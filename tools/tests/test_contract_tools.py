@@ -155,7 +155,9 @@ class CheckCommandTest(unittest.TestCase):
         self.assertEqual(code, 0, output)
         self.assertIn("weights move from index_04_leaf_l to index_03_l", output)
         renamed = WORK / "quaternius_renamed.glb"
-        code, output = run_cli("rename-bones", self.quaternius.as_posix(), "--map", "quaternius", "--out", renamed.as_posix())
+        code, output = run_cli(
+            "rename-bones", self.quaternius.as_posix(), "--map", "quaternius", "--out", renamed.as_posix()
+        )
         self.assertEqual(code, 0, output)
         self.assertIn("dropped 2", output)
         self.assertIn("index_04_leaf_l -> index_03_l", output)

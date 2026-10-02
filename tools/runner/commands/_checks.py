@@ -99,7 +99,9 @@ def _mesh_checks(report: _Report, meshes: list, measure: dict, contract: dict, k
         note = " (a provisional budget)" if budget.get("provisional") else ""
         report.add(metric, status, f"{value:,} (budget {budget_name}: target {target:,}, cap {cap:,}){note}")
     ngons = _total(meshes, "ngons")
-    report.add("ngons", FAIL if ngons else PASS, f"{ngons} faces with more than 4 corners {_names(meshes, 'ngons')}".rstrip())
+    report.add(
+        "ngons", FAIL if ngons else PASS, f"{ngons} faces with more than 4 corners {_names(meshes, 'ngons')}".rstrip()
+    )
     loose = _total(meshes, "loose_vertices") + _total(meshes, "loose_edges")
     report.add("loose_geometry", FAIL if loose else PASS, f"{loose} vertices or edges without a face")
     bad = _total(meshes, "non_manifold_edges")
@@ -113,7 +115,9 @@ def _mesh_checks(report: _Report, meshes: list, measure: dict, contract: dict, k
         f"{_total(meshes, 'islands')} connected parts, {small} of them debris (fewer than 4 faces)",
     )
     no_uv = [m["name"] for m in meshes if not m.get("uv_layers")]
-    report.add("uvs", FAIL if no_uv else PASS, f"no UV map on {', '.join(no_uv)}" if no_uv else "every mesh has a UV map")
+    report.add(
+        "uvs", FAIL if no_uv else PASS, f"no UV map on {', '.join(no_uv)}" if no_uv else "every mesh has a UV map"
+    )
     outside = _total(meshes, "uv_loops_out_of_range")
     if outside:
         report.add("uv_range", WARN, f"{outside} UV corners outside 0..1")
@@ -185,10 +189,11 @@ def _rig_checks(
     meshes = measure.get("meshes", [])
     skinned = [m for m in meshes if m.get("skinned")]
     if rules["rig"] == "forbidden":
+        rigged = bool(armatures or skinned)
         report.add(
             "rig",
-            FAIL if armatures or skinned else PASS,
-            "a rigid piece has no armature and no skin" if not (armatures or skinned) else "a rigid piece must not be rigged",
+            FAIL if rigged else PASS,
+            "a rigid piece must not be rigged" if rigged else "a rigid piece has no armature and no skin",
         )
         return None
     if len(armatures) != 1:
@@ -221,7 +226,8 @@ def _rig_checks(
         parent = bone["parent"]
         while parent in dropped:
             parent = by_raw[parent]["parent"]
-        bones[name] = {**bone, "source": bone["name"], "parent": _contract.mapped_name(parent, bone_map) if parent else ""}
+        mapped_parent = _contract.mapped_name(parent, bone_map) if parent else ""
+        bones[name] = {**bone, "source": bone["name"], "parent": mapped_parent}
     if duplicates:
         report.add("duplicate_bones", FAIL, f"two bones become {', '.join(sorted(set(duplicates)))} after the map")
     extra = sorted(n for n in bones if n not in parents)
@@ -277,7 +283,9 @@ def _rig_checks(
         report.add(
             "weighted_bones",
             FAIL if unpainted else PASS,
-            f"no weights on {', '.join(unpainted)}" if unpainted else f"all {len(skeleton['weighted'])} bones carry weights",
+            f"no weights on {', '.join(unpainted)}"
+            if unpainted
+            else f"all {len(skeleton['weighted'])} bones carry weights",
         )
     if rules["fingers"] != "off":
         problems = []
@@ -339,7 +347,10 @@ def _pose_checks(report: _Report, bones: dict[str, dict[str, Any]], contract: di
         good = toes_ahead and left_at_plus_x
         detail = "front +Z: the toes point to +Z and the left hand is at +X"
         if not good:
-            detail = f"the toes point to {'+Z' if toes_ahead else '-Z'} and the left hand is at {'+X' if left_at_plus_x else '-X'}; the contract wants +Z and +X"
+            detail = (
+                f"the toes point to {'+Z' if toes_ahead else '-Z'} and the left hand is at "
+                f"{'+X' if left_at_plus_x else '-X'}; the contract wants +Z and +X"
+            )
         report.gate("facing", rules["facing"], good, detail)
     else:
         report.gate("facing", rules["facing"], False, "cannot tell: the feet, toes or hands are missing")

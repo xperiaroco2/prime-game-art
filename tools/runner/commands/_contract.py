@@ -133,7 +133,9 @@ def validate_contract(contract: dict[str, Any], profile: dict[str, Any]) -> list
     bones = profile_parents(profile)
     skeleton = contract.get("skeleton", {})
     if skeleton.get("root") != profile.get("root_bone"):
-        errors.append(f"skeleton.root is {skeleton.get('root')!r}, the profile's root bone is {profile.get('root_bone')!r}")
+        errors.append(
+            f"skeleton.root is {skeleton.get('root')!r}, the profile's root bone is {profile.get('root_bone')!r}"
+        )
     for key in ("weighted", "weights_optional"):
         for name in skeleton.get(key, []):
             if name not in bones:

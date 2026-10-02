@@ -19,7 +19,9 @@ HELP = "regenerate contract/humanoid.json from Godot's SkeletonProfileHumanoid a
 
 
 def add_arguments(parser: argparse.ArgumentParser) -> None:
-    parser.add_argument("--check", action="store_true", help="change nothing; fail when the committed contract is stale")
+    parser.add_argument(
+        "--check", action="store_true", help="change nothing; fail when the committed contract is stale"
+    )
 
 
 def run(args: argparse.Namespace) -> int:

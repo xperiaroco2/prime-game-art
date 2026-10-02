@@ -158,13 +158,21 @@ class EvaluateTest(unittest.TestCase):
         measure = good_body(self.profile)
         bones = measure["armatures"][0]["bones"]
         bones[:] = [b for b in bones if b["name"] != "LeftRingDistal"]
-        bones.append({"name": "Socket_Hat", "parent": "Head", "head": [0, 1.7, 0], "tail": [0, 1.8, 0], "deform": False})
+        hat = {"name": "Socket_Hat", "parent": "Head", "head": [0, 1.7, 0], "tail": [0, 1.8, 0], "deform": False}
+        bones.append(hat)
         weights = measure["meshes"][0]["weights"]
         weights.update(vertices_over_limit=2, max_influences=5, unweighted_vertices=1)
         weights["weighted_bones"]["Root"] = 3
         del weights["weighted_bones"]["LeftLittleIntermediate"]
         statuses = self.statuses(self.evaluate(measure))
-        for check in ("missing_bones", "extra_bones", "weights_per_vertex", "unweighted_vertices", "root_unweighted", "finger_chains"):
+        for check in (
+            "missing_bones",
+            "extra_bones",
+            "weights_per_vertex",
+            "unweighted_vertices",
+            "root_unweighted",
+            "finger_chains",
+        ):
             self.assertEqual(statuses[check], _checks.FAIL, check)
 
     def test_wrong_parent_fails(self) -> None:
@@ -191,7 +199,8 @@ class EvaluateTest(unittest.TestCase):
     def test_a_weighted_end_bone_hands_its_weights_to_its_parent(self) -> None:
         bone_map = {"name": "test", "confirmed": False, "prefix_pattern": "", "rename": {}, "drop": ["LeftIndexTip"]}
         measure = good_body(self.profile)
-        tip = {"name": "LeftIndexTip", "parent": "LeftIndexDistal", "head": [0, 1, 0], "tail": [0, 1.1, 0], "deform": True}
+        tip = {"name": "LeftIndexTip", "parent": "LeftIndexDistal", "head": [0, 1, 0], "tail": [0, 1.1, 0]}
+        tip["deform"] = True
         measure["armatures"][0]["bones"].append(tip)
         weights = measure["meshes"][0]["weights"]["weighted_bones"]
         weights["LeftIndexTip"] = 4
