@@ -1,0 +1,23 @@
+# Every line below breaks one rule; tools/tests/test_bootstrap_manifest.py names each expected error.
+id = "Top-Bad"
+kind = "clothing"
+slot = "back"
+tools = []
+licence = "restricted"
+licence_url = "meshy terms"
+public_repo_ok = true
+ai_generated = true
+approved_by = ["SwiftySinister"]
+approved_at = ""
+approval_pr = ""
+colour = "red"
+
+[source]
+service = "meshy"
+plan = "free"
+model_version = ""
+task_ids = []
+
+[[raw]]
+file = "../outside.glb"
+sha256 = "ABC"

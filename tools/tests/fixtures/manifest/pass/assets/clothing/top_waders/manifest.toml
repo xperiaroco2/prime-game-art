@@ -1,0 +1,27 @@
+# An approved clothing piece: the approval fields are all set.
+id = "top_waders"
+kind = "clothing"
+slot = "top"
+tools = ["meshy-6", "blender 5.2.2"]
+licence = "owned-paid-output"
+licence_url = "https://www.meshy.ai/terms-of-use"
+public_repo_ok = true
+ai_generated = true
+approved_by = ["SwiftySinister", "xperiaroco2"]
+approved_at = 2026-10-10
+approval_pr = "https://github.com/xperiaroco2/prime-game-art/pull/12"
+
+[source]
+service = "meshy"
+plan = "pro-monthly"
+model_version = "meshy-6"
+task_ids = ["0199a1b2-0000-7000-8000-000000000002", "0199a1b2-0000-7000-8000-000000000003"]
+generated_at = 2026-10-04
+
+[[raw]]
+file = "2026-10-04-batch-2/top_waders.glb"
+sha256 = "0000000000000000000000000000000000000000000000000000000000000002"
+
+[[raw]]
+file = "2026-10-04-batch-2/top_waders_rigged.glb"
+sha256 = "0000000000000000000000000000000000000000000000000000000000000003"
