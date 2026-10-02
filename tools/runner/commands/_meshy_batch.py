@@ -62,6 +62,18 @@ RESERVED = {"preview": {"mode", "prompt"}, "refine": {"mode", "preview_task_id"}
             "image_to_image": {"prompt", "reference_image_urls", "input_task_id"},
             "image_to_3d": {"image_url", "input_task_id"}, "multi_image_to_3d": {"image_urls", "input_task_id"},
             "remesh": {"input_task_id", "model_url"}}
+# The request parameters the docs list for each image-mode kind (read 2026-10-03, docs/meshy.md). Meshy ignores
+# what it does not know, so a misspelt key would pay for a generation without the setting; any other key is refused.
+IMAGE_3D_PARAMS = {"ai_model", "geometry_resolution", "should_texture", "enable_pbr", "texture_resolution",
+                   "texture_prompt", "should_remesh", "topology", "target_polycount", "pose_mode", "image_enhancement",
+                   "remove_lighting", "save_pre_remeshed_model", "target_formats", "symmetry_mode", "moderation"}
+KNOWN_PARAMS = {
+    "text_to_image": {"ai_model", "generate_multi_view", "pose_mode", "aspect_ratio", "remove_background"},
+    "image_to_image": {"ai_model", "generate_multi_view", "aspect_ratio", "remove_background"},
+    "image_to_3d": IMAGE_3D_PARAMS | {"model_type"},
+    "multi_image_to_3d": IMAGE_3D_PARAMS,
+    "remesh": {"target_formats", "topology", "target_polycount"},
+}
 # Image parameters this client cannot fill in yet: they would need an input of their own.
 UNSUPPORTED = {"image_to_3d": {"texture_image_url"}, "multi_image_to_3d": {"texture_image_url", "texture_image_urls"}}
 
@@ -316,6 +328,11 @@ def _params(item: Item, raw: dict[str, Any], kdefaults: dict[str, Any], where: s
     _check_reserved(params, item.kind, where, errors)
     for key in sorted(UNSUPPORTED.get(item.kind, set()) & params.keys()):
         errors.append(f"{where}: '{key}' is not supported by this client yet (it would need an image input)")
+    known = KNOWN_PARAMS.get(item.kind)
+    if known is not None:
+        for key in sorted(params.keys() - known - RESERVED[item.kind] - UNSUPPORTED.get(item.kind, set())):
+            errors.append(f"{where}: params.{key} is not among the {item.kind} parameters in the docs (docs/meshy.md); fix "
+                          "the spelling, or re-read the docs and add it to KNOWN_PARAMS")
     return params
 
 
