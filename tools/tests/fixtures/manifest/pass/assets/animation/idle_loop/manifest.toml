@@ -1,0 +1,24 @@
+# A downloaded CC0 clip: not AI-generated, so model_version and task_ids may be empty.
+id = "idle_loop"
+kind = "animation"
+slot = ""
+tools = ["blender 5.2.2"]
+licence = "CC0-1.0"
+licence_url = "https://creativecommons.org/publicdomain/zero/1.0/"
+public_repo_ok = true
+ai_generated = false
+approved_by = []
+approved_at = ""
+approval_pr = ""
+
+[source]
+service = "quaternius"
+plan = "standard-free"
+model_version = ""
+task_ids = []
+generated_at = 2026-10-05
+url = "https://quaternius.com"
+
+[[raw]]
+file = "quaternius/universal-animation-library/UAL1_Standard.glb"
+sha256 = "0000000000000000000000000000000000000000000000000000000000000004"

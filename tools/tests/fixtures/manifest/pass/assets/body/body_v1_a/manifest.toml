@@ -1,0 +1,24 @@
+# A Meshy body from batch 1, not approved yet: the approval fields stay empty.
+id = "body_v1_a"
+kind = "body"
+slot = ""
+title = "Neutral body, variant V1, attempt A"
+tools = ["meshy-6", "blender 5.2.2"]
+licence = "owned-paid-output"
+licence_url = "https://www.meshy.ai/terms-of-use"
+public_repo_ok = true
+ai_generated = true
+approved_by = []
+approved_at = ""
+approval_pr = ""
+
+[source]
+service = "meshy"
+plan = "pro-monthly"
+model_version = "meshy-6"
+task_ids = ["0199a1b2-0000-7000-8000-000000000001"]
+generated_at = 2026-10-03T19:20:00Z
+
+[[raw]]
+file = "2026-10-03-batch-1/body_v1_a.glb"
+sha256 = "0000000000000000000000000000000000000000000000000000000000000001"
