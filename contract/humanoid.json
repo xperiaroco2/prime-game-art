@@ -1,0 +1,923 @@
+{
+  "bones": [
+    {
+      "group": "Body",
+      "handle_offset": [0.5, 0.91],
+      "index": 0,
+      "name": "Root",
+      "parent": "",
+      "reference_pose": {
+        "basis_x": [1.0, 0.0, 0.0],
+        "basis_y": [0.0, 1.0, 0.0],
+        "basis_z": [0.0, 0.0, 1.0],
+        "origin": [0.0, 0.0, 0.0]
+      },
+      "required": false,
+      "tail": "",
+      "tail_direction": "average_children"
+    },
+    {
+      "group": "Body",
+      "handle_offset": [0.5, 0.5],
+      "index": 1,
+      "name": "Hips",
+      "parent": "Root",
+      "reference_pose": {
+        "basis_x": [1.0, 0.0, 0.0],
+        "basis_y": [0.0, 1.0, 0.0],
+        "basis_z": [0.0, 0.0, 1.0],
+        "origin": [0.0, 0.75, 0.0]
+      },
+      "required": true,
+      "tail": "Spine",
+      "tail_direction": "specific_child"
+    },
+    {
+      "group": "Body",
+      "handle_offset": [0.5, 0.43],
+      "index": 2,
+      "name": "Spine",
+      "parent": "Hips",
+      "reference_pose": {
+        "basis_x": [1.0, 0.0, 0.0],
+        "basis_y": [0.0, 1.0, 0.0],
+        "basis_z": [0.0, 0.0, 1.0],
+        "origin": [0.0, 0.1, 0.0]
+      },
+      "required": true,
+      "tail": "",
+      "tail_direction": "average_children"
+    },
+    {
+      "group": "Body",
+      "handle_offset": [0.5, 0.36],
+      "index": 3,
+      "name": "Chest",
+      "parent": "Spine",
+      "reference_pose": {
+        "basis_x": [1.0, 0.0, 0.0],
+        "basis_y": [0.0, 1.0, 0.0],
+        "basis_z": [0.0, 0.0, 1.0],
+        "origin": [0.0, 0.1, 0.0]
+      },
+      "required": false,
+      "tail": "",
+      "tail_direction": "average_children"
+    },
+    {
+      "group": "Body",
+      "handle_offset": [0.5, 0.29],
+      "index": 4,
+      "name": "UpperChest",
+      "parent": "Chest",
+      "reference_pose": {
+        "basis_x": [1.0, 0.0, 0.0],
+        "basis_y": [0.0, 1.0, 0.0],
+        "basis_z": [0.0, 0.0, 1.0],
+        "origin": [0.0, 0.1, 0.0]
+      },
+      "required": false,
+      "tail": "",
+      "tail_direction": "average_children"
+    },
+    {
+      "group": "Body",
+      "handle_offset": [0.5, 0.23],
+      "index": 5,
+      "name": "Neck",
+      "parent": "UpperChest",
+      "reference_pose": {
+        "basis_x": [1.0, 0.0, 0.0],
+        "basis_y": [0.0, 1.0, 0.0],
+        "basis_z": [0.0, 0.0, 1.0],
+        "origin": [0.0, 0.1, 0.0]
+      },
+      "required": false,
+      "tail": "Head",
+      "tail_direction": "specific_child"
+    },
+    {
+      "group": "Body",
+      "handle_offset": [0.5, 0.18],
+      "index": 6,
+      "name": "Head",
+      "parent": "Neck",
+      "reference_pose": {
+        "basis_x": [1.0, 0.0, 0.0],
+        "basis_y": [0.0, 1.0, 0.0],
+        "basis_z": [0.0, 0.0, 1.0],
+        "origin": [0.0, 0.1, 0.0]
+      },
+      "required": true,
+      "tail": "",
+      "tail_direction": "end"
+    },
+    {
+      "group": "Face",
+      "handle_offset": [0.6, 0.46],
+      "index": 7,
+      "name": "LeftEye",
+      "parent": "Head",
+      "reference_pose": {
+        "basis_x": [1.0, 0.0, 0.0],
+        "basis_y": [0.0, 0.0, 1.0],
+        "basis_z": [0.0, -1.0, 0.0],
+        "origin": [0.05, 0.15, 0.0]
+      },
+      "required": false,
+      "tail": "",
+      "tail_direction": "average_children"
+    },
+    {
+      "group": "Face",
+      "handle_offset": [0.37, 0.46],
+      "index": 8,
+      "name": "RightEye",
+      "parent": "Head",
+      "reference_pose": {
+        "basis_x": [1.0, 0.0, 0.0],
+        "basis_y": [0.0, 0.0, 1.0],
+        "basis_z": [0.0, -1.0, 0.0],
+        "origin": [-0.05, 0.15, 0.0]
+      },
+      "required": false,
+      "tail": "",
+      "tail_direction": "average_children"
+    },
+    {
+      "group": "Face",
+      "handle_offset": [0.46, 0.75],
+      "index": 9,
+      "name": "Jaw",
+      "parent": "Head",
+      "reference_pose": {
+        "basis_x": [-1.0, 0.0, 0.0],
+        "basis_y": [0.0, 0.0, 1.0],
+        "basis_z": [0.0, 1.0, 0.0],
+        "origin": [0.0, 0.05, 0.05]
+      },
+      "required": false,
+      "tail": "",
+      "tail_direction": "average_children"
+    },
+    {
+      "group": "Body",
+      "handle_offset": [0.55, 0.235],
+      "index": 10,
+      "name": "LeftShoulder",
+      "parent": "UpperChest",
+      "reference_pose": {
+        "basis_x": [0.0, 0.0, 1.0],
+        "basis_y": [1.0, 0.0, 0.0],
+        "basis_z": [0.0, 1.0, 0.0],
+        "origin": [0.05, 0.1, 0.0]
+      },
+      "required": true,
+      "tail": "",
+      "tail_direction": "average_children"
+    },
+    {
+      "group": "Body",
+      "handle_offset": [0.6, 0.24],
+      "index": 11,
+      "name": "LeftUpperArm",
+      "parent": "LeftShoulder",
+      "reference_pose": {
+        "basis_x": [-1.0, 0.0, 0.0],
+        "basis_y": [0.0, 1.0, 0.0],
+        "basis_z": [0.0, 0.0, -1.0],
+        "origin": [0.0, 0.05, 0.0]
+      },
+      "required": true,
+      "tail": "",
+      "tail_direction": "average_children"
+    },
+    {
+      "group": "Body",
+      "handle_offset": [0.7, 0.24],
+      "index": 12,
+      "name": "LeftLowerArm",
+      "parent": "LeftUpperArm",
+      "reference_pose": {
+        "basis_x": [0.0, 0.0, 1.0],
+        "basis_y": [0.0, 1.0, 0.0],
+        "basis_z": [-1.0, 0.0, 0.0],
+        "origin": [0.0, 0.25, 0.0]
+      },
+      "required": true,
+      "tail": "",
+      "tail_direction": "average_children"
+    },
+    {
+      "group": "Body",
+      "handle_offset": [0.82, 0.235],
+      "index": 13,
+      "name": "LeftHand",
+      "parent": "LeftLowerArm",
+      "reference_pose": {
+        "basis_x": [0.0, 0.0, -1.0],
+        "basis_y": [0.0, 1.0, 0.0],
+        "basis_z": [1.0, 0.0, 0.0],
+        "origin": [0.0, 0.25, 0.0]
+      },
+      "required": true,
+      "tail": "LeftMiddleProximal",
+      "tail_direction": "specific_child"
+    },
+    {
+      "group": "LeftHand",
+      "handle_offset": [0.4, 0.8],
+      "index": 14,
+      "name": "LeftThumbMetacarpal",
+      "parent": "LeftHand",
+      "reference_pose": {
+        "basis_x": [0.0, 0.0, -1.0],
+        "basis_y": [-0.577, 0.816, 0.0],
+        "basis_z": [0.816, 0.577, 0.0],
+        "origin": [-0.025, 0.025, 0.0]
+      },
+      "required": false,
+      "tail": "",
+      "tail_direction": "average_children"
+    },
+    {
+      "group": "LeftHand",
+      "handle_offset": [0.3, 0.69],
+      "index": 15,
+      "name": "LeftThumbProximal",
+      "parent": "LeftThumbMetacarpal",
+      "reference_pose": {
+        "basis_x": [1.0, 0.0, 0.0],
+        "basis_y": [0.0, 1.0, 0.0],
+        "basis_z": [0.0, 0.0, 1.0],
+        "origin": [0.0, 0.043, 0.0]
+      },
+      "required": false,
+      "tail": "",
+      "tail_direction": "average_children"
+    },
+    {
+      "group": "LeftHand",
+      "handle_offset": [0.23, 0.555],
+      "index": 16,
+      "name": "LeftThumbDistal",
+      "parent": "LeftThumbProximal",
+      "reference_pose": {
+        "basis_x": [1.0, 0.0, 0.0],
+        "basis_y": [0.0, 1.0, 0.0],
+        "basis_z": [0.0, 0.0, 1.0],
+        "origin": [0.0, 0.043, 0.0]
+      },
+      "required": false,
+      "tail": "",
+      "tail_direction": "average_children"
+    },
+    {
+      "group": "LeftHand",
+      "handle_offset": [0.413, 0.52],
+      "index": 17,
+      "name": "LeftIndexProximal",
+      "parent": "LeftHand",
+      "reference_pose": {
+        "basis_x": [1.0, 0.0, 0.0],
+        "basis_y": [0.0, 1.0, 0.0],
+        "basis_z": [0.0, 0.0, 1.0],
+        "origin": [-0.025, 0.075, 0.0]
+      },
+      "required": false,
+      "tail": "",
+      "tail_direction": "average_children"
+    },
+    {
+      "group": "LeftHand",
+      "handle_offset": [0.403, 0.36],
+      "index": 18,
+      "name": "LeftIndexIntermediate",
+      "parent": "LeftIndexProximal",
+      "reference_pose": {
+        "basis_x": [1.0, 0.0, 0.0],
+        "basis_y": [0.0, 1.0, 0.0],
+        "basis_z": [0.0, 0.0, 1.0],
+        "origin": [0.0, 0.05, 0.0]
+      },
+      "required": false,
+      "tail": "",
+      "tail_direction": "average_children"
+    },
+    {
+      "group": "LeftHand",
+      "handle_offset": [0.403, 0.255],
+      "index": 19,
+      "name": "LeftIndexDistal",
+      "parent": "LeftIndexIntermediate",
+      "reference_pose": {
+        "basis_x": [1.0, 0.0, 0.0],
+        "basis_y": [0.0, 1.0, 0.0],
+        "basis_z": [0.0, 0.0, 1.0],
+        "origin": [0.0, 0.025, 0.0]
+      },
+      "required": false,
+      "tail": "",
+      "tail_direction": "average_children"
+    },
+    {
+      "group": "LeftHand",
+      "handle_offset": [0.5, 0.51],
+      "index": 20,
+      "name": "LeftMiddleProximal",
+      "parent": "LeftHand",
+      "reference_pose": {
+        "basis_x": [1.0, 0.0, 0.0],
+        "basis_y": [0.0, 1.0, 0.0],
+        "basis_z": [0.0, 0.0, 1.0],
+        "origin": [0.0, 0.075, 0.0]
+      },
+      "required": false,
+      "tail": "",
+      "tail_direction": "average_children"
+    },
+    {
+      "group": "LeftHand",
+      "handle_offset": [0.5, 0.345],
+      "index": 21,
+      "name": "LeftMiddleIntermediate",
+      "parent": "LeftMiddleProximal",
+      "reference_pose": {
+        "basis_x": [1.0, 0.0, 0.0],
+        "basis_y": [0.0, 1.0, 0.0],
+        "basis_z": [0.0, 0.0, 1.0],
+        "origin": [0.0, 0.075, 0.0]
+      },
+      "required": false,
+      "tail": "",
+      "tail_direction": "average_children"
+    },
+    {
+      "group": "LeftHand",
+      "handle_offset": [0.5, 0.22],
+      "index": 22,
+      "name": "LeftMiddleDistal",
+      "parent": "LeftMiddleIntermediate",
+      "reference_pose": {
+        "basis_x": [1.0, 0.0, 0.0],
+        "basis_y": [0.0, 1.0, 0.0],
+        "basis_z": [0.0, 0.0, 1.0],
+        "origin": [0.0, 0.025, 0.0]
+      },
+      "required": false,
+      "tail": "",
+      "tail_direction": "average_children"
+    },
+    {
+      "group": "LeftHand",
+      "handle_offset": [0.586, 0.52],
+      "index": 23,
+      "name": "LeftRingProximal",
+      "parent": "LeftHand",
+      "reference_pose": {
+        "basis_x": [1.0, 0.0, 0.0],
+        "basis_y": [0.0, 1.0, 0.0],
+        "basis_z": [0.0, 0.0, 1.0],
+        "origin": [0.025, 0.075, 0.0]
+      },
+      "required": false,
+      "tail": "",
+      "tail_direction": "average_children"
+    },
+    {
+      "group": "LeftHand",
+      "handle_offset": [0.59, 0.36],
+      "index": 24,
+      "name": "LeftRingIntermediate",
+      "parent": "LeftRingProximal",
+      "reference_pose": {
+        "basis_x": [1.0, 0.0, 0.0],
+        "basis_y": [0.0, 1.0, 0.0],
+        "basis_z": [0.0, 0.0, 1.0],
+        "origin": [0.0, 0.05, 0.0]
+      },
+      "required": false,
+      "tail": "",
+      "tail_direction": "average_children"
+    },
+    {
+      "group": "LeftHand",
+      "handle_offset": [0.591, 0.25],
+      "index": 25,
+      "name": "LeftRingDistal",
+      "parent": "LeftRingIntermediate",
+      "reference_pose": {
+        "basis_x": [1.0, 0.0, 0.0],
+        "basis_y": [0.0, 1.0, 0.0],
+        "basis_z": [0.0, 0.0, 1.0],
+        "origin": [0.0, 0.025, 0.0]
+      },
+      "required": false,
+      "tail": "",
+      "tail_direction": "average_children"
+    },
+    {
+      "group": "LeftHand",
+      "handle_offset": [0.663, 0.543],
+      "index": 26,
+      "name": "LeftLittleProximal",
+      "parent": "LeftHand",
+      "reference_pose": {
+        "basis_x": [1.0, 0.0, 0.0],
+        "basis_y": [0.0, 1.0, 0.0],
+        "basis_z": [0.0, 0.0, 1.0],
+        "origin": [0.05, 0.05, 0.0]
+      },
+      "required": false,
+      "tail": "",
+      "tail_direction": "average_children"
+    },
+    {
+      "group": "LeftHand",
+      "handle_offset": [0.672, 0.415],
+      "index": 27,
+      "name": "LeftLittleIntermediate",
+      "parent": "LeftLittleProximal",
+      "reference_pose": {
+        "basis_x": [1.0, 0.0, 0.0],
+        "basis_y": [0.0, 1.0, 0.0],
+        "basis_z": [0.0, 0.0, 1.0],
+        "origin": [0.0, 0.05, 0.0]
+      },
+      "required": false,
+      "tail": "",
+      "tail_direction": "average_children"
+    },
+    {
+      "group": "LeftHand",
+      "handle_offset": [0.672, 0.32],
+      "index": 28,
+      "name": "LeftLittleDistal",
+      "parent": "LeftLittleIntermediate",
+      "reference_pose": {
+        "basis_x": [1.0, 0.0, 0.0],
+        "basis_y": [0.0, 1.0, 0.0],
+        "basis_z": [0.0, 0.0, 1.0],
+        "origin": [0.0, 0.025, 0.0]
+      },
+      "required": false,
+      "tail": "",
+      "tail_direction": "average_children"
+    },
+    {
+      "group": "Body",
+      "handle_offset": [0.45, 0.235],
+      "index": 29,
+      "name": "RightShoulder",
+      "parent": "UpperChest",
+      "reference_pose": {
+        "basis_x": [0.0, 0.0, -1.0],
+        "basis_y": [-1.0, 0.0, 0.0],
+        "basis_z": [0.0, 1.0, 0.0],
+        "origin": [-0.05, 0.1, 0.0]
+      },
+      "required": true,
+      "tail": "",
+      "tail_direction": "average_children"
+    },
+    {
+      "group": "Body",
+      "handle_offset": [0.4, 0.24],
+      "index": 30,
+      "name": "RightUpperArm",
+      "parent": "RightShoulder",
+      "reference_pose": {
+        "basis_x": [-1.0, 0.0, 0.0],
+        "basis_y": [0.0, 1.0, 0.0],
+        "basis_z": [0.0, 0.0, -1.0],
+        "origin": [0.0, 0.05, 0.0]
+      },
+      "required": true,
+      "tail": "",
+      "tail_direction": "average_children"
+    },
+    {
+      "group": "Body",
+      "handle_offset": [0.3, 0.24],
+      "index": 31,
+      "name": "RightLowerArm",
+      "parent": "RightUpperArm",
+      "reference_pose": {
+        "basis_x": [0.0, 0.0, -1.0],
+        "basis_y": [0.0, 1.0, 0.0],
+        "basis_z": [1.0, 0.0, 0.0],
+        "origin": [0.0, 0.25, 0.0]
+      },
+      "required": true,
+      "tail": "",
+      "tail_direction": "average_children"
+    },
+    {
+      "group": "Body",
+      "handle_offset": [0.18, 0.235],
+      "index": 32,
+      "name": "RightHand",
+      "parent": "RightLowerArm",
+      "reference_pose": {
+        "basis_x": [0.0, 0.0, 1.0],
+        "basis_y": [0.0, 1.0, 0.0],
+        "basis_z": [-1.0, 0.0, 0.0],
+        "origin": [0.0, 0.25, 0.0]
+      },
+      "required": true,
+      "tail": "RightMiddleProximal",
+      "tail_direction": "specific_child"
+    },
+    {
+      "group": "RightHand",
+      "handle_offset": [0.6, 0.8],
+      "index": 33,
+      "name": "RightThumbMetacarpal",
+      "parent": "RightHand",
+      "reference_pose": {
+        "basis_x": [0.0, 0.0, 1.0],
+        "basis_y": [0.577, 0.816, 0.0],
+        "basis_z": [-0.816, 0.577, 0.0],
+        "origin": [0.025, 0.025, 0.0]
+      },
+      "required": false,
+      "tail": "",
+      "tail_direction": "average_children"
+    },
+    {
+      "group": "RightHand",
+      "handle_offset": [0.7, 0.69],
+      "index": 34,
+      "name": "RightThumbProximal",
+      "parent": "RightThumbMetacarpal",
+      "reference_pose": {
+        "basis_x": [1.0, 0.0, 0.0],
+        "basis_y": [0.0, 1.0, 0.0],
+        "basis_z": [0.0, 0.0, 1.0],
+        "origin": [0.0, 0.043, 0.0]
+      },
+      "required": false,
+      "tail": "",
+      "tail_direction": "average_children"
+    },
+    {
+      "group": "RightHand",
+      "handle_offset": [0.77, 0.555],
+      "index": 35,
+      "name": "RightThumbDistal",
+      "parent": "RightThumbProximal",
+      "reference_pose": {
+        "basis_x": [1.0, 0.0, 0.0],
+        "basis_y": [0.0, 1.0, 0.0],
+        "basis_z": [0.0, 0.0, 1.0],
+        "origin": [0.0, 0.043, 0.0]
+      },
+      "required": false,
+      "tail": "",
+      "tail_direction": "average_children"
+    },
+    {
+      "group": "RightHand",
+      "handle_offset": [0.587, 0.52],
+      "index": 36,
+      "name": "RightIndexProximal",
+      "parent": "RightHand",
+      "reference_pose": {
+        "basis_x": [1.0, 0.0, 0.0],
+        "basis_y": [0.0, 1.0, 0.0],
+        "basis_z": [0.0, 0.0, 1.0],
+        "origin": [0.025, 0.075, 0.0]
+      },
+      "required": false,
+      "tail": "",
+      "tail_direction": "average_children"
+    },
+    {
+      "group": "RightHand",
+      "handle_offset": [0.597, 0.36],
+      "index": 37,
+      "name": "RightIndexIntermediate",
+      "parent": "RightIndexProximal",
+      "reference_pose": {
+        "basis_x": [1.0, 0.0, 0.0],
+        "basis_y": [0.0, 1.0, 0.0],
+        "basis_z": [0.0, 0.0, 1.0],
+        "origin": [0.0, 0.05, 0.0]
+      },
+      "required": false,
+      "tail": "",
+      "tail_direction": "average_children"
+    },
+    {
+      "group": "RightHand",
+      "handle_offset": [0.597, 0.255],
+      "index": 38,
+      "name": "RightIndexDistal",
+      "parent": "RightIndexIntermediate",
+      "reference_pose": {
+        "basis_x": [1.0, 0.0, 0.0],
+        "basis_y": [0.0, 1.0, 0.0],
+        "basis_z": [0.0, 0.0, 1.0],
+        "origin": [0.0, 0.025, 0.0]
+      },
+      "required": false,
+      "tail": "",
+      "tail_direction": "average_children"
+    },
+    {
+      "group": "RightHand",
+      "handle_offset": [0.5, 0.51],
+      "index": 39,
+      "name": "RightMiddleProximal",
+      "parent": "RightHand",
+      "reference_pose": {
+        "basis_x": [1.0, 0.0, 0.0],
+        "basis_y": [0.0, 1.0, 0.0],
+        "basis_z": [0.0, 0.0, 1.0],
+        "origin": [0.0, 0.075, 0.0]
+      },
+      "required": false,
+      "tail": "",
+      "tail_direction": "average_children"
+    },
+    {
+      "group": "RightHand",
+      "handle_offset": [0.5, 0.345],
+      "index": 40,
+      "name": "RightMiddleIntermediate",
+      "parent": "RightMiddleProximal",
+      "reference_pose": {
+        "basis_x": [1.0, 0.0, 0.0],
+        "basis_y": [0.0, 1.0, 0.0],
+        "basis_z": [0.0, 0.0, 1.0],
+        "origin": [0.0, 0.075, 0.0]
+      },
+      "required": false,
+      "tail": "",
+      "tail_direction": "average_children"
+    },
+    {
+      "group": "RightHand",
+      "handle_offset": [0.5, 0.22],
+      "index": 41,
+      "name": "RightMiddleDistal",
+      "parent": "RightMiddleIntermediate",
+      "reference_pose": {
+        "basis_x": [1.0, 0.0, 0.0],
+        "basis_y": [0.0, 1.0, 0.0],
+        "basis_z": [0.0, 0.0, 1.0],
+        "origin": [0.0, 0.025, 0.0]
+      },
+      "required": false,
+      "tail": "",
+      "tail_direction": "average_children"
+    },
+    {
+      "group": "RightHand",
+      "handle_offset": [0.414, 0.52],
+      "index": 42,
+      "name": "RightRingProximal",
+      "parent": "RightHand",
+      "reference_pose": {
+        "basis_x": [1.0, 0.0, 0.0],
+        "basis_y": [0.0, 1.0, 0.0],
+        "basis_z": [0.0, 0.0, 1.0],
+        "origin": [-0.025, 0.075, 0.0]
+      },
+      "required": false,
+      "tail": "",
+      "tail_direction": "average_children"
+    },
+    {
+      "group": "RightHand",
+      "handle_offset": [0.41, 0.36],
+      "index": 43,
+      "name": "RightRingIntermediate",
+      "parent": "RightRingProximal",
+      "reference_pose": {
+        "basis_x": [1.0, 0.0, 0.0],
+        "basis_y": [0.0, 1.0, 0.0],
+        "basis_z": [0.0, 0.0, 1.0],
+        "origin": [0.0, 0.05, 0.0]
+      },
+      "required": false,
+      "tail": "",
+      "tail_direction": "average_children"
+    },
+    {
+      "group": "RightHand",
+      "handle_offset": [0.409, 0.25],
+      "index": 44,
+      "name": "RightRingDistal",
+      "parent": "RightRingIntermediate",
+      "reference_pose": {
+        "basis_x": [1.0, 0.0, 0.0],
+        "basis_y": [0.0, 1.0, 0.0],
+        "basis_z": [0.0, 0.0, 1.0],
+        "origin": [0.0, 0.025, 0.0]
+      },
+      "required": false,
+      "tail": "",
+      "tail_direction": "average_children"
+    },
+    {
+      "group": "RightHand",
+      "handle_offset": [0.337, 0.543],
+      "index": 45,
+      "name": "RightLittleProximal",
+      "parent": "RightHand",
+      "reference_pose": {
+        "basis_x": [1.0, 0.0, 0.0],
+        "basis_y": [0.0, 1.0, 0.0],
+        "basis_z": [0.0, 0.0, 1.0],
+        "origin": [-0.05, 0.05, 0.0]
+      },
+      "required": false,
+      "tail": "",
+      "tail_direction": "average_children"
+    },
+    {
+      "group": "RightHand",
+      "handle_offset": [0.328, 0.415],
+      "index": 46,
+      "name": "RightLittleIntermediate",
+      "parent": "RightLittleProximal",
+      "reference_pose": {
+        "basis_x": [1.0, 0.0, 0.0],
+        "basis_y": [0.0, 1.0, 0.0],
+        "basis_z": [0.0, 0.0, 1.0],
+        "origin": [0.0, 0.05, 0.0]
+      },
+      "required": false,
+      "tail": "",
+      "tail_direction": "average_children"
+    },
+    {
+      "group": "RightHand",
+      "handle_offset": [0.328, 0.32],
+      "index": 47,
+      "name": "RightLittleDistal",
+      "parent": "RightLittleIntermediate",
+      "reference_pose": {
+        "basis_x": [1.0, 0.0, 0.0],
+        "basis_y": [0.0, 1.0, 0.0],
+        "basis_z": [0.0, 0.0, 1.0],
+        "origin": [0.0, 0.025, 0.0]
+      },
+      "required": false,
+      "tail": "",
+      "tail_direction": "average_children"
+    },
+    {
+      "group": "Body",
+      "handle_offset": [0.549, 0.49],
+      "index": 48,
+      "name": "LeftUpperLeg",
+      "parent": "Hips",
+      "reference_pose": {
+        "basis_x": [-1.0, 0.0, 0.0],
+        "basis_y": [0.0, -1.0, 0.0],
+        "basis_z": [0.0, 0.0, 1.0],
+        "origin": [0.1, 0.0, 0.0]
+      },
+      "required": true,
+      "tail": "",
+      "tail_direction": "average_children"
+    },
+    {
+      "group": "Body",
+      "handle_offset": [0.548, 0.683],
+      "index": 49,
+      "name": "LeftLowerLeg",
+      "parent": "LeftUpperLeg",
+      "reference_pose": {
+        "basis_x": [-1.0, 0.0, 0.0],
+        "basis_y": [0.0, 1.0, 0.0],
+        "basis_z": [0.0, 0.0, -1.0],
+        "origin": [0.0, 0.375, 0.0]
+      },
+      "required": true,
+      "tail": "",
+      "tail_direction": "average_children"
+    },
+    {
+      "group": "Body",
+      "handle_offset": [0.545, 0.9],
+      "index": 50,
+      "name": "LeftFoot",
+      "parent": "LeftLowerLeg",
+      "reference_pose": {
+        "basis_x": [-1.0, 0.0, 0.0],
+        "basis_y": [0.0, 0.0, -1.0],
+        "basis_z": [0.0, -1.0, 0.0],
+        "origin": [0.0, 0.375, 0.0]
+      },
+      "required": true,
+      "tail": "",
+      "tail_direction": "average_children"
+    },
+    {
+      "group": "Body",
+      "handle_offset": [0.545, 0.95],
+      "index": 51,
+      "name": "LeftToes",
+      "parent": "LeftFoot",
+      "reference_pose": {
+        "basis_x": [-1.0, 0.0, 0.0],
+        "basis_y": [0.0, 1.0, 0.0],
+        "basis_z": [0.0, 0.0, -1.0],
+        "origin": [0.0, 0.15, 0.0]
+      },
+      "required": false,
+      "tail": "",
+      "tail_direction": "average_children"
+    },
+    {
+      "group": "Body",
+      "handle_offset": [0.451, 0.49],
+      "index": 52,
+      "name": "RightUpperLeg",
+      "parent": "Hips",
+      "reference_pose": {
+        "basis_x": [-1.0, 0.0, 0.0],
+        "basis_y": [0.0, -1.0, 0.0],
+        "basis_z": [0.0, 0.0, 1.0],
+        "origin": [-0.1, 0.0, 0.0]
+      },
+      "required": true,
+      "tail": "",
+      "tail_direction": "average_children"
+    },
+    {
+      "group": "Body",
+      "handle_offset": [0.452, 0.683],
+      "index": 53,
+      "name": "RightLowerLeg",
+      "parent": "RightUpperLeg",
+      "reference_pose": {
+        "basis_x": [-1.0, 0.0, 0.0],
+        "basis_y": [0.0, 1.0, 0.0],
+        "basis_z": [0.0, 0.0, -1.0],
+        "origin": [0.0, 0.375, 0.0]
+      },
+      "required": true,
+      "tail": "",
+      "tail_direction": "average_children"
+    },
+    {
+      "group": "Body",
+      "handle_offset": [0.455, 0.9],
+      "index": 54,
+      "name": "RightFoot",
+      "parent": "RightLowerLeg",
+      "reference_pose": {
+        "basis_x": [-1.0, 0.0, 0.0],
+        "basis_y": [0.0, 0.0, -1.0],
+        "basis_z": [0.0, -1.0, 0.0],
+        "origin": [0.0, 0.375, 0.0]
+      },
+      "required": true,
+      "tail": "",
+      "tail_direction": "average_children"
+    },
+    {
+      "group": "Body",
+      "handle_offset": [0.455, 0.95],
+      "index": 55,
+      "name": "RightToes",
+      "parent": "RightFoot",
+      "reference_pose": {
+        "basis_x": [-1.0, 0.0, 0.0],
+        "basis_y": [0.0, 1.0, 0.0],
+        "basis_z": [0.0, 0.0, -1.0],
+        "origin": [0.0, 0.15, 0.0]
+      },
+      "required": false,
+      "tail": "",
+      "tail_direction": "average_children"
+    }
+  ],
+  "generated_by": "tools/run.py contract (tools/godot/dump_profile.gd); never edit by hand",
+  "godot_version": "4.7.2.stable",
+  "groups": [
+    {
+      "index": 0,
+      "name": "Body"
+    },
+    {
+      "index": 1,
+      "name": "Face"
+    },
+    {
+      "index": 2,
+      "name": "LeftHand"
+    },
+    {
+      "index": 3,
+      "name": "RightHand"
+    }
+  ],
+  "profile": "SkeletonProfileHumanoid",
+  "root_bone": "Root",
+  "scale_base_bone": "Hips"
+}

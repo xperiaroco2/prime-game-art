@@ -1,0 +1,284 @@
+# The character contract: what every character model, clothing piece, accessory and prop must be so that one
+# skeleton, one animation set and one material serve them all. Read by `tools/run.py check` and validated against
+# contract/humanoid.json (generated from Godot, never typed) by `tools/run.py contract --check`.
+# Why each rule exists: docs/contract.md. Source: the ADR sketch in the wave 1 report on xperiaroco2/prime-game#165,
+# with the engineer's answers of 2026-10-02 (five fingers, the v1 slots, one neutral body, animations only).
+
+version = 1
+profile = "humanoid.json" # Godot's SkeletonProfileHumanoid, dumped by tools/godot/dump_profile.gd
+
+[axes]
+format = "glTF 2.0"
+up = "+Y"                    # glTF; Blender shows it as +Z
+front = "+Z"                 # Vector3.MODEL_FRONT; Blender shows it as -Y
+left = "+X"                  # the character's own left side
+unit_m = 1.0                 # 1 unit = 1 metre
+rest_pose = "T"              # arms horizontal, palms down; A-pose sources are re-posed and applied as rest
+origin = "between the feet, on the ground"
+character_scene_yaw_deg = 180 # the character scene turns the +Z-facing model to face -Z, like the greybox
+
+[body]
+height_m = 1.75              # top of the head
+height_min_m = 1.70          # the ADR sketch's 1.7 to 1.8 m
+height_max_m = 1.80          # never taller than the game's capsule
+eye_height_m = 1.6           # the game's camera height (content/modes/base_mode.tres in prime-game)
+eye_tolerance_m = 0.08
+feet_tolerance_m = 0.01      # the lowest vertex is within this of y = 0
+transform_tolerance = 0.0001 # location 0, rotation 0, scale 1 on every object
+capsule_height_m = 1.8       # the game's player capsule, for reference
+capsule_radius_m = 0.4
+variants = "one neutral body in v1"
+
+[skeleton]
+root = "Root"                # on the ground between the feet, never weighted
+# Bones that must carry skin weights (22): the trunk, and per side shoulder, arm, hand and leg.
+weighted = [
+  "Hips", "Spine", "Chest", "UpperChest", "Neck", "Head",
+  "LeftShoulder", "LeftUpperArm", "LeftLowerArm", "LeftHand",
+  "RightShoulder", "RightUpperArm", "RightLowerArm", "RightHand",
+  "LeftUpperLeg", "LeftLowerLeg", "LeftFoot", "LeftToes",
+  "RightUpperLeg", "RightLowerLeg", "RightFoot", "RightToes",
+]
+# Present in the rig, weights allowed but not required.
+weights_optional = ["Jaw", "LeftEye", "RightEye"]
+# Five fingers per hand (gestures): every bone of every finger chain in the profile is present and weighted.
+fingers = ["Thumb", "Index", "Middle", "Ring", "Little"]
+fingers_weighted = true
+extra_bones = false          # no sockets, jiggle or helper bones in the body; sockets live in the Godot scene
+max_weights_per_vertex = 4
+min_weight = 0.01            # influences below this are noise (a warning)
+weight_sum_tolerance = 0.01  # weights per vertex sum to 1 (a warning; Godot normalizes on import)
+
+# Attachment points. Each is a Marker3D under a BoneAttachment3D in the character scene (never override_pose); every
+# item or accessory scene has a Grip Marker3D that lands on its socket. scene_position is in the character scene
+# (front -Z, like the greybox in prime-game client/player/remote_player_body.gd); model_position is the same point
+# in model space (front +Z). Positions without numbers are measured on the first base body from 8-side shots.
+[[sockets]]
+name = "Socket_Head"
+bone = "Head"
+where = "top of the skull"
+used_by = "hair or hat"
+
+[[sockets]]
+name = "Socket_Face"
+bone = "Head"
+where = "front of the face, at eye height"
+used_by = "face accessory (masks, glasses)"
+
+[[sockets]]
+name = "Socket_HandR"
+bone = "RightHand"
+where = "palm centre, grip axis along the fingers"
+used_by = "the hand item"
+scene_position = [0.45, 0.95, -0.15]
+model_position = [-0.45, 0.95, 0.15]
+
+[[sockets]]
+name = "Socket_HandL"
+bone = "LeftHand"
+where = "palm centre"
+used_by = "IK target for two-handed holds"
+
+[[sockets]]
+name = "Socket_Carry"
+bone = "Chest"
+where = "in front of the body at chest height"
+used_by = "the two-handed package"
+scene_position = [0.0, 0.8, -0.72]
+model_position = [0.0, 0.8, 0.72]
+
+[[sockets]]
+name = "Socket_Belt"
+bone = "Hips"
+where = "the left hip"
+used_by = "the belt item"
+scene_position = [-0.48, 0.85, 0.0]
+model_position = [0.48, 0.85, 0.0]
+
+[[sockets]]
+name = "Socket_Back"
+bone = "UpperChest"
+where = "between the shoulder blades, behind the body"
+used_by = "back item"
+
+# Customization slots, v1. A player picks one piece per slot; eyes and mouth are their own slots, changeable like the
+# hair (the engineer's answer Q7). Cosmetics are public data and never derived from the role.
+#   palette  a colour index into the shared palette texture; no mesh
+#   face     eyes or mouth, built one of two ways until the style is chosen: frames in a layer of the face texture
+#            array that the shader swaps at runtime (a painted face, V3), or small rigid pieces on Socket_Face
+#            (separate eyeballs, V1), checked with `check --kind accessory`. Either way each piece provides every
+#            frame in `frames`, so blinking, talking and emotes animate without a mesh change
+#   rigid    a separate unskinned mesh on a socket, checked with `check --kind accessory`
+#   skinned  a mesh bound to profile bones only, weights from the base body, checked with `check --kind clothing`
+[[slots]]
+id = "skin_colour"
+type = "palette"
+
+[[slots]]
+id = "eyes"
+type = "face"
+forms = ["face_texture", "rigid"]
+socket = "Socket_Face"
+check_kind = "accessory"
+budget = "accessory"
+frames = ["open", "blink", "closed"] # the full frame list waits for the style answers (H2)
+
+[[slots]]
+id = "mouth"
+type = "face"
+forms = ["face_texture", "rigid"]
+socket = "Socket_Face"
+check_kind = "accessory"
+budget = "accessory"
+frames = ["closed", "small", "wide", "round"] # talking shapes; the full list waits for H2
+
+[[slots]]
+id = "hair_or_hat"
+type = "rigid"
+socket = "Socket_Head"
+check_kind = "accessory"
+budget = "head_item"
+
+[[slots]]
+id = "top"
+type = "skinned"
+check_kind = "clothing"
+budget = "clothing"
+
+[[slots]]
+id = "bottom"
+type = "skinned"
+check_kind = "clothing"
+budget = "clothing"
+
+[[slots]]
+id = "shoes"
+type = "skinned"
+check_kind = "clothing"
+budget = "clothing"
+
+[[slots]]
+id = "face_accessory"
+type = "rigid"
+socket = "Socket_Face"
+check_kind = "accessory"
+budget = "accessory"
+
+[[slots]]
+id = "back_item"
+type = "rigid"
+socket = "Socket_Back"
+check_kind = "accessory"
+budget = "accessory"
+
+[sets]
+rule = "a set is a preset of pieces: one piece id per slot; a slot it leaves out keeps the player's choice"
+
+[animation]
+source = "skeletal clips on the contract skeleton, one shared AnimationLibrary"
+ragdoll = false              # animations only (the engineer, 2026-10-02): downed and dead are clips too
+in_place = true              # root_motion_track stays empty
+loop_suffix = "_loop"
+markers = ["foot_l", "foot_r", "land"]
+# Eye and mouth frames never come from bones or blend shapes. A face_texture piece is frames in the face texture
+# array that the shader swaps. How a rigid piece (separate eyeballs on Socket_Face) shows its frames, through frames
+# in its own texture or per-instance shader parameters, waits for the style answers (H2).
+face = "eye and mouth frames are texture frames swapped at runtime, not bones or blend shapes"
+
+# Budgets: triangles after triangulation; vertices as imported (split at UV seams and hard edges, close to what the
+# GPU draws). Above the target is a warning, above the cap a failure. "provisional" budgets are not in the ADR
+# sketch and are a starting guess for the first real pieces.
+# The assembled character is not judged by `check` yet (it checks one file at a time). The ADR sketch's figures stay;
+# the body plus one piece per slot at their targets (6,000 + 3 x 1,200 + 3 x 800 = 12,000) already exceeds them: an
+# open question for the engineer.
+[budgets.character]
+note = "the assembled character LOD0: body plus every piece; 10 players, about 20 skinned bodies with corpses"
+triangles_target = 8000
+triangles_cap = 12000
+vertices_target = 8000
+vertices_cap = 12000
+
+[budgets.body]
+note = "the base body with five-finger hands"
+triangles_target = 6000
+triangles_cap = 8000
+vertices_target = 8000       # never more than the whole character's skinned vertices
+vertices_cap = 12000
+
+[budgets.clothing]
+note = "one skinned piece (top, bottom or shoes)"
+provisional = true
+triangles_target = 1200
+triangles_cap = 2000
+
+[budgets.head_item]
+note = "hair or hat"
+triangles_target = 800
+triangles_cap = 1200
+
+[budgets.accessory]
+note = "a face accessory, back item or belt item"
+triangles_target = 800
+triangles_cap = 1200
+
+[budgets.prop]
+note = "a level prop or a third-person hand item (first-person hand items: 3,000 target, 4,000 cap)"
+triangles_target = 1500
+triangles_cap = 2000
+
+[budgets.limits]
+bones = 56                   # the profile; 64 deform and 80 total are the engine-side caps
+blend_shapes_body = 0
+surfaces_per_character_target = 6
+surfaces_per_character_cap = 8
+texture_character_px = 1024
+texture_accessory_px = 512
+glb_character_mb = 5
+glb_accessory_mb = 1
+glb_animation_library_mb = 10
+
+# What `check --kind <kind>` enforces. Severities: "fail" (a hard failure, non-zero exit), "warn", "off".
+# Every kind also gets the mesh checks: budget, n-gons, loose geometry, non-manifold edges, UVs, applied transforms.
+[kinds.body]
+budget = "body"
+rig = "required"             # required | forbidden
+bones = "all"                # all: exactly the profile's bones; subset: only profile bones
+fingers = "fail"
+height = "fail"
+eyes = "warn"
+feet = "fail"
+facing = "fail"
+max_materials = 1
+
+[kinds.clothing]
+budget = "clothing"
+rig = "required"
+bones = "subset"
+fingers = "off"
+height = "off"
+eyes = "off"
+feet = "off"
+facing = "off"
+max_materials = 1
+
+[kinds.accessory]
+budget = "accessory"
+rig = "forbidden"
+bones = "subset"
+fingers = "off"
+height = "off"
+eyes = "off"
+feet = "off"
+facing = "off"
+max_materials = 1
+
+[kinds.prop]
+budget = "prop"
+rig = "forbidden"
+bones = "subset"
+fingers = "off"
+height = "off"
+eyes = "off"
+feet = "warn"
+facing = "off"
+max_materials = 2

@@ -1,0 +1,82 @@
+# Mixamo rig names -> Godot's SkeletonProfileHumanoid names (contract/humanoid.json).
+# Used by `check --map mixamo` and `rename-bones --map mixamo`. The names are Mixamo's published FBX naming
+# (mixamorig:Hips ...); no Mixamo file is in this repository, and Mixamo output never enters the public game repo.
+# Mixamo rigs have no Root and no Jaw: `check` reports them missing until they are added in Blender.
+# confirmed = true means "from Mixamo's published naming": no Mixamo file has been checked against it yet.
+
+source = "Mixamo"
+confirmed = true
+# Mixamo prefixes every bone with "mixamorig:" (sometimes "mixamorig1:", "mixamorig2:" ...); stripped first.
+prefix_pattern = '^mixamorig[0-9]*:'
+# Leaf end bones without weights; rename-bones deletes them.
+drop = [
+  "HeadTop_End",
+  "LeftHandThumb4",
+  "LeftHandIndex4",
+  "LeftHandMiddle4",
+  "LeftHandRing4",
+  "LeftHandPinky4",
+  "RightHandThumb4",
+  "RightHandIndex4",
+  "RightHandMiddle4",
+  "RightHandRing4",
+  "RightHandPinky4",
+  "LeftToe_End",
+  "RightToe_End",
+]
+
+[rename]
+Hips = "Hips"
+Spine = "Spine"
+Spine1 = "Chest"
+Spine2 = "UpperChest"
+Neck = "Neck"
+Head = "Head"
+LeftEye = "LeftEye"
+RightEye = "RightEye"
+LeftShoulder = "LeftShoulder"
+LeftArm = "LeftUpperArm"
+LeftForeArm = "LeftLowerArm"
+LeftHand = "LeftHand"
+LeftHandThumb1 = "LeftThumbMetacarpal"
+LeftHandThumb2 = "LeftThumbProximal"
+LeftHandThumb3 = "LeftThumbDistal"
+LeftHandIndex1 = "LeftIndexProximal"
+LeftHandIndex2 = "LeftIndexIntermediate"
+LeftHandIndex3 = "LeftIndexDistal"
+LeftHandMiddle1 = "LeftMiddleProximal"
+LeftHandMiddle2 = "LeftMiddleIntermediate"
+LeftHandMiddle3 = "LeftMiddleDistal"
+LeftHandRing1 = "LeftRingProximal"
+LeftHandRing2 = "LeftRingIntermediate"
+LeftHandRing3 = "LeftRingDistal"
+LeftHandPinky1 = "LeftLittleProximal"
+LeftHandPinky2 = "LeftLittleIntermediate"
+LeftHandPinky3 = "LeftLittleDistal"
+LeftUpLeg = "LeftUpperLeg"
+LeftLeg = "LeftLowerLeg"
+LeftFoot = "LeftFoot"
+LeftToeBase = "LeftToes"
+RightShoulder = "RightShoulder"
+RightArm = "RightUpperArm"
+RightForeArm = "RightLowerArm"
+RightHand = "RightHand"
+RightHandThumb1 = "RightThumbMetacarpal"
+RightHandThumb2 = "RightThumbProximal"
+RightHandThumb3 = "RightThumbDistal"
+RightHandIndex1 = "RightIndexProximal"
+RightHandIndex2 = "RightIndexIntermediate"
+RightHandIndex3 = "RightIndexDistal"
+RightHandMiddle1 = "RightMiddleProximal"
+RightHandMiddle2 = "RightMiddleIntermediate"
+RightHandMiddle3 = "RightMiddleDistal"
+RightHandRing1 = "RightRingProximal"
+RightHandRing2 = "RightRingIntermediate"
+RightHandRing3 = "RightRingDistal"
+RightHandPinky1 = "RightLittleProximal"
+RightHandPinky2 = "RightLittleIntermediate"
+RightHandPinky3 = "RightLittleDistal"
+RightUpLeg = "RightUpperLeg"
+RightLeg = "RightLowerLeg"
+RightFoot = "RightFoot"
+RightToeBase = "RightToes"

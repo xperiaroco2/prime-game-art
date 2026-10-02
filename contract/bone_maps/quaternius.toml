@@ -1,0 +1,80 @@
+# Quaternius rig names -> Godot's SkeletonProfileHumanoid names (contract/humanoid.json).
+# Confirmed on 2026-10-02 from the real rig (xperiaroco2/prime-game-art#5): UAL1_Standard.glb (Universal Animation
+# Library) and Superhero_Male_FullBody.gltf (Universal Base Characters) share one rig of 65 bones with Unreal-mannequin
+# names (pelvis, spine_01, clavicle_l ...), except the head bone, which is "Head". It has no twist or IK bones, and no
+# Jaw or eye bones: `check` reports those missing until they are added in Blender.
+
+source = "Quaternius"
+confirmed = true
+prefix_pattern = ''
+# End bones past the last finger joint and past the toes. The Base Characters weight some vertices to the finger ones:
+# rename-bones moves those weights to the parent bone (the distal joint), and check counts them there.
+drop = [
+  "thumb_04_leaf_l",
+  "index_04_leaf_l",
+  "middle_04_leaf_l",
+  "ring_04_leaf_l",
+  "pinky_04_leaf_l",
+  "ball_leaf_l",
+  "thumb_04_leaf_r",
+  "index_04_leaf_r",
+  "middle_04_leaf_r",
+  "ring_04_leaf_r",
+  "pinky_04_leaf_r",
+  "ball_leaf_r",
+]
+
+[rename]
+root = "Root"
+pelvis = "Hips"
+spine_01 = "Spine"
+spine_02 = "Chest"
+spine_03 = "UpperChest"
+neck_01 = "Neck"
+Head = "Head"
+clavicle_l = "LeftShoulder"
+upperarm_l = "LeftUpperArm"
+lowerarm_l = "LeftLowerArm"
+hand_l = "LeftHand"
+thumb_01_l = "LeftThumbMetacarpal"
+thumb_02_l = "LeftThumbProximal"
+thumb_03_l = "LeftThumbDistal"
+index_01_l = "LeftIndexProximal"
+index_02_l = "LeftIndexIntermediate"
+index_03_l = "LeftIndexDistal"
+middle_01_l = "LeftMiddleProximal"
+middle_02_l = "LeftMiddleIntermediate"
+middle_03_l = "LeftMiddleDistal"
+ring_01_l = "LeftRingProximal"
+ring_02_l = "LeftRingIntermediate"
+ring_03_l = "LeftRingDistal"
+pinky_01_l = "LeftLittleProximal"
+pinky_02_l = "LeftLittleIntermediate"
+pinky_03_l = "LeftLittleDistal"
+thigh_l = "LeftUpperLeg"
+calf_l = "LeftLowerLeg"
+foot_l = "LeftFoot"
+ball_l = "LeftToes"
+clavicle_r = "RightShoulder"
+upperarm_r = "RightUpperArm"
+lowerarm_r = "RightLowerArm"
+hand_r = "RightHand"
+thumb_01_r = "RightThumbMetacarpal"
+thumb_02_r = "RightThumbProximal"
+thumb_03_r = "RightThumbDistal"
+index_01_r = "RightIndexProximal"
+index_02_r = "RightIndexIntermediate"
+index_03_r = "RightIndexDistal"
+middle_01_r = "RightMiddleProximal"
+middle_02_r = "RightMiddleIntermediate"
+middle_03_r = "RightMiddleDistal"
+ring_01_r = "RightRingProximal"
+ring_02_r = "RightRingIntermediate"
+ring_03_r = "RightRingDistal"
+pinky_01_r = "RightLittleProximal"
+pinky_02_r = "RightLittleIntermediate"
+pinky_03_r = "RightLittleDistal"
+thigh_r = "RightUpperLeg"
+calf_r = "RightLowerLeg"
+foot_r = "RightFoot"
+ball_r = "RightToes"
