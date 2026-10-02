@@ -107,7 +107,7 @@ class ImageEstimateTest(unittest.TestCase):
         self.assertEqual(batch.item("c1-front").variant, "c")  # inherited through `from`
         self.assertEqual(batch.item("c1-body-rig").variant, "c")
         self.assertEqual(batch.item("c1-mq").depends, ["c1"])
-        self.assertTrue(batch.item("c1-body-quads").textured)
+        self.assertFalse(batch.item("c1-body-quads").textured)  # the docs list no texture for a remesh
 
     def test_inputs_are_parsed(self) -> None:
         item = parse(image_batch(CHAIN)).item("c1-mq")
@@ -182,6 +182,9 @@ class ImageValidationTest(unittest.TestCase):
              "filled in by the runner"),
             ([CONCEPT, {"id": "m", "kind": "image_to_3d", "images": [pick], "params": {"should_texture": False}},
               {"id": "r", "kind": "rig", "source": "m"}], "textured models only"),
+            ([CONCEPT, {"id": "m", "kind": "image_to_3d", "images": [pick]},
+              {"id": "q", "kind": "remesh", "source": "m"},
+              {"id": "r", "kind": "rig", "source": "q"}], "do not say a remesh keeps the"),
             ([CONCEPT, {"id": "r", "kind": "rig", "source": "c1"}], "a rig needs a text_to_3d or image_to_3d"),
         ]
         for items, message in cases:
@@ -189,9 +192,9 @@ class ImageValidationTest(unittest.TestCase):
                 self.assert_invalid(items, message)
 
     def test_rig_takes_every_textured_model_kind(self) -> None:
-        batch = parse(image_batch(CHAIN + [{"id": "q-rig", "kind": "rig", "source": "c1-body-quads"},
-                                           {"id": "f-rig", "kind": "rig", "source": "c1-front"}]))
-        self.assertEqual([i.credits for i in batch.items[-3:]], [5, 5, 5])
+        # c1-body-rig (in CHAIN) rigs a multi_image_to_3d model; a remesh is refused (test above)
+        batch = parse(image_batch(CHAIN + [{"id": "f-rig", "kind": "rig", "source": "c1-front"}]))
+        self.assertEqual([i.credits for i in batch.items[-2:]], [5, 5])
 
     def test_example_batch_never_runs(self) -> None:
         batch = batches.load("example-image-modes")

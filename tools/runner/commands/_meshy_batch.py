@@ -304,7 +304,10 @@ def _follow_up(item: Item, raw: dict[str, Any], kdefaults: dict[str, Any], seen:
     params = _params(item, raw, kdefaults, where, errors)
     wanted = MODEL_KINDS if item.kind == "rig" else ("rig",)
     src = _source(item, seen, wanted, where, errors)
-    if src is not None and item.kind == "rig" and not src.textured:
+    if src is not None and item.kind == "rig" and src.kind == "remesh":
+        errors.append(f"{where}: Meshy rigs textured models only, and the docs do not say a remesh keeps the "
+                      f"texture; rig the remesh's source {src.source!r} instead")
+    elif src is not None and item.kind == "rig" and not src.textured:
         errors.append(f"{where}: Meshy rigs textured models only; source {item.source!r} makes no texture "
                       "(texture = false or should_texture = false)")
     if item.kind == "rig":
@@ -431,7 +434,9 @@ def _remesh(item: Item, raw: dict[str, Any], kdefaults: dict[str, Any], seen: di
             errors: list[str]) -> None:
     params = _params(item, raw, kdefaults, where, errors)
     src = _source(item, seen, ("text_to_3d", "image_to_3d", "multi_image_to_3d"), where, errors)
-    item.textured = bool(src and src.textured)
+    # The docs' Remesh task lists model_urls but no texture_urls, so a remesh does not count as textured: a rig
+    # of one is refused until a live run shows that the texture survives.
+    item.textured = False
     item.stages.append(Stage("remesh", "remesh", params, REMESH_CREDITS))
 
 

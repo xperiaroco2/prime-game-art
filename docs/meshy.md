@@ -71,8 +71,9 @@ Item kinds (merged: defaults, then the variant, then the item):
   text-to-3D); a multi-image-to-3D source, which the remesh docs do not list, goes as its downloaded GLB.
 
 A `rig` takes any earlier item that makes a textured model: `text_to_3d` (textured), `image_to_3d` and
-`multi_image_to_3d` (unless `should_texture = false`) and a `remesh` of one of them; the runner sends the task that
-made the source's final model as `input_task_id`. An item without `variant` takes its source's or its first `from`
+`multi_image_to_3d` (unless `should_texture = false`); the runner sends the task that made the source's final
+model as `input_task_id`. A rig of a `remesh` is refused: the docs list no `texture_urls` for a remesh result and
+do not say whether the texture survives, so rig the remesh's source until a live run shows it does. An item without `variant` takes its source's or its first `from`
 input's.
 
 ### Image inputs
@@ -291,7 +292,7 @@ default, `quad`), `target_polycount` (100 to 300,000, default 30,000); `resize_h
 `convert_format_only` are deprecated. The result: `model_urls`, `thumbnail_url`, `alpha_thumbnail_url`.
 
 Rigging's `input_task_id` is "the input task that needs to be rigged": any task with a textured humanoid model (at
-most 300,000 faces), so a rig follows any textured model item; `model_url` takes a textured humanoid GLB facing +Z.
+most 300,000 faces), so a rig follows any textured model item (not a remesh, above); `model_url` takes a textured humanoid GLB facing +Z.
 
 ## The first batch, 2026-10-b1-bodies
 
