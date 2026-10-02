@@ -247,6 +247,9 @@ def _follow_up(item: Item, raw: dict[str, Any], kdefaults: dict[str, Any], seen:
     if item.kind == "rig":
         credits = RIG_CREDITS
     else:
+        chosen = [name for name in ("action_id", "action_ids", "motion_task_id") if name in params]
+        if len(chosen) > 1:  # the animation docs: exactly one of them
+            errors.append(f"{where}: set only one of {', '.join(chosen)}")
         ids = params.get("action_ids", [params["action_id"]] if "action_id" in params else [])
         if not isinstance(ids, list) or not ids or not all(isinstance(i, int) and not isinstance(i, bool) for i in ids):
             errors.append(f"{where}: an animate item needs params.action_ids, a list of 1 to 10 integers")
