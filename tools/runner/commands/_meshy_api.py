@@ -245,7 +245,7 @@ def _explain(resp: Response, key: str) -> str:
     try:
         data = resp.json()
         if isinstance(data, dict):
-            text = str(data.get("message") or data.get("error") or "")
+            text = str(data.get("message") or data.get("error") or "")[:300]  # an echoed data URI stays out
     except ValueError:
         text = resp.body[:200].decode("utf-8", "replace")
     parts = [p for p in (text.strip(), hints.get(resp.status, "")) if p]

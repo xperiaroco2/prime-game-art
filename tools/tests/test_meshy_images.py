@@ -16,6 +16,7 @@ from typing import Any
 from unittest import mock
 
 from runner import cli, common
+from runner.commands import _meshy_api as api
 from runner.commands import _meshy_batch as batches
 from runner.commands import _meshy_inputs as inputs
 from runner.commands import _meshy_run as runs
@@ -432,6 +433,17 @@ class ImageRunTest(unittest.TestCase):
         batch = parse(image_batch(CHAIN))
         self.assertIn("3 files", runs.item_status(batch, batch.item("c1"), self.raw))
         self.assertIn("not started", runs.item_status(batch, batch.item("c1-mq"), self.raw))
+
+
+class LongErrorTest(unittest.TestCase):
+    def test_a_refusal_quoting_our_data_uri_is_cut_short(self) -> None:
+        fake = FakeMeshy()
+        echo = "invalid image_url: data:image/png;base64," + "A" * 100_000
+        fake.queue = [api.Response(400, {}, json.dumps({"message": echo}).encode())]
+        with self.assertRaises(api.MeshyError) as caught:
+            fake.client().create("image_to_3d", {"image_url": "data:image/png;base64,AAAA"})
+        self.assertEqual(caught.exception.status, 400)
+        self.assertLess(len(str(caught.exception)), 400)
 
 
 class ImageCommandTest(unittest.TestCase):
