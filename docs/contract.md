@@ -83,7 +83,9 @@ talking need no mesh change), `hair_or_hat`, `face_accessory` and `back_item` (r
 and never derived from a role.
 
 **Animation.** Skeletal clips on the contract skeleton in one shared library, in place, loops suffixed `_loop`; no
-ragdoll: falls, downed and dead are clips too.
+ragdoll: falls, downed and dead are clips too. Eyes and mouth animate by texture frames, never bones or blend shapes;
+how a rigid eye or mouth piece shows its frames (its own texture frames or per-instance shader parameters) waits for
+the style answers (H2).
 
 **Budgets.** Above the target warns, above the cap fails.
 

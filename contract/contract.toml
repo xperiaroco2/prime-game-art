@@ -180,7 +180,10 @@ ragdoll = false              # animations only (the engineer, 2026-10-02): downe
 in_place = true              # root_motion_track stays empty
 loop_suffix = "_loop"
 markers = ["foot_l", "foot_r", "land"]
-face = "eye and mouth frames come from the face texture slots, not from bones or blend shapes"
+# Eye and mouth frames never come from bones or blend shapes. A face_texture piece is frames in the face texture
+# array that the shader swaps. How a rigid piece (separate eyeballs on Socket_Face) shows its frames, through frames
+# in its own texture or per-instance shader parameters, waits for the style answers (H2).
+face = "eye and mouth frames are texture frames swapped at runtime, not bones or blend shapes"
 
 # Budgets: triangles after triangulation; vertices as imported (split at UV seams and hard edges, close to what the
 # GPU draws). Above the target is a warning, above the cap a failure. "provisional" budgets are not in the ADR
