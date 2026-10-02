@@ -5,7 +5,7 @@ Run through the runner (`tools/run.py probe` builds it), or directly:
 
 The figure faces -Y (Blender's front, +Z in glTF), stands in an A-pose with its feet at z = 0 and the top of its head at
 z = 1.75, and has a red nose so the front reads at a glance. Each body part is a box bound with weight 1 to one bone.
-The armature carries one action, "Wave": the right arm swings up and back over 24 frames. With --textured the shirt
+The armature carries one action, "Wave" (or the --action name): the right arm swings up and back over 24 frames. With --textured the shirt
 gets a generated checker image (packed into the GLB), to exercise texture colours in the review sheet.
 """
 
@@ -57,6 +57,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--out", required=True, help="the folder the GLB goes to")
     parser.add_argument("--name", default="", help="file name without extension (default humanoid[_textured])")
     parser.add_argument("--textured", action="store_true", help="give the shirt a generated checker texture")
+    parser.add_argument("--action", default="Wave", help="the name of the wave action (default Wave)")
     return parser.parse_args(argv)
 
 
@@ -202,6 +203,7 @@ def main() -> None:
     folder.mkdir(parents=True, exist_ok=True)
     name = args.name or ("humanoid_textured" if args.textured else "humanoid")
     build(args.textured, folder)
+    bpy.data.actions["Wave"].name = args.action  # a test can mimic a Mixamo clip name such as Armature|mixamo.com|Layer0
     target = folder / f"{name}.glb"
     bpy.ops.export_scene.gltf(filepath=str(target), export_format="GLB", export_animations=True, export_apply=False)
     if not target.is_file():

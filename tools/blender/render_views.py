@@ -7,7 +7,7 @@ Imports GLB, glTF, FBX, OBJ or .blend. The model's front is -Y in Blender (+Z in
 views at 45-degree steps, front first and then counter-clockwise seen from above (the camera passes the model's left
 side first), all at the same scale and centre, go into views/ and into sheet.png: 4 x 2 cells of --cell pixels on a
 neutral light-grey background, each labelled with its angle, with a faint line at z = 0. stats.json describes the
-model. With --anim, anim_<action>.png holds --frames evenly spaced frames of that action, seen from the front.
+model. With --anim, anim_<action>.png (the name made file-safe) holds --frames evenly spaced frames of that action, seen from the front.
 
 Texture colours are used when any visible material has an image texture with pixels, material colours otherwise.
 """
@@ -17,6 +17,7 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import re
 import sys
 import zlib
 from pathlib import Path
@@ -320,6 +321,12 @@ def write_png(path: Path, rgb: np.ndarray) -> None:
 # --- animation ---------------------------------------------------------------------------------------------------
 
 
+def safe_name(name: str) -> str:
+    """An action name as a file or folder name: Mixamo and Meshy FBX clips are named like `Armature|mixamo.com|Layer0`,
+    and `|`, `/` or `:` are not allowed in a Windows file name, so every run of other characters becomes `_`."""
+    return re.sub(r"[^A-Za-z0-9._-]+", "_", name).strip("._") or "action"
+
+
 def assign_action(name: str) -> tuple[float, float]:
     action = bpy.data.actions.get(name)
     if action is None:
@@ -398,7 +405,7 @@ def main() -> None:
             sampled.append(world_points())
         anim_framing = Framing(np.concatenate(sampled), args.cell)
         anim_framing.place(camera, 0)
-        frame_dir = out / f"anim_{args.anim}"
+        frame_dir = out / f"anim_{safe_name(args.anim)}"
         frame_dir.mkdir(exist_ok=True)
         anim_images = []
         for index, frame in enumerate(frames):
@@ -406,7 +413,7 @@ def main() -> None:
             path = frame_dir / f"{index}_frame_{frame:07.2f}.png"
             render_to(path)
             anim_images.append(read_png(path))
-        anim_sheet = out / f"anim_{args.anim}.png"
+        anim_sheet = out / f"anim_{safe_name(args.anim)}.png"
         anim_labels = [f"F {round(frame)}" for frame in frames]
         write_png(anim_sheet, compose(anim_images, anim_labels, args.cell, anim_framing.ground_row(args.cell)))
         report["anim"] = {"action": args.anim, "frame_range": [start, end], "frames": frames, "sheet": str(anim_sheet)}

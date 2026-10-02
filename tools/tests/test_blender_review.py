@@ -8,7 +8,7 @@ import unittest
 import zlib
 from pathlib import Path
 
-from runner import cli, common, pins
+from runner import blender, cli, common, pins
 from runner.commands import _review
 
 OUT = common.OUT / "tests" / "blender"
@@ -144,6 +144,16 @@ class ReviewSheetTest(unittest.TestCase):
         stats = _review.render(self.fixtures["humanoid"], out, cell=128, anim="Wave", frames=4)
         self.assertEqual(len(stats["anim"]["frames"]), 4)
         self.assertEqual(_review.png_size(Path(stats["anim"]["sheet"])), (512, 128))
+
+    def test_an_action_name_with_pipes_gives_file_safe_names(self) -> None:
+        mixamo = "Armature|mixamo.com|Layer0"  # how Mixamo and Meshy FBX clips are named; `|` is not a Windows file name
+        blender.run_script("make_fixture.py", ["--out", str(OUT / "fixtures"), "--name", "humanoid_mixamo",
+                                               "--action", mixamo], timeout=300)
+        out = OUT / "renders" / "humanoid_mixamo"
+        stats = _review.render(OUT / "fixtures" / "humanoid_mixamo.glb", out, cell=64, anim=mixamo, frames=2)
+        self.assertEqual(stats["anim"]["action"], mixamo)
+        self.assertEqual(Path(stats["anim"]["sheet"]).name, "anim_Armature_mixamo.com_Layer0.png")
+        self.assertTrue((out / "anim_Armature_mixamo.com_Layer0.png").is_file())
 
     def test_an_unknown_action_fails_with_the_known_ones(self) -> None:
         with self.assertRaises(common.Failure) as caught:

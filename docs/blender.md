@@ -48,7 +48,9 @@ ignored). A relative model path is tried from the current folder, then from the 
 
 `--anim <action>` plays that action on every armature (other NLA tracks muted) and renders `--frames` evenly spaced
 frames from the first to the last key, front view, into `anim_<action>.png` (4 columns, as many rows as needed; the
-frames go into `anim_<action>/`). One scale fits the model over all sampled frames. The first and last frames of a
+frames go into `anim_<action>/`). File and folder names use the action name made file-safe: every run of characters
+other than letters, digits, `.`, `_` and `-` becomes `_`, so Mixamo's `Armature|mixamo.com|Layer0` gives
+`anim_Armature_mixamo.com_Layer0.png`; `stats.json` and the error messages keep the real name. One scale fits the model over all sampled frames. The first and last frames of a
 looping clip show the same pose. An unknown action fails with the list of actions the model has.
 
 ## The fixture
