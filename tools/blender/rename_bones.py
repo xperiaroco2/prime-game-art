@@ -87,6 +87,9 @@ def main() -> None:
         for name in to_drop:
             bone = edit_bones[name]
             for child in list(bone.children):
+                # Reparenting a connected bone snaps its head to the new parent's tail: disconnect it first, so the
+                # rest pose stays as it was.
+                child.use_connect = False
                 child.parent = bone.parent
             edit_bones.remove(bone)
         bpy.ops.object.mode_set(mode="OBJECT")

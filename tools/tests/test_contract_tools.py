@@ -137,5 +137,30 @@ class CheckCommandTest(unittest.TestCase):
         self.assertEqual(report["summary"]["warn"], 0, output)
 
 
+    def test_dropping_a_middle_bone_leaves_its_child_in_place(self) -> None:
+        chain = self.build("chain.blend", connected=True)
+        maps = WORK / "maps"
+        maps.mkdir(exist_ok=True)
+        (maps / "chain.toml").write_text(
+            'source = "test"\nconfirmed = false\nprefix_pattern = ""\ndrop = ["LeftIndexIntermediate"]\n[rename]\n',
+            encoding="utf-8",
+        )
+        renamed = WORK / "chain_renamed.blend"
+        with mock.patch.object(_contract, "BONE_MAPS", maps):
+            code, output = run_cli("rename-bones", chain.as_posix(), "--map", "chain", "--out", renamed.as_posix())
+        self.assertEqual(code, 0, output)
+        self.assertIn("LeftIndexIntermediate -> LeftIndexProximal", output)
+        before = self.bones(self.check(chain, "body")[1])
+        after = self.bones(self.check(renamed, "body")[1])
+        self.assertNotIn("LeftIndexIntermediate", after)
+        self.assertEqual(after["LeftIndexDistal"]["parent"], "LeftIndexProximal")
+        for axis in range(3):
+            self.assertAlmostEqual(after["LeftIndexDistal"]["head"][axis], before["LeftIndexDistal"]["head"][axis], 5)
+
+    @staticmethod
+    def bones(report: dict) -> dict[str, dict]:
+        return {b["name"]: b for b in report["measure"]["armatures"][0]["bones"]}
+
+
 if __name__ == "__main__":
     unittest.main()
