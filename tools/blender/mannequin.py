@@ -199,18 +199,20 @@ class Figure:
 
     def nose(self, body: Builder) -> None:
         p = self.p
-        z = self.eye_z - 0.035 * p["head"]
+        z = self.eye_z - 0.03 * p["head"]
         _, depth = self.head_radii((z - self.chin) / self.head_h)
         base = Vector((0.0, -depth + 0.02, z))
-        direction = Vector((0.0, -1.0, -0.42)).normalized()
+        # Mostly forward and tapering from a tall bridge: pointing down, a round tip's shaded underside read as a small
+        # open mouth in the full-body front reference.
+        direction = Vector((0.0, -1.0, -0.22)).normalized()
         length = 0.07 * p["nose"]
         path = [
-            (base, 0.02, 0.024),
-            (base + direction * 0.03, 0.02, 0.024),
-            (base + direction * (0.02 + length * 0.55), 0.017, 0.02),
-            (base + direction * (0.02 + length), 0.016, 0.017),
+            (base, 0.018, 0.034),
+            (base + direction * 0.03, 0.017, 0.026),
+            (base + direction * (0.02 + length * 0.55), 0.014, 0.017),
+            (base + direction * (0.02 + length), 0.011, 0.012),
         ]
-        body.tube(path, Vector((1.0, 0.0, 0.0)), start_cap=0.0, end_cap=0.9, segments=8)
+        body.tube(path, Vector((1.0, 0.0, 0.0)), start_cap=0.0, end_cap=0.7, segments=8)
 
     def ears(self, body: Builder) -> None:
         z = self.eye_z - 0.01
