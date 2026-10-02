@@ -131,6 +131,14 @@ class ManifestRulesTest(unittest.TestCase):
                     data[key] = value
                     self.assertIn(phrase, "\n".join(_manifest.validate(data)))
 
+    def test_a_trailing_newline_is_refused(self) -> None:
+        data = good()
+        data["id"] = data["id"] + "\n"
+        self.assertIn("id must be lowercase", "\n".join(_manifest.validate(data)))
+        data = good()
+        data["raw"] = [{"file": "b/x.glb", "sha256": "0" * 64 + "\n"}]
+        self.assertIn("sha256 must be 64 lowercase hex digits", "\n".join(_manifest.validate(data)))
+
     def test_not_approved_is_valid(self) -> None:
         data = good()
         data.update(approved_by=[], approved_at="", approval_pr="")

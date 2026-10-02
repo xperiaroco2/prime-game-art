@@ -91,7 +91,7 @@ def validate(data: dict[str, Any], kind_dir: str | None = None, id_dir: str | No
 
     asset_id = data.get("id")
     if "id" in data:
-        if not (isinstance(asset_id, str) and ID_RE.match(asset_id)):
+        if not (isinstance(asset_id, str) and ID_RE.fullmatch(asset_id)):
             errors.append("id must be lowercase letters, digits and underscores")
         elif id_dir is not None and asset_id != id_dir:
             errors.append(f"id {asset_id!r} differs from its folder name {id_dir!r}")
@@ -129,7 +129,7 @@ def validate(data: dict[str, Any], kind_dir: str | None = None, id_dir: str | No
                 errors.append("source.task_ids must be a list of non-empty strings")
             if "generated_at" in source and not _is_when(source["generated_at"]):
                 errors.append("source.generated_at must be a TOML date or date-time (2026-10-02 or 2026-10-02T18:00:00Z)")
-            if "url" in source and not (isinstance(source["url"], str) and URL_RE.match(source["url"])):
+            if "url" in source and not (isinstance(source["url"], str) and URL_RE.fullmatch(source["url"])):
                 errors.append("source.url must be an http(s) URL")
             if ai_generated is True:
                 if not _is_text(source.get("model_version")):
@@ -159,7 +159,7 @@ def validate(data: dict[str, Any], kind_dir: str | None = None, id_dir: str | No
                         or ".." in pure.parts
                     ):
                         errors.append(f"{where}file must be a relative path inside the raw folder, with / separators")
-                if "sha256" in entry and not (isinstance(entry["sha256"], str) and SHA256_RE.match(entry["sha256"])):
+                if "sha256" in entry and not (isinstance(entry["sha256"], str) and SHA256_RE.fullmatch(entry["sha256"])):
                     errors.append(f"{where}sha256 must be 64 lowercase hex digits")
 
     tools = data.get("tools")
@@ -169,7 +169,7 @@ def validate(data: dict[str, Any], kind_dir: str | None = None, id_dir: str | No
     licence = data.get("licence")
     if "licence" in data and (not isinstance(licence, str) or licence not in LICENCES):
         errors.append(f"licence {licence!r} is not one of {', '.join(sorted(LICENCES))}")
-    if "licence_url" in data and not (isinstance(data["licence_url"], str) and URL_RE.match(data["licence_url"])):
+    if "licence_url" in data and not (isinstance(data["licence_url"], str) and URL_RE.fullmatch(data["licence_url"])):
         errors.append("licence_url must be an http(s) URL to the licence or terms that apply")
     if licence == "CC-BY-4.0" and not _is_text(data.get("credit")):
         errors.append("a CC-BY-4.0 asset needs credit (the attribution line)")
@@ -196,11 +196,11 @@ def _approval(data: dict[str, Any]) -> list[str]:
         return []
     by, at, pr = data["approved_by"], data["approved_at"], data["approval_pr"]
     errors: list[str] = []
-    if not (isinstance(by, list) and all(isinstance(b, str) and LOGIN_RE.match(b) for b in by)):
+    if not (isinstance(by, list) and all(isinstance(b, str) and LOGIN_RE.fullmatch(b) for b in by)):
         errors.append("approved_by must be a list of GitHub logins ([] until approved)")
     if not (at == "" or _is_when(at)):
         errors.append('approved_at must be a TOML date or date-time ("" until approved)')
-    if not (pr == "" or (isinstance(pr, str) and PR_RE.match(pr))):
+    if not (pr == "" or (isinstance(pr, str) and PR_RE.fullmatch(pr))):
         errors.append('approval_pr must be a GitHub pull request URL ("" until approved)')
     if not errors:
         filled = [bool(by), at != "", pr != ""]
