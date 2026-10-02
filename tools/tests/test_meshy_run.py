@@ -271,7 +271,7 @@ class CommandTest(unittest.TestCase):
                 code = cli.main(["meshy", "status", "2026-10-b1-bodies"])
         self.assertEqual(code, 0)
         self.assertIn("v3-4", out.getvalue())
-        self.assertIn("0 credits spent of the approved cap 400", out.getvalue())
+        self.assertIn("0 credits spent of the approved cap 360", out.getvalue())
 
 
 if __name__ == "__main__":

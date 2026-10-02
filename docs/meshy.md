@@ -181,4 +181,5 @@ shoulders, shorter legs, separate eyeballs) and V3 (V1 with eyes and mouth paint
 `latest`, so a rerun matches; T-pose; remeshed to 7000 triangles; base colour texture at 2K without PBR maps;
 `symmetry_mode = "on"` kept as the record of the intent although the docs say it no longer has an effect (the prompt
 says "symmetrical"). `texture_prompt` is unset. The prompts are 306 to 318 characters, under the 800 limit, so none
-was shortened. Estimate 360 credits, cap 400.
+was shortened. Estimate 360 credits, cap 360: the engineer approved "about 360 credits" (prime-game#165), and a
+failed task costs nothing, so the cap stops the run only when Meshy charges more than the estimate.

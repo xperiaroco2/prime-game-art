@@ -163,7 +163,7 @@ class RepositoryBatchesTest(unittest.TestCase):
         with contextlib.redirect_stdout(out):
             code = cli.main(["meshy", "estimate", "batches/2026-10-b1-bodies.toml"])
         self.assertEqual(code, 0)
-        self.assertIn("total 360 credits; approved cap 400", out.getvalue())
+        self.assertIn("total 360 credits; approved cap 360", out.getvalue())
         self.assertIn("approval: complete", out.getvalue())
 
 
