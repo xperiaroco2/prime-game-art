@@ -157,6 +157,16 @@ class RealSourceTest(unittest.TestCase):
         self.assertIsNotNone(self.info["blank_face"]["mouth"])
         self.assertIsNotNone(self.info["nose"]["tip"])
 
+    def test_the_mouth_is_filled_not_pulled_in(self) -> None:
+        # In profile the front between the chin and the philtrum stays near a straight line: collapsing the mouth
+        # instead (the first version) left a notch of about 1 cm under the nose; filling it leaves about 3 mm.
+        self.assertLess(self.info["blank_face"]["dent"], 0.006)
+
+    def test_face_points_are_in_the_final_figures_metres(self) -> None:
+        mouth, tip = self.info["blank_face"]["mouth"][2], self.info["nose"]["tip"][2]
+        self.assertTrue(mouth < tip < self.info["eye_height"], (mouth, tip, self.info["eye_height"]))
+        self.assertTrue(self.info["eye_height"] - 0.12 < mouth, mouth)
+
     def test_is_175_cm_with_the_eyes_near_160(self) -> None:
         self.assertAlmostEqual(self.info["height"], 1.75, delta=0.002)
         self.assertAlmostEqual(self.info["eye_height"], 1.6, delta=0.05)

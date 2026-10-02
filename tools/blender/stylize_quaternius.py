@@ -8,7 +8,8 @@ The plan (tools/runner/commands/_stylize.py) names the bones in the rig's own na
     (Icosphere, Eyes, Eyebrows), remembering where the eyes were;
  2. reshape like an armature would: each slimmed bone scales its vertices across the bone (the bone's length and the
     joints stay), the head bone scales its vertices uniformly about the neck joint; weights blend the two;
- 3. a blank face: the eye sockets and the lips are smoothed flat;
+ 3. a blank face: the eye sockets are smoothed flat and the mouth is filled up to a surface fitted to the face
+    above and below it (never pulled in, so no notch under the nose in profile);
  4. a longer nose: the tip and its surroundings are pulled forward and a little down with a smooth falloff;
  5. softer muscles: Taubin smoothing (no shrinking) on the torso, shoulders, arms, legs and neck, by weight;
  6. the whole figure (mesh and bones) scaled to the plan's height;
@@ -187,32 +188,98 @@ def head_transform(plan: dict, armature: bpy.types.Object, point: list[float]) -
     return head + (np.array(point) - head) * plan["head_scale"]
 
 
+def ramp(value: np.ndarray, full: float, zero: float) -> np.ndarray:
+    """1 up to full, a smooth step down to 0 at zero (full < zero)."""
+    t = np.clip((value - full) / (zero - full), 0.0, 1.0)
+    return 1.0 - t * t * (3.0 - 2.0 * t)
+
+
+def mouth_slit(co: np.ndarray, head_w: np.ndarray, eye: np.ndarray, scale: float) -> np.ndarray | None:
+    """The mouth's slit: the deepest front-facing centre-line vertex 5.5 to 10 cm under the eyes (between the nose
+    and the chin, the lips stand forward and the slit sits back)."""
+    window = ((np.abs(co[:, 0]) < 0.006) & (head_w > 0.5) & (co[:, 2] < eye[2] - 0.055 * scale)
+              & (co[:, 2] > eye[2] - 0.1 * scale) & (co[:, 1] < eye[1] + 0.01 * scale))
+    if not window.any():
+        return None
+    index = np.nonzero(window)[0]
+    return co[index[np.argmax(co[index, 1])]].copy()
+
+
+def mouth_surface(co: np.ndarray, head_w: np.ndarray, slit: np.ndarray, scale: float) -> np.ndarray:
+    """The face's depth (Y) over the mouth as if it had none: a surface symmetric in X fitted (least squares) to the
+    front of the face just above the lips (the philtrum) and just below them (the chin); returns Y for every vertex."""
+    dz = co[:, 2] - slit[2]
+
+    def features(points: np.ndarray, rise: np.ndarray) -> np.ndarray:
+        x2 = points[:, 0] ** 2
+        return np.stack([np.ones(len(points)), rise, x2, x2 * rise, x2 * x2], axis=1)
+
+    front = (head_w > 0.5) & (np.abs(co[:, 0]) < 0.04 * scale) & (co[:, 1] < slit[1] - 0.006 * scale)
+    bands = front & (((dz > 0.010 * scale) & (dz < 0.018 * scale)) | ((dz > -0.032 * scale) & (dz < -0.016 * scale)))
+    coef, *_ = np.linalg.lstsq(features(co[bands], dz[bands]), co[bands, 1], rcond=None)
+    return features(co, dz) @ coef
+
+
+def fill_mouth(co: np.ndarray, edges: np.ndarray, head_w: np.ndarray, slit: np.ndarray,
+               scale: float) -> tuple[np.ndarray, int]:
+    """Closes the mouth by filling it, never by pulling it in: (1) the inside of the mouth, every vertex well behind
+    the fitted face surface, relaxes into a membrane spanning the lips (the lips held still), (2) the lips and that
+    membrane move onto the surface, fully in the middle and fading out at the corners, (3) a light Taubin smoothing
+    (no shrinking) removes the creases. Returns the new positions and how many vertices it moved."""
+
+    def weight(points: np.ndarray, surface: np.ndarray) -> np.ndarray:
+        dz = points[:, 2] - slit[2]
+        across = ramp(np.abs(points[:, 0]), 0.024 * scale, 0.036 * scale)
+        up = ramp(dz, 0.007 * scale, 0.012 * scale) * ramp(-dz, 0.012 * scale, 0.02 * scale)
+        return across * up * (head_w > 0.5) * (points[:, 1] < surface + 0.05 * scale)
+
+    before = co.copy()
+    surface = mouth_surface(co, head_w, slit, scale)
+    inside = (weight(co, surface) > 0) & (co[:, 1] > surface + 0.004 * scale)
+    co = smooth(co, edges, inside.astype(float), 300, taubin=False)
+    surface = mouth_surface(co, head_w, slit, scale)
+    co[:, 1] += weight(co, surface) * (surface - co[:, 1])
+    region = falloff(co, slit, 0.04 * scale) * head_w
+    co = smooth(co, edges, region, 20, taubin=True)
+    return co, int((np.linalg.norm(co - before, axis=1) > 1e-4).sum())
+
+
+def mouth_dent(co: np.ndarray, head_w: np.ndarray, slit: np.ndarray, scale: float, step: float = 0.004) -> float:
+    """How far (m) the centre line's front between the chin and the philtrum sits behind the straight line joining
+    them: the depth an open mouth or a notch under the nose shows in profile (about 0 for a blank face). The profile
+    runs up from 3.5 cm under the slit and stops under the nose, where the front jumps forward by more than 1 cm."""
+    centre = (np.abs(co[:, 0]) < 0.006) & (head_w > 0.5)
+    profile: list[tuple[float, float]] = []
+    for low in np.arange(slit[2] - 0.035 * scale, slit[2] + 0.02 * scale, step):
+        band = centre & (co[:, 2] >= low) & (co[:, 2] < low + step)
+        if band.any():
+            y = float(co[band, 1].min())
+            if profile and low > slit[2] and y < profile[-1][1] - 0.01 * scale:
+                break
+            profile.append((low + step / 2, y))
+    if len(profile) < 3:
+        return 0.0
+    (z0, y0), (z1, y1) = profile[0], profile[-1]
+    return max(0.0, max(y - (y0 + (y1 - y0) * (z - z0) / (z1 - z0)) for z, y in profile))
+
+
 def blank_face(co: np.ndarray, edges: np.ndarray, eyes: list[np.ndarray], head_w: np.ndarray,
                scale: float) -> tuple[np.ndarray, dict]:
-    """Step 3: smooths the eye sockets and the lips flat (plain Laplacian, which fills dents)."""
+    """Step 3: smooths the eye sockets flat (plain Laplacian, which fills dents) and fills the mouth (fill_mouth).
+    The mouth's slit is found below the eyes, so a source without an eye mesh keeps its face."""
     if not eyes:
-        return co, {"smoothed": 0, "note": "no eye mesh: nothing to flatten"}
-    eye_z = float(np.mean([e[2] for e in eyes]))
-    centre_line = (np.abs(co[:, 0]) < 0.01) & (head_w > 0.5) & (co[:, 2] < eye_z - 0.05 * scale) \
-        & (co[:, 2] > eye_z - 0.11 * scale)
+        return co, {"smoothed": 0, "mouth": None, "note": "no eye mesh: nothing to flatten"}
     mask = np.zeros(len(co))
     for eye in eyes:
         mask = np.maximum(mask, falloff(co, np.array(eye), 0.032 * scale))
-    mouth = None
-    if centre_line.any():
-        # The mouth: the front-most centre-line vertex 5 to 11 cm under the eyes, below the nose.
-        candidates = np.nonzero(centre_line)[0]
-        below_nose = candidates[co[candidates, 2] < eye_z - 0.065 * scale]
-        if len(below_nose):
-            front = below_nose[np.argmin(co[below_nose, 1])]
-            mouth = co[front] + np.array([0.0, 0.004, 0.0])
-            mask = np.maximum(mask, falloff(co, mouth, 0.038 * scale))
-            # The inside of the mouth, behind the lips: smoothing pulls it shut.
-            cavity = (np.abs(co[:, 0]) < 0.03 * scale) & (np.abs(co[:, 2] - mouth[2]) < 0.016 * scale)                 & (co[:, 1] > mouth[1] - 0.006) & (co[:, 1] < mouth[1] + 0.06 * scale)
-            mask = np.maximum(mask, cavity.astype(float))
     mask *= head_w
-    return smooth(co, edges, np.clip(mask * 1.6, 0.0, 1.0), 60, taubin=False), {
-        "smoothed": int((mask > 0.01).sum()), "mouth": None if mouth is None else [round(v, 4) for v in mouth]}
+    co = smooth(co, edges, np.clip(mask * 1.6, 0.0, 1.0), 60, taubin=False)
+    smoothed = int((mask > 0.01).sum())
+    slit = mouth_slit(co, head_w, np.mean(eyes, axis=0), scale)
+    if slit is not None:
+        co, moved = fill_mouth(co, edges, head_w, slit, scale)
+        smoothed += moved
+    return co, {"smoothed": smoothed, "mouth": slit}
 
 
 def longer_nose(co: np.ndarray, head_w: np.ndarray, eyes: list[np.ndarray], length: float,
@@ -229,7 +296,7 @@ def longer_nose(co: np.ndarray, head_w: np.ndarray, eyes: list[np.ndarray], leng
     direction = np.array([0.0, -1.0, -0.35])
     direction /= np.linalg.norm(direction)
     weight = falloff(co, tip, 0.03 * scale) * head_w
-    return co + weight[:, None] * direction * length, {"tip": [round(v, 4) for v in tip], "moved": int((weight > 0.01).sum())}
+    return co + weight[:, None] * direction * length, {"tip": tip, "moved": int((weight > 0.01).sum())}
 
 
 def scale_bones(armature: bpy.types.Object, factor: float, head_bone: str, head_scale: float) -> None:
@@ -501,6 +568,8 @@ def main() -> None:
         soft = weight_matrix(obj, plan["soften_bones"]).sum(axis=1)
         soft[boundary_vertices(mesh)] = 0.0
         co = smooth(co, edges, np.clip(soft, 0.0, 1.0), plan["soften_iterations"], taubin=True)
+        slit = info["blank_face"]["mouth"]
+        info["blank_face"]["dent"] = None if slit is None else mouth_dent(co, head_w, slit, plan["head_scale"])
         set_positions(mesh, co)
     every = np.vstack([positions(o.data) for o in meshes])
     low, high = float(every[:, 2].min()), float(every[:, 2].max())
@@ -509,6 +578,11 @@ def main() -> None:
         set_positions(obj.data, positions(obj.data) * factor)
     scale_bones(armature, factor, plan["head_bone"], plan["head_scale"])
     info["scale"] = round(factor, 5)
+    # Every height and point in info.json is in the final, scaled figure's metres.
+    face, nose = info["blank_face"], info["nose"]
+    face["mouth"] = None if face["mouth"] is None else [round(float(v) * factor, 4) for v in face["mouth"]]
+    face["dent"] = None if face.get("dent") is None else round(face["dent"] * factor, 4)
+    nose["tip"] = None if nose["tip"] is None else [round(float(v) * factor, 4) for v in nose["tip"]]
     info["eye_height"] = round(float(np.mean([e[2] for e in eyes_after])) * factor, 4) if eyes_after else None
     info["shorts_faces_source"] = flatten_materials(meshes, plan)
     info["kept_border_vertices"] = {o.name: mark_material_borders(o) for o in meshes}
