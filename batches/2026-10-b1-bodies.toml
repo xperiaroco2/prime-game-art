@@ -1,0 +1,106 @@
+# The first body batch: three variants of the base human, four tries each, for review sheets and the contract check.
+# Schema: docs/meshy.md. Prompts are durable knowledge: change them only with a new approval.
+# 2026-10-02: the manager adapted the three prompts to the engineer's answer Q7 on xperiaroco2/prime-game#165 (eyes and
+# mouth change like the hairstyle, so every body has a blank face); same 12 items and 360 credits as approved.
+
+id = "2026-10-b1-bodies"
+purpose = "Base human bodies with blank faces (eyes and mouth are separate, changeable slots): V1 average lanky with a nose, V2 bigger head and wider shoulders with a nose, V3 like V1 with no nose either; four tries each to pick from on review sheets."
+plan = "Meshy Pro (monthly)"
+terms_url = "https://www.meshy.ai/terms-of-use"
+# Terms of Use 3.2 (last updated 2026-09-19, read 2026-10-02): a paid plan's customer owns its output; Meshy keeps
+# a non-exclusive licence to run the service. Free-plan output would be Meshy's, under CC BY 4.0.
+licence = "owned by the customer on a paid plan (Meshy Terms of Use 3.2, updated 2026-09-19); no attribution required"
+credit_cap = 360
+approved_by = "xperiaroco2 (the engineer)"
+approved_at = "2026-10-02"
+approval_ref = "https://github.com/xperiaroco2/prime-game/issues/165#issuecomment-5954952499"
+
+[variants.v1]
+prompt = "stylized low-poly cartoon human, average adult proportions, slightly lanky, bald round head, blank smooth face with no eyes and no mouth, long simple nose, five-finger hands with fingers spread, plain grey t-shirt and shorts, bare feet, standing in a T-pose, arms straight out, palms down, symmetrical, flat simple colours"
+
+[variants.v2]
+prompt = "stylized low-poly cartoon human, slightly bigger head, wider shoulders, shorter legs, bald round head, blank smooth face with no eyes and no mouth, long simple nose, five-finger hands with fingers spread, plain grey t-shirt and shorts, bare feet, standing in a T-pose, arms straight out, palms down, symmetrical, flat simple colours"
+
+[variants.v3]
+prompt = "stylized low-poly cartoon human, average adult proportions, slightly lanky, bald round head, completely blank smooth face with no eyes, no nose and no mouth, five-finger hands with fingers spread, plain grey t-shirt and shorts, bare feet, standing in a T-pose, arms straight out, palms down, symmetrical, flat simple colours"
+
+# Preview: the mesh. meshy-7.1 is the newest model the docs offer (2026-10-02); pinned, not "latest", so a rerun
+# matches. should_remesh makes topology and target_polycount apply. symmetry_mode is deprecated in the docs (no
+# effect); it stays as the record of the intent, and the prompt says "symmetrical".
+[defaults.text_to_3d.preview]
+ai_model = "meshy-7.1"
+model_type = "standard"
+should_remesh = true
+topology = "triangle"
+target_polycount = 7000
+symmetry_mode = "on"
+pose_mode = "t-pose"
+target_formats = ["glb", "fbx"]
+
+# Refine: the texture. Base colour only (no PBR maps), 2K, lighting removed from the texture.
+[defaults.text_to_3d.refine]
+ai_model = "meshy-7.1"
+enable_pbr = false
+texture_resolution = "2k"
+remove_lighting = true
+target_formats = ["glb", "fbx"]
+
+[[items]]
+id = "v1-1"
+variant = "v1"
+kind = "text_to_3d"
+
+[[items]]
+id = "v1-2"
+variant = "v1"
+kind = "text_to_3d"
+
+[[items]]
+id = "v1-3"
+variant = "v1"
+kind = "text_to_3d"
+
+[[items]]
+id = "v1-4"
+variant = "v1"
+kind = "text_to_3d"
+
+[[items]]
+id = "v2-1"
+variant = "v2"
+kind = "text_to_3d"
+
+[[items]]
+id = "v2-2"
+variant = "v2"
+kind = "text_to_3d"
+
+[[items]]
+id = "v2-3"
+variant = "v2"
+kind = "text_to_3d"
+
+[[items]]
+id = "v2-4"
+variant = "v2"
+kind = "text_to_3d"
+
+[[items]]
+id = "v3-1"
+variant = "v3"
+kind = "text_to_3d"
+
+[[items]]
+id = "v3-2"
+variant = "v3"
+kind = "text_to_3d"
+
+[[items]]
+id = "v3-3"
+variant = "v3"
+kind = "text_to_3d"
+
+[[items]]
+id = "v3-4"
+variant = "v3"
+kind = "text_to_3d"
