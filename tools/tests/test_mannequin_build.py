@@ -118,3 +118,11 @@ class BuildTest(unittest.TestCase):
                 self.assertLess(hand["hand_extent_z"], 0.4 * hand["hand_extent_y"])  # the hand lies flat
                 self.assertLess(hand["thumb_tip_y"], -0.04)  # the thumb points forward, so the palm faces down
         self.assertEqual(pose["sole_z"], 0.0)
+
+    def test_running_again_leaves_no_blend_backup(self) -> None:
+        out = OUT / "again"
+        for _ in range(2):
+            code, output = run_cli("mannequin", "--preset", "base", "--out", str(out), "--no-refs", "--no-sheet")
+            self.assertEqual(code, 0, output)
+        self.assertTrue((out / "base" / "mannequin_base.blend").is_file())
+        self.assertEqual(list((out / "base").glob("*.blend1")), [])

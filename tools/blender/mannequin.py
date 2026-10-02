@@ -431,6 +431,7 @@ def main() -> None:
     bpy.ops.export_scene.gltf(filepath=str(glb), export_format="GLB", export_yup=True, export_apply=True,
                               export_animations=False)
     blend = out / f"{stem}.blend"
+    bpy.context.preferences.filepaths.save_version = 0  # no .blend1 backup when the command runs again
     bpy.ops.wm.save_as_mainfile(filepath=str(blend), check_existing=False, compress=True)
     info["glb"], info["blend"] = glb.as_posix(), blend.as_posix()
     if not args.no_refs:
