@@ -99,6 +99,10 @@ then goes through the items in file order, one at a time:
 Network failures and HTTP 429 or 5xx are retried with a growing pause (`Retry-After` when Meshy sends it), except a
 submit: after a lost answer or a 5xx the task may exist and cost credits, so the item is marked failed with
 "submit unsure" and the run stops. Check the Meshy dashboard, then rerun with `--retry-failed` if no task was made.
+A submit Meshy definitely refused for that item alone (HTTP 400, 404, 409 or 422, for example a rig whose pose
+estimate failed) creates no task and costs nothing: the item is marked failed with "refused" and the run goes on to
+the next item. 401 (bad key), 402 (not enough credits) and a 429 that outlasts the retries stop the run, since every
+item would hit them.
 
 Items run one after another, so a batch takes the sum of its tasks' times (not measured yet: no live run so far);
 Meshy's queue limit, 10 tasks on Pro, would allow parallel items later.

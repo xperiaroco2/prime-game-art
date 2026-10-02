@@ -28,6 +28,9 @@ TASK_FIELDS = ("id", "type", "status", "progress", "created_at", "started_at", "
                "task_error")
 # Where a task object keeps its result files (docs/meshy.md). texture_image_url and model_url are inputs, not results.
 RESULT_KEYS = ("model_urls", "texture_urls", "thumbnail_url", "alpha_thumbnail_url", "video_url", "result")
+# A submit Meshy definitely refused for this item alone (bad input, wrong state, a failed pose estimate): no task
+# exists and nothing was charged. 401, 402 and 429 concern every item, so they stop the run instead.
+REFUSALS = frozenset({400, 404, 409, 422})
 
 
 def batch_dir(batch: Batch, raw: Path | None = None) -> Path:
@@ -186,7 +189,10 @@ class Runner:
                 except MeshyError as exc:
                     if exc.unsure:  # never resubmitted on its own: a human checks the dashboard, then --retry-failed
                         self.finish(item, state, "failed", f"{stage.name} submit unsure: {exc}")
-                    raise
+                        raise
+                    if exc.status in REFUSALS:  # this item's request is wrong; the next items may still run
+                        return self.finish(item, state, "failed", f"{stage.name} refused: {exc}")
+                    raise  # a bad key, no credits, the rate limit: every item would hit it, so the run stops
                 record = {"id": task_id, "status": "PENDING", "submitted_at": self.now(), "request": payload}
                 state["tasks"][stage.name] = record
                 write_state(state_path, state)  # before polling: an interruption now resumes this task id

@@ -190,6 +190,31 @@ class RunTest(unittest.TestCase):
         self.assertEqual(self.runner(data, retry_failed=True).run(), 0)
         self.assertEqual(len(self.fake.posts()), 3)
 
+    def test_a_refused_submit_fails_its_item_and_the_run_goes_on(self) -> None:
+        self.fake.refuse = {"preview": 400}
+        data = batch_data(items=batch_data()["items"][:2])
+        self.assertEqual(self.runner(data).run(), 1)
+        state = self.state("a-1")
+        self.assertEqual(state["status"], "failed")
+        self.assertIn("preview refused: POST /openapi/v2/text-to-3d: HTTP 400", state["error"])
+        self.assertEqual(state["tasks"], {})
+        self.assertEqual([r["item"] for r in self.log_rows()], ["a-1", "b-1"])
+        self.assertEqual([r["status"] for r in self.log_rows()], ["failed", "failed"])
+        self.assertEqual(self.fake.tasks, {})
+
+        self.fake.refuse = {"rig": 422}  # a failed pose estimate: the animation after it waits, the run ends
+        self.assertEqual(self.runner(retry_failed=True).run(), 1)
+        self.assertEqual(self.state("a-1")["status"], "done")
+        self.assertEqual(self.state("b-1")["status"], "done")
+        self.assertIn("rig refused", self.state("a-1-rig")["error"])
+        self.assertFalse((self.raw / "t-batch" / "a-1-walk").exists())
+
+    def test_a_bad_key_or_no_credits_stops_the_run(self) -> None:
+        self.fake.refuse = {"preview": 402}
+        with self.assertRaisesRegex(api.MeshyError, "HTTP 402"):
+            self.runner().run()
+        self.assertFalse((self.raw / "t-batch" / "b-1").exists())
+
     def test_status_lines(self) -> None:
         batch = parse(batch_data())
         self.assertIn("not started", runs.item_status(batch, batch.item("a-1"), self.raw))

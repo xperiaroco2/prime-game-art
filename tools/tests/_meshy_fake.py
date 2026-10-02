@@ -26,7 +26,8 @@ class FakeClock(Clock):
 
 class FakeMeshy:
     """Routes requests like api.meshy.ai. Each task needs `polls` GETs to finish; `fail` names stages that end
-    FAILED; `interrupt_on` raises KeyboardInterrupt on the n-th GET of a task (counting all task GETs)."""
+    FAILED; `refuse` maps a stage to the HTTP status its submit gets (no task is created); `interrupt_on` raises
+    KeyboardInterrupt on the n-th GET of a task (counting all task GETs)."""
 
     def __init__(self, balance: int = 1000, polls: int = 2) -> None:
         self.balance = balance
@@ -34,6 +35,7 @@ class FakeMeshy:
         self.tasks: dict[str, dict[str, Any]] = {}
         self.requests: list[tuple[str, str, dict[str, str], Any]] = []
         self.fail: set[str] = set()
+        self.refuse: dict[str, int] = {}
         self.cost = dict(COSTS)
         self.interrupt_on: int | None = None
         self.task_gets = 0
@@ -87,6 +89,8 @@ class FakeMeshy:
             stage = "rig"
         else:
             stage = "animate"
+        if stage in self.refuse:
+            return Response(self.refuse[stage], {}, b'{"message": "Invalid request"}')
         cost = self.cost[stage] * (len(payload.get("action_ids", [])) or 1 if stage == "animate" else 1)
         if self.balance < cost:
             return Response(402, {}, b'{"message": "Insufficient credits"}')
