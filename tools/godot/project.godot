@@ -1,0 +1,8 @@
+; A minimal Godot project for headless contract scripts (tools/godot/dump_profile.gd). It has no scenes.
+
+config_version=5
+
+[application]
+
+config/name="prime-game-art contract tools"
+config/features=PackedStringArray("4.7")
