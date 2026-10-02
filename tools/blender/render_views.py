@@ -89,7 +89,7 @@ def load(model: Path) -> None:
         return
     bpy.ops.wm.read_factory_settings(use_empty=True)
     if suffix in {".glb", ".gltf"}:
-        bpy.ops.import_scene.gltf(filepath=str(model))
+        bpy.ops.import_scene.gltf(filepath=str(model), disable_bone_shape=True)  # no stray bone-shape sphere
     elif suffix == ".fbx":
         bpy.ops.import_scene.fbx(filepath=str(model))
     elif suffix == ".obj":
@@ -138,6 +138,20 @@ def materials_used() -> list[bpy.types.Material]:
             if slot.material is not None:
                 found[slot.material.name] = slot.material
     return list(found.values())
+
+
+def sync_viewport_colours(materials: list[bpy.types.Material]) -> None:
+    """Workbench's material colour is the viewport colour, which not every importer sets: copy the Principled BSDF's
+    base colour into it when that input is a plain colour."""
+    for material in materials:
+        if not material.node_tree:
+            continue
+        for node in material.node_tree.nodes:
+            if node.type == "BSDF_PRINCIPLED":
+                base = node.inputs["Base Color"]
+                if not base.is_linked:
+                    material.diffuse_color = tuple(base.default_value)
+                break
 
 
 def stats(model: Path, points: np.ndarray, color_type: str) -> dict:
@@ -354,6 +368,7 @@ def main() -> None:
     bpy.context.scene.frame_set(bpy.context.scene.frame_start)
 
     color_type = "TEXTURE" if any(has_texture(m) for m in materials_used()) else "MATERIAL"
+    sync_viewport_colours(materials_used())
     points = world_points()
     report = stats(model, points, color_type)
     camera = setup_scene(args.cell, color_type)
