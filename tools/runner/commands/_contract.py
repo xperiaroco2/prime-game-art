@@ -53,8 +53,11 @@ def dump_profile(out: Path, timeout: float = 120) -> dict[str, Any]:
         tail = "\n".join(output.splitlines()[-20:])
         raise common.Failure(f"dump_profile.gd failed (exit code {result.returncode}):\n{tail}")
     raw = json.loads(out.read_text(encoding="utf-8"))
-    if not str(raw.get("godot_version", "")).startswith(pins.GODOT):
-        raise common.Failure(f"GODOT_BIN is Godot {raw.get('godot_version')}, the contract is pinned to {pins.GODOT}")
+    # dump_profile.gd writes major.minor.patch.status; a prefix match would let 4.7.20 or 4.7.2.rc1 through.
+    if raw.get("godot_version") != f"{pins.GODOT}.stable":
+        raise common.Failure(
+            f"GODOT_BIN is Godot {raw.get('godot_version')}, the contract is pinned to {pins.GODOT}.stable"
+        )
     return raw
 
 

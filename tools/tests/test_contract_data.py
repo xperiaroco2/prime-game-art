@@ -2,8 +2,13 @@
 Pure Python: no Blender, no Godot."""
 
 import copy
+import json
+import tempfile
 import unittest
+from pathlib import Path
+from unittest import mock
 
+from runner import common
 from runner.commands import _contract
 
 
@@ -45,6 +50,26 @@ class ProfileTest(unittest.TestCase):
     def test_committed_file_is_formatted(self) -> None:
         text = _contract.HUMANOID_JSON.read_text(encoding="utf-8")
         self.assertEqual(text, _contract.format_profile(_contract.load_profile()))
+
+
+class VersionGuardTest(unittest.TestCase):
+    def test_only_the_pinned_stable_godot_is_accepted(self) -> None:
+        for version, good in (("4.7.2.stable", True), ("4.7.20.stable", False), ("4.7.2.rc1", False)):
+            with self.subTest(version=version), tempfile.TemporaryDirectory() as tmp:
+                out = Path(tmp) / "dump.json"
+
+                def fake_run(cmd, timeout, version=version, out=out):
+                    out.write_text(json.dumps({"godot_version": version}), encoding="utf-8")
+                    return mock.Mock(returncode=0, stdout="", stderr="")
+
+                with mock.patch.object(common, "godot_bin", return_value="godot"), mock.patch.object(
+                    common, "run", fake_run
+                ):
+                    if good:
+                        self.assertEqual(_contract.dump_profile(out)["godot_version"], version)
+                    else:
+                        with self.assertRaises(common.Failure):
+                            _contract.dump_profile(out)
 
 
 class ContractTest(unittest.TestCase):
