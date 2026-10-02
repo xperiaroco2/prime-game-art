@@ -6,6 +6,7 @@ reference T-pose, and a box mesh with one box per bone, weighted fully to that b
 
 spec.json: {"profile": ".../humanoid.json", "out": ".../fixture.glb|.blend",
             "names": {profile name: name in the fixture} (optional, to fake a vendor rig),
+            "extra_leaves": {bone name: profile parent} (optional unweighted end bones),
             "defects": [...] (optional; see DEFECTS)}
 """
 
@@ -222,6 +223,12 @@ def main() -> None:
         eb.head = heads["RightHand"]
         eb.tail = heads["RightHand"] + Vector((0, 0, 0.05))
         eb.parent = edit["RightHand"]
+    for leaf, parent in spec.get("extra_leaves", {}).items():  # unweighted end bones, as vendor rigs have
+        eb = arm_data.edit_bones.new(leaf)
+        eb.head = tails_b[parent]
+        eb.tail = tails_b[parent] + (tails_b[parent] - heads[parent]).normalized() * 0.03
+        eb.parent = edit[parent]
+        eb.use_deform = False
     bpy.ops.object.mode_set(mode="OBJECT")
 
     # Skin: one group per bone, each box fully weighted to its bone.
