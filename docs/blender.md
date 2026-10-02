@@ -11,12 +11,14 @@ Everything these commands write goes to `tools/out/` and is never committed.
 | Command | What it does |
 |---|---|
 | `probe [--out DIR] [--no-fixtures]` | Writes `tools/out/probe/report.json`, `workbench.png` and `eevee.png`, then builds the fixtures |
-| `render <model> [--out DIR] [--cell 512] [--no-outline]` | Renders an 8-view review sheet and `stats.json` into `tools/out/renders/<model name>/` |
+| `render <model> [--out DIR] [--cell 512] [--no-outline]` | Renders an 8-view review sheet and `stats.json` into `tools/out/renders/<stem>_<extension>/` |
 | `render <model> --anim <action> [--frames 8]` | Also an animation contact sheet of that action, seen from the front |
 
 Windows: `tools\run.cmd probe`, `tools\run.cmd render tools/out/fixtures/humanoid.glb`. Git Bash: `tools/run.sh ...`.
 `render` reads GLB, glTF, FBX, OBJ and `.blend` (cameras and lights in a `.blend` are dropped; hidden objects are
-ignored). A relative model path is tried from the current folder, then from the repository root.
+ignored). A relative model path is tried from the current folder, then from the repository root. The default
+output folder carries the extension (`humanoid_glb/`, `humanoid_fbx/`), so two formats of one model never overwrite
+each other's sheets.
 
 ## The review sheet
 

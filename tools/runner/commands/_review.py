@@ -42,6 +42,11 @@ def render(model: Path, out: Path, cell: int = 512, anim: str = "", frames: int 
     return json.loads(stats.read_text(encoding="utf-8"))
 
 
+def default_out(model: Path) -> Path:
+    """tools/out/renders/<stem>_<extension>/, so humanoid.glb and humanoid.fbx do not overwrite each other."""
+    return RENDERS / f"{model.stem}_{model.suffix.lstrip('.').lower()}"
+
+
 def png_size(path: Path) -> tuple[int, int]:
     """(width, height) from a PNG's IHDR chunk."""
     head = path.read_bytes()[:24]

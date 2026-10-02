@@ -16,7 +16,7 @@ FORMATS = {".glb", ".gltf", ".fbx", ".obj", ".blend"}
 
 def add_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("model", type=Path, help="the model file")
-    parser.add_argument("--out", type=Path, help="output folder (default tools/out/renders/<model name>/)")
+    parser.add_argument("--out", type=Path, help="output folder (default tools/out/renders/<stem>_<extension>/)")
     parser.add_argument("--cell", type=int, default=512, help="pixel size of one square view (default 512)")
     parser.add_argument("--anim", metavar="ACTION", default="", help="also an animation contact sheet of this action")
     parser.add_argument("--frames", type=int, default=8, help="frames in the animation sheet (default 8)")
@@ -38,7 +38,7 @@ def run(args: argparse.Namespace) -> int:
         raise common.Failure("--cell must be at least 64")
     if args.frames < 1:
         raise common.Failure("--frames must be at least 1")
-    out = (args.out or _review.RENDERS / model.stem).resolve()
+    out = (args.out or _review.default_out(model)).resolve()
     stats = _review.render(model, out, args.cell, args.anim, args.frames, outline=not args.no_outline)
     size = stats["bounding_box"]["size"]
     common.say(f"{model.name}: {stats['triangles']} triangles, {stats['vertices']} vertices, {stats['objects']} objects, "

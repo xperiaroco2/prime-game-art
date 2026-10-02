@@ -80,6 +80,10 @@ class WithoutBlenderTest(unittest.TestCase):
         with self.assertRaises(common.Failure):
             probe.record_eevee_crash(OUT / "crash_report.json", report, "Blender script probe.py failed")
 
+    def test_default_out_keeps_formats_apart(self) -> None:
+        self.assertEqual(_review.default_out(Path("a/humanoid.glb")).name, "humanoid_glb")
+        self.assertEqual(_review.default_out(Path("a/humanoid.FBX")).name, "humanoid_fbx")
+
     def test_commands_are_found(self) -> None:
         self.assertIn("probe", cli.discover())
         self.assertIn("render", cli.discover())
