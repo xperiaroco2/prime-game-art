@@ -62,7 +62,7 @@ RESERVED = {"preview": {"mode", "prompt"}, "refine": {"mode", "preview_task_id"}
             "image_to_image": {"prompt", "reference_image_urls", "input_task_id"},
             "image_to_3d": {"image_url", "input_task_id"}, "multi_image_to_3d": {"image_urls", "input_task_id"},
             "remesh": {"input_task_id", "model_url"}}
-# The request parameters the docs list for each image-mode kind (read 2026-10-03, docs/meshy.md). Meshy ignores
+# The request parameters the docs list for each image-mode kind (read 2026-10-03, docs/meshy.md). Meshy may ignore
 # what it does not know, so a misspelt key would pay for a generation without the setting; any other key is refused.
 IMAGE_3D_PARAMS = {"ai_model", "geometry_resolution", "should_texture", "enable_pbr", "texture_resolution",
                    "texture_prompt", "should_remesh", "topology", "target_polycount", "pose_mode", "image_enhancement",

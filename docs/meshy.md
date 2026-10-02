@@ -98,7 +98,7 @@ task and image it came from), and the recorded request carries a short note inst
 The runner fills in `mode`, `prompt`, `preview_task_id`, `input_task_id`, `rig_task_id`, `model_url`, `image_url`,
 `image_urls` and `reference_image_urls`; a batch may not set them. `texture_image_url` and `texture_image_urls` are
 not supported yet (they would need an input of their own). The `params` of an image-mode kind may hold only the
-parameters the docs list for it (`KNOWN_PARAMS` in `_meshy_batch.py`, from the section below): Meshy ignores an
+parameters the docs list for it (`KNOWN_PARAMS` in `_meshy_batch.py`, from the section below): Meshy may ignore an
 unknown key, so a misspelt one would pay for a generation without its setting. Text-to-3D prompts and `texture_prompt` are at most 800
 characters; the image docs state no prompt limit.
 
