@@ -1,0 +1,101 @@
+# The first body batch: three variants of the base human, four tries each, for review sheets and the contract check.
+# Schema: docs/meshy.md. Prompts are durable knowledge: change them only with a new approval.
+
+id = "2026-10-b1-bodies"
+purpose = "Base human bodies: V1 average lanky with separate eyeballs, V2 bigger head and wider shoulders with separate eyeballs, V3 like V1 with eyes and mouth painted on the face; four tries each to pick from on review sheets."
+plan = "Meshy Pro (monthly)"
+terms_url = "https://www.meshy.ai/terms-of-use"
+credit_cap = 400
+approved_by = "xperiaroco2 (the engineer)"
+approved_at = "2026-10-02"
+approval_ref = "https://github.com/xperiaroco2/prime-game/issues/165#issuecomment-5954952499"
+
+[variants.v1]
+prompt = "stylized low-poly cartoon human, average adult proportions, slightly lanky, bald round head, big round separate eyeballs, long simple nose, five-finger hands with fingers spread, plain grey t-shirt and shorts, bare feet, standing in a T-pose, arms straight out, palms down, symmetrical, flat simple colours"
+
+[variants.v2]
+prompt = "stylized low-poly cartoon human, slightly bigger head, wider shoulders, shorter legs, bald round head, big round separate eyeballs, long simple nose, five-finger hands with fingers spread, plain grey t-shirt and shorts, bare feet, standing in a T-pose, arms straight out, palms down, symmetrical, flat simple colours"
+
+[variants.v3]
+prompt = "stylized low-poly cartoon human, average adult proportions, slightly lanky, bald round head, eyes and mouth painted flat on the face, long simple nose, five-finger hands with fingers spread, plain grey t-shirt and shorts, bare feet, standing in a T-pose, arms straight out, palms down, symmetrical, flat simple colours"
+
+# Preview: the mesh. meshy-7.1 is the newest model the docs offer (2026-10-02); pinned, not "latest", so a rerun
+# matches. should_remesh makes topology and target_polycount apply. symmetry_mode is deprecated in the docs (no
+# effect); it stays as the record of the intent, and the prompt says "symmetrical".
+[defaults.text_to_3d.preview]
+ai_model = "meshy-7.1"
+model_type = "standard"
+should_remesh = true
+topology = "triangle"
+target_polycount = 7000
+symmetry_mode = "on"
+pose_mode = "t-pose"
+target_formats = ["glb", "fbx"]
+
+# Refine: the texture. Base colour only (no PBR maps), 2K, lighting removed from the texture.
+[defaults.text_to_3d.refine]
+ai_model = "meshy-7.1"
+enable_pbr = false
+texture_resolution = "2k"
+remove_lighting = true
+target_formats = ["glb", "fbx"]
+
+[[items]]
+id = "v1-1"
+variant = "v1"
+kind = "text_to_3d"
+
+[[items]]
+id = "v1-2"
+variant = "v1"
+kind = "text_to_3d"
+
+[[items]]
+id = "v1-3"
+variant = "v1"
+kind = "text_to_3d"
+
+[[items]]
+id = "v1-4"
+variant = "v1"
+kind = "text_to_3d"
+
+[[items]]
+id = "v2-1"
+variant = "v2"
+kind = "text_to_3d"
+
+[[items]]
+id = "v2-2"
+variant = "v2"
+kind = "text_to_3d"
+
+[[items]]
+id = "v2-3"
+variant = "v2"
+kind = "text_to_3d"
+
+[[items]]
+id = "v2-4"
+variant = "v2"
+kind = "text_to_3d"
+
+[[items]]
+id = "v3-1"
+variant = "v3"
+kind = "text_to_3d"
+
+[[items]]
+id = "v3-2"
+variant = "v3"
+kind = "text_to_3d"
+
+[[items]]
+id = "v3-3"
+variant = "v3"
+kind = "text_to_3d"
+
+[[items]]
+id = "v3-4"
+variant = "v3"
+kind = "text_to_3d"
