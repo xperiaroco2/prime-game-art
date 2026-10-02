@@ -46,6 +46,7 @@ GPT_ONLY_ASPECT_RATIOS = ("3:2", "2:3")
 # unless should_texture is false. meshy-6-lite textures at 2k only; multi-image-to-3D has no meshy-t2.
 LITE_MODEL = "meshy-6-lite"
 MULTI_IMAGE_MODELS = ("meshy-6-lite", "meshy-6", "meshy-7.1")
+MULTI_IMAGE_GEOMETRY = ("standard", "2k")  # 2k needs meshy-7.1 or latest (docs.meshy.ai, read 2026-10-03)
 REMESH_CREDITS = 5
 # How many input images each kind takes (after a `from` without `pick` expands to every image of its source).
 INPUT_COUNTS = {"image_to_image": (1, 5), "image_to_3d": (1, 1), "multi_image_to_3d": (1, 4)}
@@ -444,6 +445,13 @@ def image_model_credits(kind: str, params: dict[str, Any], where: str = "", erro
             errors.append(f"{where}: multi-image-to-3D takes ai_model {', '.join(MULTI_IMAGE_MODELS)} or latest, "
                           f"not {model!r}")
             return 0
+        geometry = str(params.get("geometry_resolution", "standard"))
+        if geometry not in MULTI_IMAGE_GEOMETRY:
+            errors.append(f"{where}: multi-image-to-3D takes geometry_resolution "
+                          f"{' or '.join(MULTI_IMAGE_GEOMETRY)}, not {geometry!r}")
+        elif geometry == "2k" and resolved != LATEST_MODEL:
+            errors.append(f"{where}: multi-image-to-3D geometry_resolution 2k requires ai_model {LATEST_MODEL} or "
+                          f"latest, not {model!r}")
     mesh = preview_credits(params, where, errors)
     if params.get("should_texture", True) is False:
         return mesh

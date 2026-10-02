@@ -250,7 +250,7 @@ give no size limit, the web app takes at most 20 MB, which the client applies.
 | Text to image | `POST /openapi/v1/text-to-image` | per image: `nano-banana` 3, `nano-banana-2` 6, `nano-banana-pro`, `gpt-image-2`, `gpt-image-2-5-flare`, `gpt-image-2-5-sunburst` 9 |
 | Image to image | `POST /openapi/v1/image-to-image` | per image: `nano-banana` 3, `nano-banana-2` 6, `nano-banana-pro` 9, the three `gpt-image-*` 12 |
 | Image to 3D | `POST /openapi/v1/image-to-3d` | mesh: meshy-7.1 and meshy-6 20, meshy-6-lite and meshy-t2 5 (+5 for `geometry_resolution` 2k or 4k on meshy-7.1); texture: +10 at 2k or 4k, +15 at 8k (meshy-6-lite: 2k only) |
-| Multi-image to 3D | `POST /openapi/v1/multi-image-to-3d` | as image to 3D (models meshy-6-lite, meshy-6, meshy-7.1; `geometry_resolution` standard or 2k) |
+| Multi-image to 3D | `POST /openapi/v1/multi-image-to-3d` | as image to 3D (models meshy-6-lite, meshy-6, meshy-7.1; `geometry_resolution` standard or 2k, 2k on meshy-7.1 or `latest` only) |
 | Remesh | `POST /openapi/v1/remesh` | 5 |
 
 Text to image: `ai_model` (required, the six above), `prompt` (required), `generate_multi_view` (default false),
