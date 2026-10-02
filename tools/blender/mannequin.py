@@ -259,15 +259,16 @@ class Figure:
         """Shoulder to wrist along X at shoulder height; radii are (vertical, depth)."""
         limb, reach = self.p["limb"] * 1.08, self.p["arm"]
         z = self.shoulder_z
+        # The forearm tapers into the palm (the last ring sits inside it), so the wrist has no flat step.
         points = [(0.1, 0.056, 0.054), (0.19, 0.058, 0.054), (0.31, 0.047, 0.045), (0.45, 0.039, 0.037),
-                  (0.58, 0.037, 0.035), (0.69, 0.028, 0.025)]
+                  (0.58, 0.037, 0.035), (0.66, 0.027, 0.026), (0.705, 0.015, 0.024)]
         return [(Vector((side * (0.1 + (x - 0.1) * reach), 0.0, z)), rz * limb, ry * limb) for x, rz, ry in points]
 
     def wrist_x(self) -> float:
         return 0.1 + 0.59 * self.p["arm"]
 
     def arm(self, body: Builder, side: float) -> None:
-        body.tube(self.arm_path(side), Vector((0.0, 0.0, 1.0)), start_cap=0.5, end_cap=0.0)
+        body.tube(self.arm_path(side), Vector((0.0, 0.0, 1.0)), start_cap=0.5, end_cap=0.5)
 
     def hand(self, body: Builder, side: float) -> None:
         """The palm faces down (-Z), the fingers point out along X, the thumb points forward (-Y)."""
@@ -293,12 +294,14 @@ class Figure:
 
     @staticmethod
     def finger(body: Builder, start: Vector, direction: Vector, length: float, radius: float) -> None:
-        """Three segments (four rings) from inside the palm to a rounded tip."""
+        """Three segments from inside the palm to a rounded tip (a narrower last ring and a low cap: a long cap on few
+        sides read as a pencil point)."""
         back = start - direction * 0.012
         path = [(back, radius, radius), (start + direction * (length * 0.36), radius * 0.95, radius),
                 (start + direction * (length * 0.68), radius * 0.88, radius * 0.92),
-                (start + direction * length, radius * 0.8, radius * 0.82)]
-        body.tube(path, Vector((0.0, 0.0, 1.0)), start_cap=0.0, end_cap=0.9, segments=6)
+                (start + direction * (length * 0.9), radius * 0.8, radius * 0.82),
+                (start + direction * length, radius * 0.6, radius * 0.62)]
+        body.tube(path, Vector((0.0, 0.0, 1.0)), start_cap=0.0, end_cap=0.6, segments=8)
 
     # --- the legs and feet --------------------------------------------------------------------------------------
 
@@ -306,13 +309,14 @@ class Figure:
         """Hip to ankle along -Z; radii are (width along X, depth along Y)."""
         limb, leg = self.p["limb"] * 1.1, self.p["leg"]
         x = side * 0.088 * (0.5 + 0.5 * self.p["torso"])
+        # The shin ends inside the foot, so the ankle is where the two meet, not a flat disc on the foot's top.
         points = [(1.0, 0.074, 0.078), (0.87, 0.072, 0.074), (0.68, 0.058, 0.06), (0.53, 0.047, 0.05),
-                  (0.44, 0.05, 0.056), (0.27, 0.039, 0.042), (0.11, 0.03, 0.033), (0.08, 0.03, 0.034)]
+                  (0.44, 0.05, 0.056), (0.27, 0.039, 0.042), (0.11, 0.03, 0.033), (0.05, 0.026, 0.03)]
         return [(Vector((x, 0.005, 0.92 * f * leg if f < 1 else self.hip_z + 0.02)), rx * limb, ry * limb)
                 for f, rx, ry in points]
 
     def leg(self, body: Builder, side: float) -> None:
-        body.tube(self.leg_path(side), Vector((1.0, 0.0, 0.0)), start_cap=0.0, end_cap=0.0)
+        body.tube(self.leg_path(side), Vector((1.0, 0.0, 0.0)), start_cap=0.0, end_cap=0.5)
 
     def foot(self, body: Builder, side: float) -> None:
         """A rounded wedge from the heel forward (-Y), its sole at z = 0, and five toes, the big toe on the inside."""
