@@ -36,6 +36,7 @@ class FakeMeshy:
         self.requests: list[tuple[str, str, dict[str, str], Any]] = []
         self.fail: set[str] = set()
         self.refuse: dict[str, int] = {}
+        self.task_error: Any = {"message": "the fake failed it"}  # what a FAILED task carries
         self.cost = dict(COSTS)
         self.interrupt_on: int | None = None
         self.task_gets = 0
@@ -107,7 +108,7 @@ class FakeMeshy:
         if task["gets"] < self.polls:
             return out
         if stage in self.fail:
-            out.update(status="FAILED", task_error={"message": "the fake failed it"})
+            out.update(status="FAILED", task_error=self.task_error)
             return out
         if not task.get("charged"):
             self.balance -= task["cost"]

@@ -190,7 +190,16 @@ class RunTest(unittest.TestCase):
         posts = self.fake.posts()
         self.assertEqual(len(posts), 3)  # only the refine again; the preview is reused
         self.assertEqual(posts[2][1]["mode"], "refine")
-        self.assertEqual(self.state("a-1")["status"], "done")
+        state = self.state("a-1")
+        self.assertEqual(state["status"], "done")
+        self.assertEqual([(t["stage"], t["status"]) for t in state["previous_tasks"]], [("refine", "FAILED")])
+        self.assertNotEqual(state["previous_tasks"][0]["id"], state["tasks"]["refine"]["id"])
+
+    def test_a_task_error_given_as_text(self) -> None:
+        self.fake.fail = {"preview"}
+        self.fake.task_error = "out of memory"
+        self.assertEqual(self.runner(batch_data(items=batch_data()["items"][:1])).run(), 1)
+        self.assertEqual(self.state("a-1")["error"], "preview FAILED: out of memory")
 
     def test_an_unsure_submit_is_not_repeated_without_retry_failed(self) -> None:
         data = batch_data(items=batch_data()["items"][:1])

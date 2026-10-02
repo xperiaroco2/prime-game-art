@@ -160,7 +160,10 @@ class Runner:
             if not self.retry_failed:
                 self.log(f"{item.id}: failed before ({state.get('error', '')}); --retry-failed submits it again")
                 return "failed"
-            state["tasks"] = {k: t for k, t in state.get("tasks", {}).items() if t.get("status") == "SUCCEEDED"}
+            tasks = state.get("tasks", {})
+            state.setdefault("previous_tasks", []).extend(  # kept for the record; the succeeded stages are reused
+                {"stage": k, **t} for k, t in tasks.items() if t.get("status") != "SUCCEEDED")
+            state["tasks"] = {k: t for k, t in tasks.items() if t.get("status") == "SUCCEEDED"}
             state["status"] = "running"
             state.pop("error", None)
 
@@ -211,7 +214,8 @@ class Runner:
             record["polled_at"] = self.now()
             write_state(state_path, state)
             if data.get("status") != "SUCCEEDED":
-                message = str((data.get("task_error") or {}).get("message") or data.get("status"))
+                error = data.get("task_error")
+                message = str((error.get("message") if isinstance(error, dict) else error) or data.get("status"))
                 return self.finish(item, state, "failed", f"{stage.name} {data.get('status')}: {message}")
             results[stage.name] = data
 

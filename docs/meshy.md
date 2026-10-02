@@ -122,8 +122,9 @@ Meshy's queue limit, 10 tasks on Pro, would allow parallel items later.
 `parameters` (per stage), `estimated_credits`, `plan`, `terms_url`, `licence`, `approval` (by, at, ref, credit_cap),
 `status` (`running`, `done`, `failed`), `error`, `started_at`, `finished_at` (UTC), `balance_before`,
 `balance_after`, `tasks` (per stage: `id`, `request`, `estimated_credits`, `submitted_at`, `polled_at`, `status`,
-`progress`, Meshy's `created_at`, `started_at`, `finished_at` in ms, `consumed_credits`, `task_error`) and `files`
-(`name`, `stage`, `bytes`, `sha256`). Signed URLs are not stored: they expire.
+`progress`, Meshy's `created_at`, `started_at`, `finished_at` in ms, `consumed_credits`, `task_error`),
+`previous_tasks` (failed tasks a `--retry-failed` replaced, each with its `stage`) and `files` (`name`, `stage`,
+`bytes`, `sha256`). Signed URLs are not stored: they expire.
 
 `log.csv` columns: `time, item, variant, kind, status, model, tasks, credits, balance_before, balance_after, files`.
 
