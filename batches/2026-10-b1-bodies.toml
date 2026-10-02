@@ -1,8 +1,10 @@
 # The first body batch: three variants of the base human, four tries each, for review sheets and the contract check.
 # Schema: docs/meshy.md. Prompts are durable knowledge: change them only with a new approval.
+# 2026-10-02: the manager adapted the three prompts to the engineer's answer Q7 on xperiaroco2/prime-game#165 (eyes and
+# mouth change like the hairstyle, so every body has a blank face); same 12 items and 360 credits as approved.
 
 id = "2026-10-b1-bodies"
-purpose = "Base human bodies: V1 average lanky with separate eyeballs, V2 bigger head and wider shoulders with separate eyeballs, V3 like V1 with eyes and mouth painted on the face; four tries each to pick from on review sheets."
+purpose = "Base human bodies with blank faces (eyes and mouth are separate, changeable slots): V1 average lanky with a nose, V2 bigger head and wider shoulders with a nose, V3 like V1 with no nose either; four tries each to pick from on review sheets."
 plan = "Meshy Pro (monthly)"
 terms_url = "https://www.meshy.ai/terms-of-use"
 # Terms of Use 3.2 (last updated 2026-09-19, read 2026-10-02): a paid plan's customer owns its output; Meshy keeps
@@ -14,13 +16,13 @@ approved_at = "2026-10-02"
 approval_ref = "https://github.com/xperiaroco2/prime-game/issues/165#issuecomment-5954952499"
 
 [variants.v1]
-prompt = "stylized low-poly cartoon human, average adult proportions, slightly lanky, bald round head, big round separate eyeballs, long simple nose, five-finger hands with fingers spread, plain grey t-shirt and shorts, bare feet, standing in a T-pose, arms straight out, palms down, symmetrical, flat simple colours"
+prompt = "stylized low-poly cartoon human, average adult proportions, slightly lanky, bald round head, blank smooth face with no eyes and no mouth, long simple nose, five-finger hands with fingers spread, plain grey t-shirt and shorts, bare feet, standing in a T-pose, arms straight out, palms down, symmetrical, flat simple colours"
 
 [variants.v2]
-prompt = "stylized low-poly cartoon human, slightly bigger head, wider shoulders, shorter legs, bald round head, big round separate eyeballs, long simple nose, five-finger hands with fingers spread, plain grey t-shirt and shorts, bare feet, standing in a T-pose, arms straight out, palms down, symmetrical, flat simple colours"
+prompt = "stylized low-poly cartoon human, slightly bigger head, wider shoulders, shorter legs, bald round head, blank smooth face with no eyes and no mouth, long simple nose, five-finger hands with fingers spread, plain grey t-shirt and shorts, bare feet, standing in a T-pose, arms straight out, palms down, symmetrical, flat simple colours"
 
 [variants.v3]
-prompt = "stylized low-poly cartoon human, average adult proportions, slightly lanky, bald round head, eyes and mouth painted flat on the face, long simple nose, five-finger hands with fingers spread, plain grey t-shirt and shorts, bare feet, standing in a T-pose, arms straight out, palms down, symmetrical, flat simple colours"
+prompt = "stylized low-poly cartoon human, average adult proportions, slightly lanky, bald round head, completely blank smooth face with no eyes, no nose and no mouth, five-finger hands with fingers spread, plain grey t-shirt and shorts, bare feet, standing in a T-pose, arms straight out, palms down, symmetrical, flat simple colours"
 
 # Preview: the mesh. meshy-7.1 is the newest model the docs offer (2026-10-02); pinned, not "latest", so a rerun
 # matches. should_remesh makes topology and target_polycount apply. symmetry_mode is deprecated in the docs (no
