@@ -6,7 +6,9 @@ reference T-pose, and a box mesh with one box per bone, weighted fully to that b
 
 spec.json: {"profile": ".../humanoid.json", "out": ".../fixture.glb|.blend",
             "names": {profile name: name in the fixture} (optional, to fake a vendor rig),
-            "extra_leaves": {bone name: profile parent} (optional unweighted end bones),
+            "extra_leaves": {bone name: profile parent} (optional end bones, unweighted unless listed below),
+            "weighted_leaves": [bone name, ...] (optional: these end bones take the tail end of their parent's box),
+            "connected": true (optional: a bone whose head is at its parent's tail is connected to it),
             "defects": [...] (optional; see DEFECTS)}
 """
 
@@ -217,18 +219,21 @@ def main() -> None:
         eb.use_deform = name != "Root"
         if bone["parent"]:
             eb.parent = edit[bone["parent"]]
+            if spec.get("connected") and (eb.head - tails_b[bone["parent"]]).length < 1e-5:
+                eb.use_connect = True
         edit[name] = eb
     if "extra_bone" in defects:
         eb = arm_data.edit_bones.new("Socket_HandR")
         eb.head = heads["RightHand"]
         eb.tail = heads["RightHand"] + Vector((0, 0, 0.05))
         eb.parent = edit["RightHand"]
-    for leaf, parent in spec.get("extra_leaves", {}).items():  # unweighted end bones, as vendor rigs have
+    weighted_leaves = set(spec.get("weighted_leaves", []))
+    for leaf, parent in spec.get("extra_leaves", {}).items():  # end bones, as vendor rigs have
         eb = arm_data.edit_bones.new(leaf)
         eb.head = tails_b[parent]
         eb.tail = tails_b[parent] + (tails_b[parent] - heads[parent]).normalized() * 0.03
         eb.parent = edit[parent]
-        eb.use_deform = False
+        eb.use_deform = leaf in weighted_leaves
     bpy.ops.object.mode_set(mode="OBJECT")
 
     # Skin: one group per bone, each box fully weighted to its bone.
@@ -238,6 +243,11 @@ def main() -> None:
         by_bone.setdefault(name, []).append(index)
     for name, indices in by_bone.items():
         groups[name].add(indices, 1.0, "REPLACE")
+    for leaf, parent in spec.get("extra_leaves", {}).items():
+        if leaf in weighted_leaves:  # the four corners at the tail end of the parent's box
+            tip = by_bone[parent][-4:]
+            groups[parent].remove(tip)
+            body.vertex_groups.new(name=leaf).add(tip, 1.0, "REPLACE")
     if "five_weights" in defects:
         v = by_bone["Hips"][0]
         groups["Hips"].add([v], 0.6, "REPLACE")

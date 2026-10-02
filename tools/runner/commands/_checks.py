@@ -197,9 +197,14 @@ def _rig_checks(
     parents = _contract.profile_parents(profile)
     raw = armatures[0]["bones"]
     by_raw = {b["name"]: b for b in raw}
-    dropped = [b["name"] for b in raw if _contract.is_dropped(b["name"], bone_map)]
+    raw_weights = _raw_weights(skinned)
+    # Like rename-bones: a dropped bone's weights move to its nearest kept ancestor; with none, a weighted one stays.
+    heirs = _heirs(raw, bone_map)
+    dropped = [n for n, heir in heirs.items() if heir or not raw_weights.get(n)]
     if dropped:
-        report.add("dropped_bones", WARN, f"rename-bones would delete {', '.join(dropped)}")
+        moved = [f"{n} to {heirs[n]}" for n in dropped if raw_weights.get(n)]
+        note = f"; weights move from {', '.join(moved)}" if moved else ""
+        report.add("dropped_bones", WARN, f"rename-bones would delete {', '.join(dropped)}{note}")
     bones: dict[str, dict[str, Any]] = {}
     duplicates: list[str] = []
     for bone in raw:
@@ -234,7 +239,10 @@ def _rig_checks(
     ]
     report.add("bone_parents", FAIL if wrong else PASS, "; ".join(wrong) if wrong else "parents match the profile")
 
-    weights = _merged_weights(skinned, bone_map)
+    weights: dict[str, int] = {}
+    for name, count in raw_weights.items():
+        target = _contract.mapped_name(heirs[name] if name in dropped else name, bone_map)
+        weights[target] = weights.get(target, 0) + count
     over = sum(m["weights"]["vertices_over_limit"] for m in skinned)
     report.add(
         "weights_per_vertex",
@@ -283,13 +291,27 @@ def _rig_checks(
     return bones
 
 
-def _merged_weights(skinned: list[dict[str, Any]], bone_map: dict | None) -> dict[str, int]:
+def _raw_weights(skinned: list[dict[str, Any]]) -> dict[str, int]:
+    """Weighted vertex counts per bone, by the bone names in the file, summed over the skinned meshes."""
     weights: dict[str, int] = {}
     for mesh in skinned:
         for name, count in mesh["weights"]["weighted_bones"].items():
-            mapped = _contract.mapped_name(name, bone_map)
-            weights[mapped] = weights.get(mapped, 0) + count
+            weights[name] = weights.get(name, 0) + count
     return weights
+
+
+def _heirs(raw: list[dict[str, Any]], bone_map: dict | None) -> dict[str, str]:
+    """Each bone the map drops -> its nearest ancestor the map keeps ("" when there is none), by file names."""
+    parents = {b["name"]: b["parent"] for b in raw}
+    heirs: dict[str, str] = {}
+    for bone in raw:
+        if not _contract.is_dropped(bone["name"], bone_map):
+            continue
+        parent = bone["parent"]
+        while parent and _contract.is_dropped(parent, bone_map):
+            parent = parents.get(parent, "")
+        heirs[bone["name"]] = parent
+    return heirs
 
 
 def _pose_checks(report: _Report, bones: dict[str, dict[str, Any]], contract: dict, rules: dict) -> None:

@@ -48,8 +48,11 @@ def run(args: argparse.Namespace) -> int:
     if not bone_map.get("confirmed"):
         common.warn(f"the {args.map} map's names are unconfirmed: compare the result with the first real file")
     common.ok(f"renamed {len(summary['renamed'])} bones, dropped {len(summary['dropped'])}; wrote {out.as_posix()}")
+    for move, count in summary["weights_moved"].items():
+        common.say(f"  moved the weights of {count} vertices: {move}")
     if summary["kept_weighted_drop_bones"]:
-        common.warn(f"kept weighted bones the map would drop: {', '.join(summary['kept_weighted_drop_bones'])}")
+        kept = ", ".join(summary["kept_weighted_drop_bones"])
+        common.warn(f"kept weighted bones the map would drop, with no kept parent to take their weights: {kept}")
     if summary["not_in_profile"]:
         common.warn(f"still not profile bones: {', '.join(summary['not_in_profile'])}")
     if summary["missing_from_profile"]:

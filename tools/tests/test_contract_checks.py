@@ -162,6 +162,30 @@ class EvaluateTest(unittest.TestCase):
         self.assertEqual(report["verdict"], _checks.PASS, report["results"])
         self.assertEqual(report["map"], "mixamo")
 
+    def test_a_weighted_end_bone_hands_its_weights_to_its_parent(self) -> None:
+        bone_map = {"name": "test", "confirmed": False, "prefix_pattern": "", "rename": {}, "drop": ["LeftIndexTip"]}
+        measure = good_body(self.profile)
+        tip = {"name": "LeftIndexTip", "parent": "LeftIndexDistal", "head": [0, 1, 0], "tail": [0, 1.1, 0], "deform": True}
+        measure["armatures"][0]["bones"].append(tip)
+        weights = measure["meshes"][0]["weights"]["weighted_bones"]
+        weights["LeftIndexTip"] = 4
+        del weights["LeftIndexDistal"]
+        self.assertEqual(self.statuses(self.evaluate(measure))["extra_bones"], _checks.FAIL)
+        report = self.evaluate(measure, bone_map=bone_map)
+        statuses = self.statuses(report)
+        self.assertEqual(statuses["extra_bones"], _checks.PASS, report["results"])
+        self.assertEqual(statuses["finger_chains"], _checks.PASS, report["results"])
+        detail = {r["check"]: r["detail"] for r in report["results"]}["dropped_bones"]
+        self.assertIn("weights move from LeftIndexTip to LeftIndexDistal", detail)
+
+    def test_a_weighted_dropped_bone_without_a_kept_ancestor_stays(self) -> None:
+        bone_map = {"name": "test", "confirmed": False, "prefix_pattern": "", "rename": {}, "drop": ["Root"]}
+        measure = good_body(self.profile)
+        measure["meshes"][0]["weights"]["weighted_bones"]["Root"] = 2
+        statuses = self.statuses(self.evaluate(measure, bone_map=bone_map))
+        self.assertNotIn("dropped_bones", statuses)
+        self.assertEqual(statuses["root_unweighted"], _checks.FAIL)
+
     def test_rigid_accessory(self) -> None:
         report = self.evaluate(rigid_piece(900), "accessory")
         self.assertEqual(report["verdict"], _checks.PASS, report["results"])
