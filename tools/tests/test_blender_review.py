@@ -139,6 +139,7 @@ class ReviewSheetTest(unittest.TestCase):
         self.assertGreater(self.stats["triangles"], 0)
         self.assertEqual(self.stats["bones"], 17)
         self.assertEqual(self.stats["materials"], 5)
+        self.assertEqual(self.stats["objects"], 2)  # the armature and its mesh, visible ones only
 
     def test_stands_1_75_m_on_the_ground(self) -> None:
         self.assertAlmostEqual(self.stats["height"], 1.75, delta=0.01)
@@ -156,7 +157,7 @@ class ReviewSheetTest(unittest.TestCase):
     def test_animation_contact_sheet(self) -> None:
         out = OUT / "renders" / "humanoid_anim"
         stats = _review.render(self.fixtures["humanoid"], out, cell=128, anim="Wave", frames=4)
-        self.assertEqual(len(stats["anim"]["frames"]), 4)
+        self.assertEqual(stats["anim"]["frames"], [1, 9, 16, 24])  # whole frames, first to last key
         self.assertEqual(_review.png_size(Path(stats["anim"]["sheet"])), (512, 128))
 
     def test_an_action_name_with_pipes_gives_file_safe_names(self) -> None:

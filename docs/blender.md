@@ -39,7 +39,7 @@ ignored). A relative model path is tried from the current folder, then from the 
   viewport colour, which is what Workbench reads (the FBX and OBJ importers leave it grey).
 - The single views are kept in `views/` (`0_000_front.png` ... `7_315.png`).
 
-`stats.json` holds: `triangles` and `vertices` (of the deformed meshes), `objects`, `meshes`, `materials`,
+`stats.json` holds: `triangles` and `vertices` (of the deformed meshes), `objects` (visible ones), `meshes`, `materials`,
 `textured_materials`, `armatures`, `bones`, `actions`, `bounding_box` (`min`, `max`, `size` in metres, world space),
 `height`, `feet_at_zero` (the lowest point within 1 cm of z = 0), `color_type` (`TEXTURE` or `MATERIAL`), `cell`,
 `views`, `sheet` and, with `--anim`, `anim` (the action, its frame range, the sampled frames, the sheet path).
@@ -47,7 +47,7 @@ ignored). A relative model path is tried from the current folder, then from the 
 ### Animation contact sheet
 
 `--anim <action>` plays that action on every armature (other NLA tracks muted) and renders `--frames` evenly spaced
-frames from the first to the last key, front view, into `anim_<action>.png` (4 columns, as many rows as needed; the
+whole frames from the first to the last key (fewer when the clip is shorter), each labelled with its frame number, front view, into `anim_<action>.png` (4 columns, as many rows as needed; the
 frames go into `anim_<action>/`). File and folder names use the action name made file-safe: every run of characters
 other than letters, digits, `.`, `_` and `-` becomes `_`, so Mixamo's `Armature|mixamo.com|Layer0` gives
 `anim_Armature_mixamo.com_Layer0.png`; `stats.json` and the error messages keep the real name. One scale fits the model over all sampled frames. The first and last frames of a

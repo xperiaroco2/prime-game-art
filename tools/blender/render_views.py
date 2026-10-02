@@ -171,7 +171,7 @@ def stats(model: Path, points: np.ndarray, color_type: str) -> dict:
         "model": str(model),
         "triangles": triangles,
         "vertices": vertices,
-        "objects": len(bpy.context.scene.objects),
+        "objects": sum(1 for obj in bpy.context.scene.objects if obj.visible_get()),
         "meshes": len(visible("MESH")),
         "materials": len(materials),
         "textured_materials": sum(1 for m in materials if has_texture(m)),
@@ -349,15 +349,16 @@ def assign_action(name: str) -> tuple[float, float]:
     return float(start), float(end)
 
 
-def frames_of(start: float, end: float, count: int) -> list[float]:
-    if count <= 1 or end <= start:
-        return [start] * max(count, 1)
-    return [start + (end - start) * i / (count - 1) for i in range(count)]
+def frames_of(start: float, end: float, count: int) -> list[int]:
+    """count whole frames spread evenly from start to end inclusive; fewer when the clip has fewer frames."""
+    first, last = round(start), round(end)
+    if count <= 1 or last <= first:
+        return [first]
+    return sorted({round(first + (last - first) * i / (count - 1)) for i in range(count)})
 
 
-def set_frame(frame: float) -> None:
-    whole = math.floor(frame)
-    bpy.context.scene.frame_set(whole, subframe=frame - whole)
+def set_frame(frame: int) -> None:
+    bpy.context.scene.frame_set(frame)
 
 
 # --- main --------------------------------------------------------------------------------------------------------
@@ -410,11 +411,11 @@ def main() -> None:
         anim_images = []
         for index, frame in enumerate(frames):
             set_frame(frame)
-            path = frame_dir / f"{index}_frame_{frame:07.2f}.png"
+            path = frame_dir / f"{index}_frame_{frame:04d}.png"
             render_to(path)
             anim_images.append(read_png(path))
         anim_sheet = out / f"anim_{safe_name(args.anim)}.png"
-        anim_labels = [f"F {round(frame)}" for frame in frames]
+        anim_labels = [f"F {frame}" for frame in frames]
         write_png(anim_sheet, compose(anim_images, anim_labels, args.cell, anim_framing.ground_row(args.cell)))
         report["anim"] = {"action": args.anim, "frame_range": [start, end], "frames": frames, "sheet": str(anim_sheet)}
 
