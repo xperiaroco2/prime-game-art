@@ -40,7 +40,9 @@ class Report:
         common.warn(text)
 
 
-def _run(cmd: list[str | Path], timeout: float = 60, cwd: Path | None = None) -> subprocess.CompletedProcess[str] | None:
+def _run(
+    cmd: list[str | Path], timeout: float = 60, cwd: Path | None = None
+) -> subprocess.CompletedProcess[str] | None:
     """Runs cmd; None when it cannot start or times out."""
     try:
         return common.run([str(c) for c in cmd], timeout, cwd)
@@ -71,7 +73,9 @@ def check_git(report: Report) -> None:
         return
     lfs = _run(["git", "lfs", "version"])
     if not (lfs and lfs.returncode == 0):
-        report.bad("Git LFS not found", "Install Git LFS (it comes with Git for Windows), then: git lfs install --skip-repo")
+        report.bad(
+            "Git LFS not found", "Install Git LFS (it comes with Git for Windows), then: git lfs install --skip-repo"
+        )
         return
     report.ok(_first_line(lfs))
     filt = _run(["git", "-C", common.ROOT, "config", "--get", "filter.lfs.process"])
@@ -84,7 +88,9 @@ def check_git(report: Report) -> None:
 def ensure_hooks_path(report: Report, repo: Path) -> None:
     """Sets core.hooksPath to tools/githooks (repository-wide: every worktree shares it) unless it already is."""
     if not (repo / HOOKS_PATH / "pre-push").is_file():
-        report.bad(f"{HOOKS_PATH}/pre-push is missing in {repo.as_posix()}", "Check out a branch that has tools/githooks")
+        report.bad(
+            f"{HOOKS_PATH}/pre-push is missing in {repo.as_posix()}", "Check out a branch that has tools/githooks"
+        )
         return
     current = _run(["git", "-C", repo, "config", "--get", "core.hooksPath"])
     value = current.stdout.strip() if current and current.returncode == 0 else ""
@@ -141,7 +147,10 @@ def check_gltf_validator(report: Report, quick: bool) -> None:
 
 def check_godot(report: Report, quick: bool) -> None:
     path = common.tool_path(pins.GODOT_ENV, None)
-    fix = f"Set {pins.GODOT_ENV} to the Godot {pins.GODOT} console exe the game repo uses (D:/prime-game: tools\\run.cmd doctor)"
+    fix = (
+        f"Set {pins.GODOT_ENV} to the Godot {pins.GODOT} console exe the game repo uses"
+        " (D:/prime-game: tools\\run.cmd doctor)"
+    )
     if not path or not path.is_file():
         report.bad(f"Godot not found ({pins.GODOT_ENV} is {str(path) if path else 'not set'})", fix)
         return
@@ -162,7 +171,10 @@ def check_raw_folders(report: Report) -> None:
     if raw.is_dir():
         report.ok(f"raw folder {raw.as_posix()}")
     else:
-        report.bad(f"raw folder {raw.as_posix()} is missing", f'Create it: New-Item -ItemType Directory "{raw}" (or set {pins.RAW_ENV})')
+        report.bad(
+            f"raw folder {raw.as_posix()} is missing",
+            f'Create it: New-Item -ItemType Directory "{raw}" (or set {pins.RAW_ENV})',
+        )
     backup = common.raw_backup_dir()
     if backup is None:
         report.bad("raw backup folder unknown: OneDrive is not set", f"Set {pins.RAW_BACKUP_ENV} to the backup folder")
@@ -195,7 +207,8 @@ def check_meshy_key(report: Report) -> None:
         report.ok(f"{pins.MESHY_KEY_ENV} is set: yes")
     else:
         report.warn(
-            f"{pins.MESHY_KEY_ENV} is set: no (needed only to generate; the engineer sets it as a user environment variable)"
+            f"{pins.MESHY_KEY_ENV} is set: no"
+            " (needed only to generate; the engineer sets it as a user environment variable)"
         )
 
 

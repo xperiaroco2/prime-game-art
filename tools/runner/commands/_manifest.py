@@ -51,7 +51,8 @@ def find(root: Path) -> tuple[list[Path], list[str]]:
     manifests = sorted(assets.rglob("manifest.toml"))
     for path in manifests:
         if len(path.relative_to(assets).parts) != 3:
-            errors.append(f"{path.relative_to(root).as_posix()}: a manifest belongs at assets/<kind>/<id>/manifest.toml")
+            where = path.relative_to(root).as_posix()
+            errors.append(f"{where}: a manifest belongs at assets/<kind>/<id>/manifest.toml")
     for kind_dir in sorted(p for p in assets.iterdir() if p.is_dir()):
         for asset_dir in sorted(p for p in kind_dir.iterdir() if p.is_dir()):
             if not (asset_dir / "manifest.toml").is_file():
@@ -128,7 +129,9 @@ def validate(data: dict[str, Any], kind_dir: str | None = None, id_dir: str | No
             if "task_ids" in source and not (isinstance(task_ids, list) and all(_is_text(t) for t in task_ids)):
                 errors.append("source.task_ids must be a list of non-empty strings")
             if "generated_at" in source and not _is_when(source["generated_at"]):
-                errors.append("source.generated_at must be a TOML date or date-time (2026-10-02 or 2026-10-02T18:00:00Z)")
+                errors.append(
+                    "source.generated_at must be a TOML date or date-time (2026-10-02 or 2026-10-02T18:00:00Z)"
+                )
             if "url" in source and not (isinstance(source["url"], str) and URL_RE.fullmatch(source["url"])):
                 errors.append("source.url must be an http(s) URL")
             if ai_generated is True:
@@ -159,7 +162,8 @@ def validate(data: dict[str, Any], kind_dir: str | None = None, id_dir: str | No
                         or ".." in pure.parts
                     ):
                         errors.append(f"{where}file must be a relative path inside the raw folder, with / separators")
-                if "sha256" in entry and not (isinstance(entry["sha256"], str) and SHA256_RE.fullmatch(entry["sha256"])):
+                digest = entry.get("sha256")
+                if "sha256" in entry and not (isinstance(digest, str) and SHA256_RE.fullmatch(digest)):
                     errors.append(f"{where}sha256 must be 64 lowercase hex digits")
 
     tools = data.get("tools")

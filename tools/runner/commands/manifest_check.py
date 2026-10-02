@@ -13,7 +13,9 @@ HELP = "validate every assets/**/manifest.toml (docs/manifest.md)"
 
 
 def add_arguments(parser: argparse.ArgumentParser) -> None:
-    parser.add_argument("--root", type=Path, default=common.ROOT, help="the tree whose assets/ is checked (default: the repo)")
+    parser.add_argument(
+        "--root", type=Path, default=common.ROOT, help="the tree whose assets/ is checked (default: the repo)"
+    )
     parser.add_argument(
         "--hashes", action="store_true", help="also check each [[raw]] file's sha256 in the raw folder (ART_RAW_DIR)"
     )
