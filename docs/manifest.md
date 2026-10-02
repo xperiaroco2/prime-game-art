@@ -74,9 +74,9 @@ Unknown keys are refused, so a typo cannot hide a missing field.
 | Kind | Slots |
 |---|---|
 | `clothing` | `top`, `bottom`, `shoes` |
-| `hair` | `head` (a hairstyle; a hat takes the same slot) |
+| `hair` | `hair_or_hat` (a hairstyle; a hat takes the same slot) |
 | `face` | `eyes`, `mouth` (changeable like the hairstyle) |
-| `accessory` | `head` (a hat), `face_acc`, `back` |
+| `accessory` | `hair_or_hat` (a hat), `face_accessory`, `back_item` |
 | `body`, `item`, `prop`, `animation` | `""` |
 
 Sets are saved presets of pieces, not assets, so they have no manifest. The slot names follow the character contract

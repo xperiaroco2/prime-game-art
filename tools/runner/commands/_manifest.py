@@ -10,14 +10,14 @@ from pathlib import Path, PurePosixPath
 from typing import Any
 
 # Which slots each kind may fill; "" means the asset fills no cosmetic slot. The slot names follow the character
-# contract (contract/, issue #4): clothing in pieces (top, bottom, shoes), a hat or a hairstyle on the head, eyes and
-# mouth as changeable face slots, a face accessory and a back item.
+# contract (contract/, issue #4): clothing in pieces (top, bottom, shoes), a hat or a hairstyle (hair_or_hat), eyes
+# and mouth as changeable face slots, a face accessory (face_accessory) and a back item (back_item).
 KIND_SLOTS: dict[str, frozenset[str]] = {
     "body": frozenset({""}),
     "clothing": frozenset({"top", "bottom", "shoes"}),
-    "hair": frozenset({"head"}),
+    "hair": frozenset({"hair_or_hat"}),
     "face": frozenset({"eyes", "mouth"}),
-    "accessory": frozenset({"head", "face_acc", "back"}),
+    "accessory": frozenset({"hair_or_hat", "face_accessory", "back_item"}),
     "item": frozenset({""}),
     "prop": frozenset({""}),
     "animation": frozenset({""}),

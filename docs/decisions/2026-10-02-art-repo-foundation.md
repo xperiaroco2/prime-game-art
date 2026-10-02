@@ -53,9 +53,9 @@ the public game repo; an agent pushes to `main` here, which GitHub Free cannot p
 7. **The character contract (Proposed).** One shared humanoid skeleton with the bone names of Godot's
    `SkeletonProfileHumanoid` (generated from the pinned Godot, never typed), five-finger chains, T-pose rest, glTF Y-up,
    1 unit = 1 m, front +Z, feet at 0, about 1.75 m tall. One neutral body in v1, modelled in segments. Cosmetic slots:
-   clothing pieces `top`, `bottom`, `shoes` (skinned, weights transferred from the body), `head` (a hat or a hairstyle),
-   `eyes` and `mouth` (changeable like the hairstyle), `face_acc` and `back` (rigid on sockets); sets are saved presets
-   of pieces. Every piece is recoloured from one shared palette. Motion is baked animations only (falls and knockdowns
+   clothing pieces `top`, `bottom`, `shoes` (skinned, weights transferred from the body), `hair_or_hat` (a hat or a
+   hairstyle), `eyes` and `mouth` (changeable like the hairstyle), `face_accessory` and `back_item` (rigid on sockets);
+   sets are saved presets of pieces. Every piece is recoloured from one shared palette. Motion is baked animations only (falls and knockdowns
    included, no ragdoll). First-person view: hands with forearms in the sleeves of the player's top, running off the
    screen edge, plus the player's shadow. Budgets, sockets and the exact slot list live in `contract/` (#4) and become
    Accepted with the first approved body; the game-side half becomes an ADR in the game repo.

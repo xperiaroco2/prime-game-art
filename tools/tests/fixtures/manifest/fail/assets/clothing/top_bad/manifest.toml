@@ -1,7 +1,7 @@
 # Every line below breaks one rule; tools/tests/test_bootstrap_manifest.py names each expected error.
 id = "Top-Bad"
 kind = "clothing"
-slot = "back"
+slot = "back_item"
 tools = []
 licence = "restricted"
 licence_url = "meshy terms"

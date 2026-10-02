@@ -54,7 +54,7 @@ class ManifestRulesTest(unittest.TestCase):
         errors = "\n".join(_manifest.validate(data or {}, "clothing", "top_bad"))
         for expected in (
             "id must be lowercase",
-            "slot 'back' is not allowed for kind 'clothing'",
+            "slot 'back_item' is not allowed for kind 'clothing'",
             "tools must be a non-empty list",
             "licence_url must be an http(s) URL",
             "public_repo_ok is true but licence 'restricted'",
@@ -105,6 +105,23 @@ class ManifestRulesTest(unittest.TestCase):
             self.assertEqual(_manifest.validate(data), [], slot)
         data["slot"] = "top"
         self.assertIn("not allowed for kind 'face'", "\n".join(_manifest.validate(data)))
+
+    def test_slot_names_follow_the_character_contract(self) -> None:
+        # contract/contract.toml (#4) names these slots; the short names an earlier draft used are refused.
+        cases = {
+            "hair": ("hair_or_hat",),
+            "accessory": ("hair_or_hat", "face_accessory", "back_item"),
+            "clothing": ("top", "bottom", "shoes"),
+        }
+        for kind, slots in cases.items():
+            for slot in slots:
+                data = good()
+                data.update(kind=kind, slot=slot)
+                self.assertEqual(_manifest.validate(data), [], f"{kind}/{slot}")
+        for slot in ("head", "face_acc", "back"):
+            data = good()
+            data.update(kind="accessory", slot=slot)
+            self.assertIn("not allowed for kind 'accessory'", "\n".join(_manifest.validate(data)), slot)
 
     def test_not_approved_is_valid(self) -> None:
         data = good()
