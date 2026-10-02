@@ -56,9 +56,10 @@ def run(args: argparse.Namespace) -> int:
         out = root / preset
         info = stylize(preset, source, out, args.triangles)
         probe = info["probe"]
+        eyes = f"{info['eye_height']} m" if info["eye_height"] is not None else "an unknown height (no eye mesh)"
         dead = sorted(label for label, moved in probe.items() if moved <= 0)
         common.say(f"{preset}: {info['triangles_source']} -> {info['triangles']} triangles, height {info['height']} m, "
-                   f"eyes at {info['eye_height']} m, {len(info['bones'])} bones, materials "
+                   f"eyes at {eyes}, {len(info['bones'])} bones, materials "
                    f"{', '.join(info['materials'])}")
         common.say(f"  rig: {len(probe) - len(dead)} of {len(probe)} probe bones move the skin"
                    + (f"; NOT: {', '.join(dead)}" if dead else ""))
