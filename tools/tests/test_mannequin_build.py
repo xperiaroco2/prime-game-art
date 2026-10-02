@@ -108,3 +108,13 @@ class BuildTest(unittest.TestCase):
         self.assertEqual(self.stats["materials"], 3)
         self.assertEqual(self.stats["color_type"], "MATERIAL")
         self.assertEqual(self.stats["armatures"], 0)
+
+    def test_stands_in_a_t_pose_with_flat_hands_thumbs_forward_and_soles_at_zero(self) -> None:
+        pose = self.info["pose"]
+        for side in ("left", "right"):
+            with self.subTest(side=side):
+                hand = pose[side]
+                self.assertAlmostEqual(hand["fingertip_z"], pose["shoulder_z"], delta=0.01)  # the arms are level
+                self.assertLess(hand["hand_extent_z"], 0.4 * hand["hand_extent_y"])  # the hand lies flat
+                self.assertLess(hand["thumb_tip_y"], -0.04)  # the thumb points forward, so the palm faces down
+        self.assertEqual(pose["sole_z"], 0.0)

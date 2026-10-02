@@ -361,6 +361,26 @@ class Figure:
             cloth.tube(tube, Vector((1.0, 0.0, 0.0)), start_cap=0.0, end_cap=0.0)
 
 
+def measure_pose(body: bpy.types.Object, figure: Figure, scale: float) -> dict:
+    """The T-pose as built, measured on the body mesh (metres): the shoulder height, each side's fingertip height (the
+    vertex furthest out), the hands' extent (a flat hand is much wider along Y than thick along Z), the thumb tip's
+    Y (forward is -Y) and the lowest point of the feet."""
+    points = [v.co for v in body.data.vertices]
+    wrist = figure.wrist_x() * scale
+    pose: dict = {"shoulder_z": round(figure.shoulder_z * scale, 4)}
+    for name, side in (("left", 1.0), ("right", -1.0)):
+        hand = [p for p in points if p.x * side > wrist]
+        tip = max(hand, key=lambda p: p.x * side)
+        pose[name] = {
+            "fingertip_z": round(tip.z, 4),
+            "hand_extent_y": round(max(p.y for p in hand) - min(p.y for p in hand), 4),
+            "hand_extent_z": round(max(p.z for p in hand) - min(p.z for p in hand), 4),
+            "thumb_tip_y": round(min(p.y for p in hand), 4),
+        }
+    pose["sole_z"] = round(min(p.z for p in points if abs(p.x) < 0.2 and p.z < 0.3), 4)
+    return pose
+
+
 def build(preset: str) -> dict:
     for obj in list(bpy.data.objects):
         bpy.data.objects.remove(obj)
@@ -388,6 +408,7 @@ def build(preset: str) -> dict:
         obj.data.transform(Matrix.Scale(scale, 4))
         obj.data.update()
     return {
+        "pose": measure_pose(objects[0], figure, scale),
         "preset": preset,
         "proportions": PRESETS[preset],
         "height": round(top * scale, 4),
