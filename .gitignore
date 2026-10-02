@@ -1,0 +1,12 @@
+# Runner output and Python caches.
+tools/out/
+__pycache__/
+*.pyc
+
+# Raw generations live outside the repository (D:/prime-art-raw); a stray copy never enters git.
+raw/
+*.part
+
+# Blender backups.
+*.blend1
+*.blend2
