@@ -9,6 +9,7 @@ spec.json: {"profile": ".../humanoid.json", "out": ".../fixture.glb|.blend",
             "extra_leaves": {bone name: profile parent} (optional end bones, unweighted unless listed below),
             "weighted_leaves": [bone name, ...] (optional: these end bones take the tail end of their parent's box),
             "connected": true (optional: a bone whose head is at its parent's tail is connected to it),
+            "omit": [profile name, ...] (optional: leave these bones out, as Mixamo has no Root and no Jaw),
             "defects": [...] (optional; see DEFECTS)}
 """
 
@@ -140,6 +141,7 @@ def main() -> None:
         raise SystemExit(f"unknown defects {sorted(unknown)}; known: {sorted(DEFECTS)}")
     names = {b["name"]: spec.get("names", {}).get(b["name"], b["name"]) for b in profile["bones"]}
     skip = {"LeftLittleDistal"} if "missing_bone" in defects else set()
+    skip |= set(spec.get("omit", []))
 
     heads_g, mats = global_heads(profile)
     tails_g = tails(profile, heads_g, mats)
@@ -217,7 +219,7 @@ def main() -> None:
         eb.head = heads[name]
         eb.tail = tails_b[name]
         eb.use_deform = name != "Root"
-        if bone["parent"]:
+        if bone["parent"] in edit:  # an omitted parent leaves the bone at the top
             eb.parent = edit[bone["parent"]]
             if spec.get("connected") and (eb.head - tails_b[bone["parent"]]).length < 1e-5:
                 eb.use_connect = True

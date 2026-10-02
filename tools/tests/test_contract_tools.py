@@ -69,6 +69,7 @@ class CheckCommandTest(unittest.TestCase):
         cls.mixamo = cls.build(
             "mixamo.glb",
             names=to_mixamo,
+            omit=["Root", "Jaw"],  # a Mixamo rig has neither
             extra_leaves={"mixamorig:HeadTop_End": "Head", "mixamorig:LeftToe_End": "LeftToes"},
         )
         quaternius = _contract.load_map("quaternius")
@@ -94,6 +95,9 @@ class CheckCommandTest(unittest.TestCase):
         code, output = run_cli("check", model.as_posix(), "--kind", kind, "--report", report_path.as_posix(), *extra)
         report = json.loads(report_path.read_text(encoding="utf-8"))
         return code, report, output
+
+    def failed(self, report: dict) -> list[str]:
+        return sorted(r["check"] for r in report["results"] if r["status"] == "fail")
 
     def statuses(self, report: dict) -> dict[str, str]:
         return {r["check"]: r["status"] for r in report["results"]}
@@ -131,7 +135,9 @@ class CheckCommandTest(unittest.TestCase):
         self.assertEqual(code, 1, output)
         self.assertEqual(self.statuses(report)["missing_bones"], "fail")
         code, report, output = self.check(self.mixamo, "body", "--map", "mixamo")
-        self.assertEqual(code, 0, output)
+        self.assertEqual(code, 1, output)
+        self.assertEqual(self.failed(report), ["missing_bones"], output)
+        self.assertIn("missing: Root, Jaw", output)
         self.assertEqual(self.statuses(report)["dropped_bones"], "warn")
 
     def test_rename_bones_then_check(self) -> None:
@@ -139,9 +145,10 @@ class CheckCommandTest(unittest.TestCase):
         code, output = run_cli("rename-bones", self.mixamo.as_posix(), "--map", "mixamo", "--out", renamed.as_posix())
         self.assertEqual(code, 0, output)
         self.assertIn("renamed 54 bones, dropped 2", output)
+        self.assertIn("profile bones the rig lacks: Root, Jaw", output)
         code, report, output = self.check(renamed, "body")
-        self.assertEqual(code, 0, output)
-        self.assertEqual(report["summary"]["warn"], 0, output)
+        self.assertEqual(self.failed(report), ["missing_bones"], output)
+        self.assertNotIn("extra_bones", self.failed(report))
 
     def test_quaternius_end_bones_go_and_their_weights_stay(self) -> None:
         code, report, output = self.check(self.quaternius, "body", "--map", "quaternius")

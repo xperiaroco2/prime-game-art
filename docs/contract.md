@@ -151,6 +151,7 @@ the map missed as an extra bone; fix the map, set `confirmed = true` and add a t
 `test_contract_tools.py` runs `contract --check` in Godot and builds fixtures in Blender with
 `tools/blender/make_contract_fixture.py`: a 1.75 m box-mesh body on every profile bone (one box per bone, fully
 weighted to it), a copy with defects (extra and missing bones, five weights, an n-gon, a non-manifold fin, too tall,
-facing backwards), copies with Mixamo and Quaternius names and end bones (one of them weighted) for the maps and
+facing backwards), a copy with Mixamo names and end bones and without Root and Jaw, as Mixamo rigs come, a copy with Quaternius names
+and end bones (one of them weighted) for the maps and
 `rename-bones`, and a copy with connected chains that drops a middle bone. Without Godot or Blender
 those tests skip with a message naming the variable to set.
