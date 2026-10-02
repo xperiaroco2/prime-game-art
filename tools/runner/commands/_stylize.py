@@ -41,17 +41,17 @@ PRESETS: dict[str, dict[str, Any]] = {
     # The issue's middle: 17 percent slimmer, a 12 percent bigger head, a nose 3 cm longer.
     "base": {
         "slim": {"torso": 0.83, "shoulder": 0.85, "arm": 0.83, "leg": 0.84, "neck": 0.9},
-        "head": 1.12, "nose": 0.03, "soften": 12,
+        "head": 1.12, "nose": 0.03, "soften": 30,
     },
     # Lankier: 20 percent slimmer limbs and torso, a slightly smaller head growth, a longer nose.
     "lanky": {
         "slim": {"torso": 0.8, "shoulder": 0.82, "arm": 0.8, "leg": 0.8, "neck": 0.85},
-        "head": 1.1, "nose": 0.036, "soften": 14,
+        "head": 1.1, "nose": 0.036, "soften": 34,
     },
     # The most cartoony: 15 percent slimmer, a 15 percent bigger head and the longest nose.
     "bighead": {
         "slim": {"torso": 0.85, "shoulder": 0.87, "arm": 0.85, "leg": 0.85, "neck": 0.9},
-        "head": 1.15, "nose": 0.045, "soften": 12,
+        "head": 1.15, "nose": 0.045, "soften": 30,
     },
 }
 

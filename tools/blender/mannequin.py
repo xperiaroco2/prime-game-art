@@ -41,7 +41,7 @@ PRESETS: dict[str, dict[str, float]] = {
     # Lankier: thinner limbs and torso, a longer neck and legs, a slightly longer nose.
     "lanky": {"head": 0.96, "nose": 1.15, "limb": 0.84, "torso": 0.9, "neck": 1.3, "leg": 1.08, "arm": 1.05},
     # A bigger head and a longer nose on the base body, a little more cartoony.
-    "bighead": {"head": 1.2, "nose": 1.3, "limb": 1.0, "torso": 1.0, "neck": 0.85, "leg": 0.96, "arm": 1.0},
+    "bighead": {"head": 1.2, "nose": 1.15, "limb": 1.0, "torso": 1.0, "neck": 0.85, "leg": 0.96, "arm": 1.0},
 }
 
 # Flat colours (sRGB); the shared palette replaces them later.
