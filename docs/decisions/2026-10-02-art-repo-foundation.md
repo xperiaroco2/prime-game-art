@@ -70,8 +70,9 @@ the public game repo; an agent pushes to `main` here, which GitHub Free cannot p
 
 ## Consequences
 - A new command is a new module plus its tests; `verify` and `selftest` pick up every task's tests.
-- A worktree whose branch predates `tools/githooks/` has no pre-push hook while `core.hooksPath` points there (git
-  skips a missing hook), so pushes from it neither guard `main` nor upload LFS objects until it rebases onto this
-  foundation.
+- A checkout whose branch predates `tools/githooks/` (the main checkout until this merges, and every worktree branched
+  before it) has no pre-push hook while `core.hooksPath` points there (git skips a missing hook), so pushes from it
+  neither guard `main` nor upload LFS objects until it rebases onto this foundation; until then push LFS files with
+  `git lfs push origin <branch>`. Before this change only the sample hooks existed, so nothing is lost.
 - Hard to revert once assets exist: the bone names, axes and slot names. Easy to revert: the generator, budgets,
   palette and pins.
