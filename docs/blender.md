@@ -75,15 +75,21 @@ closed at both ends by triangle fans (no n-gons), with a simple UV strip per she
 any model or screenshot.
 
 - An egg-shaped bald head (a round crown, widest a little above the middle, narrower at the jaw) with a long simple
-  nose and small ears, and **no eyes or mouth**: they are changeable slots (`eyes`, `mouth`).
+  nose and small ears, and **no eyes or mouth**: they are changeable slots (`eyes`, `mouth`). The nose starts as a
+  tall narrow bridge, points mostly forward and tapers: pointing down with a round tip, its shaded underside read as a
+  small open mouth in the front reference.
 - Slightly lanky adult proportions, scaled last so the top of the head is at exactly 1.75 m; the eyes' height
   (`eye_height` in `info.json`) lands near 1.6 m.
-- A T-pose: the arms horizontal at shoulder height, the palms down, the thumbs pointing forward.
-- Five separate fingers per hand, each a three-segment loft (four rings, so a rig can bend it later), slightly spread.
+- A T-pose: the arms horizontal at shoulder height, the palms down, the thumbs pointing forward (`pose` in
+  `info.json`, measured on the mesh; a test holds it).
+- The forearms and shins taper and end inside the palm or the foot, so the wrists and ankles show no cuff or ring that
+  image-to-3D could copy as a band.
+- Five separate fingers per hand, each a three-segment loft (so a rig can bend it later) with a rounded tip, slightly
+  spread.
 - Bare feet, the soles at z = 0, with five simple toes (the big toe on the inside).
 - Three objects: `Body` (skin), `Shirt` (a plain t-shirt with short sleeves) and `Shorts`, each with one flat
   material. The clothing is a separate closed shell over the body, so it can be swapped.
-- About 3,000 triangles and no armature: a blockout and a reference, not yet a rigged body.
+- About 3,400 triangles and no armature: a blockout and a reference, not yet a rigged body.
 
 | Preset | What it changes |
 |---|---|
@@ -95,11 +101,11 @@ Per preset, `<out>/<preset>/` (default `D:/prime-art-raw/mannequin/<preset>/`) h
 
 | File | What |
 |---|---|
-| `mannequin_<preset>.glb`, `.blend` | The model; the `.blend` opens in Blender for a hand edit |
+| `mannequin_<preset>.glb`, `.blend` | The model; the `.blend` opens in Blender for a hand edit (a re-run overwrites it and keeps no `.blend1`) |
 | `refs/front.png`, `side.png`, `back.png` | Reference images for Meshy: orthographic, `--size` pixels square (1024), a pure white background, the same scale and centre in every view, the body filling the frame (a 3 percent margin), Workbench's soft default studio light without shadows, specular, cavity, outline or text. `side` shows the model's left |
 | `refs_flat/...` | The same three views unlit: flat colour only |
 | `sheet/sheet.png`, `sheet/stats.json` | The 8-view review sheet through `render` |
-| `info.json` | Height, lowest point, eye height, triangles, vertices and shells per object, and per reference view its corner colours and the box of non-white pixels (so a test can prove the background is white and the frame is filled) |
+| `info.json` | Height, lowest point, eye height, the measured pose, triangles, vertices and shells per object, and per reference view its corner colours and the box of non-white pixels (so a test can prove the background is white and the frame is filled) |
 
 The reference images come from `tools/blender/refs.py`, which any Blender script can use.
 
