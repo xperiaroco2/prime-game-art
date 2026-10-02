@@ -19,7 +19,7 @@ character_scene_yaw_deg = 180 # the character scene turns the +Z-facing model to
 
 [body]
 height_m = 1.75              # top of the head
-height_min_m = 1.65
+height_min_m = 1.70          # the ADR sketch's 1.7 to 1.8 m
 height_max_m = 1.80          # never taller than the game's capsule
 eye_height_m = 1.6           # the game's camera height (content/modes/base_mode.tres in prime-game)
 eye_tolerance_m = 0.08
@@ -185,10 +185,13 @@ face = "eye and mouth frames come from the face texture slots, not from bones or
 # Budgets: triangles after triangulation; vertices as imported (split at UV seams and hard edges, close to what the
 # GPU draws). Above the target is a warning, above the cap a failure. "provisional" budgets are not in the ADR
 # sketch and are a starting guess for the first real pieces.
+# The assembled character is not judged by `check` yet (it checks one file at a time). The ADR sketch's figures stay;
+# the body plus one piece per slot at their targets (6,000 + 3 x 1,200 + 3 x 800 = 12,000) already exceeds them: an
+# open question for the engineer.
 [budgets.character]
 note = "the assembled character LOD0: body plus every piece; 10 players, about 20 skinned bodies with corpses"
-triangles_target = 10000
-triangles_cap = 14000
+triangles_target = 8000
+triangles_cap = 12000
 vertices_target = 8000
 vertices_cap = 12000
 

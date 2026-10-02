@@ -57,7 +57,7 @@ and sockets live in the Godot scene instead.
 **Axes and size.** glTF, Y up, 1 unit = 1 m, front +Z (`Vector3.MODEL_FRONT`; Blender shows it as -Y, and the
 character's left at +X). Feet at y = 0 and the origin between them, transforms applied, so a model drops into the
 scene without fix-up nodes. The character scene turns the model 180 degrees to face -Z, like the greybox. Height
-1.75 m (1.65 to 1.80 allowed) with the eyes near 1.6 m: the game's capsule is 1.8 m tall with a 0.4 m radius and the
+1.75 m (1.70 to 1.80 allowed, the ADR sketch's window) with the eyes near 1.6 m: the game's capsule is 1.8 m tall with a 0.4 m radius and the
 camera sits at 1.6 m, so a taller body would poke out of its own collision shape and the first-person view would not
 match the body. T-pose rest, arms horizontal and palms down, the pose Godot's profile uses.
 
@@ -84,15 +84,17 @@ ragdoll: falls, downed and dead are clips too.
 
 | Budget | Triangles target | Triangles cap | Vertices target / cap |
 |---|---|---|---|
-| Assembled character | 10,000 | 14,000 | 8,000 / 12,000 |
+| Assembled character (not checked yet) | 8,000 | 12,000 | 8,000 / 12,000 |
 | Base body (five fingers) | 6,000 | 8,000 | 8,000 / 12,000 |
 | Clothing piece (provisional) | 1,200 | 2,000 | |
 | Hair or hat | 800 | 1,200 | |
 | Face accessory, back or belt item | 800 | 1,200 | |
 | Prop or third-person hand item | 1,500 | 2,000 | |
 
-The body budget rose from the ADR sketch's 5,000 / 6,000 to 6,000 / 8,000 for five-finger hands, and the assembled
-character from 8,000 / 12,000 to 10,000 / 14,000 with it. The clothing budget is a starting guess (the ADR sketch had
+The body budget rose from the ADR sketch's 5,000 / 6,000 to 6,000 / 8,000 for five-finger hands. The assembled
+character keeps the ADR sketch's 8,000 / 12,000, although the body plus one piece per slot at their targets comes to
+12,000: whether to raise it is the engineer's call. `check` judges one file against its kind's budget and does not
+judge the assembled character yet. The clothing budget is a starting guess (the ADR sketch had
 skinned outfits in v2) to revise on the first real pieces. Triangles count after triangulation; vertices count as
 imported, split at UV seams and hard edges, close to what the GPU draws (a glTF file always comes split).
 
@@ -104,7 +106,7 @@ imported, split at UV seams and hard edges, close to what the GPU draws (a glTF 
 | n-gons, loose vertices and edges, non-manifold edges (more than two faces on an edge): fail | yes | yes | yes | yes |
 | open edges, debris parts under 4 faces, UVs outside 0..1, unapplied modifiers, extra materials: warn | yes | yes | yes | yes |
 | a UV map on every mesh; location 0, rotation 0, scale 1 on every mesh and armature | yes | yes | yes | yes |
-| height 1.65 to 1.80 m; feet at y = 0 | fail | | | feet warn |
+| height 1.70 to 1.80 m; feet at y = 0 | fail | | | feet warn |
 | eyes near 1.6 m (from the eye bones) | warn | | | |
 | facing: toes towards +Z, left hand at +X | fail | | | |
 | one armature, skinned; no extra bones; parents as in the profile; duplicate names after the map | yes | yes | | |

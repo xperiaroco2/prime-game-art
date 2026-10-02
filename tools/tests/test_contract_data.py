@@ -106,7 +106,8 @@ class ContractTest(unittest.TestCase):
     def test_budgets(self) -> None:
         budgets = self.contract["budgets"]
         self.assertEqual((budgets["body"]["triangles_target"], budgets["body"]["triangles_cap"]), (6000, 8000))
-        self.assertEqual((budgets["character"]["triangles_target"], budgets["character"]["triangles_cap"]), (10000, 14000))
+        self.assertEqual((budgets["character"]["triangles_target"], budgets["character"]["triangles_cap"]), (8000, 12000))
+        self.assertEqual((self.contract["body"]["height_min_m"], self.contract["body"]["height_max_m"]), (1.7, 1.8))
         self.assertFalse(self.contract["animation"]["ragdoll"])
 
 
