@@ -2,6 +2,7 @@
 # Used by `check --map mixamo` and `rename-bones --map mixamo`. The names are Mixamo's published FBX naming
 # (mixamorig:Hips ...); no Mixamo file is in this repository, and Mixamo output never enters the public game repo.
 # Mixamo rigs have no Root and no Jaw: `check` reports them missing until they are added in Blender.
+# confirmed = true means "from Mixamo's published naming": no Mixamo file has been checked against it yet.
 
 source = "Mixamo"
 confirmed = true

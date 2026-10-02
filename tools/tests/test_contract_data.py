@@ -123,7 +123,7 @@ class BoneMapTest(unittest.TestCase):
     def test_unconfirmed_maps_are_marked(self) -> None:
         self.assertTrue(_contract.load_map("mixamo")["confirmed"])
         self.assertFalse(_contract.load_map("meshy")["confirmed"])
-        self.assertFalse(_contract.load_map("quaternius")["confirmed"])
+        self.assertTrue(_contract.load_map("quaternius")["confirmed"])
 
     def test_mixamo_names(self) -> None:
         mixamo = _contract.load_map("mixamo")

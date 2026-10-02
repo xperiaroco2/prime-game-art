@@ -1,28 +1,27 @@
 # Quaternius rig names -> Godot's SkeletonProfileHumanoid names (contract/humanoid.json).
-# UNCONFIRMED: no Quaternius file has arrived yet. This map guesses Unreal-mannequin-style names (pelvis, spine_01,
-# clavicle_l ...), which Quaternius' universal animation rigs are said to follow. Fix it from the first file
-# (`check --map quaternius` lists the bones it could not map as extra) and set confirmed = true.
+# Confirmed on 2026-10-02 from the real rig (xperiaroco2/prime-game-art#5): UAL1_Standard.glb (Universal Animation
+# Library) and Superhero_Male_FullBody.gltf (Universal Base Characters) share one rig of 65 bones with Unreal-mannequin
+# names (pelvis, spine_01, clavicle_l ...), except the head bone, which is "Head". It has no twist or IK bones, and no
+# Jaw or eye bones: `check` reports those missing until they are added in Blender.
 
 source = "Quaternius"
-confirmed = false
+confirmed = true
 prefix_pattern = ''
-# Twist and IK helper bones of the Unreal mannequin layout; rename-bones deletes them.
+# End bones past the last finger joint and past the toes. The Base Characters weight some vertices to the finger ones:
+# rename-bones moves those weights to the parent bone (the distal joint), and check counts them there.
 drop = [
-  "upperarm_twist_01_l",
-  "lowerarm_twist_01_l",
-  "thigh_twist_01_l",
-  "calf_twist_01_l",
-  "upperarm_twist_01_r",
-  "lowerarm_twist_01_r",
-  "thigh_twist_01_r",
-  "calf_twist_01_r",
-  "ik_foot_root",
-  "ik_foot_l",
-  "ik_foot_r",
-  "ik_hand_root",
-  "ik_hand_gun",
-  "ik_hand_l",
-  "ik_hand_r",
+  "thumb_04_leaf_l",
+  "index_04_leaf_l",
+  "middle_04_leaf_l",
+  "ring_04_leaf_l",
+  "pinky_04_leaf_l",
+  "ball_leaf_l",
+  "thumb_04_leaf_r",
+  "index_04_leaf_r",
+  "middle_04_leaf_r",
+  "ring_04_leaf_r",
+  "pinky_04_leaf_r",
+  "ball_leaf_r",
 ]
 
 [rename]
@@ -32,7 +31,7 @@ spine_01 = "Spine"
 spine_02 = "Chest"
 spine_03 = "UpperChest"
 neck_01 = "Neck"
-head = "Head"
+Head = "Head"
 clavicle_l = "LeftShoulder"
 upperarm_l = "LeftUpperArm"
 lowerarm_l = "LeftLowerArm"

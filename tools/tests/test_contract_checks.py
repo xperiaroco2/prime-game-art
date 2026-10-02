@@ -6,6 +6,31 @@ import unittest
 from runner.commands import _checks, _contract
 
 
+# The real Quaternius rig (xperiaroco2/prime-game-art#5), as `check` measured it in UAL1_Standard.glb and
+# Superhero_Male_FullBody.gltf (the same 65 bones and parents in both): (name, parent), in file order.
+QUATERNIUS_RIG = [
+    ("root", ""), ("pelvis", "root"), ("spine_01", "pelvis"), ("spine_02", "spine_01"), ("spine_03", "spine_02"),
+    ("neck_01", "spine_03"), ("Head", "neck_01"), ("clavicle_l", "spine_03"), ("upperarm_l", "clavicle_l"),
+    ("lowerarm_l", "upperarm_l"), ("hand_l", "lowerarm_l"), ("index_01_l", "hand_l"), ("index_02_l", "index_01_l"),
+    ("index_03_l", "index_02_l"), ("index_04_leaf_l", "index_03_l"), ("middle_01_l", "hand_l"),
+    ("middle_02_l", "middle_01_l"), ("middle_03_l", "middle_02_l"), ("middle_04_leaf_l", "middle_03_l"),
+    ("pinky_01_l", "hand_l"), ("pinky_02_l", "pinky_01_l"), ("pinky_03_l", "pinky_02_l"),
+    ("pinky_04_leaf_l", "pinky_03_l"), ("ring_01_l", "hand_l"), ("ring_02_l", "ring_01_l"),
+    ("ring_03_l", "ring_02_l"), ("ring_04_leaf_l", "ring_03_l"), ("thumb_01_l", "hand_l"),
+    ("thumb_02_l", "thumb_01_l"), ("thumb_03_l", "thumb_02_l"), ("thumb_04_leaf_l", "thumb_03_l"),
+    ("clavicle_r", "spine_03"), ("upperarm_r", "clavicle_r"), ("lowerarm_r", "upperarm_r"),
+    ("hand_r", "lowerarm_r"), ("index_01_r", "hand_r"), ("index_02_r", "index_01_r"), ("index_03_r", "index_02_r"),
+    ("index_04_leaf_r", "index_03_r"), ("middle_01_r", "hand_r"), ("middle_02_r", "middle_01_r"),
+    ("middle_03_r", "middle_02_r"), ("middle_04_leaf_r", "middle_03_r"), ("pinky_01_r", "hand_r"),
+    ("pinky_02_r", "pinky_01_r"), ("pinky_03_r", "pinky_02_r"), ("pinky_04_leaf_r", "pinky_03_r"),
+    ("ring_01_r", "hand_r"), ("ring_02_r", "ring_01_r"), ("ring_03_r", "ring_02_r"),
+    ("ring_04_leaf_r", "ring_03_r"), ("thumb_01_r", "hand_r"), ("thumb_02_r", "thumb_01_r"),
+    ("thumb_03_r", "thumb_02_r"), ("thumb_04_leaf_r", "thumb_03_r"), ("thigh_l", "pelvis"), ("calf_l", "thigh_l"),
+    ("foot_l", "calf_l"), ("ball_l", "foot_l"), ("ball_leaf_l", "ball_l"), ("thigh_r", "pelvis"),
+    ("calf_r", "thigh_r"), ("foot_r", "calf_r"), ("ball_r", "foot_r"), ("ball_leaf_r", "ball_r"),
+]
+
+
 def bone_heads() -> dict[str, list[float]]:
     heads = {
         "LeftEye": [0.05, 1.6, 0.08],
@@ -185,6 +210,40 @@ class EvaluateTest(unittest.TestCase):
         statuses = self.statuses(self.evaluate(measure, bone_map=bone_map))
         self.assertNotIn("dropped_bones", statuses)
         self.assertEqual(statuses["root_unweighted"], _checks.FAIL)
+
+    def test_the_quaternius_map_fits_the_real_rig(self) -> None:
+        quaternius = _contract.load_map("quaternius")
+        self.assertTrue(quaternius["confirmed"])
+        self.assertEqual(len(QUATERNIUS_RIG), 65)
+        parents = _contract.profile_parents(self.profile)
+        kept = [n for n, _ in QUATERNIUS_RIG if not _contract.is_dropped(n, quaternius)]
+        self.assertEqual(len(kept), 53)
+        self.assertEqual(sorted(n for n, _ in QUATERNIUS_RIG if n not in kept), sorted(quaternius["drop"]))
+        mapped = {_contract.mapped_name(n, quaternius) for n in kept}
+        self.assertEqual(sorted(set(parents) - mapped), ["Jaw", "LeftEye", "RightEye"])
+        self.assertEqual(sorted(mapped - set(parents)), [])
+        rig_names = {n for n, _ in QUATERNIUS_RIG}
+        self.assertEqual([n for n in quaternius["rename"] if n not in rig_names], [], "map entries the rig lacks")
+
+    def test_a_quaternius_body_passes_but_for_the_jaw_and_eyes(self) -> None:
+        quaternius = _contract.load_map("quaternius")
+        from_profile = {target: source for source, target in quaternius["rename"].items()}
+        heads = bone_heads()
+        bones = []
+        for name, parent in QUATERNIUS_RIG:
+            head = heads.get(_contract.mapped_name(name, quaternius), [0.0, 1.0, 0.0])
+            bones.append({"name": name, "parent": parent, "head": head, "tail": [0.0, 1.1, 0.0], "deform": True})
+        measure = good_body(self.profile)
+        measure["armatures"][0]["bones"] = bones
+        weights = measure["meshes"][0]["weights"]
+        weights["weighted_bones"] = {from_profile[n]: c for n, c in weights["weighted_bones"].items()}
+        weights["weighted_bones"]["index_04_leaf_l"] = 3  # the Base Characters weight the finger tips
+        report = self.evaluate(measure, bone_map=quaternius)
+        failed = sorted(r["check"] for r in report["results"] if r["status"] == _checks.FAIL)
+        self.assertEqual(failed, ["missing_bones"], report["results"])
+        detail = {r["check"]: r["detail"] for r in report["results"]}
+        self.assertEqual(detail["missing_bones"], "missing: LeftEye, RightEye, Jaw")
+        self.assertEqual(self.statuses(report)["bone_parents"], _checks.PASS)
 
     def test_rigid_accessory(self) -> None:
         report = self.evaluate(rigid_piece(900), "accessory")

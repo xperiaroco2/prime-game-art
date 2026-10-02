@@ -71,6 +71,13 @@ class CheckCommandTest(unittest.TestCase):
             names=to_mixamo,
             extra_leaves={"mixamorig:HeadTop_End": "Head", "mixamorig:LeftToe_End": "LeftToes"},
         )
+        quaternius = _contract.load_map("quaternius")
+        cls.quaternius = cls.build(
+            "quaternius.glb",
+            names={target: source for source, target in quaternius["rename"].items()},
+            extra_leaves={"index_04_leaf_l": "LeftIndexDistal", "ball_leaf_l": "LeftToes"},
+            weighted_leaves=["index_04_leaf_l"],
+        )
 
     @staticmethod
     def build(name: str, **spec: object) -> Path:
@@ -136,6 +143,18 @@ class CheckCommandTest(unittest.TestCase):
         self.assertEqual(code, 0, output)
         self.assertEqual(report["summary"]["warn"], 0, output)
 
+    def test_quaternius_end_bones_go_and_their_weights_stay(self) -> None:
+        code, report, output = self.check(self.quaternius, "body", "--map", "quaternius")
+        self.assertEqual(code, 0, output)
+        self.assertIn("weights move from index_04_leaf_l to index_03_l", output)
+        renamed = WORK / "quaternius_renamed.glb"
+        code, output = run_cli("rename-bones", self.quaternius.as_posix(), "--map", "quaternius", "--out", renamed.as_posix())
+        self.assertEqual(code, 0, output)
+        self.assertIn("dropped 2", output)
+        self.assertIn("index_04_leaf_l -> index_03_l", output)
+        code, report, output = self.check(renamed, "body")
+        self.assertEqual(code, 0, output)
+        self.assertEqual(report["summary"]["warn"], 0, output)
 
     def test_dropping_a_middle_bone_leaves_its_child_in_place(self) -> None:
         chain = self.build("chain.blend", connected=True)

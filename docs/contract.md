@@ -38,8 +38,11 @@ weighted, optional or a finger, no two map entries rename to the same bone.
 measurements, prints the same, and exits 1 when any check fails. Loads `.glb`, `.gltf`, `.fbx`, `.obj` and `.blend`.
 
 `rename-bones` strips the map's prefix, renames the bones (Blender renames the vertex groups with them, so the skin
-follows), deletes the unweighted helper bones the map lists under `drop` (children move to the parent; a weighted one
-is kept and reported) and saves to `--out`. The source file is never changed. Run `check` on the result.
+follows), deletes the bones the map lists under `drop` and saves to `--out`. The source file is never changed. A
+dropped bone's children move to its parent without moving (they are disconnected first), and its weights move to its
+nearest ancestor that stays: an end bone past the last finger joint never moves apart from that joint, so the skin
+deforms the same. Only a weighted dropped bone without such an ancestor is kept and reported. `check --map` reads the
+rig the same way, so a file that passes `check --map` passes `check` after `rename-bones`. Run `check` on the result.
 
 ## What the contract says, and why
 
@@ -118,10 +121,20 @@ shape is ignored.
 
 `mixamo.toml` follows Mixamo's published naming (`mixamorig:Hips`, `Spine1` for Chest, `LeftHandPinky3` for
 LeftLittleDistal); Mixamo rigs have no `Root` and no `Jaw`, so `check --map mixamo` reports them missing until they
-are added in Blender. `meshy.toml` and `quaternius.toml` are guesses with `confirmed = false`: Meshy says its rig
-follows Mixamo-style names with its own spine and clavicle names, and Quaternius' rigs are said to follow the
-Unreal mannequin (`pelvis`, `spine_01`, `clavicle_l`). When the first rigged file arrives, `check <file> --kind body
---map <name>` lists every name the map missed as an extra bone; fix the map, set `confirmed = true` and add a test.
+are added in Blender. Its `confirmed = true` means "from the published naming": no Mixamo file has been checked yet.
+
+`quaternius.toml` is confirmed from the real rig
+([#5](https://github.com/xperiaroco2/prime-game-art/issues/5)): the Universal Animation Library
+(`UAL1_Standard.glb`) and the Universal Base Characters (`Superhero_Male_FullBody.gltf`) share one rig of 65 bones
+with Unreal-mannequin names (`pelvis`, `spine_01`, `clavicle_l`), except `Head`. It has no twist or IK bones. Its 12
+end bones (`thumb_04_leaf_l` ... `pinky_04_leaf_r`, `ball_leaf_l`, `ball_leaf_r`) are dropped; the Base Characters
+weight a few vertices to the finger ones, and those weights move to the distal joint. It has no `Jaw` and no eye
+bones, so `check --map quaternius` reports those three missing until they are added in Blender. The test
+`test_the_quaternius_map_fits_the_real_rig` pins the 65 names and parents as measured (no raw file is committed).
+
+`meshy.toml` is still a guess with `confirmed = false`: Meshy says its rig follows Mixamo-style names with its own
+spine and clavicle names. When the first rigged file arrives, `check <file> --kind body --map meshy` lists every name
+the map missed as an extra bone; fix the map, set `confirmed = true` and add a test.
 
 ## Tests
 
@@ -129,5 +142,6 @@ Unreal mannequin (`pelvis`, `spine_01`, `clavicle_l`). When the first rigged fil
 `test_contract_tools.py` runs `contract --check` in Godot and builds fixtures in Blender with
 `tools/blender/make_contract_fixture.py`: a 1.75 m box-mesh body on every profile bone (one box per bone, fully
 weighted to it), a copy with defects (extra and missing bones, five weights, an n-gon, a non-manifold fin, too tall,
-facing backwards), and a copy with Mixamo names and end bones for the map and `rename-bones`. Without Godot or Blender
+facing backwards), copies with Mixamo and Quaternius names and end bones (one of them weighted) for the maps and
+`rename-bones`, and a copy with connected chains that drops a middle bone. Without Godot or Blender
 those tests skip with a message naming the variable to set.
