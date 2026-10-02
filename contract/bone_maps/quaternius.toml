@@ -1,0 +1,81 @@
+# Quaternius rig names -> Godot's SkeletonProfileHumanoid names (contract/humanoid.json).
+# UNCONFIRMED: no Quaternius file has arrived yet. This map guesses Unreal-mannequin-style names (pelvis, spine_01,
+# clavicle_l ...), which Quaternius' universal animation rigs are said to follow. Fix it from the first file
+# (`check --map quaternius` lists the bones it could not map as extra) and set confirmed = true.
+
+source = "Quaternius"
+confirmed = false
+prefix_pattern = ''
+# Twist and IK helper bones of the Unreal mannequin layout; rename-bones deletes them.
+drop = [
+  "upperarm_twist_01_l",
+  "lowerarm_twist_01_l",
+  "thigh_twist_01_l",
+  "calf_twist_01_l",
+  "upperarm_twist_01_r",
+  "lowerarm_twist_01_r",
+  "thigh_twist_01_r",
+  "calf_twist_01_r",
+  "ik_foot_root",
+  "ik_foot_l",
+  "ik_foot_r",
+  "ik_hand_root",
+  "ik_hand_gun",
+  "ik_hand_l",
+  "ik_hand_r",
+]
+
+[rename]
+root = "Root"
+pelvis = "Hips"
+spine_01 = "Spine"
+spine_02 = "Chest"
+spine_03 = "UpperChest"
+neck_01 = "Neck"
+head = "Head"
+clavicle_l = "LeftShoulder"
+upperarm_l = "LeftUpperArm"
+lowerarm_l = "LeftLowerArm"
+hand_l = "LeftHand"
+thumb_01_l = "LeftThumbMetacarpal"
+thumb_02_l = "LeftThumbProximal"
+thumb_03_l = "LeftThumbDistal"
+index_01_l = "LeftIndexProximal"
+index_02_l = "LeftIndexIntermediate"
+index_03_l = "LeftIndexDistal"
+middle_01_l = "LeftMiddleProximal"
+middle_02_l = "LeftMiddleIntermediate"
+middle_03_l = "LeftMiddleDistal"
+ring_01_l = "LeftRingProximal"
+ring_02_l = "LeftRingIntermediate"
+ring_03_l = "LeftRingDistal"
+pinky_01_l = "LeftLittleProximal"
+pinky_02_l = "LeftLittleIntermediate"
+pinky_03_l = "LeftLittleDistal"
+thigh_l = "LeftUpperLeg"
+calf_l = "LeftLowerLeg"
+foot_l = "LeftFoot"
+ball_l = "LeftToes"
+clavicle_r = "RightShoulder"
+upperarm_r = "RightUpperArm"
+lowerarm_r = "RightLowerArm"
+hand_r = "RightHand"
+thumb_01_r = "RightThumbMetacarpal"
+thumb_02_r = "RightThumbProximal"
+thumb_03_r = "RightThumbDistal"
+index_01_r = "RightIndexProximal"
+index_02_r = "RightIndexIntermediate"
+index_03_r = "RightIndexDistal"
+middle_01_r = "RightMiddleProximal"
+middle_02_r = "RightMiddleIntermediate"
+middle_03_r = "RightMiddleDistal"
+ring_01_r = "RightRingProximal"
+ring_02_r = "RightRingIntermediate"
+ring_03_r = "RightRingDistal"
+pinky_01_r = "RightLittleProximal"
+pinky_02_r = "RightLittleIntermediate"
+pinky_03_r = "RightLittleDistal"
+thigh_r = "RightUpperLeg"
+calf_r = "RightLowerLeg"
+foot_r = "RightFoot"
+ball_r = "RightToes"

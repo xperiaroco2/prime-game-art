@@ -1,0 +1,79 @@
+# Meshy auto-rig names -> Godot's SkeletonProfileHumanoid names (contract/humanoid.json).
+# UNCONFIRMED: no rigged Meshy file has arrived yet. Meshy says its rig follows Mixamo-style naming with its own spine
+# and clavicle names; this map is that guess (Mixamo names without a prefix, Spine01 and Spine02). Fix it from the
+# first rigged file (`check --map meshy` lists the bones it could not map as extra) and set confirmed = true.
+
+source = "Meshy auto-rigging"
+confirmed = false
+prefix_pattern = ''
+drop = [
+  "HeadTop_End",
+  "LeftHandThumb4",
+  "LeftHandIndex4",
+  "LeftHandMiddle4",
+  "LeftHandRing4",
+  "LeftHandPinky4",
+  "RightHandThumb4",
+  "RightHandIndex4",
+  "RightHandMiddle4",
+  "RightHandRing4",
+  "RightHandPinky4",
+  "LeftToe_End",
+  "RightToe_End",
+]
+
+[rename]
+Hips = "Hips"
+Spine = "Spine"
+Spine01 = "Chest"
+Spine02 = "UpperChest"
+Neck = "Neck"
+Head = "Head"
+LeftEye = "LeftEye"
+RightEye = "RightEye"
+LeftShoulder = "LeftShoulder"
+LeftArm = "LeftUpperArm"
+LeftForeArm = "LeftLowerArm"
+LeftHand = "LeftHand"
+LeftHandThumb1 = "LeftThumbMetacarpal"
+LeftHandThumb2 = "LeftThumbProximal"
+LeftHandThumb3 = "LeftThumbDistal"
+LeftHandIndex1 = "LeftIndexProximal"
+LeftHandIndex2 = "LeftIndexIntermediate"
+LeftHandIndex3 = "LeftIndexDistal"
+LeftHandMiddle1 = "LeftMiddleProximal"
+LeftHandMiddle2 = "LeftMiddleIntermediate"
+LeftHandMiddle3 = "LeftMiddleDistal"
+LeftHandRing1 = "LeftRingProximal"
+LeftHandRing2 = "LeftRingIntermediate"
+LeftHandRing3 = "LeftRingDistal"
+LeftHandPinky1 = "LeftLittleProximal"
+LeftHandPinky2 = "LeftLittleIntermediate"
+LeftHandPinky3 = "LeftLittleDistal"
+LeftUpLeg = "LeftUpperLeg"
+LeftLeg = "LeftLowerLeg"
+LeftFoot = "LeftFoot"
+LeftToeBase = "LeftToes"
+RightShoulder = "RightShoulder"
+RightArm = "RightUpperArm"
+RightForeArm = "RightLowerArm"
+RightHand = "RightHand"
+RightHandThumb1 = "RightThumbMetacarpal"
+RightHandThumb2 = "RightThumbProximal"
+RightHandThumb3 = "RightThumbDistal"
+RightHandIndex1 = "RightIndexProximal"
+RightHandIndex2 = "RightIndexIntermediate"
+RightHandIndex3 = "RightIndexDistal"
+RightHandMiddle1 = "RightMiddleProximal"
+RightHandMiddle2 = "RightMiddleIntermediate"
+RightHandMiddle3 = "RightMiddleDistal"
+RightHandRing1 = "RightRingProximal"
+RightHandRing2 = "RightRingIntermediate"
+RightHandRing3 = "RightRingDistal"
+RightHandPinky1 = "RightLittleProximal"
+RightHandPinky2 = "RightLittleIntermediate"
+RightHandPinky3 = "RightLittleDistal"
+RightUpLeg = "RightUpperLeg"
+RightLeg = "RightLowerLeg"
+RightFoot = "RightFoot"
+RightToeBase = "RightToes"
