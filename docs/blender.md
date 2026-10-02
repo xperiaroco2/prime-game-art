@@ -149,7 +149,8 @@ band, the protected border vertices before and after decimation, the cleaned wei
 probe), `sheet/` (the review sheet) and `check/report.json` (`check --kind body --map quaternius`). The check fails
 only on `missing_bones` (the rig has no `Jaw`, `LeftEye` or `RightEye`; they are added in Blender later) and warns
 about the triangles (above the body target of 6,000), the two materials, the dropped end bones and the eye height;
-the command prints the check's exit code and still exits 0.
+the command prints the check's exit code and still exits 0 for that known case, but fails on any other failed check
+(or on `missing_bones` naming another bone).
 
 ## The fixture
 

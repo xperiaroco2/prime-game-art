@@ -71,7 +71,12 @@ def run(args: argparse.Namespace) -> int:
             report = out / "check" / "report.json"
             code = check.run(argparse.Namespace(model=info["glb"], kind="body", slot=None, map="quaternius",
                                                 report=str(report)))
-            common.say(f"  check exit code {code} (the Quaternius rig has no Jaw and no eye bones yet)")
+            unexpected = _stylize.unexpected_failures(json.loads(report.read_text(encoding="utf-8")))
+            common.say(f"  check exit code {code} (the Quaternius rig has no {', '.join(_stylize.KNOWN_MISSING_BONES)}"
+                       f" bones; only other failures fail this command)")
+            if unexpected:
+                raise common.Failure(f"{preset}: check failed beyond the known missing bones: "
+                                     + "; ".join(unexpected))
         if dead:
             raise common.Failure(f"{preset}: the rig no longer moves the skin for {', '.join(dead)}")
     return 0

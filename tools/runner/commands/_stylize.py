@@ -56,6 +56,26 @@ PRESETS: dict[str, dict[str, Any]] = {
 }
 
 
+# The contract's bones the Quaternius rig has none of: `check` reports them as missing_bones on every preset.
+KNOWN_MISSING_BONES = ("Jaw", "LeftEye", "RightEye")
+
+
+def unexpected_failures(report: dict[str, Any]) -> list[str]:
+    """The failures in a `check` report other than missing_bones naming only KNOWN_MISSING_BONES, as
+    'check: detail' lines; empty when the model fails only on what the Quaternius rig is known to lack."""
+    found = []
+    for result in report.get("results", []):
+        if result.get("status") != "fail":
+            continue
+        detail = str(result.get("detail", ""))
+        if result.get("check") == "missing_bones" and detail.startswith("missing: "):
+            bones = {b.strip() for b in detail[len("missing: "):].split(",") if b.strip()}
+            if bones <= set(KNOWN_MISSING_BONES):
+                continue
+        found.append(f"{result.get('check')}: {detail}")
+    return found
+
+
 def default_source() -> Path:
     return common.raw_dir().joinpath(*SOURCE_PARTS)
 

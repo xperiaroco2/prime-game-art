@@ -184,3 +184,25 @@ class RealSourceTest(unittest.TestCase):
         for check in ("finger_chains", "weights_per_vertex", "unweighted_vertices", "weighted_bones", "facing",
                       "open_edges", "non_manifold_edges", "height", "feet_at_zero"):
             self.assertEqual(statuses[check], "pass", check)
+
+
+class CheckVerdictTest(unittest.TestCase):
+    """Which `check` failures stylize-quaternius accepts: only the face bones the Quaternius rig lacks."""
+
+    @staticmethod
+    def report(*results: tuple[str, str, str]) -> dict:
+        return {"results": [{"check": c, "status": s, "detail": d} for c, s, d in results]}
+
+    def test_accepts_only_the_known_missing_bones(self) -> None:
+        report = self.report(("missing_bones", "fail", "missing: LeftEye, RightEye, Jaw"),
+                             ("triangles", "warn", "7,498"), ("height", "pass", "1.750"))
+        self.assertEqual(_stylize.unexpected_failures(report), [])
+
+    def test_another_failed_check_is_unexpected(self) -> None:
+        report = self.report(("missing_bones", "fail", "missing: Jaw"),
+                             ("weights_per_vertex", "fail", "12 vertices with more than 4"))
+        self.assertEqual(_stylize.unexpected_failures(report), ["weights_per_vertex: 12 vertices with more than 4"])
+
+    def test_another_missing_bone_is_unexpected(self) -> None:
+        report = self.report(("missing_bones", "fail", "missing: LeftEye, RightEye, Jaw, LeftIndexProximal"))
+        self.assertEqual(len(_stylize.unexpected_failures(report)), 1)
