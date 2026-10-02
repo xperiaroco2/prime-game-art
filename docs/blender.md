@@ -117,8 +117,12 @@ order:
 2. Reshape as an armature would: every slimmed bone scales its vertices across the bone (its length and the joints
    stay); the head bone scales its vertices uniformly about the neck joint. The weights blend both, so the neck and
    the joints stay smooth.
-3. A blank face: the eye sockets, the lips and the inside of the mouth are smoothed flat (plain Laplacian smoothing,
-   which fills dents).
+3. A blank face: the eye sockets are smoothed flat (plain Laplacian smoothing, which fills dents), and the mouth is
+   filled, never pulled in: the inside of the mouth relaxes into a membrane across the lips, the lips and that
+   membrane move onto a surface fitted to the philtrum and the chin, and a light Taubin pass removes the creases.
+   Pulling the mouth in (the first version) left a notch under the nose that read as an open mouth in profile;
+   `info.json` records the profile dent (`blank_face.dent`: about 3 mm, against about 1 cm before) and a test keeps
+   it under 6 mm.
 4. A longer nose: the nose tip (the front-most centre-line vertex under the eyes) and its surroundings are pulled
    forward and a little down with a smooth falloff.
 5. Softer muscles: Taubin smoothing, which does not shrink the mesh, on the torso, shoulders, arms, legs and neck by
@@ -144,7 +148,8 @@ The three stay inside the issue's ranges (15 to 20 percent slimmer, a 10 to 15 p
 only a little; a test holds them there.
 
 Per preset, `<out>/<preset>/` (default `D:/prime-art-raw/stylized/<preset>/`) holds `quaternius_<preset>.glb`,
-`plan.json`, `info.json` (what was dropped, the eye and nose positions, the triangles before and after, the shorts
+`plan.json`, `info.json` (in the final figure's metres: what was dropped, the eye height, the mouth, its profile
+dent and the nose tip, the triangles before and after, the shorts
 band, the protected border vertices before and after decimation, the cleaned weights, the bones, the materials and the
 probe), `sheet/` (the review sheet) and `check/report.json` (`check --kind body --map quaternius`). The check fails
 only on `missing_bones` (the rig has no `Jaw`, `LeftEye` or `RightEye`; they are added in Blender later) and warns
