@@ -25,6 +25,22 @@ def tiny_png(width: int, height: int) -> bytes:
     return b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", header) + chunk(b"IDAT", zlib.compress(raw)) + chunk(b"IEND", b"")
 
 
+def read_rgb(path: Path) -> tuple[int, int, bytes]:
+    """(width, height, rows) of an 8-bit RGB PNG whose rows all use filter 0, as render_views.py writes them."""
+    data = path.read_bytes()
+    width, height = _review.png_size(path)
+    idat, at = b"", 8
+    while at < len(data):
+        size = int.from_bytes(data[at : at + 4], "big")
+        if data[at + 4 : at + 8] == b"IDAT":
+            idat += data[at + 8 : at + 8 + size]
+        at += size + 12
+    raw = zlib.decompress(idat)
+    stride = width * 3 + 1
+    assert all(raw[row * stride] == 0 for row in range(height))
+    return width, height, b"".join(raw[row * stride + 1 : (row + 1) * stride] for row in range(height))
+
+
 class WithoutBlenderTest(unittest.TestCase):
     """Argument and file handling that needs no Blender."""
 
@@ -140,6 +156,13 @@ class ReviewSheetTest(unittest.TestCase):
         self.assertEqual(self.stats["bones"], 17)
         self.assertEqual(self.stats["materials"], 5)
         self.assertEqual(self.stats["objects"], 2)  # the armature and its mesh, visible ones only
+        self.assertIs(self.stats["outline"], True)
+
+    def test_sheet_has_a_caption_at_the_top_right(self) -> None:
+        width, _, pixels = read_rgb(self.plain_out / "sheet.png")
+        dark = sum(1 for y in range(10, 48) for x in range(1700, 2040)
+                   if pixels[(y * width + x) * 3] < 90)  # text is sRGB 0.2 grey; the band holds no model
+        self.assertGreater(dark, 200)
 
     def test_stands_1_75_m_on_the_ground(self) -> None:
         self.assertAlmostEqual(self.stats["height"], 1.75, delta=0.01)
@@ -156,8 +179,9 @@ class ReviewSheetTest(unittest.TestCase):
 
     def test_animation_contact_sheet(self) -> None:
         out = OUT / "renders" / "humanoid_anim"
-        stats = _review.render(self.fixtures["humanoid"], out, cell=128, anim="Wave", frames=4)
+        stats = _review.render(self.fixtures["humanoid"], out, cell=128, anim="Wave", frames=4, outline=False)
         self.assertEqual(stats["anim"]["frames"], [1, 9, 16, 24])  # whole frames, first to last key
+        self.assertIs(stats["outline"], False)
         self.assertEqual(_review.png_size(Path(stats["anim"]["sheet"])), (512, 128))
 
     def test_an_action_name_with_pipes_gives_file_safe_names(self) -> None:

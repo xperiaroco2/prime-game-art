@@ -11,7 +11,7 @@ Everything these commands write goes to `tools/out/` and is never committed.
 | Command | What it does |
 |---|---|
 | `probe [--out DIR] [--no-fixtures]` | Writes `tools/out/probe/report.json`, `workbench.png` and `eevee.png`, then builds the fixtures |
-| `render <model> [--out DIR] [--cell 512]` | Renders an 8-view review sheet and `stats.json` into `tools/out/renders/<model name>/` |
+| `render <model> [--out DIR] [--cell 512] [--no-outline]` | Renders an 8-view review sheet and `stats.json` into `tools/out/renders/<model name>/` |
 | `render <model> --anim <action> [--frames 8]` | Also an animation contact sheet of that action, seen from the front |
 
 Windows: `tools\run.cmd probe`, `tools\run.cmd render tools/out/fixtures/humanoid.glb`. Git Bash: `tools/run.sh ...`.
@@ -27,7 +27,9 @@ ignored). A relative model path is tried from the current folder, then from the 
 | 0 FRONT | 45 | 90 LEFT | 135 |
 | 180 BACK | 225 | 270 RIGHT | 315 |
 
-- Orthographic Workbench renders (studio light, cavity, a thin dark outline) on a neutral light-grey background.
+- Orthographic Workbench renders (studio light, cavity, a thin dark outline) on a neutral light-grey background. The
+  outline is only a review aid that separates overlapping parts; the game's look has none by default
+  (`docs/pipeline.md`), so `--no-outline` renders without it to compare.
 - The front comes first. The model's front is +Z in glTF, which is -Y in Blender; the camera then turns
   counter-clockwise seen from above, so 90 shows the model's own left side and 270 its right.
 - Every cell has the same scale and centre: the scale fits the model's height or its widest horizontal extent (the
@@ -37,12 +39,16 @@ ignored). A relative model path is tried from the current folder, then from the 
 - Colours: when any visible material has an image texture with pixels, Workbench uses texture colours (Meshy GLBs);
   otherwise material colours. Before rendering, each material's plain Principled base colour is copied into its
   viewport colour, which is what Workbench reads (the FBX and OBJ importers leave it grey).
+- A caption in small type at the top right, in the label band of the 135 cell, names the model file and gives its
+  triangles, height and colour mode, so a sheet forwarded to a phone says what it shows. Labels and caption are drawn
+  with a 5 x 7 bitmap font in upper case; at small cells a label shrinks to its angle and text that does not fit is
+  cut with `..` (at `--cell 64` the caption has no room).
 - The single views are kept in `views/` (`0_000_front.png` ... `7_315.png`).
 
 `stats.json` holds: `triangles` and `vertices` (of the deformed meshes), `objects` (visible ones), `meshes`, `materials`,
 `textured_materials`, `armatures`, `bones`, `actions`, `bounding_box` (`min`, `max`, `size` in metres, world space),
 `height`, `feet_at_zero` (the lowest point within 1 cm of z = 0), `color_type` (`TEXTURE` or `MATERIAL`), `cell`,
-`views`, `sheet` and, with `--anim`, `anim` (the action, its frame range, the sampled frames, the sheet path).
+`views`, `outline`, `sheet` and, with `--anim`, `anim` (the action, its frame range, the sampled frames, the sheet path).
 
 ### Animation contact sheet
 

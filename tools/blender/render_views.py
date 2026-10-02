@@ -62,8 +62,27 @@ FONT = {
     "O": "01110 10001 10001 10001 10001 10001 01110",
     "R": "11110 10001 10001 11110 10100 10010 10001",
     "T": "11111 00100 00100 00100 00100 00100 00100",
+    "D": "11110 10001 10001 10001 10001 10001 11110",
+    "J": "00111 00010 00010 00010 00010 10010 01100",
+    "M": "10001 11011 10101 10101 10001 10001 10001",
+    "P": "11110 10001 10001 11110 10000 10000 10000",
+    "Q": "01110 10001 10001 10001 10101 10010 01101",
+    "S": "01111 10000 10000 01110 00001 00001 11110",
+    "U": "10001 10001 10001 10001 10001 10001 01110",
+    "V": "10001 10001 10001 10001 10001 01010 00100",
+    "W": "10001 10001 10001 10101 10101 10101 01010",
+    "X": "10001 10001 01010 00100 01010 10001 10001",
+    "Y": "10001 10001 01010 00100 00100 00100 00100",
+    "Z": "11111 00001 00010 00100 01000 10000 11111",
+    ".": "00000 00000 00000 00000 00000 01100 01100",
+    "-": "00000 00000 00000 11111 00000 00000 00000",
+    "_": "00000 00000 00000 00000 00000 00000 11111",
+    ":": "00000 01100 01100 00000 01100 01100 00000",
+    "/": "00001 00001 00010 00100 01000 10000 10000",
+    "?": "01110 10001 00001 00010 00100 00000 00100",
     " ": "00000 00000 00000 00000 00000 00000 00000",
 }
+GLYPH = 6  # a glyph's advance in font dots: 5 wide and 1 apart
 
 
 def parse_args() -> argparse.Namespace:
@@ -74,6 +93,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--cell", type=int, default=512)
     parser.add_argument("--anim", default="", help="the action for an animation contact sheet")
     parser.add_argument("--frames", type=int, default=8)
+    parser.add_argument("--no-outline", action="store_true", help="no object outline (it is a review aid only)")
     return parser.parse_args(argv)
 
 
@@ -189,7 +209,7 @@ def stats(model: Path, points: np.ndarray, color_type: str) -> dict:
 # --- rendering ---------------------------------------------------------------------------------------------------
 
 
-def setup_scene(cell: int, color_type: str) -> bpy.types.Object:
+def setup_scene(cell: int, color_type: str, outline: bool) -> bpy.types.Object:
     scene = bpy.context.scene
     scene.render.engine = "BLENDER_WORKBENCH"
     scene.render.resolution_x = scene.render.resolution_y = cell
@@ -205,7 +225,7 @@ def setup_scene(cell: int, color_type: str) -> bpy.types.Object:
     shading.color_type = color_type
     shading.show_cavity = True
     shading.cavity_type = "WORLD"
-    shading.show_object_outline = True
+    shading.show_object_outline = outline
     shading.object_outline_color = (0.15, 0.15, 0.15)
     camera_data = bpy.data.cameras.new("ReviewCamera")
     camera_data.type = "ORTHO"
@@ -275,22 +295,40 @@ def read_png(path: Path) -> np.ndarray:
 # --- composing ---------------------------------------------------------------------------------------------------
 
 
+def text_width(text: str, scale: int) -> int:
+    return max(len(text) * GLYPH - 1, 0) * scale
+
+
+def fit(text: str, width: int, scale: int) -> str:
+    """text cut to at most width pixels, ending in `..` when it was cut."""
+    if text_width(text, scale) <= width:
+        return text
+    keep = max((width // scale + 1) // GLYPH - 2, 0)
+    return text[:keep] + ".." if keep else ""
+
+
 def draw_text(canvas: np.ndarray, text: str, x: int, y: int, scale: int) -> None:
+    """Draws text in the 5 x 7 font (upper case; an unknown character shows as `?`), cut to the canvas width."""
+    text = fit(text, canvas.shape[1] - x, scale)
     for char in text.upper():
-        rows = FONT.get(char, FONT[" "]).split()
+        rows = FONT.get(char, FONT["?"]).split()
         for r, bits in enumerate(rows):
             for c, bit in enumerate(bits):
                 if bit == "1":
                     canvas[y + r * scale : y + (r + 1) * scale, x + c * scale : x + (c + 1) * scale] = TEXT
-        x += 6 * scale
+        x += GLYPH * scale
 
 
-def compose(images: list[np.ndarray], labels: list[str], cell: int, ground: int | None) -> np.ndarray:
+def compose(images: list[np.ndarray], labels: list[str], cell: int, ground: int | None,
+            caption: list[str]) -> np.ndarray:
+    """The cells in rows of 4, each with its label at the top left, and up to two caption lines in small type at the
+    top right of the first row, in the label band of its last cell (the label band never holds the model)."""
     rows = math.ceil(len(images) / COLUMNS)
     columns = min(COLUMNS, len(images))
     sheet = np.empty((rows * cell, columns * cell, 3), dtype=np.float32)
     sheet[:] = BACKGROUND
     scale = label_scale(cell)
+    labels = [label if text_width(label, scale) <= cell - 6 * scale else label.split()[0] for label in labels]
     for index, (image, label) in enumerate(zip(images, labels)):
         top, left = (index // COLUMNS) * cell, (index % COLUMNS) * cell
         tile = sheet[top : top + cell, left : left + cell]
@@ -300,6 +338,14 @@ def compose(images: list[np.ndarray], labels: list[str], cell: int, ground: int 
         tile[:] = image[:, :, :3] * alpha + tile * (1 - alpha)
         tile[:, 0] = tile[0, :] = BORDER
         draw_text(tile, label, 3 * scale, 3 * scale, scale)
+    small = max(1, scale // 2)
+    last = (columns - 1) * cell
+    free_left = last + 3 * scale + text_width(labels[columns - 1], scale) + 6 * scale
+    right = columns * cell - 3 * scale
+    for line, text in enumerate(caption[:2]):
+        text = fit(text.upper(), right - free_left, small)
+        y = 3 * scale + line * 9 * small
+        draw_text(sheet[:, : right], text, right - text_width(text, small), y, small)
     return sheet
 
 
@@ -379,7 +425,7 @@ def main() -> None:
     sync_viewport_colours(materials_used())
     points = world_points()
     report = stats(model, points, color_type)
-    camera = setup_scene(args.cell, color_type)
+    camera = setup_scene(args.cell, color_type, not args.no_outline)
 
     framing = Framing(points, args.cell)
     views = out / "views"
@@ -392,10 +438,12 @@ def main() -> None:
         images.append(read_png(path))
         labels.append(f"{angle} {name}".strip())
     sheet = out / "sheet.png"
-    write_png(sheet, compose(images, labels, args.cell, framing.ground_row(args.cell)))
+    caption = [model.name, f"{report['triangles']} TRIS  {report['height']:.2f} M  {color_type}"]
+    write_png(sheet, compose(images, labels, args.cell, framing.ground_row(args.cell), caption))
     report["sheet"] = str(sheet)
     report["cell"] = args.cell
     report["views"] = labels
+    report["outline"] = not args.no_outline
 
     if args.anim:
         start, end = assign_action(args.anim)
@@ -416,7 +464,9 @@ def main() -> None:
             anim_images.append(read_png(path))
         anim_sheet = out / f"anim_{safe_name(args.anim)}.png"
         anim_labels = [f"F {frame}" for frame in frames]
-        write_png(anim_sheet, compose(anim_images, anim_labels, args.cell, anim_framing.ground_row(args.cell)))
+        anim_caption = [model.name, f"{args.anim}  F {frames[0]}-{frames[-1]}"]
+        write_png(anim_sheet, compose(anim_images, anim_labels, args.cell, anim_framing.ground_row(args.cell),
+                                      anim_caption))
         report["anim"] = {"action": args.anim, "frame_range": [start, end], "frames": frames, "sheet": str(anim_sheet)}
 
     (out / "stats.json").write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
