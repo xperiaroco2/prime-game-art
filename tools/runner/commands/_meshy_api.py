@@ -23,6 +23,11 @@ TASK_PATHS = {
     "text_to_3d": "/openapi/v2/text-to-3d",
     "rig": "/openapi/v1/rigging",
     "animate": "/openapi/v1/animations",
+    "text_to_image": "/openapi/v1/text-to-image",
+    "image_to_image": "/openapi/v1/image-to-image",
+    "image_to_3d": "/openapi/v1/image-to-3d",
+    "multi_image_to_3d": "/openapi/v1/multi-image-to-3d",
+    "remesh": "/openapi/v1/remesh",
 }
 FINAL_STATUSES = ("SUCCEEDED", "FAILED", "CANCELED")
 REDACTED = "<MESHY_API_KEY redacted>"

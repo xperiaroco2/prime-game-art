@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
 
@@ -10,7 +11,15 @@ from runner.commands._meshy_api import Clock, MeshyClient, Response
 
 KEY = "msy_TEST_secret_key_0123456789"
 ASSETS = "https://assets.example.test"
-COSTS = {"preview": 20, "refine": 10, "rig": 5, "animate": 3}
+COSTS = {"preview": 20, "refine": 10, "rig": 5, "animate": 3, "text_to_image": 9, "image_to_image": 9,
+         "image_to_3d": 30, "multi_image_to_3d": 30, "remesh": 5}
+# The create path of each image-mode kind (docs/meshy.md).
+IMAGE_MODE_PATHS = {"/openapi/v1/text-to-image": "text_to_image", "/openapi/v1/image-to-image": "image_to_image",
+                    "/openapi/v1/image-to-3d": "image_to_3d", "/openapi/v1/multi-image-to-3d": "multi_image_to_3d",
+                    "/openapi/v1/remesh": "remesh"}
+# Real PNG and GLB headers, so the runner's format checks pass on downloaded files.
+PNG = b"\x89PNG\r\n\x1a\n"
+GLB = b"glTF"
 
 
 class FakeClock(Clock):
@@ -61,7 +70,8 @@ class FakeMeshy:
             return self.queue.pop(0)
         parsed = urlparse(url)
         if url.startswith(ASSETS):
-            return Response(200, {}, f"bytes of {parsed.path}".encode())
+            magic = {".png": PNG, ".glb": GLB}.get(Path(parsed.path).suffix, b"") if "/tasks/" in parsed.path else b""
+            return Response(200, {}, magic + f"bytes of {parsed.path}".encode())
         if headers.get("Authorization") != f"Bearer {KEY}":
             return Response(401, {}, b'{"message": "Invalid API key"}')
         path = parsed.path
@@ -88,16 +98,27 @@ class FakeMeshy:
             stage = payload["mode"]
         elif path.endswith("/rigging"):
             stage = "rig"
+        elif path in IMAGE_MODE_PATHS:
+            stage = IMAGE_MODE_PATHS[path]
         else:
             stage = "animate"
         if stage in self.refuse:
             return Response(self.refuse[stage], {}, b'{"message": "Invalid request"}')
-        cost = self.cost[stage] * (len(payload.get("action_ids", [])) or 1 if stage == "animate" else 1)
+        if stage == "animate":
+            cost = self.cost[stage] * (len(payload.get("action_ids", [])) or 1)
+        elif stage in ("text_to_image", "image_to_image"):
+            cost = self.cost[stage] * self.images(payload)
+        else:
+            cost = self.cost[stage]
         if self.balance < cost:
             return Response(402, {}, b'{"message": "Insufficient credits"}')
         task_id = f"task-{len(self.tasks) + 1}-{stage}"
         self.tasks[task_id] = {"id": task_id, "stage": stage, "gets": 0, "cost": cost, "payload": payload}
         return Response(202, {}, json.dumps({"result": task_id}).encode())
+
+    @staticmethod
+    def images(payload: dict[str, Any]) -> int:
+        return 3 if payload.get("generate_multi_view") else 1
 
     def _advance(self, task: dict[str, Any]) -> dict[str, Any]:
         task["gets"] += 1
@@ -121,6 +142,19 @@ class FakeMeshy:
             if stage == "refine":
                 out["texture_urls"] = [{"base_color": f"{base}/texture_0.png?Expires=9"}]
                 out["texture_image_url"] = "https://input.example.test/guide.png"  # an input, never downloaded
+        elif stage in ("text_to_image", "image_to_image"):
+            # Meshy names every image image.png (docs example), so a multi-view set collides on the basename.
+            out["image_urls"] = [f"{ASSETS}/tasks/{tid}/output/{n}/image.png?Expires=9"
+                                 for n in range(self.images(task["payload"]))]
+        elif stage in ("image_to_3d", "multi_image_to_3d"):
+            out["model_urls"] = {"glb": f"{base}/model.glb?Expires=9", "fbx": f"{base}/model.fbx?Expires=9"}
+            out["thumbnail_url"] = f"{base}/preview.png?Expires=9"
+            if task["payload"].get("should_texture", True):
+                out["texture_urls"] = [{"base_color": f"{base}/texture_0.png?Expires=9"}]
+            out["image_url" if stage == "image_to_3d" else "image_urls"] = (
+                task["payload"].get("image_url") or task["payload"].get("image_urls"))  # inputs echoed back
+        elif stage == "remesh":
+            out["model_urls"] = {"glb": f"{base}/model.glb?Expires=9"}
         elif stage == "rig":
             out["result"] = {"rigged_character_glb_url": f"{base}/Character_output.glb?Expires=9",
                              "rigged_character_fbx_url": f"{base}/Character_output.fbx?Expires=9",
