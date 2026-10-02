@@ -6,8 +6,9 @@
 Imports GLB, glTF, FBX, OBJ or .blend. The model's front is -Y in Blender (+Z in glTF). Eight orthographic Workbench
 views at 45-degree steps, front first and then counter-clockwise seen from above (the camera passes the model's left
 side first), all at the same scale and centre, go into views/ and into sheet.png: 4 x 2 cells of --cell pixels on a
-neutral light-grey background, each labelled with its angle, with a faint line at z = 0. stats.json describes the
-model. With --anim, anim_<action>.png (the name made file-safe) holds --frames evenly spaced frames of that action, seen from the front.
+neutral light-grey background, each labelled with its angle, with a faint line at z = 0, and a caption naming the
+model. stats.json describes the model. With --anim, anim_<action>.png (the name made file-safe) holds --frames evenly
+spaced whole frames of that action, seen from the front. --no-outline drops the dark object outline.
 
 Texture colours are used when any visible material has an image texture with pixels, material colours otherwise.
 """

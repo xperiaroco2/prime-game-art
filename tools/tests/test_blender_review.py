@@ -189,7 +189,8 @@ class ReviewSheetTest(unittest.TestCase):
         self.assertEqual(_review.png_size(Path(stats["anim"]["sheet"])), (512, 128))
 
     def test_an_action_name_with_pipes_gives_file_safe_names(self) -> None:
-        mixamo = "Armature|mixamo.com|Layer0"  # how Mixamo and Meshy FBX clips are named; `|` is not a Windows file name
+        # How Mixamo and Meshy FBX clips are named; `|` is not allowed in a Windows file name.
+        mixamo = "Armature|mixamo.com|Layer0"
         blender.run_script("make_fixture.py", ["--out", str(OUT / "fixtures"), "--name", "humanoid_mixamo",
                                                "--action", mixamo], timeout=300)
         out = OUT / "renders" / "humanoid_mixamo"

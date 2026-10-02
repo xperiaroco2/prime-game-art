@@ -47,19 +47,21 @@ each other's sheets.
   cut with `..` (at `--cell 64` the caption has no room).
 - The single views are kept in `views/` (`0_000_front.png` ... `7_315.png`).
 
-`stats.json` holds: `triangles` and `vertices` (of the deformed meshes), `objects` (visible ones), `meshes`, `materials`,
-`textured_materials`, `armatures`, `bones`, `actions`, `bounding_box` (`min`, `max`, `size` in metres, world space),
-`height`, `feet_at_zero` (the lowest point within 1 cm of z = 0), `color_type` (`TEXTURE` or `MATERIAL`), `cell`,
-`views`, `outline`, `sheet` and, with `--anim`, `anim` (the action, its frame range, the sampled frames, the sheet path).
+`stats.json` holds: `triangles` and `vertices` (of the deformed meshes), `objects` (visible ones), `meshes`,
+`materials`, `textured_materials`, `armatures`, `bones`, `actions`, `bounding_box` (`min`, `max`, `size` in metres,
+world space), `height`, `feet_at_zero` (the lowest point within 1 cm of z = 0), `color_type` (`TEXTURE` or `MATERIAL`),
+`cell`, `views`, `outline`, `sheet` and, with `--anim`, `anim` (the action, its frame range, the sampled frames, the
+sheet path).
 
 ### Animation contact sheet
 
 `--anim <action>` plays that action on every armature (other NLA tracks muted) and renders `--frames` evenly spaced
-whole frames from the first to the last key (fewer when the clip is shorter), each labelled with its frame number, front view, into `anim_<action>.png` (4 columns, as many rows as needed; the
-frames go into `anim_<action>/`). File and folder names use the action name made file-safe: every run of characters
-other than letters, digits, `.`, `_` and `-` becomes `_`, so Mixamo's `Armature|mixamo.com|Layer0` gives
-`anim_Armature_mixamo.com_Layer0.png`; `stats.json` and the error messages keep the real name. One scale fits the model over all sampled frames. The first and last frames of a
-looping clip show the same pose. An unknown action fails with the list of actions the model has.
+whole frames from the first to the last key (fewer when the clip is shorter), each labelled with its frame number, front
+view, into `anim_<action>.png` (4 columns, as many rows as needed; the frames go into `anim_<action>/`). File and folder
+names use the action name made file-safe: every run of characters other than letters, digits, `.`, `_` and `-` becomes
+`_`, so Mixamo's `Armature|mixamo.com|Layer0` gives `anim_Armature_mixamo.com_Layer0.png`; `stats.json` and the error
+messages keep the real name. One scale fits the model over all sampled frames. The first and last frames of a looping
+clip show the same pose. An unknown action fails with the list of actions the model has.
 
 ## The fixture
 

@@ -203,7 +203,8 @@ def main() -> None:
     folder.mkdir(parents=True, exist_ok=True)
     name = args.name or ("humanoid_textured" if args.textured else "humanoid")
     build(args.textured, folder)
-    bpy.data.actions["Wave"].name = args.action  # a test can mimic a Mixamo clip name such as Armature|mixamo.com|Layer0
+    # A test can mimic a Mixamo clip name such as Armature|mixamo.com|Layer0.
+    bpy.data.actions["Wave"].name = args.action
     target = folder / f"{name}.glb"
     bpy.ops.export_scene.gltf(filepath=str(target), export_format="GLB", export_animations=True, export_apply=False)
     if not target.is_file():
