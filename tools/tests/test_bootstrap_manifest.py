@@ -123,6 +123,14 @@ class ManifestRulesTest(unittest.TestCase):
             data.update(kind="accessory", slot=slot)
             self.assertIn("not allowed for kind 'accessory'", "\n".join(_manifest.validate(data)), slot)
 
+    def test_a_list_or_table_in_a_name_field_is_a_readable_error(self) -> None:
+        for key, phrase in (("kind", "kind "), ("slot", "slot "), ("licence", "licence ")):
+            for value in (["top"], {"a": 1}):
+                with self.subTest(key=key, value=value):
+                    data = good()
+                    data[key] = value
+                    self.assertIn(phrase, "\n".join(_manifest.validate(data)))
+
     def test_not_approved_is_valid(self) -> None:
         data = good()
         data.update(approved_by=[], approved_at="", approval_pr="")

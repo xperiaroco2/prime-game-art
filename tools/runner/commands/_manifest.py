@@ -98,14 +98,14 @@ def validate(data: dict[str, Any], kind_dir: str | None = None, id_dir: str | No
 
     kind = data.get("kind")
     if "kind" in data:
-        if kind not in KIND_SLOTS:
+        if not isinstance(kind, str) or kind not in KIND_SLOTS:
             errors.append(f"kind {kind!r} is not one of {', '.join(sorted(KIND_SLOTS))}")
         elif kind_dir is not None and kind != kind_dir:
             errors.append(f"kind {kind!r} differs from its folder assets/{kind_dir}/")
-    if "slot" in data and kind in KIND_SLOTS:
+    if "slot" in data and isinstance(kind, str) and kind in KIND_SLOTS:
         slot = data["slot"]
         allowed = KIND_SLOTS[kind]
-        if slot not in allowed:
+        if not isinstance(slot, str) or slot not in allowed:
             shown = ", ".join(repr(s) for s in sorted(allowed))
             errors.append(f"slot {slot!r} is not allowed for kind {kind!r} (allowed: {shown})")
 
@@ -167,7 +167,7 @@ def validate(data: dict[str, Any], kind_dir: str | None = None, id_dir: str | No
         errors.append("tools must be a non-empty list of strings (the generator and every tool that changed the asset)")
 
     licence = data.get("licence")
-    if "licence" in data and licence not in LICENCES:
+    if "licence" in data and (not isinstance(licence, str) or licence not in LICENCES):
         errors.append(f"licence {licence!r} is not one of {', '.join(sorted(LICENCES))}")
     if "licence_url" in data and not (isinstance(data["licence_url"], str) and URL_RE.match(data["licence_url"])):
         errors.append("licence_url must be an http(s) URL to the licence or terms that apply")
@@ -180,7 +180,7 @@ def validate(data: dict[str, Any], kind_dir: str | None = None, id_dir: str | No
     if "public_repo_ok" in data:
         if not isinstance(public, bool):
             errors.append("public_repo_ok must be true or false")
-        elif public and licence in LICENCES and licence not in PUBLIC_LICENCES:
+        elif public and isinstance(licence, str) and licence in LICENCES and licence not in PUBLIC_LICENCES:
             errors.append(f"public_repo_ok is true but licence {licence!r} may never reach the public game repo")
 
     errors += _approval(data)
