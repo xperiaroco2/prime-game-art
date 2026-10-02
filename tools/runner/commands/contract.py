@@ -9,6 +9,7 @@ from __future__ import annotations
 import argparse
 import difflib
 import json
+from pathlib import Path
 
 from .. import common
 from . import _contract
@@ -28,18 +29,18 @@ def run(args: argparse.Namespace) -> int:
     failed = False
     committed = path.read_text(encoding="utf-8") if path.is_file() else ""
     if committed == fresh:
-        common.ok(f"{path.relative_to(common.ROOT).as_posix()} matches Godot {raw['godot_version']}")
+        common.ok(f"{_show(path)} matches Godot {raw['godot_version']}")
     elif args.check:
         diff = difflib.unified_diff(committed.splitlines(), fresh.splitlines(), "committed", "Godot", lineterm="", n=1)
         common.bad(
-            f"{path.relative_to(common.ROOT).as_posix()} differs from Godot {raw['godot_version']}",
+            f"{_show(path)} differs from Godot {raw['godot_version']}",
             "\n".join(list(diff)[:30]) + "\nrun `tools/run.py contract` and commit the result",
         )
         failed = True
     else:
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(fresh, encoding="utf-8", newline="\n")
-        common.ok(f"wrote {path.relative_to(common.ROOT).as_posix()} from Godot {raw['godot_version']}")
+        common.ok(f"wrote {_show(path)} from Godot {raw['godot_version']}")
 
     profile = json.loads(fresh)
     errors = _contract.validate_contract(_contract.load_contract(), profile)
@@ -52,5 +53,9 @@ def run(args: argparse.Namespace) -> int:
     for error in errors:
         common.bad(error)
     if not errors:
-        common.ok(f"{_contract.CONTRACT_TOML.relative_to(common.ROOT).as_posix()} agrees with the profile")
+        common.ok(f"{_show(_contract.CONTRACT_TOML)} agrees with the profile")
     return 1 if failed or errors else 0
+
+
+def _show(path: Path) -> str:
+    return path.relative_to(common.ROOT).as_posix() if path.is_relative_to(common.ROOT) else path.as_posix()
