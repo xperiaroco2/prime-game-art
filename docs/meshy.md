@@ -87,8 +87,8 @@ then goes through the items in file order, one at a time:
 
 1. A `done` item is skipped. A `failed` item is skipped unless `--retry-failed` (which keeps its succeeded stages
    and resubmits only the failed one). A rig or animation whose source is not done waits.
-2. Before submitting, it stops if the credits already spent in this batch (the sum of `consumed_credits`) plus the
-   item's estimate would pass the cap, or if the live balance is below the item's estimate.
+2. Before submitting, it stops if the credits already spent in this batch (the sum of `consumed_credits`; a task
+   still in flight counts at least at its stage's estimate) plus the item's estimate would pass the cap, or if the live balance is below the item's estimate.
 3. Each stage is submitted, its task id written to `generation.json` at once, then polled: 5 s, growing 1.5 times
    to at most 60 s, for at most 45 min. A rerun after an interruption polls the recorded task id instead of paying
    again.
@@ -119,11 +119,11 @@ Meshy's queue limit, 10 tasks on Pro, would allow parallel items later.
 ```
 
 `generation.json`: `batch`, `batch_file`, `item`, `variant`, `kind`, `prompt`, `source`, `model_version`,
-`parameters` (per stage), `estimated_credits`, `plan`, `terms_url`, `licence`, `approval` (by, at, ref, credit_cap), `status`
-(`running`, `done`, `failed`), `error`, `started_at`, `finished_at` (UTC), `balance_before`, `balance_after`, `tasks`
-(per stage: `id`, `request`, `submitted_at`, `polled_at`, `status`, `progress`, Meshy's `created_at`, `started_at`,
-`finished_at` in ms, `consumed_credits`, `task_error`) and `files` (`name`, `stage`, `bytes`, `sha256`). Signed URLs
-are not stored: they expire.
+`parameters` (per stage), `estimated_credits`, `plan`, `terms_url`, `licence`, `approval` (by, at, ref, credit_cap),
+`status` (`running`, `done`, `failed`), `error`, `started_at`, `finished_at` (UTC), `balance_before`,
+`balance_after`, `tasks` (per stage: `id`, `request`, `estimated_credits`, `submitted_at`, `polled_at`, `status`,
+`progress`, Meshy's `created_at`, `started_at`, `finished_at` in ms, `consumed_credits`, `task_error`) and `files`
+(`name`, `stage`, `bytes`, `sha256`). Signed URLs are not stored: they expire.
 
 `log.csv` columns: `time, item, variant, kind, status, model, tasks, credits, balance_before, balance_after, files`.
 

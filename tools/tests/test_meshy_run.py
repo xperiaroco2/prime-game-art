@@ -132,6 +132,19 @@ class RunTest(unittest.TestCase):
         self.assertEqual(len(self.fake.posts()), 2)  # a-1 only; b-1 was never submitted
         self.assertFalse((self.raw / "t-batch" / "b-1").exists())
 
+    def test_a_task_in_flight_counts_against_the_cap(self) -> None:
+        self.fake.cost["preview"] = 25  # 5 over the estimate
+        data = batch_data(credit_cap=60, items=batch_data()["items"][:2])
+        data["items"][1]["preview"] = {"ai_model": "meshy-7.1"}
+        self.fake.interrupt_on = 3  # a-1's refine is submitted, then the run is interrupted before it finishes
+        with self.assertRaises(KeyboardInterrupt):
+            self.runner(data).run()
+        self.assertEqual(runs.spent(self.state("a-1")), 35)  # 25 charged + the refine's 10 still in flight
+        self.fake.interrupt_on = None
+        with self.assertRaisesRegex(common.Failure, r"pass the approved cap of 60 \(35 spent already\)"):
+            self.runner(data, only=["b-1"]).run()
+        self.assertEqual(len(self.fake.posts()), 2)
+
     def test_stops_when_the_balance_is_too_low(self) -> None:
         self.fake.balance = 25
         with self.assertRaisesRegex(common.Failure, "the Meshy balance is 25"):

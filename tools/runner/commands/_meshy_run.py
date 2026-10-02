@@ -17,7 +17,7 @@ from typing import Any
 from urllib.parse import urlparse
 
 from .. import common
-from ._meshy_api import MeshyClient, MeshyError
+from ._meshy_api import FINAL_STATUSES, MeshyClient, MeshyError
 from ._meshy_batch import Batch, Item, approval_problems
 
 STATE = "generation.json"
@@ -67,9 +67,17 @@ def sha256(path: Path) -> str:
 
 
 def spent(state: dict[str, Any] | None) -> int:
+    """Credits an item has spent or committed: a task still in flight counts at least at its estimate, since Meshy
+    reports consumed_credits only once it finishes and the cap check must not take it for free."""
     if not state:
         return 0
-    return sum(int(t.get("consumed_credits") or 0) for t in state.get("tasks", {}).values())
+    total = 0
+    for task in state.get("tasks", {}).values():
+        credits = int(task.get("consumed_credits") or 0)
+        if task.get("status") not in FINAL_STATUSES:
+            credits = max(credits, int(task.get("estimated_credits") or 0))
+        total += credits
+    return total
 
 
 def result_urls(task: dict[str, Any]) -> list[tuple[str, str]]:
@@ -193,7 +201,8 @@ class Runner:
                     if exc.status in REFUSALS:  # this item's request is wrong; the next items may still run
                         return self.finish(item, state, "failed", f"{stage.name} refused: {exc}")
                     raise  # a bad key, no credits, the rate limit: every item would hit it, so the run stops
-                record = {"id": task_id, "status": "PENDING", "submitted_at": self.now(), "request": payload}
+                record = {"id": task_id, "status": "PENDING", "submitted_at": self.now(), "request": payload,
+                          "estimated_credits": stage.credits}
                 state["tasks"][stage.name] = record
                 write_state(state_path, state)  # before polling: an interruption now resumes this task id
                 self.log(f"{item.id}: {stage.name} task {task_id} submitted ({stage.credits} credits estimated)")
