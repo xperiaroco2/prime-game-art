@@ -24,6 +24,17 @@ FINGERS = ("Thumb", "Index", "Middle", "Ring", "Little")
 SIDES = ("Left", "Right")
 KINDS = ("body", "clothing", "accessory", "prop")
 DECIMALS = 6
+SEVERITIES = ("fail", "warn", "off")
+# The values each kinds.<kind> rule may take in contract.toml.
+RULE_VALUES = {
+    "rig": ("required", "forbidden"),
+    "bones": ("all", "subset"),
+    "fingers": SEVERITIES,
+    "height": SEVERITIES,
+    "eyes": SEVERITIES,
+    "feet": SEVERITIES,
+    "facing": SEVERITIES,
+}
 
 
 # --- Godot's humanoid profile -------------------------------------------------------------------------------------
@@ -152,6 +163,11 @@ def validate_contract(contract: dict[str, Any], profile: dict[str, Any]) -> list
             continue
         if rules.get("budget") not in contract.get("budgets", {}):
             errors.append(f"kinds.{kind}.budget names {rules.get('budget')!r}, which is not in budgets")
+        for key, allowed in RULE_VALUES.items():
+            if rules.get(key) not in allowed:
+                errors.append(f"kinds.{kind}.{key} is {rules.get(key)!r}; it must be one of {', '.join(allowed)}")
+        if not isinstance(rules.get("max_materials"), int):
+            errors.append(f"kinds.{kind}.max_materials must be an integer")
     for name, budget in contract.get("budgets", {}).items():
         if name == "limits":
             continue
@@ -171,6 +187,16 @@ def model_from_scene(position: list[float]) -> list[float]:
     """A point in the character scene (front -Z, like the greybox) in model space (front +Z): turned 180 degrees about
     Y, because the character scene turns the +Z-facing model to face -Z."""
     return [_clean(-float(position[0])), _clean(float(position[1])), _clean(-float(position[2]))]
+
+
+def checkable_slot(contract: dict[str, Any], slot_id: str) -> dict[str, Any]:
+    """The slot `check --slot` judges a piece for; a Failure for an unknown slot or one without a model."""
+    slots = {s["id"]: s for s in contract.get("slots", [])}
+    if slot_id not in slots:
+        raise common.Failure(f"no slot {slot_id!r}; the slots are {', '.join(slots)}")
+    if not slots[slot_id].get("check_kind"):
+        raise common.Failure(f"slot {slot_id!r} holds no model ({slots[slot_id].get('type')}): nothing to check")
+    return slots[slot_id]
 
 
 # --- bone maps ----------------------------------------------------------------------------------------------------

@@ -3,6 +3,7 @@
 import copy
 import unittest
 
+from runner import common
 from runner.commands import _checks, _contract
 
 
@@ -244,6 +245,21 @@ class EvaluateTest(unittest.TestCase):
         detail = {r["check"]: r["detail"] for r in report["results"]}
         self.assertEqual(detail["missing_bones"], "missing: LeftEye, RightEye, Jaw")
         self.assertEqual(self.statuses(report)["bone_parents"], _checks.PASS)
+
+    def test_a_slot_budget_wins_over_the_kind(self) -> None:
+        contract = self.contract
+        contract["budgets"]["head_item"].update(triangles_target=500, triangles_cap=600)
+        hair = _contract.checkable_slot(contract, "hair_or_hat")
+        report = _checks.evaluate(rigid_piece(700), "accessory", contract, self.profile, slot=hair)
+        self.assertEqual((report["budget"], report["slot"]), ("head_item", "hair_or_hat"))
+        self.assertEqual(self.statuses(report)["triangles"], _checks.FAIL)
+        self.assertEqual(self.statuses(self.evaluate(rigid_piece(700), "accessory"))["triangles"], _checks.PASS)
+
+    def test_a_slot_without_a_model_cannot_be_checked(self) -> None:
+        with self.assertRaises(common.Failure):
+            _contract.checkable_slot(self.contract, "skin_colour")
+        with self.assertRaises(common.Failure):
+            _contract.checkable_slot(self.contract, "cape")
 
     def test_rigid_accessory(self) -> None:
         report = self.evaluate(rigid_piece(900), "accessory")

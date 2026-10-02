@@ -60,6 +60,14 @@ class ContractTest(unittest.TestCase):
         broken["sockets"][0]["bone"] = "Skull"
         self.assertTrue(any("Skull" in e for e in _contract.validate_contract(broken, self.profile)))
 
+    def test_a_bad_rule_value_is_caught(self) -> None:
+        broken = copy.deepcopy(self.contract)
+        broken["kinds"]["body"]["height"] = "error"
+        broken["kinds"]["prop"]["rig"] = "maybe"
+        errors = _contract.validate_contract(broken, self.profile)
+        self.assertTrue(any("kinds.body.height is 'error'" in e for e in errors), errors)
+        self.assertTrue(any("kinds.prop.rig is 'maybe'" in e for e in errors), errors)
+
     def test_axes_height_and_weights(self) -> None:
         self.assertEqual((self.contract["axes"]["up"], self.contract["axes"]["front"]), ("+Y", "+Z"))
         self.assertEqual(self.contract["axes"]["rest_pose"], "T")

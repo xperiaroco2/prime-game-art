@@ -22,6 +22,7 @@ neutral body in v1, animations only (no ragdoll).
 tools/run.py contract              # regenerate contract/humanoid.json from Godot, validate contract/
 tools/run.py contract --check      # change nothing; fail when humanoid.json is stale or contract/ disagrees
 tools/run.py check <model> --kind body|clothing|accessory|prop [--map mixamo|meshy|quaternius] [--report FILE]
+tools/run.py check <model> --slot hair_or_hat|eyes|mouth|top|... [--map NAME] [--report FILE]
 tools/run.py rename-bones <model> --map <name> --out <file.glb|.gltf|.blend>
 ```
 
@@ -36,6 +37,10 @@ weighted, optional or a finger, no two map entries rename to the same bone.
 (`tools/runner/commands/_checks.py`), so every rule has a test without Blender. It writes `report.json` (default
 `tools/out/check/<model>/report.json`) with the verdict, one result per check (`pass`, `warn` or `fail`) and the raw
 measurements, prints the same, and exits 1 when any check fails. Loads `.glb`, `.gltf`, `.fbx`, `.obj` and `.blend`.
+`--slot` judges a piece for one slot of `contract.toml`: the slot's `check_kind` and its own `budget`, so hair
+is held to `head_item` rather than the accessory budget. `--kind` alone uses the kind's budget. `contract --check`
+also rejects a `kinds.<kind>` rule outside its values (`fail`, `warn`, `off`; `required` or `forbidden`; `all` or
+`subset`).
 
 `rename-bones` strips the map's prefix, renames the bones (Blender renames the vertex groups with them, so the skin
 follows), deletes the bones the map lists under `drop` and saves to `--out`. The source file is never changed. A

@@ -46,11 +46,14 @@ def evaluate(
     contract: dict[str, Any],
     profile: dict[str, Any],
     bone_map: dict[str, Any] | None = None,
+    slot: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
+    """With a slot, the slot's budget wins over the kind's (hair_or_hat: head_item, not accessory)."""
     rules = contract["kinds"][kind]
+    budget = (slot or {}).get("budget") or rules["budget"]
     report = _Report()
     meshes = measure.get("meshes", [])
-    _mesh_checks(report, meshes, measure, contract, kind)
+    _mesh_checks(report, meshes, measure, contract, kind, budget)
     if meshes:
         _shape_checks(report, meshes, contract, rules)
     bones = _rig_checks(report, measure, kind, contract, profile, rules, bone_map)
@@ -60,6 +63,8 @@ def evaluate(
     return {
         "model": measure.get("model"),
         "kind": kind,
+        "slot": slot["id"] if slot else None,
+        "budget": budget,
         "map": bone_map["name"] if bone_map else None,
         "map_confirmed": bone_map.get("confirmed") if bone_map else None,
         "contract_version": contract.get("version"),
@@ -79,20 +84,20 @@ def _names(meshes: list[dict[str, Any]], key: str) -> str:
     return ", ".join(f"{m['name']} ({m[key]})" for m in meshes if m.get(key))
 
 
-def _mesh_checks(report: _Report, meshes: list, measure: dict, contract: dict, kind: str) -> None:
+def _mesh_checks(report: _Report, meshes: list, measure: dict, contract: dict, kind: str, budget_name: str) -> None:
     rules = contract["kinds"][kind]
     if not meshes:
         report.add("meshes", FAIL, "the file has no mesh")
         return
     report.add("meshes", PASS, f"{len(meshes)}: {', '.join(m['name'] for m in meshes)}")
-    budget = contract["budgets"][rules["budget"]]
+    budget = contract["budgets"][budget_name]
     for metric in ("triangles", "vertices"):
         if f"{metric}_cap" not in budget:
             continue
         value, target, cap = _total(meshes, metric), budget[f"{metric}_target"], budget[f"{metric}_cap"]
         status = FAIL if value > cap else WARN if value > target else PASS
         note = " (a provisional budget)" if budget.get("provisional") else ""
-        report.add(metric, status, f"{value:,} (budget {rules['budget']}: target {target:,}, cap {cap:,}){note}")
+        report.add(metric, status, f"{value:,} (budget {budget_name}: target {target:,}, cap {cap:,}){note}")
     ngons = _total(meshes, "ngons")
     report.add("ngons", FAIL if ngons else PASS, f"{ngons} faces with more than 4 corners {_names(meshes, 'ngons')}".rstrip())
     loose = _total(meshes, "loose_vertices") + _total(meshes, "loose_edges")
