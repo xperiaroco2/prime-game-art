@@ -99,8 +99,8 @@ class ContractTest(unittest.TestCase):
             ["skin_colour", "eyes", "mouth", "hair_or_hat", "top", "bottom", "shoes", "face_accessory", "back_item"],
         )
         types = {s["id"]: s["type"] for s in self.contract["slots"]}
-        self.assertEqual(types["eyes"], "face_texture")
-        self.assertEqual(types["mouth"], "face_texture")
+        self.assertEqual(types["eyes"], "face")
+        self.assertEqual(types["mouth"], "face")
         self.assertIn("preset", self.contract["sets"]["rule"])
 
     def test_budgets(self) -> None:

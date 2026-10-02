@@ -101,25 +101,35 @@ bone = "UpperChest"
 where = "between the shoulder blades, behind the body"
 used_by = "back item"
 
-# Customization slots, v1. A player picks one piece per slot; eyes and mouth are separate slots so they combine
-# freely like hair. Cosmetics are public data and never derived from the role.
-#   palette       a colour index into the shared palette texture; no mesh
-#   face_texture  a layer of the face texture array; each piece draws every frame in `frames`, which the shader
-#                 swaps at runtime (blinking, talking, emotes) without a mesh change
-#   rigid         a separate unskinned mesh on a socket, checked with `check --kind accessory`
-#   skinned       a mesh bound to profile bones only, weights from the base body, checked with `check --kind clothing`
+# Customization slots, v1. A player picks one piece per slot; eyes and mouth are their own slots, changeable like the
+# hair (the engineer's answer Q7). Cosmetics are public data and never derived from the role.
+#   palette  a colour index into the shared palette texture; no mesh
+#   face     eyes or mouth, built one of two ways until the style is chosen: frames in a layer of the face texture
+#            array that the shader swaps at runtime (a painted face, V3), or small rigid pieces on Socket_Face
+#            (separate eyeballs, V1), checked with `check --kind accessory`. Either way each piece provides every
+#            frame in `frames`, so blinking, talking and emotes animate without a mesh change
+#   rigid    a separate unskinned mesh on a socket, checked with `check --kind accessory`
+#   skinned  a mesh bound to profile bones only, weights from the base body, checked with `check --kind clothing`
 [[slots]]
 id = "skin_colour"
 type = "palette"
 
 [[slots]]
 id = "eyes"
-type = "face_texture"
+type = "face"
+forms = ["face_texture", "rigid"]
+socket = "Socket_Face"
+check_kind = "accessory"
+budget = "accessory"
 frames = ["open", "blink", "closed"] # the full frame list waits for the style answers (H2)
 
 [[slots]]
 id = "mouth"
-type = "face_texture"
+type = "face"
+forms = ["face_texture", "rigid"]
+socket = "Socket_Face"
+check_kind = "accessory"
+budget = "accessory"
 frames = ["closed", "small", "wide", "round"] # talking shapes; the full list waits for H2
 
 [[slots]]
