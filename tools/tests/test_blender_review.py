@@ -9,7 +9,7 @@ import zlib
 from pathlib import Path
 
 from runner import blender, cli, common, pins
-from runner.commands import _review
+from runner.commands import _review, probe
 
 OUT = common.OUT / "tests" / "blender"
 HAVE_BLENDER = bool((path := common.tool_path(pins.BLENDER_ENV, pins.BLENDER_DEFAULT)) and path.is_file())
@@ -49,6 +49,20 @@ class WithoutBlenderTest(unittest.TestCase):
         path = OUT / "model.stl"
         path.write_bytes(b"solid x\nendsolid x\n")
         self.assertEqual(cli.main(["render", str(path)]), 1)
+
+    def test_a_crash_in_the_eevee_render_is_recorded_not_fatal(self) -> None:
+        path = OUT / "crash_report.json"
+        report = {"renders": {"workbench": {"ok": True}, "eevee": {"ok": False, "attempted": True, "error": "?"}}}
+        probe.record_eevee_crash(path, report, "Blender script probe.py failed with exit code 3:\nabort")
+        written = json.loads(path.read_text(encoding="utf-8"))["renders"]["eevee"]
+        self.assertFalse(written["ok"])
+        self.assertIn("crashed in the EEVEE render", written["error"])
+        self.assertIn("abort", written["output_tail"])
+
+    def test_a_crash_before_the_eevee_render_is_fatal(self) -> None:
+        report = {"renders": {"workbench": {"ok": False}, "eevee": {"ok": False, "attempted": True}}}
+        with self.assertRaises(common.Failure):
+            probe.record_eevee_crash(OUT / "crash_report.json", report, "Blender script probe.py failed")
 
     def test_commands_are_found(self) -> None:
         self.assertIn("probe", cli.discover())

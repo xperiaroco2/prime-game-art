@@ -4,7 +4,8 @@
 
 The report holds Blender's version, every property of the glTF exporter and importer with its default, the render
 engines, whether numpy imports, and the result of rendering one Workbench and one EEVEE frame of a small test scene.
-An EEVEE failure (it may need a GPU context that background mode lacks) is recorded, not raised.
+An EEVEE failure (it may need a GPU context that background mode lacks) is recorded, not raised. The report is written
+before the EEVEE render too, so even a crash of Blender itself leaves one behind (the runner then records the crash).
 """
 
 from __future__ import annotations
@@ -182,14 +183,22 @@ def main() -> None:
         "gltf_import": operator_properties(bpy.ops.import_scene.gltf),
     }
     test_scene()
-    report["renders"] = {
-        "workbench": render("BLENDER_WORKBENCH", out / "workbench.png"),
-        "eevee": render("BLENDER_EEVEE", out / "eevee.png"),
-    }
-    (out / "report.json").write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
-    if not report["renders"]["workbench"]["ok"]:  # type: ignore[index]
-        raise RuntimeError(f"the Workbench render failed: {report['renders']['workbench']['error']}")  # type: ignore[index]
+    renders: dict[str, dict] = {"workbench": render("BLENDER_WORKBENCH", out / "workbench.png")}
+    # EEVEE without a GPU context can kill Blender outright (an abort, not a Python error), so the report is written
+    # first with EEVEE marked as attempted and rewritten afterwards; the runner records a crash that leaves it so.
+    renders["eevee"] = {"ok": False, "engine": "BLENDER_EEVEE", "attempted": True,
+                        "error": "Blender exited during the EEVEE render"}
+    report["renders"] = renders
+    write_report(out, report)
+    if not renders["workbench"]["ok"]:
+        raise RuntimeError(f"the Workbench render failed: {renders['workbench']['error']}")
+    renders["eevee"] = render("BLENDER_EEVEE", out / "eevee.png")
+    write_report(out, report)
     print(f"REPORT {out / 'report.json'}")
+
+
+def write_report(out: Path, report: dict) -> None:
+    (out / "report.json").write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
 
 
 main()

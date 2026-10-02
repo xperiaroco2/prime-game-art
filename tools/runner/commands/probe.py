@@ -18,13 +18,31 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--no-fixtures", action="store_true", help="skip building tools/out/fixtures/*.glb")
 
 
+def record_eevee_crash(report_path: Path, report: dict, crash: str) -> None:
+    """Blender died after writing the report: fatal unless it died in the EEVEE render, which the probe marks as
+    attempted before it starts; then the crash goes into the report as EEVEE's error and the probe goes on."""
+    renders = report.get("renders", {})
+    if not (renders.get("workbench", {}).get("ok") and renders.get("eevee", {}).get("attempted")):
+        raise common.Failure(crash)
+    renders["eevee"]["error"] = f"Blender crashed in the EEVEE render: {crash.splitlines()[0]}"
+    renders["eevee"]["output_tail"] = crash
+    report_path.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
+
+
 def run(args: argparse.Namespace) -> int:
     out: Path = args.out.resolve()
-    blender.run_script("probe.py", ["--out", str(out)], timeout=600)
     report_path = out / "report.json"
+    report_path.unlink(missing_ok=True)
+    try:
+        blender.run_script("probe.py", ["--out", str(out)], timeout=600)
+        crash = ""
+    except common.Failure as failure:
+        crash = str(failure)
     if not report_path.is_file():
-        raise common.Failure(f"probe.py wrote no {report_path}")
+        raise common.Failure(crash or f"probe.py wrote no {report_path}")
     report = json.loads(report_path.read_text(encoding="utf-8"))
+    if crash:
+        record_eevee_crash(report_path, report, crash)
     common.say(f"Blender {report['blender']['version_string']} (Python {report['blender']['python']})")
     numpy = report["numpy"]
     if numpy["imports"]:

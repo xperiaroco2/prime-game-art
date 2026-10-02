@@ -64,6 +64,8 @@ an A-pose, has 17 bones (hips, spine, chest, neck, head and per side upper_arm, 
 ## What the probe found (2026-10-02, this PC)
 
 - Blender 5.2.2 LTS, build d13f752e3b9c, Python 3.13.13; numpy 2.3.4 imports.
+- If EEVEE fails on another PC, `probe` still exits 0: a Python error is recorded in `renders.eevee`, and so is a
+  crash of Blender itself, because the report is written before the EEVEE render with EEVEE marked `attempted`.
 - **EEVEE renders in background mode here.** The first EEVEE frame took about 17 s (shader compilation), later ones
   about 0.2 s. Workbench takes about 1 s. Cycles can be selected too.
 - In background mode the `render.engine` enum lists only `BLENDER_EEVEE`, yet `BLENDER_WORKBENCH` and `CYCLES` can be
