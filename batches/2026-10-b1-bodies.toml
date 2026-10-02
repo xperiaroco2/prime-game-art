@@ -5,6 +5,9 @@ id = "2026-10-b1-bodies"
 purpose = "Base human bodies: V1 average lanky with separate eyeballs, V2 bigger head and wider shoulders with separate eyeballs, V3 like V1 with eyes and mouth painted on the face; four tries each to pick from on review sheets."
 plan = "Meshy Pro (monthly)"
 terms_url = "https://www.meshy.ai/terms-of-use"
+# Terms of Use 3.2 (last updated 2026-09-19, read 2026-10-02): a paid plan's customer owns its output; Meshy keeps
+# a non-exclusive licence to run the service. Free-plan output would be Meshy's, under CC BY 4.0.
+licence = "owned by the customer on a paid plan (Meshy Terms of Use 3.2, updated 2026-09-19); no attribution required"
 credit_cap = 360
 approved_by = "xperiaroco2 (the engineer)"
 approved_at = "2026-10-02"

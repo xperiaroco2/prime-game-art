@@ -73,6 +73,7 @@ class Batch:
     purpose: str
     plan: str
     terms_url: str
+    licence: str
     credit_cap: int
     approved_by: str
     approved_at: str
@@ -182,6 +183,7 @@ def parse(data: dict[str, Any], path: Path) -> Batch:
         purpose=str(data.get("purpose", "")).strip(),
         plan=str(data.get("plan", "")).strip(),
         terms_url=str(data.get("terms_url", "")).strip(),
+        licence=str(data.get("licence", "")).strip(),
         credit_cap=cap,
         approved_by=str(data.get("approved_by", "")).strip(),
         approved_at=str(data.get("approved_at", "")).strip(),
@@ -289,7 +291,7 @@ def approval_problems(batch: Batch) -> list[str]:
             problems.append(f"approved_at {batch.approved_at!r} is not a date like 2026-10-02")
     if batch.approval_ref and not batch.approval_ref.startswith("https://github.com/"):
         problems.append("approval_ref must link to the engineer's yes on GitHub (https://github.com/...)")
-    for name in ("plan", "terms_url"):
+    for name in ("plan", "terms_url", "licence"):
         if not getattr(batch, name):
             problems.append(f"'{name}' is missing (it goes into every generation.json)")
     if batch.credits > batch.credit_cap:

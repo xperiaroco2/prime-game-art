@@ -61,6 +61,7 @@ class RunTest(unittest.TestCase):
         self.assertEqual(state["model_version"], "meshy-7.1")
         self.assertEqual(state["plan"], "Meshy Pro (monthly)")
         self.assertEqual(state["terms_url"], "https://www.meshy.ai/terms-of-use")
+        self.assertEqual(state["licence"], "owned by the customer on a paid plan (Meshy terms 3.2)")
         self.assertEqual(state["balance_before"], 1000)
         self.assertEqual(state["balance_after"], 970)
         self.assertEqual(state["tasks"]["preview"]["consumed_credits"], 20)

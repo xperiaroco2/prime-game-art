@@ -18,6 +18,7 @@ APPROVAL = {
     "approval_ref": "https://github.com/xperiaroco2/prime-game/issues/165#issuecomment-1",
     "plan": "Meshy Pro (monthly)",
     "terms_url": "https://www.meshy.ai/terms-of-use",
+    "licence": "owned by the customer on a paid plan (Meshy terms 3.2)",
 }
 
 
@@ -124,6 +125,10 @@ class ApprovalTest(unittest.TestCase):
         problems = batches.approval_problems(parse(batch_data(approval_ref="said yes in chat", approved_at="today")))
         self.assertTrue(any("GitHub" in p for p in problems))
         self.assertTrue(any("not a date" in p for p in problems))
+
+    def test_needs_a_licence(self) -> None:
+        problems = batches.approval_problems(parse(batch_data(licence="")))
+        self.assertIn("'licence' is missing (it goes into every generation.json)", problems)
 
     def test_estimate_over_the_cap(self) -> None:
         problems = batches.approval_problems(parse(batch_data(credit_cap=55)))

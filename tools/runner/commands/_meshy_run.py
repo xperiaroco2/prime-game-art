@@ -246,6 +246,7 @@ class Runner:
             "estimated_credits": item.credits,
             "plan": b.plan,
             "terms_url": b.terms_url,
+            "licence": b.licence,
             "approval": {"by": b.approved_by, "at": b.approved_at, "ref": b.approval_ref, "credit_cap": b.credit_cap},
             "status": "running",
             "started_at": self.now(),

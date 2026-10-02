@@ -41,6 +41,7 @@ approved. Changing a prompt or a parameter needs a new approval.
 | `id` | Equals the file name; lower-case letters, digits, `.`, `_`, `-` |
 | `purpose` | One sentence on why the batch exists |
 | `plan`, `terms_url` | The Meshy plan and terms the generations fall under; copied into every `generation.json` |
+| `licence` | The licence of the outputs under that plan and those terms, as the asset manifest records it; copied into every `generation.json` |
 | `credit_cap` | The most credits the approval covers |
 | `approved_by`, `approved_at`, `approval_ref` | Who approved, the date (`YYYY-MM-DD`) and a `https://github.com/` link to the yes |
 | `[variants.<name>]` | Shared settings of a variant: `prompt`, optional `preview`/`refine` tables |
@@ -118,7 +119,7 @@ Meshy's queue limit, 10 tasks on Pro, would allow parallel items later.
 ```
 
 `generation.json`: `batch`, `batch_file`, `item`, `variant`, `kind`, `prompt`, `source`, `model_version`,
-`parameters` (per stage), `estimated_credits`, `plan`, `terms_url`, `approval` (by, at, ref, credit_cap), `status`
+`parameters` (per stage), `estimated_credits`, `plan`, `terms_url`, `licence`, `approval` (by, at, ref, credit_cap), `status`
 (`running`, `done`, `failed`), `error`, `started_at`, `finished_at` (UTC), `balance_before`, `balance_after`, `tasks`
 (per stage: `id`, `request`, `submitted_at`, `polled_at`, `status`, `progress`, Meshy's `created_at`, `started_at`,
 `finished_at` in ms, `consumed_credits`, `task_error`) and `files` (`name`, `stage`, `bytes`, `sha256`). Signed URLs
@@ -167,6 +168,13 @@ HTTP 422.
 Errors: 400 bad input, 401 bad key, 402 not enough credits, 404, 409 wrong state, 422, 429 (a request-rate hit
 carries `Retry-After`; a queue hit, `NoMoreConcurrentTasks` or `NoMorePendingTasks`, does not), 5xx. Pro allows 20
 requests per second and 10 queued tasks.
+
+Output licence (<https://www.meshy.ai/terms-of-use>, "Last Updated: September 19, 2026", read 2026-10-02): section
+3.2 says a paid plan's customer owns its Customer Output, and Meshy keeps a non-exclusive, royalty-free, worldwide
+licence to use it to provide the service. A free plan's output is owned by Meshy and offered under CC BY 4.0 with
+credit to Meshy. Section 3.3: whatever is posted to Meshy's community page falls under CC0 (3D models) or
+CC BY-NC 4.0 (other uploads), so nothing of ours is posted there. The batch's `licence` records this per batch; reread
+the terms when the plan changes or before a batch whose terms date is older than the page's.
 
 Account (the credits guide and the quick start): the API needs a paid plan (free accounts cannot create keys) and
 draws from the same credit balance as the web app. The guide says API generations always come textured and cost 30
