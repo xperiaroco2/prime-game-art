@@ -54,10 +54,13 @@ def inventory(out: Path) -> dict:
 def body_args(cfg: dict, body: str, rm: bool = False) -> list[str]:
     """The Blender script's arguments for a body type: the character and every library (with rm, also their
     root-motion files)."""
-    out = ["--body", body, "--character", str(_anim.raw_path(cfg["bodies"][body]["character"]))]
+    out = ["--body", body, "--character", str(_anim.raw_path(cfg["bodies"][body]["character"])),
+           "--raw", str(common.raw_dir())]
     for key, lib in _anim.libraries(cfg).items():
         out += ["--lib", f"{key}={_anim.raw_path(lib['file'])}"]
-        if rm:
+        for extra in lib["extra"]:
+            _anim.raw_path(extra)  # refuse a missing file before Blender starts
+        if rm and lib["rm"]:
             out += ["--lib-rm", f"{key}={_anim.raw_path(lib['rm'])}"]
     return out
 
@@ -132,6 +135,15 @@ def feet(args: argparse.Namespace, out: Path, cfg: dict, bodies: list[str]) -> N
     for body in bodies:
         for path in sorted((out / "feet" / body).glob("*.json")):
             for key, lanes in json.loads(path.read_text(encoding="utf-8")).items():
+                if "rigid_shoes" not in lanes:  # a set of any clips (art #25's comparisons)
+                    for lane, res in lanes["lanes"].items():
+                        t, slide = res.get("toe", {}), res["foot_sliding"]
+                        common.ok(f"{body} {key} {lane}: the front of the shoe at a 20 deg heel lift "
+                                  f"{t.get('front_pitch_at_20_deg_lift')} deg, heel lift with the front level "
+                                  f"{t.get('heel_lift_front_level_max_deg')} deg, foot sliding "
+                                  f"{slide.get('slide_mean_cm_s')} cm/s, lowest vertex "
+                                  f"{res.get('lowest_vertex_cm', {}).get('min')} cm")
+                    continue
                 r, t = lanes["rigid_shoes"].get("toe", {}), lanes["toe_bones"].get("toe", {})
                 common.ok(f"{body} {key}: the front of the shoe at a 20 deg heel lift "
                           f"{r.get('front_pitch_at_20_deg_lift')} -> {t.get('front_pitch_at_20_deg_lift')} deg, heel "

@@ -12,7 +12,7 @@ from .. import common
 BLENDER_DIR = common.ROOT / "tools" / "blender"
 CONFIG = BLENDER_DIR / "anim_review.toml"
 BODIES = ("men", "women")
-LIBRARY_KEYS = {"file", "rm", "label", "map", "rigid_map"}
+LIBRARY_KEYS = {"file", "rm", "label", "map", "rigid_map", "extra", "rename", "skip", "in_place", "own"}
 MAPS = BLENDER_DIR / "retarget_maps"
 
 
@@ -28,8 +28,10 @@ def load_config(path: Path = CONFIG) -> dict:
     for key, lib in cfg.get("libraries", {}).items():
         if key in ("pack", "blend", "layer", "ual") or key.endswith("_rm") or not key.isidentifier():
             raise common.Failure(f"{path.name}: [libraries.{key}] needs another name")
-        if not (isinstance(lib, dict) and {"file", "rm"} <= set(lib) and set(lib) <= LIBRARY_KEYS):
-            raise common.Failure(f"{path.name}: [libraries.{key}] takes file, rm, label, map and rigid_map")
+        if not (isinstance(lib, dict) and "file" in lib and set(lib) <= LIBRARY_KEYS):
+            raise common.Failure(f"{path.name}: [libraries.{key}] takes file and {', '.join(sorted(LIBRARY_KEYS - {'file'}))}")
+        if "rm" not in lib and "map" not in lib:  # a library on UAL's rig has its root-motion file
+            raise common.Failure(f"{path.name}: [libraries.{key}] needs rm (a library on UAL's rig)")
         for name in (lib.get("map"), lib.get("rigid_map")):  # bone maps of a library on another rig (art #25)
             if name is not None and not (MAPS / str(name)).is_file():
                 raise common.Failure(f"{path.name}: [libraries.{key}] names a bone map {name!r} that is not in {MAPS}")
@@ -37,10 +39,12 @@ def load_config(path: Path = CONFIG) -> dict:
 
 
 def libraries(cfg: dict) -> dict[str, dict]:
-    """Every Universal Animation Library source, UAL1 first: {key: {file, rm, label}} (raw-relative paths)."""
-    out = {"ual": {"file": cfg["ual"], "rm": cfg["ual_rm"], "label": "UAL"}}
+    """Every library of clips, UAL1 first: {key: {file, rm, label, extra}} (raw-relative paths; rm is None for a
+    library without a root-motion file, such as Meshy's)."""
+    out = {"ual": {"file": cfg["ual"], "rm": cfg["ual_rm"], "label": "UAL", "extra": []}}
     for key, lib in cfg.get("libraries", {}).items():
-        out[key] = {"file": lib["file"], "rm": lib["rm"], "label": lib.get("label", key.upper())}
+        out[key] = {"file": lib["file"], "rm": lib.get("rm"), "label": lib.get("label", key.upper()),
+                    "extra": list(lib.get("extra", []))}
     return out
 
 

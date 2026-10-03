@@ -182,8 +182,9 @@ class Measure:
     def frame(self, with_mesh: bool = True) -> dict:
         arm, W = self.arm, self.arm.matrix_world
         P = {pb.name: pb.matrix.copy() for pb in arm.pose.bones}
+        root = P.get("Root", P["Body"])  # a rig without a root (Meshy's own, art #25): its hips carry the travel
         rec = {"feet": {s: tuple(W @ P[f"Foot.{s}"].translation) for s in "LR"},
-               "hips": tuple(W @ P["Body"].translation), "root": tuple(W @ P["Root"].translation)}
+               "hips": tuple(W @ P["Body"].translation), "root": tuple(W @ root.translation)}
         for name, (upper, lower, axis_local) in self.hinges.items():
             a = W @ P[upper].translation
             b = W @ P[lower].translation
@@ -194,8 +195,8 @@ class Measure:
             rel = self.twist_rest[s].inverted() @ (rot(P[f"LowerArm.{s}"]).inverted() @ rot(P[f"Wrist.{s}"]))
             rec[f"twist.{s}"] = am.twist_angle(tuple(rel), (0.0, 1.0, 0.0))
             joints = [math.degrees(rot(arm.pose.bones[f"{f}{k}.{s}"].matrix_basis).angle) for f in FINGERS
-                      for k in (2, 3, 4)]
-            joints = [min(j, 360 - j) for j in joints]
+                      for k in (2, 3, 4) if f"{f}{k}.{s}" in P]
+            joints = [min(j, 360 - j) for j in joints] or [0.0]  # a rig without fingers: none bends
             rec[f"curl.{s}"] = sum(joints) / len(joints)
             rec[f"curl_max.{s}"] = max(joints)
         rec["local"] = {pb.name: tuple(rot(pb.matrix_basis)) for pb in arm.pose.bones}
@@ -289,17 +290,21 @@ def toe_summary(frames: list[dict], floor: float) -> dict:
     under the ball and at the tip. While the tip is in contact (within CONTACT of the floor) the heel lift is how far
     the back of the sole (pivot to ball) points down to the ball, and the front pitch how far the front (ball to tip)
     points down to the tip. A rigid shoe pushing off stands on its toe: its front tips as far as its back is lifted;
-    a bending one keeps its front near level until the toes leave the floor. Reported: the mean front pitch of the
+    a bending one keeps its front near level until the toes leave the floor. A clip whose tips never come within
+    CONTACT of the floor counts contact from the tips' own lowest point instead. Reported: the mean front pitch of the
     contact samples with a heel lift of 15 to 25 degrees (`front_pitch_at_20_deg_lift`: about 20 for a rigid shoe,
     near 0 for a bending one), the largest heel lift while the front stays within 10 degrees of level, the largest
     bend at the ball in contact (the angle between the back and the front) and the tip's lowest point (cm)."""
-    near20, level, bends, contact, tip_low = [], [], [], 0, float("inf")
+    near20, level, bends, contact = [], [], [], 0
+    tip_low = min(float(np.asarray(pts[2], dtype=float)[2]) for rec in frames for pts in rec.values())
+    # contact is near the floor, or near the tip's own lowest point in a clip whose feet never come down to the floor
+    # (Meshy's walk floats 0.7 to 1 cm above it, art #25): the shoe's shape is measured either way
+    ground = max(floor, tip_low)
     for rec in frames:
         for pts in rec.values():
             h, b, t = (np.asarray(p, dtype=float) for p in pts)
             back_seg, front_seg = b - h, t - b
-            tip_low = min(tip_low, float(t[2]))
-            if t[2] >= floor + CONTACT:
+            if t[2] >= ground + CONTACT:
                 continue
             contact += 1
             cos = float(np.dot(back_seg, front_seg) / max(np.linalg.norm(back_seg) * np.linalg.norm(front_seg), 1e-12))
