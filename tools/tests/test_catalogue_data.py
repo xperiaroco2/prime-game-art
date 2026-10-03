@@ -166,6 +166,28 @@ class RulesTest(unittest.TestCase):
             self.assertEqual(v[("headwear_m_farmer_cowboy_hat", "hair_w_adventurer")], "ok")
             self.assertEqual(v[("headwear_m_farmer_cowboy_hat", "hair_m_business")], "poke")
 
+    def test_review_is_close_to_the_allowance(self) -> None:
+        for name, per in DATA["matrices"].items():
+            for g, m in per.items():
+                for c in m["cells"]:
+                    if c["verdict"] != "review":
+                        continue
+                    self.assertGreaterEqual(c.get("overlap_mm", 0), 0, f"{name}: {c['a']} x {c['b']}")
+                    self.assertLessEqual(c["review"]["over_by"], c["review"]["margin"])
+                    self.assertGreater(c["review"]["over_by"], 0)
+
+    def test_review_against_the_renders(self) -> None:
+        """Pairs rendered in art #19's review: four that looked clean are review; clearly wrong ones stay poke."""
+        def v(name: str, g: str, a: str, b: str) -> str:
+            return _catalogue.cell(DATA, name, g, a, b)["verdict"]
+        self.assertEqual(v("bottom_shoes", "W", "bottom_w_worker", "shoes_w_witch"), "review")
+        self.assertEqual(v("top_bottom", "M", "top_m_beach", "bottom_m_adventurer"), "review")
+        self.assertEqual(v("hair_skull", "M", "hair_w_scifi", "skull_m_farmer"), "review")
+        self.assertEqual(v("head_top", "M", "skull_m_hoodie", "top_m_astronaut"), "review")
+        self.assertEqual(v("bottom_shoes", "M", "bottom_m_hoodie", "shoes_m_adventurer"), "poke")
+        self.assertEqual(v("top_bottom", "W", "top_w_punk", "bottom_w_suit"), "poke")
+        self.assertEqual(v("hair_skull", "M", "hair_m_punk_mohawk", "skull_m_business"), "poke")
+
     def test_needs_fix_names_a_measured_fix(self) -> None:
         for name, per in DATA["matrices"].items():
             for g, m in per.items():

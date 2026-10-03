@@ -9879,7 +9879,11 @@
        }
       },
       "references": 2,
-      "verdict": "poke",
+      "review": {
+       "margin": 32,
+       "over_by": 12
+      },
+      "verdict": "review",
       "walk_within_references": false
      },
      {
@@ -11417,7 +11421,11 @@
        }
       },
       "references": 2,
-      "verdict": "poke",
+      "review": {
+       "margin": 16,
+       "over_by": 10
+      },
+      "verdict": "review",
       "walk_within_references": false
      },
      {
@@ -11601,7 +11609,11 @@
        }
       },
       "references": 2,
-      "verdict": "poke",
+      "review": {
+       "margin": 31,
+       "over_by": 18
+      },
+      "verdict": "review",
       "walk_within_references": false
      },
      {
@@ -11647,7 +11659,11 @@
        }
       },
       "references": 2,
-      "verdict": "poke",
+      "review": {
+       "margin": 12,
+       "over_by": 6
+      },
+      "verdict": "review",
       "walk_within_references": false
      },
      {
@@ -12736,7 +12752,11 @@
        }
       },
       "references": 2,
-      "verdict": "poke",
+      "review": {
+       "margin": 29,
+       "over_by": 6
+      },
+      "verdict": "review",
       "walk_within_references": false
      },
      {
@@ -12920,7 +12940,11 @@
        }
       },
       "references": 2,
-      "verdict": "poke",
+      "review": {
+       "margin": 18,
+       "over_by": 8
+      },
+      "verdict": "review",
       "walk_within_references": false
      },
      {
@@ -13145,7 +13169,11 @@
        }
       },
       "references": 2,
-      "verdict": "poke",
+      "review": {
+       "margin": 31,
+       "over_by": 22
+      },
+      "verdict": "review",
       "walk_within_references": false
      },
      {
@@ -13451,7 +13479,11 @@
        }
       },
       "references": 2,
-      "verdict": "poke",
+      "review": {
+       "margin": 62,
+       "over_by": 14
+      },
+      "verdict": "review",
       "walk_within_references": false
      },
      {
@@ -13819,7 +13851,11 @@
        }
       },
       "references": 2,
-      "verdict": "poke",
+      "review": {
+       "margin": 11,
+       "over_by": 4
+      },
+      "verdict": "review",
       "walk_within_references": false
      },
      {
@@ -14049,7 +14085,11 @@
        }
       },
       "references": 2,
-      "verdict": "poke",
+      "review": {
+       "margin": 13,
+       "over_by": 6
+      },
+      "verdict": "review",
       "walk_within_references": false
      },
      {
@@ -14141,7 +14181,11 @@
        }
       },
       "references": 2,
-      "verdict": "poke",
+      "review": {
+       "margin": 13,
+       "over_by": 6
+      },
+      "verdict": "review",
       "walk_within_references": false
      },
      {
@@ -14647,7 +14691,11 @@
        }
       },
       "references": 2,
-      "verdict": "poke",
+      "review": {
+       "margin": 21,
+       "over_by": 20
+      },
+      "verdict": "review",
       "walk_within_references": false
      },
      {
@@ -14877,7 +14925,11 @@
        }
       },
       "references": 2,
-      "verdict": "poke",
+      "review": {
+       "margin": 38,
+       "over_by": 4
+      },
+      "verdict": "review",
       "walk_within_references": false
      },
      {
@@ -15015,7 +15067,11 @@
        }
       },
       "references": 2,
-      "verdict": "poke",
+      "review": {
+       "margin": 25,
+       "over_by": 8
+      },
+      "verdict": "review",
       "walk_within_references": false
      },
      {
@@ -17185,7 +17241,11 @@
        }
       },
       "references": 2,
-      "verdict": "poke",
+      "review": {
+       "margin": 65,
+       "over_by": 26
+      },
+      "verdict": "review",
       "walk_within_references": false
      },
      {
@@ -17737,7 +17797,11 @@
        }
       },
       "references": 2,
-      "verdict": "poke",
+      "review": {
+       "margin": 62,
+       "over_by": 50
+      },
+      "verdict": "review",
       "walk_within_references": false
      },
      {
@@ -18013,7 +18077,11 @@
        }
       },
       "references": 2,
-      "verdict": "poke",
+      "review": {
+       "margin": 61,
+       "over_by": 42
+      },
+      "verdict": "review",
       "walk_within_references": false
      },
      {
@@ -18105,7 +18173,11 @@
        }
       },
       "references": 2,
-      "verdict": "poke",
+      "review": {
+       "margin": 65,
+       "over_by": 2
+      },
+      "verdict": "review",
       "walk_within_references": true
      },
      {
@@ -19944,7 +20016,11 @@
        "rays": 865,
        "zfight": 0
       },
-      "verdict": "poke"
+      "review": {
+       "margin": 9,
+       "over_by": 3
+      },
+      "verdict": "review"
      },
      {
       "a": "hair_w_adventurer",
@@ -20040,7 +20116,11 @@
        "rays": 865,
        "zfight": 0
       },
-      "verdict": "poke"
+      "review": {
+       "margin": 9,
+       "over_by": 3
+      },
+      "verdict": "review"
      },
      {
       "a": "hair_w_casual_bob",
@@ -20072,7 +20152,11 @@
        "rays": 865,
        "zfight": 4
       },
-      "verdict": "poke"
+      "review": {
+       "margin": 9,
+       "over_by": 7
+      },
+      "verdict": "review"
      },
      {
       "a": "hair_w_casual_bob",
@@ -20104,7 +20188,11 @@
        "rays": 865,
        "zfight": 4
       },
-      "verdict": "poke"
+      "review": {
+       "margin": 9,
+       "over_by": 7
+      },
+      "verdict": "review"
      },
      {
       "a": "hair_w_casual_bob",
@@ -20136,7 +20224,11 @@
        "rays": 865,
        "zfight": 4
       },
-      "verdict": "poke"
+      "review": {
+       "margin": 9,
+       "over_by": 7
+      },
+      "verdict": "review"
      },
      {
       "a": "hair_w_casual_bob",
@@ -20168,7 +20260,11 @@
        "rays": 865,
        "zfight": 4
       },
-      "verdict": "poke"
+      "review": {
+       "margin": 9,
+       "over_by": 7
+      },
+      "verdict": "review"
      },
      {
       "a": "hair_w_casual_bob",
@@ -20219,7 +20315,11 @@
        "rays": 865,
        "zfight": 4
       },
-      "verdict": "poke"
+      "review": {
+       "margin": 9,
+       "over_by": 7
+      },
+      "verdict": "review"
      },
      {
       "a": "hair_w_casual_bob",
@@ -20251,7 +20351,11 @@
        "rays": 865,
        "zfight": 4
       },
-      "verdict": "poke"
+      "review": {
+       "margin": 9,
+       "over_by": 7
+      },
+      "verdict": "review"
      },
      {
       "a": "hair_w_casual_bob",
@@ -20302,7 +20406,11 @@
        "rays": 865,
        "zfight": 1
       },
-      "verdict": "poke"
+      "review": {
+       "margin": 9,
+       "over_by": 9
+      },
+      "verdict": "review"
      },
      {
       "a": "hair_w_formal_updo",
@@ -20334,7 +20442,11 @@
        "rays": 865,
        "zfight": 1
       },
-      "verdict": "poke"
+      "review": {
+       "margin": 9,
+       "over_by": 9
+      },
+      "verdict": "review"
      },
      {
       "a": "hair_w_formal_updo",
@@ -20366,7 +20478,11 @@
        "rays": 865,
        "zfight": 1
       },
-      "verdict": "poke"
+      "review": {
+       "margin": 9,
+       "over_by": 9
+      },
+      "verdict": "review"
      },
      {
       "a": "hair_w_formal_updo",
@@ -20398,7 +20514,11 @@
        "rays": 865,
        "zfight": 1
       },
-      "verdict": "poke"
+      "review": {
+       "margin": 9,
+       "over_by": 9
+      },
+      "verdict": "review"
      },
      {
       "a": "hair_w_formal_updo",
@@ -20449,7 +20569,11 @@
        "rays": 865,
        "zfight": 1
       },
-      "verdict": "poke"
+      "review": {
+       "margin": 9,
+       "over_by": 8
+      },
+      "verdict": "review"
      },
      {
       "a": "hair_w_formal_updo",
@@ -20481,7 +20605,11 @@
        "rays": 865,
        "zfight": 1
       },
-      "verdict": "poke"
+      "review": {
+       "margin": 9,
+       "over_by": 9
+      },
+      "verdict": "review"
      },
      {
       "a": "hair_w_formal_updo",
@@ -21026,7 +21154,11 @@
        "rays": 865,
        "zfight": 8
       },
-      "verdict": "poke"
+      "review": {
+       "margin": 9,
+       "over_by": 4
+      },
+      "verdict": "review"
      },
      {
       "a": "hair_w_scifi",
@@ -21058,7 +21190,11 @@
        "rays": 865,
        "zfight": 8
       },
-      "verdict": "poke"
+      "review": {
+       "margin": 9,
+       "over_by": 4
+      },
+      "verdict": "review"
      },
      {
       "a": "hair_w_scifi",
@@ -21090,7 +21226,11 @@
        "rays": 865,
        "zfight": 8
       },
-      "verdict": "poke"
+      "review": {
+       "margin": 9,
+       "over_by": 4
+      },
+      "verdict": "review"
      },
      {
       "a": "hair_w_scifi",
@@ -21122,7 +21262,11 @@
        "rays": 865,
        "zfight": 8
       },
-      "verdict": "poke"
+      "review": {
+       "margin": 9,
+       "over_by": 4
+      },
+      "verdict": "review"
      },
      {
       "a": "hair_w_scifi",
@@ -21141,7 +21285,11 @@
        "rays": 865,
        "zfight": 1
       },
-      "verdict": "gap"
+      "review": {
+       "margin": 9,
+       "over_by": 1
+      },
+      "verdict": "review"
      },
      {
       "a": "hair_w_scifi",
@@ -21173,7 +21321,11 @@
        "rays": 865,
        "zfight": 8
       },
-      "verdict": "poke"
+      "review": {
+       "margin": 9,
+       "over_by": 4
+      },
+      "verdict": "review"
      },
      {
       "a": "hair_w_scifi",
@@ -21205,7 +21357,11 @@
        "rays": 865,
        "zfight": 8
       },
-      "verdict": "poke"
+      "review": {
+       "margin": 9,
+       "over_by": 4
+      },
+      "verdict": "review"
      },
      {
       "a": "hair_w_scifi",
@@ -21224,7 +21380,11 @@
        "rays": 865,
        "zfight": 1
       },
-      "verdict": "gap"
+      "review": {
+       "margin": 9,
+       "over_by": 1
+      },
+      "verdict": "review"
      },
      {
       "a": "hair_w_soldier",
@@ -22074,7 +22234,11 @@
        "rays": 865,
        "zfight": 5
       },
-      "verdict": "poke"
+      "review": {
+       "margin": 9,
+       "over_by": 2
+      },
+      "verdict": "review"
      },
      {
       "a": "hair_w_worker",
@@ -22170,7 +22334,11 @@
        "rays": 865,
        "zfight": 5
       },
-      "verdict": "poke"
+      "review": {
+       "margin": 9,
+       "over_by": 2
+      },
+      "verdict": "review"
      }
     ],
     "cols": [
@@ -22237,7 +22405,11 @@
        "rays": 865,
        "zfight": 1
       },
-      "verdict": "poke"
+      "review": {
+       "margin": 9,
+       "over_by": 8
+      },
+      "verdict": "review"
      },
      {
       "a": "hair_m_adventurer",
@@ -22269,7 +22441,11 @@
        "rays": 865,
        "zfight": 4
       },
-      "verdict": "poke"
+      "review": {
+       "margin": 9,
+       "over_by": 2
+      },
+      "verdict": "review"
      },
      {
       "a": "hair_m_adventurer",
@@ -22301,7 +22477,11 @@
        "rays": 865,
        "zfight": 2
       },
-      "verdict": "poke"
+      "review": {
+       "margin": 9,
+       "over_by": 2
+      },
+      "verdict": "review"
      },
      {
       "a": "hair_m_adventurer",
@@ -22397,7 +22577,11 @@
        "rays": 865,
        "zfight": 2
       },
-      "verdict": "poke"
+      "review": {
+       "margin": 9,
+       "over_by": 7
+      },
+      "verdict": "review"
      },
      {
       "a": "hair_m_adventurer",
@@ -22429,7 +22613,11 @@
        "rays": 865,
        "zfight": 4
       },
-      "verdict": "poke"
+      "review": {
+       "margin": 9,
+       "over_by": 2
+      },
+      "verdict": "review"
      },
      {
       "a": "hair_m_adventurer",
@@ -22632,7 +22820,11 @@
        "rays": 865,
        "zfight": 2
       },
-      "verdict": "poke"
+      "review": {
+       "margin": 9,
+       "over_by": 4
+      },
+      "verdict": "review"
      },
      {
       "a": "hair_m_business",
@@ -22740,7 +22932,11 @@
        "rays": 865,
        "zfight": 2
       },
-      "verdict": "poke"
+      "review": {
+       "margin": 9,
+       "over_by": 2
+      },
+      "verdict": "review"
      },
      {
       "a": "hair_m_business",
@@ -22791,7 +22987,11 @@
        "rays": 865,
        "zfight": 2
       },
-      "verdict": "poke"
+      "review": {
+       "margin": 9,
+       "over_by": 4
+      },
+      "verdict": "review"
      },
      {
       "a": "hair_m_casual",
@@ -23128,7 +23328,11 @@
        "rays": 865,
        "zfight": 9
       },
-      "verdict": "poke"
+      "review": {
+       "margin": 9,
+       "over_by": 5
+      },
+      "verdict": "review"
      },
      {
       "a": "hair_m_farmer_buzz",
@@ -23331,7 +23535,11 @@
        "rays": 865,
        "zfight": 4
       },
-      "verdict": "poke"
+      "review": {
+       "margin": 9,
+       "over_by": 5
+      },
+      "verdict": "review"
      },
      {
       "a": "hair_m_king_long",
@@ -23435,7 +23643,11 @@
        "rays": 865,
        "zfight": 6
       },
-      "verdict": "poke"
+      "review": {
+       "margin": 9,
+       "over_by": 3
+      },
+      "verdict": "review"
      },
      {
       "a": "hair_m_king_long",
@@ -23467,7 +23679,11 @@
        "rays": 865,
        "zfight": 8
       },
-      "verdict": "poke"
+      "review": {
+       "margin": 9,
+       "over_by": 6
+      },
+      "verdict": "review"
      },
      {
       "a": "hair_m_king_long",
@@ -23499,7 +23715,11 @@
        "rays": 865,
        "zfight": 4
       },
-      "verdict": "poke"
+      "review": {
+       "margin": 9,
+       "over_by": 3
+      },
+      "verdict": "review"
      },
      {
       "a": "hair_m_king_long",
@@ -23567,7 +23787,11 @@
        "rays": 865,
        "zfight": 6
       },
-      "verdict": "poke"
+      "review": {
+       "margin": 9,
+       "over_by": 1
+      },
+      "verdict": "review"
      },
      {
       "a": "hair_m_punk_mohawk",
@@ -23695,7 +23919,11 @@
        "rays": 865,
        "zfight": 8
       },
-      "verdict": "poke"
+      "review": {
+       "margin": 9,
+       "over_by": 8
+      },
+      "verdict": "review"
      },
      {
       "a": "hair_m_punk_mohawk",
@@ -24929,7 +25157,11 @@
        "rays": 865,
        "zfight": 1
       },
-      "verdict": "gap"
+      "review": {
+       "margin": 9,
+       "over_by": 2
+      },
+      "verdict": "review"
      },
      {
       "a": "hair_w_scifi",
@@ -24986,7 +25218,11 @@
        "rays": 865,
        "zfight": 2
       },
-      "verdict": "gap"
+      "review": {
+       "margin": 9,
+       "over_by": 2
+      },
+      "verdict": "review"
      },
      {
       "a": "hair_w_scifi",
@@ -25024,7 +25260,11 @@
        "rays": 865,
        "zfight": 0
       },
-      "verdict": "gap"
+      "review": {
+       "margin": 9,
+       "over_by": 2
+      },
+      "verdict": "review"
      },
      {
       "a": "hair_w_scifi",
@@ -25062,7 +25302,11 @@
        "rays": 865,
        "zfight": 2
       },
-      "verdict": "gap"
+      "review": {
+       "margin": 9,
+       "over_by": 2
+      },
+      "verdict": "review"
      },
      {
       "a": "hair_w_soldier",
@@ -25493,7 +25737,11 @@
        "rays": 865,
        "zfight": 1
       },
-      "verdict": "poke"
+      "review": {
+       "margin": 9,
+       "over_by": 1
+      },
+      "verdict": "review"
      },
      {
       "a": "hair_w_witch",
@@ -25563,7 +25811,11 @@
        "rays": 865,
        "zfight": 0
       },
-      "verdict": "poke"
+      "review": {
+       "margin": 9,
+       "over_by": 8
+      },
+      "verdict": "review"
      },
      {
       "a": "hair_w_worker",
@@ -25663,7 +25915,11 @@
        "rays": 865,
        "zfight": 2
       },
-      "verdict": "poke"
+      "review": {
+       "margin": 9,
+       "over_by": 6
+      },
+      "verdict": "review"
      },
      {
       "a": "hair_w_worker",
@@ -25727,7 +25983,11 @@
        "rays": 865,
        "zfight": 4
       },
-      "verdict": "poke"
+      "review": {
+       "margin": 9,
+       "over_by": 6
+      },
+      "verdict": "review"
      },
      {
       "a": "hair_w_worker",
@@ -26108,8 +26368,12 @@
        }
       },
       "references": 2,
+      "review": {
+       "margin": 16,
+       "over_by": 8
+      },
       "top_neck_ring_m": 1.5736,
-      "verdict": "gap"
+      "verdict": "review"
      },
      {
       "a": "headwear_m_astronaut_space_helmet",
@@ -26428,8 +26692,12 @@
        }
       },
       "references": 2,
+      "review": {
+       "margin": 9,
+       "over_by": 4
+      },
       "top_neck_ring_m": 1.5552,
-      "verdict": "poke"
+      "verdict": "review"
      },
      {
       "a": "headwear_m_swat_helmet",
@@ -26878,8 +27146,12 @@
        }
       },
       "references": 2,
+      "review": {
+       "margin": 14,
+       "over_by": 6
+      },
       "top_neck_ring_m": 1.5736,
-      "verdict": "gap"
+      "verdict": "review"
      },
      {
       "a": "skull_m_adventurer",
@@ -27198,8 +27470,12 @@
        }
       },
       "references": 2,
+      "review": {
+       "margin": 13,
+       "over_by": 3
+      },
       "top_neck_ring_m": 1.5552,
-      "verdict": "poke"
+      "verdict": "review"
      },
      {
       "a": "skull_m_beach",
@@ -27296,8 +27572,12 @@
        }
       },
       "references": 2,
+      "review": {
+       "margin": 15,
+       "over_by": 4
+      },
       "top_neck_ring_m": 1.5736,
-      "verdict": "gap"
+      "verdict": "review"
      },
      {
       "a": "skull_m_beach",
@@ -27520,8 +27800,12 @@
        }
       },
       "references": 2,
+      "review": {
+       "margin": 6,
+       "over_by": 5
+      },
       "top_neck_ring_m": 1.5437,
-      "verdict": "poke"
+      "verdict": "review"
      },
      {
       "a": "skull_m_business",
@@ -27616,8 +27900,12 @@
        }
       },
       "references": 2,
+      "review": {
+       "margin": 7,
+       "over_by": 1
+      },
       "top_neck_ring_m": 1.5552,
-      "verdict": "poke"
+      "verdict": "review"
      },
      {
       "a": "skull_m_business",
@@ -27968,8 +28256,12 @@
        }
       },
       "references": 2,
+      "review": {
+       "margin": 7,
+       "over_by": 4
+      },
       "top_neck_ring_m": 1.5552,
-      "verdict": "poke"
+      "verdict": "review"
      },
      {
       "a": "skull_m_casual",
@@ -28418,8 +28710,12 @@
        }
       },
       "references": 3,
+      "review": {
+       "margin": 13,
+       "over_by": 4
+      },
       "top_neck_ring_m": 1.5736,
-      "verdict": "gap"
+      "verdict": "review"
      },
      {
       "a": "skull_m_farmer",
@@ -28610,8 +28906,12 @@
        }
       },
       "references": 2,
+      "review": {
+       "margin": 10,
+       "over_by": 4
+      },
       "top_neck_ring_m": 1.5863,
-      "verdict": "poke"
+      "verdict": "review"
      },
      {
       "a": "skull_m_hoodie",
@@ -28642,8 +28942,12 @@
        }
       },
       "references": 2,
+      "review": {
+       "margin": 7,
+       "over_by": 1
+      },
       "top_neck_ring_m": 1.5437,
-      "verdict": "poke"
+      "verdict": "review"
      },
      {
       "a": "skull_m_hoodie",
@@ -28994,8 +29298,12 @@
        }
       },
       "references": 2,
+      "review": {
+       "margin": 9,
+       "over_by": 3
+      },
       "top_neck_ring_m": 1.5437,
-      "verdict": "poke"
+      "verdict": "review"
      },
      {
       "a": "skull_m_king",
@@ -29090,8 +29398,12 @@
        }
       },
       "references": 2,
+      "review": {
+       "margin": 10,
+       "over_by": 4
+      },
       "top_neck_ring_m": 1.5552,
-      "verdict": "poke"
+      "verdict": "review"
      },
      {
       "a": "skull_m_king",
@@ -29188,8 +29500,12 @@
        }
       },
       "references": 2,
+      "review": {
+       "margin": 12,
+       "over_by": 4
+      },
       "top_neck_ring_m": 1.5736,
-      "verdict": "gap"
+      "verdict": "review"
      },
      {
       "a": "skull_m_king",
@@ -29350,8 +29666,12 @@
        }
       },
       "references": 2,
+      "review": {
+       "margin": 12,
+       "over_by": 2
+      },
       "top_neck_ring_m": 1.58,
-      "verdict": "gap"
+      "verdict": "review"
      },
      {
       "a": "skull_m_king",
@@ -29672,8 +29992,12 @@
        }
       },
       "references": 2,
+      "review": {
+       "margin": 15,
+       "over_by": 6
+      },
       "top_neck_ring_m": 1.5736,
-      "verdict": "gap"
+      "verdict": "review"
      },
      {
       "a": "skull_m_punk",
@@ -31289,8 +31613,12 @@
        }
       },
       "references": 1,
+      "review": {
+       "margin": 7,
+       "over_by": 1
+      },
       "top_neck_ring_m": 1.5863,
-      "verdict": "poke"
+      "verdict": "review"
      },
      {
       "a": "skull_w_punk",
@@ -33747,8 +34075,12 @@
        }
       },
       "references": 1,
+      "review": {
+       "margin": 13,
+       "over_by": 9
+      },
       "top_neck_ring_m": 1.5423,
-      "verdict": "poke"
+      "verdict": "review"
      },
      {
       "a": "headwear_m_astronaut_space_helmet",
@@ -34133,8 +34465,12 @@
        }
       },
       "references": 1,
+      "review": {
+       "margin": 8,
+       "over_by": 1
+      },
       "top_neck_ring_m": 1.5423,
-      "verdict": "poke"
+      "verdict": "review"
      },
      {
       "a": "headwear_m_swat_helmet",
@@ -35103,8 +35439,12 @@
        }
       },
       "references": 1,
+      "review": {
+       "margin": 12,
+       "over_by": 3
+      },
       "top_neck_ring_m": 1.5423,
-      "verdict": "poke"
+      "verdict": "review"
      },
      {
       "a": "skull_m_beach",
@@ -35809,8 +36149,12 @@
        }
       },
       "references": 1,
+      "review": {
+       "margin": 6,
+       "over_by": 1
+      },
       "top_neck_ring_m": 1.5423,
-      "verdict": "poke"
+      "verdict": "review"
      },
      {
       "a": "skull_m_casual",
@@ -36195,8 +36539,12 @@
        }
       },
       "references": 1,
+      "review": {
+       "margin": 10,
+       "over_by": 2
+      },
       "top_neck_ring_m": 1.5423,
-      "verdict": "poke"
+      "verdict": "review"
      },
      {
       "a": "skull_m_farmer",
@@ -36581,8 +36929,12 @@
        }
       },
       "references": 1,
+      "review": {
+       "margin": 6,
+       "over_by": 2
+      },
       "top_neck_ring_m": 1.5423,
-      "verdict": "poke"
+      "verdict": "review"
      },
      {
       "a": "skull_m_hoodie",
@@ -37353,8 +37705,12 @@
        }
       },
       "references": 1,
+      "review": {
+       "margin": 12,
+       "over_by": 2
+      },
       "top_neck_ring_m": 1.5423,
-      "verdict": "poke"
+      "verdict": "review"
      },
      {
       "a": "skull_m_punk",
@@ -41246,7 +41602,11 @@
        "rays": 865,
        "zfight": 1
       },
-      "verdict": "poke"
+      "review": {
+       "margin": 9,
+       "over_by": 6
+      },
+      "verdict": "review"
      },
      {
       "a": "headwear_m_king_crown",
@@ -41409,7 +41769,11 @@
        "rays": 865,
        "zfight": 1
       },
-      "verdict": "poke"
+      "review": {
+       "margin": 9,
+       "over_by": 9
+      },
+      "verdict": "review"
      },
      {
       "a": "headwear_m_king_crown",
@@ -41544,7 +41908,11 @@
        "rays": 865,
        "zfight": 1
       },
-      "verdict": "poke"
+      "review": {
+       "margin": 9,
+       "over_by": 6
+      },
+      "verdict": "review"
      },
      {
       "a": "headwear_m_king_crown",
@@ -41591,7 +41959,11 @@
        "rays": 865,
        "zfight": 2
       },
-      "verdict": "poke"
+      "review": {
+       "margin": 9,
+       "over_by": 8
+      },
+      "verdict": "review"
      },
      {
       "a": "headwear_m_king_crown",
@@ -41621,7 +41993,11 @@
        "rays": 865,
        "zfight": 0
       },
-      "verdict": "poke"
+      "review": {
+       "margin": 9,
+       "over_by": 6
+      },
+      "verdict": "review"
      },
      {
       "a": "headwear_m_king_crown",
@@ -42234,7 +42610,11 @@
        "rays": 865,
        "zfight": 1
       },
-      "verdict": "poke"
+      "review": {
+       "margin": 9,
+       "over_by": 3
+      },
+      "verdict": "review"
      },
      {
       "a": "headwear_w_medieval_hood",
@@ -42299,7 +42679,11 @@
        "rays": 865,
        "zfight": 1
       },
-      "verdict": "poke"
+      "review": {
+       "margin": 9,
+       "over_by": 5
+      },
+      "verdict": "review"
      },
      {
       "a": "headwear_w_medieval_hood",
@@ -42785,7 +43169,11 @@
        "rays": 865,
        "zfight": 0
       },
-      "verdict": "poke"
+      "review": {
+       "margin": 9,
+       "over_by": 8
+      },
+      "verdict": "review"
      },
      {
       "a": "headwear_w_witch_hat",
@@ -42862,7 +43250,11 @@
        "rays": 865,
        "zfight": 3
       },
-      "verdict": "poke"
+      "review": {
+       "margin": 9,
+       "over_by": 9
+      },
+      "verdict": "review"
      },
      {
       "a": "headwear_w_witch_hat",
@@ -44366,7 +44758,11 @@
        "rays": 865,
        "zfight": 1
       },
-      "verdict": "poke"
+      "review": {
+       "margin": 9,
+       "over_by": 6
+      },
+      "verdict": "review"
      },
      {
       "a": "headwear_m_king_crown",
@@ -44529,7 +44925,11 @@
        "rays": 865,
        "zfight": 1
       },
-      "verdict": "poke"
+      "review": {
+       "margin": 9,
+       "over_by": 9
+      },
+      "verdict": "review"
      },
      {
       "a": "headwear_m_king_crown",
@@ -44664,7 +45064,11 @@
        "rays": 865,
        "zfight": 1
       },
-      "verdict": "poke"
+      "review": {
+       "margin": 9,
+       "over_by": 6
+      },
+      "verdict": "review"
      },
      {
       "a": "headwear_m_king_crown",
@@ -44711,7 +45115,11 @@
        "rays": 865,
        "zfight": 2
       },
-      "verdict": "poke"
+      "review": {
+       "margin": 9,
+       "over_by": 8
+      },
+      "verdict": "review"
      },
      {
       "a": "headwear_m_king_crown",
@@ -44741,7 +45149,11 @@
        "rays": 865,
        "zfight": 0
       },
-      "verdict": "poke"
+      "review": {
+       "margin": 9,
+       "over_by": 6
+      },
+      "verdict": "review"
      },
      {
       "a": "headwear_m_king_crown",
@@ -45354,7 +45766,11 @@
        "rays": 865,
        "zfight": 1
       },
-      "verdict": "poke"
+      "review": {
+       "margin": 9,
+       "over_by": 3
+      },
+      "verdict": "review"
      },
      {
       "a": "headwear_w_medieval_hood",
@@ -45419,7 +45835,11 @@
        "rays": 865,
        "zfight": 1
       },
-      "verdict": "poke"
+      "review": {
+       "margin": 9,
+       "over_by": 5
+      },
+      "verdict": "review"
      },
      {
       "a": "headwear_w_medieval_hood",
@@ -45905,7 +46325,11 @@
        "rays": 865,
        "zfight": 1
       },
-      "verdict": "poke"
+      "review": {
+       "margin": 9,
+       "over_by": 7
+      },
+      "verdict": "review"
      },
      {
       "a": "headwear_w_witch_hat",
@@ -45982,7 +46406,11 @@
        "rays": 865,
        "zfight": 3
       },
-      "verdict": "poke"
+      "review": {
+       "margin": 9,
+       "over_by": 9
+      },
+      "verdict": "review"
      },
      {
       "a": "headwear_w_witch_hat",
@@ -46913,8 +47341,12 @@
        }
       },
       "references": 2,
+      "review": {
+       "margin": 6,
+       "over_by": 4
+      },
       "top_lower_edge_m": 0.9898,
-      "verdict": "poke"
+      "verdict": "review"
      },
      {
       "a": "top_m_adventurer",
@@ -46945,8 +47377,12 @@
        }
       },
       "references": 2,
+      "review": {
+       "margin": 7,
+       "over_by": 3
+      },
       "top_lower_edge_m": 0.9898,
-      "verdict": "poke"
+      "verdict": "review"
      },
      {
       "a": "top_m_adventurer",
@@ -47585,8 +48021,12 @@
        }
       },
       "references": 2,
+      "review": {
+       "margin": 4,
+       "over_by": 1
+      },
       "top_lower_edge_m": 1.0211,
-      "verdict": "poke"
+      "verdict": "review"
      },
      {
       "a": "top_m_beach",
@@ -47777,8 +48217,12 @@
        }
       },
       "references": 2,
+      "review": {
+       "margin": 5,
+       "over_by": 4
+      },
       "top_lower_edge_m": 1.0211,
-      "verdict": "poke"
+      "verdict": "review"
      },
      {
       "a": "top_m_beach",
@@ -48225,8 +48669,12 @@
        }
       },
       "references": 2,
+      "review": {
+       "margin": 6,
+       "over_by": 2
+      },
       "top_lower_edge_m": 1.0202,
-      "verdict": "poke"
+      "verdict": "review"
      },
      {
       "a": "top_m_business",
@@ -48705,8 +49153,12 @@
        }
       },
       "references": 2,
+      "review": {
+       "margin": 6,
+       "over_by": 2
+      },
       "top_lower_edge_m": 1.0004,
-      "verdict": "poke"
+      "verdict": "review"
      },
      {
       "a": "top_m_farmer",
@@ -49345,8 +49797,12 @@
        }
       },
       "references": 2,
+      "review": {
+       "margin": 7,
+       "over_by": 2
+      },
       "top_lower_edge_m": 0.9864,
-      "verdict": "poke"
+      "verdict": "review"
      },
      {
       "a": "top_m_king",
@@ -49377,8 +49833,12 @@
        }
       },
       "references": 2,
+      "review": {
+       "margin": 7,
+       "over_by": 1
+      },
       "top_lower_edge_m": 0.9864,
-      "verdict": "poke"
+      "verdict": "review"
      },
      {
       "a": "top_m_king",
@@ -49665,8 +50125,12 @@
        }
       },
       "references": 2,
+      "review": {
+       "margin": 7,
+       "over_by": 1
+      },
       "top_lower_edge_m": 0.9864,
-      "verdict": "poke"
+      "verdict": "review"
      },
      {
       "a": "top_m_punk",
@@ -49761,8 +50225,12 @@
        }
       },
       "references": 2,
+      "review": {
+       "margin": 6,
+       "over_by": 4
+      },
       "top_lower_edge_m": 1.0008,
-      "verdict": "poke"
+      "verdict": "review"
      },
      {
       "a": "top_m_punk",
@@ -49825,8 +50293,12 @@
        }
       },
       "references": 2,
+      "review": {
+       "margin": 6,
+       "over_by": 5
+      },
       "top_lower_edge_m": 1.0008,
-      "verdict": "poke"
+      "verdict": "review"
      },
      {
       "a": "top_m_punk",
@@ -49857,8 +50329,12 @@
        }
       },
       "references": 2,
+      "review": {
+       "margin": 6,
+       "over_by": 5
+      },
       "top_lower_edge_m": 1.0008,
-      "verdict": "poke"
+      "verdict": "review"
      },
      {
       "a": "top_m_punk",
@@ -49889,8 +50365,12 @@
        }
       },
       "references": 2,
+      "review": {
+       "margin": 7,
+       "over_by": 4
+      },
       "top_lower_edge_m": 1.0008,
-      "verdict": "poke"
+      "verdict": "review"
      },
      {
       "a": "top_m_punk",
@@ -50115,8 +50595,12 @@
        }
       },
       "references": 2,
+      "review": {
+       "margin": 4,
+       "over_by": 1
+      },
       "top_lower_edge_m": 1.0301,
-      "verdict": "poke"
+      "verdict": "review"
      },
      {
       "a": "top_m_swat",
@@ -51402,8 +51886,12 @@
        }
       },
       "references": 2,
+      "review": {
+       "margin": 8,
+       "over_by": 5
+      },
       "top_lower_edge_m": 1.0938,
-      "verdict": "poke"
+      "verdict": "review"
      },
      {
       "a": "top_w_casual",
@@ -51692,8 +52180,12 @@
        }
       },
       "references": 2,
+      "review": {
+       "margin": 4,
+       "over_by": 4
+      },
       "top_lower_edge_m": 1.1201,
-      "verdict": "poke"
+      "verdict": "review"
      },
      {
       "a": "top_w_formal",
@@ -51822,8 +52314,12 @@
        }
       },
       "references": 2,
+      "review": {
+       "margin": 4,
+       "over_by": 1
+      },
       "top_lower_edge_m": 1.1201,
-      "verdict": "poke"
+      "verdict": "review"
      },
      {
       "a": "top_w_formal",
@@ -52110,8 +52606,12 @@
        }
       },
       "references": 2,
+      "review": {
+       "margin": 8,
+       "over_by": 4
+      },
       "top_lower_edge_m": 1.0586,
-      "verdict": "poke"
+      "verdict": "review"
      },
      {
       "a": "top_w_medieval",
@@ -52398,8 +52898,12 @@
        }
       },
       "references": 2,
+      "review": {
+       "margin": 4,
+       "over_by": 1
+      },
       "top_lower_edge_m": 1.1196,
-      "verdict": "poke"
+      "verdict": "review"
      },
      {
       "a": "top_w_punk",
@@ -55540,8 +56044,12 @@
        }
       },
       "references": 2,
+      "review": {
+       "margin": 4,
+       "over_by": 2
+      },
       "top_lower_edge_m": 1.1456,
-      "verdict": "poke"
+      "verdict": "review"
      },
      {
       "a": "top_w_worker",
@@ -59757,7 +60265,8 @@
     "needs_fix": "a gap of up to 30 mm (or a sliver) that extend_edge on the bottom closes, measured",
     "ok_over": "worn over the shoe; no see-through and the shoe does not show through",
     "ok_tucked": "tucked in; after tuck_cull no see-through and no poke-through",
-    "poke": "the shoe and the bottom cross: one shows through the other"
+    "poke": "the shoe and the bottom cross: one shows through the other",
+    "review": "no vertical gap, and the rays fail the allowance by at most 4 rays or 1 % of the rays cast: too close to call by rays; the designer decides on a render"
    }
   },
   {
@@ -59769,7 +60278,8 @@
     "needs_fix": "a gap of up to 30 mm (or a sliver) that extend_edge on the top's hem closes, measured",
     "ok_over": "the top hangs over the bottom",
     "ok_tucked": "the top goes inside the bottom",
-    "poke": "the waistband and the hem cross: one shows through the other"
+    "poke": "the waistband and the hem cross: one shows through the other",
+    "review": "no vertical gap, and the rays fail the allowance by at most 4 rays or 1 % of the rays cast: too close to call by rays; the designer decides on a render"
    }
   },
   {
@@ -59780,7 +60290,8 @@
     "gap": "more than 30 mm apart, or the fix does not close it",
     "needs_fix": "extend_edge on the head's neck closes it, measured",
     "ok": "the neck seam closes",
-    "poke": "the neck and the collar cross: one shows through the other"
+    "poke": "the neck and the collar cross: one shows through the other",
+    "review": "no vertical gap, and the rays fail the allowance by at most 4 rays or 1 % of the rays cast: too close to call by rays; the designer decides on a render"
    }
   },
   {
@@ -59790,7 +60301,8 @@
    "verdicts": {
     "needs_fix": "fits after the hat is inflated (scaled off the skull by 1 to 3 %), measured",
     "ok": "the hair stays inside the hat",
-    "poke": "the hair comes out through the hat even with the hat inflated by 3 %"
+    "poke": "the hair comes out through the hat even with the hat inflated by 3 %",
+    "review": "no vertical gap, and the rays fail the allowance by at most 4 rays or 1 % of the rays cast: too close to call by rays; the designer decides on a render"
    }
   },
   {
@@ -59801,7 +60313,8 @@
     "gap": "the open top of the skull shows (cap-style hair is missing or does not cover it)",
     "needs_fix": "fits after inflate 0.006 (the hair scaled off the skull), measured",
     "ok": "fits as is",
-    "poke": "the skull cuts through the hair even after the inflate"
+    "poke": "the skull cuts through the hair even after the inflate",
+    "review": "no vertical gap, and the rays fail the allowance by at most 4 rays or 1 % of the rays cast: too close to call by rays; the designer decides on a render"
    }
   }
  ],
@@ -59829,7 +60342,8 @@
      "needs_fix": 8,
      "ok_over": 59,
      "ok_tucked": 6,
-     "poke": 42
+     "poke": 35,
+     "review": 7
     }
    },
    "W": {
@@ -59840,7 +60354,8 @@
      "gap": 29,
      "ok_over": 14,
      "ok_tucked": 27,
-     "poke": 30
+     "poke": 19,
+     "review": 11
     }
    }
   },
@@ -59848,19 +60363,20 @@
    "M": {
     "pairs": 152,
     "verdicts": {
-     "gap": 2,
      "needs_fix": 2,
      "ok": 66,
-     "poke": 82
+     "poke": 60,
+     "review": 24
     }
    },
    "W": {
     "pairs": 152,
     "verdicts": {
-     "gap": 14,
+     "gap": 10,
      "needs_fix": 13,
      "ok": 89,
-     "poke": 36
+     "poke": 17,
+     "review": 23
     }
    }
   },
@@ -59870,10 +60386,10 @@
     "gap_over_5mm_exact": 0,
     "pairs": 198,
     "verdicts": {
-     "gap": 7,
      "needs_fix": 22,
      "ok": 158,
-     "poke": 11
+     "poke": 1,
+     "review": 17
     }
    },
    "W": {
@@ -59883,7 +60399,8 @@
     "verdicts": {
      "gap": 7,
      "ok": 76,
-     "poke": 97
+     "poke": 90,
+     "review": 7
     }
    }
   },
@@ -59893,7 +60410,8 @@
     "verdicts": {
      "needs_fix": 14,
      "ok": 31,
-     "poke": 69
+     "poke": 60,
+     "review": 9
     }
    },
    "W": {
@@ -59901,7 +60419,8 @@
     "verdicts": {
      "needs_fix": 14,
      "ok": 31,
-     "poke": 69
+     "poke": 60,
+     "review": 9
     }
    }
   },
@@ -59914,7 +60433,8 @@
      "needs_fix": 1,
      "ok_over": 85,
      "ok_tucked": 5,
-     "poke": 30
+     "poke": 16,
+     "review": 14
     }
    },
    "W": {
@@ -59926,7 +60446,8 @@
      "needs_fix": 12,
      "ok_over": 12,
      "ok_tucked": 14,
-     "poke": 60
+     "poke": 54,
+     "review": 6
     }
    }
   }
@@ -59942,6 +60463,8 @@
   ],
   "poke_behind_m": 0.015,
   "ray_slack": 2,
+  "review_rays": 4,
+  "review_share": 0.01,
   "states": [
    "rest",
    "walk (Walk f6)"

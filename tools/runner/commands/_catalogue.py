@@ -16,11 +16,11 @@ MODES = ("sheets", "matrices", "confirm")
 SLOTS = ("top", "bottom", "shoes")
 ITEM_KINDS = ("skull", "hair", "brows", "facial_hair", "headwear", "earrings", "accessory")
 MATRICES = {
-    "bottom_shoes": ("ok_tucked", "ok_over", "needs_fix", "gap", "poke"),
-    "top_bottom": ("ok_over", "ok_tucked", "needs_fix", "gap", "poke"),
-    "head_top": ("ok", "needs_fix", "gap", "poke"),
-    "hair_skull": ("ok", "needs_fix", "gap", "poke"),
-    "headwear_hair": ("ok", "needs_fix", "poke"),
+    "bottom_shoes": ("ok_tucked", "ok_over", "needs_fix", "review", "gap", "poke"),
+    "top_bottom": ("ok_over", "ok_tucked", "needs_fix", "review", "gap", "poke"),
+    "head_top": ("ok", "needs_fix", "review", "gap", "poke"),
+    "hair_skull": ("ok", "needs_fix", "review", "gap", "poke"),
+    "headwear_hair": ("ok", "needs_fix", "review", "poke"),
 }
 FIXES = ("extend_edge", "inflate", "tuck_cull")
 TOP_KEYS = ("schema", "generated_by", "sources", "conventions", "thresholds", "characters", "files", "parts", "heads",

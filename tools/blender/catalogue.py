@@ -34,12 +34,16 @@ PACKS = {"M": "refs/Ultimate_Modular_Men_Pack", "W": "refs/Ultimate_Modular_Wome
 SOURCES = {"M": "sources/quaternius_ultimate_modular_men.toml", "W": "sources/quaternius_ultimate_modular_women.toml"}
 MODES = ("sheets", "matrices", "confirm")
 
+REVIEW = ("no vertical gap, and the rays fail the allowance by at most 4 rays or 1 % of the rays cast: too close to "
+          "call by rays; the designer decides on a render")
+
 RULES = [
     {"id": "bottom_shoes", "seam": "ankle",
      "condition": "On each leg, the bottom's lower edge is below the shoes' top edge (collar): overlap_mm = collar top "
                   "- bottom lower edge >= 0. Then the bottom is tucked in when most of its shin just under the collar "
                   "is inside the shoe (um/fit.py tuck_cull deletes what is below the collar), else worn over.",
-     "verdicts": {"ok_tucked": "tucked in; after tuck_cull no see-through and no poke-through",
+     "verdicts": {"review": REVIEW,
+                  "ok_tucked": "tucked in; after tuck_cull no see-through and no poke-through",
                   "ok_over": "worn over the shoe; no see-through and the shoe does not show through",
                   "needs_fix": "a gap of up to 30 mm (or a sliver) that extend_edge on the bottom closes, measured",
                   "gap": "the bottom ends more than 30 mm above the collar (a knee-length bottom over low shoes) or "
@@ -48,27 +52,31 @@ RULES = [
     {"id": "top_bottom", "seam": "waist",
      "condition": "The top's lower edge is below the bottom's upper edge: overlap_mm = bottom upper edge - top lower "
                   "edge >= 0, and no ray sees through the waist. The outer part is the one hit first where both are.",
-     "verdicts": {"ok_over": "the top hangs over the bottom", "ok_tucked": "the top goes inside the bottom",
+     "verdicts": {"review": REVIEW,
+                  "ok_over": "the top hangs over the bottom", "ok_tucked": "the top goes inside the bottom",
                   "needs_fix": "a gap of up to 30 mm (or a sliver) that extend_edge on the top's hem closes, measured",
                   "gap": "more than 30 mm apart, or the fix does not close it",
                   "poke": "the waistband and the hem cross: one shows through the other"}},
     {"id": "head_top", "seam": "neck",
      "condition": "The top's neck ring reaches above the head's lowest ring: overlap_mm = top neck ring top - head "
                   "bottom >= 0, and no ray sees through the neck.",
-     "verdicts": {"ok": "the neck seam closes", "needs_fix": "extend_edge on the head's neck closes it, measured",
+     "verdicts": {"review": REVIEW,
+                  "ok": "the neck seam closes", "needs_fix": "extend_edge on the head's neck closes it, measured",
                   "gap": "more than 30 mm apart, or the fix does not close it",
                   "poke": "the neck and the collar cross: one shows through the other"}},
     {"id": "headwear_hair", "seam": "hat",
      "condition": "The hair stays inside the hat: on the scalp rays (toward the skull centre) no more hair comes out "
                   "in front of the hat, or lies on it, than with the hat's own hair (poke and z-fight rays no higher "
                   "than that reference plus 2). The helmets that are whole heads replace the skull and the hair.",
-     "verdicts": {"ok": "the hair stays inside the hat",
+     "verdicts": {"review": REVIEW,
+                  "ok": "the hair stays inside the hat",
                   "needs_fix": "fits after the hat is inflated (scaled off the skull by 1 to 3 %), measured",
                   "poke": "the hair comes out through the hat even with the hat inflated by 3 %"}},
     {"id": "hair_skull", "seam": "scalp",
      "condition": "Hair covers the skull's open top (no hole rays) and the skull surface never comes out through the "
                   "hair or lies on it (no poke or z-fight rays).",
-     "verdicts": {"ok": "fits as is", "needs_fix": "fits after inflate 0.006 (the hair scaled off the skull), measured",
+     "verdicts": {"review": REVIEW,
+                  "ok": "fits as is", "needs_fix": "fits after inflate 0.006 (the hair scaled off the skull), measured",
                   "gap": "the open top of the skull shows (cap-style hair is missing or does not cover it)",
                   "poke": "the skull cuts through the hair even after the inflate"}},
 ]
@@ -266,7 +274,7 @@ def main():
                    "(m or w is the source pack, not a restriction: heads, hair and face items cross body types)",
         },
         "thresholds": {"ray_slack": cr.RAY_SLACK, "gap_mm": cr.GAP_MM, "fixable_mm": cr.FIXABLE_MM,
-                       "poke_behind_m": cr.BEHIND, "hair_inflate": cr.HAIR_INFLATE, "hat_inflate": list(cr.HAT_INFLATE), "zfight_m": cr.ZFIGHT,
+                       "poke_behind_m": cr.BEHIND, "review_rays": cr.REVIEW_RAYS, "review_share": cr.REVIEW_SHARE, "hair_inflate": cr.HAIR_INFLATE, "hat_inflate": list(cr.HAT_INFLATE), "zfight_m": cr.ZFIGHT,
                        "states": [s["name"] + (" (%s f%d)" % (s["pose"]["action"], s["pose"]["frame"]) if "pose" in s else "")
                                   for s in cr.STATES]},
         "characters": chars,

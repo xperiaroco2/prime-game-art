@@ -10,6 +10,9 @@ in a walking pose. Hair x skull is measured with rays from outside toward the sk
                              down), inflate (hair scaled off the skull)
     gap                      the parts do not meet (an opening; too far apart for extend_edge)
     poke                     one part shows through the other and no assembler fix removes it
+    review                   no vertical gap, and the rays fail the allowance by at most REVIEW_RAYS or REVIEW_SHARE
+                             of the band's rays: too close to call by rays (renders of such pairs mostly look clean);
+                             the designer decides on a render before the menu offers it
 
 The rays are judged against the pack's own outfits, because the pack's characters themselves show a few see-through
 and poke-through rays at their seams (grazing rays, authored overlaps, skinning in motion): a pair passes when, in each
@@ -44,6 +47,37 @@ HAT_MEASURES = ("poke", "zfight")
 HAT_INFLATE = (0.01, 0.02, 0.03)  # inflate tries for a hat over hair that pokes through it (um/assemble.py extras)
 ALL_STATES = tuple(st["name"] for st in STATES)
 FIX_ROUNDS = 3  # extend_edge tries: the gap plus 10 mm, then 10 mm more each round
+REVIEW_RAYS = 4  # a poke or gap that fails its allowance by at most this many rays (or REVIEW_SHARE of the rays cast in
+REVIEW_SHARE = 0.01  # that state) is "review": calibrated on 5 renders of such pairs that looked clean (art #19's review)
+
+
+def review_margin(rays):
+    return max(REVIEW_RAYS, math.ceil(REVIEW_SHARE * rays))
+
+
+def review_seam(cells):
+    """A seam cell judged poke or gap becomes review when it has no vertical gap and, in every judged state, each count
+    exceeds its allowance by at most review_margin (the pair as is, without a fix)."""
+    for c in cells:
+        if c["verdict"] not in ("poke", "gap") or c["overlap_mm"] < 0:
+            continue
+        allow = c["allowance"]
+        over = max(c["probe"][s][k] - allow[s][k] for s in allow for k in allow[s])
+        margin = min(review_margin(c["probe"][s]["rays"]) for s in allow)
+        if over <= margin:
+            c["verdict"] = "review"
+            c["review"] = {"over_by": over, "margin": margin}
+
+
+def review_rays(c, measures):
+    """The same for a scalp or hat cell (its rays against its allowance)."""
+    if c["verdict"] not in ("poke", "gap"):
+        return
+    over = max(c["rays"][k] - c["allowance"][k] for k in measures)
+    margin = review_margin(c["rays"]["rays"])
+    if over <= margin:
+        c["verdict"] = "review"
+        c["review"] = {"over_by": over, "margin": margin}
 
 
 def r1(x):
@@ -286,6 +320,7 @@ def ankle_matrix(lib, g, inv, make_copy, remove):
                 ankle_bands(arm, {s: dict(v, bottom_lower_edge_m=round(v["bottom_lower_edge_m"] - d, 4))
                                   for s, v in cell["legs"].items()}))))
     fix_rounds(arm, fixes)
+    review_seam(cells)
     for copy in copies:
         remove(copy)
     return {"rows": bots, "cols": shoes, "cells": cells}
@@ -321,6 +356,7 @@ def waist_matrix(lib, g, inv, make_copy, remove):
             fixes.append(Fix(cell, copy, "top", lambda c, d, cell=cell: waist_job(
                 c, lib.parts[cell["b"]], cell["top_lower_edge_m"] - d, cell["bottom_upper_edge_m"])))
     fix_rounds(arm, fixes)
+    review_seam(cells)
     for copy in [f.copy for f in fixes]:
         remove(copy)
     return {"rows": tops, "cols": bots, "cells": cells}
@@ -363,6 +399,7 @@ def neck_matrix(lib, g, inv, rows, row_objs, items, owners, head_of, make_copy, 
             fixes.append(Fix(cell, copy, "head", lambda c, d, cell=cell: neck_job(
                 c, lib.parts[cell["b"]], cell["head_bottom_m"] - d, cell["top_neck_ring_m"])))
     fix_rounds(arm, fixes)
+    review_seam(cells)
     for copy in [f.copy for f in fixes]:
         remove(copy)
     return {"rows": rows, "cols": tops, "cells": cells}
@@ -451,6 +488,7 @@ def hair_matrix(rigs, hairs, skulls_by_g, objs, items, unique, make_copy, remove
                     cell["verdict"] = "needs_fix" if closes else "poke"
                     if closes:
                         cell["fix"] = {"fix": "inflate", "amount": HAIR_INFLATE}
+                review_rays(cell, HAIR_MEASURES)
                 cells.append(cell)
         out[g] = {"rows": hairs, "cols": skulls, "cells": cells}
     return out
@@ -521,6 +559,7 @@ def hat_matrix(rigs, hats, hairs, objs, items, unique, make_copy, remove):
                             cell["verdict"] = "needs_fix"
                             cell["fix"] = {"fix": "inflate", "part": "headwear", "amount": amount}
                             break
+                review_rays(cell, HAT_MEASURES)
                 cells.append(cell)
         out[g] = {"rows": hats, "cols": hairs, "cells": cells}
     return out

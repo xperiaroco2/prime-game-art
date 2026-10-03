@@ -113,12 +113,19 @@ and is measured again.
 | headwear x hair (the hat) | The hair stays inside the hat: no more poke or z-fight rays than the hat over its own hair, plus 2 | `ok`, `needs_fix` (inflate the hat 1 to 3 %), `poke` |
 | hair x skull (the scalp) | The hair covers the skull's open top (no hole rays) and the skull never comes out through the hair or lies on it (no poke or z-fight rays) | `ok`, `needs_fix` (inflate), `gap` (the open top shows), `poke` |
 
+**Review: too close to call by rays.** A pair whose rays fail its allowance by a few rays is not clearly worse
+than the pack's own outfits: in art #19's review, five renders of pairs that failed by 1 to 4 rays (out of 216 to
+6408) all looked clean. So a pair with no vertical gap (`overlap_mm >= 0`) that fails by at most 4 rays, or 1 % of the
+rays cast in that state when that is more, is **review**: the designer decides on a render. The cell records
+`review` (`over_by`, `margin`). Larger failures stay poke or gap; a few of those may still read as mild at a glance
+(a men's thicker neck covering a women's neckline, 100 poke rays against 2 allowed), which is a look question.
+
 In words: **gap** means the parts do not meet (an opening; more than 30 mm apart, or the last extend_edge try still
 sees through); **poke** means one part shows through the other and no assembler fix removes it, including a pair whose
 opening extend_edge closed but whose lowered edge then crosses the other part (the women's Worker top over Punk
 trousers, the women's Punk top on any other skull; `fix_tried.rounds` lists every try); **needs_fix** names the fix that was
 tried and closed it. For the menu: offer a pair when its verdict is `ok`, `ok_tucked` or `ok_over`, or `needs_fix`
-with the fix applied at assembly.
+with the fix applied at assembly; a `review` pair only after the designer approves it on a render.
 
 ## The data file: `catalogue/ultimate_modular.json`
 
@@ -127,7 +134,7 @@ with the fix applied at assembly.
 | `schema` | `prime-game-art/catalogue/ultimate-modular/1` |
 | `generated_by`, `sources` | The command; per body type the pack folder (in the raw folder), its source record and the skeleton file |
 | `conventions` | Space, units and id rules (below) |
-| `thresholds` | `ray_slack` (2), `gap_mm` (5: a "gap" in the counts, in whole millimetres as the final test reported), `fixable_mm` (30), `poke_behind_m` (0.015), `hair_inflate` (0.006), `hat_inflate` (0.01, 0.02, 0.03), `zfight_m` (0.0005), `states` |
+| `thresholds` | `ray_slack` (2), `gap_mm` (5: a "gap" in the counts, in whole millimetres as the final test reported), `fixable_mm` (30), `review_rays` (4), `review_share` (0.01), `poke_behind_m` (0.015), `hair_inflate` (0.006), `hat_inflate` (0.01, 0.02, 0.03), `zfight_m` (0.0005), `states` |
 | `characters` | Counts per body type and in total, `animated_woman` (the two files compared: hashes, objects, equal mesh positions, equal animations and skin, the verdict), `animation_sets_per_body_type`, `skeletons_per_body_type` (distinct inverse bind matrix sets) |
 | `files[]` | Per pack file: `body_type`, `file`, `character` (the id name), `sha256`, `parts` (`{slot: {id, object}}`), `props`, `animations` (24), `animation_set` (a hash), `skin` |
 | `parts{id}` | Tops, bottoms and shoes: `slot`, `body_type`, `triangles`, `vertices`, `materials[]` (`name`, `rgb`: the GLB's linear `baseColorFactor`, `triangles`), `bounds` (`min_m`, `max_m`), `same_geometry_as` (only when an equal mesh exists, found with a 0.5 mm point test; no clothing twins exist today), `seams` (below) |
@@ -139,7 +146,7 @@ with the fix applied at assembly.
 | `proposed_zones` | Cut zones defined in `catalogue_heads.py` and proposed for `um/zones.py`: `facial_hair`, `moustache`, `brows` (the brow box above z 1.698, where the women's `Brown` brows sit over the eyes), their `not_` complements, `not_chin_tuft`, `not_brow_zone`. Tested on pieces, the brow zones also ask for a brow's size (at most 64 triangles; brows have 12 to 40, a fringe piece whose centre falls in the box hundreds) |
 | `rules[]` | `id`, `seam`, `condition`, `verdicts` (the table above, in words) |
 | `matrices{rule}{M,W}` | `rows`, `cols` (sorted ids) and `cells[]` in row-major order (below). Bottom x shoes and top x bottom: the body type's own parts; head x top: every skull of unique geometry and the two helmets that are whole heads (Astronaut, Swat) on that body type's rig; hair x skull: every hair of unique geometry on that body type's skulls; headwear x hair: the six hats over every hair of unique geometry |
-| `cells[]` | `a`, `b` (row and column ids), `verdict`; seams: `overlap_mm`, `outer`, `probe` (`rest`, `walk`: `rays`, `see_through`, `poke`), `allowance` (per state the references' counts plus 2), `references`, `fix_tried` (`fix`, `part`, `drop_m`, `vertices_moved`, `probe`, `closes`, `rounds[]`: every try's `drop_m` and `probe`), `fix` (when `needs_fix`); ankles also `legs` (`L`, `R`: `bottom_lower_edge_m`, `collar_min_m`, `collar_max_m`, `overlap_mm`, `tucked`, `inside_fraction`), `faces_removed_by_tuck`, `walk_within_references`; waist `top_lower_edge_m`, `bottom_upper_edge_m`; neck `head_bottom_m`, `top_neck_ring_m`; hair: `rays` (`rays`, `covered`, `zfight`, `poke`, `hole`, `bare`), `own_skull`, `allowance`, `fix_tried` (`fix`, `amount`, `rays`, `closes`), `fix`; headwear x hair: `rays` (`rays`, `covered`, `zfight`, `poke`, `clear`), `own_hair`, `allowance`, `fix_tried` and `fix` (`fix: inflate`, `part: headwear`, `amount`) |
+| `cells[]` | `a`, `b` (row and column ids), `verdict`, `review` (`over_by`, `margin`; review cells only); seams: `overlap_mm`, `outer`, `probe` (`rest`, `walk`: `rays`, `see_through`, `poke`), `allowance` (per state the references' counts plus 2), `references`, `fix_tried` (`fix`, `part`, `drop_m`, `vertices_moved`, `probe`, `closes`, `rounds[]`: every try's `drop_m` and `probe`), `fix` (when `needs_fix`); ankles also `legs` (`L`, `R`: `bottom_lower_edge_m`, `collar_min_m`, `collar_max_m`, `overlap_mm`, `tucked`, `inside_fraction`), `faces_removed_by_tuck`, `walk_within_references`; waist `top_lower_edge_m`, `bottom_upper_edge_m`; neck `head_bottom_m`, `top_neck_ring_m`; hair: `rays` (`rays`, `covered`, `zfight`, `poke`, `hole`, `bare`), `own_skull`, `allowance`, `fix_tried` (`fix`, `amount`, `rays`, `closes`), `fix`; headwear x hair: `rays` (`rays`, `covered`, `zfight`, `poke`, `clear`), `own_hair`, `allowance`, `fix_tried` and `fix` (`fix: inflate`, `part: headwear`, `amount`) |
 | `summary{rule}{M,W}` | `pairs`, `verdicts` (counts), and for the seams `gap_over_5mm` (whole millimetres) and `gap_over_5mm_exact` |
 
 **Ids.** Pack parts: `<slot>_<m|w>_<character>` (`top_m_hoodie`, `shoes_w_soldier`). Head items:
@@ -161,7 +168,7 @@ Rendered only to files, in headless Blender (Workbench, specular off), into `--o
   neutral pose; `sheet_skulls.png`, `_hair.png`, `_face.png` (facial hair and brows), `_headwear.png` (with earrings
   and accessories): every head item alone, turned 30 degrees, labelled with its id, style or type, triangles and twin.
 - `matrices/matrix_<rule>_<m|w>.png`: each matrix as a grid; the cell's colour is its verdict's status colour (ok
-  green, fix amber, poke orange, gap red) and it always carries the verdict's word and its number (the overlap in mm,
+  green, fix amber, review light blue, poke orange, gap red) and it always carries the verdict's word and its number (the overlap in mm,
   the fix's drop, or the hair's hole, poke and z-fight rays), so colour is never the only cue.
 - `confirm/c<nn>_<a>_<b>.png`: sample pairs assembled with `um/assemble.py`'s `build_character` (the other slots filled
   with parts whose own seams are ok, so only the pair under test can show a defect): full front and side at rest, then

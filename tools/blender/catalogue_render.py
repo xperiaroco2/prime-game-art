@@ -21,8 +21,9 @@ from um.util import update
 
 # Status colours (the dataviz status palette): a verdict is a state, and every cell also carries its word.
 STATUS = {"ok": "#0ca30c", "ok_tucked": "#0ca30c", "ok_over": "#0ca30c", "needs_fix": "#fab219", "poke": "#ec835a",
-          "gap": "#d03b3b"}
-WORD = {"ok": "ok", "ok_tucked": "tucked", "ok_over": "over", "needs_fix": "fix", "poke": "poke", "gap": "gap"}
+          "gap": "#d03b3b", "review": "#7fa8e6"}
+WORD = {"ok": "ok", "ok_tucked": "tucked", "ok_over": "over", "needs_fix": "fix", "poke": "poke", "gap": "gap",
+        "review": "review"}
 INK = "#1a1a19"
 TITLES = {"bottom_shoes": "bottom (rows) x shoes (columns): the ankle seam",
           "top_bottom": "top (rows) x bottom (columns): the waist seam",
@@ -268,7 +269,8 @@ def render_matrix(path, name, g, m, title):
     texts.append(label(title, (len(m["cols"]) * W / 2 - lab_w / 2, 0.0, 0.55), 0.2, coll))
     # legend
     zl = -len(m["rows"]) * H - 0.35
-    legend = [("ok / tucked / over", "ok"), ("fix: an assembler fix closes it", "needs_fix"), ("poke", "poke"), ("gap", "gap")]
+    legend = [("ok / tucked / over", "ok"), ("fix: an assembler fix closes it", "needs_fix"),
+              ("review: within 4 rays or 1 %", "review"), ("poke", "poke"), ("gap", "gap")]
     x = -lab_w
     for text, v in legend:
         n = len(verts)
@@ -351,6 +353,10 @@ SAMPLE = [
     ("bottom_shoes", "M", "bottom_m_astronaut", "shoes_m_farmer", "a small gap: extend_edge"),
     ("head_top", "M", "skull_w_suit", "top_m_beach", "a women's neck in a men's vest: extend_edge"),
     ("hair_skull", "W", "hair_w_punk_mohawk", "skull_w_formal", "cap hair on a full skull: inflate"),
+    ("bottom_shoes", "W", "bottom_w_worker", "shoes_w_witch", "trousers tucked into boots, 2 rays over"),
+    ("top_bottom", "M", "top_m_beach", "bottom_m_adventurer", "a tank top over cargo trousers, 1 ray over"),
+    ("hair_skull", "M", "hair_w_scifi", "skull_m_farmer", "long hair on an open-top skull, 1 hole ray over"),
+    ("head_top", "M", "skull_m_hoodie", "top_m_astronaut", "a neck in a high collar, 4 rays over walking"),
     ("headwear_hair", "M", "headwear_m_worker_hard_hat", "hair_w_adventurer", "a hard hat over women's cap hair"),
     ("headwear_hair", "M", "headwear_m_farmer_cowboy_hat", "hair_m_business", "a cowboy hat over shell hair"),
     ("headwear_hair", "W", "headwear_w_medieval_hood", "hair_w_scifi", "a hood over long hair: inflate"),
