@@ -39,9 +39,12 @@ review, the feet step, the Meshy libraries) and [../meshy.md](../meshy.md) (the 
   fingers on Meshy's rig: every hand is a flat paddle, and 409 Finger Wag No wags
   the whole hand.
 - **Per game need: UAL stays for locomotion; Meshy fills four gaps, but only privately.** UAL1's walk, jog and sprint
-  with the toe bones measure as well as Meshy's and are CC0. Meshy's library has what UAL and the pack lack: a backward
-  walk with clean feet (slide 3.1 cm/s against the pack Run_Back's 33.4), a turn in place, a face-down downed idle
-  that reaches for help, and a hands-and-knees crawl. Meshy does not say where its library motions come from, so they
+  with the toe bones measure as well as Meshy's, stand flat on the floor and are CC0. Meshy's library has what UAL and
+  the pack lack, each with work left: a backward walk that slides far less than the pack's Run_Back (3.1 against 33.4
+  cm/s at the heel pivot) but sinks its sole into the floor (down to 1.9 cm, more than 1 cm for 6 of 26 frames); a two-step turn in place whose feet stay
+  below the floor (down to 1.3 cm, more than 1 cm for 15 of 30 frames) and slide; a face-down downed idle that reaches for help; and a hands-and-knees crawl that
+  does not loop (it ends 74 degrees from its start, with a look back inside) and hovers 3 to 5 cm above the floor, so
+  it needs a loop cut and a floor fix before it can serve as a downed crawl. Meshy does not say where its library motions come from, so they
   stay private (`public_repo_ok = false`) and cannot enter the public game repo as they are. That is a licence and
   money question for the engineer (below); the UAL1 Pro question still stands for a public-safe crawl and strafes.
 
@@ -235,17 +238,19 @@ Read in the close-ups and the measures:
   has no planted stance on either rig: with a 1.5 cm contact window its sole touches for 2 to 5 of 26 to 32 frames a
   foot, UAL Walk_Loop's for 27 of 41 (median slide 1.3 cm/s). Neither the stance nor the sliding can be fixed by
   following Meshy's foot more closely; a fix would plant the heel (below).
-- **Meshy's clips float: its feet never come flat.** The man's walk and runs never come closer than 0.4 to 1.2 cm to
+- **Meshy's forward walks and runs float: their feet never come flat.** (The backward walk, the turn, the hit and the
+  lying clips go into the floor instead: table below.) The man's walk and runs never come closer than 0.4 to 1.2 cm to
   the floor, on Meshy's rig as on ours; on the woman's rig 1.7 to 7.5 cm (Run Fast 7.5 cm, on its own rig too), and on
-  the women's donor every Meshy clip, the man's included, 2 to 3 cm (the woman's Run Fast 7.5). The cause is in the
+  the women's donor every forward Meshy walk and run, the man's included, 2 to 3 cm (the woman's Run Fast 7.5). The cause is in the
   clips: in stance Meshy's foot stays pitched heel-up and its toe bent 10 to 17 degrees back against it (Walking on the
   man's rig, Walking Woman on the woman's, sampled every 3 frames), so the heel never comes down; our retarget follows
   Meshy's foot, so the heel pivot of the women's donor stands about 4 cm above its rest height in stance (6.2 to 6.6 cm
   against 2.3). The tip measures of the woman's-rig clips are therefore taken in the air (their tips never come lower
   than 8 cm) and are not comparable. A fix would be ours (a foot-flat correction or a floor clamp of the heel in the
   retarget, or the game's foot IK); UAL's clips do not need one.
-- **The pack's Run_Back slides** 33 cm/s and tips its rigid toe 21 degrees into the floor; Meshy's Walk_Backward is the
-  clean backward clip.
+- **The pack's Run_Back slides** 33 cm/s and tips its rigid toe 21 degrees into the floor; Meshy's Walk_Backward slides
+  far less (3.1 cm/s, the same heel pivot) and keeps the toe at 7 degrees, but its sole goes down to 1.9 cm into the floor,
+  more than 1 cm for 6 of 26 frames (the source's own depth: `retarget --floor` reads -1.9 cm on Meshy's mesh too).
 
 The toe bones on Meshy's clips (`anim-review feet --only meshy_toes`, `feet/men/meshy_toes_meshy_*.png`): rigid shoes
 on top, toe bones below.
@@ -371,13 +376,13 @@ From art #20's and #24's needs table. "Private" means usable only if the enginee
 |---|---|---|
 | Walk 4.5 m/s | **UAL1** Walk_Loop/Jog_Fwd_Loop blend with the toe bones (CC0) | Walking: natural; after our retarget the front of the shoe stays level, but the heel never plants (no flat stance) and it floats 0.9 cm; private |
 | Sprint 7.0 m/s | **UAL1** Sprint_Loop (and the Jog blend) with the toe bones | Run Fast: a sprinter's dash with a 40 to 50 degree lean, 6.4 m/s; a look choice (designer) and private |
-| Moving backwards | **pack** Run_Back for now; **Meshy** Walk_Backward if private clips are allowed (slide 3.1 against 33.4 cm/s, front of the shoe 7 against 21 degrees) | the best backward clip we have |
+| Moving backwards | **pack** Run_Back for now; **Meshy** Walk_Backward if private clips are allowed (slide 3.1 against 33.4 cm/s, front of the shoe 7 against 21 degrees) | the best backward clip we have; its sole sinks down to 1.9 cm, more than 1 cm for 6 of 26 frames (a floor clamp in the retarget would take it out) |
 | Moving sideways | gap (no clean strafe in UAL1, UAL2, the pack or Meshy's library) | none in the library |
-| Turning in place | **Meshy** Idle_Step_Turn_Left (mirrored for the right) if private clips are allowed; else turn the idle in the engine | a clean two-step 90 degree turn |
+| Turning in place | **Meshy** Idle_Step_Turn_Left (mirrored for the right) if private clips are allowed; else turn the idle in the engine | a readable two-step 90 degree turn, but the feet stay below the floor (down to 1.3 cm, more than 1 cm for 15 of 30 frames) and slide (12 cm/s mean): it needs a floor fix |
 | Being pushed | **UAL2** Hit_Knockback / **UAL1** Hit_Chest (as art #24) | Hit Reaction: a readable sideways stagger; private |
 | Knocked down | **UAL1** Death01 (as art #20) | Knock Down: a cartoon somersault; a look choice and private |
 | Downed (lying, waiting for a revive) | **Meshy** Prone_Reach_Help if private clips are allowed (the only downed idle); **UAL2** LayToIdle for the get-up | face down, reaching for help; UAL2's get-up starts on the back, so the two do not join without a turn-over |
-| Crawling while downed | **Meshy** Crawl_and_Look_Back if private clips are allowed; for a public-safe crawl, **UAL1 Pro** | the library crawl reads well; the text-to-motion crawl heads 20 degrees off and does not loop: not worth more credits |
+| Crawling while downed | no ready clip. **UAL1 Pro** for a public-safe crawl; **Meshy** Crawl_and_Look_Back only if private clips are allowed and after a loop cut (it does not loop: 74 degree seam, 8 frame steps, a look back inside its 6.9 s) and a floor fix (hands and knees hover 3 to 5 cm) | both Meshy crawls need work: the library crawl reads better in motion, the text-to-motion crawl heads 20 degrees off and does not loop either (59 degree seam); not worth more credits |
 | Carrying the package | **UAL2** Walk_Carry_Loop's upper body (as art #24): the package is small, held close | Carry Heavy Object Walk is a wide box and a waddle: another prop |
 | Gestures, emotes | **UAL2** Yes, folded arms, No and the **pack** Wave (as art #24) | Shrug works without fingers (private); Finger Wag No fails without fingers |
 | Everything else (idle, jump, use, talk, knife, hit) | as art #20 and #24 recommend | not tried |
@@ -388,7 +393,7 @@ our toe bones keep it level, slides about as much as our retarget, and has no fi
 (`meshy_um.toml`). Text to motion gave a usable but crooked crawl for 13 credits; the library is the better buy.
 
 **The UAL1 Pro money question still stands**: Meshy's library can fill the backward walk, the turn, the downed idle
-and the crawl only privately, and fills no strafe at all; UAL1 Pro (CC0, $9.99, per art #20's research) remains the
+and (after a loop cut and a floor fix) the crawl only privately, and fills no strafe at all; UAL1 Pro (CC0, $9.99, per art #20's research) remains the
 cheap public-safe source for crawling and 8-direction locomotion.
 
 ## Questions for the engineer (licence and money)
