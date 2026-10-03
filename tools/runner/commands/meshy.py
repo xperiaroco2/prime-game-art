@@ -8,7 +8,7 @@ import datetime as dt
 import json
 from pathlib import Path
 
-from .. import common
+from .. import blender, common
 from . import _meshy_api as api
 from . import _meshy_batch as batches
 from . import _meshy_inputs as inputs
@@ -34,6 +34,10 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
     p.add_argument("--search", default="", help="only actions matching this text")
     p.add_argument("--category", default="", help="only this category, e.g. WalkAndRun")
     p.add_argument("--out", type=Path, help="the JSON file (default <raw>/meshy/animation-library-<date>.json)")
+    p = sub.add_parser("rig-input", help="a saved character (assemble --blend) as a static textured GLB facing +Z, "
+                                         "the input of a rig item (no network)")
+    p.add_argument("blend", type=Path, nargs="+", help="saved character files, blend/<id>.blend")
+    p.add_argument("--out", type=Path, required=True, help="output folder, e.g. <raw>/<batch id>/inputs")
 
 
 def run(args: argparse.Namespace) -> int:
@@ -47,6 +51,8 @@ def run(args: argparse.Namespace) -> int:
             key = api.api_key()
             common.say(f"Meshy balance: {api.MeshyClient(key).balance()} credits")
             return 0
+        if args.action == "rig-input":
+            return rig_input(args.blend, args.out)
         if args.action == "library":
             key = api.api_key()
             return library(api.MeshyClient(key), args.search, args.category, args.out)
@@ -136,4 +142,19 @@ def library(client: api.MeshyClient, search: str, category: str, out: Path | Non
         cats[str(a.get("category", "?"))] = cats.get(str(a.get("category", "?")), 0) + 1
     common.say(f"animation library: {len(actions)} actions ({', '.join(f'{k} {v}' for k, v in sorted(cats.items()))})")
     common.say(f"saved to {out}")
+    return 0
+
+
+def rig_input(blends: list[Path], out: Path) -> int:
+    """Runs tools/blender/meshy_rig_input.py on each saved character: <out>/<id>.glb, <id>_texture.png, <id>.json."""
+    out = out.resolve()
+    for path in blends:
+        if not path.is_file():
+            raise common.Failure(f"no saved character {path}")
+        blender.run_script("meshy_rig_input.py", ["--blend", str(path.resolve()), "--out", str(out)], timeout=600)
+        info = json.loads((out / f"{path.stem}.json").read_text(encoding="utf-8"))
+        common.ok(f"{path.stem}: {info['glb']} ({info['glb_bytes']} bytes, {info['triangles']} triangles, "
+                  f"{info['height_m']} m, palette {info['palette_px']} px of {len(info['materials'])} colours)")
+        common.say(f"    sha256 {inputs.sha256(Path(info['glb']))} (glb), {inputs.sha256(Path(info['texture']))} "
+                   "(texture): pin them in the batch")
     return 0

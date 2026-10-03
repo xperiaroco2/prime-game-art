@@ -563,11 +563,13 @@ def cmd_feet(a):
                 rc.place(ch, y=(i - 0.5) * spacing - (boxes[i][0] + boxes[i][1]) / 2)
             lbls = []
             for i, clip in enumerate(lanes):
-                t = ar.text(f"fl{i}", 0.04, "side")
-                t.location = (0.6, (i - 0.5) * spacing, FEET_VIDEO_H - FEET_BELOW - 0.07)
+                t = ar.text(f"fl{i}", 0.035, "side", "LEFT")
+                # at the lane's left edge in the picture (+Y), in front of the legs, where the legs seldom are
+                t.location = (-3.0, (i - 0.5) * spacing + spacing * 0.47, FEET_VIDEO_H - FEET_BELOW - 0.06)
                 t.data.body = ("rigid shoes" if i == 0 else "toe bones") + f": {clip.name}"
                 lbls.append(t)
-            seconds = max(max(c.seconds + (0 if c.loop else HOLD) for c in lanes), 2.0)
+            seconds = max(c.seconds + (0 if c.loop else HOLD) for c in lanes)
+            seconds *= max(1, math.ceil(2.0 / seconds))  # whole cycles, at least 2 s: the MP4 loops without a jump
             height_px = 360
             width_px = int(round(height_px * (2 * spacing) / FEET_VIDEO_H / 2)) * 2
             ar.aim("side", Vector((0.0, 0.0, -FEET_BELOW + FEET_VIDEO_H / 2)), FEET_VIDEO_H, width_px, height_px)
