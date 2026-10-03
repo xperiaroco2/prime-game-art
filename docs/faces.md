@@ -21,8 +21,22 @@ there. Then `tools/blender/faces_render.py` runs in background Blender: it build
 assembler (`um/assemble.py`), removes the final test's face parts, and for every family and expression puts our parts
 on every head, measures them, and renders. The command prints one line per family and fails when a part is not weighted
 to the Head bone alone, a decal sits closer than 0.2 mm to the skin, or the face moves in the Head bone's space during
-the frame strip. A full run (7 families, 9 expressions, every sheet) takes about 6 minutes; review images go outside
-git (`D:/prime-art-raw/review/...`), never into the repo.
+the frame strip. A full run (7 families, 9 expressions, every sheet: 789 renders and two clips) took 494 s on
+2026-10-03. Review images go outside git (`D:/prime-art-raw/review/...`), never into the repo.
+
+The seven families of `faces/styles.json` (the choice is the engineer's and the designer's):
+
+| Family | Eyes | Brows | Mouth |
+|---|---|---|---|
+| `f1_dots` Dots | Small dark ovals, one highlight; closed and happy eyes are strokes | Short thin strokes | A line; small open shapes |
+| `f2_googly` Googly | Big white balls standing out 8.5 mm, black pupils, skin lids | Thick blocks (2 mm deep) | A line; open with a lip rim, teeth, tongue |
+| `f3_almond` Almond | Near-human almond on a shallow eyeball, coloured iris and pupil cut by skin lids, thin lash line and flick | Thin arches | Upper and lower lips with a line |
+| `f4_toon` Cartoon iris | Larger, taller domes, a big coloured iris, two highlights, a bold lash band and flick | Expressive, arched | Open cartoon shapes with teeth and tongue |
+| `f5_lidded` Heavy-lidded | The almond half-closed under a heavy skin lid that stands out | Straight, low | Thin, calm lips |
+| `f6_painted` Painted | The almond drawn flat on the skin (decals, no depth), bold lash stroke; strokes for closed and happy | Thin flat strokes | Drawn lips |
+| `f7_button` Button | Bold glossy vertical ovals, no whites, two highlights | Short rounded blocks | Small and simple |
+
+What a run writes into `--out` (default `tools/out/faces/`):
 
 | Output | What |
 |---|---|
@@ -107,6 +121,24 @@ AA off by default). On a 1920 x 1080 screen one metre at distance d covers 1080 
 at the face, 1920 x 1080, no anti-aliasing), crops a 0.32 m window around the head (113, 45 and 23 px tall) and
 enlarges it with nearest neighbour. An eye 3 cm wide is 10, 4 and 2 px wide at 2, 5 and 10 m.
 
+The sheet also counts the face's **screen pixels**: those whose colour differs from the same head rendered without face
+parts (by more than 0.1 in any channel), and how many change when the face blinks (neutral against closed) or talks
+(neutral against talk (a)). Measured on 2026-10-03 (`face_pixels` in the report; M full skull light /
+W full skull dark):
+
+| Family | Neutral face, px at 2 / 5 / 10 m | Blink changes | Talk changes |
+|---|---|---|---|
+| F1 dots | 52 / 8 / 2; 61 / 6 / 0 | 28 / 4 / 0; 27 / 4 / 0 | 24 / 2 / 2; 20 / 4 / 0 |
+| F2 googly | 190 / 31 / 5; 178 / 24 / 10 | 121 / 18 / 4; 134 / 20 / 6 | 34 / 6 / 2; 26 / 6 / 0 |
+| F3 almond | 139 / 22 / 8; 131 / 15 / 4 | 90 / 10 / 4; 73 / 10 / 4 | 53 / 8 / 2; 30 / 8 / 0 |
+| F4 cartoon iris | 165 / 26 / 6; 175 / 26 / 6 | 138 / 23 / 6; 143 / 19 / 5 | 36 / 6 / 2; 28 / 8 / 0 |
+| F5 heavy-lidded | 128 / 17 / 4; 120 / 16 / 6 | 82 / 12 / 4; 62 / 10 / 0 | 48 / 6 / 2; 30 / 8 / 0 |
+| F6 painted | 133 / 22 / 6; 134 / 16 / 4 | 104 / 18 / 4; 104 / 16 / 4 | 46 / 6 / 2; 32 / 8 / 0 |
+| F7 button | 93 / 12 / 6; 102 / 18 / 4 | 59 / 7 / 2; 64 / 9 / 4 | 18 / 2 / 2; 18 / 4 / 0 |
+
+At 10 m every face is a handful of pixels and talking is nearly invisible; at 5 m blinks still read for the families
+with whites (F2 to F6). Dark features on the dark skin tone fade first (F1 at 10 m: 0 px).
+
 ## Checks
 
 `faces_report.json` holds, per family, expression, head and part: triangles, materials (draw calls), the vertex
@@ -126,13 +158,13 @@ The contract (`contract/contract.toml`, slots `eyes` and `mouth`) allows two for
 
 | | Rigid parts (the kit) | Face texture with frames |
 |---|---|---|
-| Triangles | Per face 230 (dots) to about 900 (almond: eyes 660, brows 128, mouth 92 to 182) on a head of 300 to 450 and a character of 6,000 to 8,500 | 0 extra; the head's own faces |
-| Draw calls | One per material per visible part: 5 to 11 per face (eyes 3 to 6, brows 1, mouth 1 to 4); 1 to 3 if the export bakes the flat colours into vertex colours with one face material | 0 extra if the face is a layer of the skin material |
+| Triangles | Per face, neutral: F1 356, F7 376, F2 428, F6 528, F4 620, F5 864, F3 880 (208 to 970 over all expressions; almond eyes 660, brows 128, mouth 92 to 182), on a bald head of 300 to 450 and a character of 6,000 to 8,500 | 0 extra; the head's own faces |
+| Draw calls | One per material per visible part: 3 to 11 per face (eyes 1 to 6, brows 1, mouth 1 to 4); 3 if the export bakes the flat colours into vertex colours with one material per part | 0 extra if the face is a layer of the skin material |
 | Depth | Real: domes, lids that stand out, slab brows, readable in three-quarter view and with the pack's faceted light | Flat: only the painted family looks the same |
-| Z-fighting | Decals are lifted about 0.4 to 1.5 mm off the skin (the measured minimum is in the report); Godot has used a reversed-Z depth buffer since 4.3 (godotengine.org, "Introducing Reverse Z"), which keeps depth error far below a millimetre at 10 m, so depth precision is not the risk; the risk is a lift too small for the faceted skin between draped vertices, which the clearance check measures | None (on the surface) |
+| Z-fighting | Decals are lifted about 0.4 to 1.5 mm off the skin (measured minimum 0.38 mm, the painted eyes; every other family 0.65 mm or more); Godot has used a reversed-Z depth buffer since 4.3 (godotengine.org, "Introducing Reverse Z"), which keeps depth error far below a millimetre at 10 m, so depth precision is not the risk; the risk is a lift too small for the faceted skin between draped vertices, which the clearance check measures | None (on the surface) |
 | UVs | None needed | The pack heads have no usable UVs (every face vertex of the four review heads sits at UV (0, 0)): each head needs a face projection anchored at its eye centres (they differ by 2 to 6 mm between the body types) |
 | Blink and talk | Each expression is its own set of meshes (per family 6 eyes, 5 brows, 8 mouths): the game shows one and hides the rest, or swaps the `mesh` of one `MeshInstance3D`; no bones or blend shapes (the contract forbids them for faces) | Instance uniforms pick the frame of each slot in a texture array; one material, no mesh change, matches the contract's "every piece draws the listed frames" literally |
-| At distance | Small features are geometry: without anti-aliasing a 1 to 2 px eye at 10 m can shimmer as the head moves | Mipmaps average a far face into a soft blur: steadier, but the eyes vanish into the skin colour sooner |
+| At distance | Small features are geometry: without anti-aliasing a 1 to 2 px eye at 10 m can shimmer as the head moves (the screen-pixel table above) | Mipmaps average a far face into a soft blur: steadier, but the eyes vanish into the skin colour sooner |
 | Mixing | Any family on any head of either body type without new UVs | A new face means a new texture layer; hair or hats over the face need no change |
 
 **Recommendation: rigid parts**, the kit's form, for the families with depth (F1 to F5, F7), switched per expression by
