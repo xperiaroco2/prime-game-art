@@ -143,10 +143,13 @@ func _player(scene: Node, player: AnimationPlayer, skeleton: Skeleton3D) -> Dict
 		var anim: Animation = player.get_animation(name)
 		var unresolved: Array = []
 		var kinds: Dictionary = {}
+		var moved: Array = []
 		for i: int in anim.get_track_count():
 			var path: NodePath = anim.track_get_path(i)
 			var kind: String = str(anim.track_get_type(i))
 			kinds[kind] = kinds.get(kind, 0) + 1
+			if anim.track_get_type(i) == Animation.TYPE_POSITION_3D:
+				moved.append(str(path.get_concatenated_subnames()))
 			if not _resolves(anim_root, path):
 				unresolved.append(str(path))
 		anims[str(name)] = {
@@ -154,6 +157,7 @@ func _player(scene: Node, player: AnimationPlayer, skeleton: Skeleton3D) -> Dict
 			"loop_mode": anim.loop_mode,
 			"tracks": anim.get_track_count(),
 			"track_types": kinds,
+			"position_tracks": moved,
 			"unresolved": unresolved,
 			"motion": _motion(player, skeleton, str(name), anim.length) if skeleton != null else {},
 		}
