@@ -138,10 +138,12 @@ def feet(args: argparse.Namespace, out: Path, cfg: dict, bodies: list[str]) -> N
                 if "rigid_shoes" not in lanes:  # a set of any clips (art #25's comparisons)
                     for lane, res in lanes["lanes"].items():
                         t, slide = res.get("toe", {}), res["foot_sliding"]
+                        mean = (slide.get("slide_mean_cm_s") if slide.get("samples", 0) >= _anim.MIN_SLIDE_SAMPLES
+                                else "-")  # too few contact velocities in a run
                         common.ok(f"{body} {key} {lane}: the front of the shoe at a 20 deg heel lift "
                                   f"{t.get('front_pitch_at_20_deg_lift')} deg, heel lift with the front level "
                                   f"{t.get('heel_lift_front_level_max_deg')} deg, foot sliding "
-                                  f"{slide.get('slide_mean_cm_s')} cm/s, lowest vertex "
+                                  f"{mean} cm/s, lowest vertex "
                                   f"{res.get('lowest_vertex_cm', {}).get('min')} cm")
                     continue
                 r, t = lanes["rigid_shoes"].get("toe", {}), lanes["toe_bones"].get("toe", {})

@@ -46,7 +46,7 @@ FLOOR_PAD = 0.22  # metres below the floor for the time labels
 HOLD = 0.5  # seconds a clip that does not loop holds its last frame in a video
 LABELS = {"pack": "pack", "ual": "UAL"}  # short source names in pictures; main() adds the settings' libraries
 AWAY = 1000.0  # x (m) where a character waits while another plays
-OWN = {}  # library -> {"char", "meas"}: a library's own rig and weights on our mesh (art #25), loaded once
+OWN = {}  # library -> [{"char", "meas"}, ...]: copies of a library's own rig and weights on our mesh (art #25)
 VARIANTS = anim_keys.VARIANTS  # clip-source suffixes: "meshy_own:Walking", "ual_rigid:Walk_Loop"
 base_source = anim_keys.base_source
 
@@ -214,17 +214,37 @@ def clips_for(a, cfg, char, keys):
     return out
 
 
-def own_char(a, lib):
-    """A library's own GLB as a character (anim_libs.own_character), loaded once and parked at AWAY, with its measure
-    prepared before it moves."""
-    if lib not in OWN:
+def own_char(a, lib, copy=0):
+    """A copy of a library's own GLB as a character (anim_libs.own_character), loaded once per copy and parked at AWAY,
+    with its measure prepared before it moves; a row that plays two clips of the same own rig needs two copies."""
+    copies = OWN.setdefault(lib, [])
+    while len(copies) <= copy:
         ch = anim_libs.own_character(a.libs[lib], anim_libs.entry(load_config(a.config), lib), a.raw,
                                      library_map(a, lib))
         ch["name"] = anim_libs.entry(load_config(a.config), lib).get("own", lib)
         meas = Measure(ch)
         rc.place(ch, x=AWAY)
-        OWN[lib] = {"char": ch, "meas": meas}
-    return OWN[lib]
+        copies.append({"char": ch, "meas": meas})
+    return copies[copy]
+
+
+def lane_chars(a, row, chars):
+    """The character of each lane of a row: a donor copy for a retargeted or pack clip, a copy of a library's own rig
+    for an own clip (the k-th own clip of a library in the row on its k-th copy)."""
+    used, out = {}, []
+    for i, clip in enumerate(row):
+        if clip.char is None:
+            out.append(chars[i])
+            continue
+        lib = base_source(clip.source)
+        out.append(own_char(a, lib, used.get(lib, 0))["char"])
+        used[lib] = used.get(lib, 0) + 1
+    return out
+
+
+def own_copies():
+    """Every loaded copy of every library's own rig: {"char", "meas"} each."""
+    return [o for copies in OWN.values() for o in copies]
 
 
 def all_keys(a, char):
@@ -419,11 +439,12 @@ def cmd_pairs(a):
     clips = {c.key: c for c in clips_for(a, cfg, chars[0], keys)}
     char_name = os.path.splitext(os.path.basename(a.character))[0]
     spacing = 1.45
-    everyone = chars + [o["char"] for o in OWN.values()]
+    lanes_of = {p["name"]: lane_chars(a, [clips[k] for k in p["clips"]], chars) for p in pairs}
+    everyone = chars + [o["char"] for o in own_copies()]
     for p in pairs:
         row = [clips[k] for k in p["clips"]]
         k = len(row)
-        lane = [c.char or chars[i] for i, c in enumerate(row)]  # a clip on a library's own rig plays on that rig
+        lane = lanes_of[p["name"]]  # a clip on a library's own rig plays on a copy of that rig
         for ch in everyone:
             rc.place(ch, x=AWAY)
         for i, ch in enumerate(lane):
@@ -596,15 +617,15 @@ def cmd_feet(a):
     keys = list(dict.fromkeys(k for g in groups for k in g[2]))
     LABELS.update({f"{lib}_rigid": f"{LABELS.get(lib, lib)} rigid shoes" for lib in a.libs})
     clips = {c.key: c for c in clips_for(a, cfg, chars[0], keys)}
-    everyone = chars + [o["char"] for o in OWN.values()]
-    metas.update({id(o["char"]): o["meas"] for o in OWN.values()})
+    lanes_of = [lane_chars(a, [clips[k] for k in g[2]], chars) for g in groups]
+    everyone = chars + [o["char"] for o in own_copies()]
+    metas.update({id(o["char"]): o["meas"] for o in own_copies()})
     char_name = os.path.splitext(os.path.basename(a.character))[0]
     out_dir = os.path.join(a.out, "feet", a.body)
     os.makedirs(out_dir, exist_ok=True)
     reports = {}
-    for r, stem, lane_keys in groups:
+    for (r, stem, lane_keys), lane in zip(groups, lanes_of):
         lanes = [clips[k] for k in lane_keys]
-        lane = [c.char or chars[i] for i, c in enumerate(lanes)]
         pair = bool(r.get("clips"))  # rigid shoes over the toe bones of one clip
         for ch in everyone:
             rc.place(ch, x=AWAY)
