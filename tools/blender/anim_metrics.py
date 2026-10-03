@@ -12,6 +12,7 @@ import bmesh
 import bpy
 import numpy as np
 from mathutils import Vector
+from mathutils.bvhtree import BVHTree
 
 import anim_math as am
 from retarget_core import rot
@@ -19,6 +20,8 @@ from retarget_core import rot
 FINGERS = ("Index", "Middle", "Ring", "Pinky")
 TORSO = {"Body", "Hips", "Abdomen", "Torso", "Chest"}
 HEAD = {"Head"}
+LEGS = {"UpperLeg.L", "UpperLeg.R", "LowerLeg.L", "LowerLeg.R"}
+SURFACE_REACH = 0.05  # metres: how far from a surface a vertex is looked for inside it
 
 
 def _dominant(obj) -> list[str | None]:
@@ -70,6 +73,39 @@ def _hull_depth(body: np.ndarray, points: np.ndarray) -> float:
     return float(-worst[inside].min()) if inside.any() else 0.0
 
 
+def _surface_depth(pts: dict, polys: dict, faces: dict, query: dict) -> float:
+    """How deep (m) the deepest vertex of `query` ({object name: vertex indices}) lies behind the faces `faces`
+    ({object name: set of polygon indices}) of the posed objects (`polys`: {object name: [vertex index tuples]}): the
+    vertex's nearest face on the whole mesh, less the faces of the query's own vertices, is one of those faces and
+    its normal points away from the vertex. Unlike a convex hull this follows concave shapes such as a hand with
+    spread fingers or a pair of legs; testing against the whole mesh keeps the open edges where a part is cut out of
+    it from counting."""
+    verts, tris, wanted, base = [], [], set(), 0
+    for name, chosen in faces.items():
+        own = set(query.get(name, ()))
+        verts.extend(Vector(p) for p in pts[name])
+        for i, f in enumerate(polys[name]):
+            if own and any(v in own for v in f):
+                continue
+            if i in chosen:
+                wanted.add(len(tris))
+            tris.append(tuple(base + v for v in f))
+        base += len(pts[name])
+    points = [pts[name][idx] for name, idx in query.items()]
+    points = np.concatenate(points) if points else np.zeros((0, 3))
+    if not wanted or not len(points):
+        return 0.0
+    tree = BVHTree.FromPolygons(verts, tris)
+    worst = 0.0
+    for p in points:
+        q = Vector(p)
+        loc, normal, index, dist = tree.find_nearest(q, SURFACE_REACH)
+        # behind the face, and squarely: a point beside a convex edge also finds a face that turns away from it
+        if loc is not None and index in wanted and dist > 1e-6 and (q - loc).dot(normal) < -0.7 * dist:
+            worst = max(worst, dist)
+    return worst
+
+
 class Measure:
     def __init__(self, char: dict):
         self.char, self.arm = char, char["arm"]
@@ -80,16 +116,25 @@ class Measure:
         Wr = rot(W)
         hand = {f"{f}{k}.{s}" for f in FINGERS for k in (1, 2, 3, 4) for s in "LR"}
         hand |= {f"Thumb{k}.{s}" for k in (1, 2, 3) for s in "LR"} | {"Wrist.L", "Wrist.R"}
+        side = {s: {b for b in hand if b.endswith("." + s)} for s in "LR"}
         # vertex sets by the bone that weighs most: the hands, the torso and the head (tested as convex hulls), and
-        # each shoe's sole
-        self.sets = {"hand": {}, "torso": {}, "head": {}, "Foot.L": {}, "Foot.R": {}}
+        # each shoe's sole; and surfaces (faces whose vertices all belong to one set): each hand and the legs, which
+        # the hands are tested against as they are (a hand through the other hand or into a thigh)
+        self.sets = {"hand": {}, "torso": {}, "head": {}, "Foot.L": {}, "Foot.R": {}, "hand.L": {}, "hand.R": {}}
+        self.surfaces = {"hand.L": {}, "hand.R": {}, "legs": {}}
+        self.polys = {}
         for obj in self.meshes:
             dom = _dominant(obj)
             for key, bones in (("hand", hand), ("torso", TORSO), ("head", HEAD), ("Foot.L", {"Foot.L"}),
-                               ("Foot.R", {"Foot.R"})):
+                               ("Foot.R", {"Foot.R"}), ("hand.L", side["L"]), ("hand.R", side["R"])):
                 idx = [i for i, g in enumerate(dom) if g in bones]
                 if idx:
                     self.sets[key][obj.name] = np.array(idx)
+            self.polys[obj.name] = [tuple(f.vertices) for f in obj.data.polygons]
+            for key, bones in (("hand.L", side["L"]), ("hand.R", side["R"]), ("legs", LEGS)):
+                chosen = {i for i, f in enumerate(self.polys[obj.name]) if all(dom[v] in bones for v in f)}
+                if chosen:
+                    self.surfaces[key][obj.name] = chosen
         # hinge axes in each parent bone's rest frame: knees bend about the world X axis (the shin goes back), the
         # left elbow about -Z and the right about +Z (the forearm comes forward from the T-pose)
         def local_axis(bone, axis):
@@ -140,6 +185,10 @@ class Measure:
             hands = self._gather(pts, "hand")
             rec["hand_depth"] = _hull_depth(self._gather(pts, "torso"), hands)
             rec["hand_head_depth"] = _hull_depth(self._gather(pts, "head"), hands)
+            rec["hand_hand_depth"] = max(
+                _surface_depth(pts, self.polys, self.surfaces["hand.R"], self.sets["hand.L"]),
+                _surface_depth(pts, self.polys, self.surfaces["hand.L"], self.sets["hand.R"]))
+            rec["hand_leg_depth"] = _surface_depth(pts, self.polys, self.surfaces["legs"], self.sets["hand"])
             rec["soles"] = {s: self._gather(pts, f"Foot.{s}") for s in "LR"}
         return rec
 
@@ -161,7 +210,8 @@ class Measure:
         if lows:
             out["lowest_vertex_cm"] = {"min": round(100 * min(lows), 1), "max": round(100 * max(lows), 1),
                                        "frames_below_1cm": sum(z < -0.01 for z in lows)}
-        for key, name in (("hand_depth", "hands_in_torso"), ("hand_head_depth", "hands_in_head")):
+        for key, name in (("hand_depth", "hands_in_torso"), ("hand_head_depth", "hands_in_head"),
+                          ("hand_hand_depth", "hands_in_each_other"), ("hand_leg_depth", "hands_in_legs")):
             depths = [f[key] for f in frames if key in f]
             if depths:
                 out[name] = {"max_depth_cm": round(100 * max(depths), 1),

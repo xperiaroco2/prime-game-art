@@ -27,12 +27,13 @@ def _cross(a, b):
 def _slide_stats(vels: list, contact_frames: int) -> dict:
     if not vels:
         return {"contact_frames": contact_frames, "raw_mean_cm_s": None, "raw_max_cm_s": None,
-                "ground_speed_cm_s": None, "slide_mean_cm_s": None, "slide_max_cm_s": None}
+                "ground_speed_cm_s": None, "slide_mean_cm_s": None, "slide_max_cm_s": None, "samples": 0}
     ground = (median(v[0] for v in vels), median(v[1] for v in vels))
     raw = [math.hypot(*v) for v in vels]
     slide = [math.hypot(v[0] - ground[0], v[1] - ground[1]) for v in vels]
     return {
         "contact_frames": contact_frames,
+        "samples": len(vels),
         "raw_mean_cm_s": round(100 * sum(raw) / len(raw), 1),
         "raw_max_cm_s": round(100 * max(raw), 1),
         "ground_speed_cm_s": round(100 * math.hypot(*ground), 1),

@@ -78,9 +78,12 @@ def _fmt(value, digits: int = 1) -> str:
     return str(value)
 
 
+MIN_SLIDE_SAMPLES = 4  # contact velocities below which the foot slide is shown as "-"
+
 COLUMNS = (
-    "| Body | Source | Clip | s | Loop | Ground m/s | Foot slide mean/max cm/s | Lowest cm | Hands in torso/head cm "
-    "| Seam deg (x step) | Knee/elbow past straight deg | Forearm twist deg | Finger curl deg |"
+    "| Body | Source | Clip | s | Loop | Ground m/s | Foot slide mean/max cm/s | Lowest cm "
+    "| Hands in torso/head/other hand/legs cm | Seam deg (x step) | Knee past straight deg | Forearm twist deg "
+    "| Finger curl deg |"
 )
 
 
@@ -91,18 +94,20 @@ def table(merged: dict, verdicts: dict | None = None) -> str:
     for body in BODIES:
         for key, m in merged.get(body, {}).items():
             fs, low = m["foot_sliding"], m.get("lowest_vertex_cm", {})
-            hands, head = m.get("hands_in_torso", {}), m.get("hands_in_head", {})
+            hands = "/".join(_fmt(m.get(k, {}).get("max_depth_cm"))
+                             for k in ("hands_in_torso", "hands_in_head", "hands_in_each_other", "hands_in_legs"))
+            few = fs.get("samples", MIN_SLIDE_SAMPLES) < MIN_SLIDE_SAMPLES  # too few contact velocities to say
             seam, hyp = m["loop_seam"], m["hyperextension_deg"]
             curl = m["finger_curl_deg"]
             ratio = f" (x{_fmt(seam['seam_ratio'])})" if m["loop"] and seam["seam_ratio"] is not None else ""
             row = [
                 body, m["source"], m["clip"], _fmt(m["seconds"], 2), "yes" if m["loop"] else "no",
                 _fmt(m["root_motion"]["ground_speed_m_s"], 2),
-                f"{_fmt(fs['slide_mean_cm_s'])} / {_fmt(fs['slide_max_cm_s'])}",
+                "-" if few else f"{_fmt(fs['slide_mean_cm_s'])} / {_fmt(fs['slide_max_cm_s'])}",
                 _fmt(low.get("min")),
-                f"{_fmt(hands.get('max_depth_cm'))} / {_fmt(head.get('max_depth_cm'))}",
+                hands,
                 f"{_fmt(seam['seam_deg'])}{ratio}",
-                f"{_fmt(max(hyp['knee.L'], hyp['knee.R']))} / {_fmt(max(hyp['elbow.L'], hyp['elbow.R']))}",
+                _fmt(max(hyp["knee.L"], hyp["knee.R"])),
                 _fmt(max(m["forearm_twist_deg"].values())),
                 f"{_fmt(min(curl['L']['min'], curl['R']['min']))}-{_fmt(max(curl['L']['max'], curl['R']['max']))}",
             ]

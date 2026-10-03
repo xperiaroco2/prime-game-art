@@ -17,9 +17,11 @@ OUT = common.OUT / "tests" / "anim"
 def measures(source: str, clip: str, loop: bool) -> dict:
     return {
         "source": source, "clip": clip, "seconds": 1.333, "loop": loop,
-        "foot_sliding": {"slide_mean_cm_s": 5.5, "slide_max_cm_s": 55.3},
+        "foot_sliding": {"slide_mean_cm_s": 5.5, "slide_max_cm_s": 55.3, "samples": 20},
         "lowest_vertex_cm": {"min": -0.4}, "hands_in_torso": {"max_depth_cm": 1.2, "frames_over_1cm": 3},
         "hands_in_head": {"max_depth_cm": 0.0, "frames_over_1cm": 0},
+        "hands_in_each_other": {"max_depth_cm": 2.2, "frames_over_1cm": 12},
+        "hands_in_legs": {"max_depth_cm": 0.0, "frames_over_1cm": 0},
         "loop_seam": {"seam_deg": 0.0, "seam_ratio": 0.0},
         "hyperextension_deg": {"knee.L": 0.0, "knee.R": 2.5, "elbow.L": 0.0, "elbow.R": 0.0},
         "forearm_twist_deg": {"L": 12.0, "R": 30.5},
@@ -58,11 +60,13 @@ class HelperTest(unittest.TestCase):
         self.assertEqual(sorted(merged["men"]), ["pack:Walk", "ual:Death01"])
         self.assertEqual(merged["men"]["pack:Walk"]["seconds"], 2.0)  # a partial run wins
         merged["men"]["pack:Walk"]["seconds"] = 1.333
+        merged["men"]["ual:Death01"]["foot_sliding"]["samples"] = 1  # one velocity says nothing: shown as "-"
         text = _anim.table(merged, {"men:pack:Walk": "good"})
         lines = text.splitlines()
         self.assertEqual(len(lines), 4)
-        self.assertIn("| men | pack | Walk | 1.33 | yes | 0.98 | 5.5 / 55.3 | -0.4 | 1.2 / 0.0 | 0.0 (x0.0) | 2.5 / 0.0 "
+        self.assertIn("| men | pack | Walk | 1.33 | yes | 0.98 | 5.5 / 55.3 | -0.4 | 1.2/0.0/2.2/0.0 | 0.0 (x0.0) | 2.5 "
                       "| 30.5 | 5.0-25.0 | good |", text)
+        self.assertIn("| men | ual | Death01 | 1.33 | no | 0.98 | - | -0.4 |", text)
         self.assertTrue(all(line.count("|") == lines[0].count("|") for line in lines))
 
     def test_the_review_settings_load(self) -> None:
