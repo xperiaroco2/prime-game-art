@@ -1,6 +1,7 @@
 """The animation inventory (tools/run.py anim-review inventory; docs/animations.md): every Ultimate Modular pack
 file's 24 actions (names, lengths, whether they are identical across the files of a body type, how the men's and the
-women's differ) and the Universal Animation Library's clips in both files (names, lengths, loops, root motion).
+women's differ) and the Universal Animation Library's clips in both files of each library, UAL1 ("ual", "ual_rm")
+and the review settings' [libraries] ("ual2", "ual2_rm"; art #24): names, lengths, loops, root motion.
 
 Usage: blender -b --factory-startup --python-exit-code 1 --python anim_inventory.py -- --raw <raw dir>
            --config <anim_review.toml> --out <inventory.json>
@@ -33,6 +34,22 @@ def action_hash(action) -> str:
 def local_rotations(sampler, frac):
     basis = sampler.basis(sampler.start + frac * sampler.frames)
     return {b: tuple(rc.rot(m)) for b, m in basis.items()}
+
+
+def compare_rigs(ref: dict, other: dict) -> dict:
+    """Another library's rig against UAL1's: the same bone names and parents, and the largest rest offset (mm) and
+    rest rotation difference (degrees, world space) of a bone: whether UAL1's bone map serves it unchanged."""
+    common = [n for n in ref if n in other]
+    off = {n: (ref[n][1].translation - other[n][1].translation).length * 1000 for n in common}
+    ang = {n: math.degrees(ref[n][1].to_quaternion().rotation_difference(other[n][1].to_quaternion()).angle)
+           for n in common}
+    ang = {n: min(a, 360 - a) for n, a in ang.items()}
+    worst = max(ang, key=ang.get) if ang and max(ang.values()) > 0.0 else None
+    return {"same_bone_names": sorted(ref) == sorted(other),
+            "same_parents": all(ref[n][0] == other[n][0] for n in common),
+            "only_in_ual": sorted(set(ref) - set(other)), "only_here": sorted(set(other) - set(ref)),
+            "max_rest_offset_mm": round(max(off.values(), default=0.0), 3),
+            "max_rest_rotation_deg": round(ang.get(worst, 0.0), 3), "most_turned_bone": worst}
 
 
 def pack_files(raw, cfg, body):
@@ -87,9 +104,13 @@ def main(argv):
                   "men_s": inv["pack"]["men"]["actions"][n]["seconds"],
                   "women_s": inv["pack"]["women"]["actions"][n]["seconds"]}
     inv["pack"]["men_vs_women"] = cmp
-    for key in ("ual", "ual_rm"):
+    files, rests = {"ual": cfg["ual"], "ual_rm": cfg["ual_rm"]}, {}
+    for lib, entry in cfg.get("libraries", {}).items():
+        files.update({lib: entry["file"], f"{lib}_rm": entry["rm"]})
+    inv["libraries"] = ["ual", *cfg.get("libraries", {})]
+    for key, rel in files.items():
         rc.new_scene()
-        ch = rc.load_glb(os.path.join(a.raw, cfg[key]))
+        ch = rc.load_glb(os.path.join(a.raw, rel))
         rig = rc.Rig(ch["arm"])
         clips = {}
         for n, act in sorted(ch["actions"].items()):
@@ -104,7 +125,11 @@ def main(argv):
                         "root_speed_m_s": round(dist / s.seconds, 2) if s.seconds else 0.0,
                         "root_rise_m": round(r1.z - r0.z, 3),
                         "pelvis_travel_m": round(math.hypot(h1.x - h0.x, h1.y - h0.y), 3)}
-        inv["ual"][key] = {"file": cfg[key], "clips": clips, "bones": len(ch["arm"].data.bones)}
+        inv["ual"][key] = {"file": rel, "clips": clips, "bones": len(ch["arm"].data.bones)}
+        rests[key] = {b.name: (b.parent.name if b.parent else None, ch["arm"].matrix_world @ b.matrix_local)
+                      for b in ch["arm"].data.bones}
+    for key in [k for k in inv["libraries"] if k != "ual"]:
+        inv["ual"][key]["rig_vs_ual"] = compare_rigs(rests["ual"], rests[key])
     os.makedirs(os.path.dirname(os.path.abspath(a.out)), exist_ok=True)
     with open(a.out, "w", encoding="utf-8") as f:
         json.dump(inv, f, indent=1)

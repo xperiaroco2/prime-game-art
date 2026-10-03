@@ -13,8 +13,8 @@ files and 130+ animations in all; the page's previews also name WAVE and IDLE_CA
 hold), downloaded by the art manager under the engineer's standing permission for free downloads from official sources \
 (art #24). The zip's License.txt says CC0 1.0 Universal and is byte-identical to UAL1's; its README says the _RM file \
 has root motion baked into every animation and the other has root motion disabled. Both GLBs hold the same 43 clips \
-at 30 fps (A_TPose included) on the 65-bone rig of UAL1: the same bone names, parents and rest positions (0 mm), rest \
-rotations within 0.6 degrees, the same mannequin mesh. The Female Mannequin (Mannequin_F in .blend, .glb and .fbx) \
+at 30 fps (A_TPose included) on the 65-bone rig of UAL1: the same bone names, parents and rest pose (0 mm and 0 \
+degrees apart, anim-review inventory) and the same mannequin mesh. The Female Mannequin (Mannequin_F in .blend, .glb and .fbx) \
 has the same rig with narrower, shorter arms and no animations of its own. Retargeted onto the Ultimate Modular rig by \
 tools/run.py retarget --library ual2 with the UAL1 bone map (docs/animations.md); the Unity FBX copies and the setup \
 pictures in the zip are not used."""

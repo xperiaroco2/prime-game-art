@@ -20,7 +20,10 @@ STEPS = ("inventory", "clips", "pairs", "rates", "sheets", "table", "all")
 def add_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("step", choices=STEPS, help="what to make; 'all' runs every step in order")
     parser.add_argument("--body", choices=(*_anim.BODIES, "both"), default="both", help="body type (default both)")
-    parser.add_argument("--clips", default="all", help="clips as pack:<name>,ual:<name> (default all)")
+    parser.add_argument("--clips", default="all", help="clips as pack:<name>,ual:<name>,ual2:<name> (default all)")
+    parser.add_argument("--sources", default="all",
+                        help="clips, pairs, rates: only these sources' clips, and the pairs and rates rows that play "
+                             "one, e.g. ual2 (comma-separated: pack, ual, ual2; default all)")
     parser.add_argument("--only", default="", help="pairs: comma-separated pack clip names (default every pair)")
     parser.add_argument("--jobs", type=int, default=4, help="parallel Blender processes per body type (default 4)")
     parser.add_argument("--out", type=Path, help="output folder (default tools/out/anim-review)")
@@ -37,27 +40,45 @@ def inventory(out: Path) -> dict:
         acts = inv["pack"][body]["actions"]
         same = sum(a["identical_in_all_files"] for a in acts.values())
         common.ok(f"{body}: {len(acts)} pack actions, {same} identical in all {len(inv['pack'][body]['files'])} files")
-    for key, ual in inv["ual"].items():
+    for key, ual in inv["ual"].items():  # each library in place and with root motion ("ual", "ual_rm", "ual2", ...)
         moving = sum(c["root_travel_m"] > 0 for c in ual["clips"].values())
         common.ok(f"{Path(ual['file']).name}: {len(ual['clips'])} clips, {moving} with root motion")
     common.say(f"inventory: {path}")
     return inv
 
 
-def body_args(cfg: dict, body: str) -> list[str]:
-    return ["--body", body, "--character", str(_anim.raw_path(cfg["bodies"][body]["character"])),
-            "--ual", str(_anim.raw_path(cfg["ual"]))]
+def body_args(cfg: dict, body: str, rm: bool = False) -> list[str]:
+    """The Blender script's arguments for a body type: the character and every library (with rm, also their
+    root-motion files)."""
+    out = ["--body", body, "--character", str(_anim.raw_path(cfg["bodies"][body]["character"]))]
+    for key, lib in _anim.libraries(cfg).items():
+        out += ["--lib", f"{key}={_anim.raw_path(lib['file'])}"]
+        if rm:
+            out += ["--lib-rm", f"{key}={_anim.raw_path(lib['rm'])}"]
+    return out
+
+
+def only_sources(args: argparse.Namespace, cfg: dict) -> set[str] | None:
+    known = _anim.sources(cfg)
+    want = {s.strip() for s in args.sources.split(",") if s.strip()} if args.sources not in ("", "all") else None
+    if want is not None and (not want or want - known):
+        raise common.Failure(f"unknown sources in --sources {args.sources}; known: {', '.join(sorted(known))}")
+    return want
 
 
 def clips(args: argparse.Namespace, out: Path, cfg: dict, bodies: list[str]) -> None:
     inv_path = out / "inventory.json"
     inv = json.loads(inv_path.read_text(encoding="utf-8")) if inv_path.is_file() else inventory(out)
+    only = only_sources(args, cfg)
+    if any(lib not in inv["ual"] for lib in _anim.libraries(cfg)):  # an older inventory without a new library
+        inv = inventory(out)
     jobs = []
     for body in bodies:
-        if args.clips == "all":  # a full run replaces every earlier measure of the body type
-            keys, prefix = _anim.clip_keys(inv, body), "_c"
-            for old in (out / "metrics").glob(f"{body}*.json"):
-                old.unlink()
+        if args.clips == "all":  # a full run replaces every earlier measure of the body type (of its sources)
+            keys, prefix = _anim.clip_keys(inv, body, only), _anim.run_tag(only)
+            stale = f"{body}_*.json" if only is None else f"{body}{prefix}*.json"
+            for old in [*(out / "metrics").glob(stale), *(out / "metrics").glob(f"{body}_part_c*.json")]:
+                old.unlink(missing_ok=True)
         else:  # a partial run adds files that sort after the full run's, so merge() lets them win
             keys, prefix = args.clips.split(","), "_part_c"
             for old in (out / "metrics").glob(f"{body}_part_c*.json"):
@@ -75,16 +96,16 @@ def clips(args: argparse.Namespace, out: Path, cfg: dict, bodies: list[str]) -> 
 
 
 def pairs(args: argparse.Namespace, out: Path, cfg: dict, bodies: list[str]) -> None:
-    jobs = [["pairs", *body_args(cfg, body), "--out", str(out), "--only", args.only] for body in bodies]
+    jobs = [["pairs", *body_args(cfg, body), "--out", str(out), "--only", args.only, "--sources", args.sources]
+            for body in bodies]
     with ThreadPoolExecutor(max_workers=len(jobs)) as pool:
         for future in [pool.submit(blender.run_script, "anim_review.py", job, 7200) for job in jobs]:
             future.result()
     common.ok(f"side-by-side pairs in {out / 'pairs'}")
 
 
-def rates(out: Path, cfg: dict, bodies: list[str]) -> None:
-    jobs = [["rates", *body_args(cfg, body), "--ual-rm", str(_anim.raw_path(cfg["ual_rm"])), "--out", str(out)]
-            for body in bodies]
+def rates(args: argparse.Namespace, out: Path, cfg: dict, bodies: list[str]) -> None:
+    jobs = [["rates", *body_args(cfg, body, rm=True), "--out", str(out), "--sources", args.sources] for body in bodies]
     with ThreadPoolExecutor(max_workers=len(jobs)) as pool:
         for future in [pool.submit(blender.run_script, "anim_review.py", job, 7200) for job in jobs]:
             future.result()
@@ -121,6 +142,7 @@ def run(args: argparse.Namespace) -> int:
     cfg = _anim.load_config()
     out = (args.out or common.OUT / "anim-review").resolve()
     out.mkdir(parents=True, exist_ok=True)
+    only_sources(args, cfg)  # refuse an unknown source before any Blender run
     bodies = list(_anim.BODIES) if args.body == "both" else [args.body]
     steps = ("inventory", "clips", "pairs", "rates", "sheets", "table") if args.step == "all" else (args.step,)
     for step in steps:
@@ -132,7 +154,7 @@ def run(args: argparse.Namespace) -> int:
         elif step == "pairs":
             pairs(args, out, cfg, bodies)
         elif step == "rates":
-            rates(out, cfg, bodies)
+            rates(args, out, cfg, bodies)
         elif step == "sheets":
             sheets(out)
         else:

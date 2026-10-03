@@ -23,7 +23,25 @@ def load_config(path: Path = CONFIG) -> dict:
     missing += [f"bodies.{b}" for b in BODIES if b not in cfg.get("bodies", {})]
     if missing:
         raise common.Failure(f"{path.name} lacks {', '.join(missing)}")
+    for key, lib in cfg.get("libraries", {}).items():
+        if key in ("pack", "blend", "layer", "ual") or not key.isidentifier():
+            raise common.Failure(f"{path.name}: [libraries.{key}] needs another name")
+        if not (isinstance(lib, dict) and {"file", "rm"} <= set(lib) and set(lib) <= {"file", "rm", "label"}):
+            raise common.Failure(f"{path.name}: [libraries.{key}] takes file, rm and label")
     return cfg
+
+
+def libraries(cfg: dict) -> dict[str, dict]:
+    """Every Universal Animation Library source, UAL1 first: {key: {file, rm, label}} (raw-relative paths)."""
+    out = {"ual": {"file": cfg["ual"], "rm": cfg["ual_rm"], "label": "UAL"}}
+    for key, lib in cfg.get("libraries", {}).items():
+        out[key] = {"file": lib["file"], "rm": lib["rm"], "label": lib.get("label", key.upper())}
+    return out
+
+
+def sources(cfg: dict) -> set[str]:
+    """Every clip source of the review: the pack and each library."""
+    return {"pack", *libraries(cfg)}
 
 
 def raw_path(relative: str) -> Path:
@@ -33,11 +51,13 @@ def raw_path(relative: str) -> Path:
     return path
 
 
-def clip_keys(inventory: dict, body: str) -> list[str]:
-    """Every clip of a body type as "pack:<name>" and "ual:<name>", from inventory.json."""
-    pack = sorted(inventory["pack"][body]["actions"])
-    ual = sorted(inventory["ual"]["ual"]["clips"])
-    return [f"pack:{n}" for n in pack] + [f"ual:{n}" for n in ual]
+def clip_keys(inventory: dict, body: str, only: set[str] | None = None) -> list[str]:
+    """Every clip of a body type as "pack:<name>", "ual:<name>" and "<library>:<name>", from inventory.json; `only`
+    keeps the clips of those sources (None: all)."""
+    keys = [f"pack:{n}" for n in sorted(inventory["pack"][body]["actions"])]
+    for lib in inventory.get("libraries", ["ual"]):  # an inventory of art #20 knows UAL1 alone
+        keys += [f"{lib}:{n}" for n in sorted(inventory["ual"][lib]["clips"])]
+    return [k for k in keys if only is None or k.split(":", 1)[0] in only]
 
 
 def chunks(keys: list[str], n: int, seconds: dict[str, float] | None = None) -> list[list[str]]:
@@ -56,16 +76,29 @@ def chunks(keys: list[str], n: int, seconds: dict[str, float] | None = None) -> 
 
 def clip_seconds(inventory: dict, body: str) -> dict[str, float]:
     out = {f"pack:{n}": a["seconds"] for n, a in inventory["pack"][body]["actions"].items()}
-    out.update({f"ual:{n}": c["seconds"] for n, c in inventory["ual"]["ual"]["clips"].items()})
+    for lib in inventory.get("libraries", ["ual"]):
+        out.update({f"{lib}:{n}": c["seconds"] for n, c in inventory["ual"][lib]["clips"].items()})
     return out
 
 
+def run_tag(only: set[str] | None) -> str:
+    """The measures file tag of a clips run over every clip of the sources `only` (None: all sources)."""
+    return "_c" if only is None else "_s" + "+".join(sorted(only)) + "_c"
+
+
+def _rank(path: Path) -> tuple[int, str]:
+    """A measures file's place in merge(): full runs, then runs over some sources, then partial runs."""
+    rest = path.stem.split("_", 1)[1] if "_" in path.stem else ""
+    return (2 if rest.startswith("part_c") else 1 if rest.startswith("s") else 0), path.name
+
+
 def merge(metrics_dir: Path) -> dict:
-    """Joins metrics/<body>*.json (one per chunk) into {body: {clip key: measures}}; in name order, so a partial
-    run's <body>_part_c*.json replaces the full run's measures of the same clips."""
+    """Joins metrics/<body>*.json (one per chunk) into {body: {clip key: measures}}: a full run's <body>_c*.json
+    first, then a run over some sources (<body>_s<sources>_c*.json), then a partial run's <body>_part_c*.json, each
+    replacing the earlier measures of the same clips."""
     merged: dict[str, dict] = {}
     for body in BODIES:
-        for path in sorted(metrics_dir.glob(f"{body}*.json")):
+        for path in sorted(metrics_dir.glob(f"{body}_*.json"), key=_rank):
             merged.setdefault(body, {}).update(json.loads(path.read_text(encoding="utf-8")))
     return merged
 

@@ -4,10 +4,15 @@ strips (front and side), looping MP4 clips and side-by-side comparisons. Backgro
 
 Usage:
   blender -b --factory-startup --python-exit-code 1 --python anim_review.py -- clips --body men --character <glb>
-      --ual <glb> --out <dir> [--clips pack:Walk,ual:Walk_Loop|all] [--no-video] [--no-strips] [--tag <chunk>]
-  ... anim_review.py -- pairs --body men --character <glb> --ual <glb> --out <dir> --config <toml> [--only Walk,Run]
+      --lib ual=<glb> [--lib ual2=<glb>] --out <dir> [--clips pack:Walk,ual:Walk_Loop|all] [--sources ual2]
+      [--no-video] [--no-strips] [--tag <chunk>]
+  ... anim_review.py -- pairs --body men --character <glb> --lib ual=<glb> ... --out <dir> --config <toml>
+      [--only Walk,Run] [--sources ual2]
   ... anim_review.py -- sheets --out <dir> --names <file>   (review sheets: men and women strips of each clip)
-  ... anim_review.py -- rates --body men --character <glb> --ual <glb> --ual-rm <glb> --out <dir>   (the game's speeds)
+  ... anim_review.py -- rates --body men --character <glb> --lib ual=<glb> --lib-rm ual=<glb> ... --out <dir>
+      [--sources ual2]   (the game's speeds)
+Clip keys ("pack:Walk", "ual2:Walk_Carry_Loop", layered "base|upper", blends) are defined in anim_keys.py; "--ual" and
+"--ual-rm" are short for "--lib ual=" and "--lib-rm ual=".
 """
 
 import argparse
@@ -23,6 +28,7 @@ import bpy  # noqa: E402
 import numpy as np  # noqa: E402
 from mathutils import Matrix, Vector  # noqa: E402
 
+import anim_keys  # noqa: E402
 import anim_math as am  # noqa: E402
 import anim_render as ar  # noqa: E402
 import retarget_core as rc  # noqa: E402
@@ -35,6 +41,7 @@ CELL = (160, 240)
 BASE_HEIGHT = 2.3  # metres shown in a strip cell, unless the clip needs more
 FLOOR_PAD = 0.22  # metres below the floor for the time labels
 HOLD = 0.5  # seconds a clip that does not loop holds its last frame in a video
+LABELS = {"pack": "pack", "ual": "UAL"}  # short source names in pictures; main() adds the settings' libraries
 
 
 def load_config(path):
@@ -43,15 +50,22 @@ def load_config(path):
 
 
 class Clip:
-    """One clip on one character: its source ("pack" or "ual"), name, action, sampler and whether it loops."""
+    """One clip on one character: its source ("pack", "ual", "ual2", ... or "layer"), name, action, sampler and whether
+    it loops."""
 
-    def __init__(self, source, name, action, loop):
+    def __init__(self, source, name, action, loop, sampler=None, key=None):
         self.source, self.name, self.action, self.loop = source, name, action, loop
-        self.sampler = rc.Sampler(action)
+        self.sampler = sampler or rc.Sampler(action)
+        self._key = key
 
     @property
     def key(self):
-        return f"{self.source}:{self.name}"
+        return self._key or f"{self.source}:{self.name}"
+
+    @property
+    def label(self):
+        """The clip's name with its source, as pictures show it ("UAL2 Walk_Carry_Loop")."""
+        return self.name if self.source == "layer" else f"{LABELS.get(self.source, self.source)} {self.name}"
 
     @property
     def seconds(self):
@@ -71,6 +85,43 @@ class Clip:
         rc.apply_basis(arm, self.sampler.basis(frame))
 
 
+class Layered:
+    """The sampler of a layered clip "base|upper": the base clip's frames with the upper clip's local transforms on the
+    upper-body bones, the upper clip time-scaled to a whole number of its own loops per base loop. Duck-types
+    rc.Sampler (start, end, frames, seconds, basis)."""
+
+    def __init__(self, base, upper, bones):
+        self.base, self.upper, self.bones = base.sampler, upper.sampler, bones
+        self.start, self.end = self.base.start, self.base.end
+        self.cycles = max(1, round(self.base.seconds / self.upper.seconds)) if self.upper.seconds > 0 else 1
+
+    @property
+    def frames(self):
+        return self.base.frames
+
+    @property
+    def seconds(self):
+        return self.base.seconds
+
+    def basis(self, frame):
+        out = dict(self.base.basis(frame))
+        phase = ((frame - self.start) / self.frames * self.cycles) % 1.0 if self.frames > 0 else 0.0
+        return overlay(out, self.upper.basis(self.upper.start + phase * self.upper.frames), self.bones)
+
+
+def overlay(base, upper, bones):
+    """base's basis matrices with upper's on `bones` (a bone the upper clip does not key goes to its rest)."""
+    for b in bones:
+        base[b] = upper.get(b, Matrix.Identity(4))
+    return base
+
+
+def upper_bones(arm, cfg):
+    """The settings' [layer] bone and every bone below it: the bones an upper-body layer drives."""
+    top = arm.data.bones[cfg.get("layer", {}).get("upper", "Torso")]
+    return [top.name] + [b.name for b in top.children_recursive]
+
+
 def setup_characters(a, count=1):
     rc.new_scene()
     ar.setup(bpy.context.scene)
@@ -78,19 +129,19 @@ def setup_characters(a, count=1):
     return chars
 
 
-def retarget(a, char, names):
-    """Bakes the named UAL clips onto char's armature; returns {name: action}."""
+def retarget(a, char, lib, names):
+    """Bakes the named clips of a library ("ual", "ual2", ...) onto char's armature; returns {name: action}."""
     if not names:
         return {}
     bmap = retarget_map.load()
     before = set(bpy.data.objects)
-    src = rc.load_glb(a.ual)
+    src = rc.load_glb(a.libs[lib])
     rt = rc.Retargeter(rc.Rig(src["arm"]), rc.Rig(char["arm"]), bmap)
     rt.set_soles(char["meshes"].values())
-    char["ual_ratio"] = rt.ratio
+    char["ual_ratio"] = rt.ratio  # the same for every library on UAL1's rig
     out = {}
     for n in names:
-        act, _ = rt.clip(src["actions"][n], "UAL|" + n, char["arm"])
+        act, _ = rt.clip(src["actions"][n], f"{LABELS.get(lib, lib)}|{n}", char["arm"])
         out[n] = act
     for o in set(bpy.data.objects) - before:
         bpy.data.objects.remove(o, do_unlink=True)
@@ -100,41 +151,52 @@ def retarget(a, char, names):
 
 
 def clips_for(a, cfg, char, keys):
+    """A Clip per key (plain or layered "base|upper"), the library clips retargeted onto char."""
     loops = cfg["loops"]
-    pack = {n: act for n, act in char["actions"].items()}
-    ual_names = sorted({k.split(":", 1)[1] for k in keys if k.startswith("ual:")})
-    ual = retarget(a, char, ual_names)
+    plain = list(dict.fromkeys(k for key in keys for k in anim_keys.needs(key)))
+    baked = {"pack": dict(char["actions"])}
+    for lib in a.libs:
+        baked[lib] = retarget(a, char, lib, sorted({anim_keys.split(k)[1] for k in plain if k.startswith(lib + ":")}))
+    made = {}
+    for k in plain:
+        src, name = anim_keys.split(k)
+        if src not in baked:
+            raise SystemExit(f"no source {src!r} for {k}; known: {sorted(baked)}")
+        loop = name in loops.get(src, []) or (src != "pack" and name.endswith("_Loop"))
+        made[k] = Clip(src, name, baked[src][name], loop)
     out = []
-    for k in keys:
-        src, name = k.split(":", 1)
-        if src == "pack":
-            out.append(Clip("pack", name, pack[name], name in loops["pack"]))
-        else:
-            out.append(Clip("ual", name, ual[name], name.endswith("_Loop") or name in loops["ual"]))
+    for key in keys:
+        base, upper = anim_keys.layer(key)
+        if upper is None:
+            out.append(made[key])
+            continue
+        b, u = made[base], made[upper]
+        out.append(Clip("layer", f"{b.label} + {u.label} upper body", b.action, b.loop,
+                        Layered(b, u, upper_bones(char["arm"], cfg)), key=key))
     return out
 
 
 def all_keys(a, char):
     import re
-    ual_names = []
-    if a.clips == "all" or "ual:" in a.clips:
-        # the UAL clip names come from the file itself
-        before = set(bpy.data.actions)
-        objs = set(bpy.data.objects)
-        src = rc.load_glb(a.ual)
-        ual_names = sorted(src["actions"])
-        for o in set(bpy.data.objects) - objs:
-            bpy.data.objects.remove(o, do_unlink=True)
-        for act in set(bpy.data.actions) - before:
-            bpy.data.actions.remove(act)
-    keys = [f"pack:{n}" for n in sorted(char["actions"])] + [f"ual:{n}" for n in ual_names]
+    keys = [f"pack:{n}" for n in sorted(char["actions"])]
+    for lib, path in a.libs.items():
+        if a.clips == "all" or f"{lib}:" in a.clips:
+            # a library's clip names come from the file itself
+            before = set(bpy.data.actions)
+            objs = set(bpy.data.objects)
+            src = rc.load_glb(path)
+            keys += [f"{lib}:{n}" for n in sorted(src["actions"]) if not re.fullmatch(r".*\.\d{3}", n)]
+            for o in set(bpy.data.objects) - objs:
+                bpy.data.objects.remove(o, do_unlink=True)
+            for act in set(bpy.data.actions) - before:
+                bpy.data.actions.remove(act)
     if a.clips != "all":
         want = a.clips.split(",")
-        unknown = [w for w in want if w not in keys]
+        unknown = [w for w in want if any(k not in keys for k in anim_keys.needs(w))]
         if unknown:
             raise SystemExit(f"unknown clips {unknown}; known: {keys}")
-        keys = want
-    return [k for k in keys if not re.fullmatch(r"ual:.*\.\d{3}", k)]
+        return want
+    return [k for k in keys if a.sources is None or anim_keys.split(k)[0] in a.sources]
 
 
 def bbox(char, clip, times):
@@ -261,8 +323,10 @@ def cmd_clips(a):
         t0 = time.time()
         res = measure(char, clip, meas)
         res.update({"source": clip.source, "clip": clip.name, "body": a.body, "character": char_name})
-        stem = f"{clip.source}_{clip.name}"
-        src_label = "Ultimate Modular pack" if clip.source == "pack" else "UAL retargeted"
+        stem = (f"{clip.source}_{clip.name}" if clip.source != "layer"
+                else "layer_" + clip.key.replace(":", "_").replace("|", "+"))
+        src_label = {"pack": "Ultimate Modular pack", "layer": "layered"}.get(clip.source,
+                                                                              f"{LABELS[clip.source]} retargeted")
         title = f"{clip.name}  |  {src_label} on {a.body} ({char_name})  |  {clip.seconds:.2f} s"
         if not a.no_strips:
             path = os.path.join(a.out, "strips", a.body, stem + ".png")
@@ -271,7 +335,7 @@ def cmd_clips(a):
             res["strip"] = path
         if not a.no_video:
             path = os.path.join(a.out, "clips", a.body, stem + ".mp4")
-            video(char, clip, path, f"{clip.name} ({'pack' if clip.source == 'pack' else 'UAL'}, {a.body})")
+            video(char, clip, path, f"{clip.label} ({a.body})")
             res["video"] = path
         res["seconds_spent"] = round(time.time() - t0, 1)
         results[clip.key] = res
@@ -283,15 +347,19 @@ def cmd_clips(a):
 
 def cmd_pairs(a):
     cfg = load_config(a.config)
-    pairs = [p for p in cfg["pairs"] if not a.only or p["pack"] in a.only.split(",")]
-    width = max(1 + len(p["ual"]) for p in pairs)
+    pairs = [p for p in anim_keys.pairs(cfg) if (not a.only or p["name"] in a.only.split(","))
+             and anim_keys.selected(p["clips"], a.sources)]
+    if not pairs:
+        print("PAIRS none selected")
+        return
+    width = max(len(p["clips"]) for p in pairs)
     chars = setup_characters(a, width)
-    keys = sorted({f"pack:{p['pack']}" for p in pairs} | {f"ual:{u}" for p in pairs for u in p["ual"]})
+    keys = sorted({k for p in pairs for k in p["clips"]})
     clips = {c.key: c for c in clips_for(a, cfg, chars[0], keys)}
     char_name = os.path.splitext(os.path.basename(a.character))[0]
     spacing = 1.45
     for p in pairs:
-        row = [clips[f"pack:{p['pack']}"]] + [clips[f"ual:{u}"] for u in p["ual"]]
+        row = [clips[k] for k in p["clips"]]
         k = len(row)
         for i, ch in enumerate(chars):
             rc.place(ch, x=(i - (k - 1) / 2) * spacing if i < k else 1000.0)
@@ -320,11 +388,11 @@ def cmd_pairs(a):
             for ch in chars:
                 for o in ch["meshes"].values():
                     o.hide_render = False
-        names = "  vs  ".join(("pack " if c.source == "pack" else "UAL ") + c.name for c in row)
+        names = "  vs  ".join(c.label for c in row)
         body_img = ar.grid(rows)
         head = header(f"{names}  |  {a.body} ({char_name})  |  front and side rows in that order, at the same "
                       f"fractions of each clip", body_img.shape[1])
-        out_png = os.path.join(a.out, "pairs", a.body, p["pack"] + ".png")
+        out_png = os.path.join(a.out, "pairs", a.body, p["name"] + ".png")
         os.makedirs(os.path.dirname(out_png), exist_ok=True)
         ar.save_png(ar.grid([[head], [body_img]]), out_png)
         # the looping side-by-side video: every clip loops on its own clock
@@ -335,7 +403,7 @@ def cmd_pairs(a):
             t = ar.text(f"pl{i}", 0.085, "three_quarter")
             t.rotation_euler = (math.radians(84), 0, 0)
             t.location = ((i - (k - 1) / 2) * spacing, -0.6, 2.0)
-            t.data.body = ("pack " if clip.source == "pack" else "UAL ") + clip.name
+            t.data.body = clip.label.replace(" + ", "\n+ ")
             lbls.append(t)
         ar.VIEWS["pair"] = (84.0, 0.0, 0.0)
         height = 2.45
@@ -346,11 +414,11 @@ def cmd_pairs(a):
             for i, clip in enumerate(row):
                 clip.pose(chars[i]["arm"], clip.cycle_frame(f / FPS))
 
-        out_mp4 = os.path.join(a.out, "pairs", a.body, p["pack"] + ".mp4")
+        out_mp4 = os.path.join(a.out, "pairs", a.body, p["name"] + ".mp4")
         ar.render_video(out_mp4, w, 480, frames, pose_frame)
         for t in lbls:
             bpy.data.objects.remove(t, do_unlink=True)
-        print("PAIR", a.body, p["pack"], out_mp4)
+        print("PAIR", a.body, p["name"], out_mp4)
 
 
 def cmd_sheets(a):
@@ -380,10 +448,13 @@ class Variant:
     """One lane of a rates row: a clip (or a cycle-synced blend of two UAL clips) played at the rate that makes its
     feet keep up with a treadmill moving at the row's speed."""
 
-    def __init__(self, key, clips, speed, natural, rig):
+    def __init__(self, key, clips, speed, natural, rig, bones=()):
         self.key = key
-        kind, name = key.split(":", 1)
-        self.parts = [clips[f"ual:{n}"] for n in name.split("+")] if kind == "blend" else [clips[key]]
+        base, upper = anim_keys.layer(key)
+        kind = "blend" if base.startswith("blend:") else "clip"
+        self.parts = [clips[k] for k in anim_keys.blend_parts(base)] if kind == "blend" else [clips[base]]
+        # an upper-body layer plays one of its loops per stride, its left heel strike on the base's
+        self.upper, self.bones = (clips[upper], list(bones)) if upper else (None, [])
         speeds = [natural[c.key] for c in self.parts]
         self.weight = 0.0
         if kind == "blend":
@@ -401,6 +472,7 @@ class Variant:
         self.natural = stride / self.cycle
         self.rate = speed / self.natural
         self.phase0 = [foot_forward_phase(c, rig) for c in self.parts]
+        self.upper_phase0 = foot_forward_phase(self.upper, rig) if self.upper else 0.0
         self.cadence = 2.0 / self.cycle * self.rate  # a loop is one stride: two steps
         self.step = speed / self.cadence
 
@@ -409,7 +481,9 @@ class Variant:
             short = [c.name.replace("_Fwd_Loop", "").replace("_Loop", "") for c in self.parts]
             name = f"blend {short[0]} {1 - self.weight:.2f} + {short[1]} {self.weight:.2f}"
         else:
-            name = ("pack " if self.parts[0].source == "pack" else "UAL ") + self.parts[0].name
+            name = self.parts[0].label
+        if self.upper:
+            name += f"\n+ {self.upper.label} upper body"
         return f"{name}\nx{self.rate:.2f}, {self.cadence:.2f} steps/s, {self.step:.2f} m a step"
 
     def pose(self, arm, t):
@@ -419,17 +493,20 @@ class Variant:
             frame = clip.sampler.start + ((phase + p0) % 1.0) * clip.seconds * FPS
             bases.append(clip.sampler.basis(frame))
         if len(bases) == 1:
-            rc.apply_basis(arm, bases[0])
-            return
-        a, b = bases
-        out = {}
-        for bone in set(a) | set(b):
-            la, qa, sa = a.get(bone, Matrix.Identity(4)).decompose()
-            lb, qb, sb = b.get(bone, Matrix.Identity(4)).decompose()
-            if qa.dot(qb) < 0:
-                qb = -qb
-            out[bone] = Matrix.LocRotScale(la.lerp(lb, self.weight), qa.slerp(qb, self.weight),
-                                           sa.lerp(sb, self.weight))
+            out = dict(bases[0])
+        else:
+            a, b = bases
+            out = {}
+            for bone in set(a) | set(b):
+                la, qa, sa = a.get(bone, Matrix.Identity(4)).decompose()
+                lb, qb, sb = b.get(bone, Matrix.Identity(4)).decompose()
+                if qa.dot(qb) < 0:
+                    qb = -qb
+                out[bone] = Matrix.LocRotScale(la.lerp(lb, self.weight), qa.slerp(qb, self.weight),
+                                               sa.lerp(sb, self.weight))
+        if self.upper:
+            u = self.upper.sampler
+            out = overlay(out, u.basis(u.start + ((phase + self.upper_phase0) % 1.0) * u.frames), self.bones)
         rc.apply_basis(arm, out)
 
 
@@ -450,10 +527,12 @@ def natural_speeds(a, char, clips, rig):
     """Each clip's speed at 1.0x (m/s): for UAL clips the root-motion file's root travel, scaled to the body (the
     speed at which its planted feet stand still on the ground); otherwise the in-place ground speed of the feet."""
     out, how = {}, {}
-    ual = [c for c in clips.values() if c.source == "ual"]
-    if ual:
+    for lib, path in a.libs_rm.items():
+        ual = [c for c in clips.values() if c.source == lib]
+        if not ual:
+            continue
         before = set(bpy.data.objects)
-        rm = rc.load_glb(a.ual_rm)
+        rm = rc.load_glb(path)
         rm_rig = rc.Rig(rm["arm"])
         for c in ual:
             s = rc.Sampler(rm["actions"][c.name])
@@ -503,16 +582,19 @@ def cmd_rates(a):
     the row's speed, each at the rate that matches its feet to the treadmill; an MP4 and a frame strip per row, and
     rates.json with each lane's rate, cadence and step length."""
     cfg = load_config(a.config)
-    rows = cfg["rates"]
+    rows = [r for r in cfg["rates"] if anim_keys.selected(r["clips"], a.sources)]
+    out_dir = os.path.join(a.out, "rates", a.body)
+    os.makedirs(out_dir, exist_ok=True)
+    if not rows:
+        with open(os.path.join(out_dir, "rates.json"), "w", encoding="utf-8") as f:
+            json.dump({"body": a.body, "rows": {}}, f, indent=1)
+        return
     width = max(len(r["clips"]) for r in rows)
     chars = setup_characters(a, width)
     rig = rc.Rig(chars[0]["arm"])
-    keys = set()
-    for r in rows:
-        for k in r["clips"]:
-            kind, name = k.split(":", 1)
-            keys |= {f"ual:{n}" for n in name.split("+")} if kind == "blend" else {k}
+    keys = {k for r in rows for lane in r["clips"] for k in anim_keys.needs(lane)}
     clips = {c.key: c for c in clips_for(a, cfg, chars[0], sorted(keys))}
+    bones = upper_bones(chars[0]["arm"], cfg)
     natural, how = natural_speeds(a, chars[0], clips, rig)
     char_name = os.path.splitext(os.path.basename(a.character))[0]
     stripes, move = treadmill()
@@ -522,10 +604,8 @@ def cmd_rates(a):
     spacing, height = 2.4, 2.7  # lanes one behind the other along the picture's right
     report = {"body": a.body, "character": char_name, "natural_speed_m_s": {k: round(v, 3) for k, v in natural.items()},
               "natural_speed_from": how, "rows": {}}
-    out_dir = os.path.join(a.out, "rates", a.body)
-    os.makedirs(out_dir, exist_ok=True)
     for r in rows:
-        lanes = [Variant(k, clips, r["speed"], natural, rig) for k in r["clips"]]
+        lanes = [Variant(k, clips, r["speed"], natural, rig, bones) for k in r["clips"]]
         k = len(lanes)
         spots = [right * ((i - (k - 1) / 2) * spacing) for i in range(k)]
         for i, ch in enumerate(chars):
@@ -567,7 +647,8 @@ def cmd_rates(a):
             bpy.data.objects.remove(t, do_unlink=True)
         report["rows"][r["name"]] = {
             "speed_m_s": r["speed"], "label": r["label"], "video": out_mp4,
-            "lanes": [{"clip": lane.key, "blend_weight": round(lane.weight, 3), "cycle_s": round(lane.cycle, 3),
+            "lanes": [{"clip": lane.key, "upper_body": lane.upper.key if lane.upper else None,
+                       "blend_weight": round(lane.weight, 3), "cycle_s": round(lane.cycle, 3),
                        "natural_speed_m_s": round(lane.natural, 3), "rate": round(lane.rate, 3),
                        "cadence_steps_s": round(lane.cadence, 2), "step_m": round(lane.step, 2)} for lane in lanes],
         }
@@ -583,8 +664,11 @@ def main(argv):
     ap.add_argument("mode", choices=["clips", "pairs", "sheets", "rates"])
     ap.add_argument("--body", choices=["men", "women"])
     ap.add_argument("--character")
-    ap.add_argument("--ual")
-    ap.add_argument("--ual-rm")
+    ap.add_argument("--ual", help="short for --lib ual=<glb>")
+    ap.add_argument("--ual-rm", help="short for --lib-rm ual=<glb>")
+    ap.add_argument("--lib", action="append", default=[], help="<key>=<glb>: a library's in-place file")
+    ap.add_argument("--lib-rm", action="append", default=[], help="<key>=<glb>: a library's root-motion file")
+    ap.add_argument("--sources", default="all", help="only these sources' clips, pairs and rates rows")
     ap.add_argument("--out", required=True)
     ap.add_argument("--config", default=os.path.join(os.path.dirname(os.path.abspath(__file__)), "anim_review.toml"))
     ap.add_argument("--clips", default="all")
@@ -595,6 +679,15 @@ def main(argv):
     ap.add_argument("--no-strips", action="store_true")
     a = ap.parse_args(argv)
     a.out = os.path.abspath(a.out)
+    a.libs = dict(x.split("=", 1) for x in a.lib)
+    a.libs_rm = dict(x.split("=", 1) for x in a.lib_rm)
+    if a.ual:
+        a.libs = {"ual": a.ual, **a.libs}
+    if a.ual_rm:
+        a.libs_rm = {"ual": a.ual_rm, **a.libs_rm}
+    cfg = load_config(a.config)
+    LABELS.update({k: v.get("label", k.upper()) for k, v in cfg.get("libraries", {}).items()})
+    a.sources = anim_keys.parse_sources(a.sources, {"pack", *a.libs})
     global TMP
     TMP = os.path.join(a.out, "tmp", f"{a.body or 'sheets'}{a.tag}")
     os.makedirs(TMP, exist_ok=True)
