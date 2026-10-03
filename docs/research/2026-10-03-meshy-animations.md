@@ -370,8 +370,10 @@ Meshy clips and the clip each one competes with.
   ownership of the output under 3.2 says the output is ours, not that the motion underneath is free of third-party
   rights, and bought motion libraries usually allow use inside a game but not redistribution of the raw files. So
   for the art repo's rules: **`public_repo_ok = false`** for every manifest that uses a Meshy library clip or the
-  text-to-motion clip, `ai_generated = true` for the text-to-motion clip and unknown (recorded as such) for the library
-  clips, and the raw files stay private (`D:/prime-art-raw/2026-10-b4-animations/` and OneDrive, never in git). A clip
+  text-to-motion clip, with `licence = "restricted"` (the manifest's value for raw library motions and anything
+  unclear), `ai_generated = true` for both kinds (the field is a boolean: for the library clips it is the conservative
+  value, since Meshy does not say whether they are generated; `notes` says so), `source.model_version = "undisclosed"`
+  and the animate task ids in `source.task_ids`, and the raw files stay private (`D:/prime-art-raw/2026-10-b4-animations/` and OneDrive, never in git). A clip
   we retarget, clean up or key by hand from one of them is still derived from it. **The game repo is public**, so in
   this state no Meshy clip can enter it; the question for the engineer is below.
 

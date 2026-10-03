@@ -357,8 +357,14 @@ library actions on the man (the sprint for the feet, then backwards, a turn in p
 downed state, a two-handed carry, a shrug and a finger wag), a walk (1 Walking Woman) and the sprint (16 Run Fast) on
 the woman, and one prime text-to-motion crawl while downed, animated on the man: 59 credits, cap 60, approved by the
 engineer for "about 60 credits" ([art #16](https://github.com/xperiaroco2/prime-game-art/issues/16#issuecomment-5971404896))
-and confirmed by the engineer in chat before the run. The action ids and names are in the batch file. The trial and its
-findings: [research/2026-10-03-meshy-animations.md](research/2026-10-03-meshy-animations.md).
+and confirmed by the engineer in chat before the run ([recorded on art #16](https://github.com/xperiaroco2/prime-game-art/issues/16#issuecomment-5972512323),
+the batch's `approval_ref`). The action ids and names are in the batch file. The trial and its findings:
+[research/2026-10-03-meshy-animations.md](research/2026-10-03-meshy-animations.md).
+
+**A manifest that uses a batch-4 clip** (library or text to motion) records `licence = "restricted"`,
+`public_repo_ok = false`, `ai_generated = true` (a boolean: for the library clips the conservative value, since Meshy
+does not disclose how they were made; say so in `notes`), `source.model_version = "undisclosed"` and the animate task
+ids. The research page has the reasons.
 
 **Run** on 2026-10-03, 18:57 to 19:00 UTC, by the art manager (`meshy run 2026-10-b4-animations`, the man's rig first):
 balance **374 before, 315 after: 59 credits**, every task charged as estimated (`log.csv` and each item's
