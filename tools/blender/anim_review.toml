@@ -1,0 +1,63 @@
+# The animation review's settings (tools/run.py anim-review; docs/animations.md). Paths are relative to the raw
+# folder (ART_RAW_DIR, default D:/prime-art-raw).
+
+ual = "quaternius/Universal_Animation_Library/Universal Animation Library[Standard]/Unreal-Godot/UAL1_Standard.glb"
+ual_rm = "quaternius/Universal_Animation_Library/Universal Animation Library[Standard]/Unreal-Godot/UAL1_Standard_RM.glb"
+
+# The clips play on unmodified pack originals; each is also its body type's skeleton and action donor.
+[bodies.men]
+character = "refs/Ultimate_Modular_Men_Pack/Business Man.glb"
+pack = "refs/Ultimate_Modular_Men_Pack"
+[bodies.women]
+character = "refs/Ultimate_Modular_Women_Pack/Suit.glb"
+pack = "refs/Ultimate_Modular_Women_Pack"
+
+# Pack clips that loop (UAL marks its loops with a _Loop suffix; Sword_Idle loops as well).
+[loops]
+pack = ["Idle", "Idle_Gun", "Idle_Gun_Pointing", "Idle_Neutral", "Idle_Sword", "Run", "Run_Back", "Run_Left",
+        "Run_Right", "Run_Shoot", "Walk"]
+ual = ["Sword_Idle"]
+
+# Side-by-side clips: the pack's clip against the corresponding UAL clips, on the same character.
+[[pairs]]
+pack = "Idle"
+ual = ["Idle_Loop"]
+[[pairs]]
+pack = "Walk"
+ual = ["Walk_Loop"]
+[[pairs]]
+pack = "Run"
+ual = ["Jog_Fwd_Loop", "Sprint_Loop"]
+[[pairs]]
+pack = "Punch_Right"
+ual = ["Punch_Cross"]
+[[pairs]]
+pack = "Death"
+ual = ["Death01"]
+[[pairs]]
+pack = "Interact"
+ual = ["Interact", "PickUp_Table"]
+[[pairs]]
+pack = "Punch_Left"
+ual = ["Punch_Jab"]
+[[pairs]]
+pack = "HitRecieve"
+ual = ["Hit_Chest", "Hit_Head"]
+[[pairs]]
+pack = "Roll"
+ual = ["Roll"]
+[[pairs]]
+pack = "Idle_Gun"
+ual = ["Pistol_Idle_Loop"]
+[[pairs]]
+pack = "Gun_Shoot"
+ual = ["Pistol_Shoot"]
+[[pairs]]
+pack = "Idle_Sword"
+ual = ["Sword_Idle"]
+[[pairs]]
+pack = "Sword_Slash"
+ual = ["Sword_Attack"]
+[[pairs]]
+pack = "Wave"
+ual = ["Idle_Talking_Loop"]
