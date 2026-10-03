@@ -1,0 +1,31 @@
+id = "quaternius_ual1_standard"
+title = "Universal Animation Library [Standard] (UAL1): 43 clips on the 65-bone Unreal-mannequin rig"
+author = "Quaternius"
+url = "https://quaternius.itch.io/universal-animation-library"
+licence = "CC0-1.0"
+licence_url = "https://creativecommons.org/publicdomain/zero/1.0/"
+public_repo_ok = true
+ai_generated = false
+downloaded_at = 2026-10-02
+credit = "Universal Animation Library by Quaternius (CC0 1.0)"
+notes = """The free Standard tier (the Pro tier, $9.99 or more, and the Source tier, $14.99 or more, add the rest of \
+120+ clips). The zip's License.txt says CC0 1.0 Universal; its README says the _RM file has root motion baked into \
+every animation and the other has root motion disabled. Both GLBs hold the same 43 clips at 30 fps (the itch.io page \
+counts 45 free animations). Retargeted onto the Ultimate Modular rig by tools/run.py retarget (docs/animations.md); \
+the Unity FBX copies in the zip are not used."""
+
+[[raw]]
+file = "quaternius/Universal Animation Library [Standard].zip"
+sha256 = "cc73fc4e495b82958207316596317a3f40b9fa38065bde1027937452da537724"
+
+[[raw]]
+file = "quaternius/Universal_Animation_Library/Universal Animation Library[Standard]/Unreal-Godot/UAL1_Standard.glb"
+sha256 = "69591853d817488edaa8fd9bf8fc1d821eaeaf789f8627b3cd23b41c4ed67997"
+
+[[raw]]
+file = "quaternius/Universal_Animation_Library/Universal Animation Library[Standard]/Unreal-Godot/UAL1_Standard_RM.glb"
+sha256 = "be684571ed655a1b892c2c07e6e2aeca053b606c442d34004adaf1d944090d01"
+
+[[raw]]
+file = "quaternius/Universal_Animation_Library/Universal Animation Library[Standard]/License.txt"
+sha256 = "6d01f55c6e4c49a2c9963e147e561945ae2c83958c8ca667d90a6bffdbfac061"
