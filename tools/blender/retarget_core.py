@@ -254,7 +254,9 @@ class Retargeter:
         # ours: without it, an arm hanging at the side on Meshy's rig stands that far out on ours)
         self.aligned = {}
         for t in bmap.get("align", []):
-            child = next(c for c in tgt.order if tgt.parent[c] == t and c in self.inv)
+            child = next((c for c in tgt.order if tgt.parent[c] == t and c in self.inv), None)
+            if child is None:
+                raise ValueError(f"[align] {t}: no mapped child bone gives its direction on both rigs")
             d_s = src.rest_world_pos(self.inv[child]) - src.rest_world_pos(self.inv[t])
             d_t = tgt.rest_world_pos(child) - tgt.rest_world_pos(t)
             turn = d_t.rotation_difference(d_s)
