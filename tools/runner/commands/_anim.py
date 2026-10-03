@@ -12,6 +12,8 @@ from .. import common
 BLENDER_DIR = common.ROOT / "tools" / "blender"
 CONFIG = BLENDER_DIR / "anim_review.toml"
 BODIES = ("men", "women")
+LIBRARY_KEYS = {"file", "rm", "label", "map", "rigid_map"}
+MAPS = BLENDER_DIR / "retarget_maps"
 
 
 def load_config(path: Path = CONFIG) -> dict:
@@ -26,8 +28,11 @@ def load_config(path: Path = CONFIG) -> dict:
     for key, lib in cfg.get("libraries", {}).items():
         if key in ("pack", "blend", "layer", "ual") or key.endswith("_rm") or not key.isidentifier():
             raise common.Failure(f"{path.name}: [libraries.{key}] needs another name")
-        if not (isinstance(lib, dict) and {"file", "rm"} <= set(lib) and set(lib) <= {"file", "rm", "label"}):
-            raise common.Failure(f"{path.name}: [libraries.{key}] takes file, rm and label")
+        if not (isinstance(lib, dict) and {"file", "rm"} <= set(lib) and set(lib) <= LIBRARY_KEYS):
+            raise common.Failure(f"{path.name}: [libraries.{key}] takes file, rm, label, map and rigid_map")
+        for name in (lib.get("map"), lib.get("rigid_map")):  # bone maps of a library on another rig (art #25)
+            if name is not None and not (MAPS / str(name)).is_file():
+                raise common.Failure(f"{path.name}: [libraries.{key}] names a bone map {name!r} that is not in {MAPS}")
     return cfg
 
 
