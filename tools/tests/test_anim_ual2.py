@@ -112,6 +112,20 @@ class ClipListTest(unittest.TestCase):
         old = {k: v for k, v in self.INV.items() if k != "libraries"}  # an inventory of art #20: UAL1 alone
         self.assertEqual(_anim.clip_keys(old, "men"), ["pack:Walk", "ual:Walk_Loop"])
 
+    def test_layered_clips_join_full_and_source_runs(self) -> None:
+        cfg = {"layer": {"upper": "Torso", "clips": ["ual:Idle_Loop|ual2:Walk_Carry_Loop"]}}
+        self.assertEqual(_anim.layered_keys(cfg), ["ual:Idle_Loop|ual2:Walk_Carry_Loop"])
+        self.assertEqual(_anim.layered_keys(cfg, {"ual2"}), ["ual:Idle_Loop|ual2:Walk_Carry_Loop"])
+        self.assertEqual(_anim.layered_keys(cfg, {"pack"}), [])
+        self.assertEqual(_anim.layered_keys({}), [])
+        for bad in ("ual:Idle_Loop", "ual:A|ual2:B|ual2:C", "ual:A|B", "ual:A|:B"):
+            with self.subTest(key=bad), self.assertRaises(common.Failure):
+                _anim.layered_keys({"layer": {"clips": [bad]}})
+        real = _anim.load_config()
+        self.assertIn("ual:Idle_Loop|ual2:Walk_Carry_Loop", _anim.layered_keys(real, {"ual2"}))
+        for key in _anim.layered_keys(real):
+            self.assertEqual(len(anim_keys.needs(key)), 2, key)
+
     def test_measures_merge_full_then_source_then_partial_runs(self) -> None:
         shutil.rmtree(OUT / "metrics", ignore_errors=True)
         (OUT / "metrics").mkdir(parents=True)

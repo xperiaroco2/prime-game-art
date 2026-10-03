@@ -13,9 +13,11 @@ rm = "quaternius/Universal_Animation_Library_2/Universal Animation Library 2[Sta
 label = "UAL2"
 
 # Layered clips "<base>|<upper>" (tools/blender/anim_keys.py): the base clip's hips and legs under the upper clip's
-# `upper` bone and every bone below it (spine, head, arms, fingers), as an engine layers an upper-body clip.
+# `upper` bone and every bone below it (spine, head, arms, fingers), as an engine layers an upper-body clip. `clips`
+# are layered clips that a run over all clips (or over one of their sources) measures beside the plain ones.
 [layer]
 upper = "Torso"
+clips = ["ual:Idle_Loop|ual2:Walk_Carry_Loop"]  # the carry idle: UAL2 has no idle carry
 
 # The clips play on unmodified pack originals; each is also its body type's skeleton and action donor.
 [bodies.men]

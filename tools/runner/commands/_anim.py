@@ -60,6 +60,19 @@ def clip_keys(inventory: dict, body: str, only: set[str] | None = None) -> list[
     return [k for k in keys if only is None or k.split(":", 1)[0] in only]
 
 
+def layered_keys(cfg: dict, only: set[str] | None = None) -> list[str]:
+    """The layered clips "<base>|<upper>" of the settings' [layer] clips that a full run measures beside the plain
+    clips; `only` keeps those that play a clip of one of those sources (None: all)."""
+    out = []
+    for key in cfg.get("layer", {}).get("clips", []):
+        parts = key.split("|")
+        if len(parts) != 2 or not all(":" in p and all(p.split(":", 1)) for p in parts):
+            raise common.Failure(f"[layer] clips: {key!r} is not <source>:<clip>|<source>:<clip>")
+        if only is None or {p.split(":", 1)[0] for p in parts} & only:
+            out.append(key)
+    return out
+
+
 def chunks(keys: list[str], n: int, seconds: dict[str, float] | None = None) -> list[list[str]]:
     """Splits keys into at most n lists of similar total length (longest first, each to the lightest list)."""
     n = max(1, min(n, len(keys)))

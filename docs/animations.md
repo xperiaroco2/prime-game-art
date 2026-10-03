@@ -118,8 +118,10 @@ Steps, or `all` in this order:
 
 `clips` takes `--no-video` and `--no-strips` (measures only: about two minutes for all 134). A run with `--clips`
 replaces only those clips' measures (its `metrics/<body>_part_c*.json` sort after the full run's and win in
-`table`); a run with all clips replaces every measure of the body type. Only the **latest** partial run is kept: a
-second `--clips` run deletes the first one's files, so the first run's clips fall back to the full run's measures.
+`table`); a run with all clips replaces every measure of the body type and also measures the layered clips named in
+the settings' `[layer] clips` (since art #24: the carry idle `ual:Idle_Loop|ual2:Walk_Carry_Loop`), so they survive any
+rerun. Only the **latest** partial run is kept: a second `--clips` run deletes the first one's files, so the first
+run's clips fall back to the full run's measures.
 
 Pictures: Workbench, flat material colours, specular off, neutral grey background, a dark floor slab whose top is
 z = 0 (a line in the horizontal views), orthographic cameras, labels as text objects; videos are driven by a

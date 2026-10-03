@@ -415,7 +415,6 @@ type) and 23 review sheets with 8 Blender processes. UAL2 (art #24):
 tools/run.py retarget --library ual2 --body men --floor
 tools/run.py retarget --library ual2 --body women --floor
 tools/run.py anim-review all --sources ual2 --out D:/prime-art-raw/review/stage1/24 --jobs 4
-tools/run.py anim-review clips --clips "ual:Idle_Loop|ual2:Walk_Carry_Loop" --out D:/prime-art-raw/review/stage1/24
-tools/run.py anim-review table --out D:/prime-art-raw/review/stage1/24
 ```
-86 UAL2 clips and 2 layered carry idles measured (strips and MP4s), 20 pairs, 2 treadmill rows and 15 sheets.
+86 UAL2 clips and 2 layered carry idles measured (strips and MP4s; the carry idle is a `[layer] clips` entry, so the
+source run measures it), 20 pairs, 2 treadmill rows and 15 sheets.

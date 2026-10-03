@@ -20,7 +20,9 @@ STEPS = ("inventory", "clips", "pairs", "rates", "sheets", "table", "all")
 def add_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("step", choices=STEPS, help="what to make; 'all' runs every step in order")
     parser.add_argument("--body", choices=(*_anim.BODIES, "both"), default="both", help="body type (default both)")
-    parser.add_argument("--clips", default="all", help="clips as pack:<name>,ual:<name>,ual2:<name> (default all)")
+    parser.add_argument("--clips", default="all",
+                        help="clips as pack:<name>,ual:<name>,ual2:<name> or a layered <base>|<upper> (default all: "
+                             "every clip and the settings' [layer] clips)")
     parser.add_argument("--sources", default="all",
                         help="clips, pairs, rates: only these sources' clips, and the pairs and rates rows that play "
                              "one, e.g. ual2 (comma-separated: pack, ual, ual2; default all)")
@@ -75,7 +77,8 @@ def clips(args: argparse.Namespace, out: Path, cfg: dict, bodies: list[str]) -> 
     jobs = []
     for body in bodies:
         if args.clips == "all":  # a full run replaces every earlier measure of the body type (of its sources)
-            keys, prefix = _anim.clip_keys(inv, body, only), _anim.run_tag(only)
+            keys = _anim.clip_keys(inv, body, only) + _anim.layered_keys(cfg, only)
+            prefix = _anim.run_tag(only)
             stale = f"{body}_*.json" if only is None else f"{body}{prefix}*.json"
             for old in [*(out / "metrics").glob(stale), *(out / "metrics").glob(f"{body}_part_c*.json")]:
                 old.unlink(missing_ok=True)
