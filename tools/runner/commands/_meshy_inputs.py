@@ -9,6 +9,9 @@ A batch names an input as a table in an item's `images` list (docs/meshy.md):
 is optional; when set, the run refuses a file whose content changed since the approval. `from` names an earlier
 image item of the batch; `pick` is a 0-based index into that item's `image_urls` (a multi-view set has three), and
 without `pick` every image of the source is used, in Meshy's order.
+
+A rig of a local model (art #25) names its files the same way, one table each: `model` (a .glb, sent as model_url)
+and optionally `texture` (its UV-unwrapped base colour, a .png, sent as texture_image_url).
 """
 
 from __future__ import annotations
@@ -27,7 +30,13 @@ from .. import common
 IMAGE_MAX_BYTES = 20 * 1024 * 1024
 IMAGE_TYPES = {".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg"}
 MAGIC = {"image/png": b"\x89PNG\r\n\x1a\n", "image/jpeg": b"\xff\xd8\xff"}
-MODEL_TYPES = {".glb": "model/gltf-binary"}
+# A rig's model_url takes "a publicly accessible URL or Data URI" of a GLB (docs.meshy.ai/en/api/rigging-and-animation,
+# read 2026-10-03), with no media type named: the client sends the one the remesh docs ask for in a model data URI.
+# The docs give no size limit for a data URI either; this client refuses a model over MODEL_MAX_BYTES.
+MODEL_TYPES = {".glb": "application/octet-stream"}
+GLB_MAGIC = b"glTF"
+MODEL_MAX_BYTES = 20 * 1024 * 1024
+TEXTURE_TYPES = {".png": "image/png"}  # texture_image_url: "We currently support .png formats"
 RAW_PREFIX = "raw:"
 SHA256 = re.compile(r"^[0-9a-f]{64}$")
 DATA_URI = re.compile(r"^data:([^;,]+);base64,")
@@ -42,6 +51,7 @@ class Input:
     sha256: str = ""
     from_item: str = ""
     pick: int | None = None
+    role: str = "image"  # image (the image modes), model or texture (a rig of a local model)
 
     def describe(self) -> str:
         if self.from_item:
@@ -101,6 +111,31 @@ def parse(value: Any, where: str, errors: list[str]) -> list[Input]:
     return out
 
 
+def parse_file(value: Any, key: str, where: str, errors: list[str]) -> Input | None:
+    """A rig's `model` (a .glb) or `texture` (a .png) table: { file = ..., provenance = ..., sha256 = ... }."""
+    if value is None:
+        return None
+    suffixes = MODEL_TYPES if key == "model" else TEXTURE_TYPES
+    at = f"{where}: {key}"
+    if not isinstance(value, dict) or not isinstance(value.get("file"), str) or not value["file"].strip():
+        errors.append(f"{at} must be a table like {{ file = \"raw:....{next(iter(suffixes))[1:]}\", provenance = ... }}")
+        return None
+    unknown = sorted(set(value) - {"file", "provenance", "sha256"})
+    if unknown:
+        errors.append(f"{at}: unknown key(s) {', '.join(unknown)}")
+    file, provenance, sha = value["file"].strip(), value.get("provenance"), value.get("sha256", "")
+    if Path(file).suffix.lower() not in suffixes:
+        errors.append(f"{at}: {file} is not a {' or '.join(suffixes)} file (what the rigging docs take)")
+    if not isinstance(provenance, str) or not provenance.strip():
+        errors.append(f"{at}: 'provenance' must say where the file comes from, for example \"own work: an assembled "
+                      "character exported from Blender\"")
+        provenance = ""
+    if not isinstance(sha, str) or (sha and not SHA256.match(sha)):
+        errors.append(f"{at}: 'sha256' must be 64 lower-case hex digits")
+        sha = ""
+    return Input(file=file, provenance=provenance.strip(), sha256=sha, role=key)
+
+
 def resolve(ref: str) -> Path:
     """The path of a `file` input: raw:<relative> under the raw folder, an absolute path, or repository-relative."""
     if ref.startswith(RAW_PREFIX):
@@ -143,11 +178,37 @@ def sniff(path: Path) -> str | None:
     return next((name for name, magic in MAGIC.items() if head.startswith(magic)), None)
 
 
+def model_type(path: Path) -> str:
+    """The media type a GLB model is sent with; raises Failure when the file is no GLB that fits."""
+    kind = MODEL_TYPES.get(path.suffix.lower())
+    if kind is None:
+        raise common.Failure(f"{path.name} is not a .glb file")
+    if not path.is_file():
+        raise common.Failure(f"{path} does not exist")
+    size = path.stat().st_size
+    if size > MODEL_MAX_BYTES:
+        raise common.Failure(f"{path.name} has {size} bytes; this client sends models of at most {MODEL_MAX_BYTES} bytes")
+    with path.open("rb") as f:
+        if f.read(4) != GLB_MAGIC:
+            raise common.Failure(f"{path.name} is not a binary glTF (GLB) file (its first bytes say otherwise)")
+    return kind
+
+
+def kind_of(inp: Input, path: Path) -> str:
+    """The media type an input is sent with, checked against the file (PNG, JPEG or GLB, by its role)."""
+    if inp.role == "model":
+        return model_type(path)
+    kind = media_type(path)
+    if inp.role == "texture" and kind != "image/png":
+        raise common.Failure(f"{path.name}: a rig's texture must be a PNG")
+    return kind
+
+
 def file_problems(inp: Input) -> list[str]:
     """Why a `file` input cannot be sent now: missing, wrong format, too big, or not the approved sha256."""
     path = resolve(inp.file)
     try:
-        media_type(path)
+        kind_of(inp, path)
     except common.Failure as exc:
         return [f"{inp.file}: {exc}"]
     if inp.sha256 and sha256(path) != inp.sha256:

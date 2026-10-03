@@ -1,8 +1,12 @@
-"""`meshy`: the Meshy API client: estimate, run, balance and status of approved batches (docs/meshy.md)."""
+"""`meshy`: the Meshy API client: estimate, run, balance and status of approved batches, and the animation library's
+listing (docs/meshy.md)."""
 
 from __future__ import annotations
 
 import argparse
+import datetime as dt
+import json
+from pathlib import Path
 
 from .. import common
 from . import _meshy_api as api
@@ -11,7 +15,7 @@ from . import _meshy_inputs as inputs
 from . import _meshy_run as runs
 
 NAME = "meshy"
-HELP = "Meshy batches: estimate, run (approved only), balance, status"
+HELP = "Meshy batches: estimate, run (approved only), balance, status; the animation library's listing"
 
 
 def add_arguments(parser: argparse.ArgumentParser) -> None:
@@ -25,6 +29,11 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
     sub.add_parser("balance", help="the Meshy credit balance (needs MESHY_API_KEY; spends nothing)")
     p = sub.add_parser("status", help="each item's state from the raw folder (no network)")
     p.add_argument("batch", help="batches/<id>.toml or a batch id")
+    p = sub.add_parser("library", help="save the animation library's listing to the raw folder (needs MESHY_API_KEY; "
+                                       "spends nothing)")
+    p.add_argument("--search", default="", help="only actions matching this text")
+    p.add_argument("--category", default="", help="only this category, e.g. WalkAndRun")
+    p.add_argument("--out", type=Path, help="the JSON file (default <raw>/meshy/animation-library-<date>.json)")
 
 
 def run(args: argparse.Namespace) -> int:
@@ -38,6 +47,9 @@ def run(args: argparse.Namespace) -> int:
             key = api.api_key()
             common.say(f"Meshy balance: {api.MeshyClient(key).balance()} credits")
             return 0
+        if args.action == "library":
+            key = api.api_key()
+            return library(api.MeshyClient(key), args.search, args.category, args.out)
         batch = batches.load(args.batch)
         problems = batches.approval_problems(batch)
         if problems:
@@ -95,4 +107,33 @@ def status(batch: batches.Batch) -> int:
         common.say("  " + runs.item_status(batch, item))
         total += runs.spent(runs.read_state(batch, item))
     common.say(f"  {total} credits spent of the approved cap {batch.credit_cap}")
+    return 0
+
+
+def actions_of(answer: object) -> list[dict]:
+    """The action records of a library answer: a list of objects, or the first such list inside an object."""
+    if isinstance(answer, list):
+        return [a for a in answer if isinstance(a, dict)]
+    if isinstance(answer, dict):
+        for value in answer.values():
+            if isinstance(value, list) and all(isinstance(a, dict) for a in value):
+                return value
+    raise common.Failure("the animation library's answer holds no list of actions")
+
+
+def library(client: api.MeshyClient, search: str, category: str, out: Path | None) -> int:
+    """Saves the library's listing as Meshy sent it (with the time and the query) and prints a summary."""
+    answer = client.library(search, category)
+    actions = actions_of(answer)
+    now = dt.datetime.now(dt.UTC)
+    out = out or common.raw_dir() / "meshy" / f"animation-library-{now:%Y-%m-%d}.json"
+    out.parent.mkdir(parents=True, exist_ok=True)
+    record = {"fetched_at": now.isoformat(timespec="seconds"), "endpoint": api.LIBRARY_PATH,
+              "search": search, "category": category, "count": len(actions), "answer": answer}
+    out.write_text(json.dumps(record, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
+    cats: dict[str, int] = {}
+    for a in actions:
+        cats[str(a.get("category", "?"))] = cats.get(str(a.get("category", "?")), 0) + 1
+    common.say(f"animation library: {len(actions)} actions ({', '.join(f'{k} {v}' for k, v in sorted(cats.items()))})")
+    common.say(f"saved to {out}")
     return 0

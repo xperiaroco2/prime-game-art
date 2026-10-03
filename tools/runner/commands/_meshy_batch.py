@@ -16,7 +16,8 @@ from .. import common
 from . import _meshy_inputs as inputs
 
 BATCHES = common.ROOT / "batches"
-KINDS = ("text_to_3d", "rig", "animate", "text_to_image", "image_to_image", "image_to_3d", "multi_image_to_3d", "remesh")
+KINDS = ("text_to_3d", "rig", "animate", "text_to_image", "image_to_image", "image_to_3d", "multi_image_to_3d", "remesh",
+         "text_to_motion")
 IMAGE_KINDS = ("text_to_image", "image_to_image")  # make images; another item takes them with `from`
 MODEL_KINDS = ("text_to_3d", "image_to_3d", "multi_image_to_3d", "remesh")  # make a model; rig and remesh take it
 EXAMPLE_PREFIX = "example-"  # batches/example-*.toml show the schema and never run
@@ -30,7 +31,13 @@ SMART_TOPOLOGY_MODEL = "meshy-t2"
 ULTRA_GEOMETRY_SURCHARGE = 5  # geometry_resolution 2k or 4k (meshy-7.1 only)
 REFINE_CREDITS = {"2k": 10, "4k": 10, "8k": 15}
 RIG_CREDITS = 5
-ANIMATION_CREDITS_PER_ACTION = 3
+ANIMATION_CREDITS_PER_ACTION = 3  # also an animation of a text-to-motion clip (motion_task_id): "the same 3-credit base"
+MAX_ACTIONS = 10  # action_ids per animation task
+# Text to motion (docs.meshy.ai/en/api/text-to-motion, read 2026-10-03): prime 10 credits (FBX), swift 3 (BVH); the
+# prompt at most 400 characters; duration 2 to 10 s in 0.5 s steps (required).
+TEXT_TO_MOTION_CREDITS = {"prime": 10, "swift": 3}
+MOTION_PROMPT_MAX = 400
+MOTION_SECONDS = (2.0, 10.0, 0.5)
 # Image modes (docs.meshy.ai/en/api/text-to-image, /image-to-image, /pricing, read 2026-10-03): credits per image.
 TEXT_TO_IMAGE_CREDITS = {"nano-banana": 3, "nano-banana-2": 6, "nano-banana-pro": 9, "gpt-image-2": 9,
                          "gpt-image-2-5-flare": 9, "gpt-image-2-5-sunburst": 9}
@@ -51,15 +58,17 @@ REMESH_CREDITS = 5
 # How many input images each kind takes (after a `from` without `pick` expands to every image of its source).
 INPUT_COUNTS = {"image_to_image": (1, 5), "image_to_3d": (1, 1), "multi_image_to_3d": (1, 4)}
 # The keys an item of each kind may have besides id, variant and kind.
-ITEM_KEYS = {"text_to_3d": {"prompt", "preview", "refine", "texture"}, "rig": {"source", "params"},
-             "animate": {"source", "params"}, "text_to_image": {"prompt", "params"},
+ITEM_KEYS = {"text_to_3d": {"prompt", "preview", "refine", "texture"}, "rig": {"source", "params", "model", "texture"},
+             "animate": {"source", "params", "motion"}, "text_to_image": {"prompt", "params"},
              "image_to_image": {"prompt", "params", "images"}, "image_to_3d": {"params", "images"},
-             "multi_image_to_3d": {"params", "images"}, "remesh": {"source", "params"}}
+             "multi_image_to_3d": {"params", "images"}, "remesh": {"source", "params"},
+             "text_to_motion": {"prompt", "params"}}
 
 APPROVAL_FIELDS = ("approved_by", "approved_at", "approval_ref")
 # Keys the runner fills in itself; a batch may not set them.
-RESERVED = {"preview": {"mode", "prompt"}, "refine": {"mode", "preview_task_id"}, "rig": {"input_task_id", "model_url"},
-            "animate": {"rig_task_id"}, "text_to_image": {"prompt"},
+RESERVED = {"preview": {"mode", "prompt"}, "refine": {"mode", "preview_task_id"},
+            "rig": {"input_task_id", "model_url", "texture_image_url"},
+            "animate": {"rig_task_id", "motion_task_id"}, "text_to_image": {"prompt"}, "text_to_motion": {"prompt"},
             "image_to_image": {"prompt", "reference_image_urls", "input_task_id"},
             "image_to_3d": {"image_url", "input_task_id"}, "multi_image_to_3d": {"image_urls", "input_task_id"},
             "remesh": {"input_task_id", "model_url"}}
@@ -74,6 +83,10 @@ KNOWN_PARAMS = {
     "image_to_3d": IMAGE_3D_PARAMS | {"model_type"},
     "multi_image_to_3d": IMAGE_3D_PARAMS,
     "remesh": {"target_formats", "topology", "target_polycount"},
+    # rigging, animation and text to motion (docs.meshy.ai, read 2026-10-03)
+    "rig": {"height_meters"},
+    "animate": {"action_id", "action_ids", "post_process"},
+    "text_to_motion": {"duration", "mode"},
 }
 # Image parameters this client cannot fill in yet: they would need an input of their own.
 UNSUPPORTED = {"image_to_3d": {"texture_image_url"}, "multi_image_to_3d": {"texture_image_url", "texture_image_urls"}}
@@ -101,6 +114,7 @@ class Item:
     inputs: list[inputs.Input] = field(default_factory=list)
     images: int = 0  # images the item makes (text_to_image, image_to_image): 3 for a multi-view set, else 1
     textured: bool = False  # the item makes a textured model (what rigging needs)
+    motion: str = ""  # an animate item's text_to_motion item (its motion_task_id), instead of library actions
 
     @property
     def credits(self) -> int:
@@ -110,6 +124,8 @@ class Item:
     def depends(self) -> list[str]:
         """The earlier items this one needs done first: its source and its `from` inputs."""
         out = [self.source] if self.source else []
+        if self.motion and self.motion not in out:
+            out.append(self.motion)
         for inp in self.inputs:
             if inp.from_item and inp.from_item not in out:
                 out.append(inp.from_item)
@@ -234,6 +250,8 @@ def parse(data: dict[str, Any], path: Path) -> Batch:
                 _text_to_3d(item, raw, kdefaults, vtable, where, errors)
             elif kind in ("rig", "animate"):
                 _follow_up(item, raw, kdefaults, seen, where, errors)
+            elif kind == "text_to_motion":
+                _text_to_motion(item, raw, kdefaults, where, errors)
             elif kind in IMAGE_KINDS:
                 _image(item, raw, kdefaults, seen, where, errors)
             elif kind in ("image_to_3d", "multi_image_to_3d"):
@@ -302,28 +320,71 @@ def _text_to_3d(item: Item, raw: dict[str, Any], kdefaults: dict[str, Any], vtab
 def _follow_up(item: Item, raw: dict[str, Any], kdefaults: dict[str, Any], seen: dict[str, Item], where: str,
                errors: list[str]) -> None:
     params = _params(item, raw, kdefaults, where, errors)
-    wanted = MODEL_KINDS if item.kind == "rig" else ("rig",)
-    src = _source(item, seen, wanted, where, errors)
-    if src is not None and item.kind == "rig" and src.kind == "remesh":
+    if item.kind == "rig":
+        _rig(item, raw, seen, where, errors)
+        item.stages.append(Stage("rig", "rig", params, RIG_CREDITS))
+        return
+    _source(item, seen, ("rig",), where, errors)
+    motion = raw.get("motion")
+    chosen = [name for name in ("action_id", "action_ids") if name in params] + (["motion"] if motion else [])
+    if len(chosen) > 1:  # the animation docs: exactly one of action_id, action_ids, motion_task_id
+        errors.append(f"{where}: set only one of {', '.join(chosen)}")
+    if motion:
+        src = seen.get(motion) if isinstance(motion, str) else None
+        if src is None or src.kind != "text_to_motion":
+            errors.append(f"{where}: motion {motion!r} must name an earlier text_to_motion item of this batch")
+        else:
+            item.motion = motion
+        item.stages.append(Stage("animate", "animate", params, ANIMATION_CREDITS_PER_ACTION))
+        return
+    ids = params.get("action_ids", [params["action_id"]] if "action_id" in params else [])
+    if not isinstance(ids, list) or not ids or not all(isinstance(i, int) and not isinstance(i, bool) for i in ids):
+        errors.append(f"{where}: an animate item needs params.action_ids, a list of 1 to {MAX_ACTIONS} integers "
+                      "(or `motion`, a text_to_motion item)")
+        ids = []
+    elif len(ids) > MAX_ACTIONS:
+        errors.append(f"{where}: Meshy takes at most {MAX_ACTIONS} action_ids per animation task")
+    elif len(set(ids)) != len(ids):
+        errors.append(f"{where}: action_ids must be unique (the docs: 1 to {MAX_ACTIONS} unique ids)")
+    item.stages.append(Stage("animate", "animate", params, ANIMATION_CREDITS_PER_ACTION * max(1, len(ids))))
+
+
+def _rig(item: Item, raw: dict[str, Any], seen: dict[str, Item], where: str, errors: list[str]) -> None:
+    """A rig takes an earlier textured model item (`source`) or a local GLB (`model`, with an optional `texture`)."""
+    model = inputs.parse_file(raw.get("model"), "model", where, errors)
+    texture = inputs.parse_file(raw.get("texture"), "texture", where, errors)
+    if model is not None:
+        if item.source:
+            errors.append(f"{where}: a rig takes 'source' (an earlier model item) or 'model' (a local GLB), not both")
+        item.inputs = [model] + ([texture] if texture else [])
+        return
+    if texture is not None:
+        errors.append(f"{where}: 'texture' goes with 'model' (a local GLB) only")
+    src = _source(item, seen, MODEL_KINDS, where, errors)
+    if src is not None and src.kind == "remesh":
         errors.append(f"{where}: Meshy rigs textured models only, and the docs do not say a remesh keeps the "
                       f"texture; rig the remesh's source {src.source!r} instead")
-    elif src is not None and item.kind == "rig" and not src.textured:
+    elif src is not None and not src.textured:
         errors.append(f"{where}: Meshy rigs textured models only; source {item.source!r} makes no texture "
                       "(texture = false or should_texture = false)")
-    if item.kind == "rig":
-        credits = RIG_CREDITS
-    else:
-        chosen = [name for name in ("action_id", "action_ids", "motion_task_id") if name in params]
-        if len(chosen) > 1:  # the animation docs: exactly one of them
-            errors.append(f"{where}: set only one of {', '.join(chosen)}")
-        ids = params.get("action_ids", [params["action_id"]] if "action_id" in params else [])
-        if not isinstance(ids, list) or not ids or not all(isinstance(i, int) and not isinstance(i, bool) for i in ids):
-            errors.append(f"{where}: an animate item needs params.action_ids, a list of 1 to 10 integers")
-            ids = []
-        elif len(ids) > 10:
-            errors.append(f"{where}: Meshy takes at most 10 action_ids per animation task")
-        credits = ANIMATION_CREDITS_PER_ACTION * max(1, len(ids))
-    item.stages.append(Stage(item.kind, item.kind, params, credits))
+
+
+def _text_to_motion(item: Item, raw: dict[str, Any], kdefaults: dict[str, Any], where: str, errors: list[str]) -> None:
+    if not item.prompt:
+        errors.append(f"{where}: no prompt (set 'prompt' on the item or on its variant)")
+    elif len(item.prompt) > MOTION_PROMPT_MAX:
+        errors.append(f"{where}: the prompt has {len(item.prompt)} characters, text to motion takes at most "
+                      f"{MOTION_PROMPT_MAX}")
+    params = _params(item, raw, kdefaults, where, errors)
+    low, high, step = MOTION_SECONDS
+    duration = params.get("duration")
+    if (not isinstance(duration, (int, float)) or isinstance(duration, bool) or not low <= duration <= high
+            or abs(duration / step - round(duration / step)) > 1e-9):
+        errors.append(f"{where}: params.duration must be {low:g} to {high:g} seconds in {step:g} s steps (required)")
+    mode = params.get("mode", "prime")
+    if mode not in TEXT_TO_MOTION_CREDITS:
+        errors.append(f"{where}: params.mode must be one of {', '.join(TEXT_TO_MOTION_CREDITS)} (default prime)")
+    item.stages.append(Stage("text_to_motion", "text_to_motion", params, TEXT_TO_MOTION_CREDITS.get(mode, 0)))
 
 
 def _params(item: Item, raw: dict[str, Any], kdefaults: dict[str, Any], where: str, errors: list[str]) -> dict[str, Any]:
