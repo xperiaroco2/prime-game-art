@@ -243,7 +243,8 @@ def own(pid, slot):
 
 def twins(inv, pid):
     """pid and every part with the same mesh (same_geometry_as): their pack outfits are all references, so that equal
-    parts get equal verdicts (the men's Adventurer and Worker trousers are one mesh)."""
+    parts get equal verdicts. No clothing twins exist in the packs today (the men's Adventurer and Worker trousers
+    look alike but are different meshes)."""
     root = inv[pid].get("same_geometry_as", pid)
     return sorted(p for p, e in inv.items() if p == root or e.get("same_geometry_as") == root)
 

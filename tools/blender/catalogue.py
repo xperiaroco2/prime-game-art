@@ -39,9 +39,11 @@ REVIEW = ("no vertical gap, and the rays fail the allowance by at most 4 rays or
 
 RULES = [
     {"id": "bottom_shoes", "seam": "ankle",
-     "condition": "On each leg, the bottom's lower edge is below the shoes' top edge (collar): overlap_mm = collar top "
-                  "- bottom lower edge >= 0. Then the bottom is tucked in when most of its shin just under the collar "
-                  "is inside the shoe (um/fit.py tuck_cull deletes what is below the collar), else worn over.",
+     "condition": "After um/fit.py tuck_cull, rays at each ankle in the rest pose: see-through and poke-through no "
+                  "higher than the references' (the bottom with its own shoes, the shoes with their own bottom) plus 2. "
+                  "overlap_mm = collar top - bottom lower edge (the lower leg): below -30 mm the bottom is too short "
+                  "(gap); below 0, or too many see-through rays, extend_edge is tried on the bottom's hem. Tucked when "
+                  "most of the shin just under the collar is inside the shoe, else worn over.",
      "verdicts": {"review": REVIEW,
                   "ok_tucked": "tucked in; after tuck_cull no see-through and no poke-through",
                   "ok_over": "worn over the shoe; no see-through and the shoe does not show through",
@@ -50,16 +52,20 @@ RULES = [
                          "the fix does not close it",
                   "poke": "the shoe and the bottom cross: one shows through the other"}},
     {"id": "top_bottom", "seam": "waist",
-     "condition": "The top's lower edge is below the bottom's upper edge: overlap_mm = bottom upper edge - top lower "
-                  "edge >= 0, and no ray sees through the waist. The outer part is the one hit first where both are.",
+     "condition": "Rays at the waist, at rest and walking: see-through and poke-through no higher than the "
+                  "references' (each part with its own pack partner) plus 2. overlap_mm = bottom upper edge - top lower "
+                  "edge: below 0, or too many see-through rays, extend_edge is tried on the top's hem. The outer part "
+                  "is the one hit first where both are.",
      "verdicts": {"review": REVIEW,
                   "ok_over": "the top hangs over the bottom", "ok_tucked": "the top goes inside the bottom",
                   "needs_fix": "a gap of up to 30 mm (or a sliver) that extend_edge on the top's hem closes, measured",
                   "gap": "more than 30 mm apart, or the fix does not close it",
                   "poke": "the waistband and the hem cross: one shows through the other"}},
     {"id": "head_top", "seam": "neck",
-     "condition": "The top's neck ring reaches above the head's lowest ring: overlap_mm = top neck ring top - head "
-                  "bottom >= 0, and no ray sees through the neck.",
+     "condition": "Rays at the neck, at rest and walking: see-through and poke-through no higher than the "
+                  "references' (the head with its own top, the top with its own head) plus 2; too many see-through rays "
+                  "send the pair to extend_edge on the head's neck. overlap_mm (top neck ring top - head bottom) is "
+                  "recorded but is positive for every pair: the rays decide every neck verdict.",
      "verdicts": {"review": REVIEW,
                   "ok": "the neck seam closes", "needs_fix": "extend_edge on the head's neck closes it, measured",
                   "gap": "more than 30 mm apart, or the fix does not close it",

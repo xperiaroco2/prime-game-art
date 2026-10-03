@@ -88,9 +88,10 @@ rays, authored overlaps, skinning in motion; the men's Worker trousers with Work
 So a pair passes the rays when, in each state, its counts are no higher than those of its references plus 2 rays. The
 references of a pair are the pack originals its parts belong to: bottom x shoes, the bottom with its own shoes and the
 shoes with their own bottom; top x bottom likewise; head x top, the skull (or helmet) with its own top and the top
-with its own head (the Astronaut and Swat tops with their helmets); hair x skull, the hair on its own skull. Parts with the same mesh (`same_geometry_as`, e.g. the men's
-Adventurer and Worker trousers) pool their references, so equal parts get equal verdicts. A pack original is its own
-reference and always passes.
+with its own head (the Astronaut and Swat tops with their helmets); hair x skull, the hair on its own skull.
+Parts with the same mesh (`same_geometry_as`) pool their references, so equal parts get equal verdicts; no clothing
+twins exist today (the men's Adventurer and Worker trousers look alike but are different meshes), only head items have
+them. A pack original is its own reference and always passes.
 
 **Ankles are judged at rest.** In the walking pose the probe's rays follow the shin while the shoe turns with the
 foot, so the pack originals themselves show 10 to 110 see-through rays at the ankles in motion; the walk counts are
@@ -107,9 +108,9 @@ and is measured again.
 
 | Rule | Condition | Verdicts |
 |---|---|---|
-| bottom x shoes (the ankle) | On each leg the bottom's lower edge is below the shoes' top edge: `overlap_mm = collar top - bottom lower edge >= 0`; the bottom is tucked when most of its shin just under the collar is inside the shoe | `ok_tucked`, `ok_over`, `needs_fix` (extend_edge on the bottom), `gap`, `poke` |
-| top x bottom (the waist) | The top's lower edge is below the bottom's upper edge: `overlap_mm = bottom upper edge - top lower edge >= 0`, and no ray sees through | `ok_over` (the top over the bottom), `ok_tucked` (the top inside it), `needs_fix` (extend_edge on the top), `gap`, `poke` |
-| head x top (the neck) | The top's neck ring reaches above the head's lowest ring: `overlap_mm = neck ring top - head bottom >= 0`, and no ray sees through | `ok`, `needs_fix` (extend_edge on the head), `gap`, `poke` |
+| bottom x shoes (the ankle) | After `tuck_cull`, the ankle rays at rest are no worse than the references' plus 2. `overlap_mm = collar top - bottom lower edge` (per leg): below -30 mm a gap outright; below 0, or too many see-through rays, extend_edge is tried. Tucked when most of the shin just under the collar is inside the shoe | `ok_tucked`, `ok_over`, `needs_fix` (extend_edge on the bottom), `gap`, `poke` |
+| top x bottom (the waist) | The waist rays at rest and walking are no worse than the references' plus 2. `overlap_mm = bottom upper edge - top lower edge`: below 0, or too many see-through rays, extend_edge is tried on the top | `ok_over` (the top over the bottom), `ok_tucked` (the top inside it), `needs_fix` (extend_edge on the top), `gap`, `poke` |
+| head x top (the neck) | The neck rays at rest and walking are no worse than the references' plus 2; too many see-through rays send it to extend_edge on the head. `overlap_mm = neck ring top - head bottom` is recorded but positive for every pair (the ring is the top's highest point near the Neck bone), so the rays decide every neck verdict | `ok`, `needs_fix` (extend_edge on the head), `gap`, `poke` |
 | headwear x hair (the hat) | The hair stays inside the hat: no more poke or z-fight rays than the hat over its own hair, plus 2 | `ok`, `needs_fix` (inflate the hat 1 to 3 %), `poke` |
 | hair x skull (the scalp) | The hair covers the skull's open top (no hole rays) and the skull never comes out through the hair or lies on it (no poke or z-fight rays) | `ok`, `needs_fix` (inflate), `gap` (the open top shows), `poke` |
 
@@ -176,10 +177,29 @@ Rendered only to files, in headless Blender (Workbench, specular off), into `--o
   `needs_fix` pair is rendered as is and with its fix. `confirm.json` lists each image with its pair, verdict, outfit
   and the build's own probe numbers.
 
+## The final test's facts
+
+Reproduced: 12 of 121 men's and 24 of 100 women's bottom-and-shoe pairs gap more than 5 mm (whole millimetres; the
+exact men's count is 13, King trousers x Hoodie shoes measure 5.1 mm), the 24 women's gaps are the six knee-length
+bottoms over the four low shoes, and the women's Worker top leaves a waist gap with 6 bottoms, up to 21 mm (Punk
+trousers). One differs: the final test reported 9 of 100 women's top x bottom pairs with a waist gap over 5 mm, "all
+with the Worker top". Here 9 pairs gap more than 5 mm too, but 3 of them are other tops over the Punk trousers
+(Soldier -7.7 mm, Witch -6.6 mm, Suit -6.2 mm); the Worker top's six are -9.0 to -20.9 mm. The final test's
+`fitcheck.py` kept no per-pair list, so the reason for the difference (most likely a different measure of the Punk
+trousers' upper edge) is not known.
+
 ## Known limits
 
 - The face kit (`um/facekit.py`) and the eyes are not catalogue items: our own eyes, mouths and brows replace the
   pack's (art #21). Pack brows are listed because a menu may still offer them.
+- The waist rays are horizontal: a thin strip under a belt seen from the front can pass them (the adversarial
+  review saw one on `top_w_adventurer x bottom_w_punk`, ok_over with a 6.1 mm overlap). A minimum overlap or tilted
+  rays would catch it; not done in this version.
+- A pair's allowance is the worse of its references, so one part's pack outfit with many rays lets any partner
+  through: the men's Worker boots allow 72 poke rays because the Worker outfit itself shows 70
+  (`bottom_m_adventurer x shoes_m_worker` passes with 70 and rendered clean). The same rule gives identical geometry
+  different verdicts when the references differ (`bottom_m_adventurer` and `bottom_m_worker` with the Hoodie shoes).
+- `verify` regenerates the catalogue once (`test_catalogue_blender.py`, about 85 s with Blender and the packs).
 - Hair floating above a smaller skull (men's hair on women's skulls) passes the scalp rule (no hole, no poke); a
   visible gap at the hairline is a look question, not measured.
 - The rays look at seams horizontally (at the bone axes); a gap seen only from above or below (into a wide collar)
