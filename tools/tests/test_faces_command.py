@@ -55,13 +55,17 @@ class RefusalsTest(unittest.TestCase):
         self.assertIn("unknown expressions wink; known: neutral, happy", out)
         code, out = run_cli("faces", "--sheets", "close,poster")
         self.assertEqual(code, 1)
-        self.assertIn("unknown sheets poster; known: close, distance, overview, strip", out)
+        self.assertIn("unknown sheets poster; known: close, distance, overview, strip, spacing, beards", out)
 
     def test_res_bounds(self) -> None:
         code, out = run_cli("faces", "--res", "200")
         self.assertEqual(code, 1)
         self.assertIn("--res must be from 5 to 100", out)
 
+
+
+class InputsTest(unittest.TestCase):
+    """Refusals that do not need the packs: the styles file fails before the heads recipe is read."""
 
     def test_a_broken_styles_file_fails_with_its_problems(self) -> None:
         tmp = common.OUT / "tests" / "faces_command"
@@ -72,6 +76,12 @@ class RefusalsTest(unittest.TestCase):
         self.assertEqual(code, 1)
         self.assertIn("expressions: missing 'neutral'", out)
         self.assertIn("families: must be an object of style families", out)
+
+    def test_the_sheets_help_lists_every_sheet(self) -> None:
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out), self.assertRaises(SystemExit):
+            cli.main(["faces", "--help"])
+        self.assertIn("close, distance, overview, strip, spacing, beards", " ".join(out.getvalue().split()))
 
 
 class ReportChecksTest(unittest.TestCase):

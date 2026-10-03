@@ -658,6 +658,10 @@ def distance_sheets(shots, heads, styles, review, fams, out, work):
     w_px, h_px = shots.px(cam["width"]), shots.px(cam["height"])
     target = shots.px(380)
     info = {"screen_px": [w_px, h_px], "fov_deg": cam["fov_deg"], "eye_height_m": cam["eye_height_m"], "per_distance": {}}
+    if cam.get("default_window"):
+        # the game sets no window size: Godot's default window shows everything this much smaller per side
+        info["default_window"] = cam["default_window"]
+        info["default_window_scale"] = round(cam["default_window"][1] / cam["height"], 3)
     for d in dists:
         ppm_d = fst.pixels_per_metre({**cam, "height": h_px}, d)
         info["per_distance"][str(d)] = {"pixels_per_m": round(ppm_d, 1), "head_px": round(0.25 * ppm_d, 1),

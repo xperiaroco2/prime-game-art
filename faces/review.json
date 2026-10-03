@@ -1,5 +1,5 @@
 {
- "description": "What tools/run.py faces shows (docs/faces.md): the review heads (an assembler recipe), the two skin tones of the final test, per-head iris and brow colours, and the game's first-person camera read from the game repo (D:/prime-game, read only, 2026-10-03 at c43c0e1): client/player/player.tscn has a Camera3D with no fov set, so Godot's default 75 degrees vertical (keep height); content/modes/base_mode.tres eye_height_m = 1.6; project.godot sets no anti-aliasing (MSAA and screen-space AA off) and stretch mode canvas_items; the target screen is 1920 x 1080. Brows: one colour per head, and a darker one on the dark skin (brow_by_skin) so that they keep a contrast of at least 3 on both skins. motion: the pack actions in which the decals' clearance from the deforming skin is measured. spacing_sheet: the eye spacing variants (eyes.inset) for the near-human question.",
+ "description": "What tools/run.py faces shows (docs/faces.md): the review heads (an assembler recipe), the two skin tones of the final test, per-head iris and brow colours, and the game's first-person camera read from the game repo (D:/prime-game, read only, 2026-10-03 at c43c0e1): client/player/player.tscn has a Camera3D with no fov set, so Godot's default 75 degrees vertical (keep height); content/modes/base_mode.tres eye_height_m = 1.6; project.godot sets no anti-aliasing (MSAA and screen-space AA off) and stretch mode canvas_items and no window size, so Godot opens its default 1152 x 648 window (default_window); the distance sheets assume a 1920 x 1080 fullscreen target, and at the default window every pixel count is 0.6 times as large per side (about 0.36 in area). Brows: one colour per head, and a darker one on the dark skin (brow_by_skin) so that they keep a contrast of at least 3 on both skins. motion: the pack actions in which the decals' clearance from the deforming skin is measured. spacing_sheet: the eye spacing variants (eyes.inset) for the near-human question.",
  "heads_recipe": "review_heads.json",
  "heads": {
   "m_full": {"label": "M full skull", "iris": [0.16, 0.07, 0.02], "brow": [0.04, 0.025, 0.012], "brow_by_skin": {"dark": [0.012, 0.007, 0.004]}},
@@ -9,7 +9,7 @@
  },
  "skins": {"light": [0.78, 0.55, 0.42], "dark": [0.22, 0.12, 0.065]},
  "overview_skins": {"m_full": "light", "m_open": "dark", "w_full": "dark", "w_open": "light"},
- "game_camera": {"fov_deg": 75.0, "width": 1920, "height": 1080, "eye_height_m": 1.6, "anti_aliasing": false},
+ "game_camera": {"fov_deg": 75.0, "width": 1920, "height": 1080, "eye_height_m": 1.6, "anti_aliasing": false, "default_window": [1152, 648]},
  "distances_m": [2, 5, 10],
  "distance_sheet": {"heads": [["m_full", "light"], ["w_full", "dark"]],
                     "expressions": ["neutral", "happy", "talk_a", "surprised", "angry", "closed"]},

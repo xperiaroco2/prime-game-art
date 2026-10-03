@@ -46,7 +46,7 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--expressions", default="", help="comma list of expressions for the close sheets (default: all)")
     parser.add_argument(
         "--sheets", default="",
-        help="comma list of close, distance, overview, strip, or none (build and measure only); default: all",
+        help=f"comma list of {', '.join(styles_module().SHEETS)}, or none (build and measure only); default: all",
     )  # fmt: skip
     parser.add_argument("--out", type=Path, help="output folder (default tools/out/faces/)")
     parser.add_argument("--res", type=int, default=100, help="render size in percent (default 100; tests use less)")

@@ -1,7 +1,8 @@
 """The face kit in headless Blender (skipped when Blender or the Ultimate Modular packs are missing): two families in
-two expressions on the four review heads at low resolution, the frame strip and its clip. Checks the sheets exist,
-every part is a mesh weighted to the Head bone alone, decals stay off the skin at rest and in the motion actions (the
-face skin is given to the Head bone), and the hair leaves the face visible. One Blender run, about 30 s."""
+two expressions on the four review heads at low resolution, the distance sheet, the frame strip and its clip. Checks
+the sheets exist, every part is a mesh weighted to the Head bone alone, decals stay off the skin at rest and in the
+motion actions (the face skin is given to the Head bone), the hair leaves the face visible, and the distance sheet
+measures the face in screen pixels. One Blender run, about 40 s."""
 
 from __future__ import annotations
 
@@ -34,7 +35,7 @@ class FacesInBlenderTest(unittest.TestCase):
         buf = io.StringIO()
         with contextlib.redirect_stdout(buf):
             cls.code = cli.main(["faces", "--families", ",".join(FAMILIES), "--expressions", "neutral,closed",
-                                 "--sheets", "close,strip", "--res", "10", "--out", str(OUT)])
+                                 "--sheets", "close,distance,strip", "--res", "10", "--out", str(OUT)])
         cls.out = buf.getvalue()
         report = OUT / "faces_report.json"
         cls.report = json.loads(report.read_text(encoding="utf-8")) if report.is_file() else {}
@@ -82,6 +83,20 @@ class FacesInBlenderTest(unittest.TestCase):
                             self.assertGreaterEqual(info["clearance_motion_min_mm"], 0.2, where)
                             # rigid on a skin that follows the Head bone: motion takes at most 0.2 mm off the rest value
                             self.assertLess(info["clearance_min_mm"] - info["clearance_motion_min_mm"], 0.2, where)
+
+    def test_the_distance_sheet_counts_screen_pixels(self) -> None:
+        dist = self.report["distance"]
+        self.assertEqual(dist["default_window"], [1152, 648])
+        for fid in FAMILIES:
+            self.assertTrue((OUT / f"{fid}_distance.png").is_file(), fid)
+            fp = dist["face_pixels"][fid]
+            for hid in ("m_full", "w_full"):
+                for d in (2, 5, 10):
+                    self.assertIn(f"{hid}_neutral_{d}m", fp)
+                    self.assertIn(f"{hid}_blink_change_{d}m", fp)
+                    self.assertIn(f"{hid}_talk_change_{d}m", fp)
+                heights = [dist["crop_px"][fid][f"{hid}_{d}m"][0] for d in (2, 5, 10)]
+                self.assertEqual(heights, sorted(heights, reverse=True), heights)
 
     def test_the_face_follows_the_head(self) -> None:
         self.assertTrue(self.report["strip"])
