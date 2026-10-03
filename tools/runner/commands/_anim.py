@@ -86,16 +86,18 @@ def run_tag(only: set[str] | None) -> str:
     return "_c" if only is None else "_s" + "+".join(sorted(only)) + "_c"
 
 
-def _rank(path: Path) -> tuple[int, str]:
-    """A measures file's place in merge(): full runs, then runs over some sources, then partial runs."""
+def _rank(path: Path) -> tuple[int, int, str]:
+    """A measures file's place in merge(): full runs, then runs over some sources, then partial runs; within one kind
+    the older file first, so that of two runs over overlapping sources the later one wins."""
     rest = path.stem.split("_", 1)[1] if "_" in path.stem else ""
-    return (2 if rest.startswith("part_c") else 1 if rest.startswith("s") else 0), path.name
+    kind = 2 if rest.startswith("part_c") else 1 if rest.startswith("s") else 0
+    return kind, path.stat().st_mtime_ns, path.name
 
 
 def merge(metrics_dir: Path) -> dict:
     """Joins metrics/<body>*.json (one per chunk) into {body: {clip key: measures}}: a full run's <body>_c*.json
-    first, then a run over some sources (<body>_s<sources>_c*.json), then a partial run's <body>_part_c*.json, each
-    replacing the earlier measures of the same clips."""
+    first, then the runs over some sources (<body>_s<sources>_c*.json, oldest first), then a partial run's
+    <body>_part_c*.json, each replacing the earlier measures of the same clips."""
     merged: dict[str, dict] = {}
     for body in BODIES:
         for path in sorted(metrics_dir.glob(f"{body}_*.json"), key=_rank):

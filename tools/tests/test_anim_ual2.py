@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import shutil
 import sys
 import unittest
@@ -123,6 +124,19 @@ class ClipListTest(unittest.TestCase):
         merged = _anim.merge(OUT / "metrics")
         self.assertEqual(merged["men"], {"ual2:Yes": 2, "pack:Walk": 1, "ual2:Walk_Carry_Loop": 3})
         self.assertEqual(merged["women"], {"ual2:Yes": 4})
+
+    def test_of_two_overlapping_source_runs_the_later_wins(self) -> None:
+        shutil.rmtree(OUT / "metrics", ignore_errors=True)
+        (OUT / "metrics").mkdir(parents=True)
+        # "men_sual+ual2" sorts before "men_sual2" by name ('+' < '2'), yet it ran later
+        older, newer = OUT / "metrics" / "men_sual2_c0.json", OUT / "metrics" / "men_sual+ual2_c0.json"
+        older.write_text(json.dumps({"ual2:Yes": "old"}), encoding="utf-8")
+        newer.write_text(json.dumps({"ual2:Yes": "new", "ual:Walk_Loop": "new"}), encoding="utf-8")
+        os.utime(older, ns=(1_000_000_000, 1_000_000_000))
+        os.utime(newer, ns=(2_000_000_000, 2_000_000_000))
+        self.assertEqual(_anim.merge(OUT / "metrics")["men"], {"ual2:Yes": "new", "ual:Walk_Loop": "new"})
+        os.utime(older, ns=(3_000_000_000, 3_000_000_000))  # the ual2 run again, after the other one
+        self.assertEqual(_anim.merge(OUT / "metrics")["men"], {"ual2:Yes": "old", "ual:Walk_Loop": "new"})
 
 
 class CommandTest(unittest.TestCase):

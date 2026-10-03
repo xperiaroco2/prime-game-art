@@ -154,8 +154,9 @@ like UAL1 by every step. Clip keys (`tools/blender/anim_keys.py`):
 
 `--sources ual2` (comma-separated; `pack`, `ual`, `ual2`) limits `clips` to those sources' clips and `pairs` and `rates`
 to the rows that play one; its measures go to `metrics/<body>_s<sources>_c*.json`. `table` merges a full run's
-`<body>_c*.json`, then the source runs' files, then a partial run's `<body>_part_c*.json`, each replacing the earlier
-measures of the same clips; a source run deletes the body type's partial files, like a full run. `[[pairs]]` takes
+`<body>_c*.json`, then the source runs' files (oldest first, so of two runs over overlapping sources such as `ual2`
+and `ual,ual2` the later one wins), then a partial run's `<body>_part_c*.json`, each replacing the earlier measures of
+the same clips; a source run deletes the body type's partial files, like a full run. `[[pairs]]` takes
 either `pack` and `ual` (a pack clip against UAL1 clips, named after the pack clip, as in art #20) or `name` and
 `clips` (any keys, layered ones included, and an optional `note`). `inventory.json` lists `libraries` and each
 library's clips in place and with root motion (`ual2`, `ual2_rm`). A `rates` run with `--sources` writes
