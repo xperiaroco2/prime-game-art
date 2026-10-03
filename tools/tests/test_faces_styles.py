@@ -145,3 +145,11 @@ class ReviewTest(unittest.TestCase):
         self.assertIn("overview_skins.x_head: unknown skin 'green'", found)
         self.assertIn("is not [head, skin, family]", found)
         self.assertIn("game_camera.fov_deg: must be a positive number", found)
+
+    def test_motion_settings(self) -> None:
+        styles = fst.load_styles(STYLES)
+        data = json.loads(REVIEW.read_text(encoding="utf-8"))
+        data["motion"]["frames"] = 1
+        with self_raises() as ctx:
+            fst.check_review(data, styles)
+        self.assertIn("motion.frames: must be a whole number from 2 to 24", "\n".join(ctx.problems))

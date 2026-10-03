@@ -62,6 +62,7 @@ class RefusalsTest(unittest.TestCase):
         self.assertEqual(code, 1)
         self.assertIn("--res must be from 5 to 100", out)
 
+
     def test_a_broken_styles_file_fails_with_its_problems(self) -> None:
         tmp = common.OUT / "tests" / "faces_command"
         tmp.mkdir(parents=True, exist_ok=True)
@@ -88,11 +89,25 @@ class ReportChecksTest(unittest.TestCase):
         found = "\n".join(faces.check_report(bad))
         self.assertIn("vertex groups ['Head', 'Neck'], want only Head", found)
         self.assertIn("no Armature modifier", found)
-        self.assertIn("the face moved 1.5 mm in the Head bone's space", found)
+        self.assertIn("the face moved 1.5 mm in the Head bone's frame", found)
+
+    def test_decals_stay_off_the_skin_in_motion(self) -> None:
+        bad = report()
+        bad["families"]["f9_test"]["expressions"]["neutral"]["m_full"]["mouth"].update(
+            clearance_motion_min_mm=0.08, clearance_motion_where="Punch_Left f9")
+        self.assertEqual(faces.check_report(bad), [
+            "f9_test/neutral/m_full/mouth: a decal 0.08 mm off the skin in Punch_Left f9 (at least 0.2 mm in motion)"])
 
     def test_summary_line(self) -> None:
         self.assertEqual(faces.summary(report()),
-                         ["f9_test (Test): triangles eyes 300, brows 128, mouth 92; materials 5/1/2; decals at least 0.8 mm off the skin"])
+                         ["f9_test (Test): triangles eyes 300, brows 128, mouth 92; materials 5/1/2; decals at least 0.8 mm off "
+                          "the skin, - mm in motion"])
+        moving = report()
+        heads = moving["families"]["f9_test"]["expressions"]["neutral"]["m_full"]
+        heads["mouth"].update(clearance_motion_min_mm=0.7)
+        heads["brows"].update(clearance_motion_min_mm=0.75)
+        self.assertIn("decals at least 0.8 mm off the skin, 0.7 mm in motion",
+                      faces.summary(moving)[0])
 
 
 class DistanceLinesTest(unittest.TestCase):

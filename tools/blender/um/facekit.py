@@ -686,3 +686,33 @@ def family_face(surf, eyes_at, mouth_at, fam_id, fam, expr, colors, skin, tag):
     eyes_b.decal = fam["eyes"]["kind"] == "painted" or all(sh.get("stroke") for sh in shapes)
     brows_b.decal = mouth_b.decal = True
     return {"eyes": eyes_b, "brows": brows_b, "mouth": mouth_b}
+
+
+def rigid_face_skin(head, front_y, z_full, z_free, bone="Head"):
+    """Gives the face's skin to the Head bone alone, so that rigid face parts (weighted 100 % to Head) cannot slide
+    against it when the neck moves. The pack heads weight part of the lower face to Neck as well (up to 15 % around
+    the mouth): in the pack's Run and Punch actions a rigid mouth then sinks up to 0.6 mm toward the skin.
+
+    Every vertex in front of front_y (world y, rest pose; the face looks toward -Y) at or above z_full moves the
+    weight of its other bones to bone; between z_full and z_free (below it, toward the chin) the share moved fades to
+    0, so the jaw and the neck still blend as before. Returns (vertices changed, the largest weight moved)."""
+    vg = head.vertex_groups
+    hi = vg[bone].index
+    mw = head.matrix_world
+    changed, most = 0, 0.0
+    for v in head.data.vertices:
+        p = mw @ v.co
+        if p.y > front_y or p.z <= z_free:
+            continue
+        s = 1.0 if p.z >= z_full else (p.z - z_free) / (z_full - z_free)
+        others = [(g.group, g.weight) for g in v.groups if g.group != hi and g.weight > 0.0]
+        moved = sum(w * s for _, w in others)
+        if moved <= 1e-6:
+            continue
+        own = next((g.weight for g in v.groups if g.group == hi), 0.0)
+        for gi, w in others:
+            vg[gi].add([v.index], w * (1.0 - s), "REPLACE")
+        vg[hi].add([v.index], own + moved, "REPLACE")
+        changed += 1
+        most = max(most, moved)
+    return changed, most

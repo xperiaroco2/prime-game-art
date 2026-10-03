@@ -1,7 +1,7 @@
 """The face kit in headless Blender (skipped when Blender or the Ultimate Modular packs are missing): two families in
 two expressions on the four review heads at low resolution, the frame strip and its clip. Checks the sheets exist,
-every part is a mesh weighted to the Head bone alone, decals stay off the skin and the face is rigid on the head over
-the walk. One Blender run, about 25 s."""
+every part is a mesh weighted to the Head bone alone, decals stay off the skin at rest and in the motion actions (the
+face skin is given to the Head bone). One Blender run, about 30 s."""
 
 from __future__ import annotations
 
@@ -66,6 +66,21 @@ class FacesInBlenderTest(unittest.TestCase):
             self.assertTrue(parts["eyes"]["decal"])
             self.assertEqual(parts["eyes"]["under_skin"], 0, hid)
             self.assertGreaterEqual(parts["eyes"]["clearance_min_mm"], 0.2, hid)
+
+    def test_decals_stay_off_the_moving_skin(self) -> None:
+        skin = self.report["face_skin_to_head"]
+        self.assertEqual(sorted(skin), ["m_full", "m_open", "w_full", "w_open"])
+        for hid, info in skin.items():
+            self.assertGreater(info["vertices"], 50, hid)  # the pack weights part of the lower face to Neck
+        for fid in FAMILIES:
+            for ename, heads in self.report["families"][fid]["expressions"].items():
+                for hid, parts in heads.items():
+                    for name, info in parts.items():
+                        where = f"{fid} {ename} {hid} {name}"
+                        if info["decal"]:
+                            self.assertGreaterEqual(info["clearance_motion_min_mm"], 0.2, where)
+                            # rigid on a skin that follows the Head bone: motion takes at most 0.2 mm off the rest value
+                            self.assertLess(info["clearance_min_mm"] - info["clearance_motion_min_mm"], 0.2, where)
 
     def test_the_face_follows_the_head(self) -> None:
         self.assertTrue(self.report["strip"])

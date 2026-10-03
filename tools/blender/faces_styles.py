@@ -4,7 +4,7 @@ loads it with the same code:
 - faces/styles.json: the style families (one design language each for eyes, brows and mouths) and the shared
   expressions, which a family may override;
 - faces/review.json: what the review sheets show (the heads recipe, skin tones, per-head colours, the game's camera
-  read from the game repo, the distances, the frame strip).
+  read from the game repo, the distances, the frame strip, the actions the decal clearance is measured in).
 
 load_styles() and load_review() report every problem at once, each naming what is allowed.
 """
@@ -58,7 +58,7 @@ CHOICES = {"kind": EYE_KINDS, "shape": EYE_SHAPES, "closed": CLOSED_STYLES, "hap
 MAX_LENGTH_M = 0.1
 
 REVIEW_KEYS = ("description", "heads_recipe", "heads", "skins", "overview_skins", "game_camera", "distances_m",
-               "distance_sheet", "strip", "facial_hair")
+               "distance_sheet", "strip", "motion", "facial_hair")
 SHEETS = ("close", "distance", "overview", "strip", "beards")
 # Where a facial-hair part is cut from its source head (rest-pose world space; see faces_render.py).
 HAIR_ZONES = ("all", "chin", "lower_face")
@@ -290,7 +290,8 @@ def pixels_per_metre(game_camera: dict[str, Any], distance_m: float) -> float:
 
 
 def check_review(data: Any, styles: dict[str, Any] | None = None, source: str = "review") -> dict[str, Any]:
-    """The review settings, checked (heads, skins, camera, distances, strip); raises StylesError."""
+    """The review settings, checked (heads, skins, camera, distances, strip, motion);
+    raises StylesError."""
     problems: list[str] = []
     if not isinstance(data, dict):
         raise StylesError(source, ["the file must be a JSON object"])
@@ -359,6 +360,15 @@ def check_review(data: Any, styles: dict[str, Any] | None = None, source: str = 
                 ok = row[2] in styles["families"]
             if not ok:
                 problems.append(f"strip.rows: {row!r} is not [head, skin, family]")
+    motion = data.get("motion")
+    if not isinstance(motion, dict):
+        problems.append("motion: must be an object with actions (pack action names) and frames per action")
+    else:
+        acts = motion.get("actions")
+        if not (isinstance(acts, list) and acts and all(isinstance(a, str) for a in acts)):
+            problems.append("motion.actions: must list pack action names (Idle, Walk, Run, ...)")
+        if not (isinstance(motion.get("frames"), int) and 2 <= motion["frames"] <= 24):
+            problems.append("motion.frames: must be a whole number from 2 to 24")
     fh = data.get("facial_hair")
     if fh is not None:
         if not isinstance(fh, dict):

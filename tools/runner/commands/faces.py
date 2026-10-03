@@ -21,7 +21,11 @@ SCRIPT = "faces_render.py"
 FACES = common.ROOT / "faces"
 # A decal (brows, mouths, painted eyes) closer to the skin than this may flicker in the game: the check fails.
 MIN_DECAL_CLEARANCE_MM = 0.2
-# The face parts are rigid on the Head bone: over the frame strip they may not move in its space.
+# The same limit holds in motion: a decal's clearance from the skin as the pack actions of review.json "motion" deform
+# it (the face parts are rigid on the Head bone; skin weighted partly to another bone slides under them).
+MIN_MOTION_CLEARANCE_MM = MIN_DECAL_CLEARANCE_MM
+# The face parts are bound to the Head bone: over the frame strip they may not move in its frame. With Head-only
+# weights this holds by construction; it catches a part bound to another rig or bone.
 MAX_HEAD_SPACE_MOVE_MM = 0.01
 
 
@@ -80,7 +84,7 @@ def load_inputs(args: argparse.Namespace) -> tuple[dict[str, Any], dict[str, Any
 
 def check_report(report: dict[str, Any]) -> list[str]:
     """What a finished run must show: every part weighted 1.0 to the Head bone alone with an Armature modifier,
-    decals off the skin, and the face rigid on the head over the strip."""
+    decals off the skin in the rest pose and in motion, and the face bound to the head over the strip."""
     problems = []
     for fid, fam in report.get("families", {}).items():
         for ename, heads in fam["expressions"].items():
@@ -94,20 +98,25 @@ def check_report(report: dict[str, Any]) -> list[str]:
                     if info.get("decal") and info["clearance_min_mm"] < MIN_DECAL_CLEARANCE_MM:
                         problems.append(f"{where}: a decal {info['clearance_min_mm']} mm off the skin "
                                         f"(at least {MIN_DECAL_CLEARANCE_MM} mm)")
+                    moving = info.get("clearance_motion_min_mm")
+                    if moving is not None and moving < MIN_MOTION_CLEARANCE_MM:
+                        problems.append(f"{where}: a decal {moving} mm off the skin in {info.get('clearance_motion_where')} "
+                                        f"(at least {MIN_MOTION_CLEARANCE_MM} mm in motion)")
     for key, strip in report.get("strip", {}).items():
         if strip["face_in_head_space_max_move_mm"] > MAX_HEAD_SPACE_MOVE_MM:
             problems.append(f"strip {key}: the face moved {strip['face_in_head_space_max_move_mm']} mm in the Head bone's "
-                            f"space (rigid parts move 0)")
+                            f"frame (parts bound to it move 0)")
     return problems
 
 
 def summary(report: dict[str, Any]) -> list[str]:
-    """One line per family: triangles per part (the range over the expressions), materials, decal clearance."""
+    """One line per family: triangles per part (the range over the expressions), materials, decal clearance at rest
+    and in motion."""
     lines = []
     for fid, fam in report.get("families", {}).items():
         tri: dict[str, list[int]] = {"eyes": [], "brows": [], "mouth": []}
         mats: dict[str, int] = {"eyes": 0, "brows": 0, "mouth": 0}
-        clear = []
+        clear, moving = [], []
         for heads in fam["expressions"].values():
             for parts in heads.values():
                 for part, info in parts.items():
@@ -115,9 +124,12 @@ def summary(report: dict[str, Any]) -> list[str]:
                     mats[part] = max(mats[part], info["materials"])
                     if info.get("decal"):
                         clear.append(info["clearance_min_mm"])
+                    if info.get("clearance_motion_min_mm") is not None:
+                        moving.append(info["clearance_motion_min_mm"])
         span = ", ".join(f"{p} {min(v)}-{max(v)}" if min(v) != max(v) else f"{p} {v[0]}" for p, v in tri.items() if v)
         lines.append(f"{fid} ({fam['name']}): triangles {span}; materials {mats['eyes']}/{mats['brows']}/{mats['mouth']}; "
-                     f"decals at least {min(clear) if clear else '-'} mm off the skin")
+                     f"decals at least {min(clear) if clear else '-'} mm off the skin, "
+                     f"{min(moving) if moving else '-'} mm in motion")
     return lines
 
 
@@ -167,6 +179,9 @@ def run(args: argparse.Namespace) -> int:
         common.say(f"  {line}")
     for line in distance_lines(report):
         common.say(f"  {line}")
+    for hid, skin in report.get("face_skin_to_head", {}).items():
+        common.say(f"  face skin {hid}: {skin['vertices']} vertices given to the Head bone alone "
+                   f"(the largest weight moved from Neck: {skin['largest_weight_moved']})")
     for key, strip in report.get("strip", {}).items():
         common.say(f"  strip {key}: {strip['action']} frames {strip['frames'][0]}-{strip['frames'][-1]}, the face moved "
                    f"{strip['face_in_head_space_max_move_mm']} mm in the Head bone's space")

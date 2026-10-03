@@ -4,14 +4,17 @@ review heads of faces/review.json, built with the assembler (tools/blender/um/),
 The runner calls it (tools/run.py faces); by hand, background only:
   blender -b --factory-startup --python-exit-code 1 --python tools/blender/faces_render.py -- \
       --styles faces/styles.json --review faces/review.json --raw D:/prime-art-raw --out tools/out/faces \
-      [--families f1_dots,f3_almond] [--expressions neutral,closed] [--sheets close,distance,overview,strip|none]
-      [--res 100]
+      [--families f1_dots,f3_almond] [--expressions neutral,closed]
+      [--sheets close,distance,overview,strip,beards|none] [--res 100] [--pack-weights]
 
-Writes into --out: faces_report.json (per family and expression: triangles, materials and the skin clearance of each
-part; the distance pixel sizes; the head-follow check of the frame strip) and the sheets: <family>_front.jpg,
+Writes into --out: faces_report.json (per family, expression, head and part: triangles, materials, the skin clearance
+in the rest pose and, for decals, its minimum over the pack actions of review.json "motion";
+the face skin given to the Head bone per head; the distance pixel sizes; the
+frame strip) and the sheets: <family>_hero.jpg (the neutral face large), <family>_front.jpg and
 <family>_threequarter.jpg (rows: expressions; columns: heads and skin tones), <family>_distance.png (the face at the
-game's distances, nearest-neighbour enlarged), overview.jpg (every family, neutral), strip_<head>_<family>.jpg (frames
-of a pack action); work/ holds the single renders.
+game's distances, nearest-neighbour enlarged), overview.jpg (every family, neutral),
+strip_<head>_<family>.jpg with clip_<head>_<family>.mp4 (a pack action), facial_hair.jpg; work/ holds the
+single renders.
 """
 
 import argparse
@@ -23,7 +26,8 @@ import sys
 import bpy
 import numpy as np
 from bpy_extras.object_utils import world_to_camera_view
-from mathutils import Vector
+from mathutils import Matrix, Vector
+from mathutils.bvhtree import BVHTree
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import faces_styles as fst  # noqa: E402
@@ -44,6 +48,12 @@ YAW_34 = 35.0  # the three-quarter view: each head turned by this, the camera fr
 FACE_PARTS = ("eyes", "brows", "mouth")
 BG = 0.8  # sheet background (display value)
 SEP = 4  # pixels between cells
+# The face skin given to the Head bone alone (facekit.rigid_face_skin): in front of this world y, fully from this far
+# below the mouth centre up, fading out further down toward the chin.
+FACE_SKIN_FRONT_Y = -0.07
+FACE_SKIN_FULL_BELOW_MOUTH = 0.02
+FACE_SKIN_FREE_BELOW_MOUTH = 0.05
+TO_CAMERA = Vector((0.0, -1.0, 0.0))  # from the face toward the front camera
 
 
 def show(name):
@@ -67,6 +77,8 @@ def parse():
     p.add_argument("--expressions", default="")
     p.add_argument("--sheets", default=",".join(fst.SHEETS))
     p.add_argument("--res", type=int, default=100)
+    p.add_argument("--pack-weights", action="store_true",
+                   help="keep the pack's face skin weights (Head and Neck), to measure what rigid_face_skin fixes")
     return p.parse_args(sys.argv[sys.argv.index("--") + 1:])
 
 
@@ -238,6 +250,8 @@ class Head:
         self.skin = next(s.material for s in parts["head"].material_slots if s.material and s.material.name == self.id + "_skin")
         self.face = {}
         self.surf = None
+        self.motion = []  # [(action, frame, BVH of the deformed head skin in the Head bone's space)]
+        self.to_head = None  # world (rest pose at x, yaw 0) -> the Head bone's space
 
     def place(self, yaw=0.0):
         pk.place(self.root, x=self.x, yaw=yaw)
@@ -267,11 +281,15 @@ def skull_out(surf, p, centre):
     return loc, n
 
 
-def clearance(builder, surf, centre):
-    """Signed distances (m) of a part's vertices and face centres from the skin along the skin's outward normal:
-    negative means under the skin (hidden there)."""
+def part_points(builder):
+    """A part's vertices and face centres (world, rest pose)."""
     bm = builder.bm
-    pts = [v.co.copy() for v in bm.verts] + [f.calc_center_median() for f in bm.faces]
+    return [v.co.copy() for v in bm.verts] + [f.calc_center_median() for f in bm.faces]
+
+
+def clearance(pts, surf, centre):
+    """Signed distances (m) of points from the skin along the skin's outward normal: negative means under the skin
+    (hidden there)."""
     out = []
     for p in pts:
         loc, n = skull_out(surf, p, centre)
@@ -279,9 +297,64 @@ def clearance(builder, surf, centre):
     return out
 
 
-def make_face(h, fid, fam, ename, review, skin_name):
-    """Builds one family's face in one expression on head h (the character facing -Y at its place); returns the
-    measurements per part."""
+def merged_bvh(objs, to_space=None):
+    """One BVH of the objects' deformed meshes, in world space or in the space to_space maps world into."""
+    dg = bpy.context.evaluated_depsgraph_get()
+    verts, polys = [], []
+    for o in objs:
+        ev = o.evaluated_get(dg)
+        me = ev.to_mesh()
+        m = (to_space @ ev.matrix_world) if to_space is not None else ev.matrix_world
+        base = len(verts)
+        verts += [m @ v.co for v in me.vertices]
+        polys += [tuple(base + i for i in p.vertices) for p in me.polygons]
+        ev.to_mesh_clear()
+    return BVHTree.FromPolygons(verts, polys)
+
+
+def head_space(h):
+    """World -> the Head bone's frame of h's rig in its current pose, in metres: the imported armature carries a world
+    scale of 100, which the frame drops (only its position and rotation count)."""
+    loc, rot, _ = (h.arm.matrix_world @ h.arm.pose.bones["Head"].matrix).decompose()
+    return Matrix.LocRotScale(loc, rot, None).inverted()
+
+
+def prepare_motion(h, motion):
+    """The head skin deformed by the sampled frames of the motion actions, in the Head bone's space. Rigid face parts
+    keep their Head-space position in every frame, so a decal's clearance in a frame is measured against that frame's
+    skin: where the skin is partly weighted to another bone (the pack's Neck), it slides under the rigid part."""
+    h.motion = []
+    for name in motion["actions"]:
+        act = pk.own_action(h.arm, name)
+        f0, f1 = (int(round(x)) for x in act.frame_range)
+        n = motion["frames"]
+        for f in sorted({int(round(f0 + (f1 - f0) * k / (n - 1))) for k in range(n)}):
+            poses.action_pose(h.arm, name, f)
+            h.motion.append((name, f, merged_bvh([h.parts["head"]], head_space(h))))
+    pk.reset_pose(h.arm)
+    poses.apply(h.arm, h.rc["pose"])
+    update()
+
+
+def motion_clearance(h, pts, centre):
+    """The smallest signed skin clearance (m) of world rest points over the motion frames, and where it is."""
+    q = [h.to_head @ p for p in pts]
+    c = h.to_head @ centre
+    worst, where = float("inf"), None
+    for name, f, bvh in h.motion:
+        for p in q:
+            loc, n, _, _ = bvh.find_nearest(p)
+            if n.dot(loc - c) < 0:
+                n = -n
+            d = (p - loc).dot(n)
+            if d < worst:
+                worst, where = d, f"{name} f{f}"
+    return worst, where
+
+
+def make_face(h, fid, fam, ename, review, skin_name, measure=False):
+    """Builds one family's face in one expression on head h (the character facing -Y at its place, yaw 0); returns
+    the measurements per part (measure: also the decals' clearance in motion)."""
     h.clear_face()
     hcol = review["heads"][h.id]
     skin_rgb = review["skins"][skin_name]
@@ -294,7 +367,14 @@ def make_face(h, fid, fam, ename, review, skin_name):
         b = builders[part]
         if not b.bm.faces:
             raise RuntimeError(f"{fid}/{ename}: {h.id} got an empty {part}")
-        d = clearance(b, h.surf, centre)
+        pts = part_points(b)
+        d = clearance(pts, h.surf, centre)
+        extra = {}
+        if measure:
+            if b.decal and h.motion:
+                worst, where = motion_clearance(h, pts, centre)
+                extra["clearance_motion_min_mm"] = round(worst * 1000, 2)
+                extra["clearance_motion_where"] = where
         o = b.to_object(f"{h.id}_{part}", h.parts["head"], h.arm, smooth=False)
         for c in list(o.users_collection):
             c.objects.unlink(o)
@@ -304,7 +384,7 @@ def make_face(h, fid, fam, ename, review, skin_name):
         info[part] = {"triangles": tris(o), "materials": len(o.material_slots), "decal": b.decal,
                       "clearance_min_mm": round(min(d) * 1000, 2), "under_skin": sum(1 for x in d if x < 0), "samples": len(d),
                       "vertex_groups": [g.name for g in vg],
-                      "armature": next((m.object.name for m in o.modifiers if m.type == "ARMATURE"), None)}
+                      "armature": next((m.object.name for m in o.modifiers if m.type == "ARMATURE"), None), **extra}
     set_skin(h, fid, fam, review, skin_name)
     update()
     return info
@@ -390,7 +470,7 @@ def main():
     shots = Shots(out, args.res)
     packs = pk.Packs({g: recipes.pack_dir(R, args.raw, g) for g in recipes.GENDERS})
 
-    heads = []
+    heads, face_skin = [], {}
     for i, rc in enumerate(R["characters"]):
         if rc["id"] not in review["heads"]:
             raise RuntimeError(f"head {rc['id']} of {review['heads_recipe']} has no colours in review.json")
@@ -404,14 +484,23 @@ def main():
             bpy.data.meshes.remove(me)
         h = Head(i, rc, arm, parts, rep, coll)
         h.place()
+        update()
+        # the face skin follows the Head bone alone, as the rigid face parts do (facekit.rigid_face_skin)
+        n, most = (0, 0.0) if args.pack_weights else fk.rigid_face_skin(
+            parts["head"], FACE_SKIN_FRONT_Y, h.mouth_z - FACE_SKIN_FULL_BELOW_MOUTH, h.mouth_z - FACE_SKIN_FREE_BELOW_MOUTH)
+        face_skin[h.id] = {"vertices": n, "largest_weight_moved": round(most, 3)}
         poses.apply(arm, rc["pose"])
+        update()
         h.surf = fk.Surface(parts["head"])
+        h.to_head = head_space(h)
+        prepare_motion(h, review["motion"])
         heads.append(h)
-        print("HEAD", h.id, "eyes", rep["eye_centres"], "mouth z", h.mouth_z)
+        print("HEAD", h.id, "eyes", rep["eye_centres"], "mouth z", h.mouth_z, "face skin to Head", face_skin[h.id],
+              "motion frames", len(h.motion))
     update()
 
     report = {"styles": os.path.basename(args.styles), "heads": [h.id for h in heads], "res": args.res,
-              "families": {}, "distance": {}, "strip": {}}
+              "face_skin_to_head": face_skin, "motion": review["motion"], "families": {}, "distance": {}, "strip": {}}
     skins = list(review["skins"])
     ppm = PPM
     cell_px = shots.px(CELL_M * ppm)
@@ -428,7 +517,7 @@ def main():
             row = {"front": [], "threequarter": []}
             for h in heads:
                 h.place()
-                erep[h.id] = make_face(h, fid, fam, ename, review, skins[0])
+                erep[h.id] = make_face(h, fid, fam, ename, review, skins[0], measure=True)
             for skin in skins:
                 for h in heads:
                     set_skin(h, fid, fam, review, skin)
@@ -723,7 +812,7 @@ def strips(shots, heads, styles, review, out, work):
             poses.action_pose(h.arm, st["action"], f)
             # the face parts in the Head bone's space must not move: they are rigid on it
             dg = bpy.context.evaluated_depsgraph_get()
-            hm = (h.arm.matrix_world @ head_pb.matrix).inverted()
+            hm = head_space(h)
             pts = []
             for part in FACE_PARTS:
                 ev = h.face[part].evaluated_get(dg)
