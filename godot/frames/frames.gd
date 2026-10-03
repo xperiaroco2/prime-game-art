@@ -5,7 +5,8 @@ extends SceneTree
 ##   godot --path godot --position -30000,-30000 --resolution 480x600 -s res://frames/frames.gd
 ##       -- <res://import/x.glb> <out folder> <spec.json>
 ## spec.json: {"character": id, "cell": [w, h], "yaw_deg": 35, "pitch_deg": 8, "fps": 24,
-##             "clips": [{"name": animation, "label": short name, "times": [s, ...], "keep": bool, "video": bool}]}
+##             "clips": [{"name": animation, "label": short name, "times": [s, ...], "note": title text,
+##                        "video_frames": n, "keep": bool, "video": bool}]}
 ## For each clip, one fixed orthographic three-quarter camera frames the whole character over all its sample times;
 ## each time is rendered (seek with update, then the next drawn frame), labelled, scaled to the cell and placed in
 ## sheets/<label>.png under a title band. "keep" also saves frames/<label>/<i>.png at window size, "video" saves every
@@ -82,14 +83,13 @@ func _run(scene_path: String, out_dir: String, spec: Dictionary) -> void:
 			if clip.get("keep", false):
 				_save(image, "%s/frames/%s/%02d.png" % [out_dir, clip["label"], i])
 			shots.append(image)
-		var title: String = "%s   %s   %d frames, %.2f s, %s   (Godot %s)" % [
-				spec["character"], clip["label"], times.size(), _player.get_animation(name).length,
-				"one loop" if clip.get("loop", false) else "first to last frame",
+		var title: String = "%s   %s   %d frames, %s   (Godot %s)" % [
+				spec["character"], clip["label"], times.size(), clip["note"],
 				Engine.get_version_info()["string"].get_slice("-", 0)]
 		var sheet: Image = await _sheet(shots, cell, title)
 		_save(sheet, "%s/sheets/%s.png" % [out_dir, clip["label"]])
 		if clip.get("video", false):
-			var n: int = int(round(_player.get_animation(name).length * float(spec["fps"])))
+			var n: int = int(clip["video_frames"])  # a closed loop's last frame is its first; else up to the last
 			for f: int in n:
 				var img: Image = await _shot(name, f / float(spec["fps"]), "%s   %s" % [spec["character"], clip["label"]])
 				_save(img, "%s/video/%s/%04d.png" % [out_dir, clip["label"], f])

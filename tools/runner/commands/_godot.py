@@ -145,6 +145,7 @@ def expectations(glb: Path) -> dict[str, Any]:
             "rest_heads_m": info.get("rest_heads_m", {}),
             "animations": {name: (end - start) / fps for name, (start, end) in info["actions"].items()},
             "height_m": info.get("height_m"),
+            "seams": info.get("seams", {}),
         }
     summary = _export.summarize(_export.glb_json(glb))
     return {
@@ -155,6 +156,7 @@ def expectations(glb: Path) -> dict[str, Any]:
         "rest_heads_m": {},
         "animations": {name: a["duration_s"] for name, a in summary["animations"].items()},
         "height_m": None,
+        "seams": {},
     }
 
 

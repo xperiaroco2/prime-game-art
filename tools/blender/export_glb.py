@@ -9,9 +9,13 @@ glTF axes (+Y up, front +Z): the armature and its bones' rest heads, every part 
 materials), the actions with their frame ranges, the rest-pose bounds and height. `tools/run.py godot-check` compares
 Godot's import with these numbers.
 
+The description also holds each action's seam (seams()): how far its last frame is from its first.
+
 EXPORT_OPTIONS is a plain module constant (bpy is imported only inside main()), so the runner and the tests can read
 the options without Blender.
 """
+
+import math
 
 # Every option the export depends on, passed explicitly so that a changed Blender default cannot change the output.
 # The reasons are in docs/godot.md ("The export options").
@@ -120,6 +124,46 @@ def describe(bpy, arm, parts):
     }
 
 
+def _angle_deg(a, b):
+    """The rotation between two quaternions in degrees, 0 to 180 (q and -q are the same rotation)."""
+    deg = math.degrees(a.rotation_difference(b).angle)
+    return min(deg, 360.0 - deg)
+
+
+def seams(bpy, arm):
+    """Per action: how far its last frame's pose is from its first, over every bone (the joint's world position in
+    mm, the rotation in armature space in degrees). A closed cycle's last key repeats its first; an open one (the
+    pack's Run, Run_Left, Run_Right) ends one frame before its first pose comes round again."""
+    scene = bpy.context.scene
+    ad = arm.animation_data or arm.animation_data_create()
+    mw = arm.matrix_world
+
+    def pose_at(frame):
+        for pb in arm.pose.bones:  # start from the rest pose, as the export samples (export_reset_pose_bones)
+            pb.location = (0.0, 0.0, 0.0)
+            pb.rotation_quaternion = (1.0, 0.0, 0.0, 0.0)
+            pb.scale = (1.0, 1.0, 1.0)
+        scene.frame_set(frame)
+        bpy.context.view_layer.update()
+        return {pb.name: (mw @ pb.head, pb.matrix.to_quaternion()) for pb in arm.pose.bones}
+
+    out = {}
+    for act in sorted(bpy.data.actions, key=lambda a: a.name):
+        ad.action = act
+        ad.action_slot = act.slots[0]
+        first, last = pose_at(int(act.frame_range[0])), pose_at(int(act.frame_range[1]))
+        out[act.name] = {
+            "position_mm": round(max((first[b][0] - last[b][0]).length for b in first) * 1000, 3),
+            "rotation_deg": round(max(_angle_deg(first[b][1], last[b][1]) for b in first), 3),
+        }
+    ad.action = None
+    for pb in arm.pose.bones:
+        pb.location = (0.0, 0.0, 0.0)
+        pb.rotation_quaternion = (1.0, 0.0, 0.0, 0.0)
+        pb.scale = (1.0, 1.0, 1.0)
+    return out
+
+
 def exporter_version():
     """The glTF add-on's version, e.g. "5.2.10"."""
     import io_scene_gltf2
@@ -172,6 +216,7 @@ def main():
         "blender": bpy.app.version_string,
         "exporter": exporter_version(),
         "options": EXPORT_OPTIONS,
+        "seams": seams(bpy, arm),
     })
     with open(args.json, "w", encoding="utf-8") as fh:
         json.dump(info, fh, indent=1)

@@ -25,11 +25,23 @@ class TimesTest(unittest.TestCase):
         self.assertEqual([round(t * 24) for t in death], [0, 4, 7, 11, 14, 18, 21, 25])
         self.assertEqual(len(_frames.times(1.0, "Run_Left")), 12)
 
+    def test_an_open_cycle_is_one_frame_longer_than_its_keys(self) -> None:
+        open_seam, closed_seam = {"position_mm": 103.3, "rotation_deg": 18.4}, {"position_mm": 0.01, "rotation_deg": 0.04}
+        run = _frames.cycle(19 / 24, "Run", open_seam)
+        self.assertEqual((run["open_cycle"], run["video_frames"], run["cycle_s"]), (True, 20, round(20 / 24, 6)))
+        self.assertIn("its last key is not its first", run["note"])
+        walk = _frames.cycle(32 / 24, "Walk", closed_seam)
+        self.assertEqual((walk["open_cycle"], walk["video_frames"]), (False, 32))  # frame 32 is frame 0 again
+        wave = _frames.cycle(40 / 24, "Wave", open_seam)  # a one-off shows its last frame too
+        self.assertEqual((wave["loop"], wave["open_cycle"], wave["video_frames"]), (False, False, 41))
+        self.assertEqual([round(t * 24) for t in _frames.times(19 / 24, "Run", open_cycle=True)][:4], [0, 2, 3, 5])
+        self.assertEqual(_frames.times(20 / 24, "Run"), _frames.times(19 / 24, "Run", open_cycle=True))
+
     def test_spec(self) -> None:
         spec = _frames.spec("x", {"CharacterArmature|Wave": 40 / 24, "CharacterArmature|Run": 19 / 24}, ["Wave"], ["Run"])
         self.assertEqual([c["label"] for c in spec["clips"]], ["Run", "Wave"])
         run, wave = spec["clips"]
-        self.assertEqual((run["loop"], run["keep"], run["video"]), (True, False, True))
+        self.assertEqual((run["loop"], run["keep"], run["video"], run["video_frames"]), (True, False, True, 19))
         self.assertEqual((wave["loop"], wave["keep"], wave["video"]), (False, True, False))
         self.assertEqual(spec["cell"], list(_frames.CELL))
 

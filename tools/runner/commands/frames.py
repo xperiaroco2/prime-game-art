@@ -50,7 +50,11 @@ def run(args: argparse.Namespace) -> int:
     for sub in ("sheets", "frames", "video", "compare", "clips"):
         shutil.rmtree(out / sub, ignore_errors=True)
     out.mkdir(parents=True, exist_ok=True)
-    spec = _frames.spec(glb.stem, animations, compare, video)
+    spec = _frames.spec(glb.stem, animations, compare, video, expect.get("seams"))
+    for clip in spec["clips"]:
+        if clip["open_cycle"]:
+            common.warn(f"{clip['label']}: its last key does not repeat its first; one cycle is {clip['cycle_s']:.3f} s, "
+                        f"one frame longer than its keys")
     spec_path = out / "spec.json"
     spec_path.write_text(json.dumps(spec, indent=1), encoding="utf-8")
 
