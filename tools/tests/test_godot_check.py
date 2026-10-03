@@ -126,6 +126,12 @@ class GodotHelpersTest(unittest.TestCase):
         self.assertIn('nodes/root_name="x"', text)
         self.assertTrue(text.endswith("_subresources={}\n"))
 
+    def test_import_lines_go_to_the_file_they_name(self) -> None:
+        a, b = "res://import/m1_rex.glb", "res://import/m1_rex_humanoid.glb"
+        lines = [f"ERROR: bad mesh in {b}", f"WARNING: odd key in {a}", "ERROR: says nothing about where"]
+        self.assertEqual(_godot.lines_for(lines, a, [a, b]), [lines[1], lines[2]])
+        self.assertEqual(_godot.lines_for(lines, b, [a, b]), [lines[0], lines[2]])
+
     def test_every_import_turns_the_animation_optimizer_off(self) -> None:
         self.assertEqual(_godot.subresources(), '{\n"nodes": {\n"PATH:AnimationPlayer": {\n"optimizer/enabled": false\n}\n}\n}')
         text = _godot.subresources({"PATH:x": {"a": _godot.Resource("res://y.tres"), "n": 1}})

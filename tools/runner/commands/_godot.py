@@ -85,6 +85,19 @@ def stage(glb: Path, name: str | None = None, params: dict[str, Any] | None = No
     return f"res://import/{name}.glb"
 
 
+def clear_staged(keep: set[str]) -> list[str]:
+    """Removes the GLBs (and their .import files) an earlier run left in godot/import/ whose stem is not in keep, so
+    that `--import` imports only this run's files and their errors cannot land on another character. One run at a time
+    (docs/godot.md). Returns the removed names."""
+    removed = []
+    for glb in sorted(IMPORT_DIR.glob("*.glb")) if IMPORT_DIR.is_dir() else []:
+        if glb.stem not in keep:
+            glb.unlink()
+            glb.with_name(glb.name + ".import").unlink(missing_ok=True)
+            removed.append(glb.name)
+    return removed
+
+
 def noteworthy(output: str) -> list[str]:
     """Godot's error and warning lines (with the "at:" line that follows each), colour codes removed."""
     lines = [ANSI.sub("", line).rstrip() for line in output.splitlines()]
@@ -94,6 +107,13 @@ def noteworthy(output: str) -> list[str]:
             where = lines[i + 1].strip() if i + 1 < len(lines) and lines[i + 1].strip().startswith("at:") else ""
             found.append(f"{line.strip()} {where}".strip())
     return found
+
+
+def lines_for(lines: list[str], res_path: str, staged: list[str]) -> list[str]:
+    """Godot's import lines that belong to res_path: those that name it, and those that name no staged file (an error
+    that does not say where it came from counts against every file of the run)."""
+    others = [p for p in staged if p != res_path]
+    return [line for line in lines if res_path in line or not any(p in line for p in others)]
 
 
 def godot(args: list[str], timeout: float) -> tuple[int, str]:

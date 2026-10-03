@@ -32,13 +32,14 @@ def run(args: argparse.Namespace) -> int:
             raise common.Failure(f"no GLB {path.as_posix()}")
         glbs.append(candidate.resolve())
     contract = _godot.load_contract()
+    _godot.clear_staged({g.stem for g in glbs})
     staged = {glb: _godot.stage(glb) for glb in glbs}
     common.say(f"godot-check: importing {', '.join(g.name for g in glbs)} into {_godot.PROJECT.as_posix()} (headless)")
     import_lines = _godot.import_project()
     failed = 0
     for glb, res_path in staged.items():
         out = (args.out or _godot.OUT).resolve() / glb.stem
-        failed += not check_one(glb, res_path, out, contract, import_lines, args.strict_contract)
+        failed += not check_one(glb, res_path, out, contract, import_lines, args.strict_contract, list(staged.values()))
     if args.humanoid:
         from . import _humanoid
 
@@ -48,10 +49,11 @@ def run(args: argparse.Namespace) -> int:
     return 1 if failed else 0
 
 
-def check_one(glb: Path, res_path: str, out: Path, contract: dict, import_lines: list[str], strict: bool) -> bool:
+def check_one(glb: Path, res_path: str, out: Path, contract: dict, import_lines: list[str], strict: bool,
+              staged: list[str]) -> bool:
     expect = _godot.expectations(glb)
     dump, lines = _godot.inspect(res_path, out / "inspect.json")
-    mine = [line for line in import_lines if glb.stem in line] or import_lines
+    mine = _godot.lines_for(import_lines, res_path, staged)
     output = mine + lines
     checks = _godot.evaluate(dump, expect, contract, output, strict_contract=strict)
     failed = [c for c in checks if c["status"] == "fail"]

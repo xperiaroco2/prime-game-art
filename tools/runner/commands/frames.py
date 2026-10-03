@@ -58,6 +58,7 @@ def run(args: argparse.Namespace) -> int:
     spec_path = out / "spec.json"
     spec_path.write_text(json.dumps(spec, indent=1), encoding="utf-8")
 
+    _godot.clear_staged({glb.stem})
     res_path = _godot.stage(glb)
     import_lines = _godot.import_project()
     common.say(f"frames: {len(spec['clips'])} animations of {glb.name} in an off-screen Godot window -> {out.as_posix()}")
