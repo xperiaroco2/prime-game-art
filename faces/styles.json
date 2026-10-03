@@ -1,0 +1,113 @@
+{
+ "description": "The face kit's style families (art #21, docs/faces.md): each one design language for eyes, brows and mouths, built by tools/blender/um/facekit.py on a bald pack head and weighted to the Head bone. Units are metres; eye shapes are normalized to the eye's half-width w and half-height h. Expressions are shared: a family may override any expression's values under its own \"expressions\".",
+ "expressions": {
+  "neutral": {},
+  "happy": {
+   "eyes": {"lower": 0.38},
+   "brows": {"raise": 0.0015, "arch": 0.0008},
+   "mouth": {"corner": 0.0045, "mid": -0.0008, "w": 1.08}
+  },
+  "talk_a": {
+   "mouth": {"gap": 0.013, "w": 0.8, "skew": -0.15, "round": 0.65, "mid": -0.002}
+  },
+  "talk_o": {
+   "mouth": {"gap": 0.012, "w": 0.5, "round": 0.5, "mid": -0.0015}
+  },
+  "talk_e": {
+   "mouth": {"gap": 0.0055, "w": 1.0, "corner": 0.0015, "round": 0.35}
+  },
+  "surprised": {
+   "eyes": {"open": 1.4, "scale": 1.12, "pupil": 0.75},
+   "brows": {"raise": 0.0045, "arch": 0.0012},
+   "mouth": {"gap": 0.0145, "w": 0.48, "round": 0.5, "mid": -0.002}
+  },
+  "angry": {
+   "eyes": {"open": 0.8, "tilt": 0.55},
+   "brows": {"raise": -0.0015, "inner": -0.0055, "arch": -0.0005},
+   "mouth": {"corner": -0.004, "mid": 0.0005, "w": 0.92}
+  },
+  "suspicious": {
+   "eyes": {"open": 0.55, "open_l": 0.75, "look": [0.3, 0.0]},
+   "brows": {"raise_l": 0.0035, "raise_r": -0.001, "inner_r": -0.003},
+   "mouth": {"side": 0.0022, "w": 0.78, "shift": 0.0015, "corner": -0.0005}
+  },
+  "closed": {
+   "eyes": {"open": 0.0}
+  }
+ },
+ "families": {
+  "f1_dots": {
+   "name": "Dots",
+   "summary": "Tiny dark oval eyes with a single highlight, short thin brow strokes and a one-line mouth. Expressions are drawn as lines: closed and happy eyes become arcs.",
+   "eyes": {"kind": "dot", "shape": "ellipse", "w": 0.0062, "h": 0.0086, "depth": 0.0026, "protrude": 0.002, "lid_scale": 1.08, "closed": "arc", "happy": "arc", "arc": 0.0011, "highlights": [[-0.3, 0.35, 0.0019]]},
+   "brows": {"pts": [[-0.012, 0.0225], [0.0, 0.025], [0.012, 0.024]], "w": [0.0014, 0.0016, 0.0011], "thick": 0.0006},
+   "mouth": {"w": 0.013, "line": 0.0011, "lips": "none", "teeth": 0.0, "tongue": true, "corner": 0.0005},
+   "lip_tint": [0.7, 0.45, 0.45],
+   "colors": {"white": [0.92, 0.92, 0.9], "pupil": [0.01, 0.01, 0.012], "highlight": [0.95, 0.95, 0.95], "lash": [0.02, 0.015, 0.012], "line": [0.03, 0.012, 0.012], "dark": [0.07, 0.012, 0.015], "teeth": [0.95, 0.95, 0.92], "tongue": [0.55, 0.13, 0.14], "dot": [0.015, 0.012, 0.012]}
+  },
+  "f2_googly": {
+   "name": "Googly",
+   "summary": "Big round white eyes standing out of the face with black pupils, thick block brows and a cartoon mouth with a lip rim. Loud and readable from far away.",
+   "eyes": {"kind": "ball", "shape": "ellipse", "w": 0.015, "h": 0.0155, "depth": 0.012, "protrude": 0.0085, "lid_scale": 1.05, "pupil": 0.0062, "iris_v": -0.1, "highlights": [[-0.25, 0.3, 0.0018]], "closed": "lid", "arc": 0.0014},
+   "brows": {"pts": [[-0.014, 0.029], [-0.002, 0.0335], [0.012, 0.0335], [0.019, 0.029]], "w": [0.0036, 0.0042, 0.004, 0.0026], "thick": 0.002},
+   "mouth": {"w": 0.0165, "line": 0.0016, "lips": "rim", "rim": 0.0013, "teeth": 0.003, "tongue": true},
+   "lip_tint": [0.65, 0.4, 0.4],
+   "expressions": {
+    "happy": {
+     "mouth": {"gap": 0.008, "skew": -0.6, "corner": 0.0055, "mid": -0.001, "round": 0.6}
+    }
+   },
+   "colors": {"white": [0.92, 0.92, 0.9], "pupil": [0.01, 0.01, 0.012], "highlight": [0.95, 0.95, 0.95], "lash": [0.02, 0.015, 0.012], "line": [0.05, 0.015, 0.015], "dark": [0.07, 0.012, 0.015], "teeth": [0.95, 0.95, 0.92], "tongue": [0.55, 0.13, 0.14], "dot": [0.015, 0.012, 0.012]}
+  },
+  "f3_almond": {
+   "name": "Almond",
+   "summary": "Near-human almond eyes on a shallow eyeball: a coloured iris and pupil cut by skin lids, a thin lash line with a small flick, thin arched brows and lips with a subtle shape.",
+   "eyes": {"kind": "almond", "shape": "almond", "w": 0.017, "h": 0.0115, "top": 0.82, "bottom": 0.55, "slant": 0.06, "top_pow": 0.65, "bottom_pow": 0.85, "depth": 0.007, "protrude": 0.003, "lid_scale": 1.06, "iris": 0.0064, "pupil": 0.0029, "iris_v": 0.05, "highlights": [[-0.18, 0.22, 0.0011]], "lash": 0.001, "lash_grow": 0.9, "flick": 0.0035, "closed": "lid"},
+   "brows": {"pts": [[-0.014, 0.0205], [-0.004, 0.0245], [0.008, 0.0255], [0.018, 0.0215]], "w": [0.0021, 0.0024, 0.0019, 0.0009], "thick": 0.0006},
+   "mouth": {"w": 0.019, "lips": "full", "lip_up": 0.0024, "lip_lo": 0.0032, "line": 0.0006, "teeth": 0.0026, "tongue": true, "lift": 0.0008},
+   "lip_tint": [0.74, 0.46, 0.46],
+   "colors": {"white": [0.9, 0.89, 0.86], "pupil": [0.01, 0.01, 0.012], "highlight": [0.95, 0.95, 0.95], "lash": [0.02, 0.012, 0.01], "line": [0.12, 0.035, 0.035], "dark": [0.08, 0.015, 0.018], "teeth": [0.93, 0.92, 0.88], "tongue": [0.5, 0.13, 0.14], "dot": [0.015, 0.012, 0.012]}
+  },
+  "f4_toon": {
+   "name": "Cartoon iris",
+   "summary": "Larger, taller eyes with a big coloured iris, a pupil and two highlights under a bold lash band with an outer flick; expressive brows and open cartoon mouths with teeth and tongue.",
+   "eyes": {"kind": "toon", "shape": "ellipse", "w": 0.015, "h": 0.0195, "depth": 0.008, "protrude": 0.0045, "lid_scale": 1.05, "iris": 0.0098, "pupil": 0.0047, "iris_v": -0.08, "highlights": [[-0.3, 0.35, 0.0026], [0.25, -0.3, 0.0013]], "lash": 0.0019, "lash_grow": 0.6, "flick": 0.0045, "flick_rise": 0.6, "closed": "lid"},
+   "brows": {"pts": [[-0.013, 0.027], [-0.003, 0.0315], [0.009, 0.0325], [0.017, 0.028]], "w": [0.0026, 0.0031, 0.0027, 0.0012], "thick": 0.0012},
+   "mouth": {"w": 0.0185, "line": 0.0013, "lips": "rim", "rim": 0.0008, "teeth": 0.0035, "tongue": true, "corner": 0.002},
+   "lip_tint": [0.7, 0.42, 0.42],
+   "expressions": {
+    "happy": {
+     "mouth": {"gap": 0.009, "skew": -0.65, "corner": 0.006, "mid": -0.001, "round": 0.6}
+    }
+   },
+   "colors": {"white": [0.93, 0.93, 0.92], "pupil": [0.01, 0.01, 0.012], "highlight": [0.97, 0.97, 0.97], "lash": [0.015, 0.01, 0.01], "line": [0.05, 0.012, 0.012], "dark": [0.07, 0.012, 0.015], "teeth": [0.95, 0.95, 0.92], "tongue": [0.6, 0.15, 0.16], "dot": [0.015, 0.012, 0.012]}
+  },
+  "f5_lidded": {
+   "name": "Heavy-lidded",
+   "summary": "Relaxed, half-closed almond eyes under a heavy skin lid that stands out of the face, a small iris, straight low brows and a calm, thin-lipped mouth.",
+   "eyes": {"kind": "almond", "shape": "almond", "w": 0.017, "h": 0.0115, "top": 0.85, "bottom": 0.5, "slant": 0.0, "top_pow": 0.6, "bottom_pow": 0.85, "rest_open": 0.55, "depth": 0.0075, "protrude": 0.0032, "lid_scale": 1.12, "iris": 0.0062, "pupil": 0.0028, "iris_v": -0.05, "highlights": [[-0.2, 0.0, 0.0009]], "lash": 0.001, "lash_grow": 0.5, "closed": "lid"},
+   "brows": {"pts": [[-0.014, 0.0185], [0.0, 0.0205], [0.016, 0.019]], "w": [0.0026, 0.0028, 0.0014], "thick": 0.001},
+   "mouth": {"w": 0.018, "lips": "full", "lip_up": 0.0014, "lip_lo": 0.0022, "line": 0.0007, "corner": -0.0006, "teeth": 0.0024, "tongue": true, "lift": 0.0008},
+   "lip_tint": [0.74, 0.48, 0.48],
+   "colors": {"white": [0.88, 0.86, 0.82], "pupil": [0.01, 0.01, 0.012], "highlight": [0.95, 0.95, 0.95], "lash": [0.02, 0.012, 0.01], "line": [0.12, 0.035, 0.035], "dark": [0.08, 0.015, 0.018], "teeth": [0.93, 0.92, 0.88], "tongue": [0.5, 0.13, 0.14], "dot": [0.015, 0.012, 0.012]}
+  },
+  "f6_painted": {
+   "name": "Painted",
+   "summary": "Graphic, decal-like shapes lying flat on the skin: an almond white with iris and pupil, a bold lash stroke with a flick, thin brow strokes and a drawn mouth. Almost no depth.",
+   "eyes": {"kind": "painted", "shape": "almond", "w": 0.0165, "h": 0.011, "top": 0.85, "bottom": 0.55, "slant": 0.08, "top_pow": 0.65, "bottom_pow": 0.85, "lift": 0.0008, "iris": 0.0062, "pupil": 0.0028, "iris_v": 0.05, "highlights": [[-0.2, 0.25, 0.0012]], "lash": 0.0014, "lash_grow": 1.0, "flick": 0.004, "closed": "arc", "happy": "arc", "arc": 0.001},
+   "brows": {"pts": [[-0.013, 0.0215], [-0.002, 0.0255], [0.01, 0.026], [0.018, 0.0225]], "w": [0.0013, 0.0016, 0.0013, 0.0004], "thick": 0.0},
+   "mouth": {"w": 0.018, "lips": "full", "lip_up": 0.0012, "lip_lo": 0.002, "line": 0.0009, "teeth": 0.0025, "tongue": true, "lift": 0.0008},
+   "lip_tint": [0.75, 0.42, 0.45],
+   "colors": {"white": [0.94, 0.93, 0.9], "pupil": [0.01, 0.01, 0.012], "highlight": [0.97, 0.97, 0.97], "lash": [0.015, 0.01, 0.01], "line": [0.06, 0.015, 0.015], "dark": [0.07, 0.012, 0.015], "teeth": [0.95, 0.95, 0.92], "tongue": [0.55, 0.13, 0.14], "dot": [0.015, 0.012, 0.012]}
+  },
+  "f7_button": {
+   "name": "Button",
+   "summary": "Bold glossy vertical ovals without whites and with two highlights, short rounded block brows and a small simple mouth: a vinyl-toy look between Dots and Googly.",
+   "eyes": {"kind": "dot", "shape": "ellipse", "w": 0.0092, "h": 0.0138, "depth": 0.005, "protrude": 0.0036, "lid_scale": 1.07, "highlights": [[-0.35, 0.4, 0.003], [0.3, -0.35, 0.0014]], "closed": "lid", "arc": 0.0022},
+   "brows": {"pts": [[-0.009, 0.0265], [0.0, 0.0282], [0.009, 0.0272]], "w": [0.0024, 0.0032, 0.0024], "thick": 0.0018},
+   "mouth": {"w": 0.0105, "line": 0.0014, "lips": "none", "teeth": 0.0, "tongue": true},
+   "lip_tint": [0.7, 0.45, 0.45],
+   "colors": {"white": [0.92, 0.92, 0.9], "pupil": [0.01, 0.01, 0.012], "highlight": [0.97, 0.97, 0.97], "lash": [0.02, 0.015, 0.012], "line": [0.04, 0.012, 0.012], "dark": [0.07, 0.012, 0.015], "teeth": [0.95, 0.95, 0.92], "tongue": [0.55, 0.13, 0.14], "dot": [0.035, 0.02, 0.015]}
+  }
+ }
+}

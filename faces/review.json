@@ -1,0 +1,31 @@
+{
+ "description": "What tools/run.py faces shows (docs/faces.md): the review heads (an assembler recipe), the two skin tones of the final test, per-head iris and brow colours, and the game's first-person camera read from the game repo (D:/prime-game, read only, 2026-10-03 at c43c0e1): client/player/player.tscn has a Camera3D with no fov set, so Godot's default 75 degrees vertical (keep height); content/modes/base_mode.tres eye_height_m = 1.6; project.godot sets no anti-aliasing (MSAA and screen-space AA off) and stretch mode canvas_items and no window size, so Godot opens its default 1152 x 648 window (default_window); the distance sheets assume a 1920 x 1080 fullscreen target, and at the default window every pixel count is 0.6 times as large per side (about 0.36 in area). Brows: one colour per head, and a darker one on the dark skin (brow_by_skin) so that they keep a contrast of at least 3 on both skins. motion: the pack actions in which the decals' clearance from the deforming skin is measured. spacing_sheet: the eye spacing variants (eyes.inset) for the near-human question.",
+ "heads_recipe": "review_heads.json",
+ "heads": {
+  "m_full": {"label": "M full skull", "iris": [0.16, 0.07, 0.02], "brow": [0.04, 0.025, 0.012], "brow_by_skin": {"dark": [0.012, 0.007, 0.004]}},
+  "m_open": {"label": "M open-top skull", "iris": [0.09, 0.2, 0.05], "brow": [0.1, 0.012, 0.01], "brow_by_skin": {"dark": [0.03, 0.004, 0.003]}},
+  "w_full": {"label": "W full skull", "iris": [0.05, 0.16, 0.42], "brow": [0.035, 0.018, 0.01], "brow_by_skin": {"dark": [0.012, 0.007, 0.004]}},
+  "w_open": {"label": "W open-top skull", "iris": [0.07, 0.035, 0.015], "brow": [0.03, 0.018, 0.01], "brow_by_skin": {"dark": [0.012, 0.007, 0.004]}}
+ },
+ "skins": {"light": [0.78, 0.55, 0.42], "dark": [0.22, 0.12, 0.065]},
+ "overview_skins": {"m_full": "light", "m_open": "dark", "w_full": "dark", "w_open": "light"},
+ "game_camera": {"fov_deg": 75.0, "width": 1920, "height": 1080, "eye_height_m": 1.6, "anti_aliasing": false, "default_window": [1152, 648]},
+ "distances_m": [2, 5, 10],
+ "distance_sheet": {"heads": [["m_full", "light"], ["w_full", "dark"]],
+                    "expressions": ["neutral", "happy", "talk_a", "surprised", "angry", "closed"]},
+ "strip": {"action": "Walk", "frames": 8, "rows": [["m_full", "light", "f3_almond"], ["w_full", "dark", "f4_toon"]]},
+ "motion": {"actions": ["Idle", "Walk", "Run", "Interact", "Punch_Left"], "frames": 8},
+ "spacing_sheet": {"families": ["f3_almond", "f4_toon"], "insets_mm": [0, 6, 10]},
+ "facial_hair": {
+  "description": "Input for the engineer's open question (facial hair on both body types or not): the men's pack facial hair, split off its source heads and put on one man's and one woman's review head, coloured like the brows. Shown, not decided.",
+  "heads": [["m_full", "light"], ["w_full", "dark"]],
+  "family": "f3_almond",
+  "parts": [
+   {"label": "Worker moustache", "file": "Worker.glb", "object": "Worker_Head", "materials": ["Moustache"], "zone": "all"},
+   {"label": "Punk goatee", "file": "Punk.glb", "object": "Punk_Head", "materials": ["Red"], "zone": "chin"},
+   {"label": "Adventurer beard", "file": "Adventurer.glb", "object": "Adventurer_Head", "materials": ["Hair"], "zone": "lower_face"},
+   {"label": "King beard", "file": "King.glb", "object": "King_Head", "materials": ["Hair_White"], "zone": "lower_face"},
+   {"label": "Casual stubble", "file": "Casual Character.glb", "object": "Casual2_Head", "materials": ["Skin_Darker"], "zone": "all", "stubble": true}
+  ]
+ }
+}
