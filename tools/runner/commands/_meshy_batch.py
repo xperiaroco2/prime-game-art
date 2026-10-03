@@ -37,8 +37,8 @@ TEXT_TO_IMAGE_CREDITS = {"nano-banana": 3, "nano-banana-2": 6, "nano-banana-pro"
 IMAGE_TO_IMAGE_CREDITS = {"nano-banana": 3, "nano-banana-2": 6, "nano-banana-pro": 9, "gpt-image-2": 12,
                           "gpt-image-2-5-flare": 12, "gpt-image-2-5-sunburst": 12}
 IMAGE_CREDITS = {"text_to_image": TEXT_TO_IMAGE_CREDITS, "image_to_image": IMAGE_TO_IMAGE_CREDITS}
-# generate_multi_view returns three images. The docs price "per image" and do not say whether a multi-view task
-# costs once or three times, so the estimate charges three (an upper bound); generation.json records what Meshy took.
+# generate_multi_view returns three images for one charge: Meshy took 9 credits for each three-view set on
+# nano-banana-pro and gpt-image-2 (batch 2026-10-b2-image-routes, 2026-10-03, consumed_credits in generation.json).
 MULTI_VIEW_IMAGES = 3
 GPT_ONLY_ASPECT_RATIOS = ("3:2", "2:3")
 # Image-to-3D and multi-image-to-3D (docs.meshy.ai/en/api/pricing, read 2026-10-03): the mesh as for a text-to-3D
@@ -413,7 +413,7 @@ def _image(item: Item, raw: dict[str, Any], kdefaults: dict[str, Any], seen: dic
     if params.get("aspect_ratio") in GPT_ONLY_ASPECT_RATIOS and not str(model).startswith("gpt-"):
         errors.append(f"{where}: aspect_ratio {params['aspect_ratio']} is for the gpt-image models only")
     item.images = MULTI_VIEW_IMAGES if multi else 1
-    item.stages.append(Stage(item.kind, item.kind, params, prices.get(str(model), 0) * item.images))
+    item.stages.append(Stage(item.kind, item.kind, params, prices.get(str(model), 0)))
 
 
 def _image_to_model(item: Item, raw: dict[str, Any], kdefaults: dict[str, Any], seen: dict[str, Item], where: str,

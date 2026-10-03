@@ -258,9 +258,9 @@ Text to image: `ai_model` (required, the six above), `prompt` (required), `gener
 `pose_mode` (`a-pose`, `t-pose`; omitted: no pose preset), `aspect_ratio` (`1:1` default, `16:9`, `9:16`, `4:3`,
 `3:4`; `3:2` and `2:3` on the GPT models; not with `generate_multi_view`), `remove_background` (default false; a
 transparent PNG). The result is `image_urls`: one image, or "three image URLs representing different viewing angles"
-with `generate_multi_view`. The docs' example names the file `image.png`. The docs price "per image" and do not say
-whether a multi-view task costs once or three times, so `meshy estimate` charges three times (an upper bound); the
-first live run's `consumed_credits` settles it, and this section should then be corrected. Which angle each of the
+with `generate_multi_view`. The docs' example names the file `image.png`. A three-view set is one charge: batch
+`2026-10-b2-image-routes` (2026-10-03) paid 9 credits per set on nano-banana-pro and gpt-image-2 (`consumed_credits`),
+so `meshy estimate` prices it once. Which angle each of the
 three images shows is not documented either: look at the downloaded images before writing a `pick`.
 
 Image to image: `ai_model` (required, the six above), `prompt` (required), `reference_image_urls` (1 to 5 images) or

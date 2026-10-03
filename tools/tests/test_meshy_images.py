@@ -71,13 +71,13 @@ class ImageEstimateTest(unittest.TestCase):
             ({"id": "x", "kind": "text_to_image", "prompt": "p", "params": {"ai_model": "nano-banana-2"}}, 6),
             ({"id": "x", "kind": "text_to_image", "prompt": "p", "params": {"ai_model": "gpt-image-2"}}, 9),
             ({"id": "x", "kind": "text_to_image", "prompt": "p",
-              "params": {"ai_model": "nano-banana-pro", "generate_multi_view": True}}, 27),
+              "params": {"ai_model": "nano-banana-pro", "generate_multi_view": True}}, 9),
             ({"id": "x", "kind": "image_to_image", "prompt": "p", "params": {"ai_model": "nano-banana-pro"},
               "images": [{"from": "c1", "pick": 0}]}, 9),
             ({"id": "x", "kind": "image_to_image", "prompt": "p", "params": {"ai_model": "gpt-image-2"},
               "images": [{"from": "c1", "pick": 0}]}, 12),
             ({"id": "x", "kind": "image_to_image", "prompt": "p",
-              "params": {"ai_model": "gpt-image-2", "generate_multi_view": True}, "images": [{"from": "c1"}]}, 36),
+              "params": {"ai_model": "gpt-image-2", "generate_multi_view": True}, "images": [{"from": "c1"}]}, 12),
             ({"id": "x", "kind": "image_to_3d", "images": [{"from": "c1", "pick": 0}]}, 30),
             ({"id": "x", "kind": "image_to_3d", "images": [{"from": "c1", "pick": 0}],
               "params": {"should_texture": False}}, 20),
@@ -100,9 +100,9 @@ class ImageEstimateTest(unittest.TestCase):
     def test_remesh_and_mixed_total(self) -> None:
         batch = parse(image_batch(CHAIN))
         per_item = {i.id: i.credits for i in batch.items}
-        self.assertEqual(per_item, {"c1": 27, "c1-mq": 12, "c1-front": 30, "c1-body": 30, "c1-body-quads": 5,
+        self.assertEqual(per_item, {"c1": 9, "c1-mq": 12, "c1-front": 30, "c1-body": 30, "c1-body-quads": 5,
                                     "c1-front-low": 5, "c1-body-rig": 5})
-        self.assertEqual(batch.credits, 114)
+        self.assertEqual(batch.credits, 96)
         self.assertEqual(batch.item("c1").images, 3)
         self.assertEqual(batch.item("c1-front").variant, "c")  # inherited through `from`
         self.assertEqual(batch.item("c1-body-rig").variant, "c")
@@ -307,7 +307,7 @@ class ImageRunTest(unittest.TestCase):
         images = runs.image_files(concept)
         self.assertEqual([f["key"] for f in images], ["image_urls.0", "image_urls.1", "image_urls.2"])
         self.assertEqual([f["name"] for f in images], [f"text_to_image-image_urls.{n}.png" for n in range(3)])
-        self.assertEqual(concept["tasks"]["text_to_image"]["consumed_credits"], 27)
+        self.assertEqual(concept["tasks"]["text_to_image"]["consumed_credits"], 9)
         self.assertTrue(any("pick 0 = text_to_image-image_urls.0.png" in line for line in self.log))
 
         # image to image: a local file and a picked image, both as data URIs, recorded with sha256 and provenance
@@ -431,17 +431,17 @@ class ImageRunTest(unittest.TestCase):
         self.assertFalse((self.raw / "t-batch" / "c1-body-rig").exists())  # waits for its source
 
     def test_the_cap_with_mixed_kinds(self) -> None:
-        items = [CONCEPT, CHAIN[2], CHAIN[5]]  # 27 + 30 + 5 = 62
-        with self.assertRaisesRegex(common.Failure, "exceeds the approved cap of 61"):
-            self.runner(items, batch={"credit_cap": 61}).run()
+        items = [CONCEPT, CHAIN[2], CHAIN[5]]  # 9 + 30 + 5 = 44
+        with self.assertRaisesRegex(common.Failure, "exceeds the approved cap of 43"):
+            self.runner(items, batch={"credit_cap": 43}).run()
         self.assertEqual(self.fake.requests, [])
 
-        self.fake.cost["text_to_image"] = 12  # Meshy charged 36 for the multi-view set, 9 over the estimate
-        with self.assertRaisesRegex(common.Failure, r"c1-front-low: 5 more credits would pass the approved cap of 66 "
-                                                    r"\(66 spent already\)"):
-            self.runner(items, batch={"credit_cap": 66}).run()
+        self.fake.cost["text_to_image"] = 12  # Meshy charged 12 for the multi-view set, 3 over the estimate
+        with self.assertRaisesRegex(common.Failure, r"c1-front-low: 5 more credits would pass the approved cap of 46 "
+                                                    r"\(42 spent already\)"):
+            self.runner(items, batch={"credit_cap": 46}).run()
         self.assertEqual(len(self.fake.posts()), 2)
-        self.assertEqual(runs.spent(self.state("c1")), 36)
+        self.assertEqual(runs.spent(self.state("c1")), 12)
         self.assertFalse((self.raw / "t-batch" / "c1-front-low").exists())
 
     def test_status_lines_for_image_items(self) -> None:

@@ -106,10 +106,8 @@ class FakeMeshy:
             return Response(self.refuse[stage], {}, b'{"message": "Invalid request"}')
         if stage == "animate":
             cost = self.cost[stage] * (len(payload.get("action_ids", [])) or 1)
-        elif stage in ("text_to_image", "image_to_image"):
-            cost = self.cost[stage] * self.images(payload)
         else:
-            cost = self.cost[stage]
+            cost = self.cost[stage]  # a three-view image set is one charge, as Meshy bills it
         if self.balance < cost:
             return Response(402, {}, b'{"message": "Insufficient credits"}')
         task_id = f"task-{len(self.tasks) + 1}-{stage}"
