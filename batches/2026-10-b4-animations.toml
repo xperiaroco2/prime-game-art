@@ -1,6 +1,6 @@
 # Batch 4: Meshy's animations tried on our own characters (art #25). The feet break in motion: the engineer decided to
 # try Meshy's animation library and its text to motion after wave 1, for about 60 credits (chat with the art manager,
-# 2026-10-03, recorded on art #16). Animation only: Meshy stays for items and props, our characters stay Ultimate
+# 2026-10-03, the budget recorded on art #16: issuecomment-5971404896). Animation only: Meshy stays for items and props, our characters stay Ultimate
 # Modular (assembled by tools/blender/um/, recipe recipes/um_final_test.json).
 #
 # Inputs: m1_rex (men) and w1_ivy (women) saved by `assemble um_final_test --ids m1_rex,w1_ivy --blend`, turned into
@@ -14,6 +14,8 @@
 #     (crawling), 372 Prone Reach Help (downed), 551 Carry Heavy Object Walk (carrying with two hands), 317 Shrug
 #     (emote), 409 Finger Wag No (a finger gesture).
 #   woman (2 actions): 1 Walking Woman (walk), 16 Run Fast (sprint).
+# Left out on purpose: a get-up (UAL2 LayToIdle fills it) and a wave (the pack's Wave fills it); one emote and one
+#   gesture instead of two emotes.
 # Text to motion (prime): a forward crawl while downed, the gap no library clip fills (the library's crawls look back
 # or go backwards); animated on the man's rig.
 #
@@ -22,8 +24,8 @@
 #   tools/run.py meshy run 2026-10-b4-animations man-rig
 #   tools/run.py meshy run 2026-10-b4-animations
 #
-# Run on 2026-10-03 (18:57 to 19:00 UTC) by the art manager after the engineer's yes in chat: 59 credits, balance
-# 374 -> 315; task ids and files in docs/meshy.md ("Batch 4") and raw:2026-10-b4-animations/<item>/generation.json.
+# Run on 2026-10-03 (18:57 to 19:00 UTC) by the art manager after the engineer's direct yes in chat for this batch
+# (recorded on art #16 at 19:03 UTC, approval_ref): 59 credits, balance 374 -> 315; task ids and files in docs/meshy.md ("Batch 4") and raw:2026-10-b4-animations/<item>/generation.json.
 
 id = "2026-10-b4-animations"
 purpose = "Meshy's rig, library actions and text to motion on two assembled characters, against UAL with our toe bones (art #25)."
@@ -33,7 +35,7 @@ licence = "owned by the customer on a paid plan (Meshy Terms of Use 3.2, updated
 credit_cap = 60
 approved_by = "xperiaroco2 (the engineer)"
 approved_at = "2026-10-03"
-approval_ref = "https://github.com/xperiaroco2/prime-game-art/issues/16#issuecomment-5971404896"
+approval_ref = "https://github.com/xperiaroco2/prime-game-art/issues/16#issuecomment-5972512323"
 
 [[items]]
 id = "man-rig"
