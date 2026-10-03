@@ -21,7 +21,7 @@ FINGERS = ("Index", "Middle", "Ring", "Pinky")
 TORSO = {"Body", "Hips", "Abdomen", "Torso", "Chest"}
 HEAD = {"Head"}
 LEGS = {"UpperLeg.L", "UpperLeg.R", "LowerLeg.L", "LowerLeg.R"}
-SURFACE_REACH = 0.05  # metres: how far from a surface a vertex is looked for inside it
+SURFACE_REACH = 0.08  # metres: how far behind a surface a vertex is looked for (about half a thigh)
 
 
 def _dominant(obj) -> list[str | None]:
