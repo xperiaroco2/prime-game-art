@@ -120,6 +120,12 @@ def materials(obj, colours=None):
     return out
 
 
+def paint(obj, colours):
+    """Sets the viewport colour of obj's materials to the GLB's (materials()), so that renders show the true colours."""
+    for slot, m in zip([s for s in obj.material_slots if s.material], materials(obj, colours)):
+        slot.material.diffuse_color = tuple(m["rgb"]) + (1.0,)
+
+
 class Library:
     """Every pack file loaded: rigs[g] (the skeleton file's armature), parts[part_id] = object on its rig, heads on both
     rigs (heads[g][head_id]), the files' table of contents, and the props found."""
@@ -178,6 +184,7 @@ class Library:
                 placed.append((obj, g, pid))
                 self.parts[pid] = obj
         for o, tg, pid in placed:
+            paint(o, self.colours[pid])
             rebind(o, src["arm"], self.rigs[tg])
             attach(o, self.rigs[tg])
             o.name = "%s@%s" % (pid, tg)

@@ -17,7 +17,7 @@ import catalogue_heads as ch
 from um import assemble, poses
 from um import packs as pk
 from um import render as rd
-from um.util import update
+from um.util import base_name, update
 
 # Status colours (the dataviz status palette): a verdict is a state, and every cell also carries its word.
 STATUS = {"ok": "#0ca30c", "ok_tucked": "#0ca30c", "ok_over": "#0ca30c", "needs_fix": "#fab219", "poke": "#ec835a",
@@ -470,6 +470,23 @@ def build(lib, recipe, rc, coll):
     return arm, parts, rep
 
 
+def paint_built(data, items, rc, parts):
+    """The assembler reads the importer's viewport colour, which is 0.8 grey on some pack meshes (docs/catalogue.md,
+    Colours): set every built part's pack materials to the catalogue's GLB colours before rendering."""
+    src = {}
+    for role, pid in rc["_outfit"].items():
+        if pid in data["parts"]:
+            src[role] = data["parts"][pid]["materials"]
+        elif pid in items:
+            src["head" if role == "head" else role] = data["heads"][items[pid]["head"]]["materials"]
+    for role, mats in src.items():
+        rgb = {m["name"]: m["rgb"] for m in mats}
+        obj = parts.get(role)
+        for slot in (obj.material_slots if obj else []):
+            if slot.material and base_name(slot.material.name) in rgb:
+                slot.material.diffuse_color = tuple(rgb[base_name(slot.material.name)]) + (1.0,)
+
+
 def remove_character(arm, coll):
     acts = pk.own_actions(arm)
     root = arm.parent
@@ -499,6 +516,7 @@ def confirm(lib, data, items, raw_recipe, out, log):
             coll = new_coll(cid)
             hide_all()
             arm, parts, rep = build(lib, raw_recipe, rc, coll)
+            paint_built(data, items, rc, parts)
             update()
             seam, centre, extent = SEAM[name]
             title = "%s x %s: %s (%s)%s" % (a, b, WORD[c["verdict"]] if c["verdict"] != "needs_fix" else "fix",
