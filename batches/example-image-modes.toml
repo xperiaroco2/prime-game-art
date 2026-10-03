@@ -1,0 +1,108 @@
+# EXAMPLE ONLY: never approved and never run (the runner refuses every batches/example-*.toml). It shows the image
+# modes of docs/meshy.md: a multi-view concept from text, a concept from our own mannequin renders, a body from the
+# concept's views and from one picked view, a prop, a remesh and a rig. Copy it to a new batch file, change the
+# prompts and parameters, and have the engineer approve that file. The mannequin render paths are placeholders for
+# the renders of art #11 (`raw:` is the raw folder, D:/prime-art-raw); `meshy estimate` flags inputs that are missing.
+
+id = "example-image-modes"
+purpose = "EXAMPLE: every image-mode item kind with every input form; shows the schema, never runs."
+plan = "Meshy Pro (monthly)"
+terms_url = "https://www.meshy.ai/terms-of-use"
+licence = "owned by the customer on a paid plan (Meshy Terms of Use 3.2, updated 2026-09-19); no attribution required"
+credit_cap = 200
+# approved_by, approved_at and approval_ref stay unset: an example is never approved.
+
+# Images on a transparent background. A character item adds generate_multi_view (three views) and pose_mode;
+# generate_multi_view and aspect_ratio exclude each other.
+[defaults.text_to_image.params]
+ai_model = "nano-banana-pro"
+remove_background = true
+
+[defaults.image_to_image.params]
+ai_model = "nano-banana-pro"
+remove_background = true
+
+# Bodies: the text-to-3D settings of batch 1 (meshy-7.1 pinned, remeshed to 7000 triangles, 2K base colour).
+[defaults.image_to_3d.params]
+ai_model = "meshy-7.1"
+should_remesh = true
+topology = "triangle"
+target_polycount = 7000
+should_texture = true
+enable_pbr = false
+texture_resolution = "2k"
+target_formats = ["glb", "fbx"]
+
+[defaults.multi_image_to_3d.params]
+ai_model = "meshy-7.1"
+should_remesh = true
+topology = "triangle"
+target_polycount = 7000
+pose_mode = "t-pose"
+should_texture = true
+enable_pbr = false
+texture_resolution = "2k"
+target_formats = ["glb", "fbx"]
+
+[variants.c1]
+prompt = "full-body character concept sheet of a stylized low-poly cartoon human, slightly lanky adult, bald egg-shaped head, blank smooth face with no eyes and no mouth, long simple nose, five-finger hands, plain grey t-shirt and shorts, bare feet, standing in a T-pose, flat simple colours, plain white background"
+
+# 1. Text to image: three views of one concept (estimated at 3 x 9 credits; Meshy may charge less).
+[[items]]
+id = "c1-concept"
+variant = "c1"
+kind = "text_to_image"
+params = { generate_multi_view = true, pose_mode = "t-pose" }
+
+# 2. Image to image: our own mannequin renders restyled; one multi-view result. sha256 pins the approved render
+#    (`meshy estimate` prints each file's current sha256 to copy here).
+[[items]]
+id = "c1-from-mannequin"
+variant = "c1"
+kind = "image_to_image"
+prompt = "restyle this grey mannequin as a stylized low-poly cartoon human with a plain grey t-shirt and shorts; keep the pose, the proportions and the blank face"
+params = { generate_multi_view = true }
+images = [
+  { file = "raw:mannequin/lanky/front.png", provenance = "own work: Blender render of our mannequin, front (art #11)" },
+  { file = "raw:mannequin/lanky/side.png", provenance = "own work: Blender render of our mannequin, side (art #11)" },
+  { file = "raw:mannequin/lanky/back.png", provenance = "own work: Blender render of our mannequin, back (art #11)" },
+]
+
+# 3. Multi-image to 3D from every view of the concept (a `from` without `pick` takes all three, in Meshy's order).
+[[items]]
+id = "c1-body"
+kind = "multi_image_to_3d"
+images = [{ from = "c1-concept" }]
+
+# 4. Image to 3D from one picked view (pick is the 0-based index into the source's image_urls).
+[[items]]
+id = "c1-body-front"
+kind = "image_to_3d"
+images = [{ from = "c1-from-mannequin", pick = 0 }]
+params = { pose_mode = "t-pose" }
+
+# 5. A prop: one image from text, then image to 3D. Not a character, so no pose.
+[[items]]
+id = "p1-cap"
+kind = "text_to_image"
+prompt = "a simple stylized baseball cap, low-poly cartoon style, flat colours, three-quarter view, plain white background"
+params = { aspect_ratio = "1:1" }
+
+[[items]]
+id = "p1-cap-3d"
+kind = "image_to_3d"
+images = [{ from = "p1-cap" }]
+params = { target_polycount = 1500 }
+
+# 6. Remesh of an earlier model (a multi-image-to-3D model goes as its downloaded GLB), and a rig of the body.
+[[items]]
+id = "c1-body-quads"
+kind = "remesh"
+source = "c1-body"
+params = { topology = "quad", target_polycount = 5000, target_formats = ["glb", "fbx"] }
+
+[[items]]
+id = "c1-body-rig"
+kind = "rig"
+source = "c1-body"
+params = { height_meters = 1.75 }

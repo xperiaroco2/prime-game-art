@@ -1,0 +1,174 @@
+# Batch 2: Meshy's image routes, after batch 1 showed that text-to-3D ignores our constraints (art #5). Concepts from
+# text-to-image with positive wording only (no named unwanted features), our own Blender mannequin restyled by
+# image-to-image, bodies from multi-image-to-3D, and four props through a picture first. Schema: docs/meshy.md.
+# Approved under the engineer's standing approval of 2026-10-03 (try different ways to use Meshy, budget for everything),
+# within the manager's plan of about 460 of the 760 monthly credits.
+
+id = "2026-10-b2-image-routes"
+purpose = "Find a Meshy route that keeps our look: bald head, blank face with a long nose, slightly lanky adult, T-pose with palms down, bare feet, five fingers, plain t-shirt and shorts, flat colours. Compare concept-first bodies, restyled-mannequin bodies and a body straight from the mannequin renders; plus four props."
+plan = "Meshy Pro (monthly)"
+terms_url = "https://www.meshy.ai/terms-of-use"
+licence = "owned by the customer on a paid plan (Meshy Terms of Use 3.2, updated 2026-09-19); no attribution required"
+credit_cap = 460
+approved_by = "xperiaroco2 (the engineer)"
+approved_at = "2026-10-03"
+approval_ref = "https://github.com/xperiaroco2/prime-game/issues/165#issuecomment-5962083584"
+
+[defaults.text_to_image.params]
+ai_model = "nano-banana-pro"
+remove_background = true
+
+[defaults.image_to_image.params]
+ai_model = "nano-banana-pro"
+remove_background = true
+
+[defaults.image_to_3d.params]
+ai_model = "meshy-7.1"
+should_remesh = true
+topology = "triangle"
+target_polycount = 1200
+should_texture = true
+enable_pbr = false
+texture_resolution = "2k"
+target_formats = ["glb", "fbx"]
+
+[defaults.multi_image_to_3d.params]
+ai_model = "meshy-7.1"
+should_remesh = true
+topology = "triangle"
+target_polycount = 7000
+pose_mode = "t-pose"
+should_texture = true
+enable_pbr = false
+texture_resolution = "2k"
+target_formats = ["glb", "fbx"]
+
+[variants.c1]
+prompt = "full-body character turnaround of a goofy adult man for a low-poly 3D party game, slightly lanky proportions, smooth egg-shaped bald head, smooth featureless face with one long pointed nose, plain grey t-shirt and grey shorts, barefoot with simple toes, T-pose with arms straight out horizontally and palms facing the floor, five spread fingers, flat solid colours, soft clay-like shading, plain white background"
+
+[variants.c2]
+prompt = "full-body character turnaround of a funny adult man for a low-poly 3D game, smooth blank head like an artist's wooden mannequin with a long carved nose, wooden-mannequin hands with five fingers, slightly lanky body, plain blue t-shirt and dark shorts, barefoot, T-pose with arms straight out horizontally and palms facing the floor, flat solid colours, plain white background"
+
+[variants.c3]
+prompt = "full-body character turnaround of a tall thin adult man for a goofy low-poly 3D game, small round bald head on a long neck, smooth featureless face with a long simple nose, long arms and long legs, five spread fingers, plain grey t-shirt and shorts, barefoot, T-pose with arms straight out horizontally and palms facing the floor, flat solid colours, plain white background"
+
+# 1. Concepts: three views each, two image models compared.
+[[items]]
+id = "c1-concept"
+variant = "c1"
+kind = "text_to_image"
+params = { generate_multi_view = true, pose_mode = "t-pose" }
+
+[[items]]
+id = "c2-concept"
+variant = "c2"
+kind = "text_to_image"
+params = { ai_model = "gpt-image-2", generate_multi_view = true, pose_mode = "t-pose" }
+
+[[items]]
+id = "c3-concept"
+variant = "c3"
+kind = "text_to_image"
+params = { generate_multi_view = true, pose_mode = "t-pose" }
+
+# 2. Our own mannequin (art #11) restyled: the base and the lanky presets.
+[[items]]
+id = "m1-restyle"
+kind = "image_to_image"
+prompt = "restyle this simple 3D mannequin as a goofy stylized low-poly cartoon game character; keep exactly the pose, the proportions, the smooth bald egg-shaped head, the smooth featureless face and the long nose; plain blue t-shirt and dark shorts, barefoot, palms facing the floor, flat solid colours, plain white background"
+params = { generate_multi_view = true }
+images = [
+  { file = "raw:mannequin/base/refs/front.png", provenance = "own work: Blender render of our mannequin, base preset, front (art #11)" },
+  { file = "raw:mannequin/base/refs/side.png", provenance = "own work: Blender render of our mannequin, base preset, side (art #11)" },
+  { file = "raw:mannequin/base/refs/back.png", provenance = "own work: Blender render of our mannequin, base preset, back (art #11)" },
+]
+
+[[items]]
+id = "m2-restyle"
+kind = "image_to_image"
+prompt = "restyle this simple 3D mannequin as a goofy stylized low-poly cartoon game character; keep exactly the pose, the tall lanky proportions, the smooth bald egg-shaped head, the smooth featureless face and the long nose; plain grey t-shirt and grey shorts, barefoot, palms facing the floor, flat solid colours, plain white background"
+params = { generate_multi_view = true }
+images = [
+  { file = "raw:mannequin/lanky/refs/front.png", provenance = "own work: Blender render of our mannequin, lanky preset, front (art #11)" },
+  { file = "raw:mannequin/lanky/refs/side.png", provenance = "own work: Blender render of our mannequin, lanky preset, side (art #11)" },
+  { file = "raw:mannequin/lanky/refs/back.png", provenance = "own work: Blender render of our mannequin, lanky preset, back (art #11)" },
+]
+
+# 3. Bodies from every route.
+[[items]]
+id = "c1-body"
+kind = "multi_image_to_3d"
+images = [{ from = "c1-concept" }]
+
+[[items]]
+id = "c2-body"
+kind = "multi_image_to_3d"
+images = [{ from = "c2-concept" }]
+
+[[items]]
+id = "c3-body"
+kind = "multi_image_to_3d"
+images = [{ from = "c3-concept" }]
+
+[[items]]
+id = "m1-body"
+kind = "multi_image_to_3d"
+images = [{ from = "m1-restyle" }]
+
+[[items]]
+id = "mraw-body"
+kind = "multi_image_to_3d"
+images = [
+  { file = "raw:mannequin/base/refs/front.png", provenance = "own work: Blender render of our mannequin, base preset, front (art #11)" },
+  { file = "raw:mannequin/base/refs/side.png", provenance = "own work: Blender render of our mannequin, base preset, side (art #11)" },
+  { file = "raw:mannequin/base/refs/back.png", provenance = "own work: Blender render of our mannequin, base preset, back (art #11)" },
+]
+
+# 4. Props and accessories: a picture first, then 3D.
+[[items]]
+id = "p-cap"
+kind = "text_to_image"
+prompt = "a simple stylized baseball cap for a low-poly cartoon game, rounded chunky shape, one flat solid colour, three-quarter view, plain white background"
+params = { aspect_ratio = "1:1" }
+
+[[items]]
+id = "p-cap-3d"
+kind = "image_to_3d"
+images = [{ from = "p-cap" }]
+params = { target_polycount = 800 }
+
+[[items]]
+id = "p-backpack"
+kind = "text_to_image"
+prompt = "a simple stylized hiking backpack for a low-poly cartoon game, chunky rounded shapes, two flat solid colours, three-quarter view, plain white background"
+params = { aspect_ratio = "1:1" }
+
+[[items]]
+id = "p-backpack-3d"
+kind = "image_to_3d"
+images = [{ from = "p-backpack" }]
+params = { target_polycount = 1000 }
+
+[[items]]
+id = "p-knife"
+kind = "text_to_image"
+prompt = "a simple stylized kitchen knife for a low-poly cartoon game, chunky blade and wooden handle, flat solid colours, side view, plain white background"
+params = { aspect_ratio = "1:1" }
+
+[[items]]
+id = "p-knife-3d"
+kind = "image_to_3d"
+images = [{ from = "p-knife" }]
+params = { target_polycount = 600 }
+
+[[items]]
+id = "p-package"
+kind = "text_to_image"
+prompt = "a simple stylized cardboard delivery package with brown tape for a low-poly cartoon game, chunky box shape, flat solid colours, three-quarter view, plain white background"
+params = { aspect_ratio = "1:1" }
+
+[[items]]
+id = "p-package-3d"
+kind = "image_to_3d"
+images = [{ from = "p-package" }]
+params = { target_polycount = 500 }

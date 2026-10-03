@@ -7,6 +7,7 @@ import argparse
 from .. import common
 from . import _meshy_api as api
 from . import _meshy_batch as batches
+from . import _meshy_inputs as inputs
 from . import _meshy_run as runs
 
 NAME = "meshy"
@@ -51,14 +52,39 @@ def run(args: argparse.Namespace) -> int:
 
 def estimate(batch: batches.Batch) -> int:
     common.say(f"batch {batch.id}: {len(batch.items)} items")
-    common.say(f"  {'item':10} {'kind':11} {'model':13} {'stages':28} credits")
+    common.say(f"  {'item':18} {'kind':17} {'model':16} {'stages':32} credits")
+    problems: list[str] = []
     for item in batch.items:
         stages = " + ".join(f"{s.name} {s.credits}" for s in item.stages)
-        common.say(f"  {item.id:10} {item.kind:11} {item.model or '-':13} {stages:28} {item.credits}")
+        common.say(f"  {item.id:18} {item.kind:17} {item.model or '-':16} {stages:32} {item.credits}")
+        if item.images > 1:
+            common.say(f"      makes {item.images} images (multi-view, estimated at {item.images} times the per-image "
+                       f"price, an upper bound); 'pick' takes 0 to {item.images - 1}")
+        for n, inp in enumerate(item.inputs):
+            line, trouble = input_line(inp)
+            common.say(f"      input {n}: {line}")
+            problems += [f"{item.id}: {t}" for t in trouble]
     common.say(f"  total {batch.credits} credits; approved cap {batch.credit_cap}")
-    problems = batches.approval_problems(batch)
-    common.say("  approval: " + ("complete, within the cap" if not problems else "; ".join(problems)))
+    approval = batches.approval_problems(batch)
+    common.say("  approval: " + ("complete, within the cap" if not approval else "; ".join(approval)))
+    if any(not inp.from_item for item in batch.items for inp in item.inputs):
+        common.say("  input files: " + ("every one is ready to send" if not problems else f"{len(problems)} not ready "
+                                        "(`meshy run` refuses the batch until they are):"))
+        for problem in problems:
+            common.say(f"    {problem}")
     return 0
+
+
+def input_line(inp: inputs.Input) -> tuple[str, list[str]]:
+    """One input for the estimate: a `from`, or a file with its current size and sha256 (to pin in the batch)."""
+    if inp.from_item:
+        return inp.describe(), []
+    trouble = inputs.file_problems(inp)
+    if trouble:
+        return f"{inp.file} ({inp.provenance}): NOT READY", trouble
+    path = inputs.resolve(inp.file)
+    pin = "pinned" if inp.sha256 else "not pinned"
+    return f"{inp.file} ({inp.provenance}): {path.stat().st_size} bytes, sha256 {inputs.sha256(path)} ({pin})", []
 
 
 def status(batch: batches.Batch) -> int:

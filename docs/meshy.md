@@ -3,14 +3,14 @@
 `tools/run.py meshy` (`tools\run.cmd meshy` on Windows) runs the engineer's approved generation batches against the
 Meshy API without a human at the keyboard, downloads every result into the raw folder and records each generation.
 `tools/run.py raw-backup` copies chosen results to the OneDrive backup. Code: `tools/runner/commands/meshy.py`,
-`_meshy_api.py` (HTTP, key, polling), `_meshy_batch.py` (batch files, prices), `_meshy_run.py` (the run) and
-`raw_backup.py`; tests: `tools/tests/test_meshy_*.py` (a fake transport, no network).
+`_meshy_api.py` (HTTP, key, polling), `_meshy_batch.py` (batch files, prices), `_meshy_inputs.py` (image inputs),
+`_meshy_run.py` (the run) and `raw_backup.py`; tests: `tools/tests/test_meshy_*.py` (a fake transport, no network).
 
 ## Commands
 
 | Command | Network | What it does |
 |---|---|---|
-| `meshy estimate <batch>` | none | Credits per stage, per item and in total, the approved cap and whether the approval is complete |
+| `meshy estimate <batch>` | none | Credits per stage, per item and in total, the approved cap, whether the approval is complete, and each input file's size and sha256 (or why it is not ready) |
 | `meshy run <batch> [item ...] [--retry-failed]` | spends credits | Refuses a batch without approval or over its cap; then submits, polls, downloads and records each item |
 | `meshy balance` | read only | The account's credit balance (spends nothing) |
 | `meshy status <batch>` | none | Each item's state from its `generation.json`; flags downloaded files that went missing |
@@ -46,20 +46,68 @@ approved. Changing a prompt or a parameter needs a new approval.
 | `approved_by`, `approved_at`, `approval_ref` | Who approved, the date (`YYYY-MM-DD`) and a `https://github.com/` link to the yes |
 | `[variants.<name>]` | Shared settings of a variant: `prompt`, optional `preview`/`refine` tables |
 | `[defaults.text_to_3d.preview]`, `[defaults.text_to_3d.refine]` | Request parameters for every text-to-3D item |
-| `[defaults.rig.params]`, `[defaults.animate.params]` | Request parameters for every rig or animation item |
-| `[[items]]` | `id`, `variant`, `kind` and the kind's settings, below |
+| `[defaults.<kind>.params]` | Request parameters for every item of another kind (`rig`, `animate`, `text_to_image`, `image_to_image`, `image_to_3d`, `multi_image_to_3d`, `remesh`) |
+| `[[items]]` | `id`, `variant`, `kind` and the kind's settings, below; any other key is an error |
 
 Item kinds (merged: defaults, then the variant, then the item):
 
 - `text_to_3d`: `prompt` (or the variant's), `preview` and `refine` tables of API parameters, `texture` (default
   true; false skips the refine, but Meshy rigs textured models only). Stages: preview, then refine.
-- `rig`: `source`, an earlier textured `text_to_3d` item; `params` such as `height_meters`. The runner sends the
-  source's refine task id as `input_task_id`.
+- `rig`: `source`, an earlier item with a textured model (below); `params` such as `height_meters`. The runner
+  sends the source's final model task id (a text-to-3D's refine) as `input_task_id`.
 - `animate`: `source`, an earlier `rig` item; `params.action_ids`, 1 to 10 ids from the animation library. The
   runner sends the source's rig task id as `rig_task_id`.
+- `text_to_image`: `prompt` (or the variant's); `params`: `ai_model` (required), `generate_multi_view`,
+  `pose_mode`, `aspect_ratio` (not with `generate_multi_view`), `remove_background`. Makes one image, or three with
+  `generate_multi_view = true`.
+- `image_to_image`: `prompt`, `images` (1 to 5 reference images); `params` as for `text_to_image`.
+- `image_to_3d`: `images` (exactly one); `params`: the text-to-3D style options `ai_model`, `model_type`,
+  `should_remesh`, `topology`, `target_polycount`, `pose_mode`, `should_texture` (default true), `enable_pbr`,
+  `texture_prompt`, `texture_resolution`, `target_formats`, ... No `prompt`: the image is the prompt.
+- `multi_image_to_3d`: `images` (1 to 4; the first is the front view); `params` as for `image_to_3d` (no
+  `meshy-t2`).
+- `remesh`: `source`, an earlier `text_to_3d`, `image_to_3d` or `multi_image_to_3d` item; `params`: `topology`,
+  `target_polycount`, `target_formats`. A text-to-3D or image-to-3D source goes by task id (the refine of a textured
+  text-to-3D); a multi-image-to-3D source, which the remesh docs do not list, goes as its downloaded GLB.
 
-The runner fills in `mode`, `prompt`, `preview_task_id`, `input_task_id` and `rig_task_id`; a batch may not set them.
-Prompts are at most 800 characters. An example with every kind:
+A `rig` takes any earlier item that makes a textured model: `text_to_3d` (textured), `image_to_3d` and
+`multi_image_to_3d` (unless `should_texture = false`); the runner sends the task that made the source's final
+model as `input_task_id`. A rig of a `remesh` is refused: the docs list no `texture_urls` for a remesh result and
+do not say whether the texture survives, so rig the remesh's source until a live run shows it does. An item without `variant` takes its source's or its first `from`
+input's.
+
+### Image inputs
+
+`images` is a list of inputs, each a table:
+
+- A local file: `{ file = "raw:mannequin/lanky/front.png", provenance = "own work: Blender render of our mannequin",
+  sha256 = "..." }`. `file` is `raw:<path>` under the raw folder, an absolute path, or a path relative to the
+  repository root. PNG or JPEG (checked by its first bytes, and the extension must match), at most 20 MB.
+  `provenance` is required: where the image comes from, in words; never a screenshot of another game and never a
+  personal photo. `sha256` is optional: when set, the run refuses a file that changed since the approval;
+  `meshy estimate` prints each file's current sha256 to copy in.
+- Another item's output: `{ from = "<item id>" }` takes every image of an earlier `text_to_image` or
+  `image_to_image` item, in Meshy's order; `{ from = "<item id>", pick = n }` takes image `n`, a 0-based index into
+  that item's `image_urls` (0, 1 or 2 of a multi-view set). An `image_to_3d` from a multi-view item needs a `pick`.
+
+Every input is sent as a base64 data URI (`data:image/png;base64,...`), which every image endpoint accepts. A `from`
+input sends the source's downloaded file, after checking it still matches the sha256 in the source's
+`generation.json`; an item waits until all its sources are done. `generation.json` keeps each input's `file` or
+`from` and `pick`, its `path`, `media_type`, `bytes`, `sha256` and `provenance` (for a `from` input: the batch, item,
+task and image it came from), and the recorded request carries a short note instead of each data URI.
+
+The runner fills in `mode`, `prompt`, `preview_task_id`, `input_task_id`, `rig_task_id`, `model_url`, `image_url`,
+`image_urls` and `reference_image_urls`; a batch may not set them. `texture_image_url` and `texture_image_urls` are
+not supported yet (they would need an input of their own). The `params` of an image-mode kind may hold only the
+parameters the docs list for it (`KNOWN_PARAMS` in `_meshy_batch.py`, from the section below): Meshy may ignore an
+unknown key, so a misspelt one would pay for a generation without its setting. Text-to-3D prompts and `texture_prompt` are at most 800
+characters; the image docs state no prompt limit.
+
+`batches/example-image-modes.toml` shows every image kind and input form: a multi-view concept from text, a concept
+from our mannequin renders, a body from every view and one from a picked view, a prop, a remesh and a rig.
+A `batches/example-*.toml` file is never approved and `meshy run` refuses it; copy it to a new batch for approval.
+
+An example with the text-to-3D kinds:
 
 ```toml
 [[items]]
@@ -83,25 +131,31 @@ params = { action_ids = [1, 2] }
 ## A run
 
 `meshy run` checks the approval fields, their shape and the estimate against `credit_cap` before it reads the key,
-then goes through the items in file order, one at a time:
+then that every local input file of the items it may submit exists, is a PNG or JPEG of at most 20 MB and matches
+its pinned sha256 (nothing is submitted otherwise), then goes through the items in file order, one at a time:
 
 1. A `done` item is skipped. A `failed` item is skipped unless `--retry-failed` (which keeps its succeeded stages
-   and resubmits only the failed one). A rig or animation whose source is not done waits.
+   and resubmits only the failed one). An item whose `source` or `from` items are not all done waits. An input that
+   cannot be sent at submit time (a source image edited since its download, fewer images than `pick` needs) fails
+   that item with "inputs" and costs nothing.
 2. Before submitting, it stops if the credits already spent in this batch (the sum of `consumed_credits`; a task
    still in flight counts at least at its stage's estimate) plus the item's estimate would pass the cap, or if the live balance is below the item's estimate.
 3. Each stage is submitted, its task id written to `generation.json` at once, then polled: 5 s, growing 1.5 times
    to at most 60 s, for at most 45 min. A rerun after an interruption polls the recorded task id instead of paying
    again.
-4. Every result URL of each stage's task (`model_urls`, `texture_urls`, `thumbnail_url`, `result`, ...) is downloaded
-   through a `.part` file as `<stage>-<file name>` (for example `refine-model.glb`, `refine-texture_0.png`).
-5. `generation.json` gets the files with their sizes and sha256, the balance after and `status: done`; a row goes to
-   `log.csv`.
+4. Every result URL of each stage's task (`model_urls`, `texture_urls`, `thumbnail_url`, `thumbnail_urls`,
+   `image_urls`, `result`, ...) is downloaded through a `.part` file as `<stage>-<file name>` (for example
+   `refine-model.glb`, `refine-texture_0.png`); when two files share a name, as the images of a multi-view set
+   (all `image.png`), the key path names them: `text_to_image-image_urls.0.png`, `...1.png`, `...2.png`. Each
+   download is logged, and an image item's log ends with the `pick` index of each image.
+5. `generation.json` gets the files with their result key, sizes and sha256, the balance after and
+   `status: done`; a row goes to `log.csv`.
 
 Network failures and HTTP 429 or 5xx are retried with a growing pause (`Retry-After` when Meshy sends it), except a
 submit: after a lost answer or a 5xx the task may exist and cost credits, so the item is marked failed with
 "submit unsure" and the run stops. Check the Meshy dashboard, then rerun with `--retry-failed` if no task was made.
-A submit Meshy definitely refused for that item alone (HTTP 400, 404, 409 or 422, for example a rig whose pose
-estimate failed) creates no task and costs nothing: the item is marked failed with "refused" and the run goes on to
+A submit Meshy definitely refused for that item alone (HTTP 400, 404, 409, 413 or 422, for example a rig whose
+pose estimate failed or a request too large) creates no task and costs nothing: the item is marked failed with "refused" and the run goes on to
 the next item. 401 (bad key), 402 (not enough credits) and a 429 that outlasts the retries stop the run, since every
 item would hit them.
 
@@ -121,10 +175,10 @@ Meshy's queue limit, 10 tasks on Pro, would allow parallel items later.
 `generation.json`: `batch`, `batch_file`, `item`, `variant`, `kind`, `prompt`, `source`, `model_version`,
 `parameters` (per stage), `estimated_credits`, `plan`, `terms_url`, `licence`, `approval` (by, at, ref, credit_cap),
 `status` (`running`, `done`, `failed`), `error`, `started_at`, `finished_at` (UTC), `balance_before`,
-`balance_after`, `tasks` (per stage: `id`, `request`, `estimated_credits`, `submitted_at`, `polled_at`, `status`,
+`balance_after`, `inputs` (image modes, above), `tasks` (per stage: `id`, `request`, `estimated_credits`, `submitted_at`, `polled_at`, `status`,
 `progress`, Meshy's `created_at`, `started_at`, `finished_at` in ms, `consumed_credits`, `task_error`),
 `previous_tasks` (failed tasks a `--retry-failed` replaced, each with its `stage`) and `files` (`name`, `stage`,
-`bytes`, `sha256`). Signed URLs are not stored: they expire.
+`key`, the result field it came from such as `image_urls.1` or `model_urls.glb`, `bytes`, `sha256`). Signed URLs are not stored: they expire.
 
 `log.csv` columns: `time, item, variant, kind, status, model, tasks, credits, balance_before, balance_after, files`.
 
@@ -182,6 +236,63 @@ draws from the same credit balance as the web app. The guide says API generation
 credits, with no mesh-only option; the API pricing page lists the preview (20 on meshy-7.1) and the refine (10)
 separately. Both give 30 for a textured meshy-7.1 generation, which is what `meshy estimate` charges. Neither page
 mentions a test key that spends nothing, so the tests use a fake transport and no live call submits a task.
+
+## The image modes as read on 2026-10-03
+
+Sources: docs.meshy.ai `/en/api/text-to-image`, `/image-to-image`, `/image-to-3d`, `/multi-image-to-3d`,
+`/remesh`, `/rigging-and-animation` and `/pricing`; help.meshy.ai "How to Use Meshy Image to 3D" for the size limit.
+Every create answers `{"result": "<task id>"}`; every task is read with `GET <path>/<id>` and has `status`,
+`progress`, `created_at`, `started_at`, `finished_at`, `expires_at`, `consumed_credits`, `task_error` and
+`preceding_tasks`. Image inputs are `.jpg`, `.jpeg` or `.png`, as a public URL or a base64 data URI; the API pages
+give no size limit, the web app takes at most 20 MB, which the client applies.
+
+| Use | Endpoint | Credits |
+|---|---|---|
+| Text to image | `POST /openapi/v1/text-to-image` | per image: `nano-banana` 3, `nano-banana-2` 6, `nano-banana-pro`, `gpt-image-2`, `gpt-image-2-5-flare`, `gpt-image-2-5-sunburst` 9 |
+| Image to image | `POST /openapi/v1/image-to-image` | per image: `nano-banana` 3, `nano-banana-2` 6, `nano-banana-pro` 9, the three `gpt-image-*` 12 |
+| Image to 3D | `POST /openapi/v1/image-to-3d` | mesh: meshy-7.1 and meshy-6 20, meshy-6-lite and meshy-t2 5 (+5 for `geometry_resolution` 2k or 4k on meshy-7.1); texture: +10 at 2k or 4k, +15 at 8k (meshy-6-lite: 2k only) |
+| Multi-image to 3D | `POST /openapi/v1/multi-image-to-3d` | as image to 3D (models meshy-6-lite, meshy-6, meshy-7.1; `geometry_resolution` standard or 2k, 2k on meshy-7.1 or `latest` only) |
+| Remesh | `POST /openapi/v1/remesh` | 5 |
+
+Text to image: `ai_model` (required, the six above), `prompt` (required), `generate_multi_view` (default false),
+`pose_mode` (`a-pose`, `t-pose`; omitted: no pose preset), `aspect_ratio` (`1:1` default, `16:9`, `9:16`, `4:3`,
+`3:4`; `3:2` and `2:3` on the GPT models; not with `generate_multi_view`), `remove_background` (default false; a
+transparent PNG). The result is `image_urls`: one image, or "three image URLs representing different viewing angles"
+with `generate_multi_view`. The docs' example names the file `image.png`. A three-view set is one charge: batch
+`2026-10-b2-image-routes` (2026-10-03) paid 9 credits per set on nano-banana-pro and gpt-image-2 (`consumed_credits`),
+so `meshy estimate` prices it once. Which angle each of the
+three images shows is not documented either: look at the downloaded images before writing a `pick`.
+
+Image to image: `ai_model` (required, the six above), `prompt` (required), `reference_image_urls` (1 to 5 images) or
+`input_task_id` (a succeeded text-to-image or image-to-image task, which wins when both are set),
+`generate_multi_view`, `aspect_ratio`, `remove_background`. The result is `image_urls`. This client sends
+`reference_image_urls` only (data URIs), so every input has a file and a sha256 on our side.
+
+Image to 3D: `image_url` or `input_task_id` (a succeeded text-to-image or image-to-image task); `ai_model`
+(`meshy-6-lite`, `meshy-6`, `meshy-7.1`, `latest`; `meshy-t2` for `model_type: "smart-topology"`), `model_type`
+(`standard`, `smart-topology`, `lowpoly` deprecated until 2026-10-30), `geometry_resolution` (`standard`, `2k`,
+`4k`), `should_texture` (default true), `enable_pbr` (default false), `texture_resolution` (`2k` default, `4k`,
+`8k`), `texture_prompt` (at most 800 characters), `texture_image_url`, `should_remesh` (default false on Meshy 6 and
+7), `topology` (`triangle` default, `quad`), `target_polycount` (100 to 300,000 when remeshing, default 30,000;
+100 to 15,000 for smart topology, default 4,000), `pose_mode` (`a-pose`, `t-pose`, empty), `image_enhancement`
+(default true), `remove_lighting` (default true), `save_pre_remeshed_model` (default false), `target_formats`
+(`glb`, `obj`, `fbx`, `stl`, `usdz`, `3mf`; default all but 3mf), `symmetry_mode` (deprecated), `moderation`. The
+result: `model_urls` (`glb`, `fbx`, `obj`, `usdz`, `mtl`, `stl`, `3mf`, `pre_remeshed_glb`), `texture_urls`
+(`base_color` and, with PBR, `metallic`, `normal`, `roughness`, `emission`), `thumbnail_url`,
+`alpha_thumbnail_url` and `thumbnail_urls` (front, right, back, left).
+
+Multi-image to 3D: `image_urls` (1 to 4 images of one object, the first is the front view) or `input_task_id` (a
+succeeded image task, multi-view included); the image-to-3D options except `meshy-t2`, plus `texture_image_urls` (1
+to 4 texture guides, meshy-7.1 only). The result is as for image to 3D.
+
+Remesh: `input_task_id` (a succeeded text-to-3D preview or refine, image-to-3D or retexture task) or `model_url` (a
+public URL or a data URI with the media type `application/octet-stream`; `.glb`, `.gltf`, `.obj`, `.fbx`, `.stl`);
+`target_formats` (default `["glb"]`; `glb`, `fbx`, `obj`, `usdz`, `blend`, `stl`, `3mf`), `topology` (`triangle`
+default, `quad`), `target_polycount` (100 to 300,000, default 30,000); `resize_height`, `origin_at` and
+`convert_format_only` are deprecated. The result: `model_urls`, `thumbnail_url`, `alpha_thumbnail_url`.
+
+Rigging's `input_task_id` is "the input task that needs to be rigged": any task with a textured humanoid model (at
+most 300,000 faces), so a rig follows any textured model item (not a remesh, above); `model_url` takes a textured humanoid GLB facing +Z.
 
 ## The first batch, 2026-10-b1-bodies
 

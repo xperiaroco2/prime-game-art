@@ -86,7 +86,7 @@ class ValidationTest(unittest.TestCase):
             (dict(good, credit_cap=0), "credit_cap"),
             (dict(good, id="Bad Id"), "lower-case"),
             (dict(good, items=[]), "no \\[\\[items\\]\\]"),
-            (dict(good, items=[{"id": "x", "variant": "a", "kind": "image_to_3d"}]), "not one of"),
+            (dict(good, items=[{"id": "x", "variant": "a", "kind": "image_to_4d"}]), "not one of"),
             (dict(good, items=[{"id": "x", "variant": "zz", "kind": "text_to_3d"}]), "no prompt"),
             (dict(good, items=[{"id": "x", "variant": "a", "kind": "text_to_3d", "prompt": "p" * 801}]), "at most 800"),
             (dict(good, items=[{"id": "x", "variant": "a", "kind": "text_to_3d", "preview": {"mode": "refine"}}]),
@@ -145,7 +145,11 @@ class RepositoryBatchesTest(unittest.TestCase):
         for path in files:
             with self.subTest(batch=path.name):
                 batch = batches.load(path)
-                self.assertEqual(batches.approval_problems(batch), [])
+                if path.stem.startswith(batches.EXAMPLE_PREFIX):  # an example shows the schema and is never approved
+                    self.assertFalse(batch.approved_by or batch.approved_at or batch.approval_ref)
+                    self.assertTrue(batches.approval_problems(batch))
+                else:
+                    self.assertEqual(batches.approval_problems(batch), [])
 
     def test_first_bodies_batch(self) -> None:
         batch = batches.load("2026-10-b1-bodies")

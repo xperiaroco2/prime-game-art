@@ -1,0 +1,42 @@
+# Batch 3b: untextured bodies from the batch 3a concepts that passed the manager's look gate (2026-10-03):
+# r3-u2 (gpt-image-2): a consistent three-view adult in briefs, T-pose with palms down, egg head, blank face with a
+# long cone nose, barefoot; r3-c3u: the same brief with clearly spread five fingers but a small head. Failed the gate:
+# r3-u1 and r3-m3 (arms down instead of a T-pose). Untextured, because every textured batch 2 body got a face painted on;
+# our palette colours come from Blender. Approved under the engineer's standing approval of 2026-10-03.
+
+id = "2026-10-b3b-underwear-bodies"
+purpose = "Two untextured base bodies in briefs from the passing round 3 concepts, to restyle and rig against the Quaternius-donor route."
+plan = "Meshy Pro (monthly)"
+terms_url = "https://www.meshy.ai/terms-of-use"
+licence = "owned by the customer on a paid plan (Meshy Terms of Use 3.2, updated 2026-09-19); no attribution required"
+credit_cap = 60
+approved_by = "xperiaroco2 (the engineer)"
+approved_at = "2026-10-03"
+approval_ref = "https://github.com/xperiaroco2/prime-game/issues/165#issuecomment-5962083584"
+
+[defaults.multi_image_to_3d.params]
+ai_model = "meshy-7.1"
+should_remesh = true
+topology = "triangle"
+target_polycount = 7000
+pose_mode = "t-pose"
+should_texture = false
+target_formats = ["glb", "fbx"]
+
+[[items]]
+id = "u2-body"
+kind = "multi_image_to_3d"
+images = [
+  { file = "raw:2026-10-b3a-underwear-concepts/r3-u2/text_to_image-multi_view_image_01a1012a-c15d-75b3-b6d1-c7e0974b91fd_part_0.png", provenance = "Meshy paid output: batch 2026-10-b3a-underwear-concepts, item r3-u2, view 0 (front)" },
+  { file = "raw:2026-10-b3a-underwear-concepts/r3-u2/text_to_image-multi_view_image_01a1012a-c15d-75b3-b6d1-c7e0974b91fd_part_1.png", provenance = "Meshy paid output: batch 2026-10-b3a-underwear-concepts, item r3-u2, view 1 (back)" },
+  { file = "raw:2026-10-b3a-underwear-concepts/r3-u2/text_to_image-multi_view_image_01a1012a-c15d-75b3-b6d1-c7e0974b91fd_part_2.png", provenance = "Meshy paid output: batch 2026-10-b3a-underwear-concepts, item r3-u2, view 2 (side)" },
+]
+
+[[items]]
+id = "c3u-body"
+kind = "multi_image_to_3d"
+images = [
+  { file = "raw:2026-10-b3a-underwear-concepts/r3-c3u/image_to_image-multi_view_image_01a1012d-1c81-7518-9588-3ca57ad854aa_part_0.png", provenance = "Meshy paid output: batch 2026-10-b3a-underwear-concepts, item r3-c3u, view 0" },
+  { file = "raw:2026-10-b3a-underwear-concepts/r3-c3u/image_to_image-multi_view_image_01a1012d-1c81-7518-9588-3ca57ad854aa_part_1.png", provenance = "Meshy paid output: batch 2026-10-b3a-underwear-concepts, item r3-c3u, view 1" },
+  { file = "raw:2026-10-b3a-underwear-concepts/r3-c3u/image_to_image-multi_view_image_01a1012d-1c81-7518-9588-3ca57ad854aa_part_2.png", provenance = "Meshy paid output: batch 2026-10-b3a-underwear-concepts, item r3-c3u, view 2" },
+]
