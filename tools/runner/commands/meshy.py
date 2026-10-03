@@ -155,7 +155,9 @@ def rig_input(blends: list[Path], out: Path) -> int:
         info = json.loads((out / f"{path.stem}.json").read_text(encoding="utf-8"))
         inside = inputs.glb_contents(Path(info["glb"]))
         if len(inside["nodes"]) != 1 or len(inside["meshes"]) != 1:
-            raise common.Failure(f"{info['glb']} holds nodes {inside['nodes']} and meshes {inside['meshes']}: a rig "
+            rejected = Path(info["glb"]).with_suffix(".glb.rejected")  # renamed so that nobody pins it by mistake
+            Path(info["glb"]).replace(rejected)
+            raise common.Failure(f"{rejected} holds nodes {inside['nodes']} and meshes {inside['meshes']}: a rig "
                                  "input is one mesh and nothing else")
         common.ok(f"{path.stem}: {info['glb']} ({info['glb_bytes']} bytes, {info['triangles']} triangles, "
                   f"{info['height_m']} m, palette {info['palette_px']} px of {len(info['materials'])} colours)")
