@@ -3,8 +3,8 @@
 Our characters are built on the Quaternius **Ultimate Modular** Men and Women packs (CC0, xperiaroco2/prime-game#165):
 one 62-bone armature, `CharacterArmature`, and 24 actions per body type. This page covers how other clips get onto
 that armature (the **retarget**) and how clips are judged (the **review**): always in motion, from frame strips and
-looping clips plus measures, never from one frozen frame. The findings of the first review (art #20) are in
-[research/2026-10-03-animation-review.md](research/2026-10-03-animation-review.md).
+looping clips plus measures, never from one frozen frame. The findings of the first review (art #20) and of the
+second library (UAL2, art #24) are in [research/2026-10-03-animation-review.md](research/2026-10-03-animation-review.md).
 
 ## Sources
 
@@ -13,6 +13,7 @@ looping clips plus measures, never from one frozen frame. The findings of the fi
 | Ultimate Modular Men, any file but `Adventurer.glb` (the review uses `Business Man.glb`) | 24 actions | `CharacterArmature`, 62 bones | CC0 1.0 | #17's `sources/` |
 | Ultimate Modular Women, any file (the review uses `Suit.glb`) | 24 actions, other motions than the men's | the same 62 bones | CC0 1.0 | #17's `sources/` |
 | Universal Animation Library Standard (UAL1): `UAL1_Standard.glb` (in place) and `UAL1_Standard_RM.glb` (root motion) | 43 clips each | 65 bones, Unreal-mannequin names | CC0 1.0 | [`sources/quaternius_ual1_standard.toml`](../sources/quaternius_ual1_standard.toml) |
+| Universal Animation Library 2 Standard (UAL2, art #24): `UAL2_Standard.glb` and `UAL2_Standard_RM.glb`, and a Female Mannequin without clips | 43 clips each, other motions than UAL1's | UAL1's rig exactly (the same 65 bones, parents and rest) | CC0 1.0 | [`sources/quaternius_ual2_standard.toml`](../sources/quaternius_ual2_standard.toml) |
 
 Measured by `anim-review inventory` (2026-10-03): the 24 actions have the same keyframes in every file of a body type,
 except the men's `Adventurer.glb`, whose 24 all differ (that character is bound 180 degrees off). The women's
@@ -27,17 +28,21 @@ against 1.67 s). UAL is authored at 30 fps; its clips import to whole frames onl
   (baked IK targets), with `PT.L`/`PT.R` knee pole targets that deform nothing; a foot's pivot sits at the heel, 2 cm
   above the floor. **No toe bone.** Fingers: `Index1` to `Index4` (and `Middle`, `Ring`, `Pinky`), where `1` is the
   metacarpal (its head at the wrist, 12 cm long) and `2` to `4` the phalanges; `Thumb1` to `Thumb3`.
-- **UAL** (`Armature`, identity world matrix): `root` > `pelvis` > `spine_01` to `spine_03` > `neck_01` > `Head`;
-  `clavicle`, `upperarm`, `lowerarm`, `hand`; fingers `_01` to `_03` are phalanges (no finger metacarpals) plus
-  `_04_leaf` ends; `thigh` > `calf` > `foot` > `ball` (toes). Both rigs rest in a T-pose, palms down, facing -Y.
+- **UAL** (`Armature`, identity world matrix; UAL1 and UAL2 alike: `anim-review inventory` compares UAL2's rig with
+  UAL1's, `rig_vs_ual` in `inventory.json`: the same names and parents, 0 mm and 0 degrees apart at rest): `root` >
+  `pelvis` > `spine_01` to `spine_03` > `neck_01` > `Head`; `clavicle`, `upperarm`, `lowerarm`, `hand`; fingers `_01` to
+  `_03` are phalanges (no finger metacarpals) plus `_04_leaf` ends; `thigh` > `calf` > `foot` > `ball` (toes). Both rigs
+  rest in a T-pose, palms down, facing -Y.
 
 ## The retarget
 
-`tools/run.py retarget [--body men|women] [--clips A,B|all] [--out DIR] [--blend] [--floor] [--no-ik]` bakes UAL clips
-onto the body type's donor character (`tools/blender/anim_review.toml`) in background Blender and writes
-`retarget_report.json` (with `--blend` also the character with the baked actions `UAL|<clip>`; with `--floor` each
-clip's lowest vertex on the target and on UAL's own mannequin scaled to the target, which tells how deep a clip goes
-into the floor by itself and how much the retarget adds). No add-on: `tools/blender/retarget_core.py`.
+`tools/run.py retarget [--body men|women] [--library ual|ual2] [--clips A,B|all] [--out DIR] [--blend] [--floor]
+[--no-ik]` bakes the clips of a library (UAL1 by default, `--library ual2` for UAL2: its actions are named `UAL2|<clip>`
+and its default output is `tools/out/retarget/ual2/<body>`) onto the body type's donor character
+(`tools/blender/anim_review.toml`) in background Blender and writes `retarget_report.json` (with `--blend` also the
+character with the baked actions `<label>|<clip>`, `UAL|` or `UAL2|`, saved as `<target>_ual.blend` for every library; with `--floor` each clip's lowest vertex on the target and on UAL's own
+mannequin scaled to the target, which tells how deep a clip goes into the floor by itself and how much the retarget
+adds). No add-on: `tools/blender/retarget_core.py`.
 
 1. **Sampling.** Actions are read from their fcurves (Blender 5's layered actions: `action.layers`, channel bags per
    slot) and posed by our own forward kinematics, `pose = pose[parent] @ (rest[parent]^-1 @ rest) @ basis`, so a
@@ -90,28 +95,33 @@ accounted for exactly once; unknown keys refused):
 | `[unused]` | source bones with no target (the leaves, `ball`, `ball_leaf`) |
 | `[source_rig]`, `[target_rig]` | the full bone lists, read from the files |
 
+UAL2 takes this map unchanged: its rig is UAL1's (above), so no second map is needed.
+
 Fingers map by anatomy, not by number: UAL `index_01..03` (phalanges) go to `Index2..4`, and `Index1` (the
 metacarpal) stays at rest; thumbs map 1:1. Hand close-ups confirmed curls bend the right way and pointing works.
 
 ## The review
 
-`tools/run.py anim-review <step> [--body men|women|both] [--clips pack:Walk,ual:Walk_Loop|all] [--jobs N] [--out DIR]`
-(default output `tools/out/anim-review`; the review of art #20 went to `D:/prime-art-raw/review/stage1/20/`, outside
-git). Steps, or `all` in this order:
+`tools/run.py anim-review <step> [--body men|women|both] [--clips pack:Walk,ual:Walk_Loop|all] [--sources ual2]
+[--jobs N] [--out DIR]` (default output `tools/out/anim-review`; the review of art #20 went to
+`D:/prime-art-raw/review/stage1/20/`, that of UAL2 (art #24) to `D:/prime-art-raw/review/stage1/24/`, outside git).
+Steps, or `all` in this order:
 
 | Step | Makes |
 |---|---|
 | `inventory` | `inventory.json`: every pack file's actions (lengths, identical across files or not), the men against the women, UAL's clips in both files with root motion per clip |
 | `clips` | per body type and clip, on the unmodified donor character: measures (`metrics/<body>_c<n>.json`), a 12-frame strip with a front and a right-side row (`strips/<body>/<source>_<clip>.png`) and a looping 480x480 H.264 clip at 30 fps (`clips/<body>/...mp4`); `--jobs` Blender processes per body type |
-| `pairs` | for each `[[pairs]]` entry of `anim_review.toml`: the pack clip and its UAL counterparts side by side, a strip (front and side rows at the same fractions of each clip; each side cell framed on its own clip) and a looping MP4 (`pairs/<body>/<pack clip>.*`) |
-| `rates` | locomotion at the game's speeds: each `[[rates]]` row (the game's walk 4.5 m/s, sprint 7.0 m/s) plays its clips side by side on a **treadmill** (light stripes on the floor moving at the row's speed), each at the rate that keeps its feet on it: UAL clips by their root-motion speed (`UAL1_Standard_RM.glb`, scaled to the body), pack clips by their feet's ground speed; `blend:A+B` is a blend of two UAL clips lined up on the left heel strike (cycle-synced) and weighted so that its stride over its cycle gives the speed. An MP4, a strip of 8 moments 0.1 s apart and `rates.json` (rate, cadence in steps/s, step length) per body type (`rates/<body>/`) |
+| `pairs` | for each `[[pairs]]` entry of `anim_review.toml`: its clips side by side (the pack clip and its UAL counterparts, or any clip keys: see "Sources, clip keys and layers"), a strip (front and side rows at the same fractions of each clip; each side cell framed on its own clip) and a looping MP4 (`pairs/<body>/<pack clip or name>.*`) |
+| `rates` | locomotion at the game's speeds: each `[[rates]]` row (the game's walk 4.5 m/s, sprint 7.0 m/s, and since art #24 the walk with the package: UAL2's carry as an upper-body layer) plays its clips side by side on a **treadmill** (light stripes on the floor moving at the row's speed), each at the rate that keeps its feet on it: library clips by their root-motion speed (each library's `_RM` file, `UAL1_Standard_RM.glb` or `UAL2_Standard_RM.glb`, scaled to the body), pack clips by their feet's ground speed; `blend:A+B` is a blend of two UAL clips lined up on the left heel strike (cycle-synced) and weighted so that its stride over its cycle gives the speed. An MP4, a strip of 8 moments 0.1 s apart and `rates.json` (rate, cadence in steps/s, step length) per body type (`rates/<body>/`) |
 | `sheets` | review sheets: each clip's men and women strips stacked, three clips a sheet (`sheets/`) |
 | `table` | `metrics.json` (all measures) and `metrics.md` (a row per body type and clip) |
 
 `clips` takes `--no-video` and `--no-strips` (measures only: about two minutes for all 134). A run with `--clips`
 replaces only those clips' measures (its `metrics/<body>_part_c*.json` sort after the full run's and win in
-`table`); a run with all clips replaces every measure of the body type. Only the **latest** partial run is kept: a
-second `--clips` run deletes the first one's files, so the first run's clips fall back to the full run's measures.
+`table`); a run with all clips replaces every measure of the body type and also measures the layered clips named in
+the settings' `[layer] clips` (since art #24: the carry idle `ual:Idle_Loop|ual2:Walk_Carry_Loop`), so they survive any
+rerun. Only the **latest** partial run is kept: a second `--clips` run deletes the first one's files, so the first
+run's clips fall back to the full run's measures.
 
 Pictures: Workbench, flat material colours, specular off, neutral grey background, a dark floor slab whose top is
 z = 0 (a line in the horizontal views), orthographic cameras, labels as text objects; videos are driven by a
@@ -131,6 +141,28 @@ frame-change handler that poses the characters, so each character can loop its o
 | Forearm twist | The twist of the wrist against the lower arm about the bone axis, from rest (no twist bones: large values wrap the wrist) |
 | Finger curl | The mean rotation of the 12 phalanx joints per hand (min-max over the clip) and the largest single joint |
 | Root motion | Hips and root travel over the clip; in place under 5 cm |
+
+### Sources, clip keys and layers (art #24)
+
+The review settings (`tools/blender/anim_review.toml`) name UAL1 (`ual`, `ual_rm`) and further libraries on its rig
+under `[libraries.<key>]` (`file`, `rm`, `label`; UAL2 is `ual2`). Every library is one more source of clips, handled
+like UAL1 by every step. Clip keys (`tools/blender/anim_keys.py`):
+
+| Key | Meaning |
+|---|---|
+| `pack:<clip>`, `ual:<clip>`, `ual2:<clip>` | a pack action, a UAL1 clip, a UAL2 clip (retargeted) |
+| `<base>\|<upper>` | a **layered** clip: the base clip's hips and legs under the upper clip's `[layer] upper` bone (`Torso`) and every bone below it (spine, head, arms, fingers), the way an engine layers an upper-body clip with a bone filter; the upper clip is time-scaled to a whole number of its loops per base loop |
+| `blend:<A>+<B>` | (rates only) a cycle-synced blend of two library clips; a name without a source is UAL1's; `\|<upper>` adds an upper-body layer, one upper loop per stride, lined up on the left heel strike |
+
+`--sources ual2` (comma-separated; `pack`, `ual`, `ual2`) limits `clips` to those sources' clips and `pairs` and `rates`
+to the rows that play one; its measures go to `metrics/<body>_s<sources>_c*.json`. `table` merges a full run's
+`<body>_c*.json`, then the source runs' files (oldest first, so of two runs over overlapping sources such as `ual2`
+and `ual,ual2` the later one wins), then a partial run's `<body>_part_c*.json`, each replacing the earlier measures of
+the same clips; a source run deletes the body type's partial files, like a full run. `[[pairs]]` takes
+either `pack` and `ual` (a pack clip against UAL1 clips, named after the pack clip, as in art #20) or `name` and
+`clips` (any keys, layered ones included, and an optional `note`). `inventory.json` lists `libraries` and each
+library's clips in place and with root motion (`ual2`, `ual2_rm`). A `rates` run with `--sources` replaces its
+selected rows in `rates/<body>/rates.json` and keeps the other rows of an earlier run there.
 
 ## Gotchas
 

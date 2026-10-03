@@ -2,10 +2,11 @@
 
 Usage (background Blender only, through tools/runner/blender.py):
   blender -b --factory-startup --python-exit-code 1 --python retarget.py -- --source <UAL.glb> --target <UM.glb>
-      --out <dir> [--map <map.toml>] [--clips Walk_Loop,Idle_Loop|all] [--no-ik] [--floor] [--blend]
+      --out <dir> [--map <map.toml>] [--clips Walk_Loop,Idle_Loop|all] [--no-ik] [--floor] [--blend] [--prefix UAL2]
 Writes <out>/retarget_report.json (the hip-height ratio, the rest-pose check, each clip's frames and IK misses; with
 --floor also each clip's lowest vertex on the target and on the source's own mesh, scaled to the target) and,
-with --blend, <out>/<target>_ual.blend: the target character with the baked actions "UAL|<clip>" and nothing else.
+with --blend, <out>/<target>_ual.blend: the target character with the baked actions "<prefix>|<clip>" (UAL|, UAL2|)
+and nothing else. UAL2 (art #24) has UAL1's rig and takes the same bone map.
 """
 
 import argparse
@@ -52,6 +53,7 @@ def main(argv):
     ap.add_argument("--no-ik", action="store_true")
     ap.add_argument("--blend", action="store_true")
     ap.add_argument("--floor", action="store_true")
+    ap.add_argument("--prefix", default="UAL", help="the baked actions' name prefix (UAL, UAL2)")
     a = ap.parse_args(argv)
     os.makedirs(a.out, exist_ok=True)
     bmap = retarget_map.load(a.map)
@@ -79,7 +81,7 @@ def main(argv):
     }
     t0 = time.time()
     for name in names:
-        act, frames = rt.clip(src["actions"][name], "UAL|" + name, tgt["arm"])
+        act, frames = rt.clip(src["actions"][name], f"{a.prefix}|{name}", tgt["arm"])
         report["clips"][name] = {"frames": frames, "seconds": round(frames / rc.FPS, 3), "action": act.name,
                                  "ik_miss_mm": round(rt.miss_mm, 2)}
         if a.floor:
@@ -95,7 +97,7 @@ def main(argv):
             if o not in keep:
                 bpy.data.objects.remove(o, do_unlink=True)
         for act in list(bpy.data.actions):
-            if act not in tgt["actions"].values() and not act.name.startswith("UAL|"):
+            if act not in tgt["actions"].values() and not act.name.startswith(f"{a.prefix}|"):
                 bpy.data.actions.remove(act)
         rc.reset_pose(tgt["arm"])
         stem = os.path.splitext(os.path.basename(a.target))[0].replace(" ", "_")

@@ -73,8 +73,8 @@ class HelperTest(unittest.TestCase):
         cfg = _anim.load_config()
         self.assertEqual(set(cfg["bodies"]), {"men", "women"})
         self.assertTrue(cfg["ual"].endswith("UAL1_Standard.glb"))
-        for pair in cfg["pairs"]:
-            self.assertTrue(pair["pack"] and pair["ual"])
+        for pair in cfg["pairs"]:  # a pack clip against UAL1 clips, or (art #24) a name and any clip keys
+            self.assertTrue(pair["name"] and pair["clips"] if "clips" in pair else pair["pack"] and pair["ual"])
         self.assertIn("Walk", cfg["loops"]["pack"])
 
     def test_broken_settings_are_refused(self) -> None:

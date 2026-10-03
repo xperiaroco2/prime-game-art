@@ -1,0 +1,52 @@
+id = "quaternius_ual2_standard"
+title = "Universal Animation Library 2 [Standard] (UAL2): 43 clips on the UAL1 rig, and a female mannequin"
+author = "Quaternius"
+url = "https://quaternius.itch.io/universal-animation-library-2"
+licence = "CC0-1.0"
+licence_url = "https://creativecommons.org/publicdomain/zero/1.0/"
+public_repo_ok = true
+ai_generated = false
+downloaded_at = 2026-10-03
+credit = "Universal Animation Library 2 by Quaternius (CC0 1.0)"
+notes = """The free Standard tier of the second library (the page's paid tier, $14.99 or more, is the Source: .blend \
+files and 130+ animations in all; the page's previews also name WAVE and IDLE_CARRY, which the Standard files do not \
+hold), downloaded by the art manager under the engineer's standing permission for free downloads from official sources \
+(art #24). The zip's License.txt says CC0 1.0 Universal and is byte-identical to UAL1's; its README says the _RM file \
+has root motion baked into every animation and the other has root motion disabled. Both GLBs hold the same 43 clips \
+at 30 fps (A_TPose included) on the 65-bone rig of UAL1: the same bone names, parents and rest pose (0 mm and 0 \
+degrees apart, anim-review inventory) and the same mannequin mesh. The Female Mannequin (Mannequin_F in .blend, .glb and .fbx) \
+has the same rig with narrower, shorter arms and no animations of its own. Retargeted onto the Ultimate Modular rig by \
+tools/run.py retarget --library ual2 with the UAL1 bone map (docs/animations.md); the Unity FBX copies and the setup \
+pictures in the zip are not used."""
+
+[[raw]]
+file = "quaternius/Universal Animation Library 2 [Standard].zip"
+sha256 = "4008ea208a604773a2b2177d965f0f5d3195498b5bf838c3f5785d68e95f2a68"
+
+[[raw]]
+file = "quaternius/Universal_Animation_Library_2/Universal Animation Library 2[Standard]/Unreal-Godot/UAL2_Standard.glb"
+sha256 = "8cee20ab1bc55130092447e810e26df22dd2803eccc54f52137a7d54d7ab88a8"
+
+[[raw]]
+file = "quaternius/Universal_Animation_Library_2/Universal Animation Library 2[Standard]/Unreal-Godot/UAL2_Standard_RM.glb"
+sha256 = "814eee878f82934992d3ea746c539df25e981487109c591f5efbb8dd03286f99"
+
+[[raw]]
+file = "quaternius/Universal_Animation_Library_2/Universal Animation Library 2[Standard]/Female Mannequin/Unreal-Godot/Mannequin_F.glb"
+sha256 = "2ee6cc3fe888d9b144afa8cc4b2ab7bfc5d13a0d5b7548df777f61f64ad65fa6"
+
+[[raw]]
+file = "quaternius/Universal_Animation_Library_2/Universal Animation Library 2[Standard]/Female Mannequin/Mannequin_F.blend"
+sha256 = "980c6eee3a2fb2ee1028d8bdd5bb95f7df983bc9de45e974ee77646b1eafbc70"
+
+[[raw]]
+file = "quaternius/Universal_Animation_Library_2/Universal Animation Library 2[Standard]/Female Mannequin/Unity/Mannequin_F.fbx"
+sha256 = "1a7fb4bb8850860eff36aabd60d65d19273a4a072b3c638001fbb38e42add4de"
+
+[[raw]]
+file = "quaternius/Universal_Animation_Library_2/Universal Animation Library 2[Standard]/Female Mannequin/README.txt"
+sha256 = "3447416d55d5cf3a82311c4941578068d544cc4cfa1d49a6a26a28c98b96c393"
+
+[[raw]]
+file = "quaternius/Universal_Animation_Library_2/Universal Animation Library 2[Standard]/License.txt"
+sha256 = "6d01f55c6e4c49a2c9963e147e561945ae2c83958c8ca667d90a6bffdbfac061"
