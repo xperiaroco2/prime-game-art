@@ -190,6 +190,7 @@ def main():
             coll.hide_render = True
         report["crossgender"] = assemble.crossgender(packs, R, path("crossgender.png"), rd)
 
+    report["actions_in_session"] = len(bpy.data.actions)  # 24 per rig still in the scene: the duplicates are gone
     with open(path("build_report.json"), "w", encoding="utf-8") as fh:
         json.dump(report, fh, indent=1)
     print("REPORT", path("build_report.json"))

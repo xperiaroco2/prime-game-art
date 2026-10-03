@@ -76,8 +76,11 @@ def place(root, x=0.0, z=0.0, yaw=0.0):
 
 
 def discard(src, keep=()):
-    """Delete every object a load() brought in except keep."""
+    """Delete every object a load() brought in except keep (the Icosphere and the "_end" empties always go); when its
+    armature goes, its 24 duplicated actions go with it."""
     keep = set(keep)
+    if src["arm"] not in keep:
+        bpy.data.batch_remove(own_actions(src["arm"]))  # one ID remap for all 24, not one each
     for o in src["objs"]:
         try:
             o.name

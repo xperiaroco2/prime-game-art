@@ -39,8 +39,8 @@ starts, then runs `tools/blender/assemble_characters.py` in background Blender a
 Output: `build_report.json` (per character: each part's source, rebind move, faces kept and fixes; the skin and
 recolours; eye centres; seam overlaps; the seam probe in the rest pose and in the pose; heights; triangles; objects),
 `characters/<id>_front.png`, `_threequarter.png`, `_face.png`, `_hands.png`, `lineup.png`, `crossgender.png` and
-`work/` (the single views). The four final-test characters with every mode and `--blend` take about 55 s; one
-character about 9 s.
+`work/` (the single views). The four final-test characters with every mode and `--blend` take about 60 s, without
+renders (`--modes none`) about 14 s; one character about 9 s.
 
 ## Recipes
 
@@ -165,7 +165,9 @@ what the reopened file holds, with `problems` (empty, or the command fails).
 
 - Each import duplicates the 24 actions with a `.001`, `.002`, ... suffix and puts all 24 on NLA tracks; the
   importer leaves the rig in its first action (Death). Use the skeleton file's own actions (`packs.own_actions`) and
-  reset every pose bone before applying one.
+  reset every pose bone before applying one. `packs.discard` removes a discarded import's 24 actions with its rig (in
+  one `batch_remove`: one remove per action made the run 60 % slower); `build_report.json` counts what is left
+  (`actions_in_session`: 24 per rig still in the scene).
 - Imported objects use quaternion rotation, so `rotation_euler` does nothing: move and turn a character through its
   root's `matrix_world` (`packs.place`). The RootNode empty itself has the identity transform; the -90 degree X
   rotation and the scale of 100 sit on `CharacterArmature` (FBX2glTF's node transform).
