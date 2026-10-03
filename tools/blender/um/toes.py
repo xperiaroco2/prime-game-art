@@ -67,9 +67,14 @@ def _geometry(arm, shoes, side: str) -> dict:
 
 def add_toe_bones(arm, shoes, parts) -> dict:
     """Adds Toe.L and Toe.R to arm (in its rest pose, at the ball of `shoes`) and splits the foot weights of every
-    object in `parts` over the ball. Returns a report; an armature that already has both toes is left alone."""
-    if all(toe_name(s) in arm.data.bones for s in SIDES):
+    object in `parts` over the ball. Returns a report; an armature that already has both toes is left alone, one with
+    a single toe is refused (adding both would make a second bone named Toe.L.001)."""
+    present = [toe_name(s) for s in SIDES if toe_name(s) in arm.data.bones]
+    if len(present) == len(SIDES):
         return {"added": False, "bones": len(arm.data.bones)}
+    if present:
+        raise RuntimeError(f"{arm.name} has only {present}: a partial earlier run or a hand-edited rig; "
+                           "remove it and add both toes again")
     update()
     geo = {s: _geometry(arm, shoes, s) for s in SIDES}
     Wi = arm.matrix_world.inverted()
