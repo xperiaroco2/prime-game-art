@@ -1,0 +1,17 @@
+{
+ "description": "What tools/run.py faces shows (docs/faces.md): the review heads (an assembler recipe), the two skin tones of the final test, per-head iris and brow colours, and the game's first-person camera read from the game repo (D:/prime-game, read only, 2026-10-03 at c43c0e1): client/player/player.tscn has a Camera3D with no fov set, so Godot's default 75 degrees vertical (keep height); content/modes/base_mode.tres eye_height_m = 1.6; project.godot sets no anti-aliasing (MSAA and screen-space AA off) and stretch mode canvas_items; the target screen is 1920 x 1080.",
+ "heads_recipe": "review_heads.json",
+ "heads": {
+  "m_full": {"label": "M full skull", "iris": [0.16, 0.07, 0.02], "brow": [0.04, 0.025, 0.012]},
+  "m_open": {"label": "M open-top skull", "iris": [0.09, 0.2, 0.05], "brow": [0.1, 0.012, 0.01]},
+  "w_full": {"label": "W full skull", "iris": [0.05, 0.16, 0.42], "brow": [0.09, 0.018, 0.006]},
+  "w_open": {"label": "W open-top skull", "iris": [0.07, 0.035, 0.015], "brow": [0.03, 0.018, 0.01]}
+ },
+ "skins": {"light": [0.78, 0.55, 0.42], "dark": [0.22, 0.12, 0.065]},
+ "overview_skins": {"m_full": "light", "m_open": "dark", "w_full": "dark", "w_open": "light"},
+ "game_camera": {"fov_deg": 75.0, "width": 1920, "height": 1080, "eye_height_m": 1.6, "anti_aliasing": false},
+ "distances_m": [2, 5, 10],
+ "distance_sheet": {"heads": [["m_full", "light"], ["w_full", "dark"]],
+                    "expressions": ["neutral", "happy", "talk_a", "surprised", "angry", "closed"]},
+ "strip": {"action": "Walk", "frames": 8, "rows": [["m_full", "light", "f3_almond"], ["w_full", "dark", "f4_toon"]]}
+}

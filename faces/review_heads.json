@@ -1,0 +1,337 @@
+{
+ "description": "The face kit's review heads (art #21, docs/faces.md): two men and two women, one full skull and one open-top skull each, bald with their hair, in the neutral pose. tools/run.py faces builds them with the assembler, removes the final test's face parts and adds each style family's. The outfits are the final test's (only the shoulders show).",
+ "packs": {
+  "M": "refs/Ultimate_Modular_Men_Pack",
+  "W": "refs/Ultimate_Modular_Women_Pack"
+ },
+ "skeleton": {
+  "M": "Business Man.glb",
+  "W": "Suit.glb"
+ },
+ "head_bone_rest": [
+  -0.0003,
+  -0.0431,
+  1.5873
+ ],
+ "face_shading": "flat",
+ "face": {
+  "M": {
+   "mouth_dz": -0.088
+  },
+  "W": {
+   "mouth_dz": -0.072
+  }
+ },
+ "modes": [
+  "face"
+ ],
+ "characters": [
+  {
+   "id": "m_full",
+   "gender": "M",
+   "skin": null,
+   "head": {
+    "file": "Beach Character.glb",
+    "object": "Beach_Head",
+    "keep": [
+     "Skin"
+    ],
+    "eye_materials": [
+     "Eye"
+    ]
+   },
+   "hair": {
+    "file": "Business Man.glb",
+    "object": "Suit_Head",
+    "materials": [
+     "Hair"
+    ],
+    "inflate": 0.006
+   },
+   "top": {
+    "file": "Hoodie Character.glb",
+    "object": "Casual_Body"
+   },
+   "bottom": {
+    "file": "Beach Character.glb",
+    "object": "Beach_Legs"
+   },
+   "shoes": {
+    "file": "Casual Character.glb",
+    "object": "Casual2_Feet"
+   },
+   "recolor": [
+    {
+     "part": "top",
+     "material": "Purple",
+     "rgb": [
+      0.02,
+      0.32,
+      0.3
+     ],
+     "was": "purple hoodie"
+    },
+    {
+     "part": "shoes",
+     "material": "Red_Dark",
+     "rgb": [
+      0.03,
+      0.03,
+      0.035
+     ],
+     "was": "dark red sneakers (same red as the mohawk and shorts)"
+    }
+   ],
+   "eyes": {
+    "style": "dots"
+   },
+   "brows": {
+    "style": "thin_arch",
+    "rgb": [
+     0.05,
+     0.03,
+     0.02
+    ]
+   },
+   "mouth": {
+    "style": "smirk"
+   },
+   "pose": {
+    "neutral": {
+     "down_deg": 70.0
+    }
+   },
+   "notes": "Full skull (Beach Character) with Business Man's hair, as m2_walt in the final test."
+  },
+  {
+   "id": "m_open",
+   "gender": "M",
+   "skin": null,
+   "head": {
+    "file": "Punk.glb",
+    "object": "Punk_Head",
+    "keep": [
+     "Skin"
+    ],
+    "eye_materials": [
+     "Eye"
+    ]
+   },
+   "hair": {
+    "file": "Punk.glb",
+    "object": "Punk_Head",
+    "materials": [
+     "Red",
+     "Red_Dark"
+    ],
+    "cut": [
+     "chin_tuft"
+    ],
+    "inflate": 0.0
+   },
+   "top": {
+    "file": "Hoodie Character.glb",
+    "object": "Casual_Body"
+   },
+   "bottom": {
+    "file": "Beach Character.glb",
+    "object": "Beach_Legs"
+   },
+   "shoes": {
+    "file": "Casual Character.glb",
+    "object": "Casual2_Feet"
+   },
+   "recolor": [
+    {
+     "part": "top",
+     "material": "Purple",
+     "rgb": [
+      0.02,
+      0.32,
+      0.3
+     ],
+     "was": "purple hoodie"
+    },
+    {
+     "part": "shoes",
+     "material": "Red_Dark",
+     "rgb": [
+      0.03,
+      0.03,
+      0.035
+     ],
+     "was": "dark red sneakers (same red as the mohawk and shorts)"
+    }
+   ],
+   "eyes": {
+    "style": "dots"
+   },
+   "brows": {
+    "style": "thin_arch",
+    "rgb": [
+     0.05,
+     0.03,
+     0.02
+    ]
+   },
+   "mouth": {
+    "style": "smirk"
+   },
+   "pose": {
+    "neutral": {
+     "down_deg": 70.0
+    }
+   },
+   "notes": "Open-top skull (Punk) with its own cap-style hair; the goatee cut off."
+  },
+  {
+   "id": "w_full",
+   "gender": "W",
+   "skin": null,
+   "head": {
+    "file": "Witch.glb",
+    "object": "Witch_Head",
+    "keep": [
+     "Skin"
+    ],
+    "eye_materials": [
+     "Brown"
+    ],
+    "tuck_ears": 0.08
+   },
+   "hair": {
+    "file": "Animated Woman-nIItLV9nxS.glb",
+    "object": "Formad_Head",
+    "materials": [
+     "Red"
+    ],
+    "inflate": 0.006
+   },
+   "top": {
+    "file": "Suit.glb",
+    "object": "Suit_Body"
+   },
+   "bottom": {
+    "file": "Animated Woman.glb",
+    "object": "Casual_Legs"
+   },
+   "shoes": {
+    "file": "Soldier.glb",
+    "object": "Soldier_Feet"
+   },
+   "recolor": [
+    {
+     "part": "bottom",
+     "material": "Orange",
+     "rgb": [
+      0.03,
+      0.06,
+      0.22
+     ],
+     "was": "orange trousers"
+    }
+   ],
+   "extend": [
+    {
+     "part": "top",
+     "drop": 0.02,
+     "why": "Suit jacket hem met the trouser waistband with ~3 mm overlap: a see-through sliver at the sides"
+    }
+   ],
+   "eyes": {
+    "style": "dots"
+   },
+   "brows": {
+    "style": "thin_arch",
+    "rgb": [
+     0.05,
+     0.03,
+     0.02
+    ]
+   },
+   "mouth": {
+    "style": "smirk"
+   },
+   "pose": {
+    "neutral": {
+     "down_deg": 70.0
+    }
+   },
+   "notes": "Full skull (Witch, ears flattened) with Animated Woman (Formal)'s hair, as w1_ivy."
+  },
+  {
+   "id": "w_open",
+   "gender": "W",
+   "skin": null,
+   "head": {
+    "file": "Soldier.glb",
+    "object": "Soldier_Head",
+    "keep": [
+     "Skin"
+    ],
+    "eye_materials": [
+     "Brown"
+    ]
+   },
+   "hair": {
+    "file": "Soldier.glb",
+    "object": "Soldier_Head",
+    "materials": [
+     "Hair_Brown"
+    ],
+    "inflate": 0.0
+   },
+   "top": {
+    "file": "Suit.glb",
+    "object": "Suit_Body"
+   },
+   "bottom": {
+    "file": "Animated Woman.glb",
+    "object": "Casual_Legs"
+   },
+   "shoes": {
+    "file": "Soldier.glb",
+    "object": "Soldier_Feet"
+   },
+   "recolor": [
+    {
+     "part": "bottom",
+     "material": "Orange",
+     "rgb": [
+      0.03,
+      0.06,
+      0.22
+     ],
+     "was": "orange trousers"
+    }
+   ],
+   "extend": [
+    {
+     "part": "top",
+     "drop": 0.02,
+     "why": "Suit jacket hem met the trouser waistband with ~3 mm overlap: a see-through sliver at the sides"
+    }
+   ],
+   "eyes": {
+    "style": "dots"
+   },
+   "brows": {
+    "style": "thin_arch",
+    "rgb": [
+     0.05,
+     0.03,
+     0.02
+    ]
+   },
+   "mouth": {
+    "style": "smirk"
+   },
+   "pose": {
+    "neutral": {
+     "down_deg": 70.0
+    }
+   },
+   "notes": "Open-top skull (Soldier) with its own hair."
+  }
+ ]
+}
