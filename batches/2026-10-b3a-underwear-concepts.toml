@@ -1,0 +1,66 @@
+# Batch 3a: cheap concept round before any new 3D body (the batch 2 review, art #5 and xperiaroco2/prime-game#165).
+# Every batch 2 Meshy body fused its t-shirt and shorts into the skin, painted a face on and lost the long nose, so
+# round 3 asks for an adult body in plain tight briefs (clothes become separate pieces), in positive wording only.
+# Bodies (untextured multi-image-to-3D) follow in batch 3b only from the concepts that pass review.
+# Approved under the engineer's standing approval of 2026-10-03 ("quality over limits and speed").
+
+id = "2026-10-b3a-underwear-concepts"
+purpose = "Adult, slightly lanky base-body concepts in plain briefs with a blank face and a long cone nose, from two image models, an edit of the c3 concept and an edit of our mannequin; plus a stand-alone t-shirt to start clothing in pieces."
+plan = "Meshy Pro (monthly)"
+terms_url = "https://www.meshy.ai/terms-of-use"
+licence = "owned by the customer on a paid plan (Meshy Terms of Use 3.2, updated 2026-09-19); no attribution required"
+credit_cap = 60
+approved_by = "xperiaroco2 (the engineer)"
+approved_at = "2026-10-03"
+approval_ref = "https://github.com/xperiaroco2/prime-game/issues/165#issuecomment-5962083584"
+
+[defaults.text_to_image.params]
+ai_model = "nano-banana-pro"
+remove_background = true
+
+[defaults.image_to_image.params]
+ai_model = "nano-banana-pro"
+remove_background = true
+
+[variants.u]
+prompt = "full-body character turnaround of a goofy grown-up man for a low-poly 3D party game, adult proportions about seven heads tall, slightly lanky with long legs and long arms, narrow gentle shoulders, soft simple rounded body shapes, symmetrical, smooth bald egg-shaped head, the face is one smooth blank skin surface with a single long straight cone-shaped nose, small simple ears, wearing only plain tight light-grey briefs, bare chest, bare legs, barefoot with simple toes, strict T-pose with arms straight out horizontally, palms facing the floor, five separate fingers spread apart, one even matte skin colour, flat solid colours, soft even lighting, plain white background"
+
+[[items]]
+id = "r3-u1"
+variant = "u"
+kind = "text_to_image"
+params = { generate_multi_view = true, pose_mode = "t-pose" }
+
+[[items]]
+id = "r3-u2"
+variant = "u"
+kind = "text_to_image"
+params = { ai_model = "gpt-image-2", generate_multi_view = true, pose_mode = "t-pose" }
+
+[[items]]
+id = "r3-c3u"
+kind = "image_to_image"
+prompt = "redraw this character as the same grown-up man in a strict T-pose with arms straight out horizontally, palms facing the floor and five separate fingers spread apart; keep the long legs, the long arms, the bald egg-shaped head, the small ears and the long straight nose; give him a slightly shorter, thicker neck and a slightly larger head; the face is one smooth blank skin surface with only the nose on it; he wears only plain tight light-grey briefs, bare chest, barefoot with simple toes; simple soft rounded 3D clay shapes, symmetrical, one even matte skin colour, flat solid colours, plain white background"
+params = { generate_multi_view = true }
+images = [
+  { file = "raw:2026-10-b2-image-routes/c3-concept/text_to_image-multi_view_image_01a10102-7d09-7211-b281-7ecd3e08a2cc_part_0.png", provenance = "Meshy paid output: batch 2026-10-b2-image-routes, item c3-concept, view 0" },
+  { file = "raw:2026-10-b2-image-routes/c3-concept/text_to_image-multi_view_image_01a10102-7d09-7211-b281-7ecd3e08a2cc_part_1.png", provenance = "Meshy paid output: batch 2026-10-b2-image-routes, item c3-concept, view 1" },
+  { file = "raw:2026-10-b2-image-routes/c3-concept/text_to_image-multi_view_image_01a10102-7d09-7211-b281-7ecd3e08a2cc_part_2.png", provenance = "Meshy paid output: batch 2026-10-b2-image-routes, item c3-concept, view 2" },
+]
+
+[[items]]
+id = "r3-m3"
+kind = "image_to_image"
+prompt = "turn this simple 3D mannequin into one smooth continuous cartoon body for a low-poly game; keep the T-pose, the lanky adult proportions, the bald egg-shaped head, the smooth blank face and the long straight cone nose; make the head slightly larger; a soft rounded torso with gentle shoulders, smooth joints that flow into each other, tapered palms with five separate spread fingers, palms facing the floor; he wears only plain tight light-grey briefs, bare chest, barefoot with simple toes; symmetrical, one even matte skin colour, flat solid colours, soft even lighting, plain white background"
+params = { generate_multi_view = true }
+images = [
+  { file = "raw:mannequin/lanky/refs/front.png", provenance = "own work: Blender render of our mannequin, lanky preset, front (art #11)" },
+  { file = "raw:mannequin/lanky/refs/side.png", provenance = "own work: Blender render of our mannequin, lanky preset, side (art #11)" },
+  { file = "raw:mannequin/lanky/refs/back.png", provenance = "own work: Blender render of our mannequin, lanky preset, back (art #11)" },
+]
+
+[[items]]
+id = "r3-tee"
+kind = "text_to_image"
+prompt = "a plain loose short-sleeve t-shirt on its own for a low-poly cartoon game, laid out flat in a T shape with sleeves straight out to the sides, simple chunky rounded shape, slightly A-line body, one flat solid blue colour, front view, plain white background"
+params = { aspect_ratio = "1:1" }
