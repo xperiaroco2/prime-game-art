@@ -158,7 +158,8 @@ to the rows that play one; its measures go to `metrics/<body>_s<sources>_c*.json
 measures of the same clips; a source run deletes the body type's partial files, like a full run. `[[pairs]]` takes
 either `pack` and `ual` (a pack clip against UAL1 clips, named after the pack clip, as in art #20) or `name` and
 `clips` (any keys, layered ones included, and an optional `note`). `inventory.json` lists `libraries` and each
-library's clips in place and with root motion (`ual2`, `ual2_rm`).
+library's clips in place and with root motion (`ual2`, `ual2_rm`). A `rates` run with `--sources` writes
+`rates/<body>/rates.json` with its selected rows only (the UAL2 review keeps its own output folder).
 
 ## Gotchas
 
