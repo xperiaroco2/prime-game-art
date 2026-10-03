@@ -93,3 +93,11 @@ class ReportChecksTest(unittest.TestCase):
     def test_summary_line(self) -> None:
         self.assertEqual(faces.summary(report()),
                          ["f9_test (Test): triangles eyes 300, brows 128, mouth 92; materials 5/1/2; decals at least 0.8 mm off the skin"])
+
+
+class DistanceLinesTest(unittest.TestCase):
+    def test_face_blink_and_talk_pixels_per_distance(self) -> None:
+        fp = {"m_full_neutral_2m": 190, "m_full_neutral_10m": 5, "m_full_blink_change_2m": 120, "m_full_blink_change_10m": 0,
+              "m_full_talk_change_2m": 40, "m_full_talk_change_10m": 2}
+        self.assertEqual(faces.distance_lines({"distance": {"face_pixels": {"f9_test": fp}}}),
+                         ["f9_test: m_full face 190/5, blink 120/0, talk 40/2 px at 2m/10m"])

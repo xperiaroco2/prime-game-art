@@ -58,8 +58,10 @@ CHOICES = {"kind": EYE_KINDS, "shape": EYE_SHAPES, "closed": CLOSED_STYLES, "hap
 MAX_LENGTH_M = 0.1
 
 REVIEW_KEYS = ("description", "heads_recipe", "heads", "skins", "overview_skins", "game_camera", "distances_m",
-               "distance_sheet", "strip")
-SHEETS = ("close", "distance", "overview", "strip")
+               "distance_sheet", "strip", "facial_hair")
+SHEETS = ("close", "distance", "overview", "strip", "beards")
+# Where a facial-hair part is cut from its source head (rest-pose world space; see faces_render.py).
+HAIR_ZONES = ("all", "chin", "lower_face")
 
 
 class StylesError(Exception):
@@ -357,6 +359,28 @@ def check_review(data: Any, styles: dict[str, Any] | None = None, source: str = 
                 ok = row[2] in styles["families"]
             if not ok:
                 problems.append(f"strip.rows: {row!r} is not [head, skin, family]")
+    fh = data.get("facial_hair")
+    if fh is not None:
+        if not isinstance(fh, dict):
+            problems.append("facial_hair: must be an object with heads, family and parts")
+        else:
+            for pair in fh.get("heads", []):
+                if not (isinstance(pair, list) and len(pair) == 2 and pair[0] in heads and pair[1] in skins):
+                    problems.append(f"facial_hair.heads: {pair!r} is not [head, skin] of heads and skins")
+            if styles is not None and fh.get("family") not in styles["families"]:
+                problems.append(f"facial_hair.family: {fh.get('family')!r} is not a family")
+            for i, p in enumerate(fh.get("parts", [])):
+                where = f"facial_hair.parts[{i}]"
+                if not isinstance(p, dict):
+                    problems.append(f"{where}: must be an object")
+                    continue
+                for key in ("label", "file", "object"):
+                    if not isinstance(p.get(key), str):
+                        problems.append(f"{where}.{key}: must be a text")
+                if not (isinstance(p.get("materials"), list) and p["materials"]):
+                    problems.append(f"{where}.materials: must list the head materials taken")
+                if p.get("zone") not in HAIR_ZONES:
+                    problems.append(f"{where}.zone: {p.get('zone')!r} is not one of {', '.join(HAIR_ZONES)}")
     if problems:
         raise StylesError(source, problems)
     return data

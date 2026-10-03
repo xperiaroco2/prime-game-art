@@ -121,6 +121,22 @@ def summary(report: dict[str, Any]) -> list[str]:
     return lines
 
 
+def distance_lines(report: dict[str, Any]) -> list[str]:
+    """Per family and distance-sheet head: how many screen pixels the neutral face covers at each distance, and how
+    many change when it blinks or talks (0: the game cannot show it there)."""
+    dist = report.get("distance", {})
+    lines = []
+    for fid, fp in dist.get("face_pixels", {}).items():
+        heads = sorted({k.split("_neutral_")[0] for k in fp if "_neutral_" in k})
+        parts = []
+        for hid in heads:
+            ds = sorted({k.rsplit("_", 1)[1] for k in fp if k.startswith(hid + "_neutral_")}, key=lambda d: float(d[:-1]))
+            row = lambda key: "/".join(str(fp.get(f"{hid}_{key}_{d}", "-")) for d in ds)  # noqa: E731
+            parts.append(f"{hid} face {row('neutral')}, blink {row('blink_change')}, talk {row('talk_change')} px at {'/'.join(ds)}")
+        lines.append(f"{fid}: " + "; ".join(parts))
+    return lines
+
+
 def run(args: argparse.Namespace) -> int:
     styles, review, heads, heads_path = load_inputs(args)
     families = _pick(args.families, list(styles["families"]), "families")
@@ -148,6 +164,8 @@ def run(args: argparse.Namespace) -> int:
         raise common.Failure(f"{SCRIPT} wrote no {report_path}")
     report = json.loads(report_path.read_text(encoding="utf-8"))
     for line in summary(report):
+        common.say(f"  {line}")
+    for line in distance_lines(report):
         common.say(f"  {line}")
     for key, strip in report.get("strip", {}).items():
         common.say(f"  strip {key}: {strip['action']} frames {strip['frames'][0]}-{strip['frames'][-1]}, the face moved "

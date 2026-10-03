@@ -8,18 +8,18 @@
    "mouth": {"corner": 0.0045, "mid": -0.0008, "w": 1.08}
   },
   "talk_a": {
-   "mouth": {"gap": 0.0105, "w": 0.82, "skew": -0.15, "round": 0.65, "mid": -0.0015}
+   "mouth": {"gap": 0.013, "w": 0.8, "skew": -0.15, "round": 0.65, "mid": -0.002}
   },
   "talk_o": {
-   "mouth": {"gap": 0.0095, "w": 0.48, "round": 0.5, "mid": -0.001}
+   "mouth": {"gap": 0.012, "w": 0.5, "round": 0.5, "mid": -0.0015}
   },
   "talk_e": {
-   "mouth": {"gap": 0.0045, "w": 1.0, "corner": 0.0012, "round": 0.35}
+   "mouth": {"gap": 0.0055, "w": 1.0, "corner": 0.0015, "round": 0.35}
   },
   "surprised": {
    "eyes": {"open": 1.4, "scale": 1.12, "pupil": 0.75},
    "brows": {"raise": 0.0045, "arch": 0.0012},
-   "mouth": {"gap": 0.0115, "w": 0.45, "round": 0.5, "mid": -0.0015}
+   "mouth": {"gap": 0.0145, "w": 0.48, "round": 0.5, "mid": -0.002}
   },
   "angry": {
    "eyes": {"open": 0.8, "tilt": 0.55},
@@ -71,7 +71,7 @@
   "f4_toon": {
    "name": "Cartoon iris",
    "summary": "Larger, taller eyes with a big coloured iris, a pupil and two highlights under a bold lash band with an outer flick; expressive brows and open cartoon mouths with teeth and tongue.",
-   "eyes": {"kind": "toon", "shape": "ellipse", "w": 0.015, "h": 0.0195, "depth": 0.008, "protrude": 0.0045, "lid_scale": 1.05, "iris": 0.0098, "pupil": 0.0047, "iris_v": -0.08, "highlights": [[-0.3, 0.35, 0.0026], [0.25, -0.3, 0.0013]], "lash": 0.0013, "lash_grow": 0.6, "flick": 0.0045, "flick_rise": 0.6, "closed": "lid"},
+   "eyes": {"kind": "toon", "shape": "ellipse", "w": 0.015, "h": 0.0195, "depth": 0.008, "protrude": 0.0045, "lid_scale": 1.05, "iris": 0.0098, "pupil": 0.0047, "iris_v": -0.08, "highlights": [[-0.3, 0.35, 0.0026], [0.25, -0.3, 0.0013]], "lash": 0.0019, "lash_grow": 0.6, "flick": 0.0045, "flick_rise": 0.6, "closed": "lid"},
    "brows": {"pts": [[-0.013, 0.027], [-0.003, 0.0315], [0.009, 0.0325], [0.017, 0.028]], "w": [0.0026, 0.0031, 0.0027, 0.0012], "thick": 0.0012},
    "mouth": {"w": 0.0185, "line": 0.0013, "lips": "rim", "rim": 0.0008, "teeth": 0.0035, "tongue": true, "corner": 0.002},
    "lip_tint": [0.7, 0.42, 0.42],
@@ -94,7 +94,7 @@
   "f6_painted": {
    "name": "Painted",
    "summary": "Graphic, decal-like shapes lying flat on the skin: an almond white with iris and pupil, a bold lash stroke with a flick, thin brow strokes and a drawn mouth. Almost no depth.",
-   "eyes": {"kind": "painted", "shape": "almond", "w": 0.0165, "h": 0.011, "top": 0.85, "bottom": 0.55, "slant": 0.08, "top_pow": 0.65, "bottom_pow": 0.85, "lift": 0.0008, "iris": 0.0062, "pupil": 0.0028, "iris_v": 0.05, "highlights": [[-0.2, 0.25, 0.0012]], "lash": 0.0011, "lash_grow": 1.0, "flick": 0.004, "closed": "arc", "happy": "arc", "arc": 0.001},
+   "eyes": {"kind": "painted", "shape": "almond", "w": 0.0165, "h": 0.011, "top": 0.85, "bottom": 0.55, "slant": 0.08, "top_pow": 0.65, "bottom_pow": 0.85, "lift": 0.0008, "iris": 0.0062, "pupil": 0.0028, "iris_v": 0.05, "highlights": [[-0.2, 0.25, 0.0012]], "lash": 0.0014, "lash_grow": 1.0, "flick": 0.004, "closed": "arc", "happy": "arc", "arc": 0.001},
    "brows": {"pts": [[-0.013, 0.0215], [-0.002, 0.0255], [0.01, 0.026], [0.018, 0.0225]], "w": [0.0013, 0.0016, 0.0013, 0.0004], "thick": 0.0},
    "mouth": {"w": 0.018, "lips": "full", "lip_up": 0.0012, "lip_lo": 0.002, "line": 0.0009, "teeth": 0.0025, "tongue": true, "lift": 0.0008},
    "lip_tint": [0.75, 0.42, 0.45],

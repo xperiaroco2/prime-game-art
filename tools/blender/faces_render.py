@@ -27,7 +27,7 @@ from mathutils import Vector
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import faces_styles as fst  # noqa: E402
-from um import assemble, poses  # noqa: E402
+from um import assemble, heads as hd, poses  # noqa: E402
 from um import facekit as fk  # noqa: E402
 from um import packs as pk  # noqa: E402
 from um import recipe as recipes  # noqa: E402
@@ -318,6 +318,17 @@ def set_skin(h, fid, fam, review, skin_name):
         set_color(lip, fst.lip_rgb(rgb, fam["lip_tint"]))
 
 
+def variants(fam, exprs):
+    """The distinct meshes a family needs per part: expressions whose values for that part are equal share one."""
+    out = {}
+    for part in FACE_PARTS:
+        groups = {}
+        for e in exprs:
+            groups.setdefault(json.dumps(fam["expressions"][e].get(part, {}), sort_keys=True), []).append(e)
+        out[part] = list(groups.values())
+    return out
+
+
 def solo(heads, keep):
     for h in heads:
         h.coll.hide_render = h not in keep
@@ -410,7 +421,7 @@ def main():
 
     for fid in fams:
         fam = styles["families"][fid]
-        frep = {"name": fam["name"], "summary": fam["summary"], "expressions": {}}
+        frep = {"name": fam["name"], "summary": fam["summary"], "variants": variants(fam, exprs), "expressions": {}}
         cells = {"front": [], "threequarter": []}
         for ename in exprs:
             erep = {}
@@ -452,6 +463,8 @@ def main():
         report["distance"] = distance_sheets(shots, heads, styles, review, fams, out, work)
     if "overview" in sheets:
         overview(shots, heads, styles, review, fams, out, work, ppm)
+    if "beards" in sheets and review.get("facial_hair"):
+        report["facial_hair"] = beards(shots, heads, styles, review, packs, out, work)
     if "strip" in sheets:
         report["strip"] = strips(shots, heads, styles, review, out, work, ppm)
 
@@ -485,6 +498,14 @@ def hero(shots, heads, fid, fam, review, out, work):
     save_image(np.concatenate([title, sheet], axis=0), os.path.join(out, f"{fid}_hero.jpg"), "JPEG")
 
 
+def face_pixels(a, bare, threshold=0.1):
+    """How many screen pixels show the face: those whose display colour differs from the bare head's by more than
+    threshold (0..1, largest channel)."""
+    if a.shape != bare.shape:
+        return None
+    return int((np.abs(a[..., :3] - bare[..., :3]).max(axis=2) > threshold).sum())
+
+
 def distance_sheets(shots, heads, styles, review, fams, out, work):
     cam = review["game_camera"]
     ds = review["distance_sheet"]
@@ -497,24 +518,43 @@ def distance_sheets(shots, heads, styles, review, fams, out, work):
         ppm_d = fst.pixels_per_metre({**cam, "height": h_px}, d)
         info["per_distance"][str(d)] = {"pixels_per_m": round(ppm_d, 1), "head_px": round(0.25 * ppm_d, 1),
                                         "eye_px_per_cm": round(0.01 * ppm_d, 2)}
+    def view(h, d, path):
+        face_c = Vector((h.x, -0.144, CELL_Z))
+        window = [face_c + Vector((dx, 0.0, dz)) for dx in (-CELL_M / 2, CELL_M / 2) for dz in (-CELL_M / 2, CELL_M / 2)]
+        eye = Vector((h.x, -0.144 - d, cam["eye_height_m"]))
+        return shots.perspective(path, eye, Vector((h.x, -0.144, 1.66)), cam["fov_deg"], w_px, h_px, window)
+
+    # the bare heads (no face parts) at each distance: a face's screen pixels are where it differs from them
+    bare = {}
+    for hid, skin in ds["heads"]:
+        h = by_id[hid]
+        solo(heads, [h])
+        h.clear_face()
+        set_color(h.skin, review["skins"][skin])
+        for d in dists:
+            bare[(hid, d)] = view(h, d, os.path.join(work, f"bare_{hid}_{d}m.png"))
+    solo(heads, heads)
+    info["face_pixels"] = {}
     for fid in fams:
         fam = styles["families"][fid]
-        cols = []
         crops = {}
+        fp = info["face_pixels"][fid] = {}
         for hid, skin in ds["heads"]:
             h = by_id[hid]
             solo(heads, [h])
             for ename in ds["expressions"]:
                 make_face(h, fid, fam, ename, review, skin)
-                face_c = Vector((h.x, -0.144, CELL_Z))
-                window = [face_c + Vector((dx, 0.0, dz)) for dx in (-CELL_M / 2, CELL_M / 2) for dz in (-CELL_M / 2, CELL_M / 2)]
                 for d in dists:
-                    eye = Vector((h.x, -0.144 - d, cam["eye_height_m"]))
-                    look = Vector((h.x, -0.144, 1.66))
-                    a = shots.perspective(os.path.join(work, f"{fid}_{hid}_{ename}_{d}m.png"), eye, look, cam["fov_deg"], w_px, h_px, window)
+                    a = view(h, d, os.path.join(work, f"{fid}_{hid}_{ename}_{d}m.png"))
                     crops[(hid, ename, d)] = a
+                    fp[f"{hid}_{ename}_{d}m"] = face_pixels(a, bare[(hid, d)])
         solo(heads, heads)
-        ch = max(a.shape[0] for a in crops.values())
+        # how many pixels change when the face blinks or talks: whether the game can show it at that distance
+        for hid, _ in ds["heads"]:
+            for d in dists:
+                for label, ename in (("blink", "closed"), ("talk", "talk_a")):
+                    if ename in ds["expressions"] and "neutral" in ds["expressions"]:
+                        fp[f"{hid}_{label}_change_{d}m"] = face_pixels(crops[(hid, ename, d)], crops[(hid, "neutral", d)])
         cells, col_labels = [], []
         for ename in ds["expressions"]:
             row = []
@@ -560,6 +600,70 @@ def overview(shots, heads, styles, review, fams, out, work, ppm):
     side = side_labels(shots, os.path.join(work, "overview_side.png"),
                        [f"{review['heads'][h.id]['label']}, {skin_of.get(h.id)}" for h in heads], cell_px, head_h, label_w, shots.px(20))
     save_image(grid(cells, top, side, head_h, label_w), os.path.join(out, "overview.jpg"), "JPEG")
+
+
+HAIR_KEEP = {
+    "all": lambda c: True,
+    "chin": zones.CUT_ZONES["chin_tuft"],  # Punk's goatee in "Red"
+    "lower_face": lambda c: c.z < 1.665 and c.y < -0.03,  # a beard below the cheekbones, in front of the ears
+}
+
+
+def beards(shots, heads, styles, review, packs, out, work):
+    """The men's pack facial hair on a man's and a woman's review head (input for the engineer, not a decision)."""
+    fh = review["facial_hair"]
+    fid = fh["family"]
+    fam = styles["families"][fid]
+    by_id = {h.id: h for h in heads}
+    px = shots.px(560)
+    win = 0.26
+    rows, rep = [], {}
+    for hid, skin in fh["heads"]:
+        h = by_id[hid]
+        solo(heads, [h])
+        make_face(h, fid, fam, "neutral", review, skin)
+        skin_rgb = review["skins"][skin]
+        made = []
+        for i, spec in enumerate(fh["parts"]):
+            keep = HAIR_KEEP[spec["zone"]]
+            mats = set(spec["materials"])
+            # the part is a region of a men's pack head, rebound to this head's rig (Head and Neck bones are shared)
+            obj, info = assemble.take_part(packs, h.id, f"facial_hair_{i}", "M", spec, h.arm,
+                                           keep=lambda m, c, mats=mats, keep=keep: m in mats and keep(c))
+            hd.inflate(obj, h.arm, 0.004)
+            for c in list(obj.users_collection):
+                c.objects.unlink(obj)
+            h.coll.objects.link(obj)
+            rgb = [x * 0.55 for x in skin_rgb] if spec.get("stubble") else review["heads"][hid]["brow"]
+            m = fk.tagged_material(h.id, f"facial_hair_{i}", rgb)
+            for slot in obj.material_slots:
+                slot.material = m
+            made.append(obj)
+            rep[f"{hid}_{i}"] = {"label": spec["label"], "triangles": tris(obj), "faces_kept": info["faces_kept"]}
+        update()
+        cells = []
+        for k in range(-1, len(made)):
+            for i, o in enumerate(made):
+                o.hide_render = i != k
+            cells.append(shots.ortho(os.path.join(work, f"beard_{hid}_{k + 1}.png"), h.x, 1.66, win, win, px))
+        rows.append(cells)
+        for o in made:
+            me = o.data
+            bpy.data.objects.remove(o, do_unlink=True)
+            bpy.data.meshes.remove(me)
+    solo(heads, heads)
+    labels = ["none"] + [p["label"] for p in fh["parts"]]
+    label_w, head_h = shots.px(230), shots.px(60)
+    top = heading(shots, os.path.join(work, "beards_head.png"), labels, px, label_w, head_h, shots.px(24))
+    side = side_labels(shots, os.path.join(work, "beards_side.png"),
+                       [f"{review['heads'][hid]['label']}, {skin}" for hid, skin in fh["heads"]], px, head_h, label_w, shots.px(22))
+    sheet = grid(rows, top, side, head_h, label_w)
+    title = shots.text(os.path.join(work, "beards_title.png"),
+                       [("Facial hair from the men's pack on both body types (with " + fam_title(fid, fam)
+                         + "), coloured like the brows: shown for the decision, not decided", 12, shots.px(30), shots.px(26), "LEFT")],
+                       sheet.shape[1], shots.px(60))
+    save_image(np.concatenate([title, sheet], axis=0), os.path.join(out, "facial_hair.jpg"), "JPEG")
+    return rep
 
 
 def render_clip(shots, h, act, path, loops):

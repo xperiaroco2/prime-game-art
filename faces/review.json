@@ -13,5 +13,17 @@
  "distances_m": [2, 5, 10],
  "distance_sheet": {"heads": [["m_full", "light"], ["w_full", "dark"]],
                     "expressions": ["neutral", "happy", "talk_a", "surprised", "angry", "closed"]},
- "strip": {"action": "Walk", "frames": 8, "rows": [["m_full", "light", "f3_almond"], ["w_full", "dark", "f4_toon"]]}
+ "strip": {"action": "Walk", "frames": 8, "rows": [["m_full", "light", "f3_almond"], ["w_full", "dark", "f4_toon"]]},
+ "facial_hair": {
+  "description": "Input for the engineer's open question (facial hair on both body types or not): the men's pack facial hair, split off its source heads and put on one man's and one woman's review head, coloured like the brows. Shown, not decided.",
+  "heads": [["m_full", "light"], ["w_full", "dark"]],
+  "family": "f3_almond",
+  "parts": [
+   {"label": "Worker moustache", "file": "Worker.glb", "object": "Worker_Head", "materials": ["Moustache"], "zone": "all"},
+   {"label": "Punk goatee", "file": "Punk.glb", "object": "Punk_Head", "materials": ["Red"], "zone": "chin"},
+   {"label": "Adventurer beard", "file": "Adventurer.glb", "object": "Adventurer_Head", "materials": ["Hair"], "zone": "lower_face"},
+   {"label": "King beard", "file": "King.glb", "object": "King_Head", "materials": ["Hair_White"], "zone": "lower_face"},
+   {"label": "Casual stubble", "file": "Casual Character.glb", "object": "Casual2_Head", "materials": ["Skin_Darker"], "zone": "all", "stubble": true}
+  ]
+ }
 }
