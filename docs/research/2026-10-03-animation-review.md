@@ -28,13 +28,14 @@ gaps and the recommendation below include it.
   (the only backward locomotion), HitRecieve_2 (a clear hit read) and the cartoony Death.
 - **Gaps in both free sets of art #20:** carrying the two-handed package, crawling and the downed state, getting up,
   strafes and backward walking, a floor pickup, emotes beyond a wave and a dance, and the first-person arm set.
-- **UAL2 Standard (art #24, free, CC0, UAL1's rig exactly) fills five of them:** the carry (Walk_Carry_Loop, and its
-  upper body layered over the idle and over the game's walk), the lying pose and the get-up after a revive
-  (LayToIdle), the floor pickup and put-down (Farm_Harvest, Farm_PlantSeed) and a thumbs-up (Yes), plus folded arms
-  and a head-shake idle, a big knockdown (Hit_Knockback) and a throw for later (OverhandThrow). It has **no** idle
+- **UAL2 Standard (art #24, free, CC0, UAL1's rig exactly) fills four of them and part of a fifth:** the carry
+  (Walk_Carry_Loop, and its upper body layered over the idle and over the game's walk), the lying pose and the get-up
+  after a revive (LayToIdle) and a thumbs-up (Yes); the floor pickup and put-down (Farm_Harvest, Farm_PlantSeed) only
+  for one-handed items: both reach the floor with the right hand while the left rests on the knee, so the two-handed
+  package needs a two-hand arm layer over the bend. Plus folded arms and a head-shake idle, a big knockdown (Hit_Knockback) and a throw for later (OverhandThrow). It has **no** idle
   carry, wave or crawl (the itch.io previews name IDLE_CARRY and WAVE, which the Standard files do not hold), and its
   knockback is a knockdown, not a push. **Still gaps:** crawling, strafes and backpedal, turning in place, being pushed
-  (a stagger), most emotes (clap, cheer, shrug, laugh) and the first-person arm set. UAL1 Pro ($9.99 or more) itemises
+  (a stagger), picking up and putting down the package with both hands, most emotes (clap, cheer, shrug, laugh) and the first-person arm set. UAL1 Pro ($9.99 or more) itemises
   crawling and 8-direction locomotion.
 - **To fix on any chosen clip:** stride length at the game's speeds; hand spacing for the big Ultimate Modular hands
   (Idle_Talking_Loop's hands pass 2.2 cm into each other, the pistol grip 2.3 cm); the women's arms (their fists press
@@ -212,8 +213,8 @@ layered row is UAL1's Idle_Loop under UAL2's carry upper body (`ual:Idle_Loop|ua
 | ual2 | Chest_Open | no | 1.37 | 0.00 / 0.00 | 0.0/0.0; 0.0/0.0 | -0.6 / -0.8 | 0.0/0.0/0.0/1.0; 0.0/0.0/0.0/7.5 | 0.0 / 0.0 | 55.4 / 55.4 | 16.1-77.9 | Bends and lifts a lid at knee height with the right hand (1.37 s): a use on a low object; the women's left fist presses 7.5 cm into the thigh while bending |
 | ual2 | ClimbUp_1m | no | 0.67 | - / - | -; - | 1.0 / 1.2 | 0.0/0.0/0.0/5.1; 0.0/0.0/0.0/5.1 | 0.0 / 0.0 | 41.3 / 41.3 | 3.6-77.9 | Climbs onto a 1 m ledge (root motion 1.68 m forward, 1.0 m up); in place the body rises off the floor. The game has a 1 m jump and no climb: not needed now |
 | ual2 | Consume | no | 1.33 | 0.00 / 0.00 | 0.0/0.0; 0.0/0.0 | -0.6 / -0.9 | 0.0/0.0/0.0/0.0; 0.0/0.0/0.0/0.0 | 0.0 / 0.0 | 95.7 / 95.7 | 15.7-77.9 | Brings the right hand to the mouth (eat or drink); forearm twist 96 degrees. Not needed |
-| ual2 | Farm_Harvest | no | 2.50 | 0.00 / 0.00 | 0.0/0.0; 0.0/0.0 | -0.6 / -0.8 | 0.0/0.0/0.0/0.4; 0.0/0.0/0.0/3.3 | 0.0 / 0.0 | 12.0 / 12.0 | 0.0-77.9 | Bends deep, reaches the floor with the right hand, pulls up and stands (2.5 s): **the floor pickup** art #20 lacked; long for a game action (cut or retime to about 1 s); the women's fists touch the thighs (3.3 cm) while bending |
-| ual2 | Farm_PlantSeed | no | 2.77 | 0.00 / 0.00 | 3.6/55.2; 4.0/71.1 | -6.5 / -7.4 | 0.0/0.0/0.0/3.4; 0.0/0.0/0.0/5.0 | 0.0 / 0.0 | 30.3 / 30.3 | 49.1-77.9 | Kneels on one knee, places something on the floor and stands (2.77 s): **the put-down** art #20 lacked; the knee goes 6.5/7.4 cm into the floor as on UAL's own mannequin (6.7/7.2): the knee pad, a floor clamp or accepted; the women's hand rests on the thigh (5.0 cm) |
+| ual2 | Farm_Harvest | no | 2.50 | 0.00 / 0.00 | 0.0/0.0; 0.0/0.0 | -0.6 / -0.8 | 0.0/0.0/0.0/0.4; 0.0/0.0/0.0/3.3 | 0.0 / 0.0 | 12.0 / 12.0 | 0.0-77.9 | Bends deep, reaches the floor with the right hand (the left stays on the knee), pulls up and stands (2.5 s): **a one-handed floor pickup** art #20 lacked (the knife; not the two-handed package as it stands); long for a game action (cut or retime to about 1 s); the women's fists touch the thighs (3.3 cm) while bending |
+| ual2 | Farm_PlantSeed | no | 2.77 | 0.00 / 0.00 | 3.6/55.2; 4.0/71.1 | -6.5 / -7.4 | 0.0/0.0/0.0/3.4; 0.0/0.0/0.0/5.0 | 0.0 / 0.0 | 30.3 / 30.3 | 49.1-77.9 | Kneels on one knee, places something on the floor with the right hand (the left rests on the knee) and stands (2.77 s): **a one-handed put-down** art #20 lacked; the knee goes 6.5/7.4 cm into the floor as on UAL's own mannequin (6.7/7.2): the knee pad, a floor clamp or accepted; the women's hand rests on the thigh (5.0 cm) |
 | ual2 | Farm_Watering | no | 3.80 | 0.00 / 0.00 | 0.0/0.0; 0.0/0.0 | -0.6 / -0.8 | 0.0/0.0/0.0/0.0; 0.0/0.0/0.0/1.8 | 0.0 / 0.0 | 14.0 / 14.0 | 77.9-77.9 | Pours from a can in the right hand (3.8 s). Not needed |
 | ual2 | Hit_Knockback | no | 0.83 | - / - | -; - | -0.9 / -1.0 | 0.0/0.0/0.0/1.3; 0.0/0.0/0.0/7.2 | 164.5 / 164.5 | 11.1 / 11.1 | 20.2-77.9 | A blast hit: starts crouched, is launched up and back and lands flat on the back (0.83 s; root motion 3.0 m back at 3.6 m/s). **A knockdown, not a push**: an alternative to Death01; its last pose is 1.5 cm and 10 degrees from LayToIdle's first. Lowest -0.9/-1.0 cm; the women's fist goes 7.2 cm into the thigh in the air |
 | ual2 | Idle_FoldArms_Loop | yes | 2.50 | 0.00 / 0.00 | 0.6/4.6; 0.6/4.6 | -0.6 / -0.8 | 3.4/0.0/0.0/0.0; 0.0/0.0/0.0/0.0 | 0.5 (x0.7) / 0.5 (x0.7) | 24.7 / 24.7 | 77.9-77.9 | Arms folded across the chest, the weight shifting: **a clear idle emote**; the men's big hands press 3.4 cm into the chest |
@@ -266,7 +267,7 @@ it named where the need was a gap). Looked at in the strips; verdicts on both bo
 | `ual2_downed` | UAL2 LayToIdle, UAL1 Death01 | **UAL2 fills the get-up and the lying pose**: LayToIdle starts lying on the back, arms by the sides, and stands up through a sit-up and a crouch in 1.53 s, where art #20 had only Death01's last frame and no get-up |
 | `ual2_gestures` | UAL2 Yes, Idle_FoldArms_Loop, Idle_No_Loop, pack Wave | **Two new emotes read well**: the thumbs-up (Yes) and the folded arms; the head shake is subtle. The pack's Wave stays the wave |
 | `ual2_talking` | UAL2 Idle_TalkingPhone_Loop, UAL1 Idle_Talking_Loop | A phone call (hand at the ear, 5 to 8 cm into the big head); Idle_Talking_Loop stays the talking clip |
-| `ual2_pickup` | UAL2 Farm_Harvest, Farm_PlantSeed, UAL1 PickUp_Table | **UAL2 fills the floor pickup and the put-down**: a deep bend to the floor and a one-knee kneel to place, against PickUp_Table's waist-height reach. Both are long for a key press (2.5 and 2.8 s): cut or retime to about 1 s |
+| `ual2_pickup` | UAL2 Farm_Harvest, Farm_PlantSeed, UAL1 PickUp_Table | **UAL2 fills the floor pickup and the put-down for one-handed items only**: a deep bend to the floor and a one-knee kneel to place, against PickUp_Table's waist-height reach, but in both the right hand alone reaches the floor while the left rests on the knee. The Delivery package is two-handed (`mvp-rules.md:87-93`): for it the bend needs a two-hand arm pose layered on top (the carry's upper body blended in at the bottom of the bend) or our own clip. Both are long for a key press (2.5 and 2.8 s): cut or retime to about 1 s |
 | `ual2_use` | UAL2 Chest_Open, UAL1 Interact | Chest_Open is a use on something low (a lid at knee height); Interact stays the use |
 | `ual2_hold` | UAL2 Idle_Lantern_Loop, UAL1 Idle_Torch_Loop | The lantern arm is held straight out: no better than the torch hold |
 | `ual2_knife` | UAL2 Melee_Hook, Sword_Regular_A, pack Sword_Slash | Both UAL2 swings are lunging combat moves (deep stances, 0.43 to 0.47 s); the pack's Sword_Slash stays the knife |
@@ -325,7 +326,7 @@ Read from the game repo (read only, 2026-10-03). The game has no crouch, no guns
 | Jump (1.0 m) | `base_mode.tres:329` `jump_height_m = 1.0`; `mvp-rules.md:101` | Jump_Start, Jump_Loop, Jump_Land (in place; the jump physics lifts the body) | UAL | ready |
 | Idle | every phase | Idle_Loop (relaxed, the same on both bodies) | UAL | ready |
 | Talking by proximity voice | `docs/GDD.md:23` (fun before any match: customization, gestures and proximity voice) | Idle_Talking_Loop (open, moving fingers); its hands pass 2.2 cm into each other | UAL | hand spacing to fix |
-| Use, pick up, put down (left mouse, E, Q) | `docs/decisions/2026-10-01-m4-first-person-client.md:81-83`; `mvp-rules.md:90-93` (a key places the item on the ground in front) | Interact (press with the index finger); PickUp_Table (waist height); **Farm_Harvest (floor pickup) and Farm_PlantSeed (put-down), UAL2** | UAL / UAL2 | floor pickup and put-down: retime to about 1 s (2.5 and 2.8 s now) |
+| Use, pick up, put down (left mouse, E, Q) | `docs/decisions/2026-10-01-m4-first-person-client.md:81-83`; `mvp-rules.md:90-93` (a key places the item on the ground in front) | Interact (press with the index finger); PickUp_Table (waist height); **Farm_Harvest (floor pickup) and Farm_PlantSeed (put-down), UAL2, one-handed** | UAL / UAL2 | one-handed items: retime to about 1 s (2.5 and 2.8 s now); the two-handed package: **partial** (a two-hand layer over the bend, or our own) |
 | Carry the two-handed package | `mvp-rules.md:88-89`; `client/player/first_person_hand.gd:4-10` (held low in the middle with both hands) | **UAL2 Walk_Carry_Loop's upper body, layered over Idle_Loop (idle) and over the walk blend (moving; `carry_4.5`)**; the hands touch (0.7 to 1.1 cm) | UAL2 | the layer to build in Godot; hand spacing to the package's width |
 | Hold an item one-handed, the belt item visible | `mvp-rules.md:86-92` | Idle_Torch_Loop as an upper-body hold; the pack's Idle_Sword | UAL / pack | upper-body layer to build |
 | Use the knife (narrow, short hit zone, 1.5 m) | `mvp-rules.md:122-127`; `content/items/knife.tres:23` | Sword_Slash (pin the feet); UAL Punch_Jab as a quick stab | pack | fix the feet |
@@ -355,7 +356,7 @@ Money options are questions for the engineer; nothing was bought or downloaded.
 | Turning in place | - | not itemised on the UAL1 Pro page | a stepping turn keyed on Idle_Loop: 0.5 to 1 day |
 | Being pushed (a stagger) | none: UAL2 Standard's Hit_Knockback is a knockdown (art #24) | - | a short stagger from Hit_Chest and a side-step: 0.5 day |
 | Stride length at the game's 4.5 m/s | - | - | stride warping in the retarget (see "Locomotion at the game's speeds"): about 1 day |
-| Floor pickup and put-down | **Filled (art #24)**: UAL2 Standard's Farm_Harvest and Farm_PlantSeed, retimed to about 1 s | - | the retime: 2 hours |
+| Floor pickup and put-down | **One-handed items filled (art #24)**: UAL2 Standard's Farm_Harvest and Farm_PlantSeed, retimed to about 1 s; **the two-handed package: partial** (both clips reach down with the right hand only) | - | the retime: 2 hours; a two-hand pickup and put-down for the package (the carry's upper body blended in at the bottom of Farm_Harvest's bend, or keyed on it): 0.5 to 1 day |
 | Emotes and five-finger gestures | UAL2 Standard (art #24): Yes (thumbs-up), Idle_FoldArms_Loop, Idle_No_Loop; no wave (the pack's Wave serves) | UAL1 Pro: "emotes" (not itemised) | hand-keyed on the five-finger chains: 2 to 4 hours each, about 2 days for the four left (clap, cheer, shrug, laugh) |
 | Throwing (later, #37) | **UAL2 Standard**: OverhandThrow | - | - |
 | First-person arm set | - | - | 3 to 4 days (same retarget and measures) |
@@ -382,10 +383,11 @@ days, side-steps and backpedal 2 days, against $9.99 one-off). UAL2 Source does 
    Sword_Slash; the guard fists pushed forward if a punch is ever used; and a check of the wrist at 60 to 97 degrees
    of forearm twist in game (or a twist bone in the contract v2).
 3. **Close the gaps in this order:** UAL2 Standard (art #24) closed the carry (Walk_Carry_Loop's upper body as a
-   layer over the idle and the walk), the lying pose and the get-up (LayToIdle), the floor pickup and put-down
-   (Farm_Harvest, Farm_PlantSeed, retimed) and a thumbs-up (Yes); its rig is UAL1's and the tools run on it unchanged.
-   Left: the crawl and the strafes and backpedal (UAL1 Pro, $9.99, or 4 to 5 days of our own), being pushed (our own
-   stagger, 0.5 day), turning in place, the remaining emotes, the first-person arm set.
+   layer over the idle and the walk), the lying pose and the get-up (LayToIdle) and a thumbs-up (Yes), and the floor
+   pickup and put-down for one-handed items (Farm_Harvest, Farm_PlantSeed, retimed); its rig is UAL1's and the tools
+   run on it unchanged. Left: the crawl and the strafes and backpedal (UAL1 Pro, $9.99, or 4 to 5 days of our own),
+   being pushed (our own stagger, 0.5 day), the package's two-handed pickup and put-down (a two-hand layer over
+   Farm_Harvest's bend, 0.5 to 1 day), turning in place, the remaining emotes, the first-person arm set.
 4. **Speeds:** for 4.5 m/s the cycle-synced Walk_Loop/Jog blend at 1.0x until stride warping lands (not the Jog at
    0.81x/0.76x: a slow-motion bound); for 7.0 m/s Sprint_Loop at 0.82x (men) or 0.76x (women), or its blend with the
    Jog. The rates come from UAL's root-motion speeds scaled to each body (Jog 5.54/5.96 m/s, Sprint 8.53/9.18).
