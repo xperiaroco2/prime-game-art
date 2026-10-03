@@ -46,6 +46,16 @@ class KeysTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             anim_keys.parse_sources("ual3", {"pack", "ual", "ual2"})
 
+    def test_a_rates_run_over_some_sources_keeps_the_other_rows(self) -> None:
+        old = {"body": "men", "natural_speed_m_s": {"ual:Jog_Fwd_Loop": 5.5},
+               "rows": {"walk_4.5": {"lanes": [1]}, "carry_4.5": {"lanes": ["old"]}}}
+        new = {"body": "men", "natural_speed_m_s": {"ual2:Walk_Carry_Loop": 0.67},
+               "rows": {"carry_4.5": {"lanes": ["new"]}}}
+        merged = anim_keys.merge_rates(old, new)
+        self.assertEqual(merged["rows"], {"walk_4.5": {"lanes": [1]}, "carry_4.5": {"lanes": ["new"]}})
+        self.assertEqual(merged["natural_speed_m_s"], {"ual:Jog_Fwd_Loop": 5.5, "ual2:Walk_Carry_Loop": 0.67})
+        self.assertIs(anim_keys.merge_rates(None, new), new)
+
     def test_both_pair_forms(self) -> None:
         cfg = {"pairs": [{"pack": "Wave", "ual": ["Idle_Talking_Loop"]},
                          {"name": "carry", "clips": ["ual2:Walk_Carry_Loop", "ual:Idle_Loop|ual2:Walk_Carry_Loop"]}]}

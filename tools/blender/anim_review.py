@@ -586,8 +586,7 @@ def cmd_rates(a):
     out_dir = os.path.join(a.out, "rates", a.body)
     os.makedirs(out_dir, exist_ok=True)
     if not rows:
-        with open(os.path.join(out_dir, "rates.json"), "w", encoding="utf-8") as f:
-            json.dump({"body": a.body, "rows": {}}, f, indent=1)
+        write_rates(out_dir, {"body": a.body, "rows": {}}, a.sources is not None)
         return
     width = max(len(r["clips"]) for r in rows)
     chars = setup_characters(a, width)
@@ -655,8 +654,21 @@ def cmd_rates(a):
         print("RATES", a.body, r["name"], json.dumps(report["rows"][r["name"]]["lanes"]))
     for ob in stripes:
         bpy.data.objects.remove(ob, do_unlink=True)
-    with open(os.path.join(out_dir, "rates.json"), "w", encoding="utf-8") as f:
-        json.dump(report, f, indent=1)
+    write_rates(out_dir, report, a.sources is not None)
+
+
+def write_rates(out_dir, report, some_rows):
+    """rates/<body>/rates.json; a run over some sources (some_rows) keeps the other rows of an earlier report."""
+    path = os.path.join(out_dir, "rates.json")
+    old = None
+    if some_rows and os.path.isfile(path):
+        try:
+            with open(path, encoding="utf-8") as f:
+                old = json.load(f)
+        except (OSError, ValueError):
+            old = None
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(anim_keys.merge_rates(old, report), f, indent=1)
 
 
 def main(argv):

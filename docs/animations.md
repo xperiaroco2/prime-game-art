@@ -161,8 +161,8 @@ and `ual,ual2` the later one wins), then a partial run's `<body>_part_c*.json`, 
 the same clips; a source run deletes the body type's partial files, like a full run. `[[pairs]]` takes
 either `pack` and `ual` (a pack clip against UAL1 clips, named after the pack clip, as in art #20) or `name` and
 `clips` (any keys, layered ones included, and an optional `note`). `inventory.json` lists `libraries` and each
-library's clips in place and with root motion (`ual2`, `ual2_rm`). A `rates` run with `--sources` writes
-`rates/<body>/rates.json` with its selected rows only (the UAL2 review keeps its own output folder).
+library's clips in place and with root motion (`ual2`, `ual2_rm`). A `rates` run with `--sources` replaces its
+selected rows in `rates/<body>/rates.json` and keeps the other rows of an earlier run there.
 
 ## Gotchas
 

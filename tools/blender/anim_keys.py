@@ -89,6 +89,17 @@ def selected(keys: list[str], sources: set[str] | None) -> bool:
     return sources is None or any(sources_of(k) & sources for k in keys)
 
 
+def merge_rates(old: dict | None, new: dict) -> dict:
+    """A rates report of a run over some sources laid over an earlier report (None: none): the new rows replace those
+    of the same name, the others stay, and the natural speeds are joined."""
+    if not old:
+        return new
+    out = {**old, **new}
+    out["rows"] = {**old.get("rows", {}), **new.get("rows", {})}
+    out["natural_speed_m_s"] = {**old.get("natural_speed_m_s", {}), **new.get("natural_speed_m_s", {})}
+    return out
+
+
 def parse_sources(text: str, known: set[str]) -> set[str] | None:
     """A comma-separated source list ("" or "all": None, every source); raises ValueError on an unknown one."""
     if text in ("", "all"):
