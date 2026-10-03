@@ -5338,6 +5338,7 @@
     "SciFi_Light",
     "SciFi_Light_Accent"
    ],
+   "neck_bottom_m": 1.4271,
    "pieces": 42,
    "recipe": {
     "cut": [],
@@ -5348,6 +5349,7 @@
      "SciFi_Light_Accent"
     ],
     "object": "SpaceSuit_Head",
+    "replaces": "skull",
     "role": "headwear"
    },
    "recipe_check": {
@@ -5356,6 +5358,7 @@
     "mismatch_by_piece": 0,
     "proposed_zones": []
    },
+   "replaces": "skull",
    "source": {
     "body_type": "M",
     "file": "Astronaut.glb",
@@ -5524,6 +5527,7 @@
     "Swat_Black",
     "Visor"
    ],
+   "neck_bottom_m": 1.482,
    "pieces": 10,
    "recipe": {
     "cut": [],
@@ -5534,6 +5538,7 @@
      "Visor"
     ],
     "object": "Swat_Head",
+    "replaces": "skull",
     "role": "headwear"
    },
    "recipe_check": {
@@ -5542,6 +5547,7 @@
     "mismatch_by_piece": 0,
     "proposed_zones": []
    },
+   "replaces": "skull",
    "source": {
     "body_type": "M",
     "file": "Swat.glb",
@@ -25816,6 +25822,776 @@
    "M": {
     "cells": [
      {
+      "a": "headwear_m_astronaut_space_helmet",
+      "allowance": {
+       "rest": {
+        "poke": 2,
+        "see_through": 8
+       },
+       "walk": {
+        "poke": 2,
+        "see_through": 2
+       }
+      },
+      "b": "top_m_adventurer",
+      "head_bottom_m": 1.4271,
+      "outer": "top",
+      "overlap_mm": 129.8,
+      "probe": {
+       "rest": {
+        "poke": 0,
+        "rays": 1368,
+        "see_through": 2
+       },
+       "walk": {
+        "poke": 0,
+        "rays": 1368,
+        "see_through": 0
+       }
+      },
+      "references": 2,
+      "top_neck_ring_m": 1.5569,
+      "verdict": "ok"
+     },
+     {
+      "a": "headwear_m_astronaut_space_helmet",
+      "allowance": {
+       "rest": {
+        "poke": 2,
+        "see_through": 6
+       },
+       "walk": {
+        "poke": 2,
+        "see_through": 2
+       }
+      },
+      "b": "top_m_astronaut",
+      "head_bottom_m": 1.4271,
+      "outer": "top",
+      "overlap_mm": 159.2,
+      "probe": {
+       "rest": {
+        "poke": 0,
+        "rays": 1620,
+        "see_through": 4
+       },
+       "walk": {
+        "poke": 0,
+        "rays": 1620,
+        "see_through": 0
+       }
+      },
+      "references": 2,
+      "top_neck_ring_m": 1.5863,
+      "verdict": "ok"
+     },
+     {
+      "a": "headwear_m_astronaut_space_helmet",
+      "allowance": {
+       "rest": {
+        "poke": 35,
+        "see_through": 8
+       },
+       "walk": {
+        "poke": 29,
+        "see_through": 2
+       }
+      },
+      "b": "top_m_beach",
+      "head_bottom_m": 1.4271,
+      "outer": "top",
+      "overlap_mm": 116.6,
+      "probe": {
+       "rest": {
+        "poke": 25,
+        "rays": 1260,
+        "see_through": 4
+       },
+       "walk": {
+        "poke": 13,
+        "rays": 1260,
+        "see_through": 0
+       }
+      },
+      "references": 2,
+      "top_neck_ring_m": 1.5437,
+      "verdict": "ok"
+     },
+     {
+      "a": "headwear_m_astronaut_space_helmet",
+      "allowance": {
+       "rest": {
+        "poke": 2,
+        "see_through": 6
+       },
+       "walk": {
+        "poke": 2,
+        "see_through": 2
+       }
+      },
+      "b": "top_m_business",
+      "head_bottom_m": 1.4271,
+      "outer": "top",
+      "overlap_mm": 131.6,
+      "probe": {
+       "rest": {
+        "poke": 0,
+        "rays": 1368,
+        "see_through": 6
+       },
+       "walk": {
+        "poke": 0,
+        "rays": 1368,
+        "see_through": 0
+       }
+      },
+      "references": 2,
+      "top_neck_ring_m": 1.5587,
+      "verdict": "ok"
+     },
+     {
+      "a": "headwear_m_astronaut_space_helmet",
+      "allowance": {
+       "rest": {
+        "poke": 2,
+        "see_through": 6
+       },
+       "walk": {
+        "poke": 2,
+        "see_through": 2
+       }
+      },
+      "b": "top_m_casual",
+      "head_bottom_m": 1.4271,
+      "outer": "top",
+      "overlap_mm": 129.8,
+      "probe": {
+       "rest": {
+        "poke": 0,
+        "rays": 1368,
+        "see_through": 4
+       },
+       "walk": {
+        "poke": 0,
+        "rays": 1368,
+        "see_through": 0
+       }
+      },
+      "references": 2,
+      "top_neck_ring_m": 1.5569,
+      "verdict": "ok"
+     },
+     {
+      "a": "headwear_m_astronaut_space_helmet",
+      "allowance": {
+       "rest": {
+        "poke": 39,
+        "see_through": 6
+       },
+       "walk": {
+        "poke": 23,
+        "see_through": 2
+       }
+      },
+      "b": "top_m_farmer",
+      "head_bottom_m": 1.4271,
+      "outer": "top",
+      "overlap_mm": 128.1,
+      "probe": {
+       "rest": {
+        "poke": 25,
+        "rays": 1368,
+        "see_through": 6
+       },
+       "walk": {
+        "poke": 20,
+        "rays": 1368,
+        "see_through": 0
+       }
+      },
+      "references": 2,
+      "top_neck_ring_m": 1.5552,
+      "verdict": "ok"
+     },
+     {
+      "a": "headwear_m_astronaut_space_helmet",
+      "allowance": {
+       "rest": {
+        "poke": 2,
+        "see_through": 6
+       },
+       "walk": {
+        "poke": 2,
+        "see_through": 2
+       }
+      },
+      "b": "top_m_hoodie",
+      "fix_tried": {
+       "closes": false,
+       "drop_m": 0.03,
+       "fix": "extend_edge",
+       "part": "head",
+       "probe": {
+        "rest": {
+         "poke": 0,
+         "rays": 1800,
+         "see_through": 18
+        },
+        "walk": {
+         "poke": 0,
+         "rays": 1800,
+         "see_through": 0
+        }
+       },
+       "rounds": [
+        {
+         "drop_m": 0.01,
+         "probe": {
+          "rest": {
+           "poke": 0,
+           "rays": 1620,
+           "see_through": 18
+          },
+          "walk": {
+           "poke": 0,
+           "rays": 1620,
+           "see_through": 0
+          }
+         }
+        },
+        {
+         "drop_m": 0.02,
+         "probe": {
+          "rest": {
+           "poke": 0,
+           "rays": 1692,
+           "see_through": 22
+          },
+          "walk": {
+           "poke": 0,
+           "rays": 1692,
+           "see_through": 0
+          }
+         }
+        },
+        {
+         "drop_m": 0.03,
+         "probe": {
+          "rest": {
+           "poke": 0,
+           "rays": 1800,
+           "see_through": 18
+          },
+          "walk": {
+           "poke": 0,
+           "rays": 1800,
+           "see_through": 0
+          }
+         }
+        }
+       ],
+       "vertices_moved": 48
+      },
+      "head_bottom_m": 1.4271,
+      "outer": "head",
+      "overlap_mm": 146.5,
+      "probe": {
+       "rest": {
+        "poke": 0,
+        "rays": 1512,
+        "see_through": 14
+       },
+       "walk": {
+        "poke": 0,
+        "rays": 1512,
+        "see_through": 0
+       }
+      },
+      "references": 2,
+      "top_neck_ring_m": 1.5736,
+      "verdict": "gap"
+     },
+     {
+      "a": "headwear_m_astronaut_space_helmet",
+      "allowance": {
+       "rest": {
+        "poke": 2,
+        "see_through": 6
+       },
+       "walk": {
+        "poke": 2,
+        "see_through": 2
+       }
+      },
+      "b": "top_m_king",
+      "head_bottom_m": 1.4271,
+      "outer": "top",
+      "overlap_mm": 136.6,
+      "probe": {
+       "rest": {
+        "poke": 0,
+        "rays": 1440,
+        "see_through": 4
+       },
+       "walk": {
+        "poke": 0,
+        "rays": 1440,
+        "see_through": 0
+       }
+      },
+      "references": 2,
+      "top_neck_ring_m": 1.5637,
+      "verdict": "ok"
+     },
+     {
+      "a": "headwear_m_astronaut_space_helmet",
+      "allowance": {
+       "rest": {
+        "poke": 2,
+        "see_through": 8
+       },
+       "walk": {
+        "poke": 2,
+        "see_through": 3
+       }
+      },
+      "b": "top_m_punk",
+      "head_bottom_m": 1.4271,
+      "outer": "top",
+      "overlap_mm": 172.8,
+      "probe": {
+       "rest": {
+        "poke": 30,
+        "rays": 1764,
+        "see_through": 4
+       },
+       "walk": {
+        "poke": 30,
+        "rays": 1764,
+        "see_through": 2
+       }
+      },
+      "references": 2,
+      "top_neck_ring_m": 1.5999,
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_m_astronaut_space_helmet",
+      "allowance": {
+       "rest": {
+        "poke": 2,
+        "see_through": 6
+       },
+       "walk": {
+        "poke": 2,
+        "see_through": 2
+       }
+      },
+      "b": "top_m_swat",
+      "head_bottom_m": 1.4271,
+      "outer": "top",
+      "overlap_mm": 152.9,
+      "probe": {
+       "rest": {
+        "poke": 0,
+        "rays": 1584,
+        "see_through": 6
+       },
+       "walk": {
+        "poke": 0,
+        "rays": 1584,
+        "see_through": 0
+       }
+      },
+      "references": 2,
+      "top_neck_ring_m": 1.58,
+      "verdict": "ok"
+     },
+     {
+      "a": "headwear_m_astronaut_space_helmet",
+      "allowance": {
+       "rest": {
+        "poke": 2,
+        "see_through": 6
+       },
+       "walk": {
+        "poke": 2,
+        "see_through": 2
+       }
+      },
+      "b": "top_m_worker",
+      "head_bottom_m": 1.4271,
+      "outer": "top",
+      "overlap_mm": 129.8,
+      "probe": {
+       "rest": {
+        "poke": 0,
+        "rays": 1368,
+        "see_through": 4
+       },
+       "walk": {
+        "poke": 0,
+        "rays": 1368,
+        "see_through": 0
+       }
+      },
+      "references": 2,
+      "top_neck_ring_m": 1.5569,
+      "verdict": "ok"
+     },
+     {
+      "a": "headwear_m_swat_helmet",
+      "allowance": {
+       "rest": {
+        "poke": 2,
+        "see_through": 8
+       },
+       "walk": {
+        "poke": 2,
+        "see_through": 2
+       }
+      },
+      "b": "top_m_adventurer",
+      "head_bottom_m": 1.482,
+      "outer": "top",
+      "overlap_mm": 74.9,
+      "probe": {
+       "rest": {
+        "poke": 0,
+        "rays": 864,
+        "see_through": 0
+       },
+       "walk": {
+        "poke": 0,
+        "rays": 864,
+        "see_through": 0
+       }
+      },
+      "references": 2,
+      "top_neck_ring_m": 1.5569,
+      "verdict": "ok"
+     },
+     {
+      "a": "headwear_m_swat_helmet",
+      "allowance": {
+       "rest": {
+        "poke": 2,
+        "see_through": 6
+       },
+       "walk": {
+        "poke": 2,
+        "see_through": 2
+       }
+      },
+      "b": "top_m_astronaut",
+      "head_bottom_m": 1.482,
+      "outer": "top",
+      "overlap_mm": 104.3,
+      "probe": {
+       "rest": {
+        "poke": 0,
+        "rays": 1152,
+        "see_through": 0
+       },
+       "walk": {
+        "poke": 0,
+        "rays": 1152,
+        "see_through": 0
+       }
+      },
+      "references": 2,
+      "top_neck_ring_m": 1.5863,
+      "verdict": "ok"
+     },
+     {
+      "a": "headwear_m_swat_helmet",
+      "allowance": {
+       "rest": {
+        "poke": 35,
+        "see_through": 8
+       },
+       "walk": {
+        "poke": 29,
+        "see_through": 2
+       }
+      },
+      "b": "top_m_beach",
+      "head_bottom_m": 1.482,
+      "outer": "top",
+      "overlap_mm": 61.7,
+      "probe": {
+       "rest": {
+        "poke": 35,
+        "rays": 756,
+        "see_through": 0
+       },
+       "walk": {
+        "poke": 25,
+        "rays": 756,
+        "see_through": 0
+       }
+      },
+      "references": 2,
+      "top_neck_ring_m": 1.5437,
+      "verdict": "ok"
+     },
+     {
+      "a": "headwear_m_swat_helmet",
+      "allowance": {
+       "rest": {
+        "poke": 2,
+        "see_through": 4
+       },
+       "walk": {
+        "poke": 2,
+        "see_through": 2
+       }
+      },
+      "b": "top_m_business",
+      "head_bottom_m": 1.482,
+      "outer": "top",
+      "overlap_mm": 76.7,
+      "probe": {
+       "rest": {
+        "poke": 0,
+        "rays": 900,
+        "see_through": 0
+       },
+       "walk": {
+        "poke": 0,
+        "rays": 900,
+        "see_through": 0
+       }
+      },
+      "references": 2,
+      "top_neck_ring_m": 1.5587,
+      "verdict": "ok"
+     },
+     {
+      "a": "headwear_m_swat_helmet",
+      "allowance": {
+       "rest": {
+        "poke": 2,
+        "see_through": 4
+       },
+       "walk": {
+        "poke": 2,
+        "see_through": 2
+       }
+      },
+      "b": "top_m_casual",
+      "head_bottom_m": 1.482,
+      "outer": "top",
+      "overlap_mm": 74.9,
+      "probe": {
+       "rest": {
+        "poke": 0,
+        "rays": 864,
+        "see_through": 0
+       },
+       "walk": {
+        "poke": 0,
+        "rays": 864,
+        "see_through": 0
+       }
+      },
+      "references": 2,
+      "top_neck_ring_m": 1.5569,
+      "verdict": "ok"
+     },
+     {
+      "a": "headwear_m_swat_helmet",
+      "allowance": {
+       "rest": {
+        "poke": 39,
+        "see_through": 4
+       },
+       "walk": {
+        "poke": 23,
+        "see_through": 2
+       }
+      },
+      "b": "top_m_farmer",
+      "head_bottom_m": 1.482,
+      "outer": "top",
+      "overlap_mm": 73.2,
+      "probe": {
+       "rest": {
+        "poke": 43,
+        "rays": 864,
+        "see_through": 0
+       },
+       "walk": {
+        "poke": 21,
+        "rays": 864,
+        "see_through": 0
+       }
+      },
+      "references": 2,
+      "top_neck_ring_m": 1.5552,
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_m_swat_helmet",
+      "allowance": {
+       "rest": {
+        "poke": 2,
+        "see_through": 4
+       },
+       "walk": {
+        "poke": 2,
+        "see_through": 2
+       }
+      },
+      "b": "top_m_hoodie",
+      "head_bottom_m": 1.482,
+      "outer": "head",
+      "overlap_mm": 91.6,
+      "probe": {
+       "rest": {
+        "poke": 0,
+        "rays": 1008,
+        "see_through": 0
+       },
+       "walk": {
+        "poke": 0,
+        "rays": 1008,
+        "see_through": 0
+       }
+      },
+      "references": 2,
+      "top_neck_ring_m": 1.5736,
+      "verdict": "ok"
+     },
+     {
+      "a": "headwear_m_swat_helmet",
+      "allowance": {
+       "rest": {
+        "poke": 2,
+        "see_through": 4
+       },
+       "walk": {
+        "poke": 2,
+        "see_through": 2
+       }
+      },
+      "b": "top_m_king",
+      "head_bottom_m": 1.482,
+      "outer": "top",
+      "overlap_mm": 81.7,
+      "probe": {
+       "rest": {
+        "poke": 0,
+        "rays": 936,
+        "see_through": 0
+       },
+       "walk": {
+        "poke": 0,
+        "rays": 936,
+        "see_through": 0
+       }
+      },
+      "references": 2,
+      "top_neck_ring_m": 1.5637,
+      "verdict": "ok"
+     },
+     {
+      "a": "headwear_m_swat_helmet",
+      "allowance": {
+       "rest": {
+        "poke": 2,
+        "see_through": 8
+       },
+       "walk": {
+        "poke": 2,
+        "see_through": 3
+       }
+      },
+      "b": "top_m_punk",
+      "head_bottom_m": 1.482,
+      "outer": "top",
+      "overlap_mm": 117.9,
+      "probe": {
+       "rest": {
+        "poke": 0,
+        "rays": 1260,
+        "see_through": 0
+       },
+       "walk": {
+        "poke": 0,
+        "rays": 1260,
+        "see_through": 1
+       }
+      },
+      "references": 2,
+      "top_neck_ring_m": 1.5999,
+      "verdict": "ok"
+     },
+     {
+      "a": "headwear_m_swat_helmet",
+      "allowance": {
+       "rest": {
+        "poke": 2,
+        "see_through": 4
+       },
+       "walk": {
+        "poke": 2,
+        "see_through": 2
+       }
+      },
+      "b": "top_m_swat",
+      "head_bottom_m": 1.482,
+      "outer": "top",
+      "overlap_mm": 98.0,
+      "probe": {
+       "rest": {
+        "poke": 0,
+        "rays": 1080,
+        "see_through": 2
+       },
+       "walk": {
+        "poke": 0,
+        "rays": 1080,
+        "see_through": 0
+       }
+      },
+      "references": 2,
+      "top_neck_ring_m": 1.58,
+      "verdict": "ok"
+     },
+     {
+      "a": "headwear_m_swat_helmet",
+      "allowance": {
+       "rest": {
+        "poke": 2,
+        "see_through": 6
+       },
+       "walk": {
+        "poke": 2,
+        "see_through": 2
+       }
+      },
+      "b": "top_m_worker",
+      "head_bottom_m": 1.482,
+      "outer": "top",
+      "overlap_mm": 74.9,
+      "probe": {
+       "rest": {
+        "poke": 0,
+        "rays": 864,
+        "see_through": 0
+       },
+       "walk": {
+        "poke": 0,
+        "rays": 864,
+        "see_through": 0
+       }
+      },
+      "references": 2,
+      "top_neck_ring_m": 1.5569,
+      "verdict": "ok"
+     },
+     {
       "a": "skull_m_adventurer",
       "allowance": {
        "rest": {
@@ -25875,7 +26651,7 @@
         "see_through": 0
        }
       },
-      "references": 1,
+      "references": 2,
       "top_neck_ring_m": 1.5863,
       "verdict": "ok"
      },
@@ -26197,7 +26973,7 @@
         "see_through": 0
        }
       },
-      "references": 1,
+      "references": 2,
       "top_neck_ring_m": 1.58,
       "verdict": "ok"
      },
@@ -26293,7 +27069,7 @@
         "see_through": 0
        }
       },
-      "references": 1,
+      "references": 2,
       "top_neck_ring_m": 1.5863,
       "verdict": "ok"
      },
@@ -26615,7 +27391,7 @@
         "see_through": 0
        }
       },
-      "references": 1,
+      "references": 2,
       "top_neck_ring_m": 1.58,
       "verdict": "ok"
      },
@@ -26688,7 +27464,7 @@
       "allowance": {
        "rest": {
         "poke": 2,
-        "see_through": 2
+        "see_through": 6
        },
        "walk": {
         "poke": 2,
@@ -26711,7 +27487,7 @@
         "see_through": 0
        }
       },
-      "references": 1,
+      "references": 2,
       "top_neck_ring_m": 1.5863,
       "verdict": "ok"
      },
@@ -26944,7 +27720,7 @@
       "allowance": {
        "rest": {
         "poke": 2,
-        "see_through": 2
+        "see_through": 4
        },
        "walk": {
         "poke": 2,
@@ -26967,7 +27743,7 @@
         "see_through": 0
        }
       },
-      "references": 1,
+      "references": 2,
       "top_neck_ring_m": 1.58,
       "verdict": "ok"
      },
@@ -27040,7 +27816,7 @@
       "allowance": {
        "rest": {
         "poke": 2,
-        "see_through": 2
+        "see_through": 6
        },
        "walk": {
         "poke": 2,
@@ -27063,7 +27839,7 @@
         "see_through": 0
        }
       },
-      "references": 1,
+      "references": 2,
       "top_neck_ring_m": 1.5863,
       "verdict": "ok"
      },
@@ -27296,7 +28072,7 @@
       "allowance": {
        "rest": {
         "poke": 2,
-        "see_through": 2
+        "see_through": 4
        },
        "walk": {
         "poke": 2,
@@ -27319,7 +28095,7 @@
         "see_through": 0
        }
       },
-      "references": 1,
+      "references": 2,
       "top_neck_ring_m": 1.58,
       "verdict": "ok"
      },
@@ -27415,7 +28191,7 @@
         "see_through": 0
        }
       },
-      "references": 2,
+      "references": 3,
       "top_neck_ring_m": 1.5863,
       "verdict": "ok"
      },
@@ -27737,7 +28513,7 @@
         "see_through": 0
        }
       },
-      "references": 2,
+      "references": 3,
       "top_neck_ring_m": 1.58,
       "verdict": "ok"
      },
@@ -27810,7 +28586,7 @@
       "allowance": {
        "rest": {
         "poke": 2,
-        "see_through": 2
+        "see_through": 6
        },
        "walk": {
         "poke": 2,
@@ -27833,7 +28609,7 @@
         "see_through": 0
        }
       },
-      "references": 1,
+      "references": 2,
       "top_neck_ring_m": 1.5863,
       "verdict": "poke"
      },
@@ -28066,7 +28842,7 @@
       "allowance": {
        "rest": {
         "poke": 2,
-        "see_through": 2
+        "see_through": 4
        },
        "walk": {
         "poke": 2,
@@ -28089,7 +28865,7 @@
         "see_through": 0
        }
       },
-      "references": 1,
+      "references": 2,
       "top_neck_ring_m": 1.58,
       "verdict": "ok"
      },
@@ -28162,7 +28938,7 @@
       "allowance": {
        "rest": {
         "poke": 2,
-        "see_through": 2
+        "see_through": 6
        },
        "walk": {
         "poke": 2,
@@ -28185,7 +28961,7 @@
         "see_through": 0
        }
       },
-      "references": 1,
+      "references": 2,
       "top_neck_ring_m": 1.5863,
       "verdict": "ok"
      },
@@ -28484,7 +29260,7 @@
       "allowance": {
        "rest": {
         "poke": 2,
-        "see_through": 2
+        "see_through": 4
        },
        "walk": {
         "poke": 2,
@@ -28573,7 +29349,7 @@
         "see_through": 0
        }
       },
-      "references": 1,
+      "references": 2,
       "top_neck_ring_m": 1.58,
       "verdict": "gap"
      },
@@ -28669,7 +29445,7 @@
         "see_through": 0
        }
       },
-      "references": 1,
+      "references": 2,
       "top_neck_ring_m": 1.5863,
       "verdict": "ok"
      },
@@ -28991,7 +29767,7 @@
         "see_through": 0
        }
       },
-      "references": 1,
+      "references": 2,
       "top_neck_ring_m": 1.58,
       "verdict": "ok"
      },
@@ -29064,7 +29840,7 @@
       "allowance": {
        "rest": {
         "poke": 2,
-        "see_through": 2
+        "see_through": 6
        },
        "walk": {
         "poke": 2,
@@ -29087,7 +29863,7 @@
         "see_through": 0
        }
       },
-      "references": 0,
+      "references": 1,
       "top_neck_ring_m": 1.5863,
       "verdict": "ok"
      },
@@ -29443,7 +30219,7 @@
       "allowance": {
        "rest": {
         "poke": 2,
-        "see_through": 2
+        "see_through": 4
        },
        "walk": {
         "poke": 2,
@@ -29451,47 +30227,6 @@
        }
       },
       "b": "top_m_swat",
-      "fix": {
-       "drop_m": 0.01,
-       "fix": "extend_edge",
-       "part": "head"
-      },
-      "fix_tried": {
-       "closes": true,
-       "drop_m": 0.01,
-       "fix": "extend_edge",
-       "part": "head",
-       "probe": {
-        "rest": {
-         "poke": 0,
-         "rays": 648,
-         "see_through": 0
-        },
-        "walk": {
-         "poke": 0,
-         "rays": 648,
-         "see_through": 0
-        }
-       },
-       "rounds": [
-        {
-         "drop_m": 0.01,
-         "probe": {
-          "rest": {
-           "poke": 0,
-           "rays": 648,
-           "see_through": 0
-          },
-          "walk": {
-           "poke": 0,
-           "rays": 648,
-           "see_through": 0
-          }
-         }
-        }
-       ],
-       "vertices_moved": 32
-      },
       "head_bottom_m": 1.5384,
       "outer": "top",
       "overlap_mm": 41.6,
@@ -29507,9 +30242,9 @@
         "see_through": 0
        }
       },
-      "references": 0,
+      "references": 1,
       "top_neck_ring_m": 1.58,
-      "verdict": "needs_fix"
+      "verdict": "ok"
      },
      {
       "a": "skull_w_adventurer",
@@ -29580,7 +30315,7 @@
       "allowance": {
        "rest": {
         "poke": 2,
-        "see_through": 2
+        "see_through": 6
        },
        "walk": {
         "poke": 2,
@@ -29603,7 +30338,7 @@
         "see_through": 0
        }
       },
-      "references": 0,
+      "references": 1,
       "top_neck_ring_m": 1.5863,
       "verdict": "ok"
      },
@@ -29959,7 +30694,7 @@
       "allowance": {
        "rest": {
         "poke": 2,
-        "see_through": 2
+        "see_through": 4
        },
        "walk": {
         "poke": 2,
@@ -29967,47 +30702,6 @@
        }
       },
       "b": "top_m_swat",
-      "fix": {
-       "drop_m": 0.01,
-       "fix": "extend_edge",
-       "part": "head"
-      },
-      "fix_tried": {
-       "closes": true,
-       "drop_m": 0.01,
-       "fix": "extend_edge",
-       "part": "head",
-       "probe": {
-        "rest": {
-         "poke": 0,
-         "rays": 648,
-         "see_through": 0
-        },
-        "walk": {
-         "poke": 0,
-         "rays": 648,
-         "see_through": 0
-        }
-       },
-       "rounds": [
-        {
-         "drop_m": 0.01,
-         "probe": {
-          "rest": {
-           "poke": 0,
-           "rays": 648,
-           "see_through": 0
-          },
-          "walk": {
-           "poke": 0,
-           "rays": 648,
-           "see_through": 0
-          }
-         }
-        }
-       ],
-       "vertices_moved": 32
-      },
       "head_bottom_m": 1.5384,
       "outer": "top",
       "overlap_mm": 41.6,
@@ -30023,9 +30717,9 @@
         "see_through": 0
        }
       },
-      "references": 0,
+      "references": 1,
       "top_neck_ring_m": 1.58,
-      "verdict": "needs_fix"
+      "verdict": "ok"
      },
      {
       "a": "skull_w_casual",
@@ -30096,7 +30790,7 @@
       "allowance": {
        "rest": {
         "poke": 2,
-        "see_through": 2
+        "see_through": 6
        },
        "walk": {
         "poke": 2,
@@ -30119,7 +30813,7 @@
         "see_through": 0
        }
       },
-      "references": 0,
+      "references": 1,
       "top_neck_ring_m": 1.5863,
       "verdict": "ok"
      },
@@ -30475,7 +31169,7 @@
       "allowance": {
        "rest": {
         "poke": 2,
-        "see_through": 2
+        "see_through": 4
        },
        "walk": {
         "poke": 2,
@@ -30483,47 +31177,6 @@
        }
       },
       "b": "top_m_swat",
-      "fix": {
-       "drop_m": 0.01,
-       "fix": "extend_edge",
-       "part": "head"
-      },
-      "fix_tried": {
-       "closes": true,
-       "drop_m": 0.01,
-       "fix": "extend_edge",
-       "part": "head",
-       "probe": {
-        "rest": {
-         "poke": 0,
-         "rays": 648,
-         "see_through": 0
-        },
-        "walk": {
-         "poke": 0,
-         "rays": 648,
-         "see_through": 0
-        }
-       },
-       "rounds": [
-        {
-         "drop_m": 0.01,
-         "probe": {
-          "rest": {
-           "poke": 0,
-           "rays": 648,
-           "see_through": 0
-          },
-          "walk": {
-           "poke": 0,
-           "rays": 648,
-           "see_through": 0
-          }
-         }
-        }
-       ],
-       "vertices_moved": 32
-      },
       "head_bottom_m": 1.5384,
       "outer": "top",
       "overlap_mm": 41.6,
@@ -30539,9 +31192,9 @@
         "see_through": 0
        }
       },
-      "references": 0,
+      "references": 1,
       "top_neck_ring_m": 1.58,
-      "verdict": "needs_fix"
+      "verdict": "ok"
      },
      {
       "a": "skull_w_formal",
@@ -30612,7 +31265,7 @@
       "allowance": {
        "rest": {
         "poke": 2,
-        "see_through": 2
+        "see_through": 6
        },
        "walk": {
         "poke": 2,
@@ -30635,7 +31288,7 @@
         "see_through": 0
        }
       },
-      "references": 0,
+      "references": 1,
       "top_neck_ring_m": 1.5863,
       "verdict": "poke"
      },
@@ -30909,7 +31562,7 @@
       "allowance": {
        "rest": {
         "poke": 2,
-        "see_through": 2
+        "see_through": 4
        },
        "walk": {
         "poke": 2,
@@ -30932,7 +31585,7 @@
         "see_through": 0
        }
       },
-      "references": 0,
+      "references": 1,
       "top_neck_ring_m": 1.58,
       "verdict": "ok"
      },
@@ -31005,7 +31658,7 @@
       "allowance": {
        "rest": {
         "poke": 2,
-        "see_through": 2
+        "see_through": 6
        },
        "walk": {
         "poke": 2,
@@ -31028,7 +31681,7 @@
         "see_through": 0
        }
       },
-      "references": 0,
+      "references": 1,
       "top_neck_ring_m": 1.5863,
       "verdict": "ok"
      },
@@ -31384,7 +32037,7 @@
       "allowance": {
        "rest": {
         "poke": 2,
-        "see_through": 2
+        "see_through": 4
        },
        "walk": {
         "poke": 2,
@@ -31392,47 +32045,6 @@
        }
       },
       "b": "top_m_swat",
-      "fix": {
-       "drop_m": 0.01,
-       "fix": "extend_edge",
-       "part": "head"
-      },
-      "fix_tried": {
-       "closes": true,
-       "drop_m": 0.01,
-       "fix": "extend_edge",
-       "part": "head",
-       "probe": {
-        "rest": {
-         "poke": 0,
-         "rays": 648,
-         "see_through": 0
-        },
-        "walk": {
-         "poke": 0,
-         "rays": 648,
-         "see_through": 0
-        }
-       },
-       "rounds": [
-        {
-         "drop_m": 0.01,
-         "probe": {
-          "rest": {
-           "poke": 0,
-           "rays": 648,
-           "see_through": 0
-          },
-          "walk": {
-           "poke": 0,
-           "rays": 648,
-           "see_through": 0
-          }
-         }
-        }
-       ],
-       "vertices_moved": 32
-      },
       "head_bottom_m": 1.5384,
       "outer": "top",
       "overlap_mm": 41.6,
@@ -31448,9 +32060,9 @@
         "see_through": 0
        }
       },
-      "references": 0,
+      "references": 1,
       "top_neck_ring_m": 1.58,
-      "verdict": "needs_fix"
+      "verdict": "ok"
      },
      {
       "a": "skull_w_scifi",
@@ -31521,7 +32133,7 @@
       "allowance": {
        "rest": {
         "poke": 2,
-        "see_through": 2
+        "see_through": 6
        },
        "walk": {
         "poke": 2,
@@ -31544,7 +32156,7 @@
         "see_through": 0
        }
       },
-      "references": 0,
+      "references": 1,
       "top_neck_ring_m": 1.5863,
       "verdict": "ok"
      },
@@ -31900,7 +32512,7 @@
       "allowance": {
        "rest": {
         "poke": 2,
-        "see_through": 2
+        "see_through": 4
        },
        "walk": {
         "poke": 2,
@@ -31908,47 +32520,6 @@
        }
       },
       "b": "top_m_swat",
-      "fix": {
-       "drop_m": 0.01,
-       "fix": "extend_edge",
-       "part": "head"
-      },
-      "fix_tried": {
-       "closes": true,
-       "drop_m": 0.01,
-       "fix": "extend_edge",
-       "part": "head",
-       "probe": {
-        "rest": {
-         "poke": 0,
-         "rays": 648,
-         "see_through": 0
-        },
-        "walk": {
-         "poke": 0,
-         "rays": 648,
-         "see_through": 0
-        }
-       },
-       "rounds": [
-        {
-         "drop_m": 0.01,
-         "probe": {
-          "rest": {
-           "poke": 0,
-           "rays": 648,
-           "see_through": 0
-          },
-          "walk": {
-           "poke": 0,
-           "rays": 648,
-           "see_through": 0
-          }
-         }
-        }
-       ],
-       "vertices_moved": 36
-      },
       "head_bottom_m": 1.5384,
       "outer": "top",
       "overlap_mm": 41.6,
@@ -31964,9 +32535,9 @@
         "see_through": 0
        }
       },
-      "references": 0,
+      "references": 1,
       "top_neck_ring_m": 1.58,
-      "verdict": "needs_fix"
+      "verdict": "ok"
      },
      {
       "a": "skull_w_soldier",
@@ -32037,7 +32608,7 @@
       "allowance": {
        "rest": {
         "poke": 2,
-        "see_through": 2
+        "see_through": 6
        },
        "walk": {
         "poke": 2,
@@ -32060,7 +32631,7 @@
         "see_through": 0
        }
       },
-      "references": 0,
+      "references": 1,
       "top_neck_ring_m": 1.5863,
       "verdict": "ok"
      },
@@ -32416,7 +32987,7 @@
       "allowance": {
        "rest": {
         "poke": 2,
-        "see_through": 2
+        "see_through": 4
        },
        "walk": {
         "poke": 2,
@@ -32424,47 +32995,6 @@
        }
       },
       "b": "top_m_swat",
-      "fix": {
-       "drop_m": 0.01,
-       "fix": "extend_edge",
-       "part": "head"
-      },
-      "fix_tried": {
-       "closes": true,
-       "drop_m": 0.01,
-       "fix": "extend_edge",
-       "part": "head",
-       "probe": {
-        "rest": {
-         "poke": 0,
-         "rays": 648,
-         "see_through": 0
-        },
-        "walk": {
-         "poke": 0,
-         "rays": 648,
-         "see_through": 0
-        }
-       },
-       "rounds": [
-        {
-         "drop_m": 0.01,
-         "probe": {
-          "rest": {
-           "poke": 0,
-           "rays": 648,
-           "see_through": 0
-          },
-          "walk": {
-           "poke": 0,
-           "rays": 648,
-           "see_through": 0
-          }
-         }
-        }
-       ],
-       "vertices_moved": 32
-      },
       "head_bottom_m": 1.5384,
       "outer": "top",
       "overlap_mm": 41.6,
@@ -32480,9 +33010,9 @@
         "see_through": 0
        }
       },
-      "references": 0,
+      "references": 1,
       "top_neck_ring_m": 1.58,
-      "verdict": "needs_fix"
+      "verdict": "ok"
      },
      {
       "a": "skull_w_suit",
@@ -32553,7 +33083,7 @@
       "allowance": {
        "rest": {
         "poke": 2,
-        "see_through": 2
+        "see_through": 6
        },
        "walk": {
         "poke": 2,
@@ -32576,7 +33106,7 @@
         "see_through": 0
        }
       },
-      "references": 0,
+      "references": 1,
       "top_neck_ring_m": 1.5863,
       "verdict": "ok"
      },
@@ -32932,7 +33462,7 @@
       "allowance": {
        "rest": {
         "poke": 2,
-        "see_through": 2
+        "see_through": 4
        },
        "walk": {
         "poke": 2,
@@ -32940,47 +33470,6 @@
        }
       },
       "b": "top_m_swat",
-      "fix": {
-       "drop_m": 0.01,
-       "fix": "extend_edge",
-       "part": "head"
-      },
-      "fix_tried": {
-       "closes": true,
-       "drop_m": 0.01,
-       "fix": "extend_edge",
-       "part": "head",
-       "probe": {
-        "rest": {
-         "poke": 0,
-         "rays": 648,
-         "see_through": 0
-        },
-        "walk": {
-         "poke": 0,
-         "rays": 648,
-         "see_through": 0
-        }
-       },
-       "rounds": [
-        {
-         "drop_m": 0.01,
-         "probe": {
-          "rest": {
-           "poke": 0,
-           "rays": 648,
-           "see_through": 0
-          },
-          "walk": {
-           "poke": 0,
-           "rays": 648,
-           "see_through": 0
-          }
-         }
-        }
-       ],
-       "vertices_moved": 36
-      },
       "head_bottom_m": 1.5384,
       "outer": "top",
       "overlap_mm": 41.6,
@@ -32996,9 +33485,9 @@
         "see_through": 0
        }
       },
-      "references": 0,
+      "references": 1,
       "top_neck_ring_m": 1.58,
-      "verdict": "needs_fix"
+      "verdict": "ok"
      },
      {
       "a": "skull_w_worker",
@@ -33047,6 +33536,8 @@
      "top_m_worker"
     ],
     "rows": [
+     "headwear_m_astronaut_space_helmet",
+     "headwear_m_swat_helmet",
      "skull_m_adventurer",
      "skull_m_beach",
      "skull_m_business",
@@ -33067,6 +33558,778 @@
    },
    "W": {
     "cells": [
+     {
+      "a": "headwear_m_astronaut_space_helmet",
+      "allowance": {
+       "rest": {
+        "poke": 2,
+        "see_through": 2
+       },
+       "walk": {
+        "poke": 2,
+        "see_through": 2
+       }
+      },
+      "b": "top_w_adventurer",
+      "head_bottom_m": 1.4271,
+      "outer": "top",
+      "overlap_mm": 132.2,
+      "probe": {
+       "rest": {
+        "poke": 22,
+        "rays": 1404,
+        "see_through": 2
+       },
+       "walk": {
+        "poke": 23,
+        "rays": 1404,
+        "see_through": 0
+       }
+      },
+      "references": 1,
+      "top_neck_ring_m": 1.5593,
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_m_astronaut_space_helmet",
+      "allowance": {
+       "rest": {
+        "poke": 2,
+        "see_through": 2
+       },
+       "walk": {
+        "poke": 2,
+        "see_through": 2
+       }
+      },
+      "b": "top_w_casual",
+      "head_bottom_m": 1.4271,
+      "outer": "top",
+      "overlap_mm": 113.4,
+      "probe": {
+       "rest": {
+        "poke": 131,
+        "rays": 1224,
+        "see_through": 0
+       },
+       "walk": {
+        "poke": 138,
+        "rays": 1224,
+        "see_through": 0
+       }
+      },
+      "references": 1,
+      "top_neck_ring_m": 1.5405,
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_m_astronaut_space_helmet",
+      "allowance": {
+       "rest": {
+        "poke": 2,
+        "see_through": 2
+       },
+       "walk": {
+        "poke": 2,
+        "see_through": 2
+       }
+      },
+      "b": "top_w_formal",
+      "head_bottom_m": 1.4271,
+      "outer": "top",
+      "overlap_mm": 113.4,
+      "probe": {
+       "rest": {
+        "poke": 129,
+        "rays": 1224,
+        "see_through": 0
+       },
+       "walk": {
+        "poke": 134,
+        "rays": 1224,
+        "see_through": 0
+       }
+      },
+      "references": 1,
+      "top_neck_ring_m": 1.5405,
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_m_astronaut_space_helmet",
+      "allowance": {
+       "rest": {
+        "poke": 2,
+        "see_through": 2
+       },
+       "walk": {
+        "poke": 2,
+        "see_through": 2
+       }
+      },
+      "b": "top_w_medieval",
+      "head_bottom_m": 1.4271,
+      "outer": "top",
+      "overlap_mm": 127.0,
+      "probe": {
+       "rest": {
+        "poke": 114,
+        "rays": 1332,
+        "see_through": 0
+       },
+       "walk": {
+        "poke": 130,
+        "rays": 1332,
+        "see_through": 0
+       }
+      },
+      "references": 1,
+      "top_neck_ring_m": 1.5541,
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_m_astronaut_space_helmet",
+      "allowance": {
+       "rest": {
+        "poke": 2,
+        "see_through": 2
+       },
+       "walk": {
+        "poke": 2,
+        "see_through": 2
+       }
+      },
+      "b": "top_w_punk",
+      "head_bottom_m": 1.4271,
+      "outer": "top",
+      "overlap_mm": 113.2,
+      "probe": {
+       "rest": {
+        "poke": 131,
+        "rays": 1224,
+        "see_through": 0
+       },
+       "walk": {
+        "poke": 139,
+        "rays": 1224,
+        "see_through": 0
+       }
+      },
+      "references": 1,
+      "top_neck_ring_m": 1.5403,
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_m_astronaut_space_helmet",
+      "allowance": {
+       "rest": {
+        "poke": 2,
+        "see_through": 2
+       },
+       "walk": {
+        "poke": 2,
+        "see_through": 2
+       }
+      },
+      "b": "top_w_scifi",
+      "head_bottom_m": 1.4271,
+      "outer": "top",
+      "overlap_mm": 115.2,
+      "probe": {
+       "rest": {
+        "poke": 0,
+        "rays": 1224,
+        "see_through": 2
+       },
+       "walk": {
+        "poke": 11,
+        "rays": 1224,
+        "see_through": 0
+       }
+      },
+      "references": 1,
+      "top_neck_ring_m": 1.5423,
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_m_astronaut_space_helmet",
+      "allowance": {
+       "rest": {
+        "poke": 2,
+        "see_through": 2
+       },
+       "walk": {
+        "poke": 2,
+        "see_through": 2
+       }
+      },
+      "b": "top_w_soldier",
+      "head_bottom_m": 1.4271,
+      "outer": "top",
+      "overlap_mm": 120.5,
+      "probe": {
+       "rest": {
+        "poke": 75,
+        "rays": 1296,
+        "see_through": 0
+       },
+       "walk": {
+        "poke": 27,
+        "rays": 1296,
+        "see_through": 0
+       }
+      },
+      "references": 1,
+      "top_neck_ring_m": 1.5476,
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_m_astronaut_space_helmet",
+      "allowance": {
+       "rest": {
+        "poke": 2,
+        "see_through": 2
+       },
+       "walk": {
+        "poke": 2,
+        "see_through": 2
+       }
+      },
+      "b": "top_w_suit",
+      "head_bottom_m": 1.4271,
+      "outer": "top",
+      "overlap_mm": 113.4,
+      "probe": {
+       "rest": {
+        "poke": 134,
+        "rays": 1224,
+        "see_through": 0
+       },
+       "walk": {
+        "poke": 141,
+        "rays": 1224,
+        "see_through": 0
+       }
+      },
+      "references": 1,
+      "top_neck_ring_m": 1.5405,
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_m_astronaut_space_helmet",
+      "allowance": {
+       "rest": {
+        "poke": 2,
+        "see_through": 2
+       },
+       "walk": {
+        "poke": 2,
+        "see_through": 2
+       }
+      },
+      "b": "top_w_witch",
+      "fix_tried": {
+       "closes": false,
+       "drop_m": 0.03,
+       "fix": "extend_edge",
+       "part": "head",
+       "probe": {
+        "rest": {
+         "poke": 129,
+         "rays": 1476,
+         "see_through": 28
+        },
+        "walk": {
+         "poke": 127,
+         "rays": 1476,
+         "see_through": 0
+        }
+       },
+       "rounds": [
+        {
+         "drop_m": 0.01,
+         "probe": {
+          "rest": {
+           "poke": 129,
+           "rays": 1296,
+           "see_through": 22
+          },
+          "walk": {
+           "poke": 127,
+           "rays": 1296,
+           "see_through": 0
+          }
+         }
+        },
+        {
+         "drop_m": 0.02,
+         "probe": {
+          "rest": {
+           "poke": 129,
+           "rays": 1404,
+           "see_through": 28
+          },
+          "walk": {
+           "poke": 129,
+           "rays": 1404,
+           "see_through": 0
+          }
+         }
+        },
+        {
+         "drop_m": 0.03,
+         "probe": {
+          "rest": {
+           "poke": 129,
+           "rays": 1476,
+           "see_through": 28
+          },
+          "walk": {
+           "poke": 127,
+           "rays": 1476,
+           "see_through": 0
+          }
+         }
+        }
+       ],
+       "vertices_moved": 48
+      },
+      "head_bottom_m": 1.4271,
+      "outer": "top",
+      "overlap_mm": 113.4,
+      "probe": {
+       "rest": {
+        "poke": 129,
+        "rays": 1224,
+        "see_through": 18
+       },
+       "walk": {
+        "poke": 129,
+        "rays": 1224,
+        "see_through": 0
+       }
+      },
+      "references": 1,
+      "top_neck_ring_m": 1.5405,
+      "verdict": "gap"
+     },
+     {
+      "a": "headwear_m_astronaut_space_helmet",
+      "allowance": {
+       "rest": {
+        "poke": 2,
+        "see_through": 2
+       },
+       "walk": {
+        "poke": 2,
+        "see_through": 2
+       }
+      },
+      "b": "top_w_worker",
+      "head_bottom_m": 1.4271,
+      "outer": "top",
+      "overlap_mm": 113.4,
+      "probe": {
+       "rest": {
+        "poke": 130,
+        "rays": 1224,
+        "see_through": 0
+       },
+       "walk": {
+        "poke": 139,
+        "rays": 1224,
+        "see_through": 0
+       }
+      },
+      "references": 1,
+      "top_neck_ring_m": 1.5405,
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_m_swat_helmet",
+      "allowance": {
+       "rest": {
+        "poke": 2,
+        "see_through": 2
+       },
+       "walk": {
+        "poke": 2,
+        "see_through": 2
+       }
+      },
+      "b": "top_w_adventurer",
+      "head_bottom_m": 1.482,
+      "outer": "top",
+      "overlap_mm": 77.3,
+      "probe": {
+       "rest": {
+        "poke": 36,
+        "rays": 900,
+        "see_through": 0
+       },
+       "walk": {
+        "poke": 18,
+        "rays": 900,
+        "see_through": 0
+       }
+      },
+      "references": 1,
+      "top_neck_ring_m": 1.5593,
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_m_swat_helmet",
+      "allowance": {
+       "rest": {
+        "poke": 2,
+        "see_through": 2
+       },
+       "walk": {
+        "poke": 2,
+        "see_through": 2
+       }
+      },
+      "b": "top_w_casual",
+      "head_bottom_m": 1.482,
+      "outer": "head",
+      "overlap_mm": 58.5,
+      "probe": {
+       "rest": {
+        "poke": 120,
+        "rays": 720,
+        "see_through": 1
+       },
+       "walk": {
+        "poke": 104,
+        "rays": 720,
+        "see_through": 0
+       }
+      },
+      "references": 1,
+      "top_neck_ring_m": 1.5405,
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_m_swat_helmet",
+      "allowance": {
+       "rest": {
+        "poke": 2,
+        "see_through": 2
+       },
+       "walk": {
+        "poke": 2,
+        "see_through": 2
+       }
+      },
+      "b": "top_w_formal",
+      "head_bottom_m": 1.482,
+      "outer": "head",
+      "overlap_mm": 58.5,
+      "probe": {
+       "rest": {
+        "poke": 129,
+        "rays": 720,
+        "see_through": 1
+       },
+       "walk": {
+        "poke": 107,
+        "rays": 720,
+        "see_through": 0
+       }
+      },
+      "references": 1,
+      "top_neck_ring_m": 1.5405,
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_m_swat_helmet",
+      "allowance": {
+       "rest": {
+        "poke": 2,
+        "see_through": 2
+       },
+       "walk": {
+        "poke": 2,
+        "see_through": 2
+       }
+      },
+      "b": "top_w_medieval",
+      "head_bottom_m": 1.482,
+      "outer": "head",
+      "overlap_mm": 72.1,
+      "probe": {
+       "rest": {
+        "poke": 82,
+        "rays": 864,
+        "see_through": 1
+       },
+       "walk": {
+        "poke": 73,
+        "rays": 864,
+        "see_through": 0
+       }
+      },
+      "references": 1,
+      "top_neck_ring_m": 1.5541,
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_m_swat_helmet",
+      "allowance": {
+       "rest": {
+        "poke": 2,
+        "see_through": 2
+       },
+       "walk": {
+        "poke": 2,
+        "see_through": 2
+       }
+      },
+      "b": "top_w_punk",
+      "head_bottom_m": 1.482,
+      "outer": "head",
+      "overlap_mm": 58.3,
+      "probe": {
+       "rest": {
+        "poke": 121,
+        "rays": 720,
+        "see_through": 0
+       },
+       "walk": {
+        "poke": 106,
+        "rays": 720,
+        "see_through": 0
+       }
+      },
+      "references": 1,
+      "top_neck_ring_m": 1.5403,
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_m_swat_helmet",
+      "allowance": {
+       "rest": {
+        "poke": 2,
+        "see_through": 2
+       },
+       "walk": {
+        "poke": 2,
+        "see_through": 2
+       }
+      },
+      "b": "top_w_scifi",
+      "head_bottom_m": 1.482,
+      "outer": "top",
+      "overlap_mm": 60.3,
+      "probe": {
+       "rest": {
+        "poke": 0,
+        "rays": 756,
+        "see_through": 2
+       },
+       "walk": {
+        "poke": 3,
+        "rays": 756,
+        "see_through": 0
+       }
+      },
+      "references": 1,
+      "top_neck_ring_m": 1.5423,
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_m_swat_helmet",
+      "allowance": {
+       "rest": {
+        "poke": 2,
+        "see_through": 2
+       },
+       "walk": {
+        "poke": 2,
+        "see_through": 2
+       }
+      },
+      "b": "top_w_soldier",
+      "head_bottom_m": 1.482,
+      "outer": "top",
+      "overlap_mm": 65.6,
+      "probe": {
+       "rest": {
+        "poke": 124,
+        "rays": 792,
+        "see_through": 0
+       },
+       "walk": {
+        "poke": 103,
+        "rays": 792,
+        "see_through": 0
+       }
+      },
+      "references": 1,
+      "top_neck_ring_m": 1.5476,
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_m_swat_helmet",
+      "allowance": {
+       "rest": {
+        "poke": 2,
+        "see_through": 2
+       },
+       "walk": {
+        "poke": 2,
+        "see_through": 2
+       }
+      },
+      "b": "top_w_suit",
+      "head_bottom_m": 1.482,
+      "outer": "head",
+      "overlap_mm": 58.5,
+      "probe": {
+       "rest": {
+        "poke": 113,
+        "rays": 720,
+        "see_through": 1
+       },
+       "walk": {
+        "poke": 102,
+        "rays": 720,
+        "see_through": 0
+       }
+      },
+      "references": 1,
+      "top_neck_ring_m": 1.5405,
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_m_swat_helmet",
+      "allowance": {
+       "rest": {
+        "poke": 2,
+        "see_through": 2
+       },
+       "walk": {
+        "poke": 2,
+        "see_through": 2
+       }
+      },
+      "b": "top_w_witch",
+      "fix_tried": {
+       "closes": false,
+       "drop_m": 0.03,
+       "fix": "extend_edge",
+       "part": "head",
+       "probe": {
+        "rest": {
+         "poke": 144,
+         "rays": 1008,
+         "see_through": 17
+        },
+        "walk": {
+         "poke": 132,
+         "rays": 1008,
+         "see_through": 0
+        }
+       },
+       "rounds": [
+        {
+         "drop_m": 0.01,
+         "probe": {
+          "rest": {
+           "poke": 133,
+           "rays": 828,
+           "see_through": 14
+          },
+          "walk": {
+           "poke": 124,
+           "rays": 828,
+           "see_through": 0
+          }
+         }
+        },
+        {
+         "drop_m": 0.02,
+         "probe": {
+          "rest": {
+           "poke": 143,
+           "rays": 900,
+           "see_through": 17
+          },
+          "walk": {
+           "poke": 131,
+           "rays": 900,
+           "see_through": 0
+          }
+         }
+        },
+        {
+         "drop_m": 0.03,
+         "probe": {
+          "rest": {
+           "poke": 144,
+           "rays": 1008,
+           "see_through": 17
+          },
+          "walk": {
+           "poke": 132,
+           "rays": 1008,
+           "see_through": 0
+          }
+         }
+        }
+       ],
+       "vertices_moved": 112
+      },
+      "head_bottom_m": 1.482,
+      "outer": "head",
+      "overlap_mm": 58.5,
+      "probe": {
+       "rest": {
+        "poke": 112,
+        "rays": 720,
+        "see_through": 9
+       },
+       "walk": {
+        "poke": 103,
+        "rays": 720,
+        "see_through": 0
+       }
+      },
+      "references": 1,
+      "top_neck_ring_m": 1.5405,
+      "verdict": "gap"
+     },
+     {
+      "a": "headwear_m_swat_helmet",
+      "allowance": {
+       "rest": {
+        "poke": 2,
+        "see_through": 2
+       },
+       "walk": {
+        "poke": 2,
+        "see_through": 2
+       }
+      },
+      "b": "top_w_worker",
+      "head_bottom_m": 1.482,
+      "outer": "head",
+      "overlap_mm": 58.5,
+      "probe": {
+       "rest": {
+        "poke": 130,
+        "rays": 720,
+        "see_through": 1
+       },
+       "walk": {
+        "poke": 107,
+        "rays": 720,
+        "see_through": 0
+       }
+      },
+      "references": 1,
+      "top_neck_ring_m": 1.5405,
+      "verdict": "poke"
+     },
      {
       "a": "skull_m_adventurer",
       "allowance": {
@@ -39323,6 +40586,8 @@
      "top_w_worker"
     ],
     "rows": [
+     "headwear_m_astronaut_space_helmet",
+     "headwear_m_swat_helmet",
      "skull_m_adventurer",
      "skull_m_beach",
      "skull_m_business",
@@ -52351,22 +53616,22 @@
    "M": {
     "gap_over_5mm": 0,
     "gap_over_5mm_exact": 0,
-    "pairs": 176,
+    "pairs": 198,
     "verdicts": {
-     "gap": 6,
-     "needs_fix": 29,
-     "ok": 132,
-     "poke": 9
+     "gap": 7,
+     "needs_fix": 22,
+     "ok": 158,
+     "poke": 11
     }
    },
    "W": {
     "gap_over_5mm": 0,
     "gap_over_5mm_exact": 0,
-    "pairs": 160,
+    "pairs": 180,
     "verdicts": {
-     "gap": 5,
+     "gap": 7,
      "ok": 76,
-     "poke": 79
+     "poke": 97
     }
    }
   },

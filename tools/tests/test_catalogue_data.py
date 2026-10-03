@@ -144,6 +144,16 @@ class RulesTest(unittest.TestCase):
                     self.assertEqual(c["verdict"], "gap" if sees else "poke", f"{name}: {c['a']} x {c['b']}")
                     self.assertEqual(ft["rounds"][-1]["drop_m"], ft["drop_m"])
 
+    def test_helmet_heads_are_measured_at_the_neck(self) -> None:
+        helmets = {"headwear_m_astronaut_space_helmet", "headwear_m_swat_helmet"}
+        for iid in helmets:
+            self.assertEqual(DATA["items"][iid]["replaces"], "skull")
+            self.assertEqual(DATA["items"][iid]["recipe"]["replaces"], "skull")
+        for g in ("M", "W"):
+            self.assertTrue(helmets <= set(DATA["matrices"]["head_top"][g]["rows"]), g)
+        own = {c["b"]: c["verdict"] for c in cells("head_top", "M") if c["a"] == "headwear_m_swat_helmet"}
+        self.assertIn(own["top_m_swat"], OK)  # a pack original is its own reference
+
     def test_needs_fix_names_a_measured_fix(self) -> None:
         for name, per in DATA["matrices"].items():
             for g, m in per.items():

@@ -174,15 +174,27 @@ def matrices(lib, inv, items, coll, log):
     unique = {i: e.get("same_geometry_as", i) for i, e in items.items() if e["kind"] == "skull"}
     skulls = sorted(i for i, e in items.items() if e["kind"] == "skull" and "same_geometry_as" not in e)
     hairs = sorted(i for i, e in items.items() if e["kind"] == "hair" and "same_geometry_as" not in e)
+    helmets = sorted(i for i, e in items.items() if e.get("replaces") == "skull")
+    # the neck rows: every unique skull and the helmets that are whole heads; their owners and each head's row
+    necks = sorted(skulls + helmets)
+    head_of = {}
+    for i, e in items.items():
+        if e["kind"] == "skull" or i in helmets:
+            hd = e["head"].split("_", 2)
+            head_of[(hd[1].upper(), hd[2])] = e.get("same_geometry_as", i)
+    owners = {}
+    for key, row in sorted(head_of.items()):
+        owners.setdefault(row, []).append(key)
     objs = {}
     for g in cp.GENDERS:
-        for iid in skulls + hairs:
+        for iid in skulls + hairs + helmets:
             e = items[iid]
             objs[(iid, g)] = ch.item_object(lib.head(e["head"], g), e["_faces"], "%s@%s" % (iid, g), coll)
     update()
     for g in cp.GENDERS:
         t0 = time.time()
-        out["head_top"][g] = cr.neck_matrix(lib, g, inv, skulls, {s: objs[(s, g)] for s in skulls}, items, unique, mk, rm)
+        out["head_top"][g] = cr.neck_matrix(lib, g, inv, necks, {s: objs[(s, g)] for s in necks}, items, owners,
+                                            head_of, mk, rm)
         log("head x top %s: %.1f s" % (g, time.time() - t0))
     t0 = time.time()
     by_g = {g: [s for s in skulls if s.split("_")[1] == g.lower()] for g in cp.GENDERS}

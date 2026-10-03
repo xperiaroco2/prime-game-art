@@ -330,42 +330,40 @@ def neck_job(head, top, h_lo, t_hi):
     return Job({"head": head, "top": top}, [("Neck", min(h_lo, t_hi) - 0.01, max(h_lo, t_hi) + 0.01, None)])
 
 
-def neck_matrix(lib, g, inv, skulls, skull_objs, items, unique, make_copy, remove):
-    """skulls: unique skull item ids; skull_objs[id]: that skull on rig g; unique: any skull id -> its unique id. The
-    references: the skull with its own character's top (on its own body type) and the top with its own skull."""
+def neck_matrix(lib, g, inv, rows, row_objs, items, owners, head_of, make_copy, remove):
+    """rows: unique skull item ids and the helmets that are whole heads; row_objs[id]: that item on rig g; owners[id]:
+    the (body type, character) heads it comes from; head_of[(body type, character)]: that head's row. The references:
+    the row with its own character's top (on its own body type) and the top with its own head's row."""
     arm = lib.rigs[g]
     tops = lib.of("top", g)
     cells, jobs = [], []
-    for sk in skulls:
+    for sk in rows:
         for tid in tops:
             h_lo, t_hi = items[sk]["neck_bottom_m"], inv[tid]["seams"]["neck_ring_top_m"]
             cells.append({"a": sk, "b": tid, "overlap_mm": r1((t_hi - h_lo) * 1000.0), "head_bottom_m": h_lo,
                           "top_neck_ring_m": t_hi})
-            jobs.append(neck_job(skull_objs[sk], lib.parts[tid], h_lo, t_hi))
+            jobs.append(neck_job(row_objs[sk], lib.parts[tid], h_lo, t_hi))
     run_jobs(arm, jobs)
     by = {}
     for cell, job in zip(cells, jobs):
         cell["probe"], cell["outer"] = job.probe, job.outer[0]
         by[(cell["a"], cell["b"])] = cell
-    owners = {}  # unique skull id -> the characters whose head it is
-    for sid, u in unique.items():
-        owners.setdefault(u, []).append(sid.split("_", 2)[2] if sid.split("_")[1] == g.lower() else None)
     fixes = []
     for cell in cells:
-        keys = [(cell["a"], "top_%s_%s" % (g.lower(), c)) for c in owners.get(cell["a"], []) if c]
+        keys = [(cell["a"], "top_%s_%s" % (g.lower(), c)) for gg, c in owners.get(cell["a"], []) if gg == g]
         for t in twins(inv, cell["b"]):
-            own_skull = unique.get("skull_%s_%s" % (g.lower(), t.split("_", 2)[2]))
-            if own_skull:
-                keys.append((own_skull, cell["b"]))
+            own_head = head_of.get((g, t.split("_", 2)[2]))
+            if own_head:
+                keys.append((own_head, cell["b"]))
         cell["verdict"] = judge(cell, ref_probes(by, keys), "ok")
         if cell["verdict"] == "try_fix":
-            copy = make_copy(skull_objs[cell["a"]], "%s+%s" % (cell["a"], cell["b"]))
+            copy = make_copy(row_objs[cell["a"]], "%s+%s" % (cell["a"], cell["b"]))
             fixes.append(Fix(cell, copy, "head", lambda c, d, cell=cell: neck_job(
                 c, lib.parts[cell["b"]], cell["head_bottom_m"] - d, cell["top_neck_ring_m"])))
     fix_rounds(arm, fixes)
     for copy in [f.copy for f in fixes]:
         remove(copy)
-    return {"rows": skulls, "cols": tops, "cells": cells}
+    return {"rows": rows, "cols": tops, "cells": cells}
 
 
 # ---------------------------------------------------------------- hair x skull

@@ -300,6 +300,11 @@ def analyse(lib, file_entries):
                 entry["recipe"] = {"role": role, "file": h["file"], "object": h["object"], "materials": mats, "cut": cuts}
                 entry["recipe_check"] = {"faces": len(faces), "mismatch_by_face": by_face, "mismatch_by_piece": by_piece,
                                          "proposed_zones": sorted(z for z in cuts if z in PROPOSED_ZONES)}
+            if kind == "headwear" and h["skull_type"] == "none":
+                # a helmet that is the whole head (Astronaut, Swat): it takes the skull's place and closes the neck
+                entry["replaces"] = "skull"
+                entry["neck_bottom_m"] = entry["bounds"]["min_m"][2]
+                entry["recipe"]["replaces"] = "skull"
             if kind == "hair":
                 entry["source_skull_type"] = h["skull_type"]
                 entry["style"] = {"open_top": "cap", "full": "shell"}.get(h["skull_type"], "helmet")
