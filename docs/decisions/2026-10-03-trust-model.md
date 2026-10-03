@@ -3,8 +3,11 @@
 - Date: 2026-10-03
 - Status: accepted (the engineer in chat with the art manager session, 2026-10-03; recorded on #16:
   https://github.com/xperiaroco2/prime-game-art/issues/16#issuecomment-5972512323)
-- Supersedes: "only the engineer merges into `main`" and "a per-batch yes for paid generation and downloads" in the
-  foundation ADR (`2026-10-02-art-repo-foundation.md`) and the first `CLAUDE.md`.
+- Supersedes, in the foundation ADR (`2026-10-02-art-repo-foundation.md`) and the first `CLAUDE.md`:
+  - "only the engineer merges into `main`";
+  - "agents never close issues": a merged PR's `Closes #n` now closes them;
+  - "a per-batch yes for paid generation and downloads";
+  - "Godot only headless": pictures now come from an off-screen window.
 
 ## Context
 Until wave 1 of stage 1, every art PR waited for the engineer to merge it. The engineer said he merged them all
@@ -23,10 +26,11 @@ What he wants from the process:
    Nobody pushes to `main` directly; the pre-push hook still refuses it. Each merge goes into the next report on the
    plan issue.
 2. **The manager decides alone**:
-   - technical matters, including tools, pipeline, order and housekeeping (worktrees, branches);
-   - small matters;
+   - small matters, including pipeline details, the order of tasks and housekeeping (worktrees, branches);
    - matters that are easy to change later;
    - matters where the better option does not depend on the engineer's taste.
+
+   The list in point 3 always wins over this one.
 
    It records each decision with a short reason in the plan issue's report, and the engineer can overrule any of them.
 3. **The manager stops and asks**, in one batched message with options and a recommendation, about:
@@ -36,15 +40,20 @@ What he wants from the process:
    - game-design rules;
    - large or hard-to-reverse changes:
      - the character contract once assets exist;
-     - deleting raw files;
+     - deleting, moving or overwriting raw files (anything destructive to the raw folder);
      - anything destructive to git history;
    - new dependencies or installs;
-   - anything in the game repo, whose `main` stays human-merged.
+   - anything in the game repo, whose `main` stays human-merged;
+   - loosening a rule in `CLAUDE.md`, this decision split, the merge gate, the git hooks or this model itself.
+     Tightening them needs no yes. This ADR records the engineer's own decision, so its PR is merged under it.
 4. **Workflows (agents)** for the stage's tasks start without a separate yes while the account's weekly usage stays
-   below 85%. Every launch and its cost goes into the reports.
+   below 85%, counting a launch's expected cost. At 85% the manager launches nothing more, reports and asks. Every
+   launch and its cost goes into the reports.
 5. **The standing permissions** from the kickoff stay in force:
    - Meshy generation within the plan's credits;
    - free downloads from official sources.
+
+   Generation on any other paid service and any other download still need a yes.
 
    Batch files keep their `approval_ref`; the spend is reported.
 

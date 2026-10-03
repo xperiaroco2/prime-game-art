@@ -60,12 +60,12 @@ TOML puts every key after a `[table]` header into that table, so the top-level k
 | `credit` | The attribution line; required for `CC-BY-4.0` |
 | `public_repo_ok` | `true` only if the asset may enter the public game repo; never with `restricted` |
 | `ai_generated` | `true` for any AI generator's output |
-| `approved_by` | GitHub logins of the approvers (the designer for the look, the engineer for the tech); `[]` until approved |
+| `approved_by` | GitHub logins of the approvers: the designer for the look, and the engineer where he decided (taste, money, licences); `[]` until approved. The tech approval is the approving PR's merge after the gate (the trust model, `docs/decisions/2026-10-03-trust-model.md`) |
 | `approved_at` | A TOML date or date-time; `""` until approved |
 | `approval_pr` | The art-repo pull request URL that approved it; `""` until approved |
 
 Approval is all or nothing: `approved_by`, `approved_at` and `approval_pr` are set together, in the approving PR,
-after the humans approve and before the merge. The game repo takes an asset only with all three set.
+after the look is approved and before the merge. The game repo takes an asset only with all three set.
 
 Unknown keys are refused, so a typo cannot hide a missing field.
 

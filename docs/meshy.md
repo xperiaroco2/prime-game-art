@@ -33,8 +33,21 @@ key fails with these steps for the engineer:
 
 ## Batch files
 
-`batches/<id>.toml` is committed: prompts and parameters are durable knowledge, and the file is what the engineer
-approved. Changing a prompt or a parameter needs a new approval.
+`batches/<id>.toml` is committed: prompts and parameters are durable knowledge, and the file is what was approved.
+Changing a prompt or a parameter needs a new approval.
+
+**Since 2026-10-03 the approval can be the standing permission.** The engineer's kickoff of stage 1 allows Meshy
+generation within the plan's credits without a separate yes per batch (`docs/decisions/2026-10-03-trust-model.md`).
+A batch under it records that permission and nothing more:
+- `approved_by` names the engineer, as the giver of the permission;
+- `approval_ref` links its record, https://github.com/xperiaroco2/prime-game-art/issues/16 (the kickoff in the body)
+  or the chat yes recorded on #16 for a specific trial;
+- `credit_cap` stays within the balance `meshy balance` shows at launch;
+- the spend goes into the next report on the plan issue.
+
+A batch beyond the plan's credits, or one the engineer wants to see first, needs his own yes linked in
+`approval_ref`. The client's message "must link to the engineer's yes" (`_meshy_batch.py`) predates this; a
+follow-up updates it.
 
 | Key | Meaning |
 |---|---|

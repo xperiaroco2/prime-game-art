@@ -6,7 +6,8 @@ accessory, prop and animation assets: a headless Blender pipeline, review sheets
 the engineer's decisions: xperiaroco2/prime-game#165 and the stage plan issues here (stage 1: #16); the pipeline:
 `docs/pipeline.md`; the foundation ADR: `docs/decisions/2026-10-02-art-repo-foundation.md`; the trust model:
 `docs/decisions/2026-10-03-trust-model.md`. The engineer (xperiaroco2) writes no code. He decides taste, money and
-large or hard-to-reverse questions and trusts the art manager with the rest; the designer (@SwiftySinister) approves
+large or hard-to-reverse questions (the full list is under "Decisions" below) and trusts the art manager with
+the rest; the designer (@SwiftySinister) approves
 the look. Agents write everything else, verify it from the command line, and the art manager merges it.
 
 ## Rules
@@ -15,7 +16,8 @@ the look. Agents write everything else, verify it from the command line, and the
   - free downloads from official sources.
 
   Every Meshy batch still has a batch file with its `approval_ref`, and the spend goes into the plan issue's reports.
-  These still need the engineer's yes: purchases, subscriptions, paid generation beyond the plan's credits, and
+  These still need the engineer's yes: purchases, subscriptions, paid generation beyond the plan's credits,
+  generation on any other paid service, any other download (mirrors, re-uploads, unofficial sources), and
   installing anything. Reading web documentation is fine.
 - **No Godot or Blender window on screen.**
   - Blender runs only as `blender -b` through `tools/runner/blender.py`.
@@ -120,14 +122,15 @@ PowerShell 5.1 is the primary shell; the Bash tool is Git Bash. In Git Bash `pyt
    The merge goes into the next report on the plan issue.
 
 ## Decisions: who decides (`docs/decisions/2026-10-03-trust-model.md`)
-The art manager decides and reports on the plan issue:
-- everything technical;
-- everything small;
-- everything easy to change later;
-- whatever does not depend on the engineer's taste.
+The art manager decides alone, and reports on the plan issue, what does not need the engineer:
+- small matters;
+- matters that are easy to change later;
+- matters where the better option does not depend on his taste.
 
-It runs workflows for the stage's tasks while the account's weekly usage stays below 85%, and reports each launch
-and its cost.
+The list below always wins over this one.
+
+It runs workflows for the stage's tasks while the account's weekly usage stays below 85%, counting a launch's
+expected cost, and reports each launch and its cost. At 85% it launches nothing more, reports and asks.
 
 Stop and ask the engineer, in one batched message with options and a recommendation, before:
 - anything about the look or taste (with the designer);
@@ -135,7 +138,9 @@ Stop and ask the engineer, in one batched message with options and a recommendat
 - licences outside the allowlist; game-design rules;
 - large or hard-to-reverse changes:
   - the character contract once assets exist;
-  - deleting raw files;
+  - deleting, moving or overwriting raw files (anything destructive to the raw folder);
   - anything destructive to git history;
 - adding a dependency (the runner is standard library only) or installing a tool;
-- anything in the game repo.
+- anything in the game repo;
+- loosening a rule in this file, the list above, the merge gate, the git hooks or the trust model itself.
+  Tightening them needs no yes.

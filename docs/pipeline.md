@@ -9,7 +9,7 @@ From a raw generation or download to an approved asset in the game. Based on sec
 The direction below changed on 2026-10-03 (xperiaroco2/prime-game#165, stage 1 plan #16). Where they differ, this
 section wins:
 - **Characters are assembled, not generated.** The base is Quaternius' Ultimate Modular Men and Women (CC0): one
-  armature with five-finger chains, plus toe bones we add (#25). The player chooses a body type. Tops, bottoms and
+  armature with five-finger chains, plus the toe bones being added in #25. The player chooses a body type. Tops, bottoms and
   shoes are per body type; heads, hair, hats, accessories and our face parts are shared.
 - **The character route:**
   - `assemble` builds characters from recipes (`docs/assembly.md`);
@@ -63,11 +63,11 @@ it does not choose.
  8 palette      drop the AI texture; per-face colour snapped to the shared palette; face decals by hand
  9 animations   bake each source clip onto the contract rig (falls and knockdowns included); fix contacts
                 (hands meet, reach the head); retime for feel; first-person arm clips for the hands-in-sleeves view
-10 export       `export`: fixed glTF export options; Khronos glTF-Validator (pinned) -> report.json; a non-zero exit
-                fails; then `godot-check` (headless import into godot/) and `frames` (off-screen Godot sheets)
+10 export       export: fixed glTF export options; Khronos glTF-Validator (pinned) -> report.json; a non-zero exit
+                fails; then godot-check (headless import into godot/) and frames (off-screen Godot sheets)
 11 render       8 views at 45 degrees in a 4x2 sheet with a caption; 8-frame sheets per clip; a lit hero image;
                 variants side by side. Shown to the engineer as a private artifact page, never committed
-[humans]
+[the designer for the look; the art manager merges after the gate]
 12 approve      a PR in this repo: the designer approves the look on the review page; the art manager merges after
                 the gate (trust model); the manifest gets approved_by, approved_at, approval_pr (docs/manifest.md)
 [agent, game repo xperiaroco2/prime-game, its own task workflow]
