@@ -5,7 +5,8 @@ Blender 5.2.2 LTS (pinned in `tools/runner/pins.py`) runs only in the background
 `blender -b --factory-startup --python-exit-code 1 --python tools/blender/<script>.py -- <args>`, with a hard timeout.
 A Python error inside the script fails the command and prints the end of Blender's output, traceback included.
 `probe` and `render` write to `tools/out/`; `mannequin` and `stylize-quaternius` write to the raw folder
-(`D:/prime-art-raw/mannequin/` and `stylized/`) by default. None of it is ever committed.
+(`D:/prime-art-raw/mannequin/` and `restyled/`; batch 2's `stylized/` came from the old stylize step) by default. None
+of it is ever committed.
 
 ## Commands
 
@@ -15,7 +16,7 @@ A Python error inside the script fails the command and prints the end of Blender
 | `render <model> [--out DIR] [--cell 512] [--no-outline]` | Renders an 8-view review sheet and `stats.json` into `tools/out/renders/<stem>_<extension>/` |
 | `render <model> --anim <action> [--frames 8]` | Also an animation contact sheet of that action, seen from the front |
 | `mannequin [--preset base\|lanky\|bighead\|all] [--out DIR] [--size 1024] [--cell 512] [--no-refs] [--no-sheet]` | Builds our own low-poly base body by script: a GLB, a `.blend`, reference images and the review sheet per preset ([below](#the-mannequin)) |
-| `stylize-quaternius [--source GLTF] [--preset base\|lanky\|bighead\|all] [--out DIR] [--triangles 7500] [--cell 512] [--no-sheet] [--no-check]` | Stylizes the CC0 Quaternius male toward our direction: a GLB, `info.json`, the review sheet and a `check` report per preset ([below](#the-stylized-quaternius-body)) |
+| `stylize-quaternius [--source GLTF] [--preset base\|lanky\|bighead\|all] [--out DIR] [--triangles 6000] [--cell 512] [--no-gates]` | Restyles the CC0 Quaternius male into our base body: a GLB and a working `.blend` with the profile's bones, the gates (sheet, `check`, close-ups, poses, the 20 m line-up, the defect check) and `info.json` per preset ([below](#the-restyled-base-body)) |
 
 Windows: `tools\run.cmd probe`, `tools\run.cmd render tools/out/fixtures/humanoid.glb`. Git Bash: `tools/run.sh ...`.
 `render` reads GLB, glTF, FBX, OBJ and `.blend` (cameras and lights in a `.blend` are dropped; hidden objects are
@@ -109,59 +110,116 @@ Per preset, `<out>/<preset>/` (default `D:/prime-art-raw/mannequin/<preset>/`) h
 
 The reference images come from `tools/blender/refs.py`, which any Blender script can use.
 
-## The stylized Quaternius body
+## The restyled base body
 
-`stylize-quaternius` (`tools/blender/stylize_quaternius.py`) takes the CC0 Quaternius male of the Universal Base
-Characters (`D:/prime-art-raw/quaternius/Universal_Base_Characters/Universal Base Characters[Standard]/Base
-Characters/Godot - UE/Superhero_Male_FullBody.gltf`: 12,566 triangles in the body, 1.82 m, 65 bones) toward our
-direction. The runner writes a plan (`plan.json`, from `tools/runner/commands/_stylize.py`) that names every bone in
-the rig's own names through `contract/bone_maps/quaternius.toml`, so the Blender script holds no vendor names. In
-order:
+`stylize-quaternius` (`tools/blender/stylize_quaternius.py`, art #14) restyles the CC0 Quaternius male of the Universal
+Base Characters (`D:/prime-art-raw/quaternius/Universal_Base_Characters/Universal Base Characters[Standard]/Base
+Characters/Godot - UE/Superhero_Male_FullBody.gltf`: 12,566 triangles, 1.82 m, 65 bones with five-finger chains) into
+our base body. The batch 2 review (art #5) chose the route: the Quaternius body is the rig, weight and topology donor,
+and mannequin-lanky ([above](#the-mannequin)) is the look target. The build starts from the source glTF rather than
+batch 2's `quaternius_base.glb` (the same rig, weights and topology, but already decimated: decimating twice loses the
+finger and joint loops). The runner writes a plan (`build/plan.json`, from `tools/runner/commands/_stylize.py`) that
+names every bone in the rig's own names through `contract/bone_maps/quaternius.toml`, so the Blender script holds no
+vendor names. In order:
 
-1. Import with the vertices merged at UV seams and no bone display shape; delete `Icosphere`, `Eyes` and `Eyebrows`,
-   remembering where the eyes were.
-2. Reshape as an armature would: every slimmed bone scales its vertices across the bone (its length and the joints
-   stay); the head bone scales its vertices uniformly about the neck joint. The weights blend both, so the neck and
-   the joints stay smooth.
-3. A blank face: the eye sockets are smoothed flat (plain Laplacian smoothing, which fills dents), and the mouth is
-   filled, never pulled in: the inside of the mouth relaxes into a membrane across the lips, the lips and that
-   membrane move onto a surface fitted to the philtrum and the chin, and a light Taubin pass removes the creases.
-   Pulling the mouth in (the first version) left a notch under the nose that read as an open mouth in profile;
-   `info.json` records the profile dent (`blank_face.dent`: about 3 mm, against about 1 cm before) and a test keeps
-   it under 6 mm.
-4. A longer nose: the nose tip (the front-most centre-line vertex under the eyes) and its surroundings are pulled
-   forward and a little down with a smooth falloff.
-5. Softer muscles: Taubin smoothing, which does not shrink the mesh, on the torso, shoulders, arms, legs and neck by
-   weight; the hands, feet and head keep their detail.
-6. Mesh and bones scaled to 1.75 m; the head bone grows with the head.
-7. One flat skin material and flat shorts. The texture's dark-grey faces give the shorts' waist and hem heights; the
-   mesh is cut along those two horizontal planes and every face between them becomes the shorts, so the edges are
-   straight instead of following the texture's ragged triangles. Textures, vertex colours and the old materials go.
-8. Collapse decimation, symmetric in X, to `--triangles` (7,500: within the issue's 7,000 to 9,000 and under the
-   contract's body cap of 8,000). The shorts' border is a protected vertex group (inverted on the modifier, so
-   collapsing its edges costs more) and stays straight. Then the weights are cleaned to the contract: at most four
-   per vertex, none under 0.01, normalized.
-9. Export as GLB, re-import it and probe the rig: each finger chain's proximal bone, the head, a forearm and a shin
-   are turned and the vertices that move are counted. A probe bone that moves nothing fails the command.
+1. Import with the vertices merged at UV seams and no bone display shape; delete the eyes, the eyebrows and any mesh
+   not skinned to the armature, remembering where the eyes were. The body mesh is renamed `Body` (the source calls it
+   `SuperHero_Male`).
+2. A soft body. The trunk (hips to neck) and every upper arm, forearm, thigh, shin and the neck get a smooth surface
+   around their axis, fitted by least squares to their own vertices (harmonics up to the second around the axis,
+   quadratic along the trunk, a straight taper along a limb), and every vertex moves towards it by its weight:
+   the pecs, abs, shoulder blades, V-taper, biceps and calves go. Vertices only move towards or away from the axis,
+   and the blend fades out at the joints, so the shoulder, elbow, hip and knee loops and the finger roots keep their
+   places. Then normal-only Taubin smoothing on the trunk (vertices move along their normals, so no loop slides), and
+   plain Laplacian smoothing flattens the source's bulge at the groin.
+3. The head. Everything above a cut that rises from the chin at the front to the skull's base at the back moves onto
+   an egg (radial projection): the mannequin's head profile (a round crown, the widest part a little above the middle,
+   narrower at the jaw), fitted to the source's temples and brow, its lower end leaning a little forward. That flattens
+   the lips, the mouth, the nasolabial folds, the brow ridge and the cheek planes: a blank face. The surface is then
+   relaxed on the egg (smooth, project back, 25 times) to spread the eyelids' and lips' dense rings; the mouth (the
+   lips and the pocket of skin inside them, which fold up on the egg) is laid flat inside its own rim (Tutte's
+   embedding: inside a convex rim no triangle folds). The ears ride on the egg, are rounded off and pulled in; between
+   the egg and the neck a membrane (positions filled in harmonically) replaces the jaw line. A cone nose is pulled out
+   of the face: the vertices inside an ellipse around the root (just under the eyes) become a cone pointing forward
+   and a little down, a tall narrow root tapering to a round tip. The egg, ears and nose are weighted to the head bone
+   alone (the source's mouth leaned on the neck and came back as a dent once the bones changed), and the membrane's
+   weights are filled in harmonically down to the neck's.
+4. The proportions, in pose mode: every trunk and limb bone is scaled across its length (slimmer), and the upper arms,
+   forearms, thighs, shins and neck along it (longer); the shoulders get narrower. No bone inherits its parent's scale
+   meanwhile, so a child moves to its parent's new end without stretching: the hands and feet are never stretched. The
+   neck is turned upright (the source's leans forward 17 degrees) and the head turned back, so it sits over the neck.
+   The head's scale is solved (a few evaluations of the posed skin) so that in the finished figure the skin the head
+   bone moves at least half is the preset's size against the source's at the same height. The posed skin is applied
+   and the pose becomes the rest (`pose.armature_apply`).
+5. Normalized: the mesh and every bone scaled to 1.75 m, the soles at z = 0 and centred on the origin. The normalized
+   skin is saved (`build/normalized.npy`); every preset has the source's topology up to here, so a preset other than
+   base is measured against base vertex by vertex.
+6. `Jaw`, `LeftEye` and `RightEye` are added under the head bone, unweighted, pointing forward: the eyes at the
+   source's eye centres (moved with the head), the jaw in front of and above the head joint.
+7. One palette material: the briefs are cut into the mesh along a waist plane 12.5 cm above the crotch and, per leg,
+   a leg-opening plane 2.5 cm below it that rises 28 degrees towards the hip; every face gets UVs in the centre of its
+   colour's cell of a 16 x 16 px palette image (4 x 4 cells, closest-pixel sampling, packed into the GLB). The material
+   is matte (roughness 1, no metal, in the viewport too). The cells are placeholders until the shared game palette
+   exists.
+8. Collapse decimation, symmetric in X, to `--triangles` (6,000, the contract's body target). A protect group (inverted
+   on the modifier, so collapsing its edges costs more) holds the finger roots, the shoulder, elbow, hip and knee loops
+   and the briefs' border. The weights are cleaned to the contract: at most four per vertex, none under 0.01,
+   normalized.
+9. Saved as `build/stage_<preset>.blend` with the rig's own names. The runner then runs `rename-bones --map quaternius`
+   on it twice: `restyled_<preset>.glb` and the working copy `restyled_<preset>.blend` (no `.blend1`), both with the
+   profile's 56 bones.
 
-| Preset | Torso, arms, legs | Shoulders, neck | Head | Nose | Smoothing |
-|---|---|---|---|---|---|
-| `base` | 83, 83, 84 percent | 85, 90 percent | 112 percent | 3.0 cm longer | 30 iterations |
-| `lanky` | 80 percent | 82, 85 percent | 110 percent | 3.6 cm longer | 34 iterations |
-| `bighead` | 85 percent | 87, 90 percent | 115 percent | 4.5 cm longer | 30 iterations |
+The export check reads the GLB's own JSON (no Blender) and fails when any node with a mesh is not `Body`
+(`_stylize.ALLOWED_MESHES`; the clothing pieces join it when the cut-piece tool exists). The batch 2 review's "stray
+Icosphere" was Blender's importer, not the files: imported without `disable_bone_shape`, a glTF gets a hidden 42-vertex
+icosphere as the bones' display shape. `contract_io.load_model` now sets it, so `rename-bones` never saves one into a
+`.blend`.
 
-The three stay inside the issue's ranges (15 to 20 percent slimmer, a 10 to 15 percent bigger head), so they differ
-only a little; a test holds them there.
+| Preset | Across (trunk, arms, legs) | Along (upper arm, forearm, thigh, shin, neck) | Head against the source |
+|---|---|---|---|
+| `base` | 0.82 to 0.94, 0.8 and 0.76, 0.8 | 1.08, 1.1, 1.1, 1.12, 1.5 | 1.125 |
+| `lanky` | 0.78 to 0.92, 0.7 and 0.68, 0.7 | 1.2, 1.22, 1.22, 1.24, 1.75 | 1.1 |
+| `bighead` | as base | as base; the neck 1.3 | 1.25 |
 
-Per preset, `<out>/<preset>/` (default `D:/prime-art-raw/stylized/<preset>/`) holds `quaternius_<preset>.glb`,
-`plan.json`, `info.json` (in the final figure's metres: what was dropped, the eye height, the mouth, its profile
-dent and the nose tip, the triangles before and after, the shorts
-band, the protected border vertices before and after decimation, the cleaned weights, the bones, the materials and the
-probe), `sheet/` (the review sheet) and `check/report.json` (`check --kind body --map quaternius`). The check fails
-only on `missing_bones` (the rig has no `Jaw`, `LeftEye` or `RightEye`; they are added in Blender later) and warns
-about the triangles (above the body target of 6,000), the two materials, the dropped end bones and the eye height;
-the command prints the check's exit code and still exits 0 for that known case, but fails on any other failed check
-(or on `missing_bones` naming another bone).
+The along factors are before the figure is scaled back to 1.75 m: lanky's limbs end about 4 percent longer for its
+height than base's (its hands and feet about 7 percent smaller), its neck 9 percent; bighead's head is 11 percent
+bigger than base's. The head is measured as the vertical extent of the skin the head bone
+moves at least half, as a fraction of the height (the source's: 0.128).
+
+### The gates
+
+After the build, per preset (`tools/runner/commands/stylize_quaternius.py`), all into
+`D:/prime-art-raw/restyled/<preset>/` (`--out`), none of it committed:
+
+| File | What |
+|---|---|
+| `sheet/sheet.png` | The 8-view review sheet ([above](#the-review-sheet)) |
+| `check/report.json` | `check --kind body` on the renamed GLB: it must pass (no failure; warnings allowed) |
+| `closeups/head.png` | Front, left, three-quarter and back in colour; front and left in clay; front and left in wireframe |
+| `closeups/hands.png` | Per hand: from above in colour and in wireframe, from the front and from below (the palm) in clay |
+| `poses.png` | Fist, point, wave, thumbs up, knee bend, sit and arms down: each a full figure (three-quarter front) and a close look at the joint or hand it tests, in clay. The poses turn bones about world axes (`tools/blender/restyle_gates.py`), so they hold for any rig with the profile's names |
+| `lineup.png`, `lineup_x4.png` | Front and side at 40 px per metre (a 1.75 m figure is 70 px, about what a 1080p screen shows at 20 m), no outline, next to mannequin-lanky and batch 2's quaternius-base; the copy is enlarged 4 times with labels. With `--preset all` the root also gets one line-up of every preset |
+| `info.json` | The build's numbers, the measurements and the defect check below |
+
+The verdict (`_stylize.gate_failures`, every rule tested without Blender) fails the command when the GLB holds
+another mesh or a second material, the contract check fails, the height is not 1.75 m on the ground with the soles
+centred, the eyes are outside 1.55 to 1.65 m, the head is more than 2 percent off its target, there are more than 10
+percent over the triangle target, any open or non-manifold edge remains (welded at 0.01 mm), or a hand's fingers are
+not five separate parts. The finger check counts the connected parts of the skin that the fingers' free segments move
+most (each finger's middle and end, the thumb's last two; the web joins the first segments in a real hand too): five
+parts, one finger each. The slices across each hand 1 to 12 cm from the fingertips are recorded too, but cannot gate:
+on this hand the thumb starts behind the knuckles, so no slice crosses five fingers (the batch 2 review saw four on
+quaternius-base as well).
+
+A preset other than base must also differ from base: its vertices at least 10.5 mm (median) from base's, three times
+batch 2's 3.5 mm, compared vertex by vertex before decimation (`shift_from_base`); lanky's neck, upper arm, forearm,
+thigh and shin at least 3 percent longer for the height than base's; bighead's head at least 7 percent bigger.
+(`measure.surface_from_base`, each vertex's distance from base's surface, is recorded for comparison: it misses limbs
+that only grew longer, which slide along their own surface.)
+
+A run of all three presets with every gate takes about 70 seconds on this PC; `--no-gates` builds only (about 8
+seconds a preset). `selftest` runs the build on the box fixture and, when the source is in the raw folder, every preset
+with every gate.
 
 ## The fixture
 
@@ -184,8 +242,9 @@ an A-pose, has 17 bones (hips, spine, chest, neck, head and per side upper_arm, 
   without an operator instance; the probe reads them from the operator class (`GLB`, `GLTF_SEPARATE`; default `GLB`).
   Defaults worth knowing: `export_yup` true, `export_apply` false (modifiers are not applied), `export_animations`
   true, `export_animation_mode` `ACTIONS`, `export_image_format` `AUTO`, `export_skins` true.
-- The glTF importer adds a hidden icosphere as the bone display shape unless `disable_bone_shape` is set; `render`
-  sets it, so object counts are the model's own.
+- The glTF importer adds a hidden icosphere as the bone display shape unless `disable_bone_shape` is set; `render`,
+  `stylize-quaternius` and every contract script (`contract_io.load_model`) set it, so object counts are the model's
+  own and no `.blend` saved from an import carries it.
 - The FBX and OBJ importers are available (`import_scene.fbx`, `wm.obj_import`). An FBX round trip adds leaf bones
   (17 become 22) unless the exporter's `add_leaf_bones` is off.
 
