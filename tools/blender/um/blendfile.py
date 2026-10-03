@@ -21,7 +21,7 @@ import bpy
 from mathutils import Matrix, Vector
 
 from . import materials
-from .packs import own_action, own_actions, place, reset_pose
+from .packs import own_action, own_action_set, own_actions, place, reset_pose
 from .util import base_name, tris, update, world_points
 
 FACE_ROLES = ("eyes", "brows", "mouth")
@@ -53,10 +53,12 @@ def _sample(arm, parts, action, frame):
     return pts
 
 
-def _rename_actions(acts):
-    """Give the character's own actions their original names, moving any other action off those names first."""
-    for act in acts:
-        target = base_name(act.name)
+def _rename_actions(own):
+    """Give the character's own actions ({"Wave": action, ...}) their original names, moving any other action off
+    those names first. Every rig's own actions were recorded at import, so the order characters are saved in does not
+    matter."""
+    for short, act in own.items():
+        target = "CharacterArmature|" + short
         other = bpy.data.actions.get(target)
         if other is not None and other is not act:
             other.name = target + "~other"
@@ -139,7 +141,7 @@ def save_character(cid, arm, parts, rc, rep, out_dir):
         for slot in o.material_slots:
             skin = base_name(slot.material.name).endswith("_skin")
             synced = max(synced, materials.sync_principled(slot.material, scripted=role in FACE_ROLES and not skin))
-    _rename_actions(acts)
+    _rename_actions(own_action_set(arm))
     _rename_materials(parts)
 
     arm.data.name = arm.name

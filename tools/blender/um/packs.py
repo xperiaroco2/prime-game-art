@@ -16,6 +16,13 @@ from mathutils import Matrix
 
 from .util import base_name, update
 
+ACTION_NAME = re.compile(r"^CharacterArmature\|([^.]+)(\.\d+)?$")
+
+# Each imported armature's own action set, {"Wave": action, ...}, recorded at import as the actions the import added.
+# Kept as datablocks rather than parsed back from names: a save renames actions, and Blender's name suffix can grow
+# past three digits in a long run.
+_OWN = {}
+
 
 class Packs:
     """The two pack folders of a recipe: load(gender, file) imports one GLB."""
@@ -28,12 +35,19 @@ class Packs:
 
     def load(self, gender, fname):
         before = set(bpy.data.objects)
+        before_actions = set(bpy.data.actions)
         bpy.ops.import_scene.gltf(filepath=self.path(gender, fname))
         new = [o for o in bpy.data.objects if o not in before]
         arm = next(o for o in new if o.type == "ARMATURE")
-        # the importer assigns this file's own first action; its name suffix (".012") names the file's action set
+        own = {}
+        for act in bpy.data.actions:
+            m = ACTION_NAME.match(act.name)
+            if act not in before_actions and m:
+                own[m.group(1)] = act
+        _OWN[arm] = own
+        # the importer assigns this file's own first action; its name suffix (".012") is kept for the report
         act = arm.animation_data.action if arm.animation_data else None
-        arm["action_suffix"] = re.search(r"(\.\d{3})?$", act.name).group(0) if act else ""
+        arm["action_suffix"] = ACTION_NAME.match(act.name).group(2) or "" if act else ""
         reset_pose(arm)
         meshes = {base_name(o.name): o for o in new if o.type == "MESH" and not o.name.startswith("Icosphere")}
         return {"gender": gender, "file": fname, "arm": arm, "root": arm.parent, "objs": new, "meshes": meshes}
@@ -53,15 +67,18 @@ def reset_pose(arm):
         pb.scale = (1, 1, 1)
 
 
+def own_action_set(arm):
+    """{"Wave": action, ...}: the 24 actions the import of this armature's file added, whatever their names are now."""
+    return dict(_OWN[arm])
+
+
 def own_actions(arm):
-    """The 24 actions of the file this armature was imported from (its action set's suffix)."""
-    suffix = arm["action_suffix"]
-    pattern = re.compile(r"^CharacterArmature\|[^.]+" + re.escape(suffix) + "$")
-    return [a for a in bpy.data.actions if pattern.match(a.name)]
+    """The 24 actions of the file this armature was imported from, by name."""
+    return sorted(_OWN[arm].values(), key=lambda a: a.name)
 
 
 def own_action(arm, name):
-    return bpy.data.actions["CharacterArmature|" + name + arm["action_suffix"]]
+    return _OWN[arm][name]
 
 
 ROOT0 = {}
@@ -81,6 +98,7 @@ def discard(src, keep=()):
     keep = set(keep)
     if src["arm"] not in keep:
         bpy.data.batch_remove(own_actions(src["arm"]))  # one ID remap for all 24, not one each
+        del _OWN[src["arm"]]
     for o in src["objs"]:
         try:
             o.name
