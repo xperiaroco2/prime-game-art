@@ -1,0 +1,61 @@
+id = "quaternius_ultimate_modular_men"
+title = "Ultimate Modular Men Pack"
+author = "Quaternius"
+url = "https://quaternius.com/packs/ultimatemodularcharacters.html"
+licence = "CC0-1.0"
+licence_url = "https://creativecommons.org/publicdomain/zero/1.0/"
+public_repo_ok = true
+ai_generated = false
+downloaded_at = 2026-10-03
+notes = """The glTF download of the pack page (11 characters, 24 animations, one 62-bone armature "CharacterArmature"; each
+character is four parts: Head, Body (top), Legs or Pants (bottom), Feet (shoes)). The zip is kept as downloaded and its
+GLBs unpacked beside it, byte-identical to the zip entries (dated 2022-07-15). The base of the characters
+(xperiaroco2/prime-game#165); the assembler is tools/blender/um/ (docs/assembly.md)."""
+
+[[raw]]
+file = "refs/Ultimate Modular Men Pack-glb.zip"
+sha256 = "ca022bede1c3453872887df75b1b5e6776ccad2760e105610885232d810d5224"
+
+[[raw]]
+file = "refs/Ultimate_Modular_Men_Pack/Adventurer.glb"
+sha256 = "4a8639cd8eee9d8a150464edc25eb0536ced464790704a64e40c8620d99f66db"
+
+[[raw]]
+file = "refs/Ultimate_Modular_Men_Pack/Astronaut.glb"
+sha256 = "c825fb5dc0f3c2875f8c298938c35df79e884c8117d9ff62a6b213d783957758"
+
+[[raw]]
+file = "refs/Ultimate_Modular_Men_Pack/Beach Character.glb"
+sha256 = "67c366f8c1e9ba3d3767213bc8660579a4f8028ed647a33c53d05596e8dd888c"
+
+[[raw]]
+file = "refs/Ultimate_Modular_Men_Pack/Business Man.glb"
+sha256 = "82b81257c1e94cd9ee48cb1dcbe5ff506e81c9ce67cd0c5af542d8712dca546e"
+
+[[raw]]
+file = "refs/Ultimate_Modular_Men_Pack/Casual Character.glb"
+sha256 = "fea7e71271203e7073f1a073fa1208de7402df276f87f80e149bf7589b5d46b4"
+
+[[raw]]
+file = "refs/Ultimate_Modular_Men_Pack/Farmer.glb"
+sha256 = "f7ae6e2596c6521d296fa5948783f1dac717807456ce5355e48719e81d15e9a6"
+
+[[raw]]
+file = "refs/Ultimate_Modular_Men_Pack/Hoodie Character.glb"
+sha256 = "0de1bcd789d409214cf82f66f61daeb53d2f7de6d914b23e7b3660bfb3dee61e"
+
+[[raw]]
+file = "refs/Ultimate_Modular_Men_Pack/King.glb"
+sha256 = "0f20861fbc1670b8cc87b2dbbe7dbe8d9fc6f0f794703b6bfee8431f3de8c5cf"
+
+[[raw]]
+file = "refs/Ultimate_Modular_Men_Pack/Punk.glb"
+sha256 = "94afa8718093cc7f9e51cdc0b35f4432c1c2f1901177f98fbbbcb4c6fd79b163"
+
+[[raw]]
+file = "refs/Ultimate_Modular_Men_Pack/Swat.glb"
+sha256 = "a835107bac833eb916c494e10997ae1709e85957ea6f6c59ace3c9a66f6d1fec"
+
+[[raw]]
+file = "refs/Ultimate_Modular_Men_Pack/Worker.glb"
+sha256 = "9c28614f465b7dc105f908c20c22fc045f4b07caf8c5ef0e9f8049eceb6dd38d"
