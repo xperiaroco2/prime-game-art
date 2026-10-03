@@ -138,7 +138,7 @@ def distance_lines(report: dict[str, Any]) -> list[str]:
 
 
 def run(args: argparse.Namespace) -> int:
-    styles, review, heads, heads_path = load_inputs(args)
+    styles, _, heads, heads_path = load_inputs(args)
     families = _pick(args.families, list(styles["families"]), "families")
     expressions = _pick(args.expressions, styles["expressions"], "expressions")
     sheets = ["none"] if args.sheets == "none" else _pick(args.sheets, list(styles_module().SHEETS), "sheets")

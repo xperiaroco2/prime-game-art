@@ -355,7 +355,7 @@ def heading(shots, path, labels, cell_w, label_w, h_px, size):
     return shots.text(path, items, label_w + len(labels) * (cell_w + SEP), h_px)
 
 
-def side_labels(shots, path, labels, cell_h, top, w_px, size):
+def side_labels(shots, path, labels, cell_h, w_px, size):
     items = [(t, 10, i * (cell_h + SEP) + cell_h / 2, size, "LEFT") for i, t in enumerate(labels)]
     return shots.text(path, items, w_px, len(labels) * (cell_h + SEP))
 
@@ -448,8 +448,7 @@ def main():
             for view, label in (("front", "front"), ("threequarter", "three-quarter")):
                 top = heading(shots, os.path.join(work, f"{fid}_{view}_head.png"),
                               col_labels, cell_px, label_w, head_h, shots.px(24))
-                side = side_labels(shots, os.path.join(work, f"{fid}_{view}_side.png"), [show(e) for e in exprs], cell_px,
-                                   head_h, label_w, fsize)
+                side = side_labels(shots, os.path.join(work, f"{fid}_{view}_side.png"), [show(e) for e in exprs], cell_px, label_w, fsize)
                 sheet = grid(cells[view], top, side, head_h, label_w)
                 title = shots.text(os.path.join(work, f"{fid}_{view}_title.png"),
                                    [(f"{fam_title(fid, fam)}  ({label})", 12, shots.px(30), shots.px(34), "LEFT")],
@@ -466,7 +465,7 @@ def main():
     if "beards" in sheets and review.get("facial_hair"):
         report["facial_hair"] = beards(shots, heads, styles, review, packs, out, work)
     if "strip" in sheets:
-        report["strip"] = strips(shots, heads, styles, review, out, work, ppm)
+        report["strip"] = strips(shots, heads, styles, review, out, work)
 
     report["renders"] = shots.n
     with open(os.path.join(out, "faces_report.json"), "w", encoding="utf-8") as fh:
@@ -570,7 +569,7 @@ def distance_sheets(shots, heads, styles, review, fams, out, work):
                 col_labels.append(f"{review['heads'][hid]['label']}, {skin}: {d} m ({a.shape[0]} px tall window)")
         label_w, head_h = shots.px(200), shots.px(70)
         top = heading(shots, os.path.join(work, f"{fid}_dist_head.png"), col_labels, target, label_w, head_h, shots.px(15))
-        side = side_labels(shots, os.path.join(work, f"{fid}_dist_side.png"), [show(e) for e in ds["expressions"]], target, head_h,
+        side = side_labels(shots, os.path.join(work, f"{fid}_dist_side.png"), [show(e) for e in ds["expressions"]], target,
                            label_w, shots.px(24))
         sheet = grid(cells, top, side, head_h, label_w)
         title = shots.text(os.path.join(work, f"{fid}_dist_title.png"),
@@ -598,7 +597,7 @@ def overview(shots, heads, styles, review, fams, out, work, ppm):
     top = heading(shots, os.path.join(work, "overview_head.png"),
                   [fam_title(fid, styles["families"][fid]) for fid in fams], cell_px, label_w, head_h, shots.px(24))
     side = side_labels(shots, os.path.join(work, "overview_side.png"),
-                       [f"{review['heads'][h.id]['label']}, {skin_of.get(h.id)}" for h in heads], cell_px, head_h, label_w, shots.px(20))
+                       [f"{review['heads'][h.id]['label']}, {skin_of.get(h.id)}" for h in heads], cell_px, label_w, shots.px(20))
     save_image(grid(cells, top, side, head_h, label_w), os.path.join(out, "overview.jpg"), "JPEG")
 
 
@@ -656,7 +655,7 @@ def beards(shots, heads, styles, review, packs, out, work):
     label_w, head_h = shots.px(230), shots.px(60)
     top = heading(shots, os.path.join(work, "beards_head.png"), labels, px, label_w, head_h, shots.px(24))
     side = side_labels(shots, os.path.join(work, "beards_side.png"),
-                       [f"{review['heads'][hid]['label']}, {skin}" for hid, skin in fh["heads"]], px, head_h, label_w, shots.px(22))
+                       [f"{review['heads'][hid]['label']}, {skin}" for hid, skin in fh["heads"]], px, label_w, shots.px(22))
     sheet = grid(rows, top, side, head_h, label_w)
     title = shots.text(os.path.join(work, "beards_title.png"),
                        [("Facial hair from the men's pack on both body types (with " + fam_title(fid, fam)
@@ -704,7 +703,7 @@ def render_clip(shots, h, act, path, loops):
     print("CLIP", path, sc.frame_end - sc.frame_start + 1, "frames")
 
 
-def strips(shots, heads, styles, review, out, work, ppm):
+def strips(shots, heads, styles, review, out, work):
     st = review["strip"]
     by_id = {h.id: h for h in heads}
     rep = {}
