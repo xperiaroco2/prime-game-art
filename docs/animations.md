@@ -16,6 +16,7 @@ the toe bones and the Meshy trial (art #25) in [research/2026-10-03-meshy-animat
 | Ultimate Modular Women, any file (the review uses `Suit.glb`) | 24 actions, other motions than the men's | the same 62 bones | CC0 1.0 | #17's `sources/` |
 | Universal Animation Library Standard (UAL1): `UAL1_Standard.glb` (in place) and `UAL1_Standard_RM.glb` (root motion) | 43 clips each | 65 bones, Unreal-mannequin names | CC0 1.0 | [`sources/quaternius_ual1_standard.toml`](../sources/quaternius_ual1_standard.toml) |
 | Universal Animation Library 2 Standard (UAL2, art #24): `UAL2_Standard.glb` and `UAL2_Standard_RM.glb`, and a Female Mannequin without clips | 43 clips each, other motions than UAL1's | UAL1's rig exactly (the same 65 bones, parents and rest) | CC0 1.0 | [`sources/quaternius_ual2_standard.toml`](../sources/quaternius_ual2_standard.toml) |
+| Meshy (art #25, batch 4, private raw files): `meshy`, Meshy's rig of m1_rex with its walking and running, ten library actions and the text-to-motion crawl; `meshyw`, its rig of w1_ivy with its walking, running, Walking Woman and Run Fast | 13 and 4 clips | Meshy's auto-rig, 24 bones, no fingers ([the research page](research/2026-10-03-meshy-animations.md)) | owned output of the Pro plan; the library motions' provenance is undisclosed: private only | [`batches/2026-10-b4-animations.toml`](../batches/2026-10-b4-animations.toml) |
 
 Measured by `anim-review inventory` (2026-10-03): the 24 actions have the same keyframes in every file of a body type,
 except the men's `Adventurer.glb`, whose 24 all differ (that character is bound 180 degrees off). The women's
@@ -118,11 +119,25 @@ accounted for exactly once; unknown keys refused):
 | `[unused]` | source bones with no target (the leaves, `ball_leaf`) |
 | `[source_rig]`, `[target_rig]` | the full bone lists, read from the files |
 
-UAL2 takes this map unchanged: its rig is UAL1's (above), so no second map is needed. UAL's toes, `ball_l` and
+UAL2 takes this map unchanged: its rig is UAL1's (above), so no second map is needed.
+
+Two more keys since art #25: **`root` may be left out** (a source with no root bone, Meshy's: our `Root` rests in
+`[rest]` and `Body`, carried by the source hips, takes the travel), and **`[align]`** lists target bones whose rest
+direction (towards their mapped child) is turned onto the source bone's before the transfer, for rests that differ
+more than a motion can carry. The rest check then leaves the aligned bones and everything below them out and reports
+the angles (`aligned_deg`).
+
+**Meshy** (`meshy_um.toml`, `meshy_um_rigid.toml`): `Hips` -> `Body` (no root), `Spine02`, `Spine01`, `Spine` ->
+`Abdomen`, `Torso`, `Chest`, `neck` -> `Neck`, `Head`, the shoulders, arms, forearms and hands, `Left/RightUpLeg`,
+`Leg`, `Foot` (the IK legs, as for UAL) and `Left/RightToeBase` -> `Toe.L`/`Toe.R`; `head_end` and `headfront` unused;
+every finger of ours at rest (Meshy's rig has none). `[align]` turns `UpperArm.L`/`.R`: Meshy placed its upper arms
+14.2 to 14.9 degrees (the man's rig) and 9.5 to 10.4 (the woman's) below our mesh's T-pose arms, so without it an arm
+hanging at the side on Meshy's rig would stand that far out on ours. `retarget --library meshy|meshyw` uses it; the
+rest check is 0.002 mm and 0 degrees outside the arms. UAL's toes, `ball_l` and
 `ball_r`, drive `Toe.L` and `Toe.R` (art #25). `ual_um_rigid.toml` is the same map with the toes unused and the toe
 bones at rest: the rigid shoes of art #20 and #24, which the review's `feet` step shows beside the toe bones. A
-library on another rig (Meshy's, once its skeleton is known) names its own map in the review settings:
-`[libraries.<key>]` `map` and `rigid_map`, files in `tools/blender/retarget_maps/` (checked to exist).
+library on another rig (Meshy's) names its own map in the review settings: `[libraries.<key>]` `map` and
+`rigid_map`, files in `tools/blender/retarget_maps/` (checked to exist).
 
 Fingers map by anatomy, not by number: UAL `index_01..03` (phalanges) go to `Index2..4`, and `Index1` (the
 metacarpal) stays at rest; thumbs map 1:1. Hand close-ups confirmed curls bend the right way and pointing works.
@@ -169,7 +184,7 @@ frame-change handler that poses the characters, so each character can loop its o
 | Forearm twist | The twist of the wrist against the lower arm about the bone axis, from rest (no twist bones: large values wrap the wrist) |
 | Finger curl | The mean rotation of the 12 phalanx joints per hand (min-max over the clip) and the largest single joint |
 | Root motion | Hips and root travel over the clip; in place under 5 cm |
-| Toe (art #25, JSON) | Three sole vertices per shoe tracked through the clip (under the foot pivot, under the ball, the tip), while the tip is within 1 cm of the floor: `front_pitch_at_20_deg_lift` (the mean pitch of the front of the shoe into the floor at a heel lift of 15 to 25 degrees: about the lift for a rigid shoe, near 0 for a bending one), `heel_lift_front_level_max_deg` (how far the heel rises while the front stays within 10 degrees of level), `bend_in_contact_max_deg`, `tip_lowest_cm`. The sole sets of the other measures include the toe bones |
+| Toe (art #25, JSON) | Three sole vertices per shoe tracked through the clip (under the foot pivot, under the ball, the tip), while the tip is within 1 cm of the floor (or of its own lowest point in a clip whose tips never come down to the floor): `front_pitch_at_20_deg_lift` (the mean pitch of the front of the shoe into the floor at a heel lift of 15 to 25 degrees: about the lift for a rigid shoe, near 0 for a bending one), `heel_lift_front_level_max_deg` (how far the heel rises while the front stays within 10 degrees of level), `bend_in_contact_max_deg`, `tip_lowest_cm`. The sole sets of the other measures include the toe bones |
 
 ### Sources, clip keys and layers (art #24)
 
@@ -180,10 +195,20 @@ like UAL1 by every step. Clip keys (`tools/blender/anim_keys.py`):
 | Key | Meaning |
 |---|---|
 | `pack:<clip>`, `ual:<clip>`, `ual2:<clip>` | a pack action, a UAL1 clip, a UAL2 clip (retargeted) |
+| `<library>_own:<clip>` | (art #25) the clip on the library's **own GLB**: Meshy's rig and weights on our mesh (comparison (a)), the bones renamed to ours through the map and the palette turned into flat colours (`anim_libs.own_character`); the settings' `own` names the character |
+| `<library>_rigid:<clip>` | (art #25) the clip retargeted with the library's `rigid_map` (the toe bones at rest) |
 | `<base>\|<upper>` | a **layered** clip: the base clip's hips and legs under the upper clip's `[layer] upper` bone (`Torso`) and every bone below it (spine, head, arms, fingers), the way an engine layers an upper-body clip with a bone filter; the upper clip is time-scaled to a whole number of its loops per base loop |
 | `blend:<A>+<B>` | (rates only) a cycle-synced blend of two library clips; a name without a source is UAL1's; `\|<upper>` adds an upper-body layer, one upper loop per stride, lined up on the left heel strike |
 
-`--sources ual2` (comma-separated; `pack`, `ual`, `ual2`) limits `clips` to those sources' clips and `pairs` and `rates`
+A library entry may also take (art #25, `tools/blender/anim_libs.py`): `extra` (more GLBs on the same rig whose
+actions join it; the load fails when a rest head differs by more than 1 mm), `rename` (action -> clip name), `skip`
+(actions left out), `in_place` (clips whose hips' horizontal travel from the first to the last frame is taken out in
+proportion to time), `own` (the character name of `<library>_own:` clips); `rm` is needed only on UAL's rig. A pair
+or a `[[feet]]` row may keep to one body type (`body`); a `[[feet]]` row's `sets` are lists of any clip keys shown top
+to bottom (a lane per key: the strip spans each clip's own length), its `clips` the rigid shoes over the toe bones as
+before. The shoes in the close-ups are the vertices weighted most to a foot or a toe, so a merged mesh works.
+
+`--sources ual2` (comma-separated; `pack`, `ual`, `ual2`, `meshy`, `meshyw`; a variant counts as its library) limits `clips` to those sources' clips and `pairs` and `rates`
 to the rows that play one; its measures go to `metrics/<body>_s<sources>_c*.json`. `table` merges a full run's
 `<body>_c*.json`, then the source runs' files (oldest first, so of two runs over overlapping sources such as `ual2`
 and `ual,ual2` the later one wins), then a partial run's `<body>_part_c*.json`, each replacing the earlier measures of
@@ -206,5 +231,9 @@ selected rows in `rates/<body>/rates.json` and keeps the other rows of an earlie
 - The single frozen frames of the pack's Idle and Walk look twisted; the motion does not (the engineer's note).
 - Add the toe bones before a character is placed or posed (`retarget_core.add_toes` right after `load_glb`): they are
   made in edit mode on the rest pose, from the shoe's rest vertices.
+- Meshy's GLBs name their actions `Armature|walking_man|baselayer` (`load_glb` takes the middle part) and carry a
+  one-frame bind pose `clip0` (skipped); the `Icosphere` beside each import is the glTF importer's own bone shape.
+- Meshy's walk floats 0.7 to 1 cm above the floor (its feet never reach it); the toe measures then count contact from
+  the tips' own lowest point. Meshy's rig has no fingers: the finger curl reads 0 on its own rig.
 - The side view (`anim_render.VIEWS["side"]`) looks at the character's right side; a label meant to stay readable in a
   side-view video goes at a lane's edge, not over the legs.

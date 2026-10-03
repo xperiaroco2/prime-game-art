@@ -322,7 +322,10 @@ UVs, so `tools/blender/meshy_rig_input.py` (background Blender) makes the rig in
    (triangles, height, bytes, the colours per material).
 
 The palette is for the rig input only; nothing of ours changes. `render` of the GLB shows the colours from the texture
-(`D:/prime-art-raw/review/stage1/25/rig_inputs/`).
+(`D:/prime-art-raw/review/stage1/25/rig_inputs/`). `rig-input` reads the GLB's JSON chunk afterwards and refuses
+anything but one node with one mesh. The "Icosphere" that appears beside every import of a Meshy output (and of the
+pack files) in Blender is the glTF importer's own bone display shape: neither the rig inputs (1 node, 1 mesh) nor
+Meshy's GLBs (the 24 bones, the armature node and one mesh: 26 nodes) contain one, so nothing of it reached Meshy.
 
 ## Animation as read on 2026-10-03 (art #25)
 
@@ -351,11 +354,32 @@ earlier names).
 
 Meshy's animations on our own characters: rigs of m1_rex and w1_ivy from `meshy rig-input` (pinned by sha256), ten
 library actions on the man (the sprint for the feet, then backwards, a turn in place, a hit, a knock-down, a crawl, the
-downed state, a two-handed carry, a shrug and a finger wag), a walk and a sprint on the woman, and one prime
-text-to-motion crawl while downed, animated on the man: 59 credits, cap 60, approved by the engineer for "about 60
-credits" ([art #16](https://github.com/xperiaroco2/prime-game-art/issues/16#issuecomment-5971404896)). The action ids
-and names are in the batch file. Run the man's rig first and look at it before the rest. The trial and its findings:
-[research/2026-10-03-meshy-animations.md](research/2026-10-03-meshy-animations.md).
+downed state, a two-handed carry, a shrug and a finger wag), a walk (1 Walking Woman) and the sprint (16 Run Fast) on
+the woman, and one prime text-to-motion crawl while downed, animated on the man: 59 credits, cap 60, approved by the
+engineer for "about 60 credits" ([art #16](https://github.com/xperiaroco2/prime-game-art/issues/16#issuecomment-5971404896))
+and confirmed by the engineer in chat before the run. The action ids and names are in the batch file. The trial and its
+findings: [research/2026-10-03-meshy-animations.md](research/2026-10-03-meshy-animations.md).
+
+**Run** on 2026-10-03, 18:57 to 19:00 UTC, by the art manager (`meshy run 2026-10-b4-animations`, the man's rig first):
+balance **374 before, 315 after: 59 credits**, every task charged as estimated (`log.csv` and each item's
+`generation.json` in `raw:2026-10-b4-animations/`; copies in `OneDrive/prime-art-raw/`, `raw-backup`: 23 files).
+
+| Item | Task | Credits | Balance | Files |
+|---|---|---|---|---|
+| `man-rig` | rig `01a10320-b412-7299-ad68-92890c4e6853` | 5 | 374 -> 369 | rigged GLB and FBX, walking and running with skin (GLB, FBX) and as armature-only GLBs |
+| `woman-rig` | rig `01a10321-dc82-74b0-bbbf-d0c66d2f5d58` | 5 | 369 -> 364 | the same |
+| `man-library` | animate `01a10322-3570-7439-bd87-2597a408f49c` | 30 | 364 -> 334 | `animate-merged_animations.glb`/`.fbx`: the ten actions as clips |
+| `woman-library` | animate `01a10322-a5d5-7169-8499-c1c522bc8ac9` | 6 | 334 -> 328 | the same with two |
+| `crawl-motion` | text to motion `01a10322-c879-7192-a408-0a474c65fc6c` | 10 | 328 -> 318 | `text_to_motion-clip.fbx` (16.8 MB, prime, 4 s) |
+| `man-crawl` | animate `01a10323-3b62-7512-80e2-9ebfde356052` | 3 | 318 -> 315 | the crawl on the man's rig, GLB and FBX |
+
+What came back (read in Blender and from the GLBs' JSON): the rigged character is our mesh merged into one object
+(`char1`, the same 6458 and 8318 triangles, the palette texture kept) skinned to Meshy's 24-bone rig (the skeleton:
+the research page), at most 4 influences a vertex, the armature at a world scale of 0.01 and facing -Y like ours. The
+basic walking (32 frames at 30 fps) and running (20) are in place; of the library clips, Carry Heavy Object Walk, Crawl
+and Look Back, Walk Backward, Hit Reaction and Knock Down travel with the hips (the review takes the travel out of the
+loops), the rest stay in place. The review reads them as two libraries (`meshy`, `meshyw` in
+`tools/blender/anim_review.toml`; docs/animations.md).
 
 ## The first batch, 2026-10-b1-bodies
 
