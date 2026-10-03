@@ -94,6 +94,11 @@ class StyleProblemsTest(unittest.TestCase):
         data = shipped()
         data["families"]["f1_dots"]["eyes"]["w"] = 6.2  # millimetres by mistake
         self.assertIn("families.f1_dots.eyes.w: 6.2 is not a length in metres from 0 to 0.1", problems(data))
+        data = shipped()
+        data["families"]["f3_almond"]["eyes"]["inset"] = 0.008  # eyes and brows 8 mm toward the midline
+        self.assertEqual(fst.check_styles(data)["families"]["f3_almond"]["eyes"]["inset"], 0.008)
+        data["families"]["f3_almond"]["eyes"]["inset"] = 8
+        self.assertIn("families.f3_almond.eyes.inset: 8 is not a length in metres from 0 to 0.1", problems(data))
 
     def test_missing_expression_and_bad_family_id(self) -> None:
         data = shipped()
@@ -155,6 +160,7 @@ class ReviewTest(unittest.TestCase):
         del data["heads"]["w_full"]["brow_by_skin"]
         data["heads"]["m_full"]["brow_by_skin"]["green"] = [0, 0, 0]
         data["motion"]["frames"] = 1
+        data["spacing_sheet"]["families"].append("f9_none")
         with self_raises() as ctx:
             fst.check_review(data, styles)
         found = "\n".join(ctx.problems)
@@ -162,6 +168,7 @@ class ReviewTest(unittest.TestCase):
         self.assertIn("on the dark skin (at least 3.0); set brow_by_skin.dark", found)
         self.assertIn("heads.m_full.brow_by_skin: unknown skin 'green'", found)
         self.assertIn("motion.frames: must be a whole number from 2 to 24", found)
+        self.assertIn("spacing_sheet.families: 'f9_none' is not a family", found)
 
     def test_contrast(self) -> None:
         self.assertAlmostEqual(fst.contrast([1, 1, 1], [0, 0, 0]), 21.0)

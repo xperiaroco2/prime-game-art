@@ -678,7 +678,12 @@ def family_face(surf, eyes_at, mouth_at, fam_id, fam, expr, colors, skin, tag):
     mats = family_materials(fam_id, fam, tag, colors, skin)
     eyes_b, brows_b, mouth_b = FamilyBuilder(), FamilyBuilder(), FamilyBuilder()
     shapes = []
+    # inset moves both eyes and their brows toward the face's midline (the pack's eye centres are set wide)
+    inset = fam["eyes"].get("inset", 0.0)
+    mid_x = sum(c.x for c in eyes_at.values()) / len(eyes_at)
     for side, c in sorted(eyes_at.items()):
+        if inset:
+            c = Vector((c.x - math.copysign(inset, c.x - mid_x), c.y, c.z))
         shapes.append(_family_eye(eyes_b, surf, c, side, fam["eyes"], expr.get("eyes", {}), mats))
         _family_brow(brows_b, surf, c, side, fam["brows"], expr.get("brows", {}), mats["brow"])
     _family_mouth(mouth_b, surf, mouth_at[0], mouth_at[1], fam["mouth"], expr.get("mouth", {}), mats)

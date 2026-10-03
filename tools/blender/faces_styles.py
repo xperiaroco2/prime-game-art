@@ -4,7 +4,8 @@ loads it with the same code:
 - faces/styles.json: the style families (one design language each for eyes, brows and mouths) and the shared
   expressions, which a family may override;
 - faces/review.json: what the review sheets show (the heads recipe, skin tones, per-head colours, the game's camera
-  read from the game repo, the distances, the frame strip, the actions the decal clearance is measured in).
+  read from the game repo, the distances, the frame strip, the actions the decal clearance is measured in, the eye
+  spacing variants).
 
 load_styles() and load_review() report every problem at once, each naming what is allowed.
 """
@@ -44,6 +45,7 @@ EYE_OPTIONAL = {
     "pupil": "length", "iris_v": "number", "highlights": "highlights", "lash": "length", "lash_grow": "number",
     "flick": "length", "flick_rise": "number", "flick_lift": "length", "closed": "choice", "happy": "choice",
     "arc": "length", "arc_lift": "length", "lift": "length", "dx": "number", "dz": "number", "cols": "count",
+    "inset": "length",
 }
 BROW_KEYS = {"pts": "points", "w": "lengths", "thick": "length", "lift": "length", "cols": "count"}
 MOUTH_REQUIRED = {"w": "length", "lips": "choice"}
@@ -58,8 +60,8 @@ CHOICES = {"kind": EYE_KINDS, "shape": EYE_SHAPES, "closed": CLOSED_STYLES, "hap
 MAX_LENGTH_M = 0.1
 
 REVIEW_KEYS = ("description", "heads_recipe", "heads", "skins", "overview_skins", "game_camera", "distances_m",
-               "distance_sheet", "strip", "motion", "facial_hair")
-SHEETS = ("close", "distance", "overview", "strip", "beards")
+               "distance_sheet", "strip", "motion", "spacing_sheet", "facial_hair")
+SHEETS = ("close", "distance", "overview", "strip", "spacing", "beards")
 # A review head's brows must stand out from every skin tone it is shown in (WCAG contrast of relative luminance):
 # brows the colour of the skin would hide the brow-led expressions and judge the families unfairly.
 MIN_BROW_CONTRAST = 3.0
@@ -309,7 +311,7 @@ def brow_rgb(head: dict[str, Any], skin: str) -> list[float]:
 
 
 def check_review(data: Any, styles: dict[str, Any] | None = None, source: str = "review") -> dict[str, Any]:
-    """The review settings, checked (heads, skins, brow contrast, camera, distances, strip, motion);
+    """The review settings, checked (heads, skins, brow contrast, camera, distances, strip, motion, spacing sheet);
     raises StylesError."""
     problems: list[str] = []
     if not isinstance(data, dict):
@@ -405,6 +407,17 @@ def check_review(data: Any, styles: dict[str, Any] | None = None, source: str = 
             problems.append("motion.actions: must list pack action names (Idle, Walk, Run, ...)")
         if not (isinstance(motion.get("frames"), int) and 2 <= motion["frames"] <= 24):
             problems.append("motion.frames: must be a whole number from 2 to 24")
+    sp = data.get("spacing_sheet")
+    if sp is not None:
+        if not isinstance(sp, dict):
+            problems.append("spacing_sheet: must be an object with families and insets_mm")
+        else:
+            for fid in sp.get("families", []):
+                if styles is not None and fid not in styles["families"]:
+                    problems.append(f"spacing_sheet.families: {fid!r} is not a family")
+            ins = sp.get("insets_mm")
+            if not (isinstance(ins, list) and ins and all(_is_number(x) and 0 <= x <= 20 for x in ins)):
+                problems.append("spacing_sheet.insets_mm: must list eye insets from 0 to 20 mm")
     fh = data.get("facial_hair")
     if fh is not None:
         if not isinstance(fh, dict):

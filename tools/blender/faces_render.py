@@ -5,19 +5,20 @@ The runner calls it (tools/run.py faces); by hand, background only:
   blender -b --factory-startup --python-exit-code 1 --python tools/blender/faces_render.py -- \
       --styles faces/styles.json --review faces/review.json --raw D:/prime-art-raw --out tools/out/faces \
       [--families f1_dots,f3_almond] [--expressions neutral,closed]
-      [--sheets close,distance,overview,strip,beards|none] [--res 100] [--pack-weights]
+      [--sheets close,distance,overview,strip,spacing,beards|none] [--res 100] [--pack-weights]
 
 Writes into --out: faces_report.json (per family, expression, head and part: triangles, materials, the skin clearance
 in the rest pose and, for decals, its minimum over the pack actions of review.json "motion", and how much of the part
 the hair leaves visible from the front; the face skin given to the Head bone per head; the distance pixel sizes; the
 frame strip) and the sheets: <family>_hero.jpg (the neutral face large), <family>_front.jpg and
 <family>_threequarter.jpg (rows: expressions; columns: heads and skin tones), <family>_distance.png (the face at the
-game's distances, nearest-neighbour enlarged), overview.jpg (every family, neutral),
-strip_<head>_<family>.jpg with clip_<head>_<family>.mp4 (a pack action), facial_hair.jpg; work/ holds the
+game's distances, nearest-neighbour enlarged), overview.jpg (every family, neutral), spacing.jpg (eye spacing
+variants), strip_<head>_<family>.jpg with clip_<head>_<family>.mp4 (a pack action), facial_hair.jpg; work/ holds the
 single renders.
 """
 
 import argparse
+import copy
 import json
 import math
 import os
@@ -565,6 +566,8 @@ def main():
         report["distance"] = distance_sheets(shots, heads, styles, review, fams, out, work)
     if "overview" in sheets:
         overview(shots, heads, styles, review, fams, out, work, ppm)
+    if "spacing" in sheets and review.get("spacing_sheet"):
+        report["spacing"] = spacing(shots, heads, styles, review, out, work, ppm)
     if "beards" in sheets and review.get("facial_hair"):
         report["facial_hair"] = beards(shots, heads, styles, review, packs, out, work)
     if "strip" in sheets:
@@ -574,6 +577,45 @@ def main():
     with open(os.path.join(out, "faces_report.json"), "w", encoding="utf-8") as fh:
         json.dump(report, fh, indent=1)
     print("REPORT", os.path.join(out, "faces_report.json"), "renders", shots.n)
+
+
+def spacing(shots, heads, styles, review, out, work, ppm):
+    """The eye spacing variants (eyes.inset): the pack's eye centres are set wide (88.6 mm apart on the men's heads,
+    92.4 mm on the women's), so the near-human families are shown with their eyes and brows moved toward the midline.
+    Rows: family and inset; columns: the heads front, then three-quarter (the overview's skins)."""
+    sp = review["spacing_sheet"]
+    skin_of = review["overview_skins"]
+    rows, labels, rep = [], [], {}
+    for fid in sp["families"]:
+        for inset in sp["insets_mm"]:
+            fam = copy.deepcopy(styles["families"][fid])
+            fam["eyes"]["inset"] = inset / 1000.0
+            clear = []
+            for h in heads:
+                h.place()
+                inf = make_face(h, fid, fam, "neutral", review, skin_of.get(h.id, list(review["skins"])[0]))
+                clear += [p["clearance_min_mm"] for p in inf.values() if p["decal"]]
+            row = row_cells(shots, heads, os.path.join(work, f"spacing_{fid}_{inset:g}_front.png"), ppm)
+            for h in heads:
+                h.place(yaw=YAW_34)
+            row += row_cells(shots, heads, os.path.join(work, f"spacing_{fid}_{inset:g}_34.png"), ppm)
+            for h in heads:
+                h.place()
+            rows.append(row)
+            labels.append(f"{fam_title(fid, fam)}, inset {inset:g} mm")
+            apart = {h.id: round((abs(h.eyes_rest["L"].x - h.eyes_rest["R"].x) - 2 * inset / 1000.0) * 1000, 1) for h in heads}
+            rep[f"{fid}_{inset:g}mm"] = {"eye_centres_apart_mm": apart, "decal_clearance_min_mm": min(clear) if clear else None}
+    cell_px = shots.px(CELL_M * ppm)
+    label_w, head_h = shots.px(330), shots.px(70)
+    cols = [f"{review['heads'][h.id]['label']}, {view}" for view in ("front", "three-quarter") for h in heads]
+    top = heading(shots, os.path.join(work, "spacing_head.png"), cols, cell_px, label_w, head_h, shots.px(22))
+    side = side_labels(shots, os.path.join(work, "spacing_side.png"), labels, cell_px, label_w, shots.px(22))
+    sheet = grid(rows, top, side, head_h, label_w)
+    title = shots.text(os.path.join(work, "spacing_title.png"),
+                       [("Eye spacing: the pack's eye centres (inset 0) and the eyes with their brows moved toward the "
+                         "midline, neutral", 12, shots.px(30), shots.px(30), "LEFT")], sheet.shape[1], shots.px(60))
+    save_image(np.concatenate([title, sheet], axis=0), os.path.join(out, "spacing.jpg"), "JPEG")
+    return rep
 
 
 def hero(shots, heads, fid, fam, review, out, work):

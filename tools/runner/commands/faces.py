@@ -192,6 +192,9 @@ def run(args: argparse.Namespace) -> int:
     for hid, skin in report.get("face_skin_to_head", {}).items():
         common.say(f"  face skin {hid}: {skin['vertices']} vertices given to the Head bone alone "
                    f"(the largest weight moved from Neck: {skin['largest_weight_moved']})")
+    for key, sp in report.get("spacing", {}).items():
+        apart = ", ".join(f"{hid} {mm}" for hid, mm in sp["eye_centres_apart_mm"].items())
+        common.say(f"  spacing {key}: eye centres {apart} mm apart; decals at least {sp['decal_clearance_min_mm']} mm off the skin")
     for key, strip in report.get("strip", {}).items():
         common.say(f"  strip {key}: {strip['action']} frames {strip['frames'][0]}-{strip['frames'][-1]}, the face moved "
                    f"{strip['face_in_head_space_max_move_mm']} mm in the Head bone's space")
