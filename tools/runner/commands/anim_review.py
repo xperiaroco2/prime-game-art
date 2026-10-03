@@ -25,8 +25,10 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
                              "every clip and the settings' [layer] clips)")
     parser.add_argument("--sources", default="all",
                         help="clips, pairs, rates: only these sources' clips, and the pairs and rates rows that play "
-                             "one, e.g. ual2 (comma-separated: pack, ual, ual2; default all)")
-    parser.add_argument("--only", default="", help="pairs: comma-separated pack clip names (default every pair)")
+                             "one, e.g. ual2 (comma-separated: pack, ual, ual2; default all); not with --clips")
+    parser.add_argument("--only", default="",
+                        help="pairs: comma-separated pair names (a pack clip name for art #20's pairs, e.g. Wave; "
+                             "ual2_carry for art #24's; default every pair)")
     parser.add_argument("--jobs", type=int, default=4, help="parallel Blender processes per body type (default 4)")
     parser.add_argument("--out", type=Path, help="output folder (default tools/out/anim-review)")
     parser.add_argument("--no-video", action="store_true", help="clips: measures and strips only")
@@ -146,6 +148,8 @@ def run(args: argparse.Namespace) -> int:
     out = (args.out or common.OUT / "anim-review").resolve()
     out.mkdir(parents=True, exist_ok=True)
     only_sources(args, cfg)  # refuse an unknown source before any Blender run
+    if args.clips != "all" and args.sources not in ("", "all"):
+        raise common.Failure("--clips names the clips itself: give --clips or --sources, not both")
     bodies = list(_anim.BODIES) if args.body == "both" else [args.body]
     steps = ("inventory", "clips", "pairs", "rates", "sheets", "table") if args.step == "all" else (args.step,)
     for step in steps:

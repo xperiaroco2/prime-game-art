@@ -171,6 +171,9 @@ class CommandTest(unittest.TestCase):
         modules["anim-review"].add_arguments(parser)
         with self.assertRaises(common.Failure):
             modules["anim-review"].run(parser.parse_args(["table", "--sources", "ual3", "--out", str(OUT)]))
+        with self.assertRaisesRegex(common.Failure, "not both"):  # --sources beside --clips would be ignored
+            modules["anim-review"].run(parser.parse_args(
+                ["table", "--clips", "ual2:Yes", "--sources", "ual2", "--out", str(OUT)]))
         parser = argparse.ArgumentParser()
         modules["retarget"].add_arguments(parser)
         with self.assertRaises(common.Failure):
