@@ -11,9 +11,6 @@ it with the system Python and Blender's Python reads it the same way.
 
 from __future__ import annotations
 
-RESERVED = {"pack", "blend", "layer"}  # not library names
-
-
 def split(key: str) -> tuple[str, str]:
     """A clip key's source and clip name; raises ValueError for anything else."""
     source, sep, name = key.partition(":")

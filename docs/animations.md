@@ -40,7 +40,7 @@ against 1.67 s). UAL is authored at 30 fps; its clips import to whole frames onl
 [--no-ik]` bakes the clips of a library (UAL1 by default, `--library ual2` for UAL2: its actions are named `UAL2|<clip>`
 and its default output is `tools/out/retarget/ual2/<body>`) onto the body type's donor character
 (`tools/blender/anim_review.toml`) in background Blender and writes `retarget_report.json` (with `--blend` also the
-character with the baked actions `UAL|<clip>`; with `--floor` each clip's lowest vertex on the target and on UAL's own
+character with the baked actions `<label>|<clip>`, `UAL|` or `UAL2|`, saved as `<target>_ual.blend` for every library; with `--floor` each clip's lowest vertex on the target and on UAL's own
 mannequin scaled to the target, which tells how deep a clip goes into the floor by itself and how much the retarget
 adds). No add-on: `tools/blender/retarget_core.py`.
 
@@ -112,7 +112,7 @@ Steps, or `all` in this order:
 | `inventory` | `inventory.json`: every pack file's actions (lengths, identical across files or not), the men against the women, UAL's clips in both files with root motion per clip |
 | `clips` | per body type and clip, on the unmodified donor character: measures (`metrics/<body>_c<n>.json`), a 12-frame strip with a front and a right-side row (`strips/<body>/<source>_<clip>.png`) and a looping 480x480 H.264 clip at 30 fps (`clips/<body>/...mp4`); `--jobs` Blender processes per body type |
 | `pairs` | for each `[[pairs]]` entry of `anim_review.toml`: its clips side by side (the pack clip and its UAL counterparts, or any clip keys: see "Sources, clip keys and layers"), a strip (front and side rows at the same fractions of each clip; each side cell framed on its own clip) and a looping MP4 (`pairs/<body>/<pack clip or name>.*`) |
-| `rates` | locomotion at the game's speeds: each `[[rates]]` row (the game's walk 4.5 m/s, sprint 7.0 m/s, and since art #24 the walk with the package: UAL2's carry as an upper-body layer) plays its clips side by side on a **treadmill** (light stripes on the floor moving at the row's speed), each at the rate that keeps its feet on it: UAL clips by their root-motion speed (`UAL1_Standard_RM.glb`, scaled to the body), pack clips by their feet's ground speed; `blend:A+B` is a blend of two UAL clips lined up on the left heel strike (cycle-synced) and weighted so that its stride over its cycle gives the speed. An MP4, a strip of 8 moments 0.1 s apart and `rates.json` (rate, cadence in steps/s, step length) per body type (`rates/<body>/`) |
+| `rates` | locomotion at the game's speeds: each `[[rates]]` row (the game's walk 4.5 m/s, sprint 7.0 m/s, and since art #24 the walk with the package: UAL2's carry as an upper-body layer) plays its clips side by side on a **treadmill** (light stripes on the floor moving at the row's speed), each at the rate that keeps its feet on it: library clips by their root-motion speed (each library's `_RM` file, `UAL1_Standard_RM.glb` or `UAL2_Standard_RM.glb`, scaled to the body), pack clips by their feet's ground speed; `blend:A+B` is a blend of two UAL clips lined up on the left heel strike (cycle-synced) and weighted so that its stride over its cycle gives the speed. An MP4, a strip of 8 moments 0.1 s apart and `rates.json` (rate, cadence in steps/s, step length) per body type (`rates/<body>/`) |
 | `sheets` | review sheets: each clip's men and women strips stacked, three clips a sheet (`sheets/`) |
 | `table` | `metrics.json` (all measures) and `metrics.md` (a row per body type and clip) |
 

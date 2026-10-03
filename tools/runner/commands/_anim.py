@@ -24,7 +24,7 @@ def load_config(path: Path = CONFIG) -> dict:
     if missing:
         raise common.Failure(f"{path.name} lacks {', '.join(missing)}")
     for key, lib in cfg.get("libraries", {}).items():
-        if key in ("pack", "blend", "layer", "ual") or not key.isidentifier():
+        if key in ("pack", "blend", "layer", "ual") or key.endswith("_rm") or not key.isidentifier():
             raise common.Failure(f"{path.name}: [libraries.{key}] needs another name")
         if not (isinstance(lib, dict) and {"file", "rm"} <= set(lib) and set(lib) <= {"file", "rm", "label"}):
             raise common.Failure(f"{path.name}: [libraries.{key}] takes file, rm and label")

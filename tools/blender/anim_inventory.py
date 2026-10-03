@@ -44,7 +44,7 @@ def compare_rigs(ref: dict, other: dict) -> dict:
     ang = {n: math.degrees(ref[n][1].to_quaternion().rotation_difference(other[n][1].to_quaternion()).angle)
            for n in common}
     ang = {n: min(a, 360 - a) for n, a in ang.items()}
-    worst = max(ang, key=ang.get) if ang and max(ang.values()) > 0.0 else None
+    worst = max(ang, key=ang.get) if ang and round(max(ang.values()), 3) > 0.0 else None  # none for 0.0 shown
     return {"same_bone_names": sorted(ref) == sorted(other),
             "same_parents": all(ref[n][0] == other[n][0] for n in common),
             "only_in_ual": sorted(set(ref) - set(other)), "only_here": sorted(set(other) - set(ref)),

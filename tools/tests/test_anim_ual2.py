@@ -102,9 +102,10 @@ class SettingsTest(unittest.TestCase):
         OUT.mkdir(parents=True, exist_ok=True)
         path = OUT / "bad_library.toml"
         text = (common.ROOT / "tools" / "blender" / "anim_review.toml").read_text(encoding="utf-8")
-        path.write_text(text.replace("[libraries.ual2]", "[libraries.pack]"), encoding="utf-8")
-        with self.assertRaises(common.Failure):
-            _anim.load_config(path)
+        for name in ("pack", "ual", "layer", "ual2_rm"):  # "<key>_rm" names a library's root-motion file
+            path.write_text(text.replace("[libraries.ual2]", f"[libraries.{name}]"), encoding="utf-8")
+            with self.subTest(name=name), self.assertRaises(common.Failure):
+                _anim.load_config(path)
 
 
 class ClipListTest(unittest.TestCase):
