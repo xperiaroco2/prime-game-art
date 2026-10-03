@@ -62,9 +62,10 @@ into the floor by itself and how much the retarget adds). No add-on: `tools/blen
    to the source foot, so heel and toe roll transfer. Then the **toe lift**: the rigid target foot (no toe bone) is
    pitched about its pivot until its toe is no lower than the rest sole, while the pivot is near the floor (fully up
    to 20 cm above its rest height, fading out over 10 cm; never when the pivot is below the floor, as in in-place
-   jumps). The report's `ik_miss_mm` says how far a leg fell short of its goal: a few mm in walks; 6 to 9 cm at the
-   push-off of Jog and Sprint, where the target leg locks straight (the heel pivot sits farther from the hip than
-   the source's ankle once the foot points down); rolls and swims far more.
+   jumps). The report's `ik_miss_mm` says how far a leg fell short of its goal: a few mm in walks; 4 to 5.5 cm at the
+   push-off of Sprint and Jog, where the target leg locks straight (the heel pivot sits farther from the hip than
+   the source's ankle once the foot points down); 2 to 6 cm in the falls, rolls, jumps and swims (before the hips fix
+   the rolls missed by 23 to 25 cm).
 5. **Bake.** One key per source frame (30 fps) on every target bone, quaternions kept on one hemisphere.
 6. **Checks.** The **rest check** retargets the source rest and compares it with the target rest: 0.003 mm and 0
    degrees on both bodies (`retarget` fails above 0.01 mm or 0.01 degrees). It is a sanity check of the pipeline (the
