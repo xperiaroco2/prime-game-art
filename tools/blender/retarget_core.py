@@ -59,12 +59,23 @@ def load_glb(path: str) -> dict:
     actions = {}
     for act in bpy.data.actions:
         if act not in before_act:
-            name = base_name(act.name).split("|")[-1]  # "CharacterArmature|Walk.001" -> "Walk"
+            parts = base_name(act.name).split("|")  # "CharacterArmature|Walk.001" -> "Walk"
+            if len(parts) > 2 and parts[-1] == "baselayer":  # Meshy's "Armature|walking_man|baselayer"
+                parts.pop()
+            name = parts[-1]
             actions[name] = act
     reset_pose(arm)
     bpy.context.view_layer.update()
     meshes = {base_name(o.name): o for o in new if o.type == "MESH"}
     return {"arm": arm, "root": arm.parent, "meshes": meshes, "actions": actions, "objects": new, "path": path}
+
+
+def add_toes(char: dict) -> dict:
+    """Gives a loaded pack character the assembler's toe bones (um/toes.py, art #25), Toe.L and Toe.R at the ball of
+    its shoes, before it is placed or posed; its pack actions play as before (they key no toe)."""
+    from um import toes  # tools/blender/um, the assembler's package
+
+    return toes.add_toe_bones(char["arm"], toes.shoes_of(char["meshes"]), list(char["meshes"].values()))
 
 
 def place(char: dict, x: float = 0.0, y: float = 0.0, yaw: float = 0.0) -> None:
@@ -223,7 +234,9 @@ class Retargeter:
     def __init__(self, src: Rig, tgt: Rig, bmap: dict):
         self.src, self.tgt, self.map = src, tgt, bmap
         self.inv = {t: s for s, t in bmap["bones"].items()}
-        self.root_t, self.hips_s, self.hips_t = bmap["root"][1], bmap["hips"][0], bmap["hips"][1]
+        # a source without a root bone (Meshy's rig) leaves the target root at rest: its hips carry the root motion
+        self.root_t = bmap["root"][1] if bmap.get("root") else None
+        self.hips_s, self.hips_t = bmap["hips"][0], bmap["hips"][1]
 
         def hip_height(rig, names):
             return sum(rig.rest_world_pos(n).z for n in names) / len(names)
@@ -236,6 +249,19 @@ class Retargeter:
         self.src_rest_w = {s: src.world(src.rest[s]) for s in bmap["bones"]}
         self.src_rest_rot_inv = {s: rot(m).inverted() for s, m in self.src_rest_w.items()}
         self.tgt_rest_rot_w = {t: rot(tgt.world(tgt.rest[t])) for t in self.inv}
+        # [align] (art #25): target bones whose rest direction is turned onto the source bone's before the transfer,
+        # where the two rests differ by more than the motion can carry (Meshy's upper arms rest 10-15 degrees below
+        # ours: without it, an arm hanging at the side on Meshy's rig stands that far out on ours)
+        self.aligned = {}
+        for t in bmap.get("align", []):
+            child = next((c for c in tgt.order if tgt.parent[c] == t and c in self.inv), None)
+            if child is None:
+                raise ValueError(f"[align] {t}: no mapped child bone gives its direction on both rigs")
+            d_s = src.rest_world_pos(self.inv[child]) - src.rest_world_pos(self.inv[t])
+            d_t = tgt.rest_world_pos(child) - tgt.rest_world_pos(t)
+            turn = d_t.rotation_difference(d_s)
+            self.tgt_rest_rot_w[t] = turn @ self.tgt_rest_rot_w[t]
+            self.aligned[t] = round(math.degrees(turn.angle), 2)
         self.tgt_Wrot_inv = tgt.Wrot.inverted()
         self.follow_off = {t: tgt.rest[c].inverted() @ tgt.rest[t] for t, c in bmap["follow"].items()}
         fwd = tgt.Wi.to_3x3().normalized() @ Vector((0.0, -1.0, 0.0))  # the target's front, in its armature space
@@ -247,6 +273,14 @@ class Retargeter:
             if tgt.parent[n] in late:
                 late.add(n)
         self.order = [n for n in tgt.order if n not in late] + [n for n in tgt.order if n in late]
+        # the bones below each IK foot (the toe bones of art #25), re-attached after the IK moves the foot
+        self.foot_kids = {}
+        for leg in bmap["legs"]:
+            kids = {leg["target"][2]}
+            for n in tgt.order:
+                if tgt.parent[n] in kids:
+                    kids.add(n)
+            self.foot_kids[leg["target"][2]] = [n for n in tgt.order if n in kids and n != leg["target"][2]]
         # each target foot's pivot, carried by the source foot: the pivot's rest position, scaled down to the source's
         # size and expressed in the source foot's rest frame, so heel and toe roll transfer with the foot
         self.foot_anchor = {}
@@ -273,27 +307,38 @@ class Retargeter:
         return (p - self.src_o) * self.ratio + self.tgt_o
 
     def set_soles(self, meshes) -> None:
-        """Reads each target foot's heel and toe from the meshes in the rest pose (the lowest vertices weighted to the
-        foot), so the toe of the rigid target foot can be kept out of the floor (the target has no toe bone)."""
-        tgt = self.tgt
+        """Reads the sole of each target foot, and of each mapped toe bone below it, from the meshes in the rest pose,
+        so a foot or a toe can be kept out of the floor. A foot's sole is the vertices weighted most to it or to a bone
+        below it kept at rest (the whole rigid shoe when its toe bone is not mapped); a mapped toe's sole is its own
+        vertices. Each keeps its frontmost low vertex (the toe of a rigid shoe, the ball of a shoe with a mapped toe,
+        the tip for a toe bone) in its bone's rest frame."""
         for leg in self.map["legs"]:
             foot = leg["target"][2]
-            pts = []
-            for obj in meshes:
-                group = obj.vertex_groups.get(foot)
-                if group is None:
-                    continue
-                for v in obj.data.vertices:
-                    best = max(v.groups, key=lambda g: g.weight, default=None)
-                    if best is not None and best.group == group.index:
-                        pts.append(obj.matrix_world @ v.co)
-            if not pts:
+            kids = self.foot_kids[foot]
+            rigid = {foot} | {k for k in kids if k not in self.inv}
+            self._sole(foot, rigid, meshes)
+            for k in kids:
+                if k in self.inv:
+                    self._sole(k, {k}, meshes)
+
+    def _sole(self, bone: str, groups: set, meshes) -> None:
+        tgt = self.tgt
+        pts = []
+        for obj in meshes:
+            names = {g.index: g.name for g in obj.vertex_groups}
+            if not groups & set(names.values()):
                 continue
-            low = min(p.z for p in pts)
-            sole = [p for p in pts if p.z < low + 0.015]
-            toe = min(sole, key=lambda p: p.y)  # the front is -Y
-            local = tgt.rest[foot].inverted() @ (tgt.Wi @ toe)
-            self.soles[foot] = {"toe_local": local, "floor_z": toe.z, "pivot_z": tgt.world(tgt.rest[foot]).translation.z}
+            for v in obj.data.vertices:
+                best = max(v.groups, key=lambda g: g.weight, default=None)
+                if best is not None and names.get(best.group) in groups:
+                    pts.append(obj.matrix_world @ v.co)
+        if not pts:
+            return
+        low = min(p.z for p in pts)
+        sole = [p for p in pts if p.z < low + 0.015]
+        toe = min(sole, key=lambda p: p.y)  # the front is -Y
+        local = tgt.rest[bone].inverted() @ (tgt.Wi @ toe)
+        self.soles[bone] = {"toe_local": local, "floor_z": toe.z, "pivot_z": tgt.world(tgt.rest[bone]).translation.z}
 
     def solve(self, src_pose: dict) -> tuple[dict, dict]:
         """Target armature-space poses and basis matrices for one source pose (armature space of the source)."""
@@ -349,23 +394,39 @@ class Retargeter:
         q2 = shin.rotation_difference(A2 - K2)
         P[lower] = Matrix.Translation(K2) @ (q2 @ q1 @ rot(P[lower])).to_matrix().to_4x4()
         P[foot] = Matrix.Translation((P[lower] @ self.follow_off[foot]).translation) @ rot(P[foot]).to_matrix().to_4x4()
-        if foot in self.soles:
-            self._lift_toe(P, foot)
+        w = self._lift_weight(P, foot) if foot in self.soles else 0.0
+        if w > 0.0:
+            self._lift(P, foot, w)
+        # the bones below the foot follow it again: a mapped toe keeps its world rotation (the source's ball), so it
+        # stays level while the heel rises (the shoe bends); an unmapped one is carried at its rest
+        for k in self.foot_kids[foot]:
+            fk_k = P[tgt.parent[k]] @ tgt.rest_rel[k]
+            P[k] = Matrix.Translation(fk_k.translation) @ rot(P[k]).to_matrix().to_4x4() if k in self.inv else fk_k
+            if k in self.inv and k in self.soles and w > 0.0:
+                self._lift(P, k, w)
 
-    def _lift_toe(self, P: dict, foot: str, full: float = 0.20, fade: float = 0.10) -> None:
-        """Pitches the foot about its pivot until its toe is no lower than the rest sole, while the pivot is on or
-        above the floor and near it (fully up to `full` m above its rest height, fading out over the next `fade` m):
-        the source rolls over its toes, the rigid target foot would push its toe into the floor instead. A pivot below
-        the floor (an in-place jump without its rise) is left alone."""
-        tgt, sole = self.tgt, self.soles[foot]
-        pivot = tgt.W @ P[foot].translation
-        toe = tgt.W @ (P[foot] @ sole["toe_local"])
-        if toe.z >= sole["floor_z"] or pivot.z < sole["pivot_z"] - 0.02:
+    def _lift_weight(self, P: dict, foot: str, full: float = 0.20, fade: float = 0.10) -> float:
+        """How much the floor clamp acts on a foot (and its toe): fully while the foot pivot is up to `full` m above
+        its rest height, fading out over the next `fade` m; not at all when the pivot is below the floor (an in-place
+        jump without its rise)."""
+        sole = self.soles[foot]
+        pivot = self.tgt.W @ P[foot].translation
+        if pivot.z < sole["pivot_z"] - 0.02:
+            return 0.0
+        return min(max(1.0 - (pivot.z - sole["pivot_z"] - full) / fade, 0.0), 1.0)
+
+    def _lift(self, P: dict, bone: str, w: float) -> None:
+        """Pitches a foot or a toe bone about its head until its sole's front point is no lower than the rest sole,
+        by the weight w: the source rolls over its toes, where a rigid target foot (or a toe tipped past the
+        floor) would push its front into the floor instead."""
+        tgt, sole = self.tgt, self.soles[bone]
+        pivot = tgt.W @ P[bone].translation
+        toe = tgt.W @ (P[bone] @ sole["toe_local"])
+        if toe.z >= sole["floor_z"]:
             return
-        w = min(max(1.0 - (pivot.z - sole["pivot_z"] - full) / fade, 0.0), 1.0)
         r = toe - pivot
         length = r.length
-        if w <= 0.0 or length < 1e-6:
+        if length < 1e-6:
             return
         now = math.asin(max(-1.0, min(1.0, r.z / length)))
         want = math.asin(max(-1.0, min(1.0, (sole["floor_z"] - pivot.z) / length)))
@@ -373,20 +434,30 @@ class Retargeter:
         if axis.length < 1e-9:
             return
         lift = Quaternion(axis.normalized(), (want - now) * w)
-        q_arm = self.tgt_Wrot_inv @ lift @ tgt.Wrot @ rot(P[foot])
-        P[foot] = Matrix.Translation(P[foot].translation) @ q_arm.to_matrix().to_4x4()
+        q_arm = self.tgt_Wrot_inv @ lift @ tgt.Wrot @ rot(P[bone])
+        P[bone] = Matrix.Translation(P[bone].translation) @ q_arm.to_matrix().to_4x4()
 
     def rest_error(self) -> dict:
         """Retargets the source rest pose: the largest bone-head offset (mm, world) and rotation (degrees) from the
         target rest. Both are zero when the method is right."""
         P, basis = self.solve(fk(self.src, {}))
-        off = max((self.tgt.W @ P[n].translation - self.tgt.W @ self.tgt.rest[n].translation).length for n in P)
-        ang = max(min(a, 360 - a) for a in (math.degrees(rot(b).angle) for b in basis.values()))
-        return {"max_offset_mm": round(off * 1000, 4), "max_rotation_deg": round(ang, 4)}
+        moved = set(self.aligned)  # an aligned bone and everything below it leave the target rest by design
+        for n in self.tgt.order:
+            if self.tgt.parent[n] in moved:
+                moved.add(n)
+        off = max((self.tgt.W @ P[n].translation - self.tgt.W @ self.tgt.rest[n].translation).length
+                  for n in P if n not in moved)
+        ang = max(min(a, 360 - a) for n, a in ((n, math.degrees(rot(b).angle)) for n, b in basis.items())
+                  if n not in moved)
+        out = {"max_offset_mm": round(off * 1000, 4), "max_rotation_deg": round(ang, 4)}
+        if self.aligned:
+            out["aligned_deg"] = dict(self.aligned)
+        return out
 
-    def clip(self, action, name: str, arm=None):
-        """Bakes one source action into a new action for the target armature; returns (action, frame count)."""
-        sampler = Sampler(action)
+    def clip(self, action, name: str, arm=None, sampler=None):
+        """Bakes one source action (or a sampler of it, such as an in-place one) into a new action for the target
+        armature; returns (action, frame count)."""
+        sampler = sampler or Sampler(action)
         n = int(round(sampler.frames))
         self.miss_mm = 0.0
         frames = []

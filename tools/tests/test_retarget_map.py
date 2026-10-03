@@ -21,7 +21,17 @@ class MapFileTest(unittest.TestCase):
 
     def test_rig_sizes(self) -> None:
         self.assertEqual(len(self.m["source_bones"]), 65)
-        self.assertEqual(len(self.m["target_bones"]), 62)
+        self.assertEqual(len(self.m["target_bones"]), 64)  # the pack's 62 and the toe bones (art #25)
+
+    def test_toes_drive_the_toe_bones_and_the_rigid_variant_keeps_them_at_rest(self) -> None:
+        self.assertEqual((self.m["bones"]["ball_l"], self.m["bones"]["ball_r"]), ("Toe.L", "Toe.R"))
+        rigid = retarget_map.load(retarget_map.MAPS / "ual_um_rigid.toml")
+        self.assertNotIn("ball_l", rigid["bones"])
+        self.assertIn("Toe.L", rigid["rest"])
+        self.assertIn("ball_r", rigid["unused"])
+        self.assertEqual(sorted(rigid["target_bones"]), sorted(self.m["target_bones"]))
+        others = {k: v for k, v in self.m["bones"].items() if not k.startswith("ball_")}
+        self.assertEqual(rigid["bones"], others)  # otherwise the same map
 
     def test_every_bone_is_accounted_for_once(self) -> None:
         self.assertEqual(sorted(list(self.m["bones"].values()) + self.m["rest"]), sorted(self.m["target_bones"]))

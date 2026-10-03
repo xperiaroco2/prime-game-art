@@ -71,7 +71,15 @@ class AssembleInBlenderTest(unittest.TestCase):
                     slots.add("moustache")
                 self.assertEqual(set(seen["objects"]), {f"{cid}_rig"} | {f"{cid}_{s}" for s in slots})
                 self.assertEqual(set(side["parts"]), slots)
-                self.assertEqual(side["armature"]["bones"], 62)
+                self.assertEqual(side["armature"]["bones"], 64)  # the pack's 62 and Toe.L, Toe.R (art #25)
+                for s, toe in side["armature"]["toe_bones"].items():
+                    # at the ball of the shoe, ahead of the foot pivot and behind the tip, the foot's axes
+                    self.assertGreater(toe["ball_from_pivot_m"], 0.05)
+                    self.assertLess(toe["head_m"][1], -0.1)
+                    self.assertLess(toe["tail_m"][1], toe["head_m"][1])
+                    self.assertAlmostEqual(toe["x_axis"][0], 1.0, places=2)
+                for role in ("head", "hair", "top", "bottom", "shoes"):
+                    self.assertEqual(side["parts"][role]["vertex_groups"], 64)
                 gender = side["body_type"]
                 recipe = recipes.load(_assembly.RECIPES / "um_final_test.json", None)
                 skeleton = recipes.pack_dir(recipe, RAW, gender) / recipe["skeleton"][gender]

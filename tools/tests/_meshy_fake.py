@@ -12,11 +12,19 @@ from runner.commands._meshy_api import Clock, MeshyClient, Response
 KEY = "msy_TEST_secret_key_0123456789"
 ASSETS = "https://assets.example.test"
 COSTS = {"preview": 20, "refine": 10, "rig": 5, "animate": 3, "text_to_image": 9, "image_to_image": 9,
-         "image_to_3d": 30, "multi_image_to_3d": 30, "remesh": 5}
+         "image_to_3d": 30, "multi_image_to_3d": 30, "remesh": 5, "text_to_motion": 10}
+MOTION_COSTS = {"prime": 10, "swift": 3}
+# The animation library as the docs list it (docs.meshy.ai/en/api/animation-library), three actions of 591.
+LIBRARY = [{"action_id": 0, "name": "Idle", "category": "DailyActions", "subcategory": "Idle",
+            "preview": "https://assets.example.test/library/0.gif"},
+           {"action_id": 1, "name": "Walking_Woman", "category": "WalkAndRun", "subcategory": "Walking",
+            "preview": "https://assets.example.test/library/1.gif"},
+           {"action_id": 16, "name": "RunFast", "category": "WalkAndRun", "subcategory": "Running",
+            "preview": "https://assets.example.test/library/16.gif"}]
 # The create path of each image-mode kind (docs/meshy.md).
 IMAGE_MODE_PATHS = {"/openapi/v1/text-to-image": "text_to_image", "/openapi/v1/image-to-image": "image_to_image",
                     "/openapi/v1/image-to-3d": "image_to_3d", "/openapi/v1/multi-image-to-3d": "multi_image_to_3d",
-                    "/openapi/v1/remesh": "remesh"}
+                    "/openapi/v1/remesh": "remesh", "/openapi/v1/text-to-motion": "text_to_motion"}
 # Real PNG and GLB headers, so the runner's format checks pass on downloaded files.
 PNG = b"\x89PNG\r\n\x1a\n"
 GLB = b"glTF"
@@ -77,6 +85,8 @@ class FakeMeshy:
         path = parsed.path
         if path == "/openapi/v1/balance":
             return self._json({"balance": self.balance})
+        if path == "/openapi/v1/animations/library" and method == "GET":
+            return self._json(list(LIBRARY))
         if method == "POST":
             if self.raise_on_post:
                 raise self.raise_on_post
@@ -106,6 +116,8 @@ class FakeMeshy:
             return Response(self.refuse[stage], {}, b'{"message": "Invalid request"}')
         if stage == "animate":
             cost = self.cost[stage] * (len(payload.get("action_ids", [])) or 1)
+        elif stage == "text_to_motion":
+            cost = MOTION_COSTS[payload.get("mode", "prime")]
         else:
             cost = self.cost[stage]  # a three-view image set is one charge, as Meshy bills it
         if self.balance < cost:
@@ -153,6 +165,11 @@ class FakeMeshy:
                 task["payload"].get("image_url") or task["payload"].get("image_urls"))  # inputs echoed back
         elif stage == "remesh":
             out["model_urls"] = {"glb": f"{base}/model.glb?Expires=9"}
+        elif stage == "text_to_motion":
+            mode = task["payload"].get("mode", "prime")
+            ext = "fbx" if mode == "prime" else "bvh"
+            out["result"] = {"motion_url": f"{base}/motion.{ext}?Expires=9", "motion_format": ext,
+                             "duration_ms": int(1000 * task["payload"]["duration"]), "mode": mode}
         elif stage == "rig":
             out["result"] = {"rigged_character_glb_url": f"{base}/Character_output.glb?Expires=9",
                              "rigged_character_fbx_url": f"{base}/Character_output.fbx?Expires=9",

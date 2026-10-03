@@ -16,8 +16,10 @@ import sys
 import tomllib
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import anim_libs  # noqa: E402
 import anim_math as am  # noqa: E402
 import retarget_core as rc  # noqa: E402
+import retarget_map  # noqa: E402
 
 SAMPLES = 24  # normalised times at which the men's and the women's versions of an action are compared
 
@@ -104,21 +106,27 @@ def main(argv):
                   "men_s": inv["pack"]["men"]["actions"][n]["seconds"],
                   "women_s": inv["pack"]["women"]["actions"][n]["seconds"]}
     inv["pack"]["men_vs_women"] = cmp
-    files, rests = {"ual": cfg["ual"], "ual_rm": cfg["ual_rm"]}, {}
+    files, rests = {"ual": (cfg["ual"], "ual")}, {}
+    files["ual_rm"] = (cfg["ual_rm"], "ual")
     for lib, entry in cfg.get("libraries", {}).items():
-        files.update({lib: entry["file"], f"{lib}_rm": entry["rm"]})
+        files[lib] = (entry["file"], lib)
+        if "rm" in entry:  # a Meshy library has none: its clips keep their travel, or the settings take it out
+            files[f"{lib}_rm"] = (entry["rm"], lib)
     inv["libraries"] = ["ual", *cfg.get("libraries", {})]
-    for key, rel in files.items():
+    for key, (rel, lib) in files.items():
         rc.new_scene()
-        ch = rc.load_glb(os.path.join(a.raw, rel))
+        ent = anim_libs.entry(cfg, lib) if key == lib else {}
+        bmap = retarget_map.load(retarget_map.MAPS / ent["map"]) if ent.get("map") else retarget_map.load()
+        root, pelvis = (bmap["root"] or bmap["hips"])[0], bmap["hips"][0]  # UAL's root and pelvis, Meshy's Hips
+        ch = anim_libs.load(os.path.join(a.raw, rel), ent, a.raw, pelvis)
         rig = rc.Rig(ch["arm"])
         clips = {}
-        for n, act in sorted(ch["actions"].items()):
-            s = rc.Sampler(act)
+        for n in sorted(ch["actions"]):
+            s = ch["samplers"][n]
             p0 = rc.fk(rig, s.basis(s.start))
             p1 = rc.fk(rig, s.basis(s.end))
-            r0, r1 = rig.W @ p0["root"].translation, rig.W @ p1["root"].translation
-            h0, h1 = rig.W @ p0["pelvis"].translation, rig.W @ p1["pelvis"].translation
+            r0, r1 = rig.W @ p0[root].translation, rig.W @ p1[root].translation
+            h0, h1 = rig.W @ p0[pelvis].translation, rig.W @ p1[pelvis].translation
             dist = math.hypot(r1.x - r0.x, r1.y - r0.y)
             clips[n] = {"frames_30fps": round(s.frames, 2), "seconds": round(s.seconds, 3),
                         "loop": n.endswith("_Loop"), "root_travel_m": round(dist, 3),
@@ -128,7 +136,7 @@ def main(argv):
         inv["ual"][key] = {"file": rel, "clips": clips, "bones": len(ch["arm"].data.bones)}
         rests[key] = {b.name: (b.parent.name if b.parent else None, ch["arm"].matrix_world @ b.matrix_local)
                       for b in ch["arm"].data.bones}
-    for key in [k for k in inv["libraries"] if k != "ual"]:
+    for key in [k for k in inv["libraries"] if k != "ual" and not anim_libs.entry(cfg, k).get("map")]:
         inv["ual"][key]["rig_vs_ual"] = compare_rigs(rests["ual"], rests[key])
     os.makedirs(os.path.dirname(os.path.abspath(a.out)), exist_ok=True)
     with open(a.out, "w", encoding="utf-8") as f:

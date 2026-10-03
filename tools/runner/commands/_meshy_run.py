@@ -345,9 +345,20 @@ class Runner:
         if stage == "refine":
             return {"mode": "refine", "preview_task_id": state["tasks"]["preview"]["id"], **params}, []
         if stage == "rig":
+            if item.inputs:  # a local GLB (and its texture), sent as data URIs
+                sent = self.file_inputs(item)
+                body = {"model_url": sent[0][0], **params}
+                if len(sent) > 1:
+                    body["texture_image_url"] = sent[1][0]
+                return body, sent
             return {"input_task_id": self.model_task_id(item.source, sources), **params}, []
         if stage == "animate":
-            return {"rig_task_id": sources[item.source]["tasks"]["rig"]["id"], **params}, []
+            body = {"rig_task_id": sources[item.source]["tasks"]["rig"]["id"], **params}
+            if item.motion:
+                body["motion_task_id"] = sources[item.motion]["tasks"]["text_to_motion"]["id"]
+            return body, []
+        if stage == "text_to_motion":
+            return {"prompt": item.prompt, **params}, []
         if stage == "text_to_image":
             return {"prompt": item.prompt, **params}, []
         if stage == "remesh":
@@ -365,6 +376,19 @@ class Runner:
         if stage == "multi_image_to_3d":
             return {"image_urls": uris, **params}, sent
         raise common.Failure(f"unknown stage {stage}")  # pragma: no cover
+
+    def file_inputs(self, item: Item) -> list[tuple[str, dict[str, Any]]]:
+        """A rig's local model and texture as (data URI, record), each checked again at submit time."""
+        sent = []
+        for inp in item.inputs:
+            problems = inputs.file_problems(inp)
+            if problems:
+                raise common.Failure("; ".join(problems))
+            path = inputs.resolve(inp.file)
+            kind = inputs.kind_of(inp, path)
+            rec = inputs.record(path, kind, file=inp.file, role=inp.role, provenance=inp.provenance)
+            sent.append((inputs.data_uri(path, kind), rec))
+        return sent
 
     def image_inputs(self, item: Item, sources: dict[str, dict[str, Any]]) -> list[tuple[str, dict[str, Any]]]:
         """Every image input as (data URI, record): local files as written, `from` inputs from the source's

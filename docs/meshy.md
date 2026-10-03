@@ -2,9 +2,10 @@
 
 `tools/run.py meshy` (`tools\run.cmd meshy` on Windows) runs the engineer's approved generation batches against the
 Meshy API without a human at the keyboard, downloads every result into the raw folder and records each generation.
+Since art #25 the client also rigs local GLBs, makes text-to-motion clips and lists the animation library.
 `tools/run.py raw-backup` copies chosen results to the OneDrive backup. Code: `tools/runner/commands/meshy.py`,
 `_meshy_api.py` (HTTP, key, polling), `_meshy_batch.py` (batch files, prices), `_meshy_inputs.py` (image inputs),
-`_meshy_run.py` (the run) and `raw_backup.py`; tests: `tools/tests/test_meshy_*.py` (a fake transport, no network).
+`_meshy_run.py` (the run), `raw_backup.py` and `tools/blender/meshy_rig_input.py` (rig inputs); tests: `tools/tests/test_meshy_*.py` (a fake transport, no network).
 
 ## Commands
 
@@ -14,6 +15,8 @@ Meshy API without a human at the keyboard, downloads every result into the raw f
 | `meshy run <batch> [item ...] [--retry-failed]` | spends credits | Refuses a batch without approval or over its cap; then submits, polls, downloads and records each item |
 | `meshy balance` | read only | The account's credit balance (spends nothing) |
 | `meshy status <batch>` | none | Each item's state from its `generation.json`; flags downloaded files that went missing |
+| `meshy library [--search S] [--category C] [--out FILE]` | read only | The animation library's listing (free), saved as Meshy sent it with the time and the query to `<raw>/meshy/animation-library-<date>.json`; prints the count per category |
+| `meshy rig-input <character.blend> ... --out DIR` | none | A saved character (`assemble --blend`) as a rig input: a static textured GLB facing +Z, its palette PNG and a JSON note; prints the sha256 values to pin (below) |
 | `raw-backup <batch> [item ...]` | none | Copies finished items (files, `generation.json`, `log.csv`) to `common.raw_backup_dir()`, sha256-checked |
 
 `<batch>` is a path (`batches/2026-10-b1-bodies.toml`) or a bare id (`2026-10-b1-bodies`).
@@ -66,10 +69,20 @@ Item kinds (merged: defaults, then the variant, then the item):
 
 - `text_to_3d`: `prompt` (or the variant's), `preview` and `refine` tables of API parameters, `texture` (default
   true; false skips the refine, but Meshy rigs textured models only). Stages: preview, then refine.
-- `rig`: `source`, an earlier item with a textured model (below); `params` such as `height_meters`. The runner
-  sends the source's final model task id (a text-to-3D's refine) as `input_task_id`.
-- `animate`: `source`, an earlier `rig` item; `params.action_ids`, 1 to 10 ids from the animation library. The
-  runner sends the source's rig task id as `rig_task_id`.
+- `rig`: `source`, an earlier item with a textured model (below), or `model`, a local GLB (art #25), with an
+  optional `texture`, its UV-unwrapped base colour as a PNG: tables like an image input,
+  `{ file = "raw:...", provenance = "...", sha256 = "..." }`. `params`: `height_meters` (default 1.7). The runner
+  sends the source's final model task id (a text-to-3D's refine) as `input_task_id`, or the GLB as a data URI in
+  `model_url` (`data:application/octet-stream;base64,...`, the media type the remesh docs ask for; the rigging docs
+  name none) and the PNG in `texture_image_url`. A model must be a binary glTF (its first bytes `glTF`) of at most
+  20 MB (this client's limit; the docs state none).
+- `animate`: `source`, an earlier `rig` item; `params.action_ids`, 1 to 10 unique ids from the animation library, or
+  `motion`, an earlier `text_to_motion` item (exactly one of them; the docs: `action_id`, `action_ids` or
+  `motion_task_id`). The runner sends the source's rig task id as `rig_task_id` and the motion item's task id as
+  `motion_task_id`; `params.post_process` (`operation_type`, `fps`) is passed as it is.
+- `text_to_motion` (art #25): `prompt` (at most 400 characters; never a game or a character), `params.duration`
+  (required, 2 to 10 s in 0.5 s steps) and `params.mode` (`prime`, the default, 10 credits, an FBX clip; `swift`, 3
+  credits, a BVH clip). The clip is downloaded at once (Meshy keeps it 3 days); an `animate` item puts it on a rig.
 - `text_to_image`: `prompt` (or the variant's); `params`: `ai_model` (required), `generate_multi_view`,
   `pose_mode`, `aspect_ratio` (not with `generate_multi_view`), `remove_background`. Makes one image, or three with
   `generate_multi_view = true`.
@@ -109,10 +122,11 @@ input sends the source's downloaded file, after checking it still matches the sh
 `from` and `pick`, its `path`, `media_type`, `bytes`, `sha256` and `provenance` (for a `from` input: the batch, item,
 task and image it came from), and the recorded request carries a short note instead of each data URI.
 
-The runner fills in `mode`, `prompt`, `preview_task_id`, `input_task_id`, `rig_task_id`, `model_url`, `image_url`,
-`image_urls` and `reference_image_urls`; a batch may not set them. `texture_image_url` and `texture_image_urls` are
+The runner fills in `mode`, `prompt`, `preview_task_id`, `input_task_id`, `rig_task_id`, `motion_task_id`, `model_url`,
+`texture_image_url` (of a rig), `image_url`, `image_urls` and `reference_image_urls`; a batch may not set them. `texture_image_url` and `texture_image_urls` are
 not supported yet (they would need an input of their own). The `params` of an image-mode kind may hold only the
-parameters the docs list for it (`KNOWN_PARAMS` in `_meshy_batch.py`, from the section below): Meshy may ignore an
+parameters the docs list for it (`KNOWN_PARAMS` in `_meshy_batch.py`, from the sections below; since art #25 also
+`rig`, `animate` and `text_to_motion`): Meshy may ignore an
 unknown key, so a misspelt one would pay for a generation without its setting. Text-to-3D prompts and `texture_prompt` are at most 800
 characters; the image docs state no prompt limit.
 
@@ -306,6 +320,85 @@ default, `quad`), `target_polycount` (100 to 300,000, default 30,000); `resize_h
 
 Rigging's `input_task_id` is "the input task that needs to be rigged": any task with a textured humanoid model (at
 most 300,000 faces), so a rig follows any textured model item (not a remesh, above); `model_url` takes a textured humanoid GLB facing +Z.
+
+## Rig inputs from our characters (`meshy rig-input`, art #25)
+
+Meshy rigs "textured humanoid GLB files" whose face points to +Z. Our characters are flat material colours with no
+UVs, so `tools/blender/meshy_rig_input.py` (background Blender) makes the rig input from a saved character:
+
+1. opens `blend/<id>.blend`, puts the armature in its rest pose (the T-pose) and joins the parts' rest shapes into one
+   static mesh (no armature, no actions, no toe bones: Meshy builds its own skeleton);
+2. bakes every material's viewport colour into one 8 px cell of a palette PNG (`<id>_texture.png`, 32 px for 14
+   colours, sRGB) and gives every face of that material UVs at its cell's centre, with one material sampling the PNG
+   (closest-pixel);
+3. exports `<id>.glb` with Blender's glTF exporter (+Y up: Blender's front -Y becomes glTF's +Z) and writes `<id>.json`
+   (triangles, height, bytes, the colours per material).
+
+The palette is for the rig input only; nothing of ours changes. `render` of the GLB shows the colours from the texture
+(`D:/prime-art-raw/review/stage1/25/rig_inputs/`). `rig-input` reads the GLB's JSON chunk afterwards and refuses
+anything but one node with one mesh. The "Icosphere" that appears beside every import of a Meshy output (and of the
+pack files) in Blender is the glTF importer's own bone display shape: neither the rig inputs (1 node, 1 mesh) nor
+Meshy's GLBs (the 24 bones, the armature node and one mesh: 26 nodes) contain one, so nothing of it reached Meshy.
+
+## Animation as read on 2026-10-03 (art #25)
+
+Sources: docs.meshy.ai `/en/api/rigging-and-animation`, `/animation`, `/animation-library`, `/text-to-motion` and the
+web guide `/en/webapp/guides/3d-model/rigging`.
+
+| Use | Endpoint | Credits |
+|---|---|---|
+| Rigging | `POST /openapi/v1/rigging`: `input_task_id`, or `model_url` ("a publicly accessible URL or Data URI"; "textured humanoid GLB files"; the face toward +Z), `height_meters` (default 1.7), `texture_image_url` (the UV-unwrapped base colour, PNG, URL or data URI); at most 300,000 faces by task id | 5 per successful task |
+| Animation | `POST /openapi/v1/animations`: `rig_task_id` and exactly one of `action_id`, `action_ids` (1 to 10 unique) or `motion_task_id` (a succeeded text-to-motion task; "requires a biped rig"); optional `post_process` `{operation_type: change_fps, fbx2usdz or extract_armature, fps: 24, 25, 30 or 60}` | 3 per action; a motion clip "the same 3-credit base" |
+| Text to motion | `POST /openapi/v1/text-to-motion`: `prompt` (at most 400 characters), `duration` (required, 2 to 10 s in 0.5 s steps), `mode` (`prime` default, `swift`); `GET /openapi/v1/text-to-motion/<id>` | prime 10 (FBX), swift 3 (BVH) |
+| Animation library | `GET /openapi/v1/animations/library` | 0 |
+
+Results: a rig task's `result` holds `rigged_character_glb_url`, `rigged_character_fbx_url` and `basic_animations`
+(walking and running, GLB and FBX, with and without the armature); an animation's `result` holds `animation_glb_url`
+and `animation_fbx_url` ("with `action_ids`, ... one merged file ... every requested action as a separate clip") and the
+post-processed files; a text-to-motion task's `result` holds `motion_url`, `motion_format` (`fbx` or `bvh`),
+`duration_ms` and `mode`, kept "3 days after the task finishes". A failed pose estimate of a rig is HTTP 422. The docs
+name no skeleton (bones, count, fingers, toes); the web guide calls the rig "Mixamo-compatible".
+
+The library listing answered on 2026-10-03 with a list of 678 actions, each `action_id`, `name`, `key` (the docs'
+name), `category`, `sub_category` and `preview_url` (the docs page lists 591, ids 0 to 590; ids from 591 on repeat
+earlier names).
+
+## Batch 4, 2026-10-b4-animations (art #25)
+
+Meshy's animations on our own characters: rigs of m1_rex and w1_ivy from `meshy rig-input` (pinned by sha256), ten
+library actions on the man (the sprint for the feet, then backwards, a turn in place, a hit, a knock-down, a crawl, the
+downed state, a two-handed carry, a shrug and a finger wag), a walk (1 Walking Woman) and the sprint (16 Run Fast) on
+the woman, and one prime text-to-motion crawl while downed, animated on the man: 59 credits, cap 60, approved by the
+engineer for "about 60 credits" ([art #16](https://github.com/xperiaroco2/prime-game-art/issues/16#issuecomment-5971404896))
+and confirmed by the engineer in chat before the run ([recorded on art #16](https://github.com/xperiaroco2/prime-game-art/issues/16#issuecomment-5972512323),
+the batch's `approval_ref`). The action ids and names are in the batch file. The trial and its findings:
+[research/2026-10-03-meshy-animations.md](research/2026-10-03-meshy-animations.md).
+
+**A manifest that uses a batch-4 clip** (library or text to motion) records `licence = "restricted"`,
+`public_repo_ok = false`, `ai_generated = true` (a boolean: for the library clips the conservative value, since Meshy
+does not disclose how they were made; say so in `notes`), `source.model_version = "undisclosed"` and the animate task
+ids. The research page has the reasons.
+
+**Run** on 2026-10-03, 18:57 to 19:00 UTC, by the art manager (`meshy run 2026-10-b4-animations`, the man's rig first):
+balance **374 before, 315 after: 59 credits**, every task charged as estimated (`log.csv` and each item's
+`generation.json` in `raw:2026-10-b4-animations/`; copies in `OneDrive/prime-art-raw/`, `raw-backup`: 23 files).
+
+| Item | Task | Credits | Balance | Files |
+|---|---|---|---|---|
+| `man-rig` | rig `01a10320-b412-7299-ad68-92890c4e6853` | 5 | 374 -> 369 | rigged GLB and FBX, walking and running with skin (GLB, FBX) and as armature-only GLBs |
+| `woman-rig` | rig `01a10321-dc82-74b0-bbbf-d0c66d2f5d58` | 5 | 369 -> 364 | the same |
+| `man-library` | animate `01a10322-3570-7439-bd87-2597a408f49c` | 30 | 364 -> 334 | `animate-merged_animations.glb`/`.fbx`: the ten actions as clips |
+| `woman-library` | animate `01a10322-a5d5-7169-8499-c1c522bc8ac9` | 6 | 334 -> 328 | the same with two |
+| `crawl-motion` | text to motion `01a10322-c879-7192-a408-0a474c65fc6c` | 10 | 328 -> 318 | `text_to_motion-clip.fbx` (16.8 MB, prime, 4 s) |
+| `man-crawl` | animate `01a10323-3b62-7512-80e2-9ebfde356052` | 3 | 318 -> 315 | the crawl on the man's rig, GLB and FBX |
+
+What came back (read in Blender and from the GLBs' JSON): the rigged character is our mesh merged into one object
+(`char1`, the same 6458 and 8318 triangles, the palette texture kept) skinned to Meshy's 24-bone rig (the skeleton:
+the research page), at most 4 influences a vertex, the armature at a world scale of 0.01 and facing -Y like ours. The
+basic walking (32 frames at 30 fps) and running (20) are in place; of the library clips, Carry Heavy Object Walk, Crawl
+and Look Back, Walk Backward, Hit Reaction and Knock Down travel with the hips (the review takes the travel out of the
+loops), the rest stay in place. The review reads them as two libraries (`meshy`, `meshyw` in
+`tools/blender/anim_review.toml`; docs/animations.md).
 
 ## The first batch, 2026-10-b1-bodies
 

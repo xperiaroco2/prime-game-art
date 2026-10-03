@@ -3,10 +3,11 @@
 Usage (background Blender only, through tools/runner/blender.py):
   blender -b --factory-startup --python-exit-code 1 --python retarget.py -- --source <UAL.glb> --target <UM.glb>
       --out <dir> [--map <map.toml>] [--clips Walk_Loop,Idle_Loop|all] [--no-ik] [--floor] [--blend] [--prefix UAL2]
+A pack original as the target gets the assembler's toe bones first (um/toes.py, art #25) when the map drives them.
 Writes <out>/retarget_report.json (the hip-height ratio, the rest-pose check, each clip's frames and IK misses; with
 --floor also each clip's lowest vertex on the target and on the source's own mesh, scaled to the target) and,
-with --blend, <out>/<target>_ual.blend: the target character with the baked actions "<prefix>|<clip>" (UAL|, UAL2|)
-and nothing else. UAL2 (art #24) has UAL1's rig and takes the same bone map.
+with --blend, <out>/<target>_<prefix>.blend (lower case): the target character with the baked actions "<prefix>|<clip>"
+(UAL|, UAL2|, Meshy|) and nothing else. UAL2 (art #24) has UAL1's rig and takes the same bone map.
 """
 
 import argparse
@@ -19,6 +20,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import bpy  # noqa: E402
 
 import retarget_core as rc  # noqa: E402
+import anim_libs  # noqa: E402
 import retarget_map  # noqa: E402
 from anim_metrics import world_points  # noqa: E402
 
@@ -53,13 +55,25 @@ def main(argv):
     ap.add_argument("--no-ik", action="store_true")
     ap.add_argument("--blend", action="store_true")
     ap.add_argument("--floor", action="store_true")
-    ap.add_argument("--prefix", default="UAL", help="the baked actions' name prefix (UAL, UAL2)")
+    ap.add_argument("--prefix", default="UAL", help="the baked actions' name prefix (UAL, UAL2, Meshy)")
+    ap.add_argument("--config", help="the review settings: the library's extra files, renames and in-place clips")
+    ap.add_argument("--library", help="the library's key in the review settings (meshy, art #25)")
+    ap.add_argument("--raw", help="the raw folder, which the settings' paths are relative to")
     a = ap.parse_args(argv)
     os.makedirs(a.out, exist_ok=True)
     bmap = retarget_map.load(a.map)
     rc.new_scene()
-    src = rc.load_glb(a.source)
+    ent = {}
+    if a.config and a.library:
+        import tomllib
+
+        with open(a.config, "rb") as f:
+            ent = anim_libs.entry(tomllib.load(f), a.library)
+    src = anim_libs.load(a.source, ent, a.raw, bmap["hips"][0])  # with a Meshy library's extra files (art #25)
     tgt = rc.load_glb(a.target)
+    toes = None
+    if any(b.startswith("Toe.") and b not in tgt["arm"].data.bones for b in bmap["target_bones"]):
+        toes = rc.add_toes(tgt)  # the assembler's toe bones (art #25) on a pack original
     missing = [b for b in bmap["source_bones"] if b not in src["arm"].data.bones]
     missing += [b for b in bmap["target_bones"] if b not in tgt["arm"].data.bones]
     if missing:
@@ -76,12 +90,13 @@ def main(argv):
         "hip_height_m": {"source": round(rt.src_hip, 4), "target": round(rt.tgt_hip, 4)},
         "translation_scale": round(rt.ratio, 4),
         "soles": sorted(rt.soles),
+        "toe_bones_added": bool(toes and toes.get("added")),
         "rest_check": rt.rest_error(),
         "clips": {},
     }
     t0 = time.time()
     for name in names:
-        act, frames = rt.clip(src["actions"][name], f"{a.prefix}|{name}", tgt["arm"])
+        act, frames = rt.clip(src["actions"][name], f"{a.prefix}|{name}", tgt["arm"], src["samplers"][name])
         report["clips"][name] = {"frames": frames, "seconds": round(frames / rc.FPS, 3), "action": act.name,
                                  "ik_miss_mm": round(rt.miss_mm, 2)}
         if a.floor:
@@ -101,7 +116,7 @@ def main(argv):
                 bpy.data.actions.remove(act)
         rc.reset_pose(tgt["arm"])
         stem = os.path.splitext(os.path.basename(a.target))[0].replace(" ", "_")
-        path = os.path.join(a.out, f"{stem}_ual.blend")
+        path = os.path.join(a.out, f"{stem}_{a.prefix.lower()}.blend")
         bpy.ops.wm.save_as_mainfile(filepath=path, compress=True)
         report["blend"] = path
         with open(os.path.join(a.out, "retarget_report.json"), "w", encoding="utf-8") as f:

@@ -9,6 +9,7 @@ from __future__ import annotations
 import json
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -28,7 +29,9 @@ TASK_PATHS = {
     "image_to_3d": "/openapi/v1/image-to-3d",
     "multi_image_to_3d": "/openapi/v1/multi-image-to-3d",
     "remesh": "/openapi/v1/remesh",
+    "text_to_motion": "/openapi/v1/text-to-motion",
 }
+LIBRARY_PATH = "/openapi/v1/animations/library"  # the animation library's actions (free)
 FINAL_STATUSES = ("SUCCEEDED", "FAILED", "CANCELED")
 REDACTED = "<MESHY_API_KEY redacted>"
 USER_AGENT = "prime-game-art-runner"
@@ -163,6 +166,12 @@ class MeshyClient:
         if not isinstance(data, dict) or not isinstance(data.get("balance"), (int, float)):
             raise MeshyError("the balance answer has no number in 'balance'")
         return int(data["balance"])
+
+    def library(self, search: str = "", category: str = "") -> Any:
+        """The animation library's actions (spends nothing): Meshy's answer as it is, a list of actions or an object
+        holding one."""
+        query = "&".join(f"{k}={urllib.parse.quote(v)}" for k, v in (("search", search), ("category", category)) if v)
+        return self._call("GET", LIBRARY_PATH + (f"?{query}" if query else ""))
 
     def create(self, kind: str, payload: dict[str, Any]) -> str:
         """Submits a paid task and returns its id."""

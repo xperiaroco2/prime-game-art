@@ -75,12 +75,12 @@ class SettingsTest(unittest.TestCase):
 
     def test_ual2_is_one_more_library(self) -> None:
         libs = _anim.libraries(self.cfg)
-        self.assertEqual(list(libs), ["ual", "ual2"])
+        self.assertEqual(list(libs)[:2], ["ual", "ual2"])  # Meshy's follow (art #25)
         self.assertTrue(libs["ual"]["file"].endswith("UAL1_Standard.glb"))
         self.assertTrue(libs["ual2"]["file"].endswith("UAL2_Standard.glb"))
         self.assertTrue(libs["ual2"]["rm"].endswith("UAL2_Standard_RM.glb"))
         self.assertEqual(libs["ual2"]["label"], "UAL2")
-        self.assertEqual(_anim.sources(self.cfg), {"pack", "ual", "ual2"})
+        self.assertLessEqual({"pack", "ual", "ual2"}, _anim.sources(self.cfg))
         self.assertEqual(self.cfg["layer"]["upper"], "Torso")
 
     def test_every_pair_and_rates_lane_parses_and_names_known_sources(self) -> None:

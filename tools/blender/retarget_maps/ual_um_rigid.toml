@@ -1,3 +1,7 @@
+# THE RIGID-SHOE VARIANT of ual_um.toml (art #25): UAL's toes are not used and the toe bones stay at rest, so each
+# shoe moves as one piece with its foot, as before the toe bones (art #20, #24). Kept to show the toe bones' effect
+# side by side (anim-review's ual_rigid source); use ual_um.toml for clips.
+#
 # Universal Animation Library (UAL1; Unreal-mannequin names, 65 bones) -> Ultimate Modular "CharacterArmature"
 # (62 bones, five-finger chains, plus the assembler's toe bones Toe.L and Toe.R of art #25: 64). Read by
 # tools/blender/retarget_map.py; the method is in docs/animations.md.
@@ -21,7 +25,7 @@
 # their 2, 3 and 4 are the proximal, intermediate and distal phalanges. UAL has no finger metacarpals: its _01, _02,
 # _03 are the phalanges (heads past the palm), so they map to 2, 3 and 4, and 1 stays at rest. Thumbs map 1:1.
 
-title = "UAL1 Standard -> Ultimate Modular"
+title = "UAL1 Standard -> Ultimate Modular, rigid shoes (toes at rest)"
 root = ["root", "Root"]
 hips = ["pelvis", "Body"]
 
@@ -59,7 +63,6 @@ pinky_03_l = "Pinky4.L"
 thigh_l = "UpperLeg.L"
 calf_l = "LowerLeg.L"
 foot_l = "Foot.L"
-ball_l = "Toe.L"
 clavicle_r = "Shoulder.R"
 upperarm_r = "UpperArm.R"
 lowerarm_r = "LowerArm.R"
@@ -82,7 +85,6 @@ pinky_03_r = "Pinky4.R"
 thigh_r = "UpperLeg.R"
 calf_r = "LowerLeg.R"
 foot_r = "Foot.R"
-ball_r = "Toe.R"
 
 [follow]
 "Foot.L" = "LowerLeg.L"
@@ -97,10 +99,10 @@ target = ["UpperLeg.R", "LowerLeg.R", "Foot.R"]
 source_foot = "foot_r"
 
 [rest]
-bones = ["Hips", "Index1.L", "Middle1.L", "Ring1.L", "Pinky1.L", "Index1.R", "Middle1.R", "Ring1.R", "Pinky1.R", "PT.L", "PT.R"]  # PT: the pack's knee pole targets, which deform nothing
+bones = ["Hips", "Index1.L", "Middle1.L", "Ring1.L", "Pinky1.L", "Index1.R", "Middle1.R", "Ring1.R", "Pinky1.R", "PT.L", "PT.R", "Toe.L", "Toe.R"]  # toes at rest (rigid shoes); PT: the pack's knee pole targets, which deform nothing
 
 [unused]
-bones = ["thumb_04_leaf_l", "index_04_leaf_l", "middle_04_leaf_l", "ring_04_leaf_l", "pinky_04_leaf_l", "thumb_04_leaf_r", "index_04_leaf_r", "middle_04_leaf_r", "ring_04_leaf_r", "pinky_04_leaf_r", "ball_leaf_l", "ball_leaf_r"]  # the leaves
+bones = ["thumb_04_leaf_l", "index_04_leaf_l", "middle_04_leaf_l", "ring_04_leaf_l", "pinky_04_leaf_l", "thumb_04_leaf_r", "index_04_leaf_r", "middle_04_leaf_r", "ring_04_leaf_r", "pinky_04_leaf_r", "ball_l", "ball_r", "ball_leaf_l", "ball_leaf_r"]  # the leaves, and the toes: the toe bones stay at rest
 
 [source_rig]  # the 65 bones of UAL1_Standard.glb, read from the file on 2026-10-03
 bones = [

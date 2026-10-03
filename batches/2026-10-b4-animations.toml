@@ -1,0 +1,76 @@
+# Batch 4: Meshy's animations tried on our own characters (art #25). The feet break in motion: the engineer decided to
+# try Meshy's animation library and its text to motion after wave 1, for about 60 credits (chat with the art manager,
+# 2026-10-03, the budget recorded on art #16: issuecomment-5971404896). Animation only: Meshy stays for items and props, our characters stay Ultimate
+# Modular (assembled by tools/blender/um/, recipe recipes/um_final_test.json).
+#
+# Inputs: m1_rex (men) and w1_ivy (women) saved by `assemble um_final_test --ids m1_rex,w1_ivy --blend`, turned into
+# static textured GLBs facing +Z by `meshy rig-input` (the flat colours baked into a 32 px palette for the rig input
+# only; Meshy rigs textured models). Each rig also returns Meshy's basic walking and running clips at no extra cost.
+#
+# Actions, picked from `meshy library` (678 actions on 2026-10-03, saved to raw:2026-10-b4-animations/
+# animation-library.json; ids and names below), for the feet first and then for the gaps art #20 and #24 left:
+#   man (10 actions, one task): 16 Run Fast (sprint, feet), 544 Walk Backward (backwards), 577 Idle Step Turn Left
+#     (turning in place), 178 Hit Reaction (being hit or pushed), 187 Knock Down (a fall), 340 Crawl and Look Back
+#     (crawling), 372 Prone Reach Help (downed), 551 Carry Heavy Object Walk (carrying with two hands), 317 Shrug
+#     (emote), 409 Finger Wag No (a finger gesture).
+#   woman (2 actions): 1 Walking Woman (walk), 16 Run Fast (sprint).
+# Left out on purpose: a get-up (UAL2 LayToIdle fills it) and a wave (the pack's Wave fills it); one emote and one
+#   gesture instead of two emotes.
+# Text to motion (prime): a forward crawl while downed, the gap no library clip fills (the library's crawls look back
+# or go backwards); animated on the man's rig.
+#
+# Credits (docs.meshy.ai, read 2026-10-03): rig 5 each (10), animation 3 per action (30 + 6 + 3 for the motion clip),
+# text to motion prime 10: 59 of the 60 approved. Run the man's rig alone first and look at it before the rest:
+#   tools/run.py meshy run 2026-10-b4-animations man-rig
+#   tools/run.py meshy run 2026-10-b4-animations
+#
+# Run on 2026-10-03 (18:57 to 19:00 UTC) by the art manager after the engineer's direct yes in chat for this batch
+# (recorded on art #16 at 19:03 UTC, approval_ref): 59 credits, balance 374 -> 315; task ids and files in docs/meshy.md ("Batch 4") and raw:2026-10-b4-animations/<item>/generation.json.
+
+id = "2026-10-b4-animations"
+purpose = "Meshy's rig, library actions and text to motion on two assembled characters, against UAL with our toe bones (art #25)."
+plan = "Meshy Pro (monthly)"
+terms_url = "https://www.meshy.ai/terms-of-use"
+licence = "owned by the customer on a paid plan (Meshy Terms of Use 3.2, updated 2026-09-19); the library motions' own source is not disclosed by Meshy; text-to-motion clips are AI-generated"
+credit_cap = 60
+approved_by = "xperiaroco2 (the engineer)"
+approved_at = "2026-10-03"
+approval_ref = "https://github.com/xperiaroco2/prime-game-art/issues/16#issuecomment-5972512323"
+
+[[items]]
+id = "man-rig"
+kind = "rig"
+params = { height_meters = 1.97 }
+model = { file = "raw:2026-10-b4-animations/inputs/m1_rex.glb", provenance = "own work: m1_rex assembled from Quaternius Ultimate Modular Men parts (CC0) with our face kit, exported static by meshy rig-input", sha256 = "f11b12d110650616a5406613bf2b3bdac1edbe8e86a39a8e4342c0748e2db7db" }
+texture = { file = "raw:2026-10-b4-animations/inputs/m1_rex_texture.png", provenance = "own work: m1_rex's flat material colours baked into a palette by meshy rig-input", sha256 = "caf81b7b36588766f69441e76452dfd813a6d4b6073d64f0fdee14a393620e06" }
+
+[[items]]
+id = "woman-rig"
+kind = "rig"
+params = { height_meters = 1.85 }
+model = { file = "raw:2026-10-b4-animations/inputs/w1_ivy.glb", provenance = "own work: w1_ivy assembled from Quaternius Ultimate Modular Women parts (CC0) with our face kit, exported static by meshy rig-input", sha256 = "c00029b6845a07d868f6cce41df1fc5b5978737d6f2bb2db1302bc525fb37c78" }
+texture = { file = "raw:2026-10-b4-animations/inputs/w1_ivy_texture.png", provenance = "own work: w1_ivy's flat material colours baked into a palette by meshy rig-input", sha256 = "18e5ed7e77f5b21857c6bfdf21c5e46e7bc7f2963db3d7da6f15c8f8ac1e2545" }
+
+[[items]]
+id = "man-library"
+kind = "animate"
+source = "man-rig"
+params = { action_ids = [16, 544, 577, 178, 187, 340, 372, 551, 317, 409] }
+
+[[items]]
+id = "woman-library"
+kind = "animate"
+source = "woman-rig"
+params = { action_ids = [1, 16] }
+
+[[items]]
+id = "crawl-motion"
+kind = "text_to_motion"
+prompt = "A person lies face down on the floor, hurt, and crawls forward slowly on hands and knees, pulling with the arms and pushing with the knees, head up and looking ahead. A steady, even crawl cycle that starts and ends in the same pose so it can loop. No props."
+params = { duration = 4, mode = "prime" }
+
+[[items]]
+id = "man-crawl"
+kind = "animate"
+source = "man-rig"
+motion = "crawl-motion"

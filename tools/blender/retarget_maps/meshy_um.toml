@@ -1,0 +1,93 @@
+# Meshy's auto-rig (24 bones, read from the files of batch 4, art #25, on 2026-10-03) -> Ultimate Modular
+# "CharacterArmature" (62 bones and the assembler's toe bones Toe.L and Toe.R: 64). Read by
+# tools/blender/retarget_map.py; the method is in docs/animations.md, the format in ual_um.toml's head.
+#
+# Meshy's rig: Hips (the top bone: no root; its location keys carry the root motion) > Spine02 > Spine01 > Spine >
+# neck > Head (> head_end, headfront: ends, no deformation of their own), Left/RightShoulder > Arm > ForeArm > Hand
+# under Spine, Left/RightUpLeg > Leg > Foot > ToeBase under Hips. No finger bones and no twist bones; one toe per foot.
+# It rests in the pose it was rigged in (our T-pose), facing -Y in Blender, with the armature's world scale 0.01.
+#
+# - No root: the target Root stays at rest and Body, carried in the frame of Meshy's Hips, takes the root motion.
+# - The feet: Meshy's LeftFoot is an ankle bone (its head at the ankle, pointing down to the ball); ours is the heel
+#   pivot. The IK carries our pivot where Meshy's foot carries it (the anchor in the source foot's frame), as for UAL.
+# - The toes: LeftToeBase and RightToeBase drive Toe.L and Toe.R; meshy_um_rigid.toml keeps them at rest.
+# - The fingers: none in the source, so every finger bone keeps its rest (a relaxed flat hand).
+# - [align]: Meshy placed its upper arms 10 to 15 degrees below the mesh's arms (the shoulder joints high); without the
+#   alignment an arm that hangs at the side in a Meshy clip stands that far out on our rig. With it the arms hang 5 to
+#   6 degrees closer to the body than on Meshy's own skinned mesh (art #25's research page).
+
+title = "Meshy auto-rig -> Ultimate Modular"
+hips = ["Hips", "Body"]
+
+[height]  # the hip joints: their mean rest height above the floor gives the translation scale
+source = ["LeftUpLeg", "RightUpLeg"]
+target = ["UpperLeg.L", "UpperLeg.R"]
+
+[bones]
+Hips = "Body"
+Spine02 = "Abdomen"
+Spine01 = "Torso"
+Spine = "Chest"
+neck = "Neck"
+Head = "Head"
+LeftShoulder = "Shoulder.L"
+LeftArm = "UpperArm.L"
+LeftForeArm = "LowerArm.L"
+LeftHand = "Wrist.L"
+LeftUpLeg = "UpperLeg.L"
+LeftLeg = "LowerLeg.L"
+LeftFoot = "Foot.L"
+LeftToeBase = "Toe.L"
+RightShoulder = "Shoulder.R"
+RightArm = "UpperArm.R"
+RightForeArm = "LowerArm.R"
+RightHand = "Wrist.R"
+RightUpLeg = "UpperLeg.R"
+RightLeg = "LowerLeg.R"
+RightFoot = "Foot.R"
+RightToeBase = "Toe.R"
+
+[follow]
+"Foot.L" = "LowerLeg.L"
+"Foot.R" = "LowerLeg.R"
+
+[[legs]]
+target = ["UpperLeg.L", "LowerLeg.L", "Foot.L"]
+source_foot = "LeftFoot"
+
+[[legs]]
+target = ["UpperLeg.R", "LowerLeg.R", "Foot.R"]
+source_foot = "RightFoot"
+
+[align]  # target bones turned onto the source bone's rest direction (see the head)
+bones = ["UpperArm.L", "UpperArm.R"]
+
+[rest]  # Root (no source root), Hips (Body carries the pelvis), every finger (none in the source), PT: the knee pole targets
+bones = [
+  "Root", "Hips", "Index1.L", "Index2.L", "Index3.L", "Index4.L", "Middle1.L", "Middle2.L", "Middle3.L", "Middle4.L",
+  "Ring1.L", "Ring2.L", "Ring3.L", "Ring4.L", "Pinky1.L", "Pinky2.L", "Pinky3.L", "Pinky4.L", "Index1.R", "Index2.R",
+  "Index3.R", "Index4.R", "Middle1.R", "Middle2.R", "Middle3.R", "Middle4.R", "Ring1.R", "Ring2.R", "Ring3.R",
+  "Ring4.R", "Pinky1.R", "Pinky2.R", "Pinky3.R", "Pinky4.R", "Thumb1.L", "Thumb2.L", "Thumb3.L", "Thumb1.R",
+  "Thumb2.R", "Thumb3.R", "PT.L", "PT.R"
+]
+
+[unused]  # the head's end bones
+bones = ["head_end", "headfront"]
+
+[source_rig]  # the 24 bones of every Meshy rig of batch 4 (man and woman, every GLB), read on 2026-10-03
+bones = [
+  "Hips", "Spine02", "Spine01", "Spine", "neck", "Head", "head_end", "headfront", "LeftShoulder", "LeftArm",
+  "LeftForeArm", "LeftHand", "RightShoulder", "RightArm", "RightForeArm", "RightHand", "LeftUpLeg", "LeftLeg",
+  "LeftFoot", "LeftToeBase", "RightUpLeg", "RightLeg", "RightFoot", "RightToeBase"
+]
+
+[target_rig]  # the 62 bones of every Ultimate Modular Men and Women GLB and the toes
+bones = [
+  "Root", "Body", "Hips", "Abdomen", "Torso", "Chest", "Neck", "Head", "Shoulder.L", "UpperArm.L", "LowerArm.L",
+  "Wrist.L", "Index1.L", "Index2.L", "Index3.L", "Index4.L", "Middle1.L", "Middle2.L", "Middle3.L", "Middle4.L",
+  "Ring1.L", "Ring2.L", "Ring3.L", "Ring4.L", "Pinky1.L", "Pinky2.L", "Pinky3.L", "Pinky4.L", "Thumb1.L", "Thumb2.L",
+  "Thumb3.L", "Shoulder.R", "UpperArm.R", "LowerArm.R", "Wrist.R", "Index1.R", "Index2.R", "Index3.R", "Index4.R",
+  "Middle1.R", "Middle2.R", "Middle3.R", "Middle4.R", "Ring1.R", "Ring2.R", "Ring3.R", "Ring4.R", "Pinky1.R",
+  "Pinky2.R", "Pinky3.R", "Pinky4.R", "Thumb1.R", "Thumb2.R", "Thumb3.R", "UpperLeg.L", "LowerLeg.L", "UpperLeg.R",
+  "LowerLeg.R", "Foot.L", "PT.L", "Foot.R", "PT.R", "Toe.L", "Toe.R"
+]
