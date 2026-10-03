@@ -1,0 +1,144 @@
+# The animation review's settings (tools/run.py anim-review; docs/animations.md). Paths are relative to the raw
+# folder (ART_RAW_DIR, default D:/prime-art-raw).
+
+ual = "quaternius/Universal_Animation_Library/Universal Animation Library[Standard]/Unreal-Godot/UAL1_Standard.glb"
+ual_rm = "quaternius/Universal_Animation_Library/Universal Animation Library[Standard]/Unreal-Godot/UAL1_Standard_RM.glb"
+
+# Further Universal Animation Library files on UAL1's 65-bone rig, each one more source of clips: its clips are keyed
+# "<key>:<clip>" as UAL1's are "ual:<clip>", retargeted with the same bone map. `file` is in place, `rm` has root
+# motion, `label` names the source in pictures (art #24; sources/quaternius_ual2_standard.toml).
+[libraries.ual2]
+file = "quaternius/Universal_Animation_Library_2/Universal Animation Library 2[Standard]/Unreal-Godot/UAL2_Standard.glb"
+rm = "quaternius/Universal_Animation_Library_2/Universal Animation Library 2[Standard]/Unreal-Godot/UAL2_Standard_RM.glb"
+label = "UAL2"
+
+# Layered clips "<base>|<upper>" (tools/blender/anim_keys.py): the base clip's hips and legs under the upper clip's
+# `upper` bone and every bone below it (spine, head, arms, fingers), as an engine layers an upper-body clip. `clips`
+# are layered clips that a run over all clips (or over one of their sources) measures beside the plain ones.
+[layer]
+upper = "Torso"
+clips = ["ual:Idle_Loop|ual2:Walk_Carry_Loop"]  # the carry idle: UAL2 has no idle carry
+
+# The clips play on unmodified pack originals; each is also its body type's skeleton and action donor.
+[bodies.men]
+character = "refs/Ultimate_Modular_Men_Pack/Business Man.glb"
+pack = "refs/Ultimate_Modular_Men_Pack"
+[bodies.women]
+character = "refs/Ultimate_Modular_Women_Pack/Suit.glb"
+pack = "refs/Ultimate_Modular_Women_Pack"
+
+# Pack clips that loop (UAL marks its loops with a _Loop suffix; Sword_Idle loops as well).
+[loops]
+pack = ["Idle", "Idle_Gun", "Idle_Gun_Pointing", "Idle_Neutral", "Idle_Sword", "Run", "Run_Back", "Run_Left",
+        "Run_Right", "Run_Shoot", "Walk"]
+ual = ["Sword_Idle"]
+
+# Locomotion at the game's speeds (the game's content/modes/base_mode.tres: walk 4.5 m/s, sprint 7.0 m/s). Each
+# row plays its clips side by side on a treadmill moving at `speed`, each at the rate that makes its feet keep up:
+# UAL clips by their root-motion speed (UAL1_Standard_RM.glb, scaled to the body), pack clips by their feet.
+# "blend:A+B" is a cycle-synced blend of two UAL clips (lined up on the left heel strike), weighted to reach the speed.
+[[rates]]
+name = "walk_4.5"
+label = "the game's walk"
+speed = 4.5
+clips = ["ual:Jog_Fwd_Loop", "blend:Walk_Loop+Jog_Fwd_Loop", "pack:Run"]
+[[rates]]
+name = "sprint_7.0"
+label = "the game's sprint"
+speed = 7.0
+clips = ["ual:Sprint_Loop", "blend:Jog_Fwd_Loop+Sprint_Loop", "pack:Run"]
+# The package carried at the game's walk (art #24): UAL2's carry walk (0.65 m/s by root motion) as an upper-body
+# layer over the walk recommended above, against the walk alone.
+[[rates]]
+name = "carry_4.5"
+label = "the game's walk with the package"
+speed = 4.5
+clips = ["blend:Walk_Loop+Jog_Fwd_Loop|ual2:Walk_Carry_Loop", "blend:Walk_Loop+Jog_Fwd_Loop"]
+
+# Side-by-side clips on the same character: the pack's clip against the corresponding UAL1 clips (pack, ual), or a
+# name and any clip keys (name, clips; tools/blender/anim_keys.py). Pairs of art #24 (UAL2) are at the end.
+[[pairs]]
+pack = "Idle"
+ual = ["Idle_Loop"]
+[[pairs]]
+pack = "Walk"
+ual = ["Walk_Loop"]
+[[pairs]]
+pack = "Run"
+ual = ["Jog_Fwd_Loop", "Sprint_Loop"]
+[[pairs]]
+pack = "Punch_Right"
+ual = ["Punch_Cross"]
+[[pairs]]
+pack = "Death"
+ual = ["Death01"]
+[[pairs]]
+pack = "Interact"
+ual = ["Interact", "PickUp_Table"]
+[[pairs]]
+pack = "Punch_Left"
+ual = ["Punch_Jab"]
+[[pairs]]
+pack = "HitRecieve"
+ual = ["Hit_Chest", "Hit_Head"]
+[[pairs]]
+pack = "Roll"
+ual = ["Roll"]
+[[pairs]]
+pack = "Idle_Gun"
+ual = ["Pistol_Idle_Loop"]
+[[pairs]]
+pack = "Gun_Shoot"
+ual = ["Pistol_Shoot"]
+[[pairs]]
+pack = "Idle_Sword"
+ual = ["Sword_Idle"]
+[[pairs]]
+pack = "Sword_Slash"
+ual = ["Sword_Attack"]
+[[pairs]]
+pack = "Wave"
+ual = ["Idle_Talking_Loop"]
+
+# Art #24: UAL2's clips for the game's needs against the best clip art #20 chose for each (or the nearest it named
+# where the need was a gap). "base|upper" is a layered clip ([layer]).
+[[pairs]]
+name = "ual2_carry"
+clips = ["ual2:Walk_Carry_Loop", "ual:Idle_Loop|ual2:Walk_Carry_Loop", "ual:Pistol_Idle_Loop"]
+note = "carrying the two-handed package: the carry walk, the carry's upper body over the idle, #20's nearest pose"
+[[pairs]]
+name = "ual2_pushed"
+clips = ["ual2:Hit_Knockback", "ual:Hit_Chest", "pack:HitRecieve_2"]
+note = "being hit or pushed: #20's nearest (Hit_Chest) and its clear hit read (HitRecieve_2)"
+[[pairs]]
+name = "ual2_knockdown"
+clips = ["ual2:Hit_Knockback", "ual:Death01", "pack:Death"]
+note = "knocked down: #20's best (Death01) and the pack's cartoony fall"
+[[pairs]]
+name = "ual2_downed"
+clips = ["ual2:LayToIdle", "ual:Death01"]
+note = "lying downed and standing up after a revive: #20 had only Death01's last frame and no get-up"
+[[pairs]]
+name = "ual2_gestures"
+clips = ["ual2:Yes", "ual2:Idle_FoldArms_Loop", "ual2:Idle_No_Loop", "pack:Wave"]
+note = "gestures and emotes: #20's best (the pack's Wave)"
+[[pairs]]
+name = "ual2_talking"
+clips = ["ual2:Idle_TalkingPhone_Loop", "ual:Idle_Talking_Loop"]
+note = "talking by proximity voice: #20's best (Idle_Talking_Loop)"
+[[pairs]]
+name = "ual2_pickup"
+clips = ["ual2:Farm_Harvest", "ual2:Farm_PlantSeed", "ual:PickUp_Table"]
+note = "picking up from and putting down on the floor: #20 had only the waist-height PickUp_Table"
+[[pairs]]
+name = "ual2_use"
+clips = ["ual2:Chest_Open", "ual:Interact"]
+note = "using something low: #20's best interact"
+[[pairs]]
+name = "ual2_hold"
+clips = ["ual2:Idle_Lantern_Loop", "ual:Idle_Torch_Loop"]
+note = "holding an item in one hand: #20's upper-body hold candidate"
+[[pairs]]
+name = "ual2_knife"
+clips = ["ual2:Melee_Hook", "ual2:Sword_Regular_A", "pack:Sword_Slash"]
+note = "the knife: #20's best swing (the pack's Sword_Slash)"

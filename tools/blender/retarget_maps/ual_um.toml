@@ -1,0 +1,120 @@
+# Universal Animation Library (UAL1; Unreal-mannequin names, 65 bones) -> Ultimate Modular "CharacterArmature"
+# (62 bones, five-finger chains). Read by tools/blender/retarget_map.py; the method is in docs/animations.md.
+#
+# [bones]   source = target: the target bone takes the source bone's world-space rotation change from its rest
+#           (both rigs rest in a T-pose facing -Y, so target = source * source_rest^-1 * target_rest).
+# root/hips the pairs whose translation is transferred, scaled by the hip-joint height ratio ([height]): the root
+#           moves by the source root's displacement; the hips bone is carried in the source pelvis's frame (its rest
+#           position at the source's size, expressed in the source pelvis's rest frame), as the feet are.
+# [follow]  target bones carried by another target bone instead of their parent: the Ultimate Modular feet are
+#           children of Root (baked IK targets), so each foot is placed where its lower leg puts it.
+# [[legs]]  two-bone IK on the target leg that keeps the source ankle path (scaled): the foot contacts.
+# [rest]    target bones that keep their rest relative to their parent.
+# [unused]  source bones with no target.
+#
+# Fingers: the Ultimate Modular Index1, Middle1, Ring1 and Pinky1 are metacarpals (heads at the wrist, 12 cm long);
+# their 2, 3 and 4 are the proximal, intermediate and distal phalanges. UAL has no finger metacarpals: its _01, _02,
+# _03 are the phalanges (heads past the palm), so they map to 2, 3 and 4, and 1 stays at rest. Thumbs map 1:1.
+
+title = "UAL1 Standard -> Ultimate Modular"
+root = ["root", "Root"]
+hips = ["pelvis", "Body"]
+
+[height]  # the hip joints: their mean rest height above the floor gives the translation scale
+source = ["thigh_l", "thigh_r"]
+target = ["UpperLeg.L", "UpperLeg.R"]
+
+[bones]
+root = "Root"
+pelvis = "Body"
+spine_01 = "Abdomen"
+spine_02 = "Torso"
+spine_03 = "Chest"
+neck_01 = "Neck"
+Head = "Head"
+clavicle_l = "Shoulder.L"
+upperarm_l = "UpperArm.L"
+lowerarm_l = "LowerArm.L"
+hand_l = "Wrist.L"
+thumb_01_l = "Thumb1.L"
+thumb_02_l = "Thumb2.L"
+thumb_03_l = "Thumb3.L"
+index_01_l = "Index2.L"
+index_02_l = "Index3.L"
+index_03_l = "Index4.L"
+middle_01_l = "Middle2.L"
+middle_02_l = "Middle3.L"
+middle_03_l = "Middle4.L"
+ring_01_l = "Ring2.L"
+ring_02_l = "Ring3.L"
+ring_03_l = "Ring4.L"
+pinky_01_l = "Pinky2.L"
+pinky_02_l = "Pinky3.L"
+pinky_03_l = "Pinky4.L"
+thigh_l = "UpperLeg.L"
+calf_l = "LowerLeg.L"
+foot_l = "Foot.L"
+clavicle_r = "Shoulder.R"
+upperarm_r = "UpperArm.R"
+lowerarm_r = "LowerArm.R"
+hand_r = "Wrist.R"
+thumb_01_r = "Thumb1.R"
+thumb_02_r = "Thumb2.R"
+thumb_03_r = "Thumb3.R"
+index_01_r = "Index2.R"
+index_02_r = "Index3.R"
+index_03_r = "Index4.R"
+middle_01_r = "Middle2.R"
+middle_02_r = "Middle3.R"
+middle_03_r = "Middle4.R"
+ring_01_r = "Ring2.R"
+ring_02_r = "Ring3.R"
+ring_03_r = "Ring4.R"
+pinky_01_r = "Pinky2.R"
+pinky_02_r = "Pinky3.R"
+pinky_03_r = "Pinky4.R"
+thigh_r = "UpperLeg.R"
+calf_r = "LowerLeg.R"
+foot_r = "Foot.R"
+
+[follow]
+"Foot.L" = "LowerLeg.L"
+"Foot.R" = "LowerLeg.R"
+
+[[legs]]
+target = ["UpperLeg.L", "LowerLeg.L", "Foot.L"]
+source_foot = "foot_l"
+
+[[legs]]
+target = ["UpperLeg.R", "LowerLeg.R", "Foot.R"]
+source_foot = "foot_r"
+
+[rest]
+bones = ["Hips", "Index1.L", "Middle1.L", "Ring1.L", "Pinky1.L", "Index1.R", "Middle1.R", "Ring1.R", "Pinky1.R", "PT.L", "PT.R"]  # PT: the pack's knee pole targets, which deform nothing
+
+[unused]
+bones = ["thumb_04_leaf_l", "index_04_leaf_l", "middle_04_leaf_l", "ring_04_leaf_l", "pinky_04_leaf_l", "thumb_04_leaf_r", "index_04_leaf_r", "middle_04_leaf_r", "ring_04_leaf_r", "pinky_04_leaf_r", "ball_l", "ball_r", "ball_leaf_l", "ball_leaf_r"]  # leaves and toes: the target has no toe bone
+
+[source_rig]  # the 65 bones of UAL1_Standard.glb, read from the file on 2026-10-03
+bones = [
+  "root", "pelvis", "spine_01", "spine_02", "spine_03", "neck_01", "Head", "clavicle_l", "upperarm_l", "lowerarm_l",
+  "hand_l", "index_01_l", "index_02_l", "index_03_l", "index_04_leaf_l", "middle_01_l", "middle_02_l", "middle_03_l",
+  "middle_04_leaf_l", "pinky_01_l", "pinky_02_l", "pinky_03_l", "pinky_04_leaf_l", "ring_01_l", "ring_02_l",
+  "ring_03_l", "ring_04_leaf_l", "thumb_01_l", "thumb_02_l", "thumb_03_l", "thumb_04_leaf_l", "clavicle_r",
+  "upperarm_r", "lowerarm_r", "hand_r", "index_01_r", "index_02_r", "index_03_r", "index_04_leaf_r", "middle_01_r",
+  "middle_02_r", "middle_03_r", "middle_04_leaf_r", "pinky_01_r", "pinky_02_r", "pinky_03_r", "pinky_04_leaf_r",
+  "ring_01_r", "ring_02_r", "ring_03_r", "ring_04_leaf_r", "thumb_01_r", "thumb_02_r", "thumb_03_r",
+  "thumb_04_leaf_r", "thigh_l", "calf_l", "foot_l", "ball_l", "ball_leaf_l", "thigh_r", "calf_r", "foot_r", "ball_r",
+  "ball_leaf_r"
+]
+
+[target_rig]  # the 62 bones of every Ultimate Modular Men and Women GLB, read from the files on 2026-10-03
+bones = [
+  "Root", "Body", "Hips", "Abdomen", "Torso", "Chest", "Neck", "Head", "Shoulder.L", "UpperArm.L", "LowerArm.L",
+  "Wrist.L", "Index1.L", "Index2.L", "Index3.L", "Index4.L", "Middle1.L", "Middle2.L", "Middle3.L", "Middle4.L",
+  "Ring1.L", "Ring2.L", "Ring3.L", "Ring4.L", "Pinky1.L", "Pinky2.L", "Pinky3.L", "Pinky4.L", "Thumb1.L", "Thumb2.L",
+  "Thumb3.L", "Shoulder.R", "UpperArm.R", "LowerArm.R", "Wrist.R", "Index1.R", "Index2.R", "Index3.R", "Index4.R",
+  "Middle1.R", "Middle2.R", "Middle3.R", "Middle4.R", "Ring1.R", "Ring2.R", "Ring3.R", "Ring4.R", "Pinky1.R",
+  "Pinky2.R", "Pinky3.R", "Pinky4.R", "Thumb1.R", "Thumb2.R", "Thumb3.R", "UpperLeg.L", "LowerLeg.L", "UpperLeg.R",
+  "LowerLeg.R", "Foot.L", "PT.L", "Foot.R", "PT.R"
+]
