@@ -51,8 +51,9 @@ body type's donor character (`tools/blender/anim_review.toml`) in background Ble
    to the source foot, so heel and toe roll transfer. Then the **toe lift**: the rigid target foot (no toe bone) is
    pitched about its pivot until its toe is no lower than the rest sole, while the pivot is near the floor (fully up
    to 20 cm above its rest height, fading out over 10 cm; never when the pivot is below the floor, as in in-place
-   jumps). The report's `ik_miss_mm` says how far a leg fell short of its goal (a few mm in walks; rolls and kneels
-   reach further than the target's legs).
+   jumps). The report's `ik_miss_mm` says how far a leg fell short of its goal: a few mm in walks; 6 to 9 cm at the
+   push-off of Jog and Sprint, where the target leg locks straight (the heel pivot sits farther from the hip than
+   the source's ankle once the foot points down); rolls and swims far more.
 5. **Bake.** One key per source frame (30 fps) on every target bone, quaternions kept on one hemisphere.
 6. **Proof.** The source rest must land on the target rest: 0.002 mm and 0 degrees on both bodies (`retarget` fails
    above 0.01 mm or 0.01 degrees; `test_retarget_blender.py` checks it and a walk).
