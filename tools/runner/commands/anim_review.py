@@ -53,11 +53,16 @@ def clips(args: argparse.Namespace, out: Path, cfg: dict, bodies: list[str]) -> 
     inv = json.loads(inv_path.read_text(encoding="utf-8")) if inv_path.is_file() else inventory(out)
     jobs = []
     for body in bodies:
-        keys = _anim.clip_keys(inv, body) if args.clips == "all" else args.clips.split(",")
-        for old in (out / "metrics").glob(f"{body}*.json"):
-            old.unlink()
+        if args.clips == "all":  # a full run replaces every earlier measure of the body type
+            keys, prefix = _anim.clip_keys(inv, body), "_c"
+            for old in (out / "metrics").glob(f"{body}*.json"):
+                old.unlink()
+        else:  # a partial run adds files that sort after the full run's, so merge() lets them win
+            keys, prefix = args.clips.split(","), "_part_c"
+            for old in (out / "metrics").glob(f"{body}_part_c*.json"):
+                old.unlink()
         for i, chunk in enumerate(_anim.chunks(keys, args.jobs, _anim.clip_seconds(inv, body))):
-            extra = ["--clips", ",".join(chunk), "--tag", f"_c{i}"]
+            extra = ["--clips", ",".join(chunk), "--tag", f"{prefix}{i}"]
             extra += ["--no-video"] if args.no_video else []
             extra += ["--no-strips"] if args.no_strips else []
             jobs.append(["clips", *body_args(cfg, body), "--out", str(out), *extra])

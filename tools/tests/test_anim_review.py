@@ -52,8 +52,12 @@ class HelperTest(unittest.TestCase):
     def test_merge_and_table(self) -> None:
         (OUT / "metrics" / "men_c0.json").write_text(json.dumps({"pack:Walk": measures("pack", "Walk", True)}))
         (OUT / "metrics" / "men_c1.json").write_text(json.dumps({"ual:Death01": measures("ual", "Death01", False)}))
+        part = measures("pack", "Walk", True) | {"seconds": 2.0}
+        (OUT / "metrics" / "men_part_c0.json").write_text(json.dumps({"pack:Walk": part}))
         merged = _anim.merge(OUT / "metrics")
         self.assertEqual(sorted(merged["men"]), ["pack:Walk", "ual:Death01"])
+        self.assertEqual(merged["men"]["pack:Walk"]["seconds"], 2.0)  # a partial run wins
+        merged["men"]["pack:Walk"]["seconds"] = 1.333
         text = _anim.table(merged, {"men:pack:Walk": "good"})
         lines = text.splitlines()
         self.assertEqual(len(lines), 4)

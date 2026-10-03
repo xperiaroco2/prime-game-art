@@ -88,7 +88,11 @@ git). Steps, or `all` in this order:
 | `clips` | per body type and clip, on the unmodified donor character: measures (`metrics/<body>_c<n>.json`), a 12-frame strip with a front and a right-side row (`strips/<body>/<source>_<clip>.png`) and a looping 480x480 H.264 clip at 30 fps (`clips/<body>/...mp4`); `--jobs` Blender processes per body type |
 | `pairs` | for each `[[pairs]]` entry of `anim_review.toml`: the pack clip and its UAL counterparts side by side, a strip (front and side rows at the same fractions of each clip) and a looping MP4 (`pairs/<body>/<pack clip>.*`) |
 | `sheets` | review sheets: each clip's men and women strips stacked, three clips a sheet (`sheets/`) |
-| `table` | `metrics.json` (all measures) and `metrics.md` (the table below) |
+| `table` | `metrics.json` (all measures) and `metrics.md` (a row per body type and clip) |
+
+`clips` takes `--no-video` and `--no-strips` (measures only: about two minutes for all 134). A run with `--clips`
+replaces only those clips' measures (its `metrics/<body>_part_c*.json` sort after the full run's and win in
+`table`); a run with all clips replaces every measure of the body type.
 
 Pictures: Workbench, flat material colours, specular off, neutral grey background, a dark floor slab whose top is
 z = 0 (a line in the horizontal views), orthographic cameras, labels as text objects; videos are driven by a

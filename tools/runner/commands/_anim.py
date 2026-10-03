@@ -61,7 +61,8 @@ def clip_seconds(inventory: dict, body: str) -> dict[str, float]:
 
 
 def merge(metrics_dir: Path) -> dict:
-    """Joins metrics/<body>*.json (one per chunk) into {body: {clip key: measures}}."""
+    """Joins metrics/<body>*.json (one per chunk) into {body: {clip key: measures}}; in name order, so a partial
+    run's <body>_part_c*.json replaces the full run's measures of the same clips."""
     merged: dict[str, dict] = {}
     for body in BODIES:
         for path in sorted(metrics_dir.glob(f"{body}*.json")):
