@@ -198,7 +198,8 @@ Retarget (`retarget --library ual2 --floor`): rest check 0.0031 mm (men) and 0.0
 scale 1.034/1.113 as for UAL1; 43 clips baked in 60 s per body type. Legs short of the source's ankle path by more than
 1 cm in Walk_Carry_Loop (11.9/9.7 mm), Yes (12.8/13.6), LayToIdle (42/47, the sit-up), Hit_Knockback (29/37, in the
 air), the slides (24 to 28), Shield_Dash (36/34) and Sword_Regular_C and the combo (47 to 66). Lowest vertex: LayToIdle
-4.0/4.1 cm into the floor while lying (UAL's own mannequin scaled: 10.0/10.7), Farm_PlantSeed 6.5/7.4 (the kneeling
+4.0/4.1 cm into the floor in the crouch of the get-up, about 0.8 s in (UAL's own mannequin scaled: 10.0/10.7; its
+first, lying frame is clean at +0.6/-1.0 cm), Farm_PlantSeed 6.5/7.4 (the kneeling
 knee; own mannequin 6.7/7.2), the floor slides 2.2 to 6.3, Shield_Dash 2.5/3.4, the sword combos 2.7 to 3.2,
 Hit_Knockback 0.9/1.0; every other clip within 2.6 cm.
 
@@ -225,7 +226,7 @@ layered row is UAL1's Idle_Loop under UAL2's carry upper body (`ual:Idle_Loop|ua
 | ual2 | Idle_Shield_Break | no | 1.07 | 0.00 / 0.00 | 0.4/3.2; 0.4/3.1 | -0.6 / -0.8 | 0.0/0.0/0.0/0.0; 0.0/0.0/0.0/0.0 | 0.0 / 0.0 | 6.3 / 6.3 | 77.9-77.9 | A shield guard breaking. Not needed |
 | ual2 | Idle_Shield_Loop | yes | 2.50 | 0.00 / 0.00 | 0.0/0.0; 0.0/0.0 | -0.6 / -0.8 | 0.0/0.0/0.0/0.0; 0.0/0.0/0.0/0.0 | 0.4 (x0.6) / 0.4 (x0.6) | 0.9 / 0.9 | 77.9-77.9 | A shield guard idle. Not needed |
 | ual2 | Idle_TalkingPhone_Loop | yes | 2.93 | 0.00 / 0.00 | 0.0/0.0; 0.0/0.0 | -0.5 / -0.7 | 0.0/5.0/0.0/0.0; 0.0/7.6/0.0/0.0 | 0.0 (x0.0) / 0.0 (x0.0) | 52.2 / 52.2 | 14.9-58.6 | Talks on a phone: the left hand at the ear, the right gesturing; the phone hand goes 5.0/7.6 cm into the big head. A phone call, not proximity voice: Idle_Talking_Loop stays the talking clip |
-| ual2 | LayToIdle | no | 1.53 | 0.01 / 0.01 | 7.5/55.6; 7.8/58.1 | -4.0 / -4.1 | 0.0/0.0/0.0/0.0; 0.0/0.0/0.0/2.8 | 94.2 / 94.2 | 84.4 / 84.4 | 6.0-77.9 | Lying on the back, sits up, crouches and stands (1.53 s): **the get-up after a revive** art #20 lacked, and its first frame is **the lying pose** for the downed state; 4.0/4.1 cm into the floor while lying (UAL's own mannequin 10.0/10.7); the legs fall 4.2/4.7 cm short of the source at the sit-up |
+| ual2 | LayToIdle | no | 1.53 | 0.01 / 0.01 | 7.5/55.6; 7.8/58.1 | -4.0 / -4.1 | 0.0/0.0/0.0/0.0; 0.0/0.0/0.0/2.8 | 94.2 / 94.2 | 84.4 / 84.4 | 6.0-77.9 | Lying on the back, sits up, crouches and stands (1.53 s): **the get-up after a revive** art #20 lacked, and its first frame is **the lying pose** for the downed state, clean on the floor (+0.6/-1.0 cm); 4.0/4.1 cm into the floor in the crouch of the get-up, about 0.8 s in (UAL's own mannequin 10.0/10.7); the legs fall 4.2/4.7 cm short of the source at the sit-up |
 | ual2 | Melee_Hook | no | 0.47 | 0.30 / 0.43 | 74.2/305.4; 68.4/320.9 | -1.2 / -1.3 | 4.4/9.9/0.0/0.7; 0.0/8.7/1.6/0.1 | 108.5 / 108.5 | 48.1 / 48.1 | 77.9-77.9 | A lunging hook punch from a boxing guard (0.47 s); guard fists 9.9/8.7 cm inside the big head. Too big for the knife |
 | ual2 | Melee_Hook_Rec | no | 0.60 | 0.92 / 0.99 | 65.9/150.7; 71.6/165.7 | -0.8 / -0.7 | 0.0/3.8/0.9/0.0; 0.0/2.7/6.2/0.0 | 108.5 / 108.5 | 1.0 / 1.0 | 77.9-77.9 | The hook's recovery to the guard (0.6 s). Not needed |
 | ual2 | NinjaJump_Idle_Loop | yes | 2.00 | 0.00 / 0.00 | 0.0/0.0; 0.0/0.0 | 41.6 / 50.1 | 0.0/0.0/0.0/0.0; 0.0/0.0/0.0/0.0 | 0.0 (x0.1) / 0.0 (x0.1) | 27.7 / 27.7 | 23.0-77.9 | An airborne tuck; in place it floats 42/50 cm above the floor. UAL1's jump set stays |
