@@ -477,7 +477,7 @@ def natural_speeds(a, char, clips, rig):
 
 
 def treadmill(spacing_m=1.0, width_m=40.0, count=60):
-    """Dark stripes across the floor every spacing_m metres; returns them and a function that moves them to where a
+    """Light stripes across the floor every spacing_m metres; returns them and a function that moves them to where a
     floor moving at `speed` m/s toward +Y is at time t."""
     mat = ar.material("stripe", (0.85, 0.85, 0.80, 1.0))
     stripes = []
