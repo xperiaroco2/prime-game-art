@@ -260,6 +260,8 @@ def analyse(lib, file_entries):
                 groups.setdefault(pc.kind, []).append(pc)
         if "beard" in groups and all(abs(pc.centre.x) < 0.025 for pc in groups["beard"]):
             groups["goatee"] = groups.pop("beard")  # only chin pieces: a goatee
+            for pc in groups["goatee"]:
+                pc.sub = "goatee"  # the head's regions say so too
         h["items"] = []
         for kind in sorted(groups):
             pcs = groups[kind]
@@ -300,6 +302,8 @@ def analyse(lib, file_entries):
                 entry["recipe"] = {"role": role, "file": h["file"], "object": h["object"], "materials": mats, "cut": cuts}
                 entry["recipe_check"] = {"faces": len(faces), "mismatch_by_face": by_face, "mismatch_by_piece": by_piece,
                                          "proposed_zones": sorted(z for z in cuts if z in PROPOSED_ZONES)}
+            entry["recipe_check"]["executable_today"] = (entry["recipe_check"]["mismatch_by_face"] == 0
+                                                         and not entry["recipe_check"].get("proposed_zones"))
             if kind == "headwear" and h["skull_type"] == "none":
                 # a helmet that is the whole head (Astronaut, Swat): it takes the skull's place and closes the neck
                 entry["replaces"] = "skull"

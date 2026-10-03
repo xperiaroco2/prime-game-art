@@ -92,6 +92,17 @@ class HeadsTest(unittest.TestCase):
             if e["kind"] == "hair":
                 self.assertEqual(e["style"], {"open_top": "cap", "full": "shell"}[e["source_skull_type"]], iid)
 
+    def test_the_goatee_region(self) -> None:
+        regions = [r for r in DATA["heads"]["head_m_punk"]["regions"] if r["kind"] == "facial_hair"]
+        self.assertEqual([r.get("subkind") for r in regions], ["goatee"])
+
+    def test_executable_today(self) -> None:
+        for iid, e in DATA["items"].items():
+            rc = e["recipe_check"]
+            self.assertEqual(rc["executable_today"], rc["mismatch_by_face"] == 0 and not rc.get("proposed_zones"), iid)
+        self.assertFalse(DATA["items"]["hair_m_king_long"]["recipe_check"]["executable_today"])
+        self.assertTrue(DATA["items"]["hair_m_punk_mohawk"]["recipe_check"]["executable_today"])
+
     def test_every_item_recipe_is_exact_by_piece(self) -> None:
         for iid, e in DATA["items"].items():
             self.assertEqual(e["recipe_check"]["mismatch_by_piece"], 0, iid)

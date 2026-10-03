@@ -37,6 +37,10 @@ CHARACTER = {
 SLOT_SUFFIX = (("_Head", "head"), ("_Body", "top"), ("_Legs", "bottom"), ("_Pants", "bottom"), ("_Feet", "shoes"))
 SLOTS = ("head", "top", "bottom", "shoes")
 
+# Things built into a part's mesh that a menu should know about (seen on the renders, checked by the bounds: the
+# women's Adventurer top reaches 0.20 m behind the body, the men's 0.07 m).
+BUILT_IN = {"top_w_adventurer": ["backpack"]}
+
 NECK_REACH = 0.10  # a top's neck ring: its vertices within this horizontal distance of the Neck bone
 LEG_REACH = 0.13  # a bottom's leg: its vertices within this horizontal distance of the Foot bone (as um/fit.py)
 
@@ -249,6 +253,8 @@ def inventory(lib):
         pts = world_verts(obj)
         entry = {"slot": slot, "body_type": g, "triangles": tris(obj), "vertices": len(obj.data.vertices),
                  "materials": materials(obj, lib.colours[pid]), "bounds": bounds(pts)}
+        if pid in BUILT_IN:
+            entry["built_in"] = BUILT_IN[pid]
         if slot == "top":
             entry["seams"] = top_seams(obj, arm)
         elif slot == "bottom":
