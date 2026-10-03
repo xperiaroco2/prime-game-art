@@ -118,9 +118,11 @@ func _stage() -> void:
 	var world: WorldEnvironment = WorldEnvironment.new()
 	world.environment = env
 	root.add_child(world)
-	_light(Vector3(-2.0, 3.2, 3.0), 1.05, true)
-	_light(Vector3(3.0, 1.6, 2.0), 0.35, false)
-	_light(Vector3(0.5, 2.5, -3.0), 0.30, false)
+	# Soft specular: the pack's materials are metallic 0.4, roughness 0.42, and a full-strength highlight turns single
+	# flat faces white (a checkerboard of glints on dark clothes and faces) that hides the motion.
+	_light(Vector3(-2.0, 3.2, 3.0), 1.05, true, 0.15)
+	_light(Vector3(3.0, 1.6, 2.0), 0.35, false, 0.0)
+	_light(Vector3(0.5, 2.5, -3.0), 0.30, false, 0.0)
 	var floor_mesh: MeshInstance3D = MeshInstance3D.new()
 	var plane: PlaneMesh = PlaneMesh.new()
 	plane.size = Vector2(200, 200)  # its far edge stays out of the frame
@@ -144,11 +146,12 @@ func _stage() -> void:
 	layer.add_child(_label)
 
 
-func _light(at: Vector3, energy: float, shadow: bool) -> void:
+func _light(at: Vector3, energy: float, shadow: bool, specular: float) -> void:
 	var light: DirectionalLight3D = DirectionalLight3D.new()
 	root.add_child(light)
 	light.look_at_from_position(at, Vector3(0, 0.9, 0))
 	light.light_energy = energy
+	light.light_specular = specular
 	light.shadow_enabled = shadow
 	if shadow:
 		light.shadow_blur = 2.0
