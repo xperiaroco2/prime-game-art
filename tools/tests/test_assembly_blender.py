@@ -1,8 +1,8 @@
-"""The assembler in headless Blender (skipped when Blender or the Ultimate Modular packs are missing): two characters of
-the final test rebuilt at low resolution must match its numbers, and their saved .blend files must follow the rules.
-
-m2_walt covers the rest-pose rebind (Adventurer_Body moves 5.6 m), an extra part, colours from another part and the
-finger curl; w1_ivy covers the tucked bottom, the edge extension, flattened ears and the poke-through probe."""
+"""The assembler in headless Blender (skipped when Blender or the Ultimate Modular packs are missing): the final test's
+four characters rebuilt at low resolution must match its numbers (tools/tests/fixtures/assembly/), and their saved
+.blend files must follow the rules (docs/assembly.md). Between them they cover the rest-pose rebind (m2_walt's
+Adventurer top moves 5.59 m), an extra part, colour references, the finger curl, the tucked bottom, edge extension,
+flattened ears, the straightened neck ring and the poke-through probe. One Blender run, about 25 s."""
 
 from __future__ import annotations
 
@@ -16,7 +16,7 @@ from runner import cli, common, pins
 from runner.commands import _assembly, _review
 
 OUT = common.OUT / "tests" / "assembly"
-IDS = ("m2_walt", "w1_ivy")
+IDS = ("m1_rex", "m2_walt", "w1_ivy", "w2_nova")
 REFERENCE = common.ROOT / "tools" / "tests" / "fixtures" / "assembly" / "final_test_reference.json"
 RAW = common.raw_dir()
 HAVE_BLENDER = bool((path := common.tool_path(pins.BLENDER_ENV, pins.BLENDER_DEFAULT)) and path.is_file())
