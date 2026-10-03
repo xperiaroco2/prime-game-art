@@ -279,6 +279,8 @@ def evaluate(dump: dict[str, Any], expect: dict[str, Any], contract: dict[str, A
            f"{least[1]['motion']['max_rotation_deg']:.1f} deg on {least[1]['motion']['most_moved_bone']})") if not still and least else
           f"no bone moves {MOVE_MIN_DEG} deg or {MOVE_MIN_M * 1000:.0f} mm in: {', '.join(still)}")
 
+    _loops(c, anims, expect.get("seams", {}))
+
     boxes = [m["rest_bounds"] for m in dump["meshes"] if m.get("rest_bounds")]
     body = contract["body"]
     if boxes:
@@ -317,6 +319,21 @@ def evaluate(dump: dict[str, Any], expect: dict[str, Any], contract: dict[str, A
               f"{len(got)} bones and {len(anims)} animations (the Ultimate Modular rig has {PACK_BONES} bones and "
               f"{PACK_ANIMATIONS} actions)")
     return c.items
+
+
+def _loops(c: Checks, anims: dict[str, Any], seams: dict[str, dict[str, float]]) -> None:
+    """The cycles (Idle*, Walk*, Run*) as Godot imported them: a warning while any plays once (loop_mode 0, NONE; the
+    glTF names carry no loop suffix), naming the open cycles whose loop is one frame longer than their keys."""
+    from . import _frames
+
+    cycles = sorted(n for n in anims if _frames.is_loop(_frames.label(n)))
+    once = [_frames.label(n) for n in cycles if not anims[n].get("loop_mode", 0)]
+    open_cycles = [_frames.label(n) for n in cycles if _frames.is_open(seams.get(n))]
+    detail = (f"{len(once)} of {len(cycles)} cycles import as loop_mode NONE ({', '.join(once)}): the game sets their loop "
+              f"mode at import" if once else f"all {len(cycles)} cycles loop")
+    if open_cycles:
+        detail += f"; open cycles, one frame longer than their keys: {', '.join(open_cycles)}"
+    c.add("loop_modes", not once, detail, "warn")
 
 
 def _facing(c: Checks, dump: dict[str, Any], skeleton: dict[str, Any], renamed: dict[str, str]) -> None:

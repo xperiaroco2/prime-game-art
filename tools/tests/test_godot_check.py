@@ -37,7 +37,7 @@ def dump() -> dict:
                    mesh("x_eyes", [-0.06, 1.60, 0.14], [0.06, 1.63, 0.17]),
                    mesh("x_shoes", [-0.19, -0.001, -0.001], [0.19, 0.24, 0.29])],
         "players": [{"path": "AnimationPlayer", "animations": {
-            name: {"length": length, "tracks": 7, "track_types": {"2": 7}, "unresolved": [],
+            name: {"length": length, "loop_mode": 1, "tracks": 7, "track_types": {"2": 7}, "unresolved": [],
                    "motion": {"max_rotation_deg": 12.0, "max_translation_m": 0.0, "most_moved_bone": "Hips"}}
             for name, length in ANIMS.items()}}],
     }
@@ -60,7 +60,8 @@ class EvaluateTest(unittest.TestCase):
         self.assertEqual(set(got), {"one_skeleton", "skeleton_bones", "bone_hierarchy", "rest_joints", "parts_separate",
                                     "parts_skinned", "one_animation_player", "animations", "animation_lengths",
                                     "tracks_resolve", "animations_move", "size_kept", "feet_at_zero", "facing_plus_z",
-                                    "contract_height", "contract_eye_height", "flat_colours", "godot_output"})
+                                    "contract_height", "contract_eye_height", "flat_colours", "godot_output",
+                                    "loop_modes"})
 
     def test_each_failure_is_caught(self) -> None:
         def unskin(d: dict) -> None:
@@ -121,6 +122,17 @@ class WithoutExportJsonTest(unittest.TestCase):
         self.assertEqual(got["expectations"], "warn")
         self.assertEqual(got["pack_floor"], "fail")  # the fixture has 7 bones and 2 animations
         self.assertNotIn("expectations", statuses(dump()))
+
+
+class LoopModesTest(unittest.TestCase):
+    def test_cycles_that_play_once_warn_and_open_cycles_are_named(self) -> None:
+        d = dump()
+        d["players"][0]["animations"]["CharacterArmature|Walk"]["loop_mode"] = 0
+        e = {**expect(), "seams": {"CharacterArmature|Idle": {"position_mm": 90.0, "rotation_deg": 12.0}}}
+        check = next(c for c in _godot.evaluate(d, e, CONTRACT, []) if c["check"] == "loop_modes")
+        self.assertEqual(check["status"], "warn")
+        self.assertIn("1 of 2 cycles import as loop_mode NONE (Walk)", check["detail"])
+        self.assertIn("one frame longer than their keys: Idle", check["detail"])
 
 
 class GodotHelpersTest(unittest.TestCase):

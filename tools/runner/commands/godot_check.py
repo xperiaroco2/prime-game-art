@@ -68,7 +68,7 @@ def check_one(glb: Path, res_path: str, out: Path, contract: dict, import_lines:
         "skeleton": dump["skeletons"][0]["path"] if dump["skeletons"] else None,
         "parts": {m["name"]: {"vertices": m["vertices"], "surfaces": m["surfaces"], "binds": len(m["binds"]),
                               "rest_bounds": m["rest_bounds"], "materials": m["materials"]} for m in dump["meshes"]},
-        "animations": {name: {k: a[k] for k in ("length", "tracks", "track_types", "motion")}
+        "animations": {name: {k: a.get(k) for k in ("length", "loop_mode", "tracks", "track_types", "position_tracks", "motion")}
                        for p in dump["players"] for name, a in p["animations"].items()},
     }
     (out / "report.json").write_text(json.dumps(report, indent=1), encoding="utf-8")
