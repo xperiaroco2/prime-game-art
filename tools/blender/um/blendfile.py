@@ -183,7 +183,7 @@ def save_character(cid, arm, parts, rc, rep, out_dir):
     sidecar["triangles_total"] = sum(p["triangles"] for p in sidecar["parts"].values())
     os.makedirs(out_dir, exist_ok=True)
     path = os.path.join(out_dir, cid + ".blend")
-    bpy.data.libraries.write(path, {scene, *acts}, path_remap="NONE", fake_user=False, compress=True)
+    bpy.data.libraries.write(path, {scene, *acts}, path_remap="NONE", fake_user=True, compress=True)
     with open(os.path.join(out_dir, cid + ".json"), "w", encoding="utf-8") as fh:
         json.dump(sidecar, fh, indent=1)
     print("SAVED", path)
