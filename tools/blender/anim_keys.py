@@ -3,6 +3,8 @@ it with the system Python and Blender's Python reads it the same way.
 
 - A clip key is "<source>:<clip>": "pack:Walk", "ual:Walk_Loop" (UAL1), "ual2:Walk_Carry_Loop" (UAL2, art #24) or any
   other library of the review settings' [libraries].
+- A source may carry a variant suffix (art #25): "<library>_own:<clip>" plays the clip on the library's own rig and
+  weights (a Meshy rig), "<library>_rigid:<clip>" retargets it with the library's rigid-shoe map.
 - A layered clip is "<base>|<upper>": the base clip's hips and legs under the upper clip's upper body (the settings'
   [layer] bone and every bone below it), the way an engine layers an upper-body clip with a bone filter.
 - A rates lane is a clip key or "blend:<A>+<B>" (two clips of a library, cycle-synced; a name without a source is
@@ -10,6 +12,17 @@ it with the system Python and Blender's Python reads it the same way.
 """
 
 from __future__ import annotations
+
+VARIANTS = ("_own", "_rigid")  # "meshy_own:Walking": on the library's own rig; "ual_rigid:Walk_Loop": rigid shoes
+
+
+def base_source(source: str) -> str:
+    """A clip source without its variant suffix (art #25): "meshy_own" -> "meshy", "ual_rigid" -> "ual"."""
+    for suffix in VARIANTS:
+        if source.endswith(suffix):
+            return source[: -len(suffix)]
+    return source
+
 
 def split(key: str) -> tuple[str, str]:
     """A clip key's source and clip name; raises ValueError for anything else."""
@@ -54,7 +67,8 @@ def needs(key: str) -> list[str]:
 
 
 def sources_of(key: str) -> set[str]:
-    return {split(k)[0] for k in needs(key)}
+    """The sources a key plays, without variant suffixes (a "meshy_own:" clip is one of meshy's)."""
+    return {base_source(split(k)[0]) for k in needs(key)}
 
 
 def pairs(cfg: dict) -> list[dict]:
@@ -63,8 +77,9 @@ def pairs(cfg: dict) -> list[dict]:
     out = []
     for i, p in enumerate(cfg.get("pairs", [])):
         if "clips" in p:
-            if not p.get("name") or set(p) - {"name", "clips", "note"}:
-                raise ValueError(f"pairs[{i}]: a pair with clips takes a name, clips and an optional note")
+            if not p.get("name") or set(p) - {"name", "clips", "note", "body"}:
+                raise ValueError(f"pairs[{i}]: a pair with clips takes a name, clips, an optional note and an "
+                                 f"optional body (men or women: that body type only)")
             clips = list(p["clips"])
         else:
             if set(p) - {"pack", "ual"} or not p.get("pack") or not p.get("ual"):
@@ -74,7 +89,7 @@ def pairs(cfg: dict) -> list[dict]:
             raise ValueError(f"pairs[{i}]: no clips")
         for k in clips:
             needs(k)
-        out.append({"name": p.get("name") or p["pack"], "clips": clips})
+        out.append({"name": p.get("name") or p["pack"], "clips": clips, **({"body": p["body"]} if "body" in p else {})})
     names = [p["name"] for p in out]
     if len(set(names)) != len(names):
         raise ValueError(f"two pairs share a name: {sorted(n for n in names if names.count(n) > 1)}")
