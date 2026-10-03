@@ -23,7 +23,8 @@ tools/run.py assemble <recipe> [--ids m1_rex,w1_ivy] [--modes chars,face,...|non
                                [--res PERCENT] [--compare REPORT]
 ```
 
-Windows: `tools\run.cmd assemble um_final_test --blend`. `<recipe>` is a file or a name in `recipes/`. The command
+Windows: `tools\run.cmd assemble um_final_test --blend`. `<recipe>` is a path from the repo root, a name in
+`recipes/` (`.json` may be left out), or another path (absolute, or from the current folder, tried last). The command
 validates the recipe against the packs in the raw folder (`ART_RAW_DIR`, default `D:/prime-art-raw`) before Blender
 starts, then runs `tools/blender/assemble_characters.py` in background Blender and prints one line per character.
 
@@ -71,7 +72,10 @@ A recipe is JSON in `recipes/`: `um_final_test.json` (the final test's four char
 | `pose` | `{"action": "Wave", "frame": 20}` or `{"neutral": {"down_deg": 70}}`, either with an optional `curl` `{"Middle.R": [60, 70, 40]}` (degrees per joint from the finger's base) |
 
 A colour (`rgb`, brows, recolours) is `[r, g, b]` (linear, 0 to 1) or `{"from_part": "hair", "material": "Hair"}`:
-that part's material colour (to match hair, moustache and brows). Cut zones (`tools/blender/um/zones.py`):
+that part's material colour (to match hair, moustache and brows). Every part's `Skin` and the head's `as_skin`
+materials become the character's one `<id>_skin` material before recolours and colour references are looked up, so
+validation refuses them there: set the skin colour with `skin`. A recolour that matches no material fails the build.
+Cut zones (`tools/blender/um/zones.py`):
 `chin_tuft` (Punk's goatee), `over_ears` (hair crossing the ears), `ears`.
 
 A variant names a base recipe in `extends`, overrides top-level keys and merges `every_character` into each
@@ -109,7 +113,8 @@ action the skeleton file's actions. Face-kit styles are checked inside Blender b
   Armature modifier on it; pack parts keep their 62 vertex groups, the face parts one (`Head`, weight 1.0);
 - the body type's 24 own actions under their original names (`CharacterArmature|Wave`, ...; the women's differ from
   the men's), with a fake user, none assigned, no NLA tracks; no `.001` copies and no other import's actions;
-- every pose bone at identity: the rest pose (the T-pose);
+- every pose bone at identity: the rest pose (the T-pose); the scene's frame range 0 to 40 covers the longest
+  action;
 - no RootNode, no `_end` empties, no Icosphere, camera, light or world; flat colours, the Principled base colour
   equal to the viewport colour (Workbench reads one, the exporter the other).
 
@@ -131,6 +136,11 @@ pack's `CharacterArmature|` prefix; whether the game strips it is the export's a
 `transform_check_max_error_m`, bounds, `height_m`, `feet_z_m`, per part the object, triangles, vertices, vertex
 groups, source and materials with colours, `triangles_total`, the actions with their frame ranges, and `inspected`:
 what the reopened file holds, with `problems` (empty, or the command fails).
+
+Opening a saved file prints `Library file, loading empty scene` (it is written with `bpy.data.libraries.write`):
+harmless, `bpy.context.scene` is the character's scene. Each action keeps the pack's slot identifier
+`OBCharacterArmature` although the armature object is `<id>_rig`; assigning an action still picks that single slot
+by itself, and the `ACTIONS` export ignores slot names.
 
 ## Pipeline rules learned in the final test
 
@@ -165,7 +175,9 @@ what the reopened file holds, with `problems` (empty, or the command fails).
 
 - Each import duplicates the 24 actions with a `.001`, `.002`, ... suffix and puts all 24 on NLA tracks; the
   importer leaves the rig in its first action (Death). Use the skeleton file's own actions (`packs.own_actions`) and
-  reset every pose bone before applying one. `packs.discard` removes a discarded import's 24 actions with its rig (in
+  reset every pose bone before applying one. `packs.load` records the actions each import adds as that rig's own
+  set, so lookups do not depend on names (a save renames actions; the suffix can pass `.999`) or on the order
+  characters are saved in. `packs.discard` removes a discarded import's 24 actions with its rig (in
   one `batch_remove`: one remove per action made the run 60 % slower); `build_report.json` counts what is left
   (`actions_in_session`: 24 per rig still in the scene).
 - Imported objects use quaternion rotation, so `rotation_euler` does nothing: move and turn a character through its
