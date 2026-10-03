@@ -7,24 +7,35 @@ and turn sideways in its Walk (m1_rex in art #18's Godot frames). The engineer d
 try Meshy's animations (its library and its text to motion) on our characters for about 60 credits (chat with the art
 manager, 2026-10-03, [art #16](https://github.com/xperiaroco2/prime-game-art/issues/16#issuecomment-5971404896)).
 
-Pictures and clips are outside git in `D:/prime-art-raw/review/stage1/25/` (`feet/`, `strips/`, `clips/`,
-`metrics/`, `rig_inputs/`). The method is in [../animations.md](../animations.md) (the retarget, the review, the feet
-step) and [../meshy.md](../meshy.md) (the client, batch 4).
+Pictures and clips are outside git in `D:/prime-art-raw/review/stage1/25/` (`feet/`, `pairs/`, `strips/`, `clips/`,
+`metrics/`, `metrics.md`, `rig_inputs/`). The method is in [../animations.md](../animations.md) (the retarget, the
+review, the feet step, the Meshy libraries) and [../meshy.md](../meshy.md) (the client, batch 4's run).
 
 ## Summary
 
 - **Toe bones: done.** Every assembled character, and the review's donors, now have `Toe.L` and `Toe.R` (children of
-  the feet, at the ball of each shoe; 64 bones in all). UAL's toes (`ball_l`, `ball_r`) drive them. At push-off the
-  shoe now bends at the ball instead of standing on its tip: with the heel lifted 20 degrees and the tip on the
-  floor, the front of a rigid shoe points 12 to 19 degrees into the floor, a shoe with toe bones -2 to -5 (level);
-  the heel rises 19 to 48 degrees before the front leaves level, against 10 to 12 for a rigid shoe (table below). The
-  pack's own 24 actions key no toe and play exactly as before (every vertex of the pack's Walk within 0.01 mm); the
-  export and the Godot 4.7.2 check pass with 64 bones.
-- **Meshy: not run in this session.** The client, the batch (59 of the 60 credits) and the rig inputs are ready and
-  checked (`meshy estimate`: approval complete, inputs ready); the balance is 374. The batch needs one command,
-  `tools/run.py meshy run 2026-10-b4-animations man-rig` and then without the item, once the engineer confirms the
-  spend directly (see "What is left"). Meshy's skeleton, both comparisons and the per-need choice between Meshy and
-  UAL therefore wait for that run; the recommendation below says what is decided without it.
+  the feet, at the ball of each shoe; 64 bones in all). UAL's toes (`ball_l`, `ball_r`) and Meshy's (`LeftToeBase`,
+  `RightToeBase`) drive them. At push-off the shoe now bends at the ball instead of standing on its tip: with the heel
+  lifted 20 degrees and the tip on the floor, the front of a rigid shoe points 12 to 24 degrees into the floor, a shoe
+  with toe bones -5 to +1 (level). The pack's own 24 actions key no toe and play exactly as before.
+- **Meshy: run.** Batch 4 spent 59 credits (balance 374 -> 315): rigs of m1_rex and w1_ivy, ten library actions on the
+  man, two on the woman, one text-to-motion crawl. **Meshy's skeleton has 24 bones, no fingers and one toe per foot**
+  (report below).
+- **Comparison (a) against (b).** Our retarget onto the Ultimate Modular rig with the toe bones (b) reproduces what
+  Meshy's own rig and weights do with the same clip on our mesh (a), pose for pose (the pairs), and does the feet
+  better: Meshy's own rig has no foot IK and its shoes are weighted by its auto-rig, so in its walk the foot slides
+  6.1 cm/s (max 39.6) against 3.3 (max 8.7) after our retarget, and in its backward walk the front of the shoe goes
+  23 degrees into the floor against 7. Meshy's clips float: its walk never comes closer than 0.7 to 0.9 cm to the
+  floor on the man, and on the woman's rig its locomotion hangs 1.7 to 7.5 cm above it (Run Fast 7.5 cm), on its own
+  rig as on ours: in stance Meshy's feet stay pitched heel-up, so the heel never comes down. The hands have no
+  fingers on Meshy's rig: every hand is a flat paddle, and 409 Finger Wag No wags
+  the whole hand.
+- **Per game need: UAL stays for locomotion; Meshy fills four gaps, but only privately.** UAL1's walk, jog and sprint
+  with the toe bones measure as well as Meshy's and are CC0. Meshy's library has what UAL and the pack lack: a backward
+  walk with clean feet (slide 3.1 cm/s against the pack Run_Back's 33.4), a turn in place, a face-down downed idle
+  that reaches for help, and a hands-and-knees crawl. Meshy does not say where its library motions come from, so they
+  stay private (`public_repo_ok = false`) and cannot enter the public game repo as they are. That is a licence and
+  money question for the engineer (below); the UAL1 Pro question still stands for a public-safe crawl and strafes.
 
 ## The toe bones
 
@@ -83,84 +94,310 @@ path, so the sliding, does not change. A per-vertex floor clamp would remove the
   toes (a shared-file change, listed for the manager).
 - Every part keeps 64 vertex groups (the pack's 62 and the toes); the face parts keep one (`Head`).
 
-## Meshy: the plan (batch 4, ready, not run)
+## Meshy: the run (batch 4)
 
-`batches/2026-10-b4-animations.toml`, estimated with `tools/run.py meshy estimate 2026-10-b4-animations`:
+`batches/2026-10-b4-animations.toml`, run by the art manager on 2026-10-03 (18:57 to 19:00 UTC) after the engineer's
+yes in chat: **374 credits before, 315 after, 59 spent**, each task charged as estimated (`meshy estimate`: 59 of the
+cap of 60). Task ids, files and the balance after each item are in [../meshy.md](../meshy.md) and each item's
+`generation.json`; the originals are in `D:/prime-art-raw/2026-10-b4-animations/` and copied to
+`OneDrive/prime-art-raw/` (`raw-backup`, 23 files).
 
-| Item | What | Credits |
-|---|---|---|
-| `man-rig` | m1_rex (men, 1.97 m) as a static textured GLB facing +Z (`meshy rig-input`: 6458 triangles, 462 KB, its 14 flat colours baked into a 32 px palette PNG, also sent as `texture_image_url`); returns Meshy's basic walking and running too | 5 |
-| `woman-rig` | w1_ivy (women, 1.85 m), the same (8318 triangles, 601 KB) | 5 |
-| `man-library` | 16 Run Fast (sprint, the feet), 544 Walk Backward, 577 Idle Step Turn Left, 178 Hit Reaction, 187 Knock Down, 340 Crawl and Look Back, 372 Prone Reach Help, 551 Carry Heavy Object Walk, 317 Shrug, 409 Finger Wag No | 30 |
-| `woman-library` | 1 Walking Woman, 16 Run Fast | 6 |
-| `crawl-motion` | text to motion, prime, 4 s: a forward crawl on hands and knees while hurt, a loopable cycle (no game or character named) | 10 |
-| `man-crawl` | the crawl animated on the man's rig (`motion_task_id`) | 3 |
-| | **total** (cap 60) | **59** |
+| Item | Task id | Credits | What came back |
+|---|---|---|---|
+| `man-rig` | `01a10320-b412-7299-ad68-92890c4e6853` | 5 | m1_rex rigged; Meshy's walking (32 frames) and running (20), in place |
+| `woman-rig` | `01a10321-dc82-74b0-bbbf-d0c66d2f5d58` | 5 | w1_ivy rigged; the same walking and running |
+| `man-library` | `01a10322-3570-7439-bd87-2597a408f49c` | 30 | 16 Run Fast, 544 Walk Backward, 577 Idle Step Turn Left, 178 Hit Reaction, 187 Knock Down, 340 Crawl and Look Back, 372 Prone Reach Help, 551 Carry Heavy Object Walk, 317 Shrug, 409 Finger Wag No |
+| `woman-library` | `01a10322-a5d5-7169-8499-c1c522bc8ac9` | 6 | 1 Walking Woman, 16 Run Fast |
+| `crawl-motion` | `01a10322-c879-7192-a408-0a474c65fc6c` | 10 | the text-to-motion crawl, prime, 4 s, an FBX on an SMPL-H skeleton |
+| `man-crawl` | `01a10323-3b62-7512-80e2-9ebfde356052` | 3 | that crawl on the man's rig |
 
-The library listing (`meshy library`, free, 2026-10-03) holds 678 actions (BodyMovements 158, DailyActions 157,
-Dancing 33, Fighting 154, WalkAndRun 176; the docs page lists 591, the rest repeat earlier names under new ids), saved
-to `D:/prime-art-raw/2026-10-b4-animations/animation-library.json`. It has no side-step strafe (only strafes with a gun
-or a bow, and backward diagonal runs), a backward walk, two crawls (one looking back, one backwards), turns in place,
-knock-downs and get-ups, a two-handed heavy carry, and many gestures (shrug, finger wag, cheers, waves, thumbs-up
-seated). The picks cover the feet (the sprint; the rig's free walk and run) and the gaps of art #20 and #24.
-
-The rig inputs were looked at (`D:/prime-art-raw/review/stage1/25/rig_inputs/m1_rex/sheet.png`: T-pose, the face to
-the front, colours from the texture).
+The "stray Icosphere" seen beside every Meshy output in Blender is the glTF importer's own bone display shape: the rig
+inputs hold one node and one mesh, Meshy's GLBs the 24 bones, the armature and one mesh (read from the GLBs' JSON), so
+nothing of the pack's Icosphere reached Meshy. `meshy rig-input` now checks that its GLB holds one mesh and nothing
+else.
 
 ## Meshy's skeleton
 
-Not known yet: the docs name no bones, no bone count and nothing about fingers or toes (read 2026-10-03: the rigging,
-animation and text-to-motion pages, and the web guide, which calls the result "Mixamo-compatible"), and no rig has been
-made. The contract's `contract/bone_maps/meshy.toml` (art #4) holds the guess, unconfirmed: Mixamo names without a
-prefix (`Hips`, `Spine`, `Spine01`, `Spine02`, `Neck`, `Head`, `LeftShoulder`, `LeftArm`, `LeftForeArm`, `LeftHand`,
-`LeftHandThumb1..3` and four fingers `1..3`, `LeftUpLeg`, `LeftLeg`, `LeftFoot`, `LeftToeBase`, and the right side),
-which would mean five-finger hands with three bones each and one toe per foot. After `man-rig` runs,
-`tools/run.py check --map meshy <rigged GLB>` lists every bone the guess does not map as extra and `render` counts the
-bones; the report then gives the names, the count, the fingers and the toes, fixes `meshy.toml` (a shared contract
-file: through the manager) and writes `tools/blender/retarget_maps/meshy_um.toml` and `meshy_um_rigid.toml` from it.
+Read from every GLB of the batch (both rigs, all files: the same 24 names and parents) and checked with
+`tools/run.py check --kind body --map meshy` on the man's rigged GLB.
 
-## What is left (after the run)
+- **24 bones**, `Hips` at the top (no root bone; the hips' location keys carry the travel):
 
-1. `tools/run.py meshy run 2026-10-b4-animations man-rig`, look at the rig (`render` of its GLB), then the rest:
-   `tools/run.py meshy run 2026-10-b4-animations`; the balance before and after (`meshy balance`); `raw-backup` of the
-   chosen originals.
-2. The skeleton report (above) and the bone map `meshy_um.toml` (the same rest compensation and hips scaling: the map
-   names Meshy's hips, hip joints and feet; a Meshy toe drives our `Toe`; finger phalanges by anatomy, as for UAL).
-3. Comparison (b): add `[libraries.meshy]` to `tools/blender/anim_review.toml` (`file` = the man's library GLB, `rm`
-   the same, `map = "meshy_um.toml"`, `rigid_map = "meshy_um_rigid.toml"`), a `[[feet]]` row with the Meshy walk, run
-   and sprint, and pairs of each Meshy clip with the best UAL1, UAL2 or pack clip for the same need; then `anim-review
-   clips`, `pairs` and `feet` into `D:/prime-art-raw/review/stage1/25/`.
-4. Comparison (a), Meshy's own animated GLB (its rig and weights on our mesh): `tools/run.py render <animation.glb>
-   --anim <action> --frames 12` for the frames, beside (b).
+  ```
+  Hips
+  ├─ Spine02 ─ Spine01 ─ Spine ─┬─ neck ─ Head ─┬─ head_end
+  │                             │               └─ headfront
+  │                             ├─ LeftShoulder ─ LeftArm ─ LeftForeArm ─ LeftHand
+  │                             └─ RightShoulder ─ RightArm ─ RightForeArm ─ RightHand
+  ├─ LeftUpLeg ─ LeftLeg ─ LeftFoot ─ LeftToeBase
+  └─ RightUpLeg ─ RightLeg ─ RightFoot ─ RightToeBase
+  ```
+
+- **Fingers: none.** Each hand is one bone (`LeftHand`); the fingers are weighted to it and never bend. A library clip
+  with finger motion (409 Finger Wag No) arrives without it.
+- **Toes: one per foot**, `LeftToeBase`, its head at the ball (the man: 4 cm above the floor, 13 cm ahead of the
+  ankle), no toe end bone. `LeftFoot` is an ankle bone (its head 14 cm above the floor, pointing down to the ball).
+- **Rest:** the pose it was rigged in, our T-pose, facing -Y in Blender (+Z in glTF), the armature at a world scale of
+  0.01 (centimetres). The joints are placed by Meshy's estimate, not ours: against the review donors the upper arms
+  rest 14.2 to 14.9 degrees (the man) and 9.5 to 10.4 (the woman) below the mesh's arms, its clavicles lie flat where
+  ours rise 31 to 35 degrees, its thighs splay 5 degrees out, its spine is within 1 to 9 degrees of ours.
+- **Weights:** at most 4 influences a vertex, every vertex weighted; 3539 of the man's 13,659 vertices carry an
+  influence below 0.01 (`check`'s warning). The parts arrive merged into one mesh (`char1`) with one textured material
+  (our palette).
+- **The contract's guess** (`contract/bone_maps/meshy.toml`, art #4, unconfirmed) was Mixamo names with five-finger
+  hands; `check --map meshy` refutes it: extra bones `head_end`, `headfront`, `neck` (lower case), no fingers or eyes,
+  and the spine the other way round (`Spine02` is the lowest, `Spine` the highest). The corrected map is a request to
+  the manager (a shared contract file).
+- **Text to motion** returns an FBX on an **SMPL-H** skeleton (52 bones: `Pelvis`, `L_Hip`, ..., three bones per
+  finger), 120 frames at 30 fps, with a mannequin of spheres; Meshy's animate task puts it on the rig (fingers lost).
+
+Our bone map, `tools/blender/retarget_maps/meshy_um.toml` (and `meshy_um_rigid.toml` with the toes at rest): `Hips` ->
+`Body` (no root: our `Root` rests), the spine, neck, head, shoulders, arms and legs one to one, `LeftToeBase` ->
+`Toe.L`, every finger of ours at rest (a relaxed flat hand), the upper arms aligned to Meshy's rest (`[align]`, so an
+arm that hangs at the side on Meshy's rig hangs at the side on ours). Rest check: 0.002 mm and 0 degrees outside the
+aligned arms. `retarget --library meshy` and `--library meshyw` bake its clips onto either donor.
+
+## The clips, as seen in the strips and the clips
+
+| Clip (`meshy:`, `meshyw:`) | Length | What it is |
+|---|---|---|
+| Walking, Running (each rig's) | 1.03 s, 0.63 s, loops | a natural walk at 1.5 m/s with arms a little away from the body; a jog at 5.6 m/s |
+| RunFast (16) | 0.47 s, loop | a sprinter's dash: the body leans 40 to 50 degrees forward, the legs reach far back; 6.4 m/s (the game's sprint is 7.0) |
+| Walking_Woman (1) | 0.97 s, loop | a walk with a sway of the hips |
+| Walk_Backward (544) | 0.87 s, loop | a cautious backward walk, arms out in front, 1.2 m/s of travel (taken out in the review) |
+| Idle_Step_Turn_Left (577) | 1.0 s | two steps that turn the body 90 degrees to the left |
+| Hit_Reaction (178) | 1.63 s | struck from the side: a stagger 0.94 m sideways with the arms up (taken out in the review) |
+| Knock_Down (187) | 2.5 s | thrown up and back, a half somersault, landing on the back 0.8 m behind; cartoon-strong |
+| Prone_Reach_Help (372) | 18.4 s, loop | lying face down, the head turned, one arm reaching up twice for help |
+| Crawl_and_Look_Back (340) | 6.9 s | a hands-and-knees crawl, head up, with a look back over the shoulder; 3.3 m of travel (taken out) |
+| Crawl_Prompt (text to motion) | 3.97 s | a low hands-and-knees crawl, heading 20 degrees to the right of straight ahead; asked to loop, its ends are 59 degrees apart (7 times a frame step) |
+| Carry_Heavy_Object_Walk (551) | 6.5 s, loop | a slow waddle leaning back with the arms wide around a big box, 0.3 m/s |
+| Shrug (317) | 1.97 s | both shoulders and palms up |
+| Finger_Wag_No (409) | 5.0 s | a "no" with the whole flat hand (no fingers) and a head shake |
+
+## Comparison (a) and (b): the feet first
+
+Each set plays, top to bottom: (a) the clip on Meshy's own rig and weights (m1_rex or w1_ivy as Meshy rigged them), (b)
+the same clip retargeted onto the review donor's rig with the toe bones (Business Man, Suit), and the best UAL1 or pack
+clip for the need (with the toe bones). `tools/run.py anim-review feet --only meshy_feet_men,meshy_feet_women` (close-ups
+of the right shoe from its side, `feet/<body>/meshy_feet_<body>_<clip>.png` and `.mp4`). The sliding is the foot
+bone's (on Meshy's rig its ankle, on ours the heel pivot), `-` with fewer than 4 contact velocities (the runs touch down
+for a frame or two); the toe measures count contact within 1 cm of the floor, or of the tips' own lowest point when a
+clip never reaches the floor (Meshy's), `-` without a sample at a 15 to 25 degree heel lift.
+
+| Body | Need | Lane | Front of the shoe at a 20 deg heel lift (deg into the floor) | Heel lift, front level (deg) | Tip lowest (cm) | Foot slide mean/max (cm/s) | Lowest vertex (cm) |
+|---|---|---|---|---|---|---|---|
+| men | walk | (a) Meshy's rig Walking | - | - | 0.7 | 6.1/39.6 | 0.7 |
+| men | walk | (b) Meshy, man's rig Walking | 0.7 | 32.3 | 1.1 | 3.3/8.7 | 0.9 |
+| men | walk | UAL1 Walk_Loop | -2.4 | 47.6 | 0.3 | 2.4/19.2 | -1.1 |
+| men | run | (a) Meshy's rig Running | - | - | 0.6 | - | 0.6 |
+| men | run | (b) Meshy, man's rig Running | -1.0 | 24.2 | 1.0 | - | 0.4 |
+| men | run | UAL1 Jog_Fwd_Loop | -4.7 | 19.3 | 0.3 | 5.7/12.0 | -0.7 |
+| men | sprint | (a) Meshy's rig RunFast | 14.1 | - | 1.2 | - | 1.2 |
+| men | sprint | (b) Meshy, man's rig RunFast | - | - | 1.2 | - | 1.1 |
+| men | sprint | UAL1 Sprint_Loop | -4.6 | 21.9 | 0.3 | - | -0.7 |
+| men | backwards | (a) Meshy's rig Walk_Backward | 22.7 | 25.7 | -1.7 | 11.1/77.9 | -1.9 |
+| men | backwards | (b) Meshy, man's rig Walk_Backward | 7.4 | 21.8 | 0.3 | 3.1/12.0 | -1.9 |
+| men | backwards | pack Run_Back | 21.3 | 7.5 | 0.2 | 33.4/84.0 | -0.3 |
+| women | walk | (a) Meshy's woman rig Walking_Woman | -4.3 | 27.8 | 8.6 | 7.6/41.9 | 2.4 |
+| women | walk | (b) Meshy, woman's rig Walking_Woman | 32.9 | 26.4 | 7.9 | 5.1/17.6 | 2.6 |
+| women | walk | (b) Meshy, man's rig Walking | 0.3 | 39.8 | 3.4 | 3.4/9.5 | 2.7 |
+| women | walk | UAL1 Walk_Loop | -1.9 | 38.1 | 0.3 | 2.6/21.0 | -0.9 |
+| women | run | (a) Meshy's woman rig Running | - | -7.1 | 8.3 | - | 2.4 |
+| women | run | (b) Meshy, woman's rig Running | - | 4.3 | 8.0 | - | 2.6 |
+| women | run | UAL1 Jog_Fwd_Loop | -4.3 | 19.6 | 0.3 | 5.8/8.1 | -0.6 |
+| women | sprint | (a) Meshy's woman rig RunFast | - | 3.6 | 8.5 | - | 7.5 |
+| women | sprint | (b) Meshy, woman's rig RunFast | - | - | 7.8 | - | 7.5 |
+| women | sprint | UAL1 Sprint_Loop | -4.2 | 24.2 | 0.3 | - | -0.6 |
+| women | backwards | (b) Meshy, man's rig Walk_Backward | 17.2 | 27.2 | 0.3 | 3.5/11.3 | -1.8 |
+| women | backwards | pack Run_Back | - | 8.9 | 0.2 | 30.2/77.1 | -0.3 |
+
+Read in the close-ups and the measures:
+
+- **The feet of (b) are as good as UAL's and better than (a).** After our retarget Meshy's walk keeps the front of the
+  shoe level at push-off (0.7 degrees at a 20 degree heel lift; UAL's -2.4) and slides 3.3 cm/s (UAL's 2.4); on its
+  own rig the same walk slides 6.1 cm/s with peaks of 39.6, because Meshy's rig has no foot IK and its auto-weights let
+  the shoe swim with the ankle. Its backward walk on its own rig pushes the front of the shoe 23 degrees into the floor
+  and 1.7 cm under it; retargeted, 7 degrees and 0.3 cm above.
+- **Meshy's clips float: its feet never come flat.** The man's walk and runs never come closer than 0.4 to 1.2 cm to
+  the floor, on Meshy's rig as on ours; on the woman's rig 1.7 to 7.5 cm (Run Fast 7.5 cm, on its own rig too), and on
+  the women's donor every Meshy clip, the man's included, 2 to 3 cm (the woman's Run Fast 7.5). The cause is in the
+  clips: in stance Meshy's foot stays pitched heel-up and its toe bent 10 to 17 degrees back against it (Walking on the
+  man's rig, Walking Woman on the woman's, sampled every 3 frames), so the heel never comes down; our retarget follows
+  Meshy's foot, so the heel pivot of the women's donor stands about 4 cm above its rest height in stance (6.2 to 6.6 cm
+  against 2.3). The tip measures of the woman's-rig clips are therefore taken in the air (their tips never come lower
+  than 8 cm) and are not comparable. A fix would be ours (a foot-flat correction or a floor clamp of the heel in the
+  retarget, or the game's foot IK); UAL's clips do not need one.
+- **The pack's Run_Back slides** 33 cm/s and tips its rigid toe 21 degrees into the floor; Meshy's Walk_Backward is the
+  clean backward clip.
+
+The toe bones on Meshy's clips (`anim-review feet --only meshy_toes`, `feet/men/meshy_toes_meshy_*.png`): rigid shoes
+on top, toe bones below.
+
+| Clip (men) | Front at a 20 deg lift: rigid -> toes | Heel lift, front level: rigid -> toes | Bend in contact: rigid -> toes | Tip lowest cm: rigid -> toes |
+|---|---|---|---|---|
+| meshy:Walking | 24.2 -> 0.7 | - -> 32.3 | 46.2 -> 52.4 | 0.3 -> 1.1 |
+| meshy:RunFast | - -> - | - -> - | 45.2 -> 45.6 | 0.8 -> 1.2 |
+
+## Comparison (a) and (b): every clip, with art #20's measures
+
+`tools/run.py anim-review clips --sources meshy,meshyw` (b, both libraries on both donors: the man's library clips on
+the women's donor too), `clips --body men --clips meshy_own:...` and `--body women --clips meshyw_own:...` (a), with the
+best UAL1, UAL2 and pack clips of each need measured in the same run; `pairs --sources meshy,meshyw` for the side by
+side (`pairs/<body>/meshy_<body>_<need>.png`, `.mp4`); the table is `metrics.md` (75 clips). The rows here are the
+Meshy clips and the clip each one competes with.
+
+| Body | Need | Clip | s | Loop | Ground m/s | Foot slide mean/max cm/s | Lowest vertex min cm (frames under -1 cm) | Front at 20 deg lift | Hands in torso/head/other hand/legs cm | Seam deg (x step) | Forearm twist deg |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| men | walk | (a) Meshy's rig Walking | 1.03 | yes | 1.52 | 6.1/39.6 | 0.7 (0) | - | 0.0/0.0/0.0/0.7 | 0.0 (0.0) | 15.0 |
+| men | walk | (b) Meshy, man's rig Walking | 1.03 | yes | 1.58 | 3.3/8.7 | 0.9 (0) | 0.7 | 0.0/0.0/0.0/0.9 | 0.0 (0.0) | 15.8 |
+| men | walk | UAL1 Walk_Loop | 1.33 | yes | 1.00 | 2.4/19.2 | -1.1 (1) | -2.4 | 0.0/0.0/0.0/0.0 | 0.0 (0.0) | 2.1 |
+| women | walk | (a) Meshy's woman rig Walking_Woman | 0.97 | yes | 1.57 | 7.6/41.9 | 2.4 (0) | -4.3 | 0.0/0.0/0.0/6.3 | 0.0 (0.0) | 58.0 |
+| women | walk | (b) Meshy, woman's rig Walking_Woman | 0.97 | yes | 1.68 | 5.1/17.6 | 2.6 (0) | 32.9 | 0.0/0.0/0.0/6.1 | 0.0 (0.0) | 57.6 |
+| women | walk | (a) Meshy's woman rig Walking | 1.03 | yes | 1.56 | 6.6/22.4 | 1.7 (0) | -0.1 | 0.0/0.0/0.0/2.6 | 0.0 (0.0) | 13.1 |
+| women | walk | (b) Meshy, woman's rig Walking | 1.03 | yes | 1.66 | 7.9/17.6 | 2.0 (0) | 7.8 | 0.0/0.0/0.0/5.3 | 0.0 (0.0) | 12.9 |
+| women | walk | (b) Meshy, man's rig Walking | 1.03 | yes | 1.70 | 3.4/9.5 | 2.7 (0) | 0.3 | 0.0/0.0/0.0/3.9 | 0.0 (0.0) | 15.8 |
+| women | walk | UAL1 Walk_Loop | 1.33 | yes | 1.08 | 2.6/21.0 | -0.9 (0) | -1.9 | 0.0/0.0/0.0/3.3 | 0.0 (0.0) | 2.1 |
+| men | run | (a) Meshy's rig Running | 0.63 | yes | 5.44 | - | 0.6 (0) | - | 0.0/0.0/0.0/0.0 | 0.1 (0.0) | 22.5 |
+| men | run | (b) Meshy, man's rig Running | 0.63 | yes | 5.59 | - | 0.4 (0) | -1.0 | 0.0/0.0/0.0/0.0 | 0.0 (0.0) | 24.4 |
+| men | run | UAL1 Jog_Fwd_Loop | 0.93 | yes | 5.95 | 5.7/12.0 | -0.7 (0) | -4.7 | 0.0/0.0/0.0/0.0 | 0.7 (0.0) | 3.9 |
+| women | run | (a) Meshy's woman rig Running | 0.63 | yes | 5.76 | - | 2.4 (0) | - | 0.0/0.0/0.0/0.0 | 0.0 (0.0) | 25.5 |
+| women | run | (b) Meshy, woman's rig Running | 0.63 | yes | 5.98 | - | 2.6 (0) | - | 0.0/0.0/0.0/0.0 | 0.0 (0.0) | 25.3 |
+| women | run | UAL1 Jog_Fwd_Loop | 0.93 | yes | 6.42 | 5.8/8.1 | -0.6 (0) | -4.3 | 0.0/0.0/0.0/0.0 | 0.7 (0.0) | 3.9 |
+| men | sprint | (a) Meshy's rig RunFast | 0.47 | yes | 6.09 | - | 1.2 (0) | 14.1 | 0.0/0.0/0.0/0.0 | 12.2 (0.4) | 17.5 |
+| men | sprint | (b) Meshy, man's rig RunFast | 0.47 | yes | 6.41 | - | 1.1 (0) | - | 0.0/0.0/0.0/0.0 | 11.7 (0.3) | 17.0 |
+| men | sprint | UAL1 Sprint_Loop | 0.67 | yes | 9.04 | - | -0.7 (0) | -4.6 | 0.0/0.0/0.0/0.0 | 0.7 (0.0) | 3.9 |
+| women | sprint | (a) Meshy's woman rig RunFast | 0.47 | yes | 6.40 | - | 7.5 (0) | - | 0.0/0.0/0.0/0.0 | 12.2 (0.4) | 19.1 |
+| women | sprint | (b) Meshy, woman's rig RunFast | 0.47 | yes | 7.16 | - | 7.5 (0) | - | 0.0/0.0/0.0/0.0 | 11.2 (0.3) | 19.4 |
+| women | sprint | UAL1 Sprint_Loop | 0.67 | yes | 9.72 | - | -0.6 (0) | -4.2 | 0.0/0.0/0.0/0.0 | 0.6 (0.0) | 3.9 |
+| men | backwards | (a) Meshy's rig Walk_Backward | 0.87 | yes | 1.40 | 11.1/77.9 | -1.9 (8) | 22.7 | 0.0/0.0/0.0/0.0 | 6.1 (0.7) | 27.0 |
+| men | backwards | (b) Meshy, man's rig Walk_Backward | 0.87 | yes | 1.40 | 3.1/12.0 | -1.9 (6) | 7.4 | 0.0/0.0/0.0/0.0 | 8.7 (0.9) | 26.8 |
+| men | backwards | pack Run_Back | 0.83 | yes | 3.09 | 33.4/84.0 | -0.3 (0) | 21.3 | 0.0/0.0/0.0/0.0 | 0.0 (0.0) | 1.8 |
+| women | backwards | (b) Meshy, man's rig Walk_Backward | 0.87 | yes | 1.51 | 3.5/11.3 | -1.8 (6) | 17.2 | 0.0/0.0/0.0/0.0 | 8.7 (0.9) | 26.8 |
+| women | backwards | pack Run_Back | 1.03 | yes | 2.46 | 30.2/77.1 | -0.3 (0) | - | 0.0/0.0/0.0/0.0 | 1.6 (0.1) | 1.8 |
+| men | turn in place | (a) Meshy's rig Idle_Step_Turn_Left | 1.00 | no | 0.02 | 15.9/85.5 | -1.6 (31) | - | 0.0/0.0/0.0/0.0 | 86.8 (23.1) | 32.1 |
+| men | turn in place | (b) Meshy, man's rig Idle_Step_Turn_Left | 1.00 | no | 0.02 | 12.3/83.3 | -1.3 (15) | - | 0.0/0.0/0.0/0.0 | 86.8 (17.2) | 33.6 |
+| men | turn in place | UAL1 Idle_Loop | 2.50 | yes | 0.00 | 0.0/0.0 | -0.6 (0) | - | 0.0/0.0/0.0/0.0 | 0.4 (0.6) | 0.9 |
+| women | turn in place | (b) Meshy, man's rig Idle_Step_Turn_Left | 1.00 | no | 0.03 | 12.6/84.8 | -1.7 (18) | - | 0.0/0.0/0.0/1.0 | 86.8 (17.2) | 33.6 |
+| men | pushed | (a) Meshy's rig Hit_Reaction | 1.63 | no | 0.60 | 7.7/80.2 | -3.9 (46) | 19.5 | 0.0/0.0/0.0/0.0 | 0.6 (0.1) | 48.2 |
+| men | pushed | (b) Meshy, man's rig Hit_Reaction | 1.63 | no | 0.61 | 7.5/79.1 | -3.4 (46) | 19.6 | 0.0/0.0/0.0/0.0 | 0.6 (0.1) | 48.0 |
+| men | pushed | UAL2 Hit_Knockback | 0.83 | no | - | - | -0.9 (0) | - | 0.0/0.0/0.0/1.3 | 164.5 (6.1) | 11.1 |
+| men | pushed | UAL1 Hit_Chest | 0.33 | no | 0.00 | 0.0/0.0 | -0.6 (0) | - | 0.0/0.0/0.0/0.0 | 13.5 (1.6) | 0.9 |
+| women | pushed | (b) Meshy, man's rig Hit_Reaction | 1.63 | no | 0.66 | 8.0/78.3 | -3.7 (46) | - | 0.0/0.0/0.0/0.0 | 0.6 (0.1) | 48.0 |
+| women | pushed | UAL2 Hit_Knockback | 0.83 | no | - | - | -1.0 (1) | - | 0.0/0.0/0.0/7.2 | 164.5 (6.1) | 11.1 |
+| men | knocked down | (a) Meshy's rig Knock_Down | 2.50 | no | 0.11 | 17.5/25.2 | -5.1 (34) | - | 0.0/2.3/2.1/0.0 | 96.0 (8.0) | 68.9 |
+| men | knocked down | (b) Meshy, man's rig Knock_Down | 2.50 | no | 0.06 | 11.5/25.3 | -2.8 (5) | - | 0.0/6.9/2.2/0.0 | 96.1 (7.9) | 70.0 |
+| men | knocked down | UAL1 Death01 | 2.40 | no | 0.00 | 4.3/89.8 | -4.9 (2) | - | 0.0/0.0/0.0/0.0 | 134.3 (20.8) | 83.8 |
+| women | knocked down | (b) Meshy, man's rig Knock_Down | 2.50 | no | 0.06 | 14.1/32.6 | -3.0 (5) | - | 0.0/2.9/2.0/0.0 | 96.1 (7.9) | 70.0 |
+| women | knocked down | UAL1 Death01 | 2.40 | no | 0.00 | 3.9/97.7 | -3.4 (2) | - | 0.0/0.0/0.0/5.3 | 134.3 (19.5) | 83.8 |
+| men | downed | (a) Meshy's rig Prone_Reach_Help | 18.40 | yes | 0.00 | 0.6/9.6 | -4.8 (159) | - | 0.0/0.0/0.0/0.0 | 0.1 (0.1) | 37.7 |
+| men | downed | (b) Meshy, man's rig Prone_Reach_Help | 18.40 | yes | 0.00 | 0.5/5.1 | -5.4 (432) | - | 0.0/4.1/0.9/0.0 | 0.1 (0.1) | 36.4 |
+| men | downed | UAL2 LayToIdle | 1.53 | no | 0.01 | 7.5/55.6 | -4.0 (30) | - | 0.0/0.0/0.0/0.0 | 94.2 (6.1) | 84.4 |
+| women | downed | (b) Meshy, man's rig Prone_Reach_Help | 18.40 | yes | 0.00 | 0.4/4.4 | -3.1 (553) | - | 0.0/0.0/1.2/0.0 | 0.1 (0.1) | 36.4 |
+| women | downed | UAL2 LayToIdle | 1.53 | no | 0.01 | 7.8/58.1 | -4.1 (31) | - | 0.0/0.0/0.0/2.8 | 94.2 (6.1) | 84.4 |
+| men | crawl | (a) Meshy's rig Crawl_and_Look_Back | 6.90 | no | 0.81 | 28.1/74.9 | 3.2 (0) | - | 0.0/0.0/0.0/0.0 | 74.0 (7.8) | 108.4 |
+| men | crawl | (b) Meshy, man's rig Crawl_and_Look_Back | 6.90 | no | 0.63 | 29.8/101.2 | 3.4 (0) | - | 0.0/0.0/0.2/0.0 | 74.0 (8.1) | 117.1 |
+| men | crawl | (a) Meshy's rig Crawl_Prompt | 3.97 | no | 0.47 | 68.7/117.7 | 2.7 (0) | - | 0.0/0.0/2.3/0.0 | 58.9 (7.1) | 0.0 |
+| men | crawl | (b) Meshy, man's rig Crawl_Prompt | 3.97 | no | 0.75 | 51.4/102.7 | -0.4 (0) | - | 0.0/0.0/2.3/0.0 | 58.9 (7.1) | 0.0 |
+| women | crawl | (b) Meshy, man's rig Crawl_and_Look_Back | 6.90 | no | 0.51 | 28.6/68.4 | 4.8 (0) | - | 0.0/0.0/0.0/0.0 | 74.0 (8.1) | 117.1 |
+| women | crawl | (b) Meshy, man's rig Crawl_Prompt | 3.97 | no | 0.89 | 55.4/110.6 | 3.4 (0) | - | 0.0/0.0/1.9/0.0 | 58.9 (7.3) | 0.0 |
+| men | carry | (a) Meshy's rig Carry_Heavy_Object_Walk | 6.50 | yes | 0.33 | 5.5/99.3 | -2.3 (15) | 22.7 | 0.0/0.0/0.0/0.0 | 0.0 (0.0) | 58.2 |
+| men | carry | (b) Meshy, man's rig Carry_Heavy_Object_Walk | 6.50 | yes | 0.34 | 7.9/167.9 | -0.6 (0) | 20.5 | 0.0/0.0/0.0/0.0 | 0.0 (0.0) | 63.2 |
+| men | carry | UAL2 Walk_Carry_Loop | 2.00 | yes | 0.67 | 1.1/28.0 | -1.1 (1) | -2.4 | 0.0/0.0/0.7/0.0 | 0.1 (0.0) | 37.0 |
+| women | carry | (b) Meshy, man's rig Carry_Heavy_Object_Walk | 6.50 | yes | 0.37 | 7.8/130.3 | -0.6 (0) | 23.6 | 0.0/0.0/0.0/0.0 | 0.0 (0.0) | 63.2 |
+| women | carry | UAL2 Walk_Carry_Loop | 2.00 | yes | 0.72 | 1.2/29.9 | -0.8 (0) | -1.6 | 0.0/0.0/1.1/0.0 | 0.0 (0.0) | 37.0 |
+| men | gestures | (a) Meshy's rig Shrug | 1.97 | no | 0.00 | 0.3/1.1 | -2.5 (60) | - | 0.0/0.0/0.0/0.0 | 0.8 (0.3) | 82.1 |
+| men | gestures | (b) Meshy, man's rig Shrug | 1.97 | no | 0.00 | 0.3/1.0 | -2.3 (60) | - | 0.0/0.0/0.0/0.0 | 0.8 (0.3) | 77.8 |
+| men | gestures | (a) Meshy's rig Finger_Wag_No | 5.00 | no | 0.00 | 1.2/4.4 | -3.0 (151) | - | 0.0/0.0/0.0/0.0 | 0.0 (0.0) | 74.3 |
+| men | gestures | (b) Meshy, man's rig Finger_Wag_No | 5.00 | no | 0.00 | 1.2/3.6 | -3.1 (151) | - | 0.0/0.0/0.0/0.0 | 0.0 (0.0) | 76.6 |
+| men | gestures | UAL2 Yes | 2.50 | no | 0.00 | 0.3/3.3 | -0.7 (0) | - | 0.0/0.0/0.0/0.0 | 0.2 (0.1) | 2.5 |
+| men | gestures | UAL2 Idle_No_Loop | 2.50 | yes | 0.00 | 0.0/0.0 | -0.6 (0) | - | 0.0/0.0/0.0/0.0 | 0.2 (0.1) | 0.9 |
+| women | gestures | (b) Meshy, man's rig Shrug | 1.97 | no | 0.00 | 0.3/1.1 | -2.5 (60) | - | 0.0/0.0/0.0/0.0 | 0.8 (0.3) | 77.8 |
+| women | gestures | (b) Meshy, man's rig Finger_Wag_No | 5.00 | no | 0.00 | 1.3/3.9 | -3.1 (151) | - | 0.0/0.0/0.0/0.0 | 0.0 (0.0) | 76.6 |
+
+- **(a) against (b), pose for pose:** the pairs show the same motion; the retarget changes the feet (above) and the
+  arms (aligned to Meshy's rest, the same hang as on its own rig), nothing else. The (a) and (b) numbers differ where
+  the rigs differ: the feet (IK), the depth into the floor of lying clips (our hips scaled to our legs: Prone Reach Help
+  goes 5.4 cm into the floor on our man, 4.8 on its own rig; UAL2's LayToIdle 4.0).
+- **Hands.** No hand goes into the torso in any Meshy clip; Knock_Down puts a hand into the head during the somersault
+  (on the man 2.3 cm on Meshy's rig, 6.9 cm after the retarget). Without fingers the hands are flat in every clip; our retarget keeps our
+  fingers relaxed at rest, so (b) looks the same as (a). The forearm twist reaches 108 to 117 degrees in Crawl and
+  Look Back and 74 to 82 in Shrug and Finger Wag No (no twist bones on either rig: the wrist wraps), against 37 for
+  UAL2's carry. Finger Wag No fails the finger test: the gesture is a wagging flat hand.
+- **Loops.** Meshy's walking, running, Run Fast, Walk Backward, Walking Woman, the carry walk and the prone idle end
+  where they start (0 to 0.9 times a frame step); the text-to-motion crawl does not (7 times), although the prompt
+  asked for a loop.
 
 ## Licences
 
 - **The rig inputs** are our own work from CC0 parts (Quaternius Ultimate Modular, our face kit).
-- **Meshy outputs on the Pro plan** (rigs, animated GLBs, text-to-motion clips) are owned by us (Meshy Terms of Use
-  3.2, updated 2026-09-19); Meshy keeps a licence to provide the service. Text-to-motion clips are `ai_generated =
-  true`.
-- **The library motions:** Meshy does not disclose where its 678 library clips come from (motion capture, purchased
-  libraries or generation). Ownership of the output under 3.2 says we own what the service produced for us, but not
-  that the underlying motion is free of third-party rights. So for the art repo's rules: library clips stay **private
-  raw files** (`D:/prime-art-raw/2026-10-b4-animations/`, never in git), `public_repo_ok = false` in any manifest
-  that uses one, and `ai_generated` recorded as unknown, until Meshy states their provenance. The public game repo
-  takes none of them in that state; a clip we retarget and then key by hand is still derived from it.
+- **Meshy's outputs on the Pro plan** (the rigs, the animated GLBs and FBXs, the text-to-motion clip) are owned by us
+  (Meshy Terms of Use 3.2, updated 2026-09-19); Meshy keeps a licence to provide the service. Every one is recorded in
+  its `generation.json` (plan, terms URL, licence line, task ids, sha256 per file).
+- **Text to motion is `ai_generated = true`.** Its raw FBX is on an SMPL-H skeleton, the body model of the research
+  motion datasets; Meshy does not say what its model was trained on. Ownership of the output does not tell whether
+  the training data allowed commercial use, so the clip is treated like the library clips below until Meshy says.
+- **The library motions' provenance is not disclosed** (motion capture of its own, bought libraries, or generation):
+  ownership of the output under 3.2 says the output is ours, not that the motion underneath is free of third-party
+  rights, and bought motion libraries usually allow use inside a game but not redistribution of the raw files. So
+  for the art repo's rules: **`public_repo_ok = false`** for every manifest that uses a Meshy library clip or the
+  text-to-motion clip, `ai_generated = true` for the text-to-motion clip and unknown (recorded as such) for the library
+  clips, and the raw files stay private (`D:/prime-art-raw/2026-10-b4-animations/` and OneDrive, never in git). A clip
+  we retarget, clean up or key by hand from one of them is still derived from it. **The game repo is public**, so in
+  this state no Meshy clip can enter it; the question for the engineer is below.
 
 ## Recommendation per game need
 
-From art #20's and #24's needs table; "Meshy" needs the run.
+From art #20's and #24's needs table. "Private" means usable only if the engineer decides how a
+`public_repo_ok = false` clip may reach the game (below).
 
-| Need | Now | After the Meshy run |
+| Need | Recommendation | Meshy's clip, as tried |
 |---|---|---|
-| Walk 4.5 m/s, sprint 7.0 m/s | UAL Walk_Loop/Jog blend and Sprint_Loop, **with the toe bones** (the feet fix is ours, not the source's) | compare Meshy's walk, run and Run Fast on the feet measures; keep UAL unless Meshy's feet are clearly better (UAL is CC0 and public-safe) |
-| Moving sideways and backwards | Run_Back (pack) | Walk Backward (Meshy) for backwards, private only; a side-step strafe is in neither (UAL1 Pro or our own) |
-| Turning in place | gap | Idle Step Turn Left (Meshy), mirrored for the right |
-| Being pushed | Hit_Chest (UAL) | Hit Reaction (Meshy) |
-| Knocked down, downed, crawling | Death01, Hit_Knockback, LayToIdle (UAL, UAL2); crawl: gap | Knock Down, Prone Reach Help, Crawl and Look Back (Meshy) and the text-to-motion crawl |
-| Carry the package | UAL2 Walk_Carry_Loop's upper body | Carry Heavy Object Walk (Meshy) against it |
-| Gestures, emotes | pack Wave, UAL Dance_Loop, UAL2 Yes and folded arms | Shrug, Finger Wag No (Meshy): the fingers are the test |
-| Everything else (idle, jump, use, talk, knife, hit) | as art #20 and #24 recommend | unchanged |
+| Walk 4.5 m/s | **UAL1** Walk_Loop/Jog_Fwd_Loop blend with the toe bones (CC0) | Walking: natural, feet as good after our retarget (front level, 3.3 cm/s), floats 0.9 cm; private |
+| Sprint 7.0 m/s | **UAL1** Sprint_Loop (and the Jog blend) with the toe bones | Run Fast: a sprinter's dash with a 40 to 50 degree lean, 6.4 m/s; a look choice (designer) and private |
+| Moving backwards | **pack** Run_Back for now; **Meshy** Walk_Backward if private clips are allowed (slide 3.1 against 33.4 cm/s, front of the shoe 7 against 21 degrees) | the best backward clip we have |
+| Moving sideways | gap (no clean strafe in UAL1, UAL2, the pack or Meshy's library) | none in the library |
+| Turning in place | **Meshy** Idle_Step_Turn_Left (mirrored for the right) if private clips are allowed; else turn the idle in the engine | a clean two-step 90 degree turn |
+| Being pushed | **UAL2** Hit_Knockback / **UAL1** Hit_Chest (as art #24) | Hit Reaction: a readable sideways stagger; private |
+| Knocked down | **UAL1** Death01 (as art #20) | Knock Down: a cartoon somersault; a look choice and private |
+| Downed (lying, waiting for a revive) | **Meshy** Prone_Reach_Help if private clips are allowed (the only downed idle); **UAL2** LayToIdle for the get-up | face down, reaching for help; UAL2's get-up starts on the back, so the two do not join without a turn-over |
+| Crawling while downed | **Meshy** Crawl_and_Look_Back if private clips are allowed; for a public-safe crawl, **UAL1 Pro** | the library crawl reads well; the text-to-motion crawl heads 20 degrees off and does not loop: not worth more credits |
+| Carrying the package | **UAL2** Walk_Carry_Loop's upper body (as art #24): the package is small, held close | Carry Heavy Object Walk is a wide box and a waddle: another prop |
+| Gestures, emotes | **UAL2** Yes, folded arms, No and the **pack** Wave (as art #24) | Shrug works without fingers (private); Finger Wag No fails without fingers |
+| Everything else (idle, jump, use, talk, knife, hit) | as art #20 and #24 recommend | not tried |
 
-**The UAL1 Pro money question still stands** for the side-step strafes (no Meshy library clip is a plain strafe) and
-for a clean, public-safe crawl; Meshy's library is private-only while its provenance is undisclosed, so for anything
-that may go public UAL1 Pro (CC0, $9.99) remains the cheaper safe source for crawling and 8-direction locomotion.
+**Meshy for animation, overall:** worth it for gaps only, not for locomotion. The clips themselves are good motion
+capture quality; Meshy's own rig is worse than ours on the feet (no IK, sliding, floating on the woman) and has no
+fingers, so whatever we take from Meshy we take as a clip and retarget onto our rig, which this task now does
+(`meshy_um.toml`). Text to motion gave a usable but crooked crawl for 13 credits; the library is the better buy.
+
+**The UAL1 Pro money question still stands**: Meshy's library can fill the backward walk, the turn, the downed idle
+and the crawl only privately, and fills no strafe at all; UAL1 Pro (CC0, $9.99, per art #20's research) remains the
+cheap public-safe source for crawling and 8-direction locomotion.
+
+## Questions for the engineer (licence and money)
+
+1. **May a Meshy library clip reach the game, and how?** The game repo is public; the clips are `public_repo_ok =
+   false` while Meshy does not disclose their source. Options: (a) no: Meshy stays for props, the gaps go to UAL1 Pro
+   and our own keys; (b) ask Meshy support in writing whether library animations may be redistributed in a public
+   repository (the engineer writes, or allows the manager to draft it); (c) keep such clips out of the public repo (a
+   private asset pack the game loads). **Recommendation: (b) first, and (a) meanwhile**: nothing waits on Meshy, and
+   UAL1 Pro answers the crawl publicly.
+2. **UAL1 Pro ($9.99)** for a public-safe crawl and strafes: recommended (unchanged since art #20).
+3. **The look** (with the designer): Run Fast's sprinter's lean and Knock Down's somersault are style choices; neither
+   is recommended for the game's tone without the designer's eye (both are private anyway).
+
+## Reproduce
+
+```
+tools/run.py retarget --library meshy --body men --clips Walking,RunFast --floor
+tools/run.py anim-review clips --sources meshy,meshyw --out D:/prime-art-raw/review/stage1/25
+tools/run.py anim-review clips --body men --clips meshy_own:Walking,...,ual:Walk_Loop,... --out D:/prime-art-raw/review/stage1/25
+tools/run.py anim-review clips --body women --clips meshyw_own:Walking,...,ual:Walk_Loop,... --out D:/prime-art-raw/review/stage1/25
+tools/run.py anim-review pairs --sources meshy,meshyw --out D:/prime-art-raw/review/stage1/25
+tools/run.py anim-review feet --only meshy_feet_men,meshy_feet_women,meshy_toes --out D:/prime-art-raw/review/stage1/25
+tools/run.py anim-review table --out D:/prime-art-raw/review/stage1/25
+```
+
+The own-rig runs list every Meshy clip of the rig and the best clips of the needs (the full lists are in the PR). The
+measures of art #25's first run (UAL with the toe bones) are in the same folder's `feet/<body>/ual_locomotion.json`.
