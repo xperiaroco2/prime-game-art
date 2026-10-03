@@ -217,7 +217,7 @@ layered row is UAL1's Idle_Loop under UAL2's carry upper body (`ual:Idle_Loop|ua
 | ual2 | Farm_Harvest | no | 2.50 | 0.00 / 0.00 | 0.0/0.0; 0.0/0.0 | -0.6 / -0.8 | 0.0/0.0/0.0/0.4; 0.0/0.0/0.0/3.3 | 0.0 / 0.0 | 12.0 / 12.0 | 0.0-77.9 | Bends deep, reaches the floor with the right hand (the left stays on the knee), pulls up and stands (2.5 s): **a one-handed floor pickup** art #20 lacked (the knife; not the two-handed package as it stands); long for a game action (cut or retime to about 1 s); the women's fists touch the thighs (3.3 cm) while bending |
 | ual2 | Farm_PlantSeed | no | 2.77 | 0.00 / 0.00 | 3.6/55.2; 4.0/71.1 | -6.5 / -7.4 | 0.0/0.0/0.0/3.4; 0.0/0.0/0.0/5.0 | 0.0 / 0.0 | 30.3 / 30.3 | 49.1-77.9 | Kneels on one knee, places something on the floor with the right hand (the left rests on the knee) and stands (2.77 s): **a one-handed put-down** art #20 lacked; the knee goes 6.5/7.4 cm into the floor as on UAL's own mannequin (6.7/7.2): the knee pad, a floor clamp or accepted; the women's hand rests on the thigh (5.0 cm) |
 | ual2 | Farm_Watering | no | 3.80 | 0.00 / 0.00 | 0.0/0.0; 0.0/0.0 | -0.6 / -0.8 | 0.0/0.0/0.0/0.0; 0.0/0.0/0.0/1.8 | 0.0 / 0.0 | 14.0 / 14.0 | 77.9-77.9 | Pours from a can in the right hand (3.8 s). Not needed |
-| ual2 | Hit_Knockback | no | 0.83 | - / - | -; - | -0.9 / -1.0 | 0.0/0.0/0.0/1.3; 0.0/0.0/0.0/7.2 | 164.5 / 164.5 | 11.1 / 11.1 | 20.2-77.9 | A blast hit: starts crouched, is launched up and back and lands flat on the back (0.83 s; root motion 3.0 m back at 3.6 m/s). **A knockdown, not a push**: an alternative to Death01; its last pose is 1.5 cm and 10 degrees from LayToIdle's first. Lowest -0.9/-1.0 cm; the women's fist goes 7.2 cm into the thigh in the air |
+| ual2 | Hit_Knockback | no | 0.83 | - / - | -; - | -0.9 / -1.0 | 0.0/0.0/0.0/1.3; 0.0/0.0/0.0/7.2 | 164.5 / 164.5 | 11.1 / 11.1 | 20.2-77.9 | A blast hit: starts crouched, is launched up and back and lands flat on the back (0.83 s; root motion 3.0 m back at 3.6 m/s). **A knockdown, not a push**: an alternative to Death01; its last pose is 1.5 cm and 10 degrees from LayToIdle's first. It starts in a deep crouch, not standing (a blend from the idle or walk into its first frame is needed), throws the whole body clear of the floor (the lowest vertex up to 61.6/67.3 cm) and ends hovering 2.8/2.4 cm above the floor (a settle onto the floor or into LayToIdle's first frame). Read in motion it looks like an explosion, a weak match for a knife hit where the player falls where they stand. Lowest -0.9/-1.0 cm (the first, crouched frame); the women's fist goes 7.2 cm into the thigh in the air |
 | ual2 | Idle_FoldArms_Loop | yes | 2.50 | 0.00 / 0.00 | 0.6/4.6; 0.6/4.6 | -0.6 / -0.8 | 3.4/0.0/0.0/0.0; 0.0/0.0/0.0/0.0 | 0.5 (x0.7) / 0.5 (x0.7) | 24.7 / 24.7 | 77.9-77.9 | Arms folded across the chest, the weight shifting: **a clear idle emote**; the men's big hands press 3.4 cm into the chest |
 | ual2 | Idle_Lantern_Loop | yes | 2.50 | 0.00 / 0.00 | 0.0/0.0; 0.0/0.0 | -0.6 / -0.8 | 0.0/0.0/0.0/0.0; 0.0/0.0/0.0/0.5 | 0.2 (x0.4) / 0.2 (x0.4) | 0.9 / 0.9 | 77.9-77.9 | Holds the right arm straight forward with a fist (a lantern): stiffer than UAL1's Idle_Torch_Loop; not better for a one-handed hold |
 | ual2 | Idle_No_Loop | yes | 2.50 | 0.00 / 0.00 | 0.0/0.0; 0.0/0.0 | -0.6 / -0.8 | 0.0/0.0/0.0/0.0; 0.0/0.0/0.0/1.3 | 0.2 (x0.1) / 0.2 (x0.1) | 0.9 / 0.9 | 77.9-77.9 | Head lowered and shaking slowly: a 'no' or a dejected idle, subtle at distance |
@@ -264,7 +264,7 @@ it named where the need was a gap). Looked at in the strips; verdicts on both bo
 |---|---|---|
 | `ual2_carry` | UAL2 Walk_Carry_Loop, UAL1 Idle_Loop + Walk_Carry_Loop upper body, UAL1 Pistol_Idle_Loop | **UAL2 fills the carry.** Both carry clips hold the package low in the middle with both hands, palms up, as the game's first-person hand does; Pistol_Idle_Loop (art #20's nearest) holds a grip at the chest. The walk leans back as under a heavy box (a look point if the package is light); the layered idle keeps the idle's stance and loops cleanly |
 | `ual2_pushed` | UAL2 Hit_Knockback, UAL1 Hit_Chest, pack HitRecieve_2 | **Not a push.** Hit_Knockback launches the body and lays it flat; for being pushed, art #20's Hit_Chest stays the nearest and the stagger remains a gap |
-| `ual2_knockdown` | UAL2 Hit_Knockback, UAL1 Death01, pack Death | A third knockdown: the fastest and most readable at distance (0.83 s, airborne, 3 m back with root motion), against Death01's natural 2.4 s stagger and the pack's cartoony sit-back. It chains into the downed pose (below). An option for the look question |
+| `ual2_knockdown` | UAL2 Hit_Knockback, UAL1 Death01, pack Death | A third knockdown: the fastest and most readable at distance (0.83 s, airborne, 3 m back with root motion), against Death01's natural 2.4 s stagger and the pack's cartoony sit-back. It chains into the downed pose (below), but it starts crouched (a blend-in from the idle or walk), launches the body 62/67 cm into the air and ends 2.8/2.4 cm above the floor: it reads as a blast, not as falling where one stands. An option for the look question beside Death01 retimed and exaggerated, not ahead of it |
 | `ual2_downed` | UAL2 LayToIdle, UAL1 Death01 | **UAL2 fills the get-up and the lying pose**: LayToIdle starts lying on the back, arms by the sides, and stands up through a sit-up and a crouch in 1.53 s, where art #20 had only Death01's last frame and no get-up |
 | `ual2_gestures` | UAL2 Yes, Idle_FoldArms_Loop, Idle_No_Loop, pack Wave | **Two new emotes read well**: the thumbs-up (Yes) and the folded arms; the head shake is subtle. The pack's Wave stays the wave |
 | `ual2_talking` | UAL2 Idle_TalkingPhone_Loop, UAL1 Idle_Talking_Loop | A phone call (hand at the ear, 5 to 8 cm into the big head); Idle_Talking_Loop stays the talking clip |
@@ -293,7 +293,9 @@ Source poses compared on UAL's own rig (`chain_check.py` in the review folder; t
 | UAL1 Death01 | pelvis 31 cm and 16 degrees apart, the head the same way; the arms differ by up to 129 degrees (Death01 lies with the arms out): a longer blend with a root shift |
 
 So UAL2 gives a matching set: Hit_Knockback to fall, LayToIdle's first frame held while downed, LayToIdle to stand up
-after a revive. The crawl between them is still missing.
+after a revive. Hit_Knockback still needs a blend-in (it starts crouched) and ends 2.8/2.4 cm above the floor, which
+the cross-fade into LayToIdle's first frame (+0.6/-1.0 cm) settles; Death01 retimed joins LayToIdle with the longer
+blend and root shift above. The crawl between them is still missing.
 
 ### The Female Mannequin (report only)
 
@@ -341,7 +343,7 @@ Read from the game repo (read only, 2026-10-03). The game has no crouch, no guns
 | Knocked down: falls where they stand (canned, no ragdoll) | `mvp-rules.md:134-138`; #165 "Q8 read back: falls and knockdowns are canned animations, no ragdoll" | Death01 (a stagger and a fall on the back); UAL2 Hit_Knockback (a blast launch onto the back, 0.83 s, joins LayToIdle); the pack's Death is the cartoony alternative | UAL / UAL2 / pack | needs the floor clamp; the look is a question |
 | Downed: lying and crawling at 1.0 m/s, giving up | `mvp-rules.md:134-146`; `base_mode.tres:331` `crawl_speed_mps = 1.0`; `client/player/player_controller.gd:8-9` | lying: LayToIdle's first frame (on the back, arms by the sides); crawling: none | UAL2 | crawling: **gap** |
 | Raising a downed player (hold E) and standing up after a revive | `mvp-rules.md:139-142` | Fixing_Kneeling for the raiser; LayToIdle for the get-up (1.53 s) | UAL / UAL2 | ready |
-| Dead body stays where it fell | `mvp-rules.md:147-148` | the knockdown's last frame | - | ready |
+| Dead body stays where it fell | `mvp-rules.md:147-148` | the knockdown's last frame (Hit_Knockback's hovers 2.8/2.4 cm above the floor: settle it, or hold LayToIdle's first frame) | - | ready |
 | Gestures with five fingers, emotes | #165 H6 (b) "players must be able to make hand gestures"; `GDD.md:23` | Wave (pack), Dance_Loop, Interact's pointing finger, Spell_Simple_Idle_Loop as "stop"; **UAL2 Yes (thumbs-up), Idle_FoldArms_Loop, Idle_No_Loop** | pack / UAL / UAL2 | clap, cheer, shrug, facepalm, laugh: **gap** |
 | First-person hands, forearms in the sleeves of the top | #165 Q10 (b); T18 | none: a first-person clip set on the arms (idle sway, walk bob, use, knife, hold, carry, pick up) | - | **gap** |
 
@@ -392,8 +394,10 @@ days, side-steps and backpedal 2 days, against $9.99 one-off). UAL2 Source does 
 4. **Speeds:** for 4.5 m/s the cycle-synced Walk_Loop/Jog blend at 1.0x until stride warping lands (not the Jog at
    0.81x/0.76x: a slow-motion bound); for 7.0 m/s Sprint_Loop at 0.82x (men) or 0.76x (women), or its blend with the
    Jog. The rates come from UAL's root-motion speeds scaled to each body (Jog 5.54/5.96 m/s, Sprint 8.53/9.18).
-5. **Look questions for @SwiftySinister** (with the engineer): the knockdown (UAL Death01, the pack's Death, or
-   Death01 retimed and exaggerated), the overall feel (UAL's natural mocap against the pack's cartoony stiffness), and
+5. **Look questions for @SwiftySinister** (with the engineer): the knockdown (UAL Death01, the pack's Death,
+   Death01 retimed and exaggerated, or UAL2 Hit_Knockback; the last two side by side: Hit_Knockback joins
+   LayToIdle with a short cross-fade but starts crouched, launches the body 62/67 cm into the air and ends
+   2.8/2.4 cm above the floor, a blast rather than a fall where one stands), the overall feel (UAL's natural mocap against the pack's cartoony stiffness), and
    **the women's stance**: UAL gives the women the same wide, turned-out stance as the men (`strips/women/ual_Idle_Loop.png`
    against the men's); options are to keep it, narrow it with a hip and foot offset on the women's clips (about
    0.5 day), or play the pack's women's idles (other motions, stiffer).
