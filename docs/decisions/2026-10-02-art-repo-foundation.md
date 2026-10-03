@@ -1,5 +1,8 @@
 # The art repository's foundation and the character contract
 
+> Amended 2026-10-03 by `2026-10-03-trust-model.md`: the art manager merges into `main` after the gate, and Meshy
+> within the plan's credits and free official downloads run under standing permissions.
+
 - **Status:** Accepted for this repository's own tooling (sections 1 to 6: layout, runner, hooks, raw folders,
   manifest, approval). **Proposed** for the character contract (section 7) until the body variants are chosen.
 - **Date:** 2026-10-02
