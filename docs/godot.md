@@ -8,12 +8,13 @@ commands for that; together they are the export step of `docs/pipeline.md` (step
 tools/run.py export <character.blend> [...] [--out DIR]          GLB with fixed options; glTF-Validator report.json
 tools/run.py godot-check <glb> [...] [--out DIR] [--strict-contract] [--humanoid]
                                                                   import headless in godot/; assertions; report.json
-tools/run.py frames <glb> [--clips A,B] [--compare Idle,Walk,Wave] [--video A,B] [--blend FILE] [--out DIR]
+tools/run.py frames <glb> [--clips A,B] [--compare all|A,B|''] [--video A,B] [--blend FILE] [--out DIR]
                                                                   Godot-rendered frame sheets (off-screen window)
 ```
 
 A full run for one character: `assemble --modes none --blend` about 9 s, `export` about 8 s, `godot-check` about 3 s
-(10 s for four), `frames` with all 24 sheets, the comparison and six clips about 90 s.
+(10 s for four), `frames` with all 24 sheets, the comparison of all 24 clips and six clips 90 to 110 s.
+`godot-check` and `frames` share `godot/import/`: run one at a time (each removes the GLBs an earlier run left there).
 
 ## export
 
@@ -22,10 +23,12 @@ mesh parented to it with one Armature modifier, no action assigned), resets ever
 Blender's glTF exporter with `EXPORT_OPTIONS`, every option the output depends on passed explicitly so that a changed
 Blender default cannot change the file. It writes `<out>/<id>/<id>.glb` and `<id>.export.json` (what Blender exported,
 in glTF axes: bones with parents and rest heads, parts, actions with frame ranges, bounds, height, the options, the
-Blender and exporter versions). The command then reads the GLB's JSON chunk and checks it against that description
+Blender and exporter versions, and each action's **seam**: the largest joint distance and bone rotation between its
+first and its last frame, which tells a closed cycle from an open one, see frames). The command then reads the GLB's JSON chunk and checks it against that description
 (`_export.check`: one skin of every bone, one skinned mesh node per part, every action an animation of its own length
 animating every bone, the armature the only root, no cameras, lights or images) and runs the pinned glTF-Validator
-(`gltf_validator --stdout --all`) into `<out>/<id>/report.json`; a check problem or a validator error fails the
+(`gltf_validator --stdout --all`; `--all` only prints every message to stderr, the JSON report holds them
+either way) into `<out>/<id>/report.json`; a check problem or a validator error fails the
 command, warnings are listed (grouped by code).
 
 ### The export options
@@ -66,11 +69,22 @@ the GLBs the commands import; `godot/.godot/` (ignored) is Godot's cache. Commit
 them too).
 
 Importing: `_godot.stage()` copies the GLB into `godot/import/` and writes a minimal `.import` file (`[remap]
-importer="scene"` and our parameters only; Godot fills in every other option with its default and adds the uid), then
-`godot --headless --path godot --import`. The one option we set is **`animation/fps = 24`**: Godot's editor import
-resamples a glTF animation at `animation/fps` (default 30), and the pack's actions are 24 fps. At 30 the joints on the
-pack's own frames were up to 7.6 mm from Blender's (m1_rex's Walk), at 24 up to 4.5 mm (below). The game's import of
-these characters needs the same setting: input for the contract v2.
+importer="scene"` and our options only; Godot fills in every other option with its default and adds the uid), then
+`godot --headless --path godot --import`. Two options are set:
+
+- **`animation/fps = 24`**: Godot's editor import resamples a glTF animation at `animation/fps` (default 30), and the
+  pack's actions are 24 fps. At 30 the joints on the pack's own frames were up to 7.6 mm from Blender's (m1_rex's Walk).
+- **`optimizer/enabled = false` on the AnimationPlayer node** (`_subresources` `nodes` / `PATH:AnimationPlayer`,
+  `_godot.PLAYER_OPTIONS`): the importer's animation optimizer (on by default) drops keys it finds linearly
+  interpolable within its velocity and angle errors. With it, joints were up to 16.7 mm from Blender's (m1_rex's Run,
+  the left hand at frame 17) and 4.5 mm in Walk; without it every joint and axis point of all 24 clips of m1_rex and
+  w1_ivy is within 0.017 mm (the JSON's rounding). The optimizer is an option of the AnimationPlayer node, not of the
+  animations (`_subresources` `animations` has no optimizer).
+
+The game's import of these characters needs both settings, or accepts the error: input for the contract v2.
+`godot-check` and `frames` first remove every GLB an earlier run left in `godot/import/` (`_godot.clear_staged`), so
+`--import` imports only this run's files; Godot's import lines go to the GLB whose `res://import/<stem>.glb` they name,
+and a line that names no staged file counts against every GLB of the run (`_godot.lines_for`).
 
 ## godot-check
 
@@ -100,6 +114,8 @@ without Godot:
 | `flat_colours` | no surface has an albedo texture |
 | `godot_output` | no ERROR line in Godot's import and inspection output (warnings are listed) |
 | `contract_height`, `contract_eye_height` | the contract v1 body gates (height 1.70 to 1.80 m to the top, eyes 1.6 +- 0.08 m): **warnings** unless `--strict-contract` |
+| `loop_modes` | **warning** while a cycle (`Idle*`, `Walk*`, `Run*`) imports with loop_mode NONE; names the open cycles |
+| `expectations`, `pack_floor` | only for a GLB without its `<stem>.export.json`: a **warning** that parts, bones and animations then come from the GLB itself (what it already lacks is not caught; no rest joints, hierarchy or Blender height), and a failure below the Ultimate Modular rig's 62 bones and 24 actions |
 
 The contract v1 gates are warnings by default because contract v1 was written for the earlier single base body: every
 final-test character is taller (m1_rex 1.967 m with his hair, m2_walt 1.858, w1_ivy 1.845, w2_nova 1.844; without hair
@@ -108,9 +124,9 @@ final-test character is taller (m1_rex 1.967 m with his hair, m2_walt 1.858, w1_
 severities (height fails, eyes warn).
 
 Output: `<out>/<stem>/report.json` (`passed`, every check with its status and detail, Godot's noteworthy lines, per
-part vertices, binds, rest bounds and materials, per animation length, tracks and motion) and `inspect.json` (the raw
+part vertices, binds, rest bounds and materials, per animation length, loop mode, tracks, position tracks and motion) and `inspect.json` (the raw
 description); exit 1 when any check fails. On 2026-10-03 all four final-test characters passed every check (with the
-two contract warnings each): 62 bones, 8 or 9 parts with 62 binds each, 24 animations of 62 tracks each (Godot's
+two contract warnings and the loop-mode warning each): 62 bones, 8 or 9 parts with 62 binds each, 24 animations of 62 tracks each (Godot's
 `remove_immutable_tracks` drops the constant ones: 7 position and 55 rotation tracks remain in Death), 1488 tracks
 resolved, the least motion 1.8 degrees (the women's Idle_Neutral).
 
@@ -122,8 +138,14 @@ resolved, the least motion 1.8 degrees (the women's Idle_Neutral).
 says Godot runs only headless (a manager follow-up). Per animation:
 
 - **times**: 8 evenly spaced whole frames (12 for locomotion, `Walk*` and `Run*`), on the pack's 24 fps frames where
-  the export's samples are exact; a loop (the idles and the locomotion, whose last frame repeats the first) is cut
-  into equal parts, a one-off runs from its first frame to its last (`_frames.times`);
+  the export's samples are exact (so "evenly" means rounded to whole frames); a loop (the idles and the locomotion) is
+  cut into equal parts of its cycle, a one-off runs from its first frame to its last (`_frames.times`, `_frames.cycle`).
+  A closed loop's last key repeats its first, so its cycle is its keys' length. An **open** loop's last key does not
+  (seam over 0.5 mm or 0.5 degrees in `export.json`): its first pose comes round one frame after its last key, so its
+  cycle is one frame longer. The pack's `Run`, `Run_Left` and `Run_Right` are open (men 103 mm / 18.4 degrees, women
+  75 mm / 12.5 degrees between the last key and the first): 20 frames, 0.83 s for the men and 25 frames, 1.04 s for
+  the women, not the 0.79 s and 1.00 s of their keys; every other cycle closes exactly. The sheet title gives the
+  cycle and says when it is open; `frames` warns about each open cycle;
 - **camera**: one fixed orthographic camera, 35 degrees from the front toward the character's left and 8 degrees up,
   sized to the skinned vertices at every sample time with a 10 % margin (so a fall stays in frame);
 - **light**: a neutral grey background and floor at y = 0, a key light with soft shadows, fill and rim lights,
@@ -133,47 +155,61 @@ says Godot runs only headless (a manager follow-up). Per animation:
   seconds) is drawn into each frame; the frames are scaled to 320 x 400 cells in a sheet of up to 6 columns under a
   title band (a 2D SubViewport); `sheets/<clip>.png`.
 
-`frames.json` records the window, each clip's camera (centre, axes, orthographic size), times and every joint's world
-position at each time. `--compare` (default Idle, Walk, Wave) keeps those frames at full size and runs
+`frames.json` records the window, each clip's camera (centre, axes, orthographic size), times and, at each time,
+every joint's world position and every bone's two **axis points** (`<bone>+x`, `<bone>+y`: 10 cm from the joint along
+world +X and +Y in the rest pose, carried by the bone's pose, `Character.axis_points`): they turn with the bone, so the
+comparison sees the rotation of a bone no other joint shows (17 leaves: `Head` carries the face, `Foot` the shoes, the
+fingertips). `--compare` (default `all`: every rendered clip; `''` for none) keeps those frames at full size and runs
 `tools/blender/compare_frames.py`: the character `.blend` (named by the export) posed at the same times from the rest
 pose (an action leaves the channels it does not key where the last action put them: without the reset the Wave's feet
 were 35 cm off), rendered with Workbench (`um/render.py`) through the same camera (Godot's orthographic size is the
 vertical extent, Blender's `ortho_scale` with a vertical sensor fit), composed with Godot's frames above Blender's
-(`compare/<clip>.png`), and each joint compared (`compare/compare.json`; a joint more than 10 mm off fails the
-command). `--video` writes every frame of one cycle and `tools/blender/encode_clips.py` encodes it with Blender's
-FFmpeg as H.264 in MP4 (480 x 600, 24 fps, constant quality, the cycle three times) into `clips/<clip>.mp4`.
+(`compare/<clip>.png`), and every joint and axis point compared (`compare/compare.json`; one more than 1 mm off, about
+0.6 degrees on the 10 cm lever, fails the command). `--video` writes every frame of one cycle (a closed loop frames 0
+to last - 1, an open loop and a one-off frames 0 to last) and `tools/blender/encode_clips.py` encodes it with
+Blender's FFmpeg as H.264 in MP4 (480 x 600, 24 fps, constant quality, the cycle three times) into `clips/<clip>.mp4`.
 
-**Measured** on whole frames (2026-10-03): m1_rex Idle 1.43 mm, Walk 4.52 mm, Wave 1.59 mm; w1_ivy Idle 1.79 mm,
-Walk 3.22 mm, Wave 1.64 mm, always at a fingertip or a foot; on most frames every joint is within 0.04 mm. The cause is Godot's editor
-import: it drops keys it finds linearly interpolable (m1_rex's Walk keeps 32 of 33 Foot.L position keys and 25 of 33
-rotation keys), so on those frames Godot interpolates where Blender has the exact key. The per-animation
-`optimizer/enabled` and `optimizer/max_*_error` import options do not change it, `remove_immutable_tracks = false`
-neither; a runtime `GLTFDocument` import keeps all 33 keys. A wrong pose differs by centimetres to decimetres, hence
-the 10 mm tolerance. The poses in the comparison images match.
+**Measured** on whole frames (2026-10-03, every clip of m1_rex and w1_ivy, 62 joints and 124 axis points): Godot and
+Blender agree within 0.017 mm everywhere. Before the optimizer was turned off they differed by up to 16.7 mm (m1_rex
+Run, a hand) and by 3.65 degrees on m1_rex's Roll `Foot.L`, which the joint-only comparison of the time could not see.
+The poses in the comparison images match.
 
 ## The SkeletonProfileHumanoid trial (`godot-check --humanoid`)
 
-Input for the contract v2, not adopted. The character is imported a second time as `<id>_humanoid.glb` with a BoneMap
+Input for the contract v2, not adopted. The character is imported again with a BoneMap
 (`godot/import/um_humanoid_bone_map.tres`, written from `_humanoid.BONE_MAP`) on its Skeleton3D through the importer's
-`retarget/bone_map` option, every other retarget option at its default (bone renamer on, the skeleton renamed
-`GeneralSkeleton`, rest fixer on). Mapped: 51 of the profile's 56 bones (Root, Hips, Spine = Abdomen, Chest = Torso,
-UpperChest = Chest, Neck, Head; per side Shoulder, UpperArm, LowerArm, Hand = Wrist, the thumb's Metacarpal, Proximal
-and Distal = Thumb1 to 3, and Index, Middle, Ring, Little = Pinky joints 2 to 4 as Proximal, Intermediate, Distal;
-UpperLeg, LowerLeg, Foot). The fingers' first joint (`Index1` starts 2.8 cm from the wrist, at the thumb's base) is a
-metacarpal the profile has only for the thumb. Unmapped rig bones: `Body`, `PT.L`, `PT.R`, and `Index1`, `Middle1`,
-`Ring1`, `Pinky1` per hand (11). Profile bones without a rig bone: `LeftEye`, `RightEye`, `Jaw`, `LeftToes`,
-`RightToes`.
+`retarget/bone_map` option, twice (`_humanoid.VARIANTS`): as `<id>_humanoid.glb` with
+**`retarget/remove_tracks/unimportant_positions = false`** (the result), and as `<id>_humanoid_defaults.glb` with every
+retarget option at its default (for comparison). The other retarget options stay at their defaults in both (bone
+renamer on, the skeleton renamed `GeneralSkeleton`, rest fixer on with its `overwrite_axis` and
+`normalize_position_tracks` defaults). Mapped: 51 of the profile's 56 bones (Root, Hips, Spine = Abdomen, Chest =
+Torso, UpperChest = Chest, Neck, Head; per side Shoulder, UpperArm, LowerArm, Hand = Wrist, the thumb's Metacarpal,
+Proximal and Distal = Thumb1 to 3, and Index, Middle, Ring, Little = Pinky joints 2 to 4 as Proximal, Intermediate,
+Distal; UpperLeg, LowerLeg, Foot). The fingers' first joint (`Index1` starts 2.8 cm from the wrist, at the thumb's
+base) is a metacarpal the profile has only for the thumb. Unmapped rig bones: `Body`, `PT.L`, `PT.R`, and `Index1`,
+`Middle1`, `Ring1`, `Pinky1` per hand (11). Profile bones without a rig bone: `LeftEye`, `RightEye`, `Jaw`,
+`LeftToes`, `RightToes`.
 
-Result (m1_rex and w1_ivy, 2026-10-03): the import works (one skeleton of 62 bones, every part still skinned to it,
-24 animations whose tracks resolve and move, height, feet and facing unchanged), but the locomotion does not survive.
-The pack moves the feet and the shoulders with translation keys (position tracks on `Foot.L`, `Foot.R`,
-`Shoulder.L`, `Shoulder.R`, besides `Body`, `PT.L`, `PT.R`); the retargeted animations keep position tracks only for
-the unmapped `Body`, `PT.L` and `PT.R`. In Walk the mapped feet end up to 52 cm (m1_rex) and 54 cm (w1_ivy) from the
-plain import's, twisted and off the ground (a sheet: `frames.gd` on the retargeted copy), and the rest of the body
-11 mm; Idle and Wave stay within 1 mm. A humanoid retarget of this rig needs the foot and shoulder translation baked
-into rotations first, or a profile that keeps them.
+Result (m1_rex and w1_ivy, 2026-10-03): **the humanoid import works with `unimportant_positions` off.** One skeleton
+of 62 bones, every part still skinned to it, 24 animations whose tracks resolve and move, height, feet and facing
+unchanged, and every mapped joint within 0.01 mm of the plain import at the compared poses of Idle, Walk and Wave.
+With Godot's defaults the locomotion breaks: `unimportant_positions` drops the position tracks of every mapped bone
+but the root and the hips, while the pack moves the feet and the shoulders with position keys (Walk's position tracks:
+`Body`, `Foot.L/R`, `Shoulder.L/R`, `PT.L/R`), so the mapped feet end up 52 cm (m1_rex) and 54 cm (w1_ivy) from the
+plain import's, twisted and off the ground (`humanoid/m1_rex_humanoid_defaults_Walk.png` on the review page). Caveat:
+keeping those position tracks is exact here because the trial retargets onto the same rig; on a skeleton with other
+proportions the feet's absolute positions would not fit (the reason Godot drops them by default). That trade-off is the
+contract v2's.
 
 ## Findings for later tasks
+
+- **Loop modes**: Godot imports all 24 animations with loop_mode NONE (the glTF names carry no `-loop` suffix): in the
+  game the idles, Walk and Run would play once and stop. The game's import sets their loop mode (per-animation
+  `settings/loop_mode` in `_subresources`) or the names get a loop suffix: the contract v2 decides.
+- **Open cycles**: `Run`, `Run_Left` and `Run_Right` (both body types) end one frame before their first pose comes
+  round; looped at the length of their keys they skip a step at every repeat. Their loop length in the game is
+  (last frame + 1) / 24 s: 0.833 s for the men, 1.042 s for the women.
+- **The game's import options**: `animation/fps = 24` and the AnimationPlayer's `optimizer/enabled = false` (above).
 
 - **The women's clips are 25 % longer** than the men's of the same name, in the pack's own files (Walk 1.67 s against
   1.33 s, Run 1.00 s against 0.79 s, Idle 2.08 s against 1.67 s): the women walk and run more slowly at the same game
