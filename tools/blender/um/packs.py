@@ -3,7 +3,7 @@ the file's own action set is remembered, every pose bone is reset; placing and t
 
 What the importer gives (Blender 5.2.2, glTF importer): an empty "RootNode", the armature "CharacterArmature" at a
 world scale of 100 with a -90 degree X rotation, its four meshes (<Name>_Head, _Body, _Legs or _Pants, _Feet) parented
-to it at the same transform, 21 "<bone>_end" empties, 24 actions "CharacterArmature|<name>" (suffixed ".001", ".002",
+to it at the same transform, 17 "<bone>_end" empties, 24 actions "CharacterArmature|<name>" (suffixed ".001", ".002",
 ... from the second import of a run on) on 24 NLA tracks, and the stray Icosphere. The importer leaves the rig in its
 first action (Death), so every pose bone is reset to identity after loading.
 """
