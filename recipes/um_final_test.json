@@ -1,0 +1,499 @@
+{
+ "description": "The final character test of 2026-10-03 (xperiaroco2/prime-game#165): two men and two women, each from five source characters of its own body type, with our scripted eyes, brows and mouths, posed with the pack's own actions. Ported from final-character-test/recipes.json; the reference numbers are its work/build_report.json.",
+ "packs": {
+  "M": "refs/Ultimate_Modular_Men_Pack",
+  "W": "refs/Ultimate_Modular_Women_Pack"
+ },
+ "skeleton": {
+  "M": "Business Man.glb",
+  "W": "Suit.glb"
+ },
+ "head_bone_rest": [
+  -0.0003,
+  -0.0431,
+  1.5873
+ ],
+ "face_shading": "flat",
+ "face": {
+  "M": {
+   "mouth_dz": -0.088
+  },
+  "W": {
+   "mouth_dz": -0.072
+  }
+ },
+ "characters": [
+  {
+   "id": "m1_rex",
+   "gender": "M",
+   "skin": null,
+   "head": {
+    "file": "Worker.glb",
+    "object": "Worker_Head",
+    "keep": [
+     "Skin"
+    ],
+    "eye_materials": [
+     "Eye"
+    ]
+   },
+   "hair": {
+    "file": "Punk.glb",
+    "object": "Punk_Head",
+    "materials": [
+     "Red",
+     "Red_Dark"
+    ],
+    "cut": [
+     "chin_tuft"
+    ],
+    "inflate": 0.0
+   },
+   "top": {
+    "file": "Hoodie Character.glb",
+    "object": "Casual_Body"
+   },
+   "bottom": {
+    "file": "Beach Character.glb",
+    "object": "Beach_Legs"
+   },
+   "shoes": {
+    "file": "Casual Character.glb",
+    "object": "Casual2_Feet"
+   },
+   "eyes": {
+    "style": "googly"
+   },
+   "brows": {
+    "style": "raised_thick",
+    "rgb": [
+     0.015,
+     0.01,
+     0.008
+    ]
+   },
+   "mouth": {
+    "style": "o",
+    "lip": [
+     0.3,
+     0.13,
+     0.08
+    ]
+   },
+   "recolor": [
+    {
+     "part": "top",
+     "material": "Purple",
+     "rgb": [
+      0.02,
+      0.32,
+      0.3
+     ],
+     "was": "purple hoodie"
+    },
+    {
+     "part": "shoes",
+     "material": "Red_Dark",
+     "rgb": [
+      0.03,
+      0.03,
+      0.035
+     ],
+     "was": "dark red sneakers (same red as the mohawk and shorts)"
+    }
+   ],
+   "pose": {
+    "action": "Wave",
+    "frame": 20
+   }
+  },
+  {
+   "id": "m2_walt",
+   "gender": "M",
+   "skin": [
+    0.22,
+    0.12,
+    0.065
+   ],
+   "head": {
+    "file": "Beach Character.glb",
+    "object": "Beach_Head",
+    "keep": [
+     "Skin"
+    ],
+    "eye_materials": [
+     "Eye"
+    ]
+   },
+   "hair": {
+    "file": "Business Man.glb",
+    "object": "Suit_Head",
+    "materials": [
+     "Hair"
+    ],
+    "inflate": 0.006
+   },
+   "extras": [
+    {
+     "role": "moustache",
+     "file": "Worker.glb",
+     "object": "Worker_Head",
+     "materials": [
+      "Moustache"
+     ],
+     "inflate": 0.004
+    }
+   ],
+   "top": {
+    "file": "Adventurer.glb",
+    "object": "Adventurer_Body"
+   },
+   "bottom": {
+    "file": "Farmer.glb",
+    "object": "Farmer_Pants"
+   },
+   "shoes": {
+    "file": "Swat.glb",
+    "object": "Swat_Feet"
+   },
+   "eyes": {
+    "style": "dots"
+   },
+   "brows": {
+    "style": "bushy_low",
+    "rgb": {
+     "from_part": "hair",
+     "material": "Hair"
+    }
+   },
+   "mouth": {
+    "style": "smirk",
+    "dz": -0.0925,
+    "lip": [
+     0.03,
+     0.008,
+     0.006
+    ]
+   },
+   "recolor": [
+    {
+     "part": "top",
+     "material": "Green",
+     "rgb": [
+      0.36,
+      0.22,
+      0.03
+     ],
+     "was": "dark olive shirt"
+    },
+    {
+     "part": "top",
+     "material": "LightGreen",
+     "rgb": [
+      0.48,
+      0.32,
+      0.06
+     ],
+     "was": "olive shirt trim"
+    },
+    {
+     "part": "moustache",
+     "material": "Moustache",
+     "rgb": {
+      "from_part": "hair",
+      "material": "Hair"
+     },
+     "was": "ginger Worker moustache, matched to the hair"
+    }
+   ],
+   "pose": {
+    "action": "Idle_Gun_Pointing",
+    "frame": 20,
+    "curl": {
+     "Middle.R": [
+      60,
+      70,
+      40
+     ],
+     "Ring.R": [
+      65,
+      70,
+      40
+     ],
+     "Pinky.R": [
+      65,
+      65,
+      40
+     ]
+    }
+   }
+  },
+  {
+   "id": "w1_ivy",
+   "gender": "W",
+   "skin": null,
+   "head": {
+    "file": "Witch.glb",
+    "object": "Witch_Head",
+    "keep": [
+     "Skin"
+    ],
+    "eye_materials": [
+     "Brown"
+    ],
+    "tuck_ears": 0.08
+   },
+   "hair": {
+    "file": "Animated Woman-nIItLV9nxS.glb",
+    "object": "Formad_Head",
+    "materials": [
+     "Red"
+    ],
+    "inflate": 0.006
+   },
+   "top": {
+    "file": "Suit.glb",
+    "object": "Suit_Body"
+   },
+   "bottom": {
+    "file": "Animated Woman.glb",
+    "object": "Casual_Legs"
+   },
+   "shoes": {
+    "file": "Soldier.glb",
+    "object": "Soldier_Feet"
+   },
+   "eyes": {
+    "style": "sleepy",
+    "iris": [
+     0.16,
+     0.07,
+     0.02
+    ],
+    "lash": [
+     0.02,
+     0.01,
+     0.008
+    ]
+   },
+   "brows": {
+    "style": "thin_arch",
+    "rgb": [
+     0.1,
+     0.012,
+     0.004
+    ]
+   },
+   "mouth": {
+    "style": "smile",
+    "lip": [
+     0.5,
+     0.04,
+     0.07
+    ]
+   },
+   "recolor": [
+    {
+     "part": "bottom",
+     "material": "Orange",
+     "rgb": [
+      0.03,
+      0.06,
+      0.22
+     ],
+     "was": "orange trousers"
+    }
+   ],
+   "pose": {
+    "action": "Walk",
+    "frame": 4
+   },
+   "extend": [
+    {
+     "part": "top",
+     "drop": 0.02,
+     "why": "Suit jacket hem met the trouser waistband with ~3 mm overlap: a see-through sliver at the sides"
+    }
+   ]
+  },
+  {
+   "id": "w2_nova",
+   "gender": "W",
+   "skin": [
+    0.78,
+    0.55,
+    0.42
+   ],
+   "head": {
+    "file": "Sci Fi Character.glb",
+    "object": "SciFi_Head",
+    "keep": [
+     "Skin"
+    ],
+    "as_skin": [
+     "Black"
+    ],
+    "straighten": [
+     "Black"
+    ],
+    "tuck_ears": 0.08,
+    "eye_materials": [
+     "Brown"
+    ]
+   },
+   "hair": {
+    "file": "Animated Woman.glb",
+    "object": "Casual_Head",
+    "materials": [
+     "Hair_Blond"
+    ],
+    "inflate": 0.006
+   },
+   "top": {
+    "file": "Punk.glb",
+    "object": "Punk_Body"
+   },
+   "bottom": {
+    "file": "Witch.glb",
+    "object": "Witch_Legs"
+   },
+   "shoes": {
+    "file": "Medieval.glb",
+    "object": "Medieval_Feet"
+   },
+   "eyes": {
+    "style": "cartoon",
+    "iris": [
+     0.05,
+     0.3,
+     0.1
+    ],
+    "lash": [
+     0.015,
+     0.01,
+     0.01
+    ]
+   },
+   "brows": {
+    "style": "soft_arch",
+    "rgb": [
+     0.2,
+     0.11,
+     0.035
+    ]
+   },
+   "mouth": {
+    "style": "grin",
+    "lip": [
+     0.4,
+     0.1,
+     0.1
+    ]
+   },
+   "pose": {
+    "action": "Idle",
+    "frame": 20
+   },
+   "extend": [
+    {
+     "part": "head",
+     "drop": 0.015,
+     "why": "Sci Fi head's neck ring ended exactly at the crop top's neckline (1.54 m): a see-through line"
+    }
+   ]
+  }
+ ],
+ "hands": [
+  {
+   "id": "m1_rex",
+   "shots": [
+    [
+     "L",
+     "front"
+    ],
+    [
+     "L",
+     "34"
+    ],
+    [
+     "L",
+     "back"
+    ],
+    [
+     "R",
+     "front"
+    ],
+    [
+     "R",
+     "34"
+    ]
+   ]
+  },
+  {
+   "id": "m2_walt",
+   "shots": [
+    [
+     "R",
+     "side"
+    ],
+    [
+     "R",
+     "34"
+    ],
+    [
+     "R",
+     "in34",
+     62
+    ],
+    [
+     "R",
+     "front"
+    ],
+    [
+     "L",
+     "front"
+    ],
+    [
+     "L",
+     "34"
+    ]
+   ]
+  }
+ ],
+ "crossgender": [
+  {
+   "id": "x1_men_top_on_woman",
+   "label": "men's top (Casual Character t-shirt) on the Suit woman",
+   "gender": "W",
+   "base_file": "Suit.glb",
+   "replace": {
+    "role": "top",
+    "remove": "Suit_Body",
+    "gender": "M",
+    "file": "Casual Character.glb",
+    "object": "Casual2_Body"
+   },
+   "pose": {
+    "action": "Idle",
+    "frame": 20
+   }
+  },
+  {
+   "id": "x2_women_bottom_on_man",
+   "label": "women's bottom (Animated Woman trousers) on the Business Man",
+   "gender": "M",
+   "base_file": "Business Man.glb",
+   "replace": {
+    "role": "bottom",
+    "remove": "Suit_Legs",
+    "gender": "W",
+    "file": "Animated Woman.glb",
+    "object": "Casual_Legs"
+   },
+   "pose": {
+    "action": "Idle",
+    "frame": 20
+   }
+  }
+ ]
+}
