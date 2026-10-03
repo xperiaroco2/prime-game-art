@@ -59,6 +59,21 @@ class RefusalsTest(FakeRaw):
         self.assertEqual(code, 1)
         self.assertIn("--res must be from 5 to 100", out)
 
+    def test_a_comparison_with_no_character_fails(self) -> None:
+        out, ref = self.raw / "out", self.raw / "reference.json"
+        ref.write_text("{}", encoding="utf-8")
+
+        def fake_blender(script: str, args: list[str], timeout: float) -> None:
+            out.mkdir(exist_ok=True)
+            (out / "build_report.json").write_text('{"characters": {}, "crossgender": {}}', encoding="utf-8")
+
+        path = self.write(mini())
+        with mock.patch.dict(os.environ, {"ART_RAW_DIR": str(self.raw)}), \
+                mock.patch("runner.blender.run_script", side_effect=fake_blender):
+            code, text = run_cli("assemble", str(path), "--modes", "crossgender", "--out", str(out), "--compare", str(ref))
+        self.assertEqual(code, 1)
+        self.assertIn("no character was built, so nothing was compared", text)
+
     def test_a_broken_recipe_lists_its_problems(self) -> None:
         data = mini()
         data["characters"][0]["shoes"]["object"] = "Punk_Shoes"

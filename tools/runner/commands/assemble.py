@@ -20,8 +20,8 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--ids", default="", help="comma list of character ids to build (default: all)")
     parser.add_argument(
         "--modes", default="",
-        help="comma list of chars, face, hands, lineup, crossgender, qa, ankles, or none (default: the recipe's "
-             "modes, else chars,face,hands,lineup,crossgender)",
+        help="comma list of chars, face, hands, lineup, crossgender, qa, ankles, or none (build and measure only; "
+             "default: the recipe's modes, else chars,face,hands,lineup,crossgender)",
     )  # fmt: skip
     parser.add_argument("--out", type=Path, help="output folder (default tools/out/assemble/<recipe>/)")
     parser.add_argument("--blend", action="store_true", help="also save blend/<id>.blend and blend/<id>.json")
@@ -81,6 +81,8 @@ def run(args: argparse.Namespace) -> int:
             common.ok(f"blend/{cid}.blend: {len(seen.get('objects', {}))} objects, {len(seen.get('actions', {}))} "
                       f"actions, feet at z {sidecar['feet_z_m']} m, transform check {sidecar['transform_check_max_error_m']} m")
     if reference is not None:
+        if not report["characters"]:
+            raise common.Failure("no character was built, so nothing was compared (crossgender alone builds none)")
         problems = _assembly.compare(reference, report)
         for line in problems:
             common.bad(line)

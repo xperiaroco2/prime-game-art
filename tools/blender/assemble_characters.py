@@ -71,7 +71,8 @@ def main():
     rd.setup_render()
     chars = {}
     recs = [rc for rc in R["characters"] if only is None or rc["id"] in only]
-    need_chars = args.blend or any(m in modes for m in ("chars", "hands", "lineup", "qa", "face", "ankles"))
+    # "none" builds and measures without rendering; crossgender alone needs no characters (as in the final test)
+    need_chars = args.blend or not modes or any(m in modes for m in ("chars", "hands", "lineup", "qa", "face", "ankles"))
     for i, rc in enumerate(recs if need_chars else []):
         coll = bpy.data.collections.new(rc["id"]); bpy.context.scene.collection.children.link(coll)
         arm, parts, rep = assemble.build_character(packs, R, rc, coll)

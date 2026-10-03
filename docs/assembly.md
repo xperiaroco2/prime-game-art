@@ -30,7 +30,7 @@ starts, then runs `tools/blender/assemble_characters.py` in background Blender a
 | Option | What it does |
 |---|---|
 | `--ids` | Build only these characters (default: all) |
-| `--modes` | `chars` (front and three-quarter), `face` (head close-ups), `hands` (the recipe's hand shots), `lineup` (all at one scale), `crossgender` (the clothing-across-body-types test), `qa` (back and side), `ankles` (each shoe collar from four sides), or `none`. Default: the recipe's `modes`, else `chars,face,hands,lineup,crossgender` |
+| `--modes` | `chars` (front and three-quarter), `face` (head close-ups), `hands` (the recipe's hand shots), `lineup` (all at one scale), `crossgender` (the clothing-across-body-types test), `qa` (back and side), `ankles` (each shoe collar from four sides), or `none` (build and measure, no renders; `crossgender` alone builds no character). Default: the recipe's `modes`, else `chars,face,hands,lineup,crossgender` |
 | `--out` | Output folder, default `tools/out/assemble/<recipe>/` |
 | `--blend` | Also save `blend/<id>.blend` and `blend/<id>.json` per character (below) |
 | `--res` | Render size in percent (default 100); the framing does not change. The tests use 10 |
@@ -196,7 +196,6 @@ render time); the neutral variant likewise (its report and 9 renders).
 
 The tolerances `--compare` and the test allow, in case a Blender or driver update moves a grazing ray: triangles
 exact; heights 1 mm; seam overlaps 0.2 mm; each probe band's see-through and poke-through counts 2 rays; the number
-of rays cast exact. `tools/tests/test_assembly_blender.py` rebuilds m2_walt (rebind, an extra part, colour
-references, the finger curl) and w1_ivy (the tucked bottom, edge extension, flattened ears, poke-through) at 10 %
-resolution against `tools/tests/fixtures/assembly/final_test_reference.json` (the final test's numbers) and checks
-their saved files; it skips when Blender or the packs are missing.
+of rays cast exact. `tools/tests/test_assembly_blender.py` rebuilds the four characters at 10 % resolution against
+`tools/tests/fixtures/assembly/final_test_reference.json` (the final test's numbers) and checks their saved files, in
+one Blender run of about 25 s; it skips when Blender or the packs are missing.
