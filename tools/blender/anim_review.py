@@ -325,8 +325,8 @@ def cmd_clips(a):
         res.update({"source": clip.source, "clip": clip.name, "body": a.body, "character": char_name})
         stem = (f"{clip.source}_{clip.name}" if clip.source != "layer"
                 else "layer_" + clip.key.replace(":", "_").replace("|", "+"))
-        src_label = {"pack": "Ultimate Modular pack", "layer": "layered"}.get(clip.source,
-                                                                              f"{LABELS[clip.source]} retargeted")
+        src_label = {"pack": "Ultimate Modular pack", "layer": "layered"}.get(
+            clip.source, f"{LABELS.get(clip.source, clip.source)} retargeted")
         title = f"{clip.name}  |  {src_label} on {a.body} ({char_name})  |  {clip.seconds:.2f} s"
         if not a.no_strips:
             path = os.path.join(a.out, "strips", a.body, stem + ".png")
