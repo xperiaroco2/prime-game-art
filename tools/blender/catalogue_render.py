@@ -137,7 +137,7 @@ def sheets(lib, data, items, out, log):
         hide_all()
         objs = []
         for r, g in enumerate(("M", "W")):
-            z = -r * {"top": 0.95, "bottom": 1.35, "shoes": 0.55}[slot]  # a row's height: the parts' span and labels
+            z = -r * {"top": 1.2, "bottom": 1.45, "shoes": 0.85}[slot]  # a row's height: the parts' span and labels
             row = []
             for pid in lib.of(slot, g):
                 e = data["parts"][pid]
@@ -172,6 +172,7 @@ def sheets(lib, data, items, out, log):
         hide_all()
         ids = sorted(i for i, e in items.items() if e["kind"] in kinds)
         per_row = 8 if name != "face" else 9
+        span = max(items[i]["bounds"]["max_m"][2] - items[i]["bounds"]["min_m"][2] for i in ids)
         objs, made_objs = [], []
         for r in range(0, len(ids), per_row):
             row = []
@@ -185,7 +186,7 @@ def sheets(lib, data, items, out, log):
                 made_objs.append(o)
                 row.append((text, o))
             o, _ = lay_row(row, coll, 0.0, yaw=yaw, label_size=0.018, gap=0.08)
-            dz = -(r // per_row) * 0.62
+            dz = -(r // per_row) * (span + 0.12)  # a row: the group's tallest item and its labels
             for b in o:
                 if b.type == "MESH":
                     b.data.transform(Matrix.Translation((0.0, 0.0, dz)))
