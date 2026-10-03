@@ -298,6 +298,9 @@ def cmd_pairs(a):
         # frame strip: a front and a side row per clip, at the same fractions of each clip's own length; the front
         # renders every clip at once and is cut into cells, the side renders each clip alone
         front_w = int(round(CELL[1] * spacing / BASE_HEIGHT / 2)) * 2
+        # the side cells are framed on each clip's own extent, so a fall or a lunge along Y stays in the picture
+        side = [framing(*bbox(chars[i], clip, [clip.seconds * j / (STRIP_FRAMES - 1) for j in range(STRIP_FRAMES)]),
+                        CELL[1] / front_w) for i, clip in enumerate(row)]
         rows = [[] for _ in range(2 * k)]
         for j in range(STRIP_FRAMES):
             for i, clip in enumerate(row):
@@ -311,7 +314,8 @@ def cmd_pairs(a):
                 for m, ch in enumerate(chars):
                     for o in ch["meshes"].values():
                         o.hide_render = m != i
-                ar.aim("side", Vector((0.0, 0.0, -FLOOR_PAD + BASE_HEIGHT / 2)), BASE_HEIGHT, front_w, CELL[1])
+                h, _, cy = side[i]
+                ar.aim("side", Vector((0.0, cy, -FLOOR_PAD + h / 2)), h, front_w, CELL[1])
                 rows[2 * i + 1].append(ar.render(os.path.join(TMP, "pair.png")))
             for ch in chars:
                 for o in ch["meshes"].values():
