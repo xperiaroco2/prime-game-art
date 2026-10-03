@@ -4,6 +4,26 @@ From a raw generation or download to an approved asset in the game. Based on sec
 (`docs/research/2026-10-02-wave-1/report.md`), updated with the engineer's answers on xperiaroco2/prime-game#165
 (2026-10-02). Where the report and this page differ, this page wins; where #165 and this page differ, fix this page.
 
+## Since 2026-10-03: the character base and who decides
+
+The direction below changed on 2026-10-03 (xperiaroco2/prime-game#165, stage 1 plan #16). Where they differ, this
+section wins:
+- **Characters are assembled, not generated.** The base is Quaternius' Ultimate Modular Men and Women (CC0): one
+  armature with five-finger chains, plus the toe bones being added in #25. The player chooses a body type. Tops, bottoms and
+  shoes are per body type; heads, hair, hats, accessories and our face parts are shared.
+- **The character route:**
+  - `assemble` builds characters from recipes (`docs/assembly.md`);
+  - `catalogue` holds the parts and their compatibility rules (`docs/catalogue.md`);
+  - `faces` holds our eyes, brows and mouths (`docs/faces.md`);
+  - `retarget` and `anim-review` bake and judge the clips (`docs/animations.md`);
+  - `export`, `godot-check` and `frames` carry a character into Godot 4.7.2 (`docs/godot.md`).
+- **Meshy makes items and props only.** It is also tried for animations (#25); characters do not come from it.
+- **Who decides:** the trust model (`docs/decisions/2026-10-03-trust-model.md`).
+  - The engineer, with the designer, decides taste; the engineer alone decides money and large or hard-to-reverse
+    changes.
+  - The art manager decides the rest and merges PRs into `main` after the gate.
+  - Meshy within the plan's credits and free official downloads run under standing permissions.
+
 ## Direction (the engineer's decisions, 2026-10-02)
 
 | Topic | Decision |
@@ -19,7 +39,7 @@ From a raw generation or download to an approved asset in the game. Based on sec
 | Names | A player's name shows only when you aim at them up close. A game rule, built in the game repo; the designer may object on #165 |
 | AI rules | Never name How to Fish or any other game or character in a prompt, never upload their screenshots, no personal photos; `ai_generated` recorded per asset; never free-plan output |
 | Raw files | `D:/prime-art-raw` on the engineer's PC; chosen originals copied to `OneDrive/prime-art-raw`; never in git |
-| Who generates | An agent, through the Meshy API, from the start; each batch only after the engineer's yes to its prompts, count and credits. The engineer buys the plan (Meshy Pro, one month) and sets `MESHY_API_KEY`; agents never enter keys or payment details |
+| Who generates | An agent, through the Meshy API, from the start; each batch only after the engineer's yes to its prompts, count and credits (since 2026-10-03: the standing permission within the plan's credits, see the section above). The engineer buys the plan (Meshy Pro, one month) and sets `MESHY_API_KEY`; agents never enter keys or payment details |
 
 The look is decided by the engineer together with the designer (@SwiftySinister); the art track proposes and renders,
 it does not choose.
@@ -27,8 +47,8 @@ it does not choose.
 ## Steps
 
 ```
-[agent, one batch at a time, after the engineer's yes recorded in batches/ and on the issue]
- 1 batch        prompts, count and credits written in a batch file; the engineer says yes
+[agent, one batch at a time; Meshy within the plan's credits under the standing permission, approval_ref in batches/]
+ 1 batch        prompts, count and credits written in a batch file with its approval_ref
  2 generate     Meshy API (text or image to 3D, about 30 credits per textured body): T-pose, five spread fingers,
                 6,000-8,000 faces per body, accessories and props smaller; no game or character names in prompts.
                 Files -> D:/prime-art-raw/<batch>/ with a log row per task; chosen originals -> OneDrive (raw-backup)
@@ -43,12 +63,13 @@ it does not choose.
  8 palette      drop the AI texture; per-face colour snapped to the shared palette; face decals by hand
  9 animations   bake each source clip onto the contract rig (falls and knockdowns included); fix contacts
                 (hands meet, reach the head); retime for feel; first-person arm clips for the hands-in-sleeves view
-10 export       fixed glTF export options; Khronos glTF-Validator (pinned) -> report.json; a non-zero exit fails
+10 export       export: fixed glTF export options; Khronos glTF-Validator (pinned) -> report.json; a non-zero exit
+                fails; then godot-check (headless import into godot/) and frames (off-screen Godot sheets)
 11 render       8 views at 45 degrees in a 4x2 sheet with a caption; 8-frame sheets per clip; a lit hero image;
                 variants side by side. Shown to the engineer as a private artifact page, never committed
-[humans]
-12 approve      a PR in this repo: the designer approves the look, the engineer the tech; the engineer merges;
-                the manifest gets approved_by, approved_at, approval_pr (docs/manifest.md)
+[the designer for the look; the art manager merges after the gate]
+12 approve      a PR in this repo: the designer approves the look on the review page; the art manager merges after
+                the gate (trust model); the manifest gets approved_by, approved_at, approval_pr (docs/manifest.md)
 [agent, game repo xperiaroco2/prime-game, its own task workflow]
 13 bring in     the approved .glb (LFS), its .import, and a credits entry with the public provenance fields
 14 check        the game's tools\run.cmd check and its asset tests
@@ -56,10 +77,16 @@ it does not choose.
 16 merge        a human merges
 ```
 
-Commands by step: `meshy` and `raw-backup` (steps 1 and 2, `docs/meshy.md`); `probe` and `render` (steps 3 and 11,
-`docs/blender.md`); `contract`, `check` and `rename-bones` (steps 4 and 6, `docs/contract.md`); `manifest-check` (the
-manifest in every step). Decimation, weight transfer, the palette recolour, the clip bake and the export are later
-issues.
+Commands by step:
+- steps 1 and 2: `meshy` and `raw-backup` (`docs/meshy.md`);
+- steps 3 and 11: `probe` and `render` (`docs/blender.md`);
+- steps 4 and 6: `contract`, `check` and `rename-bones` (`docs/contract.md`);
+- step 9: `retarget` and `anim-review` (`docs/animations.md`);
+- step 10: `export`, `godot-check` and `frames` (`docs/godot.md`);
+- every step: `manifest-check`, for the manifests and `sources/` records.
+
+Characters come from `assemble` (`docs/assembly.md`) with parts from `catalogue` (`docs/catalogue.md`) and faces from
+`faces` (`docs/faces.md`). Decimation, weight transfer and the palette recolour are later issues.
 
 ## What is committed
 Per asset, `assets/<kind>/<id>/`: `manifest.toml`, `source/` (the working .blend), `export/` (the .glb), `report.json`.

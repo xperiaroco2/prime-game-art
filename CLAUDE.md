@@ -3,34 +3,53 @@
 The private art repository of prime-game (a first-person multiplayer social deduction game in Godot 4.7.2, public repo
 xperiaroco2/prime-game). Here agents turn raw 3D generations and downloads into checked, approved character, clothing,
 accessory, prop and animation assets: a headless Blender pipeline, review sheets, provenance manifests. The plan and
-the engineer's decisions: xperiaroco2/prime-game#165; the pipeline: `docs/pipeline.md`; the foundation ADR:
-`docs/decisions/2026-10-02-art-repo-foundation.md`. The engineer (xperiaroco2) writes no code and approves; the designer
-(@SwiftySinister) approves the look. Agents write everything else and verify it from the command line.
+the engineer's decisions: xperiaroco2/prime-game#165 and the stage plan issues here (stage 1: #16); the pipeline:
+`docs/pipeline.md`; the foundation ADR: `docs/decisions/2026-10-02-art-repo-foundation.md`; the trust model:
+`docs/decisions/2026-10-03-trust-model.md`. The engineer (xperiaroco2) writes no code. He decides taste, money and
+large or hard-to-reverse questions (the full list is under "Decisions" below) and trusts the art manager with
+the rest; the designer (@SwiftySinister) approves
+the look. Agents write everything else, verify it from the command line, and the art manager merges it.
 
 ## Rules
-- **Paid services and downloads need the engineer's yes for each batch.** No generation on a paid service (Meshy or any
-  other) and no download from the internet without it; the yes (prompts, count, credits) is recorded in the batch file
-  and on the issue. Reading web documentation is fine. Nothing is installed without the engineer's yes.
-- **No Godot or Blender window.** Blender runs only as `blender -b` through `tools/runner/blender.py`; Godot only with
-  `--headless`, and pictures come from the game's `tools\run.cmd shot`.
-- **Every source and asset has its licence recorded** in its `manifest.toml` (`docs/manifest.md`): licence, licence URL,
-  `public_repo_ok`, `ai_generated`. Never free-plan AI output, Mixamo, store packs (Synty, Fab, Unity Asset Store),
-  ActorCore or Rokoko raw files, or non-commercial data in anything that may go public.
+- **Paid services and downloads.** Two standing permissions from the engineer (2026-10-03) need no separate yes:
+  - Meshy generation within the plan's credits;
+  - free downloads from official sources.
+
+  Every Meshy batch still has a batch file with its `approval_ref`, and the spend goes into the plan issue's reports.
+  These still need the engineer's yes: purchases, subscriptions, paid generation beyond the plan's credits,
+  generation on any other paid service, any other download (mirrors, re-uploads, unofficial sources), and
+  installing anything. Reading web documentation is fine.
+- **No Godot or Blender window on screen.**
+  - Blender runs only as `blender -b` through `tools/runner/blender.py`.
+  - Godot checks run with `--headless`.
+  - Godot pictures come from a window placed off-screen: `--position -30000,-30000`, never minimized, never headless
+    (a headless Godot draws nothing). This repo's `frames` does that; so does the game's `tools\run.cmd shot`.
+- **Every source and asset has its licence recorded**:
+  - a downloaded pack or library in `sources/<id>.toml`;
+  - an asset in its `manifest.toml` (`docs/manifest.md`).
+
+  Each record holds the licence, the licence URL, `public_repo_ok` and `ai_generated`. Never put any of these in
+  anything that may go public: free-plan AI output, Mixamo, store packs (Synty, Fab, Unity Asset Store), ActorCore or
+  Rokoko raw files, or non-commercial data.
 - **Raw generations and downloads live in `D:/prime-art-raw`**, copies of chosen originals in `OneDrive/prime-art-raw`;
-  never in git (`raw/` is ignored). Manifests record their relative paths and SHA-256.
+  never in git (`raw/` is ignored). Manifests and source records hold their relative paths and SHA-256.
 - **Review images go to the engineer through private artifact pages**, never committed. Committed files are sources,
   approved exports, manifests and reports.
 - **The Meshy key comes from `MESHY_API_KEY`** (the user environment) and is never printed, logged or committed. Agents
   never enter keys, passwords or payment details anywhere; the engineer buys plans and sets keys.
 - **AI rules:** never name How to Fish or any other game or character in a prompt and never upload their screenshots;
   no personal photos; `ai_generated` is recorded per asset.
-- **Git:** only the engineer merges into `main`. Push task branches only (`git push -u origin <branch>`); no push to
-  `main` and no force push by hand (the pre-push hook refuses a push to or a deletion of `main`); no `git stash`
-  (set work aside with a WIP commit). Agents never close issues.
+- **Git:**
+  - The art manager merges task PRs into `main` with `gh pr merge` after the gate in the definition of done.
+  - Task branches are pushed with `git push -u origin <branch>`; nobody pushes to `main` directly.
+  - No force push by hand. The pre-push hook refuses a push to `main` or a deletion of it.
+  - No `git stash`: set work aside with a WIP commit.
+  - Agents do not close issues by hand; a merged PR's `Closes #n` closes its issue.
 - **English and small steps:** the repo is English (code, docs, commits, issues, PRs); Conventional Commits, one
   logical change per commit; commits made by an agent end with its `Co-Authored-By` trailer.
 - **Game code is never touched from here.** Approved assets enter xperiaroco2/prime-game through a game-repo PR under
-  the character contract (`contract/`, `docs/contract.md`), by the game's own task workflow.
+  the character contract (`contract/`, `docs/contract.md`), by the game's own task workflow; the game repo's `main` is
+  merged by humans.
 - **Verify before claiming.** Never say something works unless you ran it; show the command and its result. Check the
   environment live (`doctor`, `pins`) rather than trusting docs or memory; fix a doc that is wrong.
 - **No secrets in git** (tokens, keys, passwords). This is a hobby project: protections prevent accidents, not attacks.
@@ -39,15 +58,20 @@ the engineer's decisions: xperiaroco2/prime-game#165; the pipeline: `docs/pipeli
 | Path | What |
 |---|---|
 | `assets/<kind>/<id>/` | One asset: `manifest.toml`, `source/` (.blend), `export/` (.glb), `report.json` |
-| `batches/` | Generation batch files with the engineer's recorded yes (`docs/meshy.md`) |
-| `contract/` | The character contract: skeleton, slots, sockets, budgets (`docs/contract.md`) |
-| `docs/` | `pipeline.md`, `manifest.md`, `blender.md`, `meshy.md`, `contract.md`; `decisions/` (ADRs), `research/` |
+| `batches/` | Meshy batch files with their recorded approval (`docs/meshy.md`) |
+| `catalogue/` | The parts catalogue of the Ultimate Modular packs with compatibility rules, regenerated by `catalogue` (`docs/catalogue.md`) |
+| `contract/` | The character contract: skeleton, slots, sockets, budgets (`docs/contract.md`); `bone_maps/` |
+| `docs/` | `pipeline.md`, `assembly.md`, `godot.md`, `catalogue.md`, `faces.md`, `animations.md`, `manifest.md`, `blender.md`, `meshy.md`, `contract.md`; `decisions/` (ADRs), `research/` |
+| `faces/` | The face kit's style families (`styles.json`), review settings and review heads (`docs/faces.md`) |
+| `godot/` | The Godot 4.7.2 import-check project for `godot-check` and `frames`; `import/` and `.godot/` ignored; one run at a time (`docs/godot.md`) |
+| `recipes/` | Character recipes for the assembler (`docs/assembly.md`) |
+| `sources/` | Source records of downloaded packs and libraries: licence, page, raw paths and hashes (`docs/manifest.md`) |
 | `tools/run.py`, `run.cmd`, `run.sh` | The runner; commands are modules in `tools/runner/commands/` |
 | `tools/runner/` | `cli.py`, `common.py`, `pins.py` (tool versions and paths), `blender.py` (headless Blender) |
-| `tools/blender/` | Scripts that run inside Blender (`docs/blender.md`) |
+| `tools/blender/` | Scripts that run inside Blender (`docs/blender.md`): `um/` (the Ultimate Modular assembler, `docs/assembly.md`), `retarget*.py` with `retarget_maps/` (bone maps), `anim_*.py` with `anim_review.toml`, `catalogue*.py`, `faces_*.py`, `export_glb.py` |
 | `tools/godot/` | The headless Godot project that generates the contract |
 | `tools/githooks/` | `pre-push`; `doctor` sets `core.hooksPath` to it |
-| `tools/tests/` | unittest tests, `test_<area>_*.py`; a test needing Blender or Godot skips when it is missing |
+| `tools/tests/` | unittest tests, `test_<area>_*.py`; a test needing Blender, Godot or the raw files skips when they are missing |
 | `tools/out/` | Runner output and temporary files (ignored) |
 
 Git LFS stores every binary (`.gitattributes`). All of the account's repos share 10 GiB of LFS storage: commit only
@@ -61,11 +85,19 @@ Windows: `tools\run.cmd <command>`. Git Bash: `tools/run.sh <command>`. Python 3
 | `doctor [--quick]` | Checks Python, git, Git LFS, the hooks path (sets it), Blender, glTF-Validator, Godot, the raw folders, `gh`, `MESHY_API_KEY` (yes/no). Run it first in every session |
 | `verify` | `selftest`, then `manifest-check`: the definition-of-done gate |
 | `selftest [-v] [-p PATTERN]` | unittest discovery over `tools/tests` |
-| `manifest-check [--hashes] [--root DIR]` | Validates every `assets/**/manifest.toml`; `--hashes` re-hashes the raw files |
+| `manifest-check [--hashes] [--root DIR]` | Validates every `assets/**/manifest.toml` and `sources/*.toml`; `--hashes` re-hashes the raw files |
 | `pins [--get NAME]` | Pinned tool versions and paths |
-| `probe`, `render` | Headless Blender: probe a model; 8-view review sheets (#2, `docs/blender.md`) |
-| `meshy`, `raw-backup` | The Meshy client for approved batches; copy chosen raw files to OneDrive (#3, `docs/meshy.md`) |
-| `contract`, `check`, `rename-bones` | Generate the contract from Godot; check a model against it; rename a rig's bones (#4, `docs/contract.md`) |
+| `probe`, `render` | Headless Blender: probe a model; 8-view review sheets and animation contact sheets (`docs/blender.md`) |
+| `assemble <recipe> [--ids] [--modes] [--out] [--blend] [--res] [--compare]` | Assembles Ultimate Modular characters from a recipe: renders, `build_report.json`, one clean `.blend` per character (`docs/assembly.md`) |
+| `export <character.blend>... [--out DIR]` | GLB with fixed options from saved characters; glTF-Validator `report.json` (`docs/godot.md`) |
+| `godot-check <glb>... [--strict-contract] [--humanoid]` | Imports into `godot/` headless and asserts the skeleton, separate skinned parts, animations, size, feet, facing and loop modes (`docs/godot.md`) |
+| `frames <glb> [--clips] [--compare] [--video] [--blend]` | Godot-rendered motion frame sheets in an off-screen window; a Blender comparison of joints and bone rotations; MP4 clips (`docs/godot.md`) |
+| `catalogue [--check] [--renders ...]` | The parts catalogue and compatibility rules, `catalogue/ultimate_modular.json`; `--check` regenerates and compares (`docs/catalogue.md`) |
+| `faces [--families] [--expressions] [--sheets] [--check]` | The face kit's style families rendered as review sheets (`docs/faces.md`) |
+| `retarget [--body] [--library ual2] [--blend] [--floor]` | Bakes Universal Animation Library clips onto a body type's Ultimate Modular armature (`docs/animations.md`) |
+| `anim-review <inventory\|clips\|pairs\|rates\|sheets\|table\|all> [--body] [--sources] [--clips]` | Judges animations in motion: inventory, measures, strips, MP4 clips, side-by-side pairs, the game's speeds (`rates`), sheets, table (`docs/animations.md`) |
+| `meshy`, `raw-backup` | The Meshy client for approved batches; copy chosen raw files to OneDrive (`docs/meshy.md`) |
+| `contract`, `check`, `rename-bones` | Generate the contract from Godot; check a model against it; rename a rig's bones (`docs/contract.md`) |
 
 Logs and reports go to `tools/out/`. Temporary files go there or to your scratchpad, nowhere else.
 
@@ -78,13 +110,37 @@ PowerShell 5.1 is the primary shell; the Bash tool is Git Bash. In Git Bash `pyt
 1. `tools/run.py verify` is green; paste its tail. Red: stop and report.
 2. A fresh-context review of the diff; fix the findings or list them in the PR.
 3. Docs updated if durable knowledge changed (`docs/`, an ADR for a decision).
-4. A PR into `main` (or a stacked PR into its parent branch) with the linked issue, a summary, the verification
-   commands and their output, and review images as private artifact links; a handoff comment on the issue.
-5. Only the engineer merges into `main`. Agents never close issues.
+4. A PR into `main` (or a stacked PR into its parent branch) with:
+   - the linked issue and a summary;
+   - the verification commands and their output;
+   - review images as private artifact links;
+   - a handoff comment on the issue.
+5. The art manager merges it with `gh pr merge` once:
+   - the fresh reviews leave no open blocker or major;
+   - `verify` is green on the merged tree (a trial merge when several PRs land together).
 
-## Stop and ask the engineer before
-- Any generation, download, install, purchase or subscription (see Rules).
-- Adding a dependency (the runner is standard library only) or changing the character contract once assets exist.
-- Anything destructive to git history or to the raw folder; anything about the look (with the designer), money or
-  licences outside the allowlist.
-- Batch such questions into one message, with options and a recommendation.
+   The merge goes into the next report on the plan issue.
+
+## Decisions: who decides (`docs/decisions/2026-10-03-trust-model.md`)
+The art manager decides alone, and reports on the plan issue, what does not need the engineer:
+- small matters;
+- matters that are easy to change later;
+- matters where the better option does not depend on his taste.
+
+The list below always wins over this one.
+
+It runs workflows for the stage's tasks while the account's weekly usage stays below 85%, counting a launch's
+expected cost, and reports each launch and its cost. At 85% it launches nothing more, reports and asks.
+
+Stop and ask the engineer, in one batched message with options and a recommendation, before:
+- anything about the look or taste (with the designer);
+- money: purchases, subscriptions, paid generation beyond the plan's credits;
+- licences outside the allowlist; game-design rules;
+- large or hard-to-reverse changes:
+  - the character contract once assets exist;
+  - deleting, moving or overwriting raw files (anything destructive to the raw folder);
+  - anything destructive to git history;
+- adding a dependency (the runner is standard library only) or installing a tool;
+- anything in the game repo;
+- loosening a rule in this file, the list above, the merge gate, the git hooks or the trust model itself.
+  Tightening them needs no yes.
