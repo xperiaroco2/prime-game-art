@@ -11,7 +11,8 @@ from pathlib import Path
 
 MAPS = Path(__file__).resolve().parent / "retarget_maps"
 DEFAULT = MAPS / "ual_um.toml"
-KEYS = {"title", "source_rig", "target_rig", "root", "hips", "height", "bones", "follow", "legs", "rest", "unused"}
+KEYS = {"title", "source_rig", "target_rig", "root", "hips", "height", "bones", "follow", "legs", "rest", "unused",
+        "align"}
 
 
 class MapError(ValueError):
@@ -55,6 +56,8 @@ def check(data: dict) -> dict:
         errors.append("[bones] maps two source bones to one target bone")
     for key in ("root", "hips"):
         pair = data.get(key)
+        if key == "root" and pair is None:
+            continue  # a source without a root bone (Meshy's rig, art #25): its hips carry the root motion
         if not (isinstance(pair, list) and len(pair) == 2 and bones.get(pair[0]) == pair[1]):
             errors.append(f"{key} must be [source, target], a pair that [bones] maps")
     height = data.get("height", {})
@@ -79,6 +82,11 @@ def check(data: dict) -> dict:
             errors.append(f"[[legs]] the foot {chain[2]!r} must follow the lower leg {chain[1]!r} in [follow]")
         if foot not in src:
             errors.append(f"[[legs]] source_foot {foot!r} is not a source rig bone")
+    align = data.get("align")
+    aligned = _names(data, "align", errors) if align is not None else []
+    for b in aligned:
+        if b not in targets:
+            errors.append(f"[align] {b!r} must be a mapped target bone")
     rest = _names(data, "rest", errors)
     unused = _names(data, "unused", errors)
     covered = targets + rest
@@ -99,13 +107,14 @@ def check(data: dict) -> dict:
         "source_bones": src_bones,
         "target_bones": tgt_bones,
         "bones": dict(bones),
-        "root": tuple(data["root"]),
+        "root": tuple(data["root"]) if "root" in data else None,
         "hips": tuple(data["hips"]),
         "height": {"source": list(height["source"]), "target": list(height["target"])},
         "follow": dict(follow),
         "legs": [{"target": list(leg["target"]), "source_foot": leg["source_foot"]} for leg in legs],
         "rest": rest,
         "unused": unused,
+        "align": aligned,
     }
 
 

@@ -20,6 +20,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import bpy  # noqa: E402
 
 import retarget_core as rc  # noqa: E402
+import anim_libs  # noqa: E402
 import retarget_map  # noqa: E402
 from anim_metrics import world_points  # noqa: E402
 
@@ -55,11 +56,20 @@ def main(argv):
     ap.add_argument("--blend", action="store_true")
     ap.add_argument("--floor", action="store_true")
     ap.add_argument("--prefix", default="UAL", help="the baked actions' name prefix (UAL, UAL2)")
+    ap.add_argument("--config", help="the review settings: the library's extra files, renames and in-place clips")
+    ap.add_argument("--library", help="the library's key in the review settings (meshy, art #25)")
+    ap.add_argument("--raw", help="the raw folder, which the settings' paths are relative to")
     a = ap.parse_args(argv)
     os.makedirs(a.out, exist_ok=True)
     bmap = retarget_map.load(a.map)
     rc.new_scene()
-    src = rc.load_glb(a.source)
+    ent = {}
+    if a.config and a.library:
+        import tomllib
+
+        with open(a.config, "rb") as f:
+            ent = anim_libs.entry(tomllib.load(f), a.library)
+    src = anim_libs.load(a.source, ent, a.raw, bmap["hips"][0])  # with a Meshy library's extra files (art #25)
     tgt = rc.load_glb(a.target)
     toes = None
     if any(b.startswith("Toe.") and b not in tgt["arm"].data.bones for b in bmap["target_bones"]):
@@ -86,7 +96,7 @@ def main(argv):
     }
     t0 = time.time()
     for name in names:
-        act, frames = rt.clip(src["actions"][name], f"{a.prefix}|{name}", tgt["arm"])
+        act, frames = rt.clip(src["actions"][name], f"{a.prefix}|{name}", tgt["arm"], src["samplers"][name])
         report["clips"][name] = {"frames": frames, "seconds": round(frames / rc.FPS, 3), "action": act.name,
                                  "ik_miss_mm": round(rt.miss_mm, 2)}
         if a.floor:

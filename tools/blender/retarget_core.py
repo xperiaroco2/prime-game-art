@@ -59,7 +59,10 @@ def load_glb(path: str) -> dict:
     actions = {}
     for act in bpy.data.actions:
         if act not in before_act:
-            name = base_name(act.name).split("|")[-1]  # "CharacterArmature|Walk.001" -> "Walk"
+            parts = base_name(act.name).split("|")  # "CharacterArmature|Walk.001" -> "Walk"
+            if len(parts) > 2 and parts[-1] == "baselayer":  # Meshy's "Armature|walking_man|baselayer"
+                parts.pop()
+            name = parts[-1]
             actions[name] = act
     reset_pose(arm)
     bpy.context.view_layer.update()
@@ -231,7 +234,9 @@ class Retargeter:
     def __init__(self, src: Rig, tgt: Rig, bmap: dict):
         self.src, self.tgt, self.map = src, tgt, bmap
         self.inv = {t: s for s, t in bmap["bones"].items()}
-        self.root_t, self.hips_s, self.hips_t = bmap["root"][1], bmap["hips"][0], bmap["hips"][1]
+        # a source without a root bone (Meshy's rig) leaves the target root at rest: its hips carry the root motion
+        self.root_t = bmap["root"][1] if bmap.get("root") else None
+        self.hips_s, self.hips_t = bmap["hips"][0], bmap["hips"][1]
 
         def hip_height(rig, names):
             return sum(rig.rest_world_pos(n).z for n in names) / len(names)
@@ -244,6 +249,17 @@ class Retargeter:
         self.src_rest_w = {s: src.world(src.rest[s]) for s in bmap["bones"]}
         self.src_rest_rot_inv = {s: rot(m).inverted() for s, m in self.src_rest_w.items()}
         self.tgt_rest_rot_w = {t: rot(tgt.world(tgt.rest[t])) for t in self.inv}
+        # [align] (art #25): target bones whose rest direction is turned onto the source bone's before the transfer,
+        # where the two rests differ by more than the motion can carry (Meshy's upper arms rest 10-15 degrees below
+        # ours: without it, an arm hanging at the side on Meshy's rig stands that far out on ours)
+        self.aligned = {}
+        for t in bmap.get("align", []):
+            child = next(c for c in tgt.order if tgt.parent[c] == t and c in self.inv)
+            d_s = src.rest_world_pos(self.inv[child]) - src.rest_world_pos(self.inv[t])
+            d_t = tgt.rest_world_pos(child) - tgt.rest_world_pos(t)
+            turn = d_t.rotation_difference(d_s)
+            self.tgt_rest_rot_w[t] = turn @ self.tgt_rest_rot_w[t]
+            self.aligned[t] = round(math.degrees(turn.angle), 2)
         self.tgt_Wrot_inv = tgt.Wrot.inverted()
         self.follow_off = {t: tgt.rest[c].inverted() @ tgt.rest[t] for t, c in bmap["follow"].items()}
         fwd = tgt.Wi.to_3x3().normalized() @ Vector((0.0, -1.0, 0.0))  # the target's front, in its armature space
@@ -423,13 +439,23 @@ class Retargeter:
         """Retargets the source rest pose: the largest bone-head offset (mm, world) and rotation (degrees) from the
         target rest. Both are zero when the method is right."""
         P, basis = self.solve(fk(self.src, {}))
-        off = max((self.tgt.W @ P[n].translation - self.tgt.W @ self.tgt.rest[n].translation).length for n in P)
-        ang = max(min(a, 360 - a) for a in (math.degrees(rot(b).angle) for b in basis.values()))
-        return {"max_offset_mm": round(off * 1000, 4), "max_rotation_deg": round(ang, 4)}
+        moved = set(self.aligned)  # an aligned bone and everything below it leave the target rest by design
+        for n in self.tgt.order:
+            if self.tgt.parent[n] in moved:
+                moved.add(n)
+        off = max((self.tgt.W @ P[n].translation - self.tgt.W @ self.tgt.rest[n].translation).length
+                  for n in P if n not in moved)
+        ang = max(min(a, 360 - a) for n, a in ((n, math.degrees(rot(b).angle)) for n, b in basis.items())
+                  if n not in moved)
+        out = {"max_offset_mm": round(off * 1000, 4), "max_rotation_deg": round(ang, 4)}
+        if self.aligned:
+            out["aligned_deg"] = dict(self.aligned)
+        return out
 
-    def clip(self, action, name: str, arm=None):
-        """Bakes one source action into a new action for the target armature; returns (action, frame count)."""
-        sampler = Sampler(action)
+    def clip(self, action, name: str, arm=None, sampler=None):
+        """Bakes one source action (or a sampler of it, such as an in-place one) into a new action for the target
+        armature; returns (action, frame count)."""
+        sampler = sampler or Sampler(action)
         n = int(round(sampler.frames))
         self.miss_mm = 0.0
         frames = []

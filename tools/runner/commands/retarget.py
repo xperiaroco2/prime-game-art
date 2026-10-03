@@ -19,9 +19,11 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--body", choices=_anim.BODIES, default="men", help="the body type (default men)")
     parser.add_argument("--target", type=Path, help="target GLB (default: the body type's donor in anim_review.toml)")
     parser.add_argument("--library", default="ual",
-                        help="the source library of the review settings: ual (UAL1, the default) or ual2 (art #24)")
+                        help="the source library of the review settings: ual (UAL1, the default), ual2 (art #24), "
+                             "meshy or meshyw (Meshy's rigs of the man and the woman, art #25)")
     parser.add_argument("--source", type=Path, help="source GLB (default: the library's in-place GLB, raw folder)")
-    parser.add_argument("--map", type=Path, help="bone map (default tools/blender/retarget_maps/ual_um.toml)")
+    parser.add_argument("--map", type=Path, help="bone map (default: the library's map in the review settings, or "
+                                                 "tools/blender/retarget_maps/ual_um.toml)")
     parser.add_argument("--clips", default="all", help="comma-separated source clip names (default all)")
     parser.add_argument("--out", type=Path,
                         help="output folder (default tools/out/retarget/<body>; another library: .../<library>/<body>)")
@@ -47,9 +49,11 @@ def run(args: argparse.Namespace) -> int:
     report_path = out / "retarget_report.json"
     report_path.unlink(missing_ok=True)
     script_args = ["--source", str(source), "--target", str(target), "--out", str(out), "--clips", args.clips,
-                   "--prefix", libs[args.library]["label"]]
-    if args.map:
-        script_args += ["--map", str(args.map.resolve())]
+                   "--prefix", libs[args.library]["label"], "--config", str(_anim.CONFIG), "--library", args.library,
+                   "--raw", str(common.raw_dir())]
+    own_map = cfg.get("libraries", {}).get(args.library, {}).get("map")  # a library on another rig (Meshy, art #25)
+    if args.map or own_map:
+        script_args += ["--map", str(args.map.resolve() if args.map else _anim.MAPS / own_map)]
     if args.no_ik:
         script_args.append("--no-ik")
     if args.blend:
@@ -63,11 +67,13 @@ def run(args: argparse.Namespace) -> int:
     rest = report["rest_check"]
     common.say(f"{Path(source).name} -> {Path(target).name}: translation scale {report['translation_scale']} "
                f"(hip joints {report['hip_height_m']['source']} m -> {report['hip_height_m']['target']} m)")
-    bad = {k: v for k, v in rest.items() if v > REST_TOLERANCE[k]}
+    bad = {k: rest[k] for k in REST_TOLERANCE if rest[k] > REST_TOLERANCE[k]}
     if bad:
         common.bad(f"the source rest does not land on the target rest: {rest}", "check the bone map and the rigs")
         return 1
-    common.ok(f"rest check: {rest['max_offset_mm']} mm, {rest['max_rotation_deg']} degrees")
+    common.ok(f"rest check: {rest['max_offset_mm']} mm, {rest['max_rotation_deg']} degrees"
+              + (f" (aligned to the source's rest, with what hangs below them: {rest['aligned_deg']} degrees)"
+                 if rest.get("aligned_deg") else ""))
     misses = {n: c["ik_miss_mm"] for n, c in report["clips"].items() if c["ik_miss_mm"] > 1.0}
     common.ok(f"{len(report['clips'])} clips baked in {report['seconds_spent']} s")
     if misses:
