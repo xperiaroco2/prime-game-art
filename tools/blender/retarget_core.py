@@ -223,7 +223,7 @@ class Retargeter:
     def __init__(self, src: Rig, tgt: Rig, bmap: dict):
         self.src, self.tgt, self.map = src, tgt, bmap
         self.inv = {t: s for s, t in bmap["bones"].items()}
-        self.root_t, self.hips_t = bmap["root"][1], bmap["hips"][1]
+        self.root_t, self.hips_s, self.hips_t = bmap["root"][1], bmap["hips"][0], bmap["hips"][1]
 
         def hip_height(rig, names):
             return sum(rig.rest_world_pos(n).z for n in names) / len(names)
@@ -231,6 +231,8 @@ class Retargeter:
         self.src_hip = hip_height(src, bmap["height"]["source"])
         self.tgt_hip = hip_height(tgt, bmap["height"]["target"])
         self.ratio = self.tgt_hip / self.src_hip
+        # positions scale about each rig's own origin, so the rigs may stand anywhere when the retargeter is built
+        self.src_o, self.tgt_o = src.W.translation.copy(), tgt.W.translation.copy()
         self.src_rest_w = {s: src.world(src.rest[s]) for s in bmap["bones"]}
         self.src_rest_rot_inv = {s: rot(m).inverted() for s, m in self.src_rest_w.items()}
         self.tgt_rest_rot_w = {t: rot(tgt.world(tgt.rest[t])) for t in self.inv}
@@ -250,11 +252,25 @@ class Retargeter:
         self.foot_anchor = {}
         for leg in bmap["legs"]:
             foot, sf = leg["target"][2], leg["source_foot"]
-            pivot = tgt.world(tgt.rest[foot]).translation / self.ratio
+            pivot = self.to_src(tgt.world(tgt.rest[foot]).translation)
             self.foot_anchor[foot] = self.src_rest_w[sf].inverted() @ pivot
+        # the target hips bone (Body) is carried the same way by the source pelvis: the two rigs put their pelvis
+        # pivots in different places (UAL's pelvis head is 5 cm behind its hip joints, the Ultimate Modular Body head
+        # 10 cm below its own), so moving Body by the pelvis head's displacement swings the hip joints about the wrong
+        # pivot once the pelvis turns (a fall or a roll pushed the body 13-17 cm into the floor)
+        hips_rest = self.to_src(tgt.world(tgt.rest[self.hips_t]).translation)
+        self.hip_anchor = self.src_rest_w[self.hips_s].inverted() @ hips_rest
         self.soles = {}
         self.ik = True
         self.miss_mm = 0.0  # the largest distance (mm) by which a leg fell short of its ankle goal since the reset
+
+    def to_src(self, p: Vector) -> Vector:
+        """A target world position at the source's size (scaled about the rigs' origins)."""
+        return (p - self.tgt_o) / self.ratio + self.src_o
+
+    def to_tgt(self, p: Vector) -> Vector:
+        """A source world position at the target's size (scaled about the rigs' origins)."""
+        return (p - self.src_o) * self.ratio + self.tgt_o
 
     def set_soles(self, meshes) -> None:
         """Reads each target foot's heel and toe from the meshes in the rest pose (the lowest vertices weighted to the
@@ -292,7 +308,9 @@ class Retargeter:
                 continue
             q_world = rot(S[s]) @ self.src_rest_rot_inv[s] @ self.tgt_rest_rot_w[t]
             q_arm = self.tgt_Wrot_inv @ q_world
-            if t in (self.root_t, self.hips_t):
+            if t == self.hips_t:
+                pos = tgt.Wi @ self.to_tgt(S[s] @ self.hip_anchor)
+            elif t == self.root_t:
                 delta = S[s].translation - self.src_rest_w[s].translation
                 pos = tgt.Wi @ (tgt.world(tgt.rest[t]).translation + delta * self.ratio)
             elif t in self.follow_off:
@@ -309,7 +327,7 @@ class Retargeter:
         upper, lower, foot = leg["target"]
         tgt = self.tgt
         sf = leg["source_foot"]
-        goal = tgt.Wi @ ((src_foot_w @ self.foot_anchor[foot]) * self.ratio)
+        goal = tgt.Wi @ self.to_tgt(src_foot_w @ self.foot_anchor[foot])
         H, K = P[upper].translation.copy(), P[lower].translation.copy()
         A = (P[lower] @ self.follow_off[foot]).translation
         L1, L2 = (K - H).length, (A - K).length

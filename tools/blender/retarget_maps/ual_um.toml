@@ -3,7 +3,9 @@
 #
 # [bones]   source = target: the target bone takes the source bone's world-space rotation change from its rest
 #           (both rigs rest in a T-pose facing -Y, so target = source * source_rest^-1 * target_rest).
-# root/hips the pairs whose translation is transferred, scaled by the hip-joint height ratio ([height]).
+# root/hips the pairs whose translation is transferred, scaled by the hip-joint height ratio ([height]): the root
+#           moves by the source root's displacement; the hips bone is carried in the source pelvis's frame (its rest
+#           position at the source's size, expressed in the source pelvis's rest frame), as the feet are.
 # [follow]  target bones carried by another target bone instead of their parent: the Ultimate Modular feet are
 #           children of Root (baked IK targets), so each foot is placed where its lower leg puts it.
 # [[legs]]  two-bone IK on the target leg that keeps the source ankle path (scaled): the foot contacts.
