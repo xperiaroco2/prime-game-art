@@ -119,10 +119,10 @@ with the fix applied at assembly.
 | `thresholds` | `ray_slack` (2), `gap_mm` (5: a "gap" in the counts, in whole millimetres as the final test reported), `fixable_mm` (30), `poke_behind_m` (0.015), `hair_inflate` (0.006), `zfight_m` (0.0005), `states` |
 | `characters` | Counts per body type and in total, `animated_woman` (the two files compared: hashes, objects, equal mesh positions, equal animations and skin, the verdict), `animation_sets_per_body_type`, `skeletons_per_body_type` (distinct inverse bind matrix sets) |
 | `files[]` | Per pack file: `body_type`, `file`, `character` (the id name), `sha256`, `parts` (`{slot: {id, object}}`), `props`, `animations` (24), `animation_set` (a hash), `skin` |
-| `parts{id}` | Tops, bottoms and shoes: `slot`, `body_type`, `triangles`, `vertices`, `materials[]` (`name`, `rgb` linear, `triangles`), `bounds` (`min_m`, `max_m`), `geometry` (a hash of the rest vertices to 1 mm), `same_geometry_as` (an equal mesh), `seams` (below) |
+| `parts{id}` | Tops, bottoms and shoes: `slot`, `body_type`, `triangles`, `vertices`, `materials[]` (`name`, `rgb`: the GLB's linear `baseColorFactor`, `triangles`), `bounds` (`min_m`, `max_m`), `same_geometry_as` (only when an equal mesh exists, found with a 0.5 mm point test; no clothing twins exist today), `seams` (below) |
 | `parts{id}.seams` | Top: `upper_edge_m`, `lower_edge_m` (torso column), `neck_ring_top_m` (its highest vertex within 0.10 m of the Neck bone); bottom: `upper_edge_m`, `lower_edge_m`, `leg_lower_edge_m` (`L`, `R`: within 0.13 m of each Foot bone); shoes: `top_edge_m`, `collar` (`L`, `R`: `min_m`, `max_m`, `sectors_m` the collar height in 16 sectors round the foot, from `um/fit.py`) |
-| `heads{id}` | Per pack head: `source`, `skull_type` (`full`, `open_top`, `none`), `skin_top_m`, `neck_bottom_m`, `regions[]` (`kind`, `subkind`, `material`, `pieces`, `triangles`), `items` (its item ids) |
-| `items{id}` | What a menu can offer: `kind` (`skull`, `hair`, `brows`, `facial_hair`, `headwear`, `earrings`, `accessory`), `subkind` (`moustache`, `beard`, `goatee`, `stubble`), `head`, `source`, `materials`, `pieces`, `triangles`, `bounds`, `geometry`, `same_geometry_as`, `recipe`, `recipe_check`; skulls also `skull_type`, `skin_top_m`, `neck_bottom_m`; hair `source_skull_type` and `style` (`cap`, `shell`); stubble `painted` |
+| `heads{id}` | Per pack head: `source`, `skull_type` (`full`, `open_top`, `none`), `skin_top_m`, `neck_bottom_m`, `materials[]` (`name`, `rgb`, `triangles`, as for parts), `triangles`, `bounds`, `regions[]` (`kind`, `subkind`, `material`, `pieces`, `triangles`), `items` (its item ids) |
+| `items{id}` | What a menu can offer: `kind` (`skull`, `hair`, `brows`, `facial_hair`, `headwear`, `earrings`, `accessory`), `subkind` (`moustache`, `beard`, `goatee`, `stubble`), `head`, `source`, `materials` (names), `colours[]` (`name`, `rgb`), `pieces`, `triangles`, `bounds`, `geometry`, `same_geometry_as`, `recipe`, `recipe_check`; skulls also `skull_type`, `skin_top_m`, `neck_bottom_m`; hair `source_skull_type` and `style` (`cap`, `shell`); stubble `painted` |
 | `items{id}.recipe` | The assembler's terms (`docs/assembly.md`): a skull is a `head` spec (`file`, `object`, `keep`, `eye_materials`, `as_skin`, `straighten`); other items a `hair` or `extras` spec (`role`, `file`, `object`, `materials`, `cut`) |
 | `items{id}.recipe_check` | `faces` (the item's), `mismatch_by_face` (faces today's assembler keeps differently: its zones test single face centres), `mismatch_by_piece` (the same zones tested on whole pieces: 0 for every item), `proposed_zones` (zones the recipe needs that `um/zones.py` lacks) |
 | `proposed_zones` | Cut zones defined in `catalogue_heads.py` and proposed for `um/zones.py`: `facial_hair`, `moustache`, `brows` (the brow box above z 1.698, where the women's `Brown` brows sit over the eyes), their `not_` complements, `not_chin_tuft`, `not_brow_zone`. Tested on pieces, the brow zones also ask for a brow's size (at most 64 triangles; brows have 12 to 40, a fringe piece whose centre falls in the box hundreds) |
@@ -136,6 +136,11 @@ with the fix applied at assembly.
 uses its subkind as the kind. `m` or `w` names the source pack, not a restriction: heads, hair and face items cross
 body types. Ids are stable as long as the packs' file names are (`catalogue_parts.CHARACTER` maps each file to its name
 and refuses an unknown file).
+
+**Colours** come from the GLB (`baseColorFactor`, linear), not from Blender: on meshes with a `COLOR_0` attribute
+(white everywhere in these packs) the glTF importer feeds the base colour from the attribute and leaves the viewport
+colour and the base colour's default at 0.8 grey (the men's Business and Casual trousers). `um/` reads
+`diffuse_color` too, so assembled characters with those trousers come out light grey until #17's code reads the GLB.
 
 ## Pictures for the review page
 

@@ -3,8 +3,11 @@ from the final character test (xperiaroco2/prime-game#165) and from the packs th
 
 from __future__ import annotations
 
+import json
+import struct
 import unittest
 
+from runner import common
 from runner.commands import _catalogue
 
 DATA = _catalogue.load()
@@ -133,6 +136,49 @@ class RulesTest(unittest.TestCase):
                     if c["verdict"] == "needs_fix":
                         self.assertTrue(c["fix_tried"]["closes"], f"{name}: {c['a']} x {c['b']}")
                         self.assertEqual(c["fix"]["fix"], c["fix_tried"]["fix"])
+
+
+PACKS = {"M": common.raw_dir() / "refs" / "Ultimate_Modular_Men_Pack",
+         "W": common.raw_dir() / "refs" / "Ultimate_Modular_Women_Pack"}
+
+
+def glb_node_colours(path) -> dict[str, list[tuple[str, list[float]]]]:
+    """{node name: [(material name, baseColorFactor rgb)]} straight from a GLB's JSON (independent of Blender)."""
+    data = path.read_bytes()
+    js = json.loads(data[20:20 + struct.unpack("<I", data[12:16])[0]])
+    out = {}
+    for n in js.get("nodes", []):
+        if "mesh" in n:
+            mats = [js["materials"][p["material"]] for p in js["meshes"][n["mesh"]]["primitives"] if "material" in p]
+            out[n["name"]] = [(m["name"], m.get("pbrMetallicRoughness", {}).get("baseColorFactor", [1, 1, 1, 1])[:3])
+                              for m in mats]
+    return out
+
+
+@unittest.skipUnless(all(p.is_dir() for p in PACKS.values()), "needs the Ultimate Modular packs in the raw folder")
+class ColoursTest(unittest.TestCase):
+    """Every recorded material colour (parts and heads) is the GLB's baseColorFactor of that material on the part's
+    source object (the importer's viewport colour was Blender's 0.8 grey on two pairs of trousers)."""
+
+    def test_colours_match_the_glb(self) -> None:
+        checked = 0
+        for f in DATA["files"]:
+            nodes = glb_node_colours(PACKS[f["body_type"]] / f["file"])
+            for slot, part in f["parts"].items():
+                rec = DATA["heads"][part["id"]] if slot == "head" else DATA["parts"][part["id"]]
+                for m in rec["materials"]:
+                    want = [c for n, c in nodes[part["object"]] if n == m["name"]]
+                    self.assertTrue(want, f"{part['id']}: {m['name']} is not on {part['object']}")
+                    self.assertTrue(any(all(abs(a - b) < 0.0006 for a, b in zip(m["rgb"], w)) for w in want),
+                                    f"{part['id']} {m['name']}: {m['rgb']} vs {want}")
+                    checked += 1
+        self.assertGreater(checked, 200)
+
+    def test_the_dark_trousers(self) -> None:
+        rgb = {m["name"]: m["rgb"] for m in DATA["parts"]["bottom_m_business"]["materials"]}
+        self.assertLess(max(rgb["Suit"]), 0.05)
+        rgb = {m["name"]: m["rgb"] for m in DATA["parts"]["bottom_m_casual"]["materials"]}
+        self.assertLess(max(rgb["LightBlue"]), 0.06)
 
 
 if __name__ == "__main__":

@@ -691,12 +691,62 @@
  "generated_by": "tools/run.py catalogue (tools/blender/catalogue.py)",
  "heads": {
   "head_m_adventurer": {
+   "bounds": {
+    "max_m": [
+     0.1116,
+     0.0936,
+     1.8559
+    ],
+    "min_m": [
+     -0.1084,
+     -0.1751,
+     1.4417
+    ]
+   },
    "items": [
     "beard_m_adventurer",
     "brows_m_adventurer",
     "hair_m_adventurer",
     "moustache_m_adventurer",
     "skull_m_adventurer"
+   ],
+   "materials": [
+    {
+     "name": "Skin",
+     "rgb": [
+      0.494,
+      0.334,
+      0.191
+     ],
+     "triangles": 448
+    },
+    {
+     "name": "Eyebrows",
+     "rgb": [
+      0.039,
+      0.027,
+      0.018
+     ],
+     "triangles": 24
+    },
+    {
+     "name": "Eye",
+     "rgb": [
+      0.025,
+      0.015,
+      0.009
+     ],
+     "triangles": 24
+    },
+    {
+     "name": "Hair",
+     "rgb": [
+      0.053,
+      0.022,
+      0.007
+     ],
+     "triangles": 3124
+    }
    ],
    "neck_bottom_m": 1.4417,
    "regions": [
@@ -745,11 +795,53 @@
     "body_type": "M",
     "file": "Adventurer.glb",
     "object": "Adventurer_Head"
-   }
+   },
+   "triangles": 3620
   },
   "head_m_astronaut": {
+   "bounds": {
+    "max_m": [
+     0.1573,
+     0.14,
+     1.8859
+    ],
+    "min_m": [
+     -0.1573,
+     -0.1973,
+     1.4271
+    ]
+   },
    "items": [
     "headwear_m_astronaut_space_helmet"
+   ],
+   "materials": [
+    {
+     "name": "SciFi_Light_Accent",
+     "rgb": [
+      0.293,
+      0.09,
+      0.025
+     ],
+     "triangles": 2112
+    },
+    {
+     "name": "SciFi_Light",
+     "rgb": [
+      0.358,
+      0.312,
+      0.292
+     ],
+     "triangles": 584
+    },
+    {
+     "name": "Grey",
+     "rgb": [
+      0.04,
+      0.04,
+      0.04
+     ],
+     "triangles": 2158
+    }
    ],
    "neck_bottom_m": null,
    "regions": [
@@ -778,14 +870,74 @@
     "body_type": "M",
     "file": "Astronaut.glb",
     "object": "SpaceSuit_Head"
-   }
+   },
+   "triangles": 4854
   },
   "head_m_beach": {
+   "bounds": {
+    "max_m": [
+     0.113,
+     0.0861,
+     1.8777
+    ],
+    "min_m": [
+     -0.1132,
+     -0.1811,
+     1.4405
+    ]
+   },
    "items": [
     "brows_m_beach",
     "earrings_m_beach",
     "hair_m_beach",
     "skull_m_beach"
+   ],
+   "materials": [
+    {
+     "name": "Skin",
+     "rgb": [
+      0.494,
+      0.334,
+      0.191
+     ],
+     "triangles": 448
+    },
+    {
+     "name": "Eyebrows",
+     "rgb": [
+      0.039,
+      0.027,
+      0.018
+     ],
+     "triangles": 24
+    },
+    {
+     "name": "Eye",
+     "rgb": [
+      0.025,
+      0.015,
+      0.009
+     ],
+     "triangles": 24
+    },
+    {
+     "name": "Hair",
+     "rgb": [
+      0.053,
+      0.022,
+      0.007
+     ],
+     "triangles": 1632
+    },
+    {
+     "name": "Earrings",
+     "rgb": [
+      0.343,
+      0.194,
+      0.053
+     ],
+     "triangles": 160
+    }
    ],
    "neck_bottom_m": 1.4405,
    "regions": [
@@ -826,13 +978,64 @@
     "body_type": "M",
     "file": "Beach Character.glb",
     "object": "Beach_Head"
-   }
+   },
+   "triangles": 2288
   },
   "head_m_business": {
+   "bounds": {
+    "max_m": [
+     0.1103,
+     0.0849,
+     1.8556
+    ],
+    "min_m": [
+     -0.1155,
+     -0.1751,
+     1.5012
+    ]
+   },
    "items": [
     "brows_m_business",
     "hair_m_business",
     "skull_m_business"
+   ],
+   "materials": [
+    {
+     "name": "Skin",
+     "rgb": [
+      0.494,
+      0.334,
+      0.191
+     ],
+     "triangles": 448
+    },
+    {
+     "name": "Hair",
+     "rgb": [
+      0.053,
+      0.022,
+      0.007
+     ],
+     "triangles": 1960
+    },
+    {
+     "name": "Eyebrows",
+     "rgb": [
+      0.039,
+      0.027,
+      0.018
+     ],
+     "triangles": 24
+    },
+    {
+     "name": "Eye",
+     "rgb": [
+      0.025,
+      0.015,
+      0.009
+     ],
+     "triangles": 24
+    }
    ],
    "neck_bottom_m": 1.5012,
    "regions": [
@@ -867,14 +1070,74 @@
     "body_type": "M",
     "file": "Business Man.glb",
     "object": "Suit_Head"
-   }
+   },
+   "triangles": 2456
   },
   "head_m_casual": {
+   "bounds": {
+    "max_m": [
+     0.1123,
+     0.168,
+     1.8566
+    ],
+    "min_m": [
+     -0.1125,
+     -0.1751,
+     1.505
+    ]
+   },
    "items": [
     "brows_m_casual",
     "hair_m_casual",
     "skull_m_casual",
     "stubble_m_casual"
+   ],
+   "materials": [
+    {
+     "name": "Skin",
+     "rgb": [
+      0.494,
+      0.334,
+      0.191
+     ],
+     "triangles": 404
+    },
+    {
+     "name": "Skin_Darker",
+     "rgb": [
+      0.39,
+      0.265,
+      0.152
+     ],
+     "triangles": 44
+    },
+    {
+     "name": "Eyebrows",
+     "rgb": [
+      0.039,
+      0.027,
+      0.018
+     ],
+     "triangles": 24
+    },
+    {
+     "name": "Eye",
+     "rgb": [
+      0.025,
+      0.015,
+      0.009
+     ],
+     "triangles": 24
+    },
+    {
+     "name": "Hair",
+     "rgb": [
+      0.053,
+      0.022,
+      0.007
+     ],
+     "triangles": 1188
+    }
    ],
    "neck_bottom_m": 1.505,
    "regions": [
@@ -916,14 +1179,74 @@
     "body_type": "M",
     "file": "Casual Character.glb",
     "object": "Casual2_Head"
-   }
+   },
+   "triangles": 1684
   },
   "head_m_farmer": {
+   "bounds": {
+    "max_m": [
+     0.1768,
+     0.1133,
+     1.8556
+    ],
+    "min_m": [
+     -0.1768,
+     -0.2442,
+     1.4545
+    ]
+   },
    "items": [
     "brows_m_farmer",
     "hair_m_farmer_buzz",
     "headwear_m_farmer_cowboy_hat",
     "skull_m_farmer"
+   ],
+   "materials": [
+    {
+     "name": "Skin",
+     "rgb": [
+      0.494,
+      0.334,
+      0.191
+     ],
+     "triangles": 308
+    },
+    {
+     "name": "Beige",
+     "rgb": [
+      0.266,
+      0.248,
+      0.161
+     ],
+     "triangles": 256
+    },
+    {
+     "name": "Eyebrows",
+     "rgb": [
+      0.039,
+      0.027,
+      0.018
+     ],
+     "triangles": 164
+    },
+    {
+     "name": "Red",
+     "rgb": [
+      0.162,
+      0.004,
+      0.011
+     ],
+     "triangles": 64
+    },
+    {
+     "name": "Eye",
+     "rgb": [
+      0.025,
+      0.015,
+      0.009
+     ],
+     "triangles": 24
+    }
    ],
    "neck_bottom_m": 1.4545,
    "regions": [
@@ -970,13 +1293,64 @@
     "body_type": "M",
     "file": "Farmer.glb",
     "object": "Farmer_Head"
-   }
+   },
+   "triangles": 816
   },
   "head_m_hoodie": {
+   "bounds": {
+    "max_m": [
+     0.1136,
+     0.0872,
+     1.8662
+    ],
+    "min_m": [
+     -0.1138,
+     -0.1751,
+     1.4994
+    ]
+   },
    "items": [
     "brows_m_hoodie",
     "hair_m_hoodie",
     "skull_m_hoodie"
+   ],
+   "materials": [
+    {
+     "name": "Skin",
+     "rgb": [
+      0.494,
+      0.334,
+      0.191
+     ],
+     "triangles": 420
+    },
+    {
+     "name": "Eyebrows",
+     "rgb": [
+      0.039,
+      0.027,
+      0.018
+     ],
+     "triangles": 40
+    },
+    {
+     "name": "Eye",
+     "rgb": [
+      0.025,
+      0.015,
+      0.009
+     ],
+     "triangles": 24
+    },
+    {
+     "name": "Hair",
+     "rgb": [
+      0.053,
+      0.022,
+      0.007
+     ],
+     "triangles": 1404
+    }
    ],
    "neck_bottom_m": 1.4994,
    "regions": [
@@ -1011,9 +1385,22 @@
     "body_type": "M",
     "file": "Hoodie Character.glb",
     "object": "Casual_Head"
-   }
+   },
+   "triangles": 1888
   },
   "head_m_king": {
+   "bounds": {
+    "max_m": [
+     0.113,
+     0.0822,
+     1.903
+    ],
+    "min_m": [
+     -0.1132,
+     -0.1922,
+     1.4698
+    ]
+   },
    "items": [
     "beard_m_king",
     "brows_m_king",
@@ -1021,6 +1408,44 @@
     "headwear_m_king_crown",
     "moustache_m_king",
     "skull_m_king"
+   ],
+   "materials": [
+    {
+     "name": "Skin",
+     "rgb": [
+      0.494,
+      0.334,
+      0.191
+     ],
+     "triangles": 448
+    },
+    {
+     "name": "Hair_White",
+     "rgb": [
+      0.431,
+      0.431,
+      0.431
+     ],
+     "triangles": 2356
+    },
+    {
+     "name": "Eye",
+     "rgb": [
+      0.025,
+      0.015,
+      0.009
+     ],
+     "triangles": 24
+    },
+    {
+     "name": "Gold",
+     "rgb": [
+      0.223,
+      0.14,
+      0.032
+     ],
+     "triangles": 1056
+    }
    ],
    "neck_bottom_m": 1.4698,
    "regions": [
@@ -1075,15 +1500,84 @@
     "body_type": "M",
     "file": "King.glb",
     "object": "King_Head"
-   }
+   },
+   "triangles": 3884
   },
   "head_m_punk": {
+   "bounds": {
+    "max_m": [
+     0.1071,
+     0.1595,
+     1.9654
+    ],
+    "min_m": [
+     -0.1071,
+     -0.2303,
+     1.439
+    ]
+   },
    "items": [
     "brows_m_punk",
     "earrings_m_punk",
     "goatee_m_punk",
     "hair_m_punk_mohawk",
     "skull_m_punk"
+   ],
+   "materials": [
+    {
+     "name": "Skin",
+     "rgb": [
+      0.494,
+      0.334,
+      0.191
+     ],
+     "triangles": 308
+    },
+    {
+     "name": "Red_Dark",
+     "rgb": [
+      0.164,
+      0.016,
+      0.027
+     ],
+     "triangles": 140
+    },
+    {
+     "name": "Earrings",
+     "rgb": [
+      0.343,
+      0.194,
+      0.053
+     ],
+     "triangles": 160
+    },
+    {
+     "name": "Red",
+     "rgb": [
+      0.162,
+      0.004,
+      0.011
+     ],
+     "triangles": 588
+    },
+    {
+     "name": "Eyebrows",
+     "rgb": [
+      0.039,
+      0.027,
+      0.018
+     ],
+     "triangles": 24
+    },
+    {
+     "name": "Eye",
+     "rgb": [
+      0.025,
+      0.015,
+      0.009
+     ],
+     "triangles": 24
+    }
    ],
    "neck_bottom_m": 1.439,
    "regions": [
@@ -1137,11 +1631,53 @@
     "body_type": "M",
     "file": "Punk.glb",
     "object": "Punk_Head"
-   }
+   },
+   "triangles": 1244
   },
   "head_m_swat": {
+   "bounds": {
+    "max_m": [
+     0.1187,
+     0.0838,
+     1.8524
+    ],
+    "min_m": [
+     -0.1187,
+     -0.1919,
+     1.482
+    ]
+   },
    "items": [
     "headwear_m_swat_helmet"
+   ],
+   "materials": [
+    {
+     "name": "Swat",
+     "rgb": [
+      0.063,
+      0.069,
+      0.082
+     ],
+     "triangles": 1246
+    },
+    {
+     "name": "Swat_Black",
+     "rgb": [
+      0.025,
+      0.022,
+      0.019
+     ],
+     "triangles": 930
+    },
+    {
+     "name": "Visor",
+     "rgb": [
+      0.006,
+      0.006,
+      0.006
+     ],
+     "triangles": 132
+    }
    ],
    "neck_bottom_m": null,
    "regions": [
@@ -1170,15 +1706,75 @@
     "body_type": "M",
     "file": "Swat.glb",
     "object": "Swat_Head"
-   }
+   },
+   "triangles": 2308
   },
   "head_m_worker": {
+   "bounds": {
+    "max_m": [
+     0.1191,
+     0.1026,
+     1.8628
+    ],
+    "min_m": [
+     -0.1191,
+     -0.2333,
+     1.4547
+    ]
+   },
    "items": [
     "brows_m_worker",
     "hair_m_worker_buzz",
     "headwear_m_worker_hard_hat",
     "moustache_m_worker",
     "skull_m_worker"
+   ],
+   "materials": [
+    {
+     "name": "Worker_Yellow",
+     "rgb": [
+      0.365,
+      0.237,
+      0.005
+     ],
+     "triangles": 320
+    },
+    {
+     "name": "Skin",
+     "rgb": [
+      0.494,
+      0.334,
+      0.191
+     ],
+     "triangles": 308
+    },
+    {
+     "name": "Eyebrows",
+     "rgb": [
+      0.039,
+      0.027,
+      0.018
+     ],
+     "triangles": 164
+    },
+    {
+     "name": "Eye",
+     "rgb": [
+      0.025,
+      0.015,
+      0.009
+     ],
+     "triangles": 24
+    },
+    {
+     "name": "Moustache",
+     "rgb": [
+      0.13,
+      0.042,
+      0.001
+     ],
+     "triangles": 120
+    }
    ],
    "neck_bottom_m": 1.4547,
    "regions": [
@@ -1226,13 +1822,55 @@
     "body_type": "M",
     "file": "Worker.glb",
     "object": "Worker_Head"
-   }
+   },
+   "triangles": 936
   },
   "head_w_adventurer": {
+   "bounds": {
+    "max_m": [
+     0.1098,
+     0.0544,
+     1.8276
+    ],
+    "min_m": [
+     -0.1098,
+     -0.1773,
+     1.5384
+    ]
+   },
    "items": [
     "brows_w_adventurer",
     "hair_w_adventurer",
     "skull_w_adventurer"
+   ],
+   "materials": [
+    {
+     "name": "Skin",
+     "rgb": [
+      0.617,
+      0.418,
+      0.238
+     ],
+     "triangles": 336
+    },
+    {
+     "name": "Hair_Brown",
+     "rgb": [
+      0.048,
+      0.034,
+      0.022
+     ],
+     "triangles": 286
+    },
+    {
+     "name": "Brown",
+     "rgb": [
+      0.031,
+      0.018,
+      0.011
+     ],
+     "triangles": 24
+    }
    ],
    "neck_bottom_m": 1.5384,
    "regions": [
@@ -1267,13 +1905,64 @@
     "body_type": "W",
     "file": "Adventurer.glb",
     "object": "Adventurer_Head"
-   }
+   },
+   "triangles": 646
   },
   "head_w_casual": {
+   "bounds": {
+    "max_m": [
+     0.1155,
+     0.0995,
+     1.8435
+    ],
+    "min_m": [
+     -0.1182,
+     -0.1925,
+     1.5232
+    ]
+   },
    "items": [
     "brows_w_casual",
     "hair_w_casual_bob",
     "skull_w_casual"
+   ],
+   "materials": [
+    {
+     "name": "Skin",
+     "rgb": [
+      0.617,
+      0.418,
+      0.238
+     ],
+     "triangles": 334
+    },
+    {
+     "name": "Hair_Blond",
+     "rgb": [
+      0.26,
+      0.179,
+      0.063
+     ],
+     "triangles": 2128
+    },
+    {
+     "name": "Hair_Brown",
+     "rgb": [
+      0.048,
+      0.034,
+      0.022
+     ],
+     "triangles": 40
+    },
+    {
+     "name": "Brown",
+     "rgb": [
+      0.031,
+      0.018,
+      0.011
+     ],
+     "triangles": 24
+    }
    ],
    "neck_bottom_m": 1.5384,
    "regions": [
@@ -1308,13 +1997,55 @@
     "body_type": "W",
     "file": "Animated Woman.glb",
     "object": "Casual_Head"
-   }
+   },
+   "triangles": 2526
   },
   "head_w_formal": {
+   "bounds": {
+    "max_m": [
+     0.1205,
+     0.117,
+     1.8436
+    ],
+    "min_m": [
+     -0.1205,
+     -0.2007,
+     1.5247
+    ]
+   },
    "items": [
     "brows_w_formal",
     "hair_w_formal_updo",
     "skull_w_formal"
+   ],
+   "materials": [
+    {
+     "name": "Skin",
+     "rgb": [
+      0.617,
+      0.418,
+      0.238
+     ],
+     "triangles": 390
+    },
+    {
+     "name": "Red",
+     "rgb": [
+      0.138,
+      0.016,
+      0.004
+     ],
+     "triangles": 2088
+    },
+    {
+     "name": "Brown",
+     "rgb": [
+      0.031,
+      0.018,
+      0.011
+     ],
+     "triangles": 64
+    }
    ],
    "neck_bottom_m": 1.5384,
    "regions": [
@@ -1349,14 +2080,74 @@
     "body_type": "W",
     "file": "Animated Woman-nIItLV9nxS.glb",
     "object": "Formad_Head"
-   }
+   },
+   "triangles": 2542
   },
   "head_w_medieval": {
+   "bounds": {
+    "max_m": [
+     0.1724,
+     0.1195,
+     1.8775
+    ],
+    "min_m": [
+     -0.1724,
+     -0.1925,
+     1.5206
+    ]
+   },
    "items": [
     "brows_w_medieval",
     "hair_w_medieval",
     "headwear_w_medieval_hood",
     "skull_w_medieval"
+   ],
+   "materials": [
+    {
+     "name": "Black",
+     "rgb": [
+      0.031,
+      0.027,
+      0.024
+     ],
+     "triangles": 32
+    },
+    {
+     "name": "DarkBrown",
+     "rgb": [
+      0.067,
+      0.027,
+      0.009
+     ],
+     "triangles": 552
+    },
+    {
+     "name": "Skin",
+     "rgb": [
+      0.617,
+      0.418,
+      0.238
+     ],
+     "triangles": 302
+    },
+    {
+     "name": "White",
+     "rgb": [
+      0.458,
+      0.458,
+      0.458
+     ],
+     "triangles": 1072
+    },
+    {
+     "name": "Brown",
+     "rgb": [
+      0.031,
+      0.018,
+      0.011
+     ],
+     "triangles": 64
+    }
    ],
    "neck_bottom_m": 1.5384,
    "regions": [
@@ -1403,14 +2194,74 @@
     "body_type": "W",
     "file": "Medieval.glb",
     "object": "Medieval_Head"
-   }
+   },
+   "triangles": 2022
   },
   "head_w_punk": {
+   "bounds": {
+    "max_m": [
+     0.1098,
+     0.1241,
+     1.9596
+    ],
+    "min_m": [
+     -0.1098,
+     -0.218,
+     1.5387
+    ]
+   },
    "items": [
     "accessory_w_punk_nose_ring",
     "brows_w_punk",
     "hair_w_punk_mohawk",
     "skull_w_punk"
+   ],
+   "materials": [
+    {
+     "name": "Skin",
+     "rgb": [
+      0.617,
+      0.418,
+      0.238
+     ],
+     "triangles": 378
+    },
+    {
+     "name": "Pink",
+     "rgb": [
+      0.138,
+      0.012,
+      0.13
+     ],
+     "triangles": 784
+    },
+    {
+     "name": "Black",
+     "rgb": [
+      0.031,
+      0.027,
+      0.024
+     ],
+     "triangles": 160
+    },
+    {
+     "name": "Hair_Brown",
+     "rgb": [
+      0.048,
+      0.034,
+      0.022
+     ],
+     "triangles": 40
+    },
+    {
+     "name": "Brown",
+     "rgb": [
+      0.031,
+      0.018,
+      0.011
+     ],
+     "triangles": 24
+    }
    ],
    "neck_bottom_m": 1.5387,
    "regions": [
@@ -1457,14 +2308,74 @@
     "body_type": "W",
     "file": "Punk.glb",
     "object": "Punk_Head"
-   }
+   },
+   "triangles": 1386
   },
   "head_w_scifi": {
+   "bounds": {
+    "max_m": [
+     0.1166,
+     0.0989,
+     1.8541
+    ],
+    "min_m": [
+     -0.1144,
+     -0.1923,
+     1.5384
+    ]
+   },
    "items": [
     "accessory_w_scifi_headset",
     "brows_w_scifi",
     "hair_w_scifi",
     "skull_w_scifi"
+   ],
+   "materials": [
+    {
+     "name": "Black",
+     "rgb": [
+      0.031,
+      0.027,
+      0.024
+     ],
+     "triangles": 32
+    },
+    {
+     "name": "Skin",
+     "rgb": [
+      0.617,
+      0.418,
+      0.238
+     ],
+     "triangles": 358
+    },
+    {
+     "name": "Blue",
+     "rgb": [
+      0.005,
+      0.076,
+      0.152
+     ],
+     "triangles": 132
+    },
+    {
+     "name": "Hair_Black",
+     "rgb": [
+      0.022,
+      0.021,
+      0.022
+     ],
+     "triangles": 2035
+    },
+    {
+     "name": "Brown",
+     "rgb": [
+      0.031,
+      0.018,
+      0.011
+     ],
+     "triangles": 24
+    }
    ],
    "neck_bottom_m": 1.5384,
    "regions": [
@@ -1511,13 +2422,55 @@
     "body_type": "W",
     "file": "Sci Fi Character.glb",
     "object": "SciFi_Head"
-   }
+   },
+   "triangles": 2581
   },
   "head_w_soldier": {
+   "bounds": {
+    "max_m": [
+     0.1105,
+     0.0677,
+     1.8293
+    ],
+    "min_m": [
+     -0.1105,
+     -0.1773,
+     1.5384
+    ]
+   },
    "items": [
     "brows_w_soldier",
     "hair_w_soldier",
     "skull_w_soldier"
+   ],
+   "materials": [
+    {
+     "name": "Skin",
+     "rgb": [
+      0.617,
+      0.418,
+      0.238
+     ],
+     "triangles": 334
+    },
+    {
+     "name": "Hair_Brown",
+     "rgb": [
+      0.048,
+      0.034,
+      0.022
+     ],
+     "triangles": 2490
+    },
+    {
+     "name": "Brown",
+     "rgb": [
+      0.031,
+      0.018,
+      0.011
+     ],
+     "triangles": 24
+    }
    ],
    "neck_bottom_m": 1.5384,
    "regions": [
@@ -1552,13 +2505,64 @@
     "body_type": "W",
     "file": "Soldier.glb",
     "object": "Soldier_Head"
-   }
+   },
+   "triangles": 2848
   },
   "head_w_suit": {
+   "bounds": {
+    "max_m": [
+     0.1155,
+     0.0998,
+     1.8433
+    ],
+    "min_m": [
+     -0.1181,
+     -0.1925,
+     1.5231
+    ]
+   },
    "items": [
     "brows_w_suit",
     "hair_w_suit_bob",
     "skull_w_suit"
+   ],
+   "materials": [
+    {
+     "name": "Skin",
+     "rgb": [
+      0.617,
+      0.418,
+      0.238
+     ],
+     "triangles": 334
+    },
+    {
+     "name": "Hair_Blond",
+     "rgb": [
+      0.26,
+      0.179,
+      0.063
+     ],
+     "triangles": 2128
+    },
+    {
+     "name": "Hair_Brown",
+     "rgb": [
+      0.048,
+      0.034,
+      0.022
+     ],
+     "triangles": 40
+    },
+    {
+     "name": "Brown",
+     "rgb": [
+      0.031,
+      0.018,
+      0.011
+     ],
+     "triangles": 24
+    }
    ],
    "neck_bottom_m": 1.5384,
    "regions": [
@@ -1593,14 +2597,74 @@
     "body_type": "W",
     "file": "Suit.glb",
     "object": "Suit_Head"
-   }
+   },
+   "triangles": 2526
   },
   "head_w_witch": {
+   "bounds": {
+    "max_m": [
+     0.2677,
+     0.2323,
+     2.0452
+    ],
+    "min_m": [
+     -0.2578,
+     -0.3159,
+     1.4793
+    ]
+   },
    "items": [
     "brows_w_witch",
     "hair_w_witch",
     "headwear_w_witch_hat",
     "skull_w_witch"
+   ],
+   "materials": [
+    {
+     "name": "Purple",
+     "rgb": [
+      0.054,
+      0.01,
+      0.138
+     ],
+     "triangles": 176
+    },
+    {
+     "name": "Skin",
+     "rgb": [
+      0.617,
+      0.418,
+      0.238
+     ],
+     "triangles": 334
+    },
+    {
+     "name": "Gold",
+     "rgb": [
+      0.429,
+      0.242,
+      0.067
+     ],
+     "triangles": 96
+    },
+    {
+     "name": "Hair_Black",
+     "rgb": [
+      0.022,
+      0.021,
+      0.022
+     ],
+     "triangles": 2316
+    },
+    {
+     "name": "Brown",
+     "rgb": [
+      0.031,
+      0.018,
+      0.011
+     ],
+     "triangles": 24
+    }
    ],
    "neck_bottom_m": 1.5384,
    "regions": [
@@ -1647,14 +2711,65 @@
     "body_type": "W",
     "file": "Witch.glb",
     "object": "Witch_Head"
-   }
+   },
+   "triangles": 2946
   },
   "head_w_worker": {
+   "bounds": {
+    "max_m": [
+     0.1191,
+     0.0919,
+     1.8588
+    ],
+    "min_m": [
+     -0.1191,
+     -0.2373,
+     1.5384
+    ]
+   },
    "items": [
     "brows_w_worker",
     "hair_w_worker",
     "headwear_w_worker_hard_hat",
     "skull_w_worker"
+   ],
+   "materials": [
+    {
+     "name": "Skin",
+     "rgb": [
+      0.617,
+      0.418,
+      0.238
+     ],
+     "triangles": 294
+    },
+    {
+     "name": "Worker_Yellow",
+     "rgb": [
+      0.456,
+      0.296,
+      0.007
+     ],
+     "triangles": 320
+    },
+    {
+     "name": "DarkBrown",
+     "rgb": [
+      0.067,
+      0.027,
+      0.009
+     ],
+     "triangles": 1510
+    },
+    {
+     "name": "Brown",
+     "rgb": [
+      0.031,
+      0.018,
+      0.011
+     ],
+     "triangles": 24
+    }
    ],
    "neck_bottom_m": 1.5384,
    "regions": [
@@ -1695,7 +2810,8 @@
     "body_type": "W",
     "file": "Worker.glb",
     "object": "Worker_Head"
-   }
+   },
+   "triangles": 2148
   }
  },
  "items": {
@@ -1712,6 +2828,16 @@
      1.6231
     ]
    },
+   "colours": [
+    {
+     "name": "Black",
+     "rgb": [
+      0.031,
+      0.027,
+      0.024
+     ]
+    }
+   ],
    "geometry": "93783dadd5ab",
    "head": "head_w_punk",
    "kind": "accessory",
@@ -1758,6 +2884,16 @@
      1.5968
     ]
    },
+   "colours": [
+    {
+     "name": "Blue",
+     "rgb": [
+      0.005,
+      0.076,
+      0.152
+     ]
+    }
+   ],
    "geometry": "e5d0538df2da",
    "head": "head_w_scifi",
    "kind": "accessory",
@@ -1800,6 +2936,16 @@
      1.5342
     ]
    },
+   "colours": [
+    {
+     "name": "Hair",
+     "rgb": [
+      0.053,
+      0.022,
+      0.007
+     ]
+    }
+   ],
    "geometry": "84254814de96",
    "head": "head_m_adventurer",
    "kind": "facial_hair",
@@ -1849,6 +2995,16 @@
      1.5382
     ]
    },
+   "colours": [
+    {
+     "name": "Hair_White",
+     "rgb": [
+      0.431,
+      0.431,
+      0.431
+     ]
+    }
+   ],
    "geometry": "e5069c843691",
    "head": "head_m_king",
    "kind": "facial_hair",
@@ -1898,6 +3054,16 @@
      1.7016
     ]
    },
+   "colours": [
+    {
+     "name": "Eyebrows",
+     "rgb": [
+      0.039,
+      0.027,
+      0.018
+     ]
+    }
+   ],
    "geometry": "6fdaeb833e86",
    "head": "head_m_adventurer",
    "kind": "brows",
@@ -1940,6 +3106,16 @@
      1.7016
     ]
    },
+   "colours": [
+    {
+     "name": "Eyebrows",
+     "rgb": [
+      0.039,
+      0.027,
+      0.018
+     ]
+    }
+   ],
    "geometry": "6fdaeb833e86",
    "head": "head_m_beach",
    "kind": "brows",
@@ -1983,6 +3159,16 @@
      1.7016
     ]
    },
+   "colours": [
+    {
+     "name": "Eyebrows",
+     "rgb": [
+      0.039,
+      0.027,
+      0.018
+     ]
+    }
+   ],
    "geometry": "6fdaeb833e86",
    "head": "head_m_business",
    "kind": "brows",
@@ -2026,6 +3212,16 @@
      1.7016
     ]
    },
+   "colours": [
+    {
+     "name": "Eyebrows",
+     "rgb": [
+      0.039,
+      0.027,
+      0.018
+     ]
+    }
+   ],
    "geometry": "6fdaeb833e86",
    "head": "head_m_casual",
    "kind": "brows",
@@ -2069,6 +3265,16 @@
      1.7016
     ]
    },
+   "colours": [
+    {
+     "name": "Eyebrows",
+     "rgb": [
+      0.039,
+      0.027,
+      0.018
+     ]
+    }
+   ],
    "geometry": "6fdaeb833e86",
    "head": "head_m_farmer",
    "kind": "brows",
@@ -2116,6 +3322,16 @@
      1.7016
     ]
    },
+   "colours": [
+    {
+     "name": "Eyebrows",
+     "rgb": [
+      0.039,
+      0.027,
+      0.018
+     ]
+    }
+   ],
    "geometry": "610e95adf05f",
    "head": "head_m_hoodie",
    "kind": "brows",
@@ -2158,6 +3374,16 @@
      1.7005
     ]
    },
+   "colours": [
+    {
+     "name": "Hair_White",
+     "rgb": [
+      0.431,
+      0.431,
+      0.431
+     ]
+    }
+   ],
    "geometry": "88682323afed",
    "head": "head_m_king",
    "kind": "brows",
@@ -2204,6 +3430,16 @@
      1.6985
     ]
    },
+   "colours": [
+    {
+     "name": "Eyebrows",
+     "rgb": [
+      0.039,
+      0.027,
+      0.018
+     ]
+    }
+   ],
    "geometry": "3ddda1039272",
    "head": "head_m_punk",
    "kind": "brows",
@@ -2246,6 +3482,16 @@
      1.7016
     ]
    },
+   "colours": [
+    {
+     "name": "Eyebrows",
+     "rgb": [
+      0.039,
+      0.027,
+      0.018
+     ]
+    }
+   ],
    "geometry": "6fdaeb833e86",
    "head": "head_m_worker",
    "kind": "brows",
@@ -2293,6 +3539,16 @@
      1.697
     ]
    },
+   "colours": [
+    {
+     "name": "Hair_Brown",
+     "rgb": [
+      0.048,
+      0.034,
+      0.022
+     ]
+    }
+   ],
    "geometry": "f97e6b094236",
    "head": "head_w_adventurer",
    "kind": "brows",
@@ -2339,6 +3595,16 @@
      1.6971
     ]
    },
+   "colours": [
+    {
+     "name": "Hair_Brown",
+     "rgb": [
+      0.048,
+      0.034,
+      0.022
+     ]
+    }
+   ],
    "geometry": "5807af37dcd9",
    "head": "head_w_casual",
    "kind": "brows",
@@ -2382,6 +3648,16 @@
      1.697
     ]
    },
+   "colours": [
+    {
+     "name": "Brown",
+     "rgb": [
+      0.031,
+      0.018,
+      0.011
+     ]
+    }
+   ],
    "geometry": "f97e6b094236",
    "head": "head_w_formal",
    "kind": "brows",
@@ -2429,6 +3705,16 @@
      1.697
     ]
    },
+   "colours": [
+    {
+     "name": "Brown",
+     "rgb": [
+      0.031,
+      0.018,
+      0.011
+     ]
+    }
+   ],
    "geometry": "f97e6b094236",
    "head": "head_w_medieval",
    "kind": "brows",
@@ -2476,6 +3762,16 @@
      1.697
     ]
    },
+   "colours": [
+    {
+     "name": "Hair_Brown",
+     "rgb": [
+      0.048,
+      0.034,
+      0.022
+     ]
+    }
+   ],
    "geometry": "f97e6b094236",
    "head": "head_w_punk",
    "kind": "brows",
@@ -2519,6 +3815,16 @@
      1.6984
     ]
    },
+   "colours": [
+    {
+     "name": "Hair_Black",
+     "rgb": [
+      0.022,
+      0.021,
+      0.022
+     ]
+    }
+   ],
    "geometry": "4a6618402288",
    "head": "head_w_scifi",
    "kind": "brows",
@@ -2565,6 +3871,16 @@
      1.697
     ]
    },
+   "colours": [
+    {
+     "name": "Hair_Brown",
+     "rgb": [
+      0.048,
+      0.034,
+      0.022
+     ]
+    }
+   ],
    "geometry": "f97e6b094236",
    "head": "head_w_soldier",
    "kind": "brows",
@@ -2612,6 +3928,16 @@
      1.697
     ]
    },
+   "colours": [
+    {
+     "name": "Hair_Brown",
+     "rgb": [
+      0.048,
+      0.034,
+      0.022
+     ]
+    }
+   ],
    "geometry": "f97e6b094236",
    "head": "head_w_suit",
    "kind": "brows",
@@ -2655,6 +3981,16 @@
      1.6971
     ]
    },
+   "colours": [
+    {
+     "name": "Hair_Black",
+     "rgb": [
+      0.022,
+      0.021,
+      0.022
+     ]
+    }
+   ],
    "geometry": "5807af37dcd9",
    "head": "head_w_witch",
    "kind": "brows",
@@ -2702,6 +4038,16 @@
      1.697
     ]
    },
+   "colours": [
+    {
+     "name": "DarkBrown",
+     "rgb": [
+      0.067,
+      0.027,
+      0.009
+     ]
+    }
+   ],
    "geometry": "f97e6b094236",
    "head": "head_w_worker",
    "kind": "brows",
@@ -2749,6 +4095,16 @@
      1.6496
     ]
    },
+   "colours": [
+    {
+     "name": "Earrings",
+     "rgb": [
+      0.343,
+      0.194,
+      0.053
+     ]
+    }
+   ],
    "geometry": "fb0d09701438",
    "head": "head_m_beach",
    "kind": "earrings",
@@ -2791,6 +4147,16 @@
      1.6387
     ]
    },
+   "colours": [
+    {
+     "name": "Earrings",
+     "rgb": [
+      0.343,
+      0.194,
+      0.053
+     ]
+    }
+   ],
    "geometry": "b34278937bde",
    "head": "head_m_punk",
    "kind": "earrings",
@@ -2833,6 +4199,16 @@
      1.569
     ]
    },
+   "colours": [
+    {
+     "name": "Red",
+     "rgb": [
+      0.162,
+      0.004,
+      0.011
+     ]
+    }
+   ],
    "geometry": "1c4fc5bb2198",
    "head": "head_m_punk",
    "kind": "facial_hair",
@@ -2882,6 +4258,16 @@
      1.6037
     ]
    },
+   "colours": [
+    {
+     "name": "Hair",
+     "rgb": [
+      0.053,
+      0.022,
+      0.007
+     ]
+    }
+   ],
    "geometry": "6c86638ea08e",
    "head": "head_m_adventurer",
    "kind": "hair",
@@ -2930,6 +4316,16 @@
      1.6053
     ]
    },
+   "colours": [
+    {
+     "name": "Hair",
+     "rgb": [
+      0.053,
+      0.022,
+      0.007
+     ]
+    }
+   ],
    "geometry": "be182708f7b4",
    "head": "head_m_beach",
    "kind": "hair",
@@ -2974,6 +4370,16 @@
      1.5937
     ]
    },
+   "colours": [
+    {
+     "name": "Hair",
+     "rgb": [
+      0.053,
+      0.022,
+      0.007
+     ]
+    }
+   ],
    "geometry": "255cdc1282bc",
    "head": "head_m_business",
    "kind": "hair",
@@ -3018,6 +4424,16 @@
      1.5567
     ]
    },
+   "colours": [
+    {
+     "name": "Hair",
+     "rgb": [
+      0.053,
+      0.022,
+      0.007
+     ]
+    }
+   ],
    "geometry": "a052640e6ea3",
    "head": "head_m_casual",
    "kind": "hair",
@@ -3062,6 +4478,16 @@
      1.6396
     ]
    },
+   "colours": [
+    {
+     "name": "Eyebrows",
+     "rgb": [
+      0.039,
+      0.027,
+      0.018
+     ]
+    }
+   ],
    "geometry": "a020371e30b8",
    "head": "head_m_farmer",
    "kind": "hair",
@@ -3106,6 +4532,16 @@
      1.6254
     ]
    },
+   "colours": [
+    {
+     "name": "Hair",
+     "rgb": [
+      0.053,
+      0.022,
+      0.007
+     ]
+    }
+   ],
    "geometry": "19ab84ae820f",
    "head": "head_m_hoodie",
    "kind": "hair",
@@ -3150,6 +4586,16 @@
      1.5963
     ]
    },
+   "colours": [
+    {
+     "name": "Hair_White",
+     "rgb": [
+      0.431,
+      0.431,
+      0.431
+     ]
+    }
+   ],
    "geometry": "7f38a38cd44d",
    "head": "head_m_king",
    "kind": "hair",
@@ -3198,6 +4644,24 @@
      1.6396
     ]
    },
+   "colours": [
+    {
+     "name": "Red",
+     "rgb": [
+      0.162,
+      0.004,
+      0.011
+     ]
+    },
+    {
+     "name": "Red_Dark",
+     "rgb": [
+      0.164,
+      0.016,
+      0.027
+     ]
+    }
+   ],
    "geometry": "35f5dee43206",
    "head": "head_m_punk",
    "kind": "hair",
@@ -3246,6 +4710,16 @@
      1.6396
     ]
    },
+   "colours": [
+    {
+     "name": "Eyebrows",
+     "rgb": [
+      0.039,
+      0.027,
+      0.018
+     ]
+    }
+   ],
    "geometry": "71ecc9d9731a",
    "head": "head_m_worker",
    "kind": "hair",
@@ -3290,6 +4764,16 @@
      1.6336
     ]
    },
+   "colours": [
+    {
+     "name": "Hair_Brown",
+     "rgb": [
+      0.048,
+      0.034,
+      0.022
+     ]
+    }
+   ],
    "geometry": "f922720e9197",
    "head": "head_w_adventurer",
    "kind": "hair",
@@ -3334,6 +4818,16 @@
      1.5232
     ]
    },
+   "colours": [
+    {
+     "name": "Hair_Blond",
+     "rgb": [
+      0.26,
+      0.179,
+      0.063
+     ]
+    }
+   ],
    "geometry": "960b623d7bcc",
    "head": "head_w_casual",
    "kind": "hair",
@@ -3378,6 +4872,16 @@
      1.5247
     ]
    },
+   "colours": [
+    {
+     "name": "Red",
+     "rgb": [
+      0.138,
+      0.016,
+      0.004
+     ]
+    }
+   ],
    "geometry": "64201367a66d",
    "head": "head_w_formal",
    "kind": "hair",
@@ -3422,6 +4926,16 @@
      1.5309
     ]
    },
+   "colours": [
+    {
+     "name": "White",
+     "rgb": [
+      0.458,
+      0.458,
+      0.458
+     ]
+    }
+   ],
    "geometry": "e28ba5e04f45",
    "head": "head_w_medieval",
    "kind": "hair",
@@ -3466,6 +4980,16 @@
      1.5902
     ]
    },
+   "colours": [
+    {
+     "name": "Pink",
+     "rgb": [
+      0.138,
+      0.012,
+      0.13
+     ]
+    }
+   ],
    "geometry": "d3b1fbb0d68b",
    "head": "head_w_punk",
    "kind": "hair",
@@ -3510,6 +5034,16 @@
      1.5727
     ]
    },
+   "colours": [
+    {
+     "name": "Hair_Black",
+     "rgb": [
+      0.022,
+      0.021,
+      0.022
+     ]
+    }
+   ],
    "geometry": "e84706674a4a",
    "head": "head_w_scifi",
    "kind": "hair",
@@ -3554,6 +5088,16 @@
      1.5471
     ]
    },
+   "colours": [
+    {
+     "name": "Hair_Brown",
+     "rgb": [
+      0.048,
+      0.034,
+      0.022
+     ]
+    }
+   ],
    "geometry": "baf0436baa10",
    "head": "head_w_soldier",
    "kind": "hair",
@@ -3598,6 +5142,16 @@
      1.5231
     ]
    },
+   "colours": [
+    {
+     "name": "Hair_Blond",
+     "rgb": [
+      0.26,
+      0.179,
+      0.063
+     ]
+    }
+   ],
    "geometry": "b3a8f8ad1a81",
    "head": "head_w_suit",
    "kind": "hair",
@@ -3642,6 +5196,16 @@
      1.4793
     ]
    },
+   "colours": [
+    {
+     "name": "Hair_Black",
+     "rgb": [
+      0.022,
+      0.021,
+      0.022
+     ]
+    }
+   ],
    "geometry": "b163e21c6a3d",
    "head": "head_w_witch",
    "kind": "hair",
@@ -3686,6 +5250,16 @@
      1.5685
     ]
    },
+   "colours": [
+    {
+     "name": "DarkBrown",
+     "rgb": [
+      0.067,
+      0.027,
+      0.009
+     ]
+    }
+   ],
    "geometry": "e1716c091132",
    "head": "head_w_worker",
    "kind": "hair",
@@ -3730,6 +5304,32 @@
      1.4271
     ]
    },
+   "colours": [
+    {
+     "name": "Grey",
+     "rgb": [
+      0.04,
+      0.04,
+      0.04
+     ]
+    },
+    {
+     "name": "SciFi_Light",
+     "rgb": [
+      0.358,
+      0.312,
+      0.292
+     ]
+    },
+    {
+     "name": "SciFi_Light_Accent",
+     "rgb": [
+      0.293,
+      0.09,
+      0.025
+     ]
+    }
+   ],
    "geometry": "09952b70deb2",
    "head": "head_m_astronaut",
    "kind": "headwear",
@@ -3776,6 +5376,24 @@
      1.6855
     ]
    },
+   "colours": [
+    {
+     "name": "Beige",
+     "rgb": [
+      0.266,
+      0.248,
+      0.161
+     ]
+    },
+    {
+     "name": "Red",
+     "rgb": [
+      0.162,
+      0.004,
+      0.011
+     ]
+    }
+   ],
    "geometry": "50f50af75b23",
    "head": "head_m_farmer",
    "kind": "headwear",
@@ -3820,6 +5438,16 @@
      1.7844
     ]
    },
+   "colours": [
+    {
+     "name": "Gold",
+     "rgb": [
+      0.223,
+      0.14,
+      0.032
+     ]
+    }
+   ],
    "geometry": "a9a6dc9a1fbc",
    "head": "head_m_king",
    "kind": "headwear",
@@ -3862,6 +5490,32 @@
      1.482
     ]
    },
+   "colours": [
+    {
+     "name": "Swat",
+     "rgb": [
+      0.063,
+      0.069,
+      0.082
+     ]
+    },
+    {
+     "name": "Swat_Black",
+     "rgb": [
+      0.025,
+      0.022,
+      0.019
+     ]
+    },
+    {
+     "name": "Visor",
+     "rgb": [
+      0.006,
+      0.006,
+      0.006
+     ]
+    }
+   ],
    "geometry": "675c2f87c962",
    "head": "head_m_swat",
    "kind": "headwear",
@@ -3908,6 +5562,16 @@
      1.6981
     ]
    },
+   "colours": [
+    {
+     "name": "Worker_Yellow",
+     "rgb": [
+      0.365,
+      0.237,
+      0.005
+     ]
+    }
+   ],
    "geometry": "5ce5a1245622",
    "head": "head_m_worker",
    "kind": "headwear",
@@ -3950,6 +5614,16 @@
      1.5206
     ]
    },
+   "colours": [
+    {
+     "name": "DarkBrown",
+     "rgb": [
+      0.067,
+      0.027,
+      0.009
+     ]
+    }
+   ],
    "geometry": "14ea48ed0cfb",
    "head": "head_w_medieval",
    "kind": "headwear",
@@ -3992,6 +5666,24 @@
      1.6802
     ]
    },
+   "colours": [
+    {
+     "name": "Gold",
+     "rgb": [
+      0.429,
+      0.242,
+      0.067
+     ]
+    },
+    {
+     "name": "Purple",
+     "rgb": [
+      0.054,
+      0.01,
+      0.138
+     ]
+    }
+   ],
    "geometry": "8bc972f2a4a2",
    "head": "head_w_witch",
    "kind": "headwear",
@@ -4036,6 +5728,16 @@
      1.6974
     ]
    },
+   "colours": [
+    {
+     "name": "Worker_Yellow",
+     "rgb": [
+      0.456,
+      0.296,
+      0.007
+     ]
+    }
+   ],
    "geometry": "8c826b443b8f",
    "head": "head_w_worker",
    "kind": "headwear",
@@ -4078,6 +5780,16 @@
      1.6174
     ]
    },
+   "colours": [
+    {
+     "name": "Hair",
+     "rgb": [
+      0.053,
+      0.022,
+      0.007
+     ]
+    }
+   ],
    "geometry": "69aa492ac160",
    "head": "head_m_adventurer",
    "kind": "facial_hair",
@@ -4125,6 +5837,16 @@
      1.6163
     ]
    },
+   "colours": [
+    {
+     "name": "Hair_White",
+     "rgb": [
+      0.431,
+      0.431,
+      0.431
+     ]
+    }
+   ],
    "geometry": "8ab88798db17",
    "head": "head_m_king",
    "kind": "facial_hair",
@@ -4172,6 +5894,16 @@
      1.615
     ]
    },
+   "colours": [
+    {
+     "name": "Moustache",
+     "rgb": [
+      0.13,
+      0.042,
+      0.001
+     ]
+    }
+   ],
    "geometry": "cd086b255c1f",
    "head": "head_m_worker",
    "kind": "facial_hair",
@@ -4215,6 +5947,16 @@
      1.4417
     ]
    },
+   "colours": [
+    {
+     "name": "Skin",
+     "rgb": [
+      0.494,
+      0.334,
+      0.191
+     ]
+    }
+   ],
    "geometry": "783e9248f4a7",
    "head": "head_m_adventurer",
    "kind": "skull",
@@ -4260,6 +6002,16 @@
      1.4405
     ]
    },
+   "colours": [
+    {
+     "name": "Skin",
+     "rgb": [
+      0.494,
+      0.334,
+      0.191
+     ]
+    }
+   ],
    "geometry": "a029291b140b",
    "head": "head_m_beach",
    "kind": "skull",
@@ -4305,6 +6057,16 @@
      1.5012
     ]
    },
+   "colours": [
+    {
+     "name": "Skin",
+     "rgb": [
+      0.494,
+      0.334,
+      0.191
+     ]
+    }
+   ],
    "geometry": "43a9e5975b65",
    "head": "head_m_business",
    "kind": "skull",
@@ -4350,6 +6112,24 @@
      1.505
     ]
    },
+   "colours": [
+    {
+     "name": "Skin",
+     "rgb": [
+      0.494,
+      0.334,
+      0.191
+     ]
+    },
+    {
+     "name": "Skin_Darker",
+     "rgb": [
+      0.39,
+      0.265,
+      0.152
+     ]
+    }
+   ],
    "geometry": "70435b3204c9",
    "head": "head_m_casual",
    "kind": "skull",
@@ -4399,6 +6179,16 @@
      1.4545
     ]
    },
+   "colours": [
+    {
+     "name": "Skin",
+     "rgb": [
+      0.494,
+      0.334,
+      0.191
+     ]
+    }
+   ],
    "geometry": "a15798273968",
    "head": "head_m_farmer",
    "kind": "skull",
@@ -4444,6 +6234,16 @@
      1.4994
     ]
    },
+   "colours": [
+    {
+     "name": "Skin",
+     "rgb": [
+      0.494,
+      0.334,
+      0.191
+     ]
+    }
+   ],
    "geometry": "22c423023036",
    "head": "head_m_hoodie",
    "kind": "skull",
@@ -4489,6 +6289,16 @@
      1.4698
     ]
    },
+   "colours": [
+    {
+     "name": "Skin",
+     "rgb": [
+      0.494,
+      0.334,
+      0.191
+     ]
+    }
+   ],
    "geometry": "7bec28a04b80",
    "head": "head_m_king",
    "kind": "skull",
@@ -4534,6 +6344,16 @@
      1.439
     ]
    },
+   "colours": [
+    {
+     "name": "Skin",
+     "rgb": [
+      0.494,
+      0.334,
+      0.191
+     ]
+    }
+   ],
    "geometry": "270cb6761a92",
    "head": "head_m_punk",
    "kind": "skull",
@@ -4579,6 +6399,16 @@
      1.4547
     ]
    },
+   "colours": [
+    {
+     "name": "Skin",
+     "rgb": [
+      0.494,
+      0.334,
+      0.191
+     ]
+    }
+   ],
    "geometry": "a15798273968",
    "head": "head_m_worker",
    "kind": "skull",
@@ -4625,6 +6455,16 @@
      1.5384
     ]
    },
+   "colours": [
+    {
+     "name": "Skin",
+     "rgb": [
+      0.617,
+      0.418,
+      0.238
+     ]
+    }
+   ],
    "geometry": "50a1ff59e7f7",
    "head": "head_w_adventurer",
    "kind": "skull",
@@ -4670,6 +6510,16 @@
      1.5384
     ]
    },
+   "colours": [
+    {
+     "name": "Skin",
+     "rgb": [
+      0.617,
+      0.418,
+      0.238
+     ]
+    }
+   ],
    "geometry": "9070f683de1b",
    "head": "head_w_casual",
    "kind": "skull",
@@ -4715,6 +6565,16 @@
      1.5384
     ]
    },
+   "colours": [
+    {
+     "name": "Skin",
+     "rgb": [
+      0.617,
+      0.418,
+      0.238
+     ]
+    }
+   ],
    "geometry": "9f3f4ecb99c1",
    "head": "head_w_formal",
    "kind": "skull",
@@ -4760,6 +6620,24 @@
      1.5384
     ]
    },
+   "colours": [
+    {
+     "name": "Black",
+     "rgb": [
+      0.031,
+      0.027,
+      0.024
+     ]
+    },
+    {
+     "name": "Skin",
+     "rgb": [
+      0.617,
+      0.418,
+      0.238
+     ]
+    }
+   ],
    "geometry": "9070f683de1b",
    "head": "head_w_medieval",
    "kind": "skull",
@@ -4813,6 +6691,24 @@
      1.5387
     ]
    },
+   "colours": [
+    {
+     "name": "Black",
+     "rgb": [
+      0.031,
+      0.027,
+      0.024
+     ]
+    },
+    {
+     "name": "Skin",
+     "rgb": [
+      0.617,
+      0.418,
+      0.238
+     ]
+    }
+   ],
    "geometry": "06841e0c80db",
    "head": "head_w_punk",
    "kind": "skull",
@@ -4865,6 +6761,24 @@
      1.5384
     ]
    },
+   "colours": [
+    {
+     "name": "Black",
+     "rgb": [
+      0.031,
+      0.027,
+      0.024
+     ]
+    },
+    {
+     "name": "Skin",
+     "rgb": [
+      0.617,
+      0.418,
+      0.238
+     ]
+    }
+   ],
    "geometry": "f93ad593f89c",
    "head": "head_w_scifi",
    "kind": "skull",
@@ -4917,6 +6831,16 @@
      1.5384
     ]
    },
+   "colours": [
+    {
+     "name": "Skin",
+     "rgb": [
+      0.617,
+      0.418,
+      0.238
+     ]
+    }
+   ],
    "geometry": "594093db6a85",
    "head": "head_w_soldier",
    "kind": "skull",
@@ -4962,6 +6886,16 @@
      1.5384
     ]
    },
+   "colours": [
+    {
+     "name": "Skin",
+     "rgb": [
+      0.617,
+      0.418,
+      0.238
+     ]
+    }
+   ],
    "geometry": "ddd2f963c03b",
    "head": "head_w_suit",
    "kind": "skull",
@@ -5007,6 +6941,16 @@
      1.5384
     ]
    },
+   "colours": [
+    {
+     "name": "Skin",
+     "rgb": [
+      0.617,
+      0.418,
+      0.238
+     ]
+    }
+   ],
    "geometry": "9070f683de1b",
    "head": "head_w_witch",
    "kind": "skull",
@@ -5053,6 +6997,16 @@
      1.5384
     ]
    },
+   "colours": [
+    {
+     "name": "Skin",
+     "rgb": [
+      0.617,
+      0.418,
+      0.238
+     ]
+    }
+   ],
    "geometry": "c7493db6b866",
    "head": "head_w_worker",
    "kind": "skull",
@@ -5098,6 +7052,16 @@
      1.5685
     ]
    },
+   "colours": [
+    {
+     "name": "Skin_Darker",
+     "rgb": [
+      0.39,
+      0.265,
+      0.152
+     ]
+    }
+   ],
    "geometry": "42d3696774e9",
    "head": "head_m_casual",
    "kind": "facial_hair",
@@ -43263,9 +45227,9 @@
     {
      "name": "Suit",
      "rgb": [
-      0.8,
-      0.8,
-      0.8
+      0.012,
+      0.017,
+      0.022
      ],
      "triangles": 734
     }
@@ -43300,9 +45264,9 @@
     {
      "name": "LightBlue",
      "rgb": [
-      0.8,
-      0.8,
-      0.8
+      0.026,
+      0.04,
+      0.05
      ],
      "triangles": 734
     }

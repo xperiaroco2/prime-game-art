@@ -7,6 +7,9 @@ one rest pose and their numbers compare directly. Heads cross body types: each h
 World space: metres, +Z up, the face toward -Y, +X the character's left.
 """
 
+import json
+import struct
+
 import bpy
 from mathutils import Vector
 
@@ -65,17 +68,51 @@ def bounds(pts):
     return {"min_m": [m4(x) for x in lo], "max_m": [m4(x) for x in hi]}
 
 
-def materials(obj):
-    """[{name, rgb, triangles}] in slot order (the colour is the viewport colour, linear)."""
+def glb_json(path):
+    """The JSON chunk of a GLB file (pure Python)."""
+    with open(path, "rb") as fh:
+        head = fh.read(20)
+        return json.loads(fh.read(struct.unpack("<I", head[12:16])[0]))
+
+
+def node_colours(js):
+    """{node name: [(material name, rgb)]}: the materials of each mesh node's primitives in order, with the glTF
+    baseColorFactor (linear). The importer's viewport colour cannot be trusted: on meshes with a COLOR_0 attribute
+    (white in these packs) it leaves Blender's default 0.8 grey (the men's Business and Casual trousers)."""
+    out = {}
+    for n in js.get("nodes", []):
+        if "mesh" not in n:
+            continue
+        seen, mats = set(), []
+        for p in js["meshes"][n["mesh"]]["primitives"]:
+            i = p.get("material")
+            if i is None or i in seen:
+                continue
+            seen.add(i)
+            m = js["materials"][i]
+            f = m.get("pbrMetallicRoughness", {}).get("baseColorFactor", [1.0, 1.0, 1.0, 1.0])
+            mats.append((m["name"], [round(c, 3) for c in f[:3]]))
+        out[n["name"]] = mats
+    return out
+
+
+def materials(obj, colours=None):
+    """[{name, rgb, triangles}] in slot order; rgb (linear) is the GLB's baseColorFactor of the material of that name
+    on the object's source node (colours, from node_colours; equal names are taken in order), else the viewport
+    colour."""
     me = obj.data
     count = [0] * len(me.materials)
     for p in me.polygons:
         count[p.material_index] += len(p.vertices) - 2
+    pool = list(colours or [])
     out = []
     for i, m in enumerate(me.materials):
         if m is None:
             continue
-        out.append({"name": base_name(m.name), "rgb": [round(c, 3) for c in m.diffuse_color[:3]], "triangles": count[i]})
+        name = base_name(m.name)
+        k = next((j for j, (n, _) in enumerate(pool) if n == name), None)
+        rgb = pool.pop(k)[1] if k is not None else [round(c, 3) for c in m.diffuse_color[:3]]
+        out.append({"name": name, "rgb": rgb, "triangles": count[i]})
     return out
 
 
@@ -87,6 +124,7 @@ class Library:
         self.packs = packs
         self.coll = coll
         self.rigs, self.parts, self.heads, self.files, self.info = {}, {}, {"M": {}, "W": {}}, [], {}
+        self.colours = {}  # part or head id -> node_colours() of its source object
 
     def load_all(self):
         for g in GENDERS:
@@ -110,6 +148,7 @@ class Library:
     def _load_file(self, g, fname):
         char = CHARACTER[g][fname]
         src = self.packs.load(g, fname)
+        colours = node_colours(glb_json(self.packs.folders[g] / fname))
         placed, entry = [], {"body_type": g, "file": fname, "character": char, "parts": {}, "props": []}
         for name in sorted(src["meshes"]):
             obj = src["meshes"][name]
@@ -121,6 +160,7 @@ class Library:
                 raise RuntimeError("%s/%s has two %s objects" % (g, fname, slot))
             pid = part_id(slot, g, char)
             entry["parts"][slot] = {"id": pid, "object": name}
+            self.colours[pid] = colours.get(name, [])
             if slot == "head":  # heads cross body types: one copy per rig, both rebound from the source rest
                 for tg in GENDERS:
                     o = obj
@@ -208,7 +248,7 @@ def inventory(lib):
         arm = lib.rigs[g]
         pts = world_verts(obj)
         entry = {"slot": slot, "body_type": g, "triangles": tris(obj), "vertices": len(obj.data.vertices),
-                 "materials": materials(obj), "bounds": bounds(pts)}
+                 "materials": materials(obj, lib.colours[pid]), "bounds": bounds(pts)}
         if slot == "top":
             entry["seams"] = top_seams(obj, arm)
         elif slot == "bottom":

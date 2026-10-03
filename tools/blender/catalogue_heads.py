@@ -13,8 +13,9 @@ import hashlib
 
 import bmesh
 
+import catalogue_parts as cp
 from um import zones
-from um.util import base_name
+from um.util import base_name, tris
 
 # Material roles that hold for every head.
 MATERIAL_ROLE = {"Skin": "skull", "Skin_Darker": "skull", "Eye": "eyes", "Eyebrows": "brows",
@@ -230,7 +231,8 @@ def analyse(lib, file_entries):
         top = max(pc.hi[2] for pc in skin) if skin else None
         skin_top[hp["id"]] = top
         heads[hp["id"]] = {"g": g, "char": char, "file": fe["file"], "object": hp["object"], "obj": obj, "pieces": pcs,
-                           "skin_top": top, "neck_bottom": min(pc.lo[2] for pc in skull) if skull else None}
+                           "materials": cp.materials(obj, lib.colours[hp["id"]]), "triangles": tris(obj),
+                           "bounds": cp.bounds(cp.world_verts(obj)), "skin_top": top, "neck_bottom": min(pc.lo[2] for pc in skull) if skull else None}
     # skull type: full when the skin reaches the body type's highest skull top (within 5 mm), else open-top
     for hid, h in heads.items():
         tops = [v["skin_top"] for v in heads.values() if v["g"] == h["g"] and v["skin_top"] is not None]
@@ -263,10 +265,11 @@ def analyse(lib, file_entries):
             pcs = groups[kind]
             faces = {f for pc in pcs for f in pc.faces}
             mats = sorted({pc.material for pc in pcs})
+            rgb = {m["name"]: m["rgb"] for m in h["materials"]}
             iid = item_id(kind, g, char)
             entry = {"kind": "facial_hair" if kind in ("moustache", "beard", "goatee", "stubble") else kind,
                      "head": hid, "source": {"body_type": g, "file": h["file"], "object": h["object"]},
-                     "materials": mats, "pieces": len(pcs), "triangles": sum(pc.triangles for pc in pcs),
+                     "materials": mats, "colours": [{"name": m, "rgb": rgb[m]} for m in mats], "pieces": len(pcs), "triangles": sum(pc.triangles for pc in pcs),
                      "bounds": {"min_m": [round(min(pc.lo[i] for pc in pcs), 4) for i in range(3)],
                                 "max_m": [round(max(pc.hi[i] for pc in pcs), 4) for i in range(3)]},
                      "geometry": signature(obj, faces)}
@@ -330,6 +333,7 @@ def head_record(hid, h):
     out = {"source": {"body_type": h["g"], "file": h["file"], "object": h["object"]}, "skull_type": h["skull_type"],
            "skin_top_m": round(h["skin_top"], 4) if h["skin_top"] is not None else None,
            "neck_bottom_m": round(h["neck_bottom"], 4) if h["neck_bottom"] is not None else None,
+           "materials": h["materials"], "triangles": h["triangles"], "bounds": h["bounds"],
            "regions": [regions[k] for k in sorted(regions)], "items": sorted(h["items"])}
     return out
 
