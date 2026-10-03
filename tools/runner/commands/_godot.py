@@ -31,14 +31,29 @@ ANSI = re.compile(r"\x1b\[[0-9;]*m")
 NOTEWORTHY = ("ERROR", "WARNING", "SCRIPT ERROR", "USER ERROR", "USER WARNING")
 
 
-def stage(glb: Path, name: str | None = None) -> str:
-    """Copies glb into godot/import/ as <name>.glb (dropping a stale .import so the next import starts from the
-    defaults) and returns its res:// path."""
+# The import options godot-check and frames set; every other option keeps Godot's default (docs/godot.md). Godot's
+# editor import resamples a glTF animation at animation/fps (default 30): the pack's actions are 24 fps, and at 30 the
+# joints on the pack's own frames moved by up to 7.6 mm against Blender's (m1_rex's Walk), at 24 by up to 4.5 mm.
+IMPORT_PARAMS = {"animation/fps": 24}
+
+
+def import_file(params: dict[str, Any], subresources: str = "{}") -> str:
+    """The text of a minimal .import file: Godot fills in every option left out with its default on import."""
+    lines = ["[remap]", "", 'importer="scene"', 'type="PackedScene"', "", "[params]", ""]
+    lines += [f"{key}={json.dumps(value)}" for key, value in params.items()]
+    lines.append(f"_subresources={subresources}")
+    return "\n".join(lines) + "\n"
+
+
+def stage(glb: Path, name: str | None = None, params: dict[str, Any] | None = None, subresources: str = "{}") -> str:
+    """Copies glb into godot/import/ as <name>.glb with a fresh .import file holding IMPORT_PARAMS (and params), so the
+    next import starts from Godot's defaults plus those, and returns its res:// path."""
     name = name or glb.stem
     IMPORT_DIR.mkdir(parents=True, exist_ok=True)
     target = IMPORT_DIR / f"{name}.glb"
     shutil.copyfile(glb, target)
-    (IMPORT_DIR / f"{name}.glb.import").unlink(missing_ok=True)
+    text = import_file({**IMPORT_PARAMS, **(params or {})}, subresources)
+    (IMPORT_DIR / f"{name}.glb.import").write_text(text, encoding="utf-8", newline="\n")
     return f"res://import/{name}.glb"
 
 
