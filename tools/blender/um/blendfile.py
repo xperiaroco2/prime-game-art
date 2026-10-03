@@ -147,6 +147,9 @@ def save_character(cid, arm, parts, rc, rep, out_dir):
     arm.data.name = arm.name
     scene = bpy.data.scenes.new(cid)
     scene.render.fps = bpy.context.scene.render.fps
+    # the timeline covers the longest action (frames 0 to 40), not Blender's default 1 to 250
+    scene.frame_start = int(min(a.frame_range[0] for a in acts))
+    scene.frame_end = int(max(a.frame_range[1] for a in acts))
     build = bpy.data.collections.get(cid)  # the run's own collection of this character holds the name
     if build is not None:
         build.name = cid + "~build"
