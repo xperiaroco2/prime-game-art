@@ -79,8 +79,6 @@ EXPORT_OPTIONS = {
     "will_save_settings": False,
 }
 
-ACTION_PREFIX = "CharacterArmature|"
-
 
 def gltf_axes(v):
     """A Blender point (+Z up, front -Y) in glTF axes (+Y up, front +Z), as the exporter converts it."""

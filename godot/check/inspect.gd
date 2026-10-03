@@ -110,7 +110,7 @@ func _mesh(scene: Node, mesh: MeshInstance3D) -> Dictionary:
 	var vertices: int = 0
 	if mesh.mesh != null:
 		for s: int in mesh.mesh.get_surface_count():
-			vertices += mesh.mesh.surface_get_array_len(s)
+			vertices += (mesh.mesh.surface_get_arrays(s)[Mesh.ARRAY_VERTEX] as PackedVector3Array).size()
 			var mat: Material = mesh.get_active_material(s)
 			var entry: Dictionary = {"name": mat.resource_name if mat != null else ""}
 			if mat is BaseMaterial3D:
