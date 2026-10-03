@@ -98,15 +98,21 @@ class ReportChecksTest(unittest.TestCase):
         self.assertEqual(faces.check_report(bad), [
             "f9_test/neutral/m_full/mouth: a decal 0.08 mm off the skin in Punch_Left f9 (at least 0.2 mm in motion)"])
 
+    def test_the_hair_may_not_hide_a_face_part(self) -> None:
+        bad = report()
+        bad["families"]["f9_test"]["expressions"]["neutral"]["m_full"]["brows"]["visible_front"] = 0.5
+        self.assertEqual(faces.check_report(bad), [
+            "f9_test/neutral/m_full/brows: the hair hides 50 % of it from the front (at most 40 %)"])
+
     def test_summary_line(self) -> None:
         self.assertEqual(faces.summary(report()),
                          ["f9_test (Test): triangles eyes 300, brows 128, mouth 92; materials 5/1/2; decals at least 0.8 mm off "
-                          "the skin, - mm in motion"])
+                          "the skin, - mm in motion; hair hides at most - % of a part"])
         moving = report()
         heads = moving["families"]["f9_test"]["expressions"]["neutral"]["m_full"]
-        heads["mouth"].update(clearance_motion_min_mm=0.7)
-        heads["brows"].update(clearance_motion_min_mm=0.75)
-        self.assertIn("decals at least 0.8 mm off the skin, 0.7 mm in motion",
+        heads["mouth"].update(clearance_motion_min_mm=0.7, visible_front=1.0)
+        heads["brows"].update(clearance_motion_min_mm=0.75, visible_front=0.9)
+        self.assertIn("decals at least 0.8 mm off the skin, 0.7 mm in motion; hair hides at most 10 % of a part",
                       faces.summary(moving)[0])
 
 

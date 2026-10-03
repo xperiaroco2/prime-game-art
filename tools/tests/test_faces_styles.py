@@ -146,10 +146,23 @@ class ReviewTest(unittest.TestCase):
         self.assertIn("is not [head, skin, family]", found)
         self.assertIn("game_camera.fov_deg: must be a positive number", found)
 
-    def test_motion_settings(self) -> None:
+    def test_brows_stand_out_on_every_skin(self) -> None:
         styles = fst.load_styles(STYLES)
         data = json.loads(REVIEW.read_text(encoding="utf-8"))
+        for hid, h in data["heads"].items():
+            for skin, rgb in data["skins"].items():
+                self.assertGreaterEqual(fst.contrast(fst.brow_rgb(h, skin), rgb), fst.MIN_BROW_CONTRAST, f"{hid} {skin}")
+        del data["heads"]["w_full"]["brow_by_skin"]
+        data["heads"]["m_full"]["brow_by_skin"]["green"] = [0, 0, 0]
         data["motion"]["frames"] = 1
         with self_raises() as ctx:
             fst.check_review(data, styles)
-        self.assertIn("motion.frames: must be a whole number from 2 to 24", "\n".join(ctx.problems))
+        found = "\n".join(ctx.problems)
+        self.assertIn("heads.w_full: the brows have a contrast of", found)
+        self.assertIn("on the dark skin (at least 3.0); set brow_by_skin.dark", found)
+        self.assertIn("heads.m_full.brow_by_skin: unknown skin 'green'", found)
+        self.assertIn("motion.frames: must be a whole number from 2 to 24", found)
+
+    def test_contrast(self) -> None:
+        self.assertAlmostEqual(fst.contrast([1, 1, 1], [0, 0, 0]), 21.0)
+        self.assertAlmostEqual(fst.contrast([0.2, 0.2, 0.2], [0.2, 0.2, 0.2]), 1.0)

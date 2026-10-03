@@ -60,6 +60,9 @@ MAX_LENGTH_M = 0.1
 REVIEW_KEYS = ("description", "heads_recipe", "heads", "skins", "overview_skins", "game_camera", "distances_m",
                "distance_sheet", "strip", "motion", "facial_hair")
 SHEETS = ("close", "distance", "overview", "strip", "beards")
+# A review head's brows must stand out from every skin tone it is shown in (WCAG contrast of relative luminance):
+# brows the colour of the skin would hide the brow-led expressions and judge the families unfairly.
+MIN_BROW_CONTRAST = 3.0
 # Where a facial-hair part is cut from its source head (rest-pose world space; see faces_render.py).
 HAIR_ZONES = ("all", "chin", "lower_face")
 
@@ -289,8 +292,24 @@ def pixels_per_metre(game_camera: dict[str, Any], distance_m: float) -> float:
     return game_camera["height"] / (2.0 * distance_m * math.tan(math.radians(game_camera["fov_deg"]) / 2.0))
 
 
+def luminance(rgb: list[float]) -> float:
+    """Relative luminance of a linear rgb colour (the values Blender and Godot take)."""
+    return 0.2126 * rgb[0] + 0.7152 * rgb[1] + 0.0722 * rgb[2]
+
+
+def contrast(a: list[float], b: list[float]) -> float:
+    """The WCAG contrast ratio of two linear rgb colours (1 to 21)."""
+    la, lb = sorted((luminance(a), luminance(b)), reverse=True)
+    return (la + 0.05) / (lb + 0.05)
+
+
+def brow_rgb(head: dict[str, Any], skin: str) -> list[float]:
+    """A review head's brow colour on a skin tone: brow_by_skin[skin] when given, else brow."""
+    return head.get("brow_by_skin", {}).get(skin, head["brow"])
+
+
 def check_review(data: Any, styles: dict[str, Any] | None = None, source: str = "review") -> dict[str, Any]:
-    """The review settings, checked (heads, skins, camera, distances, strip, motion);
+    """The review settings, checked (heads, skins, brow contrast, camera, distances, strip, motion);
     raises StylesError."""
     problems: list[str] = []
     if not isinstance(data, dict):
@@ -320,6 +339,23 @@ def check_review(data: Any, styles: dict[str, Any] | None = None, source: str = 
     for name, rgb in skins.items():
         if not _rgb_ok(rgb):
             problems.append(f"skins.{name}: must be [r, g, b] from 0 to 1")
+    for hid, h in heads.items():
+        if not isinstance(h, dict) or not _rgb_ok(h.get("brow")):
+            continue
+        by_skin = h.get("brow_by_skin", {})
+        if not isinstance(by_skin, dict):
+            problems.append(f"heads.{hid}.brow_by_skin: must be an object {{skin: [r, g, b]}}")
+            continue
+        for name, rgb in by_skin.items():
+            if name not in skins:
+                problems.append(f"heads.{hid}.brow_by_skin: unknown skin {name!r}; skins: {', '.join(skins)}")
+            elif not _rgb_ok(rgb):
+                problems.append(f"heads.{hid}.brow_by_skin.{name}: must be [r, g, b] from 0 to 1")
+        for name, rgb in skins.items():
+            brow = brow_rgb(h, name)
+            if _rgb_ok(rgb) and _rgb_ok(brow) and contrast(brow, rgb) < MIN_BROW_CONTRAST:
+                problems.append(f"heads.{hid}: the brows have a contrast of {contrast(brow, rgb):.2f} on the {name} skin "
+                                f"(at least {MIN_BROW_CONTRAST}); set brow_by_skin.{name}")
     for hid, skin in (data.get("overview_skins") or {}).items():
         if hid not in heads:
             problems.append(f"overview_skins: unknown head {hid!r}; heads: {', '.join(heads)}")

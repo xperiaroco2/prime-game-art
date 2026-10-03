@@ -200,10 +200,10 @@
     "tuck_ears": 0.08
    },
    "hair": {
-    "file": "Animated Woman-nIItLV9nxS.glb",
-    "object": "Formad_Head",
+    "file": "Medieval.glb",
+    "object": "Medieval_Head",
     "materials": [
-     "Red"
+     "DarkBrown"
     ],
     "inflate": 0.006
    },
@@ -257,7 +257,7 @@
      "down_deg": 70.0
     }
    },
-   "notes": "Full skull (Witch, ears flattened) with Animated Woman (Formal)'s hair, as w1_ivy."
+   "notes": "Full skull (Witch, ears flattened) with Medieval's long dark brown hair, which leaves the forehead free. The final test's Formal hair (w1_ivy) has a fringe down to 1.4 cm above the eye centre: it hid every family's brows and its side lock crossed the near eye in three-quarter view (art #21 review)."
   },
   {
    "id": "w_open",

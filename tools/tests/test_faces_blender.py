@@ -1,7 +1,7 @@
 """The face kit in headless Blender (skipped when Blender or the Ultimate Modular packs are missing): two families in
 two expressions on the four review heads at low resolution, the frame strip and its clip. Checks the sheets exist,
 every part is a mesh weighted to the Head bone alone, decals stay off the skin at rest and in the motion actions (the
-face skin is given to the Head bone). One Blender run, about 30 s."""
+face skin is given to the Head bone), and the hair leaves the face visible. One Blender run, about 30 s."""
 
 from __future__ import annotations
 
@@ -77,6 +77,7 @@ class FacesInBlenderTest(unittest.TestCase):
                 for hid, parts in heads.items():
                     for name, info in parts.items():
                         where = f"{fid} {ename} {hid} {name}"
+                        self.assertGreaterEqual(info["visible_front"], 0.6, where)
                         if info["decal"]:
                             self.assertGreaterEqual(info["clearance_motion_min_mm"], 0.2, where)
                             # rigid on a skin that follows the Head bone: motion takes at most 0.2 mm off the rest value

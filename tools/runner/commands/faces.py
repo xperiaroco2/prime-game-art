@@ -27,6 +27,9 @@ MIN_MOTION_CLEARANCE_MM = MIN_DECAL_CLEARANCE_MM
 # The face parts are bound to the Head bone: over the frame strip they may not move in its frame. With Head-only
 # weights this holds by construction; it catches a part bound to another rig or bone.
 MAX_HEAD_SPACE_MOVE_MM = 0.01
+# The review heads' hair (or a hat) may hide at most this share of a face part from the front: brows under a fringe
+# hide the brow-led expressions and judge the families unfairly.
+MIN_VISIBLE_FRONT = 0.6
 
 
 def styles_module() -> ModuleType:
@@ -84,7 +87,8 @@ def load_inputs(args: argparse.Namespace) -> tuple[dict[str, Any], dict[str, Any
 
 def check_report(report: dict[str, Any]) -> list[str]:
     """What a finished run must show: every part weighted 1.0 to the Head bone alone with an Armature modifier,
-    decals off the skin in the rest pose and in motion, and the face bound to the head over the strip."""
+    decals off the skin in the rest pose and in motion, face parts not hidden by the hair, and the face bound to the
+    head over the strip."""
     problems = []
     for fid, fam in report.get("families", {}).items():
         for ename, heads in fam["expressions"].items():
@@ -102,6 +106,9 @@ def check_report(report: dict[str, Any]) -> list[str]:
                     if moving is not None and moving < MIN_MOTION_CLEARANCE_MM:
                         problems.append(f"{where}: a decal {moving} mm off the skin in {info.get('clearance_motion_where')} "
                                         f"(at least {MIN_MOTION_CLEARANCE_MM} mm in motion)")
+                    if info.get("visible_front", 1.0) < MIN_VISIBLE_FRONT:
+                        problems.append(f"{where}: the hair hides {round(100 * (1 - info['visible_front']))} % of it from the "
+                                        f"front (at most {round(100 * (1 - MIN_VISIBLE_FRONT))} %)")
     for key, strip in report.get("strip", {}).items():
         if strip["face_in_head_space_max_move_mm"] > MAX_HEAD_SPACE_MOVE_MM:
             problems.append(f"strip {key}: the face moved {strip['face_in_head_space_max_move_mm']} mm in the Head bone's "
@@ -111,12 +118,12 @@ def check_report(report: dict[str, Any]) -> list[str]:
 
 def summary(report: dict[str, Any]) -> list[str]:
     """One line per family: triangles per part (the range over the expressions), materials, decal clearance at rest
-    and in motion."""
+    and in motion, and the least share of a part the hair leaves visible."""
     lines = []
     for fid, fam in report.get("families", {}).items():
         tri: dict[str, list[int]] = {"eyes": [], "brows": [], "mouth": []}
         mats: dict[str, int] = {"eyes": 0, "brows": 0, "mouth": 0}
-        clear, moving = [], []
+        clear, moving, vis = [], [], []
         for heads in fam["expressions"].values():
             for parts in heads.values():
                 for part, info in parts.items():
@@ -126,10 +133,13 @@ def summary(report: dict[str, Any]) -> list[str]:
                         clear.append(info["clearance_min_mm"])
                     if info.get("clearance_motion_min_mm") is not None:
                         moving.append(info["clearance_motion_min_mm"])
+                    if info.get("visible_front") is not None:
+                        vis.append(info["visible_front"])
         span = ", ".join(f"{p} {min(v)}-{max(v)}" if min(v) != max(v) else f"{p} {v[0]}" for p, v in tri.items() if v)
         lines.append(f"{fid} ({fam['name']}): triangles {span}; materials {mats['eyes']}/{mats['brows']}/{mats['mouth']}; "
                      f"decals at least {min(clear) if clear else '-'} mm off the skin, "
-                     f"{min(moving) if moving else '-'} mm in motion")
+                     f"{min(moving) if moving else '-'} mm in motion; hair hides at most "
+                     f"{round(100 * (1 - min(vis))) if vis else '-'} % of a part")
     return lines
 
 

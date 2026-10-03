@@ -8,8 +8,8 @@ The runner calls it (tools/run.py faces); by hand, background only:
       [--sheets close,distance,overview,strip,beards|none] [--res 100] [--pack-weights]
 
 Writes into --out: faces_report.json (per family, expression, head and part: triangles, materials, the skin clearance
-in the rest pose and, for decals, its minimum over the pack actions of review.json "motion";
-the face skin given to the Head bone per head; the distance pixel sizes; the
+in the rest pose and, for decals, its minimum over the pack actions of review.json "motion", and how much of the part
+the hair leaves visible from the front; the face skin given to the Head bone per head; the distance pixel sizes; the
 frame strip) and the sheets: <family>_hero.jpg (the neutral face large), <family>_front.jpg and
 <family>_threequarter.jpg (rows: expressions; columns: heads and skin tones), <family>_distance.png (the face at the
 game's distances, nearest-neighbour enlarged), overview.jpg (every family, neutral),
@@ -250,6 +250,7 @@ class Head:
         self.skin = next(s.material for s in parts["head"].material_slots if s.material and s.material.name == self.id + "_skin")
         self.face = {}
         self.surf = None
+        self.hair = None  # BVH of everything but the head skin (hair, hats) in the rest pose, facing -Y at x
         self.motion = []  # [(action, frame, BVH of the deformed head skin in the Head bone's space)]
         self.to_head = None  # world (rest pose at x, yaw 0) -> the Head bone's space
 
@@ -352,13 +353,20 @@ def motion_clearance(h, pts, centre):
     return worst, where
 
 
+def visible_front(h, pts):
+    """The share of points that the hair (or a hat) does not hide from the front camera."""
+    if h.hair is None or not pts:
+        return 1.0
+    return sum(1 for p in pts if h.hair.ray_cast(p, TO_CAMERA, 2.0)[0] is None) / len(pts)
+
+
 def make_face(h, fid, fam, ename, review, skin_name, measure=False):
     """Builds one family's face in one expression on head h (the character facing -Y at its place, yaw 0); returns
-    the measurements per part (measure: also the decals' clearance in motion)."""
+    the measurements per part (measure: also the decals' clearance in motion and the share the hair leaves visible)."""
     h.clear_face()
     hcol = review["heads"][h.id]
     skin_rgb = review["skins"][skin_name]
-    colors = {"iris": hcol["iris"], "brow": hcol["brow"], "lip": fst.lip_rgb(skin_rgb, fam["lip_tint"])}
+    colors = {"iris": hcol["iris"], "brow": fst.brow_rgb(hcol, skin_name), "lip": fst.lip_rgb(skin_rgb, fam["lip_tint"])}
     mouth_at = (h.x, h.mouth_z)
     builders = fk.family_face(h.surf, h.eyes_at(), mouth_at, fid, fam, fam["expressions"][ename], colors, h.skin, h.id)
     centre = Vector(zones.SKULL_CENTRE) + Vector((h.x, 0.0, 0.0))
@@ -371,6 +379,7 @@ def make_face(h, fid, fam, ename, review, skin_name, measure=False):
         d = clearance(pts, h.surf, centre)
         extra = {}
         if measure:
+            extra["visible_front"] = round(visible_front(h, pts), 3)
             if b.decal and h.motion:
                 worst, where = motion_clearance(h, pts, centre)
                 extra["clearance_motion_min_mm"] = round(worst * 1000, 2)
@@ -396,6 +405,9 @@ def set_skin(h, fid, fam, review, skin_name):
     lip = bpy.data.materials.get(f"{h.id}_{fid}_lip")
     if lip:
         set_color(lip, fst.lip_rgb(rgb, fam["lip_tint"]))
+    brow = bpy.data.materials.get(f"{h.id}_{fid}_brow")
+    if brow:
+        set_color(brow, fst.brow_rgb(review["heads"][h.id], skin_name))
 
 
 def variants(fam, exprs):
@@ -493,6 +505,8 @@ def main():
         update()
         h.surf = fk.Surface(parts["head"])
         h.to_head = head_space(h)
+        others = [o for role, o in parts.items() if role != "head" and o.type == "MESH"]
+        h.hair = merged_bvh(others) if others else None
         prepare_motion(h, review["motion"])
         heads.append(h)
         print("HEAD", h.id, "eyes", rep["eye_centres"], "mouth z", h.mouth_z, "face skin to Head", face_skin[h.id],
@@ -722,7 +736,7 @@ def beards(shots, heads, styles, review, packs, out, work):
             for c in list(obj.users_collection):
                 c.objects.unlink(obj)
             h.coll.objects.link(obj)
-            rgb = [x * 0.55 for x in skin_rgb] if spec.get("stubble") else review["heads"][hid]["brow"]
+            rgb = [x * 0.55 for x in skin_rgb] if spec.get("stubble") else fst.brow_rgb(review["heads"][hid], skin)
             m = fk.tagged_material(h.id, f"facial_hair_{i}", rgb)
             for slot in obj.material_slots:
                 slot.material = m
