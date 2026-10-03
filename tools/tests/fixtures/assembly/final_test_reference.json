@@ -1,0 +1,242 @@
+{
+ "source": "D:/prime-art-raw/research/2026-10-03-art-research/final-character-test/work/build_report.json (the final character test, 2026-10-03, reviewed on xperiaroco2/prime-game#165), reduced by tools/runner/commands/_assembly.extract(); the shoes slot was called feet there",
+ "characters": {
+  "m1_rex": {
+   "triangles": {
+    "head": 308,
+    "hair": 644,
+    "top": 3048,
+    "bottom": 830,
+    "shoes": 552,
+    "eyes": 680,
+    "brows": 96,
+    "mouth": 300
+   },
+   "triangles_total": 6458,
+   "height_m": 1.967,
+   "height_without_hair_m": 1.765,
+   "posed_height_m": 1.943,
+   "seam_overlap_rest": {
+    "neck_mm": 118.9,
+    "waist_mm": 33.6,
+    "ankle_mm": 87.3
+   },
+   "probe_rest": {
+    "neck": {
+     "rays": 1260,
+     "see_through": 10
+    },
+    "waist": {
+     "rays": 504,
+     "see_through": 0
+    },
+    "ankle_L": {
+     "rays": 972,
+     "see_through": 0
+    },
+    "ankle_R": {
+     "rays": 972,
+     "see_through": 0
+    }
+   },
+   "probe_posed": {
+    "neck": {
+     "rays": 1260,
+     "see_through": 0
+    },
+    "waist": {
+     "rays": 504,
+     "see_through": 0
+    },
+    "ankle_L": {
+     "rays": 972,
+     "see_through": 0
+    },
+    "ankle_R": {
+     "rays": 972,
+     "see_through": 0
+    }
+   }
+  },
+  "m2_walt": {
+   "triangles": {
+    "head": 448,
+    "hair": 1952,
+    "moustache": 120,
+    "top": 3528,
+    "bottom": 918,
+    "shoes": 560,
+    "eyes": 400,
+    "brows": 96,
+    "mouth": 72
+   },
+   "triangles_total": 8094,
+   "height_m": 1.858,
+   "height_without_hair_m": 1.827,
+   "posed_height_m": 1.83,
+   "seam_overlap_rest": {
+    "neck_mm": 116.4,
+    "waist_mm": 47.3,
+    "ankle_mm": 162.4
+   },
+   "probe_rest": {
+    "neck": {
+     "rays": 1260,
+     "see_through": 6
+    },
+    "waist": {
+     "rays": 612,
+     "see_through": 0
+    },
+    "ankle_L": {
+     "rays": 1656,
+     "see_through": 0
+    },
+    "ankle_R": {
+     "rays": 1656,
+     "see_through": 0
+    }
+   },
+   "probe_posed": {
+    "neck": {
+     "rays": 1260,
+     "see_through": 2
+    },
+    "waist": {
+     "rays": 612,
+     "see_through": 0
+    },
+    "ankle_L": {
+     "rays": 1656,
+     "see_through": 0
+    },
+    "ankle_R": {
+     "rays": 1656,
+     "see_through": 0
+    }
+   }
+  },
+  "w1_ivy": {
+   "triangles": {
+    "head": 334,
+    "hair": 2050,
+    "top": 2738,
+    "bottom": 544,
+    "shoes": 1036,
+    "eyes": 1360,
+    "brows": 96,
+    "mouth": 160
+   },
+   "triangles_total": 8318,
+   "height_m": 1.845,
+   "height_without_hair_m": 1.789,
+   "posed_height_m": 1.773,
+   "seam_overlap_rest": {
+    "neck_mm": 2.1,
+    "waist_mm": 23.0,
+    "ankle_mm": 64.7
+   },
+   "probe_rest": {
+    "neck": {
+     "rays": 216,
+     "see_through": 0
+    },
+    "waist": {
+     "rays": 396,
+     "see_through": 0
+    },
+    "ankle_L": {
+     "rays": 3024,
+     "see_through": 0,
+     "poke_through": 0
+    },
+    "ankle_R": {
+     "rays": 3024,
+     "see_through": 0,
+     "poke_through": 0
+    }
+   },
+   "probe_posed": {
+    "neck": {
+     "rays": 216,
+     "see_through": 0
+    },
+    "waist": {
+     "rays": 396,
+     "see_through": 0
+    },
+    "ankle_L": {
+     "rays": 3024,
+     "see_through": 16,
+     "poke_through": 11
+    },
+    "ankle_R": {
+     "rays": 3024,
+     "see_through": 0,
+     "poke_through": 42
+    }
+   }
+  },
+  "w2_nova": {
+   "triangles": {
+    "head": 390,
+    "hair": 2113,
+    "top": 3118,
+    "bottom": 552,
+    "shoes": 570,
+    "eyes": 1256,
+    "brows": 96,
+    "mouth": 348
+   },
+   "triangles_total": 8443,
+   "height_m": 1.844,
+   "height_without_hair_m": 1.789,
+   "posed_height_m": 1.817,
+   "seam_overlap_rest": {
+    "neck_mm": 16.9,
+    "waist_mm": 15.1,
+    "ankle_mm": 72.3
+   },
+   "probe_rest": {
+    "neck": {
+     "rays": 360,
+     "see_through": 0
+    },
+    "waist": {
+     "rays": 324,
+     "see_through": 0
+    },
+    "ankle_L": {
+     "rays": 3204,
+     "see_through": 0,
+     "poke_through": 0
+    },
+    "ankle_R": {
+     "rays": 3204,
+     "see_through": 0,
+     "poke_through": 0
+    }
+   },
+   "probe_posed": {
+    "neck": {
+     "rays": 360,
+     "see_through": 0
+    },
+    "waist": {
+     "rays": 324,
+     "see_through": 0
+    },
+    "ankle_L": {
+     "rays": 3204,
+     "see_through": 0,
+     "poke_through": 0
+    },
+    "ankle_R": {
+     "rays": 3204,
+     "see_through": 17,
+     "poke_through": 0
+    }
+   }
+  }
+ }
+}

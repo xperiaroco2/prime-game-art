@@ -1,4 +1,5 @@
-"""The asset manifest schema (docs/manifest.md): every assets/<kind>/<id>/manifest.toml is checked by validate()."""
+"""The asset manifest schema (docs/manifest.md): every assets/<kind>/<id>/manifest.toml is checked by validate(), every
+source record sources/<id>.toml (a downloaded pack or library that assets are made from) by validate_source()."""
 
 from __future__ import annotations
 
@@ -34,6 +35,11 @@ TOP_OPTIONAL = ("title", "notes", "credit")
 SOURCE_REQUIRED = ("service", "plan", "model_version", "task_ids", "generated_at")
 SOURCE_OPTIONAL = ("url",)
 RAW_REQUIRED = ("file", "sha256")
+# A source record: one download (a pack, a library) with its licence and the hashes of its raw files.
+SOURCE_RECORD_REQUIRED = (
+    "id", "title", "author", "url", "licence", "licence_url", "public_repo_ok", "ai_generated", "downloaded_at", "raw",
+)  # fmt: skip
+SOURCE_RECORD_OPTIONAL = ("credit", "notes")
 
 ID_RE = re.compile(r"^[a-z0-9][a-z0-9_]*$")
 SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
@@ -142,6 +148,24 @@ def validate(data: dict[str, Any], kind_dir: str | None = None, id_dir: str | No
                 if isinstance(source.get("plan"), str) and "free" in source["plan"].lower():
                     errors.append("free-plan AI output is never used (docs/pipeline.md, AI rules)")
 
+    errors += _raw_errors(data)
+
+    tools = data.get("tools")
+    if "tools" in data and not (isinstance(tools, list) and tools and all(_is_text(t) for t in tools)):
+        errors.append("tools must be a non-empty list of strings (the generator and every tool that changed the asset)")
+
+    errors += _licence_errors(data, "asset")
+
+    errors += _approval(data)
+    for key in ("title", "notes"):
+        if key in data and not isinstance(data[key], str):
+            errors.append(f"{key} must be a string")
+    return errors
+
+
+def _raw_errors(data: dict[str, Any]) -> list[str]:
+    """[[raw]]: one or more tables, each a relative path inside the raw folder and its sha256, no file twice."""
+    errors: list[str] = []
     raw = data.get("raw")
     if "raw" in data:
         if not (isinstance(raw, list) and raw and all(isinstance(r, dict) for r in raw)):
@@ -165,18 +189,22 @@ def validate(data: dict[str, Any], kind_dir: str | None = None, id_dir: str | No
                 digest = entry.get("sha256")
                 if "sha256" in entry and not (isinstance(digest, str) and SHA256_RE.fullmatch(digest)):
                     errors.append(f"{where}sha256 must be 64 lowercase hex digits")
+            files = [e.get("file") for e in raw if isinstance(e.get("file"), str)]
+            for file in sorted({f for f in files if files.count(f) > 1}):
+                errors.append(f"raw file {file!r} is listed twice")
+    return errors
 
-    tools = data.get("tools")
-    if "tools" in data and not (isinstance(tools, list) and tools and all(_is_text(t) for t in tools)):
-        errors.append("tools must be a non-empty list of strings (the generator and every tool that changed the asset)")
 
+def _licence_errors(data: dict[str, Any], what: str) -> list[str]:
+    """licence, licence_url, credit (required for CC-BY-4.0) and public_repo_ok (never with a private licence)."""
+    errors: list[str] = []
     licence = data.get("licence")
     if "licence" in data and (not isinstance(licence, str) or licence not in LICENCES):
         errors.append(f"licence {licence!r} is not one of {', '.join(sorted(LICENCES))}")
     if "licence_url" in data and not (isinstance(data["licence_url"], str) and URL_RE.fullmatch(data["licence_url"])):
         errors.append("licence_url must be an http(s) URL to the licence or terms that apply")
     if licence == "CC-BY-4.0" and not _is_text(data.get("credit")):
-        errors.append("a CC-BY-4.0 asset needs credit (the attribution line)")
+        errors.append(f"a CC-BY-4.0 {what} needs credit (the attribution line)")
     if "credit" in data and not isinstance(data["credit"], str):
         errors.append("credit must be a string")
 
@@ -186,11 +214,38 @@ def validate(data: dict[str, Any], kind_dir: str | None = None, id_dir: str | No
             errors.append("public_repo_ok must be true or false")
         elif public and isinstance(licence, str) and licence in LICENCES and licence not in PUBLIC_LICENCES:
             errors.append(f"public_repo_ok is true but licence {licence!r} may never reach the public game repo")
+    return errors
 
-    errors += _approval(data)
-    for key in ("title", "notes"):
-        if key in data and not isinstance(data[key], str):
-            errors.append(f"{key} must be a string")
+
+def find_sources(root: Path) -> list[Path]:
+    """Every source record, root/sources/*.toml."""
+    folder = root / "sources"
+    return sorted(folder.glob("*.toml")) if folder.is_dir() else []
+
+
+def validate_source(data: dict[str, Any], stem: str | None = None) -> list[str]:
+    """Every problem in one parsed source record (docs/manifest.md, "Source records"); stem is its file name without
+    .toml, checked against id."""
+    errors = _keys(data, SOURCE_RECORD_REQUIRED, SOURCE_RECORD_OPTIONAL, "")
+    source_id = data.get("id")
+    if "id" in data:
+        if not (isinstance(source_id, str) and ID_RE.fullmatch(source_id)):
+            errors.append("id must be lowercase letters, digits and underscores")
+        elif stem is not None and source_id != stem:
+            errors.append(f"id {source_id!r} differs from its file name {stem}.toml")
+    for key in ("title", "author"):
+        if key in data and not _is_text(data[key]):
+            errors.append(f"{key} must be a non-empty string")
+    if "url" in data and not (isinstance(data["url"], str) and URL_RE.fullmatch(data["url"])):
+        errors.append("url must be the http(s) page the source was downloaded from")
+    if "ai_generated" in data and not isinstance(data["ai_generated"], bool):
+        errors.append("ai_generated must be true or false")
+    if "downloaded_at" in data and not _is_when(data["downloaded_at"]):
+        errors.append("downloaded_at must be a TOML date or date-time (2026-10-03 or 2026-10-03T13:46:00Z)")
+    if "notes" in data and not isinstance(data["notes"], str):
+        errors.append("notes must be a string")
+    errors += _raw_errors(data)
+    errors += _licence_errors(data, "source")
     return errors
 
 
