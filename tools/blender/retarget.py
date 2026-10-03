@@ -6,8 +6,8 @@ Usage (background Blender only, through tools/runner/blender.py):
 A pack original as the target gets the assembler's toe bones first (um/toes.py, art #25) when the map drives them.
 Writes <out>/retarget_report.json (the hip-height ratio, the rest-pose check, each clip's frames and IK misses; with
 --floor also each clip's lowest vertex on the target and on the source's own mesh, scaled to the target) and,
-with --blend, <out>/<target>_ual.blend: the target character with the baked actions "<prefix>|<clip>" (UAL|, UAL2|)
-and nothing else. UAL2 (art #24) has UAL1's rig and takes the same bone map.
+with --blend, <out>/<target>_<prefix>.blend (lower case): the target character with the baked actions "<prefix>|<clip>"
+(UAL|, UAL2|, Meshy|) and nothing else. UAL2 (art #24) has UAL1's rig and takes the same bone map.
 """
 
 import argparse
@@ -55,7 +55,7 @@ def main(argv):
     ap.add_argument("--no-ik", action="store_true")
     ap.add_argument("--blend", action="store_true")
     ap.add_argument("--floor", action="store_true")
-    ap.add_argument("--prefix", default="UAL", help="the baked actions' name prefix (UAL, UAL2)")
+    ap.add_argument("--prefix", default="UAL", help="the baked actions' name prefix (UAL, UAL2, Meshy)")
     ap.add_argument("--config", help="the review settings: the library's extra files, renames and in-place clips")
     ap.add_argument("--library", help="the library's key in the review settings (meshy, art #25)")
     ap.add_argument("--raw", help="the raw folder, which the settings' paths are relative to")
@@ -116,7 +116,7 @@ def main(argv):
                 bpy.data.actions.remove(act)
         rc.reset_pose(tgt["arm"])
         stem = os.path.splitext(os.path.basename(a.target))[0].replace(" ", "_")
-        path = os.path.join(a.out, f"{stem}_ual.blend")
+        path = os.path.join(a.out, f"{stem}_{a.prefix.lower()}.blend")
         bpy.ops.wm.save_as_mainfile(filepath=path, compress=True)
         report["blend"] = path
         with open(os.path.join(a.out, "retarget_report.json"), "w", encoding="utf-8") as f:

@@ -59,7 +59,7 @@ the toes rest under the feet.
 [--no-ik]` bakes the clips of a library (UAL1 by default, `--library ual2` for UAL2: its actions are named `UAL2|<clip>`
 and its default output is `tools/out/retarget/ual2/<body>`) onto the body type's donor character
 (`tools/blender/anim_review.toml`) in background Blender and writes `retarget_report.json` (with `--blend` also the
-character with the baked actions `<label>|<clip>`, `UAL|` or `UAL2|`, saved as `<target>_ual.blend` for every library; with `--floor` each clip's lowest vertex on the target and on UAL's own
+character with the baked actions `<label>|<clip>`, `UAL|`, `UAL2|` or `Meshy|`, saved as `<target>_<label>.blend` in lower case; with `--floor` each clip's lowest vertex on the target and on UAL's own
 mannequin scaled to the target, which tells how deep a clip goes into the floor by itself and how much the retarget
 adds). No add-on: `tools/blender/retarget_core.py`.
 
