@@ -1,10 +1,10 @@
 """One clean .blend per character, the input of the glTF export (art #18), its JSON sidecar, and the inspection of a
 saved file.
 
-The saved file holds one scene named after the character with exactly: the armature <id>_rig (62 bones) and one mesh
-object per part, <id>_<slot>, each parented to the armature with an Armature modifier on it; the body type's 24 own
-actions under their original names ("CharacterArmature|Wave", ...), kept by a fake user, none assigned, no NLA
-tracks; every pose bone at identity (the rest pose). No RootNode, no "_end" empties, no Icosphere, camera, light or
+The saved file holds one scene named after the character with exactly: the armature <id>_rig (the pack's 62 bones and
+the two toe bones of um/toes.py, 64) and one mesh object per part, <id>_<slot>, each parented to the armature with an
+Armature modifier on it; the body type's 24 own actions under their original names ("CharacterArmature|Wave", ...),
+kept by a fake user, none assigned, no NLA tracks; every pose bone at identity (the rest pose). No RootNode, no "_end" empties, no Icosphere, camera, light or
 world. Materials are flat colours: the Principled base colour equals the viewport colour.
 
 Transforms are applied (docs/assembly.md): the importer's armature carries a -90 degree X rotation and a world scale
@@ -168,7 +168,8 @@ def save_character(cid, arm, parts, rc, rep, out_dir):
         "blend": cid + ".blend",
         "units": "metres; Blender +Z up, front -Y (glTF +Y up, front +Z after the exporter's default conversion)",
         "fps": scene.render.fps,
-        "armature": {"object": arm.name, "bones": len(arm.data.bones), "source": rep["skeleton"]},
+        "armature": {"object": arm.name, "bones": len(arm.data.bones), "source": rep["skeleton"],
+                     "toe_bones": {s: v for s, v in rep.get("toe_bones", {}).get("sides", {}).items()}},
         "transforms": "identity on every object (applied when saved)",
         "transform_check_max_error_m": round(error, 7),
         "principled_synced_max_change": round(synced, 4),

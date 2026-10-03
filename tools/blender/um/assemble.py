@@ -4,8 +4,8 @@ its recipe pose with the posed measurements; crossgender: the final test's cloth
 A character is five pack parts from source characters of its own body type (a head stripped to bald skin, a hairstyle
 split off another head, a top, a bottom and shoes; extras such as a moustache are more head regions), each rebound to
 the skeleton file's rest pose and parented to its armature with an Armature modifier, plus our scripted eyes, brows and
-mouth weighted 1.0 to the Head bone. Objects are named <id>_<slot>: head, hair, top, bottom, shoes, eyes, brows, mouth
-and the extras' roles.
+mouth weighted 1.0 to the Head bone, and a toe bone per foot (um/toes.py; 64 bones in all). Objects are named
+<id>_<slot>: head, hair, top, bottom, shoes, eyes, brows, mouth and the extras' roles.
 """
 
 import json
@@ -14,7 +14,7 @@ import bpy
 from mathutils import Vector
 
 from . import facekit as fk
-from . import fit, heads, poses, zones
+from . import fit, heads, poses, toes, zones
 from .materials import color_of, set_color
 from .packs import attach, discard, place, source_label
 from .rebind import rebind
@@ -104,6 +104,9 @@ def build_character(packs, recipe, rc, coll):
     for ex in rc.get("extend", []):
         rep["parts"][ex["part"]]["extended"] = fit.extend_edge(parts[ex["part"]], ex["drop"])
     update()
+    # a toe bone per foot at the ball of the shoes, the shoes' fronts reweighted to it (art #25): any clip can bend
+    # the shoe at push-off; the pack's own actions never key a toe, so they play as before
+    rep["toe_bones"] = toes.add_toe_bones(arm, parts["shoes"], list(parts.values()))
 
     for o in parts.values():
         relink(o, coll)

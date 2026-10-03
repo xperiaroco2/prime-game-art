@@ -137,7 +137,8 @@ class ExportInBlenderTest(unittest.TestCase):
                 path = fx.glb(cid)
                 s = _export.summarize(_export.glb_json(path))
                 self.assertEqual(len(s["skins"]), 1)
-                self.assertEqual(len(s["skins"][0]), 62)
+                self.assertEqual(len(s["skins"][0]), 64)  # the pack's 62 bones and the two toe bones (art #25)
+                self.assertIn("Toe.L", s["skins"][0])
                 self.assertEqual(set(s["meshes"]), {f"{cid}_{p}" for p in
                                                     ("head", "hair", "top", "bottom", "shoes", "eyes", "brows", "mouth")})
                 self.assertEqual(len(s["animation_names"]), 24)
