@@ -12,8 +12,9 @@ from .. import blender, common
 from . import _anim
 
 NAME = "anim-review"
-HELP = "judge animations in motion: inventory, measures, frame strips, MP4 clips, side-by-side pairs"
-STEPS = ("inventory", "clips", "pairs", "sheets", "table", "all")
+HELP = ("judge animations in motion: inventory, measures, frame strips, MP4 clips, side-by-side pairs, "
+        "locomotion at the game's speeds")
+STEPS = ("inventory", "clips", "pairs", "rates", "sheets", "table", "all")
 
 
 def add_arguments(parser: argparse.ArgumentParser) -> None:
@@ -81,6 +82,21 @@ def pairs(args: argparse.Namespace, out: Path, cfg: dict, bodies: list[str]) -> 
     common.ok(f"side-by-side pairs in {out / 'pairs'}")
 
 
+def rates(out: Path, cfg: dict, bodies: list[str]) -> None:
+    jobs = [["rates", *body_args(cfg, body), "--ual-rm", str(_anim.raw_path(cfg["ual_rm"])), "--out", str(out)]
+            for body in bodies]
+    with ThreadPoolExecutor(max_workers=len(jobs)) as pool:
+        for future in [pool.submit(blender.run_script, "anim_review.py", job, 7200) for job in jobs]:
+            future.result()
+    for body in bodies:
+        report = json.loads((out / "rates" / body / "rates.json").read_text(encoding="utf-8"))
+        for name, row in report["rows"].items():
+            lanes = ", ".join(f"{lane['clip']} x{lane['rate']} ({lane['cadence_steps_s']} steps/s)"
+                              for lane in row["lanes"])
+            common.ok(f"{body} {name}: {lanes}")
+    common.ok(f"the game's speeds in {out / 'rates'}")
+
+
 def sheets(out: Path) -> None:
     stems = sorted({p.stem for p in (out / "strips").glob("*/*.png")}, key=lambda s: (not s.startswith("pack"), s))
     names = out / "tmp" / "sheet_names.txt"
@@ -106,7 +122,7 @@ def run(args: argparse.Namespace) -> int:
     out = (args.out or common.OUT / "anim-review").resolve()
     out.mkdir(parents=True, exist_ok=True)
     bodies = list(_anim.BODIES) if args.body == "both" else [args.body]
-    steps = ("inventory", "clips", "pairs", "sheets", "table") if args.step == "all" else (args.step,)
+    steps = ("inventory", "clips", "pairs", "rates", "sheets", "table") if args.step == "all" else (args.step,)
     for step in steps:
         common.say(f"== {step}")
         if step == "inventory":
@@ -115,6 +131,8 @@ def run(args: argparse.Namespace) -> int:
             clips(args, out, cfg, bodies)
         elif step == "pairs":
             pairs(args, out, cfg, bodies)
+        elif step == "rates":
+            rates(out, cfg, bodies)
         elif step == "sheets":
             sheets(out)
         else:

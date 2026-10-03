@@ -18,6 +18,21 @@ pack = ["Idle", "Idle_Gun", "Idle_Gun_Pointing", "Idle_Neutral", "Idle_Sword", "
         "Run_Right", "Run_Shoot", "Walk"]
 ual = ["Sword_Idle"]
 
+# Locomotion at the game's speeds (the game's content/modes/base_mode.tres: walk 4.5 m/s, sprint 7.0 m/s). Each
+# row plays its clips side by side on a treadmill moving at `speed`, each at the rate that makes its feet keep up:
+# UAL clips by their root-motion speed (UAL1_Standard_RM.glb, scaled to the body), pack clips by their feet.
+# "blend:A+B" is a cycle-synced blend of two UAL clips (lined up on the left heel strike), weighted to reach the speed.
+[[rates]]
+name = "walk_4.5"
+label = "the game's walk"
+speed = 4.5
+clips = ["ual:Jog_Fwd_Loop", "blend:Walk_Loop+Jog_Fwd_Loop", "pack:Run"]
+[[rates]]
+name = "sprint_7.0"
+label = "the game's sprint"
+speed = 7.0
+clips = ["ual:Sprint_Loop", "blend:Jog_Fwd_Loop+Sprint_Loop", "pack:Run"]
+
 # Side-by-side clips: the pack's clip against the corresponding UAL clips, on the same character.
 [[pairs]]
 pack = "Idle"
