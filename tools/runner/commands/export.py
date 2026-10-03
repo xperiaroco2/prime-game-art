@@ -25,7 +25,7 @@ def run(args: argparse.Namespace) -> int:
     for path in args.blend:
         candidate = path if path.is_file() else common.ROOT / path
         if not candidate.is_file() or candidate.suffix.lower() != ".blend":
-            raise common.Failure(f"no saved character file {path} (a .blend from `assemble --blend`)")
+            raise common.Failure(f"no saved character file {path.as_posix()} (a .blend from `assemble --blend`)")
         blends.append(candidate.resolve())
     failed = 0
     for blend in blends:

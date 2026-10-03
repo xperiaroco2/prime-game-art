@@ -30,7 +30,7 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
 def run(args: argparse.Namespace) -> int:
     glb = args.glb if args.glb.is_file() else common.ROOT / args.glb
     if not glb.is_file() or glb.suffix.lower() != ".glb":
-        raise common.Failure(f"no GLB {args.glb}")
+        raise common.Failure(f"no GLB {args.glb.as_posix()}")
     glb = glb.resolve()
     expect = _godot.expectations(glb)
     animations = expect["animations"]

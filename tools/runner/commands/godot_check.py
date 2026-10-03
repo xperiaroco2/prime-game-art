@@ -29,7 +29,7 @@ def run(args: argparse.Namespace) -> int:
     for path in args.glb:
         candidate = path if path.is_file() else common.ROOT / path
         if not candidate.is_file() or candidate.suffix.lower() != ".glb":
-            raise common.Failure(f"no GLB {path}")
+            raise common.Failure(f"no GLB {path.as_posix()}")
         glbs.append(candidate.resolve())
     contract = _godot.load_contract()
     staged = {glb: _godot.stage(glb) for glb in glbs}
