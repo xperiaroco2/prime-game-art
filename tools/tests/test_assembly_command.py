@@ -30,6 +30,8 @@ class FindRecipeTest(unittest.TestCase):
         self.assertEqual(_assembly.find_recipe("um_final_test").name, "um_final_test.json")
         self.assertEqual(_assembly.find_recipe("um_final_test_neutral.json").name, "um_final_test_neutral.json")
         self.assertEqual(_assembly.find_recipe("recipes/um_final_test.json").name, "um_final_test.json")
+        # a relative path means this checkout's recipe even when the current folder is another checkout
+        self.assertEqual(_assembly.find_recipe("recipes/um_final_test.json").parent, (common.ROOT / "recipes").resolve())
 
     def test_an_unknown_recipe_names_the_recipes(self) -> None:
         code, out = run_cli("assemble", "no_such_recipe")

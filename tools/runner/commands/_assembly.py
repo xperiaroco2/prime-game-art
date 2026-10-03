@@ -36,8 +36,9 @@ def available() -> list[str]:
 
 
 def find_recipe(name: str) -> Path:
-    """A recipe path, a path from the repo root, or a file name in recipes/ (".json" may be left out)."""
-    for candidate in (Path(name), common.ROOT / name, RECIPES / name, RECIPES / f"{name}.json"):
+    """A path from the repo root, a file name in recipes/ (".json" may be left out), or a path (absolute, or from the
+    current folder last: run from another checkout, "recipes/x.json" still means this checkout's recipe)."""
+    for candidate in (common.ROOT / name, RECIPES / name, RECIPES / f"{name}.json", Path(name)):
         if candidate.is_file():
             return candidate.resolve()
     raise common.Failure(f"no recipe {name!r}; recipes/ has: {', '.join(available()) or 'nothing'}")
