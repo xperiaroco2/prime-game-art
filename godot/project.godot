@@ -1,0 +1,10 @@
+; The art repository's Godot 4.7.2 import check (docs/godot.md). `tools/run.py godot-check` copies a GLB into import/
+; (ignored), imports it headless and walks the scene with check/inspect.gd; `tools/run.py frames` renders motion frame
+; sheets with frames/frames.gd in an off-screen window. tools/godot/ stays the contract project.
+
+config_version=5
+
+[application]
+
+config/name="prime-game-art import check"
+config/features=PackedStringArray("4.7", "Forward Plus")
