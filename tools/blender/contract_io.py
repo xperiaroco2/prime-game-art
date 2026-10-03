@@ -47,7 +47,9 @@ def load_model(path: str) -> None:
         return
     empty_scene()
     if suffix in (".glb", ".gltf"):
-        bpy.ops.import_scene.gltf(filepath=path)
+        # Without disable_bone_shape the importer adds a hidden "Icosphere" mesh as the bones' display shape, which a
+        # .blend saved from here would then carry (the batch 2 review took it for a stray mesh in the Quaternius GLBs).
+        bpy.ops.import_scene.gltf(filepath=path, disable_bone_shape=True)
     elif suffix == ".fbx":
         bpy.ops.import_scene.fbx(filepath=path)
     else:

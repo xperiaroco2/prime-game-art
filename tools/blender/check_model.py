@@ -158,7 +158,8 @@ def main() -> None:
     for arm in armatures:
         arm.data.pose_position = "REST"
     bpy.context.view_layer.update()
-    # The glTF importer adds a bone display shape ("Icosphere") in a glTF_not_exported collection: not the model.
+    # A glTF imported without disable_bone_shape (a .blend saved elsewhere) holds the importer's bone display shape
+    # ("Icosphere") in a glTF_not_exported collection: not the model.
     shapes = {pb.custom_shape for a in armatures for pb in a.pose.bones if pb.custom_shape}
     ignored = [
         o
