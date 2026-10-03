@@ -10,7 +10,7 @@ extends SceneTree
 ## each time is rendered (seek with update, then the next drawn frame), labelled, scaled to the cell and placed in
 ## sheets/<label>.png under a title band. "keep" also saves frames/<label>/<i>.png at window size, "video" saves every
 ## frame of one cycle at fps as video/<label>/<i>.png. frames.json records the cameras, the times and every joint's
-## world position at each time. Prints FRAMES saved <path>, or FRAMES error <why> and exits 1.
+## world position at each time, with each bone's two axis points (Character.axis_points). Prints FRAMES saved <path>, or FRAMES error <why> and exits 1.
 
 const Character = preload("res://lib/character.gd")
 const WATCHDOG_S: float = 600.0
@@ -76,7 +76,9 @@ func _run(scene_path: String, out_dir: String, spec: Dictionary) -> void:
 		for i: int in times.size():
 			var t: float = times[i]
 			var image: Image = await _shot(name, t, "%s   f%s   %.2f s" % [clip["label"], _frame_label(t, spec["fps"]), t])
-			entry["joints"].append(Character.joints(_skeleton))
+			var joints: Dictionary = Character.joints(_skeleton)
+			joints.merge(Character.axis_points(_skeleton))
+			entry["joints"].append(joints)
 			if clip.get("keep", false):
 				_save(image, "%s/frames/%s/%02d.png" % [out_dir, clip["label"], i])
 			shots.append(image)

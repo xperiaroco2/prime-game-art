@@ -21,8 +21,8 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("glb", type=Path, help="a GLB from `export` (its .export.json beside it names the .blend)")
     parser.add_argument("--out", type=Path, help="output folder (default tools/out/frames/<stem>/)")
     parser.add_argument("--clips", default="", help="comma list of animations without the CharacterArmature| prefix (default: all)")
-    parser.add_argument("--compare", default=",".join(_frames.COMPARE),
-                        help="clips Blender renders beside Godot's frames, joints compared (default Idle,Walk,Wave; '' for none)")
+    parser.add_argument("--compare", default="all",
+                        help="clips Blender renders beside Godot's frames, joints compared (default all the rendered clips; '' for none)")
     parser.add_argument("--video", default="", help=f"clips to encode as looping MP4 (e.g. {','.join(_frames.VIDEO)}; default none)")
     parser.add_argument("--blend", type=Path, help="the character .blend for the comparison (default: the one the export names)")
 
@@ -37,13 +37,15 @@ def run(args: argparse.Namespace) -> int:
     wanted = [c for c in args.clips.split(",") if c]
     by_label = {_frames.label(n): n for n in animations}
     unknown = [c for c in wanted if c not in by_label]
-    compare = [c for c in args.compare.split(",") if c]
+    compare = [c for c in args.compare.split(",") if c and c != "all"]
     video = [c for c in args.video.split(",") if c]
     unknown += [c for c in compare + video if c not in by_label]
     if unknown:
         raise common.Failure(f"unknown clips {', '.join(unknown)}; {glb.name} has: {', '.join(sorted(by_label))}")
     if wanted:
         animations = {by_label[c]: animations[by_label[c]] for c in dict.fromkeys(wanted + compare + video)}
+    if args.compare == "all":
+        compare = sorted(_frames.label(n) for n in animations)
     out = (args.out or _frames.OUT / glb.stem).resolve()
     for sub in ("sheets", "frames", "video", "compare", "clips"):
         shutil.rmtree(out / sub, ignore_errors=True)
@@ -101,7 +103,8 @@ def _compare(args: argparse.Namespace, glb: Path, out: Path, compare: list[str],
     (folder / "compare.json").write_text(json.dumps(result, indent=1), encoding="utf-8")
     good = True
     for short, r in result.items():
-        text = (f"{short}: {r['joints']} joints at {len(r['per_time_mm'])} times, Godot and Blender within {r['max_mm']:.3f} mm "
+        text = (f"{short}: {r['joints']} joints and {r['axis_points']} axis points at {len(r['per_time_mm'])} times, "
+                f"Godot and Blender within {r['max_mm']:.3f} mm "
                 f"(worst {r['where']}; allowed {_frames.JOINT_TOLERANCE_M * 1000:.0f} mm) -> {(folder / (short + '.png')).as_posix()}")
         (common.ok if r["match"] else common.bad)(text)
         good &= r["match"]

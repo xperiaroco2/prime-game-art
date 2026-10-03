@@ -6,7 +6,7 @@ character posed at the times Godot rendered, through the same orthographic camer
       --blend <id>.blend --frames <frames.json> --clips Idle,Walk,Wave --out <folder>
 
 frames.json is what godot/frames/frames.gd wrote (per clip: the animation, the times, the camera, the window size,
-Godot's joints and kept frames). Writes <out>/blender/<label>/<i>.png, <out>/<label>.png (Godot's frames above
+Godot's joints, axis points and kept frames). Writes <out>/blender/<label>/<i>.png, <out>/<label>.png (Godot's frames above
 Blender's, one column per time) and <out>/blender_joints.json.
 """
 
@@ -24,6 +24,7 @@ from um import render as rd  # noqa: E402
 
 CELL = (200, 250)
 GAP = 4
+AXIS_LEVER = 0.1  # godot/lib/character.gd AXIS_LEVER
 
 
 def to_blender(v):
@@ -33,6 +34,21 @@ def to_blender(v):
 
 def gltf(v):
     return [round(v[0], 5), round(v[2], 5), round(-v[1], 5)]
+
+
+def axis_points(arm):
+    """Each bone's two axis points as godot/lib/character.gd axis_points() computes them: AXIS_LEVER from the joint along
+    glTF +X and +Y (Blender +X and +Z) in the rest pose, carried by the bone's pose; in glTF axes."""
+    mw = arm.matrix_world
+    inv = mw.inverted()
+    out = {}
+    for pb in arm.pose.bones:
+        rest = pb.bone.matrix_local
+        moved = pb.matrix @ rest.inverted()
+        head = mw @ rest.translation
+        for axis, offset in (("x", Vector((AXIS_LEVER, 0, 0))), ("y", Vector((0, 0, AXIS_LEVER)))):
+            out[f"{pb.name}+{axis}"] = gltf(mw @ (moved @ (inv @ (head + offset))))
+    return out
 
 
 def place_camera(cam, spec, window):
@@ -133,7 +149,7 @@ def main():
             scene.frame_set(int(math.floor(f)), subframe=f - math.floor(f))
             bpy.context.view_layer.update()
             mw = arm.matrix_world
-            joints[label].append({pb.name: gltf(mw @ pb.head) for pb in arm.pose.bones})
+            joints[label].append({**{pb.name: gltf(mw @ pb.head) for pb in arm.pose.bones}, **axis_points(arm)})
             caption(cam, clip["camera"], window, f"Blender {bpy.app.version_string.split()[0]}   f{f:.1f}")
             path = os.path.join(args.out, "blender", label, f"{i:02d}.png")
             os.makedirs(os.path.dirname(path), exist_ok=True)

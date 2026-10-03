@@ -39,6 +39,13 @@ class TimesTest(unittest.TestCase):
         r = _frames.compare_joints(godot, blender)["Wave"]
         self.assertEqual((r["max_mm"], r["where"], r["per_time_mm"], r["match"]), (12.0, "Head at 0.500 s", [0.0, 12.0], False))
 
+    def test_a_leaf_bone_turned_in_place_fails_through_its_axis_points(self) -> None:
+        # Head is a leaf: its joint stays put when it turns, its axis points do not
+        godot = {"clips": {"Idle": {"times": [0.0], "joints": [{"Head": [0, 1.6, 0], "Head+x": [0.1, 1.6, 0], "Head+y": [0, 1.7, 0]}]}}}
+        blender = {"joints": {"Idle": [{"Head": [0, 1.6, 0], "Head+x": [0.0995, 1.6, -0.01], "Head+y": [0, 1.7, 0]}]}}
+        r = _frames.compare_joints(godot, blender)["Idle"]
+        self.assertEqual((r["joints"], r["axis_points"], r["where"], r["match"]), (1, 2, "Head+x at 0.000 s", False))
+
     def test_unknown_clips_are_refused_before_godot_starts(self) -> None:
         if not fx.glb("m1_rex").is_file():
             self.skipTest("no exported m1_rex (the export tests make it)")

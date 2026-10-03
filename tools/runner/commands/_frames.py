@@ -16,7 +16,6 @@ YAW_DEG = 35.0  # the three-quarter view: from the front, turned toward the char
 PITCH_DEG = 8.0
 FPS = 24
 PREFIX = "CharacterArmature|"
-COMPARE = ("Idle", "Walk", "Wave")
 VIDEO = ("Idle", "Walk", "Run", "Wave", "Punch_Right", "Interact")
 # Godot and Blender agree on a joint's position within this on a whole frame. With Godot's animation optimizer off
 # (_godot.PLAYER_OPTIONS) every joint of every clip agrees within 0.02 mm (the JSON's 0.01 mm rounding); a wrong pose
@@ -63,8 +62,9 @@ def _dist(a: list[float], b: list[float]) -> float:
 
 
 def compare_joints(godot: dict[str, Any], blender: dict[str, Any]) -> dict[str, Any]:
-    """Per clip: the largest distance between Godot's and Blender's position of any joint at any of the clip's times,
-    which joint and when, and the largest per time. godot is frames.json, blender the compare script's joints."""
+    """Per clip: the largest distance between Godot's and Blender's position of any joint or axis point ("<bone>+x",
+    "<bone>+y": 10 cm from the joint, turned with the bone, so a leaf bone's rotation counts too) at any of the clip's
+    times, which one and when, and the largest per time. godot is frames.json, blender the compare script's joints."""
     out: dict[str, Any] = {}
     for short, frames in blender["joints"].items():
         clip = godot["clips"][short]
@@ -80,6 +80,7 @@ def compare_joints(godot: dict[str, Any], blender: dict[str, Any]) -> dict[str, 
             per_time.append(round(top * 1000, 3))
         missing = sorted(set(frames[0]) - set(clip["joints"][0])) if frames else []
         out[short] = {"max_mm": round(worst * 1000, 3), "where": where, "per_time_mm": per_time,
-                      "joints": len(frames[0]) if frames else 0, "missing_in_godot": missing,
+                      "joints": sum("+" not in k for k in frames[0]) if frames else 0,
+                      "axis_points": sum("+" in k for k in frames[0]) if frames else 0, "missing_in_godot": missing,
                       "match": worst <= JOINT_TOLERANCE_M and not missing}
     return out

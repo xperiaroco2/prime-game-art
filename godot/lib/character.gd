@@ -3,6 +3,8 @@ extends RefCounted
 ## skinned vertices as Godot itself deforms them, and JSON output. Loaded with preload(), not a class_name, so that a
 ## script run with -s works without the editor's global class cache.
 
+const AXIS_LEVER: float = 0.1
+
 
 ## Instantiates the PackedScene at path under parent; null when it does not load.
 static func instance(path: String, parent: Node) -> Node:
@@ -89,6 +91,24 @@ static func joints(skeleton: Skeleton3D) -> Dictionary:
 	var out: Dictionary = {}
 	for i: int in skeleton.get_bone_count():
 		out[skeleton.get_bone_name(i)] = vec(skeleton.global_transform * skeleton.get_bone_global_pose(i).origin)
+	return out
+
+
+## Two points per bone, AXIS_LEVER from its joint along world +X and +Y in the rest pose, carried by the bone's pose
+## ("<bone>+x", "<bone>+y"): they turn with the bone, so a comparison sees the rotation of a bone no other joint
+## shows (Head, Foot, the fingertips). Blender computes the same points (tools/blender/compare_frames.py).
+static func axis_points(skeleton: Skeleton3D, lever: float = AXIS_LEVER) -> Dictionary:
+	skeleton.force_update_all_bone_transforms()
+	var to_world: Transform3D = skeleton.global_transform
+	var to_skeleton: Transform3D = to_world.affine_inverse()
+	var out: Dictionary = {}
+	for i: int in skeleton.get_bone_count():
+		var rest: Transform3D = skeleton.get_bone_global_rest(i)
+		var moved: Transform3D = skeleton.get_bone_global_pose(i) * rest.affine_inverse()
+		var head: Vector3 = to_world * rest.origin
+		for axis: String in ["x", "y"]:
+			var offset: Vector3 = Vector3(lever, 0, 0) if axis == "x" else Vector3(0, lever, 0)
+			out["%s+%s" % [skeleton.get_bone_name(i), axis]] = vec(to_world * (moved * (to_skeleton * (head + offset))))
 	return out
 
 
