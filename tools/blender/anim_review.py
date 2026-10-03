@@ -164,7 +164,8 @@ def retarget(a, char, lib, names, variant="map"):
     src = anim_libs.load(a.libs[lib], ent, a.raw, bmap["hips"][0])
     rt = rc.Retargeter(rc.Rig(src["arm"]), rc.Rig(char["arm"]), bmap)
     rt.set_soles(char["meshes"].values())
-    char["ual_ratio"] = rt.ratio  # the same for every library on UAL1's rig
+    if not ent.get("map"):  # a library on UAL1's rig: the rates step scales UAL's root motion by it
+        char["ual_ratio"] = rt.ratio  # the same for every library on UAL1's rig (Meshy's rigs have their own)
     out = {}
     tag = LABELS.get(lib, lib) + (" rigid" if variant == "rigid_map" else "")
     for n in names:
