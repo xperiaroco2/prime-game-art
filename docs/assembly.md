@@ -67,6 +67,7 @@ A recipe is JSON in `recipes/`: `um_final_test.json` (the final test's four char
 | `skin` | `null` (the head's own skin) or `[r, g, b]` |
 | `recolor[]` | `part`, `material`, `rgb`, optional `was` |
 | `extend[]` | `part`, `drop` (m): lower the part's lowest ring; optional `why` |
+| `notes` | Optional text |
 | `pose` | `{"action": "Wave", "frame": 20}` or `{"neutral": {"down_deg": 70}}`, either with an optional `curl` `{"Middle.R": [60, 70, 40]}` (degrees per joint from the finger's base) |
 
 A colour (`rgb`, brows, recolours) is `[r, g, b]` (linear, 0 to 1) or `{"from_part": "hair", "material": "Hair"}`:

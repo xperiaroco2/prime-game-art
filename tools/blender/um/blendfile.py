@@ -18,7 +18,7 @@ import json
 import os
 
 import bpy
-from mathutils import Matrix
+from mathutils import Matrix, Vector
 
 from . import materials
 from .packs import own_action, own_actions, place, reset_pose
@@ -142,8 +142,12 @@ def save_character(cid, arm, parts, rc, rep, out_dir):
     _rename_actions(acts)
     _rename_materials(parts)
 
+    arm.data.name = arm.name
     scene = bpy.data.scenes.new(cid)
     scene.render.fps = bpy.context.scene.render.fps
+    build = bpy.data.collections.get(cid)  # the run's own collection of this character holds the name
+    if build is not None:
+        build.name = cid + "~build"
     coll = bpy.data.collections.new(cid)
     scene.collection.children.link(coll)
     for o in [arm] + list(parts.values()):
@@ -227,7 +231,7 @@ def inspect(path):
             ad = o.animation_data
             info["action"] = ad.action.name if ad and ad.action else None
             info["nla_tracks"] = len(ad.nla_tracks) if ad else 0
-            moved = [pb.name for pb in o.pose.bones if pb.location.length > 1e-6 or abs(pb.rotation_quaternion.w - 1) > 1e-6 or (pb.scale - pb.scale.__class__((1, 1, 1))).length > 1e-6]
+            moved = [pb.name for pb in o.pose.bones if pb.location.length > 1e-6 or abs(pb.rotation_quaternion.w - 1) > 1e-6 or (pb.scale - Vector((1, 1, 1))).length > 1e-6]
             info["posed_bones"] = len(moved)
             if info["action"] or info["nla_tracks"] or moved:
                 bad(f"{o.name}: not in the rest pose with no action (action {info['action']}, {info['nla_tracks']} NLA tracks, {len(moved)} posed bones)")
