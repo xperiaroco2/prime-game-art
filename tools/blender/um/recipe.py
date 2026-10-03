@@ -420,14 +420,26 @@ def check_contents(data: dict[str, Any], raw_dir: Path) -> list[str]:
             m = obj(f"{where}.{slot}", g, ch[slot]["file"], ch[slot]["object"])
             if m is not None:
                 available[slot] = m
+        # build_character swaps every part's Skin (and the head's as_skin) for the character's one skin material
+        # before recolours and colour references are looked up: those names are gone by then.
+        skinned = {role: {"Skin"} | (set(head.get("as_skin", [])) if role == "head" else set()) for role in available}
+
+        def material_ref(w: str, role: str, name: str) -> None:
+            if role not in available:
+                return
+            if name in skinned[role]:
+                problems.append(f"{w}: {name!r} on the {role} part becomes the character's shared skin material "
+                                f"({ch['id']}_skin); set the skin colour with the character's 'skin' key")
+            else:
+                mats(w, [name], available[role], f"the {role} part")
+
         colours = [(f"{where}.brows.rgb", ch["brows"]["rgb"])]
         for k, rc in enumerate(ch.get("recolor", [])):
-            if rc["part"] in available:
-                mats(f"{where}.recolor[{k}].material", [rc["material"]], available[rc["part"]], f"the {rc['part']} part")
+            material_ref(f"{where}.recolor[{k}].material", rc["part"], rc["material"])
             colours.append((f"{where}.recolor[{k}].rgb", rc["rgb"]))
         for w, spec in colours:
-            if isinstance(spec, dict) and spec["from_part"] in available:
-                mats(w + ".material", [spec["material"]], available[spec["from_part"]], f"the {spec['from_part']} part")
+            if isinstance(spec, dict):
+                material_ref(w + ".material", spec["from_part"], spec["material"])
         if "action" in ch["pose"]:
             action(where + ".pose.action", g, ch["pose"]["action"])
     for i, cg in enumerate(data.get("crossgender", [])):

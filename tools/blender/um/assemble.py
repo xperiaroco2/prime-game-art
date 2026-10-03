@@ -126,15 +126,17 @@ def build_character(packs, recipe, rc, coll):
     rep["recolor"] = []
     for rcol in rc.get("recolor", []):
         o = parts[rcol["part"]]
-        for slot in o.material_slots:
-            if slot.material and base_name(slot.material.name) == rcol["material"]:
-                old = [round(x, 3) for x in slot.material.diffuse_color[:3]]
-                rgb = color_of(rcol["rgb"], parts)
-                m = slot.material.copy(); m.name = "%s_%s_%s_recolor" % (cid, rcol["part"], rcol["material"])
-                set_color(m, rgb)
-                slot.material = m
-                rep["recolor"].append({"part": rcol["part"], "object": o.name, "material": rcol["material"], "from_rgb": old,
-                                       "to_rgb": rgb, "rgb_spec": rcol["rgb"], "was": rcol.get("was")})
+        hits = [slot for slot in o.material_slots if slot.material and base_name(slot.material.name) == rcol["material"]]
+        if not hits:
+            raise KeyError("recolor: no material %s on the %s part (%s)" % (rcol["material"], rcol["part"], o.name))
+        for slot in hits:
+            old = [round(x, 3) for x in slot.material.diffuse_color[:3]]
+            rgb = color_of(rcol["rgb"], parts)
+            m = slot.material.copy(); m.name = "%s_%s_%s_recolor" % (cid, rcol["part"], rcol["material"])
+            set_color(m, rgb)
+            slot.material = m
+            rep["recolor"].append({"part": rcol["part"], "object": o.name, "material": rcol["material"], "from_rgb": old,
+                                   "to_rgb": rgb, "rgb_spec": rcol["rgb"], "was": rcol.get("was")})
 
     # scripted face parts on the bald head
     update()

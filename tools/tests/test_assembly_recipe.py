@@ -132,6 +132,22 @@ class ContentTest(FakeRaw):
         data["characters"][0]["recolor"][0]["material"] = "Suit"
         self.assertIn("recolor[0].material: 'Suit' not on the shoes part; it has: Black", self.problems(data))
 
+    def test_the_shared_skin_is_not_a_material_reference(self) -> None:
+        # build_character swaps every part's Skin (and the head's as_skin) for <id>_skin before these are looked up
+        data = mini()
+        ch = data["characters"][0]
+        ch["head"]["keep"] = ["Skin", "Hair"]
+        ch["head"]["as_skin"] = ["Hair"]
+        ch["brows"]["rgb"] = {"from_part": "head", "material": "Skin"}
+        ch["recolor"] = [{"part": "top", "material": "Skin", "rgb": [0.5, 0.4, 0.3]},
+                         {"part": "head", "material": "Hair", "rgb": [0.5, 0.4, 0.3]}]
+        text = self.problems(data)
+        for expected in ("brows.rgb.material: 'Skin' on the head part becomes the character's shared skin material "
+                         "(m9_test_skin); set the skin colour with the character's 'skin' key",
+                         "recolor[0].material: 'Skin' on the top part becomes",
+                         "recolor[1].material: 'Hair' on the head part becomes"):
+            self.assertIn(expected, text)
+
     def test_an_unknown_action_names_the_actions(self) -> None:
         data = mini()
         data["characters"][0]["pose"]["action"] = "Wav"
