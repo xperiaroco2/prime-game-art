@@ -31,6 +31,19 @@ def _dominant(obj) -> list[str | None]:
     return out
 
 
+def world_points(obj) -> np.ndarray:
+    """The evaluated (posed) vertices of a mesh object in world space, as an (n, 3) array."""
+    dg = bpy.context.evaluated_depsgraph_get()
+    ev = obj.evaluated_get(dg)
+    me = ev.to_mesh()
+    co = np.empty(len(me.vertices) * 3, dtype=np.float64)
+    me.vertices.foreach_get("co", co)
+    ev.to_mesh_clear()
+    co = co.reshape(-1, 3)
+    m = np.array(ev.matrix_world)
+    return co @ m[:3, :3].T + m[:3, 3]
+
+
 def _hull_depth(body: np.ndarray, points: np.ndarray) -> float:
     """How deep (m) the deepest of points lies inside the convex hull of body (0 when none is inside)."""
     if len(body) < 4 or not len(points):
@@ -98,19 +111,8 @@ class Measure:
             s: rot(self.rest[f"LowerArm.{s}"]).inverted() @ rot(self.rest[f"Wrist.{s}"]) for s in "LR"
         }
         self._Wr = Wr
-        rest = {o.name: self._world_points(o) for o in self.meshes}  # the floor: the soles' lowest rest height
+        rest = {o.name: world_points(o) for o in self.meshes}  # the floor: the soles' lowest rest height
         self.floor = float(min(self._gather(rest, f"Foot.{s}")[:, 2].min() for s in "LR"))
-
-    def _world_points(self, obj) -> np.ndarray:
-        dg = bpy.context.evaluated_depsgraph_get()
-        ev = obj.evaluated_get(dg)
-        me = ev.to_mesh()
-        co = np.empty(len(me.vertices) * 3, dtype=np.float64)
-        me.vertices.foreach_get("co", co)
-        ev.to_mesh_clear()
-        co = co.reshape(-1, 3)
-        m = np.array(ev.matrix_world)
-        return co @ m[:3, :3].T + m[:3, 3]
 
     def frame(self, with_mesh: bool = True) -> dict:
         arm, W = self.arm, self.arm.matrix_world
@@ -133,7 +135,7 @@ class Measure:
             rec[f"curl_max.{s}"] = max(joints)
         rec["local"] = {pb.name: tuple(rot(pb.matrix_basis)) for pb in arm.pose.bones}
         if with_mesh:
-            pts = {o.name: self._world_points(o) for o in self.meshes}
+            pts = {o.name: world_points(o) for o in self.meshes}
             rec["lowest_z"] = float(min(p[:, 2].min() for p in pts.values()))
             hands = self._gather(pts, "hand")
             rec["hand_depth"] = _hull_depth(self._gather(pts, "torso"), hands)

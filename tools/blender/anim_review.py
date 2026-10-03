@@ -25,7 +25,7 @@ from mathutils import Vector  # noqa: E402
 import anim_render as ar  # noqa: E402
 import retarget_core as rc  # noqa: E402
 import retarget_map  # noqa: E402
-from anim_metrics import Measure  # noqa: E402
+from anim_metrics import Measure, world_points  # noqa: E402
 
 FPS = rc.FPS
 STRIP_FRAMES = 12
@@ -136,12 +136,11 @@ def all_keys(a, char):
 
 def bbox(char, clip, times):
     lo, hi = Vector((1e9, 1e9, 1e9)), Vector((-1e9, -1e9, -1e9))
-    m = Measure.__new__(Measure)
     for t in times:
         clip.pose(char["arm"], clip.frame_at(t))
         bpy.context.view_layer.update()
         for obj in char["meshes"].values():
-            pts = Measure._world_points(m, obj)
+            pts = world_points(obj)
             lo = Vector(np.minimum(lo, pts.min(axis=0)))
             hi = Vector(np.maximum(hi, pts.max(axis=0)))
     return lo, hi

@@ -15,8 +15,6 @@ import sys
 import tomllib
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import bpy  # noqa: E402
-
 import anim_math as am  # noqa: E402
 import retarget_core as rc  # noqa: E402
 
