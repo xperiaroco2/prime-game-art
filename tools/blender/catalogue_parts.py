@@ -215,8 +215,22 @@ def inventory(lib):
             entry["seams"] = bottom_seams(obj, arm)
         elif slot == "shoes":
             entry["seams"] = shoe_seams(obj, arm)
+        entry["geometry"] = geometry(pts)
         out[pid] = entry
+    first = {}
+    for pid in sorted(out):  # equal meshes (to 1 mm) of the same slot and body type: the later points at the first
+        key = (out[pid]["slot"], out[pid]["body_type"], out[pid]["geometry"])
+        if key in first:
+            out[pid]["same_geometry_as"] = first[key]
+        else:
+            first[key] = pid
     return out
+
+
+def geometry(pts):
+    """A hash of a part's rest-pose world vertices rounded to 1 mm, order-free: equal meshes share it."""
+    import hashlib
+    return hashlib.sha1(repr(sorted(tuple(round(x, 3) for x in p) for p in pts)).encode()).hexdigest()[:12]
 
 
 def copy_part(obj, name, coll):
