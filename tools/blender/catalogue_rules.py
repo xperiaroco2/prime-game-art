@@ -166,7 +166,9 @@ class Fix:
 
 def fix_rounds(arm, fixes):
     """Up to FIX_ROUNDS extend_edge tries per pair (the gap plus 10 mm, then 10 mm more each time), each measured like
-    the pair itself; the first that passes makes the verdict needs_fix, else gap (or poke when only that remains)."""
+    the pair itself; the first that passes makes the verdict needs_fix. Else the last try decides: gap when it still
+    sees through, poke when only poke-through remains (the opening closed but the moved edge crosses the other part).
+    Every try is recorded in fix_tried.rounds."""
     pending = list(fixes)
     for rnd in range(FIX_ROUNDS):
         if not pending:
@@ -183,8 +185,9 @@ def fix_rounds(arm, fixes):
         for f, job in zip(pending, jobs):
             allow = f.cell["allowance"]
             closes = passes(job.probe, allow, "see_through") and passes(job.probe, allow, "poke")
+            rounds = f.cell.get("fix_tried", {}).get("rounds", []) + [{"drop_m": f.drop, "probe": job.probe}]
             f.cell["fix_tried"] = {"fix": "extend_edge", "part": f.part, "drop_m": f.drop, "vertices_moved": f.moved,
-                                   "probe": job.probe, "closes": closes}
+                                   "probe": job.probe, "closes": closes, "rounds": rounds}
             if closes:
                 f.cell["verdict"] = "needs_fix"
                 f.cell["fix"] = {"fix": "extend_edge", "part": f.part, "drop_m": f.drop}
@@ -192,9 +195,8 @@ def fix_rounds(arm, fixes):
                 still.append(f)
         pending = still
     for f in pending:
-        allow = f.cell["allowance"]
-        opening = f.cell["overlap_mm"] < 0 or not passes(f.cell["probe"], allow, "see_through")
-        f.cell["verdict"] = "gap" if opening else "poke"
+        last = f.cell["fix_tried"]["probe"]
+        f.cell["verdict"] = "poke" if passes(last, f.cell["allowance"], "see_through") else "gap"
 
 
 def own(pid, slot):

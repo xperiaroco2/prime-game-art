@@ -104,8 +104,10 @@ and is measured again.
 | head x top (the neck) | The top's neck ring reaches above the head's lowest ring: `overlap_mm = neck ring top - head bottom >= 0`, and no ray sees through | `ok`, `needs_fix` (extend_edge on the head), `gap`, `poke` |
 | hair x skull (the scalp) | The hair covers the skull's open top (no hole rays) and the skull never comes out through the hair or lies on it (no poke or z-fight rays) | `ok`, `needs_fix` (inflate), `gap` (the open top shows), `poke` |
 
-In words: **gap** means the parts do not meet (an opening; more than 30 mm apart, or no extend_edge closes it);
-**poke** means one part shows through the other and no assembler fix removes it; **needs_fix** names the fix that was
+In words: **gap** means the parts do not meet (an opening; more than 30 mm apart, or the last extend_edge try still
+sees through); **poke** means one part shows through the other and no assembler fix removes it, including a pair whose
+opening extend_edge closed but whose lowered edge then crosses the other part (the women's Worker top over Punk
+trousers, the women's Punk top on any other skull; `fix_tried.rounds` lists every try); **needs_fix** names the fix that was
 tried and closed it. For the menu: offer a pair when its verdict is `ok`, `ok_tucked` or `ok_over`, or `needs_fix`
 with the fix applied at assembly.
 
@@ -128,7 +130,7 @@ with the fix applied at assembly.
 | `proposed_zones` | Cut zones defined in `catalogue_heads.py` and proposed for `um/zones.py`: `facial_hair`, `moustache`, `brows` (the brow box above z 1.698, where the women's `Brown` brows sit over the eyes), their `not_` complements, `not_chin_tuft`, `not_brow_zone`. Tested on pieces, the brow zones also ask for a brow's size (at most 64 triangles; brows have 12 to 40, a fringe piece whose centre falls in the box hundreds) |
 | `rules[]` | `id`, `seam`, `condition`, `verdicts` (the table above, in words) |
 | `matrices{rule}{M,W}` | `rows`, `cols` (sorted ids) and `cells[]` in row-major order (below). Bottom x shoes and top x bottom: the body type's own parts; head x top: every skull of unique geometry on that body type's rig; hair x skull: every hair of unique geometry on that body type's skulls |
-| `cells[]` | `a`, `b` (row and column ids), `verdict`; seams: `overlap_mm`, `outer`, `probe` (`rest`, `walk`: `rays`, `see_through`, `poke`), `allowance` (per state the references' counts plus 2), `references`, `fix_tried` (`fix`, `part`, `drop_m`, `vertices_moved`, `probe`, `closes`), `fix` (when `needs_fix`); ankles also `legs` (`L`, `R`: `bottom_lower_edge_m`, `collar_min_m`, `collar_max_m`, `overlap_mm`, `tucked`, `inside_fraction`), `faces_removed_by_tuck`, `walk_within_references`; waist `top_lower_edge_m`, `bottom_upper_edge_m`; neck `head_bottom_m`, `top_neck_ring_m`; hair: `rays` (`rays`, `covered`, `zfight`, `poke`, `hole`, `bare`), `own_skull`, `allowance`, `fix_tried` (`fix`, `amount`, `rays`, `closes`), `fix` |
+| `cells[]` | `a`, `b` (row and column ids), `verdict`; seams: `overlap_mm`, `outer`, `probe` (`rest`, `walk`: `rays`, `see_through`, `poke`), `allowance` (per state the references' counts plus 2), `references`, `fix_tried` (`fix`, `part`, `drop_m`, `vertices_moved`, `probe`, `closes`, `rounds[]`: every try's `drop_m` and `probe`), `fix` (when `needs_fix`); ankles also `legs` (`L`, `R`: `bottom_lower_edge_m`, `collar_min_m`, `collar_max_m`, `overlap_mm`, `tucked`, `inside_fraction`), `faces_removed_by_tuck`, `walk_within_references`; waist `top_lower_edge_m`, `bottom_upper_edge_m`; neck `head_bottom_m`, `top_neck_ring_m`; hair: `rays` (`rays`, `covered`, `zfight`, `poke`, `hole`, `bare`), `own_skull`, `allowance`, `fix_tried` (`fix`, `amount`, `rays`, `closes`), `fix` |
 | `summary{rule}{M,W}` | `pairs`, `verdicts` (counts), and for the seams `gap_over_5mm` (whole millimetres) and `gap_over_5mm_exact` |
 
 **Ids.** Pack parts: `<slot>_<m|w>_<character>` (`top_m_hoodie`, `shoes_w_soldier`). Head items:

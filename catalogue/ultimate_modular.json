@@ -7399,6 +7399,53 @@
          "see_through": 27
         }
        },
+       "rounds": [
+        {
+         "drop_m": 0.015,
+         "probe": {
+          "rest": {
+           "poke": 58,
+           "rays": 648,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 57,
+           "rays": 648,
+           "see_through": 18
+          }
+         }
+        },
+        {
+         "drop_m": 0.025,
+         "probe": {
+          "rest": {
+           "poke": 50,
+           "rays": 792,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 56,
+           "rays": 792,
+           "see_through": 22
+          }
+         }
+        },
+        {
+         "drop_m": 0.035,
+         "probe": {
+          "rest": {
+           "poke": 64,
+           "rays": 1008,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 56,
+           "rays": 1008,
+           "see_through": 27
+          }
+         }
+        }
+       ],
        "vertices_moved": 162
       },
       "legs": {
@@ -7434,7 +7481,7 @@
        }
       },
       "references": 2,
-      "verdict": "gap",
+      "verdict": "poke",
       "walk_within_references": false
      },
      {
@@ -7653,6 +7700,23 @@
          "see_through": 0
         }
        },
+       "rounds": [
+        {
+         "drop_m": 0.015,
+         "probe": {
+          "rest": {
+           "poke": 6,
+           "rays": 648,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 6,
+           "rays": 648,
+           "see_through": 0
+          }
+         }
+        }
+       ],
        "vertices_moved": 152
       },
       "legs": {
@@ -7907,6 +7971,23 @@
          "see_through": 2
         }
        },
+       "rounds": [
+        {
+         "drop_m": 0.02,
+         "probe": {
+          "rest": {
+           "poke": 12,
+           "rays": 576,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 12,
+           "rays": 576,
+           "see_through": 2
+          }
+         }
+        }
+       ],
        "vertices_moved": 152
       },
       "legs": {
@@ -8069,6 +8150,23 @@
          "see_through": 0
         }
        },
+       "rounds": [
+        {
+         "drop_m": 0.03,
+         "probe": {
+          "rest": {
+           "poke": 17,
+           "rays": 576,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 17,
+           "rays": 576,
+           "see_through": 0
+          }
+         }
+        }
+       ],
        "vertices_moved": 152
       },
       "legs": {
@@ -8502,6 +8600,53 @@
          "see_through": 28
         }
        },
+       "rounds": [
+        {
+         "drop_m": 0.035,
+         "probe": {
+          "rest": {
+           "poke": 24,
+           "rays": 648,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 28,
+           "rays": 648,
+           "see_through": 18
+          }
+         }
+        },
+        {
+         "drop_m": 0.045,
+         "probe": {
+          "rest": {
+           "poke": 40,
+           "rays": 792,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 39,
+           "rays": 792,
+           "see_through": 22
+          }
+         }
+        },
+        {
+         "drop_m": 0.055,
+         "probe": {
+          "rest": {
+           "poke": 22,
+           "rays": 1008,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 32,
+           "rays": 1008,
+           "see_through": 28
+          }
+         }
+        }
+       ],
        "vertices_moved": 36
       },
       "legs": {
@@ -8537,7 +8682,7 @@
        }
       },
       "references": 2,
-      "verdict": "gap",
+      "verdict": "poke",
       "walk_within_references": false
      },
      {
@@ -9032,6 +9177,23 @@
          "see_through": 18
         }
        },
+       "rounds": [
+        {
+         "drop_m": 0.02,
+         "probe": {
+          "rest": {
+           "poke": 6,
+           "rays": 648,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 6,
+           "rays": 648,
+           "see_through": 18
+          }
+         }
+        }
+       ],
        "vertices_moved": 248
       },
       "legs": {
@@ -11075,6 +11237,53 @@
          "see_through": 28
         }
        },
+       "rounds": [
+        {
+         "drop_m": 0.02,
+         "probe": {
+          "rest": {
+           "poke": 108,
+           "rays": 648,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 109,
+           "rays": 648,
+           "see_through": 18
+          }
+         }
+        },
+        {
+         "drop_m": 0.03,
+         "probe": {
+          "rest": {
+           "poke": 210,
+           "rays": 864,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 208,
+           "rays": 864,
+           "see_through": 24
+          }
+         }
+        },
+        {
+         "drop_m": 0.04,
+         "probe": {
+          "rest": {
+           "poke": 232,
+           "rays": 1008,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 228,
+           "rays": 1008,
+           "see_through": 28
+          }
+         }
+        }
+       ],
        "vertices_moved": 126
       },
       "legs": {
@@ -11110,7 +11319,7 @@
        }
       },
       "references": 2,
-      "verdict": "gap",
+      "verdict": "poke",
       "walk_within_references": false
      },
      {
@@ -11835,6 +12044,23 @@
          "see_through": 0
         }
        },
+       "rounds": [
+        {
+         "drop_m": 0.015,
+         "probe": {
+          "rest": {
+           "poke": 20,
+           "rays": 648,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 22,
+           "rays": 648,
+           "see_through": 0
+          }
+         }
+        }
+       ],
        "vertices_moved": 128
       },
       "legs": {
@@ -12089,6 +12315,23 @@
          "see_through": 2
         }
        },
+       "rounds": [
+        {
+         "drop_m": 0.02,
+         "probe": {
+          "rest": {
+           "poke": 18,
+           "rays": 576,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 22,
+           "rays": 576,
+           "see_through": 2
+          }
+         }
+        }
+       ],
        "vertices_moved": 128
       },
       "legs": {
@@ -12251,6 +12494,23 @@
          "see_through": 0
         }
        },
+       "rounds": [
+        {
+         "drop_m": 0.03,
+         "probe": {
+          "rest": {
+           "poke": 24,
+           "rays": 576,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 24,
+           "rays": 576,
+           "see_through": 0
+          }
+         }
+        }
+       ],
        "vertices_moved": 128
       },
       "legs": {
@@ -12689,6 +12949,23 @@
          "see_through": 18
         }
        },
+       "rounds": [
+        {
+         "drop_m": 0.015,
+         "probe": {
+          "rest": {
+           "poke": 58,
+           "rays": 648,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 57,
+           "rays": 648,
+           "see_through": 18
+          }
+         }
+        }
+       ],
        "vertices_moved": 162
       },
       "legs": {
@@ -15268,6 +15545,53 @@
          "see_through": 174
         }
        },
+       "rounds": [
+        {
+         "drop_m": 0.01,
+         "probe": {
+          "rest": {
+           "poke": 0,
+           "rays": 648,
+           "see_through": 248
+          },
+          "walk": {
+           "poke": 0,
+           "rays": 648,
+           "see_through": 188
+          }
+         }
+        },
+        {
+         "drop_m": 0.02,
+         "probe": {
+          "rest": {
+           "poke": 0,
+           "rays": 792,
+           "see_through": 208
+          },
+          "walk": {
+           "poke": 3,
+           "rays": 792,
+           "see_through": 165
+          }
+         }
+        },
+        {
+         "drop_m": 0.03,
+         "probe": {
+          "rest": {
+           "poke": 0,
+           "rays": 1008,
+           "see_through": 224
+          },
+          "walk": {
+           "poke": 7,
+           "rays": 1008,
+           "see_through": 174
+          }
+         }
+        }
+       ],
        "vertices_moved": 8
       },
       "legs": {
@@ -15425,6 +15749,53 @@
          "see_through": 214
         }
        },
+       "rounds": [
+        {
+         "drop_m": 0.01,
+         "probe": {
+          "rest": {
+           "poke": 2,
+           "rays": 1008,
+           "see_through": 210
+          },
+          "walk": {
+           "poke": 2,
+           "rays": 1008,
+           "see_through": 230
+          }
+         }
+        },
+        {
+         "drop_m": 0.02,
+         "probe": {
+          "rest": {
+           "poke": 12,
+           "rays": 1224,
+           "see_through": 222
+          },
+          "walk": {
+           "poke": 12,
+           "rays": 1224,
+           "see_through": 244
+          }
+         }
+        },
+        {
+         "drop_m": 0.03,
+         "probe": {
+          "rest": {
+           "poke": 26,
+           "rays": 1368,
+           "see_through": 190
+          },
+          "walk": {
+           "poke": 26,
+           "rays": 1368,
+           "see_through": 214
+          }
+         }
+        }
+       ],
        "vertices_moved": 8
       },
       "legs": {
@@ -15490,6 +15861,53 @@
          "see_through": 173
         }
        },
+       "rounds": [
+        {
+         "drop_m": 0.015,
+         "probe": {
+          "rest": {
+           "poke": 2,
+           "rays": 576,
+           "see_through": 208
+          },
+          "walk": {
+           "poke": 2,
+           "rays": 576,
+           "see_through": 191
+          }
+         }
+        },
+        {
+         "drop_m": 0.025,
+         "probe": {
+          "rest": {
+           "poke": 2,
+           "rays": 792,
+           "see_through": 222
+          },
+          "walk": {
+           "poke": 2,
+           "rays": 792,
+           "see_through": 209
+          }
+         }
+        },
+        {
+         "drop_m": 0.035,
+         "probe": {
+          "rest": {
+           "poke": 10,
+           "rays": 936,
+           "see_through": 188
+          },
+          "walk": {
+           "poke": 10,
+           "rays": 936,
+           "see_through": 173
+          }
+         }
+        }
+       ],
        "vertices_moved": 8
       },
       "legs": {
@@ -15601,6 +16019,53 @@
          "see_through": 159
         }
        },
+       "rounds": [
+        {
+         "drop_m": 0.015,
+         "probe": {
+          "rest": {
+           "poke": 0,
+           "rays": 576,
+           "see_through": 268
+          },
+          "walk": {
+           "poke": 0,
+           "rays": 576,
+           "see_through": 189
+          }
+         }
+        },
+        {
+         "drop_m": 0.025,
+         "probe": {
+          "rest": {
+           "poke": 0,
+           "rays": 792,
+           "see_through": 256
+          },
+          "walk": {
+           "poke": 0,
+           "rays": 792,
+           "see_through": 186
+          }
+         }
+        },
+        {
+         "drop_m": 0.035,
+         "probe": {
+          "rest": {
+           "poke": 0,
+           "rays": 936,
+           "see_through": 228
+          },
+          "walk": {
+           "poke": 25,
+           "rays": 936,
+           "see_through": 159
+          }
+         }
+        }
+       ],
        "vertices_moved": 8
       },
       "legs": {
@@ -15712,6 +16177,53 @@
          "see_through": 223
         }
        },
+       "rounds": [
+        {
+         "drop_m": 0.01,
+         "probe": {
+          "rest": {
+           "poke": 0,
+           "rays": 1008,
+           "see_through": 218
+          },
+          "walk": {
+           "poke": 0,
+           "rays": 1008,
+           "see_through": 239
+          }
+         }
+        },
+        {
+         "drop_m": 0.02,
+         "probe": {
+          "rest": {
+           "poke": 0,
+           "rays": 1224,
+           "see_through": 220
+          },
+          "walk": {
+           "poke": 0,
+           "rays": 1224,
+           "see_through": 251
+          }
+         }
+        },
+        {
+         "drop_m": 0.03,
+         "probe": {
+          "rest": {
+           "poke": 0,
+           "rays": 1368,
+           "see_through": 198
+          },
+          "walk": {
+           "poke": 0,
+           "rays": 1368,
+           "see_through": 223
+          }
+         }
+        }
+       ],
        "vertices_moved": 8
       },
       "legs": {
@@ -25525,6 +26037,53 @@
          "see_through": 0
         }
        },
+       "rounds": [
+        {
+         "drop_m": 0.01,
+         "probe": {
+          "rest": {
+           "poke": 0,
+           "rays": 1476,
+           "see_through": 14
+          },
+          "walk": {
+           "poke": 0,
+           "rays": 1476,
+           "see_through": 0
+          }
+         }
+        },
+        {
+         "drop_m": 0.02,
+         "probe": {
+          "rest": {
+           "poke": 0,
+           "rays": 1548,
+           "see_through": 16
+          },
+          "walk": {
+           "poke": 0,
+           "rays": 1548,
+           "see_through": 0
+          }
+         }
+        },
+        {
+         "drop_m": 0.03,
+         "probe": {
+          "rest": {
+           "poke": 0,
+           "rays": 1656,
+           "see_through": 22
+          },
+          "walk": {
+           "poke": 0,
+           "rays": 1656,
+           "see_through": 0
+          }
+         }
+        }
+       ],
        "vertices_moved": 48
       },
       "head_bottom_m": 1.4417,
@@ -25896,6 +26455,53 @@
          "see_through": 0
         }
        },
+       "rounds": [
+        {
+         "drop_m": 0.01,
+         "probe": {
+          "rest": {
+           "poke": 0,
+           "rays": 1476,
+           "see_through": 14
+          },
+          "walk": {
+           "poke": 0,
+           "rays": 1476,
+           "see_through": 0
+          }
+         }
+        },
+        {
+         "drop_m": 0.02,
+         "probe": {
+          "rest": {
+           "poke": 0,
+           "rays": 1584,
+           "see_through": 16
+          },
+          "walk": {
+           "poke": 0,
+           "rays": 1584,
+           "see_through": 0
+          }
+         }
+        },
+        {
+         "drop_m": 0.03,
+         "probe": {
+          "rest": {
+           "poke": 0,
+           "rays": 1656,
+           "see_through": 21
+          },
+          "walk": {
+           "poke": 0,
+           "rays": 1656,
+           "see_through": 0
+          }
+         }
+        }
+       ],
        "vertices_moved": 48
       },
       "head_bottom_m": 1.4405,
@@ -26971,6 +27577,53 @@
          "see_through": 0
         }
        },
+       "rounds": [
+        {
+         "drop_m": 0.01,
+         "probe": {
+          "rest": {
+           "poke": 0,
+           "rays": 1368,
+           "see_through": 12
+          },
+          "walk": {
+           "poke": 0,
+           "rays": 1368,
+           "see_through": 0
+          }
+         }
+        },
+        {
+         "drop_m": 0.02,
+         "probe": {
+          "rest": {
+           "poke": 0,
+           "rays": 1440,
+           "see_through": 14
+          },
+          "walk": {
+           "poke": 0,
+           "rays": 1440,
+           "see_through": 0
+          }
+         }
+        },
+        {
+         "drop_m": 0.03,
+         "probe": {
+          "rest": {
+           "poke": 0,
+           "rays": 1548,
+           "see_through": 14
+          },
+          "walk": {
+           "poke": 0,
+           "rays": 1548,
+           "see_through": 0
+          }
+         }
+        }
+       ],
        "vertices_moved": 48
       },
       "head_bottom_m": 1.4545,
@@ -27694,6 +28347,53 @@
          "see_through": 0
         }
        },
+       "rounds": [
+        {
+         "drop_m": 0.01,
+         "probe": {
+          "rest": {
+           "poke": 0,
+           "rays": 1224,
+           "see_through": 8
+          },
+          "walk": {
+           "poke": 0,
+           "rays": 1224,
+           "see_through": 0
+          }
+         }
+        },
+        {
+         "drop_m": 0.02,
+         "probe": {
+          "rest": {
+           "poke": 0,
+           "rays": 1296,
+           "see_through": 12
+          },
+          "walk": {
+           "poke": 0,
+           "rays": 1296,
+           "see_through": 0
+          }
+         }
+        },
+        {
+         "drop_m": 0.03,
+         "probe": {
+          "rest": {
+           "poke": 0,
+           "rays": 1404,
+           "see_through": 14
+          },
+          "walk": {
+           "poke": 0,
+           "rays": 1404,
+           "see_through": 0
+          }
+         }
+        }
+       ],
        "vertices_moved": 50
       },
       "head_bottom_m": 1.4698,
@@ -27809,6 +28509,53 @@
          "see_through": 0
         }
        },
+       "rounds": [
+        {
+         "drop_m": 0.01,
+         "probe": {
+          "rest": {
+           "poke": 0,
+           "rays": 1296,
+           "see_through": 6
+          },
+          "walk": {
+           "poke": 0,
+           "rays": 1296,
+           "see_through": 0
+          }
+         }
+        },
+        {
+         "drop_m": 0.02,
+         "probe": {
+          "rest": {
+           "poke": 0,
+           "rays": 1368,
+           "see_through": 6
+          },
+          "walk": {
+           "poke": 0,
+           "rays": 1368,
+           "see_through": 0
+          }
+         }
+        },
+        {
+         "drop_m": 0.03,
+         "probe": {
+          "rest": {
+           "poke": 0,
+           "rays": 1476,
+           "see_through": 6
+          },
+          "walk": {
+           "poke": 0,
+           "rays": 1476,
+           "see_through": 0
+          }
+         }
+        }
+       ],
        "vertices_moved": 50
       },
       "head_bottom_m": 1.4698,
@@ -28084,6 +28831,53 @@
          "see_through": 0
         }
        },
+       "rounds": [
+        {
+         "drop_m": 0.01,
+         "probe": {
+          "rest": {
+           "poke": 0,
+           "rays": 1512,
+           "see_through": 12
+          },
+          "walk": {
+           "poke": 0,
+           "rays": 1512,
+           "see_through": 0
+          }
+         }
+        },
+        {
+         "drop_m": 0.02,
+         "probe": {
+          "rest": {
+           "poke": 0,
+           "rays": 1584,
+           "see_through": 18
+          },
+          "walk": {
+           "poke": 0,
+           "rays": 1584,
+           "see_through": 0
+          }
+         }
+        },
+        {
+         "drop_m": 0.03,
+         "probe": {
+          "rest": {
+           "poke": 0,
+           "rays": 1692,
+           "see_through": 19
+          },
+          "walk": {
+           "poke": 0,
+           "rays": 1692,
+           "see_through": 0
+          }
+         }
+        }
+       ],
        "vertices_moved": 48
       },
       "head_bottom_m": 1.439,
@@ -28332,6 +29126,23 @@
          "see_through": 0
         }
        },
+       "rounds": [
+        {
+         "drop_m": 0.01,
+         "probe": {
+          "rest": {
+           "poke": 7,
+           "rays": 324,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 4,
+           "rays": 324,
+           "see_through": 0
+          }
+         }
+        }
+       ],
        "vertices_moved": 32
       },
       "head_bottom_m": 1.5384,
@@ -28420,6 +29231,23 @@
          "see_through": 0
         }
        },
+       "rounds": [
+        {
+         "drop_m": 0.01,
+         "probe": {
+          "rest": {
+           "poke": 0,
+           "rays": 468,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 0,
+           "rays": 468,
+           "see_through": 0
+          }
+         }
+        }
+       ],
        "vertices_moved": 32
       },
       "head_bottom_m": 1.5384,
@@ -28540,6 +29368,23 @@
          "see_through": 0
         }
        },
+       "rounds": [
+        {
+         "drop_m": 0.01,
+         "probe": {
+          "rest": {
+           "poke": 0,
+           "rays": 504,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 0,
+           "rays": 504,
+           "see_through": 0
+          }
+         }
+        }
+       ],
        "vertices_moved": 32
       },
       "head_bottom_m": 1.5384,
@@ -28628,6 +29473,23 @@
          "see_through": 0
         }
        },
+       "rounds": [
+        {
+         "drop_m": 0.01,
+         "probe": {
+          "rest": {
+           "poke": 0,
+           "rays": 648,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 0,
+           "rays": 648,
+           "see_through": 0
+          }
+         }
+        }
+       ],
        "vertices_moved": 32
       },
       "head_bottom_m": 1.5384,
@@ -28780,6 +29642,23 @@
          "see_through": 0
         }
        },
+       "rounds": [
+        {
+         "drop_m": 0.01,
+         "probe": {
+          "rest": {
+           "poke": 7,
+           "rays": 324,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 4,
+           "rays": 324,
+           "see_through": 0
+          }
+         }
+        }
+       ],
        "vertices_moved": 32
       },
       "head_bottom_m": 1.5384,
@@ -28868,6 +29747,23 @@
          "see_through": 0
         }
        },
+       "rounds": [
+        {
+         "drop_m": 0.01,
+         "probe": {
+          "rest": {
+           "poke": 0,
+           "rays": 468,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 0,
+           "rays": 468,
+           "see_through": 0
+          }
+         }
+        }
+       ],
        "vertices_moved": 32
       },
       "head_bottom_m": 1.5384,
@@ -28988,6 +29884,23 @@
          "see_through": 0
         }
        },
+       "rounds": [
+        {
+         "drop_m": 0.01,
+         "probe": {
+          "rest": {
+           "poke": 0,
+           "rays": 504,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 0,
+           "rays": 504,
+           "see_through": 0
+          }
+         }
+        }
+       ],
        "vertices_moved": 32
       },
       "head_bottom_m": 1.5384,
@@ -29076,6 +29989,23 @@
          "see_through": 0
         }
        },
+       "rounds": [
+        {
+         "drop_m": 0.01,
+         "probe": {
+          "rest": {
+           "poke": 0,
+           "rays": 648,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 0,
+           "rays": 648,
+           "see_through": 0
+          }
+         }
+        }
+       ],
        "vertices_moved": 32
       },
       "head_bottom_m": 1.5384,
@@ -29228,6 +30158,23 @@
          "see_through": 0
         }
        },
+       "rounds": [
+        {
+         "drop_m": 0.01,
+         "probe": {
+          "rest": {
+           "poke": 7,
+           "rays": 324,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 4,
+           "rays": 324,
+           "see_through": 0
+          }
+         }
+        }
+       ],
        "vertices_moved": 32
       },
       "head_bottom_m": 1.5384,
@@ -29316,6 +30263,23 @@
          "see_through": 0
         }
        },
+       "rounds": [
+        {
+         "drop_m": 0.01,
+         "probe": {
+          "rest": {
+           "poke": 0,
+           "rays": 468,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 0,
+           "rays": 468,
+           "see_through": 0
+          }
+         }
+        }
+       ],
        "vertices_moved": 32
       },
       "head_bottom_m": 1.5384,
@@ -29436,6 +30400,23 @@
          "see_through": 0
         }
        },
+       "rounds": [
+        {
+         "drop_m": 0.01,
+         "probe": {
+          "rest": {
+           "poke": 0,
+           "rays": 504,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 0,
+           "rays": 504,
+           "see_through": 0
+          }
+         }
+        }
+       ],
        "vertices_moved": 32
       },
       "head_bottom_m": 1.5384,
@@ -29524,6 +30505,23 @@
          "see_through": 0
         }
        },
+       "rounds": [
+        {
+         "drop_m": 0.01,
+         "probe": {
+          "rest": {
+           "poke": 0,
+           "rays": 648,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 0,
+           "rays": 648,
+           "see_through": 0
+          }
+         }
+        }
+       ],
        "vertices_moved": 32
       },
       "head_bottom_m": 1.5384,
@@ -29676,6 +30674,23 @@
          "see_through": 0
         }
        },
+       "rounds": [
+        {
+         "drop_m": 0.01,
+         "probe": {
+          "rest": {
+           "poke": 8,
+           "rays": 324,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 4,
+           "rays": 324,
+           "see_through": 0
+          }
+         }
+        }
+       ],
        "vertices_moved": 64
       },
       "head_bottom_m": 1.5387,
@@ -30052,6 +31067,23 @@
          "see_through": 0
         }
        },
+       "rounds": [
+        {
+         "drop_m": 0.01,
+         "probe": {
+          "rest": {
+           "poke": 7,
+           "rays": 324,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 4,
+           "rays": 324,
+           "see_through": 0
+          }
+         }
+        }
+       ],
        "vertices_moved": 32
       },
       "head_bottom_m": 1.5384,
@@ -30140,6 +31172,23 @@
          "see_through": 0
         }
        },
+       "rounds": [
+        {
+         "drop_m": 0.01,
+         "probe": {
+          "rest": {
+           "poke": 0,
+           "rays": 468,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 0,
+           "rays": 468,
+           "see_through": 0
+          }
+         }
+        }
+       ],
        "vertices_moved": 32
       },
       "head_bottom_m": 1.5384,
@@ -30260,6 +31309,23 @@
          "see_through": 0
         }
        },
+       "rounds": [
+        {
+         "drop_m": 0.01,
+         "probe": {
+          "rest": {
+           "poke": 0,
+           "rays": 504,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 0,
+           "rays": 504,
+           "see_through": 0
+          }
+         }
+        }
+       ],
        "vertices_moved": 32
       },
       "head_bottom_m": 1.5384,
@@ -30348,6 +31414,23 @@
          "see_through": 0
         }
        },
+       "rounds": [
+        {
+         "drop_m": 0.01,
+         "probe": {
+          "rest": {
+           "poke": 0,
+           "rays": 648,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 0,
+           "rays": 648,
+           "see_through": 0
+          }
+         }
+        }
+       ],
        "vertices_moved": 32
       },
       "head_bottom_m": 1.5384,
@@ -30500,6 +31583,23 @@
          "see_through": 0
         }
        },
+       "rounds": [
+        {
+         "drop_m": 0.01,
+         "probe": {
+          "rest": {
+           "poke": 7,
+           "rays": 324,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 4,
+           "rays": 324,
+           "see_through": 0
+          }
+         }
+        }
+       ],
        "vertices_moved": 36
       },
       "head_bottom_m": 1.5384,
@@ -30588,6 +31688,23 @@
          "see_through": 0
         }
        },
+       "rounds": [
+        {
+         "drop_m": 0.01,
+         "probe": {
+          "rest": {
+           "poke": 0,
+           "rays": 468,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 0,
+           "rays": 468,
+           "see_through": 0
+          }
+         }
+        }
+       ],
        "vertices_moved": 36
       },
       "head_bottom_m": 1.5384,
@@ -30708,6 +31825,23 @@
          "see_through": 0
         }
        },
+       "rounds": [
+        {
+         "drop_m": 0.01,
+         "probe": {
+          "rest": {
+           "poke": 0,
+           "rays": 504,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 0,
+           "rays": 504,
+           "see_through": 0
+          }
+         }
+        }
+       ],
        "vertices_moved": 36
       },
       "head_bottom_m": 1.5384,
@@ -30796,6 +31930,23 @@
          "see_through": 0
         }
        },
+       "rounds": [
+        {
+         "drop_m": 0.01,
+         "probe": {
+          "rest": {
+           "poke": 0,
+           "rays": 648,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 0,
+           "rays": 648,
+           "see_through": 0
+          }
+         }
+        }
+       ],
        "vertices_moved": 36
       },
       "head_bottom_m": 1.5384,
@@ -30948,6 +32099,23 @@
          "see_through": 0
         }
        },
+       "rounds": [
+        {
+         "drop_m": 0.01,
+         "probe": {
+          "rest": {
+           "poke": 7,
+           "rays": 324,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 4,
+           "rays": 324,
+           "see_through": 0
+          }
+         }
+        }
+       ],
        "vertices_moved": 32
       },
       "head_bottom_m": 1.5384,
@@ -31036,6 +32204,23 @@
          "see_through": 0
         }
        },
+       "rounds": [
+        {
+         "drop_m": 0.01,
+         "probe": {
+          "rest": {
+           "poke": 0,
+           "rays": 468,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 0,
+           "rays": 468,
+           "see_through": 0
+          }
+         }
+        }
+       ],
        "vertices_moved": 32
       },
       "head_bottom_m": 1.5384,
@@ -31156,6 +32341,23 @@
          "see_through": 0
         }
        },
+       "rounds": [
+        {
+         "drop_m": 0.01,
+         "probe": {
+          "rest": {
+           "poke": 0,
+           "rays": 504,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 0,
+           "rays": 504,
+           "see_through": 0
+          }
+         }
+        }
+       ],
        "vertices_moved": 32
       },
       "head_bottom_m": 1.5384,
@@ -31244,6 +32446,23 @@
          "see_through": 0
         }
        },
+       "rounds": [
+        {
+         "drop_m": 0.01,
+         "probe": {
+          "rest": {
+           "poke": 0,
+           "rays": 648,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 0,
+           "rays": 648,
+           "see_through": 0
+          }
+         }
+        }
+       ],
        "vertices_moved": 32
       },
       "head_bottom_m": 1.5384,
@@ -31396,6 +32615,23 @@
          "see_through": 0
         }
        },
+       "rounds": [
+        {
+         "drop_m": 0.01,
+         "probe": {
+          "rest": {
+           "poke": 7,
+           "rays": 324,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 4,
+           "rays": 324,
+           "see_through": 0
+          }
+         }
+        }
+       ],
        "vertices_moved": 36
       },
       "head_bottom_m": 1.5384,
@@ -31484,6 +32720,23 @@
          "see_through": 0
         }
        },
+       "rounds": [
+        {
+         "drop_m": 0.01,
+         "probe": {
+          "rest": {
+           "poke": 0,
+           "rays": 468,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 0,
+           "rays": 468,
+           "see_through": 0
+          }
+         }
+        }
+       ],
        "vertices_moved": 36
       },
       "head_bottom_m": 1.5384,
@@ -31604,6 +32857,23 @@
          "see_through": 0
         }
        },
+       "rounds": [
+        {
+         "drop_m": 0.01,
+         "probe": {
+          "rest": {
+           "poke": 0,
+           "rays": 504,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 0,
+           "rays": 504,
+           "see_through": 0
+          }
+         }
+        }
+       ],
        "vertices_moved": 36
       },
       "head_bottom_m": 1.5384,
@@ -31692,6 +32962,23 @@
          "see_through": 0
         }
        },
+       "rounds": [
+        {
+         "drop_m": 0.01,
+         "probe": {
+          "rest": {
+           "poke": 0,
+           "rays": 648,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 0,
+           "rays": 648,
+           "see_through": 0
+          }
+         }
+        }
+       ],
        "vertices_moved": 36
       },
       "head_bottom_m": 1.5384,
@@ -31810,6 +33097,53 @@
          "see_through": 0
         }
        },
+       "rounds": [
+        {
+         "drop_m": 0.01,
+         "probe": {
+          "rest": {
+           "poke": 32,
+           "rays": 1332,
+           "see_through": 4
+          },
+          "walk": {
+           "poke": 21,
+           "rays": 1332,
+           "see_through": 0
+          }
+         }
+        },
+        {
+         "drop_m": 0.02,
+         "probe": {
+          "rest": {
+           "poke": 29,
+           "rays": 1440,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 12,
+           "rays": 1440,
+           "see_through": 0
+          }
+         }
+        },
+        {
+         "drop_m": 0.03,
+         "probe": {
+          "rest": {
+           "poke": 32,
+           "rays": 1512,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 21,
+           "rays": 1512,
+           "see_through": 0
+          }
+         }
+        }
+       ],
        "vertices_moved": 48
       },
       "head_bottom_m": 1.4417,
@@ -31829,7 +33163,7 @@
       },
       "references": 1,
       "top_neck_ring_m": 1.5593,
-      "verdict": "gap"
+      "verdict": "poke"
      },
      {
       "a": "skull_m_adventurer",
@@ -32085,6 +33419,53 @@
          "see_through": 0
         }
        },
+       "rounds": [
+        {
+         "drop_m": 0.01,
+         "probe": {
+          "rest": {
+           "poke": 132,
+           "rays": 1188,
+           "see_through": 16
+          },
+          "walk": {
+           "poke": 124,
+           "rays": 1188,
+           "see_through": 0
+          }
+         }
+        },
+        {
+         "drop_m": 0.02,
+         "probe": {
+          "rest": {
+           "poke": 131,
+           "rays": 1260,
+           "see_through": 18
+          },
+          "walk": {
+           "poke": 116,
+           "rays": 1260,
+           "see_through": 0
+          }
+         }
+        },
+        {
+         "drop_m": 0.03,
+         "probe": {
+          "rest": {
+           "poke": 132,
+           "rays": 1368,
+           "see_through": 26
+          },
+          "walk": {
+           "poke": 123,
+           "rays": 1368,
+           "see_through": 0
+          }
+         }
+        }
+       ],
        "vertices_moved": 48
       },
       "head_bottom_m": 1.4417,
@@ -32168,6 +33549,53 @@
          "see_through": 0
         }
        },
+       "rounds": [
+        {
+         "drop_m": 0.01,
+         "probe": {
+          "rest": {
+           "poke": 39,
+           "rays": 1368,
+           "see_through": 2
+          },
+          "walk": {
+           "poke": 22,
+           "rays": 1368,
+           "see_through": 0
+          }
+         }
+        },
+        {
+         "drop_m": 0.02,
+         "probe": {
+          "rest": {
+           "poke": 44,
+           "rays": 1440,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 20,
+           "rays": 1440,
+           "see_through": 0
+          }
+         }
+        },
+        {
+         "drop_m": 0.03,
+         "probe": {
+          "rest": {
+           "poke": 39,
+           "rays": 1548,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 22,
+           "rays": 1548,
+           "see_through": 0
+          }
+         }
+        }
+       ],
        "vertices_moved": 48
       },
       "head_bottom_m": 1.4405,
@@ -32187,7 +33615,7 @@
       },
       "references": 1,
       "top_neck_ring_m": 1.5593,
-      "verdict": "gap"
+      "verdict": "poke"
      },
      {
       "a": "skull_m_beach",
@@ -32283,6 +33711,53 @@
          "see_through": 0
         }
        },
+       "rounds": [
+        {
+         "drop_m": 0.01,
+         "probe": {
+          "rest": {
+           "poke": 109,
+           "rays": 1296,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 120,
+           "rays": 1296,
+           "see_through": 0
+          }
+         }
+        },
+        {
+         "drop_m": 0.02,
+         "probe": {
+          "rest": {
+           "poke": 117,
+           "rays": 1404,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 111,
+           "rays": 1404,
+           "see_through": 0
+          }
+         }
+        },
+        {
+         "drop_m": 0.03,
+         "probe": {
+          "rest": {
+           "poke": 111,
+           "rays": 1476,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 121,
+           "rays": 1476,
+           "see_through": 0
+          }
+         }
+        }
+       ],
        "vertices_moved": 48
       },
       "head_bottom_m": 1.4405,
@@ -32302,7 +33777,7 @@
       },
       "references": 1,
       "top_neck_ring_m": 1.5541,
-      "verdict": "gap"
+      "verdict": "poke"
      },
      {
       "a": "skull_m_beach",
@@ -32462,6 +33937,53 @@
          "see_through": 0
         }
        },
+       "rounds": [
+        {
+         "drop_m": 0.01,
+         "probe": {
+          "rest": {
+           "poke": 130,
+           "rays": 1188,
+           "see_through": 16
+          },
+          "walk": {
+           "poke": 115,
+           "rays": 1188,
+           "see_through": 0
+          }
+         }
+        },
+        {
+         "drop_m": 0.02,
+         "probe": {
+          "rest": {
+           "poke": 134,
+           "rays": 1296,
+           "see_through": 20
+          },
+          "walk": {
+           "poke": 115,
+           "rays": 1296,
+           "see_through": 0
+          }
+         }
+        },
+        {
+         "drop_m": 0.03,
+         "probe": {
+          "rest": {
+           "poke": 130,
+           "rays": 1368,
+           "see_through": 26
+          },
+          "walk": {
+           "poke": 117,
+           "rays": 1368,
+           "see_through": 0
+          }
+         }
+        }
+       ],
        "vertices_moved": 48
       },
       "head_bottom_m": 1.4405,
@@ -33185,6 +34707,53 @@
          "see_through": 0
         }
        },
+       "rounds": [
+        {
+         "drop_m": 0.01,
+         "probe": {
+          "rest": {
+           "poke": 44,
+           "rays": 1224,
+           "see_through": 6
+          },
+          "walk": {
+           "poke": 20,
+           "rays": 1224,
+           "see_through": 0
+          }
+         }
+        },
+        {
+         "drop_m": 0.02,
+         "probe": {
+          "rest": {
+           "poke": 39,
+           "rays": 1332,
+           "see_through": 4
+          },
+          "walk": {
+           "poke": 22,
+           "rays": 1332,
+           "see_through": 0
+          }
+         }
+        },
+        {
+         "drop_m": 0.03,
+         "probe": {
+          "rest": {
+           "poke": 44,
+           "rays": 1404,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 20,
+           "rays": 1404,
+           "see_through": 0
+          }
+         }
+        }
+       ],
        "vertices_moved": 48
       },
       "head_bottom_m": 1.4545,
@@ -33204,7 +34773,7 @@
       },
       "references": 1,
       "top_neck_ring_m": 1.5593,
-      "verdict": "gap"
+      "verdict": "poke"
      },
      {
       "a": "skull_m_farmer",
@@ -33460,6 +35029,53 @@
          "see_through": 0
         }
        },
+       "rounds": [
+        {
+         "drop_m": 0.01,
+         "probe": {
+          "rest": {
+           "poke": 142,
+           "rays": 1080,
+           "see_through": 16
+          },
+          "walk": {
+           "poke": 130,
+           "rays": 1080,
+           "see_through": 0
+          }
+         }
+        },
+        {
+         "drop_m": 0.02,
+         "probe": {
+          "rest": {
+           "poke": 139,
+           "rays": 1152,
+           "see_through": 16
+          },
+          "walk": {
+           "poke": 128,
+           "rays": 1152,
+           "see_through": 0
+          }
+         }
+        },
+        {
+         "drop_m": 0.03,
+         "probe": {
+          "rest": {
+           "poke": 142,
+           "rays": 1260,
+           "see_through": 18
+          },
+          "walk": {
+           "poke": 125,
+           "rays": 1260,
+           "see_through": 0
+          }
+         }
+        }
+       ],
        "vertices_moved": 48
       },
       "head_bottom_m": 1.4545,
@@ -34119,6 +35735,53 @@
          "see_through": 0
         }
        },
+       "rounds": [
+        {
+         "drop_m": 0.01,
+         "probe": {
+          "rest": {
+           "poke": 131,
+           "rays": 936,
+           "see_through": 16
+          },
+          "walk": {
+           "poke": 113,
+           "rays": 936,
+           "see_through": 0
+          }
+         }
+        },
+        {
+         "drop_m": 0.02,
+         "probe": {
+          "rest": {
+           "poke": 125,
+           "rays": 1008,
+           "see_through": 14
+          },
+          "walk": {
+           "poke": 109,
+           "rays": 1008,
+           "see_through": 0
+          }
+         }
+        },
+        {
+         "drop_m": 0.03,
+         "probe": {
+          "rest": {
+           "poke": 130,
+           "rays": 1116,
+           "see_through": 16
+          },
+          "walk": {
+           "poke": 116,
+           "rays": 1116,
+           "see_through": 0
+          }
+         }
+        }
+       ],
        "vertices_moved": 50
       },
       "head_bottom_m": 1.4698,
@@ -34202,6 +35865,53 @@
          "see_through": 0
         }
        },
+       "rounds": [
+        {
+         "drop_m": 0.01,
+         "probe": {
+          "rest": {
+           "poke": 34,
+           "rays": 1368,
+           "see_through": 2
+          },
+          "walk": {
+           "poke": 14,
+           "rays": 1368,
+           "see_through": 0
+          }
+         }
+        },
+        {
+         "drop_m": 0.02,
+         "probe": {
+          "rest": {
+           "poke": 33,
+           "rays": 1476,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 21,
+           "rays": 1476,
+           "see_through": 0
+          }
+         }
+        },
+        {
+         "drop_m": 0.03,
+         "probe": {
+          "rest": {
+           "poke": 34,
+           "rays": 1548,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 14,
+           "rays": 1548,
+           "see_through": 0
+          }
+         }
+        }
+       ],
        "vertices_moved": 48
       },
       "head_bottom_m": 1.439,
@@ -34221,7 +35931,7 @@
       },
       "references": 1,
       "top_neck_ring_m": 1.5593,
-      "verdict": "gap"
+      "verdict": "poke"
      },
      {
       "a": "skull_m_punk",
@@ -34477,6 +36187,53 @@
          "see_through": 0
         }
        },
+       "rounds": [
+        {
+         "drop_m": 0.01,
+         "probe": {
+          "rest": {
+           "poke": 117,
+           "rays": 1188,
+           "see_through": 16
+          },
+          "walk": {
+           "poke": 104,
+           "rays": 1188,
+           "see_through": 0
+          }
+         }
+        },
+        {
+         "drop_m": 0.02,
+         "probe": {
+          "rest": {
+           "poke": 121,
+           "rays": 1296,
+           "see_through": 22
+          },
+          "walk": {
+           "poke": 111,
+           "rays": 1296,
+           "see_through": 0
+          }
+         }
+        },
+        {
+         "drop_m": 0.03,
+         "probe": {
+          "rest": {
+           "poke": 119,
+           "rays": 1368,
+           "see_through": 26
+          },
+          "walk": {
+           "poke": 106,
+           "rays": 1368,
+           "see_through": 0
+          }
+         }
+        }
+       ],
        "vertices_moved": 48
       },
       "head_bottom_m": 1.439,
@@ -34688,6 +36445,53 @@
          "see_through": 0
         }
        },
+       "rounds": [
+        {
+         "drop_m": 0.01,
+         "probe": {
+          "rest": {
+           "poke": 16,
+           "rays": 288,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 9,
+           "rays": 288,
+           "see_through": 0
+          }
+         }
+        },
+        {
+         "drop_m": 0.02,
+         "probe": {
+          "rest": {
+           "poke": 15,
+           "rays": 396,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 17,
+           "rays": 396,
+           "see_through": 0
+          }
+         }
+        },
+        {
+         "drop_m": 0.03,
+         "probe": {
+          "rest": {
+           "poke": 24,
+           "rays": 468,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 23,
+           "rays": 468,
+           "see_through": 0
+          }
+         }
+        }
+       ],
        "vertices_moved": 32
       },
       "head_bottom_m": 1.5384,
@@ -34707,7 +36511,7 @@
       },
       "references": 2,
       "top_neck_ring_m": 1.5403,
-      "verdict": "gap"
+      "verdict": "poke"
      },
      {
       "a": "skull_w_adventurer",
@@ -35027,6 +36831,53 @@
          "see_through": 0
         }
        },
+       "rounds": [
+        {
+         "drop_m": 0.01,
+         "probe": {
+          "rest": {
+           "poke": 16,
+           "rays": 288,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 9,
+           "rays": 288,
+           "see_through": 0
+          }
+         }
+        },
+        {
+         "drop_m": 0.02,
+         "probe": {
+          "rest": {
+           "poke": 15,
+           "rays": 396,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 17,
+           "rays": 396,
+           "see_through": 0
+          }
+         }
+        },
+        {
+         "drop_m": 0.03,
+         "probe": {
+          "rest": {
+           "poke": 24,
+           "rays": 468,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 23,
+           "rays": 468,
+           "see_through": 0
+          }
+         }
+        }
+       ],
        "vertices_moved": 32
       },
       "head_bottom_m": 1.5384,
@@ -35046,7 +36897,7 @@
       },
       "references": 4,
       "top_neck_ring_m": 1.5403,
-      "verdict": "gap"
+      "verdict": "poke"
      },
      {
       "a": "skull_w_casual",
@@ -35366,6 +37217,53 @@
          "see_through": 0
         }
        },
+       "rounds": [
+        {
+         "drop_m": 0.01,
+         "probe": {
+          "rest": {
+           "poke": 16,
+           "rays": 288,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 9,
+           "rays": 288,
+           "see_through": 0
+          }
+         }
+        },
+        {
+         "drop_m": 0.02,
+         "probe": {
+          "rest": {
+           "poke": 15,
+           "rays": 396,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 17,
+           "rays": 396,
+           "see_through": 0
+          }
+         }
+        },
+        {
+         "drop_m": 0.03,
+         "probe": {
+          "rest": {
+           "poke": 24,
+           "rays": 468,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 23,
+           "rays": 468,
+           "see_through": 0
+          }
+         }
+        }
+       ],
        "vertices_moved": 32
       },
       "head_bottom_m": 1.5384,
@@ -35385,7 +37283,7 @@
       },
       "references": 2,
       "top_neck_ring_m": 1.5403,
-      "verdict": "gap"
+      "verdict": "poke"
      },
      {
       "a": "skull_w_formal",
@@ -36025,6 +37923,53 @@
          "see_through": 0
         }
        },
+       "rounds": [
+        {
+         "drop_m": 0.01,
+         "probe": {
+          "rest": {
+           "poke": 16,
+           "rays": 288,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 9,
+           "rays": 288,
+           "see_through": 0
+          }
+         }
+        },
+        {
+         "drop_m": 0.02,
+         "probe": {
+          "rest": {
+           "poke": 15,
+           "rays": 396,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 17,
+           "rays": 396,
+           "see_through": 0
+          }
+         }
+        },
+        {
+         "drop_m": 0.03,
+         "probe": {
+          "rest": {
+           "poke": 24,
+           "rays": 468,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 23,
+           "rays": 468,
+           "see_through": 0
+          }
+         }
+        }
+       ],
        "vertices_moved": 32
       },
       "head_bottom_m": 1.5384,
@@ -36044,7 +37989,7 @@
       },
       "references": 2,
       "top_neck_ring_m": 1.5403,
-      "verdict": "gap"
+      "verdict": "poke"
      },
      {
       "a": "skull_w_scifi",
@@ -36364,6 +38309,53 @@
          "see_through": 0
         }
        },
+       "rounds": [
+        {
+         "drop_m": 0.01,
+         "probe": {
+          "rest": {
+           "poke": 10,
+           "rays": 288,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 7,
+           "rays": 288,
+           "see_through": 0
+          }
+         }
+        },
+        {
+         "drop_m": 0.02,
+         "probe": {
+          "rest": {
+           "poke": 7,
+           "rays": 396,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 15,
+           "rays": 396,
+           "see_through": 0
+          }
+         }
+        },
+        {
+         "drop_m": 0.03,
+         "probe": {
+          "rest": {
+           "poke": 20,
+           "rays": 468,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 15,
+           "rays": 468,
+           "see_through": 0
+          }
+         }
+        }
+       ],
        "vertices_moved": 36
       },
       "head_bottom_m": 1.5384,
@@ -36383,7 +38375,7 @@
       },
       "references": 2,
       "top_neck_ring_m": 1.5403,
-      "verdict": "gap"
+      "verdict": "poke"
      },
      {
       "a": "skull_w_soldier",
@@ -36703,6 +38695,53 @@
          "see_through": 0
         }
        },
+       "rounds": [
+        {
+         "drop_m": 0.01,
+         "probe": {
+          "rest": {
+           "poke": 7,
+           "rays": 288,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 8,
+           "rays": 288,
+           "see_through": 0
+          }
+         }
+        },
+        {
+         "drop_m": 0.02,
+         "probe": {
+          "rest": {
+           "poke": 7,
+           "rays": 396,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 14,
+           "rays": 396,
+           "see_through": 0
+          }
+         }
+        },
+        {
+         "drop_m": 0.03,
+         "probe": {
+          "rest": {
+           "poke": 20,
+           "rays": 468,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 20,
+           "rays": 468,
+           "see_through": 0
+          }
+         }
+        }
+       ],
        "vertices_moved": 32
       },
       "head_bottom_m": 1.5384,
@@ -36722,7 +38761,7 @@
       },
       "references": 2,
       "top_neck_ring_m": 1.5403,
-      "verdict": "gap"
+      "verdict": "poke"
      },
      {
       "a": "skull_w_suit",
@@ -37042,6 +39081,53 @@
          "see_through": 0
         }
        },
+       "rounds": [
+        {
+         "drop_m": 0.01,
+         "probe": {
+          "rest": {
+           "poke": 9,
+           "rays": 288,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 13,
+           "rays": 288,
+           "see_through": 0
+          }
+         }
+        },
+        {
+         "drop_m": 0.02,
+         "probe": {
+          "rest": {
+           "poke": 9,
+           "rays": 396,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 15,
+           "rays": 396,
+           "see_through": 0
+          }
+         }
+        },
+        {
+         "drop_m": 0.03,
+         "probe": {
+          "rest": {
+           "poke": 20,
+           "rays": 468,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 21,
+           "rays": 468,
+           "see_through": 0
+          }
+         }
+        }
+       ],
        "vertices_moved": 36
       },
       "head_bottom_m": 1.5384,
@@ -37061,7 +39147,7 @@
       },
       "references": 2,
       "top_neck_ring_m": 1.5403,
-      "verdict": "gap"
+      "verdict": "poke"
      },
      {
       "a": "skull_w_worker",
@@ -40458,6 +42544,53 @@
          "see_through": 0
         }
        },
+       "rounds": [
+        {
+         "drop_m": 0.01,
+         "probe": {
+          "rest": {
+           "poke": 21,
+           "rays": 324,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 33,
+           "rays": 324,
+           "see_through": 0
+          }
+         }
+        },
+        {
+         "drop_m": 0.02,
+         "probe": {
+          "rest": {
+           "poke": 44,
+           "rays": 396,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 28,
+           "rays": 396,
+           "see_through": 0
+          }
+         }
+        },
+        {
+         "drop_m": 0.03,
+         "probe": {
+          "rest": {
+           "poke": 62,
+           "rays": 504,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 37,
+           "rays": 504,
+           "see_through": 0
+          }
+         }
+        }
+       ],
        "vertices_moved": 128
       },
       "outer": "bottom",
@@ -40476,7 +42609,7 @@
       },
       "references": 2,
       "top_lower_edge_m": 1.0301,
-      "verdict": "gap"
+      "verdict": "poke"
      },
      {
       "a": "top_m_swat",
@@ -40514,6 +42647,23 @@
          "see_through": 0
         }
        },
+       "rounds": [
+        {
+         "drop_m": 0.01,
+         "probe": {
+          "rest": {
+           "poke": 13,
+           "rays": 324,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 16,
+           "rays": 324,
+           "see_through": 0
+          }
+         }
+        }
+       ],
        "vertices_moved": 128
       },
       "outer": "bottom",
@@ -41875,6 +44025,53 @@
          "see_through": 0
         }
        },
+       "rounds": [
+        {
+         "drop_m": 0.01,
+         "probe": {
+          "rest": {
+           "poke": 18,
+           "rays": 864,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 22,
+           "rays": 864,
+           "see_through": 0
+          }
+         }
+        },
+        {
+         "drop_m": 0.02,
+         "probe": {
+          "rest": {
+           "poke": 18,
+           "rays": 972,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 12,
+           "rays": 972,
+           "see_through": 0
+          }
+         }
+        },
+        {
+         "drop_m": 0.03,
+         "probe": {
+          "rest": {
+           "poke": 14,
+           "rays": 1044,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 11,
+           "rays": 1044,
+           "see_through": 0
+          }
+         }
+        }
+       ],
        "vertices_moved": 28
       },
       "outer": "bottom",
@@ -41893,7 +44090,7 @@
       },
       "references": 2,
       "top_lower_edge_m": 1.1201,
-      "verdict": "gap"
+      "verdict": "poke"
      },
      {
       "a": "top_w_formal",
@@ -42022,6 +44219,53 @@
          "see_through": 0
         }
        },
+       "rounds": [
+        {
+         "drop_m": 0.01,
+         "probe": {
+          "rest": {
+           "poke": 23,
+           "rays": 324,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 21,
+           "rays": 324,
+           "see_through": 0
+          }
+         }
+        },
+        {
+         "drop_m": 0.02,
+         "probe": {
+          "rest": {
+           "poke": 36,
+           "rays": 432,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 26,
+           "rays": 432,
+           "see_through": 0
+          }
+         }
+        },
+        {
+         "drop_m": 0.03,
+         "probe": {
+          "rest": {
+           "poke": 43,
+           "rays": 504,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 25,
+           "rays": 504,
+           "see_through": 0
+          }
+         }
+        }
+       ],
        "vertices_moved": 28
       },
       "outer": "bottom",
@@ -42040,7 +44284,7 @@
       },
       "references": 2,
       "top_lower_edge_m": 1.1201,
-      "verdict": "gap"
+      "verdict": "poke"
      },
      {
       "a": "top_w_formal",
@@ -42873,6 +45117,53 @@
          "see_through": 0
         }
        },
+       "rounds": [
+        {
+         "drop_m": 0.01,
+         "probe": {
+          "rest": {
+           "poke": 8,
+           "rays": 828,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 12,
+           "rays": 828,
+           "see_through": 0
+          }
+         }
+        },
+        {
+         "drop_m": 0.02,
+         "probe": {
+          "rest": {
+           "poke": 9,
+           "rays": 936,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 20,
+           "rays": 936,
+           "see_through": 0
+          }
+         }
+        },
+        {
+         "drop_m": 0.03,
+         "probe": {
+          "rest": {
+           "poke": 12,
+           "rays": 1008,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 21,
+           "rays": 1008,
+           "see_through": 0
+          }
+         }
+        }
+       ],
        "vertices_moved": 28
       },
       "outer": "bottom",
@@ -42891,7 +45182,7 @@
       },
       "references": 2,
       "top_lower_edge_m": 1.1245,
-      "verdict": "gap"
+      "verdict": "poke"
      },
      {
       "a": "top_w_scifi",
@@ -43020,6 +45311,53 @@
          "see_through": 0
         }
        },
+       "rounds": [
+        {
+         "drop_m": 0.01,
+         "probe": {
+          "rest": {
+           "poke": 6,
+           "rays": 288,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 11,
+           "rays": 288,
+           "see_through": 2
+          }
+         }
+        },
+        {
+         "drop_m": 0.02,
+         "probe": {
+          "rest": {
+           "poke": 9,
+           "rays": 396,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 24,
+           "rays": 396,
+           "see_through": 0
+          }
+         }
+        },
+        {
+         "drop_m": 0.03,
+         "probe": {
+          "rest": {
+           "poke": 10,
+           "rays": 468,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 33,
+           "rays": 468,
+           "see_through": 0
+          }
+         }
+        }
+       ],
        "vertices_moved": 28
       },
       "outer": "bottom",
@@ -43038,7 +45376,7 @@
       },
       "references": 2,
       "top_lower_edge_m": 1.1245,
-      "verdict": "gap"
+      "verdict": "poke"
      },
      {
       "a": "top_w_scifi",
@@ -43236,6 +45574,38 @@
          "see_through": 0
         }
        },
+       "rounds": [
+        {
+         "drop_m": 0.01,
+         "probe": {
+          "rest": {
+           "poke": 10,
+           "rays": 756,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 7,
+           "rays": 756,
+           "see_through": 0
+          }
+         }
+        },
+        {
+         "drop_m": 0.02,
+         "probe": {
+          "rest": {
+           "poke": 9,
+           "rays": 864,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 5,
+           "rays": 864,
+           "see_through": 0
+          }
+         }
+        }
+       ],
        "vertices_moved": 28
       },
       "outer": "bottom",
@@ -43319,6 +45689,53 @@
          "see_through": 0
         }
        },
+       "rounds": [
+        {
+         "drop_m": 0.015,
+         "probe": {
+          "rest": {
+           "poke": 9,
+           "rays": 324,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 16,
+           "rays": 324,
+           "see_through": 0
+          }
+         }
+        },
+        {
+         "drop_m": 0.025,
+         "probe": {
+          "rest": {
+           "poke": 16,
+           "rays": 432,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 20,
+           "rays": 432,
+           "see_through": 0
+          }
+         }
+        },
+        {
+         "drop_m": 0.035,
+         "probe": {
+          "rest": {
+           "poke": 10,
+           "rays": 504,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 22,
+           "rays": 504,
+           "see_through": 0
+          }
+         }
+        }
+       ],
        "vertices_moved": 28
       },
       "outer": "bottom",
@@ -43337,7 +45754,7 @@
       },
       "references": 2,
       "top_lower_edge_m": 1.1324,
-      "verdict": "gap"
+      "verdict": "poke"
      },
      {
       "a": "top_w_soldier",
@@ -43375,6 +45792,23 @@
          "see_through": 0
         }
        },
+       "rounds": [
+        {
+         "drop_m": 0.01,
+         "probe": {
+          "rest": {
+           "poke": 2,
+           "rays": 324,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 6,
+           "rays": 324,
+           "see_through": 0
+          }
+         }
+        }
+       ],
        "vertices_moved": 28
       },
       "outer": "bottom",
@@ -43431,6 +45865,23 @@
          "see_through": 0
         }
        },
+       "rounds": [
+        {
+         "drop_m": 0.02,
+         "probe": {
+          "rest": {
+           "poke": 6,
+           "rays": 324,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 5,
+           "rays": 324,
+           "see_through": 0
+          }
+         }
+        }
+       ],
        "vertices_moved": 28
       },
       "outer": "bottom",
@@ -43487,6 +45938,23 @@
          "see_through": 0
         }
        },
+       "rounds": [
+        {
+         "drop_m": 0.01,
+         "probe": {
+          "rest": {
+           "poke": 0,
+           "rays": 288,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 0,
+           "rays": 288,
+           "see_through": 0
+          }
+         }
+        }
+       ],
        "vertices_moved": 28
       },
       "outer": "bottom",
@@ -43666,6 +46134,53 @@
          "see_through": 0
         }
        },
+       "rounds": [
+        {
+         "drop_m": 0.01,
+         "probe": {
+          "rest": {
+           "poke": 1,
+           "rays": 792,
+           "see_through": 4
+          },
+          "walk": {
+           "poke": 3,
+           "rays": 792,
+           "see_through": 2
+          }
+         }
+        },
+        {
+         "drop_m": 0.02,
+         "probe": {
+          "rest": {
+           "poke": 36,
+           "rays": 864,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 25,
+           "rays": 864,
+           "see_through": 0
+          }
+         }
+        },
+        {
+         "drop_m": 0.03,
+         "probe": {
+          "rest": {
+           "poke": 54,
+           "rays": 972,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 37,
+           "rays": 972,
+           "see_through": 0
+          }
+         }
+        }
+       ],
        "vertices_moved": 116
       },
       "outer": "bottom",
@@ -43684,7 +46199,7 @@
       },
       "references": 2,
       "top_lower_edge_m": 1.1309,
-      "verdict": "gap"
+      "verdict": "poke"
      },
      {
       "a": "top_w_suit",
@@ -43722,6 +46237,23 @@
          "see_through": 0
         }
        },
+       "rounds": [
+        {
+         "drop_m": 0.01,
+         "probe": {
+          "rest": {
+           "poke": 2,
+           "rays": 324,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 0,
+           "rays": 324,
+           "see_through": 0
+          }
+         }
+        }
+       ],
        "vertices_moved": 116
       },
       "outer": "bottom",
@@ -43778,6 +46310,23 @@
          "see_through": 0
         }
        },
+       "rounds": [
+        {
+         "drop_m": 0.01,
+         "probe": {
+          "rest": {
+           "poke": 1,
+           "rays": 288,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 0,
+           "rays": 288,
+           "see_through": 0
+          }
+         }
+        }
+       ],
        "vertices_moved": 116
       },
       "outer": "bottom",
@@ -43829,6 +46378,53 @@
          "see_through": 5
         }
        },
+       "rounds": [
+        {
+         "drop_m": 0.01,
+         "probe": {
+          "rest": {
+           "poke": 0,
+           "rays": 324,
+           "see_through": 5
+          },
+          "walk": {
+           "poke": 0,
+           "rays": 324,
+           "see_through": 5
+          }
+         }
+        },
+        {
+         "drop_m": 0.02,
+         "probe": {
+          "rest": {
+           "poke": 0,
+           "rays": 432,
+           "see_through": 4
+          },
+          "walk": {
+           "poke": 0,
+           "rays": 432,
+           "see_through": 4
+          }
+         }
+        },
+        {
+         "drop_m": 0.03,
+         "probe": {
+          "rest": {
+           "poke": 5,
+           "rays": 504,
+           "see_through": 5
+          },
+          "walk": {
+           "poke": 3,
+           "rays": 504,
+           "see_through": 5
+          }
+         }
+        }
+       ],
        "vertices_moved": 116
       },
       "outer": "bottom",
@@ -43885,6 +46481,23 @@
          "see_through": 1
         }
        },
+       "rounds": [
+        {
+         "drop_m": 0.02,
+         "probe": {
+          "rest": {
+           "poke": 5,
+           "rays": 324,
+           "see_through": 1
+          },
+          "walk": {
+           "poke": 4,
+           "rays": 324,
+           "see_through": 1
+          }
+         }
+        }
+       ],
        "vertices_moved": 116
       },
       "outer": "bottom",
@@ -43936,6 +46549,53 @@
          "see_through": 5
         }
        },
+       "rounds": [
+        {
+         "drop_m": 0.01,
+         "probe": {
+          "rest": {
+           "poke": 2,
+           "rays": 324,
+           "see_through": 6
+          },
+          "walk": {
+           "poke": 0,
+           "rays": 324,
+           "see_through": 5
+          }
+         }
+        },
+        {
+         "drop_m": 0.02,
+         "probe": {
+          "rest": {
+           "poke": 4,
+           "rays": 396,
+           "see_through": 6
+          },
+          "walk": {
+           "poke": 10,
+           "rays": 396,
+           "see_through": 5
+          }
+         }
+        },
+        {
+         "drop_m": 0.03,
+         "probe": {
+          "rest": {
+           "poke": 31,
+           "rays": 504,
+           "see_through": 6
+          },
+          "walk": {
+           "poke": 29,
+           "rays": 504,
+           "see_through": 5
+          }
+         }
+        }
+       ],
        "vertices_moved": 116
       },
       "outer": "bottom",
@@ -44056,6 +46716,23 @@
          "see_through": 0
         }
        },
+       "rounds": [
+        {
+         "drop_m": 0.01,
+         "probe": {
+          "rest": {
+           "poke": 0,
+           "rays": 324,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 0,
+           "rays": 324,
+           "see_through": 0
+          }
+         }
+        }
+       ],
        "vertices_moved": 116
       },
       "outer": "top",
@@ -44144,6 +46821,23 @@
          "see_through": 0
         }
        },
+       "rounds": [
+        {
+         "drop_m": 0.01,
+         "probe": {
+          "rest": {
+           "poke": 2,
+           "rays": 792,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 4,
+           "rays": 792,
+           "see_through": 0
+          }
+         }
+        }
+       ],
        "vertices_moved": 30
       },
       "outer": "bottom",
@@ -44195,6 +46889,53 @@
          "see_through": 0
         }
        },
+       "rounds": [
+        {
+         "drop_m": 0.01,
+         "probe": {
+          "rest": {
+           "poke": 16,
+           "rays": 324,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 27,
+           "rays": 324,
+           "see_through": 0
+          }
+         }
+        },
+        {
+         "drop_m": 0.02,
+         "probe": {
+          "rest": {
+           "poke": 7,
+           "rays": 396,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 36,
+           "rays": 396,
+           "see_through": 0
+          }
+         }
+        },
+        {
+         "drop_m": 0.03,
+         "probe": {
+          "rest": {
+           "poke": 16,
+           "rays": 504,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 53,
+           "rays": 504,
+           "see_through": 0
+          }
+         }
+        }
+       ],
        "vertices_moved": 30
       },
       "outer": "bottom",
@@ -44213,7 +46954,7 @@
       },
       "references": 2,
       "top_lower_edge_m": 1.1313,
-      "verdict": "gap"
+      "verdict": "poke"
      },
      {
       "a": "top_w_witch",
@@ -44246,6 +46987,53 @@
          "see_through": 0
         }
        },
+       "rounds": [
+        {
+         "drop_m": 0.01,
+         "probe": {
+          "rest": {
+           "poke": 9,
+           "rays": 288,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 17,
+           "rays": 288,
+           "see_through": 0
+          }
+         }
+        },
+        {
+         "drop_m": 0.02,
+         "probe": {
+          "rest": {
+           "poke": 25,
+           "rays": 396,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 33,
+           "rays": 396,
+           "see_through": 0
+          }
+         }
+        },
+        {
+         "drop_m": 0.03,
+         "probe": {
+          "rest": {
+           "poke": 41,
+           "rays": 468,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 45,
+           "rays": 468,
+           "see_through": 0
+          }
+         }
+        }
+       ],
        "vertices_moved": 30
       },
       "outer": "bottom",
@@ -44264,7 +47052,7 @@
       },
       "references": 2,
       "top_lower_edge_m": 1.1313,
-      "verdict": "gap"
+      "verdict": "poke"
      },
      {
       "a": "top_w_witch",
@@ -44302,6 +47090,23 @@
          "see_through": 0
         }
        },
+       "rounds": [
+        {
+         "drop_m": 0.01,
+         "probe": {
+          "rest": {
+           "poke": 0,
+           "rays": 324,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 1,
+           "rays": 324,
+           "see_through": 0
+          }
+         }
+        }
+       ],
        "vertices_moved": 30
       },
       "outer": "top",
@@ -44353,6 +47158,53 @@
          "see_through": 0
         }
        },
+       "rounds": [
+        {
+         "drop_m": 0.02,
+         "probe": {
+          "rest": {
+           "poke": 9,
+           "rays": 324,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 18,
+           "rays": 324,
+           "see_through": 0
+          }
+         }
+        },
+        {
+         "drop_m": 0.03,
+         "probe": {
+          "rest": {
+           "poke": 9,
+           "rays": 396,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 25,
+           "rays": 396,
+           "see_through": 0
+          }
+         }
+        },
+        {
+         "drop_m": 0.04,
+         "probe": {
+          "rest": {
+           "poke": 8,
+           "rays": 504,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 39,
+           "rays": 504,
+           "see_through": 0
+          }
+         }
+        }
+       ],
        "vertices_moved": 30
       },
       "outer": "bottom",
@@ -44371,7 +47223,7 @@
       },
       "references": 2,
       "top_lower_edge_m": 1.1313,
-      "verdict": "gap"
+      "verdict": "poke"
      },
      {
       "a": "top_w_witch",
@@ -44404,6 +47256,53 @@
          "see_through": 0
         }
        },
+       "rounds": [
+        {
+         "drop_m": 0.01,
+         "probe": {
+          "rest": {
+           "poke": 0,
+           "rays": 324,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 7,
+           "rays": 324,
+           "see_through": 1
+          }
+         }
+        },
+        {
+         "drop_m": 0.02,
+         "probe": {
+          "rest": {
+           "poke": 0,
+           "rays": 396,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 15,
+           "rays": 396,
+           "see_through": 0
+          }
+         }
+        },
+        {
+         "drop_m": 0.03,
+         "probe": {
+          "rest": {
+           "poke": 0,
+           "rays": 504,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 27,
+           "rays": 504,
+           "see_through": 0
+          }
+         }
+        }
+       ],
        "vertices_moved": 30
       },
       "outer": "bottom",
@@ -44422,7 +47321,7 @@
       },
       "references": 2,
       "top_lower_edge_m": 1.1313,
-      "verdict": "gap"
+      "verdict": "poke"
      },
      {
       "a": "top_w_witch",
@@ -44588,6 +47487,38 @@
          "see_through": 0
         }
        },
+       "rounds": [
+        {
+         "drop_m": 0.01,
+         "probe": {
+          "rest": {
+           "poke": 2,
+           "rays": 648,
+           "see_through": 6
+          },
+          "walk": {
+           "poke": 0,
+           "rays": 648,
+           "see_through": 11
+          }
+         }
+        },
+        {
+         "drop_m": 0.02,
+         "probe": {
+          "rest": {
+           "poke": 1,
+           "rays": 756,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 0,
+           "rays": 756,
+           "see_through": 0
+          }
+         }
+        }
+       ],
        "vertices_moved": 102
       },
       "outer": "bottom",
@@ -44639,6 +47570,53 @@
          "see_through": 0
         }
        },
+       "rounds": [
+        {
+         "drop_m": 0.025,
+         "probe": {
+          "rest": {
+           "poke": 22,
+           "rays": 324,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 30,
+           "rays": 324,
+           "see_through": 0
+          }
+         }
+        },
+        {
+         "drop_m": 0.035,
+         "probe": {
+          "rest": {
+           "poke": 49,
+           "rays": 396,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 64,
+           "rays": 396,
+           "see_through": 0
+          }
+         }
+        },
+        {
+         "drop_m": 0.045,
+         "probe": {
+          "rest": {
+           "poke": 93,
+           "rays": 504,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 103,
+           "rays": 504,
+           "see_through": 0
+          }
+         }
+        }
+       ],
        "vertices_moved": 102
       },
       "outer": "bottom",
@@ -44657,7 +47635,7 @@
       },
       "references": 2,
       "top_lower_edge_m": 1.1456,
-      "verdict": "gap"
+      "verdict": "poke"
      },
      {
       "a": "top_w_worker",
@@ -44690,6 +47668,53 @@
          "see_through": 0
         }
        },
+       "rounds": [
+        {
+         "drop_m": 0.025,
+         "probe": {
+          "rest": {
+           "poke": 7,
+           "rays": 288,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 13,
+           "rays": 288,
+           "see_through": 0
+          }
+         }
+        },
+        {
+         "drop_m": 0.035,
+         "probe": {
+          "rest": {
+           "poke": 29,
+           "rays": 396,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 41,
+           "rays": 396,
+           "see_through": 0
+          }
+         }
+        },
+        {
+         "drop_m": 0.045,
+         "probe": {
+          "rest": {
+           "poke": 51,
+           "rays": 468,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 58,
+           "rays": 468,
+           "see_through": 0
+          }
+         }
+        }
+       ],
        "vertices_moved": 102
       },
       "outer": "bottom",
@@ -44708,7 +47733,7 @@
       },
       "references": 2,
       "top_lower_edge_m": 1.1456,
-      "verdict": "gap"
+      "verdict": "poke"
      },
      {
       "a": "top_w_worker",
@@ -44746,6 +47771,23 @@
          "see_through": 0
         }
        },
+       "rounds": [
+        {
+         "drop_m": 0.02,
+         "probe": {
+          "rest": {
+           "poke": 9,
+           "rays": 288,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 6,
+           "rays": 288,
+           "see_through": 0
+          }
+         }
+        }
+       ],
        "vertices_moved": 102
       },
       "outer": "bottom",
@@ -44797,6 +47839,53 @@
          "see_through": 0
         }
        },
+       "rounds": [
+        {
+         "drop_m": 0.035,
+         "probe": {
+          "rest": {
+           "poke": 16,
+           "rays": 324,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 27,
+           "rays": 324,
+           "see_through": 0
+          }
+         }
+        },
+        {
+         "drop_m": 0.045,
+         "probe": {
+          "rest": {
+           "poke": 49,
+           "rays": 432,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 57,
+           "rays": 432,
+           "see_through": 0
+          }
+         }
+        },
+        {
+         "drop_m": 0.055,
+         "probe": {
+          "rest": {
+           "poke": 79,
+           "rays": 504,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 85,
+           "rays": 504,
+           "see_through": 0
+          }
+         }
+        }
+       ],
        "vertices_moved": 102
       },
       "outer": "bottom",
@@ -44815,7 +47904,7 @@
       },
       "references": 2,
       "top_lower_edge_m": 1.1456,
-      "verdict": "gap"
+      "verdict": "poke"
      },
      {
       "a": "top_w_worker",
@@ -44848,6 +47937,53 @@
          "see_through": 0
         }
        },
+       "rounds": [
+        {
+         "drop_m": 0.025,
+         "probe": {
+          "rest": {
+           "poke": 5,
+           "rays": 324,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 13,
+           "rays": 324,
+           "see_through": 0
+          }
+         }
+        },
+        {
+         "drop_m": 0.035,
+         "probe": {
+          "rest": {
+           "poke": 44,
+           "rays": 396,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 52,
+           "rays": 396,
+           "see_through": 0
+          }
+         }
+        },
+        {
+         "drop_m": 0.045,
+         "probe": {
+          "rest": {
+           "poke": 78,
+           "rays": 504,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 84,
+           "rays": 504,
+           "see_through": 0
+          }
+         }
+        }
+       ],
        "vertices_moved": 102
       },
       "outer": "bottom",
@@ -44866,7 +48002,7 @@
       },
       "references": 2,
       "top_lower_edge_m": 1.1456,
-      "verdict": "gap"
+      "verdict": "poke"
      },
      {
       "a": "top_w_worker",
@@ -44963,6 +48099,53 @@
          "see_through": 0
         }
        },
+       "rounds": [
+        {
+         "drop_m": 0.025,
+         "probe": {
+          "rest": {
+           "poke": 35,
+           "rays": 324,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 33,
+           "rays": 324,
+           "see_through": 0
+          }
+         }
+        },
+        {
+         "drop_m": 0.035,
+         "probe": {
+          "rest": {
+           "poke": 66,
+           "rays": 432,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 58,
+           "rays": 432,
+           "see_through": 0
+          }
+         }
+        },
+        {
+         "drop_m": 0.045,
+         "probe": {
+          "rest": {
+           "poke": 84,
+           "rays": 504,
+           "see_through": 0
+          },
+          "walk": {
+           "poke": 70,
+           "rays": 504,
+           "see_through": 0
+          }
+         }
+        }
+       ],
        "vertices_moved": 102
       },
       "outer": "bottom",
@@ -44981,7 +48164,7 @@
       },
       "references": 2,
       "top_lower_edge_m": 1.1456,
-      "verdict": "gap"
+      "verdict": "poke"
      },
      {
       "a": "top_w_worker",
@@ -49125,11 +52308,11 @@
     "gap_over_5mm_exact": 13,
     "pairs": 121,
     "verdicts": {
-     "gap": 9,
+     "gap": 6,
      "needs_fix": 8,
      "ok_over": 59,
      "ok_tucked": 6,
-     "poke": 39
+     "poke": 42
     }
    },
    "W": {
@@ -49181,9 +52364,9 @@
     "gap_over_5mm_exact": 0,
     "pairs": 160,
     "verdicts": {
-     "gap": 17,
+     "gap": 5,
      "ok": 76,
-     "poke": 67
+     "poke": 79
     }
    }
   },
@@ -49193,11 +52376,10 @@
     "gap_over_5mm_exact": 0,
     "pairs": 121,
     "verdicts": {
-     "gap": 1,
      "needs_fix": 1,
      "ok_over": 85,
      "ok_tucked": 5,
-     "poke": 29
+     "poke": 30
     }
    },
    "W": {
@@ -49205,11 +52387,11 @@
     "gap_over_5mm_exact": 9,
     "pairs": 100,
     "verdicts": {
-     "gap": 17,
+     "gap": 2,
      "needs_fix": 12,
      "ok_over": 12,
      "ok_tucked": 14,
-     "poke": 45
+     "poke": 60
     }
    }
   }

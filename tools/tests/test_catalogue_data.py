@@ -115,7 +115,9 @@ class RulesTest(unittest.TestCase):
         self.assertEqual(len(gaps), 6)
         self.assertEqual(round(min(gaps.values())), -21)
         self.assertEqual(min(gaps, key=gaps.get), "bottom_w_punk")
-        self.assertEqual(worker["bottom_w_punk"]["verdict"], "gap")
+        # extend_edge closes the 21 mm opening, but the lowered hem then crosses the Punk waistband: poke
+        self.assertEqual(worker["bottom_w_punk"]["verdict"], "poke")
+        self.assertFalse(worker["bottom_w_punk"]["fix_tried"]["closes"])
 
     def test_pack_originals_are_ok(self) -> None:
         for name in ("bottom_shoes", "top_bottom"):
@@ -128,6 +130,19 @@ class RulesTest(unittest.TestCase):
         full = {c["b"]: c["verdict"] for c in cells("hair_skull", "M") if c["a"] == "hair_m_punk_mohawk"}
         self.assertEqual(full["skull_m_farmer"], "ok")  # the final test's m1_rex: Punk's cap on an open-top skull
         self.assertEqual(full["skull_m_business"], "poke")  # z-fights and cuts through on a full skull
+
+    def test_a_failed_fix_names_what_remains(self) -> None:
+        """gap only when the last extend_edge try still sees through; poke when only poke-through remains."""
+        for name in ("bottom_shoes", "top_bottom", "head_top"):
+            for g in ("M", "W"):
+                for c in cells(name, g):
+                    ft = c.get("fix_tried")
+                    if not ft or ft["closes"] or c["verdict"] not in ("gap", "poke"):
+                        continue
+                    allow = c["allowance"]
+                    sees = any(ft["probe"][s]["see_through"] > allow[s]["see_through"] for s in allow)
+                    self.assertEqual(c["verdict"], "gap" if sees else "poke", f"{name}: {c['a']} x {c['b']}")
+                    self.assertEqual(ft["rounds"][-1]["drop_m"], ft["drop_m"])
 
     def test_needs_fix_names_a_measured_fix(self) -> None:
         for name, per in DATA["matrices"].items():
