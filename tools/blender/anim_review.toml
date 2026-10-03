@@ -13,6 +13,37 @@ file = "quaternius/Universal_Animation_Library_2/Universal Animation Library 2[S
 rm = "quaternius/Universal_Animation_Library_2/Universal Animation Library 2[Standard]/Unreal-Godot/UAL2_Standard_RM.glb"
 label = "UAL2"
 
+# Meshy's animations on our own characters (art #25, batch 4, raw:2026-10-b4-animations/, private: the library's
+# provenance is undisclosed). A Meshy library is one rig: Meshy's auto-rig of m1_rex (men) or w1_ivy (women), 24 bones,
+# no fingers (tools/blender/retarget_maps/meshy_um.toml). `file` holds the library actions merged by one animation
+# task; `extra` are the other GLBs of the same rig whose actions join it (the rig's own walking and running, the
+# text-to-motion crawl animated on the man's rig); `rename` gives Meshy's action names our clip names, `skip` leaves
+# out the one-frame bind pose; `in_place` clips have their hips' travel taken out (they walk or crawl away); `own`
+# names the character whose own rig and weights play the "<key>_own:<clip>" clips (comparison (a)). No `rm`: Meshy
+# has no root-motion file of its own.
+[libraries.meshy]
+file = "2026-10-b4-animations/man-library/animate-merged_animations.glb"
+extra = ["2026-10-b4-animations/man-rig/rig-Animation_Walking_withSkin.glb",
+         "2026-10-b4-animations/man-rig/rig-Animation_Running_withSkin.glb",
+         "2026-10-b4-animations/man-crawl/animate-Animation_01a10322-c879-7192-a408-0a474c65fc6c_withSkin.glb"]
+rename = { walking_man = "Walking", running = "Running", retarget_clip = "Crawl_Prompt" }
+skip = ["clip0"]
+in_place = ["Walk_Backward", "Crawl_and_Look_Back", "Crawl_Prompt", "Carry_Heavy_Object_Walk"]
+label = "Meshy"
+own = "m1_rex"
+map = "meshy_um.toml"
+rigid_map = "meshy_um_rigid.toml"
+[libraries.meshyw]
+file = "2026-10-b4-animations/woman-library/animate-merged_animations.glb"
+extra = ["2026-10-b4-animations/woman-rig/rig-Animation_Walking_withSkin.glb",
+         "2026-10-b4-animations/woman-rig/rig-Animation_Running_withSkin.glb"]
+rename = { walking_man = "Walking", running = "Running" }
+skip = ["clip0"]
+label = "Meshy woman"
+own = "w1_ivy"
+map = "meshy_um.toml"
+rigid_map = "meshy_um_rigid.toml"
+
 # Layered clips "<base>|<upper>" (tools/blender/anim_keys.py): the base clip's hips and legs under the upper clip's
 # `upper` bone and every bone below it (spine, head, arms, fingers), as an engine layers an upper-body clip. `clips`
 # are layered clips that a run over all clips (or over one of their sources) measures beside the plain ones.
@@ -36,6 +67,8 @@ pack = "refs/Ultimate_Modular_Women_Pack"
 pack = ["Idle", "Idle_Gun", "Idle_Gun_Pointing", "Idle_Neutral", "Idle_Sword", "Run", "Run_Back", "Run_Left",
         "Run_Right", "Run_Shoot", "Walk"]
 ual = ["Sword_Idle"]
+meshy = ["Walking", "Running", "RunFast", "Walk_Backward", "Crawl_Prompt"]
+meshyw = ["Walking", "Running", "RunFast", "Walking_Woman"]
 
 # Locomotion at the game's speeds (the game's content/modes/base_mode.tres: walk 4.5 m/s, sprint 7.0 m/s). Each
 # row plays its clips side by side on a treadmill moving at `speed`, each at the rate that makes its feet keep up:
@@ -152,3 +185,135 @@ note = "the knife: #20's best swing (the pack's Sword_Slash)"
 [[feet]]
 name = "ual_locomotion"
 clips = ["ual:Walk_Loop", "ual:Jog_Fwd_Loop", "ual:Sprint_Loop"]
+
+# Art #25: Meshy's clips for the game's needs. Each row: comparison (a), the clip on Meshy's own rig and weights
+# ("meshy_own:"; m1_rex or w1_ivy as Meshy rigged them), comparison (b), the same clip retargeted onto our rig with the
+# toe bones ("meshy:", "meshyw:"), and the best UAL1, UAL2 or pack clip for the need (art #20, #24). `body` keeps a row
+# to one body type: the women's rows play the man's library clips retargeted (Meshy rigged no woman for them).
+[[pairs]]
+name = "meshy_men_walk"
+clips = ["meshy_own:Walking", "meshy:Walking", "ual:Walk_Loop"]
+note = "walking: Meshy's free walk of the rig against UAL's walk"
+body = "men"
+[[pairs]]
+name = "meshy_men_run"
+clips = ["meshy_own:Running", "meshy:Running", "ual:Jog_Fwd_Loop"]
+note = "running: Meshy's free run of the rig against UAL's jog"
+body = "men"
+[[pairs]]
+name = "meshy_men_sprint"
+clips = ["meshy_own:RunFast", "meshy:RunFast", "ual:Sprint_Loop"]
+note = "sprinting: library 16 Run Fast against UAL's sprint"
+body = "men"
+[[pairs]]
+name = "meshy_men_backwards"
+clips = ["meshy_own:Walk_Backward", "meshy:Walk_Backward", "pack:Run_Back"]
+note = "moving backwards: library 544 against the pack's Run_Back"
+body = "men"
+[[pairs]]
+name = "meshy_men_turn"
+clips = ["meshy_own:Idle_Step_Turn_Left", "meshy:Idle_Step_Turn_Left", "ual:Idle_Loop"]
+note = "turning in place: library 577 against the idle (a gap in UAL and the pack)"
+body = "men"
+[[pairs]]
+name = "meshy_men_pushed"
+clips = ["meshy_own:Hit_Reaction", "meshy:Hit_Reaction", "ual2:Hit_Knockback", "ual:Hit_Chest"]
+note = "being hit or pushed: library 178 against UAL2's knockback and UAL's Hit_Chest"
+body = "men"
+[[pairs]]
+name = "meshy_men_knockdown"
+clips = ["meshy_own:Knock_Down", "meshy:Knock_Down", "ual:Death01"]
+note = "knocked down: library 187 against UAL's Death01"
+body = "men"
+[[pairs]]
+name = "meshy_men_downed"
+clips = ["meshy_own:Prone_Reach_Help", "meshy:Prone_Reach_Help", "ual2:LayToIdle"]
+note = "downed: library 372 against UAL2's lying idle and get-up"
+body = "men"
+[[pairs]]
+name = "meshy_men_crawl"
+clips = ["meshy_own:Crawl_and_Look_Back", "meshy:Crawl_and_Look_Back", "meshy_own:Crawl_Prompt", "meshy:Crawl_Prompt"]
+note = "crawling while downed: library 340 and the text-to-motion crawl (no UAL or pack crawl)"
+body = "men"
+[[pairs]]
+name = "meshy_men_carry"
+clips = ["meshy_own:Carry_Heavy_Object_Walk", "meshy:Carry_Heavy_Object_Walk", "ual2:Walk_Carry_Loop"]
+note = "carrying the package: library 551 against UAL2's carry walk"
+body = "men"
+[[pairs]]
+name = "meshy_men_shrug"
+clips = ["meshy_own:Shrug", "meshy:Shrug", "ual2:Yes"]
+note = "an emote: library 317 against UAL2's Yes"
+body = "men"
+[[pairs]]
+name = "meshy_men_no"
+clips = ["meshy_own:Finger_Wag_No", "meshy:Finger_Wag_No", "ual2:Idle_No_Loop"]
+note = "a finger gesture: library 409 (Meshy's rig has no fingers) against UAL2's No"
+body = "men"
+[[pairs]]
+name = "meshy_women_walk"
+clips = ["meshyw_own:Walking_Woman", "meshyw:Walking_Woman", "meshyw_own:Walking", "meshyw:Walking", "ual:Walk_Loop"]
+note = "walking: library 1 Walking Woman and the rig's free walk against UAL's walk"
+body = "women"
+[[pairs]]
+name = "meshy_women_run"
+clips = ["meshyw_own:Running", "meshyw:Running", "ual:Jog_Fwd_Loop"]
+body = "women"
+[[pairs]]
+name = "meshy_women_sprint"
+clips = ["meshyw_own:RunFast", "meshyw:RunFast", "ual:Sprint_Loop"]
+body = "women"
+[[pairs]]
+name = "meshy_women_backwards"
+clips = ["meshy:Walk_Backward", "pack:Run_Back"]
+body = "women"
+[[pairs]]
+name = "meshy_women_turn"
+clips = ["meshy:Idle_Step_Turn_Left", "ual:Idle_Loop"]
+body = "women"
+[[pairs]]
+name = "meshy_women_pushed"
+clips = ["meshy:Hit_Reaction", "ual2:Hit_Knockback", "ual:Hit_Chest"]
+body = "women"
+[[pairs]]
+name = "meshy_women_knockdown"
+clips = ["meshy:Knock_Down", "ual:Death01"]
+body = "women"
+[[pairs]]
+name = "meshy_women_downed"
+clips = ["meshy:Prone_Reach_Help", "ual2:LayToIdle"]
+body = "women"
+[[pairs]]
+name = "meshy_women_crawl"
+clips = ["meshy:Crawl_and_Look_Back", "meshy:Crawl_Prompt"]
+body = "women"
+[[pairs]]
+name = "meshy_women_carry"
+clips = ["meshy:Carry_Heavy_Object_Walk", "ual2:Walk_Carry_Loop"]
+body = "women"
+[[pairs]]
+name = "meshy_women_gestures"
+clips = ["meshy:Shrug", "meshy:Finger_Wag_No", "ual2:Yes", "ual2:Idle_No_Loop"]
+body = "women"
+
+# Art #25: the feet of Meshy's locomotion. `sets` are lanes of any clip keys, top to bottom: (a) Meshy's own rig, (b)
+# the clip retargeted onto our toe bones, the best UAL1 or pack clip; `clips` (as in ual_locomotion) the rigid shoes
+# over the toe bones of a Meshy clip.
+[[feet]]
+name = "meshy_feet_men"
+body = "men"
+sets = [["meshy_own:Walking", "meshy:Walking", "ual:Walk_Loop"],
+        ["meshy_own:Running", "meshy:Running", "ual:Jog_Fwd_Loop"],
+        ["meshy_own:RunFast", "meshy:RunFast", "ual:Sprint_Loop"],
+        ["meshy_own:Walk_Backward", "meshy:Walk_Backward", "pack:Run_Back"]]
+[[feet]]
+name = "meshy_feet_women"
+body = "women"
+sets = [["meshyw_own:Walking_Woman", "meshyw:Walking_Woman", "meshy:Walking", "ual:Walk_Loop"],
+        ["meshyw_own:Running", "meshyw:Running", "ual:Jog_Fwd_Loop"],
+        ["meshyw_own:RunFast", "meshyw:RunFast", "ual:Sprint_Loop"],
+        ["meshy:Walk_Backward", "pack:Run_Back"]]
+[[feet]]
+name = "meshy_toes"
+body = "men"
+clips = ["meshy:Walking", "meshy:RunFast"]
