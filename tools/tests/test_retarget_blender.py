@@ -1,5 +1,7 @@
-"""The retarget in headless Blender on the real files: the source rest lands exactly on the target rest and a walk
-keeps its feet on the floor, for both body types. Skipped when Blender or the raw packs are missing."""
+"""The retarget in headless Blender on the real files, for both body types: the source rest lands exactly on the
+target rest, a walk keeps its feet on the floor (its legs reach the source's ankle path and no vertex goes 1 cm under
+the floor), and a fall (Death01, the pelvis turned about 100 degrees) goes no deeper into the floor than the source's
+own mesh scaled to the target, plus 3 cm. Skipped when Blender or the raw packs are missing."""
 
 from __future__ import annotations
 
@@ -24,7 +26,8 @@ class RetargetTest(unittest.TestCase):
         shutil.rmtree(out, ignore_errors=True)
         blender.run_script("retarget.py", ["--source", str(FILES[0]),
                                            "--target", str(common.raw_dir() / CFG["bodies"][body]["character"]),
-                                           "--out", str(out), "--clips", "A_TPose,Walk_Loop"], timeout=600)
+                                           "--out", str(out), "--clips", "A_TPose,Walk_Loop,Death01", "--floor"],
+                           timeout=900)
         return json.loads((out / "retarget_report.json").read_text(encoding="utf-8"))
 
     def test_both_body_types(self) -> None:
@@ -37,6 +40,9 @@ class RetargetTest(unittest.TestCase):
                 self.assertEqual(report["clips"]["Walk_Loop"]["frames"], 40)
                 self.assertLess(report["clips"]["Walk_Loop"]["ik_miss_mm"], 10.0)
                 self.assertEqual(report["clips"]["A_TPose"]["ik_miss_mm"], 0.0)
+                self.assertGreater(report["clips"]["Walk_Loop"]["lowest_cm"], -1.0)
+                death = report["clips"]["Death01"]
+                self.assertGreater(death["lowest_cm"], death["source_lowest_cm"] - 3.0, death)
 
 
 if __name__ == "__main__":

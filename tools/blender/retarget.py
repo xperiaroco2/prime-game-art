@@ -2,8 +2,9 @@
 
 Usage (background Blender only, through tools/runner/blender.py):
   blender -b --factory-startup --python-exit-code 1 --python retarget.py -- --source <UAL.glb> --target <UM.glb>
-      --out <dir> [--map <map.toml>] [--clips Walk_Loop,Idle_Loop|all] [--no-ik] [--blend]
-Writes <out>/retarget_report.json (the hip-height ratio, the rest-pose check, each clip's frames and IK misses) and,
+      --out <dir> [--map <map.toml>] [--clips Walk_Loop,Idle_Loop|all] [--no-ik] [--floor] [--blend]
+Writes <out>/retarget_report.json (the hip-height ratio, the rest-pose check, each clip's frames and IK misses; with
+--floor also each clip's lowest vertex on the target and on the source's own mesh, scaled to the target) and,
 with --blend, <out>/<target>_ual.blend: the target character with the baked actions "UAL|<clip>" and nothing else.
 """
 
@@ -18,6 +19,27 @@ import bpy  # noqa: E402
 
 import retarget_core as rc  # noqa: E402
 import retarget_map  # noqa: E402
+from anim_metrics import world_points  # noqa: E402
+
+
+def lowest(char: dict) -> float:
+    """The lowest world height of the character's posed meshes."""
+    bpy.context.view_layer.update()
+    return min(float(world_points(o)[:, 2].min()) for o in char["meshes"].values())
+
+
+def floor(rt, src: dict, tgt: dict, src_action, baked) -> dict:
+    """The lowest vertex (cm) of the retargeted clip on the target, and of the source clip on the source's own mesh
+    scaled to the target's size: how deep a clip goes into the floor by itself, against what the retarget adds."""
+    s, t = rc.Sampler(src_action), rc.Sampler(baked)
+    low_t = low_s = float("inf")
+    for i in range(int(round(t.frames)) + 1):
+        rc.apply_basis(tgt["arm"], t.basis(t.start + i))
+        low_t = min(low_t, lowest(tgt))
+        rc.apply_basis(src["arm"], s.basis(s.start + i))
+        low_s = min(low_s, (lowest(src) - rt.src_o.z) * rt.ratio + rt.tgt_o.z)
+    rc.reset_pose(tgt["arm"]), rc.reset_pose(src["arm"])
+    return {"lowest_cm": round(100 * low_t, 1), "source_lowest_cm": round(100 * low_s, 1)}
 
 
 def main(argv):
@@ -29,6 +51,7 @@ def main(argv):
     ap.add_argument("--clips", default="all")
     ap.add_argument("--no-ik", action="store_true")
     ap.add_argument("--blend", action="store_true")
+    ap.add_argument("--floor", action="store_true")
     a = ap.parse_args(argv)
     os.makedirs(a.out, exist_ok=True)
     bmap = retarget_map.load(a.map)
@@ -59,6 +82,8 @@ def main(argv):
         act, frames = rt.clip(src["actions"][name], "UAL|" + name, tgt["arm"])
         report["clips"][name] = {"frames": frames, "seconds": round(frames / rc.FPS, 3), "action": act.name,
                                  "ik_miss_mm": round(rt.miss_mm, 2)}
+        if a.floor:
+            report["clips"][name].update(floor(rt, src, tgt, src["actions"][name], act))
         print("RETARGETED", name, frames, "frames, IK miss", round(rt.miss_mm, 2), "mm")
     report["seconds_spent"] = round(time.time() - t0, 1)
     with open(os.path.join(a.out, "retarget_report.json"), "w", encoding="utf-8") as f:

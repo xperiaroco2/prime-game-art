@@ -24,6 +24,8 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--out", type=Path, help="output folder (default tools/out/retarget/<body>)")
     parser.add_argument("--no-ik", action="store_true", help="skip the leg IK that keeps the source's foot contacts")
     parser.add_argument("--blend", action="store_true", help="also save the character with the baked actions")
+    parser.add_argument("--floor", action="store_true",
+                        help="also measure each clip's lowest vertex, on the target and on the source's own mesh")
 
 
 def run(args: argparse.Namespace) -> int:
@@ -44,6 +46,8 @@ def run(args: argparse.Namespace) -> int:
         script_args.append("--no-ik")
     if args.blend:
         script_args.append("--blend")
+    if args.floor:
+        script_args.append("--floor")
     blender.run_script("retarget.py", script_args, timeout=1800)
     if not report_path.is_file():
         raise common.Failure(f"retarget.py wrote no {report_path}")
@@ -60,6 +64,10 @@ def run(args: argparse.Namespace) -> int:
     common.ok(f"{len(report['clips'])} clips baked in {report['seconds_spent']} s")
     if misses:
         common.warn(f"legs short of the source's ankle path (mm, the target's legs are too short there): {misses}")
+    if args.floor:
+        deep = {n: f"{c['lowest_cm']} (source {c['source_lowest_cm']})" for n, c in report["clips"].items()
+                if c["lowest_cm"] < -1.0}
+        common.say(f"lowest vertex below -1 cm, target (source's own mesh, scaled): {deep or 'none'}")
     if "blend" in report:
         common.say(f"blend: {report['blend']}")
     common.say(f"report: {report_path}")
