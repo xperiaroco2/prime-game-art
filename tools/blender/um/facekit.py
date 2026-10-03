@@ -677,8 +677,12 @@ def family_face(surf, eyes_at, mouth_at, fam_id, fam, expr, colors, skin, tag):
     ({"eyes": {...}, "brows": {...}, "mouth": {...}}); colors: the character's "iris", "brow" and "lip" rgb."""
     mats = family_materials(fam_id, fam, tag, colors, skin)
     eyes_b, brows_b, mouth_b = FamilyBuilder(), FamilyBuilder(), FamilyBuilder()
+    shapes = []
     for side, c in sorted(eyes_at.items()):
-        _family_eye(eyes_b, surf, c, side, fam["eyes"], expr.get("eyes", {}), mats)
+        shapes.append(_family_eye(eyes_b, surf, c, side, fam["eyes"], expr.get("eyes", {}), mats))
         _family_brow(brows_b, surf, c, side, fam["brows"], expr.get("brows", {}), mats["brow"])
     _family_mouth(mouth_b, surf, mouth_at[0], mouth_at[1], fam["mouth"], expr.get("mouth", {}), mats)
+    # decals lie on the skin (brows, mouths, painted eyes, eyes drawn as strokes); dome eyes sink into it by design
+    eyes_b.decal = fam["eyes"]["kind"] == "painted" or all(sh.get("stroke") for sh in shapes)
+    brows_b.decal = mouth_b.decal = True
     return {"eyes": eyes_b, "brows": brows_b, "mouth": mouth_b}

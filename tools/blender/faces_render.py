@@ -301,7 +301,7 @@ def make_face(h, fid, fam, ename, review, skin_name):
         h.coll.objects.link(o)
         h.face[part] = o
         vg = o.vertex_groups
-        info[part] = {"triangles": tris(o), "materials": len(o.material_slots),
+        info[part] = {"triangles": tris(o), "materials": len(o.material_slots), "decal": b.decal,
                       "clearance_min_mm": round(min(d) * 1000, 2), "under_skin": sum(1 for x in d if x < 0), "samples": len(d),
                       "vertex_groups": [g.name for g in vg],
                       "armature": next((m.object.name for m in o.modifiers if m.type == "ARMATURE"), None)}
