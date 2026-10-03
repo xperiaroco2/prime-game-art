@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import base64
 import hashlib
+import json
 import re
 from dataclasses import dataclass
 from pathlib import Path
@@ -214,6 +215,19 @@ def file_problems(inp: Input) -> list[str]:
     if inp.sha256 and sha256(path) != inp.sha256:
         return [f"{inp.file}: its sha256 is {sha256(path)}, the batch approved {inp.sha256}"]
     return []
+
+
+def glb_contents(path: Path) -> dict[str, list[str]]:
+    """The node and mesh names of a GLB, read from its JSON chunk (art #25: a rig input must hold one mesh and
+    nothing else; Blender's glTF importer shows an "Icosphere" of its own, its bone display shape, which no file of
+    ours or Meshy's contains)."""
+    data = path.read_bytes()
+    if len(data) < 20 or data[:4] != b"glTF" or data[16:20] != b"JSON":
+        raise common.Failure(f"{path.name} is not a GLB with a JSON chunk")
+    size = int.from_bytes(data[12:16], "little")
+    doc = json.loads(data[20:20 + size])
+    return {"nodes": [n.get("name", "") for n in doc.get("nodes", [])],
+            "meshes": [m.get("name", "") for m in doc.get("meshes", [])]}
 
 
 def data_uri(path: Path, kind: str) -> str:

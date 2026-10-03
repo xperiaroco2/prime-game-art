@@ -153,6 +153,10 @@ def rig_input(blends: list[Path], out: Path) -> int:
             raise common.Failure(f"no saved character {path}")
         blender.run_script("meshy_rig_input.py", ["--blend", str(path.resolve()), "--out", str(out)], timeout=600)
         info = json.loads((out / f"{path.stem}.json").read_text(encoding="utf-8"))
+        inside = inputs.glb_contents(Path(info["glb"]))
+        if len(inside["nodes"]) != 1 or len(inside["meshes"]) != 1:
+            raise common.Failure(f"{info['glb']} holds nodes {inside['nodes']} and meshes {inside['meshes']}: a rig "
+                                 "input is one mesh and nothing else")
         common.ok(f"{path.stem}: {info['glb']} ({info['glb_bytes']} bytes, {info['triangles']} triangles, "
                   f"{info['height_m']} m, palette {info['palette_px']} px of {len(info['materials'])} colours)")
         common.say(f"    sha256 {inputs.sha256(Path(info['glb']))} (glb), {inputs.sha256(Path(info['texture']))} "
