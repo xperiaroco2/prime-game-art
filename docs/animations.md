@@ -1,10 +1,12 @@
 # Animations: the retarget and the review in motion
 
 Our characters are built on the Quaternius **Ultimate Modular** Men and Women packs (CC0, xperiaroco2/prime-game#165):
-one 62-bone armature, `CharacterArmature`, and 24 actions per body type. This page covers how other clips get onto
+one 62-bone armature, `CharacterArmature`, and 24 actions per body type, plus our toe bones `Toe.L` and `Toe.R` (art #25,
+"The toe bones" below: 64 bones). This page covers how other clips get onto
 that armature (the **retarget**) and how clips are judged (the **review**): always in motion, from frame strips and
 looping clips plus measures, never from one frozen frame. The findings of the first review (art #20) and of the
-second library (UAL2, art #24) are in [research/2026-10-03-animation-review.md](research/2026-10-03-animation-review.md).
+second library (UAL2, art #24) are in [research/2026-10-03-animation-review.md](research/2026-10-03-animation-review.md);
+the toe bones and the Meshy trial (art #25) in [research/2026-10-03-meshy-animations.md](research/2026-10-03-meshy-animations.md).
 
 ## Sources
 
@@ -26,13 +28,29 @@ against 1.67 s). UAL is authored at 30 fps; its clips import to whole frames onl
   (carries the legs: `UpperLeg`, `LowerLeg`) > `Hips` > `Abdomen` > `Torso` > `Chest` > `Neck` > `Head`, and
   `Shoulder`, `UpperArm`, `LowerArm`, `Wrist` per side. The **feet are children of `Root`**, not of the lower legs
   (baked IK targets), with `PT.L`/`PT.R` knee pole targets that deform nothing; a foot's pivot sits at the heel, 2 cm
-  above the floor. **No toe bone.** Fingers: `Index1` to `Index4` (and `Middle`, `Ring`, `Pinky`), where `1` is the
+  above the floor. **The pack has no toe bone**; ours, `Toe.L`/`Toe.R`, are added below each foot (next section). Fingers: `Index1` to `Index4` (and `Middle`, `Ring`, `Pinky`), where `1` is the
   metacarpal (its head at the wrist, 12 cm long) and `2` to `4` the phalanges; `Thumb1` to `Thumb3`.
 - **UAL** (`Armature`, identity world matrix; UAL1 and UAL2 alike: `anim-review inventory` compares UAL2's rig with
   UAL1's, `rig_vs_ual` in `inventory.json`: the same names and parents, 0 mm and 0 degrees apart at rest): `root` >
   `pelvis` > `spine_01` to `spine_03` > `neck_01` > `Head`; `clavicle`, `upperarm`, `lowerarm`, `hand`; fingers `_01` to
   `_03` are phalanges (no finger metacarpals) plus `_04_leaf` ends; `thigh` > `calf` > `foot` > `ball` (toes). Both rigs
   rest in a T-pose, palms down, facing -Y.
+
+## The toe bones (art #25)
+
+The pack's shoes are rigid: each is weighted to its foot (and partly to the shin at the ankle), so a clip that rolls
+over the toes tips the whole shoe onto its tip. `tools/blender/um/toes.py` adds `Toe.L` and `Toe.R`: children of the
+feet, the head at the ball of the shoe (68% of its length from its back, along the foot's forward axis, 5 mm above
+the sole), the tail at its tip, the foot's axes; every part's foot weights are split over the ball with a smoothstep
+5 cm wide. The assembler adds them to every character (`build_character`; the saved file has 64 bones and every pack
+part 64 vertex groups), the retarget to a pack original that a map with toes targets, and the review to its donors
+(`toe_bones = true` in the settings). None of the pack's 24 actions keys a toe, so they play exactly as before (every
+vertex of the pack's Walk within 0.01 mm: `test_anim_toes.py`); the export writes no toe track for them, and in Godot
+the toes rest under the feet.
+
+**For the contract v2:** two more deforming bones that the pack's own actions never animate; any clip with toes
+(UAL1, UAL2, Meshy once mapped) bends the shoe, any clip without leaves it rigid. `SkeletonProfileHumanoid` has
+`LeftToes`/`RightToes` for them.
 
 ## The retarget
 
@@ -71,6 +89,11 @@ adds). No add-on: `tools/blender/retarget_core.py`.
    push-off of Sprint and Jog, where the target leg locks straight (the heel pivot sits farther from the hip than
    the source's ankle once the foot points down); 2 to 6 cm in the falls, rolls, jumps and swims (before the hips fix
    the rolls missed by 23 to 25 cm).
+   **Toes (art #25):** a mapped toe takes the source toe's world rotation, so it stays level while the heel rises and
+   the shoe bends at the ball; after the IK the bones below each foot are re-attached to it, and each toe's tip gets
+   the floor clamp too (pitched about the ball). With the toes the foot's own clamp holds the front of the foot's
+   part of the sole (the ball), not the tip. The sole under the ball dips 0.6 to 1.1 cm below the floor for a frame
+   or two in the walks (the bend of the blend zone; UAL's own mannequin goes 2.7 cm under in Walk_Loop).
 5. **Bake.** One key per source frame (30 fps) on every target bone, quaternions kept on one hemisphere.
 6. **Checks.** The **rest check** retargets the source rest and compares it with the target rest: 0.003 mm and 0
    degrees on both bodies (`retarget` fails above 0.01 mm or 0.01 degrees). It is a sanity check of the pipeline (the
@@ -92,10 +115,14 @@ accounted for exactly once; unknown keys refused):
 | `[follow]` | target bones carried by another target bone instead of their parent (the feet by the lower legs) |
 | `[[legs]]` | `target = [upper, lower, foot]`, `source_foot`: the IK chains |
 | `[rest]` | target bones kept at rest (the finger metacarpals, `Hips`, `PT.L`, `PT.R`) |
-| `[unused]` | source bones with no target (the leaves, `ball`, `ball_leaf`) |
+| `[unused]` | source bones with no target (the leaves, `ball_leaf`) |
 | `[source_rig]`, `[target_rig]` | the full bone lists, read from the files |
 
-UAL2 takes this map unchanged: its rig is UAL1's (above), so no second map is needed.
+UAL2 takes this map unchanged: its rig is UAL1's (above), so no second map is needed. UAL's toes, `ball_l` and
+`ball_r`, drive `Toe.L` and `Toe.R` (art #25). `ual_um_rigid.toml` is the same map with the toes unused and the toe
+bones at rest: the rigid shoes of art #20 and #24, which the review's `feet` step shows beside the toe bones. A
+library on another rig (Meshy's, once its skeleton is known) names its own map in the review settings:
+`[libraries.<key>]` `map` and `rigid_map`, files in `tools/blender/retarget_maps/` (checked to exist).
 
 Fingers map by anatomy, not by number: UAL `index_01..03` (phalanges) go to `Index2..4`, and `Index1` (the
 metacarpal) stays at rest; thumbs map 1:1. Hand close-ups confirmed curls bend the right way and pointing works.
@@ -112,6 +139,7 @@ Steps, or `all` in this order:
 | `inventory` | `inventory.json`: every pack file's actions (lengths, identical across files or not), the men against the women, UAL's clips in both files with root motion per clip |
 | `clips` | per body type and clip, on the unmodified donor character: measures (`metrics/<body>_c<n>.json`), a 12-frame strip with a front and a right-side row (`strips/<body>/<source>_<clip>.png`) and a looping 480x480 H.264 clip at 30 fps (`clips/<body>/...mp4`); `--jobs` Blender processes per body type |
 | `pairs` | for each `[[pairs]]` entry of `anim_review.toml`: its clips side by side (the pack clip and its UAL counterparts, or any clip keys: see "Sources, clip keys and layers"), a strip (front and side rows at the same fractions of each clip; each side cell framed on its own clip) and a looping MP4 (`pairs/<body>/<pack clip or name>.*`) |
+| `feet` | (art #25) for each `[[feet]]` row of the settings, each clip retargeted twice onto the same donor, with the library's `rigid_map` (rigid shoes) and its `map` (toe bones): a side close-up that follows the right shoe, 12 frames over one cycle (rigid on top), a looping side-by-side MP4 of whole cycles and both lanes' measures (`feet/<body>/<row>_<clip>.png`, `.mp4`, `<row>.json`) |
 | `rates` | locomotion at the game's speeds: each `[[rates]]` row (the game's walk 4.5 m/s, sprint 7.0 m/s, and since art #24 the walk with the package: UAL2's carry as an upper-body layer) plays its clips side by side on a **treadmill** (light stripes on the floor moving at the row's speed), each at the rate that keeps its feet on it: library clips by their root-motion speed (each library's `_RM` file, `UAL1_Standard_RM.glb` or `UAL2_Standard_RM.glb`, scaled to the body), pack clips by their feet's ground speed; `blend:A+B` is a blend of two UAL clips lined up on the left heel strike (cycle-synced) and weighted so that its stride over its cycle gives the speed. An MP4, a strip of 8 moments 0.1 s apart and `rates.json` (rate, cadence in steps/s, step length) per body type (`rates/<body>/`) |
 | `sheets` | review sheets: each clip's men and women strips stacked, three clips a sheet (`sheets/`) |
 | `table` | `metrics.json` (all measures) and `metrics.md` (a row per body type and clip) |
@@ -141,6 +169,7 @@ frame-change handler that poses the characters, so each character can loop its o
 | Forearm twist | The twist of the wrist against the lower arm about the bone axis, from rest (no twist bones: large values wrap the wrist) |
 | Finger curl | The mean rotation of the 12 phalanx joints per hand (min-max over the clip) and the largest single joint |
 | Root motion | Hips and root travel over the clip; in place under 5 cm |
+| Toe (art #25, JSON) | Three sole vertices per shoe tracked through the clip (under the foot pivot, under the ball, the tip), while the tip is within 1 cm of the floor: `front_pitch_at_20_deg_lift` (the mean pitch of the front of the shoe into the floor at a heel lift of 15 to 25 degrees: about the lift for a rigid shoe, near 0 for a bending one), `heel_lift_front_level_max_deg` (how far the heel rises while the front stays within 10 degrees of level), `bend_in_contact_max_deg`, `tip_lowest_cm`. The sole sets of the other measures include the toe bones |
 
 ### Sources, clip keys and layers (art #24)
 
@@ -175,3 +204,7 @@ selected rows in `rates/<body>/rates.json` and keeps the other rows of an earlie
 - In-place UAL jumps (`Jump_Start`, `Jump_Loop`) have no vertical root motion: their feet hang below the floor; the
   game's jump physics lifts the body. Judge them in the root-motion file or in game.
 - The single frozen frames of the pack's Idle and Walk look twisted; the motion does not (the engineer's note).
+- Add the toe bones before a character is placed or posed (`retarget_core.add_toes` right after `load_glb`): they are
+  made in edit mode on the rest pose, from the shoe's rest vertices.
+- The side view (`anim_render.VIEWS["side"]`) looks at the character's right side; a label meant to stay readable in a
+  side-view video goes at a lane's edge, not over the legs.

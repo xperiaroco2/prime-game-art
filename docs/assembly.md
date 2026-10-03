@@ -1,7 +1,8 @@
 # The Ultimate Modular assembler
 
 Characters are assembled from Quaternius' **Ultimate Modular Men and Women** packs (CC0; source records in
-`sources/quaternius_ultimate_modular_men.toml` and `_women.toml`): one 62-bone armature `CharacterArmature` with
+`sources/quaternius_ultimate_modular_men.toml` and `_women.toml`): one 62-bone armature `CharacterArmature` (ours
+gets two toe bones: 64, art #25) with
 five-finger chains and 24 actions, and per pack character four parts, `<Name>_Head`, `<Name>_Body` (top),
 `<Name>_Legs` or `_Pants` (bottom) and `<Name>_Feet` (shoes), with flat material colours and no textures. The engineer
 chose this base on xperiaroco2/prime-game#165 after the final character test
@@ -101,6 +102,7 @@ action the skeleton file's actions. Face-kit styles are checked inside Blender b
 | `um/facekit.py` | Our eyes, brows and mouths, built on the bald head's surface (the face kit task, art #21, owns its styles) |
 | `um/render.py` | Workbench, specular off; the fitted orthographic camera; labels; composing PNGs |
 | `um/assemble.py` | `build_character`, `pose_character`, the cross-gender test |
+| `um/toes.py` | (art #25) `add_toe_bones()`: `Toe.L` and `Toe.R` at the ball of the shoes, the shoes' fronts reweighted to them with a smooth blend; called by `build_character` after the parts are fitted, and by the retarget and the review for a pack original |
 | `um/blendfile.py` | Saving one clean `.blend` per character; inspecting a saved one |
 | `tools/blender/assemble_characters.py` | The entry script; `-- --inspect <file.blend> --json <out.json>` describes a saved file |
 
@@ -108,9 +110,11 @@ action the skeleton file's actions. Face-kit styles are checked inside Blender b
 
 `blend/<id>.blend` holds one scene named after the character and nothing else:
 
-- the armature `<id>_rig` (62 bones) and one mesh object per slot, `<id>_head`, `_hair`, `_top`, `_bottom`,
+- the armature `<id>_rig` (64 bones: the pack's 62 and `Toe.L`, `Toe.R`) and one mesh object per slot, `<id>_head`,
+  `_hair`, `_top`, `_bottom`,
   `_shoes`, `_eyes`, `_brows`, `_mouth` and the extras (`_moustache`), each parented to the armature with one
-  Armature modifier on it; pack parts keep their 62 vertex groups, the face parts one (`Head`, weight 1.0);
+  Armature modifier on it; pack parts keep their 62 vertex groups and gain the two toes' (64), the face parts one
+  (`Head`, weight 1.0);
 - the body type's 24 own actions under their original names (`CharacterArmature|Wave`, ...; the women's differ from
   the men's), with a fake user, none assigned, no NLA tracks; no `.001` copies and no other import's actions;
 - every pose bone at identity: the rest pose (the T-pose); the scene's frame range 0 to 40 covers the longest
@@ -128,11 +132,12 @@ multiplied by the same 100. The save checks itself: bone positions and deformed 
 Death f20 agree before and after within 0.1 mm (measured: 0.0027 mm), and each saved file is reopened and inspected.
 
 **What the export (art #18) applies: nothing.** Blender's glTF exporter with its defaults (`+Y up`, animation mode
-`ACTIONS`) writes 24 animations, one skin of 62 joints, one node per part, identity node transforms and positions in
+`ACTIONS`) writes 24 animations, one skin of 62 joints (64 since art #25; the toes carry no track in the pack's actions), one node per part, identity node transforms and positions in
 metres (checked once by hand on `w1_ivy.blend`: vertex y from -0.0005 to 1.8445 m). The animation names keep the
 pack's `CharacterArmature|` prefix; whether the game strips it is the export's and the contract's choice.
 
-`blend/<id>.json`, the sidecar: `body_type`, `units`, `fps` (24), the armature (object, bones, source),
+`blend/<id>.json`, the sidecar: `body_type`, `units`, `fps` (24), the armature (object, bones, source, and since art
+#25 `toe_bones`: each toe's head and tail, the shoe's length, the ball's distance from the foot pivot, its X axis),
 `transform_check_max_error_m`, bounds, `height_m`, `feet_z_m`, per part the object, triangles, vertices, vertex
 groups, source and materials with colours, `triangles_total`, the actions with their frame ranges, and `inspected`:
 what the reopened file holds, with `problems` (empty, or the command fails).

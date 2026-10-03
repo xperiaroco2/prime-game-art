@@ -203,6 +203,10 @@ contract v2's.
 
 ## Findings for later tasks
 
+- **Toe bones (art #25):** assembled characters have 64 bones since art #25 (`Toe.L`, `Toe.R`). The export and
+  `godot-check` pass unchanged (2026-10-03, m1_rex and w1_ivy: one skin of 64 joints, 64 binds per part, every check
+  ok); the 24 pack animations still hold 62 tracks each (1488 in all): the toes have no track and rest under the feet.
+
 - **Loop modes**: Godot imports all 24 animations with loop_mode NONE (the glTF names carry no `-loop` suffix): in the
   game the idles, Walk and Run would play once and stop. The game's import sets their loop mode (per-animation
   `settings/loop_mode` in `_subresources`) or the names get a loop suffix: the contract v2 decides.
