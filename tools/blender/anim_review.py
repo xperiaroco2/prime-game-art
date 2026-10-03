@@ -84,6 +84,7 @@ def retarget(a, char, names):
     before = set(bpy.data.objects)
     src = rc.load_glb(a.ual)
     rt = rc.Retargeter(rc.Rig(src["arm"]), rc.Rig(char["arm"]), bmap)
+    rt.set_soles(char["meshes"].values())
     out = {}
     for n in names:
         act, _ = rt.clip(src["actions"][n], "UAL|" + n, char["arm"])
@@ -243,7 +244,7 @@ def measure(char, clip, meas):
         clip.pose(char["arm"], clip.sampler.start + i)
         bpy.context.view_layer.update()
         frames.append(meas.frame())
-    return Measure.clip(frames, FPS, clip.loop)
+    return meas.clip(frames, FPS, clip.loop)
 
 
 def cmd_clips(a):

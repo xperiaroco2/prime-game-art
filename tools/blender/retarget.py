@@ -41,6 +41,7 @@ def main(argv):
         raise SystemExit(f"the rigs lack bones of the map: {missing}")
     rt = rc.Retargeter(rc.Rig(src["arm"]), rc.Rig(tgt["arm"]), bmap)
     rt.ik = not a.no_ik
+    rt.set_soles(tgt["meshes"].values())
     names = sorted(src["actions"]) if a.clips == "all" else a.clips.split(",")
     unknown = [n for n in names if n not in src["actions"]]
     if unknown:
@@ -49,6 +50,7 @@ def main(argv):
         "source": a.source, "target": a.target, "map": bmap["title"], "ik": rt.ik, "fps": rc.FPS,
         "hip_height_m": {"source": round(rt.src_hip, 4), "target": round(rt.tgt_hip, 4)},
         "translation_scale": round(rt.ratio, 4),
+        "soles": sorted(rt.soles),
         "rest_check": rt.rest_error(),
         "clips": {},
     }

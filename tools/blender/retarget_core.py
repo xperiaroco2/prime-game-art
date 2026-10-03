@@ -245,8 +245,39 @@ class Retargeter:
             if tgt.parent[n] in late:
                 late.add(n)
         self.order = [n for n in tgt.order if n not in late] + [n for n in tgt.order if n in late]
+        # each target foot's pivot, carried by the source foot: the pivot's rest position, scaled down to the source's
+        # size and expressed in the source foot's rest frame, so heel and toe roll transfer with the foot
+        self.foot_anchor = {}
+        for leg in bmap["legs"]:
+            foot, sf = leg["target"][2], leg["source_foot"]
+            pivot = tgt.world(tgt.rest[foot]).translation / self.ratio
+            self.foot_anchor[foot] = self.src_rest_w[sf].inverted() @ pivot
+        self.soles = {}
         self.ik = True
         self.miss_mm = 0.0  # the largest distance (mm) by which a leg fell short of its ankle goal since the reset
+
+    def set_soles(self, meshes) -> None:
+        """Reads each target foot's heel and toe from the meshes in the rest pose (the lowest vertices weighted to the
+        foot), so the toe of the rigid target foot can be kept out of the floor (the target has no toe bone)."""
+        tgt = self.tgt
+        for leg in self.map["legs"]:
+            foot = leg["target"][2]
+            pts = []
+            for obj in meshes:
+                group = obj.vertex_groups.get(foot)
+                if group is None:
+                    continue
+                for v in obj.data.vertices:
+                    best = max(v.groups, key=lambda g: g.weight, default=None)
+                    if best is not None and best.group == group.index:
+                        pts.append(obj.matrix_world @ v.co)
+            if not pts:
+                continue
+            low = min(p.z for p in pts)
+            sole = [p for p in pts if p.z < low + 0.015]
+            toe = min(sole, key=lambda p: p.y)  # the front is -Y
+            local = tgt.rest[foot].inverted() @ (tgt.Wi @ toe)
+            self.soles[foot] = {"toe_local": local, "floor_z": toe.z, "pivot_z": tgt.world(tgt.rest[foot]).translation.z}
 
     def solve(self, src_pose: dict) -> tuple[dict, dict]:
         """Target armature-space poses and basis matrices for one source pose (armature space of the source)."""
@@ -278,8 +309,7 @@ class Retargeter:
         upper, lower, foot = leg["target"]
         tgt = self.tgt
         sf = leg["source_foot"]
-        goal_w = tgt.world(tgt.rest[foot]).translation + (src_foot_w.translation - self.src_rest_w[sf].translation) * self.ratio
-        goal = tgt.Wi @ goal_w
+        goal = tgt.Wi @ ((src_foot_w @ self.foot_anchor[foot]) * self.ratio)
         H, K = P[upper].translation.copy(), P[lower].translation.copy()
         A = (P[lower] @ self.follow_off[foot]).translation
         L1, L2 = (K - H).length, (A - K).length
@@ -301,6 +331,32 @@ class Retargeter:
         q2 = shin.rotation_difference(A2 - K2)
         P[lower] = Matrix.Translation(K2) @ (q2 @ q1 @ rot(P[lower])).to_matrix().to_4x4()
         P[foot] = Matrix.Translation((P[lower] @ self.follow_off[foot]).translation) @ rot(P[foot]).to_matrix().to_4x4()
+        if foot in self.soles:
+            self._lift_toe(P, foot)
+
+    def _lift_toe(self, P: dict, foot: str, full: float = 0.20, fade: float = 0.10) -> None:
+        """Pitches the foot about its pivot until its toe is no lower than the rest sole, while the pivot is on or
+        above the floor and near it (fully up to `full` m above its rest height, fading out over the next `fade` m):
+        the source rolls over its toes, the rigid target foot would push its toe into the floor instead. A pivot below
+        the floor (an in-place jump without its rise) is left alone."""
+        tgt, sole = self.tgt, self.soles[foot]
+        pivot = tgt.W @ P[foot].translation
+        toe = tgt.W @ (P[foot] @ sole["toe_local"])
+        if toe.z >= sole["floor_z"] or pivot.z < sole["pivot_z"] - 0.02:
+            return
+        w = min(max(1.0 - (pivot.z - sole["pivot_z"] - full) / fade, 0.0), 1.0)
+        r = toe - pivot
+        length = r.length
+        if w <= 0.0 or length < 1e-6:
+            return
+        now = math.asin(max(-1.0, min(1.0, r.z / length)))
+        want = math.asin(max(-1.0, min(1.0, (sole["floor_z"] - pivot.z) / length)))
+        axis = r.cross(Vector((0.0, 0.0, 1.0)))
+        if axis.length < 1e-9:
+            return
+        lift = Quaternion(axis.normalized(), (want - now) * w)
+        q_arm = self.tgt_Wrot_inv @ lift @ tgt.Wrot @ rot(P[foot])
+        P[foot] = Matrix.Translation(P[foot].translation) @ q_arm.to_matrix().to_4x4()
 
     def rest_error(self) -> dict:
         """Retargets the source rest pose: the largest bone-head offset (mm, world) and rotation (degrees) from the
