@@ -8,17 +8,17 @@ from __future__ import annotations
 
 import math
 
+import bmesh
 import bpy
 import numpy as np
 from mathutils import Vector
-from mathutils.bvhtree import BVHTree
 
 import anim_math as am
 from retarget_core import rot
 
 FINGERS = ("Index", "Middle", "Ring", "Pinky")
-TORSO = {"Body", "Hips", "Abdomen", "Torso", "Chest", "Neck", "Head"}
-INSIDE_REACH_M = 0.15  # a hand point counts only against torso surface this close (the nearest-normal sign test)
+TORSO = {"Body", "Hips", "Abdomen", "Torso", "Chest"}
+HEAD = {"Head"}
 
 
 def _dominant(obj) -> list[str | None]:
@@ -31,6 +31,32 @@ def _dominant(obj) -> list[str | None]:
     return out
 
 
+def _hull_depth(body: np.ndarray, points: np.ndarray) -> float:
+    """How deep (m) the deepest of points lies inside the convex hull of body (0 when none is inside)."""
+    if len(body) < 4 or not len(points):
+        return 0.0
+    bm = bmesh.new()
+    for p in body:
+        bm.verts.new(p)
+    res = bmesh.ops.convex_hull(bm, input=bm.verts, use_existing_faces=False)
+    centre = body.mean(axis=0)
+    normals, offsets = [], []
+    for f in (g for g in res["geom"] if isinstance(g, bmesh.types.BMFace)):
+        f.normal_update()
+        n, c = np.array(f.normal), np.array(f.calc_center_median())
+        if np.dot(c - centre, n) < 0:
+            n = -n
+        normals.append(n)
+        offsets.append(np.dot(n, c))
+    bm.free()
+    if not normals:
+        return 0.0
+    signed = points @ np.array(normals).T - np.array(offsets)  # > 0 outside a face's plane
+    worst = signed.max(axis=1)
+    inside = worst < 0
+    return float(-worst[inside].min()) if inside.any() else 0.0
+
+
 class Measure:
     def __init__(self, char: dict):
         self.char, self.arm = char, char["arm"]
@@ -41,15 +67,16 @@ class Measure:
         Wr = rot(W)
         hand = {f"{f}{k}.{s}" for f in FINGERS for k in (1, 2, 3, 4) for s in "LR"}
         hand |= {f"Thumb{k}.{s}" for k in (1, 2, 3) for s in "LR"} | {"Wrist.L", "Wrist.R"}
-        self.hand_idx, self.torso_faces = {}, {}
+        # vertex sets by the bone that weighs most: the hands, the torso and the head (tested as convex hulls), and
+        # each shoe's sole
+        self.sets = {"hand": {}, "torso": {}, "head": {}, "Foot.L": {}, "Foot.R": {}}
         for obj in self.meshes:
             dom = _dominant(obj)
-            idx = [i for i, g in enumerate(dom) if g in hand]
-            if idx:
-                self.hand_idx[obj.name] = np.array(idx)
-            faces = [tuple(p.vertices) for p in obj.data.polygons if all(dom[i] in TORSO for i in p.vertices)]
-            if faces:
-                self.torso_faces[obj.name] = faces
+            for key, bones in (("hand", hand), ("torso", TORSO), ("head", HEAD), ("Foot.L", {"Foot.L"}),
+                               ("Foot.R", {"Foot.R"})):
+                idx = [i for i, g in enumerate(dom) if g in bones]
+                if idx:
+                    self.sets[key][obj.name] = np.array(idx)
         # hinge axes in each parent bone's rest frame: knees bend about the world X axis (the shin goes back), the
         # left elbow about -Z and the right about +Z (the forearm comes forward from the T-pose)
         def local_axis(bone, axis):
@@ -71,6 +98,8 @@ class Measure:
             s: rot(self.rest[f"LowerArm.{s}"]).inverted() @ rot(self.rest[f"Wrist.{s}"]) for s in "LR"
         }
         self._Wr = Wr
+        rest = {o.name: self._world_points(o) for o in self.meshes}  # the floor: the soles' lowest rest height
+        self.floor = float(min(self._gather(rest, f"Foot.{s}")[:, 2].min() for s in "LR"))
 
     def _world_points(self, obj) -> np.ndarray:
         dg = bpy.context.evaluated_depsgraph_get()
@@ -106,44 +135,35 @@ class Measure:
         if with_mesh:
             pts = {o.name: self._world_points(o) for o in self.meshes}
             rec["lowest_z"] = float(min(p[:, 2].min() for p in pts.values()))
-            rec["hand_depth"] = self._hand_depth(pts)
+            hands = self._gather(pts, "hand")
+            rec["hand_depth"] = _hull_depth(self._gather(pts, "torso"), hands)
+            rec["hand_head_depth"] = _hull_depth(self._gather(pts, "head"), hands)
+            rec["soles"] = {s: self._gather(pts, f"Foot.{s}") for s in "LR"}
         return rec
 
-    def _hand_depth(self, pts: dict) -> float:
-        """The deepest hand vertex inside the torso and head surface (m; 0 when none is inside)."""
-        verts, polys = [], []
-        for name, faces in self.torso_faces.items():
-            off = len(verts)
-            verts += [Vector(p) for p in pts[name]]
-            polys += [tuple(i + off for i in f) for f in faces]
-        if not polys:
-            return 0.0
-        bvh = BVHTree.FromPolygons(verts, polys)
-        deepest = 0.0
-        for name, idx in self.hand_idx.items():
-            for p in pts[name][idx]:
-                v = Vector(p)
-                loc, normal, _, dist = bvh.find_nearest(v, INSIDE_REACH_M)
-                if loc is not None and (v - loc).dot(normal) < 0:
-                    deepest = max(deepest, dist)
-        return deepest
+    def _gather(self, pts: dict, key: str) -> np.ndarray:
+        parts = [pts[name][idx] for name, idx in self.sets[key].items()]
+        return np.concatenate(parts) if parts else np.zeros((0, 3))
 
-    @staticmethod
-    def clip(frames: list[dict], fps: float, loop: bool) -> dict:
+    def clip(self, frames: list[dict], fps: float, loop: bool) -> dict:
         n = len(frames)
         seconds = (n - 1) / fps
         steps = [max(am.quat_angle(frames[i]["local"][b], frames[i + 1]["local"][b]) for b in frames[i]["local"])
                  for i in range(n - 1)]
         out = {"frames": n - 1, "seconds": round(seconds, 3), "loop": loop}
         out["foot_sliding"] = am.foot_sliding({s: [f["feet"][s] for f in frames] for s in "LR"}, fps)
+        if "soles" in frames[0]:
+            out["sole_sliding"] = am.sole_sliding({s: _sole_series([f["soles"][s] for f in frames], fps, loop)
+                                                   for s in "LR"}, self.floor)
         lows = [f["lowest_z"] for f in frames if "lowest_z" in f]
         if lows:
             out["lowest_vertex_cm"] = {"min": round(100 * min(lows), 1), "max": round(100 * max(lows), 1),
                                        "frames_below_1cm": sum(z < -0.01 for z in lows)}
-        depths = [f["hand_depth"] for f in frames if "hand_depth" in f]
-        if depths:
-            out["hands_in_torso"] = {"max_depth_cm": round(100 * max(depths), 1),
-                                     "frames_over_1cm": sum(d > 0.01 for d in depths)}
+        for key, name in (("hand_depth", "hands_in_torso"), ("hand_head_depth", "hands_in_head")):
+            depths = [f[key] for f in frames if key in f]
+            if depths:
+                out[name] = {"max_depth_cm": round(100 * max(depths), 1),
+                             "frames_over_1cm": sum(d > 0.01 for d in depths)}
         out["loop_seam"] = am.loop_seam(frames[0]["local"], frames[-1]["local"], steps)
         out["hyperextension_deg"] = {k: am.hyperextension([f[k] for f in frames])
                                      for k in ("knee.L", "knee.R", "elbow.L", "elbow.R")}
@@ -151,6 +171,7 @@ class Measure:
         out["forearm_twist_deg"] = {s: round(max(abs(f[f"twist.{s}"]) for f in frames), 1) for s in "LR"}
         out["finger_curl_deg"] = {s: am.summary([f[f"curl.{s}"] for f in frames]) for s in "LR"}
         out["finger_joint_max_deg"] = {s: round(max(f[f"curl_max.{s}"] for f in frames), 1) for s in "LR"}
+        slide = out["foot_sliding"]
         h0, h1 = frames[0]["hips"], frames[-1]["hips"]
         r0, r1 = frames[0]["root"], frames[-1]["root"]
         travel = math.hypot(h1[0] - h0[0], h1[1] - h0[1])
@@ -158,7 +179,25 @@ class Measure:
             "hips_travel_cm": round(100 * travel, 1),
             "root_travel_cm": round(100 * math.hypot(r1[0] - r0[0], r1[1] - r0[1]), 1),
             "in_place": travel < 0.05,
-            "ground_speed_m_s": (round(out["foot_sliding"]["ground_speed_cm_s"] / 100, 2)
-                                 if out["foot_sliding"]["ground_speed_cm_s"] is not None else None),
+            "ground_speed_m_s": (round(slide["ground_speed_cm_s"] / 100, 2)
+                                 if slide["ground_speed_cm_s"] is not None else None),
         }
         return out
+
+
+def _sole_series(soles: list, fps: float, loop: bool) -> list:
+    """Per frame: the height of the sole's lowest vertex and that vertex's horizontal velocity (central differences;
+    a loop wraps around, its last frame being its first again; the ends of other clips use one side)."""
+    n = len(soles)
+    last = n - 1 if loop and n > 2 else n  # a loop's final frame repeats its first
+    out = []
+    for i in range(last):
+        j = int(np.argmin(soles[i][:, 2]))
+        if loop and n > 2:
+            prev, nxt, span = soles[(i - 1) % last][j], soles[(i + 1) % last][j], 2
+        else:
+            a, b = max(i - 1, 0), min(i + 1, n - 1)
+            prev, nxt, span = soles[a][j], soles[b][j], max(b - a, 1)
+        v = (nxt - prev) * fps / span
+        out.append((float(soles[i][j, 2]), (float(v[0]), float(v[1]))))
+    return out

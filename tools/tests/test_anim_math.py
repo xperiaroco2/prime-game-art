@@ -56,6 +56,17 @@ class FootSlidingTest(unittest.TestCase):
         self.assertIsNone(r["slide_max_cm_s"])
 
 
+class SoleSlidingTest(unittest.TestCase):
+    def test_the_lowest_sole_point_sets_contact_and_speed(self) -> None:
+        planted = [(0.0, (0.0, -1.0))] * 10 + [(0.1, (0.0, 3.0))] * 10  # on a 1 m/s treadmill, then swinging
+        skating = [(0.0, (0.0, -1.0))] * 5 + [(0.0, (0.0, -1.5))] * 5 + [(0.1, (0.0, 3.0))] * 10
+        r = am.sole_sliding({"L": planted, "R": planted})
+        self.assertEqual(r["contact_frames"], 20)
+        self.assertEqual((r["ground_speed_cm_s"], r["slide_max_cm_s"]), (100.0, 0.0))
+        r = am.sole_sliding({"L": planted, "R": skating})
+        self.assertEqual(r["slide_max_cm_s"], 50.0)
+
+
 class AngleTest(unittest.TestCase):
     def test_quat_angle(self) -> None:
         q = about((1, 0, 0), 30)
@@ -71,8 +82,11 @@ class AngleTest(unittest.TestCase):
         down, back = (0.0, 0.0, -1.0), (0.0, math.sin(0.5), -math.cos(0.5))
         self.assertAlmostEqual(am.signed_angle(down, back, (1.0, 0.0, 0.0)), math.degrees(0.5), places=6)
         self.assertAlmostEqual(am.signed_angle(back, down, (1.0, 0.0, 0.0)), -math.degrees(0.5), places=6)
+        side = (math.sin(0.5), 0.0, -math.cos(0.5))  # a bend out of the hinge plane does not count
+        self.assertAlmostEqual(am.signed_angle(down, side, (1.0, 0.0, 0.0)), 0.0, places=6)
         self.assertEqual(am.hyperextension([30.0, 2.0, -7.25]), 7.2)
         self.assertEqual(am.hyperextension([5.0, 40.0]), 0.0)
+        self.assertEqual(am.hyperextension([150.0, -170.0, -3.0]), 3.0)  # -170: a folded elbow that wrapped
 
     def test_loop_seam(self) -> None:
         first = {"a": (1.0, 0.0, 0.0, 0.0)}

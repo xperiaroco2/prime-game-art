@@ -78,7 +78,7 @@ def _fmt(value, digits: int = 1) -> str:
 
 
 COLUMNS = (
-    "| Body | Source | Clip | s | Loop | Ground m/s | Slide mean/max cm/s | Lowest cm | Hands in body cm (frames) "
+    "| Body | Source | Clip | s | Loop | Ground m/s | Foot slide mean/max cm/s | Lowest cm | Hands in torso/head cm "
     "| Seam deg (x step) | Knee/elbow past straight deg | Forearm twist deg | Finger curl deg |"
 )
 
@@ -89,7 +89,8 @@ def table(merged: dict, verdicts: dict | None = None) -> str:
     lines = [COLUMNS + (" Verdict |" if verdicts else ""), "|" + "---|" * (13 + (1 if verdicts else 0))]
     for body in BODIES:
         for key, m in merged.get(body, {}).items():
-            fs, low, hands = m["foot_sliding"], m.get("lowest_vertex_cm", {}), m.get("hands_in_torso", {})
+            fs, low = m["foot_sliding"], m.get("lowest_vertex_cm", {})
+            hands, head = m.get("hands_in_torso", {}), m.get("hands_in_head", {})
             seam, hyp = m["loop_seam"], m["hyperextension_deg"]
             curl = m["finger_curl_deg"]
             ratio = f" (x{_fmt(seam['seam_ratio'])})" if m["loop"] and seam["seam_ratio"] is not None else ""
@@ -98,7 +99,7 @@ def table(merged: dict, verdicts: dict | None = None) -> str:
                 _fmt(m["root_motion"]["ground_speed_m_s"], 2),
                 f"{_fmt(fs['slide_mean_cm_s'])} / {_fmt(fs['slide_max_cm_s'])}",
                 _fmt(low.get("min")),
-                f"{_fmt(hands.get('max_depth_cm'))} ({hands.get('frames_over_1cm', '-')})",
+                f"{_fmt(hands.get('max_depth_cm'))} / {_fmt(head.get('max_depth_cm'))}",
                 f"{_fmt(seam['seam_deg'])}{ratio}",
                 f"{_fmt(max(hyp['knee.L'], hyp['knee.R']))} / {_fmt(max(hyp['elbow.L'], hyp['elbow.R']))}",
                 _fmt(max(m["forearm_twist_deg"].values())),

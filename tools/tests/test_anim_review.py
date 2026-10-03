@@ -19,6 +19,7 @@ def measures(source: str, clip: str, loop: bool) -> dict:
         "source": source, "clip": clip, "seconds": 1.333, "loop": loop,
         "foot_sliding": {"slide_mean_cm_s": 5.5, "slide_max_cm_s": 55.3},
         "lowest_vertex_cm": {"min": -0.4}, "hands_in_torso": {"max_depth_cm": 1.2, "frames_over_1cm": 3},
+        "hands_in_head": {"max_depth_cm": 0.0, "frames_over_1cm": 0},
         "loop_seam": {"seam_deg": 0.0, "seam_ratio": 0.0},
         "hyperextension_deg": {"knee.L": 0.0, "knee.R": 2.5, "elbow.L": 0.0, "elbow.R": 0.0},
         "forearm_twist_deg": {"L": 12.0, "R": 30.5},
@@ -56,7 +57,7 @@ class HelperTest(unittest.TestCase):
         text = _anim.table(merged, {"men:pack:Walk": "good"})
         lines = text.splitlines()
         self.assertEqual(len(lines), 4)
-        self.assertIn("| men | pack | Walk | 1.33 | yes | 0.98 | 5.5 / 55.3 | -0.4 | 1.2 (3) | 0.0 (x0.0) | 2.5 / 0.0 "
+        self.assertIn("| men | pack | Walk | 1.33 | yes | 0.98 | 5.5 / 55.3 | -0.4 | 1.2 / 0.0 | 0.0 (x0.0) | 2.5 / 0.0 "
                       "| 30.5 | 5.0-25.0 | good |", text)
         self.assertTrue(all(line.count("|") == lines[0].count("|") for line in lines))
 

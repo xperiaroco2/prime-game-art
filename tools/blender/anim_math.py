@@ -16,10 +16,6 @@ def _sub(a, b):
     return tuple(x - y for x, y in zip(a, b))
 
 
-def _norm(a) -> float:
-    return math.sqrt(sum(x * x for x in a))
-
-
 def _dot(a, b) -> float:
     return sum(x * y for x, y in zip(a, b))
 
@@ -28,27 +24,10 @@ def _cross(a, b):
     return (a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0])
 
 
-def foot_sliding(feet: dict, fps: float, window: float = CONTACT_WINDOW_M) -> dict:
-    """feet: {name: [(x, y, z) per frame]}, one cycle sampled at fps. A foot is in contact while its height is within
-    `window` of its own lowest height in the clip. Returns, in cm/s: the raw horizontal speed in contact (mean, max),
-    the ground speed (the median contact velocity of both feet: the speed of the treadmill an in-place clip walks on,
-    near zero for a clip that stands still) and the sliding (the contact velocity minus the ground velocity: mean,
-    max). Velocities are central differences over frames that are in contact on both sides."""
-    vels, per_foot = [], {}
-    for name, pts in feet.items():
-        low = min(p[2] for p in pts)
-        contact = [p[2] <= low + window for p in pts]
-        v = []
-        for i in range(1, len(pts) - 1):
-            if contact[i - 1] and contact[i] and contact[i + 1]:
-                d = _sub(pts[i + 1], pts[i - 1])
-                v.append((d[0] * fps / 2, d[1] * fps / 2))
-        per_foot[name] = {"contact_frames": sum(contact), "v": v}
-        vels += v
-    contact_frames = sum(f["contact_frames"] for f in per_foot.values())
+def _slide_stats(vels: list, contact_frames: int) -> dict:
     if not vels:
-        return {"contact_frames": contact_frames, "raw_mean_cm_s": None, "raw_max_cm_s": None, "ground_speed_cm_s": None,
-                "slide_mean_cm_s": None, "slide_max_cm_s": None}
+        return {"contact_frames": contact_frames, "raw_mean_cm_s": None, "raw_max_cm_s": None,
+                "ground_speed_cm_s": None, "slide_mean_cm_s": None, "slide_max_cm_s": None}
     ground = (median(v[0] for v in vels), median(v[1] for v in vels))
     raw = [math.hypot(*v) for v in vels]
     slide = [math.hypot(v[0] - ground[0], v[1] - ground[1]) for v in vels]
@@ -60,6 +39,38 @@ def foot_sliding(feet: dict, fps: float, window: float = CONTACT_WINDOW_M) -> di
         "slide_mean_cm_s": round(100 * sum(slide) / len(slide), 1),
         "slide_max_cm_s": round(100 * max(slide), 1),
     }
+
+
+def foot_sliding(feet: dict, fps: float, window: float = CONTACT_WINDOW_M) -> dict:
+    """feet: {name: [(x, y, z) per frame]}: a foot bone's head, one cycle sampled at fps. A foot is in contact while
+    its height is within `window` of its own lowest height in the clip. Returns, in cm/s: the raw horizontal speed in
+    contact (mean, max), the ground speed (the median contact velocity of both feet: the speed of the treadmill an
+    in-place clip walks on, near zero for a clip that stands still) and the sliding (the contact velocity minus the
+    ground velocity: mean, max). Velocities are central differences over frames in contact on both sides."""
+    vels, contact_frames = [], 0
+    for pts in feet.values():
+        low = min(p[2] for p in pts)
+        contact = [p[2] <= low + window for p in pts]
+        contact_frames += sum(contact)
+        for i in range(1, len(pts) - 1):
+            if contact[i - 1] and contact[i] and contact[i + 1]:
+                d = _sub(pts[i + 1], pts[i - 1])
+                vels.append((d[0] * fps / 2, d[1] * fps / 2))
+    return _slide_stats(vels, contact_frames)
+
+
+def sole_sliding(feet: dict, floor: float = 0.0, window: float = CONTACT_WINDOW_M) -> dict:
+    """feet: {name: [(z, (vx, vy)) per frame]}: the height of the foot's lowest sole vertex and that same vertex's
+    horizontal velocity (m/s). The sole is in contact while its lowest point is within `window` of the floor (the
+    sole's rest height) or below it; it follows heel and toe roll, which a single foot bone does not, and it counts a
+    foot dragged low along the floor as sliding. Same results as foot_sliding."""
+    vels, contact_frames = [], 0
+    for series in feet.values():
+        for z, v in series:
+            if z <= floor + window:
+                contact_frames += 1
+                vels.append(v)
+    return _slide_stats(vels, contact_frames)
 
 
 def quat_angle(q1, q2) -> float:
@@ -79,14 +90,17 @@ def twist_angle(q, axis) -> float:
 
 
 def signed_angle(a, b, axis) -> float:
-    """The angle (degrees) that turns direction a into direction b, signed by the right hand about axis."""
-    ang = math.degrees(math.atan2(_norm(_cross(a, b)), _dot(a, b)))
-    return ang if _dot(_cross(a, b), axis) >= 0 else -ang
+    """The angle (degrees) that turns direction a into direction b about the unit axis, signed by the right hand: the
+    bend in the plane normal to axis (a bend in another plane counts by its share in this one)."""
+    return math.degrees(math.atan2(_dot(_cross(a, b), axis), _dot(a, b)))
 
 
 def hyperextension(angles: list[float]) -> float:
-    """Degrees bent past straight: angles are signed joint flexions (positive = the normal bend)."""
-    return round(max(0.0, -min(angles)), 1) if angles else 0.0
+    """Degrees bent past straight: angles are signed joint flexions (positive = the normal bend). An angle beyond -90
+    degrees is a deep normal bend that wrapped past 180 (a folded elbow measured about a tilted hinge axis), not a
+    joint bent backwards, so it is left out."""
+    back = [a for a in angles if -90.0 < a < 0.0]
+    return round(-min(back), 1) if back else 0.0
 
 
 def loop_seam(first: dict, last: dict, steps: list[float]) -> dict:
