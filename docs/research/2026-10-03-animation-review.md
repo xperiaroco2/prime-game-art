@@ -409,8 +409,12 @@ tools/run.py retarget --body men --floor
 tools/run.py retarget --body women --floor
 tools/run.py anim-review all --out D:/prime-art-raw/review/stage1/20 --jobs 4
 ```
-The full review makes 134 measured clips (strips and MP4s), 28 side-by-side pairs, 4 treadmill rows (2 per body
-type) and 23 review sheets with 8 Blender processes. UAL2 (art #24):
+In art #20 the full review made 134 measured clips (strips and MP4s), 28 side-by-side pairs, 4 treadmill rows (2 per
+body type) and 23 review sheets with 8 Blender processes; `stage1/20/` is that snapshot. Since art #24 a full run also
+takes UAL2 (after `retarget --library ual2` for both body types): 222 measured clips (111 per body type, the layered
+carry idle included), 48 pairs, 6 treadmill rows and 37 sheets. `--sources pack,ual` does not give art #20's set back,
+because the UAL2 pairs, the carry rows and the carry idle also play pack or UAL1 clips; `pairs --only` with art #20's
+pair names (the pack clip names) and `clips --clips` with its keys do. UAL2 alone (art #24):
 ```
 tools/run.py retarget --library ual2 --body men --floor
 tools/run.py retarget --library ual2 --body women --floor
