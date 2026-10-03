@@ -21,6 +21,9 @@
 # text to motion prime 10: 59 of the 60 approved. Run the man's rig alone first and look at it before the rest:
 #   tools/run.py meshy run 2026-10-b4-animations man-rig
 #   tools/run.py meshy run 2026-10-b4-animations
+#
+# Run on 2026-10-03 (18:57 to 19:00 UTC) by the art manager after the engineer's yes in chat: 59 credits, balance
+# 374 -> 315; task ids and files in docs/meshy.md ("Batch 4") and raw:2026-10-b4-animations/<item>/generation.json.
 
 id = "2026-10-b4-animations"
 purpose = "Meshy's rig, library actions and text to motion on two assembled characters, against UAL with our toe bones (art #25)."
