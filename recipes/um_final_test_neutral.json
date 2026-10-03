@@ -1,0 +1,15 @@
+{
+ "extends": "um_final_test.json",
+ "description": "The final test's four characters in a neutral pose (straight legs, arms lowered 70 degrees from the T-pose, fingers straight): the check that the assembly itself is straight (final-character-test/recipes_neutral.json with assemble_neutral.py).",
+ "modes": [
+  "chars",
+  "lineup"
+ ],
+ "every_character": {
+  "pose": {
+   "neutral": {
+    "down_deg": 70.0
+   }
+  }
+ }
+}

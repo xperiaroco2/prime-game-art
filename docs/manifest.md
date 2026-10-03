@@ -82,10 +82,48 @@ Unknown keys are refused, so a typo cannot hide a missing field.
 Sets are saved presets of pieces, not assets, so they have no manifest. The slot names follow the character contract
 (`contract/`, issue #4); if the contract renames a slot, `tools/runner/commands/_manifest.py` follows it.
 
+## Source records
+
+A pack or library that assets are made from (a download, not an asset itself) has a source record,
+`sources/<id>.toml`: its page, its licence and every raw file it brought, hashed. An asset made from it names the
+same raw files in its own manifest. `manifest-check` validates every source record beside the manifests.
+
+```toml
+id = "quaternius_ultimate_modular_men"   # = the file name without .toml
+title = "Ultimate Modular Men Pack"
+author = "Quaternius"
+url = "https://quaternius.com/packs/ultimatemodularcharacters.html"
+licence = "CC0-1.0"
+licence_url = "https://creativecommons.org/publicdomain/zero/1.0/"
+public_repo_ok = true
+ai_generated = false
+downloaded_at = 2026-10-03
+notes = "..."                              # optional
+
+[[raw]]
+file = "refs/Ultimate Modular Men Pack-glb.zip"
+sha256 = "<64 lowercase hex digits>"
+
+[[raw]]
+file = "refs/Ultimate_Modular_Men_Pack/Adventurer.glb"
+sha256 = "<64 lowercase hex digits>"
+```
+
+| Field | Rule |
+|---|---|
+| `id` | Lowercase letters, digits and underscores; equal to the file name |
+| `title`, `author` | Non-empty strings: the pack's name and its maker |
+| `url` | The http(s) page it was downloaded from (the official page, not a mirror) |
+| `licence`, `licence_url`, `credit`, `public_repo_ok`, `ai_generated` | As for assets (above); `credit` is required for `CC-BY-4.0` |
+| `downloaded_at` | A TOML date or date-time |
+| `notes` | Optional string |
+| `[[raw]]` | One or more, as for assets: the downloaded archive and every file unpacked from it that is used, each listed once |
+
 ## Commands
 
-- `tools/run.py manifest-check`: every manifest under `assets/`, and every `assets/<kind>/<id>/` folder without one.
-- `tools/run.py manifest-check --hashes`: also re-hashes each `[[raw]]` file in the raw folder (`ART_RAW_DIR`, default
-  `D:/prime-art-raw`). Only on the engineer's PC, where the raw folder exists.
+- `tools/run.py manifest-check`: every manifest under `assets/`, every `assets/<kind>/<id>/` folder without one, and
+  every source record in `sources/`.
+- `tools/run.py manifest-check --hashes`: also re-hashes each `[[raw]]` file of the manifests and source records in the
+  raw folder (`ART_RAW_DIR`, default `D:/prime-art-raw`). Only on the engineer's PC, where the raw folder exists.
 - `tools/run.py manifest-check --root <dir>`: checks another tree; the tests use the fixtures in
   `tools/tests/fixtures/manifest/` (`pass` and `fail`).

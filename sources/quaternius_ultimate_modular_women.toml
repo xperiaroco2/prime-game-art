@@ -1,0 +1,57 @@
+id = "quaternius_ultimate_modular_women"
+title = "Ultimate Modular Women Pack"
+author = "Quaternius"
+url = "https://quaternius.com/packs/ultimatemodularwomen.html"
+licence = "CC0-1.0"
+licence_url = "https://creativecommons.org/publicdomain/zero/1.0/"
+public_repo_ok = true
+ai_generated = false
+downloaded_at = 2026-10-03
+notes = """The glTF download of the pack page (10 characters, 24 animations, one 62-bone armature "CharacterArmature"; each
+character is four parts: Head, Body (top), Legs or Pants (bottom), Feet (shoes)). The zip is kept as downloaded and its
+GLBs unpacked beside it, byte-identical to the zip entries (dated 2022-07-15). The base of the characters
+(xperiaroco2/prime-game#165); the assembler is tools/blender/um/ (docs/assembly.md)."""
+
+[[raw]]
+file = "refs/Ultimate Modular Women Pack-glb.zip"
+sha256 = "65392a7e7dbf1f109be700544731ffece2e002eb52b0e18b37e076f78edd404f"
+
+[[raw]]
+file = "refs/Ultimate_Modular_Women_Pack/Adventurer.glb"
+sha256 = "38e4e6429d8af5849bb23e9585266f8c17dfe3e987bda89dec58f606aaedcf31"
+
+[[raw]]
+file = "refs/Ultimate_Modular_Women_Pack/Animated Woman-nIItLV9nxS.glb"
+sha256 = "a6522fe53d15de21130a957d1bf2b8a9a58d4e4e9a12af646645b667a9bb2d17"
+
+[[raw]]
+file = "refs/Ultimate_Modular_Women_Pack/Animated Woman.glb"
+sha256 = "a2212729826b718e59e698211ed3951c22459b48733b1ee6a24fac0abf74dca8"
+
+[[raw]]
+file = "refs/Ultimate_Modular_Women_Pack/Medieval.glb"
+sha256 = "703d20f529f7bc46763c4abc59db7df636d1a018e74e348c53341b4a1083608b"
+
+[[raw]]
+file = "refs/Ultimate_Modular_Women_Pack/Punk.glb"
+sha256 = "77cbb6838bf207fc948848ddb389ea43d4bb30c52ec62c5a2fc84bbf35c88c52"
+
+[[raw]]
+file = "refs/Ultimate_Modular_Women_Pack/Sci Fi Character.glb"
+sha256 = "6f8680e5c9afe2c23a30ca093a97601e2a08715f7fe13ab1bb94600031687092"
+
+[[raw]]
+file = "refs/Ultimate_Modular_Women_Pack/Soldier.glb"
+sha256 = "8df8a98f513dd2236789992f575dbab9552a724e6dd9ce9d2e061690eccfa439"
+
+[[raw]]
+file = "refs/Ultimate_Modular_Women_Pack/Suit.glb"
+sha256 = "12aece21fecd08fb079d2fa390faa40c705e26ea8f779b5005b8bf6cbe501837"
+
+[[raw]]
+file = "refs/Ultimate_Modular_Women_Pack/Witch.glb"
+sha256 = "173aba7ebb1cda1252d2e96e1310dd90248746a9cc167936be2d5f289527be39"
+
+[[raw]]
+file = "refs/Ultimate_Modular_Women_Pack/Worker.glb"
+sha256 = "078e459440ae30ce6aa186f5fc1a5db075f308387c34eec4ada8c8f538ae2646"
