@@ -56,11 +56,9 @@ def export_one(blend: Path, out: Path) -> bool:
                   f"{len(summary['materials'])} materials; {glb.stat().st_size / 1e6:.2f} MB")
     report = _export.validate(glb, report_path)
     found = _export.issues(report)
-    counts = report.get("issues", {})
-    line = (f"glTF-Validator {report.get('validatorVersion', '?')}: {counts.get('numErrors', '?')} errors, "
-            f"{counts.get('numWarnings', '?')} warnings, {counts.get('numInfos', '?')} infos, {counts.get('numHints', '?')} hints "
-            f"-> {report_path.as_posix()}")
-    if counts.get("numErrors", 1):
+    passed, line = _export.verdict(report)
+    line += f" -> {report_path.as_posix()}"
+    if not passed:
         common.bad(line)
         for message in found["error"][:20]:
             common.say(f"        {message}")

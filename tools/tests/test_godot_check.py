@@ -135,6 +135,13 @@ class LoopModesTest(unittest.TestCase):
         self.assertIn("one frame longer than their keys: Idle", check["detail"])
 
 
+class RefusalTest(unittest.TestCase):
+    def test_a_missing_glb_is_refused(self) -> None:
+        code, out = fx.run_cli("godot-check", "no/such.glb")
+        self.assertEqual(code, 1)
+        self.assertIn("no GLB no/such.glb", out)
+
+
 class GodotHelpersTest(unittest.TestCase):
     def test_noteworthy_lines_keep_where_they_happened(self) -> None:
         output = "\x1b[1;31mERROR:\x1b[0m bad thing\n   at: f (x.cpp:1)\nplain\nWARNING: odd\n[ 50% ] import\n"
@@ -202,10 +209,6 @@ class GodotCheckTest(unittest.TestCase):
                 self.assertEqual(len(report["animations"]), 24)
                 self.assertEqual(len(report["parts"]), 8)
 
-    def test_a_missing_glb_is_refused(self) -> None:
-        code, out = fx.run_cli("godot-check", "no/such.glb")
-        self.assertEqual(code, 1)
-        self.assertIn("no GLB no/such.glb", out)
 
 
 if __name__ == "__main__":

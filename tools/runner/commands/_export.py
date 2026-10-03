@@ -113,6 +113,14 @@ def validate(glb: Path, report: Path, timeout: float = 300) -> dict[str, Any]:
 SEVERITIES = {0: "error", 1: "warning", 2: "info", 3: "hint"}
 
 
+def verdict(report: dict[str, Any]) -> tuple[bool, str]:
+    """Whether the validator's report passes (no error; a report without counts fails) and its summary line."""
+    counts = report.get("issues", {})
+    line = (f"glTF-Validator {report.get('validatorVersion', '?')}: {counts.get('numErrors', '?')} errors, "
+            f"{counts.get('numWarnings', '?')} warnings, {counts.get('numInfos', '?')} infos, {counts.get('numHints', '?')} hints")
+    return counts.get("numErrors", 1) == 0, line
+
+
 def issues(report: dict[str, Any]) -> dict[str, list[str]]:
     """The validator's messages by severity, one line per code with its count and pointers:
     {"error": [...], "warning": [...], "info": [...], "hint": [...]}."""

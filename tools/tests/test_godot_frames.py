@@ -59,9 +59,12 @@ class TimesTest(unittest.TestCase):
         self.assertEqual((r["joints"], r["axis_points"], r["where"], r["match"]), (1, 2, "Head+x at 0.000 s", False))
 
     def test_unknown_clips_are_refused_before_godot_starts(self) -> None:
-        if not fx.glb("m1_rex").is_file():
-            self.skipTest("no exported m1_rex (the export tests make it)")
-        code, out = fx.run_cli("frames", str(fx.glb("m1_rex")), "--clips", "Moonwalk")
+        folder = fx.OUT / "refusal"  # a stand-in GLB: frames reads only its export.json before Godot starts
+        folder.mkdir(parents=True, exist_ok=True)
+        (folder / "x.glb").write_bytes(b"glTF")
+        info = {"parts": {}, "bones": [], "actions": {"CharacterArmature|Idle": [0, 40]}, "fps": 24}
+        (folder / "x.export.json").write_text(json.dumps(info), encoding="utf-8")
+        code, out = fx.run_cli("frames", str(folder / "x.glb"), "--clips", "Moonwalk")
         self.assertEqual(code, 1)
         self.assertIn("unknown clips Moonwalk", out)
 

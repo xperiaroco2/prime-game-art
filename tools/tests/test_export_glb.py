@@ -102,6 +102,15 @@ class CheckTest(unittest.TestCase):
         self.assertEqual(found["error"], ["ACCESSOR_INVALID x1: bad (/accessors/1)"])
 
 
+    def test_a_validator_error_fails_the_export(self) -> None:
+        counts = {"numErrors": 0, "numWarnings": 8, "numInfos": 10, "numHints": 0}
+        good, line = _export.verdict({"validatorVersion": "2.0.0-dev.3.10", "issues": counts})
+        self.assertTrue(good)
+        self.assertEqual(line, "glTF-Validator 2.0.0-dev.3.10: 0 errors, 8 warnings, 10 infos, 0 hints")
+        self.assertFalse(_export.verdict({"issues": {**counts, "numErrors": 1}})[0])
+        self.assertFalse(_export.verdict({})[0])  # no counts: the validator did not report
+
+
 class RefusalTest(unittest.TestCase):
     def test_a_missing_or_wrong_file_is_refused(self) -> None:
         code, out = fx.run_cli("export", "no/such.blend")
