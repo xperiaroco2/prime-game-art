@@ -22,7 +22,8 @@ from .util import update
 SIDES = ("L", "R")
 BALL_FRACTION = 0.68  # the ball of the foot: this fraction of the shoe's length from its back (the toe box ends there)
 BLEND_M = 0.025  # half-width (m) of the weight blend across the ball
-SLICE_M = 0.01  # half-width (m) of the slice whose vertices give the ball's side position
+SLICE_M = 0.01  # half-width (m) of the slice whose vertices give the ball's side position and the sole's height
+SOLE_LIFT_M = 0.005  # the bend axis's height above the sole at the ball
 
 
 def toe_name(side: str) -> str:
@@ -60,7 +61,7 @@ def _geometry(arm, shoes, side: str) -> dict:
     across = Vector((side_off, 0.0, 0.0))
     head = pivot + fwd * ball + across
     tail = pivot + fwd * tip + across
-    head.z = tail.z = pivot.z  # the bend axis at the foot pivot's height above the sole
+    head.z = tail.z = min(p.z for p in near) + SOLE_LIFT_M  # the bend axis just above the sole, as a shoe bends
     return {"pivot": pivot, "fwd": fwd, "back": back, "tip": tip, "ball": ball, "head": head, "tail": tail}
 
 

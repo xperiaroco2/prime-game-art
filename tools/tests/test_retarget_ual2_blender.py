@@ -38,7 +38,7 @@ class RetargetUal2Test(unittest.TestCase):
                 carry = report["clips"]["Walk_Carry_Loop"]
                 self.assertEqual((carry["frames"], carry["action"]), (60, "UAL2|Walk_Carry_Loop"))
                 self.assertLess(carry["ik_miss_mm"], 15.0)
-                self.assertGreater(carry["lowest_cm"], -1.0)
+                self.assertGreater(carry["lowest_cm"], -1.5)  # the toe bones' bend at the ball (art #25)
                 lay = report["clips"]["LayToIdle"]
                 self.assertGreater(lay["lowest_cm"], lay["source_lowest_cm"], lay)
 

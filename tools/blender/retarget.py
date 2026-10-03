@@ -3,6 +3,7 @@
 Usage (background Blender only, through tools/runner/blender.py):
   blender -b --factory-startup --python-exit-code 1 --python retarget.py -- --source <UAL.glb> --target <UM.glb>
       --out <dir> [--map <map.toml>] [--clips Walk_Loop,Idle_Loop|all] [--no-ik] [--floor] [--blend] [--prefix UAL2]
+A pack original as the target gets the assembler's toe bones first (um/toes.py, art #25) when the map drives them.
 Writes <out>/retarget_report.json (the hip-height ratio, the rest-pose check, each clip's frames and IK misses; with
 --floor also each clip's lowest vertex on the target and on the source's own mesh, scaled to the target) and,
 with --blend, <out>/<target>_ual.blend: the target character with the baked actions "<prefix>|<clip>" (UAL|, UAL2|)
@@ -60,6 +61,9 @@ def main(argv):
     rc.new_scene()
     src = rc.load_glb(a.source)
     tgt = rc.load_glb(a.target)
+    toes = None
+    if any(b.startswith("Toe.") and b not in tgt["arm"].data.bones for b in bmap["target_bones"]):
+        toes = rc.add_toes(tgt)  # the assembler's toe bones (art #25) on a pack original
     missing = [b for b in bmap["source_bones"] if b not in src["arm"].data.bones]
     missing += [b for b in bmap["target_bones"] if b not in tgt["arm"].data.bones]
     if missing:
@@ -76,6 +80,7 @@ def main(argv):
         "hip_height_m": {"source": round(rt.src_hip, 4), "target": round(rt.tgt_hip, 4)},
         "translation_scale": round(rt.ratio, 4),
         "soles": sorted(rt.soles),
+        "toe_bones_added": bool(toes and toes.get("added")),
         "rest_check": rt.rest_error(),
         "clips": {},
     }

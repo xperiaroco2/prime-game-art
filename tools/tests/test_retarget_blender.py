@@ -40,7 +40,11 @@ class RetargetTest(unittest.TestCase):
                 self.assertEqual(report["clips"]["Walk_Loop"]["frames"], 40)
                 self.assertLess(report["clips"]["Walk_Loop"]["ik_miss_mm"], 10.0)
                 self.assertEqual(report["clips"]["A_TPose"]["ik_miss_mm"], 0.0)
-                self.assertGreater(report["clips"]["Walk_Loop"]["lowest_cm"], -1.0)
+                # with the toe bones (art #25) the shoe bends at the ball and its sole there dips about 1 cm for a
+                # frame (UAL's own mannequin goes 2.7 cm under the floor in this clip)
+                self.assertGreater(report["clips"]["Walk_Loop"]["lowest_cm"], -1.5)
+                self.assertTrue(report["toe_bones_added"])
+                self.assertEqual(report["soles"], ["Foot.L", "Foot.R", "Toe.L", "Toe.R"])
                 death = report["clips"]["Death01"]
                 self.assertGreater(death["lowest_cm"], death["source_lowest_cm"] - 3.0, death)
 
