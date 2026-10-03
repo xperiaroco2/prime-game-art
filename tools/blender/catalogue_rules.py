@@ -40,6 +40,8 @@ ZFIGHT = 0.0005  # hair and skull surfaces closer than this along a ray z-fight
 HOLE_ELEVATION = 20  # degrees above the skull centre from which a look into the skull counts as an open top
 MEASURES = ("see_through", "poke")
 HAIR_MEASURES = ("hole", "poke", "zfight")
+HAT_MEASURES = ("poke", "zfight")
+HAT_INFLATE = (0.01, 0.02, 0.03)  # inflate tries for a hat over hair that pokes through it (um/assemble.py extras)
 ALL_STATES = tuple(st["name"] for st in STATES)
 FIX_ROUNDS = 3  # extend_edge tries: the gap plus 10 mm, then 10 mm more each round
 
@@ -451,4 +453,74 @@ def hair_matrix(rigs, hairs, skulls_by_g, objs, items, unique, make_copy, remove
                         cell["fix"] = {"fix": "inflate", "amount": HAIR_INFLATE}
                 cells.append(cell)
         out[g] = {"rows": hairs, "cols": skulls, "cells": cells}
+    return out
+
+
+# ---------------------------------------------------------------- headwear x hair
+
+
+def hat_rays(hat_tree, hair_tree):
+    """The scalp rays (DIRS, toward the skull centre) against a hat and a hair: poke (hair in front of the hat with the
+    hat within 30 mm behind it: the hair comes out through the hat), zfight (hair and hat within ZFIGHT), covered (the
+    hat in front), clear (only one of them on the ray: hair below the brim, a hat over no hair)."""
+    c = Vector(zones.SKULL_CENTRE)
+    n = {"rays": 0, "covered": 0, "zfight": 0, "poke": 0, "clear": 0}
+    for _elev, d in DIRS:
+        o = c + d * 0.4
+        ray = -d
+        t = hat_tree.ray_cast(o, ray, 0.4)
+        r = hair_tree.ray_cast(o, ray, 0.4)
+        n["rays"] += 1
+        if t[0] is None or r[0] is None:
+            n["clear"] += 1
+        elif abs(t[3] - r[3]) <= ZFIGHT:
+            n["zfight"] += 1
+        elif r[3] < t[3]:
+            n["poke" if r[1].dot(ray) < 0 and t[3] - r[3] < 0.03 else "clear"] += 1
+        else:
+            n["covered"] += 1
+    return n
+
+
+def hat_matrix(rigs, hats, hairs, objs, items, unique, make_copy, remove):
+    """Every headwear (hats, crown, hood; the helmets replace the whole head and are not here) over every hair of
+    unique geometry, on each rig (rest pose). The reference: the hat over its own head's hair; a pair passes when its
+    poke and z-fight rays are no higher than the reference's plus RAY_SLACK. Else the hat is inflated (um/assemble.py
+    applies an extra's inflate) by HAT_INFLATE in turn and measured again: needs_fix when one closes, else poke."""
+    own_hair = {}
+    for h in hats:
+        mine = sorted(i for i, e in items.items() if e["kind"] == "hair" and e["head"] == items[h]["head"])
+        own_hair[h] = unique.get(mine[0], mine[0]) if mine else None
+    out = {}
+    for g in sorted(rigs):
+        rest(rigs[g])
+        trees = {i: bvh(objs[(i, g)]) for i in hats + hairs}
+        raw = {(h, r): hat_rays(trees[h], trees[r]) for h in hats for r in hairs}
+        cells = []
+        for h in hats:
+            ref = raw.get((h, own_hair[h]))
+            for r in hairs:
+                n = raw[(h, r)]
+                base = n if r == own_hair[h] or ref is None else ref  # a pack original is its own reference
+                allow = {k: base[k] + RAY_SLACK for k in HAT_MEASURES}
+                cell = {"a": h, "b": r, "rays": n, "own_hair": own_hair[h], "allowance": allow}
+                if all(n[k] <= allow[k] for k in HAT_MEASURES):
+                    cell["verdict"] = "ok"
+                else:
+                    cell["verdict"] = "poke"
+                    for amount in HAT_INFLATE:
+                        copy = make_copy(objs[(h, g)], "%s+%s" % (h, r))
+                        heads.inflate(copy, rigs[g], amount)
+                        update()
+                        n2 = hat_rays(bvh(copy), trees[r])
+                        remove(copy)
+                        closes = all(n2[k] <= allow[k] for k in HAT_MEASURES)
+                        cell["fix_tried"] = {"fix": "inflate", "part": "headwear", "amount": amount, "rays": n2,
+                                             "closes": closes}
+                        if closes:
+                            cell["verdict"] = "needs_fix"
+                            cell["fix"] = {"fix": "inflate", "part": "headwear", "amount": amount}
+                            break
+                cells.append(cell)
+        out[g] = {"rows": hats, "cols": hairs, "cells": cells}
     return out

@@ -20,6 +20,7 @@ MATRICES = {
     "top_bottom": ("ok_over", "ok_tucked", "needs_fix", "gap", "poke"),
     "head_top": ("ok", "needs_fix", "gap", "poke"),
     "hair_skull": ("ok", "needs_fix", "gap", "poke"),
+    "headwear_hair": ("ok", "needs_fix", "poke"),
 }
 FIXES = ("extend_edge", "inflate", "tuck_cull")
 TOP_KEYS = ("schema", "generated_by", "sources", "conventions", "thresholds", "characters", "files", "parts", "heads",

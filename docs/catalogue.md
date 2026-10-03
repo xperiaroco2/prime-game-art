@@ -75,6 +75,14 @@ degrees round and 5 degrees up from 30 below the centre to the crown: **hole** (
 face and no hair in front: a look into an open top), **poke** (the skull in front of hair lying within 30 mm behind
 it: the skull cuts through), **z-fight** (hair and skull within 0.5 mm).
 
+**Headwear x hair** uses the same scalp rays against a hat and a hair: **poke** (hair in front of the hat with the
+hat within 30 mm behind it: the hair comes out through the hat), **z-fight** (hat and hair within 0.5 mm). The rows are
+the six hats (the Farmer cowboy hat, the King's crown, both hard hats, the witch hat, the Medieval hood); the Astronaut
+and Swat helmets replace the whole head (skull and hair) and are measured at the neck instead. The reference is the hat
+over its own head's hair. Hair that pokes through gets the hat inflated (an extra's `inflate` in `um/assemble.py`,
+scaled about the skull centre) by 1, 2, then 3 %, each measured. Heads cross body types with identical Head bones, so
+the M and W matrices agree.
+
 **References.** The pack's own characters show a few see-through and poke-through rays at their seams too (grazing
 rays, authored overlaps, skinning in motion; the men's Worker trousers with Worker boots show 70 poke rays at rest).
 So a pair passes the rays when, in each state, its counts are no higher than those of its references plus 2 rays. The
@@ -102,6 +110,7 @@ and is measured again.
 | bottom x shoes (the ankle) | On each leg the bottom's lower edge is below the shoes' top edge: `overlap_mm = collar top - bottom lower edge >= 0`; the bottom is tucked when most of its shin just under the collar is inside the shoe | `ok_tucked`, `ok_over`, `needs_fix` (extend_edge on the bottom), `gap`, `poke` |
 | top x bottom (the waist) | The top's lower edge is below the bottom's upper edge: `overlap_mm = bottom upper edge - top lower edge >= 0`, and no ray sees through | `ok_over` (the top over the bottom), `ok_tucked` (the top inside it), `needs_fix` (extend_edge on the top), `gap`, `poke` |
 | head x top (the neck) | The top's neck ring reaches above the head's lowest ring: `overlap_mm = neck ring top - head bottom >= 0`, and no ray sees through | `ok`, `needs_fix` (extend_edge on the head), `gap`, `poke` |
+| headwear x hair (the hat) | The hair stays inside the hat: no more poke or z-fight rays than the hat over its own hair, plus 2 | `ok`, `needs_fix` (inflate the hat 1 to 3 %), `poke` |
 | hair x skull (the scalp) | The hair covers the skull's open top (no hole rays) and the skull never comes out through the hair or lies on it (no poke or z-fight rays) | `ok`, `needs_fix` (inflate), `gap` (the open top shows), `poke` |
 
 In words: **gap** means the parts do not meet (an opening; more than 30 mm apart, or the last extend_edge try still
@@ -118,7 +127,7 @@ with the fix applied at assembly.
 | `schema` | `prime-game-art/catalogue/ultimate-modular/1` |
 | `generated_by`, `sources` | The command; per body type the pack folder (in the raw folder), its source record and the skeleton file |
 | `conventions` | Space, units and id rules (below) |
-| `thresholds` | `ray_slack` (2), `gap_mm` (5: a "gap" in the counts, in whole millimetres as the final test reported), `fixable_mm` (30), `poke_behind_m` (0.015), `hair_inflate` (0.006), `zfight_m` (0.0005), `states` |
+| `thresholds` | `ray_slack` (2), `gap_mm` (5: a "gap" in the counts, in whole millimetres as the final test reported), `fixable_mm` (30), `poke_behind_m` (0.015), `hair_inflate` (0.006), `hat_inflate` (0.01, 0.02, 0.03), `zfight_m` (0.0005), `states` |
 | `characters` | Counts per body type and in total, `animated_woman` (the two files compared: hashes, objects, equal mesh positions, equal animations and skin, the verdict), `animation_sets_per_body_type`, `skeletons_per_body_type` (distinct inverse bind matrix sets) |
 | `files[]` | Per pack file: `body_type`, `file`, `character` (the id name), `sha256`, `parts` (`{slot: {id, object}}`), `props`, `animations` (24), `animation_set` (a hash), `skin` |
 | `parts{id}` | Tops, bottoms and shoes: `slot`, `body_type`, `triangles`, `vertices`, `materials[]` (`name`, `rgb`: the GLB's linear `baseColorFactor`, `triangles`), `bounds` (`min_m`, `max_m`), `same_geometry_as` (only when an equal mesh exists, found with a 0.5 mm point test; no clothing twins exist today), `seams` (below) |
@@ -129,8 +138,8 @@ with the fix applied at assembly.
 | `items{id}.recipe_check` | `faces` (the item's), `mismatch_by_face` (faces today's assembler keeps differently: its zones test single face centres), `mismatch_by_piece` (the same zones tested on whole pieces: 0 for every item), `proposed_zones` (zones the recipe needs that `um/zones.py` lacks) |
 | `proposed_zones` | Cut zones defined in `catalogue_heads.py` and proposed for `um/zones.py`: `facial_hair`, `moustache`, `brows` (the brow box above z 1.698, where the women's `Brown` brows sit over the eyes), their `not_` complements, `not_chin_tuft`, `not_brow_zone`. Tested on pieces, the brow zones also ask for a brow's size (at most 64 triangles; brows have 12 to 40, a fringe piece whose centre falls in the box hundreds) |
 | `rules[]` | `id`, `seam`, `condition`, `verdicts` (the table above, in words) |
-| `matrices{rule}{M,W}` | `rows`, `cols` (sorted ids) and `cells[]` in row-major order (below). Bottom x shoes and top x bottom: the body type's own parts; head x top: every skull of unique geometry and the two helmets that are whole heads (Astronaut, Swat) on that body type's rig; hair x skull: every hair of unique geometry on that body type's skulls |
-| `cells[]` | `a`, `b` (row and column ids), `verdict`; seams: `overlap_mm`, `outer`, `probe` (`rest`, `walk`: `rays`, `see_through`, `poke`), `allowance` (per state the references' counts plus 2), `references`, `fix_tried` (`fix`, `part`, `drop_m`, `vertices_moved`, `probe`, `closes`, `rounds[]`: every try's `drop_m` and `probe`), `fix` (when `needs_fix`); ankles also `legs` (`L`, `R`: `bottom_lower_edge_m`, `collar_min_m`, `collar_max_m`, `overlap_mm`, `tucked`, `inside_fraction`), `faces_removed_by_tuck`, `walk_within_references`; waist `top_lower_edge_m`, `bottom_upper_edge_m`; neck `head_bottom_m`, `top_neck_ring_m`; hair: `rays` (`rays`, `covered`, `zfight`, `poke`, `hole`, `bare`), `own_skull`, `allowance`, `fix_tried` (`fix`, `amount`, `rays`, `closes`), `fix` |
+| `matrices{rule}{M,W}` | `rows`, `cols` (sorted ids) and `cells[]` in row-major order (below). Bottom x shoes and top x bottom: the body type's own parts; head x top: every skull of unique geometry and the two helmets that are whole heads (Astronaut, Swat) on that body type's rig; hair x skull: every hair of unique geometry on that body type's skulls; headwear x hair: the six hats over every hair of unique geometry |
+| `cells[]` | `a`, `b` (row and column ids), `verdict`; seams: `overlap_mm`, `outer`, `probe` (`rest`, `walk`: `rays`, `see_through`, `poke`), `allowance` (per state the references' counts plus 2), `references`, `fix_tried` (`fix`, `part`, `drop_m`, `vertices_moved`, `probe`, `closes`, `rounds[]`: every try's `drop_m` and `probe`), `fix` (when `needs_fix`); ankles also `legs` (`L`, `R`: `bottom_lower_edge_m`, `collar_min_m`, `collar_max_m`, `overlap_mm`, `tucked`, `inside_fraction`), `faces_removed_by_tuck`, `walk_within_references`; waist `top_lower_edge_m`, `bottom_upper_edge_m`; neck `head_bottom_m`, `top_neck_ring_m`; hair: `rays` (`rays`, `covered`, `zfight`, `poke`, `hole`, `bare`), `own_skull`, `allowance`, `fix_tried` (`fix`, `amount`, `rays`, `closes`), `fix`; headwear x hair: `rays` (`rays`, `covered`, `zfight`, `poke`, `clear`), `own_hair`, `allowance`, `fix_tried` and `fix` (`fix: inflate`, `part: headwear`, `amount`) |
 | `summary{rule}{M,W}` | `pairs`, `verdicts` (counts), and for the seams `gap_over_5mm` (whole millimetres) and `gap_over_5mm_exact` |
 
 **Ids.** Pack parts: `<slot>_<m|w>_<character>` (`top_m_hoodie`, `shoes_w_soldier`). Head items:
@@ -168,7 +177,8 @@ Rendered only to files, in headless Blender (Workbench, specular off), into `--o
   visible gap at the hairline is a look question, not measured.
 - The rays look at seams horizontally (at the bone axes); a gap seen only from above or below (into a wide collar)
   is not measured.
-- `headwear x hair` is not measured in this version.
+- Headwear x hair checks the hair against the hat; a full skull without hair under a hat made for open-top skulls
+  (the hard hats, the cowboy hat) is not measured (shell hair over the same skull already pokes through those hats).
 - Today's assembler cuts zones face by face: for 23 hair, brow and facial-hair items the zones also catch faces of
   neighbouring pieces (fringe faces inside the brow box: 7 to 60 per hairstyle; beard strands crossing the
   facial-hair box: 130 to 166 faces for the Adventurer's and the King's hair and beards), counted in

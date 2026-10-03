@@ -40607,6 +40607,6248 @@
     ]
    }
   },
+  "headwear_hair": {
+   "M": {
+    "cells": [
+     {
+      "a": "headwear_m_farmer_cowboy_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_m_adventurer",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 346,
+        "covered": 328,
+        "poke": 179,
+        "rays": 865,
+        "zfight": 12
+       }
+      },
+      "own_hair": "hair_m_farmer_buzz",
+      "rays": {
+       "clear": 346,
+       "covered": 210,
+       "poke": 287,
+       "rays": 865,
+       "zfight": 22
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_m_farmer_cowboy_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_m_beach",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 358,
+        "covered": 399,
+        "poke": 102,
+        "rays": 865,
+        "zfight": 6
+       }
+      },
+      "own_hair": "hair_m_farmer_buzz",
+      "rays": {
+       "clear": 362,
+       "covered": 363,
+       "poke": 135,
+       "rays": 865,
+       "zfight": 5
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_m_farmer_cowboy_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_m_business",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 348,
+        "covered": 343,
+        "poke": 155,
+        "rays": 865,
+        "zfight": 19
+       }
+      },
+      "own_hair": "hair_m_farmer_buzz",
+      "rays": {
+       "clear": 349,
+       "covered": 219,
+       "poke": 267,
+       "rays": 865,
+       "zfight": 30
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_m_farmer_cowboy_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_m_casual",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 359,
+        "covered": 409,
+        "poke": 94,
+        "rays": 865,
+        "zfight": 3
+       }
+      },
+      "own_hair": "hair_m_farmer_buzz",
+      "rays": {
+       "clear": 359,
+       "covered": 367,
+       "poke": 128,
+       "rays": 865,
+       "zfight": 11
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_m_farmer_cowboy_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_m_farmer_buzz",
+      "own_hair": "hair_m_farmer_buzz",
+      "rays": {
+       "clear": 364,
+       "covered": 501,
+       "poke": 0,
+       "rays": 865,
+       "zfight": 0
+      },
+      "verdict": "ok"
+     },
+     {
+      "a": "headwear_m_farmer_cowboy_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_m_hoodie",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 338,
+        "covered": 326,
+        "poke": 163,
+        "rays": 865,
+        "zfight": 38
+       }
+      },
+      "own_hair": "hair_m_farmer_buzz",
+      "rays": {
+       "clear": 338,
+       "covered": 222,
+       "poke": 276,
+       "rays": 865,
+       "zfight": 29
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_m_farmer_cowboy_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_m_king_long",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 347,
+        "covered": 419,
+        "poke": 95,
+        "rays": 865,
+        "zfight": 4
+       }
+      },
+      "own_hair": "hair_m_farmer_buzz",
+      "rays": {
+       "clear": 347,
+       "covered": 375,
+       "poke": 130,
+       "rays": 865,
+       "zfight": 13
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_m_farmer_cowboy_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_m_punk_mohawk",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 385,
+        "covered": 407,
+        "poke": 72,
+        "rays": 865,
+        "zfight": 1
+       }
+      },
+      "own_hair": "hair_m_farmer_buzz",
+      "rays": {
+       "clear": 394,
+       "covered": 389,
+       "poke": 80,
+       "rays": 865,
+       "zfight": 2
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_m_farmer_cowboy_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_m_worker_buzz",
+      "own_hair": "hair_m_farmer_buzz",
+      "rays": {
+       "clear": 364,
+       "covered": 499,
+       "poke": 2,
+       "rays": 865,
+       "zfight": 0
+      },
+      "verdict": "ok"
+     },
+     {
+      "a": "headwear_m_farmer_cowboy_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_w_adventurer",
+      "own_hair": "hair_m_farmer_buzz",
+      "rays": {
+       "clear": 359,
+       "covered": 503,
+       "poke": 2,
+       "rays": 865,
+       "zfight": 1
+      },
+      "verdict": "ok"
+     },
+     {
+      "a": "headwear_m_farmer_cowboy_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_w_casual_bob",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 344,
+        "covered": 427,
+        "poke": 88,
+        "rays": 865,
+        "zfight": 6
+       }
+      },
+      "own_hair": "hair_m_farmer_buzz",
+      "rays": {
+       "clear": 346,
+       "covered": 392,
+       "poke": 119,
+       "rays": 865,
+       "zfight": 8
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_m_farmer_cowboy_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_w_formal_updo",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 344,
+        "covered": 416,
+        "poke": 99,
+        "rays": 865,
+        "zfight": 6
+       }
+      },
+      "own_hair": "hair_m_farmer_buzz",
+      "rays": {
+       "clear": 351,
+       "covered": 392,
+       "poke": 116,
+       "rays": 865,
+       "zfight": 6
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_m_farmer_cowboy_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_w_medieval",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 344,
+        "covered": 474,
+        "poke": 44,
+        "rays": 865,
+        "zfight": 3
+       }
+      },
+      "own_hair": "hair_m_farmer_buzz",
+      "rays": {
+       "clear": 345,
+       "covered": 459,
+       "poke": 56,
+       "rays": 865,
+       "zfight": 5
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_m_farmer_cowboy_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_w_punk_mohawk",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 400,
+        "covered": 413,
+        "poke": 52,
+        "rays": 865,
+        "zfight": 0
+       }
+      },
+      "own_hair": "hair_m_farmer_buzz",
+      "rays": {
+       "clear": 404,
+       "covered": 402,
+       "poke": 58,
+       "rays": 865,
+       "zfight": 1
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_m_farmer_cowboy_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_w_scifi",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 351,
+        "covered": 435,
+        "poke": 76,
+        "rays": 865,
+        "zfight": 3
+       }
+      },
+      "own_hair": "hair_m_farmer_buzz",
+      "rays": {
+       "clear": 353,
+       "covered": 399,
+       "poke": 102,
+       "rays": 865,
+       "zfight": 11
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_m_farmer_cowboy_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_w_soldier",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 341,
+        "covered": 488,
+        "poke": 30,
+        "rays": 865,
+        "zfight": 6
+       }
+      },
+      "own_hair": "hair_m_farmer_buzz",
+      "rays": {
+       "clear": 341,
+       "covered": 464,
+       "poke": 54,
+       "rays": 865,
+       "zfight": 6
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_m_farmer_cowboy_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_w_suit_bob",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 344,
+        "covered": 431,
+        "poke": 82,
+        "rays": 865,
+        "zfight": 8
+       }
+      },
+      "own_hair": "hair_m_farmer_buzz",
+      "rays": {
+       "clear": 346,
+       "covered": 402,
+       "poke": 107,
+       "rays": 865,
+       "zfight": 10
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_m_farmer_cowboy_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_w_witch",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 337,
+        "covered": 438,
+        "poke": 83,
+        "rays": 865,
+        "zfight": 7
+       }
+      },
+      "own_hair": "hair_m_farmer_buzz",
+      "rays": {
+       "clear": 337,
+       "covered": 406,
+       "poke": 116,
+       "rays": 865,
+       "zfight": 6
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_m_farmer_cowboy_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_w_worker",
+      "own_hair": "hair_m_farmer_buzz",
+      "rays": {
+       "clear": 340,
+       "covered": 525,
+       "poke": 0,
+       "rays": 865,
+       "zfight": 0
+      },
+      "verdict": "ok"
+     },
+     {
+      "a": "headwear_m_king_crown",
+      "allowance": {
+       "poke": 4,
+       "zfight": 3
+      },
+      "b": "hair_m_adventurer",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 787,
+        "covered": 59,
+        "poke": 19,
+        "rays": 865,
+        "zfight": 0
+       }
+      },
+      "own_hair": "hair_m_king_long",
+      "rays": {
+       "clear": 787,
+       "covered": 52,
+       "poke": 25,
+       "rays": 865,
+       "zfight": 1
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_m_king_crown",
+      "allowance": {
+       "poke": 4,
+       "zfight": 3
+      },
+      "b": "hair_m_beach",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 787,
+        "covered": 67,
+        "poke": 11,
+        "rays": 865,
+        "zfight": 0
+       }
+      },
+      "own_hair": "hair_m_king_long",
+      "rays": {
+       "clear": 787,
+       "covered": 61,
+       "poke": 17,
+       "rays": 865,
+       "zfight": 0
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_m_king_crown",
+      "allowance": {
+       "poke": 4,
+       "zfight": 3
+      },
+      "b": "hair_m_business",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 787,
+        "covered": 58,
+        "poke": 18,
+        "rays": 865,
+        "zfight": 2
+       }
+      },
+      "own_hair": "hair_m_king_long",
+      "rays": {
+       "clear": 787,
+       "covered": 51,
+       "poke": 26,
+       "rays": 865,
+       "zfight": 1
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_m_king_crown",
+      "allowance": {
+       "poke": 4,
+       "zfight": 3
+      },
+      "b": "hair_m_casual",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 787,
+        "covered": 72,
+        "poke": 5,
+        "rays": 865,
+        "zfight": 1
+       }
+      },
+      "own_hair": "hair_m_king_long",
+      "rays": {
+       "clear": 787,
+       "covered": 67,
+       "poke": 10,
+       "rays": 865,
+       "zfight": 1
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_m_king_crown",
+      "allowance": {
+       "poke": 4,
+       "zfight": 3
+      },
+      "b": "hair_m_farmer_buzz",
+      "own_hair": "hair_m_king_long",
+      "rays": {
+       "clear": 787,
+       "covered": 78,
+       "poke": 0,
+       "rays": 865,
+       "zfight": 0
+      },
+      "verdict": "ok"
+     },
+     {
+      "a": "headwear_m_king_crown",
+      "allowance": {
+       "poke": 4,
+       "zfight": 3
+      },
+      "b": "hair_m_hoodie",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 787,
+        "covered": 64,
+        "poke": 13,
+        "rays": 865,
+        "zfight": 1
+       }
+      },
+      "own_hair": "hair_m_king_long",
+      "rays": {
+       "clear": 787,
+       "covered": 56,
+       "poke": 20,
+       "rays": 865,
+       "zfight": 2
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_m_king_crown",
+      "allowance": {
+       "poke": 4,
+       "zfight": 3
+      },
+      "b": "hair_m_king_long",
+      "own_hair": "hair_m_king_long",
+      "rays": {
+       "clear": 787,
+       "covered": 75,
+       "poke": 2,
+       "rays": 865,
+       "zfight": 1
+      },
+      "verdict": "ok"
+     },
+     {
+      "a": "headwear_m_king_crown",
+      "allowance": {
+       "poke": 4,
+       "zfight": 3
+      },
+      "b": "hair_m_punk_mohawk",
+      "fix": {
+       "amount": 0.03,
+       "fix": "inflate",
+       "part": "headwear"
+      },
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": true,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 793,
+        "covered": 67,
+        "poke": 4,
+        "rays": 865,
+        "zfight": 1
+       }
+      },
+      "own_hair": "hair_m_king_long",
+      "rays": {
+       "clear": 793,
+       "covered": 67,
+       "poke": 5,
+       "rays": 865,
+       "zfight": 0
+      },
+      "verdict": "needs_fix"
+     },
+     {
+      "a": "headwear_m_king_crown",
+      "allowance": {
+       "poke": 4,
+       "zfight": 3
+      },
+      "b": "hair_m_worker_buzz",
+      "own_hair": "hair_m_king_long",
+      "rays": {
+       "clear": 787,
+       "covered": 78,
+       "poke": 0,
+       "rays": 865,
+       "zfight": 0
+      },
+      "verdict": "ok"
+     },
+     {
+      "a": "headwear_m_king_crown",
+      "allowance": {
+       "poke": 4,
+       "zfight": 3
+      },
+      "b": "hair_w_adventurer",
+      "own_hair": "hair_m_king_long",
+      "rays": {
+       "clear": 787,
+       "covered": 78,
+       "poke": 0,
+       "rays": 865,
+       "zfight": 0
+      },
+      "verdict": "ok"
+     },
+     {
+      "a": "headwear_m_king_crown",
+      "allowance": {
+       "poke": 4,
+       "zfight": 3
+      },
+      "b": "hair_w_casual_bob",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 787,
+        "covered": 69,
+        "poke": 8,
+        "rays": 865,
+        "zfight": 1
+       }
+      },
+      "own_hair": "hair_m_king_long",
+      "rays": {
+       "clear": 787,
+       "covered": 64,
+       "poke": 13,
+       "rays": 865,
+       "zfight": 1
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_m_king_crown",
+      "allowance": {
+       "poke": 4,
+       "zfight": 3
+      },
+      "b": "hair_w_formal_updo",
+      "fix": {
+       "amount": 0.01,
+       "fix": "inflate",
+       "part": "headwear"
+      },
+      "fix_tried": {
+       "amount": 0.01,
+       "closes": true,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 787,
+        "covered": 74,
+        "poke": 2,
+        "rays": 865,
+        "zfight": 2
+       }
+      },
+      "own_hair": "hair_m_king_long",
+      "rays": {
+       "clear": 787,
+       "covered": 69,
+       "poke": 5,
+       "rays": 865,
+       "zfight": 4
+      },
+      "verdict": "needs_fix"
+     },
+     {
+      "a": "headwear_m_king_crown",
+      "allowance": {
+       "poke": 4,
+       "zfight": 3
+      },
+      "b": "hair_w_medieval",
+      "fix": {
+       "amount": 0.01,
+       "fix": "inflate",
+       "part": "headwear"
+      },
+      "fix_tried": {
+       "amount": 0.01,
+       "closes": true,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 787,
+        "covered": 73,
+        "poke": 4,
+        "rays": 865,
+        "zfight": 1
+       }
+      },
+      "own_hair": "hair_m_king_long",
+      "rays": {
+       "clear": 787,
+       "covered": 72,
+       "poke": 5,
+       "rays": 865,
+       "zfight": 1
+      },
+      "verdict": "needs_fix"
+     },
+     {
+      "a": "headwear_m_king_crown",
+      "allowance": {
+       "poke": 4,
+       "zfight": 3
+      },
+      "b": "hair_w_punk_mohawk",
+      "fix": {
+       "amount": 0.03,
+       "fix": "inflate",
+       "part": "headwear"
+      },
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": true,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 793,
+        "covered": 67,
+        "poke": 4,
+        "rays": 865,
+        "zfight": 1
+       }
+      },
+      "own_hair": "hair_m_king_long",
+      "rays": {
+       "clear": 793,
+       "covered": 65,
+       "poke": 6,
+       "rays": 865,
+       "zfight": 1
+      },
+      "verdict": "needs_fix"
+     },
+     {
+      "a": "headwear_m_king_crown",
+      "allowance": {
+       "poke": 4,
+       "zfight": 3
+      },
+      "b": "hair_w_scifi",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 789,
+        "covered": 68,
+        "poke": 8,
+        "rays": 865,
+        "zfight": 0
+       }
+      },
+      "own_hair": "hair_m_king_long",
+      "rays": {
+       "clear": 789,
+       "covered": 65,
+       "poke": 10,
+       "rays": 865,
+       "zfight": 1
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_m_king_crown",
+      "allowance": {
+       "poke": 4,
+       "zfight": 3
+      },
+      "b": "hair_w_soldier",
+      "own_hair": "hair_m_king_long",
+      "rays": {
+       "clear": 787,
+       "covered": 78,
+       "poke": 0,
+       "rays": 865,
+       "zfight": 0
+      },
+      "verdict": "ok"
+     },
+     {
+      "a": "headwear_m_king_crown",
+      "allowance": {
+       "poke": 4,
+       "zfight": 3
+      },
+      "b": "hair_w_suit_bob",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 787,
+        "covered": 69,
+        "poke": 8,
+        "rays": 865,
+        "zfight": 1
+       }
+      },
+      "own_hair": "hair_m_king_long",
+      "rays": {
+       "clear": 787,
+       "covered": 64,
+       "poke": 12,
+       "rays": 865,
+       "zfight": 2
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_m_king_crown",
+      "allowance": {
+       "poke": 4,
+       "zfight": 3
+      },
+      "b": "hair_w_witch",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 787,
+        "covered": 72,
+        "poke": 6,
+        "rays": 865,
+        "zfight": 0
+       }
+      },
+      "own_hair": "hair_m_king_long",
+      "rays": {
+       "clear": 787,
+       "covered": 68,
+       "poke": 10,
+       "rays": 865,
+       "zfight": 0
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_m_king_crown",
+      "allowance": {
+       "poke": 4,
+       "zfight": 3
+      },
+      "b": "hair_w_worker",
+      "own_hair": "hair_m_king_long",
+      "rays": {
+       "clear": 787,
+       "covered": 78,
+       "poke": 0,
+       "rays": 865,
+       "zfight": 0
+      },
+      "verdict": "ok"
+     },
+     {
+      "a": "headwear_m_worker_hard_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_m_adventurer",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 335,
+        "covered": 335,
+        "poke": 164,
+        "rays": 865,
+        "zfight": 31
+       }
+      },
+      "own_hair": "hair_m_worker_buzz",
+      "rays": {
+       "clear": 335,
+       "covered": 218,
+       "poke": 293,
+       "rays": 865,
+       "zfight": 19
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_m_worker_hard_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_m_beach",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 349,
+        "covered": 443,
+        "poke": 60,
+        "rays": 865,
+        "zfight": 13
+       }
+      },
+      "own_hair": "hair_m_worker_buzz",
+      "rays": {
+       "clear": 352,
+       "covered": 394,
+       "poke": 103,
+       "rays": 865,
+       "zfight": 16
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_m_worker_hard_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_m_business",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 338,
+        "covered": 371,
+        "poke": 137,
+        "rays": 865,
+        "zfight": 19
+       }
+      },
+      "own_hair": "hair_m_worker_buzz",
+      "rays": {
+       "clear": 338,
+       "covered": 250,
+       "poke": 251,
+       "rays": 865,
+       "zfight": 26
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_m_worker_hard_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_m_casual",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 348,
+        "covered": 467,
+        "poke": 36,
+        "rays": 865,
+        "zfight": 14
+       }
+      },
+      "own_hair": "hair_m_worker_buzz",
+      "rays": {
+       "clear": 348,
+       "covered": 416,
+       "poke": 94,
+       "rays": 865,
+       "zfight": 7
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_m_worker_hard_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_m_farmer_buzz",
+      "own_hair": "hair_m_worker_buzz",
+      "rays": {
+       "clear": 357,
+       "covered": 508,
+       "poke": 0,
+       "rays": 865,
+       "zfight": 0
+      },
+      "verdict": "ok"
+     },
+     {
+      "a": "headwear_m_worker_hard_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_m_hoodie",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 327,
+        "covered": 392,
+        "poke": 126,
+        "rays": 865,
+        "zfight": 20
+       }
+      },
+      "own_hair": "hair_m_worker_buzz",
+      "rays": {
+       "clear": 327,
+       "covered": 224,
+       "poke": 272,
+       "rays": 865,
+       "zfight": 42
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_m_worker_hard_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_m_king_long",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 336,
+        "covered": 452,
+        "poke": 66,
+        "rays": 865,
+        "zfight": 11
+       }
+      },
+      "own_hair": "hair_m_worker_buzz",
+      "rays": {
+       "clear": 336,
+       "covered": 398,
+       "poke": 120,
+       "rays": 865,
+       "zfight": 11
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_m_worker_hard_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_m_punk_mohawk",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 381,
+        "covered": 416,
+        "poke": 67,
+        "rays": 865,
+        "zfight": 1
+       }
+      },
+      "own_hair": "hair_m_worker_buzz",
+      "rays": {
+       "clear": 384,
+       "covered": 408,
+       "poke": 71,
+       "rays": 865,
+       "zfight": 2
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_m_worker_hard_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_m_worker_buzz",
+      "own_hair": "hair_m_worker_buzz",
+      "rays": {
+       "clear": 357,
+       "covered": 508,
+       "poke": 0,
+       "rays": 865,
+       "zfight": 0
+      },
+      "verdict": "ok"
+     },
+     {
+      "a": "headwear_m_worker_hard_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_w_adventurer",
+      "fix": {
+       "amount": 0.02,
+       "fix": "inflate",
+       "part": "headwear"
+      },
+      "fix_tried": {
+       "amount": 0.02,
+       "closes": true,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 352,
+        "covered": 509,
+        "poke": 2,
+        "rays": 865,
+        "zfight": 2
+       }
+      },
+      "own_hair": "hair_m_worker_buzz",
+      "rays": {
+       "clear": 352,
+       "covered": 507,
+       "poke": 6,
+       "rays": 865,
+       "zfight": 0
+      },
+      "verdict": "needs_fix"
+     },
+     {
+      "a": "headwear_m_worker_hard_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_w_casual_bob",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 333,
+        "covered": 456,
+        "poke": 70,
+        "rays": 865,
+        "zfight": 6
+       }
+      },
+      "own_hair": "hair_m_worker_buzz",
+      "rays": {
+       "clear": 335,
+       "covered": 421,
+       "poke": 102,
+       "rays": 865,
+       "zfight": 7
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_m_worker_hard_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_w_formal_updo",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 325,
+        "covered": 403,
+        "poke": 137,
+        "rays": 865,
+        "zfight": 0
+       }
+      },
+      "own_hair": "hair_m_worker_buzz",
+      "rays": {
+       "clear": 329,
+       "covered": 371,
+       "poke": 151,
+       "rays": 865,
+       "zfight": 14
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_m_worker_hard_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_w_medieval",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 333,
+        "covered": 476,
+        "poke": 54,
+        "rays": 865,
+        "zfight": 2
+       }
+      },
+      "own_hair": "hair_m_worker_buzz",
+      "rays": {
+       "clear": 335,
+       "covered": 460,
+       "poke": 67,
+       "rays": 865,
+       "zfight": 3
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_m_worker_hard_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_w_punk_mohawk",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 383,
+        "covered": 428,
+        "poke": 52,
+        "rays": 865,
+        "zfight": 2
+       }
+      },
+      "own_hair": "hair_m_worker_buzz",
+      "rays": {
+       "clear": 388,
+       "covered": 420,
+       "poke": 55,
+       "rays": 865,
+       "zfight": 2
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_m_worker_hard_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_w_scifi",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 340,
+        "covered": 466,
+        "poke": 52,
+        "rays": 865,
+        "zfight": 7
+       }
+      },
+      "own_hair": "hair_m_worker_buzz",
+      "rays": {
+       "clear": 342,
+       "covered": 415,
+       "poke": 92,
+       "rays": 865,
+       "zfight": 16
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_m_worker_hard_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_w_soldier",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 330,
+        "covered": 519,
+        "poke": 14,
+        "rays": 865,
+        "zfight": 2
+       }
+      },
+      "own_hair": "hair_m_worker_buzz",
+      "rays": {
+       "clear": 330,
+       "covered": 490,
+       "poke": 34,
+       "rays": 865,
+       "zfight": 11
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_m_worker_hard_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_w_suit_bob",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 333,
+        "covered": 462,
+        "poke": 66,
+        "rays": 865,
+        "zfight": 4
+       }
+      },
+      "own_hair": "hair_m_worker_buzz",
+      "rays": {
+       "clear": 335,
+       "covered": 430,
+       "poke": 95,
+       "rays": 865,
+       "zfight": 5
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_m_worker_hard_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_w_witch",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 326,
+        "covered": 461,
+        "poke": 74,
+        "rays": 865,
+        "zfight": 4
+       }
+      },
+      "own_hair": "hair_m_worker_buzz",
+      "rays": {
+       "clear": 326,
+       "covered": 428,
+       "poke": 104,
+       "rays": 865,
+       "zfight": 7
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_m_worker_hard_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_w_worker",
+      "own_hair": "hair_m_worker_buzz",
+      "rays": {
+       "clear": 329,
+       "covered": 534,
+       "poke": 0,
+       "rays": 865,
+       "zfight": 2
+      },
+      "verdict": "ok"
+     },
+     {
+      "a": "headwear_w_medieval_hood",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_m_adventurer",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 194,
+        "covered": 659,
+        "poke": 11,
+        "rays": 865,
+        "zfight": 1
+       }
+      },
+      "own_hair": "hair_w_medieval",
+      "rays": {
+       "clear": 194,
+       "covered": 653,
+       "poke": 16,
+       "rays": 865,
+       "zfight": 2
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_w_medieval_hood",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_m_beach",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 228,
+        "covered": 634,
+        "poke": 3,
+        "rays": 865,
+        "zfight": 0
+       }
+      },
+      "own_hair": "hair_w_medieval",
+      "rays": {
+       "clear": 228,
+       "covered": 631,
+       "poke": 5,
+       "rays": 865,
+       "zfight": 1
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_w_medieval_hood",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_m_business",
+      "fix": {
+       "amount": 0.01,
+       "fix": "inflate",
+       "part": "headwear"
+      },
+      "fix_tried": {
+       "amount": 0.01,
+       "closes": true,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 221,
+        "covered": 644,
+        "poke": 0,
+        "rays": 865,
+        "zfight": 0
+       }
+      },
+      "own_hair": "hair_w_medieval",
+      "rays": {
+       "clear": 221,
+       "covered": 640,
+       "poke": 1,
+       "rays": 865,
+       "zfight": 3
+      },
+      "verdict": "needs_fix"
+     },
+     {
+      "a": "headwear_w_medieval_hood",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_m_casual",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 209,
+        "covered": 650,
+        "poke": 5,
+        "rays": 865,
+        "zfight": 1
+       }
+      },
+      "own_hair": "hair_w_medieval",
+      "rays": {
+       "clear": 210,
+       "covered": 647,
+       "poke": 7,
+       "rays": 865,
+       "zfight": 1
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_w_medieval_hood",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_m_farmer_buzz",
+      "own_hair": "hair_w_medieval",
+      "rays": {
+       "clear": 249,
+       "covered": 616,
+       "poke": 0,
+       "rays": 865,
+       "zfight": 0
+      },
+      "verdict": "ok"
+     },
+     {
+      "a": "headwear_w_medieval_hood",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_m_hoodie",
+      "fix": {
+       "amount": 0.03,
+       "fix": "inflate",
+       "part": "headwear"
+      },
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": true,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 238,
+        "covered": 625,
+        "poke": 1,
+        "rays": 865,
+        "zfight": 1
+       }
+      },
+      "own_hair": "hair_w_medieval",
+      "rays": {
+       "clear": 238,
+       "covered": 622,
+       "poke": 5,
+       "rays": 865,
+       "zfight": 0
+      },
+      "verdict": "needs_fix"
+     },
+     {
+      "a": "headwear_w_medieval_hood",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_m_king_long",
+      "own_hair": "hair_w_medieval",
+      "rays": {
+       "clear": 204,
+       "covered": 661,
+       "poke": 0,
+       "rays": 865,
+       "zfight": 0
+      },
+      "verdict": "ok"
+     },
+     {
+      "a": "headwear_w_medieval_hood",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_m_punk_mohawk",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 272,
+        "covered": 553,
+        "poke": 40,
+        "rays": 865,
+        "zfight": 0
+       }
+      },
+      "own_hair": "hair_w_medieval",
+      "rays": {
+       "clear": 275,
+       "covered": 542,
+       "poke": 47,
+       "rays": 865,
+       "zfight": 1
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_w_medieval_hood",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_m_worker_buzz",
+      "own_hair": "hair_w_medieval",
+      "rays": {
+       "clear": 249,
+       "covered": 616,
+       "poke": 0,
+       "rays": 865,
+       "zfight": 0
+      },
+      "verdict": "ok"
+     },
+     {
+      "a": "headwear_w_medieval_hood",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_w_adventurer",
+      "own_hair": "hair_w_medieval",
+      "rays": {
+       "clear": 232,
+       "covered": 633,
+       "poke": 0,
+       "rays": 865,
+       "zfight": 0
+      },
+      "verdict": "ok"
+     },
+     {
+      "a": "headwear_w_medieval_hood",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_w_casual_bob",
+      "fix": {
+       "amount": 0.01,
+       "fix": "inflate",
+       "part": "headwear"
+      },
+      "fix_tried": {
+       "amount": 0.01,
+       "closes": true,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 142,
+        "covered": 720,
+        "poke": 2,
+        "rays": 865,
+        "zfight": 1
+       }
+      },
+      "own_hair": "hair_w_medieval",
+      "rays": {
+       "clear": 142,
+       "covered": 719,
+       "poke": 3,
+       "rays": 865,
+       "zfight": 1
+      },
+      "verdict": "needs_fix"
+     },
+     {
+      "a": "headwear_w_medieval_hood",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_w_formal_updo",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 203,
+        "covered": 641,
+        "poke": 21,
+        "rays": 865,
+        "zfight": 0
+       }
+      },
+      "own_hair": "hair_w_medieval",
+      "rays": {
+       "clear": 203,
+       "covered": 635,
+       "poke": 23,
+       "rays": 865,
+       "zfight": 4
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_w_medieval_hood",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_w_medieval",
+      "own_hair": "hair_w_medieval",
+      "rays": {
+       "clear": 195,
+       "covered": 670,
+       "poke": 0,
+       "rays": 865,
+       "zfight": 0
+      },
+      "verdict": "ok"
+     },
+     {
+      "a": "headwear_w_medieval_hood",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_w_punk_mohawk",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 277,
+        "covered": 554,
+        "poke": 34,
+        "rays": 865,
+        "zfight": 0
+       }
+      },
+      "own_hair": "hair_w_medieval",
+      "rays": {
+       "clear": 281,
+       "covered": 541,
+       "poke": 42,
+       "rays": 865,
+       "zfight": 1
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_w_medieval_hood",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_w_scifi",
+      "fix": {
+       "amount": 0.02,
+       "fix": "inflate",
+       "part": "headwear"
+      },
+      "fix_tried": {
+       "amount": 0.02,
+       "closes": true,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 150,
+        "covered": 712,
+        "poke": 1,
+        "rays": 865,
+        "zfight": 2
+       }
+      },
+      "own_hair": "hair_w_medieval",
+      "rays": {
+       "clear": 150,
+       "covered": 710,
+       "poke": 4,
+       "rays": 865,
+       "zfight": 1
+      },
+      "verdict": "needs_fix"
+     },
+     {
+      "a": "headwear_w_medieval_hood",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_w_soldier",
+      "own_hair": "hair_w_medieval",
+      "rays": {
+       "clear": 142,
+       "covered": 723,
+       "poke": 0,
+       "rays": 865,
+       "zfight": 0
+      },
+      "verdict": "ok"
+     },
+     {
+      "a": "headwear_w_medieval_hood",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_w_suit_bob",
+      "fix": {
+       "amount": 0.02,
+       "fix": "inflate",
+       "part": "headwear"
+      },
+      "fix_tried": {
+       "amount": 0.02,
+       "closes": true,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 142,
+        "covered": 720,
+        "poke": 2,
+        "rays": 865,
+        "zfight": 1
+       }
+      },
+      "own_hair": "hair_w_medieval",
+      "rays": {
+       "clear": 142,
+       "covered": 718,
+       "poke": 5,
+       "rays": 865,
+       "zfight": 0
+      },
+      "verdict": "needs_fix"
+     },
+     {
+      "a": "headwear_w_medieval_hood",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_w_witch",
+      "own_hair": "hair_w_medieval",
+      "rays": {
+       "clear": 142,
+       "covered": 722,
+       "poke": 0,
+       "rays": 865,
+       "zfight": 1
+      },
+      "verdict": "ok"
+     },
+     {
+      "a": "headwear_w_medieval_hood",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_w_worker",
+      "own_hair": "hair_w_medieval",
+      "rays": {
+       "clear": 142,
+       "covered": 723,
+       "poke": 0,
+       "rays": 865,
+       "zfight": 0
+      },
+      "verdict": "ok"
+     },
+     {
+      "a": "headwear_w_witch_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_m_adventurer",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 313,
+        "covered": 526,
+        "poke": 21,
+        "rays": 865,
+        "zfight": 5
+       }
+      },
+      "own_hair": "hair_w_witch",
+      "rays": {
+       "clear": 313,
+       "covered": 503,
+       "poke": 45,
+       "rays": 865,
+       "zfight": 4
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_w_witch_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_m_beach",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 324,
+        "covered": 527,
+        "poke": 13,
+        "rays": 865,
+        "zfight": 1
+       }
+      },
+      "own_hair": "hair_w_witch",
+      "rays": {
+       "clear": 326,
+       "covered": 519,
+       "poke": 18,
+       "rays": 865,
+       "zfight": 2
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_w_witch_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_m_business",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 317,
+        "covered": 521,
+        "poke": 21,
+        "rays": 865,
+        "zfight": 6
+       }
+      },
+      "own_hair": "hair_w_witch",
+      "rays": {
+       "clear": 317,
+       "covered": 503,
+       "poke": 42,
+       "rays": 865,
+       "zfight": 3
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_w_witch_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_m_casual",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 328,
+        "covered": 530,
+        "poke": 4,
+        "rays": 865,
+        "zfight": 3
+       }
+      },
+      "own_hair": "hair_w_witch",
+      "rays": {
+       "clear": 328,
+       "covered": 527,
+       "poke": 10,
+       "rays": 865,
+       "zfight": 0
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_w_witch_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_m_farmer_buzz",
+      "own_hair": "hair_w_witch",
+      "rays": {
+       "clear": 347,
+       "covered": 518,
+       "poke": 0,
+       "rays": 865,
+       "zfight": 0
+      },
+      "verdict": "ok"
+     },
+     {
+      "a": "headwear_w_witch_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_m_hoodie",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 307,
+        "covered": 549,
+        "poke": 4,
+        "rays": 865,
+        "zfight": 5
+       }
+      },
+      "own_hair": "hair_w_witch",
+      "rays": {
+       "clear": 307,
+       "covered": 522,
+       "poke": 26,
+       "rays": 865,
+       "zfight": 10
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_w_witch_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_m_king_long",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 316,
+        "covered": 544,
+        "poke": 4,
+        "rays": 865,
+        "zfight": 1
+       }
+      },
+      "own_hair": "hair_w_witch",
+      "rays": {
+       "clear": 316,
+       "covered": 535,
+       "poke": 11,
+       "rays": 865,
+       "zfight": 3
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_w_witch_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_m_punk_mohawk",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 341,
+        "covered": 492,
+        "poke": 29,
+        "rays": 865,
+        "zfight": 3
+       }
+      },
+      "own_hair": "hair_w_witch",
+      "rays": {
+       "clear": 345,
+       "covered": 488,
+       "poke": 29,
+       "rays": 865,
+       "zfight": 3
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_w_witch_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_m_worker_buzz",
+      "own_hair": "hair_w_witch",
+      "rays": {
+       "clear": 347,
+       "covered": 518,
+       "poke": 0,
+       "rays": 865,
+       "zfight": 0
+      },
+      "verdict": "ok"
+     },
+     {
+      "a": "headwear_w_witch_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_w_adventurer",
+      "own_hair": "hair_w_witch",
+      "rays": {
+       "clear": 342,
+       "covered": 523,
+       "poke": 0,
+       "rays": 865,
+       "zfight": 0
+      },
+      "verdict": "ok"
+     },
+     {
+      "a": "headwear_w_witch_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_w_casual_bob",
+      "fix": {
+       "amount": 0.03,
+       "fix": "inflate",
+       "part": "headwear"
+      },
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": true,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 308,
+        "covered": 554,
+        "poke": 2,
+        "rays": 865,
+        "zfight": 1
+       }
+      },
+      "own_hair": "hair_w_witch",
+      "rays": {
+       "clear": 308,
+       "covered": 551,
+       "poke": 5,
+       "rays": 865,
+       "zfight": 1
+      },
+      "verdict": "needs_fix"
+     },
+     {
+      "a": "headwear_w_witch_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_w_formal_updo",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 298,
+        "covered": 560,
+        "poke": 6,
+        "rays": 865,
+        "zfight": 1
+       }
+      },
+      "own_hair": "hair_w_witch",
+      "rays": {
+       "clear": 298,
+       "covered": 552,
+       "poke": 14,
+       "rays": 865,
+       "zfight": 1
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_w_witch_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_w_medieval",
+      "fix": {
+       "amount": 0.03,
+       "fix": "inflate",
+       "part": "headwear"
+      },
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": true,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 308,
+        "covered": 554,
+        "poke": 1,
+        "rays": 865,
+        "zfight": 2
+       }
+      },
+      "own_hair": "hair_w_witch",
+      "rays": {
+       "clear": 308,
+       "covered": 551,
+       "poke": 4,
+       "rays": 865,
+       "zfight": 2
+      },
+      "verdict": "needs_fix"
+     },
+     {
+      "a": "headwear_w_witch_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_w_punk_mohawk",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 337,
+        "covered": 507,
+        "poke": 20,
+        "rays": 865,
+        "zfight": 1
+       }
+      },
+      "own_hair": "hair_w_witch",
+      "rays": {
+       "clear": 340,
+       "covered": 502,
+       "poke": 23,
+       "rays": 865,
+       "zfight": 0
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_w_witch_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_w_scifi",
+      "fix": {
+       "amount": 0.01,
+       "fix": "inflate",
+       "part": "headwear"
+      },
+      "fix_tried": {
+       "amount": 0.01,
+       "closes": true,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 314,
+        "covered": 548,
+        "poke": 1,
+        "rays": 865,
+        "zfight": 2
+       }
+      },
+      "own_hair": "hair_w_witch",
+      "rays": {
+       "clear": 314,
+       "covered": 545,
+       "poke": 4,
+       "rays": 865,
+       "zfight": 2
+      },
+      "verdict": "needs_fix"
+     },
+     {
+      "a": "headwear_w_witch_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_w_soldier",
+      "own_hair": "hair_w_witch",
+      "rays": {
+       "clear": 304,
+       "covered": 561,
+       "poke": 0,
+       "rays": 865,
+       "zfight": 0
+      },
+      "verdict": "ok"
+     },
+     {
+      "a": "headwear_w_witch_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_w_suit_bob",
+      "fix": {
+       "amount": 0.03,
+       "fix": "inflate",
+       "part": "headwear"
+      },
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": true,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 308,
+        "covered": 554,
+        "poke": 1,
+        "rays": 865,
+        "zfight": 2
+       }
+      },
+      "own_hair": "hair_w_witch",
+      "rays": {
+       "clear": 308,
+       "covered": 551,
+       "poke": 4,
+       "rays": 865,
+       "zfight": 2
+      },
+      "verdict": "needs_fix"
+     },
+     {
+      "a": "headwear_w_witch_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_w_witch",
+      "own_hair": "hair_w_witch",
+      "rays": {
+       "clear": 301,
+       "covered": 564,
+       "poke": 0,
+       "rays": 865,
+       "zfight": 0
+      },
+      "verdict": "ok"
+     },
+     {
+      "a": "headwear_w_witch_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_w_worker",
+      "own_hair": "hair_w_witch",
+      "rays": {
+       "clear": 304,
+       "covered": 561,
+       "poke": 0,
+       "rays": 865,
+       "zfight": 0
+      },
+      "verdict": "ok"
+     },
+     {
+      "a": "headwear_w_worker_hard_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_m_adventurer",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 326,
+        "covered": 271,
+        "poke": 244,
+        "rays": 865,
+        "zfight": 24
+       }
+      },
+      "own_hair": "hair_w_worker",
+      "rays": {
+       "clear": 326,
+       "covered": 165,
+       "poke": 352,
+       "rays": 865,
+       "zfight": 22
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_w_worker_hard_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_m_beach",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 340,
+        "covered": 415,
+        "poke": 89,
+        "rays": 865,
+        "zfight": 21
+       }
+      },
+      "own_hair": "hair_w_worker",
+      "rays": {
+       "clear": 342,
+       "covered": 346,
+       "poke": 153,
+       "rays": 865,
+       "zfight": 24
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_w_worker_hard_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_m_business",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 329,
+        "covered": 284,
+        "poke": 226,
+        "rays": 865,
+        "zfight": 26
+       }
+      },
+      "own_hair": "hair_w_worker",
+      "rays": {
+       "clear": 330,
+       "covered": 165,
+       "poke": 340,
+       "rays": 865,
+       "zfight": 30
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_w_worker_hard_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_m_casual",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 342,
+        "covered": 410,
+        "poke": 98,
+        "rays": 865,
+        "zfight": 15
+       }
+      },
+      "own_hair": "hair_w_worker",
+      "rays": {
+       "clear": 342,
+       "covered": 350,
+       "poke": 157,
+       "rays": 865,
+       "zfight": 16
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_w_worker_hard_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_m_farmer_buzz",
+      "own_hair": "hair_w_worker",
+      "rays": {
+       "clear": 351,
+       "covered": 514,
+       "poke": 0,
+       "rays": 865,
+       "zfight": 0
+      },
+      "verdict": "ok"
+     },
+     {
+      "a": "headwear_w_worker_hard_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_m_hoodie",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 321,
+        "covered": 289,
+        "poke": 208,
+        "rays": 865,
+        "zfight": 47
+       }
+      },
+      "own_hair": "hair_w_worker",
+      "rays": {
+       "clear": 321,
+       "covered": 114,
+       "poke": 394,
+       "rays": 865,
+       "zfight": 36
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_w_worker_hard_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_m_king_long",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 328,
+        "covered": 448,
+        "poke": 71,
+        "rays": 865,
+        "zfight": 18
+       }
+      },
+      "own_hair": "hair_w_worker",
+      "rays": {
+       "clear": 328,
+       "covered": 366,
+       "poke": 157,
+       "rays": 865,
+       "zfight": 14
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_w_worker_hard_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_m_punk_mohawk",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 378,
+        "covered": 415,
+        "poke": 69,
+        "rays": 865,
+        "zfight": 3
+       }
+      },
+      "own_hair": "hair_w_worker",
+      "rays": {
+       "clear": 385,
+       "covered": 395,
+       "poke": 78,
+       "rays": 865,
+       "zfight": 7
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_w_worker_hard_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_m_worker_buzz",
+      "own_hair": "hair_w_worker",
+      "rays": {
+       "clear": 351,
+       "covered": 514,
+       "poke": 0,
+       "rays": 865,
+       "zfight": 0
+      },
+      "verdict": "ok"
+     },
+     {
+      "a": "headwear_w_worker_hard_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_w_adventurer",
+      "own_hair": "hair_w_worker",
+      "rays": {
+       "clear": 346,
+       "covered": 519,
+       "poke": 0,
+       "rays": 865,
+       "zfight": 0
+      },
+      "verdict": "ok"
+     },
+     {
+      "a": "headwear_w_worker_hard_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_w_casual_bob",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 323,
+        "covered": 435,
+        "poke": 88,
+        "rays": 865,
+        "zfight": 19
+       }
+      },
+      "own_hair": "hair_w_worker",
+      "rays": {
+       "clear": 323,
+       "covered": 376,
+       "poke": 149,
+       "rays": 865,
+       "zfight": 17
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_w_worker_hard_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_w_formal_updo",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 323,
+        "covered": 412,
+        "poke": 122,
+        "rays": 865,
+        "zfight": 8
+       }
+      },
+      "own_hair": "hair_w_worker",
+      "rays": {
+       "clear": 325,
+       "covered": 372,
+       "poke": 160,
+       "rays": 865,
+       "zfight": 8
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_w_worker_hard_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_w_medieval",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 323,
+        "covered": 493,
+        "poke": 46,
+        "rays": 865,
+        "zfight": 3
+       }
+      },
+      "own_hair": "hair_w_worker",
+      "rays": {
+       "clear": 323,
+       "covered": 467,
+       "poke": 66,
+       "rays": 865,
+       "zfight": 9
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_w_worker_hard_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_w_punk_mohawk",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 381,
+        "covered": 430,
+        "poke": 52,
+        "rays": 865,
+        "zfight": 2
+       }
+      },
+      "own_hair": "hair_w_worker",
+      "rays": {
+       "clear": 387,
+       "covered": 420,
+       "poke": 57,
+       "rays": 865,
+       "zfight": 1
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_w_worker_hard_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_w_scifi",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 331,
+        "covered": 447,
+        "poke": 76,
+        "rays": 865,
+        "zfight": 11
+       }
+      },
+      "own_hair": "hair_w_worker",
+      "rays": {
+       "clear": 331,
+       "covered": 376,
+       "poke": 133,
+       "rays": 865,
+       "zfight": 25
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_w_worker_hard_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_w_soldier",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 320,
+        "covered": 523,
+        "poke": 16,
+        "rays": 865,
+        "zfight": 6
+       }
+      },
+      "own_hair": "hair_w_worker",
+      "rays": {
+       "clear": 320,
+       "covered": 499,
+       "poke": 36,
+       "rays": 865,
+       "zfight": 10
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_w_worker_hard_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_w_suit_bob",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 323,
+        "covered": 448,
+        "poke": 82,
+        "rays": 865,
+        "zfight": 12
+       }
+      },
+      "own_hair": "hair_w_worker",
+      "rays": {
+       "clear": 323,
+       "covered": 391,
+       "poke": 131,
+       "rays": 865,
+       "zfight": 20
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_w_worker_hard_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_w_witch",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 316,
+        "covered": 462,
+        "poke": 73,
+        "rays": 865,
+        "zfight": 14
+       }
+      },
+      "own_hair": "hair_w_worker",
+      "rays": {
+       "clear": 316,
+       "covered": 403,
+       "poke": 131,
+       "rays": 865,
+       "zfight": 15
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_w_worker_hard_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_w_worker",
+      "own_hair": "hair_w_worker",
+      "rays": {
+       "clear": 319,
+       "covered": 546,
+       "poke": 0,
+       "rays": 865,
+       "zfight": 0
+      },
+      "verdict": "ok"
+     }
+    ],
+    "cols": [
+     "hair_m_adventurer",
+     "hair_m_beach",
+     "hair_m_business",
+     "hair_m_casual",
+     "hair_m_farmer_buzz",
+     "hair_m_hoodie",
+     "hair_m_king_long",
+     "hair_m_punk_mohawk",
+     "hair_m_worker_buzz",
+     "hair_w_adventurer",
+     "hair_w_casual_bob",
+     "hair_w_formal_updo",
+     "hair_w_medieval",
+     "hair_w_punk_mohawk",
+     "hair_w_scifi",
+     "hair_w_soldier",
+     "hair_w_suit_bob",
+     "hair_w_witch",
+     "hair_w_worker"
+    ],
+    "rows": [
+     "headwear_m_farmer_cowboy_hat",
+     "headwear_m_king_crown",
+     "headwear_m_worker_hard_hat",
+     "headwear_w_medieval_hood",
+     "headwear_w_witch_hat",
+     "headwear_w_worker_hard_hat"
+    ]
+   },
+   "W": {
+    "cells": [
+     {
+      "a": "headwear_m_farmer_cowboy_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_m_adventurer",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 346,
+        "covered": 328,
+        "poke": 179,
+        "rays": 865,
+        "zfight": 12
+       }
+      },
+      "own_hair": "hair_m_farmer_buzz",
+      "rays": {
+       "clear": 346,
+       "covered": 209,
+       "poke": 287,
+       "rays": 865,
+       "zfight": 23
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_m_farmer_cowboy_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_m_beach",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 358,
+        "covered": 399,
+        "poke": 102,
+        "rays": 865,
+        "zfight": 6
+       }
+      },
+      "own_hair": "hair_m_farmer_buzz",
+      "rays": {
+       "clear": 362,
+       "covered": 363,
+       "poke": 135,
+       "rays": 865,
+       "zfight": 5
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_m_farmer_cowboy_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_m_business",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 348,
+        "covered": 342,
+        "poke": 155,
+        "rays": 865,
+        "zfight": 20
+       }
+      },
+      "own_hair": "hair_m_farmer_buzz",
+      "rays": {
+       "clear": 349,
+       "covered": 219,
+       "poke": 267,
+       "rays": 865,
+       "zfight": 30
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_m_farmer_cowboy_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_m_casual",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 359,
+        "covered": 409,
+        "poke": 94,
+        "rays": 865,
+        "zfight": 3
+       }
+      },
+      "own_hair": "hair_m_farmer_buzz",
+      "rays": {
+       "clear": 359,
+       "covered": 367,
+       "poke": 128,
+       "rays": 865,
+       "zfight": 11
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_m_farmer_cowboy_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_m_farmer_buzz",
+      "own_hair": "hair_m_farmer_buzz",
+      "rays": {
+       "clear": 364,
+       "covered": 501,
+       "poke": 0,
+       "rays": 865,
+       "zfight": 0
+      },
+      "verdict": "ok"
+     },
+     {
+      "a": "headwear_m_farmer_cowboy_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_m_hoodie",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 338,
+        "covered": 326,
+        "poke": 163,
+        "rays": 865,
+        "zfight": 38
+       }
+      },
+      "own_hair": "hair_m_farmer_buzz",
+      "rays": {
+       "clear": 338,
+       "covered": 222,
+       "poke": 276,
+       "rays": 865,
+       "zfight": 29
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_m_farmer_cowboy_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_m_king_long",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 347,
+        "covered": 420,
+        "poke": 95,
+        "rays": 865,
+        "zfight": 3
+       }
+      },
+      "own_hair": "hair_m_farmer_buzz",
+      "rays": {
+       "clear": 347,
+       "covered": 375,
+       "poke": 130,
+       "rays": 865,
+       "zfight": 13
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_m_farmer_cowboy_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_m_punk_mohawk",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 385,
+        "covered": 407,
+        "poke": 72,
+        "rays": 865,
+        "zfight": 1
+       }
+      },
+      "own_hair": "hair_m_farmer_buzz",
+      "rays": {
+       "clear": 394,
+       "covered": 389,
+       "poke": 80,
+       "rays": 865,
+       "zfight": 2
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_m_farmer_cowboy_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_m_worker_buzz",
+      "own_hair": "hair_m_farmer_buzz",
+      "rays": {
+       "clear": 364,
+       "covered": 499,
+       "poke": 2,
+       "rays": 865,
+       "zfight": 0
+      },
+      "verdict": "ok"
+     },
+     {
+      "a": "headwear_m_farmer_cowboy_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_w_adventurer",
+      "own_hair": "hair_m_farmer_buzz",
+      "rays": {
+       "clear": 359,
+       "covered": 502,
+       "poke": 2,
+       "rays": 865,
+       "zfight": 2
+      },
+      "verdict": "ok"
+     },
+     {
+      "a": "headwear_m_farmer_cowboy_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_w_casual_bob",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 344,
+        "covered": 427,
+        "poke": 88,
+        "rays": 865,
+        "zfight": 6
+       }
+      },
+      "own_hair": "hair_m_farmer_buzz",
+      "rays": {
+       "clear": 346,
+       "covered": 392,
+       "poke": 118,
+       "rays": 865,
+       "zfight": 9
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_m_farmer_cowboy_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_w_formal_updo",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 344,
+        "covered": 416,
+        "poke": 99,
+        "rays": 865,
+        "zfight": 6
+       }
+      },
+      "own_hair": "hair_m_farmer_buzz",
+      "rays": {
+       "clear": 350,
+       "covered": 392,
+       "poke": 117,
+       "rays": 865,
+       "zfight": 6
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_m_farmer_cowboy_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_w_medieval",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 344,
+        "covered": 474,
+        "poke": 44,
+        "rays": 865,
+        "zfight": 3
+       }
+      },
+      "own_hair": "hair_m_farmer_buzz",
+      "rays": {
+       "clear": 345,
+       "covered": 459,
+       "poke": 56,
+       "rays": 865,
+       "zfight": 5
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_m_farmer_cowboy_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_w_punk_mohawk",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 400,
+        "covered": 413,
+        "poke": 52,
+        "rays": 865,
+        "zfight": 0
+       }
+      },
+      "own_hair": "hair_m_farmer_buzz",
+      "rays": {
+       "clear": 404,
+       "covered": 402,
+       "poke": 58,
+       "rays": 865,
+       "zfight": 1
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_m_farmer_cowboy_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_w_scifi",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 351,
+        "covered": 435,
+        "poke": 75,
+        "rays": 865,
+        "zfight": 4
+       }
+      },
+      "own_hair": "hair_m_farmer_buzz",
+      "rays": {
+       "clear": 353,
+       "covered": 399,
+       "poke": 102,
+       "rays": 865,
+       "zfight": 11
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_m_farmer_cowboy_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_w_soldier",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 341,
+        "covered": 488,
+        "poke": 30,
+        "rays": 865,
+        "zfight": 6
+       }
+      },
+      "own_hair": "hair_m_farmer_buzz",
+      "rays": {
+       "clear": 341,
+       "covered": 465,
+       "poke": 54,
+       "rays": 865,
+       "zfight": 5
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_m_farmer_cowboy_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_w_suit_bob",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 344,
+        "covered": 431,
+        "poke": 82,
+        "rays": 865,
+        "zfight": 8
+       }
+      },
+      "own_hair": "hair_m_farmer_buzz",
+      "rays": {
+       "clear": 346,
+       "covered": 402,
+       "poke": 107,
+       "rays": 865,
+       "zfight": 10
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_m_farmer_cowboy_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_w_witch",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 337,
+        "covered": 438,
+        "poke": 84,
+        "rays": 865,
+        "zfight": 6
+       }
+      },
+      "own_hair": "hair_m_farmer_buzz",
+      "rays": {
+       "clear": 337,
+       "covered": 406,
+       "poke": 116,
+       "rays": 865,
+       "zfight": 6
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_m_farmer_cowboy_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_w_worker",
+      "own_hair": "hair_m_farmer_buzz",
+      "rays": {
+       "clear": 340,
+       "covered": 525,
+       "poke": 0,
+       "rays": 865,
+       "zfight": 0
+      },
+      "verdict": "ok"
+     },
+     {
+      "a": "headwear_m_king_crown",
+      "allowance": {
+       "poke": 4,
+       "zfight": 3
+      },
+      "b": "hair_m_adventurer",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 787,
+        "covered": 59,
+        "poke": 19,
+        "rays": 865,
+        "zfight": 0
+       }
+      },
+      "own_hair": "hair_m_king_long",
+      "rays": {
+       "clear": 787,
+       "covered": 51,
+       "poke": 25,
+       "rays": 865,
+       "zfight": 2
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_m_king_crown",
+      "allowance": {
+       "poke": 4,
+       "zfight": 3
+      },
+      "b": "hair_m_beach",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 787,
+        "covered": 67,
+        "poke": 11,
+        "rays": 865,
+        "zfight": 0
+       }
+      },
+      "own_hair": "hair_m_king_long",
+      "rays": {
+       "clear": 787,
+       "covered": 61,
+       "poke": 17,
+       "rays": 865,
+       "zfight": 0
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_m_king_crown",
+      "allowance": {
+       "poke": 4,
+       "zfight": 3
+      },
+      "b": "hair_m_business",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 787,
+        "covered": 58,
+        "poke": 18,
+        "rays": 865,
+        "zfight": 2
+       }
+      },
+      "own_hair": "hair_m_king_long",
+      "rays": {
+       "clear": 787,
+       "covered": 51,
+       "poke": 26,
+       "rays": 865,
+       "zfight": 1
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_m_king_crown",
+      "allowance": {
+       "poke": 4,
+       "zfight": 3
+      },
+      "b": "hair_m_casual",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 787,
+        "covered": 72,
+        "poke": 5,
+        "rays": 865,
+        "zfight": 1
+       }
+      },
+      "own_hair": "hair_m_king_long",
+      "rays": {
+       "clear": 787,
+       "covered": 67,
+       "poke": 10,
+       "rays": 865,
+       "zfight": 1
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_m_king_crown",
+      "allowance": {
+       "poke": 4,
+       "zfight": 3
+      },
+      "b": "hair_m_farmer_buzz",
+      "own_hair": "hair_m_king_long",
+      "rays": {
+       "clear": 787,
+       "covered": 78,
+       "poke": 0,
+       "rays": 865,
+       "zfight": 0
+      },
+      "verdict": "ok"
+     },
+     {
+      "a": "headwear_m_king_crown",
+      "allowance": {
+       "poke": 4,
+       "zfight": 3
+      },
+      "b": "hair_m_hoodie",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 787,
+        "covered": 64,
+        "poke": 13,
+        "rays": 865,
+        "zfight": 1
+       }
+      },
+      "own_hair": "hair_m_king_long",
+      "rays": {
+       "clear": 787,
+       "covered": 56,
+       "poke": 20,
+       "rays": 865,
+       "zfight": 2
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_m_king_crown",
+      "allowance": {
+       "poke": 4,
+       "zfight": 3
+      },
+      "b": "hair_m_king_long",
+      "own_hair": "hair_m_king_long",
+      "rays": {
+       "clear": 787,
+       "covered": 75,
+       "poke": 2,
+       "rays": 865,
+       "zfight": 1
+      },
+      "verdict": "ok"
+     },
+     {
+      "a": "headwear_m_king_crown",
+      "allowance": {
+       "poke": 4,
+       "zfight": 3
+      },
+      "b": "hair_m_punk_mohawk",
+      "fix": {
+       "amount": 0.03,
+       "fix": "inflate",
+       "part": "headwear"
+      },
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": true,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 793,
+        "covered": 67,
+        "poke": 4,
+        "rays": 865,
+        "zfight": 1
+       }
+      },
+      "own_hair": "hair_m_king_long",
+      "rays": {
+       "clear": 793,
+       "covered": 67,
+       "poke": 5,
+       "rays": 865,
+       "zfight": 0
+      },
+      "verdict": "needs_fix"
+     },
+     {
+      "a": "headwear_m_king_crown",
+      "allowance": {
+       "poke": 4,
+       "zfight": 3
+      },
+      "b": "hair_m_worker_buzz",
+      "own_hair": "hair_m_king_long",
+      "rays": {
+       "clear": 787,
+       "covered": 78,
+       "poke": 0,
+       "rays": 865,
+       "zfight": 0
+      },
+      "verdict": "ok"
+     },
+     {
+      "a": "headwear_m_king_crown",
+      "allowance": {
+       "poke": 4,
+       "zfight": 3
+      },
+      "b": "hair_w_adventurer",
+      "own_hair": "hair_m_king_long",
+      "rays": {
+       "clear": 787,
+       "covered": 78,
+       "poke": 0,
+       "rays": 865,
+       "zfight": 0
+      },
+      "verdict": "ok"
+     },
+     {
+      "a": "headwear_m_king_crown",
+      "allowance": {
+       "poke": 4,
+       "zfight": 3
+      },
+      "b": "hair_w_casual_bob",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 787,
+        "covered": 69,
+        "poke": 8,
+        "rays": 865,
+        "zfight": 1
+       }
+      },
+      "own_hair": "hair_m_king_long",
+      "rays": {
+       "clear": 787,
+       "covered": 64,
+       "poke": 13,
+       "rays": 865,
+       "zfight": 1
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_m_king_crown",
+      "allowance": {
+       "poke": 4,
+       "zfight": 3
+      },
+      "b": "hair_w_formal_updo",
+      "fix": {
+       "amount": 0.01,
+       "fix": "inflate",
+       "part": "headwear"
+      },
+      "fix_tried": {
+       "amount": 0.01,
+       "closes": true,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 787,
+        "covered": 74,
+        "poke": 2,
+        "rays": 865,
+        "zfight": 2
+       }
+      },
+      "own_hair": "hair_m_king_long",
+      "rays": {
+       "clear": 787,
+       "covered": 69,
+       "poke": 5,
+       "rays": 865,
+       "zfight": 4
+      },
+      "verdict": "needs_fix"
+     },
+     {
+      "a": "headwear_m_king_crown",
+      "allowance": {
+       "poke": 4,
+       "zfight": 3
+      },
+      "b": "hair_w_medieval",
+      "fix": {
+       "amount": 0.01,
+       "fix": "inflate",
+       "part": "headwear"
+      },
+      "fix_tried": {
+       "amount": 0.01,
+       "closes": true,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 787,
+        "covered": 73,
+        "poke": 4,
+        "rays": 865,
+        "zfight": 1
+       }
+      },
+      "own_hair": "hair_m_king_long",
+      "rays": {
+       "clear": 787,
+       "covered": 72,
+       "poke": 5,
+       "rays": 865,
+       "zfight": 1
+      },
+      "verdict": "needs_fix"
+     },
+     {
+      "a": "headwear_m_king_crown",
+      "allowance": {
+       "poke": 4,
+       "zfight": 3
+      },
+      "b": "hair_w_punk_mohawk",
+      "fix": {
+       "amount": 0.03,
+       "fix": "inflate",
+       "part": "headwear"
+      },
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": true,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 793,
+        "covered": 67,
+        "poke": 4,
+        "rays": 865,
+        "zfight": 1
+       }
+      },
+      "own_hair": "hair_m_king_long",
+      "rays": {
+       "clear": 793,
+       "covered": 65,
+       "poke": 6,
+       "rays": 865,
+       "zfight": 1
+      },
+      "verdict": "needs_fix"
+     },
+     {
+      "a": "headwear_m_king_crown",
+      "allowance": {
+       "poke": 4,
+       "zfight": 3
+      },
+      "b": "hair_w_scifi",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 789,
+        "covered": 68,
+        "poke": 8,
+        "rays": 865,
+        "zfight": 0
+       }
+      },
+      "own_hair": "hair_m_king_long",
+      "rays": {
+       "clear": 789,
+       "covered": 65,
+       "poke": 10,
+       "rays": 865,
+       "zfight": 1
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_m_king_crown",
+      "allowance": {
+       "poke": 4,
+       "zfight": 3
+      },
+      "b": "hair_w_soldier",
+      "own_hair": "hair_m_king_long",
+      "rays": {
+       "clear": 787,
+       "covered": 78,
+       "poke": 0,
+       "rays": 865,
+       "zfight": 0
+      },
+      "verdict": "ok"
+     },
+     {
+      "a": "headwear_m_king_crown",
+      "allowance": {
+       "poke": 4,
+       "zfight": 3
+      },
+      "b": "hair_w_suit_bob",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 787,
+        "covered": 69,
+        "poke": 8,
+        "rays": 865,
+        "zfight": 1
+       }
+      },
+      "own_hair": "hair_m_king_long",
+      "rays": {
+       "clear": 787,
+       "covered": 64,
+       "poke": 12,
+       "rays": 865,
+       "zfight": 2
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_m_king_crown",
+      "allowance": {
+       "poke": 4,
+       "zfight": 3
+      },
+      "b": "hair_w_witch",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 787,
+        "covered": 72,
+        "poke": 6,
+        "rays": 865,
+        "zfight": 0
+       }
+      },
+      "own_hair": "hair_m_king_long",
+      "rays": {
+       "clear": 787,
+       "covered": 68,
+       "poke": 10,
+       "rays": 865,
+       "zfight": 0
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_m_king_crown",
+      "allowance": {
+       "poke": 4,
+       "zfight": 3
+      },
+      "b": "hair_w_worker",
+      "own_hair": "hair_m_king_long",
+      "rays": {
+       "clear": 787,
+       "covered": 78,
+       "poke": 0,
+       "rays": 865,
+       "zfight": 0
+      },
+      "verdict": "ok"
+     },
+     {
+      "a": "headwear_m_worker_hard_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_m_adventurer",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 335,
+        "covered": 335,
+        "poke": 166,
+        "rays": 865,
+        "zfight": 29
+       }
+      },
+      "own_hair": "hair_m_worker_buzz",
+      "rays": {
+       "clear": 335,
+       "covered": 218,
+       "poke": 292,
+       "rays": 865,
+       "zfight": 20
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_m_worker_hard_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_m_beach",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 349,
+        "covered": 442,
+        "poke": 60,
+        "rays": 865,
+        "zfight": 14
+       }
+      },
+      "own_hair": "hair_m_worker_buzz",
+      "rays": {
+       "clear": 352,
+       "covered": 394,
+       "poke": 103,
+       "rays": 865,
+       "zfight": 16
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_m_worker_hard_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_m_business",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 338,
+        "covered": 371,
+        "poke": 137,
+        "rays": 865,
+        "zfight": 19
+       }
+      },
+      "own_hair": "hair_m_worker_buzz",
+      "rays": {
+       "clear": 338,
+       "covered": 249,
+       "poke": 250,
+       "rays": 865,
+       "zfight": 28
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_m_worker_hard_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_m_casual",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 348,
+        "covered": 467,
+        "poke": 36,
+        "rays": 865,
+        "zfight": 14
+       }
+      },
+      "own_hair": "hair_m_worker_buzz",
+      "rays": {
+       "clear": 348,
+       "covered": 416,
+       "poke": 94,
+       "rays": 865,
+       "zfight": 7
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_m_worker_hard_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_m_farmer_buzz",
+      "own_hair": "hair_m_worker_buzz",
+      "rays": {
+       "clear": 357,
+       "covered": 508,
+       "poke": 0,
+       "rays": 865,
+       "zfight": 0
+      },
+      "verdict": "ok"
+     },
+     {
+      "a": "headwear_m_worker_hard_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_m_hoodie",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 327,
+        "covered": 392,
+        "poke": 126,
+        "rays": 865,
+        "zfight": 20
+       }
+      },
+      "own_hair": "hair_m_worker_buzz",
+      "rays": {
+       "clear": 327,
+       "covered": 224,
+       "poke": 272,
+       "rays": 865,
+       "zfight": 42
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_m_worker_hard_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_m_king_long",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 336,
+        "covered": 452,
+        "poke": 66,
+        "rays": 865,
+        "zfight": 11
+       }
+      },
+      "own_hair": "hair_m_worker_buzz",
+      "rays": {
+       "clear": 336,
+       "covered": 398,
+       "poke": 120,
+       "rays": 865,
+       "zfight": 11
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_m_worker_hard_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_m_punk_mohawk",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 381,
+        "covered": 416,
+        "poke": 67,
+        "rays": 865,
+        "zfight": 1
+       }
+      },
+      "own_hair": "hair_m_worker_buzz",
+      "rays": {
+       "clear": 384,
+       "covered": 407,
+       "poke": 70,
+       "rays": 865,
+       "zfight": 4
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_m_worker_hard_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_m_worker_buzz",
+      "own_hair": "hair_m_worker_buzz",
+      "rays": {
+       "clear": 357,
+       "covered": 508,
+       "poke": 0,
+       "rays": 865,
+       "zfight": 0
+      },
+      "verdict": "ok"
+     },
+     {
+      "a": "headwear_m_worker_hard_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_w_adventurer",
+      "fix": {
+       "amount": 0.02,
+       "fix": "inflate",
+       "part": "headwear"
+      },
+      "fix_tried": {
+       "amount": 0.02,
+       "closes": true,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 352,
+        "covered": 509,
+        "poke": 2,
+        "rays": 865,
+        "zfight": 2
+       }
+      },
+      "own_hair": "hair_m_worker_buzz",
+      "rays": {
+       "clear": 352,
+       "covered": 507,
+       "poke": 6,
+       "rays": 865,
+       "zfight": 0
+      },
+      "verdict": "needs_fix"
+     },
+     {
+      "a": "headwear_m_worker_hard_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_w_casual_bob",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 333,
+        "covered": 455,
+        "poke": 70,
+        "rays": 865,
+        "zfight": 7
+       }
+      },
+      "own_hair": "hair_m_worker_buzz",
+      "rays": {
+       "clear": 335,
+       "covered": 421,
+       "poke": 102,
+       "rays": 865,
+       "zfight": 7
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_m_worker_hard_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_w_formal_updo",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 325,
+        "covered": 403,
+        "poke": 137,
+        "rays": 865,
+        "zfight": 0
+       }
+      },
+      "own_hair": "hair_m_worker_buzz",
+      "rays": {
+       "clear": 329,
+       "covered": 372,
+       "poke": 151,
+       "rays": 865,
+       "zfight": 13
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_m_worker_hard_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_w_medieval",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 333,
+        "covered": 476,
+        "poke": 54,
+        "rays": 865,
+        "zfight": 2
+       }
+      },
+      "own_hair": "hair_m_worker_buzz",
+      "rays": {
+       "clear": 335,
+       "covered": 460,
+       "poke": 67,
+       "rays": 865,
+       "zfight": 3
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_m_worker_hard_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_w_punk_mohawk",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 383,
+        "covered": 428,
+        "poke": 52,
+        "rays": 865,
+        "zfight": 2
+       }
+      },
+      "own_hair": "hair_m_worker_buzz",
+      "rays": {
+       "clear": 388,
+       "covered": 420,
+       "poke": 55,
+       "rays": 865,
+       "zfight": 2
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_m_worker_hard_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_w_scifi",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 340,
+        "covered": 466,
+        "poke": 52,
+        "rays": 865,
+        "zfight": 7
+       }
+      },
+      "own_hair": "hair_m_worker_buzz",
+      "rays": {
+       "clear": 342,
+       "covered": 415,
+       "poke": 92,
+       "rays": 865,
+       "zfight": 16
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_m_worker_hard_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_w_soldier",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 330,
+        "covered": 519,
+        "poke": 14,
+        "rays": 865,
+        "zfight": 2
+       }
+      },
+      "own_hair": "hair_m_worker_buzz",
+      "rays": {
+       "clear": 330,
+       "covered": 489,
+       "poke": 34,
+       "rays": 865,
+       "zfight": 12
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_m_worker_hard_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_w_suit_bob",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 333,
+        "covered": 462,
+        "poke": 66,
+        "rays": 865,
+        "zfight": 4
+       }
+      },
+      "own_hair": "hair_m_worker_buzz",
+      "rays": {
+       "clear": 335,
+       "covered": 429,
+       "poke": 95,
+       "rays": 865,
+       "zfight": 6
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_m_worker_hard_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_w_witch",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 326,
+        "covered": 461,
+        "poke": 74,
+        "rays": 865,
+        "zfight": 4
+       }
+      },
+      "own_hair": "hair_m_worker_buzz",
+      "rays": {
+       "clear": 326,
+       "covered": 428,
+       "poke": 104,
+       "rays": 865,
+       "zfight": 7
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_m_worker_hard_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_w_worker",
+      "own_hair": "hair_m_worker_buzz",
+      "rays": {
+       "clear": 329,
+       "covered": 534,
+       "poke": 0,
+       "rays": 865,
+       "zfight": 2
+      },
+      "verdict": "ok"
+     },
+     {
+      "a": "headwear_w_medieval_hood",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_m_adventurer",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 194,
+        "covered": 659,
+        "poke": 11,
+        "rays": 865,
+        "zfight": 1
+       }
+      },
+      "own_hair": "hair_w_medieval",
+      "rays": {
+       "clear": 194,
+       "covered": 653,
+       "poke": 16,
+       "rays": 865,
+       "zfight": 2
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_w_medieval_hood",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_m_beach",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 228,
+        "covered": 634,
+        "poke": 3,
+        "rays": 865,
+        "zfight": 0
+       }
+      },
+      "own_hair": "hair_w_medieval",
+      "rays": {
+       "clear": 228,
+       "covered": 631,
+       "poke": 5,
+       "rays": 865,
+       "zfight": 1
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_w_medieval_hood",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_m_business",
+      "fix": {
+       "amount": 0.01,
+       "fix": "inflate",
+       "part": "headwear"
+      },
+      "fix_tried": {
+       "amount": 0.01,
+       "closes": true,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 221,
+        "covered": 644,
+        "poke": 0,
+        "rays": 865,
+        "zfight": 0
+       }
+      },
+      "own_hair": "hair_w_medieval",
+      "rays": {
+       "clear": 221,
+       "covered": 640,
+       "poke": 1,
+       "rays": 865,
+       "zfight": 3
+      },
+      "verdict": "needs_fix"
+     },
+     {
+      "a": "headwear_w_medieval_hood",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_m_casual",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 209,
+        "covered": 650,
+        "poke": 5,
+        "rays": 865,
+        "zfight": 1
+       }
+      },
+      "own_hair": "hair_w_medieval",
+      "rays": {
+       "clear": 210,
+       "covered": 647,
+       "poke": 7,
+       "rays": 865,
+       "zfight": 1
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_w_medieval_hood",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_m_farmer_buzz",
+      "own_hair": "hair_w_medieval",
+      "rays": {
+       "clear": 249,
+       "covered": 616,
+       "poke": 0,
+       "rays": 865,
+       "zfight": 0
+      },
+      "verdict": "ok"
+     },
+     {
+      "a": "headwear_w_medieval_hood",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_m_hoodie",
+      "fix": {
+       "amount": 0.03,
+       "fix": "inflate",
+       "part": "headwear"
+      },
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": true,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 238,
+        "covered": 624,
+        "poke": 1,
+        "rays": 865,
+        "zfight": 2
+       }
+      },
+      "own_hair": "hair_w_medieval",
+      "rays": {
+       "clear": 238,
+       "covered": 622,
+       "poke": 5,
+       "rays": 865,
+       "zfight": 0
+      },
+      "verdict": "needs_fix"
+     },
+     {
+      "a": "headwear_w_medieval_hood",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_m_king_long",
+      "own_hair": "hair_w_medieval",
+      "rays": {
+       "clear": 204,
+       "covered": 661,
+       "poke": 0,
+       "rays": 865,
+       "zfight": 0
+      },
+      "verdict": "ok"
+     },
+     {
+      "a": "headwear_w_medieval_hood",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_m_punk_mohawk",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 272,
+        "covered": 553,
+        "poke": 40,
+        "rays": 865,
+        "zfight": 0
+       }
+      },
+      "own_hair": "hair_w_medieval",
+      "rays": {
+       "clear": 275,
+       "covered": 542,
+       "poke": 47,
+       "rays": 865,
+       "zfight": 1
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_w_medieval_hood",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_m_worker_buzz",
+      "own_hair": "hair_w_medieval",
+      "rays": {
+       "clear": 249,
+       "covered": 616,
+       "poke": 0,
+       "rays": 865,
+       "zfight": 0
+      },
+      "verdict": "ok"
+     },
+     {
+      "a": "headwear_w_medieval_hood",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_w_adventurer",
+      "own_hair": "hair_w_medieval",
+      "rays": {
+       "clear": 232,
+       "covered": 633,
+       "poke": 0,
+       "rays": 865,
+       "zfight": 0
+      },
+      "verdict": "ok"
+     },
+     {
+      "a": "headwear_w_medieval_hood",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_w_casual_bob",
+      "fix": {
+       "amount": 0.01,
+       "fix": "inflate",
+       "part": "headwear"
+      },
+      "fix_tried": {
+       "amount": 0.01,
+       "closes": true,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 142,
+        "covered": 720,
+        "poke": 2,
+        "rays": 865,
+        "zfight": 1
+       }
+      },
+      "own_hair": "hair_w_medieval",
+      "rays": {
+       "clear": 142,
+       "covered": 719,
+       "poke": 3,
+       "rays": 865,
+       "zfight": 1
+      },
+      "verdict": "needs_fix"
+     },
+     {
+      "a": "headwear_w_medieval_hood",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_w_formal_updo",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 202,
+        "covered": 642,
+        "poke": 21,
+        "rays": 865,
+        "zfight": 0
+       }
+      },
+      "own_hair": "hair_w_medieval",
+      "rays": {
+       "clear": 202,
+       "covered": 636,
+       "poke": 23,
+       "rays": 865,
+       "zfight": 4
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_w_medieval_hood",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_w_medieval",
+      "own_hair": "hair_w_medieval",
+      "rays": {
+       "clear": 195,
+       "covered": 670,
+       "poke": 0,
+       "rays": 865,
+       "zfight": 0
+      },
+      "verdict": "ok"
+     },
+     {
+      "a": "headwear_w_medieval_hood",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_w_punk_mohawk",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 277,
+        "covered": 554,
+        "poke": 34,
+        "rays": 865,
+        "zfight": 0
+       }
+      },
+      "own_hair": "hair_w_medieval",
+      "rays": {
+       "clear": 281,
+       "covered": 541,
+       "poke": 42,
+       "rays": 865,
+       "zfight": 1
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_w_medieval_hood",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_w_scifi",
+      "fix": {
+       "amount": 0.02,
+       "fix": "inflate",
+       "part": "headwear"
+      },
+      "fix_tried": {
+       "amount": 0.02,
+       "closes": true,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 150,
+        "covered": 712,
+        "poke": 1,
+        "rays": 865,
+        "zfight": 2
+       }
+      },
+      "own_hair": "hair_w_medieval",
+      "rays": {
+       "clear": 150,
+       "covered": 710,
+       "poke": 4,
+       "rays": 865,
+       "zfight": 1
+      },
+      "verdict": "needs_fix"
+     },
+     {
+      "a": "headwear_w_medieval_hood",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_w_soldier",
+      "own_hair": "hair_w_medieval",
+      "rays": {
+       "clear": 142,
+       "covered": 723,
+       "poke": 0,
+       "rays": 865,
+       "zfight": 0
+      },
+      "verdict": "ok"
+     },
+     {
+      "a": "headwear_w_medieval_hood",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_w_suit_bob",
+      "fix": {
+       "amount": 0.02,
+       "fix": "inflate",
+       "part": "headwear"
+      },
+      "fix_tried": {
+       "amount": 0.02,
+       "closes": true,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 142,
+        "covered": 720,
+        "poke": 2,
+        "rays": 865,
+        "zfight": 1
+       }
+      },
+      "own_hair": "hair_w_medieval",
+      "rays": {
+       "clear": 142,
+       "covered": 718,
+       "poke": 5,
+       "rays": 865,
+       "zfight": 0
+      },
+      "verdict": "needs_fix"
+     },
+     {
+      "a": "headwear_w_medieval_hood",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_w_witch",
+      "own_hair": "hair_w_medieval",
+      "rays": {
+       "clear": 142,
+       "covered": 722,
+       "poke": 0,
+       "rays": 865,
+       "zfight": 1
+      },
+      "verdict": "ok"
+     },
+     {
+      "a": "headwear_w_medieval_hood",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_w_worker",
+      "own_hair": "hair_w_medieval",
+      "rays": {
+       "clear": 142,
+       "covered": 723,
+       "poke": 0,
+       "rays": 865,
+       "zfight": 0
+      },
+      "verdict": "ok"
+     },
+     {
+      "a": "headwear_w_witch_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_m_adventurer",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 313,
+        "covered": 526,
+        "poke": 21,
+        "rays": 865,
+        "zfight": 5
+       }
+      },
+      "own_hair": "hair_w_witch",
+      "rays": {
+       "clear": 313,
+       "covered": 503,
+       "poke": 45,
+       "rays": 865,
+       "zfight": 4
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_w_witch_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_m_beach",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 324,
+        "covered": 527,
+        "poke": 13,
+        "rays": 865,
+        "zfight": 1
+       }
+      },
+      "own_hair": "hair_w_witch",
+      "rays": {
+       "clear": 326,
+       "covered": 519,
+       "poke": 18,
+       "rays": 865,
+       "zfight": 2
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_w_witch_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_m_business",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 317,
+        "covered": 521,
+        "poke": 21,
+        "rays": 865,
+        "zfight": 6
+       }
+      },
+      "own_hair": "hair_w_witch",
+      "rays": {
+       "clear": 317,
+       "covered": 503,
+       "poke": 42,
+       "rays": 865,
+       "zfight": 3
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_w_witch_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_m_casual",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 328,
+        "covered": 530,
+        "poke": 4,
+        "rays": 865,
+        "zfight": 3
+       }
+      },
+      "own_hair": "hair_w_witch",
+      "rays": {
+       "clear": 328,
+       "covered": 527,
+       "poke": 9,
+       "rays": 865,
+       "zfight": 1
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_w_witch_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_m_farmer_buzz",
+      "own_hair": "hair_w_witch",
+      "rays": {
+       "clear": 347,
+       "covered": 518,
+       "poke": 0,
+       "rays": 865,
+       "zfight": 0
+      },
+      "verdict": "ok"
+     },
+     {
+      "a": "headwear_w_witch_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_m_hoodie",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 307,
+        "covered": 549,
+        "poke": 4,
+        "rays": 865,
+        "zfight": 5
+       }
+      },
+      "own_hair": "hair_w_witch",
+      "rays": {
+       "clear": 307,
+       "covered": 522,
+       "poke": 26,
+       "rays": 865,
+       "zfight": 10
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_w_witch_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_m_king_long",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 316,
+        "covered": 544,
+        "poke": 4,
+        "rays": 865,
+        "zfight": 1
+       }
+      },
+      "own_hair": "hair_w_witch",
+      "rays": {
+       "clear": 316,
+       "covered": 535,
+       "poke": 11,
+       "rays": 865,
+       "zfight": 3
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_w_witch_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_m_punk_mohawk",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 341,
+        "covered": 492,
+        "poke": 29,
+        "rays": 865,
+        "zfight": 3
+       }
+      },
+      "own_hair": "hair_w_witch",
+      "rays": {
+       "clear": 345,
+       "covered": 488,
+       "poke": 29,
+       "rays": 865,
+       "zfight": 3
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_w_witch_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_m_worker_buzz",
+      "own_hair": "hair_w_witch",
+      "rays": {
+       "clear": 347,
+       "covered": 518,
+       "poke": 0,
+       "rays": 865,
+       "zfight": 0
+      },
+      "verdict": "ok"
+     },
+     {
+      "a": "headwear_w_witch_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_w_adventurer",
+      "own_hair": "hair_w_witch",
+      "rays": {
+       "clear": 342,
+       "covered": 523,
+       "poke": 0,
+       "rays": 865,
+       "zfight": 0
+      },
+      "verdict": "ok"
+     },
+     {
+      "a": "headwear_w_witch_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_w_casual_bob",
+      "fix": {
+       "amount": 0.03,
+       "fix": "inflate",
+       "part": "headwear"
+      },
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": true,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 308,
+        "covered": 554,
+        "poke": 2,
+        "rays": 865,
+        "zfight": 1
+       }
+      },
+      "own_hair": "hair_w_witch",
+      "rays": {
+       "clear": 308,
+       "covered": 551,
+       "poke": 5,
+       "rays": 865,
+       "zfight": 1
+      },
+      "verdict": "needs_fix"
+     },
+     {
+      "a": "headwear_w_witch_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_w_formal_updo",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 298,
+        "covered": 560,
+        "poke": 6,
+        "rays": 865,
+        "zfight": 1
+       }
+      },
+      "own_hair": "hair_w_witch",
+      "rays": {
+       "clear": 298,
+       "covered": 552,
+       "poke": 14,
+       "rays": 865,
+       "zfight": 1
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_w_witch_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_w_medieval",
+      "fix": {
+       "amount": 0.03,
+       "fix": "inflate",
+       "part": "headwear"
+      },
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": true,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 308,
+        "covered": 554,
+        "poke": 1,
+        "rays": 865,
+        "zfight": 2
+       }
+      },
+      "own_hair": "hair_w_witch",
+      "rays": {
+       "clear": 308,
+       "covered": 551,
+       "poke": 4,
+       "rays": 865,
+       "zfight": 2
+      },
+      "verdict": "needs_fix"
+     },
+     {
+      "a": "headwear_w_witch_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_w_punk_mohawk",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 337,
+        "covered": 506,
+        "poke": 20,
+        "rays": 865,
+        "zfight": 2
+       }
+      },
+      "own_hair": "hair_w_witch",
+      "rays": {
+       "clear": 340,
+       "covered": 502,
+       "poke": 23,
+       "rays": 865,
+       "zfight": 0
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_w_witch_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_w_scifi",
+      "fix": {
+       "amount": 0.01,
+       "fix": "inflate",
+       "part": "headwear"
+      },
+      "fix_tried": {
+       "amount": 0.01,
+       "closes": true,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 314,
+        "covered": 548,
+        "poke": 1,
+        "rays": 865,
+        "zfight": 2
+       }
+      },
+      "own_hair": "hair_w_witch",
+      "rays": {
+       "clear": 314,
+       "covered": 545,
+       "poke": 4,
+       "rays": 865,
+       "zfight": 2
+      },
+      "verdict": "needs_fix"
+     },
+     {
+      "a": "headwear_w_witch_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_w_soldier",
+      "own_hair": "hair_w_witch",
+      "rays": {
+       "clear": 304,
+       "covered": 561,
+       "poke": 0,
+       "rays": 865,
+       "zfight": 0
+      },
+      "verdict": "ok"
+     },
+     {
+      "a": "headwear_w_witch_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_w_suit_bob",
+      "fix": {
+       "amount": 0.03,
+       "fix": "inflate",
+       "part": "headwear"
+      },
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": true,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 308,
+        "covered": 554,
+        "poke": 1,
+        "rays": 865,
+        "zfight": 2
+       }
+      },
+      "own_hair": "hair_w_witch",
+      "rays": {
+       "clear": 308,
+       "covered": 551,
+       "poke": 4,
+       "rays": 865,
+       "zfight": 2
+      },
+      "verdict": "needs_fix"
+     },
+     {
+      "a": "headwear_w_witch_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_w_witch",
+      "own_hair": "hair_w_witch",
+      "rays": {
+       "clear": 301,
+       "covered": 564,
+       "poke": 0,
+       "rays": 865,
+       "zfight": 0
+      },
+      "verdict": "ok"
+     },
+     {
+      "a": "headwear_w_witch_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_w_worker",
+      "own_hair": "hair_w_witch",
+      "rays": {
+       "clear": 304,
+       "covered": 561,
+       "poke": 0,
+       "rays": 865,
+       "zfight": 0
+      },
+      "verdict": "ok"
+     },
+     {
+      "a": "headwear_w_worker_hard_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_m_adventurer",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 326,
+        "covered": 270,
+        "poke": 244,
+        "rays": 865,
+        "zfight": 25
+       }
+      },
+      "own_hair": "hair_w_worker",
+      "rays": {
+       "clear": 326,
+       "covered": 165,
+       "poke": 352,
+       "rays": 865,
+       "zfight": 22
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_w_worker_hard_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_m_beach",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 340,
+        "covered": 415,
+        "poke": 89,
+        "rays": 865,
+        "zfight": 21
+       }
+      },
+      "own_hair": "hair_w_worker",
+      "rays": {
+       "clear": 342,
+       "covered": 346,
+       "poke": 153,
+       "rays": 865,
+       "zfight": 24
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_w_worker_hard_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_m_business",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 329,
+        "covered": 282,
+        "poke": 225,
+        "rays": 865,
+        "zfight": 29
+       }
+      },
+      "own_hair": "hair_w_worker",
+      "rays": {
+       "clear": 330,
+       "covered": 165,
+       "poke": 340,
+       "rays": 865,
+       "zfight": 30
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_w_worker_hard_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_m_casual",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 342,
+        "covered": 410,
+        "poke": 98,
+        "rays": 865,
+        "zfight": 15
+       }
+      },
+      "own_hair": "hair_w_worker",
+      "rays": {
+       "clear": 342,
+       "covered": 351,
+       "poke": 156,
+       "rays": 865,
+       "zfight": 16
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_w_worker_hard_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_m_farmer_buzz",
+      "own_hair": "hair_w_worker",
+      "rays": {
+       "clear": 351,
+       "covered": 514,
+       "poke": 0,
+       "rays": 865,
+       "zfight": 0
+      },
+      "verdict": "ok"
+     },
+     {
+      "a": "headwear_w_worker_hard_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_m_hoodie",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 321,
+        "covered": 289,
+        "poke": 208,
+        "rays": 865,
+        "zfight": 47
+       }
+      },
+      "own_hair": "hair_w_worker",
+      "rays": {
+       "clear": 321,
+       "covered": 115,
+       "poke": 395,
+       "rays": 865,
+       "zfight": 34
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_w_worker_hard_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_m_king_long",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 328,
+        "covered": 448,
+        "poke": 71,
+        "rays": 865,
+        "zfight": 18
+       }
+      },
+      "own_hair": "hair_w_worker",
+      "rays": {
+       "clear": 328,
+       "covered": 366,
+       "poke": 157,
+       "rays": 865,
+       "zfight": 14
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_w_worker_hard_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_m_punk_mohawk",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 378,
+        "covered": 416,
+        "poke": 69,
+        "rays": 865,
+        "zfight": 2
+       }
+      },
+      "own_hair": "hair_w_worker",
+      "rays": {
+       "clear": 385,
+       "covered": 394,
+       "poke": 77,
+       "rays": 865,
+       "zfight": 9
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_w_worker_hard_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_m_worker_buzz",
+      "own_hair": "hair_w_worker",
+      "rays": {
+       "clear": 351,
+       "covered": 514,
+       "poke": 0,
+       "rays": 865,
+       "zfight": 0
+      },
+      "verdict": "ok"
+     },
+     {
+      "a": "headwear_w_worker_hard_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_w_adventurer",
+      "own_hair": "hair_w_worker",
+      "rays": {
+       "clear": 346,
+       "covered": 519,
+       "poke": 0,
+       "rays": 865,
+       "zfight": 0
+      },
+      "verdict": "ok"
+     },
+     {
+      "a": "headwear_w_worker_hard_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_w_casual_bob",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 323,
+        "covered": 436,
+        "poke": 89,
+        "rays": 865,
+        "zfight": 17
+       }
+      },
+      "own_hair": "hair_w_worker",
+      "rays": {
+       "clear": 323,
+       "covered": 376,
+       "poke": 149,
+       "rays": 865,
+       "zfight": 17
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_w_worker_hard_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_w_formal_updo",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 323,
+        "covered": 412,
+        "poke": 122,
+        "rays": 865,
+        "zfight": 8
+       }
+      },
+      "own_hair": "hair_w_worker",
+      "rays": {
+       "clear": 325,
+       "covered": 371,
+       "poke": 161,
+       "rays": 865,
+       "zfight": 8
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_w_worker_hard_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_w_medieval",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 323,
+        "covered": 492,
+        "poke": 46,
+        "rays": 865,
+        "zfight": 4
+       }
+      },
+      "own_hair": "hair_w_worker",
+      "rays": {
+       "clear": 323,
+       "covered": 467,
+       "poke": 66,
+       "rays": 865,
+       "zfight": 9
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_w_worker_hard_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_w_punk_mohawk",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 381,
+        "covered": 430,
+        "poke": 52,
+        "rays": 865,
+        "zfight": 2
+       }
+      },
+      "own_hair": "hair_w_worker",
+      "rays": {
+       "clear": 387,
+       "covered": 419,
+       "poke": 56,
+       "rays": 865,
+       "zfight": 3
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_w_worker_hard_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_w_scifi",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 331,
+        "covered": 447,
+        "poke": 77,
+        "rays": 865,
+        "zfight": 10
+       }
+      },
+      "own_hair": "hair_w_worker",
+      "rays": {
+       "clear": 331,
+       "covered": 377,
+       "poke": 134,
+       "rays": 865,
+       "zfight": 23
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_w_worker_hard_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_w_soldier",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 320,
+        "covered": 523,
+        "poke": 16,
+        "rays": 865,
+        "zfight": 6
+       }
+      },
+      "own_hair": "hair_w_worker",
+      "rays": {
+       "clear": 320,
+       "covered": 499,
+       "poke": 36,
+       "rays": 865,
+       "zfight": 10
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_w_worker_hard_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_w_suit_bob",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 323,
+        "covered": 447,
+        "poke": 81,
+        "rays": 865,
+        "zfight": 14
+       }
+      },
+      "own_hair": "hair_w_worker",
+      "rays": {
+       "clear": 323,
+       "covered": 390,
+       "poke": 130,
+       "rays": 865,
+       "zfight": 22
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_w_worker_hard_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_w_witch",
+      "fix_tried": {
+       "amount": 0.03,
+       "closes": false,
+       "fix": "inflate",
+       "part": "headwear",
+       "rays": {
+        "clear": 316,
+        "covered": 461,
+        "poke": 73,
+        "rays": 865,
+        "zfight": 15
+       }
+      },
+      "own_hair": "hair_w_worker",
+      "rays": {
+       "clear": 316,
+       "covered": 403,
+       "poke": 132,
+       "rays": 865,
+       "zfight": 14
+      },
+      "verdict": "poke"
+     },
+     {
+      "a": "headwear_w_worker_hard_hat",
+      "allowance": {
+       "poke": 2,
+       "zfight": 2
+      },
+      "b": "hair_w_worker",
+      "own_hair": "hair_w_worker",
+      "rays": {
+       "clear": 319,
+       "covered": 546,
+       "poke": 0,
+       "rays": 865,
+       "zfight": 0
+      },
+      "verdict": "ok"
+     }
+    ],
+    "cols": [
+     "hair_m_adventurer",
+     "hair_m_beach",
+     "hair_m_business",
+     "hair_m_casual",
+     "hair_m_farmer_buzz",
+     "hair_m_hoodie",
+     "hair_m_king_long",
+     "hair_m_punk_mohawk",
+     "hair_m_worker_buzz",
+     "hair_w_adventurer",
+     "hair_w_casual_bob",
+     "hair_w_formal_updo",
+     "hair_w_medieval",
+     "hair_w_punk_mohawk",
+     "hair_w_scifi",
+     "hair_w_soldier",
+     "hair_w_suit_bob",
+     "hair_w_witch",
+     "hair_w_worker"
+    ],
+    "rows": [
+     "headwear_m_farmer_cowboy_hat",
+     "headwear_m_king_crown",
+     "headwear_m_worker_hard_hat",
+     "headwear_w_medieval_hood",
+     "headwear_w_witch_hat",
+     "headwear_w_worker_hard_hat"
+    ]
+   }
+  },
   "top_bottom": {
    "M": {
     "cells": [
@@ -53542,6 +59784,16 @@
    }
   },
   {
+   "condition": "The hair stays inside the hat: on the scalp rays (toward the skull centre) no more hair comes out in front of the hat, or lies on it, than with the hat's own hair (poke and z-fight rays no higher than that reference plus 2). The helmets that are whole heads replace the skull and the hair.",
+   "id": "headwear_hair",
+   "seam": "hat",
+   "verdicts": {
+    "needs_fix": "fits after the hat is inflated (scaled off the skull by 1 to 3 %), measured",
+    "ok": "the hair stays inside the hat",
+    "poke": "the hair comes out through the hat even with the hat inflated by 3 %"
+   }
+  },
+  {
    "condition": "Hair covers the skull's open top (no hole rays) and the skull surface never comes out through the hair or lies on it (no poke or z-fight rays).",
    "id": "hair_skull",
    "seam": "scalp",
@@ -53635,6 +59887,24 @@
     }
    }
   },
+  "headwear_hair": {
+   "M": {
+    "pairs": 114,
+    "verdicts": {
+     "needs_fix": 14,
+     "ok": 31,
+     "poke": 69
+    }
+   },
+   "W": {
+    "pairs": 114,
+    "verdicts": {
+     "needs_fix": 14,
+     "ok": 31,
+     "poke": 69
+    }
+   }
+  },
   "top_bottom": {
    "M": {
     "gap_over_5mm": 0,
@@ -53665,6 +59935,11 @@
   "fixable_mm": 30.0,
   "gap_mm": 5.0,
   "hair_inflate": 0.006,
+  "hat_inflate": [
+   0.01,
+   0.02,
+   0.03
+  ],
   "poke_behind_m": 0.015,
   "ray_slack": 2,
   "states": [

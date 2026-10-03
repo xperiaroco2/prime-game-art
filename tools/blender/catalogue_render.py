@@ -27,7 +27,8 @@ INK = "#1a1a19"
 TITLES = {"bottom_shoes": "bottom (rows) x shoes (columns): the ankle seam",
           "top_bottom": "top (rows) x bottom (columns): the waist seam",
           "head_top": "skull (rows) x top (columns): the neck seam",
-          "hair_skull": "hair (rows) x skull (columns): the scalp"}
+          "hair_skull": "hair (rows) x skull (columns): the scalp",
+          "headwear_hair": "headwear (rows) x hair (columns): the hair inside the hat"}
 
 
 def linear(hexcol):
@@ -217,7 +218,12 @@ def lib_rest(arm):
 def cell_text(name, c):
     v = c["verdict"]
     word = WORD[v]
-    if name == "hair_skull":
+    if name == "headwear_hair":
+        n = c["rays"]
+        num = "p%d z%d" % (n["poke"], n["zfight"])
+        if v == "needs_fix":
+            word = "inflate %d%%" % round(c["fix"]["amount"] * 100)
+    elif name == "hair_skull":
         n = c["rays"]
         num = "h%d p%d z%d" % (n["hole"], n["poke"], n["zfight"])
         if v == "needs_fix":
@@ -345,10 +351,14 @@ SAMPLE = [
     ("bottom_shoes", "M", "bottom_m_astronaut", "shoes_m_farmer", "a small gap: extend_edge"),
     ("head_top", "M", "skull_w_suit", "top_m_beach", "a women's neck in a men's vest: extend_edge"),
     ("hair_skull", "W", "hair_w_punk_mohawk", "skull_w_formal", "cap hair on a full skull: inflate"),
+    ("headwear_hair", "M", "headwear_m_worker_hard_hat", "hair_w_adventurer", "a hard hat over women's cap hair"),
+    ("headwear_hair", "M", "headwear_m_farmer_cowboy_hat", "hair_m_business", "a cowboy hat over shell hair"),
+    ("headwear_hair", "W", "headwear_w_medieval_hood", "hair_w_scifi", "a hood over long hair: inflate"),
 ]
 
 SEAM = {"bottom_shoes": ("ankle", (0.0, 0.0, 0.26), 0.6), "top_bottom": ("waist", (0.0, 0.0, 1.05), 0.55),
-        "head_top": ("neck", (0.0, -0.03, 1.53), 0.36), "hair_skull": ("head", (0.0, -0.05, 1.72), 0.42)}
+        "head_top": ("neck", (0.0, -0.03, 1.53), 0.36), "hair_skull": ("head", (0.0, -0.05, 1.72), 0.42),
+        "headwear_hair": ("head", (0.0, -0.03, 1.76), 0.48)}
 
 
 def part_spec(data, items, pid):
@@ -373,6 +383,8 @@ def fill(data, items, g, fixed):
     the catalogue's parts in order. Only the pair under test may show a defect."""
     unique = lambda i: items[i].get("same_geometry_as", i)  # noqa: E731
     out = dict(fixed)
+    if "head" not in out and "hair" in out:  # the hair's own skull, so that only the pair under test can show a defect
+        out["head"] = next(i for i, e in sorted(items.items()) if e["kind"] == "skull" and e["head"] == items[out["hair"]]["head"])
     if "head" not in out:
         out["head"] = BASE[g]["head"]
     skull = unique(out["head"])
@@ -411,10 +423,19 @@ def character(data, items, g, cid, slots, fix=None):
     hair_g = items[b["hair"]]["source"]["body_type"]
     rc["_sources"] = {"head": head_g, "hair": hair_g}
     rc["_outfit"] = {k: b[k] for k in ("head", "hair", "top", "bottom", "shoes")}
+    if "headwear" in b:  # an extras part (docs/assembly.md)
+        hat = items[b["headwear"]]
+        rc["extras"] = [dict({k: v for k, v in hat["recipe"].items() if k in ("file", "object", "materials", "cut")},
+                             role="headwear", inflate=0.0)]
+        rc["_sources"]["extras"] = hat["source"]["body_type"]
+        rc["_outfit"]["headwear"] = b["headwear"]
     if fix and fix["fix"] == "extend_edge":
         rc["extend"] = [{"part": fix["part"], "drop": fix["drop_m"]}]
     if fix and fix["fix"] == "inflate":
-        rc["hair"]["inflate"] = fix["amount"]
+        if fix.get("part") == "headwear":
+            rc["extras"][0]["inflate"] = fix["amount"]
+        else:
+            rc["hair"]["inflate"] = fix["amount"]
     return rc
 
 
@@ -432,6 +453,8 @@ class CrossPacks:
             g = self.rc["_sources"]["head"]
         elif n == 2:
             g = self.rc["_sources"]["hair"]
+        elif n == 3 and "extras" in self.rc["_sources"]:
+            g = self.rc["_sources"]["extras"]
         return self.packs.load(g, fname)
 
 
@@ -461,8 +484,10 @@ def confirm(lib, data, items, raw_recipe, out, log):
         c = next(x for x in data["matrices"][name][g]["cells"] if x["a"] == a and x["b"] == b)
         variants = [("as is", None)] + ([("with " + c["fix"]["fix"], c["fix"])] if c["verdict"] == "needs_fix" else [])
         for vi, (vname, fix) in enumerate(variants):
-            slot_a = {"bottom_shoes": "bottom", "top_bottom": "top", "head_top": "head", "hair_skull": "hair"}[name]
-            slot_b = {"bottom_shoes": "shoes", "top_bottom": "bottom", "head_top": "top", "hair_skull": "head"}[name]
+            slot_a = {"bottom_shoes": "bottom", "top_bottom": "top", "head_top": "head", "hair_skull": "hair",
+                      "headwear_hair": "headwear"}[name]
+            slot_b = {"bottom_shoes": "shoes", "top_bottom": "bottom", "head_top": "top", "hair_skull": "head",
+                      "headwear_hair": "hair"}[name]
             cid = "c%02d%s" % (k + 1, "f" if vi else "")
             rc = character(data, items, g, cid, {slot_a: a, slot_b: b}, fix)
             coll = new_coll(cid)
@@ -485,7 +510,7 @@ def confirm(lib, data, items, raw_recipe, out, log):
             t.hide_render = True
             views = (("front", (90, 0, 0)), ("side", (90, 0, 90)))
             states = (("rest", None), ("walk", {"action": "Walk", "frame": 6}))
-            if name == "hair_skull":
+            if name in ("hair_skull", "headwear_hair"):
                 views = (("front", (90, 0, 0)), ("above", (40, 0, 150)))
                 states = states[:1]
             for state, pose in states:
@@ -501,7 +526,7 @@ def confirm(lib, data, items, raw_recipe, out, log):
             notes.append({"image": os.path.basename(path), "matrix": name, "body_type": g, "a": a, "b": b,
                           "verdict": c["verdict"], "variant": vname, "why": why, "outfit": rc["_outfit"],
                           "panels": "full front, full side, then the seam close: front and side at rest"
-                                    + ("" if name == "hair_skull" else ", front and side walking (Walk f6)"),
+                                    + ("" if name in ("hair_skull", "headwear_hair") else ", front and side walking (Walk f6)"),
                           "probe_rest": rep["probe_rest"], "seam_overlap_rest": rep["seam_overlap_rest"]})
             remove_character(arm, coll)
     with open(os.path.join(out, "confirm.json"), "w", encoding="utf-8") as fh:

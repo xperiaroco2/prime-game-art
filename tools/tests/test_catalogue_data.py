@@ -154,6 +154,18 @@ class RulesTest(unittest.TestCase):
         own = {c["b"]: c["verdict"] for c in cells("head_top", "M") if c["a"] == "headwear_m_swat_helmet"}
         self.assertIn(own["top_m_swat"], OK)  # a pack original is its own reference
 
+    def test_headwear_over_hair(self) -> None:
+        for g in ("M", "W"):
+            m = DATA["matrices"]["headwear_hair"][g]
+            self.assertNotIn("headwear_m_swat_helmet", m["rows"])  # helmets replace the head; they are not hats
+            v = {(c["a"], c["b"]): c["verdict"] for c in m["cells"]}
+            for hat, hair in (("headwear_m_worker_hard_hat", "hair_m_worker_buzz"),
+                              ("headwear_w_witch_hat", "hair_w_witch")):
+                self.assertEqual(v[(hat, hair)], "ok", f"{g}: a pack original")
+            # the hard hats and the cowboy hat sit on open-top skulls: cap hair fits, shell hair comes through
+            self.assertEqual(v[("headwear_m_farmer_cowboy_hat", "hair_w_adventurer")], "ok")
+            self.assertEqual(v[("headwear_m_farmer_cowboy_hat", "hair_m_business")], "poke")
+
     def test_needs_fix_names_a_measured_fix(self) -> None:
         for name, per in DATA["matrices"].items():
             for g, m in per.items():

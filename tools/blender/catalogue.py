@@ -58,6 +58,13 @@ RULES = [
      "verdicts": {"ok": "the neck seam closes", "needs_fix": "extend_edge on the head's neck closes it, measured",
                   "gap": "more than 30 mm apart, or the fix does not close it",
                   "poke": "the neck and the collar cross: one shows through the other"}},
+    {"id": "headwear_hair", "seam": "hat",
+     "condition": "The hair stays inside the hat: on the scalp rays (toward the skull centre) no more hair comes out "
+                  "in front of the hat, or lies on it, than with the hat's own hair (poke and z-fight rays no higher "
+                  "than that reference plus 2). The helmets that are whole heads replace the skull and the hair.",
+     "verdicts": {"ok": "the hair stays inside the hat",
+                  "needs_fix": "fits after the hat is inflated (scaled off the skull by 1 to 3 %), measured",
+                  "poke": "the hair comes out through the hat even with the hat inflated by 3 %"}},
     {"id": "hair_skull", "seam": "scalp",
      "condition": "Hair covers the skull's open top (no hole rays) and the skull surface never comes out through the "
                   "hair or lies on it (no poke or z-fight rays).",
@@ -162,7 +169,7 @@ def make_copy_factory(coll):
 
 def matrices(lib, inv, items, coll, log):
     mk, rm = make_copy_factory(coll), cp.remove
-    out = {"bottom_shoes": {}, "top_bottom": {}, "head_top": {}, "hair_skull": {}}
+    out = {"bottom_shoes": {}, "top_bottom": {}, "head_top": {}, "hair_skull": {}, "headwear_hair": {}}
     for g in cp.GENDERS:
         t0 = time.time()
         out["bottom_shoes"][g] = cr.ankle_matrix(lib, g, inv, mk, rm)
@@ -175,6 +182,8 @@ def matrices(lib, inv, items, coll, log):
     skulls = sorted(i for i, e in items.items() if e["kind"] == "skull" and "same_geometry_as" not in e)
     hairs = sorted(i for i, e in items.items() if e["kind"] == "hair" and "same_geometry_as" not in e)
     helmets = sorted(i for i, e in items.items() if e.get("replaces") == "skull")
+    hats = sorted(i for i, e in items.items() if e["kind"] == "headwear" and i not in helmets
+                  and "same_geometry_as" not in e)
     # the neck rows: every unique skull and the helmets that are whole heads; their owners and each head's row
     necks = sorted(skulls + helmets)
     head_of = {}
@@ -187,7 +196,7 @@ def matrices(lib, inv, items, coll, log):
         owners.setdefault(row, []).append(key)
     objs = {}
     for g in cp.GENDERS:
-        for iid in skulls + hairs + helmets:
+        for iid in skulls + hairs + helmets + hats:
             e = items[iid]
             objs[(iid, g)] = ch.item_object(lib.head(e["head"], g), e["_faces"], "%s@%s" % (iid, g), coll)
     update()
@@ -200,6 +209,10 @@ def matrices(lib, inv, items, coll, log):
     by_g = {g: [s for s in skulls if s.split("_")[1] == g.lower()] for g in cp.GENDERS}
     out["hair_skull"] = cr.hair_matrix(lib.rigs, hairs, by_g, objs, items, unique, mk, rm)
     log("hair x skull: %.1f s" % (time.time() - t0))
+    t0 = time.time()
+    hair_unique = {i: e.get("same_geometry_as", i) for i, e in items.items() if e["kind"] == "hair"}
+    out["headwear_hair"] = cr.hat_matrix(lib.rigs, hats, hairs, objs, items, hair_unique, mk, rm)
+    log("headwear x hair: %.1f s" % (time.time() - t0))
     for o in objs.values():
         cp.remove(o)
     return out
@@ -253,7 +266,7 @@ def main():
                    "(m or w is the source pack, not a restriction: heads, hair and face items cross body types)",
         },
         "thresholds": {"ray_slack": cr.RAY_SLACK, "gap_mm": cr.GAP_MM, "fixable_mm": cr.FIXABLE_MM,
-                       "poke_behind_m": cr.BEHIND, "hair_inflate": cr.HAIR_INFLATE, "zfight_m": cr.ZFIGHT,
+                       "poke_behind_m": cr.BEHIND, "hair_inflate": cr.HAIR_INFLATE, "hat_inflate": list(cr.HAT_INFLATE), "zfight_m": cr.ZFIGHT,
                        "states": [s["name"] + (" (%s f%d)" % (s["pose"]["action"], s["pose"]["frame"]) if "pose" in s else "")
                                   for s in cr.STATES]},
         "characters": chars,
