@@ -165,7 +165,8 @@ Read from every GLB of the batch (both rigs, all files: the same 24 names and pa
 Our bone map, `tools/blender/retarget_maps/meshy_um.toml` (and `meshy_um_rigid.toml` with the toes at rest): `Hips` ->
 `Body` (no root: our `Root` rests), the spine, neck, head, shoulders, arms and legs one to one, `LeftToeBase` ->
 `Toe.L`, every finger of ours at rest (a relaxed flat hand), the upper arms aligned to Meshy's rest (`[align]`, so an
-arm that hangs at the side on Meshy's rig hangs at the side on ours). Rest check: 0.002 mm and 0 degrees outside the
+arm that hangs at the side on Meshy's rig hangs near the side on ours: 5 to 6 degrees closer to the body than Meshy's
+own skinning shows it, below). Rest check: 0.002 mm and 0 degrees outside the
 aligned arms. `retarget --library meshy` and `--library meshyw` bake its clips onto either donor.
 
 ## The clips, as seen in the strips and the clips
@@ -336,8 +337,15 @@ Meshy clips and the clip each one competes with.
 | women | gestures | (b) Meshy, man's rig Shrug | 1.97 | no | 0.00 | 0.3/1.1 | -2.5 (60) | - | 0.0/0.0/0.0/0.0 | 0.8 (0.3) | 77.8 |
 | women | gestures | (b) Meshy, man's rig Finger_Wag_No | 5.00 | no | 0.00 | 1.3/3.9 | -3.1 (151) | - | 0.0/0.0/0.0/0.0 | 0.0 (0.0) | 76.6 |
 
-- **(a) against (b), pose for pose:** the pairs show the same motion; the retarget changes the feet (above) and the
-  arms (aligned to Meshy's rest, the same hang as on its own rig), nothing else. The (a) and (b) numbers differ where
+- **(a) against (b), pose for pose:** the pairs show the same motion; the retarget changes the toes (above) and the
+  arms, nothing else. The arms are a choice: `[align]` turns our upper arms 14 to 15 degrees (the woman's rig 9 to 10)
+  onto Meshy's rest direction, because without it an arm that hangs at the side in a Meshy clip stands that far out on
+  our rig. Measured on the same mesh (m1_rex, Meshy's walk, the mesh's upper-arm axis against straight down) the
+  alignment overshoots a little: the arms hang 24.8/23.3 degrees (left/right) from the body on Meshy's own rig and
+  19.4/17.6 after our retarget, 5 to 6 degrees closer, and a hand reaches into the head where (a)'s does not or less
+  (Prone Reach Help 0 against 4.1 cm, Knock Down 2.3 against 6.9). Meshy's own skinning bends the mesh about joints
+  placed 14 degrees low, so neither hang is "right"; a pair without `[align]` was not rendered (a follow-up if the
+  arms matter in game). The rest check leaves the aligned arms out and reports their angles instead. The (a) and (b) numbers differ where
   the rigs differ: the feet (IK), the depth into the floor of lying clips (our hips scaled to our legs: Prone Reach Help
   goes 5.4 cm into the floor on our man, 4.8 on its own rig; UAL2's LayToIdle 4.0).
 - **Hands.** No hand goes into the torso in any Meshy clip; Knock_Down puts a hand into the head during the somersault

@@ -13,7 +13,8 @@
 # - The toes: LeftToeBase and RightToeBase drive Toe.L and Toe.R; meshy_um_rigid.toml keeps them at rest.
 # - The fingers: none in the source, so every finger bone keeps its rest (a relaxed flat hand).
 # - [align]: Meshy placed its upper arms 10 to 15 degrees below the mesh's arms (the shoulder joints high); without the
-#   alignment an arm that hangs at the side in a Meshy clip stands that far out on our rig.
+#   alignment an arm that hangs at the side in a Meshy clip stands that far out on our rig. With it the arms hang 5 to
+#   6 degrees closer to the body than on Meshy's own skinned mesh (art #25's research page).
 #
 # THIS FILE: the same map with Meshy's toes unused and our toe bones at rest (the rigid shoes), for the feet step.
 
