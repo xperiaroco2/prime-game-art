@@ -9,6 +9,8 @@ Usage:
   ... anim_review.py -- pairs --body men --character <glb> --lib ual=<glb> ... --out <dir> --config <toml>
       [--only Walk,Run] [--sources ual2]
   ... anim_review.py -- sheets --out <dir> --names <file>   (review sheets: men and women strips of each clip)
+  ... anim_review.py -- feet --body men --character <glb> --lib ual=<glb> ... --out <dir> [--only <row>]
+      (close-ups of the feet: rigid shoes against the toe bones, art #25)
   ... anim_review.py -- rates --body men --character <glb> --lib ual=<glb> --lib-rm ual=<glb> ... --out <dir>
       [--sources ual2]   (the game's speeds)
 Clip keys ("pack:Walk", "ual2:Walk_Carry_Loop", layered "base|upper", blends) are defined in anim_keys.py; "--ual" and
@@ -123,25 +125,43 @@ def upper_bones(arm, cfg):
 
 
 def setup_characters(a, count=1):
+    """count copies of the body type's donor character, each given the assembler's toe bones (art #25) unless the
+    settings say `toe_bones = false`: the pack's clips play on them as before (they key no toe)."""
     rc.new_scene()
     ar.setup(bpy.context.scene)
-    chars = [rc.load_glb(a.character) for _ in range(count)]
+    toes = load_config(a.config).get("toe_bones", True)
+    chars = []
+    for _ in range(count):
+        char = rc.load_glb(a.character)
+        if toes:
+            rc.add_toes(char)
+        chars.append(char)
     return chars
 
 
-def retarget(a, char, lib, names):
-    """Bakes the named clips of a library ("ual", "ual2", ...) onto char's armature; returns {name: action}."""
+def library_map(a, lib, variant="map"):
+    """The bone map of a library: its settings' `map` (or `rigid_map` for the rigid-shoe variant), a file in
+    tools/blender/retarget_maps/; UAL1 and UAL2 default to ual_um.toml and ual_um_rigid.toml."""
+    entry = load_config(a.config).get("libraries", {}).get(lib, {})
+    name = entry.get(variant, "ual_um_rigid.toml" if variant == "rigid_map" else None)
+    return retarget_map.load(retarget_map.MAPS / name) if name else retarget_map.load()
+
+
+def retarget(a, char, lib, names, variant="map"):
+    """Bakes the named clips of a library ("ual", "ual2", ...) onto char's armature with the library's bone map (or
+    its rigid-shoe map, variant "rigid_map"); returns {name: action}."""
     if not names:
         return {}
-    bmap = retarget_map.load()
+    bmap = library_map(a, lib, variant)
     before = set(bpy.data.objects)
     src = rc.load_glb(a.libs[lib])
     rt = rc.Retargeter(rc.Rig(src["arm"]), rc.Rig(char["arm"]), bmap)
     rt.set_soles(char["meshes"].values())
     char["ual_ratio"] = rt.ratio  # the same for every library on UAL1's rig
     out = {}
+    tag = LABELS.get(lib, lib) + (" rigid" if variant == "rigid_map" else "")
     for n in names:
-        act, _ = rt.clip(src["actions"][n], f"{LABELS.get(lib, lib)}|{n}", char["arm"])
+        act, _ = rt.clip(src["actions"][n], f"{tag}|{n}", char["arm"])
         out[n] = act
     for o in set(bpy.data.objects) - before:
         bpy.data.objects.remove(o, do_unlink=True)
@@ -443,6 +463,128 @@ def cmd_sheets(a):
             print("SHEET", out)
 
 
+# ------------------------------------------------------------------------------------------------ the feet (art #25)
+FEET_FRAMES = 12
+FEET_CELL = (300, 210)  # pixels
+FEET_VIEW_H = 0.42  # metres shown in a close-up cell (from FEET_BELOW under the floor), which follows the right shoe
+FEET_BELOW = 0.05
+FEET_VIDEO_H = 0.75  # metres shown in the looping close-up, which stays put
+
+
+def right_shoe_y(char):
+    """The middle (front to back) of the right shoe (x < 0 on a character at the origin) as posed."""
+    from um import toes
+
+    pts = world_points(toes.shoes_of(char["meshes"]))
+    right = pts[pts[:, 0] < 0.0]
+    return float((right[:, 1].min() + right[:, 1].max()) / 2) if len(right) else 0.0
+
+
+def feet_box(char, clip, times):
+    """The y range (front to back) of the shoes over the given times of a clip."""
+    from um import toes
+
+    shoes = toes.shoes_of(char["meshes"])
+    lo, hi = 1e9, -1e9
+    for t in times:
+        clip.pose(char["arm"], clip.frame_at(t))
+        bpy.context.view_layer.update()
+        pts = world_points(shoes)
+        lo, hi = min(lo, float(pts[:, 1].min())), max(hi, float(pts[:, 1].max()))
+    return lo, hi
+
+
+def cmd_feet(a):
+    """Close-ups of the feet (art #25): each clip of the settings' [[feet]] rows played twice on the body type's donor
+    with its toe bones, once retargeted with the library's rigid-shoe map (the toes kept at rest: the shoes of art #20
+    and #24) and once with its map (the source's toes drive the toe bones). Per clip: a side-view strip of FEET_FRAMES
+    frames (rigid shoes on top, toe bones below), a looping side-view clip of the two side by side and both lanes'
+    measures with the toe tipping and the bend (feet/<body>/<row>_<clip>.png, .mp4 and <row>.json)."""
+    cfg = load_config(a.config)
+    rows = [r for r in cfg.get("feet", []) if not a.only or r["name"] in a.only.split(",")]
+    if not rows:
+        print("FEET none selected")
+        return
+    chars = setup_characters(a, 2)
+    meas = [Measure(ch) for ch in chars]  # before anything moves: the hinge axes come from the rest in world space
+    keys = list(dict.fromkeys(k for r in rows for k in r["clips"]))
+    toe = {c.key: c for c in clips_for(a, cfg, chars[0], keys)}
+    rigid = {}
+    for lib in a.libs:
+        names = sorted({anim_keys.split(k)[1] for k in keys if k.startswith(lib + ":")})
+        for n, act in retarget(a, chars[0], lib, names, "rigid_map").items():
+            src = f"{lib}_rigid"
+            LABELS.setdefault(src, f"{LABELS.get(lib, lib)} rigid shoes")
+            rigid[f"{lib}:{n}"] = Clip(src, n, act, toe[f"{lib}:{n}"].loop)
+    char_name = os.path.splitext(os.path.basename(a.character))[0]
+    out_dir = os.path.join(a.out, "feet", a.body)
+    os.makedirs(out_dir, exist_ok=True)
+    for r in rows:
+        report = {}
+        for key in r["clips"]:
+            lanes = [rigid[key], toe[key]]
+            for ch in chars:
+                rc.place(ch)
+            res = [measure(ch, clip, m) for ch, m, clip in zip(chars, meas, lanes)]
+            report[key] = {"rigid_shoes": res[0], "toe_bones": res[1]}
+            n = FEET_FRAMES
+            times = [lanes[0].seconds * i / n for i in range(n)]  # one cycle; its end is its start again
+            boxes = [feet_box(ch, clip, times) for ch, clip in zip(chars, lanes)]
+            span = max(hi - lo for lo, hi in boxes) + 0.12
+            grid_rows = []
+            for i, (ch, clip) in enumerate(zip(chars, lanes)):
+                for m_i, other in enumerate(chars):
+                    for o in other["meshes"].values():
+                        o.hide_render = m_i != i
+                cells = []
+                for t in times:
+                    clip.pose(ch["arm"], clip.frame_at(t))
+                    bpy.context.view_layer.update()
+                    centre = Vector((0.0, right_shoe_y(ch), -FEET_BELOW + FEET_VIEW_H / 2))
+                    ar.aim("side", centre, FEET_VIEW_H, *FEET_CELL)
+                    cells.append(ar.render(os.path.join(TMP, "feet.png")))
+                grid_rows.append(cells)
+            for ch in chars:
+                for o in ch["meshes"].values():
+                    o.hide_render = False
+            t_r, t_t = res[0].get("toe", {}), res[1].get("toe", {})
+            title = (f"{lanes[1].label} on {a.body} ({char_name}), the right shoe from its side, {n} frames over "
+                     f"{lanes[0].seconds:.2f} s"
+                     f"  |  top: rigid shoes (toe bones at rest)  |  bottom: toe bones driven by the source's toes  |  "
+                     f"front of the shoe at a 20 deg heel lift, tip down: {t_r.get('front_pitch_at_20_deg_lift')} vs "
+                     f"{t_t.get('front_pitch_at_20_deg_lift')} deg; heel lift with the front level: "
+                     f"{t_r.get('heel_lift_front_level_max_deg')} vs {t_t.get('heel_lift_front_level_max_deg')} deg")
+            body_img = ar.grid(grid_rows)
+            stem = f"{r['name']}_{key.replace(':', '_')}"
+            ar.save_png(ar.grid([[header(title, body_img.shape[1])], [body_img]]), os.path.join(out_dir, stem + ".png"))
+            # the looping close-up: both lanes side by side along the view (front to back), each on its own clock
+            spacing = span + 0.25
+            for i, ch in enumerate(chars):
+                rc.place(ch, y=(i - 0.5) * spacing - (boxes[i][0] + boxes[i][1]) / 2)
+            lbls = []
+            for i, clip in enumerate(lanes):
+                t = ar.text(f"fl{i}", 0.04, "side")
+                t.location = (0.6, (i - 0.5) * spacing, FEET_VIDEO_H - FEET_BELOW - 0.07)
+                t.data.body = ("rigid shoes" if i == 0 else "toe bones") + f": {clip.name}"
+                lbls.append(t)
+            seconds = max(max(c.seconds + (0 if c.loop else HOLD) for c in lanes), 2.0)
+            height_px = 360
+            width_px = int(round(height_px * (2 * spacing) / FEET_VIDEO_H / 2)) * 2
+            ar.aim("side", Vector((0.0, 0.0, -FEET_BELOW + FEET_VIDEO_H / 2)), FEET_VIDEO_H, width_px, height_px)
+
+            def pose_frame(f, lanes=lanes):
+                for ch, clip in zip(chars, lanes):
+                    clip.pose(ch["arm"], clip.cycle_frame(f / FPS))
+
+            ar.render_video(os.path.join(out_dir, stem + ".mp4"), width_px, height_px, int(round(seconds * FPS)),
+                            pose_frame)
+            for t in lbls:
+                bpy.data.objects.remove(t, do_unlink=True)
+            print("FEET", a.body, key, json.dumps({"rigid": t_r, "toe": t_t}))
+        with open(os.path.join(out_dir, r["name"] + ".json"), "w", encoding="utf-8") as f:
+            json.dump(report, f, indent=1)
+
+
 # ------------------------------------------------------------------------------------------- the game's speeds
 class Variant:
     """One lane of a rates row: a clip (or a cycle-synced blend of two UAL clips) played at the rate that makes its
@@ -673,7 +815,7 @@ def write_rates(out_dir, report, some_rows):
 
 def main(argv):
     ap = argparse.ArgumentParser(prog="anim_review.py")
-    ap.add_argument("mode", choices=["clips", "pairs", "sheets", "rates"])
+    ap.add_argument("mode", choices=["clips", "pairs", "sheets", "rates", "feet"])
     ap.add_argument("--body", choices=["men", "women"])
     ap.add_argument("--character")
     ap.add_argument("--ual", help="short for --lib ual=<glb>")
@@ -703,7 +845,8 @@ def main(argv):
     global TMP
     TMP = os.path.join(a.out, "tmp", f"{a.body or 'sheets'}{a.tag}")
     os.makedirs(TMP, exist_ok=True)
-    {"clips": cmd_clips, "pairs": cmd_pairs, "sheets": cmd_sheets, "rates": cmd_rates}[a.mode](a)
+    {"clips": cmd_clips, "pairs": cmd_pairs, "sheets": cmd_sheets, "rates": cmd_rates,
+     "feet": cmd_feet}[a.mode](a)
 
 
 TMP = ""

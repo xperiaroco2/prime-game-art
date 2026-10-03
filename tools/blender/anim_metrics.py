@@ -22,6 +22,8 @@ TORSO = {"Body", "Hips", "Abdomen", "Torso", "Chest"}
 HEAD = {"Head"}
 LEGS = {"UpperLeg.L", "UpperLeg.R", "LowerLeg.L", "LowerLeg.R"}
 SURFACE_REACH = 0.08  # metres: how far behind a surface a vertex is looked for (about half a thigh)
+BALL_FRACTION = 0.68  # the ball of a shoe without a toe bone, from its back (um/toes.py places the toe bone there)
+CONTACT = 0.01  # metres: a shoe's tip within this of the floor is in contact
 
 
 def _dominant(obj) -> list[str | None]:
@@ -125,8 +127,8 @@ class Measure:
         self.polys = {}
         for obj in self.meshes:
             dom = _dominant(obj)
-            for key, bones in (("hand", hand), ("torso", TORSO), ("head", HEAD), ("Foot.L", {"Foot.L"}),
-                               ("Foot.R", {"Foot.R"}), ("hand.L", side["L"]), ("hand.R", side["R"])):
+            for key, bones in (("hand", hand), ("torso", TORSO), ("head", HEAD), ("Foot.L", {"Foot.L", "Toe.L"}),
+                               ("Foot.R", {"Foot.R", "Toe.R"}), ("hand.L", side["L"]), ("hand.R", side["R"])):
                 idx = [i for i, g in enumerate(dom) if g in bones]
                 if idx:
                     self.sets[key][obj.name] = np.array(idx)
@@ -158,6 +160,24 @@ class Measure:
         self._Wr = Wr
         rest = {o.name: world_points(o) for o in self.meshes}  # the floor: the soles' lowest rest height
         self.floor = float(min(self._gather(rest, f"Foot.{s}")[:, 2].min() for s in "LR"))
+        # three sole vertices per shoe, tracked through the clip: under the foot's pivot (the rigid back of the
+        # shoe; the heel's own back is partly weighted to the shin), under the ball and the tip; the ball is under the
+        # toe bone's head (art #25), or at the assembler's ball fraction of a shoe without one
+        self.toe_track = {}
+        for s in "LR":
+            sole = [(name, int(i), rest[name][i]) for name, idx in self.sets[f"Foot.{s}"].items() for i in idx]
+            if not sole:
+                continue
+            low = min(p[2] for _, _, p in sole)
+            sole = [q for q in sole if q[2][2] < low + 0.015]
+            pivot_y = (W @ self.rest[f"Foot.{s}"].translation).y
+            back, tip = max(sole, key=lambda q: q[2][1]), min(sole, key=lambda q: q[2][1])
+            toe = f"Toe.{s}"
+            ball_y = ((W @ self.rest[toe].translation).y if toe in self.rest
+                      else back[2][1] + BALL_FRACTION * (tip[2][1] - back[2][1]))
+            heel = min(sole, key=lambda q: abs(q[2][1] - pivot_y))
+            ball = min(sole, key=lambda q: abs(q[2][1] - ball_y))
+            self.toe_track[s] = [(q[0], q[1]) for q in (heel, ball, tip)]
 
     def frame(self, with_mesh: bool = True) -> dict:
         arm, W = self.arm, self.arm.matrix_world
@@ -190,6 +210,7 @@ class Measure:
                 _surface_depth(pts, self.polys, self.surfaces["hand.L"], self.sets["hand.R"]))
             rec["hand_leg_depth"] = _surface_depth(pts, self.polys, self.surfaces["legs"], self.sets["hand"])
             rec["soles"] = {s: self._gather(pts, f"Foot.{s}") for s in "LR"}
+            rec["toe"] = {s: [pts[name][i] for name, i in track] for s, track in self.toe_track.items()}
         return rec
 
     def _gather(self, pts: dict, key: str) -> np.ndarray:
@@ -216,6 +237,8 @@ class Measure:
             if depths:
                 out[name] = {"max_depth_cm": round(100 * max(depths), 1),
                              "frames_over_1cm": sum(d > 0.01 for d in depths)}
+        if frames[0].get("toe"):
+            out["toe"] = toe_summary([f["toe"] for f in frames], self.floor)
         out["loop_seam"] = am.loop_seam(frames[0]["local"], frames[-1]["local"], steps)
         out["hyperextension_deg"] = {k: am.hyperextension([f[k] for f in frames])
                                      for k in ("knee.L", "knee.R", "elbow.L", "elbow.R")}
@@ -253,3 +276,43 @@ def _sole_series(soles: list, fps: float, loop: bool) -> list:
         v = (nxt - prev) * fps / span
         out.append((float(soles[i][j, 2]), (float(v[0]), float(v[1]))))
     return out
+
+
+def _pitch_down(seg: np.ndarray) -> float:
+    """How far (degrees) a segment points below the floor's plane (negative: above)."""
+    length = float(np.linalg.norm(seg))
+    return math.degrees(math.asin(max(-1.0, min(1.0, -float(seg[2]) / length)))) if length > 1e-9 else 0.0
+
+
+def toe_summary(frames: list[dict], floor: float) -> dict:
+    """Toe tipping and the shoe's bend (art #25), from three sole vertices per shoe and frame: under the foot's pivot,
+    under the ball and at the tip. While the tip is in contact (within CONTACT of the floor) the heel lift is how far
+    the back of the sole (pivot to ball) points down to the ball, and the front pitch how far the front (ball to tip)
+    points down to the tip. A rigid shoe pushing off stands on its toe: its front tips as far as its back is lifted;
+    a bending one keeps its front near level until the toes leave the floor. Reported: the mean front pitch of the
+    contact samples with a heel lift of 15 to 25 degrees (`front_pitch_at_20_deg_lift`: about 20 for a rigid shoe,
+    near 0 for a bending one), the largest heel lift while the front stays within 10 degrees of level, the largest
+    bend at the ball in contact (the angle between the back and the front) and the tip's lowest point (cm)."""
+    near20, level, bends, contact, tip_low = [], [], [], 0, float("inf")
+    for rec in frames:
+        for pts in rec.values():
+            h, b, t = (np.asarray(p, dtype=float) for p in pts)
+            back_seg, front_seg = b - h, t - b
+            tip_low = min(tip_low, float(t[2]))
+            if t[2] >= floor + CONTACT:
+                continue
+            contact += 1
+            cos = float(np.dot(back_seg, front_seg) / max(np.linalg.norm(back_seg) * np.linalg.norm(front_seg), 1e-12))
+            bends.append(math.degrees(math.acos(max(-1.0, min(1.0, cos)))))
+            lift, front = _pitch_down(back_seg), _pitch_down(front_seg)
+            if 15.0 <= lift <= 25.0:
+                near20.append(front)
+            if abs(front) <= 10.0:
+                level.append(lift)
+    return {
+        "front_pitch_at_20_deg_lift": round(sum(near20) / len(near20), 1) if near20 else None,
+        "heel_lift_front_level_max_deg": round(max(level), 1) if level else None,
+        "bend_in_contact_max_deg": round(max(bends), 1) if bends else None,
+        "tip_lowest_cm": round(100 * (tip_low - floor), 1),
+        "contact_samples": contact,
+    }

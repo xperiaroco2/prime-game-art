@@ -3,6 +3,7 @@
 
 ual = "quaternius/Universal_Animation_Library/Universal Animation Library[Standard]/Unreal-Godot/UAL1_Standard.glb"
 ual_rm = "quaternius/Universal_Animation_Library/Universal Animation Library[Standard]/Unreal-Godot/UAL1_Standard_RM.glb"
+toe_bones = true  # the donors get the toe bones (see [bodies])
 
 # Further Universal Animation Library files on UAL1's 65-bone rig, each one more source of clips: its clips are keyed
 # "<key>:<clip>" as UAL1's are "ual:<clip>", retargeted with the same bone map. `file` is in place, `rm` has root
@@ -19,7 +20,10 @@ label = "UAL2"
 upper = "Torso"
 clips = ["ual:Idle_Loop|ual2:Walk_Carry_Loop"]  # the carry idle: UAL2 has no idle carry
 
-# The clips play on unmodified pack originals; each is also its body type's skeleton and action donor.
+# The clips play on pack originals, each also its body type's skeleton and action donor, given the assembler's toe
+# bones Toe.L and Toe.R (tools/blender/um/toes.py, art #25; `toe_bones = false` leaves them out): the pack's clips key
+# no toe and play as before, a library's toes drive them through its bone map. A library's `map` and `rigid_map`
+# (files in tools/blender/retarget_maps/) default to ual_um.toml and ual_um_rigid.toml (the toes at rest).
 [bodies.men]
 character = "refs/Ultimate_Modular_Men_Pack/Business Man.glb"
 pack = "refs/Ultimate_Modular_Men_Pack"
@@ -142,3 +146,9 @@ note = "holding an item in one hand: #20's upper-body hold candidate"
 name = "ual2_knife"
 clips = ["ual2:Melee_Hook", "ual2:Sword_Regular_A", "pack:Sword_Slash"]
 note = "the knife: #20's best swing (the pack's Sword_Slash)"
+
+# Close-ups of the feet (art #25, `anim-review feet`): each clip with rigid shoes (its library's rigid_map: the toe
+# bones at rest, the shoes of art #20 and #24) above the same clip with the toe bones driven by the source's toes.
+[[feet]]
+name = "ual_locomotion"
+clips = ["ual:Walk_Loop", "ual:Jog_Fwd_Loop", "ual:Sprint_Loop"]

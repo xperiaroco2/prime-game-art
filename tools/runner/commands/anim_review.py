@@ -13,8 +13,8 @@ from . import _anim
 
 NAME = "anim-review"
 HELP = ("judge animations in motion: inventory, measures, frame strips, MP4 clips, side-by-side pairs, "
-        "locomotion at the game's speeds")
-STEPS = ("inventory", "clips", "pairs", "rates", "sheets", "table", "all")
+        "locomotion at the game's speeds, close-ups of the feet")
+STEPS = ("inventory", "clips", "pairs", "rates", "feet", "sheets", "table", "all")
 
 
 def add_arguments(parser: argparse.ArgumentParser) -> None:
@@ -27,7 +27,7 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
                         help="clips, pairs, rates: only these sources' clips, and the pairs and rates rows that play "
                              "one, e.g. ual2 (comma-separated: pack, ual, ual2; default all); not with --clips")
     parser.add_argument("--only", default="",
-                        help="pairs: comma-separated pair names (a pack clip name for art #20's pairs, e.g. Wave; "
+                        help="pairs, feet: comma-separated pair or [[feet]] row names (a pack clip name for art #20's pairs, e.g. Wave; "
                              "ual2_carry for art #24's; default every pair)")
     parser.add_argument("--jobs", type=int, default=4, help="parallel Blender processes per body type (default 4)")
     parser.add_argument("--out", type=Path, help="output folder (default tools/out/anim-review)")
@@ -123,6 +123,24 @@ def rates(args: argparse.Namespace, out: Path, cfg: dict, bodies: list[str]) -> 
     common.ok(f"the game's speeds in {out / 'rates'}")
 
 
+def feet(args: argparse.Namespace, out: Path, cfg: dict, bodies: list[str]) -> None:
+    """Close-ups of the feet (art #25): each [[feet]] clip with rigid shoes against the toe bones."""
+    jobs = [["feet", *body_args(cfg, body), "--out", str(out), "--only", args.only] for body in bodies]
+    with ThreadPoolExecutor(max_workers=len(jobs)) as pool:
+        for future in [pool.submit(blender.run_script, "anim_review.py", job, 7200) for job in jobs]:
+            future.result()
+    for body in bodies:
+        for path in sorted((out / "feet" / body).glob("*.json")):
+            for key, lanes in json.loads(path.read_text(encoding="utf-8")).items():
+                r, t = lanes["rigid_shoes"].get("toe", {}), lanes["toe_bones"].get("toe", {})
+                common.ok(f"{body} {key}: the front of the shoe at a 20 deg heel lift "
+                          f"{r.get('front_pitch_at_20_deg_lift')} -> {t.get('front_pitch_at_20_deg_lift')} deg, heel "
+                          f"lift with the front level {r.get('heel_lift_front_level_max_deg')} -> "
+                          f"{t.get('heel_lift_front_level_max_deg')} deg, bend {r.get('bend_in_contact_max_deg')} -> "
+                          f"{t.get('bend_in_contact_max_deg')} deg (rigid shoes -> toe bones)")
+    common.ok(f"close-ups of the feet in {out / 'feet'}")
+
+
 def sheets(out: Path) -> None:
     stems = sorted({p.stem for p in (out / "strips").glob("*/*.png")}, key=lambda s: (not s.startswith("pack"), s))
     names = out / "tmp" / "sheet_names.txt"
@@ -151,7 +169,8 @@ def run(args: argparse.Namespace) -> int:
     if args.clips != "all" and args.sources not in ("", "all"):
         raise common.Failure("--clips names the clips itself: give --clips or --sources, not both")
     bodies = list(_anim.BODIES) if args.body == "both" else [args.body]
-    steps = ("inventory", "clips", "pairs", "rates", "sheets", "table") if args.step == "all" else (args.step,)
+    steps = (("inventory", "clips", "pairs", "rates", "feet", "sheets", "table") if args.step == "all"
+             else (args.step,))
     for step in steps:
         common.say(f"== {step}")
         if step == "inventory":
@@ -162,6 +181,8 @@ def run(args: argparse.Namespace) -> int:
             pairs(args, out, cfg, bodies)
         elif step == "rates":
             rates(args, out, cfg, bodies)
+        elif step == "feet":
+            feet(args, out, cfg, bodies)
         elif step == "sheets":
             sheets(out)
         else:
