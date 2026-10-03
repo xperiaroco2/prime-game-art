@@ -399,5 +399,10 @@ tools/run.py anim-review feet --only meshy_feet_men,meshy_feet_women,meshy_toes 
 tools/run.py anim-review table --out D:/prime-art-raw/review/stage1/25
 ```
 
-The own-rig runs list every Meshy clip of the rig and the best clips of the needs (the full lists are in the PR). The
-measures of art #25's first run (UAL with the toe bones) are in the same folder's `feet/<body>/ual_locomotion.json`.
+The own-rig runs list every clip of the rig (men: `meshy_own:` Walking, Running, RunFast, Walk_Backward,
+Idle_Step_Turn_Left, Hit_Reaction, Knock_Down, Prone_Reach_Help, Crawl_and_Look_Back, Crawl_Prompt,
+Carry_Heavy_Object_Walk, Shrug, Finger_Wag_No; women: `meshyw_own:` Walking, Running, RunFast, Walking_Woman) and the
+best clips of the needs (`ual:Walk_Loop`, `ual:Jog_Fwd_Loop`, `ual:Sprint_Loop`, `pack:Run_Back`, `ual:Idle_Loop`,
+`ual2:Hit_Knockback`, `ual:Hit_Chest`, `ual:Death01`, `ual2:LayToIdle`, `ual2:Walk_Carry_Loop`, `ual2:Yes`,
+`ual2:Idle_No_Loop`). The measures of art #25's first run (UAL with the toe bones) are in the same folder's
+`feet/<body>/ual_locomotion.json`.
