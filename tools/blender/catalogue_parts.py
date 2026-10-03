@@ -202,7 +202,7 @@ def shoe_seams(obj, arm):
 
 def inventory(lib):
     """{part_id: {...}} for tops, bottoms and shoes (heads are described by catalogue_heads)."""
-    out = {}
+    out, verts = {}, {}
     for pid, obj in sorted(lib.parts.items()):
         slot, g = pid.split("_")[0], pid.split("_")[1].upper()
         arm = lib.rigs[g]
@@ -215,22 +215,31 @@ def inventory(lib):
             entry["seams"] = bottom_seams(obj, arm)
         elif slot == "shoes":
             entry["seams"] = shoe_seams(obj, arm)
-        entry["geometry"] = geometry(pts)
         out[pid] = entry
-    first = {}
-    for pid in sorted(out):  # equal meshes (to 1 mm) of the same slot and body type: the later points at the first
-        key = (out[pid]["slot"], out[pid]["body_type"], out[pid]["geometry"])
-        if key in first:
-            out[pid]["same_geometry_as"] = first[key]
-        else:
-            first[key] = pid
+        verts[pid] = pts
+    for pid in sorted(out):  # equal meshes of the same slot and body type: the later points at the first
+        e = out[pid]
+        twin = next((q for q in sorted(out) if q < pid and "same_geometry_as" not in out[q] and out[q]["slot"] == e["slot"]
+                     and out[q]["body_type"] == e["body_type"] and same_mesh(verts[q], verts[pid])), None)
+        if twin:
+            e["same_geometry_as"] = twin
     return out
 
 
-def geometry(pts):
-    """A hash of a part's rest-pose world vertices rounded to 1 mm, order-free: equal meshes share it."""
-    import hashlib
-    return hashlib.sha1(repr(sorted(tuple(round(x, 3) for x in p) for p in pts)).encode()).hexdigest()[:12]
+def same_mesh(a, b, tol=0.0005):
+    """True when two vertex sets are equal within tol (each point of one has a point of the other that close; the
+    counts match). A rounded hash is not enough: rebinding leaves points near rounding boundaries."""
+    from mathutils.kdtree import KDTree
+    if len(a) != len(b):
+        return False
+    for x, y in ((a, b), (b, a)):
+        kd = KDTree(len(y))
+        for i, p in enumerate(y):
+            kd.insert(p, i)
+        kd.balance()
+        if any(kd.find(p)[2] > tol for p in x):
+            return False
+    return True
 
 
 def copy_part(obj, name, coll):

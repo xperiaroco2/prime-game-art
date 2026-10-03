@@ -58,7 +58,15 @@ def MOUSTACHE(c):
 
 
 def BROWS(c):
-    return zones.BROW_ZONE(c) and c.z > zones.EYE_Z_MAX - 0.006
+    return zones.BROW_ZONE(c) and c.z > BROW_Z_MIN
+
+
+BROW_Z_MIN = 1.698  # between the women's eye centres (about 1.690) and brow centres (about 1.705) in "Brown"
+BROW_PIECE_TRIS = 64  # a brow piece has 12 to 40 triangles; a fringe piece whose centre falls in the brow box, hundreds
+
+
+def brow_piece(pc):
+    return zones.BROW_ZONE(pc.centre) and pc.triangles <= BROW_PIECE_TRIS
 
 
 # Cut zones the catalogue's recipes may name: um/zones.py's own, plus these proposed ones (not yet in um/zones.py;
@@ -135,7 +143,7 @@ def classify(g, char, pc):
     if role == "brows" and not zones.BROW_ZONE(c):
         role = "hair"  # the men's Farmer and Worker scalp cap is in "Eyebrows"
     if role is None:  # a hair material
-        if zones.BROW_ZONE(c) and pc.triangles <= 64:
+        if brow_piece(pc):
             role = "brows"
         elif FACIAL_HAIR(c):
             role = "facial_hair"
@@ -170,12 +178,21 @@ def recipe_faces(obj, centres, mats, role, cuts):
             and (role != "hair" or not zones.BROW_ZONE(centres[p.index])) and not any(z(centres[p.index]) for z in zs)}
 
 
+# Zones tested on whole pieces: a piece is inside when its centre is; the brow box also asks for a brow's size.
+PIECE_ZONES = {"brows": lambda pc: brow_piece(pc) and pc.centre.z > BROW_Z_MIN,
+               "not_brows": lambda pc: not (brow_piece(pc) and pc.centre.z > BROW_Z_MIN),
+               "not_brow_zone": lambda pc: not brow_piece(pc)}
+
+
+def piece_in(name, pc):
+    return PIECE_ZONES[name](pc) if name in PIECE_ZONES else ALL_ZONES[name](pc.centre)
+
+
 def piece_recipe_faces(pcs, mats, role, cuts):
-    """The same filter applied to whole pieces (a piece is cut when its centre is in a zone): what the assembler would
-    keep if its zones tested connected pieces instead of single faces (docs/catalogue.md, a proposed change)."""
-    zs = [ALL_ZONES[z] for z in cuts]
-    return {f for pc in pcs if pc.material in mats and (role != "hair" or not zones.BROW_ZONE(pc.centre))
-            and not any(z(pc.centre) for z in zs) for f in pc.faces}
+    """The same filter applied to whole pieces (PIECE_ZONES; the hair role leaves out brow pieces): what the assembler
+    would keep if its zones tested connected pieces instead of single faces (docs/catalogue.md, a proposed change)."""
+    return {f for pc in pcs if pc.material in mats and (role != "hair" or not brow_piece(pc))
+            and not any(piece_in(z, pc) for z in cuts) for f in pc.faces}
 
 
 def find_cut(obj, centres, pcs, faces, mats, role):
@@ -286,14 +303,18 @@ def analyse(lib, file_entries):
             entry["_faces"] = faces
             items[iid] = entry
             h["items"].append(iid)
-    # equal geometry: the later id points at the first
-    first = {}
+    # equal geometry (within 0.5 mm, catalogue_parts.same_mesh): the later id points at the first
+    from catalogue_parts import same_mesh
+    pts = {}
+    for iid, e in items.items():
+        o, me = heads[e["head"]]["obj"], heads[e["head"]]["obj"].data
+        pts[iid] = [o.matrix_world @ me.vertices[vi].co for fi in sorted(e["_faces"]) for vi in me.polygons[fi].vertices]
     for iid in sorted(items):
-        sig = (items[iid]["kind"], items[iid]["geometry"])
-        if sig in first:
-            items[iid]["same_geometry_as"] = first[sig]
-        else:
-            first[sig] = iid
+        e = items[iid]
+        twin = next((q for q in sorted(items) if q < iid and "same_geometry_as" not in items[q]
+                     and items[q]["kind"] == e["kind"] and same_mesh(pts[q], pts[iid])), None)
+        if twin:
+            e["same_geometry_as"] = twin
     return heads, items
 
 
