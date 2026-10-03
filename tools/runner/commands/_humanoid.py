@@ -30,6 +30,19 @@ for _side, _s in (("Left", "L"), ("Right", "R")):
 # Profile bones the rig has nothing for.
 PROFILE_ONLY = ("LeftEye", "RightEye", "Jaw", "LeftToes", "RightToes")
 BONE_MAP_RES = "res://import/um_humanoid_bone_map.tres"
+# The trial's imports. Godot's retarget/remove_tracks/unimportant_positions (on by default) drops the position tracks of
+# every mapped bone but the root and the hips; the pack moves the feet and the shoulders with position keys, so with it
+# the retargeted Walk's feet end up about 52 cm off. With it off every mapped joint stays within about 1 mm. Both runs
+# are reported; keeping those tracks is exact here because the trial retargets onto the same rig, and may not carry over
+# to a skeleton with other proportions (the reason Godot drops them by default).
+VARIANTS: dict[str, dict[str, Any]] = {
+    "keep_positions": {"retarget/remove_tracks/unimportant_positions": False},
+    "godot_defaults": {},
+}
+
+
+def staged_name(stem: str, variant: str) -> str:
+    return f"{stem}_humanoid" if variant == "keep_positions" else f"{stem}_humanoid_defaults"
 # Poses compared between the plain and the retargeted import: (animation, whole frames at 24 fps).
 POSES = {"CharacterArmature|Idle": (0, 10, 20, 30), "CharacterArmature|Walk": (0, 8, 16, 24), "CharacterArmature|Wave": (0, 15, 30)}
 
@@ -68,40 +81,54 @@ def pose_deviation(plain: dict[str, Any], retargeted: dict[str, Any], renamed: d
 
 
 def trial(glb: Path, out: Path, contract: dict[str, Any]) -> dict[str, Any]:
-    """Imports glb with the BoneMap, checks it like godot-check and compares its poses with the plain import (which
-    godot-check staged first). Writes <out>/humanoid.json and prints a summary; never fails the command."""
+    """Imports glb with the BoneMap once per VARIANTS entry, checks each like godot-check and compares its poses with
+    the plain import (which godot-check staged first). Writes <out>/humanoid.json and prints a summary; never fails
+    the command."""
     common.say(f"{glb.name}: SkeletonProfileHumanoid trial (report only, not adopted)")
     plain_path = f"res://import/{glb.stem}.glb"
     plain, _ = _godot.inspect(plain_path, out / "plain_poses.json", _request())
     skeleton_path = plain["skeletons"][0]["path"]
     (_godot.IMPORT_DIR / Path(BONE_MAP_RES).name).write_text(bone_map_tres(), encoding="utf-8", newline="\n")
-    res_path = _godot.stage(glb, f"{glb.stem}_humanoid", nodes=nodes(skeleton_path))
+    staged = {}
+    for variant, options in VARIANTS.items():
+        node = nodes(skeleton_path)
+        node[f"PATH:{skeleton_path}"].update(options)
+        staged[variant] = _godot.stage(glb, staged_name(glb.stem, variant), nodes=node)
     lines = _godot.import_project()
-    dump, more = _godot.inspect(res_path, out / "humanoid_inspect.json", _request())
     renamed = {rig: profile for profile, rig in BONE_MAP.items()}
     expect = _godot.expectations(glb)
-    checks = _godot.evaluate(dump, expect, contract, lines + more, renamed=renamed)
-    bones = dump["skeletons"][0]["bones"] if dump["skeletons"] else []
     rig_bones = expect["bones"]
-    report = {
+    report: dict[str, Any] = {
         "glb": glb.as_posix(),
-        "skeleton": dump["skeletons"][0]["path"] if dump["skeletons"] else None,
         "mapped": {profile: rig for profile, rig in BONE_MAP.items()},
         "mapped_count": len(BONE_MAP),
         "rig_bones_unmapped": [b for b in rig_bones if b not in renamed],
         "profile_bones_without_rig_bone": list(PROFILE_ONLY),
-        "bones_after_import": bones,
-        "checks": checks,
-        "pose_deviation_from_plain_import": pose_deviation(plain, dump, renamed),
-        "godot_output": lines + more,
+        "variants": {},
     }
-    (out / "humanoid.json").write_text(json.dumps(report, indent=1), encoding="utf-8")
-    for c in checks:
-        common.say(f"  {'ok   ' if c['status'] == 'pass' else c['status']:5} {c['check']}: {c['detail']}")
-    dev = report["pose_deviation_from_plain_import"]
     common.say(f"  mapped {len(BONE_MAP)} of the profile's {len(BONE_MAP) + len(PROFILE_ONLY)} bones; rig bones left "
                f"unmapped: {', '.join(report['rig_bones_unmapped'])}; profile bones without a rig bone: {', '.join(PROFILE_ONLY)}")
-    common.say(f"  mapped joints against the plain import: within {dev['max_mm']} mm over {dev['joints_compared']} joint "
-               f"positions (worst {dev['where'] or '-'})")
+    for variant, res_path in staged.items():
+        dump, more = _godot.inspect(res_path, out / f"humanoid_{variant}_inspect.json", _request())
+        mine = _godot.lines_for(lines, res_path, list(staged.values()))
+        checks = _godot.evaluate(dump, expect, contract, mine + more, renamed=renamed)
+        dev = pose_deviation(plain, dump, renamed)
+        report["variants"][variant] = {
+            "res_path": res_path,
+            "retarget_options": VARIANTS[variant],
+            "skeleton": dump["skeletons"][0]["path"] if dump["skeletons"] else None,
+            "bones_after_import": dump["skeletons"][0]["bones"] if dump["skeletons"] else [],
+            "checks": checks,
+            "position_tracks": {n: a.get("position_tracks") for p in dump["players"] for n, a in p["animations"].items()
+                                if n.endswith("|Walk")},
+            "pose_deviation_from_plain_import": dev,
+            "godot_output": mine + more,
+        }
+        common.say(f"  {variant} ({VARIANTS[variant] or 'every retarget option at its default'}):")
+        for c in checks:
+            common.say(f"    {'ok   ' if c['status'] == 'pass' else c['status']:5} {c['check']}: {c['detail']}")
+        common.say(f"    mapped joints against the plain import: within {dev['max_mm']} mm over {dev['joints_compared']} "
+                   f"joint positions (worst {dev['where'] or '-'})")
+    (out / "humanoid.json").write_text(json.dumps(report, indent=1), encoding="utf-8")
     common.say(f"  report: {(out / 'humanoid.json').as_posix()}")
     return report
