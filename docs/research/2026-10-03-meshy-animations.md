@@ -104,6 +104,9 @@ path, so the sliding, does not change. A per-vertex floor clamp would remove the
 - Godot's `SkeletonProfileHumanoid` has `LeftToes` and `RightToes`: the humanoid bone map of the contract can map the
   toes (a shared-file change, listed for the manager).
 - Every part keeps 64 vertex groups (the pack's 62 and the toes); the face parts keep one (`Head`).
+- A known cost to carry into the contract: where the toe bends, linear blend skinning pushes the sole under the ball
+  0.6 to 1.1 cm into the floor for a frame or two (rigid shoes: within 0.2 cm). A narrower blend, a higher bend axis
+  (`SOLE_LIFT_M` in `um/toes.py`) or a per-vertex floor clamp would remove it if it shows in game.
 
 ## Meshy: the run (batch 4)
 
@@ -196,7 +199,10 @@ of the right shoe from its side, `feet/<body>/meshy_feet_<body>_<clip>.png` and 
 bone's (on Meshy's rig its ankle, 14 cm up, on ours the heel pivot, 2.3 cm up: compare (b) with UAL and the pack,
 not (a) with (b); the same-point measures are in the first bullet below), `-` with fewer than 4 contact velocities (the runs touch down
 for a frame or two); the toe measures count contact within 1 cm of the floor, or of the tips' own lowest point when a
-clip never reaches the floor (Meshy's), `-` without a sample at a 15 to 25 degree heel lift.
+clip never reaches the floor (Meshy's), `-` without a sample at a 15 to 25 degree heel lift. Two limits: no run or
+sprint, Meshy's or UAL's, has a sliding value (a foot touches down for a frame or two at 30 fps; sampling between the
+keys would measure it), and comparison (a) on the woman covers her locomotion only (Walking, Running, Walking Woman,
+Run Fast: the woman's library was two clips by the batch's design), so no gap need has an (a) lane on her body type.
 
 | Body | Need | Lane | Front of the shoe at a 20 deg heel lift (deg into the floor) | Heel lift, front level (deg) | Tip lowest (cm) | Foot slide mean/max (cm/s) | Lowest vertex (cm) |
 |---|---|---|---|---|---|---|---|
