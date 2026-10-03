@@ -18,12 +18,10 @@ FPS = 24
 PREFIX = "CharacterArmature|"
 COMPARE = ("Idle", "Walk", "Wave")
 VIDEO = ("Idle", "Walk", "Run", "Wave", "Punch_Right", "Interact")
-# Godot and Blender agree on a joint's position within this on a whole frame. Not zero: Godot's editor import of a glTF
-# animation resamples it at animation/fps and drops keys it finds linearly interpolable (Walk's Foot.L keeps 25 of 33
-# rotation keys; the per-animation optimizer/* options do not change it), so tips (feet, fingertips) differ by a few
-# millimetres on some frames (measured up to 4.5 mm). A wrong pose (a channel left from another action, a wrong rest)
-# differs by centimetres to decimetres.
-JOINT_TOLERANCE_M = 0.01
+# Godot and Blender agree on a joint's position within this on a whole frame. With Godot's animation optimizer off
+# (_godot.PLAYER_OPTIONS) every joint of every clip agrees within 0.02 mm (the JSON's 0.01 mm rounding); a wrong pose
+# (a channel left from another action, a wrong rest, a dropped key) differs by millimetres to decimetres.
+JOINT_TOLERANCE_M = 0.001
 
 
 def label(name: str) -> str:

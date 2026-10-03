@@ -43,9 +43,9 @@ def bone_map_tres(mapping: dict[str, str] = BONE_MAP) -> str:
     return "\n".join(lines) + "\n"
 
 
-def subresources(skeleton_path: str) -> str:
-    """The .import _subresources that put the BoneMap on the skeleton node (the importer's retarget options)."""
-    return ('{\n"nodes": {\n"PATH:%s": {\n"retarget/bone_map": Resource("%s")\n}\n}\n}' % (skeleton_path, BONE_MAP_RES))
+def nodes(skeleton_path: str) -> dict[str, dict]:
+    """The importer's node options that put the BoneMap on the skeleton node (its retarget options)."""
+    return {f"PATH:{skeleton_path}": {"retarget/bone_map": _godot.Resource(BONE_MAP_RES)}}
 
 
 def _request(fps: int = 24) -> dict[str, Any]:
@@ -75,7 +75,7 @@ def trial(glb: Path, out: Path, contract: dict[str, Any]) -> dict[str, Any]:
     plain, _ = _godot.inspect(plain_path, out / "plain_poses.json", _request())
     skeleton_path = plain["skeletons"][0]["path"]
     (_godot.IMPORT_DIR / Path(BONE_MAP_RES).name).write_text(bone_map_tres(), encoding="utf-8", newline="\n")
-    res_path = _godot.stage(glb, f"{glb.stem}_humanoid", subresources=subresources(skeleton_path))
+    res_path = _godot.stage(glb, f"{glb.stem}_humanoid", nodes=nodes(skeleton_path))
     lines = _godot.import_project()
     dump, more = _godot.inspect(res_path, out / "humanoid_inspect.json", _request())
     renamed = {rig: profile for profile, rig in BONE_MAP.items()}

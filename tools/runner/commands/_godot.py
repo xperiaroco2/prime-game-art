@@ -33,8 +33,35 @@ NOTEWORTHY = ("ERROR", "WARNING", "SCRIPT ERROR", "USER ERROR", "USER WARNING")
 
 # The import options godot-check and frames set; every other option keeps Godot's default (docs/godot.md). Godot's
 # editor import resamples a glTF animation at animation/fps (default 30): the pack's actions are 24 fps, and at 30 the
-# joints on the pack's own frames moved by up to 7.6 mm against Blender's (m1_rex's Walk), at 24 by up to 4.5 mm.
+# joints on the pack's own frames moved by up to 7.6 mm against Blender's (m1_rex's Walk).
 IMPORT_PARAMS = {"animation/fps": 24}
+# The importer's AnimationPlayer node options (_subresources "nodes"). Godot's animation optimizer (on by default) drops
+# keys it finds linearly interpolable within its velocity and angle errors: with it, joints moved by up to 16.7 mm
+# against Blender's (m1_rex's Run, the left hand at frame 17); without it, every joint of every clip is within 0.02 mm.
+PLAYER_NODE = "PATH:AnimationPlayer"
+PLAYER_OPTIONS = {"optimizer/enabled": False}
+
+
+class Resource(str):
+    """A res:// path written as Resource("...") in an .import file."""
+
+
+def variant(value: Any) -> str:
+    """value in Godot's text format (the .import _subresources): dicts, bools, numbers, strings and Resource paths."""
+    if isinstance(value, Resource):
+        return f'Resource("{value}")'
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    if isinstance(value, dict):
+        if not value:
+            return "{}"
+        return "{\n" + ",\n".join(f"{json.dumps(str(k))}: {variant(v)}" for k, v in value.items()) + "\n}"
+    return json.dumps(value)
+
+
+def subresources(nodes: dict[str, dict[str, Any]] | None = None) -> str:
+    """The _subresources of every import: PLAYER_OPTIONS on the AnimationPlayer, plus the given node options."""
+    return variant({"nodes": {PLAYER_NODE: dict(PLAYER_OPTIONS), **(nodes or {})}})
 
 
 def import_file(params: dict[str, Any], subresources: str = "{}") -> str:
@@ -45,14 +72,15 @@ def import_file(params: dict[str, Any], subresources: str = "{}") -> str:
     return "\n".join(lines) + "\n"
 
 
-def stage(glb: Path, name: str | None = None, params: dict[str, Any] | None = None, subresources: str = "{}") -> str:
-    """Copies glb into godot/import/ as <name>.glb with a fresh .import file holding IMPORT_PARAMS (and params), so the
-    next import starts from Godot's defaults plus those, and returns its res:// path."""
+def stage(glb: Path, name: str | None = None, params: dict[str, Any] | None = None,
+          nodes: dict[str, dict[str, Any]] | None = None) -> str:
+    """Copies glb into godot/import/ as <name>.glb with a fresh .import file holding IMPORT_PARAMS (and params) and
+    subresources(nodes), so the next import starts from Godot's defaults plus those, and returns its res:// path."""
     name = name or glb.stem
     IMPORT_DIR.mkdir(parents=True, exist_ok=True)
     target = IMPORT_DIR / f"{name}.glb"
     shutil.copyfile(glb, target)
-    text = import_file({**IMPORT_PARAMS, **(params or {})}, subresources)
+    text = import_file({**IMPORT_PARAMS, **(params or {})}, subresources(nodes))
     (IMPORT_DIR / f"{name}.glb.import").write_text(text, encoding="utf-8", newline="\n")
     return f"res://import/{name}.glb"
 

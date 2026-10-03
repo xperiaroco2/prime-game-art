@@ -126,6 +126,12 @@ class GodotHelpersTest(unittest.TestCase):
         self.assertIn('nodes/root_name="x"', text)
         self.assertTrue(text.endswith("_subresources={}\n"))
 
+    def test_every_import_turns_the_animation_optimizer_off(self) -> None:
+        self.assertEqual(_godot.subresources(), '{\n"nodes": {\n"PATH:AnimationPlayer": {\n"optimizer/enabled": false\n}\n}\n}')
+        text = _godot.subresources({"PATH:x": {"a": _godot.Resource("res://y.tres"), "n": 1}})
+        self.assertIn('"PATH:x": {\n"a": Resource("res://y.tres"),\n"n": 1\n}', text)
+        self.assertIn('"optimizer/enabled": false', text)
+
 
 class HumanoidMapTest(unittest.TestCase):
     def test_the_bone_map_covers_the_profile_and_the_rig(self) -> None:
@@ -143,7 +149,7 @@ class HumanoidMapTest(unittest.TestCase):
         self.assertIn('profile = SubResource("SkeletonProfileHumanoid_um")', text)
         self.assertIn('bone_map/Spine = &"Abdomen"', text)
         self.assertIn('"PATH:x_rig/Skeleton3D": {\n"retarget/bone_map": Resource("res://import/um_humanoid_bone_map.tres")',
-                      _humanoid.subresources("x_rig/Skeleton3D"))
+                      _godot.subresources(_humanoid.nodes("x_rig/Skeleton3D")))
 
     def test_pose_deviation(self) -> None:
         plain = {"poses": {"A": {"0.0": {"Wrist.L": [0, 0, 0], "Body": [0, 0, 0]}}}}
