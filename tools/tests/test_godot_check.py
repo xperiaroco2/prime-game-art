@@ -114,6 +114,15 @@ class EvaluateTest(unittest.TestCase):
         self.assertNotIn("rest_joints", got)
 
 
+class WithoutExportJsonTest(unittest.TestCase):
+    def test_a_bare_glb_warns_and_is_held_to_the_pack_floor(self) -> None:
+        bare = {**expect(), "source": "x.glb", "bone_parents": {}, "rest_heads_m": {}, "height_m": None}
+        got = statuses(dump(), bare)
+        self.assertEqual(got["expectations"], "warn")
+        self.assertEqual(got["pack_floor"], "fail")  # the fixture has 7 bones and 2 animations
+        self.assertNotIn("expectations", statuses(dump()))
+
+
 class GodotHelpersTest(unittest.TestCase):
     def test_noteworthy_lines_keep_where_they_happened(self) -> None:
         output = "\x1b[1;31mERROR:\x1b[0m bad thing\n   at: f (x.cpp:1)\nplain\nWARNING: odd\n[ 50% ] import\n"

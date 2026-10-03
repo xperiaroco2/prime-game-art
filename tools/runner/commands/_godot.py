@@ -27,6 +27,9 @@ SIZE_TOLERANCE_M = 0.002  # Godot's rest-pose height equals Blender's
 JOINT_TOLERANCE_M = 0.001  # Godot's rest joints equal Blender's bone heads
 LENGTH_TOLERANCE_S = 1e-3
 FACE_AHEAD_M = 0.05  # the eyes sit at least this far in front of the Head joint
+# The Ultimate Modular rig: the floor a GLB without its export.json is held to (expectations() then reads the GLB).
+PACK_BONES = 62
+PACK_ANIMATIONS = 24
 ANSI = re.compile(r"\x1b\[[0-9;]*m")
 NOTEWORTHY = ("ERROR", "WARNING", "SCRIPT ERROR", "USER ERROR", "USER WARNING")
 
@@ -306,6 +309,13 @@ def evaluate(dump: dict[str, Any], expect: dict[str, Any], contract: dict[str, A
     warnings = [line for line in output if not line.startswith(("ERROR", "SCRIPT ERROR", "USER ERROR"))]
     c.add("godot_output", not errors, f"{len(errors)} errors, {len(warnings)} warnings in Godot's import and inspection output"
           + (f": {errors[0]}" if errors else ""))
+    if not expect["source"].endswith(".export.json"):
+        c.add("expectations", False, f"no .export.json beside the GLB: the parts, bones and animations come from "
+              f"{expect['source']} itself, so what the GLB already lacks is not caught, and the rest joints, the bone "
+              f"hierarchy and Blender's height are not compared", "warn")
+        c.add("pack_floor", len(got) >= PACK_BONES and len(anims) >= PACK_ANIMATIONS,
+              f"{len(got)} bones and {len(anims)} animations (the Ultimate Modular rig has {PACK_BONES} bones and "
+              f"{PACK_ANIMATIONS} actions)")
     return c.items
 
 
