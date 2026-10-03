@@ -17,7 +17,7 @@ tools/run.py catalogue [--check] [--renders sheets,matrices,confirm] [--out DIR]
 |---|---|
 | (none) | Regenerates `catalogue/ultimate_modular.json` in headless Blender (about 1.5 minutes) and prints its summary |
 | `--check` | Regenerates into `tools/out/catalogue/check.json` and fails when it differs from the committed file: the determinism and drift check (`tools/tests/test_catalogue_blender.py` runs it) |
-| `--renders` | Also renders into `--out` (default `tools/out/catalogue/`): `sheets/`, `matrices/`, `confirm/` (below; about 6 more minutes for all three) |
+| `--renders` | Also renders into `--out` (default `tools/out/catalogue/`): `sheets/`, `matrices/`, `confirm/` (below; about 10 more minutes for all three, most of it the confirmation renders) |
 | `--res` | Render size in percent (default 100) |
 
 The packs are read from the raw folder (`ART_RAW_DIR`, default `D:/prime-art-raw`, `refs/Ultimate_Modular_*_Pack/`).
