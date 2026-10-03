@@ -120,7 +120,9 @@ fists, about 78 degrees, in most clips; the pack's fists are 101 degrees, its op
 
 Notes on the measures: a straight arm in UAL's punches and lunge reads 17 to 32 degrees "past straight" (the Roll 56
 to 60 while tumbling) because the forearm's bend plane differs from the upper arm's hinge axis without twist bones;
-the strips show straight, unbroken arms. Sole sliding (in `metrics.json`) also counts the toe of the toe-less target foot dragged at toe-off and is not
+the strips show straight, unbroken arms. Sprint_Loop's slide of 0 rests on a single velocity sample (5 contact frames in a 0.67 s cycle), so it says
+nothing; its ground speed is 6% above the root-motion file's (9.04 against 8.53 m/s scaled to the men), Jog's 7%
+(5.95 against 5.54). Sole sliding (in `metrics.json`) also counts the toe of the toe-less target foot dragged at toe-off and is not
 used for verdicts. In-place jumps and the swims go below the floor by design.
 
 ## What the game needs, and the best clip for each
