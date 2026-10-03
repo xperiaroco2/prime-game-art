@@ -22,10 +22,18 @@ review, the feet step, the Meshy libraries) and [../meshy.md](../meshy.md) (the 
   man, two on the woman, one text-to-motion crawl. **Meshy's skeleton has 24 bones, no fingers and one toe per foot**
   (report below).
 - **Comparison (a) against (b).** Our retarget onto the Ultimate Modular rig with the toe bones (b) reproduces what
-  Meshy's own rig and weights do with the same clip on our mesh (a), pose for pose (the pairs), and does the feet
-  better: Meshy's own rig has no foot IK and its shoes are weighted by its auto-rig, so in its walk the foot slides
-  6.1 cm/s (max 39.6) against 3.3 (max 8.7) after our retarget, and in its backward walk the front of the shoe goes
-  23 degrees into the floor against 7. Meshy's clips float: its walk never comes closer than 0.7 to 0.9 cm to the
+  Meshy's own rig and weights do with the same clip on our mesh (a): the same motion in the pairs, except the upper
+  arms, which our rest alignment hangs 5 to 6 degrees closer to the body (below). **On sliding the two are about
+  equal.** Measured at the same point on the same mesh (m1_rex), the sole's contact patch slides 4.7 cm/s (median) in
+  Meshy's walk on its own rig and 5.6 after our retarget, 4.9 and 4.6 in the backward walk; at the same heel point (our
+  foot pivot's rest position, carried by Meshy's foot bone) (b) is only modestly steadier, 3.3/8.8 cm/s mean/max
+  against 4.1/20.2. Our retarget follows Meshy's foot, so it cannot plant a heel that Meshy never plants: Meshy's walk
+  has no flat stance on either rig (its sole is within 1.5 cm of its lowest point for 2 to 5 of 26 to 32 frames a
+  foot; UAL Walk_Loop's for 27 of 41). What the retarget does change is the toe: the front of the shoe stays level at
+  push-off instead of tipping into the floor (the backward walk: 7 degrees against 23). The bone-slide column of the
+  tables below is not an (a)-against-(b) measure: it reads Meshy's ankle (14 cm up) on (a) and our heel pivot (2.3 cm
+  up) on (b); it compares (b) with UAL and the pack, which it reads at the same point. Meshy's forward walks and runs
+  float: its walk never comes closer than 0.7 to 0.9 cm to the
   floor on the man, and on the woman's rig its locomotion hangs 1.7 to 7.5 cm above it (Run Fast 7.5 cm), on its own
   rig as on ours: in stance Meshy's feet stay pitched heel-up, so the heel never comes down. The hands have no
   fingers on Meshy's rig: every hand is a flat paddle, and 409 Finger Wag No wags
@@ -181,7 +189,8 @@ Each set plays, top to bottom: (a) the clip on Meshy's own rig and weights (m1_r
 the same clip retargeted onto the review donor's rig with the toe bones (Business Man, Suit), and the best UAL1 or pack
 clip for the need (with the toe bones). `tools/run.py anim-review feet --only meshy_feet_men,meshy_feet_women` (close-ups
 of the right shoe from its side, `feet/<body>/meshy_feet_<body>_<clip>.png` and `.mp4`). The sliding is the foot
-bone's (on Meshy's rig its ankle, on ours the heel pivot), `-` with fewer than 4 contact velocities (the runs touch down
+bone's (on Meshy's rig its ankle, 14 cm up, on ours the heel pivot, 2.3 cm up: compare (b) with UAL and the pack,
+not (a) with (b); the same-point measures are in the first bullet below), `-` with fewer than 4 contact velocities (the runs touch down
 for a frame or two); the toe measures count contact within 1 cm of the floor, or of the tips' own lowest point when a
 clip never reaches the floor (Meshy's), `-` without a sample at a 15 to 25 degree heel lift.
 
@@ -214,11 +223,18 @@ clip never reaches the floor (Meshy's), `-` without a sample at a 15 to 25 degre
 
 Read in the close-ups and the measures:
 
-- **The feet of (b) are as good as UAL's and better than (a).** After our retarget Meshy's walk keeps the front of the
-  shoe level at push-off (0.7 degrees at a 20 degree heel lift; UAL's -2.4) and slides 3.3 cm/s (UAL's 2.4); on its
-  own rig the same walk slides 6.1 cm/s with peaks of 39.6, because Meshy's rig has no foot IK and its auto-weights let
-  the shoe swim with the ankle. Its backward walk on its own rig pushes the front of the shoe 23 degrees into the floor
-  and 1.7 cm under it; retargeted, 7 degrees and 0.3 cm above.
+- **The toes of (b) are better than (a); the sliding is about the same.** After our retarget Meshy's walk keeps the
+  front of the shoe level at push-off (0.7 degrees at a 20 degree heel lift; UAL's -2.4); on its own rig the backward
+  walk pushes the front of the shoe 23 degrees into the floor, retargeted 7. The sliding was measured again during the
+  review at the same point on both, because the column above reads different bones: with the sole's contact patch (the
+  vertices within 3 mm of each shoe's lowest point, followed from frame to frame, less the ground speed, contact within
+  2.5 cm of the floor) on the same mesh, m1_rex, Meshy's walk slides 4.7/14.0/61.7 cm/s (median/mean/max) on its own
+  rig and 5.6/16.5/85.3 after our retarget (5.6/16.4/85.3 on Business Man), the backward walk 4.9 and 4.6 (median);
+  with the heel point (our pivot's rest position carried by Meshy's `LeftFoot`, resampled to 30 fps) 4.1/20.2 (a)
+  against 3.3/8.8 (b) mean/max, where the IK capping overstretched legs may account for (b)'s lower peaks. Meshy's walk
+  has no planted stance on either rig: with a 1.5 cm contact window its sole touches for 2 to 5 of 26 to 32 frames a
+  foot, UAL Walk_Loop's for 27 of 41 (median slide 1.3 cm/s). Neither the stance nor the sliding can be fixed by
+  following Meshy's foot more closely; a fix would plant the heel (below).
 - **Meshy's clips float: its feet never come flat.** The man's walk and runs never come closer than 0.4 to 1.2 cm to
   the floor, on Meshy's rig as on ours; on the woman's rig 1.7 to 7.5 cm (Run Fast 7.5 cm, on its own rig too), and on
   the women's donor every Meshy clip, the man's included, 2 to 3 cm (the woman's Run Fast 7.5). The cause is in the
@@ -353,7 +369,7 @@ From art #20's and #24's needs table. "Private" means usable only if the enginee
 
 | Need | Recommendation | Meshy's clip, as tried |
 |---|---|---|
-| Walk 4.5 m/s | **UAL1** Walk_Loop/Jog_Fwd_Loop blend with the toe bones (CC0) | Walking: natural, feet as good after our retarget (front level, 3.3 cm/s), floats 0.9 cm; private |
+| Walk 4.5 m/s | **UAL1** Walk_Loop/Jog_Fwd_Loop blend with the toe bones (CC0) | Walking: natural; after our retarget the front of the shoe stays level, but the heel never plants (no flat stance) and it floats 0.9 cm; private |
 | Sprint 7.0 m/s | **UAL1** Sprint_Loop (and the Jog blend) with the toe bones | Run Fast: a sprinter's dash with a 40 to 50 degree lean, 6.4 m/s; a look choice (designer) and private |
 | Moving backwards | **pack** Run_Back for now; **Meshy** Walk_Backward if private clips are allowed (slide 3.1 against 33.4 cm/s, front of the shoe 7 against 21 degrees) | the best backward clip we have |
 | Moving sideways | gap (no clean strafe in UAL1, UAL2, the pack or Meshy's library) | none in the library |
@@ -367,8 +383,8 @@ From art #20's and #24's needs table. "Private" means usable only if the enginee
 | Everything else (idle, jump, use, talk, knife, hit) | as art #20 and #24 recommend | not tried |
 
 **Meshy for animation, overall:** worth it for gaps only, not for locomotion. The clips themselves are good motion
-capture quality; Meshy's own rig is worse than ours on the feet (no IK, sliding, floating on the woman) and has no
-fingers, so whatever we take from Meshy we take as a clip and retarget onto our rig, which this task now does
+capture quality apart from the feet (heel up in stance, floating); Meshy's own rig tips the shoe into the floor where
+our toe bones keep it level, slides about as much as our retarget, and has no fingers, so whatever we take from Meshy we take as a clip and retarget onto our rig, which this task now does
 (`meshy_um.toml`). Text to motion gave a usable but crooked crawl for 13 credits; the library is the better buy.
 
 **The UAL1 Pro money question still stands**: Meshy's library can fill the backward walk, the turn, the downed idle

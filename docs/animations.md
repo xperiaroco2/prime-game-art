@@ -235,5 +235,9 @@ selected rows in `rates/<body>/rates.json` and keeps the other rows of an earlie
   one-frame bind pose `clip0` (skipped); the `Icosphere` beside each import is the glTF importer's own bone shape.
 - Meshy's walk floats 0.7 to 1 cm above the floor (its feet never reach it); the toe measures then count contact from
   the tips' own lowest point. Meshy's rig has no fingers: the finger curl reads 0 on its own rig.
+- The foot slide reads each rig's foot bone: on an own-rig lane (`<library>_own:`) that is the source's ankle (Meshy's
+  `RightFoot`, 14 cm up), on our rig the heel pivot (2.3 cm up). Compare own-rig lanes with retargeted ones only at
+  the same point (the sole's contact patch, or the pivot carried by the source's foot): art #25's 6.1 against 3.3 cm/s
+  was the point, not the retarget (the research page).
 - The side view (`anim_render.VIEWS["side"]`) looks at the character's right side; a label meant to stay readable in a
   side-view video goes at a lane's edge, not over the legs.
