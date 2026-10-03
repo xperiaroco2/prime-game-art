@@ -18,7 +18,8 @@ label = "UAL2"
 # no fingers (tools/blender/retarget_maps/meshy_um.toml). `file` holds the library actions merged by one animation
 # task; `extra` are the other GLBs of the same rig whose actions join it (the rig's own walking and running, the
 # text-to-motion crawl animated on the man's rig); `rename` gives Meshy's action names our clip names, `skip` leaves
-# out the one-frame bind pose; `in_place` clips have their hips' travel taken out (they walk or crawl away); `own`
+# out the one-frame bind pose; `in_place` clips have their hips' travel taken out (they walk or crawl away, or
+# stagger 0.94 m sideways: Hit_Reaction, which would walk into the next lane of a pair); `own`
 # names the character whose own rig and weights play the "<key>_own:<clip>" clips (comparison (a)). No `rm`: Meshy
 # has no root-motion file of its own.
 [libraries.meshy]
@@ -28,7 +29,7 @@ extra = ["2026-10-b4-animations/man-rig/rig-Animation_Walking_withSkin.glb",
          "2026-10-b4-animations/man-crawl/animate-Animation_01a10322-c879-7192-a408-0a474c65fc6c_withSkin.glb"]
 rename = { walking_man = "Walking", running = "Running", retarget_clip = "Crawl_Prompt" }
 skip = ["clip0"]
-in_place = ["Walk_Backward", "Crawl_and_Look_Back", "Crawl_Prompt", "Carry_Heavy_Object_Walk"]
+in_place = ["Walk_Backward", "Crawl_and_Look_Back", "Crawl_Prompt", "Carry_Heavy_Object_Walk", "Hit_Reaction"]
 label = "Meshy"
 own = "m1_rex"
 map = "meshy_um.toml"
@@ -67,7 +68,7 @@ pack = "refs/Ultimate_Modular_Women_Pack"
 pack = ["Idle", "Idle_Gun", "Idle_Gun_Pointing", "Idle_Neutral", "Idle_Sword", "Run", "Run_Back", "Run_Left",
         "Run_Right", "Run_Shoot", "Walk"]
 ual = ["Sword_Idle"]
-meshy = ["Walking", "Running", "RunFast", "Walk_Backward", "Crawl_Prompt"]
+meshy = ["Walking", "Running", "RunFast", "Walk_Backward", "Carry_Heavy_Object_Walk", "Prone_Reach_Help"]
 meshyw = ["Walking", "Running", "RunFast", "Walking_Woman"]
 
 # Locomotion at the game's speeds (the game's content/modes/base_mode.tres: walk 4.5 m/s, sprint 7.0 m/s). Each
