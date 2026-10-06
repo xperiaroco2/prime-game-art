@@ -62,7 +62,8 @@ and its default output is `tools/out/retarget/ual2/<body>`) onto the body type's
 (`tools/blender/anim_review.toml`) in background Blender and writes `retarget_report.json` (with `--blend` also the
 character with the baked actions `<label>|<clip>`, `UAL|`, `UAL2|` or `Meshy|`, saved as `<target>_<label>.blend` in lower case; with `--floor` each clip's lowest vertex on the target and on UAL's own
 mannequin scaled to the target, which tells how deep a clip goes into the floor by itself and how much the retarget
-adds). No add-on: `tools/blender/retarget_core.py`.
+adds). Every clip also reports its one-frame pops (`pops`: [bone, frame, degrees], `rc.pops`; the runner warns), a bone
+snapping between two held poses (art #33). No add-on: `tools/blender/retarget_core.py`.
 
 1. **Sampling.** Actions are read from their fcurves (Blender 5's layered actions: `action.layers`, channel bags per
    slot) and posed by our own forward kinematics, `pose = pose[parent] @ (rest[parent]^-1 @ rest) @ basis`, so a
@@ -105,7 +106,8 @@ adds). No add-on: `tools/blender/retarget_core.py`.
    translations, the anchors, the IK and the bone order), not proof that the rests agree: the rotation formula returns
    the target rest for any source rest by construction, and the rest differences of step 2 pass through untouched.
    `test_retarget_blender.py` also bakes Walk_Loop (its legs reach the source's ankle path within 10 mm and no vertex
-   goes 1 cm under the floor) and Death01 (no more than 3 cm deeper into the floor than UAL's own mannequin, scaled).
+   goes 1 cm under the floor), Death01 (no more than 3 cm deeper into the floor than UAL's own mannequin, scaled) and
+   Jump_Loop (in place, its right foot on the clamp's old 2 cm line: neither it nor the walk has a one-frame pop).
 
 ### The bone map
 
