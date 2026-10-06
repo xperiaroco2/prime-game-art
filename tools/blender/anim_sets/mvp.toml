@@ -31,7 +31,8 @@ name = "Turn_Left"
 source = "tm:turn-left-90"
 loop = false
 edits = [{ op = "heading", facing = "start" }, { op = "trim", start_s = 0.13, end_s = 1.73 },
-         { op = "turn", total_deg = 90 }, { op = "retime", seconds = 1.2 }]
+         { op = "turn", total_deg = 90 }, { op = "retime", seconds = 1.2 },
+         { op = "arm_offset", abduct_deg = 5.6, body = "women" }]  # auto: 5.64, hands 3.85 cm in the thighs to 0
 needs = [{ need = "Turn in place, 90 degrees to the left (lower body while the yaw follows the mouse)", no = 7, layer = "full" }]
 
 [[clips]]
@@ -119,6 +120,7 @@ needs = [{ need = "Jump: airborne, and falling off a ledge", no = 9, layer = "fu
 name = "Jump_Land"
 source = "ual:Jump_Land"
 loop = false
+# the women's hands brush the thighs in the crouch (7.3 cm): an arm offset up to 12 degrees made it worse (7.7)
 edits = [{ op = "trim", start_s = 0.0, end_s = 0.5 }, { op = "retime", seconds = 0.3 }]
 needs = [{ need = "Jump: the landing (upper body while moving, full standing)", no = 9, layer = "full" }]
 
@@ -128,7 +130,9 @@ name = "Shove_Stumble"
 source = "tm:shove-stumble"
 loop = false
 edits = [{ op = "trim", start_s = 0.37, end_s = 1.83 }, { op = "heading", facing = "start" },
-         { op = "in_place", mode = "path" }]
+         { op = "in_place", mode = "path" }, { op = "arm_offset", abduct_deg = 12 }]
+# arm_offset: the hanging hands went into the thighs (6.8 cm men, 7.0 women); auto reached 0 at 12 degrees on the men
+# and 4.5 cm at its limit of 12 on the women
 needs = [{ need = "Being pushed: the stumble (the game moves the body)", no = 10, layer = "full" }]
 
 [[clips]]
@@ -162,6 +166,7 @@ needs = [{ need = "Carry the package (upper body over the idle and the locomotio
 name = "Pickup_One"
 source = "ual2:Farm_Harvest"
 loop = false
+# the women's hand reaches past the thigh (2.5 cm in): an arm offset of 12 degrees only brought it to 1.9
 edits = [{ op = "trim", start_s = 0.13, end_s = 2.13 }, { op = "retime", seconds = 0.9 }]
 needs = [{ need = "Pick up a one-handed item from the floor (full standing, upper body moving)", no = 16, layer = "full" }]
 

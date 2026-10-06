@@ -101,6 +101,21 @@ def close_open_loop(fr: ae.Frames) -> tuple[ae.Frames, dict | None]:
     return out, {**seam, "frames_added": 0}
 
 
+def recentre(fr: ae.Frames) -> tuple[ae.Frames, float]:
+    """A set's clips stand over the origin, where the game's body is: a loop's Body is centred on it over the cycle, a
+    one-shot's first frame stands on it (Root moves; a cycle cut from a travelling clip, such as the strafe cut 1.8 s
+    in, would otherwise play metres away). Returns the frames and how far they moved (m)."""
+    path = ae._body_path(fr)
+    pts = path[:-1] if fr.loop and len(path) > 1 else path[:1]
+    cx, cy = sum(p[0] for p in pts) / len(pts), sum(p[1] for p in pts) / len(pts)
+    moved = math.hypot(cx, cy)
+    if moved < 1e-4:
+        return fr, 0.0
+    out = fr.copy()
+    ae._move_world(out, [Matrix.Translation((-cx, -cy, 0.0))] * len(out.basis))
+    return out, _r(moved)
+
+
 def build_clips(set_cfg: dict, char: dict, names, body: str, resolve, target: ae.Target | None = None,
                 lowest: bool = False, log=print) -> dict:
     """Builds the clips `names` ("all" or a list) of a set on char (a donor with the toe bones) and the clips they are
@@ -133,11 +148,13 @@ def build_clips(set_cfg: dict, char: dict, names, body: str, resolve, target: ae
         if c["loop"] and not fr.loop:
             raise ae.EditError(f"{name}: loop = true, but neither its source nor a cycle step closes it")
         fr.loop = c["loop"]
+        fr, moved = recentre(fr)
         rep = {"source": c.get("source"), "from": c.get("from"), "export": c["export"], "loop": fr.loop,
                "frames": fr.frames, "seconds": _r(fr.seconds), "speed_m_s": asc.speed_of(c),
                "measured_speed_m_s": _r(fr.info.get("speed_m_s")), "needs": c["needs"], "steps": fr.info["steps"]}
         if opened:
             rep["source_open_seam"] = opened
+        rep["recentred_m"] = moved
         rep.update(_summary(fr, target, lowest))
         rep["seconds_spent"] = _r(time.time() - t0, 1)
         fr.info["report"] = rep
