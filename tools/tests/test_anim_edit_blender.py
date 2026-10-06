@@ -16,11 +16,9 @@ import sys
 import unittest
 from pathlib import Path
 
-try:
-    import bpy  # noqa: F401  (inside Blender: the driver below runs)
-    IN_BLENDER = True
-except ImportError:
-    IN_BLENDER = False
+IN_BLENDER = "bpy" in sys.modules  # Blender runs this file with its bpy already loaded: the driver below runs
+if IN_BLENDER:
+    import bpy
 
 if not IN_BLENDER:
     from runner import blender, common, pins
