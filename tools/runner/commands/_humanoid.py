@@ -93,7 +93,7 @@ def trial(glb: Path, out: Path, contract: dict[str, Any]) -> dict[str, Any]:
     for variant, options in VARIANTS.items():
         node = nodes(skeleton_path)
         node[f"PATH:{skeleton_path}"].update(options)
-        staged[variant] = _godot.stage(glb, staged_name(glb.stem, variant), nodes=node)
+        staged[variant] = _godot.stage(glb, staged_name(glb.stem, variant), nodes=node, params=_godot.import_params(glb))
     lines = _godot.import_project()
     renamed = {rig: profile for profile, rig in BONE_MAP.items()}
     expect = _godot.expectations(glb)
