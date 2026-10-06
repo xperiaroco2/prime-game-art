@@ -77,6 +77,7 @@ def run(args: argparse.Namespace) -> int:
         blend = Path(saved["blend"])
         if not export.export_one(blend, out):
             failed = True
+            continue  # no GLB and no export.json to check
         glb = out / f"{blend.stem}.glb"
         info = json.loads((out / f"{blend.stem}.export.json").read_text(encoding="utf-8"))
         problems = _anim_set.check_export(info, report)
