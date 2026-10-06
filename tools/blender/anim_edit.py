@@ -348,13 +348,18 @@ def op_cycle(fr: Frames, p: dict, target: Target):
     feats = _cycle_features(fr, poses)
     vels = [[c * VEL_FRAMES for c in v] for v in em.central_diff(feats)]
     i, j, cost = em.best_cycle(feats, vels, fr.fps, p["min_s"], p["max_s"], p["within"])
-    raw = max(am.quat_angle(tuple(fr.basis[i][n].to_quaternion()), tuple(fr.basis[j][n].to_quaternion()))
-              for n in rig.order)
+    seams = {n: am.quat_angle(tuple(fr.basis[i][n].to_quaternion()), tuple(fr.basis[j][n].to_quaternion()))
+             for n in rig.order}
+    # the guard reads the bones the cut is chosen on (the fingers are reported by themselves: a hand at work changes
+    # its grip from one cycle to the next)
+    worst = max((n for n in seams if not is_finger(n)), key=seams.get)
+    raw = seams[worst]
     rep = {"i_s": _r(i / fr.fps, 3), "j_s": _r(j / fr.fps, 3), "cycle_s": _r((j - i) / fr.fps, 3),
-           "raw_seam_deg": _r(raw, 1), "cost": _r(cost, 3)}
+           "raw_seam_deg": _r(raw, 1), "raw_seam_bone": worst,
+           "finger_seam_deg": _r(max([a for n, a in seams.items() if is_finger(n)] or [0.0]), 1), "cost": _r(cost, 3)}
     if raw > p["max_raw_seam_deg"]:
-        raise EditError(f"the best cut {rep['i_s']}-{rep['j_s']} s has a raw seam of {raw:.1f} degrees, over "
-                        f"max_raw_seam_deg {p['max_raw_seam_deg']}: closing it would hide a bad cut")
+        raise EditError(f"the best cut {rep['i_s']}-{rep['j_s']} s has a raw seam of {raw:.1f} degrees ({worst}), "
+                        f"over max_raw_seam_deg {p['max_raw_seam_deg']}: closing it would hide a bad cut")
     b0, b1 = _world(rig, poses[i], BODY), _world(rig, poses[j], BODY)
     travel = math.hypot(b1.x - b0.x, b1.y - b0.y)
     yaw_drift = em.wrap(_facing(rig, poses[j]) - _facing(rig, poses[i]))
@@ -718,10 +723,10 @@ def op_hand_spacing(fr: Frames, p: dict, target: Target):
     else:
         sample = list(range(n))
 
-    def stats(deg, frames):
+    def stats(deg, frames, mean=p["at"] == "mean"):
         ms = [arms.measure(k, deg, "hands") for k in frames]
         gaps = [m["gap"] for m in ms]
-        gap = sum(gaps) / len(gaps) if p["at"] == "mean" else min(gaps)
+        gap = sum(gaps) / len(gaps) if mean else min(gaps)
         return {"gap": gap, "depth": max(m["depth"] for m in ms)}
 
     before = stats(0.0, sample)
@@ -734,29 +739,28 @@ def op_hand_spacing(fr: Frames, p: dict, target: Target):
     else:
         want = p["min_gap_cm"] / 100
 
-        def bad_frames(deg, frames):
-            return [k for k in frames if (lambda m: m["depth"] > 0 or m["gap"] < want)(arms.measure(k, deg, "hands"))]
+        def good(k, deg):
+            m = arms.measure(k, deg, "hands")
+            return m["depth"] <= 0 and m["gap"] >= want
 
         if p["at"] == "mean":
             def ok(a):
                 s = stats(a, sample)
                 return s["depth"] <= 0 and s["gap"] >= want
-        else:
-            bad = bad_frames(0.0, sample)
-            check = sorted({k + o for k in bad for o in (-1, 0, 1) if 0 <= k + o < n})
+        else:  # the frames that fail at 0 degrees and their neighbours
+            check = sorted({k + o for k in sample if not good(k, 0.0) for o in (-1, 0, 1) if 0 <= k + o < n})
 
             def ok(a):
-                return not bad_frames(a, check)
+                return all(good(k, a) for k in check)
 
         deg, found = em.search_angle(ok, 0.0, p["max_deg"], 0.5)
     after = stats(deg, sample)
-    every = stats(deg, range(n)) if p["at"] != "all" else after
+    every = after if p["at"] == "all" else stats(deg, range(n), mean=False)  # over every frame
     rc.reset_pose(target.arm)
     return arms.apply(deg), {
         "deg": _r(deg, 2), "found": found, "at": p["at"], "gap_before_cm": _r(100 * before["gap"], 2),
         "gap_after_cm": _r(100 * after["gap"], 2), "hands_in_each_other_before_cm": _r(100 * before["depth"], 2),
-        "hands_in_each_other_after_cm": _r(100 * every["depth"], 2), "min_gap_after_cm": _r(100 * every["gap"], 2)
-        if p["at"] == "all" else _r(100 * min(arms.measure(k, deg, "hands")["gap"] for k in range(n)), 2)}
+        "hands_in_each_other_after_cm": _r(100 * every["depth"], 2), "min_gap_after_cm": _r(100 * every["gap"], 2)}
 
 
 OPS = {"trim": op_trim, "retime": op_retime, "reverse": op_reverse, "cycle": op_cycle, "in_place": op_in_place,

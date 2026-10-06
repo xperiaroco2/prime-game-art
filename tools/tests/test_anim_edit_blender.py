@@ -2,7 +2,7 @@
 Walk twice is the Walk again and a raised left arm becomes a raised right arm; reverse twice, a retime round trip and a
 trim keep the frames; the cycle cut finds Walk_Loop's 1.33 s period in two concatenated cycles; in_place and heading
 undo a travel and a 20 degree turn; the stride warp plays UAL's Jog at 4.5 m/s with planted feet; the floor lift takes
-Death01's lying frames out of the floor; the women's arm offset takes their hands out of the thighs in Idle_Loop.
+Death01's lying frames out of the floor; the women's arm offset takes their hands out of the thighs in Idle_Loop, and their push's hands go 0.30 m apart.
 
 This file is also the Blender side of the test: run inside Blender (`blender -b ... --python <this file> -- <out>`)
 it does the edits and writes their numbers to <out>/edits.json, which the unittest reads. Skipped when Blender or the
@@ -94,6 +94,12 @@ if not IN_BLENDER:
             self.assertGreater(a["hands_in_legs_before_cm"], 0.5)
             self.assertLessEqual(a["hands_in_legs_after_cm"], 0.0)
             self.assertLessEqual(a["deg"], 12.0)
+
+        def test_women_hand_spacing(self) -> None:
+            h = self.r["hands"]
+            self.assertTrue(h["found"])
+            self.assertLess(h["gap_before_cm"], 1.0)  # the push's hands overlap
+            self.assertAlmostEqual(h["gap_after_cm"], 30.0, delta=1.5)
 
         def test_steps_and_errors(self) -> None:
             e = self.r["errors"]
@@ -254,11 +260,15 @@ def _blender_main(argv: list[str]) -> None:
     for o in list(bpy.data.objects):
         if o.type in ("MESH", "ARMATURE", "EMPTY") and o.name != "floor":
             bpy.data.objects.remove(o, do_unlink=True)
-    char, acts = setup(women, ["Idle_Loop"])
+    char, acts = setup(women, ["Idle_Loop", "Push_Loop"])
     target = ae.Target(char)
     idle = ae.apply(ae.Frames.from_action(acts["Idle_Loop"], target.rig, True),
                     [{"op": "arm_offset", "abduct_deg": "auto", "body": "women"}], target, "women")
     res["arms"] = idle.info["steps"][0]
+    # the hands of the women's push set 0.30 m apart on its last frame (the search goes both ways)
+    push = ae.apply(ae.Frames.from_action(acts["Push_Loop"], target.rig, True),
+                    [{"op": "hand_spacing", "gap_m": 0.30, "at": "end"}], target, "women")
+    res["hands"] = push.info["steps"][0]
 
     with open(os.path.join(out_dir, "edits.json"), "w", encoding="utf-8") as f:
         json.dump(res, f, indent=1, default=str)
