@@ -581,12 +581,22 @@ def op_floor(fr: Frames, p: dict, target: Target):
     def depths(lows):
         return [(-z if -z > min_depth else 0.0) if i0 <= k <= i1 else 0.0 for k, z in enumerate(lows)]
 
-    feet = p["mode"] == "lift"  # a hips lift leaves the shoes where they are: they are measured by themselves
+    feet = p["mode"] != "hips"  # a hips lift leaves the shoes where they are: they are measured by themselves
     lows = _lows(fr, target, feet)
     before = min(lows[i0:i1 + 1])
     out = fr.copy()
     total = [0.0] * (n + 1)
     legs = _Legs(rig)
+    if p["mode"] == "settle":  # a floating clip brought down onto the floor (art #33): Root moves, as a lift
+        drop = em.settle_profile(lows, i0, i1, fade)
+        out = fr.copy()
+        _move_world(out, [Matrix.Translation((0.0, 0.0, -h)) if h else None for h in drop])
+        _close(out)
+        after = _lows(out, target)
+        return out, {"mode": "settle", "lowest_before_cm": _r(100 * before, 2),
+                     "lowest_after_cm": _r(100 * min(after[i0:i1 + 1]), 2), "max_drop_cm": _r(100 * max(drop), 2),
+                     "highest_low_after_cm": _r(100 * max(after[i0:i1 + 1]), 2),
+                     "window_s": [_r(i0 / fr.fps, 3), _r(i1 / fr.fps, 3)]}
     rounds = 1 if p["mode"] == "lift" else 3
     for _ in range(rounds):
         lift = em.floor_profile(depths(lows), i0, i1, fade)

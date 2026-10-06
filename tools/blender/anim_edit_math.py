@@ -43,7 +43,7 @@ OPS = {
     "mirror": {},
     "stride": {"speed_m_s": _p(_N, required=True), "cadence": _p(_N), "rate": _p(_N), "plant": _p("bool", True),
                "natural_m_s": _p(_N), "warn": _p("range", [0.6, 1.6]), "fail": _p("range", [0.4, 2.5])},
-    "floor": {"mode": _p("string", "lift", choices=("lift", "hips")), "from_s": _p(_N, 0.0), "to_s": _p(_N),
+    "floor": {"mode": _p("string", "lift", choices=("lift", "hips", "settle")), "from_s": _p(_N, 0.0), "to_s": _p(_N),
               "fade_s": _p(_N, 0.2), "min_depth_cm": _p(_N, 0.3)},
     "arm_offset": {"abduct_deg": _p("number_or_auto", "auto"), "max_deg": _p(_N, 12.0), "margin_cm": _p(_N, 0.3)},
     "hand_spacing": {"min_gap_cm": _p(_N), "gap_m": _p(_N), "at": _p("string", "all", choices=("all", "end", "mean")),
@@ -574,6 +574,29 @@ def floor_profile(depths: list, i0: int, i1: int, fade: int, run: int = 2, smoot
     i0, i1 = max(0, i0), min(n - 1, i1)
     d = [max(0.0, x) for x in depths]
     rm = {i: max(d[max(i0, i - run):min(i1, i + run) + 1]) for i in range(i0, i1 + 1)}
+    out = [0.0] * n
+    for i in range(i0, i1 + 1):
+        a, b = max(i0, i - smooth), min(i1, i + smooth)
+        out[i] = sum(rm[k] for k in range(a, b + 1)) / (b - a + 1)
+    for j in range(1, fade + 1):
+        w = 1.0 - j / (fade + 1)
+        if i0 - j >= 0:
+            out[i0 - j] = out[i0] * w
+        if i1 + j < n:
+            out[i1 + j] = out[i1] * w
+    return out
+
+
+def settle_profile(heights: list, i0: int, i1: int, fade: int, run: int = 2, smooth: int = 2) -> list:
+    """The drop per frame (m, >= 0) that brings a floating clip's lowest vertex down onto the floor inside frames
+    i0..i1 (art #33, `floor {mode = "settle"}`): the heights above the floor (0 where a vertex is on or under it) as a
+    running min over +-run frames, smoothed by a centred average over +-smooth frames, held and faded as
+    floor_profile does. Every smoothed value averages minima that include the frame itself, so no frame is put under
+    the floor."""
+    n = len(heights)
+    i0, i1 = max(0, i0), min(n - 1, i1)
+    h = [max(0.0, x) for x in heights]
+    rm = {i: min(h[max(i0, i - run):min(i1, i + run) + 1]) for i in range(i0, i1 + 1)}
     out = [0.0] * n
     for i in range(i0, i1 + 1):
         a, b = max(i0, i - smooth), min(i1, i + smooth)
