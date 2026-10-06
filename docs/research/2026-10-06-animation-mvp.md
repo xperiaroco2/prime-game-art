@@ -116,7 +116,7 @@ Times are in seconds; "w" means the women only. The last column holds what is le
 | 6 | Sprint back and sideways 7.0 | `Jog_Bwd_Loop`, `Strafe_*_Loop` at 1.556 | as 3 and 4 | none | stopgap: 4.4 steps/s backward; **6.2 steps/s sideways**, a whirl | the engineer's question below |
 | 7 | Turn in place | `Turn_Left`, `Turn_Right` | TTM turn-left-90 | facing to the start, trim 0.13-1.73, turn 112.7 to 90 deg, retime 1.2 s; w: arms out 5.6 deg; right = mirror | pass, note: two clear steps; the pivot foot slides 18-20 cm/s mean (147-152 max) | the lower-body turn logic (below) |
 | 8 | Head pitch | none | | | none | procedural |
-| 9 | Jump | `Jump_Start`, `Jump_Air_Loop`, `Jump_Land` | UAL Jump_Start, Jump_Loop, Jump_Land | start: trim 0.03-0.40, retime 0.25 (0.267: whole frames); land: trim 0-0.5, retime 0.3 | pass, note: the start opens in a crouch and the landing ends in one; the take-off's toes dip 1.9 (men) and 2.3 cm (women) for 4 frames, past the design's -2 cm line on the women (resampling loses the retarget's toe clamp); w: hands 7.5 cm in the thighs at the landing | the game blends in and out, and lifts the body (the clips are in place; the air loop's feet hang 17-18 cm under the floor) |
+| 9 | Jump | `Jump_Start`, `Jump_Air_Loop`, `Jump_Land` | UAL Jump_Start, Jump_Loop, Jump_Land | start: trim 0.03-0.40, retime 0.25 (0.267: whole frames); land: trim 0-0.5, retime 0.3 | pass, note: the start opens in a crouch and the landing ends in one; the take-off's toes dip 1.9 (men) and 2.3 cm (women) for 4 frames, past the design's -2 cm line on the women (resampling loses the retarget's toe clamp); the air loop's right foot snapped 53-55 degrees and back in one frame (4 times a loop on the men, twice on the women) until the floor clamp was made to fade (131c347): now one held pose, its largest frame step 2.6/2.9 degrees; w: hands 7.5 cm in the thighs at the landing | the game blends in and out, and lifts the body (the clips are in place; the air loop's lowest vertex is 5.3/5.5 cm under the floor line, which the lift hides) |
 | 10 | Being pushed | `Shove_Stumble` | TTM shove-stumble | trim 0.37-1.83, facing to the start, in place along its path, arms out 12 deg | pass, note: the arms fly forward, two steps back, a crouch; w: hands 4.5 cm in the thighs at the crouch | contact detection; its feet travel 1.06 (men) and 1.15 m/s (women), half the push speed of 2.25 |
 | 11 | Pushing | `Push_Upper_Loop` (upper) | UAL Push_Loop | w: hands apart 4.3 deg (6.09 cm inside each other to a 1.28 cm gap); **lean 30 deg from Torso** (new) | pass after the lean: over the idle and the jog it leans into the push, palms forward at face height | upper layer at a low weight while in contact; the full-body clip bends 76 deg: a layer only |
 | 12 | One-handed item | none | | | none | grip keys |
@@ -166,6 +166,14 @@ Knockdown and Sprint_Fwd (men), the strips and sheets of every rebuilt clip, and
 fixes change (listed in the PR). The crawl's shins now stay on the feet through the loop, the knockdown lies on the
 floor, and the sprint reads as before with its feet planted.
 
+After the motion re-review's air-loop finding (the floor clamp's fade): the men's `strips/men/mvp_Jump_Air_Loop.png`
+(the right foot keeps one flat pose through the loop, where it pointed its toe down from 0.23 to 0.91 s before) and
+Godot's own sheet of `Jump_Air` (women; the same pose at all 8 times, where it flipped between f29 and f30), with
+Godot and Blender within 0.017 mm (men) and 0.014 mm (women) on `Jump_Air` and `Jump_Start`. The rebuilt pair
+`pairs/<body>/mvp_jump.mp4` and Godot's `frames/<body>/clips/Jump_Air.mp4` were rendered, not watched. The airborne
+right foot now sits level (the clamp holds most of it) where the source points it about 50 degrees down; the game lifts
+the body, so it reads as a foot held flat in the air.
+
 - **The push layer** (`Idle_Loop|Push_Upper_Loop`) raised both hands over the head, palms forward, on both bodies, as
   "hands up" rather than a push. UAL Push_Loop leans the whole body about 46 degrees from the feet and holds the arms
   forward along it. The game's upper-body layer starts at Torso, so over an upright base the arms point up. With
@@ -195,6 +203,21 @@ Measures that pass "a lowest vertex" or "a slide" below are graded against the d
 locomotion and -1.0 cm lying, kneeling or crawling, fail under -2; foot slide 12 cm/s for a standing one-shot); a
 clip past a line is a stopgap or a note, as the per-need table says.
 
+**One-frame pops** (the set build's check since art #33's last review, `pops` in `build_report.json`: a bone rotating at
+least 20 degrees in one frame step while both neighbouring steps are under a third of it). The motion review found
+the first by eye: the floor clamp switched off at once 2 cm under the foot's rest pivot, so Jump_Air_Loop's right
+foot, hovering on that line, flicked 53 (men) and 55 degrees (women) and back. The clamp now fades out over the next
+4 cm (131c347) and the loop has none. What the check still lists on the rebuilt set:
+
+| Clip | Pops (men / women) | What they are |
+|---|---|---|
+| Jog_Fwd_Loop, Jog_Bwd_Loop | 3 / 3: Foot.L 49.9/47.3 and 42.4/42.9 deg, Toe.L 36.4 | the source's heel strike and toe-off (UAL's Jog moves the foot 38 degrees in one frame on its own rig), 1.333x faster after the stride warp; the right foot's falls between two frames of the warped grid, so only the left one counts |
+| Sprint_Fwd_Loop | 4 / 2: Toe.L 24.9/23.1 deg, LowerLeg 20.5-23.6 | the same, at the sprint's rate |
+| Jump_Start | 10 / 11: Toe.L 64.4/55.2 deg at frame 2, both thighs 45-49 deg on the first step | the take-off at 1.48x the source's speed: the push-off's first step, and the toe clamp letting go as the ball leaves the floor; the game blends into it |
+| Jump_Land (women) | 1: Foot.R 20.5 deg on the first step | the impact |
+| Raise_Out | 1 / 1: Toe.R 138.1/118.8 deg at frame 9 | **a defect**: the kneeling foot's toe points straight down, where the toe clamp's pitch plane (the toe's own horizontal direction) turns round, so the clamp lifts the tip on the other side; it flips back as the foot leaves the floor. Not fixed here (see "Left for our own keys") |
+| Jog_Bwd_TTM_Loop (review only, women) | 1: UpperLeg.R 51.1 deg | the failing 7x stride |
+
 | Clip | Body | Lowest cm | Foot slide mean/max cm/s | Hands in legs cm | Verdict |
 |---|---|---|---|---|---|
 | Jog_Fwd_Loop, Jog_Bwd_Loop | m / w | -1.0 / -1.2 | in place (stride: 0.0 on contact) | 0 / 0 | pass |
@@ -207,11 +230,11 @@ clip past a line is a stopgap or a note, as the per-need table says.
 | Crawl_Start | m / w | 0.0 / 0.0 | 44.6 / 72 (men) | 0.4 / 7.5 | on the floor after the settle; travels 1.17 / 0.57 m/s as it rolls |
 | Crawl_Loop | m / w | 0.0 / 0.0 | (knees and hands: no foot measure; the hands skate about 65-95 cm/s, the art #33 motion review's probe) | 0 / 0 | stopgap: settled; the shins on the feet; hands hover and skate |
 | Getup_Fours | m / w | 0.0 / 0.0 | 13.3 / 45 and 18.0 / 48 | 6.7 / 7.4 | on the floor; lifts off 4.5 cm mid-rise |
-| Raise_In, Raise_Out, Raise_Work_Loop | m / w | -6.2, -4.5, -2.7 / -5.6, -3.7, -3.0 | under 1.2 mean | 0, 3.0 / 5.2, 7.0 | stopgap: the kneeling foot's toes, past the -2 cm line |
+| Raise_In, Raise_Out, Raise_Work_Loop | m / w | -6.2, -4.5, -2.7 / -5.6, -3.7, -3.0 | under 1.2 mean | 0, 3.0 / 5.2, 7.0 | stopgap: the kneeling foot's toes, past the -2 cm line; Raise_Out's right toe flips 138/119 degrees in one frame as the knee leaves the floor (the build's pop check) |
 | Pickup_Package, Putdown_Package | m / w | 0.0 / -0.3 | 17 / 122 and 18 / 133 | 1.7 / 7.0 | stopgap: the squat's shuffle past 12 cm/s; the end (start) pose does not hold a package |
 | Jump_Start | m / w | -1.9 / -2.3 | (in place) | 0 / 0 | the take-off's toe dip, 4 frames; past -2 cm on the women |
 | Getup_Back | m / w | 0.0 / 0.0 | 6.1 / 39 and 7.0 / 42 | 0 / 2.8 | pass |
-| Jump_Air_Loop | m / w | -18.3 / -17.2 | 0.6 / 1.9 | 0 / 0 | exempt (in place) |
+| Jump_Air_Loop | m / w | -5.3 / -5.5 | 0.6 / 1.9 | 0 / 0 | exempt (in place); no pop since the floor clamp fades (was -18.3 / -17.2 with the right toe flicking down) |
 
 Stride warping (build reports): the jog at 4.5 m/s plays 28 frames as 21 (rate 1.333), its planted feet at exactly
 4.50 m/s, IK miss 0.0 mm, the knee never past straight; its feet scale (0.567 men, 0.525 women) is under the warn mark
@@ -326,7 +349,10 @@ These are outside this task, in order of need:
 - the downed breathing loop (on Knockdown's last pose);
 - the right-hand grip and the swap (belt draw);
 - the raise: the kneeling foot's toes out of the floor, and a calmer work loop (a ping-pong of the kneeling work, or
-  keys) in place of the 27-degree seam;
+  keys) in place of the 27-degree seam; Raise_Out's toe flip (138/119 degrees in one frame) goes with the toes, or with
+  a retarget fix: the toe clamp pitching about the foot's own side-to-side axis instead of the plane of the toe's
+  horizontal direction, which turns round when the toe points straight down (it changes every clip's toes a little,
+  so it is a task of its own);
 - the package lift's end pose up to the carry's hold (it also mends the put-down, its reverse), and its feet's shuffle;
 - the women's hands on Jump_Land (7.3 cm in the thighs), Pickup_One (2.5 cm), Pickup_Package (7.0 cm), Knockdown's
   fall (6.1 cm) and Getup_Fours's rise (7.4 cm): the 12-degree arm offset did not clear the first two;
