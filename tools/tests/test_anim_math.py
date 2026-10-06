@@ -112,5 +112,15 @@ class AngleTest(unittest.TestCase):
         jumps = [abs(w(a) - w(b)) for a, b in zip(dzs, dzs[1:])]
         self.assertLessEqual(max(jumps), 0.0001 / 0.04 + 1e-9)
 
+    def test_one_frame_pops(self) -> None:
+        held = [0.8, 0.5, 53.6, 0.6, 0.4, 0.7, 53.5, 0.5]  # Jump_Loop's right foot: snaps away, holds, snaps back
+        self.assertEqual(am.one_frame_pops(held), [2, 6])
+        self.assertEqual(am.one_frame_pops([30.0, 25.0, 30.0]), [])  # a fast swing is not a pop
+        self.assertEqual(am.one_frame_pops([12.0, 15.0, 12.0]), [])  # under 20 degrees
+        self.assertEqual(am.one_frame_pops([40.0, 2.0, 3.0]), [0])  # a one-shot's first step has one neighbour
+        # a loop's steps wrap: the first step's neighbour is the last one
+        self.assertEqual(am.one_frame_pops([40.0, 2.0, 3.0, 20.0], loop=True), [])
+        self.assertEqual(am.one_frame_pops([40.0, 2.0, 3.0, 2.0], loop=True), [0])
+
 if __name__ == "__main__":
     unittest.main()

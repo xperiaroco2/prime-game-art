@@ -18,6 +18,8 @@ def report() -> dict:
         "Jog_Fwd_Loop": clip(21, True, steps=[{"op": "stride", "fit": "warn", "scale": 0.57, "cadence": 2.86,
                                                "step_m": 1.575}]),
         "Knockdown": clip(40, False, travel=0.4, low=-0.2),
+        "Jump_Air_Loop": {**clip(76, True), "pop_count": 4, "pops": [["Foot.R", 56, 53.6], ["Foot.R", 4, 53.5],
+                                                                     ["Toe.R", 4, 41.1], ["Toe.R", 56, 41.1]]},
         "Strafe_Left_Loop": {**clip(24, True), "speed_m_s": 4.5, "facing_mean_deg": 20.4, "head_facing_mean_deg": -17.7,
                              "seam_step_ratio": 2.1},
         "Jog_Bwd_TTM_Loop": clip(21, True, export=False, steps=[{"op": "stride", "fit": "fail", "scale": 8.1,
@@ -81,7 +83,11 @@ class SetChecksTest(unittest.TestCase):
                         warnings)
         self.assertTrue(any("Strafe_Left_Loop: its step onto the first frame is 2.1" in w for w in warnings), warnings)
         self.assertFalse(any(w.startswith("Jog_Fwd_Loop: faces") for w in warnings), warnings)
-        self.assertEqual(len(_anim_set.table(report()).splitlines()), 6)
+        self.assertTrue(any("Jump_Air_Loop: 4 one-frame pop(s), the largest Foot.R 53.6 deg at frame 56" in w
+                            for w in warnings), warnings)
+        self.assertFalse(any(w.startswith("Knockdown: ") and "pop" in w for w in warnings), warnings)
+        self.assertEqual(len(_anim_set.table(report()).splitlines()), 7)
+        self.assertIn("| 4 | ", _anim_set.table(report()))
         self.assertEqual(_anim_set.summary({"checks": [{"status": "pass"}, {"status": "warn"}]}),
                          {"pass": 1, "warn": 1, "fail": 0})
 

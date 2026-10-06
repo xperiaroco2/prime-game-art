@@ -126,6 +126,26 @@ def floor_clamp_weight(dz: float, full: float = 0.20, fade: float = 0.10, below:
         return min(max(1.0 - (-below - dz) / below_fade, 0.0), 1.0)
     return min(max(1.0 - (dz - full) / fade, 0.0), 1.0)
 
+
+POP_MIN_DEG, POP_RATIO = 20.0, 3.0  # a one-frame pop: one step this large, its neighbours under a third of it
+
+
+def one_frame_pops(steps: list[float], loop: bool = False, min_deg: float = POP_MIN_DEG,
+                   ratio: float = POP_RATIO) -> list[int]:
+    """The one-frame pops of a bone (art #33's review): steps[i] is its rotation (degrees) from frame i to frame i + 1;
+    a pop is a step of at least min_deg whose neighbouring steps are both under 1/ratio of it (a snap between two
+    poses that are each held, which no seam or median-step measure sees). A loop's steps wrap round (its last frame
+    is its first); a one-shot's first and last steps have one neighbour. Returns the indices i."""
+    n = len(steps)
+    out = []
+    for i, st in enumerate(steps):
+        if st < min_deg:
+            continue
+        near = [steps[j % n] for j in (i - 1, i + 1) if loop or 0 <= j < n]
+        if all(x < st / ratio for x in near if x is not None):
+            out.append(i)
+    return out
+
 def summary(values: list[float], digits: int = 1) -> dict:
     if not values:
         return {"min": None, "max": None, "mean": None}

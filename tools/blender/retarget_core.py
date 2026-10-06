@@ -124,6 +124,18 @@ class Rig:
         return self.W @ self.rest[name].translation
 
 
+def pops(rig: Rig, poses: list[dict], loop: bool = False) -> list[list]:
+    """The one-frame pops (anim_math.one_frame_pops) of every bone over armature-space poses, one per frame (a loop's
+    last pose the same as its first): [[bone, frame, degrees], ...], the frame the snap starts from, largest first."""
+    out = []
+    for n in rig.order:
+        q = [rot(P[n]) for P in poses]
+        steps = [math.degrees(a.rotation_difference(b).angle) for a, b in zip(q, q[1:])]
+        steps = [min(x, 360.0 - x) for x in steps]
+        out += [[n, i, round(steps[i], 1)] for i in anim_math.one_frame_pops(steps, loop)]
+    return sorted(out, key=lambda x: -x[2])
+
+
 def fk(rig: Rig, basis: dict) -> dict:
     """Armature-space pose matrices from local basis matrices (missing bones: identity)."""
     pose = {}

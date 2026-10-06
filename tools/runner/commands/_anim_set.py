@@ -127,7 +127,8 @@ def check_godot(godot: dict, report: dict) -> list[str]:
 def warnings(report: dict) -> list[str]:
     """What the build table flags for the review: stride fits outside the warn range, auto searches that found no
     angle, floors below -1.2 cm on a clip that is not lying, a locomotion loop (one with a speed) whose hips or head
-    face more than 5 degrees off the aim, a loop whose step onto its first frame is over 1.5 median frame steps."""
+    face more than 5 degrees off the aim, a loop whose step onto its first frame is over 1.5 median frame steps, a
+    bone that snaps in one frame between two held poses (anim_math.one_frame_pops)."""
     out = []
     for name, rep in report.get("clips", {}).items():
         if rep["loop"] and rep.get("speed_m_s"):
@@ -137,6 +138,9 @@ def warnings(report: dict) -> list[str]:
         ratio = rep.get("seam_step_ratio")
         if rep["loop"] and ratio is not None and ratio > SEAM_STEP_WARN:
             out.append(f"{name}: its step onto the first frame is {ratio} median frame steps")
+        if rep.get("pops"):
+            top = ", ".join(f"{b} {d} deg at frame {f}" for b, f, d in rep["pops"][:3])
+            out.append(f"{name}: {rep.get('pop_count', len(rep['pops']))} one-frame pop(s), the largest {top}")
         for step in rep["steps"]:
             if step.get("fit") in STRIDE_FITS:
                 out.append(f"{name}: stride scale {step['scale']} ({step['fit']}): {step['cadence']} steps/s of "
@@ -152,14 +156,15 @@ def warnings(report: dict) -> list[str]:
 def table(report: dict) -> str:
     """The build as a Markdown table, a row per clip."""
     lines = ["| Clip | Source | s | Loop | Export | Speed m/s | Travel left m | Yaw drift deg | Facing deg (hips, head) | "
-             "Seam step | Lowest cm | Steps |", "|---|---|---|---|---|---|---|---|---|---|---|---|"]
+             "Seam step | Lowest cm | Pops | Steps |", "|---|---|---|---|---|---|---|---|---|---|---|---|---|"]
     for name, rep in report.get("clips", {}).items():
         steps = ", ".join(s["op"] + (" (skipped)" if "skipped" in s else "") for s in rep["steps"]) or "-"
         lines.append(f"| {name} | {rep['source'] or 'from ' + str(rep['from'])} | {rep['seconds']} | "
                      f"{'yes' if rep['loop'] else 'no'} | {'yes' if rep['export'] else 'no'} | "
                      f"{rep['speed_m_s'] if rep['speed_m_s'] is not None else '-'} | {rep['travel_left_m']} | "
                      f"{rep['yaw_drift_deg']} | {rep.get('facing_mean_deg', '-')}, {rep.get('head_facing_mean_deg', '-')} | "
-                     f"{rep.get('seam_step_ratio') or '-'} | {rep.get('lowest_cm', '-')} | {steps} |")
+                     f"{rep.get('seam_step_ratio') or '-'} | {rep.get('lowest_cm', '-')} | {rep.get('pop_count', '-')} | "
+                     f"{steps} |")
     return "\n".join(lines) + "\n"
 
 

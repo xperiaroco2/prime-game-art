@@ -81,6 +81,9 @@ def run(args: argparse.Namespace) -> int:
     common.ok(f"{len(report['clips'])} clips baked in {report['seconds_spent']} s")
     if misses:
         common.warn(f"legs short of the source's ankle path (mm, the target's legs are too short there): {misses}")
+    popped = {n: c["pops"][:3] for n, c in report["clips"].items() if c.get("pops")}
+    if popped:  # a bone snapping in one frame between two held poses (art #33)
+        common.warn(f"one-frame pops ([bone, frame, degrees], the largest three): {popped}")
     if args.floor:
         deep = {n: f"{c['lowest_cm']} (source {c['source_lowest_cm']})" for n, c in report["clips"].items()
                 if c["lowest_cm"] < -1.0}

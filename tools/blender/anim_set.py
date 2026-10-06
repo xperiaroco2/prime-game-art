@@ -10,7 +10,7 @@ Usage (background Blender only):
 
 Writes <out>/<stem>_<body>.blend (the donor's armature and meshes with the set's exported actions only, transforms
 applied, scene at 30 fps) and <out>/build_report.json (per clip: source, frames, seconds, loop, needs, every step's
-report, the travel and heading left, the lowest vertex; the upper-body layer's bone list).
+report, the travel and heading left, the lowest vertex, the one-frame pops; the upper-body layer's bone list).
 """
 
 from __future__ import annotations
@@ -72,6 +72,10 @@ def _summary(fr: ae.Frames, target: ae.Target, lowest: bool) -> dict:
         steps = [max((a - b).length for a, b in zip(heads[k], heads[k + 1])) for k in range(len(heads) - 1)]
         median = sorted(steps)[len(steps) // 2]
         out["seam_step_ratio"] = _r(steps[-1] / median, 2) if median > 0 else None
+    # a bone snapping in one frame between two held poses (art #33's review: the floor clamp flicked Jump_Air_Loop's
+    # right foot 53 degrees and back four times a loop, which the seam and the strips did not show)
+    found = rc.pops(fr.rig, poses, fr.loop)
+    out["pop_count"], out["pops"] = len(found), found[:8]
     if lowest:
         lows = ae._lows(fr, target)
         under = run = 0

@@ -1,7 +1,8 @@
 """The retarget in headless Blender on the real files, for both body types: the source rest lands exactly on the
 target rest, a walk keeps its feet on the floor (its legs reach the source's ankle path and no vertex goes 1 cm under
 the floor), and a fall (Death01, the pelvis turned about 100 degrees) goes no deeper into the floor than the source's
-own mesh scaled to the target, plus 3 cm. Skipped when Blender or the raw packs are missing."""
+own mesh scaled to the target, plus 3 cm; no bone of the walk or of the in-place air loop (Jump_Loop) snaps in one
+frame. Skipped when Blender or the raw packs are missing."""
 
 from __future__ import annotations
 
@@ -26,7 +27,7 @@ class RetargetTest(unittest.TestCase):
         shutil.rmtree(out, ignore_errors=True)
         blender.run_script("retarget.py", ["--source", str(FILES[0]),
                                            "--target", str(common.raw_dir() / CFG["bodies"][body]["character"]),
-                                           "--out", str(out), "--clips", "A_TPose,Walk_Loop,Death01", "--floor"],
+                                           "--out", str(out), "--clips", "A_TPose,Walk_Loop,Death01,Jump_Loop", "--floor"],
                            timeout=900)
         return json.loads((out / "retarget_report.json").read_text(encoding="utf-8"))
 
@@ -45,6 +46,10 @@ class RetargetTest(unittest.TestCase):
                 self.assertGreater(report["clips"]["Walk_Loop"]["lowest_cm"], -1.5)
                 self.assertTrue(report["toe_bones_added"])
                 self.assertEqual(report["soles"], ["Foot.L", "Foot.R", "Toe.L", "Toe.R"])
+                # the in-place air loop's right foot hovers 2 cm under its rest pivot: the floor clamp fades there
+                # instead of flicking the foot 53 degrees and back in one frame (art #33)
+                self.assertEqual(report["clips"]["Jump_Loop"]["pops"], [])
+                self.assertEqual(report["clips"]["Walk_Loop"]["pops"], [])
                 death = report["clips"]["Death01"]
                 self.assertGreater(death["lowest_cm"], death["source_lowest_cm"] - 3.0, death)
 

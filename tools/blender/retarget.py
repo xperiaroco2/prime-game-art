@@ -48,6 +48,12 @@ def floor(rt, src: dict, tgt: dict, sampler, baked) -> dict:
     return {"lowest_cm": round(100 * low_t, 1), "source_lowest_cm": round(100 * low_s, 1)}
 
 
+def clip_pops(rig, baked) -> list:
+    """A baked clip's one-frame pops, every bone (rc.pops; art #33: the floor clamp flicked Jump_Loop's right foot 53
+    degrees and back): [[bone, frame, degrees], ...]."""
+    t = rc.Sampler(baked)
+    return rc.pops(rig, [rc.fk(rig, t.basis(t.start + i)) for i in range(int(round(t.frames)) + 1)])
+
 def main(argv):
     ap = argparse.ArgumentParser(prog="retarget.py")
     ap.add_argument("--source", required=True)
@@ -103,7 +109,7 @@ def main(argv):
     for name in names:
         act, frames = rt.clip(src["actions"][name], f"{a.prefix}|{name}", tgt["arm"], src["samplers"][name])
         report["clips"][name] = {"frames": frames, "seconds": round(frames / rc.FPS, 3), "action": act.name,
-                                 "ik_miss_mm": round(rt.miss_mm, 2)}
+                                 "ik_miss_mm": round(rt.miss_mm, 2), "pops": clip_pops(rt.tgt, act)}
         if a.floor:
             report["clips"][name].update(floor(rt, src, tgt, src["samplers"][name], act))
         print("RETARGETED", name, frames, "frames, IK miss", round(rt.miss_mm, 2), "mm")
