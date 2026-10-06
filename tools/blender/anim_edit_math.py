@@ -592,8 +592,8 @@ def settle_profile(heights: list, i0: int, i1: int, fade: int, run: int = 2, smo
     """The drop per frame (m, >= 0) that brings a floating clip's lowest vertex down onto the floor inside frames
     i0..i1 (art #33, `floor {mode = "settle"}`): the heights above the floor (0 where a vertex is on or under it) as a
     running min over +-run frames, smoothed by a centred average over +-smooth frames, held and faded as
-    floor_profile does. Every smoothed value averages minima that include the frame itself, so no frame is put under
-    the floor."""
+    floor_profile does. Every smoothed value averages minima that include the frame itself, and a faded frame outside
+    the window drops at most its own height, so no frame is put under the floor."""
     n = len(heights)
     i0, i1 = max(0, i0), min(n - 1, i1)
     h = [max(0.0, x) for x in heights]
@@ -605,9 +605,9 @@ def settle_profile(heights: list, i0: int, i1: int, fade: int, run: int = 2, smo
     for j in range(1, fade + 1):
         w = 1.0 - j / (fade + 1)
         if i0 - j >= 0:
-            out[i0 - j] = out[i0] * w
+            out[i0 - j] = min(out[i0] * w, h[i0 - j])
         if i1 + j < n:
-            out[i1 + j] = out[i1] * w
+            out[i1 + j] = min(out[i1] * w, h[i1 + j])
     return out
 
 

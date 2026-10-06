@@ -35,6 +35,15 @@ class SettleTest(unittest.TestCase):
         self.assertAlmostEqual(drop[15], 0.05)
         self.assertTrue(0.0 < drop[8] < 0.05)
 
+    def test_a_faded_frame_outside_the_window_stays_out_of_the_floor(self) -> None:
+        # a knockdown: on the floor at its impact (frame 9), floating 3 cm after it; settled from frame 10 on
+        heights = [0.08] * 9 + [0.0] + [0.03] * 20
+        drop = em.settle_profile(heights, 10, 29, 4)
+        after = [h - d for h, d in zip(heights, drop)]
+        self.assertGreaterEqual(min(after), -1e-12)
+        self.assertEqual(drop[9], 0.0)
+        self.assertAlmostEqual(drop[20], 0.03)
+
     def test_the_step_schema_takes_settle(self) -> None:
         self.assertEqual(em.check_steps([{"op": "floor", "mode": "settle"}]), [])
         self.assertTrue(em.check_steps([{"op": "floor", "mode": "sink"}]))
