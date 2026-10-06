@@ -97,9 +97,11 @@ name = "Sprint_Fwd_Loop"
 source = "ual:Sprint_Loop"
 loop = true
 speed_m_s = 7.0
-# natural_m_s: UAL Sprint_Loop's root-motion speed scaled to the body (anim-review rates, art #20)
-edits = [{ op = "retime", speed_m_s = 7.0, natural_m_s = 8.534, body = "men" },
-         { op = "retime", speed_m_s = 7.0, natural_m_s = 9.178, body = "women" }]
+# The stride warp plants the feet at exactly 7.0 m/s (a retime by UAL's root-motion speed left them running 7.46 and
+# 7.33 m/s: its feet run 6-7 % faster than its root). The rate keeps the reviewed cadence: 7.0 over the root-motion
+# speed scaled to the body, 8.534 (men) and 9.178 m/s (women; anim-review rates, art #20).
+edits = [{ op = "stride", speed_m_s = 7.0, rate = 0.8202, body = "men" },
+         { op = "stride", speed_m_s = 7.0, rate = 0.7627, body = "women" }]
 needs = [{ need = "Sprint forward at 7.0 m/s", no = 5, layer = "full", speed_m_s = 7.0, rate = 1.0 }]
 
 # ------------------------------------------------------------------------------------------------ the jump
