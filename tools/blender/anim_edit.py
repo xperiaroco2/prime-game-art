@@ -1,6 +1,7 @@
-"""Clip edits on our rig after the retarget (art #33; docs/animation-edits.md): cut a loop at its best seam and close
-it, take the travel out, straighten the heading, rescale a turn, trim, retime, reverse, mirror left and right, warp the
-stride to a speed with the feet planted, lift a clip out of the floor, turn the arms out of the legs and the hands apart.
+"""Clip edits on our rig after the retarget (art #33; docs/animations.md, "Clip edits"): cut a loop at its best seam
+and close it, take the travel out, straighten the heading, rescale a turn, trim, retime, reverse, mirror left and
+right, warp the stride to a speed with the feet planted, lift a clip out of the floor, turn the arms out of the legs
+and the hands apart.
 One tool set serves the pack's clips and every retargeted library (UAL1, UAL2, Meshy text to motion), since it works on
 the Ultimate Modular rig after the retarget.
 

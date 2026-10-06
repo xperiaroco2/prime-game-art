@@ -1,5 +1,5 @@
-"""The pure math of the clip edits (tools/blender/anim_edit.py; docs/animation-edits.md): no bpy, so the unit tests
-run it with the system Python and the runner validates edit steps with it.
+"""The pure math of the clip edits (tools/blender/anim_edit.py; docs/animations.md, "Clip edits"): no bpy, so the
+unit tests run it with the system Python and the runner validates edit steps with it.
 
 Conventions: vectors are tuples in metres (world space: front -Y, left +X, up +Z, floor z = 0); quaternions are
 (w, x, y, z); yaws are degrees about +Z, 0 = facing or moving forward (-Y), positive = turned to the left (+X); times
