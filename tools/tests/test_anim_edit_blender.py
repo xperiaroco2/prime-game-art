@@ -105,6 +105,7 @@ if not IN_BLENDER:
             self.assertAlmostEqual(le["tilt_after_deg"] - le["tilt_before_deg"], 30.0, delta=1.0)
             self.assertGreater(le["head_forward_cm"], 4.0)
             self.assertLess(le["feet_moved_mm"], 0.01)
+            self.assertIn("spine bone", le["off_spine"])
 
         def test_steps_and_errors(self) -> None:
             e = self.r["errors"]
@@ -279,6 +280,11 @@ def _blender_main(argv: list[str]) -> None:
     feet0, feet1 = ae._feet(push), ae._feet(leant)
     res["lean"] = {**leant.info["steps"][-1], "feet_moved_mm": 1000 * max(
         (Vector(a) - Vector(b)).length for f in feet0 for a, b in zip(feet0[f], feet1[f]))}
+    try:  # a bone off the spine (here an IK foot) is refused
+        ae.apply(push, [{"op": "lean", "deg": 10, "bone": "Foot.L"}], target, "women")
+        res["lean"]["off_spine"] = "no error"
+    except ae.EditError as e:
+        res["lean"]["off_spine"] = str(e)
 
     with open(os.path.join(out_dir, "edits.json"), "w", encoding="utf-8") as f:
         json.dump(res, f, indent=1, default=str)

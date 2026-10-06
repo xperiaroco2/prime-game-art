@@ -795,17 +795,26 @@ def op_lean(fr: Frames, p: dict, target: Target):
     layer. The legs and the IK feet do not move."""
     rig = fr.rig
     bone = p["bone"]
-    if bone not in rig.parent or bone == BODY or "Head" not in rig.parent:
-        raise EditError(f"lean needs a spine bone under {BODY} and a Head bone, not {bone!r}")
+    spine, b = [], rig.parent.get("Head")  # the bones from Head's parent up to (not including) Body
+    while b is not None and b != BODY:
+        spine.append(b)
+        b = rig.parent.get(b)
+    if bone not in spine or b != BODY:
+        raise EditError(f"lean needs a spine bone between {BODY} and Head ({', '.join(reversed(spine))}), "
+                        f"not {bone!r}")
     deg = float(p["deg"])
     poses = fr.poses()
     out_basis, tilt_before, tilt_after, head_fwd = [], [], [], []
+    last_fwd = Vector((0.0, -1.0, 0.0))
     for B0, P in zip(fr.basis, poses):
         B = {n: m.copy() for n, m in B0.items()}
         R = _turn_of(rig, P, BODY)
         fwd = R @ Vector((0.0, -1.0, 0.0))
         fwd.z = 0.0
+        if fwd.length < 1e-3:  # the body faces straight up or down: keep the last frame's heading
+            fwd = last_fwd.copy()
         fwd.normalize()
+        last_fwd = fwd.copy()
         side = Vector((0.0, 0.0, 1.0)).cross(fwd)  # the body's left (facing -Y at rest, +X): a positive turn about
         q = rig.Wrot.inverted() @ Quaternion(side, math.radians(deg)) @ rig.Wrot  # it tips the top forward
         pose = Matrix.Translation(P[bone].translation) @ (q @ rc.rot(P[bone])).to_matrix().to_4x4()
