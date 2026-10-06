@@ -66,9 +66,9 @@ Status: **ok** (the measures pass; judge the motion in the review), **stopgap** 
 | 20 | Swap items | none | | | none | hand keys |
 | 21 | Knocked down | `Knockdown` | UAL Death01 | floor lift from 1.2 s (4.86/3.44 cm), trim 0-2.0, retime 1.33 | ok | ends lying 0.48 m from where it started: the game moves the body there |
 | 22 | Lying still | Knockdown's last pose | | | none | the breathing loop is hand keys |
-| 23 | Crawl start | (`Crawl_Start`, review only) | TTM rollup-to-all-fours | settle, trim 0.4-2.4, facing to the end, retime 1.5 | re-roll | floats 8 to 14 cm before the settle, never puts its hands down |
+| 23 | Crawl start | (`Crawl_Start`, review only) | TTM rollup-to-all-fours | settle, trim 0.4-2.4, facing to the end, retime 1.5 | review, or re-roll | floated 8 to 14 cm; after the settle it rolls on the floor and ends on all fours in the `mvp_downed` pair, its hands short of the floor (our shorter arms): export it if the review accepts it |
 | 24 | Crawl 1.0 | `Crawl_Loop` (Crawl) | TTM crawl (batch 4) | heading forward, cycle 0.93-1.87 s over a **26-degree raw seam** (left wrist), settle (4.9/3.0 cm down), retime to 1.0 m/s | stopgap | the clip does not repeat; the hands hover 7-8 cm (our arms are 0.71 of SMPL-H's); re-roll |
-| 25 | Stand up | `Getup_Back`; (`Getup_Fours`, review only) | UAL2 LayToIdle; TTM getup-from-all-fours | back: floor lift (toes 4 cm); fours: trim 0.27-2.0, facing to the start, in place, retime 1.5, settle | ok; re-roll for fours | the get-up from all fours floated 6-13 cm; after the settle it still lifts off 4.5 cm mid-rise |
+| 25 | Stand up | `Getup_Back`; (`Getup_Fours`, review only) | UAL2 LayToIdle; TTM getup-from-all-fours | back: floor lift (toes 4 cm); fours: trim 0.27-2.0, facing to the start, in place, retime 1.5, settle | ok; review for fours | the get-up from all fours floated 6-13 cm; after the settle it reads as a get-up in the pair but lifts off 4.5 cm mid-rise |
 | 26 | Raise | `Raise_In`, `Raise_Work_Loop`, `Raise_Out` | UAL Fixing_Kneeling | hips floor clamp (the knee 4.65 to 0.6 cm), trims 0-0.8 and 4.2-5.0 retimed to 0.6; the loop: cycle 2.9-3.9 s over a **27-degree raw seam** (right forearm) | stopgap | the kneeling foot's toes stay 2.7-6.2 cm under the floor (a hips lift cannot move them); the work does not repeat |
 | 27 | Giving up | Knockdown's last pose | | | none | hold the pose |
 | 28 | Talking | `Talk_Upper_Loop` (upper) | UAL Idle_Talking_Loop | hands apart 9.0 deg men, 12.5 women (2.2 cm inside each other to 1.2 cm apart) | ok | upper body, low weight |
@@ -188,4 +188,5 @@ The manager runs a re-roll batch; no prompt names a game or a character. In orde
   stopgaps: no cut stays under 15.
 - New in the build: open source loops are closed, and every clip is recentred over the origin (docs/animations.md).
 - New edit: `floor {mode = "settle"}` for clips that float (the crawl, the roll-up, the get-up).
-- The roll-up and the get-up from all fours are built but not exported.
+- The roll-up and the get-up from all fours are built but not exported: the settle makes both read plausibly in the
+  `mvp_downed` pair; the review decides between exporting them (`export = true`) and a re-roll.
