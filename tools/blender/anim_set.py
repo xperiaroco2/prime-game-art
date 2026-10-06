@@ -292,6 +292,7 @@ def save(char: dict, actions: dict, path: str, fps: int) -> dict:
     scene.frame_start = int(min(a.frame_range[0] for a in acts))
     scene.frame_end = int(max(a.frame_range[1] for a in acts))
     os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
+    bpy.context.preferences.filepaths.save_version = 0  # no .blend1 backup (120 MB) beside a rebuilt set
     bpy.ops.wm.save_as_mainfile(filepath=os.path.abspath(path), copy=True, compress=True)
     print("SAVED", path)
     return {"blend": path.replace("\\", "/"), "transform_check_max_error_mm": round(error * 1000, 4),
