@@ -94,9 +94,9 @@ Windows: `tools\run.cmd <command>`. Git Bash: `tools/run.sh <command>`. Python 3
 | `frames <glb> [--clips] [--compare] [--video] [--blend]` | Godot-rendered motion frame sheets in an off-screen window; a Blender comparison of joints and bone rotations; MP4 clips (`docs/godot.md`) |
 | `catalogue [--check] [--renders ...]` | The parts catalogue and compatibility rules, `catalogue/ultimate_modular.json`; `--check` regenerates and compares (`docs/catalogue.md`) |
 | `faces [--families] [--expressions] [--sheets] [--check]` | The face kit's style families rendered as review sheets (`docs/faces.md`) |
-| `retarget [--body] [--library ual2] [--blend] [--floor]` | Bakes Universal Animation Library clips onto a body type's Ultimate Modular armature (`docs/animations.md`) |
+| `retarget [--body] [--library ual2\|tm] [--clips] [--blend] [--floor]` | Bakes Universal Animation Library (UAL1, UAL2) and Meshy text-to-motion (`tm`) clips onto a body type's Ultimate Modular armature (`docs/animations.md`) |
 | `anim-review <inventory\|clips\|pairs\|rates\|sheets\|table\|all> [--body] [--sources] [--clips]` | Judges animations in motion: inventory, measures, strips, MP4 clips, side-by-side pairs, the game's speeds (`rates`), sheets, table (`docs/animations.md`) |
-| `anim-set [--set mvp] [--body] [--clips] [--no-export] [--no-godot]` | Builds an animation set per body type from its settings (sources, clip edits, loops, layers): `.blend`, GLB, godot-check and the set's checks into `<raw>/anim-sets/<set>/` (`docs/animations.md`) |
+| `anim-set [--set mvp] [--body] [--clips] [--out] [--no-export] [--no-godot]` | Builds an animation set per body type from its settings (sources, clip edits, loops, layers): `.blend`, GLB, godot-check and the set's checks into `<raw>/anim-sets/<set>/` (`docs/animations.md`) |
 | `meshy`, `raw-backup` | The Meshy client for approved batches; copy chosen raw files to OneDrive (`docs/meshy.md`) |
 | `contract`, `check`, `rename-bones` | Generate the contract from Godot; check a model against it; rename a rig's bones (`docs/contract.md`) |
 
