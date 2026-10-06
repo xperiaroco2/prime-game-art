@@ -389,10 +389,19 @@ for 4, 3 or 2.5 s).
 | `getup-from-all-fours` | `01a110b7-fdab-73fa-8989-acd5a1ca1c2a` | 10 | 255 -> 245 | 2.97 s |
 
 What the review found (the measures and the per-need verdicts:
-[research/2026-10-06-animation-mvp.md](research/2026-10-06-animation-mvp.md)): the strafe, the turn, the shove and
-the package lift clean up into MVP clips; the backward jog barely travels (0.3 m/s: its steps would have to grow
-about 7x to reach 4.5 m/s) and the roll-up floats and never puts its hands down, so both are re-roll candidates for
-the reserve, with refined prompts in the research note; the get-up floats 6 to 13 cm and is kept for review only.
+[research/2026-10-06-animation-mvp.md](research/2026-10-06-animation-mvp.md)):
+
+- the strafe, the turn, the shove and the package lift clean up into MVP clips (`Strafe_Left_Loop` and its mirror,
+  `Turn_Left` and its mirror, `Shove_Stumble`, `Pickup_Package` and its reverse);
+- the roll-up and the get-up from all fours float (8 to 14 and 6 to 13 cm) over their whole length; the floor settle
+  puts them on the floor and both read as what they are in the review, so they ship as flagged stopgaps
+  (`Crawl_Start`, `Getup_Fours`): the roll-up's hands stay short of the floor, the get-up lifts off 4.5 cm mid-rise;
+- the backward jog barely travels (0.3 m/s: its steps would have to grow about 7x to reach 4.5 m/s), so the
+  reversed forward jog stands in for it.
+
+Re-roll candidates for the 30-credit reserve, in order (refined prompts in the research note): the roll-up, batch 4's
+crawl (no cycle repeats: the loop is closed over a 26-degree seam), the backward jog, and the get-up from all fours
+only if the review rejects the stopgap. Spend so far on the MVP: 70 of the 70 approved; the reserve is untouched.
 
 **A manifest that uses a batch-5 clip** records the owned output of the paid plan: `public_repo_ok = true`,
 `ai_generated = true`, the text-to-motion task id and `source.model_version = "prime"`.
