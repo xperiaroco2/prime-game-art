@@ -506,7 +506,20 @@ A set's sources are taken **with their travel**: a library's `in_place` list is 
 `anim_set.build_clips(set_cfg, char, names, body, resolve)` builds clips on a donor (the pack original with the toe
 bones, as the review sets it up): each source is resolved by `resolve` (the review's `clips_for`, retargeting a library
 with its map), sampled into `Frames`, run through `anim_edit.apply` and reported (`info["report"]`: frames, seconds,
-loop, needs, speed, every step's report, the travel and heading left, the lowest vertex). The command bakes the
+loop, needs, speed, every step's report, the travel and heading left, the lowest vertex). Two rules hold for every
+clip:
+
+- **A looping source is closed first.** UAL's loops are open cycles (their first pose comes round one frame after
+  their last key; the men's Idle_Loop ends 4 mm from its start at the hands, the Jog 0.65 degrees): a source whose
+  last frame is further than 0.5 mm or 0.5 degrees from its first gets its first frame appended when that seam is at
+  least half a median frame step, else its last frame becomes its first (the Sprint's 4.6 mm against 191 mm steps).
+  Every loop of the set then exports closed (seam 0), and Godot plays it without a hitch.
+- **A clip stands over the origin**, where the game's body is: a loop's Body is centred on it over the cycle, a
+  one-shot's first frame stands on it (`recentred_m`). A cycle cut from a travelling clip otherwise plays where it was
+  cut (the strafe 4.9 m to the left, the crawl 1 m ahead). A one-shot that ends elsewhere (Knockdown: 0.48 m) leaves
+  that offset to the game, which moves the body when the clip ends.
+
+The command bakes the
 exported clips under their own names and saves the donor as a character the export accepts: one armature, its meshes
 parented to it with one Armature modifier each, no RootNode, no empty and no assigned action, every transform applied
 (the location keys times the armature's world scale of 100, as `um/blendfile.save_character` does; a few poses agree
