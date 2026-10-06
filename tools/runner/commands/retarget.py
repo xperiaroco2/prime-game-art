@@ -20,7 +20,8 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--target", type=Path, help="target GLB (default: the body type's donor in anim_review.toml)")
     parser.add_argument("--library", default="ual",
                         help="the source library of the review settings: ual (UAL1, the default), ual2 (art #24), "
-                             "meshy or meshyw (Meshy's rigs of the man and the woman, art #25)")
+                             "meshy or meshyw (Meshy's rigs of the man and the woman, art #25), tm (Meshy text to "
+                             "motion, SMPL-H FBX files, art #33)")
     parser.add_argument("--source", type=Path, help="source GLB (default: the library's in-place GLB, raw folder)")
     parser.add_argument("--map", type=Path, help="bone map (default: the library's map in the review settings, or "
                                                  "tools/blender/retarget_maps/ual_um.toml)")
@@ -66,7 +67,9 @@ def run(args: argparse.Namespace) -> int:
     report = json.loads(report_path.read_text(encoding="utf-8"))
     rest = report["rest_check"]
     common.say(f"{Path(source).name} -> {Path(target).name}: translation scale {report['translation_scale']} "
-               f"(hip joints {report['hip_height_m']['source']} m -> {report['hip_height_m']['target']} m)")
+               f"(hip joints {report['hip_height_m']['source']} m -> {report['hip_height_m']['target']} m)"
+               + (f"; the source rig lifted {report['floor_shift_m']} m onto the floor" if report.get("floor_shift_m")
+                  else ""))
     bad = {k: rest[k] for k in REST_TOLERANCE if rest[k] > REST_TOLERANCE[k]}
     if bad:
         common.bad(f"the source rest does not land on the target rest: {rest}", "check the bone map and the rigs")
