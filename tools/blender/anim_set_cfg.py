@@ -24,6 +24,20 @@ NEED_KEYS = {"need", "no", "layer", "speed_m_s", "rate", "body", "note"}
 LAYERS = ("full", "upper")
 NAME = re.compile(r"[A-Za-z0-9_]+")
 LOOP_SUFFIX = "_Loop"
+GODOT_LOOP_WORDS = ("loop_mode", "loop", "cycle")  # tools/runner/commands/_godot.LOOP_WORDS
+
+
+def godot_name(name: str) -> tuple[str, bool]:
+    """The name Godot's importer gives a clip and whether it loops: _godot.godot_name for this set's names
+    ([A-Za-z0-9_]+), where a trailing _loop, _cycle or _loop_mode in any case (before trailing digits) makes a loop
+    and is dropped. A test keeps the two in step."""
+    loops = False
+    for word in GODOT_LOOP_WORDS:
+        what = name.rstrip("0123456789_")
+        end = name[len(what):]
+        if what.lower().endswith("_" + word):
+            name, loops = what[: len(what) - len(word) - 1] + end, True
+    return name, loops
 RATE_TOLERANCE = 0.01  # a need's speed against the clip's speed times the need's rate (relative)
 
 
@@ -51,6 +65,7 @@ def check(cfg: dict, sources: set[str] | None = None, bodies=("men", "women")) -
     if not isinstance(clips, list) or not clips:
         return errors + ["no [[clips]]"]
     seen: list[str] = []
+    godot_names: dict[str, str] = {}
     for i, c in enumerate(clips):
         where = f"clips[{i}]" + (f" ({c.get('name')})" if isinstance(c, dict) and c.get("name") else "")
         if not isinstance(c, dict):
@@ -70,6 +85,13 @@ def check(cfg: dict, sources: set[str] | None = None, bodies=("men", "women")) -
             errors.append(f"{where}: loop must be true or false")
         elif loop != name.endswith(LOOP_SUFFIX):
             errors.append(f"{where}: a name ends in {LOOP_SUFFIX} exactly when the clip loops (loop = {str(loop).lower()})")
+        elif godot_name(name)[1] != loop:
+            errors.append(f"{where}: Godot would {'not ' if loop else ''}loop {name} (a _loop or _cycle ending in any "
+                          f"case loops it)")
+        gname = godot_name(name)[0]
+        if gname in godot_names and godot_names[gname] != name:
+            errors.append(f"{where}: Godot would name it {gname}, as it names {godot_names[gname]}")
+        godot_names.setdefault(gname, name)
         if ("source" in c) == ("from" in c):
             errors.append(f"{where}: give source (a clip key) or from (an earlier clip), one of them")
         elif "source" in c:

@@ -81,6 +81,21 @@ class RulesTest(unittest.TestCase):
         cfg["clips"][2]["loop"] = True
         self.assertTrue(any("ends in _Loop exactly when" in e for e in errors(cfg)))
 
+    def test_godot_loops_a_clip_exactly_when_it_loops_and_names_each_clip_once(self) -> None:
+        cfg = small()
+        cfg["clips"][2]["name"] = "Bike_Cycle"  # a one-shot Godot would loop (and rename Bike)
+        self.assertTrue(any("Godot would loop Bike_Cycle" in e for e in errors(cfg)), errors(cfg))
+        cfg = small()
+        cfg["clips"][2]["name"] = "Jog_Fwd"  # Godot names Jog_Fwd_Loop Jog_Fwd too
+        self.assertTrue(any("Godot would name it Jog_Fwd, as it names Jog_Fwd_Loop" in e for e in errors(cfg)),
+                        errors(cfg))
+
+    def test_godot_names_as_the_runner_has_them(self) -> None:
+        from runner.commands import _godot
+        for name in ("Idle_Loop", "Jog_Fwd_Loop", "Knockdown", "Bike_Cycle", "walk_loop2", "Spin_LOOP_MODE",
+                     "Loop_Back", "Turn_Left", "A_loop_cycle"):
+            self.assertEqual(asc.godot_name(name), _godot.godot_name(name), name)
+
     def test_one_source_or_an_earlier_clip(self) -> None:
         cfg = small()
         cfg["clips"][1]["source"] = "ual:Idle_Loop"
