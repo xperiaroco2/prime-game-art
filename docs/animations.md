@@ -142,6 +142,120 @@ library on another rig (Meshy's) names its own map in the review settings: `[lib
 Fingers map by anatomy, not by number: UAL `index_01..03` (phalanges) go to `Index2..4`, and `Index1` (the
 metacarpal) stays at rest; thumbs map 1:1. Hand close-ups confirmed curls bend the right way and pointing works.
 
+## Text to motion: the SMPL-H retarget (art #33)
+
+Meshy's text to motion returns each clip as an FBX on an **SMPL-H skeleton** (batch 4's crawl, batch 5's seven items:
+`raw:2026-10-b4-animations/crawl-motion/`, `raw:2026-10-b5-anim-mvp/<item>/text_to_motion-clip.fbx`). They go straight
+onto our rig with `tools/blender/retarget_maps/smpl_um.toml`: no Meshy rig and no animate step in between.
+
+**The files** (all eight alike): FBX 7700; the armature `Reference` (top level, world rotation X +90, scale 0.01) with
+52 bones in quaternions; a grey mannequin skinned to it (`arm`, `body`, `head`, `leg`, spheres `qiu_L1..6`,
+`qiu_R1..6`) and three empties (`body.001`, `qiu_L`, `qiu_R`). One action, `Reference|SMPLH_Animation|Base Layer`,
+keyed on frames 1 to N (N = 120, 90 or 75: 3.97, 2.97 or 2.47 s at 30 fps). Every bone keys location, rotation and
+scale, but only `Pelvis`'s location moves and every scale is 1. The character faces -Y with its left at +X, as ours:
+no axis flip. The bone tree: `Pelvis` (the top bone, no root) > `L_Hip` > `L_Knee` > `L_Ankle` > `L_Foot` (the ball,
+14 cm in front of the ankle), `Spine1` > `Spine2` > `Spine3` > `Neck` > `Head`, `Spine3` > `L_Collar` > `L_Shoulder`
+(the upper arm) > `L_Elbow` > `L_Wrist`; fingers `Index`, `Middle`, `Ring`, `Pinky` 1 to 3 (phalanges, 1 at the
+knuckle) and `Thumb` 1 to 3 (1 the metacarpal); the right side alike. No leaf or end bones.
+
+**The loader** (`tools/blender/retarget_smpl.py`) sets the scene to 30 fps and calls `import_scene.fbx` with explicit
+options (`use_anim`, `anim_offset=1.0`, `ignore_leaf_bones=False`, `automatic_bone_orientation=False`,
+`use_custom_props=False`, `global_scale=1.0`, `axis_forward='-Z'`, `axis_up='Y'`); the scene stays at 30 fps. It
+deletes the empties, unassigns the action and resets the pose.
+
+**The floor shift.** The file's rest is centred on the pelvis (pelvis -0.19 m, hip joints -0.28, ankles -1.056, the
+mannequin's soles at **-1.161 in all eight files**) while its animation stands on z = 0 (a standing frame's lowest
+vertex is 0.0001 to 0.0076 m). Given that rest unchanged, the height ratio, the hip anchor and the foot anchors are
+garbage (a hip "height" of -0.28 m). So the loader lifts the armature by the rest's depth below the floor (1.161 m;
+the meshes are its children and follow), and every sampler of the file takes the same lift back out of `Pelvis`'s
+basis location (`anim_libs.Shifted`; `InPlace` builds on it): the offset `rot(rest[Pelvis])^-1 @ (Wi.to_3x3() @ (0, 0,
+h))`, the formula `InPlace` uses for its drift. The rest then stands on the floor (its lowest vertex 0.000 mm) and the
+motion keeps the file's world poses (turn-left-90 at frame 45: 0.0002 mm from a plain import). A `Rig` caches the
+armature's matrix, so it is built after the shift. The retarget report records `floor_shift_m` (1.161).
+
+**The scaling origin.** `retarget_core.Retargeter` scales positions about the floor point under each rig's origin
+(z = 0), not about the origin itself, which the shift puts 1.161 m up. For every rig whose origin is on the floor
+(UAL1, UAL2, Meshy's) this changes nothing: UAL1 onto the men still checks 0.0031 mm and Death01 still reaches -4.9 cm.
+
+**The map** (52 pairs, all checked by `retarget_map.py`), against UAL's and Meshy's:
+
+| | UAL (`ual_um.toml`) | Meshy (`meshy_um.toml`) | SMPL-H (`smpl_um.toml`) |
+|---|---|---|---|
+| File | GLB, in place plus an RM file | GLB, auto-rig | FBX, one clip per file |
+| Rest | T-pose on z = 0 | T-pose on z = 0 | T-pose centred on the pelvis: the floor shift |
+| Root | `root` -> `Root` | none (`Hips` carries it) | none: `Pelvis` -> `Body` carries the travel, `Root` at rest |
+| Spine | pelvis, spine_01..03 | Hips, Spine02, Spine01, Spine | `Pelvis`, `Spine1`, `Spine2`, `Spine3`, `Neck`, `Head` -> `Body`, `Abdomen`, `Torso`, `Chest`, `Neck`, `Head`; `Hips` at rest |
+| Arms | clavicle, upperarm, lowerarm, hand | Shoulder, Arm, ForeArm, Hand, `[align]` (10-15 degrees) | `L_Collar`, `L_Shoulder`, `L_Elbow`, `L_Wrist` -> `Shoulder.L`, `UpperArm.L`, `LowerArm.L`, `Wrist.L`; no `[align]` (2.6 degrees apart) |
+| Legs (IK) | thigh, calf, foot | UpLeg, Leg, Foot | `L_Hip`, `L_Knee`, `L_Ankle` (`source_foot`, an ankle joint) |
+| Toes | `ball_l` | `LeftToeBase` | `L_Foot` (the ball) -> `Toe.L` |
+| Fingers | `_01..03` -> `2..4`, thumbs 1:1 | none (rest) | `L_Index1..3` -> `Index2..4.L` (and Middle, Ring, Pinky), thumbs 1:1; the metacarpals at rest |
+| `[unused]` | the leaves | head_end, headfront | none |
+
+**The fingers never move** in a text-to-motion clip: every joint holds SMPL-H's mean relaxed hand, on our phalanges a
+constant 31.4 degrees per joint on average (index 25/44/13, middle 31/41/20, ring 38/40/25, pinky 46/32/22, thumb
+52/29/35), where UAL's loose fist curls 78. The hand shape therefore changes when the game blends a text-to-motion clip
+with a UAL clip; if that reads badly, keeping the fingers at rest is the alternative map.
+
+**Proportions.** SMPL-H's hip joints stand 0.880 m up after the shift: a translation scale of **1.0953** (men, hip
+joints 0.964 m) and **1.178** (women, 1.037 m). Our arms are short for that scale: shoulder to wrist 0.417 m (men) and
+0.453 m (women), **0.71 of SMPL-H's 0.538 m scaled**; its shoulders are 0.331 m apart against 0.305 and 0.235. Arms
+transfer by rotation, so a planted hand (on all fours) hovers about 7 to 8 cm higher on ours than on SMPL-H scaled,
+and hanging hands come into the thighs: the women's 5.3 to 7.5 cm (the turn, the lift, the shove, the rollup, the
+getup), the men's 6.5 and 6.7 in the shove and the getup.
+
+**The library** (`tools/blender/anim_review.toml`, `[libraries.tm]`): `format = "smplh_fbx"`, `file` the rig (the crawl;
+every file has the same rest, checked within 1 mm), `label = "TTM"`, `map = "smpl_um.toml"`, `own` (the SMPL-H
+mannequin plays `tm_own:<clip>`), `in_place` (the travelling clips, for the review's lanes) and a `[libraries.tm.clips]`
+table: clip name (the batch item's id) = its file. Clip keys are `tm:crawl`, `tm:backward-jog`, `tm:strafe-left`,
+`tm:turn-left-90`, `tm:shove-stumble`, `tm:package-lift`, `tm:rollup-to-all-fours`, `tm:getup-from-all-fours`; no
+raw clip loops, so `[loops]` has no `tm`. `anim_libs.load` dispatches on `format`; the runner refuses an unknown
+format, a missing `clips` table and clip files that are no raw-relative FBX; `anim-review` checks every file before
+Blender starts.
+
+`tools/run.py retarget --library tm --body men|women [--clips crawl,backward-jog] [--floor] [--blend]` writes
+`tools/out/retarget/tm/<body>/` with actions `TTM|<clip>`. Measured on 2026-10-06: the rest check 0.0008 mm (men) and
+0.002 mm (women), 0 degrees, no aligned bone; the IK misses and the lowest vertex per clip, men / women:
+
+| Clip | IK miss mm | Lowest cm (source's own mesh, scaled) |
+|---|---|---|
+| crawl | 0 / 0 | -0.6 (-0.8) / 1.7 (-0.9) |
+| backward-jog | 0 / 0 | -2.5 (0.0) / -2.3 (0.0) |
+| strafe-left | 16.1 / 9.9 | -1.8 (0.0) / -1.0 (0.0) |
+| turn-left-90 | 16.4 / 10.4 | -0.3 (0.0) / -0.4 (0.0) |
+| shove-stumble | 6.3 / 4.2 | -1.2 (0.0) / -0.4 (0.0) |
+| package-lift | 0 / 0 | -2.8 (0.0) / -1.9 (0.0) |
+| rollup-to-all-fours | 29.9 / 24.9 | **7.8** (-3.0) / **13.7** (-3.3) |
+| getup-from-all-fours | 10.6 / 11.5 | **5.9** (-2.9) / **8.4** (-3.2) |
+
+The turn's misses are its stepping leg standing nearly straight (a median of 5.2 mm short on the men, 16.4 mm where
+its heel starts to rise and our leg locks, as at UAL's push-offs); the pivot foot is exact. The rollup and the getup
+never touch the floor on ours: the source floats too (the next table), and our short arms cannot reach where its hands
+dip. `test_retarget_smpl_blender.py` checks the shift, the rest on both bodies, the crawl's 119 frames and the turn.
+
+**The raw motion** on our rig (no in-place; measured on 2026-10-06, men; the women's alike, scaled): what a clip
+needs before it is used (art #33's clip edits).
+
+| Clip | Travel | Heading and turn | Floor (lowest vertex per frame) | Other |
+|---|---|---|---|---|
+| crawl | 3.54 m, 0.89 m/s | 19 degrees left of straight | floats: median 6.5 cm, 15 cm at the start; -0.6 cm lowest | no loop (seam 59 degrees); hands 7-8 cm higher than SMPL-H's |
+| backward-jog | 1.25 m back, 0.31 m/s | 7 degrees off straight back; facing within 8 | the men's toes 1.5 cm under the floor on the median frame (-2.5 lowest; the women's 0.0 and -2.3) | a jog almost in place: steps of 0.09-0.30 m; no loop (seam 23) |
+| strafe-left | 9.6 m, 2.42 m/s | 73 degrees (17 forward of sideways); the facing drifts 8 | -1.8 lowest; up to 10 cm in its flight phases | a gallop of long and short steps; no loop (seam 49); hands 2.3 cm into the torso (women 4.2) |
+| turn-left-90 | 0.12 m | turns 109 degrees net (peak 116), not 90 | on the floor (-0.3 to 0.9 cm) | still to 0.13 s; one step of the left foot |
+| shove-stumble | 1.37 m back, 7 degrees off | facing steady | -0.8 to 4.2 cm | steps back 0.4-1.4 s, still from 1.5 s; hands into the legs 6.5 cm (women 7.2) |
+| package-lift | in place | twists 32 degrees in the bend, ends 14 turned | toes -2.8 cm in the squat | squats wide; holds with the hands forward from 1.4 s |
+| rollup-to-all-fours | 0.12 m | rolls over (the pelvis turns 180 degrees) | **floats the whole clip: median 15.6 cm, 7.8 to 31**; ends on all fours 13 cm up | starts lying, rolls over 1.1-1.6 s |
+| getup-from-all-fours | 0.66 m | ends facing 17 degrees left of its start | **floats: starts 10 cm up on all fours, ends standing 13 cm up** (the source's pelvis 1.09 m against 0.97 standing) | on all fours to 0.55 s, rises 0.7-1.75 s |
+
+The clip edits' `floor` lift pushes a clip up out of the floor; the rollup, the getup and the start of the crawl need
+the opposite, a settle down onto the floor (the lowest vertex of the lying, kneeling or standing frames brought to 0).
+
+**Gotchas.** Every file's action is called "Base Layer" (`load_glb`'s naming would make every clip "Base Layer"), so
+the names come from the `clips` table and the loader renames the actions `SMPLH|<clip>`. Later imports name the
+armature `Reference.001` and the action `....001`: the loader takes the objects and the action that import created.
+Frames start at 1 (`anim_offset=1.0`); the bake starts at 0, so a clip of N frames bakes N - 1 intervals.
+`use_custom_props=False` silences the importer's "Short" property warnings. The empties are deleted (they hang the
+spheres' grouping, nothing deforms with them).
+
 ## The review
 
 `tools/run.py anim-review <step> [--body men|women|both] [--clips pack:Walk,ual:Walk_Loop|all] [--sources ual2]
