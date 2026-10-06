@@ -1,0 +1,648 @@
+"""The pure math of the clip edits (tools/blender/anim_edit.py; docs/animation-edits.md): no bpy, so the unit tests
+run it with the system Python and the runner validates edit steps with it.
+
+Conventions: vectors are tuples in metres (world space: front -Y, left +X, up +Z, floor z = 0); quaternions are
+(w, x, y, z); yaws are degrees about +Z, 0 = facing or moving forward (-Y), positive = turned to the left (+X); times
+are seconds or frame indices on the 30 fps grid; 4x4 matrices are lists of 4 rows.
+"""
+
+from __future__ import annotations
+
+import math
+from statistics import median
+
+import anim_math as am
+
+FPS = 30
+CONTACT_WINDOW_M = am.CONTACT_WINDOW_M  # a foot is on the ground while within 2 cm of its lowest height
+TRAVEL_YAW = {"forward": 0.0, "left": 90.0, "back": 180.0, "right": -90.0}
+
+# ------------------------------------------------------------------------------------------------- the op schema
+# op -> {parameter: {"type", "required", "default", "choices"}}. Types: "number" (int or float, not bool), "string"
+# (one of "choices"), "bool", "range" (two numbers [a, b], a < b), "number_or_auto" (a number or "auto").
+_N = "number"
+
+
+def _p(kind: str, default=None, required: bool = False, choices=None) -> dict:
+    out = {"type": kind, "required": required, "default": default}
+    if choices:
+        out["choices"] = list(choices)
+    return out
+
+
+OPS = {
+    "trim": {"start_s": _p(_N, 0.0), "end_s": _p(_N)},
+    "retime": {"seconds": _p(_N), "rate": _p(_N), "speed_m_s": _p(_N), "natural_m_s": _p(_N)},
+    "reverse": {},
+    "cycle": {"min_s": _p(_N, required=True), "max_s": _p(_N, required=True), "within": _p("range"),
+              "max_raw_seam_deg": _p(_N, 15.0)},
+    "in_place": {"mode": _p("string", "linear", choices=("linear", "path")), "smooth_s": _p(_N, 0.6)},
+    "heading": {"travel": _p("string", choices=tuple(TRAVEL_YAW)),
+                "facing": _p("string", choices=("start", "end", "mean"))},
+    "turn": {"total_deg": _p(_N, required=True)},
+    "mirror": {},
+    "stride": {"speed_m_s": _p(_N, required=True), "cadence": _p(_N), "rate": _p(_N), "plant": _p("bool", True),
+               "natural_m_s": _p(_N), "warn": _p("range", [0.6, 1.6]), "fail": _p("range", [0.4, 2.5])},
+    "floor": {"mode": _p("string", "lift", choices=("lift", "hips")), "from_s": _p(_N, 0.0), "to_s": _p(_N),
+              "fade_s": _p(_N, 0.2), "min_depth_cm": _p(_N, 0.3)},
+    "arm_offset": {"abduct_deg": _p("number_or_auto", "auto"), "max_deg": _p(_N, 12.0), "margin_cm": _p(_N, 0.3)},
+    "hand_spacing": {"min_gap_cm": _p(_N), "gap_m": _p(_N), "at": _p("string", "all", choices=("all", "end", "mean")),
+                     "deg": _p("number_or_auto", "auto"), "max_deg": _p(_N, 25.0)},
+}
+COMMON = {"op", "body"}  # keys every step may have
+ONE_OF = {"retime": ("seconds", "rate", "speed_m_s"), "heading": ("travel", "facing"),
+          "hand_spacing": ("min_gap_cm", "gap_m")}  # exactly one of these
+POSITIVE = {"seconds", "rate", "cadence", "min_s", "max_s", "smooth_s", "max_raw_seam_deg", "max_deg", "gap_m"}
+NON_NEGATIVE = {"start_s", "end_s", "speed_m_s", "natural_m_s", "from_s", "to_s", "fade_s", "min_depth_cm",
+                "margin_cm", "min_gap_cm"}
+
+
+def _is_number(v) -> bool:
+    return isinstance(v, (int, float)) and not isinstance(v, bool) and math.isfinite(v)
+
+
+def _type_ok(spec: dict, v) -> bool:
+    kind = spec["type"]
+    if kind == "number":
+        return _is_number(v)
+    if kind == "number_or_auto":
+        return _is_number(v) or v == "auto"
+    if kind == "bool":
+        return isinstance(v, bool)
+    if kind == "string":
+        return isinstance(v, str) and v in spec.get("choices", [v])
+    if kind == "range":
+        return isinstance(v, (list, tuple)) and len(v) == 2 and all(_is_number(x) for x in v) and v[0] < v[1]
+    return False
+
+
+def check_steps(steps, bodies=("men", "women")) -> list[str]:
+    """The errors of a list of edit steps (empty when they are valid): unknown ops or parameters, missing required
+    ones, wrong types or values, not exactly one of retime's seconds/rate/speed_m_s (heading's travel/facing,
+    hand_spacing's min_gap_cm/gap_m), a stride with neither cadence nor rate (or both), a bad body."""
+    errors: list[str] = []
+    if not isinstance(steps, (list, tuple)):
+        return ["the edits must be a list of steps"]
+    for k, step in enumerate(steps):
+        where = f"step {k + 1}"
+        if not isinstance(step, dict):
+            errors.append(f"{where}: a step must be a table")
+            continue
+        op = step.get("op")
+        if op not in OPS:
+            errors.append(f"{where}: unknown op {op!r} (known: {', '.join(sorted(OPS))})")
+            continue
+        where = f"step {k + 1} ({op})"
+        schema = OPS[op]
+        for key in sorted(set(step) - set(schema) - COMMON):
+            errors.append(f"{where}: unknown parameter {key!r}")
+        if "body" in step and step["body"] not in bodies:
+            errors.append(f"{where}: body must be one of {list(bodies)}, not {step['body']!r}")
+        for key, spec in schema.items():
+            if key not in step:
+                if spec["required"]:
+                    errors.append(f"{where}: missing {key!r}")
+                continue
+            v = step[key]
+            if not _type_ok(spec, v):
+                want = spec["type"] + (f" in {spec['choices']}" if "choices" in spec else "")
+                errors.append(f"{where}: {key} must be a {want}, not {v!r}")
+                continue
+            if _is_number(v) and key in POSITIVE and v <= 0:
+                errors.append(f"{where}: {key} must be > 0")
+            if _is_number(v) and key in NON_NEGATIVE and v < 0:
+                errors.append(f"{where}: {key} must be >= 0")
+        if op in ONE_OF:
+            given = [key for key in ONE_OF[op] if key in step]
+            if len(given) != 1:
+                errors.append(f"{where}: give exactly one of {', '.join(ONE_OF[op])}")
+        if op == "stride" and ("cadence" in step) == ("rate" in step):
+            errors.append(f"{where}: give exactly one of cadence, rate")
+        if op == "trim" and _is_number(step.get("end_s")) and _is_number(step.get("start_s", 0.0)) \
+                and step["end_s"] <= step.get("start_s", 0.0):
+            errors.append(f"{where}: end_s must be after start_s")
+        if op == "cycle" and _is_number(step.get("min_s")) and _is_number(step.get("max_s")) \
+                and step["max_s"] < step["min_s"]:
+            errors.append(f"{where}: max_s must be >= min_s")
+        if op == "floor" and _is_number(step.get("to_s")) and step["to_s"] <= step.get("from_s", 0.0):
+            errors.append(f"{where}: to_s must be after from_s")
+    return errors
+
+
+def params(step: dict) -> dict:
+    """A step's parameters with the defaults filled in."""
+    out = {key: spec["default"] for key, spec in OPS[step["op"]].items()}
+    out.update({k: v for k, v in step.items() if k not in COMMON})
+    return out
+
+
+# ------------------------------------------------------------------------------------------------- time maps
+def trim_times(frames: int, fps: float, start_s: float, end_s: float | None = None) -> list[float]:
+    """The fractional frame indices (into frames 0..frames) that a trim to [start_s, end_s] samples: a whole number
+    of frames on the grid from start_s (end_s omitted or past the end: to the end)."""
+    total = frames / fps
+    end = total if end_s is None else min(end_s, total)
+    if start_s < 0 or start_s >= end:
+        raise ValueError(f"trim [{start_s}, {end_s}] is outside the clip (0 to {total:.3f} s)")
+    n = max(1, round((end - start_s) * fps))
+    s0 = start_s * fps
+    return [min(s0 + k, float(frames)) for k in range(n + 1)]
+
+
+def retime_count(intervals: int, rate: float) -> tuple[int, float]:
+    """(new frame intervals, the effective rate) for a clip of `intervals` frame intervals played at `rate`: a whole
+    number of frames, so the effective rate differs a little from the asked one."""
+    if rate <= 0:
+        raise ValueError("the rate must be > 0")
+    m = max(1, round(intervals / rate))
+    return m, intervals / m
+
+
+def retime_times(intervals: int, new_intervals: int) -> list[float]:
+    """The fractional frame indices that a retime samples: k * N / M for k = 0..M. The first and last frames are kept,
+    so an open clip keeps its ends and a closed loop (last frame = first) stays closed with its period scaled."""
+    return [k * intervals / new_intervals for k in range(new_intervals + 1)]
+
+
+def split_index(t: float, last: int) -> tuple[int, float]:
+    """A fractional frame index as (frame, fraction towards the next), clamped to 0..last."""
+    t = min(max(t, 0.0), float(last))
+    i = min(int(math.floor(t)), max(last - 1, 0))
+    return i, t - i
+
+
+# --------------------------------------------------------------------------------------------- quaternions
+def q_mul(a, b):
+    w1, x1, y1, z1 = a
+    w2, x2, y2, z2 = b
+    return (w1 * w2 - x1 * x2 - y1 * y2 - z1 * z2, w1 * x2 + x1 * w2 + y1 * z2 - z1 * y2,
+            w1 * y2 - x1 * z2 + y1 * w2 + z1 * x2, w1 * z2 + x1 * y2 - y1 * x2 + z1 * w2)
+
+
+def q_conj(q):
+    return (q[0], -q[1], -q[2], -q[3])
+
+
+def q_norm(q):
+    n = math.sqrt(sum(c * c for c in q))
+    return tuple(c / n for c in q) if n > 1e-12 else (1.0, 0.0, 0.0, 0.0)
+
+
+def q_hemi(q, ref):
+    """q or -q, whichever is on ref's hemisphere (the same rotation; interpolation then takes the short way)."""
+    return q if sum(a * b for a, b in zip(q, ref)) >= 0 else tuple(-c for c in q)
+
+
+def q_slerp(a, b, t: float):
+    b = q_hemi(b, a)
+    d = min(1.0, sum(x * y for x, y in zip(a, b)))
+    if d > 0.9995:
+        return q_norm(tuple(x + (y - x) * t for x, y in zip(a, b)))
+    th = math.acos(d)
+    s = math.sin(th)
+    wa, wb = math.sin((1 - t) * th) / s, math.sin(t * th) / s
+    return tuple(wa * x + wb * y for x, y in zip(a, b))
+
+
+def q_axis_angle(axis, degrees: float):
+    n = math.sqrt(sum(c * c for c in axis))
+    h = math.radians(degrees) / 2
+    return (math.cos(h), *(math.sin(h) * c / n for c in axis))
+
+
+def q_rotate(q, v):
+    return q_mul(q_mul(q, (0.0, *v)), q_conj(q))[1:]
+
+
+def q_angle(a, b) -> float:
+    return am.quat_angle(a, b)
+
+
+def lerp(a, b, t: float):
+    return tuple(x + (y - x) * t for x, y in zip(a, b))
+
+
+# ---------------------------------------------------------------------------------------------------- cycle
+def central_diff(series: list) -> list:
+    """Per-frame central differences of a list of equal-length vectors (one-sided at the ends)."""
+    n = len(series)
+    out = []
+    for i in range(n):
+        a, b = series[max(i - 1, 0)], series[min(i + 1, n - 1)]
+        span = max(min(i + 1, n - 1) - max(i - 1, 0), 1)
+        out.append([(y - x) / span for x, y in zip(a, b)])
+    return out
+
+
+def best_cycle(features: list, velocities: list, fps: float, min_s: float, max_s: float, within=None,
+               vel_weight: float = 1.0) -> tuple[int, int, float]:
+    """The frame pair (i, j), i < j, whose poses differ least, with j - i between min_s and max_s seconds (whole
+    frames) and both inside `within` = [a_s, b_s] (the whole clip when omitted): the cost is the squared distance
+    of the feature vectors plus vel_weight times that of their velocities. Returns (i, j, cost)."""
+    n = len(features)
+    lo, hi = 0, n - 1
+    if within is not None:
+        lo = max(0, math.ceil(within[0] * fps - 1e-6))
+        hi = min(n - 1, math.floor(within[1] * fps + 1e-6))
+    dmin, dmax = max(1, round(min_s * fps)), round(max_s * fps)
+    best = None
+    for i in range(lo, hi + 1):
+        fi, vi = features[i], velocities[i]
+        for j in range(i + dmin, min(i + dmax, hi) + 1):
+            fj, vj = features[j], velocities[j]
+            c = sum((a - b) ** 2 for a, b in zip(fi, fj))
+            if vel_weight:
+                c += vel_weight * sum((a - b) ** 2 for a, b in zip(vi, vj))
+            if best is None or c < best[2]:
+                best = (i, j, c)
+    if best is None:
+        raise ValueError(f"no frame pair {min_s}-{max_s} s apart inside {within} (the clip has {n} frames)")
+    return best
+
+
+def close_ramp(intervals: int) -> list[float]:
+    """The weights k / T (k = 0..T) with which a loop's residual is spread over its cycle."""
+    return [k / intervals for k in range(intervals + 1)]
+
+
+def close_vectors(series: list) -> list:
+    """A cut cycle's vector channel (locations, scales) closed: x'(k) = x(k) + (x(0) - x(T)) k / T, so the first frame
+    is unchanged and the last equals it."""
+    first, last = series[0], series[-1]
+    ramp = close_ramp(len(series) - 1)
+    return [tuple(x + (a - b) * w for x, a, b in zip(p, first, last)) for p, w in zip(series, ramp)]
+
+
+def close_quats(series: list) -> list:
+    """A cut cycle's rotation channel closed: q'(k) = q(k) slerp(1, q(T)^-1 q(0), k / T)."""
+    delta = q_norm(q_mul(q_conj(series[-1]), series[0]))
+    delta = q_hemi(delta, (1.0, 0.0, 0.0, 0.0))
+    ramp = close_ramp(len(series) - 1)
+    return [q_norm(q_mul(q, q_slerp((1.0, 0.0, 0.0, 0.0), delta, w))) for q, w in zip(series, ramp)]
+
+
+# ------------------------------------------------------------------------------------------- paths and yaws
+def linear_drift(points: list) -> list:
+    """The offsets that take a path's first-to-last travel out in proportion to time: (p(N) - p(0)) k / N."""
+    n = len(points) - 1
+    d = [b - a for a, b in zip(points[0], points[-1])]
+    return [tuple(c * k / n for c in d) if n else tuple(0.0 for _ in d) for k in range(n + 1)]
+
+
+def moving_average(points: list, half: int, odd: bool = False) -> list:
+    """A centred moving average over 2 * half + 1 samples. At the ends the window shrinks, or with odd=True the path
+    is extended by its point reflection about each end (p(-k) = 2 p(0) - p(k)), so a straight path at constant speed
+    averages to itself up to its ends."""
+    n = len(points)
+    dims = range(len(points[0]))
+
+    def at(k):
+        if 0 <= k < n or not odd:
+            return points[k]
+        e, m = (0, -k) if k < 0 else (n - 1, 2 * (n - 1) - k)
+        m = min(max(m, 0), n - 1)
+        return tuple(2 * points[e][c] - points[m][c] for c in dims)
+
+    out = []
+    for i in range(n):
+        a, b = (i - half, i + half + 1) if odd else (max(0, i - half), min(n, i + half + 1))
+        win = [at(k) for k in range(a, b)]
+        out.append(tuple(sum(p[c] for p in win) / len(win) for c in dims))
+    return out
+
+
+def path_offsets(points: list, fps: float, smooth_s: float) -> list:
+    """The offsets that hold a one-shot's body over its start: its path low-passed by a centred moving average of
+    smooth_s seconds (the ends extended by point reflection), less that average's first value (the sway about the
+    average stays)."""
+    half = max(1, round(smooth_s * fps / 2))
+    avg = moving_average(points, half, odd=True)
+    return [tuple(a - b for a, b in zip(p, avg[0])) for p in avg]
+
+
+def moving_speed(points: list, fps: float, threshold: float = 0.1) -> float:
+    """The mean speed (m/s) of a path over its frames moving faster than threshold m/s (0 when it never does)."""
+    dist = steps = 0
+    for a, b in zip(points, points[1:]):
+        d = math.dist(a, b)
+        if d * fps > threshold:
+            dist, steps = dist + d, steps + 1
+    return dist * fps / steps if steps else 0.0
+
+
+def lsq_direction(points: list, times: list) -> tuple[tuple[float, float], float]:
+    """The least-squares velocity of a 2D path over time: (unit direction, speed m/s). The direction is (0, 0) for a
+    path that does not move."""
+    n = len(points)
+    tm = sum(times) / n
+    xm = sum(p[0] for p in points) / n
+    ym = sum(p[1] for p in points) / n
+    den = sum((t - tm) ** 2 for t in times)
+    if den <= 0:
+        return (0.0, 0.0), 0.0
+    vx = sum((t - tm) * (p[0] - xm) for t, p in zip(times, points)) / den
+    vy = sum((t - tm) * (p[1] - ym) for t, p in zip(times, points)) / den
+    speed = math.hypot(vx, vy)
+    return ((vx / speed, vy / speed) if speed > 1e-12 else (0.0, 0.0)), speed
+
+
+def wrap(deg: float) -> float:
+    """An angle in (-180, 180]."""
+    a = (deg + 180.0) % 360.0 - 180.0
+    return 180.0 if a == -180.0 else a
+
+
+def yaw_of(v) -> float:
+    """The yaw (degrees) of a horizontal direction: 0 = forward (-Y), 90 = left (+X), 180 = back, -90 = right."""
+    return math.degrees(math.atan2(v[0], -v[1]))
+
+
+def signed_angle_2d(a, b) -> float:
+    """The angle (degrees, -180..180) that turns 2D direction a into b, positive counter-clockwise from above."""
+    return math.degrees(math.atan2(a[0] * b[1] - a[1] * b[0], a[0] * b[0] + a[1] * b[1]))
+
+
+def facing_yaw(forward, left) -> float:
+    """A body's facing yaw from its forward and left axes in world space: the horizontal forward axis plus the
+    horizontal left axis turned 90 degrees clockwise (the hip line), so the facing holds while the body bends
+    forward (all fours) and while it lies on its back or side."""
+    fx, fy = forward[0] + left[1], forward[1] - left[0]
+    return yaw_of((fx, fy)) if math.hypot(fx, fy) > 1e-9 else 0.0
+
+
+def unwrap(degs: list) -> list:
+    """Angles made continuous (no jump of more than 180 degrees between neighbours)."""
+    out = [degs[0]] if degs else []
+    for d in degs[1:]:
+        out.append(out[-1] + wrap(d - out[-1]))
+    return out
+
+
+def circular_mean(degs: list) -> float:
+    s = sum(math.sin(math.radians(d)) for d in degs)
+    c = sum(math.cos(math.radians(d)) for d in degs)
+    return math.degrees(math.atan2(s, c))
+
+
+def turn_correction(yaws: list, total: float) -> list:
+    """The extra yaw per frame that rescales a turn's net yaw (last minus first) to `total`: (total / net - 1) *
+    (yaw(t) - yaw(0)); yaws are unwrapped degrees."""
+    net = yaws[-1] - yaws[0]
+    if abs(net) < 1.0:
+        raise ValueError(f"the clip turns {net:.1f} degrees: nothing to rescale")
+    k = total / net - 1.0
+    return [k * (y - yaws[0]) for y in yaws]
+
+
+# ---------------------------------------------------------------------------------------------------- stride
+def contact_mask(heights: list, window: float = CONTACT_WINDOW_M) -> list[bool]:
+    low = min(heights)
+    return [h <= low + window for h in heights]
+
+
+def contact_windows(mask: list[bool], cyclic: bool) -> list[list[int]]:
+    """The runs of contact frames as lists of frame indices; in a cyclic clip (its frames 0..n-1, the frame after
+    n-1 being 0) a run over the end continues at the start."""
+    n = len(mask)
+    if all(mask):
+        return [list(range(n))]
+    runs, cur = [], []
+    for i, c in enumerate(mask):
+        if c:
+            cur.append(i)
+        elif cur:
+            runs.append(cur)
+            cur = []
+    if cur:
+        runs.append(cur)
+    if cyclic and len(runs) > 1 and runs[0][0] == 0 and runs[-1][-1] == n - 1:
+        runs[0] = runs.pop() + runs[0]
+    return runs
+
+
+def contact_velocities(feet: dict, fps: float, window: float = CONTACT_WINDOW_M) -> list[tuple[float, float]]:
+    """The horizontal contact velocities (m/s) of the feet, by anim_math.foot_sliding's rule (central differences of
+    frames in contact on both sides); feet: {name: [(x, y, z) per frame]}."""
+    vels = []
+    for pts in feet.values():
+        contact = contact_mask([p[2] for p in pts], window)
+        for i in range(1, len(pts) - 1):
+            if contact[i - 1] and contact[i] and contact[i + 1]:
+                vels.append(((pts[i + 1][0] - pts[i - 1][0]) * fps / 2, (pts[i + 1][1] - pts[i - 1][1]) * fps / 2))
+    return vels
+
+
+def ground_velocity(vels: list) -> tuple[float, float] | None:
+    """The median contact velocity (the treadmill's velocity under an in-place clip), or None without contacts."""
+    if not vels:
+        return None
+    return (median(v[0] for v in vels), median(v[1] for v in vels))
+
+
+def natural_cadence(windows: int, cycle_s: float) -> float:
+    """Steps per second: the contact windows of both feet in one cycle over its length."""
+    return windows / cycle_s
+
+
+def stride_rate(intervals: int, c0: float, cadence: float | None = None, rate: float | None = None):
+    """(new intervals, effective rate) for a loop of `intervals` frames with natural cadence c0 played at
+    `cadence` steps/s (or at `rate`), rounded to whole frames."""
+    r = rate if rate is not None else cadence / c0
+    return retime_count(intervals, r)
+
+
+def stride_scale(speed: float, rate_eff: float, v0: float) -> float:
+    """How much the feet's travel along the ground axis scales so the retimed loop's planted feet move at speed."""
+    return speed / (rate_eff * v0)
+
+
+def stride_fit(scale: float, warn=(0.6, 1.6), fail=(0.4, 2.5)) -> str:
+    if not fail[0] <= scale <= fail[1]:
+        return "fail"
+    if not warn[0] <= scale <= warn[1]:
+        return "warn"
+    return "ok"
+
+
+def scale_offset(o, d, s: float):
+    """A foot's horizontal offset from the body scaled by s along the unit ground axis d: o + (s - 1)(o.d)d."""
+    k = (s - 1.0) * (o[0] * d[0] + o[1] * d[1])
+    return (o[0] + k * d[0], o[1] + k * d[1])
+
+
+def plant(points: list, windows: list, velocity, fps: float, blend: int = 2, cyclic: bool = True) -> list:
+    """A foot's horizontal track with each contact window replaced by a straight line at `velocity` (m/s, the
+    ground's), anchored at the window's middle frame; the `blend` frames before and after each window move towards
+    the line by (blend + 1 - j) / (blend + 1). points: [(x, y)] per frame (a cyclic clip's frames 0..n-1)."""
+    n = len(points)
+    out = [tuple(p) for p in points]
+    weight = [0.0] * n
+    target = list(out)
+    for win in windows:
+        mid = (len(win) - 1) / 2  # between two frames in a window of an even length
+        a, b = points[win[int(math.floor(mid))]], points[win[int(math.ceil(mid))]]
+        anchor = ((a[0] + b[0]) / 2, (a[1] + b[1]) / 2)
+        for pos in range(-blend, len(win) + blend):
+            if 0 <= pos < len(win):
+                idx, w = win[pos], 1.0
+            else:
+                j = -pos if pos < 0 else pos - len(win) + 1
+                idx = win[0] - j if pos < 0 else win[-1] + j
+                if cyclic:
+                    idx %= n
+                elif not 0 <= idx < n:
+                    continue
+                w = (blend + 1 - j) / (blend + 1)
+            if w > weight[idx]:
+                weight[idx] = w
+                target[idx] = (anchor[0] + velocity[0] * (pos - mid) / fps, anchor[1] + velocity[1] * (pos - mid) / fps)
+    for i in range(n):
+        if weight[i] > 0:
+            out[i] = lerp(points[i], target[i], weight[i])
+    return out
+
+
+# ------------------------------------------------------------------------------------------------------- IK
+def _v_sub(a, b):
+    return tuple(x - y for x, y in zip(a, b))
+
+
+def _v_add(a, b):
+    return tuple(x + y for x, y in zip(a, b))
+
+
+def _v_mul(a, k):
+    return tuple(x * k for x in a)
+
+
+def _v_len(a):
+    return math.sqrt(sum(x * x for x in a))
+
+
+def _v_dot(a, b):
+    return sum(x * y for x, y in zip(a, b))
+
+
+def two_bone_ik(H, K, A, goal, pole):
+    """A two-bone chain hip H, knee K, ankle A reaching for goal, bending towards pole (a direction): the new knee
+    and ankle and the miss (the ankle's distance from the goal; 0 when it is reachable). The bone lengths are kept;
+    an unreachable goal gives a straight leg pointing at it."""
+    L1, L2 = _v_len(_v_sub(K, H)), _v_len(_v_sub(A, K))
+    dv = _v_sub(goal, H)
+    dist = _v_len(dv)
+    d = min(max(dist, abs(L1 - L2) + 1e-7), (L1 + L2) * (1 - 1e-6))
+    if dist > 1e-12:
+        u = _v_mul(dv, 1 / dist)
+    else:
+        ha = _v_sub(A, H)
+        u = _v_mul(ha, 1 / max(_v_len(ha), 1e-12))
+    n = _v_sub(pole, _v_mul(u, _v_dot(pole, u)))
+    if _v_len(n) < 1e-9:  # a pole along the leg: any perpendicular
+        alt = (1.0, 0.0, 0.0) if abs(u[0]) < 0.9 else (0.0, 1.0, 0.0)
+        n = _v_sub(alt, _v_mul(u, _v_dot(alt, u)))
+    n = _v_mul(n, 1 / _v_len(n))
+    a = (L1 * L1 - L2 * L2 + d * d) / (2 * d)
+    h = math.sqrt(max(L1 * L1 - a * a, 0.0))
+    K2 = _v_add(_v_add(H, _v_mul(u, a)), _v_mul(n, h))
+    A2 = _v_add(H, _v_mul(u, d))
+    return K2, A2, _v_len(_v_sub(A2, goal))
+
+
+# ---------------------------------------------------------------------------------------------------- floor
+def floor_profile(depths: list, i0: int, i1: int, fade: int, run: int = 2, smooth: int = 2) -> list:
+    """The lift per frame (m) that takes a clip's lowest vertex out of the floor inside frames i0..i1: the depths
+    (m below the floor, 0 where none) as a running max over +-run frames, smoothed by a centred average over
+    +-smooth frames (both inside the window), then held at the window's edge values and faded linearly to 0 over
+    `fade` frames outside the window."""
+    n = len(depths)
+    i0, i1 = max(0, i0), min(n - 1, i1)
+    d = [max(0.0, x) for x in depths]
+    rm = {i: max(d[max(i0, i - run):min(i1, i + run) + 1]) for i in range(i0, i1 + 1)}
+    out = [0.0] * n
+    for i in range(i0, i1 + 1):
+        a, b = max(i0, i - smooth), min(i1, i + smooth)
+        out[i] = sum(rm[k] for k in range(a, b + 1)) / (b - a + 1)
+    for j in range(1, fade + 1):
+        w = 1.0 - j / (fade + 1)
+        if i0 - j >= 0:
+            out[i0 - j] = out[i0] * w
+        if i1 + j < n:
+            out[i1 + j] = out[i1] * w
+    return out
+
+
+# ------------------------------------------------------------------------------------------------- searching
+def search_angle(ok, lo: float, hi: float, tol: float = 0.5) -> tuple[float, bool]:
+    """The smallest angle in [lo, hi] (to tol) at which ok(angle) holds, for an ok that stays true once it holds
+    (monotone); (hi, False) when it does not hold even at hi."""
+    if ok(lo):
+        return lo, True
+    if not ok(hi):
+        return hi, False
+    while hi - lo > tol:
+        mid = (lo + hi) / 2
+        if ok(mid):
+            hi = mid
+        else:
+            lo = mid
+    return hi, True
+
+
+# ---------------------------------------------------------------------------------------------------- mirror
+def mirror_name(name: str) -> str:
+    """X.L <-> X.R; other names (the centre bones) map to themselves."""
+    if name.endswith(".L"):
+        return name[:-2] + ".R"
+    if name.endswith(".R"):
+        return name[:-2] + ".L"
+    return name
+
+
+def mirror_pairs(names) -> dict:
+    """Each bone's mirror partner; a side bone without its partner is an error."""
+    names = set(names)
+    out = {}
+    for n in names:
+        m = mirror_name(n)
+        if m not in names:
+            raise ValueError(f"{n} has no mirror partner {m}")
+        out[n] = m
+    return out
+
+
+def mat_mul(a, b):
+    return [[sum(a[i][k] * b[k][j] for k in range(4)) for j in range(4)] for i in range(4)]
+
+
+def mat_inv(m):
+    """The inverse of a 4x4 matrix (Gauss-Jordan with partial pivoting)."""
+    a = [list(map(float, row)) + [1.0 if i == j else 0.0 for j in range(4)] for i, row in enumerate(m)]
+    for c in range(4):
+        p = max(range(c, 4), key=lambda r: abs(a[r][c]))
+        if abs(a[p][c]) < 1e-15:
+            raise ValueError("singular matrix")
+        a[c], a[p] = a[p], a[c]
+        piv = a[c][c]
+        a[c] = [x / piv for x in a[c]]
+        for r in range(4):
+            if r != c and a[r][c]:
+                f = a[r][c]
+                a[r] = [x - f * y for x, y in zip(a[r], a[c])]
+    return [row[4:] for row in a]
+
+
+def det3(m) -> float:
+    return (m[0][0] * (m[1][1] * m[2][2] - m[1][2] * m[2][1]) - m[0][1] * (m[1][0] * m[2][2] - m[1][2] * m[2][0])
+            + m[0][2] * (m[1][0] * m[2][1] - m[1][1] * m[2][0]))
+
+
+def mirror_correction(S, rest_b, rest_m):
+    """C[b] = (S rest[m(b)])^-1 rest[b]: the constant frame correction of bone b, whose partner is m(b), for the
+    reflection S (armature space). It assumes nothing about bone rolls."""
+    return mat_mul(mat_inv(mat_mul(S, rest_m)), rest_b)
+
+
+def mirror_pose(S, pose_m, C):
+    """P'[b] = S P[m(b)] C[b]: bone b's mirrored pose from its partner's. Exact at rest, a proper rotation
+    (det +1), and mirroring twice gives the pose back (S S = I, C[m(b)] C[b] = I)."""
+    return mat_mul(mat_mul(S, pose_m), C)
