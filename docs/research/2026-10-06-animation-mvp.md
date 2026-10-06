@@ -61,8 +61,9 @@ The game sees `Idle`, `Jog_Fwd`, `Jog_Bwd`, `Strafe_Left`, `Strafe_Right`, `Spri
 `Carry_Upper`, `Crawl`, `Raise_Work` and `Talk_Upper`; the one-shots keep their names. godot-check and frames now
 expect these names and import a set at its own 30 fps.
 
-**Godot frames** (`tools/run.py frames <glb> --clips ... --video ...`, an off-screen window, `raw:review/stage1/33/frames/<body>/`):
-Godot 4.7.2's own frame sheets and looping MP4s of a sample, each compared with Blender's pose at 8 times.
+**Godot frames** (`tools/run.py frames <glb> --clips ... --video ...`, an off-screen window,
+`raw:review/stage1/33/frames/<body>/`): Godot 4.7.2's own frame sheets and looping MP4s of a sample, each compared
+with Blender's pose at 8 times.
 
 - **Men:** Jog_Fwd, Strafe_Left, Turn_Left, Shove_Stumble, Crawl_Start, Crawl, Getup_Fours, Carry_Upper, Push_Upper
   and Knockdown, all within 0.014 to 0.017 mm.
