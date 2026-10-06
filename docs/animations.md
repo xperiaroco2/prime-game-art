@@ -17,6 +17,7 @@ the toe bones and the Meshy trial (art #25) in [research/2026-10-03-meshy-animat
 | Universal Animation Library Standard (UAL1): `UAL1_Standard.glb` (in place) and `UAL1_Standard_RM.glb` (root motion) | 43 clips each | 65 bones, Unreal-mannequin names | CC0 1.0 | [`sources/quaternius_ual1_standard.toml`](../sources/quaternius_ual1_standard.toml) |
 | Universal Animation Library 2 Standard (UAL2, art #24): `UAL2_Standard.glb` and `UAL2_Standard_RM.glb`, and a Female Mannequin without clips | 43 clips each, other motions than UAL1's | UAL1's rig exactly (the same 65 bones, parents and rest) | CC0 1.0 | [`sources/quaternius_ual2_standard.toml`](../sources/quaternius_ual2_standard.toml) |
 | Meshy (art #25, batch 4, private raw files): `meshy`, Meshy's rig of m1_rex with its walking and running, ten library actions and the text-to-motion crawl; `meshyw`, its rig of w1_ivy with its walking, running, Walking Woman and Run Fast | 13 and 4 clips | Meshy's auto-rig, 24 bones, no fingers ([the research page](research/2026-10-03-meshy-animations.md)) | owned output of the Pro plan; the library motions' provenance is undisclosed: private only | [`batches/2026-10-b4-animations.toml`](../batches/2026-10-b4-animations.toml) |
+| Meshy text to motion (art #25's crawl, art #33's batch 5, private raw files): `tm`, eight FBX clips, one per file | 8 clips | SMPL-H, 52 bones with fingers, retargeted with `smpl_um.toml` ("Text to motion") | owned output of the Pro plan (`public_repo_ok = true`, `ai_generated = true`) | [`batches/2026-10-b4-animations.toml`](../batches/2026-10-b4-animations.toml), [`batches/2026-10-b5-anim-mvp.toml`](../batches/2026-10-b5-anim-mvp.toml) |
 
 Measured by `anim-review inventory` (2026-10-03): the 24 actions have the same keyframes in every file of a body type,
 except the men's `Adventurer.glb`, whose 24 all differ (that character is bound 180 degrees off). The women's
@@ -61,7 +62,8 @@ and its default output is `tools/out/retarget/ual2/<body>`) onto the body type's
 (`tools/blender/anim_review.toml`) in background Blender and writes `retarget_report.json` (with `--blend` also the
 character with the baked actions `<label>|<clip>`, `UAL|`, `UAL2|` or `Meshy|`, saved as `<target>_<label>.blend` in lower case; with `--floor` each clip's lowest vertex on the target and on UAL's own
 mannequin scaled to the target, which tells how deep a clip goes into the floor by itself and how much the retarget
-adds). No add-on: `tools/blender/retarget_core.py`.
+adds). Every clip also reports its one-frame pops (`pops`: [bone, frame, degrees], `rc.pops`; the runner warns), a bone
+snapping between two held poses (art #33). No add-on: `tools/blender/retarget_core.py`.
 
 1. **Sampling.** Actions are read from their fcurves (Blender 5's layered actions: `action.layers`, channel bags per
    slot) and posed by our own forward kinematics, `pose = pose[parent] @ (rest[parent]^-1 @ rest) @ basis`, so a
@@ -84,9 +86,12 @@ adds). No add-on: `tools/blender/retarget_core.py`.
 4. **Feet.** A target foot follows its lower leg (`[follow]` in the map), and a **two-bone IK** per leg places its
    pivot where the source foot carries it: the target pivot's rest position, scaled to the source's size and pinned
    to the source foot, so heel and toe roll transfer. Then the **toe lift**: the rigid target foot (no toe bone) is
-   pitched about its pivot until its toe is no lower than the rest sole, while the pivot is near the floor (fully up
-   to 20 cm above its rest height, fading out over 10 cm; never when the pivot is below the floor, as in in-place
-   jumps). The report's `ik_miss_mm` says how far a leg fell short of its goal: a few mm in walks; 4 to 5.5 cm at the
+   pitched about its pivot until its toe is no lower than the rest sole, while the pivot is near the floor (fully
+   from 2 cm below its rest height to 20 cm above it, fading out over the next 10 cm above and the next 4 cm below:
+   a pivot well below the floor is an in-place jump without its rise, which the clamp leaves alone;
+   `anim_math.floor_clamp_weight`). Until art #33 the clamp switched off at once 2 cm below, so a foot hovering on
+   that line flicked between clamped and free: UAL's Jump_Loop pitched its right foot 53 degrees and back in one
+   frame, four times a loop (twice on the women); with the fade its largest frame step is 2.7 degrees. The report's `ik_miss_mm` says how far a leg fell short of its goal: a few mm in walks; 4 to 5.5 cm at the
    push-off of Sprint and Jog, where the target leg locks straight (the heel pivot sits farther from the hip than
    the source's ankle once the foot points down); 2 to 6 cm in the falls, rolls, jumps and swims (before the hips fix
    the rolls missed by 23 to 25 cm).
@@ -101,7 +106,8 @@ adds). No add-on: `tools/blender/retarget_core.py`.
    translations, the anchors, the IK and the bone order), not proof that the rests agree: the rotation formula returns
    the target rest for any source rest by construction, and the rest differences of step 2 pass through untouched.
    `test_retarget_blender.py` also bakes Walk_Loop (its legs reach the source's ankle path within 10 mm and no vertex
-   goes 1 cm under the floor) and Death01 (no more than 3 cm deeper into the floor than UAL's own mannequin, scaled).
+   goes 1 cm under the floor), Death01 (no more than 3 cm deeper into the floor than UAL's own mannequin, scaled) and
+   Jump_Loop (in place, its right foot on the clamp's old 2 cm line: neither it nor the walk has a one-frame pop).
 
 ### The bone map
 
@@ -141,6 +147,426 @@ library on another rig (Meshy's) names its own map in the review settings: `[lib
 
 Fingers map by anatomy, not by number: UAL `index_01..03` (phalanges) go to `Index2..4`, and `Index1` (the
 metacarpal) stays at rest; thumbs map 1:1. Hand close-ups confirmed curls bend the right way and pointing works.
+
+## Text to motion: the SMPL-H retarget (art #33)
+
+Meshy's text to motion returns each clip as an FBX on an **SMPL-H skeleton** (batch 4's crawl, batch 5's seven items:
+`raw:2026-10-b4-animations/crawl-motion/`, `raw:2026-10-b5-anim-mvp/<item>/text_to_motion-clip.fbx`). They go straight
+onto our rig with `tools/blender/retarget_maps/smpl_um.toml`: no Meshy rig and no animate step in between.
+
+**The files** (all eight alike): FBX 7700; the armature `Reference` (top level, world rotation X +90, scale 0.01) with
+52 bones in quaternions; a grey mannequin skinned to it (`arm`, `body`, `head`, `leg`, spheres `qiu_L1..6`,
+`qiu_R1..6`) and three empties (`body.001`, `qiu_L`, `qiu_R`). One action, `Reference|SMPLH_Animation|Base Layer`,
+keyed on frames 1 to N (N = 120, 90 or 75: 3.97, 2.97 or 2.47 s at 30 fps). Every bone keys location, rotation and
+scale, but only `Pelvis`'s location moves and every scale is 1. The character faces -Y with its left at +X, as ours:
+no axis flip. The bone tree: `Pelvis` (the top bone, no root) > `L_Hip` > `L_Knee` > `L_Ankle` > `L_Foot` (the ball,
+14 cm in front of the ankle), `Spine1` > `Spine2` > `Spine3` > `Neck` > `Head`, `Spine3` > `L_Collar` > `L_Shoulder`
+(the upper arm) > `L_Elbow` > `L_Wrist`; fingers `Index`, `Middle`, `Ring`, `Pinky` 1 to 3 (phalanges, 1 at the
+knuckle) and `Thumb` 1 to 3 (1 the metacarpal); the right side alike. No leaf or end bones.
+
+**The loader** (`tools/blender/retarget_smpl.py`) sets the scene to 30 fps and calls `import_scene.fbx` with explicit
+options (`use_anim`, `anim_offset=1.0`, `ignore_leaf_bones=False`, `automatic_bone_orientation=False`,
+`use_custom_props=False`, `global_scale=1.0`, `axis_forward='-Z'`, `axis_up='Y'`); the scene stays at 30 fps. It
+deletes the empties, unassigns the action and resets the pose.
+
+**The floor shift.** The file's rest is centred on the pelvis (pelvis -0.19 m, hip joints -0.28, ankles -1.056, the
+mannequin's soles at **-1.161 in all eight files**) while its animation stands on z = 0 (a standing frame's lowest
+vertex is 0.0001 to 0.0076 m). Given that rest unchanged, the height ratio, the hip anchor and the foot anchors are
+garbage (a hip "height" of -0.28 m). So the loader lifts the armature by the rest's depth below the floor (1.161 m;
+the meshes are its children and follow), and every sampler of the file takes the same lift back out of `Pelvis`'s
+basis location (`anim_libs.Shifted`; `InPlace` builds on it): the offset `rot(rest[Pelvis])^-1 @ (Wi.to_3x3() @ (0, 0,
+h))`, the formula `InPlace` uses for its drift. The rest then stands on the floor (its lowest vertex 0.000 mm) and the
+motion keeps the file's world poses (turn-left-90 at frame 45: 0.0002 mm from a plain import). A `Rig` caches the
+armature's matrix, so it is built after the shift. The retarget report records `floor_shift_m` (1.161).
+
+**The scaling origin.** `retarget_core.Retargeter` scales positions about the floor point under each rig's origin
+(z = 0), not about the origin itself, which the shift puts 1.161 m up. For every rig whose origin is on the floor
+(UAL1, UAL2, Meshy's) this changes nothing: UAL1 onto the men still checks 0.0031 mm and Death01 still reaches -4.9 cm.
+
+**The map** (52 pairs, all checked by `retarget_map.py`), against UAL's and Meshy's:
+
+| | UAL (`ual_um.toml`) | Meshy (`meshy_um.toml`) | SMPL-H (`smpl_um.toml`) |
+|---|---|---|---|
+| File | GLB, in place plus an RM file | GLB, auto-rig | FBX, one clip per file |
+| Rest | T-pose on z = 0 | T-pose on z = 0 | T-pose centred on the pelvis: the floor shift |
+| Root | `root` -> `Root` | none (`Hips` carries it) | none: `Pelvis` -> `Body` carries the travel, `Root` at rest |
+| Spine | pelvis, spine_01..03 | Hips, Spine02, Spine01, Spine | `Pelvis`, `Spine1`, `Spine2`, `Spine3`, `Neck`, `Head` -> `Body`, `Abdomen`, `Torso`, `Chest`, `Neck`, `Head`; `Hips` at rest |
+| Arms | clavicle, upperarm, lowerarm, hand | Shoulder, Arm, ForeArm, Hand, `[align]` (10-15 degrees) | `L_Collar`, `L_Shoulder`, `L_Elbow`, `L_Wrist` -> `Shoulder.L`, `UpperArm.L`, `LowerArm.L`, `Wrist.L`; no `[align]` (2.6 degrees apart) |
+| Legs (IK) | thigh, calf, foot | UpLeg, Leg, Foot | `L_Hip`, `L_Knee`, `L_Ankle` (`source_foot`, an ankle joint) |
+| Toes | `ball_l` | `LeftToeBase` | `L_Foot` (the ball) -> `Toe.L` |
+| Fingers | `_01..03` -> `2..4`, thumbs 1:1 | none (rest) | `L_Index1..3` -> `Index2..4.L` (and Middle, Ring, Pinky), thumbs 1:1; the metacarpals at rest |
+| `[unused]` | the leaves | head_end, headfront | none |
+
+**The fingers never move** in a text-to-motion clip: every joint holds SMPL-H's mean relaxed hand, on our phalanges a
+constant 31.4 degrees per joint on average (index 25/44/13, middle 31/41/20, ring 38/40/25, pinky 46/32/22, thumb
+52/29/35), where UAL's loose fist curls 78. The hand shape therefore changes when the game blends a text-to-motion clip
+with a UAL clip; if that reads badly, keeping the fingers at rest is the alternative map.
+
+**Proportions.** SMPL-H's hip joints stand 0.880 m up after the shift: a translation scale of **1.0953** (men, hip
+joints 0.964 m) and **1.178** (women, 1.037 m). Our arms are short for that scale: shoulder to wrist 0.417 m (men) and
+0.453 m (women), **0.71 of SMPL-H's 0.538 m scaled**; its shoulders are 0.331 m apart against 0.305 and 0.235. Arms
+transfer by rotation, so a planted hand (on all fours) hovers about 7 to 8 cm higher on ours than on SMPL-H scaled,
+and hanging hands come into the thighs: the women's 5.3 to 7.5 cm (the turn, the lift, the shove, the rollup, the
+getup), the men's 6.5 and 6.7 in the shove and the getup.
+
+**The library** (`tools/blender/anim_review.toml`, `[libraries.tm]`): `format = "smplh_fbx"`, `file` the rig (the crawl;
+every file has the same rest, checked within 1 mm), `label = "TTM"`, `map = "smpl_um.toml"`, `own` (the SMPL-H
+mannequin plays `tm_own:<clip>`), `in_place` (the travelling clips, for the review's lanes) and a `[libraries.tm.clips]`
+table: clip name (the batch item's id) = its file. Clip keys are `tm:crawl`, `tm:backward-jog`, `tm:strafe-left`,
+`tm:turn-left-90`, `tm:shove-stumble`, `tm:package-lift`, `tm:rollup-to-all-fours`, `tm:getup-from-all-fours`; no
+raw clip loops, so `[loops]` has no `tm`. `anim_libs.load` dispatches on `format`; the runner refuses an unknown
+format, a missing `clips` table and clip files that are no raw-relative FBX; `anim-review` checks every file before
+Blender starts.
+
+`tools/run.py retarget --library tm --body men|women [--clips crawl,backward-jog] [--floor] [--blend]` writes
+`tools/out/retarget/tm/<body>/` with actions `TTM|<clip>`. Measured on 2026-10-06: the rest check 0.0008 mm (men) and
+0.002 mm (women), 0 degrees, no aligned bone; the IK misses and the lowest vertex per clip, men / women:
+
+| Clip | IK miss mm | Lowest cm (source's own mesh, scaled) |
+|---|---|---|
+| crawl | 0 / 0 | -0.6 (-0.8) / 1.7 (-0.9) |
+| backward-jog | 0 / 0 | -2.5 (0.0) / -2.3 (0.0) |
+| strafe-left | 16.1 / 9.9 | -1.8 (0.0) / -1.0 (0.0) |
+| turn-left-90 | 16.4 / 10.4 | -0.3 (0.0) / -0.4 (0.0) |
+| shove-stumble | 6.3 / 4.2 | -1.2 (0.0) / -0.4 (0.0) |
+| package-lift | 0 / 0 | -2.8 (0.0) / -1.9 (0.0) |
+| rollup-to-all-fours | 29.9 / 24.9 | **7.8** (-3.0) / **13.7** (-3.3) |
+| getup-from-all-fours | 10.6 / 11.5 | **5.9** (-2.9) / **8.4** (-3.2) |
+
+The turn's misses are its stepping leg standing nearly straight (a median of 5.2 mm short on the men, 16.4 mm where
+its heel starts to rise and our leg locks, as at UAL's push-offs); the pivot foot is exact. The rollup and the getup
+never touch the floor on ours: the source floats too (the next table), and our short arms cannot reach where its hands
+dip. `test_retarget_smpl_blender.py` checks the shift, the rest on both bodies, the crawl's 119 frames and the turn.
+
+**The raw motion** on our rig (no in-place; measured on 2026-10-06, men; the women's alike, scaled): what a clip
+needs before it is used (art #33's clip edits).
+
+| Clip | Travel | Heading and turn | Floor (lowest vertex per frame) | Other |
+|---|---|---|---|---|
+| crawl | 3.54 m, 0.89 m/s | 19 degrees left of straight | floats: median 6.5 cm, 15 cm at the start; -0.6 cm lowest | no loop (seam 59 degrees); hands 7-8 cm higher than SMPL-H's |
+| backward-jog | 1.25 m back, 0.31 m/s | 7 degrees off straight back; facing within 8 | the men's toes 1.5 cm under the floor on the median frame (-2.5 lowest; the women's 0.0 and -2.3) | a jog almost in place: steps of 0.09-0.30 m; no loop (seam 23) |
+| strafe-left | 9.6 m, 2.42 m/s | 73 degrees (17 forward of sideways); the facing drifts 8 | -1.8 lowest; up to 10 cm in its flight phases | a gallop of long and short steps; no loop (seam 49); hands 2.3 cm into the torso (women 4.2) |
+| turn-left-90 | 0.12 m | turns 109 degrees net (peak 116), not 90 | on the floor (-0.3 to 0.9 cm) | still to 0.13 s; one step of the left foot |
+| shove-stumble | 1.37 m back, 7 degrees off | facing steady | -0.8 to 4.2 cm | steps back 0.4-1.4 s, still from 1.5 s; hands into the legs 6.5 cm (women 7.2) |
+| package-lift | in place | twists 32 degrees in the bend, ends 14 turned | toes -2.8 cm in the squat | squats wide; holds with the hands forward from 1.4 s |
+| rollup-to-all-fours | 0.12 m | rolls over (the pelvis turns 180 degrees) | **floats the whole clip: median 15.6 cm, 7.8 to 31**; ends on all fours 13 cm up | starts lying, rolls over 1.1-1.6 s |
+| getup-from-all-fours | 0.66 m | ends facing 17 degrees left of its start | **floats: starts 10 cm up on all fours, ends standing 13 cm up** (the source's pelvis 1.09 m against 0.97 standing) | on all fours to 0.55 s, rises 0.7-1.75 s |
+
+The clip edits' `floor` lift pushes a clip up out of the floor; the rollup, the getup and the start of the crawl need
+the opposite, a settle down onto the floor (the lowest vertex of the lying, kneeling or standing frames brought to 0).
+
+**Gotchas.** Every file's action is called "Base Layer" (`load_glb`'s naming would make every clip "Base Layer"), so
+the names come from the `clips` table and the loader renames the actions `SMPLH|<clip>`. Later imports name the
+armature `Reference.001` and the action `....001`: the loader takes the objects and the action that import created.
+Frames start at 1 (`anim_offset=1.0`); the bake starts at 0, so a clip of N frames bakes N - 1 intervals.
+`use_custom_props=False` silences the importer's "Short" property warnings. The empties are deleted (they hang the
+spheres' grouping, nothing deforms with them).
+
+## Clip edits (art #33)
+
+The clip edits turn a retargeted clip into one the game can play: they cut a loop at its best seam, take the travel
+out, straighten the heading, rescale a turn, trim, retime, reverse, mirror left and right, warp the stride to a speed
+with the feet planted, lift a clip out of the floor, turn the arms out of the legs or the hands apart, and lean the
+upper body forward. The code is in two modules:
+
+- `tools/blender/anim_edit_math.py`: the pure math (standard library only), with unit tests in
+  `tools/tests/test_anim_edit_math.py` (`test_anim_edit_settle.py`, `test_anim_edit_lean.py`);
+- `tools/blender/anim_edit.py`: the Blender side, with tests on the real pack and UAL clips in
+  `tools/tests/test_anim_edit_blender.py` (skipped without Blender or the raw files).
+
+An animation set ("Animation sets" below; `anim-set`, `tools/blender/anim_sets/`) runs the edits from a settings
+file; this section describes the edits themselves.
+
+### The model
+
+The edits work on our rig after the retarget, so one tool set serves the pack's clips, UAL1, UAL2 and Meshy text to
+motion. A clip is a `Frames` object:
+
+- `rig`: the donor's `rc.Rig`;
+- `basis`: one `{bone: basis Matrix}` per frame on the 30 fps grid, every bone of the rig;
+- `fps` (30), `loop` (a closed loop: its last frame equals its first) and `info` (the step reports in `info["steps"]`,
+  and the latest measured speed and travel in `info["speed_m_s"]` and `info["travel_m"]`).
+
+A `Frames` comes from any sampler (`rc.Sampler`, `anim_libs.InPlace`, a layered sampler) at integer frames, so the
+pack's 24 fps keys are sampled on the 30 fps grid. Armature-space poses come from `rc.fk`; a changed pose goes back to
+a basis through the parent's pose (only the bones an edit changes get a new basis, so the bones below them follow);
+`to_action` bakes the frames with `rc.bake`.
+
+#### Rig facts the edits rely on
+
+On a pack original after `rc.add_toes` (64 bones):
+
+- **Root carries everything:** `Body` (legs and spine), the IK feet `Foot.L/R` and the knee poles `PT.L/R`. A
+  whole-character move (in place, heading, turn, lift) is a change of Root's pose alone.
+- **The feet are IK targets in Root space.** Moving a foot means re-solving `UpperLeg` and `LowerLeg` (children of
+  `Body`) with the two-bone IK. The shin's end is `P[LowerLeg] @ (rest[LowerLeg]^-1 @ rest[Foot])`; after the IK the
+  foot goes to the shin's end and keeps its rotation.
+- **The toes** are children of the feet and follow them.
+- **World axes:** front -Y, left +X, up +Z, floor z = 0.
+- **Armature axes are not world axes:** the armature has a world scale of 100 and its RootNode a -90 degree turn about
+  X. Every edit converts through `rig.W` and `rig.Wi` (`rc.rot` for rotations).
+- **Contacts** use the review's rule: a `Foot.*` pivot within 2 cm of its own lowest height in the clip
+  (`anim_math.CONTACT_WINDOW_M`).
+- **Facing** is the `Body` bone's horizontal forward axis plus its hip line turned 90 degrees, so it holds while the
+  body bends forward on all fours and while it lies on its back.
+
+### The ops
+
+A settings file gives each clip a list of steps, `{op = "...", ...}`; any step may add `body = "men"` or `"women"`
+and is then skipped on the other body type. Times are seconds in the clip as it stands at that step.
+`anim_edit_math.check_steps(steps)` returns the errors of a list of steps (the runner and the tests share it);
+`anim_edit_math.OPS` is the schema (each parameter's type, whether it is required, and its default).
+
+| op | Parameters | What it does | Reports |
+|---|---|---|---|
+| `trim` | `start_s` (0), `end_s` (omitted: to the end) | keeps [start, end], a whole number of frames resampled from start; the result is not a closed loop | frames, seconds |
+| `retime` | exactly one of `seconds`, `rate`, `speed_m_s`; `natural_m_s` | resamples to a new length, rounded to whole frames (a closed loop stays closed: its period scales). For `speed_m_s` the rate is speed / natural, where natural is `natural_m_s`, else the travel speed an earlier `cycle`, `in_place` or `stride` step measured, else the feet's in-place ground speed | rate, rate_eff, seconds, frames, natural_m_s and natural_from |
+| `reverse` | none | the frames in reverse order | none |
+| `cycle` | `min_s`, `max_s`, `within` = [a_s, b_s], `max_raw_seam_deg` (15) | picks the frame pair (i, j) whose poses differ least ("The cycle cut" below), cuts i..j and closes the loop: each channel's residual (frame j against frame i) is spread linearly over the cycle, rotations by slerp, so the last frame equals the first and the travel is taken out linearly. Fails when the raw seam of the body bones at the best pair exceeds `max_raw_seam_deg` | i_s, j_s, cycle_s, raw_seam_deg and its bone, finger_seam_deg, cost, travel_m, speed_m_s, yaw_drift_deg |
+| `in_place` | `mode` = `linear` or `path`, `smooth_s` (0.6) | takes the Body's horizontal travel out by moving Root. `linear`: first to last in proportion to time. `path`: the Body's path low-passed by a centred moving average of `smooth_s` (its ends extended by point reflection), so a one-shot keeps its sway and stays over its start | travel_m, speed_m_s (the moving part), max_offset_m, travel_after_m |
+| `heading` | `travel` = forward, back, left or right; or `facing` = start, end or mean | one constant turn about the world vertical through the first frame's Body. `travel` puts the least-squares direction of the Body's path on that axis; `facing` puts the Body's facing at the start, the end or on average on -Y | turned_deg, travel_dir_deg (before and after), facing_mean_deg, crab_deg (facing against travel) |
+| `turn` | `total_deg` | rescales the clip's own turn: each frame turns Root about the Body's vertical by (total / net - 1)(yaw(t) - yaw(0)), so the planted feet turn in place | net_before_deg, net_after_deg, peak_before_deg |
+| `mirror` | none | left-right mirror ("The mirror" below) | rest_error_mm, rest_error_deg, asymmetry_mm |
+| `stride` | `speed_m_s`; `cadence` (steps/s) or `rate`; `plant` (true); `natural_m_s`; `warn` ([0.6, 1.6]); `fail` ([0.4, 2.5]) | stride warping of an in-place loop ("Stride warping" below) | rate, scale, natural_m_s, natural_cadence, cadence, step_m, cycle_s, ground_axis, ik_miss_contact_mm, ik_miss_mm, knee_past_straight_deg, fit (ok, warn, fail), ground_speed_after_m_s, slide_mean_cm_s, slide_max_cm_s |
+| `floor` | `mode` = `lift`, `hips` or `settle`, `from_s` (0), `to_s` (the end), `fade_s` (0.2), `min_depth_cm` (0.3) | per frame, the posed meshes' lowest vertex below the floor (deeper than `min_depth_cm`) inside the window gives a lift profile: a running max over +-2 frames, smoothed over +-2 frames, held at the window's edges and faded to 0 over `fade_s` outside it. `lift` moves Root (everything: lying, crawling). `hips` moves Body and re-solves the legs to their feet, up to three rounds; it measures without the shoes, which a lift of the hips cannot move. `settle` (art #33) does the opposite for a clip that floats (Meshy's crawl, roll-up and get-up): the heights of the lowest vertex above the floor as a running min over +-2 frames, smoothed and faded the same way, move Root down, so no frame goes under the floor (`anim_edit_math.settle_profile`) | lowest_before_cm, lowest_after_cm, max_lift_cm, window_s; for `hips` also shoes_lowest_after_cm; for `settle` max_drop_cm and highest_low_after_cm |
+| `arm_offset` | `abduct_deg` (a number or `"auto"`), `max_deg` (12), `margin_cm` (0.3) | turns each upper arm away from the body about the chest's forward axis at the shoulder joint, by one angle on every frame (only UpperArm's basis changes, so the arm below follows). `auto` finds the smallest angle (bisection to 0.5 degrees) at which no hand vertex is inside the legs (`hands_in_legs`), on the frames that were inside and their neighbours, then adds the angle that moves the hand `margin_cm` further | deg, found, hands_in_legs before and after (cm), frames in the legs before and after |
+| `hand_spacing` | `min_gap_cm` or `gap_m`; `at` = all, end or mean; `deg` (a number or `"auto"`); `max_deg` (25) | turns each upper arm about the world vertical at its shoulder, the hands moving apart symmetrically (a negative angle brings them together). `min_gap_cm`: no hand inside the other and at least that gap between their closest vertices (on every frame, at the end, or on average). `gap_m`: the closest distance between the two hands' vertices at `at` (all: the smallest) reaches the gap, searched in [-max_deg, max_deg] | deg, found, gap before and after (cm), hands_in_each_other before and after (cm), min_gap_after_cm |
+| `lean` | `deg`; `bone` (`Torso`; a spine bone between Body and Head: Hips, Abdomen, Torso, Chest or Neck) | turns that bone forward by `deg` about the body's left-right axis through its head, on every frame; the bones below follow, the legs and the IK feet stay. For an upper-body layer whose source leans with the hips: the game's layer starts at `Torso`, so the hips' lean is lost over an upright base (UAL Push_Loop's hands go up over the head) | bone, deg, tilt_before_deg and tilt_after_deg (the mean forward tilt of the line from the bone to Head), head_forward_cm |
+
+Steps raise `anim_edit.EditError` on a failure (an unknown op, a bad parameter, a window outside the clip, a cycle
+whose raw seam is too large, a stride on a clip that is not an in-place loop); `apply` names the failing step. A
+stride's `fit` of `warn` or `fail` is reported, not raised.
+
+#### The cycle cut
+
+Each frame gives a feature vector: every non-finger bone's local quaternion (on the first frame's hemisphere, times 2:
+about radians), the Body's height and each foot's position relative to the Body (both over 0.2 m, so 20 cm count like
+a radian). `best_cycle` minimises the squared feature distance plus that of the velocities (central differences over
+0.1 s) over the pairs i < j inside `within` with j - i between `min_s` and `max_s`. The raw seam (the largest body
+bone rotation between frame j and frame i) guards the closing: closing spreads any residual, so without the guard it
+would hide a bad cut.
+
+Closing blends every channel by itself: the IK feet (children of Root) by location, the legs under Body by rotation.
+Between the cut's ends the shin's end therefore parts from its Foot bone (15 cm mid-cycle on the crawl's 26-degree
+cut, which tore the exported ankle), so the cycle solves both legs again on every frame to the closed feet and reports
+the gap it mended (`leg_gap_before_mm`) and the IK miss (`ik_miss_mm`: where a closed foot is out of the leg's reach,
+the foot goes to the shin's end).
+
+#### Stride warping
+
+The input is an in-place loop. Its natural ground speed `v0` is the median contact velocity of the feet (the
+treadmill speed under it, `anim_math.foot_sliding`'s rule) or `natural_m_s`; its natural cadence `c0` is the contact
+windows of both feet per cycle over the cycle's length.
+
+1. **Rate.** `r = cadence / c0` (or the given rate), rounded so the cycle is a whole number of frames: `r_eff`.
+2. **Scale.** `s = speed / (r_eff * v0)`.
+3. **Ground axis.** `d`, the direction of the median contact velocity (backwards under a forward run, sideways under a
+   strafe).
+4. **Foot targets.** After the retime, each foot pivot's horizontal offset from the Body, `o`, becomes
+   `o + (s - 1)(o.d)d`; its height and rotation are unchanged, so the toes and the retarget's toe lift hold.
+5. **Plant** (`plant = true`). In each contact window the foot's horizontal track becomes a straight line at exactly
+   the ground's velocity (`speed` along `d`), anchored at the window's middle; the two frames before and after the
+   window blend towards the line by 2/3 and 1/3.
+6. **IK.** UpperLeg and LowerLeg are re-solved with the two-bone IK. The knee bends in its current plane: the knee's
+   offset from the leg's current hip-ankle line, plus a small pull to the front for a straight leg (the offset from
+   the line to the new goal would turn a straight stance leg's knee backwards when the stride shortens). The miss is
+   recorded on contact frames and on all frames.
+
+The clip then plays at 1.0x at `speed`, its planted feet move at exactly `speed`, and the arms swing at the new
+cadence. The fit is `warn` outside [0.6, 1.6] and `fail` outside [0.4, 2.5] by default.
+
+Measured on UAL's Jog_Fwd_Loop at 4.5 m/s and cadence 2.8 (`tools/out/tests/anim_edit/edits.json` and the review
+renders):
+
+| Body | v0 (m/s) | c0 (steps/s) | r_eff | s | Cadence | Step | IK miss (contact / all) | Knee past straight | Feet after |
+|---|---|---|---|---|---|---|---|---|---|
+| men | 5.95 | 2.14 | 1.333 (28 to 21 frames) | 0.567 (warn) | 2.86 steps/s | 1.575 m | 0.0 / 0.0 mm | 0.0 deg | 4.50 m/s, slide 0.0 cm/s |
+| women | 6.42 | 2.14 | 1.333 | 0.525 (warn) | 2.86 steps/s | 1.575 m | 0.0 / 0.0 mm | 0.0 deg | 4.50 m/s, slide 0.0 cm/s |
+
+The Jog itself lands in `warn` (its steps shrink to 0.53 to 0.57 of their length); the stance legs bend more than in
+the original, which the treadmill review judges.
+
+#### The mirror
+
+- **Pairs:** `X.L` and `X.R` swap (arms, fingers, legs, feet, toes, poles); the centre bones map to themselves.
+- **Reflection:** `S = rig.Wi @ diag(-1, 1, 1, 1) @ rig.W` reflects world X in armature space (computed, not assumed).
+- **Formula:** `P'[b] = S @ P[m(b)] @ C[b]`, with the constant correction `C[b] = (S @ rest[m(b)])^-1 @ rest[b]` from
+  the rest.
+- **Properties:** it assumes nothing about bone rolls; it is exact at rest by construction; `P'` is a proper rotation
+  (det +1); mirroring twice gives the pose back (`S S = I`, `C[m(b)] C[b] = I`).
+- Bones that never move (their basis location stays within 0.1 mm on both sides) keep their rest offset: the rig's
+  small asymmetry (0.06 mm on the Walk, 0.3 mm on Punch_Right) is reported as `asymmetry_mm`, not keyed.
+
+#### Resampling
+
+Trim, retime and stride sample frames at fractional times by a Catmull-Rom spline through the four neighbouring frames
+(wrapped over a closed loop's seam): locations and scales per component, rotations on the quaternion components
+aligned to one hemisphere and normalised. A UAL Walk_Loop retimed to 1.25x and back stays within 0.02 degrees on the
+upper body and 1.3 degrees on the legs (the IK bends sharply at a foot plant); the toe bones flick up to 28 degrees a
+frame where the retarget's floor clamp lifts them, which no resampling keeps (5 degrees after the round trip).
+
+### The pure and the Blender side
+
+| `anim_edit_math.py` (stdlib) | `anim_edit.py` (Blender) |
+|---|---|
+| `OPS`, `check_steps`, `params`; time maps (`trim_times`, `retime_count`, `retime_times`, `split_index`, `catmull_rom`, `neighbours`); quaternions (`q_mul`, `q_conj`, `q_slerp`, `q_hemi`, `q_axis_angle`, `q_rotate`); `best_cycle`, `central_diff`, `close_vectors`, `close_quats`; `linear_drift`, `moving_average`, `path_offsets`, `moving_speed`; `lsq_direction`, `yaw_of`, `signed_angle_2d`, `facing_yaw`, `unwrap`, `circular_mean`, `turn_correction`; `contact_mask`, `contact_windows`, `contact_velocities`, `ground_velocity`, `natural_cadence`, `stride_rate`, `stride_scale`, `stride_fit`, `scale_offset`, `plant`; `two_bone_ik`; `floor_profile`; `search_angle`; `mirror_name`, `mirror_pairs`, `mirror_correction`, `mirror_pose` (4x4 lists) | `Frames`, `Target`, `apply`, `EditError`, `OPS` (op name to function); Root and Body moves in world space; the leg IK as rotations; the mirror with mathutils; the posed-mesh measures (the lowest vertex through `anim_metrics.world_points`, the hands through `anim_metrics.Measure`'s sets and surfaces) |
+
+### The API
+
+```python
+import anim_edit as ae
+
+target = ae.Target(char)          # char: rc.load_glb(...) of the donor, after rc.add_toes(char)
+frames = ae.Frames.from_action(action, target.rig, loop=True)   # or Frames.from_sampler(sampler, rig, loop)
+out = ae.apply(frames, steps, target, "women")   # steps: a list of {op = ..., ...}; raises ae.EditError
+out.info["steps"]                 # one report per step, {"op": ..., ...}; skipped steps {"op", "skipped": "body men"}
+out.to_action(char["arm"], "Idle_Loop")
+target.upper_bones()              # the upper-body layer's bones: Torso and every bone below it
+```
+
+`Target` exposes `rig`, `legs` (the three bones of each leg), `upper = "Torso"`, `measure` (an
+`anim_metrics.Measure` built on first use, in the rest pose), `pose(basis)` and `lowest()`. The edits leave the
+target in its rest pose.
+
+An example of a set's clip entries:
+
+```toml
+[[clips]]
+name = "Jog_Fwd_Loop"
+source = "ual:Jog_Fwd_Loop"
+loop = true
+edits = [ { op = "stride", speed_m_s = 4.5, cadence = 2.8 } ]
+
+[[clips]]
+name = "Idle_Loop"
+source = "ual:Idle_Loop"
+loop = true
+edits = [ { op = "arm_offset", abduct_deg = 2.7, body = "women" } ]   # found by "auto": 2.66 degrees
+
+[[clips]]
+name = "Knockdown"
+source = "ual:Death01"
+edits = [ { op = "floor", mode = "lift", from_s = 1.2 }, { op = "trim", start_s = 0.0, end_s = 2.0 },
+          { op = "retime", seconds = 1.35 } ]
+```
+
+### Measured on the real clips
+
+Background Blender, the pack originals with the toe bones and UAL1 retargeted with `ual_um.toml`; review renders in
+`raw:review/stage1/33/tools/` (outside git).
+
+| Clip and steps | Result |
+|---|---|
+| men, UAL Death01: floor lift from 1.2 s | lowest -4.86 cm (the impact at 1.2 s) to 0.0; the lying frames lie 2.2 cm above the floor already (a lift does not lower them) |
+| men, UAL Fixing_Kneeling: floor hips | lowest without the shoes -4.65 to -0.64 cm (the knee rests on the floor); the kneeling foot's toes reach -6.95 cm, which a lift of the hips cannot move |
+| men, Fixing_Kneeling: cycle 1.0-2.0 s within 1.0-4.2 | fails: the best cut (2.9-3.9 s) has a raw seam of 26.8 degrees in the right forearm; the work is not periodic |
+| women, UAL Idle_Loop: arm_offset auto | 2.66 degrees: hands in the thighs 1.32 cm (42 frames) to 0 |
+| women, UAL Push_Loop: hand_spacing min_gap_cm 1.0 | 4.3 degrees: the hands 6.09 cm inside each other to a 1.28 cm gap |
+| men, UAL Push_Loop: hand_spacing min_gap_cm 1.0 | 0 degrees: a 1.08 cm gap already |
+| women, UAL Push_Loop: lean 30 | the spine's tilt 46.5 to 76.5 degrees, the head 8.2 cm forward, the feet still; layered over the idle the hands come down from over the head to in front of the face |
+| men, pack Punch_Right: mirror | a left punch; rest error 0.0002 mm |
+| men, UAL Jump_Start: trim 0.03-0.40, retime 0.25 | 8 frames, 0.267 s: a retime rounds to whole frames (rate 1.375 for 1.467) |
+
+### Gotchas of the edits
+
+- **Auto searches are slow.** `arm_offset` and `hand_spacing` with `auto` pose the meshes and build BVH trees per
+  frame and trial angle (20 to 90 s a clip). Pin the found angle in the settings once the review accepts it.
+- **A retime rounds to whole frames.** Short clips feel it most (Jump_Start: 0.267 s for 0.25).
+- **`retime` by speed after `stride`** uses the stride's speed (the clip then plays at that speed at 1.0x).
+- **The pack's 24 fps keys** land between the 30 fps frames: `Frames.from_sampler` reads a pack clip as samples on
+  the 30 fps grid, not as its keys.
+
+## Animation sets (art #33)
+
+An animation set is the list of clips one GLB carries for the game, each built from a source clip by the clip edits
+above, so every clip is reproducible from its settings by one command. The MVP set is
+`tools/blender/anim_sets/mvp.toml`; its per-need table, measures and open points are in
+[`research/2026-10-06-animation-mvp.md`](research/2026-10-06-animation-mvp.md).
+
+`tools/run.py anim-set [--set mvp] [--body men|women|both] [--clips A,B|all] [--out DIR] [--no-export] [--no-godot]`
+builds each body type in its own background Blender run (`tools/blender/anim_set.py`), then exports and checks it.
+Output goes to `<raw>/anim-sets/<set>/<body>/` (outside git): `anim_mvp_<body>.blend`, `.glb`, `.export.json`,
+glTF-Validator's `report.json`, `build_report.json`, `build.md` and `godot-check/report.json`. A run with `--clips`
+builds those clips (and the clips they are made `from`) and checks them, without saving or exporting; its
+`build_report.json` and `build.md` go to `<out>/<body>/partial/`, so the full build's reports stay with its `.blend`.
+
+### The settings
+
+A set names itself in the review settings' `[sets]` (`mvp = "anim_sets/mvp.toml"`). Its keys are `title`, `fps` (30,
+the edits' grid), `stem` (the file names) and `upper` (the upper-body layer's top bone, `Torso`), then one
+`[[clips]]` table per clip:
+
+| Key | Meaning |
+|---|---|
+| `name` | the action and glTF animation name, `[A-Za-z0-9_]+`, unique; it ends in `_Loop` exactly when the clip loops |
+| `source` or `from` | a clip key (`pack:Sword_Slash`, `ual:Jog_Fwd_Loop`, `ual2:Walk_Carry_Loop`, `tm:strafe-left`) or an earlier clip of the set as it stands after its edits |
+| `loop` | the clip loops: its source loops or a `cycle` step closes it (the build refuses anything else) |
+| `edits` | the steps of "Clip edits", in order; a step with `body = "men"` or `"women"` runs on that body type only |
+| `needs` | the game's needs the clip serves: `need` (text), `no` (its number in the needs list), `layer` (`full` or `upper`), `speed_m_s` and `rate` (the game plays the clip at `rate` when moving at `speed_m_s`) |
+| `speed_m_s` | the clip's ground speed at rate 1.0; the review's treadmill and the game divide their speed by it |
+| `export` | `false` for a review candidate that is built, but not written to the GLB |
+| `note` | free text |
+
+`tools/blender/anim_set_cfg.py` reads and checks a set (pure Python: the runner, the tests and Blender share it): the
+names and the loop suffix, one `source` (a single clip of a known source) or an earlier `from`, the edits through
+`anim_edit_math.check_steps`, a need's layer, rate and body, and that a need's speed is the clip's speed times its rate
+(within 1 %). Angles found by an `auto` search are pinned in the settings, so a build is quick and reproducible.
+
+A set's sources are taken **with their travel**: a library's `in_place` list is for the review's lanes only, since
+`heading {travel = ...}` and `cycle` read the travel.
+
+### The build and the save
+
+`anim_set.build_clips(set_cfg, char, names, body, resolve)` builds clips on a donor (the pack original with the toe
+bones, as the review sets it up): each source is resolved by `resolve` (the review's `clips_for`, retargeting a library
+with its map), sampled into `Frames`, run through `anim_edit.apply` and reported (`info["report"]`: frames, seconds,
+loop, needs, speed, every step's report, the travel and heading left, the lowest vertex). Two rules hold for every
+clip:
+
+- **A looping source is closed first.** UAL's loops are open cycles (their first pose comes round one frame after
+  their last key; the men's Idle_Loop ends 4 mm from its start at the hands, the Jog 0.78 degrees): a source whose
+  last frame is further than 0.5 mm or 0.5 degrees from its first gets its first frame appended when that seam is at
+  least half a median frame step, else its last frame becomes its first (the Sprint's 4.6 mm against 191 mm steps).
+  Every loop of the set then exports closed (seam 0), and Godot plays it without a hitch.
+- **A clip stands over the origin**, where the game's body is: a loop's Body is centred on it over the cycle, a
+  one-shot's first frame stands on it (`recentred_m`). A cycle cut from a travelling clip otherwise plays where it was
+  cut (the strafe 4.9 m to the left, the crawl 1 m ahead). A one-shot that ends elsewhere (Knockdown: 0.48 m) leaves
+  that offset to the game, which moves the body when the clip ends.
+
+The command bakes the
+exported clips under their own names and saves the donor as a character the export accepts: one armature, its meshes
+parented to it with one Armature modifier each, no RootNode, no empty and no assigned action, every transform applied
+(the location keys times the armature's world scale of 100, as `um/blendfile.save_character` does; a few poses agree
+before and after within 0.1 mm), a scene at 30 fps over the longest clip.
+
+### The checks
+
+| Where | Check |
+|---|---|
+| the build | every clip built, as long as its frames over 30; every loop closed and in place (its Body travels under 5 cm from its first frame to its last) |
+| the export (`export`'s checks, then the set's) | every exported clip an action of its frames, nothing else, 30 fps; every loop's last frame its first within 0.5 mm and 0.5 degrees (`export.json` seams) |
+| Godot (`godot-check`, then the set's) | every animation under the name Godot gives it, as long as built, looping (LINEAR) exactly when the set says so; 64 bones; every track resolves |
+| warnings (printed, judged in the review) | a `stride` fit of `warn` or `fail`, an `auto` search that found no angle, a lowest vertex under -1.2 cm, a locomotion loop (one with a `speed_m_s`) whose hips or head face more than 5 degrees off the aim on average (`facing_mean_deg`, `head_facing_mean_deg`: the strafe's 19.5 and -15.9), a loop whose step from its last distinct frame onto its first is over 1.5 median frame steps (`seam_step_ratio`; the export's seam is 0 by construction, so it says nothing about a pop), a bone that snaps in one frame between two held poses (`pop_count`, `pops`: a rotation of at least 20 degrees in one frame step whose neighbouring steps are both under a third of it, `anim_math.one_frame_pops`; a loop's steps wrap round). The floor clamp's flick of Jump_Air_Loop's right foot (53 degrees and back, art #33) is what it catches; `retarget` reports the same per clip and warns |
+
+**Godot's loop names.** Godot's scene importer gives an animation whose name ends in `_Loop` (also `-loop`, `_cycle`,
+`-cycle`, any case) the loop mode LINEAR and drops the suffix: the game sees `Idle`, `Jog_Fwd`, `Strafe_Left`,
+`Crawl`, `Raise_Work` and so on, and one-shots keep their names. `godot-check` and `frames` expect these names
+(`_godot.godot_name`), fail when a clip named as a loop imports playing once, and import a GLB at the fps its
+`.export.json` records (30 for a set; Godot would resample a set imported at the pack's 24).
+
+**Upper-body layers** (`layer = "upper"`: the push, the talk, the carry, the knife) export all 64 bones; the game masks
+them with the set's bone filter, `Torso` and every bone below it (`build_report.json` lists them as `upper_bones`). A
+layer keeps nothing of its source's hips: a source that leans with the hips (the push) needs a `lean` on `Torso`, and
+its full-body clip then bends further than the source (the push 76 degrees), so it is played as a layer only. Judge a
+layer in the review over the bases the game puts under it (`Idle_Loop|Push_Upper_Loop`, `Jog_Fwd_Loop|...`), not alone.
+
+### In the review
+
+`anim-review` plays a set's clips as `mvp:<clip>`, built in the review's own Blender process from the same settings
+(`anim_review.clips_for` calls `anim_set.build_clips`), so a review shows exactly what the command builds; `--sources
+mvp` selects them. On the treadmill (`rates`) a set's clip plays at the row's speed over its `speed_m_s`, as the game
+plays it, with the feet's measured ground speed reported beside it; a row's `direction` (`forward`, `back`, `left`,
+`right`) moves the stripes along the clip's ground axis.
 
 ## The review
 
@@ -197,18 +623,22 @@ like UAL1 by every step. Clip keys (`tools/blender/anim_keys.py`):
 | `pack:<clip>`, `ual:<clip>`, `ual2:<clip>` | a pack action, a UAL1 clip, a UAL2 clip (retargeted) |
 | `<library>_own:<clip>` | (art #25) the clip on the library's **own GLB**: Meshy's rig and weights on our mesh (comparison (a)), the bones renamed to ours through the map and the palette turned into flat colours (`anim_libs.own_character`); the settings' `own` names the character |
 | `<library>_rigid:<clip>` | (art #25) the clip retargeted with the library's `rigid_map` (the toe bones at rest) |
+| `tm:<clip>`, `tm_own:<clip>` | (art #33) a Meshy text-to-motion clip retargeted from SMPL-H, named by its batch item id; `tm_own:` plays it on SMPL-H's own mannequin ("Text to motion: the SMPL-H retarget" above) |
+| `<set>:<clip>` | (art #33) a clip of an animation set (`mvp:Jog_Fwd_Loop`), built in the review's process from the set's settings ("Animation sets" above); the settings' `[sets]` names the sets |
 | `<base>\|<upper>` | a **layered** clip: the base clip's hips and legs under the upper clip's `[layer] upper` bone (`Torso`) and every bone below it (spine, head, arms, fingers), the way an engine layers an upper-body clip with a bone filter; the upper clip is time-scaled to a whole number of its loops per base loop |
 | `blend:<A>+<B>` | (rates only) a cycle-synced blend of two library clips; a name without a source is UAL1's; `\|<upper>` adds an upper-body layer, one upper loop per stride, lined up on the left heel strike |
 
 A library entry may also take (art #25, `tools/blender/anim_libs.py`): `extra` (more GLBs on the same rig whose
 actions join it; the load fails when a rest head differs by more than 1 mm), `rename` (action -> clip name), `skip`
 (actions left out), `in_place` (clips whose hips' horizontal travel from the first to the last frame is taken out in
-proportion to time), `own` (the character name of `<library>_own:` clips); `rm` is needed only on UAL's rig. A pair
+proportion to time), `own` (the character name of `<library>_own:` clips), `format` (`glb`, the default, or
+`smplh_fbx` with a `clips` table of name = raw-relative FBX, art #33: "Text to motion" above); `rm` is needed only on
+UAL's rig. A pair
 or a `[[feet]]` row may keep to one body type (`body`); a `[[feet]]` row's `sets` are lists of any clip keys shown top
 to bottom (a lane per key: the strip spans each clip's own length), its `clips` the rigid shoes over the toe bones as
 before. The shoes in the close-ups are the vertices weighted most to a foot or a toe, so a merged mesh works.
 
-`--sources ual2` (comma-separated; `pack`, `ual`, `ual2`, `meshy`, `meshyw`; a variant counts as its library) limits `clips` to those sources' clips and `pairs` and `rates`
+`--sources ual2` (comma-separated; `pack`, `ual`, `ual2`, `meshy`, `meshyw`, `tm`, or a set such as `mvp`; a variant counts as its library) limits `clips` to those sources' clips and `pairs` and `rates`
 to the rows that play one; its measures go to `metrics/<body>_s<sources>_c*.json`. `table` merges a full run's
 `<body>_c*.json`, then the source runs' files (oldest first, so of two runs over overlapping sources such as `ual2`
 and `ual,ual2` the later one wins), then a partial run's `<body>_part_c*.json`, each replacing the earlier measures of

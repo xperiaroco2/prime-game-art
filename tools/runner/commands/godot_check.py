@@ -33,7 +33,7 @@ def run(args: argparse.Namespace) -> int:
         glbs.append(candidate.resolve())
     contract = _godot.load_contract()
     _godot.clear_staged({g.stem for g in glbs})
-    staged = {glb: _godot.stage(glb) for glb in glbs}
+    staged = {glb: _godot.stage(glb, params=_godot.import_params(glb)) for glb in glbs}
     common.say(f"godot-check: importing {', '.join(g.name for g in glbs)} into {_godot.PROJECT.as_posix()} (headless)")
     import_lines = _godot.import_project()
     failed = 0

@@ -1,0 +1,292 @@
+# The animation MVP (art #33; docs/animations.md, "Animation sets"): every clip of the game's MVP with its source, its
+# edits (tools/blender/anim_edit.py, in order), its loop mode and the needs it serves (the list: raw
+# manager/stage1/faces-research.json, key "animation"; `no` is the need's number there). `tools/run.py anim-set` builds
+# it per body type into <raw>/anim-sets/mvp/<body>/ (.blend, GLB, reports); anim-review plays its clips as "mvp:<name>".
+#
+# - A source is a clip key (pack:, ual:, ual2:, tm:) taken as retargeted, with its travel: a library's in_place list is
+#   for the review's lanes only. `from` starts from an earlier clip of this set after its edits.
+# - A loop's name ends in _Loop. Godot's importer gives such a clip LOOP_LINEAR and drops the suffix: the game sees
+#   "Idle", "Jog_Fwd", "Strafe_Left" and so on.
+# - `layer`: "full" (the whole body) or "upper" (the `upper` bone below and every bone under it, the game's bone filter
+#   for an upper-body layer). Upper layers export every bone; the game masks them.
+# - `speed_m_s`: the clip's ground speed at rate 1.0; the game plays it at its speed divided by this (the needs' rate).
+# - A step with `body` runs on that body type only. Angles found by an `auto` search are pinned here (the build reports
+#   them), so a build is quick and reproducible.
+
+title = "The animation MVP (art #33)"
+fps = 30
+stem = "anim_mvp"
+upper = "Torso"
+
+# ------------------------------------------------------------------------------------------------- standing
+[[clips]]
+name = "Idle_Loop"
+source = "ual:Idle_Loop"
+loop = true
+edits = [{ op = "arm_offset", abduct_deg = 2.66, body = "women" }]  # auto: hands 1.32 cm in the thighs to 0
+needs = [{ need = "Idle, standing; the base under the carry, talk and push layers", no = 1, layer = "full" }]
+
+[[clips]]
+name = "Turn_Left"
+source = "tm:turn-left-90"
+loop = false
+edits = [{ op = "heading", facing = "start" }, { op = "trim", start_s = 0.13, end_s = 1.73 },
+         { op = "turn", total_deg = 90 }, { op = "retime", seconds = 1.2 },
+         { op = "arm_offset", abduct_deg = 5.6, body = "women" }]  # auto: 5.64, hands 3.85 cm in the thighs to 0
+needs = [{ need = "Turn in place, 90 degrees to the left (lower body while the yaw follows the mouse)", no = 7, layer = "full" }]
+
+[[clips]]
+name = "Turn_Right"
+from = "Turn_Left"
+loop = false
+edits = [{ op = "mirror" }]
+needs = [{ need = "Turn in place, 90 degrees to the right", no = 7, layer = "full" }]
+
+# ----------------------------------------------------------------------------------------------- locomotion
+[[clips]]
+name = "Jog_Fwd_Loop"
+source = "ual:Jog_Fwd_Loop"
+loop = true
+speed_m_s = 4.5
+edits = [{ op = "stride", speed_m_s = 4.5, cadence = 2.8 }]
+needs = [{ need = "Move forward at 4.5 m/s (the walk)", no = 2, layer = "full", speed_m_s = 4.5, rate = 1.0 }]
+
+[[clips]]
+name = "Jog_Bwd_Loop"
+source = "ual:Jog_Fwd_Loop"
+loop = true
+speed_m_s = 4.5
+edits = [{ op = "stride", speed_m_s = 4.5, cadence = 2.8 }, { op = "reverse" }]
+needs = [{ need = "Move backward at 4.5 m/s", no = 3, layer = "full", speed_m_s = 4.5, rate = 1.0 },
+         { need = "Sprint backward at 7.0 m/s", no = 6, layer = "full", speed_m_s = 7.0, rate = 1.556 }]
+note = "the forward jog warped and played backwards: the free candidate while Meshy's backward jog is re-rolled"
+
+[[clips]]
+name = "Jog_Bwd_TTM_Loop"
+source = "tm:backward-jog"
+loop = true
+export = false
+speed_m_s = 4.5
+edits = [{ op = "heading", travel = "back" }, { op = "cycle", min_s = 0.6, max_s = 1.0, within = [0.3, 3.7] },
+         { op = "stride", speed_m_s = 4.5, cadence = 2.8 }]
+note = "review only: Meshy's backward jog barely travels (0.3 m/s), so its stride must grow about 8x (re-roll)"
+
+[[clips]]
+name = "Strafe_Left_Loop"
+source = "tm:strafe-left"
+loop = true
+speed_m_s = 4.5
+edits = [{ op = "heading", travel = "left" }, { op = "cycle", min_s = 0.55, max_s = 0.9, within = [0.3, 3.7] },
+         { op = "stride", speed_m_s = 4.5, cadence = 4.0 }]
+# cadence 4.0: at the design's 2.9 the steps had to grow 1.74x (men; 1.57 m) and the legs missed their targets by
+# 66 mm on contact frames and 465 mm in flight; 4.0 steps/s gives 1.1 m steps
+needs = [{ need = "Strafe left at 4.5 m/s", no = 4, layer = "full", speed_m_s = 4.5, rate = 1.0 },
+         { need = "Sprint to the left at 7.0 m/s", no = 6, layer = "full", speed_m_s = 7.0, rate = 1.556 }]
+
+[[clips]]
+name = "Strafe_Right_Loop"
+from = "Strafe_Left_Loop"
+loop = true
+speed_m_s = 4.5
+edits = [{ op = "mirror" }]
+needs = [{ need = "Strafe right at 4.5 m/s", no = 4, layer = "full", speed_m_s = 4.5, rate = 1.0 },
+         { need = "Sprint to the right at 7.0 m/s", no = 6, layer = "full", speed_m_s = 7.0, rate = 1.556 }]
+
+[[clips]]
+name = "Sprint_Fwd_Loop"
+source = "ual:Sprint_Loop"
+loop = true
+speed_m_s = 7.0
+# The stride warp plants the feet at exactly 7.0 m/s (a retime by UAL's root-motion speed left them running 7.46 and
+# 7.33 m/s: its feet run 6-7 % faster than its root). The rate keeps the reviewed cadence: 7.0 over the root-motion
+# speed scaled to the body, 8.534 (men) and 9.178 m/s (women; anim-review rates, art #20).
+edits = [{ op = "stride", speed_m_s = 7.0, rate = 0.8202, body = "men" },
+         { op = "stride", speed_m_s = 7.0, rate = 0.7627, body = "women" }]
+needs = [{ need = "Sprint forward at 7.0 m/s", no = 5, layer = "full", speed_m_s = 7.0, rate = 1.0 }]
+
+# ------------------------------------------------------------------------------------------------ the jump
+[[clips]]
+name = "Jump_Start"
+source = "ual:Jump_Start"
+loop = false
+edits = [{ op = "trim", start_s = 0.03, end_s = 0.40 }, { op = "retime", seconds = 0.25 }]
+needs = [{ need = "Jump: the take-off", no = 9, layer = "full" }]
+
+[[clips]]
+name = "Jump_Air_Loop"
+source = "ual:Jump_Loop"
+loop = true
+needs = [{ need = "Jump: airborne, and falling off a ledge", no = 9, layer = "full" }]
+
+[[clips]]
+name = "Jump_Land"
+source = "ual:Jump_Land"
+loop = false
+# the women's hands brush the thighs in the crouch (7.3 cm): an arm offset up to 12 degrees made it worse (7.7)
+edits = [{ op = "trim", start_s = 0.0, end_s = 0.5 }, { op = "retime", seconds = 0.3 }]
+needs = [{ need = "Jump: the landing (upper body while moving, full standing)", no = 9, layer = "full" }]
+
+# ------------------------------------------------------------------------------------- pushing, the knife
+[[clips]]
+name = "Shove_Stumble"
+source = "tm:shove-stumble"
+loop = false
+edits = [{ op = "trim", start_s = 0.37, end_s = 1.83 }, { op = "heading", facing = "start" },
+         { op = "in_place", mode = "path" }, { op = "arm_offset", abduct_deg = 12 }]
+# arm_offset: the hanging hands went into the thighs (6.8 cm men, 7.0 women); auto reached 0 at 12 degrees on the men
+# and 4.5 cm at its limit of 12 on the women
+needs = [{ need = "Being pushed: the stumble (the game moves the body)", no = 10, layer = "full" }]
+
+[[clips]]
+name = "Push_Upper_Loop"
+source = "ual:Push_Loop"
+loop = true
+# auto found 0 degrees on the men (a 1.08 cm gap already) and 4.3 on the women (6.09 cm inside each other to a 1.28 cm
+# gap); the women's hands do not reach the push's own legs (arm_offset auto: 0 degrees). lean: Push_Loop leans 46
+# degrees with the hips, which the game's layer from Torso drops, so over an upright idle or jog the hands went up over
+# the head (the review, art #33); 30 degrees on Torso put them in front of the face, a push. The full-body clip bends
+# 76 degrees: play it as the upper layer only.
+edits = [{ op = "hand_spacing", min_gap_cm = 1.0, deg = 4.3, body = "women" }, { op = "lean", deg = 30 }]
+needs = [{ need = "Pushing someone (upper body, low weight)", no = 11, layer = "upper" }]
+
+[[clips]]
+name = "Knife_Swing"
+source = "pack:Sword_Slash"
+loop = false
+edits = [{ op = "retime", seconds = 0.45 }]
+needs = [{ need = "Use the knife: the swing (upper body)", no = 13, layer = "upper" }]
+
+# -------------------------------------------------------------------------------------------- items, the package
+[[clips]]
+name = "Carry_Upper_Loop"
+source = "ual2:Walk_Carry_Loop"
+loop = true
+# a mean gap of 0.40 m between the hands (the 0.45 m package): auto found 28.71 degrees on the men and 29.8 on the women
+# (with max_deg 35; 25 reached only 34.6 and 32.7 cm), from hands touching (0.7 and 1.1 cm inside each other)
+edits = [{ op = "hand_spacing", gap_m = 0.40, at = "mean", deg = 28.7, max_deg = 35, body = "men" },
+         { op = "hand_spacing", gap_m = 0.40, at = "mean", deg = 29.8, max_deg = 35, body = "women" }]
+needs = [{ need = "Carry the package (upper body over the idle and the locomotion)", no = 15, layer = "upper" }]
+
+[[clips]]
+name = "Pickup_One"
+source = "ual2:Farm_Harvest"
+loop = false
+# the women's hand reaches past the thigh (2.5 cm in): an arm offset of 12 degrees only brought it to 1.9
+edits = [{ op = "trim", start_s = 0.13, end_s = 2.13 }, { op = "retime", seconds = 0.9 }]
+needs = [{ need = "Pick up a one-handed item from the floor (full standing, upper body moving)", no = 16, layer = "full" }]
+
+[[clips]]
+name = "Putdown_One"
+from = "Pickup_One"
+loop = false
+edits = [{ op = "reverse" }, { op = "retime", seconds = 0.8 }]
+needs = [{ need = "Put a one-handed item down in front", no = 17, layer = "full" }]
+
+[[clips]]
+name = "Pickup_Package"
+source = "tm:package-lift"
+loop = false
+edits = [{ op = "trim", start_s = 0.1, end_s = 1.5 }, { op = "heading", facing = "mean" },
+         { op = "retime", seconds = 1.0 }, { op = "floor", mode = "lift" },
+         { op = "hand_spacing", gap_m = 0.40, at = "end", deg = 18.5, body = "men" },
+         { op = "hand_spacing", gap_m = 0.40, at = "end", deg = 22.9, body = "women" }]
+# floor: the squat's toes went 2.8 cm (men) and 1.9 cm (women) into the floor; hand_spacing auto found 18.55 and
+# 22.85 degrees for a 0.40 m gap at the end (from 19.1 and 14.0 cm)
+needs = [{ need = "Pick up the package with both hands", no = 18, layer = "full" }]
+
+[[clips]]
+name = "Putdown_Package"
+from = "Pickup_Package"
+loop = false
+edits = [{ op = "reverse" }]
+needs = [{ need = "Put the package down with both hands", no = 19, layer = "full" }]
+
+# ----------------------------------------------------------------------------------------- downed and raised
+[[clips]]
+name = "Knockdown"
+source = "ual:Death01"
+loop = false
+# The lift takes the impact out of the floor; the settle brings the lying frames (from 0.83 s after the retime, the
+# frame after the impact) down onto it: Death01 lies 2.2 cm up, and the game holds its last frame as the downed pose.
+edits = [{ op = "floor", mode = "lift", from_s = 1.2 }, { op = "trim", start_s = 0.0, end_s = 2.0 },
+         { op = "retime", seconds = 1.35 }, { op = "floor", mode = "settle", from_s = 0.83 }]
+needs = [{ need = "Knocked down: falls where they stand; its last pose is the downed pose", no = 21, layer = "full" }]
+
+[[clips]]
+name = "Crawl_Start"
+source = "tm:rollup-to-all-fours"
+loop = false
+# The source floats its whole length (7.8 cm men, 13.7 cm women at best); the settle puts it on the floor. In the
+# review it rolls over and ends on all fours, its hands a little short of the floor: exported as a flagged stopgap.
+edits = [{ op = "floor", mode = "settle" }, { op = "trim", start_s = 0.4, end_s = 2.4 },
+         { op = "heading", facing = "end" }, { op = "retime", seconds = 1.5 }]
+needs = [{ need = "Crawl start: from lying on the back onto all fours (downed)", no = 23, layer = "full" }]
+note = "stopgap: Meshy's roll-up floats and its hands stay short of the floor; settled; a re-roll candidate"
+
+[[clips]]
+name = "Crawl_Loop"
+source = "tm:crawl"
+loop = true
+speed_m_s = 1.0
+# A stopgap: the crawl does not repeat. Its best cut (0.93 s from 0.93 s, men) has a raw seam of 26 degrees in the
+# left wrist (37-40 for longer cuts), over the 15 a good cut stays under, so the loop is closed over 26 degrees (re-roll).
+edits = [{ op = "heading", travel = "forward" },
+         { op = "cycle", min_s = 0.5, max_s = 1.5, within = [0.0, 2.2], max_raw_seam_deg = 30 },
+         { op = "floor", mode = "settle" }, { op = "retime", speed_m_s = 1.0 }]
+# settle: the cut floats, its lowest vertex 4.9 cm (men) and 3.0 cm (women) above the floor at best
+needs = [{ need = "Crawl at 1.0 m/s (downed)", no = 24, layer = "full", speed_m_s = 1.0, rate = 1.0 }]
+note = "stopgap: the cut's raw seam is 26 degrees (the left wrist); the crawl is a re-roll candidate"
+
+[[clips]]
+name = "Getup_Back"
+source = "ual2:LayToIdle"
+loop = false
+edits = [{ op = "floor", mode = "lift" }]  # the toes went 4.0 cm (men) and 4.1 cm (women) into the floor at 0.83 s
+needs = [{ need = "Stand up after a revive (from lying on the back)", no = 25, layer = "full" }]
+
+[[clips]]
+name = "Getup_Fours"
+source = "tm:getup-from-all-fours"
+loop = false
+# The source floats 6 to 13 cm over the whole clip; after the settle it reads as a get-up from all fours in the
+# review, lifting off 4.5 cm mid-rise: exported as a flagged stopgap.
+edits = [{ op = "trim", start_s = 0.27, end_s = 2.0 }, { op = "heading", facing = "start" },
+         { op = "in_place", mode = "path" }, { op = "retime", seconds = 1.5 }, { op = "floor", mode = "settle" }]
+needs = [{ need = "Stand up after a revive (from all fours, after the crawl)", no = 25, layer = "full" }]
+note = "stopgap: Meshy's get-up floats; settled, it lifts off 4.5 cm mid-rise; a re-roll candidate if the review rejects it"
+
+[[clips]]
+name = "Raise_In"
+source = "ual:Fixing_Kneeling"
+loop = false
+edits = [{ op = "floor", mode = "hips" }, { op = "trim", start_s = 0.0, end_s = 0.8 }, { op = "retime", seconds = 0.6 }]
+needs = [{ need = "Raise a downed player: kneel down", no = 26, layer = "full" }]
+
+[[clips]]
+name = "Raise_Work_Loop"
+source = "ual:Fixing_Kneeling"
+loop = true
+# The kneeling work does not repeat: its best cut of 1 s (2.9 to 3.9 s) has a raw seam of 27 degrees in the right
+# forearm (0.5 to 0.6 s cuts: 23 to 29), so the loop is closed over 27 degrees; hand keys or a ping-pong loop later.
+edits = [{ op = "floor", mode = "hips" },
+         { op = "cycle", min_s = 1.0, max_s = 3.0, within = [1.0, 4.2], max_raw_seam_deg = 30 }]
+needs = [{ need = "Raise a downed player: the work, looped for the 3 s", no = 26, layer = "full" }]
+note = "stopgap: the cut's raw seam is 27 degrees (the right forearm)"
+
+[[clips]]
+name = "Raise_Out"
+source = "ual:Fixing_Kneeling"
+loop = false
+edits = [{ op = "floor", mode = "hips" }, { op = "trim", start_s = 4.2, end_s = 5.0 }, { op = "retime", seconds = 0.6 }]
+needs = [{ need = "Raise a downed player: stand up again", no = 26, layer = "full" }]
+
+# ------------------------------------------------------------------------------------------------ talking
+[[clips]]
+name = "Talk_Upper_Loop"
+source = "ual:Idle_Talking_Loop"
+loop = true
+# auto found 8.98 degrees on the men (2.22 cm inside each other to a 1.18 cm gap) and 12.5 on the women (2.15 cm to
+# 1.16 cm); the women's hands do not reach the talk's own legs (arm_offset auto: 0 degrees)
+edits = [{ op = "hand_spacing", min_gap_cm = 1.0, deg = 9.0, body = "men" },
+         { op = "hand_spacing", min_gap_cm = 1.0, deg = 12.5, body = "women" }]
+needs = [{ need = "Talking by proximity voice (upper body, low weight)", no = 28, layer = "upper" }]

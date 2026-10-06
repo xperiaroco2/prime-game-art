@@ -68,7 +68,7 @@ the look. Agents write everything else, verify it from the command line, and the
 | `sources/` | Source records of downloaded packs and libraries: licence, page, raw paths and hashes (`docs/manifest.md`) |
 | `tools/run.py`, `run.cmd`, `run.sh` | The runner; commands are modules in `tools/runner/commands/` |
 | `tools/runner/` | `cli.py`, `common.py`, `pins.py` (tool versions and paths), `blender.py` (headless Blender) |
-| `tools/blender/` | Scripts that run inside Blender (`docs/blender.md`): `um/` (the Ultimate Modular assembler, `docs/assembly.md`), `retarget*.py` with `retarget_maps/` (bone maps), `anim_*.py` with `anim_review.toml`, `catalogue*.py`, `faces_*.py`, `export_glb.py` |
+| `tools/blender/` | Scripts that run inside Blender (`docs/blender.md`): `um/` (the Ultimate Modular assembler, `docs/assembly.md`), `retarget*.py` with `retarget_maps/` (bone maps), `anim_*.py` with `anim_review.toml`, `anim_edit*.py` (the clip edits), `anim_set*.py` with `anim_sets/` (animation sets: the MVP, `docs/animations.md`), `catalogue*.py`, `faces_*.py`, `export_glb.py` |
 | `tools/godot/` | The headless Godot project that generates the contract |
 | `tools/githooks/` | `pre-push`; `doctor` sets `core.hooksPath` to it |
 | `tools/tests/` | unittest tests, `test_<area>_*.py`; a test needing Blender, Godot or the raw files skips when they are missing |
@@ -94,8 +94,9 @@ Windows: `tools\run.cmd <command>`. Git Bash: `tools/run.sh <command>`. Python 3
 | `frames <glb> [--clips] [--compare] [--video] [--blend]` | Godot-rendered motion frame sheets in an off-screen window; a Blender comparison of joints and bone rotations; MP4 clips (`docs/godot.md`) |
 | `catalogue [--check] [--renders ...]` | The parts catalogue and compatibility rules, `catalogue/ultimate_modular.json`; `--check` regenerates and compares (`docs/catalogue.md`) |
 | `faces [--families] [--expressions] [--sheets] [--check]` | The face kit's style families rendered as review sheets (`docs/faces.md`) |
-| `retarget [--body] [--library ual2] [--blend] [--floor]` | Bakes Universal Animation Library clips onto a body type's Ultimate Modular armature (`docs/animations.md`) |
+| `retarget [--body] [--library ual2\|tm] [--clips] [--blend] [--floor]` | Bakes Universal Animation Library (UAL1, UAL2) and Meshy text-to-motion (`tm`) clips onto a body type's Ultimate Modular armature (`docs/animations.md`) |
 | `anim-review <inventory\|clips\|pairs\|rates\|sheets\|table\|all> [--body] [--sources] [--clips]` | Judges animations in motion: inventory, measures, strips, MP4 clips, side-by-side pairs, the game's speeds (`rates`), sheets, table (`docs/animations.md`) |
+| `anim-set [--set mvp] [--body] [--clips] [--out] [--no-export] [--no-godot]` | Builds an animation set per body type from its settings (sources, clip edits, loops, layers): `.blend`, GLB, godot-check and the set's checks into `<raw>/anim-sets/<set>/` (`docs/animations.md`) |
 | `meshy`, `raw-backup` | The Meshy client for approved batches; copy chosen raw files to OneDrive (`docs/meshy.md`) |
 | `contract`, `check`, `rename-bones` | Generate the contract from Godot; check a model against it; rename a rig's bones (`docs/contract.md`) |
 

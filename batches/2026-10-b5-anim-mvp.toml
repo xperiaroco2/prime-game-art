@@ -1,0 +1,71 @@
+# Batch 5: the animation MVP's gaps as Meshy text to motion (art #33). The game needs 32 animations; the gaps no free
+# UAL clip fills get one prime text-to-motion clip each (the list and the prompts: the faces and animation research of
+# 2026-10-05, raw:manager/stage1/faces-research.json, key "animation"). The clips are retargeted straight from their
+# SMPL-H FBX onto the Ultimate Modular rig (no Meshy rig, no animate step), then cut, cleaned and mirrored or reversed
+# in Blender (art #33):
+#   backward-jog          walking backwards at 4.5 m/s (stride-warped; 7.0 m/s at about 1.55x)
+#   strafe-left           sideways at 4.5 m/s, mirrored for the right; diagonals blend in the game
+#   turn-left-90          turning in place, mirrored for the right
+#   shove-stumble         being pushed (a one-shot when contact starts)
+#   package-lift          picking the package up with both hands; played reversed for the put-down
+#   rollup-to-all-fours   from the knocked-down pose on the back onto hands and knees (the crawl start)
+#   getup-from-all-fours  standing up after a revive when the player had crawled
+# Left out: the crawl (batch 4's crawl-motion is cleaned up first, for free) and the gestures after the MVP.
+# Prompts name no game and no character.
+#
+# Credits (docs.meshy.ai, read 2026-10-03): text to motion prime 10 each: 70, cap 70. A clip that fails review is
+# re-generated in a new batch from the 30-credit reserve the engineer approved with this one.
+#   tools/run.py meshy estimate 2026-10-b5-anim-mvp
+#   tools/run.py meshy run 2026-10-b5-anim-mvp
+
+id = "2026-10-b5-anim-mvp"
+purpose = "Seven prime text-to-motion clips for the animation MVP's gaps, retargeted onto the Ultimate Modular rig (art #33)."
+plan = "Meshy Pro (monthly)"
+terms_url = "https://www.meshy.ai/terms-of-use"
+licence = "owned by the customer on a paid plan (Meshy Terms of Use 3.2, updated 2026-09-19); text-to-motion clips are AI-generated"
+credit_cap = 70
+approved_by = "xperiaroco2 (the engineer)"
+approved_at = "2026-10-06"
+approval_ref = "https://github.com/xperiaroco2/prime-game-art/issues/16#issuecomment-6014106083"
+
+[[items]]
+id = "backward-jog"
+kind = "text_to_motion"
+prompt = "A person jogs backwards in a straight line at a steady, brisk pace, chest and head facing straight ahead, light quick steps landing on the balls of the feet, knees bent, arms bent at the elbows and swinging naturally, torso leaning slightly forward. An even, repeating cycle that starts and ends in the same pose."
+params = { duration = 4, mode = "prime" }
+
+[[items]]
+id = "strafe-left"
+kind = "text_to_motion"
+prompt = "A person jogs sideways to the left in a straight line at a steady, brisk pace, chest and head facing straight ahead the whole time, hips turned slightly toward the motion, legs crossing over in quick side steps, arms bent and swinging lightly. An even, repeating cycle that starts and ends in the same pose."
+params = { duration = 4, mode = "prime" }
+
+[[items]]
+id = "turn-left-90"
+kind = "text_to_motion"
+prompt = "A person stands relaxed, then turns 90 degrees to the left on the spot with two small steps, the head leading the turn, and ends standing relaxed facing the new direction. The feet stay flat on the floor between the steps and the body does not travel."
+params = { duration = 3, mode = "prime" }
+
+[[items]]
+id = "shove-stumble"
+kind = "text_to_motion"
+prompt = "A person standing is shoved hard in the chest from the front and stumbles backwards three short steps, arms thrown forward and out for balance, torso bent forward, then catches their balance and stands upright again. No other person or object is visible."
+params = { duration = 3, mode = "prime" }
+
+[[items]]
+id = "package-lift"
+kind = "text_to_motion"
+prompt = "A person stands, bends at the knees and hips, takes a small box from the floor just in front with both hands, and stands back up holding it low in front of the belly with both hands, elbows bent, palms under the box. Quick and light, the lift takes about one second, then they stand still holding it."
+params = { duration = 2.5, mode = "prime" }
+
+[[items]]
+id = "rollup-to-all-fours"
+kind = "text_to_motion"
+prompt = "A person lies hurt on their back on the floor, arms at the sides, then rolls onto their side and pushes up onto hands and knees, head low, and stays there breathing heavily. Slow and weak, as if injured."
+params = { duration = 4, mode = "prime" }
+
+[[items]]
+id = "getup-from-all-fours"
+kind = "text_to_motion"
+prompt = "A person on hands and knees on the floor, hurt, pushes up with the arms, brings one foot forward and stands up, then stands relaxed with the arms at the sides. Steady and a little tired, about one and a half seconds."
+params = { duration = 3, mode = "prime" }

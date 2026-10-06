@@ -114,6 +114,38 @@ def loop_seam(first: dict, last: dict, steps: list[float]) -> dict:
             "seam_ratio": round(seam / step, 1) if step > 1e-6 else None}
 
 
+
+def floor_clamp_weight(dz: float, full: float = 0.20, fade: float = 0.10, below: float = 0.02,
+                       below_fade: float = 0.04) -> float:
+    """How much the retarget's floor clamp (the toe lift, retarget_core) acts on a foot whose pivot is dz m above its
+    rest height: fully from `below` m under it to `full` m over it, fading out linearly over `fade` m above and over
+    `below_fade` m below. A pivot well under the floor is an in-place jump without its rise, which the clamp leaves
+    alone; the fade below keeps a foot hovering on that line from switching the clamp fully on and off between two
+    frames (art #33: UAL's Jump_Loop flicked the right foot 53 degrees and back four times a loop)."""
+    if dz < -below:
+        return min(max(1.0 - (-below - dz) / below_fade, 0.0), 1.0)
+    return min(max(1.0 - (dz - full) / fade, 0.0), 1.0)
+
+
+POP_MIN_DEG, POP_RATIO = 20.0, 3.0  # a one-frame pop: one step this large, its neighbours under a third of it
+
+
+def one_frame_pops(steps: list[float], loop: bool = False, min_deg: float = POP_MIN_DEG,
+                   ratio: float = POP_RATIO) -> list[int]:
+    """The one-frame pops of a bone (art #33's review): steps[i] is its rotation (degrees) from frame i to frame i + 1;
+    a pop is a step of at least min_deg whose neighbouring steps are both under 1/ratio of it (a snap between two
+    poses that are each held, which no seam or median-step measure sees). A loop's steps wrap round (its last frame
+    is its first); a one-shot's first and last steps have one neighbour. Returns the indices i."""
+    n = len(steps)
+    out = []
+    for i, st in enumerate(steps):
+        if st < min_deg:
+            continue
+        near = [steps[j % n] for j in (i - 1, i + 1) if loop or 0 <= j < n]
+        if all(x < st / ratio for x in near if x is not None):
+            out.append(i)
+    return out
+
 def summary(values: list[float], digits: int = 1) -> dict:
     if not values:
         return {"min": None, "max": None, "mean": None}

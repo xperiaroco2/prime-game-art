@@ -115,6 +115,7 @@ without Godot:
 | `godot_output` | no ERROR line in Godot's import and inspection output (warnings are listed) |
 | `contract_height`, `contract_eye_height` | the contract v1 body gates (height 1.70 to 1.80 m to the top, eyes 1.6 +- 0.08 m): **warnings** unless `--strict-contract` |
 | `loop_modes` | **warning** while a cycle (`Idle*`, `Walk*`, `Run*`) imports with loop_mode NONE; names the open cycles |
+| `loop_suffix` | an action named as a loop (`_Loop`, art #33) imports with loop_mode LINEAR under its name without the suffix (`Idle_Loop` becomes `Idle`); `animations` and `animation_lengths` compare Godot's names |
 | `expectations`, `pack_floor` | only for a GLB without its `<stem>.export.json`: a **warning** that parts, bones and animations then come from the GLB itself (what it already lacks is not caught; no rest joints, hierarchy or Blender height), and a failure below the Ultimate Modular rig's 62 bones and 24 actions |
 
 The contract v1 gates are warnings by default because contract v1 was written for the earlier single base body: every
@@ -207,13 +208,19 @@ contract v2's.
   `godot-check` pass unchanged (2026-10-03, m1_rex and w1_ivy: one skin of 64 joints, 64 binds per part, every check
   ok); the 24 pack animations still hold 62 tracks each (1488 in all): the toes have no track and rest under the feet.
 
-- **Loop modes**: Godot imports all 24 animations with loop_mode NONE (the glTF names carry no `-loop` suffix): in the
-  game the idles, Walk and Run would play once and stop. The game's import sets their loop mode (per-animation
-  `settings/loop_mode` in `_subresources`) or the names get a loop suffix: the contract v2 decides.
+- **Loop modes**: Godot imports the pack's 24 animations with loop_mode NONE (their glTF names carry no loop suffix):
+  in the game the idles, Walk and Run would play once and stop. The game's import sets their loop mode (per-animation
+  `settings/loop_mode` in `_subresources`) or the names get a loop suffix: the contract v2 decides. An animation set
+  (art #33, `docs/animations.md`) already names its loops `<Name>_Loop`: Godot 4.7.2 imports them LINEAR as `<Name>`
+  (measured), and `godot-check` asserts it (`loop_suffix`).
 - **Open cycles**: `Run`, `Run_Left` and `Run_Right` (both body types) end one frame before their first pose comes
   round; looped at the length of their keys they skip a step at every repeat. Their loop length in the game is
   (last frame + 1) / 24 s: 0.833 s for the men, 1.042 s for the women.
-- **The game's import options**: `animation/fps = 24` and the AnimationPlayer's `optimizer/enabled = false` (above).
+- **The game's import options**: the AnimationPlayer's `optimizer/enabled = false` (above), and `animation/fps` at the
+  rate the GLB was baked at, which its `.export.json` records: 24 for the pack's own clips, **30 for an animation set**
+  (art #33). `godot-check`, `frames` and `--humanoid` import a GLB at that rate (`_godot.import_params`). Godot
+  resamples every track at `animation/fps`: a 30 fps set imported at 24 would lose up to about 20 degrees on the
+  fastest joints (the jump's take-off, estimated from the GLB's keys, art #33's review).
 
 - **The women's clips are 25 % longer** than the men's of the same name, in the pack's own files (Walk 1.67 s against
   1.33 s, Run 1.00 s against 0.79 s, Idle 2.08 s against 1.67 s): the women walk and run more slowly at the same game

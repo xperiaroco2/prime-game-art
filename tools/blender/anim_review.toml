@@ -45,12 +45,44 @@ own = "w1_ivy"
 map = "meshy_um.toml"
 rigid_map = "meshy_um_rigid.toml"
 
+# Meshy text to motion (art #33): one FBX per clip on an SMPL-H skeleton (52 bones with fingers), retargeted straight
+# onto our rig with smpl_um.toml (no Meshy rig, no animate step). Owned output of the Pro plan, ai_generated.
+# `format = "smplh_fbx"`: `file` is the rig (every file has the same rest, lifted onto the floor by the loader,
+# tools/blender/retarget_smpl.py), `clips` names each clip's file (every file's action is "Base Layer"); the clip names
+# are the batch items' ids. `in_place` clips have their travel taken out for the review's lanes; `own` plays a clip on
+# the SMPL-H mannequin ("tm_own:<clip>"). No `rm`, no `rigid_map` (the toe bones are always on).
+[libraries.tm]
+format = "smplh_fbx"
+file = "2026-10-b4-animations/crawl-motion/text_to_motion-clip.fbx"
+label = "TTM"
+map = "smpl_um.toml"
+own = "SMPL-H mannequin"
+in_place = ["crawl", "backward-jog", "strafe-left", "shove-stumble", "getup-from-all-fours"]
+[libraries.tm.clips]
+crawl = "2026-10-b4-animations/crawl-motion/text_to_motion-clip.fbx"
+backward-jog = "2026-10-b5-anim-mvp/backward-jog/text_to_motion-clip.fbx"
+strafe-left = "2026-10-b5-anim-mvp/strafe-left/text_to_motion-clip.fbx"
+turn-left-90 = "2026-10-b5-anim-mvp/turn-left-90/text_to_motion-clip.fbx"
+shove-stumble = "2026-10-b5-anim-mvp/shove-stumble/text_to_motion-clip.fbx"
+package-lift = "2026-10-b5-anim-mvp/package-lift/text_to_motion-clip.fbx"
+rollup-to-all-fours = "2026-10-b5-anim-mvp/rollup-to-all-fours/text_to_motion-clip.fbx"
+getup-from-all-fours = "2026-10-b5-anim-mvp/getup-from-all-fours/text_to_motion-clip.fbx"
+
+# Animation sets (art #33; tools/blender/anim_sets/, docs/animations.md "Animation sets"): `tools/run.py anim-set`
+# builds and exports a set; the review plays its clips as "<set>:<clip>" ("mvp:Jog_Fwd_Loop"), built in the review's
+# own process from the same settings, and plays a set's locomotion at the game's speeds divided by the clip's
+# speed_m_s (what the game does).
+[sets]
+mvp = "anim_sets/mvp.toml"
+
 # Layered clips "<base>|<upper>" (tools/blender/anim_keys.py): the base clip's hips and legs under the upper clip's
 # `upper` bone and every bone below it (spine, head, arms, fingers), as an engine layers an upper-body clip. `clips`
 # are layered clips that a run over all clips (or over one of their sources) measures beside the plain ones.
 [layer]
 upper = "Torso"
-clips = ["ual:Idle_Loop|ual2:Walk_Carry_Loop"]  # the carry idle: UAL2 has no idle carry
+clips = ["ual:Idle_Loop|ual2:Walk_Carry_Loop",  # the carry idle: UAL2 has no idle carry
+         "mvp:Idle_Loop|mvp:Push_Upper_Loop", "mvp:Idle_Loop|mvp:Talk_Upper_Loop",  # the MVP layers (art #33)
+         "mvp:Idle_Loop|mvp:Carry_Upper_Loop"]
 
 # The clips play on pack originals, each also its body type's skeleton and action donor, given the assembler's toe
 # bones Toe.L and Toe.R (tools/blender/um/toes.py, art #25; `toe_bones = false` leaves them out): the pack's clips key
@@ -318,3 +350,111 @@ sets = [["meshyw_own:Walking_Woman", "meshyw:Walking_Woman", "meshy:Walking", "u
 name = "meshy_toes"
 body = "men"
 clips = ["meshy:Walking", "meshy:RunFast"]
+
+# The animation MVP set (art #33; [sets] mvp, tools/blender/anim_sets/mvp.toml): its locomotion at the game's speeds,
+# each set clip at the row's speed over its speed_m_s (as the game plays it), on a treadmill moving along `direction`.
+[[rates]]
+name = "mvp_walk_4.5"
+label = "the MVP walk: the jog warped to 4.5 m/s"
+speed = 4.5
+clips = ["mvp:Jog_Fwd_Loop", "blend:Walk_Loop+Jog_Fwd_Loop", "ual:Jog_Fwd_Loop"]
+[[rates]]
+name = "mvp_back_4.5"
+label = "the MVP backward walk"
+speed = 4.5
+direction = "back"
+clips = ["mvp:Jog_Bwd_Loop", "mvp:Jog_Bwd_TTM_Loop", "pack:Run_Back"]
+[[rates]]
+name = "mvp_strafe_left_4.5"
+label = "the MVP strafe to the left"
+speed = 4.5
+direction = "left"
+clips = ["mvp:Strafe_Left_Loop", "pack:Run_Left"]
+[[rates]]
+name = "mvp_strafe_right_4.5"
+label = "the MVP strafe to the right"
+speed = 4.5
+direction = "right"
+clips = ["mvp:Strafe_Right_Loop", "pack:Run_Right"]
+[[rates]]
+name = "mvp_sprint_7.0"
+label = "the MVP sprint"
+speed = 7.0
+clips = ["mvp:Sprint_Fwd_Loop", "ual:Sprint_Loop"]
+[[rates]]
+name = "mvp_back_7.0"
+label = "the MVP sprint backward (the walk at 1.556x)"
+speed = 7.0
+direction = "back"
+clips = ["mvp:Jog_Bwd_Loop", "mvp:Jog_Bwd_TTM_Loop"]
+[[rates]]
+name = "mvp_strafe_left_7.0"
+label = "the MVP sprint to the left (the strafe at 1.556x)"
+speed = 7.0
+direction = "left"
+clips = ["mvp:Strafe_Left_Loop"]
+[[rates]]
+name = "mvp_strafe_right_7.0"
+label = "the MVP sprint to the right (the strafe at 1.556x)"
+speed = 7.0
+direction = "right"
+clips = ["mvp:Strafe_Right_Loop"]
+[[rates]]
+name = "mvp_crawl_1.0"
+label = "the MVP crawl, downed"
+speed = 1.0
+clips = ["mvp:Crawl_Loop", "tm:crawl"]
+[[rates]]
+name = "mvp_carry_4.5"
+label = "the MVP walk with the package"
+speed = 4.5
+clips = ["mvp:Jog_Fwd_Loop|mvp:Carry_Upper_Loop", "mvp:Jog_Fwd_Loop"]
+[[rates]]
+name = "mvp_carry_7.0"
+label = "the MVP sprint with the package"
+speed = 7.0
+clips = ["mvp:Sprint_Fwd_Loop|mvp:Carry_Upper_Loop", "mvp:Sprint_Fwd_Loop"]
+[[rates]]
+name = "mvp_push_2.25"
+label = "pushing at the push speed: the push layer (leant 30 degrees) over the walk at 0.5x"
+speed = 2.25
+clips = ["mvp:Jog_Fwd_Loop|mvp:Push_Upper_Loop", "mvp:Jog_Fwd_Loop"]
+
+# The MVP set's one-shots and layers against their sources (art #33).
+[[pairs]]
+name = "mvp_knockdown"
+clips = ["mvp:Knockdown", "ual:Death01"]
+[[pairs]]
+name = "mvp_jump"
+clips = ["mvp:Jump_Start", "mvp:Jump_Air_Loop", "mvp:Jump_Land", "ual:Jump_Start", "ual:Jump_Land"]
+[[pairs]]
+name = "mvp_knife"
+clips = ["mvp:Knife_Swing", "pack:Sword_Slash", "mvp:Jog_Fwd_Loop|mvp:Knife_Swing"]
+[[pairs]]
+name = "mvp_pickup_one"
+clips = ["mvp:Pickup_One", "mvp:Putdown_One", "ual2:Farm_Harvest"]
+[[pairs]]
+name = "mvp_package"
+clips = ["mvp:Pickup_Package", "mvp:Putdown_Package", "mvp:Idle_Loop|mvp:Carry_Upper_Loop", "tm:package-lift"]
+[[pairs]]
+name = "mvp_pushed"
+clips = ["mvp:Shove_Stumble", "tm:shove-stumble", "ual:Hit_Chest"]
+[[pairs]]
+name = "mvp_turn"
+clips = ["mvp:Turn_Left", "mvp:Turn_Right", "tm:turn-left-90"]
+[[pairs]]
+name = "mvp_downed"
+note = "the chain: knocked down, the roll-up (review only), the crawl, the get-ups"
+clips = ["mvp:Knockdown", "mvp:Crawl_Start", "mvp:Crawl_Loop", "mvp:Getup_Fours", "mvp:Getup_Back"]
+[[pairs]]
+name = "mvp_raise"
+clips = ["mvp:Raise_In", "mvp:Raise_Work_Loop", "mvp:Raise_Out", "ual:Fixing_Kneeling"]
+[[pairs]]
+name = "mvp_layers"
+note = "the upper-body layers over the idle, fixed against the originals"
+clips = ["mvp:Idle_Loop|mvp:Push_Upper_Loop", "mvp:Idle_Loop|mvp:Talk_Upper_Loop", "mvp:Idle_Loop|mvp:Carry_Upper_Loop",
+         "ual:Idle_Loop|ual:Push_Loop", "ual:Idle_Loop|ual:Idle_Talking_Loop", "ual:Idle_Loop|ual2:Walk_Carry_Loop"]
+[[pairs]]
+name = "mvp_women_arms"
+body = "women"
+clips = ["mvp:Idle_Loop", "ual:Idle_Loop"]

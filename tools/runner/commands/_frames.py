@@ -44,12 +44,13 @@ def is_open(seam: dict[str, float] | None) -> bool:
     return bool(seam) and (seam["position_mm"] > SEAM_MM or seam["rotation_deg"] > SEAM_DEG)
 
 
-def cycle(length: float, short: str, seam: dict[str, float] | None = None, fps: int = FPS) -> dict[str, Any]:
+def cycle(length: float, short: str, seam: dict[str, float] | None = None, fps: int = FPS,
+          loop: bool | None = None) -> dict[str, Any]:
     """How a clip plays: a closed loop's last frame repeats its first, so one cycle is frames 0 to last - 1; an open
     loop's cycle is frames 0 to last, and the first comes round again one frame after the last (the pack's Run is
     0.83 s, not the 0.79 s of its keys); a one-off runs from its first frame to its last."""
     last = round(length * fps)
-    loop = is_loop(short)
+    loop = is_loop(short) if loop is None else loop
     open_cycle = loop and is_open(seam)
     frames = last + 1 if open_cycle or not loop else last
     if not loop:
@@ -60,27 +61,31 @@ def cycle(length: float, short: str, seam: dict[str, float] | None = None, fps: 
             "video_frames": frames, "note": note}
 
 
-def times(length: float, short: str, fps: int = FPS, open_cycle: bool = False) -> list[float]:
+def times(length: float, short: str, fps: int = FPS, open_cycle: bool = False, loop: bool | None = None) -> list[float]:
     """Evenly spaced sample times on whole frames (where the export's samples are exact): 12 for locomotion, else 8.
     A loop is cut into equal parts of its cycle (one frame longer than its keys when open_cycle); a one-off runs from
     its first frame to its last."""
     n = 12 if is_locomotion(short) else 8
     frames = round(length * fps) + (1 if open_cycle else 0)
-    steps = n if is_loop(short) else n - 1
+    steps = n if (is_loop(short) if loop is None else loop) else n - 1
     return [round(round(i * frames / steps) / fps, 6) for i in range(n)]
 
 
 def spec(character: str, animations: dict[str, float], compare: list[str], video: list[str],
-         seams: dict[str, dict[str, float]] | None = None) -> dict[str, Any]:
-    """The spec frames.gd reads: every animation (name -> length in seconds), sorted by name; seams from export.json."""
+         seams: dict[str, dict[str, float]] | None = None, fps: int = FPS,
+         loops: set[str] | None = None) -> dict[str, Any]:
+    """The spec frames.gd reads: every animation (name -> length in seconds), sorted by name; seams from export.json;
+    fps the export's (whole frames of a 30 fps animation set, art #33); `loops` the animations Godot loops because
+    of their name (an animation set's _Loop clips), beside the pack's idles and locomotion."""
     clips = []
     for name in sorted(animations):
         short = label(name)
-        how = cycle(animations[name], short, (seams or {}).get(name))
+        loop = True if loops and name in loops else None
+        how = cycle(animations[name], short, (seams or {}).get(name), fps, loop)
         clips.append({"name": name, "label": short, **how,
-                      "times": times(animations[name], short, open_cycle=how["open_cycle"]),
+                      "times": times(animations[name], short, fps, open_cycle=how["open_cycle"], loop=how["loop"]),
                       "keep": short in compare, "video": short in video})
-    return {"character": character, "cell": list(CELL), "yaw_deg": YAW_DEG, "pitch_deg": PITCH_DEG, "fps": FPS,
+    return {"character": character, "cell": list(CELL), "yaw_deg": YAW_DEG, "pitch_deg": PITCH_DEG, "fps": fps,
             "clips": clips}
 
 

@@ -12,7 +12,11 @@ from .. import common
 BLENDER_DIR = common.ROOT / "tools" / "blender"
 CONFIG = BLENDER_DIR / "anim_review.toml"
 BODIES = ("men", "women")
-LIBRARY_KEYS = {"file", "rm", "label", "map", "rigid_map", "extra", "rename", "skip", "in_place", "own"}
+LIBRARY_KEYS = {"file", "rm", "label", "map", "rigid_map", "extra", "rename", "skip", "in_place", "own", "format",
+                "clips"}
+# a library's `format`: GLB files whose actions are the clips (the default), or Meshy text to motion's FBX files on an
+# SMPL-H skeleton, one clip per file named by `clips` (art #33; tools/blender/retarget_smpl.py)
+FORMATS = ("glb", "smplh_fbx")
 MAPS = BLENDER_DIR / "retarget_maps"
 
 
@@ -35,22 +39,71 @@ def load_config(path: Path = CONFIG) -> dict:
         for name in (lib.get("map"), lib.get("rigid_map")):  # bone maps of a library on another rig (art #25)
             if name is not None and not (MAPS / str(name)).is_file():
                 raise common.Failure(f"{path.name}: [libraries.{key}] names a bone map {name!r} that is not in {MAPS}")
+        _check_format(path, key, lib)
+    for key, rel in cfg.get("sets", {}).items():  # animation sets (art #33): "<set>:<clip>" keys
+        if key in ("pack", "blend", "layer", "ual") or key in cfg.get("libraries", {}) or not key.isidentifier():
+            raise common.Failure(f"{path.name}: [sets] {key} needs another name (a source of clips has it)")
+        if not (isinstance(rel, str) and (BLENDER_DIR / rel).is_file()):
+            raise common.Failure(f"{path.name}: [sets] {key} = {rel!r} is no file in {BLENDER_DIR}")
     return cfg
+
+
+def _check_format(path: Path, key: str, lib: dict) -> None:
+    """A library's `format` and, for text to motion, its `clips` table {clip name: raw-relative FBX path}."""
+    fmt = lib.get("format", "glb")
+    where = f"{path.name}: [libraries.{key}]"
+    if fmt not in FORMATS:
+        raise common.Failure(f"{where} format {fmt!r} is not one of {', '.join(FORMATS)}")
+    clips = lib.get("clips")
+    if fmt == "glb":
+        if clips is not None:
+            raise common.Failure(f"{where} clips: only a library of one file per clip (format smplh_fbx) names them")
+        return
+    if not (isinstance(clips, dict) and clips):
+        raise common.Failure(f"{where} needs [libraries.{key}.clips]: clip name = its FBX file (raw-relative)")
+    for name, rel in clips.items():
+        if not (isinstance(rel, str) and rel.strip() and rel.lower().endswith(".fbx") and not Path(rel).is_absolute()):
+            raise common.Failure(f"{where} clips.{name}: {rel!r} is not a raw-relative .fbx path")
+    if "map" not in lib:
+        raise common.Failure(f"{where} needs map (the SMPL-H bone map)")
+    unknown = sorted(set(lib) & {"extra", "rename", "skip", "rm"})
+    if unknown:
+        raise common.Failure(f"{where} {', '.join(unknown)}: not for a library of one file per clip")
+    missing = sorted(set(lib.get("in_place", [])) - set(clips))
+    if missing:
+        raise common.Failure(f"{where} in_place names clips it lacks: {', '.join(missing)}")
 
 
 def libraries(cfg: dict) -> dict[str, dict]:
     """Every library of clips, UAL1 first: {key: {file, rm, label, extra}} (raw-relative paths; rm is None for a
-    library without a root-motion file, such as Meshy's)."""
+    library without a root-motion file, such as Meshy's; extra: every further file the library reads, a Meshy
+    library's extra GLBs or a text-to-motion library's clip files, art #33)."""
     out = {"ual": {"file": cfg["ual"], "rm": cfg["ual_rm"], "label": "UAL", "extra": []}}
     for key, lib in cfg.get("libraries", {}).items():
+        clip_files = [f for f in dict.fromkeys(lib.get("clips", {}).values()) if f != lib["file"]]
         out[key] = {"file": lib["file"], "rm": lib.get("rm"), "label": lib.get("label", key.upper()),
-                    "extra": list(lib.get("extra", []))}
+                    "extra": list(lib.get("extra", [])) + clip_files}
     return out
 
 
 def sources(cfg: dict) -> set[str]:
-    """Every clip source of the review: the pack and each library."""
-    return {"pack", *libraries(cfg)}
+    """Every clip source of the review: the pack, each library and each animation set (art #33)."""
+    return {"pack", *libraries(cfg), *cfg.get("sets", {})}
+
+
+def set_file(cfg: dict, key: str) -> Path:
+    """An animation set's settings file (the review settings' [sets], relative to tools/blender)."""
+    return BLENDER_DIR / cfg["sets"][key]
+
+
+def set_keys(cfg: dict, only: set[str] | None = None) -> list[str]:
+    """Every clip of the animation sets as "<set>:<clip>" (art #33); `only` keeps those of these sources."""
+    keys = []
+    for key in cfg.get("sets", {}):
+        if only is None or key in only:
+            data = tomllib.loads(set_file(cfg, key).read_text(encoding="utf-8"))
+            keys += [f"{key}:{c['name']}" for c in data.get("clips", [])]
+    return keys
 
 
 def raw_path(relative: str) -> Path:

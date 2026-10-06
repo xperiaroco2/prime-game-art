@@ -363,6 +363,53 @@ The library listing answered on 2026-10-03 with a list of 678 actions, each `act
 name), `category`, `sub_category` and `preview_url` (the docs page lists 591, ids 0 to 590; ids from 591 on repeat
 earlier names).
 
+## Batch 5, 2026-10-b5-anim-mvp (art #33)
+
+Seven prime text-to-motion clips for the gaps of the animation MVP (a backward jog, a strafe to the left, a 90-degree
+turn to the left, a shove and stumble, a two-handed package lift, a roll-up from the back onto all fours and a get-up
+from all fours): 70 credits, cap 70, approved by the engineer with a reserve of 30 for re-rolls
+([art #16](https://github.com/xperiaroco2/prime-game-art/issues/16#issuecomment-6014106083), the batch's
+`approval_ref`). The prompts are in the batch file; they name no game and no character. No rig and no animate step:
+each FBX (SMPL-H, 52 bones with fingers) is retargeted straight onto the Ultimate Modular rig (docs/animations.md,
+"Text to motion"), then cleaned by the clip edits into the MVP set (`tools/run.py anim-set`; "Animation sets").
+
+**Run** on 2026-10-06, 10:16 to 10:18 UTC, by the art manager (`meshy run 2026-10-b5-anim-mvp`): balance **315
+before, 245 after: 70 credits**, every task charged as estimated (`log.csv` and each item's `generation.json` in
+`raw:2026-10-b5-anim-mvp/`). Each item is one `text_to_motion-clip.fbx` (FBX 7700, 30 fps, frames 1 to 120, 90 or 75
+for 4, 3 or 2.5 s).
+
+| Item | Task | Credits | Balance | Length |
+|---|---|---|---|---|
+| `backward-jog` | text to motion `01a110b6-6928-77df-aef2-1dbfec14c511` | 10 | 315 -> 305 | 3.97 s |
+| `strafe-left` | `01a110b6-ad19-71b4-8bcb-d39541e78714` | 10 | 305 -> 295 | 3.97 s |
+| `turn-left-90` | `01a110b6-f03e-71aa-8a5d-7ee60d2e9653` | 10 | 295 -> 285 | 2.97 s |
+| `shove-stumble` | `01a110b7-32c3-761f-b52f-82be52e6eb96` | 10 | 285 -> 275 | 2.97 s |
+| `package-lift` | `01a110b7-7514-7700-8538-a08f29a4b06b` | 10 | 275 -> 265 | 2.47 s |
+| `rollup-to-all-fours` | `01a110b7-b8af-73c8-8abb-6cf5c1ea7e42` | 10 | 265 -> 255 | 3.97 s |
+| `getup-from-all-fours` | `01a110b7-fdab-73fa-8989-acd5a1ca1c2a` | 10 | 255 -> 245 | 2.97 s |
+
+What the review found (the measures and the per-need verdicts:
+[research/2026-10-06-animation-mvp.md](research/2026-10-06-animation-mvp.md)):
+
+- the strafe, the turn, the shove and the package lift clean up into MVP clips (`Strafe_Left_Loop` and its mirror,
+  `Turn_Left` and its mirror, `Shove_Stumble`, `Pickup_Package` and its reverse);
+- the roll-up and the get-up from all fours float (8 to 14 and 6 to 13 cm) over their whole length; the floor settle
+  puts them on the floor and both read as what they are in the review, so they ship as flagged stopgaps
+  (`Crawl_Start`, `Getup_Fours`): the roll-up's hands stay short of the floor, the get-up lifts off 4.5 cm mid-rise;
+- the backward jog barely travels (0.3 m/s: its steps would have to grow about 7x to reach 4.5 m/s), so the
+  reversed forward jog stands in for it.
+
+Re-roll candidates (refined prompts in the research note). The reserve was approved for re-generating a batch-5 clip
+that fails review, so it covers, in order: the roll-up, the backward jog, then the strafe (its hips and head turn
+about 20 degrees apart off the aim) or the get-up from all fours (only if the review rejects its stopgap). Batch 4's
+crawl (no cycle repeats: the loop is closed over a 26-degree seam; the hands skate) is not a batch-5 clip, and the
+approval said it would be cleaned up for free: its re-roll needs the engineer's yes for 10 credits, or the manager's
+reading that it counts under the reserve, recorded in the re-roll batch's `approval_ref`. Spend so far on the MVP: 70
+of the 70 approved; the reserve is untouched.
+
+**A manifest that uses a batch-5 clip** records the owned output of the paid plan: `public_repo_ok = true`,
+`ai_generated = true`, the text-to-motion task id and `source.model_version = "prime"`.
+
 ## Batch 4, 2026-10-b4-animations (art #25)
 
 Meshy's animations on our own characters: rigs of m1_rex and w1_ivy from `meshy rig-input` (pinned by sha256), ten

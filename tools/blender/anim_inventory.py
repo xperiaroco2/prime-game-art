@@ -1,7 +1,8 @@
 """The animation inventory (tools/run.py anim-review inventory; docs/animations.md): every Ultimate Modular pack
 file's 24 actions (names, lengths, whether they are identical across the files of a body type, how the men's and the
 women's differ) and the Universal Animation Library's clips in both files of each library, UAL1 ("ual", "ual_rm")
-and the review settings' [libraries] ("ual2", "ual2_rm"; art #24): names, lengths, loops, root motion.
+and the review settings' [libraries] ("ual2", "ual2_rm"; art #24; Meshy's rigs, art #25; Meshy text to motion's
+SMPL-H files, "tm", art #33): names, lengths, loops, root motion (an `in_place` clip also its travel taken out).
 
 Usage: blender -b --factory-startup --python-exit-code 1 --python anim_inventory.py -- --raw <raw dir>
            --config <anim_review.toml> --out <inventory.json>
@@ -133,6 +134,8 @@ def main(argv):
                         "root_speed_m_s": round(dist / s.seconds, 2) if s.seconds else 0.0,
                         "root_rise_m": round(r1.z - r0.z, 3),
                         "pelvis_travel_m": round(math.hypot(h1.x - h0.x, h1.y - h0.y), 3)}
+            if isinstance(s, anim_libs.InPlace):  # the travel the settings' in_place took out (a Meshy or TTM clip)
+                clips[n]["in_place_travel_m"] = round(s.travel_m, 3)
         inv["ual"][key] = {"file": rel, "clips": clips, "bones": len(ch["arm"].data.bones)}
         rests[key] = {b.name: (b.parent.name if b.parent else None, ch["arm"].matrix_world @ b.matrix_local)
                       for b in ch["arm"].data.bones}

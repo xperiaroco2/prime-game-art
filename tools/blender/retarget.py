@@ -7,7 +7,9 @@ A pack original as the target gets the assembler's toe bones first (um/toes.py, 
 Writes <out>/retarget_report.json (the hip-height ratio, the rest-pose check, each clip's frames and IK misses; with
 --floor also each clip's lowest vertex on the target and on the source's own mesh, scaled to the target) and,
 with --blend, <out>/<target>_<prefix>.blend (lower case): the target character with the baked actions "<prefix>|<clip>"
-(UAL|, UAL2|, Meshy|) and nothing else. UAL2 (art #24) has UAL1's rig and takes the same bone map.
+(UAL|, UAL2|, Meshy|, TTM|) and nothing else. UAL2 (art #24) has UAL1's rig and takes the same bone map. A library of
+Meshy text-to-motion FBX files (art #33) loads through anim_libs.load (retarget_smpl.py: the rig lifted onto the
+floor, `floor_shift_m` in the report).
 """
 
 import argparse
@@ -31,10 +33,11 @@ def lowest(char: dict) -> float:
     return min(float(world_points(o)[:, 2].min()) for o in char["meshes"].values())
 
 
-def floor(rt, src: dict, tgt: dict, src_action, baked) -> dict:
+def floor(rt, src: dict, tgt: dict, sampler, baked) -> dict:
     """The lowest vertex (cm) of the retargeted clip on the target, and of the source clip on the source's own mesh
-    scaled to the target's size: how deep a clip goes into the floor by itself, against what the retarget adds."""
-    s, t = rc.Sampler(src_action), rc.Sampler(baked)
+    scaled to the target's size: how deep a clip goes into the floor by itself, against what the retarget adds. The
+    source is sampled as the retarget sampled it (the library's sampler: in place, or with an SMPL-H floor shift)."""
+    s, t = sampler, rc.Sampler(baked)
     low_t = low_s = float("inf")
     for i in range(int(round(t.frames)) + 1):
         rc.apply_basis(tgt["arm"], t.basis(t.start + i))
@@ -44,6 +47,12 @@ def floor(rt, src: dict, tgt: dict, src_action, baked) -> dict:
     rc.reset_pose(tgt["arm"]), rc.reset_pose(src["arm"])
     return {"lowest_cm": round(100 * low_t, 1), "source_lowest_cm": round(100 * low_s, 1)}
 
+
+def clip_pops(rig, baked) -> list:
+    """A baked clip's one-frame pops, every bone (rc.pops; art #33: the floor clamp flicked Jump_Loop's right foot 53
+    degrees and back): [[bone, frame, degrees], ...]."""
+    t = rc.Sampler(baked)
+    return rc.pops(rig, [rc.fk(rig, t.basis(t.start + i)) for i in range(int(round(t.frames)) + 1)])
 
 def main(argv):
     ap = argparse.ArgumentParser(prog="retarget.py")
@@ -55,9 +64,9 @@ def main(argv):
     ap.add_argument("--no-ik", action="store_true")
     ap.add_argument("--blend", action="store_true")
     ap.add_argument("--floor", action="store_true")
-    ap.add_argument("--prefix", default="UAL", help="the baked actions' name prefix (UAL, UAL2, Meshy)")
+    ap.add_argument("--prefix", default="UAL", help="the baked actions' name prefix (UAL, UAL2, Meshy, TTM)")
     ap.add_argument("--config", help="the review settings: the library's extra files, renames and in-place clips")
-    ap.add_argument("--library", help="the library's key in the review settings (meshy, art #25)")
+    ap.add_argument("--library", help="the library's key in the review settings (meshy, art #25; tm, art #33)")
     ap.add_argument("--raw", help="the raw folder, which the settings' paths are relative to")
     a = ap.parse_args(argv)
     os.makedirs(a.out, exist_ok=True)
@@ -69,7 +78,8 @@ def main(argv):
 
         with open(a.config, "rb") as f:
             ent = anim_libs.entry(tomllib.load(f), a.library)
-    src = anim_libs.load(a.source, ent, a.raw, bmap["hips"][0])  # with a Meshy library's extra files (art #25)
+    # with a Meshy library's extra files (art #25), or a text-to-motion library's clip files (art #33)
+    src = anim_libs.load(a.source, ent, a.raw, bmap["hips"][0])
     tgt = rc.load_glb(a.target)
     toes = None
     if any(b.startswith("Toe.") and b not in tgt["arm"].data.bones for b in bmap["target_bones"]):
@@ -89,6 +99,7 @@ def main(argv):
         "source": a.source, "target": a.target, "map": bmap["title"], "ik": rt.ik, "fps": rc.FPS,
         "hip_height_m": {"source": round(rt.src_hip, 4), "target": round(rt.tgt_hip, 4)},
         "translation_scale": round(rt.ratio, 4),
+        "floor_shift_m": round(src.get("floor_shift_m", 0.0), 4),  # the source rig lifted onto the floor (SMPL-H)
         "soles": sorted(rt.soles),
         "toe_bones_added": bool(toes and toes.get("added")),
         "rest_check": rt.rest_error(),
@@ -98,9 +109,9 @@ def main(argv):
     for name in names:
         act, frames = rt.clip(src["actions"][name], f"{a.prefix}|{name}", tgt["arm"], src["samplers"][name])
         report["clips"][name] = {"frames": frames, "seconds": round(frames / rc.FPS, 3), "action": act.name,
-                                 "ik_miss_mm": round(rt.miss_mm, 2)}
+                                 "ik_miss_mm": round(rt.miss_mm, 2), "pops": clip_pops(rt.tgt, act)}
         if a.floor:
-            report["clips"][name].update(floor(rt, src, tgt, src["actions"][name], act))
+            report["clips"][name].update(floor(rt, src, tgt, src["samplers"][name], act))
         print("RETARGETED", name, frames, "frames, IK miss", round(rt.miss_mm, 2), "mm")
     report["seconds_spent"] = round(time.time() - t0, 1)
     with open(os.path.join(a.out, "retarget_report.json"), "w", encoding="utf-8") as f:

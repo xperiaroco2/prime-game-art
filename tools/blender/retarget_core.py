@@ -20,6 +20,8 @@ import bpy
 from bpy_extras import anim_utils
 from mathutils import Matrix, Quaternion, Vector
 
+import anim_math  # pure: the floor clamp's weight
+
 FPS = 30  # the review timeline; UAL is authored at 30 fps (its clips import to whole frames only at 30)
 
 
@@ -120,6 +122,18 @@ class Rig:
 
     def rest_world_pos(self, name: str) -> Vector:
         return self.W @ self.rest[name].translation
+
+
+def pops(rig: Rig, poses: list[dict], loop: bool = False) -> list[list]:
+    """The one-frame pops (anim_math.one_frame_pops) of every bone over armature-space poses, one per frame (a loop's
+    last pose the same as its first): [[bone, frame, degrees], ...], the frame the snap starts from, largest first."""
+    out = []
+    for n in rig.order:
+        q = [rot(P[n]) for P in poses]
+        steps = [math.degrees(a.rotation_difference(b).angle) for a, b in zip(q, q[1:])]
+        steps = [min(x, 360.0 - x) for x in steps]
+        out += [[n, i, round(steps[i], 1)] for i in anim_math.one_frame_pops(steps, loop)]
+    return sorted(out, key=lambda x: -x[2])
 
 
 def fk(rig: Rig, basis: dict) -> dict:
@@ -244,8 +258,11 @@ class Retargeter:
         self.src_hip = hip_height(src, bmap["height"]["source"])
         self.tgt_hip = hip_height(tgt, bmap["height"]["target"])
         self.ratio = self.tgt_hip / self.src_hip
-        # positions scale about each rig's own origin, so the rigs may stand anywhere when the retargeter is built
-        self.src_o, self.tgt_o = src.W.translation.copy(), tgt.W.translation.copy()
+        # positions scale about the floor point under each rig's own origin (z = 0), so the rigs may stand anywhere on
+        # the floor when the retargeter is built, and a rig lifted onto the floor (the SMPL-H floor shift, art #33:
+        # its origin 1.16 m up) does not scale heights about its origin; a no-op for rigs whose origin is on the floor
+        self.src_o = Vector((src.W.translation.x, src.W.translation.y, 0.0))
+        self.tgt_o = Vector((tgt.W.translation.x, tgt.W.translation.y, 0.0))
         self.src_rest_w = {s: src.world(src.rest[s]) for s in bmap["bones"]}
         self.src_rest_rot_inv = {s: rot(m).inverted() for s, m in self.src_rest_w.items()}
         self.tgt_rest_rot_w = {t: rot(tgt.world(tgt.rest[t])) for t in self.inv}
@@ -405,15 +422,13 @@ class Retargeter:
             if k in self.inv and k in self.soles and w > 0.0:
                 self._lift(P, k, w)
 
-    def _lift_weight(self, P: dict, foot: str, full: float = 0.20, fade: float = 0.10) -> float:
-        """How much the floor clamp acts on a foot (and its toe): fully while the foot pivot is up to `full` m above
-        its rest height, fading out over the next `fade` m; not at all when the pivot is below the floor (an in-place
-        jump without its rise)."""
-        sole = self.soles[foot]
+    def _lift_weight(self, P: dict, foot: str) -> float:
+        """How much the floor clamp acts on a foot (and its toe), from its pivot's height over its rest height
+        (anim_math.floor_clamp_weight): fully from 2 cm under it to 20 cm over it, fading out over the next 10 cm above
+        and the next 4 cm below (an in-place jump without its rise is left alone); the fade below keeps a foot that
+        hovers 2 cm down from flicking between clamped and free from one frame to the next (art #33)."""
         pivot = self.tgt.W @ P[foot].translation
-        if pivot.z < sole["pivot_z"] - 0.02:
-            return 0.0
-        return min(max(1.0 - (pivot.z - sole["pivot_z"] - full) / fade, 0.0), 1.0)
+        return anim_math.floor_clamp_weight(pivot.z - self.soles[foot]["pivot_z"])
 
     def _lift(self, P: dict, bone: str, w: float) -> None:
         """Pitches a foot or a toe bone about its head until its sole's front point is no lower than the rest sole,
