@@ -140,8 +140,11 @@ name = "Push_Upper_Loop"
 source = "ual:Push_Loop"
 loop = true
 # auto found 0 degrees on the men (a 1.08 cm gap already) and 4.3 on the women (6.09 cm inside each other to a 1.28 cm
-# gap); the women's hands do not reach the push's own legs (arm_offset auto: 0 degrees)
-edits = [{ op = "hand_spacing", min_gap_cm = 1.0, deg = 4.3, body = "women" }]
+# gap); the women's hands do not reach the push's own legs (arm_offset auto: 0 degrees). lean: Push_Loop leans 46
+# degrees with the hips, which the game's layer from Torso drops, so over an upright idle or jog the hands went up over
+# the head (the review, art #33); 30 degrees on Torso put them in front of the face, a push. The full-body clip bends
+# 76 degrees: play it as the upper layer only.
+edits = [{ op = "hand_spacing", min_gap_cm = 1.0, deg = 4.3, body = "women" }, { op = "lean", deg = 30 }]
 needs = [{ need = "Pushing someone (upper body, low weight)", no = 11, layer = "upper" }]
 
 [[clips]]
@@ -209,10 +212,12 @@ needs = [{ need = "Knocked down: falls where they stand; its last pose is the do
 name = "Crawl_Start"
 source = "tm:rollup-to-all-fours"
 loop = false
-export = false
+# The source floats its whole length (7.8 cm men, 13.7 cm women at best); the settle puts it on the floor. In the
+# review it rolls over and ends on all fours, its hands a little short of the floor: exported as a flagged stopgap.
 edits = [{ op = "floor", mode = "settle" }, { op = "trim", start_s = 0.4, end_s = 2.4 },
          { op = "heading", facing = "end" }, { op = "retime", seconds = 1.5 }]
-note = "review only: Meshy's roll-up floats the whole clip and its hands never reach the floor (re-roll)"
+needs = [{ need = "Crawl start: from lying on the back onto all fours (downed)", no = 23, layer = "full" }]
+note = "stopgap: Meshy's roll-up floats and its hands stay short of the floor; settled; a re-roll candidate"
 
 [[clips]]
 name = "Crawl_Loop"
@@ -239,10 +244,12 @@ needs = [{ need = "Stand up after a revive (from lying on the back)", no = 25, l
 name = "Getup_Fours"
 source = "tm:getup-from-all-fours"
 loop = false
-export = false
+# The source floats 6 to 13 cm over the whole clip; after the settle it reads as a get-up from all fours in the
+# review, lifting off 4.5 cm mid-rise: exported as a flagged stopgap.
 edits = [{ op = "trim", start_s = 0.27, end_s = 2.0 }, { op = "heading", facing = "start" },
          { op = "in_place", mode = "path" }, { op = "retime", seconds = 1.5 }, { op = "floor", mode = "settle" }]
-note = "review only: Meshy's get-up floats 6 to 13 cm over the whole clip (re-roll, or a settle edit)"
+needs = [{ need = "Stand up after a revive (from all fours, after the crawl)", no = 25, layer = "full" }]
+note = "stopgap: Meshy's get-up floats; settled, it lifts off 4.5 cm mid-rise; a re-roll candidate if the review rejects it"
 
 [[clips]]
 name = "Raise_In"
