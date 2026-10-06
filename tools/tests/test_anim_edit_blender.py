@@ -2,7 +2,8 @@
 Walk twice is the Walk again and a raised left arm becomes a raised right arm; reverse twice, a retime round trip and a
 trim keep the frames; the cycle cut finds Walk_Loop's 1.33 s period in two concatenated cycles; in_place and heading
 undo a travel and a 20 degree turn; the stride warp plays UAL's Jog at 4.5 m/s with planted feet; the floor lift takes
-Death01's lying frames out of the floor; the women's arm offset takes their hands out of the thighs in Idle_Loop, and their push's hands go 0.30 m apart.
+Death01's lying frames out of the floor; the women's arm offset takes their hands out of the thighs in Idle_Loop, and their push's hands go 0.30 m apart;
+the lean tips the push's spine 30 degrees forward with the feet still.
 
 This file is also the Blender side of the test: run inside Blender (`blender -b ... --python <this file> -- <out>`)
 it does the edits and writes their numbers to <out>/edits.json, which the unittest reads. Skipped when Blender or the
@@ -98,6 +99,12 @@ if not IN_BLENDER:
             self.assertTrue(h["found"])
             self.assertLess(h["gap_before_cm"], 1.0)  # the push's hands overlap
             self.assertAlmostEqual(h["gap_after_cm"], 30.0, delta=1.5)
+
+        def test_women_push_lean(self) -> None:
+            le = self.r["lean"]
+            self.assertAlmostEqual(le["tilt_after_deg"] - le["tilt_before_deg"], 30.0, delta=1.0)
+            self.assertGreater(le["head_forward_cm"], 4.0)
+            self.assertLess(le["feet_moved_mm"], 0.01)
 
         def test_steps_and_errors(self) -> None:
             e = self.r["errors"]
@@ -267,6 +274,11 @@ def _blender_main(argv: list[str]) -> None:
     push = ae.apply(ae.Frames.from_action(acts["Push_Loop"], target.rig, True),
                     [{"op": "hand_spacing", "gap_m": 0.30, "at": "end"}], target, "women")
     res["hands"] = push.info["steps"][0]
+    # the push leant 30 degrees forward from Torso: the spine tips by 30, the head goes forward, the feet stay
+    leant = ae.apply(push, [{"op": "lean", "deg": 30}], target, "women")
+    feet0, feet1 = ae._feet(push), ae._feet(leant)
+    res["lean"] = {**leant.info["steps"][-1], "feet_moved_mm": 1000 * max(
+        (Vector(a) - Vector(b)).length for f in feet0 for a, b in zip(feet0[f], feet1[f]))}
 
     with open(os.path.join(out_dir, "edits.json"), "w", encoding="utf-8") as f:
         json.dump(res, f, indent=1, default=str)

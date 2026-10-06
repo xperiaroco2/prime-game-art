@@ -48,6 +48,7 @@ OPS = {
     "arm_offset": {"abduct_deg": _p("number_or_auto", "auto"), "max_deg": _p(_N, 12.0), "margin_cm": _p(_N, 0.3)},
     "hand_spacing": {"min_gap_cm": _p(_N), "gap_m": _p(_N), "at": _p("string", "all", choices=("all", "end", "mean")),
                      "deg": _p("number_or_auto", "auto"), "max_deg": _p(_N, 25.0)},
+    "lean": {"deg": _p(_N, required=True), "bone": _p("string", "Torso")},
 }
 COMMON = {"op", "body"}  # keys every step may have
 ONE_OF = {"retime": ("seconds", "rate", "speed_m_s"), "heading": ("travel", "facing"),

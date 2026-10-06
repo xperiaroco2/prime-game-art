@@ -1,7 +1,7 @@
 """Clip edits on our rig after the retarget (art #33; docs/animations.md, "Clip edits"): cut a loop at its best seam
 and close it, take the travel out, straighten the heading, rescale a turn, trim, retime, reverse, mirror left and
 right, warp the stride to a speed with the feet planted, lift a clip out of the floor, turn the arms out of the legs
-and the hands apart.
+and the hands apart, lean the upper body.
 One tool set serves the pack's clips and every retargeted library (UAL1, UAL2, Meshy text to motion), since it works on
 the Ultimate Modular rig after the retarget.
 
@@ -774,9 +774,59 @@ def op_hand_spacing(fr: Frames, p: dict, target: Target):
         "hands_in_each_other_after_cm": _r(100 * every["depth"], 2), "min_gap_after_cm": _r(100 * every["gap"], 2)}
 
 
+# ------------------------------------------------------------------------------------------------------- lean
+def _spine_tilt(rig: rc.Rig, P: dict, bone: str) -> float:
+    """The forward tilt (degrees) of the line from a bone's head to Head's, from the vertical, signed towards the
+    body's facing (positive: leaning forward)."""
+    R = _turn_of(rig, P, BODY)
+    fwd = R @ Vector((0.0, -1.0, 0.0))
+    fwd.z = 0.0
+    line = _world(rig, P, "Head") - _world(rig, P, bone)
+    if fwd.length < 1e-9 or line.length < 1e-9:
+        return 0.0
+    fwd.normalize()
+    return math.degrees(math.atan2(line.dot(fwd), line.z))
+
+
+def op_lean(fr: Frames, p: dict, target: Target):
+    """Pitches one bone (default Torso) forward by deg about the body's left-right axis through its head; the bones
+    below it follow. For an upper-body layer whose source leans with the hips (UAL Push_Loop): the game's layer starts
+    at Torso, so the hips' lean is lost over an upright base and the arms point up; this puts the lean into the
+    layer. The legs and the IK feet do not move."""
+    rig = fr.rig
+    bone = p["bone"]
+    if bone not in rig.parent or bone == BODY or "Head" not in rig.parent:
+        raise EditError(f"lean needs a spine bone under {BODY} and a Head bone, not {bone!r}")
+    deg = float(p["deg"])
+    poses = fr.poses()
+    out_basis, tilt_before, tilt_after, head_fwd = [], [], [], []
+    for B0, P in zip(fr.basis, poses):
+        B = {n: m.copy() for n, m in B0.items()}
+        R = _turn_of(rig, P, BODY)
+        fwd = R @ Vector((0.0, -1.0, 0.0))
+        fwd.z = 0.0
+        fwd.normalize()
+        side = Vector((0.0, 0.0, 1.0)).cross(fwd)  # the body's left (facing -Y at rest, +X): a positive turn about
+        q = rig.Wrot.inverted() @ Quaternion(side, math.radians(deg)) @ rig.Wrot  # it tips the top forward
+        pose = Matrix.Translation(P[bone].translation) @ (q @ rc.rot(P[bone])).to_matrix().to_4x4()
+        head0 = _world(rig, P, "Head")
+        tilt_before.append(_spine_tilt(rig, P, bone))
+        Pn = dict(P)
+        _set_pose(rig, B, Pn, bone, pose)
+        Pn = rc.fk(rig, B)
+        tilt_after.append(_spine_tilt(rig, Pn, bone))
+        head_fwd.append((_world(rig, Pn, "Head") - head0).dot(fwd))
+        out_basis.append(B)
+    out = fr.copy(out_basis)
+    _close(out)
+    n = max(1, len(head_fwd))
+    return out, {"bone": bone, "deg": _r(deg, 2), "tilt_before_deg": _r(sum(tilt_before) / n, 2),
+                 "tilt_after_deg": _r(sum(tilt_after) / n, 2), "head_forward_cm": _r(100 * sum(head_fwd) / n, 2)}
+
+
 OPS = {"trim": op_trim, "retime": op_retime, "reverse": op_reverse, "cycle": op_cycle, "in_place": op_in_place,
        "heading": op_heading, "turn": op_turn, "mirror": op_mirror, "stride": op_stride, "floor": op_floor,
-       "arm_offset": op_arm_offset, "hand_spacing": op_hand_spacing}
+       "arm_offset": op_arm_offset, "hand_spacing": op_hand_spacing, "lean": op_lean}
 assert set(OPS) == set(em.OPS)
 
 
