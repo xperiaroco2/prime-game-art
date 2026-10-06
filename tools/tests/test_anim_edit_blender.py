@@ -1,6 +1,7 @@
 """The clip edits (tools/blender/anim_edit.py, art #33) in headless Blender on the real files: the mirror of the pack's
 Walk twice is the Walk again and a raised left arm becomes a raised right arm; reverse twice, a retime round trip and a
-trim keep the frames; the cycle cut finds Walk_Loop's 1.33 s period in two concatenated cycles; in_place and heading
+trim keep the frames; the cycle cut finds Walk_Loop's 1.33 s period in two concatenated cycles, and a cut off the
+period keeps the shins on their IK feet; in_place and heading
 undo a travel and a 20 degree turn; the stride warp plays UAL's Jog at 4.5 m/s with planted feet; the floor lift takes
 Death01's lying frames out of the floor; the women's arm offset takes their hands out of the thighs in Idle_Loop, and their push's hands go 0.30 m apart;
 the lean tips the push's spine 30 degrees forward with the feet still.
@@ -65,6 +66,14 @@ if not IN_BLENDER:
             self.assertLessEqual(abs(c["cycle_s"] - 4 / 3), 1.5 / 30)
             self.assertLessEqual(c["raw_seam_ratio"], 1.0)
             self.assertLess(c["closed_seam_deg"], 1e-3)
+            # a cut off the period leaves a residual: closing it parts the shins from the IK feet, which the cycle
+            # solves again (the crawl's ankles tore 15 cm before, art #33)
+            off = c["off_period"]
+            self.assertGreater(off["report"]["leg_gap_before_mm"], 1.0)
+            self.assertLess(off["leg_gap_after_mm"], 1.0)
+            # where a closed foot is out of the leg's reach the foot goes to the shin's end: the miss stays under the
+            # gap it mends (here 18 mm against 38)
+            self.assertLess(off["report"]["ik_miss_mm"], off["report"]["leg_gap_before_mm"])
 
         def test_in_place_and_heading(self) -> None:
             h = self.r["heading"]
@@ -215,6 +224,10 @@ def _blender_main(argv: list[str]) -> None:
     steps = [angle(a, b) for a, b in zip(wl.basis, wl.basis[1:])]
     res["cycle"] = {"cycle_s": rep["cycle_s"], "raw_seam_ratio": rep["raw_seam_deg"] / max(sorted(steps)[len(steps) // 2], 1e-6),
                     "closed_seam_deg": angle(cyc.basis[0], cyc.basis[-1]), "report": rep}
+    off = ae.apply(two, [{"op": "cycle", "min_s": 1.1, "max_s": 1.2, "max_raw_seam_deg": 90}], target, "men")
+    legs_ik = ae._Legs(rig)
+    res["cycle"]["off_period"] = {"report": off.info["steps"][0], "leg_gap_after_mm": 1000 * max(
+        legs_ik.gap(P, leg) for P in off.poses() for leg in ae.LEGS)}
 
     # in place and heading: the walk given 3 m/s of travel turned 20 degrees to the left
     trav = wl.copy()

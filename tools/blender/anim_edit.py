@@ -267,6 +267,11 @@ class _Legs:
         _set_pose(rig, B, P, ft, Matrix.Translation(A2) @ rc.rot(P[ft]).to_matrix().to_4x4())
         return miss * rig.scale
 
+    def gap(self, P: dict, leg) -> float:
+        """How far (m) the shin's end is from its Foot bone in a pose: 0 where the leg reaches its IK foot."""
+        _, lo, ft = leg
+        return ((P[lo] @ self.shin_end[lo]).translation - P[ft].translation).length * self.rig.scale
+
     def flexion(self, P: dict, leg) -> float:
         """The knee's signed flexion (degrees, positive = the normal bend), as anim_metrics measures it."""
         up, lo, _ = leg
@@ -378,10 +383,20 @@ def op_cycle(fr: Frames, p: dict, target: Target):
             l, q, s = d[n]
             out[k][n] = Matrix.LocRotScale(l + (l0 - lT) * w, q @ Quaternion().slerp(delta, w), s + (s0 - sT) * w)
     res = fr.copy(out, loop=True)
+    # Closing blends every channel by itself: the IK feet (children of Root) by location, the legs (under Body) by
+    # rotation, so between the cut's ends the shin's end and its Foot part (15 cm on the crawl, art #33). The legs are
+    # solved again to the closed feet on every frame.
+    legs = _Legs(rig)
+    gap, miss = 0.0, 0.0
+    for B in res.basis:
+        P = rc.fk(rig, B)
+        for leg in LEGS:
+            gap = max(gap, legs.gap(P, leg))
+            miss = max(miss, legs.solve(B, P, leg, P[leg[2]].translation.copy()))
     _close(res)
     res.info.update(speed_m_s=travel / (T / fr.fps), travel_m=travel, speed_from="cycle")
     rep.update(travel_m=_r(travel, 3), speed_m_s=_r(travel / (T / fr.fps), 3), yaw_drift_deg=_r(yaw_drift, 1),
-               frames=res.frames)
+               leg_gap_before_mm=_r(gap * 1000, 1), ik_miss_mm=_r(miss * 1000, 2), frames=res.frames)
     return res, rep
 
 
