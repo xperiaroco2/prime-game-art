@@ -244,8 +244,11 @@ class Retargeter:
         self.src_hip = hip_height(src, bmap["height"]["source"])
         self.tgt_hip = hip_height(tgt, bmap["height"]["target"])
         self.ratio = self.tgt_hip / self.src_hip
-        # positions scale about each rig's own origin, so the rigs may stand anywhere when the retargeter is built
-        self.src_o, self.tgt_o = src.W.translation.copy(), tgt.W.translation.copy()
+        # positions scale about the floor point under each rig's own origin (z = 0), so the rigs may stand anywhere on
+        # the floor when the retargeter is built, and a rig lifted onto the floor (the SMPL-H floor shift, art #33:
+        # its origin 1.16 m up) does not scale heights about its origin; a no-op for rigs whose origin is on the floor
+        self.src_o = Vector((src.W.translation.x, src.W.translation.y, 0.0))
+        self.tgt_o = Vector((tgt.W.translation.x, tgt.W.translation.y, 0.0))
         self.src_rest_w = {s: src.world(src.rest[s]) for s in bmap["bones"]}
         self.src_rest_rot_inv = {s: rot(m).inverted() for s, m in self.src_rest_w.items()}
         self.tgt_rest_rot_w = {t: rot(tgt.world(tgt.rest[t])) for t in self.inv}
