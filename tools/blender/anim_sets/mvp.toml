@@ -23,7 +23,7 @@ upper = "Torso"
 name = "Idle_Loop"
 source = "ual:Idle_Loop"
 loop = true
-edits = [{ op = "arm_offset", abduct_deg = "auto", body = "women" }]
+edits = [{ op = "arm_offset", abduct_deg = 2.66, body = "women" }]  # auto: hands 1.32 cm in the thighs to 0
 needs = [{ need = "Idle, standing; the base under the carry, talk and push layers", no = 1, layer = "full" }]
 
 [[clips]]
@@ -76,7 +76,9 @@ source = "tm:strafe-left"
 loop = true
 speed_m_s = 4.5
 edits = [{ op = "heading", travel = "left" }, { op = "cycle", min_s = 0.55, max_s = 0.9, within = [0.3, 3.7] },
-         { op = "stride", speed_m_s = 4.5, cadence = 2.9 }]
+         { op = "stride", speed_m_s = 4.5, cadence = 4.0 }]
+# cadence 4.0: at the design's 2.9 the steps had to grow 1.74x (men; 1.57 m) and the legs missed their targets by
+# 66 mm on contact frames and 465 mm in flight; 4.0 steps/s gives 1.1 m steps
 needs = [{ need = "Strafe left at 4.5 m/s", no = 4, layer = "full", speed_m_s = 4.5, rate = 1.0 },
          { need = "Sprint to the left at 7.0 m/s", no = 6, layer = "full", speed_m_s = 7.0, rate = 1.556 }]
 
@@ -133,8 +135,9 @@ needs = [{ need = "Being pushed: the stumble (the game moves the body)", no = 10
 name = "Push_Upper_Loop"
 source = "ual:Push_Loop"
 loop = true
-edits = [{ op = "arm_offset", abduct_deg = "auto", body = "women" },
-         { op = "hand_spacing", min_gap_cm = 1.0, deg = "auto" }]
+# auto found 0 degrees on the men (a 1.08 cm gap already) and 4.3 on the women (6.09 cm inside each other to a 1.28 cm
+# gap); the women's hands do not reach the push's own legs (arm_offset auto: 0 degrees)
+edits = [{ op = "hand_spacing", min_gap_cm = 1.0, deg = 4.3, body = "women" }]
 needs = [{ need = "Pushing someone (upper body, low weight)", no = 11, layer = "upper" }]
 
 [[clips]]
@@ -149,7 +152,10 @@ needs = [{ need = "Use the knife: the swing (upper body)", no = 13, layer = "upp
 name = "Carry_Upper_Loop"
 source = "ual2:Walk_Carry_Loop"
 loop = true
-edits = [{ op = "hand_spacing", gap_m = 0.40, at = "mean", deg = "auto" }]
+# a mean gap of 0.40 m between the hands (the 0.45 m package): auto found 28.71 degrees on the men and 29.8 on the women
+# (with max_deg 35; 25 reached only 34.6 and 32.7 cm), from hands touching (0.7 and 1.1 cm inside each other)
+edits = [{ op = "hand_spacing", gap_m = 0.40, at = "mean", deg = 28.7, max_deg = 35, body = "men" },
+         { op = "hand_spacing", gap_m = 0.40, at = "mean", deg = 29.8, max_deg = 35, body = "women" }]
 needs = [{ need = "Carry the package (upper body over the idle and the locomotion)", no = 15, layer = "upper" }]
 
 [[clips]]
@@ -171,7 +177,11 @@ name = "Pickup_Package"
 source = "tm:package-lift"
 loop = false
 edits = [{ op = "trim", start_s = 0.1, end_s = 1.5 }, { op = "heading", facing = "mean" },
-         { op = "retime", seconds = 1.0 }, { op = "hand_spacing", gap_m = 0.40, at = "end", deg = "auto" }]
+         { op = "retime", seconds = 1.0 }, { op = "floor", mode = "lift" },
+         { op = "hand_spacing", gap_m = 0.40, at = "end", deg = 18.5, body = "men" },
+         { op = "hand_spacing", gap_m = 0.40, at = "end", deg = 22.9, body = "women" }]
+# floor: the squat's toes went 2.8 cm (men) and 1.9 cm (women) into the floor; hand_spacing auto found 18.55 and
+# 22.85 degrees for a 0.40 m gap at the end (from 19.1 and 14.0 cm)
 needs = [{ need = "Pick up the package with both hands", no = 18, layer = "full" }]
 
 [[clips]]
@@ -195,7 +205,7 @@ name = "Crawl_Start"
 source = "tm:rollup-to-all-fours"
 loop = false
 export = false
-edits = [{ op = "floor", mode = "lift" }, { op = "trim", start_s = 0.4, end_s = 2.4 },
+edits = [{ op = "floor", mode = "settle" }, { op = "trim", start_s = 0.4, end_s = 2.4 },
          { op = "heading", facing = "end" }, { op = "retime", seconds = 1.5 }]
 note = "review only: Meshy's roll-up floats the whole clip and its hands never reach the floor (re-roll)"
 
@@ -208,7 +218,8 @@ speed_m_s = 1.0
 # left wrist (37-40 for longer cuts), over the 15 a good cut stays under, so the loop is closed over 26 degrees (re-roll).
 edits = [{ op = "heading", travel = "forward" },
          { op = "cycle", min_s = 0.5, max_s = 1.5, within = [0.0, 2.2], max_raw_seam_deg = 30 },
-         { op = "floor", mode = "lift" }, { op = "retime", speed_m_s = 1.0 }]
+         { op = "floor", mode = "settle" }, { op = "retime", speed_m_s = 1.0 }]
+# settle: the cut floats, its lowest vertex 4.9 cm (men) and 3.0 cm (women) above the floor at best
 needs = [{ need = "Crawl at 1.0 m/s (downed)", no = 24, layer = "full", speed_m_s = 1.0, rate = 1.0 }]
 note = "stopgap: the cut's raw seam is 26 degrees (the left wrist); the crawl is a re-roll candidate"
 
@@ -216,6 +227,7 @@ note = "stopgap: the cut's raw seam is 26 degrees (the left wrist); the crawl is
 name = "Getup_Back"
 source = "ual2:LayToIdle"
 loop = false
+edits = [{ op = "floor", mode = "lift" }]  # the toes went 4.0 cm (men) and 4.1 cm (women) into the floor at 0.83 s
 needs = [{ need = "Stand up after a revive (from lying on the back)", no = 25, layer = "full" }]
 
 [[clips]]
@@ -224,7 +236,7 @@ source = "tm:getup-from-all-fours"
 loop = false
 export = false
 edits = [{ op = "trim", start_s = 0.27, end_s = 2.0 }, { op = "heading", facing = "start" },
-         { op = "in_place", mode = "path" }, { op = "retime", seconds = 1.5 }]
+         { op = "in_place", mode = "path" }, { op = "retime", seconds = 1.5 }, { op = "floor", mode = "settle" }]
 note = "review only: Meshy's get-up floats 6 to 13 cm over the whole clip (re-roll, or a settle edit)"
 
 [[clips]]
@@ -257,6 +269,8 @@ needs = [{ need = "Raise a downed player: stand up again", no = 26, layer = "ful
 name = "Talk_Upper_Loop"
 source = "ual:Idle_Talking_Loop"
 loop = true
-edits = [{ op = "arm_offset", abduct_deg = "auto", body = "women" },
-         { op = "hand_spacing", min_gap_cm = 1.0, deg = "auto" }]
+# auto found 8.98 degrees on the men (2.22 cm inside each other to a 1.18 cm gap) and 12.5 on the women (2.15 cm to
+# 1.16 cm); the women's hands do not reach the talk's own legs (arm_offset auto: 0 degrees)
+edits = [{ op = "hand_spacing", min_gap_cm = 1.0, deg = 9.0, body = "men" },
+         { op = "hand_spacing", min_gap_cm = 1.0, deg = 12.5, body = "women" }]
 needs = [{ need = "Talking by proximity voice (upper body, low weight)", no = 28, layer = "upper" }]
