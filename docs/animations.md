@@ -476,7 +476,8 @@ above, so every clip is reproducible from its settings by one command. The MVP s
 builds each body type in its own background Blender run (`tools/blender/anim_set.py`), then exports and checks it.
 Output goes to `<raw>/anim-sets/<set>/<body>/` (outside git): `anim_mvp_<body>.blend`, `.glb`, `.export.json`,
 glTF-Validator's `report.json`, `build_report.json`, `build.md` and `godot-check/report.json`. A run with `--clips`
-builds those clips (and the clips they are made `from`) and checks them, without saving or exporting.
+builds those clips (and the clips they are made `from`) and checks them, without saving or exporting; its
+`build_report.json` and `build.md` go to `<out>/<body>/partial/`, so the full build's reports stay with its `.blend`.
 
 ### The settings
 

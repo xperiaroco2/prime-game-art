@@ -21,7 +21,7 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--body", choices=(*_anim.BODIES, "both"), default="both", help="body type (default both)")
     parser.add_argument("--clips", default="all",
                         help="comma-separated clip names, built with the clips they are made from (default all); a "
-                             "partial build is checked, not saved or exported")
+                             "partial build is checked, not saved or exported, its reports in <out>/<body>/partial/")
     parser.add_argument("--out", type=Path, help="output folder (default <raw>/anim-sets/<set>); each body type in "
                                                  "<out>/<body>/")
     parser.add_argument("--no-export", action="store_true", help="build, save and check the .blend only")
@@ -46,7 +46,8 @@ def run(args: argparse.Namespace) -> int:
     names = _anim_set.selected(data, args.clips)
     bodies = list(_anim.BODIES) if args.body == "both" else [args.body]
     root = (args.out or common.raw_dir() / "anim-sets" / args.set).resolve()
-    outs = {body: root / body for body in bodies}
+    # a partial build reports beside, not over, the full build's reports (they describe the saved .blend and GLB)
+    outs = {body: root / body / ("partial" if args.clips != "all" else "") for body in bodies}
     for out in outs.values():
         out.mkdir(parents=True, exist_ok=True)
     common.say(f"anim-set {args.set}: {len(names)} clips of {set_path.name} on {', '.join(bodies)} -> {root}")
