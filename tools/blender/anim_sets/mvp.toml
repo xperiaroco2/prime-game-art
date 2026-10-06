@@ -206,8 +206,10 @@ needs = [{ need = "Put the package down with both hands", no = 19, layer = "full
 name = "Knockdown"
 source = "ual:Death01"
 loop = false
+# The lift takes the impact out of the floor; the settle brings the lying frames (from 0.83 s after the retime, the
+# frame after the impact) down onto it: Death01 lies 2.2 cm up, and the game holds its last frame as the downed pose.
 edits = [{ op = "floor", mode = "lift", from_s = 1.2 }, { op = "trim", start_s = 0.0, end_s = 2.0 },
-         { op = "retime", seconds = 1.35 }]
+         { op = "retime", seconds = 1.35 }, { op = "floor", mode = "settle", from_s = 0.83 }]
 needs = [{ need = "Knocked down: falls where they stand; its last pose is the downed pose", no = 21, layer = "full" }]
 
 [[clips]]
