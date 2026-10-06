@@ -80,7 +80,9 @@ mvp = "anim_sets/mvp.toml"
 # are layered clips that a run over all clips (or over one of their sources) measures beside the plain ones.
 [layer]
 upper = "Torso"
-clips = ["ual:Idle_Loop|ual2:Walk_Carry_Loop"]  # the carry idle: UAL2 has no idle carry
+clips = ["ual:Idle_Loop|ual2:Walk_Carry_Loop",  # the carry idle: UAL2 has no idle carry
+         "mvp:Idle_Loop|mvp:Push_Upper_Loop", "mvp:Idle_Loop|mvp:Talk_Upper_Loop",  # the MVP layers (art #33)
+         "mvp:Idle_Loop|mvp:Carry_Upper_Loop"]
 
 # The clips play on pack originals, each also its body type's skeleton and action donor, given the assembler's toe
 # bones Toe.L and Toe.R (tools/blender/um/toes.py, art #25; `toe_bones = false` leaves them out): the pack's clips key
@@ -348,3 +350,101 @@ sets = [["meshyw_own:Walking_Woman", "meshyw:Walking_Woman", "meshy:Walking", "u
 name = "meshy_toes"
 body = "men"
 clips = ["meshy:Walking", "meshy:RunFast"]
+
+# The animation MVP set (art #33; [sets] mvp, tools/blender/anim_sets/mvp.toml): its locomotion at the game's speeds,
+# each set clip at the row's speed over its speed_m_s (as the game plays it), on a treadmill moving along `direction`.
+[[rates]]
+name = "mvp_walk_4.5"
+label = "the MVP walk: the jog warped to 4.5 m/s"
+speed = 4.5
+clips = ["mvp:Jog_Fwd_Loop", "blend:Walk_Loop+Jog_Fwd_Loop", "ual:Jog_Fwd_Loop"]
+[[rates]]
+name = "mvp_back_4.5"
+label = "the MVP backward walk"
+speed = 4.5
+direction = "back"
+clips = ["mvp:Jog_Bwd_Loop", "mvp:Jog_Bwd_TTM_Loop", "pack:Run_Back"]
+[[rates]]
+name = "mvp_strafe_left_4.5"
+label = "the MVP strafe to the left"
+speed = 4.5
+direction = "left"
+clips = ["mvp:Strafe_Left_Loop", "pack:Run_Left"]
+[[rates]]
+name = "mvp_strafe_right_4.5"
+label = "the MVP strafe to the right"
+speed = 4.5
+direction = "right"
+clips = ["mvp:Strafe_Right_Loop", "pack:Run_Right"]
+[[rates]]
+name = "mvp_sprint_7.0"
+label = "the MVP sprint"
+speed = 7.0
+clips = ["mvp:Sprint_Fwd_Loop", "ual:Sprint_Loop"]
+[[rates]]
+name = "mvp_back_7.0"
+label = "the MVP sprint backward (the walk at 1.556x)"
+speed = 7.0
+direction = "back"
+clips = ["mvp:Jog_Bwd_Loop", "mvp:Jog_Bwd_TTM_Loop"]
+[[rates]]
+name = "mvp_strafe_left_7.0"
+label = "the MVP sprint to the left (the strafe at 1.556x)"
+speed = 7.0
+direction = "left"
+clips = ["mvp:Strafe_Left_Loop"]
+[[rates]]
+name = "mvp_strafe_right_7.0"
+label = "the MVP sprint to the right (the strafe at 1.556x)"
+speed = 7.0
+direction = "right"
+clips = ["mvp:Strafe_Right_Loop"]
+[[rates]]
+name = "mvp_crawl_1.0"
+label = "the MVP crawl, downed"
+speed = 1.0
+clips = ["mvp:Crawl_Loop", "tm:crawl"]
+[[rates]]
+name = "mvp_carry_4.5"
+label = "the MVP walk with the package"
+speed = 4.5
+clips = ["mvp:Jog_Fwd_Loop|mvp:Carry_Upper_Loop", "mvp:Jog_Fwd_Loop"]
+
+# The MVP set's one-shots and layers against their sources (art #33).
+[[pairs]]
+name = "mvp_knockdown"
+clips = ["mvp:Knockdown", "ual:Death01"]
+[[pairs]]
+name = "mvp_jump"
+clips = ["mvp:Jump_Start", "mvp:Jump_Air_Loop", "mvp:Jump_Land", "ual:Jump_Start", "ual:Jump_Land"]
+[[pairs]]
+name = "mvp_knife"
+clips = ["mvp:Knife_Swing", "pack:Sword_Slash", "mvp:Jog_Fwd_Loop|mvp:Knife_Swing"]
+[[pairs]]
+name = "mvp_pickup_one"
+clips = ["mvp:Pickup_One", "mvp:Putdown_One", "ual2:Farm_Harvest"]
+[[pairs]]
+name = "mvp_package"
+clips = ["mvp:Pickup_Package", "mvp:Putdown_Package", "mvp:Idle_Loop|mvp:Carry_Upper_Loop", "tm:package-lift"]
+[[pairs]]
+name = "mvp_pushed"
+clips = ["mvp:Shove_Stumble", "tm:shove-stumble", "ual:Hit_Chest"]
+[[pairs]]
+name = "mvp_turn"
+clips = ["mvp:Turn_Left", "mvp:Turn_Right", "tm:turn-left-90"]
+[[pairs]]
+name = "mvp_downed"
+note = "the chain: knocked down, the roll-up (review only), the crawl, the get-ups"
+clips = ["mvp:Knockdown", "mvp:Crawl_Start", "mvp:Crawl_Loop", "mvp:Getup_Fours", "mvp:Getup_Back"]
+[[pairs]]
+name = "mvp_raise"
+clips = ["mvp:Raise_In", "mvp:Raise_Work_Loop", "mvp:Raise_Out", "ual:Fixing_Kneeling"]
+[[pairs]]
+name = "mvp_layers"
+note = "the upper-body layers over the idle, fixed against the originals"
+clips = ["mvp:Idle_Loop|mvp:Push_Upper_Loop", "mvp:Idle_Loop|mvp:Talk_Upper_Loop", "mvp:Idle_Loop|mvp:Carry_Upper_Loop",
+         "ual:Idle_Loop|ual:Push_Loop", "ual:Idle_Loop|ual:Idle_Talking_Loop", "ual:Idle_Loop|ual2:Walk_Carry_Loop"]
+[[pairs]]
+name = "mvp_women_arms"
+body = "women"
+clips = ["mvp:Idle_Loop", "ual:Idle_Loop"]
