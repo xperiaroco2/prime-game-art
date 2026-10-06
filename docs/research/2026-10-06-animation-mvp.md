@@ -17,17 +17,28 @@ donor `Business Man.glb`, the women's `Suit.glb`, with the toe bones). Outputs, 
 ## Summary
 
 - **28 clips per body type ship in the GLB** (12 loops, 16 one-shots), and one more is built for review only (Meshy's
-  backward jog, which fails). Both GLBs pass glTF-Validator and godot-check. Godot plays them within 0.03 mm of
-  Blender, and every loop closes with a seam of 0.0.
-- **The review's verdicts** over the 35 needs:
-  - **pass:** 8 (idle, pushing, knife, both one-handed clips, the package put-down, knockdown, talking);
-  - **pass with a note:** 8 (forward, strafes, sprint, turn, jump, being pushed, carry, the package pick-up);
-  - **stopgap:** 5 (the backward jog, the 7.0 m/s sideways and backward sprint, the crawl start, the crawl and the
-    raise);
+  backward jog, which fails). Both GLBs pass glTF-Validator and the set's Godot checks (godot-check's facing check
+  cannot tell on the pack donor: below). Godot plays them within 0.07 mm of Blender. Every loop's last frame is its
+  first by construction; the real seam, the step from the last distinct frame onto the first, is at most 1.4 median
+  frame steps, except the reversed jog's 1.6.
+- **The review's verdicts** over the 35 needs (after the fresh reviews, below):
+  - **pass:** 5 (idle, pushing, knife, the one-handed put-down, talking);
+  - **pass with a note:** 8 (forward, sprint, turn, jump, being pushed, carry, the one-handed pick-up, knockdown);
+  - **stopgap:** 8 (the backward jog, the strafes, the 7.0 m/s sideways and backward sprint, the package pick-up and
+    put-down, the crawl start, the crawl and the raise);
   - **the stand-up** (need 25) passes from the back and is a stopgap from all fours;
   - **none by design:** 13 (hand keys, procedural, no reaction by the rules, or after the MVP);
   - **fail:** Meshy's backward jog, a review-only candidate.
-- **Two fixes came out of the review:**
+- **Fixes after the fresh reviews** (code, motion, Godot, docs; the PR lists every finding):
+  - **The crawl's ankles tore** 15 cm mid-cycle: the `cycle` cut closed the IK feet and the legs separately. It now
+    solves the legs again on every frame (the gap 152/157 mm to 0, IK miss 0.0 mm).
+  - **The sprint's feet ran 7.46 and 7.33 m/s** on a 7.0 m/s ground. It is stride-warped now: the planted feet at
+    exactly 7.0 m/s, slide 0.0 on contact, the reviewed cadence kept.
+  - **The knockdown's lying frames floated** 2.0-4.5 cm (the held downed pose 2.2 cm up). A settle from the frame after
+    the impact puts them on the floor (lowest 0.0, at most 1.4 cm in the first lying frames).
+  - **The strafe's turned body** (hips 19.5 degrees towards the travel, head 15.9 the other way) is now measured and
+    warned by the build, graded a stopgap and put to the engineer; the crawl's skating hands are recorded.
+- **Two fixes came out of the motion review:**
   - **The push layer had its hands over the head** over the idle and the jog: Push_Loop leans 46 degrees with the
     hips, and the game's layer from Torso drops the hips. A new `lean` edit puts 30 degrees into Torso. The hands are
     now in front of the face, a push.
@@ -48,13 +59,20 @@ both body types in 1.5 to 2 minutes each, then exports and checks them:
 | build: every clip as long as its frames, every loop closed and in place | ok | ok |
 | save: transforms applied, poses before and after | 0.0013 mm | 0.004 mm |
 | export: 28 animations, one skin of 64 joints, 4 skinned parts; glTF-Validator | 0 errors (2.51 MB) | 0 errors (2.47 MB) |
-| export: every loop closed (export.json seams) | all 0.0 mm, 0.0 deg | all 0.0 mm, 0.0 deg |
+| export: every loop closed (export.json seams; 0 by construction) | all 0.0 mm, 0.0 deg | all 0.0 mm, 0.0 deg |
+| the real seam: the step onto the first frame against the median step (build report `seam_step_ratio`) | 0.49 to 1.37; Jog_Bwd 1.61 | 0.46 to 1.37; Jog_Bwd 1.59 |
+| hips and head facing of the locomotion loops (build warning over 5 degrees) | strafes 19.5 / -15.9; crawl -4.7 / -7.8; the rest 0 | the same |
 | godot-check: 64 bones, every track resolves (1652), lengths, rest joints within 0.01 mm | pass | pass |
 | godot-check: the 12 `_Loop` clips import LINEAR without the suffix, the 16 one-shots play once | pass | pass |
 | Godot `frames` against Blender (the sample below; 64 joints and 128 axis points at 8 times) | within 0.017 mm | within 0.030 mm |
 
 godot-check's `facing_plus_z` cannot tell on the pack donor (its parts are not named by role: no `_eyes` or `_shoes`
-part); the set's command reports it as a warning. The donor's rest faces -Y in Blender, +Z in glTF.
+part); the set's command reports it as a warning, but a standalone `godot-check` of these GLBs exits 1 on it. The
+donor's rest faces -Y in Blender, +Z in glTF (Godot's rest joints: Toe.L ahead of Foot.L, Wrist.L at +X). A later
+task that runs godot-check on a set GLB needs the toe-bone fallback in `facing_plus_z` (not done here).
+
+The rebuild on the PR's head (the set as it ships) gave the same checks on both bodies; the numbers in this note are
+from it.
 
 **Godot's loop names** (measured): Godot 4.7.2's importer gives `Idle_Loop` the loop mode LINEAR and the name `Idle`.
 The game sees `Idle`, `Jog_Fwd`, `Jog_Bwd`, `Strafe_Left`, `Strafe_Right`, `Sprint_Fwd`, `Jump_Air`, `Push_Upper`,
@@ -69,6 +87,9 @@ with Blender's pose at 8 times.
   and Knockdown, all within 0.014 to 0.017 mm.
 - **Women:** Idle, Jog_Fwd, Strafe_Right, Turn_Right, Shove_Stumble, Crawl_Start, Getup_Fours, Carry_Upper and
   Push_Upper, within 0.014 to 0.030 mm (the idle's fingers).
+- **After the fixes** (the rebuilt GLBs): Crawl, Knockdown, Sprint_Fwd, Raise_Work and Strafe_Left on both bodies,
+  within 0.010 to 0.024 mm, except Raise_Work's kneeling foot at 0.064 (men) and 0.068 mm (women). The worst over
+  every clip run is therefore 0.068 mm, all far inside the 1 mm tolerance.
 
 The carry walk is UAL2's Walk_Carry_Loop, played whole as `Carry_Upper`; in the game only its upper body plays.
 
@@ -90,28 +111,28 @@ Times are in seconds; "w" means the women only. The last column holds what is le
 | 1 | Idle | `Idle_Loop` (Idle) | UAL Idle_Loop | w: arm out 2.66 deg (hands 1.32 cm in the thighs to 0) | pass | the base under the carry, talk and push layers |
 | 2 | Forward 4.5 m/s | `Jog_Fwd_Loop` | UAL Jog_Fwd_Loop | stride to 4.5 m/s at 2.86 steps/s (1.575 m steps; feet scale 0.567 men, 0.525 women: under the 0.6 warn mark) | pass, note: long, low strides; the planted feet at exactly 4.50 m/s | BlendSpace2D forward, rate speed / 4.5 |
 | 3 | Backward 4.5 | `Jog_Bwd_Loop` | UAL Jog_Fwd_Loop | the warped jog, reversed | stopgap: a forward run played backwards, the body leaning forward | BlendSpace2D back; Meshy's backward jog is a re-roll |
-| 4 | Strafe left and right 4.5 | `Strafe_Left_Loop`, `Strafe_Right_Loop` | TTM strafe-left | heading to +X (73 to 90 deg), cycle 1.83-2.57 s (seam 10.1 deg), stride at 4.0 steps/s (1.125 m, scale 1.25 men, 1.16 women); right = mirror | pass, note: a crossing gallop at 4 steps/s; the flight legs fall 150/109 mm short of their targets | BlendSpace2D left and right; the diagonals blend |
-| 5 | Sprint forward 7.0 | `Sprint_Fwd_Loop` | UAL Sprint_Loop | retime by its root-motion speed (x0.82 men, x0.76 women) | pass, note: the feet run 7.46 (men) and 7.33 m/s (women) against 7.0, the UAL sprint's own slide (43.6 cm/s mean on the men) | rate 1.0 at 7.0 m/s |
+| 4 | Strafe left and right 4.5 | `Strafe_Left_Loop`, `Strafe_Right_Loop` | TTM strafe-left | heading to +X (73 to 90 deg), cycle 1.83-2.57 s (seam 10.1 deg), stride at 4.0 steps/s (1.125 m, scale 1.25 men, 1.16 women); right = mirror | stopgap: a crossing gallop at 4 steps/s; **the hips face 19.5 degrees towards the travel and the head 15.9 the other way** (the source's own twist: no heading fixes both); the flight legs fall 150/109 mm short of their targets | BlendSpace2D left and right; the engineer's question (below); a re-roll candidate |
+| 5 | Sprint forward 7.0 | `Sprint_Fwd_Loop` | UAL Sprint_Loop | **stride to 7.0 m/s** at the reviewed cadence (rate 0.833 men, 0.769 women: 2.5 and 2.31 steps/s of 2.8 and 3.03 m; scale 0.93/0.94, fit ok) | pass, note: the planted feet at exactly 7.0 m/s (they ran 7.46 and 7.33 when retimed by root motion); the toes dip 1.35/1.47 cm (the known toe dip) | rate 1.0 at 7.0 m/s |
 | 6 | Sprint back and sideways 7.0 | `Jog_Bwd_Loop`, `Strafe_*_Loop` at 1.556 | as 3 and 4 | none | stopgap: 4.4 steps/s backward; **6.2 steps/s sideways**, a whirl | the engineer's question below |
 | 7 | Turn in place | `Turn_Left`, `Turn_Right` | TTM turn-left-90 | facing to the start, trim 0.13-1.73, turn 112.7 to 90 deg, retime 1.2 s; w: arms out 5.6 deg; right = mirror | pass, note: two clear steps; the pivot foot slides 18-20 cm/s mean (147-152 max) | the lower-body turn logic (below) |
 | 8 | Head pitch | none | | | none | procedural |
-| 9 | Jump | `Jump_Start`, `Jump_Air_Loop`, `Jump_Land` | UAL Jump_Start, Jump_Loop, Jump_Land | start: trim 0.03-0.40, retime 0.25 (0.267: whole frames); land: trim 0-0.5, retime 0.3 | pass, note: the start opens in a crouch and the landing ends in one | the game blends in and out, and lifts the body (the clips are in place; the air loop's feet hang 17-18 cm under the floor) |
+| 9 | Jump | `Jump_Start`, `Jump_Air_Loop`, `Jump_Land` | UAL Jump_Start, Jump_Loop, Jump_Land | start: trim 0.03-0.40, retime 0.25 (0.267: whole frames); land: trim 0-0.5, retime 0.3 | pass, note: the start opens in a crouch and the landing ends in one; the take-off's toes dip 1.9 (men) and 2.3 cm (women) for 4 frames, past the design's -2 cm line on the women (resampling loses the retarget's toe clamp); w: hands 7.5 cm in the thighs at the landing | the game blends in and out, and lifts the body (the clips are in place; the air loop's feet hang 17-18 cm under the floor) |
 | 10 | Being pushed | `Shove_Stumble` | TTM shove-stumble | trim 0.37-1.83, facing to the start, in place along its path, arms out 12 deg | pass, note: the arms fly forward, two steps back, a crouch; w: hands 4.5 cm in the thighs at the crouch | contact detection; its feet travel 1.06 (men) and 1.15 m/s (women), half the push speed of 2.25 |
 | 11 | Pushing | `Push_Upper_Loop` (upper) | UAL Push_Loop | w: hands apart 4.3 deg (6.09 cm inside each other to a 1.28 cm gap); **lean 30 deg from Torso** (new) | pass after the lean: over the idle and the jog it leans into the push, palms forward at face height | upper layer at a low weight while in contact; the full-body clip bends 76 deg: a layer only |
 | 12 | One-handed item | none | | | none | grip keys |
 | 13 | Knife swing | `Knife_Swing` (upper) | pack Sword_Slash | retime 0.45 (0.467) | pass | upper layer on Swung (a OneShot); the women's source is 1.3 s, so 2.8x faster |
 | 14 | Being hit | none | | | none | no reaction, by the rules |
-| 15 | Carry | `Carry_Upper_Loop` (upper) | UAL2 Walk_Carry_Loop | hands apart to a 0.40 m mean gap: 28.7 deg men, 29.8 women (from touching) | pass, note: the forearms open wide with the palms up (taste) | upper layer over the idle and the locomotion; CARRY_POINT moves to the hands |
-| 16 | Pick up one-handed | `Pickup_One` | UAL2 Farm_Harvest | trim 0.13-2.13, retime 0.9 | pass (w: the hand 2.5 cm past the thigh at the bottom) | the hand is lowest at about 0.45 s: attach the item there |
+| 15 | Carry | `Carry_Upper_Loop` (upper) | UAL2 Walk_Carry_Loop | hands apart to a 0.40 m mean gap: 28.7 deg men, 29.8 women (from touching) | pass, note: the forearms open wide with the palms up, a tray under the box (wrists 0.59-0.65 m apart); the game's package is 0.45 m, so a side grip would need `gap_m = 0.45` (the designer's call) | upper layer over the idle and the locomotion; CARRY_POINT moves to the hands |
+| 16 | Pick up one-handed | `Pickup_One` | UAL2 Farm_Harvest | trim 0.13-2.13, retime 0.9 | pass, note: w: the hand 2.5 cm past the thigh at the bottom | the hand is lowest at about 0.45 s: attach the item there |
 | 17 | Put down one-handed | `Putdown_One` | Pickup_One | reverse, retime 0.8 | pass | |
-| 18 | Pick up the package | `Pickup_Package` | TTM package-lift | trim 0.1-1.5, facing to the mean, retime 1.0, floor lift (toes 2.8/1.9 cm), hands apart to 0.40 m at the end (18.5/22.9 deg) | pass, note: a wide squat; it ends with the hands at the hips, where the carry holds them higher | blend into the carry layer (forearms 95-97 deg apart), or a hand-keyed end pose |
-| 19 | Put the package down | `Putdown_Package` | Pickup_Package | reverse | pass | |
+| 18 | Pick up the package | `Pickup_Package` | TTM package-lift | trim 0.1-1.5, facing to the mean, retime 1.0, floor lift (toes 2.8/1.9 cm), hands apart to 0.40 m at the end (18.5/22.9 deg) | stopgap: a wide squat whose feet shuffle 17-18 cm/s (past the 12 cm/s mark); it ends with the hands beside the thighs, 0.40 m apart, where the carry holds them higher (w: 7.0 cm in the legs), so it does not end holding a package | blend into the carry layer (forearms 95-97 deg apart), or a hand-keyed end pose |
+| 19 | Put the package down | `Putdown_Package` | Pickup_Package | reverse | stopgap: the pick-up reversed, so it starts from the hands-by-the-thighs pose, not from the carry's hold, and shuffles as the pick-up does | as 18: an end pose up to the carry's hold mends both |
 | 20 | Swap items | none | | | none | hand keys |
-| 21 | Knocked down | `Knockdown` | UAL Death01 | floor lift from 1.2 s (4.86/3.44 cm), trim 0-2.0, retime 1.33 | pass (w: the hands brush the thighs 6.1 cm in the fall) | ends lying 0.48 m behind where it started: the game moves the body there |
+| 21 | Knocked down | `Knockdown` | UAL Death01 | floor lift from 1.2 s (4.86/3.44 cm), trim 0-2.0, retime 1.33, **settle from 0.83 s** (the lying frames 2.2-3.7 cm down) | pass, note: lies on the floor (lowest 0.0, the first lying frames at most 1.4 cm up); w: the hands brush the thighs 6.1 cm in the fall | ends lying 0.48 m behind where it started: the game moves the body there |
 | 22 | Lying still | Knockdown's last pose | | | none | the breathing loop is hand keys |
 | 23 | Crawl start | `Crawl_Start` (exported now) | TTM rollup-to-all-fours | settle, trim 0.4-2.4, facing to the end, retime 1.5 | stopgap: rolls over onto all fours on the floor; the hands stay short of it, and the source floated 8 to 14 cm | re-roll 1; the lying heading is the knockdown's turned round (the joins) |
-| 24 | Crawl 1.0 | `Crawl_Loop` (Crawl) | TTM crawl (batch 4) | heading forward, cycle 0.93-1.87 s over a **26-degree raw seam** (left wrist), settle (4.9/3.0 cm down), retime to 1.0 m/s | stopgap: reads as a crawl on the treadmill; the hands hover 7-8 cm (our arms are 0.71 of SMPL-H's) | re-roll 2; the body turns toward its velocity |
-| 25 | Stand up | `Getup_Back`; `Getup_Fours` (exported now) | UAL2 LayToIdle; TTM getup-from-all-fours | back: floor lift (toes 4 cm); fours: trim 0.27-2.0, facing to the start, in place, retime 1.5, settle | back: pass; fours: stopgap (it lifts off 4.5 cm mid-rise; hands 6.7/7.4 cm in the thighs as it rises) | Getup_Back when the player never crawled, Getup_Fours after a crawl |
+| 24 | Crawl 1.0 | `Crawl_Loop` (Crawl) | TTM crawl (batch 4) | heading forward, cycle 0.93-1.87 s over a **26-degree raw seam** (left wrist), settle (4.9/3.0 cm down), retime to 1.0 m/s | stopgap: reads as a crawl on the treadmill; the cycle now keeps the shins on the feet (the ankles tore 15 cm before the fix); the hands hover 7-8 cm (our arms are 0.71 of SMPL-H's) and **skate**: at 1.0 m/s a planted hand should move 1.0 m/s under the body, but the wrists sweep only 17-25 cm a cycle (about 65-95 cm/s of slide); the body faces 4.7 degrees off | a re-roll (the engineer's yes: batch 4); the body turns toward its velocity |
+| 25 | Stand up | `Getup_Back`; `Getup_Fours` (exported now) | UAL2 LayToIdle; TTM getup-from-all-fours | back: floor lift (toes 4 cm); fours: trim 0.27-2.0, facing to the start, in place, retime 1.5, settle | back: pass; fours: stopgap (it lifts off 4.5 cm mid-rise; hands 6.7/7.4 cm in the thighs as it rises; it ends with the hips 20 degrees left, 33 from the idle's) | Getup_Back when the player never crawled, Getup_Fours after a crawl |
 | 26 | Raise | `Raise_In`, `Raise_Work_Loop`, `Raise_Out` | UAL Fixing_Kneeling | hips floor clamp (the knee 4.65 to 0.6 cm), trims 0-0.8 and 4.2-5.0 retimed to 0.6; the loop: cycle 2.9-3.9 s over a **27-degree raw seam** (right forearm) | stopgap: reads as kneeling over a body; the kneeling foot's toes 2.7-6.2 cm under the floor | hand keys for the toes and a calmer work loop |
 | 27 | Giving up | Knockdown's last pose | | | none | hold the pose |
 | 28 | Talking | `Talk_Upper_Loop` (upper) | UAL Idle_Talking_Loop | hands apart 9.0 deg men, 12.5 women (2.2 cm inside each other to 1.2 cm apart) | pass | upper layer at a low weight |
@@ -140,6 +161,11 @@ What was looked at:
 
 The other rows and pairs are the same clips at another rate, or on the other body type, and were not each opened.
 
+After the fresh reviews' fixes (the publisher's pass on the rebuilt set): Godot's own sheets of Crawl (men and women),
+Knockdown and Sprint_Fwd (men), the strips and sheets of every rebuilt clip, and the treadmill rows and pairs those
+fixes change (listed in the PR). The crawl's shins now stay on the feet through the loop, the knockdown lies on the
+floor, and the sprint reads as before with its feet planted.
+
 - **The push layer** (`Idle_Loop|Push_Upper_Loop`) raised both hands over the head, palms forward, on both bodies, as
   "hands up" rather than a push. UAL Push_Loop leans the whole body about 46 degrees from the feet and holds the arms
   forward along it. The game's upper-body layer starts at Torso, so over an upright base the arms point up. With
@@ -162,63 +188,76 @@ The other rows and pairs are the same clips at another rate, or on the other bod
 From `raw:review/stage1/33/metrics.md` (anim-review clips, `--sources mvp`): every set loop's seam is 0.0 to 0.1
 degrees (x0.0 to x0.1 of a frame step), against 23 to 59 degrees in the raw text-to-motion clips. On the treadmill
 (`rates/<body>/rates.json`), every set locomotion clip plays at rate 1.0 at its speed with its feet at the ground's
-speed: the jog and the strafes 4.50 m/s, the sprint 7.46 (men) and 7.33 m/s (women) by the feet against 7.0 by root
-motion.
+speed: the jog and the strafes 4.50 m/s, the sprint 7.0 (stride-warped; it ran 7.46 and 7.33 m/s by the feet when it
+was retimed by root motion). A loop's last frame is its first by construction, so the seam that matters is the step
+onto the first frame: the build reports it against the median frame step (0.5 to 1.4; the reversed jog 1.6).
+Measures that pass "a lowest vertex" or "a slide" below are graded against the design's lines (floor -1.2 cm for
+locomotion and -1.0 cm lying, kneeling or crawling, fail under -2; foot slide 12 cm/s for a standing one-shot); a
+clip past a line is a stopgap or a note, as the per-need table says.
 
 | Clip | Body | Lowest cm | Foot slide mean/max cm/s | Hands in legs cm | Verdict |
 |---|---|---|---|---|---|
 | Jog_Fwd_Loop, Jog_Bwd_Loop | m / w | -1.0 / -1.2 | in place (stride: 0.0 on contact) | 0 / 0 | pass |
-| Strafe_*_Loop | m / w | -1.4 / -0.8 | in place (stride: 0.0 on contact; IK misses 150/109 mm in flight) | 0 / 0 | pass; the flight legs fall short |
-| Sprint_Fwd_Loop | m / w | -1.4 / -1.5 | 43.6 / 84.7 (men) | 0 / 0 | the toe dip and the UAL sprint's own slide |
+| Strafe_*_Loop | m / w | -1.4 / -0.8 | in place (stride: 0.0 on contact; IK misses 150/109 mm in flight) | 0 / 0 | stopgap: hips 19.5 and head -15.9 degrees off the aim; the flight legs fall short |
+| Sprint_Fwd_Loop | m / w | -1.4 / -1.5 | in place (stride: 0.0 on contact at 7.0 m/s; IK misses 29/37 mm in flight) | 0 / 0 | pass, note: the toe dip |
 | Turn_Left, Turn_Right | m / w | -0.3 / -0.4 | 19.7 / 147 and 17.6 / 152 | 0 / 0 | the pivot over the 12 cm/s mark |
-| Knockdown | m / w | -0.9 / -0.8 | 7.6 / 129 and 2.2 / 28 | 0 / 6.1 | pass on the floor; the women's hands brush the thighs in the fall |
+| Knockdown | m / w | -0.9 / -0.8 | 7.6 / 129 and 2.2 / 28 | 0 / 6.1 | on the floor: the lying frames settled (lowest 0.0, the first ones at most 1.4 cm up, the held last pose on it); the women's hands brush the thighs in the fall |
 | Shove_Stumble | m / w | -1.2 / -0.5 | 37.7 / 79 and 39.2 / 75 | 0 / 4.5 | the stumble's steps slide in place: the game moves the body |
 | Push_Upper_Loop (lean 30) | m / w | -1.8 / -1.7 | (an upper layer) | 0 / 0 | over the idle: -0.6 / -0.9, hands 0 in the legs and in each other |
 | Crawl_Start | m / w | 0.0 / 0.0 | 44.6 / 72 (men) | 0.4 / 7.5 | on the floor after the settle; travels 1.17 / 0.57 m/s as it rolls |
-| Crawl_Loop | m / w | 0.0 / 0.0 | (knees and hands: no foot measure) | 0 / 0 | settled; hands hover |
+| Crawl_Loop | m / w | 0.0 / 0.0 | (knees and hands: no foot measure; the hands skate about 65-95 cm/s, the art #33 motion review's probe) | 0 / 0 | stopgap: settled; the shins on the feet; hands hover and skate |
 | Getup_Fours | m / w | 0.0 / 0.0 | 13.3 / 45 and 18.0 / 48 | 6.7 / 7.4 | on the floor; lifts off 4.5 cm mid-rise |
-| Raise_In, Raise_Out | m / w | -6.2, -4.5 / -5.6, -3.7 | under 1.2 mean | 0, 3.0 / 5.2, 7.0 | the kneeling foot's toes (above) |
-| Pickup_Package | m / w | 0.0 / -0.3 | 17 / 122 and 18 / 133 | 1.7 / 7.0 | the squat's shuffle |
+| Raise_In, Raise_Out, Raise_Work_Loop | m / w | -6.2, -4.5, -2.7 / -5.6, -3.7, -3.0 | under 1.2 mean | 0, 3.0 / 5.2, 7.0 | stopgap: the kneeling foot's toes, past the -2 cm line |
+| Pickup_Package, Putdown_Package | m / w | 0.0 / -0.3 | 17 / 122 and 18 / 133 | 1.7 / 7.0 | stopgap: the squat's shuffle past 12 cm/s; the end (start) pose does not hold a package |
+| Jump_Start | m / w | -1.9 / -2.3 | (in place) | 0 / 0 | the take-off's toe dip, 4 frames; past -2 cm on the women |
 | Getup_Back | m / w | 0.0 / 0.0 | 6.1 / 39 and 7.0 / 42 | 0 / 2.8 | pass |
 | Jump_Air_Loop | m / w | -18.3 / -17.2 | 0.6 / 1.9 | 0 / 0 | exempt (in place) |
 
-Stride warping (build reports): the jog at 4.5 m/s plays 28 frames as 21 (rate 1.381 after closing the open source
-cycle), its planted feet at exactly 4.50 m/s, IK miss 0.0 mm, the knee never past straight. The strafe at 4.0 steps/s:
-IK miss 0.0 mm on contact frames, 150 (men) and 109 mm (women) in flight. At the design's 2.9 steps/s the strafe's
+Stride warping (build reports): the jog at 4.5 m/s plays 28 frames as 21 (rate 1.333), its planted feet at exactly
+4.50 m/s, IK miss 0.0 mm, the knee never past straight; its feet scale (0.567 men, 0.525 women) is under the warn mark
+of 0.6, a deviation the treadmill judged acceptable. The sprint at 7.0 m/s: rate 0.833 (men) and 0.769 (women), 2.5 and
+2.31 steps/s of 2.8 and 3.03 m, scale 0.93 and 0.94 (fit ok), IK miss 0.0 mm on contact and 29/37 mm in flight.
+The strafe at 4.0 steps/s: IK miss 0.0 mm on contact frames, 150 (men) and 109 mm (women) in flight. At the design's 2.9 steps/s the strafe's
 steps had to grow 1.74x (men) and its legs missed by 66 mm on contact and 465 mm in flight. Meshy's backward jog fails
 the stride: scale 7.1 (men) and 6.6 (women), IK misses of 487 and 734 mm on contact, its planted feet sliding 62 and
 174 cm/s.
 
 ## Joins
 
-Reported, not graded (`raw:review/stage1/33/joins_<body>.json`): from the last frame of one clip to the first of
-the next in the saved set, the Body (pelvis) distance and the largest world rotation of an upper-body bone other
-than the fingers (the fingers differ by the source's hand shape: SMPL-H's constant relaxed curl against UAL's fist);
-for the lying clips also the angle between the two poses' horizontal directions from the pelvis to the head. A turn
-ends 90 degrees round, so its join to the idle reads the body's yaw; the game turns the body with it.
+Reported, not graded (`raw:review/stage1/33/joins_<body>.json`, measured on the rebuilt set): from the last frame of
+one clip to the first of the next in the saved set, the Body (pelvis) distance and the largest world rotation of an
+upper-body bone other than the fingers (the fingers differ by the source's hand shape: SMPL-H's constant relaxed curl
+against UAL's fist); the change of the hip line's yaw (signed, positive to the left: a standing body's turn); for the
+lying clips also the angle between the two poses' horizontal directions from the pelvis to the head (it means nothing
+for a standing pose, whose pelvis-to-head line is nearly vertical). A turn ends 90 degrees round, so its join to the
+idle reads the body's yaw; the game turns the body with it.
 
-| From -> to | Pelvis cm (men / women) | Upper body deg (men / women), the worst bone | Lying heading deg |
-|---|---|---|---|
-| Knockdown to Getup_Back | 48.1 / 59.7 | 178.4 / 178.4, LowerArm.L | 0.5 / 1.4 |
-| Knockdown to Crawl_Start | 54.8 / 63.8 | 172.6 / 172.6, Shoulder.L | **161.5 / 162.3** |
-| Crawl_Start to Crawl_Loop | 16.6 / 12.5 | 88.2 / 88.1, Wrist.R | 17.9 / 18.0 |
-| Crawl_Loop to Getup_Fours | 6.5 / 6.2 | 77.9 / 77.8, Wrist.R | 4.8 / 5.5 |
-| Getup_Fours to Idle_Loop | 3.7 / 3.8 | 80.9 / 79.7, Wrist.R | (standing) |
-| Getup_Back to Idle_Loop | 17.2 / 26.8 | 7.0 / 7.2 | (standing) |
-| Pickup_Package to Carry_Upper_Loop | 3.3 / 4.5 | 96.6 / 95.3, LowerArm.L | |
-| Carry_Upper_Loop to Putdown_Package | 2.3 / 3.4 | 96.6 / 95.3, LowerArm.L | |
-| Idle_Loop to Jog_Fwd_Loop | 6.9 / 8.0 | 90.8 / 90.4, UpperArm.R | |
-| Jump_Start to Jump_Air_Loop | 13.9 / 12.4 | 35.5 / 35.5, LowerArm.R | |
-| Jump_Air_Loop to Jump_Land | 4.6 / 4.2 | 13.9 / 13.9, Head | |
-| Raise_In to Raise_Work_Loop | 5.3 / 7.1 | 64.8 / 64.8, Wrist.R | |
-| Raise_Work_Loop to Raise_Out | 1.0 / 0.5 | 51.1 / 51.1, Wrist.R | |
-| Idle_Loop to Turn_Left | 3.9 / 3.7 | 49.3 / 50.6, LowerArm.L | |
-| Turn_Left to Idle_Loop | 11.2 / 17.2 | 135.7 / 137.1, LowerArm.L | |
-| Pickup_One to Idle_Loop | 4.3 / 4.5 | 18.4 / 18.4, Head | |
-| Idle_Loop to Pickup_Package | 3.5 / 2.1 | 30.0 / 30.0, Shoulder.L | |
-| Shove_Stumble to Idle_Loop | 4.3 / 4.5 | 40.0 / 40.0, Shoulder.L | |
+| From -> to | Pelvis cm (men / women) | Upper body deg (men / women), the worst bone | Hips yaw deg | Lying heading deg |
+|---|---|---|---|---|
+| Knockdown to Getup_Back | 48.1 / 59.7 | 178.4 / 178.4, LowerArm.L | 1.8 | 0.5 / 1.4 |
+| Knockdown to Crawl_Start | 55.9 / 64.5 | 172.6 / 172.6, Shoulder.L | 171.9 | **161.5 / 162.3** |
+| Crawl_Start to Crawl_Loop | 16.6 / 12.4 | 88.2 / 88.1, Wrist.R | -0.6 | 17.9 / 18.0 |
+| Crawl_Loop to Getup_Fours | 6.5 / 6.2 | 77.9 / 77.8, Wrist.R | 16.9 | 4.8 / 5.5 |
+| Getup_Fours to Idle_Loop | 3.7 / 3.8 | 80.9 / 79.7, Wrist.R | **-33.5** | (standing) |
+| Getup_Back to Idle_Loop | 17.2 / 26.8 | 7.0 / 7.2 | 0.0 | (standing) |
+| Pickup_Package to Carry_Upper_Loop | 3.3 / 4.5 | 96.6 / 95.3, LowerArm.L | 6.2 | |
+| Carry_Upper_Loop to Putdown_Package | 2.3 / 3.4 | 96.6 / 95.3, LowerArm.L | -6.2 | |
+| Idle_Loop to Jog_Fwd_Loop | 6.9 / 8.0 | 90.8 / 90.4, UpperArm.R | 12.8 | |
+| Jump_Start to Jump_Air_Loop | 13.9 / 12.4 | 35.5 / 35.5, LowerArm.R | 8.1 | |
+| Jump_Air_Loop to Jump_Land | 4.6 / 4.2 | 13.9 / 13.9, Head | -1.1 | |
+| Raise_In to Raise_Work_Loop | 5.3 / 7.1 | 64.8 / 64.8, Wrist.R | -0.2 | |
+| Raise_Work_Loop to Raise_Out | 1.0 / 0.5 | 51.1 / 51.1, Wrist.R | 0.2 | |
+| Idle_Loop to Turn_Left | 3.9 / 3.7 | 49.3 / 50.6, LowerArm.L | 13.6 | |
+| Turn_Left to Idle_Loop | 11.2 / 17.2 | 135.7 / 137.1, LowerArm.L | -103.7 (the turn) | |
+| Pickup_One to Idle_Loop | 4.3 / 4.5 | 18.4 / 18.4, Head | -2.1 | |
+| Idle_Loop to Pickup_Package | 3.5 / 2.1 | 30.0 / 30.0, Shoulder.L | -3.9 | |
+| Shove_Stumble to Idle_Loop | 4.3 / 4.5 | 40.0 / 40.0, Shoulder.L | -12.0 | |
 
-- **The downed chain** joins within 7 to 17 cm from the roll-up on: Crawl_Start, then Crawl_Loop, then Getup_Fours,
+The idle stands with its hips 13 degrees right (UAL's stance), which is in most standing joins above.
+
+- **Getup_Fours ends with the hips 20 degrees left**, 33.5 degrees from the idle's: the game blends that turn, or
+  the clip gets a `heading {facing = "end"}` once its stopgap is judged.
+- **The downed chain** joins within 4 to 17 cm from the roll-up on: Crawl_Start, then Crawl_Loop, then Getup_Fours,
   then the idle. The break is the knockdown.
   - Death01 falls backwards and lies with its head behind where it stood, 48 to 60 cm away.
   - The roll-up starts lying with its head the other way (161 to 162 degrees round), since it then crawls forward
@@ -241,6 +280,10 @@ clips go in as assets with manifests in a later PR.
     blend position needs a short smoothing (about 0.1 s) or the legs pop.
   - Sprint: `Sprint_Fwd` at rate 1.0 at 7.0 m/s. Backward and sideways run the 4.5 clips at x1.556 until the
     engineer decides (below).
+  - The strafes run with the hips 19.5 degrees towards the travel and the head 15.9 degrees the other way (the
+    remote body turns only its head's pitch): until a re-roll, a strafing remote player looks turned off its aim.
+- **Import**: the set's GLB at `animation/fps = 30` (it is baked at 30; at Godot's resampling to 24 the fastest joints
+  lose up to about 20 degrees) with the AnimationPlayer's optimizer off (`docs/godot.md`).
 - **Upper-body layers: an AnimationTree Blend2 with a bone filter.**
   - The filter is `Torso` and every bone below it; `build_report.json` lists them as `upper_bones`.
   - `Carry_Upper` runs at weight 1 while the package is held. Move `CARRY_POINT` from 0.72 m out to the clip's hands,
@@ -266,7 +309,8 @@ clips go in as assets with manifests in a later PR.
   - `Knockdown` (1.33 s) plays on KnockedDown. The game then moves the body by the clip's 0.48 m offset and turns it
     round, as in the joins above.
   - The last pose holds while lying (giving up as well). `Crawl_Start` plays on the first move, then `Crawl` at rate
-    speed / 1.0, the body turning toward its velocity.
+    speed / 1.0, the body turning toward its velocity. The stopgap crawl's hands skate on the ground (they sweep
+    about 20 cm a cycle while the body moves 1.1 m).
   - On Revived: `Getup_Back` if the player never crawled, `Getup_Fours` after a crawl. Both blend out once the player
     moves.
 - **Raise.** RaiseStarted plays `Raise_In`, then `Raise_Work` loops; RaiseStopped plays `Raise_Out`.
@@ -283,9 +327,11 @@ These are outside this task, in order of need:
 - the right-hand grip and the swap (belt draw);
 - the raise: the kneeling foot's toes out of the floor, and a calmer work loop (a ping-pong of the kneeling work, or
   keys) in place of the 27-degree seam;
-- the package lift's end pose up to the carry's hold;
-- the women's hands on Jump_Land (7.3 cm in the thighs), Pickup_One (2.5 cm), Knockdown's fall (6.1 cm) and
-  Getup_Fours's rise (7.4 cm): the 12-degree arm offset did not clear the first two;
+- the package lift's end pose up to the carry's hold (it also mends the put-down, its reverse), and its feet's shuffle;
+- the women's hands on Jump_Land (7.3 cm in the thighs), Pickup_One (2.5 cm), Pickup_Package (7.0 cm), Knockdown's
+  fall (6.1 cm) and Getup_Fours's rise (7.4 cm): the 12-degree arm offset did not clear the first two;
+- the toe dips the resampling leaves (Jump_Start 1.9/2.3 cm, the strafes and the sprint about 1.4): the retarget's toe
+  lift run again after a retime, trim or stride;
 - the gestures after the MVP, and the first-person arms (the game side).
 
 ## Meshy spend
@@ -296,11 +342,13 @@ These are outside this task, in order of need:
 | 2026-10-b4-animations (art #25, reused) | the prime text-to-motion crawl (`crawl-motion`), part of that batch's 59 | 10 | 328 to 318 on 2026-10-03 |
 | Re-roll reserve (approved with batch 5) | not spent | 0 of 30 | |
 
-The MVP's motion cost 80 credits of text to motion in all: 70 here and batch 4's crawl. The four re-roll candidates
-below would cost 40. The reserve of 30 covers the first three; the fourth (the get-up from all fours) is needed only
-if the review rejects its stopgap, and then needs the engineer's yes for 10 more credits.
+The MVP's motion cost 80 credits of text to motion in all: 70 here and batch 4's crawl. The reserve was approved for
+re-generating a batch-5 clip that fails review: it covers three of the batch-5 candidates below (the roll-up, the
+backward jog, then the strafe or the get-up). Batch 4's crawl is not a batch-5 clip, and the approval said it would be
+cleaned up for free, so its re-roll needs the engineer's yes (10 credits) or the manager's recorded reading that it
+counts under the reserve.
 
-## Re-roll candidates (the 30-credit reserve)
+## Re-roll candidates
 
 The manager runs a re-roll batch; no prompt names a game or a character. In order of need:
 
@@ -314,15 +362,17 @@ The manager runs a re-roll batch; no prompt names a game or a character. In orde
    Slowly, as if hurt, they roll over onto their side and then onto their stomach, staying low against the ground,
    then push up onto hands and knees: palms flat on the ground under the shoulders, knees and shins on the ground under
    the hips. They stay there on all fours, head hanging low, breathing heavily."
-2. **crawl** (need 24; a stopgap ships). Measured:
+2. **crawl** (need 24, batch 4: the engineer's yes; a stopgap ships). Measured:
    - no cycle of 0.5 to 3 s repeats: the best cut (0.93 s) has a raw seam of 26.4 degrees in the left wrist, and
      longer cuts 37 to 40;
-   - it heads 20 degrees off straight and floats 3 to 5 cm.
+   - it heads 20 degrees off straight and floats 3 to 5 cm;
+   - its hands skate: the wrists sweep 17-25 cm a cycle while the body crawls 1.1 m.
 
    Prompt: "A hurt person crawls forward on hands and knees in a perfectly straight line at a slow, steady pace, palms
    flat on the ground under the shoulders, knees on the ground under the hips, body low, head up looking ahead, the
-   hands and knees moving in an even alternating rhythm. A repeating crawl cycle of about one second that starts and
-   ends in the same pose, no looking around, no turning."
+   hands and knees moving in an even alternating rhythm; each hand stays planted on the ground until it lifts for the
+   next reach. A repeating crawl cycle of about one second that starts and ends in the same pose, no looking around,
+   no turning."
 3. **backward-jog** (need 3; the reversed jog is a stopgap). Measured:
    - 1.25 m in 3.97 s (0.31 m/s; its best cycle 0.56-0.70 m/s), steps of 0.09-0.30 m;
    - stride warping to 4.5 m/s needs 6.6-7.1x the step length, against the stride's fail limit of 2.5x.
@@ -340,7 +390,23 @@ The manager runs a re-roll batch; no prompt names a game or a character. In orde
    Tired and a little hurt, they push up with the arms, bring one foot forward flat on the ground, stand up and end
    standing relaxed with both feet flat on the ground and the arms at the sides, about one and a half seconds."
 
+5. **strafe-left** (need 4; a stopgap ships). Measured: it runs 17 degrees forward of sideways; turned so it
+   travels sideways, its hips face 19.5 degrees towards the travel and its head 15.9 the other way, 35 apart, so no
+   single turn puts both on the aim; a crossing gallop of long and short steps.
+
+   Prompt: "A person runs sideways to their left in a straight line at a steady running pace, chest, hips and head
+   facing straight ahead the whole time, moving directly sideways: the left foot steps out to the left and the right
+   foot closes up beside it without crossing, a short flight phase between steps, arms bent and relaxed. An even,
+   repeating side-stepping cycle that starts and ends in the same pose."
+
 ## Questions for the engineer and the designer
+
+- **The strafe's turned body** (look at `rates/<body>/mvp_strafe_left_4.5.mp4` and `Strafe_Left.mp4` in
+  `frames/<body>/clips/`). Its hips face 19.5 degrees towards the travel and its head 15.9 the other way.
+  - Options: (a) ship it as the stopgap it is; (b) turn it so the head faces the aim (the travel then runs 16 degrees
+    off sideways and the hips 35 degrees off); (c) re-roll it from the reserve with the prompt above.
+  - Recommendation: (a) for the first playable, (c) with the reserve's third slot.
+- **The crawl's re-roll** is batch 4's clip, outside the reserve's approval: 10 credits with your yes, or wait.
 
 - **Sideways and backward at 7.0 m/s.** At the decided 1.556x the strafe runs 6.2 steps/s and the backward jog 4.4:
   likely a whirl.
@@ -349,7 +415,11 @@ The manager runs a re-roll batch; no prompt names a game or a character. In orde
   - Recommendation: separate bakes once the strafe and the backward clip are approved.
 - **The strafe's cadence.** It runs 4.0 steps/s at 4.5 m/s (the design said 2.9), which keeps the legs within reach.
   Judge it on the treadmill (`rates/<body>/mvp_strafe_left_4.5.mp4`).
-- **The carry's arms** open 29 to 30 degrees for a 0.40 m gap: judge it in `pairs/<body>/mvp_package.mp4`.
+- **The carry's arms** open 29 to 30 degrees for a 0.40 m gap between the hands, a tray under the box: judge it in
+  `pairs/<body>/mvp_package.mp4`. The game's package is 0.45 m; a side grip would set the gap to 0.45 (the designer's
+  call).
+- **The package pick-up and put-down** ship as stopgaps (the end pose does not hold a package): blend into the carry
+  in the game, or hand-key an end pose (recommended, small).
 - **The shove's speed.** Retime it to 2.25 m/s (0.69 s) so its steps match the push, or keep 1.47 s?
 - **The push's lean** (new): 30 degrees from Torso, judge it in `pairs/<body>/mvp_layers.mp4`. More lean lowers the
   hands toward the chest, less brings them up toward the head.
@@ -360,7 +430,10 @@ The manager runs a re-roll batch; no prompt names a game or a character. In orde
 
 - `Jog_Bwd_Loop` is the warped forward jog reversed (the design's review candidate), and Meshy's backward jog is the
   review candidate `Jog_Bwd_TTM_Loop`: its stride fails as predicted.
-- The strafe runs at 4.0 steps/s, not 2.9 (the IK misses above).
+- The strafe runs at 4.0 steps/s, not 2.9 (the IK misses above), with 1.12 m steps against the design's 1.5-1.7 m.
+- The sprint is stride-warped to 7.0 m/s instead of retimed by its root motion (its feet ran 6-7 % fast).
+- The knockdown gets a settle on its lying frames after the lift (the lift alone left them 2-4.5 cm up).
+- The `cycle` cut solves the legs again after closing (the crawl's ankles tore 15 cm without it).
 - The crawl and the raise loop are closed over raw seams of 26 and 27 degrees (`max_raw_seam_deg = 30`), flagged as
   stopgaps: no cut stays under 15.
 - New in the build: open source loops are closed, and every clip is recentred over the origin (docs/animations.md).
