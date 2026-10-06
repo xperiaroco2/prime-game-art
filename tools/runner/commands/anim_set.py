@@ -60,7 +60,8 @@ def run(args: argparse.Namespace) -> int:
         report, out = reports[body], outs[body]
         (out / "build.md").write_text(_anim_set.table(report), encoding="utf-8")
         common.say(f"{body}: {len(report['clips'])} clips built in {report['seconds_spent']} s -> {out / 'build.md'}")
-        problems = _anim_set.check_build(report, data, names)
+        # Blender reports the clips asked for; the ones they are made from are built but not reported
+        problems = _anim_set.check_build(report, data, _anim_set.reported(data, args.clips))
         for p in problems:
             common.bad(f"{body} build: {p}")
         if not problems:

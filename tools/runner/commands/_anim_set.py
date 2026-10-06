@@ -50,6 +50,12 @@ def selected(data: dict, clips: str) -> list[str]:
         raise common.Failure(str(error)) from error
 
 
+def reported(data: dict, clips: str) -> list[str]:
+    """The clips a build reports: all of them, or the named ones (not the clips they are made from, which a partial
+    build makes but does not report)."""
+    return selected(data, "all") if clips == "all" else [c for c in clips.split(",") if c]
+
+
 def check_build(report: dict, data: dict, names: list[str]) -> list[str]:
     """Problems with Blender's build_report.json: a clip missing, a loop that travels or is not closed by its source or
     a cycle step (the build refuses that), a clip whose length is not its frames."""

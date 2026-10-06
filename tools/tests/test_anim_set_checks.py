@@ -43,6 +43,14 @@ class SetChecksTest(unittest.TestCase):
         self.assertTrue(any("travels 0.3 m" in p for p in problems), problems)
         self.assertTrue(any("Knockdown: not built" in p for p in problems), problems)
 
+    def test_a_partial_build_checks_only_the_clips_it_reports(self) -> None:
+        cfg = {"clips": [{"name": "Turn_Left", "source": "ual:x", "loop": False},
+                         {"name": "Turn_Right", "from": "Turn_Left", "loop": False}]}
+        self.assertEqual(_anim_set.reported(cfg, "Turn_Right"), ["Turn_Right"])
+        self.assertEqual(_anim_set.reported(cfg, "all"), ["Turn_Left", "Turn_Right"])
+        partial = {"clips": {"Turn_Right": {"loop": False, "frames": 36, "seconds": 1.2, "travel_left_m": 0.0}}}
+        self.assertEqual(_anim_set.check_build(partial, cfg, _anim_set.reported(cfg, "Turn_Right")), [])
+
     def test_the_export_holds_the_exported_clips_closed(self) -> None:
         info = {"fps": 30, "actions": {"Jog_Fwd_Loop": [0, 21], "Knockdown": [0, 40]},
                 "seams": {"Jog_Fwd_Loop": {"position_mm": 0.01, "rotation_deg": 0.0},
