@@ -153,14 +153,17 @@ def library_map(a, lib, variant="map"):
     return retarget_map.load(retarget_map.MAPS / name) if name else retarget_map.load()
 
 
-def retarget(a, char, lib, names, variant="map"):
+def retarget(a, char, lib, names, variant="map", in_place=True):
     """Bakes the named clips of a library ("ual", "ual2", ...) onto char's armature with the library's bone map (or
-    its rigid-shoe map, variant "rigid_map"); returns {name: action}."""
+    its rigid-shoe map, variant "rigid_map"); returns {name: action}. in_place=False keeps the travel of the library's
+    `in_place` clips (an animation set edits the clips as they travel, art #33)."""
     if not names:
         return {}
     bmap = library_map(a, lib, variant)
     before = set(bpy.data.objects)
     ent = anim_libs.entry(load_config(a.config), lib)
+    if not in_place:
+        ent = {**ent, "in_place": []}
     src = anim_libs.load(a.libs[lib], ent, a.raw, bmap["hips"][0])
     rt = rc.Retargeter(rc.Rig(src["arm"]), rc.Rig(char["arm"]), bmap)
     rt.set_soles(char["meshes"].values())
@@ -178,8 +181,10 @@ def retarget(a, char, lib, names, variant="map"):
     return out
 
 
-def clips_for(a, cfg, char, keys):
-    """A Clip per key (plain or layered "base|upper"), the library clips retargeted onto char."""
+def clips_for(a, cfg, char, keys, in_place=True):
+    """A Clip per key (plain or layered "base|upper"), the library clips retargeted onto char (in_place=False: with the
+    travel of a library's in_place clips), an animation set's clips ("mvp:<clip>", the settings' [sets]) built from
+    their own sources and edits (anim_set.build_clips, art #33)."""
     loops = cfg["loops"]
     plain = list(dict.fromkeys(k for key in keys for k in anim_keys.needs(key)))
     baked = {"pack": dict(char["actions"])}
@@ -187,7 +192,11 @@ def clips_for(a, cfg, char, keys):
         for suffix, variant in (("", "map"), ("_rigid", "rigid_map")):
             names = sorted({anim_keys.split(k)[1] for k in plain if anim_keys.split(k)[0] == lib + suffix})
             if names or not suffix:
-                baked[lib + suffix] = retarget(a, char, lib, names, variant)
+                baked[lib + suffix] = retarget(a, char, lib, names, variant, in_place)
+    for key, path in cfg.get("sets", {}).items():
+        names = sorted({anim_keys.split(k)[1] for k in plain if anim_keys.split(k)[0] == key})
+        if names:
+            baked[key] = set_actions(a, cfg, char, key, path, names)
     made = {}
     for k in plain:
         src, name = anim_keys.split(k)
@@ -212,6 +221,34 @@ def clips_for(a, cfg, char, keys):
         b, u = made[base], made[upper]
         out.append(Clip("layer", f"{b.label} + {u.label} upper body", b.action, b.loop,
                         Layered(b, u, upper_bones(char["arm"], cfg)), key=key))
+    return out
+
+
+def set_actions(a, cfg, char, key, path, names):
+    """The clips `names` of an animation set (art #33) built on char from their sources and edits, as the set's
+    command builds them (anim_set.build_clips), baked as "<label>|<clip>": {name: action}."""
+    import anim_set
+
+    def resolve(ch, keys):
+        return {c.key: c for c in clips_for(a, cfg, ch, keys, in_place=False)}
+
+    built = anim_set.build_clips(anim_set.load_set(path), char, names, a.body, resolve)
+    rc.reset_pose(char["arm"])
+    bpy.context.view_layer.update()
+    return {n: built[n].to_action(char["arm"], f"{LABELS.get(key, key)}|{n}") for n in names}
+
+
+def set_speeds(cfg):
+    """{"<set>:<clip>": the clip's ground speed at rate 1.0} of every animation set (anim_set_cfg.speed_of)."""
+    import anim_set
+    import anim_set_cfg
+
+    out = {}
+    for key, path in cfg.get("sets", {}).items():
+        for name, clip in anim_set_cfg.clips(anim_set.load_set(path)).items():
+            speed = anim_set_cfg.speed_of(clip)
+            if speed:
+                out[f"{key}:{name}"] = speed
     return out
 
 
@@ -263,6 +300,12 @@ def all_keys(a, char):
                 bpy.data.objects.remove(o, do_unlink=True)
             for act in set(bpy.data.actions) - before:
                 bpy.data.actions.remove(act)
+    for key, path in load_config(a.config).get("sets", {}).items():  # an animation set's clips (art #33)
+        if a.clips == "all" or f"{key}:" in a.clips:
+            import anim_set
+            import anim_set_cfg
+
+            keys += [f"{key}:{n}" for n in anim_set_cfg.clips(anim_set.load_set(path))]
     if a.clips != "all":
         want = a.clips.split(",")
         known = set(keys) | {f"{lib}{suffix}:{k.split(':', 1)[1]}" for k in keys for lib in a.libs
@@ -771,10 +814,15 @@ def foot_forward_phase(clip, rig, samples=60):
     return best_i / samples
 
 
-def natural_speeds(a, char, clips, rig):
+def natural_speeds(a, char, clips, rig, cfg=None):
     """Each clip's speed at 1.0x (m/s): for UAL clips the root-motion file's root travel, scaled to the body (the
-    speed at which its planted feet stand still on the ground); otherwise the in-place ground speed of the feet."""
-    out, how = {}, {}
+    speed at which its planted feet stand still on the ground); for an animation set's clip the speed its settings
+    give it (what the game divides its speed by, art #33); otherwise the in-place ground speed of the feet. Also
+    returns the feet's ground speed of every clip not timed by root motion (reported beside the set's speeds)."""
+    out, how, feet_speed = {}, {}, {}
+    for key, speed in (set_speeds(cfg) if cfg else {}).items():
+        if key in clips:
+            out[key], how[key] = speed, "set speed_m_s"
     for lib, path in a.libs_rm.items():
         ual = [c for c in clips.values() if c.source == lib]
         if not ual:
@@ -792,20 +840,26 @@ def natural_speeds(a, char, clips, rig):
         for o in set(bpy.data.objects) - before:
             bpy.data.objects.remove(o, do_unlink=True)
     for c in clips.values():
-        if c.key not in out:
+        if c.key not in out or how[c.key] == "set speed_m_s":
             feet = {s: [] for s in "LR"}
             for i in range(int(round(c.seconds * FPS)) + 1):
                 pose = rc.fk(rig, c.sampler.basis(c.sampler.start + i))
                 for s in "LR":
                     feet[s].append(tuple(rig.W @ pose[f"Foot.{s}"].translation))
             ground = am.foot_sliding(feet, FPS)["ground_speed_cm_s"]
-            out[c.key], how[c.key] = (ground or 0.0) / 100, "feet"
-    return out, how
+            feet_speed[c.key] = round((ground or 0.0) / 100, 3)
+            if c.key not in out:
+                out[c.key], how[c.key] = (ground or 0.0) / 100, "feet"
+    return out, how, feet_speed
+
+
+GROUND = {"forward": (0.0, 1.0), "back": (0.0, -1.0), "left": (-1.0, 0.0), "right": (1.0, 0.0)}  # the floor's way
 
 
 def treadmill(spacing_m=1.0, width_m=40.0, count=60):
     """Light stripes across the floor every spacing_m metres; returns them and a function that moves them to where a
-    floor moving at `speed` m/s toward +Y is at time t."""
+    floor moving at `speed` m/s is at time t: toward +Y under a character running forward (its front is -Y), toward -Y
+    backward, toward -X for a strafe to the left (+X) and toward +X to the right (a row's `direction`, art #33)."""
     mat = ar.material("stripe", (0.85, 0.85, 0.80, 1.0))
     stripes = []
     for j in range(count):
@@ -817,10 +871,13 @@ def treadmill(spacing_m=1.0, width_m=40.0, count=60):
         bpy.context.scene.collection.objects.link(ob)
         stripes.append(ob)
 
-    def move(speed, t):
+    def move(speed, t, direction="forward"):
+        gx, gy = GROUND[direction]
         shift = (speed * t) % spacing_m
         for j, ob in enumerate(stripes):
-            ob.location = (0.0, (j - count / 2) * spacing_m + shift, 0.002)
+            pos = (j - count / 2) * spacing_m + shift
+            ob.rotation_euler = (0.0, 0.0, math.pi / 2 if gx else 0.0)
+            ob.location = (pos * gx, 0.0, 0.002) if gx else (0.0, pos * gy, 0.002)
 
     return stripes, move
 
@@ -842,7 +899,7 @@ def cmd_rates(a):
     keys = {k for r in rows for lane in r["clips"] for k in anim_keys.needs(lane)}
     clips = {c.key: c for c in clips_for(a, cfg, chars[0], sorted(keys))}
     bones = upper_bones(chars[0]["arm"], cfg)
-    natural, how = natural_speeds(a, chars[0], clips, rig)
+    natural, how, feet_speed = natural_speeds(a, chars[0], clips, rig, cfg)
     char_name = os.path.splitext(os.path.basename(a.character))[0]
     stripes, move = treadmill()
     view = (70.0, 0.0, -70.0)  # from the side and a little ahead, 20 degrees down, so the moving ground shows
@@ -850,7 +907,7 @@ def cmd_rates(a):
     ar.VIEWS["rates"] = view
     spacing, height = 2.4, 2.7  # lanes one behind the other along the picture's right
     report = {"body": a.body, "character": char_name, "natural_speed_m_s": {k: round(v, 3) for k, v in natural.items()},
-              "natural_speed_from": how, "rows": {}}
+              "natural_speed_from": how, "feet_speed_m_s": feet_speed, "rows": {}}
     for r in rows:
         lanes = [Variant(k, clips, r["speed"], natural, rig, bones) for k in r["clips"]]
         k = len(lanes)
@@ -867,15 +924,15 @@ def cmd_rates(a):
         centre = Vector((0.0, 0.0, height / 2 - 0.25))
         title = ar.text("rtitle", 0.07, "rates", "LEFT")
         title.data.body = (f"Treadmill at {r['speed']} m/s ({r['label']}), {a.body} ({char_name}): "
-                           "the stripes are the ground")
+                           "the stripes are the ground" + (f", moving {r['direction']}" if r.get("direction") else ""))
         cam = bpy.context.scene.camera
         title.parent = cam
         title.rotation_euler = (0, 0, 0)
 
-        def pose_all(t, lanes=lanes, speed=r["speed"]):
+        def pose_all(t, lanes=lanes, speed=r["speed"], direction=r.get("direction", "forward")):
             for i, lane in enumerate(lanes):
                 lane.pose(chars[i]["arm"], t)
-            move(speed, t)
+            move(speed, t, direction)
 
         ar.aim("rates", centre, height, w, 480)
         title.location = (-(w / 480) * height / 2 * 0.97, height / 2 * 0.95, -5)
@@ -893,10 +950,11 @@ def cmd_rates(a):
         for t in lbls + [title]:
             bpy.data.objects.remove(t, do_unlink=True)
         report["rows"][r["name"]] = {
-            "speed_m_s": r["speed"], "label": r["label"], "video": out_mp4,
+            "speed_m_s": r["speed"], "label": r["label"], "direction": r.get("direction", "forward"), "video": out_mp4,
             "lanes": [{"clip": lane.key, "upper_body": lane.upper.key if lane.upper else None,
                        "blend_weight": round(lane.weight, 3), "cycle_s": round(lane.cycle, 3),
                        "natural_speed_m_s": round(lane.natural, 3), "rate": round(lane.rate, 3),
+                       "feet_speed_m_s": feet_speed.get(lane.parts[0].key) if len(lane.parts) == 1 else None,
                        "cadence_steps_s": round(lane.cadence, 2), "step_m": round(lane.step, 2)} for lane in lanes],
         }
         print("RATES", a.body, r["name"], json.dumps(report["rows"][r["name"]]["lanes"]))
@@ -950,7 +1008,8 @@ def main(argv):
     LABELS.update({k: v.get("label", k.upper()) for k, v in cfg.get("libraries", {}).items()})
     LABELS.update({f"{k}_own": f"{v.get('label', k.upper())} own rig" for k, v in cfg.get("libraries", {}).items()})
     LABELS.update({f"{k}_rigid": f"{LABELS.get(k, k)} rigid shoes" for k in LABELS if k != "pack"})
-    a.sources = anim_keys.parse_sources(a.sources, {"pack", *a.libs})
+    LABELS.update({k: k.upper() for k in cfg.get("sets", {})})  # an animation set's clips: "MVP Jog_Fwd_Loop"
+    a.sources = anim_keys.parse_sources(a.sources, {"pack", *a.libs, *cfg.get("sets", {})})
     global TMP
     TMP = os.path.join(a.out, "tmp", f"{a.body or 'sheets'}{a.tag}")
     os.makedirs(TMP, exist_ok=True)
@@ -959,4 +1018,5 @@ def main(argv):
 
 
 TMP = ""
-main(sys.argv[sys.argv.index("--") + 1:])
+if __name__ == "__main__":  # anim_set.py imports this module (art #33)
+    main(sys.argv[sys.argv.index("--") + 1:])

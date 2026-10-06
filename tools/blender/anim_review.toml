@@ -68,6 +68,13 @@ package-lift = "2026-10-b5-anim-mvp/package-lift/text_to_motion-clip.fbx"
 rollup-to-all-fours = "2026-10-b5-anim-mvp/rollup-to-all-fours/text_to_motion-clip.fbx"
 getup-from-all-fours = "2026-10-b5-anim-mvp/getup-from-all-fours/text_to_motion-clip.fbx"
 
+# Animation sets (art #33; tools/blender/anim_sets/, docs/animations.md "Animation sets"): `tools/run.py anim-set`
+# builds and exports a set; the review plays its clips as "<set>:<clip>" ("mvp:Jog_Fwd_Loop"), built in the review's
+# own process from the same settings, and plays a set's locomotion at the game's speeds divided by the clip's
+# speed_m_s (what the game does).
+[sets]
+mvp = "anim_sets/mvp.toml"
+
 # Layered clips "<base>|<upper>" (tools/blender/anim_keys.py): the base clip's hips and legs under the upper clip's
 # `upper` bone and every bone below it (spine, head, arms, fingers), as an engine layers an upper-body clip. `clips`
 # are layered clips that a run over all clips (or over one of their sources) measures beside the plain ones.

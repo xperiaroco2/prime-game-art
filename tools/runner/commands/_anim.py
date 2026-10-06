@@ -40,6 +40,11 @@ def load_config(path: Path = CONFIG) -> dict:
             if name is not None and not (MAPS / str(name)).is_file():
                 raise common.Failure(f"{path.name}: [libraries.{key}] names a bone map {name!r} that is not in {MAPS}")
         _check_format(path, key, lib)
+    for key, rel in cfg.get("sets", {}).items():  # animation sets (art #33): "<set>:<clip>" keys
+        if key in ("pack", "blend", "layer", "ual") or key in cfg.get("libraries", {}) or not key.isidentifier():
+            raise common.Failure(f"{path.name}: [sets] {key} needs another name (a source of clips has it)")
+        if not (isinstance(rel, str) and (BLENDER_DIR / rel).is_file()):
+            raise common.Failure(f"{path.name}: [sets] {key} = {rel!r} is no file in {BLENDER_DIR}")
     return cfg
 
 
@@ -82,8 +87,23 @@ def libraries(cfg: dict) -> dict[str, dict]:
 
 
 def sources(cfg: dict) -> set[str]:
-    """Every clip source of the review: the pack and each library."""
-    return {"pack", *libraries(cfg)}
+    """Every clip source of the review: the pack, each library and each animation set (art #33)."""
+    return {"pack", *libraries(cfg), *cfg.get("sets", {})}
+
+
+def set_file(cfg: dict, key: str) -> Path:
+    """An animation set's settings file (the review settings' [sets], relative to tools/blender)."""
+    return BLENDER_DIR / cfg["sets"][key]
+
+
+def set_keys(cfg: dict, only: set[str] | None = None) -> list[str]:
+    """Every clip of the animation sets as "<set>:<clip>" (art #33); `only` keeps those of these sources."""
+    keys = []
+    for key in cfg.get("sets", {}):
+        if only is None or key in only:
+            data = tomllib.loads(set_file(cfg, key).read_text(encoding="utf-8"))
+            keys += [f"{key}:{c['name']}" for c in data.get("clips", [])]
+    return keys
 
 
 def raw_path(relative: str) -> Path:

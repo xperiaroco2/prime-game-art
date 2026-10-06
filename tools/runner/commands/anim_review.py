@@ -25,7 +25,8 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
                              "every clip and the settings' [layer] clips)")
     parser.add_argument("--sources", default="all",
                         help="clips, pairs, rates: only these sources' clips, and the pairs and rates rows that play "
-                             "one, e.g. ual2 (comma-separated: pack, ual, ual2; default all); not with --clips")
+                             "one, e.g. ual2 (comma-separated: pack, ual, ual2, tm, the sets such as mvp; default all); "
+                             "not with --clips")
     parser.add_argument("--only", default="",
                         help="pairs, feet: comma-separated pair or [[feet]] row names (a pack clip name for art #20's pairs, e.g. Wave; "
                              "ual2_carry for art #24's; default every pair)")
@@ -82,7 +83,7 @@ def clips(args: argparse.Namespace, out: Path, cfg: dict, bodies: list[str]) -> 
     jobs = []
     for body in bodies:
         if args.clips == "all":  # a full run replaces every earlier measure of the body type (of its sources)
-            keys = _anim.clip_keys(inv, body, only) + _anim.layered_keys(cfg, only)
+            keys = _anim.clip_keys(inv, body, only) + _anim.set_keys(cfg, only) + _anim.layered_keys(cfg, only)
             prefix = _anim.run_tag(only)
             stale = f"{body}_*.json" if only is None else f"{body}{prefix}*.json"
             for old in [*(out / "metrics").glob(stale), *(out / "metrics").glob(f"{body}_part_c*.json")]:
