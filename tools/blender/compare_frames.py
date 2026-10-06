@@ -132,7 +132,7 @@ def main():
         clip = record["clips"].get(label)
         if clip is None:
             raise SystemExit(f"frames.json has no clip {label}; it has {sorted(record['clips'])}")
-        act = bpy.data.actions[clip["name"]]
+        act = bpy.data.actions[clip.get("action", clip["name"])]  # Godot drops a loop suffix (art #33)
         ad.action = act
         ad.action_slot = act.slots[0]
         place_camera(cam, clip["camera"], window)

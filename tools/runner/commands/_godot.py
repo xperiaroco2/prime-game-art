@@ -45,6 +45,40 @@ PLAYER_NODE = "PATH:AnimationPlayer"
 PLAYER_OPTIONS = {"optimizer/enabled": False}
 
 
+# Godot's scene importer gives an animation whose name ends in _loop, -loop, _cycle or -cycle (any case; trailing digits,
+# spaces and underscores ignored; also "loop_mode") the loop mode LINEAR and drops that suffix: an animation set's
+# "Idle_Loop" is "Idle" in Godot (art #33; measured with godot-check on the MVP set).
+LOOP_WORDS = ("loop_mode", "loop", "cycle")
+
+
+def godot_name(name: str) -> tuple[str, bool]:
+    """The name Godot's importer gives an animation and whether it makes it loop (its loop suffix)."""
+    loops = False
+    for word in LOOP_WORDS:
+        what = name
+        while what and (what[-1].isdigit() or what[-1] <= " " or what[-1] == "_"):
+            what = what[:-1]
+        end = name[len(what):]
+        low = what.lower()
+        if "$" + word in low:
+            i = low.index("$" + word)
+            name, loops = what[:i] + what[i + len(word) + 1:] + end, True
+        elif low.endswith("-" + word) or low.endswith("_" + word):
+            name, loops = what[: len(what) - len(word) - 1] + end, True
+    return name, loops
+
+
+def import_params(glb: Path) -> dict[str, Any]:
+    """The import options for a GLB: IMPORT_PARAMS, with animation/fps the export's own fps when its .export.json says
+    (an animation set is baked at 30 fps: imported at 24 its keys would be resampled, art #33)."""
+    info_path = glb.with_name(f"{glb.stem}.export.json")
+    if info_path.is_file():
+        fps = json.loads(info_path.read_text(encoding="utf-8")).get("fps")
+        if fps:
+            return {**IMPORT_PARAMS, "animation/fps": fps}
+    return dict(IMPORT_PARAMS)
+
+
 class Resource(str):
     """A res:// path written as Resource("...") in an .import file."""
 
@@ -160,15 +194,19 @@ def expectations(glb: Path) -> dict[str, Any]:
     if info_path.is_file():
         info = json.loads(info_path.read_text(encoding="utf-8"))
         fps = info.get("fps", 24)
+        names = {name: godot_name(name) for name in info["actions"]}  # Godot drops a loop suffix (art #33)
         return {
             "source": info_path.name,
             "parts": sorted(info["parts"]),
             "bones": list(info["bones"]),
             "bone_parents": info.get("bone_parents", {}),
             "rest_heads_m": info.get("rest_heads_m", {}),
-            "animations": {name: (end - start) / fps for name, (start, end) in info["actions"].items()},
+            "animations": {names[name][0]: (end - start) / fps for name, (start, end) in info["actions"].items()},
             "height_m": info.get("height_m"),
-            "seams": info.get("seams", {}),
+            "seams": {names[name][0]: seam for name, seam in info.get("seams", {}).items() if name in names},
+            "fps": fps,
+            "actions": {g: name for name, (g, _) in names.items()},
+            "loop_suffix": sorted(g for g, loops in names.values() if loops),
         }
     summary = _export.summarize(_export.glb_json(glb))
     return {
@@ -280,6 +318,11 @@ def evaluate(dump: dict[str, Any], expect: dict[str, Any], contract: dict[str, A
           f"no bone moves {MOVE_MIN_DEG} deg or {MOVE_MIN_M * 1000:.0f} mm in: {', '.join(still)}")
 
     _loops(c, anims, expect.get("seams", {}))
+    if expect.get("loop_suffix"):  # animations named as loops: Godot must import them looping (art #33)
+        once = [n for n in expect["loop_suffix"] if n in anims and not anims[n].get("loop_mode", 0)]
+        c.add("loop_suffix", not once, f"all {len(expect['loop_suffix'])} animations named as loops (_Loop) import "
+              f"with loop_mode LINEAR under their name without it" if not once else
+              f"named as loops but import playing once: {', '.join(once)}")
 
     boxes = [m["rest_bounds"] for m in dump["meshes"] if m.get("rest_bounds")]
     body = contract["body"]

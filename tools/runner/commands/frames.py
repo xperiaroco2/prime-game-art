@@ -50,7 +50,8 @@ def run(args: argparse.Namespace) -> int:
     for sub in ("sheets", "frames", "video", "compare", "clips"):
         shutil.rmtree(out / sub, ignore_errors=True)
     out.mkdir(parents=True, exist_ok=True)
-    spec = _frames.spec(glb.stem, animations, compare, video, expect.get("seams"))
+    spec = _frames.spec(glb.stem, animations, compare, video, expect.get("seams"), expect.get("fps", _frames.FPS),
+                        set(expect.get("loop_suffix", [])))
     for clip in spec["clips"]:
         if clip["open_cycle"]:
             common.warn(f"{clip['label']}: its last key does not repeat its first; one cycle is {clip['cycle_s']:.3f} s, "
@@ -59,7 +60,7 @@ def run(args: argparse.Namespace) -> int:
     spec_path.write_text(json.dumps(spec, indent=1), encoding="utf-8")
 
     _godot.clear_staged({glb.stem})
-    res_path = _godot.stage(glb)
+    res_path = _godot.stage(glb, params=_godot.import_params(glb))
     import_lines = _godot.import_project()
     common.say(f"frames: {len(spec['clips'])} animations of {glb.name} in an off-screen Godot window -> {out.as_posix()}")
     w, h = _frames.WINDOW
@@ -76,6 +77,10 @@ def run(args: argparse.Namespace) -> int:
     for line in import_lines + lines:
         common.warn(f"godot: {line}")
     record = json.loads(record_path.read_text(encoding="utf-8"))
+    actions = expect.get("actions", {})  # Blender's action of each Godot animation (a loop suffix dropped, art #33)
+    for clip in record.get("clips", {}).values():
+        clip["action"] = actions.get(clip["name"], clip["name"])
+    record_path.write_text(json.dumps(record, indent=1), encoding="utf-8")
 
     failed = False
     if compare:
