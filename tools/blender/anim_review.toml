@@ -409,6 +409,16 @@ name = "mvp_carry_4.5"
 label = "the MVP walk with the package"
 speed = 4.5
 clips = ["mvp:Jog_Fwd_Loop|mvp:Carry_Upper_Loop", "mvp:Jog_Fwd_Loop"]
+[[rates]]
+name = "mvp_carry_7.0"
+label = "the MVP sprint with the package"
+speed = 7.0
+clips = ["mvp:Sprint_Fwd_Loop|mvp:Carry_Upper_Loop", "mvp:Sprint_Fwd_Loop"]
+[[rates]]
+name = "mvp_push_2.25"
+label = "pushing at the push speed: the push layer (leant 30 degrees) over the walk at 0.5x"
+speed = 2.25
+clips = ["mvp:Jog_Fwd_Loop|mvp:Push_Upper_Loop", "mvp:Jog_Fwd_Loop"]
 
 # The MVP set's one-shots and layers against their sources (art #33).
 [[pairs]]
