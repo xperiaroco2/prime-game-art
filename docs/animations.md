@@ -261,11 +261,11 @@ spheres' grouping, nothing deforms with them).
 
 The clip edits turn a retargeted clip into one the game can play: they cut a loop at its best seam, take the travel
 out, straighten the heading, rescale a turn, trim, retime, reverse, mirror left and right, warp the stride to a speed
-with the feet planted, lift a clip out of the floor, and turn the arms out of the legs or the hands apart. The code is
-in two modules:
+with the feet planted, lift a clip out of the floor, turn the arms out of the legs or the hands apart, and lean the
+upper body forward. The code is in two modules:
 
 - `tools/blender/anim_edit_math.py`: the pure math (standard library only), with unit tests in
-  `tools/tests/test_anim_edit_math.py`;
+  `tools/tests/test_anim_edit_math.py` (`test_anim_edit_settle.py`, `test_anim_edit_lean.py`);
 - `tools/blender/anim_edit.py`: the Blender side, with tests on the real pack and UAL clips in
   `tools/tests/test_anim_edit_blender.py` (skipped without Blender or the raw files).
 
@@ -326,6 +326,7 @@ and is then skipped on the other body type. Times are seconds in the clip as it 
 | `floor` | `mode` = `lift`, `hips` or `settle`, `from_s` (0), `to_s` (the end), `fade_s` (0.2), `min_depth_cm` (0.3) | per frame, the posed meshes' lowest vertex below the floor (deeper than `min_depth_cm`) inside the window gives a lift profile: a running max over +-2 frames, smoothed over +-2 frames, held at the window's edges and faded to 0 over `fade_s` outside it. `lift` moves Root (everything: lying, crawling). `hips` moves Body and re-solves the legs to their feet, up to three rounds; it measures without the shoes, which a lift of the hips cannot move. `settle` (art #33) does the opposite for a clip that floats (Meshy's crawl, roll-up and get-up): the heights of the lowest vertex above the floor as a running min over +-2 frames, smoothed and faded the same way, move Root down, so no frame goes under the floor (`anim_edit_math.settle_profile`) | lowest_before_cm, lowest_after_cm, max_lift_cm, window_s; for `hips` also shoes_lowest_after_cm; for `settle` max_drop_cm and highest_low_after_cm |
 | `arm_offset` | `abduct_deg` (a number or `"auto"`), `max_deg` (12), `margin_cm` (0.3) | turns each upper arm away from the body about the chest's forward axis at the shoulder joint, by one angle on every frame (only UpperArm's basis changes, so the arm below follows). `auto` finds the smallest angle (bisection to 0.5 degrees) at which no hand vertex is inside the legs (`hands_in_legs`), on the frames that were inside and their neighbours, then adds the angle that moves the hand `margin_cm` further | deg, found, hands_in_legs before and after (cm), frames in the legs before and after |
 | `hand_spacing` | `min_gap_cm` or `gap_m`; `at` = all, end or mean; `deg` (a number or `"auto"`); `max_deg` (25) | turns each upper arm about the world vertical at its shoulder, the hands moving apart symmetrically (a negative angle brings them together). `min_gap_cm`: no hand inside the other and at least that gap between their closest vertices (on every frame, at the end, or on average). `gap_m`: the closest distance between the two hands' vertices at `at` (all: the smallest) reaches the gap, searched in [-max_deg, max_deg] | deg, found, gap before and after (cm), hands_in_each_other before and after (cm), min_gap_after_cm |
+| `lean` | `deg`; `bone` (`Torso`) | turns one spine bone forward by `deg` about the body's left-right axis through its head, on every frame; the bones below follow, the legs and the IK feet stay. For an upper-body layer whose source leans with the hips: the game's layer starts at `Torso`, so the hips' lean is lost over an upright base (UAL Push_Loop's hands go up over the head) | bone, deg, tilt_before_deg and tilt_after_deg (the mean forward tilt of the line from the bone to Head), head_forward_cm |
 
 Steps raise `anim_edit.EditError` on a failure (an unknown op, a bad parameter, a window outside the clip, a cycle
 whose raw seam is too large, a stride on a clip that is not an in-place loop); `apply` names the failing step. A
@@ -451,6 +452,7 @@ Background Blender, the pack originals with the toe bones and UAL1 retargeted wi
 | women, UAL Idle_Loop: arm_offset auto | 2.66 degrees: hands in the thighs 1.32 cm (42 frames) to 0 |
 | women, UAL Push_Loop: hand_spacing min_gap_cm 1.0 | 4.3 degrees: the hands 6.09 cm inside each other to a 1.28 cm gap |
 | men, UAL Push_Loop: hand_spacing min_gap_cm 1.0 | 0 degrees: a 1.08 cm gap already |
+| women, UAL Push_Loop: lean 30 | the spine's tilt 46.5 to 76.5 degrees, the head 8.2 cm forward, the feet still; layered over the idle the hands come down from over the head to in front of the face |
 | men, pack Punch_Right: mirror | a left punch; rest error 0.0002 mm |
 | men, UAL Jump_Start: trim 0.03-0.40, retime 0.25 | 8 frames, 0.267 s: a retime rounds to whole frames (rate 1.375 for 1.467) |
 
@@ -541,7 +543,10 @@ before and after within 0.1 mm), a scene at 30 fps over the longest clip.
 `.export.json` records (30 for a set; Godot would resample a set imported at the pack's 24).
 
 **Upper-body layers** (`layer = "upper"`: the push, the talk, the carry, the knife) export all 64 bones; the game masks
-them with the set's bone filter, `Torso` and every bone below it (`build_report.json` lists them as `upper_bones`).
+them with the set's bone filter, `Torso` and every bone below it (`build_report.json` lists them as `upper_bones`). A
+layer keeps nothing of its source's hips: a source that leans with the hips (the push) needs a `lean` on `Torso`, and
+its full-body clip then bends further than the source (the push 76 degrees), so it is played as a layer only. Judge a
+layer in the review over the bases the game puts under it (`Idle_Loop|Push_Upper_Loop`, `Jog_Fwd_Loop|...`), not alone.
 
 ### In the review
 
