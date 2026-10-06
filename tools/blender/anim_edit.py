@@ -135,21 +135,31 @@ class Target:
 
 # ----------------------------------------------------------------------------------------------- helpers
 def _resample(fr: Frames, times: list[float]) -> list[dict]:
-    """Basis frames at fractional frame indices: rotations slerp (on one hemisphere), locations and scales lerp."""
+    """Basis frames at fractional frame indices, by a Catmull-Rom spline through the neighbouring frames (wrapped
+    over a closed loop's seam): locations and scales per component, rotations on the quaternion components aligned
+    to one hemisphere and normalised (between two frames this is a smoothed slerp)."""
     dec = [{n: m.decompose() for n, m in b.items()} for b in fr.basis]
+    last = fr.frames
     out = []
     for t in times:
-        i, f = em.split_index(t, fr.frames)
-        a, b = dec[i], dec[min(i + 1, fr.frames)]
+        i, f = em.split_index(t, last)
+        if f < 1e-9 or f > 1 - 1e-9:
+            k = i if f < 0.5 else min(i + 1, last)
+            out.append({n: Matrix.LocRotScale(*d) for n, d in dec[k].items()})
+            continue
+        w = em.catmull_rom(f)
+        idx = em.neighbours(i, last, fr.loop)
         frame = {}
-        for n, (la, qa, sa) in a.items():
-            lb, qb, sb = b[n]
-            if f < 1e-9:
-                frame[n] = Matrix.LocRotScale(la, qa, sa)
-                continue
-            if qa.dot(qb) < 0:
-                qb = -qb
-            frame[n] = Matrix.LocRotScale(la.lerp(lb, f), qa.slerp(qb, f), sa.lerp(sb, f))
+        for n, (l1, q1, s1) in dec[i].items():
+            loc, q, sc = Vector(), Quaternion((0.0, 0.0, 0.0, 0.0)), Vector()
+            for wk, k in zip(w, idx):
+                lk, qk, sk = dec[k][n]
+                if qk.dot(q1) < 0:
+                    qk = -qk
+                loc += lk * wk
+                sc += sk * wk
+                q = Quaternion([a + b * wk for a, b in zip(q, qk)])
+            frame[n] = Matrix.LocRotScale(loc, q.normalized(), sc)
         out.append(frame)
     return out
 

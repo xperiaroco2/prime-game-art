@@ -164,6 +164,22 @@ def retime_times(intervals: int, new_intervals: int) -> list[float]:
     return [k * intervals / new_intervals for k in range(new_intervals + 1)]
 
 
+def catmull_rom(f: float) -> tuple[float, float, float, float]:
+    """The weights of frames i-1, i, i+1, i+2 for a point at fraction f between frames i and i+1 (a uniform
+    Catmull-Rom spline: it passes through the frames, keeps a straight line straight and follows a curve far closer
+    than a linear blend, so a retime there and back stays within a fraction of a degree)."""
+    f2, f3 = f * f, f * f * f
+    return (-0.5 * f3 + f2 - 0.5 * f, 1.5 * f3 - 2.5 * f2 + 1.0, -1.5 * f3 + 2.0 * f2 + 0.5 * f, 0.5 * f3 - 0.5 * f2)
+
+
+def neighbours(i: int, last: int, closed: bool) -> tuple[int, int, int, int]:
+    """Frames i-1, i, i+1, i+2 of a clip with frames 0..last: clamped at the ends, or wrapped over a closed loop's
+    seam (its frame `last` is its frame 0)."""
+    if closed and last > 1:
+        return ((i - 1) % last, i, i + 1, (i + 2) % last if i + 2 > last else i + 2)
+    return (max(i - 1, 0), i, min(i + 1, last), min(i + 2, last))
+
+
 def split_index(t: float, last: int) -> tuple[int, float]:
     """A fractional frame index as (frame, fraction towards the next), clamped to 0..last."""
     t = min(max(t, 0.0), float(last))

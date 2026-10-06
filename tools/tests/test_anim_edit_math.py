@@ -88,6 +88,20 @@ class TimeMapTest(unittest.TestCase):
         self.assertAlmostEqual(eff, 1.5)
         self.assertEqual(em.retime_times(60, 40)[-1], 60.0)
         self.assertEqual(em.split_index(27.5, 28), (27, 0.5))
+        self.assertEqual(em.neighbours(0, 28, closed=True), (27, 0, 1, 2))  # over a loop's seam
+        self.assertEqual(em.neighbours(27, 28, closed=True), (26, 27, 28, 1))
+        self.assertEqual(em.neighbours(27, 28, closed=False), (26, 27, 28, 28))
+
+    def test_catmull_rom(self) -> None:
+        for f in (0.0, 0.25, 0.5, 0.9):
+            w = em.catmull_rom(f)
+            self.assertAlmostEqual(sum(w), 1.0)
+            self.assertAlmostEqual(sum(wk * x for wk, x in zip(w, (-1, 0, 1, 2))), f)  # a straight line stays
+        self.assertEqual(em.catmull_rom(0.0), (0.0, 1.0, 0.0, 0.0))
+        w = em.catmull_rom(0.5)  # a sine between samples: far closer than the linear blend
+        xs = [math.sin(0.4 * k) for k in (-1, 0, 1, 2)]
+        exact = math.sin(0.2)
+        self.assertLess(abs(sum(a * b for a, b in zip(w, xs)) - exact), abs((xs[1] + xs[2]) / 2 - exact) / 3)
         self.assertEqual(em.split_index(28.0, 28), (27, 1.0))
 
 
