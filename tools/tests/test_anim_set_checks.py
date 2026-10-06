@@ -18,6 +18,8 @@ def report() -> dict:
         "Jog_Fwd_Loop": clip(21, True, steps=[{"op": "stride", "fit": "warn", "scale": 0.57, "cadence": 2.86,
                                                "step_m": 1.575}]),
         "Knockdown": clip(40, False, travel=0.4, low=-0.2),
+        "Strafe_Left_Loop": {**clip(24, True), "speed_m_s": 4.5, "facing_mean_deg": 20.4, "head_facing_mean_deg": -17.7,
+                             "seam_step_ratio": 2.1},
         "Jog_Bwd_TTM_Loop": clip(21, True, export=False, steps=[{"op": "stride", "fit": "fail", "scale": 8.1,
                                                                  "cadence": 2.8, "step_m": 1.6}], low=-2.5),
     }}
@@ -67,7 +69,11 @@ class SetChecksTest(unittest.TestCase):
         self.assertTrue(any("Jog_Fwd_Loop: stride scale 0.57 (warn)" in w for w in warnings), warnings)
         self.assertTrue(any("Jog_Bwd_TTM_Loop: stride scale 8.1 (fail)" in w for w in warnings), warnings)
         self.assertTrue(any("lowest vertex -2.5 cm" in w for w in warnings), warnings)
-        self.assertEqual(len(_anim_set.table(report()).splitlines()), 5)
+        self.assertTrue(any("Strafe_Left_Loop: faces 20.4 degrees (hips) and -17.7 (head)" in w for w in warnings),
+                        warnings)
+        self.assertTrue(any("Strafe_Left_Loop: its step onto the first frame is 2.1" in w for w in warnings), warnings)
+        self.assertFalse(any(w.startswith("Jog_Fwd_Loop: faces") for w in warnings), warnings)
+        self.assertEqual(len(_anim_set.table(report()).splitlines()), 6)
         self.assertEqual(_anim_set.summary({"checks": [{"status": "pass"}, {"status": "warn"}]}),
                          {"pass": 1, "warn": 1, "fail": 0})
 

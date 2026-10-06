@@ -24,7 +24,7 @@ import time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import bpy  # noqa: E402
-from mathutils import Matrix  # noqa: E402
+from mathutils import Matrix, Vector  # noqa: E402
 
 import anim_edit as ae  # noqa: E402
 import anim_edit_math as em  # noqa: E402
@@ -61,6 +61,17 @@ def _summary(fr: ae.Frames, target: ae.Target, lowest: bool) -> dict:
                              _r(max(ae._world(fr.rig, P, ae.BODY).z for P in poses))]}
     if moving:
         out["crab_deg"] = _r(em.wrap(em.circular_mean(yaws) - em.yaw_of(d)), 1)
+    # where the hips and the head face on average (0: the game's aim, -Y): a strafe or a crawl turned off its aim
+    # shows here (art #33's review: the strafe's hips 20 degrees towards its travel, its head 18 the other way)
+    out["facing_mean_deg"] = _r(em.circular_mean(yaws), 1)
+    out["head_facing_mean_deg"] = _r(em.circular_mean([_head_yaw(fr.rig, P) for P in poses]), 1)
+    if fr.loop and len(poses) > 2:
+        # the loop's real seam: the step from its last distinct frame onto its first (the last frame is the first by
+        # construction, so a seam of 0 says nothing) against the median frame step, over the joints' world positions
+        heads = [[fr.rig.W @ P[n].translation for n in fr.rig.order] for P in poses]
+        steps = [max((a - b).length for a, b in zip(heads[k], heads[k + 1])) for k in range(len(heads) - 1)]
+        median = sorted(steps)[len(steps) // 2]
+        out["seam_step_ratio"] = _r(steps[-1] / median, 2) if median > 0 else None
     if lowest:
         lows = ae._lows(fr, target)
         under = run = 0
@@ -70,6 +81,11 @@ def _summary(fr: ae.Frames, target: ae.Target, lowest: bool) -> dict:
         out.update(lowest_cm=_r(100 * min(lows), 2), lowest_at_s=_r(lows.index(min(lows)) / fr.fps, 3),
                    highest_low_cm=_r(100 * max(lows), 2), frames_under_1cm_in_a_row=under)
     return out
+
+
+def _head_yaw(rig, P) -> float:
+    R = ae._turn_of(rig, P, "Head")
+    return em.facing_yaw(tuple(R @ Vector((0.0, -1.0, 0.0))), tuple(R @ Vector((1.0, 0.0, 0.0))))
 
 
 def close_open_loop(fr: ae.Frames) -> tuple[ae.Frames, dict | None]:
