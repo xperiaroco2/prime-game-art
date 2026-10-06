@@ -85,9 +85,12 @@ adds). No add-on: `tools/blender/retarget_core.py`.
 4. **Feet.** A target foot follows its lower leg (`[follow]` in the map), and a **two-bone IK** per leg places its
    pivot where the source foot carries it: the target pivot's rest position, scaled to the source's size and pinned
    to the source foot, so heel and toe roll transfer. Then the **toe lift**: the rigid target foot (no toe bone) is
-   pitched about its pivot until its toe is no lower than the rest sole, while the pivot is near the floor (fully up
-   to 20 cm above its rest height, fading out over 10 cm; never when the pivot is below the floor, as in in-place
-   jumps). The report's `ik_miss_mm` says how far a leg fell short of its goal: a few mm in walks; 4 to 5.5 cm at the
+   pitched about its pivot until its toe is no lower than the rest sole, while the pivot is near the floor (fully
+   from 2 cm below its rest height to 20 cm above it, fading out over the next 10 cm above and the next 4 cm below:
+   a pivot well below the floor is an in-place jump without its rise, which the clamp leaves alone;
+   `anim_math.floor_clamp_weight`). Until art #33 the clamp switched off at once 2 cm below, so a foot hovering on
+   that line flicked between clamped and free: UAL's Jump_Loop pitched its right foot 53 degrees and back in one
+   frame, four times a loop (twice on the women); with the fade its largest frame step is 2.7 degrees. The report's `ik_miss_mm` says how far a leg fell short of its goal: a few mm in walks; 4 to 5.5 cm at the
    push-off of Sprint and Jog, where the target leg locks straight (the heel pivot sits farther from the hip than
    the source's ankle once the foot points down); 2 to 6 cm in the falls, rolls, jumps and swims (before the hips fix
    the rolls missed by 23 to 25 cm).

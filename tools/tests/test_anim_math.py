@@ -97,5 +97,20 @@ class AngleTest(unittest.TestCase):
         self.assertIsNone(am.loop_seam(first, first, [])["seam_ratio"])
 
 
+    def test_floor_clamp_weight_is_continuous(self) -> None:
+        w = am.floor_clamp_weight
+        for dz in (-0.02, 0.0, 0.10, 0.20):  # fully on from 2 cm under the rest pivot to 20 cm over it
+            self.assertEqual(w(dz), 1.0, dz)
+        for dz in (-0.06, -0.5, 0.30, 1.0):  # off well under the floor (an in-place jump) and well over it
+            self.assertAlmostEqual(w(dz), 0.0, places=12, msg=dz)
+        self.assertAlmostEqual(w(-0.04), 0.5)
+        self.assertAlmostEqual(w(0.25), 0.5)
+        # a foot hovering on the old 2 cm line no longer switches the clamp fully on and off between two frames
+        # (art #33: Jump_Loop's right foot at -2.0 to -2.2 cm flicked 53 degrees)
+        self.assertGreater(w(-0.0201), 0.99)
+        dzs = [i / 10000 for i in range(-1000, 4001)]  # -10 cm to 40 cm in 0.1 mm steps
+        jumps = [abs(w(a) - w(b)) for a, b in zip(dzs, dzs[1:])]
+        self.assertLessEqual(max(jumps), 0.0001 / 0.04 + 1e-9)
+
 if __name__ == "__main__":
     unittest.main()

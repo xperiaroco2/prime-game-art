@@ -20,6 +20,8 @@ import bpy
 from bpy_extras import anim_utils
 from mathutils import Matrix, Quaternion, Vector
 
+import anim_math  # pure: the floor clamp's weight
+
 FPS = 30  # the review timeline; UAL is authored at 30 fps (its clips import to whole frames only at 30)
 
 
@@ -408,15 +410,13 @@ class Retargeter:
             if k in self.inv and k in self.soles and w > 0.0:
                 self._lift(P, k, w)
 
-    def _lift_weight(self, P: dict, foot: str, full: float = 0.20, fade: float = 0.10) -> float:
-        """How much the floor clamp acts on a foot (and its toe): fully while the foot pivot is up to `full` m above
-        its rest height, fading out over the next `fade` m; not at all when the pivot is below the floor (an in-place
-        jump without its rise)."""
-        sole = self.soles[foot]
+    def _lift_weight(self, P: dict, foot: str) -> float:
+        """How much the floor clamp acts on a foot (and its toe), from its pivot's height over its rest height
+        (anim_math.floor_clamp_weight): fully from 2 cm under it to 20 cm over it, fading out over the next 10 cm above
+        and the next 4 cm below (an in-place jump without its rise is left alone); the fade below keeps a foot that
+        hovers 2 cm down from flicking between clamped and free from one frame to the next (art #33)."""
         pivot = self.tgt.W @ P[foot].translation
-        if pivot.z < sole["pivot_z"] - 0.02:
-            return 0.0
-        return min(max(1.0 - (pivot.z - sole["pivot_z"] - full) / fade, 0.0), 1.0)
+        return anim_math.floor_clamp_weight(pivot.z - self.soles[foot]["pivot_z"])
 
     def _lift(self, P: dict, bone: str, w: float) -> None:
         """Pitches a foot or a toe bone about its head until its sole's front point is no lower than the rest sole,
