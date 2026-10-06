@@ -99,8 +99,13 @@ def godot(glbs: dict[str, Path], reports: dict[str, dict], outs: dict[str, Path]
     good = True
     for body, glb in glbs.items():
         out = outs[body] / "godot-check"
-        good &= godot_check.check_one(glb, staged[body], out, contract, import_lines, False, list(staged.values()))
+        godot_check.check_one(glb, staged[body], out, contract, import_lines, False, list(staged.values()))
         result = json.loads((out / "report.json").read_text(encoding="utf-8"))
+        fails = [c for c in result["checks"] if c["status"] == "fail" and not _anim_set.donor_facing(c)]
+        if any(_anim_set.donor_facing(c) for c in result["checks"]):
+            common.warn(f"{body}: facing_plus_z cannot tell on the pack donor, whose parts are not named by role "
+                        f"(_eyes, _shoes); the set keeps the donor's rest, which faces -Y in Blender (+Z in glTF)")
+        good &= not fails
         problems = _anim_set.check_godot(result, reports[body])
         for p in problems:
             common.bad(f"{body} in Godot: {p}")

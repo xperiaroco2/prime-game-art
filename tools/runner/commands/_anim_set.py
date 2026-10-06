@@ -146,6 +146,12 @@ def table(report: dict) -> str:
     return "\n".join(lines) + "\n"
 
 
+def donor_facing(check: dict[str, str]) -> bool:
+    """godot-check's facing check that cannot tell on a set's donor, a pack original whose parts are not named by
+    role (it finds no _eyes and no _shoes part): not a failure of the set (it keeps the donor's rest and facing)."""
+    return check["check"] == "facing_plus_z" and check["status"] == "fail" and check["detail"].startswith("cannot tell")
+
+
 def summary(godot: dict[str, Any] | None) -> dict[str, int]:
     """godot-check's verdicts counted: {"pass": n, "warn": n, "fail": n}."""
     out = {"pass": 0, "warn": 0, "fail": 0}

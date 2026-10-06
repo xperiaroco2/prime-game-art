@@ -33,7 +33,7 @@ import retarget_core as rc  # noqa: E402
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 CHECK_TOLERANCE_M = 1e-4  # the posed character before and after the transforms are applied (as um/blendfile.py)
-IN_PLACE_M = 0.05  # a loop's Body travel from its first to its last frame below which it is in place
+OPEN_SEAM_MM, OPEN_SEAM_DEG = 0.5, 0.5  # a looping source whose last frame is further from its first is open
 
 
 def load_set(path: str) -> dict:
@@ -72,6 +72,35 @@ def _summary(fr: ae.Frames, target: ae.Target, lowest: bool) -> dict:
     return out
 
 
+def close_open_loop(fr: ae.Frames) -> tuple[ae.Frames, dict | None]:
+    """A looping source whose last frame is not its first (an open cycle: UAL's loops end one frame before their first
+    pose comes round again) gets its first frame appended, so its loop is closed and one frame longer, as the clip
+    edits and Godot's LOOP_LINEAR expect; a seam smaller than half the clip's median frame step is a closed loop's
+    small error, and its last frame becomes its first instead. The seam is measured as the export measures it: the
+    joints' world positions (mm) and the bones' armature-space rotations (degrees). Returns the frames and the seam it
+    had (None: already closed)."""
+    poses = fr.poses()
+    heads = [[fr.rig.W @ P[n].translation for n in fr.rig.order] for P in poses]
+
+    def step(a, b):
+        mm = max((p - q).length for p, q in zip(heads[a], heads[b])) * 1000
+        deg = max(min(x, 360 - x) for x in (math.degrees(poses[a][n].to_quaternion().rotation_difference(
+            poses[b][n].to_quaternion()).angle) for n in fr.rig.order))
+        return mm, deg
+
+    mm, deg = step(0, -1)
+    if mm <= OPEN_SEAM_MM and deg <= OPEN_SEAM_DEG:
+        return fr, None
+    steps = sorted(step(k, k + 1)[0] for k in range(len(poses) - 1))
+    median = steps[len(steps) // 2] if steps else 0.0
+    seam = {"position_mm": _r(mm, 2), "rotation_deg": _r(deg, 2), "median_step_mm": _r(median, 2)}
+    if median > 0 and mm >= 0.5 * median:  # open: the first pose comes round one frame after the last
+        return fr.copy([*fr.basis, {n: m.copy() for n, m in fr.basis[0].items()}]), {**seam, "frames_added": 1}
+    out = fr.copy()
+    out.basis[-1] = {n: m.copy() for n, m in fr.basis[0].items()}
+    return out, {**seam, "frames_added": 0}
+
+
 def build_clips(set_cfg: dict, char: dict, names, body: str, resolve, target: ae.Target | None = None,
                 lowest: bool = False, log=print) -> dict:
     """Builds the clips `names` ("all" or a list) of a set on char (a donor with the toe bones) and the clips they are
@@ -87,9 +116,12 @@ def build_clips(set_cfg: dict, char: dict, names, body: str, resolve, target: ae
     for name in order:
         c = table[name]
         t0 = time.time()
+        opened = None
         if "source" in c:
             clip = src[c["source"]]
             fr = ae.Frames.from_sampler(clip.sampler, target.rig, clip.loop)
+            if fr.loop:
+                fr, opened = close_open_loop(fr)
         else:
             base = out[c["from"]]
             keep = {k: base.info[k] for k in ("speed_m_s", "speed_from", "travel_m") if k in base.info}
@@ -104,6 +136,8 @@ def build_clips(set_cfg: dict, char: dict, names, body: str, resolve, target: ae
         rep = {"source": c.get("source"), "from": c.get("from"), "export": c["export"], "loop": fr.loop,
                "frames": fr.frames, "seconds": _r(fr.seconds), "speed_m_s": asc.speed_of(c),
                "measured_speed_m_s": _r(fr.info.get("speed_m_s")), "needs": c["needs"], "steps": fr.info["steps"]}
+        if opened:
+            rep["source_open_seam"] = opened
         rep.update(_summary(fr, target, lowest))
         rep["seconds_spent"] = _r(time.time() - t0, 1)
         fr.info["report"] = rep
@@ -206,19 +240,26 @@ def save(char: dict, actions: dict, path: str, fps: int) -> dict:
     error = max(float(np.linalg.norm(p - q, axis=1).max()) for p, q in zip(before, after))
     if error > CHECK_TOLERANCE_M:
         raise RuntimeError(f"applying the transforms moved the posed character by {error * 1000:.3f} mm")
-    if root is not None:
-        bpy.data.objects.remove(root, do_unlink=True)
-    scene = bpy.data.scenes.new(os.path.splitext(os.path.basename(path))[0])
+    # the file holds the character and the set's actions only: every other object (the RootNode, the review's camera,
+    # lights and floor) and every other action (the pack's, the retargeted sources) goes. A partial write
+    # (bpy.data.libraries.write) of a new scene crashed Blender 5.2.2 in BKE_view_layer_copy_data, so the whole
+    # file is saved as a copy.
+    keep = {arm, *parts}
+    for o in list(bpy.data.objects):
+        if o not in keep:
+            bpy.data.objects.remove(o, do_unlink=True)
+    for act in list(bpy.data.actions):
+        if act not in acts:
+            bpy.data.actions.remove(act)
+    for extra in list(bpy.data.scenes)[1:]:
+        bpy.data.scenes.remove(extra)
+    scene = bpy.context.scene
     scene.render.fps = fps
     scene.render.fps_base = 1.0
     scene.frame_start = int(min(a.frame_range[0] for a in acts))
     scene.frame_end = int(max(a.frame_range[1] for a in acts))
-    coll = bpy.data.collections.new(scene.name)
-    scene.collection.children.link(coll)
-    for o in [arm] + parts:
-        coll.objects.link(o)
     os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
-    bpy.data.libraries.write(path, {scene, *acts}, path_remap="NONE", fake_user=True, compress=True)
+    bpy.ops.wm.save_as_mainfile(filepath=os.path.abspath(path), copy=True, compress=True)
     print("SAVED", path)
     return {"blend": path.replace("\\", "/"), "transform_check_max_error_mm": round(error * 1000, 4),
             "actions": {a.name: [int(a.frame_range[0]), int(a.frame_range[1])] for a in acts},
