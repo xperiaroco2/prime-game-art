@@ -399,9 +399,13 @@ What the review found (the measures and the per-need verdicts:
 - the backward jog barely travels (0.3 m/s: its steps would have to grow about 7x to reach 4.5 m/s), so the
   reversed forward jog stands in for it.
 
-Re-roll candidates for the 30-credit reserve, in order (refined prompts in the research note): the roll-up, batch 4's
-crawl (no cycle repeats: the loop is closed over a 26-degree seam), the backward jog, and the get-up from all fours
-only if the review rejects the stopgap. Spend so far on the MVP: 70 of the 70 approved; the reserve is untouched.
+Re-roll candidates (refined prompts in the research note). The reserve was approved for re-generating a batch-5 clip
+that fails review, so it covers, in order: the roll-up, the backward jog, then the strafe (its hips and head turn
+about 20 degrees apart off the aim) or the get-up from all fours (only if the review rejects its stopgap). Batch 4's
+crawl (no cycle repeats: the loop is closed over a 26-degree seam; the hands skate) is not a batch-5 clip, and the
+approval said it would be cleaned up for free: its re-roll needs the engineer's yes for 10 credits, or the manager's
+reading that it counts under the reserve, recorded in the re-roll batch's `approval_ref`. Spend so far on the MVP: 70
+of the 70 approved; the reserve is untouched.
 
 **A manifest that uses a batch-5 clip** records the owned output of the paid plan: `public_repo_ok = true`,
 `ai_generated = true`, the text-to-motion task id and `source.model_version = "prime"`.
