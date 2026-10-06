@@ -341,6 +341,12 @@ a radian). `best_cycle` minimises the squared feature distance plus that of the 
 bone rotation between frame j and frame i) guards the closing: closing spreads any residual, so without the guard it
 would hide a bad cut.
 
+Closing blends every channel by itself: the IK feet (children of Root) by location, the legs under Body by rotation.
+Between the cut's ends the shin's end therefore parts from its Foot bone (15 cm mid-cycle on the crawl's 26-degree
+cut, which tore the exported ankle), so the cycle solves both legs again on every frame to the closed feet and reports
+the gap it mended (`leg_gap_before_mm`) and the IK miss (`ik_miss_mm`: where a closed foot is out of the leg's reach,
+the foot goes to the shin's end).
+
 #### Stride warping
 
 The input is an in-place loop. Its natural ground speed `v0` is the median contact velocity of the feet (the
@@ -535,7 +541,7 @@ before and after within 0.1 mm), a scene at 30 fps over the longest clip.
 | the build | every clip built, as long as its frames over 30; every loop closed and in place (its Body travels under 5 cm from its first frame to its last) |
 | the export (`export`'s checks, then the set's) | every exported clip an action of its frames, nothing else, 30 fps; every loop's last frame its first within 0.5 mm and 0.5 degrees (`export.json` seams) |
 | Godot (`godot-check`, then the set's) | every animation under the name Godot gives it, as long as built, looping (LINEAR) exactly when the set says so; 64 bones; every track resolves |
-| warnings (printed, judged in the review) | a `stride` fit of `warn` or `fail`, an `auto` search that found no angle, a lowest vertex under -1.2 cm |
+| warnings (printed, judged in the review) | a `stride` fit of `warn` or `fail`, an `auto` search that found no angle, a lowest vertex under -1.2 cm, a locomotion loop (one with a `speed_m_s`) whose hips or head face more than 5 degrees off the aim on average (`facing_mean_deg`, `head_facing_mean_deg`: the strafe's 19.5 and -15.9), a loop whose step from its last distinct frame onto its first is over 1.5 median frame steps (`seam_step_ratio`; the export's seam is 0 by construction, so it says nothing about a pop) |
 
 **Godot's loop names.** Godot's scene importer gives an animation whose name ends in `_Loop` (also `-loop`, `_cycle`,
 `-cycle`, any case) the loop mode LINEAR and drops the suffix: the game sees `Idle`, `Jog_Fwd`, `Strafe_Left`,
