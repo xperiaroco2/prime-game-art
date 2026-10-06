@@ -45,6 +45,29 @@ own = "w1_ivy"
 map = "meshy_um.toml"
 rigid_map = "meshy_um_rigid.toml"
 
+# Meshy text to motion (art #33): one FBX per clip on an SMPL-H skeleton (52 bones with fingers), retargeted straight
+# onto our rig with smpl_um.toml (no Meshy rig, no animate step). Owned output of the Pro plan, ai_generated.
+# `format = "smplh_fbx"`: `file` is the rig (every file has the same rest, lifted onto the floor by the loader,
+# tools/blender/retarget_smpl.py), `clips` names each clip's file (every file's action is "Base Layer"); the clip names
+# are the batch items' ids. `in_place` clips have their travel taken out for the review's lanes; `own` plays a clip on
+# the SMPL-H mannequin ("tm_own:<clip>"). No `rm`, no `rigid_map` (the toe bones are always on).
+[libraries.tm]
+format = "smplh_fbx"
+file = "2026-10-b4-animations/crawl-motion/text_to_motion-clip.fbx"
+label = "TTM"
+map = "smpl_um.toml"
+own = "SMPL-H mannequin"
+in_place = ["crawl", "backward-jog", "strafe-left", "shove-stumble", "getup-from-all-fours"]
+[libraries.tm.clips]
+crawl = "2026-10-b4-animations/crawl-motion/text_to_motion-clip.fbx"
+backward-jog = "2026-10-b5-anim-mvp/backward-jog/text_to_motion-clip.fbx"
+strafe-left = "2026-10-b5-anim-mvp/strafe-left/text_to_motion-clip.fbx"
+turn-left-90 = "2026-10-b5-anim-mvp/turn-left-90/text_to_motion-clip.fbx"
+shove-stumble = "2026-10-b5-anim-mvp/shove-stumble/text_to_motion-clip.fbx"
+package-lift = "2026-10-b5-anim-mvp/package-lift/text_to_motion-clip.fbx"
+rollup-to-all-fours = "2026-10-b5-anim-mvp/rollup-to-all-fours/text_to_motion-clip.fbx"
+getup-from-all-fours = "2026-10-b5-anim-mvp/getup-from-all-fours/text_to_motion-clip.fbx"
+
 # Layered clips "<base>|<upper>" (tools/blender/anim_keys.py): the base clip's hips and legs under the upper clip's
 # `upper` bone and every bone below it (spine, head, arms, fingers), as an engine layers an upper-body clip. `clips`
 # are layered clips that a run over all clips (or over one of their sources) measures beside the plain ones.

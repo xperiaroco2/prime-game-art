@@ -12,7 +12,11 @@ from .. import common
 BLENDER_DIR = common.ROOT / "tools" / "blender"
 CONFIG = BLENDER_DIR / "anim_review.toml"
 BODIES = ("men", "women")
-LIBRARY_KEYS = {"file", "rm", "label", "map", "rigid_map", "extra", "rename", "skip", "in_place", "own"}
+LIBRARY_KEYS = {"file", "rm", "label", "map", "rigid_map", "extra", "rename", "skip", "in_place", "own", "format",
+                "clips"}
+# a library's `format`: GLB files whose actions are the clips (the default), or Meshy text to motion's FBX files on an
+# SMPL-H skeleton, one clip per file named by `clips` (art #33; tools/blender/retarget_smpl.py)
+FORMATS = ("glb", "smplh_fbx")
 MAPS = BLENDER_DIR / "retarget_maps"
 
 
@@ -35,16 +39,45 @@ def load_config(path: Path = CONFIG) -> dict:
         for name in (lib.get("map"), lib.get("rigid_map")):  # bone maps of a library on another rig (art #25)
             if name is not None and not (MAPS / str(name)).is_file():
                 raise common.Failure(f"{path.name}: [libraries.{key}] names a bone map {name!r} that is not in {MAPS}")
+        _check_format(path, key, lib)
     return cfg
+
+
+def _check_format(path: Path, key: str, lib: dict) -> None:
+    """A library's `format` and, for text to motion, its `clips` table {clip name: raw-relative FBX path}."""
+    fmt = lib.get("format", "glb")
+    where = f"{path.name}: [libraries.{key}]"
+    if fmt not in FORMATS:
+        raise common.Failure(f"{where} format {fmt!r} is not one of {', '.join(FORMATS)}")
+    clips = lib.get("clips")
+    if fmt == "glb":
+        if clips is not None:
+            raise common.Failure(f"{where} clips: only a library of one file per clip (format smplh_fbx) names them")
+        return
+    if not (isinstance(clips, dict) and clips):
+        raise common.Failure(f"{where} needs [libraries.{key}.clips]: clip name = its FBX file (raw-relative)")
+    for name, rel in clips.items():
+        if not (isinstance(rel, str) and rel.strip() and rel.lower().endswith(".fbx") and not Path(rel).is_absolute()):
+            raise common.Failure(f"{where} clips.{name}: {rel!r} is not a raw-relative .fbx path")
+    if "map" not in lib:
+        raise common.Failure(f"{where} needs map (the SMPL-H bone map)")
+    unknown = sorted(set(lib) & {"extra", "rename", "skip", "rm"})
+    if unknown:
+        raise common.Failure(f"{where} {', '.join(unknown)}: not for a library of one file per clip")
+    missing = sorted(set(lib.get("in_place", [])) - set(clips))
+    if missing:
+        raise common.Failure(f"{where} in_place names clips it lacks: {', '.join(missing)}")
 
 
 def libraries(cfg: dict) -> dict[str, dict]:
     """Every library of clips, UAL1 first: {key: {file, rm, label, extra}} (raw-relative paths; rm is None for a
-    library without a root-motion file, such as Meshy's)."""
+    library without a root-motion file, such as Meshy's; extra: every further file the library reads, a Meshy
+    library's extra GLBs or a text-to-motion library's clip files, art #33)."""
     out = {"ual": {"file": cfg["ual"], "rm": cfg["ual_rm"], "label": "UAL", "extra": []}}
     for key, lib in cfg.get("libraries", {}).items():
+        clip_files = [f for f in dict.fromkeys(lib.get("clips", {}).values()) if f != lib["file"]]
         out[key] = {"file": lib["file"], "rm": lib.get("rm"), "label": lib.get("label", key.upper()),
-                    "extra": list(lib.get("extra", []))}
+                    "extra": list(lib.get("extra", [])) + clip_files}
     return out
 
 
