@@ -107,11 +107,12 @@ PowerShell 5.1 is the primary shell; the Bash tool is Git Bash. In Git Bash `pyt
 `$PYTHON_BIN`. Multi-line commit messages and PR bodies go through a file (`git commit -F`, `gh pr create
 --body-file`). Use absolute paths; with worktrees, `git -C <path>`.
 
-**No tool call of a workflow agent or subagent blocks over 240 s** (art #43: a call over 5 minutes expires the agent's
-prompt cache, and the next call re-writes the whole context; that cost 14-18% of a week). Start Blender, Godot, test and
-`run_*.sh` runs in the background (`run_in_background`, output to a log, `echo "exit=$?" >> <log>`) and poll the log with
-short calls every 2-3 minutes; never `tail -f`, an `until ...; sleep` loop or a `timeout` over 240 s. Every workflow
-prompt carries this rule.
+**No tool call of a workflow agent or subagent blocks over 240 s** (#43: a call over 5 minutes expires the agent's
+prompt cache, and the next call re-writes the whole context; that cost 14-18% of a week). In the Bash tool, start any
+run that can pass 240 s (Blender, Godot, `verify`, `meshy run`, other `tools/run.sh` commands) in the background
+(`run_in_background`, `> <log> 2>&1` under `tools/out/` or the scratchpad, then `echo "exit=$?" >> <log>`); it
+notifies on exit, or check its log with short calls every 2-3 minutes. No `tail -f`, and no `until ...; sleep` loop or
+`timeout` longer than 240 s; never start a second run while one is running. Every workflow prompt carries this rule.
 
 ## Definition of done
 1. `tools/run.py verify` is green; paste its tail. Red: stop and report.
