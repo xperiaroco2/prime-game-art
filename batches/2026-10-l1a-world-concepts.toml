@@ -1,8 +1,11 @@
 # Locations stage 1 (art #34), batch l1a: concept images for a test of Meshy world props in the bright handmade
 # stop-motion set look. Four props, two concepts each: one from text alone, one by image-to-image from our own stage-0
 # set renders. The better concept of each prop goes to image-to-3D in batch l1b. Schema: docs/meshy.md.
-# Approved by the engineer on 2026-10-07 (option "a": a test from October's leftover credits), with a cap of 200 credits
-# for l1a and l1b together; the character track's 30-credit reserve for #33 stays untouched.
+# The engineer's yes of 2026-10-07 to option "a" (a 3-prop Meshy test from October's leftover credits; approval_ref).
+# Applied as four props (a potted tree added, as he had asked about trees) within a cap of 200 credits for l1a and l1b
+# together, set by the locations manager and accepted by the character manager on the condition that the balance stays
+# at 40 or more (https://github.com/xperiaroco2/prime-game-art/issues/34#issuecomment-6034496087); the character
+# track's 30-credit reserve for art #33 stays untouched.
 
 id = "2026-10-l1a-world-concepts"
 purpose = "Concepts for a test of whether Meshy can make soft handmade miniature-set props for the world (a felt armchair, a draped knitted throw, a yarn basket, a sponge-and-wire potted tree) that hold together with kit pieces, our scripted pieces and the clay people under the set shader."
