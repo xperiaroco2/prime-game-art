@@ -15,7 +15,8 @@ The research, the lab and the scripts are outside git in `D:/prime-art-raw/resea
 the review renders in `D:/prime-art-raw/review/locations/` (one folder per prototype, `hybrid/`, `pastel_soft_extra/`,
 `maps/`, `kits/`). All Godot work used Godot 4.7.2 Forward+ (Vulkan, RTX 4060) in lab projects, headless or in an
 off-screen window; Blender ran in the background only. Memory is given in MiB (2^20 bytes); the lab's notes mix
-decimal MB and MiB, and the figures below are converted from the bytes in each `perf.json`.
+decimal MB and MiB, and the figures below are converted from the bytes in each `perf.json` (papercraft's stores only
+rounded MiB).
 
 ## Summary
 
@@ -36,21 +37,21 @@ decimal MB and MiB, and the figures below are converted from the bytes in each `
   materials and one shader instead of 17, at 3.06 ms GPU in its worst view including the outline pass. Its room still
   lacks the set's craft pieces (floorboards, curtains, turned legs), and its yard is paler than the set's.
 - **Three decisions matter more than the choice of world**, because all four prototypes failed them the same way: a
-  2 px character outline or rim (with it the light-skinned man passes all 32 held-out views in every world); white out
-  of the delivery palette (navy measured best); an anti-aliasing mode (SMAA and MSAA 4x fail almost every edge check;
-  the checklist assumes none, as the game runs today).
+  2 px character outline or rim (with it both people pass all 32 held-out views in every world, the man 16 of 16);
+  white out of the delivery palette (navy measured best); an anti-aliasing mode (SMAA and MSAA 4x fail almost every
+  edge check; the checklist assumes none, as the game runs today).
 - **First map, a proposal for the designer: Post Office No. 7 and its yard** (54 x 45 m, 1,843 m² walkable), with a
   courtyard concept as runner-up.
-- **CC0:** 41 free packs downloaded (all CC0-1.0); 41 source records in `sources/` (45 with the character track's);
-  `manifest-check --hashes` passes. No Meshy, no purchases, no installs. Meshy is costed on paper only: the hybrid's
+- **CC0:** 41 source records in `sources/` (45 with the character track's), all CC0-1.0: 37 model packs, 19 ambientCG
+  materials (one record) and 12 Poly Haven assets (three records); `manifest-check --hashes` passes. No Meshy, no purchases, no installs. Meshy is costed on paper only: the hybrid's
   3-5 organic props would take 201-335 credits by the planning figure, against a pool of at most 215 that belongs to
   the character track.
 
 ## The principles
 
 From references where character and world differ yet hold together (Team Fortress 2, Valorant, Fall Guys, Human Fall
-Flat, Lockdown Protocol, It Takes Two, Harold Halibut, the Aardman films) and where they clash (Sonic Frontiers, Babylon's
-Fall, Gang Beasts' docks), measured on our characters (light skin albedo L* 71, rendered figures at L* 44-52, clay lumps
+Flat, Lockdown Protocol, It Takes Two, Harold Halibut, the Aardman films) and where they clash (Sonic Frontiers,
+Babylon's Fall, Gang Beasts' docks), measured on our characters (light skin albedo L* 71, rendered figures at L* 44-52, clay lumps
 about 1 mm per texel):
 
 | # | Principle | Target used for the prototypes |
@@ -111,8 +112,8 @@ checklist method (renders with and without the figure, no AA; a pass needs dE00 
 
 - The stop-motion set has the higher dE00 and edge contrast in every one of the 32 paired views against each other
   style (sign test p = 4.7e-10 per pair).
-- Its margin for the man is larger on the held-out positions than on the tuned ones: over the clay world +5.0 to
-  +13.0 dE00, over pastel +4.6 to +10.3, over papercraft +12.2 to +14.1. There is no sign of overfitting.
+- Its margin for the man is larger on the held-out positions than on the tuned ones: over the clay world +5.0 (tuned)
+  -> +13.0 (held-out) dE00, over pastel +4.6 -> +10.3, over papercraft +12.2 -> +14.1. There is no sign of overfitting.
 - The backgrounds are about equally light in the clay world, pastel and the set (L* about 75). The lead comes from the
   people: the man renders at a mean L* 37.9 under the set's light against 46.8-49.0 in the other worlds, and his face
   goes dark brown in back-lit yard views. Whether that suits the plasticine look is the designer's call.
@@ -192,12 +193,13 @@ Pastel soft modern's lineup lacked a respawn point, a round-start area, spawn dr
 its own pipeline (one world material, the unchanged palette strip, per-piece AO; 13 pieces, 40,730 triangles) and
 measured with the checklist's mask method in its light, on the outdoor paving.
 - **Respawn pad:** a 1.2 m slate field with pale footprints reads at 10 m only with a 12 cm near-black border (dE00
-  15.9-16.1, edge dL 15.2-17.6, 88 x 15 px); with a 7 cm border it failed (11.1 / 10.7). It sits 36.5-37.1 dE00 from the
+  15.9-16.1, edge dL 15.2-17.6, 88 x 15 px; at the builder's own threshold of 15 for both, since the checklist has none
+  for the pad: thin margins); with a 7 cm border it failed (11.1 / 10.7). It sits 36.5-37.1 dE00 from the
   invulnerability gold, but only 6.8 from the mean of a whole cyan ring, so shape (square and flat against round with a
   post) keeps them apart. It does not hurt a downed player lying on it.
 - **Landmarks** (water tower 5.9 m, windmill 4.9 m, lighthouse 5.0 m, giant post box 2.7 m): distinct silhouettes at
   25 m (95-205 px tall) but weak value contrast (dE00 7.9-18.5 against their background); darker tops above 2.2 m
-  helped, and the windmill (10.1) and the house-outline start gateway (7.9) stay under 15.
+  helped, and the windmill (10.1) and the house-outline start gateway (7.9) stay under the same threshold of 15.
 - **Round start and spawn dressing:** a 20 m plaza with 10 markers 2 m apart and a 4.7 m gateway; a parcel cart and a
   pallet for packages; a work bench with an empty pegboard for the knife. Looked at, not measured.
 
@@ -210,7 +212,7 @@ Per object and level piece of `objects.md` and per style (`gaps/production_split
 - **Blender, in every style:** the package, the knife, the delivery circle, the respawn pad, the house shell, the
   post-office set pieces and the landmarks.
 - **The character track or Godot shaders:** the downed player, the body and the invulnerability effect.
-- **Meshy, on paper only:** organic hero props and landmarks, never modular pieces or gameplay items.
+- **Meshy, on paper only:** proposed for organic hero props and landmarks, not for modular pieces or gameplay items.
 
 | Style | Meshy props | Credits, planning figure (range) | First map, agent-days |
 |---|---|---|---|
@@ -267,7 +269,8 @@ content test and the bot scenarios, a respawn for a player who falls out, marker
 
 ## Licences
 
-All 41 packs are CC0-1.0, read on each official page and in each archive (`License.txt`; ambientCG and Poly Haven by
+All 41 records (37 model packs, the ambientCG materials, three sets of Poly Haven assets) are CC0-1.0, read on each
+official page and in each archive or file set (`License.txt`; ambientCG and Poly Haven by
 their licence pages). Records: `sources/<id>.toml` with `licence = "CC0-1.0"`, `public_repo_ok = true`,
 `ai_generated = false`. Not taken: Poly Pizza's CC-BY-3.0 models (outside the allowlist), the paid Tiny Treats sets and
 MegaKit tiers. itch.io free tiers came through the free-download flow with no account or payment details. The hybrid
