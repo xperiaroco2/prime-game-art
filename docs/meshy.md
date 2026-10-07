@@ -363,6 +363,34 @@ The library listing answered on 2026-10-03 with a list of 678 actions, each `act
 name), `category`, `sub_category` and `preview_url` (the docs page lists 591, ids 0 to 590; ids from 591 on repeat
 earlier names).
 
+## Batches l1a and l1b, a test of world props (art #34)
+
+The locations track's first Meshy test: can Meshy make soft handmade miniature-set props for the world that hold
+together with kit pieces, our scripted pieces and the clay people? The engineer said yes to a 3-prop test from
+October's leftover credits ([art #34](https://github.com/xperiaroco2/prime-game-art/issues/34#issuecomment-6034473404),
+both batches' `approval_ref`); the locations manager applied it as four props (a potted tree added, as the engineer had
+asked about trees) within 200 credits, and the character manager accepted that on the condition that the balance stays
+at 40 or more ([art #34](https://github.com/xperiaroco2/prime-game-art/issues/34#issuecomment-6034496087)). The prompts
+name no game, film, studio or character; the image-to-image references are our own stage-0 set renders.
+
+- **`2026-10-l1a-world-concepts`**, run 2026-10-07 08:56-09:04 UTC: a felt armchair, a draped knitted throw, a yarn
+  basket and a sponge-and-wire potted tree, two nano-banana-pro concepts each (one from text alone, one by
+  image-to-image from `raw:review/locations/page/sm_objects.jpg` and `sm_E1.jpg`): 8 x 9 = **72 credits, balance 245 ->
+  173**. The text-only concepts came out as convincing photographs of handmade miniatures (felt with blanket stitch,
+  chunky knit, wicker, dyed sponge, terracotta); the image-to-image ones were cleaner and more like 3D renders.
+- **`2026-10-l1b-world-props`**, run 09:04-09:15 UTC: meshy-7.1 image-to-3D, textured, 3,000 triangles (the tree
+  4,000), from the armchair, throw and tree text-only concepts and the yarn basket's image-to-image one:
+  4 x 30 = **120 credits, balance 173 -> 53**. Each item is `image_to_3d-model.glb` (2.3-4.6 MB), a 2K
+  `image_to_3d-texture_0.png` and a preview in `raw:2026-10-l1b-world-props/<item>/`.
+
+Every task was charged as estimated (`log.csv`, `generation.json`). First look at the previews: the textures carry the
+handmade detail (stitches, knit); at 3,000-4,000 triangles the shapes are faceted, most visibly on the basket and the
+tree crown; the throw's concept drapes over a wooden post standing in for a sofa arm, and the mesh includes the post.
+They are judged under the set shader beside kit and scripted pieces in the locations track's beauty run (art #34).
+
+A manifest that uses one of these meshes records the owned output of the paid plan: `public_repo_ok = true`,
+`ai_generated = true`.
+
 ## Batch 5, 2026-10-b5-anim-mvp (art #33)
 
 Seven prime text-to-motion clips for the gaps of the animation MVP (a backward jog, a strafe to the left, a 90-degree

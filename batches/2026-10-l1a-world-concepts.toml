@@ -1,0 +1,83 @@
+# Locations stage 1 (art #34), batch l1a: concept images for a test of Meshy world props in the bright handmade
+# stop-motion set look. Four props, two concepts each: one from text alone, one by image-to-image from our own stage-0
+# set renders. The better concept of each prop goes to image-to-3D in batch l1b. Schema: docs/meshy.md.
+# The engineer's yes of 2026-10-07 to option "a" (a 3-prop Meshy test from October's leftover credits; approval_ref).
+# Applied as four props (a potted tree added, as he had asked about trees) within a cap of 200 credits for l1a and l1b
+# together, set by the locations manager and accepted by the character manager on the condition that the balance stays
+# at 40 or more (https://github.com/xperiaroco2/prime-game-art/issues/34#issuecomment-6034496087); the character
+# track's 30-credit reserve for art #33 stays untouched.
+
+id = "2026-10-l1a-world-concepts"
+purpose = "Concepts for a test of whether Meshy can make soft handmade miniature-set props for the world (a felt armchair, a draped knitted throw, a yarn basket, a sponge-and-wire potted tree) that hold together with kit pieces, our scripted pieces and the clay people under the set shader."
+plan = "Meshy Pro (monthly)"
+terms_url = "https://www.meshy.ai/terms-of-use"
+licence = "owned by the customer on a paid plan (Meshy Terms of Use 3.2, updated 2026-09-19); no attribution required"
+credit_cap = 72
+approved_by = "xperiaroco2 (the engineer)"
+approved_at = "2026-10-07"
+approval_ref = "https://github.com/xperiaroco2/prime-game-art/issues/34#issuecomment-6034473404"
+
+[defaults.text_to_image.params]
+ai_model = "nano-banana-pro"
+remove_background = true
+aspect_ratio = "1:1"
+
+[defaults.image_to_image.params]
+ai_model = "nano-banana-pro"
+remove_background = true
+
+[[items]]
+id = "w-armchair-c1"
+kind = "text_to_image"
+prompt = "a small handmade miniature armchair made for a stop-motion animation film set: hand-cut foam padding covered in mustard-yellow wool felt with visible blanket-stitch seams, plump slightly uneven cushions, short turned wooden legs painted teal, soft rounded edges, crafted by hand at tabletop scale, rich saturated colours, matte surfaces, single object, three-quarter view, plain white background"
+
+[[items]]
+id = "w-armchair-c2"
+kind = "image_to_image"
+prompt = "a single small armchair in the same handmade miniature film-set style as the reference images: felt-covered foam padding with visible stitching, plump slightly uneven cushions, short turned wooden legs, rich saturated colours, matte surfaces, single object, three-quarter view, plain white background"
+images = [
+  { file = "raw:review/locations/page/sm_objects.jpg", provenance = "own work: Godot 4.7 render of the props of our stage-0 stop-motion set prototype (art #34)", sha256 = "5f743a57aa423abd014dc81fc35a3d8537f621ecab32b57f7b71977a4d6c1ab5" },
+  { file = "raw:review/locations/page/sm_E1.jpg", provenance = "own work: Godot 4.7 render of the room of our stage-0 stop-motion set prototype (art #34)", sha256 = "f14b834bd29b1724add8091bdd05264fb36260d425c29ca85c19a477a00160de" },
+]
+
+[[items]]
+id = "w-throw-c1"
+kind = "text_to_image"
+prompt = "a handmade miniature knitted throw blanket for a stop-motion film set, draped and folded softly as if lying over the arm of a sofa, chunky visible knit texture, warm saturated coral and cream stripes, soft heavy folds, tabletop-scale craft, matte wool, single object, three-quarter view, plain white background"
+
+[[items]]
+id = "w-throw-c2"
+kind = "image_to_image"
+prompt = "a single knitted throw blanket in the same handmade miniature film-set style as the reference images, draped and folded softly as if lying over the arm of a sofa, chunky visible knit texture, saturated warm stripes, soft heavy folds, matte wool, single object, three-quarter view, plain white background"
+images = [
+  { file = "raw:review/locations/page/sm_objects.jpg", provenance = "own work: Godot 4.7 render of the props of our stage-0 stop-motion set prototype (art #34)", sha256 = "5f743a57aa423abd014dc81fc35a3d8537f621ecab32b57f7b71977a4d6c1ab5" },
+  { file = "raw:review/locations/page/sm_E1.jpg", provenance = "own work: Godot 4.7 render of the room of our stage-0 stop-motion set prototype (art #34)", sha256 = "f14b834bd29b1724add8091bdd05264fb36260d425c29ca85c19a477a00160de" },
+]
+
+[[items]]
+id = "w-yarn-c1"
+kind = "text_to_image"
+prompt = "a handmade miniature wicker basket holding a large ball of saturated teal yarn with two wooden knitting needles stuck in it and one loose strand of yarn, a stop-motion film-set prop at tabletop scale, chunky soft shapes, matte natural materials, single object, three-quarter view, plain white background"
+
+[[items]]
+id = "w-yarn-c2"
+kind = "image_to_image"
+prompt = "a single small wicker basket holding a large ball of yarn with two wooden knitting needles, in the same handmade miniature film-set style as the reference images, chunky soft shapes, rich saturated colours, matte natural materials, single object, three-quarter view, plain white background"
+images = [
+  { file = "raw:review/locations/page/sm_objects.jpg", provenance = "own work: Godot 4.7 render of the props of our stage-0 stop-motion set prototype (art #34)", sha256 = "5f743a57aa423abd014dc81fc35a3d8537f621ecab32b57f7b71977a4d6c1ab5" },
+  { file = "raw:review/locations/page/sm_E1.jpg", provenance = "own work: Godot 4.7 render of the room of our stage-0 stop-motion set prototype (art #34)", sha256 = "f14b834bd29b1724add8091bdd05264fb36260d425c29ca85c19a477a00160de" },
+]
+
+[[items]]
+id = "w-tree-c1"
+kind = "text_to_image"
+prompt = "a handmade miniature potted tree for a stop-motion film set: a twisted wire trunk wrapped in brown florist tape, a rounded crown of dyed sponge clumps in two saturated greens, in a small terracotta clay pot with a painted rim, tabletop model-making style, matte surfaces, single object, three-quarter view, plain white background"
+
+[[items]]
+id = "w-tree-c2"
+kind = "image_to_image"
+prompt = "a single small potted tree in the same handmade miniature film-set style as the reference images: a twisted wire trunk, a rounded crown of dyed sponge clumps in saturated greens, a small terracotta pot, matte surfaces, single object, three-quarter view, plain white background"
+images = [
+  { file = "raw:review/locations/page/sm_objects.jpg", provenance = "own work: Godot 4.7 render of the props of our stage-0 stop-motion set prototype (art #34)", sha256 = "5f743a57aa423abd014dc81fc35a3d8537f621ecab32b57f7b71977a4d6c1ab5" },
+  { file = "raw:review/locations/page/sm_E1.jpg", provenance = "own work: Godot 4.7 render of the room of our stage-0 stop-motion set prototype (art #34)", sha256 = "f14b834bd29b1724add8091bdd05264fb36260d425c29ca85c19a477a00160de" },
+]

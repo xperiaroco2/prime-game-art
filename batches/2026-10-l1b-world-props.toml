@@ -1,0 +1,48 @@
+# Locations stage 1 (art #34), batch l1b: image-to-3D of the better concept of each prop from batch l1a, for the
+# test of Meshy world props in the bright handmade stop-motion set look. Schema: docs/meshy.md.
+# Picked after looking at all eight l1a concepts (2026-10-07): the armchair, throw and tree from text alone (c1: crisp
+# handmade felt, knit, sponge and terracotta, saturated; the throw concept drapes over a wooden post standing in for a
+# sofa arm, which Meshy builds into the mesh); the yarn basket from image-to-image (c2: the whole object in frame with
+# clean, rounded forms). Same approval as l1a; the l1a + l1b total stays within the 200-credit cap set by the locations
+# manager and leaves at least 40 credits for the character track (its condition, art #34 issuecomment-6034496087).
+
+id = "2026-10-l1b-world-props"
+purpose = "3D meshes of four soft handmade miniature-set props (a felt armchair, a draped knitted throw, a yarn basket, a sponge-and-wire potted tree) to judge Meshy against kit pieces and our scripted pieces under the set shader."
+plan = "Meshy Pro (monthly)"
+terms_url = "https://www.meshy.ai/terms-of-use"
+licence = "owned by the customer on a paid plan (Meshy Terms of Use 3.2, updated 2026-09-19); no attribution required"
+credit_cap = 120
+approved_by = "xperiaroco2 (the engineer)"
+approved_at = "2026-10-07"
+approval_ref = "https://github.com/xperiaroco2/prime-game-art/issues/34#issuecomment-6034473404"
+
+[defaults.image_to_3d.params]
+ai_model = "meshy-7.1"
+should_remesh = true
+topology = "triangle"
+target_polycount = 3000
+should_texture = true
+enable_pbr = false
+texture_resolution = "2k"
+target_formats = ["glb"]
+
+[[items]]
+id = "w-armchair-3d"
+kind = "image_to_3d"
+images = [{ file = "raw:2026-10-l1a-world-concepts/w-armchair-c1/text_to_image-image_01a11593-298d-76de-aaa4-aa92ae01ed20_0.png", provenance = "Meshy text-to-image concept from batch 2026-10-l1a-world-concepts, item w-armchair-c1 (our prompt, paid plan)", sha256 = "4b377b4707ebd65238e91cff0c961919731bc67dd7d4e4d3fbef4fabb0299df4" }]
+
+[[items]]
+id = "w-throw-3d"
+kind = "image_to_3d"
+images = [{ file = "raw:2026-10-l1a-world-concepts/w-throw-c1/text_to_image-image_01a11595-eece-75bb-a741-15762f7c5b64_0.png", provenance = "Meshy text-to-image concept from batch 2026-10-l1a-world-concepts, item w-throw-c1 (our prompt, paid plan)", sha256 = "08d55a239f115e4be15e639c01010cd4404f5744b505f9b4f2ba2fed240f97cf" }]
+
+[[items]]
+id = "w-yarn-3d"
+kind = "image_to_3d"
+images = [{ file = "raw:2026-10-l1a-world-concepts/w-yarn-c2/image_to_image-image_01a11598-6a73-74fb-a282-7b600b288eed_0.png", provenance = "Meshy image-to-image concept from batch 2026-10-l1a-world-concepts, item w-yarn-c2 (our prompt and our own stage-0 renders as references, paid plan)", sha256 = "6539179f899fb409c70861e09694a805308748673c1401d8f480fd7682194e28" }]
+
+[[items]]
+id = "w-tree-3d"
+kind = "image_to_3d"
+images = [{ file = "raw:2026-10-l1a-world-concepts/w-tree-c1/text_to_image-image_01a11599-86cb-7417-bb9f-f01ff37b101a_0.png", provenance = "Meshy text-to-image concept from batch 2026-10-l1a-world-concepts, item w-tree-c1 (our prompt, paid plan)", sha256 = "37df8d1c30a4971d476721b570654289b973a41c07552a865174acf4dab8b858" }]
+params = { target_polycount = 4000 }
