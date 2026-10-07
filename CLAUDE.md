@@ -107,6 +107,13 @@ PowerShell 5.1 is the primary shell; the Bash tool is Git Bash. In Git Bash `pyt
 `$PYTHON_BIN`. Multi-line commit messages and PR bodies go through a file (`git commit -F`, `gh pr create
 --body-file`). Use absolute paths; with worktrees, `git -C <path>`.
 
+**No tool call of a workflow agent or subagent blocks over 240 s** (#43: a call over 5 minutes expires the agent's
+prompt cache, and the next call re-writes the whole context; that cost 14-18% of a week). In the Bash tool, start any
+run that can pass 240 s (Blender, Godot, `verify`, `meshy run`, other `tools/run.sh` commands) in the background
+(`run_in_background`, `> <log> 2>&1` under `tools/out/` or the scratchpad, then `echo "exit=$?" >> <log>`); it
+notifies on exit, or check its log with short calls every 2-3 minutes. No `tail -f`, and no `until ...; sleep` loop or
+`timeout` longer than 240 s; never start a second run while one is running. Every workflow prompt carries this rule.
+
 ## Definition of done
 1. `tools/run.py verify` is green; paste its tail. Red: stop and report.
 2. A fresh-context review of the diff; fix the findings or list them in the PR.
@@ -131,7 +138,9 @@ The art manager decides alone, and reports on the plan issue, what does not need
 The list below always wins over this one.
 
 It runs workflows for the stage's tasks while the account's weekly usage stays below 85%, counting a launch's
-expected cost, and reports each launch and its cost. At 85% it launches nothing more, reports and asks.
+expected cost, and reports each launch and its cost. At 85% it launches nothing more, reports and asks. Every launch
+is estimated before it starts; a launch over about 5% of the week stops after its first phase for a check
+(xperiaroco2/prime-game#302).
 
 Stop and ask the engineer, in one batched message with options and a recommendation, before:
 - anything about the look or taste (with the designer);
