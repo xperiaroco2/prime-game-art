@@ -1,0 +1,15 @@
+id = "kenney_furniture_kit"
+title = "Furniture Kit"
+author = "Kenney"
+url = "https://kenney.nl/assets/furniture-kit"
+licence = "CC0-1.0"
+licence_url = "https://creativecommons.org/publicdomain/zero/1.0/"
+public_repo_ok = true
+ai_generated = false
+downloaded_at = 2026-10-06
+credit = "Furniture Kit by Kenney (www.kenney.nl), CC0 1.0"
+notes = """Downloaded 2026-10-06 by the locations stage-0 research (art #34) under the engineer's standing permission for free downloads from official sources; the archive is kept as downloaded in D:/prime-art-raw/env/ and unpacked beside it (unpacked files are listed once an asset uses them). Licence as read: kenney.nl page: "License: Creative Commons CC0"; archive License.txt: "License: (Creative Commons Zero, CC0) http://creativecommons.org/publicdomain/zero/1.0/", crediting Kenney "is not mandatory" / "not a requirement". Version 2.0. 140 furniture and interior models (FBX, OBJ, and GLB in a folder named 'GLTF format') with flat material colours (median 2 materials per model, no textures); 1 unit is about half a metre (chair 0.47, doorway 1.01 high: scale x2 for the game). The 2018 colours are sRGB values stored as linear baseColorFactor, so they render paler than authored until converted. Measured (research scripts glbstats.py / fbx_to_glb.py): 140 models, triangles min/median/max 12/152/992, 0 with a base colour texture."""
+
+[[raw]]
+file = "env/kenney/furniture-kit/kenney_furniture-kit.zip"
+sha256 = "e67652d0932cee41683f74711c03d3e192a2af9979ef8e6b237711f5482d46b0"

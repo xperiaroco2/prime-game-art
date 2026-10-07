@@ -1,0 +1,99 @@
+id = "quaternius_ultimate_furniture"
+title = "Ultimate Furniture Pack"
+author = "Quaternius"
+url = "https://quaternius.com/packs/ultimatefurniture.html"
+licence = "CC0-1.0"
+licence_url = "https://creativecommons.org/publicdomain/zero/1.0/"
+public_repo_ok = true
+ai_generated = false
+downloaded_at = 2026-10-06
+credit = "Ultimate Furniture Pack by Quaternius, CC0 1.0"
+notes = """Downloaded 2026-10-06 by the locations stage-0 research (art #34) under the engineer's standing permission for free downloads from official sources; the publisher serves loose files (no archive): every file is kept as downloaded in D:/prime-art-raw/env/ and listed below. Licence as read: quaternius.com pack page: "License: CC0" (linking creativecommons.org/publicdomain/zero/1.0/); the page's Download button opens the publisher's public Google Drive folder, mirrored here file by file (the folder holds loose files, no archive); its License.txt: "License: CC0 1.0 Universal (CC0 1.0) Public Domain Dedication". The FBX folder (20 models: beds, bookcases, closets, desk, chairs, sofas, tables, doors), License.txt and Preview.png (Blends and OBJ not downloaded). Flat material colours, denser than the House Interior; scale about x0.7. FBX alpha as for the House Interior. Measured (research scripts glbstats.py / fbx_to_glb.py): 20 models, triangles min/median/max 524/2494/10948, 0 with a base colour texture."""
+
+[[raw]]
+file = "env/quaternius/ultimate-furniture/FBX/BedDouble.fbx"
+sha256 = "e6246a99b8d11a0598fc2cd790f8206eccf2e75d0e979bda76eb759a49757637"
+
+[[raw]]
+file = "env/quaternius/ultimate-furniture/FBX/BedTwin.fbx"
+sha256 = "1a41d03180290b7b16c9ba4d5ced4e3996701d648127685fbffec5b89cb12d60"
+
+[[raw]]
+file = "env/quaternius/ultimate-furniture/FBX/Bookcase.fbx"
+sha256 = "333ab111a459e3183d995d019cf5f576c0c0463c4ca1229e1812ab8d1df72742"
+
+[[raw]]
+file = "env/quaternius/ultimate-furniture/FBX/Bookcase_Books.fbx"
+sha256 = "003068ed9000e79a1fa124d5123be2f1b0ad3bffec0829f578e81717965f21b0"
+
+[[raw]]
+file = "env/quaternius/ultimate-furniture/FBX/Chair.fbx"
+sha256 = "fe1902d23f83492d69903795ea956486088efff0ae6dd8ac0dabf8080e384706"
+
+[[raw]]
+file = "env/quaternius/ultimate-furniture/FBX/Closet.fbx"
+sha256 = "e018bca83990a6de63afce3c60e6ba009287abf529ffddec67f532f6651e996a"
+
+[[raw]]
+file = "env/quaternius/ultimate-furniture/FBX/Desk.fbx"
+sha256 = "c21c3b2d5fcb80da4a00b4fb4c7f485491808bfc0a1fa02011553815c7752b6f"
+
+[[raw]]
+file = "env/quaternius/ultimate-furniture/FBX/Door1.fbx"
+sha256 = "42815ef5145fcf1bd79709def87cbd1e840a2a398cef7ddbe621dbad1c312ab3"
+
+[[raw]]
+file = "env/quaternius/ultimate-furniture/FBX/Door2.fbx"
+sha256 = "97f2dd31f76133897576b22737d1a71059fc971eb2c8d715cab85a32bc6ae6b6"
+
+[[raw]]
+file = "env/quaternius/ultimate-furniture/FBX/Door3.fbx"
+sha256 = "e425d9737257e566820720c1324be3d5bbe70735270e6198c98e8e9665366b38"
+
+[[raw]]
+file = "env/quaternius/ultimate-furniture/FBX/NightStand.fbx"
+sha256 = "df2f1c5f86ceb3a9fd585e7df07e1b9e166459101d62be4ea46b42cc2a740de2"
+
+[[raw]]
+file = "env/quaternius/ultimate-furniture/FBX/OfficeChair.fbx"
+sha256 = "c8e6a0512fb3188453f64a24e2248165b83587c8fca49ced9c4590c2d20bbb8e"
+
+[[raw]]
+file = "env/quaternius/ultimate-furniture/FBX/ShortCloset.fbx"
+sha256 = "6a15434b4eceaa89b19a1ccf7df835d551033cee72640b04f545b79f694145c1"
+
+[[raw]]
+file = "env/quaternius/ultimate-furniture/FBX/Sofa.fbx"
+sha256 = "092f6a1df74b7381985936e2f8bdbc30f6ec5cbc0d44869ffcc6e7baa9f16102"
+
+[[raw]]
+file = "env/quaternius/ultimate-furniture/FBX/Sofa2.fbx"
+sha256 = "7647511020548f5f812bf81bbcf97cfa0b125e4787f81838baca7f6da3aaa80c"
+
+[[raw]]
+file = "env/quaternius/ultimate-furniture/FBX/Sofa3.fbx"
+sha256 = "4ecb8216e23d74e54e58f4776413150a3be8219c6d0fe6e40d0f98d4f963248b"
+
+[[raw]]
+file = "env/quaternius/ultimate-furniture/FBX/Sofa_individual.fbx"
+sha256 = "14187b3121eede3792afefe622c241d2cbdc8f8b89d6143d2f150efd36c139e8"
+
+[[raw]]
+file = "env/quaternius/ultimate-furniture/FBX/Stool.fbx"
+sha256 = "a95a2fd87b82c7c7b1bbb5b4056674d59868864993e14130af2af6fe5810ccbc"
+
+[[raw]]
+file = "env/quaternius/ultimate-furniture/FBX/Table.fbx"
+sha256 = "b927cbd99a0d72ec78e8fd8f34094e24033a231b4277e5418525b6cd317e1da9"
+
+[[raw]]
+file = "env/quaternius/ultimate-furniture/FBX/Table2.fbx"
+sha256 = "1a6c537e1a7445e609993c21388252d2917b61076a8512aaee3889dba4b37bcb"
+
+[[raw]]
+file = "env/quaternius/ultimate-furniture/License.txt"
+sha256 = "83d8959f9fc56353ed571fbe2dc52e4bcd64508e2399501cd45ac2ce3df0bf8c"
+
+[[raw]]
+file = "env/quaternius/ultimate-furniture/Preview.png"
+sha256 = "3fc46fec6e77809df4ef99ec86159ab3e6e804a704fee4273bc651997a37695b"

@@ -1,0 +1,15 @@
+id = "kenney_building_kit"
+title = "Building Kit"
+author = "Kenney"
+url = "https://kenney.nl/assets/building-kit"
+licence = "CC0-1.0"
+licence_url = "https://creativecommons.org/publicdomain/zero/1.0/"
+public_repo_ok = true
+ai_generated = false
+downloaded_at = 2026-10-06
+credit = "Building Kit by Kenney (www.kenney.nl), CC0 1.0"
+notes = """Downloaded 2026-10-06 by the locations stage-0 research (art #34) under the engineer's standing permission for free downloads from official sources; the archive is kept as downloaded in D:/prime-art-raw/env/ and unpacked beside it (unpacked files are listed once an asset uses them). Licence as read: kenney.nl page: "License: Creative Commons CC0"; archive License.txt: "License: (Creative Commons Zero, CC0) http://creativecommons.org/publicdomain/zero/1.0/", crediting Kenney "is not mandatory" / "not a requirement". Version 1.0. 79 modular building pieces (walls with doors and windows, floors, roofs, stairs, gutters, rotating doors) as FBX/OBJ/GLB on one shared colormap.png palette texture; real metres (wall 2.4 m high, door 2.1 m). Measured (research scripts glbstats.py / fbx_to_glb.py): 79 models, triangles min/median/max 10/72/446, 79 with a base colour texture."""
+
+[[raw]]
+file = "env/kenney/building-kit/kenney_building-kit.zip"
+sha256 = "2740ef5772fb5fb3d7aab881db22d129f6b68afe711b1a79e6d5e9e19cf3eec6"

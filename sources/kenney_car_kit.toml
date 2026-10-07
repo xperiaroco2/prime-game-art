@@ -1,0 +1,15 @@
+id = "kenney_car_kit"
+title = "Car Kit"
+author = "Kenney"
+url = "https://kenney.nl/assets/car-kit"
+licence = "CC0-1.0"
+licence_url = "https://creativecommons.org/publicdomain/zero/1.0/"
+public_repo_ok = true
+ai_generated = false
+downloaded_at = 2026-10-06
+credit = "Car Kit by Kenney (www.kenney.nl), CC0 1.0"
+notes = """Downloaded 2026-10-06 by the locations stage-0 research (art #34) under the engineer's standing permission for free downloads from official sources; the archive is kept as downloaded in D:/prime-art-raw/env/ and unpacked beside it (unpacked files are listed once an asset uses them). Licence as read: kenney.nl page: "License: Creative Commons CC0"; archive License.txt: "License: (Creative Commons Zero, CC0) http://creativecommons.org/publicdomain/zero/1.0/", crediting Kenney "is not mandatory" / "not a requirement". Version 3.1. 50 vehicles (sedan, taxi, police, delivery van, trucks, karts), wheels, debris, a box and cones on one colormap.png palette. Measured (research scripts glbstats.py / fbx_to_glb.py): 50 models, triangles min/median/max 28/1190/3124, 50 with a base colour texture."""
+
+[[raw]]
+file = "env/kenney/car-kit/kenney_car-kit.zip"
+sha256 = "fac7dacac5c7874348cf19729af3ef205f3d366493edaf0a827d93f4fdf3d0c4"

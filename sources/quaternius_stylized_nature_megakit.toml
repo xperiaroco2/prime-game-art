@@ -1,0 +1,15 @@
+id = "quaternius_stylized_nature_megakit"
+title = "Stylized Nature MegaKit [Standard]"
+author = "Quaternius"
+url = "https://quaternius.itch.io/stylized-nature-megakit"
+licence = "CC0-1.0"
+licence_url = "https://creativecommons.org/publicdomain/zero/1.0/"
+public_repo_ok = true
+ai_generated = false
+downloaded_at = 2026-10-06
+credit = "Stylized Nature MegaKit [Standard] by Quaternius, CC0 1.0"
+notes = """Downloaded 2026-10-06 by the locations stage-0 research (art #34) under the engineer's standing permission for free downloads from official sources; the archive is kept as downloaded in D:/prime-art-raw/env/ and unpacked beside it (unpacked files are listed once an asset uses them). Licence as read: itch.io page: "Free to use in personal, educational and commercial projects. (CC0 License)", "Asset license: Creative Commons Zero v1.0 Universal", "No generative AI was used"; the free [Standard] upload was taken at $0 through the "No thanks" path (the Pro and Source uploads need payment and were not offered); archive License_Standard.txt: "License: CC0 1.0 Universal (CC0 1.0) Public Domain Dedication". The free Standard zip: 68 of the pack's 116 nature models (common, pine, twisted and dead trees, bushes, flowers, ferns, grass, mushrooms, pebbles, rock paths, rocks) as glTF, FBX and OBJ with bark and leaf textures and normal maps; 35 models carry vertex colours. Measured (research scripts glbstats.py / fbx_to_glb.py): 68 models, triangles min/median/max 13/698/10104, 68 with a base colour texture."""
+
+[[raw]]
+file = "env/quaternius/stylized-nature-megakit/Stylized Nature MegaKit[Standard].zip"
+sha256 = "298f6732b872e4cf7b30e6e7abf9641c7f6dc6b326df37ac089533ed7e3d58c9"

@@ -1,0 +1,15 @@
+id = "kenney_city_kit_commercial"
+title = "City Kit (Commercial)"
+author = "Kenney"
+url = "https://kenney.nl/assets/city-kit-commercial"
+licence = "CC0-1.0"
+licence_url = "https://creativecommons.org/publicdomain/zero/1.0/"
+public_repo_ok = true
+ai_generated = false
+downloaded_at = 2026-10-06
+credit = "City Kit by Kenney (www.kenney.nl), CC0 1.0"
+notes = """Downloaded 2026-10-06 by the locations stage-0 research (art #34) under the engineer's standing permission for free downloads from official sources; the archive is kept as downloaded in D:/prime-art-raw/env/ and unpacked beside it (unpacked files are listed once an asset uses them). Licence as read: kenney.nl page: "License: Creative Commons CC0"; archive License.txt: "License: (Creative Commons Zero, CC0) http://creativecommons.org/publicdomain/zero/1.0/", crediting Kenney "is not mandatory" / "not a requirement". Version 2.1. 41 shop buildings, skyscrapers, awnings and parasols on one colormap.png palette; miniature scale. Measured (research scripts glbstats.py / fbx_to_glb.py): 41 models, triangles min/median/max 40/246/5246, 41 with a base colour texture."""
+
+[[raw]]
+file = "env/kenney/city-kit-commercial/kenney_city-kit-commercial_2.1.zip"
+sha256 = "f8b09b081c2bb88bcc126e2dec1cb40fd0dad7e7e591b6c26aaefe96fb35276b"

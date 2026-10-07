@@ -1,0 +1,475 @@
+id = "quaternius_ultimate_stylized_nature"
+title = "Ultimate Stylized Nature Pack"
+author = "Quaternius"
+url = "https://quaternius.com/packs/ultimatestylizednature.html"
+licence = "CC0-1.0"
+licence_url = "https://creativecommons.org/publicdomain/zero/1.0/"
+public_repo_ok = true
+ai_generated = false
+downloaded_at = 2026-10-06
+credit = "Ultimate Stylized Nature Pack by Quaternius, CC0 1.0"
+notes = """Downloaded 2026-10-06 by the locations stage-0 research (art #34) under the engineer's standing permission for free downloads from official sources; the publisher serves loose files (no archive): every file is kept as downloaded in D:/prime-art-raw/env/ and listed below. Licence as read: quaternius.com pack page: "License: CC0" (linking creativecommons.org/publicdomain/zero/1.0/); the page's Download button opens the publisher's public Google Drive folder, mirrored here file by file (the folder holds loose files, no archive); its License.txt: "License: CC0 1.0 Universal (CC0 1.0) Public Domain Dedication". The glTF and Textures folders (36 of the pack page's 63 models; the other 27, common, pine and palm trees and rocks, exist only in the publisher's FBX and OBJ folders, not mirrored here: birch, maple and dead trees, bushes with and without flowers, flowers, grass), License.txt and Preview.jpg (Blends, FBX, OBJ and AllModels.blend not downloaded). Textured (bark and leaf textures, some normal maps). Its License.txt header names 'Ultimate Platformer Pack' (a copy-paste on the publisher's side) but states CC0 1.0 like the page. Measured (research scripts glbstats.py / fbx_to_glb.py): 36 models, triangles min/median/max 34/1308/7660, 36 with a base colour texture."""
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/glTF/BirchTree_1.bin"
+sha256 = "a1b14d1c82ebb8153991de4156b77ceaa1143d64469679147c0ee249c8b90b83"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/glTF/BirchTree_1.gltf"
+sha256 = "8dbf9fd8b6402bfffdbe370a8c4337e8dae27fa3da5fbacbfd4fae6482ad50fa"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/glTF/BirchTree_2.bin"
+sha256 = "3b134532c604274ec9607c3da722f50affedfc4d87dba64ff2518e1af9908d91"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/glTF/BirchTree_2.gltf"
+sha256 = "b5cc615a47f372ed464ef62c4896d9705144dfe8d203f807b8881b59824de55d"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/glTF/BirchTree_3.bin"
+sha256 = "98d3a00145beeab868c0e7eb8dbb1118115cb00a44a8a801244eae837805d602"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/glTF/BirchTree_3.gltf"
+sha256 = "0b8c042a35073de46c4e73c81c23df9af412460d59f90178e4491d9353bb2b9c"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/glTF/BirchTree_4.bin"
+sha256 = "daa5ab88ec334e2f0ff0d85f774126858a7ec23e1cf524eb1a901d14b0441f1f"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/glTF/BirchTree_4.gltf"
+sha256 = "164d23579653290ff6b751b61a492f7c99c60a152bed7b5cc129b0f123aee827"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/glTF/BirchTree_5.bin"
+sha256 = "7d1f1009a7609ae1b59b3e0131d63c9b8660aa0fac1aea01ebd7caaa2e6ddab5"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/glTF/BirchTree_5.gltf"
+sha256 = "5b752e7b487fe952ca34a02e3e6117c881202179d301257346439188e671e49e"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/glTF/BirchTree_Bark.jpg"
+sha256 = "f796f02e47bc5afddd17dc2385bbef53a352628ceb348deb1188ef04fe5deff9"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/glTF/BirchTree_Bark_Normal.png"
+sha256 = "e30ee9c7561742523340d5657056f8392bc0f944da5145f0af7690cd1d2e6a11"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/glTF/BirchTree_Leaves.png"
+sha256 = "8b674a02017d987f8ec0448bd2a52ad788d1235f91b7f00499b4ca071f8e69fe"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/glTF/Bush.bin"
+sha256 = "c8a583d0741f37ec5e256d8dfc05d82f94689cf93bf3fb7b95e716d1e05ba11f"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/glTF/Bush.gltf"
+sha256 = "21cd315cf71b454d9ddd54eb07c5289a0258ec0d48a6727beefa1b94a96d6c8f"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/glTF/Bush_Flowers.bin"
+sha256 = "d0b734b66250927042c6b00cf567cc11095fac72a5719cb1c05edaad4d665e0e"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/glTF/Bush_Flowers.gltf"
+sha256 = "3a390979e6ed8f5f1d4897267b0e46751cf806559dd55fc993bb0d4b798da559"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/glTF/Bush_Large.bin"
+sha256 = "66a186d555b9e79e33a4baf878ea3a33c7d9e48cf6568a7578cd2b5819c5948c"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/glTF/Bush_Large.gltf"
+sha256 = "36b8ffbe73a5d6c0d5a9be84e611dc3879e259eb0f2325e0b2225f8521534be4"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/glTF/Bush_Large_Flowers.bin"
+sha256 = "780b50270f5bb264c5642eae514191a372a7799eafc444cc9afb5ce501b9109a"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/glTF/Bush_Large_Flowers.gltf"
+sha256 = "cc63ec8946ee072b06d4d57e845042ed9df46efaef8de26b0a640fbe557dda12"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/glTF/Bush_Leaves.png"
+sha256 = "9f662296a285ca56b1ed56e952a198b93b466ae39ab7b6ee1c1ac1bd1c46242f"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/glTF/Bush_Small.bin"
+sha256 = "56a41780a3da0e5dc9717182ac983294320bc4927a684efc0b79d967b8ab55ef"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/glTF/Bush_Small.gltf"
+sha256 = "fd7e4efb44e897403235c11271a77732b0f552a46060eec0084d36b3c41749ea"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/glTF/Bush_Small_Flowers.bin"
+sha256 = "fad6f6fb060b3c515b963a3b66bd3c006d0d781a6c4d1bd72c580c57a2864d37"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/glTF/Bush_Small_Flowers.gltf"
+sha256 = "a269cb0296f08677b29162aedddc3e23c02302c5582d7a83c8960cc7c547d183"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/glTF/DeadTree_1.bin"
+sha256 = "765717fbcd70023ff9aa9d65b7ddd5763738eb61ca0e15704e97de2024fc0d7c"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/glTF/DeadTree_1.gltf"
+sha256 = "e335f2ab60efcc30a02ce876582985426b45877ce390e6eec7460ddbfa2513ed"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/glTF/DeadTree_10.bin"
+sha256 = "4e40d44686aff173cebe90d19c979bc6b62c8ab63065ba8d67d0e9c3e1dfb313"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/glTF/DeadTree_10.gltf"
+sha256 = "81b2dac110e27a85f3cda40788b8444f691b758b7ebc60fbf8a5e40dcb882921"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/glTF/DeadTree_2.bin"
+sha256 = "a03195deef2ed00d77e33930b88683f35852e6b4ee35fb9cede73b4bad4a8126"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/glTF/DeadTree_2.gltf"
+sha256 = "1b7b888d516e28f3b47c6374444fc38ee6e666745950c0ae311e45bc282a2b30"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/glTF/DeadTree_3.bin"
+sha256 = "eb0100605fc4fece7080749fcabc70903617bf44d7afe7cb4fd33e5c3d5aaf9c"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/glTF/DeadTree_3.gltf"
+sha256 = "a8070e4c2cd4d72a7b75508331e942a19cd0c60b751915734679f52cc07bfb1b"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/glTF/DeadTree_4.bin"
+sha256 = "576942a4fbb3253e779fbf0fed0a694d798f60cc355433fb213df641b30be574"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/glTF/DeadTree_4.gltf"
+sha256 = "0208dd07c6ef610ab5cb2aebdbd4dd88c1a27f2a8f5c0571f3eaad8d6f94fe24"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/glTF/DeadTree_5.bin"
+sha256 = "8e18fda1145b2fa9c8516e62ee89e563c5af2bd682b1bde95398b891f8400107"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/glTF/DeadTree_5.gltf"
+sha256 = "7028dfc6ca8f77fc16b8fb01ff01cb1de074793944d8e7b1d8c93a4fca33a5b6"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/glTF/DeadTree_6.bin"
+sha256 = "5ea86ef84307394d6808d91d61b1685d483ad91862de828b3207b099816477ef"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/glTF/DeadTree_6.gltf"
+sha256 = "66430c7f27de9529a34a4086a715e7f52cdfde7b12c35feea7f7b1b0e8907bec"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/glTF/DeadTree_7.bin"
+sha256 = "b7d45886fcd23b36f81e9c686043efdafbfb37cc2d56384cc4706e8b8bba3e63"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/glTF/DeadTree_7.gltf"
+sha256 = "be24723983a359e2e3fb9a88f7819b2e3c73fccf138b71e110cb450e6f83cf0e"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/glTF/DeadTree_8.bin"
+sha256 = "cf93ab8f0bbc5e1a64ff229eb4431111fb83567beae7968c1b1d2dd8c3e9d4db"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/glTF/DeadTree_8.gltf"
+sha256 = "c253f4446b7e2c1aef31a4eec64d7bfc650bf24e3403dc1d6ea9e4547a764eef"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/glTF/DeadTree_9.bin"
+sha256 = "77823e9d8e74615b32a679efe8f7c27dec9f6612955a5cb74136cf640d0b494b"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/glTF/DeadTree_9.gltf"
+sha256 = "4211d43c08cd0d7ba7ac54456164224b2735ff57a22396791aa1b0386f7c6b4b"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/glTF/Flower_1.bin"
+sha256 = "fd7b6e6d2237e1cb2c729d38a1315c41c330dc30bb9e56f6fb5de0ed9bf38ad7"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/glTF/Flower_1.gltf"
+sha256 = "5c640cd3225cc0413c5c103a2d7363c1e2ce177b669245be67400d5a1cdad12e"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/glTF/Flower_1_Clump.bin"
+sha256 = "26d8534f5e7a9e843270acd397dca7b0ca1926a108a75f0dff18ca90cc449d2f"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/glTF/Flower_1_Clump.gltf"
+sha256 = "6f5a0e6d00bb1b58a03bcc03bd066ed4720cd6ad15540eb8a861baabdb8fd4ed"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/glTF/Flower_2.bin"
+sha256 = "d20b8a1cb75e723ca5063c1079d591834490a63cccd1727d8e7aa1256d6dbb64"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/glTF/Flower_2.gltf"
+sha256 = "3695ea8205c59601e7186d5997357ae14ccd0ab87ac9f8971880a4fc7db95f8f"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/glTF/Flower_2_Clump.bin"
+sha256 = "8a01c10f325ab84f6376182b87786172829592f5391814294a38d733bbe6afa0"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/glTF/Flower_2_Clump.gltf"
+sha256 = "1b72869bc54f86bec502051e28ec3e3af0d6d6560c656d83512e5d634cff565d"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/glTF/Flower_3_Clump.bin"
+sha256 = "67a3fd037f3c20223a6fdc1b90de7942f3d6e6ff3f10fb348181d652a2336bdb"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/glTF/Flower_3_Clump.gltf"
+sha256 = "6f61887368b68e6125e8b8db73aff95976fa4705e82374837926457e48bf66df"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/glTF/Flower_4_Clump.bin"
+sha256 = "174f2e1a4c63b6d22ed997af806b541523a3e825a015453392edfeaf30695310"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/glTF/Flower_4_Clump.gltf"
+sha256 = "154975646b62e28206337cfe7442a4eaa8047c56a6613ae9863dbf1cb67ffca5"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/glTF/Flower_5_Clump.bin"
+sha256 = "aaf5f948a41d9f91eff94c3116735db54a2fb5e9271595864fe238ee420ab6a5"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/glTF/Flower_5_Clump.gltf"
+sha256 = "743e532014921934afaae6df5b724ada3a27407a4615f7e77d955e141c81decb"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/glTF/Flowers.png"
+sha256 = "23673fc87e55d8f7cbc699581a164cffec505376bd8b0b90b593dc387aa569fd"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/glTF/Grass.png"
+sha256 = "facde747020acfefdc84d176dd4037282895d200a66fc20b0d9baca470f310f1"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/glTF/Grass_Large.bin"
+sha256 = "ee07cde133dc9163279170c72d1713708e6433eeb60dd1cc23b18f4ebb690eb7"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/glTF/Grass_Large.gltf"
+sha256 = "f70ab8409bd155b485009ad9444c73bc440a6187e1637ca35b28888cbadae785"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/glTF/Grass_Large_Extruded.bin"
+sha256 = "86fd32f1c4be3466bba1fe9b09dfcf6abbfa254101bbf7f90f56a68c98c62b62"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/glTF/Grass_Large_Extruded.gltf"
+sha256 = "f152f123cf523646ef8ccff66407890ad8ef259d1994dd4c42d2122287dadc7f"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/glTF/Grass_Small.bin"
+sha256 = "b55b62b2913234c50bb506b1aaa7bee183c0d478c5da3631824413712282c7f8"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/glTF/Grass_Small.gltf"
+sha256 = "0a28c832a5447c443bf83eaa33ca7ee504315b30801abdb8588f16d98498b3ca"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/glTF/Leaves_BW.png"
+sha256 = "1440d34b8c8d2bcf15216bfe7c3c7840b64d8b289b1c2c588528001860f6a6a2"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/glTF/MapleTree_1.bin"
+sha256 = "03cfea606b55f8f38220f2922e28efb92d724abac801f76191ba062c398bf09c"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/glTF/MapleTree_1.gltf"
+sha256 = "3a67c42011c57f21d73c599f7a3d5dd2f438602f8c5ee4d921514923acab1ca3"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/glTF/MapleTree_2.bin"
+sha256 = "aae075e90e9117c88cd3674d671ef415510002a60f4adcff8d2e729c5be2b8ac"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/glTF/MapleTree_2.gltf"
+sha256 = "f72e286b236c57c5327e33b993d2400791f08003f3845c768aaf0fba822c6263"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/glTF/MapleTree_3.bin"
+sha256 = "c26fd0be6947b3d955a1b64e3f7a57d2d521d652618380d354042621c1b23be1"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/glTF/MapleTree_3.gltf"
+sha256 = "e988b3db822dada94d86de5fe3b0376ab58f222f33ceceeb20c98e4ed33feee6"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/glTF/MapleTree_4.bin"
+sha256 = "c13b4a772246f7e530301c47ea58d0832310a87c7c9bfd8a72d6d437bf0098ae"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/glTF/MapleTree_4.gltf"
+sha256 = "1fbba6645e7fdaf9340b01428ede1929a090240f507e2e3d387febacda5edbd4"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/glTF/MapleTree_5.bin"
+sha256 = "ccabdf8936019ffade3677971eaa889140d0d88b047c3fba67b6e81279e53399"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/glTF/MapleTree_5.gltf"
+sha256 = "c8ebfba58c17b599bc4c6ce9542154874e619199bd68a286dac7e2463d358013"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/glTF/MapleTree_Bark.jpg"
+sha256 = "be9d53e27f5af458a8122bfb6a88c93020fd5707f697d2288ea0af04b3019a97"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/glTF/MapleTree_Bark_Normal.png"
+sha256 = "2e3d97d57838d6e8203f0fab2858bada8ad1e6d6f240c0e898f8e88c110f2f5d"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/glTF/MapleTree_Leaves.png"
+sha256 = "915f0836e9889e28032662c7aa0d0eb9601ba999eda042c9a4e38690786d6c7b"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/glTF/MapleTree_Leaves_BW.png"
+sha256 = "6398f4fba1d7612526065f0be51d8c285f57cd3e6883bd4e464c9b7e6d1df15d"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/glTF/NormalTree_Bark.jpg"
+sha256 = "c1176fee60864e7d47c342309bbaeaf04e4d7dea3821209bc2d35f0a0dd9fd3b"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/glTF/NormalTree_Bark_Normal.png"
+sha256 = "8136a8d6dc18e6b055c7cb53cf42bc6bac41319e102289d8ba25ee5837fbc39b"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/glTF/NormalTree_Leaves.png"
+sha256 = "9f662296a285ca56b1ed56e952a198b93b466ae39ab7b6ee1c1ac1bd1c46242f"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/glTF/PalmTree_Leaves.png"
+sha256 = "6702bdeb0d5496527a049145583c98c4fdaee9fc55ea5d33a3ca2a9014a0cc74"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/glTF/PalmTree_Trunk.jpg"
+sha256 = "69473e07a885cb20f52ecd79ac6421277d3b61f3a0d440a36e6f22ea947d3b6c"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/glTF/PalmTree_Trunk_Normal.png"
+sha256 = "3d93f46d0b12b0007ce9b6b396e2c582092f1e46747d951c0e3008e48d601c78"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/glTF/PineTree_Bark.jpg"
+sha256 = "941d95cd57142962378e84c3b4ad580c75ddbd39841e2f1be20abafd65373032"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/glTF/PineTree_Bark_Normal.png"
+sha256 = "d23c7bbce3f0052ade223d3195c24bc4e8d870b33a23c788c9bd87026fa2c79b"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/glTF/PineTree_Leaves.png"
+sha256 = "8d3e0b49043639089ec68a36058c5b2ceea3fadded773adf7d9acbd006c49e1c"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/glTF/Rocks.jpg"
+sha256 = "643ab14cff99f62ad78f16e895de38dbae27c26a4a93c2bc86a6169af78c1029"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/License.txt"
+sha256 = "de990ef6fc68cffd7fd1ae342c4d0c823b541b8848d8f76bca5d3339f4de6f6e"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/Preview.jpg"
+sha256 = "ae698ee87746eb81b49c57dfcff211386071c59701d9f602d3617604c15b416f"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/Textures/BirchTree_Bark.png"
+sha256 = "689dd3e55523e999cf9a2271aa1e8ce1ac6a7cf3a2dc4bd796dd76860a33154b"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/Textures/BirchTree_Bark_Normal.png"
+sha256 = "e30ee9c7561742523340d5657056f8392bc0f944da5145f0af7690cd1d2e6a11"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/Textures/BirchTree_Leaves.png"
+sha256 = "8b674a02017d987f8ec0448bd2a52ad788d1235f91b7f00499b4ca071f8e69fe"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/Textures/Bush_Leaves.png"
+sha256 = "9f662296a285ca56b1ed56e952a198b93b466ae39ab7b6ee1c1ac1bd1c46242f"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/Textures/Flowers.png"
+sha256 = "23673fc87e55d8f7cbc699581a164cffec505376bd8b0b90b593dc387aa569fd"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/Textures/Grass.png"
+sha256 = "facde747020acfefdc84d176dd4037282895d200a66fc20b0d9baca470f310f1"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/Textures/Leaves_BW.png"
+sha256 = "1440d34b8c8d2bcf15216bfe7c3c7840b64d8b289b1c2c588528001860f6a6a2"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/Textures/MapleTree_Bark.png"
+sha256 = "183645b8dc99e810e9b4c5d48a0944ccff4c2f2a9bd5f1816ab66a367cfe9a92"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/Textures/MapleTree_Bark_Normal.png"
+sha256 = "2e3d97d57838d6e8203f0fab2858bada8ad1e6d6f240c0e898f8e88c110f2f5d"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/Textures/MapleTree_Leaves.png"
+sha256 = "915f0836e9889e28032662c7aa0d0eb9601ba999eda042c9a4e38690786d6c7b"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/Textures/MapleTree_Leaves_BW.png"
+sha256 = "6398f4fba1d7612526065f0be51d8c285f57cd3e6883bd4e464c9b7e6d1df15d"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/Textures/NormalTree_Bark.png"
+sha256 = "17d8836b4eb3462c486bc0ca596d8d4dcde918c0ce0dd37eec9111b2e175be69"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/Textures/NormalTree_Bark_Normal.png"
+sha256 = "8136a8d6dc18e6b055c7cb53cf42bc6bac41319e102289d8ba25ee5837fbc39b"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/Textures/NormalTree_Leaves.png"
+sha256 = "9f662296a285ca56b1ed56e952a198b93b466ae39ab7b6ee1c1ac1bd1c46242f"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/Textures/PalmTree_Leaves.png"
+sha256 = "6702bdeb0d5496527a049145583c98c4fdaee9fc55ea5d33a3ca2a9014a0cc74"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/Textures/PalmTree_Trunk.png"
+sha256 = "504d8d7e87ad686efd267a4f6eba2b2faacc589b4a169f1904aca1d6ff5e672d"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/Textures/PalmTree_Trunk_Normal.png"
+sha256 = "3d93f46d0b12b0007ce9b6b396e2c582092f1e46747d951c0e3008e48d601c78"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/Textures/PineTree_Bark.png"
+sha256 = "dcda0e989e2d0f6325e2fb994589d6be9e71191dd3f888b15d22720d5527fe0f"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/Textures/PineTree_Bark_Normal.png"
+sha256 = "d23c7bbce3f0052ade223d3195c24bc4e8d870b33a23c788c9bd87026fa2c79b"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/Textures/PineTree_Leaves.png"
+sha256 = "8d3e0b49043639089ec68a36058c5b2ceea3fadded773adf7d9acbd006c49e1c"
+
+[[raw]]
+file = "env/quaternius/ultimate-stylized-nature/Textures/Rocks.png"
+sha256 = "643d97219a00269b67f49b03123dff8d138cb4036c1a77153f917a3843332ce0"

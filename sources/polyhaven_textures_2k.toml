@@ -1,0 +1,91 @@
+id = "polyhaven_textures_2k"
+title = "Poly Haven textures, 2K glTF variant (4)"
+author = "Poly Haven (Amal Kumar, Rob Tuytel, Dimitrios Savva, Charlotte Baglioni)"
+url = "https://polyhaven.com/textures"
+licence = "CC0-1.0"
+licence_url = "https://creativecommons.org/publicdomain/zero/1.0/"
+public_repo_ok = true
+ai_generated = false
+downloaded_at = 2026-10-06
+credit = "Textures from Poly Haven (polyhaven.com), CC0 1.0"
+notes = """Downloaded 2026-10-06 by the locations stage-0 research (art #34) under the engineer's standing permission for free downloads from official sources; the publisher serves loose files (no archive): every file is kept as downloaded in D:/prime-art-raw/env/ and listed below. Licence as read: polyhaven.com/license: "Our assets are all licensed as CC0" and "You do not need to give credit or attribution" (the site's Terms of Service separately forbid scraping without permission: the files were fetched one by one through the public API, api.polyhaven.com, whose own terms (Public-API ToS.md 2.2-2.3) allow fetching assets through it, commercial use included; each file checked against its md5). Poly Haven serves loose files, no archive. The 2k glTF variant (a .gltf plane, .bin, and diffuse, normal GL and ARM or roughness JPGs) of painted_plaster_wall (Amal Kumar), fabric_pattern_07 (Rob Tuytel), wood_floor (Dimitrios Savva) and leafy_grass (Charlotte Baglioni); pages https://polyhaven.com/a/<id>."""
+
+[[raw]]
+file = "env/polyhaven/fabric_pattern_07/2k/fabric_pattern_07.bin"
+sha256 = "5a7788a065ff51e9b7fd7838271772c1e7773bfb049347ef4dfe3266e6b5a1c5"
+
+[[raw]]
+file = "env/polyhaven/fabric_pattern_07/2k/fabric_pattern_07_2k.gltf"
+sha256 = "506f818a2660991334cfeec9ad6b356045a12fa6dbd250aed43c917103d8ba1d"
+
+[[raw]]
+file = "env/polyhaven/fabric_pattern_07/2k/textures/fabric_pattern_07_col_1_2k.jpg"
+sha256 = "1f4941638b890d4535b1078067be8a831ca302d1e696ed959b4e4512de893cba"
+
+[[raw]]
+file = "env/polyhaven/fabric_pattern_07/2k/textures/fabric_pattern_07_nor_gl_2k.jpg"
+sha256 = "84f15ee5f6b63e7e224051a22426c751cc1fe15a794efd001ebfdb5f84828602"
+
+[[raw]]
+file = "env/polyhaven/fabric_pattern_07/2k/textures/fabric_pattern_07_rough_2k.jpg"
+sha256 = "be3e311614ee6f31d4cb4a774ed678b7a64189d3e1a55ad71033142185da270a"
+
+[[raw]]
+file = "env/polyhaven/leafy_grass/2k/leafy_grass.bin"
+sha256 = "7bc6ccde22ac1a5e37ebb823e87961e4fe53da1d656eda4fbe0ba2e2cd5679e9"
+
+[[raw]]
+file = "env/polyhaven/leafy_grass/2k/leafy_grass_2k.gltf"
+sha256 = "ca4063526b4ef39918766bede1916ae8ccf993800eee628d2bb7512db4b62d60"
+
+[[raw]]
+file = "env/polyhaven/leafy_grass/2k/textures/leafy_grass_arm_2k.jpg"
+sha256 = "70d61c669fe9d186a84f5bb50e8a337083014d7e46534306a89d47d48fd5eb0e"
+
+[[raw]]
+file = "env/polyhaven/leafy_grass/2k/textures/leafy_grass_diff_2k.jpg"
+sha256 = "8e1c6d21365d4b89bc5a35ab664da98a78dbc3ab9ba6100474881c8619a5b113"
+
+[[raw]]
+file = "env/polyhaven/leafy_grass/2k/textures/leafy_grass_nor_gl_2k.jpg"
+sha256 = "df0cf0ce96e653f033e5b934d5b12995464bda027aa53bd12e329be889aa9f45"
+
+[[raw]]
+file = "env/polyhaven/painted_plaster_wall/2k/painted_plaster_wall.bin"
+sha256 = "8742393f59510179e68f2d1163596f31c94d806bd26c9399070230c9383a2f60"
+
+[[raw]]
+file = "env/polyhaven/painted_plaster_wall/2k/painted_plaster_wall_2k.gltf"
+sha256 = "843debb6131a4e5716973c8b3a5892eaef935f6bbe85b62366ce557c729a320a"
+
+[[raw]]
+file = "env/polyhaven/painted_plaster_wall/2k/textures/painted_plaster_wall_arm_2k.jpg"
+sha256 = "8d6a2e391e87130aabb1dc6fea23e6ebcc80aca6559a0aa82e57b75729055be5"
+
+[[raw]]
+file = "env/polyhaven/painted_plaster_wall/2k/textures/painted_plaster_wall_diff_2k.jpg"
+sha256 = "6fd812ed8dd5be1873c29aeef38ce9bf1fb30a22c6d4b3a12db725e98c26a1be"
+
+[[raw]]
+file = "env/polyhaven/painted_plaster_wall/2k/textures/painted_plaster_wall_nor_gl_2k.jpg"
+sha256 = "2d601a46ed5ce2af866741c53cafa3cba472620c272e633b6484d4de16a80eb1"
+
+[[raw]]
+file = "env/polyhaven/wood_floor/2k/textures/wood_floor_arm_2k.jpg"
+sha256 = "dc024a5c535c2c513d91d9d0e541f9c4d249b9a4110f3819d60c29631bc98145"
+
+[[raw]]
+file = "env/polyhaven/wood_floor/2k/textures/wood_floor_diff_2k.jpg"
+sha256 = "7c3ff1164c8dd0758ef2c048e9a266d28174120de01052ec40e6ca486177345c"
+
+[[raw]]
+file = "env/polyhaven/wood_floor/2k/textures/wood_floor_nor_gl_2k.jpg"
+sha256 = "eff2e4db46bab930dc05997faf5085157eec4fd652cdfc6cd01fa11edd56ef10"
+
+[[raw]]
+file = "env/polyhaven/wood_floor/2k/wood_floor.bin"
+sha256 = "ac7dd664599f36e124f1e5aeacab4a8cd121f2924d31306e708d83c941f10364"
+
+[[raw]]
+file = "env/polyhaven/wood_floor/2k/wood_floor_2k.gltf"
+sha256 = "a6abaf1e51e2b7f3534afa663a005ab8e639e8f18f4e67b62716c88d8bdfae6f"

@@ -1,0 +1,15 @@
+id = "kaykit_restaurant_bits"
+title = "KayKit : Restaurant Bits (1.0, FREE)"
+author = "Kay Lousberg (KayKit)"
+url = "https://kaylousberg.itch.io/restaurant-bits"
+licence = "CC0-1.0"
+licence_url = "https://creativecommons.org/publicdomain/zero/1.0/"
+public_repo_ok = true
+ai_generated = false
+downloaded_at = 2026-10-06
+credit = "KayKit : Restaurant Bits by Kay Lousberg (www.kaylousberg.com), CC0 1.0"
+notes = """Downloaded 2026-10-06 by the locations stage-0 research (art #34) under the engineer's standing permission for free downloads from official sources; the archive is kept as downloaded in D:/prime-art-raw/env/ and unpacked beside it (unpacked files are listed once an asset uses them). Licence as read: itch.io page: "Free for personal and commercial use, no attribution required. (CC0 Licensed)"; the FREE upload was taken at $0 through "No thanks, just take me to the downloads" (no payment, no account, no personal details); archive License.txt: "Created/distributed by Kay Lousberg ... License: (Creative Commons Zero, CC0) http://creativecommons.org/publicdomain/zero/1.0/". 144 kitchen and restaurant models (counters, stoves, oven, fridges, sinks, crates, a knife, food in raw, cooked and chopped states, walls, floors, doors, tables, chairs) on one gradient atlas (restaurantbits_texture.png). Measured (research scripts glbstats.py / fbx_to_glb.py): 144 models, triangles min/median/max 32/272/4422, 144 with a base colour texture."""
+
+[[raw]]
+file = "env/kaykit/restaurant-bits/KayKit_Restaurant_Bits_1.0_FREE.zip"
+sha256 = "75f75f0a1ae569f3f2348fa7a04ccd45d2f010d419045755c70ae43289b68e4b"

@@ -1,0 +1,15 @@
+id = "quaternius_downtown_city_megakit"
+title = "Downtown City MegaKit [Standard]"
+author = "Quaternius"
+url = "https://quaternius.itch.io/downtown-city-megakit"
+licence = "CC0-1.0"
+licence_url = "https://creativecommons.org/publicdomain/zero/1.0/"
+public_repo_ok = true
+ai_generated = false
+downloaded_at = 2026-10-06
+credit = "Downtown City MegaKit [Standard] by Quaternius, CC0 1.0"
+notes = """Downloaded 2026-10-06 by the locations stage-0 research (art #34) under the engineer's standing permission for free downloads from official sources; the archive is kept as downloaded in D:/prime-art-raw/env/ and unpacked beside it (unpacked files are listed once an asset uses them). Licence as read: itch.io page: "Free to use in personal, educational and commercial projects. (CC0 License)", "Asset license: Creative Commons Zero v1.0 Universal", "No generative AI was used"; the free [Standard] upload was taken at $0 through the "No thanks" path (the paid Source upload was not taken); archive License_Standard.txt: "License: CC0 1.0 Universal (CC0 1.0) Public Domain Dedication". The free Standard zip: 153 modular city pieces (brick and metal facades, columns, cornices, doors, windows, floors, sidewalks, streets, road decals, 3 example buildings) as glTF (Godot) and FBX with shared PBR texture sets (base colour, normal, ORM) and vertex colours for wear: a realistic city style, kept as the realistic reference. Measured (research scripts glbstats.py / fbx_to_glb.py): 153 models, triangles min/median/max 2/48/45122, 153 with a base colour texture."""
+
+[[raw]]
+file = "env/quaternius/downtown-city-megakit/Downtown City MegaKit[Standard].zip"
+sha256 = "5b1a945576d54cdbb4ccc9c3d52711e6d530da74c74c586407ecc28b165335da"

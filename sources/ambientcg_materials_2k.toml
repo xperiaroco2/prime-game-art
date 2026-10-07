@@ -1,0 +1,87 @@
+id = "ambientcg_materials_2k"
+title = "ambientCG PBR materials, 2K-JPG (19 chosen for the location prototypes)"
+author = "ambientCG (Lennart Demes)"
+url = "https://ambientcg.com"
+licence = "CC0-1.0"
+licence_url = "https://creativecommons.org/publicdomain/zero/1.0/"
+public_repo_ok = true
+ai_generated = false
+downloaded_at = 2026-10-06
+credit = "Materials from ambientCG.com, CC0 1.0"
+notes = """Downloaded 2026-10-06 by the locations stage-0 research (art #34) under the engineer's standing permission for free downloads from official sources; the archive is kept as downloaded in D:/prime-art-raw/env/ and unpacked beside it (unpacked files are listed once an asset uses them). Licence as read: docs.ambientcg.com/license: "All ambientCG assets are provided under the Creative Commons CC0 1.0 Universal License." and "You don't need to give credit"; the archives hold no licence file. Each zip came from https://ambientcg.com/get?file=<id>_2K-JPG.zip (the API's own download link; page https://ambientcg.com/view?id=<id>) and holds Color, NormalGL, NormalDX, Roughness and Displacement JPGs (AO or Metalness where the material has them), a Godot .tres, .mtlx, .usdc, .blend and a preview PNG. Materials: Asphalt031, Bricks104, Cardboard004, Carpet016, Concrete034, Concrete046, Fabric036, Fabric061, Grass004, Grass005, PaintedPlaster017, Paper004, Paper005, PavingStones138, Plaster001, Tiles107, Wood049, Wood092, WoodFloor051."""
+
+[[raw]]
+file = "env/ambientcg/Asphalt031/Asphalt031_2K-JPG.zip"
+sha256 = "f2a02ea9ea1fd97d2a6d27f46ebac069a5851e3ae7c73fa991abf563b97786c7"
+
+[[raw]]
+file = "env/ambientcg/Bricks104/Bricks104_2K-JPG.zip"
+sha256 = "ecfc03b0dca0d924b7b5756e4122a144182105ece2bba10af0a6ac961833f590"
+
+[[raw]]
+file = "env/ambientcg/Cardboard004/Cardboard004_2K-JPG.zip"
+sha256 = "c75c518d8ab2cc54eb496a8c01d83236de29c8110590e0f8e599ef8e62e2caae"
+
+[[raw]]
+file = "env/ambientcg/Carpet016/Carpet016_2K-JPG.zip"
+sha256 = "a57bceafe6f2e37ed931b02f7310f6df1f7bbef5653cc5811e04f57048bc533f"
+
+[[raw]]
+file = "env/ambientcg/Concrete034/Concrete034_2K-JPG.zip"
+sha256 = "fafd7cd3aee2b703abbb12b7810ef565ab76ac7ea3b1ea9a73b088e423e670b3"
+
+[[raw]]
+file = "env/ambientcg/Concrete046/Concrete046_2K-JPG.zip"
+sha256 = "597e009cb504219e85671ec06a375cd0cf030142749bb414990cc3dece477dde"
+
+[[raw]]
+file = "env/ambientcg/Fabric036/Fabric036_2K-JPG.zip"
+sha256 = "e7dd89a2bbaa89dd8868493141751230a2feb8d879ba867e4824b5cf871d3112"
+
+[[raw]]
+file = "env/ambientcg/Fabric061/Fabric061_2K-JPG.zip"
+sha256 = "27b729c1bafa7c47f5f89dea8ca43d6107156acd437c1439a30d28e9de0013c2"
+
+[[raw]]
+file = "env/ambientcg/Grass004/Grass004_2K-JPG.zip"
+sha256 = "d7d3f08e8bb1e59aed0c3dbb85ea0b46d5308481f89b6a3fd62c0ec9e862245b"
+
+[[raw]]
+file = "env/ambientcg/Grass005/Grass005_2K-JPG.zip"
+sha256 = "89183d8dceabc3c23a26978f426e1662143dd2f84f1dc3586a1592d101e5234b"
+
+[[raw]]
+file = "env/ambientcg/PaintedPlaster017/PaintedPlaster017_2K-JPG.zip"
+sha256 = "a61330b10b1aa58410f8b60632f667e7a6d84d521bbd85cec4c4de7136d282d2"
+
+[[raw]]
+file = "env/ambientcg/Paper004/Paper004_2K-JPG.zip"
+sha256 = "b85d4ec4a4facffe335d4ef61f64058b85320208f9f3310921998d7275635554"
+
+[[raw]]
+file = "env/ambientcg/Paper005/Paper005_2K-JPG.zip"
+sha256 = "1da2f1a7e26a5e58bda7d799be3d2af2ab615611cfddeb78a464002f6b01897a"
+
+[[raw]]
+file = "env/ambientcg/PavingStones138/PavingStones138_2K-JPG.zip"
+sha256 = "fe4eba57099a904f120a23041ef0caa3d20cf2a48191594ca1bb3479493561ee"
+
+[[raw]]
+file = "env/ambientcg/Plaster001/Plaster001_2K-JPG.zip"
+sha256 = "9894765632cfa0feb3349b581825a9c224dee9efa1cebb8aba63bd1c7bc9fc3c"
+
+[[raw]]
+file = "env/ambientcg/Tiles107/Tiles107_2K-JPG.zip"
+sha256 = "fa76887bb33af0972154700126d1f86d01eaed518341ce7411616c1d1202ac55"
+
+[[raw]]
+file = "env/ambientcg/Wood049/Wood049_2K-JPG.zip"
+sha256 = "a9dd578788a1e05434d126f5cb66b15520f98f5108ac535790145905fc176c54"
+
+[[raw]]
+file = "env/ambientcg/Wood092/Wood092_2K-JPG.zip"
+sha256 = "4c392495ec8689024659de2099f538089556d77dd7c2f2c2d70a707fa7d29d54"
+
+[[raw]]
+file = "env/ambientcg/WoodFloor051/WoodFloor051_2K-JPG.zip"
+sha256 = "eb7d1cee763bb17a59feb89b0fd16398d3673a071a76fed289111cf81013ac25"

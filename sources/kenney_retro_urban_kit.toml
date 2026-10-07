@@ -1,0 +1,15 @@
+id = "kenney_retro_urban_kit"
+title = "Retro Urban Kit"
+author = "Kenney"
+url = "https://kenney.nl/assets/retro-urban-kit"
+licence = "CC0-1.0"
+licence_url = "https://creativecommons.org/publicdomain/zero/1.0/"
+public_repo_ok = true
+ai_generated = false
+downloaded_at = 2026-10-06
+credit = "Retro Urban Kit by Kenney (www.kenney.nl), CC0 1.0"
+notes = """Downloaded 2026-10-06 by the locations stage-0 research (art #34) under the engineer's standing permission for free downloads from official sources; the archive is kept as downloaded in D:/prime-art-raw/env/ and unpacked beside it (unpacked files are listed once an asset uses them). Licence as read: kenney.nl page: "License: Creative Commons CC0"; archive License.txt: "License: (Creative Commons Zero, CC0) http://creativecommons.org/publicdomain/zero/1.0/", crediting Kenney "is not mandatory" / "not a requirement". Version 2.0. 124 low-detail urban pieces (walls, roofs, roads, scaffolding, trucks, trees, benches, dumpsters) with small tiling textures (asphalt.png, concrete.png, grass.png and more), median 2 materials per model. Measured (research scripts glbstats.py / fbx_to_glb.py): 124 models, triangles min/median/max 2/24/124, 124 with a base colour texture."""
+
+[[raw]]
+file = "env/kenney/retro-urban-kit/kenney_retro-urban-kit.zip"
+sha256 = "19201cbcb0d90080dfc33b54f5b4be2089de927c2a23274180798e7166d6b6ca"
