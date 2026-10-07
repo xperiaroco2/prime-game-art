@@ -43,16 +43,16 @@ rounded MiB).
 - **First map, a proposal for the designer: Post Office No. 7 and its yard** (54 x 45 m, 1,843 m² walkable), with a
   courtyard concept as runner-up.
 - **CC0:** 41 source records in `sources/` (45 with the character track's), all CC0-1.0: 37 model packs, 19 ambientCG
-  materials (one record) and 12 Poly Haven assets (three records); `manifest-check --hashes` passes. No Meshy, no purchases, no installs. Meshy is costed on paper only: the hybrid's
-  3-5 organic props would take 201-335 credits by the planning figure, against a pool of at most 215 that belongs to
-  the character track.
+  materials (one record) and 12 Poly Haven assets (three records); `manifest-check --hashes` passes. No Meshy, no
+  purchases, no installs. Meshy is costed on paper only: the hybrid's 3-5 organic props would take 201-335 credits by
+  the planning figure, against a pool of at most 215 that belongs to the character track.
 
 ## The principles
 
 From references where character and world differ yet hold together (Team Fortress 2, Valorant, Fall Guys, Human Fall
 Flat, Lockdown Protocol, It Takes Two, Harold Halibut, the Aardman films) and where they clash (Sonic Frontiers,
-Babylon's Fall, Gang Beasts' docks), measured on our characters (light skin albedo L* 71, rendered figures at L* 44-52, clay lumps
-about 1 mm per texel):
+Babylon's Fall, Gang Beasts' docks), measured on our characters (light skin albedo L* 71, rendered figures at
+L* 44-52, clay lumps about 1 mm per texel):
 
 | # | Principle | Target used for the prototypes |
 |---|---|---|
