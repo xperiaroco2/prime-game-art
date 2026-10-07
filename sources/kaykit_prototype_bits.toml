@@ -1,0 +1,15 @@
+id = "kaykit_prototype_bits"
+title = "KayKit : Prototype Bits (1.1, FREE)"
+author = "Kay Lousberg (KayKit)"
+url = "https://kaylousberg.itch.io/prototype-bits"
+licence = "CC0-1.0"
+licence_url = "https://creativecommons.org/publicdomain/zero/1.0/"
+public_repo_ok = true
+ai_generated = false
+downloaded_at = 2026-10-06
+credit = "KayKit : Prototype Bits by Kay Lousberg (www.kaylousberg.com), CC0 1.0"
+notes = """Downloaded 2026-10-06 by the locations stage-0 research (art #34) under the engineer's standing permission for free downloads from official sources; the archive is kept as downloaded in D:/prime-art-raw/env/ and unpacked beside it (unpacked files are listed once an asset uses them). Licence as read: itch.io page: "Free for personal and commercial use, no attribution required. (CC0 Licensed)"; the FREE upload was taken at $0 through "No thanks, just take me to the downloads" (no payment, no account, no personal details); archive License.txt: "Created/distributed by Kay Lousberg ... License: (Creative Commons Zero, CC0) http://creativecommons.org/publicdomain/zero/1.0/". 72 prototype models (boxes, barrels, pallets, doors, walls with doorway and windows, floors, primitives, stairs, targets, tables, coins, a dummy) on one gradient atlas; wall 4 m, door 2.8 m (scale x0.72 to x0.75). itch.io names the upload 'Free 1.1'; the archive keeps the CDN's file name KayKit_Prototype_Bits_1.1_FREE.zip. Measured (research scripts glbstats.py / fbx_to_glb.py): 72 models, triangles min/median/max 6/62/3130, 72 with a base colour texture."""
+
+[[raw]]
+file = "env/kaykit/prototype-bits/KayKit_Prototype_Bits_1.1_FREE.zip"
+sha256 = "6dadbcd7dd13ba8582323cf3cfdec591340f83f74a959c212f8b83eb8dc42425"

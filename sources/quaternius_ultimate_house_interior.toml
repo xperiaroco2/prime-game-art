@@ -1,0 +1,511 @@
+id = "quaternius_ultimate_house_interior"
+title = "Ultimate House Interior Pack"
+author = "Quaternius"
+url = "https://quaternius.com/packs/ultimatehomeinterior.html"
+licence = "CC0-1.0"
+licence_url = "https://creativecommons.org/publicdomain/zero/1.0/"
+public_repo_ok = true
+ai_generated = false
+downloaded_at = 2026-10-06
+credit = "Ultimate House Interior Pack by Quaternius, CC0 1.0"
+notes = """Downloaded 2026-10-06 by the locations stage-0 research (art #34) under the engineer's standing permission for free downloads from official sources; the archive is kept as downloaded in D:/prime-art-raw/env/ and unpacked beside it (unpacked files are listed once an asset uses them). Licence as read: quaternius.com pack page: "License: CC0" (linking creativecommons.org/publicdomain/zero/1.0/); the page's Download button opens the publisher's public Google Drive folder, mirrored here file by file (the folder holds loose files, no archive); its License.txt: "License: CC0 1.0 Universal (CC0 1.0) Public Domain Dedication". The FBX folder (123 models), License.txt and Preview.jpg of the publisher's Drive folder (its Blends and OBJ folders were not downloaded). Flat material colours, no textures, 1 to 5 materials per model; scale about 2x (Door_1 4.19 m, Chair_1 1.77 m high: x0.5 for the game). The FBX materials import into Blender with alpha 0 (invisible) and need alpha forced to 1; lab GLB copies are in research/2026-10-06-locations/lab/converted/. Measured (research scripts glbstats.py / fbx_to_glb.py): 123 models, triangles min/median/max 48/324/3596, 0 with a base colour texture."""
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Bathroom_Bathtub.fbx"
+sha256 = "0260784a86e4202f5a942ffedd0b6a534fbd209adfd2874478d245f3afc61ea4"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Bathroom_Mirror1.fbx"
+sha256 = "eb97bf073be126f337ebf13835107ac9b9a31aeba037a60c45d63e42272a18a7"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Bathroom_Mirror2.fbx"
+sha256 = "74c0fb0223b23179d500b1a0806f2af44d1c04439fc5d58a9fa5377546cda0f8"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Bathroom_Shower1.fbx"
+sha256 = "e148cf2994e1f8ec549caccf026b79be96039ea896289d791702fc1e4700f0cd"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Bathroom_Sink.fbx"
+sha256 = "5c845efc13e012e19c45406440058172fb41c54940ca30c0f528764342de52e6"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Bathroom_Toilet.fbx"
+sha256 = "2bcd3d5e4543b904becbbadca78c50c134e0f4a87f85a6182e8e64519f60aac5"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Bathroom_Toilet2.fbx"
+sha256 = "7fd341620f15e66b31f0234f09154a4ce4bcfbef9854638b8e9ee602f13b2739"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Bathroom_ToiletPaper.fbx"
+sha256 = "84038ff2a0743816ba28a831c8ea03a1f77d1af67cf8b6206a119f076b44655b"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Bathroom_ToiletPaperPile.fbx"
+sha256 = "0b1cb86c326cf390ca504bb682aa6452d6d6d8eb8723ed24333b46587df77624"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Bathroom_Towel.fbx"
+sha256 = "49de1777c916a78d0975bc215e66ea00593a4b22f30bc3993bcf8b373e4b8393"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Bathroom_WashingMachine.fbx"
+sha256 = "bd7c4af0aa1f3f7d65c02b9c2b95cf36b835d3c7b749b504aa9acb80ec64950d"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Bed_Bunk.fbx"
+sha256 = "42048987dbc4304c8d36702221a57e22676ab19142568287908f7f90969274b4"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Bed_King.fbx"
+sha256 = "9fad1b776b499517407e88ea2bfd91d17067cb37ca3ab77e7a13530842649faa"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Bed_Single.fbx"
+sha256 = "fc66e91a3f41c7a77b6a01b40a9c74408bb29cfdda1b9bc92593ec52882e211b"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Bookshelf.fbx"
+sha256 = "6125bb56f3cb545d82498af9bc3f72d7b98a53b0360b327b99275ea0ce8c0bca"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Carpet_1.fbx"
+sha256 = "c1f44563d12a15dfffe7cd10a51b5d31a346a09811d113b20e934091cc7d8a1f"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Carpet_2.fbx"
+sha256 = "06d63312a2977bdea63a0a5d127bd4c4fdbd8cc368082f99f398da2d762343e8"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Carpet_Round.fbx"
+sha256 = "a48f48665276158b4d9d4880db95cca96ea8d9c5d23f20330918762d1b9138dc"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Chair_1.fbx"
+sha256 = "1e9ac9b362e04c1bd31a973d6511ee2e94d4690743c95b326354804b9ed60616"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Chair_2.fbx"
+sha256 = "dea497bca60d1b83ec6588a4d01db8e930bd060b2b56ab0539ede699d5497d8b"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Chair_3.fbx"
+sha256 = "e9fadad7fb5a7eb873f615106856cd3aea700c4e0071da2a411bb5f5f88f76de"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Chair_4.fbx"
+sha256 = "2be9c8fe38176886b46603b86eb623d888491df09b9238734e4954b8cad3fda2"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Column_Round1.fbx"
+sha256 = "d392c28623d90096459a418d77d12e5c46c46755a98d22be0e52c14d4004180e"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Column_Round2.fbx"
+sha256 = "3c3b790aa6db0619cf3f9d7c64c854ca95e264ccf764ebd2d6697ee6427c28e7"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Column_Round3.fbx"
+sha256 = "be1ddffbb45cd11e0037a82c65a3b372469ddf70f6b98414994e5887f93cc18c"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Column_SquareBig.fbx"
+sha256 = "a08857d02b8a7b00e65d2d39b734b7938eea328249b3ae393b405cef48dae545"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Column_SquareSmall.fbx"
+sha256 = "9592ca5e94b0d3e69c2d3b96e4f8de3984e4f8e08ce4be6e23d3196df9596495"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Couch_L.fbx"
+sha256 = "4c61b06271e064063f692f2f239fcffdfae929b4587df654b1f1b25163aa7d0b"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Couch_Large1.fbx"
+sha256 = "2b4117197f598b659c579dd8886cd7056ffd88ee4ce066661bbb4dafaba8ba29"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Couch_Large2.fbx"
+sha256 = "e96c77438e710c61675a6a9b91d4db9d2028e92f62538f11988dcbbb56e6e343"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Couch_Large3.fbx"
+sha256 = "97ebb6738907fcf25823fb6cea5c12e1d26e46dab8138e3e2adb4441c9b9f753"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Couch_Medium1.fbx"
+sha256 = "97234d176b72176d4d0dd9fd16b405f0d625b30d0910e096f91147dc65e926b5"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Couch_Medium2.fbx"
+sha256 = "275af02517963c1599ce78dee896bdea5cae25eb7f422d3d9913292b4d0a7c1b"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Couch_Small1.fbx"
+sha256 = "5723b4ddd8d7d6801501eff40bb1989abf1c896b19f0a75a0c519acfefce8237"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Couch_Small2.fbx"
+sha256 = "e88ade5fdd6869899112bbbc4347d0e4968a1002a22f45eeeef1db7f636c045a"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Curtains_Double.fbx"
+sha256 = "7dae41c611a2af150866f6f9f0e28c91ffb76a7e85e30ecdc86cd293dc649e92"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Curtains_Single.fbx"
+sha256 = "8cc2c91423f66ba80b011a2b7459eefff1747e89b2a154d61e8daa2b09fd64f4"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Door_1.fbx"
+sha256 = "b26ccce8ff32194b203cc4a8e9be6707318880cc0757436126c576740b994043"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Door_2.fbx"
+sha256 = "a3e35da6dc7e01a8b12629eb5ce456a3080a1ca5a1c334ed1d74eb4e9f46afd7"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Door_3.fbx"
+sha256 = "2d75ce0410845ea2536fc986481ddcc524732789477797847a7dc9f4ede2180e"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Door_4.fbx"
+sha256 = "f6b66b0389c125df67ee47923a1f7fd624170d6ca2f00ed10968c7ce5237c46f"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Door_5.fbx"
+sha256 = "6353778a649b2688b989dbd00adf66eca0d3963e89485dfe54b5d590677135b5"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Door_6.fbx"
+sha256 = "306d35e74b8405e80fb5ab3912c800b1c3b0fd14ed9d9b3fe50adc5adbdbb985"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Door_7.fbx"
+sha256 = "6aded4989596955de86ea913658a8cc75e0b465db74b11bdaac1d4b1c1feaae7"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Door_8.fbx"
+sha256 = "f7067c6ad8f0072f34644a941970c7cd7d0974d2ebfc6ddbcd31a82ae47390c4"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Door_9.fbx"
+sha256 = "afb1298a499ae832ebbe5ba52cfd9bb5ff9c5c9f0522812230fd41872d29c92a"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Door_Double.fbx"
+sha256 = "1ae38f2ee14a4d04a950b149f76011e52b1465189ad4f2fa397c154abae7e78e"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Drawer_1.fbx"
+sha256 = "1b7874fc04d6064e03eaf821095030db54369ab7f1d272810a34001cbf51bb3d"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Drawer_2.fbx"
+sha256 = "b826f60ad7a7fb2b35aa2a37239afcc9f41188a0a79a1c8ac8e189a8ee3fa37b"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Drawer_3.fbx"
+sha256 = "5805f4a38294958280953af9fb808b69a7974c40ddf6e25879e0828696f4e9da"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Drawer_4.fbx"
+sha256 = "e4d7a590be5b26d3d869425e41aee8a547c2199496709c909baec1a66cee1998"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Drawer_5.fbx"
+sha256 = "ed1b01f6babdd2f8129f24ed958003a71fab16f6578e7537c9690ffca67f48e9"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Fireplace.fbx"
+sha256 = "699d842d68bdf735876143d44d6c672684cefb6fbff3af0cdf20efb321dc215f"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Fork.fbx"
+sha256 = "63f7a07714523e7217edcba91959a3acf2865e8fc2d22477606f0e1b022c86a3"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Houseplant_1.fbx"
+sha256 = "20029d8f49768d4276968a9b610c49da4d7fb5c7c4e4a8cbeab8a148ae5e1182"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Houseplant_2.fbx"
+sha256 = "a3f7e609ffd06fa8e251525fde14b6ec42cb71b58c865e0955e59301b89055cb"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Houseplant_3.fbx"
+sha256 = "3944056bbad95a80e914c1304d638cb04bc3b2b3fad66b20ef7f4c56782b3c0f"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Houseplant_4.fbx"
+sha256 = "90b4799fb67084c3a20226b295c441fce935c425b8f9c94194643862f38460b4"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Houseplant_5.fbx"
+sha256 = "e973c11cab4ce23df262abd5b3a3a0cfb7cb9241abaf8abcd4bd0d180f55cda0"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Houseplant_6.fbx"
+sha256 = "8ae6238920b53bd04df4cfa39f58c9e1bd8ac712020db335fec4d616aafa7f75"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Houseplant_7.fbx"
+sha256 = "7211512ae209dcca280c0f87a867b6e07870e23c7d3f8eb855cafbfeaf488583"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Houseplant_8.fbx"
+sha256 = "bdff50a3ba001a52585886b8d1f9d23d13d4e5e3005eb5a92f53eca678bd79f0"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Kitchen_1Drawers.fbx"
+sha256 = "f9375028f76910a45801503338c2fb1a941a5a66f826cdf3d101fadb3a92cb1f"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Kitchen_2Drawers.fbx"
+sha256 = "7f21cf3932163811aaa2b7fb3799087c2621afaf20cab974cdf0140d25bd1811"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Kitchen_3Drawers.fbx"
+sha256 = "ec61a9962890de277e096a72d1093c974f6e7c75171bea6bdc9b8abc8e8833d7"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Kitchen_Cabinet1.fbx"
+sha256 = "1c16eeaf7daf751c0c8872c886aec5a57a3922324cfa458cb83738a7b5a0d205"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Kitchen_Cabinet2.fbx"
+sha256 = "7a43c4377cde977de45d1137c95cd085e02234aa08e631ecd3978eb10460f8ae"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Kitchen_CabinetSmall.fbx"
+sha256 = "986883cd72b8ee82155ca93034c63e19facc96e7911612ccdb0f88584d338f70"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Kitchen_Fridge.fbx"
+sha256 = "e7a6c73a6188f67a99be2ad8fe6225d4c85dc6bf3110c3a4be24c2d3c110c534"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Kitchen_Oven.fbx"
+sha256 = "3eda5c3c3f1f0bb37f6cc916ad15ae712f5d32c2de333a6ce8e043f8b1c6a6d1"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Kitchen_Oven_Large.fbx"
+sha256 = "61e049e1e02a2d6230b4ea812f56975d1cb6f4be23e41caeaca10abcbe622993"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Kitchen_Sink.fbx"
+sha256 = "c20d9c1a4785890f887a781fb3befd626508e1b813333293e7c4001a35125350"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Knife.fbx"
+sha256 = "adaa6d0b76510ae11ff7993eb8b887952fe7a7ba996e3c9377f83610d17045af"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Light_Ceiling1.fbx"
+sha256 = "33138fc892d378da83413e1788de63cad5fc387df6327e350734d0509979dc91"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Light_Ceiling2.fbx"
+sha256 = "10b6c2a465f5049babe14d8b96743d2fb902e6047d1c08b5c2456ed6ba1eec99"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Light_Ceiling3.fbx"
+sha256 = "e8f597f693a85c1592baf9e5a28b62bcd3f0b05a681bc025e56202b7173c0f9a"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Light_Ceiling4.fbx"
+sha256 = "442329153981280b8956e0d0827cb157ee4191111f6949fe3761f6db3ae42d15"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Light_Ceiling5.fbx"
+sha256 = "a359ab2888bee15134db108f76b18677817dd8cedccca9db0e2d999473bf90f0"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Light_Ceiling6.fbx"
+sha256 = "98430337392f21f42df8532a0d36220522bd04cc916d38a92b7c203f1dbdf124"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Light_CeilingSingle.fbx"
+sha256 = "3aa61fcdefe7a78037963f4a0d93bf4cf9b7589644e42d6a39dbf06c469106cc"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Light_Chandelier.fbx"
+sha256 = "a96cbe54bbb2d4f6d33828a4019842e142cb2e60de014eba5d76827f150190e7"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Light_Cube.fbx"
+sha256 = "64ce8e0131f295bb0051896506201709f8f900c7c297333d8c7ca54c279df3b1"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Light_Cube2.fbx"
+sha256 = "517beda54fac4407987c6fc56cd1c2a572c104e08d329ea62b8fe1f961179cb3"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Light_Desk.fbx"
+sha256 = "ed95943d36507187b90a1b0965632697e3d427b77030a812d3498fe88c713f85"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Light_Floor1.fbx"
+sha256 = "114241b2681611c8a886631906e9a0f4dec7f8de812e0cd69629da788d152d1b"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Light_Floor2.fbx"
+sha256 = "0652eae3c098b1d33e28a72bbe75cd4d2f8213448fba13ee6927fbf6ec43432b"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Light_Floor3.fbx"
+sha256 = "2e74fd71704f125367f770e584550fcb048d9eb2e48e875f2360ceeae1b8584d"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Light_Floor4.fbx"
+sha256 = "54f7252524c3ca5804678fa9f0792729d9cfd4315f75de4780af4d9e82d12de7"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Light_Icosahedron.fbx"
+sha256 = "3ad7e60fd2f28cddbd9f3940ce20ea965894fa4b55f86e9bd7da84eb9a2085f3"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Light_Icosahedron2.fbx"
+sha256 = "d434828d0f5d991d2a4ccd68cb41b7214242ad0f416385b039de7716d9331f9c"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Light_Small.fbx"
+sha256 = "02cf28bcc25970e00ceae2012d9b411394ae88aa15ec048ae31e2959fcceca54"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Light_Stand1.fbx"
+sha256 = "2d405bda7a9e1a04385c5c1135bd30897c4891aaf0621ec543e5f7e2f52cfb32"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Light_Stand2.fbx"
+sha256 = "b918faf5b2610bcdd1ee8a6e111f2cedcbe39b3ef458fa2527064d7805941459"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/NightStand_1.fbx"
+sha256 = "3d6437151b8a7b62220fa3128af0cb34a71b34e1e6653010f28a6a07689f4670"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/NightStand_2.fbx"
+sha256 = "6ce148017d219ee868aea2d2752f7e48b6a069865a5f558d192a0e82a32a229c"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/NightStand_3.fbx"
+sha256 = "4fe350fc0f63200ff8b8b8810e40b01d9ec51c3e01ad5dd38126ba382d5a5fb3"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Plate_1.fbx"
+sha256 = "fa739f25fdd9abbc0dfe1ba39952396b16490bc3da2c43c52d62e1cb96566027"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Plate_2.fbx"
+sha256 = "933d58a52cfc3f2eda80d0cd3e5145e0ff0e42b928b7e13eb8fa602ae39b3348"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Plate_3.fbx"
+sha256 = "94552b3820504c1892924b265f3e6c78c8275b9f195897328e4cdff77aa8df66"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Shelf_1.fbx"
+sha256 = "c638206d5784cad4c7cfb3bbed7b07fc3ff8cc1a2873e34a86ec38788f733dc9"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Shelf_2.fbx"
+sha256 = "ddb09b60ce97360a2529f8ab6c5531e8841fd0c6677765ddeb8a86f31d41004d"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Shelf_Large.fbx"
+sha256 = "3a1c3c3117c9d923f74fd7694a5d2697520ef78f19e2ba8caa9931bc07b0d83e"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Shelf_Small1.fbx"
+sha256 = "c59f78301cb7a861b86e94343bb54fb7d40830a119f325a807b954f3eac14802"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Shelf_Small2.fbx"
+sha256 = "1dbea1ace2d7f9b9f090b03b5eb6b351cce020922b210517fecb3905f5ccc2ad"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Shelf_Small3.fbx"
+sha256 = "46236d86b347263c9c5194a668c6d2900ed4660f585a713bd7b7d07e0e2cc741"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Spoon.fbx"
+sha256 = "0eaf8e43274a2088078c28bb27f425563aba7b736ec13a7b11aea45485a4c991"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Stool.fbx"
+sha256 = "8bf5230240a39e2b97a3f5a05e0bc821cf91cb385dd42c9ea95a5a46395b6500"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Table_RoundLarge.fbx"
+sha256 = "b6c452cdd0c9b5eef1585a241fd3391c16ba3a38b28442f9178ad5a2f122878c"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Table_RoundSmall.fbx"
+sha256 = "851f51638b4282983d8e7aa611d911baecd2e7eae02b910bf851422d6acf2060"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Table_RoundSmall2.fbx"
+sha256 = "191a27a1577c9b468b6f75ed8852fae1d926c366d6f40f9ffdd19a370e989946"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Trashcan_Cylindric.fbx"
+sha256 = "726bdb0c4406a3981dfbae979751993e84c7c4f36eea3c9c818b2a5d74ef9e59"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Trashcan_Green.fbx"
+sha256 = "09376f26b59f31ba0cdf7852c9ea7262b3e7ded387d75085090f2cd647e6f92e"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Trashcan_Large.fbx"
+sha256 = "a2440540038163c4450bfb126ccfd19c482daf7fc4135eecbfc30b03adc72007"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Trashcan_Small1.fbx"
+sha256 = "4a0fd2df7f88b4972a406b0816fe87eb91fc2ead258fa6ff331e36ec3cc3ff93"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Trashcan_Small2.fbx"
+sha256 = "03bea44d6a39ff47a110876420d3bbbb5e6b9d6b5d1bbd3fdd126fb7f2d357f7"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Window_Large1.fbx"
+sha256 = "db67631521526cfc576dca72d9dfab534c5ac94310983d1a5628016faa27042e"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Window_Large2.fbx"
+sha256 = "8a146a9c3d8b695c3067d6e54d7dd9e5b1a3ff3b40f0632a474770c210a8203f"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Window_Round1.fbx"
+sha256 = "58f5abc517526dc114127cd289f596157c450dc4e18d45d670d280b9f57ab272"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Window_Round2.fbx"
+sha256 = "39654fd5bb9edfb886cf01f2f58357438ae7883f8b993567ca8acd8ba6a68643"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Window_Round3.fbx"
+sha256 = "a313e8e2083eaca33ddacdab05076a46fb3b91f98e281f929704f82ceb2f4848"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Window_Small1.fbx"
+sha256 = "fea98337aee4ed873c0c0719478c2e0b28096f51a16205033e12624a43b4047f"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Window_Small2.fbx"
+sha256 = "c34be9961a911441fcf8989f1091319c36264498a80fc80f2839fc706df931b3"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/FBX/Window_Small3.fbx"
+sha256 = "fb1a74e82db450a37383703c4793147f13bfdba08af1685fd455eb18df1f73c0"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/License.txt"
+sha256 = "83d8959f9fc56353ed571fbe2dc52e4bcd64508e2399501cd45ac2ce3df0bf8c"
+
+[[raw]]
+file = "env/quaternius/ultimate-house-interior/Preview.jpg"
+sha256 = "5327505a592381bdd50eb79eebebeb36c8186c079ea37a7ed910796f06cef42a"

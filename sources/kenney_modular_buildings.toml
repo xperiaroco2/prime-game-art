@@ -1,0 +1,15 @@
+id = "kenney_modular_buildings"
+title = "Modular Buildings"
+author = "Kenney"
+url = "https://kenney.nl/assets/modular-buildings"
+licence = "CC0-1.0"
+licence_url = "https://creativecommons.org/publicdomain/zero/1.0/"
+public_repo_ok = true
+ai_generated = false
+downloaded_at = 2026-10-06
+credit = "Modular Buildings by Kenney (www.kenney.nl), CC0 1.0"
+notes = """Downloaded 2026-10-06 by the locations stage-0 research (art #34) under the engineer's standing permission for free downloads from official sources; the archive is kept as downloaded in D:/prime-art-raw/env/ and unpacked beside it (unpacked files are listed once an asset uses them). Licence as read: kenney.nl page: "License: Creative Commons CC0"; archive License.txt: "License: (Creative Commons Zero, CC0) http://creativecommons.org/publicdomain/zero/1.0/", crediting Kenney "is not mandatory" / "not a requirement". Version 2.1. 108 modular facade pieces (building blocks with windows, doors and balconies, roofs, separate doors and windows, AC units) on one colormap.png palette. Measured (research scripts glbstats.py / fbx_to_glb.py): 108 models, triangles min/median/max 12/40/524, 108 with a base colour texture."""
+
+[[raw]]
+file = "env/kenney/modular-buildings/kenney_modular-buildings.zip"
+sha256 = "47e1614686b4c0fe55190e88b22ff2b8b10935edf61f37f478a9b6a99477edc6"

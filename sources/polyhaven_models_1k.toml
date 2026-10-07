@@ -1,0 +1,111 @@
+id = "polyhaven_models_1k"
+title = "Poly Haven models, 1K glTF (5)"
+author = "Poly Haven (Rahul Chaudhary, Kuutti Siitonen, Kirill Sannikov, James Ray Cock, Jurita Burger)"
+url = "https://polyhaven.com/models"
+licence = "CC0-1.0"
+licence_url = "https://creativecommons.org/publicdomain/zero/1.0/"
+public_repo_ok = true
+ai_generated = false
+downloaded_at = 2026-10-06
+credit = "Models from Poly Haven (polyhaven.com), CC0 1.0"
+notes = """Downloaded 2026-10-06 by the locations stage-0 research (art #34) under the engineer's standing permission for free downloads from official sources; the archive is kept as downloaded in D:/prime-art-raw/env/ and unpacked beside it (unpacked files are listed once an asset uses them). Licence as read: polyhaven.com/license: "Our assets are all licensed as CC0" and "You do not need to give credit or attribution" (the site's Terms of Service separately forbid scraping without permission: the files were fetched one by one through the public API, api.polyhaven.com, each checked against its md5). Poly Haven serves loose files, no archive. 1k glTF of cardboard_box_01 (Rahul Chaudhary, 16952 triangles), painted_wooden_chair_01 (Kuutti Siitonen, 724), painted_wooden_table (Kirill Sannikov, 600), painted_wooden_sofa (Kirill Sannikov, 5826) and wooden_crate_02 (James Ray Cock, Jurita Burger, 5176): photoreal PBR props at real scale, the realistic reference of the style comparison."""
+
+[[raw]]
+file = "env/polyhaven/cardboard_box_01/1k/cardboard_box_01.bin"
+sha256 = "7212d43b4cb56459e46d31ab34dc7c310fcfbe170f4a588416dea07ae5628a4b"
+
+[[raw]]
+file = "env/polyhaven/cardboard_box_01/1k/cardboard_box_01_1k.gltf"
+sha256 = "6038bcc5bba5a08a5f6643a265977e37e3d14553e62981e144c33a89f10b78e1"
+
+[[raw]]
+file = "env/polyhaven/cardboard_box_01/1k/textures/cardboard_box_01_arm_1k.jpg"
+sha256 = "5db63828d0f904c6a8d9c83afc912260b2a27261c15a28d06360519384574d2b"
+
+[[raw]]
+file = "env/polyhaven/cardboard_box_01/1k/textures/cardboard_box_01_diff_1k.jpg"
+sha256 = "122c7ba8c5935e289804a730b480677a4bffdf74a45c91970cba682df92e171c"
+
+[[raw]]
+file = "env/polyhaven/cardboard_box_01/1k/textures/cardboard_box_01_nor_gl_1k.jpg"
+sha256 = "d2d1f529a851966b65411b5094510dd9eba03cd5c0a89921f79325c377a8e8eb"
+
+[[raw]]
+file = "env/polyhaven/painted_wooden_chair_01/1k/painted_wooden_chair_01.bin"
+sha256 = "eaf952048db1e770c45898049b8abe28deb83d3dbbaad81d5e7e43e22a322295"
+
+[[raw]]
+file = "env/polyhaven/painted_wooden_chair_01/1k/painted_wooden_chair_01_1k.gltf"
+sha256 = "34f55ebe1851b89c045dc62d4461c848de3b93c0668e752a2b5f6cbed2d91a5e"
+
+[[raw]]
+file = "env/polyhaven/painted_wooden_chair_01/1k/textures/painted_wooden_chair_01_arm_1k.jpg"
+sha256 = "9d2de0ea0d630e8e5af05424b1f41b1ae4a80465d27a78eb471cd7f8556db84e"
+
+[[raw]]
+file = "env/polyhaven/painted_wooden_chair_01/1k/textures/painted_wooden_chair_01_diff_1k.jpg"
+sha256 = "de67d1f8a0318616a7ee769cbe5c513301c2b25056542d011bb4359498f9e25d"
+
+[[raw]]
+file = "env/polyhaven/painted_wooden_chair_01/1k/textures/painted_wooden_chair_01_nor_gl_1k.jpg"
+sha256 = "27301c3ac6a7daf9e0ba418ec85feaa44cc898e61d048211bca57133f22e1807"
+
+[[raw]]
+file = "env/polyhaven/painted_wooden_sofa/1k/painted_wooden_sofa.bin"
+sha256 = "e1889d4b622f1063ab4f09ee458b7c5a1c80b7284c693eae012d093c66465838"
+
+[[raw]]
+file = "env/polyhaven/painted_wooden_sofa/1k/painted_wooden_sofa_1k.gltf"
+sha256 = "6c164f83190b71473ceca47d857c504b972fabf22c8de329747fbefb3a95b070"
+
+[[raw]]
+file = "env/polyhaven/painted_wooden_sofa/1k/textures/painted_wooden_sofa_arm_1k.jpg"
+sha256 = "60ff6f84d6729574d99dd29e2aaacafdf8cac5244672cb5b29b94bcb218eda3a"
+
+[[raw]]
+file = "env/polyhaven/painted_wooden_sofa/1k/textures/painted_wooden_sofa_diff_1k.jpg"
+sha256 = "b00059b1a037120881f26d5fbffca55892e5e4a2df56be28a4c9fdfdcbbf99aa"
+
+[[raw]]
+file = "env/polyhaven/painted_wooden_sofa/1k/textures/painted_wooden_sofa_nor_gl_1k.jpg"
+sha256 = "bbe3726de2ecfc07180262d310906ed7a35d2757f21de3669436daec2424502a"
+
+[[raw]]
+file = "env/polyhaven/painted_wooden_table/1k/painted_wooden_table.bin"
+sha256 = "aac5e2e7411a319b8fdf6915cdb452a3b490179c354c75785a22f560e8413059"
+
+[[raw]]
+file = "env/polyhaven/painted_wooden_table/1k/painted_wooden_table_1k.gltf"
+sha256 = "7e1ba86ae2c570e3464c42556e4e6cc09186a99127b86eaf54e7dbecb2fbafc3"
+
+[[raw]]
+file = "env/polyhaven/painted_wooden_table/1k/textures/painted_wooden_table_arm_1k.jpg"
+sha256 = "670863aece034184ac1643ebe3de1254c3565a10b01ce3f9e8ba3a67980b4bb3"
+
+[[raw]]
+file = "env/polyhaven/painted_wooden_table/1k/textures/painted_wooden_table_diff_1k.jpg"
+sha256 = "826738d2efab2c5786e498c39dd58edd6479e08c0503619727a2b9b6b2e796dc"
+
+[[raw]]
+file = "env/polyhaven/painted_wooden_table/1k/textures/painted_wooden_table_nor_gl_1k.jpg"
+sha256 = "0fe881c3f0c2ef0e4e67fa05280355f9b852adc6447af71a61cc3b15fff66338"
+
+[[raw]]
+file = "env/polyhaven/wooden_crate_02/1k/textures/wooden_crate_02_arm_1k.jpg"
+sha256 = "a76af97005a66fe8c7cdcabf20174f06813e6a6d5cd9502157c93a57f3c89d5a"
+
+[[raw]]
+file = "env/polyhaven/wooden_crate_02/1k/textures/wooden_crate_02_diff_1k.jpg"
+sha256 = "a6e57123110d2899af9493c22b1918174f1c96c707e7126ac67738d98ee10c07"
+
+[[raw]]
+file = "env/polyhaven/wooden_crate_02/1k/textures/wooden_crate_02_nor_gl_1k.jpg"
+sha256 = "59342f730c9f336950f796ef5e4c3b8c794ce5adbd54d98a2ecb679a7e4ae5e8"
+
+[[raw]]
+file = "env/polyhaven/wooden_crate_02/1k/wooden_crate_02.bin"
+sha256 = "e68e272641f704e5241e4108894f0b97363d511944db8b991a48787d0160ea5e"
+
+[[raw]]
+file = "env/polyhaven/wooden_crate_02/1k/wooden_crate_02_1k.gltf"
+sha256 = "e90985d317664668988cb95ce707784c94ab0ccc6d13c980ca789fa69a5cf7b6"

@@ -1,0 +1,15 @@
+id = "kenney_prototype_kit"
+title = "Prototype Kit"
+author = "Kenney"
+url = "https://kenney.nl/assets/prototype-kit"
+licence = "CC0-1.0"
+licence_url = "https://creativecommons.org/publicdomain/zero/1.0/"
+public_repo_ok = true
+ai_generated = false
+downloaded_at = 2026-10-06
+credit = "Prototype Kit by Kenney (www.kenney.nl), CC0 1.0"
+notes = """Downloaded 2026-10-06 by the locations stage-0 research (art #34) under the engineer's standing permission for free downloads from official sources; the archive is kept as downloaded in D:/prime-art-raw/env/ and unpacked beside it (unpacked files are listed once an asset uses them). Licence as read: kenney.nl page: "License: Creative Commons CC0"; archive License.txt: "License: (Creative Commons Zero, CC0) http://creativecommons.org/publicdomain/zero/1.0/", crediting Kenney "is not mandatory" / "not a requirement". Version 1.0. 145 greybox models (walls with doors and windows, floors, stairs, shapes, floor buttons, round and square floor indicators, numbers, crates, doors, ladders) on one colormap.png palette; 1 m grid with low walls. Measured (research scripts glbstats.py / fbx_to_glb.py): 145 models, triangles min/median/max 4/64/860, 145 with a base colour texture."""
+
+[[raw]]
+file = "env/kenney/prototype-kit/kenney_prototype-kit.zip"
+sha256 = "213b522fb12bcc9b9ac66c4f7581f7c74623293272212e40a70c39936ad3da95"

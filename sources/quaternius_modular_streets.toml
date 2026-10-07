@@ -1,0 +1,119 @@
+id = "quaternius_modular_streets"
+title = "Modular Streets Pack"
+author = "Quaternius"
+url = "https://quaternius.com/packs/modularstreets.html"
+licence = "CC0-1.0"
+licence_url = "https://creativecommons.org/publicdomain/zero/1.0/"
+public_repo_ok = true
+ai_generated = false
+downloaded_at = 2026-10-06
+credit = "Modular Streets Pack by Quaternius, CC0 1.0"
+notes = """Downloaded 2026-10-06 by the locations stage-0 research (art #34) under the engineer's standing permission for free downloads from official sources; the archive is kept as downloaded in D:/prime-art-raw/env/ and unpacked beside it (unpacked files are listed once an asset uses them). Licence as read: quaternius.com pack page: "License: CC0" (linking creativecommons.org/publicdomain/zero/1.0/); the page's Download button opens the publisher's public Google Drive folder, mirrored here file by file (the folder holds loose files, no archive); its License.txt: "License: CC0 1.0 Universal (CC0 1.0) Public Domain Dedication". The FBX folder (25 models: street tiles, bridges, street lights, traffic lights, 3 signs), License.txt and Preview.png. Flat material colours; FBX alpha as for the House Interior. Measured (research scripts glbstats.py / fbx_to_glb.py): 25 models, triangles min/median/max 12/394/12562, 0 with a base colour texture."""
+
+[[raw]]
+file = "env/quaternius/modular-streets/FBX/Sign_NoParking.fbx"
+sha256 = "ac0fead0629dc6c282ba54b3651e07fcc4f71a81da6d80a176ae2e03059c3b94"
+
+[[raw]]
+file = "env/quaternius/modular-streets/FBX/Sign_Stop.fbx"
+sha256 = "b09792f963a5fa5f80e250fbb93ab15ebda80d892a3eb21876633bd533aab6cf"
+
+[[raw]]
+file = "env/quaternius/modular-streets/FBX/Sign_Triangle.fbx"
+sha256 = "5b5880da488b602ab67b41554fb76b85d21614cbf1662d1abe92409f3034a562"
+
+[[raw]]
+file = "env/quaternius/modular-streets/FBX/Street_3Way.fbx"
+sha256 = "e85a9b00b6fe91abdf260c4117d00b8c47f7473eeda69e2b9d7b56163b9c9e30"
+
+[[raw]]
+file = "env/quaternius/modular-streets/FBX/Street_3Way_2.fbx"
+sha256 = "81ed528232065e622670bb7edc2bea812924f89bc3997214c0c4ce1d7c3d6f66"
+
+[[raw]]
+file = "env/quaternius/modular-streets/FBX/Street_4Way.fbx"
+sha256 = "16331e97f94c7731af5cd693d2fa1f1b94e41d41dbbd5d85a4f333cfbc0dd70f"
+
+[[raw]]
+file = "env/quaternius/modular-streets/FBX/Street_4Way_2.fbx"
+sha256 = "73967e7f4bcdff3a2ce7e0ee65ce5d9306132f3ad9accc86dd9996eb3d984c1a"
+
+[[raw]]
+file = "env/quaternius/modular-streets/FBX/Street_Bridge.fbx"
+sha256 = "a34f2dc4db622d6bb9244ebd7281ff4f131d9aaad783fe45862f16f63a83ab94"
+
+[[raw]]
+file = "env/quaternius/modular-streets/FBX/Street_Bridge_Ramp.fbx"
+sha256 = "b3b7a918de401bb05b27ca2ce32a6b1e06493b36ba54b4f7766722f6615fdbeb"
+
+[[raw]]
+file = "env/quaternius/modular-streets/FBX/Street_Bridge_Underpass.fbx"
+sha256 = "47f1325c6dca7362724932d6c03a97b885449701aa3df8c0d6d789da246085b3"
+
+[[raw]]
+file = "env/quaternius/modular-streets/FBX/Street_Bridge_Water.fbx"
+sha256 = "39bc45a09a0cc25d24b1a7fdef8e917397b5b8b4c25fa59628a1959693cf0a4d"
+
+[[raw]]
+file = "env/quaternius/modular-streets/FBX/Street_Bridge_WaterRamp.fbx"
+sha256 = "bab129fdb0c83948f65adc9994690fc7205beb4a18a72746dde2c4084ff25ec1"
+
+[[raw]]
+file = "env/quaternius/modular-streets/FBX/Street_Curve.fbx"
+sha256 = "702524a6aa28b899db159ab0dce1ebc0241b264f2040ad55be19d1f15dc51a90"
+
+[[raw]]
+file = "env/quaternius/modular-streets/FBX/Street_Deadend.fbx"
+sha256 = "c9001d3ec15cf60ac4eea21cc486ee0c4caac055fd35ce205596cce598a8942d"
+
+[[raw]]
+file = "env/quaternius/modular-streets/FBX/Street_Elevated.fbx"
+sha256 = "079eed00d9c387c3744f0e4cd2022012d896243124db61cee5bb534674f1494c"
+
+[[raw]]
+file = "env/quaternius/modular-streets/FBX/Street_Elevated_Ramp.fbx"
+sha256 = "618ff6f7bde3785fd1506272ba00c91ea6888c547c3b6740ab9bdfffa14ed3b2"
+
+[[raw]]
+file = "env/quaternius/modular-streets/FBX/Street_Empty.fbx"
+sha256 = "2fecf26a8f7fd99db8b018303f6d2636460da0bc4e9e38322c9b1964cd31da80"
+
+[[raw]]
+file = "env/quaternius/modular-streets/FBX/Street_Empty_Water.fbx"
+sha256 = "60a685954f0ea19df85bffe5479d3955a94f40f8c770cdb34e7349bbae9b2c73"
+
+[[raw]]
+file = "env/quaternius/modular-streets/FBX/Street_Straight.fbx"
+sha256 = "6204cac1be436fada6cca81985dd6af6872e936c79a4f62e579e61cffd23e98a"
+
+[[raw]]
+file = "env/quaternius/modular-streets/FBX/Streetlight_Double.fbx"
+sha256 = "67c09a179c2f066a4cb9d82869cc23ebcc6f203eebb559770a96189134d2d484"
+
+[[raw]]
+file = "env/quaternius/modular-streets/FBX/Streetlight_Single.fbx"
+sha256 = "1b16a2de3ffe15c3e064f1438766a8c0399032358e4663b28f942b89b802e59b"
+
+[[raw]]
+file = "env/quaternius/modular-streets/FBX/Streetlight_Triple.fbx"
+sha256 = "33e09e407bfbca65c2d336d204fe9befa9f23b8b5eb37ed12d1a26517ea3bf48"
+
+[[raw]]
+file = "env/quaternius/modular-streets/FBX/Streets_all.fbx"
+sha256 = "3692033e89fed6733e8eb4534967e2ef7f5eae6ec43e3fa9e5ac644de00433ad"
+
+[[raw]]
+file = "env/quaternius/modular-streets/FBX/TrafficLight.fbx"
+sha256 = "4254e122cd53a118e906cbf31d7ba48349bafaec5c6fc82c6d508d2278799106"
+
+[[raw]]
+file = "env/quaternius/modular-streets/FBX/TrafficLight_2.fbx"
+sha256 = "bf32338615e84c68fa2c7d3f8aaa0d3749b139347bf9d42024585e11c15c3d4c"
+
+[[raw]]
+file = "env/quaternius/modular-streets/License.txt"
+sha256 = "488f9a2238221d040110700a63b11dfb39cc3561b261143965b2617c516feb37"
+
+[[raw]]
+file = "env/quaternius/modular-streets/Preview.png"
+sha256 = "76a9fa4aac560f95a63dc15779bda2f205a3c211a10d3c958fe16432438078b1"

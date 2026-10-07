@@ -1,0 +1,15 @@
+id = "kenney_holiday_kit"
+title = "Holiday Kit"
+author = "Kenney"
+url = "https://kenney.nl/assets/holiday-kit"
+licence = "CC0-1.0"
+licence_url = "https://creativecommons.org/publicdomain/zero/1.0/"
+public_repo_ok = true
+ai_generated = false
+downloaded_at = 2026-10-06
+credit = "Holiday Kit by Kenney (www.kenney.nl), CC0 1.0"
+notes = """Downloaded 2026-10-06 by the locations stage-0 research (art #34) under the engineer's standing permission for free downloads from official sources; the archive is kept as downloaded in D:/prime-art-raw/env/ and unpacked beside it (unpacked files are listed once an asset uses them). Licence as read: kenney.nl page: "License: Creative Commons CC0"; archive License.txt: "License: (Creative Commons Zero, CC0) http://creativecommons.org/publicdomain/zero/1.0/", crediting Kenney "is not mandatory" / "not a requirement". Version 2.0. 99 winter and holiday models (log cabin kit, benches, lanterns, snow, trees, presents, a toy train) on one colormap.png palette. Measured (research scripts glbstats.py / fbx_to_glb.py): 99 models, triangles min/median/max 10/204/1150, 99 with a base colour texture."""
+
+[[raw]]
+file = "env/kenney/holiday-kit/kenney_holiday-kit.zip"
+sha256 = "fde4d514d7297388d98058e8933ff614e071886f7ce57f9aea4b00d7698dd769"

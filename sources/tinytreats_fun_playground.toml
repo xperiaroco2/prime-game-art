@@ -1,0 +1,15 @@
+id = "tinytreats_fun_playground"
+title = "Tiny Treats - Fun Playground (1.0, FREE)"
+author = "Isa Lousberg (Tiny Treats)"
+url = "https://tinytreats.itch.io/fun-playground"
+licence = "CC0-1.0"
+licence_url = "https://creativecommons.org/publicdomain/zero/1.0/"
+public_repo_ok = true
+ai_generated = false
+downloaded_at = 2026-10-06
+credit = "Tiny Treats - Fun Playground by Isa Lousberg (www.isalousberg.com), CC0 1.0"
+notes = """Downloaded 2026-10-06 by the locations stage-0 research (art #34) under the engineer's standing permission for free downloads from official sources; the archive is kept as downloaded in D:/prime-art-raw/env/ and unpacked beside it (unpacked files are listed once an asset uses them). Licence as read: itch.io page: "Free for personal and commercial use, no attribution required. (CC0 Licensed)"; the FREE upload was taken at $0 through "No thanks, just take me to the downloads" (no payment, no account, no personal details); archive License.txt: "Created/distributed by Isa Lousberg (www.isalousberg.com) ... License: (Creative Commons Zero, CC0)". 47 models: slides, swings, seesaws, merry-go-round, monkey bars, sandboxes, spring horses, fences, trees, a picnic table, tires. One shared 1024 gradient atlas (tiny_treats_texture_1.png); the same specifications and sizing as KayKit (chunky; scale about x0.72). Measured (research scripts glbstats.py / fbx_to_glb.py): 47 models, triangles min/median/max 44/404/3232, 47 with a base colour texture."""
+
+[[raw]]
+file = "env/tinytreats/fun-playground/Tiny_Treats_Fun_Playground_1.0_FREE.zip"
+sha256 = "7031b39f515895eab950cd79b197bc9c0d68106c5738272957075cc664ca3294"

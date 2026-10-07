@@ -1,0 +1,15 @@
+id = "kenney_food_kit"
+title = "Food Kit"
+author = "Kenney"
+url = "https://kenney.nl/assets/food-kit"
+licence = "CC0-1.0"
+licence_url = "https://creativecommons.org/publicdomain/zero/1.0/"
+public_repo_ok = true
+ai_generated = false
+downloaded_at = 2026-10-06
+credit = "Food Kit by Kenney (www.kenney.nl), CC0 1.0"
+notes = """Downloaded 2026-10-06 by the locations stage-0 research (art #34) under the engineer's standing permission for free downloads from official sources; the archive is kept as downloaded in D:/prime-art-raw/env/ and unpacked beside it (unpacked files are listed once an asset uses them). Licence as read: kenney.nl page: "License: Creative Commons CC0"; archive License.txt: "License: (Creative Commons Zero, CC0) http://creativecommons.org/publicdomain/zero/1.0/", crediting Kenney "is not mandatory" / "not a requirement". Version 2.0. 200 food and kitchenware models (cooking and table knives, pans, pots, pizza box, cartons) on one colormap.png palette. Measured (research scripts glbstats.py / fbx_to_glb.py): 200 models, triangles min/median/max 12/123/1376, 200 with a base colour texture."""
+
+[[raw]]
+file = "env/kenney/food-kit/kenney_food-kit.zip"
+sha256 = "cdad90853682499b94c9fda2f87678b24bfd8f3264e0ed323f6b6a27fd7c6f6f"
