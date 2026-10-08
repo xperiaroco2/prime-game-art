@@ -841,6 +841,9 @@ def planted_until(track: list, start: int, step: int, speed_m: float, rise_m: fl
     return p
 
 
+AIR_M = 0.01  # idle_ends: a foot lifted more than this is in the air; never both feet at once
+
+
 def idle_end_weights(frames: int, ends, feet: dict, fade: int, speed_m: float, rise_m: float, step_m: float,
                      upper: bool = True) -> dict:
     """The weights of idle_ends over frames 0..frames (anim_edit.op_idle_ends; the lab's round D, blend_transitions in
@@ -850,29 +853,49 @@ def idle_end_weights(frames: int, ends, feet: dict, fade: int, speed_m: float, r
     before the edit (world m). Returns
       upper   per frame, the upper body's weight: 1 at a touching frame, a smoothstep to 0 over `fade` frames (all 0
               with upper=False: the feet and legs only);
-      ends    per end: its touching frame and per side the foot's plan: "planted" (the foot stays planted, by
-              planted_until with speed_m and rise_m, to the other end), "held" (fewer than 2 frames would be left: held to the other end),
-              "fade" (held while planted, then a smoothstep to 0 over up to `fade` frames: its window; a foot that
-              shuffles along the floor there, rising under step_m / 2, is lifted to the step's arc above where it was
-              planted so the fade does not slide it: "lifted"; a foot that leaves the floor by itself is not) or
-              "step"
-              (planted all through, and the clip's other end meets another clip: the foot steps step_m high over
-              min(fade, frames) frames where the other foot moves least);
+      ends    per end: its touching frame and per side the foot's plan:
+              "planted"  the foot stays planted (by planted_until with speed_m and rise_m) to the other end;
+              "held"     fewer than 2 frames would be left: held to the other end;
+              "hold"     both ends meet the idle and the foot only shuffles along the floor between them (it moves
+                         after the start's planted frames and before the end's, rising under step_m / 2): held at the
+                         idle's on every frame (its window: the frames it moves on), so neither end's fade slides
+                         it or lifts it (art #49: the package clips' feet both shuffled, and both were lifted at once);
+              "fade"     held while planted, then a smoothstep to 0 over up to `fade` frames (its window); a foot that
+                         shuffles along the floor there, rising under step_m / 2, is lifted to the step's arc above
+                         where it was planted so the fade does not slide it ("lifted"); a foot that leaves the floor by
+                         itself is not;
+              "step"     planted all through, and the clip's other end meets another clip: the foot steps step_m high
+                         over min(fade, frames) frames where the other foot moves least, off the frames where the
+                         other foot is lifted;
+              never both feet in the air: a lift that has both feet over AIR_M up on a common frame (steps keep
+              theirs first, then the earlier lift) is dropped ("lift_dropped"; that foot fades along the floor);
       w       per end and side, the foot's weight per frame;
       feet    per side, the foot's weight per frame (the largest over the ends);
       lift    per side, the lift per frame (m): a step's arc, step_m * 4x(1 - x) for the foot's weight x, and in a
-              fade what the foot itself lacks of that arc.
+              fade what the foot itself lacks of that arc;
+      hold    per held side, the share of the end's numbers per frame: 0 up to its window, a smoothstep to 1 over it.
     """
     n = frames
     ends = tuple(ends)
     upper_on = upper
     upper = [0.0] * (n + 1)
     w = {e: {s: [0.0] * (n + 1) for s in "LR"} for e in ends}
-    lift = {s: [0.0] * (n + 1) for s in "LR"}
+    lifts = {}  # (end, side) -> the lift per frame (m)
     plan = {}
+    hold = {}
 
     def moved(s, a, b):
         return sum(_v_len(_v_sub(feet[s][f + 1], feet[s][f])) for f in range(a, b))
+
+    if "start" in ends and "end" in ends:
+        for s in "LR":
+            a = planted_until(feet[s], 0, 1, speed_m, rise_m)
+            b = planted_until(feet[s], n, -1, speed_m, rise_m)
+            if a < b:
+                rise = max(feet[s][f][2] for f in range(a, b + 1)) - min(feet[s][a][2], feet[s][b][2])
+                if rise < step_m / 2.0:
+                    hold[s] = {"window": [a, b], "shuffle_rise_cm": round(rise * 100.0, 2),
+                               "shuffle_moves_cm": round(moved(s, a, b) * 100.0, 1)}
 
     for e in ends:
         ft, d = (0, 1) if e == "start" else (n, -1)
@@ -882,23 +905,17 @@ def idle_end_weights(frames: int, ends, feet: dict, fade: int, speed_m: float, r
             if upper_on:
                 upper[f] = max(upper[f], 1.0 - smoothstep(d * (f - ft) / fade))
         info = {"frame": ft, "upper_fade_to": ft + d * fade}
+        steps = []
         for s in "LR":
             p = planted_until(feet[s], ft, d, speed_m, rise_m)
             rem = abs(far - p)
             fi = {"planted_to": p}
-            if rem == 0 and not far_idle:
-                span = min(fade, n)
-                o = "R" if s == "L" else "L"
-                cands = [(round(moved(o, a, a + span) * 100.0, 1), abs((a + span if d == 1 else a) - far), a)
-                         for a in range(0, n - span + 1)]
-                cost, _dist, a = min(cands)
-                lo, hi = a, a + span
-                fi.update(mode="step", window=[lo, hi], other_foot_moves_cm=cost)
-                for f in range(n + 1):
-                    t = (f - lo) / span if d == 1 else (hi - f) / span
-                    x = 1.0 - smoothstep(t)
-                    w[e][s][f] = x
-                    lift[s][f] = max(lift[s][f], step_m * 4.0 * x * (1.0 - x))
+            if s in hold:
+                fi.update(mode="hold", **hold[s])
+                w[e][s] = [1.0] * (n + 1)
+            elif rem == 0 and not far_idle:
+                fi["mode"] = "step"
+                steps.append(s)
             elif rem < 2:
                 fi["mode"] = "planted" if rem == 0 else "held"
                 w[e][s] = [1.0] * (n + 1)
@@ -909,14 +926,44 @@ def idle_end_weights(frames: int, ends, feet: dict, fade: int, speed_m: float, r
                 z0 = feet[s][p][2]
                 lo_w, hi_w = fi["window"]
                 fi["lifted"] = max(feet[s][f][2] - z0 for f in range(lo_w, hi_w + 1)) < step_m / 2.0
-                for f in range(n + 1):
-                    x = w[e][s][f]
-                    if fi["lifted"] and 0.0 < x < 1.0:
-                        lift[s][f] = max(lift[s][f], step_m * 4.0 * x * (1.0 - x) - max(0.0, feet[s][f][2] - z0))
+                if fi["lifted"]:
+                    lifts[(e, s)] = [max(0.0, step_m * 4.0 * x * (1.0 - x) - max(0.0, feet[s][f][2] - z0))
+                                     if 0.0 < x < 1.0 else 0.0 for f, x in enumerate(w[e][s])]
             info[s] = fi
+        for s in steps:  # after the other foot's plan: a step keeps off the frames where the other foot is lifted
+            span = min(fade, n)
+            o = "R" if s == "L" else "L"
+            busy = {f for (_e, s2), li in lifts.items() if s2 == o for f, v in enumerate(li) if v > AIR_M}
+            cands = [(any(a < f < a + span for f in busy), round(moved(o, a, a + span) * 100.0, 1),
+                      abs((a + span if d == 1 else a) - far), a) for a in range(0, n - span + 1)]
+            _clash, cost, _dist, a = min(cands)
+            lo, hi = a, a + span
+            info[s].update(mode="step", window=[lo, hi], other_foot_moves_cm=cost)
+            for f in range(n + 1):
+                t = (f - lo) / span if d == 1 else (hi - f) / span
+                w[e][s][f] = 1.0 - smoothstep(t)
+            lifts[(e, s)] = [step_m * 4.0 * x * (1.0 - x) for x in w[e][s]]
         plan[e] = info
+
+    # never both feet in the air at once: steps keep their lift first, then the earlier lifts
+    def first(k):
+        return min(f for f, v in enumerate(lifts[k]) if v > 0.0) if any(v > 0.0 for v in lifts[k]) else n + 1
+
+    kept = {s: [0.0] * (n + 1) for s in "LR"}
+    for k in sorted(lifts, key=lambda k: (plan[k[0]][k[1]]["mode"] != "step", first(k), k)):
+        e, s = k
+        o = "R" if s == "L" else "L"
+        both = [f for f, v in enumerate(lifts[k]) if v > AIR_M and kept[o][f] > AIR_M]
+        if both:
+            plan[e][s].update(lifted=False, lift_dropped=f"the other foot is lifted on frames {both[0]}-{both[-1]}")
+            continue
+        kept[s] = [max(a, b) for a, b in zip(kept[s], lifts[k])]
     feet_w = {s: [max(w[e][s][f] for e in ends) for f in range(n + 1)] for s in "LR"}
-    return {"upper": upper, "ends": plan, "w": w, "feet": feet_w, "lift": lift}
+    mix = {}
+    for s, h in hold.items():
+        a, b = h["window"]
+        mix[s] = [smoothstep((f - a) / (b - a)) for f in range(n + 1)]
+    return {"upper": upper, "ends": plan, "w": w, "feet": feet_w, "lift": kept, "hold": mix}
 
 
 def end_mix(weights: dict, side: str, f: int, frames: int) -> list:

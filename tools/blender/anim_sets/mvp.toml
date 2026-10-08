@@ -210,8 +210,9 @@ edits = [{ op = "trim", start_s = 0.1, end_s = 1.5 }, { op = "heading", facing =
 # floor: the squat's toes went 2.8 cm (men) and 1.9 cm (women) into the floor; hand_spacing auto found 18.55 and
 # 22.85 degrees for a 0.40 m gap at the end (from 19.1 and 14.0 cm). idle_ends (art #49): both ends meet the idle's
 # legs (the carry plays over the idle), so the feet and legs only go to the relaxed idle's; the arms keep their hold.
-# The heading leaves Root turned 19.8 degrees from the idle's, so the feet are matched in the set's frame (the default)
-# and Root goes to the idle's. Putdown_Package, its reverse, takes it at both ends too
+# The heading leaves Root turned 19.8 degrees from the idle's, so the feet are matched in the set's frame (the default);
+# both feet only shuffle between the ends, so they are held at the idle's all through. Putdown_Package, its reverse,
+# takes it at both ends too
 needs = [{ need = "Pick up the package with both hands", no = 18, layer = "full" }]
 
 [[clips]]

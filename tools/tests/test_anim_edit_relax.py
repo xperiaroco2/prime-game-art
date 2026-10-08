@@ -193,6 +193,41 @@ class IdleEndWeightsTest(unittest.TestCase):
         self.assertAlmostEqual(mid["start"], 0.5)
         self.assertEqual(dict(em.end_mix(w["w"], "L", n, n))["end"], 1.0)
 
+    def test_both_ends_hold_a_shuffling_foot(self) -> None:
+        # the package clips: between two ends that meet the idle, the right foot shuffles 10 cm along the floor
+        # (frames 4-9, 1.2 cm up at most); held at the idle's all through, so no fade slides it and none lifts it
+        n = 30
+        shuffle = [(0.0, -0.02 * min(5, max(0, f - 4)), 0.012 if 5 <= f <= 8 else 0.0) for f in range(n + 1)]
+        w = em.idle_end_weights(n, ("start", "end"), {"L": _track(n), "R": shuffle}, 8, 0.01, 0.015, 0.04)
+        for e in ("start", "end"):
+            r = w["ends"][e]["R"]
+            self.assertEqual(r["mode"], "hold")
+            self.assertEqual(r["window"], [4, 9])
+            self.assertEqual(r["shuffle_rise_cm"], 1.2)
+            self.assertEqual(w["ends"][e]["L"]["mode"], "planted")
+        self.assertEqual(w["feet"]["R"], [1.0] * (n + 1))
+        self.assertEqual(max(w["lift"]["R"]), 0.0)
+        mix = w["hold"]["R"]
+        self.assertEqual((mix[4], mix[9], mix[n]), (0.0, 1.0, 1.0))
+        self.assertNotIn("L", w["hold"])
+        # a foot that steps up between the ends (10 cm) is not a shuffle: each end fades
+        step = [(x, y, 0.1 if 5 <= f <= 8 else z) for f, (x, y, z) in enumerate(shuffle)]
+        w = em.idle_end_weights(n, ("start", "end"), {"L": _track(n), "R": step}, 8, 0.01, 0.015, 0.04)
+        self.assertEqual(w["ends"]["start"]["R"]["mode"], "fade")
+        self.assertEqual(w["hold"], {})
+
+    def test_never_both_feet_in_the_air(self) -> None:
+        # both feet shuffle off at the start (from frames 3 and 2): only the earlier one's fade is lifted on the arc;
+        # the other fades along the floor
+        n = 20
+        w = em.idle_end_weights(n, ("start",), {"L": _track(n, 3), "R": _track(n, 2)}, 8, 0.01, 0.015, 0.04)
+        left, right = w["ends"]["start"]["L"], w["ends"]["start"]["R"]
+        self.assertTrue(right["lifted"])
+        self.assertFalse(left["lifted"])
+        self.assertIn("other foot is lifted", left["lift_dropped"])
+        self.assertEqual(max(w["lift"]["L"]), 0.0)
+        self.assertLessEqual(max(min(a, b) for a, b in zip(w["lift"]["L"], w["lift"]["R"])), em.AIR_M)
+
     def test_an_end_landing_on_its_last_frames_is_held(self) -> None:
         n = 9  # a landing: the foot comes down on frame 8 and is still on frame 9
         track = [(0.0, 0.0, 0.3 - 0.0375 * f) for f in range(8)] + [(0.0, 0.0, 0.0), (0.0, 0.0, 0.0)]

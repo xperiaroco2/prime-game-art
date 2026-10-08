@@ -1292,8 +1292,10 @@ def op_idle_ends(fr: Frames, p: dict, target: Target):
                   clip's Root (a clip whose whole body ends off the idle's, as Getup_Back); held while the clip keeps
                   it planted (moving under plant_speed_cm a frame along the floor and rising under plant_rise_cm
                   above the touching frame), then faded out over up to fade_frames; a foot planted all through a clip
-                  whose other end meets another clip steps (step_cm high); no edited Foot or Toe head goes lower than
-                  both its own height before the edit and the idle's standing height (the foot is raised);
+                  whose other end meets another clip steps (step_cm high); between two touching ends a foot that only
+                  shuffles along the floor is held at the idle's all through; never both feet lifted at once
+                  (anim_edit_math.idle_end_weights); no edited Foot or Toe head goes lower than both its own height
+                  before the edit and the idle's standing height (the foot is raised);
       Body        lifted by the idle's stance lift times the feet's mean weight, cut where a leg would not reach;
       legs        the two-bone IK, the knee towards the foot's forward at full weight and the clip's own knee at 0, the
                   thigh's and the shin's roll matched to the idle's at the touching frame, the knees swung out in a
@@ -1325,19 +1327,19 @@ def op_idle_ends(fr: Frames, p: dict, target: Target):
     tracks = {s: [tuple(q.head(f"Foot.{s}")) for q in pre] for s in "LR"}
     plan = em.idle_end_weights(n, ends, tracks, fade, p["plant_speed_cm"] / 100.0, p["plant_rise_cm"] / 100.0,
                                p["step_cm"] / 100.0, p["upper"])
-    wf, wu = plan["feet"], plan["upper"]
+    wf, wu, hold = plan["feet"], plan["upper"], plan["hold"]
     up_arm = rig.Wi.to_3x3() @ UP  # world up in armature units: 1 m of lift
     # the floor: a correction held from the touching frame sinks a foot that settles after it (Raise_In, Raise_Out);
     # no edited Foot or Toe head goes lower than both its own height before the edit and the idle's standing height
     joints = {s: (f"Foot.{s}", f"Toe.{s}") for s in "LR"}
     stand = {j: ref_r.head(j).z for s in "LR" for j in joints[s]}
     lows = [{j: min(q.head(j).z, stand[j]) for s in "LR" for j in joints[s]} for q in pre]
-    delta = {}
+    delta, tgts = {}, {}
     for e in ends:
         ft = plan["ends"][e]["frame"]
         for s in "LR":
             F = pre[ft].P[f"Foot.{s}"]
-            tgt = base(pre[ft]) @ rel[s]
+            tgt = tgts[(e, s)] = base(pre[ft]) @ rel[s]
             delta[(e, s)] = (tgt.translation - F.translation, rc.rot(tgt) @ rc.rot(F).inverted())
             a = math.degrees(delta[(e, s)][1].angle)
             plan["ends"][e][s].update(move_cm=_r((tgt.translation - F.translation).length * rig.scale * 100, 2),
@@ -1348,8 +1350,14 @@ def op_idle_ends(fr: Frames, p: dict, target: Target):
     toe_d = {(e, s): (ref_r.brot(f"Toe.{s}") @ pre[plan["ends"][e]["frame"]].brot(f"Toe.{s}").inverted()).normalized()
              for e in ends for s in "LR" if f"Toe.{s}" in ref_r.B}
 
+    def mix_of(s, f):
+        """The ends whose numbers reach a foot on a frame, with their shares (a held foot: by its own progress)."""
+        if s in hold:
+            return [(ends[0], 1.0 - hold[s][f]), (ends[1], hold[s][f])]
+        return em.end_mix(plan["w"], s, f, n)
+
     def foot_delta(s, f):
-        mix = em.end_mix(plan["w"], s, f, n)
+        mix = mix_of(s, f)
         if not mix:
             return Vector(), Quaternion()
         dp = sum((delta[(e, s)][0] * k for e, k in mix), Vector())
@@ -1379,13 +1387,20 @@ def op_idle_ends(fr: Frames, p: dict, target: Target):
             w = wf[s][f]
             if w <= 0.0:
                 continue
-            dp, dr = foot_delta(s, f)
             F = pose.P[f"Foot.{s}"]
-            q = Quaternion().slerp(dr, w) @ rc.rot(F)
-            loc = F.translation + dp * w
+            if s in hold:  # at the idle's on every frame (its shuffle dropped): the ends' targets by its progress
+                T0, T1, m = tgts[(ends[0], s)], tgts[(ends[1], s)], hold[s][f]
+                q = rc.rot(T0).slerp(rc.rot(T1), m)
+                loc = T0.translation.lerp(T1.translation, m)
+            else:
+                dp, dr = foot_delta(s, f)
+                q = Quaternion().slerp(dr, w) @ rc.rot(F)
+                loc = F.translation + dp * w
             pose.set_arm(f"Foot.{s}", Matrix.Translation(loc) @ q.to_matrix().to_4x4())
-            if (ends[0], s) in toe_d:  # the toes too: a clip's bent toes on the idle's lower feet went into the floor
-                mix = em.end_mix(plan["w"], s, f, n)
+            if s in hold and f"Toe.{s}" in ref_r.B:
+                pose.set_brot(f"Toe.{s}", ref_r.brot(f"Toe.{s}"))
+            elif (ends[0], s) in toe_d:  # the toes too: bent toes on the idle's lower feet went into the floor
+                mix = mix_of(s, f)
                 dt = toe_d[(mix[0][0], s)]
                 if len(mix) > 1:
                     dt = dt.slerp(toe_d[(mix[1][0], s)], mix[1][1])
@@ -1432,7 +1447,7 @@ def op_idle_ends(fr: Frames, p: dict, target: Target):
                 if measure is not None:
                     tu = twist_deg(pose, upb, K - H)
                 else:
-                    tu = w * sum(twist[(e, s)][0] * k for e, k in em.end_mix(plan["w"], s, f, n))
+                    tu = w * sum(twist[(e, s)][0] * k for e, k in mix_of(s, f))
                 pose.transform(upb, _rot_about(K - H, tu, H))
                 K1 = pose.head(lo)
                 pose.transform(lo, _rot_q((_shin_end(legs, pose, leg) - K1).rotation_difference(T - K1), K1))
@@ -1440,7 +1455,7 @@ def op_idle_ends(fr: Frames, p: dict, target: Target):
                     tl = twist_deg(pose, lo, T - K1)
                     twist[(measure, s)] = (tu, tl)
                 else:
-                    tl = w * sum(twist[(e, s)][1] * k for e, k in em.end_mix(plan["w"], s, f, n))
+                    tl = w * sum(twist[(e, s)][1] * k for e, k in mix_of(s, f))
                 pose.transform(lo, _rot_about(T - K1, tl, K1))
                 # knees out in a deep bend: the narrow stance with the knees over the feet crouched knock-kneed
                 flex = math.degrees((K - H).angle(T - K))
@@ -1484,7 +1499,8 @@ def op_idle_ends(fr: Frames, p: dict, target: Target):
             if math.hypot(own.x, own.y) >= 0.005:
                 continue
             c1, c0 = feet[f][fj] - pre[f].head(fj), feet[f - 1][fj] - pre[f - 1].head(fj)
-            mv = math.hypot(c1.x - c0.x, c1.y - c0.y)
+            moved = feet[f][fj] - feet[f - 1][fj]  # a held foot cancels the clip's creep: it does not slide
+            mv = min(math.hypot(c1.x - c0.x, c1.y - c0.y), math.hypot(moved.x, moved.y))
             if mv > slide:
                 slide, at = mv, f
         raised = [nt[f"floor_raise_mm.{s}"] for nt in notes.values() if f"floor_raise_mm.{s}" in nt]
@@ -1508,6 +1524,15 @@ def op_idle_ends(fr: Frames, p: dict, target: Target):
             for b in kids:
                 _set_pose(rig, B, P, b, keep[b])
     res = fr.copy(out)
+    # never in the air where the clip stands: the character's lowest vertex per frame (a kneeling knee or a toe tip
+    # holds it as well as a sole); airborne frames: the clip had it within em.AIR_M of the floor and the edit has not;
+    # hop: how much higher it is than in the clip (art #49: the package clips' feet were both lifted at once)
+    hop, hop_at, air = 0.0, None, []
+    for f, (c0, c1) in enumerate(zip(_lows(fr, target), _lows(res, target))):
+        if c1 - max(c0, 0.0) > hop:
+            hop, hop_at = c1 - max(c0, 0.0), f
+        if c0 <= em.AIR_M < c1:
+            air.append(f)
     touch = {}
     for e in ends:
         ft = plan["ends"][e]["frame"]
@@ -1515,13 +1540,16 @@ def op_idle_ends(fr: Frames, p: dict, target: Target):
                     "after": _ends_measure(_Pose(rig, out[ft]), ref_r, fingers)}
     knees = [v for nt in notes.values() for k, v in nt.items() if k.startswith("knee_out")]
     cuts = [nt["lift_cut_mm"] for nt in notes.values() if "lift_cut_mm" in nt]
+    pulled = [v for nt in notes.values() for k, v in nt.items() if k.startswith("foot_pulled")]
     return res, {"at": p["at"], "from_clip": p["from_clip"], "lift_cm": _r(lift * 100, 3),
                  "upper_delta_deg": {b: _r(math.degrees(q.angle), 3) for b, q in dq.items()},
                  "ends": plan["ends"], "touching": touch,
                  "leg_twist_deg": {f"{e}.{s}": [_r(v[0]), _r(v[1])] for (e, s), v in twist.items()},
                  "ankle_gap_mm_max": _r(gap * 1000, 4), "knee_out_deg_max": _r(max(knees, default=0.0), 1),
-                 "lift_cut_mm_max": _r(max(cuts, default=0.0), 2), "upper": p["upper"], "floor": floor,
+                 "lift_cut_mm_max": _r(max(cuts, default=0.0), 2),
+                 "foot_pulled_mm_max": _r(max(pulled, default=0.0), 2), "upper": p["upper"], "floor": floor,
                  "match": p["match"], "reroot": {k: _r(v, 3) for k, v in reroot.items()},
+                 "air": {"hop_cm_max": _r(hop * 100, 2), "hop_frame": hop_at, "airborne_frames": air},
                  "step_lift_cm": {s: _r(max(plan["lift"][s]) * 100, 2) for s in "LR"}}
 
 

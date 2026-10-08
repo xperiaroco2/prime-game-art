@@ -5,9 +5,10 @@ shoulders down, the head level, open hands with the thumb in, the loop closed wi
 raw idle; the women's arm offset re-checked by its auto search on the relaxed hands; and idle_ends with the set's own
 steps on the jump's take-off and landing and the raise's kneel and stand (a foot that settles, a step), and at both
 ends of the raw idle played as a one-shot (planted all through, as the pickup), with and without the upper body,
-and turned 20 degrees as a whole (the package clips' Root): the touching frames stand exactly in the relaxed idle's
-first frame in the set's frame (relative to Root with match = "root"), the ankles stay on the feet on every frame the
-edit weighs, no foot sinks into the floor and none slides where the clip keeps it still.
+turned 20 degrees as a whole (the package clips' Root) and with a foot that shuffles between the ends: the touching
+frames stand exactly in the relaxed idle's first frame in the set's frame (relative to Root with match = "root"), the
+ankles stay on the feet on every frame the edit weighs, no foot sinks into the floor, none slides where the clip keeps
+it still, a shuffling foot is held, and the edit never lifts both feet where the clip stands.
 
 This file is also the Blender side of the test: run inside Blender (`blender -b ... --python <this file> -- <out>`)
 it does the edits and writes their numbers to <out>/relax.json, which the unittest reads. Skipped when Blender or the
@@ -114,6 +115,9 @@ if not IN_BLENDER:
                     for s in "LR":
                         self.assertLess(t["floor"][s]["below_mm_max"], 0.01, (body, clip, s))
                         self.assertLess(t["floor"][s]["slide_mm_max"], 2.0, (body, clip, s))
+                    # where the clip has a foot on the floor the edit keeps one there, and lifts neither higher
+                    self.assertEqual(t["air"]["airborne_frames"], [], (body, clip))
+                    self.assertLess(t["air"]["hop_cm_max"], 1.0, (body, clip))
                 self.assertLess(self.r[body]["ends"]["Jump_Start"]["ankle_gap_mm_max"], 15.0)  # art #33's resampling
                 # a foot that settles onto the floor after the touching frame is planted, not faded along the floor
                 self.assertEqual(self.r[body]["ends"]["Raise_In"]["ends"]["start"]["L"]["mode"], "step", body)
@@ -140,6 +144,13 @@ if not IN_BLENDER:
                 turned = self.r[body]["ends"]["Idle_turned"]["reroot"]["turned_deg_max"]
                 self.assertAlmostEqual(turned, 20.0, delta=0.01, msg=body)
                 self.assertEqual(self.r[body]["ends"]["Idle_turned_root"]["reroot"]["turned_deg_max"], 0.0)
+                # a foot that shuffles 8 cm along the floor between two ends that meet the idle is held there
+                shuffle = self.r[body]["ends"]["Idle_shuffle"]
+                for end in ("start", "end"):
+                    self.assertEqual(shuffle["ends"][end]["R"]["mode"], "hold", body)
+                    self.assertEqual(shuffle["ends"][end]["L"]["mode"], "planted", body)
+                self.assertEqual(shuffle["step_lift_cm"], {"L": 0.0, "R": 0.0}, body)
+                self.assertLess(shuffle["feet_travel_mm"]["R"], 0.01, body)
                 self.assertIn("idle_ends", self.r[body]["errors"]["loop"])
                 self.assertIn("not built yet", self.r[body]["errors"]["unbuilt"])
 
@@ -156,6 +167,7 @@ def _blender_main(argv: list[str]) -> None:
     import anim_set_cfg as asc
     import retarget_core as rc
     import retarget_map
+    from mathutils import Matrix
 
     out_dir, ual, men, women = argv
     mvp = asc.clips(anim_set.load_set("anim_sets/mvp.toml"))
@@ -248,10 +260,16 @@ def _blender_main(argv: list[str]) -> None:
                  for c in ("Jump_Start", "Jump_Land", "Raise_In", "Raise_Out")]
         turned = one_shot.copy()  # the whole character turned 20 degrees, as the package clips' heading leaves Root
         ae._move_world(turned, [ae._about_z(ae._body_path(turned)[0], 20.0)] * len(turned.basis))
+        shuffle = one_shot.copy()  # the right foot shuffles 8 cm along the floor on frames 6-11
+        for f, B in enumerate(shuffle.basis):
+            pose = ae._Pose(rig, B)
+            pose.transform("Foot.R", Matrix.Translation((-0.016 * min(5, max(0, f - 6)), 0.0, 0.0)))
+            shuffle.basis[f] = pose.B
         feet_only = {"op": "idle_ends", "at": "both", "from_clip": "Idle_Loop", "upper": False}
         cases += [("Idle_both", one_shot, [{"op": "idle_ends", "at": "both", "from_clip": "Idle_Loop"}]),
                   ("Idle_both_feet", one_shot, [feet_only]),
-                  ("Idle_turned", turned, [feet_only]), ("Idle_turned_root", turned, [{**feet_only, "match": "root"}])]
+                  ("Idle_turned", turned, [feet_only]), ("Idle_turned_root", turned, [{**feet_only, "match": "root"}]),
+                  ("Idle_shuffle", shuffle, [feet_only])]
         for clip, fr, steps in cases:
             fr = ae.apply(fr, [s for s in steps if s["op"] != "idle_ends"], target, body)
             done = ae.apply(fr, [s for s in steps if s["op"] == "idle_ends"], target, body)
@@ -261,7 +279,7 @@ def _blender_main(argv: list[str]) -> None:
             for end, plan in rep["ends"].items():
                 for s in "LR":
                     win = plan[s].get("window")
-                    if plan[s]["mode"] in ("planted", "held"):
+                    if plan[s]["mode"] in ("planted", "held", "hold"):
                         edited |= set(range(n + 1))
                     else:
                         edited |= set(range(0, max(win) + 1) if end == "start" else range(min(win), n + 1))
