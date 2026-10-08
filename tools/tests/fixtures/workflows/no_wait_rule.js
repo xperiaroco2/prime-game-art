@@ -1,7 +1,7 @@
 export const meta = { name: 'good', description: 'A good fixture.', args: { brief: 'text' }, steps: [1, -2, true, null] };
 
-// A fixture for test_workflow_check_*: passes every check.
-const RULES = 'Long runs go to the background.';
+// A fixture for test_workflow_check_*: one agent prompt never states the wait rule.
+const RULES = 'WAIT RULE: no tool call blocks over 180 s; long runs go to the background.';
 const READER = { model: 'sonnet', agentType: 'art-reader' };
 
 function builderPrompt(step) {

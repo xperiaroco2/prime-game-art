@@ -22,8 +22,9 @@ The drivers overlap: a long agent pays every one of the others on every call.
    - The waiting rule in CLAUDE.md ("Shell") applies: no tool call blocks over 180 s, and a long run goes to the
      background.
    - The agent checks a background run with one short call, with gaps of at most 180 s: `tools/run.sh wait <log>`
-     waits up to 180 s for the log's last line `exit=<n>`, prints the `verify:` lines or the last 8 lines and returns
-     n, or 124 while the run goes on (then call it again; never start the run again).
+     waits up to 170 s (the default and maximum `--max`, under the 180 s of one call) for the log's last line
+     `exit=<n>`, prints the `verify:` lines or the last 8 lines and returns n, or 124 while the run goes on (then call
+     it again; never start the run again).
    - No Monitor or wait tool may hold the agent idle longer than that.
 2. **Short agents** (the long agents).
    - A builder step ends at about 60 calls (this replaces the 120 calls of #51's first levers), or earlier at the
@@ -66,9 +67,14 @@ The drivers overlap: a long agent pays every one of the others on every call.
    - The 85% line in CLAUDE.md ("Decisions") still applies on top.
    - After a run, the launch report gives each agent's calls, its average and peak context, and its rewrites after
      gaps. Two ways to get them:
-     - `tools/run.sh cost [--since ISO] [--session PREFIX...]` in this repo: one row per agent of this checkout's
+     - `tools/run.sh cost [--since ISO] [--session PREFIX...]` in this repo: one row per agent of this repo's
        Claude Code transcripts (label or agentType, model, calls, first, average and peak context, cache rewrites of
-       50k+ tokens after a gap over 5 minutes, list $), a total, and `tools/out/cost/cost.json`;
+       50k+ tokens after a gap longer than their cache's life, list $), a total, and `tools/out/cost/cost.json`.
+       - It reads the main checkout's transcript folder and its worktrees' (`C--prime-game-art-wt-<name>` for
+         `C:/prime-game-art-wt/<name>`), each API call once. A worktree elsewhere has a folder of another name: name
+         it with `--project`.
+       - The usage tells 5-minute from 1-hour cache writes. A 1-hour write (main sessions use them) counts as a
+         rewrite only after a gap over an hour;
      - `tools/run.sh metrics` run read-only in a checkout of the game repo.
 
 ## Checking a workflow script (#56)
@@ -77,16 +83,21 @@ The drivers overlap: a long agent pays every one of the others on every call.
 - it does not start with `export const meta = {...}`, or `meta` is not a pure literal (strings, numbers, `true`,
   `false`, `null`, arrays and objects of them);
 - `node --check` fails on it. The check parses a module copy under `tools/out/workflow-check/`, with the body after
-  `meta` wrapped in an async function (top-level `await` and `return`) on the same line, so line numbers match. It is
-  skipped with a note when node is missing;
+  `meta` wrapped in an async function (top-level `await` and `return`) on the same line, so line numbers match; a
+  `;` ends `meta` first when the script has none, and strings and comments inside `meta` are skipped when its end is
+  found. It is skipped with a note when node is missing;
 - an `agent(` call has no `agentType: 'art-reader' | 'art-writer'` in its options, unless a
   `/* general-agent: <reason> */` comment comes right before the call (or its `await`);
+- it calls `agent` as a member (`x.agent(`, `x?.agent(`): only the global `agent()` is read, so such a call is refused;
 - an effort is `xhigh` or `max`, or an agent's `model` or `effort` is not a string literal;
 - an `art-reader` call has `model: 'opus'`;
 - an agent prompt has no `BOUNDS: at most N tool calls` with N <= 60, written in one string literal (N not in a
   `${...}`). The prompt's text includes the strings of the consts and functions it names;
-- the script never states the 180 s wait rule (a string with "no tool call blocks over 180 s");
-- it calls `Date.now()`, `Math.random()` or `new Date()` (a resumed script must replay the same way).
+- an agent prompt never states the 180 s wait rule ("no tool call blocks over 180 s" in one string literal of the
+  prompt's text, as for `BOUNDS`);
+- it calls `Date.now()`, `Math.random()` or `new Date()` (a resumed script must replay the same way), also written
+  `Date?.now()` or `Date['now']()`. The check reads tokens, not values: an alias (`const D = Date; D.now()`) passes,
+  so the manager still reads a script for them.
 
 The options of an `agent(` call are an object literal or a const bound to one; `...SPREAD` of such a const is read too.
 

@@ -279,7 +279,8 @@ def check_meta(script: Script, text: str) -> list[tuple[int, str]]:
 
 
 def meta_end(text: str) -> int | None:
-    """The character offset just after `export const meta = {...}` (and its `;`), or None."""
+    """The character offset just after `export const meta = {...}` (and a `;` right after it), or None. Strings and
+    `//` and `/* */` comments inside `meta` are skipped, so a quote or a brace in them does not end it early."""
     depth, i, n = 0, text.find("{"), len(text)
     if not text.startswith(META_PREFIX) or i < 0:
         return None
@@ -293,6 +294,16 @@ def meta_end(text: str) -> int | None:
                 quote = ""
         elif c in "'\"`":
             quote = c
+        elif text.startswith("//", i):
+            end = text.find("\n", i)
+            i = n if end < 0 else end
+            continue
+        elif text.startswith("/*", i):
+            end = text.find("*/", i + 2)
+            if end < 0:
+                return None
+            i = end + 2
+            continue
         elif c == "{":
             depth += 1
         elif c == "}":
@@ -309,8 +320,10 @@ def check_agents(script: Script) -> list[tuple[int, str]]:
     for k, t in enumerate(toks):
         if not (t.kind == "ident" and t.value == "agent" and k + 1 < len(toks) and toks[k + 1].value == "("):
             continue
-        if k > 0 and (toks[k - 1].value in (".", "?.", "function") or toks[k - 1].kind == "ident"
-                      and toks[k - 1].value in ("const", "let", "var")):
+        if k > 0 and toks[k - 1].kind == "punct" and toks[k - 1].value in (".", "?."):
+            found.append((t.line, "a member call `x.agent(` is not checked; call the global agent()"))
+            continue
+        if k > 0 and toks[k - 1].kind == "ident" and toks[k - 1].value in ("function", "const", "let", "var"):
             continue
         close = matching(toks, k + 1)
         args = split_top(toks, k + 2, close)
@@ -344,6 +357,9 @@ def check_agents(script: Script) -> list[tuple[int, str]]:
                                   "in one string literal"))
         elif max(bounds) > MAX_CALLS:
             found.append((t.line, f"the agent prompt allows {max(bounds)} tool calls; at most {MAX_CALLS}"))
+        if not WAIT_RE.search(" ".join(prompt.split())):
+            found.append((t.line, "the agent prompt never states the 180 s wait rule "
+                                  "(\"no tool call blocks over 180 s\" in one string literal)"))
     return found
 
 
@@ -353,15 +369,13 @@ def check_tokens(script: Script) -> list[tuple[int, str]]:
         if t.kind in ("ident", "str") and t.value == "effort" and toks[k + 1].value == ":" \
                 and toks[k + 2].kind == "str" and toks[k + 2].value in BANNED_EFFORTS:
             found.append((t.line, f"effort {toks[k + 2].value!r} is not allowed; builders run at 'high'"))
-        for obj, member in NONDETERMINISTIC:
-            if t.value == obj and toks[k + 1].value == "." and toks[k + 2].value == member:
+        for obj, member in NONDETERMINISTIC:  # Date.now, Date?.now, Date['now']; an alias (const D = Date) passes
+            if t.kind == "ident" and t.value == obj and toks[k + 2].value == member and (
+                    toks[k + 1].value in (".", "?.") or toks[k + 1].value == "[" and toks[k + 2].kind == "str"):
                 found.append((t.line, f"{obj}.{member}() breaks resume; workflow scripts are deterministic"))
         if t.value == "new" and toks[k + 1].value == "Date" and k + 3 < len(toks) and toks[k + 2].value == "(" \
                 and toks[k + 3].value == ")":
             found.append((t.line, "new Date() breaks resume; workflow scripts are deterministic"))
-    if not any(WAIT_RE.search(" ".join(t.value.split())) for t in toks if t.kind == "str"):
-        found.append((1, "the script never states the 180 s wait rule "
-                         "(a string with \"no tool call blocks over 180 s\")"))
     return found
 
 
@@ -386,8 +400,10 @@ def check_text(text: str) -> list[tuple[int, str]]:
 
 def module_copy(text: str) -> str | None:
     """The script as an ES module node can parse: the body after `meta` wrapped in an async function (it may use
-    top-level `await` and `return`), on the same line so node's line numbers match the script's. None without meta."""
+    top-level `await` and `return`), on the same line so node's line numbers match the script's; a `;` ends `meta`
+    first when the script has none. None without meta."""
     end = meta_end(text)
     if end is None:
         return None
-    return text[:end] + " async function __workflow_body__() {" + text[end:] + "\n}\n"
+    head = text[:end] if text[:end].endswith(";") else text[:end] + ";"  # `meta = {...}` may end without one
+    return head + " async function __workflow_body__() {" + text[end:] + "\n}\n"

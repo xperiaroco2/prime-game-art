@@ -6,7 +6,7 @@ background with the Bash tool, its output and then an exit marker going to a log
 
     tools/run.sh verify > tools/out/verify.log 2>&1; echo "exit=$?" >> tools/out/verify.log
 
-and polls it with `wait`, one tool call of at most S seconds each (default and maximum 180). The job is finished only
+and polls it with `wait`, one tool call of at most S seconds each (default and maximum 170). The job is finished only
 when the LAST complete non-empty line of the log is `exit=<n>`: the marker is the job's final write, a half-written
 line (no newline yet) is never read, and a bare `exit=0` line in the job's own output is not mistaken for the end. Then
 `wait` prints a short summary (the log's `verify:` lines, else its last TAIL_LINES non-empty lines) and returns n. Not
@@ -31,12 +31,14 @@ from pathlib import Path
 from .. import common
 
 NAME = "wait"
-HELP = "wait at most 180 s for a background job's last line exit=<n>, print its summary and return n (124: running)"
+HELP = "wait at most 170 s for a background job's last line exit=<n>, print its summary and return n (124: running)"
 
 # A poll every 3 minutes keeps a 5-minute cache warm: prime-game#555 measured about 94 s (p95) between wait's own
 # deadline and the agent's next API call under load, so the step plus that stays under CACHE_TTL. A longer --max only
-# brings that edge back: the step is the maximum too.
-DEFAULT_MAX = 180
+# brings that edge back: the step is the maximum too. It stays under the 180 s limit of one tool call (CLAUDE.md,
+# "Shell"), leaving TOOL_CALL_MAX - DEFAULT_MAX for wait's start-up and its summary inside the same call.
+DEFAULT_MAX = 170
+TOOL_CALL_MAX = 180
 MAX_ALLOWED = DEFAULT_MAX
 CACHE_TTL = 300  # a workflow agent's prompt cache, in seconds
 STILL_RUNNING = 124  # as coreutils' `timeout`

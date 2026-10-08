@@ -2,8 +2,10 @@
 
 Reads the Claude Code transcripts of this checkout (docs/agents.md, rule 8): the project folder
 `~/.claude/projects/<key>/`, where <key> is the main checkout's path with every character other than a letter or digit
-replaced by "-" (C:\\prime-game-art -> C--prime-game-art, D:\\prime-game-art -> D--prime-game-art), so a worktree reads
-its main checkout's folder. CLAUDE_CONFIG_DIR moves `~/.claude`; --project names the folder outright.
+replaced by "-" (C:\\prime-game-art -> C--prime-game-art, D:\\prime-game-art -> D--prime-game-art). A session started
+with its cwd in a worktree at `<main>-wt/<name>` has its own folder, `<key>-wt-<name>` (C--prime-game-art-wt-60): those
+are read too, and an API call found in two folders counts once (per session, agent and message id). CLAUDE_CONFIG_DIR
+moves `~/.claude`; --project names one folder outright.
 
 In that folder, `<session>.jsonl` is a main session and `<session>/subagents/**/agent-<id>.jsonl` its subagents, each
 with `agent-<id>.meta.json` (agentType, description). An assistant line carries `message.id`, `message.model` and
@@ -14,8 +16,10 @@ One row per agent (the main session is an agent too):
 - label: the meta's description, else its agentType; a main session's custom title, else "main";
 - model, and calls (API calls);
 - context: a call's prompt, input + cache writes + cache reads; the first call's, the average and the peak;
-- rewrites: calls that wrote REWRITE_MIN or more cache tokens after a gap over CACHE_TTL since the previous call (the
-  prompt cache had expired, so the whole context was written again);
+- rewrites: calls that wrote REWRITE_MIN or more cache tokens after a gap since the previous call longer than those
+  tokens' cache life (the prompt cache had expired, so the whole context was written again). The usage tells 5-minute
+  from 1-hour writes (`cache_creation.ephemeral_1h_input_tokens`): a 1-hour write counts only after a gap over
+  CACHE_TTL_1H, since a 1-hour cache outlives a shorter one;
 - list $: the calls' tokens at the API list price (PRICES).
 
 Then a total, and the whole as JSON in tools/out/cost/cost.json. Only reads transcripts; writes only that JSON.
@@ -46,6 +50,7 @@ PRICES = {
     "claude-haiku-4-5": (1.0, 1.25, 2.0, 0.10, 5.0),
 }
 CACHE_TTL = 300  # a prompt cache's life, in seconds: a longer gap before a call means its context is written again
+CACHE_TTL_1H = 3600  # the life of a 1-hour cache write (main sessions use them)
 REWRITE_MIN = 50_000  # cache-write tokens of one call that count as a rewrite after such a gap
 DEFAULT_JSON = common.OUT / "cost" / "cost.json"
 SYNTHETIC = "<synthetic>"
@@ -59,13 +64,15 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
 
 
 def run(args: argparse.Namespace) -> int:
-    folder = args.project or project_folder(main_checkout())
-    if not folder.is_dir():
-        raise common.Failure(f"no transcript folder at {folder}; name it with --project")
+    candidates = [args.project] if args.project else project_folders(main_checkout())
+    folders = [f for f in candidates if f.is_dir()]
+    if not folders:
+        raise common.Failure(f"no transcript folder at {candidates[0]}; name it with --project")
     since = parse_time(args.since) if args.since else None
-    report = collect(folder, args.session, since)
+    report = collect(folders, args.session, since)
     if not report["agents"]:
-        common.say(f"cost: no API calls in {folder}" + (f" since {args.since}" if args.since else ""))
+        where = ", ".join(str(f) for f in folders)
+        common.say(f"cost: no API calls in {where}" + (f" since {args.since}" if args.since else ""))
     for line in render(report):
         common.say(line)
     args.json.parent.mkdir(parents=True, exist_ok=True)
@@ -101,6 +108,13 @@ def claude_home() -> Path:
 
 def project_folder(checkout: Path, home: Path | None = None) -> Path:
     return (home or claude_home()) / "projects" / project_key(checkout)
+
+
+def project_folders(checkout: Path, home: Path | None = None) -> list[Path]:
+    """The main checkout's transcript folder, then its worktrees' existing `<key>-wt-<name>` folders, each once."""
+    main = project_folder(checkout, home)
+    worktrees = sorted(p for p in main.parent.glob(f"{main.name}-wt-*") if p.is_dir()) if main.parent.is_dir() else []
+    return list(dict.fromkeys([main, *worktrees]))
 
 
 # --- reading ------------------------------------------------------------------------------------------------------
@@ -149,7 +163,7 @@ def read_transcript(path: Path) -> tuple[list[dict], str | None]:
             u = m.get("usage") if isinstance(m.get("usage"), dict) else {}
             call = calls.get(mid)
             if call is None:
-                call = calls[mid] = {"model": m.get("model"), "t0": t, "t1": t, "input": 0, "write": 0,
+                call = calls[mid] = {"id": mid, "model": m.get("model"), "t0": t, "t1": t, "input": 0, "write": 0,
                                      "write_1h": 0, "read": 0, "output": 0}
             call["t0"], call["t1"] = min(call["t0"], t), max(call["t1"], t)
             for key, field in (("input", "input_tokens"), ("write", "cache_creation_input_tokens"),
@@ -189,6 +203,16 @@ def usd_of(call: dict) -> float:
             + call["read"] * price[3] + call["output"] * price[4]) / 1e6
 
 
+def expired_write(call: dict, gap: float) -> int:
+    """The cache tokens a call wrote because its cache had expired after a gap of `gap` seconds: its 5-minute writes
+    after a gap over CACHE_TTL, all its writes after one over CACHE_TTL_1H."""
+    if gap > CACHE_TTL_1H:
+        return call["write"]
+    if gap > CACHE_TTL:
+        return call["write"] - min(call["write_1h"], call["write"])
+    return 0
+
+
 def context(call: dict) -> int:
     """The call's prompt: input, cache writes and cache reads."""
     return call["input"] + call["write"] + call["read"]
@@ -202,9 +226,10 @@ def agent_row(calls: list[dict], since: float | None = None) -> dict:
         if since is not None and call["t0"] < since:
             continue
         kept.append(call)
-        if i and call["t0"] - calls[i - 1]["t1"] > CACHE_TTL and call["write"] >= REWRITE_MIN:
+        written = expired_write(call, call["t0"] - calls[i - 1]["t1"]) if i else 0
+        if written >= REWRITE_MIN:
             rewrites += 1
-            rewrite_tokens += call["write"]
+            rewrite_tokens += written
     contexts = [context(c) for c in kept]
     models = Counter(str(c["model"]) for c in kept)
     return {
@@ -222,27 +247,56 @@ def agent_row(calls: list[dict], since: float | None = None) -> dict:
     }
 
 
-def collect(folder: Path, prefixes: list[str], since: float | None) -> dict:
-    """Every agent of the folder's sessions (filtered by id prefix) with calls in the window, and the total."""
-    names = {p.stem for p in folder.glob("*.jsonl")} | {
-        p.name for p in folder.iterdir() if p.is_dir() and (p / "subagents").is_dir()
-    }
-    agents: list[dict] = []
-    for sid in sorted(names):
-        if prefixes and not any(sid.startswith(p) for p in prefixes):
+TOKEN_KEYS = ("input", "write", "write_1h", "read", "output")
+
+
+def merge_calls(into: dict[str, dict], calls: list[dict]) -> None:
+    """Adds a transcript's calls to `into` (message id -> call); a call seen before keeps its widest times and the
+    largest value of each token field."""
+    for call in calls:
+        have = into.get(call["id"])
+        if have is None:
+            into[call["id"]] = dict(call)
             continue
-        main = folder / f"{sid}.jsonl"
-        if main.is_file():
-            calls, title = read_transcript(main)
-            agents.append({"session": sid, "agent": "main", "label": title or "main", "type": "main",
-                           **agent_row(calls, since)})
-        subagents = folder / sid / "subagents"
-        for path in sorted(subagents.rglob("agent-*.jsonl")) if subagents.is_dir() else []:
-            meta = read_meta(path)
-            kind = str(meta.get("agentType") or "?")
-            calls, _title = read_transcript(path)
-            agents.append({"session": sid, "agent": path.stem.removeprefix("agent-"),
-                           "label": str(meta.get("description") or kind), "type": kind, **agent_row(calls, since)})
+        have["t0"], have["t1"] = min(have["t0"], call["t0"]), max(have["t1"], call["t1"])
+        for key in TOKEN_KEYS:
+            have[key] = max(have[key], call[key])
+
+
+def collect(folders: list[Path] | Path, prefixes: list[str], since: float | None) -> dict:
+    """Every agent of the folders' sessions (filtered by id prefix) with calls in the window, and the total. A session
+    or subagent found in several folders is one agent, its calls merged by message id."""
+    folders = [folders] if isinstance(folders, Path) else list(dict.fromkeys(folders))
+    found: dict[tuple[str, str], dict] = {}  # (session, agent) -> label, type and calls by message id
+
+    def add(sid: str, agent: str, label: str, kind: str, calls: list[dict]) -> None:
+        entry = found.setdefault((sid, agent), {"label": label, "type": kind, "calls": {}})
+        if entry["label"] in ("main", "?") and label not in ("main", "?"):
+            entry["label"] = label
+        merge_calls(entry["calls"], calls)
+
+    for folder in folders:
+        names = {p.stem for p in folder.glob("*.jsonl")} | {
+            p.name for p in folder.iterdir() if p.is_dir() and (p / "subagents").is_dir()
+        }
+        for sid in sorted(names):
+            if prefixes and not any(sid.startswith(p) for p in prefixes):
+                continue
+            main = folder / f"{sid}.jsonl"
+            if main.is_file():
+                calls, title = read_transcript(main)
+                add(sid, "main", title or "main", "main", calls)
+            subagents = folder / sid / "subagents"
+            for path in sorted(subagents.rglob("agent-*.jsonl")) if subagents.is_dir() else []:
+                meta = read_meta(path)
+                kind = str(meta.get("agentType") or "?")
+                calls, _title = read_transcript(path)
+                add(sid, path.stem.removeprefix("agent-"), str(meta.get("description") or kind), kind, calls)
+    agents = [
+        {"session": sid, "agent": agent, "label": e["label"], "type": e["type"],
+         **agent_row(sorted(e["calls"].values(), key=lambda c: c["t0"]), since)}
+        for (sid, agent), e in found.items()
+    ]
     agents = [a for a in agents if a["calls"]]
     agents.sort(key=lambda a: (a["session"], a["start"] or ""))
     total = {
@@ -253,7 +307,7 @@ def collect(folder: Path, prefixes: list[str], since: float | None) -> dict:
         "usd": round(sum(a["usd"] for a in agents), 6),
         "unpriced": sorted({m for a in agents for m in a["unpriced"]}),
     }
-    return {"folder": str(folder), "since": iso(since), "agents": agents, "total": total}
+    return {"folders": [str(f) for f in folders], "since": iso(since), "agents": agents, "total": total}
 
 
 # --- printing -----------------------------------------------------------------------------------------------------
