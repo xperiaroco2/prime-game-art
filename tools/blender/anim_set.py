@@ -148,6 +148,7 @@ def build_clips(set_cfg: dict, char: dict, names, body: str, resolve, target: ae
     target = target or ae.Target(char)
     target.upper = set_cfg.get("upper", target.upper)
     out = {}
+    target.clips = out  # a step's from_clip reads the clips built before it (art #49)
     for name in order:
         c = table[name]
         t0 = time.time()

@@ -108,6 +108,8 @@ def check(cfg: dict, sources: set[str] | None = None, bodies=("men", "women")) -
             errors.append(f"{where}: edits must be a list of steps")
         else:
             errors += [f"{where}: {e}" for e in em.check_steps(edits, bodies)]
+            errors += [f"{where}: from_clip = {n!r} names no earlier clip" for n in em.from_clips(edits)
+                       if n not in seen]
         errors += _check_needs(where, c.get("needs", []), speed if _number(speed) else None, bodies)
         seen.append(name)
     return errors
@@ -165,8 +167,8 @@ def clips(cfg: dict) -> dict[str, dict]:
 
 
 def closure(cfg: dict, names) -> list[str]:
-    """The clips needed to build `names` ("all" or None: every clip): each with the earlier clips it is made `from`,
-    in settings order; raises ValueError on an unknown name."""
+    """The clips needed to build `names` ("all" or None: every clip): each with the earlier clips it is made `from`
+    or its edits read (`from_clip`, art #49), in settings order; raises ValueError on an unknown name."""
     table = clips(cfg)
     if names in (None, "all"):
         return list(table)
@@ -182,6 +184,7 @@ def closure(cfg: dict, names) -> list[str]:
         need.add(n)
         if "from" in table[n]:
             stack.append(table[n]["from"])
+        stack.extend(em.from_clips(table[n]["edits"]))
     return [n for n in table if n in need]
 
 
