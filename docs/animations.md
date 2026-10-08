@@ -338,7 +338,7 @@ and is then skipped on the other body type. Times are seconds in the clip as it 
 | `head_level` (art #49) | `target_deg` (0), `neck_share` (0.4) | one constant pitch, `target_deg` minus the clip's mean head pitch, `neck_share` of it on `Neck` and the rest on `Head`, about the head's horizontal left-right axis (+ raises the face); the nods keep their motion | fix_deg, neck_deg, head_deg, pitch_before_deg, pitch_after_deg |
 | `hands_relax` (art #49) | `curl_deg` (a table: `Index`, `Middle`, `Ring`, `Pinky` = 3 angles for segments 2-4, `Thumb` = 2 for segments 2-3), `cap` (> 0) | each curled finger bone keeps the axis of its own rotation and takes the table's angle; with `cap`, its own angle up to `cap` times the table's (a gesture stays, a fist goes). The metacarpals (segment 1) are untouched | cap, bones, curl_before_deg and curl_after_deg per segment |
 | `thumb_in` (art #49) | `beside` (`Index3` or `Index4`), `side_cm` (1.6), `max_deg` (40), `frame` (0), or `from_clip` alone | Thumb1 turned by one constant per side on every frame: the shortest turn about its head that points the thumb's tip (Thumb3's head plus 0.9 of the Thumb2-Thumb3 segment) at a point `side_cm` beside the `beside` joint, found on `frame`; with `from_clip`, the turn that clip's `thumb_in` found | per side turn_deg, wanted_deg, quaternion_wxyz, tip_to_goal_cm_before; or from_clip |
-| `idle_ends` (art #49) | `at` (`start`, `end` or `both`), `from_clip` (the idle), `upper` (true; false: the feet and legs only), `fade_frames` (8), `plant_speed_cm` (1.0), `plant_rise_cm` (1.5), `step_cm` (4.0), `knees_out_deg` (25), `knees_out_from_deg` (25), `knees_out_full_deg` (75) | blends the relaxed idle into a one-shot's ends that meet it ("The relaxed idle" below) | at, upper, lift_cm, upper_delta_deg, ends (per end and foot: planted_to, mode, window, move_cm, turn_deg), touching (the feet, their toes, the Body and the upper body against the idle, before and after), leg_twist_deg, ankle_gap_mm_max, knee_out_deg_max, lift_cut_mm_max, step_lift_cm, floor (per foot: below_mm_max, raised_mm_max, slide_mm_max, slide_frame) |
+| `idle_ends` (art #49) | `at` (`start`, `end` or `both`), `from_clip` (the idle), `upper` (true; false: the feet and legs only), `fade_frames` (8), `plant_speed_cm` (1.0), `plant_rise_cm` (1.5), `step_cm` (4.0), `knees_out_deg` (25), `knees_out_from_deg` (25), `knees_out_full_deg` (75), `match` (`set`; `root`) | blends the relaxed idle into a one-shot's ends that meet it ("The relaxed idle" below) | at, upper, match, lift_cm, upper_delta_deg, ends (per end and foot: planted_to, mode, window, move_cm, turn_deg; a held foot's shuffle_rise_cm and shuffle_moves_cm; lift_dropped), touching (the feet, their toes, the Body and the upper body against the idle, before and after: relative to Root and in the set's frame, `set_*`, with the Root's own offset, root_cm and root_turn_deg), leg_twist_deg, ankle_gap_mm_max, knee_out_deg_max, lift_cut_mm_max, foot_pulled_mm_max, body_down_mm_max, step_lift_cm, reroot (moved_cm_max, turned_deg_max), floor (per foot: below_mm_max, raised_mm_max, slide_mm_max, slide_frame), air (hop_cm_max, hop_frame, airborne_frames) |
 
 Steps raise `anim_edit.EditError` on a failure (an unknown op, a bad parameter, a window outside the clip, a cycle
 whose raw seam is too large, a stride on a clip that is not an in-place loop); `apply` names the failing step. A
@@ -438,28 +438,55 @@ out), and the set pins the women's arm offset that `auto` finds instead of the l
     `Thumb1`, relax base to relaxed) and the curled fingers go to the idle's curl, in full at the touching frame and
     faded out over `fade_frames` (a smoothstep); `upper = false` leaves them alone (the package clips: the arms keep
     their hold);
-  - each foot goes where the idle has it relative to Root (the right foot's turn included; its toes bent as the idle's:
-    the package clip's toes, bent 20 to 42 degrees, went 4.4 cm into the floor on the idle's lower feet), held while
+  - each foot goes where the idle has it (the right foot's turn included; its toes bent as the idle's: the package
+    clip's toes, bent 20 to 42 degrees, went 4.4 cm into the floor on the idle's lower feet). By default (`match =
+    "set"`) that is in the set's frame, armature space: the game plays the clips in place with no root motion
+    (`contract/contract.toml`, `[animation] in_place`), so a crossfade blends Root too, and a foot matched relative to
+    a Root that stands or turns off the idle's moves with it (round 2: the package clips' Root, turned 19.8 degrees by
+    art #33's `heading facing = "mean"`, turned both feet 19.8 degrees and the right one 8 to 12 cm at every
+    crossfade; the UAL clips' Root stands 0.2 to 6 cm off the idle's while their Body stands within 0.4 cm). With
+    `"set"` Root itself then goes to the idle's on every frame and the bones under it keep their poses (Root carries
+    no weights: `contract.toml`), so the crossfade, which blends each bone relative to its parent, blends no Root
+    turn into the feet (`reroot`: how far Root moved and turned). `match = "root"` matches relative to the clip's
+    Root, for a clip whose whole body ends off the idle's (Getup_Back stands up
+    17 cm, men, and 27 cm, women, from where the idle stands: its feet in the set's frame would be that far from
+    under it). The foot is held while
     the clip keeps it planted (`anim_edit_math.planted_until`: under `plant_speed_cm` a frame along the floor and under
     `plant_rise_cm` above its height at the touching frame; a flat foot that creeps along the floor or settles onto it
     is planted), then faded out over up to `fade_frames`; a foot that only shuffles along the floor through its fade
-    (rising under half of `step_cm`: the package clips) is lifted on the step's arc so the fade does not slide it
-    (`lifted`), one that leaves the floor by itself is not; held to the other end when fewer than 2 frames would be
-    left (the landing); a foot planted all through a clip whose other end meets another clip takes a `step_cm` high
-    step over `fade_frames` where the other foot moves least (Raise_In and Raise_Out, the left foot);
+    (rising under half of `step_cm`) is lifted on the step's arc so the fade does not slide it (`lifted`), one that
+    leaves the floor by itself is not; held to the other end when fewer than 2 frames would be left (the landing); a
+    foot planted all through a clip whose other end meets another clip takes a `step_cm` high step over
+    `fade_frames` where the other foot moves least (Raise_In and Raise_Out, the left foot), off the frames where the
+    other foot is lifted;
+  - between two ends that meet the idle, a foot that only shuffles along the floor (it moves after the start's
+    planted frames and before the end's, rising under half of `step_cm`) is held at the idle's on every frame, its
+    toes at the idle's bend (`hold`; its shuffle is dropped). Round 2 faded both package feet out and back in with
+    overlapping windows and lifted both on the step's arc at once: the character hopped 4 to 6.6 cm off the floor
+    for about 0.2 s while it squatted;
+  - never both feet in the air: a lift that has both feet over `AIR_M` (1 cm) up on a common frame is dropped, steps
+    keeping theirs first, then the earlier lift (`lift_dropped`: that foot fades along the floor). The report's `air`
+    checks the result on the character's lowest vertex (a kneeling knee holds it as well as a sole): the frames where
+    the clip had it within 1 cm of the floor and the edit has not (`airborne_frames`), and how much higher it is than
+    in the clip (`hop_cm_max`);
   - the floor: the correction is the touching frame's, so a foot that settles after it would sink (Raise_In's toes
     went 1.7 cm into the floor); no edited Foot or Toe head goes lower than both its own height before the edit and
     the idle's standing height (the foot is raised: `floor.raised_mm_max`), and a step lifts off that floor. The
     report's `floor` measures what is left: how far a foot sinks below it, and how far the edit slides a foot the clip
     keeps still (under 5 mm a frame) while it stands (within 0.5 cm of the idle's standing height);
-  - the Body rises by the idle's lift times the feet's mean weight, cut where a leg would not reach (`REACH` 0.999);
+  - the Body rises by the idle's lift times the feet's mean weight, cut where a leg would not reach (`REACH` 0.999),
+    and goes down up to `BODY_DOWN` (2 cm) where a leg would not reach even unlifted (`body_down_mm_max`; round 3:
+    the men's Pickup_Package starts 1.4 cm higher than the idle, and its right foot was pulled 3.9 mm off the
+    idle's);
   - the legs are solved again: the knee towards the foot's forward at full weight and the clip's own knee at 0, the
     thigh's and the shin's roll matched to the idle's at the touching frame (`leg_twist_deg`; UAL's turned-out right
     thigh would twist at the crossfade otherwise), and in a deep bend the knee swings out (0 at `knees_out_from_deg`
     of knee bend, `knees_out_deg` at `knees_out_full_deg`: the narrow stance crouched knock-kneed).
 
   The pure part is `anim_edit_math.idle_end_weights` and `end_mix` (a clip whose both ends meet the idle moves from
-  the start's numbers to the end's along the clip). A loop is refused. Only the feet, the Body's lift and the fingers
+  the start's numbers to the end's along the clip). A loop is refused. With `match = "set"` the clip is marked
+  `info["placed_by"]`: the set does not recentre it (below), and any later op but `reverse` and `retime`
+  (`KEEP_PLACE`) clears the mark. Only the feet, the Body's lift and the fingers
   are matched at the touching frame: the head and the arms keep the clip's own pose plus the idle's change, so the
   game's crossfade still moves them (Jump_Land's left upper arm ends 68 degrees from the idle's).
 - **In the set** (`mvp.toml`): Idle_Loop and Talk_Upper_Loop take `foot_turn`, `stance`, `shoulders`, `head_level`,
@@ -467,7 +494,8 @@ out), and the set pins the women's arm offset that `auto` finds instead of the l
   idle then a second `arm_offset`, found by `auto` on the open hands (they are longer than fists: 2.9 cm in the
   thighs to 0 at 4.16 degrees; 0 on the men and on both bodies' talk) and pinned. The eight one-shots that start or
   end in the idle pose end with `idle_ends`; Pickup_Package with `idle_ends {at = "both", upper = false}` (both ends
-  meet the idle's legs: the carry plays over the idle), which Putdown_Package, its reverse, carries. Putdown_One is
+  meet the idle's legs: the carry plays over the idle; both feet only shuffle between them, so they are held), which
+  Putdown_Package, its reverse, carries; Getup_Back with `match = "root"`. Putdown_One is
   made from its source with the pickup's steps reversed, not `from = "Pickup_One"`, which would blend the idle into it
   twice. Carry_Upper_Loop and Push_Upper_Loop are left alone: they play over the edited idle.
 
@@ -475,7 +503,7 @@ out), and the set pins the women's arm offset that `auto` finds instead of the l
 
 | `anim_edit_math.py` (stdlib) | `anim_edit.py` (Blender) |
 |---|---|
-| `OPS`, `check_steps`, `params`; time maps (`trim_times`, `retime_count`, `retime_times`, `split_index`, `catmull_rom`, `neighbours`); quaternions (`q_mul`, `q_conj`, `q_slerp`, `q_hemi`, `q_axis_angle`, `q_rotate`); `best_cycle`, `central_diff`, `close_vectors`, `close_quats`; `linear_drift`, `moving_average`, `path_offsets`, `moving_speed`; `lsq_direction`, `yaw_of`, `signed_angle_2d`, `facing_yaw`, `unwrap`, `circular_mean`, `turn_correction`; `contact_mask`, `contact_windows`, `contact_velocities`, `ground_velocity`, `natural_cadence`, `stride_rate`, `stride_scale`, `stride_fit`, `scale_offset`, `plant`; `two_bone_ik`; `floor_profile`; `search_angle`; `mirror_name`, `mirror_pairs`, `mirror_correction`, `mirror_pose` (4x4 lists); the relaxed idle (art #49): `RELAX_OPS`, `FINGER_SEGMENTS`, `curl_errors`, `from_clips`, `smoothstep`, `finger_curls`, `curl_goal`, `stance_targets`, `stance_lift`, `pitch_of`, `head_fix`, `yaw_out`, `knees_out`, `reach_lift`, `planted_until`, `idle_end_weights`, `end_mix` | `Frames`, `Target`, `apply`, `EditError`, `OPS` (op name to function); Root and Body moves in world space; the leg IK as rotations; the mirror with mathutils; the posed-mesh measures (the lowest vertex through `anim_metrics.world_points`, the hands through `anim_metrics.Measure`'s sets and surfaces); the relaxed idle's ops on an `_Pose` in world space, `feet_numbers` |
+| `OPS`, `check_steps`, `params`; time maps (`trim_times`, `retime_count`, `retime_times`, `split_index`, `catmull_rom`, `neighbours`); quaternions (`q_mul`, `q_conj`, `q_slerp`, `q_hemi`, `q_axis_angle`, `q_rotate`); `best_cycle`, `central_diff`, `close_vectors`, `close_quats`; `linear_drift`, `moving_average`, `path_offsets`, `moving_speed`; `lsq_direction`, `yaw_of`, `signed_angle_2d`, `facing_yaw`, `unwrap`, `circular_mean`, `turn_correction`; `contact_mask`, `contact_windows`, `contact_velocities`, `ground_velocity`, `natural_cadence`, `stride_rate`, `stride_scale`, `stride_fit`, `scale_offset`, `plant`; `two_bone_ik`; `floor_profile`; `search_angle`; `mirror_name`, `mirror_pairs`, `mirror_correction`, `mirror_pose` (4x4 lists); the relaxed idle (art #49): `RELAX_OPS`, `FINGER_SEGMENTS`, `curl_errors`, `from_clips`, `smoothstep`, `finger_curls`, `curl_goal`, `stance_targets`, `stance_lift`, `pitch_of`, `head_fix`, `yaw_out`, `knees_out`, `reach_lift`, `planted_until`, `AIR_M`, `KEEP_PLACE`, `idle_end_weights`, `end_mix` | `Frames`, `Target`, `apply`, `EditError`, `OPS` (op name to function); Root and Body moves in world space; the leg IK as rotations; the mirror with mathutils; the posed-mesh measures (the lowest vertex through `anim_metrics.world_points`, the hands through `anim_metrics.Measure`'s sets and surfaces); the relaxed idle's ops on an `_Pose` in world space, `feet_numbers` |
 
 ### The API
 
@@ -537,7 +565,7 @@ Background Blender, the pack originals with the toe bones and UAL1 retargeted wi
 | men, UAL Jump_Start: trim 0.03-0.40, retime 0.25 | 8 frames, 0.267 s: a retime rounds to whole frames (rate 1.375 for 1.467) |
 | men / women, UAL Idle_Loop: the MVP's relaxed steps (art #49) | the right foot 43.66 to 3.66 degrees out (the left -5.68 kept); the ankles 47.7 to 27.5 / 45.4 to 22.9 cm apart, the stagger 45.7 to 5.6 / 46.5 to 4.5 cm, the Body 2.94 / 3.07 cm up; the head's pitch -14.9..-10.5 to -2.2..+2.3; Middle2 78 to 20 degrees, the thumb turned 22.3 / 22.0; every ankle within 0.003 mm of its foot; the loop closed, no pop |
 | women, the relaxed idle: arm_offset auto (art #49) | 4.16 degrees: the open hands 2.9 cm in the thighs (77 frames) to 0; the men and both talks 0 |
-| the ten clips that meet the idle: idle_ends (art #49) | both feet 0.000 cm and 0.00 degrees from the idle's first frame (relative to Root), the toes at its bend, at all fourteen touching ends, the fingers at its curl (but on the package clips: `upper = false`); ankle gaps 0.002 to 0.011 mm on every frame it weighs (Jump_Start's 8 mm before), Knockdown's 2.9 mm on the frames it leaves alone (art #33's resampling, 5.7 mm before); no foot below its floor, none slid where the clip keeps it still (round 2: round 1 slid Getup_Back's left foot 21 to 23 cm and sank Raise_In's toes 1.7 cm) |
+| the ten clips that meet the idle: idle_ends (art #49) | both feet 0.000 cm and 0.00 degrees from the idle's first frame in the game's frame (armature space), Root at the idle's, the toes at its bend, at the thirteen set-matched touching ends (round 3; round 2's Root-relative match left them 0.2 to 11.8 cm and up to 19.8 degrees off in the saved set), Getup_Back relative to its Root (its whole body 17 / 27 cm off); the fingers at its curl (but on the package clips: `upper = false`); the package clips' feet held at the idle's (round 2 lifted both 4 to 6.6 cm at once), no airborne frame on a set-matched clip; ankle gaps 0.002 to 0.011 mm on every frame it weighs (Jump_Start's 8 mm before), Knockdown's 2.9 mm on the frames it leaves alone (art #33's resampling, 5.7 mm before); no foot below its floor, none slid where the clip keeps it still (round 2: round 1 slid Getup_Back's left foot 21 to 23 cm and sank Raise_In's toes 1.7 cm) |
 
 ### Gotchas of the edits
 
@@ -607,7 +635,9 @@ hold for every clip:
 - **A clip stands over the origin**, where the game's body is: a loop's Body is centred on it over the cycle, a
   one-shot's first frame stands on it (`recentred_m`). A cycle cut from a travelling clip otherwise plays where it was
   cut (the strafe 4.9 m to the left, the crawl 1 m ahead). A one-shot that ends elsewhere (Knockdown: 0.48 m) leaves
-  that offset to the game, which moves the body when the clip ends.
+  that offset to the game, which moves the body when the clip ends. A clip that `idle_ends` placed in the idle's frame
+  (`match = "set"`: `placed_by` in its report, carried to a clip made `from` it) is left where it is: recentring it
+  moved its feet 1.5 to 7.3 cm off the idle's again (art #49, round 3).
 
 The command bakes the
 exported clips under their own names and saves the donor as a character the export accepts: one armature, its meshes
