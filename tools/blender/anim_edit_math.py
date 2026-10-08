@@ -59,7 +59,8 @@ OPS = {
     "thumb_in": {"beside": _p("string", "Index3", choices=("Index3", "Index4")), "side_cm": _p(_N, 1.6),
                  "max_deg": _p(_N, 40.0), "frame": _p("int", 0), "from_clip": _p("string")},
     "idle_ends": {"at": _p("string", required=True, choices=("start", "end", "both")),
-                  "from_clip": _p("string", required=True), "fade_frames": _p("int", 8), "plant_cm": _p(_N, 1.5),
+                  "from_clip": _p("string", required=True), "fade_frames": _p("int", 8),
+                  "plant_speed_cm": _p(_N, 1.0), "plant_rise_cm": _p(_N, 1.5), "upper": _p("bool", True),
                   "step_cm": _p(_N, 4.0), "knees_out_deg": _p(_N, 25.0), "knees_out_from_deg": _p(_N, 25.0),
                   "knees_out_full_deg": _p(_N, 75.0)},
 }
@@ -71,9 +72,9 @@ COMMON = {"op", "body"}  # keys every step may have
 ONE_OF = {"retime": ("seconds", "rate", "speed_m_s"), "heading": ("travel", "facing"),
           "hand_spacing": ("min_gap_cm", "gap_m")}  # exactly one of these
 POSITIVE = {"seconds", "rate", "cadence", "min_s", "max_s", "smooth_s", "max_raw_seam_deg", "max_deg", "gap_m",
-            "fade_frames", "knees_out_full_deg", "cap"}
+            "fade_frames", "knees_out_full_deg", "cap", "plant_speed_cm", "plant_rise_cm"}
 NON_NEGATIVE = {"start_s", "end_s", "speed_m_s", "natural_m_s", "from_s", "to_s", "fade_s", "min_depth_cm",
-                "margin_cm", "min_gap_cm", "out_cm", "side_cm", "frame", "plant_cm", "step_cm", "knees_out_deg",
+                "margin_cm", "min_gap_cm", "out_cm", "side_cm", "frame", "step_cm", "knees_out_deg",
                 "knees_out_from_deg"}
 
 
@@ -824,33 +825,46 @@ def reach_lift(hip, foot, reach: float) -> float:
     return math.sqrt(reach * reach - h2) - (hip[2] - foot[2])
 
 
-def planted_until(track: list, start: int, step: int, within_m: float) -> int:
-    """The last frame, going from `start` by `step` (+1 or -1), up to which a foot stays within within_m of where it
-    is at `start` (its points (x, y, z))."""
+def planted_until(track: list, start: int, step: int, speed_m: float, rise_m: float) -> int:
+    """The last frame, going from `start` by `step` (+1 or -1), up to which a foot stays planted (its points (x, y, z),
+    +Z up): each frame it moves less than speed_m along the floor and it stays less than rise_m above where it is at
+    `start`. A flat foot that creeps along the floor or settles onto it is planted; a foot that lifts or moves off is
+    not (art #49: a distance from the touching frame counted a creeping or settling foot as moving, and idle_ends then
+    slid it along the floor)."""
     p = start
-    while 0 <= p + step < len(track) and _v_len(_v_sub(track[p + step], track[start])) < within_m:
+    z0 = track[start][2]
+    while 0 <= p + step < len(track):
+        a, b = track[p], track[p + step]
+        if math.hypot(b[0] - a[0], b[1] - a[1]) >= speed_m or b[2] - z0 >= rise_m:
+            break
         p += step
     return p
 
 
-def idle_end_weights(frames: int, ends, feet: dict, fade: int, plant_m: float, step_m: float) -> dict:
+def idle_end_weights(frames: int, ends, feet: dict, fade: int, speed_m: float, rise_m: float, step_m: float,
+                     upper: bool = True) -> dict:
     """The weights of idle_ends over frames 0..frames (anim_edit.op_idle_ends; the lab's round D, blend_transitions in
     D:/prime-art-raw/research/2026-10-05-faces/lab/clay_d/clay_idle.py).
 
     ends: "start" and/or "end", the clip's ends that meet the idle. feet: {"L"/"R": [(x, y, z) per frame]}, the feet
     before the edit (world m). Returns
-      upper   per frame, the upper body's weight: 1 at a touching frame, a smoothstep to 0 over `fade` frames;
-      ends    per end: its touching frame and per side the foot's plan: "planted" (the foot stays within plant_m of
-              where it touches to the other end), "held" (fewer than 2 frames would be left: held to the other end),
-              "fade" (held while planted, then a smoothstep to 0 over up to `fade` frames: its window) or "step"
+      upper   per frame, the upper body's weight: 1 at a touching frame, a smoothstep to 0 over `fade` frames (all 0
+              with upper=False: the feet and legs only);
+      ends    per end: its touching frame and per side the foot's plan: "planted" (the foot stays planted, by
+              planted_until with speed_m and rise_m, to the other end), "held" (fewer than 2 frames would be left: held to the other end),
+              "fade" (held while planted, then a smoothstep to 0 over up to `fade` frames: its window; a foot that
+              stays low there is lifted to the step's arc above where it was planted, so it does not slide along the
+              floor) or "step"
               (planted all through, and the clip's other end meets another clip: the foot steps step_m high over
               min(fade, frames) frames where the other foot moves least);
       w       per end and side, the foot's weight per frame;
       feet    per side, the foot's weight per frame (the largest over the ends);
-      lift    per side, the step's height per frame (m).
+      lift    per side, the lift per frame (m): a step's arc, step_m * 4x(1 - x) for the foot's weight x, and in a
+              fade what the foot itself lacks of that arc.
     """
     n = frames
     ends = tuple(ends)
+    upper_on = upper
     upper = [0.0] * (n + 1)
     w = {e: {s: [0.0] * (n + 1) for s in "LR"} for e in ends}
     lift = {s: [0.0] * (n + 1) for s in "LR"}
@@ -864,10 +878,11 @@ def idle_end_weights(frames: int, ends, feet: dict, fade: int, plant_m: float, s
         far = n if d == 1 else 0
         far_idle = ("end" if e == "start" else "start") in ends
         for f in range(n + 1):
-            upper[f] = max(upper[f], 1.0 - smoothstep(d * (f - ft) / fade))
+            if upper_on:
+                upper[f] = max(upper[f], 1.0 - smoothstep(d * (f - ft) / fade))
         info = {"frame": ft, "upper_fade_to": ft + d * fade}
         for s in "LR":
-            p = planted_until(feet[s], ft, d, plant_m)
+            p = planted_until(feet[s], ft, d, speed_m, rise_m)
             rem = abs(far - p)
             fi = {"planted_to": p}
             if rem == 0 and not far_idle:
@@ -890,6 +905,11 @@ def idle_end_weights(frames: int, ends, feet: dict, fade: int, plant_m: float, s
                 span = min(fade, rem)
                 fi.update(mode="fade", window=sorted([p, p + d * span]))
                 w[e][s] = [1.0 - smoothstep(d * (f - p) / span) for f in range(n + 1)]
+                z0 = feet[s][p][2]
+                for f in range(n + 1):
+                    x = w[e][s][f]
+                    if 0.0 < x < 1.0:
+                        lift[s][f] = max(lift[s][f], step_m * 4.0 * x * (1.0 - x) - max(0.0, feet[s][f][2] - z0))
             info[s] = fi
         plan[e] = info
     feet_w = {s: [max(w[e][s][f] for e in ends) for f in range(n + 1)] for s in "LR"}

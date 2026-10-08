@@ -23,9 +23,10 @@ class RelaxStepsTest(unittest.TestCase):
                  {"op": "hands_relax", "curl_deg": CURL}, {"op": "hands_relax", "curl_deg": CURL, "cap": 1.5},
                  {"op": "thumb_in", "beside": "Index3", "side_cm": 1.6, "max_deg": 40},
                  {"op": "thumb_in", "from_clip": "Idle_Loop"},
-                 {"op": "idle_ends", "at": "both", "from_clip": "Idle_Loop", "fade_frames": 8, "plant_cm": 1.5}]
+                 {"op": "idle_ends", "at": "both", "from_clip": "Idle_Loop", "fade_frames": 8, "plant_speed_cm": 1.0,
+                  "plant_rise_cm": 1.5}, {"op": "idle_ends", "at": "both", "from_clip": "Idle_Loop", "upper": False}]
         self.assertEqual(em.check_steps(steps), [])
-        self.assertEqual(em.from_clips(steps), ["Idle_Loop", "Idle_Loop"])
+        self.assertEqual(em.from_clips(steps), ["Idle_Loop"] * 3)
 
     def test_bad_relax_steps_are_named(self) -> None:
         cases = [
@@ -46,6 +47,10 @@ class RelaxStepsTest(unittest.TestCase):
             ({"op": "idle_ends", "at": "start", "from_clip": "Idle_Loop", "knees_out_full_deg": 20},
              "knees_out_full_deg must be over knees_out_from_deg"),
             ({"op": "idle_ends", "at": "start", "from_clip": "Idle_Loop", "fade_frames": 0}, "fade_frames must be > 0"),
+            ({"op": "idle_ends", "at": "start", "from_clip": "Idle_Loop", "plant_speed_cm": 0},
+             "plant_speed_cm must be > 0"),
+            ({"op": "idle_ends", "at": "start", "from_clip": "Idle_Loop", "upper": "no"}, "upper must be a bool"),
+            ({"op": "idle_ends", "at": "start", "from_clip": "Idle_Loop", "plant_cm": 1.5}, "unknown parameter"),
         ]
         for step, want in cases:
             found = em.check_steps([step])
@@ -53,7 +58,8 @@ class RelaxStepsTest(unittest.TestCase):
 
     def test_params_fill_the_lab_defaults(self) -> None:
         p = em.params({"op": "idle_ends", "at": "end", "from_clip": "Idle_Loop"})
-        self.assertEqual((p["fade_frames"], p["plant_cm"], p["step_cm"]), (8, 1.5, 4.0))
+        self.assertEqual((p["fade_frames"], p["plant_speed_cm"], p["plant_rise_cm"], p["step_cm"], p["upper"]),
+                         (8, 1.0, 1.5, 4.0, True))
         self.assertEqual((p["knees_out_deg"], p["knees_out_from_deg"], p["knees_out_full_deg"]), (25.0, 25.0, 75.0))
         p = em.params({"op": "thumb_in"})
         self.assertEqual((p["beside"], p["side_cm"], p["max_deg"], p["frame"], p["from_clip"]),
@@ -113,10 +119,19 @@ class RelaxMathTest(unittest.TestCase):
         self.assertEqual(em.reach_lift((0, 0, 0.9), (1.2, 0, 0.0), 1.0), 0.0)
 
     def test_planted_until(self) -> None:
-        track = [(0.0, 0.0, 0.0)] * 5 + [(0.0, 0.01 * k, 0.0) for k in range(1, 6)]
-        self.assertEqual(em.planted_until(track, 0, 1, 0.015), 5)  # 1 cm at frame 5, 2 cm at frame 6
-        self.assertEqual(em.planted_until(track, 9, -1, 0.015), 8)
-        self.assertEqual(em.planted_until([(0, 0, 0)] * 4, 3, -1, 0.015), 0)
+        track = [(0.0, 0.0, 0.0)] * 5 + [(0.0, 0.02 * k, 0.0) for k in range(1, 6)]
+        self.assertEqual(em.planted_until(track, 0, 1, 0.01, 0.015), 4)  # 2 cm along the floor from frame 4 to 5
+        self.assertEqual(em.planted_until(track, 9, -1, 0.01, 0.015), 9)
+        self.assertEqual(em.planted_until([(0, 0, 0)] * 4, 3, -1, 0.01, 0.015), 0)
+        # Getup_Back's left foot: flat, creeping 4 mm a frame for 20 frames (8 cm): planted all the way back
+        creep = [(0.0, 0.004 * k, 0.028) for k in range(21)]
+        self.assertEqual(em.planted_until(creep, 20, -1, 0.01, 0.015), 0)
+        # Raise_In's left foot settles 2 cm onto the floor after the touching frame: still planted
+        settle = [(0.0, 0.0, 0.043), (0.0, 0.0, 0.036), (0.0, 0.0, 0.023)] + [(0.0, 0.0, 0.022)] * 6
+        self.assertEqual(em.planted_until(settle, 0, 1, 0.01, 0.015), 8)
+        # a heel that rises 1.8 cm is lifting off
+        lift = [(0.0, 0.0, 0.022 + 0.006 * k) for k in range(6)]
+        self.assertEqual(em.planted_until(lift, 0, 1, 0.01, 0.015), 2)
 
 
 def _track(frames, moves_from=None, speed=0.02):
@@ -127,7 +142,7 @@ def _track(frames, moves_from=None, speed=0.02):
 class IdleEndWeightsTest(unittest.TestCase):
     def test_a_start_whose_foot_steps_off(self) -> None:
         n = 20
-        w = em.idle_end_weights(n, ("start",), {"L": _track(n), "R": _track(n, 6)}, 8, 0.015, 0.04)
+        w = em.idle_end_weights(n, ("start",), {"L": _track(n), "R": _track(n, 6)}, 8, 0.01, 0.015, 0.04)
         self.assertEqual(w["upper"][0], 1.0)
         self.assertEqual(w["upper"][8], 0.0)
         self.assertGreater(w["upper"][4], 0.0)
@@ -145,11 +160,25 @@ class IdleEndWeightsTest(unittest.TestCase):
         self.assertAlmostEqual(max(w["lift"]["L"]), 0.04, places=3)
         self.assertEqual(w["feet"]["L"][0], 1.0)
         self.assertEqual(w["feet"]["L"][8], 0.0)
-        self.assertEqual(max(w["lift"]["R"]), 0.0)
+        # the right foot moves off along the floor: its fade lifts it on the step's arc (4 cm at the window's middle)
+        self.assertAlmostEqual(max(w["lift"]["R"]), 0.04, places=6)
+        self.assertEqual(w["lift"]["R"][6], 0.0)
+        # a foot that lifts higher than the arc by itself is not lifted more
+        up = [(0.0, -0.02 * max(0, f - 6), 0.1 * max(0, f - 6)) for f in range(n + 1)]
+        high = em.idle_end_weights(n, ("start",), {"L": _track(n), "R": up}, 8, 0.01, 0.015, 0.04)
+        self.assertEqual(high["ends"]["start"]["R"]["window"], [6, 14])
+        self.assertEqual(max(high["lift"]["R"]), 0.0)
+
+    def test_feet_only(self) -> None:
+        n = 20
+        w = em.idle_end_weights(n, ("start", "end"), {"L": _track(n), "R": _track(n)}, 8, 0.01, 0.015, 0.04,
+                                upper=False)
+        self.assertEqual(w["upper"], [0.0] * (n + 1))
+        self.assertEqual(w["feet"]["L"], [1.0] * (n + 1))
 
     def test_both_ends_hold_a_planted_foot(self) -> None:
         n = 24
-        w = em.idle_end_weights(n, ("start", "end"), {"L": _track(n), "R": _track(n)}, 8, 0.015, 0.04)
+        w = em.idle_end_weights(n, ("start", "end"), {"L": _track(n), "R": _track(n)}, 8, 0.01, 0.015, 0.04)
         for e in ("start", "end"):
             self.assertEqual(w["ends"][e]["L"]["mode"], "planted")
         self.assertEqual(w["feet"]["L"], [1.0] * (n + 1))
@@ -165,12 +194,12 @@ class IdleEndWeightsTest(unittest.TestCase):
     def test_an_end_landing_on_its_last_frames_is_held(self) -> None:
         n = 9  # a landing: the foot comes down on frame 8 and is still on frame 9
         track = [(0.0, 0.0, 0.3 - 0.0375 * f) for f in range(8)] + [(0.0, 0.0, 0.0), (0.0, 0.0, 0.0)]
-        w = em.idle_end_weights(n, ("end",), {"L": track, "R": track}, 8, 0.015, 0.04)
+        w = em.idle_end_weights(n, ("end",), {"L": track, "R": track}, 8, 0.01, 0.015, 0.04)
         self.assertEqual(w["ends"]["end"]["L"]["planted_to"], 8)
         self.assertEqual(w["ends"]["end"]["L"]["mode"], "fade")
         self.assertEqual(w["ends"]["end"]["L"]["window"], [0, 8])
         self.assertEqual(w["feet"]["L"][0], 0.0)
-        short = em.idle_end_weights(2, ("end",), {"L": track[-3:], "R": track[-3:]}, 8, 0.015, 0.04)
+        short = em.idle_end_weights(2, ("end",), {"L": track[-3:], "R": track[-3:]}, 8, 0.01, 0.015, 0.04)
         self.assertEqual(short["ends"]["end"]["L"]["mode"], "held")  # fewer than 2 frames left: held all through
         self.assertEqual(short["feet"]["L"], [1.0, 1.0, 1.0])
 

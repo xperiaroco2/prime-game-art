@@ -1267,9 +1267,12 @@ def op_idle_ends(fr: Frames, p: dict, target: Target):
       upper body  the idle's own change at its first frame (its relax base against its relaxed pose: each bone's basis
                   rotation change on Shoulder, UpperArm, Neck, Head and Thumb1) in full at the touching frame, faded
                   to 0 over fade_frames (a smoothstep); the curled fingers go to the idle's own curl the same way;
+                  upper = false leaves the upper body and the fingers alone (the package clips keep their hold);
       feet        each foot moved and turned to where the idle has it relative to Root, held while the clip keeps it
-                  planted (within plant_cm of the touching frame), then faded out over up to fade_frames; a foot
-                  planted all through a clip whose other end meets another clip steps (step_cm high);
+                  planted (moving under plant_speed_cm a frame along the floor and rising under plant_rise_cm above
+                  the touching frame), then faded out over up to fade_frames; a foot planted all through a clip
+                  whose other end meets another clip steps (step_cm high); no edited Foot or Toe head goes lower than
+                  both its own height before the edit and the idle's standing height (the foot is raised);
       Body        lifted by the idle's stance lift times the feet's mean weight, cut where a leg would not reach;
       legs        the two-bone IK, the knee towards the foot's forward at full weight and the clip's own knee at 0, the
                   thigh's and the shin's roll matched to the idle's at the touching frame, the knees swung out in a
@@ -1294,9 +1297,15 @@ def op_idle_ends(fr: Frames, p: dict, target: Target):
     rel = {s: ref_r.P["Root"].inverted() @ ref_r.P[f"Foot.{s}"] for s in "LR"}
     pre = [_Pose(rig, B) for B in fr.basis]
     tracks = {s: [tuple(q.head(f"Foot.{s}")) for q in pre] for s in "LR"}
-    plan = em.idle_end_weights(n, ends, tracks, fade, p["plant_cm"] / 100.0, p["step_cm"] / 100.0)
+    plan = em.idle_end_weights(n, ends, tracks, fade, p["plant_speed_cm"] / 100.0, p["plant_rise_cm"] / 100.0,
+                               p["step_cm"] / 100.0, p["upper"])
     wf, wu = plan["feet"], plan["upper"]
     up_arm = rig.Wi.to_3x3() @ UP  # world up in armature units: 1 m of lift
+    # the floor: a correction held from the touching frame sinks a foot that settles after it (Raise_In, Raise_Out);
+    # no edited Foot or Toe head goes lower than both its own height before the edit and the idle's standing height
+    joints = {s: (f"Foot.{s}", f"Toe.{s}") for s in "LR"}
+    stand = {j: ref_r.head(j).z for s in "LR" for j in joints[s]}
+    lows = [{j: min(q.head(j).z, stand[j]) for s in "LR" for j in joints[s]} for q in pre]
     delta = {}
     for e in ends:
         ft = plan["ends"][e]["frame"]
@@ -1342,8 +1351,14 @@ def op_idle_ends(fr: Frames, p: dict, target: Target):
             dp, dr = foot_delta(s, f)
             F = pose.P[f"Foot.{s}"]
             q = Quaternion().slerp(dr, w) @ rc.rot(F)
-            pose.set_arm(f"Foot.{s}", Matrix.Translation(F.translation + dp * w + up_arm * plan["lift"][s][f])
-                         @ q.to_matrix().to_4x4())
+            loc = F.translation + dp * w
+            pose.set_arm(f"Foot.{s}", Matrix.Translation(loc) @ q.to_matrix().to_4x4())
+            need = max(lows[f][j] - pose.head(j).z for j in joints[s])
+            rise = max(0.0, need) + plan["lift"][s][f]  # a step lifts the foot off its floor, not off a sunk foot
+            if rise > 0.0:
+                pose.set_arm(f"Foot.{s}", Matrix.Translation(loc + up_arm * rise) @ q.to_matrix().to_4x4())
+            if need > 0.0:
+                notes[f"floor_raise_mm.{s}"] = _r(need * 1000, 2)
         wb = (wf["L"][f] + wf["R"][f]) / 2.0
         if wb > 0.0:
             want = lift * wb
@@ -1408,13 +1423,36 @@ def op_idle_ends(fr: Frames, p: dict, target: Target):
 
     for e in ends:  # the legs' roll at each touching frame, against the idle
         solve(plan["ends"][e]["frame"], measure=e)
-    out, notes, gap = [], {}, 0.0
+    out, notes, gap, feet = [], {}, 0.0, []
     for f in range(n + 1):
         pose, nt = solve(f)
         if nt:
             notes[f] = nt
         gap = max([gap] + [_ankle_gap(legs, pose, leg) for leg in LEGS])
+        feet.append({j: pose.head(j) for s in "LR" for j in joints[s]})
         out.append(pose.B)
+    # the feet on the floor: how far a foot sinks below its floor (Foot or Toe head, see `lows`; 0 unless the IK pulls
+    # it) and how far the edit itself slides a foot along the floor from one frame to the next where the clip keeps it
+    # still (under 5 mm a frame before the edit) and it stands (its head within 0.5 cm of the idle's standing height
+    # on both frames: not a step or a foot in the air)
+    floor = {}
+    for s in "LR":
+        fj = joints[s][0]
+        below = max([0.0] + [lows[f][j] - feet[f][j].z for f in range(n + 1) if wf[s][f] > 0.0 for j in joints[s]])
+        slide, at = 0.0, None
+        for f in range(1, n + 1):
+            if max(wf[s][f], wf[s][f - 1]) <= 0.0 or max(feet[f][fj].z, feet[f - 1][fj].z) > stand[fj] + 0.005:
+                continue
+            own = pre[f].head(fj) - pre[f - 1].head(fj)
+            if math.hypot(own.x, own.y) >= 0.005:
+                continue
+            c1, c0 = feet[f][fj] - pre[f].head(fj), feet[f - 1][fj] - pre[f - 1].head(fj)
+            mv = math.hypot(c1.x - c0.x, c1.y - c0.y)
+            if mv > slide:
+                slide, at = mv, f
+        raised = [nt[f"floor_raise_mm.{s}"] for nt in notes.values() if f"floor_raise_mm.{s}" in nt]
+        floor[s] = {"below_mm_max": _r(below * 1000, 3), "raised_mm_max": _r(max(raised, default=0.0), 2),
+                    "slide_mm_max": _r(slide * 1000, 2), "slide_frame": at}
     res = fr.copy(out)
     touch = {}
     for e in ends:
@@ -1428,7 +1466,7 @@ def op_idle_ends(fr: Frames, p: dict, target: Target):
                  "ends": plan["ends"], "touching": touch,
                  "leg_twist_deg": {f"{e}.{s}": [_r(v[0]), _r(v[1])] for (e, s), v in twist.items()},
                  "ankle_gap_mm_max": _r(gap * 1000, 4), "knee_out_deg_max": _r(max(knees, default=0.0), 1),
-                 "lift_cut_mm_max": _r(max(cuts, default=0.0), 2),
+                 "lift_cut_mm_max": _r(max(cuts, default=0.0), 2), "upper": p["upper"], "floor": floor,
                  "step_lift_cm": {s: _r(max(plan["lift"][s]) * 100, 2) for s in "LR"}}
 
 

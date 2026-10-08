@@ -2,8 +2,11 @@
 Idle_Loop on the men's and women's pack originals through the MVP set's own steps (tools/blender/anim_sets/mvp.toml):
 the right foot turned in to about +3.7 degrees with the ankle on its foot, the feet at hip width and planted, the
 shoulders down, the head level, open hands with the thumb in, the loop closed without a pop; each op by itself on the
-raw idle; the women's arm offset re-checked by its auto search on the relaxed hands; and idle_ends on the jump's
-take-off and landing, whose touching frames then stand exactly in the relaxed idle's first frame.
+raw idle; the women's arm offset re-checked by its auto search on the relaxed hands; and idle_ends with the set's own
+steps on the jump's take-off and landing and the raise's kneel and stand (a foot that settles, a step), and at both
+ends of the raw idle played as a one-shot (planted all through, as the pickup), with and without the upper body: the
+touching frames stand exactly in the relaxed idle's first frame, the ankles stay on the feet on every frame the edit
+weighs, no foot sinks into the floor and none slides where the clip keeps it still.
 
 This file is also the Blender side of the test: run inside Blender (`blender -b ... --python <this file> -- <out>`)
 it does the edits and writes their numbers to <out>/relax.json, which the unittest reads. Skipped when Blender or the
@@ -87,20 +90,35 @@ if not IN_BLENDER:
 
         def test_idle_ends(self) -> None:
             for body in ("men", "women"):
-                for clip, end in (("Jump_Start", "start"), ("Jump_Land", "end")):
-                    t = self.r[body]["ends"][clip]
-                    after = t["touching"][end]["after"]
-                    for s in "LR":
-                        self.assertLess(after[f"foot_{s}_cm"], 0.01, (body, clip))
-                        self.assertLess(after[f"foot_{s}_deg"], 0.05, (body, clip))
-                    self.assertLess(after["fingers_max_deg"], 0.05, (body, clip))  # the idle's curl
-                    before = t["touching"][end]["before"]
-                    # the upper body takes the idle's own change: against the relaxed idle it stands as far as it stood
-                    # from the idle before the edit (the clip's own head and arms)
-                    self.assertAlmostEqual(after["upper_max_deg"], before["upper_max_deg"], delta=0.05, msg=(body, clip))
-                    self.assertGreater(t["ends"][end]["R"]["turn_deg"], 30.0, (body, clip))  # the right foot turned in
-                    self.assertLess(t["ankle_gap_mm_max"], 15.0, (body, clip))
+                for clip, t in self.r[body]["ends"].items():
+                    for end, touch in t["touching"].items():
+                        after = touch["after"]
+                        for s in "LR":
+                            self.assertLess(after[f"foot_{s}_cm"], 0.01, (body, clip, end))
+                            self.assertLess(after[f"foot_{s}_deg"], 0.05, (body, clip, end))
+                        if t["upper"]:
+                            self.assertLess(after["fingers_max_deg"], 0.05, (body, clip, end))  # the idle's curl
+                            # the upper body takes the idle's own change: against the relaxed idle it stands as far
+                            # as it stood from the idle before the edit (the clip's own head and arms)
+                            self.assertAlmostEqual(after["upper_max_deg"], touch["before"]["upper_max_deg"],
+                                                   delta=0.05, msg=(body, clip, end))
+                        self.assertGreater(t["ends"][end]["R"]["turn_deg"], 30.0, (body, clip))  # turned in
+                    # every frame the edit weighs keeps the ankles on the feet, no foot below its floor (its own
+                    # height before the edit or the idle's standing height), none slid where the clip keeps it still
                     self.assertLess(t["edited_ankle_gap_mm_max"], 0.05, (body, clip))
+                    for s in "LR":
+                        self.assertLess(t["floor"][s]["below_mm_max"], 0.01, (body, clip, s))
+                        self.assertLess(t["floor"][s]["slide_mm_max"], 2.0, (body, clip, s))
+                self.assertLess(self.r[body]["ends"]["Jump_Start"]["ankle_gap_mm_max"], 15.0)  # art #33's resampling
+                # a foot that settles onto the floor after the touching frame is planted, not faded along the floor
+                self.assertEqual(self.r[body]["ends"]["Raise_In"]["ends"]["start"]["L"]["mode"], "step", body)
+                self.assertEqual(self.r[body]["ends"]["Raise_Out"]["ends"]["end"]["L"]["mode"], "step", body)
+                self.assertGreater(self.r[body]["ends"]["Raise_In"]["floor"]["L"]["raised_mm_max"], 5.0, body)
+                both = self.r[body]["ends"]["Idle_both"]
+                self.assertEqual(both["edited_frames"], both["frames"] + 1)  # planted all through, both ends
+                feet_only = self.r[body]["ends"]["Idle_both_feet"]
+                self.assertFalse(feet_only["upper"])
+                self.assertLess(feet_only["upper_changed_deg"], 1e-3, body)  # the arms and fingers untouched
                 self.assertIn("idle_ends", self.r[body]["errors"]["loop"])
                 self.assertIn("not built yet", self.r[body]["errors"]["unbuilt"])
 
@@ -144,7 +162,7 @@ def _blender_main(argv: list[str]) -> None:
     for body, path in (("men", men), ("women", women)):
         for o in list(bpy.data.objects):
             bpy.data.objects.remove(o, do_unlink=True)
-        char, acts = setup(path, ["Idle_Loop", "Idle_Talking_Loop", "Jump_Start", "Jump_Land"])
+        char, acts = setup(path, ["Idle_Loop", "Idle_Talking_Loop", "Jump_Start", "Jump_Land", "Fixing_Kneeling"])
         target = ae.Target(char)
         target.measure  # noqa: B018 (in the rest pose)
         rig = target.rig
@@ -197,21 +215,40 @@ def _blender_main(argv: list[str]) -> None:
                              + [{"op": "arm_offset", "abduct_deg": "auto"}], target, body)
             r["arm_auto"] = probe.info["steps"][-1]
 
-        # idle_ends on the jump: the take-off starts in the idle, the landing ends in it
+        # idle_ends with the set's own steps: the jump's take-off starts in the idle and its landing ends in it; the
+        # raise kneels down from it (a foot that settles after the touching frame, a step) and stands up into it; and
+        # the raw idle played as a one-shot meets it at both ends (planted all through, as the pickup), also with the
+        # feet and legs only (the package clips)
         target.clips = {"Idle_Loop": idle}
         ends = r["ends"] = {}
         legs = ae._Legs(rig)
-        for clip, end in (("Jump_Start", "start"), ("Jump_Land", "end")):
-            fr = ae.Frames.from_action(acts[clip], rig, False)
-            fr = ae.apply(fr, [s for s in mvp[clip]["edits"] if s["op"] != "idle_ends"], target, body)
-            done = ae.apply(fr, [{"op": "idle_ends", "at": end, "from_clip": "Idle_Loop"}], target, body)
+        one_shot = ae.Frames(raw.rig, [{n: m.copy() for n, m in b.items()} for b in raw.basis], raw.fps, False, {})
+        cases = [(c, ae.Frames.from_action(acts[mvp[c]["source"].split(":")[1]], rig, False), mvp[c]["edits"])
+                 for c in ("Jump_Start", "Jump_Land", "Raise_In", "Raise_Out")]
+        cases += [("Idle_both", one_shot, [{"op": "idle_ends", "at": "both", "from_clip": "Idle_Loop"}]),
+                  ("Idle_both_feet", one_shot, [{"op": "idle_ends", "at": "both", "from_clip": "Idle_Loop",
+                                                 "upper": False}])]
+        for clip, fr, steps in cases:
+            fr = ae.apply(fr, [s for s in steps if s["op"] != "idle_ends"], target, body)
+            done = ae.apply(fr, [s for s in steps if s["op"] == "idle_ends"], target, body)
             rep = done.info["steps"][-1]
-            plan = rep["ends"][end]
-            edited = [f for f in range(done.frames + 1)
-                      if any(plan[s]["mode"] in ("planted", "held") or (plan[s].get("window") and min(plan[s]["window"])
-                             <= f <= max(plan[s]["window"])) for s in "LR")]
+            n = done.frames
+            edited = set()  # every frame where either foot's weight is over 0
+            for end, plan in rep["ends"].items():
+                for s in "LR":
+                    win = plan[s].get("window")
+                    if plan[s]["mode"] in ("planted", "held"):
+                        edited |= set(range(n + 1))
+                    else:
+                        edited |= set(range(0, max(win) + 1) if end == "start" else range(min(win), n + 1))
             gaps = [max(ae._ankle_gap(legs, ae._Pose(rig, done.basis[f]), leg) for leg in ae.LEGS) for f in edited]
-            ends[clip] = {**rep, "edited_ankle_gap_mm_max": 1000 * max(gaps, default=0.0)}
+            ends[clip] = {**rep, "frames": n, "edited_frames": len(edited),
+                          "edited_ankle_gap_mm_max": 1000 * max(gaps, default=0.0)}
+            if not rep["upper"]:
+                bones = [b for b in rig.order if b in ae.UPPER_DELTA or ae._curled(b)]
+                ends[clip]["upper_changed_deg"] = max(
+                    math.degrees(a[b].to_quaternion().rotation_difference(c[b].to_quaternion()).angle)
+                    for a, c in zip(fr.basis, done.basis) for b in bones)
         errors = r["errors"] = {}
         for key, fr, tgt_clips in (("loop", raw, {"Idle_Loop": idle}), ("unbuilt", fr, {})):
             target.clips = tgt_clips
