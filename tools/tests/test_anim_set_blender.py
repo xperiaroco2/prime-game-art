@@ -1,7 +1,8 @@
 """An animation set built in background Blender (tools/blender/anim_set.py, art #33): a small set of a UAL loop, a
-pack one-shot retimed and its mirror is built on the men's donor, saved as a character the export accepts and read
-back: the actions are the exported clips alone, at 30 fps, an open UAL loop is closed one frame longer, the retime
-and the mirror are in the report. Skips without Blender, the Ultimate Modular pack or UAL1 (raw folder)."""
+pack one-shot retimed, its mirror and a one-shot placed after it is built on the men's donor, saved as a character the
+export accepts and read back: the actions are the exported clips alone, at 30 fps, an open UAL loop is closed one
+frame longer, the retime, the mirror and the placement are in the report. Skips without Blender, the Ultimate
+Modular pack or UAL1 (raw folder)."""
 
 from __future__ import annotations
 
@@ -37,6 +38,12 @@ name = "Knife_Swing"
 source = "pack:Sword_Slash"
 loop = false
 edits = [{ op = "retime", seconds = 0.45 }]
+[[clips]]
+name = "Punch_After"
+source = "pack:Punch_Right"
+loop = false
+export = false
+place_after = "Knife_Swing"
 """
 
 READ_BACK = """import bpy, json, sys
@@ -86,6 +93,12 @@ class AnimSetBuildTest(unittest.TestCase):
         self.assertEqual(self.report["upper_bones"][0], "Torso")
         self.assertIn("Head", self.report["upper_bones"])
         self.assertNotIn("UpperLeg.L", self.report["upper_bones"])
+
+    def test_a_clip_placed_after_another_stands_on_its_feet(self) -> None:
+        placed = self.report["clips"]["Punch_After"]  # art #49: moved to Knife_Swing's last feet, not recentred
+        self.assertEqual((placed["placed_by"], placed["recentred_m"]), ("place_after", 0.0))
+        self.assertEqual(placed["place_after"]["clip"], "Knife_Swing")
+        self.assertLess(placed["place_after"]["feet_seam_cm"]["mean_offset"], 0.01)
 
     def test_an_open_ual_loop_is_closed_one_frame_longer(self) -> None:
         idle = self.report["clips"]["Idle_Loop"]
