@@ -143,10 +143,11 @@ needs = [{ need = "Jump: the landing (upper body while moving, full standing)", 
 name = "Shove_Stumble"
 source = "tm:shove-stumble"
 loop = false
-edits = [{ op = "trim", start_s = 0.37, end_s = 1.83 }, { op = "heading", facing = "start" },
+edits = [{ op = "trim", start_s = 0.37, end_s = 1.83 }, { op = "retime", seconds = 0.69 }, { op = "heading", facing = "start" },
          { op = "in_place", mode = "path" }, { op = "arm_offset", abduct_deg = 12 }]
-# arm_offset: the hanging hands went into the thighs (6.8 cm men, 7.0 women); auto reached 0 at 12 degrees on the men
-# and 4.5 cm at its limit of 12 on the women
+# retime (art #65): 1.47 s to 0.7 s (21 frames, the nearest to 0.69 s at 30 fps), so the steps match the 2.25 m/s at
+# which the game moves the pushed body. arm_offset: the hanging hands went into the thighs (7.0 cm men, 6.6 women after
+# the retime); 12 degrees takes them out on the men and to 4.3 cm on one frame on the women (art #33: 4.5 on 4 frames)
 needs = [{ need = "Being pushed: the stumble (the game moves the body)", no = 10, layer = "full" }]
 
 [[clips]]

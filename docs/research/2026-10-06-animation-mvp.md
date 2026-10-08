@@ -117,7 +117,7 @@ Times are in seconds; "w" means the women only. The last column holds what is le
 | 7 | Turn in place | `Turn_Left`, `Turn_Right` | TTM turn-left-90 | facing to the start, trim 0.13-1.73, turn 112.7 to 90 deg, retime 1.2 s; w: arms out 5.6 deg; right = mirror | pass, note: two clear steps; the pivot foot slides 18-20 cm/s mean (147-152 max) | the lower-body turn logic (below) |
 | 8 | Head pitch | none | | | none | procedural |
 | 9 | Jump | `Jump_Start`, `Jump_Air_Loop`, `Jump_Land` | UAL Jump_Start, Jump_Loop, Jump_Land | start: trim 0.03-0.40, retime 0.25 (0.267: whole frames); land: trim 0-0.5, retime 0.3 | pass, note: the start opens in a crouch and the landing ends in one; the take-off's toes dip 1.9 (men) and 2.3 cm (women) for 4 frames, past the design's -2 cm line on the women (resampling loses the retarget's toe clamp); the air loop's right foot snapped 53-55 degrees and back in one frame (4 times a loop on the men, twice on the women) until the floor clamp was made to fade (131c347): now one held pose, its largest frame step 2.6/2.9 degrees; w: hands 7.5 cm in the thighs at the landing | the game blends in and out, and lifts the body (the clips are in place; the air loop's lowest vertex is 5.3/5.5 cm under the floor line, which the lift hides) |
-| 10 | Being pushed | `Shove_Stumble` | TTM shove-stumble | trim 0.37-1.83, facing to the start, in place along its path, arms out 12 deg | pass, note: the arms fly forward, two steps back, a crouch; w: hands 4.5 cm in the thighs at the crouch | contact detection; its feet travel 1.06 (men) and 1.15 m/s (women), half the push speed of 2.25 |
+| 10 | Being pushed | `Shove_Stumble` | TTM shove-stumble | trim 0.37-1.83, retime 0.7 s (art #65: the engineer's 0.69 s, whole frames), facing to the start, in place along its path, arms out 12 deg | pass, note: the arms fly forward, two steps back, a crouch; w: hands 4.5 cm in the thighs at the crouch | contact detection; its feet travel 1.06 (men) and 1.15 m/s (women), half the push speed of 2.25 |
 | 11 | Pushing | `Push_Upper_Loop` (upper) | UAL Push_Loop | w: hands apart 4.3 deg (6.09 cm inside each other to a 1.28 cm gap); **lean 30 deg from Torso** (new) | pass after the lean: over the idle and the jog it leans into the push, palms forward at face height | upper layer at a low weight while in contact; the full-body clip bends 76 deg: a layer only |
 | 12 | One-handed item | none | | | none | grip keys |
 | 13 | Knife swing | `Knife_Swing` (upper) | pack Sword_Slash | retime 0.45 (0.467) | pass | upper layer on Swung (a OneShot); the women's source is 1.3 s, so 2.8x faster |
@@ -446,7 +446,8 @@ The manager runs a re-roll batch; no prompt names a game or a character. In orde
   call). Decided (art #65): a side grip at 0.45 m, the lift and the put-down ending and starting in it.
 - **The package pick-up and put-down** ship as stopgaps (the end pose does not hold a package): blend into the carry
   in the game, or hand-key an end pose (recommended, small).
-- **The shove's speed.** Retime it to 2.25 m/s (0.69 s) so its steps match the push, or keep 1.47 s?
+- **The shove's speed.** Retime it to 2.25 m/s (0.69 s) so its steps match the push, or keep 1.47 s? Decided (art
+  #65): 0.69 s, built as 0.7 s (21 frames at 30 fps).
 - **The push's lean** (new): 30 degrees from Torso, judge it in `pairs/<body>/mvp_layers.mp4`. More lean lowers the
   hands toward the chest, less brings them up toward the head.
 - **The stopgaps in the downed chain** (the roll-up, the crawl, the get-up from all fours): ship them for the first
