@@ -20,7 +20,7 @@ licence = "owned-paid-output"
 licence_url = "https://www.meshy.ai/terms-of-use"
 public_repo_ok = true
 ai_generated = true
-approved_by = ["SwiftySinister", "xperiaroco2"]
+approved_by = ["xperiaroco2"]
 approved_at = 2026-10-10
 approval_pr = "https://github.com/xperiaroco2/prime-game-art/pull/12"
 
@@ -60,7 +60,7 @@ TOML puts every key after a `[table]` header into that table, so the top-level k
 | `credit` | The attribution line; required for `CC-BY-4.0` |
 | `public_repo_ok` | `true` only if the asset may enter the public game repo; never with `restricted` |
 | `ai_generated` | `true` for any AI generator's output |
-| `approved_by` | GitHub logins of the approvers: the designer for the look, and the engineer where he decided (taste, money, licences); `[]` until approved. The tech approval is the approving PR's merge after the gate (the trust model, `docs/decisions/2026-10-03-trust-model.md`) |
+| `approved_by` | GitHub logins of the approvers: the engineer for the look (he acts as the designer; earlier manifests may also list `SwiftySinister`), and for what he decided (taste, money, licences); `[]` until approved. The tech approval is the approving PR's merge after the gate (the trust model, `docs/decisions/2026-10-03-trust-model.md`) |
 | `approved_at` | A TOML date or date-time; `""` until approved |
 | `approval_pr` | The art-repo pull request URL that approved it; `""` until approved |
 

@@ -34,7 +34,7 @@ What he wants from the process:
 
    It records each decision with a short reason in the plan issue's report, and the engineer can overrule any of them.
 3. **The manager stops and asks**, in one batched message with options and a recommendation, about:
-   - look and taste (with the designer);
+   - look and taste (the engineer, who acts as the designer since the amendment of 2026-10-08);
    - money: purchases, subscriptions, paid generation beyond the plan's credits;
    - licences outside the allowlist;
    - game-design rules;
@@ -65,3 +65,13 @@ What he wants from the process:
   which humans merge.
 - The first decisions under this model are the wave 1 questions the manager answered itself (questions 4 to 12 and 14
   of the wave 1 review page). They are listed on #16.
+
+## Amendment (2026-10-08)
+The designer, @SwiftySinister, is not active and may not return. The engineer (xperiaroco2) acts as the designer and
+approves the look (his decision on #16:
+https://github.com/xperiaroco2/prime-game-art/issues/16#issuecomment-6058026953).
+- Every "with the designer" in this decision and in the documents that cite it now means the engineer alone.
+- The decision itself is unchanged: the engineer is still asked about look and taste in one batched message, and the
+  art manager still merges after the gate.
+- `approved_by` in a manifest names the engineer for the look; earlier manifests that list the designer stay as they
+  are.

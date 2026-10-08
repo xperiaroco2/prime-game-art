@@ -4,7 +4,7 @@ Faces are our own parts: eyes, brows and mouths, shared by both body types (the 
 designed as one consistent set (the engineer's decision on xperiaroco2/prime-game#165). The face kit (art #21) makes
 several **style families** to choose from: each one design language (line weight, curvature, depth, colours, size
 against the head) with every expression the game needs, shown on four bald pack heads in two skin tones, close up and
-at game distance. The engineer and the designer (@SwiftySinister) choose the style on a review page; the kit does not
+at game distance. The engineer (who acts as the designer) chooses the style on a review page; the kit does not
 choose. The generator is `tools/blender/um/facekit.py` (art #21 owns it since art #17 ported it; `docs/assembly.md`).
 
 ## The command
@@ -26,7 +26,7 @@ the Head bone's frame during the strip (see Checks). A full run (7 families, 9 e
 two clips) took 494 s before the review fixes added the motion measure and the spacing sheet. Review images go outside
 git (`D:/prime-art-raw/review/...`), never into the repo.
 
-The seven families of `faces/styles.json` (the choice is the engineer's and the designer's):
+The seven families of `faces/styles.json` (the choice is the engineer's):
 
 | Family | From the final test | Eyes | Brows | Mouth |
 |---|---|---|---|---|
@@ -221,7 +221,7 @@ call per part). They keep the pack's faceted, lit look, need no UV work on 21 he
 cost about 1,000 triangles per face, well inside the character budget. A face texture only pays off for the painted
 family (F6), and then only with a UV projection per head and a shader; if the engineer picks F6, the same drawings can
 be baked into a texture later. The contract text "eyes and mouth animate by texture frames" would change to "by
-switching rigid pieces" (the contract ADR with the designer, a later wave).
+switching rigid pieces" (the contract ADR with the engineer, a later wave).
 
 ## Gotchas
 

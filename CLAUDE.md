@@ -7,8 +7,8 @@ the engineer's decisions: xperiaroco2/prime-game#165 and the stage plan issues h
 `docs/pipeline.md`; the foundation ADR: `docs/decisions/2026-10-02-art-repo-foundation.md`; the trust model:
 `docs/decisions/2026-10-03-trust-model.md`. The engineer (xperiaroco2) writes no code. He decides taste, money and
 large or hard-to-reverse questions (the full list is under "Decisions" below) and trusts the art manager with
-the rest; the designer (@SwiftySinister) approves
-the look. Agents write everything else, verify it from the command line, and the art manager merges it.
+the rest. He also acts as the designer and approves the look (the designer @SwiftySinister is not active; the trust
+model's amendment of 2026-10-08). Agents write everything else, verify it from the command line, and the art manager merges it.
 
 ## Rules
 - **Paid services and downloads.** Two standing permissions from the engineer (2026-10-03) need no separate yes:
@@ -100,6 +100,8 @@ Windows: `tools\run.cmd <command>`. Git Bash: `tools/run.sh <command>`. Python 3
 | `anim-review <inventory\|clips\|pairs\|rates\|sheets\|table\|all> [--body] [--sources] [--clips]` | Judges animations in motion: inventory, measures, strips, MP4 clips, side-by-side pairs, the game's speeds (`rates`), sheets, table (`docs/animations.md`) |
 | `anim-set [--set mvp] [--body] [--clips] [--out] [--no-export] [--no-godot]` | Builds an animation set per body type from its settings (sources, clip edits, loops, layers): `.blend`, GLB, godot-check and the set's checks into `<raw>/anim-sets/<set>/` (`docs/animations.md`) |
 | `workflow-check <script.js>...` | Refuses a workflow script that breaks the cost rules (LF, `meta`, `node --check`, `agentType`, effort, models, `BOUNDS`, the 180 s wait rule); the manager runs it before every launch (`docs/agents.md`) |
+| `wait <log> [--max S]` | Waits at most 180 s for a background run's last log line `exit=<n>`; prints its `verify:` lines or last 8 lines and returns n, 124 while it runs (`docs/agents.md`, rule 1) |
+| `cost [--since ISO] [--session PREFIX...] [--project DIR]` | Per-agent calls, context, cache rewrites after idle gaps and list $ from this checkout's Claude Code transcripts; `tools/out/cost/cost.json` (`docs/agents.md`, rule 8) |
 | `meshy`, `raw-backup` | The Meshy client for approved batches; copy chosen raw files to OneDrive (`docs/meshy.md`) |
 | `contract`, `check`, `rename-bones` | Generate the contract from Godot; check a model against it; rename a rig's bones (`docs/contract.md`) |
 
@@ -160,7 +162,7 @@ is estimated before it starts; a launch over about 5% of the week stops after it
 (xperiaroco2/prime-game#302).
 
 Stop and ask the engineer, in one batched message with options and a recommendation, before:
-- anything about the look or taste (with the designer);
+- anything about the look or taste (the engineer approves the look);
 - money: purchases, subscriptions, paid generation beyond the plan's credits;
 - licences outside the allowlist; game-design rules;
 - large or hard-to-reverse changes:

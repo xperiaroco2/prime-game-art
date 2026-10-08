@@ -3,12 +3,13 @@
 > Amended 2026-10-03 by `2026-10-03-trust-model.md`: the art manager merges into `main` after the gate; Meshy
 > within the plan's credits and free official downloads run under standing permissions; Godot pictures come from an
 > off-screen window.
+> Amended 2026-10-08 by the same trust model's amendment: the engineer acts as the designer and approves the look.
 
 - **Status:** Accepted for this repository's own tooling (sections 1 to 6: layout, runner, hooks, raw folders,
   manifest, approval). **Proposed** for the character contract (section 7) until the body variants are chosen.
 - **Date:** 2026-10-02
 - **Deciders:** the engineer (answers on xperiaroco2/prime-game#165); technical choices by the art department's manager
-  session under the engineer's delegation, announced on #165 and revertible. The look is decided with the designer.
+  session under the engineer's delegation, announced on #165 and revertible. The look is decided with the designer (since 2026-10-08 the engineer acts as the designer).
 
 ## Context
 prime-game (public, Godot 4.7.2) needs third-person bodies for up to 10 players, first-person arms, clothing,
@@ -52,7 +53,7 @@ the public game repo; an agent pushes to `main` here, which GitHub Free cannot p
    and credits, recorded in the batch file and on the issue; the Meshy key comes from `MESHY_API_KEY` and is never
    printed, logged or committed. Prompts never name other games or characters and never upload their screenshots; no
    personal photos. An asset is approved by a PR here: the designer approves the look, the engineer the tech, the
-   engineer merges. Approved assets enter the game through a game-repo PR by the game's own workflow; this repo never
+   engineer merges (since 2026-10-08 the engineer approves the look, as the designer; the art manager merges). Approved assets enter the game through a game-repo PR by the game's own workflow; this repo never
    edits game code.
 7. **The character contract (Proposed).** One shared humanoid skeleton with the bone names of Godot's
    `SkeletonProfileHumanoid` (generated from the pinned Godot, never typed), five-finger chains, T-pose rest, glTF Y-up,
