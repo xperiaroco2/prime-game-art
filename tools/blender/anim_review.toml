@@ -57,7 +57,8 @@ file = "2026-10-b4-animations/crawl-motion/text_to_motion-clip.fbx"
 label = "TTM"
 map = "smpl_um.toml"
 own = "SMPL-H mannequin"
-in_place = ["crawl", "backward-jog", "strafe-left", "shove-stumble", "getup-from-all-fours"]
+in_place = ["crawl", "backward-jog", "strafe-left", "shove-stumble", "getup-from-all-fours", "backward-run",
+            "strafe-left-r2", "crawl-r2"]
 [libraries.tm.clips]
 crawl = "2026-10-b4-animations/crawl-motion/text_to_motion-clip.fbx"
 backward-jog = "2026-10-b5-anim-mvp/backward-jog/text_to_motion-clip.fbx"
@@ -67,6 +68,11 @@ shove-stumble = "2026-10-b5-anim-mvp/shove-stumble/text_to_motion-clip.fbx"
 package-lift = "2026-10-b5-anim-mvp/package-lift/text_to_motion-clip.fbx"
 rollup-to-all-fours = "2026-10-b5-anim-mvp/rollup-to-all-fours/text_to_motion-clip.fbx"
 getup-from-all-fours = "2026-10-b5-anim-mvp/getup-from-all-fours/text_to_motion-clip.fbx"
+# batch 6 (art #66): the A7 re-rolls, review candidates beside the MVP's stopgaps
+backward-run = "2026-10-b6-anim-rerolls/backward-run/text_to_motion-clip.fbx"
+strafe-left-r2 = "2026-10-b6-anim-rerolls/strafe-left-r2/text_to_motion-clip.fbx"
+rollup-to-all-fours-r2 = "2026-10-b6-anim-rerolls/rollup-to-all-fours-r2/text_to_motion-clip.fbx"
+crawl-r2 = "2026-10-b6-anim-rerolls/crawl-r2/text_to_motion-clip.fbx"
 
 # Animation sets (art #33; tools/blender/anim_sets/, docs/animations.md "Animation sets"): `tools/run.py anim-set`
 # builds and exports a set; the review plays its clips as "<set>:<clip>" ("mvp:Jog_Fwd_Loop"), built in the review's
