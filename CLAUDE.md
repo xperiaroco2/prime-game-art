@@ -169,3 +169,12 @@ Stop and ask the engineer, in one batched message with options and a recommendat
 - anything in the game repo;
 - loosening a rule in this file, the list above, the merge gate, the git hooks or the trust model itself.
   Tightening them needs no yes.
+
+## Manager rules (one set for every prime-game track)
+A manager session of this repo follows `D:\prime-game\docs\MANAGERS.md` (prime-game's main checkout beside this one;
+missing or unreadable: https://github.com/xperiaroco2/prime-game/blob/main/docs/MANAGERS.md). Read it whole at the
+session's start, before anything else, and again after a change to it reaches prime-game's `main`. It holds the mode
+and effort, the kickoff (no "ultracode"), the "For you:" block, the keep-alive, when to hand over and the handover
+comment with the ready kickoff the engineer pastes, and every launch's estimate with the check after a large
+launch's first phase (§9); where this file differs on those, it wins.
+Track: art. Plan issue: the current stage's `plan:` issue in this repo; the context: the app's context usage.
