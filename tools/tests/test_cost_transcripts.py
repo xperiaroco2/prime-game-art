@@ -95,6 +95,20 @@ class RunTest(unittest.TestCase):
             self.assertIn("claude-future-9", text)
             self.assertEqual(json.loads(out_file.read_text(encoding="utf-8"))["total"]["calls"], 7)
 
+    def test_empty_folder_prints_the_total_and_writes_json(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            empty = Path(tmp) / "empty"
+            empty.mkdir()
+            out_file = Path(tmp) / "cost.json"
+            args = argparse.Namespace(since=None, session=[], project=empty, json=out_file)
+            out = io.StringIO()
+            with contextlib.redirect_stdout(out):
+                self.assertEqual(cost.run(args), 0)
+            text = out.getvalue()
+            self.assertIn("no API calls", text)
+            self.assertIn("total: 0 agents, 0 calls", text)
+            self.assertEqual(json.loads(out_file.read_text(encoding="utf-8"))["agents"], [])
+
     def test_missing_folder(self) -> None:
         args = argparse.Namespace(since=None, session=[], project=FIXTURE / "nothing", json=Path("unused"))
         with self.assertRaises(common.Failure):

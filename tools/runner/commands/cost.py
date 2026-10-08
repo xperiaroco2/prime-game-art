@@ -275,7 +275,7 @@ def render(report: dict) -> list[str]:
          money(a["usd"]))
         for a in report["agents"]
     ]
-    widths = [max(len(head[i]), *(len(r[i]) for r in rows)) for i in range(len(head))]
+    widths = [max([len(head[i]), *(len(r[i]) for r in rows)]) for i in range(len(head))]
     right = {3, 4, 5, 6, 7, 8}
 
     def line(cells: tuple[str, ...]) -> str:
