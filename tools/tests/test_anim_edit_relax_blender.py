@@ -96,6 +96,7 @@ if not IN_BLENDER:
                         for s in "LR":
                             self.assertLess(after[f"foot_{s}_cm"], 0.01, (body, clip, end))
                             self.assertLess(after[f"foot_{s}_deg"], 0.05, (body, clip, end))
+                        self.assertLess(after["toes_max_deg"], 0.05, (body, clip, end))  # the idle's toes
                         if t["upper"]:
                             self.assertLess(after["fingers_max_deg"], 0.05, (body, clip, end))  # the idle's curl
                             # the upper body takes the idle's own change: against the relaxed idle it stands as far

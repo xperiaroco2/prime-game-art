@@ -1038,6 +1038,8 @@ def _ends_measure(pose: _Pose, ref: _Pose, fingers: list) -> dict:
     a = pose.P["Root"].inverted() @ pose.P[BODY]
     b = ref.P["Root"].inverted() @ ref.P[BODY]
     out["body_cm"] = _r((a.translation - b.translation).length * pose.rig.scale * 100, 3)
+    toes = [math.degrees(pose.brot(t).rotation_difference(ref.brot(t)).angle) for t in ("Toe.L", "Toe.R") if t in pose.B]
+    out["toes_max_deg"] = _r(max([min(d, 360.0 - d) for d in toes], default=0.0), 2)
     for key, bones in (("upper", UPPER_DELTA), ("fingers", fingers)):
         diffs = {n: math.degrees(pose.brot(n).rotation_difference(ref.brot(n)).angle) for n in bones if n in pose.B}
         diffs = {n: min(d, 360.0 - d) for n, d in diffs.items()}
@@ -1274,7 +1276,8 @@ def op_idle_ends(fr: Frames, p: dict, target: Target):
                   rotation change on Shoulder, UpperArm, Neck, Head and Thumb1) in full at the touching frame, faded
                   to 0 over fade_frames (a smoothstep); the curled fingers go to the idle's own curl the same way;
                   upper = false leaves the upper body and the fingers alone (the package clips keep their hold);
-      feet        each foot moved and turned to where the idle has it relative to Root, held while the clip keeps it
+      feet        each foot moved and turned to where the idle has it relative to Root (its toes bent as the idle's),
+                  held while the clip keeps it
                   planted (moving under plant_speed_cm a frame along the floor and rising under plant_rise_cm above
                   the touching frame), then faded out over up to fade_frames; a foot planted all through a clip
                   whose other end meets another clip steps (step_cm high); no edited Foot or Toe head goes lower than
@@ -1359,6 +1362,8 @@ def op_idle_ends(fr: Frames, p: dict, target: Target):
             q = Quaternion().slerp(dr, w) @ rc.rot(F)
             loc = F.translation + dp * w
             pose.set_arm(f"Foot.{s}", Matrix.Translation(loc) @ q.to_matrix().to_4x4())
+            if f"Toe.{s}" in pose.B:  # the toes too: a clip's bent toes on the idle's lower feet went into the floor
+                pose.set_brot(f"Toe.{s}", pose.brot(f"Toe.{s}").slerp(ref_r.brot(f"Toe.{s}"), w))
             need = max(lows[f][j] - pose.head(j).z for j in joints[s])
             rise = max(0.0, need) + plan["lift"][s][f]  # a step lifts the foot off its floor, not off a sunk foot
             if rise > 0.0:
