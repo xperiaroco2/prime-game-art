@@ -67,9 +67,12 @@ The drivers overlap: a long agent pays every one of the others on every call.
    - The 85% line in CLAUDE.md ("Decisions") still applies on top.
    - After a run, the launch report gives each agent's calls, its average and peak context, and its rewrites after
      gaps. Two ways to get them:
-     - `tools/run.sh cost [--since ISO] [--session PREFIX...]` in this repo: one row per agent of this checkout's
+     - `tools/run.sh cost [--since ISO] [--session PREFIX...]` in this repo: one row per agent of this repo's
        Claude Code transcripts (label or agentType, model, calls, first, average and peak context, cache rewrites of
-       50k+ tokens after a gap over 5 minutes, list $), a total, and `tools/out/cost/cost.json`;
+       50k+ tokens after a gap over 5 minutes, list $), a total, and `tools/out/cost/cost.json`. It reads the main
+       checkout's transcript folder and its worktrees' (`C--prime-game-art-wt-<name>` for a worktree at
+       `C:/prime-game-art-wt/<name>`), each API call once. A worktree elsewhere has a folder of another name: name it
+       with `--project`;
      - `tools/run.sh metrics` run read-only in a checkout of the game repo.
 
 ## Checking a workflow script (#56)

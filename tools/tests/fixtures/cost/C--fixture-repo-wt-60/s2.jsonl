@@ -1,0 +1,2 @@
+{"type":"assistant","timestamp":"2026-10-09T00:00:00.000Z","message":{"id":"h1","model":"claude-haiku-4-5-20251001","usage":{"input_tokens":10,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"output_tokens":0}}}
+{"type":"assistant","timestamp":"2026-10-09T00:00:30.000Z","message":{"id":"h2","model":"claude-future-9","usage":{"input_tokens":1000000,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"output_tokens":0}}}

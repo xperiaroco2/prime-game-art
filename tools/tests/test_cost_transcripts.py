@@ -13,6 +13,7 @@ from runner import common
 from runner.commands import cost
 
 FIXTURE = common.ROOT / "tools" / "tests" / "fixtures" / "cost" / "C--fixture-repo"
+WORKTREE = FIXTURE.with_name("C--fixture-repo-wt-60")  # a worktree session, and s2 again
 
 
 def by_label(report: dict) -> dict[str, dict]:
@@ -30,6 +31,18 @@ class ProjectFolderTest(unittest.TestCase):
         self.assertEqual(
             cost.project_folder(Path("D:/prime-game-art"), home), home / "projects" / "D--prime-game-art"
         )
+
+    def test_worktree_folders_follow_the_main_folder(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            projects = Path(tmp) / "projects"
+            for name in ("C--x-wt-61", "C--x-wt-60", "C--xy", "C--x-other"):
+                (projects / name).mkdir(parents=True)
+            (projects / "C--x-wt-62").write_text("not a folder", encoding="utf-8")
+            folders = cost.project_folders(Path("C:/x"), Path(tmp))
+            # the main folder comes first even when it is missing: run() keeps only the folders that exist
+            self.assertEqual([f.name for f in folders], ["C--x", "C--x-wt-60", "C--x-wt-61"])
+            self.assertEqual(cost.project_folders(Path("C:/x"), Path(tmp) / "none"),
+                             [Path(tmp) / "none" / "projects" / "C--x"])
 
     def test_main_checkout_is_a_repo_root(self) -> None:
         self.assertTrue((cost.main_checkout() / ".git").exists())
@@ -75,6 +88,14 @@ class CollectTest(unittest.TestCase):
         agents = by_label(report)
         self.assertEqual((agents["art manager"]["calls"], agents["art manager"]["rewrites"]), (1, 1))
         self.assertEqual(agents["build:55"]["calls"], 1)
+
+    def test_worktree_folder_is_read_and_a_repeated_call_counts_once(self) -> None:
+        report = cost.collect([FIXTURE, WORKTREE, FIXTURE], [], None)
+        self.assertEqual(report["folders"], [str(FIXTURE), str(WORKTREE)])
+        agents = by_label(report)
+        self.assertEqual(sorted(agents), ["art manager", "build:55", "main", "worktree session"])
+        self.assertEqual(agents["main"]["calls"], 2)  # s2 is in both folders
+        self.assertEqual(report["total"]["calls"], 7 + 4)
 
     def test_bad_time(self) -> None:
         with self.assertRaises(common.Failure):
