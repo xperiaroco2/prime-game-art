@@ -130,7 +130,6 @@ if not IN_BLENDER:
                 self.assertFalse(feet_only["upper"])
                 self.assertLess(feet_only["upper_changed_deg"], 1e-3, body)  # the arms and fingers untouched
                 # a clip turned 20 degrees as a whole (the package clips' Root after art #33's heading): in the set's
-                # frame its feet meet the idle's; relative to its Root they would keep the turn
                 # frame its feet meet the idle's and its Root becomes the idle's (the bones under it kept: the edit's
                 # own Root turn); relative to its Root they would keep the turn
                 for case, key, deg, root in (("Idle_turned", "set_", 0.0, 0.0), ("Idle_turned", "", 0.0, 0.0),
