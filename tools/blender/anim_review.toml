@@ -219,6 +219,24 @@ name = "ual2_knife"
 clips = ["ual2:Melee_Hook", "ual2:Sword_Regular_A", "pack:Sword_Slash"]
 note = "the knife: #20's best swing (the pack's Sword_Slash)"
 
+# Art #66: each MVP stopgap beside batch 6's re-roll built into the set as a review-only candidate.
+[[pairs]]
+name = "a7_jog_bwd"
+clips = ["mvp:Jog_Bwd_Loop", "mvp:Jog_Bwd_R2_Loop"]
+note = "the backward jog: the reversed forward jog (exported) against Meshy's backward run"
+[[pairs]]
+name = "a7_strafe_left"
+clips = ["mvp:Strafe_Left_Loop", "mvp:Strafe_Left_R2_Loop"]
+note = "the strafe: the first strafe (exported) against its re-roll"
+[[pairs]]
+name = "a7_crawl_start"
+clips = ["mvp:Crawl_Start", "mvp:Crawl_Start_R2"]
+note = "the crawl start: the first roll-up (exported) against its re-roll"
+[[pairs]]
+name = "a7_crawl"
+clips = ["mvp:Crawl_Loop", "mvp:Crawl_R2_Loop"]
+note = "the crawl: batch 4's crawl (exported) against its re-roll"
+
 # Close-ups of the feet (art #25, `anim-review feet`): each clip with rigid shoes (its library's rigid_map: the toe
 # bones at rest, the shoes of art #20 and #24) above the same clip with the toe bones driven by the source's toes.
 [[feet]]
