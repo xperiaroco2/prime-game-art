@@ -332,6 +332,13 @@ and is then skipped on the other body type. Times are seconds in the clip as it 
 | `arm_offset` | `abduct_deg` (a number or `"auto"`), `max_deg` (12), `margin_cm` (0.3) | turns each upper arm away from the body about the chest's forward axis at the shoulder joint, by one angle on every frame (only UpperArm's basis changes, so the arm below follows). `auto` finds the smallest angle (bisection to 0.5 degrees) at which no hand vertex is inside the legs (`hands_in_legs`), on the frames that were inside and their neighbours, then adds the angle that moves the hand `margin_cm` further | deg, found, hands_in_legs before and after (cm), frames in the legs before and after |
 | `hand_spacing` | `min_gap_cm` or `gap_m`; `at` = all, end or mean; `deg` (a number or `"auto"`); `max_deg` (25) | turns each upper arm about the world vertical at its shoulder, the hands moving apart symmetrically (a negative angle brings them together). `min_gap_cm`: no hand inside the other and at least that gap between their closest vertices (on every frame, at the end, or on average). `gap_m`: the closest distance between the two hands' vertices at `at` (all: the smallest) reaches the gap, searched in [-max_deg, max_deg] | deg, found, gap before and after (cm), hands_in_each_other before and after (cm), min_gap_after_cm |
 | `lean` | `deg`; `bone` (`Torso`; a spine bone between Body and Head: Hips, Abdomen, Torso, Chest or Neck) | turns that bone forward by `deg` about the body's left-right axis through its head, on every frame; the bones below follow, the legs and the IK feet stay. For an upper-body layer whose source leans with the hips: the game's layer starts at `Torso`, so the hips' lean is lost over an upright base (UAL Push_Loop's hands go up over the head) | bone, deg, tilt_before_deg and tilt_after_deg (the mean forward tilt of the line from the bone to Head), head_forward_cm |
+| `foot_turn` (art #49) | `bone` (`Foot.L` or `Foot.R`), `toe_in_deg` | turns the foot toe-in about the world vertical through its head (the ankle) on every frame; its leg swivels with it about the hip-ankle line (the knee follows the toe) and is re-solved by the two-bone IK, so the shin's end stays on the foot | bone, toe_in_deg, yaw_out_before_deg and yaw_out_after_deg (first, min, max), swivel_deg, ik_miss_mm, ankle_gap_mm_max |
+| `stance` (art #49) | `out_cm` (2.0), `keep` (`leg_extension_f0`, the only choice) | the feet about hip width and planted: each foot moves (its rotation kept) to one point for the whole clip, its own hip joint at the first frame plus the rest pose's hip-to-ankle offset plus `out_cm` outwards (along X: the set's clips face -Y); the Body rises by the one constant that keeps the legs' mean hip-to-ankle distance at the first frame; each leg is re-solved per frame by the two-bone IK, the knee towards the foot's own forward | out_cm, body_lift_cm, feet_m, width_cm and stagger_cm (before, after), hip_width_cm, ankle_gap_mm_max |
+| `shoulders` (art #49) | `drop_deg` | both clavicles (`Shoulder.L/R`) turned down about the chest's forward axis through their heads | drop_deg, shoulder_rise_cm (the shoulder joint over the clavicle's root, first frame, before and after) |
+| `head_level` (art #49) | `target_deg` (0), `neck_share` (0.4) | one constant pitch, `target_deg` minus the clip's mean head pitch, `neck_share` of it on `Neck` and the rest on `Head`, about the head's horizontal left-right axis (+ raises the face); the nods keep their motion | fix_deg, neck_deg, head_deg, pitch_before_deg, pitch_after_deg |
+| `hands_relax` (art #49) | `curl_deg` (a table: `Index`, `Middle`, `Ring`, `Pinky` = 3 angles for segments 2-4, `Thumb` = 2 for segments 2-3), `cap` | each curled finger bone keeps the axis of its own rotation and takes the table's angle; with `cap`, its own angle up to `cap` times the table's (a gesture stays, a fist goes). The metacarpals (segment 1) are untouched | cap, bones, curl_before_deg and curl_after_deg per segment |
+| `thumb_in` (art #49) | `beside` (`Index3`), `side_cm` (1.6), `max_deg` (40), `frame` (0), `from_clip` | Thumb1 turned by one constant per side on every frame: the shortest turn about its head that points the thumb's tip (Thumb3's head plus 0.9 of the Thumb2-Thumb3 segment) at a point `side_cm` beside the `beside` joint, found on `frame`; with `from_clip`, the turn that clip's `thumb_in` found | per side turn_deg, wanted_deg, quaternion_wxyz, tip_to_goal_cm_before; or from_clip |
+| `idle_ends` (art #49) | `at` (`start`, `end` or `both`), `from_clip` (the idle), `fade_frames` (8), `plant_cm` (1.5), `step_cm` (4.0), `knees_out_deg` (25), `knees_out_from_deg` (25), `knees_out_full_deg` (75) | blends the relaxed idle into a one-shot's ends that meet it ("The relaxed idle" below) | at, lift_cm, upper_delta_deg, ends (per end and foot: planted_to, mode, window, move_cm, turn_deg), touching (feet and upper body against the idle, before and after), leg_twist_deg, ankle_gap_mm_max, knee_out_deg_max, lift_cut_mm_max, step_lift_cm |
 
 Steps raise `anim_edit.EditError` on a failure (an unknown op, a bad parameter, a window outside the clip, a cycle
 whose raw seam is too large, a stride on a clip that is not an in-place loop); `apply` names the failing step. A
@@ -405,11 +412,56 @@ aligned to one hemisphere and normalised. A UAL Walk_Loop retimed to 1.25x and b
 upper body and 1.3 degrees on the legs (the IK bends sharply at a foot plant); the toe bones flick up to 28 degrees a
 frame where the retarget's floor clamp lifts them, which no resampling keeps (5 degrees after the round trip).
 
+#### The relaxed idle (art #49)
+
+The engineer's notes (2026-10-07): the feet straight and the idle relaxed. UAL's Idle_Loop turns the right foot 44
+degrees out and stands tense: fists (Middle2 78 degrees), a wide staggered stance (ankles 47.7 cm apart, the right
+foot 45.7 cm behind the left: men), the head 10 to 15 degrees down. The lab worked the edit out on a copy of the set (round D:
+`D:/prime-art-raw/research/2026-10-05-faces/lab/clay_d/clay_idle.py` and `README_idle.txt`); these ops are its port.
+Built with the lab's values, the set matches the lab's relaxed set within 0.4 mm at every joint on every frame; the
+set itself pins the women's arm offset that `auto` finds instead of the lab's
+([research/2026-10-08-relaxed-idle.md](research/2026-10-08-relaxed-idle.md)).
+
+- **Constant offsets.** Every op adds a constant to the clip's own pose on every frame, so the breathing, the sway and
+  the talk's nods keep their motion; a loop stays closed. The ops work in world space through `rig.W` (an `_Pose`:
+  one frame's basis, its poses by `rc.fk`, a bone moved by a world transform).
+- **The feet's IK.** `foot_turn`, `stance` and `idle_ends` keep each shin's end (the rest Foot head carried by
+  `LowerLeg`) on its IK foot: 0.001 to 0.05 mm. Round C's swivel about the hip and `LowerLeg`'s tail (an 8 mm bone at
+  the knee) turned the shin about the thigh and left the ankle 7 to 14 cm off; `foot_turn` swivels about the hip and
+  the shin's end instead, then solves the IK. The build report's `feet` (below) measures every clip.
+- **The idle and the clips that meet it.** `apply` keeps a clip's first frame as it stood before its first relaxed-idle
+  op (`info["relax_base"]`, anim_edit_math.RELAX_OPS) and `stance` its lift (`info["stance_lift_m"]`). `idle_ends`
+  reads both from the idle (`from_clip`, a clip built earlier in the set: `Target.clips`) and, at the clip's touching
+  frame:
+  - the upper body takes the idle's own change (each basis rotation of `Shoulder`, `UpperArm`, `Neck`, `Head` and
+    `Thumb1`, relax base to relaxed) and the curled fingers go to the idle's curl, in full at the touching frame and
+    faded out over `fade_frames` (a smoothstep);
+  - each foot goes where the idle has it relative to Root (the right foot's turn included), held while the clip keeps
+    it within `plant_cm` of the touching frame, then faded out over up to `fade_frames`; held to the other end when
+    fewer than 2 frames would be left (the landing); a foot planted all through a clip whose other end meets another
+    clip takes a `step_cm` high step over `fade_frames` where the other foot moves least (Raise_Out, the men's
+    Raise_In);
+  - the Body rises by the idle's lift times the feet's mean weight, cut where a leg would not reach (`REACH` 0.999);
+  - the legs are solved again: the knee towards the foot's forward at full weight and the clip's own knee at 0, the
+    thigh's and the shin's roll matched to the idle's at the touching frame (`leg_twist_deg`; UAL's turned-out right
+    thigh would twist at the crossfade otherwise), and in a deep bend the knee swings out (0 at `knees_out_from_deg`
+    of knee bend, `knees_out_deg` at `knees_out_full_deg`: the narrow stance crouched knock-kneed).
+
+  The pure part is `anim_edit_math.idle_end_weights` and `end_mix` (a clip whose both ends meet the idle moves from
+  the start's numbers to the end's along the clip). A loop is refused.
+- **In the set** (`mvp.toml`): Idle_Loop and Talk_Upper_Loop take `foot_turn`, `stance`, `shoulders`, `head_level`,
+  `hands_relax` (the talk with `cap = 1.5`) and `thumb_in` (the talk with the idle's turn: `from_clip`); the women's
+  idle then a second `arm_offset`, found by `auto` on the open hands (they are longer than fists: 2.9 cm in the
+  thighs to 0 at 4.16 degrees; 0 on the men and on both bodies' talk) and pinned. The eight one-shots that start or
+  end in the idle pose end with `idle_ends`. Putdown_One is made from its source with the pickup's steps reversed,
+  not `from = "Pickup_One"`, which would blend the idle into it twice. Carry_Upper_Loop and Push_Upper_Loop are left
+  alone: they play over the edited idle.
+
 ### The pure and the Blender side
 
 | `anim_edit_math.py` (stdlib) | `anim_edit.py` (Blender) |
 |---|---|
-| `OPS`, `check_steps`, `params`; time maps (`trim_times`, `retime_count`, `retime_times`, `split_index`, `catmull_rom`, `neighbours`); quaternions (`q_mul`, `q_conj`, `q_slerp`, `q_hemi`, `q_axis_angle`, `q_rotate`); `best_cycle`, `central_diff`, `close_vectors`, `close_quats`; `linear_drift`, `moving_average`, `path_offsets`, `moving_speed`; `lsq_direction`, `yaw_of`, `signed_angle_2d`, `facing_yaw`, `unwrap`, `circular_mean`, `turn_correction`; `contact_mask`, `contact_windows`, `contact_velocities`, `ground_velocity`, `natural_cadence`, `stride_rate`, `stride_scale`, `stride_fit`, `scale_offset`, `plant`; `two_bone_ik`; `floor_profile`; `search_angle`; `mirror_name`, `mirror_pairs`, `mirror_correction`, `mirror_pose` (4x4 lists) | `Frames`, `Target`, `apply`, `EditError`, `OPS` (op name to function); Root and Body moves in world space; the leg IK as rotations; the mirror with mathutils; the posed-mesh measures (the lowest vertex through `anim_metrics.world_points`, the hands through `anim_metrics.Measure`'s sets and surfaces) |
+| `OPS`, `check_steps`, `params`; time maps (`trim_times`, `retime_count`, `retime_times`, `split_index`, `catmull_rom`, `neighbours`); quaternions (`q_mul`, `q_conj`, `q_slerp`, `q_hemi`, `q_axis_angle`, `q_rotate`); `best_cycle`, `central_diff`, `close_vectors`, `close_quats`; `linear_drift`, `moving_average`, `path_offsets`, `moving_speed`; `lsq_direction`, `yaw_of`, `signed_angle_2d`, `facing_yaw`, `unwrap`, `circular_mean`, `turn_correction`; `contact_mask`, `contact_windows`, `contact_velocities`, `ground_velocity`, `natural_cadence`, `stride_rate`, `stride_scale`, `stride_fit`, `scale_offset`, `plant`; `two_bone_ik`; `floor_profile`; `search_angle`; `mirror_name`, `mirror_pairs`, `mirror_correction`, `mirror_pose` (4x4 lists); the relaxed idle (art #49): `RELAX_OPS`, `FINGER_SEGMENTS`, `curl_errors`, `from_clips`, `smoothstep`, `finger_curls`, `curl_goal`, `stance_targets`, `stance_lift`, `pitch_of`, `head_fix`, `yaw_out`, `knees_out`, `reach_lift`, `planted_until`, `idle_end_weights`, `end_mix` | `Frames`, `Target`, `apply`, `EditError`, `OPS` (op name to function); Root and Body moves in world space; the leg IK as rotations; the mirror with mathutils; the posed-mesh measures (the lowest vertex through `anim_metrics.world_points`, the hands through `anim_metrics.Measure`'s sets and surfaces); the relaxed idle's ops on an `_Pose` in world space, `feet_numbers` |
 
 ### The API
 
@@ -422,6 +474,8 @@ out = ae.apply(frames, steps, target, "women")   # steps: a list of {op = ..., .
 out.info["steps"]                 # one report per step, {"op": ..., ...}; skipped steps {"op", "skipped": "body men"}
 out.to_action(char["arm"], "Idle_Loop")
 target.upper_bones()              # the upper-body layer's bones: Torso and every bone below it
+target.clips = {"Idle_Loop": idle}   # the clips a step's from_clip reads (anim_set.build_clips sets it)
+ae.feet_numbers(frames)           # the feet's yaw out, the ankle gap, the stance (art #49)
 ```
 
 `Target` exposes `rig`, `legs` (the three bones of each leg), `upper = "Torso"`, `measure` (an
@@ -466,6 +520,9 @@ Background Blender, the pack originals with the toe bones and UAL1 retargeted wi
 | women, UAL Push_Loop: lean 30 | the spine's tilt 46.5 to 76.5 degrees, the head 8.2 cm forward, the feet still; layered over the idle the hands come down from over the head to in front of the face |
 | men, pack Punch_Right: mirror | a left punch; rest error 0.0002 mm |
 | men, UAL Jump_Start: trim 0.03-0.40, retime 0.25 | 8 frames, 0.267 s: a retime rounds to whole frames (rate 1.375 for 1.467) |
+| men / women, UAL Idle_Loop: the MVP's relaxed steps (art #49) | the right foot 43.66 to 3.66 degrees out (the left -5.68 kept); the ankles 47.7 to 27.5 / 45.4 to 22.9 cm apart, the stagger 45.7 to 5.6 / 46.5 to 4.5 cm, the Body 2.94 / 3.07 cm up; the head's pitch -14.9..-10.5 to -2.2..+2.3; Middle2 78 to 20 degrees, the thumb turned 22.3 / 22.0; every ankle within 0.003 mm of its foot; the loop closed, no pop |
+| women, the relaxed idle: arm_offset auto (art #49) | 4.16 degrees: the open hands 2.9 cm in the thighs (77 frames) to 0; the men and both talks 0 |
+| the eight clips that meet the idle: idle_ends (art #49) | both feet 0.000 cm and 0.00 degrees from the idle's first frame (relative to Root) at all ten touching ends, the fingers at its curl; ankle gaps 0.003 to 0.05 mm on every frame it touches (Jump_Start's 8 mm and Knockdown's 5.7 mm before) |
 
 ### Gotchas of the edits
 
@@ -501,7 +558,7 @@ the edits' grid), `stem` (the file names) and `upper` (the upper-body layer's to
 | `name` | the action and glTF animation name, `[A-Za-z0-9_]+`, unique; it ends in `_Loop` exactly when the clip loops |
 | `source` or `from` | a clip key (`pack:Sword_Slash`, `ual:Jog_Fwd_Loop`, `ual2:Walk_Carry_Loop`, `tm:strafe-left`) or an earlier clip of the set as it stands after its edits |
 | `loop` | the clip loops: its source loops or a `cycle` step closes it (the build refuses anything else) |
-| `edits` | the steps of "Clip edits", in order; a step with `body = "men"` or `"women"` runs on that body type only |
+| `edits` | the steps of "Clip edits", in order; a step with `body = "men"` or `"women"` runs on that body type only; a step's `from_clip` (art #49) names an earlier clip of the set, which is built first (`anim_set_cfg.closure`) |
 | `needs` | the game's needs the clip serves: `need` (text), `no` (its number in the needs list), `layer` (`full` or `upper`), `speed_m_s` and `rate` (the game plays the clip at `rate` when moving at `speed_m_s`) |
 | `speed_m_s` | the clip's ground speed at rate 1.0; the review's treadmill and the game divide their speed by it |
 | `export` | `false` for a review candidate that is built, but not written to the GLB |
@@ -520,8 +577,10 @@ A set's sources are taken **with their travel**: a library's `in_place` list is 
 `anim_set.build_clips(set_cfg, char, names, body, resolve)` builds clips on a donor (the pack original with the toe
 bones, as the review sets it up): each source is resolved by `resolve` (the review's `clips_for`, retargeting a library
 with its map), sampled into `Frames`, run through `anim_edit.apply` and reported (`info["report"]`: frames, seconds,
-loop, needs, speed, every step's report, the travel and heading left, the lowest vertex). Two rules hold for every
-clip:
+loop, needs, speed, every step's report, the travel and heading left, the lowest vertex, and since art #49 the `feet`:
+`anim_edit.feet_numbers`, each foot's yaw out against the aim relative to the rest pose at the first frame and its range,
+the largest gap between a shin's end and its IK foot, and the ankles' width and stagger at the first frame). Two rules
+hold for every clip:
 
 - **A looping source is closed first.** UAL's loops are open cycles (their first pose comes round one frame after
   their last key; the men's Idle_Loop ends 4 mm from its start at the hands, the Jog 0.78 degrees): a source whose
