@@ -76,6 +76,8 @@ def _summary(fr: ae.Frames, target: ae.Target, lowest: bool) -> dict:
     # right foot 53 degrees and back four times a loop, which the seam and the strips did not show)
     found = rc.pops(fr.rig, poses, fr.loop)
     out["pop_count"], out["pops"] = len(found), found[:8]
+    # the feet (art #49): each foot's yaw out against the aim, the shins' ends on their IK feet, the stance
+    out["feet"] = ae.feet_numbers(fr)
     if lowest:
         lows = ae._lows(fr, target)
         under = run = 0
