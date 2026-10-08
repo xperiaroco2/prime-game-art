@@ -55,7 +55,9 @@ The drivers overlap: a long agent pays every one of the others on every call.
      short brief and the contact sheet, it ranks the variants and gives the engineer a recommendation, so he judges a
      ranked shortlist, not raw output.
    - Fixers get only the blocker and major findings. A revision covers only the judged winners.
-8. **Estimate and measure.**
+8. **Check, estimate and measure.**
+   - Before every launch, the manager runs `tools/run.sh workflow-check <script.js>...` on the workflow script; a
+     refused script is fixed first (see "Checking a workflow script" below).
    - Before a launch, the manager estimates the agents, calls and % of the week.
    - A launch over about 5% of the week stops after its first phase (the engineer, prime-game#302). The manager reports
      the measured cost and asks the engineer before the next phase.
@@ -65,6 +67,33 @@ The drivers overlap: a long agent pays every one of the others on every call.
      - the scripts in `D:/prime-art-raw/manager/cost/`: `$PYTHON_BIN cost_ctx.py <session-id-prefix>...`, also
        `cost_tok.py`, `cost_cw.py` and `cost_bash.py`;
      - `tools/run.sh metrics` run read-only in a checkout of the game repo.
+
+## Checking a workflow script (#56)
+`workflow-check <script.js>...` refuses a script, one line per refusal (`<file>:<line>: <reason>`), when:
+- its line endings are not LF (a CRLF script is refused at resume);
+- it does not start with `export const meta = {...}`, or `meta` is not a pure literal (strings, numbers, `true`,
+  `false`, `null`, arrays and objects of them);
+- `node --check` fails on it. The check parses a module copy under `tools/out/workflow-check/`, with the body after
+  `meta` wrapped in an async function (top-level `await` and `return`) on the same line, so line numbers match. It is
+  skipped with a note when node is missing;
+- an `agent(` call has no `agentType: 'art-reader' | 'art-writer'` in its options, unless a
+  `/* general-agent: <reason> */` comment comes right before the call (or its `await`);
+- an effort is `xhigh` or `max`, or an agent's `model` or `effort` is not a string literal;
+- an `art-reader` call has `model: 'opus'`;
+- an agent prompt has no `BOUNDS: at most N tool calls` with N <= 60, written in one string literal (N not in a
+  `${...}`). The prompt's text includes the strings of the consts and functions it names;
+- the script never states the 180 s wait rule (a string with "no tool call blocks over 180 s");
+- it calls `Date.now()`, `Math.random()` or `new Date()` (a resumed script must replay the same way).
+
+The options of an `agent(` call are an object literal or a const bound to one; `...SPREAD` of such a const is read too.
+
+`tools/workflows/art-lab-round.js` is the template for a lab round (rule 7). Its args are `brief`, `lab_dir`,
+`out_dir` and `steps` (1 to 4). The builder (`art-writer`, Opus, high effort) works in steps of at most 60 calls; each
+step writes `handoff-step-<n>.md` in `out_dir`, and the next step reads only that note. The last step renders
+`contact-sheet.png` (about 1280 px). One critic (`art-reader`, Sonnet) ranks the variants from that sheet, writes
+`ranking.md` and recommends one. A lab round copies the template, edits the brief and limits, and passes
+`workflow-check`. `tools/tests/test_workflow_check_scripts.py` holds a fixture per refusal
+(`tools/tests/fixtures/workflows/`).
 
 ## Agent types (#44)
 `.claude/agents/` holds two lean types. A general workflow agent carries every tool of the session: the desktop,
