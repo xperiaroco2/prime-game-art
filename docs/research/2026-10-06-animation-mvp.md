@@ -117,16 +117,16 @@ Times are in seconds; "w" means the women only. The last column holds what is le
 | 7 | Turn in place | `Turn_Left`, `Turn_Right` | TTM turn-left-90 | facing to the start, trim 0.13-1.73, turn 112.7 to 90 deg, retime 1.2 s; w: arms out 5.6 deg; right = mirror | pass, note: two clear steps; the pivot foot slides 18-20 cm/s mean (147-152 max) | the lower-body turn logic (below) |
 | 8 | Head pitch | none | | | none | procedural |
 | 9 | Jump | `Jump_Start`, `Jump_Air_Loop`, `Jump_Land` | UAL Jump_Start, Jump_Loop, Jump_Land | start: trim 0.03-0.40, retime 0.25 (0.267: whole frames); land: trim 0-0.5, retime 0.3 | pass, note: the start opens in a crouch and the landing ends in one; the take-off's toes dip 1.9 (men) and 2.3 cm (women) for 4 frames, past the design's -2 cm line on the women (resampling loses the retarget's toe clamp); the air loop's right foot snapped 53-55 degrees and back in one frame (4 times a loop on the men, twice on the women) until the floor clamp was made to fade (131c347): now one held pose, its largest frame step 2.6/2.9 degrees; w: hands 7.5 cm in the thighs at the landing | the game blends in and out, and lifts the body (the clips are in place; the air loop's lowest vertex is 5.3/5.5 cm under the floor line, which the lift hides) |
-| 10 | Being pushed | `Shove_Stumble` | TTM shove-stumble | trim 0.37-1.83, facing to the start, in place along its path, arms out 12 deg | pass, note: the arms fly forward, two steps back, a crouch; w: hands 4.5 cm in the thighs at the crouch | contact detection; its feet travel 1.06 (men) and 1.15 m/s (women), half the push speed of 2.25 |
+| 10 | Being pushed | `Shove_Stumble` | TTM shove-stumble | trim 0.37-1.83, retime 0.7 s (art #65: the engineer's 0.69 s, whole frames), facing to the start, in place along its path, arms out 12 deg | pass, note: the arms fly forward, two steps back, a crouch; w: hands 4.3 cm in a thigh on one frame at the crouch, the right toe pops 30 deg on one frame | contact detection; since the 0.7 s retime its feet travel about 2.2 (men) and 2.4 m/s (women), 2.1 times the 1.06 and 1.15 at 1.47 s: near the push speed of 2.25 |
 | 11 | Pushing | `Push_Upper_Loop` (upper) | UAL Push_Loop | w: hands apart 4.3 deg (6.09 cm inside each other to a 1.28 cm gap); **lean 30 deg from Torso** (new) | pass after the lean: over the idle and the jog it leans into the push, palms forward at face height | upper layer at a low weight while in contact; the full-body clip bends 76 deg: a layer only |
 | 12 | One-handed item | none | | | none | grip keys |
 | 13 | Knife swing | `Knife_Swing` (upper) | pack Sword_Slash | retime 0.45 (0.467) | pass | upper layer on Swung (a OneShot); the women's source is 1.3 s, so 2.8x faster |
 | 14 | Being hit | none | | | none | no reaction, by the rules |
-| 15 | Carry | `Carry_Upper_Loop` (upper) | UAL2 Walk_Carry_Loop | hands apart to a 0.40 m mean gap: 28.7 deg men, 29.8 women (from touching) | pass, note: the forearms open wide with the palms up, a tray under the box (wrists 0.59-0.65 m apart); the game's package is 0.45 m, so a side grip would need `gap_m = 0.45` (the designer's call) | upper layer over the idle and the locomotion; CARRY_POINT moves to the hands |
+| 15 | Carry | `Carry_Upper_Loop` (upper) | UAL2 Walk_Carry_Loop | art #65: fingers nearly straight, `side_grip` 0.45 m (arms open 18.3-19.8 deg men, 20.0-21.5 women; replaces art #33's 0.40 m tray) | pass, note: the package held by its sides, the palms vertical and facing, the hands' closest vertices 44.7-45.3 cm apart on every frame, 1.12-1.25 m high and 22/25 cm in front, nothing in the torso; the hand heights L-R differ up to about 7 cm (the source's arm bob) | upper layer over the idle and the locomotion; CARRY_POINT moves to the hands |
 | 16 | Pick up one-handed | `Pickup_One` | UAL2 Farm_Harvest | trim 0.13-2.13, retime 0.9 | pass, note: w: the hand 2.5 cm past the thigh at the bottom | the hand is lowest at about 0.45 s: attach the item there |
 | 17 | Put down one-handed | `Putdown_One` | Pickup_One | reverse, retime 0.8 | pass | since art #49 made from UAL2 Farm_Harvest with the pickup's steps reversed, then idle_ends ([2026-10-08-relaxed-idle.md](2026-10-08-relaxed-idle.md)) |
-| 18 | Pick up the package | `Pickup_Package` | TTM package-lift | trim 0.1-1.5, facing to the mean, retime 1.0, floor lift (toes 2.8/1.9 cm), hands apart to 0.40 m at the end (18.5/22.9 deg) | stopgap: a wide squat whose feet shuffle 17-18 cm/s (past the 12 cm/s mark); it ends with the hands beside the thighs, 0.40 m apart, where the carry holds them higher (w: 7.0 cm in the legs), so it does not end holding a package | blend into the carry layer (forearms 95-97 deg apart), or a hand-keyed end pose |
-| 19 | Put the package down | `Putdown_Package` | Pickup_Package | reverse | stopgap: the pick-up reversed, so it starts from the hands-by-the-thighs pose, not from the carry's hold, and shuffles as the pick-up does | as 18: an end pose up to the carry's hold mends both |
+| 18 | Pick up the package | `Pickup_Package` | TTM package-lift | trim 0.1-1.5, facing to the mean, retime 1.0, floor lift (toes 2.8/1.9 cm), art #65: `upper_match` to Carry_Upper_Loop's first frame over Idle_Loop's over the last 0.4 s, `side_grip` 0.45 m from the hands' lowest point (0.43 s), faded in over 0.3 s, `idle_ends` with the arms kept | stopgap: a wide squat whose feet shuffle 17-18 cm/s (past the 12 cm/s mark); it ends holding the package by its sides in the carry-over-idle pose (the wrists 0.1 cm from it, 45.0 cm apart, the palms vertical, 1.14/1.17 m high); the squat's lowest vertex -1.18 cm men, -2.0 women (warned) | the game crossfades into the carry layer over the idle with no jump of the hands |
+| 19 | Put the package down | `Putdown_Package` | Pickup_Package | reverse | stopgap: the pick-up reversed, so it starts in the carry-over-idle hold (art #65) and shuffles as the pick-up does | the game crossfades from the carry layer into it with no jump of the hands |
 | 20 | Swap items | none | | | none | hand keys |
 | 21 | Knocked down | `Knockdown` | UAL Death01 | floor lift from 1.2 s (4.86/3.44 cm), trim 0-2.0, retime 1.33, **settle from 0.83 s** (the lying frames 2.2-3.7 cm down) | pass, note: lies on the floor (lowest 0.0, the first lying frames at most 1.4 cm up); w: the hands brush the thighs 6.1 cm in the fall | ends lying 0.48 m behind where it started: the game moves the body there |
 | 22 | Lying still | Knockdown's last pose | | | none | the breathing loop is hand keys |
@@ -316,8 +316,8 @@ clips go in as assets with manifests in a later PR.
   - `Knife_Swing` is a OneShot through the same filter on `Swung`.
   - The layers export every bone. The game masks them; never play `Push_Upper` on the full body, it bends 76 degrees.
 - **Contact detection** (game side; the snapshot has no push flag): infer a push from two bodies in contact.
-  - The pushed body plays `Shove_Stumble` once when contact starts and moves at the push speed (2.25 m/s). The clip's
-    feet travel about 1.1 m/s, so its steps slide at that speed.
+  - The pushed body plays `Shove_Stumble` once when contact starts and moves at the push speed (2.25 m/s). Since the 0.7 s
+    retime (art #65) the clip's feet travel about 2.2 (men) and 2.4 m/s (women), close to it.
   - The pusher gets the push layer.
 - **Lower-body turn logic.**
   - While standing, the lower body holds its yaw as the look turns. When the difference passes about 60 to 90
@@ -443,10 +443,12 @@ The manager runs a re-roll batch; no prompt names a game or a character. In orde
   Judge it on the treadmill (`rates/<body>/mvp_strafe_left_4.5.mp4`).
 - **The carry's arms** open 29 to 30 degrees for a 0.40 m gap between the hands, a tray under the box: judge it in
   `pairs/<body>/mvp_package.mp4`. The game's package is 0.45 m; a side grip would set the gap to 0.45 (the designer's
-  call).
+  call). Decided (art #65): a side grip at 0.45 m, the lift and the put-down ending and starting in it.
 - **The package pick-up and put-down** ship as stopgaps (the end pose does not hold a package): blend into the carry
-  in the game, or hand-key an end pose (recommended, small).
-- **The shove's speed.** Retime it to 2.25 m/s (0.69 s) so its steps match the push, or keep 1.47 s?
+  in the game, or hand-key an end pose (recommended, small). Done (art #65): `upper_match` ends the lift in the carry's
+  hold over the idle, and the put-down starts in it.
+- **The shove's speed.** Retime it to 2.25 m/s (0.69 s) so its steps match the push, or keep 1.47 s? Decided (art
+  #65): 0.69 s, built as 0.7 s (21 frames at 30 fps).
 - **The push's lean** (new): 30 degrees from Torso, judge it in `pairs/<body>/mvp_layers.mp4`. More lean lowers the
   hands toward the chest, less brings them up toward the head.
 - **The stopgaps in the downed chain** (the roll-up, the crawl, the get-up from all fours): ship them for the first

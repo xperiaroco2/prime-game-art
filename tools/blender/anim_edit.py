@@ -792,6 +792,230 @@ def op_hand_spacing(fr: Frames, p: dict, target: Target):
         "hands_in_each_other_after_cm": _r(100 * every["depth"], 2), "min_gap_after_cm": _r(100 * every["gap"], 2)}
 
 
+# ------------------------------------------------------------------------------------------ the side grip (art #65)
+def _hands_numbers(target: Target, basis: dict) -> dict:
+    """Poses a frame and measures the hands (m): the closest distance between their vertices (gap), their depth in
+    each other and in the torso's hull."""
+    meas = target.measure
+    target.pose(basis)
+    pts = target.points(meas.meshes)
+    left, right = meas._gather(pts, "hand.L"), meas._gather(pts, "hand.R")
+    gap = 0.0
+    if len(left) and len(right):
+        tree = KDTree(len(left))
+        for i, q in enumerate(left):
+            tree.insert(q, i)
+        tree.balance()
+        gap = min(tree.find(q)[2] for q in right)
+    depth = max(anim_metrics._surface_depth(pts, meas.polys, meas.surfaces["hand.R"], meas.sets["hand.L"]),
+                anim_metrics._surface_depth(pts, meas.polys, meas.surfaces["hand.L"], meas.sets["hand.R"]))
+    torso = anim_metrics._hull_depth(meas._gather(pts, "torso"), meas._gather(pts, "hand"))
+    return {"gap": gap, "depth": depth, "torso": torso}
+
+
+def _palm(pose: _Pose, side: str) -> tuple:
+    return em.palm_normal(*(tuple(pose.head(f"{b}.{side}")) for b in ("Wrist", "Middle2", "Index2", "Pinky2")), side)
+
+
+def _grip_pose(base: _Pose, deg: float, p: dict, weight: float) -> tuple[_Pose, dict]:
+    """A frame with both arms opened by weight * deg (positive: the hands apart): each upper arm turns at the shoulder
+    about the axis across its shoulder-wrist line and the line from the other wrist, so the hand moves straight away
+    from the other (about the vertical for arms held forward, out to the side for hanging arms). Then each forearm
+    rolls about the elbow-wrist line by forearm_share of the roll that points the palm at the other hand (grip_goal),
+    and the hand turns at the wrist by the rest, the shortest turn that faces the palm at the goal (a bent wrist
+    cannot face it by a roll alone); both times weight."""
+    pose = _Pose(base.rig, base.B)
+    wr = {s: pose.head(f"Wrist.{s}") for s in "LR"}
+    for s, o in (("L", "R"), ("R", "L")):
+        sh = pose.head(f"UpperArm.{s}")
+        axis = (wr[s] - sh).cross(wr[s] - wr[o])
+        if axis.length > 1e-9:
+            pose.transform(f"UpperArm.{s}", _rot_about(axis, weight * deg, sh))
+    rolls = {}
+    wr = {s: pose.head(f"Wrist.{s}") for s in "LR"}
+    for s, o in (("L", "R"), ("R", "L")):
+        elbow, wrist = pose.head(f"LowerArm.{s}"), wr[s]
+        u = (wrist - elbow).normalized()
+        goal = em.grip_goal(tuple(wr[o] - wrist), p["tilt_deg"])
+        th = weight * em.roll_angle(_palm(pose, s), goal, tuple(u))
+        pose.transform(f"LowerArm.{s}", _rot_about(u, p["forearm_share"] * th, elbow))
+        q = Vector(_palm(pose, s)).rotation_difference(Vector(goal))
+        pose.transform(f"Wrist.{s}", _rot_q(Quaternion().slerp(q, weight), pose.head(f"Wrist.{s}")))
+        rolls[s] = th
+    return pose, rolls
+
+
+def op_side_grip(fr: Frames, p: dict, target: Target):
+    """Both hands hold a box by its sides (art #65): per frame, the upper arms open (_grip_pose) until the
+    hands' closest vertices are gap_m apart (a secant search) and each forearm rolls so its palm faces the other hand
+    (tilted up by tilt_deg). from_s and fade_s let a one-shot take the grip in (the lift)."""
+    rig = fr.rig
+    n = len(fr.basis)
+    w = em.grip_weights(n, fr.fps, p["from_s"], p["fade_s"])
+    tol = p["tol_cm"] / 100
+    out_basis, rows = [], []
+    deg = 0.0
+    for k, B0 in enumerate(fr.basis):
+        if w[k] <= 0.0:
+            out_basis.append({b: m.copy() for b, m in B0.items()})
+            continue
+        base = _Pose(rig, B0)
+        before = _hands_numbers(target, base.B)
+        palm0 = {s: _palm(base, s) for s in "LR"}
+        deg, gap, found = em.secant(lambda a: _hands_numbers(target, _grip_pose(base, a, p, 1.0)[0].B)["gap"],
+                                    p["gap_m"], deg, min(p["max_deg"], deg + 2.0) if deg < p["max_deg"] else deg - 2.0,
+                                    tol, -p["max_deg"], p["max_deg"])
+        pose, rolls = _grip_pose(base, deg, p, w[k])
+        after = _hands_numbers(target, pose.B)
+        wr = {s: pose.head(f"Wrist.{s}") for s in "LR"}
+        palm = {s: _palm(pose, s) for s in "LR"}
+        aim = {s: math.degrees(math.acos(max(-1.0, min(1.0, Vector(palm[s]).dot(
+            Vector(em.grip_goal(tuple(wr[o] - wr[s]), p["tilt_deg"]))))))) for s, o in (("L", "R"), ("R", "L"))}
+        rows.append({"k": k, "w": w[k], "deg": deg, "found": found, "before": before, "after": after,
+                     "palm_up_before": {s: math.degrees(math.asin(max(-1.0, min(1.0, palm0[s][2])))) for s in "LR"},
+                     "palm_up_after": {s: math.degrees(math.asin(max(-1.0, min(1.0, palm[s][2])))) for s in "LR"},
+                     "aim_err": aim, "roll": rolls, "z": {s: wr[s].z for s in "LR"},
+                     "fwd": {s: -wr[s].y for s in "LR"}})
+        out_basis.append(pose.B)
+    rc.reset_pose(target.arm)
+    out = fr.copy(out_basis)
+    _close(out)
+    full = [r for r in rows if r["w"] >= 1.0]
+
+    def sp(vals, scale=1.0, digits=2):
+        st = em.spread([v * scale for v in vals])
+        return {k: _r(v, digits) for k, v in st.items()}
+
+    z = [(r["z"]["L"] + r["z"]["R"]) / 2 for r in full]
+    rep = {"gap_m": p["gap_m"], "tilt_deg": p["tilt_deg"], "forearm_share": p["forearm_share"],
+           "frames": len(rows), "frames_full": len(full), "not_found": sum(not r["found"] for r in full),
+           "deg": sp([r["deg"] for r in full]),
+           "gap_before_cm": sp([r["before"]["gap"] for r in full], 100),
+           "gap_after_cm": sp([r["after"]["gap"] for r in full], 100),
+           "hands_in_each_other_after_cm": _r(100 * max((r["after"]["depth"] for r in rows), default=0.0), 2),
+           "hands_in_torso_before_cm": _r(100 * max((r["before"]["torso"] for r in rows), default=0.0), 2),
+           "hands_in_torso_after_cm": _r(100 * max((r["after"]["torso"] for r in rows), default=0.0), 2),
+           "roll_deg": {s: sp([r["roll"][s] for r in full]) for s in "LR"},
+           "palm_up_before_deg": {s: sp([r["palm_up_before"][s] for r in full]) for s in "LR"},
+           "palm_up_after_deg": {s: sp([r["palm_up_after"][s] for r in full]) for s in "LR"},
+           "palm_aim_err_deg": {s: sp([r["aim_err"][s] for r in full]) for s in "LR"},
+           "hand_height_m": sp(z, 1.0, 3),
+           "hand_height_diff_cm": sp([abs(r["z"]["L"] - r["z"]["R"]) for r in full], 100),
+           "hand_forward_m": sp([(r["fwd"]["L"] + r["fwd"]["R"]) / 2 for r in full], 1.0, 3)}
+    for key, r in (("first", rows[0] if rows and rows[0]["k"] == 0 else None), ("last", rows[-1] if rows else None)):
+        if r is not None:  # the frames a crossfade meets (the lift's end hands over to the carry's start)
+            rep[key] = {"gap_cm": _r(100 * r["after"]["gap"], 2), "deg": _r(r["deg"], 2), "w": _r(r["w"], 3),
+                        "hand_height_m": {s: _r(r["z"][s], 3) for s in "LR"},
+                        "hand_forward_m": {s: _r(r["fwd"][s], 3) for s in "LR"}}
+    lows = [sum((rig.W @ P[f"Wrist.{s}"].translation).z for s in "LR") / 2 for P in fr.poses()]
+    lo = min(range(n), key=lambda i: lows[i])
+    rep["hands_lowest_s"], rep["hands_lowest_m"] = _r(lo / fr.fps, 3), _r(lows[lo], 3)
+    return out, rep
+
+
+def hands_at(target: Target, basis: dict) -> dict:
+    """The grip on one frame as the game plays it (art #65): the hands' closest gap, their depth in each other and in
+    the torso (cm), each palm's angle over the horizontal and off the horizontal line to the other wrist (degrees),
+    each wrist's height and forward (m, world: forward is -Y). Leaves the target posed."""
+    pose = _Pose(target.rig, basis)
+    h = _hands_numbers(target, pose.B)
+    wr = {s: pose.head(f"Wrist.{s}") for s in "LR"}
+    palm = {s: Vector(_palm(pose, s)) for s in "LR"}
+    aim = {s: math.degrees(palm[s].angle(Vector(em.grip_goal(tuple(wr[o] - wr[s]), 0.0)), 0.0))
+           for s, o in (("L", "R"), ("R", "L"))}
+    return {"gap_cm": _r(100 * h["gap"], 2), "hands_in_each_other_cm": _r(100 * h["depth"], 2),
+            "hands_in_torso_cm": _r(100 * h["torso"], 2),
+            "palm_up_deg": {s: _r(math.degrees(math.asin(max(-1.0, min(1.0, palm[s].z)))), 2) for s in "LR"},
+            "palm_aim_err_deg": {s: _r(aim[s], 2) for s in "LR"},
+            "hand_height_m": {s: _r(wr[s].z, 3) for s in "LR"}, "hand_forward_m": {s: _r(-wr[s].y, 3) for s in "LR"},
+            "wrists": wr}
+
+
+def grip_ends(fr: Frames, target: Target, ref: dict | None = None) -> dict:
+    """hands_at on a built clip's first and last frames (the exported ones, after every edit: art #65's review asked
+    for them after idle_ends); with ref (a basis: the pose the clip hands over to, e.g. the idle with the carry's upper
+    layer over it), its numbers too and how far each end's wrists are from its (to_ref_cm)."""
+    want = hands_at(target, ref) if ref is not None else None
+    out = {}
+    for key, B in (("first", fr.basis[0]), ("last", fr.basis[-1])):
+        d = hands_at(target, B)
+        wr = d.pop("wrists")
+        if want is not None:
+            d["to_ref_cm"] = {s: _r(100 * (wr[s] - want["wrists"][s]).length, 2) for s in "LR"}
+        out[key] = d
+    if want is not None:
+        out["ref"] = {k: v for k, v in want.items() if k != "wrists"}
+    rc.reset_pose(target.arm)
+    return out
+
+
+def op_upper_match(fr: Frames, p: dict, target: Target):
+    """The upper layer's bones (target.upper_bones(): Torso and below) go to another clip's frame at one end of a
+    one-shot (art #65: the lift's end to the carry's first frame, so the hands hand over with no jump): each bone's
+    basis rotation slerps and its location lerps to the other clip's, fully on the touching frame and faded to the
+    clip's own over the fade_s before it (anim_edit_math.end_weights). With base_clip (the clip the game plays the
+    other under as a lower layer: the idle), the bones that carry the upper layer (Torso's parents under Root: Body)
+    go the same way to base_clip's first frame in armature space, the set's frame, less its stance lift, which
+    idle_ends adds back (the lift's end stood 8 cm off the idle's Body and turned, which moved the hands 8 to 18 cm);
+    idle_ends after it puts the legs back on the feet. Run it before the ops that hold the hands (side_grip), which
+    then keep them on the faded frames, and before idle_ends."""
+    if fr.loop:
+        raise EditError("upper_match is for a one-shot that ends (or starts) in another clip, not a loop")
+    other = _built(target, p["from_clip"])
+    if not 0 <= p["frame"] < len(other.basis):
+        raise EditError(f"frame {p['frame']} is not a frame of {p['from_clip']!r} (0 to {len(other.basis) - 1})")
+    ref = other.basis[p["frame"]]
+    bones = [b for b in target.upper_bones() if b in ref and b in fr.basis[0]]
+    w = em.end_weights(len(fr.basis), fr.fps, p["at"], p["fade_s"])
+    touch = len(fr.basis) - 1 if p["at"] == "end" else 0
+    pre = _Pose(fr.rig, fr.basis[touch])
+    rig = fr.rig
+    carry, goal = [], {}
+    if p["base_clip"]:
+        base = _built(target, p["base_clip"])
+        bp = rc.fk(rig, base.basis[0])
+        lift = rig.Wi.to_3x3() @ UP * base.info.get("stance_lift_m", 0.0)
+        b = rig.parent[target.upper]
+        while b and rig.parent[b]:  # up to Root (not under it)
+            carry.insert(0, b)
+            b = rig.parent[b]
+        goal = {b: Matrix.LocRotScale(bp[b].translation - lift, rc.rot(bp[b]), None) for b in carry}
+    out_basis = []
+    for k, B0 in enumerate(fr.basis):
+        B = {b: m.copy() for b, m in B0.items()}
+        if w[k] > 0.0 and carry:
+            pose = _Pose(rig, B)
+            for b in carry:
+                cur = pose.P[b]
+                q0, q1 = rc.rot(cur), rc.rot(goal[b])
+                if q0.dot(q1) < 0.0:
+                    q1 = -q1
+                pose.set_arm(b, Matrix.LocRotScale(cur.translation.lerp(goal[b].translation, w[k]), q0.slerp(q1, w[k]),
+                                                   cur.decompose()[2]))
+            B = pose.B
+        if w[k] > 0.0:
+            for b in bones:
+                l0, q0, s0 = B0[b].decompose()
+                l1, q1, _ = ref[b].decompose()
+                if q0.dot(q1) < 0.0:
+                    q1 = -q1
+                l0, q0, s0 = B[b].decompose()
+                B[b] = Matrix.LocRotScale(l0.lerp(l1, w[k]), q0.slerp(q1, w[k]), s0)
+        out_basis.append(B)
+    out = fr.copy(out_basis)
+    post = _Pose(fr.rig, out.basis[touch])
+    diffs = {b: math.degrees(pre.brot(b).rotation_difference(post.brot(b)).angle) for b in bones}
+    worst = max(diffs, key=lambda b: min(diffs[b], 360.0 - diffs[b]), default=None)
+    return out, {"from_clip": p["from_clip"], "frame": p["frame"], "at": p["at"], "fade_s": p["fade_s"],
+                 "base_clip": p["base_clip"], "carried_by": carry,
+                 "body_move_cm": _r((pre.head(BODY) - post.head(BODY)).length * 100, 2) if BODY in rig.order else None,
+                 "frames_faded": sum(1 for x in w if x > 0.0), "bones": len(bones),
+                 "max_turn_deg": _r(min(diffs[worst], 360.0 - diffs[worst]) if worst else 0.0, 2),
+                 "max_turn_bone": worst,
+                 "wrist_move_cm": {s: _r((pre.head(f"Wrist.{s}") - post.head(f"Wrist.{s}")).length * 100, 2)
+                                   for s in "LR"}}
+
+
 # ------------------------------------------------------------------------------------------------------- lean
 def _spine_tilt(rig: rc.Rig, P: dict, bone: str) -> float:
     """The forward tilt (degrees) of the line from a bone's head to Head's, from the vertical, signed towards the
@@ -1568,6 +1792,7 @@ def op_idle_ends(fr: Frames, p: dict, target: Target):
 OPS = {"trim": op_trim, "retime": op_retime, "reverse": op_reverse, "cycle": op_cycle, "in_place": op_in_place,
        "heading": op_heading, "turn": op_turn, "mirror": op_mirror, "stride": op_stride, "floor": op_floor,
        "arm_offset": op_arm_offset, "hand_spacing": op_hand_spacing, "lean": op_lean,
+       "side_grip": op_side_grip, "upper_match": op_upper_match,
        "foot_turn": op_foot_turn, "stance": op_stance, "shoulders": op_shoulders, "head_level": op_head_level,
        "hands_relax": op_hands_relax, "thumb_in": op_thumb_in, "idle_ends": op_idle_ends}
 assert set(OPS) == set(em.OPS)

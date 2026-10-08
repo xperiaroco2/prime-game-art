@@ -174,10 +174,11 @@ needs = [{ need = "Jump: the landing (upper body while moving, full standing)", 
 name = "Shove_Stumble"
 source = "tm:shove-stumble"
 loop = false
-edits = [{ op = "trim", start_s = 0.37, end_s = 1.83 }, { op = "heading", facing = "start" },
+edits = [{ op = "trim", start_s = 0.37, end_s = 1.83 }, { op = "retime", seconds = 0.69 }, { op = "heading", facing = "start" },
          { op = "in_place", mode = "path" }, { op = "arm_offset", abduct_deg = 12 }]
-# arm_offset: the hanging hands went into the thighs (6.8 cm men, 7.0 women); auto reached 0 at 12 degrees on the men
-# and 4.5 cm at its limit of 12 on the women
+# retime (art #65): 1.47 s to 0.7 s (21 frames, the nearest to 0.69 s at 30 fps), so the steps match the 2.25 m/s at
+# which the game moves the pushed body. arm_offset: the hanging hands went into the thighs (7.0 cm men, 6.6 women after
+# the retime); 12 degrees takes them out on the men and to 4.3 cm on one frame on the women (art #33: 4.5 on 4 frames)
 needs = [{ need = "Being pushed: the stumble (the game moves the body)", no = 10, layer = "full" }]
 
 [[clips]]
@@ -204,10 +205,14 @@ needs = [{ need = "Use the knife: the swing (upper body)", no = 13, layer = "upp
 name = "Carry_Upper_Loop"
 source = "ual2:Walk_Carry_Loop"
 loop = true
-# a mean gap of 0.40 m between the hands (the 0.45 m package): auto found 28.71 degrees on the men and 29.8 on the women
-# (with max_deg 35; 25 reached only 34.6 and 32.7 cm), from hands touching (0.7 and 1.1 cm inside each other)
-edits = [{ op = "hand_spacing", gap_m = 0.40, at = "mean", deg = 28.7, max_deg = 35, body = "men" },
-         { op = "hand_spacing", gap_m = 0.40, at = "mean", deg = 29.8, max_deg = 35, body = "women" }]
+# The side grip (art #65): the 0.45 m package held by its sides, the palms facing each other. UAL2's Walk_Carry holds
+# a tray (the palms 44 / 45 degrees up, the hands 0.0 to 2.1 cm apart: men / women); the fingers go nearly straight
+# (they lie on the box) and side_grip opens the arms 18.3 to 19.8 / 20.0 to 21.5 degrees per frame: the hands' closest
+# vertices 44.7 to 45.3 cm apart on every frame, the palms vertical (0.0 degrees up, within 0.02 of the other hand),
+# the hands 1.13 to 1.25 / 1.12 to 1.25 m high and 22 / 25 cm in front, nothing in the torso or the other hand.
+# Art #33's tray: hand_spacing to a mean gap of 0.40 m (28.7 / 29.8 degrees, 36.7 to 43 cm).
+edits = [{ op = "hands_relax", curl_deg = { Index = [8, 10, 6], Middle = [8, 10, 6], Ring = [10, 12, 8], Pinky = [12, 14, 8], Thumb = [6, 6] } },
+         { op = "side_grip", gap_m = 0.45 }]
 needs = [{ need = "Carry the package (upper body over the idle and the locomotion)", no = 15, layer = "upper" }]
 
 [[clips]]
@@ -235,12 +240,22 @@ source = "tm:package-lift"
 loop = false
 edits = [{ op = "trim", start_s = 0.1, end_s = 1.5 }, { op = "heading", facing = "mean" },
          { op = "retime", seconds = 1.0 }, { op = "floor", mode = "lift" },
-         { op = "hand_spacing", gap_m = 0.40, at = "end", deg = 18.5, body = "men" },
-         { op = "hand_spacing", gap_m = 0.40, at = "end", deg = 22.9, body = "women" },
+         { op = "hands_relax", curl_deg = { Index = [8, 10, 6], Middle = [8, 10, 6], Ring = [10, 12, 8], Pinky = [12, 14, 8], Thumb = [6, 6] } },
+         { op = "upper_match", from_clip = "Carry_Upper_Loop", base_clip = "Idle_Loop", fade_s = 0.4 },
+         { op = "side_grip", gap_m = 0.45, from_s = 0.43, fade_s = 0.3 },
          { op = "idle_ends", at = "both", from_clip = "Idle_Loop", upper = false }]
-# floor: the squat's toes went 2.8 cm (men) and 1.9 cm (women) into the floor; hand_spacing auto found 18.55 and
-# 22.85 degrees for a 0.40 m gap at the end (from 19.1 and 14.0 cm). idle_ends (art #49): both ends meet the idle's
-# legs (the carry plays over the idle), so the feet and legs only go to the relaxed idle's; the arms keep their hold.
+# floor: the squat's toes went 2.8 cm (men) and 1.9 cm (women) into the floor. side_grip (art #65): the carry's grip
+# from the hands' lowest point (0.43 / 0.47 s: men / women) to the end, faded in over the 0.3 s before it; the source
+# holds a narrow box (16 to 18 / 10 to 13 cm), the arms open 18.6 to 24.2 / 20.2 to 25.8 degrees: 44.8 to 45.3 /
+# 44.9 to 45.2 cm, the palms vertical (art #33's hand_spacing: a 0.40 m gap at the end only). idle_ends (art #49): both
+# ends meet the idle's legs (the carry plays over the idle), so the feet and legs only go to the relaxed idle's; the
+# arms keep their hold.
+# upper_match (art #65's review): the hands ended 9 to 18 cm lower and 10 cm further forward than the carry over the
+# idle takes them, so over the last 0.4 s the upper layer goes to Carry_Upper_Loop's first frame and Body, Hips and
+# Abdomen to Idle_Loop's (they stood 8.2 / 12.1 cm off it, turned); side_grip holds the grip through the fade. On the
+# exported ends (grip_ends, after idle_ends) the wrists are 0.1 cm from that pose, 45.0 cm apart, the palms vertical,
+# 1.14 / 1.17 m high (men L / R; women 1.14 / 1.16). The end's Body changes idle_ends' leg roll there, which the held
+# feet carry into the squat: its lowest vertex went from -0.87 to -1.18 cm (men) and -1.66 to -2.0 cm (women).
 # The heading leaves Root turned 19.8 degrees from the idle's, so the feet are matched in the set's frame (the default);
 # both feet only shuffle between the ends, so they are held at the idle's all through. Putdown_Package, its reverse,
 # takes it at both ends too

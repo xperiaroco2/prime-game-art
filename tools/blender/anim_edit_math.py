@@ -49,6 +49,13 @@ OPS = {
     "hand_spacing": {"min_gap_cm": _p(_N), "gap_m": _p(_N), "at": _p("string", "all", choices=("all", "end", "mean")),
                      "deg": _p("number_or_auto", "auto"), "max_deg": _p(_N, 25.0)},
     "lean": {"deg": _p(_N, required=True), "bone": _p("string", "Torso")},
+    # the side grip (art #65): docs/animations.md, "The ops"
+    "side_grip": {"gap_m": _p(_N, required=True), "tilt_deg": _p(_N, 0.0), "forearm_share": _p(_N, 0.5),
+                  "from_s": _p(_N, 0.0), "fade_s": _p(_N, 0.0), "max_deg": _p(_N, 40.0), "tol_cm": _p(_N, 0.3)},
+    # the upper layer's bones into another clip's frame at an end (art #65: the lift hands over to the carry)
+    "upper_match": {"from_clip": _p("string", required=True), "frame": _p("int", 0),
+                    "at": _p("string", "end", choices=("start", "end")), "fade_s": _p(_N, 0.3),
+                    "base_clip": _p("string")},
     # the relaxed idle (art #49): docs/animations.md, "The relaxed idle"
     "foot_turn": {"bone": _p("string", required=True, choices=("Foot.L", "Foot.R")),
                   "toe_in_deg": _p(_N, required=True)},
@@ -75,7 +82,7 @@ COMMON = {"op", "body"}  # keys every step may have
 ONE_OF = {"retime": ("seconds", "rate", "speed_m_s"), "heading": ("travel", "facing"),
           "hand_spacing": ("min_gap_cm", "gap_m")}  # exactly one of these
 POSITIVE = {"seconds", "rate", "cadence", "min_s", "max_s", "smooth_s", "max_raw_seam_deg", "max_deg", "gap_m",
-            "fade_frames", "knees_out_full_deg", "cap", "plant_speed_cm", "plant_rise_cm"}
+            "fade_frames", "knees_out_full_deg", "cap", "plant_speed_cm", "plant_rise_cm", "tol_cm"}
 NON_NEGATIVE = {"start_s", "end_s", "speed_m_s", "natural_m_s", "from_s", "to_s", "fade_s", "min_depth_cm",
                 "margin_cm", "min_gap_cm", "out_cm", "side_cm", "frame", "step_cm", "knees_out_deg",
                 "knees_out_from_deg"}
@@ -175,6 +182,10 @@ def check_steps(steps, bodies=("men", "women")) -> list[str]:
             errors.append(f"{where}: to_s must be after from_s")
         if op == "head_level" and _is_number(step.get("neck_share")) and not 0 <= step["neck_share"] <= 1:
             errors.append(f"{where}: neck_share must be 0 to 1")
+        if op == "side_grip" and _is_number(step.get("forearm_share")) and not 0 <= step["forearm_share"] <= 1:
+            errors.append(f"{where}: forearm_share must be 0 to 1")
+        if op == "side_grip" and _is_number(step.get("tilt_deg")) and not -90 < step["tilt_deg"] < 90:
+            errors.append(f"{where}: tilt_deg must be between -90 and 90")
         if op == "thumb_in" and "from_clip" in step:
             for key in sorted({"beside", "side_cm", "max_deg", "frame"} & set(step)):
                 errors.append(f"{where}: {key} has no effect with from_clip (the turn is that clip's)")
@@ -186,10 +197,10 @@ def check_steps(steps, bodies=("men", "women")) -> list[str]:
 
 
 def from_clips(steps) -> list[str]:
-    """The other clips a list of steps reads (their `from_clip`): a set builds them first."""
+    """The other clips a list of steps reads (their `from_clip` and `base_clip`): a set builds them first."""
     if not isinstance(steps, (list, tuple)):
         return []
-    return [s["from_clip"] for s in steps if isinstance(s, dict) and isinstance(s.get("from_clip"), str)]
+    return [s[k] for s in steps if isinstance(s, dict) for k in ("from_clip", "base_clip") if isinstance(s.get(k), str)]
 
 
 def params(step: dict) -> dict:
@@ -688,6 +699,97 @@ def search_angle(ok, lo: float, hi: float, tol: float = 0.5) -> tuple[float, boo
         else:
             lo = mid
     return hi, True
+
+
+def secant(f, goal: float, x0: float, x1: float, tol: float, lo: float, hi: float,
+           max_iter: int = 8) -> tuple[float, float, bool]:
+    """A root of f(x) = goal by the secant method from x0 and x1, each step clamped to [lo, hi]: (x, f(x), found
+    within tol). For a measure that is about linear near the answer (the side grip's gap against the arms' turn)."""
+    y0 = f(x0) - goal
+    if abs(y0) <= tol:
+        return x0, y0 + goal, True
+    y1 = f(x1) - goal
+    for _ in range(max_iter):
+        if abs(y1) <= tol:
+            return x1, y1 + goal, True
+        if y1 == y0:
+            break
+        x2 = max(lo, min(hi, x1 - y1 * (x1 - x0) / (y1 - y0)))
+        if x2 == x1:
+            break
+        x0, y0, x1, y1 = x1, y1, x2, f(x2) - goal
+    if abs(y0) < abs(y1):
+        x1, y1 = x0, y0
+    return x1, y1 + goal, abs(y1) <= tol
+
+
+# ------------------------------------------------------------------------------------------ the side grip (art #65)
+def _v_cross(a, b):
+    return (a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0])
+
+
+def _v_unit(a):
+    n = _v_len(a)
+    return tuple(x / n for x in a) if n > 1e-12 else (0.0, 0.0, 0.0)
+
+
+def palm_normal(wrist, middle, index, pinky, side: str):
+    """The unit normal out of a hand's palm from world joint positions: the wrist, the middle finger's knuckle and the
+    index and pinky knuckles. Forward f (wrist to middle) and across a (index to pinky): a x f on the left hand, f x a
+    on the right (world: front -Y, left +X, up +Z; a left palm down has a = +X, f = -Y and the normal -Z)."""
+    f = _v_sub(middle, wrist)
+    a = _v_sub(pinky, index)
+    return _v_unit(_v_cross(a, f) if side == "L" else _v_cross(f, a))
+
+
+def grip_goal(towards, tilt_deg: float = 0.0):
+    """Where a gripping palm faces: the horizontal direction towards the other hand, turned up by tilt_deg (0: the
+    palms vertical, facing each other; positive: turned up towards a tray)."""
+    h = _v_unit((towards[0], towards[1], 0.0))
+    t = math.radians(tilt_deg)
+    return (h[0] * math.cos(t), h[1] * math.cos(t), math.sin(t))
+
+
+def roll_angle(normal, goal, axis) -> float:
+    """The signed angle (degrees, right-handed about axis) that turns normal onto goal, both projected onto the plane
+    across axis (the forearm's roll that points the palm at the goal); 0 when either projection vanishes."""
+    u = _v_unit(axis)
+    n = _v_sub(normal, _v_mul(u, _v_dot(normal, u)))
+    g = _v_sub(goal, _v_mul(u, _v_dot(goal, u)))
+    if _v_len(n) < 1e-9 or _v_len(g) < 1e-9:
+        return 0.0
+    return math.degrees(math.atan2(_v_dot(u, _v_cross(n, g)), _v_dot(n, g)))
+
+
+def grip_weights(frames: int, fps: float, from_s: float = 0.0, fade_s: float = 0.0) -> list[float]:
+    """The side grip's weight per frame: 1 from from_s on, a smoothstep from 0 over the fade_s before it, 0 earlier."""
+    out = []
+    for k in range(frames):
+        t = k / fps
+        if t >= from_s - 1e-9:
+            out.append(1.0)
+        elif fade_s <= 0.0:
+            out.append(0.0)
+        else:
+            out.append(smoothstep((t - (from_s - fade_s)) / fade_s))
+    return out
+
+
+def end_weights(frames: int, fps: float, at: str, fade_s: float) -> list[float]:
+    """upper_match's weight per frame (frames: the count, both ends included): 1 on the touching frame (the last for
+    at = "end", the first for "start"), a smoothstep to 0 over the fade_s from it, 0 beyond."""
+    out = []
+    for k in range(frames):
+        t = ((frames - 1 - k) if at == "end" else k) / fps
+        out.append(1.0 if t <= 1e-9 else 0.0 if fade_s <= 0.0 else smoothstep(1.0 - t / fade_s))
+    return out
+
+
+def spread(values: list) -> dict:
+    """min, mean and max of a list of numbers (None when empty)."""
+    if not values:
+        return {"min": None, "mean": None, "max": None}
+    return {"min": min(values), "mean": sum(values) / len(values), "max": max(values)}
 
 
 # ---------------------------------------------------------------------------------------------------- mirror
