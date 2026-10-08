@@ -7,8 +7,8 @@ the engineer's decisions: xperiaroco2/prime-game#165 and the stage plan issues h
 `docs/pipeline.md`; the foundation ADR: `docs/decisions/2026-10-02-art-repo-foundation.md`; the trust model:
 `docs/decisions/2026-10-03-trust-model.md`. The engineer (xperiaroco2) writes no code. He decides taste, money and
 large or hard-to-reverse questions (the full list is under "Decisions" below) and trusts the art manager with
-the rest; the designer (@SwiftySinister) approves
-the look. Agents write everything else, verify it from the command line, and the art manager merges it.
+the rest. He also acts as the designer and approves the look (the designer @SwiftySinister is not active; the trust
+model's amendment of 2026-10-08). Agents write everything else, verify it from the command line, and the art manager merges it.
 
 ## Rules
 - **Paid services and downloads.** Two standing permissions from the engineer (2026-10-03) need no separate yes:
@@ -158,7 +158,7 @@ is estimated before it starts; a launch over about 5% of the week stops after it
 (xperiaroco2/prime-game#302).
 
 Stop and ask the engineer, in one batched message with options and a recommendation, before:
-- anything about the look or taste (with the designer);
+- anything about the look or taste (the engineer approves the look);
 - money: purchases, subscriptions, paid generation beyond the plan's credits;
 - licences outside the allowlist; game-design rules;
 - large or hard-to-reverse changes:
