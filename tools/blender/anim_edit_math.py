@@ -49,13 +49,36 @@ OPS = {
     "hand_spacing": {"min_gap_cm": _p(_N), "gap_m": _p(_N), "at": _p("string", "all", choices=("all", "end", "mean")),
                      "deg": _p("number_or_auto", "auto"), "max_deg": _p(_N, 25.0)},
     "lean": {"deg": _p(_N, required=True), "bone": _p("string", "Torso")},
+    # the relaxed idle (art #49): docs/animations.md, "The relaxed idle"
+    "foot_turn": {"bone": _p("string", required=True, choices=("Foot.L", "Foot.R")),
+                  "toe_in_deg": _p(_N, required=True)},
+    "stance": {"out_cm": _p(_N, 2.0), "keep": _p("string", "leg_extension_f0", choices=("leg_extension_f0",))},
+    "shoulders": {"drop_deg": _p(_N, required=True)},
+    "head_level": {"target_deg": _p(_N, 0.0), "neck_share": _p(_N, 0.4)},
+    "hands_relax": {"curl_deg": _p("curl", required=True), "cap": _p(_N)},
+    "thumb_in": {"beside": _p("string", "Index3", choices=("Index3", "Index4")), "side_cm": _p(_N, 1.6),
+                 "max_deg": _p(_N, 40.0), "frame": _p("int", 0), "from_clip": _p("string")},
+    "idle_ends": {"at": _p("string", required=True, choices=("start", "end", "both")),
+                  "from_clip": _p("string", required=True), "fade_frames": _p("int", 8),
+                  "plant_speed_cm": _p(_N, 1.0), "plant_rise_cm": _p(_N, 1.5), "upper": _p("bool", True),
+                  "step_cm": _p(_N, 4.0), "knees_out_deg": _p(_N, 25.0), "knees_out_from_deg": _p(_N, 25.0),
+                  "knees_out_full_deg": _p(_N, 75.0), "match": _p("string", "set", choices=("set", "root"))},
 }
+# the relaxed idle's ops (art #49): anim_edit.apply keeps the clip's first frame as it was before the first of them
+# (its "relax base"), which idle_ends reads to carry the idle's own change into the clips that meet it
+RELAX_OPS = ("foot_turn", "stance", "shoulders", "head_level", "hands_relax", "thumb_in")
+# idle_ends (match = "set") places a clip in the idle's frame; these ops after it keep the placement (the touching
+# frames stay where they are), any other clears it (art #49)
+KEEP_PLACE = ("idle_ends", "reverse", "retime")
+FINGER_SEGMENTS = {"Index": 3, "Middle": 3, "Ring": 3, "Pinky": 3, "Thumb": 2}  # the curled segments: 2-4, Thumb 2-3
 COMMON = {"op", "body"}  # keys every step may have
 ONE_OF = {"retime": ("seconds", "rate", "speed_m_s"), "heading": ("travel", "facing"),
           "hand_spacing": ("min_gap_cm", "gap_m")}  # exactly one of these
-POSITIVE = {"seconds", "rate", "cadence", "min_s", "max_s", "smooth_s", "max_raw_seam_deg", "max_deg", "gap_m"}
+POSITIVE = {"seconds", "rate", "cadence", "min_s", "max_s", "smooth_s", "max_raw_seam_deg", "max_deg", "gap_m",
+            "fade_frames", "knees_out_full_deg", "cap", "plant_speed_cm", "plant_rise_cm"}
 NON_NEGATIVE = {"start_s", "end_s", "speed_m_s", "natural_m_s", "from_s", "to_s", "fade_s", "min_depth_cm",
-                "margin_cm", "min_gap_cm"}
+                "margin_cm", "min_gap_cm", "out_cm", "side_cm", "frame", "step_cm", "knees_out_deg",
+                "knees_out_from_deg"}
 
 
 def _is_number(v) -> bool:
@@ -74,7 +97,26 @@ def _type_ok(spec: dict, v) -> bool:
         return isinstance(v, str) and v in spec.get("choices", [v])
     if kind == "range":
         return isinstance(v, (list, tuple)) and len(v) == 2 and all(_is_number(x) for x in v) and v[0] < v[1]
+    if kind == "int":
+        return isinstance(v, int) and not isinstance(v, bool)
+    if kind == "curl":
+        return not curl_errors(v)
     return False
+
+
+def curl_errors(table) -> list[str]:
+    """What is wrong with a hands_relax curl table: {finger: [degrees per curled segment]}, the fingers of
+    FINGER_SEGMENTS (Index to Pinky: segments 2, 3, 4; Thumb: 2, 3), each angle 0 to 180."""
+    if not isinstance(table, dict) or not table:
+        return ["a table of fingers"]
+    out = []
+    for finger, degs in table.items():
+        if finger not in FINGER_SEGMENTS:
+            out.append(f"unknown finger {finger!r}")
+        elif not isinstance(degs, (list, tuple)) or len(degs) != FINGER_SEGMENTS[finger] \
+                or not all(_is_number(d) and 0 <= d <= 180 for d in degs):
+            out.append(f"{finger}: {FINGER_SEGMENTS[finger]} angles of 0 to 180 degrees")
+    return out
 
 
 def check_steps(steps, bodies=("men", "women")) -> list[str]:
@@ -107,6 +149,10 @@ def check_steps(steps, bodies=("men", "women")) -> list[str]:
             v = step[key]
             if not _type_ok(spec, v):
                 want = spec["type"] + (f" in {spec['choices']}" if "choices" in spec else "")
+                if spec["type"] == "curl":
+                    want = "curl table (" + "; ".join(curl_errors(v)) + ")"
+                elif spec["type"] == "int":
+                    want = "whole number"
                 errors.append(f"{where}: {key} must be a {want}, not {v!r}")
                 continue
             if _is_number(v) and key in POSITIVE and v <= 0:
@@ -127,7 +173,23 @@ def check_steps(steps, bodies=("men", "women")) -> list[str]:
             errors.append(f"{where}: max_s must be >= min_s")
         if op == "floor" and _is_number(step.get("to_s")) and step["to_s"] <= step.get("from_s", 0.0):
             errors.append(f"{where}: to_s must be after from_s")
+        if op == "head_level" and _is_number(step.get("neck_share")) and not 0 <= step["neck_share"] <= 1:
+            errors.append(f"{where}: neck_share must be 0 to 1")
+        if op == "thumb_in" and "from_clip" in step:
+            for key in sorted({"beside", "side_cm", "max_deg", "frame"} & set(step)):
+                errors.append(f"{where}: {key} has no effect with from_clip (the turn is that clip's)")
+        if op == "idle_ends":
+            lo, hi = step.get("knees_out_from_deg", 25.0), step.get("knees_out_full_deg", 75.0)
+            if _is_number(lo) and _is_number(hi) and hi <= lo:
+                errors.append(f"{where}: knees_out_full_deg must be over knees_out_from_deg")
     return errors
+
+
+def from_clips(steps) -> list[str]:
+    """The other clips a list of steps reads (their `from_clip`): a set builds them first."""
+    if not isinstance(steps, (list, tuple)):
+        return []
+    return [s["from_clip"] for s in steps if isinstance(s, dict) and isinstance(s.get("from_clip"), str)]
 
 
 def params(step: dict) -> dict:
@@ -686,3 +748,234 @@ def mirror_pose(S, pose_m, C):
     """P'[b] = S P[m(b)] C[b]: bone b's mirrored pose from its partner's. Exact at rest, a proper rotation
     (det +1), and mirroring twice gives the pose back (S S = I, C[m(b)] C[b] = I)."""
     return mat_mul(mat_mul(S, pose_m), C)
+
+
+# ---------------------------------------------------------------------------------------- the relaxed idle (art #49)
+def smoothstep(t: float) -> float:
+    """3t^2 - 2t^3 on t clamped to [0, 1]."""
+    t = max(0.0, min(1.0, t))
+    return t * t * (3.0 - 2.0 * t)
+
+
+def finger_curls(table: dict) -> dict:
+    """A hands_relax curl table as {bone base name: degrees}: {"Index": [16, 22, 12]} -> Index2 16, Index3 22,
+    Index4 12 (segment 1, the metacarpal, is never curled)."""
+    return {f"{finger}{k + 2}": float(d) for finger, degs in table.items() for k, d in enumerate(degs)}
+
+
+def curl_goal(angle: float, curl: float, cap: float | None) -> float:
+    """A finger joint's new angle (degrees): the curl, or with a cap the joint's own angle up to cap times the curl
+    (a talk's gesture stays, its fist goes)."""
+    return curl if cap is None else min(angle, curl * cap)
+
+
+def stance_targets(hips: dict, rest_offset: dict, feet_z: dict, out_m: float) -> dict:
+    """The feet of a stance, one fixed point per side: its own hip joint plus the rest pose's hip-to-ankle offset
+    (horizontally) plus out_m outwards along X (the left is +X), at the foot's own height. Points are (x, y, z) in
+    world metres in the set's frame (the character faces -Y)."""
+    out = {}
+    for side, sign in (("L", 1.0), ("R", -1.0)):
+        h, o = hips[side], rest_offset[side]
+        out[side] = (h[0] + o[0] + sign * out_m, h[1] + o[1], feet_z[side])
+    return out
+
+
+def stance_lift(hips: dict, feet: dict, targets: dict, span: float = 0.2, rounds: int = 60) -> float:
+    """The one constant lift of the hips (m) that keeps the legs' mean hip-to-ankle distance when the feet move from
+    `feet` to `targets` (bisection in [-span, span]: the distance grows with the lift)."""
+    want = sum(_v_len(_v_sub(feet[s], hips[s])) for s in "LR") / 2.0
+    lo, hi = -span, span
+    for _ in range(rounds):
+        mid = (lo + hi) / 2.0
+        d = sum(_v_len(_v_sub(targets[s], _v_add(hips[s], (0.0, 0.0, mid)))) for s in "LR") / 2.0
+        if d > want:
+            hi = mid
+        else:
+            lo = mid
+    return (lo + hi) / 2.0
+
+
+def pitch_of(forward) -> float:
+    """A forward direction's angle above the horizontal (degrees; + looks up)."""
+    n = _v_len(forward)
+    return math.degrees(math.asin(max(-1.0, min(1.0, forward[2] / n)))) if n > 1e-12 else 0.0
+
+
+def head_fix(pitches: list, target_deg: float = 0.0) -> float:
+    """The constant pitch (degrees) that puts a clip's mean head pitch at target_deg."""
+    return target_deg - sum(pitches) / len(pitches)
+
+
+def yaw_out(foot, toe, side: str) -> float:
+    """A foot's yaw out (degrees, + = the toe turned outwards) against the set's aim (-Y): the floor direction from the
+    foot's head to its toe's head; the left foot turns out to +X (counter-clockwise from above), the right to -X."""
+    f = (toe[0] - foot[0], toe[1] - foot[1])
+    return (1.0 if side == "L" else -1.0) * signed_angle_2d((0.0, -1.0), f)
+
+
+def knees_out(flex_deg: float, deg: float, from_deg: float, full_deg: float, weight: float = 1.0) -> float:
+    """How far (degrees) a knee swings out in a bend: 0 below from_deg of knee bend, `deg` from full_deg, a
+    smoothstep between, times the weight."""
+    return deg * smoothstep((flex_deg - from_deg) / (full_deg - from_deg)) * weight
+
+
+def reach_lift(hip, foot, reach: float) -> float:
+    """The most the hip may rise (m) while a leg of length `reach` still reaches its foot (+Z up); 0 minus the
+    foot's depth below the hip when the foot is horizontally out of reach."""
+    h2 = (foot[0] - hip[0]) ** 2 + (foot[1] - hip[1]) ** 2
+    if reach * reach <= h2:
+        return 0.0
+    return math.sqrt(reach * reach - h2) - (hip[2] - foot[2])
+
+
+def planted_until(track: list, start: int, step: int, speed_m: float, rise_m: float) -> int:
+    """The last frame, going from `start` by `step` (+1 or -1), up to which a foot stays planted (its points (x, y, z),
+    +Z up): each frame it moves less than speed_m along the floor and it stays less than rise_m above where it is at
+    `start`. A flat foot that creeps along the floor or settles onto it is planted; a foot that lifts or moves off is
+    not (art #49: a distance from the touching frame counted a creeping or settling foot as moving, and idle_ends then
+    slid it along the floor)."""
+    p = start
+    z0 = track[start][2]
+    while 0 <= p + step < len(track):
+        a, b = track[p], track[p + step]
+        if math.hypot(b[0] - a[0], b[1] - a[1]) >= speed_m or b[2] - z0 >= rise_m:
+            break
+        p += step
+    return p
+
+
+AIR_M = 0.01  # idle_ends: a foot lifted more than this is in the air; never both feet at once
+
+
+def idle_end_weights(frames: int, ends, feet: dict, fade: int, speed_m: float, rise_m: float, step_m: float,
+                     upper: bool = True) -> dict:
+    """The weights of idle_ends over frames 0..frames (anim_edit.op_idle_ends; the lab's round D, blend_transitions in
+    D:/prime-art-raw/research/2026-10-05-faces/lab/clay_d/clay_idle.py).
+
+    ends: "start" and/or "end", the clip's ends that meet the idle. feet: {"L"/"R": [(x, y, z) per frame]}, the feet
+    before the edit (world m). Returns
+      upper   per frame, the upper body's weight: 1 at a touching frame, a smoothstep to 0 over `fade` frames (all 0
+              with upper=False: the feet and legs only);
+      ends    per end: its touching frame and per side the foot's plan:
+              "planted"  the foot stays planted (by planted_until with speed_m and rise_m) to the other end;
+              "held"     fewer than 2 frames would be left: held to the other end;
+              "hold"     both ends meet the idle and the foot only shuffles along the floor between them (it moves
+                         after the start's planted frames and before the end's, rising under step_m / 2): held at the
+                         idle's on every frame (its window: the frames it moves on), so neither end's fade slides
+                         it or lifts it (art #49: the package clips' feet both shuffled, and both were lifted at once);
+              "fade"     held while planted, then a smoothstep to 0 over up to `fade` frames (its window); a foot that
+                         shuffles along the floor there, rising under step_m / 2, is lifted to the step's arc above
+                         where it was planted so the fade does not slide it ("lifted"); a foot that leaves the floor by
+                         itself is not;
+              "step"     planted all through, and the clip's other end meets another clip: the foot steps step_m high
+                         over min(fade, frames) frames where the other foot moves least, off the frames where the
+                         other foot is lifted;
+              never both feet in the air: a lift that has both feet over AIR_M up on a common frame (steps keep
+              theirs first, then the earlier lift) is dropped ("lift_dropped"; that foot fades along the floor);
+      w       per end and side, the foot's weight per frame;
+      feet    per side, the foot's weight per frame (the largest over the ends);
+      lift    per side, the lift per frame (m): a step's arc, step_m * 4x(1 - x) for the foot's weight x, and in a
+              fade what the foot itself lacks of that arc;
+      hold    per held side, the share of the end's numbers per frame: 0 up to its window, a smoothstep to 1 over it.
+    """
+    n = frames
+    ends = tuple(ends)
+    upper_on = upper
+    upper = [0.0] * (n + 1)
+    w = {e: {s: [0.0] * (n + 1) for s in "LR"} for e in ends}
+    lifts = {}  # (end, side) -> the lift per frame (m)
+    plan = {}
+    hold = {}
+
+    def moved(s, a, b):
+        return sum(_v_len(_v_sub(feet[s][f + 1], feet[s][f])) for f in range(a, b))
+
+    if "start" in ends and "end" in ends:
+        for s in "LR":
+            a = planted_until(feet[s], 0, 1, speed_m, rise_m)
+            b = planted_until(feet[s], n, -1, speed_m, rise_m)
+            if a < b:
+                rise = max(feet[s][f][2] for f in range(a, b + 1)) - min(feet[s][a][2], feet[s][b][2])
+                if rise < step_m / 2.0:
+                    hold[s] = {"window": [a, b], "shuffle_rise_cm": round(rise * 100.0, 2),
+                               "shuffle_moves_cm": round(moved(s, a, b) * 100.0, 1)}
+
+    for e in ends:
+        ft, d = (0, 1) if e == "start" else (n, -1)
+        far = n if d == 1 else 0
+        far_idle = ("end" if e == "start" else "start") in ends
+        for f in range(n + 1):
+            if upper_on:
+                upper[f] = max(upper[f], 1.0 - smoothstep(d * (f - ft) / fade))
+        info = {"frame": ft, "upper_fade_to": ft + d * fade}
+        steps = []
+        for s in "LR":
+            p = planted_until(feet[s], ft, d, speed_m, rise_m)
+            rem = abs(far - p)
+            fi = {"planted_to": p}
+            if s in hold:
+                fi.update(mode="hold", **hold[s])
+                w[e][s] = [1.0] * (n + 1)
+            elif rem == 0 and not far_idle:
+                fi["mode"] = "step"
+                steps.append(s)
+            elif rem < 2:
+                fi["mode"] = "planted" if rem == 0 else "held"
+                w[e][s] = [1.0] * (n + 1)
+            else:
+                span = min(fade, rem)
+                fi.update(mode="fade", window=sorted([p, p + d * span]))
+                w[e][s] = [1.0 - smoothstep(d * (f - p) / span) for f in range(n + 1)]
+                z0 = feet[s][p][2]
+                lo_w, hi_w = fi["window"]
+                fi["lifted"] = max(feet[s][f][2] - z0 for f in range(lo_w, hi_w + 1)) < step_m / 2.0
+                if fi["lifted"]:
+                    lifts[(e, s)] = [max(0.0, step_m * 4.0 * x * (1.0 - x) - max(0.0, feet[s][f][2] - z0))
+                                     if 0.0 < x < 1.0 else 0.0 for f, x in enumerate(w[e][s])]
+            info[s] = fi
+        for s in steps:  # after the other foot's plan: a step keeps off the frames where the other foot is lifted
+            span = min(fade, n)
+            o = "R" if s == "L" else "L"
+            busy = {f for (_e, s2), li in lifts.items() if s2 == o for f, v in enumerate(li) if v > AIR_M}
+            cands = [(any(a < f < a + span for f in busy), round(moved(o, a, a + span) * 100.0, 1),
+                      abs((a + span if d == 1 else a) - far), a) for a in range(0, n - span + 1)]
+            _clash, cost, _dist, a = min(cands)
+            lo, hi = a, a + span
+            info[s].update(mode="step", window=[lo, hi], other_foot_moves_cm=cost)
+            for f in range(n + 1):
+                t = (f - lo) / span if d == 1 else (hi - f) / span
+                w[e][s][f] = 1.0 - smoothstep(t)
+            lifts[(e, s)] = [step_m * 4.0 * x * (1.0 - x) for x in w[e][s]]
+        plan[e] = info
+
+    # never both feet in the air at once: steps keep their lift first, then the earlier lifts
+    def first(k):
+        return min(f for f, v in enumerate(lifts[k]) if v > 0.0) if any(v > 0.0 for v in lifts[k]) else n + 1
+
+    kept = {s: [0.0] * (n + 1) for s in "LR"}
+    for k in sorted(lifts, key=lambda k: (plan[k[0]][k[1]]["mode"] != "step", first(k), k)):
+        e, s = k
+        o = "R" if s == "L" else "L"
+        both = [f for f, v in enumerate(lifts[k]) if v > AIR_M and kept[o][f] > AIR_M]
+        if both:
+            plan[e][s].update(lifted=False, lift_dropped=f"the other foot is lifted on frames {both[0]}-{both[-1]}")
+            continue
+        kept[s] = [max(a, b) for a, b in zip(kept[s], lifts[k])]
+    feet_w = {s: [max(w[e][s][f] for e in ends) for f in range(n + 1)] for s in "LR"}
+    mix = {}
+    for s, h in hold.items():
+        a, b = h["window"]
+        mix[s] = [smoothstep((f - a) / (b - a)) for f in range(n + 1)]
+    return {"upper": upper, "ends": plan, "w": w, "feet": feet_w, "lift": kept, "hold": mix}
+
+
+def end_mix(weights: dict, side: str, f: int, frames: int) -> list:
+    """The ends whose edit reaches frame f for one foot, each with its share; a clip whose both ends meet the idle
+    moves from the start's numbers to the end's along the clip. weights: idle_end_weights' "w"."""
+    ws = [(e, weights[e][side][f]) for e in weights if weights[e][side][f] > 0.0]
+    if len(ws) <= 1:
+        return [(e, 1.0) for e, _ in ws]
+    span = max(1, frames)
+    ts = [(e, x * (((frames - f) if e == "start" else f) / span)) for e, x in ws]
+    tot = sum(t for _, t in ts)
+    return [(e, t / tot) for e, t in ts] if tot > 0.0 else [(e, 1.0 / len(ws)) for e, _ in ws]

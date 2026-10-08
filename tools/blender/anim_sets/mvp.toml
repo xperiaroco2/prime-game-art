@@ -23,7 +23,17 @@ upper = "Torso"
 name = "Idle_Loop"
 source = "ual:Idle_Loop"
 loop = true
-edits = [{ op = "arm_offset", abduct_deg = 2.66, body = "women" }]  # auto: hands 1.32 cm in the thighs to 0
+# The relaxed idle (art #49, the lab's round D: docs/research/2026-10-08-relaxed-idle.md): the right foot turned in 40
+# degrees (UAL's idle turns it 44 out) and its leg re-solved, the feet about hip width and planted, the shoulders down,
+# the head level, open loose hands with the thumb beside the index finger. The first arm_offset is art #33's (fists:
+# auto, hands 1.32 cm in the thighs to 0); the last takes the women's longer open hands out of the thighs (auto on the
+# open hands: 2.9 cm in the thighs to 0 at 4.16 degrees; the men's 0; the lab's 6.0 was checked on its w1).
+edits = [{ op = "arm_offset", abduct_deg = 2.66, body = "women" },
+         { op = "foot_turn", bone = "Foot.R", toe_in_deg = 40.0 }, { op = "stance", out_cm = 2.0 },
+         { op = "shoulders", drop_deg = 6.0 }, { op = "head_level", target_deg = 0.0, neck_share = 0.4 },
+         { op = "hands_relax", curl_deg = { Index = [16, 22, 12], Middle = [20, 26, 14], Ring = [26, 30, 16], Pinky = [32, 34, 18], Thumb = [12, 12] } },
+         { op = "thumb_in", beside = "Index3", side_cm = 1.6, max_deg = 40 },
+         { op = "arm_offset", abduct_deg = 4.16, body = "women" }]
 needs = [{ need = "Idle, standing; the base under the carry, talk and push layers", no = 1, layer = "full" }]
 
 [[clips]]
@@ -109,7 +119,8 @@ needs = [{ need = "Sprint forward at 7.0 m/s", no = 5, layer = "full", speed_m_s
 name = "Jump_Start"
 source = "ual:Jump_Start"
 loop = false
-edits = [{ op = "trim", start_s = 0.03, end_s = 0.40 }, { op = "retime", seconds = 0.25 }]
+edits = [{ op = "trim", start_s = 0.03, end_s = 0.40 }, { op = "retime", seconds = 0.25 },
+         { op = "idle_ends", at = "start", from_clip = "Idle_Loop" }]
 needs = [{ need = "Jump: the take-off", no = 9, layer = "full" }]
 
 [[clips]]
@@ -123,7 +134,8 @@ name = "Jump_Land"
 source = "ual:Jump_Land"
 loop = false
 # the women's hands brush the thighs in the crouch (7.3 cm): an arm offset up to 12 degrees made it worse (7.7)
-edits = [{ op = "trim", start_s = 0.0, end_s = 0.5 }, { op = "retime", seconds = 0.3 }]
+edits = [{ op = "trim", start_s = 0.0, end_s = 0.5 }, { op = "retime", seconds = 0.3 },
+         { op = "idle_ends", at = "end", from_clip = "Idle_Loop" }]
 needs = [{ need = "Jump: the landing (upper body while moving, full standing)", no = 9, layer = "full" }]
 
 # ------------------------------------------------------------------------------------- pushing, the knife
@@ -172,14 +184,18 @@ name = "Pickup_One"
 source = "ual2:Farm_Harvest"
 loop = false
 # the women's hand reaches past the thigh (2.5 cm in): an arm offset of 12 degrees only brought it to 1.9
-edits = [{ op = "trim", start_s = 0.13, end_s = 2.13 }, { op = "retime", seconds = 0.9 }]
+edits = [{ op = "trim", start_s = 0.13, end_s = 2.13 }, { op = "retime", seconds = 0.9 },
+         { op = "idle_ends", at = "both", from_clip = "Idle_Loop" }]
 needs = [{ need = "Pick up a one-handed item from the floor (full standing, upper body moving)", no = 16, layer = "full" }]
 
 [[clips]]
 name = "Putdown_One"
-from = "Pickup_One"
+source = "ual2:Farm_Harvest"
 loop = false
-edits = [{ op = "reverse" }, { op = "retime", seconds = 0.8 }]
+# the pickup's own steps, reversed: made from its source rather than `from = "Pickup_One"`, which would blend the idle
+# into it twice (art #49)
+edits = [{ op = "trim", start_s = 0.13, end_s = 2.13 }, { op = "retime", seconds = 0.9 }, { op = "reverse" },
+         { op = "retime", seconds = 0.8 }, { op = "idle_ends", at = "both", from_clip = "Idle_Loop" }]
 needs = [{ need = "Put a one-handed item down in front", no = 17, layer = "full" }]
 
 [[clips]]
@@ -189,9 +205,14 @@ loop = false
 edits = [{ op = "trim", start_s = 0.1, end_s = 1.5 }, { op = "heading", facing = "mean" },
          { op = "retime", seconds = 1.0 }, { op = "floor", mode = "lift" },
          { op = "hand_spacing", gap_m = 0.40, at = "end", deg = 18.5, body = "men" },
-         { op = "hand_spacing", gap_m = 0.40, at = "end", deg = 22.9, body = "women" }]
+         { op = "hand_spacing", gap_m = 0.40, at = "end", deg = 22.9, body = "women" },
+         { op = "idle_ends", at = "both", from_clip = "Idle_Loop", upper = false }]
 # floor: the squat's toes went 2.8 cm (men) and 1.9 cm (women) into the floor; hand_spacing auto found 18.55 and
-# 22.85 degrees for a 0.40 m gap at the end (from 19.1 and 14.0 cm)
+# 22.85 degrees for a 0.40 m gap at the end (from 19.1 and 14.0 cm). idle_ends (art #49): both ends meet the idle's
+# legs (the carry plays over the idle), so the feet and legs only go to the relaxed idle's; the arms keep their hold.
+# The heading leaves Root turned 19.8 degrees from the idle's, so the feet are matched in the set's frame (the default);
+# both feet only shuffle between the ends, so they are held at the idle's all through. Putdown_Package, its reverse,
+# takes it at both ends too
 needs = [{ need = "Pick up the package with both hands", no = 18, layer = "full" }]
 
 [[clips]]
@@ -209,7 +230,8 @@ loop = false
 # The lift takes the impact out of the floor; the settle brings the lying frames (from 0.83 s after the retime, the
 # frame after the impact) down onto it: Death01 lies 2.2 cm up, and the game holds its last frame as the downed pose.
 edits = [{ op = "floor", mode = "lift", from_s = 1.2 }, { op = "trim", start_s = 0.0, end_s = 2.0 },
-         { op = "retime", seconds = 1.35 }, { op = "floor", mode = "settle", from_s = 0.83 }]
+         { op = "retime", seconds = 1.35 }, { op = "floor", mode = "settle", from_s = 0.83 },
+         { op = "idle_ends", at = "start", from_clip = "Idle_Loop" }]
 needs = [{ need = "Knocked down: falls where they stand; its last pose is the downed pose", no = 21, layer = "full" }]
 
 [[clips]]
@@ -241,7 +263,10 @@ note = "stopgap: the cut's raw seam is 26 degrees (the left wrist); the crawl is
 name = "Getup_Back"
 source = "ual2:LayToIdle"
 loop = false
-edits = [{ op = "floor", mode = "lift" }]  # the toes went 4.0 cm (men) and 4.1 cm (women) into the floor at 0.83 s
+# floor: the toes went 4.0 cm (men) and 4.1 cm (women) into the floor at 0.83 s. idle_ends matches the feet relative
+# to Root (match = "root"): the whole body stands up 17 cm (men) and 27 cm (women) from where the idle stands, so the
+# idle's feet in the set's frame would be that far from under it
+edits = [{ op = "floor", mode = "lift" }, { op = "idle_ends", at = "end", from_clip = "Idle_Loop", match = "root" }]
 needs = [{ need = "Stand up after a revive (from lying on the back)", no = 25, layer = "full" }]
 
 [[clips]]
@@ -259,7 +284,8 @@ note = "stopgap: Meshy's get-up floats; settled, it lifts off 4.5 cm mid-rise; a
 name = "Raise_In"
 source = "ual:Fixing_Kneeling"
 loop = false
-edits = [{ op = "floor", mode = "hips" }, { op = "trim", start_s = 0.0, end_s = 0.8 }, { op = "retime", seconds = 0.6 }]
+edits = [{ op = "floor", mode = "hips" }, { op = "trim", start_s = 0.0, end_s = 0.8 }, { op = "retime", seconds = 0.6 },
+         { op = "idle_ends", at = "start", from_clip = "Idle_Loop" }]
 needs = [{ need = "Raise a downed player: kneel down", no = 26, layer = "full" }]
 
 [[clips]]
@@ -270,6 +296,9 @@ loop = true
 # forearm (0.5 to 0.6 s cuts: 23 to 29), so the loop is closed over 27 degrees; hand keys or a ping-pong loop later.
 edits = [{ op = "floor", mode = "hips" },
          { op = "cycle", min_s = 1.0, max_s = 3.0, within = [1.0, 4.2], max_raw_seam_deg = 30 }]
+# placed by Raise_In's end, not recentred (art #49): Raise_In and Raise_Out keep their Body where the source has it
+# (idle_ends places them in the idle's frame) and hold the feet at the idle's, so the work meets both with its feet
+place_after = "Raise_In"
 needs = [{ need = "Raise a downed player: the work, looped for the 3 s", no = 26, layer = "full" }]
 note = "stopgap: the cut's raw seam is 27 degrees (the right forearm)"
 
@@ -277,7 +306,8 @@ note = "stopgap: the cut's raw seam is 27 degrees (the right forearm)"
 name = "Raise_Out"
 source = "ual:Fixing_Kneeling"
 loop = false
-edits = [{ op = "floor", mode = "hips" }, { op = "trim", start_s = 4.2, end_s = 5.0 }, { op = "retime", seconds = 0.6 }]
+edits = [{ op = "floor", mode = "hips" }, { op = "trim", start_s = 4.2, end_s = 5.0 }, { op = "retime", seconds = 0.6 },
+         { op = "idle_ends", at = "end", from_clip = "Idle_Loop" }]
 needs = [{ need = "Raise a downed player: stand up again", no = 26, layer = "full" }]
 
 # ------------------------------------------------------------------------------------------------ talking
@@ -287,6 +317,13 @@ source = "ual:Idle_Talking_Loop"
 loop = true
 # auto found 8.98 degrees on the men (2.22 cm inside each other to a 1.18 cm gap) and 12.5 on the women (2.15 cm to
 # 1.16 cm); the women's hands do not reach the talk's own legs (arm_offset auto: 0 degrees)
+# then the relaxed idle's stance, shoulders, head and hands (art #49), the fingers capped at 1.5 times the idle's curl
+# (a gesture stays, a fist goes) and the idle's thumb turn; no arm offset: auto finds 0 on both bodies with the open
+# hands (the lab's 6.0 for the women)
 edits = [{ op = "hand_spacing", min_gap_cm = 1.0, deg = 9.0, body = "men" },
-         { op = "hand_spacing", min_gap_cm = 1.0, deg = 12.5, body = "women" }]
+         { op = "hand_spacing", min_gap_cm = 1.0, deg = 12.5, body = "women" },
+         { op = "foot_turn", bone = "Foot.R", toe_in_deg = 40.0 }, { op = "stance", out_cm = 2.0 },
+         { op = "shoulders", drop_deg = 6.0 }, { op = "head_level", target_deg = 0.0, neck_share = 0.4 },
+         { op = "hands_relax", curl_deg = { Index = [16, 22, 12], Middle = [20, 26, 14], Ring = [26, 30, 16], Pinky = [32, 34, 18], Thumb = [12, 12] }, cap = 1.5 },
+         { op = "thumb_in", from_clip = "Idle_Loop" }]
 needs = [{ need = "Talking by proximity voice (upper body, low weight)", no = 28, layer = "upper" }]
