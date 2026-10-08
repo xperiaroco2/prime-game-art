@@ -369,8 +369,9 @@ def check_tokens(script: Script) -> list[tuple[int, str]]:
         if t.kind in ("ident", "str") and t.value == "effort" and toks[k + 1].value == ":" \
                 and toks[k + 2].kind == "str" and toks[k + 2].value in BANNED_EFFORTS:
             found.append((t.line, f"effort {toks[k + 2].value!r} is not allowed; builders run at 'high'"))
-        for obj, member in NONDETERMINISTIC:
-            if t.value == obj and toks[k + 1].value == "." and toks[k + 2].value == member:
+        for obj, member in NONDETERMINISTIC:  # Date.now, Date?.now, Date['now']; an alias (const D = Date) passes
+            if t.kind == "ident" and t.value == obj and toks[k + 2].value == member and (
+                    toks[k + 1].value in (".", "?.") or toks[k + 1].value == "[" and toks[k + 2].kind == "str"):
                 found.append((t.line, f"{obj}.{member}() breaks resume; workflow scripts are deterministic"))
         if t.value == "new" and toks[k + 1].value == "Date" and k + 3 < len(toks) and toks[k + 2].value == "(" \
                 and toks[k + 3].value == ")":

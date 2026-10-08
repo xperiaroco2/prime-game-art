@@ -76,6 +76,19 @@ class StaticChecksTest(unittest.TestCase):
         text = (FIXTURES / "good.js").read_text(encoding="utf-8").replace("effort: 'high'", "effort: level")
         self.assertIn("effort must be a string literal", lint.check_text(text)[0][1])
 
+    def test_other_member_forms_of_date_now_are_refused(self) -> None:
+        text = (FIXTURES / "good.js").read_text(encoding="utf-8")
+        for expr, name in (("Date['now']()", "Date.now()"), ('Math["random"]()', "Math.random()"),
+                           ("Date?.now()", "Date.now()")):
+            with self.subTest(expr=expr):
+                found = lint.check_text(text.replace("ratio: 4 / 2", f"ratio: {expr}"))
+                self.assertEqual(found, [(17, f"{name} breaks resume; workflow scripts are deterministic")])
+
+    def test_an_alias_of_date_passes(self) -> None:
+        # the documented limit (docs/agents.md): the check reads tokens, not values
+        text = (FIXTURES / "good.js").read_text(encoding="utf-8")
+        self.assertEqual(lint.check_text(text.replace("ratio: 4 / 2", "ratio: D.now()") + "const D = Date;\n"), [])
+
     def test_module_copy_keeps_line_numbers(self) -> None:
         text = (FIXTURES / "good.js").read_text(encoding="utf-8")
         copy = lint.module_copy(text)

@@ -89,7 +89,9 @@ The drivers overlap: a long agent pays every one of the others on every call.
   `${...}`). The prompt's text includes the strings of the consts and functions it names;
 - an agent prompt never states the 180 s wait rule ("no tool call blocks over 180 s" in one string literal of the
   prompt's text, as for `BOUNDS`);
-- it calls `Date.now()`, `Math.random()` or `new Date()` (a resumed script must replay the same way).
+- it calls `Date.now()`, `Math.random()` or `new Date()` (a resumed script must replay the same way), also written
+  `Date?.now()` or `Date['now']()`. The check reads tokens, not values: an alias (`const D = Date; D.now()`) passes,
+  so the manager still reads a script for them.
 
 The options of an `agent(` call are an object literal or a const bound to one; `...SPREAD` of such a const is read too.
 
