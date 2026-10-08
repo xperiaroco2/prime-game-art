@@ -296,6 +296,9 @@ loop = true
 # forearm (0.5 to 0.6 s cuts: 23 to 29), so the loop is closed over 27 degrees; hand keys or a ping-pong loop later.
 edits = [{ op = "floor", mode = "hips" },
          { op = "cycle", min_s = 1.0, max_s = 3.0, within = [1.0, 4.2], max_raw_seam_deg = 30 }]
+# placed by Raise_In's end, not recentred (art #49): Raise_In and Raise_Out keep their Body where the source has it
+# (idle_ends places them in the idle's frame) and hold the feet at the idle's, so the work meets both with its feet
+place_after = "Raise_In"
 needs = [{ need = "Raise a downed player: the work, looped for the 3 s", no = 26, layer = "full" }]
 note = "stopgap: the cut's raw seam is 27 degrees (the right forearm)"
 
