@@ -320,8 +320,10 @@ def check_agents(script: Script) -> list[tuple[int, str]]:
     for k, t in enumerate(toks):
         if not (t.kind == "ident" and t.value == "agent" and k + 1 < len(toks) and toks[k + 1].value == "("):
             continue
-        if k > 0 and (toks[k - 1].value in (".", "?.", "function") or toks[k - 1].kind == "ident"
-                      and toks[k - 1].value in ("const", "let", "var")):
+        if k > 0 and toks[k - 1].kind == "punct" and toks[k - 1].value in (".", "?."):
+            found.append((t.line, "a member call `x.agent(` is not checked; call the global agent()"))
+            continue
+        if k > 0 and toks[k - 1].kind == "ident" and toks[k - 1].value in ("function", "const", "let", "var"):
             continue
         close = matching(toks, k + 1)
         args = split_top(toks, k + 2, close)

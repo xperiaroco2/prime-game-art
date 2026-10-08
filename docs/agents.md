@@ -82,6 +82,7 @@ The drivers overlap: a long agent pays every one of the others on every call.
   found. It is skipped with a note when node is missing;
 - an `agent(` call has no `agentType: 'art-reader' | 'art-writer'` in its options, unless a
   `/* general-agent: <reason> */` comment comes right before the call (or its `await`);
+- it calls `agent` as a member (`x.agent(`, `x?.agent(`): only the global `agent()` is read, so such a call is refused;
 - an effort is `xhigh` or `max`, or an agent's `model` or `effort` is not a string literal;
 - an `art-reader` call has `model: 'opus'`;
 - an agent prompt has no `BOUNDS: at most N tool calls` with N <= 60, written in one string literal (N not in a
