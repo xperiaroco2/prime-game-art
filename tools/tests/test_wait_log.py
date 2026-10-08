@@ -113,7 +113,7 @@ class MainTest(unittest.TestCase):
             with self.subTest(max=bad):
                 code, out, _ = run_wait(str(self.path), bad)
                 self.assertEqual(code, wait.MISSING)
-                self.assertTrue(out[0].startswith("wait: --max is 1 to 180 s"))
+                self.assertTrue(out[0].startswith("wait: --max is 1 to 170 s"))
 
     def test_a_folder_is_not_a_log(self) -> None:
         code, out, _ = run_wait(self.dir.name)
@@ -123,6 +123,7 @@ class MainTest(unittest.TestCase):
     def test_the_step_keeps_the_cache_warm(self) -> None:
         self.assertEqual(wait.DEFAULT_MAX, wait.MAX_ALLOWED)
         self.assertLessEqual(wait.MAX_ALLOWED + 94, wait.CACHE_TTL)  # prime-game#555's p95 overhead
+        self.assertLessEqual(wait.MAX_ALLOWED + 10, wait.TOOL_CALL_MAX)  # room for start-up inside one call
 
 
 class NativePathTest(unittest.TestCase):

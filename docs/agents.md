@@ -22,8 +22,9 @@ The drivers overlap: a long agent pays every one of the others on every call.
    - The waiting rule in CLAUDE.md ("Shell") applies: no tool call blocks over 180 s, and a long run goes to the
      background.
    - The agent checks a background run with one short call, with gaps of at most 180 s: `tools/run.sh wait <log>`
-     waits up to 180 s for the log's last line `exit=<n>`, prints the `verify:` lines or the last 8 lines and returns
-     n, or 124 while the run goes on (then call it again; never start the run again).
+     waits up to 170 s (the default and maximum `--max`, under the 180 s of one call) for the log's last line
+     `exit=<n>`, prints the `verify:` lines or the last 8 lines and returns n, or 124 while the run goes on (then call
+     it again; never start the run again).
    - No Monitor or wait tool may hold the agent idle longer than that.
 2. **Short agents** (the long agents).
    - A builder step ends at about 60 calls (this replaces the 120 calls of #51's first levers), or earlier at the
