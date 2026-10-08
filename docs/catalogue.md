@@ -117,7 +117,7 @@ and is measured again.
 **Review: too close to call by rays.** A pair whose rays fail its allowance by a few rays is not clearly worse
 than the pack's own outfits: in art #19's review, five renders of pairs that failed by 1 to 4 rays (out of 216 to
 6408) all looked clean. So a pair with no vertical gap (`overlap_mm >= 0`) that fails by at most 4 rays, or 1 % of the
-rays cast in that state when that is more, is **review**: the designer decides on a render. The cell records
+rays cast in that state when that is more, is **review**: the engineer decides on a render. The cell records
 `review` (`over_by`, `margin`). Larger failures stay poke or gap; a few of those may still read as mild at a glance
 (a men's thicker neck covering a women's neckline, 100 poke rays against 2 allowed), which is a look question.
 
@@ -126,7 +126,7 @@ sees through); **poke** means one part shows through the other and no assembler 
 opening extend_edge closed but whose lowered edge then crosses the other part (the women's Worker top over Punk
 trousers, the women's Punk top on any other skull; `fix_tried.rounds` lists every try); **needs_fix** names the fix that was
 tried and closed it. For the menu: offer a pair when its verdict is `ok`, `ok_tucked` or `ok_over`, or `needs_fix`
-with the fix applied at assembly; a `review` pair only after the designer approves it on a render.
+with the fix applied at assembly; a `review` pair only after the engineer approves it on a render.
 
 ## The data file: `catalogue/ultimate_modular.json`
 

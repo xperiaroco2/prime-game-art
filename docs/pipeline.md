@@ -19,7 +19,7 @@ section wins:
   - `export`, `godot-check` and `frames` carry a character into Godot 4.7.2 (`docs/godot.md`).
 - **Meshy makes items and props only.** It is also tried for animations (#25); characters do not come from it.
 - **Who decides:** the trust model (`docs/decisions/2026-10-03-trust-model.md`).
-  - The engineer, with the designer, decides taste; the engineer alone decides money and large or hard-to-reverse
+  - The engineer, who acts as the designer, decides taste; the engineer alone decides money and large or hard-to-reverse
     changes.
   - The art manager decides the rest and merges PRs into `main` after the gate.
   - Meshy within the plan's credits and free official downloads run under standing permissions.
@@ -36,12 +36,12 @@ section wins:
 | Colour | Every piece is **recoloured from one shared palette**; flat colours with no textures, soft light and shadows, no outline by default (compared in renders) |
 | Motion | **Animations only.** Falls and knockdowns are canned animations; no ragdoll and no physical wobble |
 | First person | **Hands with forearms in the sleeves of your top**, running off the screen edge, plus your own shadow; never floating hands. A true first-person body may come later |
-| Names | A player's name shows only when you aim at them up close. A game rule, built in the game repo; the designer may object on #165 |
+| Names | A player's name shows only when you aim at them up close. A game rule, built in the game repo; the engineer, as the designer, may object on #165 |
 | AI rules | Never name How to Fish or any other game or character in a prompt, never upload their screenshots, no personal photos; `ai_generated` recorded per asset; never free-plan output |
 | Raw files | `D:/prime-art-raw` on the engineer's PC; chosen originals copied to `OneDrive/prime-art-raw`; never in git |
 | Who generates | An agent, through the Meshy API, from the start; each batch only after the engineer's yes to its prompts, count and credits (since 2026-10-03: the standing permission within the plan's credits, see the section above). The engineer buys the plan (Meshy Pro, one month) and sets `MESHY_API_KEY`; agents never enter keys or payment details |
 
-The look is decided by the engineer together with the designer (@SwiftySinister); the art track proposes and renders,
+The look is decided by the engineer, who acts as the designer (@SwiftySinister is not active); the art track proposes and renders,
 it does not choose.
 
 ## Steps
@@ -67,8 +67,8 @@ it does not choose.
                 fails; then godot-check (headless import into godot/) and frames (off-screen Godot sheets)
 11 render       8 views at 45 degrees in a 4x2 sheet with a caption; 8-frame sheets per clip; a lit hero image;
                 variants side by side. Shown to the engineer as a private artifact page, never committed
-[the designer for the look; the art manager merges after the gate]
-12 approve      a PR in this repo: the designer approves the look on the review page; the art manager merges after
+[the engineer for the look; the art manager merges after the gate]
+12 approve      a PR in this repo: the engineer approves the look on the review page; the art manager merges after
                 the gate (trust model); the manifest gets approved_by, approved_at, approval_pr (docs/manifest.md)
 [agent, game repo xperiaroco2/prime-game, its own task workflow]
 13 bring in     the approved .glb (LFS), its .import, and a credits entry with the public provenance fields
