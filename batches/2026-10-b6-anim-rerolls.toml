@@ -1,0 +1,49 @@
+# Batch 6: A7 of the animation MVP (art #33, #66), the re-rolls of the weakest text-to-motion clips. The engineer's
+# yes: 40 credits, the 30-credit reserve of batch 5 plus 10 for the crawl, balance 53 -> 13 (#16, comment 6058026953).
+# Each prompt aims at the fault measured on the old clip (docs/animations.md, "The raw motion"; mvp.toml's notes):
+#   backward-run          was backward-jog: a jog almost in place (0.31 m/s, steps of 0.09-0.30 m), no loop
+#   strafe-left-r2        was strafe-left: a gallop of long and short steps, 17 degrees forward of sideways, no loop,
+#                         the hands 2.3-4.2 cm into the torso
+#   rollup-to-all-fours-r2  was rollup-to-all-fours: floats the whole clip (7.8-31 cm), the hands short of the floor
+#   crawl-r2              was batch 4's crawl-motion: no loop (seam 59 degrees), 19 degrees left of straight, floats
+# The clips go straight from their SMPL-H FBX onto the Ultimate Modular rig (no Meshy rig, no animate step), as batch 5's.
+# They enter the MVP set as review-only candidates beside the stopgaps; the engineer judges them before any swap.
+# Prompts name no game and no character.
+#
+# Credits (docs.meshy.ai, read 2026-10-03): text to motion prime 10 each: 40, cap 40.
+#   tools/run.py meshy estimate 2026-10-b6-anim-rerolls
+#   tools/run.py meshy run 2026-10-b6-anim-rerolls
+
+id = "2026-10-b6-anim-rerolls"
+purpose = "A7: four prime text-to-motion re-rolls (backward run, strafe, roll to all fours, crawl) for the animation MVP, retargeted onto the Ultimate Modular rig (art #33, #66)."
+plan = "Meshy Pro (monthly)"
+terms_url = "https://www.meshy.ai/terms-of-use"
+licence = "owned by the customer on a paid plan (Meshy Terms of Use 3.2, updated 2026-09-19); text-to-motion clips are AI-generated"
+credit_cap = 40
+approved_by = "xperiaroco2 (the engineer)"
+approved_at = "2026-10-08"
+approval_ref = "https://github.com/xperiaroco2/prime-game-art/issues/16#issuecomment-6058026953"
+
+[[items]]
+id = "backward-run"
+kind = "text_to_motion"
+prompt = "A person runs backwards fast in a straight line, covering a lot of ground: long, quick backward strides of about one metre each, pushing off hard from the balls of the feet, chest and head facing straight ahead the whole time, knees bent, arms pumping. A fast, even, repeating run cycle that starts and ends in the same pose."
+params = { duration = 4, mode = "prime" }
+
+[[items]]
+id = "strafe-left-r2"
+kind = "text_to_motion"
+prompt = "A person runs fast exactly sideways to the left in a straight line, chest, hips and head facing straight ahead the whole time, the legs crossing over in even, rhythmic steps that are all the same length, both feet landing lightly, arms bent and held a little away from the body. An even, repeating cycle that starts and ends in the same pose."
+params = { duration = 4, mode = "prime" }
+
+[[items]]
+id = "rollup-to-all-fours-r2"
+kind = "text_to_motion"
+prompt = "A hurt person lies flat on their back on the floor, the back, hips and legs resting on the ground, then rolls over onto their stomach and pushes up onto hands and knees, palms flat on the floor under the shoulders and knees on the floor, head low, and stays there on all fours breathing heavily. Slow and weak."
+params = { duration = 4, mode = "prime" }
+
+[[items]]
+id = "crawl-r2"
+kind = "text_to_motion"
+prompt = "A hurt person crawls straight forward on hands and knees in a straight line, palms flat on the floor and knees touching the floor at every step, opposite hand and knee moving together, head up looking ahead. A slow, steady, even crawl cycle of identical steps that starts and ends in the same pose so it can loop. No props."
+params = { duration = 4, mode = "prime" }
