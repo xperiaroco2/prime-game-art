@@ -499,7 +499,8 @@ out), and the set pins the women's arm offset that `auto` finds instead of the l
   meet the idle's legs: the carry plays over the idle; both feet only shuffle between them, so they are held), which
   Putdown_Package, its reverse, carries; Getup_Back with `match = "root"`. Putdown_One is
   made from its source with the pickup's steps reversed, not `from = "Pickup_One"`, which would blend the idle into it
-  twice. Carry_Upper_Loop and Push_Upper_Loop are left alone: they play over the edited idle.
+  twice. Carry_Upper_Loop and Push_Upper_Loop are left alone: they play over the edited idle (art #65 gives the carry
+  nearly straight fingers by `hands_relax`, for its side grip).
 
 ### The pure and the Blender side
 
