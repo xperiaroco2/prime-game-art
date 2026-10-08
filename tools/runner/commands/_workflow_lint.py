@@ -15,7 +15,11 @@ BANNED_EFFORTS = ("xhigh", "max")
 META_PREFIX = "export const meta"
 BOUNDS_RE = re.compile(r"BOUNDS:\s*at most\s+(\d+)\s+tool calls")
 WAIT_RE = re.compile(r"no tool call blocks? (?:for )?(?:longer than|over|more than) 180 ?(?:s\b|seconds)", re.I)
-GENERAL_RE = re.compile(r"^/\*\s*general-agent:\s*(\S.*?)\s*\*/$", re.S)
+# The exemptions a comment right before an `agent(` call (or its `await`) grants, each with its reason (docs/agents.md):
+# general-agent: no agentType (the agent needs a tool neither lean type has);
+# opus-reader: an art-reader on model 'opus' (a read-only role that must run on Opus, such as the A/B's judge, #46);
+# per-launch-model: a `model` that is not a string literal (the manager passes it per launch; the script checks it).
+MARKERS = ("general-agent", "opus-reader", "per-launch-model")
 NONDETERMINISTIC = (("Date", "now"), ("Math", "random"))
 REGEX_AFTER = set("(,=:[!&|?{};+-*%<>~^") | {"=>", "return", "typeof", "case", "do", "else", "in", "of", "new",
                                               "delete", "void", "throw", "yield", "await"}
@@ -315,6 +319,28 @@ def meta_end(text: str) -> int | None:
     return None
 
 
+def marked(lead: list[str], name: str) -> bool:
+    """True when one of the comments right before a call is `/* <name>: <reason> */` with a reason."""
+    assert name in MARKERS, name
+    pattern = re.compile(r"^/\*\s*" + re.escape(name) + r":\s*(\S.*?)\s*\*/$", re.S)
+    return any(pattern.match(comment.strip()) for comment in lead)
+
+
+def statement_lead(toks: list[Token], k: int) -> list[str]:
+    """The comments right before the `agent` token at k, or before the start of its statement when the call is
+    `[const|let|var] NAME = [await] agent(` or `await agent(`."""
+    lead, j = list(toks[k].lead), k
+    if j > 0 and toks[j - 1].kind == "ident" and toks[j - 1].value == "await":
+        j -= 1
+        lead += toks[j].lead
+    if j > 1 and toks[j - 1].kind == "punct" and toks[j - 1].value == "=" and toks[j - 2].kind == "ident":
+        j -= 2
+        lead += toks[j].lead
+        if j > 0 and toks[j - 1].kind == "ident" and toks[j - 1].value in ("const", "let", "var"):
+            lead += toks[j - 1].lead
+    return lead
+
+
 def check_agents(script: Script) -> list[tuple[int, str]]:
     toks, found = script.tokens, []
     for k, t in enumerate(toks):
@@ -327,8 +353,8 @@ def check_agents(script: Script) -> list[tuple[int, str]]:
             continue
         close = matching(toks, k + 1)
         args = split_top(toks, k + 2, close)
-        lead = t.lead or (toks[k - 1].lead if k > 0 and toks[k - 1].value == "await" else [])
-        general = bool(lead) and GENERAL_RE.match(lead[-1].strip()) is not None
+        lead = statement_lead(toks, k)
+        general = marked(lead, "general-agent")
         if not args:
             found.append((t.line, "agent() has no prompt"))
             continue
@@ -344,12 +370,15 @@ def check_agents(script: Script) -> list[tuple[int, str]]:
         elif kind is None and not general:
             found.append((t.line, "agent() has no agentType 'art-reader' | 'art-writer' "
                                   "(or a `/* general-agent: <reason> */` comment right before it)"))
-        for key in ("model", "effort"):
-            if key in props and props[key] is None:
-                found.append((t.line, f"{key} must be a string literal so workflow-check can read it"))
+        if "effort" in props and props["effort"] is None:
+            found.append((t.line, "effort must be a string literal so workflow-check can read it"))
+        if "model" in props and props["model"] is None and not marked(lead, "per-launch-model"):
+            found.append((t.line, "model must be a string literal so workflow-check can read it "
+                                  "(or a `/* per-launch-model: <reason> */` comment right before the call)"))
         model = props.get("model")
-        if kind is not None and kind.value == "art-reader" and model is not None and "opus" in model.value.lower():
-            found.append((t.line, "an art-reader agent runs on Sonnet, not model 'opus'"))
+        if kind is not None and kind.value == "art-reader" and model is not None and "opus" in model.value.lower()                 and not marked(lead, "opus-reader"):
+            found.append((t.line, "an art-reader agent runs on Sonnet, not model 'opus' "
+                                  "(or a `/* opus-reader: <reason> */` comment right before the call)"))
         prompt = script.text_of(*args[0])
         bounds = [int(m.group(1)) for m in BOUNDS_RE.finditer(prompt)]
         if not bounds:

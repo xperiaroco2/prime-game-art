@@ -12,7 +12,8 @@ from runner.commands import workflow_check
 FIXTURES = common.ROOT / "tools" / "tests" / "fixtures" / "workflows"
 TEMPLATE = common.ROOT / "tools" / "workflows" / "art-lab-round.js"
 HAS_NODE = shutil.which("node") is not None
-GOOD = ("good.js", "good_meta_comment.js", "good_meta_no_semicolon.js")  # pass every check, node's too
+GOOD = ("good.js", "good_meta_comment.js", "good_meta_no_semicolon.js", "good_opus_reader.js",
+        "good_per_launch_model.js")  # pass every check, node's too
 
 # fixture -> (line, a piece of the one refusal it must get)
 BAD = {
@@ -24,6 +25,8 @@ BAD = {
     "effort_xhigh.js": (13, "effort 'xhigh' is not allowed"),
     "effort_max.js": (13, "effort 'max' is not allowed"),
     "reader_opus.js": (14, "an art-reader agent runs on Sonnet"),
+    "reader_opus_no_reason.js": (15, "an art-reader agent runs on Sonnet"),
+    "per_launch_model_unmarked.js": (14, "model must be a string literal"),
     "no_bounds.js": (14, "has no `BOUNDS: at most N tool calls`"),
     "bounds_over.js": (13, "allows 120 tool calls; at most 60"),
     "no_wait_rule.js": (16, "the agent prompt never states the 180 s wait rule"),
@@ -67,6 +70,24 @@ class StaticChecksTest(unittest.TestCase):
         text = (FIXTURES / "good.js").read_text(encoding="utf-8").replace(
             "*/\nawait agent(", "*/\nconst published = 1;\nawait agent(")
         self.assertIn("agent() has no agentType", lint.check_text(text)[0][1])
+
+    def test_each_marker_grants_only_its_own_exemption(self) -> None:
+        text = (FIXTURES / "good_opus_reader.js").read_text(encoding="utf-8")
+        for marker, refusal in (("per-launch-model", "an art-reader agent runs on Sonnet"),
+                                ("general-agent", "an art-reader agent runs on Sonnet")):
+            with self.subTest(marker=marker):
+                found = lint.check_text(text.replace("/* opus-reader:", f"/* {marker}:"))
+                self.assertEqual(len(found), 1, found)
+                self.assertIn(refusal, found[0][1])
+        per_launch = (FIXTURES / "good_per_launch_model.js").read_text(encoding="utf-8")
+        found = lint.check_text(per_launch.replace("/* per-launch-model:", "/* opus-reader:"))
+        self.assertIn("model must be a string literal", found[0][1])
+
+    def test_a_marker_before_the_statement_counts(self) -> None:
+        text = (FIXTURES / "good_opus_reader.js").read_text(encoding="utf-8")
+        for start in ("verdict = await agent(", "let verdict = agent(", "await agent("):
+            with self.subTest(start=start):
+                self.assertEqual(lint.check_text(text.replace("const verdict = await agent(", start)), [])
 
     def test_bounds_in_a_template_expression_is_not_read(self) -> None:
         text = (FIXTURES / "good.js").read_text(encoding="utf-8").replace("at most 60 tool", "at most ${60} tool")

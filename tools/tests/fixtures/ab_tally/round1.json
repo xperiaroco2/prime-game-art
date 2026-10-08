@@ -1,0 +1,17 @@
+{
+  "schema": "art-critic-ab/1",
+  "round": 1,
+  "labels": {"A": "trial", "B": "control"},
+  "models": {"trial": "sonnet", "control": "opus", "judge": "opus"},
+  "recommendations": {"A": "v2: the cleanest silhouette", "B": "v2: the silhouette reads at distance"},
+  "remarks": [
+    {"id": "A1", "side": "A", "variant": "v1", "text": "the hands clip the hips", "critic_severity": "serious", "verdict": "valid", "severity": "serious", "reason": "visible in the front view", "judged": true},
+    {"id": "A2", "side": "A", "variant": "v2", "text": "the boots are a little long", "critic_severity": "minor", "verdict": "valid", "severity": "minor", "reason": "longer than v3's", "judged": true},
+    {"id": "A3", "side": "A", "variant": "v3", "text": "the hat floats", "critic_severity": "serious", "verdict": "invalid", "severity": "minor", "reason": "it sits on the head", "judged": true},
+    {"id": "B1", "side": "B", "variant": "v1", "text": "hands intersect the hips", "critic_severity": "serious", "verdict": "valid", "severity": "serious", "reason": "the same as A1", "judged": true},
+    {"id": "B2", "side": "B", "variant": "v3", "text": "the neck seam is open", "critic_severity": "serious", "verdict": "valid", "severity": "serious", "reason": "a gap in the side view", "judged": true},
+    {"id": "B3", "side": "B", "variant": "v2", "text": "the colours are dull", "critic_severity": "minor", "verdict": "unsure", "severity": "minor", "reason": "taste", "judged": true}
+  ],
+  "pairs": [{"a": "A1", "b": "B1"}],
+  "cost_usd": {"trial": 0.4, "control": 1.1, "judge": 1.5}
+}
