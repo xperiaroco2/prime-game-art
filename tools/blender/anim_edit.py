@@ -1276,7 +1276,8 @@ def op_idle_ends(fr: Frames, p: dict, target: Target):
                   rotation change on Shoulder, UpperArm, Neck, Head and Thumb1) in full at the touching frame, faded
                   to 0 over fade_frames (a smoothstep); the curled fingers go to the idle's own curl the same way;
                   upper = false leaves the upper body and the fingers alone (the package clips keep their hold);
-      feet        each foot moved and turned to where the idle has it relative to Root (its toes bent as the idle's),
+      feet        each foot moved and turned to where the idle has it relative to Root (its toes take the idle's bend
+                  the same way),
                   held while the clip keeps it
                   planted (moving under plant_speed_cm a frame along the floor and rising under plant_rise_cm above
                   the touching frame), then faded out over up to fade_frames; a foot planted all through a clip
@@ -1326,6 +1327,11 @@ def op_idle_ends(fr: Frames, p: dict, target: Target):
             plan["ends"][e][s].update(move_cm=_r((tgt.translation - F.translation).length * rig.scale * 100, 2),
                                       turn_deg=_r(min(a, 360.0 - a), 2))
 
+    # each toe's change at a touching frame, like the foot's: its basis rotation to the idle's (the toes keep their own
+    # motion relative to it, as a landing's toes bend to meet the floor)
+    toe_d = {(e, s): (ref_r.brot(f"Toe.{s}") @ pre[plan["ends"][e]["frame"]].brot(f"Toe.{s}").inverted()).normalized()
+             for e in ends for s in "LR" if f"Toe.{s}" in ref_r.B}
+
     def foot_delta(s, f):
         mix = em.end_mix(plan["w"], s, f, n)
         if not mix:
@@ -1362,8 +1368,12 @@ def op_idle_ends(fr: Frames, p: dict, target: Target):
             q = Quaternion().slerp(dr, w) @ rc.rot(F)
             loc = F.translation + dp * w
             pose.set_arm(f"Foot.{s}", Matrix.Translation(loc) @ q.to_matrix().to_4x4())
-            if f"Toe.{s}" in pose.B:  # the toes too: a clip's bent toes on the idle's lower feet went into the floor
-                pose.set_brot(f"Toe.{s}", pose.brot(f"Toe.{s}").slerp(ref_r.brot(f"Toe.{s}"), w))
+            if (ends[0], s) in toe_d:  # the toes too: a clip's bent toes on the idle's lower feet went into the floor
+                mix = em.end_mix(plan["w"], s, f, n)
+                dt = toe_d[(mix[0][0], s)]
+                if len(mix) > 1:
+                    dt = dt.slerp(toe_d[(mix[1][0], s)], mix[1][1])
+                pose.set_brot(f"Toe.{s}", Quaternion().slerp(dt, w) @ pose.brot(f"Toe.{s}"))
             need = max(lows[f][j] - pose.head(j).z for j in joints[s])
             rise = max(0.0, need) + plan["lift"][s][f]  # a step lifts the foot off its floor, not off a sunk foot
             if rise > 0.0:
