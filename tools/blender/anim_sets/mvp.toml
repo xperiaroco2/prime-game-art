@@ -210,6 +210,7 @@ loop = false
 edits = [{ op = "trim", start_s = 0.1, end_s = 1.5 }, { op = "heading", facing = "mean" },
          { op = "retime", seconds = 1.0 }, { op = "floor", mode = "lift" },
          { op = "hands_relax", curl_deg = { Index = [8, 10, 6], Middle = [8, 10, 6], Ring = [10, 12, 8], Pinky = [12, 14, 8], Thumb = [6, 6] } },
+         { op = "upper_match", from_clip = "Carry_Upper_Loop", base_clip = "Idle_Loop", fade_s = 0.4 },
          { op = "side_grip", gap_m = 0.45, from_s = 0.43, fade_s = 0.3 },
          { op = "idle_ends", at = "both", from_clip = "Idle_Loop", upper = false }]
 # floor: the squat's toes went 2.8 cm (men) and 1.9 cm (women) into the floor. side_grip (art #65): the carry's grip
@@ -218,6 +219,12 @@ edits = [{ op = "trim", start_s = 0.1, end_s = 1.5 }, { op = "heading", facing =
 # 44.9 to 45.2 cm, the palms vertical (art #33's hand_spacing: a 0.40 m gap at the end only). idle_ends (art #49): both
 # ends meet the idle's legs (the carry plays over the idle), so the feet and legs only go to the relaxed idle's; the
 # arms keep their hold.
+# upper_match (art #65's review): the hands ended 9 to 18 cm lower and 10 cm further forward than the carry over the
+# idle takes them, so over the last 0.4 s the upper layer goes to Carry_Upper_Loop's first frame and Body, Hips and
+# Abdomen to Idle_Loop's (they stood 8.2 / 12.1 cm off it, turned); side_grip holds the grip through the fade. On the
+# exported ends (grip_ends, after idle_ends) the wrists are 0.1 cm from that pose, 45.0 cm apart, the palms vertical,
+# 1.14 / 1.17 m high (men L / R; women 1.14 / 1.16). The end's Body changes idle_ends' leg roll there, which the held
+# feet carry into the squat: its lowest vertex went from -0.87 to -1.18 cm (men) and -1.66 to -2.0 cm (women).
 # The heading leaves Root turned 19.8 degrees from the idle's, so the feet are matched in the set's frame (the default);
 # both feet only shuffle between the ends, so they are held at the idle's all through. Putdown_Package, its reverse,
 # takes it at both ends too
