@@ -116,3 +116,29 @@ class WeightsAndSearchTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class UpperMatchTest(unittest.TestCase):
+    """upper_match (art #65's review): the lift's end takes the carry's upper layer, so the hands hand over."""
+
+    def test_the_schema_takes_a_match(self) -> None:
+        self.assertEqual(em.check_steps([{"op": "upper_match", "from_clip": "Carry_Upper_Loop"}]), [])
+        self.assertEqual(em.params({"op": "upper_match", "from_clip": "Carry_Upper_Loop"}),
+                         {"from_clip": "Carry_Upper_Loop", "frame": 0, "at": "end", "fade_s": 0.3, "base_clip": None})
+        self.assertTrue(em.check_steps([{"op": "upper_match"}]))
+        self.assertTrue(em.check_steps([{"op": "upper_match", "from_clip": "X", "at": "middle"}]))
+        self.assertTrue(em.check_steps([{"op": "upper_match", "from_clip": "X", "frame": -1}]))
+        self.assertEqual(em.from_clips([{"op": "upper_match", "from_clip": "Carry_Upper_Loop", "base_clip": "Idle_Loop"}]),
+                         ["Carry_Upper_Loop", "Idle_Loop"])
+
+    def test_the_weights_are_full_on_the_touching_frame_only(self) -> None:
+        w = em.end_weights(25, 24.0, "end", 0.25)
+        self.assertEqual(w[-1], 1.0)
+        self.assertTrue(all(x == 0.0 for x in w[:19]))  # 6 frames or more from the end: 0.25 s and beyond
+        self.assertTrue(all(0.0 < x < 1.0 for x in w[19:24]))
+        self.assertEqual(w[19:], sorted(w[19:]))
+        self.assertEqual(em.end_weights(25, 24.0, "start", 0.25), w[::-1])
+
+    def test_no_fade_takes_the_touching_frame_alone(self) -> None:
+        self.assertEqual(em.end_weights(4, 24.0, "end", 0.0), [0.0, 0.0, 0.0, 1.0])
+        self.assertEqual(em.end_weights(4, 24.0, "start", 0.0), [1.0, 0.0, 0.0, 0.0])

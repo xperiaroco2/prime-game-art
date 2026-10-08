@@ -949,6 +949,73 @@ def grip_ends(fr: Frames, target: Target, ref: dict | None = None) -> dict:
     return out
 
 
+def op_upper_match(fr: Frames, p: dict, target: Target):
+    """The upper layer's bones (target.upper_bones(): Torso and below) go to another clip's frame at one end of a
+    one-shot (art #65: the lift's end to the carry's first frame, so the hands hand over with no jump): each bone's
+    basis rotation slerps and its location lerps to the other clip's, fully on the touching frame and faded to the
+    clip's own over the fade_s before it (anim_edit_math.end_weights). With base_clip (the clip the game plays the
+    other under as a lower layer: the idle), the bones that carry the upper layer (Torso's parents under Root: Body)
+    go the same way to base_clip's first frame in armature space, the set's frame, less its stance lift, which
+    idle_ends adds back (the lift's end stood 8 cm off the idle's Body and turned, which moved the hands 8 to 18 cm);
+    idle_ends after it puts the legs back on the feet. Run it before the ops that hold the hands (side_grip), which
+    then keep them on the faded frames, and before idle_ends."""
+    if fr.loop:
+        raise EditError("upper_match is for a one-shot that ends (or starts) in another clip, not a loop")
+    other = _built(target, p["from_clip"])
+    if not 0 <= p["frame"] < len(other.basis):
+        raise EditError(f"frame {p['frame']} is not a frame of {p['from_clip']!r} (0 to {len(other.basis) - 1})")
+    ref = other.basis[p["frame"]]
+    bones = [b for b in target.upper_bones() if b in ref and b in fr.basis[0]]
+    w = em.end_weights(len(fr.basis), fr.fps, p["at"], p["fade_s"])
+    touch = len(fr.basis) - 1 if p["at"] == "end" else 0
+    pre = _Pose(fr.rig, fr.basis[touch])
+    rig = fr.rig
+    carry, goal = [], {}
+    if p["base_clip"]:
+        base = _built(target, p["base_clip"])
+        bp = rc.fk(rig, base.basis[0])
+        lift = rig.Wi.to_3x3() @ UP * base.info.get("stance_lift_m", 0.0)
+        b = rig.parent[target.upper]
+        while b and rig.parent[b]:  # up to Root (not under it)
+            carry.insert(0, b)
+            b = rig.parent[b]
+        goal = {b: Matrix.LocRotScale(bp[b].translation - lift, rc.rot(bp[b]), None) for b in carry}
+    out_basis = []
+    for k, B0 in enumerate(fr.basis):
+        B = {b: m.copy() for b, m in B0.items()}
+        if w[k] > 0.0 and carry:
+            pose = _Pose(rig, B)
+            for b in carry:
+                cur = pose.P[b]
+                q0, q1 = rc.rot(cur), rc.rot(goal[b])
+                if q0.dot(q1) < 0.0:
+                    q1 = -q1
+                pose.set_arm(b, Matrix.LocRotScale(cur.translation.lerp(goal[b].translation, w[k]), q0.slerp(q1, w[k]),
+                                                   cur.decompose()[2]))
+            B = pose.B
+        if w[k] > 0.0:
+            for b in bones:
+                l0, q0, s0 = B0[b].decompose()
+                l1, q1, _ = ref[b].decompose()
+                if q0.dot(q1) < 0.0:
+                    q1 = -q1
+                l0, q0, s0 = B[b].decompose()
+                B[b] = Matrix.LocRotScale(l0.lerp(l1, w[k]), q0.slerp(q1, w[k]), s0)
+        out_basis.append(B)
+    out = fr.copy(out_basis)
+    post = _Pose(fr.rig, out.basis[touch])
+    diffs = {b: math.degrees(pre.brot(b).rotation_difference(post.brot(b)).angle) for b in bones}
+    worst = max(diffs, key=lambda b: min(diffs[b], 360.0 - diffs[b]), default=None)
+    return out, {"from_clip": p["from_clip"], "frame": p["frame"], "at": p["at"], "fade_s": p["fade_s"],
+                 "base_clip": p["base_clip"], "carried_by": carry,
+                 "body_move_cm": _r((pre.head(BODY) - post.head(BODY)).length * 100, 2) if BODY in rig.order else None,
+                 "frames_faded": sum(1 for x in w if x > 0.0), "bones": len(bones),
+                 "max_turn_deg": _r(min(diffs[worst], 360.0 - diffs[worst]) if worst else 0.0, 2),
+                 "max_turn_bone": worst,
+                 "wrist_move_cm": {s: _r((pre.head(f"Wrist.{s}") - post.head(f"Wrist.{s}")).length * 100, 2)
+                                   for s in "LR"}}
+
+
 # ------------------------------------------------------------------------------------------------------- lean
 def _spine_tilt(rig: rc.Rig, P: dict, bone: str) -> float:
     """The forward tilt (degrees) of the line from a bone's head to Head's, from the vertical, signed towards the
@@ -1725,7 +1792,7 @@ def op_idle_ends(fr: Frames, p: dict, target: Target):
 OPS = {"trim": op_trim, "retime": op_retime, "reverse": op_reverse, "cycle": op_cycle, "in_place": op_in_place,
        "heading": op_heading, "turn": op_turn, "mirror": op_mirror, "stride": op_stride, "floor": op_floor,
        "arm_offset": op_arm_offset, "hand_spacing": op_hand_spacing, "lean": op_lean,
-       "side_grip": op_side_grip,
+       "side_grip": op_side_grip, "upper_match": op_upper_match,
        "foot_turn": op_foot_turn, "stance": op_stance, "shoulders": op_shoulders, "head_level": op_head_level,
        "hands_relax": op_hands_relax, "thumb_in": op_thumb_in, "idle_ends": op_idle_ends}
 assert set(OPS) == set(em.OPS)

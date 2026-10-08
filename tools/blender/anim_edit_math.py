@@ -52,6 +52,10 @@ OPS = {
     # the side grip (art #65): docs/animations.md, "The ops"
     "side_grip": {"gap_m": _p(_N, required=True), "tilt_deg": _p(_N, 0.0), "forearm_share": _p(_N, 0.5),
                   "from_s": _p(_N, 0.0), "fade_s": _p(_N, 0.0), "max_deg": _p(_N, 40.0), "tol_cm": _p(_N, 0.3)},
+    # the upper layer's bones into another clip's frame at an end (art #65: the lift hands over to the carry)
+    "upper_match": {"from_clip": _p("string", required=True), "frame": _p("int", 0),
+                    "at": _p("string", "end", choices=("start", "end")), "fade_s": _p(_N, 0.3),
+                    "base_clip": _p("string")},
     # the relaxed idle (art #49): docs/animations.md, "The relaxed idle"
     "foot_turn": {"bone": _p("string", required=True, choices=("Foot.L", "Foot.R")),
                   "toe_in_deg": _p(_N, required=True)},
@@ -193,10 +197,10 @@ def check_steps(steps, bodies=("men", "women")) -> list[str]:
 
 
 def from_clips(steps) -> list[str]:
-    """The other clips a list of steps reads (their `from_clip`): a set builds them first."""
+    """The other clips a list of steps reads (their `from_clip` and `base_clip`): a set builds them first."""
     if not isinstance(steps, (list, tuple)):
         return []
-    return [s["from_clip"] for s in steps if isinstance(s, dict) and isinstance(s.get("from_clip"), str)]
+    return [s[k] for s in steps if isinstance(s, dict) for k in ("from_clip", "base_clip") if isinstance(s.get(k), str)]
 
 
 def params(step: dict) -> dict:
@@ -768,6 +772,16 @@ def grip_weights(frames: int, fps: float, from_s: float = 0.0, fade_s: float = 0
             out.append(0.0)
         else:
             out.append(smoothstep((t - (from_s - fade_s)) / fade_s))
+    return out
+
+
+def end_weights(frames: int, fps: float, at: str, fade_s: float) -> list[float]:
+    """upper_match's weight per frame (frames: the count, both ends included): 1 on the touching frame (the last for
+    at = "end", the first for "start"), a smoothstep to 0 over the fade_s from it, 0 beyond."""
+    out = []
+    for k in range(frames):
+        t = ((frames - 1 - k) if at == "end" else k) / fps
+        out.append(1.0 if t <= 1e-9 else 0.0 if fade_s <= 0.0 else smoothstep(1.0 - t / fade_s))
     return out
 
 
