@@ -1,7 +1,8 @@
 """Clip edits on our rig after the retarget (art #33; docs/animations.md, "Clip edits"): cut a loop at its best seam
 and close it, take the travel out, straighten the heading, rescale a turn, trim, retime, reverse, mirror left and
 right, warp the stride to a speed with the feet planted, lift a clip out of the floor, turn the arms out of the legs
-and the hands apart, lean the upper body.
+and the hands apart, lean the upper body; and the relaxed idle (art #49): turn a foot in, set the stance, drop the
+shoulders, level the head, relax the hands, bring the thumbs in and blend the idle into the clips that meet it.
 One tool set serves the pack's clips and every retargeted library (UAL1, UAL2, Meshy text to motion), since it works on
 the Ultimate Modular rig after the retarget.
 
@@ -107,6 +108,7 @@ class Target:
         self.rig = rc.Rig(self.arm)
         self.legs = list(LEGS)
         self.upper = "Torso"
+        self.clips = {}  # the clips of a set built so far, by name (anim_set.build_clips): a step's from_clip
         self._measure = None
 
     @property
@@ -242,9 +244,9 @@ class _Legs:
         self.shin_end = {lo: rig.rest[lo].inverted() @ rig.rest[ft] for _, lo, ft in LEGS}
         self.hinge = {up: rc.rot(rig.W @ rig.rest[up]).inverted() @ Vector((1.0, 0.0, 0.0)) for up, _, _ in LEGS}
 
-    def solve(self, B: dict, P: dict, leg, goal: Vector) -> float:
+    def solve(self, B: dict, P: dict, leg, goal: Vector, pole: Vector | None = None) -> float:
         """Re-solves one leg of a frame (B basis, P poses, both updated) so its ankle reaches goal (armature space);
-        returns the miss in metres."""
+        returns the miss in metres. pole: the knee's bend direction (armature space; by default its current one)."""
         up, lo, ft = leg
         rig = self.rig
         H, K = P[up].translation.copy(), P[lo].translation.copy()
@@ -252,12 +254,13 @@ class _Legs:
         knee = K - H
         dv = goal - H
         u = dv.normalized() if dv.length > 1e-12 else (A - H).normalized()
-        # the bend direction is the knee's offset from the leg's current hip-ankle line (not from the line to the
-        # goal: a goal far from the ankle would turn a straight leg's knee backwards)
-        u0 = (A - H).normalized()
-        pole = (knee - u0 * knee.dot(u0)) / max(knee.length, 1e-12)
-        f = rc.rot(P[up]) @ self.knee_fwd[up]
-        pole += (f - u * f.dot(u)) * 0.05
+        if pole is None:
+            # the bend direction is the knee's offset from the leg's current hip-ankle line (not from the line to
+            # the goal: a goal far from the ankle would turn a straight leg's knee backwards)
+            u0 = (A - H).normalized()
+            pole = (knee - u0 * knee.dot(u0)) / max(knee.length, 1e-12)
+            f = rc.rot(P[up]) @ self.knee_fwd[up]
+            pole += (f - u * f.dot(u)) * 0.05
         K2, A2, miss = em.two_bone_ik(tuple(H), tuple(K), tuple(A), tuple(goal), tuple(pole))
         K2, A2 = Vector(K2), Vector(A2)
         q1 = knee.rotation_difference(K2 - H)
@@ -848,15 +851,599 @@ def op_lean(fr: Frames, p: dict, target: Target):
                  "tilt_after_deg": _r(sum(tilt_after) / n, 2), "head_forward_cm": _r(100 * sum(head_fwd) / n, 2)}
 
 
+# ------------------------------------------------------------------------------------- the relaxed idle (art #49)
+# Ported from the lab's round D (D:/prime-art-raw/research/2026-10-05-faces/lab/clay_d/clay_idle.py, README_idle.txt;
+# docs/animations.md, "The relaxed idle"). Every op adds a constant to the clip's own pose on every frame, so the
+# breathing, the sway and the talk's nods keep their motion. Positions and axes are world (front -Y, left +X, up +Z):
+# the set's clips face -Y.
+UP = Vector((0.0, 0.0, 1.0))
+UPPER_DELTA = ("Shoulder.L", "Shoulder.R", "UpperArm.L", "UpperArm.R", "Neck", "Head", "Thumb1.L", "Thumb1.R")
+REACH = 0.999  # idle_ends: a leg reaches at most this share of its two segments' length
+
+
+def _rot_about(axis, degrees: float, point) -> Matrix:
+    """A world rotation by degrees about a world axis through a world point."""
+    a = Vector(axis).normalized()
+    p = Vector(point)
+    return Matrix.Translation(p) @ Matrix.Rotation(math.radians(degrees), 4, a) @ Matrix.Translation(-p)
+
+
+def _rot_q(q: Quaternion, point) -> Matrix:
+    """A world rotation q about a world point."""
+    p = Vector(point)
+    return Matrix.Translation(p) @ q.to_matrix().to_4x4() @ Matrix.Translation(-p)
+
+
+def _curled(name: str) -> bool:
+    """A finger segment the relaxed hands curl: Index, Middle, Ring, Pinky 2-4 and Thumb 2-3 (not the metacarpals)."""
+    base = name.rsplit(".", 1)[0]
+    finger, seg = base.rstrip("0123456789"), base[len(base.rstrip("0123456789")):]
+    return finger in em.FINGER_SEGMENTS and seg.isdigit() and 2 <= int(seg) <= em.FINGER_SEGMENTS[finger] + 1
+
+
+class _Pose:
+    """One frame being edited: its basis B, its armature-space poses P (rc.fk, recomputed after each change) and the
+    world (rig.W) views of them the relaxed-idle ops work in."""
+
+    def __init__(self, rig: rc.Rig, basis: dict):
+        self.rig = rig
+        self.B = {n: m.copy() for n, m in basis.items()}
+        self._P = None
+
+    @property
+    def P(self) -> dict:
+        if self._P is None:
+            self._P = rc.fk(self.rig, self.B)
+        return self._P
+
+    def head(self, n: str) -> Vector:
+        return self.rig.W @ self.P[n].translation
+
+    def rot(self, n: str) -> Quaternion:
+        """The bone's world rotation."""
+        return self.rig.Wrot @ rc.rot(self.P[n])
+
+    def turn(self, n: str) -> Quaternion:
+        """The bone's world rotation relative to its rest (posed = turn @ rest)."""
+        return _turn_of(self.rig, self.P, n)
+
+    def brot(self, n: str) -> Quaternion:
+        """The bone's basis rotation (in its own rest frame)."""
+        return self.B[n].decompose()[1]
+
+    def set_brot(self, n: str, q: Quaternion) -> None:
+        loc, _, sc = self.B[n].decompose()
+        self.B[n] = Matrix.LocRotScale(loc, q, sc)
+        self._P = None
+
+    def set_arm(self, n: str, pose: Matrix) -> None:
+        """Gives bone n a new armature-space pose (the bones below follow)."""
+        _set_pose(self.rig, self.B, dict(self.P), n, pose)
+        self._P = None
+
+    def transform(self, n: str, X: Matrix) -> None:
+        """Moves bone n by a world rigid transform X (the bones below follow)."""
+        rig = self.rig
+        self.set_arm(n, rig.Wi @ X @ rig.W @ self.P[n])
+
+    def place(self, n: str, location) -> None:
+        """Puts bone n's head at a world location, its rotation kept."""
+        M = self.P[n].copy()
+        M.translation = self.rig.Wi @ Vector(location)
+        self.set_arm(n, M)
+
+
+def _leg_geometry(rig: rc.Rig) -> dict:
+    """Per leg (by its UpperLeg): the rest lengths of the thigh (hip to knee) and the shin (knee to the rest Foot head),
+    world m."""
+    out = {}
+    for up, lo, ft in LEGS:
+        h, k, e = (rig.W @ rig.rest[n].translation for n in (up, lo, ft))
+        out[up] = ((k - h).length, (e - k).length)
+    return out
+
+
+def _shin_end(legs: _Legs, pose: _Pose, leg) -> Vector:
+    """The world point where the shin ends: the rest Foot head carried by LowerLeg (the ankle)."""
+    _, lo, _ = leg
+    return pose.rig.W @ (pose.P[lo] @ legs.shin_end[lo]).translation
+
+
+def _ankle_gap(legs: _Legs, pose: _Pose, leg) -> float:
+    """How far (m) the shin's end is from its IK Foot bone."""
+    return (_shin_end(legs, pose, leg) - pose.head(leg[2])).length
+
+
+def _leg_to(pose: _Pose, legs: _Legs, geo: dict, leg, T: Vector, bend: Vector) -> Vector:
+    """The two-bone IK of the lab's round D in world space: the hip stays, the shin's end goes to T, the knee bends
+    towards `bend` (made perpendicular to the hip-goal line); UpperLeg turns by the shortest rotation from its old
+    knee to the new one, LowerLeg by the shortest rotation from its old end to T. Returns the new knee."""
+    up, lo, _ = leg
+    a, b = geo[up]
+    H = pose.head(up)
+    dv = T - H
+    d = min(dv.length, (a + b) * 0.99999)
+    u = dv.normalized()
+    n = bend - u * bend.dot(u)
+    n.normalize()
+    x = (a * a - b * b + d * d) / (2.0 * d)
+    y = math.sqrt(max(0.0, a * a - x * x))
+    K = H + u * x + n * y
+    pose.transform(up, _rot_q((pose.head(lo) - H).rotation_difference(K - H), H))
+    K1 = pose.head(lo)
+    pose.transform(lo, _rot_q((_shin_end(legs, pose, leg) - K1).rotation_difference(T - K1), K1))
+    return K
+
+
+def _floor_forward(pose: _Pose, side: str) -> Vector:
+    """A foot's forward on the floor: its head to its toe's head, horizontal and normalised."""
+    f = pose.head(f"Toe.{side}") - pose.head(f"Foot.{side}")
+    f.z = 0.0
+    return f.normalized()
+
+
+def _rest_yaws(rig: rc.Rig) -> dict:
+    return {s: em.yaw_out(tuple(rig.W @ rig.rest[f"Foot.{s}"].translation),
+                          tuple(rig.W @ rig.rest[f"Toe.{s}"].translation), s) for s in "LR"}
+
+
+def feet_numbers(fr: Frames) -> dict:
+    """The feet of a clip: each foot's yaw out against the set's aim (-Y) relative to the rest pose (degrees, + = toe
+    out; at the first frame and its range), the largest gap between a shin's end and its Foot bone (mm: the ankle
+    holds while it is 0), and at the first frame the ankles' width (X) and stagger (Y, the right foot ahead +) in cm."""
+    rig = fr.rig
+    if "Toe.L" not in rig.rest:
+        return {}
+    legs = _Legs(rig)
+    rest = _rest_yaws(rig)
+    yaws = {s: [] for s in "LR"}
+    gap = 0.0
+    first = None
+    for B in fr.basis:
+        pose = _Pose(rig, B)
+        for s in "LR":
+            yaws[s].append(em.yaw_out(tuple(pose.head(f"Foot.{s}")), tuple(pose.head(f"Toe.{s}")), s) - rest[s])
+        gap = max([gap] + [_ankle_gap(legs, pose, leg) for leg in LEGS])
+        if first is None:
+            first = {s: pose.head(f"Foot.{s}") for s in "LR"}
+    return {"yaw_out_deg": {s: {"first": _r(v[0], 2), "min": _r(min(v), 2), "max": _r(max(v), 2)}
+                            for s, v in yaws.items()},
+            "ankle_gap_mm_max": _r(gap * 1000, 3),
+            "width_cm": _r((first["L"].x - first["R"].x) * 100, 2),
+            "stagger_cm": _r((first["R"].y - first["L"].y) * 100, 2)}
+
+
+def _built(target: Target, name: str) -> Frames:
+    clips = getattr(target, "clips", None) or {}
+    if name not in clips:
+        raise EditError(f"from_clip {name!r} is not built yet (name an earlier clip of the set)")
+    return clips[name]
+
+
+def _ends_measure(pose: _Pose, ref: _Pose, fingers: list) -> dict:
+    """How far a clip's frame is from a reference pose: each foot relative to the Root (cm, degrees), and the largest
+    basis rotation difference over the upper body's edited bones (UPPER_DELTA; idle_ends adds the idle's own change
+    to the clip's, so this stays what it was against the idle's relax base) and over the curled fingers (degrees)."""
+    out = {}
+    for s in "LR":
+        a = pose.P["Root"].inverted() @ pose.P[f"Foot.{s}"]
+        b = ref.P["Root"].inverted() @ ref.P[f"Foot.{s}"]
+        out[f"foot_{s}_cm"] = _r((a.translation - b.translation).length * pose.rig.scale * 100, 3)
+        d = math.degrees(rc.rot(a).rotation_difference(rc.rot(b)).angle)
+        out[f"foot_{s}_deg"] = _r(min(d, 360.0 - d), 2)
+    for key, bones in (("upper", UPPER_DELTA), ("fingers", fingers)):
+        diffs = {n: math.degrees(pose.brot(n).rotation_difference(ref.brot(n)).angle) for n in bones if n in pose.B}
+        diffs = {n: min(d, 360.0 - d) for n, d in diffs.items()}
+        worst = max(diffs, key=diffs.get)
+        out.update({f"{key}_max_deg": _r(diffs[worst], 2), f"{key}_max_bone": worst})
+    return out
+
+
+def op_foot_turn(fr: Frames, p: dict, target: Target):
+    """Turns one foot toe-in about the world vertical through its head (the ankle) on every frame; its leg swivels
+    with it about the hip-ankle line (the knee follows the toe, the ankle stays) and is re-solved by the two-bone IK,
+    so the shin's end stays on the foot."""
+    rig = fr.rig
+    side = p["bone"][-1]
+    leg = LEGS[0] if side == "L" else LEGS[1]
+    up, _, ft = leg
+    deg = p["toe_in_deg"] * (1.0 if side == "R" else -1.0)  # the right foot (at -X) turns in counter-clockwise
+    legs = _Legs(rig)
+    rest = _rest_yaws(rig)
+    out, before, after, swivel, miss, gap = [], [], [], [], 0.0, 0.0
+    for B in fr.basis:
+        pose = _Pose(rig, B)
+        before.append(em.yaw_out(tuple(pose.head(ft)), tuple(pose.head(f"Toe.{side}")), side) - rest[side])
+        h = pose.head(ft)
+        R = _rot_about(UP, deg, h)
+        H, E = pose.head(up), _shin_end(legs, pose, leg)
+        ax = (E - H).normalized()
+        d0 = pose.head(f"Toe.{side}") - h
+        d1 = R.to_3x3() @ d0
+        p0, p1 = d0 - ax * d0.dot(ax), d1 - ax * d1.dot(ax)
+        phi = math.degrees(math.atan2(ax.dot(p0.cross(p1)), p0.dot(p1)))  # the foot's turn seen along the leg
+        pose.transform(up, _rot_about(ax, phi, H))
+        pose.transform(ft, R)
+        P = dict(pose.P)
+        knee, ank = P[leg[1]].translation - P[up].translation, (P[leg[1]] @ legs.shin_end[leg[1]]).translation
+        u0 = (ank - P[up].translation).normalized()
+        miss = max(miss, legs.solve(pose.B, P, leg, P[ft].translation.copy(), knee - u0 * knee.dot(u0)))
+        pose._P = None
+        gap = max(gap, _ankle_gap(legs, pose, leg))
+        after.append(em.yaw_out(tuple(pose.head(ft)), tuple(pose.head(f"Toe.{side}")), side) - rest[side])
+        swivel.append(phi)
+        out.append(pose.B)
+    res = fr.copy(out)
+    _close(res)
+    return res, {"bone": p["bone"], "toe_in_deg": p["toe_in_deg"],
+                 "yaw_out_before_deg": [_r(before[0]), _r(min(before)), _r(max(before))],
+                 "yaw_out_after_deg": [_r(after[0]), _r(min(after)), _r(max(after))],
+                 "swivel_deg": [_r(min(swivel)), _r(max(swivel))], "ik_miss_mm": _r(miss * 1000, 3),
+                 "ankle_gap_mm_max": _r(gap * 1000, 4)}
+
+
+def op_stance(fr: Frames, p: dict, target: Target):
+    """Feet about hip width, planted: each foot moves (its rotation kept) to one point for the whole clip, its own hip
+    joint at the first frame plus the rest pose's hip-to-ankle offset plus out_cm outwards; the Body rises by the one
+    constant that keeps the legs' mean hip-to-ankle distance at the first frame (the wide stance had lowered the
+    hips); each leg is re-solved per frame by the two-bone IK, the knee towards the foot's own forward."""
+    rig = fr.rig
+    legs = _Legs(rig)
+    geo = _leg_geometry(rig)
+    first = _Pose(rig, fr.basis[0])
+    rest = {n: rig.W @ rig.rest[n].translation for up, _, ft in LEGS for n in (up, ft)}
+    hips = {s: tuple(first.head(f"UpperLeg.{s}")) for s in "LR"}
+    feet = {s: tuple(first.head(f"Foot.{s}")) for s in "LR"}
+    offset = {s: tuple(rest[f"Foot.{s}"] - rest[f"UpperLeg.{s}"]) for s in "LR"}
+    targets = em.stance_targets(hips, offset, {s: feet[s][2] for s in "LR"}, p["out_cm"] / 100.0)
+    lift = em.stance_lift(hips, feet, targets)
+    before = feet_numbers(fr)
+    out, gap = [], 0.0
+    for B in fr.basis:
+        pose = _Pose(rig, B)
+        pose.transform(BODY, Matrix.Translation((0.0, 0.0, lift)))
+        for s in "LR":
+            pose.place(f"Foot.{s}", targets[s])
+        for s, leg in zip("LR", LEGS):
+            _leg_to(pose, legs, geo, leg, pose.head(leg[2]), _floor_forward(pose, s))
+            gap = max(gap, _ankle_gap(legs, pose, leg))
+        out.append(pose.B)
+    res = fr.copy(out)
+    _close(res)
+    res.info["stance_lift_m"] = lift
+    after = feet_numbers(res)
+    return res, {"out_cm": p["out_cm"], "body_lift_cm": _r(lift * 100, 3),
+                 "feet_m": {s: [_r(c, 5) for c in targets[s]] for s in "LR"},
+                 "width_cm": [before["width_cm"], after["width_cm"]],
+                 "stagger_cm": [before["stagger_cm"], after["stagger_cm"]],
+                 "hip_width_cm": _r((hips["L"][0] - hips["R"][0]) * 100, 2), "ankle_gap_mm_max": _r(gap * 1000, 4)}
+
+
+def _shoulder_rise(pose: _Pose, side: str) -> float:
+    """The shoulder joint (UpperArm head) above its clavicle's root (Shoulder head) along the chest's up axis, m."""
+    up = (pose.turn(CHEST) @ UP).normalized()
+    return (pose.head(f"UpperArm.{side}") - pose.head(f"Shoulder.{side}")).dot(up)
+
+
+def op_shoulders(fr: Frames, p: dict, target: Target):
+    """Both clavicles (Shoulder.L/R) turned down by drop_deg about the chest's forward axis through their heads."""
+    rig = fr.rig
+    out, rise = [], []
+    for B in fr.basis:
+        pose = _Pose(rig, B)
+        cf = (pose.turn(CHEST) @ Vector((0.0, -1.0, 0.0))).normalized()
+        r0 = _shoulder_rise(pose, "L")
+        moves = []
+        for s in "LR":
+            sh = pose.head(f"Shoulder.{s}")
+            r = pose.head(f"UpperArm.{s}") - sh
+            moves.append((f"Shoulder.{s}", _rot_about(cf, (-1.0 if cf.cross(r).z > 0 else 1.0) * p["drop_deg"], sh)))
+        for n, X in moves:
+            pose.transform(n, X)
+        rise.append((r0, _shoulder_rise(pose, "L")))
+        out.append(pose.B)
+    res = fr.copy(out)
+    _close(res)
+    return res, {"drop_deg": p["drop_deg"], "shoulder_rise_cm": [_r(rise[0][0] * 100), _r(rise[0][1] * 100)]}
+
+
+def _head_pitch(pose: _Pose) -> float:
+    return em.pitch_of(tuple(pose.turn("Head") @ Vector((0.0, -1.0, 0.0))))
+
+
+def op_head_level(fr: Frames, p: dict, target: Target):
+    """The head made level on average: one constant pitch (target_deg minus the clip's mean head pitch), neck_share of
+    it on Neck and the rest on Head, about the head's horizontal left-right axis (+ raises the face)."""
+    rig = fr.rig
+    before = [_head_pitch(_Pose(rig, B)) for B in fr.basis]
+    fix = em.head_fix(before, p["target_deg"])
+    out, after = [], []
+    for B in fr.basis:
+        pose = _Pose(rig, B)
+        hf = pose.turn("Head") @ Vector((0.0, -1.0, 0.0))
+        ax = hf.cross(UP).normalized()
+        for bone, share in (("Neck", p["neck_share"]), ("Head", 1.0 - p["neck_share"])):
+            pose.transform(bone, _rot_about(ax, fix * share, pose.head(bone)))
+        after.append(_head_pitch(pose))
+        out.append(pose.B)
+    res = fr.copy(out)
+    _close(res)
+    return res, {"fix_deg": _r(fix, 3), "neck_deg": _r(fix * p["neck_share"], 3),
+                 "head_deg": _r(fix * (1.0 - p["neck_share"]), 3),
+                 "pitch_before_deg": [_r(min(before)), _r(max(before))], "pitch_after_deg": [_r(min(after)), _r(max(after))]}
+
+
+def op_hands_relax(fr: Frames, p: dict, target: Target):
+    """Open, loose hands: each curled finger bone (Index to Pinky 2-4, Thumb 2-3, both sides) keeps the axis of its
+    own rotation and takes the curl's angle; with a cap, its own angle up to cap times the curl."""
+    rig = fr.rig
+    curls = em.finger_curls(p["curl_deg"])
+    bones = [n for n in rig.order if n.rsplit(".", 1)[0] in curls]
+    before, after = {}, {}
+    out = []
+    for B0 in fr.basis:
+        B = {n: m.copy() for n, m in B0.items()}
+        for n in bones:
+            loc, q, sc = B[n].decompose()
+            if q.w < 0:
+                q.negate()
+            ang = math.degrees(q.angle)
+            goal = em.curl_goal(ang, curls[n.rsplit(".", 1)[0]], p["cap"])
+            if ang > 1e-6:
+                B[n] = Matrix.LocRotScale(loc, Quaternion(q.axis, math.radians(goal)), sc)
+            base = n.rsplit(".", 1)[0]
+            before.setdefault(base, []).append(ang)
+            after.setdefault(base, []).append(goal if ang > 1e-6 else ang)
+        out.append(B)
+    res = fr.copy(out)
+    _close(res)
+    return res, {"cap": p["cap"], "bones": len(bones),
+                 "curl_before_deg": {k: [_r(min(v), 1), _r(max(v), 1)] for k, v in before.items()},
+                 "curl_after_deg": {k: [_r(min(v), 1), _r(max(v), 1)] for k, v in after.items()}}
+
+
+def _thumb_turn(pose: _Pose, side: str, p: dict) -> tuple[Quaternion, dict]:
+    """Thumb1's constant turn (a quaternion in its own rest frame, pre-multiplied to its basis rotation) that points
+    the thumb's tip (Thumb3 head plus 0.9 of the Thumb2-Thumb3 segment) at a point side_cm beside the `beside` joint of
+    the index finger (towards the thumb, across the finger), at most max_deg."""
+    t1, t2, t3 = (pose.head(f"Thumb{i}.{side}") for i in (1, 2, 3))
+    tip = t3 + (t3 - t2) * 0.9
+    beside = p["beside"]
+    prev = f"{beside[:-1]}{int(beside[-1]) - 1}"
+    i2, i3 = pose.head(f"{prev}.{side}"), pose.head(f"{beside}.{side}")
+    idir = (i3 - i2).normalized()
+    across = tip - i3
+    across = across - idir * across.dot(idir)
+    across.normalize()
+    goal = i3 + across * (p["side_cm"] / 100.0)
+    q = (tip - t1).rotation_difference(goal - t1)
+    ang = min(q.angle, math.radians(p["max_deg"]))
+    qa = Quaternion(q.axis, ang)
+    pm = pose.rot(f"Thumb1.{side}") @ pose.brot(f"Thumb1.{side}").inverted()
+    D = pm.inverted() @ qa @ pm
+    D.normalize()
+    return D, {"turn_deg": _r(math.degrees(D.angle), 2), "wanted_deg": _r(math.degrees(q.angle), 2),
+               "quaternion_wxyz": [_r(c, 6) for c in D], "tip_to_goal_cm_before": _r((goal - tip).length * 100, 2)}
+
+
+def op_thumb_in(fr: Frames, p: dict, target: Target):
+    """The thumb in beside the index finger: Thumb1 turned by one constant per side on every frame, found on the
+    clip's `frame` (after hands_relax), or the turn another clip's thumb_in found (from_clip)."""
+    rig = fr.rig
+    if p["from_clip"]:
+        src = _built(target, p["from_clip"])
+        if "thumb_in" not in src.info:
+            raise EditError(f"from_clip {p['from_clip']!r} has no thumb_in step")
+        turns = {s: Quaternion(src.info["thumb_in"][s]) for s in "LR"}
+        rep = {"from_clip": p["from_clip"]}
+    else:
+        if not 0 <= p["frame"] <= fr.frames:
+            raise EditError(f"frame {p['frame']} is outside the clip (0 to {fr.frames})")
+        pose = _Pose(rig, fr.basis[p["frame"]])
+        found = {s: _thumb_turn(pose, s, p) for s in "LR"}
+        turns = {s: found[s][0] for s in "LR"}
+        rep = {"frame": p["frame"], **{s: found[s][1] for s in "LR"}}
+    out = []
+    for B0 in fr.basis:
+        B = {n: m.copy() for n, m in B0.items()}
+        for s in "LR":
+            loc, q, sc = B[f"Thumb1.{s}"].decompose()
+            B[f"Thumb1.{s}"] = Matrix.LocRotScale(loc, turns[s] @ q, sc)
+        out.append(B)
+    res = fr.copy(out)
+    _close(res)
+    res.info["thumb_in"] = {s: list(turns[s]) for s in "LR"}
+    return res, rep
+
+
+def _basis_lists(basis: dict) -> dict:
+    return {n: [list(row) for row in m] for n, m in basis.items()}
+
+
+def op_idle_ends(fr: Frames, p: dict, target: Target):
+    """Blends the relaxed idle into a one-shot's ends that meet it (at = start, end or both), so the game's crossfade
+    with the idle neither slides the feet nor snaps the hands (the lab's round D, blend_transitions):
+      upper body  the idle's own change at its first frame (its relax base against its relaxed pose: each bone's basis
+                  rotation change on Shoulder, UpperArm, Neck, Head and Thumb1) in full at the touching frame, faded
+                  to 0 over fade_frames (a smoothstep); the curled fingers go to the idle's own curl the same way;
+      feet        each foot moved and turned to where the idle has it relative to Root, held while the clip keeps it
+                  planted (within plant_cm of the touching frame), then faded out over up to fade_frames; a foot
+                  planted all through a clip whose other end meets another clip steps (step_cm high);
+      Body        lifted by the idle's stance lift times the feet's mean weight, cut where a leg would not reach;
+      legs        the two-bone IK, the knee towards the foot's forward at full weight and the clip's own knee at 0, the
+                  thigh's and the shin's roll matched to the idle's at the touching frame, the knees swung out in a
+                  deep bend (knees_out_deg, from knees_out_from_deg of knee bend, full at knees_out_full_deg)."""
+    if fr.loop:
+        raise EditError("idle_ends is for a one-shot that starts or ends in the idle, not a loop")
+    rig = fr.rig
+    idle = _built(target, p["from_clip"])
+    if "relax_base" not in idle.info:
+        raise EditError(f"from_clip {p['from_clip']!r} has no relaxed-idle step (no relax base to blend from)")
+    ref_c = _Pose(rig, {n: Matrix(m) for n, m in idle.info["relax_base"].items()})
+    ref_r = _Pose(rig, idle.basis[0])
+    lift = idle.info.get("stance_lift_m", 0.0)
+    legs = _Legs(rig)
+    geo = _leg_geometry(rig)
+    fade = p["fade_frames"]
+    ends = ("start", "end") if p["at"] == "both" else (p["at"],)
+    n = fr.frames
+    fingers = [b for b in rig.order if _curled(b)]
+    up = [b for b in UPPER_DELTA if b in rig.order]
+    dq = {b: (ref_r.brot(b) @ ref_c.brot(b).inverted()).normalized() for b in up}
+    rel = {s: ref_r.P["Root"].inverted() @ ref_r.P[f"Foot.{s}"] for s in "LR"}
+    pre = [_Pose(rig, B) for B in fr.basis]
+    tracks = {s: [tuple(q.head(f"Foot.{s}")) for q in pre] for s in "LR"}
+    plan = em.idle_end_weights(n, ends, tracks, fade, p["plant_cm"] / 100.0, p["step_cm"] / 100.0)
+    wf, wu = plan["feet"], plan["upper"]
+    up_arm = rig.Wi.to_3x3() @ UP  # world up in armature units: 1 m of lift
+    delta = {}
+    for e in ends:
+        ft = plan["ends"][e]["frame"]
+        for s in "LR":
+            F = pre[ft].P[f"Foot.{s}"]
+            tgt = pre[ft].P["Root"] @ rel[s]
+            delta[(e, s)] = (tgt.translation - F.translation, rc.rot(tgt) @ rc.rot(F).inverted())
+            a = math.degrees(delta[(e, s)][1].angle)
+            plan["ends"][e][s].update(move_cm=_r((tgt.translation - F.translation).length * rig.scale * 100, 2),
+                                      turn_deg=_r(min(a, 360.0 - a), 2))
+
+    def foot_delta(s, f):
+        mix = em.end_mix(plan["w"], s, f, n)
+        if not mix:
+            return Vector(), Quaternion()
+        dp = sum((delta[(e, s)][0] * k for e, k in mix), Vector())
+        dr = delta[(mix[0][0], s)][1]
+        if len(mix) > 1:
+            dr = dr.slerp(delta[(mix[1][0], s)][1], mix[1][1])
+        if dr.w < 0.0:
+            dr.negate()
+        return dp, dr
+
+    def twist_deg(pose, bone, axis):
+        """The turn about a world axis that takes the bone's Root-relative rotation to the idle's (swing-twist)."""
+        cur = rc.rot(pose.P["Root"].inverted() @ pose.P[bone])
+        ref = rc.rot(ref_r.P["Root"].inverted() @ ref_r.P[bone])
+        d = ref @ cur.inverted()
+        if d.w < 0.0:
+            d.negate()
+        a = (rc.rot(pose.P["Root"]).inverted() @ (rig.Wrot.inverted() @ axis)).normalized()
+        return math.degrees(2.0 * math.atan2(Vector(d[1:]).dot(a), d.w))
+
+    twist = {}
+
+    def solve(f, measure=None):
+        pose = _Pose(rig, fr.basis[f])
+        notes = {}
+        for s in "LR":  # the feet first (children of Root: the Body does not carry them)
+            w = wf[s][f]
+            if w <= 0.0:
+                continue
+            dp, dr = foot_delta(s, f)
+            F = pose.P[f"Foot.{s}"]
+            q = Quaternion().slerp(dr, w) @ rc.rot(F)
+            pose.set_arm(f"Foot.{s}", Matrix.Translation(F.translation + dp * w + up_arm * plan["lift"][s][f])
+                         @ q.to_matrix().to_4x4())
+        wb = (wf["L"][f] + wf["R"][f]) / 2.0
+        if wb > 0.0:
+            want = lift * wb
+            room = min([want] + [em.reach_lift(tuple(pose.head(leg[0])), tuple(pose.head(leg[2])),
+                                               sum(geo[leg[0]]) * REACH) for leg in LEGS])
+            use = max(0.0, room)
+            if want - use > 1e-6:
+                notes["lift_cut_mm"] = _r((want - use) * 1000, 2)
+            pose.transform(BODY, Matrix.Translation((0.0, 0.0, use)))
+            for s, leg in zip("LR", LEGS):
+                upb, lo, ftb = leg
+                a, b = geo[upb]
+                w = wf[s][f]
+                H, T = pose.head(upb), pose.head(ftb)
+                R = (a + b) * REACH
+                if (T - H).length > R:  # still out of reach: the foot comes towards the hip (the leg stays whole)
+                    if (T - H).length - R > 5e-5:
+                        notes[f"foot_pulled_mm.{s}"] = _r(((T - H).length - R) * 1000, 2)
+                    T = H + (T - H).normalized() * R
+                    pose.place(ftb, T)
+                K0 = pose.head(lo)
+                dv = T - H
+                dd = dv.length
+                u = dv.normalized()
+                fwd = _floor_forward(pose, s)
+                nf = (fwd - u * fwd.dot(u)).normalized()
+                nc = (K0 - H) - u * (K0 - H).dot(u)
+                nb = nf * w + (nc.normalized() if nc.length > 1e-9 else nf) * (1.0 - w)
+                nb.normalize()
+                x = (a * a - b * b + dd * dd) / (2.0 * dd)
+                y = math.sqrt(max(0.0, a * a - x * x))
+                K = H + u * x + nb * y
+                pose.transform(upb, _rot_q((K0 - H).rotation_difference(K - H), H))
+                if measure is not None:
+                    tu = twist_deg(pose, upb, K - H)
+                else:
+                    tu = w * sum(twist[(e, s)][0] * k for e, k in em.end_mix(plan["w"], s, f, n))
+                pose.transform(upb, _rot_about(K - H, tu, H))
+                K1 = pose.head(lo)
+                pose.transform(lo, _rot_q((_shin_end(legs, pose, leg) - K1).rotation_difference(T - K1), K1))
+                if measure is not None:
+                    tl = twist_deg(pose, lo, T - K1)
+                    twist[(measure, s)] = (tu, tl)
+                else:
+                    tl = w * sum(twist[(e, s)][1] * k for e, k in em.end_mix(plan["w"], s, f, n))
+                pose.transform(lo, _rot_about(T - K1, tl, K1))
+                # knees out in a deep bend: the narrow stance with the knees over the feet crouched knock-kneed
+                flex = math.degrees((K - H).angle(T - K))
+                sp = em.knees_out(flex, p["knees_out_deg"], p["knees_out_from_deg"], p["knees_out_full_deg"], w)
+                if sp > 0.01:
+                    ax = (T - H).normalized()
+                    outw = H - (pose.head("UpperLeg.L") + pose.head("UpperLeg.R")) / 2.0
+                    sg = 1.0 if ((_rot_about(ax, sp, H) @ K) - K).dot(outw) > 0.0 else -1.0
+                    pose.transform(upb, _rot_about(ax, sg * sp, H))
+                    notes[f"knee_out_deg.{s}"] = _r(sp, 1)
+        if wu[f] > 0.0:
+            for b in up:
+                pose.set_brot(b, Quaternion().slerp(dq[b], wu[f]) @ pose.brot(b))
+            for b in fingers:
+                pose.set_brot(b, pose.brot(b).slerp(ref_r.brot(b), wu[f]))
+        return pose, notes
+
+    for e in ends:  # the legs' roll at each touching frame, against the idle
+        solve(plan["ends"][e]["frame"], measure=e)
+    out, notes, gap = [], {}, 0.0
+    for f in range(n + 1):
+        pose, nt = solve(f)
+        if nt:
+            notes[f] = nt
+        gap = max([gap] + [_ankle_gap(legs, pose, leg) for leg in LEGS])
+        out.append(pose.B)
+    res = fr.copy(out)
+    touch = {}
+    for e in ends:
+        ft = plan["ends"][e]["frame"]
+        touch[e] = {"before": _ends_measure(pre[ft], ref_c, fingers),
+                    "after": _ends_measure(_Pose(rig, out[ft]), ref_r, fingers)}
+    knees = [v for nt in notes.values() for k, v in nt.items() if k.startswith("knee_out")]
+    cuts = [nt["lift_cut_mm"] for nt in notes.values() if "lift_cut_mm" in nt]
+    return res, {"at": p["at"], "from_clip": p["from_clip"], "lift_cm": _r(lift * 100, 3),
+                 "upper_delta_deg": {b: _r(math.degrees(q.angle), 3) for b, q in dq.items()},
+                 "ends": plan["ends"], "touching": touch,
+                 "leg_twist_deg": {f"{e}.{s}": [_r(v[0]), _r(v[1])] for (e, s), v in twist.items()},
+                 "ankle_gap_mm_max": _r(gap * 1000, 4), "knee_out_deg_max": _r(max(knees, default=0.0), 1),
+                 "lift_cut_mm_max": _r(max(cuts, default=0.0), 2),
+                 "step_lift_cm": {s: _r(max(plan["lift"][s]) * 100, 2) for s in "LR"}}
+
+
 OPS = {"trim": op_trim, "retime": op_retime, "reverse": op_reverse, "cycle": op_cycle, "in_place": op_in_place,
        "heading": op_heading, "turn": op_turn, "mirror": op_mirror, "stride": op_stride, "floor": op_floor,
-       "arm_offset": op_arm_offset, "hand_spacing": op_hand_spacing, "lean": op_lean}
+       "arm_offset": op_arm_offset, "hand_spacing": op_hand_spacing, "lean": op_lean,
+       "foot_turn": op_foot_turn, "stance": op_stance, "shoulders": op_shoulders, "head_level": op_head_level,
+       "hands_relax": op_hands_relax, "thumb_in": op_thumb_in, "idle_ends": op_idle_ends}
 assert set(OPS) == set(em.OPS)
 
 
 def apply(frames: Frames, steps: list, target: Target, body: str) -> Frames:
     """Runs the edit steps in order on a copy of frames; a step whose `body` is another body type is skipped. Each
-    step's report (with its op) is appended to info["steps"]; a failing step raises EditError naming it."""
+    step's report (with its op) is appended to info["steps"]; a failing step raises EditError naming it. Before the
+    first relaxed-idle op (anim_edit_math.RELAX_OPS) the clip's first frame is kept in info["relax_base"] (idle_ends
+    reads the idle's own change from it)."""
     errors = em.check_steps(steps)
     if errors:
         raise EditError("; ".join(errors))
@@ -866,6 +1453,8 @@ def apply(frames: Frames, steps: list, target: Target, body: str) -> Frames:
         if step.get("body", body) != body:
             cur.info["steps"].append({"op": op, "skipped": f"body {step['body']}"})
             continue
+        if op in em.RELAX_OPS and "relax_base" not in cur.info:
+            cur.info["relax_base"] = _basis_lists(cur.basis[0])
         try:
             cur, rep = OPS[op](cur, em.params(step), target)
         except (EditError, ValueError) as e:
