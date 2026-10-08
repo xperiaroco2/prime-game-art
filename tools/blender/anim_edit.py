@@ -990,7 +990,8 @@ def _rest_yaws(rig: rc.Rig) -> dict:
 def feet_numbers(fr: Frames) -> dict:
     """The feet of a clip: each foot's yaw out against the set's aim (-Y) relative to the rest pose (degrees, + = toe
     out; at the first frame and its range), the largest gap between a shin's end and its Foot bone (mm: the ankle
-    holds while it is 0), and at the first frame the ankles' width (X) and stagger (Y, the right foot ahead +) in cm."""
+    holds while it is 0), and at the first frame the ankles' width (X) and stagger (Y, + when the right foot is behind
+    the left) in cm."""
     rig = fr.rig
     if "Toe.L" not in rig.rest:
         return {}
