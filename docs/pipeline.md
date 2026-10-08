@@ -36,7 +36,7 @@ section wins:
 | Colour | Every piece is **recoloured from one shared palette**; flat colours with no textures, soft light and shadows, no outline by default (compared in renders) |
 | Motion | **Animations only.** Falls and knockdowns are canned animations; no ragdoll and no physical wobble |
 | First person | **Hands with forearms in the sleeves of your top**, running off the screen edge, plus your own shadow; never floating hands. A true first-person body may come later |
-| Names | A player's name shows only when you aim at them up close. A game rule, built in the game repo; the designer may object on #165 |
+| Names | A player's name shows only when you aim at them up close. A game rule, built in the game repo; the engineer, as the designer, may object on #165 |
 | AI rules | Never name How to Fish or any other game or character in a prompt, never upload their screenshots, no personal photos; `ai_generated` recorded per asset; never free-plan output |
 | Raw files | `D:/prime-art-raw` on the engineer's PC; chosen originals copied to `OneDrive/prime-art-raw`; never in git |
 | Who generates | An agent, through the Meshy API, from the start; each batch only after the engineer's yes to its prompts, count and credits (since 2026-10-03: the standing permission within the plan's credits, see the section above). The engineer buys the plan (Meshy Pro, one month) and sets `MESHY_API_KEY`; agents never enter keys or payment details |
