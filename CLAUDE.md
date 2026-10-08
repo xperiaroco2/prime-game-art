@@ -107,21 +107,24 @@ PowerShell 5.1 is the primary shell; the Bash tool is Git Bash. In Git Bash `pyt
 `$PYTHON_BIN`. Multi-line commit messages and PR bodies go through a file (`git commit -F`, `gh pr create
 --body-file`). Use absolute paths; with worktrees, `git -C <path>`.
 
-**No tool call of a workflow agent or subagent blocks over 240 s** (#43: a call over 5 minutes expires the agent's
-prompt cache, and the next call re-writes the whole context; that cost 14-18% of a week). In the Bash tool, start any
-run that can pass 240 s (Blender, Godot, `verify`, `meshy run`, other `tools/run.sh` commands) in the background
-(`run_in_background`, `> <log> 2>&1` under `tools/out/` or the scratchpad, then `echo "exit=$?" >> <log>`); it
-notifies on exit, or check its log with short calls every 2-3 minutes. No `tail -f`, and no `until ...; sleep` loop or
-`timeout` longer than 240 s; never start a second run while one is running. Every workflow prompt carries this rule.
+**No tool call of a workflow agent or subagent blocks over 200 s** (#43, #51: after 5 idle minutes the agent's prompt
+cache expires, and the next call re-writes the whole context; that was about a quarter of a week's cost). In the Bash
+tool, start any run that can pass 200 s (Blender, Godot, `verify`, `meshy run`, other `tools/run.sh` commands) in the
+background (`run_in_background`, `> <log> 2>&1` under `tools/out/` or the scratchpad, then `echo "exit=$?" >> <log>`);
+it notifies on exit, or check its log with short calls, with gaps of at most 200 s. No `tail -f`, and no
+`until ...; sleep` loop or `timeout` longer than 200 s; never start a second run while one is running. Every workflow
+prompt carries this rule.
 
-**Agents cost by context × calls** (`docs/agents.md`, #51). Every agent and workflow follows these rules:
-- no gap over 4 minutes between an agent's calls;
-- a builder step is at most ~60 calls, and the agent hands off with a note past ~150k context;
-- briefs are lean, and so are the tools (#44);
-- runs print a 5-10 line summary and leave the full log in a file;
-- review images are downscaled contact sheets;
-- tuning is done with variant grids, not nudge-and-look loops;
-- builders run on Opus at high effort, critics and verifiers on Sonnet;
+## Agent cost
+An agent's cost grows with its context times its calls (`docs/agents.md`, #51). Workflows and their agents follow
+these rules:
+- no idle gap over 4 minutes inside an agent;
+- builder steps of about 60 calls, ending in a handoff note;
+- lean briefs, and only the tools a role needs (#44);
+- quiet runs: the full log goes to a file, the agent reads its tail;
+- contact sheets of about 1280 px for agents;
+- variant grids instead of nudge-and-look loops;
+- Opus at high effort only for builders of code, IK or geometry; Sonnet for critics, verifiers and read-only research;
 - every launch is estimated beforehand and measured afterwards.
 
 ## Definition of done
