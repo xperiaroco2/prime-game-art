@@ -170,6 +170,9 @@ class SelectionTest(unittest.TestCase):
         cfg["clips"][2]["edits"].append({"op": "thumb_in", "from_clip": "Jog_Fwd_Loop"})
         self.assertEqual(asc.closure(cfg, ["Knife_Swing"]), ["Jog_Fwd_Loop", "Knife_Swing"])
         self.assertEqual(asc.sources(cfg, ["Knife_Swing"]), ["ual:Jog_Fwd_Loop", "pack:Sword_Slash"])
+        cfg["clips"][2]["edits"].append({"op": "idle_ends", "at": "start", "from_clip": "Nope"})
+        with self.assertRaises(ValueError):
+            asc.closure(cfg, ["Knife_Swing"])
         mvp = asc.load(common.ROOT / "tools" / "blender" / "anim_sets" / "mvp.toml")
         self.assertEqual(asc.closure(mvp, ["Getup_Back"]), ["Idle_Loop", "Getup_Back"])
 

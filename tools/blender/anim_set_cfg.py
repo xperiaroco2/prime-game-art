@@ -181,6 +181,8 @@ def closure(cfg: dict, names) -> list[str]:
         n = stack.pop()
         if n in need:
             continue
+        if n not in table:  # a `from` or `from_clip` naming no clip (check() reports it too)
+            raise ValueError(f"no clip {n!r} in the set; known: {', '.join(table)}")
         need.add(n)
         if "from" in table[n]:
             stack.append(table[n]["from"])
