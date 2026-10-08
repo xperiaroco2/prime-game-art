@@ -69,14 +69,14 @@ ${brief}
 When the variants exist, render one contact sheet of every variant side by side with its id under it (about 1280 px on
 the long side) to ${outDir}/contact-sheet.png.
 
-END OF THE STEP: at about 60 calls, or when the round is done, write the handoff note ${outDir}/handoff-step-${step}.md
+END OF THE STEP: at about 50 calls (the handoff note must fit inside the bound), or when the round is done, write the handoff note ${outDir}/handoff-step-${step}.md
 (done, next, files, open problems; short) and return it. The next step reads only that note.
 
 ${RULES}`;
 }
 
 function criticPrompt(brief, outDir, handoff, sheet) {
-  return `You are the critic of a lab round of prime-game-art. You only read.
+  return `You are the critic of a lab round of prime-game-art. You only read; the one file you write, through the shell, is the ranking below.
 BOUNDS: at most 20 tool calls.
 Read the builder's last handoff note ${handoff}, then look once at the contact sheet ${sheet} (about 1280 px).
 Judge the variants against the brief below; rank every variant best first, one line of reason each, and recommend
