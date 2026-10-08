@@ -859,6 +859,7 @@ def op_lean(fr: Frames, p: dict, target: Target):
 UP = Vector((0.0, 0.0, 1.0))
 UPPER_DELTA = ("Shoulder.L", "Shoulder.R", "UpperArm.L", "UpperArm.R", "Neck", "Head", "Thumb1.L", "Thumb1.R")
 REACH = 0.999  # idle_ends: a leg reaches at most this share of its two segments' length
+BODY_DOWN = 0.02  # idle_ends: the Body goes down at most this far (m) so a leg reaches its foot (art #49)
 
 
 def _rot_about(axis, degrees: float, point) -> Matrix:
@@ -1296,7 +1297,8 @@ def op_idle_ends(fr: Frames, p: dict, target: Target):
                   shuffles along the floor is held at the idle's all through; never both feet lifted at once
                   (anim_edit_math.idle_end_weights); no edited Foot or Toe head goes lower than both its own height
                   before the edit and the idle's standing height (the foot is raised);
-      Body        lifted by the idle's stance lift times the feet's mean weight, cut where a leg would not reach;
+      Body        lifted by the idle's stance lift times the feet's mean weight, cut where a leg would not reach, and
+                  lowered up to BODY_DOWN where it would not reach even unlifted (the men's Pickup_Package start);
       legs        the two-bone IK, the knee towards the foot's forward at full weight and the clip's own knee at 0, the
                   thigh's and the shin's roll matched to the idle's at the touching frame, the knees swung out in a
                   deep bend (knees_out_deg, from knees_out_from_deg of knee bend, full at knees_out_full_deg)."""
@@ -1416,9 +1418,11 @@ def op_idle_ends(fr: Frames, p: dict, target: Target):
             want = lift * wb
             room = min([want] + [em.reach_lift(tuple(pose.head(leg[0])), tuple(pose.head(leg[2])),
                                                sum(geo[leg[0]]) * REACH) for leg in LEGS])
-            use = max(0.0, room)
+            use = max(room, -BODY_DOWN)  # where a leg would not reach even unlifted, the Body goes down a little
             if want - use > 1e-6:
-                notes["lift_cut_mm"] = _r((want - use) * 1000, 2)
+                notes["lift_cut_mm"] = _r((want - max(use, 0.0)) * 1000, 2)
+            if use < 0.0:
+                notes["body_down_mm"] = _r(-use * 1000, 2)
             pose.transform(BODY, Matrix.Translation((0.0, 0.0, use)))
             for s, leg in zip("LR", LEGS):
                 upb, lo, ftb = leg
@@ -1547,13 +1551,15 @@ def op_idle_ends(fr: Frames, p: dict, target: Target):
     knees = [v for nt in notes.values() for k, v in nt.items() if k.startswith("knee_out")]
     cuts = [nt["lift_cut_mm"] for nt in notes.values() if "lift_cut_mm" in nt]
     pulled = [v for nt in notes.values() for k, v in nt.items() if k.startswith("foot_pulled")]
+    down = [nt["body_down_mm"] for nt in notes.values() if "body_down_mm" in nt]
     return res, {"at": p["at"], "from_clip": p["from_clip"], "lift_cm": _r(lift * 100, 3),
                  "upper_delta_deg": {b: _r(math.degrees(q.angle), 3) for b, q in dq.items()},
                  "ends": plan["ends"], "touching": touch,
                  "leg_twist_deg": {f"{e}.{s}": [_r(v[0]), _r(v[1])] for (e, s), v in twist.items()},
                  "ankle_gap_mm_max": _r(gap * 1000, 4), "knee_out_deg_max": _r(max(knees, default=0.0), 1),
                  "lift_cut_mm_max": _r(max(cuts, default=0.0), 2),
-                 "foot_pulled_mm_max": _r(max(pulled, default=0.0), 2), "upper": p["upper"], "floor": floor,
+                 "foot_pulled_mm_max": _r(max(pulled, default=0.0), 2),
+                 "body_down_mm_max": _r(max(down, default=0.0), 2), "upper": p["upper"], "floor": floor,
                  "match": p["match"], "reroot": {k: _r(v, 3) for k, v in reroot.items()},
                  "air": {"hop_cm_max": _r(hop * 100, 2), "hop_frame": hop_at, "airborne_frames": air},
                  "step_lift_cm": {s: _r(max(plan["lift"][s]) * 100, 2) for s in "LR"}}

@@ -118,6 +118,7 @@ if not IN_BLENDER:
                     # where the clip has a foot on the floor the edit keeps one there, and lifts neither higher
                     self.assertEqual(t["air"]["airborne_frames"], [], (body, clip))
                     self.assertLess(t["air"]["hop_cm_max"], 1.0, (body, clip))
+                    self.assertLess(t["foot_pulled_mm_max"], 0.05, (body, clip))  # every leg reaches its foot
                 self.assertLess(self.r[body]["ends"]["Jump_Start"]["ankle_gap_mm_max"], 15.0)  # art #33's resampling
                 # a foot that settles onto the floor after the touching frame is planted, not faded along the floor
                 self.assertEqual(self.r[body]["ends"]["Raise_In"]["ends"]["start"]["L"]["mode"], "step", body)
