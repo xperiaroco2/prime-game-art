@@ -210,7 +210,8 @@ edits = [{ op = "trim", start_s = 0.1, end_s = 1.5 }, { op = "heading", facing =
 # floor: the squat's toes went 2.8 cm (men) and 1.9 cm (women) into the floor; hand_spacing auto found 18.55 and
 # 22.85 degrees for a 0.40 m gap at the end (from 19.1 and 14.0 cm). idle_ends (art #49): both ends meet the idle's
 # legs (the carry plays over the idle), so the feet and legs only go to the relaxed idle's; the arms keep their hold.
-# Putdown_Package, its reverse, takes it at both ends too
+# The heading leaves Root turned 19.8 degrees from the idle's, so the feet are matched in the set's frame (the default)
+# and Root goes to the idle's. Putdown_Package, its reverse, takes it at both ends too
 needs = [{ need = "Pick up the package with both hands", no = 18, layer = "full" }]
 
 [[clips]]
@@ -261,8 +262,10 @@ note = "stopgap: the cut's raw seam is 26 degrees (the left wrist); the crawl is
 name = "Getup_Back"
 source = "ual2:LayToIdle"
 loop = false
-# floor: the toes went 4.0 cm (men) and 4.1 cm (women) into the floor at 0.83 s
-edits = [{ op = "floor", mode = "lift" }, { op = "idle_ends", at = "end", from_clip = "Idle_Loop" }]
+# floor: the toes went 4.0 cm (men) and 4.1 cm (women) into the floor at 0.83 s. idle_ends matches the feet relative
+# to Root (match = "root"): the whole body stands up 17 cm (men) and 27 cm (women) from where the idle stands, so the
+# idle's feet in the set's frame would be that far from under it
+edits = [{ op = "floor", mode = "lift" }, { op = "idle_ends", at = "end", from_clip = "Idle_Loop", match = "root" }]
 needs = [{ need = "Stand up after a revive (from lying on the back)", no = 25, layer = "full" }]
 
 [[clips]]

@@ -1024,20 +1024,28 @@ def _built(target: Target, name: str) -> Frames:
 
 
 def _ends_measure(pose: _Pose, ref: _Pose, fingers: list) -> dict:
-    """How far a clip's frame is from a reference pose: each foot and the Body relative to the Root (cm, degrees;
-    idle_ends matches the feet and lifts the Body by the idle's stance lift only), and the largest
-    basis rotation difference over the upper body's edited bones (UPPER_DELTA; idle_ends adds the idle's own change
-    to the clip's, so this stays what it was against the idle's relax base) and over the curled fingers (degrees)."""
+    """How far a clip's frame is from a reference pose: each foot and the Body relative to the Root (foot_L_cm, ...)
+    and in the set's frame (set_foot_L_cm, ...: armature space, which the game plays, its Root not being root motion),
+    the Root's own offset (root_cm, root_turn_deg; cm, degrees; idle_ends matches the feet and lifts the Body by the
+    idle's stance lift only), and the largest basis rotation difference over the upper body's edited bones
+    (UPPER_DELTA; idle_ends adds the idle's own change to the clip's, so this stays what it was against the idle's
+    relax base) and over the curled fingers (degrees)."""
     out = {}
-    for s in "LR":
-        a = pose.P["Root"].inverted() @ pose.P[f"Foot.{s}"]
-        b = ref.P["Root"].inverted() @ ref.P[f"Foot.{s}"]
-        out[f"foot_{s}_cm"] = _r((a.translation - b.translation).length * pose.rig.scale * 100, 3)
-        d = math.degrees(rc.rot(a).rotation_difference(rc.rot(b)).angle)
-        out[f"foot_{s}_deg"] = _r(min(d, 360.0 - d), 2)
-    a = pose.P["Root"].inverted() @ pose.P[BODY]
-    b = ref.P["Root"].inverted() @ ref.P[BODY]
-    out["body_cm"] = _r((a.translation - b.translation).length * pose.rig.scale * 100, 3)
+    sc = pose.rig.scale * 100
+
+    def deg(qa, qb):
+        d = math.degrees(qa.rotation_difference(qb).angle)
+        return _r(min(d, 360.0 - d), 2)
+
+    for key, ra, rb in (("", pose.P["Root"], ref.P["Root"]), ("set_", Matrix.Identity(4), Matrix.Identity(4))):
+        for s in "LR":
+            a, b = ra.inverted() @ pose.P[f"Foot.{s}"], rb.inverted() @ ref.P[f"Foot.{s}"]
+            out[f"{key}foot_{s}_cm"] = _r((a.translation - b.translation).length * sc, 3)
+            out[f"{key}foot_{s}_deg"] = deg(rc.rot(a), rc.rot(b))
+        a, b = ra.inverted() @ pose.P[BODY], rb.inverted() @ ref.P[BODY]
+        out[f"{key}body_cm"] = _r((a.translation - b.translation).length * sc, 3)
+    out["root_cm"] = _r((pose.P["Root"].translation - ref.P["Root"].translation).length * sc, 3)
+    out["root_turn_deg"] = deg(rc.rot(pose.P["Root"]), rc.rot(ref.P["Root"]))
     toes = [math.degrees(pose.brot(t).rotation_difference(ref.brot(t)).angle) for t in ("Toe.L", "Toe.R") if t in pose.B]
     out["toes_max_deg"] = _r(max([min(d, 360.0 - d) for d in toes], default=0.0), 2)
     for key, bones in (("upper", UPPER_DELTA), ("fingers", fingers)):
@@ -1276,11 +1284,14 @@ def op_idle_ends(fr: Frames, p: dict, target: Target):
                   rotation change on Shoulder, UpperArm, Neck, Head and Thumb1) in full at the touching frame, faded
                   to 0 over fade_frames (a smoothstep); the curled fingers go to the idle's own curl the same way;
                   upper = false leaves the upper body and the fingers alone (the package clips keep their hold);
-      feet        each foot moved and turned to where the idle has it relative to Root (its toes take the idle's bend
-                  the same way),
-                  held while the clip keeps it
-                  planted (moving under plant_speed_cm a frame along the floor and rising under plant_rise_cm above
-                  the touching frame), then faded out over up to fade_frames; a foot planted all through a clip
+      feet        each foot moved and turned to where the idle has it (its toes take the idle's bend the same way):
+                  match = "set" in the set's frame (armature space, the game's: its Root is not root motion, so a
+                  clip whose Root stands or turns off the idle's, as the package clips' 19.8 degrees, still meets
+                  the idle's feet), and Root then goes to the idle's on every frame, the bones under it keeping their
+                  poses (Root carries no weights), so the crossfade blends no Root turn; "root" relative to the
+                  clip's Root (a clip whose whole body ends off the idle's, as Getup_Back); held while the clip keeps
+                  it planted (moving under plant_speed_cm a frame along the floor and rising under plant_rise_cm
+                  above the touching frame), then faded out over up to fade_frames; a foot planted all through a clip
                   whose other end meets another clip steps (step_cm high); no edited Foot or Toe head goes lower than
                   both its own height before the edit and the idle's standing height (the foot is raised);
       Body        lifted by the idle's stance lift times the feet's mean weight, cut where a leg would not reach;
@@ -1306,6 +1317,11 @@ def op_idle_ends(fr: Frames, p: dict, target: Target):
     dq = {b: (ref_r.brot(b) @ ref_c.brot(b).inverted()).normalized() for b in up}
     rel = {s: ref_r.P["Root"].inverted() @ ref_r.P[f"Foot.{s}"] for s in "LR"}
     pre = [_Pose(rig, B) for B in fr.basis]
+
+    def base(pose):
+        """The frame the feet are matched in: the clip's Root (match = "root") or the idle's (the set's frame)."""
+        return pose.P["Root"] if p["match"] == "root" else ref_r.P["Root"]
+
     tracks = {s: [tuple(q.head(f"Foot.{s}")) for q in pre] for s in "LR"}
     plan = em.idle_end_weights(n, ends, tracks, fade, p["plant_speed_cm"] / 100.0, p["plant_rise_cm"] / 100.0,
                                p["step_cm"] / 100.0, p["upper"])
@@ -1321,7 +1337,7 @@ def op_idle_ends(fr: Frames, p: dict, target: Target):
         ft = plan["ends"][e]["frame"]
         for s in "LR":
             F = pre[ft].P[f"Foot.{s}"]
-            tgt = pre[ft].P["Root"] @ rel[s]
+            tgt = base(pre[ft]) @ rel[s]
             delta[(e, s)] = (tgt.translation - F.translation, rc.rot(tgt) @ rc.rot(F).inverted())
             a = math.degrees(delta[(e, s)][1].angle)
             plan["ends"][e][s].update(move_cm=_r((tgt.translation - F.translation).length * rig.scale * 100, 2),
@@ -1346,12 +1362,12 @@ def op_idle_ends(fr: Frames, p: dict, target: Target):
 
     def twist_deg(pose, bone, axis):
         """The turn about a world axis that takes the bone's Root-relative rotation to the idle's (swing-twist)."""
-        cur = rc.rot(pose.P["Root"].inverted() @ pose.P[bone])
+        cur = rc.rot(base(pose).inverted() @ pose.P[bone])
         ref = rc.rot(ref_r.P["Root"].inverted() @ ref_r.P[bone])
         d = ref @ cur.inverted()
         if d.w < 0.0:
             d.negate()
-        a = (rc.rot(pose.P["Root"]).inverted() @ (rig.Wrot.inverted() @ axis)).normalized()
+        a = (rc.rot(base(pose)).inverted() @ (rig.Wrot.inverted() @ axis)).normalized()
         return math.degrees(2.0 * math.atan2(Vector(d[1:]).dot(a), d.w))
 
     twist = {}
@@ -1474,6 +1490,23 @@ def op_idle_ends(fr: Frames, p: dict, target: Target):
         raised = [nt[f"floor_raise_mm.{s}"] for nt in notes.values() if f"floor_raise_mm.{s}" in nt]
         floor[s] = {"below_mm_max": _r(below * 1000, 3), "raised_mm_max": _r(max(raised, default=0.0), 2),
                     "slide_mm_max": _r(slide * 1000, 2), "slide_frame": at}
+    # match = "set": Root itself goes to the idle's on every frame and the bones under it keep their poses (Root carries
+    # no weights: contract.toml), so the game's crossfade, which blends each bone relative to its parent, blends no
+    # Root offset or turn into the feet and the Body (the package clips' 19.8 degrees moved a foot 1 to 2 cm halfway)
+    reroot = {"moved_cm_max": 0.0, "turned_deg_max": 0.0}
+    if p["match"] == "set":
+        kids = [b for b in rig.order if rig.parent[b] == "Root"]
+        R0 = ref_r.P["Root"]
+        for B in out:
+            P = rc.fk(rig, B)
+            keep = {b: P[b].copy() for b in kids}
+            a = math.degrees(rc.rot(P["Root"]).rotation_difference(rc.rot(R0)).angle)
+            reroot["moved_cm_max"] = max(reroot["moved_cm_max"],
+                                         (P["Root"].translation - R0.translation).length * rig.scale * 100)
+            reroot["turned_deg_max"] = max(reroot["turned_deg_max"], min(a, 360.0 - a))
+            _set_pose(rig, B, P, "Root", R0.copy())
+            for b in kids:
+                _set_pose(rig, B, P, b, keep[b])
     res = fr.copy(out)
     touch = {}
     for e in ends:
@@ -1488,6 +1521,7 @@ def op_idle_ends(fr: Frames, p: dict, target: Target):
                  "leg_twist_deg": {f"{e}.{s}": [_r(v[0]), _r(v[1])] for (e, s), v in twist.items()},
                  "ankle_gap_mm_max": _r(gap * 1000, 4), "knee_out_deg_max": _r(max(knees, default=0.0), 1),
                  "lift_cut_mm_max": _r(max(cuts, default=0.0), 2), "upper": p["upper"], "floor": floor,
+                 "match": p["match"], "reroot": {k: _r(v, 3) for k, v in reroot.items()},
                  "step_lift_cm": {s: _r(max(plan["lift"][s]) * 100, 2) for s in "LR"}}
 
 

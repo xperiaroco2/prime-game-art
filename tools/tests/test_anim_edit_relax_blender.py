@@ -4,9 +4,10 @@ the right foot turned in to about +3.7 degrees with the ankle on its foot, the f
 shoulders down, the head level, open hands with the thumb in, the loop closed without a pop; each op by itself on the
 raw idle; the women's arm offset re-checked by its auto search on the relaxed hands; and idle_ends with the set's own
 steps on the jump's take-off and landing and the raise's kneel and stand (a foot that settles, a step), and at both
-ends of the raw idle played as a one-shot (planted all through, as the pickup), with and without the upper body: the
-touching frames stand exactly in the relaxed idle's first frame, the ankles stay on the feet on every frame the edit
-weighs, no foot sinks into the floor and none slides where the clip keeps it still.
+ends of the raw idle played as a one-shot (planted all through, as the pickup), with and without the upper body,
+and turned 20 degrees as a whole (the package clips' Root): the touching frames stand exactly in the relaxed idle's
+first frame in the set's frame (relative to Root with match = "root"), the ankles stay on the feet on every frame the
+edit weighs, no foot sinks into the floor and none slides where the clip keeps it still.
 
 This file is also the Blender side of the test: run inside Blender (`blender -b ... --python <this file> -- <out>`)
 it does the edits and writes their numbers to <out>/relax.json, which the unittest reads. Skipped when Blender or the
@@ -93,9 +94,11 @@ if not IN_BLENDER:
                 for clip, t in self.r[body]["ends"].items():
                     for end, touch in t["touching"].items():
                         after = touch["after"]
+                        # the set's frame (the game's) by default; relative to Root with match = "root"
+                        key = "" if t["match"] == "root" else "set_"
                         for s in "LR":
-                            self.assertLess(after[f"foot_{s}_cm"], 0.01, (body, clip, end))
-                            self.assertLess(after[f"foot_{s}_deg"], 0.05, (body, clip, end))
+                            self.assertLess(after[f"{key}foot_{s}_cm"], 0.01, (body, clip, end))
+                            self.assertLess(after[f"{key}foot_{s}_deg"], 0.05, (body, clip, end))
                         self.assertLess(after["toes_max_deg"], 0.05, (body, clip, end))  # the idle's toes
                         if t["upper"]:
                             self.assertLess(after["fingers_max_deg"], 0.05, (body, clip, end))  # the idle's curl
@@ -103,7 +106,8 @@ if not IN_BLENDER:
                             # as it stood from the idle before the edit (the clip's own head and arms)
                             self.assertAlmostEqual(after["upper_max_deg"], touch["before"]["upper_max_deg"],
                                                    delta=0.05, msg=(body, clip, end))
-                        self.assertGreater(t["ends"][end]["R"]["turn_deg"], 30.0, (body, clip))  # turned in
+                        if not clip.startswith("Idle_turned"):
+                            self.assertGreater(t["ends"][end]["R"]["turn_deg"], 30.0, (body, clip))  # turned in
                     # every frame the edit weighs keeps the ankles on the feet, no foot below its floor (its own
                     # height before the edit or the idle's standing height), none slid where the clip keeps it still
                     self.assertLess(t["edited_ankle_gap_mm_max"], 0.05, (body, clip))
@@ -120,6 +124,22 @@ if not IN_BLENDER:
                 feet_only = self.r[body]["ends"]["Idle_both_feet"]
                 self.assertFalse(feet_only["upper"])
                 self.assertLess(feet_only["upper_changed_deg"], 1e-3, body)  # the arms and fingers untouched
+                # a clip turned 20 degrees as a whole (the package clips' Root after art #33's heading): in the set's
+                # frame its feet meet the idle's; relative to its Root they would keep the turn
+                # frame its feet meet the idle's and its Root becomes the idle's (the bones under it kept: the edit's
+                # own Root turn); relative to its Root they would keep the turn
+                for case, key, deg, root in (("Idle_turned", "set_", 0.0, 0.0), ("Idle_turned", "", 0.0, 0.0),
+                                             ("Idle_turned_root", "", 0.0, 20.0),
+                                             ("Idle_turned_root", "set_", 20.0, 20.0)):
+                    t = self.r[body]["ends"][case]
+                    after = t["touching"]["start"]["after"]
+                    self.assertAlmostEqual(t["touching"]["start"]["before"]["root_turn_deg"], 20.0, delta=0.01)
+                    self.assertAlmostEqual(after["root_turn_deg"], root, delta=0.01, msg=(body, case))
+                    for s in "LR":
+                        self.assertAlmostEqual(after[f"{key}foot_{s}_deg"], deg, delta=0.05, msg=(body, case, key))
+                turned = self.r[body]["ends"]["Idle_turned"]["reroot"]["turned_deg_max"]
+                self.assertAlmostEqual(turned, 20.0, delta=0.01, msg=body)
+                self.assertEqual(self.r[body]["ends"]["Idle_turned_root"]["reroot"]["turned_deg_max"], 0.0)
                 self.assertIn("idle_ends", self.r[body]["errors"]["loop"])
                 self.assertIn("not built yet", self.r[body]["errors"]["unbuilt"])
 
@@ -226,9 +246,12 @@ def _blender_main(argv: list[str]) -> None:
         one_shot = ae.Frames(raw.rig, [{n: m.copy() for n, m in b.items()} for b in raw.basis], raw.fps, False, {})
         cases = [(c, ae.Frames.from_action(acts[mvp[c]["source"].split(":")[1]], rig, False), mvp[c]["edits"])
                  for c in ("Jump_Start", "Jump_Land", "Raise_In", "Raise_Out")]
+        turned = one_shot.copy()  # the whole character turned 20 degrees, as the package clips' heading leaves Root
+        ae._move_world(turned, [ae._about_z(ae._body_path(turned)[0], 20.0)] * len(turned.basis))
+        feet_only = {"op": "idle_ends", "at": "both", "from_clip": "Idle_Loop", "upper": False}
         cases += [("Idle_both", one_shot, [{"op": "idle_ends", "at": "both", "from_clip": "Idle_Loop"}]),
-                  ("Idle_both_feet", one_shot, [{"op": "idle_ends", "at": "both", "from_clip": "Idle_Loop",
-                                                 "upper": False}])]
+                  ("Idle_both_feet", one_shot, [feet_only]),
+                  ("Idle_turned", turned, [feet_only]), ("Idle_turned_root", turned, [{**feet_only, "match": "root"}])]
         for clip, fr, steps in cases:
             fr = ae.apply(fr, [s for s in steps if s["op"] != "idle_ends"], target, body)
             done = ae.apply(fr, [s for s in steps if s["op"] == "idle_ends"], target, body)
@@ -243,8 +266,11 @@ def _blender_main(argv: list[str]) -> None:
                     else:
                         edited |= set(range(0, max(win) + 1) if end == "start" else range(min(win), n + 1))
             gaps = [max(ae._ankle_gap(legs, ae._Pose(rig, done.basis[f]), leg) for leg in ae.LEGS) for f in edited]
+            heads = {s: [rig.W @ P[f"Foot.{s}"].translation for P in done.poses()] for s in "LR"}
             ends[clip] = {**rep, "frames": n, "edited_frames": len(edited),
-                          "edited_ankle_gap_mm_max": 1000 * max(gaps, default=0.0)}
+                          "edited_ankle_gap_mm_max": 1000 * max(gaps, default=0.0),
+                          "feet_travel_mm": {s: 1000 * max((h - pts[0]).length for h in pts)
+                                             for s, pts in heads.items()}}
             if not rep["upper"]:
                 bones = [b for b in rig.order if b in ae.UPPER_DELTA or ae._curled(b)]
                 ends[clip]["upper_changed_deg"] = max(

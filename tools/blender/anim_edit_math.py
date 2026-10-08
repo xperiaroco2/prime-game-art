@@ -62,7 +62,7 @@ OPS = {
                   "from_clip": _p("string", required=True), "fade_frames": _p("int", 8),
                   "plant_speed_cm": _p(_N, 1.0), "plant_rise_cm": _p(_N, 1.5), "upper": _p("bool", True),
                   "step_cm": _p(_N, 4.0), "knees_out_deg": _p(_N, 25.0), "knees_out_from_deg": _p(_N, 25.0),
-                  "knees_out_full_deg": _p(_N, 75.0)},
+                  "knees_out_full_deg": _p(_N, 75.0), "match": _p("string", "set", choices=("set", "root"))},
 }
 # the relaxed idle's ops (art #49): anim_edit.apply keeps the clip's first frame as it was before the first of them
 # (its "relax base"), which idle_ends reads to carry the idle's own change into the clips that meet it
