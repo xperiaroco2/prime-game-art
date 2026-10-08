@@ -605,12 +605,14 @@ the edits' grid), `stem` (the file names) and `upper` (the upper-body layer's to
 | `needs` | the game's needs the clip serves: `need` (text), `no` (its number in the needs list), `layer` (`full` or `upper`), `speed_m_s` and `rate` (the game plays the clip at `rate` when moving at `speed_m_s`) |
 | `speed_m_s` | the clip's ground speed at rate 1.0; the review's treadmill and the game divide their speed by it |
 | `export` | `false` for a review candidate that is built, but not written to the GLB |
+| `place_after` | an earlier clip of the set that this clip plays after (art #49): instead of being recentred, the clip is moved along the floor so its first frame's feet stand where that clip's last frame has them (the mean of the two Foot heads' offsets, in the set's frame); the report's `placed_by` is `place_after` and `place_after` gives the clip, `moved_m` and the seam left (`feet_seam_cm`: each foot and the mean offset). That clip is built first (`anim_set_cfg.closure`) |
 | `note` | free text |
 
 `tools/blender/anim_set_cfg.py` reads and checks a set (pure Python: the runner, the tests and Blender share it): the
-names and the loop suffix, one `source` (a single clip of a known source) or an earlier `from`, the edits through
-`anim_edit_math.check_steps`, a need's layer, rate and body, and that a need's speed is the clip's speed times its rate
-(within 1 %). Angles found by an `auto` search are pinned in the settings, so a build is quick and reproducible.
+names and the loop suffix, one `source` (a single clip of a known source) or an earlier `from`, an earlier
+`place_after`, the edits through `anim_edit_math.check_steps`, a need's layer, rate and body, and that a need's speed
+is the clip's speed times its rate (within 1 %). Angles found by an `auto` search are pinned in the settings, so a
+build is quick and reproducible.
 
 A set's sources are taken **with their travel**: a library's `in_place` list is for the review's lanes only, since
 `heading {travel = ...}` and `cycle` read the travel.
@@ -637,7 +639,9 @@ hold for every clip:
   cut (the strafe 4.9 m to the left, the crawl 1 m ahead). A one-shot that ends elsewhere (Knockdown: 0.48 m) leaves
   that offset to the game, which moves the body when the clip ends. A clip that `idle_ends` placed in the idle's frame
   (`match = "set"`: `placed_by` in its report, carried to a clip made `from` it) is left where it is: recentring it
-  moved its feet 1.5 to 7.3 cm off the idle's again (art #49, round 3).
+  moved its feet 1.5 to 7.3 cm off the idle's again (art #49, round 3). A clip that plays between such clips is
+  placed by its neighbour with `place_after` instead: Raise_Work_Loop, cut from the same kneeling source, stands where
+  Raise_In leaves the feet (Raise_In and Raise_Out hold them at the idle's), and so meets Raise_Out too.
 
 The command bakes the
 exported clips under their own names and saves the donor as a character the export accepts: one armature, its meshes
