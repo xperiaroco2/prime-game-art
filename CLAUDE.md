@@ -98,6 +98,8 @@ Windows: `tools\run.cmd <command>`. Git Bash: `tools/run.sh <command>`. Python 3
 | `retarget [--body] [--library ual2\|tm] [--clips] [--blend] [--floor]` | Bakes Universal Animation Library (UAL1, UAL2) and Meshy text-to-motion (`tm`) clips onto a body type's Ultimate Modular armature (`docs/animations.md`) |
 | `anim-review <inventory\|clips\|pairs\|rates\|sheets\|table\|all> [--body] [--sources] [--clips]` | Judges animations in motion: inventory, measures, strips, MP4 clips, side-by-side pairs, the game's speeds (`rates`), sheets, table (`docs/animations.md`) |
 | `anim-set [--set mvp] [--body] [--clips] [--out] [--no-export] [--no-godot]` | Builds an animation set per body type from its settings (sources, clip edits, loops, layers): `.blend`, GLB, godot-check and the set's checks into `<raw>/anim-sets/<set>/` (`docs/animations.md`) |
+| `wait <log> [--max S]` | Waits at most 180 s for a background run's last log line `exit=<n>`; prints its `verify:` lines or last 8 lines and returns n, 124 while it runs (`docs/agents.md`, rule 1) |
+| `cost [--since ISO] [--session PREFIX...] [--project DIR]` | Per-agent calls, context, cache rewrites after idle gaps and list $ from this checkout's Claude Code transcripts; `tools/out/cost/cost.json` (`docs/agents.md`, rule 8) |
 | `meshy`, `raw-backup` | The Meshy client for approved batches; copy chosen raw files to OneDrive (`docs/meshy.md`) |
 | `contract`, `check`, `rename-bones` | Generate the contract from Godot; check a model against it; rename a rig's bones (`docs/contract.md`) |
 
