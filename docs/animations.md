@@ -266,8 +266,8 @@ spheres' grouping, nothing deforms with them).
 
 The clip edits turn a retargeted clip into one the game can play: they cut a loop at its best seam, take the travel
 out, straighten the heading, rescale a turn, trim, retime, reverse, mirror left and right, warp the stride to a speed
-with the feet planted, lift a clip out of the floor, turn the arms out of the legs or the hands apart, hold a box by its sides, and lean
-the upper body forward. The code is in two modules:
+with the feet planted, lift a clip out of the floor, turn the arms out of the legs or the hands apart, hold a box by
+its sides, and lean the upper body forward. The code is in two modules:
 
 - `tools/blender/anim_edit_math.py`: the pure math (standard library only), with unit tests in
   `tools/tests/test_anim_edit_math.py` (`test_anim_edit_settle.py`, `test_anim_edit_lean.py`,

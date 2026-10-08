@@ -214,9 +214,10 @@ edits = [{ op = "trim", start_s = 0.1, end_s = 1.5 }, { op = "heading", facing =
          { op = "idle_ends", at = "both", from_clip = "Idle_Loop", upper = false }]
 # floor: the squat's toes went 2.8 cm (men) and 1.9 cm (women) into the floor. side_grip (art #65): the carry's grip
 # from the hands' lowest point (0.43 / 0.47 s: men / women) to the end, faded in over the 0.3 s before it; the source
-# holds a narrow box (16 to 18 / 10 to 13 cm), the arms open 18.6 to 24.2 / 20.2 to 25.8 degrees: 44.8 to 45.3 / 44.9 to
-# 45.2 cm, the palms vertical (art #33's hand_spacing: a 0.40 m gap at the end only). idle_ends (art #49): both ends meet the idle's
-# legs (the carry plays over the idle), so the feet and legs only go to the relaxed idle's; the arms keep their hold.
+# holds a narrow box (16 to 18 / 10 to 13 cm), the arms open 18.6 to 24.2 / 20.2 to 25.8 degrees: 44.8 to 45.3 /
+# 44.9 to 45.2 cm, the palms vertical (art #33's hand_spacing: a 0.40 m gap at the end only). idle_ends (art #49): both
+# ends meet the idle's legs (the carry plays over the idle), so the feet and legs only go to the relaxed idle's; the
+# arms keep their hold.
 # The heading leaves Root turned 19.8 degrees from the idle's, so the feet are matched in the set's frame (the default);
 # both feet only shuffle between the ends, so they are held at the idle's all through. Putdown_Package, its reverse,
 # takes it at both ends too
