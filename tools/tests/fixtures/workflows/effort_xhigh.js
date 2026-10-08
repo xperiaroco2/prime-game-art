@@ -13,5 +13,5 @@ ${RULES}`;
 const built = await agent(builderPrompt(1), { label: 'builder', phase: 'build', model: 'opus', effort: 'xhigh', agentType: 'art-writer' });
 const verdict = await agent(`Rank it. BOUNDS: at most 20 tool calls. ${RULES}`, { label: 'critic', ...READER });
 /* general-agent: needs the Artifact tool to publish the review page */
-await agent('Publish. BOUNDS: at most 10 tool calls.', { label: 'publisher', model: 'sonnet' });
+await agent('Publish. BOUNDS: at most 10 tool calls. ' + RULES, { label: 'publisher', model: 'sonnet' });
 return { built, verdict, ratio: 4 / 2 };

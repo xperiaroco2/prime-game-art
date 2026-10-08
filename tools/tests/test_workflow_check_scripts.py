@@ -26,7 +26,7 @@ BAD = {
     "reader_opus.js": (14, "an art-reader agent runs on Sonnet"),
     "no_bounds.js": (14, "has no `BOUNDS: at most N tool calls`"),
     "bounds_over.js": (13, "allows 120 tool calls; at most 60"),
-    "no_wait_rule.js": (1, "never states the 180 s wait rule"),
+    "no_wait_rule.js": (16, "the agent prompt never states the 180 s wait rule"),
     "nondeterministic.js": (17, "Math.random() breaks resume"),
     "member_agent.js": (14, "a member call `x.agent(` is not checked"),
 }

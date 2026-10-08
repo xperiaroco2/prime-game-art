@@ -357,6 +357,9 @@ def check_agents(script: Script) -> list[tuple[int, str]]:
                                   "in one string literal"))
         elif max(bounds) > MAX_CALLS:
             found.append((t.line, f"the agent prompt allows {max(bounds)} tool calls; at most {MAX_CALLS}"))
+        if not WAIT_RE.search(" ".join(prompt.split())):
+            found.append((t.line, "the agent prompt never states the 180 s wait rule "
+                                  "(\"no tool call blocks over 180 s\" in one string literal)"))
     return found
 
 
@@ -372,9 +375,6 @@ def check_tokens(script: Script) -> list[tuple[int, str]]:
         if t.value == "new" and toks[k + 1].value == "Date" and k + 3 < len(toks) and toks[k + 2].value == "(" \
                 and toks[k + 3].value == ")":
             found.append((t.line, "new Date() breaks resume; workflow scripts are deterministic"))
-    if not any(WAIT_RE.search(" ".join(t.value.split())) for t in toks if t.kind == "str"):
-        found.append((1, "the script never states the 180 s wait rule "
-                         "(a string with \"no tool call blocks over 180 s\")"))
     return found
 
 

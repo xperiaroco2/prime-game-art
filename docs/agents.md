@@ -87,7 +87,8 @@ The drivers overlap: a long agent pays every one of the others on every call.
 - an `art-reader` call has `model: 'opus'`;
 - an agent prompt has no `BOUNDS: at most N tool calls` with N <= 60, written in one string literal (N not in a
   `${...}`). The prompt's text includes the strings of the consts and functions it names;
-- the script never states the 180 s wait rule (a string with "no tool call blocks over 180 s");
+- an agent prompt never states the 180 s wait rule ("no tool call blocks over 180 s" in one string literal of the
+  prompt's text, as for `BOUNDS`);
 - it calls `Date.now()`, `Math.random()` or `new Date()` (a resumed script must replay the same way).
 
 The options of an `agent(` call are an object literal or a const bound to one; `...SPREAD` of such a const is read too.
