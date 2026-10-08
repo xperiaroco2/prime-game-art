@@ -107,9 +107,9 @@ PowerShell 5.1 is the primary shell; the Bash tool is Git Bash. In Git Bash `pyt
 `$PYTHON_BIN`. Multi-line commit messages and PR bodies go through a file (`git commit -F`, `gh pr create
 --body-file`). Use absolute paths; with worktrees, `git -C <path>`.
 
-**No tool call of a workflow agent or subagent blocks over 180 s** (#43, #51; 180 s leaves a margin for
-the overhead around a call (p95 ~94 s under load, prime-game#555): after 5 idle minutes the agent's prompt
-cache expires, and the next call re-writes the whole context; that was about a quarter of a week's cost). In the Bash
+**No tool call of a workflow agent or subagent blocks over 180 s** (#43, #51). After 5 idle minutes the agent's
+prompt cache expires, and the next call re-writes the whole context; that was about a quarter of a week's cost. The
+180 s leave a margin for the overhead around a call, measured at about 94 s (p95) under load in prime-game#555. In the Bash
 tool, start any run that can pass 180 s (Blender, Godot, `verify`, `meshy run`, other `tools/run.sh` commands) in the
 background (`run_in_background`, `> <log> 2>&1` under `tools/out/` or the scratchpad, then `echo "exit=$?" >> <log>`);
 it notifies on exit, or check its log with short calls, with gaps of at most 180 s. No `tail -f`, and no
@@ -119,7 +119,7 @@ prompt carries this rule.
 ## Agent cost
 An agent's cost grows with its context times its calls (`docs/agents.md`, #51). Workflows and their agents follow
 these rules:
-- no idle gap over 4 minutes inside an agent;
+- no idle gap inside an agent near the 5-minute cache life (waits of at most 180 s);
 - builder steps of about 60 calls, ending in a handoff note;
 - lean briefs, and only the tools a role needs (#44);
 - quiet runs: the full log goes to a file, the agent reads its tail;
