@@ -32,8 +32,7 @@ The drivers overlap: a long agent pays every one of the others on every call.
 3. **Lean briefs and tools** (the base context).
    - A brief gives the goal, the files to touch and the acceptance checks. It does not paste history; the agent reads
      only what it needs.
-   - Each role gets only the tools it needs, through the lean agent types of #44. Until #44 lands, critics, reviewers
-     and verifiers are Sonnet agents with the call bound in their prompt.
+   - Each role gets only the tools it needs, through the lean agent types below.
 4. **Quiet runs** (the tool outputs).
    - A run writes its full output to a log and shows only its end: `<command> > <log> 2>&1; echo "exit=$?" >> <log>;
      tail -n 8 <log>`.
@@ -66,3 +65,30 @@ The drivers overlap: a long agent pays every one of the others on every call.
      - the scripts in `D:/prime-art-raw/manager/cost/`: `$PYTHON_BIN cost_ctx.py <session-id-prefix>...`, also
        `cost_tok.py`, `cost_cw.py` and `cost_bash.py`;
      - `tools/run.sh metrics` run read-only in a checkout of the game repo.
+
+## Agent types (#44)
+`.claude/agents/` holds two lean types. A general workflow agent carries every tool of the session: the desktop,
+browser, docs and connector tools and the skill listing. Its first call measured 54.6k tokens on 2026-10-08 (a Sonnet
+probe in this repo). A typed agent carries only its allowlist. prime-game-ui's types of the same shape start at about
+18k.
+
+| Type | Model | Tools | For |
+|---|---|---|---|
+| `art-reader` | Sonnet | Read, Grep, Glob, Bash, PowerShell, WebFetch, WebSearch, TaskStop | Critics, judges, reviewers, verifiers, read-only research |
+| `art-writer` | Opus | The reader's tools, plus Edit and Write | Builders (code, Blender scripts, IK, geometry), fixers, publishers |
+
+- **Every agent of an art workflow passes `agentType`:** `art-reader` or `art-writer`. The only exception is an agent
+  that needs a tool neither type has; the launch report gives the reason.
+- **A launch's `model` and `effort` still win per call.**
+  - Builders of code, IK or geometry keep Opus at high effort.
+  - A writer that only fixes docs or publishes a PR is launched with `model: 'sonnet'`.
+- **Review pages are published by the manager.** Neither type has the Artifact tool; the manager adds the links to the
+  PR.
+- **Neither type has Agent, Skill or NotebookEdit.** When a prompt names a skill, the agent reads its `SKILL.md` by
+  path.
+- **Neither type sets `permissionMode`.** A subagent runs in the session's mode, so the types only narrow what a
+  general agent can do.
+- **Monitor is left out on purpose.** A long run is checked with short calls (rule 1).
+- **A session sees a new `.claude/agents/` folder only after a restart.** It sees a new file in an existing folder
+  within seconds.
+- `tools/tests/test_agents_types.py` checks the files.
