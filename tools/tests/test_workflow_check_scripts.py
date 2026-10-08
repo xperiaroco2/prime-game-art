@@ -1,4 +1,4 @@
-"""`workflow-check` (#56): every refusal has a bad fixture script; the good fixture and the lab-round template pass."""
+"""`workflow-check` (#56): every refusal has a bad fixture script; the good fixtures and the lab-round template pass."""
 
 import shutil
 import tempfile
@@ -12,6 +12,7 @@ from runner.commands import workflow_check
 FIXTURES = common.ROOT / "tools" / "tests" / "fixtures" / "workflows"
 TEMPLATE = common.ROOT / "tools" / "workflows" / "art-lab-round.js"
 HAS_NODE = shutil.which("node") is not None
+GOOD = ("good.js", "good_meta_comment.js", "good_meta_no_semicolon.js")  # pass every check, node's too
 
 # fixture -> (line, a piece of the one refusal it must get)
 BAD = {
@@ -40,14 +41,16 @@ class StaticChecksTest(unittest.TestCase):
             with self.subTest(path=path.name):
                 self.assertNotIn(b"\r", path.read_bytes())
 
-    def test_good_fixture_passes(self) -> None:
-        self.assertEqual(static("good.js"), [])
+    def test_good_fixtures_pass(self) -> None:
+        for name in GOOD:
+            with self.subTest(fixture=name):
+                self.assertEqual(static(name), [])
 
     def test_template_passes(self) -> None:
         self.assertEqual(lint.check_text(TEMPLATE.read_text(encoding="utf-8")), [])
 
     def test_every_bad_fixture_gets_its_one_refusal(self) -> None:
-        self.assertEqual(set(BAD) | {"good.js", "syntax.js"}, {p.name for p in FIXTURES.glob("*.js")})
+        self.assertEqual(set(BAD) | set(GOOD) | {"syntax.js"}, {p.name for p in FIXTURES.glob("*.js")})
         for name, (line, piece) in BAD.items():
             with self.subTest(fixture=name):
                 found = static(name)
@@ -78,6 +81,16 @@ class StaticChecksTest(unittest.TestCase):
         self.assertEqual(copy.splitlines()[1:17], text.splitlines()[1:17])
         self.assertIsNone(lint.module_copy("// x\n" + text))
 
+    def test_module_copy_ends_meta_with_a_semicolon(self) -> None:
+        text = (FIXTURES / "good_meta_no_semicolon.js").read_text(encoding="utf-8")
+        self.assertIn("null] }; async function __workflow_body__() {\n", lint.module_copy(text))
+        self.assertEqual(lint.module_copy(text.replace("null] }", "null] };", 1)), lint.module_copy(text))
+
+    def test_meta_end_skips_comments(self) -> None:
+        text = (FIXTURES / "good_meta_comment.js").read_text(encoding="utf-8")
+        self.assertEqual(text[:lint.meta_end(text)].splitlines()[-1], "};")
+        self.assertIsNone(lint.meta_end("export const meta = { /* open"))
+
 
 @unittest.skipUnless(HAS_NODE, "node is not installed")
 class NodeCheckTest(unittest.TestCase):
@@ -90,7 +103,7 @@ class NodeCheckTest(unittest.TestCase):
         self.assertTrue(found[0][1].startswith("node --check: "), found)
 
     def test_good_and_template_parse(self) -> None:
-        for path in (FIXTURES / "good.js", TEMPLATE):
+        for path in (*(FIXTURES / name for name in GOOD), TEMPLATE):
             with self.subTest(path=path.name):
                 self.assertEqual(workflow_check.check_file(path), ([], None))
 

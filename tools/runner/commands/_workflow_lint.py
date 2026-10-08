@@ -279,7 +279,8 @@ def check_meta(script: Script, text: str) -> list[tuple[int, str]]:
 
 
 def meta_end(text: str) -> int | None:
-    """The character offset just after `export const meta = {...}` (and its `;`), or None."""
+    """The character offset just after `export const meta = {...}` (and a `;` right after it), or None. Strings and
+    `//` and `/* */` comments inside `meta` are skipped, so a quote or a brace in them does not end it early."""
     depth, i, n = 0, text.find("{"), len(text)
     if not text.startswith(META_PREFIX) or i < 0:
         return None
@@ -293,6 +294,16 @@ def meta_end(text: str) -> int | None:
                 quote = ""
         elif c in "'\"`":
             quote = c
+        elif text.startswith("//", i):
+            end = text.find("\n", i)
+            i = n if end < 0 else end
+            continue
+        elif text.startswith("/*", i):
+            end = text.find("*/", i + 2)
+            if end < 0:
+                return None
+            i = end + 2
+            continue
         elif c == "{":
             depth += 1
         elif c == "}":
@@ -386,8 +397,10 @@ def check_text(text: str) -> list[tuple[int, str]]:
 
 def module_copy(text: str) -> str | None:
     """The script as an ES module node can parse: the body after `meta` wrapped in an async function (it may use
-    top-level `await` and `return`), on the same line so node's line numbers match the script's. None without meta."""
+    top-level `await` and `return`), on the same line so node's line numbers match the script's; a `;` ends `meta`
+    first when the script has none. None without meta."""
     end = meta_end(text)
     if end is None:
         return None
-    return text[:end] + " async function __workflow_body__() {" + text[end:] + "\n}\n"
+    head = text[:end] if text[:end].endswith(";") else text[:end] + ";"  # `meta = {...}` may end without one
+    return head + " async function __workflow_body__() {" + text[end:] + "\n}\n"

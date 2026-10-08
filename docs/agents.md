@@ -77,8 +77,9 @@ The drivers overlap: a long agent pays every one of the others on every call.
 - it does not start with `export const meta = {...}`, or `meta` is not a pure literal (strings, numbers, `true`,
   `false`, `null`, arrays and objects of them);
 - `node --check` fails on it. The check parses a module copy under `tools/out/workflow-check/`, with the body after
-  `meta` wrapped in an async function (top-level `await` and `return`) on the same line, so line numbers match. It is
-  skipped with a note when node is missing;
+  `meta` wrapped in an async function (top-level `await` and `return`) on the same line, so line numbers match; a
+  `;` ends `meta` first when the script has none, and strings and comments inside `meta` are skipped when its end is
+  found. It is skipped with a note when node is missing;
 - an `agent(` call has no `agentType: 'art-reader' | 'art-writer'` in its options, unless a
   `/* general-agent: <reason> */` comment comes right before the call (or its `await`);
 - an effort is `xhigh` or `max`, or an agent's `model` or `effort` is not a string literal;
