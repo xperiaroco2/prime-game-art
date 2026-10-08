@@ -14,6 +14,7 @@ from runner import common
 from runner.commands import _anim
 
 BATCH = common.ROOT / "batches" / "2026-10-b5-anim-mvp.toml"
+BATCH6 = common.ROOT / "batches" / "2026-10-b6-anim-rerolls.toml"
 TM = """
 [libraries.tm2]
 format = "smplh_fbx"
@@ -41,13 +42,14 @@ class TextToMotionSourceTest(unittest.TestCase):
         self.assertIn("tm", _anim.sources(self.cfg))
         self.assertLessEqual(set(self.tm["in_place"]), set(self.tm["clips"]))
 
-    def test_the_clips_are_batch_5s_items_and_the_crawl(self) -> None:
-        batch = tomllib.loads(BATCH.read_text(encoding="utf-8"))
-        items = {i["id"] for i in batch["items"]}
-        self.assertEqual(len(items), 7)
-        self.assertEqual(set(self.tm["clips"]), items | {"crawl"})
-        for item in items:
-            self.assertEqual(self.tm["clips"][item], f"{batch['id']}/{item}/text_to_motion-clip.fbx")
+    def test_the_clips_are_batch_5s_and_6s_items_and_the_crawl(self) -> None:
+        batches = [tomllib.loads(b.read_text(encoding="utf-8")) for b in (BATCH, BATCH6)]
+        items = [{i["id"] for i in b["items"]} for b in batches]
+        self.assertEqual([len(i) for i in items], [7, 4])
+        self.assertEqual(set(self.tm["clips"]), items[0] | items[1] | {"crawl"})
+        for batch, ids in zip(batches, items):
+            for item in ids:
+                self.assertEqual(self.tm["clips"][item], f"{batch['id']}/{item}/text_to_motion-clip.fbx")
         self.assertEqual(self.tm["clips"]["crawl"], "2026-10-b4-animations/crawl-motion/text_to_motion-clip.fbx")
 
     def test_every_clip_file_is_checked_before_blender_starts(self) -> None:

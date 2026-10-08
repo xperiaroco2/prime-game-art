@@ -82,6 +82,22 @@ edits = [{ op = "heading", travel = "back" }, { op = "cycle", min_s = 0.6, max_s
 note = "review only: Meshy's backward jog barely travels (0.3 m/s), so its stride must grow about 8x (re-roll)"
 
 [[clips]]
+name = "Jog_Bwd_R2_Loop"
+source = "tm:backward-run"
+loop = true
+export = false
+speed_m_s = 4.5
+edits = [{ op = "heading", travel = "back" },
+         { op = "cycle", min_s = 0.5, max_s = 1.0, within = [0.3, 3.7], max_raw_seam_deg = 30 },
+         { op = "stride", speed_m_s = 4.5, cadence = 4.0 }, { op = "floor", mode = "lift" }]
+# Measured (men / women): the raw run travels 5.5 degrees off straight back at 1.4 / 1.5 m/s (the old jog 0.31); its
+# best 1 s cut runs 2.03 / 2.16 m/s at 2.0 steps/s with a raw seam of 24.1 / 28.0 degrees (the right upper arm).
+# cadence 4.0 (one grid, men / women): at the jog's 2.8 the stride grew 1.59 / 1.50x (the old jog's 7-8x) and the legs
+# missed their contacts by 74 / 83 mm; 3.2: 55 / 58; 3.6: 39 / 37; 4.0 gives 1.125 m steps, 1.13 / 1.07x and 25 / 16 mm.
+# floor: the toes went 0.9 / 1.5 cm into the floor
+note = "review only (art #66): batch 6's re-roll of the backward jog, a candidate for Jog_Bwd_Loop"
+
+[[clips]]
 name = "Strafe_Left_Loop"
 source = "tm:strafe-left"
 loop = true
@@ -92,6 +108,21 @@ edits = [{ op = "heading", travel = "left" }, { op = "cycle", min_s = 0.55, max_
 # 66 mm on contact frames and 465 mm in flight; 4.0 steps/s gives 1.1 m steps
 needs = [{ need = "Strafe left at 4.5 m/s", no = 4, layer = "full", speed_m_s = 4.5, rate = 1.0 },
          { need = "Sprint to the left at 7.0 m/s", no = 6, layer = "full", speed_m_s = 7.0, rate = 1.556 }]
+
+[[clips]]
+name = "Strafe_Left_R2_Loop"
+source = "tm:strafe-left-r2"
+loop = true
+export = false
+speed_m_s = 4.5
+edits = [{ op = "heading", travel = "left" },
+         { op = "cycle", min_s = 0.55, max_s = 0.9, within = [0.3, 3.7], max_raw_seam_deg = 30 },
+         { op = "stride", speed_m_s = 4.5, cadence = 4.0 }, { op = "floor", mode = "lift" }]
+# Measured (men / women): no strafe. The re-roll runs turned towards its travel, 50 degrees left of forward (40 forward
+# of sideways; the old strafe 17): after the heading its hips face 77.5 degrees and its head 63.7 off the aim (the old
+# 19.5 and -15.9). Its best 0.7 s cut has a raw seam of 9.0 / 8.7 (the old 10.1), the stride grows 1.42 / 1.31x; the
+# hands go 11.4 / 8.1 cm into the torso (the old 2.3 / 4.2); floor: the feet went 4.3 / 3.8 cm into it
+note = "review only (art #66): batch 6's re-roll of the strafe, a candidate for Strafe_Left_Loop (Strafe_Right_Loop mirrors it)"
 
 [[clips]]
 name = "Strafe_Right_Loop"
@@ -261,6 +292,18 @@ needs = [{ need = "Crawl start: from lying on the back onto all fours (downed)",
 note = "stopgap: Meshy's roll-up floats and its hands stay short of the floor; settled; a re-roll candidate"
 
 [[clips]]
+name = "Crawl_Start_R2"
+source = "tm:rollup-to-all-fours-r2"
+loop = false
+export = false
+edits = [{ op = "floor", mode = "settle" }, { op = "trim", start_s = 1.5, end_s = 3.9 },
+         { op = "heading", facing = "end" }, { op = "retime", seconds = 1.8 }]
+# Measured (men / women): the re-roll still floats its whole length, 4.4 / 18.4 cm at best (the old 7.8 / 13.7), and
+# rolls backwards over its head (2.2-2.8 s) rather than onto its stomach; it lies still to 1.8 s, so the trim starts at
+# 1.5. After the settle the lowest vertex per frame rises at most 6.0 / 6.7 cm off the floor (the old 10.9 / 7.9)
+note = "review only (art #66): batch 6's re-roll of the roll-up, a candidate for Crawl_Start"
+
+[[clips]]
 name = "Crawl_Loop"
 source = "tm:crawl"
 loop = true
@@ -273,6 +316,20 @@ edits = [{ op = "heading", travel = "forward" },
 # settle: the cut floats, its lowest vertex 4.9 cm (men) and 3.0 cm (women) above the floor at best
 needs = [{ need = "Crawl at 1.0 m/s (downed)", no = 24, layer = "full", speed_m_s = 1.0, rate = 1.0 }]
 note = "stopgap: the cut's raw seam is 26 degrees (the left wrist); the crawl is a re-roll candidate"
+
+[[clips]]
+name = "Crawl_R2_Loop"
+source = "tm:crawl-r2"
+loop = true
+export = false
+speed_m_s = 1.0
+edits = [{ op = "heading", travel = "forward" },
+         { op = "cycle", min_s = 0.5, max_s = 1.5, within = [0.0, 3.9], max_raw_seam_deg = 30 },
+         { op = "floor", mode = "settle" }, { op = "retime", speed_m_s = 1.0 }]
+# Measured (men / women): the re-roll crawls 0.6 degrees off straight (the old 19) at 0.42 / 0.46 m/s; its best cut,
+# 1.2 s from 0.6 s, has a raw seam of 19.1 degrees (the left upper arm; the old 26.4) and floats 1.5 / 0.8 cm (the old
+# 5.1 / 3.3) before the settle; it is retimed from 0.64 / 0.69 m/s to 1.0
+note = "review only (art #66): batch 6's re-roll of the crawl, a candidate for Crawl_Loop"
 
 [[clips]]
 name = "Getup_Back"

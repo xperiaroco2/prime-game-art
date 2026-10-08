@@ -17,7 +17,7 @@ the toe bones and the Meshy trial (art #25) in [research/2026-10-03-meshy-animat
 | Universal Animation Library Standard (UAL1): `UAL1_Standard.glb` (in place) and `UAL1_Standard_RM.glb` (root motion) | 43 clips each | 65 bones, Unreal-mannequin names | CC0 1.0 | [`sources/quaternius_ual1_standard.toml`](../sources/quaternius_ual1_standard.toml) |
 | Universal Animation Library 2 Standard (UAL2, art #24): `UAL2_Standard.glb` and `UAL2_Standard_RM.glb`, and a Female Mannequin without clips | 43 clips each, other motions than UAL1's | UAL1's rig exactly (the same 65 bones, parents and rest) | CC0 1.0 | [`sources/quaternius_ual2_standard.toml`](../sources/quaternius_ual2_standard.toml) |
 | Meshy (art #25, batch 4, private raw files): `meshy`, Meshy's rig of m1_rex with its walking and running, ten library actions and the text-to-motion crawl; `meshyw`, its rig of w1_ivy with its walking, running, Walking Woman and Run Fast | 13 and 4 clips | Meshy's auto-rig, 24 bones, no fingers ([the research page](research/2026-10-03-meshy-animations.md)) | owned output of the Pro plan; the library motions' provenance is undisclosed: private only | [`batches/2026-10-b4-animations.toml`](../batches/2026-10-b4-animations.toml) |
-| Meshy text to motion (art #25's crawl, art #33's batch 5, private raw files): `tm`, eight FBX clips, one per file | 8 clips | SMPL-H, 52 bones with fingers, retargeted with `smpl_um.toml` ("Text to motion") | owned output of the Pro plan (`public_repo_ok = true`, `ai_generated = true`) | [`batches/2026-10-b4-animations.toml`](../batches/2026-10-b4-animations.toml), [`batches/2026-10-b5-anim-mvp.toml`](../batches/2026-10-b5-anim-mvp.toml) |
+| Meshy text to motion (art #25's crawl, art #33's batch 5, art #66's batch 6 of re-rolls, private raw files): `tm`, twelve FBX clips, one per file | 12 clips | SMPL-H, 52 bones with fingers, retargeted with `smpl_um.toml` ("Text to motion") | owned output of the Pro plan (`public_repo_ok = true`, `ai_generated = true`) | [`batches/2026-10-b4-animations.toml`](../batches/2026-10-b4-animations.toml), [`batches/2026-10-b5-anim-mvp.toml`](../batches/2026-10-b5-anim-mvp.toml), [`batches/2026-10-b6-anim-rerolls.toml`](../batches/2026-10-b6-anim-rerolls.toml) |
 
 Measured by `anim-review inventory` (2026-10-03): the 24 actions have the same keyframes in every file of a body type,
 except the men's `Adventurer.glb`, whose 24 all differ (that character is bound 180 degrees off). The women's
@@ -213,7 +213,8 @@ getup), the men's 6.5 and 6.7 in the shove and the getup.
 every file has the same rest, checked within 1 mm), `label = "TTM"`, `map = "smpl_um.toml"`, `own` (the SMPL-H
 mannequin plays `tm_own:<clip>`), `in_place` (the travelling clips, for the review's lanes) and a `[libraries.tm.clips]`
 table: clip name (the batch item's id) = its file. Clip keys are `tm:crawl`, `tm:backward-jog`, `tm:strafe-left`,
-`tm:turn-left-90`, `tm:shove-stumble`, `tm:package-lift`, `tm:rollup-to-all-fours`, `tm:getup-from-all-fours`; no
+`tm:turn-left-90`, `tm:shove-stumble`, `tm:package-lift`, `tm:rollup-to-all-fours`, `tm:getup-from-all-fours`, and
+batch 6's re-rolls (art #66) `tm:backward-run`, `tm:strafe-left-r2`, `tm:rollup-to-all-fours-r2`, `tm:crawl-r2`; no
 raw clip loops, so `[loops]` has no `tm`. `anim_libs.load` dispatches on `format`; the runner refuses an unknown
 format, a missing `clips` table and clip files that are no raw-relative FBX; `anim-review` checks every file before
 Blender starts.
@@ -251,6 +252,16 @@ needs before it is used (art #33's clip edits).
 | package-lift | in place | twists 32 degrees in the bend, ends 14 turned | toes -2.8 cm in the squat | squats wide; holds with the hands forward from 1.4 s |
 | rollup-to-all-fours | 0.12 m | rolls over (the pelvis turns 180 degrees) | **floats the whole clip: median 15.6 cm, 7.8 to 31**; ends on all fours 13 cm up | starts lying, rolls over 1.1-1.6 s |
 | getup-from-all-fours | 0.66 m | ends facing 17 degrees left of its start | **floats: starts 10 cm up on all fours, ends standing 13 cm up** (the source's pelvis 1.09 m against 0.97 standing) | on all fours to 0.55 s, rises 0.7-1.75 s |
+
+Batch 6's re-rolls (art #66, measured on 2026-10-08 with `anim-review clips` and the set's build reports, men / women;
+no in-place), each against the fault it was asked to fix:
+
+| Clip (re-roll of) | Travel | Heading and turn | Floor (lowest vertex) | Other |
+|---|---|---|---|---|
+| backward-run (backward-jog) | 1.4 / 1.5 m/s back (the old 0.31); its best 1 s cut 2.03 / 2.16 m/s at 2.0 steps/s | 5.5 degrees off straight back (the old 7); faces within 7 | -2.2 / -1.7 cm lowest, up to 3.0 / 5.7 | no loop (seam 43); its best cut's raw seam 24.1 / 28.0 (right upper arm); the stride grows 1.13 / 1.07x at 4 steps/s (the old 7-8x); hands into the legs 6.8 / 8.0 cm, the torso 4.3 / 0.2 |
+| strafe-left-r2 (strafe-left) | 1.3 m/s on the feet, 3.1 / 3.4 m/s in its best cut | **50 degrees left of forward (40 forward of sideways; the old 17); the body turns towards its travel: after the heading the hips face 77.5 degrees and the head 63.7 off the aim (the old 19.5 and -15.9)** | -1.7 / -1.3 lowest; up to 16 cm in flight | no strafe: a run turned to the left; the best cut's raw seam 9.0 / 8.7; **hands 11.4 / 8.1 cm into the torso** (the old 2.3 / 4.2) |
+| rollup-to-all-fours-r2 (rollup-to-all-fours) | 0.07 m/s | **rolls backwards over its head (2.2-2.8 s)**, not onto the stomach | **floats the whole clip: 4.4 / 18.4 cm at best, up to 32.5 / 34.7** (the old 7.8 / 13.7) | lies still to 1.8 s; ends on hands and knees; after the settle each frame's lowest vertex at most 6.0 / 6.7 cm up (the old 10.9 / 7.9) |
+| crawl-r2 (crawl) | 0.42 / 0.46 m/s; its best cut 0.64 / 0.69 | 0.6 degrees off straight (the old 19) | -1.1 / -2.4 lowest, up to 6.0 / 5.4; the cut floats 1.5 / 0.8 cm (the old 5.1 / 3.3) | no loop (seam 31), its best cut (1.2 s from 0.6 s) 19.1 (left upper arm; the old 26.4); no hand in the torso |
 
 The clip edits' `floor` lift pushes a clip up out of the floor; the rollup, the getup and the start of the crawl need
 the opposite, a settle down onto the floor (the lowest vertex of the lying, kneeling or standing frames brought to 0).
@@ -608,7 +619,7 @@ the edits' grid), `stem` (the file names) and `upper` (the upper-body layer's to
 | `edits` | the steps of "Clip edits", in order; a step with `body = "men"` or `"women"` runs on that body type only; a step's `from_clip` (art #49) names an earlier clip of the set, which is built first (`anim_set_cfg.closure`) |
 | `needs` | the game's needs the clip serves: `need` (text), `no` (its number in the needs list), `layer` (`full` or `upper`), `speed_m_s` and `rate` (the game plays the clip at `rate` when moving at `speed_m_s`) |
 | `speed_m_s` | the clip's ground speed at rate 1.0; the review's treadmill and the game divide their speed by it |
-| `export` | `false` for a review candidate that is built, but not written to the GLB |
+| `export` | `false` for a review candidate that is built, but not written to the GLB: `Jog_Bwd_TTM_Loop`, and art #66's re-rolls `Jog_Bwd_R2_Loop`, `Strafe_Left_R2_Loop`, `Crawl_Start_R2` and `Crawl_R2_Loop` beside the stopgaps they may replace once the engineer has judged them (the `anim-review` pairs `a7_*`) |
 | `place_after` | an earlier clip of the set that this clip plays after (art #49): instead of being recentred, the clip is moved along the floor so its first frame's feet stand where that clip's last frame has them (the mean of the two Foot heads' offsets, in the set's frame); the report's `placed_by` is `place_after` and `place_after` gives the clip, `moved_m` and the seam left (`feet_seam_cm`: each foot and the mean offset). That clip is built first (`anim_set_cfg.closure`) |
 | `note` | free text |
 
