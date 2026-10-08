@@ -913,6 +913,42 @@ def op_side_grip(fr: Frames, p: dict, target: Target):
     return out, rep
 
 
+def hands_at(target: Target, basis: dict) -> dict:
+    """The grip on one frame as the game plays it (art #65): the hands' closest gap, their depth in each other and in
+    the torso (cm), each palm's angle over the horizontal and off the horizontal line to the other wrist (degrees),
+    each wrist's height and forward (m, world: forward is -Y). Leaves the target posed."""
+    pose = _Pose(target.rig, basis)
+    h = _hands_numbers(target, pose.B)
+    wr = {s: pose.head(f"Wrist.{s}") for s in "LR"}
+    palm = {s: Vector(_palm(pose, s)) for s in "LR"}
+    aim = {s: math.degrees(palm[s].angle(Vector(em.grip_goal(tuple(wr[o] - wr[s]), 0.0)), 0.0))
+           for s, o in (("L", "R"), ("R", "L"))}
+    return {"gap_cm": _r(100 * h["gap"], 2), "hands_in_each_other_cm": _r(100 * h["depth"], 2),
+            "hands_in_torso_cm": _r(100 * h["torso"], 2),
+            "palm_up_deg": {s: _r(math.degrees(math.asin(max(-1.0, min(1.0, palm[s].z)))), 2) for s in "LR"},
+            "palm_aim_err_deg": {s: _r(aim[s], 2) for s in "LR"},
+            "hand_height_m": {s: _r(wr[s].z, 3) for s in "LR"}, "hand_forward_m": {s: _r(-wr[s].y, 3) for s in "LR"},
+            "wrists": wr}
+
+
+def grip_ends(fr: Frames, target: Target, ref: dict | None = None) -> dict:
+    """hands_at on a built clip's first and last frames (the exported ones, after every edit: art #65's review asked
+    for them after idle_ends); with ref (a basis: the pose the clip hands over to, e.g. the idle with the carry's upper
+    layer over it), its numbers too and how far each end's wrists are from its (to_ref_cm)."""
+    want = hands_at(target, ref) if ref is not None else None
+    out = {}
+    for key, B in (("first", fr.basis[0]), ("last", fr.basis[-1])):
+        d = hands_at(target, B)
+        wr = d.pop("wrists")
+        if want is not None:
+            d["to_ref_cm"] = {s: _r(100 * (wr[s] - want["wrists"][s]).length, 2) for s in "LR"}
+        out[key] = d
+    if want is not None:
+        out["ref"] = {k: v for k, v in want.items() if k != "wrists"}
+    rc.reset_pose(target.arm)
+    return out
+
+
 # ------------------------------------------------------------------------------------------------------- lean
 def _spine_tilt(rig: rc.Rig, P: dict, bone: str) -> float:
     """The forward tilt (degrees) of the line from a bone's head to Head's, from the vertical, signed towards the

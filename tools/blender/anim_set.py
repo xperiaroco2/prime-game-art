@@ -163,6 +163,30 @@ def place_after(fr: ae.Frames, prev: ae.Frames) -> tuple[ae.Frames, float, dict]
     return out, _r(math.hypot(dx, dy)), seam
 
 
+def _chain(table: dict, name: str) -> list:
+    """A clip's edits with those of the clips it is made `from` before them."""
+    c = table[name]
+    return (_chain(table, c["from"]) if c.get("from") else []) + list(c["edits"])
+
+
+def grip_check(name: str, table: dict, built: dict, fr: ae.Frames, target: ae.Target) -> dict | None:
+    """A one-shot that holds the side grip (art #65): the grip on its exported first and last frames
+    (anim_edit.grip_ends); when it also takes the upper layer of another clip at an end (upper_match) and meets the
+    idle (idle_ends), against the pose the game crossfades to there: the idle's first frame with that clip's upper
+    layer over it. None for any other clip."""
+    steps = _chain(table, name)
+    if fr.loop or not any(s.get("op") == "side_grip" for s in steps):
+        return None
+    um = [s for s in steps if s.get("op") == "upper_match"]
+    ie = [s for s in steps if s.get("op") == "idle_ends"]
+    ref = None
+    if um and ie and um[-1]["from_clip"] in built and ie[-1]["from_clip"] in built:
+        other = built[um[-1]["from_clip"]].basis[um[-1].get("frame", 0)]
+        ref = {n: m.copy() for n, m in built[ie[-1]["from_clip"]].basis[0].items()}
+        ref.update({b: other[b].copy() for b in target.upper_bones() if b in other})
+    return ae.grip_ends(fr, target, ref)
+
+
 def build_clips(set_cfg: dict, char: dict, names, body: str, resolve, target: ae.Target | None = None,
                 lowest: bool = False, log=print) -> dict:
     """Builds the clips `names` ("all" or a list) of a set on char (a donor with the toe bones) and the clips they are
@@ -218,6 +242,9 @@ def build_clips(set_cfg: dict, char: dict, names, body: str, resolve, target: ae
         if placed:
             rep["place_after"] = placed
         rep.update(_summary(fr, target, lowest))
+        grip = grip_check(name, table, out, fr, target)
+        if grip is not None:
+            rep["grip_ends"] = grip
         rep["seconds_spent"] = _r(time.time() - t0, 1)
         fr.info["report"] = rep
         out[name] = fr
