@@ -69,10 +69,12 @@ The drivers overlap: a long agent pays every one of the others on every call.
      gaps. Two ways to get them:
      - `tools/run.sh cost [--since ISO] [--session PREFIX...]` in this repo: one row per agent of this repo's
        Claude Code transcripts (label or agentType, model, calls, first, average and peak context, cache rewrites of
-       50k+ tokens after a gap over 5 minutes, list $), a total, and `tools/out/cost/cost.json`. It reads the main
-       checkout's transcript folder and its worktrees' (`C--prime-game-art-wt-<name>` for a worktree at
-       `C:/prime-game-art-wt/<name>`), each API call once. A worktree elsewhere has a folder of another name: name it
-       with `--project`;
+       50k+ tokens after a gap longer than their cache's life, list $), a total, and `tools/out/cost/cost.json`.
+       - It reads the main checkout's transcript folder and its worktrees' (`C--prime-game-art-wt-<name>` for
+         `C:/prime-game-art-wt/<name>`), each API call once. A worktree elsewhere has a folder of another name: name
+         it with `--project`.
+       - The usage tells 5-minute from 1-hour cache writes. A 1-hour write (main sessions use them) counts as a
+         rewrite only after a gap over an hour;
      - `tools/run.sh metrics` run read-only in a checkout of the game repo.
 
 ## Checking a workflow script (#56)

@@ -16,8 +16,10 @@ One row per agent (the main session is an agent too):
 - label: the meta's description, else its agentType; a main session's custom title, else "main";
 - model, and calls (API calls);
 - context: a call's prompt, input + cache writes + cache reads; the first call's, the average and the peak;
-- rewrites: calls that wrote REWRITE_MIN or more cache tokens after a gap over CACHE_TTL since the previous call (the
-  prompt cache had expired, so the whole context was written again);
+- rewrites: calls that wrote REWRITE_MIN or more cache tokens after a gap since the previous call longer than those
+  tokens' cache life (the prompt cache had expired, so the whole context was written again). The usage tells 5-minute
+  from 1-hour writes (`cache_creation.ephemeral_1h_input_tokens`): a 1-hour write counts only after a gap over
+  CACHE_TTL_1H, since a 1-hour cache outlives a shorter one;
 - list $: the calls' tokens at the API list price (PRICES).
 
 Then a total, and the whole as JSON in tools/out/cost/cost.json. Only reads transcripts; writes only that JSON.
@@ -48,6 +50,7 @@ PRICES = {
     "claude-haiku-4-5": (1.0, 1.25, 2.0, 0.10, 5.0),
 }
 CACHE_TTL = 300  # a prompt cache's life, in seconds: a longer gap before a call means its context is written again
+CACHE_TTL_1H = 3600  # the life of a 1-hour cache write (main sessions use them)
 REWRITE_MIN = 50_000  # cache-write tokens of one call that count as a rewrite after such a gap
 DEFAULT_JSON = common.OUT / "cost" / "cost.json"
 SYNTHETIC = "<synthetic>"
@@ -200,6 +203,16 @@ def usd_of(call: dict) -> float:
             + call["read"] * price[3] + call["output"] * price[4]) / 1e6
 
 
+def expired_write(call: dict, gap: float) -> int:
+    """The cache tokens a call wrote because its cache had expired after a gap of `gap` seconds: its 5-minute writes
+    after a gap over CACHE_TTL, all its writes after one over CACHE_TTL_1H."""
+    if gap > CACHE_TTL_1H:
+        return call["write"]
+    if gap > CACHE_TTL:
+        return call["write"] - min(call["write_1h"], call["write"])
+    return 0
+
+
 def context(call: dict) -> int:
     """The call's prompt: input, cache writes and cache reads."""
     return call["input"] + call["write"] + call["read"]
@@ -213,9 +226,10 @@ def agent_row(calls: list[dict], since: float | None = None) -> dict:
         if since is not None and call["t0"] < since:
             continue
         kept.append(call)
-        if i and call["t0"] - calls[i - 1]["t1"] > CACHE_TTL and call["write"] >= REWRITE_MIN:
+        written = expired_write(call, call["t0"] - calls[i - 1]["t1"]) if i else 0
+        if written >= REWRITE_MIN:
             rewrites += 1
-            rewrite_tokens += call["write"]
+            rewrite_tokens += written
     contexts = [context(c) for c in kept]
     models = Counter(str(c["model"]) for c in kept)
     return {

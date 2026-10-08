@@ -97,6 +97,12 @@ class CollectTest(unittest.TestCase):
         self.assertEqual(agents["main"]["calls"], 2)  # s2 is in both folders
         self.assertEqual(report["total"]["calls"], 7 + 4)
 
+    def test_a_one_hour_write_is_a_rewrite_only_after_an_hour(self) -> None:
+        wt = by_label(cost.collect(WORKTREE, ["s3"], None))["worktree session"]
+        self.assertEqual((wt["calls"], wt["rewrites"], wt["rewrite_tokens"]), (4, 2, 130000))
+        call = {"write": 70000, "write_1h": 50000}
+        self.assertEqual([cost.expired_write(call, gap) for gap in (300, 301, 3600, 3601)], [0, 20000, 20000, 70000])
+
     def test_bad_time(self) -> None:
         with self.assertRaises(common.Failure):
             cost.parse_time("yesterday")
