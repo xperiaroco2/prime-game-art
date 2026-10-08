@@ -21,7 +21,10 @@ Everything below was run on 2026-10-08 in background Blender 5.2.2 and Godot 4.7
 - round 2 (the reviews' fixes, "Round 2" below): the set `raw:anim-sets/mvp-49-r5/<body>/`; the review
   `raw:review/stage1/49/after-r5/` (the eight changed one-shots), `before-package/` (main's package clips),
   `before_after_r5/` (main over round 2), `frames-r5/<body>/` (Godot), `compare/r5_vs_lab_<body>.json`; the
-  intermediate builds `mvp-49-r2` to `mvp-49-r4` are superseded.
+  intermediate builds `mvp-49-r2` to `mvp-49-r4` are superseded;
+- round 3 ("Round 3" below): the set `raw:anim-sets/mvp-49-r7/<body>/`; the review `raw:review/stage1/49/after-r7/`
+  (the nine changed one-shots), `before_after_r7/` (main over round 3), `frames-r7/<body>/` (Godot); `mvp-49-r6`,
+  `after-r6/` and `frames-r6/` are a superseded build, still recentred (below).
 
 ## Summary
 
@@ -56,6 +59,9 @@ Everything below was run on 2026-10-08 in background Blender 5.2.2 and Godot 4.7
 - **Round 2** (the three fresh reviews): idle_ends no longer slides a planted foot along the floor (Getup_Back's left
   foot, the women's Raise_In) nor sinks one into it (Raise_In, Raise_Out), and the package clips meet the idle's legs
   too (feet and legs only). See "Round 2".
+- **Round 3** (the re-reviews): the touching ends are matched in the game's frame, not relative to each clip's Root,
+  and the set no longer recentres them away; the package clips hold their feet at the idle's instead of hopping. See
+  "Round 3": the Root-relative "0.000 cm" above hid up to 11.8 cm and 19.8 degrees in the game's frame.
 
 ## The edits
 
@@ -236,12 +242,62 @@ the idle's change. At the fourteen touching ends both feet stay 0.000 cm and 0.0
 0.00 degrees; the ankle gaps 0.002 to 0.011 mm (Knockdown's 2.9 mm on the frames idle_ends leaves alone); the
 one-frame pops as main's (the men's Jump_Start trades one first-frame pop for another, LowerLeg.R at frame 0).
 
+## Round 3: the game's frame and the held shuffle
+
+Re-reviews of round 2 (code, motion) found two majors in the package clips, both hidden by the touching-end measure,
+which was relative to each clip's Root. Round 3 (the set `mvp-49-r8`):
+
+- **The game's frame.** The game plays the clips in place with no root motion (`contract.toml`, `[animation]
+  in_place`), so its crossfade blends Root too, and a foot matched relative to the clip's Root moves with it. Art
+  #33's `heading facing = "mean"` leaves the package clips' Root turned 19.84 degrees from the idle's: their feet kept
+  that turn (the right foot 23.5 degrees out against the aim where the idle's is 3.66, the left -25.5 against -5.68)
+  and, in the saved set, stood 1.1 to 11.8 cm from the idle's. `idle_ends` now matches the feet in armature space
+  (`match = "set"`, the default) and then sets Root to the idle's on every frame, the bones under it keeping their
+  poses (Root carries no weights), so the crossfade blends no Root turn either (with the turn left in Root, Godot's
+  per-bone blend swung a foot 0.5 to 2.0 cm off its straight path halfway through it). Getup_Back keeps `match = "root"`: its whole body stands
+  up 17 cm (men) and 27 cm (women) from where the idle stands.
+- **The set's recentring.** `anim-set` recentres every clip after its edits, a one-shot on its first frame's Body, and
+  the idle that `idle_ends` reads is already recentred: recentring a matched clip moved its feet off the idle's again,
+  by its own shift (1.5 to 7.3 cm). This is also why round 2's UAL clips met the idle 0.2 to 6 cm off in the saved set
+  (Jump_Start 5.9 cm) where the build report said 0.000. A clip that `idle_ends` placed (`placed_by`) is no longer
+  recentred, and Putdown_Package, made `from` Pickup_Package, keeps the mark.
+- **Held, not hopped.** Between the package clips' two ends both feet only shuffle (3 to 39 mm a frame, under 2.3 cm
+  high). Round 2 faded each out and back in with overlapping windows and lifted both on the step's arc at once: the
+  character rose 4 to 6.6 cm off the floor for about 0.2 s as it squatted. A foot that only shuffles between two ends
+  that meet the idle is now held at the idle's on every frame (`hold`: windows L 3 to 8, R 2 to 13, women R 2 to 19),
+  its toes at the idle's bend; the squat happens in the idle's stance, knees out (as the pickups').
+- **Never both feet in the air.** A lift that has both feet over 1 cm up on a common frame is dropped (steps keep
+  theirs first, then the earlier), and a step picks its window off the other foot's lift. The report's `air` checks the
+  result on the lowest vertex: no set-matched clip has an airborne frame.
+- **A leg that cannot reach.** In the game's frame the men's Pickup_Package starts 1.4 cm higher than the idle (art
+  #33's floor lift); with the idle's lift cut to 0 its right leg still fell 3.9 mm short, and the IK pulled the foot off
+  the idle's. The Body now goes down up to 2 cm where a leg would not reach even unlifted (`body_down_mm_max`), and its feet
+  meet the idle's exactly.
+
+Measured on the saved sets (`raw:anim-sets/<set>/<body>/anim_mvp_<body>.blend`, armature space: the game's frame):
+
+| | main | round 2 (`mvp-49-r5`) | round 3 (`mvp-49-r8`) |
+|---|---|---|---|
+| Package ends (4): feet from the idle's, cm (men / women) | 9.0 to 22.0 / 8.8 to 22.0 | 1.1 to 11.8 / 1.1 to 11.6 | **0.00 / 0.00** |
+| Package ends: the feet's turn against the idle's, degrees | 3.0 to 29.9 | 19.84 | **0.00** (first-frame yaw R +3.66, L -5.68, as the idle's) |
+| Package ends: Root against the idle's | 4.0 to 7.3 cm, 19.84 deg | the same | **0.00 cm, 0.00 deg** |
+| Package: a foot halfway through Godot's crossfade, off the straight blend, cm | 0.13 to 1.97 | 0.46 to 0.77 | **0.00** |
+| Package: lowest Foot or Toe joint, its highest frame, cm (men / women) | 3.76 / - | **6.59 / 5.83** (both feet lifted) | 0.46 / 0.41 (the idle's toe height on every frame) |
+| UAL clips' touching ends (9): feet from the idle's, cm | 0.2 to 5.9 (and up to 2.1 cm high) | 0.2 to 5.9 | **0.00** |
+| Getup_Back's end (`match = "root"`): the whole body from the idle's, cm | 17.2 / 26.8 | 17.2 / 26.8 | 17.2 / 26.8 |
+
+The build reports agree: at the thirteen set-matched ends `set_foot_*` is 0.000 cm and 0.00 degrees and `root_cm` 0; no
+`airborne_frames` and no `foot_pulled` on a set-matched clip (the women's Getup_Back, matched relative to Root, has
+one frame, 22, where its lowest vertex rises just over 1 cm); the ankle gaps 0.002 to 0.011 mm (Knockdown's 2.9 mm
+on the frames it leaves alone). The one-frame pops are as round 2's.
+
 ## Open points
 
-- **The package clips' body.** The feet now meet the idle, but Pickup_Package's Root faces 19.8 degrees off the aim at
-  its ends (art #33's `heading facing = mean`), so its right foot reads 23.5 degrees out against the aim (3.66 against
-  its Root), and its Body stands 3.7 to 9.8 cm from the idle's. The hands go 3.2 cm (men, 1.7 before) and 4.2 cm
-  (women, 7.0) into the legs. The package clips stay art #33's stopgap.
+- **The package clips' body.** The feet now stand on the idle's in the game's frame (round 3), but the Body is not
+  matched: it stands 3.6 to 12.1 cm from the idle's at the touching ends, and Putdown_Package starts (Pickup_Package
+  ends) with the package held, the Body 4.8 cm (men) and 6.0 cm (women) lower and the knees bent about 40 degrees
+  against the idle's 11, so the crossfade raises the body. The squat happens in the idle's narrow stance with the
+  knees out. The package clips stay art #33's stopgap.
 - **The yaw's reference.** "+3.66" is against the rest pose; the right foot's Foot-to-Toe line stands about 19.6 /
   14.4 degrees out against the aim, the left about 10.3 / 5.0 (the mesh: about 8 / 11 against -1.5 / +1.8, the code
   review's estimate). Whether the right foot reads straight beside the left is the engineer's call; `toe_in_deg` can
@@ -265,8 +321,17 @@ one-frame pops as main's (the men's Jump_Start trades one first-frame pop for an
   Its sole-sliding mean rises in Raise_In and Raise_Out (50 to 82 cm/s, men; 56 to 89, women): the 4 cm steps,
   which its contact window counts as on the floor; and in the women's Getup_Back (largest 62 to 147 cm/s, the left
   foot's landing).
-- **Getup_Back** ends with Root 17 cm (men) and 27 cm (women) from the idle's (round C's property, unchanged): whether
-  the game moves the body by root motion decides that crossfade.
+- **Getup_Back** stands up with its whole body 17 cm (men) and 27 cm (women) from where the idle stands (art #33's
+  recentring of its first, lying frame; `match = "root"` keeps its feet under it). The game plays clips in place with
+  no root motion (`contract.toml`), so the crossfade into the idle moves the whole character that far. It needs the
+  get-up's travel handled (root motion, or the get-up placed by its end); not in this issue.
+- **The other neighbours.** A clip placed by `idle_ends` keeps its pre-recentring position at its other end, which
+  meets a clip the set still recentres: the kneeling seams between the raise's clips (`Raise_Work_Loop` is a loop, centred over its cycle) and the jump's air
+loop. Feet at the crossfade, cm, main / round 2 / round 3: Raise_In into Raise_Work_Loop 5.3 / 5.3 / 4.6 (men) and
+7.1 / 7.1 / **9.7** (women); Raise_Work_Loop into Raise_Out 3.1 / 3.1 / 4.6 (men) and 2.8 / 2.8 / **9.7** (women);
+Jump_Start into Jump_Air_Loop and Jump_Air_Loop into Jump_Land change by under 5 cm, the feet in the air. The women's
+kneeling seams are worse: the next step is to place the work loop in its source's frame as well (a set option to
+leave a clip unrecentred), so the three raise clips keep their source's continuity.
 - **Knockdown's ankle** keeps a 2.9 mm gap on frames idle_ends leaves alone (main's set: 5.7 mm), from art #33's
   resampling of its IK legs.
 - **The idle's loop step** of 1.51 / 1.52 median frame steps is the fingertips' (above); the build's warning stays.
