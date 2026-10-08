@@ -989,7 +989,8 @@ def _rest_yaws(rig: rc.Rig) -> dict:
 
 def feet_numbers(fr: Frames) -> dict:
     """The feet of a clip: each foot's yaw out against the set's aim (-Y) relative to the rest pose (degrees, + = toe
-    out; at the first frame and its range), the largest gap between a shin's end and its Foot bone (mm: the ankle
+    out; at the first frame and its range; rest_yaw_out_deg is the rest pose's own yaw of the Foot-to-Toe line, so
+    that line's yaw against the aim is their sum), the largest gap between a shin's end and its Foot bone (mm: the ankle
     holds while it is 0), and at the first frame the ankles' width (X) and stagger (Y, + when the right foot is behind
     the left) in cm."""
     rig = fr.rig
@@ -1009,6 +1010,7 @@ def feet_numbers(fr: Frames) -> dict:
             first = {s: pose.head(f"Foot.{s}") for s in "LR"}
     return {"yaw_out_deg": {s: {"first": _r(v[0], 2), "min": _r(min(v), 2), "max": _r(max(v), 2)}
                             for s, v in yaws.items()},
+            "rest_yaw_out_deg": {s: _r(v, 2) for s, v in rest.items()},
             "ankle_gap_mm_max": _r(gap * 1000, 3),
             "width_cm": _r((first["L"].x - first["R"].x) * 100, 2),
             "stagger_cm": _r((first["R"].y - first["L"].y) * 100, 2)}
@@ -1022,7 +1024,8 @@ def _built(target: Target, name: str) -> Frames:
 
 
 def _ends_measure(pose: _Pose, ref: _Pose, fingers: list) -> dict:
-    """How far a clip's frame is from a reference pose: each foot relative to the Root (cm, degrees), and the largest
+    """How far a clip's frame is from a reference pose: each foot and the Body relative to the Root (cm, degrees;
+    idle_ends matches the feet and lifts the Body by the idle's stance lift only), and the largest
     basis rotation difference over the upper body's edited bones (UPPER_DELTA; idle_ends adds the idle's own change
     to the clip's, so this stays what it was against the idle's relax base) and over the curled fingers (degrees)."""
     out = {}
@@ -1032,6 +1035,9 @@ def _ends_measure(pose: _Pose, ref: _Pose, fingers: list) -> dict:
         out[f"foot_{s}_cm"] = _r((a.translation - b.translation).length * pose.rig.scale * 100, 3)
         d = math.degrees(rc.rot(a).rotation_difference(rc.rot(b)).angle)
         out[f"foot_{s}_deg"] = _r(min(d, 360.0 - d), 2)
+    a = pose.P["Root"].inverted() @ pose.P[BODY]
+    b = ref.P["Root"].inverted() @ ref.P[BODY]
+    out["body_cm"] = _r((a.translation - b.translation).length * pose.rig.scale * 100, 3)
     for key, bones in (("upper", UPPER_DELTA), ("fingers", fingers)):
         diffs = {n: math.degrees(pose.brot(n).rotation_difference(ref.brot(n)).angle) for n in bones if n in pose.B}
         diffs = {n: min(d, 360.0 - d) for n, d in diffs.items()}
