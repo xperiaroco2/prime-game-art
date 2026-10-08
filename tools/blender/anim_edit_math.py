@@ -67,6 +67,9 @@ OPS = {
 # the relaxed idle's ops (art #49): anim_edit.apply keeps the clip's first frame as it was before the first of them
 # (its "relax base"), which idle_ends reads to carry the idle's own change into the clips that meet it
 RELAX_OPS = ("foot_turn", "stance", "shoulders", "head_level", "hands_relax", "thumb_in")
+# idle_ends (match = "set") places a clip in the idle's frame; these ops after it keep the placement (the touching
+# frames stay where they are), any other clears it (art #49)
+KEEP_PLACE = ("idle_ends", "reverse", "retime")
 FINGER_SEGMENTS = {"Index": 3, "Middle": 3, "Ring": 3, "Pinky": 3, "Thumb": 2}  # the curled segments: 2-4, Thumb 2-3
 COMMON = {"op", "body"}  # keys every step may have
 ONE_OF = {"retime": ("seconds", "rate", "speed_m_s"), "heading": ("travel", "facing"),

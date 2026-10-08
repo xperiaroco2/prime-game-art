@@ -151,6 +151,8 @@ if not IN_BLENDER:
                     self.assertEqual(shuffle["ends"][end]["L"]["mode"], "planted", body)
                 self.assertEqual(shuffle["step_lift_cm"], {"L": 0.0, "R": 0.0}, body)
                 self.assertLess(shuffle["feet_travel_mm"]["R"], 0.01, body)
+                self.assertEqual(self.r[body]["placed"], {"set": "idle_ends", "root": None, "reversed": "idle_ends",
+                                                          "trimmed": None}, body)
                 self.assertIn("idle_ends", self.r[body]["errors"]["loop"])
                 self.assertIn("not built yet", self.r[body]["errors"]["unbuilt"])
 
@@ -294,6 +296,15 @@ def _blender_main(argv: list[str]) -> None:
                 ends[clip]["upper_changed_deg"] = max(
                     math.degrees(a[b].to_quaternion().rotation_difference(c[b].to_quaternion()).angle)
                     for a, c in zip(fr.basis, done.basis) for b in bones)
+        # match = "set" places the clip in the idle's frame (the set does not recentre it); reverse and retime keep
+        # that, any other later op clears it, as does match = "root"
+        def placed(steps):
+            fresh = ae.Frames(raw.rig, [{n: m.copy() for n, m in b.items()} for b in raw.basis], raw.fps, False, {})
+            return ae.apply(fresh, steps, target, body).info.get("placed_by")
+
+        r["placed"] = {"set": placed([feet_only]), "root": placed([{**feet_only, "match": "root"}]),
+                       "reversed": placed([feet_only, {"op": "reverse"}]),
+                       "trimmed": placed([feet_only, {"op": "trim", "start_s": 0.0, "end_s": 0.5}])}
         errors = r["errors"] = {}
         for key, fr, tgt_clips in (("loop", raw, {"Idle_Loop": idle}), ("unbuilt", fr, {})):
             target.clips = tgt_clips

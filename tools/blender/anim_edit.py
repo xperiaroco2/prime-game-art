@@ -1524,6 +1524,12 @@ def op_idle_ends(fr: Frames, p: dict, target: Target):
             for b in kids:
                 _set_pose(rig, B, P, b, keep[b])
     res = fr.copy(out)
+    # placed in the idle's frame: a set must not move it again (anim_set.build_clips leaves it where it is instead of
+    # recentring its first frame's Body on the origin, which shifted the feet 1.5 to 7.3 cm off the idle's)
+    if p["match"] == "set":
+        res.info["placed_by"] = "idle_ends"
+    else:
+        res.info.pop("placed_by", None)
     # never in the air where the clip stands: the character's lowest vertex per frame (a kneeling knee or a toe tip
     # holds it as well as a sole); airborne frames: the clip had it within em.AIR_M of the floor and the edit has not;
     # hop: how much higher it is than in the clip (art #49: the package clips' feet were both lifted at once)
@@ -1565,7 +1571,8 @@ def apply(frames: Frames, steps: list, target: Target, body: str) -> Frames:
     """Runs the edit steps in order on a copy of frames; a step whose `body` is another body type is skipped. Each
     step's report (with its op) is appended to info["steps"]; a failing step raises EditError naming it. Before the
     first relaxed-idle op (anim_edit_math.RELAX_OPS) the clip's first frame is kept in info["relax_base"] (idle_ends
-    reads the idle's own change from it)."""
+    reads the idle's own change from it). idle_ends with match = "set" marks the clip info["placed_by"] (in the idle's
+    frame: the set does not recentre it); any later op but reverse and retime (anim_edit_math.KEEP_PLACE) clears it."""
     errors = em.check_steps(steps)
     if errors:
         raise EditError("; ".join(errors))
@@ -1581,6 +1588,8 @@ def apply(frames: Frames, steps: list, target: Target, body: str) -> Frames:
             cur, rep = OPS[op](cur, em.params(step), target)
         except (EditError, ValueError) as e:
             raise EditError(f"step {k + 1} ({op}): {e}") from e
+        if op not in em.KEEP_PLACE:  # a later move or cut undoes idle_ends' placement in the idle's frame
+            cur.info.pop("placed_by", None)
         cur.info["steps"].append({"op": op, **rep})
     rc.reset_pose(target.arm)
     bpy.context.view_layer.update()

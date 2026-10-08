@@ -126,7 +126,8 @@ def close_open_loop(fr: ae.Frames) -> tuple[ae.Frames, dict | None]:
 def recentre(fr: ae.Frames) -> tuple[ae.Frames, float]:
     """A set's clips stand over the origin, where the game's body is: a loop's Body is centred on it over the cycle, a
     one-shot's first frame stands on it (Root moves; a cycle cut from a travelling clip, such as the strafe cut 1.8 s
-    in, would otherwise play metres away). Returns the frames and how far they moved (m)."""
+    in, would otherwise play metres away). Returns the frames and how far they moved (m). build_clips leaves a clip
+    that idle_ends placed in the idle's frame (info["placed_by"]) where it is."""
     path = ae._body_path(fr)
     pts = path[:-1] if fr.loop and len(path) > 1 else path[:1]
     cx, cy = sum(p[0] for p in pts) / len(pts), sum(p[1] for p in pts) / len(pts)
@@ -162,7 +163,8 @@ def build_clips(set_cfg: dict, char: dict, names, body: str, resolve, target: ae
                 fr, opened = close_open_loop(fr)
         else:
             base = out[c["from"]]
-            keep = {k: base.info[k] for k in ("speed_m_s", "speed_from", "travel_m") if k in base.info}
+            keep = {k: base.info[k] for k in ("speed_m_s", "speed_from", "travel_m", "placed_by")
+                    if k in base.info}
             fr = ae.Frames(base.rig, [{n: m.copy() for n, m in b.items()} for b in base.basis], base.fps, base.loop, keep)
         try:
             fr = ae.apply(fr, c["edits"], target, body)
@@ -171,13 +173,18 @@ def build_clips(set_cfg: dict, char: dict, names, body: str, resolve, target: ae
         if c["loop"] and not fr.loop:
             raise ae.EditError(f"{name}: loop = true, but neither its source nor a cycle step closes it")
         fr.loop = c["loop"]
-        fr, moved = recentre(fr)
+        if fr.info.get("placed_by"):  # idle_ends put it in the idle's frame (art #49): recentring would undo that
+            moved = 0.0
+        else:
+            fr, moved = recentre(fr)
         rep = {"source": c.get("source"), "from": c.get("from"), "export": c["export"], "loop": fr.loop,
                "frames": fr.frames, "seconds": _r(fr.seconds), "speed_m_s": asc.speed_of(c),
                "measured_speed_m_s": _r(fr.info.get("speed_m_s")), "needs": c["needs"], "steps": fr.info["steps"]}
         if opened:
             rep["source_open_seam"] = opened
         rep["recentred_m"] = moved
+        if fr.info.get("placed_by"):
+            rep["placed_by"] = fr.info["placed_by"]
         rep.update(_summary(fr, target, lowest))
         rep["seconds_spent"] = _r(time.time() - t0, 1)
         fr.info["report"] = rep
