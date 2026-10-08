@@ -53,10 +53,15 @@ The drivers overlap: a long agent pays every one of the others on every call.
    - The agent picks from the grid; it does not nudge, render and look again in a loop.
 7. **Roles and models.**
    - Opus at high effort, not xhigh, runs only builders that write code, IK or Blender geometry.
-   - Sonnet runs critics, judges, reviewers, verifiers and research that only reads.
-   - A lab round (a research iteration outside git, in `D:/prime-art-raw/research/`) keeps one Sonnet critic. From a
-     short brief and the contact sheet, it ranks the variants and gives the engineer a recommendation, so he judges a
-     ranked shortlist, not raw output.
+   - Sonnet runs critics, judges, reviewers, verifiers and research that only reads. The exception is the art
+     critic's A/B (#46, `docs/decisions/2026-10-08-art-critic-model-ab.md`): its control critic and its blind judge
+     run on Opus.
+   - A lab round (a research iteration outside git, in `D:/prime-art-raw/research/`) keeps one critic. From a short
+     brief and the contact sheet, it ranks the variants, lists its remarks and gives the engineer a recommendation, so
+     he judges a ranked shortlist, not raw output.
+   - The critic's model is a per-launch arg (`critic_model`); no shared script names a default. On the A/B's trial
+     rounds the manager also passes `control_model: 'opus'` and `round`, saves the result's `ab_record` as
+     `<out_dir>/ab-judge.json` with its `cost_usd`, and counts the rounds with `tools/run.sh ab-tally`.
    - Fixers get only the blocker and major findings. A revision covers only the judged winners.
 8. **Check, estimate and measure.**
    - Before every launch, the manager runs `tools/run.sh workflow-check <script.js>...` on the workflow script; a
@@ -87,10 +92,14 @@ The drivers overlap: a long agent pays every one of the others on every call.
   `;` ends `meta` first when the script has none, and strings and comments inside `meta` are skipped when its end is
   found. It is skipped with a note when node is missing;
 - an `agent(` call has no `agentType: 'art-reader' | 'art-writer'` in its options, unless a
-  `/* general-agent: <reason> */` comment comes right before the call (or its `await`);
+  `/* general-agent: <reason> */` comment comes right before the call (or its `await`, or the start of its
+  `const x = await agent(` statement);
 - it calls `agent` as a member (`x.agent(`, `x?.agent(`): only the global `agent()` is read, so such a call is refused;
-- an effort is `xhigh` or `max`, or an agent's `model` or `effort` is not a string literal;
-- an `art-reader` call has `model: 'opus'`;
+- an effort is `xhigh` or `max`, or an agent's `effort` is not a string literal;
+- an agent's `model` is not a string literal, unless a `/* per-launch-model: <reason> */` comment comes right before
+  the call (the manager passes the model per launch and the script checks it, as the lab round's critic does);
+- an `art-reader` call has `model: 'opus'`, unless a `/* opus-reader: <reason> */` comment comes right before the
+  call (a read-only role that must run on Opus: the A/B's judge, #46);
 - an agent prompt has no `BOUNDS: at most N tool calls` with N <= 60, written in one string literal (N not in a
   `${...}`). The prompt's text includes the strings of the consts and functions it names;
 - an agent prompt never states the 180 s wait rule ("no tool call blocks over 180 s" in one string literal of the
@@ -100,13 +109,18 @@ The drivers overlap: a long agent pays every one of the others on every call.
   so the manager still reads a script for them.
 
 The options of an `agent(` call are an object literal or a const bound to one; `...SPREAD` of such a const is read too.
+Each exemption comment (`general-agent`, `per-launch-model`, `opus-reader`) grants only its own exemption, and only
+with a reason.
 
 `tools/workflows/art-lab-round.js` is the template for a lab round (rule 7). Its args are `brief`, `lab_dir`,
-`out_dir` and `steps` (1 to 4). The builder (`art-writer`, Opus, high effort) works in steps of at most 60 calls; each
-step writes `handoff-step-<n>.md` in `out_dir`, and the next step reads only that note. The last step renders
-`contact-sheet.png` (about 1280 px). One critic (`art-reader`, Sonnet) ranks the variants from that sheet, writes
-`ranking.md` and recommends one. A lab round copies the template, edits the brief and limits, and passes
-`workflow-check`. `tools/tests/test_workflow_check_scripts.py` holds a fixture per refusal
+`out_dir`, `steps` (1 to 4) and `critic_model` (required: `opus`, `sonnet` or `haiku`), plus `control_model` and
+`round` for the A/B. The builder (`art-writer`, Opus, high effort) works in steps of at most 60 calls; each step
+writes `handoff-step-<n>.md` in `out_dir`, and the next step reads only that note. The last step renders
+`contact-sheet.png` (about 1280 px). One critic (`art-reader`, on `critic_model`) ranks the variants from that sheet,
+lists its remarks, writes `ranking.md` and recommends one. With `control_model`, a control critic with the same prompt
+runs beside it (`ranking-A.md`, `ranking-B.md`), and a blind judge (`art-reader`, Opus) rules every remark and pairs
+the shared ones; the result's `ab_record` is what `ab-tally` reads (the ADR above has its shape and the stop rule). A
+lab round copies the template, edits the brief and limits, and passes `workflow-check`. `tools/tests/test_workflow_check_scripts.py` holds a fixture per refusal
 (`tools/tests/fixtures/workflows/`).
 
 ## Agent types (#44)

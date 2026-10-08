@@ -70,7 +70,7 @@ model's amendment of 2026-10-08). Agents write everything else, verify it from t
 | `tools/run.py`, `run.cmd`, `run.sh` | The runner; commands are modules in `tools/runner/commands/` |
 | `tools/runner/` | `cli.py`, `common.py`, `pins.py` (tool versions and paths), `blender.py` (headless Blender) |
 | `tools/blender/` | Scripts that run inside Blender (`docs/blender.md`): `um/` (the Ultimate Modular assembler, `docs/assembly.md`), `retarget*.py` with `retarget_maps/` (bone maps), `anim_*.py` with `anim_review.toml`, `anim_edit*.py` (the clip edits), `anim_set*.py` with `anim_sets/` (animation sets: the MVP, `docs/animations.md`), `catalogue*.py`, `faces_*.py`, `export_glb.py` |
-| `tools/workflows/` | Workflow script templates: `art-lab-round.js` (a lab round: builder steps and one critic), checked by `workflow-check` (`docs/agents.md`) |
+| `tools/workflows/` | Workflow script templates: `art-lab-round.js` (a lab round: builder steps and one critic on the per-launch `critic_model`; with `control_model`, the A/B's control critic and blind judge), checked by `workflow-check` (`docs/agents.md`) |
 | `tools/godot/` | The headless Godot project that generates the contract |
 | `tools/githooks/` | `pre-push`; `doctor` sets `core.hooksPath` to it |
 | `tools/tests/` | unittest tests, `test_<area>_*.py`; a test needing Blender, Godot or the raw files skips when they are missing |
@@ -101,6 +101,7 @@ Windows: `tools\run.cmd <command>`. Git Bash: `tools/run.sh <command>`. Python 3
 | `anim-set [--set mvp] [--body] [--clips] [--out] [--no-export] [--no-godot]` | Builds an animation set per body type from its settings (sources, clip edits, loops, layers): `.blend`, GLB, godot-check and the set's checks into `<raw>/anim-sets/<set>/` (`docs/animations.md`) |
 | `workflow-check <script.js>...` | Refuses a workflow script that breaks the cost rules (LF, `meta`, `node --check`, `agentType`, effort, models, `BOUNDS`, the 180 s wait rule); the manager runs it before every launch (`docs/agents.md`) |
 | `wait <log> [--max S]` | Waits at most 170 s (the default and maximum `--max`) for a background run's last log line `exit=<n>`; prints its `verify:` lines or last 8 lines and returns n, 124 while it runs (`docs/agents.md`, rule 1) |
+| `ab-tally <judge.json>...` | Counts the art critic's Sonnet/Opus A/B: per side the valid (and serious), invalid and unsure remarks, the misses and the $, and the stop rule's verdict (`docs/decisions/2026-10-08-art-critic-model-ab.md`) |
 | `cost [--since ISO] [--session PREFIX...] [--project DIR]` | Per-agent calls, context, cache rewrites after idle gaps and list $ from this checkout's Claude Code transcripts; `tools/out/cost/cost.json` (`docs/agents.md`, rule 8) |
 | `meshy`, `raw-backup` | The Meshy client for approved batches; copy chosen raw files to OneDrive (`docs/meshy.md`) |
 | `contract`, `check`, `rename-bones` | Generate the contract from Godot; check a model against it; rename a rig's bones (`docs/contract.md`) |
