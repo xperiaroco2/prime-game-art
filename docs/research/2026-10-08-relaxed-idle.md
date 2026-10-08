@@ -17,7 +17,11 @@ Everything below was run on 2026-10-08 in background Blender 5.2.2 and Godot 4.7
 - the review: `raw:review/stage1/49/` (`before/` and `after/`: `anim-review clips` strips, MP4s and measures of the ten
   edited clips and the three layers over the idle; `before_after/`: each strip before over after; `frames/<body>/`:
   Godot's frames of Idle, Pickup_One and Knockdown with the Blender comparison and Idle's clip; `compare/`: the
-  joint comparison with the lab's set; `tools/`: the two scripts that made `compare/` and `before_after/`).
+  joint comparison with the lab's set; `tools/`: the two scripts that made `compare/` and `before_after/`);
+- round 2 (the reviews' fixes, "Round 2" below): the set `raw:anim-sets/mvp-49-r5/<body>/`; the review
+  `raw:review/stage1/49/after-r5/` (the eight changed one-shots), `before-package/` (main's package clips),
+  `before_after_r5/` (main over round 2), `frames-r5/<body>/` (Godot), `compare/r5_vs_lab_<body>.json`; the
+  intermediate builds `mvp-49-r2` to `mvp-49-r4` are superseded.
 
 ## Summary
 
@@ -38,14 +42,20 @@ Everything below was run on 2026-10-08 in background Blender 5.2.2 and Godot 4.7
   **0.38 mm** of the lab's relaxed set on every frame of all 28 clips, both bodies; the 18 clips neither edits are
   identical (0.0000 mm). The final set differs from it only in the women's arms (the pinned 4.16 against 6.0 on the
   idle and the clips that meet it, none against 6.0 on the talk: the fingertips 8.8 to 22.3 mm).
-- **The clips that meet the idle.** At all ten touching ends (Pickup_One and Putdown_One both ends; Jump_Start,
-  Knockdown, Raise_In the start; Getup_Back, Jump_Land, Raise_Out the end) both feet are **0.000 cm and 0.00 degrees**
-  from the idle's first frame relative to Root, and the curled fingers at the idle's curl, both bodies.
+- **The clips that meet the idle.** At all fourteen touching ends (Pickup_One, Putdown_One, Pickup_Package and
+  Putdown_Package both ends; Jump_Start, Knockdown, Raise_In the start; Getup_Back, Jump_Land, Raise_Out the end) both
+  feet are **0.000 cm and 0.00 degrees** from the idle's first frame relative to Root, their toes at its bend, and
+  (but on the package clips, whose arms keep their hold) the curled fingers at its curl, both bodies. The head, the
+  arms and the Body are not matched: the Body stays 0 to 9.8 cm from the idle's (the jump 22.7 to 26.6 cm), the upper
+  body up to 68.6 degrees (Jump_Land's left upper arm), so the game's crossfade still moves them.
 - **The game's checks pass.** `anim-set` builds, exports and checks both bodies (28 animations, 12 loops LINEAR,
   glTF-Validator 0 errors, godot-check as before: only `facing_plus_z` cannot tell on the pack donor). Godot plays
   Idle, Pickup_One and Knockdown within 0.054 mm of Blender.
 - **New measured side effects** (the lab's set has them too): in the pickup and the put-down the hands reach into the
-  legs, and Raise_In's kneeling knee goes 0.4 (men) and 0.9 cm (women) deeper into the floor ("Open points").
+  legs, and Raise_In's kneeling knee goes 0.1 (men) and 0.9 cm (women) deeper into the floor ("Open points").
+- **Round 2** (the three fresh reviews): idle_ends no longer slides a planted foot along the floor (Getup_Back's left
+  foot, the women's Raise_In) nor sinks one into it (Raise_In, Raise_Out), and the package clips meet the idle's legs
+  too (feet and legs only). See "Round 2".
 
 ## The edits
 
@@ -58,6 +68,7 @@ The ops (docs/animations.md, "The ops" and "The relaxed idle") and their setting
 | Pickup_One, Putdown_One | `idle_ends {at = "both", from_clip = "Idle_Loop"}` (Putdown_One now made from its source: the pickup's steps, reversed) |
 | Jump_Start, Knockdown, Raise_In | `idle_ends {at = "start", ...}` |
 | Getup_Back, Jump_Land, Raise_Out | `idle_ends {at = "end", ...}` |
+| Pickup_Package (round 2) | `idle_ends {at = "both", from_clip = "Idle_Loop", upper = false}`; Putdown_Package, its reverse, carries it |
 
 Each op adds a constant to the clip's own pose on every frame (the breathing, the sway and the talk's nods keep their
 motion). Its numbers, from `build_report.json` (men / women):
@@ -81,19 +92,28 @@ where a leg would not reach.
 |---|---|---|
 | Pickup_One, Putdown_One | planted all through, both ends | none: the idle's stance all through |
 | Jump_Start | planted to frame 1, then faded | 1 to 8 |
-| Knockdown | faded as the feet leave | L 15 to 23, R 14 to 22 |
-| Raise_In | men: the left foot, planted all through, steps 4 cm high; the right faded; women: both faded | L step 10 to 18, R 2 to 10; women L 1 to 9, R 3 to 11 |
-| Getup_Back | faded in as the feet plant | 31 to 39 (women L 32 to 40) |
+| Knockdown | faded as the feet leave | L 15 to 23, R 15 to 23 (women R 14 to 22) |
+| Raise_In | the left foot, planted all through (it settles 1.2 / 2.1 cm after the first frame), steps 4 cm high; the right faded | L step 10 to 18, R 2 to 10 (women 3 to 11) |
+| Getup_Back | faded in the air, before the foot lands | L 16 to 24, R 31 to 39 |
+| Pickup_Package (both ends) | faded and lifted on the step's arc (the feet shuffle 3 to 18 mm a frame, under 2 cm high) | start L 3 to 11, R 2 to 10; end L 0 to 8, R 5 to 13 (women 11 to 19) |
 | Jump_Land | held all through (the landing plants on the last frames) | none |
-| Raise_Out | the left foot, planted all through, steps 4 cm high; the right faded | L step 0 to 8, R 9 to 17 |
+| Raise_Out | the left foot, planted all through, steps 4 cm high; the right faded | L step 0 to 8, R 8 to 16 (women 9 to 17) |
+
+The windows are round 2's. Round 1 counted a foot as planted while it stayed within 1.5 cm of the touching frame, which
+faded Getup_Back's creeping left foot along the floor over frames 31 to 39 and the women's settling Raise_In foot over
+1 to 9.
 
 ## Measured
 
 ### The feet, before and after (`raw:review/stage1/49/compare/`, every frame)
 
-Before is the set main builds (art #33); after the final set. Yaw out against the aim relative to rest (degrees, +
-toe out; the first frame, and the range over the clip); ankle gap: the largest distance between a shin's end and its
-IK foot over the clip. The touching ends themselves are in the next paragraph.
+Before is the set main builds (art #33); after round 1's set. Yaw out against the aim relative to the rest pose
+(degrees, + toe out; the first frame, and the range over the clip): the rest pose's own Foot-to-Toe line is 15.94
+degrees out on the men and 10.72 on the women (`feet.rest_yaw_out_deg` in the build report), so the joint line of the
+relaxed right foot is about 19.6 / 14.4 degrees out against the aim; the code review's estimate from the foot mesh is
+about 8 / 11 degrees. Ankle gap: the largest distance between a shin's end and its IK foot over the clip, measured on
+the saved .blend's baked actions (the build report's `feet` measures the unbaked frames and reads up to 0.005 mm
+lower). The touching ends themselves are in the next paragraph.
 
 | Clip (men) | Right foot yaw before | after | Ankle gap before (mm) | after |
 |---|---|---|---|---|
@@ -156,8 +176,12 @@ frame:
   everything else under 0.03 mm),
   heads and tails alike; the 18 clips neither set edits 0.0000 mm. In the raise the lab's set leaves its ankle 0.38 mm
   off the foot where the repo's IK closes it to 0.009 mm: the same 0.38 mm at the knee;
-- **the final set**: the men's identical to the above; the women's differ by the arm offsets only (the fingertips 8.8
-  to 19.0 mm off on the idle and the clips that meet it, 22.3 mm on the talk).
+- **round 1's final set**: the men's identical to the above; the women's differ by the arm offsets only (the fingertips
+  8.8 to 19.0 mm off on the idle and the clips that meet it, 22.3 mm on the talk);
+- **round 2** (`compare/r5_vs_lab_<body>.json`): 20 (men) and 16 (women) of the 28 clips within 0.5 mm; the rest
+  differ where round 2 fixed the lab's defects (Getup_Back's left foot 21 to 23 cm, Raise_In and Raise_Out 4.4 to 22
+  cm, Knockdown's right knee 8.6 cm from a fade one frame later, the package clips, which the lab left alone) and by
+  the women's arm offset.
 
 The stance's feet in the build report (`feet_m`) are the clip's positions before the set recentres it on the origin:
 the lab's figures (`README_idle.txt`) are the same points after it.
@@ -168,16 +192,60 @@ Godot's frames of Idle, Pickup_One and Knockdown (off-screen window, Vulkan forw
 0.054 and 0.017 mm (men) and 0.014, 0.054 and 0.017 mm (women) at 64 joints and 128 axis points; Idle's clip is in
 `frames/<body>/clips/Idle.mp4`.
 
+## Round 2: the reviews' fixes
+
+Three fresh reviews (code, motion, docs) of round 1 found two majors in idle_ends on frames the touching-end measures
+did not check, and the issue's Putdown_Package unmet. Round 2 (the set `mvp-49-r5`):
+
+- **Planted means slow and low.** `planted_until` now asks for under `plant_speed_cm` (1.0) a frame along the floor
+  and under `plant_rise_cm` (1.5) above the touching frame; a flat foot that creeps (Getup_Back, 3 to 4 mm a frame)
+  or settles (Raise_In, 1.2 / 2.1 cm) is planted, and its fade falls where it moves by itself (Getup_Back's left foot
+  in the air, frames 16 to 24) or it steps (the women's Raise_In, like the men's).
+- **The floor.** No edited Foot or Toe head goes lower than both its own height before the edit and the idle's
+  standing height (raised up to 21.3 mm, the women's Raise_In); a step lifts off that floor. The toes take the
+  idle's bend as a change at the touching frame, like the feet.
+- **A shuffle is lifted.** A fade whose foot stays under 2 cm off the floor (the package clips) lifts it on the
+  step's arc, so the fade does not slide it.
+- **The package clips** take `idle_ends {at = "both", upper = false}` on Pickup_Package (Putdown_Package reverses it):
+  the issue lists Putdown_Package, the manager decided on a feet-only blend (2026-10-08), and both ends meet the
+  idle's legs (the carry plays over the idle). Their arms keep the hold.
+
+Measured on the saved sets (main / round 1 / round 2; the lowest Toe joint, cm, and its frames under 0; the feet's
+horizontal motion while within 1 cm of their lowest height, mm in all and the most in one frame; the largest shin
+acceleration, mm per frame squared):
+
+| Clip | Body | Lowest toe joint | On-floor foot motion | Shin acceleration |
+|---|---|---|---|---|
+| Getup_Back | men | 1.03 / 1.03 / 1.03 | 76, 10 / **264, 39** / 84, 18 | 76 / 76 / 76 |
+| Getup_Back | women | 1.21 / 1.21 / 1.21 | 80, 11 / **287, 43** / 89, 20 | 84 / 84 / 84 |
+| Raise_In | men | 0.14 / **-0.83 (11)** / 0.14 | 6, 4 / 15, 9 / 22, 9 | 77 / 99 / 77 |
+| Raise_In | women | 0.10 / **-1.70 (6)** / 0.10 | 5, 4 / **107, 41** / 26, 10 | 78 / 151 / **147** |
+| Raise_Out | men | 0.46 / **-0.57 (10)** / 0.46 | 6, 4 / 15, 9 / 20, 9 | 55 / 61 / 43 |
+| Raise_Out | women | 0.38 / **-0.96 (11)** / 0.38 | 6, 5 / 15, 10 / 23, 10 | 59 / 88 / 50 |
+| Jump_Land | women | 0.04 / -0.02 (1) / 0.04 | 4, 1 / 4, 1 / 4, 1 | 193 / 134 / 134 |
+| Knockdown | men | 0.36 / 0.38 / 0.39 | 6, 2 / 6, 2 / 6, 2 | 208 / 251 / **247** |
+| Knockdown | women | 0.20 / 0.22 / 0.22 | 4, 1 / 4, 1 / 6, 2 | 226 / 297 / **297** |
+| Pickup_Package | men | 1.77 / - / 0.46 | 231, 39 / - / 87, 9 | 17 / - / 59 |
+| Pickup_Package | women | 0.31 / - / 0.41 | 64, 17 / - / 114, 10 | 19 / - / 52 |
+
+The rest of the on-floor motion after round 2 is the steps' first and last frames (Raise_In, Raise_Out: the foot
+under 1 cm up) and Getup_Back's landing frame. The idle_ends report's `floor` finds no foot below its floor and no
+slide of a foot the clip keeps still, on every clip. The lowest vertex: Pickup_Package 0.0 to -0.08 cm (men) and
+-0.27 to -0.57 cm (women); the bent toes of the package clip went 2.8 / 4.4 cm into the floor before the toes took
+the idle's change. At the fourteen touching ends both feet stay 0.000 cm and 0.00 degrees from the idle's, the toes
+0.00 degrees; the ankle gaps 0.002 to 0.011 mm (Knockdown's 2.9 mm on the frames idle_ends leaves alone); the
+one-frame pops as main's (the men's Jump_Start trades one first-frame pop for another, LowerLeg.R at frame 0).
+
 ## Open points
 
-- **The issue's clip list differs from round D's.** The issue (#49) names seven standing one-shots: Jump_Start,
-  Jump_Land, Knockdown, Pickup_One, Putdown_One, Putdown_Package and Raise_In (round C's list: their first frame turns
-  the right foot over 30 degrees out). Round D, which this port follows, blends the eight clips whose end meets the idle
-  (adding Getup_Back and Raise_Out, leaving out Putdown_Package). The package clips are unchanged: Pickup_Package
-  starts with the right foot 22.8 degrees out and the ankles 41 / 38 cm apart, Putdown_Package starts holding the
-  package with the right foot 40.7 degrees out (56 / 54 cm), and ends as Pickup_Package starts. In the game both meet
-  the idle's legs (the standing end, and the holding end under the carry layer), so a crossfade there still turns the
-  right foot 19 to 37 degrees. A feet-only `idle_ends` (the upper body holds the package) would fix it; a decision.
+- **The package clips' body.** The feet now meet the idle, but Pickup_Package's Root faces 19.8 degrees off the aim at
+  its ends (art #33's `heading facing = mean`), so its right foot reads 23.5 degrees out against the aim (3.66 against
+  its Root), and its Body stands 3.7 to 9.8 cm from the idle's. The hands go 3.2 cm (men, 1.7 before) and 4.2 cm
+  (women, 7.0) into the legs. The package clips stay art #33's stopgap.
+- **The yaw's reference.** "+3.66" is against the rest pose; the right foot's Foot-to-Toe line stands about 19.6 /
+  14.4 degrees out against the aim, the left about 10.3 / 5.0 (the mesh: about 8 / 11 against -1.5 / +1.8, the code
+  review's estimate). Whether the right foot reads straight beside the left is the engineer's call; `toe_in_deg` can
+  be set per body.
 - **The pickup in the narrow stance.** Planted all through in the idle's stance, Pickup_One and Putdown_One bend over
   straighter legs (the right knee 94 to 61 degrees) with the knees out, and the reaching hand goes into the leg: 4.8 to
   4.9 cm (men) and 5.7 to 6.0 cm (women), from 0.2 to 3.6 cm before. The lab's set has the same; for the designer
@@ -186,9 +254,17 @@ Godot's frames of Idle, Pickup_One and Knockdown (off-screen window, Vulkan forw
   in the thighs without it). Worth a check on the cast's clothes at the next cast build; raising it is a one-line edit.
 - **The women's arms at the touching ends** stay 2.66 degrees from the idle's (art #33's arm offset is the idle's alone,
   before and after this change).
-- **Raise_Out and the men's Raise_In** take a 4 cm high step of the left foot (it is planted all through the clip, and
-  the clip's other end meets the kneeling work). In Raise_In the kneeling knee goes deeper into the floor: the lowest
-  vertex -6.2 to -6.6 cm (men) and -5.6 to -6.5 cm (women).
+- **Raise_In and Raise_Out** take a 4 cm high step of the left foot (it is planted all through the clip, and the
+  clip's other end meets the kneeling work). In Raise_In the kneeling knee goes deeper into the floor: the lowest
+  vertex -6.2 to -6.3 cm (men) and -5.6 to -6.5 cm (women). The women's Raise_In right shin accelerates 147 mm per
+  frame squared at frame 7 (main 78), inside its fade where the thigh's roll (-39 degrees) and the knee's swing out
+  meet; Knockdown's shins 247 / 297 (main 208 / 226). No one-frame pop is flagged; worth a look in the strips.
+- **The review's other increases** (`anim-review clips`, hands in the legs, cm, main to round 2): Raise_In women 5.2
+  to 7.3, Getup_Back women 2.8 to 3.9, Jump_Start men 0 to 1.9; decreases: Jump_Land 3.6 / 7.5 to 1.6 / 3.1,
+  Knockdown women 6.1 to 2.1, Pickup_Package women 7.0 to 4.2.
+  Its sole-sliding mean rises in Raise_In and Raise_Out (50 to 82 cm/s, men; 56 to 89, women): the 4 cm steps,
+  which its contact window counts as on the floor; and in the women's Getup_Back (largest 62 to 147 cm/s, the left
+  foot's landing).
 - **Getup_Back** ends with Root 17 cm (men) and 27 cm (women) from the idle's (round C's property, unchanged): whether
   the game moves the body by root motion decides that crossfade.
 - **Knockdown's ankle** keeps a 2.9 mm gap on frames idle_ends leaves alone (main's set: 5.7 mm), from art #33's
