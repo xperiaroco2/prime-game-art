@@ -1,0 +1,16 @@
+{
+  "schema": "art-critic-ab/1",
+  "round": 2,
+  "labels": {"A": "control", "B": "trial"},
+  "models": {"trial": "sonnet", "control": "opus", "judge": "opus"},
+  "recommendations": {"A": "v1", "B": "v1"},
+  "remarks": [
+    {"id": "A1", "side": "A", "variant": "v2", "text": "the jacket hides the belt socket", "critic_severity": "serious", "verdict": "valid", "severity": "serious", "reason": "the socket is covered", "judged": true},
+    {"id": "A2", "side": "A", "variant": "v1", "text": "the hair is too shiny", "critic_severity": "minor", "verdict": "valid", "severity": "minor", "reason": "specular highlight", "judged": true},
+    {"id": "B1", "side": "B", "variant": "v1", "text": "shiny hair", "critic_severity": "minor", "verdict": "valid", "severity": "minor", "reason": "the same as A2", "judged": true},
+    {"id": "B2", "side": "B", "variant": "v1", "text": "the feet sink into the floor", "critic_severity": "serious", "verdict": "invalid", "severity": "serious", "reason": "the soles touch the floor", "judged": true},
+    {"id": "B3", "side": "B", "variant": "v2", "text": "the sleeves stretch", "critic_severity": "serious", "verdict": "unsure", "severity": "serious", "reason": "(the judge returned no verdict)", "judged": false}
+  ],
+  "pairs": [{"a": "A2", "b": "B1"}],
+  "cost_usd": {"trial": 0.5, "control": 1.2}
+}
