@@ -118,6 +118,16 @@ class RulesTest(unittest.TestCase):
         cfg["clips"][1]["edits"] = [{"op": "idle_ends", "at": "start", "from_clip": "Knife_Swing"}]  # a later clip
         self.assertTrue(any("from_clip = 'Knife_Swing' names no earlier clip" in e for e in errors(cfg)))
 
+    def test_a_clip_is_placed_after_an_earlier_clip(self) -> None:
+        cfg = small()  # art #49: place_after moves a clip to where an earlier clip leaves the feet, built first
+        cfg["clips"][2]["place_after"] = "Jog_Fwd_Loop"
+        self.assertEqual(errors(cfg), [])
+        self.assertEqual(asc.closure(cfg, ["Knife_Swing"]), ["Jog_Fwd_Loop", "Knife_Swing"])
+        cfg["clips"][0]["place_after"] = "Knife_Swing"  # a later clip
+        self.assertTrue(any("place_after = 'Knife_Swing' names no earlier clip" in e for e in errors(cfg)))
+        mvp = asc.load(common.ROOT / "tools" / "blender" / "anim_sets" / "mvp.toml")
+        self.assertEqual(asc.closure(mvp, ["Raise_Work_Loop"]), ["Idle_Loop", "Raise_In", "Raise_Work_Loop"])
+
     def test_the_edits_are_checked_by_the_edit_schema(self) -> None:
         cfg = small()
         cfg["clips"][0]["edits"] = [{"op": "stride", "cadence": 2.8}, {"op": "wobble"}]

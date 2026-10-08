@@ -6,7 +6,9 @@ loop ends in `_Loop`), a `source` clip key ("ual:Jog_Fwd_Loop", "tm:strafe-left"
 `from` (an earlier clip of the set, as that clip stands after its edits), `loop`, the `edits` (steps of
 anim_edit_math.OPS, run in order), `needs` (the game's needs the clip serves: the need's text and number, the layer it
 plays on and the speed and rate it plays at), an optional `speed_m_s` (the ground speed of the clip at rate 1.0: what
-the game divides its speed by) and `export = false` for a review candidate that is built but not written to the GLB.
+the game divides its speed by), `export = false` for a review candidate that is built but not written to the GLB and
+`place_after` (an earlier clip of the set that this clip plays after: the build moves it along the floor so its first
+frame's feet stand where that clip's last frame has them, instead of recentring it; art #49).
 """
 
 from __future__ import annotations
@@ -19,7 +21,7 @@ import anim_keys
 
 FPS = 30
 TOP_KEYS = {"title", "fps", "stem", "upper", "clips"}
-CLIP_KEYS = {"name", "source", "from", "loop", "export", "speed_m_s", "edits", "needs", "note"}
+CLIP_KEYS = {"name", "source", "from", "loop", "export", "speed_m_s", "edits", "needs", "note", "place_after"}
 NEED_KEYS = {"need", "no", "layer", "speed_m_s", "rate", "body", "note"}
 LAYERS = ("full", "upper")
 NAME = re.compile(r"[A-Za-z0-9_]+")
@@ -98,6 +100,8 @@ def check(cfg: dict, sources: set[str] | None = None, bodies=("men", "women")) -
             errors += _check_source(where, c["source"], sources)
         elif c["from"] not in seen:
             errors.append(f"{where}: from = {c['from']!r} names no earlier clip")
+        if "place_after" in c and c["place_after"] not in seen:
+            errors.append(f"{where}: place_after = {c['place_after']!r} names no earlier clip")
         if not isinstance(c.get("export", True), bool):
             errors.append(f"{where}: export must be true or false")
         speed = c.get("speed_m_s")
@@ -167,8 +171,9 @@ def clips(cfg: dict) -> dict[str, dict]:
 
 
 def closure(cfg: dict, names) -> list[str]:
-    """The clips needed to build `names` ("all" or None: every clip): each with the earlier clips it is made `from`
-    or its edits read (`from_clip`, art #49), in settings order; raises ValueError on an unknown name."""
+    """The clips needed to build `names` ("all" or None: every clip): each with the earlier clips it is made `from`,
+    its edits read (`from_clip`, art #49) or it is placed after (`place_after`), in settings order; raises ValueError
+    on an unknown name."""
     table = clips(cfg)
     if names in (None, "all"):
         return list(table)
@@ -181,11 +186,10 @@ def closure(cfg: dict, names) -> list[str]:
         n = stack.pop()
         if n in need:
             continue
-        if n not in table:  # a `from` or `from_clip` naming no clip (check() reports it too)
+        if n not in table:  # a `from`, `from_clip` or `place_after` naming no clip (check() reports it too)
             raise ValueError(f"no clip {n!r} in the set; known: {', '.join(table)}")
         need.add(n)
-        if "from" in table[n]:
-            stack.append(table[n]["from"])
+        stack.extend(table[n][k] for k in ("from", "place_after") if k in table[n])
         stack.extend(em.from_clips(table[n]["edits"]))
     return [n for n in table if n in need]
 

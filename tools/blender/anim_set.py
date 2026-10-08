@@ -127,7 +127,8 @@ def recentre(fr: ae.Frames) -> tuple[ae.Frames, float]:
     """A set's clips stand over the origin, where the game's body is: a loop's Body is centred on it over the cycle, a
     one-shot's first frame stands on it (Root moves; a cycle cut from a travelling clip, such as the strafe cut 1.8 s
     in, would otherwise play metres away). Returns the frames and how far they moved (m). build_clips leaves a clip
-    that idle_ends placed in the idle's frame (info["placed_by"]) where it is."""
+    that idle_ends placed in the idle's frame (info["placed_by"]) where it is, and places a clip with `place_after`
+    by its neighbour instead (place_after)."""
     path = ae._body_path(fr)
     pts = path[:-1] if fr.loop and len(path) > 1 else path[:1]
     cx, cy = sum(p[0] for p in pts) / len(pts), sum(p[1] for p in pts) / len(pts)
@@ -137,6 +138,29 @@ def recentre(fr: ae.Frames) -> tuple[ae.Frames, float]:
     out = fr.copy()
     ae._move_world(out, [Matrix.Translation((-cx, -cy, 0.0))] * len(out.basis))
     return out, _r(moved)
+
+
+def place_after(fr: ae.Frames, prev: ae.Frames) -> tuple[ae.Frames, float, dict]:
+    """A clip that plays after prev (a set's `place_after`, art #49) is moved along the floor instead of recentred, so
+    its first frame's feet stand where prev's last frame has them: the mean of the two Foot heads' horizontal offsets
+    (as the game's crossfade sees them: armature space, no root motion). Returns the frames, how far they moved (m) and
+    the seam after the move (cm): each foot's distance to prev's and the feet's mean horizontal offset left (0 by
+    construction; what differs is the two clips' own stance)."""
+    feet = [foot for _, _, foot in ae.LEGS]
+    a = rc.fk(prev.rig, prev.basis[-1])
+
+    def offsets(f: ae.Frames) -> list:
+        b = rc.fk(f.rig, f.basis[0])
+        return [ae._world(prev.rig, a, j) - ae._world(f.rig, b, j) for j in feet]
+
+    d = offsets(fr)
+    dx, dy = sum(v.x for v in d) / len(d), sum(v.y for v in d) / len(d)
+    out = fr.copy()
+    ae._move_world(out, [Matrix.Translation((dx, dy, 0.0))] * len(out.basis))
+    d = offsets(out)
+    seam = {j: _r(100 * v.length, 2) for j, v in zip(feet, d)}
+    seam["mean_offset"] = _r(100 * math.hypot(sum(v.x for v in d) / len(d), sum(v.y for v in d) / len(d)), 3)
+    return out, _r(math.hypot(dx, dy)), seam
 
 
 def build_clips(set_cfg: dict, char: dict, names, body: str, resolve, target: ae.Target | None = None,
@@ -173,7 +197,13 @@ def build_clips(set_cfg: dict, char: dict, names, body: str, resolve, target: ae
         if c["loop"] and not fr.loop:
             raise ae.EditError(f"{name}: loop = true, but neither its source nor a cycle step closes it")
         fr.loop = c["loop"]
-        if fr.info.get("placed_by"):  # idle_ends put it in the idle's frame (art #49): recentring would undo that
+        placed = None
+        if c.get("place_after"):  # after a clip it meets (art #49): its feet where that clip leaves them
+            fr, moved, seam = place_after(fr, out[c["place_after"]])
+            fr.info["placed_by"] = "place_after"
+            placed = {"clip": c["place_after"], "moved_m": moved, "feet_seam_cm": seam}
+            moved = 0.0
+        elif fr.info.get("placed_by"):  # idle_ends put it in the idle's frame (art #49): recentring would undo that
             moved = 0.0
         else:
             fr, moved = recentre(fr)
@@ -185,6 +215,8 @@ def build_clips(set_cfg: dict, char: dict, names, body: str, resolve, target: ae
         rep["recentred_m"] = moved
         if fr.info.get("placed_by"):
             rep["placed_by"] = fr.info["placed_by"]
+        if placed:
+            rep["place_after"] = placed
         rep.update(_summary(fr, target, lowest))
         rep["seconds_spent"] = _r(time.time() - t0, 1)
         fr.info["report"] = rep
