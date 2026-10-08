@@ -22,9 +22,12 @@ Everything below was run on 2026-10-08 in background Blender 5.2.2 and Godot 4.7
   `raw:review/stage1/49/after-r5/` (the eight changed one-shots), `before-package/` (main's package clips),
   `before_after_r5/` (main over round 2), `frames-r5/<body>/` (Godot), `compare/r5_vs_lab_<body>.json`; the
   intermediate builds `mvp-49-r2` to `mvp-49-r4` are superseded;
-- round 3 ("Round 3" below): the set `raw:anim-sets/mvp-49-r7/<body>/`; the review `raw:review/stage1/49/after-r7/`
-  (the nine changed one-shots), `before_after_r7/` (main over round 3), `frames-r7/<body>/` (Godot); `mvp-49-r6`,
-  `after-r6/` and `frames-r6/` are a superseded build, still recentred (below).
+- round 3 ("Round 3" below): the set `raw:anim-sets/mvp-49-r8/<body>/`; the review `raw:review/stage1/49/after-r8/`
+  (the nine changed one-shots), `before_after_r8/` (main over round 3), `frames-r8/<body>/` (Godot); `mvp-49-r6`,
+  `after-r6/` and `frames-r6/` are a superseded build, still recentred (below), and `mvp-49-r7`, `after-r7/` and
+  `frames-r7/` an intermediate one;
+- the final set: `raw:anim-sets/mvp-49-r9/<body>/`, round 3 with Raise_Work_Loop placed after Raise_In ("The raise's
+  work loop" below); every other clip is the same as in `mvp-49-r8`.
 
 ## Summary
 
@@ -291,6 +294,31 @@ The build reports agree: at the thirteen set-matched ends `set_foot_*` is 0.000 
 one frame, 22, where its lowest vertex rises just over 1 cm); the ankle gaps 0.002 to 0.011 mm (Knockdown's 2.9 mm
 on the frames it leaves alone). The one-frame pops are as round 2's.
 
+### The raise's work loop
+
+Placing Raise_In and Raise_Out in the idle's frame left Raise_Work_Loop, between them, recentred over its cycle: the
+feet jumped by its recentring (4.6 cm men, 9.7 cm women) at both seams. Cut from the same kneeling source, the work
+loop now takes the set's `place_after = "Raise_In"` (docs/animations.md, "Animation sets"): it stands where Raise_In's
+last frame has the feet instead of being recentred. Raise_In and Raise_Out keep their Body where the source has it and
+their feet where the source's planted feet are, so the move is 0.000 m and the loop meets Raise_Out too. The final set
+`mvp-49-r9`; every other clip's animation is the same as in `mvp-49-r8`, value for value (27 of 28 on each body),
+and so are their build reports.
+
+At the crossfade, cm (the saved GLBs, last frame against first; main / round 3 `mvp-49-r8` / `mvp-49-r9`):
+
+| | men | women |
+|---|---|---|
+| Raise_In into Raise_Work_Loop: feet | 5.32 / 4.64 / **0.00** | 7.08 / 9.67 / **0.00** |
+| the Body | 5.31 / 4.64 / 0.34 (height only) | 7.08 / 9.66 / 0.36 (height only) |
+| the Head | 4.89 / 4.35 / 1.83 | 6.69 / 9.31 / 1.63 |
+| Raise_Work_Loop into Raise_Out: feet | 3.14 / 4.64 / **0.00** | 2.82 / 9.67 / **0.00** |
+| the Body | 1.03 / 1.81 / 3.30 | 0.53 / 6.87 / 2.81 |
+| the Head | 13.19 / 14.30 / 11.18 | 11.10 / 16.75 / 9.28 |
+
+The Body's 3.1 cm (men) and 2.8 cm (women) into Raise_Out is the source's own: its Body moves that far between the
+loop's cut and the stand-up's start at 4.2 s, over feet that stay put. Main hid it in the feet (each clip recentred on
+its own Body, so the feet slid 3.1 / 2.8 cm instead); a loop cannot meet both ends' Body with one placement.
+
 ## Open points
 
 - **The package clips' body.** The feet now stand on the idle's in the game's frame (round 3), but the Body is not
@@ -326,12 +354,10 @@ on the frames it leaves alone). The one-frame pops are as round 2's.
   no root motion (`contract.toml`), so the crossfade into the idle moves the whole character that far. It needs the
   get-up's travel handled (root motion, or the get-up placed by its end); not in this issue.
 - **The other neighbours.** A clip placed by `idle_ends` keeps its pre-recentring position at its other end, which
-  meets a clip the set still recentres: the kneeling seams between the raise's clips (`Raise_Work_Loop` is a loop, centred over its cycle) and the jump's air
-loop. Feet at the crossfade, cm, main / round 2 / round 3: Raise_In into Raise_Work_Loop 5.3 / 5.3 / 4.6 (men) and
-7.1 / 7.1 / **9.7** (women); Raise_Work_Loop into Raise_Out 3.1 / 3.1 / 4.6 (men) and 2.8 / 2.8 / **9.7** (women);
-Jump_Start into Jump_Air_Loop and Jump_Air_Loop into Jump_Land change by under 5 cm, the feet in the air. The women's
-kneeling seams are worse: the next step is to place the work loop in its source's frame as well (a set option to
-leave a clip unrecentred), so the three raise clips keep their source's continuity.
+  meets a clip the set still recentres: the jump's air loop (Jump_Start into Jump_Air_Loop and Jump_Air_Loop into
+  Jump_Land change by under 5 cm against main, the feet in the air). The raise's kneeling seams, worse in round 3
+  (the women's feet 9.7 cm at both), are fixed by placing the work loop after Raise_In ("The raise's work loop"):
+  0.00 cm at the feet; the Body's 2.8 to 3.3 cm into Raise_Out is the source's own.
 - **Knockdown's ankle** keeps a 2.9 mm gap on frames idle_ends leaves alone (main's set: 5.7 mm), from art #33's
   resampling of its IK legs.
 - **The idle's loop step** of 1.51 / 1.52 median frame steps is the fingertips' (above); the build's warning stays.
