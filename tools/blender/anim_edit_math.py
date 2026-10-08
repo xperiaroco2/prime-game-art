@@ -853,8 +853,9 @@ def idle_end_weights(frames: int, ends, feet: dict, fade: int, speed_m: float, r
       ends    per end: its touching frame and per side the foot's plan: "planted" (the foot stays planted, by
               planted_until with speed_m and rise_m, to the other end), "held" (fewer than 2 frames would be left: held to the other end),
               "fade" (held while planted, then a smoothstep to 0 over up to `fade` frames: its window; a foot that
-              stays low there is lifted to the step's arc above where it was planted, so it does not slide along the
-              floor) or "step"
+              shuffles along the floor there, rising under step_m / 2, is lifted to the step's arc above where it was
+              planted so the fade does not slide it: "lifted"; a foot that leaves the floor by itself is not) or
+              "step"
               (planted all through, and the clip's other end meets another clip: the foot steps step_m high over
               min(fade, frames) frames where the other foot moves least);
       w       per end and side, the foot's weight per frame;
@@ -906,9 +907,11 @@ def idle_end_weights(frames: int, ends, feet: dict, fade: int, speed_m: float, r
                 fi.update(mode="fade", window=sorted([p, p + d * span]))
                 w[e][s] = [1.0 - smoothstep(d * (f - p) / span) for f in range(n + 1)]
                 z0 = feet[s][p][2]
+                lo_w, hi_w = fi["window"]
+                fi["lifted"] = max(feet[s][f][2] - z0 for f in range(lo_w, hi_w + 1)) < step_m / 2.0
                 for f in range(n + 1):
                     x = w[e][s][f]
-                    if 0.0 < x < 1.0:
+                    if fi["lifted"] and 0.0 < x < 1.0:
                         lift[s][f] = max(lift[s][f], step_m * 4.0 * x * (1.0 - x) - max(0.0, feet[s][f][2] - z0))
             info[s] = fi
         plan[e] = info

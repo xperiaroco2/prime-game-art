@@ -162,12 +162,14 @@ class IdleEndWeightsTest(unittest.TestCase):
         self.assertEqual(w["feet"]["L"][8], 0.0)
         # the right foot moves off along the floor: its fade lifts it on the step's arc (4 cm at the window's middle)
         self.assertAlmostEqual(max(w["lift"]["R"]), 0.04, places=6)
+        self.assertTrue(r["lifted"])
         self.assertEqual(w["lift"]["R"][6], 0.0)
         # a foot that lifts higher than the arc by itself is not lifted more
         up = [(0.0, -0.02 * max(0, f - 6), 0.1 * max(0, f - 6)) for f in range(n + 1)]
         high = em.idle_end_weights(n, ("start",), {"L": _track(n), "R": up}, 8, 0.01, 0.015, 0.04)
         self.assertEqual(high["ends"]["start"]["R"]["window"], [6, 14])
         self.assertEqual(max(high["lift"]["R"]), 0.0)
+        self.assertFalse(high["ends"]["start"]["R"]["lifted"])
 
     def test_feet_only(self) -> None:
         n = 20
