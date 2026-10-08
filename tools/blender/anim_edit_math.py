@@ -71,10 +71,10 @@ COMMON = {"op", "body"}  # keys every step may have
 ONE_OF = {"retime": ("seconds", "rate", "speed_m_s"), "heading": ("travel", "facing"),
           "hand_spacing": ("min_gap_cm", "gap_m")}  # exactly one of these
 POSITIVE = {"seconds", "rate", "cadence", "min_s", "max_s", "smooth_s", "max_raw_seam_deg", "max_deg", "gap_m",
-            "fade_frames", "knees_out_full_deg"}
+            "fade_frames", "knees_out_full_deg", "cap"}
 NON_NEGATIVE = {"start_s", "end_s", "speed_m_s", "natural_m_s", "from_s", "to_s", "fade_s", "min_depth_cm",
                 "margin_cm", "min_gap_cm", "out_cm", "side_cm", "frame", "plant_cm", "step_cm", "knees_out_deg",
-                "knees_out_from_deg", "cap"}
+                "knees_out_from_deg"}
 
 
 def _is_number(v) -> bool:
@@ -171,6 +171,9 @@ def check_steps(steps, bodies=("men", "women")) -> list[str]:
             errors.append(f"{where}: to_s must be after from_s")
         if op == "head_level" and _is_number(step.get("neck_share")) and not 0 <= step["neck_share"] <= 1:
             errors.append(f"{where}: neck_share must be 0 to 1")
+        if op == "thumb_in" and "from_clip" in step:
+            for key in sorted({"beside", "side_cm", "max_deg", "frame"} & set(step)):
+                errors.append(f"{where}: {key} has no effect with from_clip (the turn is that clip's)")
         if op == "idle_ends":
             lo, hi = step.get("knees_out_from_deg", 25.0), step.get("knees_out_full_deg", 75.0)
             if _is_number(lo) and _is_number(hi) and hi <= lo:
