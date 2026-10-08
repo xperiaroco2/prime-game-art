@@ -21,7 +21,9 @@ The drivers overlap: a long agent pays every one of the others on every call.
 1. **No idle gap inside an agent near the 5-minute cache life** (the cache rewrites).
    - The waiting rule in CLAUDE.md ("Shell") applies: no tool call blocks over 180 s, and a long run goes to the
      background.
-   - The agent checks a background run with one short call, with gaps of at most 180 s.
+   - The agent checks a background run with one short call, with gaps of at most 180 s: `tools/run.sh wait <log>`
+     waits up to 180 s for the log's last line `exit=<n>`, prints the `verify:` lines or the last 8 lines and returns
+     n, or 124 while the run goes on (then call it again; never start the run again).
    - No Monitor or wait tool may hold the agent idle longer than that.
 2. **Short agents** (the long agents).
    - A builder step ends at about 60 calls (this replaces the 120 calls of #51's first levers), or earlier at the
@@ -62,8 +64,9 @@ The drivers overlap: a long agent pays every one of the others on every call.
    - The 85% line in CLAUDE.md ("Decisions") still applies on top.
    - After a run, the launch report gives each agent's calls, its average and peak context, and its rewrites after
      gaps. Two ways to get them:
-     - the scripts in `D:/prime-art-raw/manager/cost/`: `$PYTHON_BIN cost_ctx.py <session-id-prefix>...`, also
-       `cost_tok.py`, `cost_cw.py` and `cost_bash.py`;
+     - `tools/run.sh cost [--since ISO] [--session PREFIX...]` in this repo: one row per agent of this checkout's
+       Claude Code transcripts (label or agentType, model, calls, first, average and peak context, cache rewrites of
+       50k+ tokens after a gap over 5 minutes, list $), a total, and `tools/out/cost/cost.json`;
      - `tools/run.sh metrics` run read-only in a checkout of the game repo.
 
 ## Agent types (#44)
