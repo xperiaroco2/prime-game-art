@@ -21,7 +21,7 @@ shoulders 0.036 m narrower per side).
 
 ```
 tools/run.py assemble <recipe> [--ids m1_rex,w1_ivy] [--modes chars,face,...|none] [--out DIR] [--blend]
-                               [--res PERCENT] [--compare REPORT]
+                               [--res PERCENT] [--compare REPORT] [--look pack|clay] [--bake] [--clay-lib DIR]
 ```
 
 Windows: `tools\run.cmd assemble um_final_test --blend`. `<recipe>` is a path from the repo root, a name in
@@ -37,6 +37,9 @@ starts, then runs `tools/blender/assemble_characters.py` in background Blender a
 | `--blend` | Also save `blend/<id>.blend` and `blend/<id>.json` per character (below) |
 | `--res` | Render size in percent (default 100); the framing does not change. The tests use 10 |
 | `--compare` | A reference `build_report.json` (or an extract of one): fail on any difference outside the tolerances (below) |
+| `--look` | `pack` (the pack's flat colours) or `clay` (the clay look, below); default: the recipe's `look`, else `pack` |
+| `--bake` | Clay look only: bake every part into textures from the per-piece clay library, baking the missing pieces into it |
+| `--clay-lib` | The clay library folder (default `<raw>/clay-lib`); implies `--bake` |
 
 Output: `build_report.json` (per character: each part's source, rebind move, faces kept and fixes; the skin and
 recolours; eye centres; seam overlaps; the seam probe in the rest pose and in the pose; heights; triangles; objects),
@@ -57,6 +60,7 @@ A recipe is JSON in `recipes/`: `um_final_test.json` (the final test's four char
 | `face_shading` | `flat` (matches the faceted pack meshes) or `smooth` |
 | `face` | Per body type `mouth_dz`: the mouth's height below the eye centres |
 | `characters` | The characters (below) |
+| `look`, `clay` | Optional: the look (`pack` or `clay`) and the clay settings (below, "The clay look") |
 | `hands`, `crossgender`, `modes`, `description` | Optional: hand shots `[side, view, pitch?]` per id; the cross-gender test; default modes; a note |
 
 | Character key | What |
@@ -103,6 +107,9 @@ action the skeleton file's actions. Face-kit styles are checked inside Blender b
 | `um/render.py` | Workbench, specular off; the fitted orthographic camera; labels; composing PNGs |
 | `um/assemble.py` | `build_character`, `pose_character`, the cross-gender test |
 | `um/toes.py` | (art #25) `add_toe_bones()`: `Toe.L` and `Toe.R` at the ball of the shoes, the shoes' fronts reweighted to them with a smooth blend; called by `build_character` after the parts are fitted, and by the retarget and the review for a pack original |
+| `um/claylook.py` | Pure Python: the clay look's settings (budgets, lumps, texel densities, texture sizes), the recipe's `look` and `clay` keys, the library keys |
+| `um/clay.py` | The clay pass: the x1.3 head, remesh to budget, lumps, rolled rims, the procedural clay and glossy materials |
+| `um/claybake.py` | The bake into glTF textures and the per-piece clay library |
 | `um/blendfile.py` | Saving one clean `.blend` per character; inspecting a saved one |
 | `tools/blender/assemble_characters.py` | The entry script; `-- --inspect <file.blend> --json <out.json>` describes a saved file |
 
@@ -146,6 +153,52 @@ Opening a saved file prints `Library file, loading empty scene` (it is written w
 harmless, `bpy.context.scene` is the character's scene. Each action keeps the pack's slot identifier
 `OBCharacterArmature` although the armature object is `<id>_rig`; assigning an action still picks that single slot
 by itself, and the `ACTIONS` export ignores slot names.
+
+## The clay look
+
+The approved look of the characters (art #16, plan comment 6057672162; art #42): plasticine people, the Ultimate
+Modular bodies smoothed, one static baked clay (no boil). `--look clay` or a recipe's `"look": "clay"` runs the clay
+pass on each built character in the rest pose at the origin, after the parts and the scripted face are built and before
+the pose; `--bake` then bakes it into plain glTF textures. Ported from round D of the faces lab
+(`D:/prime-art-raw/research/2026-10-05-faces/lab/clay_d`: `clay_lib.py`, `clay_parts.py`, `clay_bake.py`,
+`clay_libbake.py`; its `README_bake.txt` holds the measurements behind the numbers in `um/claylook.py`). The proof
+recipe is `recipes/clay_round_d.json`, round D's reference man `m1` and woman `w1`.
+
+The pass (`um/clay.py`):
+- the head and everything on it (hair, extras, the scripted face) x1.3 about the Head joint, baked into the meshes
+  with each vertex's Head share and faded out over 8 cm below the joint;
+- every pack part welded, subdivided once and decimated to its kind's triangle budget (material borders held), smooth
+  shaded, pushed along its normal by one shared world-space lump field; open shoe collars and hat rims rolled thick;
+- every material made clay (flat colour x value noise x a 2 cm mottle, thumb and fingerprint dents in the bump) or
+  glossy (eye whites, pupils, irises, teeth); the noise reads the `rest_pos` attribute, so it does not crawl under
+  skinning; at most four bone weights per vertex.
+
+The optional recipe object `clay` overrides the defaults: `head_scale` (0.5 to 2.0), and per part kind `budget`
+(triangles), `lump` (m) and `density` (normal-map px per metre). `um/claylook.check` validates it before Blender starts.
+
+The bake (`um/claybake.py`): per part a fresh UV map `bake` (Smart UV Project, islands at one texel density, a 3-texel
+margin), a base colour map (RGB the clay's colour, A the skin mask; clothing takes its colours from the undecimated
+pack part, selected to active, times the mottle) baked at 2x and box-filtered down, a tangent-space normal map (OpenGL
++Y), gutters flood-filled. Normal maps aim at 1024 px/m on the head and face, 512 elsewhere, as powers of two from 128
+to the contract's 1024; the colour map is half the side. The part then wears one baked material plus its glossy ones.
+
+The library: `<clay-lib>/<M|W>/<role>/<key>/` holds `piece.blend` (the baked object in world rest coordinates with its
+vertex groups and material), `tex/<role>_<key>_col.png`, `_nrm.png` and `piece.json` (the bake's numbers). The key
+(`claylook.piece_key`, 16 hex digits) hashes everything a piece depends on: role, body type, the part's recipe spec,
+the skin tone and the part's recolours, the clay settings of its kind, `BAKE_VERSION`, and for the head the hair and
+face settings. A character bake loads every piece it finds and bakes only the missing ones; the report's
+`clay_bake` names each part's source (`baked` or `library`) and times. Raise `BAKE_VERSION` when the pass or the bake
+changes its output. The library lives in the raw folder, never in git.
+
+The face: the pack heads keep the repo's scripted eyes, brows and mouth (`claylook.FACE_ROLES`); the brows and mouth
+are joined into the head's atlas (`JOIN_INTO_HEAD`), so a character stays within the contract's 8 surfaces. The face
+kit (art #42 part B) plugs in there. Round D's stance edit (`clay_stance.py`, the Idle's right foot) is an animation
+edit, not part of the pass: the clay recipe poses Idle frame 0.
+
+Export the saved clay characters with `export --textured` and check them with `godot-check --textured`
+(`docs/godot.md`, "Textured export"). Measured on 2026-10-09 (Blender 5.2.2, OptiX): m1 8,653 triangles (pack 7,670),
+bake 60 s, all six pieces fresh (head 7.5 s, hair 14.1, accessory 7.4, top 8.4, bottom 6.6, shoes 16.1); w1 8,353
+(pack 7,586), 51.5 s.
 
 ## Pipeline rules learned in the final test
 
