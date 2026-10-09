@@ -1,0 +1,526 @@
+# The House map's task-station props (art #82, map #73) and the procedural room-defining props no other package
+# owns. Built by `tools/run.sh props` (docs/props.md) with tools/blender/props_task.py; every value here is a
+# proposal for the engineer (look, sizes, paints, mounts) and can change without touching code.
+#
+# Per prop: id, type (the builder), kind (the triangle budget), w, d, h (metres: width along X, depth along Z,
+# height along Y; the built bounds must equal them within 1 cm), chain and station (the game's marker under
+# `Stations`, inventory.md section 7), room, count (placements), surface (a `surface_game` quad the game draws on),
+# nodes (extra meshes: lids are leaves with their hinge as origin; on/off are state meshes the game shows or hides),
+# mount (where it stands), notes. Sizes come from the plan's props.md section 7; where a stand or a fitting adds to
+# the size given there, `plan_size` keeps the plan's number and `notes` says why.
+
+kit = "kits/house.json"
+version = 1
+
+[budget_tris]
+hero = 4000      # task-critical pieces players use (look.md section 6: 1,000 to 4,000)
+room = 1500      # room-defining (400 to 1,500)
+
+[materials.surface_game]  # the game's writable surface; not a world material (look.md section 5)
+source = ""
+tile_m = 1.0
+lum_std = 0.0
+normal_strength = 0.0
+roughness = 0.9
+
+# Prop paints on the kit's five materials (the kit's roles, kits/house.json, are used as they are).
+[roles]
+wood_light = { material = "wood", hex = "#8b6a48" }
+wood_dark = { material = "wood", hex = "#4b3426" }
+cardboard = { material = "plaster", hex = "#9b7752" }
+tape = { material = "plaster", hex = "#c9b58c" }
+steel = { material = "metal", hex = "#6a6f72" }
+steel_dark = { material = "metal", hex = "#34373a" }
+copper = { material = "metal", hex = "#9a6440" }
+machine = { material = "plaster", hex = "#a8842e" }
+machine_green = { material = "plaster", hex = "#4c6b55" }
+machine_grey = { material = "plaster", hex = "#6d777b" }
+switch_body = { material = "plaster", hex = "#5d6f78" }
+red_paint = { material = "plaster", hex = "#8e2f25" }
+warning = { material = "plaster", hex = "#c9a227" }
+lamp_green = { material = "plaster", hex = "#3fbf55" }
+lamp_red = { material = "plaster", hex = "#d8342a" }
+rubber = { material = "plaster", hex = "#1e1c1b" }
+enamel = { material = "plaster", hex = "#d6d0c2" }
+bottle = { material = "plaster", hex = "#23381f" }
+foil = { material = "plaster", hex = "#5a1e22" }
+crate_plastic = { material = "plaster", hex = "#3e5a78" }
+bun = { material = "plaster", hex = "#c07a36" }
+bun_sesame = { material = "plaster", hex = "#d9a75e" }
+bun_dark = { material = "plaster", hex = "#7d4a24" }
+soil = { material = "concrete", hex = "#3b2c22" }
+herb = { material = "plaster", hex = "#4f7a3a" }
+herb_dark = { material = "plaster", hex = "#33552b" }
+herb_light = { material = "plaster", hex = "#7a9a4a" }
+terracotta = { material = "plaster", hex = "#a4593a" }
+plastic_light = { material = "plaster", hex = "#c8c0b0" }
+plastic_dark = { material = "plaster", hex = "#2b2b2d" }
+screen = { material = "plaster", hex = "#1b2730" }
+paper = { material = "plaster", hex = "#e8e4da" }
+cable = { material = "plaster", hex = "#b35a2a" }
+water = { material = "plaster", hex = "#4d6e78" }
+developer = { material = "plaster", hex = "#6b4a22" }
+insulator = { material = "plaster", hex = "#6c8a7e" }
+toy_paint = { material = "plaster", hex = "#7a3e34" }
+cabinet = { material = "plaster", hex = "#4e5f57" }
+game_surface = { material = "surface_game", hex = "#2b3330" }
+
+# --- #82a: food and delivery ----------------------------------------------------------------------------------------
+[[props]]
+id = "delivery_box_stack"
+type = "box_stack"
+kind = "hero"
+w = 1.2
+d = 1.0
+h = 1.3
+chain = "delivery"
+station = "Boxes"
+room = "storage"
+count = 3
+mount = "floor"
+notes = "Procedural instead of the packs' boxes (props.md): same look as every other task prop."
+
+[[props]]
+id = "wine_rack"
+type = "wine_rack"
+kind = "hero"
+w = 2.0
+d = 0.4
+h = 2.0
+chain = "delivery"
+station = "WineRack"
+room = "storage"
+mount = "wall"
+cubbies = [4, 4]
+notes = "Against a wall, back board."
+
+[[props]]
+id = "wine_rack_freestanding"
+type = "wine_rack"
+kind = "hero"
+w = 2.0
+d = 0.7
+h = 2.0
+body_d = 0.5
+chain = "delivery"
+station = "WineRack"
+room = "storage"
+mount = "floor"
+cubbies = [4, 4]
+bottles_per_cubby = 2
+plan_size = [2.0, 0.4, 2.0]
+notes = "The WineRack marker stands 2 m from the storage's west wall: this double-sided variant stands there on sole feet."
+
+[[props]]
+id = "dining_table"
+type = "table"
+kind = "hero"
+w = 3.0
+d = 1.2
+h = 0.76
+style = "dining"
+chain = "delivery"
+station = "DiningTable"
+room = "dining_room"
+
+[[props]]
+id = "terrace_table"
+type = "table"
+kind = "hero"
+w = 1.6
+d = 0.9
+h = 0.75
+style = "terrace"
+chain = "delivery"
+station = "TerraceTable"
+room = "terrace"
+
+[[props]]
+id = "garden_dropoff"
+type = "potting_bench"
+kind = "hero"
+w = 1.6
+d = 0.7
+h = 0.9
+chain = "delivery"
+station = "GardenDropOff"
+room = "garden"
+
+[[props]]
+id = "workbench"
+type = "workbench"
+kind = "hero"
+w = 2.2
+d = 0.8
+h = 0.95
+chain = "delivery"
+station = "Workbench"
+room = "garage"
+
+[[props]]
+id = "order_board"
+type = "board"
+kind = "hero"
+w = 1.74
+d = 0.5
+h = 2.1
+board = [1.6, 1.0]
+style = "chalk"
+mount = "stand"
+header = 0.06
+surface = true
+chain = "burgers"
+station = "OrderBoard"
+room = "kitchen"
+plan_size = [1.6, 0.08, 1.0]
+notes = "The marker is mid-kitchen by the island: the board stands on two posts, its bottom at 1.04 m; mount = \"wall\" makes the wall version."
+
+[[props]]
+id = "assembly_island"
+type = "island"
+kind = "room"
+w = 2.4
+d = 1.0
+h = 0.9
+chain = "burgers"
+station = "OrderBoard"
+room = "kitchen"
+
+[[props]]
+id = "bun_shelf"
+type = "bun_shelf"
+kind = "hero"
+w = 2.0
+d = 0.5
+h = 2.0
+kinds = ["round", "sesame", "long"]
+chain = "burgers"
+station = "Buns"
+room = "storage"
+count = 2
+
+[[props]]
+id = "meat_freezer"
+type = "chest_freezer"
+kind = "hero"
+w = 1.8
+d = 0.8
+h = 0.9
+nodes = ["lid"]
+chain = "burgers"
+station = "Meat"
+room = "storage"
+notes = "A chest freezer; the lid is a leaf hinged at the back (the game may open it)."
+
+[[props]]
+id = "bbq_grill"
+type = "grill"
+kind = "hero"
+w = 1.2
+d = 0.6
+h = 1.0
+nodes = ["lid"]
+chain = "burgers"
+station = "Grill"
+room = "chill_zone"
+notes = "A barrel grill; the lid is a leaf hinged along the barrel's back."
+
+[[props]]
+id = "herb_bed"
+type = "herb_bed"
+kind = "hero"
+w = 3.0
+d = 1.2
+h = 0.5
+rows = 3
+per_row = 6
+chain = "burgers"
+station = "HerbBeds"
+room = "greenhouse"
+count = 5
+notes = "Walls 0.38 m, the herbs to 0.5 m; each row has a name stake (the herb board can show the same plates)."
+
+[[props]]
+id = "herb_board"
+type = "board"
+kind = "hero"
+w = 1.94
+d = 0.5
+h = 2.2
+board = [1.8, 1.4]
+style = "chalk"
+mount = "stand"
+header = 0.06
+surface = true
+chain = "burgers"
+station = "HerbBoard"
+room = "greenhouse"
+plan_size = [1.8, 0.1, 1.4]
+
+# --- #82b: power, photo and repair ----------------------------------------------------------------------------------
+[[props]]
+id = "generator"
+type = "generator"
+kind = "hero"
+w = 2.4
+d = 1.1
+h = 1.5
+chain = "generator"
+station = "Generator"
+room = "generator_hall"
+notes = "Procedural (Q20's default: no Meshy)."
+
+[[props]]
+id = "wall_switch"
+type = "switch"
+kind = "hero"
+w = 0.3
+d = 0.15
+h = 1.55
+box_y = 1.1
+mount = "wall"
+nodes = ["on", "off"]
+chain = "generator"
+station = "SwitchA, SwitchB, SwitchC, SwitchD"
+room = "storage, boiler_room, pump_room, switch_room"
+count = 4
+plan_size = [0.3, 0.15, 0.45]
+notes = "The box (0.3 x 0.45 m) at 1.1 m on a back plate, a conduit down to the floor pivot."
+
+[[props]]
+id = "wall_switch_post"
+type = "switch"
+kind = "hero"
+w = 0.4
+d = 0.4
+h = 1.6
+box_y = 1.1
+mount = "post"
+nodes = ["on", "off"]
+chain = "generator"
+station = "SwitchA, SwitchB, SwitchC, SwitchD"
+room = "storage, boiler_room, pump_room, switch_room"
+count = 4
+plan_size = [0.3, 0.15, 0.45]
+notes = "The switch markers stand 1.5 to 2 m from the walls: the same box on a floor post."
+
+[[props]]
+id = "pose_screen"
+type = "board"
+kind = "hero"
+w = 2.14
+d = 0.6
+h = 2.2
+board = [2.0, 1.3]
+style = "screen"
+mount = "stand"
+frame = 0.06
+surface = true
+chain = "photo"
+station = "PoseScreen"
+room = "photo_zone"
+plan_size = [2.0, 0.15, 1.3]
+notes = "A screen on a stand, its bottom at 0.9 m so that it shows over the posing players."
+
+[[props]]
+id = "computer_set"
+type = "computer"
+kind = "hero"
+w = 0.6
+d = 0.5
+h = 0.42
+surface = true
+mount = "table"
+chain = "photo"
+station = "Printer"
+room = "study"
+plan_size = [0.6, 0.5, 0.5]
+notes = "Stands on the study's desk (pivot at the desk top). The CRT's screen is a game surface (the photo to print)."
+
+[[props]]
+id = "photo_printer"
+type = "printer"
+kind = "hero"
+w = 0.5
+d = 0.4
+h = 0.3
+mount = "table"
+nodes = ["photo"]
+chain = "photo"
+station = "Printer"
+room = "study"
+notes = "Pivot at the desk top; `photo_printer_photo` is the printed photo in the output tray."
+
+[[props]]
+id = "photo_board"
+type = "board"
+kind = "hero"
+w = 3.14
+d = 0.5
+h = 2.3
+board = [3.0, 1.5]
+style = "cork"
+mount = "stand"
+header = 0.06
+surface = true
+chain = "photo"
+station = "PhotoBoard"
+room = "darkroom"
+plan_size = [3.0, 0.1, 1.5]
+
+[[props]]
+id = "car_parts_shelf"
+type = "parts_shelf"
+kind = "hero"
+w = 2.0
+d = 0.5
+h = 2.0
+chain = "car_repair"
+station = "PartsShelf"
+room = "storage"
+
+[[props]]
+id = "music_speaker"
+type = "speaker"
+kind = "hero"
+w = 0.5
+d = 0.4
+h = 0.9
+chain = "other"
+station = "Speaker"
+room = "chill_zone"
+
+# --- room-defining props no other package owns (the manager's list) ------------------------------------------------
+[[props]]
+id = "boiler"
+type = "boiler"
+kind = "room"
+w = 1.2
+d = 1.2
+h = 2.2
+chain = "room"
+station = "-"
+room = "boiler_room"
+
+[[props]]
+id = "pump"
+type = "pump"
+kind = "room"
+w = 1.4
+d = 0.8
+h = 1.0
+chain = "room"
+station = "-"
+room = "pump_room"
+
+[[props]]
+id = "water_tank"
+type = "water_tank"
+kind = "room"
+w = 1.5
+d = 1.5
+h = 2.0
+chain = "room"
+station = "-"
+room = "pump_room"
+
+[[props]]
+id = "switchboard"
+type = "switchboard"
+kind = "room"
+w = 0.8
+d = 0.3
+h = 2.0
+chain = "room"
+station = "-"
+room = "switch_room"
+count = 3
+
+[[props]]
+id = "cable_drum"
+type = "cable_drum"
+kind = "room"
+w = 0.6
+d = 0.9
+h = 0.9
+chain = "room"
+station = "-"
+room = "generator_hall"
+count = 3
+plan_size = [0.9, 0.9, 0.6]
+notes = "Stands on its rim (the plan's 0.9 x 0.9 x 0.6 lies flat); reads better as a cable drum."
+
+[[props]]
+id = "enlarger"
+type = "enlarger"
+kind = "room"
+w = 0.4
+d = 0.4
+h = 0.8
+mount = "table"
+chain = "room"
+station = "-"
+room = "darkroom"
+count = 2
+
+[[props]]
+id = "tray_table"
+type = "tray_table"
+kind = "room"
+w = 1.8
+d = 0.8
+h = 0.9
+chain = "room"
+station = "-"
+room = "darkroom"
+count = 2
+
+[[props]]
+id = "toy_chest"
+type = "toy_chest"
+kind = "room"
+w = 0.9
+d = 0.5
+h = 0.5
+nodes = ["lid"]
+chain = "room"
+station = "-"
+room = "kids_room"
+
+[[props]]
+id = "utility_pole"
+type = "utility_pole"
+kind = "room"
+w = 1.6
+d = 0.3
+h = 8.0
+chain = "room"
+station = "-"
+room = "street"
+count = 3
+plan_size = [0.3, 0.3, 8.0]
+notes = "The crossarm makes it 1.6 m wide."
+
+[[props]]
+id = "birdbath"
+type = "birdbath"
+kind = "room"
+w = 0.6
+d = 0.6
+h = 0.9
+chain = "room"
+station = "-"
+room = "garden"
+
+[[props]]
+id = "bulkhead_stairs"
+type = "bulkhead"
+kind = "room"
+w = 4.0
+d = 4.0
+h = 1.0
+entry = [-1.75, -0.25]
+chain = "room"
+station = "-"
+room = "outdoor_stairs"
+notes = "The stairwell's concrete surround; the entry gap (x -1.75 to -0.25 on the +Z side) follows the kit's U-shaped flights and is data."
