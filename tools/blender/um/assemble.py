@@ -193,7 +193,12 @@ def clay_look(recipe, rc, arm, parts, rep, lib=None):
     rep["clay"] = crep
     if lib:
         keys = claylook.keys_for(recipe, rc, cfg)
-        rep["clay_bake"] = claybake.bake_character(rc["id"], arm, parts, sources, keys, rc["gender"], lib, cfg)
+        scene = bpy.context.scene
+        engine = scene.render.engine  # the bake runs Cycles; the review renders keep the assembler's engine
+        try:
+            rep["clay_bake"] = claybake.bake_character(rc["id"], arm, parts, sources, keys, rc["gender"], lib, cfg)
+        finally:
+            scene.render.engine = engine
     clay.remove_sources(sources)
     rep["triangles_pack"], rep["triangles_total_pack"] = rep["triangles"], rep["triangles_total"]
     rep["triangles"] = {k: tris(o) for k, o in parts.items()}
