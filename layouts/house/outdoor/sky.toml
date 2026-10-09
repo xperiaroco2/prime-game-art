@@ -1,0 +1,65 @@
+# The evening sky and the backdrop beyond the fence (art #81c, docs/house-outdoor.md). Q14 default A: a painted dusk
+# sky plus a low ring of painted flats (a tree line, hills, a far haze) with a few lit windows as emissive dots; the
+# flats are excluded from the bake; fog from 35 m. Every colour and size is a reversible default (look.md section 2).
+
+[sky]
+# An equirectangular panorama (Godot's PanoramaSkyMaterial): row 0 is the zenith, the middle row the horizon.
+size = [1024, 512]
+seed = 81
+# Colour stops by elevation in degrees (-90 the nadir, 0 the horizon, 90 the zenith), sRGB hex; smooth between.
+# The peach band is low and narrow (look.md: top #2d2a55, middle #7a4f86, horizon #e0906c; no sun disc).
+stops = [
+  [-90, "#15161d"],
+  [-2, "#2a2a36"],
+  [0, "#e0906c"],
+  [4, "#c9847a"],
+  [14, "#7a4f86"],
+  [45, "#433766"],
+  [90, "#2d2a55"],
+]
+# Soft clouds: periodic value noise (no seam at u 0 / 1) between these elevations, darker violet with a peach rim low.
+clouds = { from_deg = 4, to_deg = 38, cover = 0.56, softness = 0.16, strength = 0.55, hex = "#4a3a62", rim_hex = "#d48a74", rim_deg = 12, cells = [12, 6] }
+# Faint stars above `from_deg`, fading in with elevation.
+stars = { from_deg = 30, count = 260, brightness = 0.45 }
+
+[backdrop]
+# The flats are rings round this centre (x, y), so every point of the plot and the street sits inside them.
+centre = [40, 33]
+fog_start_m = 35.0
+segments = 72
+seed = 81
+
+# At most 6 flats (#81c acceptance). Each is one ring: `radius`, `height` (its top in metres above y 0), `base`
+# (its foot, under the skirt's edge), a silhouette texture (`profile`: trees or hills or haze), its value deepening
+# with height (`hex_low` at the foot to `hex_high` at the top), and lit windows as emissive dots.
+[[backdrop.flats]]
+id = "treeline"
+radius = 56.0
+base = -1.0
+height = 11.0
+profile = "trees"
+hex_low = "#1d2a2c"
+hex_high = "#141c24"
+texture = [4096, 256]
+windows = { count = 26, hex = "#ffb46a", band = [0.08, 0.35], size_px = [5, 6] }
+
+[[backdrop.flats]]
+id = "hills"
+radius = 64.0
+base = -1.0
+height = 20.0
+profile = "hills"
+hex_low = "#2a3040"
+hex_high = "#232638"
+texture = [4096, 256]
+windows = { count = 10, hex = "#f2a868", band = [0.05, 0.3], size_px = [3, 4] }
+
+[[backdrop.flats]]
+id = "haze"
+radius = 70.0
+base = -1.0
+height = 26.0
+profile = "haze"
+hex_low = "#5a4a66"
+hex_high = "#3c3558"
+texture = [2048, 128]
