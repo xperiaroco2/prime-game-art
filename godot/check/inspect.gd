@@ -120,6 +120,11 @@ func _mesh(scene: Node, mesh: MeshInstance3D) -> Dictionary:
 				entry["metallic"] = snappedf(base.metallic, 0.001)
 				entry["roughness"] = snappedf(base.roughness, 0.001)
 				entry["textured"] = base.albedo_texture != null
+				if base.albedo_texture != null:
+					entry["albedo_px"] = [base.albedo_texture.get_width(), base.albedo_texture.get_height()]
+				entry["normal_mapped"] = base.normal_enabled and base.normal_texture != null
+				if entry["normal_mapped"]:
+					entry["normal_px"] = [base.normal_texture.get_width(), base.normal_texture.get_height()]
 			materials.append(entry)
 	return {
 		"name": str(mesh.name),

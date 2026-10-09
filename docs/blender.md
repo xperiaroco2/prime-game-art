@@ -33,6 +33,7 @@ an orphan, which the lock no longer counts (look for leftover processes after a 
 | `probe [--out DIR] [--no-fixtures]` | Writes `tools/out/probe/report.json`, `workbench.png` and `eevee.png`, then builds the fixtures |
 | `render <model> [--out DIR] [--cell 512] [--no-outline]` | Renders an 8-view review sheet and `stats.json` into `tools/out/renders/<stem>_<extension>/` |
 | `render <model> --anim <action> [--frames 8]` | Also an animation contact sheet of that action, seen from the front |
+| `render <model> --pose <action>` | The eight views posed at that action's first frame (to compare two models in the same pose); `stats.json` records `pose` |
 
 Windows: `tools\run.cmd probe`, `tools\run.cmd render tools/out/fixtures/humanoid.glb`. Git Bash: `tools/run.sh ...`.
 

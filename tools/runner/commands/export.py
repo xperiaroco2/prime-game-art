@@ -18,6 +18,8 @@ TIMEOUT = 600
 def add_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("blend", type=Path, nargs="+", help="saved character files (assemble --blend writes blend/<id>.blend)")
     parser.add_argument("--out", type=Path, help="output folder; each character goes into <out>/<id>/ (default tools/out/export/)")
+    parser.add_argument("--textured", action="store_true",
+                        help="the textured export of baked clay characters: textures, tangents, morph targets")
 
 
 def run(args: argparse.Namespace) -> int:
@@ -29,24 +31,36 @@ def run(args: argparse.Namespace) -> int:
         blends.append(candidate.resolve())
     failed = 0
     for blend in blends:
-        failed += not export_one(blend, (args.out or _export.OUT).resolve() / blend.stem)
+        failed += not export_one(blend, (args.out or _export.OUT).resolve() / blend.stem, args.textured)
     return 1 if failed else 0
 
 
-def export_one(blend: Path, out: Path) -> bool:
+def export_one(blend: Path, out: Path, textured: bool = False) -> bool:
     cid = blend.stem
     glb, info_path, report_path = out / f"{cid}.glb", out / f"{cid}.export.json", out / "report.json"
     out.mkdir(parents=True, exist_ok=True)
     for stale in (glb, info_path, report_path):
         stale.unlink(missing_ok=True)
     common.say(f"export: {blend.as_posix()} -> {glb.as_posix()}")
-    blender.run_script(_export.SCRIPT, ["--blend", str(blend), "--glb", str(glb), "--json", str(info_path)], timeout=TIMEOUT)
+    script_args = ["--blend", str(blend), "--glb", str(glb), "--json", str(info_path)] + (["--textured"] if textured else [])
+    blender.run_script(_export.SCRIPT, script_args, timeout=TIMEOUT)
     if not glb.is_file() or not info_path.is_file():
         raise common.Failure(f"{_export.SCRIPT} wrote no {glb.name} or {info_path.name}")
     info = json.loads(info_path.read_text(encoding="utf-8"))
     summary = _export.summarize(_export.glb_json(glb))
     good = True
-    problems = _export.check(info, summary)
+    problems = _export.check(info, summary, textured)
+    if textured:
+        from . import _contract
+
+        limits = _contract.load_contract()["budgets"]["limits"]
+        audit = _export.textured_audit(glb)
+        (out / f"{cid}.textures.json").write_text(json.dumps(audit, indent=1), encoding="utf-8")
+        problems += _export.textured_check(audit, limits["surfaces_per_character_cap"], limits["texture_character_px"])
+        if not problems:
+            common.ok(f"textured: {len(audit['images'])} images ({audit['image_bytes'] / 1e6:.2f} MB, largest "
+                      f"{max((max(i['px']) for i in audit['images']), default=0)} px), {audit['surfaces']} surfaces, "
+                      f"tangents fixed {info.get('textured', {}).get('tangents_fixed', {})}")
     for problem in problems:
         common.bad(problem)
         good = False

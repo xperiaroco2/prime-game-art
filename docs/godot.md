@@ -59,6 +59,32 @@ one warning per part, `NODE_SKINNED_MESH_NON_ROOT` ("parent transforms will not 
 children of the armature node, whose transform is the identity (the saved file applies every transform), so it changes
 nothing; infos `UNUSED_OBJECT` for the UVs no texture uses.
 
+## Textured export (`export --textured`, `godot-check --textured`)
+
+The clay look's baked characters (`assemble --look clay --bake --blend`, `docs/assembly.md`, "The clay look") carry
+textures, so their export and check differ from the flat-colour pack look's:
+
+- `export --textured` puts `TEXTURED_OPTIONS` (`export_glb.py`) on top of the options above: `export_image_format`
+  `AUTO` (the baked PNGs embedded as PNG), `export_tangents` on (the normal maps need them), `export_morph`,
+  `export_morph_normal` and `export_morph_tangent` on with `export_try_sparse_sk` off (the face kit's shape keys, art
+  #42 part B), `export_vertex_color` `MATERIAL`. A part without any UV map (a glossy part that samples no texture)
+  gets a spherical one, since Godot cannot make tangents for blend shapes without UVs; a TANGENT the exporter writes
+  that is not a unit vector (a glTF-Validator error, seen on single vertices of the lab's cast) is replaced by a unit
+  one perpendicular to the normal. The export check then allows images, and the command writes
+  `<out>/<id>/<id>.textures.json` (`_export.textured_audit`: every image's mime, bytes and size, each material's base
+  colour and normal textures, each surface's UVs and tangents) and fails on `_export.textured_check`: no base colour
+  texture at all, an image that is not PNG or JPEG or is over the contract's `texture_character_px` (1024), a textured
+  material without a normal map, a normal-mapped surface without UVs or tangents, more surfaces than the contract's
+  `surfaces_per_character_cap` (8).
+- `godot-check --textured` replaces `flat_colours` with `textured` (some surface has an albedo texture),
+  `normal_maps` (every textured surface has a normal map), `texture_size` (no albedo or normal texture side over
+  `texture_character_px`) and `surfaces_cap` (the surfaces within `surfaces_per_character_cap`); `inspect.gd` reports
+  each material's `albedo_px`, `normal_mapped` and `normal_px`. Every other check is the same.
+
+Measured on 2026-10-09 (`recipes/clay_round_d.json`): m1 8 surfaces, 12 images 4.41 MB, GLB 6.12 MB; w1 7
+surfaces, 10 images 3.46 MB, GLB 5.13 MB; every map at most 1024 px; validator 0 errors; godot-check passes with the
+contract warnings (heights 1.962 and 1.912 m with the x1.3 clay head) and the loop-mode warning.
+
 ## The Godot project: `godot/`
 
 A minimal Godot 4.7.2 project at the repo root (`config/features` 4.7, Forward Plus like the game), separate from
@@ -112,7 +138,7 @@ without Godot:
 | `size_kept` | the rest-pose height equals Blender's within 2 mm |
 | `feet_at_zero` | the lowest skinned vertex is within the contract's `feet_tolerance_m` (0.01 m) of y = 0 |
 | `facing_plus_z` | the eyes are at least 5 cm in front of the Head joint, the shoes reach further forward than back from the ankles, the left wrist is at +X |
-| `flat_colours` | no surface has an albedo texture |
+| `flat_colours` | no surface has an albedo texture (with `--textured`: the textured checks instead, "Textured export" above) |
 | `godot_output` | no ERROR line in Godot's import and inspection output (warnings are listed) |
 | `contract_height`, `contract_eye_height` | the contract v1 body gates (height 1.70 to 1.80 m to the top, eyes 1.6 +- 0.08 m): **warnings** unless `--strict-contract` |
 | `loop_modes` | **warning** while a cycle (`Idle*`, `Walk*`, `Run*`) imports with loop_mode NONE; names the open cycles |

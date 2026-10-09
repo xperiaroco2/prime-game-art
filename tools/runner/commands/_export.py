@@ -13,6 +13,8 @@ from .. import common
 SCRIPT = "export_glb.py"
 GLB_MAGIC = b"glTF"
 JSON_CHUNK = 0x4E4F534A
+PNG_MAGIC = bytes([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A])
+JPEG_MAGIC = bytes([0xFF, 0xD8])
 OUT = common.OUT / "export"
 # An animation's last key is at its frame range's end over the fps; the exporter writes times as 32-bit floats.
 DURATION_TOLERANCE_S = 1e-3
@@ -56,7 +58,7 @@ def summarize(gltf: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def check(info: dict[str, Any], summary: dict[str, Any]) -> list[str]:
+def check(info: dict[str, Any], summary: dict[str, Any], textured: bool = False) -> list[str]:
     """Problems with an exported character: info is what export_glb.py says it exported (the .export.json), summary
     the GLB's own content (summarize()). Empty when the GLB holds one skin of every bone, one skinned mesh node per
     part, every action as its own animation under its own name with its own length, and nothing else."""
@@ -92,7 +94,7 @@ def check(info: dict[str, Any], summary: dict[str, Any]) -> list[str]:
             problems.append(f"{name}: {anim['duration_s']:.4f} s long, the action is {want:.4f} s ({start} to {end} at {fps} fps)")
         if anim["nodes"] != len(bones):
             problems.append(f"{name}: animates {anim['nodes']} of the {len(bones)} bones")
-    for kind in ("cameras", "lights", "images"):
+    for kind in ("cameras", "lights") + (() if textured else ("images",)):
         if summary[kind]:
             problems.append(f"{summary[kind]} {kind}")
     return problems
@@ -133,3 +135,94 @@ def issues(report: dict[str, Any]) -> dict[str, list[str]]:
         pointers = ", ".join(str(m.get("pointer", "")) for m in msgs[:4]) + (", ..." if len(msgs) > 4 else "")
         out[severity].append(f"{code} x{len(msgs)}: {msgs[0].get('message')} ({pointers})")
     return out
+
+
+def glb_chunks(path: Path) -> tuple[dict[str, Any], bytes]:
+    """The JSON and the binary chunk of a GLB file."""
+    data = path.read_bytes()
+    gltf = glb_json(path)
+    length = struct.unpack("<I", data[12:16])[0]
+    start = 20 + length
+    binary = data[start + 8 : start + 8 + struct.unpack("<I", data[start : start + 4])[0]] if len(data) > start + 8 else b""
+    return gltf, binary
+
+
+def image_size(blob: bytes) -> tuple[int, int]:
+    """Width and height of a PNG or JPEG image; (0, 0) when neither."""
+    if blob[:8] == PNG_MAGIC and len(blob) >= 24:
+        return struct.unpack(">II", blob[16:24])
+    if blob[:2] == JPEG_MAGIC:
+        i = 2
+        while i + 9 < len(blob):
+            if blob[i] != 0xFF:
+                i += 1
+                continue
+            marker, size = blob[i + 1], struct.unpack(">H", blob[i + 2 : i + 4])[0]
+            if marker in (0xC0, 0xC1, 0xC2):
+                h, w = struct.unpack(">HH", blob[i + 5 : i + 9])
+                return w, h
+            i += 2 + size
+    return 0, 0
+
+
+def textured_audit(path: Path) -> dict[str, Any]:
+    """A textured character as its GLB holds it: the images (mime, bytes, size), each material's base colour and
+    normal textures (image indices), and per mesh node its surfaces with their material and whether they carry
+    TEXCOORD_0 and TANGENT."""
+    gltf, binary = glb_chunks(path)
+    views = gltf.get("bufferViews", [])
+    images = []
+    for im in gltf.get("images", []):
+        if "bufferView" in im:
+            v = views[im["bufferView"]]
+            blob = binary[v.get("byteOffset", 0) : v.get("byteOffset", 0) + v["byteLength"]]
+        else:
+            blob = b""
+        w, h = image_size(blob)
+        images.append({"name": im.get("name", ""), "mime": im.get("mimeType", ""), "bytes": len(blob), "px": [w, h]})
+    textures = gltf.get("textures", [])
+
+    def source(ref: dict[str, Any] | None) -> int | None:
+        return textures[ref["index"]].get("source") if ref else None
+
+    materials = [{"name": m.get("name", ""), "base": source(m.get("pbrMetallicRoughness", {}).get("baseColorTexture")),
+                  "normal": source(m.get("normalTexture"))} for m in gltf.get("materials", [])]
+    meshes = {}
+    for node in gltf.get("nodes", []):
+        if "mesh" not in node:
+            continue
+        surfaces = []
+        for prim in gltf["meshes"][node["mesh"]]["primitives"]:
+            at = prim.get("attributes", {})
+            surfaces.append({"material": prim.get("material"), "uv": "TEXCOORD_0" in at, "tangent": "TANGENT" in at,
+                             "targets": len(prim.get("targets", []))})
+        meshes[node.get("name", "")] = surfaces
+    return {"images": images, "materials": materials, "meshes": meshes,
+            "surfaces": sum(len(s) for s in meshes.values()),
+            "image_bytes": sum(i["bytes"] for i in images)}
+
+
+def textured_check(audit: dict[str, Any], surfaces_cap: int, max_px: int) -> list[str]:
+    """Problems with a textured character: no texture at all, an image that is not PNG or JPEG or is larger than
+    max_px on a side, a textured material without a normal map, a normal-mapped surface without UVs or tangents, more
+    surfaces than surfaces_cap."""
+    problems: list[str] = []
+    if not any(m["base"] is not None for m in audit["materials"]):
+        problems.append("no material has a base colour texture")
+    for im in audit["images"]:
+        if not all(im["px"]):
+            problems.append(f"image {im['name']}: not a PNG or JPEG")
+        elif max(im["px"]) > max_px:
+            problems.append(f"image {im['name']}: {im['px'][0]} x {im['px'][1]} px, over {max_px}")
+    for m in audit["materials"]:
+        if m["base"] is not None and m["normal"] is None:
+            problems.append(f"material {m['name']}: a base colour texture without a normal map")
+    mats = audit["materials"]
+    for name, surfaces in sorted(audit["meshes"].items()):
+        for i, s in enumerate(surfaces):
+            mat = mats[s["material"]] if s["material"] is not None else None
+            if mat and mat["normal"] is not None and not (s["uv"] and s["tangent"]):
+                problems.append(f"{name} surface {i} ({mat['name']}): normal-mapped without UVs and tangents")
+    if audit["surfaces"] > surfaces_cap:
+        problems.append(f"{audit['surfaces']} surfaces, over the contract's cap of {surfaces_cap}")
+    return problems
