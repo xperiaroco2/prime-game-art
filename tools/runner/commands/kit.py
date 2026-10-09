@@ -15,7 +15,7 @@ NAME = "kit"
 HELP = "build a modular kit (kits/house.json) as one GLB per piece and check each: grid, budgets, glTF-Validator, Godot import, collision"
 BUILD_TIMEOUT = 900
 CHECK_TIMEOUT = 600
-PROOF_TIMEOUT = 240
+PROOF_TIMEOUT = 360
 
 
 def add_arguments(parser: argparse.ArgumentParser) -> None:
@@ -44,9 +44,12 @@ def run(args: argparse.Namespace) -> int:
         d = g.describe(g.build_piece(p, spec), spec)
         described[p["id"]] = d
         problems += g.check_piece(d, p, spec)
+    if not only:  # v2 (art #86): neighbours without faces back to back; the attic's roof and the gazebo close
+        problems += g.seam_problems(spec, described)
+        problems += g.closure_problems(spec, described) + g.gazebo_problems(spec, described)
     common.say(f"kit {spec['kit']} v{spec['version']}: {len(pieces)} pieces, "
                f"{sum(d['triangles'] for d in described.values())} triangles -> {out.as_posix()}")
-    _report(problems, "spec: grid, sizes, budgets, colliders, UV2")
+    _report(problems, "spec: grid, sizes, budgets, colliders, UV2" + ("" if only else "; seams, the attic roof and the gazebo close"))
     if not args.no_build:
         out.mkdir(parents=True, exist_ok=True)
         for p in pieces:
@@ -63,7 +66,7 @@ def run(args: argparse.Namespace) -> int:
         if not glb.is_file():
             glb_problems.append(f"{p['id']}: no {glb.as_posix()}")
             continue
-        glb_problems += _kit.check_glb(_export.glb_json(glb), described[p["id"]], len(spec["materials"]))
+        glb_problems += _kit.check_glb(_export.glb_json(glb), described[p["id"]], len(g.export_materials(spec)))
         report = _export.validate(glb, reports / f"{p['id']}.json")
         passed, _line = _export.verdict(report)
         counts = report.get("issues", {})
@@ -76,7 +79,7 @@ def run(args: argparse.Namespace) -> int:
     if not args.no_godot:
         problems += godot_check(pieces, described, out)
         if args.proof and not problems:
-            problems += proof(pieces, described, args.proof.resolve())
+            problems += proof(spec, pieces, described, out, args.proof.resolve())
     rows = g.piece_table([described[p["id"]] for p in pieces])
     (out / "pieces.json").write_text(json.dumps(rows, indent=1), encoding="utf-8")
     (out / "pieces.md").write_text(_kit.table_md(rows, spec["budget_tris"]), encoding="utf-8", newline="\n")
@@ -117,11 +120,26 @@ def godot_check(pieces: list[dict], described: dict, out: Path) -> list[str]:
     return problems
 
 
-def proof(pieces: list[dict], described: dict, folder: Path) -> list[str]:
-    """godot/kit/proof.gd in a window off-screen (pictures need one): the shots, sheet.png and the walks."""
+def proof(spec: dict, pieces: list[dict], described: dict, out: Path, folder: Path) -> list[str]:
+    """godot/kit/proof.gd in a window off-screen (pictures need one): the line-up by kind, the room, corridor and
+    stairs, the porch, the attic roof over 4 x 4 m and the gazebo; sheet.png, the walks and the rays up the roofs."""
+    g = _kit.geom()
+    mats = [spec["materials"][m] for m in spec.get("packs", {}).get("set", {}).get("layers", [])]
+    man = common.raw_dir().joinpath(*_kit.MAN)
     request = {"pieces": {p["id"]: {"scene": f"res://import/kit_{p['id']}.glb", **described[p["id"]]["bounds_m"]}
-                          for p in pieces}}
-    missing = {"stairs_main", "wall_storey_2m_ext", "wall_storey_2m_door_int"} - set(request["pieces"])
+                          for p in pieces},
+               "groups": _kit.lineup_groups(pieces), "version": spec["version"], "pitch": spec["grid"]["gable_rise_per_m"],
+               "attic": [[pid, deg, list(off)] for pid, deg, off in g.attic_roof(spec, 4, 4)],
+               "gazebo": [[pid, deg, list(off)] for pid, deg, off in g.gazebo()],
+               "man": man.as_posix() if man.is_file() else ""}
+    if len(mats) == 3:
+        request["pack"] = {"textures": (out / "textures").as_posix(), "roughness": [m["roughness"] for m in mats],
+                           "normal_strength": [m["normal_strength"] for m in mats]}
+    needed = {"stairs_main", "wall_storey_2m_ext", "wall_storey_2m_door_int", "wall_storey_2m_window_ext", "porch_2x2",
+              "floor_concrete_2x2", "floor_boards_2x2", "wall_knee_2m_ext", "wall_knee_2m_window_ext",
+              "wall_knee_corner_ext", "gable_tri_2m_up", "gable_tri_2m_down"}
+    needed |= {pid for pid, _, _ in request["attic"] + request["gazebo"]}
+    missing = needed - set(request["pieces"])
     if missing:
         return [f"proof: needs {', '.join(sorted(missing))} (drop --only)"]
     folder.mkdir(parents=True, exist_ok=True)
@@ -134,11 +152,14 @@ def proof(pieces: list[dict], described: dict, folder: Path) -> list[str]:
     if code != 0 or not (folder / "proof.json").is_file():
         tail = "\n".join(output.splitlines()[-20:])
         raise common.Failure(f"proof.gd failed (exit code {code}):\n{tail}")
-    walks = json.loads((folder / "proof.json").read_text(encoding="utf-8"))["walks"]
+    result = json.loads((folder / "proof.json").read_text(encoding="utf-8"))
     problems = [f"proof: walk {k} {'arrived' if w['arrived'] else 'stopped'} at {[round(c, 2) for c in w['end']]}"
-                for k, w in walks.items() if not w["pass"]]
+                for k, w in result["walks"].items() if not w["pass"]]
+    problems += [f"proof: {r['missed']} of {r['rays']} rays up the {k} miss its roof, e.g. {r['misses'][:4]}"
+                 for k, r in result.get("rays", {}).items() if not r["pass"]]
+    rays = ", ".join(f"{k} {r['rays']}" for k, r in result.get("rays", {}).items())
     _report(problems, "proof: the 0.8 m capsule walks room, door, corridor and stairs to 3.2 m; a 1.5 m one stops at "
-                      f"the door; sheet {(folder / 'sheet.png').as_posix()}")
+                      f"the door; rays up the roofs close ({rays}); sheet {(folder / 'sheet.png').as_posix()}")
     return problems
 
 
