@@ -595,8 +595,9 @@ def _strip_inside(st: dict, r) -> bool:
 # ---------------------------------------------------------------- scenes
 
 def _tf(turn: int, x: float, h: float, z: float) -> str:
+    """A scene transform: Godot's text format lists the basis by rows (x.x, y.x, z.x, x.y, ...), then the origin."""
     ax, az = axes(turn)
-    v = [ax[0], 0, ax[1], 0, 1, 0, az[0], 0, az[1], x, h, z]
+    v = [ax[0], 0, az[0], 0, 1, 0, ax[1], 0, az[1], x, h, z]
     return "Transform3D(" + ", ".join(_num(n) for n in v) + ")"
 
 

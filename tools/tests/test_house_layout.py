@@ -213,7 +213,8 @@ class SceneTest(unittest.TestCase):
                              + sum(len(lv["extra"]) for lv in PLAN["levels"]))
 
     def test_a_turned_transform(self) -> None:
-        self.assertEqual(H._tf(90, 1, 2, 3), "Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 1, 2, 3)")
+        # Turn 90 runs local +X north (-Z) with the exterior east (+X); Godot's text lists the basis by rows.
+        self.assertEqual(H._tf(90, 1, 2, 3), "Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 1, 2, 3)")
 
 
 class WalkRequestTest(unittest.TestCase):
