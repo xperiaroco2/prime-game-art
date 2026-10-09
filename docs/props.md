@@ -72,13 +72,33 @@ files are stacked, turned by `yaw_deg`, scaled (`scale`, or fitted per axis with
 - its colliders `<id>_col<n>-convcolonly` (closed convex: a box, or the hull of the mesh);
 - a fixture's `LightAnchor` empty at the centre of its emissive faces, where the map puts its light;
 - materials `kit_<name>-vcol`; the emissive one glows in the prop's emissive paint (`bulb`, `tube`, `safelight`).
+  Kit v2 (#86) packs plaster, wood and concrete into one `kit_set-vcol` material (the layer in the vertex colour's
+  alpha): `prop_geom.lib_spec` carries the kit's `packs`, so props export the same materials as the kit pieces, and
+  the build's `textures/` holds the packed `set_d.png`, `set_n0.png` and `set_n1.png` for Godot's set shader.
+
+## The Godot check and the line-up sheets
+
+After the GLB checks, `--build` (also with `--no-blender`) imports every prop into `godot/` as `prop_<id>` and runs
+the kit's headless describer (`godot/check/kit.gd`) on them: the mesh, its triangles, UV2, sRGB vertex colours, one
+static body per collider with a closed convex shape that stops a ray (the collider's points are read from the GLB),
+the bounds against the size and the pivot (`floor`: the base's centre at the origin; `wall`: the back's bottom centre,
+the prop in +Z; `ceiling`: the top's centre) and Y up, and the `LightAnchor` of a fixture where `build.json` put it
+(no other prop has one). The describer's output goes to `<out>/godot.json`. `--no-godot` skips it.
+
+`--sheets DIR` then shoots the line-up from an off-screen Godot window (`godot/props/lineup.gd`): the props in
+library order cut into 4 sheets (`_props.sheet_plan`), on each sheet tallest first in rows of 7, each row beside a
+1.8 m capsule and labelled with the ids, shot orthographic from the front-right and above, the kit's set shader on
+the `kit_set` surfaces and a small warm light at each LightAnchor. Out: `DIR/lineup_<n>.png` (1280 px wide) and
+`DIR/lineup.json` (the rows and the anchors Godot found). Review pictures only: the raw GLBs are not committed.
 
 ## The command
 
 ```
-tools/run.sh props [--measure] [--table FILE] [--build [--batch N] [--only IDS] [--out DIR] [--no-blender]]
+tools/run.sh props [--measure] [--table FILE] [--build [--batch N] [--only IDS] [--out DIR] [--no-blender]
+                  [--no-godot] [--sheets DIR]]
 ```
 
 It checks the mapping file (no raw file needed); `--measure` reads every pack file in `<raw>/env` again (a pure
 Python glTF reader: the accessors' bounds through the node transforms, the triangles) and compares them with the
-record; `--table` writes the prop table as markdown. The tests are `tools/tests/test_props_library.py`.
+record; `--table` writes the prop table as markdown. The tests are `tools/tests/test_props_library.py`,
+`test_props_geom.py` and `test_props_godot.py`.
