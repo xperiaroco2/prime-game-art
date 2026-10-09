@@ -135,7 +135,8 @@ resolved, the least motion 1.8 degrees (the women's Idle_Neutral).
 
 `frames/frames.gd` runs in a real window off-screen, like the game's `tools\run.cmd shot` (`--position
 -30000,-30000 --resolution 480x600`; never headless and never minimized, where Godot does not draw and
-`RenderingServer.frame_post_draw` never fires). The engineer's kickoff of 2026-10-03 allows this, and CLAUDE.md's rules say so. Per
+`RenderingServer.frame_post_draw` never fires). The engineer's kickoff of 2026-10-03 allows this, and CLAUDE.md's rules say so. The
+window plays no sound (`--audio-driver Dummy`, art #69): with no audio output device, WASAPI would log an ERROR. Per
 animation:
 
 - **times**: 8 evenly spaced whole frames (12 for locomotion, `Walk*` and `Run*`), on the pack's 24 fps frames where
