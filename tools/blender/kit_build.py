@@ -9,9 +9,12 @@ axes: x, -z, y), makes the detail textures and materials, and exports. Per piece
 <out>/textures/<material>_{d,n}.png (made from the ambientCG CC0 maps, sources/ambientcg_materials_2k.toml) and
 <out>/build.json (what each GLB holds, measured in Blender before the export).
 
-Materials: one per kit material (plaster, wood, concrete, metal, glass), base colour white times the detail texture;
-the paint is the vertex colour (COLOR_0, multiplied into the base colour), so the kit needs five materials however
-many paints it uses. Each material is named `kit_<name>-vcol`: Godot's scene importer strips the suffix and sets
+Materials: one per exported material (v2, art #86, look.md section 5: `set` packs plaster, wood and concrete; metal;
+glass); the paint is the vertex colour (COLOR_0, multiplied into the base colour), so the kit needs three materials
+however many paints it uses. A pack's material is plain white in the GLB; its detail lives in the packed textures
+<out>/textures/set_d.png (RGB: the layers' detail), set_n0.png (RG, BA: layers 0 and 1's normal XY) and set_n1.png
+(RG: layer 2's), which godot/kit/kit_set.gdshader reads by the vertex colour's alpha (kit_geom.layer_alpha). An
+unpacked textured material keeps its own detail texture. Each material is named `kit_<name>-vcol`: Godot's scene importer strips the suffix and sets
 vertex colour as albedo with sRGB vertex colours (Godot 4.7.2's glTF importer misses that flag on a mesh's first
 primitive), so COLOR_0 holds sRGB-encoded paint (kit_geom.role_colour). KIT_EXPORT_OPTIONS is a plain constant (bpy is imported only in main()).
 """
@@ -109,12 +112,66 @@ def make_textures(bpy, np, spec, ambientcg: Path, out: Path) -> dict:
         bpy.data.images.remove(col)
         made[name] = {"d": str(out / f"{name}_d.png"), "n": str(out / f"{name}_n.png"),
                       "d_linear_mean": round(float(val.mean()), 4), "d_linear_std": round(float(val.std()), 4)}
+        made[name]["_d"], made[name]["_n"] = enc, nrm
+    for pack, d in spec.get("packs", {}).items():
+        made[pack] = pack_textures(bpy, np, pack, [made[m] for m in d["layers"]], out)
+    for name in spec["materials"]:
+        if name in made:
+            made[name].pop("_d", None)
+            made[name].pop("_n", None)
     return made
 
 
+def pack_textures(bpy, np, pack: str, layers: list, out: Path) -> dict:
+    """<pack>_d.png: the layers' sRGB detail in R, G, B; <pack>_n0.png: layer 0's normal XY in RG, layer 1's in BA;
+    <pack>_n1.png: layer 2's in RG (B 0.5, A 1)."""
+    n = TEX_SIZE * TEX_SIZE
+    d = np.ones((n, 4), dtype=np.float32)
+    for i, layer in enumerate(layers[:3]):
+        d[:, i] = layer["_d"]
+    normals = []
+    for layer in layers:
+        px = np.empty(n * 4, dtype=np.float32)
+        layer["_n"].pixels.foreach_get(px)
+        normals.append(px.reshape(-1, 4))
+    n0 = np.ones((n, 4), dtype=np.float32)
+    n1 = np.full((n, 4), 0.5, dtype=np.float32)
+    n1[:, 3] = 1.0
+    n0[:, 0:2] = normals[0][:, 0:2]
+    if len(normals) > 1:
+        n0[:, 2:4] = normals[1][:, 0:2]
+    if len(normals) > 2:
+        n1[:, 0:2] = normals[2][:, 0:2]
+    files = {}
+    for key, arr, alpha in (("d", d, False), ("n0", n0, True), ("n1", n1, False)):
+        img = bpy.data.images.new(f"{pack}_{key}", TEX_SIZE, TEX_SIZE, alpha=alpha, float_buffer=False)
+        img.colorspace_settings.name = "sRGB" if key == "d" else "Non-Color"
+        img.alpha_mode = "STRAIGHT"
+        img.pixels.foreach_set(arr.ravel())
+        img.filepath_raw = str(out / f"{pack}_{key}.png")
+        img.file_format = "PNG"
+        if alpha:
+            bpy.context.scene.render.image_settings.color_mode = "RGBA"
+        img.save()
+        files[key] = str(out / f"{pack}_{key}.png")
+    return {"files": files, "layers": [Path(layer["d"]).stem[:-2] for layer in layers]}
+
+
 def make_materials(bpy, spec, textures: dict) -> dict:
+    """One Blender material per exported material: a pack (plain white; its shader reads the packed textures in Godot)
+    or an unpacked kit material (its own detail texture)."""
     mats = {}
+    for pack, d in spec.get("packs", {}).items():
+        mat = bpy.data.materials.new(f"kit_{pack}-vcol")
+        mat.use_nodes = True
+        bsdf = mat.node_tree.nodes.get("Principled BSDF")
+        bsdf.inputs["Base Color"].default_value = (1, 1, 1, 1)
+        layers = [spec["materials"][m] for m in d["layers"]]
+        bsdf.inputs["Roughness"].default_value = sum(m.get("roughness", 0.8) for m in layers) / len(layers)
+        mats[pack] = mat
     for name, m in spec["materials"].items():
+        if m.get("pack"):
+            continue
         mat = bpy.data.materials.new(f"kit_{name}-vcol")
         mat.use_nodes = True
         nt = mat.node_tree
@@ -156,11 +213,12 @@ def mesh_object(bpy, scene, m: dict, spec: dict, mats: dict):
     me = bpy.data.meshes.new(m["name"])
     me.from_pydata([to_blender(v, origin) for v in m["verts"]], [], m["faces"])
     me.update()
-    names = sorted({spec["roles"][r]["material"] for r in m["roles"]})
+    exported = {r: kit_geom.export_material(spec, spec["roles"][r]["material"]) for r in set(m["roles"])}
+    names = sorted(set(exported.values()))
     for n in names:
         me.materials.append(mats[n])
     for poly, role in zip(me.polygons, m["roles"]):
-        poly.material_index = names.index(spec["roles"][role]["material"])
+        poly.material_index = names.index(exported[role])
     layers = [me.uv_layers.new(name="UVMap"), me.uv_layers.new(name="UV2")]
     for layer, key in zip(layers, ("uv0", "uv2")):
         for poly, uvs in zip(me.polygons, m[key]):

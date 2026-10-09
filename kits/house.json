@@ -1,7 +1,7 @@
 {
  "kit": "house",
- "version": 1,
- "about": "The House kit (art #74, map request #73): the modular shell pieces of the House map on its grid. Godot axes: metres, +Y up; walls run along +X from the pivot (the grid node), centred on the grid line, their exterior (ext) side at +Z; floors span +X/+Z from the pivot with their top at y 0. Every piece is one GLB in <raw>/kits/house/v1/. docs/kit.md.",
+ "version": 2,
+ "about": "The House kit (art #74, v2 art #86; map request #73): the modular shell pieces of the House map on its grid. Godot axes: metres, +Y up; walls run along +X from the pivot (the grid node), centred on the grid line, their exterior (ext) side at +Z; floors span +X/+Z from the pivot with their top at y 0. Every piece is one GLB in <raw>/kits/house/v<version>/. v2 appends pieces (v1's ids stay) and packs plaster, wood and concrete into one material. docs/kit.md.",
  "grid": {
   "modules_m": [1, 2],
   "floor_to_floor_m": 3.2,
@@ -20,13 +20,14 @@
   "parapet_h_m": 1.0,
   "gable_rise_per_m": 0.7,
   "glass_wall_h_m": 2.4,
-  "fence_h_m": 1.8
+  "fence_h_m": 1.8,
+  "pitched_roof_t_m": 0.2
  },
- "budget_tris": {"wall": 400, "corner": 60, "floor": 120, "roof": 200, "stairs": 2500, "ladder": 600, "railing": 1500, "fence": 1200, "gate": 4000, "glass": 600, "garage": 600},
+ "budget_tris": {"wall": 400, "corner": 60, "floor": 120, "roof": 200, "stairs": 2500, "ladder": 600, "railing": 1500, "fence": 1200, "gate": 4000, "glass": 600, "garage": 600, "pillar": 60, "porch": 400, "chimney": 200, "trim": 120, "gazebo": 1200},
  "materials": {
-  "plaster": {"source": "PaintedPlaster017", "tile_m": 1.0, "lum_std": 0.03, "normal_strength": 0.15, "roughness": 0.88},
-  "wood": {"source": "WoodFloor051", "tile_m": 1.0, "lum_std": 0.05, "normal_strength": 0.4, "roughness": 0.72},
-  "concrete": {"source": "Concrete034", "tile_m": 1.0, "lum_std": 0.04, "normal_strength": 0.3, "roughness": 0.92},
+  "plaster": {"source": "PaintedPlaster017", "tile_m": 1.0, "lum_std": 0.03, "normal_strength": 0.15, "roughness": 0.88, "pack": "set"},
+  "wood": {"source": "WoodFloor051", "tile_m": 1.0, "lum_std": 0.05, "normal_strength": 0.4, "roughness": 0.72, "pack": "set"},
+  "concrete": {"source": "Concrete034", "tile_m": 1.0, "lum_std": 0.04, "normal_strength": 0.3, "roughness": 0.92, "pack": "set"},
   "metal": {"source": "", "tile_m": 1.0, "lum_std": 0.0, "normal_strength": 0.0, "roughness": 0.5, "metallic": 0.6},
   "glass": {"source": "", "tile_m": 1.0, "lum_std": 0.0, "normal_strength": 0.0, "roughness": 0.05, "alpha": 0.25}
  },
@@ -49,6 +50,9 @@
   "ext": {"neg": "wall_int", "pos": "wall_ext", "skirting": true, "band": true},
   "basement": {"neg": "basement", "pos": "basement", "skirting": false, "band": false},
   "parapet": {"neg": "wall_ext", "pos": "wall_ext", "skirting": false, "band": false}
+ },
+ "packs": {
+  "set": {"layers": ["plaster", "wood", "concrete"], "about": "look.md section 5: one world material for plaster, wood and concrete; the vertex colour's alpha picks the layer (1.0, 0.75, 0.5), godot/kit/kit_set.gdshader reads the layer's detail and normal from the packed textures (textures/set_d.png RGB, set_n0.png, set_n1.png)"}
  },
  "pieces": [
   {"id": "wall_storey_1m_int", "type": "wall", "kind": "wall", "length": 1, "height": 3.0, "finish": "int"},
@@ -121,6 +125,40 @@
   {"id": "glass_wall_2m", "type": "glass", "kind": "glass", "length": 2},
   {"id": "glass_wall_1m", "type": "glass", "kind": "glass", "length": 1},
   {"id": "glass_door_2m", "type": "glass", "kind": "glass", "length": 2, "opening": "door"},
-  {"id": "garage_door_8m", "type": "garage_door", "kind": "garage", "length": 8, "height": 3.0, "door_h": 2.6}
+  {"id": "garage_door_8m", "type": "garage_door", "kind": "garage", "length": 8, "height": 3.0, "door_h": 2.6},
+  {"id": "wall_knee_end_int", "type": "end", "kind": "corner", "height": 2.2, "finish": "int"},
+  {"id": "glass_corner", "type": "glass_node", "kind": "corner", "node": "corner"},
+  {"id": "glass_end", "type": "glass_node", "kind": "corner", "node": "end"},
+  {"id": "glass_post", "type": "glass_node", "kind": "corner", "node": "post"},
+  {"id": "slab_edge_2m", "type": "slab_edge", "kind": "floor", "length": 2, "thick": 0.2, "role": "ceiling"},
+  {"id": "slab_edge_1m", "type": "slab_edge", "kind": "floor", "length": 1, "thick": 0.2, "role": "ceiling"},
+  {"id": "pillar_concrete", "type": "pillar", "kind": "pillar", "section": 0.4, "height": 3.0, "role": "concrete"},
+  {"id": "roof_pitched_2x2", "type": "pitched", "kind": "roof", "x": [0, 2], "z": [0, 2]},
+  {"id": "roof_pitched_2x1", "type": "pitched", "kind": "roof", "x": [0, 2], "z": [0, 1]},
+  {"id": "roof_pitched_eave_2m", "type": "pitched", "kind": "roof", "x": [0, 2], "z": [-0.5, 0], "ends": "-z", "overhang": true},
+  {"id": "roof_pitched_verge_2_l", "type": "pitched", "kind": "roof", "x": [-0.5, 0], "z": [0, 2], "ends": "-x", "overhang": true},
+  {"id": "roof_pitched_verge_2_r", "type": "pitched", "kind": "roof", "x": [0, 0.5], "z": [0, 2], "ends": "+x", "overhang": true},
+  {"id": "roof_pitched_verge_1_l", "type": "pitched", "kind": "roof", "x": [-0.5, 0], "z": [0, 1], "ends": "-x", "overhang": true},
+  {"id": "roof_pitched_verge_1_r", "type": "pitched", "kind": "roof", "x": [0, 0.5], "z": [0, 1], "ends": "+x", "overhang": true},
+  {"id": "roof_pitched_corner_l", "type": "pitched", "kind": "roof", "x": [-0.5, 0], "z": [-0.5, 0], "ends": "-x-z", "overhang": true},
+  {"id": "roof_pitched_corner_r", "type": "pitched", "kind": "roof", "x": [0, 0.5], "z": [-0.5, 0], "ends": "+x-z", "overhang": true},
+  {"id": "roof_pitched_ridge_2m", "type": "ridge", "kind": "roof", "x": [0, 2]},
+  {"id": "roof_pitched_ridge_end_l", "type": "ridge", "kind": "roof", "x": [-0.5, 0], "ends": "-x", "overhang": true},
+  {"id": "roof_pitched_ridge_end_r", "type": "ridge", "kind": "roof", "x": [0, 0.5], "ends": "+x", "overhang": true},
+  {"id": "glass_roof_2x2", "type": "glass_roof", "kind": "glass", "x": [0, 2], "z": [0, 2]},
+  {"id": "glass_roof_eave_2m", "type": "glass_roof", "kind": "glass", "x": [0, 2], "z": [-0.15, 0], "ends": "-z", "gutter": true, "overhang": true},
+  {"id": "glass_roof_ridge_2m", "type": "glass_ridge", "kind": "glass", "x": [0, 2]},
+  {"id": "glass_gable_tri_2m_up", "type": "glass_gable", "kind": "glass", "length": 2, "up": "+x"},
+  {"id": "glass_gable_tri_2m_down", "type": "glass_gable", "kind": "glass", "length": 2, "up": "-x"},
+  {"id": "glass_gable_band_2m", "type": "glass_gable", "kind": "glass", "length": 2, "band": true},
+  {"id": "porch_2x2", "type": "porch", "kind": "porch", "length": 2, "depth": 2, "height": 2.75, "front_height": 2.6, "thick": 0.12},
+  {"id": "chimney_stack", "type": "chimney", "kind": "chimney", "width": 1.0, "height": 2.0},
+  {"id": "cornice_bracket", "type": "bracket", "kind": "trim", "reach": 0.8, "drop": 0.6, "width": 0.16},
+  {"id": "fence_post_cap", "type": "cap", "kind": "fence", "width": 0.14, "slab": 0.03, "peak": 0.06, "role": "fence"},
+  {"id": "gate_post", "type": "gate_post", "kind": "fence", "width": 0.24, "height": 2.1},
+  {"id": "gazebo_sector", "type": "gazebo_sector", "kind": "gazebo", "radius": 2.8, "deck_h": 0.15, "post_h": 2.4},
+  {"id": "gazebo_sector_open", "type": "gazebo_sector", "kind": "gazebo", "radius": 2.8, "deck_h": 0.15, "post_h": 2.4, "open": true},
+  {"id": "gazebo_roof_sector", "type": "gazebo_roof", "kind": "gazebo", "radius": 3.0, "eave_h": 2.55, "apex_h": 3.4, "thick": 0.1},
+  {"id": "gazebo_finial", "type": "finial", "kind": "gazebo", "width": 0.1, "peak": 0.12, "role": "metal"}
  ]
 }
