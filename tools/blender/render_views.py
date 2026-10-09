@@ -475,4 +475,5 @@ def main() -> None:
     print(f"STATS {out / 'stats.json'}")
 
 
-main()
+if __name__ == "__main__":  # Blender runs a --python script as __main__; props_task_review.py imports it
+    main()
