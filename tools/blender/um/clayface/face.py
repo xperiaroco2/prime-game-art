@@ -12,7 +12,7 @@ from ..util import update
 from .kit import (
     CLOSED_PIECES, EAR_KEYS, LAYOUT, LOOK, LOUD_SCALE, MASK, MASK_UV, MOUTHS, NOSE_SCALE, SCALE_FADE, STATES,
     nose_axes, nose_loud)
-from .mesh import Ctx, add_keys, apply_skin, bind, data_object, drop_piece, materials, piece_coords
+from .mesh import Ctx, add_keys, apply_skin, bind as bind_head, data_object, drop_piece, materials, piece_coords
 from .mouth import build_mouth, outer2d
 from .eyes import build_eyes
 from .brows import build_brows
@@ -162,7 +162,7 @@ def build_face(h, picks, skin, coll=None, hair_rgb=None, bind=True, brow_colour=
     for o in face.objects():
         cl.add_rest(o)
         if bind:
-            bind(o, arm)
+            bind_head(o, arm)
     face.meta["tris"] = face.tris()
     face.meta["tris_total"] = sum(face.meta["tris"].values())
     face.meta["nose_eye_overlap_mm"] = nose_eye_overlap(face, lay)
@@ -302,7 +302,7 @@ def game_mesh(face, name=None, coll=None):
     add_keys(o, keyed, None)
     face.meta["mask_faces"] = write_mask_uv(o, mask_rules(face))  # round D
     cl.add_rest(o)
-    bind(o, arm)
+    bind_head(o, arm)
     arm.data.pose_position = old
     update()
     for p in pieces:
