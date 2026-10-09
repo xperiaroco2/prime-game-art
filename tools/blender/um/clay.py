@@ -384,7 +384,7 @@ def apply(cid, arm, parts, cfg, kinds=None):
     cache = {}
     for role, o in parts.items():
         info = {}
-        head_item = role in L.HEAD_ROLES or role not in ("top", "bottom", "shoes")
+        head_item = role in L.HEAD_ROLES or role not in L.BODY_ROLES
         if head_item:
             info["head_scale"] = head_scale(o, arm, cfg["head_scale"])
         if role in L.FACE_ROLES:  # the repo's scripted face: smooth already; the face kit (art #42 B) replaces it

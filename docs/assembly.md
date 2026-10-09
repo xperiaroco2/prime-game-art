@@ -184,9 +184,12 @@ to the contract's 1024; the colour map is half the side. The part then wears one
 
 The library: `<clay-lib>/<M|W>/<role>/<key>/` holds `piece.blend` (the baked object in world rest coordinates with its
 vertex groups and material), `tex/<role>_<key>_col.png`, `_nrm.png` and `piece.json` (the bake's numbers). The key
-(`claylook.piece_key`, 16 hex digits) hashes everything a piece depends on: role, body type, the part's recipe spec,
-the skin tone and the part's recolours, the clay settings of its kind, `BAKE_VERSION`, and for the head the hair and
-face settings. A character bake loads every piece it finds and bakes only the missing ones; the report's
+(`claylook.piece_key`, 16 hex digits) hashes what a piece depends on: role, body type, the part's recipe spec,
+the skin tone and the part's recolours, the clay settings of its kind and `BAKE_VERSION`; and what the build does to
+the part before the bake (`claylook.keys_for`): the shoes for the bottom (the tuck cull and the toe-bone split), the
+character's `extend` drops for the part they lengthen, the skeleton and `head_bone_rest` for every head item (the head
+scale's joint), and for the face parts and the head the head, hair and face settings. A new step in `assemble.build`
+that changes a part from something outside its spec must join its key there. A character bake loads every piece it finds and bakes only the missing ones; the report's
 `clay_bake` names each part's source (`baked` or `library`) and times. Raise `BAKE_VERSION` when the pass or the bake
 changes its output. The library lives in the raw folder, never in git.
 

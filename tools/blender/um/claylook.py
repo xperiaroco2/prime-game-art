@@ -29,6 +29,7 @@ RIMS = {"shoes": 0.003, "headwear": 0.003}
 HEAD_SCALE = 1.3  # the clay head and everything on it, about the Head bone's head, baked into the meshes
 SCALE_FADE = 0.08  # the x1.3 fades out over this height below the Head joint (long hair, the neck)
 HEAD_ROLES = ("head", "hair", "eyes", "brows", "mouth")  # plus every extra (a head item); clothing is not scaled
+BODY_ROLES = ("top", "bottom", "shoes")  # the clothing: never scaled with the head
 FACE_ROLES = ("eyes", "brows", "mouth")  # the repo's scripted face: the hook where the face kit (art #42 B) plugs in
 JOIN_INTO_HEAD = ("brows", "mouth")  # one head atlas, as round D: the surfaces stay within the contract's cap of 8
 GLOSSY = {"eye_white": 0.17, "eye_black": 0.08, "white": 0.17, "pupil": 0.08, "iris": 0.12, "teeth": 0.28,
@@ -146,7 +147,8 @@ def piece_key(role, gender, spec, cfg, skin=None, recolor=(), context=None, kind
     """The content key of one baked piece in the clay library: everything its clay mesh and textures depend on (the
     role, the body type, the part's recipe spec, the character's skin tone and the recolours of this part, the clay
     settings of its kind and the bake version). Two characters wearing the same piece in the same colours share it.
-    `context` adds what a face part depends on (the head it is built on). Returns 16 hex digits."""
+    `context` adds what the piece depends on beyond its own spec: the head a face part is built on, the shoes the
+    bottom is culled against, the part's `extend` edits, the rig a head item is scaled on. Returns 16 hex digits."""
     kind = kind or role
     data = {
         "v": BAKE_VERSION, "role": role, "gender": gender, "spec": spec,
@@ -162,23 +164,45 @@ def piece_key(role, gender, spec, cfg, skin=None, recolor=(), context=None, kind
 
 
 def keys_for(recipe, rc, cfg):
-    """{role: library key} for every part of character rc: the pack parts, its extras and the scripted face (which
-    depends on the head it is built on, the face settings and the skin)."""
+    """{role: library key} for every part of character rc: the pack parts, its extras and the scripted face. Beyond
+    a part's own spec, skin and recolours the key holds what the build does to it before the bake (assemble.build):
+    every head item (the head, hair, extras and face; clay.head_scale) is scaled about the Head joint of the body
+    type's skeleton, so its key holds the skeleton and `head_bone_rest`; the bottom is culled against the shoes
+    (fit.tuck_cull) and its foot weights split at the shoes' ball (toes.add_toe_bones), so its key holds the shoes;
+    a part the character's `extend` lengthens (fit.extend_edge) holds its edits; a face part holds the head it is
+    built on, the face settings and the hair."""
     g, skin = rc["gender"], rc.get("skin")
     recolor = rc.get("recolor", [])
 
     def rec(role):
         return [r for r in recolor if r.get("part") == role]
 
-    context = {"head": rc["head"], "face": recipe.get("face", {}).get(g), "shading": recipe.get("face_shading", "smooth"),
-               "hair": rc["hair"]}
+    def extend(role):
+        return [{"drop": e["drop"]} for e in rc.get("extend", []) if e.get("part") == role]
+
+    rig = {"skeleton": recipe.get("skeleton", {}).get(g), "head_bone_rest": recipe.get("head_bone_rest")}
+
+    def ctx(role, **more):
+        """The context of a part: the rig for a head item, the shoes for the bottom, the part's extend edits."""
+        c = dict(more)
+        if role not in BODY_ROLES:
+            c["rig"] = rig
+        if role == "bottom":
+            c["shoes"] = rc["shoes"]
+        if extend(role):
+            c["extend"] = extend(role)
+        return c or None
+
+    face = {"head": rc["head"], "face": recipe.get("face", {}).get(g), "shading": recipe.get("face_shading", "smooth"),
+            "hair": rc["hair"]}
     joined = {r: rc[r] for r in JOIN_INTO_HEAD}  # the face parts baked into the head's atlas
-    keys = {"head": piece_key("head", g, rc["head"], cfg, skin, rec("head"), context=dict(context, joined=joined))}
-    keys["hair"] = piece_key("hair", g, rc["hair"], cfg, None, rec("hair"))
+    keys = {"head": piece_key("head", g, rc["head"], cfg, skin, rec("head"), context=ctx("head", joined=joined, **face))}
+    keys["hair"] = piece_key("hair", g, rc["hair"], cfg, None, rec("hair"), context=ctx("hair"))
     for e in rc.get("extras", []):
-        keys[e["role"]] = piece_key(e["role"], g, e, cfg, None, rec(e["role"]), kind=kind_of(e["role"]))
-    for role in ("top", "bottom", "shoes"):
-        keys[role] = piece_key(role, g, rc[role], cfg, skin, rec(role))
+        keys[e["role"]] = piece_key(e["role"], g, e, cfg, None, rec(e["role"]), context=ctx(e["role"]),
+                                    kind=kind_of(e["role"]))
+    for role in BODY_ROLES:
+        keys[role] = piece_key(role, g, rc[role], cfg, skin, rec(role), context=ctx(role))
     for role in FACE_ROLES:
-        keys[role] = piece_key(role, g, rc[role], cfg, skin, rec(role), context=context)
+        keys[role] = piece_key(role, g, rc[role], cfg, skin, rec(role), context=ctx(role, **face))
     return keys

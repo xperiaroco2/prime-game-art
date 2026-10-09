@@ -23,7 +23,8 @@ CHAR = {
     "eyes": {"style": "dots"}, "brows": {"style": "raised_thick"}, "mouth": {"style": "smile"},
     "pose": {"action": "Idle", "frame": 0},
 }
-RECIPE = {"face": {"M": {"mouth_dz": -0.088}}, "face_shading": "smooth", "look": "clay", "characters": [CHAR]}
+RECIPE = {"face": {"M": {"mouth_dz": -0.088}}, "face_shading": "smooth", "look": "clay", "characters": [CHAR],
+          "skeleton": {"M": "Business Man.glb", "W": "Suit.glb"}, "head_bone_rest": [-0.0003, -0.0431, 1.5873]}
 
 
 class LookAndSettings(unittest.TestCase):
@@ -100,6 +101,36 @@ class PieceKeys(unittest.TestCase):
         self.assertNotEqual(a["top"], L.keys_for(RECIPE, CHAR, cfg2)["top"])
         self.assertEqual(a["shoes"], L.keys_for(RECIPE, CHAR, cfg2)["shoes"])
 
+
+    def test_shoes_change_the_bottoms_key(self) -> None:
+        # the bottom is culled against the shoes (fit.tuck_cull): the same trousers over other boots are another piece
+        boots = copy.deepcopy(CHAR)
+        boots["shoes"] = {"file": "Adventurer.glb", "object": "Adventurer_Feet"}
+        a, b = L.keys_for(RECIPE, CHAR, self.cfg), L.keys_for(RECIPE, boots, self.cfg)
+        self.assertNotEqual(a["bottom"], b["bottom"])
+        self.assertNotEqual(a["shoes"], b["shoes"])
+        for role in ("top", "head", "hair", "accessory", "eyes"):
+            self.assertEqual(a[role], b[role], role)
+
+    def test_extend_changes_only_its_part(self) -> None:
+        longer = copy.deepcopy(CHAR)
+        longer["extend"] = [{"part": "top", "drop": 0.02, "why": "a gap at the waist"}]
+        a, b = L.keys_for(RECIPE, CHAR, self.cfg), L.keys_for(RECIPE, longer, self.cfg)
+        self.assertNotEqual(a["top"], b["top"])
+        self.assertEqual(a["bottom"], b["bottom"])
+        reason = copy.deepcopy(longer)
+        reason["extend"][0]["why"] = "another note"
+        self.assertEqual(b["top"], L.keys_for(RECIPE, reason, self.cfg)["top"])  # the note is not the geometry
+
+    def test_rig_changes_only_the_head_items(self) -> None:
+        moved = dict(RECIPE, head_bone_rest=[0.0, -0.04, 1.6])
+        a, b = L.keys_for(RECIPE, CHAR, self.cfg), L.keys_for(moved, CHAR, self.cfg)
+        for role in ("head", "hair", "accessory", "eyes", "brows", "mouth"):
+            self.assertNotEqual(a[role], b[role], role)
+        for role in L.BODY_ROLES:
+            self.assertEqual(a[role], b[role], role)
+        other = dict(RECIPE, skeleton={"M": "Worker.glb", "W": "Suit.glb"})
+        self.assertNotEqual(a["hair"], L.keys_for(other, CHAR, self.cfg)["hair"])
 
 if __name__ == "__main__":
     unittest.main()
