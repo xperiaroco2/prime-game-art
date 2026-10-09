@@ -145,6 +145,40 @@ edits = [{ op = "stride", speed_m_s = 7.0, rate = 0.8202, body = "men" },
          { op = "stride", speed_m_s = 7.0, rate = 0.7627, body = "women" }]
 needs = [{ need = "Sprint forward at 7.0 m/s", no = 5, layer = "full", speed_m_s = 7.0, rate = 1.0 }]
 
+# ------------------------------------------------------------------------------------------------ crouching
+[[clips]]
+name = "Crouch_Idle_Loop"
+source = "ual:Crouch_Idle_Loop"
+loop = true
+# Art #70: the relaxed idle's open loose hands and thumb (the idle's turn). The women's open hands went 2.1 cm into the
+# thighs on 70 of 88 frames (the men's 0.3 cm on 12: left); turning the arms out made it worse (2.3 at 12 degrees), so
+# arm_offset swings them forward (axis "swing"): 0 cm from 20 degrees (one grid: -20 3.3, -10 3.6, 10 2.4, 30 0.0).
+# Measured (men / women): in place, the feet planted (slide 0.3 / 0.3 cm/s mean, 0.5 / 0.6 max), seam step 0.25 / 0.24
+# median steps, lowest vertex -1.2 / -1.0 cm, no pop; the head as the source's (no head_level: it looks ahead and down)
+edits = [{ op = "hands_relax", curl_deg = { Index = [16, 22, 12], Middle = [20, 26, 14], Ring = [26, 30, 16], Pinky = [32, 34, 18], Thumb = [12, 12] } },
+         { op = "thumb_in", from_clip = "Idle_Loop" },
+         { op = "arm_offset", axis = "swing", abduct_deg = 20, body = "women" }]
+needs = [{ need = "Crouch idle (new: the game has no crouch yet)", layer = "full" }]
+
+[[clips]]
+name = "Crouch_Fwd_Loop"
+source = "ual:Crouch_Fwd_Loop"
+loop = true
+speed_m_s = 0.75
+# Art #70: UAL's sneaking crouch walk, 1.5 steps/s of 0.5 m. stride: its feet run 0.753 m/s (men) and 0.798 (women);
+# at its own cadence the stride plants them at 0.75 on both (scale 0.996 / 0.94, fit ok, IK miss 0, slide 0.0 cm/s).
+# floor: the toes went 1.42 / 1.37 cm into the floor (after: -0.23 / -0.26). The hands went 7.6 / 6.4 cm into the
+# thighs at the deepest steps (25 / 32 of 60 frames); turning the arms out (12 degrees) left 7.6 / 4.6. One grid of the
+# swing (men / women: -30 - / 4.0, -20 1.2 / 5.6, -10 5.9 / 4.6, 10 6.4 / 6.3, 20 7.3 / 5.0): back 20 degrees, then
+# the women's arms out 12 (1.2 cm on 2 frames / 2.0 cm on 9: art #70's review). The hips face 6.7 degrees right of the
+# aim on average, the head 1.9 (the source's own turn; warned). Seam step 1.0 median steps
+edits = [{ op = "stride", speed_m_s = 0.75, rate = 1.0 }, { op = "floor", mode = "lift" },
+         { op = "hands_relax", curl_deg = { Index = [16, 22, 12], Middle = [20, 26, 14], Ring = [26, 30, 16], Pinky = [32, 34, 18], Thumb = [12, 12] } },
+         { op = "thumb_in", from_clip = "Idle_Loop" },
+         { op = "arm_offset", axis = "swing", abduct_deg = -20 },
+         { op = "arm_offset", abduct_deg = 12, body = "women" }]
+needs = [{ need = "Crouch walk forward (the game plays it at its own speed / 0.75)", layer = "full", speed_m_s = 0.75, rate = 1.0 }]
+
 # ------------------------------------------------------------------------------------------------ the jump
 [[clips]]
 name = "Jump_Start"

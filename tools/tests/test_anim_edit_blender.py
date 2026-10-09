@@ -103,6 +103,12 @@ if not IN_BLENDER:
             self.assertLessEqual(a["hands_in_legs_after_cm"], 0.0)
             self.assertLessEqual(a["deg"], 12.0)
 
+        def test_women_arm_swing(self) -> None:
+            sw = self.r["swing"]
+            self.assertEqual((sw["axis"], sw["deg"]), ("swing", 15.0))
+            for side in "LR":  # a 15-degree swing of a ~0.5 m arm moves each wrist about 13 cm ahead
+                self.assertGreater(sw[f"wrist_{side}_forward_cm"], 6.0)
+
         def test_women_hand_spacing(self) -> None:
             h = self.r["hands"]
             self.assertTrue(h["found"])
@@ -284,6 +290,14 @@ def _blender_main(argv: list[str]) -> None:
     idle = ae.apply(ae.Frames.from_action(acts["Idle_Loop"], target.rig, True),
                     [{"op": "arm_offset", "abduct_deg": "auto", "body": "women"}], target, "women")
     res["arms"] = idle.info["steps"][0]
+    # art #70: arm_offset's swing turns both arms forward about the chest's left-right axis (positive: the hands ahead)
+    base = ae.Frames.from_action(acts["Idle_Loop"], target.rig, True)
+    swung = ae.apply(base, [{"op": "arm_offset", "axis": "swing", "abduct_deg": 15}], target, "women")
+    P0, P1 = base.poses()[0], swung.poses()[0]
+    fwd = ae._turn_of(target.rig, P0, ae.CHEST) @ Vector((0.0, -1.0, 0.0))
+    res["swing"] = {**swung.info["steps"][0], **{
+        f"wrist_{s}_forward_cm": 100 * (ae._world(target.rig, P1, f"Wrist.{s}")
+                                       - ae._world(target.rig, P0, f"Wrist.{s}")).dot(fwd) for s in "LR"}}
     # the hands of the women's push set 0.30 m apart on its last frame (the search goes both ways)
     push = ae.apply(ae.Frames.from_action(acts["Push_Loop"], target.rig, True),
                     [{"op": "hand_spacing", "gap_m": 0.30, "at": "end"}], target, "women")

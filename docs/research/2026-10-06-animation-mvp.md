@@ -139,6 +139,7 @@ Times are in seconds; "w" means the women only. The last column holds what is le
 | 29 | Face | none | | | none | procedural |
 | 30-34 | Gestures | none | | | none | after the MVP |
 | 35 | First-person arms | none | | | none | the game side |
+| new (art #70) | Crouch: idle and walk | `Crouch_Idle_Loop` (Crouch_Idle), `Crouch_Fwd_Loop` (Crouch_Fwd) | UAL Crouch_Idle_Loop, Crouch_Fwd_Loop | both: the relaxed idle's open hands and thumb; idle: w: arms swung forward 20 deg (hands 2.1 cm in the thighs to 0); walk: stride to 0.75 m/s at its 1.5 steps/s (scale 0.996 / 0.94), floor lift (1.4 cm), arms swung back 20 deg, w: out 12 deg (hands 7.6 / 6.4 cm in the thighs to 1.2 / 2.0) | the engineer's review (D:/prime-art-raw/review/anim/70) | the game has no crouch yet: it plays the walk at its speed / 0.75; the walk's hips face 6.7 deg right of the aim |
 
 Review only: `Jog_Bwd_TTM_Loop` (Meshy's backward jog stride-warped to 4.5 m/s): **fail**, its legs split (scale 7.1
 men, 6.6 women; IK misses of 487 and 734 mm on contact).
@@ -235,6 +236,7 @@ foot, hovering on that line, flicked 53 (men) and 55 degrees (women) and back. T
 | Jump_Start | m / w | -1.9 / -2.3 | (in place) | 0 / 0 | the take-off's toe dip, 4 frames; past -2 cm on the women |
 | Getup_Back | m / w | 0.0 / 0.0 | 6.1 / 39 and 7.0 / 42 | 0 / 2.8 | pass |
 | Jump_Air_Loop | m / w | -5.3 / -5.5 | 0.6 / 1.9 | 0 / 0 | exempt (in place); no pop since the floor clamp fades (was -18.3 / -17.2 with the right toe flicking down) |
+| Crouch_Idle_Loop, Crouch_Fwd_Loop (art #70) | m / w | -1.2, -0.2 / -1.0, -0.3 | idle 0.3 / 0.5 and 0.3 / 0.6; walk 0.0 on contact at 0.75 m/s | 0.3, 1.2 / 0, 2.0 | the walk's hands brush the thighs at the deepest step (1 / 5 frames over 1 cm) |
 
 Stride warping (build reports): the jog at 4.5 m/s plays 28 frames as 21 (rate 1.333), its planted feet at exactly
 4.50 m/s, IK miss 0.0 mm, the knee never past straight; its feet scale (0.567 men, 0.525 women) is under the warn mark
