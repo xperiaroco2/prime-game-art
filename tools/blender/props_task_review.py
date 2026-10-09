@@ -165,7 +165,7 @@ def lineups(spec: dict, glbs: Path, out: Path) -> list[str]:
         band = 24
         sheet = np.empty((band + rows * CELL, 4 * CELL, 3), dtype=np.float32)
         sheet[:] = rv.BACKGROUND
-        rv.draw_text(sheet, f"#82 PROPS: {name.upper()}  (FRONT, 3/4; CAPSULE 1.8 M)", 6, 6, 2)
+        rv.draw_text(sheet, f"PROPS 82: {name.upper()}  FRONT AND 3/4  CAPSULE 1.8 M", 6, 6, 2)
         for i, p in enumerate(props):
             clear()
             cam = setup(CELL, CELL)
@@ -187,6 +187,9 @@ def lineups(spec: dict, glbs: Path, out: Path) -> list[str]:
         made.append(str(path))
         print(f"REVIEW {path}")
     return made
+
+
+ZOOM_X, ZOOM_Y, ZOOM_W, ZOOM_H = 530, 310, 220, 150
 
 
 def switch_8m(glbs: Path, out: Path) -> str:
@@ -214,7 +217,13 @@ def switch_8m(glbs: Path, out: Path) -> str:
     canvas = np.empty((720, 1280, 3), dtype=np.float32)
     canvas[:] = rv.BACKGROUND
     paste(canvas, img, 0, 0)
-    rv.draw_text(canvas, "WALL_SWITCH_POST FROM 8 M, EYE 1.6 M, FOV 75: LEFT ON, RIGHT OFF", 8, 8, 2)
+    crop = canvas[ZOOM_Y:ZOOM_Y + ZOOM_H, ZOOM_X:ZOOM_X + ZOOM_W].copy()  # the switches, 2x and pixel for pixel
+    zoom = np.repeat(np.repeat(crop, 2, axis=0), 2, axis=1)
+    zy, zx = 720 - zoom.shape[0] - 8, 1280 - zoom.shape[1] - 8
+    canvas[zy - 2:zy + zoom.shape[0] + 2, zx - 2:zx + zoom.shape[1] + 2] = 0.9
+    canvas[zy:zy + zoom.shape[0], zx:zx + zoom.shape[1]] = zoom
+    rv.draw_text(canvas, "WALL_SWITCH_POST FROM 8 M  EYE 1.6 M  FOV 75: LEFT ON  RIGHT OFF", 8, 8, 2)
+    rv.draw_text(canvas, "2X OF THE SAME PIXELS", zx, zy - 22, 2)
     rv.write_png(path, canvas)
     print(f"REVIEW {path}")
     return str(path)
