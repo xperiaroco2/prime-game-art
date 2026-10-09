@@ -1,0 +1,76 @@
+# Level 2: the attic: the house layout (art #75, docs/house.md). Generated once from the design doc, then edited by hand.
+# Coordinates are the design doc's: metres, origin at the plot's north-west corner, x east, y south; a rect is
+# [x, y, width, depth] from its north-west corner. Godot: x = x, z = y; heights are local to floor_y.
+level = "attic"
+node = "AtticAndRoof"
+floor_y = 6.4
+walls = "knee"
+
+[[rooms]]
+id = "attic"
+title = "Attic"
+node = "Attic"
+rect = [20, 26, 20, 14]
+kind = "room"
+floor = "boards"
+stations = [
+  { name = "HidingSpots", at = [4.0, 0.0, 10.0] },
+]
+markers = [
+  { name = "Knife3", at = [16.0, 0.0, 11.0], group = "spawn_knife" },
+]
+
+[[doors]]
+at = [40, 33]
+rooms = ["attic", "roof"]
+names = { attic = "Door1", roof = "Door1" }
+kind = "door"
+leaf = "none"
+note = "the locked door to the roof deck (doc 39.5, 33)"
+
+[[windows]]
+at = [25, 26]
+room = "attic"
+
+[[windows]]
+at = [35, 26]
+room = "attic"
+
+[[windows]]
+at = [25, 40]
+room = "attic"
+
+[[windows]]
+at = [35, 40]
+room = "attic"
+
+[[holes]]
+id = "hatch"
+tile = [27, 28]
+piece = "floor_boards_2x2_hatch"
+note = "the kit's hatch tile centres its hole at (28, 29); the doc says (28, 28.5)"
+
+[[stairs]]
+id = "hatch_ladder"
+piece = "ladder_attic"
+rect = [27.65, 28.3, 0.7, 1.38]
+y = 3.2
+climb = "N"
+
+[[placeholders]]
+name = "RoofPitched"
+room = "attic"
+at = [30, 2.2, 33]
+note = "the pitched roof over the attic (kit v2; Q2 default B, 0.35 per metre)"
+
+[[placeholders]]
+name = "GableWindowWest"
+room = "attic"
+at = [20, 2.6, 33]
+note = "a gable window (kit v2)"
+
+[[placeholders]]
+name = "GableWindowEast"
+room = "attic"
+at = [40, 2.6, 29]
+note = "a gable window (kit v2)"

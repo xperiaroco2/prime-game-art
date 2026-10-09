@@ -1,0 +1,214 @@
+# Level 1: the second floor and the balcony: the house layout (art #75, docs/house.md). Generated once from the design doc, then edited by hand.
+# Coordinates are the design doc's: metres, origin at the plot's north-west corner, x east, y south; a rect is
+# [x, y, width, depth] from its north-west corner. Godot: x = x, z = y; heights are local to floor_y.
+level = "upper"
+node = "SecondFloor"
+floor_y = 3.2
+walls = "storey"
+footprint = [18, 24, 24, 20]
+
+[[rooms]]
+id = "bedroom"
+title = "Bedroom"
+node = "Bedroom"
+rect = [18, 24, 8, 10]
+kind = "room"
+floor = "boards"
+markers = [
+  { name = "Circle07", at = [3.0, 0.5, 4.0], group = "spawn_circle" },
+]
+
+[[rooms]]
+id = "kids_room"
+title = "Kids' room"
+node = "KidsRoom"
+rect = [18, 34, 8, 10]
+kind = "room"
+floor = "boards"
+markers = [
+  { name = "Circle08", at = [3.0, 0.5, 6.0], group = "spawn_circle" },
+]
+
+[[rooms]]
+id = "landing"
+title = "Landing"
+node = "Landing"
+rect = [26, 24, 8, 20]
+kind = "room"
+floor = "boards"
+
+[[rooms]]
+id = "study"
+title = "Study"
+node = "Study"
+rect = [34, 24, 8, 8]
+kind = "room"
+floor = "boards"
+stations = [
+  { name = "Printer", at = [6.0, 0.0, 5.0] },
+]
+markers = [
+  { name = "Circle10", at = [3.0, 0.5, 4.0], group = "spawn_circle" },
+]
+
+[[rooms]]
+id = "bathroom"
+title = "Bathroom"
+node = "Bathroom"
+rect = [34, 32, 8, 4]
+kind = "room"
+floor = "lino"
+
+[[rooms]]
+id = "guest_room"
+title = "Guest room"
+node = "GuestRoom"
+rect = [34, 36, 8, 8]
+kind = "room"
+floor = "boards"
+markers = [
+  { name = "Circle09", at = [4.0, 0.5, 4.0], group = "spawn_circle" },
+]
+
+[[rooms]]
+id = "balcony"
+title = "Balcony"
+node = "Balcony"
+rect = [30, 21, 10, 3]
+kind = "open"
+floor = "boards"
+railing = "balcony"
+
+[[doors]]
+at = [26, 28]
+rooms = ["bedroom", "landing"]
+names = { bedroom = "Door1", landing = "Door1" }
+kind = "door"
+leaf = "none"
+
+[[doors]]
+at = [26, 40]
+rooms = ["kids_room", "landing"]
+names = { kids_room = "Door1", landing = "Door2" }
+kind = "door"
+leaf = "none"
+
+[[doors]]
+at = [34, 28]
+rooms = ["study", "landing"]
+names = { study = "Door1", landing = "Door6" }
+kind = "door"
+leaf = "none"
+
+[[doors]]
+at = [34, 34]
+rooms = ["bathroom", "landing"]
+names = { bathroom = "Door1", landing = "Door3" }
+kind = "door"
+leaf = "none"
+
+[[doors]]
+at = [34, 40]
+rooms = ["guest_room", "landing"]
+names = { guest_room = "Door1", landing = "Door4" }
+kind = "door"
+leaf = "none"
+
+[[doors]]
+at = [32, 24]
+rooms = ["landing", "balcony"]
+names = { landing = "Door5", balcony = "Door1" }
+kind = "door"
+leaf = "none"
+
+[[doors]]
+at = [39, 21]
+rooms = ["balcony"]
+names = { balcony = "Door2" }
+kind = "gap"
+leaf = "none"
+note = "the top of the external stairs"
+
+[[windows]]
+at = [20, 24]
+room = "bedroom"
+
+[[windows]]
+at = [24, 24]
+room = "bedroom"
+
+[[windows]]
+at = [18, 27]
+room = "bedroom"
+
+[[windows]]
+at = [18, 31]
+room = "bedroom"
+
+[[windows]]
+at = [18, 37]
+room = "kids_room"
+
+[[windows]]
+at = [18, 41]
+room = "kids_room"
+
+[[windows]]
+at = [20, 44]
+room = "kids_room"
+
+[[windows]]
+at = [24, 44]
+room = "kids_room"
+
+[[windows]]
+at = [38, 24]
+room = "study"
+
+[[windows]]
+at = [42, 26]
+room = "study"
+
+[[windows]]
+at = [42, 30]
+room = "study"
+
+[[windows]]
+at = [42, 34]
+room = "bathroom"
+
+[[windows]]
+at = [42, 38]
+room = "guest_room"
+
+[[windows]]
+at = [42, 42]
+room = "guest_room"
+
+[[windows]]
+at = [36, 44]
+room = "guest_room"
+
+[[windows]]
+at = [40, 44]
+room = "guest_room"
+
+[[holes]]
+id = "main_stairs"
+rect = [26, 30, 4, 6]
+railing = true
+
+[[stairs]]
+id = "main_stairs"
+piece = "stairs_main"
+rect = [26, 30, 2, 6]
+y = 0.0
+climb = "N"
+
+[[stairs]]
+id = "balcony_stairs"
+piece = "stairs_balcony"
+rect = [38, 15, 2, 6]
+y = 0.0
+climb = "S"
+note = "Q6 default: a straight flight north of the balcony, its foot on the yard at y15."

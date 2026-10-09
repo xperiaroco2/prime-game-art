@@ -1,0 +1,155 @@
+# Level -1: the basement: the house layout (art #75, docs/house.md). Generated once from the design doc, then edited by hand.
+# Coordinates are the design doc's: metres, origin at the plot's north-west corner, x east, y south; a rect is
+# [x, y, width, depth] from its north-west corner. Godot: x = x, z = y; heights are local to floor_y.
+level = "basement"
+node = "Basement"
+floor_y = -3.2
+walls = "basement"
+
+[[rooms]]
+id = "storage"
+title = "Storage"
+node = "Storage"
+rect = [14, 18, 16, 16]
+kind = "room"
+floor = "concrete"
+stations = [
+  { name = "Buns", at = [3.0, 0.0, 4.0] },
+  { name = "Meat", at = [9.0, 0.0, 3.0] },
+  { name = "WineRack", at = [2.0, 0.0, 8.0] },
+  { name = "Boxes", at = [7.0, 0.0, 11.0] },
+  { name = "SwitchA", at = [2.0, 0.0, 14.0] },
+  { name = "PartsShelf", at = [13.0, 0.0, 14.0] },
+]
+markers = [
+  { name = "Package01", at = [1.5, 0.0, 1.5], group = "spawn_package" },
+  { name = "Package02", at = [4.5, 0.0, 1.5], group = "spawn_package" },
+  { name = "Package03", at = [7.5, 0.0, 1.5], group = "spawn_package" },
+  { name = "Package04", at = [13.5, 0.0, 1.5], group = "spawn_package" },
+  { name = "Package05", at = [1.5, 0.0, 5.0], group = "spawn_package" },
+  { name = "Package06", at = [5.0, 0.0, 6.0], group = "spawn_package" },
+  { name = "Package07", at = [14.0, 0.0, 5.5], group = "spawn_package" },
+  { name = "Package08", at = [1.5, 0.0, 11.0], group = "spawn_package" },
+  { name = "Package09", at = [5.0, 0.0, 13.5], group = "spawn_package" },
+  { name = "Package10", at = [14.5, 0.0, 14.5], group = "spawn_package" },
+]
+
+[[rooms]]
+id = "darkroom"
+title = "Darkroom"
+node = "Darkroom"
+rect = [14, 34, 16, 10]
+kind = "room"
+floor = "concrete"
+stations = [
+  { name = "PhotoBoard", at = [8.0, 0.0, 6.0] },
+]
+
+[[rooms]]
+id = "corridor"
+title = "Corridor"
+node = "Corridor"
+rect = [30, 26, 10, 4]
+kind = "room"
+floor = "concrete"
+
+[[rooms]]
+id = "boiler_room"
+title = "Boiler room"
+node = "BoilerRoom"
+rect = [30, 34, 10, 12]
+kind = "room"
+floor = "concrete"
+stations = [
+  { name = "SwitchB", at = [2.0, 0.0, 10.0] },
+]
+
+[[rooms]]
+id = "generator_hall"
+title = "Generator hall"
+node = "GeneratorHall"
+rect = [40, 22, 18, 20]
+kind = "room"
+floor = "concrete"
+stations = [
+  { name = "Generator", at = [9.0, 0.0, 10.0] },
+]
+
+[[rooms]]
+id = "pump_room"
+title = "Pump room"
+node = "PumpRoom"
+rect = [44, 42, 10, 8]
+kind = "room"
+floor = "concrete"
+stations = [
+  { name = "SwitchC", at = [8.0, 0.0, 6.0] },
+]
+
+[[rooms]]
+id = "switch_room"
+title = "Switch room"
+node = "SwitchRoom"
+rect = [42, 16, 8, 6]
+kind = "room"
+floor = "concrete"
+stations = [
+  { name = "SwitchD", at = [6.5, 0.0, 3.5] },
+]
+
+[[rooms]]
+id = "passage"
+title = "Passage"
+node = "Passage"
+rect = [58, 28, 8, 6]
+kind = "room"
+floor = "concrete"
+
+[[doors]]
+at = [30, 28]
+rooms = ["storage", "corridor"]
+names = { storage = "Door1", corridor = "Door1" }
+kind = "door"
+leaf = "none"
+
+[[doors]]
+at = [22, 34]
+rooms = ["storage", "darkroom"]
+names = { storage = "Door2", darkroom = "Door1" }
+kind = "door"
+leaf = "none"
+
+[[doors]]
+at = [40, 28]
+rooms = ["corridor", "generator_hall"]
+names = { corridor = "Door2", generator_hall = "Door1" }
+kind = "door"
+leaf = "none"
+
+[[doors]]
+at = [40, 38]
+rooms = ["boiler_room", "generator_hall"]
+names = { boiler_room = "Door1", generator_hall = "Door2" }
+kind = "door"
+leaf = "none"
+
+[[doors]]
+at = [49, 42]
+rooms = ["generator_hall", "pump_room"]
+names = { generator_hall = "Door3", pump_room = "Door1" }
+kind = "door"
+leaf = "none"
+
+[[doors]]
+at = [46, 22]
+rooms = ["switch_room", "generator_hall"]
+names = { switch_room = "Door1", generator_hall = "Door4" }
+kind = "door"
+leaf = "none"
+
+[[doors]]
+at = [58, 31]
+rooms = ["generator_hall", "passage"]
+names = { generator_hall = "Door5", passage = "Door1" }
+kind = "door"
+leaf = "none"

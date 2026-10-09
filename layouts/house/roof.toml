@@ -1,0 +1,32 @@
+# Level 2: the roof deck: the house layout (art #75, docs/house.md). Generated once from the design doc, then edited by hand.
+# Coordinates are the design doc's: metres, origin at the plot's north-west corner, x east, y south; a rect is
+# [x, y, width, depth] from its north-west corner. Godot: x = x, z = y; heights are local to floor_y.
+level = "roof"
+node = "AtticAndRoof"
+floor_y = 6.4
+walls = "none"
+
+[[rooms]]
+id = "roof"
+title = "Roof"
+node = "Roof"
+rect = [17, 23, 26, 22]
+kind = "open"
+floor = "roof"
+railing = "parapet"
+stations = [
+  { name = "Lookout", at = [13.0, 0.0, 19.5] },
+  { name = "Loot", at = [24.5, 0.0, 2.0] },
+]
+
+[[placeholders]]
+name = "Chimney1"
+room = "roof"
+at = [22, 0.0, 42]
+note = "a chimney (kit v2)"
+
+[[placeholders]]
+name = "Chimney2"
+room = "roof"
+at = [38, 0.0, 24.5]
+note = "a chimney (kit v2)"
