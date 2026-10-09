@@ -71,7 +71,7 @@ class SideGripBlenderTest(unittest.TestCase):
         self.assertEqual(set(ends), {"first", "last", "ref"})
         last = ends["last"]
         for side in "LR":
-            self.assertLessEqual(last["to_ref_cm"][side], 0.15)  # 0.08 cm on the men (art #65)
+            self.assertLessEqual(last["to_ref_cm"][side], 0.1)  # 0.08 cm on the men (art #65), 0.1 on the women
             self.assertLess(abs(last["palm_up_deg"][side]), 1.0)
         self.assertAlmostEqual(last["gap_cm"], 45.0, delta=1.5)
         self.assertAlmostEqual(ends["ref"]["gap_cm"], 45.0, delta=1.5)
