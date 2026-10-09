@@ -6,6 +6,19 @@ Blender 5.2.2 LTS (pinned in `tools/runner/pins.py`) runs only in the background
 A Python error inside the script fails the command and prints the end of Blender's output, traceback included.
 Everything these commands write goes to `tools/out/` and is never committed.
 
+## The heavy-run lock: one Blender or Godot process at a time
+
+Several workflows may run at once on the shared PC, but their Blender and Godot processes take turns (the engineer,
+2026-10-09: one Blender batch at a time). Every Blender or Godot process the runner starts (`common.run`: `blender.py`,
+`godot-check`, `frames`, `contract`, lab scripts that import the runner) first takes an OS file lock,
+`<raw>/locks/heavy.lock`, shared by every checkout and worktree on the machine; the OS releases it when its holder
+exits or dies, so a killed run or a power cut leaves no stale lock. A waiting run prints `heavy-run lock: waiting for
+<holder>` to stderr once (the holder is in `heavy.lock.holder`) and gives up with a failure after 2 hours
+(`ART_HEAVY_LOCK_WAIT`, seconds). Children of a heavy process do not take it again (`ART_HEAVY_LOCK_HELD`).
+`ART_HEAVY_LOCK=off` turns it off; `ART_HEAVY_LOCK=<path>` moves it; with no raw folder (the laptop's raw-free lane)
+there is no lock. The process timeout counts from the process's start, not from the wait. A `verify` started while a
+long bake holds the lock waits for it; its Blender tests take the lock one by one.
+
 ## Commands
 
 | Command | What it does |
