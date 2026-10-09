@@ -141,7 +141,7 @@ func _build_row(row: Array, origin: Vector3) -> Array:
 	cap.position = origin + Vector3(CAPSULE_R, CAPSULE_H * 0.5, 0)
 	holder.add_child(cap)
 	_label(holder, "1.8 m", origin + Vector3(CAPSULE_R, -text_h * 0.9, CAPSULE_R + 0.1), text_h)
-	points += [origin + Vector3(0, 0, -CAPSULE_R), origin + Vector3(2 * CAPSULE_R, CAPSULE_H, CAPSULE_R)]
+	points += _corners(origin + Vector3(0, 0, -CAPSULE_R), origin + Vector3(2 * CAPSULE_R, CAPSULE_H, CAPSULE_R))
 	x = 2.0 * CAPSULE_R + SLOT_GAP_M
 	var depth: float = 0.0
 	for i: int in row.size():
@@ -167,7 +167,7 @@ func _build_row(row: Array, origin: Vector3) -> Array:
 			lamp.omni_range = clampf(hi.y - lo.y, 0.6, 2.0)
 			anchor.add_child(lamp)
 		var off: Vector3 = n.position
-		points += [off + lo, off + hi]
+		points += _corners(off + lo, off + hi)
 		depth = maxf(depth, hi.z - lo.z)
 		_label(holder, p["id"], origin + Vector3(centre_x, -text_h * 0.9, (hi.z - lo.z) * 0.5 + 0.1), text_h)
 		x += slots[i] + SLOT_GAP_M
@@ -180,8 +180,17 @@ func _build_row(row: Array, origin: Vector3) -> Array:
 	strip.material_override = floor_mat
 	strip.position = origin + Vector3(x * 0.5, -0.011, 0)
 	holder.add_child(strip)
-	points += [origin + Vector3(0, -text_h * 1.8, depth * 0.5 + 0.2), origin + Vector3(x, 0, -depth * 0.5 - 0.2)]
+	points += _corners(origin + Vector3(0, -text_h * 1.8, -depth * 0.5 - 0.2), origin + Vector3(x, 0, depth * 0.5 + 0.2))
 	return [points, view_w]
+
+
+## The eight corners of the box lo..hi: the camera looks from the front-right, so two diagonal corners miss the
+## row's right end and its front-low labels.
+func _corners(lo: Vector3, hi: Vector3) -> Array:
+	var out: Array = []
+	for c: int in 8:
+		out.append(Vector3(hi.x if c & 1 else lo.x, hi.y if c & 2 else lo.y, hi.z if c & 4 else lo.z))
+	return out
 
 
 func _label(parent: Node3D, text: String, at: Vector3, text_h: float) -> void:
