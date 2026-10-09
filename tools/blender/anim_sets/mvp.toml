@@ -211,12 +211,16 @@ needs = [{ need = "Jump: the landing (upper body while moving, full standing)", 
 name = "Shove_Stumble"
 source = "tm:shove-stumble"
 loop = false
-edits = [{ op = "trim", start_s = 0.37, end_s = 1.83 }, { op = "retime", seconds = 0.7 }, { op = "heading", facing = "start" },
+edits = [{ op = "trim", start_s = 0.39, end_s = 1.83 }, { op = "retime", seconds = 0.7 }, { op = "heading", facing = "start" },
          { op = "in_place", mode = "path" }, { op = "arm_offset", abduct_deg = 12 }]
 # retime (art #65): 1.47 s to 0.7 s (21 frames; art #69: written 0.7, the export's length, not the asked 0.69, which
 # rounds to the same 21 frames and the same samples), so the steps match the 2.25 m/s at
 # which the game moves the pushed body. arm_offset: the hanging hands went into the thighs (7.0 cm men, 6.6 women after
 # the retime); 12 degrees takes them out on the men and to 4.3 cm on one frame on the women (art #33: 4.5 on 4 frames)
+# trim (art #69): from 0.37 s the women's 21 frames sampled a one-frame Toe.R pop (29.7 degrees at frame 6). One grid
+# of the start (0.35 to 0.39 s) by the length (21, 22 frames): 0.39 s and 21 frames pops on neither body (lowest
+# vertex -0.88 / -0.45 cm, the women's hands 4.28 cm into a thigh on one frame); 0.37 and 0.38 at 21 frames pop the
+# women's toe, 0.35 at 22 the men's foot
 needs = [{ need = "Being pushed: the stumble (the game moves the body)", no = 10, layer = "full" }]
 
 [[clips]]
