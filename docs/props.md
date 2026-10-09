@@ -31,11 +31,12 @@ budget, size, colliders, game surface, extra nodes).
 
 Every value is the engineer's to change (sizes, paints, mounts), as data:
 
-- `kit`: the kit whose five materials and roles the props use (`kits/house.json`); a prop role may not redefine a
+- `kit`: the kit whose materials, packs and roles the props use (`kits/house.json`); a prop role may not redefine a
   kit role.
 - `budget_tris`: `hero` 4,000 (task-critical pieces players use) and `room` 1,500 (room-defining), the plan's
   `look.md` §6.
-- `materials.surface_game`: the game's writable surface, a sixth material that only the boards and the computer use.
+- `materials.surface_game`: the game's writable surface, a material of its own that only the boards and the computer
+  use.
 - `roles`: the prop paints (a material and a hex colour each).
 - `[[props]]`: `id`, `type` (the builder), `kind` (the budget), `w`, `d`, `h` (the built bounds, width along X,
   depth along Z, height along Y, within 1 cm), `chain`, `station` (the game's marker under `Stations`), `room`,
@@ -47,7 +48,8 @@ Every value is the engineer's to change (sizes, paints, mounts), as data:
 - **Pivot and front**: the pivot is on the floor at the game's marker (a table-top prop's on the desk top), the
   footprint centred on it; the one front faces +Z. Godot's axes, metres.
 - **Paint and materials**: as the kit's (`docs/kit.md`, "Paint"): one role per face, sRGB-encoded vertex colours,
-  materials named `kit_<name>-vcol`; the game surface is `surface_game-vcol`.
+  materials named `kit_<name>-vcol` (kit v2: plaster, wood and concrete export as one `kit_set-vcol`, the vertex
+  colour's alpha picking the layer); the game surface is `surface_game-vcol`.
 - **Game surface**: one flat quad facing +Z with UV0 0..1 over it (u along +X, v up), on the `surface_game`
   material, so the game can draw icons and text on it: the order board, the herb board, the pose screen, the photo
   board and the computer's screen.
@@ -72,6 +74,7 @@ Every value is the engineer's to change (sizes, paints, mounts), as data:
    its `w`, `d`, `h`, its lowest point on the floor and its footprint centred, within the budget, colliders not
    flat, UV2 on every face inside 0..1, a game surface exactly where `surface = true`, the `nodes` present.
 2. **GLB** (the kit's `_kit.check_glb` and `props.check_surface_material`): every mesh node has UV0, UV2, COLOR_0
-   and normals, every collider its node, at most six materials, all `-vcol`; glTF-Validator has no errors.
+   and normals, every collider its node, at most the exported materials (`set`, `metal`, `glass`,
+   `surface_game`), all `-vcol`; glTF-Validator has no errors.
 3. **Godot** (`godot/check/kit.gd`, `_kit.evaluate`): bounds equal the spec's within 2 mm, the triangle count, UV2
    and sRGB vertex colours on every surface, one closed convex body per collider, and a ray hits each.

@@ -89,7 +89,7 @@ def run(args: argparse.Namespace) -> int:
             glb_problems.append(f"{p['id']}: no {glb.as_posix()}")
             continue
         gltf = _export.glb_json(glb)
-        glb_problems += _kit.check_glb(gltf, described[p["id"]], len(spec["materials"]))
+        glb_problems += _kit.check_glb(gltf, described[p["id"]], len(g.kit_geom.export_materials(spec)))
         glb_problems += check_surface_material(gltf, p, g.SURFACE_MATERIAL)
         report = _export.validate(glb, reports / f"{p['id']}.json")
         passed, _line = _export.verdict(report)

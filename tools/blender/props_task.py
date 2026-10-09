@@ -33,8 +33,8 @@ CH = 0.015  # the default chamfer of a prop's boxes and cylinders
 
 # --- the spec ------------------------------------------------------------------------------------------------------
 def load_spec(path: Path) -> dict:
-    """props/tasks.toml merged with its kit's materials and roles (the kit's roles come first; a prop role may not
-    redefine one)."""
+    """props/tasks.toml merged with its kit's materials, packs and roles (the kit's roles come first; a prop role may
+    not redefine one)."""
     path = Path(path).resolve()
     with path.open("rb") as f:
         spec = tomllib.load(f)
@@ -42,6 +42,7 @@ def load_spec(path: Path) -> dict:
     spec["kit_roles"] = sorted(kit["roles"])
     spec["clashes"] = sorted(set(kit["roles"]) & set(spec.get("roles", {})))
     spec["materials"] = {**kit["materials"], **spec.get("materials", {})}
+    spec["packs"] = kit.get("packs", {})  # kit v2 (#86) packs plaster, wood and concrete into one `set` material
     spec["roles"] = {**spec.get("roles", {}), **kit["roles"]}
     return spec
 

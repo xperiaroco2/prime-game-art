@@ -5,7 +5,7 @@
       --spec props/tasks.toml --out D:/prime-art-raw/props/task/v1 --ambientcg D:/prime-art-raw/env/ambientcg [--only id,...]
 
 The geometry comes from props_task.py (pure Python); the objects, detail textures, materials and the export are the
-kit's (kit_build.py), so a prop shares the kit's five materials and paint encoding. The game surface's material is
+kit's (kit_build.py), so a prop shares the kit's materials and paint encoding. The game surface's material is
 named `surface_game-vcol` (Godot imports it as `surface_game`). Writes <out>/<id>.glb, <out>/textures/ and
 <out>/build.json.
 """
