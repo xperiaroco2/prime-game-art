@@ -122,6 +122,28 @@ def run(args: argparse.Namespace) -> int:
     return 0
 
 
+RAY_LEAD_M = 0.5  # every collider is probed by a ray that starts this far outside it
+RAY_OFFSET = 0.17  # of the half size along the other two axes: off the face's triangle diagonals
+
+
+def rays(described: dict[str, Any]) -> list[list[list[float]]]:
+    """One ray per collider, as the kit's (`_kit.rays`) but aimed a little off its centre: a ray at a box face's
+    centre meets the diagonal between the face's two triangles, where Godot's segment test can miss both (it did on
+    computer_set). The target stays inside every box and convex prism collider."""
+    out = []
+    for c in described["colliders"]:
+        pts = c["points"]
+        lo = [min(p[i] for p in pts) for i in range(3)]
+        hi = [max(p[i] for p in pts) for i in range(3)]
+        centre = [sum(p[i] for p in pts) / len(pts) for i in range(3)]
+        axis = min(range(3), key=lambda i: hi[i] - lo[i])
+        target = [centre[i] + (0.0 if i == axis else RAY_OFFSET * (hi[i] - lo[i]) / 2) for i in range(3)]
+        start = list(target)
+        start[axis] = lo[axis] - RAY_LEAD_M
+        out.append([[round(v, 5) for v in start], [round(v, 5) for v in target]])
+    return out
+
+
 def check_surface_material(gltf: dict[str, Any], p: dict[str, Any], surface: str) -> list[str]:
     """A prop with a game surface has the `surface_game-vcol` material; one without has none."""
     has = any(m.get("name") == f"{surface}-vcol" for m in gltf.get("materials", []))
@@ -137,7 +159,7 @@ def godot_check(props: list[dict], described: dict, out: Path) -> list[str]:
     request = {"pieces": {}}
     for pid, name in names.items():
         res = _godot.stage(out / f"{pid}.glb", name)
-        request["pieces"][pid] = {"scene": res, "rays": _kit.rays(described[pid])}
+        request["pieces"][pid] = {"scene": res, "rays": rays(described[pid])}
     lines = _godot.import_project()
     work = common.OUT / "props"
     work.mkdir(parents=True, exist_ok=True)

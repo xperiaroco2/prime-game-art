@@ -747,7 +747,7 @@ def build_parts_shelf(pc: Piece, p: dict, spec: dict) -> None:
     y = tops[0]
     for i, x in enumerate((-0.45, 0.2)):
         for k in range(2 - i):
-            lathe(m, (x, y + k * 0.2, 0.0), "y",
+            lathe(m, (x, y + k * 0.205, 0.0), "y",
                   [(0, 0.12), (0.0, 0.2), (0.02, 0.22), (0.18, 0.22), (0.2, 0.2), (0.2, 0.12), (0.0, 0.12)],
                   "rubber", n=8, caps=(False, False))
     cbox(m, (0.55, y, -0.1), (0.85, y + 0.2, 0.08), "rubber", 0.012)
@@ -1007,13 +1007,15 @@ def build_bulkhead(pc: Piece, p: dict, spec: dict) -> None:
     t = 0.25
     e0, e1 = p.get("entry", [-1.75, -0.25])
     walls = [((-w / 2, 0, -d / 2), (w / 2, h - 0.06, -d / 2 + t)),
-             ((-w / 2, 0, -d / 2 + t), (-w / 2 + t, h - 0.06, d / 2 - t)),
-             ((w / 2 - t, 0, -d / 2 + t), (w / 2, h - 0.06, d / 2 - t)),
-             ((-w / 2, 0, d / 2 - t), (e0, h - 0.06, d / 2)),
-             ((e1, 0, d / 2 - t), (w / 2, h - 0.06, d / 2))]
+             ((-w / 2, 0, -d / 2 + t), (-w / 2 + t, h - 0.06, d / 2)),
+             ((w / 2 - t, 0, -d / 2 + t), (w / 2, h - 0.06, d / 2)),
+             ((-w / 2 + t, 0, d / 2 - t), (e0, h - 0.06, d / 2)),
+             ((e1, 0, d / 2 - t), (w / 2 - t, h - 0.06, d / 2))]
     for lo, hi in walls:
-        cbox(m, lo, hi, "concrete", 0.02)
-        cbox(m, (lo[0] - 0.0, h - 0.06, lo[2]), (hi[0], h, hi[2]), "basement", 0.012)
+        if hi[0] - lo[0] < 0.01:
+            continue
+        cbox(m, lo, (hi[0], h - 0.055, hi[2]), "concrete", 0.02)
+        cbox(m, (lo[0], h - 0.06, lo[2]), (hi[0], h, hi[2]), "basement", 0.012)
         pc.collide_box(lo, (hi[0], h, hi[2]))
 
 
@@ -1118,6 +1120,11 @@ def check_prop(d: dict, p: dict, spec: dict) -> list[str]:
     for s in d["surfaces"]:
         if s["corners"] != 4 or s["z"][1] - s["z"][0] > EPS or s["normal"][2] <= 0:
             problems.append(f"{pid}: the game surface is not one flat quad facing +Z ({s})")
+    for m in d["meshes"]:
+        seen = [tuple(sorted(f)) for f in m["faces"]]
+        twins = len(seen) - len(set(seen))
+        if twins:
+            problems.append(f"{pid}: {m['name']} has {twins} faces on the same vertices as another (Blender merges them)")
     names = {m["name"] for m in d["meshes"]}
     for node in p.get("nodes", []):
         if f"{pid}_{node}" not in names:

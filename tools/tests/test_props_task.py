@@ -108,10 +108,15 @@ class PropTest(unittest.TestCase):
     def test_the_printer_has_its_photo(self) -> None:
         self.assertIn("photo_printer_photo", {m["name"] for m in BUILT["photo_printer"]["meshes"]})
 
-    def test_rays_cross_every_collider(self) -> None:
-        from runner.commands import _kit
+    def test_rays_cross_every_collider_off_its_centre(self) -> None:
         for pid, d in BUILT.items():
-            self.assertEqual(len(_kit.rays(d)), len(d["colliders"]), pid)
+            rays = props_cmd.rays(d)
+            self.assertEqual(len(rays), len(d["colliders"]), pid)
+            for (start, end), c in zip(rays, d["colliders"]):
+                lo = [min(p[i] for p in c["points"]) for i in range(3)]
+                hi = [max(p[i] for p in c["points"]) for i in range(3)]
+                self.assertTrue(all(lo[i] < end[i] < hi[i] for i in range(3)), (pid, c["name"]))
+                self.assertTrue(any(start[i] < lo[i] for i in range(3)), (pid, c["name"]))
 
     def test_the_table_lists_every_prop(self) -> None:
         rows = G.prop_table(list(BUILT.values()), SPEC)
