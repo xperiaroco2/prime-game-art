@@ -57,7 +57,7 @@ class LayoutDataTest(unittest.TestCase):
         self.assertEqual(len(set(ids)), 35)
 
     def test_the_kit_path_is_one_setting(self) -> None:
-        self.assertEqual(DATA["settings"]["kit_dir"], "kits/house/v1")
+        self.assertEqual(DATA["settings"]["kit_dir"], "kits/house/v2")
         self.assertIn("{id}", DATA["settings"]["kit_res"])
 
     def test_every_planned_piece_is_in_the_kit(self) -> None:
@@ -75,6 +75,15 @@ class LayoutDataTest(unittest.TestCase):
         st = next(s for s in level("ground")["stairs"] if s["id"] == "pantry_stairs")
         self.assertTrue(st["placeholder"])
         self.assertEqual(H.stair_top_edge(st), ("h", 25, 26, 28))
+
+    def test_free_pieces_land_in_their_room(self) -> None:
+        porch = [p for p in planned("ground")["pieces"]["path"] if p["id"] == "porch_2x2"]
+        self.assertEqual(porch, [{"id": "porch_2x2", "x": 29.0, "y": 44.0, "h": 0.0, "turn": 0}])
+        chimneys = sorted((p["x"], p["y"]) for p in planned("roof")["pieces"]["roof"] if p["id"] == "chimney_stack")
+        self.assertEqual(chimneys, [(21.5, 41.5), (37.5, 24.0)])
+        data = one_room(pieces=[{"piece": "no_such_piece", "room": "r", "at": [1, 0, 1]},
+                                {"piece": "chimney_stack", "room": "nowhere", "at": [1, 0, 1]}])
+        self.assertEqual(len(H.plan(data)["problems"]), 2)
 
     @unittest.skipUnless(DOC.is_file(), "the game's design doc is missing")
     def test_rooms_match_the_design_doc(self) -> None:

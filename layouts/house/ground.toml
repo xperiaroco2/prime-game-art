@@ -415,12 +415,11 @@ room = "garage"
 at = [54, 38]
 room = "garage"
 
-[[placeholders]]
-name = "Porch"
+[[pieces]]
+piece = "porch_2x2"
 room = "path"
-at = [30, 0.0, 45.5]
-size = [4.0, 2.8, 3.0]
-note = "the front porch over the front door, with a lamp (#74b, kit v2)"
+at = [29, 0.0, 44]
+note = "the front porch (kit v2) on the front wall over the front door at x 30; its posts at x 29.12 and 30.88 leave 1.64 m clear; its lamp socket takes the porch lamp (#74b)"
 
 [[holes]]
 id = "pantry_stairs"

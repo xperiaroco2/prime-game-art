@@ -8,8 +8,8 @@ later packages add dressing data (`layouts/house/dressing/`, #75b) and only rege
 
 | File | What |
 |---|---|
-| `layouts/house/house.toml` | Settings: the kit spec, the kit folder under the raw folder (`kit_dir`, the one setting to switch kit v1 to v2), the `res://` paths of the pieces and scenes, the level order |
-| `layouts/house/{basement,ground,upper,attic,roof}.toml` | One level each: `floor_y`, the default wall family, the house `footprint`; `[[rooms]]`, `[[doors]]`, `[[windows]]`, `[[holes]]`, `[[stairs]]` (a U-turn lists its lower half and landing in `below`), `[[placeholders]]` |
+| `layouts/house/house.toml` | Settings: the kit spec, the kit folder under the raw folder (`kit_dir`: `kits/house/v2`; v1 and v2 share the piece ids, so it is the one setting that switches kits), the `res://` paths of the pieces and scenes, the level order |
+| `layouts/house/{basement,ground,upper,attic,roof}.toml` | One level each: `floor_y`, the default wall family, the house `footprint`; `[[rooms]]`, `[[doors]]`, `[[windows]]`, `[[holes]]`, `[[stairs]]` (a U-turn lists its lower half and landing in `below`), `[[pieces]]` (one free kit piece each: `piece`, `room`, `at` = [x, h, y] of its pivot, `turn`; the porch and the chimneys), `[[placeholders]]` |
 | `tools/runner/house_layout.py` | Load, validate, plan (choose the pieces), write the scenes |
 | `tools/runner/commands/house.py` | The `house` command |
 | `tools/tests/test_house_layout.py` | The rules, the plan's conventions, the design doc's 35 rooms and the game's greybox marker names |
@@ -99,8 +99,11 @@ floor from above, the other levels and the ceilings hidden, a label per room), `
 - The attic hatch: the kit's hatch tile puts the hole's centre on whole metres, at (28, 29) instead of the doc's
   (28, 28.5).
 - The study door is at (34, 28) as on the plan (the game's greybox has it at (34, 25)).
-- The pitched roof, gable windows, chimneys and the front porch wait for kit v2 (#86, #74b): named `Placeholders`
-  markers in the attic, roof and path scenes (`size` in metres for the review box).
+- The front porch and the two chimneys are kit v2 pieces (`[[pieces]]`): one `porch_2x2` from x 29 on the front
+  wall, so its posts (x 29.12 and 30.88) leave 1.64 m clear round the front door at x 30, its lamp socket for the porch
+  lamp (#74b); the chimneys centred on the doc's points (22, 42) and (38, 24.5). The pitched roof over the attic and its
+  gable windows are still named `Placeholders` markers in the attic scene (`size` in metres for the review box): v2 has
+  the pitched-roof pieces, but laying out the roof (eaves, verges, ridge, gables over the knee walls) is its own step.
 - The main stairs (not the doc's straight flight): a 6 m flight fills the 6 m stairs room, so its foot sits against
   the hallway wall, and a capsule stepping onto it from a door hits the door's head (2.15 m). Instead a U-turn of the
   kit's two half flights (`below` in the stairs entry: the lower half and the landing): up west from the room's open

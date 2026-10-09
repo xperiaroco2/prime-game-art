@@ -366,6 +366,15 @@ def plan(data: dict) -> dict:
                 # A block is a floor piece: its top at the pivot (docs/kit.md), so it stands on y with its top at y + height.
                 h = part["y"] + float(p["height"]) if p["type"] == "block" else part["y"]
                 extra.append({"id": part["piece"], "x": x, "y": y, "h": h, "turn": turn, "name": name})
+        # free pieces: one kit piece each at a doc point (the porch, the chimneys), h above the level's floor
+        for fp in lv.get("pieces", []):
+            if fp["piece"] not in data["pieces"]:
+                problems.append(f"{lv['level']}: no kit piece {fp['piece']}")
+            elif fp.get("room") not in pieces:
+                problems.append(f"{lv['level']}: the piece {fp['piece']} at {fp['at']} has no room {fp.get('room')}")
+            else:
+                pieces[fp["room"]].append({"id": fp["piece"], "x": float(fp["at"][0]), "y": float(fp["at"][2]),
+                                           "h": float(fp["at"][1]), "turn": int(fp.get("turn", 0))})
         for d in lv.get("doors", []):
             for rid, nm in d.get("names", {}).items():
                 if rid in rooms:

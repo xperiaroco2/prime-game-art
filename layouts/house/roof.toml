@@ -19,16 +19,14 @@ stations = [
   { name = "Loot", at = [24.5, 0.0, 2.0] },
 ]
 
-[[placeholders]]
-name = "Chimney1"
+[[pieces]]
+piece = "chimney_stack"
 room = "roof"
-at = [22, 0.0, 42]
-size = [1.0, 1.6, 1.0]
-note = "a chimney (kit v2)"
+at = [21.5, 0.0, 41.5]
+note = "a chimney (kit v2), 1 x 1 m from its north-west corner, centred on (22, 42)"
 
-[[placeholders]]
-name = "Chimney2"
+[[pieces]]
+piece = "chimney_stack"
 room = "roof"
-at = [38, 0.0, 24.5]
-size = [1.0, 1.6, 1.0]
-note = "a chimney (kit v2)"
+at = [37.5, 0.0, 24.0]
+note = "a chimney (kit v2), 1 x 1 m from its north-west corner, centred on (38, 24.5)"
