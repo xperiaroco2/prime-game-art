@@ -1,0 +1,1618 @@
+# The House dressing library (art #87, map request #73): one GLB per generic prop (furniture, dressing, fixtures,
+# outdoor) in the kit's materials, painted by role as vertex colour. docs/props.md explains every field; the plan is
+# D:/prime-art-raw/research/2026-10-10-house-plan (props.md, inventory.md section 9). Sizes are the engineer's
+# inventory draft (L along X, W along Z, H up, metres); a size that does not work is reported, never changed silently.
+# Paints and shapes are taste data: changing a hex or a prop's roles needs no code change.
+
+library = "house"
+version = 1
+kit_spec = "kits/house.json"
+out = "props/library/v1"  # under the raw folder: D:/prime-art-raw/props/library/v1/<id>.glb
+review = "review/house/87"  # line-up sheets, under the raw folder
+licences = ["CC0-1.0"]
+max_materials = 6
+new_materials = ["emissive"]  # materials the props need that kit v1 lacks (kit v2, #86, adds them)
+
+# Library material -> the kit's material. Re-point a line here when the kit's material plan changes (kit v2, #86:
+# look.md section 5 merges plaster, wood and concrete into one `set` material); nothing else names a material.
+[materials]
+plaster = "plaster"
+wood = "wood"
+concrete = "concrete"
+metal = "metal"
+glass = "glass"
+emissive = "emissive"
+
+
+# Triangles by class, [min, max] (look.md section 6). `vehicle` is the parked cars (the car of #79 has 3,000 to 5,000).
+[budgets]
+dressing = [150, 600]
+room = [400, 1500]
+fixture = [100, 400]
+vehicle = [400, 3000]
+
+# The props' paints: a library material and an sRGB hex (D1 palette, look.md section 7). The kit's roles
+# (kits/house.json: trim, boards, lino, fence, concrete, glass ...) can be named too. A pack prop's source colours
+# are clustered into as many groups as it has roles; the clusters, dark to light, take its roles, dark to light.
+[roles]
+wood_dark = {material = "wood", hex = "#3d2a1e"}
+wood_mid = {material = "wood", hex = "#6b4a32"}
+fabric = {material = "plaster", hex = "#6b5a52"}
+fabric_accent = {material = "plaster", hex = "#b5593a"}
+cream = {material = "plaster", hex = "#d8cdb4"}
+mustard = {material = "plaster", hex = "#d0a02c"}
+teal_stripe = {material = "plaster", hex = "#1f8a8a"}
+porcelain = {material = "plaster", hex = "#d6d2c6"}
+appliance = {material = "plaster", hex = "#c8c3b6"}
+cardboard = {material = "plaster", hex = "#a8855e"}
+rubber = {material = "plaster", hex = "#1c1b1a"}
+plant = {material = "plaster", hex = "#4f7f4a"}
+flower = {material = "plaster", hex = "#c25a7a"}
+bottle_green = {material = "plaster", hex = "#2f4a32"}
+metal_dark = {material = "metal", hex = "#23211f"}
+metal_grey = {material = "metal", hex = "#6d6e6c"}
+pipe_red = {material = "metal", hex = "#8a1f1a"}
+rust_red = {material = "metal", hex = "#7a3a2a"}
+safety_green = {material = "metal", hex = "#5f7a3a"}
+car_paint = {material = "metal", hex = "#c4422c"}
+stone = {material = "concrete", hex = "#7d786e"}
+brick = {material = "concrete", hex = "#8a4a38"}
+terracotta = {material = "concrete", hex = "#a85a3c"}
+soil = {material = "concrete", hex = "#4a3a30"}
+gravel = {material = "concrete", hex = "#8a8579"}
+bulb = {material = "emissive", hex = "#ffd9ad"}
+tube = {material = "emissive", hex = "#e6eef2"}
+safelight = {material = "emissive", hex = "#d0201a"}
+
+# Inventory props this library does not make, and who does (the manager's split of 2026-10-10).
+[skip]
+assembly_island = "task station (order board): #82a"
+bbq_grill = "task prop: #82a/#82b (the car and lift: #79)"
+bulkhead_stairs = "kit pieces and rail: #74b/#81a"
+bun_shelf = "task prop: #82a/#82b (the car and lift: #79)"
+bush = "vegetation, nature packs and scatter: #80"
+car = "the car on the lift: #79"
+car_lift = "garage: #79"
+car_parts_shelf = "task prop: #82a/#82b (the car and lift: #79)"
+chimney = "kit addition: #74b"
+computer_set = "task prop: #82a/#82b (the car and lift: #79)"
+concrete_pillar = "kit piece"
+delivery_box_stack = "task prop: #82a/#82b (the car and lift: #79)"
+dining_table = "task prop: #82a/#82b (the car and lift: #79)"
+flower_bed = "vegetation: #80"
+garden_dropoff = "task prop: #82a/#82b (the car and lift: #79)"
+garden_tree = "vegetation, nature packs and scatter: #80"
+gazebo = "the photo gazebo: #81b"
+generator = "task prop: #82a/#82b (the car and lift: #79)"
+hatch_ladder = "kit piece ladder_attic"
+hedge = "vegetation: #80"
+herb_bed = "task prop: #82a/#82b (the car and lift: #79)"
+herb_board = "task prop: #82a/#82b (the car and lift: #79)"
+lift_panel = "garage: #79"
+mannequin = "hero class (props.md section 3, Q20): not in the library"
+meat_freezer = "task prop: #82a/#82b (the car and lift: #79)"
+music_speaker = "task prop: #82a/#82b (the car and lift: #79)"
+order_board = "task prop: #82a/#82b (the car and lift: #79)"
+photo_board = "task prop: #82a/#82b (the car and lift: #79)"
+photo_printer = "task prop: #82a/#82b (the car and lift: #79)"
+pose_screen = "task prop: #82a/#82b (the car and lift: #79)"
+rocking_horse = "hero class (props.md section 3, Q20): not in the library"
+terrace_table = "task prop: #82a/#82b (the car and lift: #79)"
+wall_switch = "task prop: #82a/#82b (the car and lift: #79)"
+wine_rack = "task prop: #82a/#82b (the car and lift: #79)"
+workbench = "task prop: #82a/#82b (the car and lift: #79)"
+
+# --- Room-defining furniture ---
+
+[[prop]]
+id = "armchair"
+name = "Armchair"
+class = "room"
+size_m = [0.9, 0.9, 0.9]
+count = 2
+route = "pack"
+source = "kaykit_furniture_bits"
+files = ["kaykit/furniture-bits/KayKit_Furniture_Bits_1.0_FREE/KayKit_Furniture_Bits_1.0_FREE/Assets/gltf/armchair_pillows.gltf"]
+src_size = [1.8, 1.2241, 1.6]
+src_triangles = 614
+yaw_deg = 0
+scale = 0.606
+stretch = true
+roles = ["fabric", "fabric_accent", "wood_dark"]
+pivot = "floor"
+collision = "hull"
+
+[[prop]]
+id = "basin"
+name = "Washbasin with mirror"
+class = "room"
+size_m = [0.6, 0.45, 1.7]
+count = 2
+route = "pack"
+source = "kenney_furniture_kit"
+files = ["kenney/furniture-kit/kenney_furniture-kit/Models/GLTF format/bathroomSink.glb"]
+src_size = [0.34, 0.56, 0.29]
+src_triangles = 316
+yaw_deg = 0
+scale = 1.655
+pack_size_m = [0.6, 0.45, 0.9]
+extras = ["wall_mirror"]
+roles = ["porcelain", "metal_grey"]
+pivot = "floor"
+collision = "hull"
+
+[[prop]]
+id = "bathtub"
+name = "Bathtub"
+class = "room"
+size_m = [1.7, 0.75, 0.6]
+count = 1
+route = "pack"
+source = "kenney_furniture_kit"
+files = ["kenney/furniture-kit/kenney_furniture-kit/Models/GLTF format/bathtub.glb"]
+src_size = [1.19, 0.42, 0.56]
+src_triangles = 602
+yaw_deg = 0
+scale = 1.383
+roles = ["porcelain", "metal_grey"]
+pivot = "floor"
+collision = "hull"
+
+[[prop]]
+id = "boiler"
+name = "Boiler tank with gauges"
+class = "room"
+size_m = [1.2, 1.2, 2.2]
+count = 1
+route = "proc"
+shape = "boiler"
+roles = ["metal_grey", "pipe_red", "metal_dark"]
+pivot = "floor"
+collision = "hull"
+
+[[prop]]
+id = "bookcase"
+name = "Bookcase"
+class = "room"
+size_m = [1.0, 0.35, 2.0]
+count = 5
+route = "proc"
+shape = "shelving"
+params = {shelves = 5, items = "books", back = 1}
+roles = ["wood_mid", "cream", "fabric_accent", "mustard"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "bunk_bed"
+name = "Bunk bed"
+class = "room"
+size_m = [0.9, 2.0, 1.7]
+count = 1
+route = "pack"
+source = "kenney_furniture_kit"
+files = ["kenney/furniture-kit/kenney_furniture-kit/Models/GLTF format/bedBunk.glb"]
+src_size = [0.571, 0.85, 1.095]
+src_triangles = 580
+yaw_deg = 0
+scale = 1.775
+stretch = true
+roles = ["wood_mid", "fabric", "cream"]
+pivot = "floor"
+collision = "hull"
+
+[[prop]]
+id = "coat_rack"
+name = "Coat rack with coats"
+class = "room"
+size_m = [0.6, 0.4, 1.8]
+count = 1
+route = "proc"
+shape = "coat_rack"
+roles = ["wood_dark", "fabric", "fabric_accent"]
+pivot = "floor"
+collision = "hull"
+
+[[prop]]
+id = "coffee_table"
+name = "Coffee table"
+class = "room"
+size_m = [1.1, 0.6, 0.4]
+count = 1
+route = "proc"
+shape = "table"
+params = {legs = 4, top = 0.05}
+roles = ["wood_mid"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "deckchair"
+name = "Deckchair"
+class = "room"
+size_m = [0.6, 1.4, 0.9]
+count = 4
+route = "proc"
+shape = "deckchair"
+roles = ["fence", "mustard", "teal_stripe"]
+pivot = "floor"
+collision = "hull"
+
+[[prop]]
+id = "desk"
+name = "Desk"
+class = "room"
+size_m = [1.4, 0.7, 0.75]
+count = 3
+route = "pack"
+source = "kenney_furniture_kit"
+files = ["kenney/furniture-kit/kenney_furniture-kit/Models/GLTF format/desk.glb"]
+src_size = [0.7345, 0.3844, 0.3923]
+src_triangles = 198
+yaw_deg = 0
+scale = 1.866
+roles = ["wood_mid", "metal_dark"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "dining_chair"
+name = "Dining chair"
+class = "room"
+size_m = [0.45, 0.45, 0.9]
+count = 8
+route = "pack"
+source = "kaykit_furniture_bits"
+files = ["kaykit/furniture-bits/KayKit_Furniture_Bits_1.0_FREE/KayKit_Furniture_Bits_1.0_FREE/Assets/gltf/chair_A_wood.gltf"]
+src_size = [0.75, 1.2583, 0.8451]
+src_triangles = 308
+yaw_deg = 0
+scale = 0.617
+stretch = true
+roles = ["wood_mid"]
+pivot = "floor"
+collision = "hull"
+
+[[prop]]
+id = "double_bed"
+name = "Double bed"
+class = "room"
+size_m = [1.6, 2.1, 0.7]
+count = 1
+route = "pack"
+source = "kaykit_furniture_bits"
+files = ["kaykit/furniture-bits/KayKit_Furniture_Bits_1.0_FREE/KayKit_Furniture_Bits_1.0_FREE/Assets/gltf/bed_double_A.gltf"]
+src_size = [3.1, 1.0, 3.0]
+src_triangles = 540
+yaw_deg = 0
+scale = 0.601
+stretch = true
+roles = ["wood_dark", "cream", "mustard"]
+pivot = "floor"
+collision = "hull"
+
+[[prop]]
+id = "enlarger"
+name = "Photo enlarger on a table"
+class = "room"
+size_m = [0.4, 0.4, 0.8]
+count = 2
+route = "proc"
+shape = "enlarger"
+roles = ["metal_dark", "metal_grey", "wood_dark"]
+pivot = "floor"
+collision = "hull"
+
+[[prop]]
+id = "fire_pit"
+name = "Fire pit with log seats"
+class = "room"
+size_m = [1.2, 1.2, 0.4]
+count = 1
+route = "pack"
+source = "kenney_survival_kit"
+files = ["kenney/survival-kit/kenney_survival-kit/Models/GLB format/campfire-pit.glb"]
+src_size = [0.2778, 0.1091, 0.2692]
+src_triangles = 305
+yaw_deg = 0
+scale = 4.043
+stretch = true
+roles = ["stone", "wood_dark"]
+pivot = "floor"
+collision = "hull"
+
+[[prop]]
+id = "fireplace"
+name = "Fireplace with mantel"
+class = "room"
+size_m = [1.6, 0.5, 1.3]
+count = 1
+route = "proc"
+shape = "fireplace"
+roles = ["brick", "trim", "metal_dark"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "fridge"
+name = "Fridge"
+class = "room"
+size_m = [0.7, 0.7, 1.8]
+count = 1
+route = "pack"
+source = "kenney_furniture_kit"
+files = ["kenney/furniture-kit/kenney_furniture-kit/Models/GLTF format/kitchenFridgeLarge.glb"]
+src_size = [0.52, 0.92, 0.4055]
+src_triangles = 436
+yaw_deg = 0
+scale = 1.623
+stretch = true
+roles = ["appliance", "metal_grey"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "jar_shelf"
+name = "Pantry shelving with jars"
+class = "room"
+size_m = [1.2, 0.4, 2.0]
+count = 2
+route = "proc"
+shape = "shelving_jars"
+roles = ["wood_dark", "glass", "cream"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "kitchen_counter"
+name = "Kitchen counter run (per 1 m)"
+class = "room"
+size_m = [1.0, 0.6, 0.9]
+count = 7
+route = "proc"
+shape = "cabinet"
+params = {doors = 2, drawers = 1, top = "lino", plinth = 1}
+roles = ["wood_mid", "lino", "metal_grey"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "kitchen_sink"
+name = "Kitchen sink unit"
+class = "room"
+size_m = [1.2, 0.6, 0.9]
+count = 1
+route = "proc"
+shape = "cabinet"
+params = {doors = 2, top = "lino", plinth = 1, sink = 1}
+roles = ["wood_mid", "lino", "metal_grey"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "kitchen_upper"
+name = "Upper kitchen cabinet (per 1 m)"
+class = "room"
+size_m = [1.0, 0.35, 0.7]
+count = 5
+route = "proc"
+shape = "cabinet"
+params = {doors = 2}
+roles = ["wood_mid", "metal_grey"]
+pivot = "wall"
+collision = "box"
+
+[[prop]]
+id = "metal_shelving"
+name = "Metal shelving unit"
+class = "room"
+size_m = [2.0, 0.5, 2.0]
+count = 12
+route = "proc"
+shape = "shelving_metal"
+roles = ["metal_grey", "cardboard"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "old_wardrobe"
+name = "Old wardrobe"
+class = "room"
+size_m = [1.4, 0.6, 1.9]
+count = 2
+route = "proc"
+shape = "cabinet"
+params = {doors = 2, legs = 4, cornice = 1}
+roles = ["wood_dark", "metal_dark"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "photo_backdrop"
+name = "Photo backdrop panel"
+class = "room"
+size_m = [3.0, 0.1, 2.4]
+count = 1
+route = "proc"
+shape = "backdrop_panel"
+roles = ["fence", "fabric_accent"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "pipe_run"
+name = "Pipe run, straight/bend/valve set (per 2 m)"
+class = "room"
+size_m = [2.0, 0.2, 0.2]
+count = 40
+route = "proc"
+shape = "pipe"
+params = {flanges = 2, valve = 0}
+roles = ["pipe_red", "metal_grey"]
+pivot = "floor"
+collision = "hull"
+
+[[prop]]
+id = "potting_bench"
+name = "Greenhouse potting bench"
+class = "room"
+size_m = [2.0, 0.6, 0.9]
+count = 1
+route = "proc"
+shape = "potting_bench"
+roles = ["fence", "soil", "terracotta"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "pump"
+name = "Water pump with motor"
+class = "room"
+size_m = [1.4, 0.8, 1.0]
+count = 1
+route = "proc"
+shape = "pump"
+roles = ["safety_green", "metal_grey", "metal_dark"]
+pivot = "floor"
+collision = "hull"
+
+[[prop]]
+id = "sheeted_furniture"
+name = "Furniture under a dust sheet"
+class = "room"
+size_m = [1.0, 1.0, 1.0]
+count = 5
+route = "proc"
+shape = "sheeted"
+roles = ["cream"]
+pivot = "floor"
+collision = "hull"
+
+[[prop]]
+id = "sideboard"
+name = "Sideboard"
+class = "room"
+size_m = [1.6, 0.45, 0.9]
+count = 1
+route = "proc"
+shape = "cabinet"
+params = {doors = 3, legs = 4}
+roles = ["wood_dark", "metal_grey"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "single_bed"
+name = "Single bed"
+class = "room"
+size_m = [0.9, 2.0, 0.6]
+count = 2
+route = "pack"
+source = "kaykit_furniture_bits"
+files = ["kaykit/furniture-bits/KayKit_Furniture_Bits_1.0_FREE/KayKit_Furniture_Bits_1.0_FREE/Assets/gltf/bed_single_A.gltf"]
+src_size = [1.6, 1.0, 3.0]
+src_triangles = 474
+yaw_deg = 0
+scale = 0.612
+roles = ["wood_mid", "cream", "teal_stripe"]
+pivot = "floor"
+collision = "hull"
+
+[[prop]]
+id = "sofa"
+name = "Sofa"
+class = "room"
+size_m = [2.0, 0.9, 0.85]
+count = 2
+route = "pack"
+source = "kaykit_furniture_bits"
+files = ["kaykit/furniture-bits/KayKit_Furniture_Bits_1.0_FREE/KayKit_Furniture_Bits_1.0_FREE/Assets/gltf/couch_pillows.gltf"]
+src_size = [3.0, 1.2241, 1.6]
+src_triangles = 808
+yaw_deg = 0
+scale = 0.625
+stretch = true
+roles = ["fabric", "fabric_accent", "wood_dark"]
+pivot = "floor"
+collision = "hull"
+
+[[prop]]
+id = "standing_mirror"
+name = "Standing mirror, cracked"
+class = "room"
+size_m = [0.7, 0.4, 1.8]
+count = 1
+route = "proc"
+shape = "standing_mirror"
+roles = ["wood_dark", "glass"]
+pivot = "floor"
+collision = "hull"
+
+[[prop]]
+id = "stove"
+name = "Stove with hood"
+class = "room"
+size_m = [0.7, 0.65, 0.9]
+count = 1
+route = "pack"
+source = "kenney_furniture_kit"
+files = ["kenney/furniture-kit/kenney_furniture-kit/Models/GLTF format/kitchenStove.glb"]
+src_size = [0.43, 0.45, 0.45]
+src_triangles = 830
+yaw_deg = 0
+scale = 1.7
+stretch = true
+extras = ["hood"]
+roles = ["appliance", "metal_dark"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "switchboard"
+name = "Electrical switchboard cabinet"
+class = "room"
+size_m = [0.8, 0.3, 2.0]
+count = 3
+route = "proc"
+shape = "cabinet_metal"
+roles = ["safety_green", "metal_dark"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "terrace_chair"
+name = "Terrace chair"
+class = "room"
+size_m = [0.5, 0.5, 0.85]
+count = 4
+route = "pack"
+source = "kaykit_restaurant_bits"
+files = ["kaykit/restaurant-bits/KayKit_Restaurant_Bits_1.0_FREE/KayKit_Restaurant_Bits_1.0_FREE/Assets/gltf/chair_A.gltf"]
+src_size = [0.75, 1.208, 0.7962]
+src_triangles = 428
+yaw_deg = 0
+scale = 0.665
+roles = ["fence"]
+pivot = "floor"
+collision = "hull"
+
+[[prop]]
+id = "toilet"
+name = "Toilet"
+class = "room"
+size_m = [0.4, 0.7, 0.8]
+count = 2
+route = "pack"
+source = "kenney_furniture_kit"
+files = ["kenney/furniture-kit/kenney_furniture-kit/Models/GLTF format/toilet.glb"]
+src_size = [0.3126, 0.451, 0.4772]
+src_triangles = 230
+yaw_deg = 0
+scale = 1.507
+stretch = true
+roles = ["porcelain"]
+pivot = "floor"
+collision = "hull"
+
+[[prop]]
+id = "tool_wall"
+name = "Pegboard tool wall"
+class = "room"
+size_m = [2.0, 0.1, 1.4]
+count = 2
+route = "proc"
+shape = "pegboard"
+roles = ["cardboard", "metal_dark", "pipe_red"]
+pivot = "wall"
+collision = "box"
+
+[[prop]]
+id = "tray_table"
+name = "Developing-tray table with trays"
+class = "room"
+size_m = [1.8, 0.8, 0.9]
+count = 2
+route = "proc"
+shape = "tray_table"
+roles = ["metal_grey", "cream", "metal_dark"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "trunk"
+name = "Old trunk"
+class = "room"
+size_m = [0.9, 0.5, 0.5]
+count = 6
+route = "proc"
+shape = "trunk"
+roles = ["rust_red", "metal_dark", "wood_dark"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "tv_cabinet"
+name = "TV cabinet with old TV"
+class = "room"
+size_m = [1.4, 0.5, 1.0]
+count = 1
+route = "pack"
+source = "kenney_furniture_kit"
+files = ["kenney/furniture-kit/kenney_furniture-kit/Models/GLTF format/cabinetTelevision.glb", "kenney/furniture-kit/kenney_furniture-kit/Models/GLTF format/televisionVintage.glb"]
+src_size = [0.8, 0.58, 0.27]
+src_triangles = 434
+yaw_deg = 0
+scale = 1.787
+roles = ["wood_dark", "metal_dark", "appliance"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "wardrobe"
+name = "Wardrobe"
+class = "room"
+size_m = [1.8, 0.6, 2.0]
+count = 2
+route = "proc"
+shape = "cabinet"
+params = {doors = 2, plinth = 1}
+roles = ["wood_mid", "metal_dark"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "water_tank"
+name = "Upright water tank"
+class = "room"
+size_m = [1.5, 1.5, 2.0]
+count = 1
+route = "proc"
+shape = "tank_upright"
+roles = ["metal_grey", "metal_dark"]
+pivot = "floor"
+collision = "hull"
+
+# --- Dressing ---
+
+[[prop]]
+id = "antenna"
+name = "TV antenna"
+class = "dressing"
+size_m = [0.8, 0.8, 2.5]
+count = 1
+route = "proc"
+shape = "antenna"
+roles = ["metal_grey"]
+pivot = "floor"
+collision = "hull"
+
+[[prop]]
+id = "balcony_chair"
+name = "Balcony chair"
+class = "dressing"
+size_m = [0.5, 0.5, 0.85]
+count = 2
+route = "pack"
+source = "kaykit_furniture_bits"
+files = ["kaykit/furniture-bits/KayKit_Furniture_Bits_1.0_FREE/KayKit_Furniture_Bits_1.0_FREE/Assets/gltf/chair_C.gltf"]
+src_size = [0.75, 1.2029, 0.9356]
+src_triangles = 288
+yaw_deg = 0
+scale = 0.615
+stretch = true
+roles = ["metal_dark", "fabric_accent"]
+pivot = "floor"
+collision = "hull"
+
+[[prop]]
+id = "barrel"
+name = "Barrel"
+class = "dressing"
+size_m = [0.6, 0.6, 0.9]
+count = 10
+route = "pack"
+source = "kaykit_prototype_bits"
+files = ["kaykit/prototype-bits/KayKit_Prototype_Bits_1.1_FREE/KayKit_Prototype_Bits_1.1_FREE/Assets/gltf/Barrel_A.gltf"]
+src_size = [1.0, 1.0, 1.0]
+src_triangles = 384
+yaw_deg = 0
+scale = 0.735
+stretch = true
+roles = ["wood_mid", "metal_dark"]
+pivot = "floor"
+collision = "hull"
+
+[[prop]]
+id = "bean_bag"
+name = "Bean bag"
+class = "dressing"
+size_m = [0.9, 0.9, 0.6]
+count = 3
+route = "proc"
+shape = "bean_bag"
+roles = ["mustard"]
+pivot = "floor"
+collision = "hull"
+
+[[prop]]
+id = "birdbath"
+name = "Birdbath"
+class = "dressing"
+size_m = [0.6, 0.6, 0.9]
+count = 1
+route = "proc"
+shape = "birdbath"
+roles = ["concrete", "stone"]
+pivot = "floor"
+collision = "hull"
+
+[[prop]]
+id = "cable_drum"
+name = "Cable drum"
+class = "dressing"
+size_m = [0.9, 0.9, 0.6]
+count = 3
+route = "proc"
+shape = "cable_drum"
+roles = ["wood_mid", "rubber"]
+pivot = "floor"
+collision = "hull"
+
+[[prop]]
+id = "cardboard_box"
+name = "Cardboard box"
+class = "dressing"
+size_m = [0.5, 0.4, 0.4]
+count = 30
+route = "proc"
+shape = "cardboard_box"
+roles = ["cardboard"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "console_table"
+name = "Console table"
+class = "dressing"
+size_m = [1.2, 0.35, 0.8]
+count = 4
+route = "proc"
+shape = "table"
+params = {legs = 4, top = 0.04, shelf = 1}
+roles = ["wood_dark"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "cooler_box"
+name = "Cooler box"
+class = "dressing"
+size_m = [0.6, 0.4, 0.4]
+count = 2
+route = "pack"
+source = "tinytreats_pleasant_picnic"
+files = ["tinytreats/pleasant-picnic/Tiny_Treats_Pleasant_Picnic_1.0_FREE/Tiny_Treats_Pleasant_Picnic_1.0_FREE/Assets/gltf/cooler.gltf"]
+src_size = [1.6301, 0.9041, 1.0771]
+src_triangles = 834
+yaw_deg = 0
+scale = 0.404
+decimate = true
+roles = ["rust_red", "cream"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "crate"
+name = "Wooden crate"
+class = "dressing"
+size_m = [0.5, 0.4, 0.4]
+count = 41
+route = "pack"
+source = "kaykit_prototype_bits"
+files = ["kaykit/prototype-bits/KayKit_Prototype_Bits_1.1_FREE/KayKit_Prototype_Bits_1.1_FREE/Assets/gltf/Box_B.gltf"]
+src_size = [0.6, 0.4022, 0.4062]
+src_triangles = 80
+yaw_deg = 0
+scale = 0.91
+roles = ["wood_mid"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "dresser"
+name = "Dresser"
+class = "dressing"
+size_m = [1.2, 0.5, 0.9]
+count = 1
+route = "proc"
+shape = "cabinet"
+params = {drawers = 3, legs = 4}
+roles = ["wood_mid", "metal_grey"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "filing_cabinet"
+name = "Filing cabinet"
+class = "dressing"
+size_m = [0.5, 0.6, 1.3]
+count = 1
+route = "proc"
+shape = "filing_cabinet"
+roles = ["metal_grey", "metal_dark"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "firewood_stack"
+name = "Firewood stack"
+class = "dressing"
+size_m = [1.5, 0.5, 1.0]
+count = 2
+route = "proc"
+shape = "log_stack"
+roles = ["wood_mid", "wood_dark"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "fuel_barrel"
+name = "Fuel barrel (red/yellow)"
+class = "dressing"
+size_m = [0.6, 0.6, 0.9]
+count = 6
+route = "pack"
+source = "kenney_survival_kit"
+files = ["kenney/survival-kit/kenney_survival-kit/Models/GLB format/barrel.glb"]
+src_size = [0.2365, 0.344, 0.2365]
+src_triangles = 412
+yaw_deg = 0
+scale = 2.576
+roles = ["pipe_red", "metal_dark"]
+pivot = "floor"
+collision = "hull"
+
+[[prop]]
+id = "garden_bench"
+name = "Garden bench"
+class = "dressing"
+size_m = [1.6, 0.5, 0.85]
+count = 6
+route = "proc"
+shape = "bench"
+params = {back = 1, slats = 4}
+roles = ["fence", "metal_dark"]
+pivot = "floor"
+collision = "hull"
+
+[[prop]]
+id = "gravel_patch"
+name = "Gravel patch, a ground decal"
+class = "dressing"
+size_m = [2.0, 2.0, 0.01]
+count = 3
+route = "proc"
+shape = "ground_decal"
+roles = ["gravel"]
+pivot = "floor"
+collision = "none"
+
+[[prop]]
+id = "greenhouse_shelf"
+name = "Greenhouse plant shelf with pots"
+class = "dressing"
+size_m = [1.8, 0.4, 1.6]
+count = 2
+route = "proc"
+shape = "shelving_pots"
+roles = ["fence", "terracotta", "plant"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "hose_reel"
+name = "Hose reel"
+class = "dressing"
+size_m = [0.5, 0.3, 0.6]
+count = 1
+route = "proc"
+shape = "hose_reel"
+roles = ["safety_green", "metal_dark"]
+pivot = "floor"
+collision = "hull"
+
+[[prop]]
+id = "hydrant"
+name = "Fire hydrant"
+class = "dressing"
+size_m = [0.3, 0.3, 0.8]
+count = 1
+route = "proc"
+shape = "hydrant"
+roles = ["pipe_red", "metal_grey"]
+pivot = "floor"
+collision = "hull"
+
+[[prop]]
+id = "jerrycan"
+name = "Jerrycan"
+class = "dressing"
+size_m = [0.35, 0.2, 0.5]
+count = 3
+route = "proc"
+shape = "jerrycan"
+roles = ["pipe_red"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "landing_bench"
+name = "Bench"
+class = "dressing"
+size_m = [1.4, 0.4, 0.5]
+count = 1
+route = "proc"
+shape = "bench"
+params = {back = 0, cushion = 1}
+roles = ["wood_mid", "fabric"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "loot_crate"
+name = "Crate for the roof loot"
+class = "dressing"
+size_m = [0.8, 0.5, 0.5]
+count = 1
+route = "pack"
+source = "kenney_survival_kit"
+files = ["kenney/survival-kit/kenney_survival-kit/Models/GLB format/box-large.glb"]
+src_size = [0.25, 0.25, 0.5]
+src_triangles = 124
+yaw_deg = 90
+scale = 1.789
+stretch = true
+roles = ["wood_mid", "metal_dark"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "mailbox"
+name = "Mailbox"
+class = "dressing"
+size_m = [0.4, 0.25, 1.2]
+count = 1
+route = "proc"
+shape = "mailbox"
+roles = ["rust_red", "metal_dark"]
+pivot = "floor"
+collision = "hull"
+
+[[prop]]
+id = "nightstand"
+name = "Nightstand"
+class = "dressing"
+size_m = [0.45, 0.4, 0.5]
+count = 3
+route = "proc"
+shape = "cabinet"
+params = {drawers = 2, legs = 4}
+roles = ["wood_mid", "metal_grey"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "office_chair"
+name = "Office chair"
+class = "dressing"
+size_m = [0.6, 0.6, 1.0]
+count = 3
+route = "pack"
+source = "kenney_furniture_kit"
+files = ["kenney/furniture-kit/kenney_furniture-kit/Models/GLTF format/chairDesk.glb"]
+src_size = [0.335, 0.6076, 0.3143]
+src_triangles = 588
+yaw_deg = 0
+scale = 1.773
+roles = ["fabric", "metal_dark"]
+pivot = "floor"
+collision = "hull"
+
+[[prop]]
+id = "old_bicycle"
+name = "Old bicycle"
+class = "dressing"
+size_m = [1.7, 0.5, 1.0]
+count = 1
+route = "proc"
+shape = "bicycle"
+roles = ["rust_red", "rubber", "metal_grey"]
+pivot = "floor"
+collision = "hull"
+
+[[prop]]
+id = "pallet"
+name = "Pallet"
+class = "dressing"
+size_m = [1.2, 0.8, 0.15]
+count = 6
+route = "pack"
+source = "kaykit_prototype_bits"
+files = ["kaykit/prototype-bits/KayKit_Prototype_Bits_1.1_FREE/KayKit_Prototype_Bits_1.1_FREE/Assets/gltf/Pallet_Large.gltf"]
+src_size = [4.0, 0.5, 4.0]
+src_triangles = 132
+yaw_deg = 0
+scale = 0.245
+stretch = true
+roles = ["wood_mid"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "picnic_table"
+name = "Low picnic table"
+class = "dressing"
+size_m = [1.4, 0.8, 0.5]
+count = 1
+route = "proc"
+shape = "picnic_table"
+roles = ["fence"]
+pivot = "floor"
+collision = "hull"
+
+[[prop]]
+id = "picture_frame"
+name = "Picture frame"
+class = "dressing"
+size_m = [0.5, 0.03, 0.4]
+count = 33
+route = "proc"
+shape = "picture_frame"
+roles = ["wood_dark", "cream", "teal_stripe"]
+pivot = "wall"
+collision = "none"
+
+[[prop]]
+id = "planter_pot"
+name = "Planter pot with plant"
+class = "dressing"
+size_m = [0.5, 0.5, 0.7]
+count = 35
+route = "pack"
+source = "tinytreats_house_plants"
+files = ["tinytreats/house-plants/Tiny_Treats_House_Plants_1.0_FREE/Tiny_Treats_House_Plants_1.0_FREE/Assets/gltf/yucca_plant_medium_potted.gltf"]
+src_size = [1.4218, 2.3272, 1.3339]
+src_triangles = 2908
+yaw_deg = 0
+scale = 0.336
+stretch = true
+decimate = true
+roles = ["terracotta", "plant", "soil"]
+pivot = "floor"
+collision = "hull"
+
+[[prop]]
+id = "potted_plant"
+name = "Potted plant"
+class = "dressing"
+size_m = [0.4, 0.4, 0.9]
+count = 12
+route = "pack"
+source = "tinytreats_house_plants"
+files = ["tinytreats/house-plants/Tiny_Treats_House_Plants_1.0_FREE/Tiny_Treats_House_Plants_1.0_FREE/Assets/gltf/sansevieria_plant_medium_potted.gltf"]
+src_size = [1.2073, 2.2436, 0.9745]
+src_triangles = 936
+yaw_deg = 0
+scale = 0.369
+stretch = true
+decimate = true
+roles = ["terracotta", "plant", "soil"]
+pivot = "floor"
+collision = "hull"
+
+[[prop]]
+id = "rolled_carpet"
+name = "Rolled carpet"
+class = "dressing"
+size_m = [1.8, 0.3, 0.3]
+count = 3
+route = "proc"
+shape = "rolled_carpet"
+roles = ["fabric_accent"]
+pivot = "floor"
+collision = "hull"
+
+[[prop]]
+id = "roof_vent"
+name = "Roof vent or skylight bump"
+class = "dressing"
+size_m = [0.8, 0.8, 0.5]
+count = 4
+route = "proc"
+shape = "roof_vent"
+roles = ["metal_grey"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "roof_water_tank"
+name = "Rooftop water tank"
+class = "dressing"
+size_m = [1.5, 1.5, 1.8]
+count = 1
+route = "proc"
+shape = "tank_roof"
+roles = ["metal_grey", "metal_dark"]
+pivot = "floor"
+collision = "hull"
+
+[[prop]]
+id = "rug"
+name = "Rug"
+class = "dressing"
+size_m = [3.0, 2.0, 0.02]
+count = 9
+route = "proc"
+shape = "rug"
+roles = ["fabric_accent", "cream"]
+pivot = "floor"
+collision = "none"
+
+[[prop]]
+id = "shoe_rack"
+name = "Shoe rack"
+class = "dressing"
+size_m = [0.8, 0.3, 0.5]
+count = 1
+route = "proc"
+shape = "shoe_rack"
+roles = ["wood_mid", "rubber"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "small_table"
+name = "Small round table"
+class = "dressing"
+size_m = [0.7, 0.7, 0.7]
+count = 1
+route = "pack"
+source = "kaykit_furniture_bits"
+files = ["kaykit/furniture-bits/KayKit_Furniture_Bits_1.0_FREE/KayKit_Furniture_Bits_1.0_FREE/Assets/gltf/table_small.gltf"]
+src_size = [1.0, 1.0, 1.0]
+src_triangles = 168
+yaw_deg = 0
+scale = 0.7
+roles = ["wood_mid"]
+pivot = "floor"
+collision = "hull"
+
+[[prop]]
+id = "stepping_stone"
+name = "Stepping stone path (per 2 m)"
+class = "dressing"
+size_m = [2.0, 0.6, 0.05]
+count = 28
+route = "proc"
+shape = "stepping_stones"
+roles = ["stone"]
+pivot = "floor"
+collision = "none"
+
+[[prop]]
+id = "stool"
+name = "Stool"
+class = "dressing"
+size_m = [0.35, 0.35, 0.65]
+count = 3
+route = "pack"
+source = "kenney_furniture_kit"
+files = ["kenney/furniture-kit/kenney_furniture-kit/Models/GLTF format/stoolBar.glb"]
+src_size = [0.2654, 0.435, 0.2299]
+src_triangles = 176
+yaw_deg = 0
+scale = 1.417
+roles = ["wood_mid", "metal_dark"]
+pivot = "floor"
+collision = "hull"
+
+[[prop]]
+id = "toolbox_cart"
+name = "Toolbox cart"
+class = "dressing"
+size_m = [0.7, 0.45, 0.9]
+count = 1
+route = "proc"
+shape = "toolbox_cart"
+roles = ["pipe_red", "metal_dark"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "towel_rack"
+name = "Towel rack"
+class = "dressing"
+size_m = [0.6, 0.1, 0.9]
+count = 1
+route = "proc"
+shape = "towel_rack"
+roles = ["metal_grey", "cream"]
+pivot = "wall"
+collision = "none"
+
+[[prop]]
+id = "toy_chest"
+name = "Toy chest with toys"
+class = "dressing"
+size_m = [0.9, 0.5, 0.5]
+count = 1
+route = "proc"
+shape = "toy_chest"
+roles = ["wood_mid", "mustard", "teal_stripe"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "trash_bin"
+name = "Wheelie bin"
+class = "dressing"
+size_m = [0.6, 0.7, 1.1]
+count = 5
+route = "proc"
+shape = "wheelie_bin"
+roles = ["safety_green", "metal_dark", "rubber"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "tripod_camera"
+name = "Camera on a tripod"
+class = "dressing"
+size_m = [0.5, 0.5, 1.5]
+count = 1
+route = "proc"
+shape = "tripod_camera"
+roles = ["metal_dark", "metal_grey"]
+pivot = "floor"
+collision = "hull"
+
+[[prop]]
+id = "tyre_stack"
+name = "Stack of tyres"
+class = "dressing"
+size_m = [0.7, 0.7, 0.8]
+count = 3
+route = "proc"
+shape = "tyre_stack"
+roles = ["rubber"]
+pivot = "floor"
+collision = "hull"
+
+[[prop]]
+id = "utility_pole"
+name = "Utility pole with wires"
+class = "dressing"
+size_m = [0.3, 0.3, 8.0]
+count = 3
+route = "proc"
+shape = "utility_pole"
+roles = ["wood_dark", "metal_dark"]
+pivot = "floor"
+collision = "hull"
+
+[[prop]]
+id = "washing_line"
+name = "Washing line with laundry"
+class = "dressing"
+size_m = [5.0, 0.1, 1.8]
+count = 1
+route = "proc"
+shape = "washing_line"
+roles = ["metal_grey", "cream", "teal_stripe", "mustard"]
+pivot = "floor"
+collision = "hull"
+
+[[prop]]
+id = "watering_can"
+name = "Watering can"
+class = "dressing"
+size_m = [0.45, 0.2, 0.35]
+count = 3
+route = "pack"
+source = "tinytreats_house_plants"
+files = ["tinytreats/house-plants/Tiny_Treats_House_Plants_1.0_FREE/Tiny_Treats_House_Plants_1.0_FREE/Assets/gltf/watering_can_A.gltf"]
+src_size = [0.9, 0.75, 0.6]
+src_triangles = 630
+yaw_deg = 0
+scale = 0.408
+stretch = true
+decimate = true
+roles = ["safety_green"]
+pivot = "floor"
+collision = "hull"
+
+[[prop]]
+id = "wheelbarrow"
+name = "Wheelbarrow"
+class = "dressing"
+size_m = [1.4, 0.6, 0.7]
+count = 1
+route = "proc"
+shape = "wheelbarrow"
+roles = ["safety_green", "rubber", "wood_mid"]
+pivot = "floor"
+collision = "hull"
+
+[[prop]]
+id = "window_box"
+name = "Window box with flowers"
+class = "dressing"
+size_m = [1.0, 0.25, 0.25]
+count = 8
+route = "proc"
+shape = "window_box"
+roles = ["wood_mid", "soil", "plant", "flower"]
+pivot = "wall"
+collision = "box"
+
+[[prop]]
+id = "wine_bottle_crate"
+name = "Crate of wine bottles"
+class = "dressing"
+size_m = [0.5, 0.35, 0.3]
+count = 6
+route = "proc"
+shape = "bottle_crate"
+roles = ["wood_mid", "bottle_green"]
+pivot = "floor"
+collision = "box"
+
+# --- Vehicles ---
+
+[[prop]]
+id = "parked_car"
+name = "Parked car on the street"
+class = "vehicle"
+size_m = [4.3, 1.8, 1.5]
+count = 3
+route = "pack"
+source = "kaykit_city_builder_bits"
+files = ["kaykit/city-builder-bits/KayKit_City_Builder_Bits_1.0_FREE/KayKit_City_Builder_Bits_1.0_FREE/Assets/gltf/car_sedan.gltf"]
+src_size = [0.419, 0.3688, 0.9381]
+src_triangles = 1222
+yaw_deg = 90
+scale = 4.318
+roles = ["car_paint", "rubber", "glass", "metal_grey"]
+pivot = "floor"
+collision = "hull"
+
+# --- Light fixtures ---
+
+[[prop]]
+id = "bare_bulb"
+name = "Hanging bare bulb on a cord (fixture)"
+class = "fixture"
+size_m = [0.12, 0.12, 0.3]
+count = 28
+route = "proc"
+shape = "bare_bulb"
+roles = ["bulb", "metal_dark"]
+pivot = "ceiling"
+collision = "none"
+
+[[prop]]
+id = "cage_lamp"
+name = "Wall cage lamp (fixture)"
+class = "fixture"
+size_m = [0.2, 0.2, 0.25]
+count = 22
+route = "proc"
+shape = "cage_lamp"
+roles = ["bulb", "metal_dark"]
+pivot = "wall"
+collision = "none"
+
+[[prop]]
+id = "chandelier"
+name = "Chandelier (fixture)"
+class = "fixture"
+size_m = [0.9, 0.9, 0.7]
+count = 1
+route = "proc"
+shape = "chandelier"
+roles = ["bulb", "metal_dark"]
+pivot = "ceiling"
+collision = "none"
+
+[[prop]]
+id = "floor_lamp"
+name = "Floor lamp (fixture)"
+class = "fixture"
+size_m = [0.4, 0.4, 1.6]
+count = 2
+route = "pack"
+source = "kenney_furniture_kit"
+files = ["kenney/furniture-kit/kenney_furniture-kit/Models/GLTF format/lampRoundFloor.glb"]
+src_size = [0.152, 0.86, 0.1756]
+src_triangles = 76
+yaw_deg = 0
+scale = 2.213
+stretch = true
+roles = ["cream", "metal_dark", "bulb"]
+pivot = "floor"
+collision = "hull"
+
+[[prop]]
+id = "fluorescent_tube"
+name = "Fluorescent tube fixture (fixture)"
+class = "fixture"
+size_m = [1.2, 0.1, 0.08]
+count = 6
+route = "proc"
+shape = "fluorescent"
+roles = ["tube", "metal_grey"]
+pivot = "ceiling"
+collision = "none"
+
+[[prop]]
+id = "garden_post_lamp"
+name = "Garden post lamp (fixture)"
+class = "fixture"
+size_m = [0.25, 0.25, 2.4]
+count = 12
+route = "proc"
+shape = "post_lamp"
+roles = ["bulb", "metal_dark"]
+pivot = "floor"
+collision = "hull"
+
+[[prop]]
+id = "industrial_pendant"
+name = "Industrial pendant shade (fixture)"
+class = "fixture"
+size_m = [0.5, 0.5, 0.4]
+count = 10
+route = "proc"
+shape = "pendant_industrial"
+roles = ["bulb", "safety_green"]
+pivot = "ceiling"
+collision = "none"
+
+[[prop]]
+id = "lantern"
+name = "Lantern (fixture)"
+class = "fixture"
+size_m = [0.2, 0.2, 0.3]
+count = 21
+route = "pack"
+source = "kenney_holiday_kit"
+files = ["kenney/holiday-kit/kenney_holiday-kit/Models/GLB format/lantern-hanging.glb"]
+src_size = [0.4254, 0.6671, 0.4162]
+src_triangles = 152
+yaw_deg = 0
+scale = 0.465
+roles = ["metal_dark", "bulb"]
+pivot = "floor"
+collision = "hull"
+
+[[prop]]
+id = "path_light"
+name = "Low path light (fixture)"
+class = "fixture"
+size_m = [0.2, 0.2, 0.5]
+count = 28
+route = "proc"
+shape = "path_light"
+roles = ["bulb", "metal_dark"]
+pivot = "floor"
+collision = "hull"
+
+[[prop]]
+id = "pendant_shade"
+name = "Pendant lamp with shade (fixture)"
+class = "fixture"
+size_m = [0.5, 0.5, 0.4]
+count = 8
+route = "proc"
+shape = "pendant_shade"
+roles = ["bulb", "mustard"]
+pivot = "ceiling"
+collision = "none"
+
+[[prop]]
+id = "porch_lamp"
+name = "Porch lamp (fixture)"
+class = "fixture"
+size_m = [0.25, 0.25, 0.35]
+count = 3
+route = "proc"
+shape = "porch_lamp"
+roles = ["bulb", "metal_dark"]
+pivot = "wall"
+collision = "none"
+
+[[prop]]
+id = "safelight_red"
+name = "Red darkroom safelight (fixture)"
+class = "fixture"
+size_m = [0.2, 0.15, 0.2]
+count = 6
+route = "proc"
+shape = "safelight"
+roles = ["safelight", "metal_dark"]
+pivot = "wall"
+collision = "none"
+
+[[prop]]
+id = "streetlight"
+name = "Street light (fixture)"
+class = "fixture"
+size_m = [0.4, 0.4, 6.0]
+count = 5
+route = "proc"
+shape = "streetlight"
+roles = ["metal_dark", "bulb"]
+pivot = "floor"
+collision = "hull"
+
+[[prop]]
+id = "string_lights"
+name = "String of lights, per 5 m (fixture)"
+class = "fixture"
+size_m = [5.0, 0.05, 0.1]
+count = 14
+route = "proc"
+shape = "string_lights"
+roles = ["bulb", "metal_dark"]
+pivot = "ceiling"
+collision = "none"
+
+[[prop]]
+id = "table_lamp"
+name = "Table lamp (fixture)"
+class = "fixture"
+size_m = [0.3, 0.3, 0.5]
+count = 9
+route = "pack"
+source = "kenney_furniture_kit"
+files = ["kenney/furniture-kit/kenney_furniture-kit/Models/GLTF format/lampRoundTable.glb"]
+src_size = [0.152, 0.3142, 0.1756]
+src_triangles = 76
+yaw_deg = 0
+scale = 1.772
+stretch = true
+roles = ["cream", "metal_dark", "bulb"]
+pivot = "floor"
+collision = "hull"
+
+[[prop]]
+id = "wall_sconce"
+name = "Wall sconce (fixture)"
+class = "fixture"
+size_m = [0.2, 0.12, 0.25]
+count = 16
+route = "proc"
+shape = "sconce"
+roles = ["bulb", "metal_grey"]
+pivot = "wall"
+collision = "none"
