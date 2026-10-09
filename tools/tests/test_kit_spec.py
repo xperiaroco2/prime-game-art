@@ -55,6 +55,11 @@ class SpecTest(unittest.TestCase):
         floor["size"] = [2.5, floor["size"][1]]
         self.assertTrue(any("not whole metres" in s for s in G.check_spec(bad)))
 
+    def test_the_line_up_shows_every_piece_once(self) -> None:
+        ids = [i for g in _kit.lineup_groups(SPEC["pieces"]) for i in g[1]]
+        self.assertEqual(sorted(ids), sorted(PIECES))
+        self.assertEqual([g for g in _kit.lineup_groups(SPEC["pieces"]) if g[0] == "other"], [])
+
 
 class PieceTest(unittest.TestCase):
     def test_every_piece_passes_its_checks(self) -> None:

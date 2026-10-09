@@ -16,6 +16,19 @@ CHECK = "res://check/kit.gd"
 PROOF = "res://kit/proof.gd"
 BOUNDS_TOLERANCE_M = 0.002  # Godot's imported bounds equal the spec's geometry
 RAY_LEAD_M = 0.5  # every collider is probed by a ray that starts this far outside it
+MAN = ("clay-42a", "export", "m1", "m1.glb")  # the clay man for scale in the proof (<raw>/...); a capsule without it
+# The proof's line-up (art #86): every piece in one group by its kind; the view pitch in degrees (8 front, 90 from
+# above; the roofs at 50 so the slopes show). A kind in no group goes to "other".
+LINEUP_GROUPS = (
+    ("walls", ("wall",), 8.0),
+    ("corners, ends, pillars, chimney, trim", ("corner", "pillar", "chimney", "trim"), 8.0),
+    ("floors", ("floor",), 90.0),
+    ("roofs", ("roof",), 50.0),
+    ("glass", ("glass",), 8.0),
+    ("stairs, ladder, railings", ("stairs", "ladder", "railing"), 8.0),
+    ("fences, gates, garage, porch", ("fence", "gate", "garage", "porch"), 8.0),
+    ("gazebo", ("gazebo",), 30.0),
+)
 
 
 def geom():
@@ -29,6 +42,14 @@ def geom():
     sys.modules[name] = module
     spec.loader.exec_module(module)
     return module
+
+
+def lineup_groups(pieces: list[dict[str, Any]]) -> list[list]:
+    """LINEUP_GROUPS filled with the pieces' ids in spec order; empty groups dropped, unknown kinds in "other"."""
+    known = {k for _, kinds, _ in LINEUP_GROUPS for k in kinds}
+    groups = [[title, [p["id"] for p in pieces if p["kind"] in kinds], pitch] for title, kinds, pitch in LINEUP_GROUPS]
+    groups.append(["other", [p["id"] for p in pieces if p["kind"] not in known], 8.0])
+    return [g for g in groups if g[1]]
 
 
 def default_out(spec: dict[str, Any]) -> Path:
