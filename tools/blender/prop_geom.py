@@ -1490,6 +1490,10 @@ def pack_piece(p: dict, parts: list[dict], spec: dict) -> Piece:
     else:
         f = [p["scale"]] * 3
     verts = [tuple(v[i] * f[i] for i in range(3)) for v in verts]
+    lo = [min(v[i] for v in verts) for i in range(3)]
+    hi = [max(v[i] for v in verts) for i in range(3)]
+    d = (-(lo[0] + hi[0]) / 2, -lo[1], -(lo[2] + hi[2]) / 2)  # the floor frame, so that extras can use the sizes
+    verts = [(v[0] + d[0], v[1] + d[1], v[2] + d[2]) for v in verts]
     roles = list(p["roles"])
     dark_to_light = sorted(roles, key=lambda r: luminance(spec["roles"][r]["hex"]))
     labels = cluster(cols, areas, len(roles))
