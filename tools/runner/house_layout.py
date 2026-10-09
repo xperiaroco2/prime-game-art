@@ -677,7 +677,7 @@ def write_scenes(data: dict, planned: dict, out: Path) -> dict:
             if phs:
                 sc.group("Placeholders")
                 for p in phs:
-                    sc.marker(p["name"], "Placeholders", p["at"][0] - rx, p["at"][1], p["at"][2] - ry, meta={"note": p["note"]})
+                    sc.marker(p["name"], "Placeholders", p["at"][0] - rx, p["at"][1], p["at"][2] - ry, meta={"note": p["note"], **({"size": p["size"]} if "size" in p else {})})
             (out / name / f"{room['id']}.tscn").write_text(sc.text(), encoding="utf-8", newline="\n")
             level.instance(room["node"], "Rooms", f"{scene_res}/{name}/{room['id']}.tscn",
                            _tf(0, rx, lv["floor_y"], ry))

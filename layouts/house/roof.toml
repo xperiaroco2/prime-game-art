@@ -23,10 +23,12 @@ stations = [
 name = "Chimney1"
 room = "roof"
 at = [22, 0.0, 42]
+size = [1.0, 1.6, 1.0]
 note = "a chimney (kit v2)"
 
 [[placeholders]]
 name = "Chimney2"
 room = "roof"
 at = [38, 0.0, 24.5]
+size = [1.0, 1.6, 1.0]
 note = "a chimney (kit v2)"

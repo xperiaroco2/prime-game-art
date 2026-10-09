@@ -91,10 +91,18 @@ class LayoutDataTest(unittest.TestCase):
                 text = (GREYBOX / f"{room['id']}.tscn").read_text(encoding="utf-8")
                 theirs = sorted(re.findall(r'\[node name="(\w+)" type="Marker3D" parent="Doors"', text))
                 ours = sorted(d["names"][room["id"]] for L in DATA["levels"] for d in L.get("doors", [])
-                              if room["id"] in d.get("names", {}))
+                              if room["id"] in d.get("names", {}) and not d.get("placeholder"))
                 self.assertEqual(ours, theirs, room["id"])
                 stations = sorted(re.findall(r'\[node name="(\w+)" type="Marker3D" parent="Stations"', text))
                 self.assertEqual(sorted(s["name"] for s in room.get("stations", [])), stations, room["id"])
+
+
+    def test_the_main_stairs_foot_has_a_marked_door(self) -> None:
+        ground = next(lv for lv in DATA["levels"] if lv["level"] == "ground")
+        foot = [d for d in ground["doors"] if d["at"] == [27, 36]]
+        self.assertEqual(len(foot), 1)
+        self.assertTrue(foot[0]["placeholder"])
+        self.assertEqual(sorted(foot[0]["rooms"]), ["hallway", "stairs"])
 
 
 class RuleTest(unittest.TestCase):
