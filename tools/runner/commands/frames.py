@@ -64,8 +64,10 @@ def run(args: argparse.Namespace) -> int:
     import_lines = _godot.import_project()
     common.say(f"frames: {len(spec['clips'])} animations of {glb.name} in an off-screen Godot window -> {out.as_posix()}")
     w, h = _frames.WINDOW
-    code, output = _godot.godot(["--path", _godot.PROJECT, "--position", _frames.POSITION, "--resolution", f"{w}x{h}",
-                                 "-s", _frames.SCRIPT, "--", res_path, out.as_posix(), spec_path.as_posix()], TIMEOUT)
+    # no sound: with no audio output device Godot's WASAPI logs an ERROR (art #69), and a frame sheet needs none
+    code, output = _godot.godot(["--path", _godot.PROJECT, "--audio-driver", "Dummy", "--position", _frames.POSITION,
+                                 "--resolution", f"{w}x{h}", "-s", _frames.SCRIPT, "--", res_path, out.as_posix(),
+                                 spec_path.as_posix()], TIMEOUT)
     (out / "godot.log").write_text(output, encoding="utf-8")
     lines = _godot.noteworthy(output)
     errors = [ln for ln in output.splitlines() if "FRAMES error" in ln] + [ln for ln in lines if "ERROR" in ln]
