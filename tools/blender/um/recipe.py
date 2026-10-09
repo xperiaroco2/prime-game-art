@@ -14,7 +14,7 @@ import re
 from pathlib import Path, PurePosixPath
 from typing import Any
 
-from . import glb, zones
+from . import claylook, glb, zones
 
 GENDERS = ("M", "W")
 PACK_LABEL = {"M": "Men", "W": "Women"}
@@ -28,7 +28,7 @@ DEFAULT_MODES = ("chars", "face", "hands", "lineup", "crossgender")
 ID_RE = re.compile(r"^[a-z0-9][a-z0-9_]*$")
 
 TOP_REQUIRED = ("packs", "skeleton", "head_bone_rest", "face", "characters")
-TOP_OPTIONAL = ("description", "face_shading", "hands", "crossgender", "modes")
+TOP_OPTIONAL = ("description", "face_shading", "hands", "crossgender", "modes", "look", "clay")
 CHAR_REQUIRED = ("id", "gender", "head", "hair", "top", "bottom", "shoes", "eyes", "brows", "mouth", "pose")
 CHAR_OPTIONAL = ("skin", "extras", "recolor", "extend", "notes")
 
@@ -170,6 +170,8 @@ def check_structure(data: dict[str, Any]) -> list[str]:
     hb = data.get("head_bone_rest")
     if not (isinstance(hb, list) and len(hb) == 3 and all(_num(v) for v in hb)):
         c.bad("head_bone_rest", "must be [x, y, z] in metres")
+    for problem in claylook.check(data):
+        c.problems.append(problem)
     if data.get("face_shading", "smooth") not in ("smooth", "flat"):
         c.bad("face_shading", "must be smooth or flat")
     if c.keys(data.get("face"), "face", GENDERS):
@@ -270,8 +272,10 @@ def _check_character(c: _Check, ch: dict[str, Any], where: str) -> None:
         role, part = spec
         w = where + (".hair" if role else f".extras[{k - 1}]")
         required = ("file", "object", "materials") + (() if role else ("role",))
-        if not _check_part(c, part, w, required, ("cut", "inflate")):
+        if not _check_part(c, part, w, required, ("cut", "inflate") + (() if role else ("gender",))):
             continue
+        if "gender" in part and part["gender"] not in GENDERS:
+            c.bad(w + ".gender", "must be M or W (the pack a head item comes from; default the character's)")
         c.names(part.get("materials"), w + ".materials")
         if "cut" in part:
             c.cuts(part["cut"], w + ".cut")
@@ -412,9 +416,10 @@ def check_contents(data: dict[str, Any], raw_dir: Path) -> list[str]:
                 mats(f"{where}.head.{key}", head.get(key, []), hm, what)
             available["head"] = list(head["keep"]) + list(head.get("as_skin", []))
         for spec, w in [(ch["hair"], where + ".hair")] + [(e, f"{where}.extras[{k}]") for k, e in enumerate(ch.get("extras", []))]:
-            m = obj(w, g, spec["file"], spec["object"])
+            sg = spec.get("gender", g)
+            m = obj(w, sg, spec["file"], spec["object"])
             if m is not None:
-                mats(w + ".materials", spec["materials"], m, f"{spec['object']} ({PACK_LABEL[g]}/{spec['file']})")
+                mats(w + ".materials", spec["materials"], m, f"{spec['object']} ({PACK_LABEL[sg]}/{spec['file']})")
                 available[spec.get("role", "hair")] = list(spec["materials"])
         for slot in ("top", "bottom", "shoes"):
             m = obj(f"{where}.{slot}", g, ch[slot]["file"], ch[slot]["object"])

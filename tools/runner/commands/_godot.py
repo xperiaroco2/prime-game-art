@@ -242,10 +242,12 @@ def _part(dump: dict[str, Any], slot: str) -> dict[str, Any] | None:
 
 
 def evaluate(dump: dict[str, Any], expect: dict[str, Any], contract: dict[str, Any], output: list[str],
-             strict_contract: bool = False, renamed: dict[str, str] | None = None) -> list[dict[str, str]]:
+             strict_contract: bool = False, renamed: dict[str, str] | None = None,
+             textured: bool = False) -> list[dict[str, str]]:
     """The assertions of godot-check on inspect.gd's description of an imported character (docs/godot.md). renamed maps
     the rig's bone names to the names the import gave them (the SkeletonProfileHumanoid trial); then the bone set is
-    compared through it and the rest joints are not compared. Contract v1 gates are warnings unless strict_contract."""
+    compared through it and the rest joints are not compared. Contract v1 gates are warnings unless strict_contract.
+    textured (a baked clay character): the textured checks (_textured) replace flat_colours."""
     renamed = renamed or {}
     c = Checks()
     skeletons = dump["skeletons"]
@@ -348,8 +350,12 @@ def evaluate(dump: dict[str, Any], expect: dict[str, Any], contract: dict[str, A
                   rules["eyes"] if strict_contract else "warn")
     else:
         c.add("feet_at_zero", False, "no skinned vertices to measure")
-    textured = [f"{m['name']}/{mat['name']}" for m in dump["meshes"] for mat in m["materials"] if mat.get("textured")]
-    c.add("flat_colours", not textured, "every surface a flat albedo colour, no texture" if not textured else f"textured: {', '.join(textured)}")
+    if textured:
+        _textured(c, dump, contract)
+    else:
+        textured_ = [f"{m['name']}/{mat['name']}" for m in dump["meshes"] for mat in m["materials"] if mat.get("textured")]
+        c.add("flat_colours", not textured_, "every surface a flat albedo colour, no texture" if not textured_ else
+              f"textured: {', '.join(textured_)}")
     errors = [line for line in output if line.startswith(("ERROR", "SCRIPT ERROR", "USER ERROR"))]
     warnings = [line for line in output if not line.startswith(("ERROR", "SCRIPT ERROR", "USER ERROR"))]
     c.add("godot_output", not errors, f"{len(errors)} errors, {len(warnings)} warnings in Godot's import and inspection output"
@@ -362,6 +368,26 @@ def evaluate(dump: dict[str, Any], expect: dict[str, Any], contract: dict[str, A
               f"{len(got)} bones and {len(anims)} animations (the Ultimate Modular rig has {PACK_BONES} bones and "
               f"{PACK_ANIMATIONS} actions)")
     return c.items
+
+
+def _textured(c: Checks, dump: dict[str, Any], contract: dict[str, Any]) -> None:
+    """A baked clay character as Godot imported it: textured surfaces with their normal maps, no texture side over the
+    contract's texture_character_px, the surfaces within its surfaces_per_character_cap."""
+    limits = contract["budgets"]["limits"]
+    mats = [(m["name"], mat) for m in dump["meshes"] for mat in m["materials"]]
+    with_tex = [f"{n}/{mat['name']}" for n, mat in mats if mat.get("textured")]
+    c.add("textured", bool(with_tex), f"{len(with_tex)} of {len(mats)} surfaces textured" if with_tex else "no textured surface")
+    flat_nrm = [f"{n}/{mat['name']}" for n, mat in mats if mat.get("textured") and not mat.get("normal_mapped")]
+    c.add("normal_maps", not flat_nrm, "every textured surface normal-mapped" if not flat_nrm else
+          f"textured without a normal map: {', '.join(flat_nrm)}")
+    sides = [max(mat.get(k) or [0]) for _, mat in mats for k in ("albedo_px", "normal_px")]
+    cap_px = limits["texture_character_px"]
+    c.add("texture_size", max(sides, default=0) <= cap_px,
+          f"largest texture side {max(sides, default=0)} px (contract: {cap_px})")
+    surfaces = sum(m["surfaces"] for m in dump["meshes"])
+    cap = limits["surfaces_per_character_cap"]
+    c.add("surfaces_cap", surfaces <= cap, f"{surfaces} surfaces (contract: target {limits['surfaces_per_character_target']}, "
+          f"cap {cap})")
 
 
 def _loops(c: Checks, anims: dict[str, Any], seams: dict[str, dict[str, float]]) -> None:

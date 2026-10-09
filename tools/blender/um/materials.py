@@ -39,6 +39,8 @@ def sync_principled(mat, scripted):
     """Principled base colour := the viewport colour (what Workbench showed). For our scripted face materials (made
     with viewport settings only) roughness and metallic follow too; the packs' own materials keep theirs.
     Returns the largest colour difference that was corrected."""
+    if mat.get("look") in ("clay", "baked"):  # the clay look (um/clay.py): a procedural or textured base colour
+        return 0.0
     bsdf = principled(mat)
     base = bsdf.inputs["Base Color"]
     if base.is_linked:

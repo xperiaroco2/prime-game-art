@@ -188,6 +188,13 @@ class ReviewSheetTest(unittest.TestCase):
         self.assertIs(stats["outline"], False)
         self.assertEqual(_review.png_size(Path(stats["anim"]["sheet"])), (512, 128))
 
+    def test_views_posed_at_an_action(self) -> None:
+        # --pose: the eight views at the action's first frame, to compare two models in the same pose.
+        out = OUT / "renders" / "humanoid_posed"
+        stats = _review.render(self.fixtures["humanoid"], out, cell=64, pose="Wave")
+        self.assertEqual(stats["pose"], "Wave")
+        self.assertEqual(_review.png_size(out / "sheet.png"), (256, 128))
+
     def test_an_action_name_with_pipes_gives_file_safe_names(self) -> None:
         # How Mixamo and Meshy FBX clips are named; `|` is not allowed in a Windows file name.
         mixamo = "Armature|mixamo.com|Layer0"

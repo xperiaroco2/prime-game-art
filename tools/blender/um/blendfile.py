@@ -230,6 +230,10 @@ def inspect(path):
                     bad(f"{o.name}: an empty material slot")
                     continue
                 bsdf = next((n for n in s.material.node_tree.nodes if n.type == "BSDF_PRINCIPLED"), None) if s.material.node_tree else None
+                if s.material.get("look") in ("clay", "baked"):  # the clay look: a procedural or textured base colour
+                    if bsdf is None:
+                        bad(f"{o.name}: material {s.material.name} has no Principled BSDF")
+                    continue
                 if bsdf is None or max(abs(a - b) for a, b in zip(bsdf.inputs["Base Color"].default_value[:3], s.material.diffuse_color[:3])) > 1e-4:
                     bad(f"{o.name}: material {s.material.name}'s Principled base colour is not its viewport colour")
         elif o.type == "ARMATURE":
