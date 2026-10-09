@@ -661,13 +661,13 @@ class _Arms:
             R = _turn_of(rig, P, CHEST)
             if axis == "forward":
                 ax = R @ Vector((0.0, -1.0, 0.0))
-            elif axis == "side":  # the chest's left-right axis: positive swings the hand forward (art #70)
+            elif axis == "swing":  # the chest's left-right axis: positive swings the hand forward (art #70)
                 ax = R @ Vector((1.0, 0.0, 0.0))
             else:
                 ax = Vector((0.0, 0.0, 1.0))
-            out = R @ Vector((0.0, -1.0, 0.0)) if axis == "side" else R @ Vector((1.0, 0.0, 0.0))
+            out = R @ Vector((0.0, -1.0, 0.0)) if axis == "swing" else R @ Vector((1.0, 0.0, 0.0))
             self.axes.append(ax.normalized())
-            for side, k in ((("L", 1.0), ("R", 1.0)) if axis == "side" else (("L", 1.0), ("R", -1.0))):
+            for side, k in ((("L", 1.0), ("R", 1.0)) if axis == "swing" else (("L", 1.0), ("R", -1.0))):
                 r = _world(rig, P, f"Wrist.{side}") - _world(rig, P, f"UpperArm.{side}")
                 reach[side] += ax.cross(r).dot(out * k)
         self.sign = {s: (1.0 if v >= 0 else -1.0) for s, v in reach.items()}
@@ -716,7 +716,7 @@ class _Arms:
 
 
 def op_arm_offset(fr: Frames, p: dict, target: Target):
-    arms = _Arms(fr, target, "side" if p["axis"] == "swing" else "forward")
+    arms = _Arms(fr, target, "swing" if p["axis"] == "swing" else "forward")
     frames = range(len(fr.basis))
     before = [arms.measure(k, 0.0, "legs")["depth"] for k in frames]
     found = True
@@ -730,9 +730,15 @@ def op_arm_offset(fr: Frames, p: dict, target: Target):
             def ok(a):
                 return all(arms.measure(k, a, "legs")["depth"] <= 0 for k in check)
 
-            deg, found = em.search_angle(ok, 0.0, p["max_deg"], 0.5)
+            # out (abduct) searches 0 to +max_deg; a swing both ways, forward and back (art #69), the smaller wins
+            signs = (1.0, -1.0) if p["axis"] == "swing" else (1.0,)
+            tries = [(sign, *em.search_angle(lambda a, sign=sign: ok(sign * a), 0.0, p["max_deg"], 0.5))
+                     for sign in signs]
+            hits = [t for t in tries if t[2]]
+            sign, deg, found = min(hits, key=lambda t: t[1]) if hits else tries[0]
             if found:  # the margin: the hands' closest point moves margin_cm further out
                 deg = min(p["max_deg"], deg + math.degrees(p["margin_cm"] / 100 / max(arms.arm_m, 0.1)))
+            deg *= sign
     else:
         deg = float(p["abduct_deg"])
     after = [arms.measure(k, deg, "legs")["depth"] for k in frames]
@@ -997,11 +1003,10 @@ def op_upper_match(fr: Frames, p: dict, target: Target):
             B = pose.B
         if w[k] > 0.0:
             for b in bones:
-                l0, q0, s0 = B0[b].decompose()
+                l0, q0, s0 = B[b].decompose()  # B: after the carry bones (art #69: not B0)
                 l1, q1, _ = ref[b].decompose()
                 if q0.dot(q1) < 0.0:
                     q1 = -q1
-                l0, q0, s0 = B[b].decompose()
                 B[b] = Matrix.LocRotScale(l0.lerp(l1, w[k]), q0.slerp(q1, w[k]), s0)
         out_basis.append(B)
     out = fr.copy(out_basis)

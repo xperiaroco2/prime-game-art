@@ -170,12 +170,15 @@ speed_m_s = 0.75
 # floor: the toes went 1.42 / 1.37 cm into the floor (after: -0.23 / -0.26). The hands went 7.6 / 6.4 cm into the
 # thighs at the deepest steps (25 / 32 of 60 frames); turning the arms out (12 degrees) left 7.6 / 4.6. One grid of the
 # swing (men / women: -30 - / 4.0, -20 1.2 / 5.6, -10 5.9 / 4.6, 10 6.4 / 6.3, 20 7.3 / 5.0): back 20 degrees, then
-# the women's arms out 12 (1.2 cm on 2 frames / 2.0 cm on 9: art #70's review). The hips face 6.7 degrees right of the
-# aim on average, the head 1.9 (the source's own turn; warned). Seam step 1.0 median steps
+# the women's arms out 12 (1.2 cm on 2 frames / 2.0 cm on 9: art #70's review). Art #69's grid of swing x out (men /
+# women, cm in the thighs; out 0, 6, 12): -20 1.2, 0, 0 / 5.4, 3.8, 2.0; -25 1.0, 0, 0 / 4.7, 2.8, 1.3; -30 0.6, 0, 0 /
+# 3.9, 2.4, 0.7; -35 0, 0, 0 / 3.3, 1.6, 0: back 35 degrees and the women's arms out 12 take both out (0 cm, the same
+# two steps). The hips face 6.7 degrees right of the aim on average, the head 1.9 (the source's own turn; warned).
+# Seam step 1.0 median steps
 edits = [{ op = "stride", speed_m_s = 0.75, rate = 1.0 }, { op = "floor", mode = "lift" },
          { op = "hands_relax", curl_deg = { Index = [16, 22, 12], Middle = [20, 26, 14], Ring = [26, 30, 16], Pinky = [32, 34, 18], Thumb = [12, 12] } },
          { op = "thumb_in", from_clip = "Idle_Loop" },
-         { op = "arm_offset", axis = "swing", abduct_deg = -20 },
+         { op = "arm_offset", axis = "swing", abduct_deg = -35 },
          { op = "arm_offset", abduct_deg = 12, body = "women" }]
 needs = [{ need = "Crouch walk forward (the game plays it at its own speed / 0.75)", layer = "full", speed_m_s = 0.75, rate = 1.0 }]
 
@@ -208,11 +211,16 @@ needs = [{ need = "Jump: the landing (upper body while moving, full standing)", 
 name = "Shove_Stumble"
 source = "tm:shove-stumble"
 loop = false
-edits = [{ op = "trim", start_s = 0.37, end_s = 1.83 }, { op = "retime", seconds = 0.69 }, { op = "heading", facing = "start" },
+edits = [{ op = "trim", start_s = 0.39, end_s = 1.83 }, { op = "retime", seconds = 0.7 }, { op = "heading", facing = "start" },
          { op = "in_place", mode = "path" }, { op = "arm_offset", abduct_deg = 12 }]
-# retime (art #65): 1.47 s to 0.7 s (21 frames, the nearest to 0.69 s at 30 fps), so the steps match the 2.25 m/s at
+# retime (art #65): 1.47 s (1.44 after art #69's trim) to 0.7 s (21 frames; art #69: written 0.7, the export's length, not the asked 0.69, which
+# rounds to the same 21 frames and the same samples), so the steps match the 2.25 m/s at
 # which the game moves the pushed body. arm_offset: the hanging hands went into the thighs (7.0 cm men, 6.6 women after
 # the retime); 12 degrees takes them out on the men and to 4.3 cm on one frame on the women (art #33: 4.5 on 4 frames)
+# trim (art #69): from 0.37 s the women's 21 frames sampled a one-frame Toe.R pop (29.7 degrees at frame 6). One grid
+# of the start (0.35 to 0.39 s) by the length (21, 22 frames): 0.39 s and 21 frames pops on neither body (lowest
+# vertex -0.88 / -0.45 cm, the women's hands 4.28 cm into a thigh on one frame); 0.37 and 0.38 at 21 frames pop the
+# women's toe, 0.35 at 22 the men's foot
 needs = [{ need = "Being pushed: the stumble (the game moves the body)", no = 10, layer = "full" }]
 
 [[clips]]
@@ -245,6 +253,8 @@ loop = true
 # vertices 44.7 to 45.3 cm apart on every frame, the palms vertical (0.0 degrees up, within 0.02 of the other hand),
 # the hands 1.13 to 1.25 / 1.12 to 1.25 m high and 22 / 25 cm in front, nothing in the torso or the other hand.
 # Art #33's tray: hand_spacing to a mean gap of 0.40 m (28.7 / 29.8 degrees, 36.7 to 43 cm).
+# Accepted (art #69): the left and right hands' heights differ by 0.1 to 6.9 cm (mean 3.2) on the men and 0.0 to 7.1
+# (mean 3.2) on the women, the walk's own sway of the box; no op levels the hands (a new side_grip option would)
 edits = [{ op = "hands_relax", curl_deg = { Index = [8, 10, 6], Middle = [8, 10, 6], Ring = [10, 12, 8], Pinky = [12, 14, 8], Thumb = [6, 6] } },
          { op = "side_grip", gap_m = 0.45 }]
 needs = [{ need = "Carry the package (upper body over the idle and the locomotion)", no = 15, layer = "upper" }]
@@ -292,7 +302,9 @@ edits = [{ op = "trim", start_s = 0.1, end_s = 1.5 }, { op = "heading", facing =
 # feet carry into the squat: its lowest vertex went from -0.87 to -1.18 cm (men) and -1.66 to -2.0 cm (women).
 # The heading leaves Root turned 19.8 degrees from the idle's, so the feet are matched in the set's frame (the default);
 # both feet only shuffle between the ends, so they are held at the idle's all through. Putdown_Package, its reverse,
-# takes it at both ends too
+# takes it at both ends too. Accepted (art #69): a floor lift after idle_ends (0.2 to 0.8 s, past 1 cm) takes the
+# lowest vertex to -0.25 / -0.23 cm but drops idle_ends' placement (the set recentres the clip 3.5 / 7.3 cm) and parts
+# the end from the carry by 3.5 / 7.3 cm (0.08 / 0.1 cm now), so -1.18 / -2.0 cm stays (warned)
 needs = [{ need = "Pick up the package with both hands", no = 18, layer = "full" }]
 
 [[clips]]
