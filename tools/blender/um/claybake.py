@@ -26,7 +26,7 @@ import numpy as np
 from mathutils import Matrix
 
 from . import claylook as L
-from .clay import is_clay, tris
+from .clay import MASK_UV, is_clay, tris
 from .util import update
 
 SENTINEL = (1.0, 0.0, 1.0)  # magenta: no clay colour is pure magenta; a texel still magenta after a bake is unbaked
@@ -73,10 +73,18 @@ def unwrap(o, margin):
     """A fresh UV map 'bake' (the pack's overlapping palette UVs removed): Smart UV Project, islands at one density,
     the clay islands packed. Returns the clay UV use."""
     me = o.data
+    keep = {}  # the face kit's mask UV survives the unwrap, after 'bake' (glTF TEXCOORD_1)
+    if me.uv_layers.get(MASK_UV):
+        keep[MASK_UV] = [0.0] * (2 * len(me.loops))
+        me.uv_layers[MASK_UV].data.foreach_get("uv", keep[MASK_UV])
     for layer in list(me.uv_layers):
         me.uv_layers.remove(layer)
     me.uv_layers.new(name="bake")
+    for name, uv in keep.items():
+        me.uv_layers.new(name=name).data.foreach_set("uv", uv)
     me.uv_layers.active = me.uv_layers["bake"]
+    for u in me.uv_layers:
+        u.active_render = u.name == "bake"
     with bpy.context.temp_override(**_only(o)):
         bpy.ops.object.mode_set(mode="EDIT")
         bpy.ops.mesh.select_mode(type="FACE")
@@ -533,7 +541,7 @@ def write_piece(o, folder, meta):
     piece.json."""
     cp = o.copy()
     cp.data = o.data.copy()
-    cp.data.transform(o.matrix_world)
+    cp.data.transform(o.matrix_world, shape_keys=True)
     cp.parent = None
     cp.matrix_world = Matrix.Identity(4)
     for m in list(cp.modifiers):
@@ -555,7 +563,7 @@ def load_piece(o, folder, arm):
         dst.objects = [PIECE_OBJECT]
     pc = dst.objects[0]
     me = pc.data
-    me.transform(o.matrix_world.inverted())
+    me.transform(o.matrix_world.inverted(), shape_keys=True)
     old = o.data
     o.data = me
     me.name = old.name

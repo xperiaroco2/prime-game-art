@@ -22,7 +22,8 @@ from mathutils import Vector, noise
 from . import claylook as L
 from .util import base_name, update
 
-SOURCE_ROLES = ("top", "bottom", "shoes")  # clothing whose base colour the bake takes from the undecimated pack part
+SOURCE_ROLES = ("top", "bottom", "shoes")
+MASK_UV = "mask"  # the face kit's mask UV layer (clayface.kit.MASK_UV), kept through the join and the bake  # clothing whose base colour the bake takes from the undecimated pack part
 
 
 # ----------------------------------------------------------------------------------------------- materials
@@ -319,6 +320,7 @@ def head_scale(o, arm, s, fade=L.SCALE_FADE):
     mw = o.matrix_world
     inv = mw.inverted()
     moved, most = 0, 0.0
+    blocks = list(o.data.shape_keys.key_blocks) if o.data.shape_keys else []
     for v in o.data.vertices:
         tot = sum(g.weight for g in v.groups)
         w = sum(g.weight for g in v.groups if g.group in idx) / tot if tot > 1e-9 else 0.0
@@ -332,6 +334,9 @@ def head_scale(o, arm, s, fade=L.SCALE_FADE):
         q = p + (p - joint) * ((s - 1.0) * k)
         most = max(most, (q - p).length)
         v.co = inv @ q
+        for kb in blocks:  # the shape keys (the face kit's expressions) with the same k, measured on the basis
+            pk = mw @ kb.data[v.index].co
+            kb.data[v.index].co = inv @ (pk + (pk - joint) * ((s - 1.0) * k))
         moved += 1
     o.data.update()
     return {"scale": s, "fade_m": fade, "vertices_scaled": moved, "largest_move_mm": round(most * 1000, 1)}
@@ -416,6 +421,12 @@ def join_into_head(parts, roles=L.JOIN_INTO_HEAD):
     if not others:
         return []
     objs = [head] + others
+    if any(o.data.shape_keys for o in others) and not head.data.shape_keys:
+        head.shape_key_add(name="Basis", from_mix=False)  # else the join drops the others' keys
+    for layer in sorted({u.name for o in others for u in o.data.uv_layers} - {u.name for u in head.data.uv_layers}):
+        if layer == MASK_UV:  # the head's own faces get the mask's rest value (no tint)
+            from .clayface.face import write_mask_uv
+            write_mask_uv(head, {})
     for ob in bpy.context.view_layer.objects:
         ob.select_set(False)
     for ob in objs:
