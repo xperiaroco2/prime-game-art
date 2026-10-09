@@ -85,6 +85,32 @@ class LayoutDataTest(unittest.TestCase):
                                 {"piece": "chimney_stack", "room": "nowhere", "at": [1, 0, 1]}])
         self.assertEqual(len(H.plan(data)["problems"]), 2)
 
+    def test_the_attic_roof_is_the_kits_pitched_roof_with_gables(self) -> None:
+        ps = planned("attic")["pieces"]["attic"]
+        r, knee = DATA["spec"]["grid"]["gable_rise_per_m"], DATA["spec"]["grid"]["knee_h_m"]
+        roof = [p for p in ps if p["id"].startswith("roof_pitched")]
+        self.assertEqual(len(roof), len(H.kit_geom().attic_roof(DATA["spec"], 20, 14)))
+        ridge = [p for p in roof if p["id"] == "roof_pitched_ridge_2m"]
+        self.assertEqual(sorted(p["x"] for p in ridge), list(range(20, 40, 2)))
+        self.assertTrue(all(p["y"] == 33 and abs(p["h"] - (knee + 7 * r)) < 1e-9 for p in ridge))
+        self.assertFalse([p for p in level("attic").get("placeholders", []) if p["name"] == "RoofPitched"])
+        for gx, turn in ((20, -90), (40, 90)):
+            gable = [p for p in ps if p["id"].startswith("gable_") and p["x"] == gx]
+            self.assertTrue(gable and all(p["turn"] == turn for p in gable))
+            for p in gable:  # each piece's top meets the slope's line r * (distance to the nearer eave)
+                kp = DATA["pieces"][p["id"]]
+                length = float(kp["length"])
+                a = p["y"] - 26 if turn == -90 else p["y"] - length - 26
+                top = p["h"] + float(kp.get("rise", kp.get("height")))
+                if kp["type"] == "gable":
+                    self.assertAlmostEqual(top - knee, r * max(min(a, 14 - a), min(a + length, 14 - a - length)))
+                else:
+                    self.assertLessEqual(top - knee, r * min(a, 14 - a - length) + 1e-9)
+            tris = sorted((p["y"], p["id"]) for p in gable if p["id"].startswith("gable_tri"))
+            self.assertEqual(sum(DATA["pieces"][i]["length"] for _, i in tris), 14)
+        odd = one_room(d=5, walls="knee", roofs=[{"id": "x", "room": "r", "rect": [0, 0, 6, 5], "gables": True}])
+        self.assertTrue(any("even" in p for p in H.plan(odd)["problems"]))
+
     @unittest.skipUnless(DOC.is_file(), "the game's design doc is missing")
     def test_rooms_match_the_design_doc(self) -> None:
         rows = re.findall(r"^\| ([^|]+?) \| (\d+), (\d+) \| (\d+) x (\d+) m \|", DOC.read_text(encoding="utf-8"), re.M)

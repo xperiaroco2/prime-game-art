@@ -15,8 +15,10 @@ Godot's x = x, z = y. A kit piece runs along its local +X with its exterior at l
 
 from __future__ import annotations
 
+import importlib.util
 import json
 import math
+import sys
 import tomllib
 from pathlib import Path
 
@@ -375,6 +377,14 @@ def plan(data: dict) -> dict:
             else:
                 pieces[fp["room"]].append({"id": fp["piece"], "x": float(fp["at"][0]), "y": float(fp["at"][2]),
                                            "h": float(fp["at"][1]), "turn": int(fp.get("turn", 0))})
+        # pitched roofs: the kit's roof panels, eaves, verges, ridge and the gables over a room's knee walls
+        for rf in lv.get("roofs", []):
+            if rf.get("room") not in pieces:
+                problems.append(f"{lv['level']}: the roof {rf.get('id')} has no room {rf.get('room')}")
+                continue
+            placed, probs = pitched_roof(rf, data)
+            pieces[rf["room"]] += placed
+            problems += [f"{lv['level']}: the roof {rf.get('id')}: {p}" for p in probs]
         for d in lv.get("doors", []):
             for rid, nm in d.get("names", {}).items():
                 if rid in rooms:
@@ -382,6 +392,59 @@ def plan(data: dict) -> dict:
         out["levels"].append({"level": lv["level"], "node": lv["node"], "floor_y": lv["floor_y"], "pieces": pieces,
                               "extra": extra, "doors": markers})
     return {**out, "problems": problems}
+
+
+def kit_geom():
+    """tools/blender/kit_geom.py as a module (plain Python; shared with the kit command's loader)."""
+    name = "kit_geom"
+    if name not in sys.modules:
+        spec = importlib.util.spec_from_file_location(name, ROOT / "tools" / "blender" / "kit_geom.py")
+        module = importlib.util.module_from_spec(spec)
+        sys.modules[name] = module
+        spec.loader.exec_module(module)
+    return sys.modules[name]
+
+
+def pitched_roof(rf: dict, data: dict) -> tuple[list[dict], list[str]]:
+    """A room's pitched roof from the kit (docs/kit.md, "Pitched roofs"): the placements of kit_geom.attic_roof over
+    rf["rect"] (eaves on its two x-long sides, the ridge along x, so its depth is even), pivoted on the knee walls' top
+    (rf["h"], default the kit's knee height), and with rf["gables"] the gable walls on its two short sides: per slope
+    row a triangle over bands of the row's length, so the gables' tops follow the same pitch. Every height comes from
+    the kit's spec (gable_rise_per_m, the pieces' rise and height): a new pitch (Q2) is a kit rebuild, not an edit here."""
+    spec, kit = data["spec"], data["pieces"]
+    x0, y0, w, d = (float(v) for v in rf["rect"])
+    h0 = float(rf.get("h", spec["grid"]["knee_h_m"]))
+    r = spec["grid"]["gable_rise_per_m"]
+    try:
+        placed = kit_geom().attic_roof(spec, int(w), int(d))
+    except ValueError as e:
+        return [], [str(e)]
+    out = [{"id": pid, "x": x0 + off[0], "y": y0 + off[2], "h": h0 + off[1], "turn": int(round(deg))}
+           for pid, deg, off in placed]
+    if rf.get("gables"):
+        run, rows, z = d / 2, [], 0.0
+        while z < run - EPS:
+            step = 2 if run - z >= 2 else 1
+            rows.append((z, step))
+            z += step
+        for gx, turn in ((x0, turn_for((-1, 0))), (x0 + w, turn_for((1, 0)))):
+            ax, _ = axes(turn)
+            for s, step in rows:
+                for lo, south in ((s, True), (d - s - step, False)):  # the north slope's row, then its mirror
+                    up = south == (ax[1] > 0)  # the row climbs to the south (north slope); "up" climbs along +X
+                    start = lo if ax[1] > 0 else lo + step
+                    band = kit.get(f"gable_band_{step}m")
+                    tri = f"gable_tri_{step}m_{'up' if up else 'down'}"
+                    base = r * s
+                    n = round(base / float(band["height"])) if band else 0
+                    if tri not in kit or (base > EPS and (band is None or abs(n * float(band["height"]) - base) > 1e-6)):
+                        return out, [f"no gable pieces for a {step} m row at {base:g} m (the kit's pitch {r:g})"]
+                    for k in range(n):
+                        out.append({"id": band["id"], "x": gx, "y": y0 + start, "h": h0 + k * float(band["height"]),
+                                    "turn": turn})
+                    out.append({"id": tri, "x": gx, "y": y0 + start, "h": h0 + base, "turn": turn})
+    missing = sorted({p["id"] for p in out} - set(kit))
+    return out, [f"no kit piece {', '.join(missing)}"] if missing else []
 
 
 def _edge_from(n, d):
