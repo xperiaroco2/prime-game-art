@@ -505,17 +505,18 @@ out), and the set pins the women's arm offset that `auto` finds instead of the l
   game's crossfade still moves them (Jump_Land's left upper arm ends 68 degrees from the idle's).
 - **In the set** (`mvp.toml`): Idle_Loop and Talk_Upper_Loop take `foot_turn`, `stance`, `shoulders`, `head_level`,
   `hands_relax` (the talk with `cap = 1.5`) and `thumb_in` (the talk with the idle's turn: `from_clip`); the women's
-  idle then a second `arm_offset`, found by `auto` on the open hands (they are longer than fists: 2.9 cm in the
-  thighs to 0 at 4.16 degrees; 0 on the men and on both bodies' talk) and pinned. The crouch loops (art #70) take
-  the open hands and the idle's thumb turn only (no stance, foot turn or head level on a crouch); their hands go into
-  the thighs from in front or behind, so their `arm_offset` swings the arms (`axis = "swing"`, found by one grid). The
-  eight one-shots that start or
-  end in the idle pose end with `idle_ends`; Pickup_Package with `idle_ends {at = "both", upper = false}` (both ends
-  meet the idle's legs: the carry plays over the idle; both feet only shuffle between them, so they are held), which
-  Putdown_Package, its reverse, carries; Getup_Back with `match = "root"`. Putdown_One is
-  made from its source with the pickup's steps reversed, not `from = "Pickup_One"`, which would blend the idle into it
-  twice. Carry_Upper_Loop and Push_Upper_Loop are left alone: they play over the edited idle (art #65 gives the carry
-  nearly straight fingers by `hands_relax`, for its side grip).
+  idle then a second `arm_offset`, found by `auto` on the open hands (they are longer than fists: 2.9 cm in the thighs
+  to 0 at 4.16 degrees; 0 on the men and on both bodies' talk) and pinned. The crouch loops (art #70) take the open
+  hands and the idle's thumb turn only (no stance, foot turn or head level on a crouch); their hands go into the
+  thighs from in front or behind, so their `arm_offset` swings the arms (`axis = "swing"`, found by one grid): the
+  women's crouch idle forward 20 degrees; the crouch walk back 35 on both bodies, then the women's arms out 12 by a
+  second, women-only `arm_offset` (art #69's grid). The eight one-shots that start or end in the idle pose end with
+  `idle_ends`; Pickup_Package with `idle_ends {at = "both", upper = false}` (both ends meet the idle's legs: the carry
+  plays over the idle; both feet only shuffle between them, so they are held), which Putdown_Package, its reverse,
+  carries; Getup_Back with `match = "root"`. Putdown_One is made from its source with the pickup's steps reversed, not
+  `from = "Pickup_One"`, which would blend the idle into it twice. Carry_Upper_Loop and Push_Upper_Loop are left
+  alone: they play over the edited idle (art #65 gives the carry nearly straight fingers by `hands_relax`, for its
+  side grip).
 
 ### The pure and the Blender side
 
