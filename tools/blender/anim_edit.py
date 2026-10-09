@@ -661,11 +661,13 @@ class _Arms:
             R = _turn_of(rig, P, CHEST)
             if axis == "forward":
                 ax = R @ Vector((0.0, -1.0, 0.0))
+            elif axis == "side":  # the chest's left-right axis: positive swings the hand forward (art #70)
+                ax = R @ Vector((1.0, 0.0, 0.0))
             else:
                 ax = Vector((0.0, 0.0, 1.0))
-            out = R @ Vector((1.0, 0.0, 0.0))
+            out = R @ Vector((0.0, -1.0, 0.0)) if axis == "side" else R @ Vector((1.0, 0.0, 0.0))
             self.axes.append(ax.normalized())
-            for side, k in (("L", 1.0), ("R", -1.0)):
+            for side, k in ((("L", 1.0), ("R", 1.0)) if axis == "side" else (("L", 1.0), ("R", -1.0))):
                 r = _world(rig, P, f"Wrist.{side}") - _world(rig, P, f"UpperArm.{side}")
                 reach[side] += ax.cross(r).dot(out * k)
         self.sign = {s: (1.0 if v >= 0 else -1.0) for s, v in reach.items()}
@@ -714,7 +716,7 @@ class _Arms:
 
 
 def op_arm_offset(fr: Frames, p: dict, target: Target):
-    arms = _Arms(fr, target, "forward")
+    arms = _Arms(fr, target, "side" if p["axis"] == "swing" else "forward")
     frames = range(len(fr.basis))
     before = [arms.measure(k, 0.0, "legs")["depth"] for k in frames]
     found = True
@@ -736,7 +738,7 @@ def op_arm_offset(fr: Frames, p: dict, target: Target):
     after = [arms.measure(k, deg, "legs")["depth"] for k in frames]
     rc.reset_pose(target.arm)
     return arms.apply(deg), {
-        "deg": _r(deg, 2), "found": found, "hands_in_legs_before_cm": _r(100 * max(before), 2),
+        "deg": _r(deg, 2), "axis": p["axis"], "found": found, "hands_in_legs_before_cm": _r(100 * max(before), 2),
         "hands_in_legs_after_cm": _r(100 * max(after), 2), "frames_in_legs_before": sum(x > 0 for x in before),
         "frames_in_legs_after": sum(x > 0 for x in after)}
 

@@ -51,6 +51,7 @@ class CheckStepsTest(unittest.TestCase):
             ({"op": "mirror", "body": "kids"}, "body must be one of"),
             ({"op": "trim", "start_s": 1.0, "end_s": 0.5}, "end_s must be after start_s"),
             ({"op": "arm_offset", "abduct_deg": "some"}, "abduct_deg must be a number_or_auto"),
+            ({"op": "arm_offset", "axis": "back"}, "axis must be a string in ['out', 'swing']"),
             ({"op": "hand_spacing", "gap_m": 0.4, "min_gap_cm": 1}, "exactly one of min_gap_cm, gap_m"),
         ]
         for step, text in cases:
