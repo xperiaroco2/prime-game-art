@@ -21,7 +21,7 @@ engine's convention.
 ## The command
 
 ```
-tools/run.sh outdoor [--check] [--out DIR] [--layouts DIR]
+tools/run.sh outdoor [--check] [--out DIR] [--layouts DIR] [--proof [DIR]] [--kit DIR]
 ```
 
 Pure Python, about 5 s, no lock. `--check` only validates. Otherwise it writes into `--out` (default
@@ -30,6 +30,8 @@ points, the props, the lights, the summary), `outdoor.glb` (the meshes `ground-c
 `backdrop.glb` (one ring mesh per flat, its textures embedded), `sky.png`, `flat_<id>.png` and `flat_<id>_emit.png`,
 and `plan.png` (top-down, 14 px per metre: paints, holes grey, fence white, openings green, stairs blue, lights orange,
 other props magenta). It fails on any problem.
+
+`--proof` (Godot, a few minutes, takes the heavy-run lock) then checks the build in Godot; see "The proof".
 
 ## What it builds
 
@@ -64,7 +66,31 @@ other props magenta). It fails on any problem.
   (`KHR_materials_unlit`), the tree line and hills alpha-masked, the haze blended. The scene that places them sets
   `gi_mode` disabled (the flats stay out of the bake) and the fog starts at 35 m.
 
+## The proof
+
+`outdoor --proof [DIR]` (default `<raw>/review/house/81`) runs glTF-Validator on `outdoor.glb` and `backdrop.glb`
+(reports beside them, `<name>.validator.json`), stages them and the kit v2 pieces it places (`--kit`, default
+`<raw>/kits/house/v2`, as `res://import/kit_<id>.glb`) into `godot/import/`, imports them headless and runs
+`godot/outdoor/proof.gd` in a window off-screen with the request of `tools/runner/house_outdoor_scene.py`:
+
+- the scene: the placed fence, gates, caps, stairs and rails with the kit's `set` pack (`godot/kit/kit_materials.gd`),
+  the ground and kerb with their `-col` colliders, the flats with `gi_mode` disabled and no shadows, `sky.png` as a
+  `PanoramaSkyMaterial`, depth fog from the backdrop's `fog_start_m` to 180 m in the sky's mean horizon colour, warm
+  stand-in lamps at the lit props (#83 owns the light design), the props as boxes of their `size`, and grey stand-in
+  blocks for the house, the terrace slab, the garage and the greenhouse; under the stairs a temporary pad at -3.2 m
+  (8 x 6 m at (58, 28)) and the stairwell's walls with a lintel over the passage door, until the layout engine (#75a)
+  builds the passage;
+- the walks: a capsule 0.8 m wide and 1.8 m tall with gravity walks round the inside of the fence (1 m in), through the
+  wicket and the gates onto the pavement and down the outdoor stairs onto the pad; four controls walk out across the
+  fence away from the openings and must stop;
+- the pictures: 360-degree strips (four 90-degree views) from the yard and the street, the street, the wicket, the gates
+  from outside and inside, the stairs from the garden and from the passage, two lookouts 9 m up for the seam between
+  the skirt and the flats, and an aerial view; `sheet.png` 1280 px wide (the strips, then rows of three), each picture
+  full size beside it, and `proof.json` (the walks).
+
+It fails on a validator error, a Godot import error or a walk that ends the wrong way.
+
 ## Open
 
-The Godot import, the walks (the perimeter, the wicket, the gates, the stairs down to the passage) and the dusk
-shots are #81's next steps; the house is a grey block there until the layout engine is on `main`.
+The house, the terrace, the garage and the greenhouse are grey blocks in the proof until the layout engine (#75a) and
+their packages are on `main`; then the proof places their builds and drops the pad under the stairs.
