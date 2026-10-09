@@ -96,8 +96,8 @@ class PropTest(unittest.TestCase):
             self.assertNotIn("lamp_red", on["roles"])
             self.assertIn("lamp_red", off["roles"])
             self.assertNotIn("lamp_green", off["roles"])
-            # the lever points up when on, down when off
-            self.assertGreater(max(v[1] for v in on["verts"]), max(v[1] for v in off["verts"]))
+            # the lever points up when on, down when off (the lamp window sits at the top in both)
+            self.assertGreater(min(v[1] for v in on["verts"]), min(v[1] for v in off["verts"]) + 0.1)
 
     def test_lids_are_leaves_hinged_at_the_back(self) -> None:
         for pid in ("meat_freezer", "bbq_grill", "toy_chest"):

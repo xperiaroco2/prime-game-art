@@ -54,11 +54,17 @@ Every value is the engineer's to change (sizes, paints, mounts), as data:
 - **Moving parts** are leaves with their hinge as origin and their collider parented to them: the freezer's, the
   grill's and the toy chest's `<id>_lid`.
 - **States** are separate meshes the game shows or hides: a switch's `<id>_on` (lever up, green lamp, green knob)
-  and `<id>_off` (lever down, red lamp, red knob); the printer's `<id>_photo` (the print in the output tray).
+  and `<id>_off` (lever down, red lamp, red knob); the printer's `<id>_photo` (the print in the output tray). The
+  switch's state must read from 8 m (#82b), where its 0.3 x 0.45 m box is about 17 x 26 px at 720 px: the lamp is a
+  window across the box's whole top (0.24 m) and the lever's crossbar is as wide, so the state reads as a band of
+  colour at the top (on) or at the top and the foot (off). The lamps are paint, not emissive: in a dark room the game
+  may give `<id>_on`'s `lamp_green` and `<id>_off`'s `lamp_red` faces an emissive override.
 - **Collision**: closed convex boxes or prisms, `<id>_col<k>-convcolonly`, roughly the prop's volume (a table blocks
   sight under it); checked in Godot by one ray per collider.
 - **The clay look**: every box over a few centimetres has chamfered edges (`cbox`), cylinders and lathed shapes are
   8 to 12 sided with chamfered rims, and the detail is hand-placed parts (louvres, gauges, bolts, tape, labels).
+  One paint per face: there is no edge-wear or dirt vertex-colour pass yet (the house plan's look.md section 5); it is
+  left to the clay look (#42a), so the kit and the props wear the same way.
 
 ## The checks
 

@@ -647,8 +647,10 @@ def build_generator(pc: Piece, p: dict, spec: dict) -> None:
 
 
 def build_switch(pc: Piece, p: dict, spec: dict) -> None:
-    """A power switch with two state meshes, `<id>_on` (lever up, green lamp) and `<id>_off` (lever down, red lamp),
-    the game shows one. Mount "wall": a box on a back plate with conduit to the floor; "post": on a floor post."""
+    """A power switch with two state meshes, `<id>_on` and `<id>_off`; the game shows one. The state reads from 8 m
+    as colour and place: a wide lamp window across the box's top (green on, red off) and a U-lever whose crossbar
+    stands up under the lamp (on, green) or down at the box's foot (off, red). Mount "wall": a box on a back plate
+    with conduit to the floor; "post": on a floor post."""
     m = pc.mesh
     w, d, h = _dims(p)
     post = p.get("mount") == "post"
@@ -660,6 +662,9 @@ def build_switch(pc: Piece, p: dict, spec: dict) -> None:
         cbox(m, (-w / 2, 0, -d / 2), (w / 2, 0.025, d / 2), "steel_dark", 0.006)
         cbox(m, (-0.04, 0, zb - 0.04), (0.04, h - 0.02, zb + 0.04), "machine_grey", 0.01)
         cbox(m, (-0.06, h - 0.02, zb - 0.06), (0.06, h, zb + 0.06), "steel_dark", 0.005)
+        for i in range(3):  # hazard bands on the post at knee height
+            y = 0.3 + i * 0.1
+            cbox(m, (-0.045, y, zb - 0.045), (0.045, y + 0.05, zb + 0.045), "warning", 0.006)
         z0 = zb + 0.04
     else:
         z0 = -d / 2
@@ -670,18 +675,19 @@ def build_switch(pc: Piece, p: dict, spec: dict) -> None:
     zf = z0 + 0.07
     kz = min(zf + 0.075, d / 2)
     cbox(m, (-bw / 2 + 0.015, by0 + 0.015, z0), (bw / 2 - 0.015, by1 - 0.015, zf), "switch_body", 0.015)
-    m.box((-bw / 2 + 0.05, by0 + 0.05, zf), (bw / 2 - 0.05, by0 + 0.07, zf + 0.004), "warning")
-    py = (by0 + by1) / 2
-    cyl(m, (0.04, py, zf), "z", 0.02, 0.045, "steel_dark", n=8)
-    lamp_x = -0.085
-    for state, up, lamp_role, ly in (("on", True, "lamp_green", by1 - 0.07), ("off", False, "lamp_red", by0 + 0.12)):
+    cbox(m, (-0.13, by0 + 0.34, zf - 0.002), (0.13, by0 + 0.425, zf + 0.012), "steel_dark", 0.006)  # lamp bezel
+    py = by0 + 0.19
+    cbox(m, (-0.1, py - 0.02, zf - 0.002), (0.1, py + 0.02, zf + 0.03), "steel_dark", 0.008)  # lever pivot
+    for state, up, lamp_role, knob_role in (("on", True, "lamp_green", "lamp_green"),
+                                            ("off", False, "lamp_red", "red_paint")):
         s = pc.leaf(state, (0.0, 0.0, 0.0))
-        tip = by1 - 0.025 if up else by0 + 0.025
+        cbox(s, (-0.12, by0 + 0.35, zf + 0.004), (0.12, by0 + 0.415, zf + 0.024), lamp_role, 0.008)
+        tip = by0 + 0.33 if up else by0 + 0.04
         lo, hi = (py, tip) if up else (tip, py)
-        cbox(s, (0.015, lo, zf + 0.02), (0.065, hi, zf + 0.05), "steel", 0.008)
+        for ax in (-0.085, 0.085):
+            cbox(s, (ax - 0.012, lo, zf + 0.012), (ax + 0.012, hi, zf + 0.04), "steel", 0.006)
         ky = tip - 0.05 if up else tip
-        cbox(s, (0.0, ky, zf + 0.02), (0.08, ky + 0.05, kz), "lamp_green" if up else "red_paint", 0.012)
-        cyl(s, (lamp_x, ly, zf), "z", 0.025, 0.04, "steel_dark", n=8, cap_roles=(None, lamp_role))
+        cbox(s, (-0.12, ky, zf + 0.02), (0.12, ky + 0.05, kz), knob_role, 0.012)
     pc.collide_box((-bw / 2, by0, -d / 2 if not post else z0), (bw / 2, by1, kz))
     if post:
         pc.collide_box((-w / 2, 0, -d / 2), (w / 2, by0, d / 2))
