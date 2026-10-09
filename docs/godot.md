@@ -65,7 +65,8 @@ A minimal Godot 4.7.2 project at the repo root (`config/features` 4.7, Forward P
 `tools/godot/`, which stays the headless contract project with its one dump script. `godot/import/` (ignored) receives
 the GLBs the commands import; `godot/.godot/` (ignored) is Godot's cache. Committed: `project.godot`,
 `lib/character.gd` (shared helpers, loaded with `preload` because a `-s` script has no global class cache),
-`check/inspect.gd`, `frames/frames.gd` and the `.gd.uid` files Godot 4.7 writes beside scripts (the game commits
+`check/inspect.gd`, `frames/frames.gd`, `check/kit.gd` (the headless import check of the kit's pieces) and
+`kit/proof.gd` (the kit's test room, walks and shots in the off-screen window; `docs/kit.md`), and the `.gd.uid` files Godot 4.7 writes beside scripts (the game commits
 them too).
 
 Importing: `_godot.stage()` copies the GLB into `godot/import/` and writes a minimal `.import` file (`[remap]

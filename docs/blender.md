@@ -42,6 +42,7 @@ Other commands drive Blender through their own scripts and pages:
 - `faces`: `docs/faces.md`;
 - `retarget` and `anim-review`: `docs/animations.md`;
 - `export`: `docs/godot.md`.
+- `kit` (`tools/blender/kit_build.py` with the pure-Python geometry `kit_geom.py`, one GLB per piece): `docs/kit.md`.
 
 `render` reads GLB, glTF, FBX, OBJ and `.blend` (cameras and lights in a `.blend` are dropped; hidden objects are
 ignored). A relative model path is tried from the current folder, then from the repository root. The default
