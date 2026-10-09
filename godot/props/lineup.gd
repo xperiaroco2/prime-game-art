@@ -1,7 +1,7 @@
 extends SceneTree
-## The dressing library's line-up sheets for `tools/run.py props --sheets DIR` (art #87, docs/props.md): the imported
-## props in rows of similar height, each row beside a 1.8 m capsule for scale, every prop labelled with its id, shot
-## by an orthographic camera from the front-right and above, the kit's `set` pack shader on the `kit_set` surfaces
+## The dressing library's line-up sheets for `tools/run.py props-library --sheets DIR` (art #87, docs/props.md): the
+## imported props in rows of similar height, each row beside a 1.8 m capsule for scale, every prop labelled with its id,
+## shot by an orthographic camera from the front-right and above, the kit's `set` pack shader on the `kit_set` surfaces
 ## (kit/kit_materials.gd) and a small warm light at each fixture's LightAnchor.
 ## Pictures need a real window placed off-screen (the runner passes --position -30000,-30000), never headless:
 ##   godot --path godot --position -30000,-30000 --resolution 1600x900 -s res://props/lineup.gd -- <request.json> <out dir>

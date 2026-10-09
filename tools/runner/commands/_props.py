@@ -1,5 +1,5 @@
-"""Helpers of `props` (docs/props.md): the dressing library's mapping file (props/library.toml), a glTF/GLB reader
-that measures a pack model's bounds and triangles without Blender, and the library's pure checks (ids, classes,
+"""Helpers of `props-library` (docs/props.md): the dressing library's mapping file (props/library.toml), a glTF/GLB
+reader that measures a pack model's bounds and triangles without Blender, and the library's pure checks (ids, classes,
 budgets, sources and their licences, the scale of every pack prop against its inventory size). Standard library
 only."""
 
@@ -208,7 +208,7 @@ def check(lib: dict[str, Any], sources: dict[str, dict[str, Any]], kit_spec: dic
             if not p.get("files"):
                 problems.append(f"{where}: a pack prop needs files (relative to <raw>/env)")
             if len(p.get("src_size", [])) != 3:
-                problems.append(f"{where}: no measured src_size (run `props --measure`)")
+                problems.append(f"{where}: no measured src_size (run `props-library --measure`)")
                 continue
             want = size_xyz(p.get("pack_size_m", size))
             src = yawed(p["src_size"], p.get("yaw_deg", 0.0))
@@ -272,7 +272,7 @@ def table_md(lib: dict[str, Any]) -> str:
     return "\n".join(rows) + "\n"
 
 
-# --- the build (props --build) ---------------------------------------------------------------------------------------
+# --- the build (props-library --build) --------------------------------------------------------------------------------
 SCRIPT = "prop_build.py"
 
 

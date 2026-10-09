@@ -47,7 +47,7 @@ build in the kit's materials, so version 1 has 32 pack props and 77 procedural o
 
 ## The build
 
-`tools/run.sh props --build [--batch 1|2] [--only id,...]` builds the props in one headless Blender run
+`tools/run.sh props-library --build [--batch 1|2] [--only id,...]` builds the props in one headless Blender run
 (`tools/blender/prop_build.py`) into `D:/prime-art-raw/props/library/v1/`: one `<id>.glb` per prop, `textures/`
 (the kit's detail maps), `build.json` (what each GLB holds; batches accumulate) and `props.md` (the build table); then
 it checks every GLB: the mesh and collider nodes, UV2 and vertex colours, at most `max_materials` materials all named
@@ -94,7 +94,7 @@ the `kit_set` surfaces and a small warm light at each LightAnchor. Out: `DIR/lin
 ## The command
 
 ```
-tools/run.sh props [--measure] [--table FILE] [--build [--batch N] [--only IDS] [--out DIR] [--no-blender]
+tools/run.sh props-library [--measure] [--table FILE] [--build [--batch N] [--only IDS] [--out DIR] [--no-blender]
                   [--no-godot] [--sheets DIR]]
 ```
 

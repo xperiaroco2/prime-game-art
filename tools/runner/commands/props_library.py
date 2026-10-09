@@ -1,10 +1,10 @@
-"""`props`: the House dressing library (props/library.toml, docs/props.md). Checks the mapping file: classes, budgets,
-paints, the sources' licences and the scale of every pack prop against its inventory size; `--measure` reads the
-packs' glTF files again and compares their bounds and triangles with the record; `--build` makes the GLBs in
-headless Blender (tools/blender/prop_build.py) into <raw>/props/library/v1/ and checks them: nodes, UV2, vertex
-colours, `-vcol` materials, glTF-Validator, the class's triangle budget; then Godot's headless import (sizes, pivot,
-Y up, UV2, vertex colours, closed collision, the fixtures' LightAnchor; godot/check/kit.gd); `--sheets DIR` adds the
-line-up sheets from an off-screen Godot window (godot/props/lineup.gd)."""
+"""`props-library`: the House dressing library (props/library.toml, docs/props.md). Checks the mapping file: classes,
+budgets, paints, the sources' licences and the scale of every pack prop against its inventory size; `--measure` reads
+the packs' glTF files again and compares their bounds and triangles with the record; `--build` makes the GLBs in
+headless Blender (tools/blender/prop_build.py) into <raw>/props/library/v1/ and checks them: nodes, UV2, vertex colours,
+`-vcol` materials, glTF-Validator, the class's triangle budget; then Godot's headless import (sizes, pivot, Y up, UV2,
+vertex colours, closed collision, the fixtures' LightAnchor; godot/check/kit.gd); `--sheets DIR` adds the line-up sheets
+from an off-screen Godot window (godot/props/lineup.gd)."""
 
 from __future__ import annotations
 
@@ -15,7 +15,7 @@ from pathlib import Path
 from .. import blender, common
 from . import _frames, _godot, _kit, _props
 
-NAME = "props"
+NAME = "props-library"
 BUILD_TIMEOUT = 1500  # seconds for one Blender run of a batch (about 60 props)
 CHECK_TIMEOUT = 600
 LINEUP_TIMEOUT = 240

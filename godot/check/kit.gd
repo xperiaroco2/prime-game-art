@@ -5,7 +5,7 @@ extends SceneTree
 ## request.json: {"pieces": {"<id>": {"scene": "res://import/kit_<id>.glb", "rays": [[from xyz, to xyz], ...]}}}.
 ## Per piece: the visual meshes (surfaces, UV2, vertex colour as albedo, triangles, world bounds), the static bodies
 ## and their shapes (class, convex point count), each ray's first hit (the piece alone in the physics world) and the
-## `LightAnchor*` nodes' positions (the dressing library's fixtures, `props`).
+## `LightAnchor*` nodes' positions (the dressing library's fixtures, `props-library`).
 ## Prints KIT saved <path>, or KIT error <why> and exits 1.
 
 const WATCHDOG_S: float = 240.0

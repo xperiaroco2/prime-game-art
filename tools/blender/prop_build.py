@@ -1,5 +1,5 @@
 """Builds the House dressing library (props/library.toml, docs/props.md) as one GLB per prop (art #87). The runner
-calls it (tools/run.py props --build); by hand, background only:
+calls it (tools/run.py props-library --build); by hand, background only:
 
   blender -b --factory-startup --python-exit-code 1 --python tools/blender/prop_build.py -- \
       --library props/library.toml --kit kits/house.json --out D:/prime-art-raw/props/library/v1 \
