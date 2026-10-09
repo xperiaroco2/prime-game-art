@@ -118,7 +118,7 @@ Times are in seconds; "w" means the women only. The last column holds what is le
 | 7 | Turn in place | `Turn_Left`, `Turn_Right` | TTM turn-left-90 | facing to the start, trim 0.13-1.73, turn 112.7 to 90 deg, retime 1.2 s; w: arms out 5.6 deg; right = mirror | pass, note: two clear steps; the pivot foot slides 18-20 cm/s mean (147-152 max) | the lower-body turn logic (below) |
 | 8 | Head pitch | none | | | none | procedural |
 | 9 | Jump | `Jump_Start`, `Jump_Air_Loop`, `Jump_Land` | UAL Jump_Start, Jump_Loop, Jump_Land | start: trim 0.03-0.40, retime 0.25 (0.267: whole frames); land: trim 0-0.5, retime 0.3 | pass, note: the start opens in a crouch and the landing ends in one; the take-off's toes dip 1.9 (men) and 2.3 cm (women) for 4 frames, past the design's -2 cm line on the women (resampling loses the retarget's toe clamp); the air loop's right foot snapped 53-55 degrees and back in one frame (4 times a loop on the men, twice on the women) until the floor clamp was made to fade (131c347): now one held pose, its largest frame step 2.6/2.9 degrees; w: hands 7.5 cm in the thighs at the landing | the game blends in and out, and lifts the body (the clips are in place; the air loop's lowest vertex is 5.3/5.5 cm under the floor line, which the lift hides) |
-| 10 | Being pushed | `Shove_Stumble` | TTM shove-stumble | trim 0.37-1.83, retime 0.7 s (art #65: the engineer's 0.69 s, whole frames), facing to the start, in place along its path, arms out 12 deg | pass, note: the arms fly forward, two steps back, a crouch; w: hands 4.3 cm in a thigh on one frame at the crouch, the right toe pops 30 deg on one frame | contact detection; since the 0.7 s retime its feet travel about 2.2 (men) and 2.4 m/s (women), 2.1 times the 1.06 and 1.15 at 1.47 s: near the push speed of 2.25 |
+| 10 | Being pushed | `Shove_Stumble` | TTM shove-stumble | trim 0.39-1.83 (art #69: from 0.37 the women's right toe popped), retime 0.7 s (art #65: the engineer's 0.69 s, whole frames), facing to the start, in place along its path, arms out 12 deg | pass, note: the arms fly forward, two steps back, a crouch; w: hands 4.3 cm in a thigh on one frame at the crouch | contact detection; since the 0.7 s retime its feet travel about 2.2 (men) and 2.4 m/s (women), 2.1 times the 1.06 and 1.15 at 1.47 s: near the push speed of 2.25 |
 | 11 | Pushing | `Push_Upper_Loop` (upper) | UAL Push_Loop | w: hands apart 4.3 deg (6.09 cm inside each other to a 1.28 cm gap); **lean 30 deg from Torso** (new) | pass after the lean: over the idle and the jog it leans into the push, palms forward at face height | upper layer at a low weight while in contact; the full-body clip bends 76 deg: a layer only |
 | 12 | One-handed item | none | | | none | grip keys |
 | 13 | Knife swing | `Knife_Swing` (upper) | pack Sword_Slash | retime 0.45 (0.467) | pass | upper layer on Swung (a OneShot); the women's source is 1.3 s, so 2.8x faster |
@@ -140,7 +140,7 @@ Times are in seconds; "w" means the women only. The last column holds what is le
 | 29 | Face | none | | | none | procedural |
 | 30-34 | Gestures | none | | | none | after the MVP |
 | 35 | First-person arms | none | | | none | the game side |
-| new (art #70) | Crouch: idle and walk | `Crouch_Idle_Loop` (Crouch_Idle), `Crouch_Fwd_Loop` (Crouch_Fwd) | UAL Crouch_Idle_Loop, Crouch_Fwd_Loop | both: the relaxed idle's open hands and thumb; idle: w: arms swung forward 20 deg (hands 2.1 cm in the thighs to 0); walk: stride to 0.75 m/s at its 1.5 steps/s (scale 0.996 / 0.94), floor lift (1.4 cm), arms swung back 20 deg, w: out 12 deg (hands 7.6 / 6.4 cm in the thighs to 1.2 / 2.0) | the engineer's review (D:/prime-art-raw/review/anim/70) | the game has no crouch yet: it plays the walk at its speed / 0.75; the walk's hips face 6.7 deg right of the aim |
+| new (art #70) | Crouch: idle and walk | `Crouch_Idle_Loop` (Crouch_Idle), `Crouch_Fwd_Loop` (Crouch_Fwd) | UAL Crouch_Idle_Loop, Crouch_Fwd_Loop | both: the relaxed idle's open hands and thumb; idle: w: arms swung forward 20 deg (hands 2.1 cm in the thighs to 0); walk: stride to 0.75 m/s at its 1.5 steps/s (scale 0.996 / 0.94), floor lift (1.4 cm), arms swung back 35 deg, w: out 12 deg (hands 7.6 / 6.4 cm in the thighs to 0 / 0; art #69's grid) | the engineer's review (D:/prime-art-raw/review/anim/70) | the game has no crouch yet: it plays the walk at its speed / 0.75; the walk's hips face 6.7 deg right of the aim |
 
 Review only: `Jog_Bwd_TTM_Loop` (Meshy's backward jog stride-warped to 4.5 m/s): **fail**, its legs split (scale 7.1
 men, 6.6 women; IK misses of 487 and 734 mm on contact).
@@ -227,7 +227,7 @@ foot, hovering on that line, flicked 53 (men) and 55 degrees (women) and back. T
 | Sprint_Fwd_Loop | m / w | -1.4 / -1.5 | in place (stride: 0.0 on contact at 7.0 m/s; IK misses 29/37 mm in flight) | 0 / 0 | pass, note: the toe dip |
 | Turn_Left, Turn_Right | m / w | -0.3 / -0.4 | 19.7 / 147 and 17.6 / 152 | 0 / 0 | the pivot over the 12 cm/s mark |
 | Knockdown | m / w | -0.9 / -0.8 | 7.6 / 129 and 2.2 / 28 | 0 / 6.1 | on the floor: the lying frames settled (lowest 0.0, the first ones at most 1.4 cm up, the held last pose on it); the women's hands brush the thighs in the fall |
-| Shove_Stumble | m / w | -1.2 / -0.5 | 37.7 / 79 and 39.2 / 75 | 0 / 4.5 | the stumble's steps slide in place: the game moves the body |
+| Shove_Stumble | m / w | -0.9 / -0.5 | 37.7 / 79 and 39.2 / 75 | 0 / 4.5 | the stumble's steps slide in place: the game moves the body |
 | Push_Upper_Loop (lean 30) | m / w | -1.8 / -1.7 | (an upper layer) | 0 / 0 | over the idle: -0.6 / -0.9, hands 0 in the legs and in each other |
 | Crawl_Start | m / w | 0.0 / 0.0 | 44.6 / 72 (men) | 0.4 / 7.5 | on the floor after the settle; travels 1.17 / 0.57 m/s as it rolls |
 | Crawl_Loop | m / w | 0.0 / 0.0 | (knees and hands: no foot measure; the hands skate about 65-95 cm/s, the art #33 motion review's probe) | 0 / 0 | stopgap: settled; the shins on the feet; hands hover and skate |
@@ -237,7 +237,7 @@ foot, hovering on that line, flicked 53 (men) and 55 degrees (women) and back. T
 | Jump_Start | m / w | -1.9 / -2.3 | (in place) | 0 / 0 | the take-off's toe dip, 4 frames; past -2 cm on the women |
 | Getup_Back | m / w | 0.0 / 0.0 | 6.1 / 39 and 7.0 / 42 | 0 / 2.8 | pass |
 | Jump_Air_Loop | m / w | -5.3 / -5.5 | 0.6 / 1.9 | 0 / 0 | exempt (in place); no pop since the floor clamp fades (was -18.3 / -17.2 with the right toe flicking down) |
-| Crouch_Idle_Loop, Crouch_Fwd_Loop (art #70) | m / w | -1.2, -0.2 / -1.0, -0.3 | idle 0.3 / 0.5 and 0.3 / 0.6; walk 0.0 on contact at 0.75 m/s | 0.3, 1.2 / 0, 2.0 | the walk's hands brush the thighs at the deepest step (1 / 5 frames over 1 cm) |
+| Crouch_Idle_Loop, Crouch_Fwd_Loop (art #70) | m / w | -1.2, -0.2 / -1.0, -0.3 | idle 0.3 / 0.5 and 0.3 / 0.6; walk 0.0 on contact at 0.75 m/s | 0.3, 0 / 0, 0 | the walk's hands clear the thighs since art #69 (arms back 35 deg) |
 
 Stride warping (build reports): the jog at 4.5 m/s plays 28 frames as 21 (rate 1.333), its planted feet at exactly
 4.50 m/s, IK miss 0.0 mm, the knee never past straight; its feet scale (0.567 men, 0.525 women) is under the warn mark
