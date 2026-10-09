@@ -56,7 +56,30 @@ def role_colour(spec: dict, role: str) -> list[float]:
     h = r["hex"].lstrip("#")
     lin = [srgb_to_linear(int(h[i:i + 2], 16) / 255) for i in (0, 2, 4)]
     div = TEX_MEAN if mat.get("source") else 1.0
-    return [round(linear_to_srgb(min(1.0, c / div)), 5) for c in lin] + [1.0]
+    return [round(linear_to_srgb(min(1.0, c / div)), 5) for c in lin] + [layer_alpha(spec, r["material"])]
+
+
+def layer_alpha(spec: dict, material: str) -> float:
+    """The vertex colour's alpha: which layer of its pack a material is (look.md section 5: plaster, wood and concrete
+    share one `set` material; the shader picks the layer's detail by alpha: 1.0, 0.75, 0.5, 0.25). 1.0 unpacked."""
+    pack = spec["materials"][material].get("pack")
+    if not pack:
+        return 1.0
+    return round(1.0 - 0.25 * spec["packs"][pack]["layers"].index(material), 5)
+
+
+def export_material(spec: dict, material: str) -> str:
+    """The material a kit material is exported as: its pack, or itself."""
+    return spec["materials"][material].get("pack", material)
+
+
+def export_materials(spec: dict) -> list[str]:
+    out = []
+    for name in spec["materials"]:
+        e = export_material(spec, name)
+        if e not in out:
+            out.append(e)
+    return out
 
 
 # --- geometry helpers ----------------------------------------------------------------------------------------------
@@ -167,6 +190,7 @@ class Piece:
         self.kind = kind
         self.meshes: list[Mesh] = [Mesh(pid)]
         self.colliders: list[dict] = []
+        self.sockets: dict[str, list[float]] = {}  # named points a fixture or prop hangs from (the porch's lamp)
 
     @property
     def mesh(self) -> Mesh:
@@ -227,9 +251,12 @@ def build_wall(pc: Piece, p: dict, spec: dict) -> None:
                 za, zb = sorted((s * h2, s * (h2 + CASING_P)))
                 out = "+z" if s > 0 else "-z"
                 ylo = y0 - CASING_W if y0 > EPS else 0.0
-                m.box((x0 - CASING_W, ylo, za), (x0, y1 + CASING_W, zb), "trim", f"{out}-x+x+y-y")
-                m.box((x1, ylo, za), (x1 + CASING_W, y1 + CASING_W, zb), "trim", f"{out}-x+x+y-y")
-                m.box((x0, y1, za), (x1, y1 + CASING_W, zb), "trim", f"{out}+y-y")
+                # the casing stops at the wall's top (a knee wall's door head leaves only 5 cm; v1 stood above it)
+                ytop = min(y1 + CASING_W, H)
+                top = "+y" if ytop < H - EPS else ""
+                m.box((x0 - CASING_W, ylo, za), (x0, ytop, zb), "trim", f"{out}-x+x{top}-y")
+                m.box((x1, ylo, za), (x1 + CASING_W, ytop, zb), "trim", f"{out}-x+x{top}-y")
+                m.box((x0, y1, za), (x1, ytop, zb), "trim", f"{out}{top}-y")
                 if y0 > EPS:
                     m.box((x0, y0 - CASING_W, za), (x1, y0, zb), "trim", f"{out}+y-y")
         if y0 > EPS:  # a window: a frame inside the reveal and the pane
@@ -271,7 +298,8 @@ def build_end(pc: Piece, p: dict, spec: dict) -> None:
     g = spec["grid"]
     fin = spec["finishes"][p["finish"]]
     h2, H = g["wall_t_m"] / 2, float(p["height"])
-    lo, hi = (-0.02, 0, -h2), (0, H, h2)
+    ylo = -g["slab_m"] if p.get("band", fin["band"]) else 0.0  # the wall's band runs over the slab's edge; so does its cap
+    lo, hi = (-0.02, ylo, -h2), (0, H, h2)
     pc.mesh.box(lo, hi, fin["neg"], "-x+y+z-z", {"+z": fin["pos"]})
     pc.collide_box(lo, hi)
 
@@ -302,8 +330,8 @@ def build_floor(pc: Piece, p: dict, spec: dict) -> None:
         if xb - xa > EPS and zb - za > EPS:
             m.box((xa, -th, za), (xb, 0, zb), top, "+y-y", {"-y": bottom})
             pc.collide_box((xa, -th, za), (xb, 0, zb))
-    # the outer edges (seen at a stairwell, a balcony or a hatch) and the hole's reveal
-    m.box((0, -th, 0), (w, 0, d), bottom, "+x-x+z-z")
+    # no outer side faces: two tiles would put them back to back at every seam (v1); a free edge (a stairwell, a
+    # balcony) is closed by a slab_edge piece. The hole's reveal is the tile's own.
     if hole:
         hx, hz, hw, hd = hole
         x1, z1 = hx + hw, hz + hd
@@ -321,7 +349,7 @@ def build_floor(pc: Piece, p: dict, spec: dict) -> None:
 def build_ceiling(pc: Piece, p: dict, spec: dict) -> None:
     w, d = (float(v) for v in p["size"])
     lo, hi = (0, -0.02, 0), (w, 0, d)
-    pc.mesh.box(lo, hi, "ceiling", "-y+x-x+z-z")
+    pc.mesh.box(lo, hi, "ceiling", "-y")
     pc.collide_box(lo, hi)
 
 
@@ -568,12 +596,372 @@ def build_garage_door(pc: Piece, p: dict, spec: dict) -> None:
     pc.collide_box((0, 0, -0.03), (L, dh, 0.03), parent=door.name)
 
 
+# --- version 2 (art #86): rotated parts, pillars, pitched and glass roofs, porch, chimney, gazebo, node pieces -------
+def rot_y(p, deg: float) -> tuple:
+    """Godot's rotation about +Y by deg (a +90 deg turn takes +X to -Z)."""
+    a = math.radians(deg)
+    c, s = math.cos(a), math.sin(a)
+    return (p[0] * c + p[2] * s, p[1], -p[0] * s + p[2] * c)
+
+
+def place(p, deg: float = 0.0, offset=(0.0, 0.0, 0.0)) -> tuple:
+    q = rot_y(p, deg)
+    return (q[0] + offset[0], q[1] + offset[1], q[2] + offset[2])
+
+
+def merge(dst: Mesh, src: Mesh, deg: float = 0.0, offset=(0.0, 0.0, 0.0)) -> None:
+    """Appends src's faces to dst, turned by deg about +Y and moved by offset."""
+    for face, role in zip(src.faces, src.roles):
+        dst.faces.append([dst._v(place(src.verts[i], deg, offset)) for i in face])
+        dst.roles.append(role)
+
+
+def _outward_sides(m: Mesh, poly, lift, role, edges=None, edge_roles=None) -> None:
+    """The sides of a convex polygon extruded by lift(point2d, t) (t 0 and 1 the two ends); each side faces away from
+    the polygon's centroid."""
+    n = len(poly)
+    cx, cy = sum(a for a, _ in poly) / n, sum(b for _, b in poly) / n
+    cen = lift((cx, cy), 0.5)
+    for i in range(n):
+        if edges is not None and not edges[i]:
+            continue
+        a, b = poly[i], poly[(i + 1) % n]
+        if math.hypot(b[0] - a[0], b[1] - a[1]) < EPS:
+            continue
+        pts = [lift(a, 0), lift(b, 0), lift(b, 1), lift(a, 1)]
+        mid = [sum(p[k] for p in pts) / 4 for k in range(3)]
+        m.poly(pts, _sub(mid, cen), (edge_roles or {}).get(i, role))
+
+
+def prism_x(m: Mesh, poly_zy, x0, x1, role, caps: str = "-x+x", cap_role=None, edges=None, edge_roles=None) -> None:
+    """A convex polygon in the ZY plane (points (z, y)) extruded along X over x0..x1."""
+    if "-x" in caps:
+        m.poly([(x0, y, z) for z, y in poly_zy], (-1, 0, 0), cap_role or role)
+    if "+x" in caps:
+        m.poly([(x1, y, z) for z, y in poly_zy], (1, 0, 0), cap_role or role)
+    _outward_sides(m, poly_zy, lambda q, t: (x0 + (x1 - x0) * t, q[1], q[0]), role, edges, edge_roles)
+
+
+def prism_y(m: Mesh, poly_xz, y0, y1, role, caps: str = "", cap_role=None, edges=None) -> None:
+    """A convex polygon in the XZ plane extruded along Y over y0..y1."""
+    if "-y" in caps:
+        m.poly([(x, y0, z) for x, z in poly_xz], (0, -1, 0), cap_role or role)
+    if "+y" in caps:
+        m.poly([(x, y1, z) for x, z in poly_xz], (0, 1, 0), cap_role or role)
+    _outward_sides(m, poly_xz, lambda q, t: (q[0], y0 + (y1 - y0) * t, q[1]), role, edges)
+
+
+def prism_x_points(poly_zy, x0, x1) -> list[list[float]]:
+    return [[x, y, z] for z, y in poly_zy for x in (x0, x1)]
+
+
+def prism_y_points(poly_xz, y0, y1) -> list[list[float]]:
+    return [[x, y, z] for x, z in poly_xz for y in (y0, y1)]
+
+
+def chamfered_square(half: float, ch: float) -> list[tuple]:
+    h, c = half, half - ch
+    return [(c, -h), (h, -c), (h, c), (c, h), (-c, h), (-h, c), (-h, -c), (-c, -h)]
+
+
+def build_pillar(pc: Piece, p: dict, spec: dict) -> None:
+    """A free-standing pillar centred on its grid node, floor (y 0) to the slab's underside; chamfered edges."""
+    half, H = float(p["section"]) / 2, float(p["height"])
+    poly = chamfered_square(half, float(p.get("chamfer", 0.03)))
+    prism_y(pc.mesh, poly, 0.0, H, p.get("role", "concrete"))
+    pc.collide(prism_y_points(poly, 0.0, H))
+
+
+def pitch(spec: dict) -> dict:
+    """The pitched roofs' planes (docs/kit.md, "Pitched roofs"): rise r per metre (grid gable_rise_per_m, shared with
+    the gables; Q2); the slab's underside lies u under the line y = r * z that the gables' tops follow from the eave
+    wall's grid node (2 cm under the knee wall's inner top edge, so the slab hides the wall's and the gables' tops);
+    tv is the slab's vertical thickness."""
+    g = spec["grid"]
+    r, h2 = g["gable_rise_per_m"], g["wall_t_m"] / 2
+    t = g["pitched_roof_t_m"]
+    return {"r": r, "u": -(r * h2 + 0.02), "tv": t * math.sqrt(1 + r * r), "t": t,
+            "deg": round(math.degrees(math.atan(r)), 2)}
+
+
+def build_pitched(pc: Piece, p: dict, spec: dict) -> None:
+    """A pitched roof slab (the attic): x over p["x"] along the eave, z over p["z"] up the slope (horizontal metres from
+    the eave wall's grid line). Pivot: the eave wall's grid node at the knee wall's top. Plumb-cut ends; p["ends"] names
+    the open ends it closes with a trim board (eave "-z", verge "-x" or "+x"); the others meet neighbours."""
+    pp = pitch(spec)
+    r, u, tv = pp["r"], pp["u"], pp["tv"]
+    (x0, x1), (z0, z1) = p["x"], p["z"]
+    ends = p.get("ends", "")
+    prof = [(z0, u + r * z0), (z1, u + r * z1), (z1, u + tv + r * z1), (z0, u + tv + r * z0)]
+    prism_x(pc.mesh, prof, x0, x1, p.get("under", "boards"), caps="".join(e for e in ("-x", "+x") if e in ends),
+            cap_role="trim", edges=[True, "+z" in ends, True, "-z" in ends], edge_roles={1: "trim", 2: "roof", 3: "trim"})
+    pc.collide(prism_x_points(prof, x0, x1))
+
+
+def build_ridge(pc: Piece, p: dict, spec: dict) -> None:
+    """The ridge cap: two boards over the apex along x over p["x"]. Pivot: the gables' apex (y = r * run above the
+    knee wall's top, on the ridge line); the roof's top meets there at u + tv."""
+    pp = pitch(spec)
+    r, y0 = pp["r"], pp["u"] + pp["tv"]
+    x0, x1 = p["x"]
+    c, k = 0.2, 0.04
+    caps = "".join(e for e in ("-x", "+x") if e in p.get("ends", ""))
+    for s in (-1, 1):
+        prof = [(0, y0), (s * c, y0 - r * c), (s * c, y0 - r * c + k), (0, y0 + k)]
+        prism_x(pc.mesh, prof, x0, x1, "trim", caps=caps, edges=[False, True, True, False])
+    pc.collide(prism_x_points([(-c, y0 - r * c), (c, y0 - r * c), (c, y0 - r * c + k), (0, y0 + k), (-c, y0 - r * c + k)],
+                              x0, x1))
+
+
+GLASS_BAR, GLASS_LIFT = 0.05, 0.06  # the glass roof's rafter width and the pane's height over the gables' line
+
+
+def build_glass_roof(pc: Piece, p: dict, spec: dict) -> None:
+    """A greenhouse glass roof bay: a metal rafter along its x0 edge (the next bay's rafter or a glass gable's sloped
+    bar closes x1), a pane over the rest; p["gutter"] hangs a gutter at z0 (the eave bay). Pivot as build_pitched's, on
+    the glass wall's top; the pane lies GLASS_LIFT over the line y = r * z."""
+    r = pitch(spec)["r"]
+    (x0, x1), (z0, z1) = p["x"], p["z"]
+    m = pc.mesh
+    raf = [(z0, r * z0), (z1, r * z1), (z1, r * z1 + GLASS_LIFT), (z0, r * z0 + GLASS_LIFT)]
+    prism_x(m, raf, x0, x0 + GLASS_BAR, "metal", caps="+x", edges=[True, False, False, "-z" in p.get("ends", "")])
+    pc.collide(prism_x_points(raf, x0, x0 + GLASS_BAR))
+    lift = GLASS_LIFT
+    pane = [(z0, r * z0 + lift), (z1, r * z1 + lift), (z1, r * z1 + lift + 0.008), (z0, r * z0 + lift + 0.008)]
+    prism_x(m, pane, x0 + GLASS_BAR, x1, "glass", caps="", edges=[True, False, True, False])
+    pc.collide(prism_x_points([(z0, r * z0 + lift - 0.004), (z1, r * z1 + lift - 0.004),
+                               (z1, r * z1 + lift + 0.012), (z0, r * z0 + lift + 0.012)], x0 + GLASS_BAR, x1), "glass")
+    if p.get("gutter"):
+        y = r * z0 + lift
+        lo, hi = (x0, y - 0.12, z0 - 0.12), (x1, y - 0.02, z0)
+        m.box(lo, hi, "metal", "+y-y-z+z")
+        pc.collide_box(lo, hi)
+
+
+def build_glass_ridge(pc: Piece, p: dict, spec: dict) -> None:
+    """The glass roof's ridge beam over x over p["x"]; pivot at the glass gables' apex (as build_ridge's)."""
+    x0, x1 = p["x"]
+    lo, hi = (x0, 0.0, -0.05), (x1, GLASS_LIFT + 0.08, 0.05)
+    pc.mesh.box(lo, hi, "metal", "+y-y+z-z" + "".join(e for e in ("-x", "+x") if e in p.get("ends", "")))
+    pc.collide_box(lo, hi)
+
+
+def build_glass_gable(pc: Piece, p: dict, spec: dict) -> None:
+    """A greenhouse gable in glass on the glass wall's top beam: a triangle (p["up"] "+x" or "-x") or a band (p["band"]:
+    a rectangle as tall as the triangle's rise) of one pane, a mullion at x 0 (as the glass walls) and mid-way, a sloped
+    bar on a triangle's top (the end bay's rafter), a transom on a band's top."""
+    g = spec["grid"]
+    L = float(p["length"])
+    R = L * g["gable_rise_per_m"]
+    m = pc.mesh
+    mw = 0.03
+    up = p.get("up", "+x")
+    band = p.get("band", False)
+
+    def top(x):
+        return R if band else (R * x / L if up == "+x" else R * (1 - x / L))
+    if band:
+        poly = [(0, 0), (L, 0), (L, R), (0, R)]
+    else:
+        poly = [(0, 0), (L, 0), (L, R)] if up == "+x" else [(0, 0), (L, 0), (0, R)]
+    m.prism(poly, -0.004, 0.004, "glass", edges=[False] * len(poly))
+    pc.collide(prism_points(poly, -0.006, 0.006), "glass")
+    for xc in (0.0, L / 2):
+        h = top(xc)
+        if h > 0.05:
+            m.box((xc - mw, 0, -mw), (xc + mw, h, mw), "metal", "+x-x+z-z")
+            pc.collide_box((xc - mw, 0, -mw), (xc + mw, h, mw))
+    if band:
+        m.box((mw, R - 0.03, -mw), (L - mw, R + 0.03, mw), "metal", "+y-y+z-z")
+        pc.collide_box((0, R - 0.03, -mw), (L, R + 0.03, mw))
+    else:
+        bar = [(0, -0.05), (L, R - 0.05), (L, R), (0, 0)] if up == "+x" else [(0, R - 0.05), (L, -0.05), (L, 0), (0, R)]
+        m.prism(bar, -mw, mw, "metal", edges=[True, False, True, False])
+        pc.collide(prism_points(bar, -mw, mw))
+
+
+def build_porch(pc: Piece, p: dict, spec: dict) -> None:
+    """A porch roof on two posts against an exterior wall: x over 0..length along the wall from its grid node, out
+    along +Z from the wall's exterior face for depth; a lean-to slab from height at the wall to front_height; a lamp
+    rod under the slab's middle (socket "lamp": where a porch_lamp hangs)."""
+    g = spec["grid"]
+    h2 = g["wall_t_m"] / 2
+    L, D, hw, hf, t = (float(p[k]) for k in ("length", "depth", "height", "front_height", "thick"))
+    m = pc.mesh
+    za, zb = h2, h2 + D
+    prof = [(za, hw - t), (zb, hf - t), (zb, hf), (za, hw)]
+    prism_x(m, prof, 0.0, L, "boards", caps="-x+x", cap_role="trim", edges=[True, True, True, False],
+            edge_roles={1: "trim", 2: "roof"})
+    pc.collide(prism_x_points(prof, 0.0, L))
+
+    def under(z):
+        return hw - t + (hf - hw) * (z - za) / D
+    ps = float(p.get("post", 0.12))
+    zc = zb - 0.12
+    for xc in (0.12, L - 0.12):
+        poly = [(xc - ps / 2, zc - ps / 2), (xc + ps / 2, zc - ps / 2), (xc + ps / 2, zc + ps / 2), (xc - ps / 2, zc + ps / 2)]
+        prism_y(m, poly, 0.0, under(zc + ps / 2), "trim")
+        pc.collide(prism_y_points(poly, 0.0, under(zc + ps / 2)))
+    xm, zm = L / 2, za + D * 0.6
+    y1 = under(zm)
+    m.box((xm - 0.06, y1 - 0.02, zm - 0.06), (xm + 0.06, y1, zm + 0.06), "metal", "+x-x-y+z-z")
+    m.box((xm - 0.012, y1 - 0.3, zm - 0.012), (xm + 0.012, y1 - 0.02, zm + 0.012), "metal", "+x-x-y+z-z")
+    pc.sockets["lamp"] = [round(xm, 4), round(y1 - 0.3, 4), round(zm, 4)]
+
+
+def build_chimney(pc: Piece, p: dict, spec: dict) -> None:
+    """A chimney stack on the roof deck: x, z over 0..size from its grid node, a plastered body, a concrete cap and a
+    metal flue; total height p["height"]."""
+    S, H = float(p["width"]), float(p["height"])
+    m = pc.mesh
+    cap0, cap1, o = H - 0.25, H - 0.15, 0.06
+    m.box((0, 0, 0), (S, cap0, S), "wall_ext", "+x-x+z-z")
+    m.box((-o, cap0, -o), (S + o, cap1, S + o), "concrete", "+x-x+y-y+z-z")
+    f0, f1 = S / 2 - 0.15, S / 2 + 0.15
+    m.box((f0, cap1, f0), (f1, H, f1), "metal", "+x-x+y+z-z")
+    pc.collide_box((0, 0, 0), (S, cap0, S))
+    pc.collide_box((-o, cap0, -o), (S + o, cap1, S + o))
+    pc.collide_box((f0, cap1, f0), (f1, H, f1))
+
+
+def build_bracket(pc: Piece, p: dict, spec: dict) -> None:
+    """A cornice bracket under the roof deck's overhang (Q3): on an exterior wall's face, centred on x 0, its top
+    against the slab's underside at y 0, reaching p["reach"] out from the wall's face."""
+    h2 = spec["grid"]["wall_t_m"] / 2
+    reach, drop, w = float(p["reach"]), float(p["drop"]), float(p["width"]) / 2
+    prof = [(h2, 0.0), (h2 + reach, 0.0), (h2 + reach, -0.12), (h2 + 0.15, -drop), (h2, -drop)]
+    prism_x(pc.mesh, prof, -w, w, p.get("role", "trim"), edges=[False, True, True, True, False])
+    pc.collide(prism_x_points(prof, -w, w))
+
+
+def build_cap(pc: Piece, p: dict, spec: dict) -> None:
+    """A post's cap: a slab and a low pyramid, centred on x, z 0 at the post's top (y 0)."""
+    hw, slab, peak = float(p["width"]) / 2, float(p["slab"]), float(p["peak"])
+    m = pc.mesh
+    m.box((-hw, 0, -hw), (hw, slab, hw), p["role"], "+x-x-y+z-z")
+    corners = [(-hw, slab, -hw), (hw, slab, -hw), (hw, slab, hw), (-hw, slab, hw)]
+    apex = (0.0, slab + peak, 0.0)
+    for i in range(4):
+        a, b = corners[i], corners[(i + 1) % 4]
+        m.poly([a, b, apex], ((a[0] + b[0]) / 2, hw, (a[2] + b[2]) / 2), p["role"])
+    pc.collide(box_points((-hw, 0, -hw), (hw, slab, hw)) + [list(apex)])
+
+
+def build_gate_post(pc: Piece, p: dict, spec: dict) -> None:
+    """A gate post centred on its grid node: a plastered body, a concrete cap with a low pyramid."""
+    hw, H = float(p["width"]) / 2, float(p["height"])
+    m = pc.mesh
+    m.box((-hw, 0, -hw), (hw, H, hw), "wall_ext", "+x-x+z-z")
+    pc.collide_box((-hw, 0, -hw), (hw, H, hw))
+    cap = Piece(pc.id + "_cap", pc.kind)
+    build_cap(cap, {"width": 2 * hw + 0.06, "slab": 0.06, "peak": 0.09, "role": "concrete"}, spec)
+    merge(m, cap.mesh, 0.0, (0.0, H, 0.0))
+    pc.collide([[q[0], q[1] + H, q[2]] for q in cap.colliders[0]["points"]])
+
+
+def gazebo_corner(R: float, k: int) -> tuple:
+    """The k-th corner of the gazebo's hexagon of circumradius R: corner 0 on +X, corner k is corner 0 turned by
+    k * 60 deg about +Y, so six instances of a sector at k * 60 deg close the ring."""
+    return rot_y((R, 0.0, 0.0), 60.0 * k)
+
+
+def build_gazebo_sector(pc: Piece, p: dict, spec: dict) -> None:
+    """One sixth of the hexagonal gazebo, pivot at its centre: the deck's triangle, the post near corner 0 and (unless
+    p["open"], the entrance) the rail from post 0 to post 1. Six instances at k * 60 deg about +Y make the gazebo."""
+    R, dh, ph = float(p["radius"]), float(p["deck_h"]), float(p["post_h"])
+    m = pc.mesh
+    c0, c1 = gazebo_corner(R, 0), gazebo_corner(R, 1)
+    tri = [(0.0, 0.0), (c0[0], c0[2]), (c1[0], c1[2])]
+    prism_y(m, tri, 0.0, dh, "trim", caps="+y", cap_role="boards", edges=[False, True, False])
+    pc.collide(prism_y_points(tri, 0.0, dh))
+    ps, rp = float(p.get("post", 0.14)), R - 0.12
+    q0, q1 = gazebo_corner(rp, 0), gazebo_corner(rp, 1)
+    post = [(q0[0] - ps / 2, -ps / 2), (q0[0] + ps / 2, -ps / 2), (q0[0] + ps / 2, ps / 2), (q0[0] - ps / 2, ps / 2)]
+    prism_y(m, post, dh, dh + ph, "trim")
+    pc.collide(prism_y_points(post, dh, dh + ph))
+    if p.get("open"):
+        return
+    span = math.dist((q0[0], q0[2]), (q1[0], q1[2]))
+    deg = math.degrees(math.atan2(-(q1[2] - q0[2]), q1[0] - q0[0]))
+    rail = Mesh("rail")
+    a, b = ps / 2, span - ps / 2
+    rail.box((a, 0.85, -0.04), (b, 0.91, 0.04), "trim", "+y-y+z-z")
+    rail.box((a, 0.08, -0.03), (b, 0.14, 0.03), "trim", "+y-y+z-z")
+    x = a + 0.18
+    while x < b - 0.1:
+        rail.box((x - 0.02, 0.14, -0.02), (x + 0.02, 0.85, 0.02), "trim", "+x-x+z-z")
+        x += 0.2
+    merge(m, rail, deg, (q0[0], dh, q0[2]))
+    pc.collide([list(place(q, deg, (q0[0], dh, q0[2]))) for q in box_points((a, 0.08, -0.04), (b, 0.91, 0.04))])
+
+
+def build_gazebo_roof(pc: Piece, p: dict, spec: dict) -> None:
+    """One sixth of the gazebo's roof, pivot at the gazebo's centre: a triangle from the eave edge (corners 0 and 1 of
+    radius p["radius"] at eave_h) up to the apex at apex_h, its underside p["thick"] lower, a fascia on the eave."""
+    R, ye, ya, tv = (float(p[k]) for k in ("radius", "eave_h", "apex_h", "thick"))
+    m = pc.mesh
+    c0, c1 = gazebo_corner(R, 0), gazebo_corner(R, 1)
+    top = [(0.0, ya, 0.0), (c0[0], ye, c0[2]), (c1[0], ye, c1[2])]
+    bot = [(q[0], q[1] - tv, q[2]) for q in top]
+    out = ((c0[0] + c1[0]) / 2, 0.0, (c0[2] + c1[2]) / 2)
+    m.poly(top, (out[0] * 0.3, 1.0, out[2] * 0.3), "roof")
+    m.poly(bot, (-out[0] * 0.3, -1.0, -out[2] * 0.3), "boards")
+    m.poly([top[1], top[2], bot[2], bot[1]], out, "trim")
+    pc.collide([list(q) for q in top + bot])
+
+
+def build_finial(pc: Piece, p: dict, spec: dict) -> None:
+    """The gazebo's finial on the roof's apex (pivot at the apex)."""
+    hw = float(p["width"]) / 2
+    m = pc.mesh
+    m.box((-hw, -0.1, -hw), (hw, 0.05, hw), p["role"], "+x-x+z-z")
+    cap = Piece(pc.id + "_cap", pc.kind)
+    build_cap(cap, {"width": 2 * hw + 0.02, "slab": 0.02, "peak": float(p["peak"]), "role": p["role"]}, spec)
+    merge(m, cap.mesh, 0.0, (0.0, 0.05, 0.0))
+    pc.collide(box_points((-hw, -0.1, -hw), (hw, 0.05, hw)) + [[0.0, 0.07 + float(p["peak"]), 0.0]])
+
+
+def build_glass_node(pc: Piece, p: dict, spec: dict) -> None:
+    """Glass-wall node pieces: "corner" fills the outer corner's notch of the kerb and the top beam (as build_corner);
+    "end" caps a free kerb end at x 0 (2 cm proud, as build_end); "post" is a lone mullion on a node (the far end of a
+    run, whose last module has no post at x = length)."""
+    g = spec["grid"]
+    h2, H, kerb, mw, beam = g["wall_t_m"] / 2, g["glass_wall_h_m"], 0.3, 0.03, 0.06
+    m = pc.mesh
+    what = p["node"]
+    if what == "corner":
+        m.box((0, 0, 0), (h2, kerb, h2), "concrete", "+x+z+y")
+        pc.collide_box((0, 0, 0), (h2, kerb, h2))
+        m.box((mw, H - beam, 0.0), (0.04, H, 0.04), "metal", "+x+z+y-y")
+        m.box((0.0, H - beam, mw), (mw, H, 0.04), "metal", "+z+y-y")
+        pc.collide_box((0, H - beam, 0), (0.04, H, 0.04))
+    elif what == "end":
+        m.box((-0.02, 0, -h2), (0, kerb, h2), "concrete", "-x+y+z-z")
+        pc.collide_box((-0.02, 0, -h2), (0, kerb, h2))
+    else:
+        m.box((-mw, kerb, -mw), (mw, H, mw), "metal", "+x-x+y+z-z")
+        pc.collide_box((-mw, kerb, -mw), (mw, H, mw))
+
+
+def build_slab_edge(pc: Piece, p: dict, spec: dict) -> None:
+    """Closes a slab's free edge (a stairwell, a balcony, a hatch's side): a face along +X at z 0 facing -Z, the slab on
+    the +Z side, from its top (y 0) down by p["thick"]; floor tiles have no side faces (they met back to back)."""
+    L, th = float(p["length"]), float(p["thick"])
+    pc.mesh.quad_z(0, L, -th, 0, 0, -1, p["role"])
+    pc.collide_box((0, -th, 0), (L, 0, 0.02))
+
+
 BUILDERS = {
     "wall": build_wall, "corner": build_corner, "end": build_end, "gable": build_gable, "floor": build_floor,
     "ceiling": build_ceiling, "block": build_block, "parapet": build_parapet, "parapet_corner": build_parapet_corner,
     "stairs": build_stairs, "stairs_open": build_stairs_open, "ladder": build_ladder, "post": build_post,
     "railing": build_railing, "fence": build_fence, "wicket": build_wicket, "gates": build_gates,
     "glass": build_glass, "garage_door": build_garage_door,
+    # version 2 (art #86)
+    "pillar": build_pillar, "pitched": build_pitched, "ridge": build_ridge, "glass_roof": build_glass_roof,
+    "glass_ridge": build_glass_ridge, "glass_gable": build_glass_gable, "porch": build_porch, "chimney": build_chimney,
+    "bracket": build_bracket, "cap": build_cap, "gate_post": build_gate_post, "gazebo_sector": build_gazebo_sector,
+    "gazebo_roof": build_gazebo_roof, "finial": build_finial, "glass_node": build_glass_node, "slab_edge": build_slab_edge,
 }
 
 
@@ -604,7 +992,12 @@ def uv0(mesh: Mesh, spec: dict) -> list[list[list[float]]]:
 
 
 def uv2(mesh: Mesh, margin: float = UV2_MARGIN_M) -> list[list[list[float]]]:
-    """Every face its own island (projected in metres), shelf-packed into the unit square at one uniform scale."""
+    return uv2_pack(mesh, margin)[0]
+
+
+def uv2_pack(mesh: Mesh, margin: float = UV2_MARGIN_M) -> tuple[list, float]:
+    """Every face its own island (projected in metres), shelf-packed into the unit square at one uniform scale; returns
+    the UVs and that scale (UV units per metre: the lightmap's texels per metre are the mesh's lightmap size times it)."""
     islands = []
     for face in mesh.faces:
         pts = [mesh.verts[i] for i in face]
@@ -614,7 +1007,7 @@ def uv2(mesh: Mesh, margin: float = UV2_MARGIN_M) -> list[list[list[float]]]:
         hi = (max(a for a, _ in q), max(b for _, b in q))
         islands.append(([(a - lo[0], b - lo[1]) for a, b in q], hi[0] - lo[0], hi[1] - lo[1]))
     if not islands:
-        return []
+        return [], 0.0
     area = sum((w + 2 * margin) * (h + 2 * margin) for _, w, h in islands)
     width = max(max(w for _, w, _ in islands) + 2 * margin, math.sqrt(area) * 1.15)
     order = sorted(range(len(islands)), key=lambda i: -islands[i][2])
@@ -628,7 +1021,7 @@ def uv2(mesh: Mesh, margin: float = UV2_MARGIN_M) -> list[list[list[float]]]:
         row = max(row, h + 2 * margin)
     scale = 1.0 / max(width, y + row)
     return [[[round((a + place[i][0]) * scale, 6), round((b + place[i][1]) * scale, 6)] for a, b in islands[i][0]]
-            for i in range(len(islands))]
+            for i in range(len(islands))], scale
 
 
 # --- the kit -------------------------------------------------------------------------------------------------------
@@ -652,9 +1045,10 @@ def describe(pc: Piece, spec: dict) -> dict:
     """The piece as kit_build.py builds it and the piece table reports it."""
     meshes = []
     for m in pc.meshes:
+        uvs, scale = uv2_pack(m)
         meshes.append({
             "name": m.name, "origin": list(m.origin), "verts": [list(v) for v in m.verts], "faces": m.faces,
-            "roles": m.roles, "uv0": uv0(m, spec), "uv2": uv2(m), "triangles": m.triangles(),
+            "roles": m.roles, "uv0": uv0(m, spec), "uv2": uvs, "uv2_per_m": round(scale, 5), "triangles": m.triangles(),
         })
     verts = [v for m in pc.meshes for v in m.verts]
     return {
@@ -663,6 +1057,7 @@ def describe(pc: Piece, spec: dict) -> dict:
         "bounds_m": bounds(verts),
         "collision_bounds_m": bounds(p for c in pc.colliders for p in c["points"]),
         "roles": sorted({r for m in pc.meshes for r in m.roles}),
+        "sockets": pc.sockets,
     }
 
 
@@ -673,6 +1068,8 @@ def build_kit(spec: dict) -> list[dict]:
 # --- checks --------------------------------------------------------------------------------------------------------
 def nominal_size(p: dict, spec: dict) -> dict:
     """The grid footprint a piece is placed by: (length along X, depth along Z) in metres, or None for a node piece."""
+    if "x" in p:  # a span piece (roofs): its spans, which may stand out of the grid (eaves, verges)
+        return {"x": float(p["x"][1] - p["x"][0]), "z": float(p["z"][1] - p["z"][0]) if "z" in p else None}
     if "length" in p:
         return {"x": float(p["length"]), "z": None}
     if "size" in p:
@@ -701,7 +1098,7 @@ def check_spec(spec: dict) -> list[str]:
         size = nominal_size(p, spec)
         for axis in ("x", "z"):
             v = size[axis]
-            if v is not None and p["type"] not in ("ladder",) and abs(v - round(v)) > EPS:
+            if v is not None and p["type"] not in ("ladder",) and not p.get("overhang") and abs(v - round(v)) > EPS:
                 problems.append(f"{p['id']}: its {axis} size {v} m is not whole metres")
         if "length" in p and p["type"] in ("wall", "parapet", "railing", "fence", "glass", "gable") \
                 and int(p["length"]) not in g["modules_m"]:
@@ -709,6 +1106,13 @@ def check_spec(spec: dict) -> list[str]:
         for key in ("finish",):
             if key in p and p[key] not in spec["finishes"]:
                 problems.append(f"{p['id']}: no finish {p[key]}")
+    for name, m in spec["materials"].items():
+        pack = m.get("pack")
+        if pack and (pack not in spec.get("packs", {}) or name not in spec["packs"][pack]["layers"]):
+            problems.append(f"material {name}: not a layer of pack {pack}")
+    for pack, d in spec.get("packs", {}).items():
+        if not 1 <= len(d["layers"]) <= 4:
+            problems.append(f"pack {pack}: {len(d['layers'])} layers (1 to 4: the vertex alpha holds them)")
     return problems
 
 
@@ -735,7 +1139,13 @@ def check_piece(d: dict, p: dict, spec: dict) -> list[str]:
                 break
     size = nominal_size(p, spec)
     b = d["bounds_m"]
-    if size["x"] is not None and p["type"] not in ("ladder",):
+    if "x" in p:  # a span piece: nothing outside its spans (a glass eave's gutter hangs 0.12 m before z0)
+        z = p.get("z")
+        if z is not None and (b["min"][2] < z[0] - (0.12 if p.get("gutter") else 0.0) - EPS or b["max"][2] > z[1] + EPS):
+            problems.append(f"{pid}: z extent {b['min'][2]}..{b['max'][2]} m leaves its span {z}")
+        if b["min"][0] < p["x"][0] - EPS or b["max"][0] > p["x"][1] + EPS:
+            problems.append(f"{pid}: x extent {b['min'][0]}..{b['max'][0]} m leaves its span {p['x']}")
+    elif size["x"] is not None and p["type"] not in ("ladder",):
         lo_ok = b["min"][0] >= -0.08 - EPS
         # a module may stop short of its end node by up to 0.12 m (the next module's post closes it)
         hi_ok = b["max"][0] <= size["x"] + 0.08 + EPS and b["max"][0] >= size["x"] - 0.12 - EPS
@@ -755,7 +1165,256 @@ def piece_table(described: list[dict]) -> list[dict]:
             "id": d["id"], "kind": d["kind"], "triangles": d["triangles"],
             "size_m": [round(b["max"][i] - b["min"][i], 3) for i in range(3)],
             "bounds_m": b, "colliders": len(d["colliders"]),
+            "uv2_per_m": min(m["uv2_per_m"] for m in d["meshes"]),
             "glass_colliders": sum(1 for c in d["colliders"] if c["group"] == "glass"),
             "nodes": [m["name"] for m in d["meshes"]],
         })
     return rows
+
+
+# --- seams: neighbours on the grid must not put faces back to back (art #86, v1's floor tiles did) ------------------
+def _plane_key(pts):
+    n = polygon_normal(pts)
+    ln = math.sqrt(_dot(n, n))
+    if ln < EPS:
+        return None
+    n = tuple(c / ln for c in n)
+    return n, _dot(n, pts[0])
+
+
+def _clip(subject, clip):
+    """Sutherland-Hodgman: the convex polygon subject clipped by the convex polygon clip (both counter-clockwise, 2D)."""
+    def inside(p, a, b):
+        return (b[0] - a[0]) * (p[1] - a[1]) - (b[1] - a[1]) * (p[0] - a[0]) >= -1e-9
+
+    def cut(p, q, a, b):
+        dx, dy = q[0] - p[0], q[1] - p[1]
+        ex, ey = b[0] - a[0], b[1] - a[1]
+        den = dx * ey - dy * ex
+        if abs(den) < 1e-12:
+            return q
+        t = ((a[0] - p[0]) * ey - (a[1] - p[1]) * ex) / den
+        return (p[0] + t * dx, p[1] + t * dy)
+    out = list(subject)
+    for i in range(len(clip)):
+        a, b = clip[i], clip[(i + 1) % len(clip)]
+        src, out = out, []
+        for j in range(len(src)):
+            p, q = src[j], src[(j + 1) % len(src)]
+            if inside(q, a, b):
+                if not inside(p, a, b):
+                    out.append(cut(p, q, a, b))
+                out.append(q)
+            elif inside(p, a, b):
+                out.append(cut(p, q, a, b))
+        if not out:
+            return []
+    return out
+
+
+def _area2(poly) -> float:
+    return sum(poly[i][0] * poly[(i + 1) % len(poly)][1] - poly[(i + 1) % len(poly)][0] * poly[i][1]
+               for i in range(len(poly))) / 2
+
+
+def _flat(pts, n):
+    ax = _axis(n)
+    keep = [i for i in range(3) if i != ax]
+    q = [(p[keep[0]], p[keep[1]]) for p in pts]
+    return q if _area2(q) > 0 else q[::-1]
+
+
+def coplanar_overlaps(faces_a, faces_b, min_area: float = 1e-4) -> list[tuple]:
+    """Pairs of faces (index in a, index in b) that lie in one plane and overlap by more than min_area m2: faces that
+    z-fight or sit back to back where two pieces meet."""
+    planes = {}
+    for j, pts in enumerate(faces_b):
+        k = _plane_key(pts)
+        if k:
+            planes.setdefault(_axis(k[0]), []).append((j, k, pts))
+    hits = []
+    for i, pts in enumerate(faces_a):
+        k = _plane_key(pts)
+        if not k:
+            continue
+        for j, kb, pb in planes.get(_axis(k[0]), []):
+            if abs(abs(_dot(k[0], kb[0])) - 1) > 1e-6:
+                continue
+            if abs(kb[1] * _dot(k[0], kb[0]) - k[1]) > 1e-4:
+                continue
+            inter = _clip(_flat(pts, k[0]), _flat(pb, k[0]))
+            if len(inter) >= 3 and abs(_area2(inter)) > min_area:
+                hits.append((i, j))
+    return hits
+
+
+def face_points(d: dict, deg: float = 0.0, offset=(0.0, 0.0, 0.0)) -> list[list[tuple]]:
+    out = []
+    for m in d["meshes"]:
+        o = m["origin"]
+        for f in m["faces"]:
+            out.append([place((m["verts"][i][0] + o[0], m["verts"][i][1] + o[1], m["verts"][i][2] + o[2]), deg, offset)
+                        for i in f])
+    return out
+
+
+RUN_TYPES = ("wall", "parapet", "railing", "fence", "glass", "slab_edge")
+
+
+def seam_offsets(p: dict) -> list[tuple]:
+    """Where the next copy of a piece snaps on (a run along +X, a floor along +X and +Z, a roof slab along its spans)."""
+    if p["type"] in RUN_TYPES:
+        return [(float(p["length"]), 0.0, 0.0)]
+    if p["type"] in ("floor", "ceiling") and "size" in p:
+        return [(float(p["size"][0]), 0.0, 0.0), (0.0, 0.0, float(p["size"][1]))]
+    if p["type"] in ("pitched", "glass_roof") and not p.get("ends"):
+        dz = p["z"][1] - p["z"][0]
+        return [(p["x"][1] - p["x"][0], 0.0, 0.0), ("pitch", dz)]
+    if p["type"] in ("ridge", "glass_ridge") and not p.get("ends"):
+        return [(p["x"][1] - p["x"][0], 0.0, 0.0)]
+    return []
+
+
+def seam_problems(spec: dict, described: dict) -> list[str]:
+    """Snaps a copy of every run, floor and roof module onto its neighbour node and refuses faces back to back."""
+    problems = []
+    r = spec["grid"]["gable_rise_per_m"]
+    for p in spec["pieces"]:
+        d = described.get(p["id"])
+        if d is None:
+            continue
+        a = face_points(d)
+        for off in seam_offsets(p):
+            if off[0] == "pitch":
+                off = (0.0, r * off[1], off[1])
+            hits = coplanar_overlaps(a, face_points(d, 0.0, off))
+            if hits:
+                problems.append(f"{p['id']}: {len(hits)} faces back to back with its neighbour at {list(off)}")
+    return problems
+
+
+# --- assemblies the checks and the proof share (pieces placed as (id, degrees about +Y, offset)) --------------------
+def attic_roof(spec: dict, span_x: int, span_z: int) -> list[tuple]:
+    """The attic's pitched roof over span_x x span_z metres (grid lines; the eave walls at z 0 and span_z, the gables at
+    x 0 and span_x; pivots at the knee walls' top, y 0): panels 2 m along the eave, 2 m and 1 m up the slope, eaves,
+    verges, the corners between them and the ridge; the far slope is the near one turned 180 deg."""
+    run = span_z / 2
+    r = spec["grid"]["gable_rise_per_m"]
+    if run != int(run):
+        raise ValueError("the attic's depth must be an even number of metres (the ridge on a grid line)")
+    rows, z = [], 0
+    while z < run:
+        step = 2 if run - z >= 2 else 1
+        rows.append((z, step))
+        z += step
+    out = []
+    for side in (0, 1):
+        deg = 180.0 * side
+
+        def at(x, z):  # a pivot on the slope: lifted r per metre up it; the far slope mirrored through the centre
+            return (span_x - x, r * z, span_z - z) if side else (x, r * z, z)
+        for x in range(0, span_x, 2):
+            out.append(("roof_pitched_eave_2m", deg, at(x, 0)))
+            for z, step in rows:
+                out.append((f"roof_pitched_2x{step}", deg, at(x, z)))
+        for z, step in rows:
+            out.append((f"roof_pitched_verge_{step}_l", deg, at(0, z)))
+            out.append((f"roof_pitched_verge_{step}_r", deg, at(span_x, z)))
+        out.append(("roof_pitched_corner_l", deg, at(0, 0)))
+        out.append(("roof_pitched_corner_r", deg, at(span_x, 0)))
+    for x in range(0, span_x, 2):
+        out.append(("roof_pitched_ridge_2m", 0.0, (x, r * run, run)))
+    out.append(("roof_pitched_ridge_end_l", 0.0, (0, r * run, run)))
+    out.append(("roof_pitched_ridge_end_r", 0.0, (span_x, r * run, run)))
+    return out
+
+
+def gazebo(prefix: str = "gazebo") -> list[tuple]:
+    """The gazebo: six deck sectors (sector 0 the open entrance), six roof sectors and the finial."""
+    out = [(f"{prefix}_sector_open" if k == 0 else f"{prefix}_sector", 60.0 * k, (0.0, 0.0, 0.0)) for k in range(6)]
+    out += [(f"{prefix}_roof_sector", 60.0 * k, (0.0, 0.0, 0.0)) for k in range(6)]
+    return out
+
+
+def _ray_hits_up(tris, x, z, y0) -> bool:
+    return _ray_up(tris, x, z, y0) is not None
+
+
+def _ray_up(tris, x, z, y0):
+    """The lowest height above y0 where a vertical ray at (x, z) meets one of the triangles, or None."""
+    best = None
+    for a, b, c in tris:
+        # barycentric test in XZ, then the hit's height above y0
+        d = (b[2] - c[2]) * (a[0] - c[0]) + (c[0] - b[0]) * (a[2] - c[2])
+        if abs(d) < 1e-12:
+            continue
+        l1 = ((b[2] - c[2]) * (x - c[0]) + (c[0] - b[0]) * (z - c[2])) / d
+        l2 = ((c[2] - a[2]) * (x - c[0]) + (a[0] - c[0]) * (z - c[2])) / d
+        l3 = 1 - l1 - l2
+        y = l1 * a[1] + l2 * b[1] + l3 * c[1]
+        if min(l1, l2, l3) >= -1e-9 and y > y0 and (best is None or y < best):
+            best = y
+    return best
+
+
+def assembly_tris(placed: list[tuple], described: dict) -> list[tuple]:
+    tris = []
+    for pid, deg, off in placed:
+        for f in face_points(described[pid], deg, off):
+            for k in range(1, len(f) - 1):
+                tris.append((f[0], f[k], f[k + 1]))
+    return tris
+
+
+def closure_problems(spec: dict, described: dict, span_x: int = 20, span_z: int = 14, step: float = 0.25) -> list[str]:
+    """The attic's roof closes over its span: a ray straight up from every step-metre point inside the walls hits the
+    roof; the roof's underside stays under the gables' sloped top (no gap at the gable) at every point of the slope."""
+    problems = []
+    placed = attic_roof(spec, span_x, span_z)
+    missing = sorted({pid for pid, _, _ in placed if pid not in described})
+    if missing:
+        return [f"attic roof: no piece {', '.join(missing)}"]
+    tris = assembly_tris(placed, described)
+    misses = []
+    n = int(round(span_x / step))
+    m = int(round(span_z / step))
+    for i in range(n + 1):
+        for j in range(m + 1):
+            x, z = min(max(i * step, 0.11), span_x - 0.11), min(max(j * step, 0.11), span_z - 0.11)
+            if not _ray_hits_up(tris, x + 1e-4, z + 1e-4, 0.0):
+                misses.append((round(x, 2), round(z, 2)))
+    if misses:
+        problems.append(f"attic roof: {len(misses)} rays up miss the roof, e.g. {misses[:4]}")
+    r = pitch(spec)["r"]
+    gaps = []
+    for x in (0.0, float(span_x)):  # the gables' planes: the underside measured against the gables' sloped top
+        for k in range(1, int(span_z / 0.05)):
+            z = k * 0.05 + 1e-4
+            under = _ray_up(tris, x + 1e-4, z, -1.0)
+            top = r * min(z, span_z - z)
+            if under is None or under > top - 0.01:
+                gaps.append((x, round(z, 2), None if under is None else round(under - top, 3)))
+    if gaps:
+        problems.append(f"attic roof: at {len(gaps)} points of the gables the underside is not under their top, "
+                        f"e.g. {gaps[:4]}")
+    return problems
+
+
+def gazebo_problems(spec: dict, described: dict) -> list[str]:
+    placed = gazebo()
+    missing = sorted({pid for pid, _, _ in placed if pid not in described})
+    if missing:
+        return [f"gazebo: no piece {', '.join(missing)}"]
+    roof = [t for t in assembly_tris([q for q in placed if "roof" in q[0]], described)]
+    deck = [t for t in assembly_tris([q for q in placed if "roof" not in q[0]], described)]
+    misses = []
+    for i in range(-24, 25):
+        for j in range(-24, 25):
+            x, z = i * 0.1 + 1e-4, j * 0.1 + 1e-4
+            if math.hypot(x, z) > 2.3:
+                continue
+            if not _ray_hits_up(roof, x, z, 2.0):
+                misses.append(("roof", round(x, 2), round(z, 2)))
+            if not _ray_hits_up(deck, x, z, -1.0):
+                misses.append(("deck", round(x, 2), round(z, 2)))
+    return [f"gazebo: {len(misses)} rays up miss, e.g. {misses[:4]}"] if misses else []
