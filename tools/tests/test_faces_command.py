@@ -132,3 +132,40 @@ class DistanceLinesTest(unittest.TestCase):
               "m_full_talk_change_2m": 40, "m_full_talk_change_10m": 2}
         self.assertEqual(faces.distance_lines({"distance": {"face_pixels": {"f9_test": fp}}}),
                          ["f9_test: m_full face 190/5, blink 120/0, talk 40/2 px at 2m/10m"])
+
+
+def kit_body(**kw: object) -> dict:
+    b = {"head": "m1", "faces": 4, "requested": 4, "faces_with_collision": 0, "brow_in_white_faces": 0, "pokes": 0,
+         "ear_hair_overlap_faces": 0, "meets_pupils_faces": 0, "nose_above_mouth_mm_min": 1.5, "look_sag_mm_max": -0.2,
+         "tris_max": 1900, "tris_mean": 1500.0, "seconds": 9.0, "hairs_seen": {"hair_m_beach": 4}, "brow_tuck_faces": 1,
+         "moustache_seat": {"faces": 1, "overlap_faces": 0, "cannot_clear_faces": 0, "nose_clear_mm_min": 0.4,
+                            "squash_min": 1.0}}
+    b.update(kw)
+    return b
+
+
+class KitCheck(unittest.TestCase):
+    def test_clean_report_passes(self) -> None:
+        report = {"bodies": {"M": kit_body(), "W": kit_body(head="w1")}}
+        self.assertEqual(faces.kit_problems(report), [])
+        self.assertEqual(len(faces.kit_summary(report)), 2)
+
+    def test_each_failure_is_named(self) -> None:
+        bad = kit_body(faces=3, faces_with_collision=1, brow_in_white_faces=2, pokes=1, ear_hair_overlap_faces=1,
+                       meets_pupils_faces=1, nose_above_mouth_mm_min=-0.3, look_sag_mm_max=0.1, tris_max=2100,
+                       moustache_seat={"faces": 1, "overlap_faces": 1, "cannot_clear_faces": 0, "nose_clear_mm_min": 0.0,
+                                       "squash_min": 1.0})
+        problems = faces.kit_problems({"bodies": {"M": bad}})
+        self.assertEqual(len(problems), 10, problems)
+        self.assertTrue(all(p.startswith("M (m1)") for p in problems))
+
+    def test_flag_defaults_and_refusal(self) -> None:
+        import argparse
+        parser = argparse.ArgumentParser()
+        faces.add_arguments(parser)
+        self.assertEqual(parser.parse_args(["--kit-check"]).kit_check, faces.KIT_CHECK_DEFAULT)
+        self.assertEqual(parser.parse_args(["--kit-check", "5"]).kit_check, 5)
+        self.assertEqual(parser.parse_args([]).kit_check, 0)
+        code, out = run_cli("faces", "--kit-check", "-1")
+        self.assertNotEqual(code, 0)
+        self.assertIn("N >= 1", out)
