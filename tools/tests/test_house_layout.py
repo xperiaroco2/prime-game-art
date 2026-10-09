@@ -91,18 +91,17 @@ class LayoutDataTest(unittest.TestCase):
                 text = (GREYBOX / f"{room['id']}.tscn").read_text(encoding="utf-8")
                 theirs = sorted(re.findall(r'\[node name="(\w+)" type="Marker3D" parent="Doors"', text))
                 ours = sorted(d["names"][room["id"]] for L in DATA["levels"] for d in L.get("doors", [])
-                              if room["id"] in d.get("names", {}) and not d.get("placeholder"))
+                              if room["id"] in d.get("names", {}))
                 self.assertEqual(ours, theirs, room["id"])
                 stations = sorted(re.findall(r'\[node name="(\w+)" type="Marker3D" parent="Stations"', text))
                 self.assertEqual(sorted(s["name"] for s in room.get("stations", [])), stations, room["id"])
 
 
-    def test_the_main_stairs_foot_has_a_marked_door(self) -> None:
-        ground = next(lv for lv in DATA["levels"] if lv["level"] == "ground")
-        foot = [d for d in ground["doors"] if d["at"] == [27, 36]]
-        self.assertEqual(len(foot), 1)
-        self.assertTrue(foot[0]["placeholder"])
-        self.assertEqual(sorted(foot[0]["rooms"]), ["hallway", "stairs"])
+    def test_the_main_stairs_are_a_marked_u_turn(self) -> None:
+        st = next(s for s in level("upper")["stairs"] if s["id"] == "main_stairs")
+        self.assertTrue(st["placeholder"])
+        self.assertEqual([b["piece"] for b in st["below"]], ["stairs_outdoor_half", "stairs_outdoor_landing"])
+        self.assertAlmostEqual(st["y"], 1.6)
 
 
 class RuleTest(unittest.TestCase):
@@ -136,7 +135,7 @@ class RuleTest(unittest.TestCase):
     def test_a_stair_off_its_hole_is_refused(self) -> None:
         data = copy.deepcopy(DATA)
         st = next(s for L in data["levels"] for s in L.get("stairs", []) if s["id"] == "main_stairs")
-        st["rect"] = [30, 30, 2, 6]
+        st["rect"] = [30, 31, 3, 2]
         self.assertTrue(any(p.startswith("main_stairs") for p in H.check_stairs(data)))
 
 
@@ -184,7 +183,10 @@ class PlanTest(unittest.TestCase):
 
     def test_stairs_climb_from_their_rect(self) -> None:
         extra = {p.get("name"): p for p in planned("upper")["extra"]}
-        self.assertEqual((extra["main_stairs"]["x"], extra["main_stairs"]["y"], extra["main_stairs"]["turn"]), (26, 36, 90))
+        self.assertEqual((extra["main_stairs"]["x"], extra["main_stairs"]["y"], extra["main_stairs"]["turn"]), (27, 32, 0))
+        # The U-turn: the lower half climbs west from x 30, the 1 x 4 m landing on the west wall.
+        self.assertEqual((extra["main_stairs_1"]["x"], extra["main_stairs_1"]["y"], extra["main_stairs_1"]["turn"]), (30, 36, 180))
+        self.assertEqual((extra["main_stairs_2"]["x"], extra["main_stairs_2"]["y"], extra["main_stairs_2"]["turn"]), (27, 32, -90))
         self.assertEqual((extra["balcony_stairs"]["x"], extra["balcony_stairs"]["y"], extra["balcony_stairs"]["turn"]),
                          (40, 15, -90))
 
@@ -251,8 +253,9 @@ class WalkRequestTest(unittest.TestCase):
         self.assertEqual(sorted(stairs), sorted(f"{s}:{d}" for s in ("main_stairs", "pantry_stairs", "balcony_stairs")
                                                 for d in ("up", "down")))
         up = stairs["main_stairs:up"]
-        self.assertEqual(up[1], [27.0, 0.0, 36.0])
-        self.assertEqual(up[2], [27.0, 3.2, 30.0])
+        self.assertEqual(up[1], [30.0, 0.0, 35.0])  # the U-turn: up west, across the landing, up east
+        self.assertEqual(up[2], [27.0, 1.6, 35.0])
+        self.assertEqual(up[-2], [30.0, 3.2, 33.0])
         self.assertEqual(stairs["main_stairs:down"], up[::-1])
         # The pantry's 1 m landing: the end stops short of its north wall (capsule radius and half a wall).
         self.assertAlmostEqual(stairs["pantry_stairs:up"][-1][2], 24.85)

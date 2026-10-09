@@ -258,14 +258,6 @@ names = { stairs = "Door2", hallway = "Door4" }
 kind = "door"
 leaf = "none"
 
-[[doors]]
-at = [27, 36]
-rooms = ["stairs", "hallway"]
-names = { stairs = "DoorFoot", hallway = "DoorStairs" }
-kind = "door"
-leaf = "none"
-placeholder = true
-note = "Not in the design doc (for the engineer): the 6 m main flight fills the 6 m stairs room, so its foot sits against the hallway wall and a 1.4 m capsule cannot step onto it from the door at (32, 36). This door from the hallway opens straight onto the foot. Options: a U-turn of two half flights or a 5 m steeper flight (kit v2)."
 
 [[doors]]
 at = [34, 40]

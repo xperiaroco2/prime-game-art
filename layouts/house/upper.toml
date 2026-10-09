@@ -200,10 +200,16 @@ railing = true
 
 [[stairs]]
 id = "main_stairs"
-piece = "stairs_main"
-rect = [26, 30, 2, 6]
-y = 0.0
-climb = "N"
+piece = "stairs_outdoor_half"
+rect = [27, 32, 3, 2]
+y = 1.6
+climb = "E"
+placeholder = true
+note = "Not the doc's straight 6 m flight (for the engineer): it fills the 6 m stairs room, so its foot sits against the hallway wall, where a capsule hits the door's head. A U-turn of the kit's two half flights instead: up west from the stairs room's open half (x 30) to a 1 m landing at 1.6 m on the west wall, then up east to the upper landing at x 30, under the doc's hole. The half flights and the landing are the outdoor (concrete) pieces until kit v2 has indoor ones."
+below = [
+  { piece = "stairs_outdoor_half", rect = [27, 34, 3, 2], y = 0.0, climb = "W" },
+  { piece = "stairs_outdoor_landing", rect = [26, 32, 1, 4], y = 0.0 },
+]
 
 [[stairs]]
 id = "balcony_stairs"

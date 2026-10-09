@@ -348,14 +348,22 @@ def plan(data: dict) -> dict:
             if h.get("railing") and h.get("rect"):
                 extra += edge_rail(h["rect"], "balcony", wall_cells, gaps, lv["floor_y"], outward=False)
         for st in lv.get("stairs", []):
-            p = data["pieces"].get(st["piece"])
-            if p is None:
-                problems.append(f"{lv['level']}: no kit piece {st['piece']}")
-                continue
-            turn = _turn_x(CLIMB[st["climb"]])
-            run, width = (1.38, 0.7) if p["type"] == "ladder" else (float(p["run"]), float(p["width"]))
-            x, y = pivot_for(st["rect"], run, width, turn)
-            extra.append({"id": st["piece"], "x": x, "y": y, "h": st["y"], "turn": turn, "name": st["id"]})
+            parts = st.get("below", [])
+            for i, part in enumerate(parts + [st]):
+                p = data["pieces"].get(part["piece"])
+                if p is None:
+                    problems.append(f"{lv['level']}: no kit piece {part['piece']}")
+                    continue
+                name = st["id"] if i == len(parts) else f"{st['id']}_{i + 1}"
+                r = part["rect"]
+                if p["type"] == "block":  # a landing: its long side along the rect's long side, top at y + height
+                    turn = 0 if r[2] >= r[3] else _turn_x((0, 1))
+                    x, y = pivot_for(r, float(p["size"][0]), float(p["size"][1]), turn)
+                else:
+                    turn = _turn_x(CLIMB[part["climb"]])
+                    run, width = (1.38, 0.7) if p["type"] == "ladder" else (float(p["run"]), float(p["width"]))
+                    x, y = pivot_for(r, run, width, turn)
+                extra.append({"id": part["piece"], "x": x, "y": y, "h": part["y"], "turn": turn, "name": name})
         for d in lv.get("doors", []):
             for rid, nm in d.get("names", {}).items():
                 if rid in rooms:
@@ -703,7 +711,8 @@ def write_scenes(data: dict, planned: dict, out: Path) -> dict:
 
 WALK_LEVELS = ("ground", "upper")  # the storeys whose doors the capsule walks (#75a); stairs are walked on every level
 DOOR_KINDS = ("door", "glass", "gate8")
-STAIR_PIECES = ("stairs_main", "stairs_basement", "stairs_balcony")
+STAIR_PIECES = ("stairs_main", "stairs_basement", "stairs_balcony", "stairs_outdoor_half")
+TURN_IN = 0.2  # metres onto a U-turn's landing past a flight's top (or before the next one's foot)
 WALK_SIDE = 1.0  # metres either side of a doorway's wall line
 
 
@@ -762,13 +771,32 @@ def walk_request(data: dict, levels=WALK_LEVELS) -> dict:
             if st["piece"] not in STAIR_PIECES:
                 continue
             rise = data["pieces"][st["piece"]]["rise"]
+            # A U-turn's lower flights (`below`): their foot and top, then onto the landing and to the next foot.
+            flights = [f for f in st.get("below", []) if "climb" in f] + [st]
+            middle = []
+            for i, f in enumerate(flights):
+                fdx, fdy = CLIMB[f["climb"]]
+                frx, fry, fw, fh = f["rect"]
+                frun = fh if fdy else fw
+                fc = (frx + fw / 2, fry + fh / 2)
+                ffoot = (fc[0] - fdx * frun / 2, fc[1] - fdy * frun / 2)
+                ftop = (fc[0] + fdx * frun / 2, fc[1] + fdy * frun / 2)
+                fr = data["pieces"][f["piece"]]["rise"]
+                if i:
+                    middle.append([ffoot[0] - fdx * TURN_IN, f["y"], ffoot[1] - fdy * TURN_IN])
+                middle.append([ffoot[0], f["y"], ffoot[1]])
+                middle.append([ftop[0], f["y"] + fr, ftop[1]])
+                if i < len(flights) - 1:
+                    middle.append([ftop[0] + fdx * TURN_IN, f["y"] + fr, ftop[1] + fdy * TURN_IN])
+            first = flights[0]
             dx, dy = CLIMB[st["climb"]]
             rx, ry, w, h = st["rect"]
             cx, cy = rx + w / 2, ry + h / 2
             run = h if dy else w
-            foot = (cx - dx * run / 2, cy - dy * run / 2)
             top = (cx + dx * run / 2, cy + dy * run / 2)
-            low = next(v for v in data["levels"] if abs(v["floor_y"] - st["y"]) < EPS)
+            fdx, fdy = CLIMB[first["climb"]]
+            foot = (middle[0][0], middle[0][2])
+            low = next(v for v in data["levels"] if abs(v["floor_y"] - first["y"]) < EPS)
             high = next(v for v in data["levels"] if abs(v["floor_y"] - (st["y"] + rise)) < EPS)
             room = _floored(high, top[0] + dx * 0.05, top[1] + dy * 0.05)
             reach = 1.0
@@ -777,9 +805,9 @@ def walk_request(data: dict, levels=WALK_LEVELS) -> dict:
                 far = {(1, 0): rx2 + w2 - top[0], (-1, 0): top[0] - rx2, (0, 1): ry2 + h2 - top[1],
                        (0, -1): top[1] - ry2}[(dx, dy)]
                 reach = max(0.1, min(1.0, far - 0.85))
-            start = end(low, foot[0] - dx * WALK_SIDE, foot[1] - dy * WALK_SIDE)
+            start = end(low, foot[0] - fdx * WALK_SIDE, foot[1] - fdy * WALK_SIDE)
             finish = end(high, top[0] + dx * reach, top[1] + dy * reach)
-            up = [start, [foot[0], st["y"], foot[1]], [top[0], st["y"] + rise, top[1]], finish]
+            up = [start] + middle + [finish]
             walks.append({"name": f"{st['id']}:up", "kind": "stairs", "points": up})
             walks.append({"name": f"{st['id']}:down", "kind": "stairs", "points": up[::-1]})
     rooms = [{"level": lv["level"], "id": r["id"], "title": r.get("title", r["id"]), "rect": r["rect"],

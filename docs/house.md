@@ -9,7 +9,7 @@ later packages add dressing data (`layouts/house/dressing/`, #75b) and only rege
 | File | What |
 |---|---|
 | `layouts/house/house.toml` | Settings: the kit spec, the kit folder under the raw folder (`kit_dir`, the one setting to switch kit v1 to v2), the `res://` paths of the pieces and scenes, the level order |
-| `layouts/house/{basement,ground,upper,attic,roof}.toml` | One level each: `floor_y`, the default wall family, the house `footprint`; `[[rooms]]`, `[[doors]]`, `[[windows]]`, `[[holes]]`, `[[stairs]]`, `[[placeholders]]` |
+| `layouts/house/{basement,ground,upper,attic,roof}.toml` | One level each: `floor_y`, the default wall family, the house `footprint`; `[[rooms]]`, `[[doors]]`, `[[windows]]`, `[[holes]]`, `[[stairs]]` (a U-turn lists its lower half and landing in `below`), `[[placeholders]]` |
 | `tools/runner/house_layout.py` | Load, validate, plan (choose the pieces), write the scenes |
 | `tools/runner/commands/house.py` | The `house` command |
 | `tools/tests/test_house_layout.py` | The rules, the plan's conventions, the design doc's 35 rooms and the game's greybox marker names |
@@ -101,7 +101,9 @@ floor from above, the other levels and the ceilings hidden, a label per room), `
 - The study door is at (34, 28) as on the plan (the game's greybox has it at (34, 25)).
 - The pitched roof, gable windows, chimneys and the front porch wait for kit v2 (#86, #74b): named `Placeholders`
   markers in the attic, roof and path scenes (`size` in metres for the review box).
-- The main stairs' foot (not in the doc): the 6 m flight fills the 6 m stairs room, so its foot sits against the
-  hallway wall and a 1.4 m capsule cannot step onto it from the doc's door at (32, 36). A second door from the hallway
-  at (27, 36) opens straight onto the foot, marked `placeholder` (the game's greybox has no marker for it: the
-  greybox check skips placeholder doors). Options: a U-turn of two half flights, or a 5 m steeper flight (kit v2).
+- The main stairs (not the doc's straight flight): a 6 m flight fills the 6 m stairs room, so its foot sits against
+  the hallway wall, and a capsule stepping onto it from a door hits the door's head (2.15 m). Instead a U-turn of the
+  kit's two half flights (`below` in the stairs entry: the lower half and the landing): up west from the room's open
+  half at x 30 to a 1 x 4 m landing at 1.6 m on the west wall, then up east to the upper landing at x 30, all under
+  the doc's hole (26, 30, 4 x 6). Marked `placeholder`; the outdoor (concrete) pieces stand in until kit v2 has
+  indoor ones. Option: a 5 m steeper straight flight with a 1 m foot landing (kit v2).
