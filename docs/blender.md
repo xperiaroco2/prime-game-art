@@ -6,6 +6,26 @@ Blender 5.2.2 LTS (pinned in `tools/runner/pins.py`) runs only in the background
 A Python error inside the script fails the command and prints the end of Blender's output, traceback included.
 Everything these commands write goes to `tools/out/` and is never committed.
 
+## The heavy-run lock: one Blender or Godot process at a time
+
+Several workflows may run at once on the shared PC, but their Blender and Godot processes take turns (the engineer,
+2026-10-09: one Blender batch at a time). What is locked: every process `common.run` starts whose executable's name
+begins with `blender` or `godot` (`blender.py`, `godot-check`, `frames`, `contract`, and lab scripts that import the
+runner). It first takes an OS file lock, `<raw>/locks/heavy.lock`, shared by every checkout and worktree on the
+machine; inside one runner process a thread lock first serializes its threads, so `anim-review --jobs` and
+`anim-set` run their Blenders one after another. The OS releases the file lock when its holder exits or dies, so a
+killed run or a power cut leaves no stale lock; but a killed runner can leave its Blender or Godot child running as
+an orphan, which the lock no longer counts (look for leftover processes after a stopped run).
+
+- A waiting run prints `heavy-run lock: waiting for <holder>` to stderr once (the holder is in `heavy.lock.holder`) and
+  fails after 2 hours (`ART_HEAVY_LOCK_WAIT`, seconds). The process timeout counts from the process's start.
+- `verify` and `selftest` hold the lock for their whole run: their Blender tests do not take it again
+  (`ART_HEAVY_LOCK_HELD` in the children's environment), and the wait for it is outside their timeouts. A long bake
+  elsewhere delays a `verify`; a `verify` delays the bakes queued behind it.
+- `doctor`'s version probes never wait for it. Not locked: `frames --video`'s ffmpeg and the game repo's own tools.
+- `ART_HEAVY_LOCK=off` turns it off; `ART_HEAVY_LOCK=<path>` moves it; with no raw folder (the laptop's raw-free lane)
+  there is no lock.
+
 ## Commands
 
 | Command | What it does |
