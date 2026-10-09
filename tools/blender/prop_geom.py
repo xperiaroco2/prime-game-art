@@ -1539,10 +1539,35 @@ def _move(m: Mesh, d) -> None:
     m._index = {v: i for i, v in enumerate(m.verts)}
 
 
+MIN_FACE_AREA_M2 = 1e-10  # a face below this is degenerate: Blender's glTF export drops it, Godot never sees it
+
+
+def clean(m: Mesh) -> int:
+    """Drops repeated corners from every face, the faces left with under 3 corners or no area (a cone's point cap, a
+    zero-length rod's end) and a second face on the same corners (two parts touching: Blender keeps the first), so
+    the description counts the triangles the GLB holds. Returns the faces dropped."""
+    faces, roles, seen = [], [], set()
+    for f, r in zip(m.faces, m.roles):
+        g = [v for k, v in enumerate(f) if v != f[k - 1]] if len(f) > 1 else list(f)
+        key = frozenset(g)
+        if len(key) < 3 or len(key) != len(g) or key in seen:
+            continue
+        n = kit_geom.polygon_normal([m.verts[v] for v in g])  # twice the vector area
+        if 0.25 * sum(c * c for c in n) < MIN_FACE_AREA_M2 ** 2:
+            continue
+        seen.add(key)
+        faces.append(g)
+        roles.append(r)
+    dropped = len(m.faces) - len(faces)
+    m.faces, m.roles = faces, roles
+    return dropped
+
+
 def finish(pc: Piece, p: dict, spec: dict) -> None:
-    """Moves the prop to its pivot, adds its collider (box, hull or none) and its light anchor (the centre of its
-    emissive faces)."""
+    """Drops degenerate faces (clean), moves the prop to its pivot, adds its collider (box, hull or none) and its
+    light anchor (the centre of its emissive faces)."""
     m = pc.mesh
+    clean(m)
     lo = [min(v[i] for v in m.verts) for i in range(3)]
     hi = [max(v[i] for v in m.verts) for i in range(3)]
     cx, cz = (lo[0] + hi[0]) / 2, (lo[2] + hi[2]) / 2

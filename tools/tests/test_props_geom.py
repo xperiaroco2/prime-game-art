@@ -145,5 +145,17 @@ class PackPaintTest(unittest.TestCase):
         self.assertEqual(len(d["colliders"]), 1)
 
 
+
+class CleanTest(unittest.TestCase):
+    def test_drops_degenerate_and_duplicate_faces(self):
+        m = kit_geom.Mesh("t")
+        m.verts = [(0.0, 0.0, 0.0), (1.0, 0.0, 0.0), (1.0, 1.0, 0.0), (0.0, 1.0, 0.0), (2.0, 0.0, 0.0)]
+        m.faces = [[0, 1, 2, 3], [3, 2, 1, 0], [0, 1, 1, 2], [0, 1, 4], [0, 0, 1]]
+        m.roles = ["a", "b", "c", "d", "e"]
+        self.assertEqual(prop_geom.clean(m), 3)
+        self.assertEqual(m.faces, [[0, 1, 2, 3], [0, 1, 2]])  # the twin, the flat triangle, the 2-corner face go
+        self.assertEqual(m.roles, ["a", "c"])
+
+
 if __name__ == "__main__":
     unittest.main()
