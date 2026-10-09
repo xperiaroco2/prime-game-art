@@ -93,6 +93,23 @@ class Picks(unittest.TestCase):
                     self.assertIn(p[cat], K.PICKS[cat], (cat, p))
 
 
+class RecipePicks(unittest.TestCase):
+    def test_defaults_and_overrides(self):
+        self.assertEqual(K.picks_for(None, "M"), K.default_picks("M"))
+        p = K.picks_for({"mouth": "buck", "eye_size": "big"}, "W")
+        self.assertEqual((p["mouth"], p["eye_size"], p["teeth"]), ("buck", "big", True))
+        self.assertEqual(K.check_picks({"nose": "long", "brow_rgb": [0.1, 0.05, 0.02]}, "M"), [])
+
+    def test_problems(self):
+        probs = K.check_picks({"nose": "potato", "colour": 1, "brow_rgb": [2, 0, 0]}, "M", "c.face_kit")
+        self.assertEqual(len(probs), 3, probs)
+        self.assertTrue(any(p.startswith("c.face_kit.nose: 'potato'") for p in probs))
+        beards = [k for k in K.PICKS["facial_hair"] if k != "none"]
+        self.assertTrue(K.check_picks({"facial_hair": beards[0]}, "W"))  # no facial hair on the women's body
+        self.assertEqual(K.check_picks({"facial_hair": beards[0]}, "M"), [])
+        self.assertEqual(K.check_picks("big", "M"), ["face_kit: must be an object of picks (" + ", ".join(K.FACE_KIT_KEYS) + ")"])
+
+
 class LabParity(unittest.TestCase):
     """The port against the lab file it was made from (faces/clay_kit.json lab_source): every table and the picks of
     the check's seeds. Skipped without the raw folder or once the lab file has moved on (re-sync then)."""

@@ -5,6 +5,7 @@ builder's tuning constants, and the picks, colours and ear states (docs/faces.md
 Ported from the faces lab's round E kit (D:/prime-art-raw/research/2026-10-05-faces/lab/clay_e/clay_face_b.py, the data section and its helpers).
 The runner and the tests import this module; the Blender modules of this package read the same names.
 """
+import hashlib
 import json
 from pathlib import Path
 
@@ -31,6 +32,8 @@ def load(path=KIT_FILE):
 
 KIT = load()
 HAIR_ITEMS = json.loads(HAIR_FILE.read_text(encoding="utf-8"))["items"]
+# the kit's data in the clay library's piece keys (claylook.keys_for): a changed feature or hair flag re-bakes the faces
+DATA_SHA = hashlib.sha256(KIT_FILE.read_bytes() + HAIR_FILE.read_bytes()).hexdigest()[:16]
 
 # ----------------------------------------------------------------------------------------------- the features (data)
 SKINS = KIT["colours"]["skins"]  # the lab's clay skins (linear); a character's skin is any RGB (skin_key picks the tint)
@@ -437,3 +440,47 @@ BAD_PAIRS = {("nose", "mouth"), ("nose", "teeth"), ("fhair", "mouth"), ("fhair",
 
 
 SCALE_FADE = 0.08  # the same fade as clay_parts.bake_head_scale (SCALE_FADE): face and head stay in register
+
+
+# ----------------------------------------------------------------------------------------------- recipe picks
+PICK_KEYS = tuple(PICKS) + ("loud",)  # a recipe character's `face_kit` object: any of these, the rest its defaults
+FACE_KIT_KEYS = PICK_KEYS + ("brow_rgb",)  # brow_rgb: the brow's own colour (linear RGB); default the skin's brow
+
+
+def check_picks(spec, gender, where="face_kit"):
+    """Problems with a recipe character's `face_kit` object as `where: what` strings (empty when fine): known keys,
+    known values per category, facial hair only on the bodies that may wear it, the kit's forbid rules."""
+    if spec is None:
+        return []
+    if not isinstance(spec, dict):
+        return [f"{where}: must be an object of picks ({', '.join(FACE_KIT_KEYS)})"]
+    out = []
+    for k, v in spec.items():
+        if k not in FACE_KIT_KEYS:
+            out.append(f"{where}.{k}: unknown key; known: {', '.join(FACE_KIT_KEYS)}")
+        elif k == "brow_rgb":
+            if not (isinstance(v, list) and len(v) == 3 and all(isinstance(x, (int, float)) and not isinstance(x, bool)
+                                                                and 0.0 <= x <= 1.0 for x in v)):
+                out.append(f"{where}.brow_rgb: must be three numbers from 0 to 1")
+        elif k == "loud":
+            if v is not None and v not in LOUD_WEIGHTS:
+                out.append(f"{where}.loud: {v!r} is not a loud category; known: {', '.join(LOUD_WEIGHTS)}")
+        elif v not in PICKS[k]:
+            out.append(f"{where}.{k}: {v!r} is not a pick; known: {', '.join(map(str, PICKS[k]))}")
+    if out or gender not in DEFAULTS:
+        return out
+    p = picks_for(spec, gender)
+    if p.get("facial_hair", "none") != "none" and gender not in RULES["facial_hair_bodies"]:
+        out.append(f"{where}.facial_hair: body type {gender} wears no facial hair")
+    if forbidden(p):
+        out.append(f"{where}: the picks break a forbid rule of the kit ({RULES['forbid']})")
+    return out
+
+
+def picks_for(spec, gender):
+    """The picks a recipe character's `face_kit` object gives: the body type's defaults with its picks on top (the
+    mouth's forced teeth applied)."""
+    p = default_picks(gender, **{k: v for k, v in (spec or {}).items() if k in PICK_KEYS})
+    if p.get("mouth") in RULES["teeth_forced"]:
+        p["teeth"] = RULES["teeth_forced"][p["mouth"]]
+    return p

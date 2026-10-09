@@ -15,6 +15,7 @@ from pathlib import Path, PurePosixPath
 from typing import Any
 
 from . import claylook, glb, zones
+from .clayface import kit as claykit
 
 GENDERS = ("M", "W")
 PACK_LABEL = {"M": "Men", "W": "Women"}
@@ -30,7 +31,7 @@ ID_RE = re.compile(r"^[a-z0-9][a-z0-9_]*$")
 TOP_REQUIRED = ("packs", "skeleton", "head_bone_rest", "face", "characters")
 TOP_OPTIONAL = ("description", "face_shading", "hands", "crossgender", "modes", "look", "clay")
 CHAR_REQUIRED = ("id", "gender", "head", "hair", "top", "bottom", "shoes", "eyes", "brows", "mouth", "pose")
-CHAR_OPTIONAL = ("skin", "extras", "recolor", "extend", "notes")
+CHAR_OPTIONAL = ("skin", "extras", "recolor", "extend", "notes", "face_kit")
 
 
 class RecipeError(Exception):
@@ -323,6 +324,10 @@ def _check_character(c: _Check, ch: dict[str, Any], where: str) -> None:
                 c.bad(w + ".part", f"{ex.get('part')!r} is not a pack part of this character ({', '.join(roles)})")
             if not (_num(ex.get("drop")) and 0.0 < ex["drop"] < 0.1):
                 c.bad(w + ".drop", "must be metres (0 to 0.1)")
+    if "face_kit" in ch:  # the clay look's face (um/clayface): picks over the body type's defaults
+        for problem in claykit.check_picks(ch["face_kit"], ch.get("gender"), where + ".face_kit"):
+            w, _, text = problem.partition(": ")
+            c.bad(w, text)
     _check_pose(c, ch.get("pose"), where + ".pose", neutral_ok=True)
 
 
