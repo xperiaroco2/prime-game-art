@@ -730,9 +730,15 @@ def op_arm_offset(fr: Frames, p: dict, target: Target):
             def ok(a):
                 return all(arms.measure(k, a, "legs")["depth"] <= 0 for k in check)
 
-            deg, found = em.search_angle(ok, 0.0, p["max_deg"], 0.5)
+            # out (abduct) searches 0 to +max_deg; a swing both ways, forward and back (art #69), the smaller wins
+            signs = (1.0, -1.0) if p["axis"] == "swing" else (1.0,)
+            tries = [(sign, *em.search_angle(lambda a, sign=sign: ok(sign * a), 0.0, p["max_deg"], 0.5))
+                     for sign in signs]
+            hits = [t for t in tries if t[2]]
+            sign, deg, found = min(hits, key=lambda t: t[1]) if hits else tries[0]
             if found:  # the margin: the hands' closest point moves margin_cm further out
                 deg = min(p["max_deg"], deg + math.degrees(p["margin_cm"] / 100 / max(arms.arm_m, 0.1)))
+            deg *= sign
     else:
         deg = float(p["abduct_deg"])
     after = [arms.measure(k, deg, "legs")["depth"] for k in frames]
