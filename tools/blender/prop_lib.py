@@ -28,7 +28,7 @@ def materials(bpy, np, spec: dict, ambientcg: Path, out: Path) -> tuple[dict, di
 def set_emission(mats: dict, spec: dict, role: str | None) -> None:
     """Sets the emissive material's glow to the prop's emissive paint (one emissive role per prop)."""
     for name, mat in mats.items():
-        if not spec["materials"][name].get("emissive"):
+        if not spec["materials"].get(name, {}).get("emissive"):  # a pack (`set`) is no spec material
             continue
         bsdf = mat.node_tree.nodes.get("Principled BSDF")
         if role is None:

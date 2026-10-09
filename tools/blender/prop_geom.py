@@ -26,7 +26,8 @@ LIGHT_ANCHOR = "LightAnchor"
 # --- the spec: kit materials and roles plus the library's ---------------------------------------------------------
 def lib_spec(lib: dict, kit: dict) -> dict:
     """A kit_geom-style spec: the kit's materials named by the library's [materials] table (plus the new ones, such
-    as emissive, which have no detail texture), the kit's roles and the library's roles mapped to kit materials."""
+    as emissive, which have no detail texture), the kit's roles and the library's roles mapped to kit materials, and
+    the kit's packs (v2: plaster, wood and concrete export as one `kit_set-vcol` material, the layer in vertex alpha)."""
     used = set(lib["materials"].values())
     mats = {}
     for name in sorted(used):
@@ -41,7 +42,7 @@ def lib_spec(lib: dict, kit: dict) -> dict:
     roles = {r: dict(v) for r, v in kit["roles"].items()}
     for r, v in lib["roles"].items():
         roles[r] = {"material": lib["materials"][v["material"]], "hex": v["hex"]}
-    return {"materials": mats, "roles": roles}
+    return {"materials": mats, "roles": roles, "packs": {k: dict(v) for k, v in kit.get("packs", {}).items()}}
 
 
 def is_emissive(spec: dict, role: str) -> bool:
