@@ -997,11 +997,10 @@ def op_upper_match(fr: Frames, p: dict, target: Target):
             B = pose.B
         if w[k] > 0.0:
             for b in bones:
-                l0, q0, s0 = B0[b].decompose()
+                l0, q0, s0 = B[b].decompose()  # B: after the carry bones (art #69: not B0)
                 l1, q1, _ = ref[b].decompose()
                 if q0.dot(q1) < 0.0:
                     q1 = -q1
-                l0, q0, s0 = B[b].decompose()
                 B[b] = Matrix.LocRotScale(l0.lerp(l1, w[k]), q0.slerp(q1, w[k]), s0)
         out_basis.append(B)
     out = fr.copy(out_basis)
