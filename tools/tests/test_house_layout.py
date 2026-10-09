@@ -216,5 +216,39 @@ class SceneTest(unittest.TestCase):
         self.assertEqual(H._tf(90, 1, 2, 3), "Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 1, 2, 3)")
 
 
+class WalkRequestTest(unittest.TestCase):
+    REQ = H.walk_request(DATA)
+
+    def test_every_door_of_the_walked_levels_is_crossed(self) -> None:
+        doors = [(lv["level"], tuple(d["at"])) for lv in DATA["levels"] if lv["level"] in H.WALK_LEVELS
+                 for d in lv.get("doors", []) if d.get("kind", "door") in H.DOOR_KINDS]
+        walks = [w for w in self.REQ["walks"] if w["kind"] != "stairs"]
+        self.assertEqual(len(walks), len(doors))
+        for w, (name, (x, y)) in zip(walks, doors):
+            a, b = w["points"]
+            self.assertEqual(((a[0] + b[0]) / 2, (a[2] + b[2]) / 2), (x, y), w["name"])
+            self.assertAlmostEqual(abs(a[0] - b[0]) + abs(a[2] - b[2]), 2 * H.WALK_SIDE, msg=w["name"])
+            self.assertTrue(w["name"].startswith(f"{name}:"))
+
+    def test_a_door_walk_starts_in_its_first_room(self) -> None:
+        w = next(w for w in self.REQ["walks"] if w["name"].startswith("ground:dining_room>terrace"))
+        self.assertEqual(w["points"], [[36.0, 0.0, 25.0], [36.0, 0.0, 23.0]])
+
+    def test_each_flight_is_walked_up_and_down(self) -> None:
+        stairs = {w["name"]: w["points"] for w in self.REQ["walks"] if w["kind"] == "stairs"}
+        self.assertEqual(sorted(stairs), sorted(f"{s}:{d}" for s in ("main_stairs", "pantry_stairs", "balcony_stairs")
+                                                for d in ("up", "down")))
+        up = stairs["main_stairs:up"]
+        self.assertEqual(up[1], [27.0, 0.0, 36.0])
+        self.assertEqual(up[2], [27.0, 3.2, 30.0])
+        self.assertEqual(stairs["main_stairs:down"], up[::-1])
+        # The pantry's 1 m landing: the end stops short of its north wall (capsule radius and half a wall).
+        self.assertAlmostEqual(stairs["pantry_stairs:up"][-1][2], 24.85)
+
+    def test_ends_without_a_floor_get_a_pad(self) -> None:
+        self.assertIn([39.0, 0.0, 14.0], self.REQ["pads"])  # the balcony stairs' foot in the yard
+        self.assertNotIn([27.0, 0.0, 37.0], self.REQ["pads"])  # the hallway has a floor
+
+
 if __name__ == "__main__":
     unittest.main()

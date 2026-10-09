@@ -696,3 +696,92 @@ def write_scenes(data: dict, planned: dict, out: Path) -> dict:
         summary["instances"] += count
     (out / "house.tscn").write_text(house.text(), encoding="utf-8", newline="\n")
     return summary
+
+
+# ---------------------------------------------------------------- the walk (godot/house/walk.gd)
+
+WALK_LEVELS = ("ground", "upper")  # the storeys whose doors the capsule walks (#75a); stairs are walked on every level
+DOOR_KINDS = ("door", "glass", "gate8")
+STAIR_PIECES = ("stairs_main", "stairs_basement", "stairs_balcony")
+WALK_SIDE = 1.0  # metres either side of a doorway's wall line
+
+
+def _floored(level: dict, x: float, y: float):
+    """The room with a floor (not an area) whose rect holds (x, y), or None."""
+    for r in level["rooms"]:
+        if r.get("floor") and strictly_inside(r["rect"], x, y):
+            return r
+    return None
+
+
+def _door_normal(d: dict, level: dict) -> tuple[float, float]:
+    """The unit step from the door's first room into its second, across the wall line through the door's centre."""
+    x, y = d["at"]
+    rooms = {r["id"]: r for r in level["rooms"]}
+    rx, ry, w, h = rooms[d["rooms"][0]]["rect"]
+    if abs(y - ry) < EPS and rx < x < rx + w:
+        return (0.0, -1.0)
+    if abs(y - (ry + h)) < EPS and rx < x < rx + w:
+        return (0.0, 1.0)
+    if abs(x - rx) < EPS and ry < y < ry + h:
+        return (-1.0, 0.0)
+    if abs(x - (rx + w)) < EPS and ry < y < ry + h:
+        return (1.0, 0.0)
+    raise ValueError(f"door {d['rooms']} at {d['at']} is not on {d['rooms'][0]}'s rect")
+
+
+def walk_request(data: dict, levels=WALK_LEVELS) -> dict:
+    """What godot/house/walk.gd walks and labels: one walk across every doorway of the given levels (from its first
+    room into its second, WALK_SIDE each side, in Godot's x, height, z), up and down every flight of stairs, a pad
+    under every end that has no floor (the yard), and the rooms with their titles for the top-down plan."""
+    by_name = {lv["level"]: lv for lv in data["levels"]}
+    walks, pads = [], []
+
+    def end(level: dict, x: float, y: float) -> list[float]:
+        if _floored(level, x, y) is None:
+            pads.append([x, level["floor_y"], y])
+        return [x, level["floor_y"], y]
+
+    for name in levels:
+        lv = by_name[name]
+        for d in lv.get("doors", []):
+            if d.get("kind", "door") not in DOOR_KINDS:
+                continue
+            nx, ny = _door_normal(d, lv)
+            x, y = d["at"]
+            walks.append({"name": f"{name}:{d['rooms'][0]}>{d['rooms'][1]}@{x:g},{y:g}", "kind": d.get("kind", "door"),
+                          "points": [end(lv, x - nx * WALK_SIDE, y - ny * WALK_SIDE),
+                                     end(lv, x + nx * WALK_SIDE, y + ny * WALK_SIDE)]})
+    for lv in data["levels"]:
+        for st in lv.get("stairs", []):
+            if st["piece"] not in STAIR_PIECES:
+                continue
+            rise = data["pieces"][st["piece"]]["rise"]
+            dx, dy = CLIMB[st["climb"]]
+            rx, ry, w, h = st["rect"]
+            cx, cy = rx + w / 2, ry + h / 2
+            run = h if dy else w
+            foot = (cx - dx * run / 2, cy - dy * run / 2)
+            top = (cx + dx * run / 2, cy + dy * run / 2)
+            low = next(v for v in data["levels"] if abs(v["floor_y"] - st["y"]) < EPS)
+            high = next(v for v in data["levels"] if abs(v["floor_y"] - (st["y"] + rise)) < EPS)
+            room = _floored(high, top[0] + dx * 0.05, top[1] + dy * 0.05)
+            reach = 1.0
+            if room is not None:  # stop short of the far wall: the capsule's radius plus half a wall
+                rx2, ry2, w2, h2 = room["rect"]
+                far = {(1, 0): rx2 + w2 - top[0], (-1, 0): top[0] - rx2, (0, 1): ry2 + h2 - top[1],
+                       (0, -1): top[1] - ry2}[(dx, dy)]
+                reach = max(0.1, min(1.0, far - 0.85))
+            start = end(low, foot[0] - dx * WALK_SIDE, foot[1] - dy * WALK_SIDE)
+            finish = end(high, top[0] + dx * reach, top[1] + dy * reach)
+            up = [start, [foot[0], st["y"], foot[1]], [top[0], st["y"] + rise, top[1]], finish]
+            walks.append({"name": f"{st['id']}:up", "kind": "stairs", "points": up})
+            walks.append({"name": f"{st['id']}:down", "kind": "stairs", "points": up[::-1]})
+    rooms = [{"level": lv["level"], "id": r["id"], "title": r.get("title", r["id"]), "rect": r["rect"],
+              "kind": r["kind"], "floor_y": lv["floor_y"]} for lv in data["levels"] for r in lv["rooms"]]
+    unique = []
+    for p in pads:
+        if p not in unique:
+            unique.append(p)
+    return {"walks": walks, "pads": unique, "rooms": rooms,
+            "levels": {lv["level"]: {"node": lv["node"], "floor_y": lv["floor_y"]} for lv in data["levels"]}}
