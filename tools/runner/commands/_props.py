@@ -336,3 +336,98 @@ def build_table_md(lib: dict[str, Any], out: Path) -> str:
                     f"{', '.join(f'{v:.2f}' for v in r['size_m'])} | {len(r['colliders'])} | "
                     f"{'yes' if r.get('light_anchor') else ''} |")
     return "# Dressing library build\n\n" + "\n".join(rows) + "\n"
+
+
+# --- Godot: the import check and the line-up sheets -----------------------------------------------------------------
+
+ANCHOR_TOLERANCE_M = 0.005  # Godot's LightAnchor against build.json's light_anchor
+SHEETS = 4  # line-up sheets (about 28 props each)
+ROW = 7  # props per row of a sheet
+
+
+def glb_points(path: Path) -> dict[str, list[list[float]]]:
+    """The world positions of every mesh node's vertices in a .glb (float VEC3 POSITION accessors), by node name."""
+    data = path.read_bytes()
+    gltf = read_gltf_bytes(data)
+    length = struct.unpack_from("<I", data, 12)[0]
+    at = 20 + length
+    bin_len, bin_type = struct.unpack_from("<II", data, at)
+    if bin_type != 0x004E4942:
+        raise ValueError(f"{path.name}: the second GLB chunk is not BIN")
+    blob = data[at + 8:at + 8 + bin_len]
+    nodes, meshes, acc, views = gltf["nodes"], gltf.get("meshes", []), gltf["accessors"], gltf["bufferViews"]
+    scenes = gltf.get("scenes", [{"nodes": list(range(len(nodes)))}])
+    out: dict[str, list[list[float]]] = {}
+    stack = [(i, [1.0, 0, 0, 0, 0, 1.0, 0, 0, 0, 0, 1.0, 0, 0, 0, 0, 1.0]) for i in scenes[gltf.get("scene", 0)]["nodes"]]
+    while stack:
+        i, parent = stack.pop()
+        node = nodes[i]
+        m = _mat_mul(parent, node_matrix(node))
+        if "mesh" in node:
+            pts = out.setdefault(node.get("name", str(i)), [])
+            for prim in meshes[node["mesh"]]["primitives"]:
+                a = acc[prim["attributes"]["POSITION"]]
+                if a["componentType"] != 5126 or a["type"] != "VEC3":
+                    raise ValueError(f"{path.name}: POSITION is not float VEC3")
+                v = views[a["bufferView"]]
+                base = v.get("byteOffset", 0) + a.get("byteOffset", 0)
+                stride = v.get("byteStride", 12)
+                for k in range(a["count"]):
+                    pts.append([round(c, 5) for c in _apply(m, struct.unpack_from("<3f", blob, base + k * stride))])
+        stack += [(c, m) for c in node.get("children", [])]
+    return out
+
+
+def pivot_bounds(size: list[float], pivot: str) -> dict[str, list[float]]:
+    """A built prop's bounds from its size (glTF X, Y, Z) and pivot (prop_geom.finish): floor, the base's centre;
+    wall, the back's bottom centre (the prop stands in +Z); ceiling, the top's centre."""
+    sx, sy, sz = size
+    if pivot == "wall":
+        return {"min": [-sx / 2, 0.0, 0.0], "max": [sx / 2, sy, sz]}
+    if pivot == "ceiling":
+        return {"min": [-sx / 2, -sy, -sz / 2], "max": [sx / 2, 0.0, sz / 2]}
+    return {"min": [-sx / 2, 0.0, -sz / 2], "max": [sx / 2, sy, sz / 2]}
+
+
+def godot_described(p: dict[str, Any], rec: dict[str, Any], glb: Path) -> dict[str, Any]:
+    """What Godot must import from a built prop, in _kit.evaluate's terms: meshes, triangles, colliders (their
+    points read from the GLB, for the rays) and bounds."""
+    pts = glb_points(glb)
+    colliders = [{"name": c["name"], "points": pts.get(c["name"], [])} for c in rec["colliders"]]
+    missing = [c["name"] for c in colliders if not c["points"]]
+    if missing:
+        raise ValueError(f"{p['id']}: no collider mesh {', '.join(missing)} in {glb.name}")
+    return {"id": p["id"], "meshes": [{"name": n} for n in rec["meshes"]], "triangles": rec["triangles"],
+            "colliders": colliders, "bounds_m": pivot_bounds(rec["size_m"], p.get("pivot", "floor"))}
+
+
+def evaluate_anchor(pid: str, dump: dict[str, Any], rec: dict[str, Any]) -> list[str]:
+    """A fixture's LightAnchor arrives in Godot where build.json put it; no other prop has one."""
+    if "error" in dump:
+        return []
+    anchors = dump.get("anchors", [])
+    want = rec.get("light_anchor")
+    if not want:
+        return [f"{pid}: an unexpected {anchors[0]['name']} in Godot"] if anchors else []
+    if len(anchors) != 1:
+        return [f"{pid}: {len(anchors)} LightAnchor nodes in Godot, want 1"]
+    got = anchors[0]["position"]
+    if any(abs(a - b) > ANCHOR_TOLERANCE_M for a, b in zip(got, want)):
+        return [f"{pid}: Godot's LightAnchor at {[round(v, 3) for v in got]}, build.json {want}"]
+    return []
+
+
+def sheet_plan(props: list[dict[str, Any]], built: dict[str, Any], sheets: int = SHEETS, row: int = ROW
+               ) -> list[list[list[str]]]:
+    """The line-up: the props in library order (batch, then the file's order) cut into `sheets` sheets of about equal
+    size; on each sheet, tallest first, rows of `row` props (so a row holds props of similar height)."""
+    ids = [p["id"] for p in sorted(props, key=lambda p: p["batch"]) if p["id"] in built and "error" not in built[p["id"]]]
+    if not ids:
+        return []
+    n = min(sheets, len(ids))
+    cut = [round(k * len(ids) / n) for k in range(n + 1)]
+    plan = []
+    for k in range(n):
+        part = sorted(ids[cut[k]:cut[k + 1]], key=lambda i: -built[i]["size_m"][1])
+        plan.append([part[j:j + row] for j in range(0, len(part), row)])
+    return plan
