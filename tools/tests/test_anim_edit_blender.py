@@ -1,10 +1,10 @@
 """The clip edits (tools/blender/anim_edit.py, art #33) in headless Blender on the real files: the mirror of the pack's
 Walk twice is the Walk again and a raised left arm becomes a raised right arm; reverse twice, a retime round trip and a
 trim keep the frames; the cycle cut finds Walk_Loop's 1.33 s period in two concatenated cycles, and a cut off the
-period keeps the shins on their IK feet; in_place and heading
-undo a travel and a 20 degree turn; the stride warp plays UAL's Jog at 4.5 m/s with planted feet; the floor lift takes
-Death01's lying frames out of the floor; the women's arm offset takes their hands out of the thighs in Idle_Loop, and their push's hands go 0.30 m apart;
-the lean tips the push's spine 30 degrees forward with the feet still.
+period keeps the shins on their IK feet; in_place and heading undo a travel and a 20 degree turn; the stride warp
+plays UAL's Jog at 4.5 m/s with planted feet; the floor lift takes Death01's lying frames out of the floor; the women's
+arm offset takes their hands out of the thighs in Idle_Loop, a swing of 15 degrees moves the wrists forward and one of
+-15 back, and their push's hands go 0.30 m apart; the lean tips the push's spine 30 degrees forward with the feet still.
 
 This file is also the Blender side of the test: run inside Blender (`blender -b ... --python <this file> -- <out>`)
 it does the edits and writes their numbers to <out>/edits.json, which the unittest reads. Skipped when Blender or the
@@ -108,6 +108,10 @@ if not IN_BLENDER:
             self.assertEqual((sw["axis"], sw["deg"]), ("swing", 15.0))
             for side in "LR":  # a 15-degree swing of a ~0.5 m arm moves each wrist about 13 cm ahead
                 self.assertGreater(sw[f"wrist_{side}_forward_cm"], 6.0)
+            back = self.r["swing_back"]  # art #69: a negative swing moves the wrists back by about as much
+            self.assertEqual((back["axis"], back["deg"]), ("swing", -15.0))
+            for side in "LR":
+                self.assertLess(back[f"wrist_{side}_forward_cm"], -6.0)
 
         def test_women_hand_spacing(self) -> None:
             h = self.r["hands"]
@@ -292,12 +296,14 @@ def _blender_main(argv: list[str]) -> None:
     res["arms"] = idle.info["steps"][0]
     # art #70: arm_offset's swing turns both arms forward about the chest's left-right axis (positive: the hands ahead)
     base = ae.Frames.from_action(acts["Idle_Loop"], target.rig, True)
-    swung = ae.apply(base, [{"op": "arm_offset", "axis": "swing", "abduct_deg": 15}], target, "women")
-    P0, P1 = base.poses()[0], swung.poses()[0]
+    P0 = base.poses()[0]
     fwd = ae._turn_of(target.rig, P0, ae.CHEST) @ Vector((0.0, -1.0, 0.0))
-    res["swing"] = {**swung.info["steps"][0], **{
-        f"wrist_{s}_forward_cm": 100 * (ae._world(target.rig, P1, f"Wrist.{s}")
-                                       - ae._world(target.rig, P0, f"Wrist.{s}")).dot(fwd) for s in "LR"}}
+    for key, deg in (("swing", 15), ("swing_back", -15)):
+        swung = ae.apply(base, [{"op": "arm_offset", "axis": "swing", "abduct_deg": deg}], target, "women")
+        P1 = swung.poses()[0]
+        res[key] = {**swung.info["steps"][0], **{
+            f"wrist_{s}_forward_cm": 100 * (ae._world(target.rig, P1, f"Wrist.{s}")
+                                           - ae._world(target.rig, P0, f"Wrist.{s}")).dot(fwd) for s in "LR"}}
     # the hands of the women's push set 0.30 m apart on its last frame (the search goes both ways)
     push = ae.apply(ae.Frames.from_action(acts["Push_Loop"], target.rig, True),
                     [{"op": "hand_spacing", "gap_m": 0.30, "at": "end"}], target, "women")
