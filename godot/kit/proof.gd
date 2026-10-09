@@ -22,6 +22,7 @@ var _out: String
 var _house: Node3D
 var _camera: Camera3D
 var _label: Label
+var _env: Environment
 
 
 func _initialize() -> void:
@@ -124,6 +125,7 @@ func _environment() -> void:
 	env.fog_light_energy = 0.8
 	env.fog_depth_begin = 30.0
 	env.fog_depth_end = 140.0
+	_env = env
 	var world: WorldEnvironment = WorldEnvironment.new()
 	world.environment = env
 	root.add_child(world)
@@ -270,9 +272,9 @@ func _build_lineup() -> AABB:
 		(g as GeometryInstance3D).layers = 1 << (LINEUP_LAYER - 1)
 	var key: DirectionalLight3D = DirectionalLight3D.new()
 	key.light_cull_mask = 1 << (LINEUP_LAYER - 1)
-	key.light_energy = 1.2
-	key.rotation_degrees = Vector3(-50.0, 210.0, 0.0)  # shines towards +Z, the camera side
-	key.shadow_enabled = true
+	key.light_energy = 1.5
+	key.rotation_degrees = Vector3(-50.0, 30.0, 0.0)  # from the camera side (+Z) towards -Z: lights the faces it sees
+	key.shadow_enabled = false  # the house must not shade the line-up
 	root.add_child(key)
 	return box
 
@@ -330,6 +332,9 @@ func _shot(name: String, title: String, from: Vector3, to: Vector3) -> Image:
 func _lineup_shot(box: AABB) -> Image:
 	_camera.fov = 40.0
 	_camera.cull_mask = 1 << (LINEUP_LAYER - 1)
+	_env.fog_enabled = false  # the line-up camera stands past the fog's 30 m start: no purple haze
+	_env.background_mode = Environment.BG_COLOR
+	_env.background_color = Color(0.55, 0.56, 0.58)
 	var c: Vector3 = box.get_center()
 	var half_w: float = box.size.x * 0.5 + 1.0
 	var d: float = 1.25 * half_w / tan(deg_to_rad(33.0))
