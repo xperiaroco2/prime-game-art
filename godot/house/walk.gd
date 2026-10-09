@@ -2,11 +2,12 @@ extends SceneTree
 ## The House shell's walk for `tools/run.py house --walk DIR` (docs/house.md): loads the generated house.tscn
 ## (res://import/house), walks a 1.4 m capsule through every doorway of the ground and upper floors and up and down every
 ## flight, shoots eye-height stills (1.6 m), a top-down plan of the ground floor with room labels and an aerial view,
-## and counts the shell's draw calls per view. Pictures need a real window placed off-screen, never headless:
+## and counts the shell's draw calls per view; then the exterior's four sides at dusk (exterior.png), the kit's own
+## colours, with each `Placeholders` marker drawn as a see-through orange box (its `size` metadata, from the bottom up). Pictures need a real window placed off-screen, never headless:
 ##   godot --path godot --position -30000,-30000 --resolution 1600x900 -s res://house/walk.gd -- <request.json> <out dir>
 ## request.json: house_layout.walk_request(): {"walks": [{"name", "kind", "points": [[x, h, z], ...]}], "pads": [...],
 ## "rooms": [{"level", "id", "title", "rect", "kind", "floor_y"}], "levels": {"<level>": {"node", "floor_y"}}}.
-## Writes <out>/<shot>.png, <out>/sheet.png (1280 px wide) and <out>/walk.json; prints WALK saved <dir>.
+## Writes <out>/<shot>.png, <out>/sheet.png and <out>/exterior.png (1280 px wide) and <out>/walk.json; prints WALK saved <dir>.
 
 const WATCHDOG_S: float = 170.0
 const EYE: float = 1.6
@@ -19,6 +20,13 @@ const GAP: int = 4
 const RADIUS: float = 0.68
 const CONTROL_RADIUS: float = 0.75  # 1.5 m: must stop at a 1.4 m door (the colliders are there)
 const SPEED: float = 3.0
+## The exterior's four sides at dusk from 1.7 m eye height outside the plot's middle, aimed at the house (x 17..43, z 16..45).
+const EXTERIOR: Array = [
+	["ext_south", "south: the front (path, front door, porch)", Vector3(30, 1.7, 76), Vector3(30, 4.0, 34)],
+	["ext_east", "east: kitchen and garage side", Vector3(78, 1.7, 33), Vector3(30, 4.0, 31)],
+	["ext_north", "north: terrace and balcony", Vector3(30, 1.7, -14), Vector3(30, 3.5, 28)],
+	["ext_west", "west: living room and WC side", Vector3(-18, 1.7, 33), Vector3(30, 4.0, 31)],
+]
 const PLAN_RECT := Rect2(13.0, 13.0, 34.0, 34.0)  # the top-down's ground area (x, z): the house and the terrace
 
 var _req: Dictionary
@@ -58,6 +66,7 @@ func _run(args: PackedStringArray) -> void:
 	root.add_child(_house)
 	_lamps()
 	_pads()
+	_placeholders()
 	_camera = Camera3D.new()
 	_camera.near = 0.05
 	root.add_child(_camera)
@@ -97,10 +106,14 @@ func _run(args: PackedStringArray) -> void:
 	var images: Array[Image] = []
 	for s: Array in shots:
 		images.append(await _shot(s[0], s[1], s[2], s[3], result))
-	var aerial: Image = await _shot("aerial", "the shell from the south-east (kit v1, no roof yet)",
+	var aerial: Image = await _shot("aerial", "the shell from the south-east (kit v1; orange: placeholders)",
 		Vector3(62, 26, 70), Vector3(32, 2, 30), result, 50.0)
 	var balcony: Image = await _shot("balcony_stairs", "terrace: balcony stairs (Q6 default)",
 		Vector3(34, EYE, 11.5), Vector3(39, 2.4, 19), result)
+	var sides: Array[Image] = []
+	for s: Array in EXTERIOR:
+		sides.append(await _shot(s[0], s[1], s[2], s[3], result, 38.0))
+	_save(_grid(sides), _out.path_join("exterior.png"))
 	var plan: Image = await _plan(result)
 	_save(_sheet(plan, [aerial, balcony], images), _out.path_join("sheet.png"))
 	var f: FileAccess = FileAccess.open(_out.path_join("walk.json"), FileAccess.WRITE)
@@ -169,6 +182,37 @@ func _lamps() -> void:
 		lamp.omni_range = maxf(5.0, 0.75 * maxf(float(rect[2]), float(rect[3])))
 		lamp.position = Vector3(rect[0] + rect[2] * 0.5, float(r["floor_y"]) + 2.7, rect[1] + rect[3] * 0.5)
 		_house.add_child(lamp)
+
+
+## Every marker under a `Placeholders` node (porch, chimneys, pitched roof: kit v2) as a see-through orange box with its
+## name; no collider, so walks pass through.
+func _placeholders() -> void:
+	var paint: StandardMaterial3D = StandardMaterial3D.new()
+	paint.albedo_color = Color(1.0, 0.45, 0.05, 0.45)
+	paint.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	paint.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	for n: Node in _house.find_children("*", "Marker3D", true, false):
+		if n.get_parent().name != "Placeholders":
+			continue
+		var m: Marker3D = n as Marker3D
+		var size: Vector3 = Vector3(0.6, 0.6, 0.6)
+		if m.has_meta("size"):
+			size = _v(m.get_meta("size"))
+		var box: MeshInstance3D = MeshInstance3D.new()
+		var mesh: BoxMesh = BoxMesh.new()
+		mesh.size = size
+		box.mesh = mesh
+		box.material_override = paint
+		box.position = Vector3(0, size.y * 0.5, 0)
+		m.add_child(box)
+		var t: Label3D = Label3D.new()
+		t.text = String(m.name)
+		t.font_size = 28
+		t.pixel_size = 0.02
+		t.outline_size = 8
+		t.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+		t.position = Vector3(0, size.y + 0.4, 0)
+		m.add_child(t)
 
 
 ## A 3 x 3 m slab (top at the end's height) under every walk end that has no floor: the yard (#81a builds it).
@@ -271,7 +315,10 @@ func _plan(result: Dictionary) -> Image:
 	var c: Vector2 = PLAN_RECT.get_center()
 	_camera.look_at_from_position(Vector3(c.x, 40, c.y + 0.001), Vector3(c.x, 0, c.y), Vector3(0, 0, -1))
 	_label.text = "ground floor from above"
+	var frame: Vector2 = root.get_visible_rect().size
+	_label.position.x = (frame.x - frame.y) * 0.5 + 16.0  # inside the square crop
 	var image: Image = await _grab()
+	_label.position.x = 16.0
 	result["shots"]["plan_ground"] = _frame_info()
 	var side: int = image.get_height()
 	var square: Image = image.get_region(Rect2i((image.get_width() - side) / 2, 0, side, side))
@@ -292,6 +339,17 @@ func _grab() -> Image:
 	var image: Image = root.get_texture().get_image()
 	image.convert(Image.FORMAT_RGB8)
 	return image
+
+
+## Four views in a 2 x 2 grid, 1280 px wide.
+func _grid(views: Array[Image]) -> Image:
+	var cw: int = (SHEET_W - GAP) / 2
+	var ch: int = int(cw * views[0].get_height() / float(views[0].get_width()))
+	var sheet: Image = Image.create_empty(SHEET_W, 2 * ch + GAP, false, Image.FORMAT_RGB8)
+	sheet.fill(Color(0.97, 0.97, 0.97))
+	for i: int in views.size():
+		_paste(sheet, views[i], Vector2i((i % 2) * (cw + GAP), (i / 2) * (ch + GAP)), Vector2i(cw, ch))
+	return sheet
 
 
 ## The plan (a square) on the left, the two side views stacked on its right, the six stills in two rows of three.

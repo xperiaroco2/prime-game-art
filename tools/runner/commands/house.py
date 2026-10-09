@@ -24,7 +24,7 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--check", action="store_true", help="only check the layout; write nothing")
     parser.add_argument("--walk", type=Path, metavar="DIR",
                         help="stage the kit GLBs, import, then walk and shoot the house in an off-screen Godot window "
-                             "into DIR (walk.json, sheet.png, stills)")
+                             "into DIR (walk.json, sheet.png, exterior.png, stills)")
 
 
 def run(args: argparse.Namespace) -> int:
@@ -58,7 +58,7 @@ def run(args: argparse.Namespace) -> int:
 def walk(data: dict, summary: dict, folder: Path) -> int:
     """Stages the pieces the scenes use from the kit folder, imports them headless, then runs godot/house/walk.gd in a
     window off-screen (pictures need one): every doorway of the ground and upper floors and every flight, walked by
-    a 1.36 m capsule; the stills, the plan and sheet.png; draw calls per view."""
+    a 1.36 m capsule; the stills, the plan, sheet.png and the exterior at dusk (exterior.png); draw calls per view."""
     kit = common.raw_dir() / data["settings"]["kit_dir"]
     names = {pid: f"kit_{pid}" for pid in summary["pieces"]}
     missing = [pid for pid in names if not (kit / f"{pid}.glb").is_file()]

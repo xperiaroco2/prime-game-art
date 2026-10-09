@@ -58,7 +58,9 @@ take the heavy-run lock). The request (`house_layout.walk_request`, written to `
 A walk arrives when it gets within 0.3 m of its last point at that point's height (0.15 m); it gives up after 30
 ticks without moving. Into `DIR`: `walk.json` (each walk's end, time and verdict; draw calls, objects and primitives
 per view; mesh instance and body counts), the eye-height stills (1.6 m), `aerial.png`, `plan_ground.png` (the ground
-floor from above, the other levels and the ceilings hidden, a label per room) and `sheet.png` (1280 px wide). The lamps
+floor from above, the other levels and the ceilings hidden, a label per room), `sheet.png` (1280 px wide) and
+`exterior.png` (the four sides at dusk from 1.7 m eye height outside the plot, 1280 px wide; the kit's own colours, the
+`[[placeholders]]` as see-through orange boxes of their `size`, from the marker up). The lamps
 (one warm omni per room, no shadows) and the dusk sky only light the shell for review; they are not the house's light.
 
 ## The rules (`validate`)
@@ -97,5 +99,9 @@ floor from above, the other levels and the ceilings hidden, a label per room) an
 - The attic hatch: the kit's hatch tile puts the hole's centre on whole metres, at (28, 29) instead of the doc's
   (28, 28.5).
 - The study door is at (34, 28) as on the plan (the game's greybox has it at (34, 25)).
-- The pitched roof, gable windows and chimneys wait for kit v2 (#86): named `Placeholders` markers in the attic and
-  roof scenes.
+- The pitched roof, gable windows, chimneys and the front porch wait for kit v2 (#86, #74b): named `Placeholders`
+  markers in the attic, roof and path scenes (`size` in metres for the review box).
+- The main stairs' foot (not in the doc): the 6 m flight fills the 6 m stairs room, so its foot sits against the
+  hallway wall and a 1.4 m capsule cannot step onto it from the doc's door at (32, 36). A second door from the hallway
+  at (27, 36) opens straight onto the foot, marked `placeholder` (the game's greybox has no marker for it: the
+  greybox check skips placeholder doors). Options: a U-turn of two half flights, or a 5 m steeper flight (kit v2).
