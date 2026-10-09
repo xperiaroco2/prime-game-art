@@ -511,19 +511,20 @@ def build_chest_freezer(pc: Piece, p: dict, spec: dict) -> None:
 
 
 def build_grill(pc: Piece, p: dict, spec: dict) -> None:
-    """A barrel grill on legs with a side shelf; the lid is a leaf hinged along the barrel's back."""
+    """A barrel grill on legs with a side shelf and two wheels under the left legs; the lid is a leaf hinged along the
+    barrel's back."""
     m = pc.mesh
     w, d, h = _dims(p)
     r = 0.25
     cy = h - r
-    bx0, bx1 = -w / 2 + 0.08, w / 2 - 0.36
+    bx0, bx1 = -w / 2 + 0.04, w / 2 - 0.36
     oct_lo = [(r * math.cos(t), cy + r * math.sin(t)) for t in
               (0, -math.pi / 4, -math.pi / 2, -3 * math.pi / 4, math.pi)]
     prism_zy(m, list(reversed(oct_lo)), bx0, bx1, "steel_dark")
     m.box((bx0 + 0.02, cy - 0.01, -r + 0.03), (bx1 - 0.02, cy, r - 0.03), "steel")
     for sx in (-1, 1):
         for sz in (-1, 1):
-            lx = (bx0 + 0.06) if sx < 0 else (bx1 - 0.06)
+            lx = (bx0 + 0.025) if sx < 0 else (bx1 - 0.06)
             cbox(m, (lx - 0.025, 0, sz * (r - 0.03) - 0.025), (lx + 0.025, cy - r * 0.7, sz * (r - 0.03) + 0.025),
                  "steel_dark", 0.006)
     cbox(m, (bx0 + 0.05, 0.22, -r + 0.03), (bx1 - 0.05, 0.25, r - 0.03), "boards", 0.006)
@@ -534,7 +535,8 @@ def build_grill(pc: Piece, p: dict, spec: dict) -> None:
     m.box((bx1, cy - 0.06, r - 0.05), (w / 2, cy - 0.03, r - 0.02), "steel_dark")
     cbox(m, (w / 2 - 0.04, 0, -r + 0.02), (w / 2, cy - 0.03, -r + 0.06), "steel_dark", 0.006)
     cbox(m, (w / 2 - 0.04, 0, r - 0.06), (w / 2, cy - 0.03, r - 0.02), "steel_dark", 0.006)
-    cyl(m, (-w / 2, 0.05, -r + 0.06), "x", 0.07, 0.05, "rubber", n=8)
+    for sz in (-1, 1):  # wheels against the left legs' outer faces
+        cyl(m, (-w / 2, 0.05, sz * (r - 0.03)), "x", 0.035, 0.05, "rubber", n=8)
     m.box((bx0 + 0.05, cy - 0.05, -d / 2), (bx1 - 0.05, cy - 0.02, -d / 2 + 0.02), "steel")
     for x in (bx0 + 0.08, bx1 - 0.08):
         m.box((x - 0.01, cy - 0.05, -d / 2 + 0.02), (x + 0.01, cy - 0.02, -r + 0.03), "steel_dark")
