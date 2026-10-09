@@ -223,6 +223,68 @@ family (F6), and then only with a UV projection per head and a shader; if the en
 be baked into a texture later. The contract text "eyes and mouth animate by texture frames" would change to "by
 switching rigid pieces" (the contract ADR with the engineer, a later wave).
 
+## The clay face kit (art #42 part B)
+
+The clay look's faces (the plasticine style the engineer chose on 2026-10-06) come from the faces lab's round E kit
+(`D:/prime-art-raw/research/2026-10-05-faces/lab/clay_e/clay_face_b.py`), ported into `tools/blender/um/clayface/`:
+
+| Module | What |
+|---|---|
+| `kit.py` | Pure Python: loads `faces/clay_kit.json` (eyes, brows, noses, ears, mouths, facial hair, pick weights and rules, colours, the mask) and `faces/clay_hair.json` (the hair items with their face flags); random and default picks, a recipe's `face_kit` picks (`check_picks`, `picks_for`), the hair flags (`hair_flags`, `ear_state`, `hair_brow_ok`), `DATA_SHA` |
+| `mesh.py`, `eyes.py`, `brows.py`, `nose.py`, `mouth.py`, `fhair.py`, `ears.py` | The pieces, built on the head's surface (`Ctx`) |
+| `face.py` | `build_face`: every piece with its keys; `Face` states (mouth, blink, look, ears); the mask UV; `game_mesh` |
+| `adapter.py` | The kit on an assembled character (`assemble.build_character(face="kit")`) |
+| `checks.py`, `survey.py` | The measures and the many-face check (`faces --kit-check`) |
+
+`faces/clay_kit.json` records the lab file it was ported from (`lab_source`: path and SHA-256); a test compares the
+data with the lab's tables when the raw folder is there. Change the data there, not in the modules.
+
+**Per-hair flags.** Each hair item of `faces/clay_hair.json` carries `ears_free` (left, right) and `brow_tuck`; the
+game applies them from the worn hair (and headwear) as the kit does (`kit.hair_flags`): the ears `free`, `tuck` (the
+`ears_tuck` key) or `hide` (`ears_hide`, under covering hair), and the brows pressed into the forehead where a lock
+covers them (full length kept; `brow_tuck` false for the hairs that must not tuck). The e5 brow pad cap was rejected
+(2026-10-10): the kit keeps the e4 brow behaviour.
+
+**A recipe character's face.** A clay recipe character may carry `face_kit`: any of the picks (`kit.PICK_KEYS`:
+mouth, nose, eye_size, pupil, lid, brows, ears, facial_hair, teeth, asym, loud) and `brow_rgb`; the rest are the kit's
+defaults for the body type. `assemble --look clay` builds the kit's face instead of the scripted pack face
+(`docs/assembly.md`, "The clay look").
+
+### The head shader contract (what the game gets)
+
+The character contract's file does not change for the kit (a v2 of the contract is the engineer's call). A clay
+character's face arrives as:
+
+- **The head** (`<id>_head`): the bald pack head with the kit's lids, brows, nose, mouth, teeth, ears and facial hair
+  joined into it (`claylook.JOIN_INTO_HEAD`); one baked clay material: colour and normal atlas on the UV layer `bake`
+  (glTF `TEXCOORD_0`; sizes in the piece's `piece.json`, `colour_px` and `normal_px`), the mouth cavity baked as clay.
+  The teeth keep a glossy material of their own on the head (`claylook.GLOSSY`). A second UV layer `mask`
+  (`TEXCOORD_1`) marks the parts the game may tint: brows at (1, 0), facial hair at (0, 1), the rest at (0, 0).
+- **The eyes** (`<id>_eyes`): the whites and the pupils, glossy, not baked (two materials); the part godot-check finds
+  the eyes by.
+- **Shape keys** (glTF morph targets): on the head `mouth_a`, `mouth_e`, `mouth_o`, `mouth_closed` (the mouth states
+  over the rest mouth), `blink_half`, `blink`, `ears_tuck`, `ears_hide`; on the eyes `look_l`, `look_r`, `look_u`,
+  `look_d` (yaw and pitch combine; the check proves no pupil sinks into the white at any blend). The ear keys are set
+  from the hair after the bake; the game sets them again when the hair changes.
+- Every face part is skinned 100 % to the Head bone; the head's face skin in front of the kit follows the Head bone
+  alone (`facekit.rigid_face_skin`), fading back to the pack weights below it.
+
+Open: m1 of `clay_round_d` has 9 surfaces (head clay and teeth, eye white and pupil, hair, accessory, top, bottom,
+shoes), over the contract's 8 when a character wears an extra; the teeth as clay or one eye material would fix it (a
+look question for the engineer).
+
+### The many-face check: `faces --kit-check [N]`
+
+`tools/run.sh faces --kit-check 320` builds N random faces (default 320) per body type on the heads of `--recipe`
+(default `recipes/clay_round_d.json`: its first man and woman), each under a random hair item of that body type, with
+the lab's seeds (500 for M, 501 for W) and its draw order, so the numbers compare with the lab's check. Per face it
+measures, in the rest pose at head scale 1: collisions between pieces that must never touch (every mouth state and
+blink step), brow vertices in the visible white, visible brow pokes (a brow point with no hair in front and visible
+hair right behind it; the lab's e5 test, at every vertex and every triangle's centre and edge midpoints), the ears
+against the hair in the item's ear state, the nose's clearance above the mouth and the moustache, noses meeting a
+pupil, the look's sag and triangles. It writes `kit_check.json` (with the worst faces and the formal-updo list) under
+`--out` (default `tools/out/faces_kit/`) and exits non-zero on any failure (`faces.kit_problems`).
+
 ## Gotchas
 
 - `(1 - u * u) ** 0.8` with `u` slightly beyond 1 is a complex number in Python: clamp with `max(0, ...)` before a
