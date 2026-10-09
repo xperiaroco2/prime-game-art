@@ -13,6 +13,7 @@ from .. import common
 SPEC = common.ROOT / "kits" / "house.json"
 SCRIPT = "kit_build.py"
 CHECK = "res://check/kit.gd"
+PROOF = "res://kit/proof.gd"
 BOUNDS_TOLERANCE_M = 0.002  # Godot's imported bounds equal the spec's geometry
 RAY_LEAD_M = 0.5  # every collider is probed by a ray that starts this far outside it
 

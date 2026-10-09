@@ -9,12 +9,13 @@ import json
 from pathlib import Path
 
 from .. import blender, common
-from . import _export, _godot, _kit
+from . import _export, _frames, _godot, _kit
 
 NAME = "kit"
 HELP = "build a modular kit (kits/house.json) as one GLB per piece and check each: grid, budgets, glTF-Validator, Godot import, collision"
 BUILD_TIMEOUT = 900
 CHECK_TIMEOUT = 600
+PROOF_TIMEOUT = 240
 
 
 def add_arguments(parser: argparse.ArgumentParser) -> None:
@@ -23,6 +24,8 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--only", default="", help="comma-separated piece ids (default every piece)")
     parser.add_argument("--no-build", action="store_true", help="check the GLBs already in --out")
     parser.add_argument("--no-godot", action="store_true", help="skip the Godot import check")
+    parser.add_argument("--proof", type=Path, help="also assemble the test room, corridor and stairs in an off-screen "
+                                                   "Godot window, walk them and shoot them into this folder")
 
 
 def run(args: argparse.Namespace) -> int:
@@ -72,6 +75,8 @@ def run(args: argparse.Namespace) -> int:
     problems += glb_problems
     if not args.no_godot:
         problems += godot_check(pieces, described, out)
+        if args.proof and not problems:
+            problems += proof(pieces, described, args.proof.resolve())
     rows = g.piece_table([described[p["id"]] for p in pieces])
     (out / "pieces.json").write_text(json.dumps(rows, indent=1), encoding="utf-8")
     (out / "pieces.md").write_text(_kit.table_md(rows, spec["budget_tris"]), encoding="utf-8", newline="\n")
@@ -109,6 +114,31 @@ def godot_check(pieces: list[dict], described: dict, out: Path) -> list[str]:
     _report(problems, f"Godot {dump.get('godot', '?')} import: sizes, Y up, UV2, vertex colours, closed collision "
                       f"({sum(len(described[p]['colliders']) for p in names)} rays); {len(lines)} import warnings")
     (out / "godot.json").write_text(json.dumps(dump, indent=1), encoding="utf-8")
+    return problems
+
+
+def proof(pieces: list[dict], described: dict, folder: Path) -> list[str]:
+    """godot/kit/proof.gd in a window off-screen (pictures need one): the shots, sheet.png and the walks."""
+    request = {"pieces": {p["id"]: {"scene": f"res://import/kit_{p['id']}.glb", **described[p["id"]]["bounds_m"]}
+                          for p in pieces}}
+    missing = {"stairs_main", "wall_storey_2m_ext", "wall_storey_2m_door_int"} - set(request["pieces"])
+    if missing:
+        return [f"proof: needs {', '.join(sorted(missing))} (drop --only)"]
+    folder.mkdir(parents=True, exist_ok=True)
+    req = common.OUT / "kit" / "proof_request.json"
+    req.write_text(json.dumps(request), encoding="utf-8")
+    (folder / "proof.json").unlink(missing_ok=True)
+    code, output = _godot.godot(["--path", _godot.PROJECT, "--audio-driver", "Dummy", "--position", _frames.POSITION,
+                                 "--resolution", "1600x900", "-s", _kit.PROOF, "--", req.as_posix(),
+                                 folder.as_posix()], PROOF_TIMEOUT)
+    if code != 0 or not (folder / "proof.json").is_file():
+        tail = "\n".join(output.splitlines()[-20:])
+        raise common.Failure(f"proof.gd failed (exit code {code}):\n{tail}")
+    walks = json.loads((folder / "proof.json").read_text(encoding="utf-8"))["walks"]
+    problems = [f"proof: walk {k} {'arrived' if w['arrived'] else 'stopped'} at {[round(c, 2) for c in w['end']]}"
+                for k, w in walks.items() if not w["pass"]]
+    _report(problems, "proof: the 0.8 m capsule walks room, door, corridor and stairs to 3.2 m; a 1.5 m one stops at "
+                      f"the door; sheet {(folder / 'sheet.png').as_posix()}")
     return problems
 
 
