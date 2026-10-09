@@ -78,3 +78,25 @@ Every value is the engineer's to change (sizes, paints, mounts), as data:
    `surface_game`), all `-vcol`; glTF-Validator has no errors.
 3. **Godot** (`godot/check/kit.gd`, `_kit.evaluate`): bounds equal the spec's within 2 mm, the triangle count, UV2
    and sRGB vertex colours on every surface, one closed convex body per collider, and a ray hits each.
+
+## The zone props: `props/zones.toml`
+
+Art #81b adds the chill zone's and the photo gazebo's props as a second spec beside `tasks.toml`, built by the same
+command: `tools/run.sh props --spec props/zones.toml [--review DIR]`. Their builders are in
+`tools/blender/props_zone.py` (registered into `props_task.BUILDERS`); the spec's `out_dir = "zones"` sends the GLBs
+to `D:/prime-art-raw/props/zones/v1/`, and its `label` heads the line-up sheet `lineup_zones.png`.
+
+- Props: `deckchair`, `fire_pit`, `bean_bag`, `cooler_box`, `photo_backdrop`, `tripod_camera`, `lantern`, and two
+  string-light sets: `string_lights_set` (a 5 m strand between two weighted poles, for open ground) and
+  `string_lights_gazebo` (a strand hung between two of the kit gazebo's posts).
+- Budgets add `dressing` 600 and `fixture` 400 triangles (the plan's `look.md` section 6).
+- **Light fixtures** carry their bulbs (and the fire pit its embers) on an `emissive` material (`kit_emissive-vcol`,
+  emission lamp c2 `#ffd9ad`; the vertex colour keeps each bulb's tint) and name their light anchors as sockets
+  `light_<k>` in `build.json`'s describe output: the assembly puts the baked light there. Lights are fixtures, never
+  free-floating lights (the plan's inventory section 8).
+- `mount = "hang"`: a strand hung from two hooks has its pivot in the middle of the hook line and hangs below it
+  (y from -h to 0); the floor check becomes "the highest point at y 0".
+- The builders aim at the spec's bounds and `props_zone.fit` absorbs the rest (bars' slant, lathe facets) by at most
+  6 % per axis; a bigger miss fails the build.
+- A zone prop has `chain = "zone"` and `station = "-"`; the stations themselves (the grill, the speaker, the pose
+  screen) stay in `tasks.toml`. Where they stand is the zones' layout data (`docs/zones.md`).
