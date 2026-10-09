@@ -363,7 +363,9 @@ def plan(data: dict) -> dict:
                     turn = _turn_x(CLIMB[part["climb"]])
                     run, width = (1.38, 0.7) if p["type"] == "ladder" else (float(p["run"]), float(p["width"]))
                     x, y = pivot_for(r, run, width, turn)
-                extra.append({"id": part["piece"], "x": x, "y": y, "h": part["y"], "turn": turn, "name": name})
+                # A block is a floor piece: its top at the pivot (docs/kit.md), so it stands on y with its top at y + height.
+                h = part["y"] + float(p["height"]) if p["type"] == "block" else part["y"]
+                extra.append({"id": part["piece"], "x": x, "y": y, "h": h, "turn": turn, "name": name})
         for d in lv.get("doors", []):
             for rid, nm in d.get("names", {}).items():
                 if rid in rooms:

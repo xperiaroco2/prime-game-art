@@ -187,6 +187,7 @@ class PlanTest(unittest.TestCase):
         # The U-turn: the lower half climbs west from x 30, the 1 x 4 m landing on the west wall.
         self.assertEqual((extra["main_stairs_1"]["x"], extra["main_stairs_1"]["y"], extra["main_stairs_1"]["turn"]), (30, 36, 180))
         self.assertEqual((extra["main_stairs_2"]["x"], extra["main_stairs_2"]["y"], extra["main_stairs_2"]["turn"]), (27, 32, -90))
+        self.assertAlmostEqual(extra["main_stairs_2"]["h"], 1.6)  # the landing block's top, not its foot (it hung into the basement)
         self.assertEqual((extra["balcony_stairs"]["x"], extra["balcony_stairs"]["y"], extra["balcony_stairs"]["turn"]),
                          (40, 15, -90))
 
