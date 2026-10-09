@@ -1316,7 +1316,10 @@ def build_tyre_stack(m, s, R, prm, rng):
     h = H / n
     for i in range(n):
         dx, dz = 0.02 * (rng.random() - 0.5), 0.02 * (rng.random() - 0.5)
-        tube(m, "y", (dx, dz), L / 2 * 0.52, L / 2 - 0.012, h * i, h * (i + 1) - 0.004, R[0], 12)
+        y0, y1, ro, ri = h * i, h * (i + 1) - 0.004, L / 2 - 0.012, L / 2 * 0.52
+        tube(m, "y", (dx, dz), ri, ro * 0.9, y0, y1, R[0], 12)
+        cyl(m, "y", (dx, dz), ro * 0.9, y0, (y0 + y1) / 2, R[0], 12, r1=ro, caps=(False, False))
+        cyl(m, "y", (dx, dz), ro, (y0 + y1) / 2, y1, R[0], 12, r1=ro * 0.9, caps=(False, False))
 
 
 def build_utility_pole(m, s, R, prm, rng):
@@ -1496,6 +1499,8 @@ def pack_piece(p: dict, parts: list[dict], spec: dict) -> Piece:
     verts = [(v[0] + d[0], v[1] + d[1], v[2] + d[2]) for v in verts]
     roles = list(p["roles"])
     dark_to_light = sorted(roles, key=lambda r: luminance(spec["roles"][r]["hex"]))
+    if p.get("paint"):  # the roles of the source's colour clusters, dark to light (when luminance order is wrong)
+        dark_to_light = list(p["paint"])
     labels = cluster(cols, areas, len(roles))
     k = max(labels) + 1 if labels else 1
     pick = [dark_to_light[round(j * (len(roles) - 1) / max(k - 1, 1))] if k < len(roles) else dark_to_light[j]

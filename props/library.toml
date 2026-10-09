@@ -263,6 +263,7 @@ src_size = [0.7345, 0.3844, 0.3923]
 src_triangles = 198
 yaw_deg = 0
 scale = 1.866
+paint = ["wood_mid", "metal_dark"]  # the source's darker cluster is the wood: keep the desk wood, not black
 roles = ["wood_mid", "metal_dark"]
 pivot = "floor"
 collision = "box"
