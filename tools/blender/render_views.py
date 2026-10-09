@@ -8,7 +8,8 @@ views at 45-degree steps, front first and then counter-clockwise seen from above
 side first), all at the same scale and centre, go into views/ and into sheet.png: 4 x 2 cells of --cell pixels on a
 neutral light-grey background, each labelled with its angle, with a faint line at z = 0, and a caption naming the
 model. stats.json describes the model. With --anim, anim_<action>.png (the name made file-safe) holds --frames evenly
-spaced whole frames of that action, seen from the front. --no-outline drops the dark object outline.
+spaced whole frames of that action, seen from the front. --pose ACTION shows the eight views at the first frame of that
+action (to compare two models in the same pose). --no-outline drops the dark object outline.
 
 Texture colours are used when any visible material has an image texture with pixels, material colours otherwise.
 """
@@ -94,6 +95,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--cell", type=int, default=512)
     parser.add_argument("--anim", default="", help="the action for an animation contact sheet")
     parser.add_argument("--frames", type=int, default=8)
+    parser.add_argument("--pose", default="", help="show the views posed at the first frame of this action")
     parser.add_argument("--no-outline", action="store_true", help="no object outline (it is a review aid only)")
     return parser.parse_args(argv)
 
@@ -420,7 +422,11 @@ def main() -> None:
         raise SystemExit("--cell must be at least 64")
     out.mkdir(parents=True, exist_ok=True)
     load(model)
-    bpy.context.scene.frame_set(bpy.context.scene.frame_start)
+    if args.pose:
+        start, _end = assign_action(args.pose)
+        bpy.context.scene.frame_set(int(start))
+    else:
+        bpy.context.scene.frame_set(bpy.context.scene.frame_start)
 
     color_type = "TEXTURE" if any(has_texture(m) for m in materials_used()) else "MATERIAL"
     sync_viewport_colours(materials_used())
@@ -445,6 +451,7 @@ def main() -> None:
     report["cell"] = args.cell
     report["views"] = labels
     report["outline"] = not args.no_outline
+    report["pose"] = args.pose
 
     if args.anim:
         start, end = assign_action(args.anim)

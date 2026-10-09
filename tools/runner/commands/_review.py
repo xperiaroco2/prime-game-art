@@ -28,11 +28,14 @@ def make_fixtures(folder: Path = FIXTURES) -> list[Path]:
     return made
 
 
-def render(model: Path, out: Path, cell: int = 512, anim: str = "", frames: int = 8, outline: bool = True) -> dict:
-    """Renders model's review sheet into out and returns its stats.json."""
+def render(model: Path, out: Path, cell: int = 512, anim: str = "", frames: int = 8, outline: bool = True,
+           pose: str = "") -> dict:
+    """Renders model's review sheet into out (posed at pose's first frame when given) and returns its stats.json."""
     args = [str(model), "--out", str(out), "--cell", str(cell)]
     if not outline:
         args.append("--no-outline")
+    if pose:
+        args += ["--pose", pose]
     if anim:
         args += ["--anim", anim, "--frames", str(frames)]
     blender.run_script("render_views.py", args, timeout=1800)

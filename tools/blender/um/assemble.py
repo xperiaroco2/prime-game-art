@@ -35,6 +35,7 @@ def check_styles(recipe):
 
 
 def take_part(packs, char_id, role, gender, spec, arm, keep=None, extra_report=None):
+    gender = spec.get("gender", gender)  # a head item may come from the other body type's pack (same Head bone)
     src = packs.load(gender, spec["file"])
     obj = src["meshes"][spec["object"]]
     moved = rebind(obj, src["arm"], arm)
@@ -178,6 +179,30 @@ def build_character(packs, recipe, rc, coll):
     rep["objects"] = {k: {"name": o.name, "parent": o.parent.name, "armature_modifier": next((m.object.name for m in o.modifiers if m.type == "ARMATURE"), None),
                           "vertex_groups": len(o.vertex_groups)} for k, o in parts.items()}
     return arm, parts, rep
+
+
+def clay_look(recipe, rc, arm, parts, rep, lib=None):
+    """The clay pass (um/clay.py) on a built character, still at the origin in the rest pose; with lib, the bake from
+    the per-piece clay library (um/claybake.py). Records rep["clay"] (and rep["clay_bake"]); the triangles become the
+    clay ones (the pack's stay under triangles_pack)."""
+    from . import clay, claybake, claylook
+
+    cfg = claylook.settings(recipe)
+    crep, sources = clay.apply(rc["id"], arm, parts, cfg)
+    rep["look"] = "clay"
+    rep["clay"] = crep
+    if lib:
+        keys = claylook.keys_for(recipe, rc, cfg)
+        scene = bpy.context.scene
+        engine = scene.render.engine  # the bake runs Cycles; the review renders keep the assembler's engine
+        try:
+            rep["clay_bake"] = claybake.bake_character(rc["id"], arm, parts, sources, keys, rc["gender"], lib, cfg)
+        finally:
+            scene.render.engine = engine
+    clay.remove_sources(sources)
+    rep["triangles_pack"], rep["triangles_total_pack"] = rep["triangles"], rep["triangles_total"]
+    rep["triangles"] = {k: tris(o) for k, o in parts.items()}
+    rep["triangles_total"] = sum(rep["triangles"].values())
 
 
 def pose_character(arm, parts, rc, rep):
