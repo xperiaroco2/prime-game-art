@@ -99,7 +99,7 @@ func _run(args: PackedStringArray) -> void:
 		["front_door", "front door from the path", Vector3(30, EYE, 48.5), Vector3(30, 1.4, 38)],
 		["dining_terrace", "dining room to the terrace door", Vector3(36, EYE, 28.6), Vector3(36, 1.2, 18)],
 		["living_hallway", "living room to the hallway door", Vector3(21, EYE, 40), Vector3(31, 1.2, 40)],
-		["main_stairs", "hallway: main stairs up", Vector3(27, EYE, 40.5), Vector3(27, 3.6, 30)],
+		["main_stairs", "stairs room: the U-turn up (placeholder)", Vector3(33.4, EYE, 35.4), Vector3(27, 1.4, 33)],
 		["pantry_stairs", "pantry: stairs down (placeholder)", Vector3(25.2, EYE, 24.8), Vector3(27, -2.6, 31)],
 		["landing_balcony", "upper landing to the balcony door", Vector3(32, 3.2 + EYE, 29.5), Vector3(32, 3.2 + 1.2, 20)],
 	]
@@ -111,8 +111,14 @@ func _run(args: PackedStringArray) -> void:
 	var balcony: Image = await _shot("balcony_stairs", "terrace: balcony stairs (Q6 default)",
 		Vector3(34, EYE, 11.5), Vector3(39, 2.4, 19), result)
 	var sides: Array[Image] = []
+	var fill: DirectionalLight3D = DirectionalLight3D.new()  # review only: the moon backlights the front
+	fill.light_color = Color(0.6, 0.66, 0.9)
+	fill.light_energy = 0.3
+	fill.rotation_degrees = Vector3(-20.0, 20.0, 0.0)
+	root.add_child(fill)
 	for s: Array in EXTERIOR:
 		sides.append(await _shot(s[0], s[1], s[2], s[3], result, 38.0))
+	fill.queue_free()
 	_save(_grid(sides), _out.path_join("exterior.png"))
 	var plan: Image = await _plan(result)
 	_save(_sheet(plan, [aerial, balcony], images), _out.path_join("sheet.png"))
