@@ -732,11 +732,12 @@ def _door_normal(d: dict, level: dict) -> tuple[float, float]:
 
 
 def walk_request(data: dict, levels=WALK_LEVELS) -> dict:
-    """What godot/house/walk.gd walks and labels: one walk across every doorway of the given levels (from its first
+    """What godot/house/walk.gd walks and labels: one walk across every open doorway of the given levels (from its first
     room into its second, WALK_SIDE each side, in Godot's x, height, z), up and down every flight of stairs, a pad
-    under every end that has no floor (the yard), and the rooms with their titles for the top-down plan."""
+    under every end that has no floor (the yard), the rooms with their titles for the top-down plan, and the doors left
+    out because their kit piece holds a closed leaf (`leaf = "kit"`)."""
     by_name = {lv["level"]: lv for lv in data["levels"]}
-    walks, pads = [], []
+    walks, pads, closed = [], [], []
 
     def end(level: dict, x: float, y: float) -> list[float]:
         if _floored(level, x, y) is None:
@@ -747,6 +748,9 @@ def walk_request(data: dict, levels=WALK_LEVELS) -> dict:
         lv = by_name[name]
         for d in lv.get("doors", []):
             if d.get("kind", "door") not in DOOR_KINDS:
+                continue
+            if d.get("leaf") == "kit":  # the piece carries its own closed leaf (garage gate, greenhouse door)
+                closed.append(f"{name}:{d['rooms'][0]}>{d['rooms'][1]}@{d['at'][0]:g},{d['at'][1]:g}")
                 continue
             nx, ny = _door_normal(d, lv)
             x, y = d["at"]
@@ -784,5 +788,5 @@ def walk_request(data: dict, levels=WALK_LEVELS) -> dict:
     for p in pads:
         if p not in unique:
             unique.append(p)
-    return {"walks": walks, "pads": unique, "rooms": rooms,
+    return {"walks": walks, "pads": unique, "rooms": rooms, "closed": closed,
             "levels": {lv["level"]: {"node": lv["node"], "floor_y": lv["floor_y"]} for lv in data["levels"]}}

@@ -33,7 +33,7 @@ Coordinates are the design doc's: metres, x east, y south, origin at the plot's 
 ## The command
 
 ```
-tools/run.sh house [--check] [--out DIR] [--layouts DIR]
+tools/run.sh house [--check] [--out DIR] [--layouts DIR] [--walk DIR]
 ```
 
 It validates the layout, then writes into `--out` (default `godot/import/house/`, ignored, `res://import/house`) one
@@ -41,6 +41,25 @@ scene per room (`<level>/<room>.tscn`, origin at the room's north-west corner li
 level (`<level>.tscn`: the rooms at their positions, the stairs and railings) and `house.tscn`; the plan goes to
 `tools/out/house/plan.json`. Pure Python, a second; the scenes instance the kit GLBs at
 `res://import/kit_<id>.glb`, where the `kit` command puts them.
+
+`--walk DIR` then stages the pieces the scenes use from `<raw>/<kit_dir>` as `godot/import/kit_<id>.glb`, imports
+them headless and runs `godot/house/walk.gd` in a window placed off-screen (pictures need one; Godot and its import
+take the heavy-run lock). The request (`house_layout.walk_request`, written to `tools/out/house/walk_request.json`):
+
+- every open doorway (kinds `door`, `glass`, `gate8`; not those whose kit piece holds a closed leaf, `leaf = "kit"`:
+  the garage gate, the greenhouse door) of the ground and upper floors, crossed from its first room into its
+  second, 1 m either side of the wall line, by a capsule 1.36 m wide and 1.8 m tall at 3 m/s (the kit's door is
+  exactly 1.4 m clear: a 1.4 m capsule touches both jambs and jams, so the walk keeps 2 cm a side);
+- every flight (`stairs_main`, `stairs_basement`, `stairs_balcony`) up and down, from 1 m before its foot to up to
+  1 m past its top (less where the room there is short: the pantry's landing);
+- a 3 x 3 m pad under each walk end that has no floor (the yard; #81a builds the real ground);
+- a control: the 1.5 m capsule must stop at the first door (the colliders are there).
+
+A walk arrives when it gets within 0.3 m of its last point at that point's height (0.15 m); it gives up after 30
+ticks without moving. Into `DIR`: `walk.json` (each walk's end, time and verdict; draw calls, objects and primitives
+per view; mesh instance and body counts), the eye-height stills (1.6 m), `aerial.png`, `plan_ground.png` (the ground
+floor from above, the other levels and the ceilings hidden, a label per room) and `sheet.png` (1280 px wide). The lamps
+(one warm omni per room, no shadows) and the dusk sky only light the shell for review; they are not the house's light.
 
 ## The rules (`validate`)
 
