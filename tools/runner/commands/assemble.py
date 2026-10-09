@@ -25,6 +25,12 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
     )  # fmt: skip
     parser.add_argument("--out", type=Path, help="output folder (default tools/out/assemble/<recipe>/)")
     parser.add_argument("--blend", action="store_true", help="also save blend/<id>.blend and blend/<id>.json")
+    parser.add_argument("--look", choices=("pack", "clay"), help="the look (default: the recipe's look, else pack)")
+    parser.add_argument(
+        "--bake", action="store_true",
+        help="clay look: bake every part from the per-piece clay library (missing pieces are baked into it)",
+    )  # fmt: skip
+    parser.add_argument("--clay-lib", type=Path, help="the clay library folder (default <raw>/clay-lib)")
     parser.add_argument("--res", type=int, default=100, help="render size in percent (default 100; tests use less)")
     parser.add_argument(
         "--compare", type=Path, metavar="REPORT",
@@ -64,6 +70,14 @@ def run(args: argparse.Namespace) -> int:
         script_args += ["--modes", ",".join(modes)]
     if args.blend:
         script_args.append("--blend")
+    look = args.look or recipe.get("look", "pack")
+    if args.look:
+        script_args += ["--look", args.look]
+    if (args.bake or args.clay_lib) and look != "clay":
+        raise common.Failure("--bake and --clay-lib need the clay look (--look clay or the recipe's look)")
+    if args.bake or args.clay_lib:
+        lib = (args.clay_lib or Path(raw) / "clay-lib").resolve()
+        script_args += ["--clay-lib", str(lib)]
     common.say(f"assemble: {path.name} ({', '.join(ids) or 'every character'}) -> {out.as_posix()}")
     blender.run_script(_assembly.SCRIPT, script_args, timeout=TIMEOUT)
 

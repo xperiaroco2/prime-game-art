@@ -36,7 +36,7 @@ class FindRecipeTest(unittest.TestCase):
     def test_an_unknown_recipe_names_the_recipes(self) -> None:
         code, out = run_cli("assemble", "no_such_recipe")
         self.assertEqual(code, 1)
-        self.assertIn("recipes/ has: um_final_test.json, um_final_test_neutral.json", out)
+        self.assertIn("recipes/ has: clay_round_d.json, um_final_test.json, um_final_test_neutral.json", out)
 
 
 class RefusalsTest(FakeRaw):

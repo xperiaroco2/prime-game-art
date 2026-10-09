@@ -22,6 +22,9 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
                         help="fail on the contract v1 body gates (height, eyes) with the contract's own severities")
     parser.add_argument("--humanoid", action="store_true",
                         help="also the trial: import with a BoneMap to SkeletonProfileHumanoid and report what maps and works")
+    parser.add_argument("--textured", action="store_true",
+                        help="a baked clay character (export --textured): textures, normal maps, sizes and surfaces "
+                             "checked instead of flat colours")
 
 
 def run(args: argparse.Namespace) -> int:
@@ -39,7 +42,8 @@ def run(args: argparse.Namespace) -> int:
     failed = 0
     for glb, res_path in staged.items():
         out = (args.out or _godot.OUT).resolve() / glb.stem
-        failed += not check_one(glb, res_path, out, contract, import_lines, args.strict_contract, list(staged.values()))
+        failed += not check_one(glb, res_path, out, contract, import_lines, args.strict_contract, list(staged.values()),
+                            args.textured)
     if args.humanoid:
         from . import _humanoid
 
@@ -50,12 +54,12 @@ def run(args: argparse.Namespace) -> int:
 
 
 def check_one(glb: Path, res_path: str, out: Path, contract: dict, import_lines: list[str], strict: bool,
-              staged: list[str]) -> bool:
+              staged: list[str], textured: bool = False) -> bool:
     expect = _godot.expectations(glb)
     dump, lines = _godot.inspect(res_path, out / "inspect.json")
     mine = _godot.lines_for(import_lines, res_path, staged)
     output = mine + lines
-    checks = _godot.evaluate(dump, expect, contract, output, strict_contract=strict)
+    checks = _godot.evaluate(dump, expect, contract, output, strict_contract=strict, textured=textured)
     failed = [c for c in checks if c["status"] == "fail"]
     report = {
         "glb": glb.as_posix(),

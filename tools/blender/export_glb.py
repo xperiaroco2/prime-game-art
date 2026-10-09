@@ -13,6 +13,11 @@ The description also holds each action's seam (seams()): how far its last frame 
 
 EXPORT_OPTIONS is a plain module constant (bpy is imported only inside main()), so the runner and the tests can read
 the options without Blender.
+
+--textured (the clay look's baked characters, docs/godot.md, "Textured export"): TEXTURED_OPTIONS on top, the baked
+PNGs embedded, tangents for the normal maps, morph targets (with their normals and tangents) kept, vertex colours where
+a material reads them; a part without any UV map gets a spherical one (glossy parts have none, and Godot cannot make
+tangents without UVs), and a zero TANGENT the exporter writes is replaced by a unit one (fix_zero_tangents).
 """
 
 import math
@@ -78,6 +83,88 @@ EXPORT_OPTIONS = {
     "check_existing": False,
     "will_save_settings": False,
 }
+
+# The textured export's changes to EXPORT_OPTIONS (ported from the faces lab's clay_export.OVERRIDES, round D).
+TEXTURED_OPTIONS = {
+    "export_image_format": "AUTO",
+    "export_tangents": True,
+    "export_morph": True,
+    "export_morph_normal": True,
+    "export_morph_tangent": True,
+    "export_try_sparse_sk": False,
+    "export_vertex_color": "MATERIAL",
+}
+
+
+def options(textured=False):
+    """The export options: EXPORT_OPTIONS, with TEXTURED_OPTIONS on top for a textured export."""
+    return dict(EXPORT_OPTIONS, **(TEXTURED_OPTIONS if textured else {}))
+
+
+def ensure_uvs(o, name="bake"):
+    """A part without any UV map gets a spherical one about its centre (an untextured glossy part: Godot's importer
+    cannot make tangents for its blend shapes without UVs). Returns True when a map was added."""
+    me = o.data
+    if me.uv_layers:
+        return False
+    n = len(me.vertices)
+    if not n:
+        return False
+    cx = sum(v.co.x for v in me.vertices) / n
+    cy = sum(v.co.y for v in me.vertices) / n
+    cz = sum(v.co.z for v in me.vertices) / n
+    layer = me.uv_layers.new(name=name)
+    for loop, uv in zip(me.loops, layer.data):
+        p = me.vertices[loop.vertex_index].co
+        dx, dy, dz = p.x - cx, p.y - cy, p.z - cz
+        r = max(math.sqrt(dx * dx + dy * dy + dz * dz), 1e-9)
+        uv.uv = (0.5 + math.atan2(dx, -dy) / (2 * math.pi), 0.5 + math.asin(max(-1.0, min(1.0, dz / r))) / math.pi)
+    me.update()
+    return True
+
+
+def fix_zero_tangents(path, tol=1e-3):
+    """Every TANGENT the exporter wrote whose xyz is not a unit vector (glTF-Validator ACCESSOR_VECTOR3_NON_UNIT, an
+    error; seen on single vertices of the lab's cast) is replaced in place by a unit vector perpendicular to that
+    vertex's NORMAL, w kept. Returns {"mesh/primitive": vertices fixed}."""
+    import json
+    import struct
+
+    data = bytearray(open(path, "rb").read())
+    jlen = struct.unpack_from("<I", data, 12)[0]
+    gltf = json.loads(data[20:20 + jlen].decode("utf-8"))
+    bin_off = 20 + jlen + 8
+    fixed = {}
+    for me in gltf.get("meshes", []):
+        for pi, pr in enumerate(me["primitives"]):
+            ti, ni = pr["attributes"].get("TANGENT"), pr["attributes"].get("NORMAL")
+            if ti is None or ni is None:
+                continue
+            ta, na = gltf["accessors"][ti], gltf["accessors"][ni]
+            tv, nv = gltf["bufferViews"][ta["bufferView"]], gltf["bufferViews"][na["bufferView"]]
+            if ta["componentType"] != 5126 or tv.get("byteStride", 16) != 16 or nv.get("byteStride", 12) != 12:
+                continue
+            t0 = bin_off + tv.get("byteOffset", 0) + ta.get("byteOffset", 0)
+            n0 = bin_off + nv.get("byteOffset", 0) + na.get("byteOffset", 0)
+            count = 0
+            for i in range(ta["count"]):
+                x, y, z, w = struct.unpack_from("<4f", data, t0 + 16 * i)
+                if abs(math.sqrt(x * x + y * y + z * z) - 1.0) <= tol:
+                    continue
+                a, b, c = struct.unpack_from("<3f", data, n0 + 12 * i)
+                ln = math.sqrt(a * a + b * b + c * c) or 1.0
+                a, b, c = a / ln, b / ln, c / ln
+                rx, ry, rz = (1.0, 0.0, 0.0) if abs(a) < 0.9 else (0.0, 1.0, 0.0)
+                d = a * rx + b * ry + c * rz
+                tx, ty, tz = rx - a * d, ry - b * d, rz - c * d
+                lt = math.sqrt(tx * tx + ty * ty + tz * tz)
+                struct.pack_into("<4f", data, t0 + 16 * i, tx / lt, ty / lt, tz / lt, -1.0 if w < 0 else 1.0)
+                count += 1
+            if count:
+                fixed[f"{me.get('name')}/{pi}"] = count
+    if fixed:
+        open(path, "wb").write(bytes(data))
+    return fixed
 
 
 def gltf_axes(v):
@@ -181,6 +268,7 @@ def main():
     p.add_argument("--blend", required=True)
     p.add_argument("--glb", required=True)
     p.add_argument("--json", required=True)
+    p.add_argument("--textured", action="store_true", help="the textured export (baked clay characters)")
     args = p.parse_args(sys.argv[sys.argv.index("--") + 1 :])
 
     bpy.ops.wm.open_mainfile(filepath=args.blend)
@@ -203,17 +291,21 @@ def main():
         pb.scale = (1.0, 1.0, 1.0)
     bpy.context.view_layer.update()
 
+    uv_added = [o.name for o in parts if ensure_uvs(o)] if args.textured else []
     info = describe(bpy, arm, parts)
+    opts = options(args.textured)
     os.makedirs(os.path.dirname(os.path.abspath(args.glb)), exist_ok=True)
-    result = bpy.ops.export_scene.gltf(filepath=args.glb, **EXPORT_OPTIONS)
+    result = bpy.ops.export_scene.gltf(filepath=args.glb, **opts)
     if result != {"FINISHED"}:
         raise SystemExit(f"the glTF exporter returned {result}")
+    if args.textured:
+        info["textured"] = {"uv_added": uv_added, "tangents_fixed": fix_zero_tangents(args.glb)}
     info.update({
         "blend": os.path.abspath(args.blend).replace("\\", "/"),
         "glb": os.path.abspath(args.glb).replace("\\", "/"),
         "blender": bpy.app.version_string,
         "exporter": exporter_version(),
-        "options": EXPORT_OPTIONS,
+        "options": opts,
         "seams": seams(bpy, arm),
     })
     with open(args.json, "w", encoding="utf-8") as fh:
