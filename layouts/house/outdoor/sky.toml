@@ -1,5 +1,5 @@
 # The evening sky and the backdrop beyond the fence (art #81c, docs/house-outdoor.md). Q14 default A: a painted dusk
-# sky plus a low ring of painted flats (a tree line, hills, a far haze) with a few lit windows as emissive dots; the
+# sky plus a low ring of painted flats (a tree line, hills, a far haze) with a few lit windows as bright dots; the
 # flats are excluded from the bake; fog from 35 m. Every colour and size is a reversible default (look.md section 2).
 
 [sky]
@@ -31,7 +31,8 @@ seed = 81
 
 # At most 6 flats (#81c acceptance). Each is one ring: `radius`, `height` (its top in metres above y 0), `base`
 # (its foot, under the skirt's edge), a silhouette texture (`profile`: trees or hills or haze), its value deepening
-# with height (`hex_low` at the foot to `hex_high` at the top), and lit windows as emissive dots.
+# with height (`hex_low` at the foot to `hex_high` at the top), and lit windows painted into it (the material is
+# unlit, so they glow).
 [[backdrop.flats]]
 id = "treeline"
 radius = 56.0

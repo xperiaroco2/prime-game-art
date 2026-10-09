@@ -194,8 +194,11 @@ def profile(kind: str, noise: Noise, u: float) -> float:
     return 0.55 + 0.35 * noise(u, 0.6)
 
 
-def flat_rows(flat: dict, seed: int) -> tuple[int, int, list[bytes], list[bytes], int]:
-    """One flat's RGBA texture (row 0 its top) and its RGB emission (the lit windows); returns the windows placed."""
+def flat_rows(flat: dict, seed: int) -> tuple[int, int, list[bytes], int]:
+    """One flat's RGBA texture (row 0 its top) with its lit windows painted in, opaque; returns the windows placed.
+
+    The windows live in the colour texture, not in an emission texture: the flats' materials are unlit
+    (KHR_materials_unlit), so the colour is what shows, and Godot's unshaded materials ignore emission."""
     width, height = flat["texture"]
     kind = flat["profile"]
     cells = {"trees": (48, 2), "hills": (9, 2), "haze": (5, 2)}[kind]
@@ -204,7 +207,7 @@ def flat_rows(flat: dict, seed: int) -> tuple[int, int, list[bytes], list[bytes]
     high = tuple(to_linear(c) for c in hex_rgb(flat["hex_high"]))
     alpha_max = 0.7 if kind == "haze" else 1.0
     tops = [profile(kind, noise, (c + 0.5) / width) for c in range(width)]
-    rgba, emit = [], []
+    rgba = []
     for r in range(height):
         f = 1 - (r + 0.5) / height  # height fraction of this row
         col = mix(low, high, smooth(f))
@@ -216,14 +219,13 @@ def flat_rows(flat: dict, seed: int) -> tuple[int, int, list[bytes], list[bytes]
             if kind == "haze":
                 a *= smooth(edge / (height * 0.25))
             out += px + bytes((byte(a),))
-        rgba.append(bytes(out))
-        emit.append(bytearray(width * 3))
+        rgba.append(out)
     placed = 0
     win = flat.get("windows")
     if win:
         rnd = random.Random(seed + 7)
         wx, wy = win["size_px"]
-        lit = tuple(byte(c) for c in hex_rgb(win["hex"]))
+        lit = bytes(byte(c) for c in hex_rgb(win["hex"])) + b"\xff"
         tries = 0
         while placed < win["count"] and tries < win["count"] * 50:
             tries += 1
@@ -234,6 +236,6 @@ def flat_rows(flat: dict, seed: int) -> tuple[int, int, list[bytes], list[bytes]
                 continue  # the window must sit under the silhouette
             for r in range(r0, r0 + wy):
                 for c in range(c0, c0 + wx):
-                    emit[r][c * 3:c * 3 + 3] = bytes(lit)
+                    rgba[r][c * 4:c * 4 + 4] = lit
             placed += 1
-    return width, height, rgba, [bytes(e) for e in emit], placed
+    return width, height, [bytes(r) for r in rgba], placed

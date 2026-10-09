@@ -559,17 +559,14 @@ def write(data: dict, out: Path) -> dict:
     seam = sky.seam_step(rows)
     images, mats, windows = [], [], {}
     for k, f in enumerate(cfg["backdrop"]["flats"]):
-        fw, fh, rgba, emit, placed = sky.flat_rows(f, int(cfg["backdrop"]["seed"]) + k)
+        fw, fh, rgba, placed = sky.flat_rows(f, int(cfg["backdrop"]["seed"]) + k)
         windows[f["id"]] = placed
         a = sky.png_bytes(fw, fh, rgba, 4)
-        e = sky.png_bytes(fw, fh, emit, 3)
         (out / f"flat_{f['id']}.png").write_bytes(a)
-        (out / f"flat_{f['id']}_emit.png").write_bytes(e)
-        images += [a, e]
+        images.append(a)
         mats.append({"name": f"flat_{f['id']}", "doubleSided": False,
                      "alphaMode": "BLEND" if f["profile"] == "haze" else "MASK",
-                     "pbrMetallicRoughness": {"baseColorTexture": {"index": 2 * k}, "metallicFactor": 0.0},
-                     "emissiveTexture": {"index": 2 * k + 1}, "emissiveFactor": [1.0, 1.0, 1.0],
+                     "pbrMetallicRoughness": {"baseColorTexture": {"index": k}, "metallicFactor": 0.0},
                      "extensions": {"KHR_materials_unlit": {}}})
     flats = flat_meshes(cfg)
     (out / "backdrop.glb").write_bytes(glb_bytes(flats, mats, images))

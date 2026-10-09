@@ -185,8 +185,14 @@ class SkyTest(unittest.TestCase):
         flat = copy.deepcopy(self.CFG["backdrop"]["flats"][0])
         flat["texture"] = [512, 64]
         flat["windows"]["count"] = 5
-        w, h, rgba, emit, placed = sky.flat_rows(flat, 3)
+        w, h, rgba, placed = sky.flat_rows(flat, 3)
         self.assertEqual(placed, 5)
+        # The windows are painted into the colour texture, opaque (unlit materials show colour, not emission).
+        lit = bytes(round(c * 255) for c in sky.hex_rgb(flat["windows"]["hex"])) + b"\xff"
+        wx, wy = flat["windows"]["size_px"]
+        n = sum(1 for row in rgba for i in range(0, len(row), 4) if row[i:i + 4] == lit)
+        self.assertGreaterEqual(n, wx * wy)  # at least one whole window (they may overlap)
+        self.assertLessEqual(n, 5 * wx * wy)
         with tempfile.TemporaryDirectory() as tmp:
             path = sky.write_png(Path(tmp) / "f.png", w, h, rgba, 4)
             self.assertEqual(sky.read_png(path), (w, h, 4, rgba))
