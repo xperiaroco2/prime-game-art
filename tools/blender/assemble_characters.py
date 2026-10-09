@@ -36,6 +36,8 @@ def parse():
     p.add_argument("--ids", default="")
     p.add_argument("--blend", action="store_true")
     p.add_argument("--res", type=int, default=100)
+    p.add_argument("--look", default="")
+    p.add_argument("--clay-lib", default="")
     p.add_argument("--inspect")
     p.add_argument("--json")
     return p.parse_args(sys.argv[sys.argv.index("--") + 1:])
@@ -76,6 +78,8 @@ def main():
     for i, rc in enumerate(recs if need_chars else []):
         coll = bpy.data.collections.new(rc["id"]); bpy.context.scene.collection.children.link(coll)
         arm, parts, rep = assemble.build_character(packs, R, rc, coll)
+        if (args.look or R.get("look", "pack")) == "clay":
+            assemble.clay_look(R, rc, arm, parts, rep, lib=args.clay_lib or None)
         report["characters"][rc["id"]] = rep
         chars[rc["id"]] = (arm, parts, coll, rc)
         print("BUILT", rc["id"], "height", rep["height_m"], "tris", rep["triangles_total"])

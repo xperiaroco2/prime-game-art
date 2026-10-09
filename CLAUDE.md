@@ -92,9 +92,9 @@ Windows: `tools\run.cmd <command>`. Git Bash: `tools/run.sh <command>`. Python 3
 | `manifest-check [--hashes] [--root DIR]` | Validates every `assets/**/manifest.toml` and `sources/*.toml`; `--hashes` re-hashes the raw files |
 | `pins [--get NAME]` | Pinned tool versions and paths |
 | `probe`, `render` | Headless Blender: probe a model; 8-view review sheets and animation contact sheets (`docs/blender.md`) |
-| `assemble <recipe> [--ids] [--modes] [--out] [--blend] [--res] [--compare]` | Assembles Ultimate Modular characters from a recipe: renders, `build_report.json`, one clean `.blend` per character (`docs/assembly.md`) |
-| `export <character.blend>... [--out DIR]` | GLB with fixed options from saved characters; glTF-Validator `report.json` (`docs/godot.md`) |
-| `godot-check <glb>... [--strict-contract] [--humanoid]` | Imports into `godot/` headless and asserts the skeleton, separate skinned parts, animations, size, feet, facing and loop modes (`docs/godot.md`) |
+| `assemble <recipe> [--ids] [--modes] [--out] [--blend] [--res] [--compare] [--look] [--bake] [--clay-lib]` | Assembles Ultimate Modular characters from a recipe: renders, `build_report.json`, one clean `.blend` per character; `--look clay` the clay look, `--bake` its textures from the per-piece clay library (`docs/assembly.md`) |
+| `export <character.blend>... [--out DIR] [--textured]` | GLB with fixed options from saved characters; glTF-Validator `report.json`; `--textured` for baked clay characters (`docs/godot.md`) |
+| `godot-check <glb>... [--strict-contract] [--humanoid] [--textured]` | Imports into `godot/` headless and asserts the skeleton, separate skinned parts, animations, size, feet, facing and loop modes; `--textured`: textures, normal maps, sizes, surfaces (`docs/godot.md`) |
 | `frames <glb> [--clips] [--compare] [--video] [--blend]` | Godot-rendered motion frame sheets in an off-screen window; a Blender comparison of joints and bone rotations; MP4 clips (`docs/godot.md`) |
 | `catalogue [--check] [--renders ...]` | The parts catalogue and compatibility rules, `catalogue/ultimate_modular.json`; `--check` regenerates and compares (`docs/catalogue.md`) |
 | `faces [--families] [--expressions] [--sheets] [--check]` | The face kit's style families rendered as review sheets (`docs/faces.md`) |

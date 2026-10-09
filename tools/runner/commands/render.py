@@ -20,6 +20,7 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--cell", type=int, default=512, help="pixel size of one square view (default 512)")
     parser.add_argument("--anim", metavar="ACTION", default="", help="also an animation contact sheet of this action")
     parser.add_argument("--frames", type=int, default=8, help="frames in the animation sheet (default 8)")
+    parser.add_argument("--pose", metavar="ACTION", default="", help="pose the eight views at this action's first frame")
     parser.add_argument("--no-outline", action="store_true", help="no dark object outline (it is only a review aid)")
 
 
@@ -39,7 +40,8 @@ def run(args: argparse.Namespace) -> int:
     if args.frames < 1:
         raise common.Failure("--frames must be at least 1")
     out = (args.out or _review.default_out(model)).resolve()
-    stats = _review.render(model, out, args.cell, args.anim, args.frames, outline=not args.no_outline)
+    stats = _review.render(model, out, args.cell, args.anim, args.frames, outline=not args.no_outline,
+                           pose=args.pose)
     size = stats["bounding_box"]["size"]
     common.say(f"{model.name}: {stats['triangles']} triangles, {stats['vertices']} vertices, {stats['objects']} objects, "
                f"{stats['materials']} materials, {stats['bones']} bones")
