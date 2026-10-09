@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 import subprocess
 import sys
+import threading
 import time
 from contextlib import contextmanager
 from pathlib import Path
@@ -99,8 +100,10 @@ def raw_backup_dir() -> Path | None:
 # --- The heavy-run lock: one Blender or Godot process at a time on this machine --------------------------------------
 # Several workflows may run at once, but their Blender and Godot processes take turns (the engineer, 2026-10-09: one
 # Blender batch at a time on the shared PC). The lock is an OS file lock in the raw folder, shared by every checkout and
-# worktree on the machine, and released by the OS when its holder exits or dies. A heavy process's children inherit
-# HEAVY_HELD_ENV and do not take the lock again (no deadlock). No raw folder (the laptop's raw-free lane): no lock.
+# worktree on the machine, and released by the OS when its holder exits or dies; inside one runner process a thread
+# lock serializes its threads first (anim-review and anim-set run Blender from thread pools). The children of a holder
+# get HEAVY_HELD_ENV in their own environment and do not take the lock again (no deadlock); this process's
+# environment is never changed. No raw folder (the laptop's raw-free lane): no lock.
 
 HEAVY_LOCK_ENV = "ART_HEAVY_LOCK"  # a lock file path, or "off"
 HEAVY_HELD_ENV = "ART_HEAVY_LOCK_HELD"
@@ -108,6 +111,7 @@ HEAVY_WAIT_ENV = "ART_HEAVY_LOCK_WAIT"  # the most seconds to wait for the lock
 HEAVY_WAIT_DEFAULT = 7200.0
 HEAVY_POLL = 2.0
 HEAVY_NAMES = ("blender", "godot")
+_HEAVY_THREADS = threading.Lock()
 
 
 def is_heavy(cmd: list[str]) -> bool:
@@ -124,7 +128,13 @@ def heavy_lock_path() -> Path | None:
     return raw / "locks" / "heavy.lock" if raw.is_dir() else None
 
 
+def heavy_env() -> dict[str, str]:
+    """The environment for a child of a lock holder: this process's, plus HEAVY_HELD_ENV."""
+    return {**os.environ, HEAVY_HELD_ENV: "1"}
+
+
 def _try_lock(handle) -> bool:
+    # The handle is never written, so the file stays empty and byte 0 is the locked region whatever append mode does.
     handle.seek(0)
     try:
         if IS_WINDOWS:
@@ -158,38 +168,51 @@ def _unlock(handle) -> None:
 @contextmanager
 def heavy_lock(what: str, wait: float | None = None) -> Iterator[None]:
     """Holds the heavy-run lock for the block; waits at most wait seconds (ART_HEAVY_LOCK_WAIT, default 2 h), then
-    raises Failure. A no-op when the lock is off, there is no raw folder, or a parent process already holds it."""
+    raises Failure. A no-op when the lock is off, there is no raw folder, or a parent process holds it. Children
+    started inside the block must get heavy_env() to skip it."""
     path = heavy_lock_path()
-    if path is None or env(HEAVY_HELD_ENV):
+    if path is None or os.environ.get(HEAVY_HELD_ENV):
         yield
         return
     if wait is None:
-        wait = float(env(HEAVY_WAIT_ENV) or HEAVY_WAIT_DEFAULT)
-    path.parent.mkdir(parents=True, exist_ok=True)
+        raw_wait = env(HEAVY_WAIT_ENV)
+        try:
+            wait = float(raw_wait) if raw_wait else HEAVY_WAIT_DEFAULT
+        except ValueError:
+            raise Failure(f"{HEAVY_WAIT_ENV}={raw_wait!r} is not a number of seconds") from None
     holder = path.with_name(path.name + ".holder")
-    with open(path, "a+b") as handle:
-        start = time.monotonic()
-        told = False
-        while not _try_lock(handle):
-            waited = time.monotonic() - start
-            if waited >= wait:
-                raise Failure(f"the heavy-run lock {path} stayed taken for {waited:.0f} s: {_read_holder(holder)}")
-            if not told:
-                print(f"heavy-run lock: waiting for {_read_holder(holder)}", file=sys.stderr, flush=True)
-                told = True
-            time.sleep(HEAVY_POLL)
-        if told:
-            print(f"heavy-run lock: taken after {time.monotonic() - start:.0f} s", file=sys.stderr, flush=True)
+    start = time.monotonic()
+    if not _HEAVY_THREADS.acquire(timeout=wait):
+        raise Failure(f"the heavy-run lock stayed taken inside this process for {wait:.0f} s")
+    try:
         try:
-            holder.write_text(f"pid {os.getpid()} since {time.strftime('%Y-%m-%d %H:%M:%S')}: {what}\n", encoding="utf-8")
-        except OSError:
-            pass
-        os.environ[HEAVY_HELD_ENV] = "1"
-        try:
-            yield
-        finally:
-            os.environ.pop(HEAVY_HELD_ENV, None)
-            _unlock(handle)
+            path.parent.mkdir(parents=True, exist_ok=True)
+            handle = open(path, "a+b")
+        except OSError as exc:
+            raise Failure(f"cannot open the heavy-run lock {path}: {exc}") from exc
+        with handle:
+            told = False
+            while not _try_lock(handle):
+                waited = time.monotonic() - start
+                if waited >= wait:
+                    raise Failure(f"the heavy-run lock {path} stayed taken for {waited:.0f} s: {_read_holder(holder)}")
+                if not told:
+                    print(f"heavy-run lock: waiting for {_read_holder(holder)}", file=sys.stderr, flush=True)
+                    told = True
+                time.sleep(max(0.05, min(HEAVY_POLL, wait - waited)))
+            if told:
+                print(f"heavy-run lock: taken after {time.monotonic() - start:.0f} s", file=sys.stderr, flush=True)
+            try:
+                stamp = time.strftime("%Y-%m-%d %H:%M:%S")
+                holder.write_text(f"pid {os.getpid()} since {stamp}: {what}\n", encoding="utf-8")
+            except OSError:
+                pass
+            try:
+                yield
+            finally:
+                _unlock(handle)
+    finally:
+        _HEAVY_THREADS.release()
 
 
 def _read_holder(holder: Path) -> str:
@@ -199,20 +222,26 @@ def _read_holder(holder: Path) -> str:
         return "an unknown holder"
 
 
-def run(cmd: list[str], timeout: float, cwd: Path | None = None) -> subprocess.CompletedProcess[str]:
+def run(
+    cmd: list[str], timeout: float, cwd: Path | None = None, heavy: bool | None = None
+) -> subprocess.CompletedProcess[str]:
     """Runs cmd, captures text output, kills it after timeout seconds (raises Failure then). A Blender or Godot cmd
-    first takes the heavy-run lock (heavy_lock); the timeout counts from the start of the process, not the wait."""
-    if is_heavy(cmd):
+    (is_heavy, or heavy=True) first takes the heavy-run lock; heavy=False skips it (a version probe). The timeout
+    counts from the start of the process, not the wait."""
+    if is_heavy(cmd) if heavy is None else heavy:
         with heavy_lock(" ".join(Path(str(c)).name if i == 0 else str(c) for i, c in enumerate(cmd[:6]))):
-            return _run(cmd, timeout, cwd)
-    return _run(cmd, timeout, cwd)
+            return _run(cmd, timeout, cwd, heavy_env())
+    return _run(cmd, timeout, cwd, None)
 
 
-def _run(cmd: list[str], timeout: float, cwd: Path | None) -> subprocess.CompletedProcess[str]:
+def _run(
+    cmd: list[str], timeout: float, cwd: Path | None, child_env: dict[str, str] | None
+) -> subprocess.CompletedProcess[str]:
     try:
         return subprocess.run(
             [str(c) for c in cmd],
             cwd=str(cwd) if cwd else None,
+            env=child_env,
             capture_output=True,
             text=True,
             encoding="utf-8",
