@@ -10,8 +10,10 @@ axes: x, -z, y), makes the detail textures and materials, and exports. Per piece
 <out>/build.json (what each GLB holds, measured in Blender before the export).
 
 Materials: one per kit material (plaster, wood, concrete, metal, glass), base colour white times the detail texture;
-the paint is the vertex colour (COLOR_0, which glTF multiplies into the base colour), so the kit needs five materials
-however many paints it uses. KIT_EXPORT_OPTIONS is a plain constant (bpy is imported only in main()).
+the paint is the vertex colour (COLOR_0, multiplied into the base colour), so the kit needs five materials however
+many paints it uses. Each material is named `kit_<name>-vcol`: Godot's scene importer strips the suffix and sets
+vertex colour as albedo with sRGB vertex colours (Godot 4.7.2's glTF importer misses that flag on a mesh's first
+primitive), so COLOR_0 holds sRGB-encoded paint (kit_geom.role_colour). KIT_EXPORT_OPTIONS is a plain constant (bpy is imported only in main()).
 """
 
 import json
@@ -113,7 +115,7 @@ def make_textures(bpy, np, spec, ambientcg: Path, out: Path) -> dict:
 def make_materials(bpy, spec, textures: dict) -> dict:
     mats = {}
     for name, m in spec["materials"].items():
-        mat = bpy.data.materials.new(f"kit_{name}")
+        mat = bpy.data.materials.new(f"kit_{name}-vcol")
         mat.use_nodes = True
         nt = mat.node_tree
         bsdf = nt.nodes.get("Principled BSDF")

@@ -43,14 +43,20 @@ def srgb_to_linear(c: float) -> float:
     return c / 12.92 if c <= 0.04045 else ((c + 0.055) / 1.055) ** 2.4
 
 
+def linear_to_srgb(c: float) -> float:
+    return c * 12.92 if c <= 0.0031308 else 1.055 * c ** (1 / 2.4) - 0.055
+
+
 def role_colour(spec: dict, role: str) -> list[float]:
-    """The role's vertex colour (linear RGBA): its paint, divided by the detail texture's mean where it has one."""
+    """The role's vertex colour, sRGB-encoded RGBA: its paint, divided (in linear) by the detail texture's mean where it
+    has one. sRGB because the kit's materials carry Godot's `-vcol` suffix, which makes the importer read COLOR_0 as
+    sRGB (docs/kit.md, "Paint")."""
     r = spec["roles"][role]
     mat = spec["materials"][r["material"]]
     h = r["hex"].lstrip("#")
     lin = [srgb_to_linear(int(h[i:i + 2], 16) / 255) for i in (0, 2, 4)]
     div = TEX_MEAN if mat.get("source") else 1.0
-    return [round(min(1.0, c / div), 5) for c in lin] + [1.0]
+    return [round(linear_to_srgb(min(1.0, c / div)), 5) for c in lin] + [1.0]
 
 
 # --- geometry helpers ----------------------------------------------------------------------------------------------

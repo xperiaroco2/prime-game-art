@@ -52,7 +52,7 @@ def rays(described: dict[str, Any]) -> list[list[list[float]]]:
 
 def check_glb(gltf: dict[str, Any], described: dict[str, Any], max_materials: int) -> list[str]:
     """The exported file holds the piece: its mesh nodes with UV2 (TEXCOORD_1) and vertex colours, one node per
-    collider, at most the kit's materials."""
+    collider, at most the kit's materials, each named `<name>-vcol`."""
     pid = described["id"]
     problems = []
     nodes = {n.get("name"): n for n in gltf.get("nodes", [])}
@@ -70,6 +70,9 @@ def check_glb(gltf: dict[str, Any], described: dict[str, Any], max_materials: in
             problems.append(f"{pid}: no collider node {c['name']}")
     if len(gltf.get("materials", [])) > max_materials:
         problems.append(f"{pid}: {len(gltf['materials'])} materials, the kit has {max_materials}")
+    for mat in gltf.get("materials", []):
+        if not str(mat.get("name", "")).endswith("-vcol"):
+            problems.append(f"{pid}: material {mat.get('name')} lacks the -vcol suffix (sRGB vertex paint in Godot)")
     return problems
 
 
@@ -94,8 +97,8 @@ def evaluate(dump: dict[str, Any], described: dict[str, Any]) -> list[str]:
         for s in m["surfaces"]:
             if not s["uv2"]:
                 problems.append(f"{pid}: {m['name']} surface {s['material']} has no UV2")
-            if not s["color"] or not s["vertex_colour_albedo"]:
-                problems.append(f"{pid}: {m['name']} surface {s['material']} does not paint with its vertex colours")
+            if not s["color"] or not s["vertex_colour_albedo"] or not s.get("vertex_colour_srgb"):
+                problems.append(f"{pid}: {m['name']} surface {s['material']} does not paint with its sRGB vertex colours")
     if len(dump["bodies"]) != len(described["colliders"]):
         problems.append(f"{pid}: {len(dump['bodies'])} static bodies, the spec has {len(described['colliders'])} colliders")
     for b in dump["bodies"]:

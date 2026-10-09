@@ -68,6 +68,7 @@ func _describe(scene: Node3D, rays: Array) -> Dictionary:
 					"uv2": (fmt & Mesh.ARRAY_FORMAT_TEX_UV2) != 0,
 					"color": (fmt & Mesh.ARRAY_FORMAT_COLOR) != 0,
 					"vertex_colour_albedo": vc,
+					"vertex_colour_srgb": mat is BaseMaterial3D and (mat as BaseMaterial3D).vertex_color_is_srgb,
 					"transparent": mat is BaseMaterial3D and (mat as BaseMaterial3D).transparency != BaseMaterial3D.TRANSPARENCY_DISABLED,
 					"triangles": count,
 				})
