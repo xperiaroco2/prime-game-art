@@ -24,7 +24,11 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
 
 def run(args: argparse.Namespace) -> int:
     try:
-        result = subprocess.run(command(args.verbose, args.pattern), cwd=common.ROOT, timeout=TIMEOUT)
+        # The whole run holds the heavy-run lock: its Blender tests skip it, and the wait is outside the timeout.
+        with common.heavy_lock("selftest"):
+            result = subprocess.run(
+                command(args.verbose, args.pattern), cwd=common.ROOT, timeout=TIMEOUT, env=common.heavy_env()
+            )
     except subprocess.TimeoutExpired as exc:
         raise common.Failure(f"the tests did not finish in {TIMEOUT} s") from exc
     if result.returncode != 0:

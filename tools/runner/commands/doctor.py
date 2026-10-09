@@ -43,9 +43,9 @@ class Report:
 def _run(
     cmd: list[str | Path], timeout: float = 60, cwd: Path | None = None
 ) -> subprocess.CompletedProcess[str] | None:
-    """Runs cmd; None when it cannot start or times out."""
+    """Runs cmd; None when it cannot start or times out. Never waits for the heavy-run lock (version probes only)."""
     try:
-        return common.run([str(c) for c in cmd], timeout, cwd)
+        return common.run([str(c) for c in cmd], timeout, cwd, heavy=False)
     except (OSError, common.Failure):
         return None
 

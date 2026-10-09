@@ -1,0 +1,102 @@
+# Modular kits: the House kit
+
+The House map (map request #73) is assembled from modular shell pieces: walls, floors, roofs, stairs, railings,
+fences, gates and glass walls on one grid. Art #74 built the first kit, the **House kit**, as repo code: a spec
+(`kits/house.json`), a pure-Python geometry module, a headless Blender builder, and the `kit` command that builds one
+GLB per piece and checks every piece in glTF-Validator and Godot. The GLBs stay in the raw folder
+(`D:/prime-art-raw/kits/house/v1/`) until the engineer approves the kit's look on a review page; then they come into
+the repo with their manifests.
+
+## The command
+
+```
+tools/run.sh kit [--spec kits/house.json] [--out DIR] [--only id,...] [--no-build] [--no-godot] [--proof DIR]
+```
+
+| Option | What it does |
+|---|---|
+| (none) | Checks the spec, builds every piece in headless Blender (`tools/blender/kit_build.py`), checks every GLB and imports them all into `godot/` headless (`godot/check/kit.gd`); about 3 minutes |
+| `--out` | Output folder (default `<raw>/kits/<kit>/v<version>`, `D:/prime-art-raw/kits/house/v1`) |
+| `--only` | Only these pieces (`--proof` needs the whole kit) |
+| `--no-build` | Checks the GLBs already in `--out` (about 1 minute with Godot) |
+| `--no-godot` | Skips the Godot import (and the proof) |
+| `--proof DIR` | Also assembles a test room, a corridor and a stair flight in an off-screen Godot window, walks them and shoots them into `DIR` (below) |
+
+Run it in the background (`> tools/out/kit/run.log 2>&1; echo "exit=$?" >> ...`, then `tools/run.sh wait`). It
+writes into `--out`: `<id>.glb` per piece, `textures/` (the detail and normal PNGs), `build.json` (what Blender
+exported), `reports/<id>.json` (glTF-Validator), `godot.json` (Godot's measures) and the piece table `pieces.md` /
+`pieces.json` (triangles against the budget, size, colliders, nodes). It fails when any check finds a problem.
+
+## The spec: `kits/house.json`
+
+- `grid`: the engineer's grid of #73: whole metres, 1 m and 2 m wall modules, floor to floor 3.2 m (a 0.2 m slab and
+  a 3.0 m storey wall), attic knee walls 2.2 m, walls 0.2 m thick, interior doors 1.4 x 2.15 m, windows 1.0 x 1.2 m
+  on a 0.9 m sill, the 8 m gates, a 0.3 m roof slab, a 1.0 m parapet, gables at 0.7 m rise per metre (35 deg), glass
+  walls 2.4 m, the fence 1.8 m. A size that does not work is proposed to the engineer in the PR; it is never changed
+  silently.
+- `budget_tris`: triangles per kind of piece (wall 400, corner 60, floor 120, roof 200, stairs 2500, ladder 600,
+  railing 1500, fence 1200, gate 4000, glass 600, garage 600). Version 1's 71 pieces hold 3,772 triangles in all; the
+  most is the driveway gates (570). The locations' minimum-spec budgets (`docs/research/2026-10-06-locations.md`, "Godot
+  budgets") allow 400k visible world triangles and 6 world materials: a whole storey of these pieces stays a small
+  part of the triangles, and the kit uses 5 materials.
+- `materials`: five (plaster, wood, concrete, metal, glass). The first three take a detail texture made from an
+  ambientCG CC0 map (`sources/ambientcg_materials_2k.toml`): grey, linear mean 0.92, 512 px, with its normal map.
+- `roles`: the paints, each a material and a hex colour; the house lab's look v1 round 3 (#41: wall `#3a6264`,
+  exterior `#4f6a72`, ceiling `#3c4652`, trims `#3d2a1e`, boards `#534941` ...).
+- `pieces`: one entry per piece: `id`, `type` (the builder), `kind` (the budget) and its sizes.
+
+## Conventions
+
+- **Axes and pivot**: Godot's (metres, +Y up). A wall runs along +X from its pivot, the grid node, centred on the grid
+  line, its exterior side at +Z; a floor spans +X/+Z from the pivot with its top at y 0; a flight climbs along +X.
+  Pieces placed on grid nodes meet without gaps; faces that would lie in one plane where pieces meet are left out
+  (the corner and end pieces close a wall run).
+- **Leaves** (the wicket, the driveway gates, the greenhouse door, the garage door) are separate mesh nodes with their
+  hinge as origin, their collider parented to them, so the game can swing them.
+- **Collision**: every piece has simple convex colliders, nodes named `<id>_col<k>-convcolonly` (Godot imports each
+  as a `StaticBody3D` with a `ConvexPolygonShape3D` and no mesh); glass panes are `<id>_glass<k>-convcolonly`, a
+  separate group the game may keep out of line-of-sight rays. A flight's walkable collider is a ramp through its
+  nosings.
+- **UV0**: box projection in metres (one texture tile per metre). **UV2** (the lightmap UV, `TEXCOORD_1`): one island
+  per face, shelf-packed into the unit square at one scale with a margin, so LightmapGI can bake the pieces.
+
+## Paint: vertex colours and the `-vcol` suffix
+
+The paint is the vertex colour (`COLOR_0`), multiplied into the material's white-times-detail base colour, so five
+materials serve every paint. Godot 4.7.2's glTF importer sets a material's "vertex colour as albedo" only after it
+has handled the primitive's material (`gltf_document.cpp`: the flag at line 1632 comes after the material at line
+1460), so the first primitive of each mesh drew without its paint (Godot's master has fixed the order). The kit works
+around it: each material is named `kit_<name>-vcol`; Godot's scene importer strips the suffix and turns on vertex
+colour as albedo **and** sRGB vertex colours for that material. COLOR_0 therefore holds **sRGB-encoded** paint
+(`kit_geom.role_colour`: the role's hex, divided in linear by the detail texture's mean, encoded back), not the
+glTF spec's linear colours: Godot shows the paint right; other viewers show it lighter.
+
+## The checks
+
+1. **Spec** (`kit_geom.check_spec`, `check_piece`): the grid adds up, ids are unique, sizes are whole metres and wall
+   lengths a module, every piece is within its budget, has colliders that are not flat, and UV2 on every face inside
+   0..1; its extent fits its module.
+2. **GLB** (`_kit.check_glb`): every mesh node has `TEXCOORD_0`, `TEXCOORD_1`, `COLOR_0` and `NORMAL`, every collider
+   its node, at most the kit's materials, each with the `-vcol` suffix; glTF-Validator has no errors. Its 98 warnings
+   are all `MESH_PRIMITIVE_GENERATED_TANGENT_SPACE`: the kit exports no tangents and Godot makes them on import
+   (`meshes/ensure_tangents`); harmless.
+3. **Godot** (`godot/check/kit.gd`, `_kit.evaluate`): the imported bounds equal the spec's within 2 mm (size, pivot,
+   Y up), the triangle count is the spec's, every surface has UV2 and paints with its sRGB vertex colours, one static
+   body with a closed convex shape per collider, and one ray per collider, from 0.5 m outside along its thinnest axis
+   to its centre, hits it.
+
+## The proof: `--proof DIR`
+
+`godot/kit/proof.gd` runs in a window placed off-screen (`--position -30000,-30000`, 1600 x 900, the Dummy audio
+driver), never on screen and never headless. It instances the pieces into a test house: a 6 x 4 m room (x 0..6,
+z 0..4) with exterior walls and windows south and east and an interior wall with the 1.4 m door at z 4, a 2 m
+corridor (z 4..6), `stairs_main` from x 6 to 12 up to a landing (x 12..16) at 3.2 m, the upper storey's walls and
+the ceilings, four warm omni lamps (the house lab's lamp colour c2) and the house lab r3_v1 environment (filmic
+tonemap, exposure 1.5, saturation 1.35, SSAO, the sky colours, depth fog). It uses SDFGI instead of a baked
+LightmapGI (a bake cannot run from a script), so it checks the real-time look only.
+
+Walks: a capsule of radius 0.4 m (a player carrying a package, 0.8 m wide) walks from the room through the door,
+along the corridor and up the flight to the landing and must arrive; a control of radius 0.75 m (1.5 m wide) must
+stop at the door. Shots at eye height 1.6 m: `room_corner`, `room_window`, `room_door`, `corridor`, `stairs_up`,
+`stairs_down`; `lineup` shows every piece with a 5 m bar of 1 m blocks (no fog, a neutral background, its own key
+light). `sheet.png` (1280 px wide) puts the line-up over the six views; `proof.json` holds the walks.
