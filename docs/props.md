@@ -45,10 +45,38 @@ build in the kit's materials, so version 1 has 32 pack props and 77 procedural o
 - with `stretch`, the largest axis factor over the smallest is at most 1.5;
 - a source over its class's budget needs `decimate = true`; every source is CC0 with `public_repo_ok = true`.
 
+## The build
+
+`tools/run.sh props --build [--batch 1|2] [--only id,...]` builds the props in one headless Blender run
+(`tools/blender/prop_build.py`) into `D:/prime-art-raw/props/library/v1/`: one `<id>.glb` per prop, `textures/`
+(the kit's detail maps), `build.json` (what each GLB holds; batches accumulate) and `props.md` (the build table); then
+it checks every GLB: the mesh and collider nodes, UV2 and vertex colours, at most `max_materials` materials all named
+`-vcol`, glTF-Validator, the class's maximum triangles, a collider unless `none`, a fixture's light anchor. Under the
+class's minimum is a note, not a problem: simple props are cheap. `--no-blender` checks the files already built.
+
+The code is in three files:
+
+| File | What |
+|---|---|
+| `tools/blender/prop_geom.py` | Pure Python (tested without Blender, `tools/tests/test_props_geom.py`): the primitives (a soft box with 4 mm chamfers, cylinders and frustums, tubes, ellipsoids, beams and rods at any angle, slabs, lofts), one builder per `shape`, the pack paint (k-means of the faces' colours, dark to light onto the roles, dark to light), the pivot, the collider and the light anchor, the description the export uses. |
+| `tools/blender/prop_lib.py` | **The shared Blender helper for props** (the task props of #82 use it too): the materials (`materials`), a pack file's import with its face colours and the decimation (`import_pack`), one prop's export (`export_prop`). |
+| `tools/blender/prop_build.py` | The entry the runner calls; a prop that fails is recorded in `build.json` with its error and the run goes on. |
+
+Every builder works in the floor frame (x across L, y up to H, z across W, the front at +z) and takes the prop's roles
+by position (`R[0]` the body, the last one usually the hardware); `finish` then moves it to its pivot. A pack prop's
+files are stacked, turned by `yaw_deg`, scaled (`scale`, or fitted per axis with `stretch` to `size_m` or
+`pack_size_m`), decimated to 85 % of the class's maximum when `decimate` is set, and painted; `extras` (`wall_mirror`,
+`hood`) add procedural parts around it. Every GLB carries:
+
+- one mesh `<id>` with UV0 (metres) and UV2 (one island per face, margin 2 % of the prop's size), sRGB vertex colours;
+- its colliders `<id>_col<n>-convcolonly` (closed convex: a box, or the hull of the mesh);
+- a fixture's `LightAnchor` empty at the centre of its emissive faces, where the map puts its light;
+- materials `kit_<name>-vcol`; the emissive one glows in the prop's emissive paint (`bulb`, `tube`, `safelight`).
+
 ## The command
 
 ```
-tools/run.sh props [--measure] [--table FILE]
+tools/run.sh props [--measure] [--table FILE] [--build [--batch N] [--only IDS] [--out DIR] [--no-blender]]
 ```
 
 It checks the mapping file (no raw file needed); `--measure` reads every pack file in `<raw>/env` again (a pure

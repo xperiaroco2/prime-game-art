@@ -270,3 +270,69 @@ def table_md(lib: dict[str, Any]) -> str:
         rows.append(f"| {p['id']} | {p['class']} | {p['route']} | {'x'.join(str(v) for v in p['size_m'])} | "
                     f"{src or p.get('shape', '')} | {p.get('scale', '')} | {', '.join(p.get('roles', []))} |")
     return "\n".join(rows) + "\n"
+
+
+# --- the build (props --build) ---------------------------------------------------------------------------------------
+SCRIPT = "prop_build.py"
+
+
+def check_build(lib: dict[str, Any], props: list[dict[str, Any]], out: Path) -> tuple[list[str], list[str]]:
+    """Checks the GLBs of props against <out>/build.json: built without error, the file holds the described nodes
+    (UV2, vertex colours, `-vcol` materials: the kit's check), glTF-Validator passes, the triangles are under the
+    class's maximum, a collider unless `none`, a fixture's light anchor. Notes (not problems): under the class's
+    minimum, a size off the inventory's."""
+    from . import _export, _kit
+
+    path = out / "build.json"
+    if not path.is_file():
+        return [f"no {path.as_posix()}"], []
+    built = json.loads(path.read_text(encoding="utf-8")).get("props", {})
+    problems, notes = [], []
+    reports = out / "reports"
+    reports.mkdir(parents=True, exist_ok=True)
+    for p in props:
+        pid = p["id"]
+        rec = built.get(pid)
+        glb = out / f"{pid}.glb"
+        if rec is None or "error" in rec:
+            problems.append(f"{pid}: {rec['error'] if rec else 'not in build.json'}")
+            continue
+        if not glb.is_file():
+            problems.append(f"{pid}: no {glb.as_posix()}")
+            continue
+        described = {"id": pid, "meshes": [{"name": n} for n in rec["meshes"]], "colliders": rec["colliders"]}
+        problems += _kit.check_glb(_export.glb_json(glb), described, int(lib.get("max_materials", 6)))
+        report = _export.validate(glb, reports / f"{pid}.json")
+        passed, _line = _export.verdict(report)
+        if not passed:
+            problems += [f"{pid}: {m}" for m in _export.issues(report)["error"][:5]]
+        lo, hi = lib["budgets"][p["class"]]
+        if rec["triangles"] > hi:
+            problems.append(f"{pid}: {rec['triangles']} triangles, over the {p['class']} maximum {hi}")
+        elif rec["triangles"] < lo:
+            notes.append(f"{pid}: {rec['triangles']} triangles, under the {p['class']} minimum {lo} (simple is fine)")
+        if p.get("collision", "box") != "none" and not rec["colliders"]:
+            problems.append(f"{pid}: collision {p.get('collision', 'box')} but no collider")
+        if p["class"] == "fixture" and not rec.get("light_anchor"):
+            problems.append(f"{pid}: a fixture without an emissive part")
+        want = size_xyz(p["size_m"])
+        if any(abs(e) > max(0.03, 0.12 * w) for e, w in zip(rec["size_error_m"], want)):
+            notes.append(f"{pid}: built {rec['size_m']} m, inventory {want} m (x, y, z)")
+    return problems, notes
+
+
+def build_table_md(lib: dict[str, Any], out: Path) -> str:
+    """The built props (every prop in build.json) as a markdown table."""
+    built = json.loads((out / "build.json").read_text(encoding="utf-8")).get("props", {})
+    rows = ["| Prop | Batch | Route | Class | Triangles | Budget | Size x, y, z (m) | Colliders | Light |",
+            "|---|---|---|---|---|---|---|---|---|"]
+    for pid in sorted(built):
+        r = built[pid]
+        if "error" in r:
+            rows.append(f"| {pid} | {r.get('batch', '')} | {r['route']} | {r['class']} | error: {r['error']} | | | | |")
+            continue
+        lo, hi = lib["budgets"][r["class"]]
+        rows.append(f"| {pid} | {r.get('batch', '')} | {r['route']} | {r['class']} | {r['triangles']} | {lo}-{hi} | "
+                    f"{', '.join(f'{v:.2f}' for v in r['size_m'])} | {len(r['colliders'])} | "
+                    f"{'yes' if r.get('light_anchor') else ''} |")
+    return "# Dressing library build\n\n" + "\n".join(rows) + "\n"
