@@ -16,8 +16,8 @@ donor `Business Man.glb`, the women's `Suit.glb`, with the toe bones). Outputs, 
 
 ## Summary
 
-- **28 clips per body type ship in the GLB** (12 loops, 16 one-shots), and one more is built for review only (Meshy's
-  backward jog, which fails). Both GLBs pass glTF-Validator and the set's Godot checks (godot-check's facing check
+- **30 clips per body type ship in the GLB** (14 loops, 16 one-shots; art #70 added the two crouch loops), and five
+  more are built for review only (Meshy's backward jog, which fails, and art #66's four R2 re-roll candidates). Both GLBs pass glTF-Validator and the set's Godot checks (godot-check's facing check
   cannot tell on the pack donor: below). Godot plays them within 0.07 mm of Blender. Every loop's last frame is its
   first by construction; the real seam, the step from the last distinct frame onto the first, is at most 1.4 median
   frame steps, except the reversed jog's 1.6.
@@ -51,8 +51,9 @@ donor `Business Man.glb`, the women's `Suit.glb`, with the toe bones). Outputs, 
 
 ## The set
 
-29 clips per body type: 28 exported (12 loops, 16 one-shots) and one review candidate. `tools/run.py anim-set` builds
-both body types in 1.5 to 2 minutes each, then exports and checks them:
+35 clips per body type: 30 exported (14 loops, 16 one-shots) and five review candidates (art #69's count; the
+checks below were measured on art #33's 28 exported clips). `tools/run.py anim-set` builds both body types in 1.5 to
+2 minutes each, then exports and checks them:
 
 | Check | Men | Women |
 |---|---|---|
@@ -63,7 +64,7 @@ both body types in 1.5 to 2 minutes each, then exports and checks them:
 | the real seam: the step onto the first frame against the median step (build report `seam_step_ratio`) | 0.49 to 1.37; Jog_Bwd 1.61 | 0.46 to 1.37; Jog_Bwd 1.59 |
 | hips and head facing of the locomotion loops (build warning over 5 degrees) | strafes 19.5 / -15.9; crawl -4.7 / -7.8; the rest 0 | the same |
 | godot-check: 64 bones, every track resolves (1652), lengths, rest joints within 0.01 mm | pass | pass |
-| godot-check: the 12 `_Loop` clips import LINEAR without the suffix, the 16 one-shots play once | pass | pass |
+| godot-check: the 12 `_Loop` clips (14 since art #70) import LINEAR without the suffix, the 16 one-shots play once | pass | pass |
 | Godot `frames` against Blender (the sample below; 64 joints and 128 axis points at 8 times) | within 0.017 mm | within 0.030 mm |
 
 godot-check's `facing_plus_z` cannot tell on the pack donor (its parts are not named by role: no `_eyes` or `_shoes`
