@@ -44,9 +44,12 @@ def run(args: argparse.Namespace) -> int:
         d = g.describe(g.build_piece(p, spec), spec)
         described[p["id"]] = d
         problems += g.check_piece(d, p, spec)
+    if not only:  # v2 (art #86): neighbours without faces back to back; the attic's roof and the gazebo close
+        problems += g.seam_problems(spec, described)
+        problems += g.closure_problems(spec, described) + g.gazebo_problems(spec, described)
     common.say(f"kit {spec['kit']} v{spec['version']}: {len(pieces)} pieces, "
                f"{sum(d['triangles'] for d in described.values())} triangles -> {out.as_posix()}")
-    _report(problems, "spec: grid, sizes, budgets, colliders, UV2")
+    _report(problems, "spec: grid, sizes, budgets, colliders, UV2" + ("" if only else "; seams, the attic roof and the gazebo close"))
     if not args.no_build:
         out.mkdir(parents=True, exist_ok=True)
         for p in pieces:
@@ -63,7 +66,7 @@ def run(args: argparse.Namespace) -> int:
         if not glb.is_file():
             glb_problems.append(f"{p['id']}: no {glb.as_posix()}")
             continue
-        glb_problems += _kit.check_glb(_export.glb_json(glb), described[p["id"]], len(spec["materials"]))
+        glb_problems += _kit.check_glb(_export.glb_json(glb), described[p["id"]], len(g.export_materials(spec)))
         report = _export.validate(glb, reports / f"{p['id']}.json")
         passed, _line = _export.verdict(report)
         counts = report.get("issues", {})

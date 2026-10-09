@@ -209,9 +209,96 @@ class TableTest(unittest.TestCase):
     def test_one_row_per_piece(self) -> None:
         rows = G.piece_table(list(KIT.values()))
         md = _kit.table_md(rows, SPEC["budget_tris"])
-        self.assertEqual(len(md.strip().splitlines()), len(KIT) + 2)
+        self.assertEqual(len(md.strip().splitlines()), len(KIT) + 4)  # the UV2 note, a blank line, the header
         self.assertIn("| stairs_main | stairs |", md)
 
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class VersionTwoTest(unittest.TestCase):
+    """Art #86: v1's ids stay, the new pieces, the material pack, the seams and the assemblies that must close."""
+
+    V1_IDS = {"wall_storey_2m_ext", "wall_knee_2m_door_int", "floor_boards_2x2", "roof_flat_2x2", "parapet_corner",
+              "stairs_main", "ladder_attic", "fence_gates_8m", "glass_door_2m", "garage_door_8m", "gable_tri_2m_up"}
+
+    def test_v1_ids_stay_and_v2_appends(self) -> None:
+        self.assertEqual(SPEC["version"], 2)
+        ids = [p["id"] for p in SPEC["pieces"]]
+        self.assertEqual(self.V1_IDS - set(ids), set())
+        self.assertLess(ids.index("garage_door_8m"), ids.index("pillar_concrete"))
+
+    def test_the_new_pieces_are_there(self) -> None:
+        for pid in ("pillar_concrete", "roof_pitched_2x2", "roof_pitched_ridge_2m", "glass_roof_2x2", "porch_2x2",
+                    "chimney_stack", "cornice_bracket", "fence_post_cap", "gate_post", "gazebo_sector",
+                    "gazebo_roof_sector", "wall_knee_end_int", "glass_corner", "glass_end", "slab_edge_2m"):
+            self.assertIn(pid, KIT)
+
+    def test_pillar_is_storey_high_and_centred(self) -> None:
+        b = KIT["pillar_concrete"]["bounds_m"]
+        self.assertEqual((b["min"], b["max"]), ([-0.2, 0.0, -0.2], [0.2, 3.0, 0.2]))
+
+    def test_pitch_is_the_spec_parameter(self) -> None:
+        pp = G.pitch(SPEC)
+        self.assertAlmostEqual(pp["deg"], 35.0, delta=0.1)
+        s2 = copy.deepcopy(SPEC)
+        s2["grid"]["gable_rise_per_m"] = 0.35
+        d = G.describe(G.build_piece(PIECES["roof_pitched_2x2"], s2), s2)
+        self.assertLess(d["bounds_m"]["max"][1], KIT["roof_pitched_2x2"]["bounds_m"]["max"][1] - 0.6)
+
+    def test_knee_door_casing_stays_under_the_wall_top(self) -> None:
+        self.assertLessEqual(KIT["wall_knee_2m_door_int"]["bounds_m"]["max"][1], 2.2 + 1e-6)
+
+    def test_ext_end_cap_runs_over_the_slab_band(self) -> None:
+        self.assertAlmostEqual(KIT["wall_storey_end_ext"]["bounds_m"]["min"][1], -SPEC["grid"]["slab_m"])
+        self.assertAlmostEqual(KIT["wall_storey_end_int"]["bounds_m"]["min"][1], 0.0)
+
+    def test_pack_alpha_and_exported_materials(self) -> None:
+        self.assertEqual(G.export_materials(SPEC), ["set", "metal", "glass"])
+        self.assertEqual([G.layer_alpha(SPEC, m) for m in ("plaster", "wood", "concrete", "metal")], [1.0, 0.75, 0.5, 1.0])
+        self.assertEqual(G.role_colour(SPEC, "boards")[3], 0.75)
+        bad = copy.deepcopy(SPEC)
+        bad["materials"]["metal"]["pack"] = "set"
+        self.assertIn("material metal: not a layer of pack set", G.check_spec(bad))
+
+    def test_no_faces_back_to_back_at_seams(self) -> None:
+        self.assertEqual(G.seam_problems(SPEC, KIT), [])
+
+    def test_v1_floor_sides_would_fail_the_seam_check(self) -> None:
+        d = copy.deepcopy(KIT["floor_boards_2x2"])
+        side = [[2, -0.2, 0], [2, 0, 0], [2, 0, 2], [2, -0.2, 2]]
+        other = [[0, -0.2, 0], [0, 0, 0], [0, 0, 2], [0, -0.2, 2]]
+        m = d["meshes"][0]
+        n = len(m["verts"])
+        m["verts"] += side + other
+        m["faces"] += [[n, n + 1, n + 2, n + 3], [n + 4, n + 5, n + 6, n + 7]]
+        problems = G.seam_problems({"pieces": [PIECES["floor_boards_2x2"]], "grid": SPEC["grid"]},
+                                   {"floor_boards_2x2": d})
+        self.assertTrue(problems and "back to back" in problems[0])
+
+    def test_the_attic_roof_closes_over_its_span(self) -> None:
+        self.assertEqual(G.closure_problems(SPEC, KIT), [])
+        placed = G.attic_roof(SPEC, 20, 14)
+        self.assertEqual(sum(1 for q in placed if q[0] == "roof_pitched_2x1"), 20)
+
+    def test_a_missing_panel_is_found(self) -> None:
+        kit = dict(KIT)
+        holed = copy.deepcopy(kit["roof_pitched_2x2"])
+        holed["meshes"][0]["faces"] = []
+        kit["roof_pitched_2x2"] = holed
+        self.assertTrue(G.closure_problems(SPEC, kit, step=0.5))
+
+    def test_the_gazebo_closes(self) -> None:
+        self.assertEqual(G.gazebo_problems(SPEC, KIT), [])
+        b = KIT["gazebo_roof_sector"]["bounds_m"]
+        self.assertAlmostEqual(b["max"][0], 3.0)
+
+    def test_porch_has_its_lamp_socket(self) -> None:
+        x, y, z = KIT["porch_2x2"]["sockets"]["lamp"]
+        self.assertTrue(0 < x < 2 and 2.15 < y < 2.6 and 0.1 < z < 2.1)
+
+    def test_table_reports_uv2_density(self) -> None:
+        rows = G.piece_table([KIT["pillar_concrete"]])
+        self.assertGreater(rows[0]["uv2_per_m"], 0.05)
+        self.assertIn("UV2 per m", _kit.table_md(rows, SPEC["budget_tris"]))

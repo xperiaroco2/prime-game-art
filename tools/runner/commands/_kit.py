@@ -116,11 +116,15 @@ def evaluate(dump: dict[str, Any], described: dict[str, Any]) -> list[str]:
 
 
 def table_md(rows: list[dict[str, Any]], budgets: dict[str, int]) -> str:
-    lines = ["| piece | kind | triangles (budget) | size x, y, z (m) | colliders (glass) | nodes |",
-             "|---|---|---|---|---|---|"]
+    lines = ["UV2: each piece's own lightmap UV; texels/m = the mesh's lightmap size (Godot's lightmap_size_hint) times "
+             "the UV2 column (UV units per metre); the hint for 10 texels/m is 10 / UV2.", "",
+             "| piece | kind | triangles (budget) | size x, y, z (m) | colliders (glass) | UV2 per m (hint for 10 px/m) | nodes |",
+             "|---|---|---|---|---|---|---|"]
     for r in rows:
         size = ", ".join(f"{v:g}" for v in r["size_m"])
         extra = ", ".join(n.removeprefix(r["id"] + "_") for n in r["nodes"][1:]) or "-"
+        uv2 = r.get("uv2_per_m", 0.0)
+        hint = f"{10 / uv2:.0f}" if uv2 else "-"
         lines.append(f"| {r['id']} | {r['kind']} | {r['triangles']} ({budgets[r['kind']]}) | {size} | "
-                     f"{r['colliders']} ({r['glass_colliders']}) | {extra} |")
+                     f"{r['colliders']} ({r['glass_colliders']}) | {uv2:.3f} ({hint}) | {extra} |")
     return "\n".join(lines) + "\n"
