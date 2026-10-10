@@ -1,5 +1,5 @@
 {
- "description": "The face kit's proof (art #42 part B): the lab's round E cast (research/2026-10-05-faces/lab/clay_e/cast_e.py CAST_E: the ball nose on every face, the loud features moved) on round D's cast builds (research/2026-10-07-clay-d/cast/<id>_build.json: parts, skin, hair and brow colours), built in the clay look with the clay face kit. The catalogue's cuts the assembler cannot make yet are left out: m2's hair keeps the King's pack beard (cut facial_hair), w4's nose ring comes with the Punk's neck ring (cut not_facial_hair).",
+ "description": "The face kit's proof (art #42 part B): the lab's round E cast (research/2026-10-05-faces/lab/clay_e/cast_e.py CAST_E: the ball nose on every face, the loud features moved) on round D's cast builds (research/2026-10-07-clay-d/cast/<id>_build.json: parts, skin, hair and brow colours), built in the clay look with the clay face kit. The catalogue's cuts the assembler cannot make yet are left out: w4's nose ring comes with the Punk's neck ring (cut not_facial_hair). m2's hair drops the King's pack beard and moustache as whole pieces (drop_pieces facial_hair): the kit's handlebar is his moustache, as in the lab.",
  "packs": {
   "M": "refs/Ultimate_Modular_Men_Pack",
   "W": "refs/Ultimate_Modular_Women_Pack"
@@ -129,7 +129,10 @@
     "materials": [
      "Hair_White"
     ],
-    "object": "King_Head"
+    "object": "King_Head",
+    "drop_pieces": [
+     "facial_hair"
+    ]
    },
    "top": {
     "file": "King.glb",

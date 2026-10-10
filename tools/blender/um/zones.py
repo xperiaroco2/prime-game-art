@@ -13,6 +13,13 @@ CUT_ZONES = {
     "ears": lambda c: abs(c.x) > 0.088 and -0.11 < c.y < 0.0 and 1.62 < c.z < 1.74,  # the head's own ears
 }
 
+# Named boxes that drop whole loose pieces of a split part (a recipe's "drop_pieces" list): a piece (faces joined by
+# shared world positions) goes when the centre of its bounding box is inside; the catalogue classifies pieces the same
+# way (tools/blender/catalogue_heads.py FACIAL_HAIR), so the King's 9 beard pieces go and his 18 hair pieces stay.
+PIECE_ZONES = {
+    "facial_hair": lambda c: c.z < 1.655 and c.y < -0.09 and abs(c.x) < 0.07,  # beards and moustaches
+}
+
 # Both ears of every pack head (tuck_ears flattens the vertices in it).
 EAR_BOX = lambda p: -0.125 < p.y < -0.015 and 1.62 < p.z < 1.735  # noqa: E731
 

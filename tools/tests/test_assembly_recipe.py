@@ -191,6 +191,14 @@ class StructureTest(FakeRaw):
             self.assertIn(expected, text)
         self.assertGreaterEqual(len(text.splitlines()), 10)
 
+    def test_drop_pieces_names_a_piece_zone(self) -> None:
+        """A part's drop_pieces (art #42 round 3: m2 drops the King's beard pieces) names zones.PIECE_ZONES only."""
+        data = mini()
+        data["characters"][0]["hair"]["drop_pieces"] = ["facial_hair"]
+        recipe.load(self.write(data), self.raw)  # no RecipeError
+        data["characters"][0]["hair"]["drop_pieces"] = ["chin_tuft"]
+        self.assertIn("hair.drop_pieces: must be a list of piece zone names from facial_hair", self.problems(data))
+
     def test_ids_are_unique_and_hands_name_a_character(self) -> None:
         data = mini()
         data["characters"].append(copy.deepcopy(data["characters"][0]))

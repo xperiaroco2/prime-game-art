@@ -16,13 +16,53 @@ from . import zones
 from .util import base_name
 
 
-def filter_faces(obj, arm, keep):
-    """keep(material_base_name, world_centre) -> bool; the rest of the faces are deleted."""
+def loose_pieces(bm, mw):
+    """The faces of bm grouped into loose pieces: faces joined by shared world positions (rounded to 0.01 mm, as
+    flat-shaded imports split every vertex) and the same material, as the catalogue's pieces()."""
+    parent = {f: f for f in bm.faces}
+
+    def find(f):
+        while parent[f] is not f:
+            parent[f] = parent[parent[f]]
+            f = parent[f]
+        return f
+
+    first = {}
+    for f in bm.faces:
+        for v in f.verts:
+            k = (f.material_index, tuple(round(c, 5) for c in (mw @ v.co)))
+            if k in first:
+                a, b = find(f), find(first[k])
+                if a is not b:
+                    parent[a] = b
+            else:
+                first[k] = f
+    groups = {}
+    for f in bm.faces:
+        groups.setdefault(find(f), []).append(f)
+    return list(groups.values())
+
+
+def piece_centre(faces, mw):
+    """The centre of a piece's world bounding box."""
+    pts = [mw @ v.co for f in faces for v in f.verts]
+    return Vector([(min(p[i] for p in pts) + max(p[i] for p in pts)) / 2 for i in range(3)])
+
+
+def filter_faces(obj, arm, keep, drop_piece=None):
+    """keep(material_base_name, world_centre) -> bool; the rest of the faces are deleted. drop_piece(world_centre) ->
+    bool then deletes every kept loose piece whose bounding-box centre it returns True for (zones.PIECE_ZONES)."""
     me = obj.data
     names = [base_name(m.name) if m else "" for m in me.materials]
     mw = arm.matrix_world
     bm = bmesh.new(); bm.from_mesh(me)
     gone = [f for f in bm.faces if not keep(names[f.material_index], mw @ f.calc_center_median())]
+    if drop_piece is not None:
+        goneset = set(gone)
+        for faces in loose_pieces(bm, mw):
+            faces = [f for f in faces if f not in goneset]
+            if faces and drop_piece(piece_centre(faces, mw)):
+                gone.extend(faces)
     bmesh.ops.delete(bm, geom=gone, context="FACES")
     bm.to_mesh(me); bm.free()
     # drop now-unused material slots

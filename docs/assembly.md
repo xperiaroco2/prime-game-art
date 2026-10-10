@@ -84,7 +84,7 @@ A recipe is JSON in `recipes/`: `um_final_test.json` (the final test's four char
 |---|---|
 | `id`, `gender` | Lowercase id; `M` or `W` (the body type) |
 | `head` | `file`, `object`, `keep` (materials kept as bald skin), `eye_materials` (where the eye centres are read); optional `as_skin` (more materials painted with the skin), `straighten` (a collar ring made a straight neck), `tuck_ears` (flatten the ears at this half-width, m), `cut` (zones) |
-| `hair`, `extras[]` | `file`, `object`, `materials` (the head regions taken); optional `cut`, `inflate` (scale about the skull centre, e.g. 0.006); an extra also has `role` (its slot name, e.g. `moustache`) |
+| `hair`, `extras[]` | `file`, `object`, `materials` (the head regions taken); optional `cut` (zones: faces whose centre is inside go), `drop_pieces` (`um/zones.py` `PIECE_ZONES`: whole loose pieces whose bounding-box centre is inside go, as the catalogue classifies pieces; m2 drops the King's beard and moustache with `facial_hair`), `inflate` (scale about the skull centre, e.g. 0.006); an extra also has `role` (its slot name, e.g. `moustache`) |
 | `top`, `bottom`, `shoes` | `file`, `object` |
 | `eyes`, `brows`, `mouth` | Face-kit `style`; eyes `iris`, `lash`; brows `rgb`; mouth `lip`, `dz` |
 | `skin` | `null` (the head's own skin) or `[r, g, b]` |
