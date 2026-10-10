@@ -4,7 +4,8 @@ extends SceneTree
 ##   godot --headless --path godot -s res://check/kit.gd -- <request.json> <out.json>
 ## request.json: {"pieces": {"<id>": {"scene": "res://import/kit_<id>.glb", "rays": [[from xyz, to xyz], ...]}}}.
 ## Per piece: the visual meshes (surfaces, UV2, vertex colour as albedo, triangles, world bounds), the static bodies
-## and their shapes (class, convex point count), and each ray's first hit (the piece alone in the physics world).
+## and their shapes (class, convex point count), each ray's first hit (the piece alone in the physics world) and the
+## `LightAnchor*` nodes' positions (the dressing library's fixtures, `props-library`).
 ## Prints KIT saved <path>, or KIT error <why> and exits 1.
 
 const WATCHDOG_S: float = 240.0
@@ -49,6 +50,7 @@ func _run(args: PackedStringArray) -> void:
 func _describe(scene: Node3D, rays: Array) -> Dictionary:
 	var meshes: Array = []
 	var bodies: Array = []
+	var anchors: Array = []
 	var lo := Vector3(INF, INF, INF)
 	var hi := Vector3(-INF, -INF, -INF)
 	for n: Node in _all(scene):
@@ -84,6 +86,9 @@ func _describe(scene: Node3D, rays: Array) -> Dictionary:
 					var pts: int = (sh as ConvexPolygonShape3D).points.size() if sh is ConvexPolygonShape3D else 0
 					shapes.append({"class": sh.get_class(), "points": pts})
 			bodies.append({"name": str(n.name), "parent": str(n.get_parent().name), "shapes": shapes})
+		elif n is Node3D and str(n.name).begins_with("LightAnchor"):
+			var at: Vector3 = (n as Node3D).global_position
+			anchors.append({"name": str(n.name), "position": [at.x, at.y, at.z]})
 	var space: PhysicsDirectSpaceState3D = scene.get_world_3d().direct_space_state
 	var hits: Array = []
 	for r: Array in rays:
@@ -91,7 +96,7 @@ func _describe(scene: Node3D, rays: Array) -> Dictionary:
 		var hit: Dictionary = space.intersect_ray(q)
 		hits.append([hit["position"].x, hit["position"].y, hit["position"].z] if hit else null)
 	return {
-		"meshes": meshes, "bodies": bodies, "hits": hits,
+		"meshes": meshes, "bodies": bodies, "hits": hits, "anchors": anchors,
 		"bounds": {"min": [lo.x, lo.y, lo.z], "max": [hi.x, hi.y, hi.z]},
 	}
 
