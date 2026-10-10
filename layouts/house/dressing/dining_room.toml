@@ -1,0 +1,95 @@
+# The dining room's dressing (art #75b, docs/house.md "Dressing"): the props and light fixtures of one room, as data.
+# at = [x, h, z]: room-local metres like the room's stations (x east, h above the floor, z south from the room's
+# north-west corner) at the prop's pivot (floor: the footprint's centre; wall: the back's bottom centre on the wall's
+# face; ceiling: the top's centre). face = the way the prop's front (+Z) looks: N, E, S or W (or yaw = degrees).
+# Ids are the dressing library's (props/library.toml, #87) and the task props' (props/tasks.toml, #82); an id with
+# no GLB yet is generated as a named, sized placeholder box. Positions are the engineer's to change.
+room = "dining_room"
+
+[[props]]
+id = "dining_table"
+at = [6.0, 0, 3.0]
+station = "DiningTable"
+
+[[props]]
+id = "dining_chair"
+at = [5.0, 0, 2.15]
+station = "DiningTable"
+
+[[props]]
+id = "dining_chair"
+at = [6.0, 0, 2.15]
+station = "DiningTable"
+
+[[props]]
+id = "dining_chair"
+at = [7.0, 0, 2.15]
+station = "DiningTable"
+
+[[props]]
+id = "dining_chair"
+at = [5.0, 0, 3.85]
+face = "N"
+station = "DiningTable"
+
+[[props]]
+id = "dining_chair"
+at = [6.0, 0, 3.85]
+face = "N"
+station = "DiningTable"
+
+[[props]]
+id = "dining_chair"
+at = [7.0, 0, 3.85]
+face = "N"
+station = "DiningTable"
+
+[[props]]
+id = "dining_chair"
+at = [4.25, 0, 3.0]
+face = "E"
+station = "DiningTable"
+
+[[props]]
+id = "dining_chair"
+at = [7.75, 0, 3.0]
+face = "W"
+station = "DiningTable"
+
+[[props]]
+id = "sideboard"
+at = [11.65, 0, 3.0]
+face = "W"
+
+[[props]]
+id = "potted_plant"
+at = [11.5, 0, 0.55]
+
+[[props]]
+id = "picture_frame"
+at = [5.0, 1.4, 5.9]
+face = "N"
+
+[[props]]
+id = "picture_frame"
+at = [10.5, 1.4, 5.9]
+face = "N"
+
+[[props]]
+id = "picture_frame"
+at = [0.1, 1.4, 5.0]
+face = "E"
+
+[[fixtures]]
+id = "chandelier"
+at = [6.0, 3.0, 3.0]
+
+[[fixtures]]
+id = "wall_sconce"
+at = [11.9, 1.95, 1.2]
+face = "W"
+
+[[fixtures]]
+id = "wall_sconce"
+at = [11.9, 1.95, 4.8]
+face = "W"
