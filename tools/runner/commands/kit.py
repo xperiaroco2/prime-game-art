@@ -81,6 +81,8 @@ def run(args: argparse.Namespace) -> int:
         if args.proof and not problems:
             problems += proof(spec, pieces, described, out, args.proof.resolve())
     rows = g.piece_table([described[p["id"]] for p in pieces])
+    if only:  # keep the other pieces' rows: house --bake reads the whole table for its UV2 densities (#108)
+        rows = merge_rows(out / "pieces.json", rows, [p["id"] for p in spec["pieces"]])
     (out / "pieces.json").write_text(json.dumps(rows, indent=1), encoding="utf-8")
     (out / "pieces.md").write_text(_kit.table_md(rows, spec["budget_tris"]), encoding="utf-8", newline="\n")
     common.say(f"  piece table: {(out / 'pieces.md').as_posix()}")
@@ -89,6 +91,14 @@ def run(args: argparse.Namespace) -> int:
         return 1
     common.ok(f"kit: {len(pieces)} pieces built and checked")
     return 0
+
+
+def merge_rows(path: Path, rows: list[dict], order: list[str]) -> list[dict]:
+    """The piece table at path with rows replacing their pieces' old rows, in the spec's order."""
+    old = json.loads(path.read_text(encoding="utf-8")) if path.is_file() else []
+    mine = {r["id"] for r in rows}
+    rank = {pid: i for i, pid in enumerate(order)}
+    return sorted([r for r in old if r["id"] not in mine] + rows, key=lambda r: rank.get(r["id"], len(order)))
 
 
 def godot_check(pieces: list[dict], described: dict, out: Path) -> list[str]:
