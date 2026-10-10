@@ -124,8 +124,26 @@ func _run(args: PackedStringArray) -> void:
 		sides.append(await _shot(s[0], s[1], s[2], s[3], result, 38.0))
 	fill.queue_free()
 	_save(_grid(sides), _out.path_join("exterior.png"))
+	# The dressed rooms (house_dressing.review_request): one shot per room from its door, the feature shots.
+	var room_images: Array[Image] = []
+	var feature_images: Array[Image] = []
+	result["rooms"] = {}
+	for s: Dictionary in _req.get("room_shots", []):
+		room_images.append(await _shot(s["name"], s["title"], _v(s["from"]), _v(s["to"]), result))
+		var info: Dictionary = result["shots"][s["name"]].duplicate()
+		info.merge(_dressing_triangles(s["node"]))
+		result["rooms"][s["room"]] = info
+	for s: Dictionary in _req.get("features", []):
+		feature_images.append(await _shot(s["name"], s["title"], _v(s["from"]), _v(s["to"]), result, 60.0))
+	var sw: Dictionary = _req.get("swatches", {})
+	if not sw.is_empty():
+		feature_images.append(await _swatches(sw, result))
 	var plan: Image = await _plan(result)
 	_save(_sheet(plan, [aerial, balcony], images), _out.path_join("sheet.png"))
+	if not room_images.is_empty():
+		var right: Array = feature_images.duplicate()
+		right.append(aerial)
+		_save(_rooms_sheet(plan, right.slice(0, 2), room_images), _out.path_join("rooms.png"))
 	var f: FileAccess = FileAccess.open(_out.path_join("walk.json"), FileAccess.WRITE)
 	f.store_string(JSON.stringify(result, " "))
 	f.close()
@@ -181,9 +199,18 @@ func _environment() -> void:
 
 
 ## A warm lamp without shadows at 2.7 m in every room (kind "room") of every level: light to see the shell by.
+## With a dressing (`lamps`): a c2 stand-in at every light fixture instead, in the rooms of `lamp_rooms`.
 func _lamps() -> void:
+	var dressed: Array = _req.get("lamp_rooms", [])
+	for l: Dictionary in _req.get("lamps", []):
+		var lamp: OmniLight3D = OmniLight3D.new()
+		lamp.light_color = LAMP
+		lamp.light_energy = 1.3
+		lamp.omni_range = 5.0
+		lamp.position = _v(l["at"])
+		_house.add_child(lamp)
 	for r: Dictionary in _req["rooms"]:
-		if r["kind"] != "room":
+		if r["kind"] != "room" or r["id"] in dressed:
 			continue
 		var rect: Array = r["rect"]
 		var lamp: OmniLight3D = OmniLight3D.new()
@@ -382,6 +409,92 @@ func _sheet(plan: Image, side: Array, shots: Array[Image]) -> Image:
 	for i: int in shots.size():
 		_paste(sheet, shots[i], Vector2i((i % 3) * (cw + GAP), s + GAP + (i / 3) * (ch + GAP)), Vector2i(cw, ch))
 	return sheet
+
+
+## The dressed rooms' sheet, 1280 px wide: the plan (a square) on the left, the feature shot and the aerial stacked on
+## its right, the room shots in rows of four.
+func _rooms_sheet(plan: Image, side: Array, rooms: Array[Image]) -> Image:
+	var s: int = 632
+	var w: int = SHEET_W - s - GAP
+	var h: int = (s - GAP) / 2
+	var cw: int = (SHEET_W - 3 * GAP) / 4
+	var ch: int = int(cw * rooms[0].get_height() / float(rooms[0].get_width()))
+	var rows: int = (rooms.size() + 3) / 4
+	var sheet: Image = Image.create_empty(SHEET_W, s + rows * (ch + GAP), false, Image.FORMAT_RGB8)
+	sheet.fill(Color(0.97, 0.97, 0.97))
+	_paste(sheet, plan, Vector2i.ZERO, Vector2i(s, s))
+	for i: int in side.size():
+		_paste(sheet, side[i], Vector2i(s + GAP, i * (h + GAP)), Vector2i(w, h))
+	for i: int in rooms.size():
+		_paste(sheet, rooms[i], Vector2i((i % 4) * (cw + GAP), s + GAP + (i / 4) * (ch + GAP)), Vector2i(cw, ch))
+	return sheet
+
+
+## The package colours (house_dressing.SWATCHES) as 0.25 m cubes in a row on a prop's top, shot from its front; each
+## cube's front face is sampled (7 x 7 px) into result["swatches"]: {name, hex, seen}.
+func _swatches(sw: Dictionary, result: Dictionary) -> Image:
+	var at: Vector3 = _v(sw["at"])
+	var along: Vector3 = Vector3(sw["along"][0], 0, sw["along"][1])
+	var facing: Vector3 = Vector3(sw["facing"][0], 0, sw["facing"][1])
+	var colors: Array = sw["colors"]
+	var cubes: Array[Vector3] = []
+	for i: int in colors.size():
+		var box: MeshInstance3D = MeshInstance3D.new()
+		var mesh: BoxMesh = BoxMesh.new()
+		mesh.size = Vector3(0.25, 0.25, 0.25)
+		box.mesh = mesh
+		var paint: StandardMaterial3D = StandardMaterial3D.new()
+		paint.albedo_color = Color.html(String(colors[i]["hex"]))
+		paint.roughness = 0.9
+		box.material_override = paint
+		box.position = at + along * ((i - (colors.size() - 1) * 0.5) * 0.32) + Vector3(0, 0.125, 0)
+		root.add_child(box)
+		cubes.append(box.position)
+	var image: Image = await _shot("swatches", "package colours under the c2 lamps",
+		at + facing * 1.4 + Vector3(0, 0.6, 0), at + Vector3(0, 0.1, 0), result, 60.0)
+	var k: Vector2 = Vector2(image.get_size()) / root.get_visible_rect().size
+	var out: Array = []
+	for i: int in colors.size():
+		var px: Vector2 = _camera.unproject_position(cubes[i] + facing * 0.125) * k
+		var sum: Color = Color(0, 0, 0)
+		var n: int = 0
+		for dx: int in range(-3, 4):
+			for dy: int in range(-3, 4):
+				var q: Vector2i = Vector2i(int(px.x) + dx, int(px.y) + dy)
+				if q.x >= 0 and q.y >= 0 and q.x < image.get_width() and q.y < image.get_height():
+					sum += image.get_pixelv(q)
+					n += 1
+		var seen: Color = sum / float(maxi(n, 1))
+		out.append({"name": colors[i]["name"], "hex": colors[i]["hex"], "seen": seen.to_html(false)})
+	result["swatches"] = out
+	return image
+
+
+## The meshes and triangles under a room's Dressing and Fixtures groups (a placeholder box counts 12).
+func _dressing_triangles(path: String) -> Dictionary:
+	var meshes: int = 0
+	var tris: int = 0
+	var room: Node = _house.get_node_or_null(path)
+	if room == null:
+		return {"dressing_meshes": 0, "dressing_triangles": 0, "dressing_node": "missing: " + path}
+	for group: String in ["Dressing", "Fixtures"]:
+		var g: Node = room.get_node_or_null(group)
+		if g == null:
+			continue
+		for n: Node in g.find_children("*", "MeshInstance3D", true, false):
+			var mesh: Mesh = (n as MeshInstance3D).mesh
+			if mesh == null:
+				continue
+			meshes += 1
+			for i: int in mesh.get_surface_count():
+				var arrays: Array = mesh.surface_get_arrays(i)
+				var index: Variant = arrays[Mesh.ARRAY_INDEX]
+				var count: int = (index as PackedInt32Array).size() if index != null else (arrays[Mesh.ARRAY_VERTEX] as PackedVector3Array).size()
+				tris += count / 3
+		for n: Node in g.find_children("*", "CSGBox3D", true, false):
+			meshes += 1
+			tris += 12
+	return {"dressing_meshes": meshes, "dressing_triangles": tris}
 
 
 ## Scales src to cover size (cropping the overflow, centred) and pastes it at `at`.

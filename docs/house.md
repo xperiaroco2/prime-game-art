@@ -92,6 +92,15 @@ The `house` command checks the dressing after the layout and fails on a problem 
   top, station (within 2 m) and spawn marker (within 1 m) that it reaches in the empty room. What the empty room
   itself does not reach is a note: the pantry stairs' top landing (1 m deep).
 
+With a dressing, `--walk` also lights and shoots it (`house_dressing.review_request`): a c2 stand-in omni light (no
+shadows) at every light fixture replaces the shell's one centre lamp in those rooms (real-time review light; the bake
+is #83's); one shot per dressed room from its deepest door, 0.3 m in, at 1.6 m eye height (`room_<id>.png`); the
+kitchen's order board from 3.2 m in front (`kitchen_order_board.png`); and the package colours (`SWATCHES`: cardboard
+#a8855e, white, cyan, purple, terracotta, mustard, look.md section 4) as 0.25 m cubes on the assembly island
+(`swatches.png`), each front face sampled and logged as `swatch <name>: #paint (L*, C*, h) reads #seen (...; hue
+shift)`. `rooms.png` (1280 px) holds the plan, the order board, the swatches and the room shots; the log and
+`walk.json` `rooms` give per room the view's draw calls and primitives and the dressing's meshes and triangles.
+
 Defaults used (questions.md): Q9 B, the leaves of the front and terrace doors stand open against a jamb as
 placeholder boxes without collision until a leaf prop exists; Q11 A, no per-room wall colour (the kit's #3a6264);
 Q21 B, the inventory's props and counts for every room. Notes from the game's greybox: spawn marker Circle01 lies

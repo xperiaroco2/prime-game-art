@@ -62,7 +62,7 @@ def run(args: argparse.Namespace) -> int:
     if args.walk:
         if args.out.resolve() != DEFAULT_OUT.resolve():
             raise common.Failure("--walk needs the scenes in godot/import/house (drop --out)")
-        return walk(data, summary, args.walk.resolve(), found)
+        return walk(data, summary, args.walk.resolve(), found, dressing)
     return 0
 
 
@@ -112,10 +112,12 @@ def prop_glbs(data: dict, dressing: dict) -> dict:
     return found
 
 
-def walk(data: dict, summary: dict, folder: Path, props: dict | None = None) -> int:
+def walk(data: dict, summary: dict, folder: Path, props: dict | None = None, dressing: dict | None = None) -> int:
     """Stages the pieces the scenes use from the kit folder, imports them headless, then runs godot/house/walk.gd in a
     window off-screen (pictures need one): every doorway of the ground and upper floors and every flight, walked by
-    a 1.36 m capsule; the stills, the plan, sheet.png and the exterior at dusk (exterior.png); draw calls per view."""
+    a 1.36 m capsule; the stills, the plan, sheet.png and the exterior at dusk (exterior.png); draw calls per view.
+    With a dressing: c2 stand-in lamps at its fixtures, one shot per dressed room from its door and rooms.png
+    (house_dressing.review_request), and per room the view's draw calls and the dressing's triangles."""
     kit = common.raw_dir() / data["settings"]["kit_dir"]
     names = {pid: f"kit_{pid}" for pid in summary["pieces"]}
     missing = [pid for pid in names if not (kit / f"{pid}.glb").is_file()]
@@ -133,6 +135,8 @@ def walk(data: dict, summary: dict, folder: Path, props: dict | None = None) -> 
     folder.mkdir(parents=True, exist_ok=True)
     req = common.OUT / "house" / "walk_request.json"
     request = house_layout.walk_request(data)
+    if dressing:
+        request.update(house_dressing.review_request(data, dressing))
     for name in request["closed"]:
         common.say(f"  not walked (closed kit leaf): {name}")
     req.write_text(json.dumps(request, indent=1), encoding="utf-8", newline="\n")
@@ -152,6 +156,11 @@ def walk(data: dict, summary: dict, folder: Path, props: dict | None = None) -> 
                    + (f"; the doc {w['doc_s']} s, {'within' if w['within_1s'] else 'NOT within'} 1 s" if "doc_s" in w else ""))
     for name, info in result["shots"].items():
         common.say(f"  {name}: {info['draw_calls']} draw calls, {info['objects']} objects, {info['primitives']} primitives")
+    for name, info in result.get("rooms", {}).items():
+        common.say(f"  {name}: {info['draw_calls']} draw calls, {info['primitives']} primitives in view; dressing "
+                   f"{info['dressing_meshes']} meshes, {info['dressing_triangles']} triangles")
+    for line in house_dressing.swatch_report(result.get("swatches", [])):
+        common.say(f"  swatch {line}")
     common.say(f"  {result['instances']['mesh_instances']} mesh instances, {result['instances']['static_bodies']} bodies; "
                f"sheet {(folder / 'sheet.png').as_posix()}")
     if failed or errors:
