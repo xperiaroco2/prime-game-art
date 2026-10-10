@@ -299,3 +299,31 @@ class ExtrasCatalogueTest(unittest.TestCase):
         for path in sorted((common.ROOT / "recipes").glob("*.json")):
             with self.subTest(recipe=path.name):
                 self.assertEqual(recipe.check_extras(recipe.read(path), cat), [])
+
+
+class HeadsCatalogueTest(unittest.TestCase):
+    """recipe.check_heads: a head keeps its whole skull (art #42: m4's jaw)."""
+
+    CAT = {"items": {"skull_m_casual": {"kind": "skull", "source": {"body_type": "M"}, "materials": ["Skin", "Skin_Darker"],
+                                         "recipe": {"file": "Casual Character.glb", "object": "Casual2_Head"}}}}
+
+    def check(self, head, gender="M"):
+        return recipe.check_heads({"characters": [{"id": "c1", "gender": gender, "head": head}]}, self.CAT)
+
+    def test_stubble_dropped_refused(self):
+        problems = self.check({"file": "Casual Character.glb", "object": "Casual2_Head", "keep": ["Skin"]})
+        self.assertEqual(len(problems), 1)
+        self.assertIn("Skin_Darker", problems[0])
+
+    def test_whole_skull_passes(self):
+        self.assertEqual(self.check({"file": "Casual Character.glb", "object": "Casual2_Head", "keep": ["Skin"],
+                                     "as_skin": ["Skin_Darker"]}), [])
+
+    def test_unknown_head_not_compared(self):
+        self.assertEqual(self.check({"file": "Other.glb", "object": "X_Head", "keep": ["Skin"]}), [])
+
+    def test_repo_recipes_pass(self):
+        cat = json.loads(recipe.CATALOGUE.read_text(encoding="utf-8"))
+        for path in sorted((common.ROOT / "recipes").glob("*.json")):
+            with self.subTest(recipe=path.name):
+                self.assertEqual(recipe.check_heads(recipe.read(path), cat), [])

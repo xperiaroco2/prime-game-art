@@ -298,6 +298,9 @@
     ],
     "eye_materials": [
      "Eye"
+    ],
+    "as_skin": [
+     "Skin_Darker"
     ]
    },
    "hair": {
@@ -630,6 +633,12 @@
     ],
     "eye_materials": [
      "Brown"
+    ],
+    "as_skin": [
+     "Black"
+    ],
+    "straighten": [
+     "Black"
     ]
    },
    "hair": {

@@ -86,7 +86,8 @@ def load(path: Path, raw_dir: Path | None = None) -> dict[str, Any]:
     if not problems and raw_dir is not None:
         problems = check_contents(data, Path(raw_dir))
     if not problems and raw_dir is not None and CATALOGUE.is_file():
-        problems = check_extras(data, json.loads(CATALOGUE.read_text(encoding="utf-8")))
+        cat = json.loads(CATALOGUE.read_text(encoding="utf-8"))
+        problems = check_extras(data, cat) + check_heads(data, cat)
     if problems:
         raise RecipeError(path.name, problems)
     data["_name"] = path.stem
@@ -390,6 +391,29 @@ def check_extras(data: dict[str, Any], catalogue: dict[str, Any]) -> list[str]:
                         and it.get("source", {}).get("body_type") == g and it.get("recipe", {}).get("file") == e.get("file")]
                 problems.append(f"{w}: {e.get('object')} {e.get('materials')} is not a whole catalogue item of body type "
                                 f"{g}; items of {e.get('file')}: {', '.join(near) or 'none'}")
+    return problems
+
+
+def check_heads(data: dict[str, Any], catalogue: dict[str, Any]) -> list[str]:
+    """Every head keeps its whole skull (art #42: m4's jaw was cut off because its recipe kept the Casual head's
+    "Skin" without the painted stubble "Skin_Darker", which is the skull's lower jaw): keep plus as_skin must hold
+    every material of the catalogue's skull item of the same file and object and body type. A head the catalogue has
+    no skull item for is not compared."""
+    items = catalogue.get("items", {})
+    problems: list[str] = []
+    for ch in data.get("characters", []):
+        h, g = ch.get("head") or {}, ch.get("gender")
+        if not h:
+            continue
+        skulls = [(i, it) for i, it in sorted(items.items()) if it.get("kind") == "skull"
+                  and it.get("source", {}).get("body_type") == g
+                  and (it.get("recipe", {}).get("file"), it.get("recipe", {}).get("object")) == (h.get("file"), h.get("object"))]
+        kept = set(h.get("keep") or []) | set(h.get("as_skin") or [])
+        for i, it in skulls:
+            missing = sorted(set(it.get("materials") or []) - kept)
+            if missing:
+                problems.append(f"characters[{ch.get('id')}].head: drops {', '.join(missing)} of the skull {i} "
+                                f"(the skull is cut open there); add them to as_skin as {i}'s recipe does")
     return problems
 
 
