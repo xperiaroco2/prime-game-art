@@ -1,0 +1,60 @@
+# The hallway's dressing (art #75b, docs/house.md "Dressing"): the props and light fixtures of one room, as data.
+# at = [x, h, z]: room-local metres like the room's stations (x east, h above the floor, z south from the room's
+# north-west corner) at the prop's pivot (floor: the footprint's centre; wall: the back's bottom centre on the wall's
+# face; ceiling: the top's centre). face = the way the prop's front (+Z) looks: N, E, S or W (or yaw = degrees).
+# Ids are the dressing library's (props/library.toml, #87) and the task props' (props/tasks.toml, #82); an id with
+# no GLB yet is generated as a named, sized placeholder box. Positions are the engineer's to change.
+room = "hallway"
+
+# Q9 default B: the front door's leaf stands open into the hall against its west jamb; dressing, no collision.
+[[props]]
+id = "door_leaf"
+at = [3.28, 0, 7.2]
+yaw = 90
+size = [1.4, 0.05, 2.1]
+collision = "none"
+note = "placeholder until a door leaf prop exists (Q9)"
+
+[[props]]
+id = "coat_rack"
+at = [2.4, 0, 7.68]
+face = "N"
+
+[[props]]
+id = "shoe_rack"
+at = [5.6, 0, 7.73]
+face = "N"
+
+[[props]]
+id = "console_table"
+at = [2.5, 0, 0.3]
+
+[[props]]
+id = "rug"
+at = [4.0, 0, 4.5]
+face = "E"
+
+[[props]]
+id = "picture_frame"
+at = [2.5, 1.4, 0.1]
+
+[[props]]
+id = "picture_frame"
+at = [7.9, 1.4, 6.5]
+face = "W"
+
+[[fixtures]]
+id = "wall_sconce"
+at = [0.1, 1.95, 6.5]
+face = "E"
+
+[[fixtures]]
+id = "wall_sconce"
+at = [7.9, 1.95, 1.5]
+face = "W"
+
+# Over the front door, on the facade under the porch roof.
+[[fixtures]]
+id = "porch_lamp"
+at = [4.0, 2.3, 8.1]
+outside = true
