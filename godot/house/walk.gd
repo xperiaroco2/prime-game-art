@@ -11,6 +11,7 @@ extends SceneTree
 ## 1280 px wide), and <out>/walk.json; prints WALK saved <dir>.
 
 const WATCHDOG_S: float = 170.0
+const KitMaterials := preload("res://kit/kit_materials.gd")
 const EYE: float = 1.6
 const UP := Vector3.UP
 const LAMP := Color(1.0, 0.85, 0.68)
@@ -69,6 +70,12 @@ func _run(args: PackedStringArray) -> void:
 		return
 	_house = scene.instantiate() as Node3D
 	root.add_child(_house)
+	# The kit's `set` material with the rooms' wall paints (Q11 = B, house.toml [wall_paint]) on the stand-in surfaces.
+	var pack: Dictionary = _req.get("pack", {})
+	if not pack.is_empty():
+		var kit_mat: ShaderMaterial = KitMaterials.make(pack["textures"], pack)
+		var painted: int = KitMaterials.paint(kit_mat, _req.get("paints", {}))
+		print("kit material: %d surfaces, %d painted rooms" % [KitMaterials.apply(_house, kit_mat), painted])
 	_lamps()
 	_pads()
 	_placeholders()
@@ -144,6 +151,7 @@ func _run(args: PackedStringArray) -> void:
 		else:
 			room_images.append(img)
 		var info: Dictionary = result["shots"][s["name"]].duplicate()
+		info.merge(await _dressing_draw_calls(info["draw_calls"]))
 		info.merge(_dressing_triangles(s["node"]))
 		result["rooms"][s["room"]] = info
 	for s: Dictionary in _req.get("features", []):
@@ -555,6 +563,18 @@ func _swatches(sw: Dictionary, result: Dictionary) -> Image:
 		out.append({"name": colors[i]["name"], "hex": colors[i]["hex"], "seen": seen.to_html(false)})
 	result["swatches"] = out
 	return image
+
+
+## The dressing layer's share of a view's draw calls: the same view drawn again with every room's Dressing group hidden.
+func _dressing_draw_calls(all: int) -> Dictionary:
+	var groups: Array[Node] = _house.find_children("Dressing", "Node3D", true, false)
+	for g: Node in groups:
+		(g as Node3D).visible = false
+	await _grab()
+	var bare: int = RenderingServer.get_rendering_info(RenderingServer.RENDERING_INFO_TOTAL_DRAW_CALLS_IN_FRAME)
+	for g: Node in groups:
+		(g as Node3D).visible = true
+	return {"dressing_draw_calls": all - bare}
 
 
 ## The meshes and triangles under a room's Dressing and Fixtures groups (a placeholder box counts 12).

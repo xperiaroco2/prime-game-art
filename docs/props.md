@@ -124,7 +124,7 @@ The library is data: a paint, a size, a source file or a shape changes without a
 | Field | What |
 |---|---|
 | `[materials]` | Library material name to the kit's material (`kits/house.json`). The **one place** that names materials: when kit v2 (#86) merges plaster, wood and concrete into one `set` material, re-point the lines here. At most `max_materials` (6) targets; a target the kit lacks must be in `new_materials` (`emissive`). |
-| `[budgets]` | Triangles by class, `[min, max]` (`look.md` §6): `dressing` 150 to 600, `room` 400 to 1,500, `fixture` 100 to 400, `vehicle` 400 to 3,000 (the parked cars). |
+| `[budgets]` | Triangles by class, `[min, max]` (`look.md` §6): `dressing` 150 to 600, `room` 400 to 1,500, `fixture` 100 to 400, `vehicle` 400 to 3,000 (the parked cars), `clutter` 12 to 400 (the small lived-in props of #104: books, cups, plates, bottles, pots, papers, frames' kin, baskets, shoes, toys; all `collision = "none"`, batch 3, placed by `house --clutter`, docs/house.md "Clutter"). |
 | `[roles]` | The props' paints: a library material and an sRGB hex (the D1 palette, `look.md` §7). A prop may also name the kit's roles (`trim`, `fence`, `lino`, `glass` ...). |
 | `[skip]` | Inventory ids this library does not make, with the package that does. |
 | `script` | The Blender build script (default `prop_build.py`); another mapping file in this format names its own, such as `props/plants.toml`'s `plant_build.py` (the garden's plants, `docs/house-garden.md`). |

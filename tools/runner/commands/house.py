@@ -8,7 +8,7 @@ import json
 import tomllib
 from pathlib import Path
 
-from .. import common, house_basement, house_dressing, house_layout, house_lights, house_routes
+from .. import common, house_basement, house_clutter, house_dressing, house_layout, house_lights, house_routes
 from . import _frames, _godot, _house_bake
 
 NAME = "house"
@@ -25,6 +25,8 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--out", type=Path, default=DEFAULT_OUT,
                         help="where the scenes go (default godot/import/house, res://import/house)")
     parser.add_argument("--check", action="store_true", help="only check the layout; write nothing")
+    parser.add_argument("--clutter", action="store_true",
+                        help="regenerate the dressing files' clutter blocks (house_clutter.py, seeded) before the checks")
     parser.add_argument("--props-spec", type=Path, action="append", default=[], metavar="TOML",
                         help="another prop catalogue for the dressing's sizes (e.g. a library.toml not yet on main)")
     parser.add_argument("--walk", type=Path, metavar="DIR",
@@ -59,6 +61,11 @@ def run(args: argparse.Namespace) -> int:
             common.say(f"  {p}")
         raise common.Failure(f"house layout: {len(problems)} problems")
     common.say("house layout: grid, openings, corners, footprints, stairs, holes and the light kit hold")
+    if args.clutter:
+        st = data["settings"]
+        cat = house_dressing.catalogue(house_dressing.spec_paths(st, extra=args.props_spec))
+        counts = house_clutter.write(data, Path(args.layouts) / st.get("dressing_dir", "dressing"), cat)
+        common.say(f"house clutter: {sum(counts.values())} items in {len(counts)} rooms (seed {house_clutter.SEED})")
     dressing = check_dressing(data, args.layouts, args.props_spec)
     check_basement(data, args.layouts, args.props_spec)
     routes = house_routes.load(args.layouts)
@@ -134,7 +141,10 @@ def basement(data: dict, layouts: Path, extra, folder: Path, errors: list[str] =
         raise common.Failure(f"basement.gd failed (exit code {code}):\n{tail}")
     result = json.loads((folder / "basement.json").read_text(encoding="utf-8"))
     for name, info in result["shots"].items():
-        common.say(f"  {name}: median L* {info['lstar_median']:g}")
+        common.say(f"  {name}: median L* {info['lstar_median']:g}; {info.get('draw_calls')} draw calls in view "
+                   f"({info.get('dressing_draw_calls')} the dressing's), {info.get('primitives')} primitives; "
+                   f"{info.get('room')}'s dressing {info.get('dressing_meshes')} meshes, "
+                   f"{info.get('dressing_triangles')} triangles")
     far = result.get("far_edge", {})
     common.say(f"  far edge ({far.get('shot')}): median L* {far.get('lstar_median')} (needs > {far.get('min_lstar')})")
     common.say(f"  {result['lamps']} lamp stand-ins; route lines: {len(routes)}; sheet {(folder / 'sheet.png').as_posix()}")
@@ -212,6 +222,17 @@ def stage(data: dict, summary: dict, props: dict | None = None) -> list[str]:
     return errors
 
 
+def kit_pack(data: dict) -> dict:
+    """The kit's `set` material for walk.gd (kit_materials.gd `make`): its textures under the kit folder and the layers'
+    roughness and normal strength; empty when the spec has no three-layer pack (the plain imported paint then)."""
+    spec = data["spec"]
+    mats = [spec["materials"][m] for m in spec.get("packs", {}).get("set", {}).get("layers", [])]
+    if len(mats) != 3:
+        return {}
+    return {"textures": (common.raw_dir() / data["settings"]["kit_dir"] / "textures").as_posix(),
+            "roughness": [m["roughness"] for m in mats], "normal_strength": [m["normal_strength"] for m in mats]}
+
+
 def walk(data: dict, folder: Path, routes: dict | None = None, errors: list[str] = (),
          dressing: dict | None = None) -> int:
     """Runs godot/house/walk.gd in a window off-screen (pictures need one) on the staged house: every doorway of the
@@ -224,6 +245,7 @@ def walk(data: dict, folder: Path, routes: dict | None = None, errors: list[str]
     req = common.OUT / "house" / "walk_request.json"
     request = house_layout.walk_request(data)
     request["walks"] += house_routes.walks(data, request, routes or {})
+    request["pack"] = kit_pack(data)  # the kit's material, which carries the rooms' wall paints
     if dressing:  # the walked levels' rooms; the basement's have their own review (--basement)
         walked = {r["id"] for lv in data["levels"] if lv["level"] in house_layout.WALK_LEVELS for r in lv["rooms"]}
         request.update(house_dressing.review_request(data, {rid: r for rid, r in dressing.items() if rid in walked}))
@@ -257,8 +279,9 @@ def walk(data: dict, folder: Path, routes: dict | None = None, errors: list[str]
     for name, info in result["shots"].items():
         common.say(f"  {name}: {info['draw_calls']} draw calls, {info['objects']} objects, {info['primitives']} primitives")
     for name, info in result.get("rooms", {}).items():
-        common.say(f"  {name}: {info['draw_calls']} draw calls, {info['primitives']} primitives in view; dressing "
-                   f"{info['dressing_meshes']} meshes, {info['dressing_triangles']} triangles")
+        common.say(f"  {name}: {info['draw_calls']} draw calls ({info.get('dressing_draw_calls')} the dressing's), "
+                   f"{info['primitives']} primitives in view; dressing {info['dressing_meshes']} meshes, "
+                   f"{info['dressing_triangles']} triangles")
     for line in house_dressing.swatch_report(result.get("swatches", [])):
         common.say(f"  swatch {line}")
     common.say(f"  {result['instances']['mesh_instances']} mesh instances, {result['instances']['static_bodies']} bodies; "

@@ -78,6 +78,10 @@ func _run(args: PackedStringArray) -> void:
 		_label.text = s["title"]
 		var image: Image = await _grab()
 		var info: Dictionary = {"title": s["title"], "lstar_median": _lstar(image, Rect2i(Vector2i.ZERO, image.get_size()))}
+		info.merge(_frame_info())
+		info.merge(await _dressing_draw_calls(info["draw_calls"]))
+		info.merge(_dressing_triangles(String(s.get("node", ""))))
+		info["room"] = s.get("room", "")
 		if s["name"] == far["shot"]:
 			var box: Rect2i = _project_box(_v(far["a"]), _v(far["b"]), image.get_size())
 			var l: float = _lstar(image, box)
@@ -94,6 +98,51 @@ func _run(args: PackedStringArray) -> void:
 	f.close()
 	print("BASEMENT saved %s" % _out)
 	quit(0)
+
+
+func _frame_info() -> Dictionary:
+	return {"draw_calls": RenderingServer.get_rendering_info(RenderingServer.RENDERING_INFO_TOTAL_DRAW_CALLS_IN_FRAME),
+		"objects": RenderingServer.get_rendering_info(RenderingServer.RENDERING_INFO_TOTAL_OBJECTS_IN_FRAME),
+		"primitives": RenderingServer.get_rendering_info(RenderingServer.RENDERING_INFO_TOTAL_PRIMITIVES_IN_FRAME)}
+
+
+## The dressing layer's share of a view's draw calls: the same view drawn again with every room's Dressing group hidden.
+func _dressing_draw_calls(all: int) -> Dictionary:
+	var groups: Array[Node] = _house.find_children("Dressing", "Node3D", true, false)
+	for g: Node in groups:
+		(g as Node3D).visible = false
+	await _grab()
+	var bare: int = RenderingServer.get_rendering_info(RenderingServer.RENDERING_INFO_TOTAL_DRAW_CALLS_IN_FRAME)
+	for g: Node in groups:
+		(g as Node3D).visible = true
+	return {"dressing_draw_calls": all - bare}
+
+
+## The meshes and triangles under a room's Dressing and Fixtures groups (walk.gd's count).
+func _dressing_triangles(path: String) -> Dictionary:
+	var meshes: int = 0
+	var tris: int = 0
+	var room: Node = _house.get_node_or_null(path) if path != "" else null
+	if room == null:
+		return {"dressing_meshes": 0, "dressing_triangles": 0, "dressing_node": "missing: " + path}
+	for group: String in ["Dressing", "Fixtures"]:
+		var g: Node = room.get_node_or_null(group)
+		if g == null:
+			continue
+		for n: Node in g.find_children("*", "MeshInstance3D", true, false):
+			var mesh: Mesh = (n as MeshInstance3D).mesh
+			if mesh == null:
+				continue
+			meshes += 1
+			for i: int in mesh.get_surface_count():
+				var arrays: Array = mesh.surface_get_arrays(i)
+				var index: Variant = arrays[Mesh.ARRAY_INDEX]
+				var count: int = (index as PackedInt32Array).size() if index != null else (arrays[Mesh.ARRAY_VERTEX] as PackedVector3Array).size()
+				tris += count / 3
+		for n: Node in g.find_children("*", "CSGBox3D", true, false):
+			meshes += 1
+			tris += 12
+	return {"dressing_meshes": meshes, "dressing_triangles": tris}
 
 
 ## Night underground: no sky light, a faint cool ambient, one fixed exposure (Q24 A).

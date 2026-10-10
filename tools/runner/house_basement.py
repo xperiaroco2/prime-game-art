@@ -190,7 +190,8 @@ def lamps(data: dict, dressings: dict, cat: dict, spec: dict) -> list[dict]:
 
 
 def shots(data: dict, spec: dict) -> list[dict]:
-    """The review's eye-height shots: each from SHOT_IN inside the door its room shares with `from`, at 1.6 m."""
+    """The review's eye-height shots: each from SHOT_IN inside the door its room shares with `from`, at 1.6 m; with
+    its room and the room's scene node (basement.gd counts the view's draw calls and the room's dressing there)."""
     lv = _level(data)
     fy = lv["floor_y"]
     out = []
@@ -204,7 +205,8 @@ def shots(data: dict, spec: dict) -> list[dict]:
         lx, ly = s.get("look", (rect[0] + rect[2] / 2, rect[1] + rect[3] / 2))
         out.append({"name": f"{s['room']}_from_{s['from']}",
                     "title": s.get("title", f"{room['title'].lower()} from the {s['from'].replace('_', ' ')} door"),
-                    "from": [px, fy + EYE, py], "to": [lx, fy + LOOK_H, ly]})
+                    "from": [px, fy + EYE, py], "to": [lx, fy + LOOK_H, ly],
+                    "room": s["room"], "node": f"{lv['node']}/Rooms/{room['node']}"})
     return out
 
 
