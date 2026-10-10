@@ -167,6 +167,13 @@ class ReviewRequest(unittest.TestCase):
                 self.assertAlmostEqual(h, LEVEL["floor_y"] + 1.6)
                 self.assertTrue(rx <= x <= rx + w and ry <= z <= ry + d)
 
+    def test_every_shot_names_its_room_and_scene_node(self):
+        nodes = {r["id"]: f"{LEVEL['node']}/Rooms/{r['node']}" for r in LEVEL["rooms"]}
+        for s, shot in zip(self.spec["shots"], self.req["shots"]):
+            with self.subTest(shot=shot["name"]):
+                self.assertEqual(shot["room"], s["room"])
+                self.assertEqual(shot["node"], nodes[s["room"]])
+
     def test_far_edge_the_hall_from_the_passage(self):
         far = self.req["far_edge"]
         self.assertEqual(far["shot"], "generator_hall_from_passage")

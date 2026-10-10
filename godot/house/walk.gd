@@ -151,6 +151,7 @@ func _run(args: PackedStringArray) -> void:
 		else:
 			room_images.append(img)
 		var info: Dictionary = result["shots"][s["name"]].duplicate()
+		info.merge(await _dressing_draw_calls(info["draw_calls"]))
 		info.merge(_dressing_triangles(s["node"]))
 		result["rooms"][s["room"]] = info
 	for s: Dictionary in _req.get("features", []):
@@ -562,6 +563,18 @@ func _swatches(sw: Dictionary, result: Dictionary) -> Image:
 		out.append({"name": colors[i]["name"], "hex": colors[i]["hex"], "seen": seen.to_html(false)})
 	result["swatches"] = out
 	return image
+
+
+## The dressing layer's share of a view's draw calls: the same view drawn again with every room's Dressing group hidden.
+func _dressing_draw_calls(all: int) -> Dictionary:
+	var groups: Array[Node] = _house.find_children("Dressing", "Node3D", true, false)
+	for g: Node in groups:
+		(g as Node3D).visible = false
+	await _grab()
+	var bare: int = RenderingServer.get_rendering_info(RenderingServer.RENDERING_INFO_TOTAL_DRAW_CALLS_IN_FRAME)
+	for g: Node in groups:
+		(g as Node3D).visible = true
+	return {"dressing_draw_calls": all - bare}
 
 
 ## The meshes and triangles under a room's Dressing and Fixtures groups (a placeholder box counts 12).

@@ -141,7 +141,10 @@ def basement(data: dict, layouts: Path, extra, folder: Path, errors: list[str] =
         raise common.Failure(f"basement.gd failed (exit code {code}):\n{tail}")
     result = json.loads((folder / "basement.json").read_text(encoding="utf-8"))
     for name, info in result["shots"].items():
-        common.say(f"  {name}: median L* {info['lstar_median']:g}")
+        common.say(f"  {name}: median L* {info['lstar_median']:g}; {info.get('draw_calls')} draw calls in view "
+                   f"({info.get('dressing_draw_calls')} the dressing's), {info.get('primitives')} primitives; "
+                   f"{info.get('room')}'s dressing {info.get('dressing_meshes')} meshes, "
+                   f"{info.get('dressing_triangles')} triangles")
     far = result.get("far_edge", {})
     common.say(f"  far edge ({far.get('shot')}): median L* {far.get('lstar_median')} (needs > {far.get('min_lstar')})")
     common.say(f"  {result['lamps']} lamp stand-ins; route lines: {len(routes)}; sheet {(folder / 'sheet.png').as_posix()}")
@@ -276,8 +279,9 @@ def walk(data: dict, folder: Path, routes: dict | None = None, errors: list[str]
     for name, info in result["shots"].items():
         common.say(f"  {name}: {info['draw_calls']} draw calls, {info['objects']} objects, {info['primitives']} primitives")
     for name, info in result.get("rooms", {}).items():
-        common.say(f"  {name}: {info['draw_calls']} draw calls, {info['primitives']} primitives in view; dressing "
-                   f"{info['dressing_meshes']} meshes, {info['dressing_triangles']} triangles")
+        common.say(f"  {name}: {info['draw_calls']} draw calls ({info.get('dressing_draw_calls')} the dressing's), "
+                   f"{info['primitives']} primitives in view; dressing {info['dressing_meshes']} meshes, "
+                   f"{info['dressing_triangles']} triangles")
     for line in house_dressing.swatch_report(result.get("swatches", [])):
         common.say(f"  swatch {line}")
     common.say(f"  {result['instances']['mesh_instances']} mesh instances, {result['instances']['static_bodies']} bodies; "
