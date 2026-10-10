@@ -91,6 +91,37 @@ and must check that Godot's "static lightmaps" import keeps the kit's UV2 rather
   **Chimney**, **cornice bracket**, **post cap**, **gate post**, **slab edges** (`slab_edge_2m/1m`, closing a slab's free
   edge such as a stairwell's) and the glass nodes (`glass_corner/end/post`) are documented in their builders.
 
+## Version 3: the free roof (art #77)
+
+The engineer's picks of 2026-10-10: a free roof of clay pantiles with one gable dormer, walkable at the Q2 B pitch.
+
+- **Pitch**: `gable_rise_per_m` 0.35 (19.3 deg, under Godot's 45 deg floor limit), so every gable, pitched piece and the
+  dormer follow it. The greenhouse's glass roof keeps 0.7 through its own `glass_rise_per_m` (`kit_geom.glass_rise`;
+  a spec without it falls back to the shared pitch). `gable_band_2m_window` stays in the kit but the layout uses none:
+  the 0.9 m gable window does not fit the low gable band at 0.35.
+- **Pantiles** (`kit_geom.pantile_courses`): the pitched panels' top is courses of tiles, 1/3 m deep up the slope and
+  1/3 m wide, cut on one kit-wide grid of multiples from the eave wall's line, so neighbouring panels meet. Each
+  course's lower edge stands 3 cm proud of the slab and its upper edge sinks under the next lip: the stepped course
+  shadows of the look round (`D:/prime-art-raw/research/2026-10-10-roof-look/`). Each tile takes one of the roles
+  `tile`, `tile_b`, `tile_c` (warm clay `#7a4634`, a darker worn `#6a4236` and a paler `#83533f`: the spread is
+  lightness, not saturation), vertex colours of the one `set` material, so the spread costs no draw call. The eave
+  and verge ends close the step with trim. `roof_pitched_2x2` holds 146 triangles (budget 200). The collision stays
+  the slab's hull; the tiles stand at most 3 cm over it.
+- **Ridge** (`build_ridge`): a half-round clay cap (radius 0.12 m, 8 segments, role `tile`) on a mortar bed (role
+  `concrete`, 0.17 m each side), its feet sunk into the bed.
+- **Dormer** (`dormer_gable`, type `dormer`, budget `dormer` 1500): replaces a 2 m panel column over 7 m of run
+  (`house_layout.dormer_cut`). A plastered front with the window (`window` w x h, `sill` over the roof's top), a white
+  casement open 80 deg outward, a boarded gable, plastered cheeks, its own pantile-coloured roof (`rise` per metre)
+  and the main roof's slab behind it; socket `lamp` under its ridge. `reach_m` (1.0) is what may stand out before the
+  span's z0 and beside its x span (the overhangs and the open casement); the span check allows it.
+- **Climb-out stair** (`stair_dormer`, type `ladder`): `build_ladder` takes optional `steps`, `tread` (each tread's
+  depth, centred on the collision ramp's line) and `handrail` (a rail 0.9 m over each stringer); the attic ladder keeps
+  the defaults (11 rungs, 0.1 m, no rails). The stair: 1.0 m wide, run 3.0, rise 2.857 m (the window's sill), 43.6
+  deg, 13 treads.
+- **Not built yet** (a follow-up): an S-profile relief normal map for the tiles (the material system has no
+  per-role texture source), lead flashing at the chimneys and the dormer, gutters and downpipes on the pitched eave,
+  the TV aerial, vent pipes, chimney pots, the eave's fall collision.
+
 ## Materials: the `set` pack and its shader (v2)
 
 Plaster, wood and concrete share one material, `kit_set-vcol` (look.md section 5: fewer materials, one shader). The
