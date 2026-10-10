@@ -56,7 +56,10 @@ take the heavy-run lock). The request (`house_layout.walk_request`, written to `
 - every flight (`stairs_main`, `stairs_basement`, `stairs_balcony`) up and down, from 1 m before its foot to up to
   1 m past its top (less where the room there is short: the pantry's landing);
 - a 3 x 3 m pad under each walk end that has no floor (the yard; #81a builds the real ground);
-- a control: the 1.5 m capsule must stop at the first door (the colliders are there).
+- a control: the 1.5 m capsule must stop at the first door (the colliders are there);
+- every `[[loops]]` entry of a level (a design-doc route as `points` = [x, height, y], heights absolute): walked at its
+  `speed` (the game's 4.5 m/s) for at most 40 s and timed against the doc's `doc_s` (`within_1s` in `walk.json`;
+  `house_layout.loop_length` gives its plan length beforehand). The one loop is the second floor's (#76, below).
 
 A walk arrives when it gets within 0.3 m of its last point at that point's height (0.15 m); it gives up after 30
 ticks without moving. Into `DIR`: `walk.json` (each walk's end, time and verdict; draw calls, objects and primitives
@@ -103,6 +106,28 @@ placeholder boxes without collision until a leaf prop exists; Q11 A, no per-room
 Q21 B, the inventory's props and counts for every room. Notes from the game's greybox: spawn marker Circle01 lies
 under the dining table and Circle02 0.2 m from the terrace table.
 
+### The second floor (#76)
+
+Seven files (`bedroom`, `kids_room`, `landing`, `study`, `bathroom`, `guest_room`, `balcony`) with the inventory's
+props and fixtures (`tools/tests/test_house_upper.py`). The study's `Printer` station (40, 29) is the desk with the
+computer set and the photo printer on its top (h 0.75) and the chair, all tagged `station = "Printer"`. The balcony's
+sitting set stands at its west end and the pots on the north rail, so a 2.3 m lane runs from the landing door to the
+external stairs' top. Defaults: Q21 B (the inventory's counts; the rocking horse is hero class and not made; a second
+nightstand in the guest room so each table lamp has one), Q6 (the straight flight, its foot on the yard at y 15).
+
+The doc's loop (dining room, stairs, landing, balcony, external stairs, terrace, dining room: 46 m, 10.2 s) is
+`[[loops]]` in `upper.toml`. As built it is 62.6 m in plan (`house_layout.loop_length`), about 13.9 s at 4.5 m/s:
+the main stairs' U-turn adds about 4 m, the route passes south of the dining set, and the straight balcony flight lands
+north on the yard, so the route steps off its foot and goes back south round its west side, under the balcony (the east
+side is too narrow for the 0.68 m capsule beside the terrace's corner planter). Q6's U-turn option (two runs in the
+same 2 x 6 m rect, the foot on the terrace under the balcony) is an estimate, not walked: 54.3 to 56.1 m with
+`loop_length` for a half-landing at y 18.5 or 17.6 (12.1 to 12.5 s), still over the doc's 10.2 s; the engineer decides.
+
+The walk's second-floor proof is `upper.png` (1280 px): `plan_upper.png` (the second floor from above, the attic and
+roof hidden, a label per room) beside `balcony_loop.png` (the loop's waypoints as a ribbon over the same top-down,
+orange on the ground, cyan upstairs, the walked seconds in its title), then the upper rooms' `room_<id>.png` and the
+balcony stairs. `rooms.png` keeps the ground floor's rooms.
+
 ## The rules (`validate`)
 
 - Rooms on whole metres; no two rooms with floors overlap at one height (an open room may hold a room: the roof deck
@@ -137,7 +162,8 @@ under the dining table and Circle02 0.2 m from the terrace table.
 - Q9 B: leaves standing ajar at the front door, the terrace door and the garage side door; the greenhouse door is
   the kit's own leaf; open doorways elsewhere.
 - The attic hatch: the kit's hatch tile puts the hole's centre on whole metres, at (28, 29) instead of the doc's
-  (28, 28.5).
+  (28, 28.5). Its ladder climbs south (#76): the foot on the landing at y 28.3; climbing north put the foot 0.3 m
+  from the stairwell (y 30), where no one can stand.
 - The study door is at (34, 28) as on the plan (the game's greybox has it at (34, 25)).
 - The front porch and the two chimneys are kit v2 pieces (`[[pieces]]`): one `porch_2x2` from x 29 on the front
   wall, so its posts (x 29.12 and 30.88) leave 1.64 m clear round the front door at x 30, its lamp socket for the porch

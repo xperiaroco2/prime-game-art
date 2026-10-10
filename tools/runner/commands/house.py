@@ -161,7 +161,8 @@ def walk(data: dict, summary: dict, folder: Path, props: dict | None = None, dre
     for w in result["walks"] + [result["control"]]:
         mark = "ok  " if w["pass"] else "FAIL"
         common.say(f"  {mark} {w['name']}: {'arrived' if w['arrived'] else 'stopped'} at {w['end']} "
-                   f"({w['reached']}/{w['of']} points, {w['seconds']} s)")
+                   f"({w['reached']}/{w['of']} points, {w['seconds']} s)"
+                   + (f"; the doc {w['doc_s']} s, {'within' if w['within_1s'] else 'NOT within'} 1 s" if "doc_s" in w else ""))
     for name, info in result["shots"].items():
         common.say(f"  {name}: {info['draw_calls']} draw calls, {info['objects']} objects, {info['primitives']} primitives")
     for name, info in result.get("rooms", {}).items():
@@ -170,7 +171,8 @@ def walk(data: dict, summary: dict, folder: Path, props: dict | None = None, dre
     for line in house_dressing.swatch_report(result.get("swatches", [])):
         common.say(f"  swatch {line}")
     common.say(f"  {result['instances']['mesh_instances']} mesh instances, {result['instances']['static_bodies']} bodies; "
-               f"sheet {(folder / 'sheet.png').as_posix()}")
+               f"sheet {(folder / 'sheet.png').as_posix()}"
+               + (f", the second floor {(folder / 'upper.png').as_posix()}" if (folder / "upper.png").is_file() else ""))
     if failed or errors:
         common.bad(f"house walk: {len(failed)} walks failed, {len(errors)} import errors")
         return 1
