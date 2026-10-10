@@ -142,6 +142,8 @@ def measure(face, item, ht):
     bt = face.meta.get("brow_tuck") or {}
     m["brow_tucked_verts"] = bt.get("verts", 0)
     m["brow_above_pad"] = brow_above_pad(face)["points"]
+    # art #42 round 3: the brows seen from the front over the eyes (w3's brows sank behind them under the updo)
+    m["brow_vis"] = checks.brow_visibility(face, [face.h.parts["head"], face.h.parts.get("hair")])
     return m
 
 
@@ -183,6 +185,15 @@ def add(stats, i, p, item, m):
         mst["cannot_clear_faces"] += int(ms["cannot_clear"] > 0)
         mst["nose_clear_mm_min"] = min(mst["nose_clear_mm_min"], ms["nose_clear_mm"])
         mst["squash_min"] = min(mst["squash_min"], ms["squash_min"])
+    bv = m["brow_vis"]
+    if bv.get("brows", True) is not False:
+        stats["brow_eye_clear_mm_min"] = min(stats["brow_eye_clear_mm_min"], bv["eye_clear_mm"])
+        stats["brow_seen_min"] = min(stats["brow_seen_min"], min(bv["seen_share"].values()))
+    if not bv["ok"]:
+        stats["brow_hidden_faces"] += 1
+        _count(stats["brow_hidden_by"], item)
+        _top(stats["brow_hidden_top"], dict(who, seen=bv["seen_share"], eye_clear_mm=bv["eye_clear_mm"],
+                                            n=-bv["eye_clear_mm"]), "n")
     if item == UPDO:
         stats["updo"].append({"i": i, "brows": p["brows"], "pokes": m["pokes"], "brow_above_pad": m["brow_above_pad"]})
 
@@ -193,6 +204,8 @@ def new_stats(head_id, n):
             "poke_top": [], "ear_hair_overlap_faces": 0, "ear_hair_by": {}, "ear_states": {},
             "nose_above_mouth_mm_min": 99.0, "look_sag_mm_max": -9.0, "meets_pupils_faces": 0, "brow_tuck_faces": 0,
             "tris_max": 0, "tris_sum": 0, "hairs_seen": {}, "picks_seen": {}, "updo": [],
+            "brow_hidden_faces": 0, "brow_hidden_by": {}, "brow_hidden_top": [], "brow_eye_clear_mm_min": 99.0,
+            "brow_seen_min": 1.0,
             "moustache_seat": {"faces": 0, "overlap_faces": 0, "cannot_clear_faces": 0, "nose_clear_mm_min": 99.0,
                                "squash_min": 1.0}}
 

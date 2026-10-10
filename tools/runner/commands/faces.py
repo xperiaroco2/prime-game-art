@@ -175,7 +175,8 @@ def distance_lines(report: dict[str, Any]) -> list[str]:
 def kit_problems(report: dict[str, Any]) -> list[str]:
     """The failures in a kit_check.json report: any face with a collision, a brow in the white, a visible poke, an ear
     in the hair, a pupil sinking into the white, a nose meeting a pupil or the moustache, a nose below the mouth's top,
-    or over KIT_MAX_TRIS triangles."""
+    brows sunk into the eyes or hidden from the front (checks.brow_visibility, art #42 round 3) or over KIT_MAX_TRIS
+    triangles."""
     out = []
     for g, b in report["bodies"].items():
         where = f"{g} ({b['head']})"
@@ -183,8 +184,9 @@ def kit_problems(report: dict[str, Any]) -> list[str]:
             out.append(f"{where}: {b['faces']} of {b['requested']} faces measured")
         for key, what in (("faces_with_collision", "faces with a collision"), ("brow_in_white_faces", "faces with a brow in the white"),
                           ("pokes", "faces with a visible brow poke"), ("ear_hair_overlap_faces", "faces with an ear in the hair"),
-                          ("meets_pupils_faces", "faces whose nose meets a pupil")):
-            if b[key]:
+                          ("meets_pupils_faces", "faces whose nose meets a pupil"),
+                          ("brow_hidden_faces", "faces whose brows sink into the eyes or hide from the front")):
+            if b.get(key):
                 out.append(f"{where}: {b[key]} {what}")
         ms = b["moustache_seat"]
         if ms["overlap_faces"] or ms["cannot_clear_faces"]:
@@ -206,7 +208,8 @@ def kit_summary(report: dict[str, Any]) -> list[str]:
                      f"brow in white {b['brow_in_white_faces']}, visible pokes {b['pokes']}, ear/hair {b['ear_hair_overlap_faces']}, "
                      f"nose meets pupils {b['meets_pupils_faces']}; nose above mouth min {b['nose_above_mouth_mm_min']} mm; "
                      f"look sag max {b['look_sag_mm_max']} mm; moustache faces {ms['faces']} (nose clear min "
-                     f"{ms['nose_clear_mm_min']} mm); brows tucked {b['brow_tuck_faces']}; tris max {b['tris_max']} "
+                     f"{ms['nose_clear_mm_min']} mm); brows tucked {b['brow_tuck_faces']}, hidden {b.get('brow_hidden_faces', 0)} "
+                     f"(eye clear min {b.get('brow_eye_clear_mm_min', '-')} mm, seen min {b.get('brow_seen_min', '-')}); tris max {b['tris_max']} "
                      f"mean {b['tris_mean']}; {b['seconds']} s")
     return lines
 

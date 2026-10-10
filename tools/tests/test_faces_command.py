@@ -152,11 +152,12 @@ class KitCheck(unittest.TestCase):
 
     def test_each_failure_is_named(self) -> None:
         bad = kit_body(faces=3, faces_with_collision=1, brow_in_white_faces=2, pokes=1, ear_hair_overlap_faces=1,
-                       meets_pupils_faces=1, nose_above_mouth_mm_min=-0.3, look_sag_mm_max=0.1, tris_max=2100,
+                       meets_pupils_faces=1, brow_hidden_faces=1, nose_above_mouth_mm_min=-0.3, look_sag_mm_max=0.1,
+                       tris_max=2100,
                        moustache_seat={"faces": 1, "overlap_faces": 1, "cannot_clear_faces": 0, "nose_clear_mm_min": 0.0,
                                        "squash_min": 1.0})
         problems = faces.kit_problems({"bodies": {"M": bad}})
-        self.assertEqual(len(problems), 10, problems)
+        self.assertEqual(len(problems), 11, problems)
         self.assertTrue(all(p.startswith("M (m1)") for p in problems))
 
     def test_flag_defaults_and_refusal(self) -> None:
