@@ -144,3 +144,27 @@ Every light is `light_bake_mode` Static (baked; not drawn in real time where a l
 `house` command writes `lights/<level>.tscn` (a level's lights in plot coordinates) and `zones/<zone>.tscn` (the
 zone's room scenes, the level pieces standing in them, its lights, and as `Above` the next level's rooms over it: the
 floor slabs that are the zone's ceiling). A bake needs the editor (below).
+
+### Baking a zone
+
+Godot 4.7.2 bakes a LightmapGI only in the editor, with a window:
+- `LightmapGI.bake()` is not exposed to scripts (the bake lives in the C++ editor plugin);
+- a `--headless` editor has no GPU device and reports that lightmap baking is not supported;
+- an exported project cannot bake.
+
+So there is no stock headless route (Q22 option C; a forum answer for 4.5.1 says the same:
+https://forum.godotengine.org/t/is-it-possible-to-bake-lightmapgi-node-using-headless-godot-editor/129607). The only
+route without a window would be a custom engine build that exposes `bake()`, which is installing a tool: the
+engineer's yes.
+
+The route used (#83a spike, raw project `D:/prime-art-raw/house/83a/godot`):
+1. `house --out <project>/import/house` writes the zone scenes; the kit v2 GLBs are imported with
+   `meshes/light_baking=1` so the kit's UV2 is kept.
+2. `zone_build.gd` (headless) flattens a zone into one scene with a LightmapGI from `[bake]`; each mesh's
+   `lightmap_size_hint` is the zone's texel per metre times its UV2 extent, so High and Low differ only in the texel.
+3. The editor bakes it: the lab's `lmbake` plugin, started by `labrun.py godot ... --window 1280x720 -- --editor`
+   (an off-screen window, never minimized). `labrun.py` refuses an editor run outside 00:00-08:00 local unless the
+   manager wrote a daytime grant (`editor_window.txt`); agents never write that file.
+4. Every lab Godot run starts inside the art runner's heavy-run lock (`common.heavy_lock`), one at a time.
+
+Bakes are therefore night jobs: a zone is prepared by day and baked in the next night run.
