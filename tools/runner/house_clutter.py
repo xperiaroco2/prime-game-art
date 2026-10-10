@@ -25,6 +25,7 @@ from pathlib import Path
 
 from . import house_basement
 from . import house_dressing as hd
+from . import house_layout
 from . import house_routes
 
 SEED = 104
@@ -102,10 +103,10 @@ RULES = {
         "floor": ("shoes",),
     },
     "pantry": {
-        "furn": ("@store", "wine_bottle_crate", "open_box"),
-        "fill": ("jar_shelf", "metal_shelving", "crate+"),
+        "furn": ("@store", "open_box", "cardboard_box", "wine_bottle_crate"),
+        "fill": ("jar_shelf", "kitchen_upper", "metal_shelving", "kitchen_upper", "crate+"),
         "island": ("crate+",),
-        "mid": ("crate+", "cardboard_box"),
+        "mid": ("crate+",),
         "wall": ("wall_shelf", "wall_shelf"),
         "floor": ("basket", "bottles", "basket"),
     },
@@ -666,17 +667,25 @@ def _windows(level: dict, room: dict) -> list:
     return out
 
 
-def _legs(routes: dict, level: dict, room: dict) -> list:
-    """Room-local boxes round the routes' legs on the room's level (each leg's bounding box grown by the radius)."""
+def walk_legs(data: dict, routes: dict) -> list:
+    """Every walk the `house --walk` run makes (doorways, flights, loops and the routes with their flights expanded:
+    house_layout.walk_request, house_routes.walks) as its points [x, height, z]."""
+    request = house_layout.walk_request(data)
+    return [w["points"] for w in request["walks"] + house_routes.walks(data, request, routes)]
+
+
+def _legs(walks: list, level: dict, room: dict) -> list:
+    """Room-local boxes round the walks' legs on the room's level (each leg's bounding box grown by the radius): the
+    furniture and clutter keep off them, so the capsule's routes, flights' exits and loops stay clear."""
     rx, ry = room["rect"][:2]
     pad = hd.RADIUS + 0.05
+    y = level["floor_y"]
     out = []
-    for r in routes.get("routes", []):
-        pts = r["points"]
+    for pts in walks:
         for a, b in zip(pts, pts[1:]):
-            if a[0] == b[0] == level["level"]:
-                out.append((min(a[1], b[1]) - rx - pad, min(a[2], b[2]) - ry - pad,
-                            max(a[1], b[1]) - rx + pad, max(a[2], b[2]) - ry + pad))
+            if abs(a[1] - y) < 0.05 and abs(b[1] - y) < 0.05:
+                out.append((min(a[0], b[0]) - rx - pad, min(a[2], b[2]) - ry - pad,
+                            max(a[0], b[0]) - rx + pad, max(a[2], b[2]) - ry + pad))
     return out
 
 
@@ -697,7 +706,7 @@ def generate(data: dict, folder: Path, cat: dict) -> dict:
     DATA.clear()
     DATA.update(data)
     texts = {f: f.read_text(encoding="utf-8") for f in sorted(Path(folder).glob("*.toml"))}
-    routes = house_routes.load(Path(folder).parent)
+    walks = walk_legs(data, house_routes.load(Path(folder).parent))
     out = {}
     for lv in data["levels"]:
         for room in lv["rooms"]:
@@ -707,7 +716,7 @@ def generate(data: dict, folder: Path, cat: dict) -> dict:
                 continue
             base = strip(texts[path])
             dressing = tomllib.loads(base)
-            rm = dict(room, windows=_windows(lv, room), legs=_legs(routes, lv, room))
+            rm = dict(room, windows=_windows(lv, room), legs=_legs(walks, lv, room))
             items = room_clutter(lv, rm, dressing, cat, rule)
             out[room["id"]] = (path, base + "\n" + block(items), items)
     return out

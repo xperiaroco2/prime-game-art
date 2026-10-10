@@ -40,22 +40,22 @@ face = "W"
 
 [[props]]
 id = "shoe_rack"
-at = [3.86, 0, 0.3]
+at = [3.13, 0, 0.3]
 face = "S"
 
 [[props]]
 id = "shoes"
-at = [3.86, 0.5, 0.3]
+at = [3.13, 0.5, 0.3]
 face = "S"
 
 [[props]]
 id = "coat_rack"
-at = [4.66, 0, 0.35]
+at = [3.93, 0, 0.35]
 face = "S"
 
 [[props]]
 id = "boots"
-at = [3.21, 0, 0.36]
+at = [2.48, 0, 0.36]
 face = "S"
 
 [[props]]
@@ -89,13 +89,8 @@ at = [7.65, 0, 0.94]
 face = "W"
 
 [[props]]
-id = "console_table"
-at = [2.11, 0, 0.325]
-face = "S"
-
-[[props]]
 id = "radiator"
-at = [7.9, 0.12, 4.21]
+at = [7.9, 0.12, 4.14]
 face = "W"
 
 [[props]]
@@ -105,42 +100,42 @@ face = "E"
 
 [[props]]
 id = "potted_plant"
-at = [6.2, 0, 4.2]
-face = "S"
+at = [1.2, 0, 1.45]
+face = "W"
 
 [[props]]
 id = "potted_plant"
-at = [2.7, 0, 1.45]
+at = [1.95, 0, 1.2]
 face = "N"
 
 [[props]]
 id = "potted_plant"
-at = [5.2, 0, 1.45]
+at = [2.95, 0, 1.45]
+face = "S"
+
+[[props]]
+id = "potted_plant"
+at = [3.45, 0, 1.2]
 face = "W"
 
 [[props]]
 id = "potted_plant"
-at = [4.45, 0, 1.2]
-face = "W"
-
-[[props]]
-id = "potted_plant"
-at = [6.7, 0, 4.2]
+at = [2.45, 0, 1.45]
 face = "E"
 
 [[props]]
 id = "potted_plant"
-at = [7.65, 0, 2.02]
+at = [1.9, 0, 0.35]
+face = "S"
+
+[[props]]
+id = "book_stack"
+at = [7.71, 0.8, 2.62]
 face = "W"
 
 [[props]]
 id = "vase_flowers"
-at = [7.73, 0.8, 3]
-face = "W"
-
-[[props]]
-id = "book_stack"
-at = [7.66, 0.8, 3.32]
+at = [7.63, 0.8, 3.4]
 face = "W"
 
 [[props]]
@@ -149,23 +144,13 @@ at = [7.61, 0.4, 5.72]
 face = "W"
 
 [[props]]
-id = "vase_flowers"
-at = [1.86, 0.8, 0.26]
-face = "S"
-
-[[props]]
-id = "book_stack"
-at = [2.38, 0.8, 0.34]
-face = "S"
-
-[[props]]
 id = "picture_frame"
 at = [7.9, 1.4, 3]
 face = "W"
 
 [[props]]
 id = "picture_frame"
-at = [2.92, 1.4, 0.1]
+at = [2.55, 1.4, 0.1]
 face = "S"
 
 [[props]]
@@ -175,5 +160,5 @@ face = "W"
 
 [[props]]
 id = "shoes"
-at = [7.22, 0, 5.7]
-face = "N"
+at = [7.7, 0, 2.02]
+face = "W"
