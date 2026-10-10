@@ -112,18 +112,28 @@ class RoofTest(unittest.TestCase):
         self.assertLess(dm["sill"], 3.2)  # and a short stair's height over the attic floor
         self.assertLess(math.dist(dm["out"], ROOF["arrive"]), 0.6)
         self.assertLessEqual(A.step_at_wall(dm, DATA), A.STEP_H)  # out over the sill and back in without a jump
-        # the game's 1.8 m capsule does not pass the 1.4 m window: recorded open for the engineer, failed without it
-        self.assertLess(dm["opening"][1], A.PLAYER_H)
-        self.assertTrue(dm["open"])
+        # the crouched capsule (the game adds a crouch) passes the 1.0 x 1.4 m window with its margin; a lower one fails
+        self.assertGreaterEqual(dm["opening"][1], A.CLEAR_H)
+        self.assertGreaterEqual(A.CLEAR_H, A.CROUCH_H + 0.1)
+        self.assertGreaterEqual(dm["opening"][0], 2 * A.PLAYER_R + 0.1)
         self.assertFalse(any("capsule through" in p for p in A.check(ROOF, DATA)))
         data = copy.deepcopy(DATA)
-        attic = next(lv for lv in data["levels"] if lv["level"] == "attic")
-        del attic["dormers"][0]["open"]
-        self.assertTrue(any("capsule through" in p for p in A.check(ROOF, data)))
-        data["pieces"]["dormer_gable"]["window"] = [1.0, 1.9]
-        self.assertFalse(any("capsule through" in p for p in A.check(ROOF, data)))
+        data["pieces"]["dormer_gable"]["window"] = [1.0, 1.25]
+        self.assertTrue(any("crouched 1.2 m capsule through" in p for p in A.check(ROOF, data)))
+        data["pieces"]["dormer_gable"]["window"] = [0.85, 1.4]
+        self.assertTrue(any("crouched 1.2 m capsule through" in p for p in A.check(ROOF, data)))
+        data = copy.deepcopy(DATA)
         data["pieces"]["dormer_gable"]["sill"] = 0.5
         self.assertTrue(any("no walking back in" in p for p in A.check(ROOF, data)))
+
+    def test_the_open_casement_keeps_clear_of_the_climb_out(self) -> None:
+        (dm,) = A.dormers(DATA)
+        x0, x1 = dm["window"][0] - dm["opening"][0] / 2, dm["window"][0] + dm["opening"][0] / 2
+        hinge = dm["leaf"][0] if abs(dm["leaf"][0][0] - x1) < 0.1 else dm["leaf"][-1]
+        self.assertAlmostEqual(hinge[0], x1, delta=0.05)  # the world-east jamb (docs/house.md)
+        lane = (dm["window"][0] - A.PLAYER_R, dm["window"][0] + A.PLAYER_R)  # the crouched capsule straight out
+        self.assertTrue(all(not lane[0] < x < lane[1] for x, _ in dm["leaf"]))
+        self.assertTrue(all(x >= x0 for x, _ in dm["leaf"]))
 
     def test_the_whole_roof_is_walkable_from_the_dormer(self) -> None:
         seen, cell = A.walkable(ROOF, DATA)

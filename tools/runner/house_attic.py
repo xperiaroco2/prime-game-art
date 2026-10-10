@@ -31,8 +31,11 @@ from .house_zones import _ccw, _near, overlap, rect
 DRESSING = common.ROOT / "layouts" / "house" / "dressing" / "attic_roof"  # not the rooms' format (#75b): kept apart
 LIBRARY = common.ROOT / "props" / "library.toml"
 PLOT = common.ROOT / "layouts" / "house" / "outdoor" / "plot.toml"
-PLAYER_H = 1.8  # the game's player capsule height (prime-game content/modes/base_mode.tres, capsule_height_m; it has
-# no crouch and its crawl keeps the capsule): the dormer's window must let it through
+PLAYER_H = 1.8  # the game's standing player capsule height (prime-game content/modes/base_mode.tres, capsule_height_m)
+CROUCH_H = 1.2  # the crouched capsule's height: an ASSUMPTION for the game side, which adds the crouch (the engineer,
+# 2026-10-10): the crouch capsule must be at most 1.2 m tall to pass the dormer's window (art #77)
+CLEAR_H = 1.3  # the dormer window's clear height: the crouched capsule with a 0.1 m margin
+CLEAR_MARGIN = 0.05  # the window's clear width: the capsule's diameter with this much on each side
 STEP_H = 0.3  # the game's step_height_m: the highest ledge a player walks up without a jump (out over the sill, back in)
 PLAYER_R = 0.4  # the brief's 0.4 m player capsule, taken as its radius (stricter than the zones' 0.35)
 REACH_M = 1.0  # pick-up reach in plan from the capsule's axis
@@ -44,7 +47,6 @@ OVERHANG = 0.5  # the roof's eave and verge pieces reach 0.5 m out of the footpr
 EDGE_M = 0.2  # a player's axis keeps this far inside the roof's outline (the eave is a real edge: a fall)
 FLAT_H = 0.1  # lower than this is walked over (rugs, the picture frames' depth is not their height)
 STATION_TOL = 0.01  # a roof station's height in the layout against roof_top
-CASEMENT_DEG = 80.0  # the dormer's casement, open outward (kit_geom.build_dormer)
 DORMER_WALL = 0.15  # the dormer's front wall (kit_geom.DORMER_WALL): the stair's top meets its inner face
 CLIMB_FOOT = 0.5  # where a player stands before a stair's first tread, from its foot on its axis
 CLIMB_TOL = 0.01  # a stair's top against the dormer's sill (m)
@@ -176,7 +178,7 @@ def dormers(data: dict) -> list[dict]:
 
             def world(lx, lz, p=p, ax=ax, az=az):
                 return (p["x"] + ax[0] * lx + az[0] * lz, p["y"] + ax[1] * lx + az[1] * lz)
-            a = math.radians(CASEMENT_DEG)  # the leaf: from its jamb at local x (W - ww) / 2 out towards local -Z
+            a = math.radians(kg.DORMER_CASEMENT_DEG)  # the leaf: from its jamb at local x (W - ww) / 2 out towards local -Z
             hx = (W - ww) / 2
             tip = (hx + ww * math.cos(a), -ww * math.sin(a))
             n = (0.03 * math.sin(a), 0.03 * math.cos(a))
@@ -187,7 +189,7 @@ def dormers(data: dict) -> list[dict]:
                         "out": world(W / 2, -1.0), "sill": p["h"] + dd["sill"],
                         "inner": world(W / 2, DORMER_WALL), "lamp": [*world(W / 2, min(dd["ze"], 1.2)),
                                                                      p["h"] + dd["he"] - 0.1],
-                        "opening": [ww, dd["head"] - dd["sill"]], "open": dm.get("open", "")})
+                        "opening": [ww, dd["head"] - dd["sill"]]})
     return out
 
 
@@ -371,9 +373,10 @@ def check(z: dict, data: dict) -> list[str]:
         return problems + climb_problems(z, data)
     # the roof: the walk starts outside a dormer's window; the stations are the layout's and reachable from there
     dms = dormers(data)
-    for dm in dms:  # a window lower than the capsule recorded as `open` for the engineer is reported, not failed
-        if (dm["opening"][1] < PLAYER_H or dm["opening"][0] < 2 * PLAYER_R) and not dm["open"]:
-            problems.append(f"the dormer {dm['id']}'s window {dm['opening']} does not let a {PLAYER_H} m capsule through")
+    for dm in dms:  # the crouched capsule climbs out through the window with a margin
+        if dm["opening"][1] < CLEAR_H or dm["opening"][0] < 2 * (PLAYER_R + CLEAR_MARGIN):
+            problems.append(f"the dormer {dm['id']}'s window {dm['opening']} does not let a crouched {CROUCH_H} m "
+                            f"capsule through (clear {2 * (PLAYER_R + CLEAR_MARGIN):g} x {CLEAR_H:g} m)")
         step = step_at_wall(dm, data)
         if step > STEP_H:
             problems.append(f"the dormer {dm['id']}'s sill stands {step:.2f} m over the roof at its front wall, over the "
@@ -425,6 +428,9 @@ def climb_problems(z: dict, data: dict) -> list[str]:
         c = mine[0]
         if abs(c["top_h"] - dm["sill"]) > CLIMB_TOL:
             problems.append(f"the dormer {dm['id']}: its stair's top {c['top_h']:.3f} m is not its sill {dm['sill']:.3f}")
+        if dm["sill"] - c["top_h"] > STEP_H:
+            problems.append(f"the dormer {dm['id']}: its sill stands {dm['sill'] - c['top_h']:.2f} m over the stair's "
+                            f"landing, over the game's {STEP_H} m step")
         if c["slope"] > MAX_SLOPE:
             problems.append(f"the dormer {dm['id']}: its stair climbs at {c['slope']:.1f} deg, over {MAX_SLOPE}")
         if c["width"] < 2 * PLAYER_R:
@@ -535,7 +541,7 @@ def report(data: dict | None = None) -> dict[str, Any]:
     dms = [{"id": dm["id"], "window": [round(v, 2) for v in dm["window"]], "sill": round(dm["sill"], 3),
             "lamp": [round(v, 3) for v in dm["lamp"]],
             "opening": [round(v, 3) for v in dm["opening"]], "step_at_wall": round(step_at_wall(dm, data), 3),
-            "roof_top_eave": round(roof_top(data, dm["out"][1]), 3), "open": dm["open"]} for dm in dormers(data)]
+            "roof_top_eave": round(roof_top(data, dm["out"][1]), 3)} for dm in dormers(data)]
     climb = [{"id": c["id"], "foot": [round(v, 2) for v in c["foot"]], "top": [round(v, 2) for v in c["top"]],
               "top_h": round(c["top_h"], 3), "slope_deg": round(c["slope"], 1)} for c in climbs(data)]
     return {"attic": {"items": len(attic["items"]), "spots": reach(attic, data), "climb": climb,

@@ -365,17 +365,15 @@ Defaults used (for the engineer; data, easy to change):
 - The front porch and the two chimneys are kit v2 pieces (`[[pieces]]`): one `porch_2x2` from x 29 on the front
   wall, so its posts (x 29.12 and 30.88) leave 1.64 m clear round the front door at x 30, its lamp socket for the porch
   lamp (#74b); the chimneys centred on the doc's points (22, 42) and (38, 24.5).
-- The attic's pitched roof is kit v2's (`[[roofs]]` in `attic.toml`, `pitched_roof` in the engine): the placements of
-  `kit_geom.attic_roof` over the attic's 20 x 14 m (docs/kit.md, "Pitched roofs"), pivoted on the knee walls' top
-  (2.2 m), the eaves on y 26 and 40 and the ridge on y 33; with `gables = true` the gable walls on x 20 and 40, per
-  slope row (2, 2, 2 and 1 m from each eave) a `gable_tri_*` over `gable_band_*` of the row's length, so their tops
-  follow the roof's line. Every height comes from the kit's spec, so the roof follows the kit's pitch: tonight 0.7 per
-  metre (Q2 option A, the ridge 7.1 m over the attic floor), because kit v2 is built at 0.7 (kept by #77: the
-  engineer's call); Q2's option B (0.35) is a kit rebuild with `gable_rise_per_m` 0.35 (and the gable bands' heights).
-- The gable window pair (#77): the kit's `gable_band_2m_window` (a 2 m gable band with a 1.0 x 0.9 m window on a
-  0.25 m sill, so 2.45 to 3.35 m over the attic floor) swaps the lowest band of the 2 m row centred on each
-  `windows` point; tonight one per gable at y 31 (the north row x 30..32), beside the roof door at y 33 in the east.
-  A point that is not a 2 m row's centre is a problem.
+- The attic's pitched roof is kit v3's (`[[roofs]]` in `attic.toml`, `pitched_roof` in the engine): the placements of
+  `kit_geom.attic_roof` over the house's 24 x 20 m footprint (docs/kit.md, "Pitched roofs" and "Version 3"), pivoted
+  on the knee walls' top (2.2 m), the eaves on y 24 and 44 and the ridge on y 34; with `gables = true` the gable walls
+  on x 18 and 42, per slope row a `gable_tri_*` over `gable_band_*` of the row's length, so their tops follow the
+  roof's line. Every height comes from the kit's spec, so the roof follows the kit's pitch: 0.35 per metre (Q2 option
+  B, 19.3 deg; the engineer's pick for the free roof, #77).
+- No gable windows (#77): `windows` in a `[[roofs]]` entry swaps the lowest band of a 2 m row for the kit's
+  `gable_band_2m_window` (a 1.0 x 0.9 m window on a 0.25 m sill), but at 0.35 the lowest gable band is too low to hold
+  it, so the attic roof lists none; the dormer lights the attic. A point that is not a 2 m row's centre is a problem.
 - Q3 A (the deck's 1 m overhang, as the doc): 44 `cornice_bracket`s every 2 m round the second floor's walls, their
   tops against the deck slab's underside (6.1 m), reaching 0.8 m out.
 - The main stairs (not the doc's straight flight): a 6 m flight fills the 6 m stairs room, so its foot sits against
@@ -427,13 +425,16 @@ lies on the roof). The light fixtures are #83a's. The rooms' dressing (`<room>.t
   measure where one stands. The south eave is about 8.8 m over the ground floor (the attic floor 6.4 m plus 2.36 m).
   The art side builds nothing more: what a fall does (damage, a kill, a fall volume under the eaves) is the game's
   rule, on the game side.
-- **Open: the window and the game's capsule.** The check measures the window against the game's player capsule (1.8 m
-  tall, radius 0.4: base_mode.tres; no crouch, and the crawl keeps the capsule). The 1.0 x 1.4 m opening is lower, so
-  no player passes it yet; the layout records that as the dormer's `open` note (reported, not failed; without the note
-  the check fails). The fix is the engineer's: a door-height opening in a taller dormer front, or a crouch in the
-  game. Until then the climb is proven by geometry only (the stair's top at the sill, its slope, width and foot, the
-  step at the sill); a capsule walk in Godot up the stair, out and back (extending `zones.gd` or the house walk) comes
-  with the new opening. The stair's 43.6 deg leaves 1.4 deg under the floor limit: a steeper stair fails the check.
+- **The window and the crouch** (the engineer, 2026-10-10: the dormer keeps a window, the game adds a crouch). The
+  check models a crouched player: the crouch capsule taken as 1.2 m tall, radius 0.4 (`CROUCH_H`, an assumption for
+  the game side: the crouch capsule must be at most 1.2 m tall to pass the window). The window's clear opening must
+  pass it with a margin: at least 0.9 m wide (`CLEAR_MARGIN` 0.05 a side) and 1.3 m high (`CLEAR_H`); the 1.0 x 1.4 m
+  window does. The sill stands at most 0.3 m (`STEP_H`) over the roof outside (0.15 m) and over the stair's top
+  landing inside (0 m). The standing capsule stays the game's 1.8 m (base_mode.tres).
+- **The casement** hinges on the window's world-east jamb (x 35.5) and stands open 95 deg outward
+  (`kit_geom.DORMER_CASEMENT_DEG`), swung just past square to the front toward the south-east, so its leaf keeps clear of
+  the crouched capsule's lane straight out (`test_the_open_casement_keeps_clear_of_the_climb_out`).
+- The stair's 43.6 deg leaves 1.4 deg under the floor limit: a steeper stair fails the check.
 - **The lookout** (`[roof.lookout]`): from each eye 1.6 m over the roof's top, the share of sample points on the plot's
   wicket and gates (`plot.toml`'s fence openings) seen over the roof and its props, and every window of the house in
   view. The station is on the south slope near (39, 41.9), 11.09 m up: wicket 100 %, gates 100 %, no house window in

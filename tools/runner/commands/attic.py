@@ -44,8 +44,9 @@ def run(args: argparse.Namespace) -> int:
                    f"the attic floor, {dm['step_at_wall']:.2f} m over the roof at its front wall (the game's step "
                    f"{house_attic.STEP_H:g} m), the eave {dm['roof_top_eave']:.2f} m; {rep['roof']['walkable_m2']} m2 of "
                    f"roof walkable from it")
-        if dm["open"]:
-            common.say(f"roof: dormer {dm['id']}: OPEN for the engineer: {dm['open']}")
+        common.say(f"roof: dormer {dm['id']}: a crouched {house_attic.CROUCH_H:g} m capsule climbs out (clear "
+                   f"{w:g} x {h:g} m against {2 * (house_attic.PLAYER_R + house_attic.CLEAR_MARGIN):g} x "
+                   f"{house_attic.CLEAR_H:g} m)")
     for k, v in enumerate(rep["roof"]["lookout"]):
         see = ", ".join(f"{t} {100 * f:.0f}%" for t, f in v["see"].items())
         label = "the station" if k == 0 else "an alternative, not the acceptance"

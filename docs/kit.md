@@ -18,7 +18,7 @@ tools/run.sh kit [--spec kits/house.json] [--out DIR] [--only id,...] [--no-buil
 | Option | What it does |
 |---|---|
 | (none) | Checks the spec (with the seam and closure checks), builds every piece in headless Blender (`tools/blender/kit_build.py`), checks every GLB and imports them all into `godot/` headless (`godot/check/kit.gd`); about 5 minutes, plus any wait for the heavy-run lock |
-| `--out` | Output folder (default `<raw>/kits/<kit>/v<version>`, now `D:/prime-art-raw/kits/house/v2`) |
+| `--out` | Output folder (default `<raw>/kits/<kit>/v<version>`, now `D:/prime-art-raw/kits/house/v3`) |
 | `--only` | Only these pieces (`--proof` needs the whole kit) |
 | `--no-build` | Checks the GLBs already in `--out` (about 1 minute with Godot) |
 | `--no-godot` | Skips the Godot import (and the proof) |
@@ -114,7 +114,8 @@ The engineer's picks of 2026-10-10: a free roof of clay pantiles with one gable 
   `concrete`, 0.17 m each side), its feet sunk into the bed.
 - **Dormer** (`dormer_gable`, type `dormer`, budget `dormer` 1500): replaces a 2 m panel column over 7 m of run
   (`house_layout.dormer_cut`). A plastered front with the window (`window` w x h, `sill` over the roof's top), a white
-  casement open 80 deg outward, a boarded gable, plastered cheeks, its own pantile-coloured roof (`rise` per metre)
+  casement open 95 deg outward on the world-east jamb (`DORMER_CASEMENT_DEG`: clear of the
+  crouched climb-out), a boarded gable, plastered cheeks, its own pantile-coloured roof (`rise` per metre)
   and the main roof's slab behind it; socket `lamp` under its ridge. `reach_m` (1.0) is what may stand out before the
   span's z0 and beside its x span (the overhangs and the open casement); the span check allows it.
 - **Climb-out stair** (`stair_dormer`, type `ladder`): `build_ladder` takes optional `steps`, `tread` (each tread's

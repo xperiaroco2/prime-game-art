@@ -82,7 +82,6 @@ slope = "S"
 x = 34
 z = [1, 8]
 piece = "dormer_gable"
-open = "the window's 1.0 x 1.4 m opening is lower than the game's 1.8 m player capsule (base_mode.tres capsule_height_m; no crouch, the crawl keeps the capsule): no player passes it until the engineer picks a taller opening (a door-height dormer front) or the game adds a crouch (art #77's PR)"
 note = "the gable dormer the players climb out of onto the south slope (art #77): the 2 m panel column x 34..36 from 1 m up the slope (its front wall at y 43) to 8 m (y 36), where its ridge meets the main roof (the kit piece's 7 m); a 2 x 1 panel fills the column below and above it"
 
 [[pieces]]
