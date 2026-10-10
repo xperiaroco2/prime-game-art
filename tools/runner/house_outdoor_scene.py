@@ -45,9 +45,11 @@ def stand_ins(data: dict) -> list[dict]:
     t, pit = PIT_T, (0.3, 0.3, 0.31)
     out.append(box("pit_w", x - t, y - t, x, y + d + t, -drop, 0.0, pit))
     out.append(box("pit_e", x + w, y - t, x + w + t, y + d + t, -drop, 0.0, pit))
-    out.append(box("pit_s", x, y + d, x + w, y + d + t, -drop, 0.0, pit))
-    out.append(box("pit_n", x + w / 2, y - t, x + w, y, -drop, -0.3, pit))
-    out.append(box("pit_lintel", x, y - t, x + w / 2, y, -drop + LINTEL_CLEAR_M, 0.0, pit))
+    # the far edge walled; the entry edge open above its east half, its west half a lintel over the passage exit
+    far, near = ((y + d, y + d + t), (y - t, y)) if data["stairs"]["entry"] == "N" else ((y - t, y), (y + d, y + d + t))
+    out.append(box("pit_far", x, far[0], x + w, far[1], -drop, 0.0, pit))
+    out.append(box("pit_entry", x + w / 2, near[0], x + w, near[1], -drop, -0.3, pit))
+    out.append(box("pit_lintel", x, near[0], x + w / 2, near[1], -drop + LINTEL_CLEAR_M, 0.0, pit))
     return out
 
 
@@ -106,8 +108,9 @@ def shots(data: dict, doc: dict) -> dict:
     mid = {o["kind"]: (o["from"][0] + o["to"][0]) / 2 for o in doc["openings"]}
     wx, gx = mid["wicket"], mid["gates"]
     fy = max(p[1] for p in data["plot"])
-    sx, sy, sw, _ = data["stairs"]["rect"]
+    sx, sy, sw, sd = data["stairs"]["rect"]
     drop = float(data["stairs"]["drop"])
+    edge, inward = (sy, 1.0) if data["stairs"]["entry"] == "N" else (sy + sd, -1.0)  # the entry edge, into the well
     cx, _ = data["sky_cfg"]["backdrop"]["centre"]
     return {
         "strips": [["strip_yard", "yard", [48.0, EYE, 52.0]], ["strip_street", "street", [40.0, EYE, kerb + 1.5]]],
@@ -117,10 +120,10 @@ def shots(data: dict, doc: dict) -> dict:
              "closed"],
             ["gates", "the 8 m gates (open) and gate posts from the street", [gx - 7.0, 1.7, kerb + 3.0], [gx, 1.0, fy]],
             ["gates_in", "the gates and the drive from inside", [gx + 3.0, 1.7, fy - 9.0], [gx - 1.0, 1.0, fy]],
-            ["stairs_top", "the outdoor stairs from the garden", [sx + sw + 1.0, 1.7, sy - 1.5],
-             [sx + 1.0, -drop + 0.7, sy + 2.5]],
-            ["stairs_bottom", "walked down: from the passage up the flights", [sx + 1.0, -drop + EYE, sy - 0.8],
-             [sx + 1.0, -1.0, sy + 3.0]],
+            ["stairs_top", "the outdoor stairs from their entry", [sx + sw + 1.0, 1.7, edge - inward * 1.5],
+             [sx + 1.0, -drop + 0.7, edge + inward * 2.5]],
+            ["stairs_bottom", "walked down: from the passage up the flights",
+             [sx + 1.0, -drop + EYE, edge - inward * 0.8], [sx + 1.0, -1.0, edge + inward * 3.0]],
             ["lookout_south", "seam check: 9 m up, over the street to the flats", [cx, 9.0, fy - 14.0],
              [cx, 2.0, fy + 60.0]],
             ["lookout_north", "seam check: 9 m up, north to the flats", [cx, 9.0, 20.0], [cx, 2.0, -40.0]],

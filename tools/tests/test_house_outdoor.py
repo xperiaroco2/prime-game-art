@@ -137,11 +137,24 @@ class StairsTest(unittest.TestCase):
         st = PLAN["stairs"]
         rails = [r for r in st["rails"] if r["piece"] == DATA["stairs"]["railing"]]
         self.assertEqual(len(rails) * 2, 14)  # 16 m of edge less the 2 m entry
-        x0, y0, _, _ = DATA["stairs"]["rect"]
-        for r in rails:  # nothing starts into the entry span (x0+2..x0+4 on the north edge)
+        x0, y0, _, d = DATA["stairs"]["rect"]
+        edge = y0 if DATA["stairs"]["entry"] == "N" else y0 + d
+        for r in rails:  # nothing starts into the entry span (x0+2..x0+4 on the entry edge)
             lx = ho.local_x(r["yaw"])
             mid = (r["at"][0] + lx[0], r["at"][2] + lx[1])
-            self.assertFalse(abs(mid[1] - y0) < 1e-6 and x0 + 2 < mid[0] < x0 + 4, r)
+            self.assertFalse(abs(mid[1] - edge) < 1e-6 and x0 + 2 < mid[0] < x0 + 4, r)
+
+    def test_the_stairs_come_from_the_house_layout(self) -> None:  # one owner: ground.toml (art #78)
+        import tomllib
+        with open(ho.DATA.parent / ho.HOUSE_GROUND, "rb") as f:
+            g = tomllib.load(f)
+        hole = next(h for h in g["holes"] if h["id"] == ho.STAIRS_ID)
+        flight = next(s for s in g["stairs"] if s["id"] == ho.STAIRS_ID)
+        self.assertEqual(DATA["stairs"]["rect"], hole["rect"])
+        self.assertEqual(DATA["stairs"]["entry"], flight["climb"])
+        a, _, b = PLAN["stairs"]["flights"]  # the outdoor U's flights where the house walks them
+        self.assertEqual(a, flight["rect"])
+        self.assertEqual(b, flight["below"][0]["rect"])
 
 
 class PropsTest(unittest.TestCase):

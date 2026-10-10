@@ -28,7 +28,7 @@ markers = [
   { name = "Package04", at = [13.5, 0.0, 1.5], group = "spawn_package" },
   { name = "Package05", at = [1.5, 0.0, 5.0], group = "spawn_package" },
   { name = "Package06", at = [5.0, 0.0, 6.0], group = "spawn_package" },
-  { name = "Package07", at = [14.0, 0.0, 5.5], group = "spawn_package" },
+  { name = "Package07", at = [12.5, 0.0, 2.6], group = "spawn_package" },
   { name = "Package08", at = [1.5, 0.0, 11.0], group = "spawn_package" },
   { name = "Package09", at = [5.0, 0.0, 13.5], group = "spawn_package" },
   { name = "Package10", at = [14.5, 0.0, 14.5], group = "spawn_package" },
@@ -153,3 +153,47 @@ rooms = ["generator_hall", "passage"]
 names = { generator_hall = "Door5", passage = "Door1" }
 kind = "door"
 leaf = "none"
+
+# Concrete pillars (kit v2's `pillar_concrete`, 0.4 m, centred on its node; art #78). The hall's 18 x 20 m cannot hold
+# the inventory's 8 on an 8 m grid: 4 on a 10 x 12 m grid, 4 m off the walls, chosen by a grid search for the longest
+# clear sight lines (from the passage door to every door and corner, and from every door to the generator: each clears
+# a pillar by at least 0.79 m). Storage keeps the inventory's 4, clear of the line from its corridor door to switch A.
+[[pieces]]
+piece = "pillar_concrete"
+room = "generator_hall"
+at = [44, 0.0, 26]
+
+[[pieces]]
+piece = "pillar_concrete"
+room = "generator_hall"
+at = [54, 0.0, 26]
+
+[[pieces]]
+piece = "pillar_concrete"
+room = "generator_hall"
+at = [44, 0.0, 38]
+
+[[pieces]]
+piece = "pillar_concrete"
+room = "generator_hall"
+at = [54, 0.0, 38]
+
+[[pieces]]
+piece = "pillar_concrete"
+room = "storage"
+at = [19, 0.0, 23]
+
+[[pieces]]
+piece = "pillar_concrete"
+room = "storage"
+at = [25, 0.0, 23]
+
+[[pieces]]
+piece = "pillar_concrete"
+room = "storage"
+at = [19, 0.0, 28]
+
+[[pieces]]
+piece = "pillar_concrete"
+room = "storage"
+at = [22, 0.0, 25.5]

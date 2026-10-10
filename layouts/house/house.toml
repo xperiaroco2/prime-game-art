@@ -6,3 +6,9 @@ kit_dir = "kits/house/v2"
 kit_res = "res://import/kit_{id}.glb"
 scene_res = "res://import/house"
 levels = ["basement", "ground", "upper", "attic", "roof"]
+# The dressing (#75b, docs/house.md "Dressing"): one file per room in dressing/; the prop catalogues that give each id
+# its size and pivot (later files win); the raw folders its GLB is looked for in, in order; its res:// path when staged.
+dressing_dir = "dressing"
+prop_specs = ["props/tasks.toml", "props/library.toml"]
+prop_dirs = ["props/task/v1", "props/library/v1"]
+prop_res = "res://import/prop_{id}.glb"

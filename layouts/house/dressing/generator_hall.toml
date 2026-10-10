@@ -1,0 +1,202 @@
+# The generator hall's dressing (art #78, docs/house.md "Dressing"): the props and light fixtures of one room, as data.
+# at = [x, h, z]: room-local metres like the room's stations (x east, h above the floor, z south from the room's
+# north-west corner) at the prop's pivot (floor: the footprint's centre; wall: the back's bottom centre on the wall's
+# face; ceiling: the top's centre). face = the way the prop's front (+Z) looks: N, E, S or W.
+# Ids are the dressing library's (props/library.toml, #87) and the task props' (props/tasks.toml, #82). Fixtures are
+# the lamps' meshes only (their light is #83a's, layouts/house/lights.toml). Positions are the engineer's to change.
+# Pillars: four kit pillars in basement.toml [[pieces]] (a 10 x 12 m grid; the sight lines in docs/house.md).
+room = "generator_hall"
+
+[[props]]
+id = "generator"
+at = [9, 0, 11.2]
+face = "N"
+station = "Generator"
+note = "its front 0.65 m south of the station marker"
+
+[[props]]
+id = "fuel_barrel"
+at = [17.4, 0, 1.6]
+
+[[props]]
+id = "fuel_barrel"
+at = [17.4, 0, 2.3]
+
+[[props]]
+id = "fuel_barrel"
+at = [16.7, 0, 1.6]
+
+[[props]]
+id = "fuel_barrel"
+at = [16.7, 0, 2.3]
+
+[[props]]
+id = "cable_drum"
+at = [12.5, 0, 10.5]
+
+[[props]]
+id = "cable_drum"
+at = [12.6, 0, 11.6]
+
+[[props]]
+id = "cable_drum"
+at = [5.4, 0, 12]
+
+[[props]]
+id = "pipe_run"
+at = [1.1, 2.6, 0.2]
+
+[[props]]
+id = "pipe_run"
+at = [3.1, 2.6, 0.2]
+
+[[props]]
+id = "pipe_run"
+at = [5.1, 2.6, 0.2]
+
+[[props]]
+id = "pipe_run"
+at = [7.1, 2.6, 0.2]
+
+[[props]]
+id = "pipe_run"
+at = [9.1, 2.6, 0.2]
+
+[[props]]
+id = "pipe_run"
+at = [11.1, 2.6, 0.2]
+
+[[props]]
+id = "pipe_run"
+at = [13.1, 2.6, 0.2]
+
+[[props]]
+id = "pipe_run"
+at = [15.1, 2.6, 0.2]
+
+[[props]]
+id = "pipe_run"
+at = [16.9, 2.6, 0.2]
+
+[[props]]
+id = "pipe_run"
+at = [17.8, 2.6, 1.1]
+face = "W"
+
+[[props]]
+id = "pipe_run"
+at = [17.8, 2.6, 3.1]
+face = "W"
+
+[[props]]
+id = "pipe_run"
+at = [17.8, 2.6, 5.1]
+face = "W"
+
+[[props]]
+id = "pipe_run"
+at = [17.8, 2.6, 7.1]
+face = "W"
+
+[[props]]
+id = "pipe_run"
+at = [17.8, 2.6, 9.1]
+face = "W"
+
+[[props]]
+id = "crate"
+at = [0.4, 0, 19.3]
+
+[[props]]
+id = "crate"
+at = [1, 0, 19.3]
+
+[[props]]
+id = "crate"
+at = [0.4, 0.4, 19.3]
+
+[[props]]
+id = "crate"
+at = [17.4, 0, 19.4]
+
+[[props]]
+id = "metal_shelving"
+at = [0.35, 0, 10]
+face = "E"
+
+[[props]]
+id = "metal_shelving"
+at = [0.35, 0, 12.2]
+face = "E"
+
+[[props]]
+id = "pallet"
+at = [16.5, 0, 18.5]
+
+[[props]]
+id = "pallet"
+at = [2, 0, 1]
+
+[[fixtures]]
+id = "industrial_pendant"
+at = [2, 3, 6]
+
+[[fixtures]]
+id = "industrial_pendant"
+at = [6, 3, 6]
+
+[[fixtures]]
+id = "industrial_pendant"
+at = [9, 3, 6]
+
+[[fixtures]]
+id = "industrial_pendant"
+at = [12, 3, 6]
+
+[[fixtures]]
+id = "industrial_pendant"
+at = [16, 3, 6]
+
+[[fixtures]]
+id = "industrial_pendant"
+at = [2, 3, 14]
+
+[[fixtures]]
+id = "industrial_pendant"
+at = [6, 3, 14]
+
+[[fixtures]]
+id = "industrial_pendant"
+at = [9, 3, 14]
+
+[[fixtures]]
+id = "industrial_pendant"
+at = [12, 3, 14]
+
+[[fixtures]]
+id = "industrial_pendant"
+at = [16, 3, 14]
+
+[[fixtures]]
+id = "cage_lamp"
+at = [17.9, 2.2, 7]
+face = "W"
+note = "beside the passage door"
+
+[[fixtures]]
+id = "cage_lamp"
+at = [8, 2.2, 0.1]
+face = "S"
+note = "beside the switch room door"
+
+[[fixtures]]
+id = "cage_lamp"
+at = [11, 2.2, 19.9]
+face = "N"
+note = "beside the pump room door"
+
+[[fixtures]]
+id = "cage_lamp"
+at = [0.1, 2.2, 8]
+face = "E"
+note = "between the corridor and boiler doors"

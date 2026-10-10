@@ -147,6 +147,8 @@
   {"id": "roof_pitched_ridge_end_r", "type": "ridge", "kind": "roof", "x": [0, 0.5], "ends": "+x", "overhang": true},
   {"id": "glass_roof_2x2", "type": "glass_roof", "kind": "glass", "x": [0, 2], "z": [0, 2]},
   {"id": "glass_roof_eave_2m", "type": "glass_roof", "kind": "glass", "x": [0, 2], "z": [-0.15, 0], "ends": "-z", "gutter": true, "overhang": true},
+  {"id": "glass_roof_2x2_end", "type": "glass_roof", "kind": "glass", "x": [0, 2], "z": [0, 2], "ends": "+x"},
+  {"id": "glass_roof_eave_2m_end", "type": "glass_roof", "kind": "glass", "x": [0, 2], "z": [-0.15, 0], "ends": "-z+x", "gutter": true, "overhang": true},
   {"id": "glass_roof_ridge_2m", "type": "glass_ridge", "kind": "glass", "x": [0, 2]},
   {"id": "glass_gable_tri_2m_up", "type": "glass_gable", "kind": "glass", "length": 2, "up": "+x"},
   {"id": "glass_gable_tri_2m_down", "type": "glass_gable", "kind": "glass", "length": 2, "up": "-x"},

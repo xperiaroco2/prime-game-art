@@ -1,0 +1,294 @@
+# The House map's light kit (art #83a, docs/house.md "Light"): fixture types, the fixtures per room, the bake zones
+# and the Low and High presets. Taste data: the engineer may change any number here and regenerate (`house`).
+# Counts per room are inventory.md §8 of the house plan (191 fixtures); positions are generated (`place`) unless a
+# fixture lists `at` = [x, h, y] in plot metres. Every fixture is baked (LightmapGI, light_bake_mode Static); a type
+# with `glow = true` may also get the cheap real-time glow (unshadowed omni, distance fade) for the nearest
+# `glow_count` of the preset.
+
+[colors]  # linear-ish Godot colours; c2 is the lab's lamp c2 (baked and real-time match, lab round 3)
+c2 = [1.0, 0.85, 0.68]
+cool = [0.86, 0.93, 1.0]       # functional spaces on purpose (Q23 B): garage tubes, generator pendants, switch cages
+safelight = [1.0, 0.12, 0.08]  # the darkroom
+green_cold = [0.82, 1.0, 0.9]  # the greenhouse
+moon = [0.62, 0.72, 1.0]       # bake-only window spots (D1: moonlight through the windows)
+
+# mount: ceiling (a grid under the ceiling), wall (spaced along the walls, 0.15 m in, clear of doors) or floor (a grid
+# inset from the walls); h: the light's height above the room's floor; light: omni or spot (spots point down).
+[types.bare_bulb]
+mount = "ceiling"
+h = 2.7
+light = "omni"
+energy = 1.0
+range = 6.0
+glow = true
+[types.cage_lamp]
+mount = "ceiling"
+h = 2.7
+light = "omni"
+energy = 0.9
+range = 5.5
+glow = true
+[types.industrial_pendant]
+mount = "ceiling"
+h = 2.6
+light = "omni"
+energy = 1.4
+range = 8.0
+color = "cool"
+glow = true
+[types.fluorescent_tube]
+mount = "ceiling"
+h = 2.8
+light = "omni"
+energy = 1.2
+range = 7.0
+color = "cool"
+glow = false
+[types.pendant_shade]
+mount = "ceiling"
+h = 2.3
+light = "omni"
+energy = 1.0
+range = 6.0
+glow = true
+[types.chandelier]
+mount = "ceiling"
+h = 2.3
+light = "omni"
+energy = 1.6
+range = 8.0
+glow = true
+[types.string_lights]
+mount = "ceiling"
+h = 2.6
+light = "omni"
+energy = 0.35
+range = 5.0
+glow = false
+[types.wall_sconce]
+mount = "wall"
+h = 1.9
+light = "omni"
+energy = 0.6
+range = 4.5
+glow = true
+[types.porch_lamp]
+mount = "wall"
+h = 2.2
+light = "omni"
+energy = 0.8
+range = 5.0
+glow = true
+[types.safelight_red]
+mount = "wall"
+h = 1.8
+light = "omni"
+energy = 0.5
+range = 4.0
+color = "safelight"
+glow = true
+[types.lantern]
+mount = "wall"
+h = 2.0
+light = "omni"
+energy = 0.6
+range = 4.5
+glow = true
+[types.table_lamp]
+mount = "floor"
+h = 0.9
+light = "omni"
+energy = 0.5
+range = 3.5
+glow = true
+[types.floor_lamp]
+mount = "floor"
+h = 1.6
+light = "omni"
+energy = 0.7
+range = 4.5
+glow = true
+[types.path_light]
+mount = "floor"
+h = 0.5
+light = "omni"
+energy = 0.3
+range = 3.0
+glow = false
+[types.garden_post_lamp]
+mount = "floor"
+h = 2.4
+light = "omni"
+energy = 0.8
+range = 6.0
+glow = true
+[types.streetlight]
+mount = "floor"
+h = 5.5
+light = "spot"
+energy = 2.0
+range = 12.0
+angle = 55.0
+glow = true
+
+# Bake-only moon spots through the windows (no mesh, no glow): one per `moon_every` windows of a level, `out` metres
+# outside the window at `h` over the floor, aimed `in` metres inside at 0.5 m.
+[moon]
+every = 2
+out = 1.5
+in = 2.5
+h = 2.6
+energy = 0.6
+range = 8.0
+angle = 35.0
+
+# The fixtures per room (room id -> type -> count); `place = "perimeter"` spaces a room's floor fixtures along its
+# edges 2 m in (the yard: the rest of the plot holds the house).
+[rooms.storage]
+bare_bulb = 12
+cage_lamp = 2
+[rooms.darkroom]
+bare_bulb = 3
+safelight_red = 6
+[rooms.corridor]
+cage_lamp = 4
+[rooms.boiler_room]
+bare_bulb = 2
+cage_lamp = 3
+[rooms.generator_hall]
+cage_lamp = 4
+industrial_pendant = 10
+[rooms.pump_room]
+cage_lamp = 3
+[rooms.switch_room]
+bare_bulb = 1
+cage_lamp = 2
+[rooms.passage]
+cage_lamp = 3
+[rooms.wc]
+wall_sconce = 1
+[rooms.pantry]
+bare_bulb = 1
+[rooms.dining_room]
+wall_sconce = 2
+chandelier = 1
+[rooms.living_room]
+wall_sconce = 2
+table_lamp = 1
+floor_lamp = 2
+[rooms.stairs]
+wall_sconce = 2
+[rooms.kitchen]
+wall_sconce = 1
+pendant_shade = 3
+[rooms.hallway]
+wall_sconce = 2
+porch_lamp = 1
+[rooms.terrace]
+lantern = 4
+string_lights = 2
+porch_lamp = 1
+[rooms.garage]
+fluorescent_tube = 6
+[rooms.greenhouse]
+bare_bulb = 4
+string_lights = 2
+color = "green_cold"
+[rooms.garden]
+path_light = 10
+string_lights = 2
+garden_post_lamp = 6
+[rooms.driveway]
+path_light = 4
+[rooms.path]
+path_light = 8
+porch_lamp = 1
+[rooms.yard]
+path_light = 6
+garden_post_lamp = 6
+place = "perimeter"
+[rooms.photo_zone]
+lantern = 6
+string_lights = 4
+[rooms.chill_zone]
+lantern = 6
+string_lights = 3
+[rooms.outdoor_stairs]
+cage_lamp = 1
+lantern = 1
+[rooms.street]
+streetlight = 5
+[rooms.bedroom]
+table_lamp = 2
+pendant_shade = 1
+[rooms.kids_room]
+table_lamp = 1
+pendant_shade = 1
+[rooms.landing]
+wall_sconce = 4
+pendant_shade = 2
+[rooms.study]
+table_lamp = 1
+pendant_shade = 1
+[rooms.bathroom]
+wall_sconce = 2
+[rooms.guest_room]
+table_lamp = 2
+[rooms.balcony]
+lantern = 2
+string_lights = 1
+[rooms.attic]
+bare_bulb = 5
+table_lamp = 2
+[rooms.roof]
+lantern = 2
+
+# Bake zones: separate LightmapGI scenes (the spike asks whether they blend). `rooms` lists room ids; `levels` takes
+# every room of those levels. `texel_high` and `texel_low`: lightmap texels per metre at the High and Low presets.
+[zones.basement]
+levels = ["basement"]
+texel_high = 8.0
+texel_low = 4.0
+[zones.ground]
+rooms = ["wc", "pantry", "dining_room", "living_room", "stairs", "kitchen", "hallway", "terrace"]
+texel_high = 8.0
+texel_low = 4.0
+[zones.upper]
+levels = ["upper", "attic"]
+texel_high = 8.0
+texel_low = 4.0
+[zones.outbuildings]
+rooms = ["garage", "greenhouse"]
+texel_high = 6.0
+texel_low = 3.0
+[zones.roof]
+levels = ["roof"]
+texel_high = 4.0
+texel_low = 2.0
+[zones.yard]
+rooms = ["yard", "street", "path", "driveway", "garden", "photo_zone", "chill_zone", "outdoor_stairs"]
+texel_high = 2.0
+texel_low = 1.0
+
+# The bake (LightmapGI) settings every zone shares; the lab's rules: the room is lit by the lamps, the window spots and
+# bounce (at most 1.5), never a set fill; the backdrop and emissive decor stay out of the bake.
+[bake]
+quality = "high"        # low, medium, high, ultra
+bounces = 3
+bounce_indirect_energy = 1.5
+denoiser = true
+directional = false
+interior = true
+
+[presets.high]
+lightmap = "texel_high"
+glow_count = 12
+ssao = "half"
+shadowed_spots = 4
+fog = false
+[presets.low]
+lightmap = "texel_low"
+glow_count = 4
+ssao = "off"
+shadowed_spots = 2
+fog = true

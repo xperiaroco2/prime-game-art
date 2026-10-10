@@ -74,7 +74,7 @@ class LayoutDataTest(unittest.TestCase):
     def test_the_pantry_stairs_are_a_marked_placeholder(self) -> None:
         st = next(s for s in level("ground")["stairs"] if s["id"] == "pantry_stairs")
         self.assertTrue(st["placeholder"])
-        self.assertEqual(H.stair_top_edge(st), ("h", 25, 26, 28))
+        self.assertEqual(H.stair_top_edge(st), ("h", 28, 26, 28))  # climbing south: the 2 m landing at y 28..30
 
     def test_free_pieces_land_in_their_room(self) -> None:
         porch = [p for p in planned("ground")["pieces"]["path"] if p["id"] == "porch_2x2"]
@@ -269,7 +269,7 @@ class WalkRequestTest(unittest.TestCase):
     def test_every_door_of_the_walked_levels_is_crossed(self) -> None:
         doors = [(lv["level"], tuple(d["at"])) for lv in DATA["levels"] if lv["level"] in H.WALK_LEVELS
                  for d in lv.get("doors", []) if d.get("kind", "door") in H.DOOR_KINDS and d.get("leaf") != "kit"]
-        walks = [w for w in self.REQ["walks"] if w["kind"] != "stairs"]
+        walks = [w for w in self.REQ["walks"] if w["kind"] not in ("stairs", "loop")]
         self.assertEqual(len(walks), len(doors))
         for w, (name, (x, y)) in zip(walks, doors):
             a, b = w["points"]
@@ -286,15 +286,16 @@ class WalkRequestTest(unittest.TestCase):
 
     def test_each_flight_is_walked_up_and_down(self) -> None:
         stairs = {w["name"]: w["points"] for w in self.REQ["walks"] if w["kind"] == "stairs"}
-        self.assertEqual(sorted(stairs), sorted(f"{s}:{d}" for s in ("main_stairs", "pantry_stairs", "balcony_stairs")
+        self.assertEqual(sorted(stairs), sorted(f"{s}:{d}" for s in ("main_stairs", "pantry_stairs", "balcony_stairs",
+                                                                         "outdoor_stairs")
                                                 for d in ("up", "down")))
         up = stairs["main_stairs:up"]
         self.assertEqual(up[1], [30.0, 0.0, 35.0])  # the U-turn: up west, across the landing, up east
         self.assertEqual(up[2], [27.0, 1.6, 35.0])
         self.assertEqual(up[-2], [30.0, 3.2, 33.0])
         self.assertEqual(stairs["main_stairs:down"], up[::-1])
-        # The pantry's 1 m landing: the end stops short of its north wall (capsule radius and half a wall).
-        self.assertAlmostEqual(stairs["pantry_stairs:up"][-1][2], 24.85)
+        # The pantry stairs climb south onto a 2 m landing: the end 1 m past the top (y 28), short of the south wall.
+        self.assertEqual(stairs["pantry_stairs:up"][-1], [27.0, 0.0, 29.0])
 
     def test_ends_without_a_floor_get_a_pad(self) -> None:
         self.assertIn([39.0, 0.0, 14.0], self.REQ["pads"])  # the balcony stairs' foot in the yard
