@@ -92,7 +92,7 @@ The `house` command checks the dressing after the layout and fails on a problem 
 With a dressing, `--walk` also lights and shoots it (`house_dressing.review_request`): a c2 stand-in omni light (no
 shadows) at every light fixture replaces the shell's one centre lamp in those rooms (real-time review light; the bake
 is #83's); one shot per dressed room from its deepest door, 0.3 m in, at 1.6 m eye height (`room_<id>.png`); the
-kitchen's order board from 3.2 m in front (`kitchen_order_board.png`); and the package colours (`SWATCHES`: cardboard
+kitchen's order board from 4 m in front (`kitchen_order_board.png`); and the package colours (`SWATCHES`: cardboard
 #a8855e, white, cyan, purple, terracotta, mustard, look.md section 4) as 0.25 m cubes on the assembly island
 (`swatches.png`), each front face sampled and logged as `swatch <name>: #paint (L*, C*, h) reads #seen (...; hue
 shift)`. `rooms.png` (1280 px) holds the plan, the order board, the swatches and the room shots; the log and
