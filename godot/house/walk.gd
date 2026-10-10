@@ -11,6 +11,7 @@ extends SceneTree
 ## 1280 px wide), and <out>/walk.json; prints WALK saved <dir>.
 
 const WATCHDOG_S: float = 170.0
+const KitMaterials := preload("res://kit/kit_materials.gd")
 const EYE: float = 1.6
 const UP := Vector3.UP
 const LAMP := Color(1.0, 0.85, 0.68)
@@ -69,6 +70,12 @@ func _run(args: PackedStringArray) -> void:
 		return
 	_house = scene.instantiate() as Node3D
 	root.add_child(_house)
+	# The kit's `set` material with the rooms' wall paints (Q11 = B, house.toml [wall_paint]) on the stand-in surfaces.
+	var pack: Dictionary = _req.get("pack", {})
+	if not pack.is_empty():
+		var kit_mat: ShaderMaterial = KitMaterials.make(pack["textures"], pack)
+		var painted: int = KitMaterials.paint(kit_mat, _req.get("paints", {}))
+		print("kit material: %d surfaces, %d painted rooms" % [KitMaterials.apply(_house, kit_mat), painted])
 	_lamps()
 	_pads()
 	_placeholders()

@@ -212,6 +212,17 @@ def stage(data: dict, summary: dict, props: dict | None = None) -> list[str]:
     return errors
 
 
+def kit_pack(data: dict) -> dict:
+    """The kit's `set` material for walk.gd (kit_materials.gd `make`): its textures under the kit folder and the layers'
+    roughness and normal strength; empty when the spec has no three-layer pack (the plain imported paint then)."""
+    spec = data["spec"]
+    mats = [spec["materials"][m] for m in spec.get("packs", {}).get("set", {}).get("layers", [])]
+    if len(mats) != 3:
+        return {}
+    return {"textures": (common.raw_dir() / data["settings"]["kit_dir"] / "textures").as_posix(),
+            "roughness": [m["roughness"] for m in mats], "normal_strength": [m["normal_strength"] for m in mats]}
+
+
 def walk(data: dict, folder: Path, routes: dict | None = None, errors: list[str] = (),
          dressing: dict | None = None) -> int:
     """Runs godot/house/walk.gd in a window off-screen (pictures need one) on the staged house: every doorway of the
@@ -224,6 +235,7 @@ def walk(data: dict, folder: Path, routes: dict | None = None, errors: list[str]
     req = common.OUT / "house" / "walk_request.json"
     request = house_layout.walk_request(data)
     request["walks"] += house_routes.walks(data, request, routes or {})
+    request["pack"] = kit_pack(data)  # the kit's material, which carries the rooms' wall paints
     if dressing:  # the walked levels' rooms; the basement's have their own review (--basement)
         walked = {r["id"] for lv in data["levels"] if lv["level"] in house_layout.WALK_LEVELS for r in lv["rooms"]}
         request.update(house_dressing.review_request(data, {rid: r for rid, r in dressing.items() if rid in walked}))
