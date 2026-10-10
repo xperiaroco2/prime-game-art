@@ -292,6 +292,16 @@ on, the noses barely different (the pack nose dominated). `faces/clay_head.json`
    of it moves out along the head's normal (deeper than `reach` stays hidden), spread to its neighbours (the lab's
    4 mm hair and hat clearance; the report's `push_out`).
 
+Not ported yet: the lab cast's head is round C's ONE head (`clay_d/clay_head_c.py` `build_one`): round B's men's clean
+head (the Beach head through steps 1-4) for every body, its jaw grown out radially toward the women's clean head
+(the Witch head) in `JAW_BAND` (`morph_jaw`, z 1.565/1.600/1.632 and reach 3 cm at the lab's x1.3 about the head pivot
+z 1.5873, about 1.570/1.597/1.622 unscaled), the long men's neck tapered (`NECK_TAPER`) and fitted inside every top.
+The repo still builds each character's own pack head through steps 1-5, so the bean above the neck matches the lab but
+the jaw and neck below it are the character's pack head's. The jaw check fails on all eight of the cast in the 3/4
+views 30 mm below the mouth (y -0.077 to -0.078 against the line at -0.08, front views pass; 2026-10-10): that level
+is 3 mm above the bean's bottom, where the closed bean's underside turns in, whatever the pack head. A morph toward
+the character's own warped pack head moves at most 0.5 mm (w1): the bean snap, not the pack head, sets that chin.
+
 The clay library's piece keys carry the head data (`kit.DATA_SHA` for the head and the face, `kit.HEAD_SHA` and the
 head for the hair and the extras that follow it).
 
