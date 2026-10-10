@@ -288,19 +288,24 @@ on, the noses barely different (the pack nose dominated). `faces/clay_head.json`
    warped head is welded, cut `neck_dz` above the bean's bottom, united with a sphere put onto the bean, voxel
    remeshed (`voxel_m`), decimated (`tris`), snapped onto the bean within `snap_tol`, the neck crease softened; the
    pack's weights below the cut, the Head bone alone above it; one skin material (the report's `clean_head`);
-5. `heads.push_out` (`push_out`): the hair and every head extra that sinks into the closed bean or lies within `clear`
-   of it moves out along the head's normal (deeper than `reach` stays hidden), spread to its neighbours (the lab's
-   4 mm hair and hat clearance; the report's `push_out`).
+5. `heads.morph_jaw` (`jaw_morph`): the lab cast's head is round C's ONE head (`clay_c/clay_head_c.py` `build_one`):
+   round B's men's clean head for every body, its jaw grown out radially toward the women's clean head in `JAW_BAND`
+   (`morph_jaw`: z 1.565/1.600/1.632 at the lab's x1.3 about the head pivot z 1.5873, `band_dz` -0.120/-0.093/-0.068
+   from the bean centre unscaled; reach 3 cm). The repo's clean head keeps each pack head's jaw, which sat behind the
+   jaw check's 3/4 line (y -0.077 against -0.08, all eight, 2026-10-10) while the lab's one head passes the same rays
+   (-0.086). So the lab head's own jaw is the target: `profile` is that head's radius about the bean centre's vertical
+   axis per `dz` from the bean centre (2 mm steps) and azimuth (7.5 degrees, from -Y toward +X), unscaled, sampled
+   once from `head_clay.blend` (`jaw_source`: its SHA-256 and face frame; the sampler
+   `D:/prime-art-raw/clay-bean/lab/jaw_profile.py`). Every vertex in the band whose radius is below the profile by
+   less than `reach` moves out by the difference x the smoothstep bump, never in (the report's `jaw_morph`). w3 and w4
+   after it: 3/4 at 30 mm y -0.0855/-0.086 (the lab head -0.0857/-0.0859), front -0.091 (-0.089);
+6. `heads.lift_grid`, `lift_by` (`scalp_lift`) and `heads.push_out` (`push_out`): the hair's shell lifted off the
+   clean head per direction from the bean centre, a hat following its hair's lift; then the hair and every head extra
+   that sinks into the closed bean or lies within `clear` of it moves out along the head's normal (deeper than `reach`
+   stays hidden), per welded position (the lab's 4 mm hair and hat clearance; the report's `scalp_lift`, `push_out`).
 
-Not ported yet: the lab cast's head is round C's ONE head (`clay_d/clay_head_c.py` `build_one`): round B's men's clean
-head (the Beach head through steps 1-4) for every body, its jaw grown out radially toward the women's clean head
-(the Witch head) in `JAW_BAND` (`morph_jaw`, z 1.565/1.600/1.632 and reach 3 cm at the lab's x1.3 about the head pivot
-z 1.5873, about 1.570/1.597/1.622 unscaled), the long men's neck tapered (`NECK_TAPER`) and fitted inside every top.
-The repo still builds each character's own pack head through steps 1-5, so the bean above the neck matches the lab but
-the jaw and neck below it are the character's pack head's. The jaw check fails on all eight of the cast in the 3/4
-views 30 mm below the mouth (y -0.077 to -0.078 against the line at -0.08, front views pass; 2026-10-10): that level
-is 3 mm above the bean's bottom, where the closed bean's underside turns in, whatever the pack head. A morph toward
-the character's own warped pack head moves at most 0.5 mm (w1): the bean snap, not the pack head, sets that chin.
+Not ported yet: the one head's long men's neck, tapered (`NECK_TAPER`) and fitted inside every top; the repo keeps
+each character's pack neck below the jaw (the women's short necks).
 
 The clay library's piece keys carry the head data (`kit.DATA_SHA` for the head and the face, `kit.HEAD_SHA` and the
 head for the hair and the extras that follow it).

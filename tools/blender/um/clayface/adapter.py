@@ -44,6 +44,7 @@ BEAN = dict(kit.HEAD["bean"], **kit.HEAD["bean_clay"])
 # hair and extras pushed out of what is left (heads.push_out)
 CLEAN_HEAD = dict(kit.HEAD["clean_head"])
 SCALP_LIFT = dict(kit.HEAD["scalp_lift"])
+JAW_MORPH = dict(kit.HEAD["jaw_morph"])
 PUSH_OUT = dict(kit.HEAD["push_out"])
 
 
@@ -135,6 +136,9 @@ def build(arm, parts, coll, rc, eyes_at, skin_mat, pack_mouth_dz=None):
     rep["rigid_face_skin"] = {"z_full": round(z_full, 4), "vertices": n, "largest_change": round(most, 3)}
     bean = {k: v for k, v in BEAN.items() if k not in ("strength", "fade_z", "hair_k")}
     rep["clean_head"] = heads.clean_head(head, h.x, h.eye_z(), bean, skin_mat=skin_mat, **CLEAN_HEAD)
+    # the lab cast's ONE head's jaw (clay_head_c.morph_jaw): grown out toward the lab head's own radii
+    rep["jaw_morph"] = heads.morph_jaw(head, h.x, h.eye_z(), bean, JAW_MORPH["profile"],
+                                       band_dz=tuple(JAW_MORPH["band_dz"]), reach=JAW_MORPH["reach"])
     # the lab's round B fit (clay_parts build, hair and headwear): the hair's shell lifted off the clean head per
     # direction from the bean centre (thickness kept, its split vertices together), a hat following its hair's lift,
     # then push_out for what is still inside or too close

@@ -32,8 +32,19 @@ class HeadData(unittest.TestCase):
     def test_shape(self):
         H = K.HEAD
         self.assertEqual(H["schema"], "prime-game-art/faces/clay-head/1")
-        self.assertEqual(H["order"], ["nose_flatten", "bean_warp", "rigid_face_skin", "clean_head", "scalp_lift",
-                                      "push_out"])
+        self.assertEqual(H["order"], ["nose_flatten", "bean_warp", "rigid_face_skin", "clean_head", "jaw_morph",
+                                      "scalp_lift", "push_out"])
+        J = H["jaw_morph"]
+        self.assertEqual(set(J), {"band_dz", "reach", "profile"})
+        lo, mid, hi = J["band_dz"]
+        self.assertTrue(lo < mid < hi < 0.0)
+        prof = J["profile"]
+        self.assertEqual(len(prof["r"]), len(prof["dz"]))
+        self.assertTrue(all(len(row) == len(prof["az_deg"]) for row in prof["r"]))
+        self.assertTrue(all(0.0 < r < 0.2 for row in prof["r"] for r in row))
+        self.assertLessEqual(prof["dz"][0], lo)
+        self.assertGreaterEqual(prof["dz"][-1], hi)
+        self.assertAlmostEqual(360.0 / len(prof["az_deg"]), prof["az_deg"][1] - prof["az_deg"][0])
         self.assertEqual(set(H["scalp_lift"]), {"clear", "depth", "n_az", "n_el"})
         self.assertEqual(set(H["clean_head"]), {"neck_dz", "sphere", "voxel_m", "tris", "snap_tol", "crease_band",
                                                 "crease_passes", "weight_blend_m", "small_piece_faces"})
@@ -54,6 +65,9 @@ class HeadData(unittest.TestCase):
         for k, v in K.HEAD["nose_flatten"].items():
             self.assertEqual(nose[k], v, k)
         self.assertEqual(defaults(UM / "clayface" / "face.py", "rigid_full_z")["margin"], K.HEAD["rigid_margin"])
+        jaw = defaults(UM / "heads.py", "morph_jaw")
+        self.assertEqual(tuple(jaw["band_dz"]), tuple(K.HEAD["jaw_morph"]["band_dz"]))
+        self.assertEqual(jaw["reach"], K.HEAD["jaw_morph"]["reach"])
         for fn, key in (("clean_head", "clean_head"), ("push_out", "push_out"), ("lift_grid", "scalp_lift")):
             got = defaults(UM / "heads.py", fn)
             for k, v in K.HEAD[key].items():
@@ -66,7 +80,7 @@ class HeadData(unittest.TestCase):
         src = (UM / "clayface" / "adapter.py").read_text(encoding="utf-8")
         body = src[src.index("def build("):]
         at = [body.index(s) for s in ("heads.flatten_nose(", "heads.bean_warp(", "fk.rigid_face_skin(",
-                                    "heads.clean_head(", "heads.lift_grid(", "heads.lift_by(", "heads.push_out(",
+                                    "heads.clean_head(", "heads.morph_jaw(", "heads.lift_grid(", "heads.lift_by(", "heads.push_out(",
                                     "build_face(")]
         self.assertEqual(at, sorted(at))
         self.assertNotIn("bean_warp", (UM / "heads.py").read_text(encoding="utf-8").split("def bean_warp")[0])
@@ -109,6 +123,18 @@ class LabParity(unittest.TestCase):
                      % (K.HEAD["scalp_lift"]["depth"], K.HEAD["scalp_lift"]["n_az"], K.HEAD["scalp_lift"]["n_el"]),
                      "HAIR_CLEAR = %s" % K.HEAD["scalp_lift"]["clear"]):
             self.assertIn(frag.replace("\\", ""), code, frag)
+
+    def test_jaw_source(self):
+        # the lab's ONE head (clay_c/clay_head_c.py): its JAW_BAND and morph reach, and the head file sampled
+        src = K.HEAD["jaw_source"]
+        code = RAW / "research" / Path(src["code"]).relative_to("research")
+        blend = RAW / "research" / Path(src["head"]).relative_to("research")
+        if not code.is_file() or not blend.is_file():
+            self.skipTest("no lab files")
+        text = code.read_text(encoding="utf-8")
+        self.assertIn("JAW_BAND = (%.3f, %.3f, %.3f)" % tuple(src["band_scaled_z"]), text)
+        self.assertIn("reach=%s" % K.HEAD["jaw_morph"]["reach"], text)
+        self.assertEqual(hashlib.sha256(blend.read_bytes()).hexdigest(), src["head_sha256"])
 
 
 if __name__ == "__main__":

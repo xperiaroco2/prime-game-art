@@ -486,6 +486,53 @@ def clean_head(head, x, eye_z, bean, skin_mat=None, neck_dz=0.02, sphere=(64, 32
     return info
 
 
+def morph_jaw(head, x, eye_z, bean, profile, band_dz=(-0.1201, -0.0926, -0.068), reach=0.03):
+    """The lab's ONE head's jaw on the clean head (art #42; clay_c/clay_head_c.py morph_jaw, run after clean_head).
+    The lab's cast head is round B's men's clean head with its jaw grown out toward the women's; the repo's clean head
+    keeps each pack head's jaw, which sits behind the jaw check's 3/4 line. `profile` (faces/clay_head.json
+    "jaw_morph") is the lab head's radius about the bean centre's vertical axis, sampled per dz from the bean centre
+    and azimuth (from -Y toward +X), unscaled. Every vertex inside band_dz (lo, mid, hi: a smoothstep bump, 0 at lo and
+    hi, 1 at mid) whose radius r is below the profile's r_l by less than `reach` moves out horizontally by
+    (r_l - r) x the bump; never in. World space, rest pose, the face toward -Y. Returns what was done."""
+    import numpy as np
+    c = np.array([x, bean["centre_y"], eye_z + bean["centre_dz"]])
+    DZ = np.array(profile["dz"], np.float64)
+    AZ = np.array(profile["az_deg"], np.float64)
+    R = np.array(profile["r"], np.float64)
+    lo, mid, hi = band_dz
+    P = _wco(head)
+    d = P - c
+    z = d[:, 2]
+    sel = np.where((z > lo) & (z < hi))[0]
+    info = {"vertices": 0, "largest_mm": 0.0}
+    if not len(sel):
+        return info
+    zs = z[sel]
+    t = np.where(zs <= mid, (zs - lo) / (mid - lo), (hi - zs) / (hi - mid))
+    w = t * t * (3 - 2 * t)
+    r = np.hypot(d[sel, 0], d[sel, 1])
+    az = np.degrees(np.arctan2(d[sel, 0], -d[sel, 1])) % 360.0
+    # bilinear in (dz, az): dz clamped to the samples, az wrapping
+    fi = np.clip((zs - DZ[0]) / (DZ[1] - DZ[0]), 0.0, len(DZ) - 1.000001)
+    i0 = np.floor(fi).astype(int)
+    u = fi - i0
+    step = AZ[1] - AZ[0]
+    fj = az / step
+    j0 = np.floor(fj).astype(int) % len(AZ)
+    j1 = (j0 + 1) % len(AZ)
+    v = fj - np.floor(fj)
+    r_l = ((1 - u) * ((1 - v) * R[i0, j0] + v * R[i0, j1]) + u * ((1 - v) * R[i0 + 1, j0] + v * R[i0 + 1, j1]))
+    ok = (r > 1e-6) & (r < r_l) & (r_l < r + reach)
+    move = np.where(ok, (r_l - r) * w, 0.0)
+    k = np.where(ok, (r + move) / np.maximum(r, 1e-6), 1.0)
+    P[sel, 0] = c[0] + d[sel, 0] * k
+    P[sel, 1] = c[1] + d[sel, 1] * k
+    _set_wco(head, P)
+    info["vertices"] = int((move > 1e-5).sum())
+    info["largest_mm"] = round(float(move.max()) * 1000, 2)
+    return info
+
+
 def _position_groups(P, weld_m=1e-5):
     """Vertex -> group index, one group per welded position (rounded to weld_m): the pack's split (flat-shaded, UV
     seam) vertices of one corner share a group, so a move given per group keeps the mesh whole."""
