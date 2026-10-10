@@ -1,5 +1,5 @@
 """The face kit on an assembled character (um/assemble.py build_character with face="kit", the clay look): the pack
-head's own ears and nose flattened, its face skin given to the Head bone alone, the kit's face built from the recipe
+head's own ears flattened (its nose stays: FLATTEN_PACK_NOSE), its face skin given to the Head bone alone, the kit's face built from the recipe
 character's `face_kit` picks and merged into two skinned meshes:
 
 - `<id>_eyes`: the eye whites and pupils (one glossy material whose colour is the vertex colour EYE_RGB: white or
@@ -29,8 +29,11 @@ EAR_TUCK_X = 0.082  # the pack head's own ears flattened to this half-width (m) 
 RIGID_FRONT_Y = -0.07  # the face skin in front of this world y follows the Head bone alone (facekit.rigid_face_skin)
 RIGID_BLEND_M = 0.03  # ... fading back to the pack's weights over this height below the kit's lowest point
 # the pack nose pushed back into the face before the kit's nose is seated (heads.flatten_nose): the faces lab's
-# params_r2.json "nose_flatten", on which every lab face was built (art #42: without it the kit's ball sat on the pack
-# nose's tip and read as a forward cone); the mouth centre the box ends at is the kit's (LAYOUT eye_dz, eye_mouth)
+# params_r2.json "nose_flatten", on which every lab face was built; the mouth centre the box ends at is the kit's
+# (LAYOUT eye_dz, eye_mouth). OFF (art #42, 2026-10-10): the engineer approved the cast's noses as they sit on the
+# unflattened pack nose (the forward "Pinocchio" long nose); flattening it flattened every mid-face. Kept for
+# experiments (a script sets FLATTEN_PACK_NOSE = True and may change NOSE_FLATTEN before the build)
+FLATTEN_PACK_NOSE = False
 NOSE_FLATTEN = {"half_w": 0.026, "side_x": 0.03, "top_dz": 0.012, "bottom_dz": 0.012, "bulge": 0.004, "fade": 0.012,
                 "smooth": 30}
 
@@ -112,13 +115,25 @@ def build(arm, parts, coll, rc, eyes_at, skin_mat):
     item = kit.hair_item(rc["hair"], g)
     picks = kit.picks_for(spec, g)
     h = KitHead(cid, arm, parts, coll, eyes_at, item, skin_mat)
-    mouth_z = h.eye_z() + kit.LAYOUT["eye_dz"] - kit.LAYOUT["eye_mouth"]
-    rep["pack_nose_flattened"] = heads.flatten_nose(head, h.x, h.eye_z(), mouth_z, **NOSE_FLATTEN)
+    if FLATTEN_PACK_NOSE:
+        mouth_z = h.eye_z() + kit.LAYOUT["eye_dz"] - kit.LAYOUT["eye_mouth"]
+        rep["pack_nose_flattened"] = heads.flatten_nose(head, h.x, h.eye_z(), mouth_z, **NOSE_FLATTEN)
     z_full = rigid_full_z(h)
     n, most = fk.rigid_face_skin(head, RIGID_FRONT_Y, z_full, z_full - RIGID_BLEND_M)
     rep["rigid_face_skin"] = {"z_full": round(z_full, 4), "vertices": n, "largest_change": round(most, 3)}
     skin = tuple(rc["skin"]) if rc.get("skin") else tuple(skin_mat.diffuse_color[:3])
-    face = build_face(h, picks, skin, coll=coll, brow_colour=spec.get("brow_rgb"))
+    surf = heads.skin_only_copy(head)  # the recipe's as_skin pieces left out of the kit's surface (art #42)
+    if surf is not None:
+        h.parts["head"] = surf
+        rep["kit_surface"] = "skin without as_skin"
+    try:
+        face = build_face(h, picks, skin, coll=coll, brow_colour=spec.get("brow_rgb"))
+    finally:
+        if surf is not None:
+            h.parts["head"] = head
+            me = surf.data
+            bpy.data.objects.remove(surf)
+            bpy.data.meshes.remove(me)
     # the check's numbers on this head (the 300+ check runs the same on many faces: faces --check)
     rep.update({"picks": picks, "hair_item": item, "flags": kit.hair_flags(item), "tris": face.meta["tris"],
                 "tris_total": face.meta["tris_total"], "collisions": checks.collisions(face),

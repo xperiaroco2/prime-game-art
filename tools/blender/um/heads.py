@@ -9,6 +9,7 @@ goatee; King and men's Adventurer hair include beards; Casual Character "Skin_Da
 import math
 
 import bmesh
+import bpy
 from mathutils import Vector
 
 from . import zones
@@ -194,3 +195,41 @@ def smooth_patch(head, inside, iterations=30):
             me.vertices[i].co = inv @ Vector((p.x, ys[g], p.z))
     me.update()
     return len(free)
+
+
+AS_SKIN_ATTR = "um_as_skin"  # face attribute: the head faces of the recipe's as_skin materials (read once, then removed)
+
+
+def mark_as_skin(head, materials):
+    """Marks the head faces whose material is one of materials (the recipe's as_skin, before they become the skin) in
+    the face attribute AS_SKIN_ATTR. Returns the number of faces marked."""
+    slots = {i for i, s in enumerate(head.material_slots) if s.material and base_name(s.material.name) in set(materials)}
+    flags = [p.material_index in slots for p in head.data.polygons]
+    a = head.data.attributes.new(AS_SKIN_ATTR, "BOOLEAN", "FACE")
+    a.data.foreach_set("value", flags)
+    return sum(flags)
+
+
+def skin_only_copy(head):
+    """The head without the faces marked by mark_as_skin, as an unlinked object at the head's place (None: no face
+    marked). Removes the mark from the head. Art #42: the face kit seats and culls its pieces against this surface,
+    because a kept as_skin piece that is not welded to the skin (the Casual head's stubble jaw, 4-14 mm gaps) makes
+    the nearest-point inside test cull the fronts of the eye whites and the nose."""
+    me = head.data
+    a = me.attributes.get(AS_SKIN_ATTR)
+    if a is None:
+        return None
+    flags = [d.value for d in a.data]
+    me.attributes.remove(a)
+    if not any(flags):
+        return None
+    cp = me.copy()
+    bm = bmesh.new()
+    bm.from_mesh(cp)
+    bm.faces.ensure_lookup_table()
+    bmesh.ops.delete(bm, geom=[bm.faces[i] for i, f in enumerate(flags) if f], context="FACES")
+    bm.to_mesh(cp)
+    bm.free()
+    o = bpy.data.objects.new(head.name + "_kit_surface", cp)
+    o.matrix_world = head.matrix_world.copy()
+    return o

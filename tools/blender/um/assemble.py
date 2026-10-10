@@ -114,6 +114,8 @@ def build_character(packs, recipe, rc, coll, face="pack"):
     for o in parts.values():
         relink(o, coll)
 
+    if face == "kit" and hs.get("as_skin"):  # the kit is built against the skin without them (heads.skin_only_copy)
+        rep["parts"]["head"]["as_skin_faces"] = heads.mark_as_skin(head, hs["as_skin"])
     # one skin material for the whole character
     skin = None
     for slot in head.material_slots:
