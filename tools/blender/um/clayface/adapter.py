@@ -122,7 +122,18 @@ def build(arm, parts, coll, rc, eyes_at, skin_mat):
     n, most = fk.rigid_face_skin(head, RIGID_FRONT_Y, z_full, z_full - RIGID_BLEND_M)
     rep["rigid_face_skin"] = {"z_full": round(z_full, 4), "vertices": n, "largest_change": round(most, 3)}
     skin = tuple(rc["skin"]) if rc.get("skin") else tuple(skin_mat.diffuse_color[:3])
-    face = build_face(h, picks, skin, coll=coll, brow_colour=spec.get("brow_rgb"))
+    surf = heads.skin_only_copy(head)  # the recipe's as_skin pieces left out of the kit's surface (art #42)
+    if surf is not None:
+        h.parts["head"] = surf
+        rep["kit_surface"] = "skin without as_skin"
+    try:
+        face = build_face(h, picks, skin, coll=coll, brow_colour=spec.get("brow_rgb"))
+    finally:
+        if surf is not None:
+            h.parts["head"] = head
+            me = surf.data
+            bpy.data.objects.remove(surf)
+            bpy.data.meshes.remove(me)
     # the check's numbers on this head (the 300+ check runs the same on many faces: faces --check)
     rep.update({"picks": picks, "hair_item": item, "flags": kit.hair_flags(item), "tris": face.meta["tris"],
                 "tris_total": face.meta["tris_total"], "collisions": checks.collisions(face),
