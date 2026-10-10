@@ -13,7 +13,7 @@ later packages add dressing data (`layouts/house/dressing/`, #75b) and only rege
 | `tools/runner/house_layout.py` | Load, validate, plan (choose the pieces), write the scenes |
 | `tools/runner/commands/house.py` | The `house` command |
 | `tools/tests/test_house_layout.py` | The rules, the plan's conventions, the design doc's 35 rooms and the game's greybox marker names |
-| `layouts/house/dressing/<room>.toml` | One room's props and light fixtures (#75b); the ground floor's eight rooms |
+| `layouts/house/dressing/<room>.toml` | One room's props and light fixtures (#75b); the ground floor's eight rooms and the greenhouse (#80, `docs/house-garden.md`) |
 | `layouts/house/routes.toml` | The design doc's routes (§7) as waypoints for the walk, with the doc's lengths and times (#78; "Routes" below) |
 | `layouts/house/basement_review.toml` | The basement's review pictures: lamp stand-ins per fixture id, exposure, ambient, the shots and the far edge's L* (#78) |
 | `tools/runner/house_dressing.py` | The dressing: catalogue, checks (bounds, overlaps, stations, the capsule's paths), scene nodes |

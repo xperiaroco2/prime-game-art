@@ -1,0 +1,227 @@
+# The garden and the greenhouse's roof (art #80, docs/house-garden.md): the path network, the fixed props, the scatter
+# rules (trees, bushes, flower beds on a seeded Poisson disc), the greenhouse's glass roof and the herb route, as data.
+# Plan metres: x east, y south, origin at the plot's north-west corner (docs/house-outdoor.md); Godot: x = x, z = y.
+# `at` is a footprint's centre (x, y); `yaw` degrees about +Y (0: the long side along x; 90: along y). Every size,
+# kind, paint and position is a reversible default (the house plan's Q15 ground A, Q19 garden A: a cottage garden);
+# edit and rerun `tools/run.sh garden`. The greenhouse's own props are the dressing file layouts/house/dressing/
+# greenhouse.toml (docs/house.md "Dressing").
+
+rect = [46, 2, 32, 28]  # the garden (inventory.md section 4)
+greenhouse = [58, 6, 16, 12]
+seed = 80
+
+# The path network: polylines of `width` metres kept clear of every prop (the 1.4 m rule), painted on #81a's ground
+# with `paint` (registered as plot.toml zones with the same id, line and width; the test compares them). Points may
+# leave the garden where a path comes from the yard.
+[[paths]]
+id = "garden_path_kitchen"
+paint = "gravel"
+width = 1.4
+line = [[42.8, 40], [46, 35], [50, 28], [56, 16], [56, 12], [57.4, 12]]
+note = "the kitchen side door (42, 40) to the greenhouse door (58, 12): the herb route"
+
+[[paths]]
+id = "garden_path_loop"
+paint = "gravel"
+width = 1.4
+line = [[56, 16], [56, 4.4], [76, 4.4], [76, 20], [56, 20]]
+note = "round the greenhouse, 1.6 m off its glass"
+
+[[paths]]
+id = "garden_path_dropoff"
+paint = "worn"
+width = 1.4
+line = [[50, 28], [53, 25.4], [64, 25.4], [64, 28.4]]
+note = "the drop-off's front to the outdoor stairs' entry (the delivery route from the basement)"
+
+[[paths]]
+id = "garden_path_east"
+paint = "worn"
+width = 1.4
+line = [[64, 25.4], [70, 25.4], [70, 20]]
+note = "the drop-off to the loop's south side"
+
+# The places the paths serve; `node` is a path point the check finds on the network.
+[[ends]]
+id = "kitchen_door"
+at = [42, 40]
+node = [42.8, 40]
+
+[[ends]]
+id = "greenhouse_door"
+at = [58, 12]
+node = [57.4, 12]
+
+[[ends]]
+id = "garden_dropoff"
+at = [62, 24]
+node = [62, 25.4]
+
+[[ends]]
+id = "outdoor_stairs"
+at = [64, 29]
+node = [64, 28.4]
+
+# Clearances no scatter enters besides the paths: the stations (1 m round the station's prop), the stairs' entry.
+[[clear]]
+id = "dropoff_station"
+rect = [60.2, 22.65, 3.6, 2.7]
+
+[[clear]]
+id = "stairs_entry"
+rect = [61, 26.5, 6, 7]
+
+# Fixed props (dressing library #87, task props #82; plants: this package's builder, boxes of `size` until built).
+# `size` [x, height, y] at yaw 0. `station` marks a task station's prop. `shadow = false` (here and per [[scatter]]
+# kind): flat and small things cast no shadow, so that the garden stays under 150 draw calls (docs/house-garden.md).
+[[props]]
+id = "garden_dropoff"
+src = "tasks"
+size = [1.6, 0.9, 0.7]
+at = [[62, 24]]
+yaw = 0
+face = "S"
+station = "GardenDropOff"
+
+[[props]]
+id = "hedge"
+src = "garden"
+size = [2.0, 1.2, 0.7]
+yaw = 90
+at = [[46.6, 3.2], [46.6, 5.2], [46.6, 7.2], [46.6, 9.2], [46.6, 11.2], [46.6, 13.2]]
+note = "the west hedge between the terrace's lawn and the garden"
+
+[[props]]
+id = "hedge"
+src = "garden"
+size = [2.0, 1.2, 0.7]
+yaw = 0
+at = [[53, 29.4], [55, 29.4], [57, 29.4], [59, 29.4], [68.4, 29.4], [70.4, 29.4]]
+note = "the south hedge along the yard, broken by the paths and the stairs"
+
+[[props]]
+id = "garden_bench"
+src = "library"
+size = [1.6, 0.85, 0.5]
+yaw = 0
+at = [[66, 2.9], [60, 21.6]]
+face = "S"
+
+[[props]]
+id = "garden_bench"
+src = "library"
+size = [1.6, 0.85, 0.5]
+yaw = 90
+at = [[77.5, 12]]
+face = "W"
+
+[[props]]
+id = "birdbath"
+src = "library"
+size = [0.6, 0.9, 0.6]
+at = [[51, 18]]
+
+[[props]]
+id = "wheelbarrow"
+src = "library"
+size = [1.4, 0.7, 0.6]
+yaw = 90
+at = [[54.4, 8]]
+
+[[props]]
+id = "watering_can"
+src = "library"
+size = [0.45, 0.35, 0.2]
+shadow = false
+at = [[57.3, 13.6]]
+
+[[props]]
+id = "garden_post_lamp"
+src = "library"
+size = [0.25, 2.4, 0.25]
+light = true
+at = [[45.3, 38.1], [49.0, 32.0], [52.0, 21.5], [57.4, 3.2], [77.3, 4.4], [67.5, 26.6]]
+
+[[props]]
+id = "path_light"
+src = "library"
+size = [0.2, 0.5, 0.2]
+shadow = false
+light = true
+at = [[50.2, 25.1], [57.5, 26.3], [53.5, 18.5], [54.8, 14.0], [57.4, 10.2], [62, 3.4], [70, 3.4], [77.1, 16],
+      [72, 21.0], [64, 21.0]]
+
+[[props]]
+id = "string_lights"
+src = "library"
+size = [5.0, 0.1, 0.05]
+h = 2.4
+shadow = false
+light = true
+at = [[60.5, 18.2], [71.5, 18.2]]
+note = "along the greenhouse's south eave"
+
+# Flat dressing on the paths (not solid: a player walks over them).
+[[props]]
+id = "stepping_stone"
+src = "library"
+size = [2.0, 0.05, 0.6]
+flat = true
+shadow = false
+yaw = 90
+at = [[56, 17.6], [56, 15.0], [56, 6.0], [56, 8.4], [76, 6.0], [76, 8.4], [76, 10.8], [76, 13.2], [76, 15.6],
+      [76, 18.0], [58.6, 20], [61, 20], [63.4, 20], [65.8, 20], [68.2, 20], [72.4, 20], [74.4, 20], [58, 4.4],
+      [64, 4.4], [70, 4.4]]
+
+# The scatter (Poisson disc, Bridson): per kind the count, the footprint `radius` that blocks (a tree's canopy is
+# spaced by `spacing` but blocks only `radius`, its trunk and low skirt), the clearance `margin` to paths and other
+# props, and the kinds the generator cycles through (Q19 A: a cottage garden: fruit trees, mixed shrubs, saturated
+# flowers). `size` is the plant's box for the placeholders until the plants are built.
+[[scatter]]
+id = "garden_tree"
+count = 14
+radius = 0.9
+spacing = 3.2
+margin = 0.4
+size = [3.0, 7.0, 3.0]
+kinds = ["apple", "pear", "plum"]
+scales = [0.8, 1.0]
+
+[[scatter]]
+id = "flower_bed"
+count = 8
+radius = 1.05
+spacing = 2.6
+margin = 0.4
+size = [2.0, 0.4, 0.8]
+shadow = false
+kinds = ["rose", "foxglove", "dahlia", "marigold", "tulip", "aster"]
+scales = [1.0]
+
+[[scatter]]
+id = "bush"
+count = 30
+radius = 0.6
+spacing = 1.5
+margin = 0.3
+size = [1.2, 1.0, 1.2]
+kinds = ["boxwood", "hydrangea", "lavender", "currant"]
+scales = [0.8, 1.0, 1.15]
+
+# The greenhouse's glass pitched roof (kit v2 #86 pieces, docs/kit.md "Pitched roofs"): eaves on its two x-long sides,
+# the ridge along x, gables in glass on its short sides; pivoted on the glass walls' top.
+[roof]
+rect = [58, 6, 16, 12]
+gables = true
+
+# The herb route of the design doc (section 7: Kitchen (icon) -> greenhouse (herb board, bed) -> kitchen, 94 m,
+# 20.9 s at 4.5 m/s): its waypoints in straight segments; the garden part follows the paths. Checked within `tol_s`.
+[route]
+id = "herb"
+doc_m = 94.0
+doc_s = 20.9
+speed = 4.5
+tol_s = 1.0
+points = [[39, 38.2], [41.2, 40], [42.8, 40], [46, 35], [50, 28], [56, 16], [56, 12], [58.8, 12], [62, 14.5],
+          [67, 12.4], [58.8, 12], [56, 12], [56, 16], [50, 28], [46, 35], [42.8, 40], [41.2, 40], [39, 38.2]]
+note = "the order board read from the island's south side (kitchen 5, 8.2), the side door, the path, the herb board read from 1 m (62, 14.5), the beds' aisle (HerbBeds 67, 11), back"

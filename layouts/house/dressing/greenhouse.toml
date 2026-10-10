@@ -1,0 +1,183 @@
+# The greenhouse's dressing (art #80, docs/house.md "Dressing", docs/house-garden.md): the props and light fixtures of
+# one room, as data. at = [x, h, z]: room-local metres (x east, h above the floor, z south from the room's north-west
+# corner, plan (58, 6)) at the prop's pivot (floor: the footprint's centre; ceiling: the top's centre). face = the way
+# the prop's front (+Z) looks: N, E, S or W. Ids are the dressing library's (#87) and the task props' (#82).
+# The glass door is on the west wall at z 6 (plan (58, 12)). Positions are the engineer's to change.
+room = "greenhouse"
+
+# The herb board at the entrance (HerbBoard at 4, 9.5), read from the aisle north of it.
+[[props]]
+id = "herb_board"
+at = [4.0, 0, 9.5]
+face = "N"
+station = "HerbBoard"
+
+# Five raised herb beds (HerbBeds at 9, 5) in a row across the house, 1.5 m aisles between them; read and picked from
+# the aisle south of them (z 5.6 to 9.25). The middle bed stands on the marker.
+[[props]]
+id = "herb_bed"
+at = [9.0, 0, 4.1]
+yaw = 90
+station = "HerbBeds"
+
+[[props]]
+id = "herb_bed"
+at = [3.6, 0, 4.1]
+yaw = 90
+station = "HerbBeds"
+
+[[props]]
+id = "herb_bed"
+at = [6.3, 0, 4.1]
+yaw = 90
+station = "HerbBeds"
+
+[[props]]
+id = "herb_bed"
+at = [11.7, 0, 4.1]
+yaw = 90
+station = "HerbBeds"
+
+[[props]]
+id = "herb_bed"
+at = [14.4, 0, 4.1]
+yaw = 90
+station = "HerbBeds"
+
+# The south wall: the potting bench and two shelves; a hose reel in the south-west corner.
+[[props]]
+id = "potting_bench"
+at = [8.0, 0, 11.55]
+face = "N"
+
+[[props]]
+id = "greenhouse_shelf"
+at = [11.0, 0, 11.65]
+face = "N"
+
+[[props]]
+id = "greenhouse_shelf"
+at = [13.4, 0, 11.65]
+face = "N"
+
+[[props]]
+id = "hose_reel"
+at = [1.0, 0, 11.6]
+face = "N"
+
+[[props]]
+id = "watering_can"
+at = [6.4, 0, 11.7]
+face = "N"
+
+[[props]]
+id = "watering_can"
+at = [15.4, 0, 6.6]
+face = "W"
+
+# Twenty pots: ten along the north wall behind the beds, five on the west wall south of the door, five on the east.
+[[props]]
+id = "planter_pot"
+at = [1.5, 0, 0.45]
+
+[[props]]
+id = "planter_pot"
+at = [2.9, 0, 0.45]
+
+[[props]]
+id = "planter_pot"
+at = [4.3, 0, 0.45]
+
+[[props]]
+id = "planter_pot"
+at = [5.7, 0, 0.45]
+
+[[props]]
+id = "planter_pot"
+at = [7.1, 0, 0.45]
+
+[[props]]
+id = "planter_pot"
+at = [8.5, 0, 0.45]
+
+[[props]]
+id = "planter_pot"
+at = [9.9, 0, 0.45]
+
+[[props]]
+id = "planter_pot"
+at = [11.3, 0, 0.45]
+
+[[props]]
+id = "planter_pot"
+at = [12.7, 0, 0.45]
+
+[[props]]
+id = "planter_pot"
+at = [14.1, 0, 0.45]
+
+[[props]]
+id = "planter_pot"
+at = [0.45, 0, 8.2]
+
+[[props]]
+id = "planter_pot"
+at = [0.45, 0, 8.9]
+
+[[props]]
+id = "planter_pot"
+at = [0.45, 0, 9.6]
+
+[[props]]
+id = "planter_pot"
+at = [0.45, 0, 10.3]
+
+[[props]]
+id = "planter_pot"
+at = [0.45, 0, 11.0]
+
+[[props]]
+id = "planter_pot"
+at = [15.55, 0, 7.5]
+
+[[props]]
+id = "planter_pot"
+at = [15.55, 0, 8.3]
+
+[[props]]
+id = "planter_pot"
+at = [15.55, 0, 9.1]
+
+[[props]]
+id = "planter_pot"
+at = [15.55, 0, 9.9]
+
+[[props]]
+id = "planter_pot"
+at = [15.55, 0, 10.7]
+
+# Light: two strings along the aisle and four bare bulbs, hung from the glass walls' top (2.4 m) until the roof has
+# tie beams (look.md section 3: one of the brightest places in the yard at dusk).
+[[fixtures]]
+id = "string_lights"
+at = [5.0, 2.4, 7.4]
+
+[[fixtures]]
+id = "string_lights"
+at = [11.0, 2.4, 7.4]
+
+[[fixtures]]
+id = "bare_bulb"
+at = [4.0, 2.4, 8.4]
+
+[[fixtures]]
+id = "bare_bulb"
+at = [9.0, 2.4, 6.4]
+
+[[fixtures]]
+id = "bare_bulb"
+at = [13.0, 2.4, 6.4]
+
+[[fixtures]]
+id = "bare_bulb"
+at = [8.0, 2.4, 10.6]

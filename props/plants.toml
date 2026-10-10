@@ -1,0 +1,255 @@
+# The garden's plants (art #80, map request #73; docs/house-garden.md "The plants"): procedural clay vegetation in the
+# dressing library's format (docs/props.md "The House dressing library"), built by the library's command:
+#   tools/run.sh props-library --library props/plants.toml --build
+# One GLB per plant kind, `<scatter id>_<kind>` (layouts/house/outdoor/garden.toml's [[scatter]] kinds) and `hedge`.
+# Sizes are the inventory's (L along X, W along Z, H up, metres); the garden scales trees and bushes per placement.
+# Shapes, crowns, forms and paints are taste data (Q19 A: a cottage garden): a change here needs no code change.
+
+library = "plants"
+version = 1
+kit_spec = "kits/house.json"
+script = "plant_build.py"  # tools/blender/plant_build.py: the library's build with the plant builders (plant_geom.py)
+out = "house/80/plants"  # under the raw folder
+licences = []  # procedural: no source files
+max_materials = 6
+new_materials = []
+
+[materials]
+plaster = "plaster"
+wood = "wood"
+concrete = "concrete"
+
+# look.md section 6: vegetation 400 to 1,500 triangles.
+[budgets]
+vegetation = [400, 1500]
+
+# Two leaf tones per plant give the crowns the value variation look.md section 5 asks of foliage.
+[roles]
+bark = {material = "wood", hex = "#4a3426"}
+leaf_apple = {material = "plaster", hex = "#4f7f4a"}
+leaf_apple_light = {material = "plaster", hex = "#6f9a52"}
+leaf_pear = {material = "plaster", hex = "#5b8a45"}
+leaf_pear_light = {material = "plaster", hex = "#86a656"}
+leaf_plum = {material = "plaster", hex = "#3f6a4a"}
+leaf_plum_light = {material = "plaster", hex = "#5a7f50"}
+fruit_apple = {material = "plaster", hex = "#b8322a"}
+fruit_pear = {material = "plaster", hex = "#c9b44a"}
+fruit_plum = {material = "plaster", hex = "#5a2a5a"}
+leaf_box = {material = "plaster", hex = "#2f5a36"}
+leaf_box_light = {material = "plaster", hex = "#44703f"}
+leaf_shrub = {material = "plaster", hex = "#4a7a44"}
+leaf_shrub_light = {material = "plaster", hex = "#64924c"}
+leaf_lavender = {material = "plaster", hex = "#6f8a6a"}
+bloom_hydrangea = {material = "plaster", hex = "#6a7fc8"}
+bloom_lavender = {material = "plaster", hex = "#7a5ab0"}
+berry_currant = {material = "plaster", hex = "#c0202a"}
+bed_edge = {material = "concrete", hex = "#8a4a38"}
+soil = {material = "concrete", hex = "#4a3a30"}
+leaf_bed = {material = "plaster", hex = "#4f8248"}
+bloom_rose = {material = "plaster", hex = "#c8304a"}
+bloom_foxglove = {material = "plaster", hex = "#b04a9a"}
+bloom_dahlia = {material = "plaster", hex = "#e0602a"}
+bloom_marigold = {material = "plaster", hex = "#f0a020"}
+bloom_tulip = {material = "plaster", hex = "#e8384a"}
+bloom_aster = {material = "plaster", hex = "#8a6ae0"}
+leaf_hedge = {material = "plaster", hex = "#355f38"}
+leaf_hedge_light = {material = "plaster", hex = "#4b7440"}
+
+# Trees: the crown starts at canopy_bottom (2.9 m; 2.32 m at the garden's 0.8 scale, over the 2.2 m head room) and
+# collides with its trunk only. The inventory's 3 x 3 x 7 m box is kept: the trees read tall and narrow.
+[[prop]]
+id = "garden_tree_apple"
+batch = 1
+name = "Apple tree"
+class = "vegetation"
+size_m = [3.0, 3.0, 7.0]
+count = 5
+route = "proc"
+shape = "garden_tree"
+params = {crown = "round", canopy_bottom = 2.9, fruit = 14}
+roles = ["bark", "leaf_apple", "leaf_apple_light", "fruit_apple"]
+pivot = "floor"
+collision = "boxes"
+
+[[prop]]
+id = "garden_tree_pear"
+batch = 1
+name = "Pear tree"
+class = "vegetation"
+size_m = [3.0, 3.0, 7.0]
+count = 5
+route = "proc"
+shape = "garden_tree"
+params = {crown = "upright", canopy_bottom = 2.9, fruit = 12}
+roles = ["bark", "leaf_pear", "leaf_pear_light", "fruit_pear"]
+pivot = "floor"
+collision = "boxes"
+
+[[prop]]
+id = "garden_tree_plum"
+batch = 1
+name = "Plum tree"
+class = "vegetation"
+size_m = [3.0, 3.0, 7.0]
+count = 4
+route = "proc"
+shape = "garden_tree"
+params = {crown = "spread", canopy_bottom = 2.9, fruit = 16}
+roles = ["bark", "leaf_plum", "leaf_plum_light", "fruit_plum"]
+pivot = "floor"
+collision = "boxes"
+
+[[prop]]
+id = "bush_boxwood"
+batch = 1
+name = "Boxwood bush"
+class = "vegetation"
+size_m = [1.2, 1.2, 1.0]
+count = 8
+route = "proc"
+shape = "bush"
+params = {form = "mound"}
+roles = ["leaf_box", "leaf_box_light"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "bush_hydrangea"
+batch = 1
+name = "Hydrangea bush"
+class = "vegetation"
+size_m = [1.2, 1.2, 1.0]
+count = 8
+route = "proc"
+shape = "bush"
+params = {form = "heads"}
+roles = ["leaf_shrub", "leaf_shrub_light", "bloom_hydrangea"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "bush_lavender"
+batch = 1
+name = "Lavender bush"
+class = "vegetation"
+size_m = [1.2, 1.2, 1.0]
+count = 7
+route = "proc"
+shape = "bush"
+params = {form = "spikes", spikes = 30}
+roles = ["leaf_lavender", "leaf_lavender", "bloom_lavender"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "bush_currant"
+batch = 1
+name = "Currant bush"
+class = "vegetation"
+size_m = [1.2, 1.2, 1.0]
+count = 7
+route = "proc"
+shape = "bush"
+params = {form = "berries", berries = 18}
+roles = ["leaf_shrub", "leaf_shrub_light", "berry_currant"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "flower_bed_rose"
+batch = 1
+name = "Flower bed: roses"
+class = "vegetation"
+size_m = [2.0, 0.8, 0.4]
+count = 2
+route = "proc"
+shape = "flower_bed"
+params = {form = "ball", flowers = 14}
+roles = ["bed_edge", "soil", "leaf_bed", "bloom_rose"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "flower_bed_foxglove"
+batch = 1
+name = "Flower bed: foxgloves"
+class = "vegetation"
+size_m = [2.0, 0.8, 0.4]
+count = 1
+route = "proc"
+shape = "flower_bed"
+params = {form = "spike", flowers = 12}
+roles = ["bed_edge", "soil", "leaf_bed", "bloom_foxglove"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "flower_bed_dahlia"
+batch = 1
+name = "Flower bed: dahlias"
+class = "vegetation"
+size_m = [2.0, 0.8, 0.4]
+count = 1
+route = "proc"
+shape = "flower_bed"
+params = {form = "ball", flowers = 12}
+roles = ["bed_edge", "soil", "leaf_bed", "bloom_dahlia"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "flower_bed_marigold"
+batch = 1
+name = "Flower bed: marigolds"
+class = "vegetation"
+size_m = [2.0, 0.8, 0.4]
+count = 1
+route = "proc"
+shape = "flower_bed"
+params = {form = "disc", flowers = 18}
+roles = ["bed_edge", "soil", "leaf_bed", "bloom_marigold"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "flower_bed_tulip"
+batch = 1
+name = "Flower bed: tulips"
+class = "vegetation"
+size_m = [2.0, 0.8, 0.4]
+count = 1
+route = "proc"
+shape = "flower_bed"
+params = {form = "cup", flowers = 18}
+roles = ["bed_edge", "soil", "leaf_bed", "bloom_tulip"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "flower_bed_aster"
+batch = 1
+name = "Flower bed: asters"
+class = "vegetation"
+size_m = [2.0, 0.8, 0.4]
+count = 2
+route = "proc"
+shape = "flower_bed"
+params = {form = "disc", flowers = 18}
+roles = ["bed_edge", "soil", "leaf_bed", "bloom_aster"]
+pivot = "floor"
+collision = "box"
+
+# One 2 m segment; flat ends, so segments in a row read as one hedge.
+[[prop]]
+id = "hedge"
+batch = 1
+name = "Hedge segment"
+class = "vegetation"
+size_m = [2.0, 0.7, 1.2]
+count = 12
+route = "proc"
+shape = "hedge"
+params = {lump = 0.16, per_row = 4}
+roles = ["leaf_hedge", "leaf_hedge_light"]
+pivot = "floor"
+collision = "box"
