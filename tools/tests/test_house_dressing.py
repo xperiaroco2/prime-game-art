@@ -115,7 +115,7 @@ class GroundFloor(unittest.TestCase):
         cls.rooms = {r["id"]: r for lv in cls.data["levels"] if lv["level"] == "ground" for r in lv["rooms"]}
 
     def test_eight_rooms(self):
-        self.assertEqual(set(self.files), set(ROOMS))
+        self.assertEqual({r for r in self.files if r in self.rooms}, set(ROOMS))  # the other floors: their own tests
         self.assertTrue(set(ROOMS) <= set(self.rooms))
 
     def test_room_defining_props_and_fixtures(self):
