@@ -26,23 +26,30 @@ class Clutter(unittest.TestCase):
         self.assertGreaterEqual(sum(len(v[2]) for v in GEN.values()), 150)
 
     def test_the_blocks_are_current_and_seeded(self) -> None:
-        again = hc.generate(DATA, FOLDER, CAT)
-        for rid, (path, text, _) in GEN.items():
-            self.assertEqual(text, again[rid][1], rid)
+        for rid, (path, text, _) in GEN.items():  # the files were written by an earlier run: the same seeds
             self.assertEqual(path.read_text(encoding="utf-8"), text, f"{rid}: run `house --clutter`")
             self.assertEqual(hc.strip(text).count(hc.MARK), 0)
 
-    def test_clutter_is_known_and_never_solid(self) -> None:
+    def test_clutter_is_known_and_only_the_mid_layer_is_solid(self) -> None:
         for rid, (_, _, items) in GEN.items():
+            mid = {k.rstrip("+") for k in hc.RULES[rid].get("mid", ())}
             for it in items:
                 self.assertIn(it["id"], CAT, rid)
-                self.assertFalse(hd.solid(hd.resolve(it, CAT)), f"{rid}: {it}")
+                if it["id"] not in mid:
+                    self.assertFalse(hd.solid(hd.resolve(it, CAT)), f"{rid}: {it}")
+
+    def test_the_mid_layer_is_placed(self) -> None:
+        for rid, (_, _, items) in GEN.items():
+            ids = [it["id"] for it in items]
+            for kind in set(hc.RULES[rid].get("mid", ())):
+                want = sum(1 + k.endswith("+") for k in hc.RULES[rid]["mid"] if k == kind)
+                self.assertGreaterEqual(ids.count(kind.rstrip("+")), want, f"{rid}: {kind}")
 
     def test_items_rest_on_a_host_a_wall_or_the_floor(self) -> None:
         for rid, (_, text, items) in GEN.items():
             base = tomllib.loads(hc.strip(text))
             hosts = []
-            for it in base.get("props", []):
+            for it in base.get("props", []) + items:  # the mid layer's tops are hosts too
                 if it["id"] in hc.HOSTS and not it.get("station"):
                     r = hd.resolve(it, CAT)
                     hosts.append((hd.footprint(r), hd.span(r)[1]))

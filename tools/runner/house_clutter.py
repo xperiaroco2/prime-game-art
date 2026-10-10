@@ -8,10 +8,14 @@ and HOSTS here, not the block). The layers, in room-local metres like the dressi
   `per_host` items each, kept apart from what already stands on the top (a lamp, a computer);
 - wall dressing (frames, shelves, clocks) on free wall spans: on a real wall face, clear of door openings, windows,
   corners, the stairs and anything in front of the wall at its height;
+- mid-size dressing (plants, stools, box stacks, crates, small tables: RULES' `mid`, placed first) against free wall
+  spans like the floor clutter; these are SOLID, so each one is kept only when the room's own check
+  (`house_dressing.check_room`: overlaps, stations, spawns, the capsule's reach) finds no new problem; a `+` after
+  the id stacks a second one on top (box stacks); their tops then host surface clutter like the dressing's;
 - floor clutter (baskets, shoes, toys) against free wall spans, clear of doors, stations, spawns and the stairs, and a
   doormat inside the room's first door.
-Every clutter item is non-solid (`collision = "none"` in the library, or under 0.3 m tall), so the walk's capsule and
-the overlap rule do not see it.
+Every item of the surface, wall and floor layers is non-solid (`collision = "none"` in the library, or under 0.3 m
+tall), so the walk's capsule and the overlap rule do not see it.
 """
 from __future__ import annotations
 
@@ -52,39 +56,117 @@ HOSTS = {
     "meat_freezer": ("paper_stack", "bottles"),
 }
 
-# room -> wall items (in order of placement), floor items, surface items at most per host and per room
+# room -> mid-size solid items, wall items (in order of placement), floor items; surface items at most per host and room
 RULES = {
     # the ground floor
-    "kitchen": {"wall": ("wall_clock", "wall_shelf", "picture_frame", "picture_frame"), "floor": ("basket",)},
-    "hallway": {"wall": ("picture_frame", "picture_frame", "wall_shelf", "wall_clock", "picture_frame"),
-                "floor": ("doormat", "shoes", "shoes", "basket")},
-    "living_room": {"wall": ("picture_frame", "wall_shelf", "picture_frame", "wall_clock", "picture_frame"),
-                    "floor": ("basket", "book_stack", "toy_blocks")},
-    "dining_room": {"wall": ("picture_frame", "wall_clock", "picture_frame", "wall_shelf"), "floor": ("basket",)},
-    "stairs": {"wall": ("picture_frame", "picture_frame", "picture_frame"), "floor": ("shoes",)},
-    "pantry": {"wall": ("wall_shelf", "wall_shelf"), "floor": ("basket", "bottles", "basket")},
-    "wc": {"wall": ("picture_frame", "wall_shelf"), "floor": ("basket",)},
+    "kitchen": {
+        "mid": ("potted_plant", "stool", "stool", "trash_bin"),
+        "wall": ("picture_frame", "wall_clock", "wall_shelf", "picture_frame", "picture_frame"),
+        "floor": ("basket",),
+    },
+    "hallway": {
+        "mid": ("potted_plant", "console_table", "shoe_rack"),
+        "wall": ("picture_frame", "picture_frame", "picture_frame", "wall_shelf", "wall_clock", "picture_frame"),
+        "floor": ("doormat", "shoes", "shoes", "basket"),
+    },
+    "living_room": {
+        "mid": ("potted_plant", "armchair", "small_table", "potted_plant", "bean_bag"),
+        "wall": ("picture_frame", "picture_frame", "picture_frame", "wall_shelf", "picture_frame", "wall_clock",
+                 "picture_frame"),
+        "floor": ("basket", "book_stack", "toy_blocks"),
+    },
+    "dining_room": {
+        "mid": ("potted_plant", "console_table", "potted_plant"),
+        "wall": ("picture_frame", "picture_frame", "picture_frame", "wall_clock", "picture_frame", "wall_shelf"),
+        "floor": ("basket",),
+    },
+    "stairs": {
+        "mid": ("potted_plant",),
+        "wall": ("picture_frame", "picture_frame", "picture_frame"),
+        "floor": ("shoes",),
+    },
+    "pantry": {
+        "mid": ("crate+", "cardboard_box+", "wine_bottle_crate", "cardboard_box"),
+        "wall": ("wall_shelf", "wall_shelf"),
+        "floor": ("basket", "bottles", "basket"),
+    },
+    "wc": {
+        "mid": ("potted_plant",),
+        "wall": ("picture_frame", "wall_shelf"),
+        "floor": ("basket",),
+    },
     # the upper floor
-    "bedroom": {"wall": ("picture_frame", "picture_frame", "wall_shelf", "wall_clock"),
-                "floor": ("shoes", "basket", "book_stack")},
-    "kids_room": {"wall": ("picture_frame", "wall_shelf", "picture_frame", "wall_clock"),
-                  "floor": ("toy_blocks", "toy_blocks", "book_stack", "basket", "shoes")},
-    "landing": {"wall": ("picture_frame", "picture_frame", "wall_shelf", "picture_frame"), "floor": ("basket",)},
-    "study": {"wall": ("wall_shelf", "wall_clock", "picture_frame", "wall_shelf"),
-              "floor": ("book_stack", "book_stack", "paper_stack", "basket")},
-    "bathroom": {"wall": ("wall_shelf", "picture_frame", "wall_shelf"), "floor": ("basket",)},
-    "guest_room": {"wall": ("picture_frame", "wall_shelf", "picture_frame", "wall_clock"),
-                   "floor": ("shoes", "basket", "book_stack")},
+    "bedroom": {
+        "mid": ("potted_plant", "trunk", "nightstand", "standing_mirror"),
+        "wall": ("picture_frame", "picture_frame", "picture_frame", "wall_shelf", "wall_clock"),
+        "floor": ("shoes", "basket", "book_stack"),
+    },
+    "kids_room": {
+        "mid": ("toy_chest", "bean_bag", "small_table", "stool", "cardboard_box+"),
+        "wall": ("picture_frame", "wall_shelf", "picture_frame", "wall_clock"),
+        "floor": ("toy_blocks", "toy_blocks", "book_stack", "basket", "shoes"),
+    },
+    "landing": {
+        "mid": ("potted_plant", "console_table", "potted_plant"),
+        "wall": ("picture_frame", "picture_frame", "picture_frame", "wall_shelf", "picture_frame"),
+        "floor": ("basket",),
+    },
+    "study": {
+        "mid": ("filing_cabinet", "potted_plant", "cardboard_box+", "small_table"),
+        "wall": ("picture_frame", "wall_shelf", "wall_clock", "picture_frame", "wall_shelf"),
+        "floor": ("book_stack", "book_stack", "paper_stack", "basket"),
+    },
+    "bathroom": {
+        "mid": ("potted_plant", "stool"),
+        "wall": ("wall_shelf", "picture_frame", "wall_shelf"),
+        "floor": ("basket",),
+    },
+    "guest_room": {
+        "mid": ("potted_plant", "trunk", "nightstand", "small_table"),
+        "wall": ("picture_frame", "picture_frame", "wall_shelf", "picture_frame", "wall_clock"),
+        "floor": ("shoes", "basket", "book_stack"),
+    },
     # the basement
-    "storage": {"wall": ("wall_shelf", "wall_shelf", "wall_clock"), "floor": ("basket", "bottles", "paper_stack")},
-    "darkroom": {"wall": ("wall_shelf", "wall_shelf", "picture_frame"), "floor": ("paper_stack", "bottles")},
-    "corridor": {"wall": ("wall_clock", "picture_frame"), "floor": ("basket",)},
-    "boiler_room": {"wall": ("wall_shelf", "wall_clock"), "floor": ("bottles", "basket")},
+    "storage": {
+        "mid": ("crate+", "cardboard_box+", "crate", "cardboard_box+", "barrel"),
+        "wall": ("wall_shelf", "wall_shelf", "wall_clock"),
+        "floor": ("basket", "bottles", "paper_stack"),
+    },
+    "darkroom": {
+        "mid": ("cardboard_box+", "crate", "stool"),
+        "wall": ("wall_shelf", "wall_shelf", "picture_frame"),
+        "floor": ("paper_stack", "bottles"),
+    },
+    "corridor": {
+        "mid": ("cardboard_box+", "crate"),
+        "wall": ("wall_clock", "picture_frame"),
+        "floor": ("basket",),
+    },
+    "boiler_room": {
+        "mid": ("barrel", "crate+", "jerrycan"),
+        "wall": ("wall_shelf", "wall_clock"),
+        "floor": ("bottles", "basket"),
+    },
     # the hall's sight lines from the passage run at eye height (house_basement.hall_sight): only clocks above them
-    "generator_hall": {"wall": ("wall_clock", "wall_clock"), "floor": ("bottles", "paper_stack", "basket")},
-    "pump_room": {"wall": ("wall_shelf", "wall_clock"), "floor": ("bottles", "basket")},
-    "switch_room": {"wall": ("wall_clock", "wall_shelf"), "floor": ("paper_stack", "bottles")},
-    "passage": {"wall": ("wall_clock",), "floor": ("basket",)},
+    "generator_hall": {
+        "mid": ("fuel_barrel", "jerrycan", "jerrycan"),
+        "wall": ("wall_clock", "wall_clock"),
+        "floor": ("bottles", "paper_stack", "basket"),
+    },
+    "pump_room": {
+        "mid": ("crate+", "jerrycan"),
+        "wall": ("wall_shelf", "wall_clock"),
+        "floor": ("bottles", "basket"),
+    },
+    "switch_room": {
+        "mid": ("cardboard_box+", "crate"),
+        "wall": ("wall_clock", "wall_shelf"),
+        "floor": ("paper_stack", "bottles"),
+    },
+    "passage": {
+        "wall": ("wall_clock",),
+        "floor": ("basket",),
+    },
 }
 PER_HOST = 4
 PER_ROOM = 16  # surface items at most per room
@@ -200,7 +282,18 @@ def room_clutter(level: dict, room: dict, dressing: dict, cat: dict, rule: dict)
         r["span"] = hd.span(r)
         r["kind"] = kind
         res.append(r)
-    out: list[dict] = []
+    floor_blocks = _base_blocks(sh, 0.3)
+    floor_blocks += room.get("legs", [])  # the routes' legs (house_routes), grown by the capsule's radius
+    for m in room.get("stations", []):
+        floor_blocks.append((m["at"][0] - 1, m["at"][2] - 1, m["at"][0] + 1, m["at"][2] + 1))
+    for m in room.get("markers", []):
+        if str(m.get("group", "")).startswith("spawn"):
+            floor_blocks.append((m["at"][0] - 0.5, m["at"][2] - 0.5, m["at"][0] + 0.5, m["at"][2] + 0.5))
+    out: list[dict] = _mid(level, room, dressing, cat, rule, sh, floor_blocks, res, rng)
+    for it in out:  # their tops host surface clutter, and the later layers keep off them
+        r = hd.resolve(it, cat)
+        r["fp"], r["span"], r["kind"] = hd.footprint(r), hd.span(r), "props"
+        res.append(r)
     # surfaces
     placed_on = 0
     used: dict = {}
@@ -248,13 +341,6 @@ def room_clutter(level: dict, room: dict, dressing: dict, cat: dict, rule: dict)
                 out.append(got[0])
                 break
     # floor
-    floor_blocks = _base_blocks(sh, 0.3)
-    floor_blocks += room.get("legs", [])  # the routes' legs (house_routes), grown by the capsule's radius
-    for m in room.get("stations", []):
-        floor_blocks.append((m["at"][0] - 1, m["at"][2] - 1, m["at"][0] + 1, m["at"][2] + 1))
-    for m in room.get("markers", []):
-        if str(m.get("group", "")).startswith("spawn"):
-            floor_blocks.append((m["at"][0] - 0.5, m["at"][2] - 0.5, m["at"][0] + 0.5, m["at"][2] + 0.5))
     for kind in rule.get("floor", ()):
         L, W, H = cat[kind]["size"]
         if kind == "doormat":
@@ -275,6 +361,37 @@ def room_clutter(level: dict, room: dict, dressing: dict, cat: dict, rule: dict)
                 out.append(got[0])
                 break
     return out
+
+
+def _mid(level: dict, room: dict, dressing: dict, cat: dict, rule: dict, sh: dict, floor_blocks: list, res: list,
+         rng) -> list[dict]:
+    """The room's mid-size solid items: each against the widest free wall span that takes it, kept only when the
+    room's check (house_dressing.check_room) finds no more problems than without it; else the next span or side."""
+    levels = LEVELS or [level]
+    props = list(dressing.get("props", []))
+    before = len(hd.check_room(level, room, dressing, cat, levels)["problems"])
+    placed: list[dict] = []
+    for token in rule.get("mid", ()):
+        kind, stack = token.rstrip("+"), token.endswith("+")
+        L, W, H = cat[kind]["size"]
+        blocks = floor_blocks + _occupied(res, placed, cat, 0.03, H + 0.05)
+        order = sorted("NSWE", key=lambda s: -sum(b - a for a, b in free_spans(sh, s, W + 0.2, blocks)))
+        done = False
+        for side in order:
+            spans = free_spans(sh, side, W + 0.2, blocks)
+            while not done:
+                got = _place_along(sh, side, kind, L, 0.05 + W / 2, 0, spans, rng)
+                if not got:
+                    break
+                new = [got[0]] + ([dict(got[0], at=[got[0]["at"][0], H, got[0]["at"][2]])] if stack else [])
+                trial = dict(dressing, props=props + placed + new)
+                if len(hd.check_room(level, room, trial, cat, levels)["problems"]) <= before:
+                    placed += new
+                    done = True
+                spans = got[1]
+            if done:
+                break
+    return placed
 
 
 LEVELS: list = []  # every level, set by generate() (a room's shell sees the stairs of the levels around it)
