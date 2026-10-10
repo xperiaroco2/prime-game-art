@@ -239,11 +239,27 @@ The clay look's faces (the plasticine style the engineer chose on 2026-10-06) co
 `faces/clay_kit.json` records the lab file it was ported from (`lab_source`: path and SHA-256); a test compares the
 data with the lab's tables when the raw folder is there. Change the data there, not in the modules.
 
-**Per-hair flags.** Each hair item of `faces/clay_hair.json` carries `ears_free` (left, right) and `brow_tuck`; the
+**Per-hair flags.** Each hair item of `faces/clay_hair.json` carries `ears_free` (ears free where they are, ears free
+when tucked) and `brow_tuck`; the
 game applies them from the worn hair (and headwear) as the kit does (`kit.hair_flags`): the ears `free`, `tuck` (the
 `ears_tuck` key) or `hide` (`ears_hide`, under covering hair), and the brows pressed into the forehead where a lock
 covers them (full length kept; `brow_tuck` false for the hairs that must not tuck). The e5 brow pad cap was rejected
 (2026-10-10): the kit keeps the e4 brow behaviour.
+
+The lab measured `ears_free` on its one head; the repo's heads measure some hairs otherwise (`faces --kit-check` on
+`clay_round_d`'s man, 2026-10-10), and there the repo's value wins and `lab_ears_free` keeps the lab's (the parity test
+compares that). On m1 the free ear's top 5 mm (of 40) reach into `hair_m_hoodie`'s side: it tucks (0 overlaps). The
+tucked ear still meets `hair_m_casual` (42 triangle pairs) and `hair_m_king_long` (16), whose hair covers the ear's
+upper two thirds (casual) or all of it (king): both hide the ear (0 overlaps). A deeper `EAR_TUCK` would also clear them
+(scale 0.6 to 0.7, 16 mm back, 25 mm down: 0 overlaps) but changes the tuck the women's mohawk and updo were tuned to.
+
+**The moustache's ends.** The moustache stations keep the lip outline's top clear, not the lip's own thickness at a
+raised corner beyond them: on m1 a loud brush met the smirk's raised corner in state `e` (26 mm out from the middle).
+`fhair.lift_moustache` lifts the touching side's end in 0.5 mm steps (a ramp over 8 mm, at most 4 mm) until no state
+touches, as `settle_goatee` lowers the goatee; `meta["moustache_lift_mm"]` records it. The moustache seat (variant a,
+the nose ball on the moustache) raises the nose until it clears the moustache by `moustache_clear` (0.8 mm, unscaled):
+the check's least nose clearance (0.91 mm on m1, droopy with the long nose) is that floor, not a fault; the lab's
+2.75 mm came from its own head's nose and lip heights.
 
 **A recipe character's face.** A clay recipe character may carry `face_kit`: any of the picks (`kit.PICK_KEYS`:
 mouth, nose, eye_size, pupil, lid, brows, ears, facial_hair, teeth, asym, loud) and `brow_rgb`; the rest are the kit's
