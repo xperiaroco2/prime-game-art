@@ -121,3 +121,28 @@ class ShellTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class ShootTest(unittest.TestCase):
+    def test_the_shoot_request(self) -> None:
+        import tempfile
+        from pathlib import Path
+
+        from runner.commands import attic as cmd
+
+        with tempfile.TemporaryDirectory() as tmp:
+            req, staged, missing = cmd.shoot_request([], Path(tmp))
+            self.assertTrue((Path(tmp) / "house.tscn").is_file())
+        names = [v[0] for v in req["views"]]
+        self.assertEqual(names[:6], [v[0] for v in cmd.VIEWS])
+        self.assertEqual(names[6:], [f"lookout_{k + 1}" for k in range(len(ROOF["lookout"]["eyes"]))])
+        self.assertNotIn("lineup_at", req)  # zones.gd's line-up is the zones' only
+        self.assertEqual(len(req["lamps"]), len(cmd.LAMPS))
+        dressing = [p for p in req["pieces"] if p["zone"] in ("attic", "roof")]
+        self.assertEqual(len(dressing), len(ATTIC["items"]) + len(ROOF["items"]))
+        for p in dressing:
+            self.assertEqual(p["pos"][1], cmd.F)
+            self.assertTrue(("scene" in p) != ("size" in p), p)
+        self.assertEqual({p["id"] for p in req["pieces"] if p["zone"] == "yard"}, set(ROOF["lookout"]["see"]))
+        self.assertIn("kit_gable_band_2m_window", set(staged) | {f"kit_{m}" for m in missing})
+        self.assertTrue(all(n.startswith(("kit_", "prop_")) for n in staged))

@@ -100,6 +100,11 @@ def shoot(zones: list[dict], folder: Path) -> int:
     missing = sorted(p.as_posix() for p in staged.values() if not p.is_file())
     if missing:
         raise common.Failure(f"missing GLBs (build the kit and the props first): {', '.join(missing)}")
+    return render(req, staged, folder, common.OUT / "zones" / "request.json", "zones")
+
+
+def render(req: dict, staged: dict[str, Path], folder: Path, path: Path, label: str) -> int:
+    """Stages the GLBs, imports them headless and runs zones.gd off-screen on req (also the attic's shoot, attic.py)."""
     _godot.clear_staged(set(staged))
     for name, glb in staged.items():
         _godot.stage(glb, name)
@@ -107,7 +112,6 @@ def shoot(zones: list[dict], folder: Path) -> int:
     for line in errors[:10]:
         common.say(f"  import: {line}")
     folder.mkdir(parents=True, exist_ok=True)
-    path = common.OUT / "zones" / "request.json"
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(req, indent=1), encoding="utf-8", newline="\n")
     (folder / "zones.json").unlink(missing_ok=True)
@@ -123,7 +127,7 @@ def shoot(zones: list[dict], folder: Path) -> int:
     common.say(f"  {result['instances']} instances, {result['lights']} lights, {result['proxies']} proxies; "
                f"sheet {(folder / 'sheet.png').as_posix()}")
     if errors:
-        common.bad(f"zones: {len(errors)} import errors")
+        common.bad(f"{label}: {len(errors)} import errors")
         return 1
-    common.ok(f"zones: {len(result['shots'])} frames at dusk")
+    common.ok(f"{label}: {len(result['shots'])} frames at dusk")
     return 0
