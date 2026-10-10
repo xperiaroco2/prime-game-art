@@ -63,7 +63,8 @@ def walks(data: dict, request: dict, spec: dict) -> list[dict]:
                 pts += [list(q) for q in (up if p[2] == "up" else up[::-1])]
             else:
                 pts.append([float(p[1]), levels[p[0]], float(p[2])])
-                floored = any(r.get("floor") and hl.inside(r["rect"], p[1], p[2]) for r in by_name[p[0]]["rooms"])
+                floored = any(room.get("floor") and hl.inside(room["rect"], p[1], p[2])
+                              for room in by_name[p[0]]["rooms"])
                 if not floored and not any(_covers(q, pts[-1]) for q in request["pads"]):
                     request["pads"].append(hl.clip_pad(pts[-1], by_name[p[0]].get("holes", [])))
         out.append({"name": f"route:{r['id']}", "kind": "route", "points": pts, "speed": speed,
