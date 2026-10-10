@@ -12,3 +12,19 @@ dressing_dir = "dressing"
 prop_specs = ["props/tasks.toml", "props/library.toml"]
 prop_dirs = ["props/task/v1", "props/library/v1"]
 prop_res = "res://import/prop_{id}.glb"
+# Per-room wall paint (Q11 = B, the engineer 2026-10-10; look.md section 4): the inner plaster's colour per room id; a
+# room not listed keeps the kit's (role wall_int, #3a6264). Teal is the base, oxblood the bedrooms, ink-blue only the
+# study; the garage is a neutral concrete grey (the basement's walls are the kit's concrete already). The lab's rule:
+# the biggest plane in a frame is never amber. The scene writer puts it on the room's root (`metadata/wall_paint`);
+# the kit's material (godot/kit/kit_materials.gd `paint`) recolours that room's inner plaster.
+[wall_paint]
+kitchen = "#3a6264"
+hallway = "#3a6264"
+living_room = "#3a6264"
+dining_room = "#3a6264"
+stairs = "#3a6264"
+landing = "#3a6264"
+bedroom = "#69413c"
+guest_room = "#69413c"
+study = "#1f2a48"
+garage = "#8f897d"

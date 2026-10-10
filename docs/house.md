@@ -108,12 +108,69 @@ kitchen's order board from 4 m in front (`kitchen_order_board.png`); and the pac
 #a8855e, white, cyan, purple, terracotta, mustard, look.md section 4) as 0.25 m cubes on the assembly island
 (`swatches.png`), each front face sampled and logged as `swatch <name>: #paint (L*, C*, h) reads #seen (...; hue
 shift)`. `rooms.png` (1280 px) holds the plan, the order board, the swatches and the room shots; the log and
-`walk.json` `rooms` give per room the view's draw calls and primitives and the dressing's meshes and triangles.
+`walk.json` `rooms` give per room the view's draw calls and primitives, the dressing's share of those draw calls (the
+view drawn again with every room's Dressing group hidden: `dressing_draw_calls`, a difference of two frames, so a
+shadow-map refresh can make it noisy or even negative in a near-empty view) and the room's dressing meshes and
+triangles.
 
 Defaults used (questions.md): Q9 B, the leaves of the front and terrace doors stand open against a jamb as
-placeholder boxes without collision until a leaf prop exists; Q11 A, no per-room wall colour (the kit's #3a6264);
-Q21 B, the inventory's props and counts for every room. Notes from the game's greybox: spawn marker Circle01 lies
+placeholder boxes without collision until a leaf prop exists; Q11 B, a wall paint per room ("Wall paint" below);
+Q21 A, the inventory's props and counts for every room plus a dense lived-in clutter layer ("Clutter" below; art #104,
+the engineer's "too empty, dress them denser" of 2026-10-10). Notes from the game's greybox: spawn marker Circle01 lies
 under the dining table and Circle02 0.2 m from the terrace table.
+
+### Clutter (#104)
+
+The lived-in layer: `house --clutter` (`tools/runner/house_clutter.py`) appends a generated block after the line
+`# ---- clutter (art #104): generated ...` to the dressing files of the 21 interior rooms in its `RULES` (the ground
+and upper floors and the basement; not the attic, roof, terrace, balcony or greenhouse) and replaces it on every run;
+edit `RULES` and `HOSTS`, never the block. One `random.Random` per room seeded with 104 and the room id, so the block
+is the same on every machine; `tools/tests/test_house_clutter.py` fails when a file's block is not the generator's.
+- Mid-size dressing first (`RULES`' `mid`: potted plants, stools, console and small tables, nightstands, trunks,
+  bean bags, a standing mirror; crates, cardboard-box stacks, barrels and jerrycans in the pantry and the basement)
+  against free wall spans, under the floor clutter's clearances (doors, stations 1 m, spawns 0.5 m, the stairs, the
+  routes' legs). These are solid: each is kept only when `house_dressing.check_room` (overlaps, station and spawn
+  clearances, the capsule's reach) finds no new problem in the room, else the generator tries the next span or wall;
+  an id ending in `+` stacks a second one on top (box and crate stacks). Their tops host surface clutter.
+- Surface clutter on the tops of `HOSTS` furniture (counters, the stove, tables, the sideboard, desks, nightstands,
+  the dresser, crates, the filing cabinet ...): up to 4 per top by its area, 16 per room, the room's least used kind
+  first, apart from what already stands on the top (a lamp, the computer). A station's own prop carries nothing, so
+  the stations read as before.
+- Wall dressing (`picture_frame` at 1.4 m, `wall_shelf` at 1.45 m, `wall_clock` at 1.85 m) in the widest free span of a
+  real wall face: 0.35 m off corners, clear of door openings, of windows (1.15 m round their centre), of the stairs
+  and holes, and of anything in front of the wall at its height. The generator hall takes clocks only: its sight
+  lines from the passage run at eye height (`house_basement.hall_sight`).
+- Floor clutter (baskets, shoes, toys, book and paper stacks) against free wall spans, clear of doors, stations
+  (1 m), spawns (0.5 m), the stairs and the routes' legs (`house_routes`, grown by the capsule's radius); the
+  hallway's doormat inside its first door.
+
+Every surface, wall and floor item is non-solid (`collision = "none"`, the library's `clutter` class, docs/props.md),
+so the capsule's walk and the overlap rule do not see it; only the mid layer is solid, and the room checks hold with
+it. The generator runs the room check once per mid-size candidate: `house --clutter` takes about a minute.
+
+Budget (proposed, #104): the clutter adds at most 60 meshes and 15k triangles to a room (met: at most 27 meshes, the kitchen and
+the storage, and 4.9k triangles, the kitchen). Brief #104's other check, "under 150 draw calls per room view", is not met and cannot be
+met by trimming the clutter. Measured 2026-10-10, before (main's dressing) and after, with the same code and paint:
+- Without any dressing the views already draw 44 to 935 calls on the walked floors and up to 3,034 in the basement:
+  one instance per kit piece, and every mesh drawn again into the shadow maps of the review's real-time stand-in
+  lamps (55 shadowed omnis in the basement).
+- The whole dressing layer drew 29 to 723 calls per view before the clutter (1,301 in the generator hall from the
+  switch room); the clutter adds 0 to 350 on the walked floors and up to 750 in the basement, one mesh counted
+  once per lamp that shadows it.
+
+Meeting 150 needs the shell merged (MultiMesh or merged static walls) and a count under the baked light (#83), whose
+lamps draw no real-time shadow passes: a follow-up for the manager.
+
+### Wall paint (#104)
+
+`house.toml`'s `[wall_paint]` maps a walled room's id to a `#rrggbb` paint (Q11 B: teal #3a6264 in the kitchen,
+hallway, living and dining rooms, stairs and landing; oxblood #69413c in the bedroom and guest room; ink-blue #1f2a48
+in the study; the garage a concrete-neutral #8f897d; the basement keeps the kit's concrete; any other room the kit's
+paint). `house_layout.check_paints` (part of `validate`) refuses an unknown or unwalled room and a bad hex; the room
+scene's root carries `metadata/wall_paint`; `walk_request()["paints"]` hands the rooms' rects to the walk, which puts
+the kit's set material (`godot/kit/kit_materials.gd` `make`, `paint`, `apply`; `kit_set.gdshader`, at most 16 paints)
+on the house, recolouring the inner plaster inside a painted room. The lab's rule holds: the biggest plane in a frame
+is never amber. Tested in `tools/tests/test_house_paint.py`.
 
 ### The second floor (#76)
 
@@ -174,6 +231,8 @@ safelights: Q23 B), a faint cool ambient and one fixed exposure for the zone (Q2
 pass (#83a). A shot per room from 0.3 m inside a door at 1.6 m, the hall from the passage and from the switch room,
 the basement from above with labels and the last walk's route times (`tools/out/house/routes.json`), and the median
 L* of each shot and of the hall's far (west) wall from the passage door, which must stay above 12 (2026-10-10: 42.4).
+Per shot `basement.json` also holds the view's draw calls, objects and primitives, the dressing's draw calls and the
+room's dressing meshes and triangles, as the walk's `rooms` do.
 Rooms outside the house's footprint (the generator hall, the pump and switch rooms, the passage) have no slab over them
 yet (no layout level is there; the yard's ground, #81a, has to close it), so their shots look up into black.
 
@@ -228,6 +287,9 @@ Defaults used (for the engineer; data, easy to change):
   route jammed); a straight flight climbing south hit the capsule's head on the north wall's slab edge. The pantry's
   two jar shelves moved off the stairwell to the east and north walls.
 - Q6: the balcony stairs run straight north, the foot on the yard at y 15.
+- Q11 B: a wall paint per room (`[wall_paint]` in `house.toml`, "Wall paint"); the garage's neutral #8f897d is this
+  doc's reading of "the garage stays concrete-neutral".
+- Q21 A: dense, lived-in dressing: the inventory's props plus the seeded clutter layer ("Clutter", art #104).
 - Q7 B: 16 windows on the ground floor, 16 on the second floor, 4 knee windows in the attic, 5 in the garage.
 - Q9 B: leaves standing ajar at the front door, the terrace door and the garage side door; the greenhouse door is
   the kit's own leaf; open doorways elsewhere.

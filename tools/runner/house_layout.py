@@ -18,6 +18,7 @@ from __future__ import annotations
 import importlib.util
 import json
 import math
+import re
 import sys
 import tomllib
 from pathlib import Path
@@ -602,6 +603,56 @@ def _spans(cells: list[int]) -> list[tuple[int, int]]:
 
 # ---------------------------------------------------------------- validation
 
+# ---------------------------------------------------------------- wall paint (Q11 = B, docs/house.md "Wall paint")
+
+HEX = re.compile(r"^#[0-9a-fA-F]{6}$")
+PAINT_ROLE = "wall_int"  # the kit's inner plaster: the role a room's paint replaces (kits/house.json roles)
+PAINT_BAND = (-0.1, 3.1)  # metres above the level's floor that a room's paint covers (the storey's walls)
+
+
+def check_paints(data: dict) -> list[str]:
+    """house.toml's [wall_paint]: every key a walled room, every value a #rrggbb hex."""
+    rooms = {r["id"]: r for lv in data["levels"] for r in lv["rooms"]}
+    problems = []
+    for rid, hexc in data["settings"].get("wall_paint", {}).items():
+        if rid not in rooms:
+            problems.append(f"wall_paint: no room {rid}")
+        elif rooms[rid]["kind"] != "room":
+            problems.append(f"wall_paint: {rid} is {rooms[rid]['kind']}, not a walled room")
+        if not isinstance(hexc, str) or not HEX.match(hexc):
+            problems.append(f"wall_paint: {rid}'s paint {hexc!r} is not #rrggbb")
+    return problems
+
+
+def wall_paint(data: dict, room_id: str) -> str | None:
+    """The room's wall paint (#rrggbb) from house.toml's [wall_paint], or None: the kit's own (role wall_int)."""
+    return data["settings"].get("wall_paint", {}).get(room_id)
+
+
+def paint_vcol(spec: dict, hexc: str) -> list[float]:
+    """A paint as the kit's inner plaster would carry it: the sRGB-encoded vertex colour (kit_geom.role_colour, RGB)."""
+    roles = dict(spec["roles"], **{PAINT_ROLE: dict(spec["roles"][PAINT_ROLE], hex=hexc)})
+    return kit_geom().role_colour(dict(spec, roles=roles), PAINT_ROLE)[:3]
+
+
+def paint_request(data: dict) -> dict:
+    """What the kit's material needs to paint each room (kit_materials.gd `paint`): the inner plaster's vertex colour
+    (`from`) and per painted room its world rect [x0, z0, x1, z1], its band of heights and its vertex colour (`to`)."""
+    spec = data["spec"]
+    out = []
+    for lv in data["levels"]:
+        for r in lv["rooms"]:
+            hexc = wall_paint(data, r["id"])
+            if not hexc:
+                continue
+            x, y, w, d = r["rect"]
+            out.append({"room": r["id"], "level": lv["level"], "hex": hexc, "rect": [x, y, x + w, y + d],
+                        "band": [round(lv["floor_y"] + PAINT_BAND[0], 3), round(lv["floor_y"] + PAINT_BAND[1], 3)],
+                        "to": paint_vcol(spec, hexc)})
+    kit_hex = spec["roles"][PAINT_ROLE]["hex"]
+    return {"from": paint_vcol(spec, kit_hex), "kit_hex": kit_hex, "rooms": out}
+
+
 def validate(data: dict) -> list[str]:
     """Problems with the layout's data (empty: it holds)."""
     problems = []
@@ -650,6 +701,7 @@ def validate(data: dict) -> list[str]:
             for b in solid[i + 1:]:
                 if overlap(a["rect"], b["rect"]) and not ({a["kind"], b["kind"]} == {"room", "open"}):
                     problems.append(f"height {h:g}: {a['id']} and {b['id']} overlap")
+    problems += check_paints(data)
     problems += check_stairs(data)
     problems += plan(data)["problems"]
     return problems
@@ -775,6 +827,8 @@ def write_scenes(data: dict, planned: dict, out: Path, dressing: dict | None = N
         for room in lv["rooms"]:
             rx, ry = room["rect"][0], room["rect"][1]
             sc = _Scene(room["node"])
+            if wall_paint(data, room["id"]):  # the room's wall paint for the game (Q11 = B); the kit's when absent
+                sc.nodes[0] += "\n" + f'metadata/wall_paint = "{wall_paint(data, room["id"])}"'
             sc.group("Shell")
             seen: dict = {}
             for p in pl["pieces"][room["id"]]:
@@ -972,5 +1026,5 @@ def walk_request(data: dict, levels=WALK_LEVELS) -> dict:
             unique.append(p)
     holes = {lv["floor_y"]: lv.get("holes", []) for lv in data["levels"]}
     unique = [clip_pad(p, holes.get(p[1], [])) for p in unique]
-    return {"walks": walks, "pads": unique, "rooms": rooms, "closed": closed,
+    return {"walks": walks, "pads": unique, "rooms": rooms, "closed": closed, "paints": paint_request(data),
             "levels": {lv["level"]: {"node": lv["node"], "floor_y": lv["floor_y"]} for lv in data["levels"]}}

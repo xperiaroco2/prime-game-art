@@ -1408,6 +1408,175 @@ def build_window_box(m, s, R, prm, rng):
         bulb(m, (x + 0.03, bh + 0.06, 0.03), 0.03, flower, 0.025)
 
 
+# --- small clutter (art #104: the lived-in layer; boxes and cylinders, class `clutter`) ---------------------------
+def build_book_stack(m, s, R, prm, rng):
+    """Books lying in a stack, each a little smaller and turned off the last."""
+    L, W, H = s
+    n = int(prm.get("books", 3))
+    y = 0.0
+    for i in range(n):
+        t = H / n
+        sx, sz = L * (1 - 0.08 * i) / 2, W * (1 - 0.06 * i) / 2
+        dx = (rng.random() - 0.5) * 0.02
+        cbox(m, (-sx + dx, y, -sz), (sx + dx, y + t - 0.002, sz), _r(R, i % len(R)), c=0.003)
+        y += t
+
+
+def build_book_row(m, s, R, prm, rng):
+    """Books standing in a row on a shelf (spines to the front), heights and widths varied."""
+    L, W, H = s
+    x = -L / 2
+    i = 0
+    while x < L / 2 - 0.02:
+        t = min(0.025 + rng.random() * 0.03, L / 2 - x)
+        h = H * (0.72 + rng.random() * 0.28)
+        box(m, (x, 0, -W / 2), (x + t - 0.002, h, W / 2 - rng.random() * 0.03), _r(R, i % len(R)), "+x-x+y+z")
+        x += t
+        i += 1
+
+
+def build_wall_shelf(m, s, R, prm, rng):
+    """A plank on two brackets with a row of books and a jar on it (wall pivot: the back at -z)."""
+    L, W, H = s
+    hz = W / 2
+    wood = R[0]
+    box(m, (-L / 2, 0.06, -hz), (L / 2, 0.085, hz), wood)
+    for sx in (-1, 1):
+        x = sx * L * 0.36
+        box(m, (x - 0.012, 0.0, -hz), (x + 0.012, 0.06, -hz + W * 0.75), _r(R, -1))
+    x = -L / 2 + 0.06
+    i = 0
+    while x < L * 0.18:
+        t = 0.03 + rng.random() * 0.02
+        box(m, (x, 0.085, -hz + 0.02), (x + t - 0.003, 0.085 + (H - 0.085) * (0.7 + rng.random() * 0.3), hz - 0.03),
+            _r(R, 1 + i % max(1, len(R) - 2)), "+x-x+y+z")
+        x += t
+        i += 1
+    cyl(m, "y", (L * 0.32, 0.0), min(0.05, W * 0.3), 0.085, 0.085 + (H - 0.085) * 0.6, _r(R, 2), 8)
+
+
+def build_cup_set(m, s, R, prm, rng):
+    """Two cups (and their saucers) side by side."""
+    L, W, H = s
+    r = min(L / 4, W / 2) * 0.62
+    for sx in (-1, 1):
+        x = sx * L / 4
+        cyl(m, "y", (x, 0.0), r * 1.45, 0.0, 0.01, R[0], 10)
+        cyl(m, "y", (x, 0.0), r, 0.01, H, R[0], 10, r1=r * 1.1, caps=(True, False))
+        cyl(m, "y", (x, 0.0), r * 0.92, H - 0.012, H - 0.004, _r(R, 1), 10, caps=(False, True))
+
+
+def build_plate_stack(m, s, R, prm, rng):
+    L, W, H = s
+    n = int(prm.get("plates", 4))
+    r = min(L, W) / 2
+    for i in range(n):
+        y0 = H * i / n
+        cyl(m, "y", (0.0, 0.0), r * 0.7, y0, y0 + H / n * 0.4, R[0], 12, r1=r, caps=(True, False))
+        cyl(m, "y", (0.0, 0.0), r, y0 + H / n * 0.4, y0 + H / n * 0.9, R[0], 12, caps=(False, True))
+
+
+def build_bottles(m, s, R, prm, rng):
+    """Three bottles of different heights in a row."""
+    L, W, H = s
+    n = int(prm.get("bottles", 3))
+    r = min(L / n, W) / 2 * 0.85
+    for i in range(n):
+        x = -L / 2 + L * (i + 0.5) / n
+        h = H * (0.8 + 0.2 * ((i * 7) % n) / max(1, n - 1)) if n > 1 else H
+        role = _r(R, i % len(R))
+        cyl(m, "y", (x, 0.0), r, 0.0, h * 0.62, role, 8)
+        cyl(m, "y", (x, 0.0), r, h * 0.62, h * 0.78, role, 8, r1=r * 0.38, caps=(False, False))
+        cyl(m, "y", (x, 0.0), r * 0.38, h * 0.78, h, role, 6, caps=(False, True))
+
+
+def build_cooking_pot(m, s, R, prm, rng):
+    L, W, H = s
+    r = min(L * 0.8, W) / 2
+    metal = R[0]
+    cyl(m, "y", (0.0, 0.0), r, 0.0, H * 0.78, metal, 12, caps=(True, False))
+    cyl(m, "y", (0.0, 0.0), r * 1.02, H * 0.78, H * 0.84, metal, 12, r1=r * 0.6, caps=(False, False))
+    cyl(m, "y", (0.0, 0.0), r * 0.6, H * 0.84, H * 0.86, metal, 12, caps=(False, True))
+    cyl(m, "y", (0.0, 0.0), 0.02, H * 0.86, H, _r(R, 1), 6)
+    for sx in (-1, 1):
+        box(m, (sx * r - (0.0 if sx > 0 else L / 2 - r), H * 0.6, -0.02), (sx * r + (L / 2 - r if sx > 0 else 0.0), H * 0.68, 0.02), _r(R, 1))
+
+
+def build_paper_stack(m, s, R, prm, rng):
+    L, W, H = s
+    n = int(prm.get("sheets", 3))
+    for i in range(n):
+        y0 = H * i / n
+        dx, dz = (rng.random() - 0.5) * 0.03, (rng.random() - 0.5) * 0.03
+        box(m, (-L / 2 * 0.94 + dx, y0, -W / 2 * 0.94 + dz), (L / 2 * 0.94 + dx, y0 + H / n, W / 2 * 0.94 + dz), _r(R, i % len(R)))
+
+
+def build_wall_clock(m, s, R, prm, rng):
+    """A round clock: rim, face, two hands (wall pivot: the back at -z)."""
+    L, W, H = s
+    r = min(L, H) / 2
+    zb, zf = -W / 2, W / 2
+    tube(m, "z", (0.0, r), r * 0.86, r, zb, zf, R[0], 16)
+    cyl(m, "z", (0.0, r), r * 0.86, zb, zf - 0.012, _r(R, 1), 16, caps=(True, True))
+    box(m, (-0.008, r, zf - 0.012), (0.008, r + r * 0.6, zf - 0.006), _r(R, 2), "+z+x-x+y")
+    box(m, (0.0, r - 0.008, zf - 0.012), (r * 0.45, r + 0.008, zf - 0.006), _r(R, 2), "+z+y-y+x")
+
+
+def build_basket(m, s, R, prm, rng):
+    """A woven basket: a flared shell, its rim and two handles."""
+    L, W, H = s
+    hx, hz = L / 2, W / 2
+    cyl(m, "y", (0.0, 0.0), hx * 0.85, 0.0, H * 0.92, R[0], 10, r1=hx, sq=hz / hx, caps=(True, False))
+    cyl(m, "y", (0.0, 0.0), hx * 0.82, 0.02, H * 0.92, R[0], 10, r1=hx * 0.96, sq=hz / hx, caps=(True, False), flip=True)
+    cyl(m, "y", (0.0, 0.0), hx, H * 0.92, H, _r(R, 1), 10, sq=hz / hx, caps=(False, False))
+    cyl(m, "y", (0.0, 0.0), hx * 0.94, H * 0.92, H, _r(R, 1), 10, sq=hz / hx, caps=(False, False), flip=True)
+    for sx in (-1, 1):
+        box(m, (sx * hx * 0.98 - 0.015, H * 0.7, -0.05), (sx * hx * 0.98 + 0.015, H * 0.84, 0.05), _r(R, 1))
+
+
+def build_shoes(m, s, R, prm, rng):
+    """A pair of shoes: sole, upper and the heel's block each."""
+    L, W, H = s
+    for sx in (-1, 1):
+        x = sx * L / 4
+        sw = L / 2 * 0.96
+        box(m, (x - sw / 2, 0.0, -W / 2), (x + sw / 2, 0.02, W / 2), _r(R, 1))
+        cbox(m, (x - sw / 2 * 0.9, 0.02, -W / 2 * 0.95), (x + sw / 2 * 0.9, H * 0.55, W / 2 * 0.6), R[0], c=0.006)
+        cbox(m, (x - sw / 2 * 0.9, 0.02, -W / 2 * 0.95), (x + sw / 2 * 0.9, H, -W / 2 * 0.3), R[0], c=0.006)
+
+
+def build_toy_blocks(m, s, R, prm, rng):
+    """A few coloured blocks, two of them stacked."""
+    L, W, H = s
+    a = min(H / 2, L / 3, W / 2)
+    spots = [(-L / 2 + a / 2, -W / 4, 0.0), (-L / 2 + a / 2, -W / 4, a), (0.05, W / 4 - a / 2, 0.0),
+             (L / 2 - a / 2, -W / 2 + a / 2, 0.0), (L / 2 - a * 0.7, W / 2 - a / 2, 0.0)]
+    for i, (x, z, y) in enumerate(spots):
+        cbox(m, (x - a / 2, y, z - a / 2), (x + a / 2, y + a - 0.003, z + a / 2), _r(R, i % len(R)), c=0.004)
+
+
+def build_vase_flowers(m, s, R, prm, rng):
+    L, W, H = s
+    r = min(L, W) / 2
+    cyl(m, "y", (0.0, 0.0), r * 0.6, 0.0, H * 0.45, R[0], 8, r1=r * 0.42, caps=(True, False))
+    for i in range(3):
+        a = 2 * math.pi * i / 3
+        x, z = math.cos(a) * r * 0.62, math.sin(a) * r * 0.62
+        rod(m, (0.0, H * 0.4, 0.0), (x, H * 0.82, z), 0.006, _r(R, 1), 4)
+        blob(m, (x, H * 0.88, z), r * 0.38, H * 0.1, r * 0.38, _r(R, 2), 6, 3)
+
+
+def build_fruit_bowl(m, s, R, prm, rng):
+    L, W, H = s
+    r = min(L, W) / 2
+    cyl(m, "y", (0.0, 0.0), r * 0.45, 0.0, H * 0.5, R[0], 12, r1=r, caps=(True, False))
+    cyl(m, "y", (0.0, 0.0), r * 0.4, 0.01, H * 0.5, R[0], 12, r1=r * 0.94, caps=(False, False), flip=True)
+    for i in range(4):
+        a = 2 * math.pi * i / 4 + 0.4
+        blob(m, (math.cos(a) * r * 0.42, H * 0.62, math.sin(a) * r * 0.42), r * 0.26, H * 0.36, r * 0.26,
+             _r(R, 1 + i % max(1, len(R) - 1)), 6, 3)
+
+
 BUILDERS = {name[6:]: fn for name, fn in dict(globals()).items() if name.startswith("build_") and callable(fn)}
 
 

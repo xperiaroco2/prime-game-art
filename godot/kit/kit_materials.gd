@@ -24,6 +24,28 @@ static func make(textures: String, params: Dictionary = {}) -> ShaderMaterial:
 	return mat
 
 
+## Per-room wall paint (Q11 = B, docs/house.md "Wall paint"): `paints` is house_layout.paint_request's dictionary
+## ({"from": [r, g, b], "rooms": [{"rect": [x0, z0, x1, z1], "band": [y0, y1], "to": [r, g, b]}]}, world metres,
+## sRGB-encoded vertex colours). The shader recolours the inner plaster of each room's faces; returns the rooms set.
+static func paint(mat: ShaderMaterial, paints: Dictionary) -> int:
+	var rooms: Array = paints.get("rooms", [])
+	var n: int = mini(rooms.size(), 16)
+	var rects: PackedVector4Array = PackedVector4Array()
+	var bands: PackedVector2Array = PackedVector2Array()
+	var tos: PackedVector3Array = PackedVector3Array()
+	for i: int in 16:
+		var r: Dictionary = rooms[i] if i < n else {"rect": [0, 0, 0, 0], "band": [0, 0], "to": [0, 0, 0]}
+		rects.append(Vector4(float(r["rect"][0]), float(r["rect"][1]), float(r["rect"][2]), float(r["rect"][3])))
+		bands.append(Vector2(float(r["band"][0]), float(r["band"][1])))
+		tos.append(_vec3(r["to"]))
+	mat.set_shader_parameter("paint_from", _vec3(paints.get("from", [0, 0, 0])))
+	mat.set_shader_parameter("paint_rect", rects)
+	mat.set_shader_parameter("paint_band", bands)
+	mat.set_shader_parameter("paint_to", tos)
+	mat.set_shader_parameter("paint_count", n)
+	return n
+
+
 ## Puts `mat` on every surface under `node` whose material is the pack's stand-in; returns how many surfaces it set.
 static func apply(node: Node, mat: Material) -> int:
 	var count: int = 0
