@@ -721,12 +721,16 @@ class _Scene:
         return "\n".join(head + [""] + [n + "\n" for n in self.nodes])
 
 
-def write_scenes(data: dict, planned: dict, out: Path) -> dict:
-    """One .tscn per room and level, and house.tscn, into out (the scene_res folder's files). Returns a summary."""
+def write_scenes(data: dict, planned: dict, out: Path, dressing: dict | None = None, res_of=None) -> dict:
+    """One .tscn per room and level, and house.tscn, into out (the scene_res folder's files). Returns a summary.
+    dressing: room id -> its checked dressing (house_dressing.check's rooms); res_of(prop id): the staged GLB's
+    res:// path, or None for a named placeholder box of the prop's size."""
+    from . import house_dressing
+
     st = data["settings"]
     kit_res, scene_res = st["kit_res"], st["scene_res"].rstrip("/")
     out = Path(out)
-    summary = {"levels": {}, "instances": 0, "pieces": {}}
+    summary = {"levels": {}, "instances": 0, "pieces": {}, "props": {}, "placeholders": {}}
     house = _Scene("House")
     for lv, pl in zip(data["levels"], planned["levels"]):
         name = lv["level"]
@@ -760,6 +764,12 @@ def write_scenes(data: dict, planned: dict, out: Path) -> dict:
                 sc.group("Placeholders")
                 for p in phs:
                     sc.marker(p["name"], "Placeholders", p["at"][0] - rx, p["at"][1], p["at"][2] - ry, meta={"note": p["note"], **({"size": p["size"]} if "size" in p else {})})
+            rep = (dressing or {}).get(room["id"])
+            if rep:
+                summary["placeholders"][room["id"]] = house_dressing.scene_nodes(sc, rep["resolved"],
+                                                                                 res_of or (lambda i: None))
+                for r in rep["resolved"]:
+                    summary["props"][r["id"]] = summary["props"].get(r["id"], 0) + 1
             (out / name / f"{room['id']}.tscn").write_text(sc.text(), encoding="utf-8", newline="\n")
             level.instance(room["node"], "Rooms", f"{scene_res}/{name}/{room['id']}.tscn",
                            _tf(0, rx, lv["floor_y"], ry))
