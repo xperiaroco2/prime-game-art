@@ -79,7 +79,9 @@ and must check that Godot's "static lightmaps" import keeps the kit's UV2 rather
   metre along +Z; the ridge's pivot is the gables' apex (y = rise x run). The roof's underside sits `rise x 0.1 + 0.02`
   under the gables' top line, so the slab covers the knee and the gable tops. `kit_geom.attic_roof(spec, x, z)` lists
   the placements (id, degrees about +Y, offset) for a span; the far slope is the near one turned 180 degrees. The glass
-  roof (`glass_roof_*`, `glass_gable_*`) follows the same pivots on the glass walls' top.
+  roof (`glass_roof_*`, `glass_gable_*`) follows the same pivots on the glass walls' top. A glass bay's rafter is at
+  its local x 0; the `_end` bays (`glass_roof_2x2_end`, `glass_roof_eave_2m_end`, `"+x"` in `ends`) add one at x 2 for
+  the bay whose far end meets a glass gable, whose top lies 6 cm under the pane (`docs/house-garden.md`).
 - **Gazebo**: six 60-degree deck sectors round its centre (sector 0 `gazebo_sector_open`, the entrance), six roof
   sectors and the finial, all pivoted at the centre; `kit_geom.gazebo()` lists them.
 - **Porch** (`porch_2x2`): x along the exterior wall from its grid node, out along +Z from the wall's face; its
