@@ -557,22 +557,22 @@ def write_piece(o, folder, meta):
 
 
 def load_piece(o, folder, arm):
-    """Replaces part o's mesh, vertex groups and materials with the library piece in <folder>; o keeps its name,
-    parent and Armature modifier. Returns the piece's json."""
+    """Replaces part o's mesh (with its vertex groups) and materials with the library piece in <folder>; o keeps its
+    name, parent and Armature modifier. Returns the piece's json."""
     with bpy.data.libraries.load(os.path.join(folder, "piece.blend"), link=False) as (src, dst):
         dst.objects = [PIECE_OBJECT]
     pc = dst.objects[0]
     me = pc.data
     me.transform(o.matrix_world.inverted(), shape_keys=True)
     old = o.data
-    o.data = me
-    me.name = old.name
+    name = old.name
+    o.data = me  # the vertex groups' names and weights live on the mesh (Blender 3.0+): they come with it
     if old.users == 0:
         bpy.data.meshes.remove(old)
-    o.vertex_groups.clear()
-    for g in pc.vertex_groups:
-        o.vertex_groups.new(name=g.name)
+    me.name = name  # after the old mesh is gone: no '.001' in the GLB's mesh names
     bpy.data.objects.remove(pc, do_unlink=True)
+    if any(m.type == "ARMATURE" for m in o.modifiers) and not any(v.groups for v in me.vertices):
+        raise RuntimeError(f"{o.name}: the library piece in {folder} has no vertex weights")
     with open(os.path.join(folder, "piece.json"), encoding="utf-8") as fh:
         return json.load(fh)
 
