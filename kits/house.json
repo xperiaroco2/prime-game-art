@@ -26,7 +26,7 @@
   "gable_window_sill_m": 0.25,
   "gable_window_h_m": 0.9
  },
- "budget_tris": {"wall": 400, "corner": 60, "floor": 120, "roof": 700, "stairs": 2500, "ladder": 600, "railing": 1500, "fence": 1200, "gate": 4000, "glass": 600, "garage": 600, "pillar": 60, "porch": 400, "chimney": 200, "dormer": 1500, "trim": 120, "gazebo": 1200, "downpipe": 300},
+ "budget_tris": {"wall": 400, "corner": 60, "floor": 120, "roof": 700, "stairs": 2500, "ladder": 600, "railing": 1500, "fence": 1200, "gate": 4000, "glass": 600, "garage": 600, "pillar": 60, "porch": 400, "chimney": 450, "dormer": 2400, "trim": 120, "gazebo": 1200, "downpipe": 300, "vent": 120},
  "materials": {
   "plaster": {"source": "PaintedPlaster017", "tile_m": 1.0, "lum_std": 0.03, "normal_strength": 0.15, "roughness": 0.88, "pack": "set"},
   "wood": {"source": "WoodFloor051", "tile_m": 1.0, "lum_std": 0.05, "normal_strength": 0.4, "roughness": 0.72, "pack": "set"},
@@ -50,6 +50,10 @@
   "tile_c": {"material": "concrete", "hex": "#83533f"},
   "tile_moss": {"material": "concrete", "hex": "#5b5134"},
   "zinc": {"material": "metal", "hex": "#6f7471"},
+  "lead": {"material": "metal", "hex": "#565b5e"},
+  "brick": {"material": "concrete", "hex": "#7b3f2e"},
+  "brick_b": {"material": "concrete", "hex": "#6b3a2d"},
+  "brick_c": {"material": "concrete", "hex": "#86503a"},
   "metal": {"material": "metal", "hex": "#23211f"},
   "glass": {"material": "glass", "hex": "#a8c0c8"}
  },
@@ -179,7 +183,10 @@
   {"id": "gazebo_roof_sector", "type": "gazebo_roof", "kind": "gazebo", "radius": 3.0, "eave_h": 2.55, "apex_h": 3.4, "thick": 0.1},
   {"id": "gazebo_finial", "type": "finial", "kind": "gazebo", "width": 0.1, "peak": 0.12, "role": "metal"},
   {"id": "gable_band_2m_window", "type": "wall", "kind": "wall", "length": 2, "height": 1.4, "finish": "ext", "band": false, "skirting": false, "opening": "window_gable"},
-  {"id": "chimney_attic", "type": "chimney", "kind": "chimney", "width": 1.0, "height": 5.4, "about": "the free roof's chimney (art #77): from the attic floor through the 0.35 roof, 1.5 m over its top on the high side"},
+  {"id": "chimney_attic", "type": "chimney", "kind": "chimney", "width": 1.0, "height": 5.4, "roof": {"eave_d": 4.5, "down": "+z"}, "aerial": true, "about": "the free roof's south chimney (art #77): from the attic floor through the 0.35 roof's south slope (its north face 4.5 m from the eave wall's line), brick-coursed over the roof, lead flashing, two clay pots 1.5 m over the high side, the TV aerial"},
+  {"id": "chimney_attic_n", "type": "chimney", "kind": "chimney", "width": 1.0, "height": 5.4, "roof": {"eave_d": 3.0, "down": "-z"}, "about": "the north chimney: as chimney_attic through the north slope (its north face 3 m from the eave wall's line), no aerial"},
+  {"id": "roof_vent", "type": "vent", "kind": "vent", "width": 0.3, "height": 0.52, "down": "+z", "about": "a soil vent pipe with a cowl through the south slope (art #77): pivot at the 0.3 m square's north-west corner, y 0 the slab's top at its axis (house_attic.roof_top)"},
+  {"id": "roof_vent_n", "type": "vent", "kind": "vent", "width": 0.3, "height": 0.52, "down": "-z", "about": "roof_vent through the north slope"},
   {"id": "dormer_gable", "type": "dormer", "kind": "dormer", "x": [0, 2], "z": [0, 7], "window": [1.0, 1.4], "sill": 0.15, "rise": 0.7, "reach_m": 1.05, "about": "the free roof's gable dormer (art #77): replaces a 2 m panel column over 7 m of run (house_layout.dormer_cut); the players climb out of its window onto the slope"}
  ]
 }

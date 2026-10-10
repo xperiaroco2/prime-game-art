@@ -734,6 +734,24 @@ def build_pitched(pc: Piece, p: dict, spec: dict) -> None:
     pc.collide(prism_x_points(prof, x0, x1))
     if "-z" in ends and p.get("overhang"):
         gutter(pc.mesh, x0, x1, z0, u + tv + r * z0 - GUTTER_DROP, ends)
+        snow_guard(pc.mesh, x0, x1, lambda z: u + tv + r * z, ends)
+
+
+SNOW_GUARD_Z, SNOW_GUARD_H, SNOW_GUARD_STEP = -0.2, 0.12, 0.5  # its line on the eave's overhang (z from the eave
+# wall's line), the rail's top over the slab's top, the brackets' spacing along the eave
+
+
+def snow_guard(m: Mesh, x0, x1, base, ends: str = "") -> None:
+    """The snow guard on an eave piece (art #77): a zinc rail SNOW_GUARD_H over the slab's top at z SNOW_GUARD_Z (on
+    the overhang, above the gutter), on metal brackets every SNOW_GUARD_STEP from the tiles. No collider."""
+    z, yt = SNOW_GUARD_Z, base(SNOW_GUARD_Z) + SNOW_GUARD_H
+    m.box((x0, yt - 0.025, z - 0.01), (x1, yt, z + 0.01), "zinc",
+          "+y-y+z-z" + "".join(e for e in ("-x", "+x") if e in ends))
+    xb = math.floor(x0 / SNOW_GUARD_STEP) * SNOW_GUARD_STEP + SNOW_GUARD_STEP / 2
+    while xb < x1 - 0.03:
+        if xb > x0 + 0.03:
+            m.box((xb - 0.01, base(z) + 0.02, z - 0.03), (xb + 0.01, yt - 0.025, z + 0.012), "metal", "+x-x+z-z")
+        xb += SNOW_GUARD_STEP
 
 
 GUTTER_R, GUTTER_DROP, GUTTER_SEGS = 0.065, 0.04, 6  # the half-round gutter's radius, its rim under the slab's top
@@ -1013,19 +1031,127 @@ def build_porch(pc: Piece, p: dict, spec: dict) -> None:
     pc.sockets["lamp"] = [round(xm, 4), round(y1 - 0.3, 4), round(zm, 4)]
 
 
+BRICK_BAND = 0.15  # a chimney's brick course band (two courses of 75 mm) and its colour spread
+BRICK_ROLES = ("brick", "brick_b", "brick", "brick_c", "brick_b")
+CHIMNEY_POT, CHIMNEY_CAP, CHIMNEY_CORBEL = 0.4, 0.1, 0.15  # the clay pots' height, the cap's and the corbel band's
+LEAD_ON_TILES = 0.06  # the lead's lift over the slab's top: it lies on the pantiles (lip 0.03 + the S's 0.045 crest)
+
+
+def frustum(m: Mesh, c, y0, y1, r0, r1, role: str, sides: int = 8, top: str | None = None) -> None:
+    """A vertical frustum about (c[0], c[1]) (x, z) from radius r0 at y0 to r1 at y1; top: the role of a cap disk at
+    y1 (none: open)."""
+    ring = [(math.cos(2 * math.pi * (k + 0.5) / sides), math.sin(2 * math.pi * (k + 0.5) / sides)) for k in range(sides)]
+    for k in range(sides):
+        (ax, az), (bx, bz) = ring[k], ring[(k + 1) % sides]
+        pts = [(c[0] + r0 * ax, y0, c[1] + r0 * az), (c[0] + r0 * bx, y0, c[1] + r0 * bz),
+               (c[0] + r1 * bx, y1, c[1] + r1 * bz), (c[0] + r1 * ax, y1, c[1] + r1 * az)]
+        pts = [q for i, q in enumerate(pts) if math.dist(q, pts[i - 1]) > EPS]
+        m.poly(pts, (ax + bx, 0.0, az + bz), role)
+    if top:
+        m.poly([(c[0] + r1 * x, y1, c[1] + r1 * z) for x, z in ring], (0, 1, 0), top)
+
+
+def chimney_roof(p: dict, spec: dict):
+    """The roof's slab top over the attic floor at the chimney piece's local z (p["roof"]: eave_d, the horizontal
+    distance from the eave wall's line at z 0, and down, the face towards the eave, "+z" or "-z"), or None."""
+    rf = p.get("roof")
+    if not rf:
+        return None
+    pp, knee = pitch(spec), float(spec["grid"]["knee_h_m"])
+    s = -1.0 if rf["down"] == "+z" else 1.0
+    return lambda z: knee + pp["u"] + pp["tv"] + pp["r"] * (float(rf["eave_d"]) + s * z)
+
+
 def build_chimney(pc: Piece, p: dict, spec: dict) -> None:
-    """A chimney stack on the roof deck: x, z over 0..size from its grid node, a plastered body, a concrete cap and a
-    metal flue; total height p["height"]."""
+    """A chimney stack (art #77, docs/kit.md "The free roof"): x, z over 0..width from its grid node; the body
+    plastered under the roof (in the attic) and brick-coursed over it (bands of BRICK_BAND in BRICK_ROLES), a
+    projecting corbel band, a concrete cap and two clay pots whose rims reach p["height"]. With p["roof"] (the slope it
+    passes, chimney_roof): lead flashing on the tiles: the apron on the eave-side face, the back gutter on the
+    ridge-side face and a strip up each side. p["aerial"]: a TV aerial on a mast strapped to the +x face."""
     S, H = float(p["width"]), float(p["height"])
     m = pc.mesh
-    cap0, cap1, o = H - 0.25, H - 0.15, 0.06
-    m.box((0, 0, 0), (S, cap0, S), "wall_ext", "+x-x+z-z")
+    cap1 = H - CHIMNEY_POT
+    cap0, o, c = cap1 - CHIMNEY_CAP, 0.06, 0.035
+    cb0 = cap0 - CHIMNEY_CORBEL
+    top = chimney_roof(p, spec)
+    yb = 0.0 if top is None else min(top(0.0), top(S)) - 0.02
+    if yb > 0:
+        m.box((0, 0, 0), (S, yb, S), "wall_ext", "+x-x+z-z")
+    ys = [yb] + [k * BRICK_BAND for k in range(math.floor(yb / BRICK_BAND) + 1, math.ceil(cb0 / BRICK_BAND))
+                 if yb + EPS < k * BRICK_BAND < cb0 - EPS] + [cb0]
+    for i, (ya, yz) in enumerate(zip(ys, ys[1:])):
+        k = round(ya / BRICK_BAND)
+        m.box((0, ya, 0), (S, yz, S), "brick", "+x-x+z-z",
+              {f: BRICK_ROLES[(k * 2 + j * 3) % len(BRICK_ROLES)] for j, f in enumerate(("+x", "-x", "+z", "-z"))})
+    m.box((-c, cb0, -c), (S + c, cap0, S + c), "brick_b", "+x-x-y+z-z")
     m.box((-o, cap0, -o), (S + o, cap1, S + o), "concrete", "+x-x+y-y+z-z")
-    f0, f1 = S / 2 - 0.15, S / 2 + 0.15
-    m.box((f0, cap1, f0), (f1, H, f1), "metal", "+x-x+y+z-z")
-    pc.collide_box((0, 0, 0), (S, cap0, S))
-    pc.collide_box((-o, cap0, -o), (S + o, cap1, S + o))
-    pc.collide_box((f0, cap1, f0), (f1, H, f1))
+    for xc in (S * 0.3, S * 0.7):  # the clay pots: a tapered body, a rolled rim, the dark flue inside
+        frustum(m, (xc, S / 2), cap1, H - 0.06, 0.12, 0.09, "tile_c")
+        frustum(m, (xc, S / 2), H - 0.06, H, 0.105, 0.105, "tile_c")
+        frustum(m, (xc, S / 2), H - 0.06, H - 0.03, 0.09, 0.09, "metal", top="metal")  # the soot-dark flue
+        pc.collide_box((xc - 0.12, cap1, S / 2 - 0.12), (xc + 0.12, H, S / 2 + 0.12))
+    pc.collide_box((0, 0, 0), (S, cb0, S))
+    pc.collide_box((-o, cb0, -o), (S + o, cap1, S + o))
+    if top is not None:
+        _chimney_lead(m, p, S, lambda z: top(z) + LEAD_ON_TILES)
+    if p.get("aerial"):
+        _aerial(m, S, cb0, H)
+
+
+def _chimney_lead(m: Mesh, p: dict, S: float, yf) -> None:
+    """The chimney's lead flashing over the tile line yf(z): an upstand LEAD_UP on each face, the apron's skirt down
+    the slope from the eave-side face, the back gutter's tray up the slope from the ridge-side face, a lip on the
+    tiles along each side."""
+    up, sk, lip, g = 0.15, 0.18, 0.1, 0.012
+    zd = S if p["roof"]["down"] == "+z" else 0.0
+    zu, sd = S - zd, (1.0 if zd == S else -1.0)  # sd: the eave side's direction along z
+    for z, sgn, run in ((zd, sd, sk), (zu, -sd, 0.3)):  # the apron (down the slope), the back gutter (up)
+        zf = z + sgn * g
+        m.poly([(-g, yf(z), zf), (S + g, yf(z), zf), (S + g, yf(z) + up, zf), (-g, yf(z) + up, zf)], (0, 0, sgn), "lead")
+        z2 = z + sgn * run
+        m.poly([(-g - 0.06, yf(z), zf), (S + g + 0.06, yf(z), zf), (S + g + 0.06, yf(z2), z2), (-g - 0.06, yf(z2), z2)],
+               (0, 1, 0), "lead")
+    for x, sx in ((-g, -1.0), (S + g, 1.0)):
+        m.poly([(x, yf(0.0), 0.0), (x, yf(S), S), (x, yf(S) + up, S), (x, yf(0.0) + up, 0.0)], (sx, 0, 0), "lead")
+        m.poly([(x, yf(0.0), 0.0), (x + sx * lip, yf(0.0), 0.0), (x + sx * lip, yf(S), S), (x, yf(S), S)], (0, 1, 0),
+               "lead")
+
+
+def _aerial(m: Mesh, S: float, y0: float, H: float) -> None:
+    """A TV aerial: a mast beside the chimney's +x face from y0 - 0.6 to H + 1.3 with two straps round the stack, a
+    boom along z at the top and five directors across it, shortening towards the front."""
+    mx, mz, r = S + 0.04, S / 2, 0.022
+    tube(m, (mx, y0 - 0.6, mz), (mx, H + 1.3, mz), r, "metal")
+    for ys in (y0 - 0.5, y0 - 0.1):
+        m.box((-0.01, ys, -0.01), (S + 0.06, ys + 0.03, S + 0.01), "zinc", "+x-x+y-y+z-z")
+    yb = H + 1.2
+    tube(m, (mx, yb, mz - 0.25), (mx, yb, mz + 0.85), 0.012, "metal", sides=4)
+    for i in range(5):
+        z, half = mz - 0.15 + 0.22 * i, 0.32 - 0.04 * i
+        m.box((mx - half, yb - 0.006, z - 0.006), (mx + half, yb + 0.006, z + 0.006), "zinc", "+x-x+y-y+z-z")
+
+
+VENT_R, VENT_H = 0.055, 0.45  # a roof vent pipe's radius and its height over the slab's top at its axis
+
+
+def build_vent(pc: Piece, p: dict, spec: dict) -> None:
+    """A soil vent pipe through the pantiles (art #77): over 0..width x 0..width from its pivot, the pipe's axis at
+    the middle, y 0 the slab's top there (the layout's h); a lead slate on the tiles (down: the eave side, as the
+    chimney's p["roof"]["down"]), the pipe from under the tiles to VENT_H and a cowl: a flared hood with a cone."""
+    w = float(p["width"])
+    m = pc.mesh
+    c = (w / 2, w / 2)
+    r = pitch(spec)["r"]
+    s = -1.0 if p["down"] == "+z" else 1.0
+
+    def y(z):
+        return LEAD_ON_TILES + s * r * (z - w / 2)
+    m.poly([(0, y(0), 0), (w, y(0), 0), (w, y(w), w), (0, y(w), w)], (0, 1, 0), "lead")
+    frustum(m, c, y(w / 2) - 0.02, y(w / 2) + 0.05, VENT_R + 0.03, VENT_R + 0.005, "lead", sides=6)
+    frustum(m, c, -0.15, VENT_H - 0.06, VENT_R, VENT_R, "metal", sides=6)
+    frustum(m, c, VENT_H - 0.06, VENT_H, VENT_R, VENT_R + 0.035, "metal", sides=6)
+    frustum(m, c, VENT_H, VENT_H + 0.07, VENT_R + 0.035, 0.0, "metal", sides=6)
+    pc.collide_box((c[0] - VENT_R, -0.15, c[1] - VENT_R), (c[0] + VENT_R, VENT_H + 0.07, c[1] + VENT_R))
 
 
 def dormer_dims(p: dict, spec: dict) -> dict:
@@ -1109,7 +1235,7 @@ def build_dormer(pc: Piece, p: dict, spec: dict) -> None:
         top = [(X(-ov), ye, -ov), (X(-ov), ye, dd["ze"]), (X(W / 2), hr, L), (X(W / 2), hr, -ov)]
         bot = [(x, y - sl, z) for x, y, z in top]
         nrm = (-k if side == 0 else k, 1.0, 0.0)
-        m.poly(top, nrm, "tile")
+        _dormer_tiles(m, dd, k, side)
         m.poly(bot, tuple(-v for v in nrm), "boards")
         m.poly([top[0], top[3], bot[3], bot[0]], (0.0, 0.0, -1.0), "trim")  # the barge board's edge
         m.poly([top[0], top[1], bot[1], bot[0]], (-1.0 if side == 0 else 1.0, 0.0, 0.0), "trim")  # the fascia's edge
@@ -1129,6 +1255,27 @@ def build_dormer(pc: Piece, p: dict, spec: dict) -> None:
         _rot_box(m, pc, hinge, ang, lo, hi, "trim")
     _rot_box(m, pc, hinge, ang, (fw, fw, -ft / 2 - 0.004), (lw - fw, lh - fw, -ft / 2 + 0.004), "glass", collide=True)
     pc.sockets["lamp"] = [round(W / 2, 4), round(he - 0.1, 4), round(min(dd["ze"], 1.2), 4)]
+
+
+def _dormer_tiles(m: Mesh, dd: dict, k: float, side: int) -> None:
+    """One slope of the dormer's roof as pantile courses (art #77): pantile_courses laid in the slope's own frame (a
+    along its eave = the dormer's z, b up the slope from its eave = x + DORMER_OVER, base ye + k b), the tiles past
+    the valley (the line from (b 0, a ze) to the ridge's far end (b W/2 + over, a L)) dropped, then mirrored in place."""
+    ov, W, L, ze, ye = DORMER_OVER, dd["W"], dd["L"], dd["ze"], dd["ye"]
+    bm = W / 2 + ov
+    tmp = Mesh("dormer_tiles")
+    pantile_courses(tmp, -ov, L, 0.0, bm, lambda b: ye + k * b, "-z-x+z")
+
+    def world(q):
+        x = q[2] - ov
+        return (x if side == 0 else W - x, q[1], q[0])
+    for f, role in zip(tmp.faces, tmp.roles):
+        pts = [tmp.verts[i] for i in f]
+        ac, bc = sum(q[0] for q in pts) / len(pts), sum(q[2] for q in pts) / len(pts)
+        if ac > ze + (L - ze) * bc / bm + 0.05:
+            continue
+        n = polygon_normal(pts)
+        m.poly([world(q) for q in pts], (n[2] if side == 0 else -n[2], n[1], n[0]), role)
 
 
 def build_bracket(pc: Piece, p: dict, spec: dict) -> None:
@@ -1267,7 +1414,7 @@ BUILDERS = {
     # version 2 (art #86)
     "pillar": build_pillar, "pitched": build_pitched, "ridge": build_ridge, "glass_roof": build_glass_roof,
     "glass_ridge": build_glass_ridge, "glass_gable": build_glass_gable, "porch": build_porch, "chimney": build_chimney,
-    "dormer": build_dormer, "downpipe": build_downpipe,
+    "dormer": build_dormer, "downpipe": build_downpipe, "vent": build_vent,
     "bracket": build_bracket, "cap": build_cap, "gate_post": build_gate_post, "gazebo_sector": build_gazebo_sector,
     "gazebo_roof": build_gazebo_roof, "finial": build_finial, "glass_node": build_glass_node, "slab_edge": build_slab_edge,
     "beam": build_beam,  # #108

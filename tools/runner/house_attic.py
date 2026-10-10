@@ -127,15 +127,16 @@ def _piece_size(data: dict, pid: str) -> tuple[float, float, float]:
 
 
 def chimneys(data: dict) -> list[dict]:
-    """The attic level's free kit pieces (the chimneys, from their pivot at the north-west corner): each a poly and h
-    (its top over the attic floor)."""
+    """The attic level's free kit pieces (the chimneys and the roof vents, from their pivot at the north-west corner):
+    each a poly, base (its foot over the attic floor: a vent stands on the roof's top) and h (its top over the attic
+    floor)."""
     out = []
     for fp in _level(data, "attic").get("pieces", []):
         if data["pieces"][fp["piece"]]["type"] == "ladder":
             continue
         w, d, h = _piece_size(data, fp["piece"])
-        x, y = float(fp["at"][0]), float(fp["at"][2])
-        out.append({"poly": _box(x, y, w, d), "h": h, "id": fp["piece"], "index": None})
+        x, base, y = (float(v) for v in fp["at"])
+        out.append({"poly": _box(x, y, w, d), "base": base, "h": base + h, "id": fp["piece"], "index": None})
     return out
 
 
@@ -207,7 +208,7 @@ def solids(z: dict, data: dict) -> list[dict]:
     roof's top), id, index."""
     out = [{"poly": footprint(it), "h": it["h"], "id": it["id"], "index": it["index"]}
            for it in z["items"] if "w" in it and it["h"] >= FLAT_H]
-    out += chimneys(data)
+    out += [c for c in chimneys(data) if z["room"] == "roof" or c["base"] <= 0]  # the attic: no roof vents
     if z["room"] == "attic":
         out += [{"poly": c["poly"], "h": c["top_h"], "id": c["id"], "index": None} for c in climbs(data)]
     if z["room"] == "roof":

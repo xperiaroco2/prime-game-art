@@ -85,7 +85,7 @@ class LayoutDataTest(unittest.TestCase):
     def test_free_pieces_land_in_their_room(self) -> None:
         porch = [p for p in planned("ground")["pieces"]["path"] if p["id"] == "porch_2x2"]
         self.assertEqual(porch, [{"id": "porch_2x2", "x": 29.0, "y": 44.0, "h": 0.0, "turn": 0}])
-        chimneys = sorted((p["x"], p["y"]) for p in planned("attic")["pieces"]["attic"] if p["id"] == "chimney_attic")
+        chimneys = sorted((p["x"], p["y"]) for p in planned("attic")["pieces"]["attic"] if p["id"].startswith("chimney_attic"))
         self.assertEqual(chimneys, [(21.5, 27.0), (40.0, 39.5)])
         data = one_room(pieces=[{"piece": "no_such_piece", "room": "r", "at": [1, 0, 1]},
                                 {"piece": "chimney_stack", "room": "nowhere", "at": [1, 0, 1]}])

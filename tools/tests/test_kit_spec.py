@@ -378,6 +378,34 @@ class FreeRoofTest(unittest.TestCase):
         self.assertGreater(b["max"][2], -SPEC["grid"]["wall_t_m"] / 2 - 0.01)  # the clips touch the wall's face
         self.assertLess(b["max"][2], 0.0)
 
+    def test_chimney_is_brick_over_the_roof_with_lead_on_the_tiles(self) -> None:
+        for pid in ("chimney_attic", "chimney_attic_n"):
+            p, d = PIECES[pid], KIT[pid]
+            top = G.chimney_roof(p, SPEC)
+            self.assertTrue({"brick", "brick_b", "brick_c", "lead", "tile_c", "concrete"} <= set(d["roles"]), pid)
+            lead = [v for m in d["meshes"] for f, r in zip(m["faces"], m["roles"]) if r == "lead" for v in
+                    (m["verts"][i] for i in f)]
+            for x, y, z in lead:  # every lead vertex lies on or just over the tiles at its z
+                zz = min(max(z, -0.4), 1.4)
+                self.assertGreaterEqual(y, top(zz) + G.LEAD_ON_TILES - 0.01, (pid, x, y, z))
+                self.assertLessEqual(y, top(zz) + G.LEAD_ON_TILES + 0.2, (pid, x, y, z))
+            self.assertAlmostEqual(d["bounds_m"]["min"][1], 0.0)
+        self.assertGreater(KIT["chimney_attic"]["bounds_m"]["max"][1], PIECES["chimney_attic"]["height"] + 1.0)  # aerial
+
+    def test_vent_stands_on_the_slope(self) -> None:
+        for pid in ("roof_vent", "roof_vent_n"):
+            b = KIT[pid]["bounds_m"]
+            self.assertAlmostEqual(b["max"][1], PIECES[pid]["height"], delta=0.01)
+            self.assertGreater(b["min"][1], -G.pitch(SPEC)["tv"])  # the pipe stays inside the slab
+
+    def test_eave_has_a_snow_guard_over_the_overhang(self) -> None:
+        pp = G.pitch(SPEC)
+        p = PIECES["roof_pitched_eave_2m"]
+        self.assertTrue(p["z"][0] < G.SNOW_GUARD_Z < p["z"][1])
+        rail = pp["u"] + pp["tv"] + pp["r"] * G.SNOW_GUARD_Z + G.SNOW_GUARD_H
+        ys = [v[1] for m in KIT["roof_pitched_eave_2m"]["meshes"] for v in m["verts"]]
+        self.assertTrue(any(abs(y - rail) < 1e-3 for y in ys))
+
     def test_tile_roles_share_the_set_material(self) -> None:
         for r in G.TILE_ROLES:
             self.assertEqual(SPEC["roles"][r]["material"], "concrete")

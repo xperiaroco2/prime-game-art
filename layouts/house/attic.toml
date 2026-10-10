@@ -70,10 +70,22 @@ at = [40.0, 0.0, 39.5]
 note = "the south chimney (art #77, the roof options lab's (40.5, 40)): 1 x 1 m from its north-west corner, from the attic floor through the south slope"
 
 [[pieces]]
-piece = "chimney_attic"
+piece = "chimney_attic_n"
 room = "attic"
 at = [21.5, 0.0, 27.0]
 note = "the north chimney (the lab's (22, 27.5)), through the north slope"
+
+[[pieces]]
+piece = "roof_vent"
+room = "attic"
+at = [27.85, 4.9819, 36.35]
+note = "a soil vent through the south slope (art #77): its axis at (28, 36.5), 7.5 m up from the eave; h the roof's top there (house_attic.roof_top)"
+
+[[pieces]]
+piece = "roof_vent_n"
+room = "attic"
+at = [30.85, 4.6319, 30.35]
+note = "a soil vent through the north slope: its axis at (31, 30.5), 6.5 m up from the eave"
 
 [[dormers]]
 id = "climb_out"
