@@ -8,7 +8,7 @@ import json
 from pathlib import Path
 
 from .. import common, house_dressing, house_layout, house_lights
-from . import _frames, _godot
+from . import _frames, _godot, _house_bake
 
 NAME = "house"
 HELP = "check the House layout (layouts/house/*.toml) and generate its room, level and house scenes from the kit"
@@ -27,6 +27,13 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--walk", type=Path, metavar="DIR",
                         help="stage the kit GLBs, import, then walk and shoot the house in an off-screen Godot window "
                              "into DIR (walk.json, sheet.png, exterior.png, stills)")
+    parser.add_argument("--bake", metavar="ZONES",
+                        help="bake these zones of lights.toml (comma-separated, or all) in the editor in an off-screen "
+                             "window: night only (00:00-08:00 local) unless the manager granted a window")
+    parser.add_argument("--preset", default="high", choices=["high", "low"], help="the bake's texel preset")
+    parser.add_argument("--no-bake", action="store_true", help="with --bake: stage, import and build only (by day)")
+    parser.add_argument("--review", type=Path, metavar="DIR",
+                        help="with --bake: baked and real-time frames, sheet.png and measures.json into DIR")
 
 
 def run(args: argparse.Namespace) -> int:
@@ -68,6 +75,11 @@ def run(args: argparse.Namespace) -> int:
                    f"{z['lights'] - z['fixtures']} moon spots")
     common.say(f"house: {summary['instances']} instances of {len(summary['pieces'])} pieces -> {args.out.as_posix()}; "
                f"plan {report.as_posix()}")
+    if args.bake:
+        if args.out.resolve() != DEFAULT_OUT.resolve():
+            raise common.Failure("--bake needs the scenes in godot/import/house (drop --out)")
+        zones = list(lights["zones"]) if args.bake == "all" else args.bake.split(",")
+        return _house_bake.run(data, lights, zones, args.preset, args.review, args.no_bake, found)
     if args.walk:
         if args.out.resolve() != DEFAULT_OUT.resolve():
             raise common.Failure("--walk needs the scenes in godot/import/house (drop --out)")
