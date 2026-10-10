@@ -116,10 +116,12 @@ external stairs' top. Defaults: Q21 B (the inventory's counts; the rocking horse
 nightstand in the guest room so each table lamp has one), Q6 (the straight flight, its foot on the yard at y 15).
 
 The doc's loop (dining room, stairs, landing, balcony, external stairs, terrace, dining room: 46 m, 10.2 s) is
-`[[loops]]` in `upper.toml`. As built it is 62.8 m in plan, about 14.0 s at 4.5 m/s: the main stairs' U-turn adds
-about 4 m and the straight balcony flight lands north on the yard, so the route goes back round its east side. Q6's
-U-turn option (a foot on the terrace under the balcony) measures 51.8 to 53.8 m (11.5 to 12.0 s); the engineer
-decides.
+`[[loops]]` in `upper.toml`. As built it is 62.6 m in plan (`house_layout.loop_length`), about 13.9 s at 4.5 m/s:
+the main stairs' U-turn adds about 4 m, the route passes south of the dining set, and the straight balcony flight lands
+north on the yard, so the route steps off its foot and goes back south round its west side, under the balcony (the east
+side is too narrow for the 0.68 m capsule beside the terrace's corner planter). Q6's U-turn option (two runs in the
+same 2 x 6 m rect, the foot on the terrace under the balcony) is an estimate, not walked: 54.3 to 56.1 m with
+`loop_length` for a half-landing at y 18.5 or 17.6 (12.1 to 12.5 s), still over the doc's 10.2 s; the engineer decides.
 
 The walk's second-floor proof is `upper.png` (1280 px): `plan_upper.png` (the second floor from above, the attic and
 roof hidden, a label per room) beside `balcony_loop.png` (the loop's waypoints as a ribbon over the same top-down,
