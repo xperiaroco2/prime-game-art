@@ -145,3 +145,12 @@ props outside the library); `clear` rects stay free (the hatch's apron, the roof
   station point (30, 42.5), 2.5 m from the parapet, the parapet hides everything within about 33 m (the wicket and the
   gates 0 %); at the parapet in front of it (30, 44.4) both are 100 % in view. The attic's two south knee windows
   (25, 40) and (35, 40) look onto the deck, so the lookout sees into the attic.
+
+**The review shoot**: `tools/run.sh attic --shoot DIR [--kit DIR]` (Godot, off-screen, about 2 minutes) generates the
+house's scenes into `godot/import/house`, stages their kit GLBs (each `--kit` folder is searched before the layout's
+`kit_dir`: a piece not yet in the kit's raw folder, such as `gable_band_2m_window` built by `kit --only ... --out`) and
+the library GLBs of the dressing, and renders through `godot/house/zones.gd` at dusk: grey labelled boxes for the
+placeholders and for the fence openings the lookout must see, two warm review lamps under the ridge (review only), and
+the views in `commands/attic.py` (`VIEWS`: from the hatch, inside at 1.6 m, the hiding spots of the south-west corner
+and the north eave, the deck from above and from the roof door; one lookout view per `[lookout] eyes`). Frames
+1600x900 and `sheet.png` (1280 px wide) go to DIR.
