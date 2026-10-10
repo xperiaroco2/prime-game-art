@@ -74,7 +74,7 @@ class LayoutDataTest(unittest.TestCase):
     def test_the_pantry_stairs_are_a_marked_placeholder(self) -> None:
         st = next(s for s in level("ground")["stairs"] if s["id"] == "pantry_stairs")
         self.assertTrue(st["placeholder"])
-        self.assertEqual(H.stair_top_edge(st), ("h", 25, 26, 28))
+        self.assertEqual(H.stair_top_edge(st), ("h", 28, 26, 28))  # climbing south: the 2 m landing at y 28..30
 
     def test_free_pieces_land_in_their_room(self) -> None:
         porch = [p for p in planned("ground")["pieces"]["path"] if p["id"] == "porch_2x2"]
@@ -294,8 +294,8 @@ class WalkRequestTest(unittest.TestCase):
         self.assertEqual(up[2], [27.0, 1.6, 35.0])
         self.assertEqual(up[-2], [30.0, 3.2, 33.0])
         self.assertEqual(stairs["main_stairs:down"], up[::-1])
-        # The pantry's 1 m landing: the end stops short of its north wall (capsule radius and half a wall).
-        self.assertAlmostEqual(stairs["pantry_stairs:up"][-1][2], 24.85)
+        # The pantry stairs climb south onto a 2 m landing: the end 1 m past the top (y 28), short of the south wall.
+        self.assertEqual(stairs["pantry_stairs:up"][-1], [27.0, 0.0, 29.0])
 
     def test_ends_without_a_floor_get_a_pad(self) -> None:
         self.assertIn([39.0, 0.0, 14.0], self.REQ["pads"])  # the balcony stairs' foot in the yard

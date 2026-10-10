@@ -424,17 +424,17 @@ note = "the front porch (kit v2) on the front wall over the front door at x 30; 
 
 [[holes]]
 id = "pantry_stairs"
-rect = [26, 25, 2, 5]
+rect = [26, 24, 2, 4]
 railing = true
 
 [[stairs]]
 id = "pantry_stairs"
 piece = "stairs_basement"
-rect = [26, 25, 2, 6]
+rect = [26, 22, 2, 6]
 y = -3.2
-climb = "N"
+climb = "S"
 placeholder = true
-note = "Q5 and the manager's correction: a straight flight with a 1 m top landing (the pantry floor y24..25); the foot lands in storage at y31, 1 m from the parts shelf. Option: a U-turn of two half flights."
+note = "Q5 and the manager's correction: a straight flight, climbing south (art #78): the foot in storage at y22 (under the terrace), the top at y28 with a 2 m landing (the pantry floor y28..30), 2 m from the dining room door; a 1 m landing at the north wall was too narrow for the 1.36 m capsule to turn. The hole stops at the north wall: 1.9 m of headroom over the tread there. Option: a U-turn of two half flights."
 
 [[holes]]
 id = "outdoor_stairs"

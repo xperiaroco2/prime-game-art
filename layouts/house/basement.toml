@@ -28,7 +28,7 @@ markers = [
   { name = "Package04", at = [13.5, 0.0, 1.5], group = "spawn_package" },
   { name = "Package05", at = [1.5, 0.0, 5.0], group = "spawn_package" },
   { name = "Package06", at = [5.0, 0.0, 6.0], group = "spawn_package" },
-  { name = "Package07", at = [14.0, 0.0, 5.5], group = "spawn_package" },
+  { name = "Package07", at = [12.5, 0.0, 2.6], group = "spawn_package" },
   { name = "Package08", at = [1.5, 0.0, 11.0], group = "spawn_package" },
   { name = "Package09", at = [5.0, 0.0, 13.5], group = "spawn_package" },
   { name = "Package10", at = [14.5, 0.0, 14.5], group = "spawn_package" },

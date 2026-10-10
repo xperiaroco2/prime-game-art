@@ -104,7 +104,7 @@ func _run(args: PackedStringArray) -> void:
 		["dining_terrace", "dining room to the terrace door", Vector3(36, EYE, 28.6), Vector3(36, 1.2, 18)],
 		["living_hallway", "living room to the hallway door", Vector3(21, EYE, 40), Vector3(31, 1.2, 40)],
 		["main_stairs", "stairs room: the U-turn up (placeholder)", Vector3(33.4, EYE, 35.4), Vector3(27, 1.4, 33)],
-		["pantry_stairs", "pantry: stairs down (placeholder)", Vector3(25.2, EYE, 24.8), Vector3(27, -2.6, 31)],
+		["pantry_stairs", "pantry: stairs down (placeholder)", Vector3(28.9, EYE, 29.3), Vector3(27, -2.6, 22)],
 		["landing_balcony", "upper landing to the balcony door", Vector3(32, 3.2 + EYE, 29.5), Vector3(32, 3.2 + 1.2, 20)],
 	]
 	var images: Array[Image] = []

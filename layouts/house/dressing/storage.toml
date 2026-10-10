@@ -112,19 +112,19 @@ at = [5.9, 0.55, 15.4]
 
 [[props]]
 id = "pallet"
-at = [8, 0, 4.5]
+at = [8, 0, 7.8]
 
 [[props]]
 id = "crate"
-at = [7.7, 0.15, 4.5]
+at = [7.7, 0.15, 7.8]
 
 [[props]]
 id = "crate"
-at = [8.3, 0.15, 4.5]
+at = [8.3, 0.15, 7.8]
 
 [[props]]
 id = "crate"
-at = [8, 0.55, 4.5]
+at = [8, 0.55, 7.8]
 
 [[props]]
 id = "pallet"
@@ -214,23 +214,23 @@ face = "E"
 
 [[props]]
 id = "cardboard_box"
-at = [11.6, 0, 5]
+at = [11.6, 0, 10]
 
 [[props]]
 id = "cardboard_box"
-at = [11.6, 0.4, 5]
+at = [11.6, 0.4, 10]
 
 [[props]]
 id = "cardboard_box"
-at = [11, 0, 4.45]
+at = [11, 0, 9.45]
 
 [[props]]
 id = "cardboard_box"
-at = [10.4, 0, 5]
+at = [10.4, 0, 10]
 
 [[props]]
 id = "cardboard_box"
-at = [10.4, 0.4, 5]
+at = [10.4, 0.4, 10]
 
 [[props]]
 id = "cardboard_box"
