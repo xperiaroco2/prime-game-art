@@ -13,6 +13,9 @@ later packages add dressing data (`layouts/house/dressing/`, #75b) and only rege
 | `tools/runner/house_layout.py` | Load, validate, plan (choose the pieces), write the scenes |
 | `tools/runner/commands/house.py` | The `house` command |
 | `tools/tests/test_house_layout.py` | The rules, the plan's conventions, the design doc's 35 rooms and the game's greybox marker names |
+| `layouts/house/dressing/<room>.toml` | One room's props and light fixtures (#75b); the ground floor's eight rooms |
+| `tools/runner/house_dressing.py` | The dressing: catalogue, checks (bounds, overlaps, stations, the capsule's paths), scene nodes |
+| `tools/tests/test_house_dressing.py` | The dressing's rules, and the ground floor against the plan's inventory and the stations |
 
 Coordinates are the design doc's: metres, x east, y south, origin at the plot's north-west corner; a `rect` is
 `[x, y, width, depth]` from its north-west corner. Godot's x = x and z = y; heights in a room are above its level's
@@ -62,6 +65,34 @@ floor from above, the other levels and the ceilings hidden, a label per room), `
 `exterior.png` (the four sides at dusk from 1.7 m eye height outside the plot, 1280 px wide; the kit's own colours, the
 `[[placeholders]]` as see-through orange boxes of their `size`, from the marker up). The lamps
 (one warm omni per room, no shadows) and the dusk sky only light the shell for review; they are not the house's light.
+
+## Dressing (#75b)
+
+One file per room in `layouts/house/dressing/<room>.toml` (`room` = its id): `[[props]]` and `[[fixtures]]` (the light
+fixtures' meshes; their lights are #83's), each with `id`, `at` = [x, h, z] room-local like the stations, at the
+prop's pivot (`floor`: the footprint's centre; `wall`: the back's bottom centre on the wall's face, 0.1 m off the grid
+line; `ceiling`: the top's centre, `h` 3.0 under the slab), `face` (N, E, S, W: where the front, +Z, looks; default
+S) or `yaw` (degrees, Godot's Y rotation), and optionally `station` (the prop belongs to that station's set),
+`outside = true` (on the facade), `size`/`pivot`/`collision` (an id no catalogue has: the door leaves), `note`.
+Sizes and pivots come from the catalogues in `house.toml`'s `prop_specs` (the task props, `props/tasks.toml`; the
+dressing library, `props/library.toml`; `--props-spec` adds one, e.g. a library not yet on main); the GLBs from its
+`prop_dirs` under the raw folder, staged by `--walk` as `res://import/prop_<id>.glb`. A prop with no GLB yet becomes a
+named `CSGBox3D` of its size (colliding unless `collision = "none"`, `metadata/placeholder`). The room scene gets
+`Dressing` and `Fixtures` groups, each node with `metadata/prop` (and `metadata/station`).
+
+The `house` command checks the dressing after the layout and fails on a problem (`tools/out/house/dressing.json`):
+- every id known, the footprint inside the room's wall faces (open edges: the rect), a wall prop's back on a wall
+  face and not on a door opening, no two solid props overlapping (solid: a collider, spanning 0.3 to 1.8 m);
+- no solid prop within 1 m of a station marker unless it is that station's, none within 0.5 m of a spawn marker;
+- the 1.36 m capsule on a 0.1 m grid (walls 0.2 m with the doors' 1.4 m openings, floor holes and stairs as
+  obstacles) reaches from the room's first door, with the props in place, every door (0.8 m in), stair foot, flight
+  top, station (within 2 m) and spawn marker (within 1 m) that it reaches in the empty room. What the empty room
+  itself does not reach is a note: the pantry stairs' top landing (1 m deep).
+
+Defaults used (questions.md): Q9 B, the leaves of the front and terrace doors stand open against a jamb as
+placeholder boxes without collision until a leaf prop exists; Q11 A, no per-room wall colour (the kit's #3a6264);
+Q21 B, the inventory's props and counts for every room. Notes from the game's greybox: spawn marker Circle01 lies
+under the dining table and Circle02 0.2 m from the terrace table.
 
 ## The rules (`validate`)
 
