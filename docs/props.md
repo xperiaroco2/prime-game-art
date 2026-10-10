@@ -150,7 +150,9 @@ The library is data: a paint, a size, a source file or a shape changes without a
 The plan expected about 80 pack props. Fitting the packs to the inventory's real sizes showed that the rounded toy
 families (KayKit, Tiny Treats) are chunky: their counters, cabinets, wardrobes and benches are low and deep, and a
 fit distorts them by more than 1.5 times between axes. Simple boxy furniture is cheap and exact as a procedural
-build in the kit's materials, so version 1 has 32 pack props and 77 procedural ones. The check (`_props.check`):
+build in the kit's materials, so version 1 has 32 pack props and 99 procedural ones (77 at first, then the
+clutter of art #104 and its story pieces: `laundry_basket`, `drying_rack`, `open_box`, `radiator`,
+`laundry_pile`, `boots`, `toy_spill`; docs/house.md "Fill"). The check (`_props.check`):
 
 - without `stretch`, the uniformly scaled source is within 10 % of the inventory size on every axis;
 - with `stretch`, the largest axis factor over the smallest is at most 1.5;

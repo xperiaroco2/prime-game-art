@@ -1927,3 +1927,96 @@ shape = "rug"
 roles = ["fabric", "cardboard"]
 pivot = "floor"
 collision = "none"
+
+# story pieces of the rooms' fill (art #104 pass 2): laundry, a drying rack, a half-packed box, boots, a toy spill,
+# radiators along the bare walls
+[[prop]]
+id = "laundry_basket"
+batch = 1
+name = "Laundry basket with clothes"
+class = "dressing"
+size_m = [0.55, 0.4, 0.5]
+count = 4
+route = "proc"
+shape = "laundry_basket"
+roles = ["wood_mid", "fabric", "fabric_accent"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "laundry_pile"
+batch = 3
+name = "Pile of laundry"
+class = "clutter"
+size_m = [0.7, 0.5, 0.22]
+count = 4
+route = "proc"
+shape = "laundry_pile"
+roles = ["fabric", "fabric_accent", "cream"]
+pivot = "floor"
+collision = "none"
+
+[[prop]]
+id = "drying_rack"
+batch = 1
+name = "Clothes drying rack with washing"
+class = "dressing"
+size_m = [1.2, 0.55, 1.0]
+count = 3
+route = "proc"
+shape = "drying_rack"
+roles = ["metal_grey", "fabric", "fabric_accent", "cream"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "open_box"
+batch = 1
+name = "Half-packed cardboard box"
+class = "dressing"
+size_m = [0.5, 0.4, 0.55]
+count = 6
+route = "proc"
+shape = "open_box"
+roles = ["cardboard", "fabric_accent", "cream"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "boots"
+batch = 3
+name = "Pair of tall boots"
+class = "clutter"
+size_m = [0.3, 0.32, 0.4]
+count = 4
+route = "proc"
+shape = "boots"
+roles = ["wood_dark", "rubber"]
+pivot = "floor"
+collision = "none"
+
+[[prop]]
+id = "toy_spill"
+batch = 3
+name = "Spilled toys"
+class = "clutter"
+size_m = [0.9, 0.7, 0.18]
+count = 2
+route = "proc"
+shape = "toy_spill"
+roles = ["fabric_accent", "mustard", "teal_stripe", "cream"]
+pivot = "floor"
+collision = "none"
+
+[[prop]]
+id = "radiator"
+batch = 1
+name = "Column radiator"
+class = "dressing"
+size_m = [1.0, 0.1, 0.6]
+count = 12
+route = "proc"
+shape = "radiator"
+roles = ["cream", "metal_grey"]
+pivot = "wall"
+collision = "box"
