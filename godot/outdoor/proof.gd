@@ -11,7 +11,8 @@ extends SceneTree
 ##   "strips": [[name, title, eye]], "views": [[name, title, from, to, leaves]]}; a walk's or view's "leaves" ("open"
 ##   or "closed") swings the wicket's and the gates' leaves (kit nodes `*_leaf*`, hinge at their origin) inwards first.
 ## Writes <out>/<view>.png, <strip>.png, sheet.png (1280 px wide: the strips, then the views in rows of three) and
-## proof.json (the walks); prints PROOF saved <dir>.
+## proof.json (the walks, and per picture its lit-window pixels: those that change when the flats' textures swap to
+## copies with the windows painted dark; every 2nd pixel of every 2nd row); prints PROOF saved <dir>.
 
 const WATCHDOG_S: float = 280.0
 const UP := Vector3.UP
@@ -28,6 +29,8 @@ var _camera: Camera3D
 var _label: Label
 var _env: Environment
 var _leaves: Array = []  # [leaf node, its closed Y rotation in degrees, the open swing in degrees]
+var _flats: Array = []  # [material, its texture, the copy with the windows dark]
+var _windows: Dictionary = {}  # picture name: its sampled lit-window pixels
 
 
 func _initialize() -> void:
@@ -71,7 +74,7 @@ func _run(args: PackedStringArray) -> void:
 	root.add_child(layer)
 	for i: int in 3:
 		await physics_frame
-	var result: Dictionary = {"walks": {}, "leaves": _leaves.size()}
+	var result: Dictionary = {"walks": {}, "leaves": _leaves.size(), "windows": _windows}
 	var walks: Dictionary = _req["walks"]
 	for name: String in walks:
 		var w: Dictionary = walks[name]
@@ -154,6 +157,8 @@ func _build() -> void:
 		var mi: MeshInstance3D = n as MeshInstance3D
 		mi.gi_mode = GeometryInstance3D.GI_MODE_DISABLED
 		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		for i: int in mi.mesh.get_surface_count():
+			_windows_off(mi.get_active_material(i))
 	scene.add_child(backdrop)
 	var scenes: Dictionary = {}
 	for id: String in _req["pieces"]:
@@ -288,6 +293,7 @@ func _strip(name: String, title: String, eye: Vector3) -> Array:
 		_label.text = "360 from the %s: %s" % [title, h[0]]
 		var image: Image = await _grab()
 		_save(image, _out.path_join("%s_%s.png" % [name, h[0]]))
+		_windows["%s_%s" % [name, h[0]]] = await _count_windows(image)
 		tiles.append(image)
 	_camera.keep_aspect = Camera3D.KEEP_HEIGHT
 	return tiles
@@ -299,7 +305,50 @@ func _view(name: String, title: String, from: Vector3, to: Vector3) -> Image:
 	_label.text = title
 	var image: Image = await _grab()
 	_save(image, _out.path_join("%s.png" % name))
+	_windows[name] = await _count_windows(image)
 	return image
+
+
+## A flat's material gets a copy of its texture with the lit windows (the only bright texels; the flats are dark)
+## painted dark, for _count_windows.
+func _windows_off(material: Material) -> void:
+	var m: StandardMaterial3D = material as StandardMaterial3D
+	if m == null or m.albedo_texture == null:
+		return
+	var image: Image = m.albedo_texture.get_image()
+	if image.is_compressed():
+		image.decompress()
+	image.clear_mipmaps()
+	image.convert(Image.FORMAT_RGBA8)
+	var data: PackedByteArray = image.get_data()
+	for i: int in range(0, data.size(), 4):
+		if data[i] >= 128 and data[i + 3] >= 128:
+			data[i] = 24
+			data[i + 1] = 30
+			data[i + 2] = 36
+	image.set_data(image.get_width(), image.get_height(), false, Image.FORMAT_RGBA8, data)
+	image.generate_mipmaps()
+	_flats.append([m, m.albedo_texture, ImageTexture.create_from_image(image)])
+
+
+## The lit windows in a picture: the pixels that change by more than 45 (the sum over R, G and B) when the flats show
+## their copies with the windows dark; every 2nd pixel of every 2nd row. Fog and light act on both pictures alike.
+func _count_windows(shown: Image) -> int:
+	for f: Array in _flats:
+		(f[0] as StandardMaterial3D).albedo_texture = f[2]
+	var off: Image = await _grab()
+	for f: Array in _flats:
+		(f[0] as StandardMaterial3D).albedo_texture = f[1]
+	var a: PackedByteArray = shown.get_data()
+	var b: PackedByteArray = off.get_data()
+	var w: int = shown.get_width()
+	var n: int = 0
+	for y: int in range(0, shown.get_height(), 2):
+		for x: int in range(0, w, 2):
+			var i: int = (y * w + x) * 3
+			if absi(a[i] - b[i]) + absi(a[i + 1] - b[i + 1]) + absi(a[i + 2] - b[i + 2]) > 45:
+				n += 1
+	return n
 
 
 func _grab() -> Image:

@@ -27,7 +27,7 @@ tools/run.sh outdoor [--check] [--out DIR] [--layouts DIR] [--proof [DIR]] [--ki
 Pure Python, about 5 s, no lock. `--check` only validates. Otherwise it writes into `--out` (default
 `<raw>/house/81/build`): `outdoor.json` (the fence, stair and railing placements, the openings, the stairs' walk
 points, the props, the lights, the summary), `outdoor.glb` (the meshes `ground-col`, `skirt`, `kerb-col`),
-`backdrop.glb` (one ring mesh per flat, its textures embedded), `sky.png`, `flat_<id>.png` and `flat_<id>_emit.png`,
+`backdrop.glb` (one ring mesh per flat, its textures embedded), `sky.png`, `flat_<id>.png`,
 and `plan.png` (top-down, 14 px per metre: paints, holes grey, fence white, openings green, stairs blue, lights orange,
 other props magenta). It fails on any problem.
 
@@ -62,7 +62,8 @@ other props magenta). It fails on any problem.
   noise (no seam where u wraps; the test measures the wrap step against the inner steps), faint stars above 30
   degrees; no sun disc.
 - **Backdrop**: at most 6 flats; here 3 rings round (40, 33): a tree line at 56 m, hills at 64 m, a haze at 70 m, each
-  an RGBA silhouette (values deepening with height) and an emission texture of lit windows; the materials are unlit
+  an RGBA silhouette (values deepening with height) with its lit windows painted in, opaque (an emission texture on
+  the unlit material showed no window in Godot's pictures); the materials are unlit
   (`KHR_materials_unlit`), the tree line and hills alpha-masked, the haze blended. The scene that places them sets
   `gi_mode` disabled (the flats stay out of the bake) and the fog starts at 35 m.
 
@@ -86,9 +87,10 @@ other props magenta). It fails on any problem.
 - the pictures: 360-degree strips (four 90-degree views) from the yard and the street, the street, the wicket, the gates
   from outside and inside, the stairs from the garden and from the passage, two lookouts 9 m up for the seam between
   the skirt and the flats, and an aerial view; `sheet.png` 1280 px wide (the strips, then rows of three), each picture
-  full size beside it, and `proof.json` (the walks).
+  full size beside it, and `proof.json` (the walks, and per picture its lit-window pixels: every 2nd pixel of every
+  2nd row that changes when the flats' textures swap to copies with the windows painted dark).
 
-It fails on a validator error, a Godot import error or a walk that ends the wrong way.
+It fails on a validator error, a Godot import error, a walk that ends the wrong way or a lookout without a lit window.
 
 ## Open
 

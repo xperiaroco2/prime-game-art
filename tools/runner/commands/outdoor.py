@@ -103,5 +103,10 @@ def proof(data: dict, build: Path, kit: Path, review: Path) -> list[str]:
         if not w["pass"]:
             problems.append(f"walk {name} {'arrived' if w['arrived'] else 'stopped'} at "
                             f"{[round(c, 2) for c in w['end']]}")
+    seen = result.get("windows", {})
+    common.say("outdoor: lit-window pixels (every 2nd) " + ", ".join(f"{k} {v}" for k, v in seen.items()))
+    blind = [k for k in seen if k.startswith("lookout") and not seen[k]]
+    if not seen or blind:
+        problems.append(f"no lit window shows in {', '.join(blind) or 'any picture'} (backdrop flats)")
     common.say(f"outdoor: sheet {(review / 'sheet.png').as_posix()}")
     return problems
