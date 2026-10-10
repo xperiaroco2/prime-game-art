@@ -1,5 +1,5 @@
 """The attic's old things and hiding spots and the roof deck's dressing and lookout (art #77, map #73): the data in
-layouts/house/dressing/attic.toml and roof.toml, checked in pure Python (docs/house.md, "The attic and the roof deck").
+layouts/house/dressing/attic_roof/attic.toml and roof.toml, checked in pure Python (docs/house.md, "The attic and the roof deck").
 
 - `load(name)`: a dressing file with every item's footprint (w along its local X, d along Z, h) from the dressing
   library (props/library.toml, #87) or its own `size` (a placeholder for the hero props).
@@ -21,7 +21,7 @@ from typing import Any
 from . import common, house_layout
 from .house_zones import _ccw, _near, overlap, rect
 
-DRESSING = common.ROOT / "layouts" / "house" / "dressing"
+DRESSING = common.ROOT / "layouts" / "house" / "dressing" / "attic_roof"  # not the rooms' format (#75b): kept apart
 LIBRARY = common.ROOT / "props" / "library.toml"
 PLOT = common.ROOT / "layouts" / "house" / "outdoor" / "plot.toml"
 PLAYER_R = 0.4  # the brief's 0.4 m player capsule, taken as its radius (stricter than the zones' 0.35)

@@ -11,7 +11,7 @@ later packages add dressing data (`layouts/house/dressing/`, #75b) and only rege
 | `layouts/house/house.toml` | Settings: the kit spec, the kit folder under the raw folder (`kit_dir`: `kits/house/v2`; v1 and v2 share the piece ids, so it is the one setting that switches kits), the `res://` paths of the pieces and scenes, the level order |
 | `layouts/house/{basement,ground,upper,attic,roof}.toml` | One level each: `floor_y`, the default wall family, the house `footprint`; `[[rooms]]`, `[[doors]]`, `[[windows]]`, `[[holes]]`, `[[stairs]]` (a U-turn lists its lower half and landing in `below`), `[[pieces]]` (one free kit piece each: `piece`, `room`, `at` = [x, h, y] of its pivot, `turn`; the porch and the chimneys), `[[roofs]]` (a pitched roof from the kit over a room: `room`, `rect`, `gables`, optional `h`, `windows`: gable windows as [x, y] centres; the attic's), `[[cornices]]` (brackets under an overhanging deck: `piece`, `room`, `rect` of the walls below, `every`, optional `h`; the roof deck's), `[[placeholders]]` |
 | `tools/runner/house_layout.py` | Load, validate, plan (choose the pieces), write the scenes |
-| `layouts/house/dressing/{attic,roof}.toml`, `tools/runner/house_attic.py`, `commands/attic.py` | The attic's old things and hiding spots, the roof deck's dressing and lookout, and their checks (below; art #77) |
+| `layouts/house/dressing/attic_roof/{attic,roof}.toml`, `tools/runner/house_attic.py`, `commands/attic.py` | The attic's old things and hiding spots, the roof deck's dressing and lookout, and their checks (below; art #77) |
 | `tools/runner/commands/house.py` | The `house` command |
 | `tools/tests/test_house_layout.py` | The rules, the plan's conventions, the design doc's 35 rooms and the game's greybox marker names |
 | `layouts/house/dressing/<room>.toml` | One room's props and light fixtures (#75b); the ground floor's eight rooms |
@@ -165,11 +165,13 @@ under the dining table and Circle02 0.2 m from the terrace table.
 
 ## The attic and the roof deck (art #77)
 
-`tools/run.sh attic [--json PATH]` checks `layouts/house/dressing/attic.toml` and `roof.toml` (pure Python, seconds)
-and writes `tools/out/attic/report.json`. The files use the zones' conventions (docs/zones.md: `[[items]]` with `id`,
+`tools/run.sh attic [--json PATH]` checks `layouts/house/dressing/attic_roof/attic.toml` and `roof.toml` (pure Python,
+seconds) and writes `tools/out/attic/report.json`. The files use the zones' conventions (docs/zones.md: `[[items]]` with `id`,
 `at`, `yaw`; sizes from `props/library.toml`, or `size` for a placeholder: the mannequin and the rocking horse, hero
 props outside the library); `clear` rects stay free (the hatch's apron, the roof door's approach, the Knife3 marker),
-`arrive` is where a player comes in (off the ladder, out of the roof door). The light fixtures are #83a's.
+`arrive` is where a player comes in (off the ladder, out of the roof door). The light fixtures are #83a's. The two files
+sit in their own folder because the rooms' dressing (`<room>.toml` above, #75b) reads every file of `dressing/` in
+another format (`[[props]]` at [x, h, z]); moving the attic and the deck onto that format is a follow-up.
 
 - **Items**: inside the floor (the walls' or the parapet's inner face), off the hatch hole and the kept-free rects, off
   each other and the chimneys, under the attic's roof line (the kit's pitch from the eaves), the inventory's counts

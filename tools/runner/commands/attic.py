@@ -1,6 +1,6 @@
 """`attic`: checks the attic's old things and hiding spots and the roof deck's dressing and lookout
-(layouts/house/dressing/attic.toml and roof.toml, house_attic.py; docs/house.md, "The attic and the roof deck") and
-writes the report: every spot's standing point, the lookout's view per eye. With --shoot, it generates the house's
+(layouts/house/dressing/attic_roof/attic.toml and roof.toml, house_attic.py; docs/house.md, "The attic and the roof
+deck") and writes the report: every spot's standing point, the lookout's view per eye. With --shoot, it generates the house's
 scenes, places the dressing (library GLBs, grey boxes for the placeholders) and shoots the attic and the roof deck at
 dusk in an off-screen Godot window through godot/house/zones.gd."""
 
