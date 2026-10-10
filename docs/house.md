@@ -123,6 +123,12 @@ The lived-in layer: `house --clutter` (`tools/runner/house_clutter.py`) appends 
 and upper floors and the basement; not the attic, roof, terrace, balcony or greenhouse) and replaces it on every run;
 edit `RULES` and `HOSTS`, never the block. One `random.Random` per room seeded with 104 and the room id, so the block
 is the same on every machine; `tools/tests/test_house_clutter.py` fails when a file's block is not the generator's.
+- Mid-size dressing first (`RULES`' `mid`: potted plants, stools, console and small tables, nightstands, trunks,
+  bean bags, a standing mirror; crates, cardboard-box stacks, barrels and jerrycans in the pantry and the basement)
+  against free wall spans, under the floor clutter's clearances (doors, stations 1 m, spawns 0.5 m, the stairs, the
+  routes' legs). These are solid: each is kept only when `house_dressing.check_room` (overlaps, station and spawn
+  clearances, the capsule's reach) finds no new problem in the room, else the generator tries the next span or wall;
+  an id ending in `+` stacks a second one on top (box and crate stacks). Their tops host surface clutter.
 - Surface clutter on the tops of `HOSTS` furniture (counters, the stove, tables, the sideboard, desks, nightstands,
   the dresser, crates, the filing cabinet ...): up to 4 per top by its area, 16 per room, the room's least used kind
   first, apart from what already stands on the top (a lamp, the computer). A station's own prop carries nothing, so
@@ -135,8 +141,9 @@ is the same on every machine; `tools/tests/test_house_clutter.py` fails when a f
   (1 m), spawns (0.5 m), the stairs and the routes' legs (`house_routes`, grown by the capsule's radius); the
   hallway's doormat inside its first door.
 
-Every clutter item is non-solid (`collision = "none"`, the library's `clutter` class, docs/props.md), so the capsule's
-walk and the overlap rule are unchanged. Budget (proposed, #104): the clutter adds at most 60 meshes and 15k
+Every surface, wall and floor item is non-solid (`collision = "none"`, the library's `clutter` class, docs/props.md),
+so the capsule's walk and the overlap rule do not see it; only the mid layer is solid, and the room checks hold with
+it. The generator runs the room check once per mid-size candidate: `house --clutter` takes about a minute. Budget (proposed, #104): the clutter adds at most 60 meshes and 15k
 triangles to a room; the per-room draw calls of `walk.json` are the shell's (one instance per kit piece, 94 to 1,640
 per view before any clutter), so "150 per view" needs the shell merged (MultiMesh or merged static walls), a follow-up.
 
