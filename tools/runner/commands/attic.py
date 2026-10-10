@@ -77,9 +77,10 @@ def _top(y: float) -> float:
     return F + house_attic.roof_top(house_layout.load(), y)
 
 
-## Review lamps under the attic's ridge (review only; the game's lights are #83a's): plan x, y, height over the floor.
-LAMPS = [[25.0, 34.0, 4.0], [35.0, 34.0, 4.0]]
-LAMP = [[1.0, 0.8, 0.55], 1.6, 9.0]
+## Review lamps (review only; the game's lights are #83a's): plan x, y, height over the floor: two under the attic's
+## ridge, one over the climb-out stair and one in the dormer under its ridge, so the climb-out reads (art #77).
+LAMPS = [[25.0, 34.0, 4.0], [35.0, 34.0, 4.0], [35.0, 39.0, 3.4], [35.0, 41.8, 3.3]]
+LAMP = [[1.0, 0.8, 0.55], 2.4, 9.0]
 ## Name, title, eye, look (plan x, y, height), fov. The hatch's hole centres at (28, 29); the dormer's window at
 ## (35, 43), its sill 2.97 m over the attic floor; the ridge on y 34.
 VIEWS = [
