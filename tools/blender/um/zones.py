@@ -18,6 +18,12 @@ CUT_ZONES = {
 # way (tools/blender/catalogue_heads.py FACIAL_HAIR), so the King's 9 beard pieces go and his 18 hair pieces stay.
 PIECE_ZONES = {
     "facial_hair": lambda c: c.z < 1.655 and c.y < -0.09 and abs(c.x) < 0.07,  # beards and moustaches
+    # art #42 round 3, w4's true mohawk: the women's Punk "Pink" hair is 9 pieces: the skull cap (172 faces, x +-0.097,
+    # z 1.66-1.823, centre y -0.054 z 1.742), six crest spikes (64-88 faces each, |x| < 0.036, centres z 1.77-1.86)
+    # and two side strips by the ears (66 faces each, |x| 0.074-0.095, z 1.59-1.69); these two zones drop the cap and
+    # the strips and keep the crest (the bean skull shows on the sides)
+    "punk_cap": lambda c: abs(c.x) < 0.01 and -0.08 < c.y < -0.03 and c.z < 1.76,
+    "punk_side_strips": lambda c: abs(c.x) > 0.06 and c.z < 1.70 and c.y < -0.08,
 }
 
 # Both ears of every pack head (tuck_ears flattens the vertices in it).
