@@ -8,7 +8,7 @@ import json
 import tomllib
 from pathlib import Path
 
-from .. import common, house_basement, house_clutter, house_dressing, house_layout, house_lights, house_routes
+from .. import common, house_basement, house_clutter, house_dressing, house_fill, house_layout, house_lights, house_routes
 from . import _frames, _godot, _house_bake
 
 NAME = "house"
@@ -50,6 +50,23 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
                              "review into DIR (basement_review.toml; sheet.png, a still per room, basement.json)")
 
 
+def report_fill(data: dict, layouts: Path, extra) -> list[dict]:
+    """Logs every clutter room's fill measures (house_fill) and writes them to tools/out/house/fill.json."""
+    st = data["settings"]
+    cat = house_dressing.catalogue(house_dressing.spec_paths(st, extra=extra))
+    dressings = house_dressing.load(Path(layouts) / st.get("dressing_dir", "dressing"))
+    rows = house_fill.table(data, dressings, cat)
+    for m in rows:
+        common.say(f"  fill {house_fill.fmt(m)}")
+    short = [m["room"] for m in rows if house_fill.passes(m)]
+    common.say(f"house fill: {len(rows) - len(short)} of {len(rows)} rooms meet the targets"
+               + (f"; short: {', '.join(short)}" if short else ""))
+    out = common.OUT / "house" / "fill.json"
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(json.dumps(rows, indent=1), encoding="utf-8", newline="\n")
+    return rows
+
+
 def run(args: argparse.Namespace) -> int:
     data = house_layout.load(args.layouts)
     lights = house_lights.load(args.layouts / "lights.toml")
@@ -66,6 +83,7 @@ def run(args: argparse.Namespace) -> int:
         cat = house_dressing.catalogue(house_dressing.spec_paths(st, extra=args.props_spec))
         counts = house_clutter.write(data, Path(args.layouts) / st.get("dressing_dir", "dressing"), cat)
         common.say(f"house clutter: {sum(counts.values())} items in {len(counts)} rooms (seed {house_clutter.SEED})")
+        report_fill(data, args.layouts, args.props_spec)
     dressing = check_dressing(data, args.layouts, args.props_spec)
     check_basement(data, args.layouts, args.props_spec)
     routes = house_routes.load(args.layouts)
