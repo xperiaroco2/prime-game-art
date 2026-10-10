@@ -84,6 +84,22 @@ class SecondFloor(unittest.TestCase):
         for rid in ROOMS:
             self.assertTrue(all(v for k, v in rep["rooms"][rid]["reach"].items() if k.startswith("door")), rid)
 
+    def test_review_shots_and_lamps(self):
+        paths = [p for p in hd.spec_paths(self.data["settings"]) if p.is_file()]
+        rep = hd.check(self.data, {r: self.files[r] for r in ROOMS}, hd.catalogue(paths))
+        req = hd.review_request(self.data, rep["rooms"])
+        shots = {s["room"]: s for s in req["room_shots"]}
+        self.assertEqual(set(shots), set(ROOMS))
+        fy = self.level["floor_y"]
+        for rid, s in shots.items():  # upper.png: from its door at 1.6 m above the second floor, looking inside
+            self.assertEqual(s["level"], "upper")
+            rx, rz, w, d = self.rooms[rid]["rect"]
+            for x, _, z in (s["from"], s["to"]):
+                self.assertTrue(rx < x < rx + w and rz < z < rz + d, f"{rid}: {s}")
+            self.assertAlmostEqual(s["from"][1], fy + hd.EYE)
+        self.assertEqual(len(req["lamps"]), sum(sum(f.values()) for f in FIXTURES.values()))
+        self.assertTrue(all(fy < lp["at"][1] < fy + 3.2 for lp in req["lamps"]))
+
     def test_the_balcony_loop_is_walked_at_the_game_speed(self):
         loop = next(w for w in hl.walk_request(self.data)["walks"] if w["name"] == "loop:balcony_loop")
         self.assertEqual((loop["kind"], loop["speed"], loop["doc_m"], loop["doc_s"]), ("loop", 4.5, 46, 10.2))
