@@ -45,6 +45,8 @@ BEAN = dict(kit.HEAD["bean"], **kit.HEAD["bean_clay"])
 CLEAN_HEAD = dict(kit.HEAD["clean_head"])
 SCALP_LIFT = dict(kit.HEAD["scalp_lift"])
 JAW_MORPH = dict(kit.HEAD["jaw_morph"])
+# the lab cast's ONE head's neck (the men's long neck, tapered, inside every top) for every head (heads.neck_tube)
+NECK_TUBE = kit.HEAD["neck_tube"]
 PUSH_OUT = dict(kit.HEAD["push_out"])
 
 
@@ -135,7 +137,8 @@ def build(arm, parts, coll, rc, eyes_at, skin_mat, pack_mouth_dz=None):
     n, most = fk.rigid_face_skin(head, RIGID_FRONT_Y, z_full, z_full - RIGID_BLEND_M)
     rep["rigid_face_skin"] = {"z_full": round(z_full, 4), "vertices": n, "largest_change": round(most, 3)}
     bean = {k: v for k, v in BEAN.items() if k not in ("strength", "fade_z", "hair_k")}
-    rep["clean_head"] = heads.clean_head(head, h.x, h.eye_z(), bean, skin_mat=skin_mat, **CLEAN_HEAD)
+    rep["clean_head"] = heads.clean_head(head, h.x, h.eye_z(), bean, skin_mat=skin_mat, neck=NECK_TUBE,
+                                        **CLEAN_HEAD)
     # the lab cast's ONE head's jaw (clay_head_c.morph_jaw): grown out toward the lab head's own radii
     rep["jaw_morph"] = heads.morph_jaw(head, h.x, h.eye_z(), bean, JAW_MORPH["profile"],
                                        band_dz=tuple(JAW_MORPH["band_dz"]), reach=JAW_MORPH["reach"])

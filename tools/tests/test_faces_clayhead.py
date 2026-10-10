@@ -45,6 +45,20 @@ class HeadData(unittest.TestCase):
         self.assertLessEqual(prof["dz"][0], lo)
         self.assertGreaterEqual(prof["dz"][-1], hi)
         self.assertAlmostEqual(360.0 / len(prof["az_deg"]), prof["az_deg"][1] - prof["az_deg"][0])
+        N = H["neck_tube"]
+        self.assertEqual(set(N), {"top_dz", "bottom_dz", "profile", "source"})
+        np_ = N["profile"]
+        self.assertEqual(len(np_["r"]), len(np_["dz"]))
+        self.assertTrue(all(len(row) == len(np_["az_deg"]) for row in np_["r"]))
+        self.assertTrue(all(0.01 < r < 0.12 for row in np_["r"] for r in row))
+        self.assertEqual(list(np_["dz"]), sorted(np_["dz"]))
+        # from the lab head's neck bottom up past the clean head's cut, so the bean and the tube overlap
+        self.assertLess(N["bottom_dz"], np_["dz"][0])
+        self.assertLess(np_["dz"][0] - N["bottom_dz"], 0.005)
+        z_cut = -H["bean"]["az_bottom"] + H["clean_head"]["neck_dz"]
+        self.assertGreater(N["top_dz"], z_cut)
+        self.assertAlmostEqual(np_["dz"][-1], N["top_dz"])
+        self.assertAlmostEqual(360.0 / len(np_["az_deg"]), np_["az_deg"][1] - np_["az_deg"][0])
         self.assertEqual(set(H["scalp_lift"]), {"clear", "depth", "n_az", "n_el"})
         self.assertEqual(set(H["clean_head"]), {"neck_dz", "sphere", "voxel_m", "tris", "snap_tol", "crease_band",
                                                 "crease_passes", "weight_blend_m", "small_piece_faces"})
@@ -83,6 +97,7 @@ class HeadData(unittest.TestCase):
                                     "heads.clean_head(", "heads.morph_jaw(", "heads.lift_grid(", "heads.lift_by(", "heads.push_out(",
                                     "build_face(")]
         self.assertEqual(at, sorted(at))
+        self.assertIn("neck=NECK_TUBE", body[body.index("heads.clean_head("):body.index("heads.morph_jaw(")])
         self.assertNotIn("bean_warp", (UM / "heads.py").read_text(encoding="utf-8").split("def bean_warp")[0])
 
 
@@ -136,6 +151,18 @@ class LabParity(unittest.TestCase):
         self.assertIn("reach=%s" % K.HEAD["jaw_morph"]["reach"], text)
         self.assertEqual(hashlib.sha256(blend.read_bytes()).hexdigest(), src["head_sha256"])
 
+
+    def test_neck_source(self):
+        # the lab's ONE head (the same head file as the jaw's) and its neck bottom
+        src = K.HEAD["neck_tube"]["source"]
+        self.assertEqual(src["head_sha256"], K.HEAD["jaw_source"]["head_sha256"])
+        frame = RAW / "research" / Path(src["face_frame"]).relative_to("research")
+        if not frame.is_file():
+            self.skipTest("no lab files")
+        lab = json.loads(frame.read_text(encoding="utf-8"))
+        bottom = lab["build"]["round_b"]["head_m_clay"]["neck_bottom_z"]
+        self.assertAlmostEqual(lab["face_frame"]["bean_centre_unscaled"][2] + K.HEAD["neck_tube"]["bottom_dz"], bottom,
+                               places=3)
 
 if __name__ == "__main__":
     unittest.main()

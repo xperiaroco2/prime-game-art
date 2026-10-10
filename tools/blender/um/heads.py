@@ -367,7 +367,8 @@ def _sphere_uv(o, c):
 
 
 def clean_head(head, x, eye_z, bean, skin_mat=None, neck_dz=0.02, sphere=(64, 32), voxel_m=0.003, tris=1200,
-               snap_tol=0.06, crease_band=(-0.045, 0.01), crease_passes=4, weight_blend_m=0.02, small_piece_faces=120):
+               snap_tol=0.06, crease_band=(-0.045, 0.01), crease_passes=4, weight_blend_m=0.02, small_piece_faces=120,
+               neck=None):
     """The faces lab's clean bean head (art #42; clay_b/clay_parts.build_head, the head under every approved lab face),
     run after bean_warp and the rigid face skin. The warped pack head still carries the pack's eye holes and socket
     creases at 15 %, and the women's (and some men's) pack heads leave the crown and the back of the skull to the hair,
@@ -381,6 +382,10 @@ def clean_head(head, x, eye_z, bean, skin_mat=None, neck_dz=0.02, sphere=(64, 32
        underside softened (crease_passes neighbour means between z_neck + crease_band);
     4. the weights: the warped pack head's below the cut, the Head bone alone above it (smoothstep over
        weight_blend_m); smooth shading, a spherical UV map, one material (skin_mat, else the head's first).
+
+    With `neck` (faces/clay_head.json "neck_tube") the pack's neck below the cut is not kept: the lab's ONE head's
+    neck (heads.neck_tube) goes into the union instead, the same for every head (the lab's cast: the men's long neck
+    to z ~1.44, tapered and fitted inside every top); its weights still come from the nearest pack-head point.
 
     `bean` is faces/clay_head.json "bean". World space, rest pose, the face toward -Y. Returns what was done."""
     import numpy as np
@@ -417,6 +422,10 @@ def clean_head(head, x, eye_z, bean, skin_mat=None, neck_dz=0.02, sphere=(64, 32
     nv = [tuple(v.co) for v in bm.verts]
     nf = [tuple(v.index for v in f.verts) for f in bm.faces]
     bm.free()
+    if neck is not None:
+        # the lab's ONE head's neck instead of the pack's (the women's pack necks end 9 cm higher)
+        nv, nf = neck_tube(c, neck["profile"], neck["top_dz"])
+        info["neck_tube"] = {"rings": len(neck["profile"]["dz"]), "bottom_z": round(float(min(p[2] for p in nv)), 4)}
     # 2. the union with the bean, remeshed and decimated
     bm = bmesh.new()
     bmesh.ops.create_uvsphere(bm, u_segments=sphere[0], v_segments=sphere[1], radius=1.0)
@@ -484,6 +493,36 @@ def clean_head(head, x, eye_z, bean, skin_mat=None, neck_dz=0.02, sphere=(64, 32
     _sphere_uv(head, c)
     info["tris"] = cl.tris(head.data)
     return info
+
+
+def neck_tube(c, profile, top_dz):
+    """The lab's ONE head's neck as a closed tube (art #42; clean_head's `neck`): one ring per profile level dz <=
+    top_dz (faces/clay_head.json "neck_tube": the lab head's radius about the bean centre's vertical axis per dz from
+    the bean centre and azimuth from -Y toward +X, unscaled, sampled from the head the lab cast wore, its NECK_TAPER
+    and its fit inside every top already in it), both ends capped by a fan. c: the bean centre (world). Returns
+    (vertices, faces), world space."""
+    import math
+    AZ = profile["az_deg"]
+    rings = [(dz, row) for dz, row in zip(profile["dz"], profile["r"]) if dz <= top_dz + 1e-9]
+    n = len(AZ)
+    sc = [(math.sin(math.radians(a)), -math.cos(math.radians(a))) for a in AZ]
+    vs, fs = [], []
+    for dz, row in rings:
+        vs += [(c[0] + r * s, c[1] + r * k, c[2] + dz) for r, (s, k) in zip(row, sc)]
+    for i in range(len(rings) - 1):
+        a, b = i * n, (i + 1) * n
+        for j in range(n):
+            j1 = (j + 1) % n
+            fs.append((a + j, a + j1, b + j1, b + j))
+    lo = len(vs)
+    vs.append((c[0], c[1], c[2] + rings[0][0]))
+    vs.append((c[0], c[1], c[2] + rings[-1][0]))
+    top = (len(rings) - 1) * n
+    for j in range(n):
+        j1 = (j + 1) % n
+        fs.append((lo, j1, j))
+        fs.append((lo + 1, top + j, top + j1))
+    return vs, fs
 
 
 def morph_jaw(head, x, eye_z, bean, profile, band_dz=(-0.1201, -0.0926, -0.068), reach=0.03):

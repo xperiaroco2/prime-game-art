@@ -287,7 +287,16 @@ on, the noses barely different (the pack nose dominated). `faces/clay_head.json`
    the pack's sockets at 15 %, and the women's and m3's leave the crown and the back of the skull to the hair). The
    warped head is welded, cut `neck_dz` above the bean's bottom, united with a sphere put onto the bean, voxel
    remeshed (`voxel_m`), decimated (`tris`), snapped onto the bean within `snap_tol`, the neck crease softened; the
-   pack's weights below the cut, the Head bone alone above it; one skin material (the report's `clean_head`);
+   pack's weights below the cut, the Head bone alone above it; one skin material (the report's `clean_head`).
+   The pack's neck below the cut is not kept: `heads.neck_tube` (`neck_tube`) puts the lab cast's ONE head's neck
+   into the union instead, for every body (round B's men's long neck down to z ~1.44, its `NECK_TAPER` and its
+   `clay_fit.fit_inside` every top of both body types already in it; the women's pack necks end at z ~1.53 and left
+   a gap over the top: w4's neck seam -17.3 mm, its Punk choker floating). `profile` is that head's radius about the
+   bean centre's vertical axis per `dz` (4 mm steps from `bottom_dz` up to `top_dz`, just above the cut) and azimuth
+   (7.5 degrees), unscaled, sampled once from `head_clay.blend` (`source`; the sampler
+   `D:/prime-art-raw/clay-bean/lab/neck_profile.py`); a closed tube, one ring per level. Its weights still come from
+   the nearest pack-head point (the report's `clean_head.neck_tube`). w3 and w4 after it: neck seams +111/+110 mm
+   (into the top), see-through rays at rest 22/95 -> 2/0, poke-through 0;
 5. `heads.morph_jaw` (`jaw_morph`): the lab cast's head is round C's ONE head (`clay_c/clay_head_c.py` `build_one`):
    round B's men's clean head for every body, its jaw grown out radially toward the women's clean head in `JAW_BAND`
    (`morph_jaw`: z 1.565/1.600/1.632 at the lab's x1.3 about the head pivot z 1.5873, `band_dz` -0.120/-0.093/-0.068
@@ -303,9 +312,6 @@ on, the noses barely different (the pack nose dominated). `faces/clay_head.json`
    clean head per direction from the bean centre, a hat following its hair's lift; then the hair and every head extra
    that sinks into the closed bean or lies within `clear` of it moves out along the head's normal (deeper than `reach`
    stays hidden), per welded position (the lab's 4 mm hair and hat clearance; the report's `scalp_lift`, `push_out`).
-
-Not ported yet: the one head's long men's neck, tapered (`NECK_TAPER`) and fitted inside every top; the repo keeps
-each character's pack neck below the jaw (the women's short necks).
 
 The clay library's piece keys carry the head data (`kit.DATA_SHA` for the head and the face, `kit.HEAD_SHA` and the
 head for the hair and the extras that follow it).
