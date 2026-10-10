@@ -84,9 +84,13 @@ func _run(args: PackedStringArray) -> void:
 		await physics_frame
 	var result: Dictionary = {"walks": [], "radius_m": RADIUS, "shots": {}, "instances": _count_instances()}
 	for w: Dictionary in _req["walks"]:
-		var r: Dictionary = await _walk(RADIUS, w["points"])
+		var loop: bool = w["kind"] == "loop"  # a doc route (#76): the game's speed, timed against the doc
+		var r: Dictionary = await _walk(RADIUS, w["points"], float(w.get("speed", SPEED)), 40.0 if loop else 8.0)
 		r["name"] = w["name"]
 		r["kind"] = w["kind"]
+		if loop:
+			r["doc_s"] = w["doc_s"]
+			r["within_1s"] = r["arrived"] and absf(float(r["seconds"]) - float(w["doc_s"])) <= 1.0
 		r["pass"] = r["arrived"]
 		result["walks"].append(r)
 	var door: Dictionary = _req["walks"][0]
@@ -240,9 +244,10 @@ func _count_instances() -> Dictionary:
 
 
 # --- the walk check ------------------------------------------------------------------------------------------------
-## A capsule (radius r, 1.8 m) walks the waypoints [x, h, z] at 3 m/s; it arrives when it reaches the last within
-## 0.3 m and its height within 0.15 m. Stops early when it has not moved for 30 ticks.
-func _walk(r: float, points: Array) -> Dictionary:
+## A capsule (radius r, 1.8 m) walks the waypoints [x, h, z] at `speed` (3 m/s) over the plan for at most `max_s`
+## seconds; it arrives when it reaches the last within 0.3 m and its height within 0.15 m. Stops early when it has not
+## moved for 30 ticks.
+func _walk(r: float, points: Array, speed: float = SPEED, max_s: float = 8.0) -> Dictionary:
 	var body: CharacterBody3D = CharacterBody3D.new()
 	var shape: CollisionShape3D = CollisionShape3D.new()
 	var cap: CapsuleShape3D = CapsuleShape3D.new()
@@ -260,15 +265,19 @@ func _walk(r: float, points: Array) -> Dictionary:
 	var steps: int = 0
 	var stuck: int = 0
 	var last: Vector3 = body.global_position
-	while steps < 8 * Engine.physics_ticks_per_second and reached < points.size() - 1 and stuck < 30:
+	while steps < max_s * Engine.physics_ticks_per_second and reached < points.size() - 1 and stuck < 30:
 		await physics_frame
 		steps += 1
 		var target: Vector3 = _v(points[reached + 1])
 		var flat: Vector3 = Vector3(target.x - body.global_position.x, 0, target.z - body.global_position.z)
+		while flat.length() < 0.3 and reached < points.size() - 2:  # next waypoint in the same tick: no idle ticks
+			reached += 1
+			target = _v(points[reached + 1])
+			flat = Vector3(target.x - body.global_position.x, 0, target.z - body.global_position.z)
 		if flat.length() < 0.3:
 			reached += 1
 			continue
-		var v: Vector3 = flat.normalized() * SPEED
+		var v: Vector3 = flat.normalized() * speed
 		v.y = 0.0 if body.is_on_floor() else body.velocity.y - 9.8 * dt
 		body.velocity = v
 		body.move_and_slide()

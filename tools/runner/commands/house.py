@@ -148,7 +148,8 @@ def walk(data: dict, summary: dict, folder: Path, props: dict | None = None) -> 
     for w in result["walks"] + [result["control"]]:
         mark = "ok  " if w["pass"] else "FAIL"
         common.say(f"  {mark} {w['name']}: {'arrived' if w['arrived'] else 'stopped'} at {w['end']} "
-                   f"({w['reached']}/{w['of']} points, {w['seconds']} s)")
+                   f"({w['reached']}/{w['of']} points, {w['seconds']} s)"
+                   + (f"; the doc {w['doc_s']} s, {'within' if w['within_1s'] else 'NOT within'} 1 s" if "doc_s" in w else ""))
     for name, info in result["shots"].items():
         common.say(f"  {name}: {info['draw_calls']} draw calls, {info['objects']} objects, {info['primitives']} primitives")
     common.say(f"  {result['instances']['mesh_instances']} mesh instances, {result['instances']['static_bodies']} bodies; "
