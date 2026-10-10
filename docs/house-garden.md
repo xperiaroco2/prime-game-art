@@ -86,7 +86,7 @@ main), the dressing's and the garden's props (`prop_dirs`; the hedge from `--pla
 - the scene: the outdoor proof's plot, sky, backdrop and fog without the grey stand-ins of the house, the garage, the
   terrace and the greenhouse; `house.tscn` (the greenhouse's glass walls and dressing); the glass roof from
   `garden.json`, the garden's props and the scatter's plants as the garden's layer: each GLB one MultiMesh per mesh
-  over all its placements, with each placement's colliders (a tree's trunk) as a body of its own; stand-in lamps at the post lamps, path lights and
+  over all its placements (a mesh's glass surfaces a MultiMesh of their own that casts no shadow), with each placement's colliders (a tree's trunk) as a body of its own; stand-in lamps at the post lamps, path lights and
   strings and two in the greenhouse (#83 owns the light design);
 - the ray test: every roof mesh gets a trimesh collider on its own layer; rays go straight up from 2.45 m on a 0.5 m
   grid over the greenhouse and along both gables 5 cm in (each hit is that row's roof height), and level from the

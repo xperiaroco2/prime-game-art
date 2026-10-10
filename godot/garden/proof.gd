@@ -89,7 +89,7 @@ func _counts() -> Array:
 
 # --- the garden's additions ----------------------------------------------------------------------------------------
 ## The house scene, then the garden's layer (`_layer`, hidden per view to count its draw calls): the glass roof, the
-## props and the plants, each GLB as one MultiMesh per mesh over all its placements.
+## props and the plants, each GLB as one MultiMesh per mesh over all its placements (its glass apart, without shadow).
 func _garden() -> void:
 	var house: Node3D = _load(_req["house"])
 	root.add_child(house)
@@ -138,15 +138,18 @@ func _multi(res: String, xforms: Array, roof: bool) -> void:
 					mesh = mi.mesh.duplicate() as Mesh
 				mesh.surface_set_material(s, mi.get_surface_override_material(s))
 		var local: Transform3D = _rel(mi, proto)
-		var mm: MultiMesh = MultiMesh.new()
-		mm.transform_format = MultiMesh.TRANSFORM_3D
-		mm.mesh = mesh
-		mm.instance_count = xforms.size()
-		for i: int in xforms.size():
-			mm.set_instance_transform(i, (xforms[i] as Transform3D) * local)
-		var mmi: MultiMeshInstance3D = MultiMeshInstance3D.new()
-		mmi.multimesh = mm
-		_layer.add_child(mmi)
+		for part: Array in _parts(mesh):
+			var mm: MultiMesh = MultiMesh.new()
+			mm.transform_format = MultiMesh.TRANSFORM_3D
+			mm.mesh = part[0]
+			mm.instance_count = xforms.size()
+			for i: int in xforms.size():
+				mm.set_instance_transform(i, (xforms[i] as Transform3D) * local)
+			var mmi: MultiMeshInstance3D = MultiMeshInstance3D.new()
+			mmi.multimesh = mm
+			if part[1]:
+				mmi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+			_layer.add_child(mmi)
 		if roof:
 			var shape: Shape3D = mi.mesh.create_trimesh_shape()
 			for x: Transform3D in xforms:
@@ -170,6 +173,31 @@ func _multi(res: String, xforms: Array, roof: bool) -> void:
 			cs.transform = _rel(c as Node3D, proto)
 			body.add_child(cs)
 		root.add_child(body)
+
+
+## The mesh as [mesh, clear] parts: the mesh itself when its surfaces are all opaque or all clear, else its opaque
+## surfaces and its clear (glass) ones apart, so that glass casts no shadow (a pane lets the sun through, and its
+## shadow passes are draw calls the garden's budget does not need).
+func _parts(mesh: Mesh) -> Array:
+	var solid: Array[int] = []
+	var clear: Array[int] = []
+	for s: int in mesh.get_surface_count():
+		var mat: Material = mesh.surface_get_material(s)
+		if mat is BaseMaterial3D and (mat as BaseMaterial3D).transparency != BaseMaterial3D.TRANSPARENCY_DISABLED:
+			clear.append(s)
+		else:
+			solid.append(s)
+	if solid.is_empty() or clear.is_empty():
+		return [[mesh, solid.is_empty()]]
+	return [[_subset(mesh, solid), false], [_subset(mesh, clear), true]]
+
+
+func _subset(mesh: Mesh, surfaces: Array[int]) -> ArrayMesh:
+	var out: ArrayMesh = ArrayMesh.new()
+	for s: int in surfaces:
+		out.add_surface_from_arrays(mesh.surface_get_primitive_type(s), mesh.surface_get_arrays(s))
+		out.surface_set_material(out.get_surface_count() - 1, mesh.surface_get_material(s))
+	return out
 
 
 func _rel(n: Node3D, top: Node) -> Transform3D:
