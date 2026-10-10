@@ -162,7 +162,7 @@ def free_spans(sh: dict, side: str, depth: float, blocks: list) -> list:
     return spans
 
 
-def _place_along(sh: dict, side: str, kind: str, length: float, depth: float, h: float, spans: list, rng, cat):
+def _place_along(sh: dict, side: str, kind: str, length: float, depth: float, h: float, spans: list, rng):
     """Puts one item in the widest span that fits it (ties broken by rng); returns (item, spans left) or None."""
     fits = [s for s in spans if s[1] - s[0] >= length + 2 * GAP]
     if not fits:
@@ -178,7 +178,7 @@ def _place_along(sh: dict, side: str, kind: str, length: float, depth: float, h:
     return item, left
 
 
-def _base_blocks(room: dict, sh: dict, pad: float) -> list:
+def _base_blocks(sh: dict, pad: float) -> list:
     """The stairs, holes, pillars and the door openings as boxes (room-local), grown by pad."""
     out = [(b[0] - STAIR_GAP, b[1] - STAIR_GAP, b[2] + STAIR_GAP, b[3] + STAIR_GAP) for b in sh["stairs"] + sh["holes"]]
     for dr in sh["doors"]:
@@ -234,22 +234,21 @@ def room_clutter(level: dict, room: dict, dressing: dict, cat: dict, rule: dict)
                 break
     # walls
     near = 0.45
-    wall_blocks = _base_blocks(room, sh, 0.1)
+    wall_blocks = _base_blocks(sh, 0.1)
     for s in room.get("windows", []):
         wall_blocks.append((s[0] - WINDOW_HALF, s[1] - WINDOW_HALF, s[0] + WINDOW_HALF, s[1] + WINDOW_HALF))
-    spans = {}
     for kind in rule.get("wall", ()):
         L, W, H = cat[kind]["size"]
         h0 = WALL_H[kind]
         blocks = wall_blocks + [b for b in _occupied(res, out, cat, h0 - 0.15, h0 + H + 0.15)]
         order = sorted("NSWE", key=lambda s: -sum(b - a for a, b in free_spans(sh, s, near, blocks)))
         for side in order:
-            got = _place_along(sh, side, kind, L, 0.0, h0, free_spans(sh, side, near, blocks), rng, cat)
+            got = _place_along(sh, side, kind, L, 0.0, h0, free_spans(sh, side, near, blocks), rng)
             if got:
                 out.append(got[0])
                 break
     # floor
-    floor_blocks = _base_blocks(room, sh, 0.3)
+    floor_blocks = _base_blocks(sh, 0.3)
     floor_blocks += room.get("legs", [])  # the routes' legs (house_routes), grown by the capsule's radius
     for m in room.get("stations", []):
         floor_blocks.append((m["at"][0] - 1, m["at"][2] - 1, m["at"][0] + 1, m["at"][2] + 1))
@@ -261,7 +260,7 @@ def room_clutter(level: dict, room: dict, dressing: dict, cat: dict, rule: dict)
         if kind == "doormat":
             if sh["doors"]:
                 dr = sh["doors"][0]
-                side, c = _side_of(dr["at"], w, d)
+                side = _side_of(dr["at"], w, d)[0]
                 if side:
                     off = hd.WALL_T + W / 2 + 0.05
                     x, z = dr["at"]
@@ -271,7 +270,7 @@ def room_clutter(level: dict, room: dict, dressing: dict, cat: dict, rule: dict)
         blocks = floor_blocks + [b for b in _occupied(res, out, cat, 0.03, 0.35)]
         order = sorted("NSWE", key=lambda s: -sum(b - a for a, b in free_spans(sh, s, W + 0.2, blocks)))
         for side in order:
-            got = _place_along(sh, side, kind, L, 0.05 + W / 2, 0, free_spans(sh, side, W + 0.2, blocks), rng, cat)
+            got = _place_along(sh, side, kind, L, 0.05 + W / 2, 0, free_spans(sh, side, W + 0.2, blocks), rng)
             if got:
                 out.append(got[0])
                 break
