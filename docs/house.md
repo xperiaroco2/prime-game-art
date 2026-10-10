@@ -360,8 +360,17 @@ lies on the roof). The light fixtures are #83a's. The rooms' dressing (`<room>.t
   a package put down anywhere must stay pickable) as a test: a 0.4 m-radius player walks a 0.1 m grid from `arrive`;
   a spot is reachable if some reached point is within 1.0 m of it in plan, the spot is at most 2.0 m high, and the
   line from the eye (1.6 m) to it clears every prop but its holder. 12 spots, all reachable.
-- **The roof walk**: from the dormer's window, the roof's top outside 2.36 m over the attic floor; 440.9 m2 of roof are
-  walkable from it.
+- **The roof walk**: from the dormer's window; its sill stands 0.15 m over the roof's top at the front wall, under the
+  game's 0.3 m step (`STEP_H`, base_mode.tres `step_height_m`), so a player steps out and back in without a jump (the
+  check fails a sill higher than that); the roof falls to 2.36 m over the attic floor at the eave 1 m below. 440.9 m2
+  of roof are walkable from it.
+- **Open: the window and the game's capsule.** The check measures the window against the game's player capsule (1.8 m
+  tall, radius 0.4: base_mode.tres; no crouch, and the crawl keeps the capsule). The 1.0 x 1.4 m opening is lower, so
+  no player passes it yet; the layout records that as the dormer's `open` note (reported, not failed; without the note
+  the check fails). The fix is the engineer's: a door-height opening in a taller dormer front, or a crouch in the
+  game. Until then the climb is proven by geometry only (the stair's top at the sill, its slope, width and foot, the
+  step at the sill); a capsule walk in Godot up the stair, out and back (extending `zones.gd` or the house walk) comes
+  with the new opening. The stair's 43.6 deg leaves 1.4 deg under the floor limit: a steeper stair fails the check.
 - **The lookout** (`[roof.lookout]`): from each eye 1.6 m over the roof's top, the share of sample points on the plot's
   wicket and gates (`plot.toml`'s fence openings) seen over the roof and its props, and every window of the house in
   view. The station is on the south slope near (39, 41.9), 11.09 m up: wicket 100 %, gates 100 %, no house window in

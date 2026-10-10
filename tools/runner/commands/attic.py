@@ -39,9 +39,13 @@ def run(args: argparse.Namespace) -> int:
         common.say(f"attic: {c['id']} from its foot {c['foot']} (reached from the hatch) up {c['top_h']:.3f} m at "
                    f"{c['slope_deg']} deg to {c['top']}, the dormer window's sill")
     for dm in rep["roof"]["dormers"]:
-        common.say(f"roof: dormer {dm['id']}: window at {dm['window']}, its sill {dm['sill']:.2f} m over the attic floor, "
-                   f"the roof's top outside {dm['roof_top_outside']:.2f} m; {rep['roof']['walkable_m2']} m2 of roof "
-                   f"walkable from it")
+        w, h = dm["opening"]
+        common.say(f"roof: dormer {dm['id']}: window at {dm['window']}, {w:g} x {h:g} m, its sill {dm['sill']:.2f} m over "
+                   f"the attic floor, {dm['step_at_wall']:.2f} m over the roof at its front wall (the game's step "
+                   f"{house_attic.STEP_H:g} m), the eave {dm['roof_top_eave']:.2f} m; {rep['roof']['walkable_m2']} m2 of "
+                   f"roof walkable from it")
+        if dm["open"]:
+            common.say(f"roof: dormer {dm['id']}: OPEN for the engineer: {dm['open']}")
     for k, v in enumerate(rep["roof"]["lookout"]):
         see = ", ".join(f"{t} {100 * f:.0f}%" for t, f in v["see"].items())
         label = "the station" if k == 0 else "an alternative, not the acceptance"

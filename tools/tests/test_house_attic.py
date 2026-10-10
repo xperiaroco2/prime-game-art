@@ -111,10 +111,19 @@ class RoofTest(unittest.TestCase):
         self.assertGreater(dm["sill"], A.roof_top(DATA, 43.2))  # the sill stands over the roof outside
         self.assertLess(dm["sill"], 3.2)  # and a short stair's height over the attic floor
         self.assertLess(math.dist(dm["out"], ROOF["arrive"]), 0.6)
-        self.assertGreaterEqual(dm["opening"][1], A.PLAYER_H)  # a standing player passes the window
+        self.assertLessEqual(A.step_at_wall(dm, DATA), A.STEP_H)  # out over the sill and back in without a jump
+        # the game's 1.8 m capsule does not pass the 1.4 m window: recorded open for the engineer, failed without it
+        self.assertLess(dm["opening"][1], A.PLAYER_H)
+        self.assertTrue(dm["open"])
+        self.assertFalse(any("capsule through" in p for p in A.check(ROOF, DATA)))
         data = copy.deepcopy(DATA)
-        data["pieces"]["dormer_gable"]["window"] = [1.0, 1.15]
+        attic = next(lv for lv in data["levels"] if lv["level"] == "attic")
+        del attic["dormers"][0]["open"]
         self.assertTrue(any("capsule through" in p for p in A.check(ROOF, data)))
+        data["pieces"]["dormer_gable"]["window"] = [1.0, 1.9]
+        self.assertFalse(any("capsule through" in p for p in A.check(ROOF, data)))
+        data["pieces"]["dormer_gable"]["sill"] = 0.5
+        self.assertTrue(any("no walking back in" in p for p in A.check(ROOF, data)))
 
     def test_the_whole_roof_is_walkable_from_the_dormer(self) -> None:
         seen, cell = A.walkable(ROOF, DATA)
