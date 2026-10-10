@@ -166,7 +166,10 @@ def build(arm, parts, coll, rc, eyes_at, skin_mat, pack_mouth_dz=None):
     rep.update({"picks": picks, "hair_item": item, "flags": kit.hair_flags(item), "tris": face.meta["tris"],
                 "tris_total": face.meta["tris_total"], "collisions": checks.collisions(face),
                 "brow_in_white": checks.brow_in_white(face), "nose_meets_pupils": face.meta["nose"]["meets_pupils"],
-                "layout": face.meta["layout"], "points_pulled_in": face.meta["points_pulled_in"]})
+                "layout": face.meta["layout"], "points_pulled_in": face.meta["points_pulled_in"],
+                "brows": {"visibility": checks.brow_visibility(face, [head, parts.get("hair"), parts.get("headwear")]),
+                          "fit": face.meta.get("brow_fit"), "pad": face.meta.get("brow_pad"),
+                          "tuck": face.meta.get("brow_tuck"), "lifted": face.meta.get("brow_lifted", 0)}})
     cav = face.mats.get("cavity")
     if cav is not None and not cl.is_clay(cav):  # baked into the head atlas: one surface fewer
         cl.clay(cav, tuple(cav.diffuse_color[:3]))

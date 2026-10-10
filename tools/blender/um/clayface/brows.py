@@ -286,6 +286,13 @@ def tuck_brows(face, o, ctx=None):
     meta["sides"] = len({P0[i].x > cx for i in moved})
 
 
+# art #42 round 3 (w3's brows sank 17 mm below the lid's top under hair_w_formal_updo): a lock whose tip ends up to
+# this many eye radii above the eye line hangs past the brow, so it is a strand (the brow keeps its height and is
+# tucked behind it), not a fringe the brow is lowered and squeezed under (round C's 0.5: 7 lowered, 3 squeezed on w3;
+# 1.2: 2 lowered, none squeezed, the brow's front 2.5 mm under the lid's top, as built)
+BROW_STRAND_TOP_R = 1.2
+
+
 def hairline_fn(face, ctx, lay):
     """x -> the lowest z of the hair hanging over the forehead above the eyes near x (None where no hair is there).
     The hair counts where it lies at or in front of the forehead skin (within 6 mm behind it). A face built on an
@@ -329,7 +336,7 @@ def hairline_fn(face, ctx, lay):
     # Round C: a strand that hangs on down past the eyes in front of the face (a face-framing lock, not a fringe) does
     # not push the brow down: on such columns the brow keeps its own height and the strand crosses over it (round C's
     # first sheets: under the formal updo's locks the brows were squeezed to stubs on 320 of 320 women's faces).
-    low = P[(P[:, 2] > ez - 0.035) & (P[:, 2] <= ez + 0.5 * r) & (P[:, 1] < cy + 2.0 * r) & (P[:, 0] > x0) & (P[:, 0] < x1)]
+    low = P[(P[:, 2] > ez - 0.035) & (P[:, 2] <= ez + BROW_STRAND_TOP_R * r) & (P[:, 1] < cy + 2.0 * r) & (P[:, 0] > x0) & (P[:, 0] < x1)]
     S = []
     for v in low:
         try:
