@@ -1,14 +1,21 @@
-"""The attic's old things and hiding spots and the roof deck's dressing and lookout (art #77, map #73): the data in
-layouts/house/dressing/attic_roof/attic.toml and roof.toml, checked in pure Python (docs/house.md, "The attic and the roof deck").
+"""The attic's old things and hiding spots and the free roof's stations and lookout (art #77, map #73): the data in
+layouts/house/dressing/attic_roof/attic.toml, checked in pure Python (docs/house.md, "The attic and the free roof").
 
 - `load(name)`: a dressing file with every item's footprint (w along its local X, d along Z, h) from the dressing
-  library (props/library.toml, #87) or its own `size` (a placeholder for the hero props).
+  library (props/library.toml, #87) or its own `size` (a placeholder for the hero props); its `[roof]` table holds the
+  roof's items, the walk's start outside the dormer and the lookout.
+- `roof_zone(z, data)`: the roof as a zone of its own: the roof's outline (the footprint and its 0.5 m overhang), its
+  items; the dormers and the chimneys stand on it.
 - `check(z, data)`: the items inside the floor, off each other and the kept-free rects, under the attic's roof, the
-  inventory's counts; every hiding spot reachable for a pick-up; the roof's stations reachable.
+  inventory's counts; every hiding spot reachable for a pick-up; the roof's stations reachable from the dormer.
 - `reach(z, data)`: per hiding spot, a point a player (radius PLAYER_R) can walk to from the ladder, within REACH_M of
   the spot in plan and with a clear line of sight from the eye (EYE_M) to it.
-- `lookout(z, data)`: from each lookout eye, the share of the plot's fence openings in view over the parapet, and which
+- `lookout(rz, data)`: from each lookout eye on the roof, the share of the plot's fence openings in view, and which
   windows of the house can be seen (the design doc: "the roof sees the yard, not inside").
+- `roof_top(data, y)`: the roof's top over the attic floor at plan y (where a player on the roof stands).
+- `climbs(data)`, `climb_problems(z, data)`: the dormer's climb-out stair (a kit piece of type ladder in the attic's
+  `[[pieces]]`): its top at the window's sill on the front wall's inner face, at most 45 deg, its foot reached by the
+  attic's walk; the dormer's `lamp` socket (its practical, layouts/house/lights.toml `fixed`) hangs over it.
 """
 
 from __future__ import annotations
@@ -24,20 +31,33 @@ from .house_zones import _ccw, _near, overlap, rect
 DRESSING = common.ROOT / "layouts" / "house" / "dressing" / "attic_roof"  # not the rooms' format (#75b): kept apart
 LIBRARY = common.ROOT / "props" / "library.toml"
 PLOT = common.ROOT / "layouts" / "house" / "outdoor" / "plot.toml"
+PLAYER_H = 1.8  # the game's standing player capsule height (prime-game content/modes/base_mode.tres, capsule_height_m)
+CROUCH_H = 1.2  # the crouched capsule's height: an ASSUMPTION for the game side, which adds the crouch (the engineer,
+# 2026-10-10): the crouch capsule must be at most 1.2 m tall to pass the dormer's window (art #77)
+CLEAR_H = 1.3  # the dormer window's clear height: the crouched capsule with a 0.1 m margin
+CLEAR_MARGIN = 0.05  # the window's clear width: the capsule's diameter with this much on each side
+STEP_H = 0.3  # the game's step_height_m: the highest ledge a player walks up without a jump (out over the sill, back in)
 PLAYER_R = 0.4  # the brief's 0.4 m player capsule, taken as its radius (stricter than the zones' 0.35)
 REACH_M = 1.0  # pick-up reach in plan from the capsule's axis
 EYE_M = 1.6
 SPOT_MAX_H = 2.0  # no spot above a standing player's reach
 GRID = 0.1
 WALL_HALF = 0.1
-PARAPET_HALF = 0.14  # the parapet's cap (kit_geom.build_parapet)
+OVERHANG = 0.5  # the roof's eave and verge pieces reach 0.5 m out of the footprint (kits/house.json)
+EDGE_M = 0.2  # a player's axis keeps this far inside the roof's outline (the eave is a real edge: a fall)
 FLAT_H = 0.1  # lower than this is walked over (rugs, the picture frames' depth is not their height)
-# inventory.md section 6: the attic's and the roof deck's props (light fixtures: #83a)
+STATION_TOL = 0.01  # a roof station's height in the layout against roof_top
+DORMER_WALL = 0.15  # the dormer's front wall (kit_geom.DORMER_WALL): the stair's top meets its inner face
+CLIMB_FOOT = 0.5  # where a player stands before a stair's first tread, from its foot on its axis
+CLIMB_TOL = 0.01  # a stair's top against the dormer's sill (m)
+MAX_SLOPE = 45.0  # Godot's floor limit: a steeper stair is not walked
+# inventory.md section 6: the attic's props (light fixtures: #83a). The roof's: the deck's vents, antenna and water tank
+# went with the deck (art #77; the free roof's vent pipes and aerial are kit pieces, its craft); the Loot crate stays.
 COUNTS = {
     "attic": {"trunk": 6, "sheeted_furniture": 5, "old_wardrobe": 2, "mannequin": 1, "standing_mirror": 1,
               "rocking_horse": 1, "rolled_carpet": 3, "old_bicycle": 1, "cardboard_box": 10, "crate": 5,
               "picture_frame": 6, "potted_plant": 1, "rug": 2},
-    "roof": {"roof_vent": 4, "antenna": 1, "loot_crate": 1, "roof_water_tank": 1},
+    "roof": {"loot_crate": 1},
 }
 MIN_SPOTS = 10  # the brief: about 12
 
@@ -47,12 +67,9 @@ def _library() -> dict[str, list[float]]:
         return {p["id"]: [float(v) for v in p["size_m"]] for p in tomllib.load(f)["prop"]}
 
 
-def load(name: str, folder: Path = DRESSING) -> dict[str, Any]:
-    with (Path(folder) / f"{name}.toml").open("rb") as f:
-        z = tomllib.load(f)
-    lib = _library()
+def _items(raw: list[dict], lib: dict) -> list[dict]:
     items = []
-    for i, it in enumerate(z.get("items", [])):
+    for i, it in enumerate(raw):
         it = dict(it, index=i)
         size = it.get("size") or lib.get(it["id"])
         if size:
@@ -60,7 +77,16 @@ def load(name: str, folder: Path = DRESSING) -> dict[str, Any]:
         it.setdefault("yaw", 0.0)
         it.setdefault("src", "library")
         items.append(it)
-    z["items"] = items
+    return items
+
+
+def load(name: str, folder: Path = DRESSING) -> dict[str, Any]:
+    with (Path(folder) / f"{name}.toml").open("rb") as f:
+        z = tomllib.load(f)
+    lib = _library()
+    z["items"] = _items(z.get("items", []), lib)
+    if "roof" in z:
+        z["roof"] = dict(z["roof"], items=_items(z["roof"].get("items", []), lib))
     z["name"] = name
     return z
 
@@ -77,36 +103,135 @@ def _level(data: dict, name: str) -> dict:
     return next(lv for lv in data["levels"] if lv["level"] == name)
 
 
+def _roof(data: dict) -> dict:
+    return _level(data, "attic")["roofs"][0]
+
+
+def roof_top(data: dict, y: float) -> float:
+    """The attic roof's top over the attic floor at plan y: the knee wall, the pitch from the nearer eave wall's line,
+    the slab's top (kit_geom.pitch: its underside u under the line r * z, its vertical thickness tv). Past the eave
+    (the overhang) it keeps falling."""
+    pp = house_layout.kit_geom().pitch(data["spec"])
+    _, y0, _, d = (float(v) for v in _roof(data)["rect"])
+    a = min(y - y0, y0 + d - y)
+    return float(data["spec"]["grid"]["knee_h_m"]) + pp["r"] * a + pp["u"] + pp["tv"]
+
+
+def _piece_size(data: dict, pid: str) -> tuple[float, float, float]:
+    kp = data["pieces"].get(pid, {})
+    if "size" in kp:
+        s = [float(v) for v in kp["size"]]
+        return s[0], s[1], s[2] if len(s) > 2 else 2.0
+    w = float(kp.get("width", 1.0))
+    return w, float(kp.get("depth", w)), float(kp.get("height", 2.0))
+
+
+def chimneys(data: dict) -> list[dict]:
+    """The attic level's free kit pieces (the chimneys and the roof vents, from their pivot at the north-west corner):
+    each a poly, base (its foot over the attic floor: a vent stands on the roof's top) and h (its top over the attic
+    floor)."""
+    out = []
+    for fp in _level(data, "attic").get("pieces", []):
+        if data["pieces"][fp["piece"]]["type"] == "ladder":
+            continue
+        w, d, h = _piece_size(data, fp["piece"])
+        x, base, y = (float(v) for v in fp["at"])
+        out.append({"poly": _box(x, y, w, d), "base": base, "h": base + h, "id": fp["piece"], "index": None})
+    return out
+
+
+def climbs(data: dict) -> list[dict]:
+    """The attic's free stair pieces (type ladder: the dormer's climb-out stair, art #77), each from its pivot and turn
+    (house_layout.axes; the kit's foot at the pivot, climbing along local +X, its width along +Z): its plan polygon,
+    the foot (a point CLIMB_FOOT before it on its axis), the top edge's centre and height over the attic floor, its
+    width and slope in degrees."""
+    out = []
+    for fp in _level(data, "attic").get("pieces", []):
+        kp = data["pieces"][fp["piece"]]
+        if kp["type"] != "ladder":
+            continue
+        wd, run, rise = float(kp["width"]), float(kp["run"]), float(kp["rise"])
+        ax, az = house_layout.axes(int(fp.get("turn", 0)))
+        x0, h0, y0 = (float(v) for v in fp["at"])
+
+        def world(lx, lz):
+            return (x0 + ax[0] * lx + az[0] * lz, y0 + ax[1] * lx + az[1] * lz)
+        out.append({"id": fp["piece"], "poly": _ccw([world(0, 0), world(run, 0), world(run, wd), world(0, wd)]),
+                    "foot": world(-CLIMB_FOOT, wd / 2), "top": world(run, wd / 2), "top_h": h0 + rise,
+                    "width": wd, "slope": math.degrees(math.atan2(rise, run))})
+    return out
+
+
+def dormers(data: dict) -> list[dict]:
+    """Each dormer as planned (house_layout.dormer_cut): its body's plan polygon (the front wall and the cheeks: local
+    x 0..W, z 0..L), its top over the attic floor (its ridge), the open casement leaf's plan polygon, the window's
+    centre on the front, a point 1 m out of it (plan) and the sill over the attic floor."""
+    planned = house_layout.plan(data)
+    lv = next(L for L in planned["levels"] if L["level"] == "attic")
+    kg = house_layout.kit_geom()
+    out = []
+    for dm in _level(data, "attic").get("dormers", []):
+        pid = dm.get("piece", "dormer_gable")
+        dd = kg.dormer_dims(data["pieces"][pid], data["spec"])
+        W, L, ww = dd["W"], dd["L"], dd["ww"]
+        for p in (p for ps in lv["pieces"].values() for p in ps if p["id"] == pid):
+            ax, az = house_layout.axes(p["turn"])
+
+            def world(lx, lz, p=p, ax=ax, az=az):
+                return (p["x"] + ax[0] * lx + az[0] * lz, p["y"] + ax[1] * lx + az[1] * lz)
+            a = math.radians(180.0 - kg.DORMER_CASEMENT_DEG)  # the leaf: from its jamb at local x (W + ww) / 2 out
+            hx = (W + ww) / 2  # towards local -Z, swung away from the opening (kit_geom.build_dormer)
+            tip = (hx + ww * math.cos(a), -ww * math.sin(a))
+            n = (0.03 * math.sin(a), 0.03 * math.cos(a))
+            leaf = [world(hx - n[0], -n[1]), world(tip[0] - n[0], tip[1] - n[1]),
+                    world(tip[0] + n[0], tip[1] + n[1]), world(hx + n[0], n[1])]
+            out.append({"id": dm["id"], "piece": pid, "body": _ccw([world(0, 0), world(W, 0), world(W, L), world(0, L)]),
+                        "leaf": _ccw(leaf), "top": p["h"] + dd["hr"], "window": world(W / 2, 0),
+                        "out": world(W / 2, -1.0), "sill": p["h"] + dd["sill"],
+                        "inner": world(W / 2, DORMER_WALL), "lamp": [*world(W / 2, min(dd["ze"], 1.2)),
+                                                                     p["h"] + dd["he"] - 0.1],
+                        "opening": [ww, dd["head"] - dd["sill"]]})
+    return out
+
+
+def roof_zone(z: dict, data: dict) -> dict:
+    """The roof as a walkable zone from the attic dressing's [roof] table: the roof's outline, its items, arrive."""
+    x, y, w, d = (float(v) for v in _roof(data)["rect"])
+    rf = z["roof"]
+    return {"room": "roof", "name": "roof", "rect": [x - OVERHANG, y - OVERHANG, w + 2 * OVERHANG, d + 2 * OVERHANG],
+            "items": rf["items"], "arrive": rf["arrive"], "lookout": rf.get("lookout"), "clear": rf.get("clear", [])}
+
+
 def solids(z: dict, data: dict) -> list[dict]:
-    """What stands on the floor: the items (not the flat ones) and, on the roof, the layout's free kit pieces (the
-    chimneys, from their pivot at the north-west corner). Each: poly, h (top above the floor), id, index."""
+    """What stands in the way (in the attic or on the roof): the items (not the flat ones), the chimneys and, on the
+    roof, the dormers' bodies and open casements. Each: poly, h (its top over the attic floor; a roof item's over the
+    roof's top), id, index."""
     out = [{"poly": footprint(it), "h": it["h"], "id": it["id"], "index": it["index"]}
            for it in z["items"] if "w" in it and it["h"] >= FLAT_H]
-    for fp in _level(data, z["room"]).get("pieces", []):
-        size = data["pieces"].get(fp["piece"], {}).get("size", [1, 1, 2])
-        x, y = float(fp["at"][0]), float(fp["at"][2])
-        out.append({"poly": _box(x, y, float(size[0]), float(size[1])), "h": float(size[2]) if len(size) > 2 else 2.0,
-                    "id": fp["piece"], "index": None})
+    out += [c for c in chimneys(data) if z["room"] == "roof" or c["base"] <= 0]  # the attic: no roof vents
+    if z["room"] == "attic":
+        out += [{"poly": c["poly"], "h": c["top_h"], "id": c["id"], "index": None} for c in climbs(data)]
+    if z["room"] == "roof":
+        for dm in dormers(data):
+            out.append({"poly": dm["body"], "h": dm["top"], "id": dm["piece"], "index": None})
+            out.append({"poly": dm["leaf"], "h": dm["top"], "id": f"{dm['piece']} casement", "index": None})
     return out
 
 
 def floor_rect(z: dict) -> tuple[float, float, float, float]:
-    """The floor's free rectangle (x0, y0, x1, y1): inside the walls (attic) or the parapet (roof)."""
-    m = WALL_HALF if z["room"] == "attic" else PARAPET_HALF
+    """The floor's free rectangle (x0, y0, x1, y1): inside the walls (attic) or the roof's edge (roof)."""
+    m = WALL_HALF if z["room"] == "attic" else EDGE_M
     x, y, w, d = (float(v) for v in z["rect"])
     return x + m, y + m, x + w - m, y + d - m
 
 
 def blocked_rects(z: dict, data: dict) -> list[list[tuple[float, float]]]:
-    """Floor nobody stands on: the hatch's hole in the attic, the attic itself on the roof (with its walls)."""
+    """Floor nobody stands on: the hatch's hole in the attic."""
     out = []
     if z["room"] == "attic":
         for h in _level(data, "attic").get("holes", []):
             if "tile" in h:
                 out.append(_box(float(h["tile"][0]), float(h["tile"][1]), 2.0, 2.0))
-    if "hole" in z:
-        x, y, w, d = (float(v) for v in z["hole"])
-        out.append(_box(x - WALL_HALF, y - WALL_HALF, w + 2 * WALL_HALF, d + 2 * WALL_HALF))
     return out
 
 
@@ -195,6 +320,22 @@ def reach(z: dict, data: dict) -> list[dict]:
     return out
 
 
+def _station(data: dict, name: str) -> tuple[float, float, float] | None:
+    """A station of the attic room in plan metres and its height over the attic floor (the layout's marker)."""
+    room = next(r for r in _level(data, "attic")["rooms"] if r["id"] == "attic")
+    s = next((s["at"] for s in room.get("stations", []) if s["name"] == name), None)
+    return (room["rect"][0] + float(s[0]), room["rect"][1] + float(s[2]), float(s[1])) if s else None
+
+
+def _station_problems(data: dict, name: str, at: list[float]) -> list[str]:
+    st = _station(data, name)
+    if st is None or math.dist(st[:2], at) > 1e-6:
+        return [f"the {name} station {list(at)} is not the layout's {name} station"]
+    if abs(st[2] - roof_top(data, st[1])) > STATION_TOL:
+        return [f"the layout's {name} station stands {st[2]:.3f} m up, the roof's top there is {roof_top(data, st[1]):.3f}"]
+    return []
+
+
 def check(z: dict, data: dict) -> list[str]:
     problems = []
     x0, y0, x1, y1 = floor_rect(z)
@@ -230,31 +371,73 @@ def check(z: dict, data: dict) -> list[str]:
         problems += [f"hiding spot {s['name']}: no pick-up from anywhere a player stands" for s in spots
                      if not s["reachable"]]
         problems += [f"hiding spot {s['name']}: no `{s['in']}` holds it" for s in spots if s["host"] is None]
-    else:
-        seen, cell = walkable(z, data)
-        for it in z["items"]:
-            if it.get("station"):
-                r = max(it["w"], it["d"]) / 2 + 0.8
-                if not any(math.dist(cell(*c), it["at"]) <= r for c in seen):
-                    problems.append(f"the {it['station']} station ({it['id']}) is out of reach from the roof door")
-        lk = z.get("lookout")
-        if lk:
-            if not any(math.dist(cell(*c), lk["station"]) <= 0.5 for c in seen):
-                problems.append("the Lookout station's point is out of reach from the roof door")
-            lv = _level(data, "roof")
-            room = next(r for r in lv["rooms"] if r["id"] == z["room"])
-            marker = next((s["at"] for s in room.get("stations", []) if s["name"] == "Lookout"), None)
-            at = (room["rect"][0] + marker[0], room["rect"][1] + marker[2]) if marker else None
-            if at is None or math.dist(at, lk["station"]) > 1e-6:
-                problems.append(f"the lookout's station {lk['station']} is not the layout's Lookout station")
-            view = lookout(z, data)
-            if not view or math.dist(view[0]["eye"], lk["station"]) > 1e-6:
-                problems.append("the lookout's station is not its first eye")
-            elif not lk.get("open"):  # a shortfall recorded as open for the engineer is reported, not failed
-                problems += not_met(z, view)
-            for v in view:
-                if v["house_windows"]:
-                    problems.append(f"the lookout eye {v['eye']} sees into the house: {v['house_windows']}")
+        return problems + climb_problems(z, data)
+    # the roof: the walk starts outside a dormer's window; the stations are the layout's and reachable from there
+    dms = dormers(data)
+    for dm in dms:  # the crouched capsule climbs out through the window with a margin
+        if dm["opening"][1] < CLEAR_H or dm["opening"][0] < 2 * (PLAYER_R + CLEAR_MARGIN):
+            problems.append(f"the dormer {dm['id']}'s window {dm['opening']} does not let a crouched {CROUCH_H} m "
+                            f"capsule through (clear {2 * (PLAYER_R + CLEAR_MARGIN):g} x {CLEAR_H:g} m)")
+        step = step_at_wall(dm, data)
+        if step > STEP_H:
+            problems.append(f"the dormer {dm['id']}'s sill stands {step:.2f} m over the roof at its front wall, over the "
+                            f"game's {STEP_H} m step: no walking back in")
+    if not any(math.dist(dm["out"], z["arrive"]) <= 0.6 for dm in dms):
+        problems.append(f"the roof's walk starts at {z['arrive']}, not outside a dormer's window")
+    seen, cell = walkable(z, data)
+    if not seen:
+        problems.append(f"no roof to stand on at the walk's start {z['arrive']}")
+    for it in z["items"]:
+        if it.get("station"):
+            problems += _station_problems(data, it["station"], it["at"])
+            r = max(it["w"], it["d"]) / 2 + 0.8
+            if not any(math.dist(cell(*c), it["at"]) <= r for c in seen):
+                problems.append(f"the {it['station']} station ({it['id']}) is out of reach from the dormer")
+    lk = z.get("lookout")
+    if lk:
+        if not any(math.dist(cell(*c), lk["station"]) <= 0.5 for c in seen):
+            problems.append("the Lookout station's point is out of reach from the dormer")
+        problems += _station_problems(data, "Lookout", lk["station"])
+        view = lookout(z, data)
+        if not view or math.dist(view[0]["eye"], lk["station"]) > 1e-6:
+            problems.append("the lookout's station is not its first eye")
+        elif not lk.get("open"):  # a shortfall recorded as open for the engineer is reported, not failed
+            problems += not_met(z, view)
+        for v in view:
+            if v["house_windows"]:
+                problems.append(f"the lookout eye {v['eye']} sees into the house: {v['house_windows']}")
+    return problems
+
+
+def step_at_wall(dm: dict, data: dict) -> float:
+    """The sill's height over the roof's top at the dormer's front wall: the ledge a player steps down out of the window
+    and up again on the way back in."""
+    return dm["sill"] - roof_top(data, dm["window"][1])
+
+
+def climb_problems(z: dict, data: dict) -> list[str]:
+    """Every dormer has a stair whose top meets its sill at the front wall's inner face, no steeper than the floor
+    limit, as wide as a capsule, and whose foot the attic's walk reaches (from the hatch ladder)."""
+    problems = []
+    seen, cell = walkable(z, data)
+    cs = climbs(data)
+    for dm in dormers(data):
+        mine = [c for c in cs if math.dist(c["top"], dm["inner"]) <= 0.2]
+        if not mine:
+            problems.append(f"the dormer {dm['id']}: no stair's top at its window's inner face {dm['inner']}")
+            continue
+        c = mine[0]
+        if abs(c["top_h"] - dm["sill"]) > CLIMB_TOL:
+            problems.append(f"the dormer {dm['id']}: its stair's top {c['top_h']:.3f} m is not its sill {dm['sill']:.3f}")
+        if dm["sill"] - c["top_h"] > STEP_H:
+            problems.append(f"the dormer {dm['id']}: its sill stands {dm['sill'] - c['top_h']:.2f} m over the stair's "
+                            f"landing, over the game's {STEP_H} m step")
+        if c["slope"] > MAX_SLOPE:
+            problems.append(f"the dormer {dm['id']}: its stair climbs at {c['slope']:.1f} deg, over {MAX_SLOPE}")
+        if c["width"] < 2 * PLAYER_R:
+            problems.append(f"the dormer {dm['id']}: its stair is {c['width']} m wide, narrower than the capsule")
+        if not any(math.dist(cell(*k), c["foot"]) <= 0.3 for k in seen):
+            problems.append(f"the dormer {dm['id']}: the attic's walk does not reach its stair's foot {c['foot']}")
     return problems
 
 
@@ -300,45 +483,46 @@ def _windows(data: dict) -> dict[str, list[tuple[str, tuple[float, float, float]
 
 
 def lookout(z: dict, data: dict) -> list[dict]:
-    """Per eye: the share of each fence opening's sample points in view, the house's windows (ground and upper
-    floors, basement) and the attic's windows in view. Blockers: the parapet's cap, the deck's slab, the attic (up to
-    its roof line), the roof's items and chimneys."""
-    fy = float(_level(data, "roof")["floor_y"])
-    dx0, dy0, dw, dd = (float(v) for v in z["rect"])
-    ax0, ay0, aw, ad = (float(v) for v in z["hole"])
-    cap = fy + float(data["spec"]["grid"]["parapet_h_m"]) + 0.06
-    slab = float(data["spec"]["grid"]["roof_slab_m"])
-    attic = load("attic") if (DRESSING / "attic.toml").is_file() else {"rect": z["hole"], "eave_h": 2.2}
-    sol = solids(z, data)
+    """Per eye (EYE_M over the roof's top there): the share of each fence opening's sample points in view, the house's
+    windows in view (ground and upper floors, basement), an outbuilding's (the garage's, across the yard: reported, as
+    from the yard) and the attic's. Blockers (the roof options lab's variant A): the house under the attic floor, the
+    attic and its roof as one solid with the 0.5 m overhang, the chimneys, the dormers, the roof's items."""
+    fy = float(_level(data, "attic")["floor_y"])
+    x0, y0, w, d = (float(v) for v in _roof(data)["rect"])
+    blocks = [(s["poly"], fy + s["h"]) for s in chimneys(data)]
+    blocks += [(dm["body"], fy + dm["top"]) for dm in dormers(data)]
+    blocks += [(footprint(it), fy + roof_top(data, it["at"][1]) + it["h"]) for it in z["items"] if "w" in it]
+    boxes = [(min(p[0] for p in b), min(p[1] for p in b), max(p[0] for p in b), max(p[1] for p in b)) for b, _ in blocks]
 
     def blocked(p) -> bool:
         x, y, h = p
-        inside = dx0 - PARAPET_HALF <= x <= dx0 + dw + PARAPET_HALF and dy0 - PARAPET_HALF <= y <= dy0 + dd + PARAPET_HALF
-        if inside:
-            edge = min(abs(x - dx0), abs(x - dx0 - dw), abs(y - dy0), abs(y - dy0 - dd))
-            if edge <= PARAPET_HALF and fy - slab <= h < cap:
-                return True
-            if fy - slab <= h < fy:
-                return True
-        if ax0 - WALL_HALF <= x <= ax0 + aw + WALL_HALF and ay0 - WALL_HALF <= y <= ay0 + ad + WALL_HALF:
-            if fy <= h < fy + roof_line({**attic, "rect": z["hole"]}, data, y) + 0.2:
-                return True
-        return any(fy <= h < fy + s["h"] and _near(x, y, s["poly"], 0.0) for s in sol)
+        if x0 - WALL_HALF <= x <= x0 + w + WALL_HALF and y0 - WALL_HALF <= y <= y0 + d + WALL_HALF and h < fy:
+            return True  # the house under the attic floor
+        if x0 - OVERHANG <= x <= x0 + w + OVERHANG and y0 - OVERHANG <= y <= y0 + d + OVERHANG \
+                and fy <= h < fy + roof_top(data, y):
+            return True  # the attic and its roof, the overhang included
+        return any(h < top and bx[0] <= x <= bx[2] and bx[1] <= y <= bx[3] and _near(x, y, b, 0.0)
+                   for (b, top), bx in zip(blocks, boxes))
 
     def visible(eye, t) -> bool:
         n = max(1, int(math.dist(eye, t) / 0.05))
         return not any(blocked([eye[i] + (t[i] - eye[i]) * k / n for i in range(3)]) for k in range(1, n))
 
+    def on_house(p) -> bool:  # a window in the house's walls (under the roof), not an outbuilding's (the garage)
+        return x0 - 0.3 <= p[0] <= x0 + w + 0.3 and y0 - 0.3 <= p[1] <= y0 + d + 0.3
+
     targets = _targets(z["lookout"]["see"])
     wins = _windows(data)
     out = []
     for ex, ey in z["lookout"]["eyes"]:
-        eye = (float(ex), float(ey), fy + EYE_M)
+        eye = (float(ex), float(ey), fy + roof_top(data, float(ey)) + EYE_M)
         see = {k: sum(visible(eye, t) for t in pts) / len(pts) for k, pts in targets.items()}
-        seen = {lv: [lab for lab, pts in ws if any(visible(eye, p) for p in pts)] for lv, ws in wins.items()}
-        out.append({"eye": [float(ex), float(ey)], "see": {k: round(v, 3) for k, v in see.items()},
-                    "house_windows": [w for lv in ("basement", "ground", "upper") for w in seen.get(lv, [])],
-                    "attic_windows": seen.get("attic", [])})
+        seen = {lv: [(lab, pts[0]) for lab, pts in ws if any(visible(eye, p) for p in pts)] for lv, ws in wins.items()}
+        below = [(lab, p) for lv in ("basement", "ground", "upper") for lab, p in seen.get(lv, [])]
+        out.append({"eye": [float(ex), float(ey)], "eye_h": round(eye[2], 3), "see": {k: round(v, 3) for k, v in see.items()},
+                    "house_windows": [lab for lab, p in below if on_house(p)],
+                    "other_windows": [lab for lab, p in below if not on_house(p)],
+                    "attic_windows": [lab for lab, _ in seen.get("attic", [])]})
     return out
 
 
@@ -351,8 +535,18 @@ def not_met(z: dict, view: list[dict]) -> list[str]:
 
 def report(data: dict | None = None) -> dict[str, Any]:
     data = data or house_layout.load()
-    attic, roof = load("attic"), load("roof")
+    attic = load("attic")
+    roof = roof_zone(attic, data)
     view = lookout(roof, data)
-    return {"attic": {"items": len(attic["items"]), "spots": reach(attic, data), "problems": check(attic, data)},
-            "roof": {"items": len(roof["items"]), "lookout": view, "problems": check(roof, data),
-                     "not_met": not_met(roof, view), "open": roof["lookout"].get("open", "")}}
+    seen, _ = walkable(roof, data)
+    dms = [{"id": dm["id"], "window": [round(v, 2) for v in dm["window"]], "sill": round(dm["sill"], 3),
+            "lamp": [round(v, 3) for v in dm["lamp"]],
+            "opening": [round(v, 3) for v in dm["opening"]], "step_at_wall": round(step_at_wall(dm, data), 3),
+            "roof_top_eave": round(roof_top(data, dm["out"][1]), 3)} for dm in dormers(data)]
+    climb = [{"id": c["id"], "foot": [round(v, 2) for v in c["foot"]], "top": [round(v, 2) for v in c["top"]],
+              "top_h": round(c["top_h"], 3), "slope_deg": round(c["slope"], 1)} for c in climbs(data)]
+    return {"attic": {"items": len(attic["items"]), "spots": reach(attic, data), "climb": climb,
+                      "problems": check(attic, data)},
+            "roof": {"items": len(roof["items"]), "walkable_m2": round(len(seen) * GRID * GRID, 1), "dormers": dms,
+                     "lookout": view, "problems": check(roof, data), "not_met": not_met(roof, view),
+                     "open": roof["lookout"].get("open", "")}}

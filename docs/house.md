@@ -8,10 +8,10 @@ later packages add dressing data (`layouts/house/dressing/`, #75b) and only rege
 
 | File | What |
 |---|---|
-| `layouts/house/house.toml` | Settings: the kit spec, the kit folder under the raw folder (`kit_dir`: `kits/house/v2`; v1 and v2 share the piece ids, so it is the one setting that switches kits), the `res://` paths of the pieces and scenes, the level order |
-| `layouts/house/{basement,ground,upper,attic,roof}.toml` | One level each: `floor_y`, the default wall family, the house `footprint`; `[[rooms]]`, `[[doors]]`, `[[windows]]`, `[[holes]]`, `[[stairs]]` (a U-turn lists its lower half and landing in `below`), `[[pieces]]` (one free kit piece each: `piece`, `room`, `at` = [x, h, y] of its pivot, `turn`; the porch and the chimneys), `[[roofs]]` (a pitched roof from the kit over a room: `room`, `rect`, `gables`, optional `h`, `windows`: gable windows as [x, y] centres; the attic's), `[[cornices]]` (brackets under an overhanging deck: `piece`, `room`, `rect` of the walls below, `every`, optional `h`; the roof deck's), `[[placeholders]]` |
+| `layouts/house/house.toml` | Settings: the kit spec, the kit folder under the raw folder (`kit_dir`: `kits/house/v3b`, the full v3 build of #77 beside a stale in-between `v3/`, and the folder a plain `kit` builds into; the versions share the piece ids, so it is the one setting that switches kits), the `res://` paths of the pieces and scenes, the level order |
+| `layouts/house/{basement,ground,upper,attic}.toml` | One level each: `floor_y`, the default wall family, the house `footprint`; `[[rooms]]`, `[[doors]]`, `[[windows]]`, `[[holes]]`, `[[stairs]]` (a U-turn lists its lower half and landing in `below`), `[[pieces]]` (one free kit piece each: `piece`, `room`, `at` = [x, h, y] of its pivot, `turn`; the porch and the chimneys), `[[roofs]]` (a pitched roof from the kit over a room: `room`, `rect`, `gables`, optional `h`, `windows`: gable windows as [x, y] centres; the attic's), `[[dormers]]` (a dormer cut into a roof: the free roof's climb-out, art #77), `[[cornices]]` (brackets under an overhanging deck: `piece`, `room`, `rect` of the walls below, `every`, optional `h`; the roof deck's), `[[placeholders]]` |
 | `tools/runner/house_layout.py` | Load, validate, plan (choose the pieces), write the scenes |
-| `layouts/house/dressing/attic_roof/{attic,roof}.toml`, `tools/runner/house_attic.py`, `commands/attic.py` | The attic's old things and hiding spots, the roof deck's dressing and lookout, and their checks (below; art #77) |
+| `layouts/house/dressing/attic_roof/attic.toml`, `tools/runner/house_attic.py`, `commands/attic.py` | The attic's old things and hiding spots, the climb-out, the free roof's items and lookout, and their checks (below; art #77) |
 | `tools/runner/commands/house.py` | The `house` command |
 | `tools/tests/test_house_layout.py` | The rules, the plan's conventions, the design doc's 35 rooms and the game's greybox marker names |
 | `layouts/house/dressing/<room>.toml` | One room's props and light fixtures (#75b); the ground floor's eight rooms and the greenhouse (#80, `docs/house-garden.md`) |
@@ -22,10 +22,10 @@ later packages add dressing data (`layouts/house/dressing/`, #75b) and only rege
 
 Coordinates are the design doc's: metres, x east, y south, origin at the plot's north-west corner; a `rect` is
 `[x, y, width, depth]` from its north-west corner. Godot's x = x and z = y; heights in a room are above its level's
-`floor_y` (basement -3.2, ground 0, second floor 3.2, attic and roof deck 6.4).
+`floor_y` (basement -3.2, ground 0, second floor 3.2, attic 6.4).
 
 - **Rooms**: `id` (the game's file name), `node` (the game's node name), `title` (the doc's), `rect`, `kind`: `room`
-  (walls and floor), `open` (floor, railing or parapet, no walls: the terrace, the balcony, the roof deck) or `area`
+  (walls and floor), `open` (floor, railing or parapet, no walls: the terrace, the balcony) or `area`
   (no geometry yet: the yard, the garden and the other outdoor zones, built by #80 and #81); `floor` (boards, lino,
   concrete, roof), `walls` (a family other than the level's: `glass` for the greenhouse), `stations` and `markers`
   (the game's greybox `Stations` and `Markers`, room-local Godot x, height, z).
@@ -321,8 +321,8 @@ Defaults used (for the engineer; data, easy to change):
 
 ## The rules (`validate`)
 
-- Rooms on whole metres; no two rooms with floors overlap at one height (an open room may hold a room: the roof deck
-  holds the attic, and its floor skips the attic's cells); a level's `footprint` is tiled exactly by its rooms.
+- Rooms on whole metres; no two rooms with floors overlap at one height (an open room may hold a room,
+  and its floor skips the held room's cells); a level's `footprint` is tiled exactly by its rooms.
 - Door and window centres on whole metres, on a wall of their rooms; an opening's 2 m module (8 m for the garage
   door) lies inside one wall run, so no door is within 1 m of a corner, and no wall meets it; windows only on
   exterior walls of their own room.
@@ -362,20 +362,21 @@ Defaults used (for the engineer; data, easy to change):
   (28, 28.5). Its ladder climbs south (#76): the foot on the landing at y 28.3; climbing north put the foot 0.3 m
   from the stairwell (y 30), where no one can stand.
 - The study door is at (34, 28) as on the plan (the game's greybox has it at (34, 25)).
-- The front porch and the two chimneys are kit v2 pieces (`[[pieces]]`): one `porch_2x2` from x 29 on the front
-  wall, so its posts (x 29.12 and 30.88) leave 1.64 m clear round the front door at x 30, its lamp socket for the porch
-  lamp (#74b); the chimneys centred on the doc's points (22, 42) and (38, 24.5).
-- The attic's pitched roof is kit v2's (`[[roofs]]` in `attic.toml`, `pitched_roof` in the engine): the placements of
-  `kit_geom.attic_roof` over the attic's 20 x 14 m (docs/kit.md, "Pitched roofs"), pivoted on the knee walls' top
-  (2.2 m), the eaves on y 26 and 40 and the ridge on y 33; with `gables = true` the gable walls on x 20 and 40, per
-  slope row (2, 2, 2 and 1 m from each eave) a `gable_tri_*` over `gable_band_*` of the row's length, so their tops
-  follow the roof's line. Every height comes from the kit's spec, so the roof follows the kit's pitch: tonight 0.7 per
-  metre (Q2 option A, the ridge 7.1 m over the attic floor), because kit v2 is built at 0.7 (kept by #77: the
-  engineer's call); Q2's option B (0.35) is a kit rebuild with `gable_rise_per_m` 0.35 (and the gable bands' heights).
-- The gable window pair (#77): the kit's `gable_band_2m_window` (a 2 m gable band with a 1.0 x 0.9 m window on a
-  0.25 m sill, so 2.45 to 3.35 m over the attic floor) swaps the lowest band of the 2 m row centred on each
-  `windows` point; tonight one per gable at y 31 (the north row x 30..32), beside the roof door at y 33 in the east.
-  A point that is not a 2 m row's centre is a problem.
+- The front porch is a kit v2 piece (`[[pieces]]`): one `porch_2x2` from x 29 on the front wall, so its posts (x 29.12
+  and 30.88) leave 1.64 m clear round the front door at x 30, its lamp socket for the porch lamp (#74b).
+- The free roof's chimneys and vents are kit v3 pieces in `attic.toml`'s `[[pieces]]` (#77, docs/kit.md "Chimneys",
+  "Vents"): `chimney_attic` centred on (40.5, 40) through the south slope (with the TV aerial) and `chimney_attic_n` on
+  (22, 27.5) through the north one, each from the attic floor, brick over the roof with lead flashing; `roof_vent` on
+  (28, 36.5) and `roof_vent_n` on (31, 30.5), their `at` height the roof's top there.
+- The attic's pitched roof is kit v3's (`[[roofs]]` in `attic.toml`, `pitched_roof` in the engine): the placements of
+  `kit_geom.attic_roof` over the house's 24 x 20 m footprint (docs/kit.md, "Pitched roofs" and "Version 3"), pivoted
+  on the knee walls' top (2.2 m), the eaves on y 24 and 44 and the ridge on y 34; with `gables = true` the gable walls
+  on x 18 and 42, per slope row a `gable_tri_*` over `gable_band_*` of the row's length, so their tops follow the
+  roof's line. Every height comes from the kit's spec, so the roof follows the kit's pitch: 0.35 per metre (Q2 option
+  B, 19.3 deg; the engineer's pick for the free roof, #77).
+- No gable windows (#77): `windows` in a `[[roofs]]` entry swaps the lowest band of a 2 m row for the kit's
+  `gable_band_2m_window` (a 1.0 x 0.9 m window on a 0.25 m sill), but at 0.35 the lowest gable band is too low to hold
+  it, so the attic roof lists none; the dormer lights the attic. A point that is not a 2 m row's centre is a problem.
 - Q3 A (the deck's 1 m overhang, as the doc): 44 `cornice_bracket`s every 2 m round the second floor's walls, their
   tops against the deck slab's underside (6.1 m), reaching 0.8 m out.
 - The main stairs (not the doc's straight flight): a 6 m flight fills the 6 m stairs room, so its foot sits against
@@ -385,42 +386,75 @@ Defaults used (for the engineer; data, easy to change):
   the doc's hole (26, 30, 4 x 6). Marked `placeholder`; the outdoor (concrete) pieces stand in until kit v2 has
   indoor ones. Option: a 5 m steeper straight flight with a 1 m foot landing (kit v2).
 
-## The attic and the roof deck (art #77)
+## The attic and the free roof (art #77)
 
-`tools/run.sh attic [--json PATH]` checks `layouts/house/dressing/attic_roof/attic.toml` and `roof.toml` (pure Python,
-seconds) and writes `tools/out/attic/report.json`. The files use the zones' conventions (docs/zones.md: `[[items]]` with `id`,
-`at`, `yaw`; sizes from `props/library.toml`, or `size` for a placeholder: the mannequin and the rocking horse, hero
-props outside the library); `clear` rects stay free (the hatch's apron, the roof door's approach, the Knife3 marker),
-`arrive` is where a player comes in (off the ladder, out of the roof door). The light fixtures are #83a's. The two files
-sit in their own folder because the rooms' dressing (`<room>.toml` above, #75b) reads every file of `dressing/` in
-another format (`[[props]]` at [x, h, z]); moving the attic and the deck onto that format is a follow-up.
+The engineer's picks of 2026-10-10: no roof deck. The attic covers the whole footprint on knee walls under one pitched
+roof of clay pantiles (0.35 rise per metre, 19 deg; `docs/kit.md`, "Version 3"); the players climb out of the attic
+through one gable dormer's window onto the south slope and can walk the whole roof; the eave is a real edge (a fall),
+and an item dropped on the roof may stay there.
 
-- **Items**: inside the floor (the walls' or the parapet's inner face), off the hatch hole and the kept-free rects, off
-  each other and the chimneys, under the attic's roof line (the kit's pitch from the eaves), the inventory's counts
-  (section 6: 44 old things in the attic; vents, antenna, loot crate and water tank on the deck).
+`tools/run.sh attic [--json PATH]` checks `layouts/house/dressing/attic_roof/attic.toml` (pure Python, seconds) and
+writes `tools/out/attic/report.json`. The file uses the zones' conventions (docs/zones.md: `[[items]]` with `id`, `at`,
+`yaw`; sizes from `props/library.toml`, or `size` for a placeholder: the mannequin and the rocking horse, hero props
+outside the library); `clear` rects stay free (the hatch's apron, the climb stair's foot, the Knife3 marker), `arrive`
+is where a player comes in (off the ladder). `[[roof.items]]` and `[roof.lookout]` are the free roof's (the Loot crate
+lies on the roof). The light fixtures are #83a's. The rooms' dressing (`<room>.toml` above, #75b) reads every file of
+`dressing/` in another format (`[[props]]` at [x, h, z]); moving the attic onto that format is a follow-up.
+
+- **The dormer** (`attic.toml` `[[dormers]]`, honoured by `house_layout.pitched_roof`): `climb_out`, the 2 m panel
+  column x 34..36 from 1 m up the south slope (its front wall at y 43) to where its ridge meets the main roof (y 36).
+  `dormer_cut` takes the column's panels out and fills below and above it with 2 x 1 panels; the slab gets the hole.
+- **The climb** (`[[pieces]]` `stair_dormer`, `house_attic.climbs` and `climb_problems`): a 1 m ship stair with 13
+  treads and handrails from the attic floor (foot at y 39.85) up 2.857 m to the window's sill at the front wall's inner
+  face (y 42.85), 43.6 deg, under the 45 deg floor limit. The check: the top meets the sill within 0.01 m, at most 45
+  deg, the width, and the foot reached by the attic's walk from `arrive`. The stair is a solid for the attic's items.
+- **The lamp**: `lights.toml` gives a room `fixed` practicals at [x, h over the room's floor, y]; the attic's
+  `dormer` bare bulb hangs in the dormer's `lamp` socket over the stair, so the climb-out reads lit at dusk (190
+  fixtures in all).
+- **Items**: inside the floor (the knee walls' inner face), off the hatch hole and the kept-free rects, off each other,
+  the chimneys and the stair, under the roof line (the kit's pitch from the eaves), the inventory's counts (section 6:
+  44 old things in the attic; the Loot crate on the roof; the deck's vents, antenna and water tank are gone).
 - **Hiding spots** (`[[spots]]`: `name`, `at`, `h`, `in` the prop that holds it): the game's rule (levels/CLAUDE.md:
   a package put down anywhere must stay pickable) as a test: a 0.4 m-radius player walks a 0.1 m grid from `arrive`;
   a spot is reachable if some reached point is within 1.0 m of it in plan, the spot is at most 2.0 m high, and the
-  line from the eye (1.6 m) to it clears every prop but its holder. Tonight 12 spots, all reachable.
-- **The lookout** (`[lookout]`): from each eye at 1.6 m, the share of sample points on the plot's wicket and gates
-  (`plot.toml`'s fence openings) seen over the parapet's cap (7.46 m), the deck slab, the attic and the roof props; and
-  every window of the house (basement, ground, second floor) and the attic in view. `station` is the layout's Lookout
-  station (`roof.toml`, the design doc's (30, 42.5)) in plan metres and the first eye. The acceptance: the openings at
-  least half in view from the station's eye, and no window of the house from any eye. **Not met**: 2.5 m behind the
-  parapet, the station sees neither opening (0 %; along x 30: 0 % up to y 43.5, 33 % at 43.75, 67 % at 44.0, 100 % from
-  44.1). The dressing records the shortfall as `open` (the engineer's call): the check reports it as NOT MET and does
-  not fail; without `open` it fails. The second eye (30, 44.2), 0.8 m from the parapet, is a labelled alternative
-  (100 %), not the acceptance. The options: move the Lookout marker to the parapet, lower the parapet there, or accept.
-  The attic's two south knee windows (25, 40) and (35, 40) look onto the deck, so the lookout sees into the attic.
+  line from the eye (1.6 m) to it clears every prop but its holder. 12 spots, all reachable.
+- **The roof walk**: from the dormer's window; its sill stands 0.15 m over the roof's top at the front wall, under the
+  game's 0.3 m step (`STEP_H`, base_mode.tres `step_height_m`), so a player steps out and back in without a jump (the
+  check fails a sill higher than that); the roof falls to 2.36 m over the attic floor at the eave 1 m below. 440.9 m2
+  of roof are walkable from it.
+- **The eave** is an open edge, a fall: each roof piece's collision is its panel's hull, and the eave piece's falls
+  with the pitch to its outer edge with no lip, gutter or rail over the roof's top (`test_kit_spec`,
+  `test_the_eave_is_an_open_edge`). The walk keeps a player's axis 0.2 m inside the roof's outline (`EDGE_M`) only to
+  measure where one stands. The south eave is about 8.8 m over the ground floor (the attic floor 6.4 m plus 2.36 m).
+  The art side builds nothing more: what a fall does (damage, a kill, a fall volume under the eaves) is the game's
+  rule, on the game side.
+- **The window and the crouch** (the engineer, 2026-10-10: the dormer keeps a window, the game adds a crouch). The
+  check models a crouched player: the crouch capsule taken as 1.2 m tall, radius 0.4 (`CROUCH_H`, an assumption for
+  the game side: the crouch capsule must be at most 1.2 m tall to pass the window). The window's clear opening must
+  pass it with a margin: at least 0.9 m wide (`CLEAR_MARGIN` 0.05 a side) and 1.3 m high (`CLEAR_H`); the 1.0 x 1.4 m
+  window does. The sill stands at most 0.3 m (`STEP_H`) over the roof outside (0.15 m) and over the stair's top
+  landing inside (0 m). The standing capsule stays the game's 1.8 m (base_mode.tres).
+- **The casement** hinges on the window's world-west jamb (x 34.5) and stands open 95 deg outward
+  (`kit_geom.DORMER_CASEMENT_DEG`), swung just past square to the front toward the south-west: its leaf keeps clear of
+  the crouched capsule's lane straight out and of the way east to the Lookout
+  (`test_the_open_casement_keeps_clear_of_the_climb_out`). Until #111 it hinged on the east jamb, across that way.
+- The stair's 43.6 deg leaves 1.4 deg under the floor limit: a steeper stair fails the check.
+- **The lookout** (`[roof.lookout]`): from each eye 1.6 m over the roof's top, the share of sample points on the plot's
+  wicket and gates (`plot.toml`'s fence openings) seen over the roof and its props, and every window of the house in
+  view. The station is on the south slope near (39, 41.9), 11.09 m up: wicket 100 %, gates 100 %, no house window in
+  view; across the yard the garage's three windows (68, 34), (72, 38) and (72, 43) are in view (the game side decides
+  whether that matters).
 
 **The review shoot**: `tools/run.sh attic --shoot DIR [--kit DIR]` (Godot, off-screen, about 2 minutes) generates the
 house's scenes into `godot/import/house`, stages their kit GLBs (each `--kit` folder is searched before the layout's
-`kit_dir`: for a piece not yet in the kit's raw folder, built by `kit --only ... --out`) and
-the library GLBs of the dressing, and renders through `godot/house/zones.gd` at dusk: grey labelled boxes for the
-placeholders, the hiding spots (0.12 m, at their height) and the fence openings the lookout must see, two warm review lamps under the ridge (review only), and
-the views in `commands/attic.py` (`VIEWS`: from the hatch, inside at 1.6 m, the hiding spots of the south-west corner
-and the north eave, the deck from above and from the roof door; one lookout view per `[lookout] eyes`). Frames
-1600x900 and `sheet.png` (1280 px wide) go to DIR.
+`kit_dir`: for a piece not yet in the kit's raw folder, built by `kit --only ... --out`) and the library GLBs of the
+dressing, and renders through `godot/house/zones.gd` at dusk: grey labelled boxes for the placeholders, the hiding
+spots (0.12 m, at their height) and the fence openings the lookout must see, two warm review lamps under the ridge
+(review only), and the views in `commands/attic.py` (`VIEWS`: from the hatch toward the dormer, inside at 1.6 m, the
+hiding spots of the south-west corner and the north eave, the climb-out, the roof from the street (the roof look
+round's south-east camera, high enough that the whole roof shows) and from the south-east, higher, on the slope out
+of the dormer, from the ridge to the yard; one lookout view per eye). Frames 1600x900 and `sheet.png` (1280 px wide)
+go to DIR.
 
 ## Light (#83a)
 

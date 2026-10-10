@@ -1,12 +1,13 @@
-"""`attic`: checks the attic's old things and hiding spots and the roof deck's dressing and lookout
-(layouts/house/dressing/attic_roof/attic.toml and roof.toml, house_attic.py; docs/house.md, "The attic and the roof
-deck") and writes the report: every spot's standing point, the lookout's view per eye. With --shoot, it generates the house's
-scenes, places the dressing (library GLBs, grey boxes for the placeholders) and shoots the attic and the roof deck at
-dusk in an off-screen Godot window through godot/house/zones.gd."""
+"""`attic`: checks the attic's old things and hiding spots and the free roof's stations and lookout
+(layouts/house/dressing/attic_roof/attic.toml, house_attic.py; docs/house.md, "The attic and the free roof") and writes
+the report: every spot's standing point, the dormer's climb-out, the lookout's view per eye. With --shoot, it generates
+the house's scenes, places the dressing (library GLBs, grey boxes for the placeholders) and shoots the attic and the
+free roof at dusk in an off-screen Godot window through godot/house/zones.gd."""
 
 from __future__ import annotations
 
 import argparse
+import math
 import json
 import tomllib
 from pathlib import Path
@@ -16,14 +17,14 @@ from . import _props, zones
 from . import house as house_cmd
 
 NAME = "attic"
-HELP = "check the attic's hiding spots and the roof deck's dressing and lookout (layouts/house/dressing)"
+HELP = "check the attic's hiding spots and the free roof's stations and lookout (layouts/house/dressing)"
 
 
 def add_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--json", type=Path, default=common.ROOT / "tools" / "out" / "attic" / "report.json",
                         help="where the report goes (default tools/out/attic/report.json)")
     parser.add_argument("--shoot", type=Path, metavar="DIR",
-                        help="then shoot the attic and the roof deck at dusk off-screen into DIR (sheet.png, frames)")
+                        help="then shoot the attic and the free roof at dusk off-screen into DIR (sheet.png, frames)")
     parser.add_argument("--kit", type=Path, action="append", default=[], metavar="DIR",
                         help="a folder searched before the layout's kit_dir for kit GLBs (a piece not built there yet)")
 
@@ -35,11 +36,24 @@ def run(args: argparse.Namespace) -> int:
     spots = rep["attic"]["spots"]
     common.say(f"attic: {rep['attic']['items']} items, {sum(s['reachable'] for s in spots)}/{len(spots)} hiding "
                f"spots reachable for a pick-up")
+    for c in rep["attic"]["climb"]:
+        common.say(f"attic: {c['id']} from its foot {c['foot']} (reached from the hatch) up {c['top_h']:.3f} m at "
+                   f"{c['slope_deg']} deg to {c['top']}, the dormer window's sill")
+    for dm in rep["roof"]["dormers"]:
+        w, h = dm["opening"]
+        common.say(f"roof: dormer {dm['id']}: window at {dm['window']}, {w:g} x {h:g} m, its sill {dm['sill']:.2f} m over "
+                   f"the attic floor, {dm['step_at_wall']:.2f} m over the roof at its front wall (the game's step "
+                   f"{house_attic.STEP_H:g} m), the eave {dm['roof_top_eave']:.2f} m; {rep['roof']['walkable_m2']} m2 of "
+                   f"roof walkable from it")
+        common.say(f"roof: dormer {dm['id']}: a crouched {house_attic.CROUCH_H:g} m capsule climbs out (clear "
+                   f"{w:g} x {h:g} m against {2 * (house_attic.PLAYER_R + house_attic.CLEAR_MARGIN):g} x "
+                   f"{house_attic.CLEAR_H:g} m)")
     for k, v in enumerate(rep["roof"]["lookout"]):
         see = ", ".join(f"{t} {100 * f:.0f}%" for t, f in v["see"].items())
         label = "the station" if k == 0 else "an alternative, not the acceptance"
-        common.say(f"roof: lookout eye {v['eye']} ({label}): {see}; house windows in view {len(v['house_windows'])}; "
-                   f"attic windows in view {v['attic_windows'] or 'none'}")
+        common.say(f"roof: lookout eye {v['eye']} at {v['eye_h']:.2f} m ({label}): {see}; house windows in view "
+                   f"{len(v['house_windows'])}; attic windows {v['attic_windows'] or 'none'}; across the yard "
+                   f"{v['other_windows'] or 'none'}")
     if rep["roof"]["open"]:
         for m in rep["roof"]["not_met"]:
             common.say(f"roof: NOT MET, open for the engineer: {m}")
@@ -55,25 +69,92 @@ def run(args: argparse.Namespace) -> int:
     return shoot(args.shoot.resolve(), [k.resolve() for k in args.kit])
 
 
-F = 6.4  # the attic's and the deck's floor (layouts/house/attic.toml, roof.toml); views are plan [x, y, height]
-## Review lamps under the attic's ridge (review only; the game's lights are #83a's): plan x, y, height over the floor.
-LAMPS = [[25.0, 33.0, 3.6], [35.0, 33.0, 3.6]]
-LAMP = [[1.0, 0.8, 0.55], 1.6, 9.0]
-## Name, title, eye, look (plan x, y, height), fov. The hatch's hole centres at (28, 29).
+F = 6.4  # the attic's floor (layouts/house/attic.toml); views are plan [x, y, height]
+
+
+def _top(y: float) -> float:
+    """The roof's top at plan y over the ground (where a player on the free roof stands)."""
+    return F + house_attic.roof_top(house_layout.load(), y)
+
+
+## Review lamps (review only; the game's lights are #83a's): plan x, y, height over the floor: two under the attic's
+## ridge, one over the climb-out stair and one in the dormer under its ridge, so the climb-out reads (art #77).
+LAMPS = [[25.0, 34.0, 4.0], [35.0, 34.0, 4.0], [35.0, 39.0, 3.4], [35.0, 41.8, 3.3]]
+LAMP = [[1.0, 0.8, 0.55], 2.4, 9.0]
+## Name, title, eye, look (plan x, y, height), fov. The hatch's hole centres at (28, 29); the dormer's window at
+## (35, 43), its sill 2.97 m over the attic floor; the ridge on y 34.
 VIEWS = [
-    ["hatch", "attic: from the hatch (head 0.9 m over the floor)", [28.0, 29.6, F + 0.9], [36.0, 37.0, F + 1.0], 75.0],
-    ["inside", "attic: inside at 1.6 m, toward the west gable", [38.5, 36.0, F + 1.6], [20.0, 30.0, F + 1.4], 75.0],
-    ["spots_sw", "attic: hiding spots, the south-west corner", [27.0, 33.5, F + 1.6], [21.0, 39.0, F + 0.4], 75.0],
-    ["spots_n", "attic: hiding spots, the north eave", [29.0, 33.0, F + 1.6], [23.0, 26.5, F + 0.4], 75.0],
-    ["deck_high", "roof deck from the south-east, high", [50.0, 52.0, F + 9.0], [30.0, 34.0, F], 55.0],
-    ["deck_door", "roof deck: out of the roof door at 1.6 m, toward the south strip", [41.5, 32.0, F + 1.6],
-     [36.0, 43.5, F + 0.5], 75.0],
+    ["hatch", "attic: from the hatch (head 0.9 m over the floor), toward the dormer", [28.0, 29.6, F + 0.9],
+     [35.0, 41.0, F + 1.8], 75.0],
+    ["inside", "attic: inside at 1.6 m, toward the west gable", [40.5, 36.0, F + 1.6], [18.0, 30.0, F + 1.4], 75.0],
+    ["spots_sw", "attic: hiding spots, the south-west corner", [25.0, 37.5, F + 1.6], [19.0, 43.0, F + 0.4], 75.0],
+    ["spots_n", "attic: hiding spots, the north eave", [27.0, 31.0, F + 1.6], [21.0, 24.5, F + 0.4], 75.0],
+    ["climb_out", "attic: the climb-out, the dormer's window over its stair", [35.0, 38.0, F + 1.6],
+     [35.0, 43.5, F + 3.2], 75.0],
+    # the street camera of the roof look round (research/2026-10-10-roof-look, roofl.py): south-east, high enough
+    # that the whole roof shows, so the review frame sits beside the look round's
+    ["street", "the free roof from the street, south-east", [45.0, 57.0, 12.5], [31.0, 38.0, 10.2], 50.0],
+    ["roof_high", "the free roof from the south-east, high", [54.0, 58.0, F + 10.0], [30.0, 34.0, F + 2.0], 55.0],
+    ["slope", "on the south slope out of the dormer at 1.6 m, toward the lookout", [33.5, 43.4, _top(43.4) + 1.6],
+     [40.0, 40.0, _top(40.0) + 1.0], 75.0],
+    ["ridge", "from the ridge at 1.6 m to the yard", [30.0, 34.2, _top(34.2) + 1.6], [30.0, 56.0, 0.0], 75.0],
 ]
+CROUCH_BACK = 0.6  # the climb crouches this far (plan) before the stair's top, under the dormer's roof
+OUT_M = 1.2  # the crouched capsule's first stop out of the window (plan, from the window): past the lead apron
+# (kit_geom.DORMER_APRON 0.6 m) by more than the capsule's radius, so it stands on the tiles; it stops 0.3 m short
+ASIDE_M = 1.8  # then sideways along the slope, clear of the dormer's front, toward the Lookout
+CROUCH_SPEED = 1.5  # m/s; standing 3 (house/walk.gd)
+
+
+def walks(data: dict) -> list[dict]:
+    """The climb-out as a Godot capsule walk (zones.gd `walks`, Godot [x, h, z]): from each dormer's stair foot the
+    standing capsule (house_attic.PLAYER_H) walks up the stair to CROUCH_BACK before its top, crouches
+    (house_attic.CROUCH_H) through the window onto the slope, stands up there, walks to the Lookout station and back,
+    crouches back in and stands to walk down to the stair's foot. It steps up ledges as the game's controller does
+    (house_attic.STEP_H): the sill stands 0.15 m over the roof outside."""
+    out = []
+    cs = house_attic.climbs(data)
+    station = house_attic.load("attic")["roof"]["lookout"]["station"]
+    for dm in house_attic.dormers(data):
+        c = next(c for c in cs if math.dist(c["top"], dm["inner"]) <= 0.2)
+        dx, dy = (c["top"][0] - c["foot"][0], c["top"][1] - c["foot"][1])
+        run = math.hypot(dx, dy) - house_attic.CLIMB_FOOT
+        ux, uy = dx / (run + house_attic.CLIMB_FOOT), dy / (run + house_attic.CLIMB_FOOT)
+        crouch = (c["top"][0] - ux * CROUCH_BACK, c["top"][1] - uy * CROUCH_BACK)
+        # coming down, a leg stops 0.3 m short of its last point: aim past the crouch point by twice that, so the
+        # capsule stands up where it stood on the way up (the up leg's stop), clear of the dormer's front over the head
+        back = CROUCH_BACK + 0.6
+        crouch_in = (c["top"][0] - ux * back, c["top"][1] - uy * back)
+        ox, oy = (dm["out"][0] - dm["window"][0], dm["out"][1] - dm["window"][1])
+        n = math.hypot(ox, oy)
+        sill_out = (dm["window"][0] + ox / n * OUT_M, dm["window"][1] + oy / n * OUT_M)
+        side = 1.0 if (station[0] - sill_out[0]) * -oy / n + (station[1] - sill_out[1]) * ox / n >= 0 else -1.0
+        aside = (sill_out[0] - side * oy / n * ASIDE_M, sill_out[1] + side * ox / n * ASIDE_M)
+
+        def g(p, h):
+            return [round(p[0], 3), round(F + h, 3), round(p[1], 3)]
+        hc = c["top_h"] * (run - CROUCH_BACK) / run
+        stair = [g(c["foot"], 0.0), g(crouch, hc)]
+        roof = [g(sill_out, house_attic.roof_top(data, sill_out[1])), g(aside, house_attic.roof_top(data, aside[1]))]
+        look = g(station, house_attic.roof_top(data, station[1]))
+        P, C, R = house_attic.PLAYER_H, house_attic.CROUCH_H, house_attic.PLAYER_R
+        out.append({"name": dm["id"], "radius": R, "step": house_attic.STEP_H, "start": stair[0], "legs": [
+            {"name": "up the stair, standing", "height": P, "points": stair[1:]},
+            {"name": "crouched out of the window", "height": C, "speed": CROUCH_SPEED,
+             "points": [g(c["top"], c["top_h"]), g(dm["window"], dm["sill"]), roof[0]]},
+            {"name": "stand on the slope, to the Lookout", "height": P, "points": [roof[1], look]},
+            {"name": "back to the window, standing", "height": P, "points": roof[::-1]},
+            {"name": "crouched back in", "height": C, "speed": CROUCH_SPEED,
+             "points": [g(dm["window"], dm["sill"]), g(c["top"], c["top_h"]), g(crouch_in, c["top_h"] * (run - back) / run)]},
+            {"name": "down the stair, standing", "height": P, "points": stair[:1]}]})
+    return out
+
+
 LOOKOUT_FOV = 70.0  # wide enough for both openings (the wicket due south, the gates south-east)
 
 
 def shoot_request(kits: list[Path], scenes: Path = house_cmd.DEFAULT_OUT) -> tuple[dict, dict[str, Path], list[str]]:
-    """The zones.gd request for the attic and the deck, the GLBs to stage and the kit pieces found nowhere."""
+    """The zones.gd request for the attic and the free roof, the GLBs to stage and the kit pieces found nowhere."""
     data = house_layout.load()
     planned = house_layout.plan(data)
     summary = house_layout.write_scenes(data, planned, scenes)
@@ -89,9 +170,12 @@ def shoot_request(kits: list[Path], scenes: Path = house_cmd.DEFAULT_OUT) -> tup
     lib = _props.default_out(_props.load())
     pieces = [{"zone": "house", "id": "house", "src": "layout", "pos": [0, 0, 0], "yaw": 0.0,
                "scene": f"{data['settings']['scene_res'].rstrip('/')}/house.tscn"}]
-    for name in ("attic", "roof"):
-        for it in house_attic.load(name)["items"]:
-            entry = {"zone": name, "id": it["id"], "src": it["src"], "pos": [it["at"][0], F, it["at"][1]],
+    attic = house_attic.load("attic")
+    roof = house_attic.roof_zone(attic, data)
+    for name, z in (("attic", attic), ("roof", roof)):
+        for it in z["items"]:
+            fy = F if name == "attic" else F + house_attic.roof_top(data, it["at"][1])  # roof items on the slope's top
+            entry = {"zone": name, "id": it["id"], "src": it["src"], "pos": [it["at"][0], fy, it["at"][1]],
                      "yaw": it["yaw"]}
             if it["src"] == "library":
                 staged[f"prop_{it['id']}"] = lib / f"{it['id']}.glb"
@@ -99,10 +183,9 @@ def shoot_request(kits: list[Path], scenes: Path = house_cmd.DEFAULT_OUT) -> tup
             else:
                 entry["size"] = it.get("size", [0.6, 0.6, 0.6])
             pieces.append(entry)
-    for sp in house_attic.load("attic").get("spots", []):  # the hiding spots as small labelled boxes at their height
+    for sp in attic.get("spots", []):  # the hiding spots as small labelled boxes at their height
         pieces.append({"zone": "spots", "id": sp["name"], "src": "spot", "yaw": 0.0, "size": [0.12, 0.12, 0.12],
                        "pos": [sp["at"][0], F + float(sp["h"]), sp["at"][1]]})
-    roof = house_attic.load("roof")
     with house_attic.PLOT.open("rb") as f:
         plot = tomllib.load(f)
     post_h = float(plot["fence"].get("post_h", 1.8))
@@ -116,13 +199,14 @@ def shoot_request(kits: list[Path], scenes: Path = house_cmd.DEFAULT_OUT) -> tup
     views = [list(v) for v in VIEWS]
     for k, (x, y) in enumerate(roof["lookout"]["eyes"]):
         views.append([f"lookout_{k + 1}", f"lookout at ({x:g}, {y:g}), eye 1.6 m, toward {' and '.join(see)}",
-                      [x, y, F + 1.6], [tx, ty, 0.8], LOOKOUT_FOV])
+                      [x, y, _top(y) + 1.6], [tx, ty, 0.8], LOOKOUT_FOV])
     spec = json.loads(zones.KIT_SPEC.read_text(encoding="utf-8"))
     mats = [spec["materials"][m] for m in spec.get("packs", {}).get("set", {}).get("layers", [])]
     pack = {"textures": (kit_dir / "textures").as_posix(), "roughness": [m["roughness"] for m in mats],
             "normal_strength": [m["normal_strength"] for m in mats]} if len(mats) == 3 else {}
     lamps = [[x, F + h, y] for x, y, h in LAMPS]
-    return {"pieces": pieces, "views": views, "pack": pack, "lamps": lamps, "lamp": LAMP}, staged, missing
+    return {"pieces": pieces, "views": views, "pack": pack, "lamps": lamps, "lamp": LAMP,
+            "walks": walks(data)}, staged, missing
 
 
 def shoot(folder: Path, kits: list[Path]) -> int:

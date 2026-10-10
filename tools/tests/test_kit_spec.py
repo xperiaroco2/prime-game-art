@@ -229,7 +229,7 @@ class VersionTwoTest(unittest.TestCase):
               "stairs_main", "ladder_attic", "fence_gates_8m", "glass_door_2m", "garage_door_8m", "gable_tri_2m_up"}
 
     def test_v1_ids_stay_and_v2_appends(self) -> None:
-        self.assertEqual(SPEC["version"], 2)
+        self.assertEqual(SPEC["version"], 3)  # v3 (art #77): the 0.35 roof pitch, the dormer, the attic chimney
         ids = [p["id"] for p in SPEC["pieces"]]
         self.assertEqual(self.V1_IDS - set(ids), set())
         self.assertLess(ids.index("garage_door_8m"), ids.index("pillar_concrete"))
@@ -246,11 +246,24 @@ class VersionTwoTest(unittest.TestCase):
 
     def test_pitch_is_the_spec_parameter(self) -> None:
         pp = G.pitch(SPEC)
-        self.assertAlmostEqual(pp["deg"], 35.0, delta=0.1)
+        self.assertAlmostEqual(pp["deg"], 19.29, delta=0.1)  # Q2 B (art #77): 0.35 per metre
         s2 = copy.deepcopy(SPEC)
-        s2["grid"]["gable_rise_per_m"] = 0.35
+        s2["grid"]["gable_rise_per_m"] = 0.7
         d = G.describe(G.build_piece(PIECES["roof_pitched_2x2"], s2), s2)
-        self.assertLess(d["bounds_m"]["max"][1], KIT["roof_pitched_2x2"]["bounds_m"]["max"][1] - 0.6)
+        self.assertGreater(d["bounds_m"]["max"][1], KIT["roof_pitched_2x2"]["bounds_m"]["max"][1] + 0.6)
+        # the greenhouse keeps its own 0.7 glass pitch
+        self.assertEqual(G.glass_rise(SPEC), 0.7)
+        self.assertAlmostEqual(KIT["glass_roof_2x2"]["bounds_m"]["max"][1], 2 * 0.7 + G.GLASS_LIFT + 0.008, places=6)
+
+    def test_the_eave_is_an_open_edge(self) -> None:
+        # the free roof's eave is a fall (art #77): the eave piece's collision falls with the pitch to its outer edge,
+        # with no lip, gutter or rail over the roof's top that would hold a player back
+        (c,) = G.build_piece(PIECES["roof_pitched_eave_2m"], SPEC).colliders
+
+        def top(z: float) -> float:
+            return max(p[1] for p in c["points"] if abs(p[2] - z) < 1e-6)
+        self.assertAlmostEqual(top(0.0) - top(-0.5), 0.5 * SPEC["grid"]["gable_rise_per_m"], places=6)
+        self.assertLessEqual(max(p[1] for p in c["points"]), top(0.0) + 1e-6)
 
     def test_knee_door_casing_stays_under_the_wall_top(self) -> None:
         self.assertLessEqual(KIT["wall_knee_2m_door_int"]["bounds_m"]["max"][1], 2.2 + 1e-6)
@@ -320,3 +333,111 @@ class VersionTwoTest(unittest.TestCase):
             rows = kit.merge_rows(path, [{"id": "b", "v": 2}, {"id": "d", "v": 2}], ["a", "b", "c", "d"])
             self.assertEqual([(r["id"], r["v"]) for r in rows], [("a", 1), ("b", 2), ("c", 1), ("d", 2)])
             self.assertEqual(kit.merge_rows(Path(tmp) / "none.json", rows[:1], ["a"]), rows[:1])
+
+class FreeRoofTest(unittest.TestCase):
+    """Art #77: the pantile courses, the half-round ridge cap and the dormer's faces."""
+
+    def test_pantiles_meet_on_the_course_grid(self) -> None:
+        pp = G.pitch(SPEC)
+        top = lambda z: pp["u"] + pp["tv"] + pp["r"] * z  # noqa: E731
+        m = G.build_piece(PIECES["roof_pitched_2x2"], SPEC).mesh
+        tiles = [[m.verts[i] for i in f] for f, r in zip(m.faces, m.roles) if r.startswith("tile")]
+        self.assertTrue(tiles)
+        hi = {round(v[2], 4): max(q[1] for f in tiles for q in f if abs(q[2] - v[2]) < 1e-6) for f in tiles for v in f}
+        # every course boundary (multiples of 1/3) holds the lip, the panel's top end sinks to the slab's top; the S's
+        # roll crowns each tile
+        crown = max(h for _, h in G.TILE_S)
+        self.assertAlmostEqual(hi[0.0], top(0.0) + G.TILE_LIP + crown, places=5)
+        self.assertAlmostEqual(hi[round(1 / 3, 4)], top(1 / 3) + G.TILE_LIP + crown, places=5)
+        self.assertAlmostEqual(hi[2.0], top(2.0) + crown, places=5)
+        self.assertGreaterEqual(len({r for r in m.roles if r.startswith("tile")}), 2)  # the clay's spread
+        self.assertLessEqual(m.triangles(), SPEC["budget_tris"]["roof"])
+
+    def test_pantile_s_meets_across_tiles(self) -> None:
+        w = G.TILE_W
+        self.assertAlmostEqual(G.TILE_S[0][1], G.TILE_S[-1][1])  # a tile's edges meet its neighbours'
+        for k in (-3, 0, 1, 5):
+            self.assertAlmostEqual(G.tile_lift(k * w), G.TILE_S[0][1], places=6)
+            self.assertAlmostEqual(G.tile_lift((k + 0.45) * w), 0.0, places=6)  # the pan
+            self.assertAlmostEqual(G.tile_lift((k + 0.78) * w), 0.045, places=6)  # the roll
+        self.assertEqual(G._tile_xs(0.0, w), [0.0, 0.45 * w, 0.78 * w, w])
+
+    def test_eave_wears_moss_and_hangs_a_gutter(self) -> None:
+        m = G.build_piece(PIECES["roof_pitched_eave_2m"], SPEC).mesh
+        self.assertIn("tile_moss", m.roles)
+        self.assertIn("zinc", m.roles)
+        zg, yg = G.gutter_axis(SPEC)
+        zinc = [m.verts[i] for f, r in zip(m.faces, m.roles) if r == "zinc" for i in f]
+        self.assertAlmostEqual(min(v[1] for v in zinc), yg - G.GUTTER_R, places=4)
+        self.assertLess(max(v[2] for v in zinc if v[1] <= yg + 1e-6), -0.5)  # the gutter: in front of the fascia
+        self.assertNotIn("tile_moss", G.build_piece(PIECES["roof_pitched_2x2"], SPEC).mesh.roles)
+
+    def test_downpipe_reaches_the_ground_on_the_wall(self) -> None:
+        b = KIT["roof_downpipe"]["bounds_m"]
+        self.assertAlmostEqual(b["min"][1], -PIECES["roof_downpipe"]["drop"], delta=0.05)
+        self.assertGreater(b["max"][2], -SPEC["grid"]["wall_t_m"] / 2 - 0.01)  # the clips touch the wall's face
+        self.assertLess(b["max"][2], 0.0)
+
+    def test_chimney_is_brick_over_the_roof_with_lead_on_the_tiles(self) -> None:
+        for pid in ("chimney_attic", "chimney_attic_n"):
+            p, d = PIECES[pid], KIT[pid]
+            top = G.chimney_roof(p, SPEC)
+            self.assertTrue({"brick", "brick_b", "brick_c", "lead", "tile_c", "concrete"} <= set(d["roles"]), pid)
+            lead = [v for m in d["meshes"] for f, r in zip(m["faces"], m["roles"]) if r == "lead" for v in
+                    (m["verts"][i] for i in f)]
+            for x, y, z in lead:  # every lead vertex lies on or just over the tiles at its z
+                zz = min(max(z, -0.4), 1.4)
+                self.assertGreaterEqual(y, top(zz) + G.LEAD_ON_TILES - 0.01, (pid, x, y, z))
+                self.assertLessEqual(y, top(zz) + G.LEAD_ON_TILES + 0.2, (pid, x, y, z))
+            self.assertAlmostEqual(d["bounds_m"]["min"][1], 0.0)
+        self.assertGreater(KIT["chimney_attic"]["bounds_m"]["max"][1], PIECES["chimney_attic"]["height"] + 1.0)  # aerial
+
+    def test_vent_stands_on_the_slope(self) -> None:
+        for pid in ("roof_vent", "roof_vent_n"):
+            b = KIT[pid]["bounds_m"]
+            self.assertAlmostEqual(b["max"][1], PIECES[pid]["height"], delta=0.01)
+            self.assertGreater(b["min"][1], -G.pitch(SPEC)["tv"])  # the pipe stays inside the slab
+
+    def test_eave_has_a_snow_guard_over_the_overhang(self) -> None:
+        pp = G.pitch(SPEC)
+        p = PIECES["roof_pitched_eave_2m"]
+        self.assertTrue(p["z"][0] < G.SNOW_GUARD_Z < p["z"][1])
+        rail = pp["u"] + pp["tv"] + pp["r"] * G.SNOW_GUARD_Z + G.SNOW_GUARD_H
+        ys = [v[1] for m in KIT["roof_pitched_eave_2m"]["meshes"] for v in m["verts"]]
+        self.assertTrue(any(abs(y - rail) < 1e-3 for y in ys))
+
+    def test_tile_roles_share_the_set_material(self) -> None:
+        for r in G.TILE_ROLES:
+            self.assertEqual(SPEC["roles"][r]["material"], "concrete")
+
+    def test_ridge_cap_is_half_round_over_the_apex(self) -> None:
+        pp = G.pitch(SPEC)
+        b = KIT["roof_pitched_ridge_2m"]["bounds_m"]
+        self.assertAlmostEqual(b["max"][1], pp["u"] + pp["tv"] + G.RIDGE_R, places=4)
+        self.assertAlmostEqual(b["max"][2], G.RIDGE_BED, places=4)
+
+    def test_dormer_has_no_duplicate_faces(self) -> None:
+        m = G.build_piece(PIECES["dormer_gable"], SPEC).mesh
+        keys = [tuple(sorted(f)) for f in m.faces]
+        self.assertEqual(len(keys), len(set(keys)))
+
+    def test_dormer_front_band_collider_reaches_the_apron_toe(self) -> None:
+        # the lead apron's wedge is folded into the hull of the wall band under the sill (the crouched capsule's ramp
+        # back in): still 11 colliders, one of them reaching DORMER_APRON down the slope at the roof's top, up to the
+        # sill's top, across the dormer's width, and nowhere under the roof slab's underside (into the attic)
+        p = PIECES["dormer_gable"]
+        pc = G.build_piece(p, SPEC)
+        self.assertEqual(len(pc.colliders), 11)
+        dd = G.dormer_dims(p, SPEC)
+        a = G.DORMER_APRON
+        toe_y = dd["u"] + dd["tv"] - dd["r"] * a
+        bands = [c for c in pc.colliders
+                 if any(abs(q[2] + a) < 1e-4 and abs(q[1] - toe_y) < 1e-4 for q in c["points"])]
+        self.assertEqual(len(bands), 1)
+        b = G.bounds(bands[0]["points"])
+        self.assertAlmostEqual(b["min"][2], -a, places=4)
+        self.assertAlmostEqual(b["max"][1], dd["sill"], places=4)
+        self.assertAlmostEqual(b["min"][0], 0.0, places=4)
+        self.assertAlmostEqual(b["max"][0], dd["W"], places=4)
+        for x, y, z in bands[0]["points"]:
+            self.assertGreaterEqual(y, dd["u"] + dd["r"] * min(z, 0.0) - 1e-4, (x, y, z))

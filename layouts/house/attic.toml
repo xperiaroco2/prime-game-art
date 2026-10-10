@@ -10,38 +10,36 @@ walls = "knee"
 id = "attic"
 title = "Attic"
 node = "Attic"
-rect = [20, 26, 20, 14]
+rect = [18, 24, 24, 20]
 kind = "room"
 floor = "boards"
+# The free roof (art #77, the engineer's pick 2026-10-10): no deck; the Lookout and the Loot stand on the roof's
+# slopes, their heights the roof's top there (house_attic.roof_top: knee 2.2 + 0.35 per metre from the eave + the
+# slab's top). Lookout: the south slope at (39, 41.9), 2.1 m up from the eave; Loot: the north slope at (41, 26), the
+# design doc's north-east corner.
 stations = [
-  { name = "HidingSpots", at = [4.0, 0.0, 10.0] },
+  { name = "HidingSpots", at = [4.0, 0.0, 15.0] },
+  { name = "Lookout", at = [21.0, 3.092, 17.9] },
+  { name = "Loot", at = [23.0, 3.057, 2.0] },
 ]
 markers = [
-  { name = "Knife3", at = [16.0, 0.0, 11.0], group = "spawn_knife" },
+  { name = "Knife3", at = [18.0, 0.0, 13.0], group = "spawn_knife" },
 ]
 
-[[doors]]
-at = [40, 33]
-rooms = ["attic", "roof"]
-names = { attic = "Door1", roof = "Door1" }
-kind = "door"
-leaf = "none"
-note = "the locked door to the roof deck (doc 39.5, 33)"
-
 [[windows]]
-at = [25, 26]
+at = [25, 24]
 room = "attic"
 
 [[windows]]
-at = [35, 26]
+at = [35, 24]
 room = "attic"
 
 [[windows]]
-at = [25, 40]
+at = [25, 44]
 room = "attic"
 
 [[windows]]
-at = [35, 40]
+at = [35, 44]
 room = "attic"
 
 [[holes]]
@@ -61,7 +59,46 @@ note = "Climbs south (art #76): its foot on the landing at y 28.3, the top on th
 [[roofs]]
 id = "attic_roof"
 room = "attic"
-rect = [20, 26, 20, 14]
+rect = [18, 24, 24, 20]
 gables = true
-windows = [[20, 31], [40, 31]]  # a gable window pair (art #77): the kit's gable_band_2m_window, the north 2 m row's lowest band
-note = "the kit's pitched roof on the knee walls: eaves on y 26 and 40, the ridge at y 33, gables on x 20 and 40; its pitch is the kit's gable_rise_per_m (Q2)"
+note = "the free roof (art #77) on the knee walls round the house's footprint: eaves on y 24 and 44, the ridge at y 34, gables on x 18 and 42; its pitch is the kit's gable_rise_per_m (Q2 B: 0.35, 19.3 deg). No gable windows: a 0.7 m gable band cannot hold the 0.9 m gable window (the roof options lab); the dormer lights the attic"
+
+[[pieces]]
+piece = "chimney_attic"
+room = "attic"
+at = [40.0, 0.0, 39.5]
+note = "the south chimney (art #77, the roof options lab's (40.5, 40)): 1 x 1 m from its north-west corner, from the attic floor through the south slope"
+
+[[pieces]]
+piece = "chimney_attic_n"
+room = "attic"
+at = [21.5, 0.0, 27.0]
+note = "the north chimney (the lab's (22, 27.5)), through the north slope"
+
+[[pieces]]
+piece = "roof_vent"
+room = "attic"
+at = [27.85, 4.9819, 36.35]
+note = "a soil vent through the south slope (art #77): its axis at (28, 36.5), 7.5 m up from the eave; h the roof's top there (house_attic.roof_top)"
+
+[[pieces]]
+piece = "roof_vent_n"
+room = "attic"
+at = [30.85, 4.6319, 30.35]
+note = "a soil vent through the north slope: its axis at (31, 30.5), 6.5 m up from the eave"
+
+[[dormers]]
+id = "climb_out"
+roof = "attic_roof"
+slope = "S"
+x = 34
+z = [1, 8]
+piece = "dormer_gable"
+note = "the gable dormer the players climb out of onto the south slope (art #77): the 2 m panel column x 34..36 from 1 m up the slope (its front wall at y 43) to 8 m (y 36), where its ridge meets the main roof (the kit piece's 7 m); a 2 x 1 panel fills the column below and above it"
+
+[[pieces]]
+piece = "stair_dormer"
+room = "attic"
+at = [35.5, 0.0, 39.85]
+turn = -90
+note = "the climb-out stair (art #77): its foot at y 39.85, climbing south 3 m to the dormer window's sill (2.857 m) at the front wall's inner face (y 42.85), x 34.5..35.5 under the 1 m window; 43.6 deg, so the capsule walks it; lit by the dormer's lamp (lights.toml)"

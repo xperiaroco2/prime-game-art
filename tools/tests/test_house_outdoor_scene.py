@@ -1,11 +1,12 @@
 """The Godot proof's request of the House map's plot (tools/runner/house_outdoor_scene.py, godot/outdoor/proof.gd,
-docs/house-outdoor.md "The proof"): every placed piece is a kit v2 piece, the stand-ins stay off the walks, the walks
+docs/house-outdoor.md "The proof"): every placed piece is a house kit piece, the stand-ins stay off the walks, the walks
 cross the openings and end at the passage pad, the controls cross the fence away from the openings. Pure Python."""
 
 from __future__ import annotations
 
 import json
 import tempfile
+import tomllib
 import unittest
 from pathlib import Path
 
@@ -89,3 +90,22 @@ class SceneRequestTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class DefaultKitTest(unittest.TestCase):
+    def test_the_proofs_default_to_the_kit_specs_version(self) -> None:
+        from runner.commands import _kit, outdoor
+        spec = json.loads((ROOT / "kits" / "house.json").read_text(encoding="utf-8"))
+        self.assertEqual(outdoor.default_kit(), _kit.default_out(spec))
+        self.assertRegex(outdoor.default_kit().name, rf"^v{spec['version']}[a-z]?$")  # not a stale v2 (art #77)
+
+    def test_the_house_kit_builds_where_the_layout_reads(self) -> None:
+        # one setting (layouts/house/house.toml kit_dir): `kit`, `house`, `attic`, `outdoor` and `garden` share it
+        from runner import common
+        from runner.commands import _kit
+        spec = json.loads((ROOT / "kits" / "house.json").read_text(encoding="utf-8"))
+        with _kit.HOUSE_SETTINGS.open("rb") as f:
+            kit_dir = tomllib.load(f)["kit_dir"]
+        self.assertEqual(_kit.default_out(spec), common.raw_dir() / kit_dir)
+        other = dict(spec, version=spec["version"] + 1)  # a new version leaves the layout's older folder alone
+        self.assertEqual(_kit.default_out(other).name, f"v{other['version']}")
