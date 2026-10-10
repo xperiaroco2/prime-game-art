@@ -114,8 +114,10 @@ class GroundFloor(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.data = hl.load()
-        cls.files = hd.load(hl.LAYOUT_DIR / cls.data["settings"]["dressing_dir"])
         cls.rooms = {r["id"]: r for lv in cls.data["levels"] if lv["level"] == "ground" for r in lv["rooms"]}
+        # the ground floor's files (the basement's are #78's, test_house_basement)
+        cls.files = {rid: f for rid, f in hd.load(hl.LAYOUT_DIR / cls.data["settings"]["dressing_dir"]).items()
+                     if rid in cls.rooms}
 
     def test_eight_rooms(self):
         self.assertEqual({r for r in self.files if r in self.rooms}, set(ROOMS))  # the other floors: their own tests

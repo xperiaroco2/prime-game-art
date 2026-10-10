@@ -28,6 +28,8 @@ from . import house_sky as sky
 from .common import ROOT
 
 DATA = ROOT / "layouts" / "house" / "outdoor"
+HOUSE_GROUND = "ground.toml"  # beside the outdoor folder: the outdoor stairs' owner (house_stairs)
+STAIRS_ID = "outdoor_stairs"
 EPS = 1e-6
 
 # ---------------------------------------------------------------- data
@@ -38,7 +40,19 @@ def load(folder: Path = DATA) -> dict:
         plot = tomllib.load(f)
     with open(folder / "sky.toml", "rb") as f:
         plot["sky_cfg"] = tomllib.load(f)
+    plot["stairs"].update(house_stairs(folder.parent / HOUSE_GROUND))
     return plot
+
+
+def house_stairs(ground: Path) -> dict:
+    """The outdoor stairwell's rect and entry from their one owner, the house layout's ground floor (art #78: the walk
+    and the basement passage use it): the hole `outdoor_stairs` and the climb of its upper flight (the edge the player
+    steps down from)."""
+    with open(ground, "rb") as f:
+        g = tomllib.load(f)
+    hole = next(h for h in g.get("holes", []) if h["id"] == STAIRS_ID)
+    flight = next(s for s in g.get("stairs", []) if s["id"] == STAIRS_ID)
+    return {"rect": list(hole["rect"]), "entry": flight["climb"]}
 
 
 def turn_for(ext: tuple[int, int]) -> int:
