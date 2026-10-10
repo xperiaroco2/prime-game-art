@@ -373,7 +373,7 @@ func _plan(result: Dictionary, level: String = "ground") -> Image:
 		t.position = Vector3(rect[0] + rect[2] * 0.5, top + 4.0, rect[1] + rect[3] * 0.5)
 		root.add_child(t)
 		labels.append(t)
-	var square: Image = await _top_down("%s floor from above" % level)
+	var square: Image = await _top_down("%s floor from above" % ("second" if level == "upper" else level))
 	for t: Label3D in labels:
 		t.queue_free()
 	result["shots"]["plan_" + level] = _frame_info()
@@ -421,8 +421,8 @@ func _loop_plan(w: Dictionary, r: Dictionary, result: Dictionary) -> Image:
 		if Vector2(b.x - a.x, b.z - a.z).length() > 0.01:
 			seg.look_at(Vector3(b.x, 8.0, b.z), UP)
 		marks.append(seg)
-	var title: String = "%s: %s s walked at %s m/s (doc %s s)%s" % [w["name"], r["seconds"], w.get("speed", SPEED),
-		w["doc_s"], "" if r["arrived"] else ", STOPPED"]
+	var title: String = "%s: %s s at %s m/s, doc %s s%s" % [String(w["name"]).get_slice(":", 1), r["seconds"],
+		w.get("speed", SPEED), w["doc_s"], "" if r["arrived"] else ", STOPPED"]
 	var image: Image = await _top_down(title)
 	for m: Node3D in marks:
 		m.queue_free()
