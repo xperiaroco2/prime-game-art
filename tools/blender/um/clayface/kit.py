@@ -440,6 +440,10 @@ BAD_PAIRS = {("nose", "mouth"), ("nose", "teeth"), ("fhair", "mouth"), ("fhair",
              ("ear", "eye"), ("ear", "lid"), ("ear", "brow"), ("ear", "nose"), ("ear", "mouth"), ("ear", "fhair"),
              ("brow", "nose"), ("fhair", "eye"), ("fhair", "lid"), ("nose", "pupil"),
              ("nose", "fhair")}  # round E fix: the moustache sits below the nose (seat_moustache)
+# art #42: the pinocchio stands far out in front, so it must clear the eyes and lids too (the ball and the bean nose
+# may stand in front of the eyes' lower edge by design)
+STRICT_NOSES = {"pinocchio"}
+STRICT_NOSE_PAIRS = {("nose", "eye"), ("nose", "lid")}
 
 
 SCALE_FADE = 0.08  # the same fade as clay_parts.bake_head_scale (SCALE_FADE): face and head stay in register

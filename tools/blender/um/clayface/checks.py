@@ -5,7 +5,7 @@ import math
 
 import numpy as np
 
-from .kit import BAD_PAIRS, LIP_W, MOUTHS, NOSES, STATES
+from .kit import BAD_PAIRS, LIP_W, MOUTHS, NOSES, STATES, STRICT_NOSE_PAIRS, STRICT_NOSES
 from .mesh import piece_coords
 from .mouth import mouth_extent
 
@@ -25,12 +25,13 @@ def collisions(face):
         else:
             keys = [None]
         trees[name] = [BVHTree.FromPolygons(piece_coords(o, k), polys) for k in keys]
+    bad = BAD_PAIRS | (STRICT_NOSE_PAIRS if face.picks.get("nose") in STRICT_NOSES else set())
     out = {}
     names = sorted(trees)
     for i, a in enumerate(names):
         for b in names[i + 1:]:
             ca, cb = face.cat[a], face.cat[b]
-            if (ca, cb) not in BAD_PAIRS and (cb, ca) not in BAD_PAIRS:
+            if (ca, cb) not in bad and (cb, ca) not in bad:
                 continue
             same_state = {ca, cb} <= {"mouth", "teeth", "fhair"}
             n = 0

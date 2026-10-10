@@ -9,6 +9,7 @@ import hashlib
 import json
 import random
 import unittest
+from unittest import mock
 from pathlib import Path
 
 from runner.commands import _assembly
@@ -118,11 +119,33 @@ class RecipePicks(unittest.TestCase):
 
 
 class NosesTest(unittest.TestCase):
-    def test_the_lab_noses_only(self):
-        # art #42: #106's forward "cone" nose is gone; the ball on every cast face, "long" a kit pick at 0.8
-        self.assertEqual(set(K.NOSES), {"bulb", "long"})
-        self.assertEqual(set(K.PICKS["nose"]), {"bulb", "long"})
+    def test_three_noses(self):
+        # art #42 round 3: BALL (bulb), BEAN ("long" at 0.8, the lab's droop) and the new PINOCCHIO; the ball the most
+        # common pick and every cast default
+        self.assertEqual(set(K.NOSES), {"bulb", "long", "pinocchio"})
+        self.assertEqual(set(K.PICKS["nose"]), {"bulb", "long", "pinocchio"})
         self.assertEqual(K.NOSE_SCALE["long"], 0.8)
+        w = K.WEIGHTS["nose"]
+        self.assertEqual(max(w, key=w.get), "bulb")
+        self.assertTrue(all(w[n] > 0 for n in K.NOSES))
+
+    def test_pinocchio_points_forward_and_down(self):
+        P = K.NOSES["pinocchio"]
+        self.assertGreater(P["half"][1] + P["capsule"], 1.5 * P["half"][0])  # long along the forward axis
+        self.assertGreater(P["tilt"], 0.0)  # the tip goes down
+        self.assertLess(P["taper"][1], P["taper"][0])  # thinner toward the tip
+        self.assertIn("pinocchio", K.STRICT_NOSES)  # it must clear the eyes and lids as well
+
+
+def without_repo_noses():
+    """The repo's tables without its own noses (REPO_NOSES, art #42 round 3's pinocchio), which the lab never had."""
+    drop = lambda t: {k: v for k, v in t.items() if k not in REPO_NOSES}  # noqa: E731
+    return {"NOSES": drop(K.NOSES), "NOSE_SCALE": drop(K.NOSE_SCALE),
+            "WEIGHTS": {c: (drop(t) if c == "nose" else t) for c, t in K.WEIGHTS.items()},
+            "PICKS": {c: ([n for n in v if n not in REPO_NOSES] if c == "nose" else v) for c, v in K.PICKS.items()}}
+
+
+REPO_NOSES = {"pinocchio"}
 
 
 class LabParity(unittest.TestCase):
@@ -151,6 +174,7 @@ class LabParity(unittest.TestCase):
         # the repo's ear flags where its heads measure otherwise (lab_ears_free in faces/clay_hair.json) compare as the lab's
         lab_rules = {iid: tuple(v.get("lab_ears_free", v["ears_free"])) for iid, v in K.HAIR_ITEMS.items()}
         as_lab = {"EAR_RULES": lab_rules, "COVERS_EARS": {k for k, (f, b) in lab_rules.items() if not f and not b}}
+        as_lab.update(without_repo_noses())
         for n in names:
             a, b = self.lab[n], as_lab.get(n, getattr(K, n))
             if n == "WEIGHTS":
@@ -162,8 +186,9 @@ class LabParity(unittest.TestCase):
     def test_picks(self):
         for g in ("M", "W"):
             ra, rb = random.Random(500 + ("M", "W").index(g)), random.Random(500 + ("M", "W").index(g))
-            for _ in range(320):
-                self.assertEqual(self.lab["random_picks"](ra, g), K.random_picks(rb, g))
+            with mock.patch.dict(K.WEIGHTS, {"nose": without_repo_noses()["WEIGHTS"]["nose"]}):
+                for _ in range(320):
+                    self.assertEqual(self.lab["random_picks"](ra, g), K.random_picks(rb, g))
 
 
 if __name__ == "__main__":

@@ -242,12 +242,31 @@
     "tilt": -25.0,
     "tris": 240,
     "seat_low": true
+   },
+   "pinocchio": {
+    "label": "pinocchio (long, forward and slightly down, rounded tip)",
+    "half": [
+     0.0115,
+     0.013,
+     0.012
+    ],
+    "capsule": 0.012,
+    "taper": [
+     1.15,
+     0.72
+    ],
+    "embed": 0.3,
+    "drop": 0.0,
+    "tilt": 10.0,
+    "tris": 320,
+    "seat_low": true
    }
   },
   "scale": {
    "bulb": 1.0,
    "droop": 1.0,
-   "long": 0.8
+   "long": 0.8,
+   "pinocchio": 1.0
   }
  },
  "ears": {
@@ -775,7 +794,8 @@
    },
    "nose": {
     "bulb": 1.6,
-    "long": 1.0
+    "long": 1.0,
+    "pinocchio": 0.5
    },
    "eye_size": {
     "small": 0.8,

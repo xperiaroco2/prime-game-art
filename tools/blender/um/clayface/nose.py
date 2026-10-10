@@ -1,4 +1,4 @@
-"""The clay face kit's noses: the round ball and the long nose, seated over the mouth and kept off the pupils.
+"""The clay face kit's noses: the round ball, the long bean nose and the pinocchio, seated over the mouth and kept off the pupils.
 """
 import math
 
@@ -32,7 +32,15 @@ def build_nose(face, ctx, M, coll, moustache_z=None, k=None, axes=None, drop_ext
     depth = hy + N.get("capsule", 0.0)
     c = Vector((ctx.x, p.y - depth * (1.0 - N["embed"]), cz))
     rot = Matrix.Rotation(math.radians(N["tilt"]), 3, "X") if N["tilt"] else None
-    bm = blob_bm(c, (hx, hy, hz), seg=14, rings=8, rot=rot, capsule=N.get("capsule", 0.0))
+    taper = N.get("taper")
+    bm = blob_bm(c, (hx, hy, hz), seg=14, rings=8, rot=None if taper else rot, capsule=N.get("capsule", 0.0))
+    if taper:  # art #42 PINOCCHIO: thicker where it meets the face, thinner toward the rounded tip (forward is -y)
+        for v in bm.verts:
+            q = v.co - c
+            t = min(1.0, max(0.0, (depth - q.y) / (2.0 * depth)))  # 0 at the back end, 1 at the tip
+            f = taper[0] + (taper[1] - taper[0]) * t
+            q = Vector((q.x * f, q.y, q.z * f))
+            v.co = c + (rot @ q if rot is not None else q)
     lumps = (N["lumps"], 70.0, 5) if N.get("lumps") else None
     o, culled = static_piece(ctx, f"{h.id}_fb_nose", bm, [face.mats["nose"]], coll, sub=1, target=N["tris"], lumps=lumps)
     if N.get("seat_low"):  # round E: the lowest point (not the centre) sits at `bottom`, the ball's clearance
@@ -40,7 +48,8 @@ def build_nose(face, ctx, M, coll, moustache_z=None, k=None, axes=None, drop_ext
         for v in o.data.vertices:
             v.co.z += bottom - low
         o.data.update()
-    face.meta["nose"] = {"kind": picks["nose"], "scale": round(kn, 3), "scale_xyz": [round(x, 3) for x in ks], "half_mm": [round(v * 1000, 1) for v in (hx, hy, hz)],
+    tip = min(piece_coords(o), key=lambda q: q.y)
+    face.meta["nose"] = {"kind": picks["nose"], "reach_mm": round((p.y - tip.y) * 1000, 1), "scale": round(kn, 3), "scale_xyz": [round(x, 3) for x in ks], "half_mm": [round(v * 1000, 1) for v in (hx, hy, hz)],
                          "bottom_above_mouth_top_mm": round((bottom - hi) * 1000, 1),
                          "culled_faces": culled}
     return face.add("nose", o, "nose")
