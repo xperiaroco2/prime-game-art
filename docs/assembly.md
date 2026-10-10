@@ -29,6 +29,14 @@ Windows: `tools\run.cmd assemble um_final_test --blend`. `<recipe>` is a path fr
 validates the recipe against the packs in the raw folder (`ART_RAW_DIR`, default `D:/prime-art-raw`) before Blender
 starts, then runs `tools/blender/assemble_characters.py` in background Blender and prints one line per character.
 
+With the parts catalogue (`catalogue/ultimate_modular.json`) present, the validation also refuses (art #42):
+- an extra that is not one whole catalogue item of the character's own body type (`recipe.check_extras`: its file,
+  object and materials equal one item's recipe, kind not skull, hair or brows); m1's stray blue strip was a piece of a
+  woman's headset;
+- a head that does not keep its whole skull (`recipe.check_heads`: `keep` plus `as_skin` hold every material of the
+  catalogue's skull item of that file and object); m4's jaw was cut off because its recipe left out the Casual head's
+  `Skin_Darker`, which is the lower jaw.
+
 | Option | What it does |
 |---|---|
 | `--ids` | Build only these characters (default: all) |
