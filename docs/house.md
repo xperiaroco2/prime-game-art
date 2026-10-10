@@ -116,3 +116,31 @@ floor from above, the other levels and the ceilings hidden, a label per room), `
   half at x 30 to a 1 x 4 m landing at 1.6 m on the west wall, then up east to the upper landing at x 30, all under
   the doc's hole (26, 30, 4 x 6). Marked `placeholder`; the outdoor (concrete) pieces stand in until kit v2 has
   indoor ones. Option: a 5 m steeper straight flight with a 1 m foot landing (kit v2).
+
+## Light (#83a)
+
+`layouts/house/lights.toml` is the light kit as data; `tools/runner/house_lights.py` places it and `house` writes it
+with the shell (the fixtures and the summary to `tools/out/house/lights.json`). Every number is taste data: change it
+and regenerate.
+
+- **Types** (`[types.<id>]`, the 16 fixtures of the plan's `inventory.md` §8): `mount` (`ceiling`: a grid under the
+  ceiling; `wall`: spaced along the walls 0.15 m in, 1.2 m clear of the room's doors; `floor`: a grid 0.6 m in from
+  the walls), `h` (the light's height over the room's floor), `light` (`omni`, or `spot` pointing down with `angle`),
+  `energy`, `range`, `color` (a name in `[colors]`; c2, the lab's lamp colour, unless the type or the room says
+  otherwise) and `glow` (may get the cheap real-time glow).
+- **Fixtures** (`[rooms.<id>]`: type = count; 191 in all): positions are generated per room; `place = "perimeter"`
+  spaces a room's ceiling and floor fixtures 2 m in along its edges (the yard, which holds the house); a room's
+  `color` recolours its types without a colour (the greenhouse's green cold).
+- **Moon spots** (`[moon]`): bake-only cool spots, one per `every` windows of a level, outside the window, aimed in.
+- **Zones** (`[zones.<id>]`): the separate LightmapGI bakes (basement, ground, upper with the attic, outbuildings,
+  roof, yard); each room is in exactly one; `texel_high` and `texel_low` are the lightmap texels per metre of the
+  presets.
+- **Bake** (`[bake]`): the LightmapGI settings every zone shares (quality, bounces, the bounce energy at most 1.5,
+  denoiser, interior).
+- **Presets** (`[presets.high]`, `[presets.low]`): the lightmap resolution, the real-time glow count (the nearest
+  fixtures with `glow`), SSAO, shadowed spots, fog (`look.md` §4.5 of the plan).
+
+Every light is `light_bake_mode` Static (baked; not drawn in real time where a lightmap covers it); no shadows. The
+`house` command writes `lights/<level>.tscn` (a level's lights in plot coordinates) and `zones/<zone>.tscn` (the
+zone's room scenes, the level pieces standing in them, its lights, and as `Above` the next level's rooms over it: the
+floor slabs that are the zone's ceiling). A bake needs the editor (below).
