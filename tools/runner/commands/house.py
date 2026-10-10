@@ -7,7 +7,7 @@ import argparse
 import json
 from pathlib import Path
 
-from .. import common, house_basement, house_dressing, house_layout
+from .. import common, house_basement, house_dressing, house_layout, house_routes
 from . import _frames, _godot
 
 NAME = "house"
@@ -41,6 +41,12 @@ def run(args: argparse.Namespace) -> int:
     common.say("house layout: grid, openings, corners, footprints, stairs and holes hold")
     dressing = check_dressing(data, args.layouts, args.props_spec)
     check_basement(data, args.layouts, args.props_spec)
+    routes = house_routes.load(args.layouts)
+    bad_routes = house_routes.problems(data, routes)
+    if bad_routes:
+        for p in bad_routes:
+            common.say(f"  {p}")
+        raise common.Failure(f"house routes: {len(bad_routes)} problems")
     if args.check:
         return 0
     planned = house_layout.plan(data)
@@ -63,7 +69,7 @@ def run(args: argparse.Namespace) -> int:
     if args.walk:
         if args.out.resolve() != DEFAULT_OUT.resolve():
             raise common.Failure("--walk needs the scenes in godot/import/house (drop --out)")
-        return walk(data, summary, args.walk.resolve(), found)
+        return walk(data, summary, args.walk.resolve(), found, routes)
     return 0
 
 
@@ -113,10 +119,11 @@ def prop_glbs(data: dict, dressing: dict) -> dict:
     return found
 
 
-def walk(data: dict, summary: dict, folder: Path, props: dict | None = None) -> int:
+def walk(data: dict, summary: dict, folder: Path, props: dict | None = None, routes: dict | None = None) -> int:
     """Stages the pieces the scenes use from the kit folder, imports them headless, then runs godot/house/walk.gd in a
     window off-screen (pictures need one): every doorway of the ground and upper floors and every flight, walked by
-    a 1.36 m capsule; the stills, the plan, sheet.png and the exterior at dusk (exterior.png); draw calls per view."""
+    a 1.36 m capsule; the design doc's routes (routes.toml) at their speed, judged against the doc's times; the stills,
+    the plan, sheet.png and the exterior at dusk (exterior.png); draw calls per view."""
     kit = common.raw_dir() / data["settings"]["kit_dir"]
     names = {pid: f"kit_{pid}" for pid in summary["pieces"]}
     missing = [pid for pid in names if not (kit / f"{pid}.glb").is_file()]
@@ -134,6 +141,7 @@ def walk(data: dict, summary: dict, folder: Path, props: dict | None = None) -> 
     folder.mkdir(parents=True, exist_ok=True)
     req = common.OUT / "house" / "walk_request.json"
     request = house_layout.walk_request(data)
+    request["walks"] += house_routes.walks(data, request, routes or {})
     for name in request["closed"]:
         common.say(f"  not walked (closed kit leaf): {name}")
     req.write_text(json.dumps(request, indent=1), encoding="utf-8", newline="\n")
@@ -145,6 +153,14 @@ def walk(data: dict, summary: dict, folder: Path, props: dict | None = None) -> 
         tail = "\n".join(output.splitlines()[-20:])
         raise common.Failure(f"walk.gd failed (exit code {code}):\n{tail}")
     result = json.loads((folder / "walk.json").read_text(encoding="utf-8"))
+    tolerance = float((routes or {}).get("tolerance_s", 1.0))
+    for w, r in zip(request["walks"], result["walks"]):
+        if w["kind"] == "route":
+            r.update(house_routes.judge(w, r, tolerance))
+            common.say(f"  route {w['name']}: {r['seconds']} s walked at {w['speed']:g} m/s, the doc {r['doc_s']:g} s "
+                       f"({r['delta_s']:+g} s, {'within' if r['time_ok'] else 'OVER'} {tolerance:g} s), {r['plan_m']:g} m on the "
+                       f"plan, the doc {r['doc_m']:g} m")
+    (folder / "walk.json").write_text(json.dumps(result, indent=1), encoding="utf-8", newline="\n")
     failed = [w for w in result["walks"] if not w["pass"]] + ([] if result["control"]["pass"] else [result["control"]])
     for w in result["walks"] + [result["control"]]:
         mark = "ok  " if w["pass"] else "FAIL"

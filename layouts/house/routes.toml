@@ -1,0 +1,87 @@
+# The design doc's routes (prime-game docs/design/house-map.md §7) walked by `tools/run.sh house --walk` (art #78):
+# a 1.36 m capsule at the doc's walking speed, 4.5 m/s, through the waypoints below; a route passes when it arrives
+# and its walked time is within `tolerance_s` of the doc's. A point is [level, x, y] in the doc's metres (x east,
+# y south; the height is the level's floor), or ["stairs", <stairs id>, "up" | "down"]: that flight's own walk
+# points (house_layout.walk_request), foot to top. Waypoints go round the dressing's solid props and the pillars; a
+# route starts on a station's marker and ends on one, or 2 m short of a station that is a piece of furniture (the
+# doc's station reach). The doc counts a change of level as 6 m; the walk climbs the real flights.
+
+speed = 4.5
+tolerance_s = 1.0
+
+[[routes]]
+id = "wine"
+doc = "Delivery: wine: storage (wine) -> pantry -> dining table"
+doc_m = 26
+doc_s = 5.9
+points = [
+  ["basement", 16, 26],         # the wine rack's marker
+  ["basement", 17.8, 29.5],     # south-west of the pillar at (19, 28) and the box stacks
+  ["basement", 27, 32],         # 1 m before the pantry stairs' foot
+  ["stairs", "pantry_stairs", "up"],
+  ["ground", 27, 24.8],         # the pantry's 1 m landing
+  ["ground", 29, 24.8],
+  ["ground", 29, 27],
+  ["ground", 30, 27],           # the pantry -> dining room door
+  ["ground", 31, 27],
+  ["ground", 34, 27],           # 2 m short of the dining table (36, 27)
+]
+
+[[routes]]
+id = "garage"
+doc = "Delivery: garage: storage (box) -> generator hall -> outdoor stairs behind the garage -> workbench"
+doc_m = 60
+doc_s = 13.4
+points = [
+  ["basement", 21, 29.4],       # the boxes' marker, at the stacks' front
+  ["basement", 25.5, 31.75],    # round the pantry stairs' south end
+  ["basement", 28.95, 31.75],
+  ["basement", 28.95, 28.6],
+  ["basement", 30, 28],         # storage -> corridor
+  ["basement", 31, 28],
+  ["basement", 40, 28],         # corridor -> generator hall
+  ["basement", 58, 31],         # generator hall -> passage
+  ["basement", 60, 33],
+  ["basement", 63, 33],         # 1 m before the outdoor stairs' foot
+  ["stairs", "outdoor_stairs", "up"],
+  ["ground", 65, 33],
+  ["ground", 63, 33],
+  ["ground", 63, 34],           # the garage's back door
+  ["ground", 63, 35],
+  ["ground", 68.08, 36.45],     # 2 m short of the workbench (70, 37)
+]
+
+[[routes]]
+id = "switches"
+doc = "Generator: all four switches, D -> B -> C -> A"
+doc_m = 105
+doc_s = 23.4
+points = [
+  ["basement", 48.5, 19.5],     # switch D
+  ["basement", 46, 21],
+  ["basement", 46, 22],         # switch room -> generator hall
+  ["basement", 46, 23],
+  ["basement", 41, 38],
+  ["basement", 40, 38],         # generator hall -> boiler room
+  ["basement", 39, 38],
+  ["basement", 32, 44],         # switch B
+  ["basement", 39, 38],
+  ["basement", 40, 38],
+  ["basement", 41, 38],
+  ["basement", 49, 41],
+  ["basement", 49, 42],         # generator hall -> pump room
+  ["basement", 49, 43],
+  ["basement", 52, 48],         # switch C
+  ["basement", 49, 43],
+  ["basement", 49, 42],
+  ["basement", 49, 41],
+  ["basement", 44.3, 35.3],     # west of the cable drum at (45.4, 34)
+  ["basement", 41, 28],
+  ["basement", 40, 28],         # generator hall -> corridor
+  ["basement", 31, 28],
+  ["basement", 30, 28],         # corridor -> storage
+  ["basement", 28.95, 28.6],
+  ["basement", 28.95, 31.75],   # round the pantry stairs' south end
+  ["basement", 25.5, 31.75],
+  ["basement", 16, 32],         # switch A
+]

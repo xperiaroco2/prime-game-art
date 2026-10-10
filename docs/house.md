@@ -14,6 +14,7 @@ later packages add dressing data (`layouts/house/dressing/`, #75b) and only rege
 | `tools/runner/commands/house.py` | The `house` command |
 | `tools/tests/test_house_layout.py` | The rules, the plan's conventions, the design doc's 35 rooms and the game's greybox marker names |
 | `layouts/house/dressing/<room>.toml` | One room's props and light fixtures (#75b); the ground floor's eight rooms |
+| `layouts/house/routes.toml` | The design doc's routes (§7) as waypoints for the walk, with the doc's lengths and times (#78; "Routes" below) |
 | `tools/runner/house_dressing.py` | The dressing: catalogue, checks (bounds, overlaps, stations, the capsule's paths), scene nodes |
 | `tools/tests/test_house_dressing.py` | The dressing's rules, and the ground floor against the plan's inventory and the stations |
 
@@ -57,6 +58,7 @@ take the heavy-run lock). The request (`house_layout.walk_request`, written to `
   1 m past its top (less where the room there is short: the pantry's landing);
 - a 3 x 3 m pad under each walk end that has no floor (the yard; #81a builds the real ground);
 - a control: the 1.5 m capsule must stop at the first door (the colliders are there).
+- the design doc's routes from `layouts/house/routes.toml` ("Routes" under the basement below), at their own speed.
 
 A walk arrives when it gets within 0.3 m of its last point at that point's height (0.15 m); it gives up after 30
 ticks without moving. Into `DIR`: `walk.json` (each walk's end, time and verdict; draw calls, objects and primitives
