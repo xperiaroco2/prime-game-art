@@ -21,7 +21,9 @@
   "gable_rise_per_m": 0.7,
   "glass_wall_h_m": 2.4,
   "fence_h_m": 1.8,
-  "pitched_roof_t_m": 0.2
+  "pitched_roof_t_m": 0.2,
+  "gable_window_sill_m": 0.25,
+  "gable_window_h_m": 0.9
  },
  "budget_tris": {"wall": 400, "corner": 60, "floor": 120, "roof": 200, "stairs": 2500, "ladder": 600, "railing": 1500, "fence": 1200, "gate": 4000, "glass": 600, "garage": 600, "pillar": 60, "porch": 400, "chimney": 200, "trim": 120, "gazebo": 1200},
  "materials": {
@@ -159,6 +161,7 @@
   {"id": "gazebo_sector", "type": "gazebo_sector", "kind": "gazebo", "radius": 2.8, "deck_h": 0.15, "post_h": 2.4},
   {"id": "gazebo_sector_open", "type": "gazebo_sector", "kind": "gazebo", "radius": 2.8, "deck_h": 0.15, "post_h": 2.4, "open": true},
   {"id": "gazebo_roof_sector", "type": "gazebo_roof", "kind": "gazebo", "radius": 3.0, "eave_h": 2.55, "apex_h": 3.4, "thick": 0.1},
-  {"id": "gazebo_finial", "type": "finial", "kind": "gazebo", "width": 0.1, "peak": 0.12, "role": "metal"}
+  {"id": "gazebo_finial", "type": "finial", "kind": "gazebo", "width": 0.1, "peak": 0.12, "role": "metal"},
+  {"id": "gable_band_2m_window", "type": "wall", "kind": "wall", "length": 2, "height": 1.4, "finish": "ext", "band": false, "skirting": false, "opening": "window_gable"}
  ]
 }
