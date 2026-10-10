@@ -443,18 +443,30 @@ def build_stairs_open(pc: Piece, p: dict, spec: dict) -> None:
 
 
 def build_ladder(pc: Piece, p: dict, spec: dict) -> None:
-    """The pull-down attic ladder: foot at the pivot, climbing along +X to the hatch's edge at (run, rise)."""
+    """A ladder or a ship stair: foot at the pivot, climbing along +X to the top edge at (run, rise), its width along
+    +Z. The pull-down attic ladder takes the defaults (11 rungs, 0.1 m deep, no handrails); the dormer's climb-out
+    stair (art #77) sets `steps`, `tread` (each tread's depth, centred on the slope's line, so the collision's ramp
+    runs through the treads) and `handrail` (a rail 0.9 m over each stringer). The collision is a slab under the
+    slope's line from (0, 0) to (run, rise)."""
     wd, run, rise = float(p["width"]), float(p["run"]), float(p["rise"])
+    steps, tread = int(p.get("steps", 11)), float(p.get("tread", 0.1))
+    stair = tread > 0.1
+    st, deep, back = (0.06, 0.22, tread / 2) if stair else (0.05, 0.08, 0.0)  # stringer: thickness, depth, offset
     m = pc.mesh
-    rail = [(0, 0), (0.08, 0), (run + 0.08, rise), (run, rise)]
-    for za, zb in ((0, 0.05), (wd - 0.05, wd)):
+    rail = [(-back, 0), (deep - back, 0), (run + deep - back, rise), (run - back, rise)]
+    for za, zb in ((0, st), (wd - st, wd)):
         m.prism(rail, za, zb, "trim")
-    steps = 11
     for k in range(1, steps):
         y = k * rise / steps
-        x = y * run / rise + 0.01
-        m.box((x, y - 0.03, 0.05), (x + 0.1, y, wd - 0.05), "trim", "+x-x+y-y")
-    pc.collide(prism_points([(0, 0), (0.12, 0), (run + 0.12, rise), (run, rise)], 0, wd))
+        x = y * run / rise + 0.01 - back
+        m.box((x, y - 0.03, st), (x + tread, y, wd - st), "trim", "+x-x+y-y")
+    if p.get("handrail"):
+        for za, zb in ((0, st), (wd - st, wd)):
+            m.prism([(0, 0.85), (run, rise + 0.85), (run, rise + 0.9), (0, 0.9)], za, zb, "metal")
+            for t in (0.1, 0.5, 0.9):
+                x, y = run * t, rise * t
+                m.box((x, y, za), (x + 0.04, y + 0.86, zb), "metal", "+x-x+z-z")
+    pc.collide(prism_points([(0, 0), (deep + 0.04, 0), (run + deep + 0.04, rise), (run, rise)], 0, wd))
 
 
 def build_post(pc: Piece, p: dict, spec: dict) -> None:

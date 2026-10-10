@@ -114,6 +114,7 @@
   {"id": "stairs_outdoor_landing", "type": "block", "kind": "floor", "size": [4, 1], "height": 1.6, "top": "concrete", "side": "basement"},
   {"id": "stairs_balcony", "type": "stairs_open", "kind": "stairs", "width": 2, "run": 6, "rise": 3.2, "risers": 18},
   {"id": "ladder_attic", "type": "ladder", "kind": "ladder", "width": 0.7, "run": 1.3, "rise": 3.2},
+  {"id": "stair_dormer", "type": "ladder", "kind": "ladder", "width": 1.0, "run": 3.0, "rise": 2.857, "steps": 13, "tread": 0.24, "handrail": true, "about": "the climb-out stair under the dormer (art #77): from the attic floor to the window's sill (dormer_dims sill over the knee and 1 m of slope: 2.857 m), 43.6 deg, under the floor limit of 45, so a capsule walks it; 13 treads and a handrail each side"},
   {"id": "railing_balcony_2m", "type": "railing", "kind": "railing", "length": 2, "height": 1.0, "role": "metal", "post": 0.06, "bar": 0.02, "pitch": 0.125},
   {"id": "railing_balcony_1m", "type": "railing", "kind": "railing", "length": 1, "height": 1.0, "role": "metal", "post": 0.06, "bar": 0.02, "pitch": 0.125},
   {"id": "railing_balcony_post", "type": "post", "kind": "railing", "height": 1.0, "role": "metal", "post": 0.06},
