@@ -1,0 +1,305 @@
+# The storage's dressing (art #78, docs/house.md "Dressing"): the props and light fixtures of one room, as data.
+# at = [x, h, z]: room-local metres like the room's stations (x east, h above the floor, z south from the room's
+# north-west corner) at the prop's pivot (floor: the footprint's centre; wall: the back's bottom centre on the wall's
+# face; ceiling: the top's centre). face = the way the prop's front (+Z) looks: N, E, S or W.
+# Ids are the dressing library's (props/library.toml, #87) and the task props' (props/tasks.toml, #82). Fixtures are
+# the lamps' meshes only (their light is #83a's, layouts/house/lights.toml). Positions are the engineer's to change.
+# Pillars: four kit pillars in basement.toml [[pieces]].
+room = "storage"
+
+[[props]]
+id = "bun_shelf"
+at = [2, 0, 2.75]
+face = "S"
+station = "Buns"
+
+[[props]]
+id = "bun_shelf"
+at = [4.2, 0, 2.75]
+face = "S"
+station = "Buns"
+
+[[props]]
+id = "meat_freezer"
+at = [9, 0, 0.5]
+face = "S"
+station = "Meat"
+
+[[props]]
+id = "wine_rack"
+at = [0.1, 0, 8]
+face = "E"
+station = "WineRack"
+
+[[props]]
+id = "delivery_box_stack"
+at = [6.2, 0, 9.9]
+face = "S"
+station = "Boxes"
+
+[[props]]
+id = "delivery_box_stack"
+at = [7.5, 0, 9.9]
+face = "S"
+station = "Boxes"
+
+[[props]]
+id = "delivery_box_stack"
+at = [8.8, 0, 9.9]
+face = "S"
+station = "Boxes"
+note = "north of the marker: the line from the corridor door to switch A stays open"
+
+[[props]]
+id = "wall_switch"
+at = [0.1, 0, 14]
+face = "E"
+station = "SwitchA"
+note = "on the west wall: in sight from the corridor door across the room"
+
+[[props]]
+id = "car_parts_shelf"
+at = [13, 0, 15.65]
+face = "N"
+station = "PartsShelf"
+
+[[props]]
+id = "metal_shelving"
+at = [15.65, 0, 3]
+face = "W"
+
+[[props]]
+id = "metal_shelving"
+at = [15.65, 0, 5.5]
+face = "W"
+
+[[props]]
+id = "metal_shelving"
+at = [12, 0, 0.35]
+face = "S"
+
+[[props]]
+id = "metal_shelving"
+at = [3.5, 0, 15.65]
+face = "N"
+
+[[props]]
+id = "metal_shelving"
+at = [10.5, 0, 15.65]
+face = "N"
+
+[[props]]
+id = "metal_shelving"
+at = [9, 0, 7.5]
+face = "E"
+note = "a free-standing aisle"
+
+[[props]]
+id = "pallet"
+at = [5.9, 0, 15.4]
+
+[[props]]
+id = "crate"
+at = [5.6, 0.15, 15.4]
+
+[[props]]
+id = "crate"
+at = [6.2, 0.15, 15.4]
+
+[[props]]
+id = "crate"
+at = [5.9, 0.55, 15.4]
+
+[[props]]
+id = "pallet"
+at = [8, 0, 4.5]
+
+[[props]]
+id = "crate"
+at = [7.7, 0.15, 4.5]
+
+[[props]]
+id = "crate"
+at = [8.3, 0.15, 4.5]
+
+[[props]]
+id = "crate"
+at = [8, 0.55, 4.5]
+
+[[props]]
+id = "pallet"
+at = [6, 0, 0.5]
+
+[[props]]
+id = "crate"
+at = [5.7, 0.15, 0.5]
+
+[[props]]
+id = "crate"
+at = [6.3, 0.15, 0.5]
+
+[[props]]
+id = "crate"
+at = [6, 0.55, 0.5]
+
+[[props]]
+id = "pallet"
+at = [5, 0, 3.8]
+
+[[props]]
+id = "crate"
+at = [4.7, 0.15, 3.8]
+
+[[props]]
+id = "crate"
+at = [5.3, 0.15, 3.8]
+
+[[props]]
+id = "crate"
+at = [5, 0.55, 3.8]
+
+[[props]]
+id = "pallet"
+at = [11, 0, 11]
+
+[[props]]
+id = "crate"
+at = [10.75, 0.15, 11]
+
+[[props]]
+id = "crate"
+at = [11.3, 0.15, 11]
+
+[[props]]
+id = "barrel"
+at = [0.45, 0, 10.5]
+
+[[props]]
+id = "barrel"
+at = [0.45, 0, 12.2]
+
+[[props]]
+id = "barrel"
+at = [15.5, 0, 0.5]
+
+[[props]]
+id = "wine_bottle_crate"
+at = [0.3, 0, 6.3]
+face = "E"
+
+[[props]]
+id = "wine_bottle_crate"
+at = [0.3, 0.3, 6.3]
+face = "E"
+
+[[props]]
+id = "wine_bottle_crate"
+at = [0.3, 0.6, 6.3]
+face = "E"
+
+[[props]]
+id = "wine_bottle_crate"
+at = [0.3, 0, 9.6]
+face = "E"
+
+[[props]]
+id = "wine_bottle_crate"
+at = [0.3, 0.3, 9.6]
+face = "E"
+
+[[props]]
+id = "wine_bottle_crate"
+at = [0.3, 0.6, 9.6]
+face = "E"
+
+[[props]]
+id = "cardboard_box"
+at = [11.6, 0, 5]
+
+[[props]]
+id = "cardboard_box"
+at = [11.6, 0.4, 5]
+
+[[props]]
+id = "cardboard_box"
+at = [11, 0, 4.45]
+
+[[props]]
+id = "cardboard_box"
+at = [10.4, 0, 5]
+
+[[props]]
+id = "cardboard_box"
+at = [10.4, 0.4, 5]
+
+[[props]]
+id = "cardboard_box"
+at = [4.4, 0, 10]
+
+[[props]]
+id = "cardboard_box"
+at = [4.4, 0.4, 10]
+
+[[props]]
+id = "cardboard_box"
+at = [5, 0, 9.45]
+
+[[fixtures]]
+id = "bare_bulb"
+at = [2, 3, 3]
+
+[[fixtures]]
+id = "bare_bulb"
+at = [6, 3, 3]
+
+[[fixtures]]
+id = "bare_bulb"
+at = [10, 3, 3]
+
+[[fixtures]]
+id = "bare_bulb"
+at = [14.5, 3, 3]
+
+[[fixtures]]
+id = "bare_bulb"
+at = [2, 3, 8]
+
+[[fixtures]]
+id = "bare_bulb"
+at = [6, 3, 8]
+
+[[fixtures]]
+id = "bare_bulb"
+at = [10, 3, 8]
+
+[[fixtures]]
+id = "bare_bulb"
+at = [14.5, 3, 8]
+
+[[fixtures]]
+id = "bare_bulb"
+at = [2, 3, 13]
+
+[[fixtures]]
+id = "bare_bulb"
+at = [6, 3, 13]
+
+[[fixtures]]
+id = "bare_bulb"
+at = [10, 3, 13]
+
+[[fixtures]]
+id = "bare_bulb"
+at = [14.5, 3, 13]
+
+[[fixtures]]
+id = "cage_lamp"
+at = [15.9, 2.2, 8]
+face = "W"
+note = "beside the corridor door"
+
+[[fixtures]]
+id = "cage_lamp"
+at = [0.1, 2.2, 14]
+face = "E"
+note = "over switch A"

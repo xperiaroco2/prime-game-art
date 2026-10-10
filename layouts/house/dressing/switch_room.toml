@@ -1,0 +1,62 @@
+# The switch room's dressing (art #78, docs/house.md "Dressing"): the props and light fixtures of one room, as data.
+# at = [x, h, z]: room-local metres like the room's stations (x east, h above the floor, z south from the room's
+# north-west corner) at the prop's pivot (floor: the footprint's centre; wall: the back's bottom centre on the wall's
+# face; ceiling: the top's centre). face = the way the prop's front (+Z) looks: N, E, S or W.
+# Ids are the dressing library's (props/library.toml, #87) and the task props' (props/tasks.toml, #82). Fixtures are
+# the lamps' meshes only (their light is #83a's, layouts/house/lights.toml). Positions are the engineer's to change.
+room = "switch_room"
+
+[[props]]
+id = "wall_switch"
+at = [7.9, 0, 3.5]
+face = "W"
+station = "SwitchD"
+note = "on the east wall: in sight from the door"
+
+[[props]]
+id = "switchboard"
+at = [1.5, 0, 0.25]
+face = "S"
+
+[[props]]
+id = "switchboard"
+at = [2.5, 0, 0.25]
+face = "S"
+
+[[props]]
+id = "switchboard"
+at = [3.5, 0, 0.25]
+face = "S"
+
+[[props]]
+id = "desk"
+at = [0.45, 0, 3.5]
+face = "E"
+
+[[props]]
+id = "office_chair"
+at = [1.3, 0, 3.5]
+face = "W"
+
+[[props]]
+id = "cardboard_box"
+at = [5.5, 0, 0.4]
+
+[[props]]
+id = "cardboard_box"
+at = [5.5, 0.4, 0.4]
+
+[[fixtures]]
+id = "cage_lamp"
+at = [7.9, 2.2, 3.5]
+face = "W"
+note = "over switch D"
+
+[[fixtures]]
+id = "cage_lamp"
+at = [6.5, 2.2, 0.1]
+face = "S"
+
+[[fixtures]]
+id = "bare_bulb"
+at = [4, 3, 3]
