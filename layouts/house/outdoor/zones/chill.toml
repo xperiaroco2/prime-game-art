@@ -1,0 +1,158 @@
+# The chill zone (art #81b, map #73; inventory.md section 4 "Chill zone"): data for tools/runner/house_zones.py; the
+# conventions are photo.toml's. No walls: the music must carry, and the plot's fence is its south and west edge.
+
+zone = "chill_zone"
+rect = [2, 44, 14, 14]
+ground = "grass + gravel"
+questions = []
+
+[[items]]
+id = "bbq_grill"
+src = "tasks"
+station = "Grill"              # inventory.md section 7: (8, 50)
+at = [8.0, 50.0]
+yaw = 90.0                     # its front (the lid's handle) faces east, towards the approach
+
+[[items]]
+id = "music_speaker"
+src = "tasks"
+station = "Speaker"            # (12, 55)
+at = [12.0, 55.0]
+face = [6.5, 54.5]
+
+[[items]]
+id = "fire_pit"
+src = "zones"
+at = [6.5, 54.5]
+
+[[items]]
+id = "deckchair"
+src = "zones"
+at = [6.5, 52.4]
+face = [6.5, 54.5]
+[[items]]
+id = "deckchair"
+src = "zones"
+at = [8.6, 54.5]
+face = [6.5, 54.5]
+[[items]]
+id = "deckchair"
+src = "zones"
+at = [6.5, 56.6]
+face = [6.5, 54.5]
+[[items]]
+id = "deckchair"
+src = "zones"
+at = [4.4, 54.5]
+face = [6.5, 54.5]
+
+[[items]]
+id = "bean_bag"
+src = "zones"
+at = [13.8, 53.4]
+[[items]]
+id = "bean_bag"
+src = "zones"
+at = [13.9, 56.2]
+[[items]]
+id = "bean_bag"
+src = "zones"
+at = [10.6, 57.0]
+
+[[items]]
+id = "cooler_box"
+src = "zones"
+at = [8.0, 48.5]
+yaw = 90.0
+[[items]]
+id = "cooler_box"
+src = "zones"
+at = [4.2, 52.4]
+yaw = 45.0
+
+[[items]]
+id = "string_lights_set"
+src = "zones"
+at = [6.5, 50.9]
+yaw = 0.0
+[[items]]
+id = "string_lights_set"
+src = "zones"
+at = [6.5, 57.7]
+yaw = 0.0
+[[items]]
+id = "string_lights_set"
+src = "zones"
+at = [10.4, 53.3]
+yaw = 90.0
+
+[[items]]
+id = "lantern"
+src = "zones"
+at = [5.0, 53.0]
+[[items]]
+id = "lantern"
+src = "zones"
+at = [8.0, 53.0]
+[[items]]
+id = "lantern"
+src = "zones"
+at = [5.0, 56.0]
+[[items]]
+id = "lantern"
+src = "zones"
+at = [8.0, 56.0]
+[[items]]
+id = "lantern"
+src = "zones"
+at = [9.0, 51.3]
+[[items]]
+id = "lantern"
+src = "zones"
+at = [12.7, 55.7]
+
+[[items]]
+id = "picnic_table"
+src = "#87"
+at = [13.0, 49.5]
+size = [1.4, 0.8, 0.5]
+[[items]]
+id = "firewood_stack"
+src = "#87"
+at = [3.0, 50.0]
+yaw = 90.0
+size = [1.5, 0.5, 1.0]
+[[items]]
+id = "garden_tree"
+src = "#87"
+at = [4.0, 46.5]
+size = [0.4, 0.4, 7.0]         # the trunk; the 3 x 3 m crown is overhead
+[[items]]
+id = "garden_tree"
+src = "#87"
+at = [15.0, 45.5]
+size = [0.4, 0.4, 7.0]
+[[items]]
+id = "bush"
+src = "#87"
+at = [2.8, 57.0]
+size = [1.2, 1.2, 1.0]
+[[items]]
+id = "bush"
+src = "#87"
+at = [15.2, 57.2]
+size = [1.2, 1.2, 1.0]
+[[items]]
+id = "bush"
+src = "#87"
+at = [2.8, 47.8]
+size = [1.2, 1.2, 1.0]
+
+[[views]]
+name = "approach"
+eye = [22.0, 50.0, 1.6]
+look = [8.0, 53.0, 0.9]
+[[views]]
+name = "fire"
+eye = [12.5, 51.0, 1.6]
+look = [6.5, 54.5, 0.5]
