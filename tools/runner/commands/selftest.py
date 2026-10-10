@@ -10,8 +10,6 @@ from .. import common
 NAME = "selftest"
 HELP = "run the runner's unit tests (unittest discovery over tools/tests)"
 TIMEOUT = 1800
-
-
 DEFAULT_PATTERN = "test*.py"
 
 
@@ -22,7 +20,7 @@ def command(verbose: bool = False, pattern: str = DEFAULT_PATTERN) -> list[str]:
 
 def add_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("-v", "--verbose", action="store_true", help="name every test")
-    parser.add_argument("-p", "--pattern", default=DEFAULT_PATTERN, help="test file pattern (default test*.py)")
+    parser.add_argument("-p", "--pattern", default=DEFAULT_PATTERN, help="test file pattern (default test*.py); a narrowed run does not hold the heavy-run lock")
 
 
 def run(args: argparse.Namespace) -> int:
