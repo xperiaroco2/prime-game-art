@@ -240,8 +240,6 @@ string_lights = 1
 [rooms.attic]
 bare_bulb = 5
 table_lamp = 2
-[rooms.roof]
-lantern = 2
 
 # Bake zones: separate LightmapGI scenes (the spike asks whether they blend). `rooms` lists room ids; `levels` takes
 # every room of those levels. `texel_high` and `texel_low`: lightmap texels per metre at the High and Low presets.
@@ -261,10 +259,6 @@ texel_low = 4.0
 rooms = ["garage", "greenhouse"]
 texel_high = 6.0
 texel_low = 3.0
-[zones.roof]
-levels = ["roof"]
-texel_high = 4.0
-texel_low = 2.0
 [zones.yard]
 rooms = ["yard", "street", "path", "driveway", "garden", "photo_zone", "chill_zone", "outdoor_stairs"]
 texel_high = 2.0

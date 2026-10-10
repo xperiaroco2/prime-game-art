@@ -1,11 +1,11 @@
 # The house generator's settings (art #75, docs/house.md). One file per level beside this one.
-# The kit: its spec in the repo and its GLBs under the raw folder (kit v2, #86; v1's piece ids are kept).
+# The kit: its spec in the repo and its GLBs under the raw folder (kit v3: the 0.35 roof pitch, #77; v2 #86; v1's ids are kept).
 kit_spec = "kits/house.json"
-kit_dir = "kits/house/v2"
+kit_dir = "kits/house/v3"
 # Where the generated scenes find a piece and each other inside the godot/ project (godot/import/ is ignored).
 kit_res = "res://import/kit_{id}.glb"
 scene_res = "res://import/house"
-levels = ["basement", "ground", "upper", "attic", "roof"]
+levels = ["basement", "ground", "upper", "attic"]
 # The dressing (#75b, docs/house.md "Dressing"): one file per room in dressing/; the prop catalogues that give each id
 # its size and pivot (later files win); the raw folders its GLB is looked for in, in order; its res:// path when staged.
 dressing_dir = "dressing"
