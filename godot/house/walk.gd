@@ -7,7 +7,8 @@ extends SceneTree
 ##   godot --path godot --position -30000,-30000 --resolution 1600x900 -s res://house/walk.gd -- <request.json> <out dir>
 ## request.json: house_layout.walk_request(): {"walks": [{"name", "kind", "points": [[x, h, z], ...]}], "pads": [...],
 ## "rooms": [{"level", "id", "title", "rect", "kind", "floor_y"}], "levels": {"<level>": {"node", "floor_y"}}}.
-## Writes <out>/<shot>.png, <out>/sheet.png and <out>/exterior.png (1280 px wide) and <out>/walk.json; prints WALK saved <dir>.
+## Writes <out>/<shot>.png, <out>/sheet.png, <out>/exterior.png, with upper rooms or a loop <out>/upper.png (all
+## 1280 px wide), and <out>/walk.json; prints WALK saved <dir>.
 
 const WATCHDOG_S: float = 170.0
 const EYE: float = 1.6
@@ -87,12 +88,19 @@ func _run(args: PackedStringArray) -> void:
 	for i: int in 3:
 		await physics_frame
 	var result: Dictionary = {"walks": [], "radius_m": RADIUS, "shots": {}, "instances": _count_instances()}
+	var loops: Array = []  # [request walk, its result]: drawn on the upper floor's top-down
 	for w: Dictionary in _req["walks"]:
-		var r: Dictionary = await _walk(RADIUS, w["points"], float(w.get("speed", SPEED)), float(w.get("max_s", MAX_S)))
+		var loop: bool = w["kind"] == "loop"  # a doc route (#76): the game's speed, timed against the doc
+		var r: Dictionary = await _walk(RADIUS, w["points"], float(w.get("speed", SPEED)), float(w.get("max_s", 40.0 if loop else MAX_S)))
 		r["name"] = w["name"]
 		r["kind"] = w["kind"]
+		if loop:
+			r["doc_s"] = w["doc_s"]
+			r["within_1s"] = r["arrived"] and absf(float(r["seconds"]) - float(w["doc_s"])) <= 1.0
 		r["pass"] = r["arrived"]
 		result["walks"].append(r)
+		if loop:
+			loops.append([w, r])
 	var door: Dictionary = _req["walks"][0]
 	var control: Dictionary = await _walk(CONTROL_RADIUS, door["points"])
 	control["name"] = "control_1.5m:" + door["name"]
@@ -126,10 +134,15 @@ func _run(args: PackedStringArray) -> void:
 	_save(_grid(sides), _out.path_join("exterior.png"))
 	# The dressed rooms (house_dressing.review_request): one shot per room from its door, the feature shots.
 	var room_images: Array[Image] = []
+	var upper_images: Array[Image] = []  # the second floor's rooms (#76): upper.png
 	var feature_images: Array[Image] = []
 	result["rooms"] = {}
 	for s: Dictionary in _req.get("room_shots", []):
-		room_images.append(await _shot(s["name"], s["title"], _v(s["from"]), _v(s["to"]), result))
+		var img: Image = await _shot(s["name"], s["title"], _v(s["from"]), _v(s["to"]), result)
+		if s.get("level", "ground") == "upper":
+			upper_images.append(img)
+		else:
+			room_images.append(img)
 		var info: Dictionary = result["shots"][s["name"]].duplicate()
 		info.merge(_dressing_triangles(s["node"]))
 		result["rooms"][s["room"]] = info
@@ -144,6 +157,13 @@ func _run(args: PackedStringArray) -> void:
 		var right: Array = feature_images.duplicate()
 		right.append(aerial)
 		_save(_rooms_sheet(plan, right.slice(0, 2), room_images), _out.path_join("rooms.png"))
+	if _req["levels"].has("upper") and (not upper_images.is_empty() or not loops.is_empty()):
+		var upper_plan: Image = await _plan(result, "upper")
+		var loop_image: Image = upper_plan
+		for lr: Array in loops:
+			loop_image = await _loop_plan(lr[0], lr[1], result)
+		upper_images.append(balcony)
+		_save(_upper_sheet(upper_plan, loop_image, upper_images), _out.path_join("upper.png"))
 	var f: FileAccess = FileAccess.open(_out.path_join("walk.json"), FileAccess.WRITE)
 	f.store_string(JSON.stringify(result, " "))
 	f.close()
@@ -299,6 +319,10 @@ func _walk(r: float, points: Array, speed: float = SPEED, max_s: float = MAX_S) 
 		steps += 1
 		var target: Vector3 = _v(points[reached + 1])
 		var flat: Vector3 = Vector3(target.x - body.global_position.x, 0, target.z - body.global_position.z)
+		while flat.length() < 0.3 and reached < points.size() - 2:  # next waypoint in the same tick: no idle ticks
+			reached += 1
+			target = _v(points[reached + 1])
+			flat = Vector3(target.x - body.global_position.x, 0, target.z - body.global_position.z)
 		if flat.length() < 0.3:
 			reached += 1
 			continue
@@ -329,16 +353,20 @@ func _shot(name: String, title: String, from: Vector3, to: Vector3, result: Dict
 	return image
 
 
-## The ground floor alone from above (orthographic), ceilings and the other levels hidden, a label per room.
-func _plan(result: Dictionary) -> Image:
+## One floor from above (orthographic): the levels above it, the basement and every ceiling hidden, a label per room
+## of the floor; saved as plan_<level>.png (a square crop). The labels are freed after the grab.
+func _plan(result: Dictionary, level: String = "ground") -> Image:
+	var top: float = float(_req["levels"][level]["floor_y"])
 	for lv: String in _req["levels"]:
 		var node: Node = _house.get_node_or_null(String(_req["levels"][lv]["node"]) if lv != "roof" else "RoofDeck")
-		if node != null and lv != "ground":
-			(node as Node3D).visible = false
+		var fy: float = float(_req["levels"][lv]["floor_y"])
+		if node != null:
+			(node as Node3D).visible = lv == level or (lv != "roof" and fy >= 0.0 and fy < top)
 	for n: Node in _house.find_children("ceiling*", "Node3D", true, false):
 		(n as Node3D).visible = false
+	var labels: Array[Label3D] = []
 	for r: Dictionary in _req["rooms"]:
-		if r["level"] != "ground" or r["kind"] == "area":
+		if r["level"] != level or r["kind"] == "area":
 			continue
 		var rect: Array = r["rect"]
 		var t: Label3D = Label3D.new()
@@ -349,22 +377,66 @@ func _plan(result: Dictionary) -> Image:
 		t.outline_modulate = Color(0, 0, 0)
 		t.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 		t.no_depth_test = true
-		t.position = Vector3(rect[0] + rect[2] * 0.5, 4.0, rect[1] + rect[3] * 0.5)
+		t.position = Vector3(rect[0] + rect[2] * 0.5, top + 4.0, rect[1] + rect[3] * 0.5)
 		root.add_child(t)
+		labels.append(t)
+	var square: Image = await _top_down("%s floor from above" % ("second" if level == "upper" else level))
+	for t: Label3D in labels:
+		t.queue_free()
+	result["shots"]["plan_" + level] = _frame_info()
+	_save(square, _out.path_join("plan_%s.png" % level))
+	return square
+
+
+## The current scene from above (orthographic, PLAN_RECT), cropped to a square, with a title.
+func _top_down(title: String) -> Image:
 	_camera.projection = Camera3D.PROJECTION_ORTHOGONAL
 	_camera.size = PLAN_RECT.size.y
 	var c: Vector2 = PLAN_RECT.get_center()
 	_camera.look_at_from_position(Vector3(c.x, 40, c.y + 0.001), Vector3(c.x, 0, c.y), Vector3(0, 0, -1))
-	_label.text = "ground floor from above"
+	_label.text = title
 	var frame: Vector2 = root.get_visible_rect().size
 	_label.position.x = (frame.x - frame.y) * 0.5 + 16.0  # inside the square crop
 	var image: Image = await _grab()
 	_label.position.x = 16.0
-	result["shots"]["plan_ground"] = _frame_info()
 	var side: int = image.get_height()
-	var square: Image = image.get_region(Rect2i((image.get_width() - side) / 2, 0, side, side))
-	_save(square, _out.path_join("plan_ground.png"))
-	return square
+	return image.get_region(Rect2i((image.get_width() - side) / 2, 0, side, side))
+
+
+## A walk of kind "loop" (#76) drawn over the upper floor's top-down: a 0.25 m ribbon through its waypoints, seen
+## through the floors (orange on the ground, cyan upstairs), the walked time in the title; saved as <loop id>.png.
+func _loop_plan(w: Dictionary, r: Dictionary, result: Dictionary) -> Image:
+	var paint: Array[StandardMaterial3D] = []
+	for col: Color in [Color(1.0, 0.5, 0.05), Color(0.1, 0.85, 1.0)]:
+		var m: StandardMaterial3D = StandardMaterial3D.new()
+		m.albedo_color = col
+		m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		m.no_depth_test = true
+		paint.append(m)
+	var marks: Array[Node3D] = []
+	var pts: Array = w["points"]
+	for i: int in pts.size() - 1:
+		var a: Vector3 = _v(pts[i])
+		var b: Vector3 = _v(pts[i + 1])
+		var seg: MeshInstance3D = MeshInstance3D.new()
+		var box: BoxMesh = BoxMesh.new()
+		box.size = Vector3(0.25, 0.05, Vector2(b.x - a.x, b.z - a.z).length() + 0.25)
+		seg.mesh = box
+		seg.material_override = paint[1 if maxf(a.y, b.y) > 1.6 else 0]
+		root.add_child(seg)
+		seg.position = Vector3((a.x + b.x) * 0.5, 8.0, (a.z + b.z) * 0.5)
+		if Vector2(b.x - a.x, b.z - a.z).length() > 0.01:
+			seg.look_at(Vector3(b.x, 8.0, b.z), UP)
+		marks.append(seg)
+	var title: String = "%s: %s s at %s m/s, doc %s s%s" % [String(w["name"]).get_slice(":", 1), r["seconds"],
+		w.get("speed", SPEED), w["doc_s"], "" if r["arrived"] else ", STOPPED"]
+	var image: Image = await _top_down(title)
+	for m: Node3D in marks:
+		m.queue_free()
+	var file: String = String(w["name"]).get_slice(":", 1)  # "loop:<id>": no colon in a Windows file name
+	result["shots"][file] = _frame_info()
+	_save(image, _out.path_join("%s.png" % file))
+	return image
 
 
 func _frame_info() -> Dictionary:
@@ -426,6 +498,22 @@ func _rooms_sheet(plan: Image, side: Array, rooms: Array[Image]) -> Image:
 		_paste(sheet, side[i], Vector2i(s + GAP, i * (h + GAP)), Vector2i(w, h))
 	for i: int in rooms.size():
 		_paste(sheet, rooms[i], Vector2i((i % 4) * (cw + GAP), s + GAP + (i / 4) * (ch + GAP)), Vector2i(cw, ch))
+	return sheet
+
+
+## The second floor's sheet (#76), 1280 px wide: its top-down with labels and the balcony loop's top-down side by side,
+## then the tiles (the upper rooms from their doors, the balcony stairs) in rows of four.
+func _upper_sheet(plan: Image, loop: Image, tiles: Array[Image]) -> Image:
+	var s: int = (SHEET_W - GAP) / 2
+	var cw: int = (SHEET_W - 3 * GAP) / 4
+	var ch: int = int(cw * tiles[0].get_height() / float(tiles[0].get_width()))
+	var rows: int = (tiles.size() + 3) / 4
+	var sheet: Image = Image.create_empty(SHEET_W, s + rows * (ch + GAP), false, Image.FORMAT_RGB8)
+	sheet.fill(Color(0.97, 0.97, 0.97))
+	_paste(sheet, plan, Vector2i.ZERO, Vector2i(s, s))
+	_paste(sheet, loop, Vector2i(s + GAP, 0), Vector2i(s, s))
+	for i: int in tiles.size():
+		_paste(sheet, tiles[i], Vector2i((i % 4) * (cw + GAP), s + GAP + (i / 4) * (ch + GAP)), Vector2i(cw, ch))
 	return sheet
 
 

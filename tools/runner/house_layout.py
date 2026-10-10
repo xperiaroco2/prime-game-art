@@ -845,6 +845,14 @@ def clip_pad(p: list[float], holes: list[dict]) -> list[float]:
     if not cut:
         return p
     return [(x0 + x1) / 2, p[1], (z0 + z1) / 2, x1 - x0, z1 - z0]
+def loop_length(points) -> tuple[float, float]:
+    """A loop's (plan length, length along its slopes) in metres; walk.gd's speed is over the plan, so time = plan / speed."""
+    plan = slope = 0.0
+    for a, b in zip(points, points[1:]):
+        dx, dh, dy = b[0] - a[0], b[1] - a[1], b[2] - a[2]
+        plan += math.hypot(dx, dy)
+        slope += math.sqrt(dx * dx + dh * dh + dy * dy)
+    return plan, slope
 
 
 def walk_request(data: dict, levels=WALK_LEVELS) -> dict:
@@ -917,6 +925,11 @@ def walk_request(data: dict, levels=WALK_LEVELS) -> dict:
             up = [start] + middle + [finish]
             walks.append({"name": f"{st['id']}:up", "kind": "stairs", "points": up})
             walks.append({"name": f"{st['id']}:down", "kind": "stairs", "points": up[::-1]})
+    for lv in data["levels"]:  # the doc's loops (#76), walked at the game's speed and timed against the doc
+        for lp in lv.get("loops", []):
+            walks.append({"name": f"loop:{lp['id']}", "kind": "loop", "speed": lp.get("speed", 4.5),
+                          "doc_m": lp.get("doc_m"), "doc_s": lp.get("doc_s"),
+                          "points": [[float(x), float(h), float(y)] for x, h, y in lp["points"]]})
     rooms = [{"level": lv["level"], "id": r["id"], "title": r.get("title", r["id"]), "rect": r["rect"],
               "kind": r["kind"], "floor_y": lv["floor_y"]} for lv in data["levels"] for r in lv["rooms"]]
     unique = []

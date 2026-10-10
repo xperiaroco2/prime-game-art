@@ -56,10 +56,13 @@ take the heavy-run lock). The request (`house_layout.walk_request`, written to `
   second, 1 m either side of the wall line, by a capsule 1.36 m wide and 1.8 m tall at 3 m/s (the kit's door is
   exactly 1.4 m clear: a 1.4 m capsule touches both jambs and jams, so the walk keeps 2 cm a side);
 - every flight (`stairs_main`, `stairs_basement`, `stairs_balcony`) up and down, from 1 m before its foot to up to
-  1 m past its top (less where the room there is short);
+  1 m past its top (less where the room there is short: the pantry's landing);
 - a 3 x 3 m pad under each walk end that has no floor (the yard; #81a builds the real ground), cut back from the
   holes of its level (`house_layout.clip_pad`: a pad over the outdoor stairwell jammed the climb);
-- a control: the 1.5 m capsule must stop at the first door (the colliders are there).
+- a control: the 1.5 m capsule must stop at the first door (the colliders are there);
+- every `[[loops]]` entry of a level (a design-doc route as `points` = [x, height, y], heights absolute): walked at its
+  `speed` (the game's 4.5 m/s) for at most 40 s and timed against the doc's `doc_s` (`within_1s` in `walk.json`;
+  `house_layout.loop_length` gives its plan length beforehand). The one loop is the second floor's (#76, below);
 - the design doc's routes from `layouts/house/routes.toml` ("Routes" under the basement below), at their own speed.
 
 A walk arrives when it gets within 0.3 m of its last point at that point's height (0.15 m); it gives up after 30
@@ -111,6 +114,27 @@ placeholder boxes without collision until a leaf prop exists; Q11 A, no per-room
 Q21 B, the inventory's props and counts for every room. Notes from the game's greybox: spawn marker Circle01 lies
 under the dining table and Circle02 0.2 m from the terrace table.
 
+### The second floor (#76)
+
+Seven files (`bedroom`, `kids_room`, `landing`, `study`, `bathroom`, `guest_room`, `balcony`) with the inventory's
+props and fixtures (`tools/tests/test_house_upper.py`). The study's `Printer` station (40, 29) is the desk with the
+computer set and the photo printer on its top (h 0.75) and the chair, all tagged `station = "Printer"`. The balcony's
+sitting set stands at its west end and the pots on the north rail, so a 2.3 m lane runs from the landing door to the
+external stairs' top. Defaults: Q21 B (the inventory's counts; the rocking horse is hero class and not made; a second
+nightstand in the guest room so each table lamp has one), Q6 (the straight flight, its foot on the yard at y 15).
+
+The doc's loop (dining room, stairs, landing, balcony, external stairs, terrace, dining room: 46 m, 10.2 s) is
+`[[loops]]` in `upper.toml`. As built it is 62.6 m in plan (`house_layout.loop_length`), about 13.9 s at 4.5 m/s:
+the main stairs' U-turn adds about 4 m, the route passes south of the dining set, and the straight balcony flight lands
+north on the yard, so the route steps off its foot and goes back south round its west side, under the balcony (the east
+side is too narrow for the 0.68 m capsule beside the terrace's corner planter). Q6's U-turn option (two runs in the
+same 2 x 6 m rect, the foot on the terrace under the balcony) is an estimate, not walked: 54.3 to 56.1 m with
+`loop_length` for a half-landing at y 18.5 or 17.6 (12.1 to 12.5 s), still over the doc's 10.2 s; the engineer decides.
+
+The walk's second-floor proof is `upper.png` (1280 px): `plan_upper.png` (the second floor from above, the attic and
+roof hidden, a label per room) beside `balcony_loop.png` (the loop's waypoints as a ribbon over the same top-down,
+orange on the ground, cyan upstairs, the walked seconds in its title), then the upper rooms' `room_<id>.png` and the
+balcony stairs. `rooms.png` keeps the ground floor's rooms.
 ## The basement (#78)
 
 Eight dressed rooms (`layouts/house/dressing/{storage,darkroom,corridor,boiler_room,generator_hall,pump_room,
@@ -203,7 +227,8 @@ Defaults used (for the engineer; data, easy to change):
 - Q9 B: leaves standing ajar at the front door, the terrace door and the garage side door; the greenhouse door is
   the kit's own leaf; open doorways elsewhere.
 - The attic hatch: the kit's hatch tile puts the hole's centre on whole metres, at (28, 29) instead of the doc's
-  (28, 28.5).
+  (28, 28.5). Its ladder climbs south (#76): the foot on the landing at y 28.3; climbing north put the foot 0.3 m
+  from the stairwell (y 30), where no one can stand.
 - The study door is at (34, 28) as on the plan (the game's greybox has it at (34, 25)).
 - The front porch and the two chimneys are kit v2 pieces (`[[pieces]]`): one `porch_2x2` from x 29 on the front
   wall, so its posts (x 29.12 and 30.88) leave 1.64 m clear round the front door at x 30, its lamp socket for the porch
@@ -222,3 +247,57 @@ Defaults used (for the engineer; data, easy to change):
   half at x 30 to a 1 x 4 m landing at 1.6 m on the west wall, then up east to the upper landing at x 30, all under
   the doc's hole (26, 30, 4 x 6). Marked `placeholder`; the outdoor (concrete) pieces stand in until kit v2 has
   indoor ones. Option: a 5 m steeper straight flight with a 1 m foot landing (kit v2).
+
+## Light (#83a)
+
+`layouts/house/lights.toml` is the light kit as data; `tools/runner/house_lights.py` places it and `house` writes it
+with the shell (the fixtures and the summary to `tools/out/house/lights.json`). Every number is taste data: change it
+and regenerate.
+
+- **Types** (`[types.<id>]`, the 16 fixtures of the plan's `inventory.md` §8): `mount` (`ceiling`: a grid under the
+  ceiling; `wall`: spaced along the walls 0.15 m in, 1.2 m clear of the room's doors; `floor`: a grid 0.6 m in from
+  the walls), `h` (the light's height over the room's floor), `light` (`omni`, or `spot` pointing down with `angle`),
+  `energy`, `range`, `color` (a name in `[colors]`; c2, the lab's lamp colour, unless the type or the room says
+  otherwise) and `glow` (may get the cheap real-time glow).
+- **Fixtures** (`[rooms.<id>]`: type = count; 191 in all): positions are generated per room; `place = "perimeter"`
+  spaces a room's ceiling and floor fixtures 2 m in along its edges (the yard, which holds the house); a room's
+  `color` recolours its types without a colour (the greenhouse's green cold).
+- **Moon spots** (`[moon]`): bake-only cool spots, one per `every` windows of a level, outside the window, aimed in.
+- **Zones** (`[zones.<id>]`): the separate LightmapGI bakes (basement, ground, upper with the attic, outbuildings,
+  roof, yard); each room is in exactly one; `texel_high` and `texel_low` are the lightmap texels per metre of the
+  presets.
+- **Bake** (`[bake]`): the LightmapGI settings every zone shares (quality, bounces, the bounce energy at most 1.5,
+  denoiser, interior).
+- **Presets** (`[presets.high]`, `[presets.low]`): the lightmap resolution, the real-time glow count (the nearest
+  fixtures with `glow`), SSAO, shadowed spots, fog (`look.md` §4.5 of the plan).
+
+Every light is `light_bake_mode` Static (baked; not drawn in real time where a lightmap covers it); no shadows. The
+`house` command writes `lights/<level>.tscn` (a level's lights in plot coordinates) and `zones/<zone>.tscn` (the
+zone's room scenes, the level pieces standing in them, its lights, and as `Above` the next level's rooms over it: the
+floor slabs that are the zone's ceiling; where the zone's rooms lie under the yard, which the generator gives no
+floor, `Above` also holds `Cover_<n>`: bake-only concrete floor tiles at the next level's height, so a basement room
+outside the ground floor's footprint does not bake under open sky). A bake needs the editor (below).
+
+### Baking a zone
+
+Godot 4.7.2 bakes a LightmapGI only in the editor, with a window:
+- `LightmapGI.bake()` is not exposed to scripts (the bake lives in the C++ editor plugin);
+- a `--headless` editor has no GPU device and reports that lightmap baking is not supported;
+- an exported project cannot bake.
+
+So there is no stock headless route (Q22 option C; a forum answer for 4.5.1 says the same:
+https://forum.godotengine.org/t/is-it-possible-to-bake-lightmapgi-node-using-headless-godot-editor/129607). The only
+route without a window would be a custom engine build that exposes `bake()`, which is installing a tool: the
+engineer's yes.
+
+The route used (#83a spike, raw project `D:/prime-art-raw/house/83a/godot`):
+1. `house --out <project>/import/house` writes the zone scenes; the kit v2 GLBs are imported with
+   `meshes/light_baking=1` so the kit's UV2 is kept.
+2. `zone_build.gd` (headless) flattens a zone into one scene with a LightmapGI from `[bake]`; each mesh's
+   `lightmap_size_hint` is the zone's texel per metre times its UV2 extent, so High and Low differ only in the texel.
+3. The editor bakes it: the lab's `lmbake` plugin, started by `labrun.py godot ... --window 1280x720 -- --editor`
+   (an off-screen window, never minimized). `labrun.py` refuses an editor run outside 00:00-08:00 local unless the
+   manager wrote a daytime grant (`editor_window.txt`); agents never write that file.
+4. Every lab Godot run starts inside the art runner's heavy-run lock (`common.heavy_lock`), one at a time.
+
+Bakes are therefore night jobs: a zone is prepared by day and baked in the next night run.

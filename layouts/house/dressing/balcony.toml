@@ -1,0 +1,49 @@
+# The balcony's dressing (art #76, docs/house.md "Dressing"): the props and light fixtures of one room, as data.
+# at = [x, h, z]: room-local metres like the room's stations (x east, h above the floor, z south from the room's
+# north-west corner) at the prop's pivot (floor: the footprint's centre; wall: the back's bottom centre on the wall's
+# face; ceiling: the top's centre). face = the way the prop's front (+Z) looks: N, E, S or W (or yaw = degrees).
+# Ids are the dressing library's (props/library.toml, #87) and the task props' (props/tasks.toml, #82); an id with
+# no GLB yet is generated as a named, sized placeholder box. Positions are the engineer's to change.
+# The sitting set at the west end and the pots on the north rail keep a 2.3 m lane from the door to the stairs' top.
+room = "balcony"
+
+[[props]]
+id = "small_table"
+at = [0.55, 0, 1.4]
+
+[[props]]
+id = "balcony_chair"
+at = [0.55, 0, 0.6]
+
+[[props]]
+id = "balcony_chair"
+at = [0.55, 0, 2.2]
+face = "N"
+
+[[props]]
+id = "planter_pot"
+at = [3.5, 0, 0.35]
+
+[[props]]
+id = "planter_pot"
+at = [5.5, 0, 0.35]
+
+[[props]]
+id = "planter_pot"
+at = [7.5, 0, 0.35]
+
+[[props]]
+id = "planter_pot"
+at = [9.65, 0, 2.65]
+
+[[fixtures]]
+id = "lantern"
+at = [0.55, 0.7, 1.4]
+
+[[fixtures]]
+id = "lantern"
+at = [3.0, 0, 2.7]
+
+[[fixtures]]
+id = "string_lights"
+at = [5.0, 2.6, 2.85]
