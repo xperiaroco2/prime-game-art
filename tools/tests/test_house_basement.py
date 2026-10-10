@@ -131,10 +131,6 @@ class BasementDressing(unittest.TestCase):
         self.assertLessEqual(row["clear"], 0.0)
 
 
-if __name__ == "__main__":
-    unittest.main()
-
-
 class ReviewRequest(unittest.TestCase):
     """The review pictures' request (house_basement.review_request, layouts/house/basement_review.toml)."""
 
@@ -184,6 +180,10 @@ class ReviewRequest(unittest.TestCase):
             self.assertTrue(x <= rx and y <= ry and rx + rw <= x + w and ry + rd <= y + d)
         self.assertEqual(len(self.req["hide"]), len(DATA["levels"]) - 1)
         self.assertEqual(self.req["lines"], ["route:wine: 6.5 s walked, the doc 5.9 s (+0.6 s)"])
+        stopped = B.review_request(DATA, {}, {}, {"shots": []},
+                                    [{"name": "route:wine", "seconds": 5.5, "doc_s": 5.9, "delta_s": -0.4,
+                                      "pass": False, "end": [27.3, -3.0, 25.0]}])
+        self.assertEqual(stopped["lines"], ["route:wine: stopped after 5.5 s at [27.3, -3.0, 25.0], the doc 5.9 s"])
 
 
 class WalkPads(unittest.TestCase):
@@ -207,3 +207,7 @@ class WalkPads(unittest.TestCase):
         p = H.clip_pad([65.0, 0.0, 33.0], [{"rect": [62, 28, 4, 4]}])
         self.assertEqual(p, [65.0, 0.0, 33.25, 3.0, 2.5])
         self.assertEqual(H.clip_pad([39.0, 0.0, 14.0], [{"rect": [62, 28, 4, 4]}]), [39.0, 0.0, 14.0])
+
+
+if __name__ == "__main__":
+    unittest.main()

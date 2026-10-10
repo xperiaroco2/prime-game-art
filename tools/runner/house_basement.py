@@ -222,6 +222,8 @@ def review_request(data: dict, dressings: dict, cat: dict, spec: dict, routes: l
     shot_list = shots(data, spec)
     far = next((s["name"] for s in shot_list if s["name"] == "generator_hall_from_passage"), None)
     lines = [f"{r['name']}: {r['seconds']:g} s walked, the doc {r['doc_s']:g} s ({r['delta_s']:+g} s)"
+             if r.get("pass", True) else
+             f"{r['name']}: stopped after {r['seconds']:g} s at {r.get('end')}, the doc {r['doc_s']:g} s"
              for r in routes or []]
     return {"exposure": float(spec.get("exposure", 1.0)), "ambient": list(spec.get("ambient", [0.5, 0.5, 0.5])),
             "ambient_energy": float(spec.get("ambient_energy", 0.05)), "fov": float(spec.get("fov", 75.0)),
