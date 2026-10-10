@@ -22,11 +22,13 @@ from .. import heads
 from .. import clay as cl
 from ..util import relink
 from . import checks, kit
+from .accessories import seat_accessories
 from .face import build_face, game_mesh, rigid_full_z
 
 EYE_MATERIAL = "fb_eye"  # the eyes' one material (shared by every character)
 EYE_RGB = "eye_rgb"  # its colour attribute (corner domain, linear float): kit.FIXED's white or pupil per face
 BODY_PARTS = ("top", "bottom", "shoes")  # every other part but the head sits on it and follows the bean warp
+NOT_ACCESSORIES = ("hair", "headwear")  # every other extra's ear and nose pieces are seated on the kit's (accessories)
 EYE_PIECES = ("whites", "pupils")  # the pieces of the eyes object; every other piece goes into the face object
 EAR_TUCK_X = 0.082  # the pack head's own ears flattened to this half-width (m) unless the recipe tucks them itself
 RIGID_FRONT_Y = -0.07  # the face skin in front of this world y follows the Head bone alone (facekit.rigid_face_skin)
@@ -157,6 +159,9 @@ def build(arm, parts, coll, rc, eyes_at, skin_mat, pack_mouth_dz=None):
     rep["push_out"] = {o.name: heads.push_out(o, head, **PUSH_OUT) for o in followers if o is not None}
     skin = tuple(rc["skin"]) if rc.get("skin") else tuple(skin_mat.diffuse_color[:3])
     face = build_face(h, picks, skin, coll=coll, brow_colour=spec.get("brow_rgb"))
+    # art #42 round 3: the extras' rings and studs moved from the pack ear's place onto the kit's ears and nose
+    extras = [parts[e["role"]] for e in rc.get("extras", []) if e["role"] not in NOT_ACCESSORIES and e["role"] in parts]
+    rep["accessories"] = seat_accessories(face, h, extras, kit.hair_flags(item)["ears"])
     # the check's numbers on this head (the 300+ check runs the same on many faces: faces --check)
     rep.update({"picks": picks, "hair_item": item, "flags": kit.hair_flags(item), "tris": face.meta["tris"],
                 "tris_total": face.meta["tris_total"], "collisions": checks.collisions(face),
