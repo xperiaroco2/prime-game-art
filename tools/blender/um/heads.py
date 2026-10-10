@@ -9,6 +9,7 @@ goatee; King and men's Adventurer hair include beards; Casual Character "Skin_Da
 import math
 
 import bmesh
+import bpy
 from mathutils import Vector
 
 from . import zones
@@ -255,3 +256,268 @@ def bean_warp(head, x, eye_z, followers=(), centre_dz=-0.007, centre_y=-0.047, a
         moved[o.name] = len(o.data.vertices)
     return {"centre": [round(k, 4) for k in c], "chin_z_before": round(chin, 4), "largest_move_mm": round(most * 1000, 1),
             "followers_moved": moved, "radii": [ax, ay, az_top, az_bottom], "power": power, "strength": strength}
+
+
+def _bean_project(P, c, radii, power):
+    """Points P (n x 3, world) moved along the ray from c onto the bean superellipsoid (the lab's
+    clay_parts.bean_project)."""
+    import numpy as np
+    ax, ay, azt, azb = radii
+    d = P - c
+    az = np.where(d[:, 2] >= 0, azt, azb)
+    f = (np.abs(d[:, 0]) / ax) ** power + (np.abs(d[:, 1]) / ay) ** power + (np.abs(d[:, 2]) / az) ** power
+    f = np.maximum(f, 1e-12)
+    return c + d / f[:, None] ** (1.0 / power)
+
+
+def _wco(o):
+    import numpy as np
+    a = np.empty(len(o.data.vertices) * 3, np.float64)
+    o.data.vertices.foreach_get("co", a)
+    M = np.array(o.matrix_world, dtype=np.float64)
+    return a.reshape(-1, 3) @ M[:3, :3].T + M[:3, 3]
+
+
+def _set_wco(o, P):
+    import numpy as np
+    Mi = np.array(o.matrix_world.inverted(), dtype=np.float64)
+    o.data.vertices.foreach_set("co", (P @ Mi[:3, :3].T + Mi[:3, 3]).astype(np.float32).ravel())
+    o.data.update()
+
+
+def _small_pieces(bm, max_faces):
+    """The faces of the connected pieces (shared vertices) of at most max_faces faces."""
+    bm.verts.index_update()
+    parent = list(range(len(bm.verts)))
+
+    def find(i):
+        while parent[i] != i:
+            parent[i] = parent[parent[i]]
+            i = parent[i]
+        return i
+    for e in bm.edges:
+        a, b = find(e.verts[0].index), find(e.verts[1].index)
+        if a != b:
+            parent[a] = b
+    pieces = {}
+    for f in bm.faces:
+        pieces.setdefault(find(f.verts[0].index), []).append(f)
+    return [f for fs in pieces.values() if len(fs) <= max_faces for f in fs]
+
+
+def _transfer_weights(dst, src):
+    """Vertex groups of src carried to dst (same rig): each dst vertex takes the barycentric blend of the weights at
+    its nearest point on src (the lab's clay_parts.transfer_weights). Returns the number of groups written."""
+    from mathutils.bvhtree import BVHTree
+    from mathutils.interpolate import poly_3d_calc
+    bm = bmesh.new()
+    bm.from_mesh(src.data)
+    bmesh.ops.triangulate(bm, faces=bm.faces)
+    bm.verts.ensure_lookup_table()
+    bm.verts.index_update()
+    dl = bm.verts.layers.deform.active
+    mws = src.matrix_world
+    vs = [mws @ v.co for v in bm.verts]
+    tri = [[v.index for v in f.verts] for f in bm.faces]
+    wts = [dict(v[dl]) if dl is not None else {} for v in bm.verts]
+    bm.free()
+    bvh = BVHTree.FromPolygons(vs, tri)
+    names = [g.name for g in src.vertex_groups]
+    for g in list(dst.vertex_groups):
+        dst.vertex_groups.remove(g)
+    groups = [dst.vertex_groups.new(name=n) for n in names]
+    mwd = dst.matrix_world
+    acc = {}
+    for v in dst.data.vertices:
+        loc, _, fi, _ = bvh.find_nearest(mwd @ v.co)
+        t = tri[fi]
+        bc = poly_3d_calc([vs[i] for i in t], loc)
+        w = {}
+        for i, b in zip(t, bc):
+            for gi, x in wts[i].items():
+                w[gi] = w.get(gi, 0.0) + b * x
+        tot = sum(w.values())
+        for gi, x in w.items():
+            if x > 1e-4 and tot > 0:
+                acc.setdefault(gi, []).append((v.index, x / tot))
+    for gi, lst in acc.items():
+        for vi, x in lst:
+            groups[gi].add([vi], x, "REPLACE")
+    return len(acc)
+
+
+def _sphere_uv(o, c):
+    """A spherical UV map about c, its seam at the back (the lab's clay_parts.sphere_uv)."""
+    me = o.data
+    uv = me.uv_layers[0] if me.uv_layers else me.uv_layers.new(name="UVMap")
+    mw = o.matrix_world
+    for poly in me.polygons:
+        us = []
+        for li in poly.loop_indices:
+            p = mw @ me.vertices[me.loops[li].vertex_index].co - Vector(tuple(c))
+            u = (math.atan2(p.x, -p.y) / (2 * math.pi)) % 1.0
+            v = math.acos(max(-1.0, min(1.0, p.z / max(p.length, 1e-9)))) / math.pi
+            us.append([u, 1.0 - v])
+        if max(x[0] for x in us) - min(x[0] for x in us) > 0.5:
+            for x in us:
+                if x[0] < 0.5:
+                    x[0] += 1.0
+        for li, x in zip(poly.loop_indices, us):
+            uv.data[li].uv = x
+
+
+def clean_head(head, x, eye_z, bean, skin_mat=None, neck_dz=0.02, sphere=(64, 32), voxel_m=0.003, tris=1200,
+               snap_tol=0.06, crease_band=(-0.045, 0.01), crease_passes=4, weight_blend_m=0.02, small_piece_faces=120):
+    """The faces lab's clean bean head (art #42; clay_b/clay_parts.build_head, the head under every approved lab face),
+    run after bean_warp and the rigid face skin. The warped pack head still carries the pack's eye holes and socket
+    creases at 15 %, and the women's (and some men's) pack heads leave the crown and the back of the skull to the hair,
+    so the head above the neck is REPLACED by the closed bean itself:
+
+    1. the warped head welded, its small loose pieces (<= small_piece_faces) dropped, then cut below
+       z_neck = the bean's centre z - az_bottom + neck_dz, the cut filled;
+    2. united with a UV sphere (sphere: segments, rings) put onto the bean, voxel remeshed at voxel_m and decimated
+       to `tris`;
+    3. every vertex within |f - 1| < snap_tol of the bean put exactly on it, the crease where the neck meets the bean's
+       underside softened (crease_passes neighbour means between z_neck + crease_band);
+    4. the weights: the warped pack head's below the cut, the Head bone alone above it (smoothstep over
+       weight_blend_m); smooth shading, a spherical UV map, one material (skin_mat, else the head's first).
+
+    `bean` is faces/clay_head.json "bean". World space, rest pose, the face toward -Y. Returns what was done."""
+    import numpy as np
+    from . import clay as cl
+    mw = head.matrix_world.copy()
+    inv = mw.inverted()
+    c = np.array([x, bean["centre_y"], eye_z + bean["centre_dz"]])
+    radii = (bean["ax"], bean["ay"], bean["az_top"], bean["az_bottom"])
+    power = bean["power"]
+    z_neck = float(c[2] - radii[3] + neck_dz)
+    info = {"z_neck": round(z_neck, 4)}
+    mat = skin_mat or (head.data.materials[0] if head.data.materials else None)
+    # 1. weld, drop loose bits, keep a weighted copy for the neck's weights, cut and cap (world space)
+    bm = bmesh.new()
+    bm.from_mesh(head.data)
+    n0 = len(bm.verts)
+    bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=1e-5 / cl.wscale(head))
+    info["welded_vertices"] = n0 - len(bm.verts)
+    small = _small_pieces(bm, small_piece_faces)
+    bmesh.ops.delete(bm, geom=small, context="FACES")
+    bmesh.ops.delete(bm, geom=[v for v in bm.verts if not v.link_faces], context="VERTS")
+    info["small_pieces_removed_faces"] = len(small)
+    wsrc = head.copy()
+    wsrc.data = head.data.copy()
+    bm.to_mesh(wsrc.data)  # welded, with its vertex groups (the deform layer travels with the bmesh)
+    bm.transform(mw)
+    geom = bm.verts[:] + bm.edges[:] + bm.faces[:]
+    bmesh.ops.bisect_plane(bm, geom=geom, plane_co=Vector((0, 0, z_neck)), plane_no=Vector((0, 0, 1)), clear_outer=True)
+    filled = bmesh.ops.holes_fill(bm, edges=[e for e in bm.edges if e.is_boundary], sides=0)
+    bmesh.ops.triangulate(bm, faces=bm.faces)
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+    info["neck_caps"] = len(filled["faces"])
+    bm.verts.index_update()
+    nv = [tuple(v.co) for v in bm.verts]
+    nf = [tuple(v.index for v in f.verts) for f in bm.faces]
+    bm.free()
+    # 2. the union with the bean, remeshed and decimated
+    bm = bmesh.new()
+    bmesh.ops.create_uvsphere(bm, u_segments=sphere[0], v_segments=sphere[1], radius=1.0)
+    bm.verts.index_update()
+    Pb = _bean_project(np.array([tuple(v.co) for v in bm.verts]) * 0.1 + c, c, radii, power)
+    off = len(nv)
+    nv += [tuple(p) for p in Pb]
+    nf += [tuple(off + v.index for v in f.verts) for f in bm.faces]
+    bm.free()
+    me = bpy.data.meshes.new(head.data.name + "_bean")
+    me.from_pydata([tuple(inv @ Vector(p)) for p in nv], [], nf)
+    me.update()
+    if mat is not None:
+        me.materials.append(mat)
+    old = head.data
+    head.data = me
+    if old.users == 0:
+        bpy.data.meshes.remove(old)
+    for g in list(head.vertex_groups):
+        head.vertex_groups.remove(g)
+    rem = head.modifiers.new("bean_remesh", "REMESH")
+    rem.mode = "VOXEL"
+    rem.voxel_size = voxel_m / cl.wscale(head)
+    rem.adaptivity = 0.0
+    info["remesh_tris"] = cl.apply_modifiers(head)
+    dec = head.modifiers.new("bean_decimate", "DECIMATE")
+    dec.ratio = min(1.0, tris / max(1, cl.tris(head.data)))
+    cl.apply_modifiers(head)
+    # 3. exactly the bean where it is the bean; the neck crease softened
+    Pw = _wco(head)
+    d = Pw - c
+    az = np.where(d[:, 2] >= 0, radii[2], radii[3])
+    f = ((np.abs(d[:, 0]) / radii[0]) ** power + (np.abs(d[:, 1]) / radii[1]) ** power
+         + (np.abs(d[:, 2]) / az) ** power) ** (1.0 / power)
+    on = np.abs(f - 1.0) < snap_tol
+    Pw[on] = _bean_project(Pw[on], c, radii, power)
+    nb = [[] for _ in range(len(Pw))]
+    for e in head.data.edges:
+        a, b = e.vertices
+        nb[a].append(b)
+        nb[b].append(a)
+    crease = np.where(~on & (Pw[:, 2] > z_neck + crease_band[0]) & (Pw[:, 2] < z_neck + crease_band[1]))[0]
+    for _ in range(crease_passes):
+        Pw[crease] = 0.5 * Pw[crease] + 0.5 * np.array([Pw[nb[i]].mean(0) if nb[i] else Pw[i] for i in crease])
+    _set_wco(head, Pw)
+    info["on_bean_vertices"] = int(on.sum())
+    info["crease_vertices_softened"] = int(len(crease))
+    # 4. the weights
+    info["weights_transferred"] = _transfer_weights(head, wsrc)
+    wme = wsrc.data
+    bpy.data.objects.remove(wsrc, do_unlink=True)
+    bpy.data.meshes.remove(wme)
+    hg = head.vertex_groups.get("Head") or head.vertex_groups.new(name="Head")
+    for v in head.data.vertices:
+        t = min(1.0, max(0.0, (Pw[v.index, 2] - (z_neck - weight_blend_m)) / weight_blend_m))
+        t = t * t * (3 - 2 * t)
+        if t <= 0.0:
+            continue
+        for ge in list(v.groups):
+            if ge.group != hg.index:
+                head.vertex_groups[ge.group].add([v.index], ge.weight * (1 - t), "REPLACE")
+        hw = next((ge.weight for ge in v.groups if ge.group == hg.index), 0.0)
+        hg.add([v.index], hw * (1 - t) + t, "REPLACE")
+    cl.smooth_shade(head.data)
+    _sphere_uv(head, c)
+    info["tris"] = cl.tris(head.data)
+    return info
+
+
+def push_out(o, head, clear=0.004, reach=0.035, passes=4, keep=0.85):
+    """Hair, a hat or a beard that sinks into the clean bean head, or lies closer than `clear`, moves out along the
+    head's surface normal at its nearest point until it clears it; vertices deeper than `reach` stay (hidden inside the
+    head). The move is spread to neighbours (keep x the largest neighbour's move). The lab's clay_parts.push_out, with
+    which round B fitted every hair and hat on the clean head (HAIR_CLEAR, HAT_CLEAR 4 mm). Returns what moved."""
+    import numpy as np
+    from mathutils.bvhtree import BVHTree
+    hm = head.matrix_world
+    bvh = BVHTree.FromPolygons([hm @ v.co for v in head.data.vertices], [tuple(p.vertices) for p in head.data.polygons])
+    P = _wco(o)
+    D = np.zeros_like(P)
+    for i, p in enumerate(P):
+        loc, nrm, _, _ = bvh.find_nearest(Vector(tuple(p)))
+        if loc is None:
+            continue
+        sd = (Vector(tuple(p)) - loc).dot(nrm)
+        if -reach < sd < clear:
+            D[i] = np.array(nrm) * (clear - sd)
+    nb = [[] for _ in range(len(D))]
+    for e in o.data.edges:
+        a, b = e.vertices
+        nb[a].append(b)
+        nb[b].append(a)
+    for _ in range(passes):
+        L = np.linalg.norm(D, axis=1)
+        new = D.copy()
+        for i, n in enumerate(nb):
+            if n:
+                j = n[int(np.argmax(L[n]))]
+                if keep * L[j] > L[i]:
+                    new[i] = keep * D[j]
+        D = new
+    _set_wco(o, P + D)
+    L = np.linalg.norm(D, axis=1)
+    return {"vertices_pushed": int((L > 1e-5).sum()), "largest_push_mm": round(float(L.max()) * 1000, 1)}

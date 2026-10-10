@@ -279,7 +279,16 @@ on, the noses barely different (the pack nose dominated). `faces/clay_head.json`
    `az_top`, `az_bottom`, power `power`) centred at the eye height + `centre_dz`, y `centre_y`, fading out below the
    chin over `fade_z` so the neck stays; the hair and every head extra (a beard, a hat, an earring) move with their
    `hair_k` nearest head vertices (inverse distance), so they still sit on the head (the report's `bean_head`);
-3. `facekit.rigid_face_skin` down to `rigid_full_z` (`rigid_margin` under the kit's lowest mouth point).
+3. `facekit.rigid_face_skin` down to `rigid_full_z` (`rigid_margin` under the kit's lowest mouth point);
+4. `heads.clean_head` (`clean_head`, the lab's round B clay head, `clay_b/clay_parts.py` `build_head`): the warp alone
+   is not the lab's head (step 2's IoU against the lab's own renders: the women 0.45-0.70; the warped pack heads keep
+   the pack's sockets at 15 %, and the women's and m3's leave the crown and the back of the skull to the hair). The
+   warped head is welded, cut `neck_dz` above the bean's bottom, united with a sphere put onto the bean, voxel
+   remeshed (`voxel_m`), decimated (`tris`), snapped onto the bean within `snap_tol`, the neck crease softened; the
+   pack's weights below the cut, the Head bone alone above it; one skin material (the report's `clean_head`);
+5. `heads.push_out` (`push_out`): the hair and every head extra that sinks into the closed bean or lies within `clear`
+   of it moves out along the head's normal (deeper than `reach` stays hidden), spread to its neighbours (the lab's
+   4 mm hair and hat clearance; the report's `push_out`).
 
 The clay library's piece keys carry the head data (`kit.DATA_SHA` for the head and the face, `kit.HEAD_SHA` and the
 head for the hair and the extras that follow it).

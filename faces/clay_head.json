@@ -1,13 +1,19 @@
 {
  "schema": "prime-game-art/faces/clay-head/1",
- "what": "The clay face kit's head as data (art #42): the pack head reshaped into the faces lab's egg-like bean head before the kit's features are seated on it, in the lab's order (order). nose_flatten pushes the pack nose back into the face (heads.flatten_nose); bean is the space warp onto a superellipsoid about the eye height (heads.bean_warp; hair_k: the hair and every head extra move with their nearest head vertices); rigid_margin is the margin under the kit's lowest mouth point down to which the face skin follows the Head bone alone (clayface/face.py rigid_full_z). Metres, the face toward -Y, world space at rest before the clay look's head scale. Read by tools/blender/um/clayface/kit.py (docs/faces.md, \"The bean head\").",
+ "what": "The clay face kit's head as data (art #42): the pack head reshaped into the faces lab's egg-like bean head before the kit's features are seated on it, in the lab's order (order). nose_flatten pushes the pack nose back into the face (heads.flatten_nose); bean is the space warp onto a superellipsoid about the eye height (heads.bean_warp; hair_k: the hair and every head extra move with their nearest head vertices); clean_head replaces the warped head above the neck by the closed bean itself (heads.clean_head, the lab's round B clay head: the pack's sockets and the women's missing skull gone), push_out moves the hair and every head extra out of it (heads.push_out, 4 mm clear); rigid_margin is the margin under the kit's lowest mouth point down to which the face skin follows the Head bone alone (clayface/face.py rigid_full_z). Metres, the face toward -Y, world space at rest before the clay look's head scale. Read by tools/blender/um/clayface/kit.py (docs/faces.md, \"The bean head\").",
  "lab_source": {
   "path": "research/2026-10-05-faces/lab/params_r2.json",
   "sha256": "215b230306dfd8475f1f7e1130c7fb78d4e8c7061206547c1e4675727e2c30cc",
   "code": "research/2026-10-05-faces/lab/lab_base.py",
   "code_sha256": "292bc06ef392e8056052dcc7f0e0bdae6be6df651d42a56e62816efd684c5311"
  },
- "order": ["nose_flatten", "bean_warp", "rigid_face_skin"],
+ "order": [
+  "nose_flatten",
+  "bean_warp",
+  "rigid_face_skin",
+  "clean_head",
+  "push_out"
+ ],
  "nose_flatten": {
   "half_w": 0.026,
   "side_x": 0.03,
@@ -26,8 +32,44 @@
   "az_bottom": 0.104,
   "power": 2.3,
   "strength": 0.85,
-  "fade_z": [0.035, 0.008],
+  "fade_z": [
+   0.035,
+   0.008
+  ],
   "hair_k": 6
  },
- "rigid_margin": 0.005
+ "rigid_margin": 0.005,
+ "clean_head_source": {
+  "code": "research/2026-10-05-faces/lab/clay_b/clay_parts.py",
+  "code_sha256": "2936380d8cdc1860253cc94e6dad7d7b8228444a3a5fcf5abbac1deac8ac7732",
+  "functions": [
+   "build_head",
+   "bean_project",
+   "transfer_weights",
+   "push_out"
+  ]
+ },
+ "clean_head": {
+  "neck_dz": 0.02,
+  "sphere": [
+   64,
+   32
+  ],
+  "voxel_m": 0.003,
+  "tris": 1200,
+  "snap_tol": 0.06,
+  "crease_band": [
+   -0.045,
+   0.01
+  ],
+  "crease_passes": 4,
+  "weight_blend_m": 0.02,
+  "small_piece_faces": 120
+ },
+ "push_out": {
+  "clear": 0.004,
+  "reach": 0.035,
+  "passes": 4,
+  "keep": 0.85
+ }
 }

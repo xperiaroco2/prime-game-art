@@ -1,6 +1,7 @@
 """The face kit on an assembled character (um/assemble.py build_character with face="kit", the clay look): the pack
 head's own ears and nose flattened, the head reshaped into the faces lab's bean head (the hair and extras following
-it), its face skin given to the Head bone alone, the kit's face built from the recipe character's `face_kit` picks
+it), its face skin given to the Head bone alone, the head above the neck replaced by the closed bean
+(the hair and extras pushed out of it), the kit's face built from the recipe character's `face_kit` picks
 and merged into two skinned meshes:
 
 - `<id>_eyes`: the eye whites and pupils (one glossy material whose colour is the vertex colour EYE_RGB: white or
@@ -36,6 +37,10 @@ RIGID_BLEND_M = 0.03  # ... fading back to the pack's weights over this height b
 # was built. Without the bean the kit's features sat on the narrow, flat pack head: pressed in, glued on.
 NOSE_FLATTEN = dict(kit.HEAD["nose_flatten"])
 BEAN = dict(kit.HEAD["bean"])
+# ... then the head above the neck replaced by the closed bean itself (heads.clean_head, the lab's round B clay head:
+# no pack sockets, a whole skull under every hair) and the hair and extras pushed out of it (heads.push_out)
+CLEAN_HEAD = dict(kit.HEAD["clean_head"])
+PUSH_OUT = dict(kit.HEAD["push_out"])
 
 
 class KitHead:
@@ -124,6 +129,9 @@ def build(arm, parts, coll, rc, eyes_at, skin_mat, pack_mouth_dz=None):
     z_full = rigid_full_z(h, margin=kit.HEAD["rigid_margin"])
     n, most = fk.rigid_face_skin(head, RIGID_FRONT_Y, z_full, z_full - RIGID_BLEND_M)
     rep["rigid_face_skin"] = {"z_full": round(z_full, 4), "vertices": n, "largest_change": round(most, 3)}
+    bean = {k: v for k, v in BEAN.items() if k not in ("strength", "fade_z", "hair_k")}
+    rep["clean_head"] = heads.clean_head(head, h.x, h.eye_z(), bean, skin_mat=skin_mat, **CLEAN_HEAD)
+    rep["push_out"] = {o.name: heads.push_out(o, head, **PUSH_OUT) for o in followers if o is not None}
     skin = tuple(rc["skin"]) if rc.get("skin") else tuple(skin_mat.diffuse_color[:3])
     face = build_face(h, picks, skin, coll=coll, brow_colour=spec.get("brow_rgb"))
     # the check's numbers on this head (the 300+ check runs the same on many faces: faces --check)
