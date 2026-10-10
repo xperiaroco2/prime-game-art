@@ -362,9 +362,12 @@ Defaults used (for the engineer; data, easy to change):
   (28, 28.5). Its ladder climbs south (#76): the foot on the landing at y 28.3; climbing north put the foot 0.3 m
   from the stairwell (y 30), where no one can stand.
 - The study door is at (34, 28) as on the plan (the game's greybox has it at (34, 25)).
-- The front porch and the two chimneys are kit v2 pieces (`[[pieces]]`): one `porch_2x2` from x 29 on the front
-  wall, so its posts (x 29.12 and 30.88) leave 1.64 m clear round the front door at x 30, its lamp socket for the porch
-  lamp (#74b); the chimneys centred on the doc's points (22, 42) and (38, 24.5).
+- The front porch is a kit v2 piece (`[[pieces]]`): one `porch_2x2` from x 29 on the front wall, so its posts (x 29.12
+  and 30.88) leave 1.64 m clear round the front door at x 30, its lamp socket for the porch lamp (#74b).
+- The free roof's chimneys and vents are kit v3 pieces in `attic.toml`'s `[[pieces]]` (#77, docs/kit.md "Chimneys",
+  "Vents"): `chimney_attic` centred on (40.5, 40) through the south slope (with the TV aerial) and `chimney_attic_n` on
+  (22, 27.5) through the north one, each from the attic floor, brick over the roof with lead flashing; `roof_vent` on
+  (28, 36.5) and `roof_vent_n` on (31, 30.5), their `at` height the roof's top there.
 - The attic's pitched roof is kit v3's (`[[roofs]]` in `attic.toml`, `pitched_roof` in the engine): the placements of
   `kit_geom.attic_roof` over the house's 24 x 20 m footprint (docs/kit.md, "Pitched roofs" and "Version 3"), pivoted
   on the knee walls' top (2.2 m), the eaves on y 24 and 44 and the ridge on y 34; with `gables = true` the gable walls
