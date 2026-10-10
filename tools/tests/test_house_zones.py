@@ -48,6 +48,26 @@ class ZoneLayoutTest(unittest.TestCase):
         self.assertEqual(ids.count("gazebo_sector_open"), 1)
         self.assertEqual(ids.count("gazebo_roof_sector"), 6)
 
+    def test_the_railing_runs_round_the_zone_and_leaves_the_opening(self) -> None:
+        z = ZONES["photo"]
+        pieces = hz.railing_pieces(z)
+        length = sum(int(p["piece"].rsplit("_", 1)[1][:-1]) for p in pieces if p["piece"].endswith("m"))
+        x0, y0, w, d = z["rect"]
+        op = z["opening"]
+        self.assertEqual(length, 2 * (w + d) - abs(op["to"] - op["from"]))
+        for p in pieces:  # every module lies on the rectangle's edge, none inside the opening
+            x, y = p["at"]
+            self.assertTrue(math.isclose(x, x0) or math.isclose(x, x0 + w) or math.isclose(y, y0)
+                            or math.isclose(y, y0 + d), p)
+            if p["piece"].endswith("m") and math.isclose(x, op["at"]):
+                ux, uy = hz.turn(1.0, 0.0, p["yaw"])
+                ends = sorted((y, y + uy * int(p["piece"].rsplit("_", 1)[1][:-1])))
+                self.assertTrue(ends[1] <= op["from"] + 1e-6 or ends[0] >= op["to"] - 1e-6, p)
+        posts = [p for p in pieces if p["piece"].endswith("_post")]
+        self.assertEqual(len(posts), 1)  # the opening's north side; the south side's run ends on a corner
+        placed = [p for p in hz.placements(z) if p["id"].startswith("railing_gazebo")]
+        self.assertEqual(len(placed), len(pieces))
+
 
 class ZoneChecksCatchTest(unittest.TestCase):
     def _item(self, z, pid):

@@ -136,6 +136,50 @@ def obstacles(it: dict) -> list[list[tuple[float, float]]]:
     return [rect(x, y, it["w"], it["d"], it["yaw"])]
 
 
+def railing_runs(z: dict) -> list[tuple[tuple[float, float], tuple[float, float]]]:
+    """The zone railing's straight runs (start, end) round the zone's rectangle, the opening left out."""
+    if "railing" not in z:
+        return []
+    x0, y0, w, d = (float(v) for v in z["rect"])
+    op = z.get("opening", {})
+    sides = {"north": ((x0, y0), (x0 + w, y0)), "east": ((x0 + w, y0), (x0 + w, y0 + d)),
+             "south": ((x0 + w, y0 + d), (x0, y0 + d)), "west": ((x0, y0 + d), (x0, y0))}
+    out = []
+    for name, (a, b) in sides.items():
+        runs = [(a, b)]
+        if name == op.get("side"):
+            along = 1 if a[0] == b[0] else 0
+            lo, hi = sorted((float(op["from"]), float(op["to"])))
+            p, q = list(a), list(b)
+            near, far = (lo, hi) if a[along] < b[along] else (hi, lo)
+            p[along], q[along] = near, far
+            runs = [(a, tuple(p)), (tuple(q), b)]
+        out += [(s, e) for s, e in runs if math.dist(s, e) > 1e-6]
+    return out
+
+
+def railing_pieces(z: dict) -> list[dict]:
+    """The kit's gazebo railing along every run: 2 m modules, then a 1 m one, each with its post at its start (local
+    +X along the run), and a post piece closing each run's end."""
+    piece = z.get("railing", {}).get("piece", "railing_gazebo")
+    out = []
+    runs = railing_runs(z)
+    starts = [s for s, _ in runs]
+    for s, e in runs:
+        length = math.dist(s, e)
+        ux, uy = (e[0] - s[0]) / length, (e[1] - s[1]) / length
+        yaw = round(math.degrees(math.atan2(-uy, ux)), 3) + 0.0
+        t = 0.0
+        while length - t > 0.5:
+            m = 2 if length - t >= 2 - 1e-6 else 1
+            out.append({"piece": f"{piece}_{m}m", "at": [round(s[0] + ux * t, 4), round(s[1] + uy * t, 4)],
+                        "y": 0.0, "yaw": yaw})
+            t += m
+        if not any(math.dist(e, q) < 1e-6 for q in starts):  # a corner is closed by the next run's first post
+            out.append({"piece": f"{piece}_post", "at": [round(e[0], 4), round(e[1], 4)], "y": 0.0, "yaw": yaw})
+    return out
+
+
 def zone_walls(z: dict) -> list[list[tuple[float, float]]]:
     """The photo zone's railing round its rectangle, the opening left out, and the gazebo's posts and closed rails."""
     out = []
@@ -311,4 +355,7 @@ def placements(z: dict) -> list[dict]:
         for g in gazebo_pieces(z["gazebo"]):
             out.append({"id": g["piece"], "src": "kit", "pos": [g["at"][0], g["y"], g["at"][1]],
                         "yaw": round(g["yaw"], 3), "station": "", "size": None})
+    for g in railing_pieces(z):
+        out.append({"id": g["piece"], "src": "kit", "pos": [g["at"][0], g["y"], g["at"][1]], "yaw": g["yaw"],
+                    "station": "", "size": None})
     return out
