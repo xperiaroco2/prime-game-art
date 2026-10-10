@@ -41,6 +41,12 @@ def problems(data: dict, spec: dict) -> list[str]:
     return out
 
 
+def _covers(pad: list[float], at: list[float]) -> bool:
+    """A pad (walk.gd's: [x, h, z] 3 x 3 m, or [x, h, z, size_x, size_z]) under the point at its height."""
+    sx, sz = (pad[3], pad[4]) if len(pad) > 4 else (hl.PAD, hl.PAD)
+    return abs(pad[1] - at[1]) < 0.01 and abs(pad[0] - at[0]) <= sx / 2 and abs(pad[2] - at[2]) <= sz / 2
+
+
 def walks(data: dict, request: dict, spec: dict) -> list[dict]:
     """The routes as walk.gd walks: points [x, height, z], the speed, a time limit and the doc's figures. A point with
     no floor (the yard; #81a builds its ground) gets a pad in the request, like a walk's end."""
@@ -58,8 +64,8 @@ def walks(data: dict, request: dict, spec: dict) -> list[dict]:
             else:
                 pts.append([float(p[1]), levels[p[0]], float(p[2])])
                 floored = any(r.get("floor") and hl.inside(r["rect"], p[1], p[2]) for r in by_name[p[0]]["rooms"])
-                if not floored and pts[-1] not in request["pads"]:
-                    request["pads"].append(pts[-1])
+                if not floored and not any(_covers(q, pts[-1]) for q in request["pads"]):
+                    request["pads"].append(hl.clip_pad(pts[-1], by_name[p[0]].get("holes", [])))
         out.append({"name": f"route:{r['id']}", "kind": "route", "points": pts, "speed": speed,
                     "max_s": 2 * float(r["doc_s"]) + SLACK_S, "doc_s": float(r["doc_s"]), "doc_m": float(r["doc_m"])})
     return out

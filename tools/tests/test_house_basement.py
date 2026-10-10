@@ -184,3 +184,26 @@ class ReviewRequest(unittest.TestCase):
             self.assertTrue(x <= rx and y <= ry and rx + rw <= x + w and ry + rd <= y + d)
         self.assertEqual(len(self.req["hide"]), len(DATA["levels"]) - 1)
         self.assertEqual(self.req["lines"], ["route:wine: 6.5 s walked, the doc 5.9 s (+0.6 s)"])
+
+
+class WalkPads(unittest.TestCase):
+    """walk.gd's pads under the yard's walk ends stay off the stairwells: a pad over the outdoor stairs' top flight
+    jammed the climb (house_layout.clip_pad)."""
+
+    def test_no_pad_over_a_hole(self):
+        from runner import house_routes as R
+        req = H.walk_request(DATA)
+        R.walks(DATA, req, R.load(H.LAYOUT_DIR))
+        holes = {lv["floor_y"]: lv.get("holes", []) for lv in DATA["levels"]}
+        for p in req["pads"]:
+            sx, sz = (p[3], p[4]) if len(p) > 4 else (H.PAD, H.PAD)
+            for h in holes[p[1]]:
+                hx, hz, hw, hd = h["rect"]
+                with self.subTest(pad=p, hole=h["id"]):
+                    self.assertFalse(p[0] - sx / 2 < hx + hw - 1e-6 and hx < p[0] + sx / 2 - 1e-6
+                                     and p[2] - sz / 2 < hz + hd - 1e-6 and hz < p[2] + sz / 2 - 1e-6)
+
+    def test_a_cut_pad_keeps_its_end(self):
+        p = H.clip_pad([65.0, 0.0, 33.0], [{"rect": [62, 28, 4, 4]}])
+        self.assertEqual(p, [65.0, 0.0, 33.25, 3.0, 2.5])
+        self.assertEqual(H.clip_pad([39.0, 0.0, 14.0], [{"rect": [62, 28, 4, 4]}]), [39.0, 0.0, 14.0])

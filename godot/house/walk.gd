@@ -231,7 +231,7 @@ func _pads() -> void:
 		var body: StaticBody3D = StaticBody3D.new()
 		var shape: CollisionShape3D = CollisionShape3D.new()
 		var box: BoxShape3D = BoxShape3D.new()
-		box.size = Vector3(3, 0.2, 3)
+		box.size = Vector3(p[3], 0.2, p[4]) if p.size() > 4 else Vector3(3, 0.2, 3)  # cut back from a stairwell
 		shape.shape = box
 		body.add_child(shape)
 		body.position = Vector3(p[0], float(p[1]) - 0.1, p[2])
