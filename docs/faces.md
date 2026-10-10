@@ -246,6 +246,19 @@ game applies them from the worn hair (and headwear) as the kit does (`kit.hair_f
 covers them (full length kept; `brow_tuck` false for the hairs that must not tuck). The e5 brow pad cap was rejected
 (2026-10-10): the kit keeps the e4 brow behaviour.
 
+**Brows stay above the eyes** (art #42 round 3: w3's brows sank behind the eyes under `hair_w_formal_updo`). The tuck
+lowers a brow strand only while the strand's top stays within `brows.BROW_STRAND_TOP_R` (1.2 of its radius; it was
+0.5, which pushed w3's whole brow 17 mm into the lids). `checks.brow_visibility` measures per side the share of brow
+vertices seen from straight in front (no head, hair, eye, lid or nose in the way; at least `BROW_SEEN_MIN` 0.25) and
+the brow-to-eye clearance (the lowest front brow point over an eye above that eye's resting upper lid top). The limit
+is per brow style (`kit.brow_clear_min_mm`), about 1 mm under the lowest the 320-face run measured: -5 mm for `normal`
+and `surprised` (lowest -4.01 mm), -6.5 mm for `one_raised` (its lowered side, -5.53 mm) and -10.5 mm for the angry V,
+whose inner ends dip in front of the lid over big eyes by design (-9.2 mm men, -9.99 mm women).
+w3's fixed brows read -2.46 mm, and its sunk ones -17.4 mm. The clearance compares heights only. A brow inside an
+eyeball is its own failure (`checks.brow_in_white`), and a brow on a pupil is a collision. `faces --kit-check` prints
+each style's lowest clearance. The cast's `build_report.json` holds it under `face_kit.brows.visibility`, and the
+many-face check fails any face that misses it.
+
 The lab measured `ears_free` on its one head; the repo's heads measure some hairs otherwise (`faces --kit-check` on
 `clay_round_d`'s man, 2026-10-10), and there the repo's value wins and `lab_ears_free` keeps the lab's (the parity test
 compares that). On m1 the free ear's top 5 mm (of 40) reach into `hair_m_hoodie`'s side: it tucks (0 overlaps). The
@@ -261,18 +274,66 @@ the nose ball on the moustache) raises the nose until it clears the moustache by
 the check's least nose clearance (0.91 mm on m1, droopy with the long nose) is that floor, not a fault; the lab's
 2.75 mm came from its own head's nose and lip heights.
 
-**The noses.** Three styles (`faces/clay_kit.json` "noses"): `bulb` (the ball, the base nose), `long` (the lab's
-bean that sits on the face and droops down) and `cone` (a forward capsule, half sizes 16/18/16 mm, capsule 8 mm,
-embed 0.15), picked rarely (weight 0.3 against 1.0 for the others: about one face in ten). The cone is what the first
-port's long nose had turned into, and the engineer kept it as a third style (2026-10-10).
+**The noses.** Three styles (`faces/clay_kit.json` "noses"; the engineer's three types, art #42 round 3): `bulb`
+(BALL: the ball, the base nose, on every face of the cast, pick weight 1.6), `long` (BEAN: the lab's bean that sits on
+the face and droops down, at scale 0.8, weight 1.0) and `pinocchio` (a closed clay capsule, its straight part 28 mm
+(`capsule`; 12 mm read as a short sausage, little longer than the ball), pointing forward and about 10 degrees down, tapering 1.15 to 0.72 to a rounded tip, seated low over the mouth, weight 0.5; where its top
+would touch an eye or a lid, `nose.clear_strict_nose` squashes it vertically about its lowest point). The old "Pinocchio"
+of PR #102 was the pack head's own nose under the kit's ball; the bean head replaced it, so it is a real shape now.
+`kit.STRICT_NOSES` (the pinocchio) must also clear the eyes and lids in `checks.collisions`, and `meta.nose.reach_mm`
+records how far it reaches. PR #106's forward `cone` is gone (art #42, 2026-10-10): it treated the symptom of the
+missing bean head below.
 
-**The pack nose is pushed back first.** The kit seats its nose by a ray cast on the pack head, and the pack heads carry
-their own nose about 17 mm out of the face. The lab built every face on heads with that nose flattened
-(`lab/lab_base.py` `flatten_nose` and `smooth_patch`); without it the kit's nose sat on the pack nose's tip and the
-clay pass merged both into one forward cone (the "Pinocchio" of PR #102's cast). `um/heads.py` `flatten_nose` and
-`smooth_patch` are the exact port; `clayface/adapter.build` runs them before the face is built (`NOSE_FLATTEN`; the
-mouth height is the eye height plus the layout's `eye_dz` minus `eye_mouth`; the report's `pack_nose_flattened`), so the
-cast and `faces --kit-check` both get it.
+**The bean head.** The engineer approved the lab's faces, which are two layers: the lab's own head, every pack head
+reshaped into an egg-like "bean" (`lab/lab_base.py` `bean_warp`, `params_r2.json`), and the clay kit's features on it.
+The first ports had only the features, so every face sat on the narrow, flat pack head: pressed in, the features glued
+on, the noses barely different (the pack nose dominated). `faces/clay_head.json` holds the lab's numbers and order;
+`clayface/adapter.build` runs, before the face is built (so the cast and `faces --kit-check` both get it):
+
+1. `heads.flatten_nose` and `smooth_patch` (`nose_flatten`): the pack heads carry their own nose about 17 mm out of
+   the face; inside a box from the eye height + `top_dz` down to the pack's mouth centre (the recipe's `face`
+   `mouth_dz`, as the lab's heads) + `bottom_dz`, every skin vertex in front of a smooth cheek surface moves back onto
+   it (without it the kit's ball sat on the pack nose's tip: the "Pinocchio" of PR #102's cast);
+2. `heads.bean_warp` (`bean`): every head vertex moves by `strength` toward a superellipsoid (radii `ax`, `ay`,
+   `az_top`, `az_bottom`, power `power`) centred at the eye height + `centre_dz`, y `centre_y`, fading out below the
+   chin over `fade_z` so the neck stays; the hair and every head extra (a beard, a hat, an earring) move with their
+   `hair_k` nearest head vertices (inverse distance), so they still sit on the head (the report's `bean_head`);
+   The clay head runs the bean as the lab's round B clay head did (`bean_clay`: strength 1.0, power 2.5 over
+   `params_r2.json`'s 0.85 and 2.3; `clay_parts.py` `dict(P["bean"], strength=1.0, power=2.5)`), steps 2 and 4 alike;
+3. `facekit.rigid_face_skin` down to `rigid_full_z` (`rigid_margin` under the kit's lowest mouth point);
+4. `heads.clean_head` (`clean_head`, the lab's round B clay head, `clay_b/clay_parts.py` `build_head`): the warp alone
+   is not the lab's head (step 2's IoU against the lab's own renders: the women 0.45-0.70; the warped pack heads keep
+   the pack's sockets at 15 %, and the women's and m3's leave the crown and the back of the skull to the hair). The
+   warped head is welded, cut `neck_dz` above the bean's bottom, united with a sphere put onto the bean, voxel
+   remeshed (`voxel_m`), decimated (`tris`), snapped onto the bean within `snap_tol`, the neck crease softened; the
+   pack's weights below the cut, the Head bone alone above it; one skin material (the report's `clean_head`).
+   The pack's neck below the cut is not kept: `heads.neck_tube` (`neck_tube`) puts the lab cast's ONE head's neck
+   into the union instead, for every body (round B's men's long neck down to z ~1.44, its `NECK_TAPER` and its
+   `clay_fit.fit_inside` every top of both body types already in it; the women's pack necks end at z ~1.53 and left
+   a gap over the top: w4's neck seam -17.3 mm, its Punk choker floating). `profile` is that head's radius about the
+   bean centre's vertical axis per `dz` (4 mm steps from `bottom_dz` up to `top_dz`, just above the cut) and azimuth
+   (7.5 degrees), unscaled, sampled once from `head_clay.blend` (`source`; the sampler
+   `D:/prime-art-raw/clay-bean/lab/neck_profile.py`); a closed tube, one ring per level. Its weights still come from
+   the nearest pack-head point (the report's `clean_head.neck_tube`). w3 and w4 after it: neck seams +111/+110 mm
+   (into the top), see-through rays at rest 22/95 -> 2/0, poke-through 0;
+5. `heads.morph_jaw` (`jaw_morph`): the lab cast's head is round C's ONE head (`clay_c/clay_head_c.py` `build_one`):
+   round B's men's clean head for every body, its jaw grown out radially toward the women's clean head in `JAW_BAND`
+   (`morph_jaw`: z 1.565/1.600/1.632 at the lab's x1.3 about the head pivot z 1.5873, `band_dz` -0.120/-0.093/-0.068
+   from the bean centre unscaled; reach 3 cm). The repo's clean head keeps each pack head's jaw, which sat behind the
+   jaw check's 3/4 line (y -0.077 against -0.08, all eight, 2026-10-10) while the lab's one head passes the same rays
+   (-0.086). So the lab head's own jaw is the target: `profile` is that head's radius about the bean centre's vertical
+   axis per `dz` from the bean centre (2 mm steps) and azimuth (7.5 degrees, from -Y toward +X), unscaled, sampled
+   once from `head_clay.blend` (`jaw_source`: its SHA-256 and face frame; the sampler
+   `D:/prime-art-raw/clay-bean/lab/jaw_profile.py`). Every vertex in the band whose radius is below the profile by
+   less than `reach` moves out by the difference x the smoothstep bump, never in (the report's `jaw_morph`). w3 and w4
+   after it: 3/4 at 30 mm y -0.0855/-0.086 (the lab head -0.0857/-0.0859), front -0.091 (-0.089);
+6. `heads.lift_grid`, `lift_by` (`scalp_lift`) and `heads.push_out` (`push_out`): the hair's shell lifted off the
+   clean head per direction from the bean centre, a hat following its hair's lift; then the hair and every head extra
+   that sinks into the closed bean or lies within `clear` of it moves out along the head's normal (deeper than `reach`
+   stays hidden), per welded position (the lab's 4 mm hair and hat clearance; the report's `scalp_lift`, `push_out`).
+
+The clay library's piece keys carry the head data (`kit.DATA_SHA` for the head and the face, `kit.HEAD_SHA` and the
+head for the hair and the extras that follow it).
 
 **Whole heads and own extras.** The recipe validation refuses a head that drops part of its catalogue skull (m4's jaw)
 and an extra that is not a whole item of the character's body type (m1's blue strip), and the cast build measures each
@@ -318,7 +379,7 @@ measures, in the rest pose at head scale 1: collisions between pieces that must 
 blink step), brow vertices in the visible white, visible brow pokes (a brow point with no hair in front and visible
 hair right behind it; the lab's e5 test, at every vertex and every triangle's centre and edge midpoints), the ears
 against the hair in the item's ear state, the nose's clearance above the mouth and the moustache, noses meeting a
-pupil, the look's sag and triangles. It writes `kit_check.json` (with the worst faces and the formal-updo list) under
+pupil, the brows' visibility and brow-to-eye clearance (`brow_hidden_faces`), the look's sag and triangles. It writes `kit_check.json` (with the worst faces and the formal-updo list) under
 `--out` (default `tools/out/faces_kit/`) and exits non-zero on any failure (`faces.kit_problems`).
 
 ## Gotchas

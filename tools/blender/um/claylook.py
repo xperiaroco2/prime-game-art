@@ -202,11 +202,12 @@ def keys_for(recipe, rc, cfg):
     # this hair (the ear state, the brow tuck and the hair colour of the facial hair come from it)
     spec = rc.get("face_kit") or {}
     face = {"head": rc["head"], "hair": rc["hair"], "kit": claykit.picks_for(spec, g), "brow_rgb": spec.get("brow_rgb"),
-            "kit_data": claykit.DATA_SHA}
+            "kit_data": claykit.DATA_SHA, "pack_mouth_dz": recipe.get("face", {}).get(g, {}).get("mouth_dz")}
     keys = {"head": piece_key("head", g, rc["head"], cfg, skin, rec("head"), context=ctx("head", joined={"face": face}))}
-    keys["hair"] = piece_key("hair", g, rc["hair"], cfg, None, rec("hair"), context=ctx("hair"))
+    # the hair and the head extras move with the bean head under them (heads.bean_warp): its data is in their keys
+    keys["hair"] = piece_key("hair", g, rc["hair"], cfg, None, rec("hair"), context=ctx("hair", head_data=claykit.HEAD_SHA, on_head=rc["head"]))
     for e in rc.get("extras", []):
-        keys[e["role"]] = piece_key(e["role"], g, e, cfg, None, rec(e["role"]), context=ctx(e["role"]),
+        keys[e["role"]] = piece_key(e["role"], g, e, cfg, None, rec(e["role"]), context=ctx(e["role"], head_data=claykit.HEAD_SHA, on_head=rc["head"]),
                                     kind=kind_of(e["role"]))
     for role in BODY_ROLES:
         keys[role] = piece_key(role, g, rc[role], cfg, skin, rec(role), context=ctx(role))

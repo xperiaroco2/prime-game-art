@@ -9,6 +9,7 @@ import hashlib
 import json
 import random
 import unittest
+from unittest import mock
 from pathlib import Path
 
 from runner.commands import _assembly
@@ -117,44 +118,35 @@ class RecipePicks(unittest.TestCase):
         self.assertEqual(K.check_picks("big", "M"), ["face_kit: must be an object of picks (" + ", ".join(K.FACE_KIT_KEYS) + ")"])
 
 
-# noses the repo added past the lab (art #42: "cone", the port's forward nose kept as a rare third style); the
-# parity tests compare the lab's tables and picks without them
-REPO_NOSES = {"cone"}
-
-
-def without_repo_noses(name, table):
-    if name in ("NOSES", "NOSE_SCALE"):
-        return {k: v for k, v in table.items() if k not in REPO_NOSES}
-    if name in ("WEIGHTS", "PICKS"):
-        t = dict(table)
-        t["nose"] = ({k: w for k, w in t["nose"].items() if k not in REPO_NOSES} if isinstance(t["nose"], dict)
-                     else [k for k in t["nose"] if k not in REPO_NOSES])
-        return t
-    return table
-
-
-class lab_noses_only:
-    """K's nose picks and weights without REPO_NOSES while inside (restored on exit)."""
-
-    def __enter__(self):
-        self.saved = (K.WEIGHTS["nose"], K.PICKS["nose"])
-        K.WEIGHTS["nose"] = without_repo_noses("WEIGHTS", K.WEIGHTS)["nose"]
-        K.PICKS["nose"] = without_repo_noses("PICKS", K.PICKS)["nose"]
-
-    def __exit__(self, *exc):
-        K.WEIGHTS["nose"], K.PICKS["nose"] = self.saved
-
-
-class RepoNosesTest(unittest.TestCase):
-    def test_cone_is_a_rare_third_nose(self):
-        self.assertEqual(set(K.NOSES), {"bulb", "long", "cone"})
-        self.assertIn("cone", K.PICKS["nose"])
+class NosesTest(unittest.TestCase):
+    def test_three_noses(self):
+        # art #42 round 3: BALL (bulb), BEAN ("long" at 0.8, the lab's droop) and the new PINOCCHIO; the ball the most
+        # common pick and every cast default
+        self.assertEqual(set(K.NOSES), {"bulb", "long", "pinocchio"})
+        self.assertEqual(set(K.PICKS["nose"]), {"bulb", "long", "pinocchio"})
+        self.assertEqual(K.NOSE_SCALE["long"], 0.8)
         w = K.WEIGHTS["nose"]
-        self.assertLess(w["cone"], min(w["bulb"], w["long"]))
-        for g in ("M", "W"):
-            rng = random.Random(7)
-            share = sum(K.random_picks(rng, g)["nose"] == "cone" for _ in range(400)) / 400
-            self.assertTrue(0.03 < share < 0.2, (g, share))
+        self.assertEqual(max(w, key=w.get), "bulb")
+        self.assertTrue(all(w[n] > 0 for n in K.NOSES))
+
+    def test_pinocchio_points_forward_and_down(self):
+        P = K.NOSES["pinocchio"]
+        self.assertGreater(P["half"][1] + P["capsule"], 1.5 * P["half"][0])  # long along the forward axis
+        self.assertGreaterEqual(P["half"][1] + P["capsule"], 0.04)  # long like the old accidental nose (42b sheet2)
+        self.assertGreater(P["tilt"], 0.0)  # the tip goes down
+        self.assertLess(P["taper"][1], P["taper"][0])  # thinner toward the tip
+        self.assertIn("pinocchio", K.STRICT_NOSES)  # it must clear the eyes and lids as well
+
+
+def without_repo_noses():
+    """The repo's tables without its own noses (REPO_NOSES, art #42 round 3's pinocchio), which the lab never had."""
+    drop = lambda t: {k: v for k, v in t.items() if k not in REPO_NOSES}  # noqa: E731
+    return {"NOSES": drop(K.NOSES), "NOSE_SCALE": drop(K.NOSE_SCALE),
+            "WEIGHTS": {c: (drop(t) if c == "nose" else t) for c, t in K.WEIGHTS.items()},
+            "PICKS": {c: ([n for n in v if n not in REPO_NOSES] if c == "nose" else v) for c, v in K.PICKS.items()}}
+
+
+REPO_NOSES = {"pinocchio"}
 
 
 class LabParity(unittest.TestCase):
@@ -183,8 +175,9 @@ class LabParity(unittest.TestCase):
         # the repo's ear flags where its heads measure otherwise (lab_ears_free in faces/clay_hair.json) compare as the lab's
         lab_rules = {iid: tuple(v.get("lab_ears_free", v["ears_free"])) for iid, v in K.HAIR_ITEMS.items()}
         as_lab = {"EAR_RULES": lab_rules, "COVERS_EARS": {k for k, (f, b) in lab_rules.items() if not f and not b}}
+        as_lab.update(without_repo_noses())
         for n in names:
-            a, b = self.lab[n], without_repo_noses(n, as_lab.get(n, getattr(K, n)))
+            a, b = self.lab[n], as_lab.get(n, getattr(K, n))
             if n == "WEIGHTS":
                 a = {c: {str(k): w for k, w in t.items()} for c, t in a.items()}
                 b = {c: {str(k): w for k, w in t.items()} for c, t in b.items()}
@@ -194,10 +187,82 @@ class LabParity(unittest.TestCase):
     def test_picks(self):
         for g in ("M", "W"):
             ra, rb = random.Random(500 + ("M", "W").index(g)), random.Random(500 + ("M", "W").index(g))
-            with lab_noses_only():
+            with mock.patch.dict(K.WEIGHTS, {"nose": without_repo_noses()["WEIGHTS"]["nose"]}):
                 for _ in range(320):
                     self.assertEqual(self.lab["random_picks"](ra, g), K.random_picks(rb, g))
 
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class P:
+    """A world point for the pure zone rules (anything with x, y and z)."""
+
+    def __init__(self, x, y, z):
+        self.x, self.y, self.z = x, y, z
+
+
+class Accessories(unittest.TestCase):
+    """art #42 round 3: the ear and nose accessories' zones and seat measure (kit.accessory_zone, accessory_seat_ok)."""
+
+    EYE_Z, NOSE_BACK = 1.70, -0.17
+
+    def zone(self, x, y, z):
+        return K.accessory_zone(P(x, y, z), 0.0, self.EYE_Z, self.NOSE_BACK)
+
+    def test_ear_pieces_by_side(self):
+        self.assertEqual(self.zone(0.11, -0.06, 1.66), "ear_l")  # +X is the character's left
+        self.assertEqual(self.zone(-0.11, -0.06, 1.66), "ear_r")
+        self.assertIsNone(self.zone(0.03, -0.06, 1.66))  # too near the centre line for an ear
+        self.assertIsNone(self.zone(0.11, -0.06, 1.55))  # below the ear band (a necklace)
+
+    def test_nose_pieces(self):
+        self.assertEqual(self.zone(0.01, -0.19, 1.65), "nose")
+        self.assertIsNone(self.zone(0.04, -0.19, 1.65))  # off the centre line
+        self.assertIsNone(self.zone(0.0, -0.10, 1.65))  # well behind the nose's back
+        self.assertIsNone(self.zone(0.0, -0.19, 1.72))  # above the eye line (a brow piercing)
+
+    def test_the_seat_measure(self):
+        self.assertTrue(K.accessory_seat_ok(1.39, 0.2))  # m3's ring, round 3
+        self.assertTrue(K.accessory_seat_ok(K.ACC_GAP_MAX_MM, 0.0))
+        self.assertFalse(K.accessory_seat_ok(K.ACC_GAP_MAX_MM + 0.01, 0.0))  # floating
+        self.assertFalse(K.accessory_seat_ok(0.0, K.ACC_INSIDE_MAX))  # buried
+
+    def test_the_build_enforces_it(self):
+        src = (ROOT / "tools/blender/um/clayface/accessories.py").read_text(encoding="utf-8")
+        self.assertIn("accessory_seat_ok(gap, inside)", src)
+        self.assertIn("raise SeatError", src)
+
+
+class BrowMeasure(unittest.TestCase):
+    """art #42 round 3: the brow measure's verdict (kit.brow_visible_ok): strict for every style but the angry V."""
+
+    SEEN = {"L": 0.53, "R": 0.55}
+
+    def test_w3_fixed_passes_and_sunk_fails(self):
+        self.assertTrue(K.brow_visible_ok(self.SEEN, -2.46, "normal"))  # w3 under the formal updo, fixed
+        self.assertFalse(K.brow_visible_ok(self.SEEN, -17.4, "normal"))  # w3 before the fix
+
+    def test_only_the_angry_v_may_dip(self):
+        self.assertTrue(K.brow_visible_ok(self.SEEN, -9.99, "angry"))  # the 320-face run's deepest angry brow
+        self.assertTrue(K.brow_visible_ok(self.SEEN, -5.53, "one_raised"))  # its lowered side, 320-face run
+        self.assertTrue(K.brow_visible_ok(self.SEEN, -4.01, "normal"))
+        for style in K.BROWS:
+            if style not in ("angry", "one_raised"):
+                self.assertFalse(K.brow_visible_ok(self.SEEN, -6.0, style), style)
+        self.assertFalse(K.brow_visible_ok(self.SEEN, -7.0, "one_raised"))
+        self.assertFalse(K.brow_visible_ok(self.SEEN, -11.0, "angry"))
+        self.assertFalse(K.brow_visible_ok(self.SEEN, -6.0, None))  # an unknown style gets the strict limit
+
+    def test_hidden_brows_fail(self):
+        self.assertFalse(K.brow_visible_ok({"L": 0.53, "R": K.BROW_SEEN_MIN - 0.01}, 0.0, "normal"))
+
+
+class StrictNose(unittest.TestCase):
+    def test_only_the_pinocchio_must_clear_eyes_and_lids(self):
+        self.assertLessEqual({("nose", "eye"), ("nose", "lid")}, K.bad_pairs("pinocchio"))
+        for nose in K.NOSES:
+            if nose not in K.STRICT_NOSES:
+                self.assertEqual(K.bad_pairs(nose), K.BAD_PAIRS, nose)
+        self.assertLessEqual(K.BAD_PAIRS, K.bad_pairs("pinocchio"))

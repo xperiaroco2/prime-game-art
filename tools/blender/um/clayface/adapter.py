@@ -1,6 +1,8 @@
 """The face kit on an assembled character (um/assemble.py build_character with face="kit", the clay look): the pack
-head's own ears and nose flattened, its face skin given to the Head bone alone, the kit's face built from the recipe
-character's `face_kit` picks and merged into two skinned meshes:
+head's own ears and nose flattened, the head reshaped into the faces lab's bean head (the hair and extras following
+it), its face skin given to the Head bone alone, the head above the neck replaced by the closed bean
+(the hair and extras pushed out of it), the kit's face built from the recipe character's `face_kit` picks
+and merged into two skinned meshes:
 
 - `<id>_eyes`: the eye whites and pupils (one glossy material whose colour is the vertex colour EYE_RGB: white or
   pupil per face; not baked; the look keys), the part godot-check finds the eyes by;
@@ -20,19 +22,34 @@ from .. import heads
 from .. import clay as cl
 from ..util import relink
 from . import checks, kit
+from .accessories import seat_accessories
 from .face import build_face, game_mesh, rigid_full_z
 
 EYE_MATERIAL = "fb_eye"  # the eyes' one material (shared by every character)
 EYE_RGB = "eye_rgb"  # its colour attribute (corner domain, linear float): kit.FIXED's white or pupil per face
+BODY_PARTS = ("top", "bottom", "shoes")  # every other part but the head sits on it and follows the bean warp
+NOT_ACCESSORIES = ("hair", "headwear")  # every other extra's ear and nose pieces are seated on the kit's (accessories)
 EYE_PIECES = ("whites", "pupils")  # the pieces of the eyes object; every other piece goes into the face object
 EAR_TUCK_X = 0.082  # the pack head's own ears flattened to this half-width (m) unless the recipe tucks them itself
 RIGID_FRONT_Y = -0.07  # the face skin in front of this world y follows the Head bone alone (facekit.rigid_face_skin)
 RIGID_BLEND_M = 0.03  # ... fading back to the pack's weights over this height below the kit's lowest point
-# the pack nose pushed back into the face before the kit's nose is seated (heads.flatten_nose): the faces lab's
-# params_r2.json "nose_flatten", on which every lab face was built (art #42: without it the kit's ball sat on the pack
-# nose's tip and read as a forward cone); the mouth centre the box ends at is the kit's (LAYOUT eye_dz, eye_mouth)
-NOSE_FLATTEN = {"half_w": 0.026, "side_x": 0.03, "top_dz": 0.012, "bottom_dz": 0.012, "bulge": 0.004, "fade": 0.012,
-                "smooth": 30}
+# the bean head (art #42; faces/clay_head.json, the faces lab's params_r2.json): the pack nose pushed back into the
+# face (heads.flatten_nose), then the pack head reshaped into the lab's egg-like bean (heads.bean_warp; the hair and
+# the head extras follow it), then the face skin made rigid: the lab's order (build_heads_r2), on which every lab face
+# was built. Without the bean the kit's features sat on the narrow, flat pack head: pressed in, glued on.
+NOSE_FLATTEN = dict(kit.HEAD["nose_flatten"])
+# the lab's round B clay head (the approved one) ran the bean at strength 1.0 and power 2.5 (bean_clay), not
+# params_r2.json's 0.85 and 2.3: a fuller, boxier bean, the chin's underside included
+BEAN = dict(kit.HEAD["bean"], **kit.HEAD["bean_clay"])
+# ... then the head above the neck replaced by the closed bean itself (heads.clean_head, the lab's round B clay head:
+# no pack sockets, a whole skull under every hair), the hair's shell lifted off it (heads.lift_grid, lift_by) and the
+# hair and extras pushed out of what is left (heads.push_out)
+CLEAN_HEAD = dict(kit.HEAD["clean_head"])
+SCALP_LIFT = dict(kit.HEAD["scalp_lift"])
+JAW_MORPH = dict(kit.HEAD["jaw_morph"])
+# the lab cast's ONE head's neck (the men's long neck, tapered, inside every top) for every head (heads.neck_tube)
+NECK_TUBE = kit.HEAD["neck_tube"]
+PUSH_OUT = dict(kit.HEAD["push_out"])
 
 
 class KitHead:
@@ -100,7 +117,7 @@ def one_eye_material(eyes):
     return {m.name: int((idx == i).sum()) for i, m in enumerate(old) if m}
 
 
-def build(arm, parts, coll, rc, eyes_at, skin_mat):
+def build(arm, parts, coll, rc, eyes_at, skin_mat, pack_mouth_dz=None):
     """Builds the kit face on parts["head"] (rest pose, at the origin, after the skin material is set). Returns
     ({"eyes": obj, "face": obj}, report)."""
     cid, g = rc["id"], rc["gender"]
@@ -112,18 +129,47 @@ def build(arm, parts, coll, rc, eyes_at, skin_mat):
     item = kit.hair_item(rc["hair"], g)
     picks = kit.picks_for(spec, g)
     h = KitHead(cid, arm, parts, coll, eyes_at, item, skin_mat)
-    mouth_z = h.eye_z() + kit.LAYOUT["eye_dz"] - kit.LAYOUT["eye_mouth"]
+    # the lab flattened the nose down to the pack's mouth centre (the recipe's mouth_dz); else the kit's mouth
+    mouth_z = h.eye_z() + (pack_mouth_dz if pack_mouth_dz is not None
+                           else kit.LAYOUT["eye_dz"] - kit.LAYOUT["eye_mouth"])
     rep["pack_nose_flattened"] = heads.flatten_nose(head, h.x, h.eye_z(), mouth_z, **NOSE_FLATTEN)
-    z_full = rigid_full_z(h)
+    followers = [o for role, o in parts.items() if role not in BODY_PARTS and o is not head]
+    rep["bean_head"] = heads.bean_warp(head, h.x, h.eye_z(), followers, **BEAN)
+    z_full = rigid_full_z(h, margin=kit.HEAD["rigid_margin"])
     n, most = fk.rigid_face_skin(head, RIGID_FRONT_Y, z_full, z_full - RIGID_BLEND_M)
     rep["rigid_face_skin"] = {"z_full": round(z_full, 4), "vertices": n, "largest_change": round(most, 3)}
+    bean = {k: v for k, v in BEAN.items() if k not in ("strength", "fade_z", "hair_k")}
+    rep["clean_head"] = heads.clean_head(head, h.x, h.eye_z(), bean, skin_mat=skin_mat, neck=NECK_TUBE,
+                                        **CLEAN_HEAD)
+    # the lab cast's ONE head's jaw (clay_head_c.morph_jaw): grown out toward the lab head's own radii
+    rep["jaw_morph"] = heads.morph_jaw(head, h.x, h.eye_z(), bean, JAW_MORPH["profile"],
+                                       band_dz=tuple(JAW_MORPH["band_dz"]), reach=JAW_MORPH["reach"])
+    # the lab's round B fit (clay_parts build, hair and headwear): the hair's shell lifted off the clean head per
+    # direction from the bean centre (thickness kept, its split vertices together), a hat following its hair's lift,
+    # then push_out for what is still inside or too close
+    centre = (h.x, bean["centre_y"], h.eye_z() + bean["centre_dz"])
+    rep["scalp_lift"] = {}
+    hair = parts.get("hair")
+    if hair is not None and hair is not head:
+        G, RH = heads.lift_grid(hair, head, centre, **SCALP_LIFT)
+        rep["scalp_lift"][hair.name] = heads.lift_by(hair, G, RH, centre, depth=SCALP_LIFT["depth"])
+        hat = parts.get("headwear")
+        if hat is not None and hat is not head:
+            rep["scalp_lift"][hat.name] = heads.lift_by(hat, G, RH, centre, depth=1.0)
+    rep["push_out"] = {o.name: heads.push_out(o, head, **PUSH_OUT) for o in followers if o is not None}
     skin = tuple(rc["skin"]) if rc.get("skin") else tuple(skin_mat.diffuse_color[:3])
     face = build_face(h, picks, skin, coll=coll, brow_colour=spec.get("brow_rgb"))
+    # art #42 round 3: the extras' rings and studs moved from the pack ear's place onto the kit's ears and nose
+    extras = [parts[e["role"]] for e in rc.get("extras", []) if e["role"] not in NOT_ACCESSORIES and e["role"] in parts]
+    rep["accessories"] = seat_accessories(face, h, extras, kit.hair_flags(item)["ears"])
     # the check's numbers on this head (the 300+ check runs the same on many faces: faces --check)
     rep.update({"picks": picks, "hair_item": item, "flags": kit.hair_flags(item), "tris": face.meta["tris"],
                 "tris_total": face.meta["tris_total"], "collisions": checks.collisions(face),
                 "brow_in_white": checks.brow_in_white(face), "nose_meets_pupils": face.meta["nose"]["meets_pupils"],
-                "layout": face.meta["layout"], "points_pulled_in": face.meta["points_pulled_in"]})
+                "layout": face.meta["layout"], "points_pulled_in": face.meta["points_pulled_in"],
+                "brows": {"visibility": checks.brow_visibility(face, [head, parts.get("hair"), parts.get("headwear")]),
+                          "fit": face.meta.get("brow_fit"), "pad": face.meta.get("brow_pad"),
+                          "tuck": face.meta.get("brow_tuck"), "lifted": face.meta.get("brow_lifted", 0)}})
     cav = face.mats.get("cavity")
     if cav is not None and not cl.is_clay(cav):  # baked into the head atlas: one surface fewer
         cl.clay(cav, tuple(cav.diffuse_color[:3]))

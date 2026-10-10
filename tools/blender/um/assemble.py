@@ -34,7 +34,7 @@ def check_styles(recipe):
         raise ValueError("recipe: " + "; ".join(problems))
 
 
-def take_part(packs, char_id, role, gender, spec, arm, keep=None, extra_report=None):
+def take_part(packs, char_id, role, gender, spec, arm, keep=None, extra_report=None, drop_piece=None):
     gender = spec.get("gender", gender)  # a head item may come from the other body type's pack (same Head bone)
     src = packs.load(gender, spec["file"])
     obj = src["meshes"][spec["object"]]
@@ -46,7 +46,7 @@ def take_part(packs, char_id, role, gender, spec, arm, keep=None, extra_report=N
     update()
     info = {"file": source_label(gender, spec["file"]), "object": spec["object"], "rebind_max_move_m": round(moved, 4)}
     if keep is not None:
-        info["faces_kept"] = heads.filter_faces(obj, arm, keep)
+        info["faces_kept"] = heads.filter_faces(obj, arm, keep, drop_piece=drop_piece)
     if extra_report:
         info.update(extra_report)
     return obj, info
@@ -90,10 +90,14 @@ def build_character(packs, recipe, rc, coll, face="pack"):
     for role, spec in [("hair", rc["hair"])] + [(e["role"], e) for e in rc.get("extras", [])]:
         mats = set(spec["materials"])
         cuts = [zones.CUT_ZONES[z] for z in spec.get("cut", [])]
+        pzs = [zones.PIECE_ZONES[z] for z in spec.get("drop_pieces", [])]
         obj, info = take_part(packs, cid, role, g, spec, arm,
-                              keep=lambda m, c, mats=mats, role=role, cuts=cuts: m in mats and (role != "hair" or not zones.BROW_ZONE(c)) and not any(z(c) for z in cuts))
+                              keep=lambda m, c, mats=mats, role=role, cuts=cuts: m in mats and (role != "hair" or not zones.BROW_ZONE(c)) and not any(z(c) for z in cuts),
+                              drop_piece=(lambda c, pzs=pzs: any(z(c) for z in pzs)) if pzs else None)
         if cuts:
             info["cut"] = spec["cut"]
+        if pzs:
+            info["drop_pieces"] = spec["drop_pieces"]
         heads.inflate(obj, arm, spec.get("inflate", 0.0))
         info["materials"] = ", ".join(sorted(mats)) + " faces of the source head"
         info["inflate"] = spec.get("inflate", 0.0)
@@ -148,7 +152,8 @@ def build_character(packs, recipe, rc, coll, face="pack"):
     update()
     if face == "kit":
         from .clayface import adapter
-        built, rep["face_kit"] = adapter.build(arm, parts, coll, rc, eyes_at, skin)
+        built, rep["face_kit"] = adapter.build(arm, parts, coll, rc, eyes_at, skin,
+                                               pack_mouth_dz=recipe.get("face", {}).get(g, {}).get("mouth_dz"))
         parts.update(built)
         for role, o in built.items():
             rep["parts"][role] = {"kit": True, "object": o.name, "bone": "Head (weight 1.0)"}

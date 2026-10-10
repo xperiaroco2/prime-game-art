@@ -154,6 +154,10 @@ class _Check:
         if not isinstance(value, list) or any(z not in zones.CUT_ZONES for z in value):
             self.bad(where, f"must be a list of zone names from {', '.join(sorted(zones.CUT_ZONES))}")
 
+    def piece_zones(self, value: Any, where: str) -> None:
+        if not isinstance(value, list) or any(z not in zones.PIECE_ZONES for z in value):
+            self.bad(where, f"must be a list of piece zone names from {', '.join(sorted(zones.PIECE_ZONES))}")
+
     def file_name(self, value: Any, where: str) -> None:
         if not (isinstance(value, str) and value.lower().endswith(".glb") and "/" not in value and "\\" not in value):
             self.bad(where, "must be a .glb file name in the pack folder")
@@ -278,13 +282,15 @@ def _check_character(c: _Check, ch: dict[str, Any], where: str) -> None:
         role, part = spec
         w = where + (".hair" if role else f".extras[{k - 1}]")
         required = ("file", "object", "materials") + (() if role else ("role",))
-        if not _check_part(c, part, w, required, ("cut", "inflate") + (() if role else ("gender",))):
+        if not _check_part(c, part, w, required, ("cut", "drop_pieces", "inflate") + (() if role else ("gender",))):
             continue
         if "gender" in part and part["gender"] not in GENDERS:
             c.bad(w + ".gender", "must be M or W (the pack a head item comes from; default the character's)")
         c.names(part.get("materials"), w + ".materials")
         if "cut" in part:
             c.cuts(part["cut"], w + ".cut")
+        if "drop_pieces" in part:
+            c.piece_zones(part["drop_pieces"], w + ".drop_pieces")
         if "inflate" in part and not (_num(part["inflate"]) and 0.0 <= part["inflate"] < 0.05):
             c.bad(w + ".inflate", "must be a small scale offset (0 to 0.05)")
         if not role:

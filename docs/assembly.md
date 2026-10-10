@@ -84,7 +84,7 @@ A recipe is JSON in `recipes/`: `um_final_test.json` (the final test's four char
 |---|---|
 | `id`, `gender` | Lowercase id; `M` or `W` (the body type) |
 | `head` | `file`, `object`, `keep` (materials kept as bald skin), `eye_materials` (where the eye centres are read); optional `as_skin` (more materials painted with the skin), `straighten` (a collar ring made a straight neck), `tuck_ears` (flatten the ears at this half-width, m), `cut` (zones) |
-| `hair`, `extras[]` | `file`, `object`, `materials` (the head regions taken); optional `cut`, `inflate` (scale about the skull centre, e.g. 0.006); an extra also has `role` (its slot name, e.g. `moustache`) |
+| `hair`, `extras[]` | `file`, `object`, `materials` (the head regions taken); optional `cut` (zones: faces whose centre is inside go), `drop_pieces` (`um/zones.py` `PIECE_ZONES`: whole loose pieces whose bounding-box centre is inside go, as the catalogue classifies pieces; m2 drops the King's beard and moustache with `facial_hair`; w4 keeps only the Punk mohawk's crest with `punk_cap` and `punk_side_strips`), `inflate` (scale about the skull centre, e.g. 0.006); an extra also has `role` (its slot name, e.g. `moustache`) |
 | `top`, `bottom`, `shoes` | `file`, `object` |
 | `eyes`, `brows`, `mouth` | Face-kit `style`; eyes `iris`, `lash`; brows `rgb`; mouth `lip`, `dz` |
 | `skin` | `null` (the head's own skin) or `[r, g, b]` |
@@ -226,6 +226,17 @@ Export the saved clay characters with `export --textured` and check them with `g
 (`docs/godot.md`, "Textured export"). Measured on 2026-10-09 (Blender 5.2.2, OptiX): m1 8,653 triangles (pack 7,670),
 bake 60 s, all six pieces fresh (head 7.5 s, hair 14.1, accessory 7.4, top 8.4, bottom 6.6, shoes 16.1); w1 8,353
 (pack 7,586), 51.5 s.
+
+**Ear and nose accessories on the bean head** (art #42 round 3: m3's rings hung where the pack's ear had been). The
+pack's rings and studs follow the warped skull, but the kit builds its own ears and nose, so
+`um/clayface/accessories.py` `seat_accessories` (run by `clayface/adapter.build` after the face) moves each side's ear
+pieces (a piece's centre within -0.10..0.03 m of the eye line and over 45 mm off the centre line) so their top passes
+2 mm up through the kit ear's lobe, in the ear state's shape (free or tucked; hidden ears carry nothing), and the nose
+pieces so their top passes through the kit nose's underside. It only translates (the ring keeps its orientation) and
+measures each piece: `face_kit.accessories` in `build_report.json` (move, gap to the ear or nose surface, share of the
+ring inside it; ok when the gap is at most 3 mm and under half the ring is buried). A piece that fails it fails the
+build (`accessories.SeatError`); the zones and the limits are pure data in `clayface/kit.py` (`accessory_zone`,
+`accessory_seat_ok`), unit-tested in `tools/tests/test_faces_claykit.py`.
 
 ## Pipeline rules learned in the final test
 
