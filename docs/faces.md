@@ -262,9 +262,9 @@ the check's least nose clearance (0.91 mm on m1, droopy with the long nose) is t
 2.75 mm came from its own head's nose and lip heights.
 
 **The noses.** Two styles (`faces/clay_kit.json` "noses"): `bulb` (the ball, the base nose) and `long` (the lab's
-bean). Both are seated by a ray cast on the pack head, whose own nose stands about 17 mm out of the face, so on the
-cast the long nose sits on the pack nose and points forward: the "Pinocchio" nose the engineer approved on the 42b cast
-sheet. A third, rarer "cone" style (PR #106) was removed again (2026-10-10): it was a new shape no cast member had.
+bean). Both are seated by a ray cast on the pack head, whose own nose stands about 17 mm out of the face. All eight
+cast members (`recipes/clay_cast_e.json`) pick `bulb`: the ball sits on the tip of the pack nose, and the pair reads as
+one long nose pointing forward, the "Pinocchio" nose the engineer approved on the 42b cast sheet. A third, rarer "cone" style (PR #106) was removed again (2026-10-10): it was a new shape no cast member had.
 
 **The pack nose is not flattened.** The faces lab built every face on heads with the pack nose pushed back
 (`lab/lab_base.py` `flatten_nose` and `smooth_patch`). `um/heads.py` `flatten_nose` and `smooth_patch` are their exact
