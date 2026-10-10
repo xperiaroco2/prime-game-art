@@ -8,3 +8,7 @@ config_version=5
 
 config/name="prime-game-art import check"
 config/features=PackedStringArray("4.7", "Forward Plus")
+
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/lmbake/plugin.cfg")
