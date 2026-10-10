@@ -32,7 +32,9 @@ class HeadData(unittest.TestCase):
     def test_shape(self):
         H = K.HEAD
         self.assertEqual(H["schema"], "prime-game-art/faces/clay-head/1")
-        self.assertEqual(H["order"], ["nose_flatten", "bean_warp", "rigid_face_skin", "clean_head", "push_out"])
+        self.assertEqual(H["order"], ["nose_flatten", "bean_warp", "rigid_face_skin", "clean_head", "scalp_lift",
+                                      "push_out"])
+        self.assertEqual(set(H["scalp_lift"]), {"clear", "depth", "n_az", "n_el"})
         self.assertEqual(set(H["clean_head"]), {"neck_dz", "sphere", "voxel_m", "tris", "snap_tol", "crease_band",
                                                 "crease_passes", "weight_blend_m", "small_piece_faces"})
         self.assertEqual(set(H["push_out"]), {"clear", "reach", "passes", "keep"})
@@ -52,9 +54,9 @@ class HeadData(unittest.TestCase):
         for k, v in K.HEAD["nose_flatten"].items():
             self.assertEqual(nose[k], v, k)
         self.assertEqual(defaults(UM / "clayface" / "face.py", "rigid_full_z")["margin"], K.HEAD["rigid_margin"])
-        for fn in ("clean_head", "push_out"):
+        for fn, key in (("clean_head", "clean_head"), ("push_out", "push_out"), ("lift_grid", "scalp_lift")):
             got = defaults(UM / "heads.py", fn)
-            for k, v in K.HEAD[fn].items():
+            for k, v in K.HEAD[key].items():
                 self.assertEqual(json.loads(json.dumps(got[k])), json.loads(json.dumps(v)), (fn, k))
 
     def test_the_head_is_in_the_kit_data_sha(self):
@@ -64,7 +66,8 @@ class HeadData(unittest.TestCase):
         src = (UM / "clayface" / "adapter.py").read_text(encoding="utf-8")
         body = src[src.index("def build("):]
         at = [body.index(s) for s in ("heads.flatten_nose(", "heads.bean_warp(", "fk.rigid_face_skin(",
-                                    "heads.clean_head(", "heads.push_out(", "build_face(")]
+                                    "heads.clean_head(", "heads.lift_grid(", "heads.lift_by(", "heads.push_out(",
+                                    "build_face(")]
         self.assertEqual(at, sorted(at))
         self.assertNotIn("bean_warp", (UM / "heads.py").read_text(encoding="utf-8").split("def bean_warp")[0])
 
@@ -101,7 +104,10 @@ class LabParity(unittest.TestCase):
                      "range(%d)" % C["crease_passes"], "remove_small_components(head, %d)" % C["small_piece_faces"],
                      '"head": %d' % C["tris"], "HAIR_CLEAR = %s" % K.HEAD["push_out"]["clear"],
                      "reach=%s, passes=%d" % (K.HEAD["push_out"]["reach"], K.HEAD["push_out"]["passes"]),
-                     "keep=%s" % K.HEAD["push_out"]["keep"]):
+                     "keep=%s" % K.HEAD["push_out"]["keep"],
+                     "def lift_grid(o, head_bvh, centre, clear, depth=%s, n_az=%d, n_el=%d)"
+                     % (K.HEAD["scalp_lift"]["depth"], K.HEAD["scalp_lift"]["n_az"], K.HEAD["scalp_lift"]["n_el"]),
+                     "HAIR_CLEAR = %s" % K.HEAD["scalp_lift"]["clear"]):
             self.assertIn(frag.replace("\\", ""), code, frag)
 
 

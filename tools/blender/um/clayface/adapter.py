@@ -40,8 +40,10 @@ NOSE_FLATTEN = dict(kit.HEAD["nose_flatten"])
 # params_r2.json's 0.85 and 2.3: a fuller, boxier bean, the chin's underside included
 BEAN = dict(kit.HEAD["bean"], **kit.HEAD["bean_clay"])
 # ... then the head above the neck replaced by the closed bean itself (heads.clean_head, the lab's round B clay head:
-# no pack sockets, a whole skull under every hair) and the hair and extras pushed out of it (heads.push_out)
+# no pack sockets, a whole skull under every hair), the hair's shell lifted off it (heads.lift_grid, lift_by) and the
+# hair and extras pushed out of what is left (heads.push_out)
 CLEAN_HEAD = dict(kit.HEAD["clean_head"])
+SCALP_LIFT = dict(kit.HEAD["scalp_lift"])
 PUSH_OUT = dict(kit.HEAD["push_out"])
 
 
@@ -133,6 +135,18 @@ def build(arm, parts, coll, rc, eyes_at, skin_mat, pack_mouth_dz=None):
     rep["rigid_face_skin"] = {"z_full": round(z_full, 4), "vertices": n, "largest_change": round(most, 3)}
     bean = {k: v for k, v in BEAN.items() if k not in ("strength", "fade_z", "hair_k")}
     rep["clean_head"] = heads.clean_head(head, h.x, h.eye_z(), bean, skin_mat=skin_mat, **CLEAN_HEAD)
+    # the lab's round B fit (clay_parts build, hair and headwear): the hair's shell lifted off the clean head per
+    # direction from the bean centre (thickness kept, its split vertices together), a hat following its hair's lift,
+    # then push_out for what is still inside or too close
+    centre = (h.x, bean["centre_y"], h.eye_z() + bean["centre_dz"])
+    rep["scalp_lift"] = {}
+    hair = parts.get("hair")
+    if hair is not None and hair is not head:
+        G, RH = heads.lift_grid(hair, head, centre, **SCALP_LIFT)
+        rep["scalp_lift"][hair.name] = heads.lift_by(hair, G, RH, centre, depth=SCALP_LIFT["depth"])
+        hat = parts.get("headwear")
+        if hat is not None and hat is not head:
+            rep["scalp_lift"][hat.name] = heads.lift_by(hat, G, RH, centre, depth=1.0)
     rep["push_out"] = {o.name: heads.push_out(o, head, **PUSH_OUT) for o in followers if o is not None}
     skin = tuple(rc["skin"]) if rc.get("skin") else tuple(skin_mat.diffuse_color[:3])
     face = build_face(h, picks, skin, coll=coll, brow_colour=spec.get("brow_rgb"))

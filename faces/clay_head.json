@@ -1,6 +1,6 @@
 {
  "schema": "prime-game-art/faces/clay-head/1",
- "what": "The clay face kit's head as data (art #42): the pack head reshaped into the faces lab's egg-like bean head before the kit's features are seated on it, in the lab's order (order). nose_flatten pushes the pack nose back into the face (heads.flatten_nose); bean is the space warp onto a superellipsoid about the eye height (heads.bean_warp; hair_k: the hair and every head extra move with their nearest head vertices); bean_clay overrides bean for the clay head, as the lab's round B clay head did (clay_parts.py: dict(P['bean'], strength=1.0, power=2.5)) for the warp and the clean head alike; clean_head replaces the warped head above the neck by the closed bean itself (heads.clean_head, the lab's round B clay head: the pack's sockets and the women's missing skull gone), push_out moves the hair and every head extra out of it (heads.push_out, 4 mm clear); rigid_margin is the margin under the kit's lowest mouth point down to which the face skin follows the Head bone alone (clayface/face.py rigid_full_z). Metres, the face toward -Y, world space at rest before the clay look's head scale. Read by tools/blender/um/clayface/kit.py (docs/faces.md, \"The bean head\").",
+ "what": "The clay face kit's head as data (art #42): the pack head reshaped into the faces lab's egg-like bean head before the kit's features are seated on it, in the lab's order (order). nose_flatten pushes the pack nose back into the face (heads.flatten_nose); bean is the space warp onto a superellipsoid about the eye height (heads.bean_warp; hair_k: the hair and every head extra move with their nearest head vertices); bean_clay overrides bean for the clay head, as the lab's round B clay head did (clay_parts.py: dict(P['bean'], strength=1.0, power=2.5)) for the warp and the clean head alike; clean_head replaces the warped head above the neck by the closed bean itself (heads.clean_head, the lab's round B clay head: the pack's sockets and the women's missing skull gone), scalp_lift lifts the hair's shell off it per direction from the bean centre (heads.lift_grid and lift_by, the lab's scalp lift: thickness kept; a hat follows its hair's lift), then push_out moves the hair and every head extra out of what is left (heads.push_out, 4 mm clear, per welded position so the pack's split vertices stay together); rigid_margin is the margin under the kit's lowest mouth point down to which the face skin follows the Head bone alone (clayface/face.py rigid_full_z). Metres, the face toward -Y, world space at rest before the clay look's head scale. Read by tools/blender/um/clayface/kit.py (docs/faces.md, \"The bean head\").",
  "lab_source": {
   "path": "research/2026-10-05-faces/lab/params_r2.json",
   "sha256": "215b230306dfd8475f1f7e1130c7fb78d4e8c7061206547c1e4675727e2c30cc",
@@ -12,6 +12,7 @@
   "bean_warp",
   "rigid_face_skin",
   "clean_head",
+  "scalp_lift",
   "push_out"
  ],
  "nose_flatten": {
@@ -50,6 +51,8 @@
    "build_head",
    "bean_project",
    "transfer_weights",
+   "lift_grid",
+   "lift_by",
    "push_out"
   ]
  },
@@ -69,6 +72,12 @@
   "crease_passes": 4,
   "weight_blend_m": 0.02,
   "small_piece_faces": 120
+ },
+ "scalp_lift": {
+  "clear": 0.004,
+  "depth": 0.03,
+  "n_az": 72,
+  "n_el": 45
  },
  "push_out": {
   "clear": 0.004,

@@ -486,38 +486,131 @@ def clean_head(head, x, eye_z, bean, skin_mat=None, neck_dz=0.02, sphere=(64, 32
     return info
 
 
+def _position_groups(P, weld_m=1e-5):
+    """Vertex -> group index, one group per welded position (rounded to weld_m): the pack's split (flat-shaded, UV
+    seam) vertices of one corner share a group, so a move given per group keeps the mesh whole."""
+    import numpy as np
+    key = np.round(P / weld_m).astype(np.int64)
+    _, inv = np.unique(key, axis=0, return_inverse=True)
+    return inv.reshape(-1), int(inv.max()) + 1 if len(inv) else 0
+
+
+def _rays(n_el, n_az):
+    import numpy as np
+    els = np.linspace(-math.pi / 2, math.pi / 2, n_el)
+    azs = np.linspace(0, 2 * math.pi, n_az, endpoint=False)
+    return els, azs
+
+
+def _grid_at(G, P, centre):
+    """The grid's value (bilinear over elevation x azimuth about centre), the unit rays and radii of points P."""
+    import numpy as np
+    d = P - np.array(centre)
+    r = np.maximum(np.linalg.norm(d, axis=1), 1e-9)
+    el = np.arcsin(np.clip(d[:, 2] / r, -1, 1))
+    az = np.arctan2(d[:, 0], -d[:, 1]) % (2 * math.pi)
+    n_el, n_az = G.shape
+    fe = (el + math.pi / 2) / math.pi * (n_el - 1)
+    fa = az / (2 * math.pi) * n_az
+    e0 = np.clip(np.floor(fe).astype(int), 0, n_el - 2)
+    a0 = np.floor(fa).astype(int) % n_az
+    a1 = (a0 + 1) % n_az
+    te, ta = fe - e0, fa - np.floor(fa)
+    v = G[e0, a0] * (1 - te) * (1 - ta) + G[e0, a1] * (1 - te) * ta + G[e0 + 1, a0] * te * (1 - ta) + G[e0 + 1, a1] * te * ta
+    return v, d / r[:, None], r
+
+
+def _bvh(o):
+    from mathutils.bvhtree import BVHTree
+    P = _wco(o)
+    return BVHTree.FromPolygons([Vector(tuple(p)) for p in P], [tuple(q.vertices) for q in o.data.polygons])
+
+
+def lift_grid(o, head, centre, clear=0.004, depth=0.03, n_az=72, n_el=45):
+    """The lab's scalp lift (clay_b/clay_parts.lift_grid): how far a hair must move out, per direction from the skull
+    centre, so that its innermost surface (ignoring what lies deeper than `depth` inside the head: hidden) clears the
+    clean bean head by `clear`; dilated by one cell and smoothed. Returns (grid, head radius grid)."""
+    import numpy as np
+    hb, ob = _bvh(head), _bvh(o)
+    c = Vector(tuple(centre))
+    N = np.zeros((n_el, n_az))
+    RH = np.full((n_el, n_az), np.nan)
+    els, azs = _rays(n_el, n_az)
+    for i, el in enumerate(els):
+        for j, az in enumerate(azs):
+            d = Vector((math.cos(el) * math.sin(az), -math.cos(el) * math.cos(az), math.sin(el)))
+            h = hb.ray_cast(c, d, 0.5)
+            if h[0] is None:
+                continue
+            rh = (h[0] - c).length
+            RH[i, j] = rh
+            start = max(0.0, rh - depth)
+            t = ob.ray_cast(c + d * start, d, 0.5)
+            if t[0] is None:
+                continue
+            ri = start + t[3]
+            if ri < rh + clear:
+                N[i, j] = rh + clear - ri
+    P = np.pad(N, ((1, 1), (0, 0)), mode="edge")
+    M = np.max(np.stack([N, np.roll(N, 1, 1), np.roll(N, -1, 1), P[:-2], P[2:]]), axis=0)
+    P = np.pad(M, ((1, 1), (0, 0)), mode="edge")
+    G = (2 * M + np.roll(M, 1, 1) + np.roll(M, -1, 1) + P[:-2] + P[2:]) / 6.0
+    return G, np.nan_to_num(RH, nan=0.0)
+
+
+def lift_by(o, G, RH, centre, depth=0.03):
+    """The lab's lift_by: every vertex moves out along its ray from the centre by the lift grid (a hair's shell moves as
+    one: its thickness and its split vertices kept); vertices deeper than `depth` inside the head stay (hidden). Returns
+    the largest lift in mm."""
+    import numpy as np
+    P = _wco(o)
+    lift, dn, r = _grid_at(G, P, centre)
+    rh, _, _ = _grid_at(RH, P, centre)
+    lift = np.where(r < rh - depth, 0.0, lift)
+    _set_wco(o, P + dn * lift[:, None])
+    return round(float(lift.max()) * 1000, 1) if len(lift) else 0.0
+
+
 def push_out(o, head, clear=0.004, reach=0.035, passes=4, keep=0.85):
     """Hair, a hat or a beard that sinks into the clean bean head, or lies closer than `clear`, moves out along the
     head's surface normal at its nearest point until it clears it; vertices deeper than `reach` stay (hidden inside the
     head). The move is spread to neighbours (keep x the largest neighbour's move). The lab's clay_parts.push_out, with
-    which round B fitted every hair and hat on the clean head (HAIR_CLEAR, HAT_CLEAR 4 mm). Returns what moved."""
+    which round B fitted every hair and hat on the clean head (HAIR_CLEAR, HAT_CLEAR 4 mm), after its clay pass had
+    welded the part: here the part is not welded yet, so the move is found and spread per welded position group
+    (_position_groups), never per split vertex, or the pack's flat-shaded hair tears into shards. Returns what moved."""
     import numpy as np
     from mathutils.bvhtree import BVHTree
     hm = head.matrix_world
     bvh = BVHTree.FromPolygons([hm @ v.co for v in head.data.vertices], [tuple(p.vertices) for p in head.data.polygons])
     P = _wco(o)
-    D = np.zeros_like(P)
-    for i, p in enumerate(P):
+    grp, n = _position_groups(P)
+    Q = np.zeros((n, 3))
+    Q[grp] = P
+    D = np.zeros_like(Q)
+    for i, p in enumerate(Q):
         loc, nrm, _, _ = bvh.find_nearest(Vector(tuple(p)))
         if loc is None:
             continue
         sd = (Vector(tuple(p)) - loc).dot(nrm)
         if -reach < sd < clear:
             D[i] = np.array(nrm) * (clear - sd)
-    nb = [[] for _ in range(len(D))]
+    nb = [set() for _ in range(n)]
     for e in o.data.edges:
-        a, b = e.vertices
-        nb[a].append(b)
-        nb[b].append(a)
+        a, b = grp[e.vertices[0]], grp[e.vertices[1]]
+        if a != b:
+            nb[a].add(b)
+            nb[b].add(a)
+    nb = [list(x) for x in nb]
     for _ in range(passes):
         L = np.linalg.norm(D, axis=1)
         new = D.copy()
-        for i, n in enumerate(nb):
-            if n:
-                j = n[int(np.argmax(L[n]))]
+        for i, nn in enumerate(nb):
+            if nn:
+                j = nn[int(np.argmax(L[nn]))]
                 if keep * L[j] > L[i]:
                     new[i] = keep * D[j]
         D = new
-    _set_wco(o, P + D)
+    _set_wco(o, P + D[grp])
     L = np.linalg.norm(D, axis=1)
-    return {"vertices_pushed": int((L > 1e-5).sum()), "largest_push_mm": round(float(L.max()) * 1000, 1)}
+    return {"vertices_pushed": int((L[grp] > 1e-5).sum()), "position_groups": n,
+            "largest_push_mm": round(float(L.max()) * 1000, 1) if n else 0.0}
