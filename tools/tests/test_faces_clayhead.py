@@ -36,6 +36,7 @@ class HeadData(unittest.TestCase):
         self.assertEqual(set(H["clean_head"]), {"neck_dz", "sphere", "voxel_m", "tris", "snap_tol", "crease_band",
                                                 "crease_passes", "weight_blend_m", "small_piece_faces"})
         self.assertEqual(set(H["push_out"]), {"clear", "reach", "passes", "keep"})
+        self.assertEqual(dict(H["bean_clay"]), {"strength": 1.0, "power": 2.5})
         self.assertEqual(set(H["bean"]), {"centre_dz", "centre_y", "ax", "ay", "az_top", "az_bottom", "power",
                                           "strength", "fade_z", "hair_k"})
         self.assertTrue(0.0 < H["bean"]["strength"] <= 1.0)
@@ -92,6 +93,8 @@ class LabParity(unittest.TestCase):
             self.skipTest("the lab file has moved on: re-sync faces/clay_head.json")
         code = p.read_text(encoding="utf-8")
         C = K.HEAD["clean_head"]
+        self.assertIn('dict(ctx.P["bean"], strength=%s, power=%s)' % (K.HEAD["bean_clay"]["strength"],
+                                                                     K.HEAD["bean_clay"]["power"]), code)
         for frag in ('B["radii"][3] + %s)' % C["neck_dz"], "u_segments=%d, v_segments=%d" % tuple(C["sphere"]),
                      "voxel_m\": %s" % C["voxel_m"], "np.abs(f - 1.0) < %s" % C["snap_tol"],
                      "(Pw[:, 2] > z_neck - %s) & (Pw[:, 2] < z_neck + %s)" % (-C["crease_band"][0], C["crease_band"][1]),

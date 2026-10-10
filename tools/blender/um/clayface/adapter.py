@@ -36,7 +36,9 @@ RIGID_BLEND_M = 0.03  # ... fading back to the pack's weights over this height b
 # the head extras follow it), then the face skin made rigid: the lab's order (build_heads_r2), on which every lab face
 # was built. Without the bean the kit's features sat on the narrow, flat pack head: pressed in, glued on.
 NOSE_FLATTEN = dict(kit.HEAD["nose_flatten"])
-BEAN = dict(kit.HEAD["bean"])
+# the lab's round B clay head (the approved one) ran the bean at strength 1.0 and power 2.5 (bean_clay), not
+# params_r2.json's 0.85 and 2.3: a fuller, boxier bean, the chin's underside included
+BEAN = dict(kit.HEAD["bean"], **kit.HEAD["bean_clay"])
 # ... then the head above the neck replaced by the closed bean itself (heads.clean_head, the lab's round B clay head:
 # no pack sockets, a whole skull under every hair) and the hair and extras pushed out of it (heads.push_out)
 CLEAN_HEAD = dict(kit.HEAD["clean_head"])

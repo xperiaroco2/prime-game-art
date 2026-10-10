@@ -279,6 +279,8 @@ on, the noses barely different (the pack nose dominated). `faces/clay_head.json`
    `az_top`, `az_bottom`, power `power`) centred at the eye height + `centre_dz`, y `centre_y`, fading out below the
    chin over `fade_z` so the neck stays; the hair and every head extra (a beard, a hat, an earring) move with their
    `hair_k` nearest head vertices (inverse distance), so they still sit on the head (the report's `bean_head`);
+   The clay head runs the bean as the lab's round B clay head did (`bean_clay`: strength 1.0, power 2.5 over
+   `params_r2.json`'s 0.85 and 2.3; `clay_parts.py` `dict(P["bean"], strength=1.0, power=2.5)`), steps 2 and 4 alike;
 3. `facekit.rigid_face_skin` down to `rigid_full_z` (`rigid_margin` under the kit's lowest mouth point);
 4. `heads.clean_head` (`clean_head`, the lab's round B clay head, `clay_b/clay_parts.py` `build_head`): the warp alone
    is not the lab's head (step 2's IoU against the lab's own renders: the women 0.45-0.70; the warped pack heads keep

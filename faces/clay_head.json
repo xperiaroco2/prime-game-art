@@ -1,6 +1,6 @@
 {
  "schema": "prime-game-art/faces/clay-head/1",
- "what": "The clay face kit's head as data (art #42): the pack head reshaped into the faces lab's egg-like bean head before the kit's features are seated on it, in the lab's order (order). nose_flatten pushes the pack nose back into the face (heads.flatten_nose); bean is the space warp onto a superellipsoid about the eye height (heads.bean_warp; hair_k: the hair and every head extra move with their nearest head vertices); clean_head replaces the warped head above the neck by the closed bean itself (heads.clean_head, the lab's round B clay head: the pack's sockets and the women's missing skull gone), push_out moves the hair and every head extra out of it (heads.push_out, 4 mm clear); rigid_margin is the margin under the kit's lowest mouth point down to which the face skin follows the Head bone alone (clayface/face.py rigid_full_z). Metres, the face toward -Y, world space at rest before the clay look's head scale. Read by tools/blender/um/clayface/kit.py (docs/faces.md, \"The bean head\").",
+ "what": "The clay face kit's head as data (art #42): the pack head reshaped into the faces lab's egg-like bean head before the kit's features are seated on it, in the lab's order (order). nose_flatten pushes the pack nose back into the face (heads.flatten_nose); bean is the space warp onto a superellipsoid about the eye height (heads.bean_warp; hair_k: the hair and every head extra move with their nearest head vertices); bean_clay overrides bean for the clay head, as the lab's round B clay head did (clay_parts.py: dict(P['bean'], strength=1.0, power=2.5)) for the warp and the clean head alike; clean_head replaces the warped head above the neck by the closed bean itself (heads.clean_head, the lab's round B clay head: the pack's sockets and the women's missing skull gone), push_out moves the hair and every head extra out of it (heads.push_out, 4 mm clear); rigid_margin is the margin under the kit's lowest mouth point down to which the face skin follows the Head bone alone (clayface/face.py rigid_full_z). Metres, the face toward -Y, world space at rest before the clay look's head scale. Read by tools/blender/um/clayface/kit.py (docs/faces.md, \"The bean head\").",
  "lab_source": {
   "path": "research/2026-10-05-faces/lab/params_r2.json",
   "sha256": "215b230306dfd8475f1f7e1130c7fb78d4e8c7061206547c1e4675727e2c30cc",
@@ -37,6 +37,10 @@
    0.008
   ],
   "hair_k": 6
+ },
+ "bean_clay": {
+  "strength": 1.0,
+  "power": 2.5
  },
  "rigid_margin": 0.005,
  "clean_head_source": {
