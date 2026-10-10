@@ -20,6 +20,10 @@ const GAP: int = 4
 const RADIUS: float = 0.68
 const CONTROL_RADIUS: float = 0.75  # 1.5 m: must stop at a 1.4 m door (the colliders are there)
 const SPEED: float = 3.0
+const MAX_S: float = 8.0  # a walk's limit in simulated seconds unless it sets "max_s" (the routes)
+## Moves per physics frame: the walk runs in simulated time (steps x 1/ticks), several moves a frame, so the long
+## routes (house_routes, art #78) take a quarter of their walking time on the clock.
+const SUBSTEPS: int = 4
 ## The exterior's four sides at dusk from 1.7 m eye height outside the plot's middle, aimed at the house (x 17..43, z 16..45).
 const EXTERIOR: Array = [
 	["ext_south", "south: the front (path, front door, porch)", Vector3(30, 1.7, 76), Vector3(30, 4.0, 34)],
@@ -84,7 +88,7 @@ func _run(args: PackedStringArray) -> void:
 		await physics_frame
 	var result: Dictionary = {"walks": [], "radius_m": RADIUS, "shots": {}, "instances": _count_instances()}
 	for w: Dictionary in _req["walks"]:
-		var r: Dictionary = await _walk(RADIUS, w["points"])
+		var r: Dictionary = await _walk(RADIUS, w["points"], float(w.get("speed", SPEED)), float(w.get("max_s", MAX_S)))
 		r["name"] = w["name"]
 		r["kind"] = w["kind"]
 		r["pass"] = r["arrived"]
@@ -240,9 +244,10 @@ func _count_instances() -> Dictionary:
 
 
 # --- the walk check ------------------------------------------------------------------------------------------------
-## A capsule (radius r, 1.8 m) walks the waypoints [x, h, z] at 3 m/s; it arrives when it reaches the last within
-## 0.3 m and its height within 0.15 m. Stops early when it has not moved for 30 ticks.
-func _walk(r: float, points: Array) -> Dictionary:
+## A capsule (radius r, 1.8 m) walks the waypoints [x, h, z] at `speed` (3 m/s by default); it arrives when it reaches
+## the last within 0.3 m and its height within 0.15 m. Stops early when it has not moved for 30 ticks, or after max_s
+## simulated seconds. Reports the simulated seconds and the metres walked on the floor plan.
+func _walk(r: float, points: Array, speed: float = SPEED, max_s: float = MAX_S) -> Dictionary:
 	var body: CharacterBody3D = CharacterBody3D.new()
 	var shape: CollisionShape3D = CollisionShape3D.new()
 	var cap: CapsuleShape3D = CapsuleShape3D.new()
@@ -260,26 +265,29 @@ func _walk(r: float, points: Array) -> Dictionary:
 	var steps: int = 0
 	var stuck: int = 0
 	var last: Vector3 = body.global_position
-	while steps < 8 * Engine.physics_ticks_per_second and reached < points.size() - 1 and stuck < 30:
-		await physics_frame
+	var metres: float = 0.0
+	while steps < max_s * Engine.physics_ticks_per_second and reached < points.size() - 1 and stuck < 30:
+		if steps % SUBSTEPS == 0:
+			await physics_frame
 		steps += 1
 		var target: Vector3 = _v(points[reached + 1])
 		var flat: Vector3 = Vector3(target.x - body.global_position.x, 0, target.z - body.global_position.z)
 		if flat.length() < 0.3:
 			reached += 1
 			continue
-		var v: Vector3 = flat.normalized() * SPEED
+		var v: Vector3 = flat.normalized() * speed
 		v.y = 0.0 if body.is_on_floor() else body.velocity.y - 9.8 * dt
 		body.velocity = v
 		body.move_and_slide()
 		stuck = stuck + 1 if body.global_position.distance_to(last) < 0.002 else 0
+		metres += Vector2(body.global_position.x - last.x, body.global_position.z - last.z).length()
 		last = body.global_position
 	var end: Vector3 = body.global_position
 	var arrived: bool = reached == points.size() - 1 and absf(end.y - float(points[-1][1])) < 0.15
 	body.queue_free()
 	await physics_frame
 	return {"radius_m": r, "reached": reached + 1, "of": points.size(), "end": [snappedf(end.x, 0.01),
-		snappedf(end.y, 0.01), snappedf(end.z, 0.01)], "seconds": snappedf(steps * dt, 0.01), "arrived": arrived}
+		snappedf(end.y, 0.01), snappedf(end.z, 0.01)], "seconds": snappedf(steps * dt, 0.01), "metres": snappedf(metres, 0.01), "arrived": arrived}
 
 
 # --- pictures ------------------------------------------------------------------------------------------------------
