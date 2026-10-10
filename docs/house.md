@@ -9,8 +9,9 @@ later packages add dressing data (`layouts/house/dressing/`, #75b) and only rege
 | File | What |
 |---|---|
 | `layouts/house/house.toml` | Settings: the kit spec, the kit folder under the raw folder (`kit_dir`: `kits/house/v2`; v1 and v2 share the piece ids, so it is the one setting that switches kits), the `res://` paths of the pieces and scenes, the level order |
-| `layouts/house/{basement,ground,upper,attic,roof}.toml` | One level each: `floor_y`, the default wall family, the house `footprint`; `[[rooms]]`, `[[doors]]`, `[[windows]]`, `[[holes]]`, `[[stairs]]` (a U-turn lists its lower half and landing in `below`), `[[pieces]]` (one free kit piece each: `piece`, `room`, `at` = [x, h, y] of its pivot, `turn`; the porch and the chimneys), `[[roofs]]` (a pitched roof from the kit over a room: `room`, `rect`, `gables`, optional `h`; the attic's), `[[placeholders]]` |
+| `layouts/house/{basement,ground,upper,attic,roof}.toml` | One level each: `floor_y`, the default wall family, the house `footprint`; `[[rooms]]`, `[[doors]]`, `[[windows]]`, `[[holes]]`, `[[stairs]]` (a U-turn lists its lower half and landing in `below`), `[[pieces]]` (one free kit piece each: `piece`, `room`, `at` = [x, h, y] of its pivot, `turn`; the porch and the chimneys), `[[roofs]]` (a pitched roof from the kit over a room: `room`, `rect`, `gables`, optional `h`, `windows`: gable windows as [x, y] centres; the attic's), `[[cornices]]` (brackets under an overhanging deck: `piece`, `room`, `rect` of the walls below, `every`, optional `h`; the roof deck's), `[[placeholders]]` |
 | `tools/runner/house_layout.py` | Load, validate, plan (choose the pieces), write the scenes |
+| `layouts/house/dressing/{attic,roof}.toml`, `tools/runner/house_attic.py`, `commands/attic.py` | The attic's old things and hiding spots, the roof deck's dressing and lookout, and their checks (below; art #77) |
 | `tools/runner/commands/house.py` | The `house` command |
 | `tools/tests/test_house_layout.py` | The rules, the plan's conventions, the design doc's 35 rooms and the game's greybox marker names |
 
@@ -107,12 +108,40 @@ floor from above, the other levels and the ceilings hidden, a label per room), `
   (2.2 m), the eaves on y 26 and 40 and the ridge on y 33; with `gables = true` the gable walls on x 20 and 40, per
   slope row (2, 2, 2 and 1 m from each eave) a `gable_tri_*` over `gable_band_*` of the row's length, so their tops
   follow the roof's line. Every height comes from the kit's spec, so the roof follows the kit's pitch: tonight 0.7 per
-  metre (Q2 option A, the ridge 7.1 m over the attic floor), because kit v2 is built at 0.7; Q2's default B (0.35) is a
-  kit rebuild with `gable_rise_per_m` 0.35 and needs no layout edit. The two gable windows stay named `Placeholders`
-  markers: the kit has no gable window piece.
+  metre (Q2 option A, the ridge 7.1 m over the attic floor), because kit v2 is built at 0.7 (kept by #77: the
+  engineer's call); Q2's option B (0.35) is a kit rebuild with `gable_rise_per_m` 0.35 (and the gable bands' heights).
+- The gable window pair (#77): the kit's `gable_band_2m_window` (a 2 m gable band with a 1.0 x 0.9 m window on a
+  0.25 m sill, so 2.45 to 3.35 m over the attic floor) swaps the lowest band of the 2 m row centred on each
+  `windows` point; tonight one per gable at y 31 (the north row x 30..32), beside the roof door at y 33 in the east.
+  A point that is not a 2 m row's centre is a problem.
+- Q3 A (the deck's 1 m overhang, as the doc): 44 `cornice_bracket`s every 2 m round the second floor's walls, their
+  tops against the deck slab's underside (6.1 m), reaching 0.8 m out.
 - The main stairs (not the doc's straight flight): a 6 m flight fills the 6 m stairs room, so its foot sits against
   the hallway wall, and a capsule stepping onto it from a door hits the door's head (2.15 m). Instead a U-turn of the
   kit's two half flights (`below` in the stairs entry: the lower half and the landing): up west from the room's open
   half at x 30 to a 1 x 4 m landing at 1.6 m on the west wall, then up east to the upper landing at x 30, all under
   the doc's hole (26, 30, 4 x 6). Marked `placeholder`; the outdoor (concrete) pieces stand in until kit v2 has
   indoor ones. Option: a 5 m steeper straight flight with a 1 m foot landing (kit v2).
+
+## The attic and the roof deck (art #77)
+
+`tools/run.sh attic [--json PATH]` checks `layouts/house/dressing/attic.toml` and `roof.toml` (pure Python, seconds)
+and writes `tools/out/attic/report.json`. The files use the zones' conventions (docs/zones.md: `[[items]]` with `id`,
+`at`, `yaw`; sizes from `props/library.toml`, or `size` for a placeholder: the mannequin and the rocking horse, hero
+props outside the library); `clear` rects stay free (the hatch's apron, the roof door's approach, the Knife3 marker),
+`arrive` is where a player comes in (off the ladder, out of the roof door). The light fixtures are #83a's.
+
+- **Items**: inside the floor (the walls' or the parapet's inner face), off the hatch hole and the kept-free rects, off
+  each other and the chimneys, under the attic's roof line (the kit's pitch from the eaves), the inventory's counts
+  (section 6: 44 old things in the attic; vents, antenna, loot crate and water tank on the deck).
+- **Hiding spots** (`[[spots]]`: `name`, `at`, `h`, `in` the prop that holds it): the game's rule (levels/CLAUDE.md:
+  a package put down anywhere must stay pickable) as a test: a 0.4 m-radius player walks a 0.1 m grid from `arrive`;
+  a spot is reachable if some reached point is within 1.0 m of it in plan, the spot is at most 2.0 m high, and the
+  line from the eye (1.6 m) to it clears every prop but its holder. Tonight 12 spots, all reachable.
+- **The lookout** (`[lookout]`): from each eye at 1.6 m, the share of sample points on the plot's wicket and gates
+  (`plot.toml`'s fence openings) seen over the parapet's cap (7.46 m), the deck slab, the attic and the roof props; and
+  every window of the house (basement, ground, second floor) and the attic in view. The check wants the openings at
+  least half in view from some eye and no window of the house from any. Findings for the engineer: from the doc's
+  station point (30, 42.5), 2.5 m from the parapet, the parapet hides everything within about 33 m (the wicket and the
+  gates 0 %); at the parapet in front of it (30, 44.4) both are 100 % in view. The attic's two south knee windows
+  (25, 40) and (35, 40) look onto the deck, so the lookout sees into the attic.
