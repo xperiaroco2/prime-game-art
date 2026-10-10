@@ -34,6 +34,7 @@ GROUPS = [
     ("photo_repair", lambda p: p["chain"] in ("photo", "car_repair", "other") or p["id"] in ("enlarger",
                                                                                            "tray_table")),
     ("house_yard", lambda p: p["id"] in ("toy_chest", "utility_pole", "birdbath", "bulkhead_stairs")),
+    ("zones", lambda p: p["chain"] == "zone"),  # props/zones.toml (#81b): the chill zone and the photo gazebo
 ]
 
 
@@ -165,7 +166,7 @@ def lineups(spec: dict, glbs: Path, out: Path) -> list[str]:
         band = 24
         sheet = np.empty((band + rows * CELL, 4 * CELL, 3), dtype=np.float32)
         sheet[:] = rv.BACKGROUND
-        rv.draw_text(sheet, f"PROPS 82: {name.upper()}  FRONT AND 3/4  CAPSULE 1.8 M", 6, 6, 2)
+        rv.draw_text(sheet, f"{spec.get('label', 'PROPS 82')}: {name.upper()}  FRONT AND 3/4  CAPSULE 1.8 M", 6, 6, 2)
         for i, p in enumerate(props):
             clear()
             cam = setup(CELL, CELL)
@@ -235,7 +236,8 @@ def main() -> None:
     glbs, out = Path(a["glbs"]), Path(a["out"])
     out.mkdir(parents=True, exist_ok=True)
     lineups(spec, glbs, out)
-    switch_8m(glbs, out)
+    if (glbs / "wall_switch_post.glb").is_file():  # props/tasks.toml only
+        switch_8m(glbs, out)
 
 
 if __name__ == "__main__":
