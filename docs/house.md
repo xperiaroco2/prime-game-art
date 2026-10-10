@@ -184,7 +184,10 @@ Defaults used (for the engineer; data, easy to change):
   garage route does not walk back west): down
   north to the landing on the passage's north wall, then down south to the passage, the foot at (63, 32). The doc's
   stairwell at (62, 29) leaves 1 m between the foot and a passage wall whichever way it is entered, too narrow for
-  the 1.36 m capsule; the zone keeps the doc's rect. The passage has no slab over it (the yard is not a floor): the
+  the 1.36 m capsule; the zone keeps the doc's rect. This file owns the stairwell: #81's outdoor plot
+  (`layouts/house/outdoor/plot.toml` `[stairs]`) no longer holds a rect or entry of its own (it had (62, 29) from the
+  north) and reads the hole's rect and the upper flight's climb from here (`house_outdoor.house_stairs`), so the
+  yard's U, its railings and pit stand-ins sit where the walk climbs. The passage has no slab over it (the yard is not a floor): the
   yard's ground (#81a) must close it round the stairwell.
 - Switches on a wall in sight from the door: A on storage's west wall, B on the boiler room's west wall, C and D on
   the east walls; a cage lamp over each switch (its pool is #83a's); the generator's front 0.65 m south of its
