@@ -15,6 +15,7 @@ later packages add dressing data (`layouts/house/dressing/`, #75b) and only rege
 | `tools/tests/test_house_layout.py` | The rules, the plan's conventions, the design doc's 35 rooms and the game's greybox marker names |
 | `layouts/house/dressing/<room>.toml` | One room's props and light fixtures (#75b); the ground floor's eight rooms |
 | `layouts/house/routes.toml` | The design doc's routes (§7) as waypoints for the walk, with the doc's lengths and times (#78; "Routes" below) |
+| `layouts/house/basement_review.toml` | The basement's review pictures: lamp stand-ins per fixture id, exposure, ambient, the shots and the far edge's L* (#78) |
 | `tools/runner/house_dressing.py` | The dressing: catalogue, checks (bounds, overlaps, stations, the capsule's paths), scene nodes |
 | `tools/tests/test_house_dressing.py` | The dressing's rules, and the ground floor against the plan's inventory and the stations |
 
@@ -37,7 +38,7 @@ Coordinates are the design doc's: metres, x east, y south, origin at the plot's 
 ## The command
 
 ```
-tools/run.sh house [--check] [--out DIR] [--layouts DIR] [--walk DIR]
+tools/run.sh house [--check] [--out DIR] [--layouts DIR] [--walk DIR] [--basement DIR]
 ```
 
 It validates the layout, then writes into `--out` (default `godot/import/house/`, ignored, `res://import/house`) one
@@ -56,7 +57,8 @@ take the heavy-run lock). The request (`house_layout.walk_request`, written to `
   exactly 1.4 m clear: a 1.4 m capsule touches both jambs and jams, so the walk keeps 2 cm a side);
 - every flight (`stairs_main`, `stairs_basement`, `stairs_balcony`) up and down, from 1 m before its foot to up to
   1 m past its top (less where the room there is short: the pantry's landing);
-- a 3 x 3 m pad under each walk end that has no floor (the yard; #81a builds the real ground);
+- a 3 x 3 m pad under each walk end that has no floor (the yard; #81a builds the real ground), cut back from the
+  holes of its level (`house_layout.clip_pad`: a pad over the outdoor stairwell jammed the climb);
 - a control: the 1.5 m capsule must stop at the first door (the colliders are there).
 - the design doc's routes from `layouts/house/routes.toml` ("Routes" under the basement below), at their own speed.
 
@@ -67,6 +69,9 @@ floor from above, the other levels and the ceilings hidden, a label per room), `
 `exterior.png` (the four sides at dusk from 1.7 m eye height outside the plot, 1280 px wide; the kit's own colours, the
 `[[placeholders]]` as see-through orange boxes of their `size`, from the marker up). The lamps
 (one warm omni per room, no shadows) and the dusk sky only light the shell for review; they are not the house's light.
+
+`--basement DIR` stages and imports the same way, then runs `godot/house/basement.gd` off-screen for the basement's
+review (#78; "The basement" below). With `--walk` in the same run it goes after the walk and shows its route times.
 
 ## Dressing (#75b)
 
@@ -112,6 +117,27 @@ them as obstacles (`house_dressing.PIECE_HALF`).
   four corners, and from each door to the generator; pillars and props taller than 1.6 m block. Tonight's clearances:
   corridor door 2.29 m, boiler room door 0.94, pump room door 1.75, switch room door 2.0, generator 5.11, corners
   1.24 (NW), 3.08 (NE), 0.8 (SW), 3.12 (SE); from the doors to the generator 1.52 to 4.8 m.
+
+Routes (`layouts/house/routes.toml`, walked by `house --walk` at the doc's 4.5 m/s; 2026-10-10, walk2):
+- wine (storage's wine rack -> pantry stairs -> dining table; the doc 26 m, 5.9 s): jams at the pantry's 1 m top
+  landing (27.3, 25.0), where the 1.36 m capsule cannot turn east past the stairwell's railing; 5.5 s up to there. The
+  pantry stairs' layout (Q5: a straight flight with a 1 m landing) is the question, not the route.
+- garage (storage's boxes -> hall -> passage -> outdoor stairs -> workbench; 60 m, 13.4 s): 15.2 s (+1.8 s).
+- switches D -> B -> C -> A (105 m, 23.4 s): 24.6 s (+1.2 s).
+
+The plan is longer than the doc's straight lines (29.9, 66.7 and 111.1 m): the pantry stairs' flight stands between
+the box stacks and the corridor door, the outdoor U is about 8.4 m a level against the doc's 6, and each 1.4 m door is
+1 m of straight approach. A miss is the engineer's layout choice (accept it, or move the pantry stairs or the corridor
+door); the waypoints are not bent to fit.
+
+Review pictures (`house --basement DIR`, `godot/house/basement.gd`, settings in `layouts/house/basement_review.toml`):
+a real-time omni at each of the 55 fixtures by its id (cool pendants and cage lamps, warm bare bulbs, red
+safelights: Q23 B), a faint cool ambient and one fixed exposure for the zone (Q24 A); nothing baked and not the light
+pass (#83a). A shot per room from 0.3 m inside a door at 1.6 m, the hall from the passage and from the switch room,
+the basement from above with labels and the last walk's route times (`tools/out/house/routes.json`), and the median
+L* of each shot and of the hall's far (west) wall from the passage door, which must stay above 12 (2026-10-10: 42.4).
+Rooms outside the house's footprint (the generator hall, the pump and switch rooms, the passage) have no slab over them
+yet (no layout level is there; the yard's ground, #81a, has to close it), so their shots look up into black.
 
 Defaults used (for the engineer; data, easy to change):
 - The hall's pillars: 4, not the inventory's 8 (an 8 m grid does not fit 18 x 20 m), at (44, 26), (54, 26), (44, 38)
