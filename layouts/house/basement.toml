@@ -196,4 +196,4 @@ at = [19, 0.0, 28]
 [[pieces]]
 piece = "pillar_concrete"
 room = "storage"
-at = [25, 0.0, 28]
+at = [22, 0.0, 25.5]

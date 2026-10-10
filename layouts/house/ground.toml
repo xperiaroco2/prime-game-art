@@ -424,17 +424,21 @@ note = "the front porch (kit v2) on the front wall over the front door at x 30; 
 
 [[holes]]
 id = "pantry_stairs"
-rect = [26, 24, 2, 4]
+rect = [24, 24, 4, 4]
 railing = true
 
 [[stairs]]
 id = "pantry_stairs"
-piece = "stairs_basement"
-rect = [26, 22, 2, 6]
-y = -3.2
+piece = "stairs_outdoor_half"
+rect = [26, 25, 2, 3]
+y = -1.6
 climb = "S"
 placeholder = true
-note = "Q5 and the manager's correction: a straight flight, climbing south (art #78): the foot in storage at y22 (under the terrace), the top at y28 with a 2 m landing (the pantry floor y28..30), 2 m from the dining room door; a 1 m landing at the north wall was too narrow for the 1.36 m capsule to turn. The hole stops at the north wall: 1.9 m of headroom over the tread there. Option: a U-turn of two half flights."
+note = "Q5's option (art #78): a U of the kit's two half flights in a 4 x 4 m stairwell in the pantry's north-west corner, like the outdoor stairs: up north from the foot in storage at (25, 28) to the 4 x 1 m landing on the north wall, then up south to the pantry floor, the top at (27, 28) with a 2 m landing (y 28..30), 2 m from the dining room door. The straight flight's 1 m top landing at the north wall was too narrow for the 1.36 m capsule to turn, and a straight flight climbing south hit its head on the north wall's slab edge."
+below = [
+  { piece = "stairs_outdoor_half", rect = [24, 25, 2, 3], y = -3.2, climb = "N" },
+  { piece = "stairs_outdoor_landing", rect = [24, 24, 4, 1], y = -3.2 },
+]
 
 [[holes]]
 id = "outdoor_stairs"

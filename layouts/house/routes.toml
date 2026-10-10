@@ -16,14 +16,15 @@ doc_m = 26
 doc_s = 5.9
 points = [
   ["basement", 16, 26],         # the wine rack's marker
-  ["basement", 26.4, 21.25],    # north of the pillar at (25, 23), towards the pantry stairs' foot (from the north)
+  ["basement", 17.8, 29.5],     # south-west of the pillar at (19, 28) and the box stacks
+  ["basement", 24.2, 29.4],     # 1 m before the pantry stairs' foot (25, 28)
   ["stairs", "pantry_stairs", "up"],
   ["ground", 28.4, 28.75],      # the pantry's 2 m landing, between the stairwell's corner and the crates
   ["ground", 29.0, 27.6],
   ["ground", 29.2, 27],
   ["ground", 30, 27],           # the pantry -> dining room door
   ["ground", 31, 27],
-  ["ground", 34, 27],           # 2 m short of the dining table (36, 27)
+  ["ground", 33.3, 27],         # the capsule's front 2 m short of the dining table (36, 27), at its west chair
 ]
 
 [[routes]]
@@ -33,8 +34,7 @@ doc_m = 60
 doc_s = 13.4
 points = [
   ["basement", 21, 29.4],       # the boxes' marker, at the stacks' front
-  ["basement", 25, 30.2],       # south of the pallet at (25, 29)
-  ["basement", 28.6, 28.85],    # past the pantry stairs' south end (y 28)
+  ["basement", 28.6, 28.85],    # past the pantry stairwell's south-east corner (28, 28)
   ["basement", 30, 28],         # storage -> corridor
   ["basement", 31, 28],
   ["basement", 40, 28],         # corridor -> generator hall
@@ -76,7 +76,6 @@ points = [
   ["basement", 40, 28],         # generator hall -> corridor
   ["basement", 31, 28],
   ["basement", 30, 28],         # corridor -> storage
-  ["basement", 28.6, 28.85],    # past the pantry stairs' south end (y 28)
-  ["basement", 25, 30.2],       # south of the pallet at (25, 29)
+  ["basement", 28.6, 28.85],    # past the pantry stairwell's south-east corner (28, 28)
   ["basement", 16, 32],         # switch A
 ]

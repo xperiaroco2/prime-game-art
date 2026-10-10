@@ -56,7 +56,7 @@ take the heavy-run lock). The request (`house_layout.walk_request`, written to `
   second, 1 m either side of the wall line, by a capsule 1.36 m wide and 1.8 m tall at 3 m/s (the kit's door is
   exactly 1.4 m clear: a 1.4 m capsule touches both jambs and jams, so the walk keeps 2 cm a side);
 - every flight (`stairs_main`, `stairs_basement`, `stairs_balcony`) up and down, from 1 m before its foot to up to
-  1 m past its top (less where the room there is short: the pantry's landing);
+  1 m past its top (less where the room there is short);
 - a 3 x 3 m pad under each walk end that has no floor (the yard; #81a builds the real ground), cut back from the
   holes of its level (`house_layout.clip_pad`: a pad over the outdoor stairwell jammed the climb);
 - a control: the 1.5 m capsule must stop at the first door (the colliders are there).
@@ -94,7 +94,8 @@ The `house` command checks the dressing after the layout and fails on a problem 
 - the 1.36 m capsule on a 0.1 m grid (walls 0.2 m with the doors' 1.4 m openings, floor holes and stairs as
   obstacles) reaches from the room's first door, with the props in place, every door (0.8 m in), stair foot, flight
   top, station (within 2 m) and spawn marker (within 1 m) that it reaches in the empty room. What the empty room
-  itself does not reach is a note: the pantry stairs' top landing (1 m deep).
+  itself does not reach is a note: the pantry stairs' top (its target, half a metre past the top, lies within the
+  capsule's radius of the stairwell's railing; the walk climbs it).
 
 With a dressing, `--walk` also lights and shoots it (`house_dressing.review_request`): a c2 stand-in omni light (no
 shadows) at every light fixture replaces the shell's one centre lamp in those rooms (real-time review light; the bake
@@ -127,17 +128,19 @@ them as obstacles (`house_dressing.PIECE_HALF`).
   corridor door 2.29 m, boiler room door 0.94, pump room door 1.75, switch room door 2.0, generator 5.11, corners
   1.24 (NW), 3.08 (NE), 0.8 (SW), 3.12 (SE); from the doors to the generator 1.52 to 4.8 m.
 
-Routes (`layouts/house/routes.toml`, walked by `house --walk` at the doc's 4.5 m/s; 2026-10-10, walk2):
-- wine (storage's wine rack -> pantry stairs -> dining table; the doc 26 m, 5.9 s): jams at the pantry's 1 m top
-  landing (27.3, 25.0), where the 1.36 m capsule cannot turn east past the stairwell's railing; 5.5 s up to there. The
-  pantry stairs' layout (Q5: a straight flight with a 1 m landing) is the question, not the route.
-- garage (storage's boxes -> hall -> passage -> outdoor stairs -> workbench; 60 m, 13.4 s): 15.2 s (+1.8 s).
-- switches D -> B -> C -> A (105 m, 23.4 s): 24.6 s (+1.2 s).
+Routes (`layouts/house/routes.toml`, walked by `house --walk` at the doc's 4.5 m/s; 2026-10-10, walk4, after the
+pantry stairs became a U and the garage's back door moved to (65, 34)):
+- wine (storage's wine rack -> pantry stairs -> dining table; the doc 26 m, 5.9 s): 7.2 s (+1.3 s), 28.7 m on the plan;
+  it then stopped against the dining table's west chair 0.7 m short of its end, which moved to (33.3, 27) (the
+  capsule's front 2 m from the table).
+- garage (storage's boxes -> hall -> passage -> outdoor stairs -> workbench; 60 m, 13.4 s): 13.7 s (+0.3 s).
+- switches D -> B -> C -> A (105 m, 23.4 s): 24.1 s (+0.7 s).
 
-The plan is longer than the doc's straight lines (29.9, 66.7 and 111.1 m): the pantry stairs' flight stands between
-the box stacks and the corridor door, the outdoor U is about 8.4 m a level against the doc's 6, and each 1.4 m door is
-1 m of straight approach. A miss is the engineer's layout choice (accept it, or move the pantry stairs or the corridor
-door); the waypoints are not bent to fit.
+The doc counts a change of level as 6 m in a straight line; the walk climbs the real flights: the pantry U is about
+11 m of stairs and its landing turn, the outdoor U about 8.4 m a level, and each 1.4 m door is 1 m of straight
+approach. Wine's miss is the U's: a straight flight walks 6.8 m but has no room for a top landing the capsule can turn
+on. Accepting it, or a shorter wine leg (the wine rack nearer the stairs), is the engineer's layout choice; the
+waypoints are not bent to fit.
 
 Review pictures (`house --basement DIR`, `godot/house/basement.gd`, settings in `layouts/house/basement_review.toml`):
 a real-time omni at each of the 55 fixtures by its id (cool pendants and cage lamps, warm bare bulbs, red
@@ -151,9 +154,10 @@ yet (no layout level is there; the yard's ground, #81a, has to close it), so the
 Defaults used (for the engineer; data, easy to change):
 - The hall's pillars: 4, not the inventory's 8 (an 8 m grid does not fit 18 x 20 m), at (44, 26), (54, 26), (44, 38)
   and (54, 38): a 10 x 12 m grid 4 m off the walls, the best of a grid search for the longest clear sight lines.
-  Storage keeps 4 at (19, 23), (25, 23), (19, 28), (25, 28).
+  Storage keeps 4 at (19, 23), (25, 23), (19, 28), (22, 25.5) (the fourth moved off the pantry stairwell).
 - The outdoor stairs (`outdoor_stairs` in `ground.toml`, a placeholder): a U of two `stairs_outdoor_half` and the
-  landing in a 4 x 4 m stairwell at (62, 28), entered from the south 2 m from the garage's back door (63, 34): down
+  landing in a 4 x 4 m stairwell at (62, 28), entered from the south 2 m from the garage's back door (65, 34; the doc's (63, 34), moved 2 m east so the
+  garage route does not walk back west): down
   north to the landing on the passage's north wall, then down south to the passage, the foot at (63, 32). The doc's
   stairwell at (62, 29) leaves 1 m between the foot and a passage wall whichever way it is entered, too narrow for
   the 1.36 m capsule; the zone keeps the doc's rect. The passage has no slab over it (the yard is not a floor): the
@@ -188,9 +192,12 @@ Defaults used (for the engineer; data, easy to change):
 
 ## Defaults used (questions in the plan's `questions.md`; the engineer may change any as data)
 
-- Q5, the pantry stairs: a straight flight north to south with a 1 m top landing (the pantry floor y 24..25): hole
-  x 26..28, y 25..30, foot in storage at y 31, 1 m from the parts shelf at (27, 32). Marked `placeholder`; the option
-  is a U-turn of two half flights.
+- Q5, the pantry stairs: the option, a U of the kit's two half flights (art #78), in a 4 x 4 m stairwell in the
+  pantry's north-west corner (hole x 24..28, y 24..28): the foot in storage at (25, 28), up north to the 4 x 1 m
+  landing on the north wall, up south to the top at (27, 28) and the pantry's 2 m landing (y 28..30). Marked
+  `placeholder`. The default, a straight flight with a 1 m top landing, did not let the 1.36 m capsule turn (the wine
+  route jammed); a straight flight climbing south hit the capsule's head on the north wall's slab edge. The pantry's
+  two jar shelves moved off the stairwell to the east and north walls.
 - Q6: the balcony stairs run straight north, the foot on the yard at y 15.
 - Q7 B: 16 windows on the ground floor, 16 on the second floor, 4 knee windows in the attic, 5 in the garage.
 - Q9 B: leaves standing ajar at the front door, the terrace door and the garage side door; the greenhouse door is
