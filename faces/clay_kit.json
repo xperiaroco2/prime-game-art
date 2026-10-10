@@ -1,0 +1,936 @@
+{
+ "schema": "prime-game-art/faces/clay-kit/1",
+ "what": "The clay face kit's features as data (art #42 part B): colours, eyes, brows, noses, ears, mouths, facial hair and the pick rules; read by tools/blender/um/clayface/kit.py (docs/faces.md, \"The clay face kit\"). Ported from the faces lab's round E (clay_e/clay_face_b.py).",
+ "lab_source": {
+  "path": "research/2026-10-05-faces/lab/clay_e/clay_face_b.py",
+  "sha256": "326164f3e6035718fc438ebe2c356abb8fba999a6fb0bcd0512369708b20d7f4"
+ },
+ "colours": {
+  "skins": {
+   "light": [
+    0.6,
+    0.39,
+    0.27
+   ],
+   "dark": [
+    0.13,
+    0.07,
+    0.04
+   ]
+  },
+  "tint": {
+   "nose": {
+    "light": [
+     1.14,
+     0.99,
+     0.93
+    ],
+    "dark": [
+     1.28,
+     1.15,
+     1.1
+    ]
+   },
+   "lip": {
+    "light": [
+     0.9,
+     0.7,
+     0.66
+    ],
+    "dark": [
+     1.12,
+     0.9,
+     0.84
+    ]
+   },
+   "crease": {
+    "light": [
+     0.8,
+     0.8,
+     0.8
+    ],
+    "dark": [
+     0.8,
+     0.8,
+     0.8
+    ]
+   }
+  },
+  "fixed": {
+   "white": [
+    0.9,
+    0.86,
+    0.72
+   ],
+   "pupil": [
+    0.008,
+    0.008,
+    0.012
+   ],
+   "cavity": [
+    0.05,
+    0.012,
+    0.02
+   ],
+   "teeth": [
+    0.92,
+    0.9,
+    0.8
+   ]
+  },
+  "gloss": {
+   "white": 0.17,
+   "pupil": 0.3,
+   "teeth": 0.28
+  },
+  "brow_default": {
+   "light": [
+    0.04,
+    0.025,
+    0.012
+   ],
+   "dark": [
+    0.012,
+    0.007,
+    0.004
+   ]
+  },
+  "hair_default": [
+   0.05,
+   0.028,
+   0.014
+  ],
+  "brow_palette": {
+   "black": [
+    0.012,
+    0.009,
+    0.008
+   ],
+   "dark_brown": [
+    0.04,
+    0.025,
+    0.012
+   ],
+   "brown": [
+    0.13,
+    0.06,
+    0.025
+   ],
+   "ginger": [
+    0.3,
+    0.09,
+    0.03
+   ],
+   "blond": [
+    0.45,
+    0.33,
+    0.14
+   ],
+   "grey": [
+    0.56,
+    0.58,
+    0.62
+   ],
+   "white": [
+    0.78,
+    0.77,
+    0.74
+   ]
+  }
+ },
+ "eyes": {
+  "sizes": {
+   "small": 0.022,
+   "medium": 0.025,
+   "big": 0.028
+  },
+  "loud_radius": 0.031,
+  "pupils": {
+   "pill": [
+    0.3,
+    0.46
+   ],
+   "dot": [
+    0.27,
+    0.27
+   ],
+   "big": [
+    0.42,
+    0.42
+   ]
+  },
+  "lids": {
+   "sleepy": 14.0,
+   "neutral": 40.0,
+   "alert": 64.0
+  },
+  "look": {
+   "yaw": 25.0,
+   "pitch_up": 16.0,
+   "pitch_down": 16.0
+  }
+ },
+ "brows": {
+  "styles": {
+   "normal": {
+    "label": "normal (relaxed, level)",
+    "hh": 0.0066,
+    "depth": 0.0082,
+    "len": 0.88,
+    "angle": 0.0,
+    "arch": 0.0008,
+    "raise": 0.0
+   },
+   "surprised": {
+    "label": "surprised (high, arched)",
+    "hh": 0.0062,
+    "depth": 0.008,
+    "len": 0.84,
+    "angle": 4.0,
+    "arch": 0.008,
+    "raise": 0.013
+   },
+   "angry": {
+    "label": "angry (inner ends down: a V)",
+    "hh": 0.0072,
+    "depth": 0.009,
+    "len": 0.92,
+    "angle": -22.0,
+    "arch": 0.0,
+    "raise": -0.0004
+   },
+   "one_raised": {
+    "label": "one raised (skeptical)",
+    "hh": 0.0066,
+    "depth": 0.0082,
+    "len": 0.88,
+    "angle": -6.0,
+    "arch": 0.0008,
+    "raise": 0.0,
+    "one": {
+     "side": "L",
+     "raise": 0.012,
+     "arch": 0.007,
+     "angle": -8.0
+    }
+   }
+  }
+ },
+ "noses": {
+  "styles": {
+   "bulb": {
+    "label": "round (bulb)",
+    "half": [
+     0.019,
+     0.023,
+     0.019
+    ],
+    "embed": 0.35,
+    "drop": 0.0,
+    "tilt": 0.0,
+    "tris": 240
+   },
+   "long": {
+    "label": "long (seated droop shape)",
+    "half": [
+     0.015,
+     0.024,
+     0.027
+    ],
+    "embed": 0.3,
+    "drop": 0.0,
+    "tilt": -25.0,
+    "tris": 240,
+    "seat_low": true
+   }
+  },
+  "scale": {
+   "bulb": 1.0,
+   "droop": 1.0,
+   "long": 0.8
+  }
+ },
+ "ears": {
+  "styles": {
+   "small": {
+    "half": [
+     0.012,
+     0.014,
+     0.02
+    ],
+    "sink": 0.003,
+    "out": 15.0,
+    "y": -0.058,
+    "dz": -0.024,
+    "tris": 128,
+    "lumps": [
+     0.0007,
+     60.0,
+     20
+    ],
+    "dent": [
+     0.0015,
+     0.45,
+     0.08
+    ]
+   }
+  }
+ },
+ "mouths": {
+  "styles": {
+   "gap_grin": {
+    "label": "gap grin (+1 tooth)",
+    "w": 0.027,
+    "pow": 0.8,
+    "top_share": 0.12,
+    "smile": 0.008,
+    "teeth": [
+     {
+      "u": [
+       -0.4435185185185185,
+       -0.13703703703703704
+      ],
+      "row": "top",
+      "h": 0.0085
+     },
+     {
+      "u": [
+       -0.7833333333333334,
+       -0.4768518518518519
+      ],
+      "row": "top",
+      "h": 0.0085
+     },
+     {
+      "u": [
+       0.13703703703703704,
+       0.33024691358024694
+      ],
+      "row": "top",
+      "h": 0.0085
+     },
+     {
+      "u": [
+       0.3635802469135803,
+       0.5567901234567901
+      ],
+      "row": "top",
+      "h": 0.0085
+     },
+     {
+      "u": [
+       0.5901234567901235,
+       0.7833333333333334
+      ],
+      "row": "top",
+      "h": 0.0085
+     }
+    ],
+    "states": {
+     "rest": {
+      "gap": 0.015
+     },
+     "closed": {
+      "gap": 0.004,
+      "smile": -0.004,
+      "teeth": false
+     },
+     "a": {
+      "gap": 0.024,
+      "w": 0.9,
+      "smile": -0.004,
+      "top_share": 0.3
+     },
+     "e": {
+      "gap": 0.008,
+      "w": 1.15,
+      "smile": -0.005
+     },
+     "o": {
+      "gap": 0.022,
+      "w": 0.42,
+      "smile": -0.008,
+      "top_share": 0.5,
+      "pow": 0.5,
+      "teeth": false
+     }
+    }
+   },
+   "toothy": {
+    "label": "wide toothy grin",
+    "w": 0.031,
+    "pow": 0.75,
+    "top_share": 0.22,
+    "smile": 0.011,
+    "teeth": [
+     {
+      "u": [
+       -0.77,
+       -0.5633333333333335
+      ],
+      "row": "top",
+      "h": 0.0078
+     },
+     {
+      "u": [
+       -0.5033333333333334,
+       -0.29666666666666675
+      ],
+      "row": "top",
+      "h": 0.0078
+     },
+     {
+      "u": [
+       -0.23666666666666672,
+       -0.03
+      ],
+      "row": "top",
+      "h": 0.0078
+     },
+     {
+      "u": [
+       0.03,
+       0.2366666666666666
+      ],
+      "row": "top",
+      "h": 0.0078
+     },
+     {
+      "u": [
+       0.29666666666666663,
+       0.5033333333333332
+      ],
+      "row": "top",
+      "h": 0.0078
+     },
+     {
+      "u": [
+       0.5633333333333332,
+       0.77
+      ],
+      "row": "top",
+      "h": 0.0078
+     }
+    ],
+    "states": {
+     "rest": {
+      "gap": 0.019
+     },
+     "closed": {
+      "gap": 0.0045,
+      "smile": -0.005,
+      "teeth": false
+     },
+     "a": {
+      "gap": 0.026,
+      "w": 0.92,
+      "smile": -0.005,
+      "top_share": 0.32
+     },
+     "e": {
+      "gap": 0.011,
+      "w": 1.12,
+      "smile": -0.004
+     },
+     "o": {
+      "gap": 0.022,
+      "w": 0.42,
+      "smile": -0.011,
+      "top_share": 0.5,
+      "pow": 0.5,
+      "teeth": false
+     }
+    }
+   },
+   "buck": {
+    "label": "buck-tooth overbite",
+    "w": 0.019,
+    "pow": 0.7,
+    "top_share": 0.5,
+    "smile": 0.002,
+    "teeth": [
+     {
+      "u": [
+       -0.4,
+       -0.02
+      ],
+      "row": "buck",
+      "h": 0.0115,
+      "always": true
+     },
+     {
+      "u": [
+       0.02,
+       0.4
+      ],
+      "row": "buck",
+      "h": 0.0115,
+      "always": true
+     }
+    ],
+    "states": {
+     "rest": {
+      "gap": 0.007
+     },
+     "closed": {
+      "gap": 0.004
+     },
+     "a": {
+      "gap": 0.018
+     },
+     "e": {
+      "gap": 0.009,
+      "w": 1.18,
+      "smile": -0.002
+     },
+     "o": {
+      "gap": 0.017,
+      "w": 0.66,
+      "pow": 0.5
+     }
+    }
+   },
+   "pursed": {
+    "label": "small pursed",
+    "w": 0.0125,
+    "pow": 0.55,
+    "top_share": 0.5,
+    "smile": 0.0,
+    "lipk": 1.3,
+    "teeth": [
+     {
+      "u": [
+       -0.55,
+       -0.05
+      ],
+      "row": "top",
+      "h": 0.0058
+     },
+     {
+      "u": [
+       0.05,
+       0.55
+      ],
+      "row": "top",
+      "h": 0.0058
+     }
+    ],
+    "states": {
+     "rest": {
+      "gap": 0.0055
+     },
+     "closed": {
+      "gap": 0.004,
+      "w": 0.95,
+      "teeth": false
+     },
+     "a": {
+      "gap": 0.016,
+      "w": 1.08
+     },
+     "e": {
+      "gap": 0.0075,
+      "w": 1.5,
+      "smile": 0.001
+     },
+     "o": {
+      "gap": 0.013,
+      "w": 0.78,
+      "lipk": 1.12,
+      "teeth": false
+     }
+    }
+   },
+   "smirk": {
+    "label": "lopsided smirk",
+    "w": 0.021,
+    "pow": 0.7,
+    "top_share": 0.38,
+    "smile": 0.001,
+    "skew": 0.0035,
+    "side_smile": 0.007,
+    "teeth": [
+     {
+      "u": [
+       0.05,
+       0.23
+      ],
+      "row": "top",
+      "h": 0.0065
+     },
+     {
+      "u": [
+       0.29000000000000004,
+       0.47
+      ],
+      "row": "top",
+      "h": 0.0065
+     },
+     {
+      "u": [
+       0.53,
+       0.71
+      ],
+      "row": "top",
+      "h": 0.0065
+     }
+    ],
+    "states": {
+     "rest": {
+      "gap": 0.006
+     },
+     "closed": {
+      "gap": 0.004,
+      "teeth": false
+     },
+     "a": {
+      "gap": 0.017
+     },
+     "e": {
+      "gap": 0.009,
+      "w": 1.15
+     },
+     "o": {
+      "gap": 0.016,
+      "w": 0.52,
+      "pow": 0.5,
+      "top_share": 0.5,
+      "side_k": 0.3,
+      "skew": -0.0025,
+      "teeth": false
+     }
+    }
+   },
+   "deadpan": {
+    "label": "deadpan line to D",
+    "w": 0.023,
+    "pow": 0.55,
+    "top_share": 0.0,
+    "smile": 0.0,
+    "teeth": [
+     {
+      "u": [
+       -0.59,
+       -0.33999999999999997
+      ],
+      "row": "top",
+      "h": 0.0058
+     },
+     {
+      "u": [
+       -0.28,
+       -0.03
+      ],
+      "row": "top",
+      "h": 0.0058
+     },
+     {
+      "u": [
+       0.03,
+       0.2799999999999999
+      ],
+      "row": "top",
+      "h": 0.0058
+     },
+     {
+      "u": [
+       0.33999999999999997,
+       0.59
+      ],
+      "row": "top",
+      "h": 0.0058
+     }
+    ],
+    "states": {
+     "rest": {
+      "gap": 0.0038,
+      "teeth": false
+     },
+     "closed": {
+      "gap": 0.0034,
+      "teeth": false
+     },
+     "a": {
+      "gap": 0.024,
+      "pow": 0.5
+     },
+     "e": {
+      "gap": 0.009,
+      "w": 1.12,
+      "top_share": 0.25,
+      "pow": 0.8
+     },
+     "o": {
+      "gap": 0.016,
+      "w": 0.5,
+      "top_share": 0.5,
+      "pow": 0.5,
+      "teeth": false
+     }
+    }
+   },
+   "frown": {
+    "label": "grumpy frown",
+    "w": 0.022,
+    "pow": 0.7,
+    "top_share": 0.62,
+    "smile": -0.0085,
+    "teeth": [
+     {
+      "u": [
+       -0.39,
+       -0.17
+      ],
+      "row": "bot",
+      "h": 0.0052
+     },
+     {
+      "u": [
+       -0.11000000000000001,
+       0.10999999999999996
+      ],
+      "row": "bot",
+      "h": 0.0052
+     },
+     {
+      "u": [
+       0.16999999999999996,
+       0.3899999999999999
+      ],
+      "row": "bot",
+      "h": 0.0052
+     }
+    ],
+    "states": {
+     "rest": {
+      "gap": 0.0055
+     },
+     "closed": {
+      "gap": 0.004,
+      "teeth": false
+     },
+     "a": {
+      "gap": 0.019
+     },
+     "e": {
+      "gap": 0.009,
+      "w": 1.1,
+      "smile": 0.002
+     },
+     "o": {
+      "gap": 0.015,
+      "w": 0.52,
+      "pow": 0.5,
+      "top_share": 0.5,
+      "smile": 0.006,
+      "teeth": false
+     }
+    }
+   }
+  },
+  "states": [
+   "rest",
+   "closed",
+   "a",
+   "e",
+   "o"
+  ]
+ },
+ "facial_hair": {
+  "styles": {
+   "none": [],
+   "brush": [
+    "brush"
+   ],
+   "handlebar": [
+    "handlebar"
+   ],
+   "droopy": [
+    "droopy"
+   ],
+   "goatee": [
+    "goatee"
+   ],
+   "brush+goatee": [
+    "brush",
+    "goatee"
+   ]
+  }
+ },
+ "picks": {
+  "asym": {
+   "none": null,
+   "brow": "left brow 2 mm higher, its outer end tilted up",
+   "eye": "right eye 1.5 mm higher"
+  },
+  "weights": {
+   "mouth": {
+    "gap_grin": 2.0,
+    "toothy": 1.0,
+    "buck": 0.8,
+    "pursed": 1.0,
+    "smirk": 1.1,
+    "deadpan": 1.0,
+    "frown": 0.9
+   },
+   "nose": {
+    "bulb": 1.6,
+    "long": 1.0
+   },
+   "eye_size": {
+    "small": 0.8,
+    "medium": 1.6,
+    "big": 1.0
+   },
+   "pupil": {
+    "pill": 1.6,
+    "dot": 1.0,
+    "big": 0.8
+   },
+   "lid": {
+    "sleepy": 0.8,
+    "neutral": 1.8,
+    "alert": 0.8
+   },
+   "brows": {
+    "normal": 2.2,
+    "surprised": 0.8,
+    "angry": 0.6,
+    "one_raised": 0.8
+   },
+   "ears": {
+    "small": 1.0
+   },
+   "facial_hair": {
+    "none": 2.2,
+    "brush": 0.9,
+    "handlebar": 0.6,
+    "droopy": 0.5,
+    "goatee": 0.7,
+    "brush+goatee": 0.4
+   },
+   "teeth": {
+    "true": 1.0
+   },
+   "asym": {
+    "none": 1.0,
+    "brow": 1.0,
+    "eye": 1.0
+   }
+  },
+  "loud": {
+   "mouth": [
+    "buck",
+    "toothy"
+   ],
+   "eye_size": [
+    "big"
+   ],
+   "facial_hair": [
+    "brush+goatee",
+    "droopy",
+    "handlebar"
+   ]
+  },
+  "loud_weights": {
+   "mouth": 0.14,
+   "eye_size": 0.08,
+   "facial_hair": 0.1
+  },
+  "loud_scale": {
+   "brows": 1.45,
+   "facial_hair": 1.3
+  },
+  "rules": {
+   "facial_hair_bodies": [
+    "M"
+   ],
+   "teeth_forced": {
+    "buck": true
+   },
+   "forbid": [
+    [
+     "brows",
+     "angry",
+     "mouth",
+     "frown"
+    ],
+    [
+     "brows",
+     "angry",
+     "mouth",
+     "smirk"
+    ],
+    [
+     "brows",
+     "one_raised",
+     "asym",
+     "brow"
+    ],
+    [
+     "brows",
+     "angry",
+     "lid",
+     "alert"
+    ],
+    [
+     "facial_hair",
+     "droopy",
+     "mouth",
+     "smirk"
+    ]
+   ]
+  },
+  "defaults": {
+   "M": {
+    "mouth": "gap_grin",
+    "nose": "bulb",
+    "eye_size": "medium",
+    "pupil": "pill",
+    "lid": "neutral",
+    "brows": "normal",
+    "ears": "small",
+    "facial_hair": "none",
+    "teeth": true,
+    "asym": "none",
+    "loud": "none"
+   },
+   "W": {
+    "mouth": "gap_grin",
+    "nose": "bulb",
+    "eye_size": "medium",
+    "pupil": "pill",
+    "lid": "neutral",
+    "brows": "normal",
+    "ears": "small",
+    "facial_hair": "none",
+    "teeth": true,
+    "asym": "eye",
+    "loud": "none"
+   }
+  },
+  "smiling_at_rest": [
+   "buck",
+   "gap_grin",
+   "smirk",
+   "toothy"
+  ],
+  "visible_smile": [
+   "gap_grin",
+   "toothy"
+  ]
+ },
+ "mask": {
+  "uv": "mask",
+  "values": {
+   "brow": [
+    1.0,
+    0.0
+   ],
+   "fhair": [
+    0.0,
+    1.0
+   ]
+  }
+ }
+}

@@ -45,15 +45,20 @@ other props magenta). It fails on any problem.
   noise (`vary`, `scale_m`), with unshared corners, so zone edges stay sharp. No cell lies under a floor another
   package lays at y 0 (the house, the terrace, the garage, the greenhouse) or over the stairwell, so nothing
   z-fights (the test cross-checks the layout engine's floors when `layouts/house/ground.toml` is present). Paths, the
-  driveway, the pavement and the street are paints of the same sheet. A coarse `skirt` in the `beyond` paint reaches
+  driveway, the pavement and the street are paints of the same sheet; the garden's paths are `[[zones]]` lines
+  registered from `layouts/house/outdoor/garden.toml` (#80, `docs/house-garden.md`). A coarse `skirt` in the `beyond` paint reaches
   out to the flats; the kerb is a box strip on the ground with a gap at the driveway. COLOR_0 holds sRGB paint and
   the material is `outdoor_ground-vcol` (the kit's `-vcol` rule, `docs/kit.md`); UV2 maps the area once for a bake.
   `-col` nodes get Godot's trimesh collision.
-- **Outdoor stairs**: a U in the 4 x 4 m stairwell at (62, 29): `stairs_outdoor_half` from the entry edge down 1.6 m
+- **Outdoor stairs**: a U in the 4 x 4 m stairwell: `stairs_outdoor_half` from the entry edge down 1.6 m
   to `stairs_outdoor_landing` on the far edge, a second half flight back under the entry side down to the passage
-  floor (-3.2); `railing_balcony_2m` on every hole edge but the entry, closed by a `railing_balcony_post`. `entry`
-  `N` (from the garden, default) or `S` (from the garage's back door). The walk points go from the yard to the
-  passage. The passage's ceiling needs the same hole in the layout engine's slab (#75a).
+  floor (-3.2); `railing_balcony_2m` on every hole edge but the entry, closed by a `railing_balcony_post`. The
+  stairwell's rect and `entry` (`N` from the garden or `S` from the garage's back door) have one owner, the house
+  layout's `layouts/house/ground.toml` (the hole and the flights `outdoor_stairs` that the house walk and the
+  basement passage use, art #78): `house_outdoor.load` reads the hole's rect and the upper flight's `climb`; `[stairs]`
+  in `plot.toml` keeps the drop and the pieces. Today (62, 28), entered from the south (`docs/house.md`, the
+  basement). The walk points go from the entry to the passage; the scene's stand-in pit walls and its two stairs
+  views follow the entry.
 - **Props**: placements by id, centre and yaw with box sizes until the dressing library (#87) supplies them; refused
   when off the ground, across the fence, in a hole, in a clearance (the wicket's and gates' approaches, the path) or
   on another prop.

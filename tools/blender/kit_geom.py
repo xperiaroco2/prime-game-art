@@ -720,20 +720,27 @@ GLASS_BAR, GLASS_LIFT = 0.05, 0.06  # the glass roof's rafter width and the pane
 
 
 def build_glass_roof(pc: Piece, p: dict, spec: dict) -> None:
-    """A greenhouse glass roof bay: a metal rafter along its x0 edge (the next bay's rafter or a glass gable's sloped
-    bar closes x1), a pane over the rest; p["gutter"] hangs a gutter at z0 (the eave bay). Pivot as build_pitched's, on
-    the glass wall's top; the pane lies GLASS_LIFT over the line y = r * z."""
+    """A greenhouse glass roof bay: a metal rafter along its x0 edge (the next bay's rafter closes x1), a pane over the
+    rest; "+x" in p["ends"] adds a closing rafter along x1 (the end bay whose x1 meets a glass gable: the pane lies
+    GLASS_LIFT over the gable's top, and only a rafter fills that slit); p["gutter"] hangs a gutter at z0 (the eave
+    bay). Pivot as build_pitched's, on the glass wall's top; the pane lies GLASS_LIFT over the line y = r * z."""
     r = pitch(spec)["r"]
     (x0, x1), (z0, z1) = p["x"], p["z"]
     m = pc.mesh
+    ends = p.get("ends", "")
     raf = [(z0, r * z0), (z1, r * z1), (z1, r * z1 + GLASS_LIFT), (z0, r * z0 + GLASS_LIFT)]
-    prism_x(m, raf, x0, x0 + GLASS_BAR, "metal", caps="+x", edges=[True, False, False, "-z" in p.get("ends", "")])
+    prism_x(m, raf, x0, x0 + GLASS_BAR, "metal", caps="+x", edges=[True, False, False, "-z" in ends])
     pc.collide(prism_x_points(raf, x0, x0 + GLASS_BAR))
+    xe = x1
+    if "+x" in ends:
+        xe = x1 - GLASS_BAR
+        prism_x(m, raf, xe, x1, "metal", caps="-x+x", edges=[True, False, False, "-z" in ends])
+        pc.collide(prism_x_points(raf, xe, x1))
     lift = GLASS_LIFT
     pane = [(z0, r * z0 + lift), (z1, r * z1 + lift), (z1, r * z1 + lift + 0.008), (z0, r * z0 + lift + 0.008)]
-    prism_x(m, pane, x0 + GLASS_BAR, x1, "glass", caps="", edges=[True, False, True, False])
+    prism_x(m, pane, x0 + GLASS_BAR, xe, "glass", caps="", edges=[True, False, True, False])
     pc.collide(prism_x_points([(z0, r * z0 + lift - 0.004), (z1, r * z1 + lift - 0.004),
-                               (z1, r * z1 + lift + 0.012), (z0, r * z0 + lift + 0.012)], x0 + GLASS_BAR, x1), "glass")
+                               (z1, r * z1 + lift + 0.012), (z0, r * z0 + lift + 0.012)], x0 + GLASS_BAR, xe), "glass")
     if p.get("gutter"):
         y = r * z0 + lift
         lo, hi = (x0, y - 0.12, z0 - 0.12), (x1, y - 0.02, z0)

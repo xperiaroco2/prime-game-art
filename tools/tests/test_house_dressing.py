@@ -85,7 +85,7 @@ class Rules(unittest.TestCase):
         self.assertIn("use_collision = false", text)
 
 
-# The ground floor (#75b): the eight rooms, their stations' props, the room-defining props and the fixtures of the
+# The ground floor (#75b; the greenhouse #80): the rooms, their stations' props, the room-defining props and the fixtures of the
 # plan's inventory (D:/prime-art-raw/research/2026-10-10-house-plan/inventory.md sections 4 and 8).
 ROOMS = {
     "wc": {"toilet", "basin"},
@@ -96,23 +96,28 @@ ROOMS = {
     "kitchen": {"order_board", "assembly_island", "kitchen_counter", "kitchen_upper", "fridge", "stove", "kitchen_sink"},
     "hallway": {"coat_rack"},
     "terrace": {"terrace_table", "terrace_chair"},
+    "greenhouse": {"herb_board", "herb_bed", "potting_bench"},
 }
 FIXTURES = {
     "wc": {"wall_sconce": 1}, "pantry": {"bare_bulb": 1}, "dining_room": {"chandelier": 1, "wall_sconce": 2},
     "living_room": {"floor_lamp": 2, "table_lamp": 1, "wall_sconce": 2}, "stairs": {"wall_sconce": 2},
     "kitchen": {"pendant_shade": 3, "wall_sconce": 1}, "hallway": {"wall_sconce": 2, "porch_lamp": 1},
     "terrace": {"lantern": 4, "string_lights": 2, "porch_lamp": 1},
+    "greenhouse": {"string_lights": 2, "bare_bulb": 4},
 }
 STATION_PROPS = {"DiningTable": {"dining_table"}, "OrderBoard": {"order_board", "assembly_island"},
-                 "TerraceTable": {"terrace_table"}}
+                 "TerraceTable": {"terrace_table"},
+                 "HerbBoard": {"herb_board"}, "HerbBeds": {"herb_bed"}}
 
 
 class GroundFloor(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.data = hl.load()
-        cls.files = hd.load(hl.LAYOUT_DIR / cls.data["settings"]["dressing_dir"])
         cls.rooms = {r["id"]: r for lv in cls.data["levels"] if lv["level"] == "ground" for r in lv["rooms"]}
+        # the ground floor's files (the basement's are #78's, test_house_basement)
+        cls.files = {rid: f for rid, f in hd.load(hl.LAYOUT_DIR / cls.data["settings"]["dressing_dir"]).items()
+                     if rid in cls.rooms}
 
     def test_eight_rooms(self):
         self.assertEqual({r for r in self.files if r in self.rooms}, set(ROOMS))  # the other floors: their own tests

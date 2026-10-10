@@ -78,8 +78,7 @@ class PieceKeys(unittest.TestCase):
 
     def test_every_part_has_a_key(self) -> None:
         keys = L.keys_for(RECIPE, CHAR, self.cfg)
-        self.assertEqual(sorted(keys), sorted(["head", "hair", "accessory", "top", "bottom", "shoes", "eyes", "brows",
-                                               "mouth"]))
+        self.assertEqual(sorted(keys), sorted(["head", "hair", "accessory", "top", "bottom", "shoes", "eyes", "face"]))
         self.assertTrue(all(len(k) == 16 for k in keys.values()))
 
     def test_same_piece_same_key_across_characters(self) -> None:
@@ -125,12 +124,26 @@ class PieceKeys(unittest.TestCase):
     def test_rig_changes_only_the_head_items(self) -> None:
         moved = dict(RECIPE, head_bone_rest=[0.0, -0.04, 1.6])
         a, b = L.keys_for(RECIPE, CHAR, self.cfg), L.keys_for(moved, CHAR, self.cfg)
-        for role in ("head", "hair", "accessory", "eyes", "brows", "mouth"):
+        for role in ("head", "hair", "accessory", "eyes", "face"):
             self.assertNotEqual(a[role], b[role], role)
         for role in L.BODY_ROLES:
             self.assertEqual(a[role], b[role], role)
         other = dict(RECIPE, skeleton={"M": "Worker.glb", "W": "Suit.glb"})
         self.assertNotEqual(a["hair"], L.keys_for(other, CHAR, self.cfg)["hair"])
+
+    def test_face_kit_picks_change_the_face_and_head(self) -> None:
+        # the kit's face is joined into the head: its picks change the head's key, the face's and not the clothing's
+        bigger = copy.deepcopy(CHAR)
+        bigger["face_kit"] = {"eye_size": "big", "loud": "eye_size"}
+        a, b = L.keys_for(RECIPE, CHAR, self.cfg), L.keys_for(RECIPE, bigger, self.cfg)
+        for role in ("head", "face", "eyes"):
+            self.assertNotEqual(a[role], b[role], role)
+        for role in ("hair", "accessory") + L.BODY_ROLES:
+            self.assertEqual(a[role], b[role], role)
+        same = copy.deepcopy(CHAR)
+        same["face_kit"] = {}  # the defaults spelled out or left out: the same piece
+        self.assertEqual(a, L.keys_for(RECIPE, same, self.cfg))
+
 
 if __name__ == "__main__":
     unittest.main()

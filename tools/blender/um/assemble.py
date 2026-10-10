@@ -52,8 +52,10 @@ def take_part(packs, char_id, role, gender, spec, arm, keep=None, extra_report=N
     return obj, info
 
 
-def build_character(packs, recipe, rc, coll):
-    """Returns (armature, {role: object}, report) with the rig in its rest pose at the origin."""
+def build_character(packs, recipe, rc, coll, face="pack"):
+    """Returns (armature, {role: object}, report) with the rig in its rest pose at the origin. face: "pack" (the
+    scripted eyes, brows and mouth of um/facekit.py) or "kit" (the clay face kit, um/clayface: the eyes and face parts;
+    the clay look)."""
     cid, g = rc["id"], rc["gender"]
     skel = packs.load(g, recipe["skeleton"][g])
     arm = skel["arm"]
@@ -144,23 +146,32 @@ def build_character(packs, recipe, rc, coll):
 
     # scripted face parts on the bald head
     update()
-    surf = fk.Surface(head)
-    fe = rc["eyes"]
-    smooth = recipe.get("face_shading", "smooth") == "smooth"
-    eyes = fk.eyes(surf, eyes_at, fe["style"], {"iris": fe.get("iris", (0.1, 0.25, 0.6)), "lash": fe.get("lash", (0.02, 0.01, 0.01))}, skin)
-    parts["eyes"] = eyes.to_object(cid + "_eyes", head, arm, smooth=smooth)
-    br = rc["brows"]
-    brow_rgb = color_of(br["rgb"], parts)
-    parts["brows"] = fk.brows(surf, eyes_at, br["style"], brow_rgb).to_object(cid + "_brows", head, arm, smooth=smooth)
-    rep["brow_rgb"] = brow_rgb
-    ez = (eyes_at["L"].z + eyes_at["R"].z) / 2
-    mz = ez + rc["mouth"].get("dz", recipe["face"][g]["mouth_dz"])
-    mo = rc["mouth"]
-    parts["mouth"] = fk.mouth(surf, 0.0, mz, mo["style"], {"lip": mo.get("lip", (0.3, 0.07, 0.07))}).to_object(cid + "_mouth", head, arm, smooth=smooth)
-    for role in ("eyes", "brows", "mouth"):
-        o = parts[role]
-        relink(o, coll)
-        rep["parts"][role] = {"scripted": True, "style": rc[role]["style"], "object": o.name, "bone": "Head (weight 1.0)"}
+    if face == "kit":
+        from .clayface import adapter
+        built, rep["face_kit"] = adapter.build(arm, parts, coll, rc, eyes_at, skin)
+        parts.update(built)
+        for role, o in built.items():
+            rep["parts"][role] = {"kit": True, "object": o.name, "bone": "Head (weight 1.0)"}
+    else:
+        surf = fk.Surface(head)
+        fe = rc["eyes"]
+        smooth = recipe.get("face_shading", "smooth") == "smooth"
+        eyes = fk.eyes(surf, eyes_at, fe["style"], {"iris": fe.get("iris", (0.1, 0.25, 0.6)), "lash": fe.get("lash", (0.02, 0.01, 0.01))}, skin)
+        parts["eyes"] = eyes.to_object(cid + "_eyes", head, arm, smooth=smooth)
+        br = rc["brows"]
+        brow_rgb = color_of(br["rgb"], parts)
+        parts["brows"] = fk.brows(surf, eyes_at, br["style"], brow_rgb).to_object(cid + "_brows", head, arm, smooth=smooth)
+        rep["brow_rgb"] = brow_rgb
+        ez = (eyes_at["L"].z + eyes_at["R"].z) / 2
+        mz = ez + rc["mouth"].get("dz", recipe["face"][g]["mouth_dz"])
+        mo = rc["mouth"]
+        parts["mouth"] = fk.mouth(surf, 0.0, mz, mo["style"], {"lip": mo.get("lip", (0.3, 0.07, 0.07))}).to_object(cid + "_mouth", head, arm, smooth=smooth)
+        for role in ("eyes", "brows", "mouth"):
+            o = parts[role]
+            relink(o, coll)
+            rep["parts"][role] = {"scripted": True, "style": rc[role]["style"], "object": o.name, "bone": "Head (weight 1.0)"}
+    if face == "kit":
+        mz = rep["face_kit"]["layout"]["mouth_z"]
     rep["eye_centres"] = {k: [round(x, 4) for x in v] for k, v in eyes_at.items()}
     rep["mouth_centre_z"] = round(mz, 4)
 
@@ -200,6 +211,10 @@ def clay_look(recipe, rc, arm, parts, rep, lib=None):
         finally:
             scene.render.engine = engine
     clay.remove_sources(sources)
+    if "face_kit" in rep:  # the ears as the hair item sets them (the game applies the same flags), after the bake
+        from .clayface import adapter
+        rep["face_kit"]["ears_state"] = adapter.set_ears(parts["head"], rep["face_kit"]["flags"]["ears"])
+    rep["surfaces"] = sum(len(o.material_slots) for o in parts.values())
     rep["triangles_pack"], rep["triangles_total_pack"] = rep["triangles"], rep["triangles_total"]
     rep["triangles"] = {k: tris(o) for k, o in parts.items()}
     rep["triangles_total"] = sum(rep["triangles"].values())

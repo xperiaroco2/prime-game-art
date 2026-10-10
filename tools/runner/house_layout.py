@@ -858,6 +858,27 @@ def _door_normal(d: dict, level: dict) -> tuple[float, float]:
     raise ValueError(f"door {d['rooms']} at {d['at']} is not on {d['rooms'][0]}'s rect")
 
 
+PAD = 3.0  # walk.gd's pads: 3 x 3 m unless the pad gives its own size
+
+
+def clip_pad(p: list[float], holes: list[dict]) -> list[float]:
+    """A walk end's pad cut back from the holes of its level ([x, h, z] -> [x, h, z, size_x, size_z] when cut): a pad
+    over a stairwell would jam the capsule climbing out of it (the outdoor stairs, art #78). Each overlapping hole cuts
+    the side that keeps the end point and the most area."""
+    x0, x1, z0, z1 = p[0] - PAD / 2, p[0] + PAD / 2, p[2] - PAD / 2, p[2] + PAD / 2
+    cut = False
+    for hole in holes:
+        hx, hz, hw, hd = hole["rect"]
+        if not (x0 < hx + hw and hx < x1 and z0 < hz + hd and hz < z1):
+            continue
+        keep = [o for o in ((x0, min(x1, hx), z0, z1), (max(x0, hx + hw), x1, z0, z1), (x0, x1, z0, min(z1, hz)),
+                            (x0, x1, max(z0, hz + hd), z1)) if o[0] <= p[0] <= o[1] and o[2] <= p[2] <= o[3]]
+        if keep:
+            x0, x1, z0, z1 = max(keep, key=lambda o: (o[1] - o[0]) * (o[3] - o[2]))
+            cut = True
+    if not cut:
+        return p
+    return [(x0 + x1) / 2, p[1], (z0 + z1) / 2, x1 - x0, z1 - z0]
 def loop_length(points) -> tuple[float, float]:
     """A loop's (plan length, length along its slopes) in metres; walk.gd's speed is over the plan, so time = plan / speed."""
     plan = slope = 0.0
@@ -949,5 +970,7 @@ def walk_request(data: dict, levels=WALK_LEVELS) -> dict:
     for p in pads:
         if p not in unique:
             unique.append(p)
+    holes = {lv["floor_y"]: lv.get("holes", []) for lv in data["levels"]}
+    unique = [clip_pad(p, holes.get(p[1], [])) for p in unique]
     return {"walks": walks, "pads": unique, "rooms": rooms, "closed": closed,
             "levels": {lv["level"]: {"node": lv["node"], "floor_y": lv["floor_y"]} for lv in data["levels"]}}

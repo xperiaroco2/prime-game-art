@@ -1,0 +1,44 @@
+# The passage's dressing (art #78, docs/house.md "Dressing"): the props and light fixtures of one room, as data.
+# at = [x, h, z]: room-local metres like the room's stations (x east, h above the floor, z south from the room's
+# north-west corner) at the prop's pivot (floor: the footprint's centre; wall: the back's bottom centre on the wall's
+# face; ceiling: the top's centre). face = the way the prop's front (+Z) looks: N, E, S or W.
+# Ids are the dressing library's (props/library.toml, #87) and the task props' (props/tasks.toml, #82). Fixtures are
+# the lamps' meshes only (their light is #83a's, layouts/house/lights.toml). Positions are the engineer's to change.
+room = "passage"
+
+[[props]]
+id = "pipe_run"
+at = [1.1, 2.6, 0.2]
+
+[[props]]
+id = "pipe_run"
+at = [3.1, 2.6, 0.2]
+
+[[props]]
+id = "pipe_run"
+at = [0.2, 2.6, 4.9]
+face = "E"
+
+[[props]]
+id = "crate"
+at = [0.4, 0, 5.5]
+
+[[props]]
+id = "crate"
+at = [0.4, 0.4, 5.5]
+
+[[fixtures]]
+id = "cage_lamp"
+at = [2, 2.2, 0.1]
+face = "S"
+
+[[fixtures]]
+id = "cage_lamp"
+at = [2, 2.2, 5.9]
+face = "N"
+
+[[fixtures]]
+id = "cage_lamp"
+at = [6, 2.2, 5.9]
+face = "N"
+note = "at the outdoor stairs' foot"
