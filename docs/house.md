@@ -199,14 +199,63 @@ https://forum.godotengine.org/t/is-it-possible-to-bake-lightmapgi-node-using-hea
 route without a window would be a custom engine build that exposes `bake()`, which is installing a tool: the
 engineer's yes.
 
-The route used (#83a spike, raw project `D:/prime-art-raw/house/83a/godot`):
-1. `house --out <project>/import/house` writes the zone scenes; the kit v2 GLBs are imported with
-   `meshes/light_baking=1` so the kit's UV2 is kept.
-2. `zone_build.gd` (headless) flattens a zone into one scene with a LightmapGI from `[bake]`; each mesh's
-   `lightmap_size_hint` is the zone's texel per metre times its UV2 extent, so High and Low differ only in the texel.
-3. The editor bakes it: the lab's `lmbake` plugin, started by `labrun.py godot ... --window 1280x720 -- --editor`
-   (an off-screen window, never minimized). `labrun.py` refuses an editor run outside 00:00-08:00 local unless the
-   manager wrote a daytime grant (`editor_window.txt`); agents never write that file.
-4. Every lab Godot run starts inside the art runner's heavy-run lock (`common.heavy_lock`), one at a time.
+#83a proved the route in a raw lab project (`D:/prime-art-raw/house/83a/godot`); #83 moved it into this repo as
+`house --bake` (`tools/runner/house_bake.py` the pure parts, `tools/runner/commands/_house_bake.py` the driver,
+`godot/house/zone_build.gd`, `godot/house/bake_shots.gd`, the `godot/addons/lmbake` editor plugin):
 
-Bakes are therefore night jobs: a zone is prepared by day and baked in the next night run.
+```
+tools/run.sh house --bake ZONES [--preset high|low] [--grid] [--merge] [--no-bake] [--review DIR]
+```
+
+1. `house` writes the zone scenes into `godot/import/house` (so `--bake` refuses `--out`); the kit and prop GLBs the
+   zone scenes instance are staged and imported: the kit with `meshes/light_baking=1` (its own UV2 is kept), the
+   props with `light_baking=2` and a 0.2 m texel (Godot unwraps their UV2).
+2. `zone_build.gd` (headless) flattens a zone into `res://import/house/bake/<zone>_<tag>.scn` with a LightmapGI from
+   `[bake]`; a kit mesh's `lightmap_size_hint` is texel / `uv2_per_m` (the kit's `pieces.json`), so the presets
+   differ only in the texel. `Above` (the zone's ceiling) bakes its floor slabs at the full texel and its other
+   pieces at a tenth (they only occlude). `--merge` welds each room level's floor tiles of one kind into one mesh and
+   unwraps it (one lightmap island per floor instead of one per tile). Meshes without UV2 stay Dynamic.
+3. The editor bakes it: Godot opens the project with the `lmbake` plugin (`-- lmbake=<scene>`; without that argument
+   the plugin does nothing) in a 1280x720 window at `-30000,-30000` (off-screen, never minimized); the plugin presses
+   the LightmapGI's bake button, answers the file dialog, saves and quits. `house --bake` refuses this step outside
+   00:00-08:00 local unless the manager wrote a daytime grant (`<raw>/research/2026-10-06-locations/lab/
+   editor_window.txt`, `until YYYY-MM-DD HH:MM`, the lab runner's rule); agents never write that file.
+   `--no-bake` stops after step 2 and runs by day.
+4. With `--review DIR`, `bake_shots.gd` (an off-screen window) shoots each zone's real-time row (the first scene
+   without its lightmap, the lights dynamic) and its baked rows from two E1 cameras (a room corner at 1.6 m across to
+   three quarters of the room) and one seam camera (level along the first room's middle line from 1 m inside its north
+   wall: ceiling and floor tiles in frame, never inside a wall); into `DIR`: the frames, `sheet.png` (about 1280 px
+   across), `measures.json` and `numbers.md` (L* mean, the share under L* 20, C* p90 per frame, as the house lab
+   measures; each baked row's L* against real time). Zones with review rooms: ground, basement, upper.
+5. `--grid` bakes a zone once per variant: texel 8 / 12 / 16 per m x the denoiser on / off x bounce energy 1.0 / 1.5,
+   tags `t<texel>_d<0|1>_e<energy x 10>` (`_m` with `--merge`). Twelve variants of the ground floor are about 12
+   editor runs of 21-22 s plus the builds: well under half an hour.
+
+Every Godot run takes the heavy-run lock (`common.heavy_lock`), one at a time; a run that waits for it is normal. The
+whole command can pass 180 s: an agent starts it in the background with its log under `tools/out/`. Bakes are night
+jobs: a zone is prepared by day (`--no-bake`) and baked in the next night run.
+
+### The numbers of #83a
+
+From `D:/prime-art-raw/review/house/83a/numbers.md` (2026-10-10, bare rooms of #75a, kit v2, RTX 4060, quality high,
+3 bounces, denoiser on, bounce energy 1.5):
+
+| zone | preset | texel/m | meshes | lights | M texels | bake s (editor run s) | lightmap MB |
+|---|---|---|---|---|---|---|---|
+| basement | high | 8 | 948 | 55 | 0.77 | 4.6 (22) | 1.9 |
+| basement | low | 4 | 948 | 55 | 0.20 | 4.0 (21) | 1.2 |
+| ground | high | 8 | 478 | 34 | 0.40 | 4.3 (21) | 1.7 |
+| ground | low | 4 | 478 | 34 | 0.10 | 4.2 (21) | 0.9 |
+
+- A bake takes seconds and is not texel-bound (the editor's start dominates); overlapping geometry is the slow case
+  (63-577 s when every piece stood at the origin). The six zones together: about 9 MB High, 5 MB Low.
+- One bake per zone works; two zones side by side at the stairs showed no visible jump, but one of that row's cameras
+  stood inside a wall, so the zone seam is not yet called clean.
+- 3-4 fixtures reach a camera inside one zone (at most 4), 7-10 at a seam of two zones: the High preset's real-time
+  glow can stay at the nearest 4. Draw calls: 19 (basement) and 31 (ground) per frame in bare rooms, 54 with two zones.
+- The verdict: GO for one bake per zone at night; NOT YET for the look: the baked rooms are flatter than real time
+  (the lamps' ceiling pools are lost), with per-tile seams on the modular ceilings and floors and diagonal triangle
+  blotches on the floors. The kit gives every face its own UV2 island (`docs/kit.md`): at 8 texels per m a 2 m floor
+  tile's top face gets about 16 texels across, so each tile bakes and filters on its own. #83's grid (`--grid`, and
+  `--merge` for one island per floor) measures which of texel, denoiser, bounce energy and merged floors close the
+  gap.
