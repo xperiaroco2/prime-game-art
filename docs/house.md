@@ -152,19 +152,20 @@ them as obstacles (`house_dressing.PIECE_HALF`).
   corridor door 2.29 m, boiler room door 0.94, pump room door 1.75, switch room door 2.0, generator 5.11, corners
   1.24 (NW), 3.08 (NE), 0.8 (SW), 3.12 (SE); from the doors to the generator 1.52 to 4.8 m.
 
-Routes (`layouts/house/routes.toml`, walked by `house --walk` at the doc's 4.5 m/s; 2026-10-10, walk4, after the
-pantry stairs became a U and the garage's back door moved to (65, 34)):
-- wine (storage's wine rack -> pantry stairs -> dining table; the doc 26 m, 5.9 s): 7.2 s (+1.3 s), 28.7 m on the plan;
-  it then stopped against the dining table's west chair 0.7 m short of its end, which moved to (33.3, 27) (the
-  capsule's front 2 m from the table).
-- garage (storage's boxes -> hall -> passage -> outdoor stairs -> workbench; 60 m, 13.4 s): 13.7 s (+0.3 s).
-- switches D -> B -> C -> A (105 m, 23.4 s): 24.1 s (+0.7 s).
+Routes (`layouts/house/routes.toml`, walked by `house --walk` at the doc's 4.5 m/s; 2026-10-10, walk5, on main
+with the second floor and the light kit, the pantry stairs a U, the garage's back door at (65, 34)); every route
+arrives and is within the 1 s tolerance:
+- wine (storage's wine rack -> pantry stairs -> dining table, the end at (33.3, 27), the capsule's front 2 m from the
+  table; the doc 26 m, 5.9 s): 6.47 s (+0.57 s), 27.97 m on the plan.
+- garage (storage's boxes -> hall -> passage -> outdoor stairs -> workbench; 60 m, 13.4 s): 13.42 s (+0.02 s),
+  59.14 m.
+- switches D -> B -> C -> A (105 m, 23.4 s): 23.67 s (+0.27 s), 108.4 m.
 
 The doc counts a change of level as 6 m in a straight line; the walk climbs the real flights: the pantry U is about
 11 m of stairs and its landing turn, the outdoor U about 8.4 m a level, and each 1.4 m door is 1 m of straight
-approach. Wine's miss is the U's: a straight flight walks 6.8 m but has no room for a top landing the capsule can turn
-on. Accepting it, or a shorter wine leg (the wine rack nearer the stairs), is the engineer's layout choice; the
-waypoints are not bent to fit.
+approach. The routes still fit because the walk's speed is over the plan and the flights' runs are short on it. The
+manager waives the wine time if a later change puts it over 1 s while it still arrives (the U stairs' real path);
+garage and switches must stay within 1 s. The waypoints are not bent to fit.
 
 Review pictures (`house --basement DIR`, `godot/house/basement.gd`, settings in `layouts/house/basement_review.toml`):
 a real-time omni at each of the 55 fixtures by its id (cool pendants and cage lamps, warm bare bulbs, red
