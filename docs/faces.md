@@ -261,18 +261,18 @@ the nose ball on the moustache) raises the nose until it clears the moustache by
 the check's least nose clearance (0.91 mm on m1, droopy with the long nose) is that floor, not a fault; the lab's
 2.75 mm came from its own head's nose and lip heights.
 
-**The noses.** Three styles (`faces/clay_kit.json` "noses"): `bulb` (the ball, the base nose), `long` (the lab's
-bean that sits on the face and droops down) and `cone` (a forward capsule, half sizes 16/18/16 mm, capsule 8 mm,
-embed 0.15), picked rarely (weight 0.3 against 1.0 for the others: about one face in ten). The cone is what the first
-port's long nose had turned into, and the engineer kept it as a third style (2026-10-10).
+**The noses.** Two styles (`faces/clay_kit.json` "noses"): `bulb` (the ball, the base nose) and `long` (the lab's
+bean). Both are seated by a ray cast on the pack head, whose own nose stands about 17 mm out of the face, so on the
+cast the long nose sits on the pack nose and points forward: the "Pinocchio" nose the engineer approved on the 42b cast
+sheet. A third, rarer "cone" style (PR #106) was removed again (2026-10-10): it was a new shape no cast member had.
 
-**The pack nose is pushed back first.** The kit seats its nose by a ray cast on the pack head, and the pack heads carry
-their own nose about 17 mm out of the face. The lab built every face on heads with that nose flattened
-(`lab/lab_base.py` `flatten_nose` and `smooth_patch`); without it the kit's nose sat on the pack nose's tip and the
-clay pass merged both into one forward cone (the "Pinocchio" of PR #102's cast). `um/heads.py` `flatten_nose` and
-`smooth_patch` are the exact port; `clayface/adapter.build` runs them before the face is built (`NOSE_FLATTEN`; the
-mouth height is the eye height plus the layout's `eye_dz` minus `eye_mouth`; the report's `pack_nose_flattened`), so the
-cast and `faces --kit-check` both get it.
+**The pack nose is not flattened.** The faces lab built every face on heads with the pack nose pushed back
+(`lab/lab_base.py` `flatten_nose` and `smooth_patch`). `um/heads.py` `flatten_nose` and `smooth_patch` are their exact
+port, and PR #106 ran them in `clayface/adapter.build` for the cast and `faces --kit-check`. The engineer rejected the
+result (art #42, 2026-10-10): the approved forward nose vanished from every face, the mid-faces looked flattened and
+m3 got a wide smeared nose. The step is off (`adapter.FLATTEN_PACK_NOSE = False`); the code stays for experiments (a
+script sets the flag, and may change `NOSE_FLATTEN`, before the build; the report then carries `pack_nose_flattened`).
+Nothing about a cast face changes unless a brief names it.
 
 **Whole heads and own extras.** The recipe validation refuses a head that drops part of its catalogue skull (m4's jaw)
 and an extra that is not a whole item of the character's body type (m1's blue strip), and the cast build measures each
