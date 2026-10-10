@@ -125,12 +125,16 @@ The engineer's picks of 2026-10-10: a free roof of clay pantiles with one gable 
   `house_layout.pitched_roof` places one 0.4 m in from each end of each eave.
 - **Ridge** (`build_ridge`): a half-round clay cap (radius 0.12 m, 8 segments, role `tile`) on a mortar bed (role
   `concrete`, 0.17 m each side), its feet sunk into the bed.
-- **Dormer** (`dormer_gable`, type `dormer`, budget `dormer` 2000: 1,966 triangles with its pantile roof and ridge tile): replaces a 2 m panel column over 7 m of run
+- **Dormer** (`dormer_gable`, type `dormer`, budget `dormer` 2000: 1,978 triangles with its pantile roof, ridge tile and lead): replaces a 2 m panel column over 7 m of run
   (`house_layout.dormer_cut`). A plastered front with the window (`window` w x h, `sill` over the roof's top), a white
   casement open 95 deg outward on the opening's local +x jamb (`DORMER_CASEMENT_DEG`; the world-west one
   in the House: clear of the crouched climb-out and the way to the Lookout), a boarded gable, plastered cheeks, its own roof (`rise` per metre) laid as pantile courses (`_dormer_tiles`:
   `pantile_courses` in the slope's frame, the tiles past the valleys dropped)
-  and the main roof's slab behind it; socket `lamp` under its ridge. `reach_m` (1.05: the casement at 95 deg) is what may stand out before the
+  and the main roof's slab behind it; socket `lamp` under its ridge. Its lead (`_dormer_lead`, role `lead`): the apron
+  under the sill, a solid wedge from the roof's top `DORMER_APRON` (0.6 m) down the slope up to the sill's top (31 deg;
+  its collider is the ramp the crouched capsule walks to climb back in: the bare sill stood about 0.3 m over the slope
+  a capsule's radius in front of the wall, past the game's step), and step flashing along both cheeks (0.12 m on the
+  tiles, 0.1 m up the cheek). `reach_m` (1.05: the casement at 95 deg) is what may stand out before the
   span's z0 and beside its x span (the overhangs and the open casement); the span check allows it.
 - **Climb-out stair** (`stair_dormer`, type `ladder`): `build_ladder` takes optional `steps`, `tread` (each tread's
   depth, centred on the collision ramp's line) and `handrail` (a rail 0.9 m over each stringer); the attic ladder keeps
@@ -150,7 +154,7 @@ The engineer's picks of 2026-10-10: a free roof of clay pantiles with one gable 
   and cone through a lead slate on the tiles; pivot at the 0.3 m square's north-west corner, y 0 the slab's top at its
   axis (the layout's `at` height: `house_attic.roof_top`). The attic layout stands one on each slope; they block the
   roof's walk and view (`house_attic.solids`, `lookout`), not the attic's floor.
-- **Not built yet** (a follow-up): lead flashing round the dormer, the eave's fall collision.
+- **Not built yet** (a follow-up): the eave's fall collision.
 
 ## Materials: the `set` pack and its shader (v2)
 

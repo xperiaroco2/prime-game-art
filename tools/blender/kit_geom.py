@@ -1255,7 +1255,33 @@ def build_dormer(pc: Piece, p: dict, spec: dict) -> None:
                    ((fw, lh - fw, -ft), (lw - fw, lh, 0))):
         _rot_box(m, pc, hinge, ang, lo, hi, "trim")
     _rot_box(m, pc, hinge, ang, (fw, fw, -ft / 2 - 0.004), (lw - fw, lh - fw, -ft / 2 + 0.004), "glass", collide=True)
+    _dormer_lead(m, pc, dd)
     pc.sockets["lamp"] = [round(W / 2, 4), round(he - 0.1, 4), round(min(dd["ze"], 1.2), 4)]
+
+
+DORMER_APRON = 0.6  # the lead apron's reach down the slope from the front wall: a 31 deg ramp up to the sill's top
+DORMER_STEP_W, DORMER_STEP_UP = 0.12, 0.1  # the step flashing along a cheek: on the tiles, and up the cheek
+
+
+def _dormer_lead(m: Mesh, pc: Piece, dd: dict) -> None:
+    """The dormer's lead (art #77): the apron under the sill, dressed down over the tiles DORMER_APRON in front of the
+    wall, a solid wedge from the roof's top up to the sill's top (its collider is the ramp a player walks up to climb
+    back in: the sill's ledge over the slope in front of the wall is taller than the game's step), and the step
+    flashing along both cheeks from the front wall to where the roof's top meets the dormer's eave line."""
+    r, u, tv, W, sill, he = (dd[k] for k in ("r", "u", "tv", "W", "sill", "he"))
+
+    def top(z):
+        return u + tv + r * z
+    a = DORMER_APRON
+    pc.collide(prism_x_points([(-a, top(-a)), (0.0, top(0.0)), (0.0, sill)], 0.0, W))
+    prism_x(m, [(-a, top(-a) + LEAD_ON_TILES), (0.0, top(0.0) + LEAD_ON_TILES), (0.0, sill)], 0.0, W, "lead",
+            edges=[False, False, True])
+    zt = (he - u - tv) / r
+    for x_out, x_in, s in ((-DORMER_STEP_W, -0.003, -1.0), (W + DORMER_STEP_W, W + 0.003, 1.0)):
+        y0, y1 = top(0.0) + LEAD_ON_TILES, top(zt) + LEAD_ON_TILES
+        m.poly([(x_out, y0, 0.0), (x_in, y0, 0.0), (x_in, y1, zt), (x_out, y1, zt)], (0.0, 1.0, -r), "lead")
+        m.poly([(x_in, y0, 0.0), (x_in, y0 + DORMER_STEP_UP, 0.0), (x_in, y1 + DORMER_STEP_UP, zt), (x_in, y1, zt)],
+               (s, 0.0, 0.0), "lead")
 
 
 def _dormer_tiles(m: Mesh, dd: dict, k: float, side: int) -> None:
