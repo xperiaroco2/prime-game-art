@@ -18,7 +18,7 @@ NAME = "garden"
 HELP = "check the garden and the greenhouse roof (layouts/house/outdoor/garden.toml); write the scatter and a plan"
 PROOF = "res://garden/proof.gd"
 PROOF_TIMEOUT = 330
-ROOF_PREFIX = "glass_roof_"  # the roof pieces come from --roof-kit (the end bays are not in kit v2 on main yet)
+ROOF_PREFIX = "glass_roof_"  # the roof pieces come from --roof-kit (the end bays are not in the kit's build on main yet)
 
 
 def add_arguments(parser: argparse.ArgumentParser) -> None:
@@ -26,7 +26,7 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--out", type=Path, help="output folder (default <raw>/house/80/build)")
     parser.add_argument("--proof", nargs="?", type=Path, const=Path(), metavar="DIR",
                         help="then walk, ray-test and shoot it in Godot off-screen (default <raw>/review/house/80)")
-    parser.add_argument("--kit", type=Path, help="the kit v2 build folder (default <raw>/kits/house/v2)")
+    parser.add_argument("--kit", type=Path, help="the house kit's build folder (default <raw>/kits/house/v<version>, the spec's version)")
     parser.add_argument("--roof-kit", type=Path, help="the glass roof pieces' folder (default <raw>/house/80/kit)")
     parser.add_argument("--plants", type=Path, help="the plants' GLB folder (default <raw>/house/80/plants)")
 
@@ -51,7 +51,7 @@ def run(args: argparse.Namespace) -> int:
     if args.proof is not None and out is not None and not problems:
         raw = common.raw_dir()
         review = (args.proof if args.proof != Path() else raw / "review" / "house" / "80").resolve()
-        found = proof(data, plot, layout, rep, out.parent, review, (args.kit or raw / "kits" / "house" / "v2").resolve(),
+        found = proof(data, plot, layout, rep, out.parent, review, (args.kit or outdoor_cmd.default_kit()).resolve(),
                       (args.roof_kit or raw / "house" / "80" / "kit").resolve(),
                       (args.plants or raw / "house" / "80" / "plants").resolve())
         for p in found:

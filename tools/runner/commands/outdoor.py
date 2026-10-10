@@ -1,6 +1,6 @@
 """`outdoor`: the House map outside the house (art #81a, #81c): checks `layouts/house/outdoor/` and writes the fence
 and stairs plan, the ground and backdrop GLBs, the sky and flats PNGs and a top-down plan. Pure Python, about 5 s.
-`--proof` then validates the two GLBs (glTF-Validator), stages them with the kit v2 pieces into godot/import/ and runs
+`--proof` then validates the two GLBs (glTF-Validator), stages them with the house kit's pieces into godot/import/ and runs
 godot/outdoor/proof.gd off-screen: the walks (round the inside of the fence, through the wicket and the gates, down
 the outdoor stairs; walking out at the fence must stop) and the review sheet. docs/house-outdoor.md."""
 
@@ -11,7 +11,7 @@ import json
 from pathlib import Path
 
 from .. import common, house_outdoor, house_outdoor_scene
-from . import _export, _frames, _godot
+from . import _export, _frames, _godot, _kit
 
 PROOF = "res://outdoor/proof.gd"
 PROOF_TIMEOUT = 330
@@ -27,8 +27,13 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--check", action="store_true", help="only check the layout; write nothing")
     parser.add_argument("--proof", nargs="?", type=Path, const=Path(), metavar="DIR",
                         help="then validate, walk and shoot it in Godot off-screen (default <raw>/review/house/81)")
-    parser.add_argument("--kit", type=Path, help="the kit v2 build folder (default <raw>/kits/house/v2)")
+    parser.add_argument("--kit", type=Path, help="the house kit's build folder (default <raw>/kits/house/v<version>, the spec's version)")
 
+
+
+def default_kit() -> Path:
+    """The house kit's build folder for the spec's version (kits/house.json), as the `kit` command writes it."""
+    return _kit.default_out(json.loads(KIT_SPEC.read_text(encoding="utf-8")))
 
 def run(args: argparse.Namespace) -> int:
     data = house_outdoor.load(args.layouts)
@@ -46,7 +51,7 @@ def run(args: argparse.Namespace) -> int:
         common.say(f"outdoor: wrote {out}")
         if args.proof is not None and not problems:
             review = args.proof if args.proof != Path() else common.raw_dir() / "review" / "house" / "81"
-            kit = (args.kit or common.raw_dir() / "kits" / "house" / "v2").resolve()
+            kit = (args.kit or default_kit()).resolve()
             problems += proof(data, out, kit, review.resolve())
     for p in problems:
         common.say(f"outdoor: PROBLEM {p}")

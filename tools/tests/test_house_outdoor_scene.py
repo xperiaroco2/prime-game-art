@@ -1,5 +1,5 @@
 """The Godot proof's request of the House map's plot (tools/runner/house_outdoor_scene.py, godot/outdoor/proof.gd,
-docs/house-outdoor.md "The proof"): every placed piece is a kit v2 piece, the stand-ins stay off the walks, the walks
+docs/house-outdoor.md "The proof"): every placed piece is a house kit piece, the stand-ins stay off the walks, the walks
 cross the openings and end at the passage pad, the controls cross the fence away from the openings. Pure Python."""
 
 from __future__ import annotations
@@ -89,3 +89,11 @@ class SceneRequestTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class DefaultKitTest(unittest.TestCase):
+    def test_the_proofs_default_to_the_kit_specs_version(self) -> None:
+        from runner.commands import _kit, outdoor
+        spec = json.loads((ROOT / "kits" / "house.json").read_text(encoding="utf-8"))
+        self.assertEqual(outdoor.default_kit(), _kit.default_out(spec))
+        self.assertEqual(outdoor.default_kit().name, f"v{spec['version']}")  # not a stale v2 (art #77)

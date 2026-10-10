@@ -1,6 +1,6 @@
 """The garden and the greenhouse's roof (art #80, docs/house-garden.md): `layouts/house/outdoor/garden.toml` loaded and
 checked (the path network, the fixed props, the clearances, the herb route), a seeded scatter of trees, bushes and
-flower beds on a Poisson disc (Bridson), the greenhouse's glass pitched roof from kit v2's pieces with a check that
+flower beds on a Poisson disc (Bridson), the greenhouse's glass pitched roof from the house kit's pieces with a check that
 every gable meets a rafter on both slopes, a top-down plan and `garden.json` for the assembly. Pure Python.
 
 Plan metres as #81a's (docs/house-outdoor.md): x east, y south; Godot x = x, z = y."""
