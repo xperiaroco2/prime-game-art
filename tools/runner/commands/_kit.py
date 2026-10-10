@@ -4,13 +4,16 @@ table. Standard library only; the geometry is tools/blender/kit_geom.py (importe
 from __future__ import annotations
 
 import importlib.util
+import re
 import sys
+import tomllib
 from pathlib import Path
 from typing import Any
 
 from .. import common
 
 SPEC = common.ROOT / "kits" / "house.json"
+HOUSE_SETTINGS = common.ROOT / "layouts" / "house" / "house.toml"
 SCRIPT = "kit_build.py"
 CHECK = "res://check/kit.gd"
 PROOF = "res://kit/proof.gd"
@@ -21,9 +24,10 @@ MAN = ("clay-42a", "export", "m1", "m1.glb")  # the clay man for scale in the pr
 # above; the roofs at 50 so the slopes show). A kind in no group goes to "other".
 LINEUP_GROUPS = (
     ("walls", ("wall",), 8.0),
-    ("corners, ends, pillars, chimney, trim", ("corner", "pillar", "chimney", "trim"), 8.0),
+    ("corners, ends, pillars, chimney, trim, downpipe, vent", ("corner", "pillar", "chimney", "trim", "downpipe", "vent"), 8.0),
     ("floors", ("floor",), 90.0),
     ("roofs", ("roof",), 50.0),
+    ("dormer", ("dormer",), 12.0),
     ("glass", ("glass",), 8.0),
     ("stairs, ladder, railings", ("stairs", "ladder", "railing"), 8.0),
     ("fences, gates, garage, porch", ("fence", "gate", "garage", "porch"), 8.0),
@@ -53,6 +57,14 @@ def lineup_groups(pieces: list[dict[str, Any]]) -> list[list]:
 
 
 def default_out(spec: dict[str, Any]) -> Path:
+    """A kit's build folder: <raw>/kits/<kit>/v<version>; for the House kit the House layout's `kit_dir`
+    (layouts/house/house.toml, the one setting `house`, `attic`, `zones`, `outdoor` and `garden` read) while it names a
+    build of the spec's version (v3 or v3b for version 3), so a plain `kit` rebuilds the folder the map uses."""
+    if spec["kit"] == "house" and HOUSE_SETTINGS.is_file():
+        with HOUSE_SETTINGS.open("rb") as f:
+            kit_dir = tomllib.load(f).get("kit_dir", "")
+        if re.fullmatch(rf"v{spec['version']}[a-z]?", Path(kit_dir).name):
+            return common.raw_dir() / kit_dir
     return common.raw_dir() / "kits" / spec["kit"] / f"v{spec['version']}"
 
 

@@ -1,248 +1,270 @@
 # The attic's old things and hiding spots (art #77, map #73; inventory.md section 6 "Attic"): data for
-# tools/runner/house_attic.py (docs/house.md, "The attic and the roof deck"). Plan metres (x east, y south), the
+# tools/runner/house_attic.py (docs/house.md, "The attic and the free roof"). Plan metres (x east, y south), the
 # conventions of the zones (docs/zones.md): `at` the footprint's centre, `yaw` turns the prop's front (+Z) about +Y
 # (0 south, 90 east, 180 north, -90 west), `src` "library" (props/library.toml, #87) or a placeholder with its own
 # `size` [w, d, h] (the hero props, not in the library). The light fixtures are #83a's (layouts/house/lights.toml).
 # Every position is the engineer's to change: edit, then `tools/run.sh attic`.
 
 room = "attic"
-rect = [20, 26, 20, 14]
-eave_h = 2.2                       # the knee wall; the roof climbs gable_rise_per_m from the eaves on y 26 and 40
-# Floor kept free: the hatch and its 1 m apron, the roof door's approach, 1 m round the Knife3 marker.
-clear = [[26, 27, 4, 4], [37.5, 31.8, 2.4, 2.4], [35, 36, 2, 2]]
+rect = [18, 24, 24, 20]
+eave_h = 2.2                       # the knee wall; the roof climbs gable_rise_per_m from the eaves on y 24 and 44
+# Floor kept free: the hatch and its 1 m apron, the dormer's climb-out (its stair and the way to it), 1 m round
+# the Knife3 marker (36, 37).
+clear = [[26, 27, 4, 4], [33.4, 39.5, 3.2, 4.5], [35, 36, 2, 2]]
 arrive = [28.0, 31.2]              # where a player steps off the ladder (the walk's start)
 
 # --- the north eave ---
 [[items]]
 id = "old_wardrobe"
-at = [22.0, 26.5]
+at = [20, 24.5]
 [[items]]
 id = "trunk"
-at = [24.0, 26.5]
+at = [22, 24.5]
 [[items]]
 id = "cardboard_box"
-at = [25.3, 26.4]
+at = [23.3, 24.4]
 [[items]]
 id = "cardboard_box"
-at = [25.9, 26.4]
+at = [23.9, 24.4]
 yaw = 90.0
 [[items]]
 id = "cardboard_box"
-at = [25.5, 26.95]
+at = [23.5, 24.95]
 yaw = 15.0
 [[items]]
 id = "sheeted_furniture"
-at = [31.5, 27.0]
+at = [33.5, 25]
 [[items]]
 id = "rolled_carpet"
-at = [34.0, 26.35]
+at = [36, 24.35]
 [[items]]
 id = "rolled_carpet"
-at = [34.0, 26.72]
+at = [36, 24.72]
 [[items]]
 id = "crate"
-at = [36.4, 26.45]
+at = [38.4, 24.45]
 [[items]]
 id = "crate"
-at = [37.0, 26.45]
+at = [39, 24.45]
 yaw = 8.0
 [[items]]
 id = "picture_frame"
-at = [38.3, 26.2]
+at = [40.3, 24.2]
 [[items]]
 id = "picture_frame"
-at = [38.9, 26.25]
+at = [40.9, 24.25]
 yaw = 6.0
 [[items]]
 id = "picture_frame"
-at = [38.6, 26.35]
+at = [40.6, 24.35]
 yaw = -4.0
 [[items]]
 id = "trunk"
-at = [39.4, 28.2]
+at = [41.4, 26.2]
 yaw = -90.0
 
 # --- the west gable ---
 [[items]]
 id = "standing_mirror"
-at = [20.5, 30.0]
+at = [18.5, 28]
 yaw = 90.0
 [[items]]
 id = "sheeted_furniture"
-at = [21.0, 32.2]
+at = [19, 30.2]
 [[items]]
 id = "rocking_horse"
 src = "placeholder"
 size = [1.0, 0.4, 0.9]
-at = [21.5, 34.2]
+at = [19.5, 38.2]
 yaw = 90.0
 
-# --- the south-west corner: the HidingSpots station (24, 36) ---
+# --- the south-west corner: the HidingSpots station (22, 39) ---
 [[items]]
 id = "old_wardrobe"
-at = [21.0, 39.5]
+at = [19, 43.5]
 yaw = 180.0
 [[items]]
 id = "trunk"
-at = [23.0, 39.5]
+at = [21, 43.5]
 yaw = 180.0
 [[items]]
 id = "sheeted_furniture"
-at = [24.9, 38.4]
+at = [22.9, 42.4]
 yaw = 10.0
 [[items]]
 id = "mannequin"
 src = "placeholder"
 size = [0.5, 0.4, 1.7]
-at = [22.6, 36.6]
+at = [20.6, 40.6]
 yaw = 60.0
 [[items]]
 id = "trunk"
-at = [26.3, 36.0]
+at = [24.3, 40]
 yaw = 90.0
 [[items]]
 id = "crate"
-at = [23.2, 34.6]
+at = [21.2, 38.6]
 [[items]]
 id = "crate"
-at = [23.8, 34.6]
+at = [21.8, 38.6]
 yaw = -10.0
 [[items]]
 id = "rug"
-at = [24.5, 36.2]
+at = [22.5, 40.2]
 yaw = 5.0
 [[items]]
 id = "cardboard_box"
-at = [26.8, 39.6]
+at = [24.8, 43.6]
 [[items]]
 id = "cardboard_box"
-at = [27.4, 39.6]
+at = [25.4, 43.6]
 [[items]]
 id = "cardboard_box"
-at = [27.1, 39.05]
+at = [25.1, 43.05]
 yaw = 20.0
 [[items]]
 id = "picture_frame"
-at = [28.2, 39.8]
+at = [26.2, 43.8]
 yaw = 180.0
 [[items]]
 id = "picture_frame"
-at = [28.6, 39.75]
+at = [26.6, 43.75]
 yaw = 175.0
 [[items]]
 id = "picture_frame"
-at = [28.4, 39.65]
+at = [26.4, 43.65]
 yaw = 186.0
 [[items]]
 id = "potted_plant"
-at = [29.4, 39.5]
+at = [27.4, 43.5]
 
 # --- the south-east ---
 [[items]]
 id = "sheeted_furniture"
-at = [31.5, 38.6]
+at = [31.8, 41.4]
 [[items]]
 id = "trunk"
-at = [33.5, 39.5]
+at = [31.6, 43.5]
 yaw = 180.0
 [[items]]
 id = "old_bicycle"
-at = [36.4, 39.45]
+at = [38.4, 43.45]
 [[items]]
 id = "cardboard_box"
-at = [38.4, 39.6]
+at = [40.4, 43.6]
 [[items]]
 id = "cardboard_box"
-at = [39.0, 39.6]
+at = [41, 43.6]
 yaw = 90.0
 [[items]]
 id = "cardboard_box"
-at = [38.7, 39.05]
+at = [40.7, 43.05]
 yaw = -12.0
 [[items]]
 id = "rolled_carpet"
-at = [39.6, 37.0]
+at = [41.6, 41]
 yaw = 90.0
 [[items]]
 id = "rug"
-at = [33.5, 35.0]
+at = [35.5, 39]
 yaw = -3.0
 
-# --- the east, north of the roof door ---
+# --- the east ---
 [[items]]
 id = "sheeted_furniture"
-at = [38.9, 29.6]
+at = [40.9, 27.6]
 [[items]]
 id = "crate"
-at = [37.2, 28.9]
+at = [39.2, 26.9]
 [[items]]
 id = "cardboard_box"
-at = [34.5, 29.0]
+at = [36.5, 27]
 yaw = 30.0
 [[items]]
 id = "trunk"
-at = [32.5, 30.2]
+at = [34.5, 28.2]
 yaw = 90.0
 
 # The hiding spots: where a package may lie among the old things. `at` = [x, y], `h` above the attic floor, `in` the
 # prop that holds it (left out of the line-of-sight test: an open trunk, a wardrobe's doors, a dust sheet lifted).
 [[spots]]
 name = "TrunkNorth"
-at = [24.0, 26.5]
+at = [22, 24.5]
 h = 0.5
 in = "trunk"
 [[spots]]
 name = "WardrobeTopNorth"
-at = [22.0, 26.5]
+at = [20, 24.5]
 h = 1.9
 in = "old_wardrobe"
 [[spots]]
 name = "SheetNorth"
-at = [31.5, 27.0]
+at = [33.5, 25]
 h = 0.6
 in = "sheeted_furniture"
 [[spots]]
 name = "SheetWest"
-at = [21.0, 32.2]
+at = [19, 30.2]
 h = 0.6
 in = "sheeted_furniture"
 [[spots]]
 name = "WardrobeSouth"
-at = [21.0, 39.5]
+at = [19, 43.5]
 h = 1.0
 in = "old_wardrobe"
 [[spots]]
 name = "TrunkSouthWest"
-at = [23.0, 39.5]
+at = [21, 43.5]
 h = 0.5
 in = "trunk"
 [[spots]]
 name = "CrateWest"
-at = [23.5, 34.6]
+at = [21.5, 38.6]
 h = 0.4
 in = "crate"
 [[spots]]
 name = "SheetSouthWest"
-at = [24.9, 38.4]
+at = [22.9, 42.4]
 h = 0.6
 in = "sheeted_furniture"
 [[spots]]
 name = "BoxSouth"
-at = [27.1, 39.05]
+at = [25.1, 43.05]
 h = 0.4
 in = "cardboard_box"
 [[spots]]
 name = "TrunkSouthEast"
-at = [33.5, 39.5]
+at = [31.6, 43.5]
 h = 0.5
 in = "trunk"
 [[spots]]
 name = "BicycleBasket"
-at = [37.0, 39.45]
+at = [39, 43.45]
 h = 0.9
 in = "old_bicycle"
 [[spots]]
 name = "SheetEast"
-at = [38.9, 29.6]
+at = [40.9, 27.6]
 h = 0.6
 in = "sheeted_furniture"
+
+# The free roof (art #77, the engineer's pick 2026-10-10): no deck. The players climb out of the dormer's window onto
+# the south slope; the whole roof is walkable (19 deg), its eave a real edge. `arrive`: outside the dormer's window, on
+# the slope west of its open casement (the walk's start). The roof's items stand on the roof's top
+# (house_attic.roof_top); the vent pipes and the aerial are the roof's kit pieces, not dressing.
+[roof]
+arrive = [34.9, 43.6]
+
+[[roof.items]]
+id = "loot_crate"
+station = "Loot"                   # the layout's Loot station on the north slope (the design doc's north-east corner)
+at = [41.0, 26.0]
+yaw = -90.0
+
+# The lookout: what a player sees at eye height 1.6 m over the roof's top. `station` is the layout's Lookout station
+# (attic.toml: on the south slope, 2.1 m up from the eave) and the first of the `eyes`; the acceptance: from it the
+# `see` openings of the fence (layouts/house/outdoor/plot.toml) at least half in view. Without `open` a shortfall fails.
+[roof.lookout]
+station = [39.0, 41.9]
+eyes = [[39.0, 41.9]]
+see = ["wicket", "gates"]

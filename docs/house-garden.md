@@ -46,9 +46,9 @@ the herb route white). It fails on any problem. `--proof` then runs the Godot pr
 - **Herb route** (design doc section 7: kitchen -> herb board -> bed -> kitchen, 94 m, 20.9 s at 4.5 m/s): its
   waypoints in straight segments, on the paths in the garden; its time within `tol_s` (1 s) of the doc's. Tonight
   95.0 m, 21.1 s.
-- **Greenhouse roof**: kit v2's glass pieces (`glass_roof_eave_2m`, `glass_roof_2x2`, `glass_roof_ridge_2m`, glass
-  gable triangles over bands) laid by `kit_geom.attic_roof`'s pattern on the glass walls' top (2.4 m); the ridge at
-  2.4 + 6 x the kit's pitch. A bay's rafter is at its own start, so a gable is closed only on the slope whose bays begin
+- **Greenhouse roof**: the kit's glass pieces (`glass_roof_eave_2m`, `glass_roof_2x2`, `glass_roof_ridge_2m`, glass
+  gable triangles over bands; kit v3 keeps them at 0.7 rise per metre through `glass_rise_per_m`) laid by
+  `kit_geom.attic_roof`'s pattern on the glass walls' top (2.4 m); the ridge at 2.4 + 6 x the glass pitch. A bay's rafter is at its own start, so a gable is closed only on the slope whose bays begin
   there; the bay whose far end meets a gable (x 58 on the south slope, x 74 on the north) is the `_end` variant
   (`glass_roof_2x2_end`, `glass_roof_eave_2m_end`: `"+x"` in `ends`, a second rafter at its far end). `gable_gaps`
   lists each gable and slope with no rafter within 6 cm (a slit between the gable's top and the pane, open to a level
@@ -77,7 +77,7 @@ core with leafy lumps and flat ends, so 2 m segments tile.
 
 `garden --proof [DIR]` (default `<raw>/review/house/80`; a few minutes, takes the heavy-run lock) rebuilds the plot
 with the garden's paths (`house_outdoor.write` into `<raw>/house/80/outdoor`) and the house scenes
-(`godot/import/house`, as `house` does), stages the kit v2 pieces (`--kit`, default `<raw>/kits/house/v2`; the
+(`godot/import/house`, as `house` does), stages the house kit's pieces (`--kit`, default the House layout's `kit_dir`, now `<raw>/kits/house/v3b`; the
 `glass_roof_*` pieces from `--roof-kit`, default `<raw>/house/80/kit`, until the end bays are in the kit's build on
 main), the dressing's and the garden's props (`prop_dirs`; the hedge from `--plants`) and the plants
 (`plant_<id>_<kind>`), imports them headless and runs `godot/garden/proof.gd` (it extends the outdoor proof,

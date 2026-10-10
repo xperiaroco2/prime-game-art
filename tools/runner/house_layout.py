@@ -395,7 +395,8 @@ def plan(data: dict) -> dict:
             if rf.get("room") not in pieces:
                 problems.append(f"{lv['level']}: the roof {rf.get('id')} has no room {rf.get('room')}")
                 continue
-            placed, probs = pitched_roof(rf, data)
+            dms = [dm for dm in lv.get("dormers", []) if dm.get("roof") == rf.get("id")]
+            placed, probs = pitched_roof(rf, data, dms)
             pieces[rf["room"]] += placed
             problems += [f"{lv['level']}: the roof {rf.get('id')}: {p}" for p in probs]
         for d in lv.get("doors", []):
@@ -540,14 +541,18 @@ def kit_geom():
     return sys.modules[name]
 
 
-def pitched_roof(rf: dict, data: dict) -> tuple[list[dict], list[str]]:
+DOWNPIPE_IN = 0.4  # a downpipe's axis in from the gable's grid line along the eave
+
+
+def pitched_roof(rf: dict, data: dict, dormers: list[dict] | None = None) -> tuple[list[dict], list[str]]:
     """A room's pitched roof from the kit (docs/kit.md, "Pitched roofs"): the placements of kit_geom.attic_roof over
     rf["rect"] (eaves on its two x-long sides, the ridge along x, so its depth is even), pivoted on the knee walls' top
     (rf["h"], default the kit's knee height), and with rf["gables"] the gable walls on its two short sides: per slope
     row a triangle over bands of the row's length, so the gables' tops follow the same pitch. Every height comes from
     the kit's spec (gable_rise_per_m, the pieces' rise and height): a new pitch (Q2) is a kit rebuild, not an edit here.
     rf["windows"] lists gable windows as plan points [x, y] on a gable: each swaps the lowest band of the row centred
-    there for the band's `_window` piece (gable_band_2m_window)."""
+    there for the band's `_window` piece (gable_band_2m_window). `dormers` (the level's [[dormers]] on this roof) cut
+    their column out of a slope (dormer_cut)."""
     spec, kit = data["spec"], data["pieces"]
     x0, y0, w, d = (float(v) for v in rf["rect"])
     h0 = float(rf.get("h", spec["grid"]["knee_h_m"]))
@@ -558,6 +563,14 @@ def pitched_roof(rf: dict, data: dict) -> tuple[list[dict], list[str]]:
         return [], [str(e)]
     out = [{"id": pid, "x": x0 + off[0], "y": y0 + off[2], "h": h0 + off[1], "turn": int(round(deg))}
            for pid, deg, off in placed]
+    if "roof_downpipe" in kit:  # art #77: a downpipe near each end of each eave, on the gutter's outlet
+        for x, turn, y in ((x0 + DOWNPIPE_IN, 0, y0), (x0 + w - DOWNPIPE_IN, 0, y0),
+                           (x0 + w - DOWNPIPE_IN, 180, y0 + d), (x0 + DOWNPIPE_IN, 180, y0 + d)):
+            out.append({"id": "roof_downpipe", "x": x, "y": y, "h": h0, "turn": turn})
+    dprobs = []
+    for dm in dormers or []:
+        out, pr = dormer_cut(out, dm, rf, spec)
+        dprobs += [f"the dormer {dm.get('id')}: {p}" for p in pr]
     wins = {(float(a), float(b)) for a, b in rf.get("windows", [])}  # gable windows: (x, y) of their centres
     used = set()
     if rf.get("gables"):
@@ -590,7 +603,56 @@ def pitched_roof(rf: dict, data: dict) -> tuple[list[dict], list[str]]:
     probs = [f"no kit piece {', '.join(missing)}"] if missing else []
     probs += [f"the gable window at ({x:g}, {y:g}) is not the centre of a gable row's lowest 2 m band"
               for x, y in sorted(wins - used)]
-    return out, probs
+    return out, probs + dprobs
+
+
+def dormer_cut(out: list[dict], dm: dict, rf: dict, spec: dict) -> tuple[list[dict], list[str]]:
+    """A dormer on a pitched roof (art #77, docs/house.md "The attic and the free roof"): dm["slope"] "N" or "S" (the
+    slope whose eave is on the rect's north or south side), dm["x"] the west edge of a 2 m panel column (on the
+    panels' 2 m grid from the rect's west side), dm["z"] = [z0, z1] whole metres of run up the slope from the eave
+    wall's line (1 <= z0 < z1 <= the run). The column's panels between z0 and z1 go; 2 x 1 panels (roof_pitched_2x1)
+    refill what a removed 2 m row had outside [z0, z1]; dm["piece"] (the kit's dormer, default dormer_gable) is placed
+    like a panel at z0 of that column: its local x 0..2 along the eave, local z 0..z1 - z0 up the slope, its pivot on
+    the knee wall's top line lifted r * z0. The eave, verge and ridge pieces stay."""
+    x0, y0, w, d = (float(v) for v in rf["rect"])
+    h0 = float(rf.get("h", spec["grid"]["knee_h_m"]))
+    r, run = float(spec["grid"]["gable_rise_per_m"]), d / 2
+    slope, cx = dm.get("slope"), float(dm.get("x", -1))
+    z0, z1 = (float(v) for v in dm.get("z", [0, 0]))
+    probs = []
+    if slope not in ("N", "S"):
+        probs.append(f"slope {slope!r} is not N or S")
+    if not (x0 - EPS <= cx <= x0 + w - 2 + EPS and abs((cx - x0) / 2 - round((cx - x0) / 2)) < EPS):
+        probs.append(f"x {cx:g} is not the west edge of a 2 m panel column (from {x0:g})")
+    if not (1 - EPS <= z0 < z1 <= run + EPS and z0 == int(z0) and z1 == int(z1)):
+        probs.append(f"z {z0:g}..{z1:g} is not whole metres inside 1..{run:g} up the slope")
+    if probs:
+        return out, probs
+    south = slope == "S"
+
+    def place(z: float) -> tuple[float, float]:  # plan (x, y) of a panel pivot at run z in this column
+        return (cx + 2, y0 + d - z) if south else (cx, y0 + z)
+    turn = 180 if south else 0
+    keep, cut = [], []
+    for p in out:
+        if p["id"].startswith("roof_pitched_2x") and p["turn"] % 360 == turn % 360:
+            px, py = place(0)
+            zs = (y0 + d - p["y"]) if south else (p["y"] - y0)
+            step = float(p["id"].rsplit("x", 1)[1])
+            if abs(p["x"] - px) < EPS and zs < z1 - EPS and zs + step > z0 + EPS:
+                cut.append((zs, step))
+                continue
+        keep.append(p)
+    for zs, step in cut:
+        for k in range(int(round(step))):
+            z = zs + k
+            if z < z0 - EPS or z >= z1 - EPS:
+                x, y = place(z)
+                keep.append({"id": "roof_pitched_2x1", "x": x, "y": y, "h": h0 + r * z, "turn": turn})
+    x, y = place(z0)
+    keep.append({"id": dm.get("piece", "dormer_gable"), "x": x, "y": y, "h": h0 + r * z0, "turn": turn,
+                 "dormer": dm.get("id")})
+    return keep, []
 
 
 def _edge_from(n, d):

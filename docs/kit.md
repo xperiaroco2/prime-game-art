@@ -6,7 +6,7 @@ fences, gates and glass walls on one grid. Art #74 built the first kit, the **Ho
 GLB per piece and checks every piece in glTF-Validator and Godot. Art #86 made **version 2** (below): 105 pieces
 (v1's 71 with their ids kept, 34 more), the pitched and glass roofs, the porch, the pillar, the chimney, the gazebo,
 and look.md section 5's material plan (one `set` material for plaster, wood and concrete). The GLBs stay in the raw
-folder (`D:/prime-art-raw/kits/house/v<version>/`; v1 is kept untouched in `v1/`, v2 builds into `v2/`) until the
+folder (`D:/prime-art-raw/kits/house/v<version>/`; v1 is kept untouched in `v1/`, v2 builds into `v2/`, v3 into `v3b/`: the House layout's `kit_dir`, since `v3/` holds a stale in-between build) until the
 engineer approves the kit's look on a review page; then they come into the repo with their manifests.
 
 ## The command
@@ -18,7 +18,7 @@ tools/run.sh kit [--spec kits/house.json] [--out DIR] [--only id,...] [--no-buil
 | Option | What it does |
 |---|---|
 | (none) | Checks the spec (with the seam and closure checks), builds every piece in headless Blender (`tools/blender/kit_build.py`), checks every GLB and imports them all into `godot/` headless (`godot/check/kit.gd`); about 5 minutes, plus any wait for the heavy-run lock |
-| `--out` | Output folder (default `<raw>/kits/<kit>/v<version>`, now `D:/prime-art-raw/kits/house/v2`) |
+| `--out` | Output folder (default `<raw>/kits/<kit>/v<version>`; for the House kit the House layout's `kit_dir` while it names a build of the spec's version, now `D:/prime-art-raw/kits/house/v3b`) |
 | `--only` | Only these pieces (`--proof` needs the whole kit) |
 | `--no-build` | Checks the GLBs already in `--out` (about 1 minute with Godot) |
 | `--no-godot` | Skips the Godot import (and the proof) |
@@ -47,7 +47,9 @@ and must check that Godot's "static lightmaps" import keeps the kit's UV2 rather
   glass roof piece reads (`kit_geom.pitch`): changing it (Q2 of the house plan's questions) rebuilds them all.
 - `budget_tris`: triangles per kind of piece (wall 400, corner 60, floor 120, roof 200, stairs 2500, ladder 600,
   railing 1500, fence 1200, gate 4000, glass 600, garage 600; v2: pillar 60, porch 400, chimney 200, trim 120,
-  gazebo 1200). Version 2's 105 pieces hold 4,194 triangles. Version 1's 71 pieces hold 3,772 triangles in all; the
+  gazebo 1200; v3: roof 700 for the pantiles' S, downpipe 300, chimney 450 for the
+  brick courses, pots, flashing and aerial, vent 120). Version 2's 105 pieces hold 4,194 triangles.
+  Version 1's 71 pieces hold 3,772 triangles in all; the
   most is the driveway gates (570). The locations' minimum-spec budgets (`docs/research/2026-10-06-locations.md`, "Godot
   budgets") allow 400k visible world triangles and 6 world materials: a whole storey of these pieces stays a small
   part of the triangles, and the kit uses 5 materials.
@@ -93,6 +95,74 @@ and must check that Godot's "static lightmaps" import keeps the kit's UV2 rather
   (`slab_yard_2x2/1x1`: a `ceiling` piece with `thick` 0.2 and `role` basement, an underside and a collider only, its top
   the yard's ground sheet; art #108), the **beams** (`beam_concrete_2m/1m`, type `beam`: 0.3 x 0.3 m under the pivot,
   centred on z 0, no end faces) and the glass nodes (`glass_corner/end/post`) are documented in their builders.
+
+## Version 3: the free roof (art #77)
+
+The engineer's picks of 2026-10-10: a free roof of clay pantiles with one gable dormer, walkable at the Q2 B pitch.
+
+- **Pitch**: `gable_rise_per_m` 0.35 (19.3 deg, under Godot's 45 deg floor limit), so every gable, pitched piece and the
+  dormer follow it. The greenhouse's glass roof keeps 0.7 through its own `glass_rise_per_m` (`kit_geom.glass_rise`;
+  a spec without it falls back to the shared pitch). `gable_band_2m_window` stays in the kit but the layout uses none:
+  the 0.9 m gable window does not fit the low gable band at 0.35.
+- **Pantiles** (`kit_geom.pantile_courses`): the pitched panels' top is courses of tiles, 1/3 m deep up the slope and
+  1/3 m wide, cut on one kit-wide grid of multiples from the eave wall's line, so neighbouring panels meet. Each
+  course's lower edge stands 3 cm proud of the slab and its upper edge sinks under the next lip: the stepped course
+  shadows of the look round (`D:/prime-art-raw/research/2026-10-10-roof-look/`). Across its width each tile is the
+  pantile's S in three facets (`TILE_S`: the edge 2 cm up, the pan's hollow at 0.45, the roll's crown 4.5 cm up at
+  0.78, the edge again; `tile_lift`), on the same grid, so the relief runs on across panels and the lips are wavy:
+  geometry, not a normal map (the material system has no per-role texture source). Each tile takes one of the roles
+  `tile`, `tile_b`, `tile_c` (warm clay `#7a4634`, a darker worn `#6a4236` and a paler `#83533f`: the spread is
+  lightness, not saturation), vertex colours of the one `set` material, so the spread costs no draw call. The eave's
+  wear: on the eave pieces the lowest course and every third tile of the next are `tile_moss` (`#5b5134`, olive brown).
+  The eave and verge ends close the step with trim (the fascia and the barge boards); the slab's underside is the
+  boarded soffit. `roof_pitched_2x2` holds 434 triangles (budget `roof` 700). The collision stays the slab's hull;
+  the tiles stand at most 7.5 cm over it.
+- **Gutters and downpipes**: the eave and eave-corner pieces hang a half-round zinc gutter (`kit_geom.gutter`: radius
+  6.5 cm, 6 facets, role `zinc` `#6f7471`, its rim 4 cm under the slab's top) before the fascia, a bracket strap at
+  every half metre and an end cap on the corners' open ends; `reach_m` 0.15 lets it stand out before z0.
+  `roof_downpipe` (type `downpipe`, budget `downpipe` 300) is the outlet, a swan neck back to the wall, the stack down
+  the wall's face `drop` 8.6 m (the attic's floor_y 6.4 + the knee 2.2) to a shoe, and wall clips every 1.5 m;
+  `house_layout.pitched_roof` places one 0.4 m in from each end of each eave.
+- **Ridge** (`build_ridge`): a half-round clay cap (radius 0.12 m, 8 segments, role `tile`) on a mortar bed (role
+  `concrete`, 0.17 m each side), its feet sunk into the bed.
+- **Dormer** (`dormer_gable`, type `dormer`, budget `dormer` 2000: 1,978 triangles with its pantile roof, ridge tile and lead): replaces a 2 m panel column over 7 m of run
+  (`house_layout.dormer_cut`). A plastered front with the window (`window` w x h, `sill` over the roof's top), a white
+  casement open 95 deg outward on the opening's local +x jamb (`DORMER_CASEMENT_DEG`; the world-west one
+  in the House: clear of the crouched climb-out and the way to the Lookout), a boarded gable, plastered cheeks, its own roof (`rise` per metre) laid as pantile courses (`_dormer_tiles`:
+  `pantile_courses` in the slope's frame, the tiles past the valleys dropped)
+  and the main roof's slab behind it; socket `lamp` under its ridge. Its lead (`_dormer_lead`, role `lead`): the apron
+  under the sill, a solid wedge from the roof's top `DORMER_APRON` (0.6 m) down the slope up to the sill's top (31 deg;
+  its collider, folded into the front wall band's hull so the piece keeps 11 colliders, is the ramp the crouched
+  capsule walks to climb back in: the bare sill stood about 0.3 m over the slope
+  a capsule's radius in front of the wall, past the game's step), and step flashing along both cheeks (0.12 m on the
+  tiles, 0.1 m up the cheek). `reach_m` (1.05: the casement at 95 deg) is what may stand out before the
+  span's z0 and beside its x span (the overhangs and the open casement); the span check allows it.
+- **Climb-out stair** (`stair_dormer`, type `ladder`): `build_ladder` takes optional `steps`, `tread` (each tread's
+  depth, centred on the collision ramp's line) and `handrail` (a rail 0.9 m over each stringer); the attic ladder keeps
+  the defaults (11 rungs, 0.1 m, no rails). The stair: 1.0 m wide, run 3.0, rise 2.857 m (the window's sill), 43.6
+  deg, 13 treads.
+- **Snow guard**: the eave pieces carry a zinc rail 0.12 m over the slab's top at z -0.2 (on the overhang, above the
+  gutter) on metal brackets every 0.5 m (`kit_geom.snow_guard`); no collider.
+- **Chimneys** (`build_chimney`, budget `chimney` 450): plastered in the attic, brick-coursed over the roof (bands of
+  0.15 m in `brick`, `brick_b`, `brick_c`: `#7b3f2e`, `#6b3a2d`, `#86503a`), a projecting corbel band, a concrete cap and
+  two clay pots (`tile_c`) with dark flues; their rims at `height`. `roof` (`eave_d`: the distance of the piece's z 0
+  face from the eave wall's line; `down`: its eave-side face, `+z` or `-z`) puts the brick's foot at the roof and lays
+  lead flashing (role `lead`, `#565b5e`) 6 cm over the slab's top, on the tiles: the apron with its skirt down the
+  slope, the back gutter with its tray up the slope, an upstand and a lip along each side. `aerial`: a TV aerial on a
+  mast strapped to the +x face (1.3 m over the pots). The House: `chimney_attic` (south slope, `eave_d` 4.5, aerial,
+  330 triangles) and `chimney_attic_n` (north slope, `eave_d` 3, 234).
+- **Vents** (`roof_vent`, `roof_vent_n`, type `vent`, budget `vent` 120, 44 triangles): a soil pipe with a flared cowl
+  and cone through a lead slate on the tiles; pivot at the 0.3 m square's north-west corner, y 0 the slab's top at its
+  axis (the layout's `at` height: `house_attic.roof_top`). The attic layout stands one on each slope; they block the
+  roof's walk and view (`house_attic.solids`, `lookout`), not the attic's floor.
+- **The roof's budget** (proposed, art #77). Measured on the House (2026-10-10: the attic scene's kit instances
+  times each GLB's render primitives, collision meshes left out): 189 pieces, 63,234 triangles, 222 draw calls (one
+  per instance and surface), 3 materials (`kit_set`, `kit_metal`, `kit_glass`). The 116 `roof_pitched_2x2` panels
+  hold 50,344 of the triangles and 116 of the draw calls; the eaves 5,952 and 48; the dormer 1,978 and 3. Budget for
+  the whole roof: 70,000 triangles, 240 draw calls, 3 materials. The review scene with the dressing draws 577 (the
+  street frame) to 805 (on the slope) calls in all. Merging each slope's panels into one mesh would take the panels
+  from 116 draw calls to about 4: a follow-up if the game's profile asks for it.
+- **Not built yet** (a follow-up): the eave's fall collision.
 
 ## Materials: the `set` pack and its shader (v2)
 

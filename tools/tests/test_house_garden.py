@@ -73,7 +73,7 @@ class Garden(unittest.TestCase):
                                "glass_gable_tri_2m_up": 6, "glass_gable_tri_2m_down": 6, "glass_gable_band_2m": 12})
         self.assertEqual(self.rep["roof_gaps"], [])  # every gable meets a rafter on both slopes
         self.assertTrue(all(p["id"] in self.layout["pieces"] for p in roof))
-        r = self.layout["spec"]["grid"]["gable_rise_per_m"]
+        r = self.layout["spec"]["grid"]["glass_rise_per_m"]  # the greenhouse's own pitch (art #77)
         h0 = self.layout["spec"]["grid"]["glass_wall_h_m"]
         ridge = [p for p in roof if p["id"] == "glass_roof_ridge_2m"]
         self.assertTrue(all(math.isclose(p["h"], h0 + 6 * r) and p["y"] == 12 for p in ridge))

@@ -8,8 +8,11 @@ extends SceneTree
 ## request.json: commands/zones.py request(): {"pieces": [{"zone", "id", "src", "pos", "yaw", "scene" | "size",
 ## "lights", "light"}], "views": [[name, title, eye [x, y, h], look [x, y, h], fov]], "lineup": [{"id", "scene", "min",
 ## "max"}], "lineup_at": [x, y], "pack": {...}}; optional "lamps": [[x, h, z]] with "lamp": [colour, energy, range]
-## (review lights). Without "lineup_at" there is no line-up (the attic's shoot, commands/attic.py). Writes
-## <out>/<view>.png, lineup.png, sheet.png and zones.json.
+## (review lights). Without "lineup_at" there is no line-up (the attic's shoot, commands/attic.py). Optional "walks":
+## [{"name", "radius", "step", "start": [x, h, z], "legs": [{"name", "height", "speed", "points": [[x, h, z]]}]}]: a capsule
+## walks each leg at its height (a crouch is a lower leg) and steps up ledges up to "step" high (the game's controller's
+## step_height_m); before a taller leg it must fit where it stands (standing up). The attic's climb-out (commands/attic.py walks). Writes <out>/<view>.png, lineup.png, sheet.png and zones.json
+## (with "walks": per walk "arrived" and its legs).
 
 const KitMaterials := preload("res://kit/kit_materials.gd")
 const WATCHDOG_S: float = 170.0
@@ -17,6 +20,9 @@ const UP := Vector3.UP
 const SHEET_W: int = 1280
 const GAP: int = 4
 const EMISSION_BOOST: float = 3.0  # the bulbs' glow at dusk (review only)
+const SUBSTEPS: int = 4  # walk moves per physics frame (the walk runs in simulated time, as house/walk.gd)
+const LEG_MAX_S: float = 30.0  # simulated seconds per leg
+const FIT_LIFT: float = 0.05  # the stand-up test's capsule floats this far over the floor
 
 var _req: Dictionary
 var _out: String
@@ -82,6 +88,10 @@ func _run(args: PackedStringArray) -> void:
 	root.add_child(layer)
 	var result: Dictionary = {"shots": {}}
 	result.merge(_counts)
+	if _req.has("walks"):
+		result["walks"] = {}
+		for w: Dictionary in _req["walks"]:
+			result["walks"][w["name"]] = await _walk_legs(w)
 	var images: Array[Image] = []
 	for v: Array in _req["views"]:
 		images.append(await _shot(v[0], v[1], _p(v[2]), _p(v[3]), result, float(v[4])))
@@ -311,3 +321,130 @@ func _save(image: Image, path: String) -> void:
 func _fail(why: String) -> void:
 	printerr("ZONES error %s" % why)
 	quit(1)
+
+
+# --- the capsule walks ---------------------------------------------------------------------------------------------
+## One capsule (radius r) walks the legs in order, each at its height and speed; a leg arrives when it reaches its last
+## point within 0.3 m in plan and 0.15 m in height. Before each leg the capsule at the leg's height must fit where it
+## stands (a stand-up needs the headroom). Stops at the first leg that does not fit or arrive.
+func _walk_legs(w: Dictionary) -> Dictionary:
+	var r: float = float(w["radius"])
+	var body: CharacterBody3D = CharacterBody3D.new()
+	var shape: CollisionShape3D = CollisionShape3D.new()
+	var cap: CapsuleShape3D = CapsuleShape3D.new()
+	cap.radius = r
+	cap.height = float(w["legs"][0]["height"])
+	shape.shape = cap
+	shape.position.y = cap.height / 2.0
+	body.add_child(shape)
+	body.floor_snap_length = 0.3
+	root.add_child(body)
+	body.global_position = _p3(w["start"]) + Vector3(0, 0.05, 0)
+	await physics_frame
+	var legs: Array = []
+	var ok: bool = true
+	for leg: Dictionary in w["legs"]:
+		var h: float = float(leg["height"])
+		var fits: bool = _fits(body, r, h)
+		cap.height = h
+		shape.position.y = h / 2.0
+		await physics_frame
+		var res: Dictionary = await _walk_leg(body, leg["points"], float(leg.get("speed", 3.0)), float(w.get("step", 0.0)))
+		res["name"] = leg.get("name", "")
+		res["height_m"] = h
+		res["fits"] = fits
+		legs.append(res)
+		if not (fits and res["arrived"]):
+			ok = false
+			break
+	body.queue_free()
+	await physics_frame
+	return {"radius_m": r, "arrived": ok, "legs": legs}
+
+
+func _fits(body: CharacterBody3D, r: float, h: float) -> bool:
+	var q: PhysicsShapeQueryParameters3D = PhysicsShapeQueryParameters3D.new()
+	var probe: CapsuleShape3D = CapsuleShape3D.new()
+	probe.radius = r
+	probe.height = h
+	q.shape = probe
+	q.transform = Transform3D(Basis(), body.global_position + Vector3(0, h / 2.0 + FIT_LIFT, 0))
+	q.exclude = [body.get_rid()]
+	return body.get_world_3d().direct_space_state.intersect_shape(q, 1).is_empty()
+
+
+func _walk_leg(body: CharacterBody3D, points: Array, speed: float, step: float) -> Dictionary:
+	var reached: int = 0
+	var dt: float = 1.0 / Engine.physics_ticks_per_second
+	var steps: int = 0
+	var stuck: int = 0
+	var last: Vector3 = body.global_position
+	var hit: Dictionary = {}
+	var start_pos: Vector3 = body.global_position
+	while steps < LEG_MAX_S * Engine.physics_ticks_per_second and reached < points.size() and stuck < 30:
+		if steps % SUBSTEPS == 0:
+			await physics_frame
+		steps += 1
+		var target: Vector3 = _p3(points[reached])
+		var flat: Vector3 = Vector3(target.x - body.global_position.x, 0, target.z - body.global_position.z)
+		if flat.length() < 0.3:
+			reached += 1
+			continue
+		var v: Vector3 = flat.normalized() * speed
+		v.y = 0.0 if body.is_on_floor() else body.velocity.y - 9.8 * dt
+		body.velocity = v
+		body.move_and_slide()
+		for i: int in body.get_slide_collision_count():
+			var c: KinematicCollision3D = body.get_slide_collision(i)
+			if c.get_normal().y < 0.7:  # a wall, not the floor: the last one is reported if the leg fails
+				var n: Node = c.get_collider() as Node
+				hit = {"collider": str(n.get_parent().name) + "/" + str(n.name) if n != null and n.get_parent() != null else str(n),
+					"at": _r3(c.get_position()), "normal": _r3(c.get_normal()), "feet_h": snappedf(body.global_position.y, 0.01)}
+		var moved: float = Vector2(body.global_position.x - last.x, body.global_position.z - last.z).length()
+		if step > 0.0 and body.is_on_floor() and body.is_on_wall() and moved < 0.5 * speed * dt:
+			_step_up(body, flat.normalized() * speed * dt, step)
+		stuck = stuck + 1 if body.global_position.distance_to(last) < 0.002 else 0
+		last = body.global_position
+	for i: int in 30:  # settle onto the floor (a step down off the sill)
+		if body.is_on_floor():
+			break
+		body.velocity = Vector3(0, body.velocity.y - 9.8 * dt, 0)
+		body.move_and_slide()
+	var end: Vector3 = body.global_position
+	# the leg stops 0.3 m (plan) short of its last point: at that point's height (a floor), or on a stair or slope at
+	# the last segment's height there (a round foot on a 45 deg ramp stands up to 0.17 m over it)
+	var a: Vector3 = _p3(points[-2]) if points.size() > 1 else start_pos
+	var b: Vector3 = _p3(points[-1])
+	var seg: float = Vector2(b.x - a.x, b.z - a.z).length()
+	var t: float = clampf(Vector2(end.x - a.x, end.z - a.z).length() / seg, 0.0, 1.0) if seg > 0.01 else 1.0
+	var arrived: bool = reached == points.size() and (absf(end.y - b.y) < 0.15 or absf(end.y - lerpf(a.y, b.y, t)) < 0.2)
+	return {"reached": reached, "of": points.size(), "end": [snappedf(end.x, 0.01), snappedf(end.y, 0.01),
+		snappedf(end.z, 0.01)], "seconds": snappedf(steps * dt, 0.01), "arrived": arrived,
+		"hit": {} if arrived else hit}
+
+
+func _r3(v: Vector3) -> Array:
+	return [snappedf(v.x, 0.01), snappedf(v.y, 0.01), snappedf(v.z, 0.01)]
+
+
+## The game's step: up to `step` over a ledge in the way, then forward (the shortest of a few reaches that clears it:
+## the capsule's round foot must pass the ledge's edge) and back down; kept only if the capsule ends higher.
+func _step_up(body: CharacterBody3D, fwd: Vector3, step: float) -> void:
+	var up: Vector3 = Vector3(0, step, 0)
+	var start: Transform3D = body.global_transform
+	if body.test_move(start, up):
+		return
+	var raised: Transform3D = start.translated(up)
+	for d: float in [0.1, 0.2, 0.3, 0.45]:
+		var ahead: Vector3 = fwd.normalized() * d
+		if body.test_move(raised, ahead):
+			return
+		body.global_transform = raised.translated(ahead)
+		body.move_and_collide(-up - Vector3(0, 0.05, 0))
+		if body.global_position.y > start.origin.y + 0.02:
+			return
+		body.global_transform = start
+
+
+func _p3(a: Array) -> Vector3:
+	return Vector3(float(a[0]), float(a[1]), float(a[2]))
