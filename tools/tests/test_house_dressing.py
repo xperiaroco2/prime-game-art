@@ -111,8 +111,10 @@ class GroundFloor(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.data = hl.load()
-        cls.files = hd.load(hl.LAYOUT_DIR / cls.data["settings"]["dressing_dir"])
         cls.rooms = {r["id"]: r for lv in cls.data["levels"] if lv["level"] == "ground" for r in lv["rooms"]}
+        # the ground floor's files (the basement's are #78's, test_house_basement)
+        cls.files = {rid: f for rid, f in hd.load(hl.LAYOUT_DIR / cls.data["settings"]["dressing_dir"]).items()
+                     if rid in cls.rooms}
 
     def test_eight_rooms(self):
         self.assertEqual(set(self.files), set(ROOMS))
@@ -147,7 +149,7 @@ class GroundFloor(unittest.TestCase):
     def test_review_shots_and_lamps(self):
         paths = [p for p in hd.spec_paths(self.data["settings"]) if p.is_file()]
         rep = hd.check(self.data, self.files, hd.catalogue(paths))
-        req = hd.review_request(self.data, rep["rooms"])
+        req = hd.review_request(self.data, {rid: r for rid, r in rep["rooms"].items() if rid in self.rooms})
         shots = {s["room"]: s for s in req["room_shots"]}
         self.assertEqual(set(shots), set(ROOMS))
         for rid, s in shots.items():

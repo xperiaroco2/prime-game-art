@@ -196,8 +196,9 @@ def walk(data: dict, folder: Path, routes: dict | None = None, errors: list[str]
     req = common.OUT / "house" / "walk_request.json"
     request = house_layout.walk_request(data)
     request["walks"] += house_routes.walks(data, request, routes or {})
-    if dressing:
-        request.update(house_dressing.review_request(data, dressing))
+    if dressing:  # the walked levels' rooms; the basement's have their own review (--basement)
+        walked = {r["id"] for lv in data["levels"] if lv["level"] in house_layout.WALK_LEVELS for r in lv["rooms"]}
+        request.update(house_dressing.review_request(data, {rid: r for rid, r in dressing.items() if rid in walked}))
     for name in request["closed"]:
         common.say(f"  not walked (closed kit leaf): {name}")
     req.write_text(json.dumps(request, indent=1), encoding="utf-8", newline="\n")
