@@ -40,12 +40,12 @@ def geom():
 
 
 def default_out(spec: dict[str, Any]) -> Path:
-    return common.raw_dir() / "props" / "task" / f"v{spec['version']}"
+    return common.raw_dir() / "props" / spec.get("out_dir", "task") / f"v{spec['version']}"
 
 
 def add_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--spec", type=Path, default=SPEC, help="the prop spec (default props/tasks.toml)")
-    parser.add_argument("--out", type=Path, help="output folder (default <raw>/props/task/v<version>)")
+    parser.add_argument("--out", type=Path, help="output folder (default <raw>/props/<out_dir>/v<version>: task, or the spec's out_dir)")
     parser.add_argument("--only", default="", help="comma-separated prop ids (default every prop)")
     parser.add_argument("--no-build", action="store_true", help="check the GLBs already in --out")
     parser.add_argument("--no-godot", action="store_true", help="skip the Godot import check")

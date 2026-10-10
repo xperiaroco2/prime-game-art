@@ -1047,6 +1047,8 @@ def build_prop(p: dict, spec: dict) -> Piece:
     pc = Piece(p["id"], p["kind"])
     BUILDERS[p["type"]](pc, p, spec)
     pc.meshes = [m for m in pc.meshes if m.faces]
+    if p["type"] in FITTED:
+        props_zone.fit(pc, p)
     for k, c in enumerate(pc.colliders):
         c["name"] = f"{pc.id}_col{k}-convcolonly"
     return pc
@@ -1108,7 +1110,10 @@ def check_prop(d: dict, p: dict, spec: dict) -> list[str]:
     got = [b["max"][i] - b["min"][i] for i in range(3)]
     if any(abs(got[i] - want[i]) > SIZE_TOLERANCE_M for i in range(3)):
         problems.append(f"{pid}: size {[round(v, 3) for v in got]} (x, y, z) is not the spec's {want}")
-    if abs(b["min"][1]) > 0.002:
+    if p.get("mount") == "hang":  # a hung strand: its pivot is on the hook line, the strand below it
+        if abs(b["max"][1]) > 0.002:
+            problems.append(f"{pid}: its highest point is at y {b['max'][1]}, not on its hook line")
+    elif abs(b["min"][1]) > 0.002:
         problems.append(f"{pid}: its lowest point is at y {b['min'][1]}, not on the floor")
     for i, axis in ((0, "x"), (2, "z")):
         if abs(b["min"][i] + b["max"][i]) > 2 * SIZE_TOLERANCE_M:
@@ -1167,3 +1172,10 @@ def table_md(rows: list[dict]) -> str:
                      f"({r['budget']}) | {', '.join(f'{v:g}' for v in r['size_m'])} | {r['count']} | {r['colliders']} | "
                      f"{'yes' if r['surfaces'] else '-'} | {extra} |")
     return "\n".join(lines) + "\n"
+
+
+# --- the zone props (art #81b, props/zones.toml): their builders live in props_zone.py, which uses the primitives above
+import props_zone  # noqa: E402
+
+BUILDERS.update(props_zone.BUILDERS)
+FITTED = props_zone.FITTED
