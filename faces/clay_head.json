@@ -1,0 +1,33 @@
+{
+ "schema": "prime-game-art/faces/clay-head/1",
+ "what": "The clay face kit's head as data (art #42): the pack head reshaped into the faces lab's egg-like bean head before the kit's features are seated on it, in the lab's order (order). nose_flatten pushes the pack nose back into the face (heads.flatten_nose); bean is the space warp onto a superellipsoid about the eye height (heads.bean_warp; hair_k: the hair and every head extra move with their nearest head vertices); rigid_margin is the margin under the kit's lowest mouth point down to which the face skin follows the Head bone alone (clayface/face.py rigid_full_z). Metres, the face toward -Y, world space at rest before the clay look's head scale. Read by tools/blender/um/clayface/kit.py (docs/faces.md, \"The bean head\").",
+ "lab_source": {
+  "path": "research/2026-10-05-faces/lab/params_r2.json",
+  "sha256": "215b230306dfd8475f1f7e1130c7fb78d4e8c7061206547c1e4675727e2c30cc",
+  "code": "research/2026-10-05-faces/lab/lab_base.py",
+  "code_sha256": "292bc06ef392e8056052dcc7f0e0bdae6be6df651d42a56e62816efd684c5311"
+ },
+ "order": ["nose_flatten", "bean_warp", "rigid_face_skin"],
+ "nose_flatten": {
+  "half_w": 0.026,
+  "side_x": 0.03,
+  "top_dz": 0.012,
+  "bottom_dz": 0.012,
+  "bulge": 0.004,
+  "fade": 0.012,
+  "smooth": 30
+ },
+ "bean": {
+  "centre_dz": -0.007,
+  "centre_y": -0.047,
+  "ax": 0.086,
+  "ay": 0.106,
+  "az_top": 0.138,
+  "az_bottom": 0.104,
+  "power": 2.3,
+  "strength": 0.85,
+  "fade_z": [0.035, 0.008],
+  "hair_k": 6
+ },
+ "rigid_margin": 0.005
+}

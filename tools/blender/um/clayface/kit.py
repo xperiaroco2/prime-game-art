@@ -12,6 +12,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[4]
 KIT_FILE = ROOT / "faces" / "clay_kit.json"
 HAIR_FILE = ROOT / "faces" / "clay_hair.json"
+HEAD_FILE = ROOT / "faces" / "clay_head.json"  # the bean head the features sit on (art #42)
 
 
 def _tup(v):
@@ -32,8 +33,10 @@ def load(path=KIT_FILE):
 
 KIT = load()
 HAIR_ITEMS = json.loads(HAIR_FILE.read_text(encoding="utf-8"))["items"]
-# the kit's data in the clay library's piece keys (claylook.keys_for): a changed feature or hair flag re-bakes the faces
-DATA_SHA = hashlib.sha256(KIT_FILE.read_bytes() + HAIR_FILE.read_bytes()).hexdigest()[:16]
+HEAD = load(HEAD_FILE)  # nose_flatten, bean (heads.bean_warp), rigid_margin, in the lab's order
+# the kit's data in the clay library's piece keys (claylook.keys_for): a changed feature, hair flag or head re-bakes the faces
+HEAD_SHA = hashlib.sha256(HEAD_FILE.read_bytes()).hexdigest()[:16]  # the hair and extras follow the head: in their keys
+DATA_SHA = hashlib.sha256(KIT_FILE.read_bytes() + HAIR_FILE.read_bytes() + HEAD_FILE.read_bytes()).hexdigest()[:16]
 
 # ----------------------------------------------------------------------------------------------- the features (data)
 SKINS = KIT["colours"]["skins"]  # the lab's clay skins (linear); a character's skin is any RGB (skin_key picks the tint)

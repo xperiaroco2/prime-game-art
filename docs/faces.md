@@ -261,18 +261,28 @@ the nose ball on the moustache) raises the nose until it clears the moustache by
 the check's least nose clearance (0.91 mm on m1, droopy with the long nose) is that floor, not a fault; the lab's
 2.75 mm came from its own head's nose and lip heights.
 
-**The noses.** Three styles (`faces/clay_kit.json` "noses"): `bulb` (the ball, the base nose), `long` (the lab's
-bean that sits on the face and droops down) and `cone` (a forward capsule, half sizes 16/18/16 mm, capsule 8 mm,
-embed 0.15), picked rarely (weight 0.3 against 1.0 for the others: about one face in ten). The cone is what the first
-port's long nose had turned into, and the engineer kept it as a third style (2026-10-10).
+**The noses.** Two styles (`faces/clay_kit.json` "noses"), the lab's round E: `bulb` (the ball, the base nose, on
+every face of the cast) and `long` (the lab's bean that sits on the face and droops down, a kit pick at scale 0.8).
+PR #106's forward `cone` is gone (art #42, 2026-10-10): it treated the symptom of the missing bean head below.
 
-**The pack nose is pushed back first.** The kit seats its nose by a ray cast on the pack head, and the pack heads carry
-their own nose about 17 mm out of the face. The lab built every face on heads with that nose flattened
-(`lab/lab_base.py` `flatten_nose` and `smooth_patch`); without it the kit's nose sat on the pack nose's tip and the
-clay pass merged both into one forward cone (the "Pinocchio" of PR #102's cast). `um/heads.py` `flatten_nose` and
-`smooth_patch` are the exact port; `clayface/adapter.build` runs them before the face is built (`NOSE_FLATTEN`; the
-mouth height is the eye height plus the layout's `eye_dz` minus `eye_mouth`; the report's `pack_nose_flattened`), so the
-cast and `faces --kit-check` both get it.
+**The bean head.** The engineer approved the lab's faces, which are two layers: the lab's own head, every pack head
+reshaped into an egg-like "bean" (`lab/lab_base.py` `bean_warp`, `params_r2.json`), and the clay kit's features on it.
+The first ports had only the features, so every face sat on the narrow, flat pack head: pressed in, the features glued
+on, the noses barely different (the pack nose dominated). `faces/clay_head.json` holds the lab's numbers and order;
+`clayface/adapter.build` runs, before the face is built (so the cast and `faces --kit-check` both get it):
+
+1. `heads.flatten_nose` and `smooth_patch` (`nose_flatten`): the pack heads carry their own nose about 17 mm out of
+   the face; inside a box from the eye height + `top_dz` down to the pack's mouth centre (the recipe's `face`
+   `mouth_dz`, as the lab's heads) + `bottom_dz`, every skin vertex in front of a smooth cheek surface moves back onto
+   it (without it the kit's ball sat on the pack nose's tip: the "Pinocchio" of PR #102's cast);
+2. `heads.bean_warp` (`bean`): every head vertex moves by `strength` toward a superellipsoid (radii `ax`, `ay`,
+   `az_top`, `az_bottom`, power `power`) centred at the eye height + `centre_dz`, y `centre_y`, fading out below the
+   chin over `fade_z` so the neck stays; the hair and every head extra (a beard, a hat, an earring) move with their
+   `hair_k` nearest head vertices (inverse distance), so they still sit on the head (the report's `bean_head`);
+3. `facekit.rigid_face_skin` down to `rigid_full_z` (`rigid_margin` under the kit's lowest mouth point).
+
+The clay library's piece keys carry the head data (`kit.DATA_SHA` for the head and the face, `kit.HEAD_SHA` and the
+head for the hair and the extras that follow it).
 
 **Whole heads and own extras.** The recipe validation refuses a head that drops part of its catalogue skull (m4's jaw)
 and an extra that is not a whole item of the character's body type (m1's blue strip), and the cast build measures each

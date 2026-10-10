@@ -1,6 +1,7 @@
 """The face kit on an assembled character (um/assemble.py build_character with face="kit", the clay look): the pack
-head's own ears and nose flattened, its face skin given to the Head bone alone, the kit's face built from the recipe
-character's `face_kit` picks and merged into two skinned meshes:
+head's own ears and nose flattened, the head reshaped into the faces lab's bean head (the hair and extras following
+it), its face skin given to the Head bone alone, the kit's face built from the recipe character's `face_kit` picks
+and merged into two skinned meshes:
 
 - `<id>_eyes`: the eye whites and pupils (one glossy material whose colour is the vertex colour EYE_RGB: white or
   pupil per face; not baked; the look keys), the part godot-check finds the eyes by;
@@ -24,15 +25,17 @@ from .face import build_face, game_mesh, rigid_full_z
 
 EYE_MATERIAL = "fb_eye"  # the eyes' one material (shared by every character)
 EYE_RGB = "eye_rgb"  # its colour attribute (corner domain, linear float): kit.FIXED's white or pupil per face
+BODY_PARTS = ("top", "bottom", "shoes")  # every other part but the head sits on it and follows the bean warp
 EYE_PIECES = ("whites", "pupils")  # the pieces of the eyes object; every other piece goes into the face object
 EAR_TUCK_X = 0.082  # the pack head's own ears flattened to this half-width (m) unless the recipe tucks them itself
 RIGID_FRONT_Y = -0.07  # the face skin in front of this world y follows the Head bone alone (facekit.rigid_face_skin)
 RIGID_BLEND_M = 0.03  # ... fading back to the pack's weights over this height below the kit's lowest point
-# the pack nose pushed back into the face before the kit's nose is seated (heads.flatten_nose): the faces lab's
-# params_r2.json "nose_flatten", on which every lab face was built (art #42: without it the kit's ball sat on the pack
-# nose's tip and read as a forward cone); the mouth centre the box ends at is the kit's (LAYOUT eye_dz, eye_mouth)
-NOSE_FLATTEN = {"half_w": 0.026, "side_x": 0.03, "top_dz": 0.012, "bottom_dz": 0.012, "bulge": 0.004, "fade": 0.012,
-                "smooth": 30}
+# the bean head (art #42; faces/clay_head.json, the faces lab's params_r2.json): the pack nose pushed back into the
+# face (heads.flatten_nose), then the pack head reshaped into the lab's egg-like bean (heads.bean_warp; the hair and
+# the head extras follow it), then the face skin made rigid: the lab's order (build_heads_r2), on which every lab face
+# was built. Without the bean the kit's features sat on the narrow, flat pack head: pressed in, glued on.
+NOSE_FLATTEN = dict(kit.HEAD["nose_flatten"])
+BEAN = dict(kit.HEAD["bean"])
 
 
 class KitHead:
@@ -100,7 +103,7 @@ def one_eye_material(eyes):
     return {m.name: int((idx == i).sum()) for i, m in enumerate(old) if m}
 
 
-def build(arm, parts, coll, rc, eyes_at, skin_mat):
+def build(arm, parts, coll, rc, eyes_at, skin_mat, pack_mouth_dz=None):
     """Builds the kit face on parts["head"] (rest pose, at the origin, after the skin material is set). Returns
     ({"eyes": obj, "face": obj}, report)."""
     cid, g = rc["id"], rc["gender"]
@@ -112,9 +115,13 @@ def build(arm, parts, coll, rc, eyes_at, skin_mat):
     item = kit.hair_item(rc["hair"], g)
     picks = kit.picks_for(spec, g)
     h = KitHead(cid, arm, parts, coll, eyes_at, item, skin_mat)
-    mouth_z = h.eye_z() + kit.LAYOUT["eye_dz"] - kit.LAYOUT["eye_mouth"]
+    # the lab flattened the nose down to the pack's mouth centre (the recipe's mouth_dz); else the kit's mouth
+    mouth_z = h.eye_z() + (pack_mouth_dz if pack_mouth_dz is not None
+                           else kit.LAYOUT["eye_dz"] - kit.LAYOUT["eye_mouth"])
     rep["pack_nose_flattened"] = heads.flatten_nose(head, h.x, h.eye_z(), mouth_z, **NOSE_FLATTEN)
-    z_full = rigid_full_z(h)
+    followers = [o for role, o in parts.items() if role not in BODY_PARTS and o is not head]
+    rep["bean_head"] = heads.bean_warp(head, h.x, h.eye_z(), followers, **BEAN)
+    z_full = rigid_full_z(h, margin=kit.HEAD["rigid_margin"])
     n, most = fk.rigid_face_skin(head, RIGID_FRONT_Y, z_full, z_full - RIGID_BLEND_M)
     rep["rigid_face_skin"] = {"z_full": round(z_full, 4), "vertices": n, "largest_change": round(most, 3)}
     skin = tuple(rc["skin"]) if rc.get("skin") else tuple(skin_mat.diffuse_color[:3])

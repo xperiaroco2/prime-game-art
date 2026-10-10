@@ -194,3 +194,64 @@ def smooth_patch(head, inside, iterations=30):
             me.vertices[i].co = inv @ Vector((p.x, ys[g], p.z))
     me.update()
     return len(free)
+
+
+def bean_warp(head, x, eye_z, followers=(), centre_dz=-0.007, centre_y=-0.047, ax=0.086, ay=0.106, az_top=0.138,
+              az_bottom=0.104, power=2.3, strength=0.85, fade_z=(0.035, 0.008), hair_k=6):
+    """Reshapes the pack head into the faces lab's egg-like 'bean' head (art #42), the head every lab face was built
+    on: the lab's lab_base.bean_warp (params faces/clay_head.json "bean"), run after flatten_nose and before the face
+    skin is made rigid, as the lab's build_heads_r2 does.
+
+    A space warp: every head vertex moves toward a superellipsoid (|dx/ax|^p + |dy/ay|^p + |dz/az|^p = 1, centred at
+    world (x, centre_y, eye_z + centre_dz); az_top above the centre, az_bottom below it, so the chin comes up) along
+    the ray from the centre, by `strength`; below the chin the share fades to nothing over fade_z (from chin -
+    fade_z[0] to chin - fade_z[1], smoothstep) so the neck stays where it is. Each follower (the hair, a beard, a hat,
+    an earring) moves with the skull under it: each vertex by the mean displacement of its hair_k nearest head
+    vertices (inverse distance + 4 mm), so it still sits on the head. World space, rest pose, the face toward -Y.
+    Returns what moved."""
+    from mathutils.kdtree import KDTree
+    me = head.data
+    mw = head.matrix_world
+    inv = mw.inverted()
+    pts = [mw @ v.co for v in me.vertices]
+    c = Vector((x, centre_y, eye_z + centre_dz))
+    front = [p for p in pts if p.y < -0.11 and abs(p.x - x) < 0.02]
+    chin = min(p.z for p in front)
+    z0, z1 = chin - fade_z[0], chin - fade_z[1]
+    disp, most = [], 0.0
+    for p in pts:
+        d = p - c
+        az = az_top if d.z >= 0 else az_bottom
+        f = (abs(d.x) / ax) ** power + (abs(d.y) / ay) ** power + (abs(d.z) / az) ** power
+        if f < 1e-12:
+            disp.append(Vector())
+            continue
+        target = c + d / (f ** (1.0 / power))
+        w = 1.0 if p.z >= z1 else (0.0 if p.z <= z0 else (p.z - z0) / (z1 - z0))
+        w = w * w * (3 - 2 * w)  # smoothstep
+        dv = (target - p) * (strength * w)
+        disp.append(dv)
+        most = max(most, dv.length)
+    for v, p, dv in zip(me.vertices, pts, disp):
+        v.co = inv @ (p + dv)
+    me.update()
+    kd = KDTree(len(pts))
+    for i, p in enumerate(pts):
+        kd.insert(p, i)
+    kd.balance()
+    moved = {}
+    for o in followers:
+        if o is None:
+            continue
+        ow = o.matrix_world
+        oinv = ow.inverted()
+        for v in o.data.vertices:
+            p = ow @ v.co
+            near = kd.find_n(p, hair_k)
+            ws = [1.0 / (dist + 0.004) for _, _, dist in near]
+            dv = sum((disp[i] * w for (_, i, _), w in zip(near, ws)), Vector()) / sum(ws)
+            v.co = oinv @ (p + dv)
+        o.data.update()
+        moved[o.name] = len(o.data.vertices)
+    return {"centre": [round(k, 4) for k in c], "chin_z_before": round(chin, 4), "largest_move_mm": round(most * 1000, 1),
+            "followers_moved": moved, "radii": [ax, ay, az_top, az_bottom], "power": power, "strength": strength}

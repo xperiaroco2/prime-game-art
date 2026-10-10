@@ -148,7 +148,8 @@ def build_character(packs, recipe, rc, coll, face="pack"):
     update()
     if face == "kit":
         from .clayface import adapter
-        built, rep["face_kit"] = adapter.build(arm, parts, coll, rc, eyes_at, skin)
+        built, rep["face_kit"] = adapter.build(arm, parts, coll, rc, eyes_at, skin,
+                                               pack_mouth_dz=recipe.get("face", {}).get(g, {}).get("mouth_dz"))
         parts.update(built)
         for role, o in built.items():
             rep["parts"][role] = {"kit": True, "object": o.name, "bone": "Head (weight 1.0)"}
