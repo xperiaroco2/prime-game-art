@@ -398,3 +398,129 @@ def scene_nodes(sc, resolved: list[dict], res_of) -> list[str]:
                 f"use_collision = {'false' if r['collision'] == 'none' else 'true'}",
                 "metadata/placeholder = true"] + meta))
     return placeholders
+
+
+# ---------------------------------------------------------------- the review pictures
+
+EYE = 1.6
+SHOT_IN = 0.3  # the room shot's camera: metres inside the door's wall line
+FEATURES = [  # (shot, room, prop id, metres in front of it, title): a prop shot from where its front reads
+    ("kitchen_order_board", "kitchen", "order_board", 4.0, "kitchen: the order board over the assembly island"),
+]
+## The package colours to check under the c2 lamps (look.md section 4, item 6: cyan reads green, purple pink, white cream
+## under amber): 0.25 m cubes in a row on the top of SWATCH_ON in its room, shot close; walk.gd samples each.
+SWATCH_ON = ("kitchen", "assembly_island")
+SWATCHES = [("cardboard", "a8855e"), ("white", "f2f2f2"), ("cyan", "3fb8c8"), ("purple", "8a4fb0"),
+            ("terracotta", "b5593a"), ("mustard", "d0a02c")]
+
+
+def front(yaw: float) -> tuple[float, float]:
+    """The (x, z) direction a prop's front (+Z) looks after its Y rotation."""
+    return _rot(yaw, 0.0, 1.0)
+
+
+def lamp_point(r: dict) -> tuple[float, float, float]:
+    """Room-local (x, h, z) of a fixture's light: under a ceiling fixture, in front of a wall one, in a floor lamp's top."""
+    x, h, z = r["at"]
+    H = r["size"][2]
+    if r["pivot"] == "ceiling":
+        return x, h - H - 0.05, z
+    if r["pivot"] == "wall":
+        fx, fz = front(r["yaw"])
+        d = r["size"][1] + 0.1
+        return x + fx * d, h + H * 0.6, z + fz * d
+    return x, h + H * 0.9, z
+
+
+def review_request(data: dict, dressing: dict) -> dict:
+    """What walk.gd shoots for the dressed rooms (docs/house.md, "Dressing"): `lamps`, a c2 stand-in light at every
+    fixture (world x, y, z) and `lamp_rooms` (those rooms lose the shell's one centre lamp); `room_shots`, one per
+    dressed room from its deepest door at eye height looking across the room (world points, the room's scene node for
+    its dressing triangles); `features` (FEATURES)."""
+    lamps, lamp_rooms, shots, features = [], [], [], []
+    for lv in data["levels"]:
+        fy = lv["floor_y"]
+        for room in lv["rooms"]:
+            rep = dressing.get(room["id"])
+            if rep is None:
+                continue
+            rx, rz, w, d = room["rect"]
+            fixtures = [r for r in rep["resolved"] if r["kind"] == "fixtures" and not r.get("outside")]
+            if fixtures and room["kind"] == "room":
+                lamp_rooms.append(room["id"])
+            for r in rep["resolved"]:
+                if r["kind"] == "fixtures":
+                    x, h, z = lamp_point(r)
+                    lamps.append({"room": room["id"], "id": r["id"], "at": [rx + x, fy + h, rz + z]})
+            sh = shell(lv, room, data["levels"])
+            best = None
+            for dr in sh["doors"]:
+                nx, nz = {"N": (0, 1), "S": (0, -1), "W": (1, 0), "E": (-1, 0)}[dr["side"]]
+                depth = {"N": d, "S": d, "W": w, "E": w}[dr["side"]]
+                if best is None or depth > best[0]:
+                    best = (depth, dr, nx, nz)
+            if best is None:
+                continue
+            depth, dr, nx, nz = best
+            x, z = dr["at"]
+            cx, cz = w / 2, d / 2
+            along = (cx - x) * abs(nz) + (cz - z) * abs(nx)  # pull the aim towards the room's middle across the door
+            tx, tz = x + nx * depth * 0.75 + abs(nz) * along * 0.6, z + nz * depth * 0.75 + abs(nx) * along * 0.6
+            shots.append({"name": f"room_{room['id']}", "room": room["id"], "level": lv["level"],
+                          "title": f"{room.get('title', room['id'])} from its door {dr['side']}",
+                          "node": f"{lv['node']}/Rooms/{room['node']}",
+                          "from": [rx + x + nx * SHOT_IN, fy + EYE, rz + z + nz * SHOT_IN],
+                          "to": [rx + tx, fy + 1.1, rz + tz]})
+    for name, rid, pid, dist, title in FEATURES:
+        lv = next((v for v in data["levels"] for r in v["rooms"] if r["id"] == rid), None)
+        rep = dressing.get(rid)
+        hit = [r for r in rep["resolved"] if r["id"] == pid] if rep else []
+        if lv is None or not hit:
+            continue
+        room = next(r for r in lv["rooms"] if r["id"] == rid)
+        rx, rz = room["rect"][0], room["rect"][1]
+        r = hit[0]
+        x, h, z = r["at"]
+        fx, fz = front(r["yaw"])
+        aim = lv["floor_y"] + h + r["size"][2] * 0.6
+        features.append({"name": name, "title": title,
+                         "from": [rx + x + fx * dist, lv["floor_y"] + EYE, rz + z + fz * dist],
+                         "to": [rx + x, aim, rz + z]})
+    swatches = {}
+    rid, pid = SWATCH_ON
+    for lv in data["levels"]:
+        for room in lv["rooms"]:
+            hit = [r for r in dressing.get(room["id"], {}).get("resolved", []) if r["id"] == pid]                 if room["id"] == rid else []
+            if hit:
+                r = hit[0]
+                x, h, z = r["at"]
+                fx, fz = front(r["yaw"])
+                top = [room["rect"][0] + x, lv["floor_y"] + h + r["size"][2], room["rect"][1] + z]
+                swatches = {"at": top, "along": [-fz, fx], "facing": [fx, fz],
+                            "colors": [{"name": n, "hex": c} for n, c in SWATCHES]}
+    return {"lamps": lamps, "lamp_rooms": lamp_rooms, "room_shots": shots, "features": features,
+            "swatches": swatches}
+
+
+def _lab(hexc: str) -> tuple[float, float, float]:
+    """CIE L*, C*, h (degrees) of an sRGB hex colour (D65)."""
+    rgb = [int(hexc[i:i + 2], 16) / 255 for i in (0, 2, 4)]
+    lin = [c / 12.92 if c <= 0.04045 else ((c + 0.055) / 1.055) ** 2.4 for c in rgb]
+    x = (0.4124 * lin[0] + 0.3576 * lin[1] + 0.1805 * lin[2]) / 0.95047
+    y = 0.2126 * lin[0] + 0.7152 * lin[1] + 0.0722 * lin[2]
+    z = (0.0193 * lin[0] + 0.1192 * lin[1] + 0.9505 * lin[2]) / 1.08883
+    f = [t ** (1 / 3) if t > 0.008856 else 7.787 * t + 16 / 116 for t in (x, y, z)]
+    L, a, b = 116 * f[1] - 16, 500 * (f[0] - f[1]), 200 * (f[1] - f[2])
+    return L, math.hypot(a, b), math.degrees(math.atan2(b, a)) % 360
+
+
+def swatch_report(colors: list[dict]) -> list[str]:
+    """One line per sampled swatch: its paint and what it reads as under the lamps (L*, C*, hue and the hue's shift)."""
+    out = []
+    for c in colors:
+        L0, C0, h0 = _lab(c["hex"])
+        L1, C1, h1 = _lab(c["seen"])
+        dh = (h1 - h0 + 180) % 360 - 180
+        out.append(f"{c['name']}: #{c['hex']} (L* {L0:.0f}, C* {C0:.0f}, h {h0:.0f}) reads #{c['seen']} "
+                   f"(L* {L1:.0f}, C* {C1:.0f}, h {h1:.0f}; hue {dh:+.0f})")
+    return out

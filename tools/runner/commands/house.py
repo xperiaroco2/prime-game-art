@@ -78,7 +78,7 @@ def run(args: argparse.Namespace) -> int:
     if args.walk or args.basement:
         errors = stage(data, summary, found)
         if args.walk:
-            code = walk(data, args.walk.resolve(), routes, errors)
+            code = walk(data, args.walk.resolve(), routes, errors, dressing)
         if args.basement:
             code = basement(data, args.layouts, args.props_spec, args.basement.resolve(), errors) or code
     return code
@@ -184,15 +184,20 @@ def stage(data: dict, summary: dict, props: dict | None = None) -> list[str]:
     return errors
 
 
-def walk(data: dict, folder: Path, routes: dict | None = None, errors: list[str] = ()) -> int:
+def walk(data: dict, folder: Path, routes: dict | None = None, errors: list[str] = (),
+         dressing: dict | None = None) -> int:
     """Runs godot/house/walk.gd in a window off-screen (pictures need one) on the staged house: every doorway of the
     ground and upper floors and every flight, walked by a 1.36 m capsule; the design doc's routes (routes.toml) at their
     speed, judged against the doc's times (also into tools/out/house/routes.json); the stills, the plan, sheet.png and
-    the exterior at dusk (exterior.png); draw calls per view."""
+    the exterior at dusk (exterior.png); draw calls per view. With a dressing: c2 stand-in lamps at its fixtures, one
+    shot per dressed room from its door and rooms.png (house_dressing.review_request), and per room the view's draw
+    calls and the dressing's triangles."""
     folder.mkdir(parents=True, exist_ok=True)
     req = common.OUT / "house" / "walk_request.json"
     request = house_layout.walk_request(data)
     request["walks"] += house_routes.walks(data, request, routes or {})
+    if dressing:
+        request.update(house_dressing.review_request(data, dressing))
     for name in request["closed"]:
         common.say(f"  not walked (closed kit leaf): {name}")
     req.write_text(json.dumps(request, indent=1), encoding="utf-8", newline="\n")
@@ -221,6 +226,11 @@ def walk(data: dict, folder: Path, routes: dict | None = None, errors: list[str]
                    f"({w['reached']}/{w['of']} points, {w['seconds']} s)")
     for name, info in result["shots"].items():
         common.say(f"  {name}: {info['draw_calls']} draw calls, {info['objects']} objects, {info['primitives']} primitives")
+    for name, info in result.get("rooms", {}).items():
+        common.say(f"  {name}: {info['draw_calls']} draw calls, {info['primitives']} primitives in view; dressing "
+                   f"{info['dressing_meshes']} meshes, {info['dressing_triangles']} triangles")
+    for line in house_dressing.swatch_report(result.get("swatches", [])):
+        common.say(f"  swatch {line}")
     common.say(f"  {result['instances']['mesh_instances']} mesh instances, {result['instances']['static_bodies']} bodies; "
                f"sheet {(folder / 'sheet.png').as_posix()}")
     if failed or errors:

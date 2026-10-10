@@ -1,0 +1,103 @@
+# The terrace's dressing (art #75b, docs/house.md "Dressing"): the props and light fixtures of one room, as data.
+# at = [x, h, z]: room-local metres like the room's stations (x east, h above the floor, z south from the room's
+# north-west corner) at the prop's pivot (floor: the footprint's centre; wall: the back's bottom centre on the wall's
+# face; ceiling: the top's centre). face = the way the prop's front (+Z) looks: N, E, S or W (or yaw = degrees).
+# Ids are the dressing library's (props/library.toml, #87) and the task props' (props/tasks.toml, #82); an id with
+# no GLB yet is generated as a named, sized placeholder box. Positions are the engineer's to change.
+room = "terrace"
+
+# The delivery drop-off (TerraceTable at 7, 4) with its four chairs; the balcony stairs stand on x 16..18, z 0..5.
+[[props]]
+id = "terrace_table"
+at = [7.0, 0, 4.0]
+station = "TerraceTable"
+
+[[props]]
+id = "terrace_chair"
+at = [6.6, 0, 3.22]
+station = "TerraceTable"
+
+[[props]]
+id = "terrace_chair"
+at = [7.4, 0, 3.22]
+station = "TerraceTable"
+
+[[props]]
+id = "terrace_chair"
+at = [6.6, 0, 4.78]
+face = "N"
+station = "TerraceTable"
+
+[[props]]
+id = "terrace_chair"
+at = [7.4, 0, 4.78]
+face = "N"
+station = "TerraceTable"
+
+# Q9 default B: the terrace door's leaf stands open onto the terrace against its east jamb; no collision.
+[[props]]
+id = "door_leaf"
+at = [14.73, 0, 7.2]
+yaw = 90
+size = [1.4, 0.05, 2.1]
+collision = "none"
+note = "placeholder until a door leaf prop exists (Q9)"
+
+[[props]]
+id = "planter_pot"
+at = [1.0, 0, 0.5]
+
+[[props]]
+id = "planter_pot"
+at = [4.0, 0, 0.5]
+
+[[props]]
+id = "planter_pot"
+at = [10.0, 0, 0.5]
+
+[[props]]
+id = "planter_pot"
+at = [13.0, 0, 0.5]
+
+[[props]]
+id = "planter_pot"
+at = [19.5, 0, 0.5]
+
+[[props]]
+id = "potted_plant"
+at = [12.2, 0, 7.5]
+
+[[props]]
+id = "potted_plant"
+at = [15.8, 0, 7.5]
+
+[[fixtures]]
+id = "lantern"
+at = [7.0, 0.75, 4.0]
+station = "TerraceTable"
+
+[[fixtures]]
+id = "lantern"
+at = [0.4, 0, 7.5]
+
+[[fixtures]]
+id = "lantern"
+at = [19.6, 0, 7.5]
+
+[[fixtures]]
+id = "lantern"
+at = [19.6, 0, 0.4]
+
+# Under the balcony slab (3.0 m), along x.
+[[fixtures]]
+id = "string_lights"
+at = [10.5, 3.0, 6.5]
+
+[[fixtures]]
+id = "string_lights"
+at = [15.5, 3.0, 6.5]
+
+[[fixtures]]
+id = "porch_lamp"
+at = [15.3, 1.9, 7.9]
+face = "N"
