@@ -110,7 +110,7 @@ class SecondFloor(unittest.TestCase):
             self.assertTrue(any(min(a[0], b[0]) <= door[0] <= max(a[0], b[0]) and min(a[1], b[1]) <= door[1] <= max(a[1], b[1])
                                 for a, b in zip(plan, plan[1:])), door)
         self.assertIn([39.0, 3.2, 21.0], pts)  # the external stairs' top
-        self.assertIn([39.0, 0.0, 15.0], pts)  # their foot on the yard (Q6)
+        self.assertIn([39.0, 0.0, 14.2], pts)  # off their foot on the yard (Q6: the last step ends at y 15)
         length, _ = hl.loop_length(pts)
         self.assertGreater(length, 46 - 12)  # the doc counts each level change as 6 m
 
