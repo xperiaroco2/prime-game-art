@@ -93,6 +93,21 @@ class Garden(unittest.TestCase):
                        {"id": "glass_roof_2x2_end", "x": 60, "y": 18, "h": 2.4, "turn": 180}]
         self.assertEqual(hg.gable_gaps(self.data, ends), [])
 
+    def test_an_end_bay_has_a_rafter_at_its_far_end(self):
+        # the slit is between the gable's top (y = r z) and the pane GLASS_LIFT over it, at the bay's x 2: an end bay's
+        # solid collider fills it there; a plain bay's does not
+        kg = hl.kit_geom()
+        spec = self.layout["spec"]
+        r = kg.pitch(spec)["r"]
+        for pid, closed in (("glass_roof_2x2_end", True), ("glass_roof_2x2", False)):
+            pc = kg.build_piece(self.layout["pieces"][pid], spec)
+            solid = [c["points"] for c in pc.colliders if c["group"] == "solid"]
+            hit = any(min(q[0] for q in pts) <= 2 - 0.02 and max(q[0] for q in pts) >= 2 - 1e-6
+                      and min(q[1] - r * q[2] for q in pts) <= 1e-6
+                      and max(q[1] - r * q[2] for q in pts) >= kg.GLASS_LIFT - 1e-6 for pts in solid)
+            with self.subTest(pid):
+                self.assertEqual(hit, closed)
+
 
 class Rules(unittest.TestCase):
     @classmethod
