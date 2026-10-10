@@ -1577,6 +1577,126 @@ def build_fruit_bowl(m, s, R, prm, rng):
              _r(R, 1 + i % max(1, len(R) - 1)), 6, 3)
 
 
+def build_laundry_basket(m, s, R, prm, rng):
+    """A wicker basket heaped with clothes: the tapered body, its rim and three folds of laundry over the top."""
+    L, W, H = s
+    hx, hz = L / 2, W / 2
+    body, cloth = R[0], _r(R, 1)
+    hb = H * 0.72
+    cyl(m, "y", (0.0, 0.0), hx * 0.88, 0.0, hb, body, 10, r1=hx, sq=hz / hx, caps=(True, False))
+    cyl(m, "y", (0.0, 0.0), hx * 0.97, hb - 0.03, hb, body, 10, sq=hz / hx, caps=(False, True))
+    blob(m, (-0.06, hb, 0.02), hx * 0.62, H - hb, hz * 0.7, cloth, 8, 4, ry_bottom=0.04)
+    blob(m, (0.1, hb + 0.01, -0.04), hx * 0.45, (H - hb) * 0.75, hz * 0.6, _r(R, 2), 8, 4, ry_bottom=0.04)
+    bar(m, (hx * 0.55, hb + 0.02, hz * 0.3), (hx * 0.9, hb * 0.55, hz * 0.55), 0.08, cloth, 0.03)
+
+
+def build_laundry_pile(m, s, R, prm, rng):
+    """A heap of clothes on the floor: four flattened lumps in two fabrics, one shirt sleeve trailing."""
+    L, W, H = s
+    hx, hz = L / 2, W / 2
+    blob(m, (-hx * 0.3, 0.0, 0.0), hx * 0.62, H, hz * 0.85, R[0], 10, 4, floor=0.0)
+    blob(m, (hx * 0.35, 0.0, -hz * 0.2), hx * 0.55, H * 0.7, hz * 0.7, _r(R, 1), 8, 4, floor=0.0)
+    blob(m, (hx * 0.1, H * 0.45, hz * 0.25), hx * 0.4, H * 0.5, hz * 0.45, _r(R, 2), 8, 4, floor=H * 0.45)
+    bar(m, (hx * 0.45, 0.02, hz * 0.35), (hx * 0.95, 0.02, hz * 0.85), 0.12, _r(R, 1), 0.04)
+
+
+def build_drying_rack(m, s, R, prm, rng):
+    """A folding clothes airer: two A-frames of tube, eight rails, and towels and shirts hung over them."""
+    L, W, H = s
+    hx, hz = L / 2, W / 2
+    metal = R[0]
+    for x in (-hx + 0.02, hx - 0.02):
+        for z in (-hz + 0.02, hz - 0.02):
+            rod(m, (x, 0.0, z), (x, H - 0.02, 0.0), 0.012, metal, 5)
+        rod(m, (x, H * 0.35, -hz * 0.62), (x, H * 0.35, hz * 0.62), 0.008, metal, 4)
+    rod(m, (-hx + 0.02, H - 0.02, 0.0), (hx - 0.02, H - 0.02, 0.0), 0.012, metal, 5)
+    rails = []
+    for f in (0.35, 0.62, 0.85):
+        for sz in (-1, 1):
+            z = sz * (hz - 0.02) * (1 - f)
+            rails.append((H * f, z))
+            rod(m, (-hx + 0.02, H * f, z), (hx - 0.02, H * f, z), 0.006, metal, 4, caps=False)
+    hang = ((-hx * 0.55, 0.42, H * 0.85, -1, _r(R, 1)), (hx * 0.15, 0.5, H * 0.62, 1, _r(R, 2)),
+            (hx * 0.62, 0.3, H * 0.85, 1, _r(R, 3)), (-hx * 0.15, 0.36, H * 0.62, -1, _r(R, 2)))
+    for x, w, y, sz, role in hang:
+        z = sz * (hz - 0.02) * (1 - y / H)
+        drop = min(0.45, y - 0.1)
+        box(m, (x - w / 2, y - drop, z - 0.012), (x + w / 2, y + 0.01, z + 0.012), role)
+
+
+def build_open_box(m, s, R, prm, rng):
+    """A half-packed cardboard box: four flaps open and leaning out, books and a folded cloth inside."""
+    L, W, H = s
+    hx, hz = L / 2, W / 2
+    card = R[0]
+    hb = H * 0.66
+    t = 0.012
+    box(m, (-hx, 0.0, -hz), (hx, t, hz), card, "-y+y")
+    box(m, (-hx, 0.0, -hz), (hx, hb, -hz + t), card)
+    box(m, (-hx, 0.0, hz - t), (hx, hb, hz), card)
+    box(m, (-hx, 0.0, -hz + t), (-hx + t, hb, hz - t), card)
+    box(m, (hx - t, 0.0, -hz + t), (hx, hb, hz - t), card)
+    fl = H - hb
+    for sz in (-1, 1):
+        z0 = sz * hz
+        box(m, (-hx + 0.01, hb, min(z0, z0 + sz * t)), (hx - 0.01, hb + fl * 0.8, max(z0, z0 + sz * t)), card)
+    for sx in (-1, 1):
+        x0 = sx * hx
+        box(m, (min(x0, x0 + sx * t), hb, -hz + 0.01), (max(x0, x0 + sx * t), H, hz - 0.01), card)
+    cbox(m, (-hx + 0.04, t, -hz + 0.04), (0.02, hb + 0.04, hz * 0.4), _r(R, 1), c=0.01)
+    cbox(m, (0.04, t, -hz + 0.05), (hx - 0.04, hb * 0.82, hz - 0.05), _r(R, 2), c=0.01)
+
+
+def build_boots(m, s, R, prm, rng):
+    """A pair of tall boots: sole, foot and shaft each, the right one slumped against the left."""
+    L, W, H = s
+    sw = L / 2 * 0.9
+    for i, sx in enumerate((-1, 1)):
+        x = sx * L / 4
+        box(m, (x - sw / 2, 0.0, -W / 2), (x + sw / 2, 0.025, W / 2), _r(R, 1))
+        cbox(m, (x - sw / 2 * 0.92, 0.025, -W / 2 * 0.95), (x + sw / 2 * 0.92, 0.12, W / 2 * 0.9), R[0], c=0.01)
+        top = H if i == 0 else H * 0.8
+        cbox(m, (x - sw / 2 * 0.9, 0.08, -W / 2 * 0.95), (x + sw / 2 * 0.9, top, -W / 2 * 0.95 + sw * 0.95), R[0],
+             c=0.01)
+
+
+def build_toy_spill(m, s, R, prm, rng):
+    """A kid's toys spilled on the floor: blocks, a ball, a toy truck and a picture book."""
+    L, W, H = s
+    hx, hz = L / 2, W / 2
+    a = 0.07
+    spots = [(-hx + 0.08, -hz + 0.12, 0.0), (-hx + 0.08, -hz + 0.12, a), (-hx + 0.22, -hz + 0.1, 0.0),
+             (0.05, hz - 0.1, 0.0), (hx - 0.3, -hz + 0.08, 0.0), (-0.1, -0.05, 0.0)]
+    for i, (x, z, y) in enumerate(spots):
+        box(m, (x - a / 2, y, z - a / 2), (x + a / 2, y + a - 0.003, z + a / 2), _r(R, i % len(R)))
+    r = min(H / 2, 0.09)
+    blob(m, (hx - r - 0.02, r, hz - r - 0.02), r, r, r, _r(R, 1), 8, 5)
+    tx, tz = -hx + 0.3, hz - 0.15
+    cbox(m, (tx - 0.12, 0.03, tz - 0.06), (tx + 0.12, 0.09, tz + 0.06), _r(R, 2), c=0.006)
+    cbox(m, (tx + 0.04, 0.09, tz - 0.055), (tx + 0.12, 0.14, tz + 0.055), _r(R, 3), c=0.006)
+    for wx in (tx - 0.08, tx + 0.08):
+        cyl(m, "z", (wx, 0.03), 0.03, tz - 0.07, tz + 0.07, R[0], 6)
+    box(m, (0.12, 0.0, -hz + 0.05), (0.36, 0.02, -hz + 0.23), _r(R, 3))
+
+
+def build_radiator(m, s, R, prm, rng):
+    """A painted column radiator on two wall brackets: columns, top and bottom headers, a valve (wall pivot)."""
+    L, W, H = s
+    hx = L / 2
+    paint, metal = R[0], _r(R, 1)
+    zb = -W / 2
+    n = max(4, int(L / 0.09))
+    pitch = (L - 0.04) / n
+    for i in range(n):
+        x = -hx + 0.02 + pitch * (i + 0.5)
+        box(m, (x - pitch * 0.32, 0.04, zb + 0.02), (x + pitch * 0.32, H - 0.04, zb + W - 0.005), paint)
+    cbox(m, (-hx + 0.02, 0.0, zb + 0.03), (hx - 0.02, 0.05, zb + W - 0.015), paint, c=0.008)
+    cbox(m, (-hx + 0.02, H - 0.05, zb + 0.03), (hx - 0.02, H, zb + W - 0.015), paint, c=0.008)
+    for x in (-hx * 0.6, hx * 0.6):
+        box(m, (x - 0.02, H * 0.6, zb), (x + 0.02, H * 0.66, zb + 0.03), metal)
+    cyl(m, "x", (0.03, zb + W * 0.55), 0.018, -hx, -hx + 0.02, metal, 6)
+
+
 BUILDERS = {name[6:]: fn for name, fn in dict(globals()).items() if name.startswith("build_") and callable(fn)}
 
 

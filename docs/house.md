@@ -141,16 +141,73 @@ is the same on every machine; `tools/tests/test_house_clutter.py` fails when a f
   and holes, and of anything in front of the wall at its height. The generator hall takes clocks only: its sight
   lines from the passage run at eye height (`house_basement.hall_sight`).
 - Floor clutter (baskets, shoes, toys, book and paper stacks) against free wall spans, clear of doors, stations
-  (1 m), spawns (0.5 m), the stairs and the routes' legs (`house_routes`, grown by the capsule's radius); the
+  (1 m), spawns (0.5 m), the stairs and the walks' legs (grown by the capsule's radius): every leg on the room's
+  level of the `--walk` run's walks (`house_clutter.walk_legs`: doorways, flights with their exits, loops, the
+  routes with their flights expanded; the furniture layer keeps off them too); the
   hallway's doormat inside its first door.
 
 Every surface, wall and floor item is non-solid (`collision = "none"`, the library's `clutter` class, docs/props.md),
 so the capsule's walk and the overlap rule do not see it; only the mid layer is solid, and the room checks hold with
-it. The generator runs the room check once per mid-size candidate: `house --clutter` takes about a minute.
+it. The generator runs the room check once per mid-size candidate: `house --clutter` with the furniture layer below runs
+in under three minutes, measured 2026-10-10 (the capsule grid stamps each block's own cells, `house_dressing._grid`).
 
-Budget (proposed, #104): the clutter adds at most 60 meshes and 15k triangles to a room (met: at most 27 meshes, the kitchen and
-the storage, and 4.9k triangles, the kitchen). Brief #104's other check, "under 150 draw calls per room view", is not met and cannot be
-met by trimming the clutter. Measured 2026-10-10, before (main's dressing) and after, with the same code and paint:
+### Fill (#104 pass 2)
+
+Pass 1's small items vanished in the big rooms, so a furniture layer now runs before the mid and clutter layers
+(`house_clutter._furnish`), and `tools/runner/house_fill.py` measures every room (`house --clutter` logs
+`fill <room>: ...`, the line `house fill: N of 21 rooms meet the targets` and writes `tools/out/house/fill.json`):
+- **Wall lining**: the share of the free wall (doors, windows ±1 m, stairs and holes cut) with a piece of at least
+  0.4 m backing onto it within 0.3 m (not clutter); target 55 %, 40 % in the small rooms (`house_fill.SMALL`).
+- **Floor**: the share of the floor under floor furniture at least 0.3 m tall (not clutter); target 18 %.
+- **Heights**: pieces in the F (floor, to 0.75 m), S (0.75 to 1.25 m surfaces) and T (1.6 m and over, or wall
+  shelving from 1.2 m) bands.
+- **Stories**: `house_fill.STORIES`, an anchor with each other part within 2 m (a reading corner, a laundry pile, a
+  drying rack, a half-packed box, boots by the door, a toy spill, a work bench round the toolbox cart, a store stack,
+  kitchen prep, desk work); target two per room.
+
+The layer reads three `RULES` keys: `furn` (groups `@reading`, `@desk_work`, `@boots`, `@toys`, `@store`, `@work`,
+`@laundry`, `@drying`, `@packing` from `GROUPS`, single ids, `id+` stacks; each against a wall), `fill` (wall-lining
+kinds placed in turn until the wall share passes its target by 3 points and the floor share its target, up to 85 %
+of the wall; wall pieces such as the radiator hang at `WALL_MOUNT` and keep off the windows) and `island`
+(free-standing pieces or stacks at least 1 m off the walls while the floor share is short: crate and box stacks,
+barrels, a shelving run in the basement, an armchair or a plant upstairs). Every placement is kept only when the
+room's problems do not rise: `check_room`, the basement's switch lines and the generator hall's sight lines (clear by
+`HALL_CLEAR` 0.5 m). The python checks do not model a flight's exit: before the walks' legs held the flights' exits and
+the loops free, island crates on the pantry's stair landing and a group on the dining room's north wall stopped
+three of the `--walk` run's walks (pantry stairs up, the wine route, the balcony loop).
+
+The story pieces are procedural library props (docs/props.md): `laundry_basket`, `drying_rack`, `open_box` and the
+wall-pivot `radiator` (dressing), `laundry_pile`, `boots` and `toy_spill` (clutter, no collider).
+
+Where the targets are not met (2026-10-10, 11 of 21 rooms meet all four; open for the manager's decision, #110):
+- floor under 18 % in 10 rooms: generator_hall 7.7, passage 9.3, hallway 9.7, stairs 11.8, landing 12.7, storage
+  16.0, wc 16.6, pantry 17.1, boiler_room 17.6, corridor 17.8;
+- wall lining under 55 % in 2 rooms: hallway 51.8, stairs 52.4.
+
+The corridors (hallway, landing, stairs, passage, corridor) keep their floor for the routes' legs and doors, the
+generator hall's floor is held free by its sight lines, the pantry's short walls are taken by its door, its stair
+landing's walk lane and shelving, and in storage, wc and boiler_room the layer runs out of placements (no fill kind
+and no island within `ISLAND_TRIES` fits without an overlap or a new problem: a walk's leg, `check_room`, the switch
+lines). The basement's floor shortfalls cannot be closed by more pieces without raising its draw calls
+further past the brief's ~30 % (see Budget). The floor share's denominator is the whole room floor, walk lanes
+included.
+
+Budget (proposed, #104): pass 1's clutter added at most 60 meshes and 15k triangles to a room (met then: at most 27
+meshes, the kitchen and the storage, and 4.9k triangles, the kitchen). Pass 2's fill breaks that cap. Measured
+2026-10-10 against main 3c8add0 (the per-room table in #110), the fill adds per room:
+- dressing meshes +10 (pantry) to +99 (generator_hall); over 60 in storage (+80, 92 to 172), boiler_room (+75, 37 to
+  112) and generator_hall (+99, 55 to 154);
+- dressing triangles +1.3k (pantry) to +20.6k (generator_hall, 12.8k to 33.5k); over 15k only there; the most per
+  room after is storage's 41k (29k before);
+- view draw calls +13 % to +28 % in 15 of the 21 views (passage aside), but over the brief's ~30 % in five lit
+  basement shots: storage +41 % (808 to 1,143), darkroom +45 % (1,620 to 2,347),
+  corridor +43 % (3,966 to 5,677), boiler_room +43 % (2,108 to 3,013), pump_room +51 % (234 to 353). The basement
+  review lights 55 shadow-casting stand-in lamps, so each added mesh is drawn again in their shadow passes. passage's
+  41 to 824 is a broken "before" count (a negative dressing share), not a jump. The overshoot is open for the
+  manager (#110): accept it until #107, or drop basement pieces (whose floors are already short).
+
+Brief #104's other check, "under 150 draw calls per room view", is not met and cannot be met by trimming the dressing.
+Pass 1's measures, 2026-10-10, before (main's dressing) and after the clutter, with the same code and paint:
 - Without any dressing the views already draw 44 to 935 calls on the walked floors and up to 3,034 in the basement:
   one instance per kit piece, and every mesh drawn again into the shadow maps of the review's real-time stand-in
   lamps (55 shadowed omnis in the basement).
@@ -159,7 +216,7 @@ met by trimming the clutter. Measured 2026-10-10, before (main's dressing) and a
   once per lamp that shadows it.
 
 Meeting 150 needs the shell merged (MultiMesh or merged static walls) and a count under the baked light (#83), whose
-lamps draw no real-time shadow passes: a follow-up for the manager.
+lamps draw no real-time shadow passes: follow-up #107.
 
 ### Wall paint (#104)
 
