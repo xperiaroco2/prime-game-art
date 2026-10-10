@@ -242,12 +242,26 @@
     "tilt": -25.0,
     "tris": 240,
     "seat_low": true
+   },
+   "cone": {
+    "label": "cone (forward-pointing; art #42: the port's look before the pack nose was flattened, kept as a rare third nose)",
+    "half": [
+     0.016,
+     0.018,
+     0.016
+    ],
+    "embed": 0.15,
+    "drop": 0.0,
+    "tilt": 0.0,
+    "capsule": 0.008,
+    "tris": 240
    }
   },
   "scale": {
    "bulb": 1.0,
    "droop": 1.0,
-   "long": 0.8
+   "long": 0.8,
+   "cone": 1.0
   }
  },
  "ears": {
@@ -775,7 +789,8 @@
    },
    "nose": {
     "bulb": 1.6,
-    "long": 1.0
+    "long": 1.0,
+    "cone": 0.3
    },
    "eye_size": {
     "small": 0.8,
