@@ -379,6 +379,7 @@ func _walk_leg(body: CharacterBody3D, points: Array, speed: float, step: float) 
 	var steps: int = 0
 	var stuck: int = 0
 	var last: Vector3 = body.global_position
+	var hit: Dictionary = {}
 	while steps < LEG_MAX_S * Engine.physics_ticks_per_second and reached < points.size() and stuck < 30:
 		if steps % SUBSTEPS == 0:
 			await physics_frame
@@ -392,6 +393,12 @@ func _walk_leg(body: CharacterBody3D, points: Array, speed: float, step: float) 
 		v.y = 0.0 if body.is_on_floor() else body.velocity.y - 9.8 * dt
 		body.velocity = v
 		body.move_and_slide()
+		for i: int in body.get_slide_collision_count():
+			var c: KinematicCollision3D = body.get_slide_collision(i)
+			if c.get_normal().y < 0.7:  # a wall, not the floor: the last one is reported if the leg fails
+				var n: Node = c.get_collider() as Node
+				hit = {"collider": str(n.get_parent().name) + "/" + str(n.name) if n != null and n.get_parent() != null else str(n),
+					"at": _r3(c.get_position()), "normal": _r3(c.get_normal()), "feet_h": snappedf(body.global_position.y, 0.01)}
 		var moved: float = Vector2(body.global_position.x - last.x, body.global_position.z - last.z).length()
 		if step > 0.0 and body.is_on_floor() and body.is_on_wall() and moved < 0.5 * speed * dt:
 			_step_up(body, flat.normalized() * speed * dt, step)
@@ -405,7 +412,12 @@ func _walk_leg(body: CharacterBody3D, points: Array, speed: float, step: float) 
 	var end: Vector3 = body.global_position
 	var arrived: bool = reached == points.size() and absf(end.y - float(points[-1][1])) < 0.15
 	return {"reached": reached, "of": points.size(), "end": [snappedf(end.x, 0.01), snappedf(end.y, 0.01),
-		snappedf(end.z, 0.01)], "seconds": snappedf(steps * dt, 0.01), "arrived": arrived}
+		snappedf(end.z, 0.01)], "seconds": snappedf(steps * dt, 0.01), "arrived": arrived,
+		"hit": {} if arrived else hit}
+
+
+func _r3(v: Vector3) -> Array:
+	return [snappedf(v.x, 0.01), snappedf(v.y, 0.01), snappedf(v.z, 0.01)]
 
 
 ## The game's step: up to `step` over a ledge in the way, then forward (the shortest of a few reaches that clears it:

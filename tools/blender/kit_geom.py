@@ -459,7 +459,7 @@ def build_ladder(pc: Piece, p: dict, spec: dict) -> None:
     +Z. The pull-down attic ladder takes the defaults (11 rungs, 0.1 m deep, no handrails); the dormer's climb-out
     stair (art #77) sets `steps`, `tread` (each tread's depth, centred on the slope's line, so the collision's ramp
     runs through the treads) and `handrail` (a rail 0.9 m over each stringer). The collision is a slab under the
-    slope's line from (0, 0) to (run, rise)."""
+    slope's line from (0, 0) to (run, rise), cut plumb at x = run."""
     wd, run, rise = float(p["width"]), float(p["run"]), float(p["rise"])
     steps, tread = int(p.get("steps", 11)), float(p.get("tread", 0.1))
     stair = tread > 0.1
@@ -478,7 +478,8 @@ def build_ladder(pc: Piece, p: dict, spec: dict) -> None:
             for t in (0.1, 0.5, 0.9):
                 x, y = run * t, rise * t
                 m.box((x, y, za), (x + 0.04, y + 0.86, zb), "metal", "+x-x+z-z")
-    pc.collide(prism_points([(0, 0), (deep + 0.04, 0), (run + deep + 0.04, rise), (run, rise)], 0, wd))
+    # the slab ends plumb at the top edge: nothing pokes past it (through the dormer's window, art #77)
+    pc.collide(prism_points([(0, 0), (deep + 0.04, 0), (run, rise * (1 - (deep + 0.04) / run)), (run, rise)], 0, wd))
 
 
 def build_post(pc: Piece, p: dict, spec: dict) -> None:

@@ -132,6 +132,8 @@ def render(req: dict, staged: dict[str, Path], folder: Path, path: Path, label: 
             note = ("" if leg["fits"] else ", NO ROOM to take this height") + ("" if leg["arrived"] else ", NOT ARRIVED")
             common.say(f"  walk {name}: {leg['name']} ({leg['height_m']:g} m capsule): {leg['reached']}/{leg['of']} "
                        f"points, end {leg['end']}, {leg['seconds']} s{note}")
+            if leg.get("hit"):
+                common.say(f"    last wall hit: {leg['hit']}")
     failed = sorted(n for n, w in walks.items() if not w["arrived"])
     if errors or failed:
         common.bad(f"{label}: {len(errors)} import errors; walks failed: {', '.join(failed) or 'none'}")
