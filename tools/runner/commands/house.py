@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import tomllib
 from pathlib import Path
 
 from .. import common, house_basement, house_dressing, house_layout, house_routes
@@ -14,6 +15,8 @@ NAME = "house"
 HELP = "check the House layout (layouts/house/*.toml) and generate its room, level and house scenes from the kit"
 DEFAULT_OUT = common.ROOT / "godot" / "import" / "house"
 WALK = "res://house/walk.gd"
+BASEMENT = "res://house/basement.gd"
+ROUTES_OUT = common.OUT / "house" / "routes.json"  # the last walk's route times, for the basement's sheet
 WALK_TIMEOUT = 240
 
 
@@ -27,6 +30,9 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--walk", type=Path, metavar="DIR",
                         help="stage the kit GLBs, import, then walk and shoot the house in an off-screen Godot window "
                              "into DIR (walk.json, sheet.png, exterior.png, stills)")
+    parser.add_argument("--basement", type=Path, metavar="DIR",
+                        help="stage and import like --walk, then light the basement with lamp stand-ins and shoot its "
+                             "review into DIR (basement_review.toml; sheet.png, a still per room, basement.json)")
 
 
 def run(args: argparse.Namespace) -> int:
@@ -66,10 +72,49 @@ def run(args: argparse.Namespace) -> int:
     report.write_text(json.dumps({"summary": summary, "plan": planned}, indent=1), encoding="utf-8", newline="\n")
     common.say(f"house: {summary['instances']} instances of {len(summary['pieces'])} pieces -> {args.out.as_posix()}; "
                f"plan {report.as_posix()}")
-    if args.walk:
-        if args.out.resolve() != DEFAULT_OUT.resolve():
-            raise common.Failure("--walk needs the scenes in godot/import/house (drop --out)")
-        return walk(data, summary, args.walk.resolve(), found, routes)
+    if (args.walk or args.basement) and args.out.resolve() != DEFAULT_OUT.resolve():
+        raise common.Failure("--walk and --basement need the scenes in godot/import/house (drop --out)")
+    code = 0
+    if args.walk or args.basement:
+        errors = stage(data, summary, found)
+        if args.walk:
+            code = walk(data, args.walk.resolve(), routes, errors)
+        if args.basement:
+            code = basement(data, args.layouts, args.props_spec, args.basement.resolve(), errors) or code
+    return code
+
+
+def basement(data: dict, layouts: Path, extra, folder: Path, errors: list[str] = ()) -> int:
+    """Runs godot/house/basement.gd off-screen on the staged house: lamp stand-ins at the basement's fixtures, a still
+    per room from its door, the plan with the last walk's route times (tools/out/house/routes.json), the hall's far
+    edge L* (house_basement.review_request, layouts/house/basement_review.toml). A far edge at or under its L* fails."""
+    st = data["settings"]
+    spec = tomllib.loads((Path(layouts) / house_basement.REVIEW).read_text(encoding="utf-8"))
+    dressings = house_dressing.load(Path(layouts) / st.get("dressing_dir", "dressing"))
+    cat = house_dressing.catalogue(house_dressing.spec_paths(st, extra=extra))
+    routes = json.loads(ROUTES_OUT.read_text(encoding="utf-8")) if ROUTES_OUT.is_file() else []
+    request = house_basement.review_request(data, dressings, cat, spec, routes)
+    req = common.OUT / "house" / "basement_request.json"
+    req.write_text(json.dumps(request, indent=1), encoding="utf-8", newline="\n")
+    folder.mkdir(parents=True, exist_ok=True)
+    (folder / "basement.json").unlink(missing_ok=True)
+    code, output = _godot.godot(["--path", _godot.PROJECT, "--audio-driver", "Dummy", "--position", _frames.POSITION,
+                                 "--resolution", "1600x900", "-s", BASEMENT, "--", req.as_posix(), folder.as_posix()],
+                                WALK_TIMEOUT)
+    if code != 0 or not (folder / "basement.json").is_file():
+        tail = "\n".join(output.splitlines()[-20:])
+        raise common.Failure(f"basement.gd failed (exit code {code}):\n{tail}")
+    result = json.loads((folder / "basement.json").read_text(encoding="utf-8"))
+    for name, info in result["shots"].items():
+        common.say(f"  {name}: median L* {info['lstar_median']:g}")
+    far = result.get("far_edge", {})
+    common.say(f"  far edge ({far.get('shot')}): median L* {far.get('lstar_median')} (needs > {far.get('min_lstar')})")
+    common.say(f"  {result['lamps']} lamp stand-ins; route lines: {len(routes)}; sheet {(folder / 'sheet.png').as_posix()}")
+    if not far.get("pass") or errors:
+        common.bad(f"house basement review: far edge {'ok' if far.get('pass') else 'too dark'}, "
+                   f"{len(errors)} import errors")
+        return 1
+    common.ok(f"house basement review: {len(result['shots'])} shots, the far edge holds")
     return 0
 
 
@@ -119,11 +164,9 @@ def prop_glbs(data: dict, dressing: dict) -> dict:
     return found
 
 
-def walk(data: dict, summary: dict, folder: Path, props: dict | None = None, routes: dict | None = None) -> int:
-    """Stages the pieces the scenes use from the kit folder, imports them headless, then runs godot/house/walk.gd in a
-    window off-screen (pictures need one): every doorway of the ground and upper floors and every flight, walked by
-    a 1.36 m capsule; the design doc's routes (routes.toml) at their speed, judged against the doc's times; the stills,
-    the plan, sheet.png and the exterior at dusk (exterior.png); draw calls per view."""
+def stage(data: dict, summary: dict, props: dict | None = None) -> list[str]:
+    """Stages the pieces and props the scenes use (the kit folder, the prop GLBs), imports them headless; returns the
+    import's error lines."""
     kit = common.raw_dir() / data["settings"]["kit_dir"]
     names = {pid: f"kit_{pid}" for pid in summary["pieces"]}
     missing = [pid for pid in names if not (kit / f"{pid}.glb").is_file()]
@@ -138,6 +181,14 @@ def walk(data: dict, summary: dict, folder: Path, props: dict | None = None, rou
     errors = [line for line in _godot.import_project() if "ERROR" in line]
     for line in errors[:10]:
         common.say(f"  import: {line}")
+    return errors
+
+
+def walk(data: dict, folder: Path, routes: dict | None = None, errors: list[str] = ()) -> int:
+    """Runs godot/house/walk.gd in a window off-screen (pictures need one) on the staged house: every doorway of the
+    ground and upper floors and every flight, walked by a 1.36 m capsule; the design doc's routes (routes.toml) at their
+    speed, judged against the doc's times (also into tools/out/house/routes.json); the stills, the plan, sheet.png and
+    the exterior at dusk (exterior.png); draw calls per view."""
     folder.mkdir(parents=True, exist_ok=True)
     req = common.OUT / "house" / "walk_request.json"
     request = house_layout.walk_request(data)
@@ -161,6 +212,8 @@ def walk(data: dict, summary: dict, folder: Path, props: dict | None = None, rou
                        f"({r['delta_s']:+g} s, {'within' if r['time_ok'] else 'OVER'} {tolerance:g} s), {r['plan_m']:g} m on the "
                        f"plan, the doc {r['doc_m']:g} m")
     (folder / "walk.json").write_text(json.dumps(result, indent=1), encoding="utf-8", newline="\n")
+    ROUTES_OUT.write_text(json.dumps([dict(r, name=w["name"]) for w, r in zip(request["walks"], result["walks"])
+                                      if w["kind"] == "route"], indent=1), encoding="utf-8", newline="\n")
     failed = [w for w in result["walks"] if not w["pass"]] + ([] if result["control"]["pass"] else [result["control"]])
     for w in result["walks"] + [result["control"]]:
         mark = "ok  " if w["pass"] else "FAIL"

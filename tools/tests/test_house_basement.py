@@ -133,3 +133,54 @@ class BasementDressing(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class ReviewRequest(unittest.TestCase):
+    """The review pictures' request (house_basement.review_request, layouts/house/basement_review.toml)."""
+
+    @classmethod
+    def setUpClass(cls):
+        import tomllib
+        cls.spec = tomllib.loads((H.LAYOUT_DIR / B.REVIEW).read_text(encoding="utf-8"))
+        cls.req = B.review_request(DATA, DRESSING, CAT, cls.spec,
+                                   [{"name": "route:wine", "seconds": 6.5, "doc_s": 5.9, "delta_s": 0.6}])
+
+    def test_a_lamp_per_fixture(self):
+        want = Counter()
+        for counts in FIXTURES.values():
+            want.update(counts)
+        self.assertEqual(Counter(l["id"] for l in self.req["lamps"]), want)
+
+    def test_lamps_inside_their_rooms_below_the_ceiling(self):
+        rects = {r["id"]: r["rect"] for r in LEVEL["rooms"]}
+        for l in self.req["lamps"]:
+            x, h, z = l["pos"]
+            rx, ry, w, d = rects[l["room"]]
+            with self.subTest(lamp=l):
+                self.assertTrue(rx < x < rx + w and ry < z < ry + d)
+                self.assertTrue(LEVEL["floor_y"] + 1.5 < h < LEVEL["floor_y"] + 3.0)
+
+    def test_every_room_shot_from_inside_its_door_at_eye_height(self):
+        rects = {r["id"]: r["rect"] for r in LEVEL["rooms"]}
+        rooms = {s["room"] for s in self.spec["shots"]}
+        self.assertEqual(rooms, set(ROOMS))
+        for s, shot in zip(self.spec["shots"], self.req["shots"]):
+            x, h, z = shot["from"]
+            rx, ry, w, d = rects[s["room"]]
+            with self.subTest(shot=shot["name"]):
+                self.assertAlmostEqual(h, LEVEL["floor_y"] + 1.6)
+                self.assertTrue(rx <= x <= rx + w and ry <= z <= ry + d)
+
+    def test_far_edge_the_hall_from_the_passage(self):
+        far = self.req["far_edge"]
+        self.assertEqual(far["shot"], "generator_hall_from_passage")
+        self.assertGreater(far["min_lstar"], 0)
+        self.assertEqual(far["a"][0], far["b"][0])
+
+    def test_plan_holds_every_room_and_hides_the_other_levels(self):
+        x, y, w, d = self.req["plan"]["rect"]
+        for r in LEVEL["rooms"]:
+            rx, ry, rw, rd = r["rect"]
+            self.assertTrue(x <= rx and y <= ry and rx + rw <= x + w and ry + rd <= y + d)
+        self.assertEqual(len(self.req["hide"]), len(DATA["levels"]) - 1)
+        self.assertEqual(self.req["lines"], ["route:wine: 6.5 s walked, the doc 5.9 s (+0.6 s)"])

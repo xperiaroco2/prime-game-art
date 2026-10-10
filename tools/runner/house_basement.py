@@ -153,3 +153,83 @@ def switch_sight(data: dict, dressings: dict, cat: dict) -> list[dict]:
                     rows.append(_row(f"{room['id']}: door ({dr['at'][0]}, {dr['at'][1]}) -> {it.get('station')}",
                                      a, s, blocks))
     return rows
+
+
+# ---------------------------------------------------------------- the review pictures
+
+REVIEW = "basement_review.toml"
+SHOT_IN = 0.3  # a room's shot stands this far inside its door (the frame stays out of the picture)
+LOOK_H = 1.2
+FAR_EDGE_H = (0.2, 2.6)  # the hall's far wall band measured for L*, above the floor
+PLAN_MARGIN = 1.0
+
+
+def lamps(data: dict, dressings: dict, cat: dict, spec: dict) -> list[dict]:
+    """A real-time lamp stand-in per light fixture of the basement's dressing (basement_review.toml `lamps` by id): at a
+    ceiling pivot `drop` below it, at a wall pivot `out` off the wall towards the fixture's front and `up` above it."""
+    lv = _level(data)
+    out = []
+    for room in lv["rooms"]:
+        rx, ry = room["rect"][:2]
+        for it in dressings.get(room["id"], {}).get("fixtures", []):
+            r = hd.resolve(it, cat)
+            k = spec.get("lamps", {}).get(r["id"])
+            if k is None:
+                continue
+            x, h, z = r["at"]
+            if r["pivot"] == "wall":
+                t = math.radians(r["yaw"])
+                x, z, h = x + k.get("out", 0.2) * math.sin(t), z + k.get("out", 0.2) * math.cos(t), h + k.get("up", 0.0)
+            elif r["pivot"] == "ceiling":
+                h -= k.get("drop", 0.3)
+            out.append({"id": r["id"], "room": room["id"], "pos": [round(rx + x, 3), round(lv["floor_y"] + h, 3),
+                                                                  round(ry + z, 3)],
+                        "color": list(k["color"]), "energy": float(k["energy"]), "range": float(k["range"]),
+                        "shadow": bool(k.get("shadow", True))})
+    return out
+
+
+def shots(data: dict, spec: dict) -> list[dict]:
+    """The review's eye-height shots: each from SHOT_IN inside the door its room shares with `from`, at 1.6 m."""
+    lv = _level(data)
+    fy = lv["floor_y"]
+    out = []
+    for s in spec.get("shots", []):
+        room = _room(lv, s["room"])
+        door = next((d for d in lv["doors"] if set(d["rooms"]) == {s["room"], s["from"]}), None)
+        if door is None:
+            raise ValueError(f"basement review: {s['room']} has no door to {s['from']}")
+        rect = room["rect"]
+        px, py = _inside(rect, door, SHOT_IN)
+        lx, ly = s.get("look", (rect[0] + rect[2] / 2, rect[1] + rect[3] / 2))
+        out.append({"name": f"{s['room']}_from_{s['from']}",
+                    "title": s.get("title", f"{room['title'].lower()} from the {s['from'].replace('_', ' ')} door"),
+                    "from": [px, fy + EYE, py], "to": [lx, fy + LOOK_H, ly]})
+    return out
+
+
+def review_request(data: dict, dressings: dict, cat: dict, spec: dict, routes: list[dict] | None = None) -> dict:
+    """What godot/house/basement.gd lights, shoots and measures: the lamps, the shots, the plan's rooms and rect, the
+    level nodes to hide for the plan, the far edge (the hall's west wall from the passage) and the route lines."""
+    lv = _level(data)
+    fy = lv["floor_y"]
+    rects = [r["rect"] for r in lv["rooms"]]
+    x0, y0 = min(r[0] for r in rects) - PLAN_MARGIN, min(r[1] for r in rects) - PLAN_MARGIN
+    x1 = max(r[0] + r[2] for r in rects) + PLAN_MARGIN
+    y1 = max(r[1] + r[3] for r in rects) + PLAN_MARGIN
+    hall = _room(lv, "generator_hall")["rect"]
+    wx = round(hall[0] + hd.WALL_T + 0.02, 3)
+    shot_list = shots(data, spec)
+    far = next((s["name"] for s in shot_list if s["name"] == "generator_hall_from_passage"), None)
+    lines = [f"{r['name']}: {r['seconds']:g} s walked, the doc {r['doc_s']:g} s ({r['delta_s']:+g} s)"
+             for r in routes or []]
+    return {"exposure": float(spec.get("exposure", 1.0)), "ambient": list(spec.get("ambient", [0.5, 0.5, 0.5])),
+            "ambient_energy": float(spec.get("ambient_energy", 0.05)), "fov": float(spec.get("fov", 75.0)),
+            "lamps": lamps(data, dressings, cat, spec), "shots": shot_list,
+            "rooms": [{"title": r["title"], "rect": r["rect"]} for r in lv["rooms"]],
+            "plan": {"rect": [x0, y0, x1 - x0, y1 - y0], "floor_y": fy},
+            "hide": [L["node"] if L["level"] != "roof" else "RoofDeck" for L in data["levels"] if L["level"] != LEVEL],
+            "far_edge": {"shot": far, "a": [wx, fy + FAR_EDGE_H[0], hall[1] + 0.5],
+                         "b": [wx, fy + FAR_EDGE_H[1], hall[1] + hall[3] - 0.5],
+                         "min_lstar": float(spec.get("far_edge_min_lstar", 12.0))},
+            "lines": lines}
