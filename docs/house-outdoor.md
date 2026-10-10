@@ -45,7 +45,8 @@ other props magenta). It fails on any problem.
   noise (`vary`, `scale_m`), with unshared corners, so zone edges stay sharp. No cell lies under a floor another
   package lays at y 0 (the house, the terrace, the garage, the greenhouse) or over the stairwell, so nothing
   z-fights (the test cross-checks the layout engine's floors when `layouts/house/ground.toml` is present). Paths, the
-  driveway, the pavement and the street are paints of the same sheet. A coarse `skirt` in the `beyond` paint reaches
+  driveway, the pavement and the street are paints of the same sheet; the garden's paths are `[[zones]]` lines
+  registered from `layouts/house/outdoor/garden.toml` (#80, `docs/house-garden.md`). A coarse `skirt` in the `beyond` paint reaches
   out to the flats; the kerb is a box strip on the ground with a gap at the driveway. COLOR_0 holds sRGB paint and
   the material is `outdoor_ground-vcol` (the kit's `-vcol` rule, `docs/kit.md`); UV2 maps the area once for a bake.
   `-col` nodes get Godot's trimesh collision.
