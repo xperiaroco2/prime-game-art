@@ -143,6 +143,7 @@ class ShootTest(unittest.TestCase):
         for p in dressing:
             self.assertEqual(p["pos"][1], cmd.F)
             self.assertTrue(("scene" in p) != ("size" in p), p)
+        self.assertEqual([p["id"] for p in req["pieces"] if p["zone"] == "spots"], [s["name"] for s in ATTIC["spots"]])
         self.assertEqual({p["id"] for p in req["pieces"] if p["zone"] == "yard"}, set(ROOF["lookout"]["see"]))
         self.assertIn("kit_gable_band_2m_window", set(staged) | {f"kit_{m}" for m in missing})
         self.assertTrue(all(n.startswith(("kit_", "prop_")) for n in staged))

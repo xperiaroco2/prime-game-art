@@ -61,7 +61,8 @@ VIEWS = [
     ["spots_sw", "attic: hiding spots, the south-west corner", [27.0, 33.5, F + 1.6], [21.0, 39.0, F + 0.4], 75.0],
     ["spots_n", "attic: hiding spots, the north eave", [29.0, 33.0, F + 1.6], [23.0, 26.5, F + 0.4], 75.0],
     ["deck_high", "roof deck from the south-east, high", [50.0, 52.0, F + 9.0], [30.0, 34.0, F], 55.0],
-    ["deck_door", "roof deck from the roof door at 1.6 m", [41.2, 33.0, F + 1.6], [30.0, 43.5, F + 0.8], 75.0],
+    ["deck_door", "roof deck: out of the roof door at 1.6 m, toward the south strip", [41.5, 32.0, F + 1.6],
+     [36.0, 43.5, F + 0.5], 75.0],
 ]
 LOOKOUT_FOV = 70.0  # wide enough for both openings (the wicket due south, the gates south-east)
 
@@ -93,6 +94,9 @@ def shoot_request(kits: list[Path], scenes: Path = house_cmd.DEFAULT_OUT) -> tup
             else:
                 entry["size"] = it.get("size", [0.6, 0.6, 0.6])
             pieces.append(entry)
+    for sp in house_attic.load("attic").get("spots", []):  # the hiding spots as small labelled boxes at their height
+        pieces.append({"zone": "spots", "id": sp["name"], "src": "spot", "yaw": 0.0, "size": [0.12, 0.12, 0.12],
+                       "pos": [sp["at"][0], F + float(sp["h"]), sp["at"][1]]})
     roof = house_attic.load("roof")
     with house_attic.PLOT.open("rb") as f:
         plot = tomllib.load(f)
