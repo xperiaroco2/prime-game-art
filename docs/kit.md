@@ -132,7 +132,8 @@ The engineer's picks of 2026-10-10: a free roof of clay pantiles with one gable 
   `pantile_courses` in the slope's frame, the tiles past the valleys dropped)
   and the main roof's slab behind it; socket `lamp` under its ridge. Its lead (`_dormer_lead`, role `lead`): the apron
   under the sill, a solid wedge from the roof's top `DORMER_APRON` (0.6 m) down the slope up to the sill's top (31 deg;
-  its collider is the ramp the crouched capsule walks to climb back in: the bare sill stood about 0.3 m over the slope
+  its collider, folded into the front wall band's hull so the piece keeps 11 colliders, is the ramp the crouched
+  capsule walks to climb back in: the bare sill stood about 0.3 m over the slope
   a capsule's radius in front of the wall, past the game's step), and step flashing along both cheeks (0.12 m on the
   tiles, 0.1 m up the cheek). `reach_m` (1.05: the casement at 95 deg) is what may stand out before the
   span's z0 and beside its x span (the overhangs and the open casement); the span check allows it.

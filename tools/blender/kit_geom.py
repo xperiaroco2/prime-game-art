@@ -1216,7 +1216,8 @@ def build_dormer(pc: Piece, p: dict, spec: dict) -> None:
     for lo, hi, sides in (((0, u, 0), (W, sill, t), "+x-x+y-y+z-z"), ((0, head, 0), (W, he, t), "+x-x-y+z-z"),
                           ((0, sill, 0), (wx0, head, t), "+x-x+y-y+z-z"), ((wx1, sill, 0), (W, head, t), "+x-x+y-y+z-z")):
         m.box(lo, hi, "wall_ext", sides)
-        pc.collide_box(lo, hi)
+        # the band under the sill takes the lead apron's wedge into its hull (one collider: the climb-back-in ramp)
+        pc.collide(box_points(lo, hi) + (_dormer_apron_points(dd) if hi[1] == sill and lo[0] == 0 else []))
     # the boarded front gable (no bottom face: it would coincide with the wall band's top, a duplicate Godot drops)
     tri = [(0.0, he), (W, he), (W / 2, hr)]
     m.prism(tri, 0.0, t, "trim", edges=[False, True, True])
@@ -1263,17 +1264,25 @@ DORMER_APRON = 0.6  # the lead apron's reach down the slope from the front wall:
 DORMER_STEP_W, DORMER_STEP_UP = 0.12, 0.1  # the step flashing along a cheek: on the tiles, and up the cheek
 
 
+def _dormer_apron_points(dd: dict) -> list:
+    """The lead apron's solid wedge (from the roof's top DORMER_APRON down the slope up to the sill's top at the front
+    wall) as collider points. build_dormer folds them into the front band's hull: the hull's lower edge from the
+    wedge's toe to the band's foot stays inside the roof slab, so the piece keeps one collider per wall part."""
+    r, u, tv, W, sill, a = dd["r"], dd["u"], dd["tv"], dd["W"], dd["sill"], DORMER_APRON
+    return prism_x_points([(-a, u + tv - r * a), (0.0, u + tv), (0.0, sill)], 0.0, W)
+
+
 def _dormer_lead(m: Mesh, pc: Piece, dd: dict) -> None:
     """The dormer's lead (art #77): the apron under the sill, dressed down over the tiles DORMER_APRON in front of the
-    wall, a solid wedge from the roof's top up to the sill's top (its collider is the ramp a player walks up to climb
-    back in: the sill's ledge over the slope in front of the wall is taller than the game's step), and the step
-    flashing along both cheeks from the front wall to where the roof's top meets the dormer's eave line."""
+    wall, a solid wedge from the roof's top up to the sill's top (its collider, folded into the front band's by
+    build_dormer, is the ramp a player walks up to climb back in: the sill's ledge over the slope in front of the wall
+    is taller than the game's step), and the step flashing along both cheeks from the front wall to where the roof's
+    top meets the dormer's eave line."""
     r, u, tv, W, sill, he = (dd[k] for k in ("r", "u", "tv", "W", "sill", "he"))
 
     def top(z):
         return u + tv + r * z
     a = DORMER_APRON
-    pc.collide(prism_x_points([(-a, top(-a)), (0.0, top(0.0)), (0.0, sill)], 0.0, W))
     prism_x(m, [(-a, top(-a) + LEAD_ON_TILES), (0.0, top(0.0) + LEAD_ON_TILES), (0.0, sill)], 0.0, W, "lead",
             edges=[False, False, True])
     zt = (he - u - tv) / r
