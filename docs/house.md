@@ -156,3 +156,57 @@ under the dining table and Circle02 0.2 m from the terrace table.
   half at x 30 to a 1 x 4 m landing at 1.6 m on the west wall, then up east to the upper landing at x 30, all under
   the doc's hole (26, 30, 4 x 6). Marked `placeholder`; the outdoor (concrete) pieces stand in until kit v2 has
   indoor ones. Option: a 5 m steeper straight flight with a 1 m foot landing (kit v2).
+
+## Light (#83a)
+
+`layouts/house/lights.toml` is the light kit as data; `tools/runner/house_lights.py` places it and `house` writes it
+with the shell (the fixtures and the summary to `tools/out/house/lights.json`). Every number is taste data: change it
+and regenerate.
+
+- **Types** (`[types.<id>]`, the 16 fixtures of the plan's `inventory.md` §8): `mount` (`ceiling`: a grid under the
+  ceiling; `wall`: spaced along the walls 0.15 m in, 1.2 m clear of the room's doors; `floor`: a grid 0.6 m in from
+  the walls), `h` (the light's height over the room's floor), `light` (`omni`, or `spot` pointing down with `angle`),
+  `energy`, `range`, `color` (a name in `[colors]`; c2, the lab's lamp colour, unless the type or the room says
+  otherwise) and `glow` (may get the cheap real-time glow).
+- **Fixtures** (`[rooms.<id>]`: type = count; 191 in all): positions are generated per room; `place = "perimeter"`
+  spaces a room's ceiling and floor fixtures 2 m in along its edges (the yard, which holds the house); a room's
+  `color` recolours its types without a colour (the greenhouse's green cold).
+- **Moon spots** (`[moon]`): bake-only cool spots, one per `every` windows of a level, outside the window, aimed in.
+- **Zones** (`[zones.<id>]`): the separate LightmapGI bakes (basement, ground, upper with the attic, outbuildings,
+  roof, yard); each room is in exactly one; `texel_high` and `texel_low` are the lightmap texels per metre of the
+  presets.
+- **Bake** (`[bake]`): the LightmapGI settings every zone shares (quality, bounces, the bounce energy at most 1.5,
+  denoiser, interior).
+- **Presets** (`[presets.high]`, `[presets.low]`): the lightmap resolution, the real-time glow count (the nearest
+  fixtures with `glow`), SSAO, shadowed spots, fog (`look.md` §4.5 of the plan).
+
+Every light is `light_bake_mode` Static (baked; not drawn in real time where a lightmap covers it); no shadows. The
+`house` command writes `lights/<level>.tscn` (a level's lights in plot coordinates) and `zones/<zone>.tscn` (the
+zone's room scenes, the level pieces standing in them, its lights, and as `Above` the next level's rooms over it: the
+floor slabs that are the zone's ceiling; where the zone's rooms lie under the yard, which the generator gives no
+floor, `Above` also holds `Cover_<n>`: bake-only concrete floor tiles at the next level's height, so a basement room
+outside the ground floor's footprint does not bake under open sky). A bake needs the editor (below).
+
+### Baking a zone
+
+Godot 4.7.2 bakes a LightmapGI only in the editor, with a window:
+- `LightmapGI.bake()` is not exposed to scripts (the bake lives in the C++ editor plugin);
+- a `--headless` editor has no GPU device and reports that lightmap baking is not supported;
+- an exported project cannot bake.
+
+So there is no stock headless route (Q22 option C; a forum answer for 4.5.1 says the same:
+https://forum.godotengine.org/t/is-it-possible-to-bake-lightmapgi-node-using-headless-godot-editor/129607). The only
+route without a window would be a custom engine build that exposes `bake()`, which is installing a tool: the
+engineer's yes.
+
+The route used (#83a spike, raw project `D:/prime-art-raw/house/83a/godot`):
+1. `house --out <project>/import/house` writes the zone scenes; the kit v2 GLBs are imported with
+   `meshes/light_baking=1` so the kit's UV2 is kept.
+2. `zone_build.gd` (headless) flattens a zone into one scene with a LightmapGI from `[bake]`; each mesh's
+   `lightmap_size_hint` is the zone's texel per metre times its UV2 extent, so High and Low differ only in the texel.
+3. The editor bakes it: the lab's `lmbake` plugin, started by `labrun.py godot ... --window 1280x720 -- --editor`
+   (an off-screen window, never minimized). `labrun.py` refuses an editor run outside 00:00-08:00 local unless the
+   manager wrote a daytime grant (`editor_window.txt`); agents never write that file.
+4. Every lab Godot run starts inside the art runner's heavy-run lock (`common.heavy_lock`), one at a time.
+
+Bakes are therefore night jobs: a zone is prepared by day and baked in the next night run.
