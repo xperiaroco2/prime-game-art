@@ -2,8 +2,8 @@
 of godot/garden/proof.gd. It starts from the outdoor proof's request (house_outdoor_scene.py: the plot, fence, stairs,
 sky, backdrop) without the grey stand-ins the layout engine's house scene replaces, and adds the house scene
 (res://import/house/house.tscn, with the greenhouse's glass walls and dressing), the glass roof from garden.json, the
-garden's props and lights, the scatter plants (one MultiMesh per plant kind), the walks (every garden path, the herb
-route from the kitchen), the glass roof's ray test and the pictures."""
+garden's props and lights, the scatter plants (one MultiMesh per plant kind), the kinds that cast no shadow, the walks
+(every garden path, the herb route from the kitchen), the glass roof's ray test and the pictures."""
 
 from __future__ import annotations
 
@@ -37,6 +37,14 @@ def plants(garden: dict) -> dict[str, list[list[float]]]:
         res = f"res://import/plant_{q['id']}_{q['kind']}.glb"
         out.setdefault(res, []).append([q["at"][0], q["at"][1], float(q["yaw"]), float(q["scale"])])
     return out
+
+
+def no_shadow(garden: dict) -> list[str]:
+    """The res of every prop and plant kind marked `shadow = false` in garden.toml (flat and small: their shadow
+    passes cost the garden's draw calls and show little); the proof turns their shadow casting off."""
+    out = {f"res://import/prop_{p['id']}.glb" for p in garden["props"] if not p["shadow"]}
+    out |= {f"res://import/plant_{q['id']}_{q['kind']}.glb" for q in garden["scatter"] if not q["shadow"]}
+    return sorted(out)
 
 
 def lights(garden: dict) -> list[list[float]]:
@@ -97,6 +105,7 @@ def request(plot: dict, outdoor_doc: dict, outdoor_build: Path, pack: dict | Non
     roof = roof_placed(garden)
     req["pieces"].update({i: f"res://import/kit_{i}.glb" for i in sorted({r[0] for r in roof})})
     req.update({"house": HOUSE, "roof": roof, "props": props(garden), "plants": plants(garden),
+                "no_shadow": no_shadow(garden),
                 "lights": req["lights"] + lights(garden), "walks": walks(garden_data), "strips": [],
                 "views": shots(garden, layout_room), "rays": rays(layout_room),
                 "draw_call_limit": DRAW_CALL_LIMIT})

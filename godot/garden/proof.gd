@@ -9,7 +9,7 @@ extends "res://outdoor/proof.gd"
 ##   godot --path godot --position -30000,-30000 --resolution 1600x900 -s res://garden/proof.gd -- <request.json> <out>
 ## request.json (tools/runner/house_garden_scene.py): the outdoor proof's keys and "house": res, "roof": [[id, at,
 ##   yaw]], "props": [[res, at, yaw]], "plants": {res: [[x, z, yaw, scale]]}, "rays": {"rect", "step", "inset",
-##   "from_h", "level_step", "gable_tol", "control"}, "draw_call_limit".
+##   "from_h", "level_step", "gable_tol", "control"}, "no_shadow": [res], "draw_call_limit".
 ## Writes <out>/<view>.png, sheet.png (1280 px wide, rows of three) and proof.json (the walks, the rays, per view its
 ## draw calls, primitives and objects, and the garden layer's draw calls and primitives); prints PROOF saved <dir>.
 
@@ -107,7 +107,7 @@ func _garden() -> void:
 		for q: Array in plants[res]:
 			_group(groups, res, _xform([q[0], 0.0, q[1]], float(q[2]), float(q[3])), false)
 	for res: String in groups:
-		_multi(res, groups[res][0], groups[res][1])
+		_multi(res, groups[res][0], groups[res][1], res in _req.get("no_shadow", []))
 
 
 func _group(groups: Dictionary, res: String, x: Transform3D, roof: bool) -> void:
@@ -123,7 +123,7 @@ func _xform(at: Variant, yaw: float, scale: float) -> Transform3D:
 ## One MultiMeshInstance3D per mesh of the GLB over the transforms (the kit pack's surface overrides baked into a copy
 ## of the mesh); per transform a StaticBody3D with the GLB's collision shapes, and for the roof a trimesh collider per
 ## mesh on ROOF_LAYER for the rays.
-func _multi(res: String, xforms: Array, roof: bool) -> void:
+func _multi(res: String, xforms: Array, roof: bool, no_shadow: bool) -> void:
 	var proto: Node3D = _load(res)
 	if roof and _set != null:
 		KitMaterials.apply(proto, _set)
@@ -147,7 +147,7 @@ func _multi(res: String, xforms: Array, roof: bool) -> void:
 				mm.set_instance_transform(i, (xforms[i] as Transform3D) * local)
 			var mmi: MultiMeshInstance3D = MultiMeshInstance3D.new()
 			mmi.multimesh = mm
-			if part[1]:
+			if part[1] or no_shadow:
 				mmi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 			_layer.add_child(mmi)
 		if roof:

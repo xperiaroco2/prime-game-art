@@ -72,7 +72,8 @@ id = "stairs_entry"
 rect = [61, 26.5, 6, 7]
 
 # Fixed props (dressing library #87, task props #82; plants: this package's builder, boxes of `size` until built).
-# `size` [x, height, y] at yaw 0. `station` marks a task station's prop.
+# `size` [x, height, y] at yaw 0. `station` marks a task station's prop. `shadow = false` (here and per [[scatter]]
+# kind): flat and small things cast no shadow, so that the garden stays under 150 draw calls (docs/house-garden.md).
 [[props]]
 id = "garden_dropoff"
 src = "tasks"
@@ -131,6 +132,7 @@ at = [[54.4, 8]]
 id = "watering_can"
 src = "library"
 size = [0.45, 0.35, 0.2]
+shadow = false
 at = [[57.3, 13.6]]
 
 [[props]]
@@ -144,6 +146,7 @@ at = [[45.3, 38.1], [49.0, 32.0], [52.0, 21.5], [57.4, 3.2], [77.3, 4.4], [67.5,
 id = "path_light"
 src = "library"
 size = [0.2, 0.5, 0.2]
+shadow = false
 light = true
 at = [[50.2, 25.1], [57.5, 26.3], [53.5, 18.5], [54.8, 14.0], [57.4, 10.2], [62, 3.4], [70, 3.4], [77.1, 16],
       [72, 21.0], [64, 21.0]]
@@ -153,6 +156,7 @@ id = "string_lights"
 src = "library"
 size = [5.0, 0.1, 0.05]
 h = 2.4
+shadow = false
 light = true
 at = [[60.5, 18.2], [71.5, 18.2]]
 note = "along the greenhouse's south eave"
@@ -163,6 +167,7 @@ id = "stepping_stone"
 src = "library"
 size = [2.0, 0.05, 0.6]
 flat = true
+shadow = false
 yaw = 90
 at = [[56, 17.6], [56, 15.0], [56, 6.0], [56, 8.4], [76, 6.0], [76, 8.4], [76, 10.8], [76, 13.2], [76, 15.6],
       [76, 18.0], [58.6, 20], [61, 20], [63.4, 20], [65.8, 20], [68.2, 20], [72.4, 20], [74.4, 20], [58, 4.4],
@@ -189,6 +194,7 @@ radius = 1.05
 spacing = 2.6
 margin = 0.4
 size = [2.0, 0.4, 0.8]
+shadow = false
 kinds = ["rose", "foxglove", "dahlia", "marigold", "tulip", "aster"]
 scales = [1.0]
 

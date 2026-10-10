@@ -87,7 +87,8 @@ def prop_rects(data: dict) -> list[dict]:
         for x, y in p["at"]:
             out.append({"id": p["id"], "src": p.get("src", ""), "at": [x, y], "yaw": p.get("yaw", 0),
                         "face": p.get("face"), "h": p.get("h", 0.0), "size": p["size"], "light": p.get("light", False),
-                        "station": p.get("station"), "rect": [x - sx / 2, y - sy / 2, sx, sy],
+                        "station": p.get("station"), "shadow": p.get("shadow", True),
+                        "rect": [x - sx / 2, y - sy / 2, sx, sy],
                         "solid": not p.get("flat") and p.get("h", 0.0) < 1.8})
     return out
 
@@ -170,7 +171,7 @@ def scatter(data: dict, plot: dict) -> tuple[list[dict], list[str]]:
             kind = sc["kinds"][len(mine) % len(sc["kinds"])]
             mine.append({"id": sc["id"], "kind": kind, "at": [round(x, 3), round(y, 3)],
                          "yaw": rng.randrange(0, 360, 15), "scale": rng.choice(sc["scales"]),
-                         "radius": r, "margin": m, "size": sc["size"]})
+                         "radius": r, "margin": m, "size": sc["size"], "shadow": sc.get("shadow", True)})
         if len(mine) < sc["count"]:
             problems.append(f"scatter: {sc['id']}: room for {len(mine)} of {sc['count']} (spacing {sp:g} m)")
         placed += mine

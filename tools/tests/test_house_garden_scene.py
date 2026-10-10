@@ -34,6 +34,14 @@ class GardenScene(unittest.TestCase):
         self.assertEqual(sum(len(v) for v in self.req["plants"].values()), len(self.rep["scatter"]))
         self.assertTrue(all(res.startswith("res://import/plant_") for res in self.req["plants"]))
 
+    def test_flat_and_small_kinds_cast_no_shadow(self):
+        off = set(self.req["no_shadow"])
+        placed = {p[0] for p in self.req["props"]} | set(self.req["plants"])
+        self.assertTrue(off <= placed)
+        self.assertIn("res://import/prop_stepping_stone.glb", off)
+        self.assertTrue(any(r.startswith("res://import/plant_flower_bed_") for r in off))
+        self.assertFalse(any("garden_tree" in r or "hedge" in r for r in off))
+
     def test_every_path_and_the_route_are_walked(self):
         walks = self.req["walks"]
         for p in self.data["paths"]:
