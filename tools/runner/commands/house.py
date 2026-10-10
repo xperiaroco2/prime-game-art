@@ -162,7 +162,8 @@ def walk(data: dict, summary: dict, folder: Path, props: dict | None = None, dre
     for line in house_dressing.swatch_report(result.get("swatches", [])):
         common.say(f"  swatch {line}")
     common.say(f"  {result['instances']['mesh_instances']} mesh instances, {result['instances']['static_bodies']} bodies; "
-               f"sheet {(folder / 'sheet.png').as_posix()}")
+               f"sheet {(folder / 'sheet.png').as_posix()}"
+               + (f", the second floor {(folder / 'upper.png').as_posix()}" if (folder / "upper.png").is_file() else ""))
     if failed or errors:
         common.bad(f"house walk: {len(failed)} walks failed, {len(errors)} import errors")
         return 1

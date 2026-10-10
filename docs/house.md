@@ -121,6 +121,11 @@ about 4 m and the straight balcony flight lands north on the yard, so the route 
 U-turn option (a foot on the terrace under the balcony) measures 51.8 to 53.8 m (11.5 to 12.0 s); the engineer
 decides.
 
+The walk's second-floor proof is `upper.png` (1280 px): `plan_upper.png` (the second floor from above, the attic and
+roof hidden, a label per room) beside `balcony_loop.png` (the loop's waypoints as a ribbon over the same top-down,
+orange on the ground, cyan upstairs, the walked seconds in its title), then the upper rooms' `room_<id>.png` and the
+balcony stairs. `rooms.png` keeps the ground floor's rooms.
+
 ## The rules (`validate`)
 
 - Rooms on whole metres; no two rooms with floors overlap at one height (an open room may hold a room: the roof deck
