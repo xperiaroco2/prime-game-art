@@ -1,0 +1,224 @@
+# The plot outside the house (art #81a, docs/house-outdoor.md): ground zones, the fence, the street, the path, the
+# driveway and the outdoor stairs. The design doc's coordinates: metres, origin at the plot's north-west corner,
+# x east, y south; a rect is [x, y, width, depth] from its north-west corner; Godot: x = x, z = y, ground top y 0.
+# Every size and colour here is a reversible default (the house plan's questions.md: Q4, Q15, Q16); edit and rerun
+# `tools/run.sh outdoor`.
+
+# The plot polygon (axis-aligned edges, whole metres) and the house footprint (built by #75a's layout engine).
+plot = [[0, 0], [80, 0], [80, 60], [0, 60]]
+footprint = [18, 24, 24, 20]
+# The area the ground mesh covers in 1 m cells: the plot and the street. Beyond it a coarse skirt reaches `skirt_m`
+# from the backdrop's centre (sky.toml) in the `beyond` paint.
+ground = [0, 0, 80, 66]
+skirt_m = 80.0
+cell_m = 1.0
+
+# Floors other packages lay at y 0 (the ground leaves a hole so nothing z-fights): the house (#75a), the terrace
+# (#75a), the garage (#75a, #79), the greenhouse (#80). The outdoor stairs' hole is added from [stairs].
+floor_holes = [
+  { id = "house", rect = [18, 24, 24, 20] },
+  { id = "terrace", rect = [22, 16, 20, 8] },
+  { id = "garage", rect = [54, 34, 18, 14] },
+  { id = "greenhouse", rect = [58, 6, 16, 12] },
+]
+
+# The fence (kit v2 pieces, 2 m modules, a 1 m filler where a run is odd). Each opening sits on the plot's edge;
+# Q4 default: the wicket 2 m centred on x 30, the gates 8 m centred on x 64 (both on the south edge, y 60).
+[fence]
+module = "fence_2m"
+filler = "fence_1m"
+post = "fence_post"
+cap = "fence_post_cap"
+post_h = 1.9
+gate_post = "gate_post"
+
+[[fence.openings]]
+id = "wicket"
+piece = "fence_wicket_2m"
+centre = [30, 60]
+width = 2
+passage = [0.35, 1.65]   # the leaf's clear span inside the 2 m module (kit: posts at 0.25 and 1.75)
+
+[[fence.openings]]
+id = "gates"
+piece = "fence_gates_8m"
+centre = [64, 60]
+width = 8
+passage = [0.1, 7.9]
+gate_posts = true
+
+# Ground paints (Q15 A: a cool dusk blue-green lawn with value variation, gravel and soil patches, worn paths).
+# `vary` is the value noise's +- fraction; `scale_m` its feature size.
+[paints]
+grass = { hex = "#3f5f4a", vary = 0.10, scale_m = 7.0 }
+worn = { hex = "#56604b", vary = 0.08, scale_m = 3.0 }
+soil = { hex = "#4a3a2e", vary = 0.08, scale_m = 2.0 }
+gravel = { hex = "#6d6a63", vary = 0.06, scale_m = 1.5 }
+paving = { hex = "#7a756d", vary = 0.05, scale_m = 2.0 }
+concrete = { hex = "#6f6c66", vary = 0.05, scale_m = 4.0 }
+pavement = { hex = "#5c5b59", vary = 0.04, scale_m = 3.0 }
+asphalt = { hex = "#34373d", vary = 0.05, scale_m = 5.0 }
+beyond = { hex = "#2f4a3c", vary = 0.12, scale_m = 12.0 }
+
+# Zones paint the cells in this order (a later zone wins). `rect`, or `line` (a polyline) with `width`.
+[[zones]]
+paint = "grass"
+rect = [0, 0, 80, 60]
+
+[[zones]]
+id = "worn_terrace"
+paint = "worn"
+line = [[16.5, 52], [16.5, 22], [22, 20]]
+width = 1.4
+note = "a worn track from the chill-zone track up the house's west side to the terrace"
+
+[[zones]]
+id = "worn_garden"
+paint = "worn"
+line = [[42, 40], [46, 40], [46, 31], [56, 31]]
+width = 1.4
+note = "the kitchen side door to the garden and the outdoor stairs"
+
+[[zones]]
+id = "worn_chill"
+paint = "worn"
+line = [[29, 52], [16, 52]]
+width = 1.2
+
+[[zones]]
+id = "soil_beds_front"
+paint = "soil"
+rect = [20, 45, 6, 2]
+
+[[zones]]
+id = "soil_beds_front_e"
+paint = "soil"
+rect = [34, 45, 6, 2]
+
+[[zones]]
+id = "gravel_side"
+paint = "gravel"
+rect = [42, 34, 4, 10]
+
+[[zones]]
+id = "gravel_stairs"
+paint = "gravel"
+rect = [58, 28, 12, 6]
+
+[[zones]]
+id = "path"
+paint = "paving"
+rect = [29, 44, 2, 16]
+
+[[zones]]
+id = "driveway"
+paint = "concrete"
+rect = [59, 48, 10, 12]
+
+[[zones]]
+id = "driveway_gravel"
+paint = "gravel"
+rect = [57, 48, 2, 12]
+
+[[zones]]
+id = "pavement"
+paint = "pavement"
+rect = [0, 60, 80, 2]
+
+[[zones]]
+id = "street"
+paint = "asphalt"
+rect = [0, 62, 80, 4]
+
+[[zones]]
+id = "wicket_apron"
+paint = "paving"
+rect = [29, 60, 2, 2]
+
+[[zones]]
+id = "gates_apron"
+paint = "concrete"
+rect = [60, 60, 8, 2]
+
+# The kerb between the pavement and the street (Q16 A): boxes on the ground, a gap at the driveway's apron.
+[kerb]
+y = 62
+height = 0.15
+width = 0.2
+gaps = [[60, 68]]
+
+# The outdoor stairs (inventory: 4 x 4 m at (62, 29), a 3.2 m drop to the passage): two half flights and a landing,
+# a U. `entry` is the hole's edge the player steps down from (N: from the garden; S: from the garage's back door).
+[stairs]
+rect = [62, 29, 4, 4]
+entry = "N"
+drop = 3.2
+flight = "stairs_outdoor_half"
+landing = "stairs_outdoor_landing"
+railing = "railing_balcony_2m"
+railing_post = "railing_balcony_post"
+
+# Placements (dressing from the dressing library #87 when it lands; boxes of `size` until then). `at` is the
+# footprint's centre (x, y), `yaw` degrees about +Y (0: the long side along x), `size` [x, height, y] in metres.
+# Q16 A: a strip with a kerb, 5 street lights, a few parked cars, a hydrant, poles, then the backdrop.
+[[props]]
+id = "streetlight"
+size = [0.3, 5.0, 0.3]
+light = true
+at = [[8, 60.8], [22, 60.8], [40, 60.8], [52, 60.8], [74, 60.8]]
+
+[[props]]
+id = "parked_car"
+size = [4.3, 1.5, 1.8]
+at = [[13, 63.3], [45, 63.3], [76, 64.4]]
+
+[[props]]
+id = "hydrant"
+size = [0.3, 0.8, 0.3]
+at = [[35, 60.8]]
+
+[[props]]
+id = "trash_bin"
+size = [0.6, 1.1, 0.7]
+at = [[56.8, 60.6], [57.6, 60.6], [70.2, 49.0], [70.2, 50.0]]
+
+[[props]]
+id = "utility_pole"
+size = [0.3, 8.0, 0.3]
+at = [[4, 65.7], [34, 65.7], [72, 65.7]]
+
+[[props]]
+id = "hedge"
+size = [2.0, 1.2, 0.7]
+yaw = 90
+at = [[28.0, 47], [28.0, 49], [28.0, 54], [28.0, 56], [32.0, 47], [32.0, 49], [32.0, 54], [32.0, 56]]
+
+[[props]]
+id = "path_light"
+size = [0.15, 0.6, 0.15]
+light = true
+at = [[27.4, 46], [32.6, 46], [27.4, 51.5], [32.6, 51.5], [27.4, 58], [32.6, 58], [58.2, 50], [58.2, 56],
+      [69.6, 52], [69.6, 57]]
+
+[[props]]
+id = "mailbox"
+size = [0.4, 1.2, 0.25]
+at = [[32.2, 59.3]]
+
+[[props]]
+id = "stepping_stone"
+size = [0.6, 0.05, 0.4]
+at = [[16.5, 52], [18.5, 52], [20.5, 52], [22.5, 52], [24.5, 52], [26.5, 52]]
+
+# Clearances that no prop may enter: the openings' approaches and the stairs' entry.
+[[clear]]
+id = "wicket_approach"
+rect = [29, 57, 2, 9]
+
+[[clear]]
+id = "gates_approach"
+rect = [59.5, 48, 9, 18]
+
+[[clear]]
+id = "path"
+rect = [29, 44, 2, 16]
