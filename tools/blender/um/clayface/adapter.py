@@ -65,13 +65,14 @@ def eye_material():
     mat = bpy.data.materials.get(EYE_MATERIAL)
     if mat is not None:
         return mat
-    mat = cl.gloss(bpy.data.materials.new(EYE_MATERIAL), (1.0, 1.0, 1.0), rough=kit.GLOSS["white"], spec=0.5)
+    # the unlinked base colour and the viewport colour: the white (Workbench and blendfile's check read them)
+    mat = cl.gloss(bpy.data.materials.new(EYE_MATERIAL), tuple(kit.FIXED["white"]), rough=kit.GLOSS["white"], spec=0.5)
     nt = mat.node_tree
     p = next(n for n in nt.nodes if n.type == "BSDF_PRINCIPLED")
     vc = nt.nodes.new("ShaderNodeVertexColor")
     vc.layer_name = EYE_RGB
     nt.links.new(vc.outputs["Color"], p.inputs["Base Color"])
-    mat.diffuse_color = (*kit.FIXED["white"], 1.0)
+    mat["base_from"] = "vertex_colour"  # materials.sync_principled leaves its base colour alone
     return mat
 
 

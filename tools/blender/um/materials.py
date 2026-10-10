@@ -41,6 +41,8 @@ def sync_principled(mat, scripted):
     Returns the largest colour difference that was corrected."""
     if mat.get("look") in ("clay", "baked"):  # the clay look (um/clay.py): a procedural or textured base colour
         return 0.0
+    if mat.get("base_from") == "vertex_colour":  # the face kit's eyes (clayface/adapter.eye_material)
+        return 0.0
     bsdf = principled(mat)
     base = bsdf.inputs["Base Color"]
     if base.is_linked:
