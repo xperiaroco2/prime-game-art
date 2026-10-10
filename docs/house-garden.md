@@ -100,7 +100,8 @@ main), the dressing's and the garden's props (`prop_dirs`; the hedge from `--pla
   three, each picture full size beside it; `proof.json` with the walks, the rays and each view's draw calls,
   primitives and objects, all and the garden layer's (the difference when the layer is hidden; shadow passes
   included). It fails on a walk that stops, a ray miss, an import error or a view where the garden layer takes 150
-  draw calls or more (packages.md #80: under 150 with MultiMesh).
+  draw calls or more (packages.md #80: under 150 with MultiMesh). Tonight the layer takes 98 (top-down) to 141
+  (the lawn) draw calls.
 
 ## Open
 
