@@ -144,6 +144,22 @@ class GroundFloor(unittest.TestCase):
         rep = hd.check(self.data, self.files, hd.catalogue(paths))
         self.assertEqual(rep["problems"], [])
 
+    def test_review_shots_and_lamps(self):
+        paths = [p for p in hd.spec_paths(self.data["settings"]) if p.is_file()]
+        rep = hd.check(self.data, self.files, hd.catalogue(paths))
+        req = hd.review_request(self.data, rep["rooms"])
+        shots = {s["room"]: s for s in req["room_shots"]}
+        self.assertEqual(set(shots), set(ROOMS))
+        for rid, s in shots.items():
+            rx, rz, w, d = self.rooms[rid]["rect"]
+            for x, y, z in (s["from"], s["to"]):
+                self.assertTrue(rx < x < rx + w and rz < z < rz + d, f"{rid}: {s}")
+            self.assertAlmostEqual(s["from"][1], hd.EYE)
+            self.assertTrue(s["node"].endswith("/Rooms/" + self.rooms[rid]["node"]))
+        self.assertEqual(len(req["lamps"]), sum(sum(f.values()) for f in FIXTURES.values()))
+        board = next(f for f in req["features"] if f["name"] == "kitchen_order_board")
+        self.assertGreater(board["from"][2], board["to"][2])  # the board reads from the south
+
 
 if __name__ == "__main__":
     unittest.main()
