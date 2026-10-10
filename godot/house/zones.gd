@@ -380,6 +380,7 @@ func _walk_leg(body: CharacterBody3D, points: Array, speed: float, step: float) 
 	var stuck: int = 0
 	var last: Vector3 = body.global_position
 	var hit: Dictionary = {}
+	var start_pos: Vector3 = body.global_position
 	while steps < LEG_MAX_S * Engine.physics_ticks_per_second and reached < points.size() and stuck < 30:
 		if steps % SUBSTEPS == 0:
 			await physics_frame
@@ -410,7 +411,13 @@ func _walk_leg(body: CharacterBody3D, points: Array, speed: float, step: float) 
 		body.velocity = Vector3(0, body.velocity.y - 9.8 * dt, 0)
 		body.move_and_slide()
 	var end: Vector3 = body.global_position
-	var arrived: bool = reached == points.size() and absf(end.y - float(points[-1][1])) < 0.15
+	# the leg stops 0.3 m (plan) short of its last point: at that point's height (a floor), or on a stair or slope at
+	# the last segment's height there (a round foot on a 45 deg ramp stands up to 0.17 m over it)
+	var a: Vector3 = _p3(points[-2]) if points.size() > 1 else start_pos
+	var b: Vector3 = _p3(points[-1])
+	var seg: float = Vector2(b.x - a.x, b.z - a.z).length()
+	var t: float = clampf(Vector2(end.x - a.x, end.z - a.z).length() / seg, 0.0, 1.0) if seg > 0.01 else 1.0
+	var arrived: bool = reached == points.size() and (absf(end.y - b.y) < 0.15 or absf(end.y - lerpf(a.y, b.y, t)) < 0.2)
 	return {"reached": reached, "of": points.size(), "end": [snappedf(end.x, 0.01), snappedf(end.y, 0.01),
 		snappedf(end.z, 0.01)], "seconds": snappedf(steps * dt, 0.01), "arrived": arrived,
 		"hit": {} if arrived else hit}

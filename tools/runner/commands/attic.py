@@ -98,7 +98,8 @@ VIEWS = [
     ["ridge", "from the ridge at 1.6 m to the yard", [30.0, 34.2, _top(34.2) + 1.6], [30.0, 56.0, 0.0], 75.0],
 ]
 CROUCH_BACK = 0.6  # the climb crouches this far (plan) before the stair's top, under the dormer's roof
-OUT_M = 0.8  # the crouched capsule's first stop out of the window (plan, from the window)
+OUT_M = 1.2  # the crouched capsule's first stop out of the window (plan, from the window): past the lead apron
+# (kit_geom.DORMER_APRON 0.6 m) by more than the capsule's radius, so it stands on the tiles; it stops 0.3 m short
 ASIDE_M = 1.8  # then sideways along the slope, clear of the dormer's front, toward the Lookout
 CROUCH_SPEED = 1.5  # m/s; standing 3 (house/walk.gd)
 
@@ -118,6 +119,10 @@ def walks(data: dict) -> list[dict]:
         run = math.hypot(dx, dy) - house_attic.CLIMB_FOOT
         ux, uy = dx / (run + house_attic.CLIMB_FOOT), dy / (run + house_attic.CLIMB_FOOT)
         crouch = (c["top"][0] - ux * CROUCH_BACK, c["top"][1] - uy * CROUCH_BACK)
+        # coming down, a leg stops 0.3 m short of its last point: aim past the crouch point by twice that, so the
+        # capsule stands up where it stood on the way up (the up leg's stop), clear of the dormer's front over the head
+        back = CROUCH_BACK + 0.6
+        crouch_in = (c["top"][0] - ux * back, c["top"][1] - uy * back)
         ox, oy = (dm["out"][0] - dm["window"][0], dm["out"][1] - dm["window"][1])
         n = math.hypot(ox, oy)
         sill_out = (dm["window"][0] + ox / n * OUT_M, dm["window"][1] + oy / n * OUT_M)
@@ -138,7 +143,7 @@ def walks(data: dict) -> list[dict]:
             {"name": "stand on the slope, to the Lookout", "height": P, "points": [roof[1], look]},
             {"name": "back to the window, standing", "height": P, "points": roof[::-1]},
             {"name": "crouched back in", "height": C, "speed": CROUCH_SPEED,
-             "points": [g(dm["window"], dm["sill"]), g(c["top"], c["top_h"]), stair[1]]},
+             "points": [g(dm["window"], dm["sill"]), g(c["top"], c["top_h"]), g(crouch_in, c["top_h"] * (run - back) / run)]},
             {"name": "down the stair, standing", "height": P, "points": stair[:1]}]})
     return out
 
