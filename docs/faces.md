@@ -260,8 +260,11 @@ character's face arrives as:
   (glTF `TEXCOORD_0`; sizes in the piece's `piece.json`, `colour_px` and `normal_px`), the mouth cavity baked as clay.
   The teeth keep a glossy material of their own on the head (`claylook.GLOSSY`). A second UV layer `mask`
   (`TEXCOORD_1`) marks the parts the game may tint: brows at (1, 0), facial hair at (0, 1), the rest at (0, 0).
-- **The eyes** (`<id>_eyes`): the whites and the pupils, glossy, not baked (two materials); the part godot-check finds
-  the eyes by.
+- **The eyes** (`<id>_eyes`): the whites and the pupils, glossy, not baked, as ONE material `fb_eye` (one surface;
+  the manager's call of 2026-10-10 to keep the character within the contract's 8): its base colour is the colour
+  attribute `eye_rgb` (corner domain, linear; glTF `COLOR_0`, which Godot's importer multiplies into the albedo), the
+  kit's white or pupil colour per face; roughness the white's (0.17; the lab's pupil had 0.3). The part godot-check
+  finds the eyes by.
 - **Shape keys** (glTF morph targets): on the head `mouth_a`, `mouth_e`, `mouth_o`, `mouth_closed` (the mouth states
   over the rest mouth), `blink_half`, `blink`, `ears_tuck`, `ears_hide`; on the eyes `look_l`, `look_r`, `look_u`,
   `look_d` (yaw and pitch combine; the check proves no pupil sinks into the white at any blend). The ear keys are set
@@ -269,9 +272,8 @@ character's face arrives as:
 - Every face part is skinned 100 % to the Head bone; the head's face skin in front of the kit follows the Head bone
   alone (`facekit.rigid_face_skin`), fading back to the pack weights below it.
 
-Open: m1 of `clay_round_d` has 9 surfaces (head clay and teeth, eye white and pupil, hair, accessory, top, bottom,
-shoes), over the contract's 8 when a character wears an extra; the teeth as clay or one eye material would fix it (a
-look question for the engineer).
+A character with an extra therefore has 8 surfaces: the head (baked clay and the glossy teeth), the eyes, hair,
+accessory, top, bottom and shoes (before the one eye material, m1 of `clay_round_d` had 9).
 
 ### The many-face check: `faces --kit-check [N]`
 

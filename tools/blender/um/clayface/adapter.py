@@ -2,15 +2,18 @@
 head's own ears flattened, its face skin given to the Head bone alone, the kit's face built from the recipe
 character's `face_kit` picks and merged into two skinned meshes:
 
-- `<id>_eyes`: the eye whites and pupils (glossy, not baked; the look keys), the part godot-check finds the eyes by;
+- `<id>_eyes`: the eye whites and pupils (one glossy material whose colour is the vertex colour EYE_RGB: white or
+  pupil per face; not baked; the look keys), the part godot-check finds the eyes by;
 - `<id>_face`: lids, brows, nose, mouth, teeth, ears and facial hair with every expression key (mouth, blink, ears),
   joined into the head by the clay pass (claylook.JOIN_INTO_HEAD) and baked into its atlas; its mask UV (brows (1, 0),
   facial hair (0, 1)) lets the game tint them.
 
-The mouth cavity becomes clay (baked into the head atlas, not a surface of its own): the character stays within the
-contract's 8 surfaces. The ear state comes from the hair item (kit.hair_flags); apply it after the bake (set_ears).
+The mouth cavity becomes clay (baked into the head atlas, not a surface of its own) and the eyes are one surface
+(one_eye_material): the character stays within the contract's 8 surfaces. The ear state comes from the hair item
+(kit.hair_flags); apply it after the bake (set_ears).
 """
 import bpy
+import numpy as np
 
 from .. import facekit as fk
 from .. import heads
@@ -19,6 +22,8 @@ from ..util import relink
 from . import checks, kit
 from .face import build_face, game_mesh, rigid_full_z
 
+EYE_MATERIAL = "fb_eye"  # the eyes' one material (shared by every character)
+EYE_RGB = "eye_rgb"  # its colour attribute (corner domain, linear float): kit.FIXED's white or pupil per face
 EYE_PIECES = ("whites", "pupils")  # the pieces of the eyes object; every other piece goes into the face object
 EAR_TUCK_X = 0.082  # the pack head's own ears flattened to this half-width (m) unless the recipe tucks them itself
 RIGID_FRONT_Y = -0.07  # the face skin in front of this world y follows the Head bone alone (facekit.rigid_face_skin)
@@ -53,6 +58,42 @@ def _merge(face, names, name, coll):
     return o
 
 
+def eye_material():
+    """The eyes' one glossy material (the manager's call, 2026-10-10: one surface for the whites and the pupils): the
+    base colour is the colour attribute EYE_RGB (glTF COLOR_0, which Godot's importer multiplies into the albedo), the
+    roughness the white's (kit.GLOSS)."""
+    mat = bpy.data.materials.get(EYE_MATERIAL)
+    if mat is not None:
+        return mat
+    mat = cl.gloss(bpy.data.materials.new(EYE_MATERIAL), (1.0, 1.0, 1.0), rough=kit.GLOSS["white"], spec=0.5)
+    nt = mat.node_tree
+    p = next(n for n in nt.nodes if n.type == "BSDF_PRINCIPLED")
+    vc = nt.nodes.new("ShaderNodeVertexColor")
+    vc.layer_name = EYE_RGB
+    nt.links.new(vc.outputs["Color"], p.inputs["Base Color"])
+    mat.diffuse_color = (*kit.FIXED["white"], 1.0)
+    return mat
+
+
+def one_eye_material(eyes):
+    """Folds the eyes' white and pupil materials into eye_material(): every corner gets its face's old material colour
+    (kit.FIXED) in the colour attribute EYE_RGB, then one material slot. Returns {old material: faces}."""
+    me = eyes.data
+    old = [s.material for s in eyes.material_slots]
+    rgb = np.array([(*(kit.FIXED.get(m.name[3:]) if m and m.name.startswith("fb_") and m.name[3:] in kit.FIXED
+                       else m.diffuse_color[:3]), 1.0) for m in old], np.float32)
+    idx = np.zeros(len(me.polygons), np.int32)
+    me.polygons.foreach_get("material_index", idx)
+    tot = np.zeros(len(me.polygons), np.int32)
+    me.polygons.foreach_get("loop_total", tot)
+    col = me.color_attributes.get(EYE_RGB) or me.color_attributes.new(EYE_RGB, "FLOAT_COLOR", "CORNER")
+    col.data.foreach_set("color", rgb[np.repeat(idx, tot)].ravel())
+    me.polygons.foreach_set("material_index", np.zeros(len(me.polygons), np.int32))
+    me.materials.clear()
+    me.materials.append(eye_material())
+    return {m.name: int((idx == i).sum()) for i, m in enumerate(old) if m}
+
+
 def build(arm, parts, coll, rc, eyes_at, skin_mat):
     """Builds the kit face on parts["head"] (rest pose, at the origin, after the skin material is set). Returns
     ({"eyes": obj, "face": obj}, report)."""
@@ -79,6 +120,7 @@ def build(arm, parts, coll, rc, eyes_at, skin_mat):
     if cav is not None and not cl.is_clay(cav):  # baked into the head atlas: one surface fewer
         cl.clay(cav, tuple(cav.diffuse_color[:3]))
     eyes = _merge(face, EYE_PIECES, cid + "_eyes", coll)
+    rep["eye_material"] = {"name": EYE_MATERIAL, "faces": one_eye_material(eyes)}
     fo = _merge(face, [k for k in face.pieces if k not in EYE_PIECES], cid + "_face", coll)
     rep["mask_faces"] = face.meta.get("mask_faces")
     face.remove()
