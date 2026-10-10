@@ -14,7 +14,6 @@
    "skin": [0.6, 0.39, 0.27],
    "head": {"file": "Beach Character.glb", "object": "Beach_Head", "keep": ["Skin"], "eye_materials": ["Eye"]},
    "hair": {"file": "Beach Character.glb", "object": "Beach_Head", "materials": ["Hair"]},
-   "extras": [{"role": "accessory", "gender": "W", "file": "Sci Fi Character.glb", "object": "SciFi_Head", "materials": ["Blue"]}],
    "top": {"file": "Adventurer.glb", "object": "Adventurer_Body"},
    "bottom": {"file": "Adventurer.glb", "object": "Adventurer_Legs"},
    "shoes": {"file": "Worker.glb", "object": "Worker_Feet"},
