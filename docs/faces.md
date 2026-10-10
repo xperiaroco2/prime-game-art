@@ -322,6 +322,10 @@ pupil, the look's sag and triangles. It writes `kit_check.json` (with the worst 
 
 ## Gotchas
 
+- The clay kit's eyes paint the white, iris and pupil as vertex colours (`adapter.eye_material`). Workbench, in
+  `MATERIAL` or `TEXTURE` colour mode (the assembler's `um/render.py`), draws none of them: the eyes come out as pale
+  balls with a lid ring and at most a dark dot, which read as flat glasses with the pupils lost (PR #102's cast sheet on m1 and m2,
+  art #42 point 4). Judge kit faces in Eevee (or Cycles), never from the assembler's Workbench views.
 - `(1 - u * u) ** 0.8` with `u` slightly beyond 1 is a complex number in Python: clamp with `max(0, ...)` before a
   fractional power (a stroke runs to `u = 1.05`).
 - Turning a head for the three-quarter view moves its face sideways (it turns about the feet, the face is 15 cm in
