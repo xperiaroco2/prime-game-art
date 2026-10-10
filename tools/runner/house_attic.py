@@ -241,10 +241,19 @@ def check(z: dict, data: dict) -> list[str]:
         if lk:
             if not any(math.dist(cell(*c), lk["station"]) <= 0.5 for c in seen):
                 problems.append("the Lookout station's point is out of reach from the roof door")
+            lv = _level(data, "roof")
+            room = next(r for r in lv["rooms"] if r["id"] == z["room"])
+            marker = next((s["at"] for s in room.get("stations", []) if s["name"] == "Lookout"), None)
+            at = (room["rect"][0] + marker[0], room["rect"][1] + marker[2]) if marker else None
+            if at is None or math.dist(at, lk["station"]) > 1e-6:
+                problems.append(f"the lookout's station {lk['station']} is not the layout's Lookout station")
             view = lookout(z, data)
-            for t in lk["see"]:
-                if max(v["see"][t] for v in view) < 0.5:
-                    problems.append(f"the lookout sees less than half of the {t} from every eye")
+            own = next((v for v in view if math.dist(v["eye"], lk["station"]) < 1e-6), None)
+            if own is None:
+                problems.append("the lookout's station is not one of its eyes")
+            for t in lk["see"] if own else []:
+                if own["see"][t] < 0.5:
+                    problems.append(f"the lookout sees less than half of the {t} from its station")
             for v in view:
                 if v["house_windows"]:
                     problems.append(f"the lookout eye {v['eye']} sees into the house: {v['house_windows']}")

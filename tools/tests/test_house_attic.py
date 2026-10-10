@@ -68,12 +68,20 @@ class AtticTest(unittest.TestCase):
 
 
 class RoofTest(unittest.TestCase):
-    def test_the_lookout_sees_the_yard_from_the_parapet_and_not_inside(self) -> None:
+    def test_the_lookout_sees_the_yard_from_its_station_and_not_inside(self) -> None:
         views = {tuple(v["eye"]): v for v in A.lookout(ROOF, DATA)}
-        at_parapet = views[(30.0, 44.4)]
-        self.assertEqual(at_parapet["see"], {"wicket": 1.0, "gates": 1.0})
+        self.assertEqual(tuple(ROOF["lookout"]["station"]), (30.0, 44.2))
+        self.assertEqual(views[(30.0, 44.2)]["see"], {"wicket": 1.0, "gates": 1.0})
+        self.assertEqual(views[(30.0, 42.5)]["see"], {"wicket": 0.0, "gates": 0.0})  # the doc's point: reported only
         for v in views.values():
             self.assertEqual(v["house_windows"], [])
+
+    def test_the_lookout_is_judged_from_its_station(self) -> None:
+        z = copy.deepcopy(ROOF)
+        z["lookout"]["station"] = [30.0, 42.5]  # sees the parapet only; the layout's marker is elsewhere
+        probs = A.check(z, DATA)
+        self.assertTrue(any("not the layout's Lookout station" in p for p in probs), probs)
+        self.assertTrue(any("less than half of the wicket from its station" in p for p in probs), probs)
 
     def test_the_loot_crate_is_on_its_station(self) -> None:
         crate = next(it for it in ROOF["items"] if it["id"] == "loot_crate")

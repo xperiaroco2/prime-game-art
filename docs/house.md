@@ -208,10 +208,12 @@ another format (`[[props]]` at [x, h, z]); moving the attic and the deck onto th
   line from the eye (1.6 m) to it clears every prop but its holder. Tonight 12 spots, all reachable.
 - **The lookout** (`[lookout]`): from each eye at 1.6 m, the share of sample points on the plot's wicket and gates
   (`plot.toml`'s fence openings) seen over the parapet's cap (7.46 m), the deck slab, the attic and the roof props; and
-  every window of the house (basement, ground, second floor) and the attic in view. The check wants the openings at
-  least half in view from some eye and no window of the house from any. Findings for the engineer: from the doc's
-  station point (30, 42.5), 2.5 m from the parapet, the parapet hides everything within about 33 m (the wicket and the
-  gates 0 %); at the parapet in front of it (30, 44.4) both are 100 % in view. The attic's two south knee windows
+  every window of the house (basement, ground, second floor) and the attic in view. `station` is the layout's Lookout
+  station (`roof.toml`) in plan metres and one of the eyes; the check wants the openings at least half in view from
+  the station's eye and no window of the house from any eye. From the doc's point (30, 42.5), 2.5 m from the parapet,
+  the parapet hides everything within about 33 m (the wicket and the gates 0 %; a grid along x 30: 33 % at y 43.75,
+  67 % at 44.0, 100 % from 44.2), so the Lookout station stands at (30, 44.2) and the doc's point is a second eye,
+  reported only (the engineer's call: move it back, or lower the parapet there). The attic's two south knee windows
   (25, 40) and (35, 40) look onto the deck, so the lookout sees into the attic.
 
 **The review shoot**: `tools/run.sh attic --shoot DIR [--kit DIR]` (Godot, off-screen, about 2 minutes) generates the

@@ -32,9 +32,11 @@ station = "Loot"                   # the design doc's (41.5, 25)
 at = [41.5, 25.0]
 yaw = -90.0
 
-# The lookout (the design doc's (30, 42.5)): what a player sees at eye height 1.6 m from the station's point and
-# from the parapet in front of it. `see`: the plot's fence openings (layouts/house/outdoor/plot.toml) that must show.
+# The lookout: what a player sees at eye height 1.6 m. `station` is the layout's Lookout station (roof.toml) in plan
+# metres and must be one of the `eyes`; from it the `see` openings of the fence (layouts/house/outdoor/plot.toml) must
+# show at least half. The design doc's point (30, 42.5) sees neither over the 1 m parapet (0 %), so the station
+# stands at (30, 44.2), 0.8 m from the parapet (100 %); the doc's point stays as a second eye, reported only.
 [lookout]
-station = [30.0, 42.5]
-eyes = [[30.0, 42.5], [30.0, 44.4]]
+station = [30.0, 44.2]
+eyes = [[30.0, 44.2], [30.0, 42.5]]
 see = ["wicket", "gates"]
