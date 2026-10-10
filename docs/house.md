@@ -94,6 +94,37 @@ placeholder boxes without collision until a leaf prop exists; Q11 A, no per-room
 Q21 B, the inventory's props and counts for every room. Notes from the game's greybox: spawn marker Circle01 lies
 under the dining table and Circle02 0.2 m from the terrace table.
 
+## The basement (#78)
+
+Eight dressed rooms (`layouts/house/dressing/{storage,darkroom,corridor,boiler_room,generator_hall,pump_room,
+switch_room,passage}.toml`): 147 props, among them every station's task prop and #82's room props (boiler, pump,
+water tank, three switchboards, three cable drums, two enlargers, two tray tables), and the inventory's 55 light
+fixtures (meshes only; #83a lights them). Kit pillars are `[[pieces]]` in `basement.toml`; the dressing check counts
+them as obstacles (`house_dressing.PIECE_HALF`).
+
+`tools/runner/house_basement.py` (run by `house`, rows in `tools/out/house/basement.json`; tests
+`tools/tests/test_house_basement.py`) checks the level design on the plan at eye height (1.6 m):
+- the intended dead ends (the darkroom, the boiler, pump and switch rooms) have exactly one door and no stairs;
+- each switch is in sight from every door of its room (no prop taller than the switch box's 1.1 m on the line);
+- the generator hall's sight lines from the passage door (1 m in) to the other four doors, the generator and the
+  four corners, and from each door to the generator; pillars and props taller than 1.6 m block. Tonight's clearances:
+  corridor door 2.29 m, boiler room door 0.94, pump room door 1.75, switch room door 2.0, generator 5.11, corners
+  1.24 (NW), 3.08 (NE), 0.8 (SW), 3.12 (SE); from the doors to the generator 1.52 to 4.8 m.
+
+Defaults used (for the engineer; data, easy to change):
+- The hall's pillars: 4, not the inventory's 8 (an 8 m grid does not fit 18 x 20 m), at (44, 26), (54, 26), (44, 38)
+  and (54, 38): a 10 x 12 m grid 4 m off the walls, the best of a grid search for the longest clear sight lines.
+  Storage keeps 4 at (19, 23), (25, 23), (19, 28), (25, 28).
+- The outdoor stairs (`outdoor_stairs` in `ground.toml`, a placeholder): a U of two `stairs_outdoor_half` and the
+  landing in a 4 x 4 m stairwell at (62, 28), entered from the south 2 m from the garage's back door (63, 34): down
+  north to the landing on the passage's north wall, then down south to the passage, the foot at (63, 32). The doc's
+  stairwell at (62, 29) leaves 1 m between the foot and a passage wall whichever way it is entered, too narrow for
+  the 1.36 m capsule; the zone keeps the doc's rect. The passage has no slab over it (the yard is not a floor): the
+  yard's ground (#81a) must close it round the stairwell.
+- Switches on a wall in sight from the door: A on storage's west wall, B on the boiler room's west wall, C and D on
+  the east walls; a cage lamp over each switch (its pool is #83a's); the generator's front 0.65 m south of its
+  marker; the darkroom's photo board faces its door.
+
 ## The rules (`validate`)
 
 - Rooms on whole metres; no two rooms with floors overlap at one height (an open room may hold a room: the roof deck

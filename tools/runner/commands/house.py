@@ -7,7 +7,7 @@ import argparse
 import json
 from pathlib import Path
 
-from .. import common, house_dressing, house_layout
+from .. import common, house_basement, house_dressing, house_layout
 from . import _frames, _godot
 
 NAME = "house"
@@ -40,6 +40,7 @@ def run(args: argparse.Namespace) -> int:
         raise common.Failure(f"house layout: {len(problems)} problems")
     common.say("house layout: grid, openings, corners, footprints, stairs and holes hold")
     dressing = check_dressing(data, args.layouts, args.props_spec)
+    check_basement(data, args.layouts, args.props_spec)
     if args.check:
         return 0
     planned = house_layout.plan(data)
@@ -158,3 +159,34 @@ def walk(data: dict, summary: dict, folder: Path, props: dict | None = None) -> 
         return 1
     common.ok(f"house walk: {len(result['walks'])} walks with a {2 * result['radius_m']:g} m capsule, the 1.5 m control stops")
     return 0
+
+
+def check_basement(data: dict, layouts: Path, extra) -> None:
+    """The basement's dead ends and sight lines (house_basement, art #78) into tools/out/house/basement.json; a dead end
+    with more than one door, or a switch out of sight from a door of its room, fails the command."""
+    st = data["settings"]
+    folder = Path(layouts) / st.get("dressing_dir", "dressing")
+    if not any(lv["level"] == house_basement.LEVEL for lv in data["levels"]):
+        return
+    dressings = house_dressing.load(folder) if folder.is_dir() else {}
+    cat = house_dressing.catalogue(house_dressing.spec_paths(st, extra=extra))
+    ends = house_basement.dead_ends(data)
+    hall = house_basement.hall_sight(data, dressings, cat)
+    switches = house_basement.switch_sight(data, dressings, cat)
+    report = common.OUT / "house" / "basement.json"
+    report.parent.mkdir(parents=True, exist_ok=True)
+    report.write_text(json.dumps({"dead_ends": {k: {"doors": d, "stairs": s} for k, (d, s) in ends.items()},
+                                  "hall_sight": hall, "switch_sight": switches}, indent=1),
+                      encoding="utf-8", newline="\n")
+    problems = [f"dead end {k}: {d} doors, {s} stairs (one door, no stairs)" for k, (d, s) in ends.items()
+                if (d, s) != (1, 0)]
+    problems += [f"{r['line']}: blocked by {r['nearest']}" for r in switches if r["clear"] is not None and r["clear"] <= 0]
+    for r in hall:
+        common.say(f"  sight {r['line']}: {r['length']:g} m, clear by {r['clear']} m ({r['nearest']})")
+    if problems:
+        for p in problems:
+            common.say(f"  {p}")
+        raise common.Failure(f"house basement: {len(problems)} problems")
+    blocked = [r["line"] for r in hall if r["clear"] is not None and r["clear"] <= 0]
+    common.say(f"house basement: {len(ends)} dead ends with one door each; {len(switches)} switch lines clear; "
+               f"hall sight lines blocked: {', '.join(blocked) or 'none'}; {report.as_posix()}")
