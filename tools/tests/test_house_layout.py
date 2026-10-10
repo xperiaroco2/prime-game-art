@@ -269,7 +269,7 @@ class WalkRequestTest(unittest.TestCase):
     def test_every_door_of_the_walked_levels_is_crossed(self) -> None:
         doors = [(lv["level"], tuple(d["at"])) for lv in DATA["levels"] if lv["level"] in H.WALK_LEVELS
                  for d in lv.get("doors", []) if d.get("kind", "door") in H.DOOR_KINDS and d.get("leaf") != "kit"]
-        walks = [w for w in self.REQ["walks"] if w["kind"] != "stairs"]
+        walks = [w for w in self.REQ["walks"] if w["kind"] not in ("stairs", "loop")]
         self.assertEqual(len(walks), len(doors))
         for w, (name, (x, y)) in zip(walks, doors):
             a, b = w["points"]

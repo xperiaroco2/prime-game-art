@@ -7,7 +7,7 @@ import argparse
 import json
 from pathlib import Path
 
-from .. import common, house_dressing, house_layout
+from .. import common, house_dressing, house_layout, house_lights
 from . import _frames, _godot
 
 NAME = "house"
@@ -31,14 +31,15 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
 
 def run(args: argparse.Namespace) -> int:
     data = house_layout.load(args.layouts)
-    problems = house_layout.validate(data)
+    lights = house_lights.load(args.layouts / "lights.toml")
+    problems = house_layout.validate(data) + house_lights.validate(lights, data)
     rooms = sum(len(lv["rooms"]) for lv in data["levels"])
     common.say(f"house layout: {len(data['levels'])} levels, {rooms} rooms, kit {data['settings']['kit_dir']}")
     if problems:
         for p in problems:
             common.say(f"  {p}")
         raise common.Failure(f"house layout: {len(problems)} problems")
-    common.say("house layout: grid, openings, corners, footprints, stairs and holes hold")
+    common.say("house layout: grid, openings, corners, footprints, stairs, holes and the light kit hold")
     dressing = check_dressing(data, args.layouts, args.props_spec)
     if args.check:
         return 0
@@ -57,6 +58,14 @@ def run(args: argparse.Namespace) -> int:
     report = common.OUT / "house" / "plan.json"
     report.parent.mkdir(parents=True, exist_ok=True)
     report.write_text(json.dumps({"summary": summary, "plan": planned}, indent=1), encoding="utf-8", newline="\n")
+    fixtures = house_lights.plan(lights, data)
+    lit = house_lights.write(lights, data, planned, fixtures, args.out)
+    (common.OUT / "house" / "lights.json").write_text(
+        json.dumps({"summary": lit, "presets": lights["presets"], "bake": lights["bake"], "zones": lights["zones"],
+                    "fixtures": fixtures}, indent=1), encoding="utf-8", newline="\n")
+    for zone, z in lit["zones"].items():
+        common.say(f"  zone {zone}: {z['rooms']} rooms, {z['pieces']} level pieces, {z['fixtures']} fixtures, "
+                   f"{z['lights'] - z['fixtures']} moon spots")
     common.say(f"house: {summary['instances']} instances of {len(summary['pieces'])} pieces -> {args.out.as_posix()}; "
                f"plan {report.as_posix()}")
     if args.walk:
@@ -152,7 +161,8 @@ def walk(data: dict, summary: dict, folder: Path, props: dict | None = None, dre
     for w in result["walks"] + [result["control"]]:
         mark = "ok  " if w["pass"] else "FAIL"
         common.say(f"  {mark} {w['name']}: {'arrived' if w['arrived'] else 'stopped'} at {w['end']} "
-                   f"({w['reached']}/{w['of']} points, {w['seconds']} s)")
+                   f"({w['reached']}/{w['of']} points, {w['seconds']} s)"
+                   + (f"; the doc {w['doc_s']} s, {'within' if w['within_1s'] else 'NOT within'} 1 s" if "doc_s" in w else ""))
     for name, info in result["shots"].items():
         common.say(f"  {name}: {info['draw_calls']} draw calls, {info['objects']} objects, {info['primitives']} primitives")
     for name, info in result.get("rooms", {}).items():
@@ -161,7 +171,8 @@ def walk(data: dict, summary: dict, folder: Path, props: dict | None = None, dre
     for line in house_dressing.swatch_report(result.get("swatches", [])):
         common.say(f"  swatch {line}")
     common.say(f"  {result['instances']['mesh_instances']} mesh instances, {result['instances']['static_bodies']} bodies; "
-               f"sheet {(folder / 'sheet.png').as_posix()}")
+               f"sheet {(folder / 'sheet.png').as_posix()}"
+               + (f", the second floor {(folder / 'upper.png').as_posix()}" if (folder / "upper.png").is_file() else ""))
     if failed or errors:
         common.bad(f"house walk: {len(failed)} walks failed, {len(errors)} import errors")
         return 1
