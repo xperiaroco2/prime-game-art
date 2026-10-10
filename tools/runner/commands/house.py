@@ -9,7 +9,7 @@ import tomllib
 from pathlib import Path
 
 from .. import common, house_basement, house_dressing, house_layout, house_lights, house_routes
-from . import _frames, _godot
+from . import _frames, _godot, _house_bake
 
 NAME = "house"
 HELP = "check the House layout (layouts/house/*.toml) and generate its room, level and house scenes from the kit"
@@ -30,6 +30,19 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--walk", type=Path, metavar="DIR",
                         help="stage the kit GLBs, import, then walk and shoot the house in an off-screen Godot window "
                              "into DIR (walk.json, sheet.png, exterior.png, stills)")
+    parser.add_argument("--bake", metavar="ZONES",
+                        help="bake these zones of lights.toml (comma-separated, or all) in the editor in an off-screen "
+                             "window: night only (00:00-08:00 local) unless the manager granted a window")
+    parser.add_argument("--preset", default="high", choices=["high", "low"], help="the bake's texel preset")
+    parser.add_argument("--no-bake", action="store_true", help="with --bake: stage, import and build only (by day)")
+    parser.add_argument("--grid", action="store_true",
+                        help="with --bake: one bake per variant of texel 8/12/16 x denoiser on/off x bounce energy "
+                             "1.0/1.5 instead of the preset (#83)")
+    parser.add_argument("--merge", action="store_true",
+                        help="with --bake: weld each room level's floor tiles into one unwrapped mesh (one lightmap "
+                             "island per floor kind and height instead of one per tile)")
+    parser.add_argument("--review", type=Path, metavar="DIR",
+                        help="with --bake: baked and real-time frames, sheet.png and measures.json into DIR")
     parser.add_argument("--basement", type=Path, metavar="DIR",
                         help="stage and import like --walk, then light the basement with lamp stand-ins and shoot its "
                              "review into DIR (basement_review.toml; sheet.png, a still per room, basement.json)")
@@ -81,6 +94,12 @@ def run(args: argparse.Namespace) -> int:
                    f"{z['lights'] - z['fixtures']} moon spots")
     common.say(f"house: {summary['instances']} instances of {len(summary['pieces'])} pieces -> {args.out.as_posix()}; "
                f"plan {report.as_posix()}")
+    if args.bake:
+        if args.out.resolve() != DEFAULT_OUT.resolve():
+            raise common.Failure("--bake needs the scenes in godot/import/house (drop --out)")
+        zones = list(lights["zones"]) if args.bake == "all" else args.bake.split(",")
+        return _house_bake.run(data, lights, zones, args.preset, args.review, args.no_bake, found, args.grid,
+                               args.merge)
     if (args.walk or args.basement) and args.out.resolve() != DEFAULT_OUT.resolve():
         raise common.Failure("--walk and --basement need the scenes in godot/import/house (drop --out)")
     code = 0
