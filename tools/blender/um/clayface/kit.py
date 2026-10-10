@@ -446,6 +446,60 @@ STRICT_NOSES = {"pinocchio"}
 STRICT_NOSE_PAIRS = {("nose", "eye"), ("nose", "lid")}
 
 
+def bad_pairs(nose):
+    """The piece pairs that must never touch on a face with this nose pick (checks.collisions)."""
+    return BAD_PAIRS | (STRICT_NOSE_PAIRS if nose in STRICT_NOSES else set())
+
+
+# art #42 round 3, the brow measure (checks.brow_visibility): at least BROW_SEEN_MIN of each brow's vertices seen from
+# the front, and the lowest front brow point over an eye at least this far above (< 0: below) the resting upper lid's
+# top. Per brow style: the angry brows' inner ends dip in front of the lid over big eyes by design (the lab's V; the
+# kit-check of 2026-10-10 measured -9.2 mm men, -9.99 mm women); every other style keeps the first limit, -3 mm, which
+# the same run passed with no failure (w3's fixed brows: -2.46 mm; sunk under the formal updo: -17.4 mm). A brow inside
+# the eyeball is a separate failure (checks.brow_in_white), and a brow on a pupil a collision (BAD_PAIRS).
+BROW_SEEN_MIN = 0.25
+BROW_EYE_CLEAR_MIN_MM = {"angry": -10.5}
+BROW_EYE_CLEAR_STRICT_MM = -3.0
+
+
+def brow_clear_min_mm(style):
+    """The brow-to-lid clearance limit (mm) for a brow style."""
+    return BROW_EYE_CLEAR_MIN_MM.get(style, BROW_EYE_CLEAR_STRICT_MM)
+
+
+def brow_visible_ok(seen_share, eye_clear_mm, style):
+    """The brow measure's verdict: seen_share {"L": share, "R": share}, eye_clear_mm the lowest clearance (mm)."""
+    return min(seen_share.values()) >= BROW_SEEN_MIN and eye_clear_mm > brow_clear_min_mm(style)
+
+
+# art #42 round 3, ear and nose accessories (clayface/accessories.py): the zones that sort an extra's loose pieces by
+# their world centre, and the seat's measure. A seated piece's nearest vertex lies within ACC_GAP_MAX_MM of the kit's
+# ear or nose surface (not floating) and less than half its vertices inside it (not buried); a miss fails the build.
+ACC_EAR_BAND = (-0.10, 0.03)  # an ear piece's centre lies within this world z band about the eye line ...
+ACC_EAR_SIDE_M = 0.045  # ... and at least this far out from the centre line
+ACC_NOSE_BAND = (-0.09, 0.0)  # a nose piece's centre: within this z band about the eye line ...
+ACC_NOSE_SIDE_M = 0.025  # ... within this far of the centre line ...
+ACC_NOSE_FRONT_M = 0.02  # ... and no more than this behind the nose's back
+ACC_GAP_MAX_MM = 3.0
+ACC_INSIDE_MAX = 0.5
+
+
+def accessory_zone(c, x, eye_z, nose_back_y):
+    """"ear_l" / "ear_r" / "nose" / None for a piece centre c (anything with x, y, z; world, the face looks to -Y and
+    +X is the character's left), the head's centre line x, its eye line eye_z and the kit nose's back y."""
+    dz = c.z - eye_z
+    if ACC_EAR_BAND[0] <= dz <= ACC_EAR_BAND[1] and abs(c.x - x) >= ACC_EAR_SIDE_M:
+        return "ear_l" if c.x > x else "ear_r"
+    if ACC_NOSE_BAND[0] <= dz <= ACC_NOSE_BAND[1] and abs(c.x - x) <= ACC_NOSE_SIDE_M and             c.y <= nose_back_y + ACC_NOSE_FRONT_M:
+        return "nose"
+    return None
+
+
+def accessory_seat_ok(gap_mm, inside_share):
+    """The seat measure's verdict for one seated piece group."""
+    return gap_mm <= ACC_GAP_MAX_MM and inside_share < ACC_INSIDE_MAX
+
+
 SCALE_FADE = 0.08  # the same fade as clay_parts.bake_head_scale (SCALE_FADE): face and head stay in register
 
 

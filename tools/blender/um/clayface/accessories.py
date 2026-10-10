@@ -8,16 +8,11 @@ from mathutils import Vector
 from mathutils.bvhtree import BVHTree
 
 from .. import heads
+from .kit import accessory_seat_ok, accessory_zone
 from .mesh import piece_coords
 
 PIERCE_M = 0.002  # the ring's top passes this far up through the lobe or the nose's underside
-EAR_BAND = (-0.10, 0.03)  # an ear piece's centre lies within this world z band about the eye line ...
-EAR_SIDE_M = 0.045  # ... and at least this far out from the centre line
-NOSE_BAND = (-0.09, 0.0)  # a nose piece's centre: within this z band about the eye line ...
-NOSE_SIDE_M = 0.025  # ... within this far of the centre line ...
-NOSE_FRONT_M = 0.02  # ... and no more than this behind the nose's back
 EAR_KEY = {"free": None, "tuck": "ears_tuck"}  # the ear state's shape key the lobe is read from ("hide": no ear)
-GAP_MAX_MM = 3.0  # the measure's limit: a seated piece's nearest vertex within this of the ear or nose surface
 
 
 def _pieces(o):
@@ -65,18 +60,18 @@ def _gap(tree, pts):
 
 
 def classify(c, x, eye_z, nose_back_y):
-    """"ear_l" / "ear_r" / "nose" / None for a piece centre c (world): the zones above."""
-    dz = c.z - eye_z
-    if EAR_BAND[0] <= dz <= EAR_BAND[1] and abs(c.x - x) >= EAR_SIDE_M:
-        return "ear_l" if c.x > x else "ear_r"
-    if NOSE_BAND[0] <= dz <= NOSE_BAND[1] and abs(c.x - x) <= NOSE_SIDE_M and c.y <= nose_back_y + NOSE_FRONT_M:
-        return "nose"
-    return None
+    """"ear_l" / "ear_r" / "nose" / None for a piece centre c (world): kit.accessory_zone."""
+    return accessory_zone(c, x, eye_z, nose_back_y)
+
+
+class SeatError(RuntimeError):
+    """A ring or stud left floating off or buried in the kit's ear or nose (kit.accessory_seat_ok)."""
 
 
 def seat_accessories(face, h, objs, ear_state):
     """Seats the ear and nose pieces of objs (the recipe's extras) on the kit's ears and nose. Returns the report:
-    per object and zone the move (mm) and the gap measure ({"gap_mm", "inside_share", "ok"})."""
+    per object and zone the move (mm) and the gap measure ({"gap_mm", "inside_share", "ok"}). Raises SeatError when
+    a moved piece fails the measure (kit.accessory_seat_ok)."""
     ears, nose = face.pieces.get("ears"), face.pieces.get("nose")
     x, ez = h.x, h.eye_z()
     nose_pts = piece_coords(nose) if nose is not None else []
@@ -119,7 +114,11 @@ def seat_accessories(face, h, objs, ear_state):
             world = piece_coords(o)
             gap, inside = _gap(tree, [world[i] for i in idx])
             out[z] = {"moved": True, "move_mm": round(d.length * 1000, 1), "vertices": len(idx), "gap_mm": gap,
-                      "inside_share": inside, "ok": gap <= GAP_MAX_MM and inside < 0.5}
+                      "inside_share": inside, "ok": accessory_seat_ok(gap, inside)}
         if out:
             rep[o.name] = out
+    bad = ["%s %s: gap %s mm, inside %s" % (o, z, r["gap_mm"], r["inside_share"])
+           for o, zs in rep.items() for z, r in zs.items() if r.get("moved") and not r["ok"]]
+    if bad:
+        raise SeatError("ear/nose accessories not seated on the kit: " + "; ".join(bad))
     return rep

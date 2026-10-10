@@ -234,7 +234,9 @@ pieces (a piece's centre within -0.10..0.03 m of the eye line and over 45 mm off
 2 mm up through the kit ear's lobe, in the ear state's shape (free or tucked; hidden ears carry nothing), and the nose
 pieces so their top passes through the kit nose's underside. It only translates (the ring keeps its orientation) and
 measures each piece: `face_kit.accessories` in `build_report.json` (move, gap to the ear or nose surface, share of the
-ring inside it; ok when the gap is at most 3 mm and under half the ring is buried).
+ring inside it; ok when the gap is at most 3 mm and under half the ring is buried). A piece that fails it fails the
+build (`accessories.SeatError`); the zones and the limits are pure data in `clayface/kit.py` (`accessory_zone`,
+`accessory_seat_ok`), unit-tested in `tools/tests/test_faces_claykit.py`.
 
 ## Pipeline rules learned in the final test
 

@@ -193,3 +193,42 @@ class LabParity(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class P:
+    """A world point for the pure zone rules (anything with x, y and z)."""
+
+    def __init__(self, x, y, z):
+        self.x, self.y, self.z = x, y, z
+
+
+class Accessories(unittest.TestCase):
+    """art #42 round 3: the ear and nose accessories' zones and seat measure (kit.accessory_zone, accessory_seat_ok)."""
+
+    EYE_Z, NOSE_BACK = 1.70, -0.17
+
+    def zone(self, x, y, z):
+        return K.accessory_zone(P(x, y, z), 0.0, self.EYE_Z, self.NOSE_BACK)
+
+    def test_ear_pieces_by_side(self):
+        self.assertEqual(self.zone(0.11, -0.06, 1.66), "ear_l")  # +X is the character's left
+        self.assertEqual(self.zone(-0.11, -0.06, 1.66), "ear_r")
+        self.assertIsNone(self.zone(0.03, -0.06, 1.66))  # too near the centre line for an ear
+        self.assertIsNone(self.zone(0.11, -0.06, 1.55))  # below the ear band (a necklace)
+
+    def test_nose_pieces(self):
+        self.assertEqual(self.zone(0.01, -0.19, 1.65), "nose")
+        self.assertIsNone(self.zone(0.04, -0.19, 1.65))  # off the centre line
+        self.assertIsNone(self.zone(0.0, -0.10, 1.65))  # well behind the nose's back
+        self.assertIsNone(self.zone(0.0, -0.19, 1.72))  # above the eye line (a brow piercing)
+
+    def test_the_seat_measure(self):
+        self.assertTrue(K.accessory_seat_ok(1.39, 0.2))  # m3's ring, round 3
+        self.assertTrue(K.accessory_seat_ok(K.ACC_GAP_MAX_MM, 0.0))
+        self.assertFalse(K.accessory_seat_ok(K.ACC_GAP_MAX_MM + 0.01, 0.0))  # floating
+        self.assertFalse(K.accessory_seat_ok(0.0, K.ACC_INSIDE_MAX))  # buried
+
+    def test_the_build_enforces_it(self):
+        src = (ROOT / "tools/blender/um/clayface/accessories.py").read_text(encoding="utf-8")
+        self.assertIn("accessory_seat_ok(gap, inside)", src)
+        self.assertIn("raise SeatError", src)
