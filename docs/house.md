@@ -288,7 +288,7 @@ another format (`[[props]]` at [x, h, z]); moving the attic and the deck onto th
 
 **The review shoot**: `tools/run.sh attic --shoot DIR [--kit DIR]` (Godot, off-screen, about 2 minutes) generates the
 house's scenes into `godot/import/house`, stages their kit GLBs (each `--kit` folder is searched before the layout's
-`kit_dir`: a piece not yet in the kit's raw folder, such as `gable_band_2m_window` built by `kit --only ... --out`) and
+`kit_dir`: for a piece not yet in the kit's raw folder, built by `kit --only ... --out`) and
 the library GLBs of the dressing, and renders through `godot/house/zones.gd` at dusk: grey labelled boxes for the
 placeholders, the hiding spots (0.12 m, at their height) and the fence openings the lookout must see, two warm review lamps under the ridge (review only), and
 the views in `commands/attic.py` (`VIEWS`: from the hatch, inside at 1.6 m, the hiding spots of the south-west corner
