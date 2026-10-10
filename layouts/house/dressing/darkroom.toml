@@ -144,8 +144,23 @@ at = [11.88, 0, 0.45]
 face = "S"
 
 [[props]]
+id = "open_box"
+at = [10.69, 0, 0.35]
+face = "S"
+
+[[props]]
+id = "cardboard_box"
+at = [11.29, 0, 0.35]
+face = "S"
+
+[[props]]
+id = "book_stack"
+at = [10.24, 0, 0.295]
+face = "S"
+
+[[props]]
 id = "metal_shelving"
-at = [10.54, 0, 0.4]
+at = [14.92, 0, 0.4]
 face = "S"
 
 [[props]]
@@ -160,43 +175,43 @@ face = "N"
 
 [[props]]
 id = "metal_shelving"
-at = [14.42, 0, 0.4]
+at = [1.08, 0, 0.4]
 face = "S"
 
 [[props]]
 id = "filing_cabinet"
-at = [10.22, 0, 9.55]
+at = [0.71, 0, 9.55]
 face = "N"
 
 [[props]]
 id = "sideboard"
-at = [3.52, 0, 0.375]
-face = "S"
-
-[[props]]
-id = "metal_shelving"
-at = [6.91, 0, 9.6]
+at = [9.67, 0, 9.625]
 face = "N"
 
 [[props]]
+id = "metal_shelving"
+at = [4.54, 0, 0.4]
+face = "S"
+
+[[props]]
 id = "filing_cabinet"
-at = [0.45, 0, 8.74]
-face = "E"
+at = [8.58, 0, 9.55]
+face = "N"
 
 [[props]]
 id = "sideboard"
-at = [0.375, 0, 1.26]
+at = [0.375, 0, 7.11]
 face = "E"
 
 [[props]]
 id = "metal_shelving"
-at = [5.96, 0, 0.4]
-face = "S"
+at = [7.29, 0, 9.6]
+face = "N"
 
 [[props]]
 id = "filing_cabinet"
-at = [9.68, 0, 9.55]
-face = "N"
+at = [15.55, 0, 0.94]
+face = "W"
 
 [[props]]
 id = "sideboard"
@@ -205,170 +220,290 @@ face = "W"
 
 [[props]]
 id = "metal_shelving"
-at = [0.4, 0, 4.94]
+at = [0.4, 0, 5.27]
 face = "E"
 
 [[props]]
 id = "filing_cabinet"
-at = [0.52, 0, 9.55]
-face = "N"
+at = [6.71, 0, 0.45]
+face = "S"
 
 [[props]]
 id = "sideboard"
-at = [5.07, 0, 9.625]
+at = [4.69, 0, 9.625]
+face = "N"
+
+[[props]]
+id = "filing_cabinet"
+at = [2.81, 0, 0.45]
+face = "S"
+
+[[props]]
+id = "sideboard"
+at = [15.625, 0, 4.91]
+face = "W"
+
+[[props]]
+id = "filing_cabinet"
+at = [9.82, 0, 0.45]
+face = "S"
+
+[[props]]
+id = "filing_cabinet"
+at = [5.83, 0, 0.45]
+face = "S"
+
+[[props]]
+id = "filing_cabinet"
+at = [0.45, 0, 1.38]
+face = "E"
+
+[[props]]
+id = "filing_cabinet"
+at = [6, 0, 9.55]
+face = "N"
+
+[[props]]
+id = "filing_cabinet"
+at = [0.45, 0, 8.74]
+face = "E"
+
+[[props]]
+id = "filing_cabinet"
+at = [15.55, 0, 1.48]
+face = "W"
+
+[[props]]
+id = "cardboard_box"
+at = [1.75, 0, 4.25]
+face = "N"
+
+[[props]]
+id = "cardboard_box"
+at = [1.75, 0.4, 4.25]
+face = "N"
+
+[[props]]
+id = "crate"
+at = [5.75, 0, 7.25]
+face = "N"
+
+[[props]]
+id = "crate"
+at = [5.75, 0.4, 7.25]
 face = "N"
 
 [[props]]
 id = "metal_shelving"
-at = [1.68, 0, 0.4]
+at = [13.75, 0, 7.25]
+face = "N"
+
+[[props]]
+id = "cardboard_box"
+at = [8.25, 0, 4]
 face = "S"
 
 [[props]]
-id = "filing_cabinet"
-at = [15.55, 0, 4.19]
-face = "W"
+id = "cardboard_box"
+at = [8.25, 0.4, 4]
+face = "S"
 
 [[props]]
-id = "sideboard"
-at = [0.375, 0, 7.11]
+id = "crate"
+at = [14.25, 0, 3.5]
 face = "E"
 
 [[props]]
-id = "filing_cabinet"
-at = [15.55, 0, 1.38]
+id = "crate"
+at = [14.25, 0.4, 3.5]
+face = "E"
+
+[[props]]
+id = "metal_shelving"
+at = [4.75, 0, 7.75]
 face = "W"
 
 [[props]]
-id = "filing_cabinet"
-at = [8.2, 0, 9.55]
+id = "cardboard_box"
+at = [10.75, 0, 4.25]
 face = "N"
 
 [[props]]
-id = "filing_cabinet"
-at = [15.55, 0, 4.73]
-face = "W"
-
-[[props]]
-id = "filing_cabinet"
-at = [8.74, 0, 9.55]
+id = "cardboard_box"
+at = [10.75, 0.4, 4.25]
 face = "N"
 
 [[props]]
-id = "filing_cabinet"
-at = [15.55, 0, 5.37]
-face = "W"
+id = "crate"
+at = [7.25, 0, 3.75]
+face = "N"
 
 [[props]]
-id = "filing_cabinet"
-at = [4.64, 0, 0.45]
+id = "crate"
+at = [7.25, 0.4, 3.75]
+face = "N"
+
+[[props]]
+id = "metal_shelving"
+at = [13, 0, 6.25]
+face = "S"
+
+[[props]]
+id = "cardboard_box"
+at = [12.5, 0, 7.75]
+face = "S"
+
+[[props]]
+id = "cardboard_box"
+at = [12.5, 0.4, 7.75]
+face = "S"
+
+[[props]]
+id = "crate"
+at = [1.5, 0, 8.25]
+face = "E"
+
+[[props]]
+id = "crate"
+at = [1.5, 0.4, 8.25]
+face = "E"
+
+[[props]]
+id = "metal_shelving"
+at = [2.5, 0, 6.5]
+face = "N"
+
+[[props]]
+id = "cardboard_box"
+at = [2.5, 0, 3.75]
+face = "S"
+
+[[props]]
+id = "cardboard_box"
+at = [2.5, 0.4, 3.75]
+face = "S"
+
+[[props]]
+id = "crate"
+at = [8, 0, 3.25]
+face = "S"
+
+[[props]]
+id = "crate"
+at = [8, 0.4, 3.25]
+face = "S"
+
+[[props]]
+id = "metal_shelving"
+at = [3, 0, 2.25]
 face = "S"
 
 [[props]]
 id = "stool"
-at = [9.21, 0, 9.675]
-face = "N"
-
-[[props]]
-id = "paper_stack"
-at = [0.71, 0.9, 3.55]
-face = "E"
-
-[[props]]
-id = "bottles"
-at = [0.73, 0.9, 2.86]
-face = "E"
-
-[[props]]
-id = "bottles"
-at = [0.28, 0.9, 3.56]
-face = "E"
-
-[[props]]
-id = "paper_stack"
-at = [0.36, 0.9, 2.85]
-face = "E"
-
-[[props]]
-id = "bottles"
-at = [15.53, 0.9, 3.06]
-face = "W"
-
-[[props]]
-id = "paper_stack"
-at = [15.66, 0.9, 3.4]
-face = "W"
-
-[[props]]
-id = "paper_stack"
-at = [15.31, 0.9, 2.95]
-face = "W"
-
-[[props]]
-id = "bottles"
-at = [15.18, 0.9, 2.26]
-face = "W"
-
-[[props]]
-id = "book_stack"
-at = [3.52, 0.8, 9.59]
-face = "S"
-
-[[props]]
-id = "book_stack"
-at = [12.32, 0.8, 9.63]
-face = "S"
-
-[[props]]
-id = "book_stack"
-at = [15.54, 0.8, 6.07]
-face = "W"
-
-[[props]]
-id = "book_stack"
-at = [15.44, 0.4, 6.52]
-face = "W"
-
-[[props]]
-id = "paper_stack"
-at = [0.46, 0.4, 8.25]
-face = "E"
-
-[[props]]
-id = "book_stack"
-at = [12.6, 0.8, 0.39]
-face = "S"
-
-[[props]]
-id = "book_stack"
-at = [13.2, 0.4, 0.33]
+at = [2.32, 0, 0.325]
 face = "S"
 
 [[props]]
 id = "paper_stack"
-at = [15.67, 1.3, 9.41]
+at = [0.56, 0.9, 3.6]
+face = "E"
+
+[[props]]
+id = "bottles"
+at = [0.68, 0.9, 3.11]
+face = "E"
+
+[[props]]
+id = "paper_stack"
+at = [0.26, 0.9, 2.85]
+face = "E"
+
+[[props]]
+id = "bottles"
+at = [0.33, 0.9, 3.51]
+face = "E"
+
+[[props]]
+id = "bottles"
+at = [15.38, 0.9, 3.31]
+face = "W"
+
+[[props]]
+id = "paper_stack"
+at = [15.71, 0.9, 3.25]
+face = "W"
+
+[[props]]
+id = "paper_stack"
+at = [15.71, 0.9, 2.85]
+face = "W"
+
+[[props]]
+id = "bottles"
+at = [15.68, 0.9, 3.61]
+face = "W"
+
+[[props]]
+id = "book_stack"
+at = [3.57, 0.8, 9.54]
+face = "S"
+
+[[props]]
+id = "book_stack"
+at = [12.32, 0.8, 9.54]
+face = "S"
+
+[[props]]
+id = "book_stack"
+at = [15.44, 0.8, 6.02]
+face = "W"
+
+[[props]]
+id = "book_stack"
+at = [15.44, 0.4, 6.57]
+face = "W"
+
+[[props]]
+id = "paper_stack"
+at = [0.46, 0.4, 8.2]
+face = "E"
+
+[[props]]
+id = "book_stack"
+at = [12.55, 0.8, 0.33]
+face = "S"
+
+[[props]]
+id = "book_stack"
+at = [13.1, 0.4, 0.28]
+face = "S"
+
+[[props]]
+id = "paper_stack"
+at = [11.24, 0.4, 0.31]
+face = "S"
+
+[[props]]
+id = "wall_shelf"
+at = [10.64, 1.45, 9.9]
 face = "N"
 
 [[props]]
 id = "wall_shelf"
-at = [10.46, 1.45, 9.9]
-face = "N"
-
-[[props]]
-id = "wall_shelf"
-at = [15.9, 1.45, 5.95]
+at = [15.9, 1.45, 6.12]
 face = "W"
 
 [[props]]
 id = "picture_frame"
-at = [4.46, 1.4, 9.9]
+at = [4.38, 1.4, 9.9]
 face = "N"
 
 [[props]]
 id = "paper_stack"
-at = [15.73, 0, 7.05]
-face = "W"
+at = [13.65, 0, 0.27]
+face = "S"
 
 [[props]]
 id = "bottles"
-at = [15.805, 0, 1.86]
-face = "W"
+at = [6.27, 0, 0.195]
+face = "S"

@@ -70,64 +70,72 @@ RULES = {
         "floor": ("basket",),
     },
     "hallway": {
-        "furn": ("@boots",),
-        "fill": ("bookcase", "console_table", "landing_bench", "dresser"),
+        "furn": ("@boots", "@packing"),
+        "fill": ("radiator", "bookcase", "console_table", "landing_bench", "dresser"),
+        "island": ("potted_plant",),
         "mid": ("potted_plant", "console_table", "shoe_rack"),
         "wall": ("picture_frame", "picture_frame", "picture_frame", "wall_shelf", "wall_clock", "picture_frame"),
         "floor": ("doormat", "shoes", "shoes", "basket"),
     },
     "living_room": {
-        "furn": ("@reading",),
-        "fill": ("bookcase", "sideboard", "bookcase", "dresser"),
+        "furn": ("@reading", "@packing"),
+        "fill": ("radiator", "bookcase", "sideboard", "bookcase", "dresser"),
         "mid": ("potted_plant", "armchair", "small_table", "potted_plant", "bean_bag"),
         "wall": ("picture_frame", "picture_frame", "picture_frame", "wall_shelf", "picture_frame", "wall_clock",
                  "picture_frame"),
         "floor": ("basket", "book_stack", "toy_blocks"),
     },
     "dining_room": {
-        "furn": ("@reading", "console_table"),
-        "fill": ("sideboard", "bookcase", "dresser", "bookcase"),
-        "mid": ("potted_plant", "potted_plant"),
+        "furn": ("@drying", "@packing", "console_table"),
+        "fill": ("radiator", "sideboard", "bookcase", "dresser", "bookcase"),
+        "island": ("armchair", "small_table"),
+        "mid": ("potted_plant",),
         "wall": ("picture_frame", "picture_frame", "picture_frame", "wall_clock", "picture_frame", "wall_shelf"),
         "floor": ("basket",),
     },
     "stairs": {
-                "fill": ("bookcase", "landing_bench", "console_table"),
+        "furn": ("@boots", "@packing"),
+        "fill": ("radiator", "bookcase", "landing_bench", "console_table"),
+        "island": ("potted_plant",),
         "mid": ("potted_plant",),
         "wall": ("picture_frame", "picture_frame", "picture_frame"),
         "floor": ("shoes",),
     },
     "pantry": {
-        "furn": ("@store", "wine_bottle_crate"),
+        "furn": ("@store", "wine_bottle_crate", "open_box"),
         "fill": ("jar_shelf", "metal_shelving", "crate+"),
-        "mid": ("crate+", "cardboard_box", "cardboard_box"),
+        "island": ("crate+",),
+        "mid": ("crate+", "cardboard_box"),
         "wall": ("wall_shelf", "wall_shelf"),
         "floor": ("basket", "bottles", "basket"),
     },
     "wc": {
-                "fill": ("dresser", "console_table", "nightstand"),
+        "furn": ("@laundry", "@packing", "radiator"),
+        "fill": ("dresser", "console_table", "nightstand"),
         "mid": ("potted_plant",),
         "wall": ("picture_frame", "wall_shelf"),
         "floor": ("basket",),
     },
     # the upper floor
     "bedroom": {
-        "furn": ("@reading", "standing_mirror"),
-        "fill": ("wardrobe", "dresser", "bookcase", "trunk"),
+        "furn": ("@reading", "@laundry", "standing_mirror"),
+        "fill": ("radiator", "wardrobe", "dresser", "bookcase", "trunk"),
         "mid": ("potted_plant", "trunk", "nightstand"),
         "wall": ("picture_frame", "picture_frame", "picture_frame", "wall_shelf", "wall_clock"),
         "floor": ("shoes", "basket", "book_stack"),
     },
     "kids_room": {
-        "furn": ("@toys", "@reading", "bean_bag"),
+        "furn": ("@toys", "@reading", "@laundry", "bean_bag"),
         "fill": ("bookcase", "dresser", "wardrobe", "toy_chest"),
+        "island": ("bean_bag", "small_table"),
         "mid": ("toy_chest", "small_table", "stool", "cardboard_box+"),
         "wall": ("picture_frame", "wall_shelf", "picture_frame", "wall_clock"),
         "floor": ("toy_blocks", "toy_blocks", "book_stack", "basket", "shoes"),
     },
     "landing": {
-        "furn": ("@reading",),
-        "fill": ("bookcase", "landing_bench", "dresser", "console_table"),
+        "furn": ("@reading", "@laundry"),
+        "fill": ("radiator", "bookcase", "landing_bench", "dresser", "console_table"),
+        "island": ("armchair", "small_table"),
         "mid": ("potted_plant", "console_table", "potted_plant"),
         "wall": ("picture_frame", "picture_frame", "picture_frame", "wall_shelf", "picture_frame"),
         "floor": ("basket",),
@@ -140,43 +148,48 @@ RULES = {
         "floor": ("book_stack", "book_stack", "paper_stack", "basket"),
     },
     "bathroom": {
-                "fill": ("dresser", "console_table", "nightstand"),
+        "furn": ("@laundry", "@drying", "radiator"),
+        "fill": ("dresser", "console_table", "nightstand"),
         "mid": ("potted_plant", "stool"),
         "wall": ("wall_shelf", "picture_frame", "wall_shelf"),
         "floor": ("basket",),
     },
     "guest_room": {
-        "furn": ("@reading",),
-        "fill": ("wardrobe", "dresser", "bookcase", "trunk"),
+        "furn": ("@reading", "@packing"),
+        "fill": ("radiator", "wardrobe", "dresser", "bookcase", "trunk"),
         "mid": ("potted_plant", "trunk", "nightstand", "small_table"),
         "wall": ("picture_frame", "picture_frame", "wall_shelf", "picture_frame", "wall_clock"),
         "floor": ("shoes", "basket", "book_stack"),
     },
     # the basement
     "storage": {
-        "furn": ("@store", "@work"),
+        "furn": ("@store", "@work", "@packing"),
         "fill": ("metal_shelving", "crate+", "metal_shelving", "cardboard_box+"),
+        "island": ("crate+", "metal_shelving", "cardboard_box+", "barrel"),
         "mid": ("crate+", "cardboard_box+", "crate", "cardboard_box+", "barrel"),
         "wall": ("wall_shelf", "wall_shelf", "wall_clock"),
         "floor": ("basket", "bottles", "paper_stack"),
     },
     "darkroom": {
-        "furn": ("@store",),
+        "furn": ("@store", "@packing"),
         "fill": ("metal_shelving", "filing_cabinet", "sideboard"),
+        "island": ("cardboard_box+", "crate+", "metal_shelving"),
         "mid": ("cardboard_box", "crate", "stool"),
         "wall": ("wall_shelf", "wall_shelf", "picture_frame"),
         "floor": ("paper_stack", "bottles"),
     },
     "corridor": {
-        "furn": ("@store",),
-        "fill": ("metal_shelving", "crate+", "cardboard_box+"),
+        "furn": ("@store", "@packing"),
+        "fill": ("radiator", "metal_shelving", "crate+", "cardboard_box+"),
+        "island": ("crate+",),
         "mid": ("cardboard_box+", "crate"),
         "wall": ("wall_clock", "picture_frame"),
         "floor": ("basket",),
     },
     "boiler_room": {
-        "furn": ("@work", "barrel"),
+        "furn": ("@work", "@store", "barrel"),
         "fill": ("metal_shelving", "crate+", "toolbox_cart"),
+        "island": ("crate+", "barrel", "cardboard_box+", "metal_shelving"),
         "mid": ("crate+", "jerrycan"),
         "wall": ("wall_shelf", "wall_clock"),
         "floor": ("bottles", "basket"),
@@ -184,27 +197,32 @@ RULES = {
     # the hall's sight lines from the passage run at eye height (house_basement.hall_sight): only clocks above them
     "generator_hall": {
         "furn": ("@work", "@store", "fuel_barrel"),
-        "fill": ("toolbox_cart", "crate+", "barrel", "sideboard"),
+        "fill": ("radiator", "toolbox_cart", "crate+", "barrel", "sideboard"),
+        "island": ("crate+", "fuel_barrel", "barrel", "cardboard_box+"),
         "mid": ("jerrycan", "jerrycan"),
         "wall": ("wall_clock", "wall_clock"),
         "floor": ("bottles", "paper_stack", "basket"),
     },
     "pump_room": {
-        "furn": ("@work",),
+        "furn": ("@work", "@store"),
         "fill": ("metal_shelving", "crate+", "toolbox_cart"),
+        "island": ("crate+", "barrel"),
         "mid": ("crate+", "jerrycan"),
         "wall": ("wall_shelf", "wall_clock"),
         "floor": ("bottles", "basket"),
     },
     "switch_room": {
-        "furn": ("@store",),
+        "furn": ("@store", "@packing"),
         "fill": ("metal_shelving", "filing_cabinet", "crate+"),
+        "island": ("crate+", "cardboard_box+"),
         "mid": ("cardboard_box", "crate"),
         "wall": ("wall_clock", "wall_shelf"),
         "floor": ("paper_stack", "bottles"),
     },
     "passage": {
-                "fill": ("crate+", "cardboard_box+"),
+        "furn": ("@packing",),
+        "fill": ("radiator", "crate+", "cardboard_box+"),
+        "island": ("crate+",),
         "wall": ("wall_clock",),
         "floor": ("basket",),
     },
@@ -430,18 +448,26 @@ GROUPS = {
     "desk_work": (("desk", 0.0, 0.05, 0.0, "props"), ("office_chair", 0.0, 0.85, 0.0, "props"),
                   ("table_lamp", -0.5, 0.12, 0.75, "fixtures"), ("paper_stack", 0.3, 0.15, 0.75, "props"),
                   ("filing_cabinet", 1.05, 0.05, 0.0, "props")),
-    "boots": (("shoe_rack", 0.0, 0.05, 0.0, "props"), ("shoes", 0.0, 0.08, 0.5, "props"),
-              ("coat_rack", 0.8, 0.05, 0.0, "props"), ("shoes", -0.75, 0.15, 0.0, "props")),
+    "boots": (("shoe_rack", 0.0, 0.05, 0.0, "props"), ("shoes", 0.0, 0.05, 0.5, "props"),
+              ("coat_rack", 0.8, 0.05, 0.0, "props"), ("boots", -0.65, 0.1, 0.0, "props")),
     "toys": (("toy_chest", 0.0, 0.05, 0.0, "props"), ("toy_blocks", 0.0, 0.1, 0.5, "props"),
-             ("toy_blocks", 0.85, 0.3, 0.0, "props"), ("basket", -0.8, 0.1, 0.0, "props")),
+             ("toy_spill", 1.05, 0.2, 0.0, "props"), ("basket", -0.8, 0.1, 0.0, "props")),
+    "laundry": (("laundry_basket", 0.0, 0.05, 0.0, "props"), ("laundry_pile", 0.7, 0.1, 0.0, "props")),
+    "drying": (("drying_rack", 0.0, 0.05, 0.0, "props"), ("laundry_basket", 0.95, 0.05, 0.0, "props"),
+               ("laundry_pile", -0.95, 0.1, 0.0, "props")),
+    "packing": (("open_box", 0.0, 0.05, 0.0, "props"), ("cardboard_box", 0.6, 0.05, 0.0, "props"),
+                ("book_stack", -0.45, 0.1, 0.0, "props")),
     "store": (("crate", 0.0, 0.05, 0.0, "props"), ("crate", 0.0, 0.05, 0.4, "props"),
               ("cardboard_box", 0.6, 0.05, 0.0, "props"), ("barrel", -0.65, 0.05, 0.0, "props")),
     "work": (("toolbox_cart", 0.0, 0.05, 0.0, "props"), ("tool_wall", 0.0, 0.0, 1.0, "props"),
              ("crate", 0.75, 0.05, 0.0, "props"), ("jerrycan", -0.65, 0.05, 0.0, "props")),
 }
-WALL_MOUNT = {"kitchen_upper": 1.5, "tool_wall": 1.0}  # a wall piece's bottom when the fill puts it alone
+WALL_MOUNT = {"kitchen_upper": 1.5, "tool_wall": 1.0, "radiator": 0.12}  # a wall piece's bottom when the fill puts it alone
 FILL_MARGIN = 3.0  # per cent: the fill stops this far past the room's wall-lining target
 FILL_TRIES = 6  # candidate places per side and piece
+ISLAND_WALL = 1.0  # m: a free-standing piece keeps this clear of the walls (the lined pieces stand there)
+ISLAND_TRIES = 14  # checked places per free-standing piece
+ISLAND_ROUNDS = 5  # passes over RULES' `island` kinds while the floor share is short
 FILL_CAP = 85.0  # per cent of the free wall: the fill never lines more (it goes on for the floor share past the target)
 
 
@@ -507,7 +533,7 @@ def _furnish(level: dict, room: dict, dressing: dict, cat: dict, rule: dict, sh:
         length = u1 - u0
         walled = all(cat[k]["pivot"] == "wall" for k, *_ in rows)
         lo = min(h for _, _, _, h, _ in rows) if walled else 0.03
-        blocks = (_base_blocks(sh, 0.1) if walled else list(floor_blocks)) + (wins if top > 0.95 else [])
+        blocks = (_base_blocks(sh, 0.1) if walled else list(floor_blocks)) + (wins if top > 0.95 or walled else [])
         blocks += _occupied(res, placed, cat, lo, top + 0.05)
         order = sorted("NSWE", key=lambda s: -sum(b - a for a, b in free_spans(sh, s, depth + 0.2, blocks, GAP)))
         for side in order:
@@ -523,6 +549,34 @@ def _furnish(level: dict, room: dict, dressing: dict, cat: dict, rule: dict, sh:
                     return True
         return False
 
+    def stand(token: str) -> bool:
+        """A free-standing piece (or stack) away from the walls, kept when it overlaps nothing and adds no problem."""
+        kind = token.rstrip("+")
+        L, W, H = cat[kind]["size"]
+        top = H * (2 if token.endswith("+") else 1)
+        blocks = list(floor_blocks) + _occupied(res, placed, cat, 0.03, top + 0.05)
+        m0 = ISLAND_WALL + max(L, W) / 2
+        xs = [m0 + k * 0.25 for k in range(int((sh["w"] - 2 * m0) / 0.25) + 1)]
+        zs = [m0 + k * 0.25 for k in range(int((sh["d"] - 2 * m0) / 0.25) + 1)]
+        cands = [(x, z) for x in xs for z in zs]
+        rng.shuffle(cands)
+        tries = 0
+        for x, z in cands:
+            face = "NSWE"[int(x * 4 + z * 4) % 4]
+            new = [{"id": kind, "at": [round(x, 3), 0.0, round(z, 3)], "face": face}]
+            if token.endswith("+"):
+                new.append({"id": kind, "at": [round(x, 3), round(H, 3), round(z, 3)], "face": face})
+            fp = _box(kind, new[0]["at"], face, cat)["fp"]
+            if any(_ov(fp, b, GAP) for b in blocks):
+                continue
+            tries += 1
+            if _problems(level, room, trial(new), cat) <= before:
+                placed.extend(new)
+                return True
+            if tries >= ISLAND_TRIES:
+                break
+        return False
+
     for token in rule.get("furn", ()):
         place(token)
     fill, k, misses = rule.get("fill", ()), 0, 0
@@ -534,6 +588,11 @@ def _furnish(level: dict, room: dict, dressing: dict, cat: dict, rule: dict, sh:
         token = fill[k % len(fill)]
         k += 1
         misses = 0 if place(token) else misses + 1
+    island = rule.get("island", ())
+    for token in island * ISLAND_ROUNDS:
+        if house_fill.metrics(level, room, trial([]), cat, levels)["floor_pct"] >= house_fill.TARGET["floor"] + 1:
+            break
+        stand(token)
     return placed
 
 

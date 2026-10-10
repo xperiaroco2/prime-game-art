@@ -37,7 +37,7 @@ STORIES = {
     "boots by the door": ("boots", ("shoe_rack", "doormat", "coat_rack", "shoes")),
     "drying rack": ("drying_rack", ("laundry_basket", "laundry_pile")),
     "toy spill": ("toy_spill", ("toy_chest", "toy_blocks")),
-    "work bench": ("workbench", ("toolbox_cart", "tool_wall", "crate")),
+    "work bench": ("toolbox_cart", ("tool_wall", "workbench"), ("crate", "jerrycan")),
     "kitchen prep": ("kitchen_counter", ("cooking_pot",), ("plate_stack", "cup_set", "fruit_bowl")),
     "wardrobe spill": ("wardrobe", ("laundry_pile", "shoes", "open_box")),
     "desk work": ("desk", ("office_chair", "dining_chair", "stool"), ("paper_stack", "book_stack"),

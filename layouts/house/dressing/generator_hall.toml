@@ -249,23 +249,118 @@ at = [9.18, 0, 0.45]
 face = "S"
 
 [[props]]
+id = "radiator"
+at = [17.9, 0.12, 7.66]
+face = "W"
+
+[[props]]
 id = "toolbox_cart"
-at = [17.625, 0, 0.91]
+at = [17.625, 0, 3.93]
 face = "W"
 
 [[props]]
 id = "crate"
-at = [17.65, 0, 3.93]
+at = [17.65, 0, 0.67]
 face = "W"
 
 [[props]]
 id = "crate"
-at = [17.65, 0.4, 3.93]
+at = [17.65, 0.4, 0.67]
 face = "W"
 
 [[props]]
 id = "barrel"
-at = [9.82, 0, 0.45]
+at = [17.11, 0, 0.45]
+face = "S"
+
+[[props]]
+id = "sideboard"
+at = [17.625, 0, 18.36]
+face = "W"
+
+[[props]]
+id = "radiator"
+at = [4.12, 0.12, 19.9]
+face = "N"
+
+[[props]]
+id = "toolbox_cart"
+at = [13.14, 0, 0.375]
+face = "S"
+
+[[props]]
+id = "crate"
+at = [13.57, 0, 19.65]
+face = "N"
+
+[[props]]
+id = "crate"
+at = [13.57, 0.4, 19.65]
+face = "N"
+
+[[props]]
+id = "barrel"
+at = [11.14, 0, 0.45]
+face = "S"
+
+[[props]]
+id = "sideboard"
+at = [17.625, 0, 14.61]
+face = "W"
+
+[[props]]
+id = "radiator"
+at = [5.16, 0.12, 19.9]
+face = "N"
+
+[[props]]
+id = "toolbox_cart"
+at = [14.21, 0, 19.625]
+face = "N"
+
+[[props]]
+id = "crate"
+at = [10.55, 0, 0.35]
+face = "S"
+
+[[props]]
+id = "crate"
+at = [10.55, 0.4, 0.35]
+face = "S"
+
+[[props]]
+id = "barrel"
+at = [15.15, 0, 0.45]
+face = "S"
+
+[[props]]
+id = "sideboard"
+at = [12.48, 0, 19.625]
+face = "N"
+
+[[props]]
+id = "radiator"
+at = [0.1, 0.12, 13.74]
+face = "E"
+
+[[props]]
+id = "toolbox_cart"
+at = [17.625, 0, 3.19]
+face = "W"
+
+[[props]]
+id = "crate"
+at = [11.73, 0, 0.35]
+face = "S"
+
+[[props]]
+id = "crate"
+at = [11.73, 0.4, 0.35]
+face = "S"
+
+[[props]]
+id = "barrel"
+at = [12.45, 0, 0.45]
 face = "S"
 
 [[props]]
@@ -274,104 +369,34 @@ at = [17.625, 0, 16.48]
 face = "W"
 
 [[props]]
-id = "toolbox_cart"
-at = [13.76, 0, 0.375]
-face = "S"
-
-[[props]]
-id = "crate"
-at = [10.29, 0, 19.65]
+id = "radiator"
+at = [16.26, 0.12, 19.9]
 face = "N"
-
-[[props]]
-id = "crate"
-at = [10.29, 0.4, 19.65]
-face = "N"
-
-[[props]]
-id = "barrel"
-at = [17.06, 0, 0.45]
-face = "S"
-
-[[props]]
-id = "sideboard"
-at = [17.625, 0, 14.72]
-face = "W"
 
 [[props]]
 id = "toolbox_cart"
-at = [13.84, 0, 19.625]
-face = "N"
-
-[[props]]
-id = "crate"
-at = [16.47, 0, 0.35]
+at = [14.17, 0, 0.375]
 face = "S"
 
 [[props]]
 id = "crate"
-at = [16.47, 0.4, 0.35]
+at = [9.77, 0, 0.35]
+face = "S"
+
+[[props]]
+id = "crate"
+at = [9.77, 0.4, 0.35]
 face = "S"
 
 [[props]]
 id = "barrel"
-at = [16.81, 0, 19.55]
+at = [14.9, 0, 19.55]
 face = "N"
 
 [[props]]
-id = "sideboard"
-at = [15.38, 0, 0.375]
-face = "S"
-
-[[props]]
-id = "toolbox_cart"
-at = [13.1, 0, 19.625]
-face = "N"
-
-[[props]]
-id = "crate"
-at = [17.65, 0, 2.89]
-face = "W"
-
-[[props]]
-id = "crate"
-at = [17.65, 0.4, 2.89]
-face = "W"
-
-[[props]]
-id = "barrel"
-at = [12.41, 0, 19.55]
-face = "N"
-
-[[props]]
-id = "sideboard"
-at = [17.625, 0, 18.36]
-face = "W"
-
-[[props]]
-id = "toolbox_cart"
-at = [11.77, 0, 0.375]
-face = "S"
-
-[[props]]
-id = "crate"
-at = [14.48, 0, 19.65]
-face = "N"
-
-[[props]]
-id = "crate"
-at = [14.48, 0.4, 19.65]
-face = "N"
-
-[[props]]
-id = "barrel"
-at = [11.08, 0, 0.45]
-face = "S"
-
-[[props]]
-id = "sideboard"
-at = [15.67, 0, 19.625]
-face = "N"
+id = "radiator"
+at = [0.1, 0.12, 7.9]
+face = "E"
 
 [[props]]
 id = "toolbox_cart"
@@ -380,127 +405,332 @@ face = "W"
 
 [[props]]
 id = "crate"
-at = [10.45, 0, 0.35]
+at = [16.13, 0, 0.35]
 face = "S"
 
 [[props]]
 id = "crate"
-at = [10.45, 0.4, 0.35]
+at = [16.13, 0.4, 0.35]
 face = "S"
 
 [[props]]
 id = "barrel"
-at = [13.07, 0, 0.45]
-face = "S"
+at = [10.34, 0, 19.55]
+face = "N"
+
+[[props]]
+id = "radiator"
+at = [0.1, 0.12, 17.95]
+face = "E"
 
 [[props]]
 id = "toolbox_cart"
-at = [11.72, 0, 19.625]
+at = [11.03, 0, 19.625]
+face = "N"
+
+[[props]]
+id = "radiator"
+at = [0.1, 0.12, 4.66]
+face = "E"
+
+[[props]]
+id = "radiator"
+at = [6.93, 0.12, 19.9]
+face = "N"
+
+[[props]]
+id = "radiator"
+at = [17.9, 0.12, 1.46]
+face = "W"
+
+[[props]]
+id = "radiator"
+at = [0.1, 0.12, 3.62]
+face = "E"
+
+[[props]]
+id = "radiator"
+at = [2.62, 0.12, 0.1]
+face = "S"
+
+[[props]]
+id = "radiator"
+at = [3.08, 0.12, 19.9]
+face = "N"
+
+[[props]]
+id = "radiator"
+at = [17.9, 0.12, 10.87]
+face = "W"
+
+[[props]]
+id = "radiator"
+at = [0.1, 0.12, 1.58]
+face = "E"
+
+[[props]]
+id = "radiator"
+at = [4.66, 0.12, 0.1]
+face = "S"
+
+[[props]]
+id = "radiator"
+at = [2.04, 0.12, 19.9]
+face = "N"
+
+[[props]]
+id = "radiator"
+at = [17.9, 0.12, 6.2]
+face = "W"
+
+[[props]]
+id = "radiator"
+at = [1.58, 0.12, 0.1]
+face = "S"
+
+[[props]]
+id = "radiator"
+at = [17.3, 0.12, 19.9]
+face = "N"
+
+[[props]]
+id = "radiator"
+at = [0.79, 0.12, 19.9]
 face = "N"
 
 [[props]]
 id = "crate"
-at = [12.45, 0, 0.35]
+at = [10.25, 0, 2.25]
+face = "W"
+
+[[props]]
+id = "crate"
+at = [10.25, 0.4, 2.25]
+face = "W"
+
+[[props]]
+id = "fuel_barrel"
+at = [10.8, 0, 10.3]
+face = "N"
+
+[[props]]
+id = "barrel"
+at = [10.55, 0, 18.05]
+face = "W"
+
+[[props]]
+id = "cardboard_box"
+at = [14.25, 0, 5]
+face = "S"
+
+[[props]]
+id = "cardboard_box"
+at = [14.25, 0.4, 5]
 face = "S"
 
 [[props]]
 id = "crate"
-at = [12.45, 0.4, 0.35]
+at = [15, 0, 11.25]
+face = "S"
+
+[[props]]
+id = "crate"
+at = [15, 0.4, 11.25]
+face = "S"
+
+[[props]]
+id = "fuel_barrel"
+at = [7.55, 0, 1.3]
+face = "E"
+
+[[props]]
+id = "barrel"
+at = [15.55, 0, 16.05]
+face = "W"
+
+[[props]]
+id = "cardboard_box"
+at = [10, 0, 14.5]
+face = "W"
+
+[[props]]
+id = "cardboard_box"
+at = [10, 0.4, 14.5]
+face = "W"
+
+[[props]]
+id = "crate"
+at = [12.5, 0, 17]
+face = "W"
+
+[[props]]
+id = "crate"
+at = [12.5, 0.4, 17]
+face = "W"
+
+[[props]]
+id = "fuel_barrel"
+at = [11.05, 0, 4.05]
+face = "N"
+
+[[props]]
+id = "barrel"
+at = [16.55, 0, 16.55]
+face = "N"
+
+[[props]]
+id = "cardboard_box"
+at = [15.25, 0, 4.5]
+face = "E"
+
+[[props]]
+id = "cardboard_box"
+at = [15.25, 0.4, 4.5]
+face = "E"
+
+[[props]]
+id = "crate"
+at = [12.5, 0, 3.25]
+face = "E"
+
+[[props]]
+id = "crate"
+at = [12.5, 0.4, 3.25]
+face = "E"
+
+[[props]]
+id = "fuel_barrel"
+at = [16.3, 0, 12.05]
 face = "S"
 
 [[props]]
 id = "barrel"
-at = [10.88, 0, 19.55]
+at = [10.55, 0, 15.3]
+face = "E"
+
+[[props]]
+id = "cardboard_box"
+at = [13, 0, 4.75]
+face = "E"
+
+[[props]]
+id = "cardboard_box"
+at = [13, 0.4, 4.75]
+face = "E"
+
+[[props]]
+id = "crate"
+at = [13.25, 0, 17.25]
+face = "W"
+
+[[props]]
+id = "crate"
+at = [13.25, 0.4, 17.25]
+face = "W"
+
+[[props]]
+id = "fuel_barrel"
+at = [13.8, 0, 14.3]
 face = "N"
 
 [[props]]
-id = "jerrycan"
-at = [17.75, 0, 3.41]
+id = "barrel"
+at = [15.05, 0, 14.55]
 face = "W"
 
 [[props]]
-id = "jerrycan"
-at = [14.34, 0, 0.25]
+id = "cardboard_box"
+at = [8.25, 0, 2]
 face = "S"
 
 [[props]]
-id = "paper_stack"
-at = [1.05, 0.4, 19.26]
+id = "cardboard_box"
+at = [8.25, 0.4, 2]
 face = "S"
+
+[[props]]
+id = "jerrycan"
+at = [15.48, 0, 19.75]
+face = "N"
 
 [[props]]
 id = "book_stack"
-at = [0.37, 0.8, 19.23]
+at = [0.92, 0.4, 19.29]
 face = "S"
 
 [[props]]
 id = "bottles"
-at = [17.41, 0.4, 19.34]
+at = [0.31, 0.8, 19.39]
+face = "S"
+
+[[props]]
+id = "paper_stack"
+at = [17.45, 0.4, 19.36]
+face = "S"
+
+[[props]]
+id = "paper_stack"
+at = [17.61, 0.4, 13.57]
+face = "W"
+
+[[props]]
+id = "book_stack"
+at = [7.91, 0.8, 0.39]
+face = "S"
+
+[[props]]
+id = "paper_stack"
+at = [8.64, 0.4, 0.31]
 face = "S"
 
 [[props]]
 id = "bottles"
-at = [17.59, 0.4, 13.53]
-face = "W"
-
-[[props]]
-id = "book_stack"
-at = [7.96, 0.8, 0.39]
-face = "S"
-
-[[props]]
-id = "paper_stack"
-at = [8.54, 0.4, 0.31]
-face = "S"
-
-[[props]]
-id = "book_stack"
-at = [17.63, 0.8, 3.95]
-face = "W"
-
-[[props]]
-id = "fruit_bowl"
-at = [17.64, 0.9, 16.37]
+at = [17.54, 0.8, 0.58]
 face = "W"
 
 [[props]]
 id = "vase_flowers"
-at = [17.61, 0.9, 17.04]
+at = [17.5, 0.9, 18.81]
 face = "W"
 
 [[props]]
 id = "fruit_bowl"
-at = [17.59, 0.9, 15.97]
+at = [17.59, 0.9, 17.95]
+face = "W"
+
+[[props]]
+id = "fruit_bowl"
+at = [17.59, 0.9, 18.5]
 face = "W"
 
 [[props]]
 id = "vase_flowers"
-at = [17.7, 0.9, 16.68]
+at = [17.7, 0.9, 18.21]
 face = "W"
 
 [[props]]
-id = "paper_stack"
-at = [10.29, 0.8, 19.61]
+id = "bottles"
+at = [13.48, 0.8, 19.68]
 face = "N"
 
 [[props]]
 id = "vase_flowers"
-at = [17.5, 0.9, 14.62]
+at = [17.61, 0.9, 13.91]
 face = "W"
 
 [[props]]
-id = "bottles"
-at = [17.73, 0.9, 14.18]
+id = "book_stack"
+at = [17.53, 0.9, 14.28]
 face = "W"
 
 [[props]]
 id = "fruit_bowl"
-at = [17.64, 0.9, 15.26]
+at = [17.64, 0.9, 14.6]
 face = "W"
 
 [[props]]
 id = "bottles"
-at = [17.68, 0.9, 14.53]
+at = [17.68, 0.9, 15.12]
 face = "W"
 
 [[props]]
@@ -515,5 +745,10 @@ face = "N"
 
 [[props]]
 id = "bottles"
-at = [17.805, 0, 4.36]
-face = "W"
+at = [13.66, 0, 0.195]
+face = "S"
+
+[[props]]
+id = "paper_stack"
+at = [15.66, 0, 0.27]
+face = "S"

@@ -65,13 +65,8 @@ at = [3.13, 0, 5.675]
 face = "N"
 
 [[props]]
-id = "crate"
+id = "open_box"
 at = [0.35, 0, 4.91]
-face = "E"
-
-[[props]]
-id = "crate"
-at = [0.35, 0.4, 4.91]
 face = "E"
 
 [[props]]
@@ -85,34 +80,59 @@ at = [5.59, 0.4, 0.35]
 face = "S"
 
 [[props]]
-id = "book_stack"
-at = [5.64, 0.8, 5.69]
-face = "S"
-
-[[props]]
-id = "paper_stack"
-at = [5, 0.4, 5.61]
-face = "S"
-
-[[props]]
-id = "bottles"
-at = [1.8, 0.8, 5.74]
+id = "crate"
+at = [1.25, 0, 4.75]
 face = "N"
 
 [[props]]
-id = "book_stack"
-at = [2.36, 0.4, 5.63]
+id = "crate"
+at = [1.25, 0.4, 4.75]
 face = "N"
 
 [[props]]
-id = "bottles"
-at = [0.43, 0.8, 4.92]
+id = "crate"
+at = [3, 0, 4.75]
 face = "E"
 
 [[props]]
-id = "paper_stack"
-at = [5.64, 0.8, 0.36]
+id = "crate"
+at = [3, 0.4, 4.75]
+face = "E"
+
+[[props]]
+id = "book_stack"
+at = [5.69, 0.8, 5.69]
 face = "S"
+
+[[props]]
+id = "bottles"
+at = [4.96, 0.4, 5.58]
+face = "S"
+
+[[props]]
+id = "paper_stack"
+at = [1.74, 0.8, 5.66]
+face = "N"
+
+[[props]]
+id = "paper_stack"
+at = [2.29, 0.4, 5.61]
+face = "N"
+
+[[props]]
+id = "bottles"
+at = [5.5, 0.8, 0.28]
+face = "S"
+
+[[props]]
+id = "book_stack"
+at = [1.17, 0.8, 4.78]
+face = "N"
+
+[[props]]
+id = "bottles"
+at = [3.08, 0.8, 4.81]
+face = "E"
 
 [[props]]
 id = "wall_shelf"
@@ -121,7 +141,7 @@ face = "N"
 
 [[props]]
 id = "wall_shelf"
-at = [4.55, 1.45, 5.9]
+at = [1.45, 1.45, 5.9]
 face = "N"
 
 [[props]]

@@ -30,10 +30,10 @@ class Clutter(unittest.TestCase):
             self.assertEqual(path.read_text(encoding="utf-8"), text, f"{rid}: run `house --clutter`")
             self.assertEqual(hc.strip(text).count(hc.MARK), 0)
 
-    def test_clutter_is_known_and_only_the_furniture_and_mid_layers_are_solid(self) -> None:
+    def test_clutter_is_known_and_only_the_furniture_island_and_mid_layers_are_solid(self) -> None:
         for rid, (_, _, items) in GEN.items():
             rule = hc.RULES[rid]
-            mid = {k.rstrip("+") for k in rule.get("mid", ()) + rule.get("fill", ())}
+            mid = {k.rstrip("+") for k in rule.get("mid", ()) + rule.get("fill", ()) + rule.get("island", ())}
             mid |= {row[0] for t in rule.get("furn", ()) for row in hc._pieces(t, CAT)}
             for it in items:
                 self.assertIn(it["id"], CAT, rid)
