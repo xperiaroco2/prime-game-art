@@ -1,0 +1,171 @@
+# The photo zone with the gazebo (art #81b, map #73; inventory.md section 4 "Photo zone (gazebo)"): data for
+# tools/runner/house_zones.py. Plan metres: x east, y south (the plot is 80 x 60 m, the street at y 60); Godot puts a
+# plan point (x, y) at (x, 0, y). yaw is degrees about +Y (a prop's front is +Z; yaw 90 faces east, -90 west,
+# 180 north); `face = [x, y]` turns the front towards a point instead. Every value is the engineer's to change.
+# `src`: zones (props/zones.toml), tasks (props/tasks.toml), kit (kits/house.json) or a package that owns the piece
+# (#87 the dressing library); pieces another package owns are placeholders until it lands.
+
+zone = "photo_zone"
+rect = [4, 6, 10, 10]          # x, y, width (east), depth (south)
+ground = "deck + grass"
+questions = ["Q17 default A: a hexagonal timber pavilion with string lights, a painted backdrop and the pose screen"]
+
+[opening]                      # the walking approach comes in through the zone's low railing here
+side = "east"
+at = 14.0
+from = 9.0
+to = 13.0
+
+[railing]                      # the zone's edge: the kit's gazebo railing round the rectangle, the opening left free
+piece = "railing_gazebo"
+
+[gazebo]                       # the kit's six deck sectors, six roof sectors and the finial (kit_geom.gazebo)
+centre = [9.0, 11.0]
+yaw = -30.0                    # turns the open sector (sector 0) to face east, towards the opening
+post_radius = 2.68             # the kit: radius 2.8 less 0.12 to the posts' centres
+post = 0.14
+deck_h = 0.15
+post_h = 2.4
+roof_radius = 3.0
+
+[[items]]
+id = "pose_screen"
+src = "tasks"
+station = "PoseScreen"         # inventory.md section 7: the photo spot and the pose screen at (9, 11)
+at = [9.0, 11.0]
+yaw = 90.0
+y = 0.15                       # on the deck
+
+[[items]]
+id = "photo_backdrop"
+src = "zones"
+at = [7.6, 11.0]
+yaw = 90.0
+y = 0.15
+
+[[items]]
+id = "tripod_camera"
+src = "zones"
+at = [10.9, 12.0]
+face = [9.6, 11.0]             # the posing player stands in front of the screen
+y = 0.15
+
+[[items]]
+id = "string_lights_gazebo"
+src = "zones"
+gazebo_edge = 1                # edges counted from the opening (0) round the hexagon; 3 is the back
+hook_h = 2.45
+[[items]]
+id = "string_lights_gazebo"
+src = "zones"
+gazebo_edge = 2
+hook_h = 2.45
+[[items]]
+id = "string_lights_gazebo"
+src = "zones"
+gazebo_edge = 4
+hook_h = 2.45
+[[items]]
+id = "string_lights_gazebo"
+src = "zones"
+gazebo_edge = 5
+hook_h = 2.45
+
+[[items]]
+id = "lantern"
+src = "zones"
+at = [13.6, 8.6]               # the opening's two sides
+[[items]]
+id = "lantern"
+src = "zones"
+at = [13.6, 13.4]
+[[items]]
+id = "lantern"
+src = "zones"
+at = [9.0, 8.9]                # on the deck by the side posts
+y = 0.15
+[[items]]
+id = "lantern"
+src = "zones"
+at = [9.0, 13.1]
+y = 0.15
+[[items]]
+id = "lantern"
+src = "zones"
+at = [11.6, 8.9]               # outside the posts beside the entrance
+[[items]]
+id = "lantern"
+src = "zones"
+at = [11.6, 13.1]
+
+[[items]]
+id = "garden_bench"
+src = "#87"
+at = [9.0, 15.2]
+yaw = 180.0
+size = [1.6, 0.5, 0.85]
+[[items]]
+id = "garden_bench"
+src = "#87"
+at = [9.0, 6.8]
+yaw = 0.0
+size = [1.6, 0.5, 0.85]
+[[items]]
+id = "planter_pot"
+src = "#87"
+at = [4.8, 6.8]
+size = [0.5, 0.5, 0.7]
+[[items]]
+id = "planter_pot"
+src = "#87"
+at = [4.8, 15.2]
+size = [0.5, 0.5, 0.7]
+[[items]]
+id = "planter_pot"
+src = "#87"
+at = [13.2, 6.8]
+size = [0.5, 0.5, 0.7]
+[[items]]
+id = "planter_pot"
+src = "#87"
+at = [13.2, 15.2]
+size = [0.5, 0.5, 0.7]
+[[items]]
+id = "planter_pot"
+src = "#87"
+at = [13.4, 7.8]
+size = [0.5, 0.5, 0.7]
+[[items]]
+id = "planter_pot"
+src = "#87"
+at = [13.4, 14.2]
+size = [0.5, 0.5, 0.7]
+[[items]]
+id = "bush"
+src = "#87"
+at = [5.0, 8.0]
+size = [1.2, 1.2, 1.0]
+[[items]]
+id = "bush"
+src = "#87"
+at = [5.0, 14.0]
+size = [1.2, 1.2, 1.0]
+[[items]]
+id = "bush"
+src = "#87"
+at = [6.4, 15.0]
+size = [1.2, 1.2, 1.0]
+[[items]]
+id = "bush"
+src = "#87"
+at = [6.4, 7.0]
+size = [1.2, 1.2, 1.0]
+
+[[views]]                      # the review: dusk frames from the walking approach at eye height
+name = "approach"
+eye = [22.0, 12.5, 1.6]
+look = [9.0, 11.0, 1.4]
+[[views]]
+name = "entrance"
+eye = [14.5, 11.6, 1.6]
+look = [9.0, 11.0, 1.3]
