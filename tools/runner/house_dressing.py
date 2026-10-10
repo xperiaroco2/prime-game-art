@@ -32,6 +32,7 @@ STATION_CLEAR = 1.0
 STATION_REACH = 2.0  # a station counts as reached from a capsule centre this close to its marker
 SPAWN_CLEAR = 0.5
 TOL = 0.02
+PIECE_HALF = {"pillar_concrete": 0.2}  # free layout pieces that block the capsule: half their square section (kit v2)
 
 
 # ---------------------------------------------------------------- loading
@@ -177,6 +178,12 @@ def shell(level: dict, room: dict, levels: list[dict]) -> dict:
 
     holes = [local(h["rect"]) for h in level.get("holes", []) if "rect" in h and hl.overlap(h["rect"], rect)]
     stairs, feet = [], []
+    # free kit pieces that stand in the capsule's way (the basement's pillars, art #78), centred on their `at`
+    for fp in level.get("pieces", []):
+        half = PIECE_HALF.get(fp["piece"])
+        if half and fp.get("room") == room["id"]:
+            px, py = fp["at"][0], fp["at"][2]
+            stairs.append(local([px - half, py - half, 2 * half, 2 * half]))
     fy = level["floor_y"]
     for lv in levels:
         for st in lv.get("stairs", []):

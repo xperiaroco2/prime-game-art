@@ -286,7 +286,8 @@ class WalkRequestTest(unittest.TestCase):
 
     def test_each_flight_is_walked_up_and_down(self) -> None:
         stairs = {w["name"]: w["points"] for w in self.REQ["walks"] if w["kind"] == "stairs"}
-        self.assertEqual(sorted(stairs), sorted(f"{s}:{d}" for s in ("main_stairs", "pantry_stairs", "balcony_stairs")
+        self.assertEqual(sorted(stairs), sorted(f"{s}:{d}" for s in ("main_stairs", "pantry_stairs", "balcony_stairs",
+                                                                         "outdoor_stairs")
                                                 for d in ("up", "down")))
         up = stairs["main_stairs:up"]
         self.assertEqual(up[1], [30.0, 0.0, 35.0])  # the U-turn: up west, across the landing, up east

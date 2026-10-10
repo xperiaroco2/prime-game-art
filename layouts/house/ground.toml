@@ -207,6 +207,7 @@ id = "outdoor_stairs"
 title = "Outdoor stairs"
 node = "OutdoorStairs"
 rect = [62, 29, 4, 4]
+note = "the doc's zone; the stairwell itself (the hole and the U below) sits 1 m north at (62, 28), art #78"
 kind = "area"
 
 [[doors]]
@@ -434,3 +435,21 @@ y = -3.2
 climb = "N"
 placeholder = true
 note = "Q5 and the manager's correction: a straight flight with a 1 m top landing (the pantry floor y24..25); the foot lands in storage at y31, 1 m from the parts shelf. Option: a U-turn of two half flights."
+
+[[holes]]
+id = "outdoor_stairs"
+rect = [62, 28, 4, 4]
+railing = true
+
+[[stairs]]
+id = "outdoor_stairs"
+piece = "stairs_outdoor_half"
+rect = [64, 29, 2, 3]
+y = -1.6
+climb = "S"
+placeholder = true
+note = "art #78: a U of the kit's two half flights in the 4 x 4 m stairwell behind the garage, entered from the south (the garage's back door at (63, 34), 2 m away): down north from y32 to the 4 x 1 m landing on the passage's north wall, then down south to the passage floor, the foot at (63, 32). The doc's stairwell (62, 29) leaves 1 m between the foot and a passage wall either way; it moved 1 m north."
+below = [
+  { piece = "stairs_outdoor_half", rect = [62, 29, 2, 3], y = -3.2, climb = "N" },
+  { piece = "stairs_outdoor_landing", rect = [62, 28, 4, 1], y = -3.2 },
+]
