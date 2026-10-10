@@ -32,6 +32,7 @@ dressing = [150, 600]
 room = [400, 1500]
 fixture = [100, 400]
 vehicle = [400, 3000]
+clutter = [12, 400]  # small lived-in props on surfaces, walls and floors (art #104): no collider
 
 # The props' paints: a library material and an sRGB hex (D1 palette, look.md section 7). The kit's roles
 # (kits/house.json: trim, boards, lino, fence, concrete, glass ...) can be named too. A pack prop's source colours
@@ -1727,4 +1728,202 @@ route = "proc"
 shape = "sconce"
 roles = ["bulb", "metal_grey"]
 pivot = "wall"
+collision = "none"
+
+# --- small clutter (art #104, Q21 = A: the lived-in layer): boxes and cylinders, no collider; counts are the
+# dressing's planned placements.
+
+[[prop]]
+id = "book_stack"
+batch = 3
+name = "Stack of books"
+class = "clutter"
+size_m = [0.26, 0.19, 0.12]
+count = 0
+route = "proc"
+shape = "book_stack"
+roles = ["fabric_accent", "teal_stripe", "cream", "mustard"]
+pivot = "floor"
+collision = "none"
+
+[[prop]]
+id = "book_row"
+batch = 3
+name = "Row of books"
+class = "clutter"
+size_m = [0.5, 0.2, 0.26]
+count = 0
+route = "proc"
+shape = "book_row"
+roles = ["fabric_accent", "teal_stripe", "cream", "mustard", "wood_mid"]
+pivot = "floor"
+collision = "none"
+
+[[prop]]
+id = "wall_shelf"
+batch = 3
+name = "Wall shelf with books"
+class = "clutter"
+size_m = [0.9, 0.22, 0.32]
+count = 0
+route = "proc"
+shape = "wall_shelf"
+roles = ["wood_dark", "fabric_accent", "teal_stripe", "mustard", "metal_dark"]
+pivot = "wall"
+collision = "none"
+
+[[prop]]
+id = "cup_set"
+batch = 3
+name = "Two cups on saucers"
+class = "clutter"
+size_m = [0.3, 0.14, 0.09]
+count = 0
+route = "proc"
+shape = "cup_set"
+roles = ["porcelain", "wood_dark"]
+pivot = "floor"
+collision = "none"
+
+[[prop]]
+id = "plate_stack"
+batch = 3
+name = "Stack of plates"
+class = "clutter"
+size_m = [0.26, 0.26, 0.08]
+count = 0
+route = "proc"
+shape = "plate_stack"
+roles = ["porcelain"]
+pivot = "floor"
+collision = "none"
+
+[[prop]]
+id = "bottles"
+batch = 3
+name = "Three bottles"
+class = "clutter"
+size_m = [0.24, 0.09, 0.3]
+count = 0
+route = "proc"
+shape = "bottles"
+roles = ["bottle_green", "glass", "fabric_accent"]
+pivot = "floor"
+collision = "none"
+
+[[prop]]
+id = "cooking_pot"
+batch = 3
+name = "Cooking pot"
+class = "clutter"
+size_m = [0.36, 0.26, 0.2]
+count = 0
+route = "proc"
+shape = "cooking_pot"
+roles = ["metal_grey", "metal_dark"]
+pivot = "floor"
+collision = "none"
+
+[[prop]]
+id = "paper_stack"
+batch = 3
+name = "Stack of papers"
+class = "clutter"
+size_m = [0.32, 0.24, 0.03]
+count = 0
+route = "proc"
+shape = "paper_stack"
+roles = ["cream", "porcelain"]
+pivot = "floor"
+collision = "none"
+
+[[prop]]
+id = "wall_clock"
+batch = 3
+name = "Wall clock"
+class = "clutter"
+size_m = [0.34, 0.05, 0.34]
+count = 0
+route = "proc"
+shape = "wall_clock"
+roles = ["wood_dark", "cream", "metal_dark"]
+pivot = "wall"
+collision = "none"
+
+[[prop]]
+id = "basket"
+batch = 3
+name = "Woven basket"
+class = "clutter"
+size_m = [0.45, 0.34, 0.3]
+count = 0
+route = "proc"
+shape = "basket"
+roles = ["wood_mid", "wood_dark"]
+pivot = "floor"
+collision = "none"
+
+[[prop]]
+id = "shoes"
+batch = 3
+name = "Pair of shoes"
+class = "clutter"
+size_m = [0.28, 0.3, 0.12]
+count = 0
+route = "proc"
+shape = "shoes"
+roles = ["fabric", "rubber"]
+pivot = "floor"
+collision = "none"
+
+[[prop]]
+id = "toy_blocks"
+batch = 3
+name = "Toy blocks"
+class = "clutter"
+size_m = [0.4, 0.3, 0.2]
+count = 0
+route = "proc"
+shape = "toy_blocks"
+roles = ["fabric_accent", "mustard", "teal_stripe", "cream"]
+pivot = "floor"
+collision = "none"
+
+[[prop]]
+id = "vase_flowers"
+batch = 3
+name = "Vase with flowers"
+class = "clutter"
+size_m = [0.13, 0.13, 0.4]
+count = 0
+route = "proc"
+shape = "vase_flowers"
+roles = ["terracotta", "plant", "flower"]
+pivot = "floor"
+collision = "none"
+
+[[prop]]
+id = "fruit_bowl"
+batch = 3
+name = "Fruit bowl"
+class = "clutter"
+size_m = [0.3, 0.3, 0.12]
+count = 0
+route = "proc"
+shape = "fruit_bowl"
+roles = ["wood_mid", "fabric_accent", "mustard", "plant"]
+pivot = "floor"
+collision = "none"
+
+[[prop]]
+id = "doormat"
+batch = 3
+name = "Doormat"
+class = "clutter"
+size_m = [0.8, 0.5, 0.02]
+count = 0
+route = "proc"
+shape = "rug"
+roles = ["fabric", "cardboard"]
+pivot = "floor"
 collision = "none"
