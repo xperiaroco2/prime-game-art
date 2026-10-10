@@ -41,7 +41,9 @@ and must check that Godot's "static lightmaps" import keeps the kit's UV2 rather
   a 3.0 m storey wall), attic knee walls 2.2 m, walls 0.2 m thick, interior doors 1.4 x 2.15 m, windows 1.0 x 1.2 m
   on a 0.9 m sill, the 8 m gates, a 0.3 m roof slab, a 1.0 m parapet, gables at 0.7 m rise per metre (35 deg), glass
   walls 2.4 m, the fence 1.8 m. A size that does not work is proposed to the engineer in the PR; it is never changed
-  silently. v2 adds `pitched_roof_t_m` (0.2). `gable_rise_per_m` is the one pitch number every gable, pitched and
+  silently. v2 adds `pitched_roof_t_m` (0.2); #77 adds `gable_window_sill_m` (0.25) and `gable_window_h_m` (0.9) for the
+  gable window piece `gable_band_2m_window` (a `gable_band_2m` with a window; v2's ids stay, the piece is appended; built into `v2/` with `kit --only
+  gable_band_2m_window`, its row added to v2's tables). `gable_rise_per_m` is the one pitch number every gable, pitched and
   glass roof piece reads (`kit_geom.pitch`): changing it (Q2 of the house plan's questions) rebuilds them all.
 - `budget_tris`: triangles per kind of piece (wall 400, corner 60, floor 120, roof 200, stairs 2500, ladder 600,
   railing 1500, fence 1200, gate 4000, glass 600, garage 600; v2: pillar 60, porch 400, chimney 200, trim 120,

@@ -377,6 +377,12 @@ def plan(data: dict) -> dict:
             else:
                 pieces[fp["room"]].append({"id": fp["piece"], "x": float(fp["at"][0]), "y": float(fp["at"][2]),
                                            "h": float(fp["at"][1]), "turn": int(fp.get("turn", 0))})
+        # cornices: brackets on the outer face of a rect's walls under an overhanging deck (Q3), every `every` m
+        for cn in lv.get("cornices", []):
+            if cn["piece"] not in data["pieces"] or cn.get("room") not in pieces:
+                problems.append(f"{lv['level']}: the cornice {cn.get('piece')} needs a kit piece and a room")
+                continue
+            pieces[cn["room"]] += cornice(cn, data)
         # pitched roofs: the kit's roof panels, eaves, verges, ridge and the gables over a room's knee walls
         for rf in lv.get("roofs", []):
             if rf.get("room") not in pieces:
@@ -392,6 +398,23 @@ def plan(data: dict) -> dict:
         out["levels"].append({"level": lv["level"], "node": lv["node"], "floor_y": lv["floor_y"], "pieces": pieces,
                               "extra": extra, "doors": markers})
     return {**out, "problems": problems}
+
+
+def cornice(cn: dict, data: dict) -> list[dict]:
+    """Brackets (cn["piece"], the kit's cornice_bracket) round the walls of cn["rect"] (the storey below's
+    footprint): one every cn["every"] m (default 2), the first half a step from each corner, turned so they reach
+    out of the rect; their tops at cn["h"] (default minus the kit's roof slab: against the deck's underside)."""
+    x0, y0, w, d = (float(v) for v in cn["rect"])
+    step = float(cn.get("every", 2))
+    h = float(cn.get("h", -data["spec"]["grid"]["roof_slab_m"]))
+    out = []
+    for (ax, ay), (dx, dy), length, ext in (((x0, y0), (1, 0), w, (0, -1)), ((x0, y0 + d), (1, 0), w, (0, 1)),
+                                            ((x0, y0), (0, 1), d, (-1, 0)), ((x0 + w, y0), (0, 1), d, (1, 0))):
+        t = step / 2
+        while t < length - EPS:
+            out.append({"id": cn["piece"], "x": ax + dx * t, "y": ay + dy * t, "h": h, "turn": turn_for(ext)})
+            t += step
+    return out
 
 
 def kit_geom():
@@ -410,7 +433,9 @@ def pitched_roof(rf: dict, data: dict) -> tuple[list[dict], list[str]]:
     rf["rect"] (eaves on its two x-long sides, the ridge along x, so its depth is even), pivoted on the knee walls' top
     (rf["h"], default the kit's knee height), and with rf["gables"] the gable walls on its two short sides: per slope
     row a triangle over bands of the row's length, so the gables' tops follow the same pitch. Every height comes from
-    the kit's spec (gable_rise_per_m, the pieces' rise and height): a new pitch (Q2) is a kit rebuild, not an edit here."""
+    the kit's spec (gable_rise_per_m, the pieces' rise and height): a new pitch (Q2) is a kit rebuild, not an edit here.
+    rf["windows"] lists gable windows as plan points [x, y] on a gable: each swaps the lowest band of the row centred
+    there for the band's `_window` piece (gable_band_2m_window)."""
     spec, kit = data["spec"], data["pieces"]
     x0, y0, w, d = (float(v) for v in rf["rect"])
     h0 = float(rf.get("h", spec["grid"]["knee_h_m"]))
@@ -421,6 +446,8 @@ def pitched_roof(rf: dict, data: dict) -> tuple[list[dict], list[str]]:
         return [], [str(e)]
     out = [{"id": pid, "x": x0 + off[0], "y": y0 + off[2], "h": h0 + off[1], "turn": int(round(deg))}
            for pid, deg, off in placed]
+    wins = {(float(a), float(b)) for a, b in rf.get("windows", [])}  # gable windows: (x, y) of their centres
+    used = set()
     if rf.get("gables"):
         run, rows, z = d / 2, [], 0.0
         while z < run - EPS:
@@ -440,11 +467,18 @@ def pitched_roof(rf: dict, data: dict) -> tuple[list[dict], list[str]]:
                     if tri not in kit or (base > EPS and (band is None or abs(n * float(band["height"]) - base) > 1e-6)):
                         return out, [f"no gable pieces for a {step} m row at {base:g} m (the kit's pitch {r:g})"]
                     for k in range(n):
-                        out.append({"id": band["id"], "x": gx, "y": y0 + start, "h": h0 + k * float(band["height"]),
+                        bid, c = band["id"], (gx, y0 + lo + step / 2)
+                        if k == 0 and c in wins and f"{bid}_window" in kit:  # the row's lowest band holds the window
+                            bid = f"{bid}_window"
+                            used.add(c)
+                        out.append({"id": bid, "x": gx, "y": y0 + start, "h": h0 + k * float(band["height"]),
                                     "turn": turn})
                     out.append({"id": tri, "x": gx, "y": y0 + start, "h": h0 + base, "turn": turn})
     missing = sorted({p["id"] for p in out} - set(kit))
-    return out, [f"no kit piece {', '.join(missing)}"] if missing else []
+    probs = [f"no kit piece {', '.join(missing)}"] if missing else []
+    probs += [f"the gable window at ({x:g}, {y:g}) is not the centre of a gable row's lowest 2 m band"
+              for x, y in sorted(wins - used)]
+    return out, probs
 
 
 def _edge_from(n, d):

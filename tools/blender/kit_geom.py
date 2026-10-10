@@ -32,6 +32,9 @@ def openings(g: dict) -> dict:
         "window": {"w": g["window_w_m"], "y0": g["window_sill_m"], "y1": g["window_sill_m"] + g["window_h_m"], "casing": True},
         "window_knee": {"w": g["window_w_m"], "y0": g["window_sill_m"], "y1": g["window_sill_m"] + 0.8, "casing": True},
         "window_basement": {"w": g["window_w_m"], "y0": 2.2, "y1": 2.7, "casing": False},
+        # a gable window (art #77): in a gable band, sill and height from the band's foot
+        "window_gable": {"w": g["window_w_m"], "y0": g["gable_window_sill_m"],
+                         "y1": g["gable_window_sill_m"] + g["gable_window_h_m"], "casing": True},
     }
 
 

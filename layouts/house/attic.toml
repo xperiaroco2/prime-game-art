@@ -63,16 +63,5 @@ id = "attic_roof"
 room = "attic"
 rect = [20, 26, 20, 14]
 gables = true
+windows = [[20, 31], [40, 31]]  # a gable window pair (art #77): the kit's gable_band_2m_window, the north 2 m row's lowest band
 note = "the kit's pitched roof on the knee walls: eaves on y 26 and 40, the ridge at y 33, gables on x 20 and 40; its pitch is the kit's gable_rise_per_m (Q2)"
-
-[[placeholders]]
-name = "GableWindowWest"
-room = "attic"
-at = [20, 2.6, 33]
-note = "a gable window (the kit has no gable window piece yet)"
-
-[[placeholders]]
-name = "GableWindowEast"
-room = "attic"
-at = [40, 2.6, 29]
-note = "a gable window (the kit has no gable window piece yet)"

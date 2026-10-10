@@ -7,7 +7,9 @@ extends SceneTree
 ##   godot --path godot --position -30000,-30000 --resolution 1600x900 -s res://house/zones.gd -- <request.json> <out dir>
 ## request.json: commands/zones.py request(): {"pieces": [{"zone", "id", "src", "pos", "yaw", "scene" | "size",
 ## "lights", "light"}], "views": [[name, title, eye [x, y, h], look [x, y, h], fov]], "lineup": [{"id", "scene", "min",
-## "max"}], "lineup_at": [x, y], "pack": {...}}. Writes <out>/<view>.png, lineup.png, sheet.png and zones.json.
+## "max"}], "lineup_at": [x, y], "pack": {...}}; optional "lamps": [[x, h, z]] with "lamp": [colour, energy, range]
+## (review lights). Without "lineup_at" there is no line-up (the attic's shoot, commands/attic.py). Writes
+## <out>/<view>.png, lineup.png, sheet.png and zones.json.
 
 const KitMaterials := preload("res://kit/kit_materials.gd")
 const WATCHDOG_S: float = 170.0
@@ -54,7 +56,17 @@ func _run(args: PackedStringArray) -> void:
 			_instance(p)
 		else:
 			_proxy(p)
-	_lineup()
+	for l: Array in _req.get("lamps", []):
+		var c: Array = _req["lamp"][0]
+		var lamp: OmniLight3D = OmniLight3D.new()
+		lamp.light_color = Color(float(c[0]), float(c[1]), float(c[2]))
+		lamp.light_energy = float(_req["lamp"][1])
+		lamp.omni_range = float(_req["lamp"][2])
+		lamp.position = Vector3(float(l[0]), float(l[1]), float(l[2]))
+		root.add_child(lamp)
+		_counts["lights"] += 1
+	if _req.has("lineup_at"):
+		_lineup()
 	_camera = Camera3D.new()
 	_camera.near = 0.05
 	root.add_child(_camera)
@@ -73,6 +85,17 @@ func _run(args: PackedStringArray) -> void:
 	var images: Array[Image] = []
 	for v: Array in _req["views"]:
 		images.append(await _shot(v[0], v[1], _p(v[2]), _p(v[3]), result, float(v[4])))
+	if _req.has("lineup_at"):
+		await _lineup_shot(images, result)
+	_save(_grid(images), _out.path_join("sheet.png"))
+	var f: FileAccess = FileAccess.open(_out.path_join("zones.json"), FileAccess.WRITE)
+	f.store_string(JSON.stringify(result, " "))
+	f.close()
+	print("ZONES saved %s" % _out)
+	quit(0)
+
+
+func _lineup_shot(images: Array[Image], result: Dictionary) -> void:
 	var fill: DirectionalLight3D = DirectionalLight3D.new()  # review only: the line-up gets a soft key light
 	fill.light_color = Color(1.0, 0.92, 0.85)
 	fill.light_energy = 0.9
@@ -84,12 +107,6 @@ func _run(args: PackedStringArray) -> void:
 	images.append(await _shot("lineup", "the zone props beside a 1.8 m capsule",
 		Vector3(mid, 1.6, float(at[1]) + back), Vector3(mid, 0.9, float(at[1])), result, 40.0))
 	fill.queue_free()
-	_save(_grid(images), _out.path_join("sheet.png"))
-	var f: FileAccess = FileAccess.open(_out.path_join("zones.json"), FileAccess.WRITE)
-	f.store_string(JSON.stringify(result, " "))
-	f.close()
-	print("ZONES saved %s" % _out)
-	quit(0)
 
 
 # --- the scene -----------------------------------------------------------------------------------------------------

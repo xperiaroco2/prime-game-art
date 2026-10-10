@@ -1,0 +1,248 @@
+# The attic's old things and hiding spots (art #77, map #73; inventory.md section 6 "Attic"): data for
+# tools/runner/house_attic.py (docs/house.md, "The attic and the roof deck"). Plan metres (x east, y south), the
+# conventions of the zones (docs/zones.md): `at` the footprint's centre, `yaw` turns the prop's front (+Z) about +Y
+# (0 south, 90 east, 180 north, -90 west), `src` "library" (props/library.toml, #87) or a placeholder with its own
+# `size` [w, d, h] (the hero props, not in the library). The light fixtures are #83a's (layouts/house/lights.toml).
+# Every position is the engineer's to change: edit, then `tools/run.sh attic`.
+
+room = "attic"
+rect = [20, 26, 20, 14]
+eave_h = 2.2                       # the knee wall; the roof climbs gable_rise_per_m from the eaves on y 26 and 40
+# Floor kept free: the hatch and its 1 m apron, the roof door's approach, 1 m round the Knife3 marker.
+clear = [[26, 27, 4, 4], [37.5, 31.8, 2.4, 2.4], [35, 36, 2, 2]]
+arrive = [28.0, 31.2]              # where a player steps off the ladder (the walk's start)
+
+# --- the north eave ---
+[[items]]
+id = "old_wardrobe"
+at = [22.0, 26.5]
+[[items]]
+id = "trunk"
+at = [24.0, 26.5]
+[[items]]
+id = "cardboard_box"
+at = [25.3, 26.4]
+[[items]]
+id = "cardboard_box"
+at = [25.9, 26.4]
+yaw = 90.0
+[[items]]
+id = "cardboard_box"
+at = [25.5, 26.95]
+yaw = 15.0
+[[items]]
+id = "sheeted_furniture"
+at = [31.5, 27.0]
+[[items]]
+id = "rolled_carpet"
+at = [34.0, 26.35]
+[[items]]
+id = "rolled_carpet"
+at = [34.0, 26.72]
+[[items]]
+id = "crate"
+at = [36.4, 26.45]
+[[items]]
+id = "crate"
+at = [37.0, 26.45]
+yaw = 8.0
+[[items]]
+id = "picture_frame"
+at = [38.3, 26.2]
+[[items]]
+id = "picture_frame"
+at = [38.9, 26.25]
+yaw = 6.0
+[[items]]
+id = "picture_frame"
+at = [38.6, 26.35]
+yaw = -4.0
+[[items]]
+id = "trunk"
+at = [39.4, 28.2]
+yaw = -90.0
+
+# --- the west gable ---
+[[items]]
+id = "standing_mirror"
+at = [20.5, 30.0]
+yaw = 90.0
+[[items]]
+id = "sheeted_furniture"
+at = [21.0, 32.2]
+[[items]]
+id = "rocking_horse"
+src = "placeholder"
+size = [1.0, 0.4, 0.9]
+at = [21.5, 34.2]
+yaw = 90.0
+
+# --- the south-west corner: the HidingSpots station (24, 36) ---
+[[items]]
+id = "old_wardrobe"
+at = [21.0, 39.5]
+yaw = 180.0
+[[items]]
+id = "trunk"
+at = [23.0, 39.5]
+yaw = 180.0
+[[items]]
+id = "sheeted_furniture"
+at = [24.9, 38.4]
+yaw = 10.0
+[[items]]
+id = "mannequin"
+src = "placeholder"
+size = [0.5, 0.4, 1.7]
+at = [22.6, 36.6]
+yaw = 60.0
+[[items]]
+id = "trunk"
+at = [26.3, 36.0]
+yaw = 90.0
+[[items]]
+id = "crate"
+at = [23.2, 34.6]
+[[items]]
+id = "crate"
+at = [23.8, 34.6]
+yaw = -10.0
+[[items]]
+id = "rug"
+at = [24.5, 36.2]
+yaw = 5.0
+[[items]]
+id = "cardboard_box"
+at = [26.8, 39.6]
+[[items]]
+id = "cardboard_box"
+at = [27.4, 39.6]
+[[items]]
+id = "cardboard_box"
+at = [27.1, 39.05]
+yaw = 20.0
+[[items]]
+id = "picture_frame"
+at = [28.2, 39.8]
+yaw = 180.0
+[[items]]
+id = "picture_frame"
+at = [28.6, 39.75]
+yaw = 175.0
+[[items]]
+id = "picture_frame"
+at = [28.4, 39.65]
+yaw = 186.0
+[[items]]
+id = "potted_plant"
+at = [29.4, 39.5]
+
+# --- the south-east ---
+[[items]]
+id = "sheeted_furniture"
+at = [31.5, 38.6]
+[[items]]
+id = "trunk"
+at = [33.5, 39.5]
+yaw = 180.0
+[[items]]
+id = "old_bicycle"
+at = [36.4, 39.45]
+[[items]]
+id = "cardboard_box"
+at = [38.4, 39.6]
+[[items]]
+id = "cardboard_box"
+at = [39.0, 39.6]
+yaw = 90.0
+[[items]]
+id = "cardboard_box"
+at = [38.7, 39.05]
+yaw = -12.0
+[[items]]
+id = "rolled_carpet"
+at = [39.6, 37.0]
+yaw = 90.0
+[[items]]
+id = "rug"
+at = [33.5, 35.0]
+yaw = -3.0
+
+# --- the east, north of the roof door ---
+[[items]]
+id = "sheeted_furniture"
+at = [38.9, 29.6]
+[[items]]
+id = "crate"
+at = [37.2, 28.9]
+[[items]]
+id = "cardboard_box"
+at = [34.5, 29.0]
+yaw = 30.0
+[[items]]
+id = "trunk"
+at = [32.5, 30.2]
+yaw = 90.0
+
+# The hiding spots: where a package may lie among the old things. `at` = [x, y], `h` above the attic floor, `in` the
+# prop that holds it (left out of the line-of-sight test: an open trunk, a wardrobe's doors, a dust sheet lifted).
+[[spots]]
+name = "TrunkNorth"
+at = [24.0, 26.5]
+h = 0.5
+in = "trunk"
+[[spots]]
+name = "WardrobeTopNorth"
+at = [22.0, 26.5]
+h = 1.9
+in = "old_wardrobe"
+[[spots]]
+name = "SheetNorth"
+at = [31.5, 27.0]
+h = 0.6
+in = "sheeted_furniture"
+[[spots]]
+name = "SheetWest"
+at = [21.0, 32.2]
+h = 0.6
+in = "sheeted_furniture"
+[[spots]]
+name = "WardrobeSouth"
+at = [21.0, 39.5]
+h = 1.0
+in = "old_wardrobe"
+[[spots]]
+name = "TrunkSouthWest"
+at = [23.0, 39.5]
+h = 0.5
+in = "trunk"
+[[spots]]
+name = "CrateWest"
+at = [23.5, 34.6]
+h = 0.4
+in = "crate"
+[[spots]]
+name = "SheetSouthWest"
+at = [24.9, 38.4]
+h = 0.6
+in = "sheeted_furniture"
+[[spots]]
+name = "BoxSouth"
+at = [27.1, 39.05]
+h = 0.4
+in = "cardboard_box"
+[[spots]]
+name = "TrunkSouthEast"
+at = [33.5, 39.5]
+h = 0.5
+in = "trunk"
+[[spots]]
+name = "BicycleBasket"
+at = [37.0, 39.45]
+h = 0.9
+in = "old_bicycle"
+[[spots]]
+name = "SheetEast"
+at = [38.9, 29.6]
+h = 0.6
+in = "sheeted_furniture"

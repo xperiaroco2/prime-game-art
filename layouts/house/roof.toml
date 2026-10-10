@@ -30,3 +30,10 @@ piece = "chimney_stack"
 room = "roof"
 at = [37.5, 0.0, 24.0]
 note = "a chimney (kit v2), 1 x 1 m from its north-west corner, centred on (38, 24.5)"
+
+[[cornices]]
+piece = "cornice_bracket"
+room = "roof"
+rect = [18, 24, 24, 20]
+every = 2
+note = "Q3 A (art #77): the deck's 1 m overhang on brackets under its slab, round the house's walls (x 18..42, y 24..44)"
