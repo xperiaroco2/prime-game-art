@@ -18,6 +18,11 @@ PLAN = H.plan(DATA)
 GAME = Path("D:/prime-game")
 DOC = GAME / "docs" / "design" / "house-map.md"
 GREYBOX = GAME / "levels" / "house" / "rooms"
+# The free roof (art #77) is ahead of the game: until the game side takes it, the design doc and the greybox still
+# have the roof deck. These are the differences the game side must make (listed in the PR); the comparisons expect them.
+PENDING_ROOMS = {"Roof": None, "Attic": [18, 24, 24, 20]}  # no Roof room; the attic on the whole footprint
+PENDING_DOORS = {"attic": {"Door1"}}  # the attic's door to the deck is gone (the dormer window instead)
+PENDING_STATIONS = {"attic": {"Lookout", "Loot"}}  # the deck's stations, now on the roof, belong to the attic
 
 
 def level(name: str) -> dict:
@@ -51,13 +56,14 @@ class LayoutDataTest(unittest.TestCase):
     def test_the_layout_holds_the_rules(self) -> None:
         self.assertEqual(H.validate(DATA), [])
 
-    def test_35_rooms_once_each(self) -> None:
-        ids = [r["id"] for lv in DATA["levels"] for r in lv["rooms"]]
-        self.assertEqual(len(ids), 35)
-        self.assertEqual(len(set(ids)), 35)
+    def test_34_rooms_once_each(self) -> None:
+        ids = [r["id"] for lv in DATA["levels"] for r in lv["rooms"]]  # the design doc's 35 without the roof deck (#77)
+        self.assertEqual(len(ids), 34)
+        self.assertEqual(len(set(ids)), 34)
+        self.assertNotIn("roof", {lv["level"] for lv in DATA["levels"]})
 
     def test_the_kit_path_is_one_setting(self) -> None:
-        self.assertEqual(DATA["settings"]["kit_dir"], "kits/house/v2")
+        self.assertEqual(DATA["settings"]["kit_dir"], "kits/house/v3")
         self.assertIn("{id}", DATA["settings"]["kit_res"])
 
     def test_every_planned_piece_is_in_the_kit(self) -> None:
@@ -79,8 +85,8 @@ class LayoutDataTest(unittest.TestCase):
     def test_free_pieces_land_in_their_room(self) -> None:
         porch = [p for p in planned("ground")["pieces"]["path"] if p["id"] == "porch_2x2"]
         self.assertEqual(porch, [{"id": "porch_2x2", "x": 29.0, "y": 44.0, "h": 0.0, "turn": 0}])
-        chimneys = sorted((p["x"], p["y"]) for p in planned("roof")["pieces"]["roof"] if p["id"] == "chimney_stack")
-        self.assertEqual(chimneys, [(21.5, 41.5), (37.5, 24.0)])
+        chimneys = sorted((p["x"], p["y"]) for p in planned("attic")["pieces"]["attic"] if p["id"] == "chimney_attic")
+        self.assertEqual(chimneys, [(21.5, 27.0), (40.0, 39.5)])
         data = one_room(pieces=[{"piece": "no_such_piece", "room": "r", "at": [1, 0, 1]},
                                 {"piece": "chimney_stack", "room": "nowhere", "at": [1, 0, 1]}])
         self.assertEqual(len(H.plan(data)["problems"]), 2)
@@ -89,25 +95,26 @@ class LayoutDataTest(unittest.TestCase):
         ps = planned("attic")["pieces"]["attic"]
         r, knee = DATA["spec"]["grid"]["gable_rise_per_m"], DATA["spec"]["grid"]["knee_h_m"]
         roof = [p for p in ps if p["id"].startswith("roof_pitched")]
-        self.assertEqual(len(roof), len(H.kit_geom().attic_roof(DATA["spec"], 20, 14)))
+        # the free roof (art #77): 24 x 20 m from (18, 24); the dormer's column loses four 2 x 2 panels, gains a 2 x 1
+        self.assertEqual(len(roof), len(H.kit_geom().attic_roof(DATA["spec"], 24, 20)) - 4 + 1)
         ridge = [p for p in roof if p["id"] == "roof_pitched_ridge_2m"]
-        self.assertEqual(sorted(p["x"] for p in ridge), list(range(20, 40, 2)))
-        self.assertTrue(all(p["y"] == 33 and abs(p["h"] - (knee + 7 * r)) < 1e-9 for p in ridge))
+        self.assertEqual(sorted(p["x"] for p in ridge), list(range(18, 42, 2)))
+        self.assertTrue(all(p["y"] == 34 and abs(p["h"] - (knee + 10 * r)) < 1e-9 for p in ridge))
         self.assertFalse([p for p in level("attic").get("placeholders", []) if p["name"] == "RoofPitched"])
-        for gx, turn in ((20, -90), (40, 90)):
+        for gx, turn in ((18, -90), (42, 90)):
             gable = [p for p in ps if p["id"].startswith("gable_") and p["x"] == gx]
             self.assertTrue(gable and all(p["turn"] == turn for p in gable))
             for p in gable:  # each piece's top meets the slope's line r * (distance to the nearer eave)
                 kp = DATA["pieces"][p["id"]]
                 length = float(kp["length"])
-                a = p["y"] - 26 if turn == -90 else p["y"] - length - 26
+                a = p["y"] - 24 if turn == -90 else p["y"] - length - 24
                 top = p["h"] + float(kp.get("rise", kp.get("height")))
                 if kp["type"] == "gable":
-                    self.assertAlmostEqual(top - knee, r * max(min(a, 14 - a), min(a + length, 14 - a - length)))
+                    self.assertAlmostEqual(top - knee, r * max(min(a, 20 - a), min(a + length, 20 - a - length)))
                 else:
-                    self.assertLessEqual(top - knee, r * min(a, 14 - a - length) + 1e-9)
+                    self.assertLessEqual(top - knee, r * min(a, 20 - a - length) + 1e-9)
             tris = sorted((p["y"], p["id"]) for p in gable if p["id"].startswith("gable_tri"))
-            self.assertEqual(sum(DATA["pieces"][i]["length"] for _, i in tris), 14)
+            self.assertEqual(sum(DATA["pieces"][i]["length"] for _, i in tris), 20)
         odd = one_room(d=5, walls="knee", roofs=[{"id": "x", "room": "r", "rect": [0, 0, 6, 5], "gables": True}])
         self.assertTrue(any("even" in p for p in H.plan(odd)["problems"]))
 
@@ -116,7 +123,10 @@ class LayoutDataTest(unittest.TestCase):
         rows = re.findall(r"^\| ([^|]+?) \| (\d+), (\d+) \| (\d+) x (\d+) m \|", DOC.read_text(encoding="utf-8"), re.M)
         doc = {t: [int(x), int(y), int(w), int(d)] for t, x, y, w, d in rows}
         ours = {r["title"]: r["rect"] for lv in DATA["levels"] for r in lv["rooms"]}
-        self.assertEqual(len(doc), 35)
+        if "Roof" in doc:  # the game side has not taken the free roof yet (#77)
+            self.assertEqual(len(doc), 35)
+            for title, rect in PENDING_ROOMS.items():
+                doc.pop(title) if rect is None else doc.__setitem__(title, rect)
         self.assertEqual(ours, doc)
 
     @unittest.skipUnless(GREYBOX.is_dir(), "the game's greybox rooms are missing")
@@ -127,9 +137,10 @@ class LayoutDataTest(unittest.TestCase):
                 theirs = sorted(re.findall(r'\[node name="(\w+)" type="Marker3D" parent="Doors"', text))
                 ours = sorted(d["names"][room["id"]] for L in DATA["levels"] for d in L.get("doors", [])
                               if room["id"] in d.get("names", {}))
-                self.assertEqual(ours, theirs, room["id"])
-                stations = sorted(re.findall(r'\[node name="(\w+)" type="Marker3D" parent="Stations"', text))
-                self.assertEqual(sorted(s["name"] for s in room.get("stations", [])), stations, room["id"])
+                self.assertEqual(ours, sorted(set(theirs) - PENDING_DOORS.get(room["id"], set())), room["id"])
+                stations = set(re.findall(r'\[node name="(\w+)" type="Marker3D" parent="Stations"', text))
+                self.assertEqual(sorted(s["name"] for s in room.get("stations", [])),
+                                 sorted(stations | PENDING_STATIONS.get(room["id"], set())), room["id"])
 
 
     def test_the_main_stairs_are_a_marked_u_turn(self) -> None:
@@ -232,12 +243,20 @@ class PlanTest(unittest.TestCase):
         self.assertNotIn(38, [x for x, _ in spans])
         self.assertTrue(spans)
 
-    def test_the_roof_deck_skips_the_attic_and_has_a_parapet(self) -> None:
-        roof = planned("roof")
-        tiles = [p for p in roof["pieces"]["roof"] if p["id"].startswith("roof_flat")]
-        area = sum(4 if p["id"].endswith("2x2") else 1 for p in tiles)
-        self.assertEqual(area, 26 * 22 - 20 * 14)
-        self.assertEqual(sum(1 for p in roof["extra"] if p["id"] == "parapet_corner"), 4)
+    def test_the_dormer_cuts_its_panel_column(self) -> None:
+        ps = planned("attic")["pieces"]["attic"]  # climb_out: the south slope's column x 34..36, z 1..8 (y 43..36)
+        col = sorted((p["y"], p["id"]) for p in ps if p["id"].startswith("roof_pitched_2x") and p["turn"] == 180
+                     and p["x"] == 36)
+        self.assertEqual(col, [(36.0, "roof_pitched_2x2"), (44.0, "roof_pitched_2x1")])  # z 8..10 and z 0..1 stay
+        dm = [p for p in ps if p["id"] == "dormer_gable"]
+        r, knee = DATA["spec"]["grid"]["gable_rise_per_m"], DATA["spec"]["grid"]["knee_h_m"]
+        self.assertEqual([(p["x"], p["y"], p["turn"]) for p in dm], [(36.0, 43.0, 180)])
+        self.assertAlmostEqual(dm[0]["h"], knee + r)
+        for bad, word in (({"x": 35}, "column"), ({"z": [0, 3]}, "whole metres"), ({"slope": "E"}, "slope")):
+            data = copy.deepcopy(DATA)
+            lv = next(lv for lv in data["levels"] if lv["level"] == "attic")
+            lv["dormers"][0].update(bad)
+            self.assertTrue(any(word in p for p in H.plan(data)["problems"]), bad)
 
 
 class SceneTest(unittest.TestCase):
@@ -245,7 +264,7 @@ class SceneTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             summary = H.write_scenes(DATA, PLAN, Path(tmp))
             files = sorted(p.relative_to(tmp).as_posix() for p in Path(tmp).rglob("*.tscn"))
-            self.assertEqual(len(files), 35 + 5 + 1)
+            self.assertEqual(len(files), 34 + 4 + 1)  # rooms, levels (no roof deck, #77), house.tscn
             dining = (Path(tmp) / "ground" / "dining_room.tscn").read_text(encoding="utf-8")
             for name in ("Door1", "Door2", "Door3", "Door4", "DiningTable", "Circle01"):
                 self.assertIn(f'[node name="{name}" type="Marker3D"', dining)

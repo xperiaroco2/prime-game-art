@@ -1,6 +1,6 @@
 """The House map's light kit (tools/runner/house_lights.py, layouts/house/lights.toml, docs/house.md "Light"): the data
-holds, the fixture counts are the plan's (inventory.md §8: 191), every fixture lands in its room at its type's height,
-wall fixtures keep clear of doors, and the scenes carry baked lights. Pure Python."""
+holds, the fixture counts are the plan's (inventory.md §8: 191, less the roof deck's 2 lanterns: 189, art #77), every
+fixture lands in its room at its type's height, wall fixtures keep clear of doors, and the scenes carry baked lights. Pure Python."""
 
 from __future__ import annotations
 
@@ -25,7 +25,7 @@ class LightData(unittest.TestCase):
 
     def test_counts_match_the_plan(self):
         fixtures = [f for f in FIX if f["type"] != "moon"]
-        self.assertEqual(len(fixtures), 191)
+        self.assertEqual(len(fixtures), 191 - 2)  # the free roof (#77): the deck's 2 lanterns went
         by_type: dict = {}
         for f in fixtures:
             by_type[f["type"]] = by_type.get(f["type"], 0) + 1
@@ -127,7 +127,7 @@ class Scenes(unittest.TestCase):
             out = Path(tmp)
             s = L.write(LIGHTS, DATA, H.plan(DATA), FIX, out)
             self.assertEqual(sum(s["levels"].values()), len(FIX))
-            self.assertEqual(sum(z["fixtures"] for z in s["zones"].values()), 191)
+            self.assertEqual(sum(z["fixtures"] for z in s["zones"].values()), 191 - 2)
             text = (out / "zones" / "basement.tscn").read_text(encoding="utf-8")
             self.assertIn('[node name="storage_bare_bulb_01" type="OmniLight3D" parent="Lights"]', text)
             self.assertIn("light_bake_mode = 1", text)
