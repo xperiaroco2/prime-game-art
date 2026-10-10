@@ -179,9 +179,18 @@ three of the `--walk` run's walks (pantry stairs up, the wine route, the balcony
 The story pieces are procedural library props (docs/props.md): `laundry_basket`, `drying_rack`, `open_box` and the
 wall-pivot `radiator` (dressing), `laundry_pile`, `boots` and `toy_spill` (clutter, no collider).
 
-Where the targets are not met (2026-10-10, 11 of 21 rooms meet all four): the corridors (hallway, landing, stairs,
-passage, corridor) keep their floor for the routes' legs and doors, the generator hall's floor is held free by its
-sight lines, and the pantry's short walls are taken by its door, its stair landing's walk lane and shelving.
+Where the targets are not met (2026-10-10, 11 of 21 rooms meet all four; open for the manager's decision, #110):
+- floor under 18 % in 10 rooms: generator_hall 7.7, passage 9.3, hallway 9.7, stairs 11.8, landing 12.7, storage
+  16.0, wc 16.6, pantry 17.1, boiler_room 17.6, corridor 17.8;
+- wall lining under 55 % in 2 rooms: hallway 51.8, stairs 52.4.
+
+The corridors (hallway, landing, stairs, passage, corridor) keep their floor for the routes' legs and doors, the
+generator hall's floor is held free by its sight lines, the pantry's short walls are taken by its door, its stair
+landing's walk lane and shelving, and in storage, wc and boiler_room the layer runs out of placements (no fill kind
+and no island within `ISLAND_TRIES` fits without an overlap or a new problem: a walk's leg, `check_room`, the switch
+lines). The basement's floor shortfalls cannot be closed by more pieces without raising its draw calls
+further past the brief's ~30 % (see Budget). The floor share's denominator is the whole room floor, walk lanes
+included.
 
 Budget (proposed, #104): the clutter adds at most 60 meshes and 15k triangles to a room (met: at most 27 meshes, the kitchen and
 the storage, and 4.9k triangles, the kitchen). Brief #104's other check, "under 150 draw calls per room view", is not met and cannot be
