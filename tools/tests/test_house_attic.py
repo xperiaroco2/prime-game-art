@@ -87,6 +87,10 @@ class RoofTest(unittest.TestCase):
         self.assertGreater(dm["sill"], A.roof_top(DATA, 43.2))  # the sill stands over the roof outside
         self.assertLess(dm["sill"], 3.2)  # and a short stair's height over the attic floor
         self.assertLess(math.dist(dm["out"], ROOF["arrive"]), 0.6)
+        self.assertGreaterEqual(dm["opening"][1], A.PLAYER_H)  # a standing player passes the window
+        data = copy.deepcopy(DATA)
+        data["pieces"]["dormer_gable"]["window"] = [1.0, 1.15]
+        self.assertTrue(any("capsule through" in p for p in A.check(ROOF, data)))
 
     def test_the_whole_roof_is_walkable_from_the_dormer(self) -> None:
         seen, cell = A.walkable(ROOF, DATA)

@@ -28,6 +28,7 @@ from .house_zones import _ccw, _near, overlap, rect
 DRESSING = common.ROOT / "layouts" / "house" / "dressing" / "attic_roof"  # not the rooms' format (#75b): kept apart
 LIBRARY = common.ROOT / "props" / "library.toml"
 PLOT = common.ROOT / "layouts" / "house" / "outdoor" / "plot.toml"
+PLAYER_H = 1.36  # the player capsule's height (the house walk's): the dormer's window must let it through
 PLAYER_R = 0.4  # the brief's 0.4 m player capsule, taken as its radius (stricter than the zones' 0.35)
 REACH_M = 1.0  # pick-up reach in plan from the capsule's axis
 EYE_M = 1.6
@@ -150,7 +151,8 @@ def dormers(data: dict) -> list[dict]:
                     world(tip[0] + n[0], tip[1] + n[1]), world(hx + n[0], n[1])]
             out.append({"id": dm["id"], "piece": pid, "body": _ccw([world(0, 0), world(W, 0), world(W, L), world(0, L)]),
                         "leaf": _ccw(leaf), "top": p["h"] + dd["hr"], "window": world(W / 2, 0),
-                        "out": world(W / 2, -1.0), "sill": p["h"] + dd["sill"]})
+                        "out": world(W / 2, -1.0), "sill": p["h"] + dd["sill"],
+                        "opening": [ww, dd["head"] - dd["sill"]]})
     return out
 
 
@@ -332,6 +334,9 @@ def check(z: dict, data: dict) -> list[str]:
         return problems
     # the roof: the walk starts outside a dormer's window; the stations are the layout's and reachable from there
     dms = dormers(data)
+    for dm in dms:
+        if dm["opening"][1] < PLAYER_H or dm["opening"][0] < 2 * PLAYER_R:
+            problems.append(f"the dormer {dm['id']}'s window {dm['opening']} does not let a {PLAYER_H} m capsule through")
     if not any(math.dist(dm["out"], z["arrive"]) <= 0.6 for dm in dms):
         problems.append(f"the roof's walk starts at {z['arrive']}, not outside a dormer's window")
     seen, cell = walkable(z, data)

@@ -167,6 +167,6 @@
   {"id": "gazebo_finial", "type": "finial", "kind": "gazebo", "width": 0.1, "peak": 0.12, "role": "metal"},
   {"id": "gable_band_2m_window", "type": "wall", "kind": "wall", "length": 2, "height": 1.4, "finish": "ext", "band": false, "skirting": false, "opening": "window_gable"},
   {"id": "chimney_attic", "type": "chimney", "kind": "chimney", "width": 1.0, "height": 5.4, "about": "the free roof's chimney (art #77): from the attic floor through the 0.35 roof, 1.5 m over its top on the high side"},
-  {"id": "dormer_gable", "type": "dormer", "kind": "dormer", "x": [0, 2], "z": [0, 7], "window": [1.0, 1.15], "sill": 0.26, "rise": 0.7, "reach_m": 1.0, "about": "the free roof's gable dormer (art #77): replaces a 2 m panel column over 7 m of run (house_layout.dormer_cut); the players climb out of its window onto the slope"}
+  {"id": "dormer_gable", "type": "dormer", "kind": "dormer", "x": [0, 2], "z": [0, 7], "window": [1.0, 1.4], "sill": 0.15, "rise": 0.7, "reach_m": 1.0, "about": "the free roof's gable dormer (art #77): replaces a 2 m panel column over 7 m of run (house_layout.dormer_cut); the players climb out of its window onto the slope"}
  ]
 }
