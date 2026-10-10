@@ -12,6 +12,8 @@ import hashlib
 import json
 import math
 
+from .clayface import kit as claykit
+
 LOOKS = ("pack", "clay")
 DEFAULT_LOOK = "pack"
 
@@ -28,10 +30,12 @@ LUMP_SEED = 0
 RIMS = {"shoes": 0.003, "headwear": 0.003}
 HEAD_SCALE = 1.3  # the clay head and everything on it, about the Head bone's head, baked into the meshes
 SCALE_FADE = 0.08  # the x1.3 fades out over this height below the Head joint (long hair, the neck)
-HEAD_ROLES = ("head", "hair", "eyes", "brows", "mouth")  # plus every extra (a head item); clothing is not scaled
+HEAD_ROLES = ("head", "hair", "eyes", "brows", "mouth", "face")  # plus every extra (a head item); clothing is not scaled
 BODY_ROLES = ("top", "bottom", "shoes")  # the clothing: never scaled with the head
-FACE_ROLES = ("eyes", "brows", "mouth")  # the repo's scripted face: the hook where the face kit (art #42 B) plugs in
-JOIN_INTO_HEAD = ("brows", "mouth")  # one head atlas, as round D: the surfaces stay within the contract's cap of 8
+FACE_ROLES = ("eyes", "brows", "mouth", "face")  # face parts: no clay pass (built smooth); the scripted face's three
+# roles (the pack look) or the face kit's eyes and face (the clay look: um/clayface/adapter.py)
+KIT_ROLES = ("eyes", "face")  # the clay look's face parts (the face kit)
+JOIN_INTO_HEAD = ("brows", "mouth", "face")  # one head atlas, as round D: the surfaces stay within the contract's cap of 8
 GLOSSY = {"eye_white": 0.17, "eye_black": 0.08, "white": 0.17, "pupil": 0.08, "iris": 0.12, "teeth": 0.28,
           "tongue": 0.45}  # material name part: roughness
 DEFAULT_KIND = "accessory"
@@ -164,13 +168,14 @@ def piece_key(role, gender, spec, cfg, skin=None, recolor=(), context=None, kind
 
 
 def keys_for(recipe, rc, cfg):
-    """{role: library key} for every part of character rc: the pack parts, its extras and the scripted face. Beyond
+    """{role: library key} for every part of character rc: the pack parts, its extras and the face kit's eyes and face. Beyond
     a part's own spec, skin and recolours the key holds what the build does to it before the bake (assemble.build):
     every head item (the head, hair, extras and face; clay.head_scale) is scaled about the Head joint of the body
     type's skeleton, so its key holds the skeleton and `head_bone_rest`; the bottom is culled against the shoes
     (fit.tuck_cull) and its foot weights split at the shoes' ball (toes.add_toe_bones), so its key holds the shoes;
     a part the character's `extend` lengthens (fit.extend_edge) holds its edits; a face part holds the head it is
-    built on, the face settings and the hair."""
+    built on, the face kit's picks and data and the hair; the face kit's face (joined into the head) is in the
+    head's key."""
     g, skin = rc["gender"], rc.get("skin")
     recolor = rc.get("recolor", [])
 
@@ -193,16 +198,18 @@ def keys_for(recipe, rc, cfg):
             c["extend"] = extend(role)
         return c or None
 
-    face = {"head": rc["head"], "face": recipe.get("face", {}).get(g), "shading": recipe.get("face_shading", "smooth"),
-            "hair": rc["hair"]}
-    joined = {r: rc[r] for r in JOIN_INTO_HEAD}  # the face parts baked into the head's atlas
-    keys = {"head": piece_key("head", g, rc["head"], cfg, skin, rec("head"), context=ctx("head", joined=joined, **face))}
+    # the clay look's face is the face kit's (um/clayface): its picks, brow colour and kit data, on this head, under
+    # this hair (the ear state, the brow tuck and the hair colour of the facial hair come from it)
+    spec = rc.get("face_kit") or {}
+    face = {"head": rc["head"], "hair": rc["hair"], "kit": claykit.picks_for(spec, g), "brow_rgb": spec.get("brow_rgb"),
+            "kit_data": claykit.DATA_SHA}
+    keys = {"head": piece_key("head", g, rc["head"], cfg, skin, rec("head"), context=ctx("head", joined={"face": face}))}
     keys["hair"] = piece_key("hair", g, rc["hair"], cfg, None, rec("hair"), context=ctx("hair"))
     for e in rc.get("extras", []):
         keys[e["role"]] = piece_key(e["role"], g, e, cfg, None, rec(e["role"]), context=ctx(e["role"]),
                                     kind=kind_of(e["role"]))
     for role in BODY_ROLES:
         keys[role] = piece_key(role, g, rc[role], cfg, skin, rec(role), context=ctx(role))
-    for role in FACE_ROLES:
-        keys[role] = piece_key(role, g, rc[role], cfg, skin, rec(role), context=ctx(role, **face))
+    for role in KIT_ROLES:
+        keys[role] = piece_key(role, g, face["kit"], cfg, skin, (), context=ctx(role, **face))
     return keys

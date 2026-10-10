@@ -8,13 +8,13 @@ room = "pantry"
 
 [[props]]
 id = "jar_shelf"
-at = [0.32, 0, 1.6]
-face = "E"
+at = [5.68, 0, 1.6]
+face = "W"
 
 [[props]]
 id = "jar_shelf"
-at = [0.32, 0, 3.0]
-face = "E"
+at = [4.7, 0, 0.32]
+face = "S"
 
 [[props]]
 id = "crate"

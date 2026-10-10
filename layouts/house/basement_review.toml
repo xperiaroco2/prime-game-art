@@ -1,0 +1,83 @@
+# The basement's review pictures (art #78, docs/house.md "The basement"; `tools/run.py house --basement DIR`).
+# Real-time lamp stand-ins at each light FIXTURE of the basement's dressing files: a review aid only, not the light pass
+# (that is #83a's layouts/house/lights.toml) and nothing baked. Colours by function (Q23 B), one fixed exposure for the
+# zone (Q24 A). Every value here is the engineer's to change.
+exposure = 1.0
+ambient = [0.55, 0.6, 0.7]  # the colour of the dark between the lamps
+ambient_energy = 0.04
+fov = 75.0
+far_edge_min_lstar = 12.0  # the hall's far wall seen from the passage (the plan: L* > 12)
+
+# Per fixture id: colour, energy, range (m), `drop` below a ceiling pivot (the fixture's top) or `out` off a wall
+# pivot (the back's bottom centre, lifted by `up`), shadows.
+[lamps.industrial_pendant]  # the generator hall: cool work light
+color = [0.78, 0.87, 1.0]
+energy = 3.0
+range = 9.0
+drop = 0.45
+shadow = true
+
+[lamps.cage_lamp]  # a cool pool over each switch and beside the doors
+color = [0.82, 0.9, 1.0]
+energy = 2.2
+range = 4.5
+out = 0.25
+up = 0.15
+shadow = true
+
+[lamps.bare_bulb]  # storage, corridor, boiler and pump rooms: warm tungsten
+color = [1.0, 0.76, 0.48]
+energy = 1.8
+range = 6.0
+drop = 0.3
+shadow = true
+
+[lamps.safelight_red]  # the darkroom
+color = [1.0, 0.12, 0.06]
+energy = 1.6
+range = 5.0
+out = 0.2
+up = 0.1
+drop = 0.2
+shadow = false
+
+# One shot per room from 0.3 m inside the door it shares with `from`, at 1.6 m, aimed at `look` ([x, y] in the doc's
+# metres; default the room's centre) at 1.2 m. The generator hall from the passage is the far-edge shot.
+[[shots]]
+room = "generator_hall"
+from = "passage"
+
+[[shots]]
+room = "generator_hall"
+from = "switch_room"
+title = "generator hall from the switch-room door"
+
+[[shots]]
+room = "storage"
+from = "corridor"
+
+[[shots]]
+room = "darkroom"
+from = "storage"
+
+[[shots]]
+room = "corridor"
+from = "storage"
+look = [40, 28]
+
+[[shots]]
+room = "boiler_room"
+from = "generator_hall"
+
+[[shots]]
+room = "pump_room"
+from = "generator_hall"
+
+[[shots]]
+room = "switch_room"
+from = "generator_hall"
+
+[[shots]]
+room = "passage"
+from = "generator_hall"
+look = [63, 30]

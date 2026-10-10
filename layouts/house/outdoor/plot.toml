@@ -140,6 +140,31 @@ id = "gates_apron"
 paint = "concrete"
 rect = [60, 60, 8, 2]
 
+# The garden's paths (#80): registered from layouts/house/outdoor/garden.toml (the test compares them).
+[[zones]]
+id = "garden_path_kitchen"
+paint = "gravel"
+line = [[42.8, 40], [46, 35], [50, 28], [56, 16], [56, 12], [57.4, 12]]
+width = 1.4
+
+[[zones]]
+id = "garden_path_loop"
+paint = "gravel"
+line = [[56, 16], [56, 4.4], [76, 4.4], [76, 20], [56, 20]]
+width = 1.4
+
+[[zones]]
+id = "garden_path_dropoff"
+paint = "worn"
+line = [[50, 28], [53, 25.4], [64, 25.4], [64, 28.4]]
+width = 1.4
+
+[[zones]]
+id = "garden_path_east"
+paint = "worn"
+line = [[64, 25.4], [70, 25.4], [70, 20]]
+width = 1.4
+
 # The kerb between the pavement and the street (Q16 A): boxes on the ground, a gap at the driveway's apron.
 [kerb]
 y = 62
@@ -148,10 +173,10 @@ width = 0.2
 gaps = [[60, 68]]
 
 # The outdoor stairs (inventory: 4 x 4 m at (62, 29), a 3.2 m drop to the passage): two half flights and a landing,
-# a U. `entry` is the hole's edge the player steps down from (N: from the garden; S: from the garage's back door).
+# a U. Their rect and entry (the hole's edge the player steps down from) have one owner, the house layout's
+# `../ground.toml` (the hole and the flights `outdoor_stairs`, which the walk and the basement passage use; art #78):
+# `house_outdoor.load` reads them from there (today [62, 28, 4, 4], entered from the south, the garage's back door).
 [stairs]
-rect = [62, 29, 4, 4]
-entry = "N"
 drop = 3.2
 flight = "stairs_outdoor_half"
 landing = "stairs_outdoor_landing"

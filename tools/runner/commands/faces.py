@@ -30,6 +30,12 @@ MAX_HEAD_SPACE_MOVE_MM = 0.01
 # The review heads' hair (or a hat) may hide at most this share of a face part from the front: brows under a fringe
 # hide the brow-led expressions and judge the families unfairly.
 MIN_VISIBLE_FRONT = 0.6
+# The clay face kit's many-face check (--kit-check): faces_kit_check.py on the recipe's heads.
+KIT_SCRIPT = "faces_kit_check.py"
+KIT_RECIPE = common.ROOT / "recipes" / "clay_round_d.json"
+KIT_CHECK_DEFAULT = 320
+# A face over this many triangles fails (the lab's limit; the contract's budget is for the whole character).
+KIT_MAX_TRIS = 2000
 
 
 def styles_module() -> ModuleType:
@@ -53,6 +59,13 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--styles", type=Path, default=FACES / "styles.json", help="the style families file")
     parser.add_argument("--review", type=Path, default=FACES / "review.json", help="what the sheets show")
     parser.add_argument("--check", action="store_true", help="only check the styles, review and heads files (no Blender)")
+    parser.add_argument(
+        "--kit-check", type=int, nargs="?", const=KIT_CHECK_DEFAULT, default=0, metavar="N",
+        help=f"the clay face kit's check instead of the sheets: N random faces per body type (default {KIT_CHECK_DEFAULT})"
+             " under random hair items, collisions, brows in the white, visible pokes, ears, nose and moustache; "
+             "non-zero exit on a failure",
+    )  # fmt: skip
+    parser.add_argument("--recipe", type=Path, default=KIT_RECIPE, help="--kit-check: the recipe whose heads carry the faces")
 
 
 def _pick(value: str, known: list[str], what: str) -> list[str]:
@@ -159,7 +172,71 @@ def distance_lines(report: dict[str, Any]) -> list[str]:
     return lines
 
 
+def kit_problems(report: dict[str, Any]) -> list[str]:
+    """The failures in a kit_check.json report: any face with a collision, a brow in the white, a visible poke, an ear
+    in the hair, a pupil sinking into the white, a nose meeting a pupil or the moustache, a nose below the mouth's top,
+    or over KIT_MAX_TRIS triangles."""
+    out = []
+    for g, b in report["bodies"].items():
+        where = f"{g} ({b['head']})"
+        if b["faces"] != b["requested"]:
+            out.append(f"{where}: {b['faces']} of {b['requested']} faces measured")
+        for key, what in (("faces_with_collision", "faces with a collision"), ("brow_in_white_faces", "faces with a brow in the white"),
+                          ("pokes", "faces with a visible brow poke"), ("ear_hair_overlap_faces", "faces with an ear in the hair"),
+                          ("meets_pupils_faces", "faces whose nose meets a pupil")):
+            if b[key]:
+                out.append(f"{where}: {b[key]} {what}")
+        ms = b["moustache_seat"]
+        if ms["overlap_faces"] or ms["cannot_clear_faces"]:
+            out.append(f"{where}: moustache seat: {ms['overlap_faces']} faces with the nose on it, {ms['cannot_clear_faces']} not cleared")
+        if b["faces"] and b["nose_above_mouth_mm_min"] < 0:
+            out.append(f"{where}: the nose dips {-b['nose_above_mouth_mm_min']} mm below the mouth's top")
+        if b["look_sag_mm_max"] > 0:
+            out.append(f"{where}: a pupil sinks {b['look_sag_mm_max']} mm into the white as the eyes look around")
+        if b["tris_max"] > KIT_MAX_TRIS:
+            out.append(f"{where}: a face of {b['tris_max']} triangles (at most {KIT_MAX_TRIS})")
+    return out
+
+
+def kit_summary(report: dict[str, Any]) -> list[str]:
+    lines = []
+    for g, b in report["bodies"].items():
+        ms = b["moustache_seat"]
+        lines.append(f"{g} on {b['head']}: {b['faces']} faces under {len(b['hairs_seen'])} hairs; collisions {b['faces_with_collision']}, "
+                     f"brow in white {b['brow_in_white_faces']}, visible pokes {b['pokes']}, ear/hair {b['ear_hair_overlap_faces']}, "
+                     f"nose meets pupils {b['meets_pupils_faces']}; nose above mouth min {b['nose_above_mouth_mm_min']} mm; "
+                     f"look sag max {b['look_sag_mm_max']} mm; moustache faces {ms['faces']} (nose clear min "
+                     f"{ms['nose_clear_mm_min']} mm); brows tucked {b['brow_tuck_faces']}; tris max {b['tris_max']} "
+                     f"mean {b['tris_mean']}; {b['seconds']} s")
+    return lines
+
+
+def run_kit_check(args: argparse.Namespace) -> int:
+    if args.kit_check < 1:
+        raise common.Failure("--kit-check N needs N >= 1")
+    out = (args.out or common.OUT / "faces_kit").resolve()
+    script_args = ["--recipe", str(Path(args.recipe).resolve()), "--raw", str(common.raw_dir()), "--out", str(out),
+                   "--n", str(args.kit_check)]
+    common.say(f"faces --kit-check: {args.kit_check} faces per body type on {Path(args.recipe).name} -> {out.as_posix()}")
+    blender.run_script(KIT_SCRIPT, script_args, timeout=TIMEOUT)
+    path = out / "kit_check.json"
+    if not path.is_file():
+        raise common.Failure(f"{KIT_SCRIPT} wrote no {path}")
+    report = json.loads(path.read_text(encoding="utf-8"))
+    for line in kit_summary(report):
+        common.say(f"  {line}")
+    problems = kit_problems(report)
+    for line in problems:
+        common.bad(line)
+    if problems:
+        raise common.Failure(f"{len(problems)} problem(s) in {path}")
+    common.ok(f"kit check: {sum(b['faces'] for b in report['bodies'].values())} faces pass; report: {path.as_posix()}")
+    return 0
+
+
 def run(args: argparse.Namespace) -> int:
+    if args.kit_check:
+        return run_kit_check(args)
     styles, _, heads, heads_path = load_inputs(args)
     families = _pick(args.families, list(styles["families"]), "families")
     expressions = _pick(args.expressions, styles["expressions"], "expressions")

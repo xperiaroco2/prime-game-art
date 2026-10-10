@@ -84,7 +84,7 @@ def build(args: argparse.Namespace, path: Path, lib: dict) -> list[str]:
                "--batch", str(args.batch)]
         if only:
             cmd += ["--only", ",".join(only)]
-        blender.run_script(_props.SCRIPT, cmd, timeout=BUILD_TIMEOUT)
+        blender.run_script(lib.get("script", _props.SCRIPT), cmd, timeout=BUILD_TIMEOUT)
     problems, notes = _props.check_build(lib, props, out)
     for n in notes:
         common.say(f"  note: {n}")

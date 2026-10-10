@@ -85,7 +85,7 @@ class Rules(unittest.TestCase):
         self.assertIn("use_collision = false", text)
 
 
-# The ground floor (#75b): the eight rooms, their stations' props, the room-defining props and the fixtures of the
+# The ground floor (#75b; the greenhouse #80): the rooms, their stations' props, the room-defining props and the fixtures of the
 # plan's inventory (D:/prime-art-raw/research/2026-10-10-house-plan/inventory.md sections 4 and 8).
 ROOMS = {
     "wc": {"toilet", "basin"},
@@ -96,26 +96,31 @@ ROOMS = {
     "kitchen": {"order_board", "assembly_island", "kitchen_counter", "kitchen_upper", "fridge", "stove", "kitchen_sink"},
     "hallway": {"coat_rack"},
     "terrace": {"terrace_table", "terrace_chair"},
+    "greenhouse": {"herb_board", "herb_bed", "potting_bench"},
 }
 FIXTURES = {
     "wc": {"wall_sconce": 1}, "pantry": {"bare_bulb": 1}, "dining_room": {"chandelier": 1, "wall_sconce": 2},
     "living_room": {"floor_lamp": 2, "table_lamp": 1, "wall_sconce": 2}, "stairs": {"wall_sconce": 2},
     "kitchen": {"pendant_shade": 3, "wall_sconce": 1}, "hallway": {"wall_sconce": 2, "porch_lamp": 1},
     "terrace": {"lantern": 4, "string_lights": 2, "porch_lamp": 1},
+    "greenhouse": {"string_lights": 2, "bare_bulb": 4},
 }
 STATION_PROPS = {"DiningTable": {"dining_table"}, "OrderBoard": {"order_board", "assembly_island"},
-                 "TerraceTable": {"terrace_table"}}
+                 "TerraceTable": {"terrace_table"},
+                 "HerbBoard": {"herb_board"}, "HerbBeds": {"herb_bed"}}
 
 
 class GroundFloor(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.data = hl.load()
-        cls.files = hd.load(hl.LAYOUT_DIR / cls.data["settings"]["dressing_dir"])
         cls.rooms = {r["id"]: r for lv in cls.data["levels"] if lv["level"] == "ground" for r in lv["rooms"]}
+        # the ground floor's files (the basement's are #78's, test_house_basement)
+        cls.files = {rid: f for rid, f in hd.load(hl.LAYOUT_DIR / cls.data["settings"]["dressing_dir"]).items()
+                     if rid in cls.rooms}
 
     def test_eight_rooms(self):
-        self.assertEqual(set(self.files), set(ROOMS))
+        self.assertEqual({r for r in self.files if r in self.rooms}, set(ROOMS))  # the other floors: their own tests
         self.assertTrue(set(ROOMS) <= set(self.rooms))
 
     def test_room_defining_props_and_fixtures(self):
@@ -148,7 +153,7 @@ class GroundFloor(unittest.TestCase):
         paths = [p for p in hd.spec_paths(self.data["settings"]) if p.is_file()]
         rep = hd.check(self.data, self.files, hd.catalogue(paths))
         req = hd.review_request(self.data, rep["rooms"])
-        shots = {s["room"]: s for s in req["room_shots"]}
+        shots = {s["room"]: s for s in req["room_shots"] if s["level"] == "ground"}  # the upper floor: #76's test
         self.assertEqual(set(shots), set(ROOMS))
         for rid, s in shots.items():
             rx, rz, w, d = self.rooms[rid]["rect"]
@@ -156,7 +161,8 @@ class GroundFloor(unittest.TestCase):
                 self.assertTrue(rx < x < rx + w and rz < z < rz + d, f"{rid}: {s}")
             self.assertAlmostEqual(s["from"][1], hd.EYE)
             self.assertTrue(s["node"].endswith("/Rooms/" + self.rooms[rid]["node"]))
-        self.assertEqual(len(req["lamps"]), sum(sum(f.values()) for f in FIXTURES.values()))
+        self.assertEqual(len([lp for lp in req["lamps"] if lp["room"] in ROOMS]),
+                         sum(sum(f.values()) for f in FIXTURES.values()))
         board = next(f for f in req["features"] if f["name"] == "kitchen_order_board")
         self.assertGreater(board["from"][2], board["to"][2])  # the board reads from the south
 

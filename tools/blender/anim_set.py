@@ -325,7 +325,7 @@ def save(char: dict, actions: dict, path: str, fps: int) -> dict:
     if max(scale) - min(scale) > 1e-4:
         raise RuntimeError(f"the armature's scale {tuple(scale)} is not uniform")
     for o in parts:
-        o.data.transform(o.matrix_world)
+        o.data.transform(o.matrix_world, shape_keys=True)  # the face kit's expression keys move too
         o.data.update()
     arm.parent = None
     arm.data.transform(m)

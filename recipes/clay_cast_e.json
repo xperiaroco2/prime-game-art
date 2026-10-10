@@ -1,0 +1,729 @@
+{
+ "description": "The face kit's proof (art #42 part B): the lab's round E cast (research/2026-10-05-faces/lab/clay_e/cast_e.py CAST_E: the ball nose on every face, the loud features moved) on round D's cast builds (research/2026-10-07-clay-d/cast/<id>_build.json: parts, skin, hair and brow colours), built in the clay look with the clay face kit. The catalogue's cuts the assembler cannot make yet are left out: m2's hair keeps the King's pack beard (cut facial_hair), w4's nose ring comes with the Punk's neck ring (cut not_facial_hair).",
+ "packs": {
+  "M": "refs/Ultimate_Modular_Men_Pack",
+  "W": "refs/Ultimate_Modular_Women_Pack"
+ },
+ "skeleton": {
+  "M": "Business Man.glb",
+  "W": "Suit.glb"
+ },
+ "head_bone_rest": [
+  -0.0003,
+  -0.0431,
+  1.5873
+ ],
+ "face_shading": "smooth",
+ "face": {
+  "M": {
+   "mouth_dz": -0.088
+  },
+  "W": {
+   "mouth_dz": -0.072
+  }
+ },
+ "look": "clay",
+ "modes": [
+  "chars"
+ ],
+ "characters": [
+  {
+   "id": "m1",
+   "gender": "M",
+   "skin": [
+    0.6,
+    0.39,
+    0.27
+   ],
+   "head": {
+    "file": "Beach Character.glb",
+    "object": "Beach_Head",
+    "keep": [
+     "Skin"
+    ],
+    "eye_materials": [
+     "Eye"
+    ]
+   },
+   "hair": {
+    "file": "Beach Character.glb",
+    "materials": [
+     "Hair"
+    ],
+    "object": "Beach_Head"
+   },
+   "top": {
+    "file": "Adventurer.glb",
+    "object": "Adventurer_Body"
+   },
+   "bottom": {
+    "file": "Adventurer.glb",
+    "object": "Adventurer_Legs"
+   },
+   "shoes": {
+    "file": "Worker.glb",
+    "object": "Worker_Feet"
+   },
+   "extras": [
+    {
+     "role": "accessory",
+     "file": "Sci Fi Character.glb",
+     "materials": [
+      "Blue"
+     ],
+     "object": "SciFi_Head",
+     "gender": "W"
+    }
+   ],
+   "eyes": {
+    "style": "dots"
+   },
+   "brows": {
+    "style": "raised_thick",
+    "rgb": [
+     0.04,
+     0.025,
+     0.012
+    ]
+   },
+   "mouth": {
+    "style": "smile",
+    "lip": [
+     0.45,
+     0.2,
+     0.15
+    ]
+   },
+   "pose": {
+    "action": "Idle",
+    "frame": 0
+   },
+   "face_kit": {
+    "mouth": "gap_grin",
+    "nose": "bulb",
+    "eye_size": "big",
+    "pupil": "pill",
+    "lid": "neutral",
+    "brows": "surprised",
+    "ears": "small",
+    "facial_hair": "none",
+    "teeth": true,
+    "asym": "brow",
+    "loud": "eye_size",
+    "brow_rgb": [
+     0.04,
+     0.025,
+     0.012
+    ]
+   }
+  },
+  {
+   "id": "m2",
+   "gender": "M",
+   "skin": [
+    0.36,
+    0.215,
+    0.13
+   ],
+   "head": {
+    "file": "King.glb",
+    "object": "King_Head",
+    "keep": [
+     "Skin"
+    ],
+    "eye_materials": [
+     "Eye"
+    ]
+   },
+   "hair": {
+    "file": "King.glb",
+    "materials": [
+     "Hair_White"
+    ],
+    "object": "King_Head"
+   },
+   "top": {
+    "file": "King.glb",
+    "object": "King_Body"
+   },
+   "bottom": {
+    "file": "Business Man.glb",
+    "object": "Suit_Legs"
+   },
+   "shoes": {
+    "file": "Business Man.glb",
+    "object": "Suit_Feet"
+   },
+   "eyes": {
+    "style": "dots"
+   },
+   "brows": {
+    "style": "raised_thick",
+    "rgb": [
+     0.04,
+     0.025,
+     0.012
+    ]
+   },
+   "mouth": {
+    "style": "smile",
+    "lip": [
+     0.45,
+     0.2,
+     0.15
+    ]
+   },
+   "pose": {
+    "action": "Idle",
+    "frame": 0
+   },
+   "face_kit": {
+    "mouth": "gap_grin",
+    "nose": "bulb",
+    "eye_size": "small",
+    "pupil": "dot",
+    "lid": "sleepy",
+    "brows": "one_raised",
+    "ears": "small",
+    "facial_hair": "handlebar",
+    "teeth": true,
+    "asym": "none",
+    "loud": "facial_hair",
+    "brow_rgb": [
+     0.56,
+     0.58,
+     0.62
+    ]
+   }
+  },
+  {
+   "id": "m3",
+   "gender": "M",
+   "skin": [
+    0.13,
+    0.07,
+    0.04
+   ],
+   "head": {
+    "file": "Worker.glb",
+    "object": "Worker_Head",
+    "keep": [
+     "Skin"
+    ],
+    "eye_materials": [
+     "Eye"
+    ]
+   },
+   "hair": {
+    "file": "Worker.glb",
+    "materials": [
+     "Eyebrows"
+    ],
+    "object": "Worker_Head"
+   },
+   "top": {
+    "file": "Worker.glb",
+    "object": "Worker_Body"
+   },
+   "bottom": {
+    "file": "Farmer.glb",
+    "object": "Farmer_Pants"
+   },
+   "shoes": {
+    "file": "Swat.glb",
+    "object": "Swat_Feet"
+   },
+   "extras": [
+    {
+     "role": "headwear",
+     "file": "Worker.glb",
+     "materials": [
+      "Worker_Yellow"
+     ],
+     "object": "Worker_Head"
+    },
+    {
+     "role": "earrings",
+     "file": "Punk.glb",
+     "materials": [
+      "Earrings"
+     ],
+     "object": "Punk_Head"
+    }
+   ],
+   "eyes": {
+    "style": "dots"
+   },
+   "brows": {
+    "style": "raised_thick",
+    "rgb": [
+     0.04,
+     0.025,
+     0.012
+    ]
+   },
+   "mouth": {
+    "style": "smile",
+    "lip": [
+     0.45,
+     0.2,
+     0.15
+    ]
+   },
+   "pose": {
+    "action": "Idle",
+    "frame": 0
+   },
+   "face_kit": {
+    "mouth": "buck",
+    "nose": "bulb",
+    "eye_size": "medium",
+    "pupil": "big",
+    "lid": "alert",
+    "brows": "normal",
+    "ears": "small",
+    "facial_hair": "none",
+    "teeth": true,
+    "asym": "eye",
+    "loud": "mouth",
+    "brow_rgb": [
+     0.04,
+     0.025,
+     0.012
+    ]
+   }
+  },
+  {
+   "id": "m4",
+   "gender": "M",
+   "skin": [
+    0.21,
+    0.115,
+    0.065
+   ],
+   "head": {
+    "file": "Casual Character.glb",
+    "object": "Casual2_Head",
+    "keep": [
+     "Skin"
+    ],
+    "eye_materials": [
+     "Eye"
+    ]
+   },
+   "hair": {
+    "file": "Casual Character.glb",
+    "materials": [
+     "Hair"
+    ],
+    "object": "Casual2_Head"
+   },
+   "top": {
+    "file": "Hoodie Character.glb",
+    "object": "Casual_Body"
+   },
+   "bottom": {
+    "file": "Punk.glb",
+    "object": "Punk_Legs"
+   },
+   "shoes": {
+    "file": "Punk.glb",
+    "object": "Punk_Feet"
+   },
+   "recolor": [
+    {
+     "part": "hair",
+     "material": "Hair",
+     "rgb": [
+      0.011,
+      0.008,
+      0.006
+     ],
+     "was": [
+      0.053,
+      0.022,
+      0.007
+     ]
+    }
+   ],
+   "eyes": {
+    "style": "dots"
+   },
+   "brows": {
+    "style": "raised_thick",
+    "rgb": [
+     0.04,
+     0.025,
+     0.012
+    ]
+   },
+   "mouth": {
+    "style": "smile",
+    "lip": [
+     0.45,
+     0.2,
+     0.15
+    ]
+   },
+   "pose": {
+    "action": "Idle",
+    "frame": 0
+   },
+   "face_kit": {
+    "mouth": "frown",
+    "nose": "bulb",
+    "eye_size": "small",
+    "pupil": "pill",
+    "lid": "neutral",
+    "brows": "normal",
+    "ears": "small",
+    "facial_hair": "brush+goatee",
+    "teeth": true,
+    "asym": "none",
+    "loud": "facial_hair",
+    "brow_rgb": [
+     0.012,
+     0.009,
+     0.008
+    ]
+   }
+  },
+  {
+   "id": "w1",
+   "gender": "W",
+   "skin": [
+    0.13,
+    0.07,
+    0.04
+   ],
+   "head": {
+    "file": "Witch.glb",
+    "object": "Witch_Head",
+    "keep": [
+     "Skin"
+    ],
+    "eye_materials": [
+     "Brown"
+    ]
+   },
+   "hair": {
+    "file": "Witch.glb",
+    "materials": [
+     "Hair_Black"
+    ],
+    "object": "Witch_Head"
+   },
+   "top": {
+    "file": "Sci Fi Character.glb",
+    "object": "SciFi_Body"
+   },
+   "bottom": {
+    "file": "Animated Woman.glb",
+    "object": "Casual_Legs"
+   },
+   "shoes": {
+    "file": "Sci Fi Character.glb",
+    "object": "SciFi_Feet"
+   },
+   "eyes": {
+    "style": "dots"
+   },
+   "brows": {
+    "style": "thin_arch",
+    "rgb": [
+     0.3,
+     0.2,
+     0.08
+    ]
+   },
+   "mouth": {
+    "style": "smile",
+    "lip": [
+     0.2,
+     0.08,
+     0.06
+    ]
+   },
+   "pose": {
+    "action": "Idle",
+    "frame": 0
+   },
+   "face_kit": {
+    "mouth": "gap_grin",
+    "nose": "bulb",
+    "eye_size": "big",
+    "pupil": "pill",
+    "lid": "alert",
+    "brows": "normal",
+    "ears": "small",
+    "facial_hair": "none",
+    "teeth": true,
+    "asym": "eye",
+    "loud": "eye_size",
+    "brow_rgb": [
+     0.45,
+     0.33,
+     0.14
+    ]
+   }
+  },
+  {
+   "id": "w2",
+   "gender": "W",
+   "skin": [
+    0.6,
+    0.39,
+    0.27
+   ],
+   "head": {
+    "file": "Animated Woman.glb",
+    "object": "Casual_Head",
+    "keep": [
+     "Skin"
+    ],
+    "eye_materials": [
+     "Brown"
+    ]
+   },
+   "hair": {
+    "file": "Animated Woman.glb",
+    "materials": [
+     "Hair_Blond"
+    ],
+    "object": "Casual_Head"
+   },
+   "top": {
+    "file": "Worker.glb",
+    "object": "Worker_Body"
+   },
+   "bottom": {
+    "file": "Worker.glb",
+    "object": "Worker_Legs"
+   },
+   "shoes": {
+    "file": "Medieval.glb",
+    "object": "Medieval_Feet"
+   },
+   "eyes": {
+    "style": "dots"
+   },
+   "brows": {
+    "style": "thin_arch",
+    "rgb": [
+     0.3,
+     0.2,
+     0.08
+    ]
+   },
+   "mouth": {
+    "style": "smile",
+    "lip": [
+     0.2,
+     0.08,
+     0.06
+    ]
+   },
+   "pose": {
+    "action": "Idle",
+    "frame": 0
+   },
+   "face_kit": {
+    "mouth": "toothy",
+    "nose": "bulb",
+    "eye_size": "medium",
+    "pupil": "dot",
+    "lid": "alert",
+    "brows": "one_raised",
+    "ears": "small",
+    "facial_hair": "none",
+    "teeth": true,
+    "asym": "none",
+    "loud": "mouth",
+    "brow_rgb": [
+     0.04,
+     0.025,
+     0.012
+    ]
+   }
+  },
+  {
+   "id": "w3",
+   "gender": "W",
+   "skin": [
+    0.36,
+    0.215,
+    0.13
+   ],
+   "head": {
+    "file": "Animated Woman-nIItLV9nxS.glb",
+    "object": "Formad_Head",
+    "keep": [
+     "Skin"
+    ],
+    "eye_materials": [
+     "Brown"
+    ]
+   },
+   "hair": {
+    "file": "Animated Woman-nIItLV9nxS.glb",
+    "materials": [
+     "Red"
+    ],
+    "object": "Formad_Head"
+   },
+   "top": {
+    "file": "Medieval.glb",
+    "object": "Medieval_Body"
+   },
+   "bottom": {
+    "file": "Punk.glb",
+    "object": "Punk_Legs"
+   },
+   "shoes": {
+    "file": "Witch.glb",
+    "object": "Witch_Feet"
+   },
+   "extras": [
+    {
+     "role": "headwear",
+     "file": "King.glb",
+     "materials": [
+      "Gold"
+     ],
+     "object": "King_Head",
+     "gender": "M"
+    }
+   ],
+   "eyes": {
+    "style": "dots"
+   },
+   "brows": {
+    "style": "thin_arch",
+    "rgb": [
+     0.3,
+     0.2,
+     0.08
+    ]
+   },
+   "mouth": {
+    "style": "smile",
+    "lip": [
+     0.2,
+     0.08,
+     0.06
+    ]
+   },
+   "pose": {
+    "action": "Idle",
+    "frame": 0
+   },
+   "face_kit": {
+    "mouth": "toothy",
+    "nose": "bulb",
+    "eye_size": "medium",
+    "pupil": "pill",
+    "lid": "sleepy",
+    "brows": "normal",
+    "ears": "small",
+    "facial_hair": "none",
+    "teeth": true,
+    "asym": "brow",
+    "loud": "mouth",
+    "brow_rgb": [
+     0.13,
+     0.06,
+     0.025
+    ]
+   }
+  },
+  {
+   "id": "w4",
+   "gender": "W",
+   "skin": [
+    0.21,
+    0.115,
+    0.065
+   ],
+   "head": {
+    "file": "Punk.glb",
+    "object": "Punk_Head",
+    "keep": [
+     "Skin"
+    ],
+    "eye_materials": [
+     "Brown"
+    ]
+   },
+   "hair": {
+    "file": "Punk.glb",
+    "materials": [
+     "Pink"
+    ],
+    "object": "Punk_Head"
+   },
+   "top": {
+    "file": "Soldier.glb",
+    "object": "Soldier_Body"
+   },
+   "bottom": {
+    "file": "Soldier.glb",
+    "object": "Soldier_Legs"
+   },
+   "shoes": {
+    "file": "Adventurer.glb",
+    "object": "Adventurer_Feet"
+   },
+   "extras": [
+    {
+     "role": "accessory",
+     "file": "Punk.glb",
+     "materials": [
+      "Black"
+     ],
+     "object": "Punk_Head"
+    }
+   ],
+   "eyes": {
+    "style": "dots"
+   },
+   "brows": {
+    "style": "thin_arch",
+    "rgb": [
+     0.3,
+     0.2,
+     0.08
+    ]
+   },
+   "mouth": {
+    "style": "smile",
+    "lip": [
+     0.2,
+     0.08,
+     0.06
+    ]
+   },
+   "pose": {
+    "action": "Idle",
+    "frame": 0
+   },
+   "face_kit": {
+    "mouth": "toothy",
+    "nose": "bulb",
+    "eye_size": "small",
+    "pupil": "big",
+    "lid": "neutral",
+    "brows": "angry",
+    "ears": "small",
+    "facial_hair": "none",
+    "teeth": true,
+    "asym": "brow",
+    "loud": "mouth",
+    "brow_rgb": [
+     0.012,
+     0.009,
+     0.008
+    ]
+   }
+  }
+ ]
+}
