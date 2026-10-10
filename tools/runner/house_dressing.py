@@ -213,9 +213,18 @@ def shell(level: dict, room: dict, levels: list[dict]) -> dict:
 # ---------------------------------------------------------------- reachability
 
 def _grid(sh: dict, blocks: list) -> tuple[int, int, list[list[bool]]]:
+    """The capsule's free cells: a cell is free when every block is at least RADIUS from its centre (each block stamps
+    only the cells round it, so a room check stays fast with many props)."""
     nx, nz = int(round(sh["w"] / CELL)), int(round(sh["d"] / CELL))
-    free = [[all(box_dist(b, (i + 0.5) * CELL, (j + 0.5) * CELL) >= RADIUS for b in blocks) for j in range(nz)]
-            for i in range(nx)]
+    free = [[True] * nz for _ in range(nx)]
+    for b in blocks:
+        i0, i1 = max(0, int((b[0] - RADIUS) / CELL) - 1), min(nx, int((b[2] + RADIUS) / CELL) + 2)
+        j0, j1 = max(0, int((b[1] - RADIUS) / CELL) - 1), min(nz, int((b[3] + RADIUS) / CELL) + 2)
+        for i in range(i0, i1):
+            col, x = free[i], (i + 0.5) * CELL
+            for j in range(j0, j1):
+                if col[j] and box_dist(b, x, (j + 0.5) * CELL) < RADIUS:
+                    col[j] = False
     return nx, nz, free
 
 
