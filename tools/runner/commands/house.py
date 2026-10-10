@@ -8,7 +8,7 @@ import json
 import tomllib
 from pathlib import Path
 
-from .. import common, house_basement, house_dressing, house_layout, house_lights, house_routes
+from .. import common, house_basement, house_clutter, house_dressing, house_layout, house_lights, house_routes
 from . import _frames, _godot, _house_bake
 
 NAME = "house"
@@ -25,6 +25,8 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--out", type=Path, default=DEFAULT_OUT,
                         help="where the scenes go (default godot/import/house, res://import/house)")
     parser.add_argument("--check", action="store_true", help="only check the layout; write nothing")
+    parser.add_argument("--clutter", action="store_true",
+                        help="regenerate the dressing files' clutter blocks (house_clutter.py, seeded) before the checks")
     parser.add_argument("--props-spec", type=Path, action="append", default=[], metavar="TOML",
                         help="another prop catalogue for the dressing's sizes (e.g. a library.toml not yet on main)")
     parser.add_argument("--walk", type=Path, metavar="DIR",
@@ -59,6 +61,11 @@ def run(args: argparse.Namespace) -> int:
             common.say(f"  {p}")
         raise common.Failure(f"house layout: {len(problems)} problems")
     common.say("house layout: grid, openings, corners, footprints, stairs, holes and the light kit hold")
+    if args.clutter:
+        st = data["settings"]
+        cat = house_dressing.catalogue(house_dressing.spec_paths(st, extra=args.props_spec))
+        counts = house_clutter.write(data, Path(args.layouts) / st.get("dressing_dir", "dressing"), cat)
+        common.say(f"house clutter: {sum(counts.values())} items in {len(counts)} rooms (seed {house_clutter.SEED})")
     dressing = check_dressing(data, args.layouts, args.props_spec)
     check_basement(data, args.layouts, args.props_spec)
     routes = house_routes.load(args.layouts)
