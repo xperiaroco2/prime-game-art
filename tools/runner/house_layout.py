@@ -34,6 +34,10 @@ FLOOR_TILES = {  # floor role -> pieces by footprint (width x depth)
     "concrete": {(2, 2): "floor_concrete_2x2", (1, 1): "floor_concrete_1x1"},
     "roof": {(2, 2): "roof_flat_2x2", (1, 1): "roof_flat_1x1"},
 }
+SLAB_TILES = {(2, 2): "slab_yard_2x2", (1, 1): "slab_yard_1x1"}  # the yard slab's underside (#108)
+SLAB_EDGES = {2: "slab_edge_yard_2m", 1: "slab_edge_yard_1m"}  # its edge round a hole (the outdoor stairwell)
+BEAMS = {2: "beam_concrete_2m", 1: "beam_concrete_1m"}
+BEAM_STEP = 4  # metres between a yard slab's beams across a room's short span
 OPENING_W = {"door": 2, "glass": 2, "gate8": 8, "window": 2}
 
 
@@ -245,7 +249,7 @@ def plan(data: dict) -> dict:
     by_height: dict = {}
     for lv in data["levels"]:
         by_height.setdefault(round(lv["floor_y"], 3), []).append(lv)
-    for lv in data["levels"]:
+    for li, lv in enumerate(data["levels"]):
         pieces = {r["id"]: [] for r in lv["rooms"]}
         extra = []  # pieces of the level scene itself (stairs, railings), absolute heights
         markers = {r["id"]: [] for r in lv["rooms"]}
@@ -336,6 +340,8 @@ def plan(data: dict) -> dict:
                             blocked |= _cells(r2["rect"])
             for t in tile_floor(room["rect"], blocked, FLOOR_TILES[role]):
                 pieces[room["id"]].append(t)
+        for rid, placed in yard_slab(data, li).items():
+            pieces[rid] += placed
         # railings: open rooms' free edges, holes' free edges
         wall_cells = {(k[0], k[1], k[2]) for k in edges}
         gaps = [d for d in lv.get("doors", []) if d.get("kind") == "gap"]
@@ -399,6 +405,111 @@ def plan(data: dict) -> dict:
         out["levels"].append({"level": lv["level"], "node": lv["node"], "floor_y": lv["floor_y"], "pieces": pieces,
                               "extra": extra, "doors": markers})
     return {**out, "problems": problems}
+
+
+def bare_cells(data: dict, li: int, room: dict) -> set:
+    """The cells of a walled room on level li that the next level's floored rooms leave open but one of its areas (the
+    yard, which the generator gives no floor) lies over: the basement rooms outside the house's footprint (#108)."""
+    if li + 1 >= len(data["levels"]) or room["kind"] == "area" or family_of(data["levels"][li], room) == "none":
+        return set()
+    up = data["levels"][li + 1]
+    floored, ground = set(), set()
+    for r in up["rooms"]:
+        if r["kind"] == "area":
+            ground |= _cells(r["rect"])
+        elif r.get("floor"):
+            floored |= _cells(r["rect"])
+    return (_cells(room["rect"]) & ground) - floored
+
+
+def _modules(a: int, b: int, sizes: dict) -> list[tuple[int, int]]:
+    """(start, length) modules over a..b: 2 m ones, then a 1 m one."""
+    out, s = [], a
+    while s < b:
+        n = 2 if b - s >= 2 and 2 in sizes else 1
+        out.append((s, n))
+        s += n
+    return out
+
+
+def yard_slab(data: dict, li: int) -> dict:
+    """The real slab under the yard (#108) per room id of level li: its underside tiles (SLAB_TILES; the top is the
+    yard's ground sheet at the next level's floor, `outdoor`), round the next level's holes, with an edge piece on
+    each of a hole's edges in the room, and in a room at least 2/3 under the yard downstand beams across its short span
+    (along its pillars' lines if it has pillars, else every BEAM_STEP m from its middle). h above the level's floor."""
+    if li + 1 >= len(data["levels"]):
+        return {}
+    lv, up = data["levels"][li], data["levels"][li + 1]
+    h = round(up["floor_y"] - lv["floor_y"], 3)
+    holes = set()
+    for hl in up.get("holes", []):
+        holes |= _cells(hl.get("rect") or _tile_rect(hl, data))
+    out = {}
+    for room in lv["rooms"]:
+        bare = bare_cells(data, li, room)
+        if not bare:
+            continue
+        cells = _cells(room["rect"])
+        slab = bare - holes
+        placed = [{**t, "h": h} for t in tile_floor(room["rect"], cells - slab, SLAB_TILES)]
+        # edges: every unit edge between a hole cell and a cell outside the hole, the hole cell in this room's bare
+        # part; the face looks into the hole (local -Z), the slab on its +Z side
+        runs: dict = {}
+        for (i, j) in sorted(bare & holes):
+            for dx, dy in ((0, -1), (0, 1), (-1, 0), (1, 0)):
+                if (i + dx, j + dy) in holes:
+                    continue
+                if dy:
+                    key, a = ("h", j + (dy > 0), (0, dy)), i
+                else:
+                    key, a = ("v", i + (dx > 0), (dx, 0)), j
+                runs.setdefault(key, []).append(a)
+        for (o, line, out_dir), units in sorted(runs.items()):
+            for a, b in _spans(sorted(units)):
+                placed += _run_pieces(o, line, out_dir, a, b, SLAB_EDGES, h)
+        if 3 * len(bare) >= 2 * len(cells):  # mostly under the yard: its beams span the whole room, round holes
+            placed += _beams(lv, room, cells - holes, h)
+        out[room["id"]] = placed
+    return out
+
+
+def _run_pieces(o: str, line: int, out_dir: tuple, a: int, b: int, sizes: dict, h: float) -> list[dict]:
+    """Run pieces (local +X along the run, local +Z towards out_dir) over a..b on a grid line, as house walls do."""
+    turn = turn_for(out_dir)
+    ax, _ = axes(turn)
+    along = (1, 0) if o == "h" else (0, 1)
+    forward = (ax[0] * along[0] + ax[1] * along[1]) > 0
+    placed = []
+    for s, n in _modules(a, b, sizes):
+        p = s if forward else s + n
+        x, y = (p, line) if o == "h" else (line, p)
+        placed.append({"id": sizes[n], "x": float(x), "y": float(y), "h": h, "turn": turn})
+    return placed
+
+
+def _beams(lv: dict, room: dict, slab: set, h: float) -> list[dict]:
+    """Beams across the room's short span on whole-metre lines, where the cells on both sides are in `slab`."""
+    x0, y0, w, d = (int(v) for v in room["rect"])
+    across_x = w <= d  # the beams run along x when the room is narrower in x
+    lo, n = (y0, d) if across_x else (x0, w)
+    pillars = sorted({int(round(fp["at"][2] if across_x else fp["at"][0])) for fp in lv.get("pieces", [])
+                      if fp.get("room") == room["id"] and fp["piece"].startswith("pillar")})
+    if pillars:
+        lines = pillars
+    else:
+        mid = lo + n // 2
+        lines = [mid + k * BEAM_STEP for k in range(-n // BEAM_STEP, n // BEAM_STEP + 1)]
+    placed = []
+    for line in lines:
+        if not lo + 1 <= line <= lo + n - 1:
+            continue
+        if across_x:
+            units = [i for i in range(x0, x0 + w) if (i, line - 1) in slab and (i, line) in slab]
+        else:
+            units = [j for j in range(y0, y0 + d) if (line - 1, j) in slab and (line, j) in slab]
+        for a, b in _spans(units):
+            placed += _run_pieces("h" if across_x else "v", line, (0, 1) if across_x else (1, 0), a, b, BEAMS, h - 0.2)
+    return placed
 
 
 def cornice(cn: dict, data: dict) -> list[dict]:

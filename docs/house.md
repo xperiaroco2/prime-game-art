@@ -268,8 +268,16 @@ the basement from above with labels and the last walk's route times (`tools/out/
 L* of each shot and of the hall's far (west) wall from the passage door, which must stay above 12 (2026-10-10: 42.4).
 Per shot `basement.json` also holds the view's draw calls, objects and primitives, the dressing's draw calls and the
 room's dressing meshes and triangles, as the walk's `rooms` do.
-Rooms outside the house's footprint (the generator hall, the pump and switch rooms, the passage) have no slab over them
-yet (no layout level is there; the yard's ground, #81a, has to close it), so their shots look up into black.
+**The yard slab** (#108): the basement's cells outside the house's footprint (all of the generator hall, the pump and
+switch rooms and the passage; storage's west and north strips, the darkroom's west strip and the boiler room's south
+strip) lie under the yard, which the generator gives no floor. `house_layout.yard_slab` puts a real slab over them
+in the rooms' own scenes: `slab_yard_2x2/1x1` (0.2 m of the kit's bare basement concrete, an underside and a collider,
+no top face: its top is the yard's ground sheet at y 0, `outdoor`, so nothing z-fights and nothing gaps), round the
+ground level's holes; `slab_edge_yard_2m/1m` on every edge of the outdoor stairwell (the free edges and the strip
+over the passage walls' tops); in a room at least 2/3 under the yard, downstand beams `beam_concrete_2m/1m` (0.3 x
+0.3 m) across its short span, along its pillars' lines (the hall: y 26 and 38) or every 4 m from its middle. The
+pipes, cable trays and fixtures keep their heights (the slab's underside is 3.0 m over the floor, as under the house).
+The bake's old `Cover_<n>` tiles are gone: the slab bakes with its room.
 
 Defaults used (for the engineer; data, easy to change):
 - The hall's pillars: 4, not the inventory's 8 (an 8 m grid does not fit 18 x 20 m), at (44, 26), (54, 26), (44, 38)
@@ -283,8 +291,8 @@ Defaults used (for the engineer; data, easy to change):
   the 1.36 m capsule; the zone keeps the doc's rect. This file owns the stairwell: #81's outdoor plot
   (`layouts/house/outdoor/plot.toml` `[stairs]`) no longer holds a rect or entry of its own (it had (62, 29) from the
   north) and reads the hole's rect and the upper flight's climb from here (`house_outdoor.house_stairs`), so the
-  yard's U, its railings and pit stand-ins sit where the walk climbs. The passage has no slab over it (the yard is not a floor): the
-  yard's ground (#81a) must close it round the stairwell.
+  yard's U, its railings and pit stand-ins sit where the walk climbs. The yard slab (#108, "The yard slab" above) closes the
+  passage round the stairwell under the yard's ground (#81a).
 - Switches on a wall in sight from the door: A on storage's west wall, B on the boiler room's west wall, C and D on
   the east walls; a cage lamp over each switch (its pool is #83a's); the generator's front 0.65 m south of its
   marker; the darkroom's photo board faces its door.
@@ -418,9 +426,8 @@ and regenerate.
 Every light is `light_bake_mode` Static (baked; not drawn in real time where a lightmap covers it); no shadows. The
 `house` command writes `lights/<level>.tscn` (a level's lights in plot coordinates) and `zones/<zone>.tscn` (the
 zone's room scenes, the level pieces standing in them, its lights, and as `Above` the next level's rooms over it: the
-floor slabs that are the zone's ceiling; where the zone's rooms lie under the yard, which the generator gives no
-floor, `Above` also holds `Cover_<n>`: bake-only concrete floor tiles at the next level's height, so a basement room
-outside the ground floor's footprint does not bake under open sky). A bake needs the editor (below).
+floor slabs that are the zone's ceiling; a basement room under the yard has its own yard slab, #108, in its room
+scene). A bake needs the editor (below).
 
 ### Baking a zone
 
@@ -448,7 +455,8 @@ tools/run.sh house --bake ZONES [--preset high|low] [--grid] [--merge] [--no-bak
 2. `zone_build.gd` (headless) flattens a zone into `res://import/house/bake/<zone>_<tag>.scn` with a LightmapGI from
    `[bake]`; a kit mesh's `lightmap_size_hint` is texel / `uv2_per_m` (the kit's `pieces.json`), so the presets
    differ only in the texel. `Above` (the zone's ceiling) bakes its floor slabs at the full texel and its other
-   pieces at a tenth (they only occlude). `--merge` welds each room level's floor tiles of one kind into one mesh and
+   pieces at a tenth (they only occlude); the yard slab and its beams (#108) are the zone's own pieces (its room
+   scenes, not `Above`) and bake at the full texel. `--merge` welds each room level's floor tiles of one kind into one mesh and
    unwraps it (one lightmap island per floor instead of one per tile). Meshes without UV2 stay Dynamic.
 3. The editor bakes it: Godot opens the project with the `lmbake` plugin (`-- lmbake=<scene>`; without that argument
    the plugin does nothing) in a 1280x720 window at `-30000,-30000` (off-screen, never minimized); the plugin presses
