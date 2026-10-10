@@ -141,7 +141,9 @@ is the same on every machine; `tools/tests/test_house_clutter.py` fails when a f
   and holes, and of anything in front of the wall at its height. The generator hall takes clocks only: its sight
   lines from the passage run at eye height (`house_basement.hall_sight`).
 - Floor clutter (baskets, shoes, toys, book and paper stacks) against free wall spans, clear of doors, stations
-  (1 m), spawns (0.5 m), the stairs and the routes' legs (`house_routes`, grown by the capsule's radius); the
+  (1 m), spawns (0.5 m), the stairs and the walks' legs (grown by the capsule's radius): every leg on the room's
+  level of the `--walk` run's walks (`house_clutter.walk_legs`: doorways, flights with their exits, loops, the
+  routes with their flights expanded; the furniture layer keeps off them too); the
   hallway's doormat inside its first door.
 
 Every surface, wall and floor item is non-solid (`collision = "none"`, the library's `clutter` class, docs/props.md),
@@ -170,14 +172,16 @@ of the wall; wall pieces such as the radiator hang at `WALL_MOUNT` and keep off 
 (free-standing pieces or stacks at least 1 m off the walls while the floor share is short: crate and box stacks,
 barrels, a shelving run in the basement, an armchair or a plant upstairs). Every placement is kept only when the
 room's problems do not rise: `check_room`, the basement's switch lines and the generator hall's sight lines (clear by
-`HALL_CLEAR` 0.5 m).
+`HALL_CLEAR` 0.5 m). The python checks do not model a flight's exit: before the walks' legs held the flights' exits and
+the loops free, island crates on the pantry's stair landing and a group on the dining room's north wall stopped
+three of the `--walk` run's walks (pantry stairs up, the wine route, the balcony loop).
 
 The story pieces are procedural library props (docs/props.md): `laundry_basket`, `drying_rack`, `open_box` and the
 wall-pivot `radiator` (dressing), `laundry_pile`, `boots` and `toy_spill` (clutter, no collider).
 
 Where the targets are not met (2026-10-10, 11 of 21 rooms meet all four): the corridors (hallway, landing, stairs,
 passage, corridor) keep their floor for the routes' legs and doors, the generator hall's floor is held free by its
-sight lines, and the pantry's short walls are taken by its door and shelving.
+sight lines, and the pantry's short walls are taken by its door, its stair landing's walk lane and shelving.
 
 Budget (proposed, #104): the clutter adds at most 60 meshes and 15k triangles to a room (met: at most 27 meshes, the kitchen and
 the storage, and 4.9k triangles, the kitchen). Brief #104's other check, "under 150 draw calls per room view", is not met and cannot be
