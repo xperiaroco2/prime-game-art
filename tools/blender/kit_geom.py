@@ -732,10 +732,110 @@ def build_pitched(pc: Piece, p: dict, spec: dict) -> None:
             cap_role="trim", edges=[True, "+z" in ends, False, "-z" in ends], edge_roles={1: "trim", 3: "trim"})
     pantile_courses(pc.mesh, x0, x1, z0, z1, lambda z: u + tv + r * z, ends)
     pc.collide(prism_x_points(prof, x0, x1))
+    if "-z" in ends and p.get("overhang"):
+        gutter(pc.mesh, x0, x1, z0, u + tv + r * z0 - GUTTER_DROP, ends)
+
+
+GUTTER_R, GUTTER_DROP, GUTTER_SEGS = 0.065, 0.04, 6  # the half-round gutter's radius, its rim under the slab's top
+
+
+def gutter_axis(spec: dict, z0: float = -0.5) -> tuple[float, float]:
+    """(z, y) of the eave's gutter axis (its rim's middle) in the pitched pieces' frame, the eave's plumb end at z0."""
+    pp = pitch(spec)
+    return z0 - GUTTER_R - 0.01, pp["u"] + pp["tv"] + pp["r"] * z0 - GUTTER_DROP
+
+
+def gutter(m: Mesh, x0, x1, z0, y, ends: str = "") -> None:
+    """A half-round zinc gutter along x over x0..x1 in front of the eave's plumb end at z0, its rim at y: the outer and
+    inner skins, a bracket strap to the fascia every metre (at the half metres) and an end cap on each named end."""
+    zc = z0 - GUTTER_R - 0.01
+    def ring(rad):
+        return [(zc + rad * math.cos(a), y + rad * math.sin(a))
+                for a in (math.pi + math.pi * i / GUTTER_SEGS for i in range(GUTTER_SEGS + 1))]
+    arc = ring(GUTTER_R)
+    for skin, sign in ((arc, 1.0), (ring(GUTTER_R - 0.004), -1.0)):  # the inner skin 4 mm in: no doubled faces
+        for (za, ya), (zb, yb) in zip(skin, skin[1:]):
+            out = (0.0, sign * ((ya + yb) / 2 - y), sign * ((za + zb) / 2 - zc))
+            m.poly([(x0, ya, za), (x1, ya, za), (x1, yb, zb), (x0, yb, zb)], out, "zinc")
+    for side, x in (("-x", x0), ("+x", x1)):
+        if side in ends:
+            m.poly([(x, yy, zz) for zz, yy in arc], (-1 if side == "-x" else 1, 0, 0), "zinc")
+    xb = math.floor(x0) + 0.5
+    while xb < x1 - 0.05:
+        if xb > x0 + 0.05:
+            m.box((xb - 0.015, y - GUTTER_R - 0.008, zc - GUTTER_R), (xb + 0.015, y - GUTTER_R, zc + GUTTER_R), "metal",
+                  "+x-x-y+z-z")
+            m.box((xb - 0.015, y - 0.02, zc + GUTTER_R), (xb + 0.015, y + 0.01, z0), "metal", "+x-x+y-y")
+        xb += 1.0
+
+
+def tube(m: Mesh, a, b, rad: float, role: str, sides: int = 6) -> None:
+    """A tube of `sides` facets of radius rad from a to b (the downpipes' runs); open ends."""
+    d = _sub(b, a)
+    ln = math.sqrt(_dot(d, d))
+    d = tuple(v / ln for v in d)
+    ref = (1.0, 0.0, 0.0) if abs(d[0]) < 0.9 else (0.0, 0.0, 1.0)
+    e1 = _cross(d, ref)
+    n1 = math.sqrt(_dot(e1, e1))
+    e1 = tuple(v / n1 for v in e1)
+    e2 = _cross(d, e1)
+    ring = [tuple(math.cos(2 * math.pi * k / sides) * e1[i] + math.sin(2 * math.pi * k / sides) * e2[i]
+                  for i in range(3)) for k in range(sides)]
+    for k in range(sides):
+        r0, r1 = ring[k], ring[(k + 1) % sides]
+        pts = [tuple(a[i] + rad * r0[i] for i in range(3)), tuple(a[i] + rad * r1[i] for i in range(3)),
+               tuple(b[i] + rad * r1[i] for i in range(3)), tuple(b[i] + rad * r0[i] for i in range(3))]
+        m.poly(pts, tuple(r0[i] + r1[i] for i in range(3)), role)
+
+
+def build_downpipe(pc: Piece, p: dict, spec: dict) -> None:
+    """A downpipe from the eave's gutter to the ground (art #77): in the pitched pieces' frame (x along the eave, z up
+    the slope from the eave wall's grid line, y 0 the knee wall's top), at x 0: an outlet under the gutter, a swan
+    neck back to the wall, the stack down the wall's face p["drop"] metres under the knee wall's top (the House: the
+    attic's floor_y 6.4 + the knee 2.2), wall clips every 1.5 m and a shoe kicking out at the foot."""
+    g = spec["grid"]
+    zg, yg = gutter_axis(spec)
+    zw = -g["wall_t_m"] / 2 - 0.02 - DOWNPIPE_R  # the stack's axis off the wall's face
+    drop = float(p["drop"])
+    m = pc.mesh
+    y1 = yg - GUTTER_R - 0.08
+    pts = [(0.0, yg - GUTTER_R + 0.01, zg), (0.0, y1, zg), (0.0, y1 - abs(zg - zw), zw), (0.0, -drop + 0.12, zw),
+           (0.0, -drop + 0.04, zw - 0.1)]
+    for a, b in zip(pts, pts[1:]):
+        tube(m, a, b, DOWNPIPE_R, "zinc")
+    y = -0.6
+    while y > -drop + 0.4:
+        m.box((-0.02, y - 0.02, zw - DOWNPIPE_R - 0.005), (0.02, y + 0.02, -g["wall_t_m"] / 2), "metal", "+x-x+y-y-z")
+        y -= 1.5
+    pc.collide_box((-DOWNPIPE_R, -drop, zw - DOWNPIPE_R), (DOWNPIPE_R, y1 - abs(zg - zw), zw + DOWNPIPE_R))
+
+
+DOWNPIPE_R = 0.04
 
 
 TILE_COURSE, TILE_W, TILE_LIP = 1 / 3, 1 / 3, 0.03  # the pantiles' course and tile (horizontal m) and the lip's lift
 TILE_ROLES = ("tile", "tile", "tile_b", "tile", "tile_c", "tile", "tile_b")  # the clay's spread, picked per tile
+# The pantile's S across its width (fractions of TILE_W, lift in m over the course's plane): the edge under the
+# neighbour's roll, the pan's hollow, the roll's crown, the edge again. Three facets a tile: the relief reads as the
+# look round's S at street distance (art #77).
+TILE_S = ((0.0, 0.02), (0.45, 0.0), (0.78, 0.045), (1.0, 0.02))
+TILE_MOSS = 3  # the eave's wear: every TILE_MOSS-th tile of the second course from the eave, all of the first
+
+
+def tile_lift(x: float) -> float:
+    """The pantile's S lift at x (horizontal m from the eave wall's grid node along the eave)."""
+    f = x / TILE_W - math.floor(x / TILE_W + 1e-9)
+    for (fa, ha), (fb, hb) in zip(TILE_S, TILE_S[1:]):
+        if f <= fb + 1e-9:
+            return ha + (hb - ha) * (f - fa) / (fb - fa)
+    return TILE_S[-1][1]
+
+
+def _tile_xs(xa: float, xb: float) -> list[float]:
+    """xa, the S's facet breaks strictly inside (xa, xb), xb."""
+    j = math.floor(xa / TILE_W + 1e-6)
+    inner = [(j + f) * TILE_W for f, _ in TILE_S[1:-1]]
+    return [xa] + [x for x in inner if xa + EPS < x < xb - EPS] + [xb]
 
 
 def _cuts(a: float, b: float, step: float) -> list[float]:
@@ -764,18 +864,23 @@ def pantile_courses(m: Mesh, x0, x1, z0, z1, base, ends: str = "") -> None:
         ya, yb = y(za), y(zb)
         lip = abs(za - k * TILE_COURSE) < 1e-6 or (za == z0 and "-z" in ends)
         tail = zb == z1 and "+z" in ends and yb - base(zb) > EPS
-        nrm = (0.0, 1.0, -(yb - ya) / (zb - za))
         for xa, xb in zip(xs, xs[1:]):
             j = math.floor((xa + 1e-6) / TILE_W)
             role = TILE_ROLES[(k * 5 + j * 3) % len(TILE_ROLES)]
-            m.poly([(xa, ya, za), (xb, ya, za), (xb, yb, zb), (xa, yb, zb)], nrm, role)
-            if lip:
-                m.poly([(xa, base(za), za), (xb, base(za), za), (xb, ya, za), (xa, ya, za)], (0, 0, -1), role)
-            if tail:
-                m.poly([(xa, base(zb), zb), (xb, base(zb), zb), (xb, yb, zb), (xa, yb, zb)], (0, 0, 1), "trim")
+            if "-z" in ends and k * TILE_COURSE < -EPS and (k * TILE_COURSE < z0 + TILE_COURSE - EPS or j % TILE_MOSS == 0):
+                role = "tile_moss"
+            for sa, sb in zip(_tile_xs(xa, xb), _tile_xs(xa, xb)[1:]):
+                ha, hb = tile_lift(sa), tile_lift(sb)
+                fn = tuple(-v for v in polygon_normal([(sa, ya + ha, za), (sb, ya + hb, za), (sb, yb + hb, zb)]))
+                m.poly([(sa, ya + ha, za), (sb, ya + hb, za), (sb, yb + hb, zb), (sa, yb + ha, zb)], fn, role)
+                if lip:
+                    m.poly([(sa, base(za), za), (sb, base(za), za), (sb, ya + hb, za), (sa, ya + ha, za)], (0, 0, -1), role)
+                if tail:
+                    m.poly([(sa, base(zb), zb), (sb, base(zb), zb), (sb, yb + hb, zb), (sa, yb + ha, zb)], (0, 0, 1), "trim")
         for side, x in (("-x", x0), ("+x", x1)):
             if side in ends:
-                pts = [(x, base(za), za), (x, base(zb), zb), (x, yb, zb), (x, ya, za)]
+                h = tile_lift(x)
+                pts = [(x, base(za), za), (x, base(zb), zb), (x, yb + h, zb), (x, ya + h, za)]
                 pts = [q for i, q in enumerate(pts) if math.dist(q, pts[i - 1]) > EPS]
                 m.poly(pts, (-1 if side == "-x" else 1, 0, 0), "trim")
 
@@ -1162,7 +1267,7 @@ BUILDERS = {
     # version 2 (art #86)
     "pillar": build_pillar, "pitched": build_pitched, "ridge": build_ridge, "glass_roof": build_glass_roof,
     "glass_ridge": build_glass_ridge, "glass_gable": build_glass_gable, "porch": build_porch, "chimney": build_chimney,
-    "dormer": build_dormer,
+    "dormer": build_dormer, "downpipe": build_downpipe,
     "bracket": build_bracket, "cap": build_cap, "gate_post": build_gate_post, "gazebo_sector": build_gazebo_sector,
     "gazebo_roof": build_gazebo_roof, "finial": build_finial, "glass_node": build_glass_node, "slab_edge": build_slab_edge,
     "beam": build_beam,  # #108

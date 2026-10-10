@@ -47,7 +47,8 @@ and must check that Godot's "static lightmaps" import keeps the kit's UV2 rather
   glass roof piece reads (`kit_geom.pitch`): changing it (Q2 of the house plan's questions) rebuilds them all.
 - `budget_tris`: triangles per kind of piece (wall 400, corner 60, floor 120, roof 200, stairs 2500, ladder 600,
   railing 1500, fence 1200, gate 4000, glass 600, garage 600; v2: pillar 60, porch 400, chimney 200, trim 120,
-  gazebo 1200). Version 2's 105 pieces hold 4,194 triangles. Version 1's 71 pieces hold 3,772 triangles in all; the
+  gazebo 1200; v3: roof 700 for the pantiles' S, downpipe 300). Version 2's 105 pieces hold 4,194 triangles.
+  Version 1's 71 pieces hold 3,772 triangles in all; the
   most is the driveway gates (570). The locations' minimum-spec budgets (`docs/research/2026-10-06-locations.md`, "Godot
   budgets") allow 400k visible world triangles and 6 world materials: a whole storey of these pieces stays a small
   part of the triangles, and the kit uses 5 materials.
@@ -105,11 +106,22 @@ The engineer's picks of 2026-10-10: a free roof of clay pantiles with one gable 
 - **Pantiles** (`kit_geom.pantile_courses`): the pitched panels' top is courses of tiles, 1/3 m deep up the slope and
   1/3 m wide, cut on one kit-wide grid of multiples from the eave wall's line, so neighbouring panels meet. Each
   course's lower edge stands 3 cm proud of the slab and its upper edge sinks under the next lip: the stepped course
-  shadows of the look round (`D:/prime-art-raw/research/2026-10-10-roof-look/`). Each tile takes one of the roles
+  shadows of the look round (`D:/prime-art-raw/research/2026-10-10-roof-look/`). Across its width each tile is the
+  pantile's S in three facets (`TILE_S`: the edge 2 cm up, the pan's hollow at 0.45, the roll's crown 4.5 cm up at
+  0.78, the edge again; `tile_lift`), on the same grid, so the relief runs on across panels and the lips are wavy:
+  geometry, not a normal map (the material system has no per-role texture source). Each tile takes one of the roles
   `tile`, `tile_b`, `tile_c` (warm clay `#7a4634`, a darker worn `#6a4236` and a paler `#83533f`: the spread is
-  lightness, not saturation), vertex colours of the one `set` material, so the spread costs no draw call. The eave
-  and verge ends close the step with trim. `roof_pitched_2x2` holds 146 triangles (budget 200). The collision stays
-  the slab's hull; the tiles stand at most 3 cm over it.
+  lightness, not saturation), vertex colours of the one `set` material, so the spread costs no draw call. The eave's
+  wear: on the eave pieces the lowest course and every third tile of the next are `tile_moss` (`#5b5134`, olive brown).
+  The eave and verge ends close the step with trim (the fascia and the barge boards); the slab's underside is the
+  boarded soffit. `roof_pitched_2x2` holds 434 triangles (budget `roof` 700). The collision stays the slab's hull;
+  the tiles stand at most 7.5 cm over it.
+- **Gutters and downpipes**: the eave and eave-corner pieces hang a half-round zinc gutter (`kit_geom.gutter`: radius
+  6.5 cm, 6 facets, role `zinc` `#6f7471`, its rim 4 cm under the slab's top) before the fascia, a bracket strap at
+  every half metre and an end cap on the corners' open ends; `reach_m` 0.15 lets it stand out before z0.
+  `roof_downpipe` (type `downpipe`, budget `downpipe` 300) is the outlet, a swan neck back to the wall, the stack down
+  the wall's face `drop` 8.6 m (the attic's floor_y 6.4 + the knee 2.2) to a shoe, and wall clips every 1.5 m;
+  `house_layout.pitched_roof` places one 0.4 m in from each end of each eave.
 - **Ridge** (`build_ridge`): a half-round clay cap (radius 0.12 m, 8 segments, role `tile`) on a mortar bed (role
   `concrete`, 0.17 m each side), its feet sunk into the bed.
 - **Dormer** (`dormer_gable`, type `dormer`, budget `dormer` 1500): replaces a 2 m panel column over 7 m of run
@@ -122,9 +134,8 @@ The engineer's picks of 2026-10-10: a free roof of clay pantiles with one gable 
   depth, centred on the collision ramp's line) and `handrail` (a rail 0.9 m over each stringer); the attic ladder keeps
   the defaults (11 rungs, 0.1 m, no rails). The stair: 1.0 m wide, run 3.0, rise 2.857 m (the window's sill), 43.6
   deg, 13 treads.
-- **Not built yet** (a follow-up): an S-profile relief normal map for the tiles (the material system has no
-  per-role texture source), lead flashing at the chimneys and the dormer, gutters and downpipes on the pitched eave,
-  the TV aerial, vent pipes, chimney pots, the eave's fall collision.
+- **Not built yet** (a follow-up): lead flashing at the chimneys and the dormer, the brick chimney top with its pots,
+  the TV aerial, vent pipes, snow guards, the eave's fall collision.
 
 ## Materials: the `set` pack and its shader (v2)
 

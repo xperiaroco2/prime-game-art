@@ -101,6 +101,9 @@ class LayoutDataTest(unittest.TestCase):
         self.assertEqual(sorted(p["x"] for p in ridge), list(range(18, 42, 2)))
         self.assertTrue(all(p["y"] == 34 and abs(p["h"] - (knee + 10 * r)) < 1e-9 for p in ridge))
         self.assertFalse([p for p in level("attic").get("placeholders", []) if p["name"] == "RoofPitched"])
+        pipes = sorted((p["x"], p["y"], p["turn"]) for p in ps if p["id"] == "roof_downpipe")
+        d = H.DOWNPIPE_IN  # one near each end of each eave, on the knee walls' top
+        self.assertEqual(pipes, [(18 + d, 24, 0), (18 + d, 44, 180), (42 - d, 24, 0), (42 - d, 44, 180)])
         for gx, turn in ((18, -90), (42, 90)):
             gable = [p for p in ps if p["id"].startswith("gable_") and p["x"] == gx]
             self.assertTrue(gable and all(p["turn"] == turn for p in gable))

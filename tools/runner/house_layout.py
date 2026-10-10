@@ -541,6 +541,9 @@ def kit_geom():
     return sys.modules[name]
 
 
+DOWNPIPE_IN = 0.4  # a downpipe's axis in from the gable's grid line along the eave
+
+
 def pitched_roof(rf: dict, data: dict, dormers: list[dict] | None = None) -> tuple[list[dict], list[str]]:
     """A room's pitched roof from the kit (docs/kit.md, "Pitched roofs"): the placements of kit_geom.attic_roof over
     rf["rect"] (eaves on its two x-long sides, the ridge along x, so its depth is even), pivoted on the knee walls' top
@@ -560,6 +563,10 @@ def pitched_roof(rf: dict, data: dict, dormers: list[dict] | None = None) -> tup
         return [], [str(e)]
     out = [{"id": pid, "x": x0 + off[0], "y": y0 + off[2], "h": h0 + off[1], "turn": int(round(deg))}
            for pid, deg, off in placed]
+    if "roof_downpipe" in kit:  # art #77: a downpipe near each end of each eave, on the gutter's outlet
+        for x, turn, y in ((x0 + DOWNPIPE_IN, 0, y0), (x0 + w - DOWNPIPE_IN, 0, y0),
+                           (x0 + w - DOWNPIPE_IN, 180, y0 + d), (x0 + DOWNPIPE_IN, 180, y0 + d)):
+            out.append({"id": "roof_downpipe", "x": x, "y": y, "h": h0, "turn": turn})
     dprobs = []
     for dm in dormers or []:
         out, pr = dormer_cut(out, dm, rf, spec)

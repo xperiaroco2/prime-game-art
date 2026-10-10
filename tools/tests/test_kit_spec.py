@@ -344,12 +344,39 @@ class FreeRoofTest(unittest.TestCase):
         tiles = [[m.verts[i] for i in f] for f, r in zip(m.faces, m.roles) if r.startswith("tile")]
         self.assertTrue(tiles)
         hi = {round(v[2], 4): max(q[1] for f in tiles for q in f if abs(q[2] - v[2]) < 1e-6) for f in tiles for v in f}
-        # every course boundary (multiples of 1/3) holds the lip, the panel's top end sinks to the slab's top
-        self.assertAlmostEqual(hi[0.0], top(0.0) + G.TILE_LIP, places=5)
-        self.assertAlmostEqual(hi[round(1 / 3, 4)], top(1 / 3) + G.TILE_LIP, places=5)
-        self.assertAlmostEqual(hi[2.0], top(2.0), places=5)
+        # every course boundary (multiples of 1/3) holds the lip, the panel's top end sinks to the slab's top; the S's
+        # roll crowns each tile
+        crown = max(h for _, h in G.TILE_S)
+        self.assertAlmostEqual(hi[0.0], top(0.0) + G.TILE_LIP + crown, places=5)
+        self.assertAlmostEqual(hi[round(1 / 3, 4)], top(1 / 3) + G.TILE_LIP + crown, places=5)
+        self.assertAlmostEqual(hi[2.0], top(2.0) + crown, places=5)
         self.assertGreaterEqual(len({r for r in m.roles if r.startswith("tile")}), 2)  # the clay's spread
         self.assertLessEqual(m.triangles(), SPEC["budget_tris"]["roof"])
+
+    def test_pantile_s_meets_across_tiles(self) -> None:
+        w = G.TILE_W
+        self.assertAlmostEqual(G.TILE_S[0][1], G.TILE_S[-1][1])  # a tile's edges meet its neighbours'
+        for k in (-3, 0, 1, 5):
+            self.assertAlmostEqual(G.tile_lift(k * w), G.TILE_S[0][1], places=6)
+            self.assertAlmostEqual(G.tile_lift((k + 0.45) * w), 0.0, places=6)  # the pan
+            self.assertAlmostEqual(G.tile_lift((k + 0.78) * w), 0.045, places=6)  # the roll
+        self.assertEqual(G._tile_xs(0.0, w), [0.0, 0.45 * w, 0.78 * w, w])
+
+    def test_eave_wears_moss_and_hangs_a_gutter(self) -> None:
+        m = G.build_piece(PIECES["roof_pitched_eave_2m"], SPEC).mesh
+        self.assertIn("tile_moss", m.roles)
+        self.assertIn("zinc", m.roles)
+        zg, yg = G.gutter_axis(SPEC)
+        zinc = [m.verts[i] for f, r in zip(m.faces, m.roles) if r == "zinc" for i in f]
+        self.assertAlmostEqual(min(v[1] for v in zinc), yg - G.GUTTER_R, places=4)
+        self.assertLess(max(v[2] for v in zinc), -0.5)  # in front of the fascia
+        self.assertNotIn("tile_moss", G.build_piece(PIECES["roof_pitched_2x2"], SPEC).mesh.roles)
+
+    def test_downpipe_reaches_the_ground_on_the_wall(self) -> None:
+        b = KIT["roof_downpipe"]["bounds_m"]
+        self.assertAlmostEqual(b["min"][1], -PIECES["roof_downpipe"]["drop"], delta=0.05)
+        self.assertGreater(b["max"][2], -SPEC["grid"]["wall_t_m"] / 2 - 0.01)  # the clips touch the wall's face
+        self.assertLess(b["max"][2], 0.0)
 
     def test_tile_roles_share_the_set_material(self) -> None:
         for r in G.TILE_ROLES:

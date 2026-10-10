@@ -21,7 +21,7 @@ MAN = ("clay-42a", "export", "m1", "m1.glb")  # the clay man for scale in the pr
 # above; the roofs at 50 so the slopes show). A kind in no group goes to "other".
 LINEUP_GROUPS = (
     ("walls", ("wall",), 8.0),
-    ("corners, ends, pillars, chimney, trim", ("corner", "pillar", "chimney", "trim"), 8.0),
+    ("corners, ends, pillars, chimney, trim, downpipe", ("corner", "pillar", "chimney", "trim", "downpipe"), 8.0),
     ("floors", ("floor",), 90.0),
     ("roofs", ("roof",), 50.0),
     ("dormer", ("dormer",), 12.0),
