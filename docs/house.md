@@ -192,9 +192,22 @@ lines). The basement's floor shortfalls cannot be closed by more pieces without 
 further past the brief's ~30 % (see Budget). The floor share's denominator is the whole room floor, walk lanes
 included.
 
-Budget (proposed, #104): the clutter adds at most 60 meshes and 15k triangles to a room (met: at most 27 meshes, the kitchen and
-the storage, and 4.9k triangles, the kitchen). Brief #104's other check, "under 150 draw calls per room view", is not met and cannot be
-met by trimming the clutter. Measured 2026-10-10, before (main's dressing) and after, with the same code and paint:
+Budget (proposed, #104): pass 1's clutter added at most 60 meshes and 15k triangles to a room (met then: at most 27
+meshes, the kitchen and the storage, and 4.9k triangles, the kitchen). Pass 2's fill breaks that cap. Measured
+2026-10-10 against main 3c8add0 (the per-room table in #110), the fill adds per room:
+- dressing meshes +10 (pantry) to +99 (generator_hall); over 60 in storage (+80, 92 to 172), boiler_room (+75, 37 to
+  112) and generator_hall (+99, 55 to 154);
+- dressing triangles +1.3k (pantry) to +20.6k (generator_hall, 12.8k to 33.5k); over 15k only there; the most per
+  room after is storage's 41k (29k before);
+- view draw calls +13 % to +28 % in 15 of the 21 views (passage aside), but over the brief's ~30 % in five lit
+  basement shots: storage +41 % (808 to 1,143), darkroom +45 % (1,620 to 2,347),
+  corridor +43 % (3,966 to 5,677), boiler_room +43 % (2,108 to 3,013), pump_room +51 % (234 to 353). The basement
+  review lights 55 shadow-casting stand-in lamps, so each added mesh is drawn again in their shadow passes. passage's
+  41 to 824 is a broken "before" count (a negative dressing share), not a jump. The overshoot is open for the
+  manager (#110): accept it until #107, or drop basement pieces (whose floors are already short).
+
+Brief #104's other check, "under 150 draw calls per room view", is not met and cannot be met by trimming the dressing.
+Pass 1's measures, 2026-10-10, before (main's dressing) and after the clutter, with the same code and paint:
 - Without any dressing the views already draw 44 to 935 calls on the walked floors and up to 3,034 in the basement:
   one instance per kit piece, and every mesh drawn again into the shadow maps of the review's real-time stand-in
   lamps (55 shadowed omnis in the basement).
@@ -203,7 +216,7 @@ met by trimming the clutter. Measured 2026-10-10, before (main's dressing) and a
   once per lamp that shadows it.
 
 Meeting 150 needs the shell merged (MultiMesh or merged static walls) and a count under the baked light (#83), whose
-lamps draw no real-time shadow passes: a follow-up for the manager.
+lamps draw no real-time shadow passes: follow-up #107.
 
 ### Wall paint (#104)
 
