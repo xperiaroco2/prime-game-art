@@ -307,3 +307,16 @@ class VersionTwoTest(unittest.TestCase):
         rows = G.piece_table([KIT["pillar_concrete"]])
         self.assertGreater(rows[0]["uv2_per_m"], 0.05)
         self.assertIn("UV2 per m", _kit.table_md(rows, SPEC["budget_tris"]))
+
+    def test_a_partial_build_keeps_the_other_rows(self) -> None:  # kit --only (#108): house --bake reads them all
+        import json
+        import tempfile
+        from pathlib import Path
+
+        from runner.commands import kit
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "pieces.json"
+            path.write_text(json.dumps([{"id": "a", "v": 1}, {"id": "b", "v": 1}, {"id": "c", "v": 1}]), encoding="utf-8")
+            rows = kit.merge_rows(path, [{"id": "b", "v": 2}, {"id": "d", "v": 2}], ["a", "b", "c", "d"])
+            self.assertEqual([(r["id"], r["v"]) for r in rows], [("a", 1), ("b", 2), ("c", 1), ("d", 2)])
+            self.assertEqual(kit.merge_rows(Path(tmp) / "none.json", rows[:1], ["a"]), rows[:1])
