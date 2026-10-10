@@ -125,7 +125,7 @@ The engineer's picks of 2026-10-10: a free roof of clay pantiles with one gable 
   `house_layout.pitched_roof` places one 0.4 m in from each end of each eave.
 - **Ridge** (`build_ridge`): a half-round clay cap (radius 0.12 m, 8 segments, role `tile`) on a mortar bed (role
   `concrete`, 0.17 m each side), its feet sunk into the bed.
-- **Dormer** (`dormer_gable`, type `dormer`, budget `dormer` 2400: 2,214 triangles with its pantile roof): replaces a 2 m panel column over 7 m of run
+- **Dormer** (`dormer_gable`, type `dormer`, budget `dormer` 2000: 1,966 triangles with its pantile roof and ridge tile): replaces a 2 m panel column over 7 m of run
   (`house_layout.dormer_cut`). A plastered front with the window (`window` w x h, `sill` over the roof's top), a white
   casement open 95 deg outward on the opening's local +x jamb (`DORMER_CASEMENT_DEG`; the world-west one
   in the House: clear of the crouched climb-out and the way to the Lookout), a boarded gable, plastered cheeks, its own roof (`rise` per metre) laid as pantile courses (`_dormer_tiles`:

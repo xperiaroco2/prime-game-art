@@ -1240,6 +1240,7 @@ def build_dormer(pc: Piece, p: dict, spec: dict) -> None:
         m.poly([top[0], top[3], bot[3], bot[0]], (0.0, 0.0, -1.0), "trim")  # the barge board's edge
         m.poly([top[0], top[1], bot[1], bot[0]], (-1.0 if side == 0 else 1.0, 0.0, 0.0), "trim")  # the fascia's edge
         pc.collide([list(q) for q in top + bot])
+    tube(m, (W / 2, hr + 0.02, -ov), (W / 2, hr + 0.02, L), 0.07, "tile")  # the half-round ridge tile over the apex
     # the main roof behind the cheeks: the column's slab from ze to the far end (round the valleys)
     z0 = dd["ze"]
     slab = [(z0, u + r * z0), (L, u + r * L), (L, u + tv + r * L), (z0, u + tv + r * z0)]
@@ -1264,7 +1265,7 @@ def _dormer_tiles(m: Mesh, dd: dict, k: float, side: int) -> None:
     ov, W, L, ze, ye = DORMER_OVER, dd["W"], dd["L"], dd["ze"], dd["ye"]
     bm = W / 2 + ov
     tmp = Mesh("dormer_tiles")
-    pantile_courses(tmp, -ov, L, 0.0, bm, lambda b: ye + k * b, "-z-x+z")
+    pantile_courses(tmp, -ov, L, 0.0, bm, lambda b: ye + k * b, "-z-x")  # no ridge tails: both slopes' coincide
 
     def world(q):
         x = q[2] - ov

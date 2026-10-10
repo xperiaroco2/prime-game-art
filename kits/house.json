@@ -26,7 +26,7 @@
   "gable_window_sill_m": 0.25,
   "gable_window_h_m": 0.9
  },
- "budget_tris": {"wall": 400, "corner": 60, "floor": 120, "roof": 700, "stairs": 2500, "ladder": 600, "railing": 1500, "fence": 1200, "gate": 4000, "glass": 600, "garage": 600, "pillar": 60, "porch": 400, "chimney": 450, "dormer": 2400, "trim": 120, "gazebo": 1200, "downpipe": 300, "vent": 120},
+ "budget_tris": {"wall": 400, "corner": 60, "floor": 120, "roof": 700, "stairs": 2500, "ladder": 600, "railing": 1500, "fence": 1200, "gate": 4000, "glass": 600, "garage": 600, "pillar": 60, "porch": 400, "chimney": 450, "dormer": 2000, "trim": 120, "gazebo": 1200, "downpipe": 300, "vent": 120},
  "materials": {
   "plaster": {"source": "PaintedPlaster017", "tile_m": 1.0, "lum_std": 0.03, "normal_strength": 0.15, "roughness": 0.88, "pack": "set"},
   "wood": {"source": "WoodFloor051", "tile_m": 1.0, "lum_std": 0.05, "normal_strength": 0.4, "roughness": 0.72, "pack": "set"},
