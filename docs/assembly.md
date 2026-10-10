@@ -227,6 +227,15 @@ Export the saved clay characters with `export --textured` and check them with `g
 bake 60 s, all six pieces fresh (head 7.5 s, hair 14.1, accessory 7.4, top 8.4, bottom 6.6, shoes 16.1); w1 8,353
 (pack 7,586), 51.5 s.
 
+**Ear and nose accessories on the bean head** (art #42 round 3: m3's rings hung where the pack's ear had been). The
+pack's rings and studs follow the warped skull, but the kit builds its own ears and nose, so
+`um/clayface/accessories.py` `seat_accessories` (run by `clayface/adapter.build` after the face) moves each side's ear
+pieces (a piece's centre within -0.10..0.03 m of the eye line and over 45 mm off the centre line) so their top passes
+2 mm up through the kit ear's lobe, in the ear state's shape (free or tucked; hidden ears carry nothing), and the nose
+pieces so their top passes through the kit nose's underside. It only translates (the ring keeps its orientation) and
+measures each piece: `face_kit.accessories` in `build_report.json` (move, gap to the ear or nose surface, share of the
+ring inside it; ok when the gap is at most 3 mm and under half the ring is buried).
+
 ## Pipeline rules learned in the final test
 
 1. **Rebind.** Rest poses differ between pack files: the men's Adventurer is bound 180 degrees off (its parts land at

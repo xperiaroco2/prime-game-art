@@ -246,6 +246,14 @@ game applies them from the worn hair (and headwear) as the kit does (`kit.hair_f
 covers them (full length kept; `brow_tuck` false for the hairs that must not tuck). The e5 brow pad cap was rejected
 (2026-10-10): the kit keeps the e4 brow behaviour.
 
+**Brows stay above the eyes** (art #42 round 3: w3's brows sank behind the eyes under `hair_w_formal_updo`). The tuck
+lowers a brow strand only while the strand's top stays within `brows.BROW_STRAND_TOP_R` (1.2 of its radius; it was
+0.5, which pushed w3's whole brow 17 mm into the lids). `checks.brow_visibility` measures per side the share of brow
+vertices seen from straight in front (no head, hair, eye, lid or nose in the way; at least `BROW_SEEN_MIN` 0.25) and
+the brow-to-eye clearance (the lowest front brow point over an eye above that eye's resting upper lid top; above
+`BROW_EYE_CLEAR_MIN_MM` -3 mm). The cast's `build_report.json` holds it under `face_kit.brows.visibility`, and the
+many-face check fails any face that misses it.
+
 The lab measured `ears_free` on its one head; the repo's heads measure some hairs otherwise (`faces --kit-check` on
 `clay_round_d`'s man, 2026-10-10), and there the repo's value wins and `lab_ears_free` keeps the lab's (the parity test
 compares that). On m1 the free ear's top 5 mm (of 40) reach into `hair_m_hoodie`'s side: it tucks (0 overlaps). The
@@ -261,9 +269,14 @@ the nose ball on the moustache) raises the nose until it clears the moustache by
 the check's least nose clearance (0.91 mm on m1, droopy with the long nose) is that floor, not a fault; the lab's
 2.75 mm came from its own head's nose and lip heights.
 
-**The noses.** Two styles (`faces/clay_kit.json` "noses"), the lab's round E: `bulb` (the ball, the base nose, on
-every face of the cast) and `long` (the lab's bean that sits on the face and droops down, a kit pick at scale 0.8).
-PR #106's forward `cone` is gone (art #42, 2026-10-10): it treated the symptom of the missing bean head below.
+**The noses.** Three styles (`faces/clay_kit.json` "noses"; the engineer's three types, art #42 round 3): `bulb`
+(BALL: the ball, the base nose, on every face of the cast, pick weight 1.6), `long` (BEAN: the lab's bean that sits on
+the face and droops down, at scale 0.8, weight 1.0) and `pinocchio` (a closed clay capsule pointing forward and about
+10 degrees down, tapering 1.15 to 0.72 to a rounded tip, seated low over the mouth, weight 0.5). The old "Pinocchio"
+of PR #102 was the pack head's own nose under the kit's ball; the bean head replaced it, so it is a real shape now.
+`kit.STRICT_NOSES` (the pinocchio) must also clear the eyes and lids in `checks.collisions`, and `meta.nose.reach_mm`
+records how far it reaches. PR #106's forward `cone` is gone (art #42, 2026-10-10): it treated the symptom of the
+missing bean head below.
 
 **The bean head.** The engineer approved the lab's faces, which are two layers: the lab's own head, every pack head
 reshaped into an egg-like "bean" (`lab/lab_base.py` `bean_warp`, `params_r2.json`), and the clay kit's features on it.
@@ -360,7 +373,7 @@ measures, in the rest pose at head scale 1: collisions between pieces that must 
 blink step), brow vertices in the visible white, visible brow pokes (a brow point with no hair in front and visible
 hair right behind it; the lab's e5 test, at every vertex and every triangle's centre and edge midpoints), the ears
 against the hair in the item's ear state, the nose's clearance above the mouth and the moustache, noses meeting a
-pupil, the look's sag and triangles. It writes `kit_check.json` (with the worst faces and the formal-updo list) under
+pupil, the brows' visibility and brow-to-eye clearance (`brow_hidden_faces`), the look's sag and triangles. It writes `kit_check.json` (with the worst faces and the formal-updo list) under
 `--out` (default `tools/out/faces_kit/`) and exits non-zero on any failure (`faces.kit_problems`).
 
 ## Gotchas
