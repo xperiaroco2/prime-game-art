@@ -33,6 +33,13 @@ def main():
     textures = kit_build.make_textures(bpy, np, spec, Path(a["ambientcg"]), out / "textures")
     mats = kit_build.make_materials(bpy, spec, textures)
     mats[props_task.SURFACE_MATERIAL].name = f"{props_task.SURFACE_MATERIAL}-vcol"
+    for name, m in spec["materials"].items():  # an emissive material (props/zones.toml: bulbs, candles, embers)
+        if m.get("emission"):
+            bsdf = mats[name].node_tree.nodes.get("Principled BSDF")
+            rgb = [int(m["emission"][i:i + 2], 16) / 255 for i in (1, 3, 5)]
+            lin = [c / 12.92 if c <= 0.04045 else ((c + 0.055) / 1.055) ** 2.4 for c in rgb]
+            bsdf.inputs["Emission Color"].default_value = (*lin, 1.0)
+            bsdf.inputs["Emission Strength"].default_value = m.get("emission_strength", 1.0)
     scene = bpy.context.scene
     report = {"textures": textures, "props": {}}
     for p in spec["props"]:
