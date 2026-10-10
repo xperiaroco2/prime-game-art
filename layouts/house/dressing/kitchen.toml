@@ -1,0 +1,126 @@
+# The kitchen's dressing (art #75b, docs/house.md "Dressing"): the props and light fixtures of one room, as data.
+# at = [x, h, z]: room-local metres like the room's stations (x east, h above the floor, z south from the room's
+# north-west corner) at the prop's pivot (floor: the footprint's centre; wall: the back's bottom centre on the wall's
+# face; ceiling: the top's centre). face = the way the prop's front (+Z) looks: N, E, S or W (or yaw = degrees).
+# Ids are the dressing library's (props/library.toml, #87) and the task props' (props/tasks.toml, #82); an id with
+# no GLB yet is generated as a named, sized placeholder box. Positions are the engineer's to change.
+room = "kitchen"
+
+# The burger station mid-kitchen (OrderBoard at 5, 7): the assembly island, the order board on its stand behind it
+# (read from the island's south side). #82's props, placed, not rebuilt.
+[[props]]
+id = "assembly_island"
+at = [5.0, 0, 7.0]
+station = "OrderBoard"
+
+[[props]]
+id = "order_board"
+at = [5.0, 0, 5.75]
+station = "OrderBoard"
+
+# The north wall: counters, the stove, the sink and the fridge; the upper cabinets over them.
+[[props]]
+id = "kitchen_counter"
+at = [0.62, 0, 0.42]
+
+[[props]]
+id = "stove"
+at = [1.47, 0, 0.445]
+
+[[props]]
+id = "kitchen_counter"
+at = [2.32, 0, 0.42]
+
+[[props]]
+id = "kitchen_counter"
+at = [5.3, 0, 0.42]
+
+[[props]]
+id = "kitchen_sink"
+at = [6.4, 0, 0.42]
+
+[[props]]
+id = "fridge"
+at = [7.53, 0, 0.47]
+
+[[props]]
+id = "kitchen_upper"
+at = [0.62, 1.45, 0.1]
+
+[[props]]
+id = "kitchen_upper"
+at = [1.62, 1.45, 0.1]
+
+[[props]]
+id = "kitchen_upper"
+at = [2.62, 1.45, 0.1]
+
+[[props]]
+id = "kitchen_upper"
+at = [5.3, 1.45, 0.1]
+
+[[props]]
+id = "kitchen_upper"
+at = [6.3, 1.45, 0.1]
+
+# The east wall: four counters under the windows, three stools at them.
+[[props]]
+id = "kitchen_counter"
+at = [7.58, 0, 1.5]
+face = "W"
+
+[[props]]
+id = "kitchen_counter"
+at = [7.58, 0, 2.5]
+face = "W"
+
+[[props]]
+id = "kitchen_counter"
+at = [7.58, 0, 3.5]
+face = "W"
+
+[[props]]
+id = "kitchen_counter"
+at = [7.58, 0, 4.5]
+face = "W"
+
+[[props]]
+id = "stool"
+at = [7.05, 0, 1.5]
+face = "E"
+
+[[props]]
+id = "stool"
+at = [7.05, 0, 2.5]
+face = "E"
+
+[[props]]
+id = "stool"
+at = [7.05, 0, 3.5]
+face = "E"
+
+[[props]]
+id = "trash_bin"
+at = [0.47, 0, 1.6]
+face = "E"
+
+[[props]]
+id = "potted_plant"
+at = [7.5, 0, 13.5]
+
+[[fixtures]]
+id = "pendant_shade"
+at = [4.0, 3.0, 7.0]
+
+[[fixtures]]
+id = "pendant_shade"
+at = [5.0, 3.0, 7.0]
+
+[[fixtures]]
+id = "pendant_shade"
+at = [6.0, 3.0, 7.0]
+
+[[fixtures]]
+id = "wall_sconce"
+at = [0.1, 1.95, 7.0]
+face = "E"

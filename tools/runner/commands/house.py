@@ -7,7 +7,7 @@ import argparse
 import json
 from pathlib import Path
 
-from .. import common, house_layout
+from .. import common, house_dressing, house_layout
 from . import _frames, _godot
 
 NAME = "house"
@@ -22,6 +22,8 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--out", type=Path, default=DEFAULT_OUT,
                         help="where the scenes go (default godot/import/house, res://import/house)")
     parser.add_argument("--check", action="store_true", help="only check the layout; write nothing")
+    parser.add_argument("--props-spec", type=Path, action="append", default=[], metavar="TOML",
+                        help="another prop catalogue for the dressing's sizes (e.g. a library.toml not yet on main)")
     parser.add_argument("--walk", type=Path, metavar="DIR",
                         help="stage the kit GLBs, import, then walk and shoot the house in an off-screen Godot window "
                              "into DIR (walk.json, sheet.png, exterior.png, stills)")
@@ -37,10 +39,19 @@ def run(args: argparse.Namespace) -> int:
             common.say(f"  {p}")
         raise common.Failure(f"house layout: {len(problems)} problems")
     common.say("house layout: grid, openings, corners, footprints, stairs and holes hold")
+    dressing = check_dressing(data, args.layouts, args.props_spec)
     if args.check:
         return 0
     planned = house_layout.plan(data)
-    summary = house_layout.write_scenes(data, planned, args.out)
+    found = prop_glbs(data, dressing)
+    st = data["settings"]
+    summary = house_layout.write_scenes(data, planned, args.out, dressing,
+                                        lambda pid: st["prop_res"].format(id=pid) if pid in found else None)
+    held = {rid: ids for rid, ids in summary["placeholders"].items() if ids}
+    if summary["props"]:
+        common.say(f"  dressing: {sum(summary['props'].values())} props and fixtures in {len(dressing)} rooms, "
+                   f"{sum(len(v) for v in held.values())} as placeholder boxes (no GLB yet: "
+                   f"{', '.join(sorted({i for v in held.values() for i in v})) or '-'})")
     for name, s in summary["levels"].items():
         common.say(f"  {name}: {s['rooms']} rooms, {s['instances']} piece instances")
     report = common.OUT / "house" / "plan.json"
@@ -51,28 +62,81 @@ def run(args: argparse.Namespace) -> int:
     if args.walk:
         if args.out.resolve() != DEFAULT_OUT.resolve():
             raise common.Failure("--walk needs the scenes in godot/import/house (drop --out)")
-        return walk(data, summary, args.walk.resolve())
+        return walk(data, summary, args.walk.resolve(), found, dressing)
     return 0
 
 
-def walk(data: dict, summary: dict, folder: Path) -> int:
+def check_dressing(data: dict, layouts: Path, extra) -> dict:
+    """Checks layouts/house/dressing/*.toml against the rooms (house_dressing.check); writes tools/out/house/dressing.json;
+    returns room id -> its report. A problem fails the command."""
+    st = data["settings"]
+    folder = Path(layouts) / st.get("dressing_dir", "dressing")
+    if not folder.is_dir():
+        return {}
+    paths = house_dressing.spec_paths(st, extra=extra)
+    missing = [p.as_posix() for p in paths if not p.is_file()]
+    cat = house_dressing.catalogue(paths)
+    result = house_dressing.check(data, house_dressing.load(folder), cat)
+    report = common.OUT / "house" / "dressing.json"
+    report.parent.mkdir(parents=True, exist_ok=True)
+    slim = {rid: {k: v for k, v in r.items() if k != "resolved"} for rid, r in result["rooms"].items()}
+    report.write_text(json.dumps({"catalogues": [p.as_posix() for p in paths], "missing": missing, "rooms": slim,
+                                  "problems": result["problems"], "notes": result["notes"]}, indent=1),
+                      encoding="utf-8", newline="\n")
+    for r in result["rooms"].values():
+        common.say(f"  dressing {r['room']}: {r['props']} props, {r['fixtures']} fixtures; capsule reaches "
+                   f"{sum(r['reach'].values())}/{len(r['reach'])} doors, stairs, stations and spawns")
+    for n in result["notes"]:
+        common.say(f"  note: {n}")
+    if result["problems"]:
+        for p in result["problems"]:
+            common.say(f"  {p}")
+        hint = f" (catalogues missing: {', '.join(missing)}; pass --props-spec)" if missing else ""
+        raise common.Failure(f"house dressing: {len(result['problems'])} problems{hint}")
+    common.say(f"house dressing: {len(result['rooms'])} rooms hold (bounds, overlaps, stations, the capsule's paths); "
+               f"{report.as_posix()}")
+    return result["rooms"]
+
+
+def prop_glbs(data: dict, dressing: dict) -> dict:
+    """prop id -> its GLB under the raw folder (the first of house.toml's prop_dirs that has it)."""
+    raw = common.raw_dir()
+    ids = {r["id"] for rep in dressing.values() for r in rep["resolved"]}
+    found = {}
+    for pid in sorted(ids):
+        for d in data["settings"].get("prop_dirs", []):
+            glb = raw / d / f"{pid}.glb"
+            if glb.is_file():
+                found[pid] = glb
+                break
+    return found
+
+
+def walk(data: dict, summary: dict, folder: Path, props: dict | None = None, dressing: dict | None = None) -> int:
     """Stages the pieces the scenes use from the kit folder, imports them headless, then runs godot/house/walk.gd in a
     window off-screen (pictures need one): every doorway of the ground and upper floors and every flight, walked by
-    a 1.36 m capsule; the stills, the plan, sheet.png and the exterior at dusk (exterior.png); draw calls per view."""
+    a 1.36 m capsule; the stills, the plan, sheet.png and the exterior at dusk (exterior.png); draw calls per view.
+    With a dressing: c2 stand-in lamps at its fixtures, one shot per dressed room from its door and rooms.png
+    (house_dressing.review_request), and per room the view's draw calls and the dressing's triangles."""
     kit = common.raw_dir() / data["settings"]["kit_dir"]
     names = {pid: f"kit_{pid}" for pid in summary["pieces"]}
     missing = [pid for pid in names if not (kit / f"{pid}.glb").is_file()]
     if missing:
         raise common.Failure(f"no {', '.join(sorted(missing))} in {kit.as_posix()} (build the kit first)")
-    _godot.clear_staged(set(names.values()))
+    props = props or {}
+    _godot.clear_staged(set(names.values()) | {f"prop_{pid}" for pid in props})
     for pid, name in names.items():
         _godot.stage(kit / f"{pid}.glb", name)
+    for pid, glb in props.items():
+        _godot.stage(glb, f"prop_{pid}")
     errors = [line for line in _godot.import_project() if "ERROR" in line]
     for line in errors[:10]:
         common.say(f"  import: {line}")
     folder.mkdir(parents=True, exist_ok=True)
     req = common.OUT / "house" / "walk_request.json"
     request = house_layout.walk_request(data)
+    if dressing:
+        request.update(house_dressing.review_request(data, dressing))
     for name in request["closed"]:
         common.say(f"  not walked (closed kit leaf): {name}")
     req.write_text(json.dumps(request, indent=1), encoding="utf-8", newline="\n")
@@ -91,6 +155,11 @@ def walk(data: dict, summary: dict, folder: Path) -> int:
                    f"({w['reached']}/{w['of']} points, {w['seconds']} s)")
     for name, info in result["shots"].items():
         common.say(f"  {name}: {info['draw_calls']} draw calls, {info['objects']} objects, {info['primitives']} primitives")
+    for name, info in result.get("rooms", {}).items():
+        common.say(f"  {name}: {info['draw_calls']} draw calls, {info['primitives']} primitives in view; dressing "
+                   f"{info['dressing_meshes']} meshes, {info['dressing_triangles']} triangles")
+    for line in house_dressing.swatch_report(result.get("swatches", [])):
+        common.say(f"  swatch {line}")
     common.say(f"  {result['instances']['mesh_instances']} mesh instances, {result['instances']['static_bodies']} bodies; "
                f"sheet {(folder / 'sheet.png').as_posix()}")
     if failed or errors:
