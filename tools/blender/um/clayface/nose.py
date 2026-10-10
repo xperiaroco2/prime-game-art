@@ -95,6 +95,41 @@ def settle_nose(face, step=0.0005, most=0.012):
     return raised
 
 
+def clear_strict_nose(face, step=0.92, most=8):
+    """art #42 round 3: a STRICT_NOSES nose (the pinocchio) never touches an eye or a lid (the kit-check found 19 of
+    320 men's faces with its top in the lids). While it meets the eyes or lids in any blink step it is squashed
+    vertically about its lowest point by `step` (its reach and bottom kept), at most `most` times. Records the factor
+    in meta["nose"]["squash_for_eyes"]."""
+    from mathutils.bvhtree import BVHTree
+    from .kit import STRICT_NOSES
+    if face.picks.get("nose") not in STRICT_NOSES:
+        return 1.0
+    nose = face.pieces["nose"]
+    trees = []
+    for name, o in face.pieces.items():
+        cat = face.cat.get(name)
+        if cat not in ("eye", "lid"):
+            continue
+        polys = [tuple(p.vertices) for p in o.data.polygons]
+        keys = [None, "blink_half", "blink"] if cat == "lid" else [None]
+        for k in keys:
+            if k is None or (o.data.shape_keys and k in o.data.shape_keys.key_blocks):
+                trees.append(BVHTree.FromPolygons(piece_coords(o, k), polys))
+    npolys = [tuple(p.vertices) for p in nose.data.polygons]
+    f = 1.0
+    for _ in range(most):
+        nt = BVHTree.FromPolygons(piece_coords(nose), npolys)
+        if not any(nt.overlap(t) for t in trees):
+            break
+        low = min(v.co.z for v in nose.data.vertices)
+        for v in nose.data.vertices:
+            v.co.z = low + (v.co.z - low) * step
+        f *= step
+    nose.data.update()
+    face.meta["nose"]["squash_for_eyes"] = round(f, 3)
+    return f
+
+
 def nose_eye_overlap(face, lay):
     """How far the nose's top rises above the eyes' lowest point (mm; > 0: it stands in front of the eyes)."""
     o = face.pieces["nose"]

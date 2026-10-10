@@ -16,7 +16,7 @@ from .mesh import Ctx, add_keys, apply_skin, bind as bind_head, data_object, dro
 from .mouth import build_mouth, outer2d
 from .eyes import build_eyes
 from .brows import build_brows
-from .nose import build_nose, nose_eye_overlap, nose_meets_pupils, settle_nose
+from .nose import build_nose, clear_strict_nose, nose_eye_overlap, nose_meets_pupils, settle_nose
 from .ears import build_ears
 from .fhair import build_facial_hair, lift_moustache, seat_moustache, settle_goatee
 
@@ -155,6 +155,7 @@ def build_face(h, picks, skin, coll=None, hair_rgb=None, bind=True, brow_colour=
     face.meta["nose"]["loudness"] = t if nose_loud(picks) else None
     face.meta["nose"]["shrunk_for_pupils"] = round(kf - face.meta["nose"]["scale"], 3)
     seat_moustache(face, ctx, M)
+    clear_strict_nose(face)  # after the moustache seat, which may raise the nose into the lids
     face.ctx = ctx  # step 2 (brief5): the check's visible-poke test reads the skin
     build_ears(face, ctx, coll)
     face.meta["layout"] = {"eye_z": round(ctx.ez, 4), "mouth_z": round(ctx.mz, 4)}

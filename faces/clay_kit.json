@@ -258,7 +258,7 @@
     "embed": 0.3,
     "drop": 0.0,
     "tilt": 10.0,
-    "tris": 320,
+    "tris": 288,
     "seat_low": true
    }
   },
