@@ -24,6 +24,8 @@ PACK_PARTS = ("head", "hair", "top", "bottom", "shoes")
 FACE_PARTS = ("eyes", "brows", "mouth")
 FINGER_JOINTS = {"Thumb": 3, "Index": 4, "Middle": 4, "Ring": 4, "Pinky": 4}
 VIEWS = ("front", "34", "side", "back", "in34")
+CATALOGUE = Path(__file__).resolve().parents[3] / "catalogue" / "ultimate_modular.json"
+EXTRA_KINDS_NOT = ("skull", "hair", "brows")  # catalogue kinds that are never an extra
 MODES = ("chars", "face", "hands", "lineup", "crossgender", "qa", "ankles")
 DEFAULT_MODES = ("chars", "face", "hands", "lineup", "crossgender")
 ID_RE = re.compile(r"^[a-z0-9][a-z0-9_]*$")
@@ -83,6 +85,8 @@ def load(path: Path, raw_dir: Path | None = None) -> dict[str, Any]:
     problems = check_structure(data)
     if not problems and raw_dir is not None:
         problems = check_contents(data, Path(raw_dir))
+    if not problems and raw_dir is not None and CATALOGUE.is_file():
+        problems = check_extras(data, json.loads(CATALOGUE.read_text(encoding="utf-8")))
     if problems:
         raise RecipeError(path.name, problems)
     data["_name"] = path.stem
@@ -359,6 +363,36 @@ def _check_pose(c: _Check, pose: Any, where: str, neutral_ok: bool) -> None:
 
 
 # ---------------------------------------------------------------------------------------------------- contents
+def check_extras(data: dict[str, Any], catalogue: dict[str, Any]) -> list[str]:
+    """Every extra is a whole item of the parts catalogue of the character's own body type (art #42: m1's stray blue
+    strip was a woman's headset): its file, object and materials equal one item's recipe (kind not skull, hair or
+    brows) whose source body type is the character's. A cut the assembler cannot make yet is not compared."""
+    items = catalogue.get("items", {})
+    problems: list[str] = []
+
+    def same(it: dict[str, Any], e: dict[str, Any]) -> bool:
+        r = it.get("recipe", {})
+        return (r.get("file"), r.get("object"), sorted(r.get("materials") or [])) == (
+            e.get("file"), e.get("object"), sorted(e.get("materials") or []))
+
+    for ch in data.get("characters", []):
+        g = ch.get("gender")
+        for k, e in enumerate(ch.get("extras", [])):
+            w = f"characters[{ch.get('id')}].extras[{k}]"
+            if e.get("gender", g) != g:
+                problems.append(f"{w}.gender: {e['gender']!r} is not the character's {g!r}: an extra is an item of "
+                                f"the character's own body type")
+                continue
+            ok = [i for i, it in sorted(items.items()) if it.get("kind") not in EXTRA_KINDS_NOT
+                  and it.get("source", {}).get("body_type") == g and same(it, e)]
+            if not ok:
+                near = [i for i, it in sorted(items.items()) if it.get("kind") not in EXTRA_KINDS_NOT
+                        and it.get("source", {}).get("body_type") == g and it.get("recipe", {}).get("file") == e.get("file")]
+                problems.append(f"{w}: {e.get('object')} {e.get('materials')} is not a whole catalogue item of body type "
+                                f"{g}; items of {e.get('file')}: {', '.join(near) or 'none'}")
+    return problems
+
+
 def check_contents(data: dict[str, Any], raw_dir: Path) -> list[str]:
     """Every pack folder, file, object, material and action the recipe names exists; each problem names what does."""
     problems: list[str] = []

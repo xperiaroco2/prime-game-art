@@ -257,3 +257,45 @@ class RepoRecipesTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class ExtrasCatalogueTest(unittest.TestCase):
+    """recipe.check_extras: an extra is a whole catalogue item of the character's own body type (art #42)."""
+
+    CAT = {"items": {
+        "accessory_w_scifi_headset": {"kind": "accessory", "source": {"body_type": "W"},
+                                      "recipe": {"file": "Sci Fi Character.glb", "object": "SciFi_Head", "materials": ["Blue"]}},
+        "earrings_m_punk": {"kind": "earrings", "source": {"body_type": "M"},
+                            "recipe": {"file": "Punk.glb", "object": "Punk_Head", "materials": ["Earrings"]}},
+        "hair_m_punk": {"kind": "hair", "source": {"body_type": "M"},
+                        "recipe": {"file": "Punk.glb", "object": "Punk_Head", "materials": ["Red"]}},
+    }}
+
+    def check(self, gender, extra):
+        return recipe.check_extras({"characters": [{"id": "c1", "gender": gender, "extras": [extra]}]}, self.CAT)
+
+    def test_whole_item_of_own_body_type_passes(self):
+        self.assertEqual(self.check("M", {"role": "earrings", "file": "Punk.glb", "object": "Punk_Head",
+                                          "materials": ["Earrings"]}), [])
+
+    def test_other_gender_refused(self):
+        problems = self.check("M", {"role": "accessory", "gender": "W", "file": "Sci Fi Character.glb",
+                                    "object": "SciFi_Head", "materials": ["Blue"]})
+        self.assertEqual(len(problems), 1)
+        self.assertIn("not the character's 'M'", problems[0])
+
+    def test_piece_that_is_no_item_refused(self):
+        problems = self.check("M", {"role": "bits", "file": "Punk.glb", "object": "Punk_Head",
+                                    "materials": ["Earrings", "Skin"]})
+        self.assertEqual(len(problems), 1)
+        self.assertIn("earrings_m_punk", problems[0])
+
+    def test_hair_is_not_an_extra(self):
+        self.assertEqual(len(self.check("M", {"role": "wig", "file": "Punk.glb", "object": "Punk_Head",
+                                              "materials": ["Red"]})), 1)
+
+    def test_repo_recipes_pass(self):
+        cat = json.loads(recipe.CATALOGUE.read_text(encoding="utf-8"))
+        for path in sorted((common.ROOT / "recipes").glob("*.json")):
+            with self.subTest(recipe=path.name):
+                self.assertEqual(recipe.check_extras(recipe.read(path), cat), [])

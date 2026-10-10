@@ -64,17 +64,6 @@
     "file": "Worker.glb",
     "object": "Worker_Feet"
    },
-   "extras": [
-    {
-     "role": "accessory",
-     "file": "Sci Fi Character.glb",
-     "materials": [
-      "Blue"
-     ],
-     "object": "SciFi_Head",
-     "gender": "W"
-    }
-   ],
    "eyes": {
     "style": "dots"
    },
@@ -583,17 +572,6 @@
     "file": "Witch.glb",
     "object": "Witch_Feet"
    },
-   "extras": [
-    {
-     "role": "headwear",
-     "file": "King.glb",
-     "materials": [
-      "Gold"
-     ],
-     "object": "King_Head",
-     "gender": "M"
-    }
-   ],
    "eyes": {
     "style": "dots"
    },
