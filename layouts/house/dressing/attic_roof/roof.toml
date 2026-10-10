@@ -32,11 +32,14 @@ station = "Loot"                   # the design doc's (41.5, 25)
 at = [41.5, 25.0]
 yaw = -90.0
 
-# The lookout: what a player sees at eye height 1.6 m. `station` is the layout's Lookout station (roof.toml) in plan
-# metres and must be one of the `eyes`; from it the `see` openings of the fence (layouts/house/outdoor/plot.toml) must
-# show at least half. The design doc's point (30, 42.5) sees neither over the 1 m parapet (0 %), so the station
-# stands at (30, 44.2), 0.8 m from the parapet (100 %); the doc's point stays as a second eye, reported only.
+# The lookout: what a player sees at eye height 1.6 m. `station` is the layout's Lookout station (roof.toml), the
+# design doc's (30, 42.5), in plan metres and the first of the `eyes`; the acceptance: from it the `see` openings of the
+# fence (layouts/house/outdoor/plot.toml) at least half in view. NOT MET: 2.5 m behind the 1 m parapet it sees neither
+# (0 %). `open` records that the shortfall waits for the engineer (art #77): the check reports it and does not fail;
+# without `open` it fails. The second eye (30, 44.2), 0.8 m from the parapet, is a labelled alternative (100 %), the
+# option "move the Lookout marker to the parapet"; it is not the acceptance.
 [lookout]
-station = [30.0, 44.2]
-eyes = [[30.0, 44.2], [30.0, 42.5]]
+station = [30.0, 42.5]
+eyes = [[30.0, 42.5], [30.0, 44.2]]
 see = ["wicket", "gates"]
+open = "art #77, the engineer's call: move the Lookout marker to the parapet (30, 44.2), lower the parapet there, or accept"

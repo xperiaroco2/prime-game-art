@@ -35,10 +35,15 @@ def run(args: argparse.Namespace) -> int:
     spots = rep["attic"]["spots"]
     common.say(f"attic: {rep['attic']['items']} items, {sum(s['reachable'] for s in spots)}/{len(spots)} hiding "
                f"spots reachable for a pick-up")
-    for v in rep["roof"]["lookout"]:
-        see = ", ".join(f"{k} {100 * f:.0f}%" for k, f in v["see"].items())
-        common.say(f"roof: lookout eye {v['eye']}: {see}; house windows in view {len(v['house_windows'])}; "
+    for k, v in enumerate(rep["roof"]["lookout"]):
+        see = ", ".join(f"{t} {100 * f:.0f}%" for t, f in v["see"].items())
+        label = "the station" if k == 0 else "an alternative, not the acceptance"
+        common.say(f"roof: lookout eye {v['eye']} ({label}): {see}; house windows in view {len(v['house_windows'])}; "
                    f"attic windows in view {v['attic_windows'] or 'none'}")
+    if rep["roof"]["open"]:
+        for m in rep["roof"]["not_met"]:
+            common.say(f"roof: NOT MET, open for the engineer: {m}")
+        common.say(f"roof: open: {rep['roof']['open']}")
     problems = [f"attic: {p}" for p in rep["attic"]["problems"]] + [f"roof: {p}" for p in rep["roof"]["problems"]]
     for p in problems:
         common.say(f"  {p}")

@@ -248,12 +248,10 @@ def check(z: dict, data: dict) -> list[str]:
             if at is None or math.dist(at, lk["station"]) > 1e-6:
                 problems.append(f"the lookout's station {lk['station']} is not the layout's Lookout station")
             view = lookout(z, data)
-            own = next((v for v in view if math.dist(v["eye"], lk["station"]) < 1e-6), None)
-            if own is None:
-                problems.append("the lookout's station is not one of its eyes")
-            for t in lk["see"] if own else []:
-                if own["see"][t] < 0.5:
-                    problems.append(f"the lookout sees less than half of the {t} from its station")
+            if not view or math.dist(view[0]["eye"], lk["station"]) > 1e-6:
+                problems.append("the lookout's station is not its first eye")
+            elif not lk.get("open"):  # a shortfall recorded as open for the engineer is reported, not failed
+                problems += not_met(z, view)
             for v in view:
                 if v["house_windows"]:
                     problems.append(f"the lookout eye {v['eye']} sees into the house: {v['house_windows']}")
@@ -344,8 +342,17 @@ def lookout(z: dict, data: dict) -> list[dict]:
     return out
 
 
+def not_met(z: dict, view: list[dict]) -> list[str]:
+    """The acceptance from the station's eye (the first): every `see` opening at least half in view."""
+    own = view[0]
+    return [f"the lookout sees {100 * own['see'][t]:.0f} % of the {t} from its station {own['eye']}, less than half"
+            for t in z["lookout"]["see"] if own["see"][t] < 0.5]
+
+
 def report(data: dict | None = None) -> dict[str, Any]:
     data = data or house_layout.load()
     attic, roof = load("attic"), load("roof")
+    view = lookout(roof, data)
     return {"attic": {"items": len(attic["items"]), "spots": reach(attic, data), "problems": check(attic, data)},
-            "roof": {"items": len(roof["items"]), "lookout": lookout(roof, data), "problems": check(roof, data)}}
+            "roof": {"items": len(roof["items"]), "lookout": view, "problems": check(roof, data),
+                     "not_met": not_met(roof, view), "open": roof["lookout"].get("open", "")}}

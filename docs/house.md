@@ -209,12 +209,13 @@ another format (`[[props]]` at [x, h, z]); moving the attic and the deck onto th
 - **The lookout** (`[lookout]`): from each eye at 1.6 m, the share of sample points on the plot's wicket and gates
   (`plot.toml`'s fence openings) seen over the parapet's cap (7.46 m), the deck slab, the attic and the roof props; and
   every window of the house (basement, ground, second floor) and the attic in view. `station` is the layout's Lookout
-  station (`roof.toml`) in plan metres and one of the eyes; the check wants the openings at least half in view from
-  the station's eye and no window of the house from any eye. From the doc's point (30, 42.5), 2.5 m from the parapet,
-  the parapet hides everything within about 33 m (the wicket and the gates 0 %; a grid along x 30: 33 % at y 43.75,
-  67 % at 44.0, 100 % from 44.2), so the Lookout station stands at (30, 44.2) and the doc's point is a second eye,
-  reported only (the engineer's call: move it back, or lower the parapet there). The attic's two south knee windows
-  (25, 40) and (35, 40) look onto the deck, so the lookout sees into the attic.
+  station (`roof.toml`, the design doc's (30, 42.5)) in plan metres and the first eye. The acceptance: the openings at
+  least half in view from the station's eye, and no window of the house from any eye. **Not met**: 2.5 m behind the
+  parapet, the station sees neither opening (0 %; along x 30: 0 % up to y 43.5, 33 % at 43.75, 67 % at 44.0, 100 % from
+  44.1). The dressing records the shortfall as `open` (the engineer's call): the check reports it as NOT MET and does
+  not fail; without `open` it fails. The second eye (30, 44.2), 0.8 m from the parapet, is a labelled alternative
+  (100 %), not the acceptance. The options: move the Lookout marker to the parapet, lower the parapet there, or accept.
+  The attic's two south knee windows (25, 40) and (35, 40) look onto the deck, so the lookout sees into the attic.
 
 **The review shoot**: `tools/run.sh attic --shoot DIR [--kit DIR]` (Godot, off-screen, about 2 minutes) generates the
 house's scenes into `godot/import/house`, stages their kit GLBs (each `--kit` folder is searched before the layout's

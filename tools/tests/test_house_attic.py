@@ -68,20 +68,30 @@ class AtticTest(unittest.TestCase):
 
 
 class RoofTest(unittest.TestCase):
-    def test_the_lookout_sees_the_yard_from_its_station_and_not_inside(self) -> None:
+    def test_the_lookout_reports_the_doc_station_honestly_and_never_sees_inside(self) -> None:
         views = {tuple(v["eye"]): v for v in A.lookout(ROOF, DATA)}
-        self.assertEqual(tuple(ROOF["lookout"]["station"]), (30.0, 44.2))
-        self.assertEqual(views[(30.0, 44.2)]["see"], {"wicket": 1.0, "gates": 1.0})
-        self.assertEqual(views[(30.0, 42.5)]["see"], {"wicket": 0.0, "gates": 0.0})  # the doc's point: reported only
+        self.assertEqual(tuple(ROOF["lookout"]["station"]), (30.0, 42.5))  # the design doc's point, the layout's marker
+        self.assertEqual(views[(30.0, 42.5)]["see"], {"wicket": 0.0, "gates": 0.0})  # the parapet hides both
+        self.assertEqual(views[(30.0, 44.2)]["see"], {"wicket": 1.0, "gates": 1.0})  # the alternative only
         for v in views.values():
             self.assertEqual(v["house_windows"], [])
 
-    def test_the_lookout_is_judged_from_its_station(self) -> None:
+    def test_the_station_shortfall_fails_unless_open_for_the_engineer(self) -> None:
+        rep = A.report(DATA)["roof"]
+        self.assertEqual(len(rep["not_met"]), 2, rep["not_met"])
+        self.assertTrue(rep["open"])
         z = copy.deepcopy(ROOF)
-        z["lookout"]["station"] = [30.0, 42.5]  # sees the parapet only; the layout's marker is elsewhere
+        del z["lookout"]["open"]
+        probs = A.check(z, DATA)
+        self.assertTrue(any("0 % of the wicket from its station" in p for p in probs), probs)
+        z["lookout"]["eyes"] = list(reversed(z["lookout"]["eyes"]))  # the alternative cannot stand in for the station
+        self.assertIn("the lookout's station is not its first eye", A.check(z, DATA))
+
+    def test_the_lookout_station_is_the_layouts_marker(self) -> None:
+        z = copy.deepcopy(ROOF)
+        z["lookout"]["station"] = z["lookout"]["eyes"][0] = [30.0, 44.2]
         probs = A.check(z, DATA)
         self.assertTrue(any("not the layout's Lookout station" in p for p in probs), probs)
-        self.assertTrue(any("less than half of the wicket from its station" in p for p in probs), probs)
 
     def test_the_loot_crate_is_on_its_station(self) -> None:
         crate = next(it for it in ROOF["items"] if it["id"] == "loot_crate")
