@@ -42,10 +42,8 @@ points = [
   ["basement", 60, 33],
   ["basement", 63, 33],         # 1 m before the outdoor stairs' foot
   ["stairs", "outdoor_stairs", "up"],
-  ["ground", 65, 33],
-  ["ground", 63, 33],
-  ["ground", 63, 34],           # the garage's back door
-  ["ground", 63, 35],
+  ["ground", 65, 34],           # the garage's back door, 2 m south of the stairs' top
+  ["ground", 65, 35],
   ["ground", 68.08, 36.45],     # 2 m short of the workbench (70, 37)
 ]
 
