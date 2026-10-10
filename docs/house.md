@@ -420,7 +420,8 @@ tools/run.sh house --bake ZONES [--preset high|low] [--grid] [--merge] [--no-bak
 2. `zone_build.gd` (headless) flattens a zone into `res://import/house/bake/<zone>_<tag>.scn` with a LightmapGI from
    `[bake]`; a kit mesh's `lightmap_size_hint` is texel / `uv2_per_m` (the kit's `pieces.json`), so the presets
    differ only in the texel. `Above` (the zone's ceiling) bakes its floor slabs at the full texel and its other
-   pieces at a tenth (they only occlude). `--merge` welds each room level's floor tiles of one kind into one mesh and
+   pieces at a tenth (they only occlude); the yard slab and its beams (#108) are the zone's own pieces (its room
+   scenes, not `Above`) and bake at the full texel. `--merge` welds each room level's floor tiles of one kind into one mesh and
    unwraps it (one lightmap island per floor instead of one per tile). Meshes without UV2 stay Dynamic.
 3. The editor bakes it: Godot opens the project with the `lmbake` plugin (`-- lmbake=<scene>`; without that argument
    the plugin does nothing) in a 1280x720 window at `-30000,-30000` (off-screen, never minimized); the plugin presses
