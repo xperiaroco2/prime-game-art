@@ -23,7 +23,9 @@ import random
 import tomllib
 from pathlib import Path
 
+from . import house_basement
 from . import house_dressing as hd
+from . import house_layout
 from . import house_routes
 
 SEED = 104
@@ -56,114 +58,172 @@ HOSTS = {
     "meat_freezer": ("paper_stack", "bottles"),
 }
 
-# room -> mid-size solid items, wall items (in order of placement), floor items; surface items at most per host and room
+# room -> furniture (`furn`: GROUPS `@name`, ids, `id+` stacks, in order; `fill`: wall-lining kinds in turn until the
+# room's wall lining passes its target, house_fill), mid-size solid items, wall items (in order of placement), floor
+# items; surface items at most per host and room
 RULES = {
     # the ground floor
     "kitchen": {
+        "furn": ("@reading",),
+        "fill": ("kitchen_counter", "jar_shelf", "kitchen_counter", "sideboard"),
         "mid": ("potted_plant", "stool", "stool", "trash_bin"),
         "wall": ("picture_frame", "wall_clock", "wall_shelf", "picture_frame", "picture_frame"),
         "floor": ("basket",),
     },
     "hallway": {
+        "furn": ("@boots", "@packing"),
+        "fill": ("radiator", "bookcase", "console_table", "landing_bench", "dresser"),
+        "island": ("potted_plant",),
         "mid": ("potted_plant", "console_table", "shoe_rack"),
         "wall": ("picture_frame", "picture_frame", "picture_frame", "wall_shelf", "wall_clock", "picture_frame"),
         "floor": ("doormat", "shoes", "shoes", "basket"),
     },
     "living_room": {
+        "furn": ("@reading", "@packing"),
+        "fill": ("radiator", "bookcase", "sideboard", "bookcase", "dresser"),
         "mid": ("potted_plant", "armchair", "small_table", "potted_plant", "bean_bag"),
         "wall": ("picture_frame", "picture_frame", "picture_frame", "wall_shelf", "picture_frame", "wall_clock",
                  "picture_frame"),
         "floor": ("basket", "book_stack", "toy_blocks"),
     },
     "dining_room": {
-        "mid": ("potted_plant", "console_table", "potted_plant"),
+        "furn": ("@drying", "@packing", "console_table"),
+        "fill": ("radiator", "sideboard", "bookcase", "dresser", "bookcase"),
+        "island": ("armchair", "small_table"),
+        "mid": ("potted_plant",),
         "wall": ("picture_frame", "picture_frame", "picture_frame", "wall_clock", "picture_frame", "wall_shelf"),
         "floor": ("basket",),
     },
     "stairs": {
+        "furn": ("@boots", "@packing"),
+        "fill": ("radiator", "bookcase", "landing_bench", "console_table"),
+        "island": ("potted_plant",),
         "mid": ("potted_plant",),
         "wall": ("picture_frame", "picture_frame", "picture_frame"),
         "floor": ("shoes",),
     },
     "pantry": {
-        "mid": ("crate+", "cardboard_box+", "wine_bottle_crate", "cardboard_box"),
+        "furn": ("@store", "open_box", "cardboard_box", "wine_bottle_crate"),
+        "fill": ("jar_shelf", "kitchen_upper", "metal_shelving", "kitchen_upper", "crate+"),
+        "island": ("crate+",),
+        "mid": ("crate+",),
         "wall": ("wall_shelf", "wall_shelf"),
         "floor": ("basket", "bottles", "basket"),
     },
     "wc": {
+        "furn": ("@laundry", "@packing", "radiator"),
+        "fill": ("dresser", "console_table", "nightstand"),
         "mid": ("potted_plant",),
         "wall": ("picture_frame", "wall_shelf"),
         "floor": ("basket",),
     },
     # the upper floor
     "bedroom": {
-        "mid": ("potted_plant", "trunk", "nightstand", "standing_mirror"),
+        "furn": ("@reading", "@laundry", "standing_mirror"),
+        "fill": ("radiator", "wardrobe", "dresser", "bookcase", "trunk"),
+        "mid": ("potted_plant", "trunk", "nightstand"),
         "wall": ("picture_frame", "picture_frame", "picture_frame", "wall_shelf", "wall_clock"),
         "floor": ("shoes", "basket", "book_stack"),
     },
     "kids_room": {
-        "mid": ("toy_chest", "bean_bag", "small_table", "stool", "cardboard_box+"),
+        "furn": ("@toys", "@reading", "@laundry", "bean_bag"),
+        "fill": ("bookcase", "dresser", "wardrobe", "toy_chest"),
+        "island": ("bean_bag", "small_table"),
+        "mid": ("toy_chest", "small_table", "stool", "cardboard_box+"),
         "wall": ("picture_frame", "wall_shelf", "picture_frame", "wall_clock"),
         "floor": ("toy_blocks", "toy_blocks", "book_stack", "basket", "shoes"),
     },
     "landing": {
+        "furn": ("@reading", "@laundry"),
+        "fill": ("radiator", "bookcase", "landing_bench", "dresser", "console_table"),
+        "island": ("armchair", "small_table"),
         "mid": ("potted_plant", "console_table", "potted_plant"),
         "wall": ("picture_frame", "picture_frame", "picture_frame", "wall_shelf", "picture_frame"),
         "floor": ("basket",),
     },
     "study": {
-        "mid": ("filing_cabinet", "potted_plant", "cardboard_box+", "small_table"),
+        "furn": ("@desk_work", "@reading", "cardboard_box+"),
+        "fill": ("bookcase", "filing_cabinet", "bookcase", "sideboard"),
+        "mid": ("filing_cabinet", "potted_plant", "small_table"),
         "wall": ("picture_frame", "wall_shelf", "wall_clock", "picture_frame", "wall_shelf"),
         "floor": ("book_stack", "book_stack", "paper_stack", "basket"),
     },
     "bathroom": {
+        "furn": ("@laundry", "@drying", "radiator"),
+        "fill": ("dresser", "console_table", "nightstand"),
         "mid": ("potted_plant", "stool"),
         "wall": ("wall_shelf", "picture_frame", "wall_shelf"),
         "floor": ("basket",),
     },
     "guest_room": {
+        "furn": ("@reading", "@packing"),
+        "fill": ("radiator", "wardrobe", "dresser", "bookcase", "trunk"),
         "mid": ("potted_plant", "trunk", "nightstand", "small_table"),
         "wall": ("picture_frame", "picture_frame", "wall_shelf", "picture_frame", "wall_clock"),
         "floor": ("shoes", "basket", "book_stack"),
     },
     # the basement
     "storage": {
+        "furn": ("@store", "@work", "@packing"),
+        "fill": ("metal_shelving", "crate+", "metal_shelving", "cardboard_box+"),
+        "island": ("crate+", "metal_shelving", "cardboard_box+", "barrel"),
         "mid": ("crate+", "cardboard_box+", "crate", "cardboard_box+", "barrel"),
         "wall": ("wall_shelf", "wall_shelf", "wall_clock"),
         "floor": ("basket", "bottles", "paper_stack"),
     },
     "darkroom": {
-        "mid": ("cardboard_box+", "crate", "stool"),
+        "furn": ("@store", "@packing"),
+        "fill": ("metal_shelving", "filing_cabinet", "sideboard"),
+        "island": ("cardboard_box+", "crate+", "metal_shelving"),
+        "mid": ("cardboard_box", "crate", "stool"),
         "wall": ("wall_shelf", "wall_shelf", "picture_frame"),
         "floor": ("paper_stack", "bottles"),
     },
     "corridor": {
+        "furn": ("@store", "@packing"),
+        "fill": ("radiator", "metal_shelving", "crate+", "cardboard_box+"),
+        "island": ("crate+",),
         "mid": ("cardboard_box+", "crate"),
         "wall": ("wall_clock", "picture_frame"),
         "floor": ("basket",),
     },
     "boiler_room": {
-        "mid": ("barrel", "crate+", "jerrycan"),
+        "furn": ("@work", "@store", "barrel"),
+        "fill": ("metal_shelving", "crate+", "toolbox_cart"),
+        "island": ("crate+", "barrel", "cardboard_box+", "metal_shelving"),
+        "mid": ("crate+", "jerrycan"),
         "wall": ("wall_shelf", "wall_clock"),
         "floor": ("bottles", "basket"),
     },
     # the hall's sight lines from the passage run at eye height (house_basement.hall_sight): only clocks above them
     "generator_hall": {
-        "mid": ("fuel_barrel", "jerrycan", "jerrycan"),
+        "furn": ("@work", "@store", "fuel_barrel"),
+        "fill": ("radiator", "toolbox_cart", "crate+", "barrel", "sideboard"),
+        "island": ("crate+", "fuel_barrel", "barrel", "cardboard_box+"),
+        "mid": ("jerrycan", "jerrycan"),
         "wall": ("wall_clock", "wall_clock"),
         "floor": ("bottles", "paper_stack", "basket"),
     },
     "pump_room": {
+        "furn": ("@work", "@store"),
+        "fill": ("metal_shelving", "crate+", "toolbox_cart"),
+        "island": ("crate+", "barrel"),
         "mid": ("crate+", "jerrycan"),
         "wall": ("wall_shelf", "wall_clock"),
         "floor": ("bottles", "basket"),
     },
     "switch_room": {
-        "mid": ("cardboard_box+", "crate"),
+        "furn": ("@store", "@packing"),
+        "fill": ("metal_shelving", "filing_cabinet", "crate+"),
+        "island": ("crate+", "cardboard_box+"),
+        "mid": ("cardboard_box", "crate"),
         "wall": ("wall_clock", "wall_shelf"),
         "floor": ("paper_stack", "bottles"),
     },
     "passage": {
+        "furn": ("@packing",),
+        "fill": ("radiator", "crate+", "cardboard_box+"),
+        "island": ("crate+",),
         "wall": ("wall_clock",),
         "floor": ("basket",),
     },
@@ -177,6 +237,13 @@ def strip(text: str) -> str:
     """The dressing file's text without its generated block."""
     i = text.find(MARK)
     return text if i < 0 else text[:i].rstrip() + "\n"
+
+
+def generated_fixtures(folder: Path, rid: str) -> int:
+    """How many fixtures (the furniture layer's lamps) the room's generated block holds."""
+    text = (Path(folder) / f"{rid}.toml").read_text(encoding="utf-8")
+    i = text.find(MARK)
+    return 0 if i < 0 else tomllib.loads(text[i:]).get("fixtures", []).__len__()
 
 
 def _box(kind: str, at, face: str, cat: dict) -> dict:
@@ -202,8 +269,9 @@ def _side_of(at, w: float, d: float):
     return None, None
 
 
-def wall_spans(sh: dict) -> dict:
-    """side -> merged [a, b] spans along it where the shell has a wall (doors already cut)."""
+def wall_spans(sh: dict, corner: float = CORNER) -> dict:
+    """side -> merged [a, b] spans along it where the shell has a wall (doors already cut), corner metres off the
+    room's corners."""
     w, d, t = sh["w"], sh["d"], hd.WALL_T
     out: dict = {s: [] for s in "NSWE"}
     for x0, z0, x1, z1 in sh["walls"]:
@@ -220,7 +288,7 @@ def wall_spans(sh: dict) -> dict:
             else:
                 merged.append([a, b])
         length = w if s in "NS" else d
-        out[s] = [[max(a, CORNER), min(b, length - CORNER)] for a, b in merged if min(b, length - CORNER) > max(a, CORNER)]
+        out[s] = [[max(a, corner), min(b, length - corner)] for a, b in merged if min(b, length - corner) > max(a, corner)]
     return out
 
 
@@ -234,10 +302,10 @@ def _cut(spans: list, a: float, b: float) -> list:
     return [q for s0, s1 in spans for q in ((s0, min(s1, a)), (max(s0, b), s1)) if q[1] - q[0] > 1e-6]
 
 
-def free_spans(sh: dict, side: str, depth: float, blocks: list) -> list:
+def free_spans(sh: dict, side: str, depth: float, blocks: list, corner: float = CORNER) -> list:
     """The wall's spans on a side minus the projections of the blocker boxes that reach into its strip."""
     sb = _strip_box(side, depth, sh["w"], sh["d"])
-    spans = [tuple(s) for s in wall_spans(sh)[side]]
+    spans = [tuple(s) for s in wall_spans(sh, corner)[side]]
     for b in blocks:
         if _ov(sb, b):
             spans = _cut(spans, b[0], b[2]) if side in "NS" else _cut(spans, b[1], b[3])
@@ -289,8 +357,16 @@ def room_clutter(level: dict, room: dict, dressing: dict, cat: dict, rule: dict)
     for m in room.get("markers", []):
         if str(m.get("group", "")).startswith("spawn"):
             floor_blocks.append((m["at"][0] - 0.5, m["at"][2] - 0.5, m["at"][0] + 0.5, m["at"][2] + 0.5))
-    out: list[dict] = _mid(level, room, dressing, cat, rule, sh, floor_blocks, res, rng)
-    for it in out:  # their tops host surface clutter, and the later layers keep off them
+    out: list[dict] = _furnish(level, room, dressing, cat, rule, sh, floor_blocks, res, rng)
+    for it in out:  # the furniture's tops host surface clutter, and the later layers keep off them
+        r = hd.resolve(it, cat)
+        r["fp"], r["span"], r["kind"] = hd.footprint(r), hd.span(r), it.get("_kind", "props")
+        res.append(r)
+    dressing = dict(dressing, props=list(dressing.get("props", [])) + [i for i in out if i.get("_kind") != "fixtures"],
+                    fixtures=list(dressing.get("fixtures", [])) + [i for i in out if i.get("_kind") == "fixtures"])
+    mid = _mid(level, room, dressing, cat, rule, sh, floor_blocks, res, rng)
+    out += mid
+    for it in mid:  # their tops host surface clutter, and the later layers keep off them
         r = hd.resolve(it, cat)
         r["fp"], r["span"], r["kind"] = hd.footprint(r), hd.span(r), "props"
         res.append(r)
@@ -363,13 +439,171 @@ def room_clutter(level: dict, room: dict, dressing: dict, cat: dict, rule: dict)
     return out
 
 
+# ---------------------------------------------------------------- the furniture layer (art #104, pass 2)
+
+# group -> its pieces against one wall, facing into the room: (id, u along the wall from the group's middle, v from
+# the wall face to the piece's back, h its bottom, the dressing list); a lamp goes into `fixtures`
+GROUPS = {
+    "reading": (("armchair", 0.0, 0.05, 0.0, "props"), ("small_table", 0.85, 0.05, 0.0, "props"),
+                ("book_stack", 0.85, 0.25, 0.7, "props"), ("floor_lamp", -0.75, 0.1, 0.0, "fixtures")),
+    "desk_work": (("desk", 0.0, 0.05, 0.0, "props"), ("office_chair", 0.0, 0.85, 0.0, "props"),
+                  ("table_lamp", -0.5, 0.12, 0.75, "fixtures"), ("paper_stack", 0.3, 0.15, 0.75, "props"),
+                  ("filing_cabinet", 1.05, 0.05, 0.0, "props")),
+    "boots": (("shoe_rack", 0.0, 0.05, 0.0, "props"), ("shoes", 0.0, 0.05, 0.5, "props"),
+              ("coat_rack", 0.8, 0.05, 0.0, "props"), ("boots", -0.65, 0.1, 0.0, "props")),
+    "toys": (("toy_chest", 0.0, 0.05, 0.0, "props"), ("toy_blocks", 0.0, 0.1, 0.5, "props"),
+             ("toy_spill", 1.05, 0.2, 0.0, "props"), ("basket", -0.8, 0.1, 0.0, "props")),
+    "laundry": (("laundry_basket", 0.0, 0.05, 0.0, "props"), ("laundry_pile", 0.7, 0.1, 0.0, "props")),
+    "drying": (("drying_rack", 0.0, 0.05, 0.0, "props"), ("laundry_basket", 0.95, 0.05, 0.0, "props"),
+               ("laundry_pile", -0.95, 0.1, 0.0, "props")),
+    "packing": (("open_box", 0.0, 0.05, 0.0, "props"), ("cardboard_box", 0.6, 0.05, 0.0, "props"),
+                ("book_stack", -0.45, 0.1, 0.0, "props")),
+    "store": (("crate", 0.0, 0.05, 0.0, "props"), ("crate", 0.0, 0.05, 0.4, "props"),
+              ("cardboard_box", 0.6, 0.05, 0.0, "props"), ("barrel", -0.65, 0.05, 0.0, "props")),
+    "work": (("toolbox_cart", 0.0, 0.05, 0.0, "props"), ("tool_wall", 0.0, 0.0, 1.0, "props"),
+             ("crate", 0.75, 0.05, 0.0, "props"), ("jerrycan", -0.65, 0.05, 0.0, "props")),
+}
+WALL_MOUNT = {"kitchen_upper": 1.5, "tool_wall": 1.0, "radiator": 0.12}  # a wall piece's bottom when the fill puts it alone
+FILL_MARGIN = 3.0  # per cent: the fill stops this far past the room's wall-lining target
+FILL_TRIES = 6  # candidate places per side and piece
+ISLAND_WALL = 1.0  # m: a free-standing piece keeps this clear of the walls (the lined pieces stand there)
+ISLAND_TRIES = 14  # checked places per free-standing piece
+ISLAND_ROUNDS = 5  # passes over RULES' `island` kinds while the floor share is short
+FILL_CAP = 85.0  # per cent of the free wall: the fill never lines more (it goes on for the floor share past the target)
+
+
+def _pieces(token: str, cat: dict) -> list:
+    """A furniture token's pieces as GROUPS rows: a group, an id (a wall piece at WALL_MOUNT), or an id + (a stack)."""
+    if token.startswith("@"):
+        return list(GROUPS[token[1:]])
+    kind = token.rstrip("+")
+    if cat[kind]["pivot"] == "wall":
+        return [(kind, 0.0, 0.0, WALL_MOUNT.get(kind, 1.0), "props")]
+    rows = [(kind, 0.0, 0.05, 0.0, "props")]
+    return rows + ([(kind, 0.0, 0.05, cat[kind]["size"][2], "props")] if token.endswith("+") else [])
+
+
+def _group_at(sh: dict, side: str, c: float, rows: list, cat: dict) -> list[dict]:
+    w, d, t = sh["w"], sh["d"], hd.WALL_T
+    out = []
+    for kind, u, v, h, lst in rows:
+        L, W, H = cat[kind]["size"]
+        off = t + v + (0.0 if cat[kind]["pivot"] == "wall" else W / 2)
+        a = round(c + u, 2)
+        at = {"N": (a, h, off), "S": (a, h, d - off), "W": (off, h, a), "E": (w - off, h, a)}[side]
+        it = {"id": kind, "at": [round(x, 3) for x in at], "face": SIDE_FACE[side]}
+        if lst != "props":
+            it["_kind"] = lst
+        out.append(it)
+    return out
+
+
+def _extent(rows: list, cat: dict) -> tuple[float, float, float, float]:
+    """u0, u1 (along the wall), depth and the top of a group's pieces."""
+    u0 = min(u - cat[k]["size"][0] / 2 for k, u, *_ in rows)
+    u1 = max(u + cat[k]["size"][0] / 2 for k, u, *_ in rows)
+    depth = max(v + (0 if cat[k]["pivot"] == "wall" else cat[k]["size"][1]) for k, _, v, *_ in rows)
+    top = max(h + cat[k]["size"][2] for k, _, _, h, _ in rows)
+    return u0, u1, depth, top
+
+
+def _furnish(level: dict, room: dict, dressing: dict, cat: dict, rule: dict, sh: dict, floor_blocks: list, res: list,
+             rng) -> list[dict]:
+    """The room's furniture, placed before the mid and clutter layers: RULES' `furn` tokens (groups `@name`, ids,
+    `id+` stacks) in order, then RULES' `fill` kinds in turn against the free walls until the room's wall lining
+    (house_fill) passes its target by FILL_MARGIN and its floor share passes its target, the lining reaches FILL_CAP
+    or nothing more fits. Each piece or group stands with its back to a
+    wall in a free span (packed from a span's end or centred) and is kept only when house_dressing.check_room finds
+    no new problem in the room; a piece taller than 0.95 m keeps off the windows."""
+    from . import house_fill  # house_fill measures with this module's spans
+    levels = LEVELS or [level]
+    props, fixtures = list(dressing.get("props", [])), list(dressing.get("fixtures", []))
+    before = _problems(level, room, dressing, cat)
+    placed: list[dict] = []
+    half = house_fill.WINDOW_HALF
+    wins = [(s[0] - half, s[1] - half, s[0] + half, s[1] + half) for s in room.get("windows", [])]
+
+    def trial(new: list) -> dict:
+        allp = placed + new
+        return dict(dressing, props=props + [i for i in allp if i.get("_kind") != "fixtures"],
+                    fixtures=fixtures + [i for i in allp if i.get("_kind") == "fixtures"])
+
+    def place(token: str) -> bool:
+        rows = _pieces(token, cat)
+        u0, u1, depth, top = _extent(rows, cat)
+        length = u1 - u0
+        walled = all(cat[k]["pivot"] == "wall" for k, *_ in rows)
+        lo = min(h for _, _, _, h, _ in rows) if walled else 0.03
+        blocks = (_base_blocks(sh, 0.1) if walled else list(floor_blocks)) + (wins if top > 0.95 or walled else [])
+        blocks += _occupied(res, placed, cat, lo, top + 0.05)
+        order = sorted("NSWE", key=lambda s: -sum(b - a for a, b in free_spans(sh, s, depth + 0.2, blocks, GAP)))
+        for side in order:
+            cands = []
+            for a, b in free_spans(sh, side, depth + 0.2, blocks, GAP):
+                if b - a >= length + 2 * GAP:
+                    cands += [a + GAP - u0, b - GAP - u1, (a + b) / 2 - (u0 + u1) / 2]
+            rng.shuffle(cands)
+            for c in cands[:FILL_TRIES]:
+                new = _group_at(sh, side, c, rows, cat)
+                if _problems(level, room, trial(new), cat) <= before:
+                    placed.extend(new)
+                    return True
+        return False
+
+    def stand(token: str) -> bool:
+        """A free-standing piece (or stack) away from the walls, kept when it overlaps nothing and adds no problem."""
+        kind = token.rstrip("+")
+        L, W, H = cat[kind]["size"]
+        top = H * (2 if token.endswith("+") else 1)
+        blocks = list(floor_blocks) + _occupied(res, placed, cat, 0.03, top + 0.05)
+        m0 = ISLAND_WALL + max(L, W) / 2
+        xs = [m0 + k * 0.25 for k in range(int((sh["w"] - 2 * m0) / 0.25) + 1)]
+        zs = [m0 + k * 0.25 for k in range(int((sh["d"] - 2 * m0) / 0.25) + 1)]
+        cands = [(x, z) for x in xs for z in zs]
+        rng.shuffle(cands)
+        tries = 0
+        for x, z in cands:
+            face = "NSWE"[int(x * 4 + z * 4) % 4]
+            new = [{"id": kind, "at": [round(x, 3), 0.0, round(z, 3)], "face": face}]
+            if token.endswith("+"):
+                new.append({"id": kind, "at": [round(x, 3), round(H, 3), round(z, 3)], "face": face})
+            fp = _box(kind, new[0]["at"], face, cat)["fp"]
+            if any(_ov(fp, b, GAP) for b in blocks):
+                continue
+            tries += 1
+            if _problems(level, room, trial(new), cat) <= before:
+                placed.extend(new)
+                return True
+            if tries >= ISLAND_TRIES:
+                break
+        return False
+
+    for token in rule.get("furn", ()):
+        place(token)
+    fill, k, misses = rule.get("fill", ()), 0, 0
+    while fill and misses < len(fill):
+        m = house_fill.metrics(level, room, trial([]), cat, levels)
+        walls_done = m["wall_pct"] >= m["wall_target"] + FILL_MARGIN
+        if (walls_done and m["floor_pct"] >= m["floor_target"] + 1) or m["wall_pct"] >= FILL_CAP:
+            break
+        token = fill[k % len(fill)]
+        k += 1
+        misses = 0 if place(token) else misses + 1
+    island = rule.get("island", ())
+    for token in island * ISLAND_ROUNDS:
+        if house_fill.metrics(level, room, trial([]), cat, levels)["floor_pct"] >= house_fill.TARGET["floor"] + 1:
+            break
+        stand(token)
+    return placed
+
+
 def _mid(level: dict, room: dict, dressing: dict, cat: dict, rule: dict, sh: dict, floor_blocks: list, res: list,
          rng) -> list[dict]:
     """The room's mid-size solid items: each against the widest free wall span that takes it, kept only when the
     room's check (house_dressing.check_room) finds no more problems than without it; else the next span or side."""
     levels = LEVELS or [level]
     props = list(dressing.get("props", []))
-    before = len(hd.check_room(level, room, dressing, cat, levels)["problems"])
+    before = _problems(level, room, dressing, cat)
     placed: list[dict] = []
     for token in rule.get("mid", ()):
         kind, stack = token.rstrip("+"), token.endswith("+")
@@ -385,7 +619,7 @@ def _mid(level: dict, room: dict, dressing: dict, cat: dict, rule: dict, sh: dic
                     break
                 new = [got[0]] + ([dict(got[0], at=[got[0]["at"][0], H, got[0]["at"][2]])] if stack else [])
                 trial = dict(dressing, props=props + placed + new)
-                if len(hd.check_room(level, room, trial, cat, levels)["problems"]) <= before:
+                if _problems(level, room, trial, cat) <= before:
                     placed += new
                     done = True
                 spans = got[1]
@@ -395,6 +629,22 @@ def _mid(level: dict, room: dict, dressing: dict, cat: dict, rule: dict, sh: dic
 
 
 LEVELS: list = []  # every level, set by generate() (a room's shell sees the stairs of the levels around it)
+HALL_CLEAR = 0.5  # the generator hall's sight lines keep this clear of the dressing (test_house_basement)
+DATA: dict = {}  # the layout, set by generate() (the basement's sight lines)
+
+
+def _problems(level: dict, room: dict, dressing: dict, cat: dict) -> int:
+    """The room's check problems (house_dressing.check_room) plus, in the basement, its blocked switch lines and, in
+    the generator hall, its blocked sight lines (house_basement: `house --check` refuses the first and reports the
+    second)."""
+    n = len(hd.check_room(level, room, dressing, cat, LEVELS or [level])["problems"])
+    if DATA and level["level"] == house_basement.LEVEL:
+        ds = {room["id"]: dressing}
+        n += sum(1 for r in house_basement.switch_sight(DATA, ds, cat) if r["clear"] is not None and r["clear"] <= 0)
+        if room["id"] == "generator_hall":
+            n += sum(1 for r in house_basement.hall_sight(DATA, ds, cat) if r["clear"] is not None
+                     and r["clear"] < HALL_CLEAR)
+    return n
 
 
 def _occupied(res: list, out: list, cat: dict, lo: float, hi: float) -> list:
@@ -417,22 +667,30 @@ def _windows(level: dict, room: dict) -> list:
     return out
 
 
-def _legs(routes: dict, level: dict, room: dict) -> list:
-    """Room-local boxes round the routes' legs on the room's level (each leg's bounding box grown by the radius)."""
+def walk_legs(data: dict, routes: dict) -> list:
+    """Every walk the `house --walk` run makes (doorways, flights, loops and the routes with their flights expanded:
+    house_layout.walk_request, house_routes.walks) as its points [x, height, z]."""
+    request = house_layout.walk_request(data)
+    return [w["points"] for w in request["walks"] + house_routes.walks(data, request, routes)]
+
+
+def _legs(walks: list, level: dict, room: dict) -> list:
+    """Room-local boxes round the walks' legs on the room's level (each leg's bounding box grown by the radius): the
+    furniture and clutter keep off them, so the capsule's routes, flights' exits and loops stay clear."""
     rx, ry = room["rect"][:2]
     pad = hd.RADIUS + 0.05
+    y = level["floor_y"]
     out = []
-    for r in routes.get("routes", []):
-        pts = r["points"]
+    for pts in walks:
         for a, b in zip(pts, pts[1:]):
-            if a[0] == b[0] == level["level"]:
-                out.append((min(a[1], b[1]) - rx - pad, min(a[2], b[2]) - ry - pad,
-                            max(a[1], b[1]) - rx + pad, max(a[2], b[2]) - ry + pad))
+            if abs(a[1] - y) < 0.05 and abs(b[1] - y) < 0.05:
+                out.append((min(a[0], b[0]) - rx - pad, min(a[2], b[2]) - ry - pad,
+                            max(a[0], b[0]) - rx + pad, max(a[2], b[2]) - ry + pad))
     return out
 
 
 def _fmt_item(it: dict) -> str:
-    lines = ["[[props]]", f'id = "{it["id"]}"', "at = [" + ", ".join(f"{v:g}" for v in it["at"]) + "]"]
+    lines = [f"[[{it.get('_kind', 'props')}]]", f'id = "{it["id"]}"', "at = [" + ", ".join(f"{v:g}" for v in it["at"]) + "]"]
     if "face" in it:
         lines.append(f'face = "{it["face"]}"')
     return "\n".join(lines)
@@ -445,8 +703,10 @@ def block(items: list[dict]) -> str:
 def generate(data: dict, folder: Path, cat: dict) -> dict:
     """room id -> (file path, the new file text, the clutter items) for every room in RULES that has a dressing file."""
     LEVELS[:] = data["levels"]
+    DATA.clear()
+    DATA.update(data)
     texts = {f: f.read_text(encoding="utf-8") for f in sorted(Path(folder).glob("*.toml"))}
-    routes = house_routes.load(Path(folder).parent)
+    walks = walk_legs(data, house_routes.load(Path(folder).parent))
     out = {}
     for lv in data["levels"]:
         for room in lv["rooms"]:
@@ -456,7 +716,7 @@ def generate(data: dict, folder: Path, cat: dict) -> dict:
                 continue
             base = strip(texts[path])
             dressing = tomllib.loads(base)
-            rm = dict(room, windows=_windows(lv, room), legs=_legs(routes, lv, room))
+            rm = dict(room, windows=_windows(lv, room), legs=_legs(walks, lv, room))
             items = room_clutter(lv, rm, dressing, cat, rule)
             out[room["id"]] = (path, base + "\n" + block(items), items)
     return out

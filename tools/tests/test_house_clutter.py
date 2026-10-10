@@ -30,9 +30,11 @@ class Clutter(unittest.TestCase):
             self.assertEqual(path.read_text(encoding="utf-8"), text, f"{rid}: run `house --clutter`")
             self.assertEqual(hc.strip(text).count(hc.MARK), 0)
 
-    def test_clutter_is_known_and_only_the_mid_layer_is_solid(self) -> None:
+    def test_clutter_is_known_and_only_the_furniture_island_and_mid_layers_are_solid(self) -> None:
         for rid, (_, _, items) in GEN.items():
-            mid = {k.rstrip("+") for k in hc.RULES[rid].get("mid", ())}
+            rule = hc.RULES[rid]
+            mid = {k.rstrip("+") for k in rule.get("mid", ()) + rule.get("fill", ()) + rule.get("island", ())}
+            mid |= {row[0] for t in rule.get("furn", ()) for row in hc._pieces(t, CAT)}
             for it in items:
                 self.assertIn(it["id"], CAT, rid)
                 if it["id"] not in mid:
@@ -44,6 +46,14 @@ class Clutter(unittest.TestCase):
             for kind in set(hc.RULES[rid].get("mid", ())):
                 want = sum(1 + k.endswith("+") for k in hc.RULES[rid]["mid"] if k == kind)
                 self.assertGreaterEqual(ids.count(kind.rstrip("+")), want, f"{rid}: {kind}")
+
+    def test_the_furniture_layer_is_placed(self) -> None:
+        for rid, (_, _, items) in GEN.items():
+            ids = [it["id"] for it in items]
+            for token in hc.RULES[rid].get("furn", ()):
+                rows = hc._pieces(token, CAT)
+                self.assertGreaterEqual(ids.count(rows[0][0]), sum(1 for r in rows if r[0] == rows[0][0]),
+                                        f"{rid}: {token}")
 
     def test_items_rest_on_a_host_a_wall_or_the_floor(self) -> None:
         for rid, (_, text, items) in GEN.items():
@@ -57,7 +67,7 @@ class Clutter(unittest.TestCase):
                 r = hd.resolve(it, CAT)
                 fp, h = hd.footprint(r), it["at"][1]
                 if r["pivot"] == "wall":
-                    self.assertEqual(h, hc.WALL_H[it["id"]], f"{rid}: {it}")
+                    self.assertEqual(h, hc.WALL_H.get(it["id"], hc.WALL_MOUNT.get(it["id"])), f"{rid}: {it}")
                 elif h > 0:
                     self.assertTrue(any(abs(top - h) < 1e-3 and hb[0] <= fp[0] and hb[1] <= fp[1] and fp[2] <= hb[2]
                                         and fp[3] <= hb[3] for hb, top in hosts), f"{rid}: {it} floats")

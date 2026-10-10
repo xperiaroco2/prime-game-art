@@ -8,6 +8,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+from runner import house_clutter as hc  # noqa: E402
 from runner import house_dressing as hd  # noqa: E402
 from runner import house_layout as hl  # noqa: E402
 
@@ -41,12 +42,17 @@ class SecondFloor(unittest.TestCase):
         self.assertEqual(set(self.rooms), set(ROOMS))
         self.assertEqual({r for r in self.files if r in self.rooms}, set(ROOMS))
 
+    def lamps(self, rid: str) -> int:
+        """The lamps of the room's generated furniture layer (house_clutter's GROUPS), after the inventory's."""
+        return hc.generated_fixtures(hl.LAYOUT_DIR / self.data["settings"]["dressing_dir"], rid)
+
     def test_room_defining_props_and_fixtures(self):
         for rid, want in ROOMS.items():
             ids = {it["id"] for it in self.files[rid].get("props", [])}
             self.assertTrue(want <= ids, f"{rid}: missing {sorted(want - ids)}")
             got: dict = {}
-            for it in self.files[rid].get("fixtures", []):
+            own = self.files[rid].get("fixtures", [])
+            for it in own[:len(own) - self.lamps(rid)]:  # the inventory's: the furniture layer's lamps come last
                 got[it["id"]] = got.get(it["id"], 0) + 1
             self.assertEqual(got, FIXTURES[rid], rid)
 
@@ -97,7 +103,8 @@ class SecondFloor(unittest.TestCase):
             for x, _, z in (s["from"], s["to"]):
                 self.assertTrue(rx < x < rx + w and rz < z < rz + d, f"{rid}: {s}")
             self.assertAlmostEqual(s["from"][1], fy + hd.EYE)
-        self.assertEqual(len(req["lamps"]), sum(sum(f.values()) for f in FIXTURES.values()))
+        self.assertEqual(len(req["lamps"]), sum(sum(f.values()) for f in FIXTURES.values())
+                         + sum(self.lamps(rid) for rid in FIXTURES))
         self.assertTrue(all(fy < lp["at"][1] < fy + 3.2 for lp in req["lamps"]))
 
     def test_the_balcony_loop_is_walked_at_the_game_speed(self):
