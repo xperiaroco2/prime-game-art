@@ -1,9 +1,9 @@
 # The House map's light kit (art #83a, docs/house.md "Light"): fixture types, the fixtures per room, the bake zones
 # and the Low and High presets. Taste data: the engineer may change any number here and regenerate (`house`).
-# Counts per room are inventory.md §8 of the house plan (191 fixtures); positions are generated (`place`) unless a
-# fixture lists `at` = [x, h, y] in plot metres. Every fixture is baked (LightmapGI, light_bake_mode Static); a type
-# with `glow = true` may also get the cheap real-time glow (unshadowed omni, distance fade) for the nearest
-# `glow_count` of the preset.
+# Counts per room are inventory.md §8 of the house plan (191 fixtures); positions are generated (`place`); a room's
+# `fixed` list adds practicals at given points, `at` = [x, h over the room's floor, y] in plot metres. Every fixture
+# is baked (LightmapGI, light_bake_mode Static); a type with `glow = true` may also get the cheap real-time glow
+# (unshadowed omni, distance fade) for the nearest `glow_count` of the preset.
 
 [colors]  # linear-ish Godot colours; c2 is the lab's lamp c2 (baked and real-time match, lab round 3)
 c2 = [1.0, 0.85, 0.68]
@@ -240,6 +240,8 @@ string_lights = 1
 [rooms.attic]
 bare_bulb = 5
 table_lamp = 2
+# the dormer's practical lamp at the kit's `lamp` socket (house_attic.dormers' "lamp"), over the climb-out stair (art #77)
+fixed = [{ name = "dormer", type = "bare_bulb", at = [35.0, 4.357, 41.8] }]
 
 # Bake zones: separate LightmapGI scenes (the spike asks whether they blend). `rooms` lists room ids; `levels` takes
 # every room of those levels. `texel_high` and `texel_low`: lightmap texels per metre at the High and Low presets.

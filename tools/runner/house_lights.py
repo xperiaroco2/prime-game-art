@@ -72,6 +72,11 @@ def validate(lights: dict, data: dict) -> list[str]:
             problems.append(f"rooms.{rid}: unknown colour {entry.get('color')!r}")
         if entry.get("place", "grid") not in ("grid", "perimeter"):
             problems.append(f"rooms.{rid}: place {entry.get('place')!r} is not grid or perimeter")
+        for fx in entry.get("fixed", []):  # a practical at a kit socket (the dormer's lamp, art #77)
+            if fx.get("type") not in types:
+                problems.append(f"rooms.{rid}: the fixed fixture {fx.get('name')} has an unknown type {fx.get('type')!r}")
+            elif rid in rooms and not H.inside(rooms[rid][1]["rect"], fx["at"][0], fx["at"][2]):
+                problems.append(f"rooms.{rid}: the fixed fixture {fx.get('name')} at {fx['at']} is outside the room")
     levels = {lv["level"] for lv in data["levels"]}
     seen: dict = {}
     for name, z in lights["zones"].items():
@@ -171,6 +176,14 @@ def plan(lights: dict, data: dict) -> list[dict]:
                     f["angle"] = spec["angle"]
                     f["aim"] = [f["x"], round(lv["floor_y"], 3), f["y"]]
                 out.append(f)
+        for fx in entry.get("fixed", []):  # at = [x, h over the room's floor, y]
+            spec = types[fx["type"]]
+            x, h, y = (float(v) for v in fx["at"])
+            out.append({"name": f"{rid}_{fx['type']}_{fx['name']}", "room": rid, "level": lv["level"],
+                        "zone": zone_of.get(rid), "type": fx["type"], "light": spec["light"], "x": round(x, 3),
+                        "h": round(lv["floor_y"] + h, 3), "y": round(y, 3),
+                        "color": colors[spec.get("color", entry.get("color", "c2"))], "energy": spec["energy"],
+                        "range": spec["range"], "glow": bool(spec.get("glow")), "bake": True})
     out += moon_spots(lights, data, zone_of)
     return out
 

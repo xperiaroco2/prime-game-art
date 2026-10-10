@@ -1,5 +1,6 @@
 """The House map's light kit (tools/runner/house_lights.py, layouts/house/lights.toml, docs/house.md "Light"): the data
-holds, the fixture counts are the plan's (inventory.md §8: 191, less the roof deck's 2 lanterns: 189, art #77), every
+holds, the fixture counts are the plan's (inventory.md §8: 191, less the roof deck's 2 lanterns, plus the dormer's lamp:
+190, art #77), every
 fixture lands in its room at its type's height, wall fixtures keep clear of doors, and the scenes carry baked lights. Pure Python."""
 
 from __future__ import annotations
@@ -25,11 +26,11 @@ class LightData(unittest.TestCase):
 
     def test_counts_match_the_plan(self):
         fixtures = [f for f in FIX if f["type"] != "moon"]
-        self.assertEqual(len(fixtures), 191 - 2)  # the free roof (#77): the deck's 2 lanterns went
+        self.assertEqual(len(fixtures), 191 - 2 + 1)  # the free roof (#77): the deck's 2 lanterns went, the dormer's lamp came
         by_type: dict = {}
         for f in fixtures:
             by_type[f["type"]] = by_type.get(f["type"], 0) + 1
-        self.assertEqual(by_type["bare_bulb"], 28)
+        self.assertEqual(by_type["bare_bulb"], 29)
         self.assertEqual(by_type["cage_lamp"], 22)
         self.assertEqual(by_type["path_light"], 28)
         self.assertEqual(by_type["chandelier"], 1)
@@ -46,8 +47,10 @@ class LightData(unittest.TestCase):
         bad["rooms"]["nowhere"] = {"bare_bulb": 1}
         bad["zones"]["ground"]["rooms"].append("storage")
         bad["types"]["lantern"]["mount"] = "roof"
+        bad["rooms"]["attic"]["fixed"] = [{"name": "out", "type": "bare_bulb", "at": [50.0, 2.0, 30.0]}]
         problems = "\n".join(L.validate(bad, DATA))
-        for text in ("unknown fixture type neon_sign", "rooms.nowhere", "storage is in zones", "mount 'roof'"):
+        for text in ("unknown fixture type neon_sign", "rooms.nowhere", "storage is in zones", "mount 'roof'",
+                     "fixed fixture out"):
             self.assertIn(text, problems)
 
 
@@ -58,7 +61,17 @@ class Placement(unittest.TestCase):
                 continue
             lv, room = ROOMS[f["room"]]
             self.assertTrue(H.inside(room["rect"], f["x"], f["y"]), f["name"])
-            self.assertAlmostEqual(f["h"], lv["floor_y"] + LIGHTS["types"][f["type"]]["h"], places=3, msg=f["name"])
+            fixed = {f"{f['room']}_{fx['type']}_{fx['name']}": fx["at"][1]
+                     for fx in LIGHTS["rooms"].get(f["room"], {}).get("fixed", [])}
+            h = fixed.get(f["name"], LIGHTS["types"][f["type"]]["h"])
+            self.assertAlmostEqual(f["h"], lv["floor_y"] + h, places=3, msg=f["name"])
+
+    def test_the_dormer_lamp_hangs_at_its_socket(self):
+        from runner import house_attic as A
+        (dm,) = A.dormers(DATA)
+        (f,) = [f for f in FIX if f["name"] == "attic_bare_bulb_dormer"]
+        lv, _ = ROOMS["attic"]
+        self.assertLess(math.dist((f["x"], f["h"] - lv["floor_y"], f["y"]), (dm["lamp"][0], dm["lamp"][2], dm["lamp"][1])), 0.01)
 
     def test_wall_fixtures_on_a_wall_clear_of_doors(self):
         for f in FIX:
@@ -127,7 +140,7 @@ class Scenes(unittest.TestCase):
             out = Path(tmp)
             s = L.write(LIGHTS, DATA, H.plan(DATA), FIX, out)
             self.assertEqual(sum(s["levels"].values()), len(FIX))
-            self.assertEqual(sum(z["fixtures"] for z in s["zones"].values()), 191 - 2)
+            self.assertEqual(sum(z["fixtures"] for z in s["zones"].values()), 191 - 2 + 1)
             text = (out / "zones" / "basement.tscn").read_text(encoding="utf-8")
             self.assertIn('[node name="storage_bare_bulb_01" type="OmniLight3D" parent="Lights"]', text)
             self.assertIn("light_bake_mode = 1", text)

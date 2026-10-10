@@ -68,6 +68,30 @@ class AtticTest(unittest.TestCase):
         probs = A.check(with_item(ATTIC, id="crate", at=[22.0, 27.5]), DATA)  # on the north chimney (21.5..22.5, 27..28)
         self.assertTrue(any("chimney_attic" in p and "overlap" in p for p in probs), probs)
 
+    def test_the_climb_out_stair_meets_the_sill_from_the_attic_floor(self) -> None:
+        (c,) = A.climbs(DATA)
+        (dm,) = A.dormers(DATA)
+        self.assertAlmostEqual(c["top_h"], dm["sill"], delta=A.CLIMB_TOL)
+        self.assertLess(math.dist(c["top"], dm["inner"]), 0.01)  # at the front wall's inner face, under the window
+        self.assertLessEqual(c["slope"], A.MAX_SLOPE)
+        self.assertGreaterEqual(c["width"], dm["opening"][0])
+        self.assertEqual(A.climb_problems(ATTIC, DATA), [])
+        lamp = dm["lamp"]  # the practical lamp hangs over the stair, above a climbing player's head
+        self.assertTrue(34.5 <= lamp[0] <= 35.5 and 39.85 <= lamp[1] <= 42.85)
+        t = (lamp[1] - 39.85) / 3.0
+        self.assertGreater(lamp[2], c["top_h"] * t + A.PLAYER_H + 0.3)
+
+    def test_a_stair_too_short_steep_or_walled_off_is_found(self) -> None:
+        data = copy.deepcopy(DATA)
+        data["pieces"]["stair_dormer"]["rise"] = 2.6
+        self.assertTrue(any("is not its sill" in p for p in A.climb_problems(ATTIC, data)))
+        data["pieces"]["stair_dormer"].update(rise=2.857, run=2.0)
+        attic = next(lv for lv in data["levels"] if lv["level"] == "attic")
+        next(fp for fp in attic["pieces"] if fp["piece"] == "stair_dormer")["at"][2] = 40.85  # its top stays put
+        self.assertTrue(any("over 45" in p for p in A.climb_problems(ATTIC, data)))
+        boxed = with_item(ATTIC, id="crate", at=[35.0, 39.2])
+        self.assertTrue(any("stair's foot" in p for p in A.climb_problems(boxed, DATA)))
+
     def test_overlaps_and_counts_are_found(self) -> None:
         problems = A.check(with_item(ATTIC, id="trunk", at=[22.1, 24.5]), DATA)
         self.assertTrue(any("overlap" in p for p in problems))

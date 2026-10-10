@@ -35,6 +35,9 @@ def run(args: argparse.Namespace) -> int:
     spots = rep["attic"]["spots"]
     common.say(f"attic: {rep['attic']['items']} items, {sum(s['reachable'] for s in spots)}/{len(spots)} hiding "
                f"spots reachable for a pick-up")
+    for c in rep["attic"]["climb"]:
+        common.say(f"attic: {c['id']} from its foot {c['foot']} (reached from the hatch) up {c['top_h']:.3f} m at "
+                   f"{c['slope_deg']} deg to {c['top']}, the dormer window's sill")
     for dm in rep["roof"]["dormers"]:
         common.say(f"roof: dormer {dm['id']}: window at {dm['window']}, its sill {dm['sill']:.2f} m over the attic floor, "
                    f"the roof's top outside {dm['roof_top_outside']:.2f} m; {rep['roof']['walkable_m2']} m2 of roof "

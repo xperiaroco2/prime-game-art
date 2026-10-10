@@ -83,3 +83,10 @@ x = 34
 z = [1, 8]
 piece = "dormer_gable"
 note = "the gable dormer the players climb out of onto the south slope (art #77): the 2 m panel column x 34..36 from 1 m up the slope (its front wall at y 43) to 8 m (y 36), where its ridge meets the main roof (the kit piece's 7 m); a 2 x 1 panel fills the column below and above it"
+
+[[pieces]]
+piece = "stair_dormer"
+room = "attic"
+at = [35.5, 0.0, 39.85]
+turn = -90
+note = "the climb-out stair (art #77): its foot at y 39.85, climbing south 3 m to the dormer window's sill (2.857 m) at the front wall's inner face (y 42.85), x 34.5..35.5 under the 1 m window; 43.6 deg, so the capsule walks it; lit by the dormer's lamp (lights.toml)"
