@@ -1,0 +1,199 @@
+# The House map's chill zone and photo gazebo props (art #81b, map #73): the dressing, fixtures and room-defining
+# pieces of the two zones that #82's task props (props/tasks.toml: the grill, the speaker, the pose screen) do not
+# cover. Built by `tools/run.sh props --spec props/zones.toml` (docs/props.md) with tools/blender/props_zone.py; every
+# value is a proposal for the engineer (look, sizes, paints) and can change without touching code.
+#
+# The fields are props/tasks.toml's. Zone props have chain "zone" and station "-" (no game marker). Light fixtures
+# carry their bulbs on the `emissive` material and name their light anchors as sockets (`light_<k>`), where the
+# assembly puts the baked light (inventory.md section 8). mount "hang" is a strand hung from two hooks: its pivot
+# is the middle of the hook line, the strand below it (y from -h to 0).
+
+kit = "kits/house.json"
+version = 1
+out_dir = "zones"   # <raw>/props/zones/v<version>
+label = "PROPS 81B"
+
+[budget_tris]
+hero = 4000      # look.md section 6
+room = 1500      # room-defining (400 to 1,500)
+dressing = 600   # dressing (150 to 600)
+fixture = 400    # light fixtures (100 to 400)
+
+[materials.surface_game]  # the props command's game surface (no zone prop has one)
+source = ""
+tile_m = 1.0
+lum_std = 0.0
+normal_strength = 0.0
+roughness = 0.9
+
+[materials.emissive]  # bulbs, candles and embers (look.md section 5, material 4): excluded from the bake as a source
+source = ""
+tile_m = 1.0
+lum_std = 0.0
+normal_strength = 0.0
+roughness = 0.6
+emission = "#ffd9ad"  # lamp c2 (1.0, 0.85, 0.68); the vertex colour carries each bulb's own tint
+emission_strength = 2.0
+
+[roles]
+wood_light = { material = "wood", hex = "#8b6a48" }
+wood_dark = { material = "wood", hex = "#4b3426" }
+steel = { material = "metal", hex = "#6a6f72" }
+steel_dark = { material = "metal", hex = "#34373a" }
+rubber = { material = "plaster", hex = "#1e1c1b" }
+plastic_dark = { material = "plaster", hex = "#2b2b2d" }
+stripe_mustard = { material = "plaster", hex = "#d0a02c" }   # look.md section 7: deckchair stripes, mustard and teal
+stripe_teal = { material = "plaster", hex = "#2f7d78" }
+stripe_cream = { material = "plaster", hex = "#e2d6bd" }
+cooler_red = { material = "plaster", hex = "#b8352b" }       # look.md section 7: a red cooler
+cooler_lid = { material = "plaster", hex = "#e3ddcf" }
+stone = { material = "concrete", hex = "#7a726a" }
+stone_dark = { material = "concrete", hex = "#58514b" }
+ash = { material = "concrete", hex = "#2f2b29" }
+log_bark = { material = "wood", hex = "#5a3b26" }
+log_end = { material = "wood", hex = "#a3815a" }
+bean_rust = { material = "plaster", hex = "#b5593a" }       # look.md: striped cushions #b5593a
+bean_seam = { material = "plaster", hex = "#8a3f28" }
+backdrop_ink = { material = "plaster", hex = "#1f2a48" }     # look.md: ink-blue #1f2a48
+backdrop_teal = { material = "plaster", hex = "#2f5f66" }
+backdrop_sun = { material = "plaster", hex = "#e0906c" }     # the sky's horizon colour
+backdrop_gold = { material = "plaster", hex = "#d0a02c" }
+cable_black = { material = "plaster", hex = "#1b1a19" }
+bulb = { material = "emissive", hex = "#ffd9ad" }            # lamp c2
+ember = { material = "emissive", hex = "#ff8a3d" }
+game_surface = { material = "surface_game", hex = "#2b3330" }
+
+# --- the chill zone ---------------------------------------------------------------------------------------------------
+[[props]]
+id = "deckchair"
+type = "deckchair"
+kind = "room"
+w = 0.6
+d = 1.4
+h = 0.9
+chain = "zone"
+station = "-"
+room = "chill_zone"
+count = 4
+mount = "floor"
+notes = "A wooden folding deckchair with a striped sling (mustard, teal, cream); the sitter faces +Z."
+
+[[props]]
+id = "fire_pit"
+type = "fire_pit"
+kind = "room"
+w = 1.2
+d = 1.2
+h = 0.4
+chain = "zone"
+station = "-"
+room = "chill_zone"
+count = 1
+mount = "floor"
+notes = "A ring of stones round glowing embers and a tepee of logs; socket light_0 is the fire's light."
+
+[[props]]
+id = "bean_bag"
+type = "bean_bag"
+kind = "dressing"
+w = 0.9
+d = 0.9
+h = 0.6
+chain = "zone"
+station = "-"
+room = "chill_zone"
+count = 3
+mount = "floor"
+
+[[props]]
+id = "cooler_box"
+type = "cooler"
+kind = "dressing"
+w = 0.6
+d = 0.4
+h = 0.4
+chain = "zone"
+station = "-"
+room = "chill_zone"
+count = 2
+mount = "floor"
+
+[[props]]
+id = "string_lights_set"
+type = "string_lights_poles"
+kind = "fixture"
+w = 5.36
+d = 0.36
+h = 2.7
+span = 4.92
+sag = 0.35
+bulbs = 10
+chain = "zone"
+station = "-"
+room = "chill_zone"
+count = 3
+mount = "floor"
+plan_size = [5.0, 0.05, 0.1]
+notes = "A 5 m strand between two weighted poles (the zone has no walls to hang it from); sockets light_0..2."
+
+[[props]]
+id = "lantern"
+type = "lantern"
+kind = "fixture"
+w = 0.2
+d = 0.2
+h = 0.3
+chain = "zone"
+station = "-"
+room = "chill_zone, photo_zone"
+count = 12
+mount = "floor"
+notes = "A metal lantern with glass panes round a candle; stands on the ground, a table or a deck; socket light_0."
+
+# --- the photo gazebo ---------------------------------------------------------------------------------------------------
+[[props]]
+id = "photo_backdrop"
+type = "backdrop"
+kind = "room"
+w = 3.0
+d = 0.6
+h = 2.4
+chain = "zone"
+station = "-"
+room = "photo_zone"
+count = 1
+mount = "floor"
+plan_size = [3.0, 0.1, 2.4]
+notes = "A painted cloth (ink blue, a low sun, gold and teal bands) on two stands with a crossbar; the feet add depth."
+
+[[props]]
+id = "tripod_camera"
+type = "tripod_camera"
+kind = "dressing"
+w = 0.42
+d = 0.48
+h = 1.5
+plan_size = [0.5, 0.5, 1.5]
+chain = "zone"
+station = "-"
+room = "photo_zone"
+count = 1
+mount = "floor"
+notes = "A camera on a tripod; the lens faces +Z (towards the photo spot). Three legs make the footprint 0.42 x 0.48 m."
+
+[[props]]
+id = "string_lights_gazebo"
+type = "string_lights_hang"
+kind = "fixture"
+w = 2.54
+d = 0.06
+h = 0.3
+span = 2.54
+sag = 0.22
+bulbs = 6
+chain = "zone"
+station = "-"
+room = "photo_zone"
+count = 4
+mount = "hang"
+notes = "A strand between two of the gazebo's posts under the eaves (kit gazebo: posts 2.68 m apart, 0.14 m thick)."
