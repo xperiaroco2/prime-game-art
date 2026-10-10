@@ -71,6 +71,13 @@ class HairFlags(unittest.TestCase):
         self.assertEqual(K.hair_flags("hair_m_beach")["ears"], "hide")
         self.assertEqual(K.hair_flags("hair_w_formal_updo")["ears"], "tuck")
         self.assertEqual(K.hair_flags("hair_m_farmer_buzz")["ears"], "free")
+        # measured on the repo's head (faces --kit-check, art #42 part B): the hair over the tucked or free ear
+        self.assertEqual(K.hair_flags("hair_m_hoodie")["ears"], "tuck")
+        self.assertEqual(K.hair_flags("hair_m_casual")["ears"], "hide")
+        self.assertEqual(K.hair_flags("hair_m_king_long")["ears"], "hide")
+        for iid, v in K.HAIR_ITEMS.items():
+            if "lab_ears_free" in v:
+                self.assertNotEqual(v["lab_ears_free"], v["ears_free"], iid)
         self.assertEqual(K.hair_flags("hair_m_farmer_buzz", "headwear_m_swat_helmet")["ears"], "hide")
         self.assertEqual(K.hair_flags(None, "no_such_item"), {"ears": "free", "brow_tuck": True})
         self.assertTrue(K.hair_flags("hair_w_witch")["brow_tuck"])
@@ -133,8 +140,11 @@ class LabParity(unittest.TestCase):
         def norm(v):
             return json.loads(json.dumps(v, default=sorted, sort_keys=True).replace("true", "true"))
 
+        # the repo's ear flags where its heads measure otherwise (lab_ears_free in faces/clay_hair.json) compare as the lab's
+        lab_rules = {iid: tuple(v.get("lab_ears_free", v["ears_free"])) for iid, v in K.HAIR_ITEMS.items()}
+        as_lab = {"EAR_RULES": lab_rules, "COVERS_EARS": {k for k, (f, b) in lab_rules.items() if not f and not b}}
         for n in names:
-            a, b = self.lab[n], getattr(K, n)
+            a, b = self.lab[n], as_lab.get(n, getattr(K, n))
             if n == "WEIGHTS":
                 a = {c: {str(k): w for k, w in t.items()} for c, t in a.items()}
                 b = {c: {str(k): w for k, w in t.items()} for c, t in b.items()}

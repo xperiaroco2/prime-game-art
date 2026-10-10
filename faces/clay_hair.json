@@ -1,6 +1,6 @@
 {
  "schema": "prime-game-art/faces/clay-hair/1",
- "what": "Per hair and headwear item (catalogue ids): the face kit's flags, which the game applies from the worn items. ears_free: [ears free where they are, ears free when tucked] measured on the lab's one head (face_sheets.py --only ears); brow_tuck: the brows are pressed behind the item's hanging locks (docs/faces.md, \"The clay face kit\").",
+ "what": "Per hair and headwear item (catalogue ids): the face kit's flags, which the game applies from the worn items. ears_free: [ears free where they are, ears free when tucked] measured on the lab's one head (face_sheets.py --only ears); brow_tuck: the brows are pressed behind the item's hanging locks (docs/faces.md, \"The clay face kit\"). lab_ears_free: the lab's value where the repo's heads measure otherwise (faces --kit-check on the recipe's heads, art #42 part B): the repo value wins.",
  "items": {
   "hair_m_adventurer": {
    "kind": "hair",
@@ -54,6 +54,10 @@
    ],
    "ears_free": [
     false,
+    false
+   ],
+   "lab_ears_free": [
+    false,
     true
    ],
    "brow_tuck": true
@@ -81,6 +85,10 @@
     "Hair"
    ],
    "ears_free": [
+    false,
+    true
+   ],
+   "lab_ears_free": [
     true,
     true
    ],
@@ -95,6 +103,10 @@
     "Hair_White"
    ],
    "ears_free": [
+    false,
+    false
+   ],
+   "lab_ears_free": [
     false,
     true
    ],
