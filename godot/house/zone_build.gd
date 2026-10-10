@@ -5,7 +5,7 @@ extends SceneTree
 ## imported UV2 scaled from 5 texels/m), meshes without UV2 Dynamic (lit by the probes), the zone's lights, a
 ## LightmapGI with bake=<json>'s settings and a night WorldEnvironment; saved as res://import/house/bake/<zone>_<tag>.scn.
 ## The level above (group Above, the zone's ceiling slabs) stays in the bake as occluders at a tenth of the texels.
-## #83: the Above pieces that are floors (floor_*, ceiling_*, Cover) bake at the full texel (they are the zone's
+## #83: the Above pieces that are floors (floor_*, ceiling_*) bake at the full texel (they are the zone's
 ## ceiling; at a tenth they gave one texel per tile: per-tile seams and no lamp pools); above=0.1 keeps #83a's rule.
 ## Overrides of bake.json: denoiser=0|1 energy=<f>; merge=1 welds each room level's floor tiles into one mesh and
 ## unwraps it (lightmap_unwrap) so the floor has one lightmap island instead of one per tile and face.
@@ -15,8 +15,6 @@ func _piece(n: Node) -> String:
 	while n != null:
 		if n.scene_file_path.begins_with("res://import/kit_") or n.scene_file_path.begins_with("res://import/prop_"):
 			return n.scene_file_path.get_file().get_basename()
-		if n.name.begins_with("Cover"):
-			return "kit_cover"
 		n = n.get_parent()
 	return ""
 
