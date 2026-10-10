@@ -274,6 +274,12 @@ m3 got a wide smeared nose. The step is off (`adapter.FLATTEN_PACK_NOSE = False`
 script sets the flag, and may change `NOSE_FLATTEN`, before the build; the report then carries `pack_nose_flattened`).
 Nothing about a cast face changes unless a brief names it.
 
+**The kit sits on the skin alone.** A recipe's `as_skin` pieces (m4's Casual stubble "Skin_Darker", kept for the jaw)
+stay on the head, but the kit seats and culls against a copy of the head without them (`heads.skin_only_copy` in
+`clayface/adapter.build`). The stubble is not welded to the skin (4 to 14 mm gaps), so the kit's nearest-point inside
+test took it for the outside surface and culled the fronts of m4's eye whites and nose (a see-through "glasses" look,
+art #42, 2026-10-10).
+
 **Whole heads and own extras.** The recipe validation refuses a head that drops part of its catalogue skull (m4's jaw)
 and an extra that is not a whole item of the character's body type (m1's blue strip), and the cast build measures each
 character's jaw on its geometry and fails on one cut open or covered (`um/jaw.py`): `docs/assembly.md`, "The
