@@ -53,9 +53,10 @@ note = "the kit's hatch tile centres its hole at (28, 29); the doc says (28, 28.
 [[stairs]]
 id = "hatch_ladder"
 piece = "ladder_attic"
-rect = [27.65, 28.3, 0.7, 1.38]
+rect = [27.65, 28.32, 0.7, 1.38]
 y = 3.2
-climb = "N"
+climb = "S"
+note = "Climbs south (art #76): its foot on the landing at y 28.3, the top on the hole's south edge (29.7); climbing north put the foot at y 29.7, 0.3 m from the stairwell (y 30), where no one can stand. The same direction as the pantry stairs under it."
 
 [[roofs]]
 id = "attic_roof"

@@ -218,3 +218,17 @@ rect = [38, 15, 2, 6]
 y = 0.0
 climb = "S"
 note = "Q6 default: a straight flight north of the balcony, its foot on the yard at y15."
+
+[[loops]]
+id = "balcony_loop"
+title = "Loop: house, second floor, terrace"
+speed = 4.5
+doc_m = 46
+doc_s = 10.2
+note = "The design doc's route (section 7): dining room, stairs, landing, balcony, external stairs, terrace, dining room; walked by walk.gd at the game's 4.5 m/s (art #76). Points are [x, height, y] in the doc's metres, heights absolute; it starts and ends inside the terrace door and passes south of the dining set (#75b). With the Q6 default the external stairs land north on the yard, so the loop steps off its foot and goes back round the flight's west side, under the balcony (walk3 jammed on the foot's east corner, walk4 on the terrace's north-east planter pot)."
+points = [
+  [36, 0, 25], [33.2, 0, 25], [32, 0, 29], [32, 0, 31], [31, 0, 35], [30, 0, 35],
+  [27, 1.6, 35], [26.8, 1.6, 35], [26.8, 1.6, 33], [27, 1.6, 33], [30, 3.2, 33], [31, 3.2, 33],
+  [32, 3.2, 25], [32, 3.2, 22.6], [39, 3.2, 22.6], [39, 3.2, 21],
+  [39, 0, 14.2], [36.9, 0, 14.2], [36.9, 0, 21.8], [36, 0, 22.8], [36, 0, 25],
+]

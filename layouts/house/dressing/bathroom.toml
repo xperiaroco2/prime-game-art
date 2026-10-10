@@ -1,0 +1,33 @@
+# The bathroom's dressing (art #76, docs/house.md "Dressing"): the props and light fixtures of one room, as data.
+# at = [x, h, z]: room-local metres like the room's stations (x east, h above the floor, z south from the room's
+# north-west corner) at the prop's pivot (floor: the footprint's centre; wall: the back's bottom centre on the wall's
+# face; ceiling: the top's centre). face = the way the prop's front (+Z) looks: N, E, S or W (or yaw = degrees).
+# Ids are the dressing library's (props/library.toml, #87) and the task props' (props/tasks.toml, #82); an id with
+# no GLB yet is generated as a named, sized placeholder box. Positions are the engineer's to change.
+room = "bathroom"
+
+[[props]]
+id = "bathtub"
+at = [4.0, 0, 3.525]
+face = "N"
+
+[[props]]
+id = "toilet"
+at = [6.5, 0, 0.45]
+
+[[props]]
+id = "basin"
+at = [4.0, 0, 0.325]
+
+[[props]]
+id = "towel_rack"
+at = [1.5, 0.6, 3.9]
+face = "N"
+
+[[fixtures]]
+id = "wall_sconce"
+at = [3.45, 1.4, 0.1]
+
+[[fixtures]]
+id = "wall_sconce"
+at = [4.55, 1.4, 0.1]
