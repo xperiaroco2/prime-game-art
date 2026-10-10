@@ -91,7 +91,10 @@ def brow_in_white(face):
 
 
 BROW_SEEN_MIN = 0.25  # art #42 round 3: at least this share of each brow's vertices seen from the front
-BROW_EYE_CLEAR_MIN_MM = -3.0  # ... and its lowest front point over an eye at most this far below the lid's top
+# ... and its lowest front point over an eye at most this far below the lid's top: the angry brows' inner ends dip to
+# -10 mm over big eyes by design (the lab's look; kit-check 2026-10-10, seen 0.46+); w3's brows sunk under the formal
+# updo were -17.4 mm (-2.5 mm once fixed)
+BROW_EYE_CLEAR_MIN_MM = -12.0
 
 
 def brow_visibility(face, occluders):

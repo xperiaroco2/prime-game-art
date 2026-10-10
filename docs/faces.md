@@ -251,7 +251,8 @@ lowers a brow strand only while the strand's top stays within `brows.BROW_STRAND
 0.5, which pushed w3's whole brow 17 mm into the lids). `checks.brow_visibility` measures per side the share of brow
 vertices seen from straight in front (no head, hair, eye, lid or nose in the way; at least `BROW_SEEN_MIN` 0.25) and
 the brow-to-eye clearance (the lowest front brow point over an eye above that eye's resting upper lid top; above
-`BROW_EYE_CLEAR_MIN_MM` -3 mm). The cast's `build_report.json` holds it under `face_kit.brows.visibility`, and the
+`BROW_EYE_CLEAR_MIN_MM` -12 mm: the angry brows' inner ends dip to -10 mm over big eyes by design, w3's sunk brows
+were -17.4 mm). The cast's `build_report.json` holds it under `face_kit.brows.visibility`, and the
 many-face check fails any face that misses it.
 
 The lab measured `ears_free` on its one head; the repo's heads measure some hairs otherwise (`faces --kit-check` on
@@ -272,7 +273,8 @@ the check's least nose clearance (0.91 mm on m1, droopy with the long nose) is t
 **The noses.** Three styles (`faces/clay_kit.json` "noses"; the engineer's three types, art #42 round 3): `bulb`
 (BALL: the ball, the base nose, on every face of the cast, pick weight 1.6), `long` (BEAN: the lab's bean that sits on
 the face and droops down, at scale 0.8, weight 1.0) and `pinocchio` (a closed clay capsule pointing forward and about
-10 degrees down, tapering 1.15 to 0.72 to a rounded tip, seated low over the mouth, weight 0.5). The old "Pinocchio"
+10 degrees down, tapering 1.15 to 0.72 to a rounded tip, seated low over the mouth, weight 0.5; where its top
+would touch an eye or a lid, `nose.clear_strict_nose` squashes it vertically about its lowest point). The old "Pinocchio"
 of PR #102 was the pack head's own nose under the kit's ball; the bean head replaced it, so it is a real shape now.
 `kit.STRICT_NOSES` (the pinocchio) must also clear the eyes and lids in `checks.collisions`, and `meta.nose.reach_mm`
 records how far it reaches. PR #106's forward `cone` is gone (art #42, 2026-10-10): it treated the symptom of the
