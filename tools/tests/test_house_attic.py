@@ -129,11 +129,11 @@ class RoofTest(unittest.TestCase):
     def test_the_open_casement_keeps_clear_of_the_climb_out(self) -> None:
         (dm,) = A.dormers(DATA)
         x0, x1 = dm["window"][0] - dm["opening"][0] / 2, dm["window"][0] + dm["opening"][0] / 2
-        hinge = dm["leaf"][0] if abs(dm["leaf"][0][0] - x1) < 0.1 else dm["leaf"][-1]
-        self.assertAlmostEqual(hinge[0], x1, delta=0.05)  # the world-east jamb (docs/house.md)
+        self.assertTrue(all(x <= x0 + 0.05 for x, _ in dm["leaf"]))  # on the world-west jamb, away from the Lookout
+        self.assertTrue(any(abs(x - x0) < 0.05 and abs(y - dm["window"][1]) < 0.05 for x, y in dm["leaf"]))
         lane = (dm["window"][0] - A.PLAYER_R, dm["window"][0] + A.PLAYER_R)  # the crouched capsule straight out
         self.assertTrue(all(not lane[0] < x < lane[1] for x, _ in dm["leaf"]))
-        self.assertTrue(all(x >= x0 for x, _ in dm["leaf"]))
+        self.assertTrue(all(x < x1 for x, _ in dm["leaf"]))
 
     def test_the_whole_roof_is_walkable_from_the_dormer(self) -> None:
         seen, cell = A.walkable(ROOF, DATA)
@@ -209,6 +209,30 @@ class ShootTest(unittest.TestCase):
         self.assertEqual({p["id"] for p in req["pieces"] if p["zone"] == "yard"}, set(ROOF["lookout"]["see"]))
         self.assertIn("kit_dormer_gable", set(staged) | {f"kit_{m}" for m in missing})
         self.assertTrue(all(n.startswith(("kit_", "prop_")) for n in staged))
+
+        self.assertEqual([w["name"] for w in req["walks"]], ["climb_out"])
+
+    def test_the_climb_out_walk_crouches_through_the_window(self) -> None:
+        from runner.commands import attic as cmd
+
+        (w,) = cmd.walks(DATA)
+        (dm,) = A.dormers(DATA)
+        (c,) = A.climbs(DATA)
+        heights = [leg["height"] for leg in w["legs"]]
+        self.assertEqual(heights, [A.PLAYER_H, A.CROUCH_H, A.PLAYER_H, A.PLAYER_H, A.CROUCH_H, A.PLAYER_H])
+        self.assertEqual(w["start"], w["legs"][-1]["points"][-1])  # back at the stair's foot on the attic floor
+        self.assertAlmostEqual(w["start"][1], cmd.F)
+        for k in (1, 4):  # the crouched legs cross the window at its sill
+            win = [p for p in w["legs"][k]["points"] if abs(p[2] - dm["window"][1]) < 1e-6]
+            self.assertEqual(win, [[35.0, round(cmd.F + dm["sill"], 3), 43.0]])
+        self.assertLessEqual(w["legs"][0]["points"][-1][1] - cmd.F + A.PLAYER_H, dm["sill"] + 1.4)  # stands under
+        look = w["legs"][2]["points"][-1]
+        self.assertEqual([look[0], look[2]], ROOF["lookout"]["station"])
+        for leg in w["legs"][2:4]:  # standing on the slope: on the roof's top, clear of the casement's leaf
+            for x, h, y in leg["points"]:
+                self.assertAlmostEqual(h, round(cmd.F + A.roof_top(DATA, y), 3))
+                self.assertTrue(all(math.dist((x, y), q) > A.PLAYER_R for q in dm["leaf"]))
+        self.assertLess(c["top_h"], 3.0)
 
 
 if __name__ == "__main__":

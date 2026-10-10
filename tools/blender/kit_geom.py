@@ -942,6 +942,7 @@ def dormer_dims(p: dict, spec: dict) -> dict:
 
 DORMER_WALL, DORMER_CHEEK, DORMER_SLAB, DORMER_OVER = 0.15, 0.1, 0.1, 0.1
 DORMER_CASEMENT_DEG = 95.0  # the casement's leaf swung just past square to the front: clear of the crouched climb-out
+# (it hinges on the opening's local +x jamb, the world-west one in the House's south dormer: away from the Lookout)
 
 
 def _rot_box(m: Mesh, pc: Piece, hinge, ang: float, lo, hi, role: str, collide: bool = False) -> None:
@@ -971,7 +972,7 @@ def build_dormer(pc: Piece, p: dict, spec: dict) -> None:
     p["z"] (house_layout.dormer_cut). Frame as build_pitched's: x along the eave, z up the slope from the dormer's
     front, the pivot on the knee wall's top line lifted r * z0 (the main roof's underside at u + r z). A plastered
     front wall with the window opening (p["window"] w x h, the sill p["sill"] over the roof's top) and a white
-    casement open DORMER_CASEMENT_DEG outward on the west jamb, a boarded front gable, plastered cheeks down to the main roof, the
+    casement open DORMER_CASEMENT_DEG outward on the +x jamb, a boarded front gable, plastered cheeks down to the main roof, the
     dormer's own roof (rise p["rise"] per metre) whose valleys meet the main roof, and the main roof's slab of the
     column behind (from ze to the far end). Socket "lamp": the practical lamp under the dormer's ridge."""
     dd = dormer_dims(p, spec)
@@ -1015,7 +1016,7 @@ def build_dormer(pc: Piece, p: dict, spec: dict) -> None:
     # the sills and the open casement
     m.box((wx0 - 0.05, sill - 0.03, -0.08), (wx1 + 0.05, sill, 0.0), "metal")
     m.box((wx0, sill - 0.03, t), (wx1, sill, t + 0.15), "trim")
-    hinge, ang, fw, ft = (wx0, sill, 0.0), DORMER_CASEMENT_DEG, 0.05, 0.05
+    hinge, ang, fw, ft = (wx1, sill, 0.0), 180.0 - DORMER_CASEMENT_DEG, 0.05, 0.05  # the leaf: from wx1 out, away
     lw, lh = wx1 - wx0, head - sill
     for lo, hi in (((0, 0, -ft), (fw, lh, 0)), ((lw - fw, 0, -ft), (lw, lh, 0)), ((fw, 0, -ft), (lw - fw, fw, 0)),
                    ((fw, lh - fw, -ft), (lw - fw, lh, 0))):

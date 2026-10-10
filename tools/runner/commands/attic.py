@@ -7,6 +7,7 @@ free roof at dusk in an off-screen Godot window through godot/house/zones.gd."""
 from __future__ import annotations
 
 import argparse
+import math
 import json
 import tomllib
 from pathlib import Path
@@ -95,6 +96,52 @@ VIEWS = [
      [40.0, 40.0, _top(40.0) + 1.0], 75.0],
     ["ridge", "from the ridge at 1.6 m to the yard", [30.0, 34.2, _top(34.2) + 1.6], [30.0, 56.0, 0.0], 75.0],
 ]
+CROUCH_BACK = 0.6  # the climb crouches this far (plan) before the stair's top, under the dormer's roof
+OUT_M = 0.8  # the crouched capsule's first stop out of the window (plan, from the window)
+ASIDE_M = 1.8  # then sideways along the slope, clear of the dormer's front, toward the Lookout
+CROUCH_SPEED = 1.5  # m/s; standing 3 (house/walk.gd)
+
+
+def walks(data: dict) -> list[dict]:
+    """The climb-out as a Godot capsule walk (zones.gd `walks`, Godot [x, h, z]): from each dormer's stair foot the
+    standing capsule (house_attic.PLAYER_H) walks up the stair to CROUCH_BACK before its top, crouches
+    (house_attic.CROUCH_H) through the window onto the slope, stands up there, walks to the Lookout station and back,
+    crouches back in and stands to walk down to the stair's foot. It steps up ledges as the game's controller does
+    (house_attic.STEP_H): the sill stands 0.15 m over the roof outside."""
+    out = []
+    cs = house_attic.climbs(data)
+    station = house_attic.load("attic")["roof"]["lookout"]["station"]
+    for dm in house_attic.dormers(data):
+        c = next(c for c in cs if math.dist(c["top"], dm["inner"]) <= 0.2)
+        dx, dy = (c["top"][0] - c["foot"][0], c["top"][1] - c["foot"][1])
+        run = math.hypot(dx, dy) - house_attic.CLIMB_FOOT
+        ux, uy = dx / (run + house_attic.CLIMB_FOOT), dy / (run + house_attic.CLIMB_FOOT)
+        crouch = (c["top"][0] - ux * CROUCH_BACK, c["top"][1] - uy * CROUCH_BACK)
+        ox, oy = (dm["out"][0] - dm["window"][0], dm["out"][1] - dm["window"][1])
+        n = math.hypot(ox, oy)
+        sill_out = (dm["window"][0] + ox / n * OUT_M, dm["window"][1] + oy / n * OUT_M)
+        side = 1.0 if (station[0] - sill_out[0]) * -oy / n + (station[1] - sill_out[1]) * ox / n >= 0 else -1.0
+        aside = (sill_out[0] - side * oy / n * ASIDE_M, sill_out[1] + side * ox / n * ASIDE_M)
+
+        def g(p, h):
+            return [round(p[0], 3), round(F + h, 3), round(p[1], 3)]
+        hc = c["top_h"] * (run - CROUCH_BACK) / run
+        stair = [g(c["foot"], 0.0), g(crouch, hc)]
+        roof = [g(sill_out, house_attic.roof_top(data, sill_out[1])), g(aside, house_attic.roof_top(data, aside[1]))]
+        look = g(station, house_attic.roof_top(data, station[1]))
+        P, C, R = house_attic.PLAYER_H, house_attic.CROUCH_H, house_attic.PLAYER_R
+        out.append({"name": dm["id"], "radius": R, "step": house_attic.STEP_H, "start": stair[0], "legs": [
+            {"name": "up the stair, standing", "height": P, "points": stair[1:]},
+            {"name": "crouched out of the window", "height": C, "speed": CROUCH_SPEED,
+             "points": [g(c["top"], c["top_h"]), g(dm["window"], dm["sill"]), roof[0]]},
+            {"name": "stand on the slope, to the Lookout", "height": P, "points": [roof[1], look]},
+            {"name": "back to the window, standing", "height": P, "points": roof[::-1]},
+            {"name": "crouched back in", "height": C, "speed": CROUCH_SPEED,
+             "points": [g(dm["window"], dm["sill"]), g(c["top"], c["top_h"]), stair[1]]},
+            {"name": "down the stair, standing", "height": P, "points": stair[:1]}]})
+    return out
+
+
 LOOKOUT_FOV = 70.0  # wide enough for both openings (the wicket due south, the gates south-east)
 
 
@@ -150,7 +197,8 @@ def shoot_request(kits: list[Path], scenes: Path = house_cmd.DEFAULT_OUT) -> tup
     pack = {"textures": (kit_dir / "textures").as_posix(), "roughness": [m["roughness"] for m in mats],
             "normal_strength": [m["normal_strength"] for m in mats]} if len(mats) == 3 else {}
     lamps = [[x, F + h, y] for x, y, h in LAMPS]
-    return {"pieces": pieces, "views": views, "pack": pack, "lamps": lamps, "lamp": LAMP}, staged, missing
+    return {"pieces": pieces, "views": views, "pack": pack, "lamps": lamps, "lamp": LAMP,
+            "walks": walks(data)}, staged, missing
 
 
 def shoot(folder: Path, kits: list[Path]) -> int:

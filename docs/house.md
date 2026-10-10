@@ -431,9 +431,10 @@ lies on the roof). The light fixtures are #83a's. The rooms' dressing (`<room>.t
   pass it with a margin: at least 0.9 m wide (`CLEAR_MARGIN` 0.05 a side) and 1.3 m high (`CLEAR_H`); the 1.0 x 1.4 m
   window does. The sill stands at most 0.3 m (`STEP_H`) over the roof outside (0.15 m) and over the stair's top
   landing inside (0 m). The standing capsule stays the game's 1.8 m (base_mode.tres).
-- **The casement** hinges on the window's world-east jamb (x 35.5) and stands open 95 deg outward
-  (`kit_geom.DORMER_CASEMENT_DEG`), swung just past square to the front toward the south-east, so its leaf keeps clear of
-  the crouched capsule's lane straight out (`test_the_open_casement_keeps_clear_of_the_climb_out`).
+- **The casement** hinges on the window's world-west jamb (x 34.5) and stands open 95 deg outward
+  (`kit_geom.DORMER_CASEMENT_DEG`), swung just past square to the front toward the south-west: its leaf keeps clear of
+  the crouched capsule's lane straight out and of the way east to the Lookout
+  (`test_the_open_casement_keeps_clear_of_the_climb_out`). Until #111 it hinged on the east jamb, across that way.
 - The stair's 43.6 deg leaves 1.4 deg under the floor limit: a steeper stair fails the check.
 - **The lookout** (`[roof.lookout]`): from each eye 1.6 m over the roof's top, the share of sample points on the plot's
   wicket and gates (`plot.toml`'s fence openings) seen over the roof and its props, and every window of the house in

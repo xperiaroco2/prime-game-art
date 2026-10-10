@@ -126,8 +126,15 @@ def render(req: dict, staged: dict[str, Path], folder: Path, path: Path, label: 
         common.say(f"  {name}: {info['draw_calls']} draw calls, {info['primitives']} primitives")
     common.say(f"  {result['instances']} instances, {result['lights']} lights, {result['proxies']} proxies; "
                f"sheet {(folder / 'sheet.png').as_posix()}")
-    if errors:
-        common.bad(f"{label}: {len(errors)} import errors")
+    walks = result.get("walks", {})
+    for name, w in walks.items():
+        for leg in w["legs"]:
+            note = ("" if leg["fits"] else ", NO ROOM to take this height") + ("" if leg["arrived"] else ", NOT ARRIVED")
+            common.say(f"  walk {name}: {leg['name']} ({leg['height_m']:g} m capsule): {leg['reached']}/{leg['of']} "
+                       f"points, end {leg['end']}, {leg['seconds']} s{note}")
+    failed = sorted(n for n, w in walks.items() if not w["arrived"])
+    if errors or failed:
+        common.bad(f"{label}: {len(errors)} import errors; walks failed: {', '.join(failed) or 'none'}")
         return 1
-    common.ok(f"{label}: {len(result['shots'])} frames at dusk")
+    common.ok(f"{label}: {len(result['shots'])} frames at dusk" + (f"; {len(walks)} capsule walk(s) arrived" if walks else ""))
     return 0

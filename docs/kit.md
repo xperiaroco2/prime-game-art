@@ -114,9 +114,9 @@ The engineer's picks of 2026-10-10: a free roof of clay pantiles with one gable 
   `concrete`, 0.17 m each side), its feet sunk into the bed.
 - **Dormer** (`dormer_gable`, type `dormer`, budget `dormer` 1500): replaces a 2 m panel column over 7 m of run
   (`house_layout.dormer_cut`). A plastered front with the window (`window` w x h, `sill` over the roof's top), a white
-  casement open 95 deg outward on the world-east jamb (`DORMER_CASEMENT_DEG`: clear of the
-  crouched climb-out), a boarded gable, plastered cheeks, its own pantile-coloured roof (`rise` per metre)
-  and the main roof's slab behind it; socket `lamp` under its ridge. `reach_m` (1.0) is what may stand out before the
+  casement open 95 deg outward on the opening's local +x jamb (`DORMER_CASEMENT_DEG`; the world-west one
+  in the House: clear of the crouched climb-out and the way to the Lookout), a boarded gable, plastered cheeks, its own pantile-coloured roof (`rise` per metre)
+  and the main roof's slab behind it; socket `lamp` under its ridge. `reach_m` (1.05: the casement at 95 deg) is what may stand out before the
   span's z0 and beside its x span (the overhangs and the open casement); the span check allows it.
 - **Climb-out stair** (`stair_dormer`, type `ladder`): `build_ladder` takes optional `steps`, `tread` (each tread's
   depth, centred on the collision ramp's line) and `handrail` (a rail 0.9 m over each stringer); the attic ladder keeps

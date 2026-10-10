@@ -178,8 +178,8 @@ def dormers(data: dict) -> list[dict]:
 
             def world(lx, lz, p=p, ax=ax, az=az):
                 return (p["x"] + ax[0] * lx + az[0] * lz, p["y"] + ax[1] * lx + az[1] * lz)
-            a = math.radians(kg.DORMER_CASEMENT_DEG)  # the leaf: from its jamb at local x (W - ww) / 2 out towards local -Z
-            hx = (W - ww) / 2
+            a = math.radians(180.0 - kg.DORMER_CASEMENT_DEG)  # the leaf: from its jamb at local x (W + ww) / 2 out
+            hx = (W + ww) / 2  # towards local -Z, swung away from the opening (kit_geom.build_dormer)
             tip = (hx + ww * math.cos(a), -ww * math.sin(a))
             n = (0.03 * math.sin(a), 0.03 * math.cos(a))
             leaf = [world(hx - n[0], -n[1]), world(tip[0] - n[0], tip[1] - n[1]),
