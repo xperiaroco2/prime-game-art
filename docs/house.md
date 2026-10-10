@@ -108,7 +108,10 @@ kitchen's order board from 4 m in front (`kitchen_order_board.png`); and the pac
 #a8855e, white, cyan, purple, terracotta, mustard, look.md section 4) as 0.25 m cubes on the assembly island
 (`swatches.png`), each front face sampled and logged as `swatch <name>: #paint (L*, C*, h) reads #seen (...; hue
 shift)`. `rooms.png` (1280 px) holds the plan, the order board, the swatches and the room shots; the log and
-`walk.json` `rooms` give per room the view's draw calls and primitives and the dressing's meshes and triangles.
+`walk.json` `rooms` give per room the view's draw calls and primitives, the dressing's share of those draw calls (the
+view drawn again with every room's Dressing group hidden: `dressing_draw_calls`, a difference of two frames, so a
+shadow-map refresh can make it noisy or even negative in a near-empty view) and the room's dressing meshes and
+triangles.
 
 Defaults used (questions.md): Q9 B, the leaves of the front and terrace doors stand open against a jamb as
 placeholder boxes without collision until a leaf prop exists; Q11 B, a wall paint per room ("Wall paint" below);
@@ -143,9 +146,20 @@ is the same on every machine; `tools/tests/test_house_clutter.py` fails when a f
 
 Every surface, wall and floor item is non-solid (`collision = "none"`, the library's `clutter` class, docs/props.md),
 so the capsule's walk and the overlap rule do not see it; only the mid layer is solid, and the room checks hold with
-it. The generator runs the room check once per mid-size candidate: `house --clutter` takes about a minute. Budget (proposed, #104): the clutter adds at most 60 meshes and 15k
-triangles to a room; the per-room draw calls of `walk.json` are the shell's (one instance per kit piece, 94 to 1,640
-per view before any clutter), so "150 per view" needs the shell merged (MultiMesh or merged static walls), a follow-up.
+it. The generator runs the room check once per mid-size candidate: `house --clutter` takes about a minute.
+
+Budget (proposed, #104): the clutter adds at most 60 meshes and 15k triangles to a room (met: at most 27 meshes, the kitchen and
+the storage, and 4.9k triangles, the kitchen). Brief #104's other check, "under 150 draw calls per room view", is not met and cannot be
+met by trimming the clutter. Measured 2026-10-10, before (main's dressing) and after, with the same code and paint:
+- Without any dressing the views already draw 44 to 935 calls on the walked floors and up to 3,034 in the basement:
+  one instance per kit piece, and every mesh drawn again into the shadow maps of the review's real-time stand-in
+  lamps (55 shadowed omnis in the basement).
+- The whole dressing layer drew 29 to 723 calls per view before the clutter (1,301 in the generator hall from the
+  switch room); the clutter adds 0 to 350 on the walked floors and up to 750 in the basement, one mesh counted
+  once per lamp that shadows it.
+
+Meeting 150 needs the shell merged (MultiMesh or merged static walls) and a count under the baked light (#83), whose
+lamps draw no real-time shadow passes: a follow-up for the manager.
 
 ### Wall paint (#104)
 
@@ -217,6 +231,8 @@ safelights: Q23 B), a faint cool ambient and one fixed exposure for the zone (Q2
 pass (#83a). A shot per room from 0.3 m inside a door at 1.6 m, the hall from the passage and from the switch room,
 the basement from above with labels and the last walk's route times (`tools/out/house/routes.json`), and the median
 L* of each shot and of the hall's far (west) wall from the passage door, which must stay above 12 (2026-10-10: 42.4).
+Per shot `basement.json` also holds the view's draw calls, objects and primitives, the dressing's draw calls and the
+room's dressing meshes and triangles, as the walk's `rooms` do.
 Rooms outside the house's footprint (the generator hall, the pump and switch rooms, the passage) have no slab over them
 yet (no layout level is there; the yard's ground, #81a, has to close it), so their shots look up into black.
 
