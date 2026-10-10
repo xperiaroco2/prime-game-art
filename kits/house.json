@@ -1,6 +1,6 @@
 {
  "kit": "house",
- "version": 2,
+ "version": 3,
  "about": "The House kit (art #74, v2 art #86; map request #73): the modular shell pieces of the House map on its grid. Godot axes: metres, +Y up; walls run along +X from the pivot (the grid node), centred on the grid line, their exterior (ext) side at +Z; floors span +X/+Z from the pivot with their top at y 0. Every piece is one GLB in <raw>/kits/house/v<version>/. v2 appends pieces (v1's ids stay) and packs plaster, wood and concrete into one material. docs/kit.md.",
  "grid": {
   "modules_m": [1, 2],
@@ -18,14 +18,15 @@
   "gate_w_m": 8.0,
   "roof_slab_m": 0.3,
   "parapet_h_m": 1.0,
-  "gable_rise_per_m": 0.7,
+  "gable_rise_per_m": 0.35,
+  "glass_rise_per_m": 0.7,
   "glass_wall_h_m": 2.4,
   "fence_h_m": 1.8,
   "pitched_roof_t_m": 0.2,
   "gable_window_sill_m": 0.25,
   "gable_window_h_m": 0.9
  },
- "budget_tris": {"wall": 400, "corner": 60, "floor": 120, "roof": 200, "stairs": 2500, "ladder": 600, "railing": 1500, "fence": 1200, "gate": 4000, "glass": 600, "garage": 600, "pillar": 60, "porch": 400, "chimney": 200, "trim": 120, "gazebo": 1200},
+ "budget_tris": {"wall": 400, "corner": 60, "floor": 120, "roof": 200, "stairs": 2500, "ladder": 600, "railing": 1500, "fence": 1200, "gate": 4000, "glass": 600, "garage": 600, "pillar": 60, "porch": 400, "chimney": 200, "dormer": 1500, "trim": 120, "gazebo": 1200},
  "materials": {
   "plaster": {"source": "PaintedPlaster017", "tile_m": 1.0, "lum_std": 0.03, "normal_strength": 0.15, "roughness": 0.88, "pack": "set"},
   "wood": {"source": "WoodFloor051", "tile_m": 1.0, "lum_std": 0.05, "normal_strength": 0.4, "roughness": 0.72, "pack": "set"},
@@ -86,12 +87,12 @@
   {"id": "wall_basement_2m_window", "type": "wall", "kind": "wall", "length": 2, "height": 3.0, "finish": "basement", "opening": "window_basement"},
   {"id": "wall_basement_corner", "type": "corner", "kind": "corner", "height": 3.0, "finish": "basement"},
   {"id": "wall_basement_end", "type": "end", "kind": "corner", "height": 3.0, "finish": "basement"},
-  {"id": "gable_band_2m", "type": "wall", "kind": "wall", "length": 2, "height": 1.4, "finish": "ext", "band": false, "skirting": false},
-  {"id": "gable_band_1m", "type": "wall", "kind": "wall", "length": 1, "height": 0.7, "finish": "ext", "band": false, "skirting": false},
-  {"id": "gable_tri_2m_up", "type": "gable", "kind": "wall", "length": 2, "rise": 1.4, "finish": "ext", "up": "+x"},
-  {"id": "gable_tri_2m_down", "type": "gable", "kind": "wall", "length": 2, "rise": 1.4, "finish": "ext", "up": "-x"},
-  {"id": "gable_tri_1m_up", "type": "gable", "kind": "wall", "length": 1, "rise": 0.7, "finish": "ext", "up": "+x"},
-  {"id": "gable_tri_1m_down", "type": "gable", "kind": "wall", "length": 1, "rise": 0.7, "finish": "ext", "up": "-x"},
+  {"id": "gable_band_2m", "type": "wall", "kind": "wall", "length": 2, "height": 0.7, "finish": "ext", "band": false, "skirting": false},
+  {"id": "gable_band_1m", "type": "wall", "kind": "wall", "length": 1, "height": 0.35, "finish": "ext", "band": false, "skirting": false},
+  {"id": "gable_tri_2m_up", "type": "gable", "kind": "wall", "length": 2, "rise": 0.7, "finish": "ext", "up": "+x"},
+  {"id": "gable_tri_2m_down", "type": "gable", "kind": "wall", "length": 2, "rise": 0.7, "finish": "ext", "up": "-x"},
+  {"id": "gable_tri_1m_up", "type": "gable", "kind": "wall", "length": 1, "rise": 0.35, "finish": "ext", "up": "+x"},
+  {"id": "gable_tri_1m_down", "type": "gable", "kind": "wall", "length": 1, "rise": 0.35, "finish": "ext", "up": "-x"},
   {"id": "floor_boards_2x2", "type": "floor", "kind": "floor", "size": [2, 2], "top": "boards", "bottom": "ceiling"},
   {"id": "floor_boards_2x1", "type": "floor", "kind": "floor", "size": [2, 1], "top": "boards", "bottom": "ceiling"},
   {"id": "floor_boards_1x1", "type": "floor", "kind": "floor", "size": [1, 1], "top": "boards", "bottom": "ceiling"},
@@ -164,6 +165,8 @@
   {"id": "gazebo_sector_open", "type": "gazebo_sector", "kind": "gazebo", "radius": 2.8, "deck_h": 0.15, "post_h": 2.4, "open": true},
   {"id": "gazebo_roof_sector", "type": "gazebo_roof", "kind": "gazebo", "radius": 3.0, "eave_h": 2.55, "apex_h": 3.4, "thick": 0.1},
   {"id": "gazebo_finial", "type": "finial", "kind": "gazebo", "width": 0.1, "peak": 0.12, "role": "metal"},
-  {"id": "gable_band_2m_window", "type": "wall", "kind": "wall", "length": 2, "height": 1.4, "finish": "ext", "band": false, "skirting": false, "opening": "window_gable"}
+  {"id": "gable_band_2m_window", "type": "wall", "kind": "wall", "length": 2, "height": 1.4, "finish": "ext", "band": false, "skirting": false, "opening": "window_gable"},
+  {"id": "chimney_attic", "type": "chimney", "kind": "chimney", "width": 1.0, "height": 5.4, "about": "the free roof's chimney (art #77): from the attic floor through the 0.35 roof, 1.5 m over its top on the high side"},
+  {"id": "dormer_gable", "type": "dormer", "kind": "dormer", "x": [0, 2], "z": [0, 7], "window": [1.0, 1.15], "sill": 0.26, "rise": 0.7, "reach_m": 1.0, "about": "the free roof's gable dormer (art #77): replaces a 2 m panel column over 7 m of run (house_layout.dormer_cut); the players climb out of its window onto the slope"}
  ]
 }

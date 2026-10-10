@@ -24,6 +24,7 @@ LINEUP_GROUPS = (
     ("corners, ends, pillars, chimney, trim", ("corner", "pillar", "chimney", "trim"), 8.0),
     ("floors", ("floor",), 90.0),
     ("roofs", ("roof",), 50.0),
+    ("dormer", ("dormer",), 12.0),
     ("glass", ("glass",), 8.0),
     ("stairs, ladder, railings", ("stairs", "ladder", "railing"), 8.0),
     ("fences, gates, garage, porch", ("fence", "gate", "garage", "porch"), 8.0),

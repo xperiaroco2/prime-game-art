@@ -687,6 +687,13 @@ def pitch(spec: dict) -> dict:
             "deg": round(math.degrees(math.atan(r)), 2)}
 
 
+def glass_rise(spec: dict) -> float:
+    """The greenhouse glass roof's rise per metre (grid glass_rise_per_m): its own pitch since the house roof went to
+    0.35 (art #77, Q2 B); a spec without it keeps the shared gable_rise_per_m."""
+    g = spec["grid"]
+    return float(g.get("glass_rise_per_m", g["gable_rise_per_m"]))
+
+
 def build_pitched(pc: Piece, p: dict, spec: dict) -> None:
     """A pitched roof slab (the attic): x over p["x"] along the eave, z over p["z"] up the slope (horizontal metres from
     the eave wall's grid line). Pivot: the eave wall's grid node at the knee wall's top. Plumb-cut ends; p["ends"] names
@@ -723,8 +730,9 @@ def build_glass_roof(pc: Piece, p: dict, spec: dict) -> None:
     """A greenhouse glass roof bay: a metal rafter along its x0 edge (the next bay's rafter closes x1), a pane over the
     rest; "+x" in p["ends"] adds a closing rafter along x1 (the end bay whose x1 meets a glass gable: the pane lies
     GLASS_LIFT over the gable's top, and only a rafter fills that slit); p["gutter"] hangs a gutter at z0 (the eave
-    bay). Pivot as build_pitched's, on the glass wall's top; the pane lies GLASS_LIFT over the line y = r * z."""
-    r = pitch(spec)["r"]
+    bay). Pivot as build_pitched's, on the glass wall's top; the pane lies GLASS_LIFT over the line y = r * z (r: the
+    glass pitch, glass_rise)."""
+    r = glass_rise(spec)
     (x0, x1), (z0, z1) = p["x"], p["z"]
     m = pc.mesh
     ends = p.get("ends", "")
@@ -762,7 +770,7 @@ def build_glass_gable(pc: Piece, p: dict, spec: dict) -> None:
     bar on a triangle's top (the end bay's rafter), a transom on a band's top."""
     g = spec["grid"]
     L = float(p["length"])
-    R = L * g["gable_rise_per_m"]
+    R = L * glass_rise(spec)
     m = pc.mesh
     mw = 0.03
     up = p.get("up", "+x")
@@ -832,6 +840,107 @@ def build_chimney(pc: Piece, p: dict, spec: dict) -> None:
     pc.collide_box((0, 0, 0), (S, cap0, S))
     pc.collide_box((-o, cap0, -o), (S + o, cap1, S + o))
     pc.collide_box((f0, cap1, f0), (f1, H, f1))
+
+
+def dormer_dims(p: dict, spec: dict) -> dict:
+    """A gable dormer's heights (art #77) in its panel frame (see build_dormer): the main roof's underside u + r z and
+    top u + tv + r z, the dormer's ridge hr (where its ridge meets the main roof's top at z L), its eave he (rise
+    p["rise"] per metre over the half width), the window's sill (p["sill"] over the roof's top at the front) and head,
+    where a cheek's top meets the main roof's underside (zc) and where the dormer roof's eave meets its top (ze)."""
+    pp = pitch(spec)
+    r, u, tv = pp["r"], pp["u"], pp["tv"]
+    (x0, x1), (z0, z1) = p["x"], p["z"]
+    W, L = x1 - x0, z1 - z0
+    hr = u + tv + r * L
+    he = hr - float(p["rise"]) * W / 2
+    sill = u + tv + float(p["sill"])
+    ww, wh = (float(v) for v in p["window"])
+    ye = hr - float(p["rise"]) * (W / 2 + DORMER_OVER)
+    return {"r": r, "u": u, "tv": tv, "W": W, "L": L, "hr": hr, "he": he, "ye": ye, "sill": sill, "head": sill + wh,
+            "ww": ww, "zc": (he - u) / r, "ze": (ye - u - tv) / r}
+
+
+DORMER_WALL, DORMER_CHEEK, DORMER_SLAB, DORMER_OVER = 0.15, 0.1, 0.1, 0.1
+
+
+def _rot_box(m: Mesh, pc: Piece, hinge, ang: float, lo, hi, role: str, collide: bool = False) -> None:
+    """A box in a casement leaf's frame (x from the hinge along the leaf, y up, z its thickness) turned ang degrees
+    out about the vertical hinge: the leaf points (cos, 0, -sin), towards -Z (outside)."""
+    a = math.radians(ang)
+    d, n = (math.cos(a), 0.0, -math.sin(a)), (math.sin(a), 0.0, math.cos(a))
+
+    def P(x, y, z):
+        return (hinge[0] + x * d[0] + z * n[0], hinge[1] + y, hinge[2] + x * d[2] + z * n[2])
+    (x0, y0, z0), (x1, y1, z1) = lo, hi
+    neg = tuple(-v for v in d), tuple(-v for v in n)
+    faces = [([(x1, y0, z0), (x1, y1, z0), (x1, y1, z1), (x1, y0, z1)], d),
+             ([(x0, y0, z0), (x0, y1, z0), (x0, y1, z1), (x0, y0, z1)], neg[0]),
+             ([(x0, y1, z0), (x1, y1, z0), (x1, y1, z1), (x0, y1, z1)], (0.0, 1.0, 0.0)),
+             ([(x0, y0, z0), (x1, y0, z0), (x1, y0, z1), (x0, y0, z1)], (0.0, -1.0, 0.0)),
+             ([(x0, y0, z1), (x1, y0, z1), (x1, y1, z1), (x0, y1, z1)], n),
+             ([(x0, y0, z0), (x1, y0, z0), (x1, y1, z0), (x0, y1, z0)], neg[1])]
+    for pts, nn in faces:
+        m.poly([P(*q) for q in pts], nn, role)
+    if collide:
+        pc.collide([list(P(x, y, z)) for x in (x0, x1) for y in (y0, y1) for z in (z0, z1)])
+
+
+def build_dormer(pc: Piece, p: dict, spec: dict) -> None:
+    """A gable dormer (art #77, docs/kit.md "The free roof"): it replaces a 2 m panel column of the pitched roof over
+    p["z"] (house_layout.dormer_cut). Frame as build_pitched's: x along the eave, z up the slope from the dormer's
+    front, the pivot on the knee wall's top line lifted r * z0 (the main roof's underside at u + r z). A plastered
+    front wall with the window opening (p["window"] w x h, the sill p["sill"] over the roof's top) and a white
+    casement open 80 deg outward on the west jamb, a boarded front gable, plastered cheeks down to the main roof, the
+    dormer's own roof (rise p["rise"] per metre) whose valleys meet the main roof, and the main roof's slab of the
+    column behind (from ze to the far end). Socket "lamp": the practical lamp under the dormer's ridge."""
+    dd = dormer_dims(p, spec)
+    r, u, tv, W, L, hr, he, ye = (dd[k] for k in ("r", "u", "tv", "W", "L", "hr", "he", "ye"))
+    m = pc.mesh
+    t, c, sl, ov = DORMER_WALL, DORMER_CHEEK, DORMER_SLAB, DORMER_OVER
+    wx0, wx1, sill, head = (W - dd["ww"]) / 2, (W + dd["ww"]) / 2, dd["sill"], dd["head"]
+    # the front wall round the opening
+    for lo, hi in (((0, u, 0), (W, sill, t)), ((0, head, 0), (W, he, t)), ((0, sill, 0), (wx0, head, t)),
+                   ((wx1, sill, 0), (W, head, t))):
+        m.box(lo, hi, "wall_ext")
+        pc.collide_box(lo, hi)
+    # the boarded front gable
+    tri = [(0.0, he), (W, he), (W / 2, hr)]
+    m.prism(tri, 0.0, t, "trim")
+    pc.collide(prism_points(tri, 0.0, t))
+    # the plastered cheeks: from the main roof's underside up to the eave line
+    prof = [(0.0, u), (dd["zc"], he), (0.0, he)]
+    for x0, x1 in ((0.0, c), (W - c, W)):
+        prism_x(m, prof, x0, x1, "wall_ext")
+        pc.collide(prism_x_points(prof, x0, x1))
+    # the dormer's roof: two slabs from the ridge to the eave (overhanging ov), back to the valleys that meet the main
+    # roof's top at the ridge's far end
+    k = float(p["rise"])
+    for side in (0, 1):
+        def X(x, s=side):
+            return x if s == 0 else W - x
+        top = [(X(-ov), ye, -ov), (X(-ov), ye, dd["ze"]), (X(W / 2), hr, L), (X(W / 2), hr, -ov)]
+        bot = [(x, y - sl, z) for x, y, z in top]
+        nrm = (-k if side == 0 else k, 1.0, 0.0)
+        m.poly(top, nrm, "roof")
+        m.poly(bot, tuple(-v for v in nrm), "boards")
+        m.poly([top[0], top[3], bot[3], bot[0]], (0.0, 0.0, -1.0), "trim")  # the barge board's edge
+        m.poly([top[0], top[1], bot[1], bot[0]], (-1.0 if side == 0 else 1.0, 0.0, 0.0), "trim")  # the fascia's edge
+        pc.collide([list(q) for q in top + bot])
+    # the main roof behind the cheeks: the column's slab from ze to the far end (round the valleys)
+    z0 = dd["ze"]
+    slab = [(z0, u + r * z0), (L, u + r * L), (L, u + tv + r * L), (z0, u + tv + r * z0)]
+    prism_x(m, slab, 0.0, W, "boards", caps="", edges=[True, False, True, True], edge_roles={2: "roof", 3: "trim"})
+    pc.collide(prism_x_points(slab, 0.0, W))
+    # the sills and the open casement
+    m.box((wx0 - 0.05, sill - 0.03, -0.08), (wx1 + 0.05, sill, 0.0), "metal")
+    m.box((wx0, sill - 0.03, t), (wx1, sill, t + 0.15), "trim")
+    hinge, ang, fw, ft = (wx0, sill, 0.0), 80.0, 0.05, 0.05
+    lw, lh = wx1 - wx0, head - sill
+    for lo, hi in (((0, 0, -ft), (fw, lh, 0)), ((lw - fw, 0, -ft), (lw, lh, 0)), ((fw, 0, -ft), (lw - fw, fw, 0)),
+                   ((fw, lh - fw, -ft), (lw - fw, lh, 0))):
+        _rot_box(m, pc, hinge, ang, lo, hi, "trim")
+    _rot_box(m, pc, hinge, ang, (fw, fw, -ft / 2 - 0.004), (lw - fw, lh - fw, -ft / 2 + 0.004), "glass", collide=True)
+    pc.sockets["lamp"] = [round(W / 2, 4), round(he - 0.1, 4), round(min(dd["ze"], 1.2), 4)]
 
 
 def build_bracket(pc: Piece, p: dict, spec: dict) -> None:
@@ -970,6 +1079,7 @@ BUILDERS = {
     # version 2 (art #86)
     "pillar": build_pillar, "pitched": build_pitched, "ridge": build_ridge, "glass_roof": build_glass_roof,
     "glass_ridge": build_glass_ridge, "glass_gable": build_glass_gable, "porch": build_porch, "chimney": build_chimney,
+    "dormer": build_dormer,
     "bracket": build_bracket, "cap": build_cap, "gate_post": build_gate_post, "gazebo_sector": build_gazebo_sector,
     "gazebo_roof": build_gazebo_roof, "finial": build_finial, "glass_node": build_glass_node, "slab_edge": build_slab_edge,
 }
@@ -1149,11 +1259,12 @@ def check_piece(d: dict, p: dict, spec: dict) -> list[str]:
                 break
     size = nominal_size(p, spec)
     b = d["bounds_m"]
-    if "x" in p:  # a span piece: nothing outside its spans (a glass eave's gutter hangs 0.12 m before z0)
-        z = p.get("z")
-        if z is not None and (b["min"][2] < z[0] - (0.12 if p.get("gutter") else 0.0) - EPS or b["max"][2] > z[1] + EPS):
+    if "x" in p:  # a span piece: nothing outside its spans (a glass eave's gutter hangs 0.12 m before z0; p["reach_m"]:
+        # what may stand out before z0 and beside the x span, a dormer's overhangs and its open casement)
+        z, reach = p.get("z"), float(p.get("reach_m", 0.0))
+        if z is not None and (b["min"][2] < z[0] - (0.12 if p.get("gutter") else reach) - EPS or b["max"][2] > z[1] + EPS):
             problems.append(f"{pid}: z extent {b['min'][2]}..{b['max'][2]} m leaves its span {z}")
-        if b["min"][0] < p["x"][0] - EPS or b["max"][0] > p["x"][1] + EPS:
+        if b["min"][0] < p["x"][0] - reach - EPS or b["max"][0] > p["x"][1] + reach + EPS:
             problems.append(f"{pid}: x extent {b['min'][0]}..{b['max'][0]} m leaves its span {p['x']}")
     elif size["x"] is not None and p["type"] not in ("ladder",):
         lo_ok = b["min"][0] >= -0.08 - EPS
@@ -1296,7 +1407,7 @@ def seam_problems(spec: dict, described: dict) -> list[str]:
         a = face_points(d)
         for off in seam_offsets(p):
             if off[0] == "pitch":
-                off = (0.0, r * off[1], off[1])
+                off = (0.0, (glass_rise(spec) if p["type"] == "glass_roof" else r) * off[1], off[1])
             hits = coplanar_overlaps(a, face_points(d, 0.0, off))
             if hits:
                 problems.append(f"{p['id']}: {len(hits)} faces back to back with its neighbour at {list(off)}")
@@ -1304,12 +1415,13 @@ def seam_problems(spec: dict, described: dict) -> list[str]:
 
 
 # --- assemblies the checks and the proof share (pieces placed as (id, degrees about +Y, offset)) --------------------
-def attic_roof(spec: dict, span_x: int, span_z: int) -> list[tuple]:
+def attic_roof(spec: dict, span_x: int, span_z: int, rise: float | None = None) -> list[tuple]:
     """The attic's pitched roof over span_x x span_z metres (grid lines; the eave walls at z 0 and span_z, the gables at
     x 0 and span_x; pivots at the knee walls' top, y 0): panels 2 m along the eave, 2 m and 1 m up the slope, eaves,
-    verges, the corners between them and the ridge; the far slope is the near one turned 180 deg."""
+    verges, the corners between them and the ridge; the far slope is the near one turned 180 deg. `rise` overrides the
+    kit's gable_rise_per_m (the greenhouse's glass roof passes glass_rise)."""
     run = span_z / 2
-    r = spec["grid"]["gable_rise_per_m"]
+    r = spec["grid"]["gable_rise_per_m"] if rise is None else rise
     if run != int(run):
         raise ValueError("the attic's depth must be an even number of metres (the ridge on a grid line)")
     rows, z = [], 0

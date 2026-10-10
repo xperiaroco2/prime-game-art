@@ -229,7 +229,7 @@ class VersionTwoTest(unittest.TestCase):
               "stairs_main", "ladder_attic", "fence_gates_8m", "glass_door_2m", "garage_door_8m", "gable_tri_2m_up"}
 
     def test_v1_ids_stay_and_v2_appends(self) -> None:
-        self.assertEqual(SPEC["version"], 2)
+        self.assertEqual(SPEC["version"], 3)  # v3 (art #77): the 0.35 roof pitch, the dormer, the attic chimney
         ids = [p["id"] for p in SPEC["pieces"]]
         self.assertEqual(self.V1_IDS - set(ids), set())
         self.assertLess(ids.index("garage_door_8m"), ids.index("pillar_concrete"))
@@ -246,11 +246,14 @@ class VersionTwoTest(unittest.TestCase):
 
     def test_pitch_is_the_spec_parameter(self) -> None:
         pp = G.pitch(SPEC)
-        self.assertAlmostEqual(pp["deg"], 35.0, delta=0.1)
+        self.assertAlmostEqual(pp["deg"], 19.29, delta=0.1)  # Q2 B (art #77): 0.35 per metre
         s2 = copy.deepcopy(SPEC)
-        s2["grid"]["gable_rise_per_m"] = 0.35
+        s2["grid"]["gable_rise_per_m"] = 0.7
         d = G.describe(G.build_piece(PIECES["roof_pitched_2x2"], s2), s2)
-        self.assertLess(d["bounds_m"]["max"][1], KIT["roof_pitched_2x2"]["bounds_m"]["max"][1] - 0.6)
+        self.assertGreater(d["bounds_m"]["max"][1], KIT["roof_pitched_2x2"]["bounds_m"]["max"][1] + 0.6)
+        # the greenhouse keeps its own 0.7 glass pitch
+        self.assertEqual(G.glass_rise(SPEC), 0.7)
+        self.assertAlmostEqual(KIT["glass_roof_2x2"]["bounds_m"]["max"][1], 2 * 0.7 + G.GLASS_LIFT + 0.008, places=6)
 
     def test_knee_door_casing_stays_under_the_wall_top(self) -> None:
         self.assertLessEqual(KIT["wall_knee_2m_door_int"]["bounds_m"]["max"][1], 2.2 + 1e-6)

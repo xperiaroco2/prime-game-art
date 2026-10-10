@@ -287,13 +287,13 @@ def glass_roof(data: dict, layout: dict) -> tuple[list[dict], list[str]]:
     rf = data["roof"]
     x0, y0, w, d = (float(v) for v in rf["rect"])
     h0 = float(spec["grid"]["glass_wall_h_m"])
-    r = float(spec["grid"]["gable_rise_per_m"])
+    r = hl.kit_geom().glass_rise(spec)
     if int(d) % 4:
         return [], [f"roof: the glass roof's depth {d:g} m must be a multiple of 4 (2 m rows up each slope)"]
     names = {"roof_pitched_eave_2m": "glass_roof_eave_2m", "roof_pitched_2x2": "glass_roof_2x2",
              "roof_pitched_ridge_2m": "glass_roof_ridge_2m"}
     out = [{"id": names[pid], "x": x0 + off[0], "y": y0 + off[2], "h": h0 + off[1], "turn": int(round(deg))}
-           for pid, deg, off in hl.kit_geom().attic_roof(spec, int(w), int(d)) if pid in names]
+           for pid, deg, off in hl.kit_geom().attic_roof(spec, int(w), int(d), rise=r) if pid in names]
     for q in out:  # the bay whose far end meets a gable closes it with its second rafter (kit "_end" pieces)
         if q["id"] in BAYS and any(abs(bay_far_x(q) - gx) <= RAFTER_M for gx in (x0, x0 + w)):
             q["id"] += "_end"
