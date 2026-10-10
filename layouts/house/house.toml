@@ -1,7 +1,8 @@
 # The house generator's settings (art #75, docs/house.md). One file per level beside this one.
 # The kit: its spec in the repo and its GLBs under the raw folder (kit v3: the 0.35 roof pitch, #77; v2 #86; v1's ids are kept).
+# v3b: #77's full v3 build in its own folder (v3/ holds a stale in-between build of #77, left untouched); a plain `kit` builds here.
 kit_spec = "kits/house.json"
-kit_dir = "kits/house/v3"
+kit_dir = "kits/house/v3b"
 # Where the generated scenes find a piece and each other inside the godot/ project (godot/import/ is ignored).
 kit_res = "res://import/kit_{id}.glb"
 scene_res = "res://import/house"

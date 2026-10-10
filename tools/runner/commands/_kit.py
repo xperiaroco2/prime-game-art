@@ -4,13 +4,16 @@ table. Standard library only; the geometry is tools/blender/kit_geom.py (importe
 from __future__ import annotations
 
 import importlib.util
+import re
 import sys
+import tomllib
 from pathlib import Path
 from typing import Any
 
 from .. import common
 
 SPEC = common.ROOT / "kits" / "house.json"
+HOUSE_SETTINGS = common.ROOT / "layouts" / "house" / "house.toml"
 SCRIPT = "kit_build.py"
 CHECK = "res://check/kit.gd"
 PROOF = "res://kit/proof.gd"
@@ -54,6 +57,14 @@ def lineup_groups(pieces: list[dict[str, Any]]) -> list[list]:
 
 
 def default_out(spec: dict[str, Any]) -> Path:
+    """A kit's build folder: <raw>/kits/<kit>/v<version>; for the House kit the House layout's `kit_dir`
+    (layouts/house/house.toml, the one setting `house`, `attic`, `zones`, `outdoor` and `garden` read) while it names a
+    build of the spec's version (v3 or v3b for version 3), so a plain `kit` rebuilds the folder the map uses."""
+    if spec["kit"] == "house" and HOUSE_SETTINGS.is_file():
+        with HOUSE_SETTINGS.open("rb") as f:
+            kit_dir = tomllib.load(f).get("kit_dir", "")
+        if re.fullmatch(rf"v{spec['version']}[a-z]?", Path(kit_dir).name):
+            return common.raw_dir() / kit_dir
     return common.raw_dir() / "kits" / spec["kit"] / f"v{spec['version']}"
 
 

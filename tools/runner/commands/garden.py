@@ -26,7 +26,7 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--out", type=Path, help="output folder (default <raw>/house/80/build)")
     parser.add_argument("--proof", nargs="?", type=Path, const=Path(), metavar="DIR",
                         help="then walk, ray-test and shoot it in Godot off-screen (default <raw>/review/house/80)")
-    parser.add_argument("--kit", type=Path, help="the house kit's build folder (default <raw>/kits/house/v<version>, the spec's version)")
+    parser.add_argument("--kit", type=Path, help="the house kit's build folder (default the kit command's: the House layout's kit_dir, layouts/house/house.toml)")
     parser.add_argument("--roof-kit", type=Path, help="the glass roof pieces' folder (default <raw>/house/80/kit)")
     parser.add_argument("--plants", type=Path, help="the plants' GLB folder (default <raw>/house/80/plants)")
 

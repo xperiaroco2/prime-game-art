@@ -27,12 +27,12 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--check", action="store_true", help="only check the layout; write nothing")
     parser.add_argument("--proof", nargs="?", type=Path, const=Path(), metavar="DIR",
                         help="then validate, walk and shoot it in Godot off-screen (default <raw>/review/house/81)")
-    parser.add_argument("--kit", type=Path, help="the house kit's build folder (default <raw>/kits/house/v<version>, the spec's version)")
+    parser.add_argument("--kit", type=Path, help="the house kit's build folder (default the kit command's: the House layout's kit_dir, layouts/house/house.toml)")
 
 
 
 def default_kit() -> Path:
-    """The house kit's build folder for the spec's version (kits/house.json), as the `kit` command writes it."""
+    """The house kit's build folder as the `kit` command writes it (_kit.default_out: the House layout's kit_dir)."""
     return _kit.default_out(json.loads(KIT_SPEC.read_text(encoding="utf-8")))
 
 def run(args: argparse.Namespace) -> int:

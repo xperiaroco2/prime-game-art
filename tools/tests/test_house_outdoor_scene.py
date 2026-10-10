@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import json
 import tempfile
+import tomllib
 import unittest
 from pathlib import Path
 
@@ -96,4 +97,15 @@ class DefaultKitTest(unittest.TestCase):
         from runner.commands import _kit, outdoor
         spec = json.loads((ROOT / "kits" / "house.json").read_text(encoding="utf-8"))
         self.assertEqual(outdoor.default_kit(), _kit.default_out(spec))
-        self.assertEqual(outdoor.default_kit().name, f"v{spec['version']}")  # not a stale v2 (art #77)
+        self.assertRegex(outdoor.default_kit().name, rf"^v{spec['version']}[a-z]?$")  # not a stale v2 (art #77)
+
+    def test_the_house_kit_builds_where_the_layout_reads(self) -> None:
+        # one setting (layouts/house/house.toml kit_dir): `kit`, `house`, `attic`, `outdoor` and `garden` share it
+        from runner import common
+        from runner.commands import _kit
+        spec = json.loads((ROOT / "kits" / "house.json").read_text(encoding="utf-8"))
+        with _kit.HOUSE_SETTINGS.open("rb") as f:
+            kit_dir = tomllib.load(f)["kit_dir"]
+        self.assertEqual(_kit.default_out(spec), common.raw_dir() / kit_dir)
+        other = dict(spec, version=spec["version"] + 1)  # a new version leaves the layout's older folder alone
+        self.assertEqual(_kit.default_out(other).name, f"v{other['version']}")

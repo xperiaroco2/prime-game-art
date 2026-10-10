@@ -77,7 +77,7 @@ core with leafy lumps and flat ends, so 2 m segments tile.
 
 `garden --proof [DIR]` (default `<raw>/review/house/80`; a few minutes, takes the heavy-run lock) rebuilds the plot
 with the garden's paths (`house_outdoor.write` into `<raw>/house/80/outdoor`) and the house scenes
-(`godot/import/house`, as `house` does), stages the house kit's pieces (`--kit`, default `<raw>/kits/house/v<version>`, now v3; the
+(`godot/import/house`, as `house` does), stages the house kit's pieces (`--kit`, default the House layout's `kit_dir`, now `<raw>/kits/house/v3b`; the
 `glass_roof_*` pieces from `--roof-kit`, default `<raw>/house/80/kit`, until the end bays are in the kit's build on
 main), the dressing's and the garden's props (`prop_dirs`; the hedge from `--plants`) and the plants
 (`plant_<id>_<kind>`), imports them headless and runs `godot/garden/proof.gd` (it extends the outdoor proof,

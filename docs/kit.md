@@ -6,7 +6,7 @@ fences, gates and glass walls on one grid. Art #74 built the first kit, the **Ho
 GLB per piece and checks every piece in glTF-Validator and Godot. Art #86 made **version 2** (below): 105 pieces
 (v1's 71 with their ids kept, 34 more), the pitched and glass roofs, the porch, the pillar, the chimney, the gazebo,
 and look.md section 5's material plan (one `set` material for plaster, wood and concrete). The GLBs stay in the raw
-folder (`D:/prime-art-raw/kits/house/v<version>/`; v1 is kept untouched in `v1/`, v2 builds into `v2/`) until the
+folder (`D:/prime-art-raw/kits/house/v<version>/`; v1 is kept untouched in `v1/`, v2 builds into `v2/`, v3 into `v3b/`: the House layout's `kit_dir`, since `v3/` holds a stale in-between build) until the
 engineer approves the kit's look on a review page; then they come into the repo with their manifests.
 
 ## The command
@@ -18,7 +18,7 @@ tools/run.sh kit [--spec kits/house.json] [--out DIR] [--only id,...] [--no-buil
 | Option | What it does |
 |---|---|
 | (none) | Checks the spec (with the seam and closure checks), builds every piece in headless Blender (`tools/blender/kit_build.py`), checks every GLB and imports them all into `godot/` headless (`godot/check/kit.gd`); about 5 minutes, plus any wait for the heavy-run lock |
-| `--out` | Output folder (default `<raw>/kits/<kit>/v<version>`, now `D:/prime-art-raw/kits/house/v3`) |
+| `--out` | Output folder (default `<raw>/kits/<kit>/v<version>`; for the House kit the House layout's `kit_dir` while it names a build of the spec's version, now `D:/prime-art-raw/kits/house/v3b`) |
 | `--only` | Only these pieces (`--proof` needs the whole kit) |
 | `--no-build` | Checks the GLBs already in `--out` (about 1 minute with Godot) |
 | `--no-godot` | Skips the Godot import (and the proof) |

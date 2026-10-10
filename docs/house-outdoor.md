@@ -76,7 +76,7 @@ other props magenta). It fails on any problem.
 
 `outdoor --proof [DIR]` (default `<raw>/review/house/81`) runs glTF-Validator on `outdoor.glb` and `backdrop.glb`
 (reports beside them, `<name>.validator.json`), stages them and the house kit's pieces it places (`--kit`, default
-`<raw>/kits/house/v<version>`, now v3, as `res://import/kit_<id>.glb`) into `godot/import/`, imports them headless and runs
+the House layout's `kit_dir`, now `<raw>/kits/house/v3b`, as `res://import/kit_<id>.glb`) into `godot/import/`, imports them headless and runs
 `godot/outdoor/proof.gd` in a window off-screen with the request of `tools/runner/house_outdoor_scene.py`:
 
 - the scene: the placed fence, gates, caps, stairs and rails with the kit's `set` pack (`godot/kit/kit_materials.gd`),
