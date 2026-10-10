@@ -453,13 +453,14 @@ def bad_pairs(nose):
 
 # art #42 round 3, the brow measure (checks.brow_visibility): at least BROW_SEEN_MIN of each brow's vertices seen from
 # the front, and the lowest front brow point over an eye at least this far above (< 0: below) the resting upper lid's
-# top. Per brow style: the angry brows' inner ends dip in front of the lid over big eyes by design (the lab's V; the
-# kit-check of 2026-10-10 measured -9.2 mm men, -9.99 mm women); every other style keeps the first limit, -3 mm, which
-# the same run passed with no failure (w3's fixed brows: -2.46 mm; sunk under the formal updo: -17.4 mm). A brow inside
-# the eyeball is a separate failure (checks.brow_in_white), and a brow on a pupil a collision (BAD_PAIRS).
+# top. Per brow style, from the 320-face kit-check of 2026-10-10 (lowest per style, men / women): normal -4.01 / -2.5,
+# surprised -2.21 / +3.72, one_raised -5.53 / -3.23 (its lowered side), angry -9.2 / -9.99 (the V's inner ends dip in
+# front of the lid over big eyes by design); each limit keeps about 1 mm under that. w3's fixed brows read -2.46 mm, its
+# sunk ones -17.4 mm. A brow inside the eyeball is a separate failure (checks.brow_in_white), and a brow on a pupil a
+# collision (BAD_PAIRS).
 BROW_SEEN_MIN = 0.25
-BROW_EYE_CLEAR_MIN_MM = {"angry": -10.5}
-BROW_EYE_CLEAR_STRICT_MM = -3.0
+BROW_EYE_CLEAR_MIN_MM = {"angry": -10.5, "one_raised": -6.5}
+BROW_EYE_CLEAR_STRICT_MM = -5.0  # normal, surprised and any other style
 
 
 def brow_clear_min_mm(style):

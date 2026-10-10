@@ -246,11 +246,14 @@ class BrowMeasure(unittest.TestCase):
 
     def test_only_the_angry_v_may_dip(self):
         self.assertTrue(K.brow_visible_ok(self.SEEN, -9.99, "angry"))  # the 320-face run's deepest angry brow
+        self.assertTrue(K.brow_visible_ok(self.SEEN, -5.53, "one_raised"))  # its lowered side, 320-face run
+        self.assertTrue(K.brow_visible_ok(self.SEEN, -4.01, "normal"))
         for style in K.BROWS:
-            if style != "angry":
-                self.assertFalse(K.brow_visible_ok(self.SEEN, -5.0, style), style)
+            if style not in ("angry", "one_raised"):
+                self.assertFalse(K.brow_visible_ok(self.SEEN, -6.0, style), style)
+        self.assertFalse(K.brow_visible_ok(self.SEEN, -7.0, "one_raised"))
         self.assertFalse(K.brow_visible_ok(self.SEEN, -11.0, "angry"))
-        self.assertFalse(K.brow_visible_ok(self.SEEN, -5.0, None))  # an unknown style gets the strict limit
+        self.assertFalse(K.brow_visible_ok(self.SEEN, -6.0, None))  # an unknown style gets the strict limit
 
     def test_hidden_brows_fail(self):
         self.assertFalse(K.brow_visible_ok({"L": 0.53, "R": K.BROW_SEEN_MIN - 0.01}, 0.0, "normal"))

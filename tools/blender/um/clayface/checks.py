@@ -96,7 +96,7 @@ def brow_visibility(face, occluders):
     lids, pupils and nose first: the head, hair and headwear objects given) and the brow-to-eye clearance (mm: the
     lowest front brow vertex over an eye above that eye's resting upper lid top, c.z + r x lid_scale; < 0: the brow
     sinks into the lid). ok: kit.brow_visible_ok (both sides seen at least BROW_SEEN_MIN, the clearance above the
-    brow style's limit, kit.brow_clear_min_mm: -3 mm, the angry V -10.5 mm)."""
+    brow style's limit, kit.brow_clear_min_mm: -5 mm, one_raised -6.5 mm, the angry V -10.5 mm)."""
     from mathutils import Vector
     from mathutils.bvhtree import BVHTree
     o = face.pieces.get("brows")
