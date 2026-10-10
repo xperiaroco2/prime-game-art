@@ -910,14 +910,14 @@ def build_dormer(pc: Piece, p: dict, spec: dict) -> None:
     m = pc.mesh
     t, c, sl, ov = DORMER_WALL, DORMER_CHEEK, DORMER_SLAB, DORMER_OVER
     wx0, wx1, sill, head = (W - dd["ww"]) / 2, (W + dd["ww"]) / 2, dd["sill"], dd["head"]
-    # the front wall round the opening
-    for lo, hi in (((0, u, 0), (W, sill, t)), ((0, head, 0), (W, he, t)), ((0, sill, 0), (wx0, head, t)),
-                   ((wx1, sill, 0), (W, head, t))):
-        m.box(lo, hi, "wall_ext")
+    # the front wall round the opening (the band over the head has no top: the gable sits on it)
+    for lo, hi, sides in (((0, u, 0), (W, sill, t), "+x-x+y-y+z-z"), ((0, head, 0), (W, he, t), "+x-x-y+z-z"),
+                          ((0, sill, 0), (wx0, head, t), "+x-x+y-y+z-z"), ((wx1, sill, 0), (W, head, t), "+x-x+y-y+z-z")):
+        m.box(lo, hi, "wall_ext", sides)
         pc.collide_box(lo, hi)
-    # the boarded front gable
+    # the boarded front gable (no bottom face: it would coincide with the wall band's top, a duplicate Godot drops)
     tri = [(0.0, he), (W, he), (W / 2, hr)]
-    m.prism(tri, 0.0, t, "trim")
+    m.prism(tri, 0.0, t, "trim", edges=[False, True, True])
     pc.collide(prism_points(tri, 0.0, t))
     # the plastered cheeks: from the main roof's underside up to the eave line
     prof = [(0.0, u), (dd["zc"], he), (0.0, he)]
