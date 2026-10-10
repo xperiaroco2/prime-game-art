@@ -255,6 +255,16 @@ class VersionTwoTest(unittest.TestCase):
         self.assertEqual(G.glass_rise(SPEC), 0.7)
         self.assertAlmostEqual(KIT["glass_roof_2x2"]["bounds_m"]["max"][1], 2 * 0.7 + G.GLASS_LIFT + 0.008, places=6)
 
+    def test_the_eave_is_an_open_edge(self) -> None:
+        # the free roof's eave is a fall (art #77): the eave piece's collision falls with the pitch to its outer edge,
+        # with no lip, gutter or rail over the roof's top that would hold a player back
+        (c,) = G.build_piece(PIECES["roof_pitched_eave_2m"], SPEC).colliders
+
+        def top(z: float) -> float:
+            return max(p[1] for p in c["points"] if abs(p[2] - z) < 1e-6)
+        self.assertAlmostEqual(top(0.0) - top(-0.5), 0.5 * SPEC["grid"]["gable_rise_per_m"], places=6)
+        self.assertLessEqual(max(p[1] for p in c["points"]), top(0.0) + 1e-6)
+
     def test_knee_door_casing_stays_under_the_wall_top(self) -> None:
         self.assertLessEqual(KIT["wall_knee_2m_door_int"]["bounds_m"]["max"][1], 2.2 + 1e-6)
 

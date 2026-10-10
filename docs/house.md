@@ -364,6 +364,12 @@ lies on the roof). The light fixtures are #83a's. The rooms' dressing (`<room>.t
   game's 0.3 m step (`STEP_H`, base_mode.tres `step_height_m`), so a player steps out and back in without a jump (the
   check fails a sill higher than that); the roof falls to 2.36 m over the attic floor at the eave 1 m below. 440.9 m2
   of roof are walkable from it.
+- **The eave** is an open edge, a fall: each roof piece's collision is its panel's hull, and the eave piece's falls
+  with the pitch to its outer edge with no lip, gutter or rail over the roof's top (`test_kit_spec`,
+  `test_the_eave_is_an_open_edge`). The walk keeps a player's axis 0.2 m inside the roof's outline (`EDGE_M`) only to
+  measure where one stands. The south eave is about 8.8 m over the ground floor (the attic floor 6.4 m plus 2.36 m).
+  The art side builds nothing more: what a fall does (damage, a kill, a fall volume under the eaves) is the game's
+  rule, on the game side.
 - **Open: the window and the game's capsule.** The check measures the window against the game's player capsule (1.8 m
   tall, radius 0.4: base_mode.tres; no crouch, and the crawl keeps the capsule). The 1.0 x 1.4 m opening is lower, so
   no player passes it yet; the layout records that as the dormer's `open` note (reported, not failed; without the note
