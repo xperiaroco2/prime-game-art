@@ -154,6 +154,13 @@ The engineer's picks of 2026-10-10: a free roof of clay pantiles with one gable 
   and cone through a lead slate on the tiles; pivot at the 0.3 m square's north-west corner, y 0 the slab's top at its
   axis (the layout's `at` height: `house_attic.roof_top`). The attic layout stands one on each slope; they block the
   roof's walk and view (`house_attic.solids`, `lookout`), not the attic's floor.
+- **The roof's budget** (proposed, art #77). Measured on the House (2026-10-10: the attic scene's kit instances
+  times each GLB's render primitives, collision meshes left out): 189 pieces, 63,234 triangles, 222 draw calls (one
+  per instance and surface), 3 materials (`kit_set`, `kit_metal`, `kit_glass`). The 116 `roof_pitched_2x2` panels
+  hold 50,344 of the triangles and 116 of the draw calls; the eaves 5,952 and 48; the dormer 1,978 and 3. Budget for
+  the whole roof: 70,000 triangles, 240 draw calls, 3 materials. The review scene with the dressing draws 577 (the
+  street frame) to 805 (on the slope) calls in all. Merging each slope's panels into one mesh would take the panels
+  from 116 draw calls to about 4: a follow-up if the game's profile asks for it.
 - **Not built yet** (a follow-up): the eave's fall collision.
 
 ## Materials: the `set` pack and its shader (v2)
