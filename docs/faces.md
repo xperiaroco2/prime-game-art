@@ -275,8 +275,8 @@ the check's least nose clearance (0.91 mm on m1, droopy with the long nose) is t
 
 **The noses.** Three styles (`faces/clay_kit.json` "noses"; the engineer's three types, art #42 round 3): `bulb`
 (BALL: the ball, the base nose, on every face of the cast, pick weight 1.6), `long` (BEAN: the lab's bean that sits on
-the face and droops down, at scale 0.8, weight 1.0) and `pinocchio` (a closed clay capsule pointing forward and about
-10 degrees down, tapering 1.15 to 0.72 to a rounded tip, seated low over the mouth, weight 0.5; where its top
+the face and droops down, at scale 0.8, weight 1.0) and `pinocchio` (a closed clay capsule, its straight part 28 mm
+(`capsule`; 12 mm read as a short sausage, little longer than the ball), pointing forward and about 10 degrees down, tapering 1.15 to 0.72 to a rounded tip, seated low over the mouth, weight 0.5; where its top
 would touch an eye or a lid, `nose.clear_strict_nose` squashes it vertically about its lowest point). The old "Pinocchio"
 of PR #102 was the pack head's own nose under the kit's ball; the bean head replaced it, so it is a real shape now.
 `kit.STRICT_NOSES` (the pinocchio) must also clear the eyes and lids in `checks.collisions`, and `meta.nose.reach_mm`

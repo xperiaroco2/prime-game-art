@@ -132,6 +132,7 @@ class NosesTest(unittest.TestCase):
     def test_pinocchio_points_forward_and_down(self):
         P = K.NOSES["pinocchio"]
         self.assertGreater(P["half"][1] + P["capsule"], 1.5 * P["half"][0])  # long along the forward axis
+        self.assertGreaterEqual(P["half"][1] + P["capsule"], 0.04)  # long like the old accidental nose (42b sheet2)
         self.assertGreater(P["tilt"], 0.0)  # the tip goes down
         self.assertLess(P["taper"][1], P["taper"][0])  # thinner toward the tip
         self.assertIn("pinocchio", K.STRICT_NOSES)  # it must clear the eyes and lids as well
