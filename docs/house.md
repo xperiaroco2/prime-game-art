@@ -451,9 +451,10 @@ house's scenes into `godot/import/house`, stages their kit GLBs (each `--kit` fo
 dressing, and renders through `godot/house/zones.gd` at dusk: grey labelled boxes for the placeholders, the hiding
 spots (0.12 m, at their height) and the fence openings the lookout must see, two warm review lamps under the ridge
 (review only), and the views in `commands/attic.py` (`VIEWS`: from the hatch toward the dormer, inside at 1.6 m, the
-hiding spots of the south-west corner and the north eave, the climb-out, the roof from the street and from the
-south-east, on the slope out of the dormer, from the ridge to the yard; one lookout view per eye). Frames 1600x900
-and `sheet.png` (1280 px wide) go to DIR.
+hiding spots of the south-west corner and the north eave, the climb-out, the roof from the street (the roof look
+round's south-east camera, high enough that the whole roof shows) and from the south-east, higher, on the slope out
+of the dormer, from the ridge to the yard; one lookout view per eye). Frames 1600x900 and `sheet.png` (1280 px wide)
+go to DIR.
 
 ## Light (#83a)
 

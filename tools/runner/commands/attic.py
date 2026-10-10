@@ -91,7 +91,9 @@ VIEWS = [
     ["spots_n", "attic: hiding spots, the north eave", [27.0, 31.0, F + 1.6], [21.0, 24.5, F + 0.4], 75.0],
     ["climb_out", "attic: the climb-out, the dormer's window over its stair", [35.0, 38.0, F + 1.6],
      [35.0, 43.5, F + 3.2], 75.0],
-    ["street", "the free roof from the street", [30.0, 64.0, 1.7], [30.0, 34.0, F + 3.0], 55.0],
+    # the street camera of the roof look round (research/2026-10-10-roof-look, roofl.py): south-east, high enough
+    # that the whole roof shows, so the review frame sits beside the look round's
+    ["street", "the free roof from the street, south-east", [45.0, 57.0, 12.5], [31.0, 38.0, 10.2], 50.0],
     ["roof_high", "the free roof from the south-east, high", [54.0, 58.0, F + 10.0], [30.0, 34.0, F + 2.0], 55.0],
     ["slope", "on the south slope out of the dormer at 1.6 m, toward the lookout", [33.5, 43.4, _top(43.4) + 1.6],
      [40.0, 40.0, _top(40.0) + 1.0], 75.0],
