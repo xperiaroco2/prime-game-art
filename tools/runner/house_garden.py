@@ -293,6 +293,9 @@ def glass_roof(data: dict, layout: dict) -> tuple[list[dict], list[str]]:
              "roof_pitched_ridge_2m": "glass_roof_ridge_2m"}
     out = [{"id": names[pid], "x": x0 + off[0], "y": y0 + off[2], "h": h0 + off[1], "turn": int(round(deg))}
            for pid, deg, off in hl.kit_geom().attic_roof(spec, int(w), int(d)) if pid in names]
+    for q in out:  # the bay whose far end meets a gable closes it with its second rafter (kit "_end" pieces)
+        if q["id"] in BAYS and any(abs(bay_far_x(q) - gx) <= RAFTER_M for gx in (x0, x0 + w)):
+            q["id"] += "_end"
     if rf.get("gables"):
         rows = list(range(0, int(d / 2), 2))
         for gx, turn in ((x0, hl.turn_for((-1, 0))), (x0 + w, hl.turn_for((1, 0)))):
@@ -310,8 +313,17 @@ def glass_roof(data: dict, layout: dict) -> tuple[list[dict], list[str]]:
     return out, [f"roof: no kit piece {', '.join(missing)}"] if missing else []
 
 
+BAYS = ("glass_roof_2x2", "glass_roof_eave_2m")  # the glass roof's bays; "<bay>_end" adds a rafter at local x 2
+BAY_M = 2.0
+
+
+def bay_far_x(p: dict) -> float:
+    """The world x of a bay's local x 2 end (its pivot, local x 0, is at p["x"])."""
+    return p["x"] + BAY_M * round(math.cos(math.radians(p["turn"])))
+
+
 def gable_gaps(data: dict, placed: list[dict]) -> list[str]:
-    """A bay's rafter is at its local x 0, so a bay closes the gable at its own start only: list each (gable, slope)
+    """A bay's rafter is at its local x 0 (an "_end" bay has a second one at its local x 2): list each (gable, slope)
     with no bay's rafter within RAFTER_M of the gable's plane (a slit between the gable's top and the pane above it,
     open to a level line-of-sight ray)."""
     x0, y0, w, d = data["roof"]["rect"]
@@ -319,8 +331,9 @@ def gable_gaps(data: dict, placed: list[dict]) -> list[str]:
     gaps = []
     for gx in (x0, x0 + w):
         for slope, north in (("north", True), ("south", False)):
-            ok = any(p["id"] in ("glass_roof_2x2", "glass_roof_eave_2m") and (p["y"] <= ridge) == north
-                     and abs(p["x"] - gx) <= RAFTER_M for p in placed)
+            ok = any(p["id"].removesuffix("_end") in BAYS and (p["y"] <= ridge) == north
+                     and (abs(p["x"] - gx) <= RAFTER_M
+                          or (p["id"].endswith("_end") and abs(bay_far_x(p) - gx) <= RAFTER_M)) for p in placed)
             if not ok:
                 gaps.append(f"roof: the gable at x {gx:g} has no rafter on the {slope} slope")
     return gaps

@@ -67,8 +67,12 @@ class Garden(unittest.TestCase):
         for p in roof:
             ids[p["id"]] = ids.get(p["id"], 0) + 1
         # 16 x 12 m: 8 bays along each eave, 3 rows of 2 m up each slope, 8 ridge pieces, per gable 3 rows x 2 slopes
-        self.assertEqual(ids, {"glass_roof_eave_2m": 16, "glass_roof_2x2": 48, "glass_roof_ridge_2m": 8,
+        # the bay meeting a gable with its far end (north slope at x 74, south slope at x 58) is an "_end" bay
+        self.assertEqual(ids, {"glass_roof_eave_2m": 14, "glass_roof_eave_2m_end": 2, "glass_roof_2x2": 42,
+                               "glass_roof_2x2_end": 6, "glass_roof_ridge_2m": 8,
                                "glass_gable_tri_2m_up": 6, "glass_gable_tri_2m_down": 6, "glass_gable_band_2m": 12})
+        self.assertEqual(self.rep["roof_gaps"], [])  # every gable meets a rafter on both slopes
+        self.assertTrue(all(p["id"] in self.layout["pieces"] for p in roof))
         r = self.layout["spec"]["grid"]["gable_rise_per_m"]
         h0 = self.layout["spec"]["grid"]["glass_wall_h_m"]
         ridge = [p for p in roof if p["id"] == "glass_roof_ridge_2m"]
@@ -85,6 +89,9 @@ class Garden(unittest.TestCase):
         closed = roof + [{"id": "glass_roof_2x2", "x": 74, "y": 6, "h": 2.4, "turn": 0},
                          {"id": "glass_roof_2x2", "x": 58, "y": 18, "h": 2.4, "turn": 180}]
         self.assertEqual(hg.gable_gaps(self.data, closed), [])
+        ends = roof + [{"id": "glass_roof_2x2_end", "x": 72, "y": 6, "h": 2.4, "turn": 0},
+                       {"id": "glass_roof_2x2_end", "x": 60, "y": 18, "h": 2.4, "turn": 180}]
+        self.assertEqual(hg.gable_gaps(self.data, ends), [])
 
 
 class Rules(unittest.TestCase):
