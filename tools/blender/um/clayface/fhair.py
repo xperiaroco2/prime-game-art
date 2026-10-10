@@ -273,6 +273,77 @@ def settle_goatee(face, step=0.0005, most=0.008):
     return lowered
 
 
+def lift_moustache(face, ctx, step=0.0005, most=0.004, ramp=0.008):
+    """Lifts a moustache's end off a mouth state it meets, as settle_goatee lowers the goatee (art #42 part B): the
+    stations keep the lip outline's top clear (build_facial_hair put), but not the lip's own thickness at a raised
+    corner beyond them; on the repo's head a loud brush met the smirk's raised corner in state e (kit-check M: 5 faces,
+    4 triangle pairs each, 26 mm out from the middle). Per side that touches, the moustache's vertices from `ramp`
+    inside the innermost touching point outward rise in 0.5 mm steps (a linear ramp from 0 to the full step; basis
+    and every key alike) until no state touches, at most `most`. The goatee is not touched. Records
+    meta["moustache_lift_mm"] ({"L"|"R": mm}, empty when nothing touched)."""
+    from mathutils.bvhtree import BVHTree
+    o = face.pieces.get("fhair")
+    mo = face.pieces.get("mouth")
+    face.meta["moustache_lift_mm"] = {}
+    if o is None or mo is None:
+        return {}
+    g0, gn = getattr(face, "goatee_range", None) or (0, 0)
+    mine = [q for q in o.data.polygons if not g0 <= q.vertices[0] < g0 + gn]
+    if not mine:
+        return {}
+    polys = [tuple(q.vertices) for q in mine]
+    keys = [None] + [f"mouth_{s}" for s in STATES if s != "rest"]
+    others = []
+    for k in ("mouth", "teeth"):
+        m = face.pieces.get(k)
+        if m is not None:
+            mp = [tuple(q.vertices) for q in m.data.polygons]
+            others.append({key: BVHTree.FromPolygons(piece_coords(m, key), mp) for key in keys})
+    mx = ctx.mx
+    inv = o.matrix_world.inverted()
+    lifted = {}
+
+    def touching():
+        """The innermost |x - mx| of the touching moustache faces per side ({1.0 | -1.0: offset})."""
+        out = {}
+        for key in keys:
+            co = piece_coords(o, key)
+            t = BVHTree.FromPolygons(co, polys)
+            for oth in others:
+                for a, _b in t.overlap(oth[key]):
+                    c = sum((co[j] for j in polys[a]), co[polys[a][0]] * 0) / len(polys[a])
+                    s_ = 1.0 if c.x >= mx else -1.0
+                    out[s_] = min(out.get(s_, 1.0), abs(c.x - mx))
+        return out
+
+    hit = touching()
+    while hit:
+        for s_, x0 in hit.items():
+            if lifted.get(s_, 0.0) >= most - 1e-9:
+                continue
+            up = (inv.to_3x3() @ Vector((0.0, 0.0, step)))
+            for i, v in enumerate(o.data.vertices):
+                if g0 <= i < g0 + gn:
+                    continue
+                d = (o.matrix_world @ v.co).x - mx
+                if d * s_ <= 0:
+                    continue
+                w = min(1.0, max(0.0, (abs(d) - (x0 - ramp)) / ramp))
+                if w <= 0.0:
+                    continue
+                v.co += up * w
+                if o.data.shape_keys:
+                    for kb in o.data.shape_keys.key_blocks:
+                        kb.data[i].co += up * w
+            lifted[s_] = lifted.get(s_, 0.0) + step
+        o.data.update()
+        if all(lifted.get(s_, 0.0) >= most - 1e-9 for s_ in hit):
+            break
+        hit = touching()
+    face.meta["moustache_lift_mm"] = {("L" if s_ > 0 else "R"): round(v_ * 1000, 1) for s_, v_ in lifted.items()}
+    return lifted
+
+
 def seat_moustache(face, ctx, M=None, bin_w=0.001):
     """Round E fix (2026-10-09, brief2 FIX 1): every moustache sits as one piece BELOW the nose. The nose is built on
     the moustache's centre line, so its underside sank into the moustache (the ball split the brush into two pads).

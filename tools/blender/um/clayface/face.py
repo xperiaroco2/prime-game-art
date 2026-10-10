@@ -18,7 +18,7 @@ from .eyes import build_eyes
 from .brows import build_brows
 from .nose import build_nose, nose_eye_overlap, nose_meets_pupils, settle_nose
 from .ears import build_ears
-from .fhair import build_facial_hair, seat_moustache, settle_goatee
+from .fhair import build_facial_hair, lift_moustache, seat_moustache, settle_goatee
 
 
 class Face:
@@ -133,6 +133,7 @@ def build_face(h, picks, skin, coll=None, hair_rgb=None, bind=True, brow_colour=
     M = build_mouth(face, ctx, coll)
     fh, centre_z = build_facial_hair(face, ctx, M, coll)
     settle_goatee(face)
+    lift_moustache(face, ctx)
     # Iterator round 1 (resumed): a loud nose (x1.25) on the library heads could reach a pupil (the 300-face check on
     # the library heads: 50 nose|pupil triangle pairs). The nose is built at its full scale and, while it meets a
     # pupil, rebuilt 0.05 smaller (never below its quiet size, then never below wave A's size).
