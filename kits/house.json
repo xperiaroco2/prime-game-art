@@ -45,6 +45,9 @@
   "basement": {"material": "concrete", "hex": "#6f6a62"},
   "concrete": {"material": "concrete", "hex": "#8f897d"},
   "roof": {"material": "concrete", "hex": "#5a3a34"},
+  "tile": {"material": "concrete", "hex": "#7a4634"},
+  "tile_b": {"material": "concrete", "hex": "#6a4236"},
+  "tile_c": {"material": "concrete", "hex": "#83533f"},
   "metal": {"material": "metal", "hex": "#23211f"},
   "glass": {"material": "glass", "hex": "#a8c0c8"}
  },

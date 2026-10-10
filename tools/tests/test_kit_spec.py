@@ -310,3 +310,36 @@ class VersionTwoTest(unittest.TestCase):
         rows = G.piece_table([KIT["pillar_concrete"]])
         self.assertGreater(rows[0]["uv2_per_m"], 0.05)
         self.assertIn("UV2 per m", _kit.table_md(rows, SPEC["budget_tris"]))
+
+
+class FreeRoofTest(unittest.TestCase):
+    """Art #77: the pantile courses, the half-round ridge cap and the dormer's faces."""
+
+    def test_pantiles_meet_on_the_course_grid(self) -> None:
+        pp = G.pitch(SPEC)
+        top = lambda z: pp["u"] + pp["tv"] + pp["r"] * z  # noqa: E731
+        m = G.build_piece(PIECES["roof_pitched_2x2"], SPEC).mesh
+        tiles = [[m.verts[i] for i in f] for f, r in zip(m.faces, m.roles) if r.startswith("tile")]
+        self.assertTrue(tiles)
+        hi = {round(v[2], 4): max(q[1] for f in tiles for q in f if abs(q[2] - v[2]) < 1e-6) for f in tiles for v in f}
+        # every course boundary (multiples of 1/3) holds the lip, the panel's top end sinks to the slab's top
+        self.assertAlmostEqual(hi[0.0], top(0.0) + G.TILE_LIP, places=5)
+        self.assertAlmostEqual(hi[round(1 / 3, 4)], top(1 / 3) + G.TILE_LIP, places=5)
+        self.assertAlmostEqual(hi[2.0], top(2.0), places=5)
+        self.assertGreaterEqual(len({r for r in m.roles if r.startswith("tile")}), 2)  # the clay's spread
+        self.assertLessEqual(m.triangles(), SPEC["budget_tris"]["roof"])
+
+    def test_tile_roles_share_the_set_material(self) -> None:
+        for r in G.TILE_ROLES:
+            self.assertEqual(SPEC["roles"][r]["material"], "concrete")
+
+    def test_ridge_cap_is_half_round_over_the_apex(self) -> None:
+        pp = G.pitch(SPEC)
+        b = KIT["roof_pitched_ridge_2m"]["bounds_m"]
+        self.assertAlmostEqual(b["max"][1], pp["u"] + pp["tv"] + G.RIDGE_R, places=4)
+        self.assertAlmostEqual(b["max"][2], G.RIDGE_BED, places=4)
+
+    def test_dormer_has_no_duplicate_faces(self) -> None:
+        m = G.build_piece(PIECES["dormer_gable"], SPEC).mesh
+        keys = [tuple(sorted(f)) for f in m.faces]
+        self.assertEqual(len(keys), len(set(keys)))

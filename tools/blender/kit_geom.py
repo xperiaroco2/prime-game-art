@@ -716,8 +716,55 @@ def build_pitched(pc: Piece, p: dict, spec: dict) -> None:
     ends = p.get("ends", "")
     prof = [(z0, u + r * z0), (z1, u + r * z1), (z1, u + tv + r * z1), (z0, u + tv + r * z0)]
     prism_x(pc.mesh, prof, x0, x1, p.get("under", "boards"), caps="".join(e for e in ("-x", "+x") if e in ends),
-            cap_role="trim", edges=[True, "+z" in ends, True, "-z" in ends], edge_roles={1: "trim", 2: "roof", 3: "trim"})
+            cap_role="trim", edges=[True, "+z" in ends, False, "-z" in ends], edge_roles={1: "trim", 3: "trim"})
+    pantile_courses(pc.mesh, x0, x1, z0, z1, lambda z: u + tv + r * z, ends)
     pc.collide(prism_x_points(prof, x0, x1))
+
+
+TILE_COURSE, TILE_W, TILE_LIP = 1 / 3, 1 / 3, 0.03  # the pantiles' course and tile (horizontal m) and the lip's lift
+TILE_ROLES = ("tile", "tile", "tile_b", "tile", "tile_c", "tile", "tile_b")  # the clay's spread, picked per tile
+
+
+def _cuts(a: float, b: float, step: float) -> list[float]:
+    """a, the multiples of step strictly inside (a, b), b: a piece's span cut on the kit-wide tile grid."""
+    out, k = [a], math.floor(a / step + 1e-6) + 1
+    while k * step < b - EPS:
+        out.append(k * step)
+        k += 1
+    return out + [b]
+
+
+def pantile_courses(m: Mesh, x0, x1, z0, z1, base, ends: str = "") -> None:
+    """The pantile covering of a pitched slab (art #77, docs/kit.md "The free roof"): courses TILE_COURSE deep up the
+    slope, each tile TILE_W wide, on the grid of multiples from the eave wall's line, so neighbouring panels meet. A
+    course's lower edge stands TILE_LIP over the slab's top base(z) and its upper edge sinks under the next course's
+    lip: the stepped shadow lines of the look round's courses. Every tile takes one of TILE_ROLES (the clay's colour
+    spread: vertex colours of one material). The plumb ends named in ends ("-z" eave, "+z", "-x" or "+x" verges)
+    close the step."""
+    zs, xs = _cuts(z0, z1, TILE_COURSE), _cuts(x0, x1, TILE_W)
+    for za, zb in zip(zs, zs[1:]):
+        k = math.floor((za + 1e-6) / TILE_COURSE)
+        ce = (k + 1) * TILE_COURSE
+
+        def y(z, ce=ce):
+            return base(z) + TILE_LIP * (ce - z) / TILE_COURSE
+        ya, yb = y(za), y(zb)
+        lip = abs(za - k * TILE_COURSE) < 1e-6 or (za == z0 and "-z" in ends)
+        tail = zb == z1 and "+z" in ends and yb - base(zb) > EPS
+        nrm = (0.0, 1.0, -(yb - ya) / (zb - za))
+        for xa, xb in zip(xs, xs[1:]):
+            j = math.floor((xa + 1e-6) / TILE_W)
+            role = TILE_ROLES[(k * 5 + j * 3) % len(TILE_ROLES)]
+            m.poly([(xa, ya, za), (xb, ya, za), (xb, yb, zb), (xa, yb, zb)], nrm, role)
+            if lip:
+                m.poly([(xa, base(za), za), (xb, base(za), za), (xb, ya, za), (xa, ya, za)], (0, 0, -1), role)
+            if tail:
+                m.poly([(xa, base(zb), zb), (xb, base(zb), zb), (xb, yb, zb), (xa, yb, zb)], (0, 0, 1), "trim")
+        for side, x in (("-x", x0), ("+x", x1)):
+            if side in ends:
+                pts = [(x, base(za), za), (x, base(zb), zb), (x, yb, zb), (x, ya, za)]
+                pts = [q for i, q in enumerate(pts) if math.dist(q, pts[i - 1]) > EPS]
+                m.poly(pts, (-1 if side == "-x" else 1, 0, 0), "trim")
 
 
 def build_ridge(pc: Piece, p: dict, spec: dict) -> None:
@@ -726,13 +773,22 @@ def build_ridge(pc: Piece, p: dict, spec: dict) -> None:
     pp = pitch(spec)
     r, y0 = pp["r"], pp["u"] + pp["tv"]
     x0, x1 = p["x"]
-    c, k = 0.2, 0.04
+    c, k = RIDGE_BED, 0.05
     caps = "".join(e for e in ("-x", "+x") if e in p.get("ends", ""))
-    for s in (-1, 1):
+    for s in (-1, 1):  # the mortar bed
         prof = [(0, y0), (s * c, y0 - r * c), (s * c, y0 - r * c + k), (0, y0 + k)]
-        prism_x(pc.mesh, prof, x0, x1, "trim", caps=caps, edges=[False, True, True, False])
-    pc.collide(prism_x_points([(-c, y0 - r * c), (c, y0 - r * c), (c, y0 - r * c + k), (0, y0 + k), (-c, y0 - r * c + k)],
-                              x0, x1))
+        prism_x(pc.mesh, prof, x0, x1, "concrete", caps=caps, edges=[False, True, True, False])
+    # the half-round clay cap on the bed, its feet sunk into the mortar
+    a0 = math.radians(RIDGE_FOOT_DEG)
+    arc = [(RIDGE_R * math.cos(a), y0 + RIDGE_R * math.sin(a))
+           for a in (-a0 + (math.pi + 2 * a0) * i / RIDGE_SEGS for i in range(RIDGE_SEGS + 1))]
+    prism_x(pc.mesh, arc, x0, x1, "tile", caps=caps, edges=[True] * RIDGE_SEGS + [False])
+    h = RIDGE_R * 0.71
+    pc.collide(prism_x_points([(-c, y0 - r * c), (c, y0 - r * c), (c, y0 - r * c + k), (h, y0 + h), (0, y0 + RIDGE_R),
+                               (-h, y0 + h), (-c, y0 - r * c + k)], x0, x1))
+
+
+RIDGE_BED, RIDGE_R, RIDGE_SEGS, RIDGE_FOOT_DEG = 0.17, 0.12, 8, 14.0  # the mortar bed's half width; the clay cap
 
 
 GLASS_BAR, GLASS_LIFT = 0.05, 0.06  # the glass roof's rafter width and the pane's height over the gables' line
@@ -933,7 +989,7 @@ def build_dormer(pc: Piece, p: dict, spec: dict) -> None:
         top = [(X(-ov), ye, -ov), (X(-ov), ye, dd["ze"]), (X(W / 2), hr, L), (X(W / 2), hr, -ov)]
         bot = [(x, y - sl, z) for x, y, z in top]
         nrm = (-k if side == 0 else k, 1.0, 0.0)
-        m.poly(top, nrm, "roof")
+        m.poly(top, nrm, "tile")
         m.poly(bot, tuple(-v for v in nrm), "boards")
         m.poly([top[0], top[3], bot[3], bot[0]], (0.0, 0.0, -1.0), "trim")  # the barge board's edge
         m.poly([top[0], top[1], bot[1], bot[0]], (-1.0 if side == 0 else 1.0, 0.0, 0.0), "trim")  # the fascia's edge
@@ -941,7 +997,7 @@ def build_dormer(pc: Piece, p: dict, spec: dict) -> None:
     # the main roof behind the cheeks: the column's slab from ze to the far end (round the valleys)
     z0 = dd["ze"]
     slab = [(z0, u + r * z0), (L, u + r * L), (L, u + tv + r * L), (z0, u + tv + r * z0)]
-    prism_x(m, slab, 0.0, W, "boards", caps="", edges=[True, False, True, True], edge_roles={2: "roof", 3: "trim"})
+    prism_x(m, slab, 0.0, W, "boards", caps="", edges=[True, False, True, True], edge_roles={2: "tile", 3: "trim"})
     pc.collide(prism_x_points(slab, 0.0, W))
     # the sills and the open casement
     m.box((wx0 - 0.05, sill - 0.03, -0.08), (wx1 + 0.05, sill, 0.0), "metal")
