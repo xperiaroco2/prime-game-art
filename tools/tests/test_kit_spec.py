@@ -420,3 +420,24 @@ class FreeRoofTest(unittest.TestCase):
         m = G.build_piece(PIECES["dormer_gable"], SPEC).mesh
         keys = [tuple(sorted(f)) for f in m.faces]
         self.assertEqual(len(keys), len(set(keys)))
+
+    def test_dormer_front_band_collider_reaches_the_apron_toe(self) -> None:
+        # the lead apron's wedge is folded into the hull of the wall band under the sill (the crouched capsule's ramp
+        # back in): still 11 colliders, one of them reaching DORMER_APRON down the slope at the roof's top, up to the
+        # sill's top, across the dormer's width, and nowhere under the roof slab's underside (into the attic)
+        p = PIECES["dormer_gable"]
+        pc = G.build_piece(p, SPEC)
+        self.assertEqual(len(pc.colliders), 11)
+        dd = G.dormer_dims(p, SPEC)
+        a = G.DORMER_APRON
+        toe_y = dd["u"] + dd["tv"] - dd["r"] * a
+        bands = [c for c in pc.colliders
+                 if any(abs(q[2] + a) < 1e-4 and abs(q[1] - toe_y) < 1e-4 for q in c["points"])]
+        self.assertEqual(len(bands), 1)
+        b = G.bounds(bands[0]["points"])
+        self.assertAlmostEqual(b["min"][2], -a, places=4)
+        self.assertAlmostEqual(b["max"][1], dd["sill"], places=4)
+        self.assertAlmostEqual(b["min"][0], 0.0, places=4)
+        self.assertAlmostEqual(b["max"][0], dd["W"], places=4)
+        for x, y, z in bands[0]["points"]:
+            self.assertGreaterEqual(y, dd["u"] + dd["r"] * min(z, 0.0) - 1e-4, (x, y, z))
