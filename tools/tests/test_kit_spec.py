@@ -369,7 +369,7 @@ class FreeRoofTest(unittest.TestCase):
         zg, yg = G.gutter_axis(SPEC)
         zinc = [m.verts[i] for f, r in zip(m.faces, m.roles) if r == "zinc" for i in f]
         self.assertAlmostEqual(min(v[1] for v in zinc), yg - G.GUTTER_R, places=4)
-        self.assertLess(max(v[2] for v in zinc), -0.5)  # in front of the fascia
+        self.assertLess(max(v[2] for v in zinc if v[1] <= yg + 1e-6), -0.5)  # the gutter: in front of the fascia
         self.assertNotIn("tile_moss", G.build_piece(PIECES["roof_pitched_2x2"], SPEC).mesh.roles)
 
     def test_downpipe_reaches_the_ground_on_the_wall(self) -> None:

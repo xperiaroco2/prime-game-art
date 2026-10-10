@@ -1089,7 +1089,7 @@ def build_chimney(pc: Piece, p: dict, spec: dict) -> None:
         frustum(m, (xc, S / 2), cap1, H - 0.06, 0.12, 0.09, "tile_c")
         frustum(m, (xc, S / 2), H - 0.06, H, 0.105, 0.105, "tile_c")
         frustum(m, (xc, S / 2), H - 0.06, H - 0.03, 0.09, 0.09, "metal", top="metal")  # the soot-dark flue
-        pc.collide_box((xc - 0.12, cap1, S / 2 - 0.12), (xc + 0.12, H, S / 2 + 0.12))
+    pc.collide_box((S * 0.3 - 0.12, cap1, S / 2 - 0.12), (S * 0.7 + 0.12, H, S / 2 + 0.12))  # one box round both pots
     pc.collide_box((0, 0, 0), (S, cb0, S))
     pc.collide_box((-o, cb0, -o), (S + o, cap1, S + o))
     if top is not None:
