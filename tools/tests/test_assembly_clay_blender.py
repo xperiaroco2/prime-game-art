@@ -24,7 +24,7 @@ LIB = RAW / "clay-lib"
 HAVE_BLENDER = bool((path := common.tool_path(pins.BLENDER_ENV, pins.BLENDER_DEFAULT)) and path.is_file())
 HAVE_PACKS = (RAW / "refs" / "Ultimate_Modular_Men_Pack").is_dir() and (RAW / "refs" / "Ultimate_Modular_Women_Pack").is_dir()
 SKIP = f"needs Blender {pins.BLENDER} ({path}) and the Ultimate Modular packs in {RAW.as_posix()}/refs"
-BAKED_ROLES = ("head", "hair", "top", "bottom", "shoes")  # w1's baked pieces; her eyes stay plain glossy parts
+BAKED_ROLES = ("head", "hair", "top", "bottom", "shoes")  # w1's baked pieces (the kit face in the head); her eyes stay plain glossy
 
 
 def run_cli(*argv: str) -> tuple[int, str]:
@@ -55,6 +55,17 @@ class ClayPassTest(unittest.TestCase):
             self.assertLessEqual(rep["triangles"][role], L.BUDGET[role] + 2, role)  # the decimator's +-1 per island
         self.assertGreater(rep["triangles_total"], 0)
         self.assertIn("triangles_total_pack", rep)
+        # the face kit's face (um/clayface) instead of the scripted one: no collisions, no brow in an eye white, the
+        # expressions on the face joined into the head, the ears as her hair item sets them
+        kit = rep["face_kit"]
+        self.assertEqual(kit["collisions"], {})
+        self.assertEqual(kit["brow_in_white"], 0)
+        self.assertFalse(kit["nose_meets_pupils"])
+        self.assertIn("mouth_a", kit["keys"]["face"])
+        self.assertIn("look_l", kit["keys"]["eyes"])
+        self.assertEqual(kit["ears_state"], kit["flags"]["ears"])
+        self.assertNotIn("brows", rep["triangles"])
+        self.assertEqual(rep["clay"]["joined_into_head"], ["face"])
 
 
 @unittest.skipUnless(HAVE_BLENDER and HAVE_PACKS, SKIP)

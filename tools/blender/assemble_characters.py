@@ -77,8 +77,9 @@ def main():
     need_chars = args.blend or not modes or any(m in modes for m in ("chars", "hands", "lineup", "qa", "face", "ankles"))
     for i, rc in enumerate(recs if need_chars else []):
         coll = bpy.data.collections.new(rc["id"]); bpy.context.scene.collection.children.link(coll)
-        arm, parts, rep = assemble.build_character(packs, R, rc, coll)
-        if (args.look or R.get("look", "pack")) == "clay":
+        clay_look = (args.look or R.get("look", "pack")) == "clay"
+        arm, parts, rep = assemble.build_character(packs, R, rc, coll, face="kit" if clay_look else "pack")
+        if clay_look:
             assemble.clay_look(R, rc, arm, parts, rep, lib=args.clay_lib or None)
         report["characters"][rc["id"]] = rep
         chars[rc["id"]] = (arm, parts, coll, rc)

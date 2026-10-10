@@ -193,9 +193,16 @@ that changes a part from something outside its spec must join its key there. A c
 `clay_bake` names each part's source (`baked` or `library`) and times. Raise `BAKE_VERSION` when the pass or the bake
 changes its output. The library lives in the raw folder, never in git.
 
-The face: the pack heads keep the repo's scripted eyes, brows and mouth (`claylook.FACE_ROLES`); the brows and mouth
-are joined into the head's atlas (`JOIN_INTO_HEAD`), so a character stays within the contract's 8 surfaces. The face
-kit (art #42 part B) plugs in there. Round D's stance edit (`clay_stance.py`, the Idle's right foot) is an animation
+The face: a clay character gets the clay face kit's face (`build_character(face="kit")`, `um/clayface/adapter.py`;
+`docs/faces.md`, "The clay face kit") from its optional `face_kit` picks; the pack look keeps the scripted eyes, brows
+and mouth (`face="pack"`). The pack head's own ears are flattened (`heads.tuck_ears`, unless the recipe tucks them),
+and the kit's face is merged into two parts (`claylook.KIT_ROLES`): `<id>_eyes` (whites and pupils, glossy, the look
+keys) and `<id>_face` (everything else, every expression key, the mask UV), which the pass joins into the head's atlas
+(`JOIN_INTO_HEAD`: brows, mouth, face), so a character stays within the contract's 8 surfaces. The shape keys survive
+the pass: the head scale scales the key blocks, the join adds the head's Basis, the bake keeps the `mask` UV, and the
+saved file's transforms keep the keys. The ear state follows the hair item (`face_kit.ears_state` in the report, set
+after the bake). The face's settings (picks, `brow_rgb`, the hair, the kit's `DATA_SHA`) are in the face and head
+piece keys. Round D's stance edit (`clay_stance.py`, the Idle's right foot) is an animation
 edit, not part of the pass: the clay recipe poses Idle frame 0.
 
 Export the saved clay characters with `export --textured` and check them with `godot-check --textured`

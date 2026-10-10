@@ -1,5 +1,5 @@
 {
- "description": "The clay look's proof (art #42 part A): round D's reference man m1 and woman w1 (D:/prime-art-raw/research/2026-10-07-clay-d/cast/m1_build.json, w1_build.json: the same top, bottom, shoes, hair, accessory and skin tone) built by the assembler's clay pass. The heads are the pack heads with the repo's scripted face until the face kit (art #42 part B) replaces them.",
+ "description": "The clay look's proof (art #42 part A): round D's reference man m1 and woman w1 (D:/prime-art-raw/research/2026-10-07-clay-d/cast/m1_build.json, w1_build.json: the same top, bottom, shoes, hair, accessory and skin tone) built by the assembler's clay pass. The heads are the pack heads with the clay face kit's face (art #42 part B; the kit's default picks for the body type).",
  "packs": {"M": "refs/Ultimate_Modular_Men_Pack", "W": "refs/Ultimate_Modular_Women_Pack"},
  "skeleton": {"M": "Business Man.glb", "W": "Suit.glb"},
  "head_bone_rest": [-0.0003, -0.0431, 1.5873],

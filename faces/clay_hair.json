@@ -1,0 +1,403 @@
+{
+ "schema": "prime-game-art/faces/clay-hair/1",
+ "what": "Per hair and headwear item (catalogue ids): the face kit's flags, which the game applies from the worn items. ears_free: [ears free where they are, ears free when tucked] measured on the lab's one head (face_sheets.py --only ears); brow_tuck: the brows are pressed behind the item's hanging locks (docs/faces.md, \"The clay face kit\"). lab_ears_free: the lab's value where the repo's heads measure otherwise (faces --kit-check on the recipe's heads, art #42 part B): the repo value wins.",
+ "items": {
+  "hair_m_adventurer": {
+   "kind": "hair",
+   "body_type": "M",
+   "file": "Adventurer.glb",
+   "object": "Adventurer_Head",
+   "materials": [
+    "Hair"
+   ],
+   "ears_free": [
+    false,
+    false
+   ],
+   "brow_tuck": true
+  },
+  "hair_m_beach": {
+   "kind": "hair",
+   "body_type": "M",
+   "file": "Beach Character.glb",
+   "object": "Beach_Head",
+   "materials": [
+    "Hair"
+   ],
+   "ears_free": [
+    false,
+    false
+   ],
+   "brow_tuck": true
+  },
+  "hair_m_business": {
+   "kind": "hair",
+   "body_type": "M",
+   "file": "Business Man.glb",
+   "object": "Suit_Head",
+   "materials": [
+    "Hair"
+   ],
+   "ears_free": [
+    false,
+    false
+   ],
+   "brow_tuck": true
+  },
+  "hair_m_casual": {
+   "kind": "hair",
+   "body_type": "M",
+   "file": "Casual Character.glb",
+   "object": "Casual2_Head",
+   "materials": [
+    "Hair"
+   ],
+   "ears_free": [
+    false,
+    false
+   ],
+   "lab_ears_free": [
+    false,
+    true
+   ],
+   "brow_tuck": true
+  },
+  "hair_m_farmer_buzz": {
+   "kind": "hair",
+   "body_type": "M",
+   "file": "Farmer.glb",
+   "object": "Farmer_Head",
+   "materials": [
+    "Eyebrows"
+   ],
+   "ears_free": [
+    true,
+    true
+   ],
+   "brow_tuck": true
+  },
+  "hair_m_hoodie": {
+   "kind": "hair",
+   "body_type": "M",
+   "file": "Hoodie Character.glb",
+   "object": "Casual_Head",
+   "materials": [
+    "Hair"
+   ],
+   "ears_free": [
+    false,
+    true
+   ],
+   "lab_ears_free": [
+    true,
+    true
+   ],
+   "brow_tuck": true
+  },
+  "hair_m_king_long": {
+   "kind": "hair",
+   "body_type": "M",
+   "file": "King.glb",
+   "object": "King_Head",
+   "materials": [
+    "Hair_White"
+   ],
+   "ears_free": [
+    false,
+    false
+   ],
+   "lab_ears_free": [
+    false,
+    true
+   ],
+   "brow_tuck": true
+  },
+  "hair_m_punk_mohawk": {
+   "kind": "hair",
+   "body_type": "M",
+   "file": "Punk.glb",
+   "object": "Punk_Head",
+   "materials": [
+    "Red",
+    "Red_Dark"
+   ],
+   "ears_free": [
+    true,
+    true
+   ],
+   "brow_tuck": true
+  },
+  "hair_m_worker_buzz": {
+   "kind": "hair",
+   "body_type": "M",
+   "file": "Worker.glb",
+   "object": "Worker_Head",
+   "materials": [
+    "Eyebrows"
+   ],
+   "ears_free": [
+    true,
+    true
+   ],
+   "brow_tuck": true
+  },
+  "hair_w_adventurer": {
+   "kind": "hair",
+   "body_type": "W",
+   "file": "Adventurer.glb",
+   "object": "Adventurer_Head",
+   "materials": [
+    "Hair_Brown"
+   ],
+   "ears_free": [
+    true,
+    true
+   ],
+   "brow_tuck": true
+  },
+  "hair_w_casual_bob": {
+   "kind": "hair",
+   "body_type": "W",
+   "file": "Animated Woman.glb",
+   "object": "Casual_Head",
+   "materials": [
+    "Hair_Blond"
+   ],
+   "ears_free": [
+    false,
+    false
+   ],
+   "brow_tuck": true
+  },
+  "hair_w_formal_updo": {
+   "kind": "hair",
+   "body_type": "W",
+   "file": "Animated Woman-nIItLV9nxS.glb",
+   "object": "Formad_Head",
+   "materials": [
+    "Red"
+   ],
+   "ears_free": [
+    false,
+    true
+   ],
+   "brow_tuck": true
+  },
+  "hair_w_medieval": {
+   "kind": "hair",
+   "body_type": "W",
+   "file": "Medieval.glb",
+   "object": "Medieval_Head",
+   "materials": [
+    "White"
+   ],
+   "ears_free": [
+    false,
+    false
+   ],
+   "brow_tuck": true
+  },
+  "hair_w_punk_mohawk": {
+   "kind": "hair",
+   "body_type": "W",
+   "file": "Punk.glb",
+   "object": "Punk_Head",
+   "materials": [
+    "Pink"
+   ],
+   "ears_free": [
+    false,
+    true
+   ],
+   "brow_tuck": true
+  },
+  "hair_w_scifi": {
+   "kind": "hair",
+   "body_type": "W",
+   "file": "Sci Fi Character.glb",
+   "object": "SciFi_Head",
+   "materials": [
+    "Hair_Black"
+   ],
+   "ears_free": [
+    false,
+    false
+   ],
+   "brow_tuck": true
+  },
+  "hair_w_soldier": {
+   "kind": "hair",
+   "body_type": "W",
+   "file": "Soldier.glb",
+   "object": "Soldier_Head",
+   "materials": [
+    "Hair_Brown"
+   ],
+   "ears_free": [
+    false,
+    false
+   ],
+   "brow_tuck": true
+  },
+  "hair_w_suit_bob": {
+   "kind": "hair",
+   "body_type": "W",
+   "file": "Suit.glb",
+   "object": "Suit_Head",
+   "materials": [
+    "Hair_Blond"
+   ],
+   "ears_free": [
+    false,
+    false
+   ],
+   "brow_tuck": true
+  },
+  "hair_w_witch": {
+   "kind": "hair",
+   "body_type": "W",
+   "file": "Witch.glb",
+   "object": "Witch_Head",
+   "materials": [
+    "Hair_Black"
+   ],
+   "ears_free": [
+    false,
+    false
+   ],
+   "brow_tuck": true
+  },
+  "hair_w_worker": {
+   "kind": "hair",
+   "body_type": "W",
+   "file": "Worker.glb",
+   "object": "Worker_Head",
+   "materials": [
+    "DarkBrown"
+   ],
+   "ears_free": [
+    false,
+    false
+   ],
+   "brow_tuck": true
+  },
+  "headwear_m_astronaut_space_helmet": {
+   "kind": "headwear",
+   "body_type": "M",
+   "file": "Astronaut.glb",
+   "object": "SpaceSuit_Head",
+   "materials": [
+    "Grey",
+    "SciFi_Light",
+    "SciFi_Light_Accent"
+   ],
+   "ears_free": [
+    false,
+    false
+   ],
+   "brow_tuck": false
+  },
+  "headwear_m_farmer_cowboy_hat": {
+   "kind": "headwear",
+   "body_type": "M",
+   "file": "Farmer.glb",
+   "object": "Farmer_Head",
+   "materials": [
+    "Beige",
+    "Red"
+   ],
+   "ears_free": [
+    true,
+    true
+   ],
+   "brow_tuck": false
+  },
+  "headwear_m_king_crown": {
+   "kind": "headwear",
+   "body_type": "M",
+   "file": "King.glb",
+   "object": "King_Head",
+   "materials": [
+    "Gold"
+   ],
+   "ears_free": [
+    true,
+    true
+   ],
+   "brow_tuck": false
+  },
+  "headwear_m_swat_helmet": {
+   "kind": "headwear",
+   "body_type": "M",
+   "file": "Swat.glb",
+   "object": "Swat_Head",
+   "materials": [
+    "Swat",
+    "Swat_Black",
+    "Visor"
+   ],
+   "ears_free": [
+    false,
+    false
+   ],
+   "brow_tuck": false
+  },
+  "headwear_m_worker_hard_hat": {
+   "kind": "headwear",
+   "body_type": "M",
+   "file": "Worker.glb",
+   "object": "Worker_Head",
+   "materials": [
+    "Worker_Yellow"
+   ],
+   "ears_free": [
+    true,
+    true
+   ],
+   "brow_tuck": false
+  },
+  "headwear_w_medieval_hood": {
+   "kind": "headwear",
+   "body_type": "W",
+   "file": "Medieval.glb",
+   "object": "Medieval_Head",
+   "materials": [
+    "DarkBrown"
+   ],
+   "ears_free": [
+    false,
+    false
+   ],
+   "brow_tuck": false
+  },
+  "headwear_w_witch_hat": {
+   "kind": "headwear",
+   "body_type": "W",
+   "file": "Witch.glb",
+   "object": "Witch_Head",
+   "materials": [
+    "Gold",
+    "Purple"
+   ],
+   "ears_free": [
+    true,
+    true
+   ],
+   "brow_tuck": false
+  },
+  "headwear_w_worker_hard_hat": {
+   "kind": "headwear",
+   "body_type": "W",
+   "file": "Worker.glb",
+   "object": "Worker_Head",
+   "materials": [
+    "Worker_Yellow"
+   ],
+   "ears_free": [
+    true,
+    true
+   ],
+   "brow_tuck": false
+  }
+ }
+}

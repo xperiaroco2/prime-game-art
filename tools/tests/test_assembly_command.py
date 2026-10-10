@@ -36,7 +36,9 @@ class FindRecipeTest(unittest.TestCase):
     def test_an_unknown_recipe_names_the_recipes(self) -> None:
         code, out = run_cli("assemble", "no_such_recipe")
         self.assertEqual(code, 1)
-        self.assertIn("recipes/ has: clay_round_d.json, um_final_test.json, um_final_test_neutral.json", out)
+        names = ", ".join(sorted(p.name for p in (common.ROOT / "recipes").glob("*.json")))
+        self.assertIn("um_final_test.json", names)
+        self.assertIn(f"recipes/ has: {names}", out)
 
 
 class RefusalsTest(FakeRaw):

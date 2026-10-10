@@ -109,7 +109,7 @@ def save_character(cid, arm, parts, rc, rep, out_dir):
     if max(scale) - min(scale) > 1e-4:
         raise RuntimeError(f"{cid}: the armature's scale {tuple(scale)} is not uniform")
     for o in parts.values():
-        o.data.transform(o.matrix_world)
+        o.data.transform(o.matrix_world, shape_keys=True)  # the face kit's expression keys move too
         o.data.update()
     m = arm.matrix_world.copy()
     arm.parent = None
