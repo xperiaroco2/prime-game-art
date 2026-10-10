@@ -14,7 +14,7 @@ from runner import common
 from runner.commands import _assembly
 
 recipe = _assembly.recipe_module()
-from um import glb  # noqa: E402  (importable once recipe_module() put tools/blender on the path)
+from um import glb, zones  # noqa: E402  (importable once recipe_module() put tools/blender on the path)
 
 RAW = common.raw_dir()
 HAVE_PACKS = (RAW / "refs" / "Ultimate_Modular_Men_Pack").is_dir() and (RAW / "refs" / "Ultimate_Modular_Women_Pack").is_dir()
@@ -335,3 +335,27 @@ class HeadsCatalogueTest(unittest.TestCase):
         for path in sorted((common.ROOT / "recipes").glob("*.json")):
             with self.subTest(recipe=path.name):
                 self.assertEqual(recipe.check_heads(recipe.read(path), cat), [])
+
+
+class PieceZones(unittest.TestCase):
+    """art #42 round 3: zones.PIECE_ZONES on the pieces' measured centres (the probe in the zones' comments)."""
+
+    @staticmethod
+    def p(x, y, z):
+        return type("P", (), {"x": x, "y": y, "z": z})()
+
+    def test_the_kings_beard_goes_and_his_hair_stays(self) -> None:
+        fh = zones.PIECE_ZONES["facial_hair"]
+        self.assertTrue(fh(self.p(0.0, -0.12, 1.60)))  # beard
+        self.assertTrue(fh(self.p(0.03, -0.13, 1.645)))  # moustache
+        self.assertFalse(fh(self.p(0.0, -0.05, 1.80)))  # crown
+        self.assertFalse(fh(self.p(0.09, -0.06, 1.64)))  # side lock by the ear
+
+    def test_w4_keeps_the_crest_only(self) -> None:
+        cap, strips = zones.PIECE_ZONES["punk_cap"], zones.PIECE_ZONES["punk_side_strips"]
+        self.assertTrue(cap(self.p(0.0, -0.054, 1.742)))  # the skull cap's centre
+        for x, z in ((0.0, 1.77), (0.02, 1.80), (-0.035, 1.86)):  # crest spikes: |x| < 0.036, z 1.77-1.86
+            self.assertFalse(cap(self.p(x, -0.05, z)) or strips(self.p(x, -0.05, z)), (x, z))
+        for x in (0.074, -0.095):  # the side strips by the ears
+            self.assertTrue(strips(self.p(x, -0.09, 1.64)))
+            self.assertFalse(cap(self.p(x, -0.09, 1.64)))
