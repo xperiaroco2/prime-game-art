@@ -117,6 +117,14 @@ class RecipePicks(unittest.TestCase):
         self.assertEqual(K.check_picks("big", "M"), ["face_kit: must be an object of picks (" + ", ".join(K.FACE_KIT_KEYS) + ")"])
 
 
+class LabNosesOnly(unittest.TestCase):
+    def test_no_repo_nose(self):
+        # art #42: the "cone" nose #106 added is gone; the kit's noses, sizes and weights are the lab's two
+        self.assertEqual(set(K.NOSES), {"bulb", "long"})
+        self.assertEqual(set(K.PICKS["nose"]), {"bulb", "long"})
+        self.assertEqual(set(K.WEIGHTS["nose"]), {"bulb", "long"})
+
+
 class LabParity(unittest.TestCase):
     """The port against the lab file it was made from (faces/clay_kit.json lab_source): every table and the picks of
     the check's seeds. Skipped without the raw folder or once the lab file has moved on (re-sync then)."""
