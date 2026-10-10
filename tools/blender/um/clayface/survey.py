@@ -189,6 +189,8 @@ def add(stats, i, p, item, m):
     if bv.get("brows", True) is not False:
         stats["brow_eye_clear_mm_min"] = min(stats["brow_eye_clear_mm_min"], bv["eye_clear_mm"])
         stats["brow_seen_min"] = min(stats["brow_seen_min"], min(bv["seen_share"].values()))
+        by = stats["brow_eye_clear_mm_min_by_style"]
+        by[str(bv.get("style"))] = min(by.get(str(bv.get("style")), 99.0), bv["eye_clear_mm"])
     if not bv["ok"]:
         stats["brow_hidden_faces"] += 1
         _count(stats["brow_hidden_by"], item)
@@ -205,7 +207,7 @@ def new_stats(head_id, n):
             "nose_above_mouth_mm_min": 99.0, "look_sag_mm_max": -9.0, "meets_pupils_faces": 0, "brow_tuck_faces": 0,
             "tris_max": 0, "tris_sum": 0, "hairs_seen": {}, "picks_seen": {}, "updo": [],
             "brow_hidden_faces": 0, "brow_hidden_by": {}, "brow_hidden_top": [], "brow_eye_clear_mm_min": 99.0,
-            "brow_seen_min": 1.0,
+            "brow_seen_min": 1.0, "brow_eye_clear_mm_min_by_style": {},
             "moustache_seat": {"faces": 0, "overlap_faces": 0, "cannot_clear_faces": 0, "nose_clear_mm_min": 99.0,
                                "squash_min": 1.0}}
 

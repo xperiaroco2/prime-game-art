@@ -250,9 +250,12 @@ covers them (full length kept; `brow_tuck` false for the hairs that must not tuc
 lowers a brow strand only while the strand's top stays within `brows.BROW_STRAND_TOP_R` (1.2 of its radius; it was
 0.5, which pushed w3's whole brow 17 mm into the lids). `checks.brow_visibility` measures per side the share of brow
 vertices seen from straight in front (no head, hair, eye, lid or nose in the way; at least `BROW_SEEN_MIN` 0.25) and
-the brow-to-eye clearance (the lowest front brow point over an eye above that eye's resting upper lid top; above
-`BROW_EYE_CLEAR_MIN_MM` -12 mm: the angry brows' inner ends dip to -10 mm over big eyes by design, w3's sunk brows
-were -17.4 mm). The cast's `build_report.json` holds it under `face_kit.brows.visibility`, and the
+the brow-to-eye clearance (the lowest front brow point over an eye above that eye's resting upper lid top). The limit
+is per brow style (`kit.brow_clear_min_mm`): -3 mm for every style but the angry V, and -10.5 mm for the angry V,
+whose inner ends dip in front of the lid over big eyes by design (-9.2 mm men, -9.99 mm women in the 320-face run).
+w3's fixed brows read -2.46 mm, and its sunk ones -17.4 mm. The clearance compares heights only. A brow inside an
+eyeball is its own failure (`checks.brow_in_white`), and a brow on a pupil is a collision. `faces --kit-check` prints
+each style's lowest clearance. The cast's `build_report.json` holds it under `face_kit.brows.visibility`, and the
 many-face check fails any face that misses it.
 
 The lab measured `ears_free` on its one head; the repo's heads measure some hairs otherwise (`faces --kit-check` on

@@ -209,7 +209,8 @@ def kit_summary(report: dict[str, Any]) -> list[str]:
                      f"nose meets pupils {b['meets_pupils_faces']}; nose above mouth min {b['nose_above_mouth_mm_min']} mm; "
                      f"look sag max {b['look_sag_mm_max']} mm; moustache faces {ms['faces']} (nose clear min "
                      f"{ms['nose_clear_mm_min']} mm); brows tucked {b['brow_tuck_faces']}, hidden {b.get('brow_hidden_faces', 0)} "
-                     f"(eye clear min {b.get('brow_eye_clear_mm_min', '-')} mm, seen min {b.get('brow_seen_min', '-')}); tris max {b['tris_max']} "
+                     f"(eye clear min {b.get('brow_eye_clear_mm_min', '-')} mm, by style {b.get('brow_eye_clear_mm_min_by_style', {})}, "
+                     f"seen min {b.get('brow_seen_min', '-')}); tris max {b['tris_max']} "
                      f"mean {b['tris_mean']}; {b['seconds']} s")
     return lines
 

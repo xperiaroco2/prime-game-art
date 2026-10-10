@@ -232,3 +232,33 @@ class Accessories(unittest.TestCase):
         src = (ROOT / "tools/blender/um/clayface/accessories.py").read_text(encoding="utf-8")
         self.assertIn("accessory_seat_ok(gap, inside)", src)
         self.assertIn("raise SeatError", src)
+
+
+class BrowMeasure(unittest.TestCase):
+    """art #42 round 3: the brow measure's verdict (kit.brow_visible_ok): strict for every style but the angry V."""
+
+    SEEN = {"L": 0.53, "R": 0.55}
+
+    def test_w3_fixed_passes_and_sunk_fails(self):
+        self.assertTrue(K.brow_visible_ok(self.SEEN, -2.46, "normal"))  # w3 under the formal updo, fixed
+        self.assertFalse(K.brow_visible_ok(self.SEEN, -17.4, "normal"))  # w3 before the fix
+
+    def test_only_the_angry_v_may_dip(self):
+        self.assertTrue(K.brow_visible_ok(self.SEEN, -9.99, "angry"))  # the 320-face run's deepest angry brow
+        for style in K.BROWS:
+            if style != "angry":
+                self.assertFalse(K.brow_visible_ok(self.SEEN, -5.0, style), style)
+        self.assertFalse(K.brow_visible_ok(self.SEEN, -11.0, "angry"))
+        self.assertFalse(K.brow_visible_ok(self.SEEN, -5.0, None))  # an unknown style gets the strict limit
+
+    def test_hidden_brows_fail(self):
+        self.assertFalse(K.brow_visible_ok({"L": 0.53, "R": K.BROW_SEEN_MIN - 0.01}, 0.0, "normal"))
+
+
+class StrictNose(unittest.TestCase):
+    def test_only_the_pinocchio_must_clear_eyes_and_lids(self):
+        self.assertLessEqual({("nose", "eye"), ("nose", "lid")}, K.bad_pairs("pinocchio"))
+        for nose in K.NOSES:
+            if nose not in K.STRICT_NOSES:
+                self.assertEqual(K.bad_pairs(nose), K.BAD_PAIRS, nose)
+        self.assertLessEqual(K.BAD_PAIRS, K.bad_pairs("pinocchio"))

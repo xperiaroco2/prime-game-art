@@ -5,7 +5,7 @@ import math
 
 import numpy as np
 
-from .kit import EYEBALL, BAD_PAIRS, LIP_W, MOUTHS, NOSES, STATES, STRICT_NOSE_PAIRS, STRICT_NOSES
+from .kit import EYEBALL, LIP_W, MOUTHS, NOSES, STATES, bad_pairs, brow_clear_min_mm, brow_visible_ok
 from .mesh import piece_coords
 from .mouth import mouth_extent
 
@@ -25,7 +25,7 @@ def collisions(face):
         else:
             keys = [None]
         trees[name] = [BVHTree.FromPolygons(piece_coords(o, k), polys) for k in keys]
-    bad = BAD_PAIRS | (STRICT_NOSE_PAIRS if face.picks.get("nose") in STRICT_NOSES else set())
+    bad = bad_pairs(face.picks.get("nose"))
     out = {}
     names = sorted(trees)
     for i, a in enumerate(names):
@@ -90,19 +90,13 @@ def brow_in_white(face):
     return n
 
 
-BROW_SEEN_MIN = 0.25  # art #42 round 3: at least this share of each brow's vertices seen from the front
-# ... and its lowest front point over an eye at most this far below the lid's top: the angry brows' inner ends dip to
-# -10 mm over big eyes by design (the lab's look; kit-check 2026-10-10, seen 0.46+); w3's brows sunk under the formal
-# updo were -17.4 mm (-2.5 mm once fixed)
-BROW_EYE_CLEAR_MIN_MM = -12.0
-
-
 def brow_visibility(face, occluders):
     """art #42 round 3 (w3's brows sank behind the eyes under the formal updo): per side the share of brow vertices
     seen from straight in front (a ray from 0.5 m in front of each vertex meets none of the occluders, the eye whites,
     lids, pupils and nose first: the head, hair and headwear objects given) and the brow-to-eye clearance (mm: the
     lowest front brow vertex over an eye above that eye's resting upper lid top, c.z + r x lid_scale; < 0: the brow
-    sinks into the lid). ok: both sides seen at least BROW_SEEN_MIN and the clearance above BROW_EYE_CLEAR_MIN_MM."""
+    sinks into the lid). ok: kit.brow_visible_ok (both sides seen at least BROW_SEEN_MIN, the clearance above the
+    brow style's limit, kit.brow_clear_min_mm: -3 mm, the angry V -10.5 mm)."""
     from mathutils import Vector
     from mathutils.bvhtree import BVHTree
     o = face.pieces.get("brows")
@@ -125,6 +119,8 @@ def brow_visibility(face, occluders):
                 if abs(q.x - c.x) < r and q.y < c.y:  # over this eye, in front of its centre: above the lid's top
                     clear = min(clear, q.z - (c.z + r * EYEBALL["lid_scale"]))
         out[side] = round(seen / max(1, len(pts)), 3)
-    res = {"seen_share": out, "eye_clear_mm": round(clear * 1000, 2)}
-    res["ok"] = min(out.values()) >= BROW_SEEN_MIN and clear * 1000 > BROW_EYE_CLEAR_MIN_MM
+    style = face.picks.get("brows")
+    res = {"seen_share": out, "eye_clear_mm": round(clear * 1000, 2), "style": style,
+           "eye_clear_min_mm": brow_clear_min_mm(style)}
+    res["ok"] = brow_visible_ok(out, clear * 1000, style)
     return res
