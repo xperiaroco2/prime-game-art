@@ -89,7 +89,10 @@ and must check that Godot's "static lightmaps" import keeps the kit's UV2 rather
 - **Porch** (`porch_2x2`): x along the exterior wall from its grid node, out along +Z from the wall's face; its
   `sockets.lamp` is where a porch lamp hangs. **Pillar** (`pillar_concrete`, 0.4 m): centred on its grid node.
   **Chimney**, **cornice bracket**, **post cap**, **gate post**, **slab edges** (`slab_edge_2m/1m`, closing a slab's free
-  edge such as a stairwell's) and the glass nodes (`glass_corner/end/post`) are documented in their builders.
+  edge such as a stairwell's; `slab_edge_yard_2m/1m` in the basement's concrete), the **yard slab**
+  (`slab_yard_2x2/1x1`: a `ceiling` piece with `thick` 0.2 and `role` basement, an underside and a collider only, its top
+  the yard's ground sheet; art #108), the **beams** (`beam_concrete_2m/1m`, type `beam`: 0.3 x 0.3 m under the pivot,
+  centred on z 0, no end faces) and the glass nodes (`glass_corner/end/post`) are documented in their builders.
 
 ## Version 3: the free roof (art #77)
 

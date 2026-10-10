@@ -259,6 +259,46 @@ class PlanTest(unittest.TestCase):
             self.assertTrue(any(word in p for p in H.plan(data)["problems"]), bad)
 
 
+
+class YardSlabTest(unittest.TestCase):  # #108: a real ceiling over the basement rooms under the yard
+    def setUp(self) -> None:
+        self.li = next(i for i, lv in enumerate(DATA["levels"]) if lv["level"] == "basement")
+        self.low, self.up = DATA["levels"][self.li], DATA["levels"][self.li + 1]
+        self.rooms = planned("basement")["pieces"]
+        self.holes = set().union(*(H._cells(h["rect"]) for h in self.up["holes"] if "rect" in h))
+
+    def test_every_bare_cell_but_the_stairwell_gets_one_slab_tile(self) -> None:
+        for room in self.low["rooms"]:
+            bare = H.bare_cells(DATA, self.li, room)
+            tiles = [p for p in self.rooms[room["id"]] if p["id"] in H.SLAB_TILES.values()]
+            covered = []
+            for t in tiles:
+                n = 2 if t["id"].endswith("2x2") else 1
+                covered += [(int(t["x"]) + a, int(t["y"]) + b) for a in range(n) for b in range(n)]
+                self.assertEqual(t["h"], self.up["floor_y"] - self.low["floor_y"])  # its top on the yard's ground
+            self.assertEqual(len(covered), len(set(covered)), room["id"])
+            self.assertEqual(set(covered), bare - self.holes, room["id"])
+        for rid in ("generator_hall", "pump_room", "switch_room", "passage"):
+            self.assertTrue(H.bare_cells(DATA, self.li, next(r for r in self.low["rooms"] if r["id"] == rid)), rid)
+
+    def test_the_stairwell_keeps_its_hole_with_edges_all_round(self) -> None:
+        edges = [p for p in self.rooms["passage"] if p["id"] in H.SLAB_EDGES.values()]
+        self.assertEqual(sum(2 if p["id"].endswith("2m") else 1 for p in edges), 16)  # 4 x 4 m outdoor stairwell
+        self.assertFalse(any(p["id"].startswith("slab_edge") for rid, ps in self.rooms.items() if rid != "passage"
+                             for p in ps))
+
+    def test_beams_hang_under_the_slab_off_the_hole(self) -> None:
+        beams = [(rid, p) for rid, ps in self.rooms.items() for p in ps if p["id"] in H.BEAMS.values()]
+        self.assertEqual({rid for rid, _ in beams}, {"generator_hall", "pump_room", "switch_room", "passage"})
+        for rid, p in beams:
+            self.assertAlmostEqual(p["h"], 3.0)  # the slab's underside
+            ax, _ = H.axes(p["turn"])
+            n = 2 if p["id"].endswith("2m") else 1
+            for k in range(n):  # the cells either side of each metre are slab, not the stairwell
+                x, y = p["x"] + ax[0] * (k + 0.5), p["y"] + ax[1] * (k + 0.5)
+                side = [(int(x // 1), int(y // 1) - 1), (int(x // 1), int(y // 1))] if ax[1] == 0 else                     [(int(x // 1) - 1, int(y // 1)), (int(x // 1), int(y // 1))]
+                self.assertFalse(set(side) & self.holes, (rid, p))
+
 class SceneTest(unittest.TestCase):
     def test_scenes_carry_the_pieces_and_markers(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

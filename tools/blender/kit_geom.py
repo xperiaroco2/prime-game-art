@@ -350,9 +350,21 @@ def build_floor(pc: Piece, p: dict, spec: dict) -> None:
 
 
 def build_ceiling(pc: Piece, p: dict, spec: dict) -> None:
+    """Only an underside: `thick` under the pivot (default 0.02, a plaster ceiling) in `role`; the collider fills it.
+    The yard slab over the basement (#108) is 0.2 m of bare concrete whose top is the yard's ground sheet (no top
+    face, so nothing z-fights with it)."""
     w, d = (float(v) for v in p["size"])
-    lo, hi = (0, -0.02, 0), (w, 0, d)
-    pc.mesh.box(lo, hi, "ceiling", "-y")
+    lo, hi = (0, -float(p.get("thick", 0.02)), 0), (w, 0, d)
+    pc.mesh.box(lo, hi, p.get("role", "ceiling"), "-y")
+    pc.collide_box(lo, hi)
+
+
+def build_beam(pc: Piece, p: dict, spec: dict) -> None:
+    """A downstand beam under a slab (#108): along +X over `length`, centred on z 0, `width` wide, its top at y 0 (the
+    slab's underside) and `depth` deep; no end faces (it runs into a wall or the next module)."""
+    L, hw, dp = float(p["length"]), float(p["width"]) / 2, float(p["depth"])
+    lo, hi = (0, -dp, -hw), (L, 0, hw)
+    pc.mesh.box(lo, hi, p.get("role", "basement"), "-y+z-z")
     pc.collide_box(lo, hi)
 
 
@@ -1150,6 +1162,7 @@ BUILDERS = {
     "dormer": build_dormer,
     "bracket": build_bracket, "cap": build_cap, "gate_post": build_gate_post, "gazebo_sector": build_gazebo_sector,
     "gazebo_roof": build_gazebo_roof, "finial": build_finial, "glass_node": build_glass_node, "slab_edge": build_slab_edge,
+    "beam": build_beam,  # #108
 }
 
 
@@ -1447,7 +1460,7 @@ def face_points(d: dict, deg: float = 0.0, offset=(0.0, 0.0, 0.0)) -> list[list[
     return out
 
 
-RUN_TYPES = ("wall", "parapet", "railing", "fence", "glass", "slab_edge")
+RUN_TYPES = ("wall", "parapet", "railing", "fence", "glass", "slab_edge", "beam")
 
 
 def seam_offsets(p: dict) -> list[tuple]:
