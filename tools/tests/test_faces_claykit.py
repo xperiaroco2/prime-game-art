@@ -117,6 +117,46 @@ class RecipePicks(unittest.TestCase):
         self.assertEqual(K.check_picks("big", "M"), ["face_kit: must be an object of picks (" + ", ".join(K.FACE_KIT_KEYS) + ")"])
 
 
+# noses the repo added past the lab (art #42: "cone", the port's forward nose kept as a rare third style); the
+# parity tests compare the lab's tables and picks without them
+REPO_NOSES = {"cone"}
+
+
+def without_repo_noses(name, table):
+    if name in ("NOSES", "NOSE_SCALE"):
+        return {k: v for k, v in table.items() if k not in REPO_NOSES}
+    if name in ("WEIGHTS", "PICKS"):
+        t = dict(table)
+        t["nose"] = ({k: w for k, w in t["nose"].items() if k not in REPO_NOSES} if isinstance(t["nose"], dict)
+                     else [k for k in t["nose"] if k not in REPO_NOSES])
+        return t
+    return table
+
+
+class lab_noses_only:
+    """K's nose picks and weights without REPO_NOSES while inside (restored on exit)."""
+
+    def __enter__(self):
+        self.saved = (K.WEIGHTS["nose"], K.PICKS["nose"])
+        K.WEIGHTS["nose"] = without_repo_noses("WEIGHTS", K.WEIGHTS)["nose"]
+        K.PICKS["nose"] = without_repo_noses("PICKS", K.PICKS)["nose"]
+
+    def __exit__(self, *exc):
+        K.WEIGHTS["nose"], K.PICKS["nose"] = self.saved
+
+
+class RepoNosesTest(unittest.TestCase):
+    def test_cone_is_a_rare_third_nose(self):
+        self.assertEqual(set(K.NOSES), {"bulb", "long", "cone"})
+        self.assertIn("cone", K.PICKS["nose"])
+        w = K.WEIGHTS["nose"]
+        self.assertLess(w["cone"], min(w["bulb"], w["long"]))
+        for g in ("M", "W"):
+            rng = random.Random(7)
+            share = sum(K.random_picks(rng, g)["nose"] == "cone" for _ in range(400)) / 400
+            self.assertTrue(0.03 < share < 0.2, (g, share))
+
+
 class LabParity(unittest.TestCase):
     """The port against the lab file it was made from (faces/clay_kit.json lab_source): every table and the picks of
     the check's seeds. Skipped without the raw folder or once the lab file has moved on (re-sync then)."""
@@ -144,7 +184,7 @@ class LabParity(unittest.TestCase):
         lab_rules = {iid: tuple(v.get("lab_ears_free", v["ears_free"])) for iid, v in K.HAIR_ITEMS.items()}
         as_lab = {"EAR_RULES": lab_rules, "COVERS_EARS": {k for k, (f, b) in lab_rules.items() if not f and not b}}
         for n in names:
-            a, b = self.lab[n], as_lab.get(n, getattr(K, n))
+            a, b = self.lab[n], without_repo_noses(n, as_lab.get(n, getattr(K, n)))
             if n == "WEIGHTS":
                 a = {c: {str(k): w for k, w in t.items()} for c, t in a.items()}
                 b = {c: {str(k): w for k, w in t.items()} for c, t in b.items()}
@@ -154,8 +194,9 @@ class LabParity(unittest.TestCase):
     def test_picks(self):
         for g in ("M", "W"):
             ra, rb = random.Random(500 + ("M", "W").index(g)), random.Random(500 + ("M", "W").index(g))
-            for _ in range(320):
-                self.assertEqual(self.lab["random_picks"](ra, g), K.random_picks(rb, g))
+            with lab_noses_only():
+                for _ in range(320):
+                    self.assertEqual(self.lab["random_picks"](ra, g), K.random_picks(rb, g))
 
 
 if __name__ == "__main__":

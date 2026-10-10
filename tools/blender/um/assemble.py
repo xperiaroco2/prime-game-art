@@ -14,7 +14,7 @@ import bpy
 from mathutils import Vector
 
 from . import facekit as fk
-from . import fit, heads, poses, toes, zones
+from . import fit, heads, jaw, poses, toes, zones
 from .materials import color_of, set_color
 from .packs import attach, discard, place, source_label
 from .rebind import rebind
@@ -174,6 +174,8 @@ def build_character(packs, recipe, rc, coll, face="pack"):
         mz = rep["face_kit"]["layout"]["mouth_z"]
     rep["eye_centres"] = {k: [round(x, 4) for x in v] for k, v in eyes_at.items()}
     rep["mouth_centre_z"] = round(mz, 4)
+    update()
+    rep["jaw"] = jaw_measure(parts, (eyes_at["L"].x + eyes_at["R"].x) / 2, mz)
 
     # numbers in the rest pose
     update()
@@ -190,6 +192,35 @@ def build_character(packs, recipe, rc, coll, face="pack"):
     rep["objects"] = {k: {"name": o.name, "parent": o.parent.name, "armature_modifier": next((m.object.name for m in o.modifiers if m.type == "ARMATURE"), None),
                           "vertex_groups": len(o.vertex_groups)} for k, o in parts.items()}
     return arm, parts, rep
+
+
+def jaw_measure(parts, x, mouth_z):
+    """The jaw check's measures (um/jaw.py) on the built parts in the rest pose: per sight line (front, 3/4 left and
+    right) and per level below the mouth centre z, a ray toward the head's axis: the y of the head's first surface it
+    meets (None: none) and the part met before it outside jaw.SIGHT_CLEAR_ROLES (None: none)."""
+    from mathutils.bvhtree import BVHTree
+    dg = bpy.context.evaluated_depsgraph_get()
+    trees = {}
+    for role, o in parts.items():
+        ev = o.evaluated_get(dg)
+        me = ev.to_mesh()
+        trees[role] = BVHTree.FromPolygons([o.matrix_world @ v.co for v in me.vertices], [tuple(p.vertices) for p in me.polygons])
+        ev.to_mesh_clear()
+    reach = 2.0
+    out = {"mouth_z": round(mouth_z, 4), "rays": {}}
+    for view, d in jaw.sight_dirs().items():
+        dv = Vector(d)
+        rows = []
+        for dz_mm in jaw.LEVELS_MM:
+            aim = Vector((x, jaw.AXIS_Y, mouth_z - dz_mm / 1000.0))
+            hits = []
+            for role, t in trees.items():
+                hit, _, _, dist = t.ray_cast(aim + dv * reach, -dv, reach)
+                if hit is not None:
+                    hits.append((role, dist, hit.y))
+            rows.append(dict(dz_mm=dz_mm, **jaw.read_ray(hits)))
+        out["rays"][view] = rows
+    return out
 
 
 def clay_look(recipe, rc, arm, parts, rep, lib=None):
