@@ -98,3 +98,99 @@ def straighten_ring(head, ring_mats):
         me.vertices[i].co = inv @ np_
     me.update()
     return round(moved * 1000, 1)
+
+
+def flatten_nose(head, x, eye_z, mouth_z, half_w=0.026, side_x=0.03, top_dz=0.012, bottom_dz=0.012, bulge=0.004,
+                 fade=0.012, smooth=30):
+    """Pushes the pack head's own nose back into the face, so that a scripted nose (the clay face kit's) sits on the
+    face and not on the pack nose's tip (art #42: the kit's ball on the pack nose read as a forward cone). The faces
+    lab's lab_base.flatten_nose (params_r2.json "nose_flatten"), on which every lab face was built: inside
+    |x - x| < half_w (+ a fade) and between eye_z + top_dz and mouth_z + bottom_dz, every skin vertex in front of a
+    smooth face surface moves back onto it. That surface at height z is the cheeks' y at x +- side_x (ray casts on the
+    unchanged head) with a bulge toward the midline (bulge * (1 - (dx / side_x)^2)); then the zone is relaxed
+    (smooth_patch). World space, rest pose, the face toward -Y. Returns what moved."""
+    from mathutils.bvhtree import BVHTree
+    me = head.data
+    mw = head.matrix_world
+    inv = mw.inverted()
+    bvh = BVHTree.FromPolygons([mw @ v.co for v in me.vertices], [tuple(p.vertices) for p in me.polygons])
+    z_top, z_bot = eye_z + top_dz, mouth_z + bottom_dz
+    cheek = {}
+
+    def cheek_y(z):
+        k = round(z, 4)
+        if k not in cheek:
+            ys = []
+            for sx in (-side_x, side_x):
+                loc, _, _, _ = bvh.ray_cast(Vector((x + sx, -2.0, z)), Vector((0.0, 1.0, 0.0)))
+                if loc is not None:
+                    ys.append(loc.y)
+            cheek[k] = sum(ys) / len(ys) if ys else None
+        return cheek[k]
+
+    moved, most = 0, 0.0
+    for v in me.vertices:
+        p = mw @ v.co
+        dx = abs(p.x - x)
+        if dx > half_w + fade or p.y > -0.08 or not (z_bot - fade < p.z < z_top + fade):
+            continue
+        cy = cheek_y(min(max(p.z, z_bot), z_top))
+        if cy is None:
+            continue
+        target = cy - bulge * max(0.0, 1.0 - (dx / side_x) ** 2)
+        if p.y >= target:
+            continue
+        sx = 1.0 if dx <= half_w else 1.0 - (dx - half_w) / fade  # full inside the box, fading over `fade` outside
+        sz = 1.0
+        if p.z > z_top:
+            sz = 1.0 - (p.z - z_top) / fade
+        elif p.z < z_bot:
+            sz = 1.0 - (z_bot - p.z) / fade
+        s = max(0.0, min(1.0, sx)) * max(0.0, min(1.0, sz))
+        ny = p.y + (target - p.y) * s
+        if abs(ny - p.y) > 1e-6:
+            most = max(most, ny - p.y)
+            moved += 1
+            v.co = inv @ Vector((p.x, ny, p.z))
+    me.update()
+    smoothed = smooth_patch(head, lambda p: abs(p.x - x) <= half_w + fade and z_bot - fade < p.z < z_top + fade
+                            and p.y < -0.08, iterations=smooth)
+    return {"vertices_moved": moved, "largest_move_mm": round(most * 1000, 1), "smoothed_points": smoothed}
+
+
+def smooth_patch(head, inside, iterations=30):
+    """Relaxes the skin's y inside a zone (x and z kept): each point's y becomes its neighbours' mean, the zone's
+    border held by the points outside it. The pack meshes are flat-shaded with split vertices, so points are grouped
+    by position and moved together (no tearing). The faces lab's lab_base.smooth_patch. Returns the points relaxed."""
+    if iterations <= 0:
+        return 0
+    me = head.data
+    mw = head.matrix_world
+    inv = mw.inverted()
+    world = [mw @ v.co for v in me.vertices]
+    key, groups = {}, []
+    for i, p in enumerate(world):
+        k = (round(p.x, 5), round(p.y, 5), round(p.z, 5))
+        if k not in key:
+            key[k] = len(groups)
+            groups.append([])
+        groups[key[k]].append(i)
+    gid = {i: g for g, idx in enumerate(groups) for i in idx}
+    nb = [set() for _ in groups]
+    for e in me.edges:
+        a, b = gid[e.vertices[0]], gid[e.vertices[1]]
+        if a != b:
+            nb[a].add(b)
+            nb[b].add(a)
+    ys = [world[idx[0]].y for idx in groups]
+    free = [g for g, idx in enumerate(groups) if inside(world[idx[0]]) and nb[g]]
+    for _ in range(iterations):
+        new = {g: sum(ys[n] for n in nb[g]) / len(nb[g]) for g in free}
+        for g, y in new.items():
+            ys[g] = y
+    for g in free:
+        for i in groups[g]:
+            p = world[i]
+            me.vertices[i].co = inv @ Vector((p.x, ys[g], p.z))
+    me.update()
+    return len(free)
