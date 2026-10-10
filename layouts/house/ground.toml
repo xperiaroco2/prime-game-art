@@ -1,0 +1,436 @@
+# Level 0: the ground floor and the yard: the house layout (art #75, docs/house.md). Generated once from the design doc, then edited by hand.
+# Coordinates are the design doc's: metres, origin at the plot's north-west corner, x east, y south; a rect is
+# [x, y, width, depth] from its north-west corner. Godot: x = x, z = y; heights are local to floor_y.
+level = "ground"
+node = "GroundFloor"
+floor_y = 0.0
+walls = "storey"
+footprint = [18, 24, 24, 20]
+
+[[rooms]]
+id = "wc"
+title = "WC"
+node = "WC"
+rect = [18, 24, 6, 6]
+kind = "room"
+floor = "lino"
+
+[[rooms]]
+id = "pantry"
+title = "Pantry"
+node = "Pantry"
+rect = [24, 24, 6, 6]
+kind = "room"
+floor = "lino"
+
+[[rooms]]
+id = "dining_room"
+title = "Dining room"
+node = "DiningRoom"
+rect = [30, 24, 12, 6]
+kind = "room"
+floor = "boards"
+stations = [
+  { name = "DiningTable", at = [6.0, 0.0, 3.0] },
+]
+markers = [
+  { name = "Circle01", at = [5.0, 0.5, 3.0], group = "spawn_circle" },
+]
+
+[[rooms]]
+id = "living_room"
+title = "Living room"
+node = "LivingRoom"
+rect = [18, 30, 8, 14]
+kind = "room"
+floor = "boards"
+markers = [
+  { name = "Circle05", at = [3.0, 0.5, 7.0], group = "spawn_circle" },
+]
+
+[[rooms]]
+id = "stairs"
+title = "Stairs"
+node = "Stairs"
+rect = [26, 30, 8, 6]
+kind = "room"
+floor = "boards"
+
+[[rooms]]
+id = "kitchen"
+title = "Kitchen"
+node = "Kitchen"
+rect = [34, 30, 8, 14]
+kind = "room"
+floor = "lino"
+stations = [
+  { name = "OrderBoard", at = [5.0, 0.0, 7.0] },
+]
+markers = [
+  { name = "Circle06", at = [3.0, 0.5, 12.0], group = "spawn_circle" },
+  { name = "Knife1", at = [1.5, 0.0, 12.5], group = "spawn_knife" },
+]
+
+[[rooms]]
+id = "hallway"
+title = "Hallway"
+node = "Hallway"
+rect = [26, 36, 8, 8]
+kind = "room"
+floor = "boards"
+
+[[rooms]]
+id = "terrace"
+title = "Terrace"
+node = "Terrace"
+rect = [22, 16, 20, 8]
+kind = "open"
+floor = "concrete"
+stations = [
+  { name = "TerraceTable", at = [7.0, 0.0, 4.0] },
+]
+markers = [
+  { name = "Circle02", at = [6.0, 0.5, 4.0], group = "spawn_circle" },
+]
+
+[[rooms]]
+id = "garage"
+title = "Garage"
+node = "Garage"
+rect = [54, 34, 18, 14]
+kind = "room"
+floor = "concrete"
+stations = [
+  { name = "Workbench", at = [16.0, 0.0, 3.0] },
+  { name = "CarLift", at = [10.0, 0.0, 7.0] },
+  { name = "LiftPanel", at = [3.0, 0.0, 12.0] },
+]
+markers = [
+  { name = "Circle04", at = [15.0, 0.5, 4.0], group = "spawn_circle" },
+  { name = "Knife2", at = [15.0, 0.0, 11.5], group = "spawn_knife" },
+]
+
+[[rooms]]
+id = "greenhouse"
+title = "Greenhouse"
+node = "Greenhouse"
+rect = [58, 6, 16, 12]
+kind = "room"
+floor = "concrete"
+walls = "glass"
+stations = [
+  { name = "HerbBoard", at = [4.0, 0.0, 9.5] },
+  { name = "HerbBeds", at = [9.0, 0.0, 5.0] },
+]
+
+[[rooms]]
+id = "yard"
+title = "Yard"
+node = "Yard"
+rect = [0, 0, 80, 60]
+kind = "area"
+markers = [
+  { name = "RoundPlayer01", at = [24.0, -0.06, 52.0], group = "spawn_round_player" },
+  { name = "RoundPlayer02", at = [26.5, -0.06, 52.0], group = "spawn_round_player" },
+  { name = "RoundPlayer03", at = [33.5, -0.06, 52.0], group = "spawn_round_player" },
+  { name = "RoundPlayer04", at = [36.0, -0.06, 52.0], group = "spawn_round_player" },
+  { name = "RoundPlayer05", at = [38.5, -0.06, 52.0], group = "spawn_round_player" },
+  { name = "RoundPlayer06", at = [24.0, -0.06, 55.0], group = "spawn_round_player" },
+  { name = "RoundPlayer07", at = [26.5, -0.06, 55.0], group = "spawn_round_player" },
+  { name = "RoundPlayer08", at = [33.5, -0.06, 55.0], group = "spawn_round_player" },
+  { name = "RoundPlayer09", at = [36.0, -0.06, 55.0], group = "spawn_round_player" },
+  { name = "RoundPlayer10", at = [38.5, -0.06, 55.0], group = "spawn_round_player" },
+  { name = "Respawn1", at = [1.5, -0.06, 1.5], group = "spawn_respawn" },
+  { name = "Respawn2", at = [78.5, -0.06, 1.5], group = "spawn_respawn" },
+  { name = "Respawn3", at = [1.5, -0.06, 58.5], group = "spawn_respawn" },
+  { name = "Respawn4", at = [78.5, -0.06, 58.5], group = "spawn_respawn" },
+]
+
+[[rooms]]
+id = "street"
+title = "Street"
+node = "Street"
+rect = [0, 60, 80, 6]
+kind = "area"
+
+[[rooms]]
+id = "path"
+title = "Path"
+node = "Path"
+rect = [29, 44, 2, 16]
+kind = "area"
+
+[[rooms]]
+id = "driveway"
+title = "Driveway"
+node = "Driveway"
+rect = [59, 48, 10, 12]
+kind = "area"
+
+[[rooms]]
+id = "garden"
+title = "Garden"
+node = "Garden"
+rect = [46, 2, 32, 28]
+kind = "area"
+stations = [
+  { name = "GardenDropOff", at = [16.0, 0.0, 22.0] },
+]
+markers = [
+  { name = "Circle03", at = [14.0, 0.46, 22.0], group = "spawn_circle" },
+  { name = "Knife4", at = [4.0, -0.04, 8.0], group = "spawn_knife" },
+]
+
+[[rooms]]
+id = "photo_zone"
+title = "Photo zone"
+node = "PhotoZone"
+rect = [4, 6, 10, 10]
+kind = "area"
+stations = [
+  { name = "PoseScreen", at = [5.0, 0.0, 5.0] },
+]
+
+[[rooms]]
+id = "chill_zone"
+title = "Chill zone"
+node = "ChillZone"
+rect = [2, 44, 14, 14]
+kind = "area"
+stations = [
+  { name = "Grill", at = [6.0, 0.0, 6.0] },
+  { name = "Speaker", at = [10.0, 0.0, 11.0] },
+]
+
+[[rooms]]
+id = "outdoor_stairs"
+title = "Outdoor stairs"
+node = "OutdoorStairs"
+rect = [62, 29, 4, 4]
+kind = "area"
+
+[[doors]]
+at = [21, 30]
+rooms = ["wc", "living_room"]
+names = { wc = "Door1", living_room = "Door2" }
+kind = "door"
+leaf = "none"
+
+[[doors]]
+at = [30, 27]
+rooms = ["pantry", "dining_room"]
+names = { pantry = "Door1", dining_room = "Door3" }
+kind = "door"
+leaf = "none"
+
+[[doors]]
+at = [36, 24]
+rooms = ["dining_room", "terrace"]
+names = { dining_room = "Door1", terrace = "Door1" }
+kind = "door"
+leaf = "ajar"
+
+[[doors]]
+at = [32, 30]
+rooms = ["dining_room", "stairs"]
+names = { dining_room = "Door4", stairs = "Door1" }
+kind = "door"
+leaf = "none"
+
+[[doors]]
+at = [38, 30]
+rooms = ["dining_room", "kitchen"]
+names = { dining_room = "Door2", kitchen = "Door3" }
+kind = "door"
+leaf = "none"
+
+[[doors]]
+at = [26, 40]
+rooms = ["living_room", "hallway"]
+names = { living_room = "Door1", hallway = "Door2" }
+kind = "door"
+leaf = "none"
+
+[[doors]]
+at = [32, 36]
+rooms = ["stairs", "hallway"]
+names = { stairs = "Door2", hallway = "Door4" }
+kind = "door"
+leaf = "none"
+
+
+[[doors]]
+at = [34, 40]
+rooms = ["kitchen", "hallway"]
+names = { kitchen = "Door2", hallway = "Door3" }
+kind = "door"
+leaf = "none"
+
+[[doors]]
+at = [42, 40]
+rooms = ["kitchen", "yard"]
+names = { kitchen = "Door1" }
+kind = "door"
+leaf = "none"
+
+[[doors]]
+at = [30, 44]
+rooms = ["hallway", "path"]
+names = { hallway = "Door1", path = "Door1" }
+kind = "door"
+leaf = "ajar"
+
+[[doors]]
+at = [64, 48]
+rooms = ["garage", "driveway"]
+names = { garage = "Door2", driveway = "Door1" }
+kind = "gate8"
+leaf = "kit"
+
+[[doors]]
+at = [54, 44]
+rooms = ["garage", "yard"]
+names = { garage = "Door1" }
+kind = "door"
+leaf = "ajar"
+
+[[doors]]
+at = [63, 34]
+rooms = ["garage", "outdoor_stairs"]
+names = { garage = "Door3" }
+kind = "door"
+leaf = "none"
+
+[[doors]]
+at = [58, 12]
+rooms = ["greenhouse", "garden"]
+names = { greenhouse = "Door1" }
+kind = "glass"
+leaf = "kit"
+
+[[doors]]
+at = [30, 60]
+rooms = ["path", "street", "yard"]
+names = { path = "Door2", street = "Door1", yard = "Door1" }
+kind = "gap"
+leaf = "kit"
+note = "the wicket in the fence (#81a)"
+
+[[doors]]
+at = [64, 60]
+rooms = ["driveway", "street", "yard"]
+names = { driveway = "Door2", street = "Door2", yard = "Door2" }
+kind = "gap"
+leaf = "kit"
+note = "the driveway gates in the fence (#81a)"
+
+[[doors]]
+at = [14, 11]
+rooms = ["photo_zone", "yard"]
+names = { photo_zone = "Door1" }
+kind = "gap"
+leaf = "none"
+
+[[windows]]
+at = [21, 24]
+room = "wc"
+
+[[windows]]
+at = [27, 24]
+room = "pantry"
+
+[[windows]]
+at = [32, 24]
+room = "dining_room"
+
+[[windows]]
+at = [40, 24]
+room = "dining_room"
+
+[[windows]]
+at = [42, 27]
+room = "dining_room"
+
+[[windows]]
+at = [18, 33]
+room = "living_room"
+
+[[windows]]
+at = [18, 37]
+room = "living_room"
+
+[[windows]]
+at = [18, 41]
+room = "living_room"
+
+[[windows]]
+at = [20, 44]
+room = "living_room"
+
+[[windows]]
+at = [24, 44]
+room = "living_room"
+
+[[windows]]
+at = [36, 44]
+room = "kitchen"
+
+[[windows]]
+at = [40, 44]
+room = "kitchen"
+
+[[windows]]
+at = [42, 33]
+room = "kitchen"
+
+[[windows]]
+at = [42, 36]
+room = "kitchen"
+
+[[windows]]
+at = [27, 44]
+room = "hallway"
+
+[[windows]]
+at = [33, 44]
+room = "hallway"
+
+[[windows]]
+at = [58, 34]
+room = "garage"
+
+[[windows]]
+at = [68, 34]
+room = "garage"
+
+[[windows]]
+at = [72, 38]
+room = "garage"
+
+[[windows]]
+at = [72, 43]
+room = "garage"
+
+[[windows]]
+at = [54, 38]
+room = "garage"
+
+[[pieces]]
+piece = "porch_2x2"
+room = "path"
+at = [29, 0.0, 44]
+note = "the front porch (kit v2) on the front wall over the front door at x 30; its posts at x 29.12 and 30.88 leave 1.64 m clear; its lamp socket takes the porch lamp (#74b)"
+
+[[holes]]
+id = "pantry_stairs"
+rect = [26, 25, 2, 5]
+railing = true
+
+[[stairs]]
+id = "pantry_stairs"
+piece = "stairs_basement"
+rect = [26, 25, 2, 6]
+y = -3.2
+climb = "N"
+placeholder = true
+note = "Q5 and the manager's correction: a straight flight with a 1 m top landing (the pantry floor y24..25); the foot lands in storage at y31, 1 m from the parts shelf. Option: a U-turn of two half flights."
