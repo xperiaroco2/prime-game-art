@@ -5,7 +5,8 @@ bake zones and presets, and the scenes the bake needs.
 - `plan` places every fixture (a ceiling grid, wall slots clear of the doors, a floor grid inset from the walls, or the
   room's perimeter 2 m in) and the bake-only moon spots outside every `every`-th window of a level.
 - `write` writes `lights/<level>.tscn` (the level's lights, plot coordinates) and `zones/<zone>.tscn` (the zone's
-  room scenes, the level pieces standing in its rooms, its lights): the input of a zone's LightmapGI bake.
+  room scenes, the level pieces standing in its rooms, its lights, and under `Above` its ceiling: the next level's
+  rooms over it and `cover_tiles`, a bake-only slab where the yard lies over it): the input of a zone's LightmapGI bake.
 
 Coordinates are the house layout's (house_layout.py): metres, x east, y south; Godot's x = x, z = y."""
 
@@ -223,6 +224,36 @@ def light_node(f: dict, parent: str) -> str:
     return "\n".join(lines)
 
 
+COVER_TILES = H.FLOOR_TILES["concrete"]  # the bake-only slab over a zone's rooms that lie under the yard
+
+
+def cover_tiles(data: dict, zone_rooms_: list, top: int) -> list[dict]:
+    """The bake-only ground over a zone: the cells of the zone's walled rooms on level `top` that the next level's
+    floored rooms leave open but one of its areas (the yard, which the generator gives no floor) lies over, tiled with
+    COVER_TILES at plot coordinates (the caller sets the height: the next level's floor). Without it a basement room
+    outside the ground floor's footprint bakes under open sky."""
+    if top + 1 >= len(data["levels"]):
+        return []
+    low, up = data["levels"][top], data["levels"][top + 1]
+    floored = set()
+    for r in up["rooms"]:
+        if r["kind"] != "area" and r.get("floor"):
+            floored |= H._cells(r["rect"])
+    ground = set()
+    for r in up["rooms"]:
+        if r["kind"] == "area":
+            ground |= H._cells(r["rect"])
+    tiles = []
+    for lv, room in zone_rooms_:
+        if lv is not low or room["kind"] == "area":
+            continue
+        cells = H._cells(room["rect"])
+        bare = (cells & ground) - floored
+        if bare:
+            tiles += H.tile_floor(room["rect"], cells - bare, COVER_TILES)
+    return tiles
+
+
 def write(lights: dict, data: dict, planned: dict, fixtures: list[dict], out: Path) -> dict:
     """lights/<level>.tscn and zones/<zone>.tscn into out (the scene_res folder); returns counts per level and zone."""
     st = data["settings"]
@@ -264,6 +295,7 @@ def write(lights: dict, data: dict, planned: dict, fixtures: list[dict], out: Pa
         order = [v["level"] for v in data["levels"]]
         top = max(order.index(rooms[r][0]["level"]) for r in ids)
         above = []
+        n_cover = 0
         if top + 1 < len(order):
             up = data["levels"][top + 1]
             above = [r for r in up["rooms"] if r["kind"] != "area"
@@ -273,9 +305,17 @@ def write(lights: dict, data: dict, planned: dict, fixtures: list[dict], out: Pa
             for r in above:
                 sc.instance(r["node"], "Above", f"{scene_res}/{up['level']}/{r['id']}.tscn",
                             H._tf(0, r["rect"][0], up["floor_y"], r["rect"][1]))
+            n_cover = 0
+            for t in cover_tiles(data, [rooms[i] for i in ids], top):
+                if not above and n_cover == 0:
+                    sc.group("Above")
+                n_cover += 1
+                sc.instance(f"Cover_{n_cover}", "Above", kit_res.format(id=t["id"]),
+                            H._tf(t["turn"], t["x"], up["floor_y"], t["y"]))
         mine = [f for f in fixtures if f["zone"] == zone]
         sc.nodes += [light_node(f, "Lights") for f in mine]
         (out / "zones" / f"{zone}.tscn").write_text(sc.text(), encoding="utf-8", newline="\n")
-        summary["zones"][zone] = {"rooms": len(ids), "pieces": n_pieces, "above": len(above), "lights": len(mine),
+        summary["zones"][zone] = {"rooms": len(ids), "pieces": n_pieces, "above": len(above), "cover": n_cover,
+                                  "lights": len(mine),
                                   "fixtures": sum(f["type"] != "moon" for f in mine)}
     return summary

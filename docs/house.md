@@ -143,7 +143,9 @@ and regenerate.
 Every light is `light_bake_mode` Static (baked; not drawn in real time where a lightmap covers it); no shadows. The
 `house` command writes `lights/<level>.tscn` (a level's lights in plot coordinates) and `zones/<zone>.tscn` (the
 zone's room scenes, the level pieces standing in them, its lights, and as `Above` the next level's rooms over it: the
-floor slabs that are the zone's ceiling). A bake needs the editor (below).
+floor slabs that are the zone's ceiling; where the zone's rooms lie under the yard, which the generator gives no
+floor, `Above` also holds `Cover_<n>`: bake-only concrete floor tiles at the next level's height, so a basement room
+outside the ground floor's footprint does not bake under open sky). A bake needs the editor (below).
 
 ### Baking a zone
 

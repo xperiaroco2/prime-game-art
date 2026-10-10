@@ -103,6 +103,24 @@ class Placement(unittest.TestCase):
         self.assertAlmostEqual(sum(-zc * dc / n for zc, dc in zip(z, d)), 1.0, places=6)
 
 
+class Cover(unittest.TestCase):
+    def test_the_basement_has_a_ceiling_everywhere(self):
+        b = next(i for i, lv in enumerate(DATA["levels"]) if lv["level"] == "basement")
+        low, up = DATA["levels"][b], DATA["levels"][b + 1]
+        tiles = L.cover_tiles(DATA, [(low, r) for r in low["rooms"]], b)
+        self.assertTrue(tiles)
+        roofed = set()
+        for r in up["rooms"]:
+            if r["kind"] != "area" and r.get("floor"):
+                roofed |= H._cells(r["rect"])
+        open_cells = set().union(*(H._cells(r["rect"]) for r in low["rooms"])) - roofed
+        area = sum(w * d for t in tiles for (w, d), pid in L.COVER_TILES.items() if pid == t["id"])
+        self.assertEqual(area, len(open_cells))  # every open cell gets exactly one tile's worth of slab
+
+    def test_nothing_over_the_top_level(self):
+        self.assertEqual(L.cover_tiles(DATA, [], len(DATA["levels"]) - 1), [])
+
+
 class Scenes(unittest.TestCase):
     def test_zone_and_level_scenes(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -115,6 +133,9 @@ class Scenes(unittest.TestCase):
             self.assertIn("light_bake_mode = 1", text)
             self.assertIn('parent="Above"', text)  # the ground floor's slabs are the basement's ceiling
             self.assertIn("res://import/house/basement/storage.tscn", text)
+            self.assertIn('[node name="Cover_1" parent="Above"', text)  # the yard's ground over the outer rooms
+            self.assertGreater(s["zones"]["basement"]["cover"], 0)
+            self.assertEqual(s["zones"]["ground"]["cover"], 0)
             self.assertTrue((out / "lights" / "ground.tscn").is_file())
             self.assertIn("SpotLight3D", (out / "zones" / "ground.tscn").read_text(encoding="utf-8"))
 
