@@ -72,6 +72,55 @@ def size_hint(texel_per_m: float, uv2_per_m: float, k: float = 1.0) -> int:
     return max(4, math.ceil(texel_per_m * k / uv2_per_m - 1e-9))
 
 
+# The grid run (#83): texel density x the denoiser x the bounce energy on one zone, each variant baked and shot beside
+# the zone's real-time frame. 1.5 is lights.toml's bounce energy (the lab's ceiling); 1.0 the plain bounce.
+GRID_TEXELS = (8.0, 12.0, 16.0)
+GRID_DENOISER = (True, False)
+GRID_ENERGIES = (1.0, 1.5)
+
+
+def variant_tag(texel: float, denoiser: bool, energy: float, merge: bool = False) -> str:
+    """A variant's file-safe tag: t12_d1_e15 is 12 texels/m, the denoiser on, bounce energy 1.5; _m: merged floors."""
+    return f"t{texel:g}_d{int(bool(denoiser))}_e{round(energy * 10)}" + ("_m" if merge else "")
+
+
+def variants(lights: dict, zone: str, preset: str | None = None, grid: bool = False, merge: bool = False) -> list[dict]:
+    """The bakes of one zone: the preset's texel with lights.toml's [bake] (tag = the preset's name), or with `grid`
+    every GRID_TEXELS x GRID_DENOISER x GRID_ENERGIES variant. Each: tag, texel, bake (a copy with the overrides),
+    merge."""
+    bake = lights["bake"]
+    if not grid:
+        texel = float(lights["zones"][zone][lights["presets"][preset]["lightmap"]])
+        tag = preset + ("_m" if merge else "")
+        return [{"tag": tag, "texel": texel, "bake": dict(bake), "merge": merge}]
+    return [{"tag": variant_tag(t, d, e, merge), "texel": t,
+             "bake": {**bake, "denoiser": d, "bounce_indirect_energy": e}, "merge": merge}
+            for t in GRID_TEXELS for d in GRID_DENOISER for e in GRID_ENERGIES]
+
+
+def sheet_layout(rows: int, cams: int, width: int = 1280) -> dict:
+    """The review sheet about `width` px across: up to four rows one per line, more rows two per line; 16:9 tiles."""
+    per_line = 1 if rows <= 4 else 2
+    tile_w = width // max(1, cams * per_line)
+    return {"tile": [tile_w, tile_w * 9 // 16], "per_line": per_line}
+
+
+def numbers_md(zone: str, table: dict[str, list[dict]], reference: str, cam_names: list[str]) -> str:
+    """measures per row label (one dict per camera) as a markdown table: L* mean, dark % and C* p90 per camera, and
+    each baked row's L* difference from the reference (real-time) row, camera by camera."""
+    ref = table.get(reference, [])
+    head = "| row | " + " | ".join(f"{c} L* / dark % / C* p90" for c in cam_names) + " | dL* vs real time (mean) |"
+    lines = [f"# House bake grid: {zone}", "", f"Reference: `{reference}` (no lightmap, the lights dynamic).", "", head,
+             "|" + "---|" * (len(cam_names) + 2)]
+    for label, ms in table.items():
+        cells = [f"{m['L_mean']} / {m['dark_pct']} / {m['C_p90']}" for m in ms]
+        cells += [""] * (len(cam_names) - len(cells))
+        deltas = [m["L_mean"] - r["L_mean"] for m, r in zip(ms, ref)]
+        delta = "" if label == reference or not deltas else f"{sum(deltas) / len(deltas):+.1f}"
+        lines.append(f"| {label} | " + " | ".join(cells) + f" | {delta} |")
+    return "\n".join(lines) + "\n"
+
+
 def build_args(zone: str, tag: str, texel: float, bake: dict, uv2_json: str, bake_json: str, above: float = 1.0,
                merge: bool = False) -> list[str]:
     """The user arguments of zone_build.gd for one zone and preset."""

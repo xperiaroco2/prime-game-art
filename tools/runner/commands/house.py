@@ -32,6 +32,12 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
                              "window: night only (00:00-08:00 local) unless the manager granted a window")
     parser.add_argument("--preset", default="high", choices=["high", "low"], help="the bake's texel preset")
     parser.add_argument("--no-bake", action="store_true", help="with --bake: stage, import and build only (by day)")
+    parser.add_argument("--grid", action="store_true",
+                        help="with --bake: one bake per variant of texel 8/12/16 x denoiser on/off x bounce energy "
+                             "1.0/1.5 instead of the preset (#83)")
+    parser.add_argument("--merge", action="store_true",
+                        help="with --bake: weld each room level's floor tiles into one unwrapped mesh (one lightmap "
+                             "island per floor kind and height instead of one per tile)")
     parser.add_argument("--review", type=Path, metavar="DIR",
                         help="with --bake: baked and real-time frames, sheet.png and measures.json into DIR")
 
@@ -79,7 +85,8 @@ def run(args: argparse.Namespace) -> int:
         if args.out.resolve() != DEFAULT_OUT.resolve():
             raise common.Failure("--bake needs the scenes in godot/import/house (drop --out)")
         zones = list(lights["zones"]) if args.bake == "all" else args.bake.split(",")
-        return _house_bake.run(data, lights, zones, args.preset, args.review, args.no_bake, found)
+        return _house_bake.run(data, lights, zones, args.preset, args.review, args.no_bake, found, args.grid,
+                               args.merge)
     if args.walk:
         if args.out.resolve() != DEFAULT_OUT.resolve():
             raise common.Failure("--walk needs the scenes in godot/import/house (drop --out)")

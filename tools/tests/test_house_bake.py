@@ -3,11 +3,16 @@
 import struct
 import tempfile
 import time
+import tomllib
 import unittest
 import zlib
 from pathlib import Path
+from unittest import mock
 
 from runner import common, house_bake as B, house_layout
+from runner.commands import _house_bake
+
+LIGHTS = common.ROOT / "layouts" / "house" / "lights.toml"
 
 
 def at(hour: int) -> float:
@@ -114,6 +119,67 @@ class Measures(unittest.TestCase):
         m = B.measures(4, 1, [(0, 0, 0), (0, 0, 0), (255, 255, 255), (200, 40, 40)], grid=4)
         self.assertEqual(m["dark_pct"], 50.0)
         self.assertGreater(m["C_p90"], 60)
+
+
+class Grid(unittest.TestCase):
+    def setUp(self):
+        self.lights = tomllib.loads(LIGHTS.read_text(encoding="utf-8"))
+
+    def test_tags(self):
+        self.assertEqual(B.variant_tag(12.0, True, 1.5), "t12_d1_e15")
+        self.assertEqual(B.variant_tag(8.0, False, 1.0, merge=True), "t8_d0_e10_m")
+
+    def test_the_preset_is_one_variant_with_the_shared_bake(self):
+        (v,) = B.variants(self.lights, "ground", "high")
+        self.assertEqual((v["tag"], v["texel"], v["merge"]), ("high", self.lights["zones"]["ground"]["texel_high"], False))
+        self.assertEqual(v["bake"], self.lights["bake"])
+        self.assertIsNot(v["bake"], self.lights["bake"])
+
+    def test_the_grid_is_texel_by_denoiser_by_energy(self):
+        vs = B.variants(self.lights, "ground", "high", grid=True)
+        self.assertEqual(len(vs), 12)
+        self.assertEqual(len({v["tag"] for v in vs}), 12)
+        self.assertEqual({v["texel"] for v in vs}, {8.0, 12.0, 16.0})
+        self.assertEqual({(v["bake"]["denoiser"], v["bake"]["bounce_indirect_energy"]) for v in vs},
+                         {(True, 1.0), (True, 1.5), (False, 1.0), (False, 1.5)})
+        for v in vs:  # the rest of [bake] is shared
+            self.assertEqual(v["bake"]["quality"], self.lights["bake"]["quality"])
+            self.assertLessEqual(v["bake"]["bounce_indirect_energy"], 1.5)  # the lab's ceiling
+        self.assertEqual(self.lights["bake"]["bounce_indirect_energy"], 1.5)  # the grid did not change lights.toml
+
+    def test_merge_marks_every_variant(self):
+        self.assertTrue(all(v["merge"] and v["tag"].endswith("_m")
+                            for v in B.variants(self.lights, "ground", "low", grid=True, merge=True)))
+
+    def test_sheet_about_1280_px(self):
+        self.assertEqual(B.sheet_layout(2, 3), {"tile": [426, 239], "per_line": 1})
+        grid = B.sheet_layout(13, 3)  # real time and the 12 variants
+        self.assertEqual(grid["per_line"], 2)
+        self.assertLessEqual(grid["tile"][0] * 3 * 2, 1280)
+        self.assertGreater(grid["tile"][0] * 3 * 2, 1200)
+
+    def test_numbers_against_real_time(self):
+        m = lambda lum: {"L_mean": lum, "dark_pct": 10.0, "C_p90": 20.0}
+        md = B.numbers_md("ground", {"ground_realtime": [m(40.0), m(50.0)], "ground_high_baked": [m(30.0), m(45.0)]},
+                          "ground_realtime", ["E1 kitchen", "seam"])
+        self.assertIn("| ground_high_baked | 30.0 / 10.0 / 20.0 | 45.0 / 10.0 / 20.0 | -7.5 |", md)
+        self.assertIn("| ground_realtime | 40.0 / 10.0 / 20.0 | 50.0 / 10.0 / 20.0 |  |", md)
+
+
+class EditorRefusedByDay(unittest.TestCase):
+    """The editor parts refuse outside the night window before any Godot run; a real bake is never run here."""
+
+    def test_bake_refused_at_noon(self):
+        boom = mock.Mock(side_effect=AssertionError("no Godot run by day"))
+        with mock.patch.object(_house_bake.time, "time", return_value=at(12)),                 mock.patch.object(B, "grant_text", return_value=None),                 mock.patch.object(_house_bake._godot, "godot", boom),                 mock.patch.object(_house_bake, "stage", boom):
+            with self.assertRaises(common.Failure) as caught:
+                _house_bake.run({}, {"zones": {"ground": {}}}, ["ground"], "high", None, False, {}, grid=True)
+        self.assertIn("00:00 and 08:00", str(caught.exception))
+        boom.assert_not_called()
+
+    def test_unknown_zone(self):
+        with self.assertRaises(common.Failure):
+            _house_bake.run({}, {"zones": {}}, ["nowhere"], "high", None, True, {})
 
 
 class Project(unittest.TestCase):
