@@ -20,7 +20,7 @@ import bpy
 from mathutils import Vector
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from um import assemble, blendfile, fit  # noqa: E402
+from um import assemble, blendfile, fit, jaw  # noqa: E402
 from um import packs as pk  # noqa: E402
 from um import recipe as recipes  # noqa: E402
 from um import render as rd  # noqa: E402
@@ -72,7 +72,8 @@ def main():
     report = {"recipe": R["_name"], "characters": {}, "crossgender": {}}
     rd.setup_render()
     chars = {}
-    recs = [rc for rc in R["characters"] if only is None or rc["id"] in only]
+    jaw_problems = []  # um/jaw.py: every character keeps a whole lower jaw (art #42); the build fails at the end
+    recs =[rc for rc in R["characters"] if only is None or rc["id"] in only]
     # "none" builds and measures without rendering; crossgender alone needs no characters (as in the final test)
     need_chars = args.blend or not modes or any(m in modes for m in ("chars", "hands", "lineup", "qa", "face", "ankles"))
     for i, rc in enumerate(recs if need_chars else []):
@@ -82,6 +83,7 @@ def main():
         if clay_look:
             assemble.clay_look(R, rc, arm, parts, rep, lib=args.clay_lib or None)
         report["characters"][rc["id"]] = rep
+        jaw_problems += jaw.problems(rc["id"], rep["jaw"])
         chars[rc["id"]] = (arm, parts, coll, rc)
         print("BUILT", rc["id"], "height", rep["height_m"], "tris", rep["triangles_total"])
         pk.place(arm.parent, x=(i + 1) * 3.0)  # park it away from the origin so the next build has the origin free
@@ -214,6 +216,10 @@ def main():
             print("INSPECTED", cid, "objects", len(seen["objects"]), "actions", len(seen["actions"]), "problems", len(seen["problems"]))
         if problems:
             raise RuntimeError("saved files break the rules:\n" + "\n".join(problems))
+    for line in jaw_problems:
+        print("JAW", line)
+    if jaw_problems:
+        raise RuntimeError(f"{len(jaw_problems)} jaw problem(s): a lower jaw is cut off or covered (um/jaw.py)")
 
 
 main()

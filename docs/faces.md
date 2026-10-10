@@ -275,7 +275,8 @@ mouth height is the eye height plus the layout's `eye_dz` minus `eye_mouth`; the
 cast and `faces --kit-check` both get it.
 
 **Whole heads and own extras.** The recipe validation refuses a head that drops part of its catalogue skull (m4's jaw)
-and an extra that is not a whole item of the character's body type (m1's blue strip): `docs/assembly.md`, "The
+and an extra that is not a whole item of the character's body type (m1's blue strip), and the cast build measures each
+character's jaw on its geometry and fails on one cut open or covered (`um/jaw.py`): `docs/assembly.md`, "The
 command".
 
 **A recipe character's face.** A clay recipe character may carry `face_kit`: any of the picks (`kit.PICK_KEYS`:

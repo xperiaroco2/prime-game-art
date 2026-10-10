@@ -37,6 +37,15 @@ With the parts catalogue (`catalogue/ultimate_modular.json`) present, the valida
   catalogue's skull item of that file and object); m4's jaw was cut off because its recipe left out the Casual head's
   `Skin_Darker`, which is the lower jaw.
 
+The build also measures every character's jaw on its geometry (`um/jaw.py`, art #42), so a jaw lost to anything the
+recipe check cannot see (a head the catalogue has no skull item for, a head cut zone, the face adapter, a mask or
+another extra) fails too. In the rest pose, rays from the front and from 35 degrees on each side, at 10, 20 and 30 mm
+below the mouth centre, aim at the head's axis (y -0.05): each must meet the head on the face's front (in front of
+y -0.08; the cast: -0.096 to -0.155) and meet no other part before it but the face's parts and the hairstyle (a beard
+or a lock of hair may cover the jaw: m2's King beard, w2's hair at 3/4). The measure is `build_report.json`'s
+`characters.<id>.jaw`; the build prints `JAW` lines and fails at its end on a problem. m4 with the old recipe (no
+`Skin_Darker`): every ray passes through, no head met.
+
 | Option | What it does |
 |---|---|
 | `--ids` | Build only these characters (default: all) |
