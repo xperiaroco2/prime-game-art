@@ -398,7 +398,7 @@ def scene_nodes(sc, resolved: list[dict], res_of) -> list[str]:
 EYE = 1.6
 SHOT_IN = 0.3  # the room shot's camera: metres inside the door's wall line
 FEATURES = [  # (shot, room, prop id, metres in front of it, title): a prop shot from where its front reads
-    ("kitchen_order_board", "kitchen", "order_board", 3.2, "kitchen: the order board over the assembly island"),
+    ("kitchen_order_board", "kitchen", "order_board", 4.0, "kitchen: the order board over the assembly island"),
 ]
 ## The package colours to check under the c2 lamps (look.md section 4, item 6: cyan reads green, purple pink, white cream
 ## under amber): 0.25 m cubes in a row on the top of SWATCH_ON in its room, shot close; walk.gd samples each.
