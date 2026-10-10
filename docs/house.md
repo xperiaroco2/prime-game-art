@@ -146,7 +146,38 @@ is the same on every machine; `tools/tests/test_house_clutter.py` fails when a f
 
 Every surface, wall and floor item is non-solid (`collision = "none"`, the library's `clutter` class, docs/props.md),
 so the capsule's walk and the overlap rule do not see it; only the mid layer is solid, and the room checks hold with
-it. The generator runs the room check once per mid-size candidate: `house --clutter` takes about a minute.
+it. The generator runs the room check once per mid-size candidate: `house --clutter` with the furniture layer below runs
+in under three minutes, measured 2026-10-10 (the capsule grid stamps each block's own cells, `house_dressing._grid`).
+
+### Fill (#104 pass 2)
+
+Pass 1's small items vanished in the big rooms, so a furniture layer now runs before the mid and clutter layers
+(`house_clutter._furnish`), and `tools/runner/house_fill.py` measures every room (`house --clutter` logs
+`fill <room>: ...`, the line `house fill: N of 21 rooms meet the targets` and writes `tools/out/house/fill.json`):
+- **Wall lining**: the share of the free wall (doors, windows ±1 m, stairs and holes cut) with a piece of at least
+  0.4 m backing onto it within 0.3 m (not clutter); target 55 %, 40 % in the small rooms (`house_fill.SMALL`).
+- **Floor**: the share of the floor under floor furniture at least 0.3 m tall (not clutter); target 18 %.
+- **Heights**: pieces in the F (floor, to 0.75 m), S (0.75 to 1.25 m surfaces) and T (1.6 m and over, or wall
+  shelving from 1.2 m) bands.
+- **Stories**: `house_fill.STORIES`, an anchor with each other part within 2 m (a reading corner, a laundry pile, a
+  drying rack, a half-packed box, boots by the door, a toy spill, a work bench round the toolbox cart, a store stack,
+  kitchen prep, desk work); target two per room.
+
+The layer reads three `RULES` keys: `furn` (groups `@reading`, `@desk_work`, `@boots`, `@toys`, `@store`, `@work`,
+`@laundry`, `@drying`, `@packing` from `GROUPS`, single ids, `id+` stacks; each against a wall), `fill` (wall-lining
+kinds placed in turn until the wall share passes its target by 3 points and the floor share its target, up to 85 %
+of the wall; wall pieces such as the radiator hang at `WALL_MOUNT` and keep off the windows) and `island`
+(free-standing pieces or stacks at least 1 m off the walls while the floor share is short: crate and box stacks,
+barrels, a shelving run in the basement, an armchair or a plant upstairs). Every placement is kept only when the
+room's problems do not rise: `check_room`, the basement's switch lines and the generator hall's sight lines (clear by
+`HALL_CLEAR` 0.5 m).
+
+The story pieces are procedural library props (docs/props.md): `laundry_basket`, `drying_rack`, `open_box` and the
+wall-pivot `radiator` (dressing), `laundry_pile`, `boots` and `toy_spill` (clutter, no collider).
+
+Where the targets are not met (2026-10-10, 11 of 21 rooms meet all four): the corridors (hallway, landing, stairs,
+passage, corridor) keep their floor for the routes' legs and doors, the generator hall's floor is held free by its
+sight lines, and the pantry's short walls are taken by its door and shelving.
 
 Budget (proposed, #104): the clutter adds at most 60 meshes and 15k triangles to a room (met: at most 27 meshes, the kitchen and
 the storage, and 4.9k triangles, the kitchen). Brief #104's other check, "under 150 draw calls per room view", is not met and cannot be
