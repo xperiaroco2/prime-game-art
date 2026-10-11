@@ -174,9 +174,10 @@ one). The outdoor rooms of P2 (yard, street, path, ...) carry only markers and l
 package 7.
 
 `tools/tests/test_house_export.py` diffs the 34 art rooms against the game's greybox rooms (`D:/prime-game`, read
-only; skipped without it) on root, origin, size, Doors, Stations and Markers and expects exactly the six known
-differences of the plan's `mapping.md` (attic and roof: question G1; garage Door3, landing Door6, study Door1,
-storage Package07: G2; art task A4 settles them), the attic's by name (Door1; Loot, HidingSpots, Lookout; Knife3).
+only; skipped without it) on root, origin, size, Doors, Stations and Markers and expects exactly the known differences:
+the six of the plan's `mapping.md` (attic and roof: question G1; garage Door3, landing Door6, study Door1,
+storage Package07: G2; art task A4 settles them), the attic's by name (Door1; Loot, HidingSpots, Lookout; Knife3); and the game's three spawn zone markers Zone01-Zone03
+(yard, garden, landing; prime-game #651, #681), which the art rooms do not carry yet.
 
 ## Dressing (#75b)
 
