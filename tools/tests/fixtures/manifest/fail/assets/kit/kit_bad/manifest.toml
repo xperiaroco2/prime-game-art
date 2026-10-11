@@ -1,0 +1,45 @@
+# A broken set manifest: every [[files]] rule is broken once.
+id = "kit_bad"
+kind = "kit"
+slot = ""
+tools = ["blender 5.2.2"]
+licence = "own-work"
+licence_url = "https://github.com/xperiaroco2/prime-game-art"
+public_repo_ok = true
+ai_generated = false
+approved_by = []
+approved_at = ""
+approval_pr = ""
+
+[source]
+service = "own"
+plan = "own-work"
+model_version = ""
+task_ids = []
+generated_at = 2026-10-10
+
+[[files]]
+name = "../wall_a.glb"
+file = "D:/prime-art-raw/kits/wall_a.glb"
+sha256 = "ABC"
+
+[[files]]
+name = "lamp.glb"
+file = "props/v1/lamp.glb"
+sha256 = "0000000000000000000000000000000000000000000000000000000000000031"
+source = "private_pack"
+from = ["env/private/private-pack/lamp.glb", "env/private/private-pack/shade.glb"]
+
+[[files]]
+name = "lamp.glb"
+file = "props/v1/lamp2.glb"
+sha256 = "0000000000000000000000000000000000000000000000000000000000000032"
+source = "no_such_pack"
+from = ["env/none/x.glb"]
+
+[[files]]
+name = "stool.glb"
+file = "props/v1/stool.glb"
+sha256 = "0000000000000000000000000000000000000000000000000000000000000033"
+from = ["env/none/stool.glb"]
+colour = "red"

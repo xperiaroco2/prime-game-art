@@ -44,7 +44,7 @@ TOML puts every key after a `[table]` header into that table, so the top-level k
 | Field | Rule |
 |---|---|
 | `id` | Lowercase letters, digits and underscores; equal to the asset's folder name |
-| `kind` | `body`, `clothing`, `hair`, `face`, `accessory`, `item`, `prop` or `animation`; equal to the folder under `assets/` |
+| `kind` | `body`, `clothing`, `hair`, `face`, `accessory`, `item`, `prop`, `animation`, `kit` (a modular kit's pieces), `room` (room scenes) or `environment` (an outdoor or garden package); equal to the folder under `assets/` |
 | `slot` | The cosmetic slot the asset fills (table below); `""` for a kind that fills none |
 | `title`, `notes` | Optional strings |
 | `source.service` | Who made it: `meshy`, `quaternius`, `own`, ... |
@@ -53,7 +53,8 @@ TOML puts every key after a `[table]` header into that table, so the top-level k
 | `source.task_ids` | The generator's task ids (generation, rig, animation); at least one when `ai_generated` is true |
 | `source.generated_at` | A TOML date or date-time: when it was generated or downloaded |
 | `source.url` | Optional: the page it came from |
-| `[[raw]]` | One or more: `file` (a path relative to the raw folder, `/` separators, no `..`) and `sha256` (64 lowercase hex digits) |
+| `[[raw]]` | One or more: `file` (a path relative to the raw folder, `/` separators, no `..`) and `sha256` (64 lowercase hex digits); a set manifest may leave it out (its `[[files]]` are its raw files) |
+| `[[files]]` | Only in a set manifest (below): one table per shipped file |
 | `tools` | A non-empty list: the generator and every tool that changed the asset, with versions |
 | `licence` | `CC0-1.0`, `CC-BY-4.0`, `owned-paid-output`, `own-work` or `restricted` (private only: Mixamo, store packs, raw library motions, anything unclear) |
 | `licence_url` | An http(s) URL to the licence or the terms that applied on `generated_at` |
@@ -77,10 +78,60 @@ Unknown keys are refused, so a typo cannot hide a missing field.
 | `hair` | `hair_or_hat` (a hairstyle; a hat takes the same slot) |
 | `face` | `eyes`, `mouth` (changeable like the hairstyle) |
 | `accessory` | `hair_or_hat` (a hat), `face_accessory`, `back_item` |
-| `body`, `item`, `prop`, `animation` | `""` |
+| `body`, `item`, `prop`, `animation`, `kit`, `room`, `environment` | `""` |
 
-Sets are saved presets of pieces, not assets, so they have no manifest. The slot names follow the character contract
-(`contract/`, issue #4); if the contract renames a slot, `tools/runner/commands/_manifest.py` follows it.
+A character's outfit sets are saved presets of pieces, not assets, so they have no manifest. The slot names follow the
+character contract (`contract/`, issue #4); if the contract renames a slot, `tools/runner/commands/_manifest.py` follows
+it.
+
+## Set manifests
+
+A package of many files built together (the House's kit, its props, its garden, its plot; #118) has one manifest for
+the whole set rather than one per piece. Its kind is `kit`, `room`, `environment` or `prop`; a character kind cannot be
+a set. Each shipped file gets a `[[files]]` table:
+
+```toml
+[[files]]
+name = "library/armchair.glb"            # its path inside the set's export/ folder
+file = "props/library/v1/armchair.glb"   # where it was built, relative to the raw folder
+sha256 = "<64 lowercase hex digits>"
+source = "kaykit_furniture_bits"          # only for a file made from a pack: its source record
+from = ["env/kaykit/furniture-bits/.../armchair_pillows.gltf"]  # that record's [[raw]] files it was made from
+```
+
+| Field | Rule |
+|---|---|
+| `name` | A relative path inside the set's `export/` folder; each name once |
+| `file` | A relative path inside the raw folder; each file once |
+| `sha256` | 64 lowercase hex digits |
+| `source` | Optional: the id of a source record, `sources/<id>.toml`, that must exist; needed with `from` |
+| `from` | Optional: the raw files of that record the file was made from, each listed in the record's `[[raw]]` |
+
+The set's own top-level `licence` covers the files without a `source` (for the art's own work, `own-work`); a file
+with a `source` also carries its record's licence, so a set with `public_repo_ok = true` may name only records that are
+public themselves. `manifest-check --hashes` re-hashes every `file` in the raw folder and every `name` already in
+`export/`; a set is built in the raw folder first and its exports are committed once approved.
+
+The House's sets (written for #118 from the 2026-10-10 builds; a rebuild changes their hashes):
+
+| Manifest | Files |
+|---|---|
+| `assets/kit/house_kit/` | the kit v3b's 121 GLBs (with the greenhouse's 5 glass roof pieces, byte-identical in `house/80/kit`) and the shared texture set `textures/set_d.png`, `set_n0.png`, `set_n1.png`, made from 6 ambientCG maps |
+| `assets/prop/house_props/` | `library/` 131 (32 from CC0 packs, named by `source` and `from`), `task/` 34, `zones/` 9 GLBs; they use the kit's texture set |
+| `assets/environment/house_garden/` | the 14 garden plants of `house/80/plants` |
+| `assets/environment/house_outdoor/` | `outdoor.glb`, `backdrop.glb` (the flats embedded) and `sky.png` of `house/81/build` |
+
+Room scenes (`room`) get their manifests with the export command (task A1). Own work is `own-work` with
+`public_repo_ok = true`; the licence the game publishes it under is the engineer's call (question E1 of the export
+plan).
+
+## Credits for the game
+
+The game takes an asset with `docs/credits/<id>.md` in its own format (its `docs/ARCHITECTURE.md` section 11.2, example
+`docs/credits/kenney_chair.md`): `Files`, `Author`, `Source` (the art manifest, or the download page with the file's
+SHA-256), `License` with its URL, `AI generated` and `Public repo OK`. Drafts are written to the raw folder,
+`house/export/credits/<id>.md`, never committed here; the game's own task workflow copies them into its PR once the
+manifest is approved.
 
 ## Source records
 

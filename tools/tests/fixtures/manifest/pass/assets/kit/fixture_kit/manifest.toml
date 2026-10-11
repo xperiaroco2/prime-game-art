@@ -1,0 +1,36 @@
+# A set manifest: two kit pieces of our own and one prop made from a pack file; not approved yet.
+id = "fixture_kit"
+kind = "kit"
+slot = ""
+tools = ["blender 5.2.2", "prime-game-art kit"]
+licence = "own-work"
+licence_url = "https://github.com/xperiaroco2/prime-game-art"
+public_repo_ok = true
+ai_generated = false
+approved_by = []
+approved_at = ""
+approval_pr = ""
+
+[source]
+service = "own"
+plan = "own-work"
+model_version = ""
+task_ids = []
+generated_at = 2026-10-10
+
+[[files]]
+name = "wall_a.glb"
+file = "kits/fixture/v1/wall_a.glb"
+sha256 = "0000000000000000000000000000000000000000000000000000000000000020"
+
+[[files]]
+name = "textures/set_d.png"
+file = "kits/fixture/v1/textures/set_d.png"
+sha256 = "0000000000000000000000000000000000000000000000000000000000000021"
+
+[[files]]
+name = "chair.glb"
+file = "props/fixture/v1/chair.glb"
+sha256 = "0000000000000000000000000000000000000000000000000000000000000022"
+source = "fixture_pack"
+from = ["env/fixture/fixture-pack/chair.glb"]

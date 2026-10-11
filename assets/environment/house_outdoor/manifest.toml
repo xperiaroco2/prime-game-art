@@ -1,0 +1,37 @@
+# Written for #118 from the raw builds of 2026-10-10; a rebuild changes the hashes below (`manifest-check --hashes` finds it).
+id = "house_outdoor"
+kind = "environment"
+slot = ""
+title = "The House's plot: ground, fence, street, outdoor stairs, sky and backdrop"
+notes = "Built by `outdoor` from layouts/house/outdoor/plot.toml and sky.toml (docs/house-outdoor.md) into house/81/build; the backdrop flats are embedded in backdrop.glb. Own work."
+tools = ["blender 5.2.2", "prime-game-art outdoor (layouts/house/outdoor/plot.toml, sky.toml)"]
+licence = "own-work"
+licence_url = "https://github.com/xperiaroco2/prime-game-art"
+public_repo_ok = true
+ai_generated = false
+approved_by = []
+approved_at = ""
+approval_pr = ""
+
+[source]
+service = "own"
+plan = "own-work"
+model_version = ""
+task_ids = []
+generated_at = 2026-10-10
+url = "https://github.com/xperiaroco2/prime-game-art"
+
+[[files]]
+name = "backdrop.glb"
+file = "house/81/build/backdrop.glb"
+sha256 = "00579999349266ebbba95fb4cc57486b483fe2930da90f00cadfd441bb6729be"
+
+[[files]]
+name = "outdoor.glb"
+file = "house/81/build/outdoor.glb"
+sha256 = "48f015abc335ad0ce4dc93415f533fd5111ae1ade79a9b54e6a7015cd3d2812c"
+
+[[files]]
+name = "sky.png"
+file = "house/81/build/sky.png"
+sha256 = "270a5a55c9107e464c258830673c94b09c004a63f5f1e9d09308e7a8caaa17d6"

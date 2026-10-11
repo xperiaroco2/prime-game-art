@@ -13,3 +13,17 @@ notes = """Downloaded 2026-10-06 by the locations stage-0 research (art #34) und
 [[raw]]
 file = "env/kaykit/restaurant-bits/KayKit_Restaurant_Bits_1.0_FREE.zip"
 sha256 = "75f75f0a1ae569f3f2348fa7a04ccd45d2f010d419045755c70ae43289b68e4b"
+
+# Unpacked files the House uses (#118): props/library.toml `files` and the glTF buffers and images they load.
+
+[[raw]]
+file = "env/kaykit/restaurant-bits/KayKit_Restaurant_Bits_1.0_FREE/KayKit_Restaurant_Bits_1.0_FREE/Assets/gltf/chair_A.bin"
+sha256 = "c95a15bc30e2bb9f122762590819c99934db31b7e7dbf3e54b68eb105e36148b"
+
+[[raw]]
+file = "env/kaykit/restaurant-bits/KayKit_Restaurant_Bits_1.0_FREE/KayKit_Restaurant_Bits_1.0_FREE/Assets/gltf/chair_A.gltf"
+sha256 = "0d0abdc382abedb3e4bc2e0260af663c16ff2dab0d441f09d675e0709a7a7310"
+
+[[raw]]
+file = "env/kaykit/restaurant-bits/KayKit_Restaurant_Bits_1.0_FREE/KayKit_Restaurant_Bits_1.0_FREE/Assets/gltf/restaurantbits_texture.png"
+sha256 = "1bfff8f880c5e5e1b793bc46fa1f91149b7f70766174a817b3d5962495c5e40f"

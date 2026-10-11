@@ -85,3 +85,29 @@ sha256 = "4c392495ec8689024659de2099f538089556d77dd7c2f2c2d70a707fa7d29d54"
 [[raw]]
 file = "env/ambientcg/WoodFloor051/WoodFloor051_2K-JPG.zip"
 sha256 = "eb7d1cee763bb17a59feb89b0fd16398d3673a071a76fed289111cf81013ac25"
+
+# Unpacked maps the House kit's texture set is made from (#118, kits/house.json materials).
+
+[[raw]]
+file = "env/ambientcg/Concrete034/Concrete034_2K-JPG/Concrete034_2K-JPG_Color.jpg"
+sha256 = "fa27982687596d7aa080db1e9b88c30f48a3c32eb3e50b27a2ea27c431e4cde9"
+
+[[raw]]
+file = "env/ambientcg/Concrete034/Concrete034_2K-JPG/Concrete034_2K-JPG_NormalGL.jpg"
+sha256 = "b077dfe6b3b8fbe794d82b9014d030fa01984a25ab67d2e21310995e6ea5b881"
+
+[[raw]]
+file = "env/ambientcg/PaintedPlaster017/PaintedPlaster017_2K-JPG/PaintedPlaster017_2K-JPG_Color.jpg"
+sha256 = "1690e0a8839a1db6ac7e339929ddfad885b5c34145ea206f2aa03d7669f73f44"
+
+[[raw]]
+file = "env/ambientcg/PaintedPlaster017/PaintedPlaster017_2K-JPG/PaintedPlaster017_2K-JPG_NormalGL.jpg"
+sha256 = "8cacf9983fedd60bf28faa231d841ada117298ed4daa8675d3bf771069144470"
+
+[[raw]]
+file = "env/ambientcg/WoodFloor051/WoodFloor051_2K-JPG/WoodFloor051_2K-JPG_Color.jpg"
+sha256 = "cd20f4039f62ca2b2430b8a4521774572a31ee586babac058a3afe178ed9ef5f"
+
+[[raw]]
+file = "env/ambientcg/WoodFloor051/WoodFloor051_2K-JPG/WoodFloor051_2K-JPG_NormalGL.jpg"
+sha256 = "4c49e6dad811b850ddf496cbab5c247292d4df61f25ba3108ba43d83aa242780"

@@ -1,0 +1,648 @@
+# Written for #118 from the raw builds of 2026-10-10; a rebuild changes the hashes below (`manifest-check --hashes` finds it).
+id = "house_kit"
+kind = "kit"
+slot = ""
+title = "The House's modular kit v3b: 121 pieces and the shared texture set"
+notes = "Built by `kit` from kits/house.json (docs/kit.md) into kits/house/v3b. Own work; the three textures are packed, grey-averaged derivatives of ambientCG CC0 maps (PaintedPlaster017, WoodFloor051, Concrete034). The greenhouse's glass roof pieces (house/80/kit) are byte-identical to the kit's and ship here. The licence the game publishes our own work under is the engineer's question E1."
+tools = ["blender 5.2.2", "prime-game-art kit (kits/house.json)"]
+licence = "own-work"
+licence_url = "https://github.com/xperiaroco2/prime-game-art"
+public_repo_ok = true
+ai_generated = false
+approved_by = []
+approved_at = ""
+approval_pr = ""
+
+[source]
+service = "own"
+plan = "own-work"
+model_version = ""
+task_ids = []
+generated_at = 2026-10-10
+url = "https://github.com/xperiaroco2/prime-game-art"
+
+[[files]]
+name = "beam_concrete_1m.glb"
+file = "kits/house/v3b/beam_concrete_1m.glb"
+sha256 = "50520f0cd26e8d6452c5cc44b30e1cce2e54e488597f5240060a69a34e25c1df"
+
+[[files]]
+name = "beam_concrete_2m.glb"
+file = "kits/house/v3b/beam_concrete_2m.glb"
+sha256 = "055eea414e7553b7c99c50b32713f1d38ccccd254ac4b0643001e245a9542666"
+
+[[files]]
+name = "ceiling_1x1.glb"
+file = "kits/house/v3b/ceiling_1x1.glb"
+sha256 = "3e80093c11a3d02be8ced75fe84e03ce1a4b7c0baf5d7461152da5b56947b555"
+
+[[files]]
+name = "ceiling_2x2.glb"
+file = "kits/house/v3b/ceiling_2x2.glb"
+sha256 = "3d31686f0ea2f1a06c7dc3ba89b49aa1930bb95eedb3dfe0eeb0afede5a0374c"
+
+[[files]]
+name = "chimney_attic.glb"
+file = "kits/house/v3b/chimney_attic.glb"
+sha256 = "2049b186521e7bd9a278b0203c11f5e55890b820b998036353e26728a2aa64a2"
+
+[[files]]
+name = "chimney_attic_n.glb"
+file = "kits/house/v3b/chimney_attic_n.glb"
+sha256 = "6f31be026261d404b93425f8dbe07a2b72bd3331489cb6913d786965ad0f6363"
+
+[[files]]
+name = "chimney_stack.glb"
+file = "kits/house/v3b/chimney_stack.glb"
+sha256 = "e8c98f4d4b8b22a9fcc212ab75b3c381ea8011ff2648797283880c8592a34ea6"
+
+[[files]]
+name = "cornice_bracket.glb"
+file = "kits/house/v3b/cornice_bracket.glb"
+sha256 = "fc7eda8972c139f227609e7ea9d087b07acfa8529c38b82628a98e50eff486ab"
+
+[[files]]
+name = "dormer_gable.glb"
+file = "kits/house/v3b/dormer_gable.glb"
+sha256 = "4f3d44916dd815dce925f32878ca101a967556dc810ebcd373269d5a11658e6c"
+
+[[files]]
+name = "fence_1m.glb"
+file = "kits/house/v3b/fence_1m.glb"
+sha256 = "2cdb5110a81a3c63d2c81c2e802306721f9611bab1c8cb3be1ff6f5296ab5d22"
+
+[[files]]
+name = "fence_2m.glb"
+file = "kits/house/v3b/fence_2m.glb"
+sha256 = "ed164631208f8960c674d1777dfa148cc3a95be02af31a266b855f6ba34d3ace"
+
+[[files]]
+name = "fence_gates_8m.glb"
+file = "kits/house/v3b/fence_gates_8m.glb"
+sha256 = "1edf4089eff03d7e9e0dce8ab8a9393c18a220ca0cc36aceb0af6c5106cdfec1"
+
+[[files]]
+name = "fence_post.glb"
+file = "kits/house/v3b/fence_post.glb"
+sha256 = "dd1a558751bd16f6c0f6fc7e8b8bc75a71c4e7710440b51eee12e7fed30e43c7"
+
+[[files]]
+name = "fence_post_cap.glb"
+file = "kits/house/v3b/fence_post_cap.glb"
+sha256 = "28fa62047d32e5dab16a337146e67b407e34d9c328858033866a1c6a705fe400"
+
+[[files]]
+name = "fence_wicket_2m.glb"
+file = "kits/house/v3b/fence_wicket_2m.glb"
+sha256 = "ba90b212b55c0f7e7c0af670fb1f24d8bc48ac1b7421ab998788f4d05c736d13"
+
+[[files]]
+name = "floor_boards_1x1.glb"
+file = "kits/house/v3b/floor_boards_1x1.glb"
+sha256 = "1614cc3cad0bbc27306c0901f3e791c1f406582dc0ac5aec1fdeea2fa701e287"
+
+[[files]]
+name = "floor_boards_2x1.glb"
+file = "kits/house/v3b/floor_boards_2x1.glb"
+sha256 = "76d9df0c829fccb9b4c6000d47c35e9aacfbc82f12c9a6b3e7b1cb5fccc1d560"
+
+[[files]]
+name = "floor_boards_2x2.glb"
+file = "kits/house/v3b/floor_boards_2x2.glb"
+sha256 = "1c0af9a21fa33271405638a6fa96adc6df5c73741e1f97e513eae26c974ecf6e"
+
+[[files]]
+name = "floor_boards_2x2_hatch.glb"
+file = "kits/house/v3b/floor_boards_2x2_hatch.glb"
+sha256 = "7c251a5cf458117f4e61c75eb101651fbe5afe96a0cbd8910ce82eda370351c4"
+
+[[files]]
+name = "floor_concrete_1x1.glb"
+file = "kits/house/v3b/floor_concrete_1x1.glb"
+sha256 = "4549ed5c7144ef3ae5a2eaaaa40df4fb25583bef12d86161f0fc32403b1b4320"
+
+[[files]]
+name = "floor_concrete_2x2.glb"
+file = "kits/house/v3b/floor_concrete_2x2.glb"
+sha256 = "a5bc630d5951cb86197ce6083cefcbdd145e371a968319bf525f208859aa5e8b"
+
+[[files]]
+name = "floor_lino_1x1.glb"
+file = "kits/house/v3b/floor_lino_1x1.glb"
+sha256 = "b1c113561938abc7ccea51140f670bc32c4deb49fcc737f7022ce8844dfe538d"
+
+[[files]]
+name = "floor_lino_2x2.glb"
+file = "kits/house/v3b/floor_lino_2x2.glb"
+sha256 = "6c6e0924da627b20b9b6ec8c91a8d8716fe40a83296efc9571c108002ff868d6"
+
+[[files]]
+name = "gable_band_1m.glb"
+file = "kits/house/v3b/gable_band_1m.glb"
+sha256 = "2110ca4d4fef38177495824038a6ed415e6959db499e9d18901446336764db41"
+
+[[files]]
+name = "gable_band_2m.glb"
+file = "kits/house/v3b/gable_band_2m.glb"
+sha256 = "10c07bf36c6cd0f317e1a51b64bbf3df677b4f2d7c2fb826781111b905119d28"
+
+[[files]]
+name = "gable_band_2m_window.glb"
+file = "kits/house/v3b/gable_band_2m_window.glb"
+sha256 = "3ad4d98a1d5cc4e609726bf1d3cbf548623c018ebbc78608b32c3239eac9ec6a"
+
+[[files]]
+name = "gable_tri_1m_down.glb"
+file = "kits/house/v3b/gable_tri_1m_down.glb"
+sha256 = "540cf58c5a9ab9e25b6ca86522cde8e1904215daa9d23a086c77b1b466bccb07"
+
+[[files]]
+name = "gable_tri_1m_up.glb"
+file = "kits/house/v3b/gable_tri_1m_up.glb"
+sha256 = "e672ffaa0e19d524732b6a20f764d85f0b3e14cfd07b5e74961cc41a57e042e1"
+
+[[files]]
+name = "gable_tri_2m_down.glb"
+file = "kits/house/v3b/gable_tri_2m_down.glb"
+sha256 = "64bf9b621eff2e5509cd7f086e5294c57f9ee361e97353cef75fc02f0d6dc710"
+
+[[files]]
+name = "gable_tri_2m_up.glb"
+file = "kits/house/v3b/gable_tri_2m_up.glb"
+sha256 = "8cb160e0fb5d2b5c3994b83007a2f8508b8310c06fea484b4be9d0e7c73a7130"
+
+[[files]]
+name = "garage_door_8m.glb"
+file = "kits/house/v3b/garage_door_8m.glb"
+sha256 = "393a676d88ed227cb893c21259ccbe55e0e290e480d6001f138cdc39b775ee88"
+
+[[files]]
+name = "gate_post.glb"
+file = "kits/house/v3b/gate_post.glb"
+sha256 = "2def94c9c14a1cce1866e152c9839a3d96eb36c3b3026e0b80aab7c7894b106d"
+
+[[files]]
+name = "gazebo_finial.glb"
+file = "kits/house/v3b/gazebo_finial.glb"
+sha256 = "3ca45ce493135ef4c1ad1669d6d8c26c52b7dbdc72e300e7f922aa9c21f6c891"
+
+[[files]]
+name = "gazebo_roof_sector.glb"
+file = "kits/house/v3b/gazebo_roof_sector.glb"
+sha256 = "b0ee1756eae7935ca196ac84e32453bd64e0d0b9b75132a3dac26871684a4ca4"
+
+[[files]]
+name = "gazebo_sector.glb"
+file = "kits/house/v3b/gazebo_sector.glb"
+sha256 = "2dbe24bffb1ef1b4f6dd1e0842b3afd9dd0901dc307a1e00616240a9730ed0fd"
+
+[[files]]
+name = "gazebo_sector_open.glb"
+file = "kits/house/v3b/gazebo_sector_open.glb"
+sha256 = "e3b155a0768db6507a28bc35159fe3e62969b244fc5cc0b5b26879d66f70a2ee"
+
+[[files]]
+name = "glass_corner.glb"
+file = "kits/house/v3b/glass_corner.glb"
+sha256 = "76833e35f8d0051f54ef531e37b077820a22585ecb7024c47397508de4e2feb1"
+
+[[files]]
+name = "glass_door_2m.glb"
+file = "kits/house/v3b/glass_door_2m.glb"
+sha256 = "6dcdce06e4a93886b162176895061dde25ddae543687a3eef4f12852f46429fb"
+
+[[files]]
+name = "glass_end.glb"
+file = "kits/house/v3b/glass_end.glb"
+sha256 = "6959aaad5947b1fcfe46d8fae41cbc5331b6cce06145f8e4dd8b181455cc667b"
+
+[[files]]
+name = "glass_gable_band_2m.glb"
+file = "kits/house/v3b/glass_gable_band_2m.glb"
+sha256 = "a889502347817a9a849d61389fecf385471379b05a0892a2356f524affb91024"
+
+[[files]]
+name = "glass_gable_tri_2m_down.glb"
+file = "kits/house/v3b/glass_gable_tri_2m_down.glb"
+sha256 = "d6a62dc5b70cdbbbb3e907229d222a12262aa53a39a2704af6293037b88b2b19"
+
+[[files]]
+name = "glass_gable_tri_2m_up.glb"
+file = "kits/house/v3b/glass_gable_tri_2m_up.glb"
+sha256 = "45c6f61d10519aba1dd14c960a9e7b4621b4a83e7314f65ef962f07e520b798e"
+
+[[files]]
+name = "glass_post.glb"
+file = "kits/house/v3b/glass_post.glb"
+sha256 = "bb1e0291791e7f112ea119a2e7a57936738799e5a6ef2c6cbc25715c4c52ce4f"
+
+[[files]]
+name = "glass_roof_2x2.glb"
+file = "kits/house/v3b/glass_roof_2x2.glb"
+sha256 = "6343a4ed2cfacaf6eb2c0ee53da66f022c2b550e5abf88e41361f71f7a587e38"
+
+[[files]]
+name = "glass_roof_2x2_end.glb"
+file = "kits/house/v3b/glass_roof_2x2_end.glb"
+sha256 = "9ec7491323c5bd8a6babe74f4d57c29341248352614ca984cb91831ecd135a09"
+
+[[files]]
+name = "glass_roof_eave_2m.glb"
+file = "kits/house/v3b/glass_roof_eave_2m.glb"
+sha256 = "98a83d789c41cd5df00dff97508892db4d382e4cc113f6694d52d68518b33bee"
+
+[[files]]
+name = "glass_roof_eave_2m_end.glb"
+file = "kits/house/v3b/glass_roof_eave_2m_end.glb"
+sha256 = "c086bbe6c3ee58160a3dd6895db921abf467fe886ebce83da6e2b0e65e657b4c"
+
+[[files]]
+name = "glass_roof_ridge_2m.glb"
+file = "kits/house/v3b/glass_roof_ridge_2m.glb"
+sha256 = "fb8253ef2cf0d3d58d81b6ac48c050acd778a0ffedcae9dcd8d540abc754f60c"
+
+[[files]]
+name = "glass_wall_1m.glb"
+file = "kits/house/v3b/glass_wall_1m.glb"
+sha256 = "946a83c2ac3f791f882167a3103095d846e5a8e91da536cd3163643643729415"
+
+[[files]]
+name = "glass_wall_2m.glb"
+file = "kits/house/v3b/glass_wall_2m.glb"
+sha256 = "4cf4d8c0d02c04696d944a66c3cc59b0173808d46b35af4ae003deea4d2d03ab"
+
+[[files]]
+name = "ladder_attic.glb"
+file = "kits/house/v3b/ladder_attic.glb"
+sha256 = "c00f2f05acae8fcfa088784f84ca847c77c0919002f9d6301bf43f7677e2dd47"
+
+[[files]]
+name = "parapet_1m.glb"
+file = "kits/house/v3b/parapet_1m.glb"
+sha256 = "cf9a116047734882b850781735d4439558256ae9c7e40e96b6de6fd5ed0f0236"
+
+[[files]]
+name = "parapet_2m.glb"
+file = "kits/house/v3b/parapet_2m.glb"
+sha256 = "0edb81420b7b1801a7994c8f9b45623a59bcef59098a9c3eeca0a784dfbbda74"
+
+[[files]]
+name = "parapet_corner.glb"
+file = "kits/house/v3b/parapet_corner.glb"
+sha256 = "048a00a48fb0edb8a040bf0cbed37daaa71b46c898170b647e6d1aa6b33f19eb"
+
+[[files]]
+name = "pillar_concrete.glb"
+file = "kits/house/v3b/pillar_concrete.glb"
+sha256 = "96c9d86f1708a32c7bc7fe045fc514501b41ed5df90f4206ef02a9eaca831856"
+
+[[files]]
+name = "porch_2x2.glb"
+file = "kits/house/v3b/porch_2x2.glb"
+sha256 = "529d7b2766bfd898dc4d78dc23aad70e304f240cd5bd6dc29be694e4cd2f3ad9"
+
+[[files]]
+name = "railing_balcony_1m.glb"
+file = "kits/house/v3b/railing_balcony_1m.glb"
+sha256 = "23696e15c6108844da4f4c5da394d25e4f8b2193a4532d38b9949c83def14a1c"
+
+[[files]]
+name = "railing_balcony_2m.glb"
+file = "kits/house/v3b/railing_balcony_2m.glb"
+sha256 = "d643096c4862486486b0d514028e984d59edf7c4f2127781bd5d4dc2499a75de"
+
+[[files]]
+name = "railing_balcony_post.glb"
+file = "kits/house/v3b/railing_balcony_post.glb"
+sha256 = "ea4243f859ce100b1bea005d1a15c5594d97f67df88b733f87389d465b1dc518"
+
+[[files]]
+name = "railing_gazebo_1m.glb"
+file = "kits/house/v3b/railing_gazebo_1m.glb"
+sha256 = "1249c23418c40768a9a8a78c01f41ecfb90a2202b8bfed4232acc7607963b556"
+
+[[files]]
+name = "railing_gazebo_2m.glb"
+file = "kits/house/v3b/railing_gazebo_2m.glb"
+sha256 = "2b7c99da9d853a7f2cf33a4e8ae081c828d64cdfecd1674023592d51946d8d28"
+
+[[files]]
+name = "railing_gazebo_post.glb"
+file = "kits/house/v3b/railing_gazebo_post.glb"
+sha256 = "1eed57a43b6de75484e3e7986e9814ee9322d1ce677bbecac337df4a1e2b5d22"
+
+[[files]]
+name = "roof_downpipe.glb"
+file = "kits/house/v3b/roof_downpipe.glb"
+sha256 = "4cbed35461671c3c50fd841de48950915659b298adbdbb5117eb377fd756aeb8"
+
+[[files]]
+name = "roof_flat_1x1.glb"
+file = "kits/house/v3b/roof_flat_1x1.glb"
+sha256 = "7eb893dfac6a51abf2ca694bbc88265213802850c73b0651fa7185dffbd5436f"
+
+[[files]]
+name = "roof_flat_2x2.glb"
+file = "kits/house/v3b/roof_flat_2x2.glb"
+sha256 = "a2f82f438ba86bf772d43273c4e0fd3cfa707a06242f2f133465bd32d4da8bd4"
+
+[[files]]
+name = "roof_pitched_2x1.glb"
+file = "kits/house/v3b/roof_pitched_2x1.glb"
+sha256 = "df4680a1c673dd6e6ea3f884563b2446f28158408c77ab70595862e01b84bf3a"
+
+[[files]]
+name = "roof_pitched_2x2.glb"
+file = "kits/house/v3b/roof_pitched_2x2.glb"
+sha256 = "3e2e7c4dbf0887516e921287a31245455ecc129181890932af5d28adf3f41c70"
+
+[[files]]
+name = "roof_pitched_corner_l.glb"
+file = "kits/house/v3b/roof_pitched_corner_l.glb"
+sha256 = "cc32b5fe4a47897ebb5ecdc6a02616aff5c3cc434aeb72ccb2a95216bc29eaad"
+
+[[files]]
+name = "roof_pitched_corner_r.glb"
+file = "kits/house/v3b/roof_pitched_corner_r.glb"
+sha256 = "5d479d3547227fd9f0b4f7fcc9a9bf0fe3f09448a4a347ce4b4786979810379c"
+
+[[files]]
+name = "roof_pitched_eave_2m.glb"
+file = "kits/house/v3b/roof_pitched_eave_2m.glb"
+sha256 = "38776ec63789e347bdde7df4706288981ce3635823efdbc1f494e62532f4e929"
+
+[[files]]
+name = "roof_pitched_ridge_2m.glb"
+file = "kits/house/v3b/roof_pitched_ridge_2m.glb"
+sha256 = "1221a7e140a3a7857b09b29fc5685cba4805cb40e283d26f3e144a21e633da11"
+
+[[files]]
+name = "roof_pitched_ridge_end_l.glb"
+file = "kits/house/v3b/roof_pitched_ridge_end_l.glb"
+sha256 = "e840aa0a12b6193f1875359f6a6df15076994b14844f890e481f631215597dcc"
+
+[[files]]
+name = "roof_pitched_ridge_end_r.glb"
+file = "kits/house/v3b/roof_pitched_ridge_end_r.glb"
+sha256 = "35b76440bdc5f90f7353ea0c942510d62cd94dc384fbc048000ea9b1b14cad22"
+
+[[files]]
+name = "roof_pitched_verge_1_l.glb"
+file = "kits/house/v3b/roof_pitched_verge_1_l.glb"
+sha256 = "ace8a7ddf2e2b01d0da339e6956c74c9c5c16eb58017a42a276081cd094afd08"
+
+[[files]]
+name = "roof_pitched_verge_1_r.glb"
+file = "kits/house/v3b/roof_pitched_verge_1_r.glb"
+sha256 = "0044be888f706fe1b116c84e34a8e1e9dbd83ce2a1d3ff96fc4da949a151d6c2"
+
+[[files]]
+name = "roof_pitched_verge_2_l.glb"
+file = "kits/house/v3b/roof_pitched_verge_2_l.glb"
+sha256 = "e6ee95aad47941190107b22544d7f640fe8b6cb82f85aaeb6fb83cbbabc3f9d0"
+
+[[files]]
+name = "roof_pitched_verge_2_r.glb"
+file = "kits/house/v3b/roof_pitched_verge_2_r.glb"
+sha256 = "77ec1324b1c35af84769096866b97fa697fa72ea6ec27e8f3a09fc0c886c8740"
+
+[[files]]
+name = "roof_vent.glb"
+file = "kits/house/v3b/roof_vent.glb"
+sha256 = "02dd2c4bcac6474217a42b3a0da4bd3d79211e418c2f50cd2b43191a3465924d"
+
+[[files]]
+name = "roof_vent_n.glb"
+file = "kits/house/v3b/roof_vent_n.glb"
+sha256 = "ed9a34b7d528805c9e9bd968182e09980329f3c0e1dfb5b91ef9b0b0e90ffd66"
+
+[[files]]
+name = "slab_edge_1m.glb"
+file = "kits/house/v3b/slab_edge_1m.glb"
+sha256 = "431c9c5cec2e71091bf779f2065cc2ab07761919970afb298bc8bb895ce65b90"
+
+[[files]]
+name = "slab_edge_2m.glb"
+file = "kits/house/v3b/slab_edge_2m.glb"
+sha256 = "3dc4aa99ac8f2f8f24dd9a962fe77f0319ef20b95924a6500a04f7d347322944"
+
+[[files]]
+name = "slab_edge_yard_1m.glb"
+file = "kits/house/v3b/slab_edge_yard_1m.glb"
+sha256 = "247ffc6e9fcd8e4708d7ef9b017c48f3b9894d3924a6535e8781630fcd92b09a"
+
+[[files]]
+name = "slab_edge_yard_2m.glb"
+file = "kits/house/v3b/slab_edge_yard_2m.glb"
+sha256 = "f6ff2a21a8327acb4dd1c54fc7d55638d778d120f527df8713122174588fbf2d"
+
+[[files]]
+name = "slab_yard_1x1.glb"
+file = "kits/house/v3b/slab_yard_1x1.glb"
+sha256 = "08c5e565b7d30ea14628770469914b95056ce92cbb22c2da2ef9481ced435490"
+
+[[files]]
+name = "slab_yard_2x2.glb"
+file = "kits/house/v3b/slab_yard_2x2.glb"
+sha256 = "a8b36696ed8d3342345bea2f6ca8bb917f653d2caefbb739bb601d6eff1e4f02"
+
+[[files]]
+name = "stair_dormer.glb"
+file = "kits/house/v3b/stair_dormer.glb"
+sha256 = "94bf7205aad1f938bf1059e417b3f60c3cf9def7b00ab8299d74f094b1295c99"
+
+[[files]]
+name = "stairs_balcony.glb"
+file = "kits/house/v3b/stairs_balcony.glb"
+sha256 = "94ee504bab52c56cf9d622437076a0b2afa8947d2ee204664ed732220e790e39"
+
+[[files]]
+name = "stairs_basement.glb"
+file = "kits/house/v3b/stairs_basement.glb"
+sha256 = "7f8871baf2bb0f537d727def895a8adcfbe83cb82d707beb0410c448f56a5517"
+
+[[files]]
+name = "stairs_main.glb"
+file = "kits/house/v3b/stairs_main.glb"
+sha256 = "00f5ad7ec1034198906d7ffe785020d3180f5f547c2d61d3b9cbe4f24a522bfa"
+
+[[files]]
+name = "stairs_outdoor_half.glb"
+file = "kits/house/v3b/stairs_outdoor_half.glb"
+sha256 = "0d54c5ce18f01a598df864d660c7dbbb0f6fc355d42481221c9701bada9037ec"
+
+[[files]]
+name = "stairs_outdoor_landing.glb"
+file = "kits/house/v3b/stairs_outdoor_landing.glb"
+sha256 = "f1bda8ef9f90528db3fe1e9c694e11550f425fe764520f37c09df032677685b6"
+
+[[files]]
+name = "textures/set_d.png"
+file = "kits/house/v3b/textures/set_d.png"
+sha256 = "4f19ef1d3855f4bf18f43b9bcbb1d8084ed7a3669772c721e597225346441098"
+source = "ambientcg_materials_2k"
+from = ["env/ambientcg/Concrete034/Concrete034_2K-JPG/Concrete034_2K-JPG_Color.jpg", "env/ambientcg/PaintedPlaster017/PaintedPlaster017_2K-JPG/PaintedPlaster017_2K-JPG_Color.jpg", "env/ambientcg/WoodFloor051/WoodFloor051_2K-JPG/WoodFloor051_2K-JPG_Color.jpg"]
+
+[[files]]
+name = "textures/set_n0.png"
+file = "kits/house/v3b/textures/set_n0.png"
+sha256 = "a97f80bcd62d9608cbd8d76982c90ddba9b9a3b8714e953eef1d8e7f704c51ed"
+source = "ambientcg_materials_2k"
+from = ["env/ambientcg/Concrete034/Concrete034_2K-JPG/Concrete034_2K-JPG_NormalGL.jpg", "env/ambientcg/PaintedPlaster017/PaintedPlaster017_2K-JPG/PaintedPlaster017_2K-JPG_NormalGL.jpg", "env/ambientcg/WoodFloor051/WoodFloor051_2K-JPG/WoodFloor051_2K-JPG_NormalGL.jpg"]
+
+[[files]]
+name = "textures/set_n1.png"
+file = "kits/house/v3b/textures/set_n1.png"
+sha256 = "66601d510a1dafc3fb2a4c8203f0e661631cb5d498343a9f08cdfae930280623"
+source = "ambientcg_materials_2k"
+from = ["env/ambientcg/Concrete034/Concrete034_2K-JPG/Concrete034_2K-JPG_NormalGL.jpg", "env/ambientcg/PaintedPlaster017/PaintedPlaster017_2K-JPG/PaintedPlaster017_2K-JPG_NormalGL.jpg", "env/ambientcg/WoodFloor051/WoodFloor051_2K-JPG/WoodFloor051_2K-JPG_NormalGL.jpg"]
+
+[[files]]
+name = "wall_basement_1m.glb"
+file = "kits/house/v3b/wall_basement_1m.glb"
+sha256 = "4755a6b5eb91af270c0e0e02ce5264ad6e5bc72968a7101b72ca838ef2229bae"
+
+[[files]]
+name = "wall_basement_2m.glb"
+file = "kits/house/v3b/wall_basement_2m.glb"
+sha256 = "38b1f5be53ab18a3074c9a314f3f03f4c68124364d9432a1ddee5d5129b39457"
+
+[[files]]
+name = "wall_basement_2m_door.glb"
+file = "kits/house/v3b/wall_basement_2m_door.glb"
+sha256 = "f9aa9946043cdc0c67fcd920409cab7252ac9917d0b14b285e74b3eb6f131fc5"
+
+[[files]]
+name = "wall_basement_2m_window.glb"
+file = "kits/house/v3b/wall_basement_2m_window.glb"
+sha256 = "9f2117ad1bc052f2a2dbd4398c7c8f39c3111781efceca823d654dad576e1fc1"
+
+[[files]]
+name = "wall_basement_corner.glb"
+file = "kits/house/v3b/wall_basement_corner.glb"
+sha256 = "437f88a6b3aa5686e5682a2608c8730e18c48ef7d582cddd7bd5b8ed56f8c0b7"
+
+[[files]]
+name = "wall_basement_end.glb"
+file = "kits/house/v3b/wall_basement_end.glb"
+sha256 = "210153264840944d51850f17b55e2276463362dc04b06d5c31a91d4eb26f1d3f"
+
+[[files]]
+name = "wall_knee_1m_ext.glb"
+file = "kits/house/v3b/wall_knee_1m_ext.glb"
+sha256 = "2109d5774e625d5f3e00c6adc5a445d0c5139078af68565faf125176378dc2ba"
+
+[[files]]
+name = "wall_knee_1m_int.glb"
+file = "kits/house/v3b/wall_knee_1m_int.glb"
+sha256 = "c37700fea5dd3f00cd74c99bec5f6eafc5fefdb5eb8e6daec8e3a104b984999e"
+
+[[files]]
+name = "wall_knee_2m_door_ext.glb"
+file = "kits/house/v3b/wall_knee_2m_door_ext.glb"
+sha256 = "2a645e4170d5720833d48d075324209b1ee9ad4e6480ce3c7afa7be0a38090e5"
+
+[[files]]
+name = "wall_knee_2m_door_int.glb"
+file = "kits/house/v3b/wall_knee_2m_door_int.glb"
+sha256 = "4328e22d256c1781b1042a8b4f2bf43d51885ad230f2b1e8957d09a1fc3ef69d"
+
+[[files]]
+name = "wall_knee_2m_ext.glb"
+file = "kits/house/v3b/wall_knee_2m_ext.glb"
+sha256 = "c6e8d5610e11a203d69e0888e7da277c35c720abadb91094475d299166325096"
+
+[[files]]
+name = "wall_knee_2m_int.glb"
+file = "kits/house/v3b/wall_knee_2m_int.glb"
+sha256 = "313cbd84a0873fd9b2b8781e7afb85060d05afa7a4e857f7548b3c9233c940fc"
+
+[[files]]
+name = "wall_knee_2m_window_ext.glb"
+file = "kits/house/v3b/wall_knee_2m_window_ext.glb"
+sha256 = "84a85e185e47e722d9626705a88f664e74c0d1a8a121aa628274f598173da873"
+
+[[files]]
+name = "wall_knee_2m_window_int.glb"
+file = "kits/house/v3b/wall_knee_2m_window_int.glb"
+sha256 = "816bd236347b3f345a54b0a7ac50e9940471141944d1a9b39e69a14624185f59"
+
+[[files]]
+name = "wall_knee_corner_ext.glb"
+file = "kits/house/v3b/wall_knee_corner_ext.glb"
+sha256 = "3725c7bd49499c786534a7b8a06c9aa66913fdf38cbc7933d26669fd9c34e405"
+
+[[files]]
+name = "wall_knee_corner_int.glb"
+file = "kits/house/v3b/wall_knee_corner_int.glb"
+sha256 = "cb03b5f3a2ec6418179e4caa3f7bb411929f02c9cb005130268987853694d2b8"
+
+[[files]]
+name = "wall_knee_end_ext.glb"
+file = "kits/house/v3b/wall_knee_end_ext.glb"
+sha256 = "b52810b787434c7f50b36f2bf6bed10f82583c9ce149f24a36bccbfb1ea12f34"
+
+[[files]]
+name = "wall_knee_end_int.glb"
+file = "kits/house/v3b/wall_knee_end_int.glb"
+sha256 = "bf920e663f3279097665a75f83e29ca3cf13025d9bc7067d0b213b5a86efe577"
+
+[[files]]
+name = "wall_storey_1m_ext.glb"
+file = "kits/house/v3b/wall_storey_1m_ext.glb"
+sha256 = "41ad9fcd7eb46434f1d530f6c2f292361e6e4ad6e421b94c6384431e870c05d5"
+
+[[files]]
+name = "wall_storey_1m_int.glb"
+file = "kits/house/v3b/wall_storey_1m_int.glb"
+sha256 = "8e6ad613590d543d9418c4fc94f368d5f656be367b453dc699d43d39cc4d5bf3"
+
+[[files]]
+name = "wall_storey_2m_door_ext.glb"
+file = "kits/house/v3b/wall_storey_2m_door_ext.glb"
+sha256 = "f38d7460f18f5f2285fbe3e47857f308fabbce0df818b5c7f302b69a27c344aa"
+
+[[files]]
+name = "wall_storey_2m_door_int.glb"
+file = "kits/house/v3b/wall_storey_2m_door_int.glb"
+sha256 = "df2075c47c67791716cdaf1b7d8e2c73a2ed713af298b3e9dfad3c0b4f40ebf2"
+
+[[files]]
+name = "wall_storey_2m_ext.glb"
+file = "kits/house/v3b/wall_storey_2m_ext.glb"
+sha256 = "4eae340f953fd5b4d766d95e86627f62793fabc7319f11d1c74284d5b5d9d0ff"
+
+[[files]]
+name = "wall_storey_2m_int.glb"
+file = "kits/house/v3b/wall_storey_2m_int.glb"
+sha256 = "2e6291869ab9d273e5c727fb42c4b3208fe9c2ac8d76d6d485d2710d905346cf"
+
+[[files]]
+name = "wall_storey_2m_window_ext.glb"
+file = "kits/house/v3b/wall_storey_2m_window_ext.glb"
+sha256 = "df8c45eae88f908120167b1f7cee97734bc191f07af30a3a5b70ea2fb8fa3227"
+
+[[files]]
+name = "wall_storey_2m_window_int.glb"
+file = "kits/house/v3b/wall_storey_2m_window_int.glb"
+sha256 = "d67053e351382f9daa8f6d7a1ff57120caaedae822cce6bb03089f07376c5a13"
+
+[[files]]
+name = "wall_storey_corner_ext.glb"
+file = "kits/house/v3b/wall_storey_corner_ext.glb"
+sha256 = "89e86f46b6bd7d6c3928b6b098495a2d0aa9c5d6c58c5c129a1418a957aaeb9d"
+
+[[files]]
+name = "wall_storey_corner_int.glb"
+file = "kits/house/v3b/wall_storey_corner_int.glb"
+sha256 = "d2729fbecd636f3b07ab4a4889e641f4cfee5c08c246a06787bfe35a433fa9c3"
+
+[[files]]
+name = "wall_storey_end_ext.glb"
+file = "kits/house/v3b/wall_storey_end_ext.glb"
+sha256 = "5a8c71fbbbd6ede166d879de1be95c156b1ce81f10b80c020fbea113cb226176"
+
+[[files]]
+name = "wall_storey_end_int.glb"
+file = "kits/house/v3b/wall_storey_end_int.glb"
+sha256 = "0e01f5a26fcfa710597e38c90f1a98694296227a41fd5204db9c03e724842639"
