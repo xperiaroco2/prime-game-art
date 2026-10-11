@@ -122,8 +122,9 @@ The House's sets (written for #118 from the 2026-10-10 builds; a rebuild changes
 | `assets/environment/house_outdoor/` | `outdoor.glb`, `backdrop.glb` (the flats embedded) and `sky.png` of `house/81/build` |
 
 Room scenes (`room`) get their manifests with the export command (task A1). Own work is `own-work` with
-`public_repo_ok = true`; the licence the game publishes it under is the engineer's call (question E1 of the export
-plan).
+`public_repo_ok = true` and goes to the game under the game's terms (the engineer's E1, 2026-10-11): the game repo is
+public with no licence file, so all rights reserved, and `licence_url` points to it
+(`https://github.com/xperiaroco2/prime-game`), not to this private repo.
 
 ## Credits for the game
 
