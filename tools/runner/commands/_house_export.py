@@ -53,6 +53,10 @@ def package_lines(pkg: dict) -> list[str]:
              f"GLBs with a surface hold a collider; {pkg.get('rays', 0)} rays down, surfaces hit "
              f"{json.dumps(pkg.get('surfaces', {}), sort_keys=True)}; {sum(1 for w in walks if w['arrived'])}/"
              f"{len(walks)} walks of the 1.36 m capsule arrive"]
+    paints = pkg.get("paints", {})
+    if paints.get("surfaces"):
+        lines.append(f"  kit material: {paints['surfaces']} set surfaces, {paints.get('bare', 0)} without it; painted "
+                     f"rooms carrying their paint: {', '.join(paints.get('painted', [])) or 'none'}")
     if pkg.get("roof_rays"):
         lines.append(f"  roof: {pkg['roof_rays']} rays down from over the ridge, first hits "
                      f"{json.dumps(pkg.get('roof_surfaces', {}), sort_keys=True)} (miss: past the eaves)")

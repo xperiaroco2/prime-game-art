@@ -8,10 +8,11 @@ on the art PR).
 | From this repo | To the game repo |
 |---|---|
 | P1 (`assets/kit/house_kit/HANDOFF.md`) | `assets/environment/house_kit/` (P3's rooms use 9 of its pieces) |
+| `assets/kit/house_kit/export/kit_set.gdshader`, `kit_set.tres` (#132) | `assets/environment/house_kit/` (beside the kit's textures) |
 | `assets/prop/house_props/export/library/*.glb` (32 of them), `task/*.glb` (15), as `package.json` lists | `assets/environment/house_props/<file>.glb` (flat) |
 | `assets/room/house_basement/export/<room>.tscn` (8) | the content of `levels/house/rooms/<room>.tscn` (G3 below) |
 
-`package.json` beside this file lists the package's 67 game paths with their SHA-256 (the copies must hash the same),
+`package.json` beside this file lists the package's 69 game paths with their SHA-256 (the copies must hash the same),
 its rooms (game node, level, kit and prop counts) and the questions. The 8 rooms: `storage`, `darkroom`, `corridor`,
 `boiler_room`, `generator_hall`, `pump_room`, `switch_room`, `passage`. Each scene keeps the game room's root name,
 origin, `metadata/size_m`, `Name` label, `Doors`, `Stations` and `Markers`, and adds `Shell` (kit instances, walkable
@@ -23,6 +24,15 @@ Seven props have a namesake in the library: `boiler`, `cable_drum`, `enlarger`, 
 `water_tank`. The export resolves a prop id through `house.toml`'s `prop_dirs` in order (the task props first), so
 every package ships the task prop under that name (`task/<id>.glb` here) and never the library's; one game file
 `assets/environment/house_props/<id>.glb` per id, the same bytes in every package (`package.json`'s SHA-256).
+
+## Wall paints and the kit's look (#132)
+Every kit instance under `Shell` overrides its meshes' set surfaces (`surface_material_override/<i>`) with
+`res://assets/environment/house_kit/kit_set.tres`: the art's `kit_set.gdshader`, the kit's `set_d`, `set_n0`
+and `set_n1` textures and the House's wall paints (`layouts/house/house.toml` `[wall_paint]`). Each such mesh
+also sets `instance_shader_parameters/plan_at`, its place and turn in the house plan, so the shader paints by
+the plan wherever the game puts the House. Nothing to run: copy the two files with the kit and load the scene
+(the root's `metadata/wall_paint` stays as a note). No basement room has a paint (it keeps the kit's concrete); the material gives the kit's textured
+look.
 
 ## Credits
 The drafts are `D:/prime-art-raw/house/export/credits/house_kit.md` and `house_props.md` (the game's

@@ -157,6 +157,7 @@ func _package(req: Dictionary) -> Dictionary:
 		Walker.pad(self, p)
 	for i in 3:
 		await physics_frame
+	var paints: Dictionary = _paints(req, placed, problems)  # in the tree now: global poses hold
 	var space := root.get_world_3d().direct_space_state
 	var counts := {}
 	var named := {}
@@ -241,6 +242,73 @@ func _package(req: Dictionary) -> Dictionary:
 		walks.append(res)
 		if not res["arrived"]:
 			problems.append("walk %s: the %.2f m capsule stops at %s" % [w["name"], 2 * RADIUS, str(res["end"])])
-	return {"problems": problems, "rays": rays, "surfaces": counts, "roof_rays": roof_rays, "roof_surfaces": roof_counts,
+	return {"problems": problems, "paints": paints, "rays": rays, "surfaces": counts, "roof_rays": roof_rays, "roof_surfaces": roof_counts,
 		"none_at": none_at, "pieces": pieces, "walks": walks,
 		"outside": req.get("outside", []), "closed": req.get("closed", [])}
+
+
+## The wall paints travel with the scenes (#132, docs/house.md "The export"): every Shell surface whose imported
+## material is the kit's stand-in (`kit_set`) carries the kit's set material (req["material"], any ShaderMaterial when
+## empty) with `plan_at` at its mesh's place and turn (the rooms stand at their plan origins); a painted room's
+## material holds the room's paint (its rect and colour), else "the walls do not carry the paint".
+func _paints(req: Dictionary, placed: Dictionary, problems: Array) -> Dictionary:
+	var want: String = String(req.get("material", ""))
+	var out := {"surfaces": 0, "bare": 0, "painted": []}
+	for r: Dictionary in req["rooms"]:
+		var node: Node3D = placed.get(r["id"])
+		if node == null or node.get_node_or_null("Shell") == null:
+			continue
+		var bare := 0
+		var first := ""
+		var mats := {}
+		for n: Node in node.get_node("Shell").find_children("*", "MeshInstance3D", true, false):
+			var mi := n as MeshInstance3D
+			if mi.mesh == null:
+				continue
+			for i in mi.mesh.get_surface_count():
+				var m: Material = mi.mesh.surface_get_material(i)
+				if m == null or m.resource_name != "kit_set":
+					continue
+				out["surfaces"] += 1
+				var o := mi.get_surface_override_material(i) as ShaderMaterial
+				var at: Variant = mi.get_instance_shader_parameter("plan_at")
+				var ok := o != null and (want == "" or o.resource_path == want) and at is Vector4
+				if ok:
+					var v: Vector4 = at
+					var turn: float = absf(wrapf(rad_to_deg(mi.global_rotation.y) - v.w, -180.0, 180.0))
+					ok = v.w >= 0.0 and Vector3(v.x, v.y, v.z).distance_to(mi.global_position) < 0.01 and turn < 0.5
+				if ok:
+					mats[o] = true
+				else:
+					bare += 1
+					if first == "":
+						first = "%s surface %d" % [node.get_path_to(mi), i]
+		if bare > 0:
+			out["bare"] += bare
+			problems.append("%s: %d kit surfaces without the kit's set material at their plan place, e.g. %s"
+				% [r["id"], bare, first])
+		if r.has("paint"):
+			var held := not mats.is_empty()
+			for o: ShaderMaterial in mats:
+				held = held and _holds(o, r["paint"])
+			if held:
+				out["painted"].append(r["id"])
+			else:
+				problems.append("%s: the walls do not carry the paint %s" % [r["id"], r["paint"]["hex"]])
+	return out
+
+
+## The material paints `paint`'s rect (x0, z0, x1, z1 in the plan) with its colour (kit_materials.gd `paint`).
+func _holds(mat: ShaderMaterial, paint: Dictionary) -> bool:
+	var count: Variant = mat.get_shader_parameter("paint_count")
+	var rects: Variant = mat.get_shader_parameter("paint_rect")
+	var tos: Variant = mat.get_shader_parameter("paint_to")
+	if not (count is int and rects is PackedVector4Array and tos is PackedVector3Array):
+		return false
+	var want := Vector4(float(paint["rect"][0]), float(paint["rect"][1]), float(paint["rect"][2]), float(paint["rect"][3]))
+	var to := Vector3(float(paint["to"][0]), float(paint["to"][1]), float(paint["to"][2]))
+	for i in mini(int(count), mini(rects.size(), tos.size())):
+		var d: Vector4 = rects[i] - want
+		if maxf(maxf(absf(d.x), absf(d.y)), maxf(absf(d.z), absf(d.w))) < 0.01 and tos[i].distance_to(to) < 0.01:
+			return true
+	return false

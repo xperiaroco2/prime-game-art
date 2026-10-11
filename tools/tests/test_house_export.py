@@ -383,6 +383,103 @@ shape = SubResource("crate")
 """
 
 
+def _glb(nodes: list[dict], meshes: list[dict], materials: list[str]) -> bytes:
+    """A GLB with only its JSON chunk (enough for house_export.set_surfaces)."""
+    doc = json.dumps({"scenes": [{"nodes": list(range(len(nodes)))}], "nodes": nodes, "meshes": meshes,
+                      "materials": [{"name": m} for m in materials]}).encode()
+    doc += b" " * (-len(doc) % 4)
+    return b"glTF" + (2).to_bytes(4, "little") + (20 + len(doc)).to_bytes(4, "little") \
+        + len(doc).to_bytes(4, "little") + b"JSON" + doc
+
+
+class WallPaints(unittest.TestCase):
+    """#132: the kit's set material with the house's paints travels with the room scenes."""
+
+    def test_set_surfaces_reads_the_stand_in_material(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            glb = Path(tmp) / "wall.glb"
+            glb.write_bytes(_glb([{"name": "wall", "mesh": 0}, {"name": "leaf", "mesh": 1, "translation": [0.5, 0, 0]},
+                                  {"name": "wall_col0-convcolonly", "mesh": 2}],
+                                 [{"primitives": [{"material": 0}, {"material": 1}]},
+                                  {"primitives": [{"material": 1}]}, {"primitives": [{}]}],
+                                 ["kit_glass-vcol", "kit_set-vcol"]))
+            self.assertEqual(X.set_surfaces(glb), [{"node": "wall", "at": [0, 0, 0], "surfaces": [1]},
+                                                   {"node": "leaf", "at": [0.5, 0, 0], "surfaces": [0]}])
+            glb.write_bytes(b"glTF")
+            self.assertEqual(X.set_surfaces(glb), [])
+            glb.write_bytes(_glb([{"name": "wall", "mesh": 0, "rotation": [0, 0.7071, 0, 0.7071]}],
+                                 [{"primitives": [{"material": 0}]}], ["kit_set-vcol"]))
+            with self.assertRaises(ValueError):
+                X.set_surfaces(glb)
+
+    def test_the_scene_puts_the_material_on_every_set_surface_with_its_plan_pose(self):
+        lv, room = next((lv, r) for lv in DATA["levels"] for r in lv["rooms"] if r["id"] == "kitchen")
+        pl = PLAN["levels"][DATA["levels"].index(lv)]
+        pieces = pl["pieces"]["kitchen"]
+        surfaces = {p["id"]: [{"node": p["id"], "at": [0, 0, 0], "surfaces": [0]}] for p in pieces}
+        text = X.room_scene(DATA, lv, dict(room, _doors=pl["doors"]["kitchen"]), pieces, [], [], [],
+                            surfaces=surfaces)
+        mat = X.material_res(DATA)
+        self.assertIn(f'[ext_resource type="ShaderMaterial" path="{mat}"', text)
+        self.assertEqual(text.count("surface_material_override/0"), len(pieces))
+        p = pieces[0]
+        name = f"{p['id']}_1"
+        at = [p["x"], lv["floor_y"] + p["h"], p["y"], p["turn"] % 360]
+        self.assertIn(f'[node name="{p["id"]}" parent="Shell/{name}"]', text)
+        self.assertIn("instance_shader_parameters/plan_at = Vector4(" + ", ".join(H._num(v) for v in at) + ")", text)
+
+    def test_the_material_holds_every_painted_room(self):
+        text = X.material_text(DATA)
+        paints = H.paint_request(DATA)
+        self.assertIn('path="res://assets/environment/house_kit/kit_set.gdshader"', text)
+        self.assertIn(f"shader_parameter/paint_count = {len(paints['rooms'])}", text)
+        rects = re.search(r"paint_rect = PackedVector4Array\(([^)]*)\)", text).group(1).split(", ")
+        self.assertEqual(len(rects), 64)
+        kitchen = next(r for r in paints["rooms"] if r["room"] == "kitchen")
+        k = paints["rooms"].index(kitchen)
+        self.assertEqual([float(v) for v in rects[4 * k:4 * k + 4]], [float(v) for v in kitchen["rect"]])
+        request = X.check_request(DATA, {"kitchen": {}}, {"wall_2m"})
+        self.assertEqual(request["material"], X.material_res(DATA))
+        self.assertEqual(request["rooms"][0]["paint"]["hex"], kitchen["hex"])
+
+
+PAINTED = """[gd_scene format=3]
+
+[ext_resource type="Shader" path="res://kit_set.gdshader" id="1"]
+
+[sub_resource type="StandardMaterial3D" id="stand"]
+resource_name = "kit_set"
+
+[sub_resource type="BoxMesh" id="box"]
+material = SubResource("stand")
+
+[sub_resource type="ShaderMaterial" id="set"]
+shader = ExtResource("1")
+{paint}
+
+[node name="{name}" type="Node3D"]
+metadata/size_m = Vector2i(4, 4)
+
+[node name="Shell" type="Node3D" parent="."]
+
+[node name="wall_ok" type="MeshInstance3D" parent="Shell"]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 1, 0, 2)
+mesh = SubResource("box")
+surface_material_override/0 = SubResource("set")
+instance_shader_parameters/plan_at = Vector4(11, 0, 22, 90)
+
+[node name="wall_bare" type="MeshInstance3D" parent="Shell"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3, 0, 2)
+mesh = SubResource("box")
+
+[node name="wall_moved" type="MeshInstance3D" parent="Shell"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0, 3)
+mesh = SubResource("box")
+surface_material_override/0 = SubResource("set")
+instance_shader_parameters/plan_at = Vector4(11, 0, 22, 0)
+"""
+
+
 @unittest.skipUnless(common.tool_path("GODOT_BIN", None), "Godot not found (GODOT_BIN)")
 class BrokenFixture(unittest.TestCase):
     def test_the_check_names_every_problem(self):
@@ -422,6 +519,41 @@ class BrokenFixture(unittest.TestCase):
             self.assertEqual(pkg["roof_surfaces"], {"miss": 16, "wood": 32, "none": 4, "concrete": 60})
             self.assertEqual(pkg["none_at"].get("Bad/Dressing/RoofCrate"), "bad roof")
             self.assertEqual(pkg["none_at"].get("Bad/Shell/floor_bare/Body"), "bad")
+
+
+    def test_the_check_names_walls_without_their_paint(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            folder = Path(tmp)
+            (folder / "kit_set.gdshader").write_text(X.SHADER_SRC.read_text(encoding="utf-8"), encoding="utf-8",
+                                                     newline="\n")
+            rooms = folder / "levels/house/rooms"
+            rooms.mkdir(parents=True)
+            to = ", ".join(str(v) for v in H.paint_request(DATA)["rooms"][0]["to"])
+            (rooms / "painted.tscn").write_text(PAINTED.format(paint="", name="Painted"), encoding="utf-8",
+                                                newline="\n")
+            (rooms / "good.tscn").write_text(PAINTED.format(
+                paint=f"shader_parameter/paint_count = 1\nshader_parameter/paint_rect = PackedVector4Array(10, 20, "
+                      f"14, 24)\nshader_parameter/paint_to = PackedVector3Array({to})", name="Good"),
+                encoding="utf-8", newline="\n")
+            paint = {"hex": "#3a6264", "rect": [10, 20, 14, 24], "to": H.paint_request(DATA)["rooms"][0]["to"]}
+            request = {"rooms": [{"id": rid, "rect": [10, 20, 4, 4], "floor_y": 0.0, "floor": False,
+                                  "scene": f"res://levels/house/rooms/{rid}.tscn", "walkable": [], "hide": [],
+                                  "paint": paint} for rid in ("painted", "good")],
+                       "pieces": {}, "walks": [], "pads": [], "material": ""}
+            summary = {"rooms": {"painted": {"node": "Painted", "kit": 0}, "good": {"node": "Good", "kit": 0}},
+                       "check": request}
+            with contextlib.redirect_stdout(io.StringIO()):
+                code, problems = _house_export.run(folder, summary)
+            text = "\n".join(problems)
+            self.assertEqual(code, 1, text)
+            self.assertIn("painted: 2 kit surfaces without the kit's set material at their plan place, e.g. "
+                          "Shell/wall_bare surface 0", text)
+            self.assertIn("painted: the walls do not carry the paint #3a6264", text)
+            self.assertIn("good: 2 kit surfaces without", text)
+            self.assertNotIn("good: the walls", text)
+            report = json.loads((folder / "_check/load.json").read_text(encoding="utf-8"))
+            self.assertEqual(report["package"]["paints"]["painted"], ["good"])
+            self.assertEqual(report["package"]["paints"]["surfaces"], 6)
 
 
 
