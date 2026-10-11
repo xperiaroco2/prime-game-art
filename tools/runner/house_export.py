@@ -265,9 +265,9 @@ def check_request(data: dict, built: dict, kit_ids=()) -> dict:
     """What godot/house/export_check.gd checks on the assembled package (its rooms placed at their plan origins): per
     room its rect, floor height and node lists (walkable shell pieces, props with a collider); the kit GLBs with a
     surface (each must hold a layer-1 collider); a room under a roof of its level also its `roof` rect (ROOF_MARGIN
-    round it) for the rays down from roof_from over its floor; and the 1.36 m capsule's walks (house_layout.walk_request over every
-    level: each doorway and flight) whose every point stands in a room of the package, with the pads under ends that
-    have no floor. The walks leaving the package are listed as `outside`, the closed kit leaves as `closed`."""
+    round it) for the rays down from roof_from over its floor, and `roof_rect`, where a ray must meet the roof; and
+    the 1.36 m capsule's walks (house_layout.walk_request over every level: each doorway and flight) whose every
+    point stands in a room of the package, with the pads under ends that have no floor. The walks leaving the package are listed as `outside`, the closed kit leaves as `closed`."""
     ex = settings(data)
     rooms = []
     for lv in data["levels"]:
@@ -282,7 +282,8 @@ def check_request(data: dict, built: dict, kit_ids=()) -> dict:
                 if roof:  # the roof's rays: from over the ridge, the first hit is the roof a player walks on
                     x, y, w, d = (float(v) for v in roof["rect"])
                     m = ROOF_MARGIN
-                    rooms[-1].update(roof=[x - m, y - m, w + 2 * m, d + 2 * m], roof_from=ROOF_FROM)
+                    rooms[-1].update(roof=[x - m, y - m, w + 2 * m, d + 2 * m], roof_rect=[x, y, w, d],
+                                     roof_from=ROOF_FROM)
 
     storey = data["settings"].get("floor_to_floor_m", 3.2)
 

@@ -168,6 +168,7 @@ class HouseExport(unittest.TestCase):
         x, y, w, d = (float(v) for v in next(lv for lv in DATA["levels"] if lv["level"] == "attic")["roofs"][0]["rect"])
         m = X.ROOF_MARGIN
         self.assertEqual(room["roof"], [x - m, y - m, w + 2 * m, d + 2 * m])
+        self.assertEqual(room["roof_rect"], [x, y, w, d])
         self.assertGreater(room["roof_from"], 6.0)
 
     def test_packages_split_the_rooms(self):

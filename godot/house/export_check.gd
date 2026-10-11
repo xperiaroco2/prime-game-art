@@ -191,6 +191,9 @@ func _package(req: Dictionary) -> Dictionary:
 				var hit := space.intersect_ray(q)
 				roof_rays += 1
 				var key := "miss"
+				var rect: Array = r["roof_rect"]
+				if hit.is_empty() and x > float(rect[0]) and x < float(rect[0]) + float(rect[2]) 						and z > float(rect[1]) and z < float(rect[1]) + float(rect[3]):
+					problems.append("%s roof: a ray at %.2f, %.2f meets no roof" % [r["id"], x, z])
 				if not hit.is_empty():
 					var col := hit["collider"] as Node
 					var path := String(root.get_path_to(col))
