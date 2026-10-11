@@ -382,8 +382,8 @@ blink step), brow vertices in the visible white, visible brow pokes (a brow poin
 hair right behind it; the lab's e5 test, at every vertex and every triangle's centre and edge midpoints), the ears
 against the hair in the item's ear state, the nose's clearance above the mouth and the moustache, noses meeting a
 pupil, the brows' visibility and brow-to-eye clearance (`brow_hidden_faces`), the look's sag and triangles, and (art #42 round 4) a pair of the men's Punk ear rings seated on the
-face's ears (`ear_rings`: sides seated, faces with hidden ears, the worst gap, piercing point to the lobe's centre and
-ring plane to the ear's; `docs/assembly.md`, "Ear and nose accessories"); a face whose ring misses fails the check. It writes `kit_check.json` (with the worst faces and the formal-updo list) under
+face's ears (`ear_rings`: sides seated, faces with hidden ears, the worst gap, piercing point to the lobe's centre,
+ring plane to the ear's hanging plane and share of the ring inside the head; `docs/assembly.md`, "Ear and nose accessories"); a face whose ring misses fails the check. It writes `kit_check.json` (with the worst faces and the formal-updo list) under
 `--out` (default `tools/out/faces_kit/`) and exits non-zero on any failure (`faces.kit_problems`).
 
 ## Gotchas

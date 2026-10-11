@@ -88,12 +88,14 @@ def take_ring(packs, rc, arm, coll):
 
 def ring_seat(face, h, ring, item, coll):
     """The ring seat on one face: a copy of the template seated on the kit ears, measured, removed. Returns
-    {"seated": sides, "fail": text or None, "gap_mm", "pierce_mm", "plane_deg", "inside_share"} (the worst side)."""
+    {"seated": sides, "fail": text or None, "gap_mm", "pierce_mm", "plane_deg", "inside_share",
+    "head_inside"} (the worst side)."""
     o = ring.copy()
     o.data = ring.data.copy()
     coll.objects.link(o)
     update()
-    m = {"seated": 0, "fail": None, "gap_mm": 0.0, "pierce_mm": 0.0, "plane_deg": 0.0, "inside_share": 0.0}
+    m = {"seated": 0, "fail": None, "gap_mm": 0.0, "pierce_mm": 0.0, "plane_deg": 0.0, "inside_share": 0.0,
+         "head_inside": 0.0}
     try:
         rep = seat_accessories(face, h, [o], kit.hair_flags(item)["ears"])
     except SeatError as e:
@@ -102,7 +104,7 @@ def ring_seat(face, h, ring, item, coll):
     for r in rep.get(o.name, {}).values():
         if r.get("moved"):
             m["seated"] += 1
-            for k in ("gap_mm", "pierce_mm", "plane_deg", "inside_share"):
+            for k in ("gap_mm", "pierce_mm", "plane_deg", "inside_share", "head_inside"):
                 m[k] = max(m[k], r.get(k, 0.0))
     me = o.data
     bpy.data.objects.remove(o, do_unlink=True)
@@ -244,7 +246,7 @@ def add_ring(stats, i, item, r):
     st["faces"] += 1
     st["seated_sides"] += r["seated"]
     st["no_ear_faces"] += int(r["seated"] == 0 and r["fail"] is None)
-    for k in ("gap_mm", "pierce_mm", "plane_deg", "inside_share"):
+    for k in ("gap_mm", "pierce_mm", "plane_deg", "inside_share", "head_inside"):
         st[k + "_max"] = max(st[k + "_max"], r[k])
     if r["fail"]:
         st["fail_faces"] += 1
@@ -260,7 +262,8 @@ def new_stats(head_id, n):
             "brow_hidden_faces": 0, "brow_hidden_by": {}, "brow_hidden_top": [], "brow_eye_clear_mm_min": 99.0,
             "brow_seen_min": 1.0, "brow_eye_clear_mm_min_by_style": {},
             "ear_rings": {"faces": 0, "seated_sides": 0, "no_ear_faces": 0, "fail_faces": 0, "fail_top": [],
-                          "gap_mm_max": 0.0, "pierce_mm_max": 0.0, "plane_deg_max": 0.0, "inside_share_max": 0.0},
+                          "gap_mm_max": 0.0, "pierce_mm_max": 0.0, "plane_deg_max": 0.0, "inside_share_max": 0.0,
+                          "head_inside_max": 0.0},
             "moustache_seat": {"faces": 0, "overlap_faces": 0, "cannot_clear_faces": 0, "nose_clear_mm_min": 99.0,
                                "squash_min": 1.0}}
 

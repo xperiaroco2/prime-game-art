@@ -513,10 +513,20 @@ def accessory_seat_ok(gap_mm, inside_share):
 # into the ear's plane and moved so its piercing point (the top of its centre line: centre + mean radius along the
 # world's up in the ring's plane) sits on the lobe's centre. The check: the piercing point within ACC_PIERCE_MAX_MM of
 # the lobe's centre and the ring's plane within ACC_PLANE_MAX_DEG of the ear's, besides the gap measure above.
+# Step 4 (the ring sank into the jaw under the ear): the lobe's band counts only the ear's vertices at least
+# ACC_LOBE_FREE_MM off the head (the ear's root on the skull is not lobe); the ring hangs: its plane is the vertical
+# plane turned to the ear's yaw (hang_normal: the ear normal's level part), then the seat tries the smallest swing
+# (ACC_SWING_DEG: the ring's bottom out about the piercing point's tangent) and push out along that normal
+# (ACC_PUSH_MM) that leaves at most ACC_HEAD_INSIDE_MAX of the ring's vertices inside the head (ring_clear_ok).
 ACC_LOBE_BAND = 0.25
 ACC_EAR_PLANE_SHARE = 0.5
 ACC_PIERCE_MAX_MM = 3.0
 ACC_PLANE_MAX_DEG = 20.0
+ACC_LOBE_FREE_MM = 3.0
+ACC_LOBE_MIN_POINTS = 8
+ACC_HEAD_INSIDE_MAX = 0.03
+ACC_SWING_DEG = (0, 5, 10, 15, 20)
+ACC_PUSH_MM = (0.0, 0.5, 1.0, 1.5, 2.0, 2.5)
 
 
 def _xyz(p):
@@ -578,9 +588,14 @@ def plane_angle_deg(n1, n2):
     return math.degrees(math.acos(min(1.0, d)))
 
 
-def lobe_centre(pts, band=ACC_LOBE_BAND):
-    """The lobe's centre of one ear side's vertices: the centroid of those in the lowest `band` of its height."""
+def lobe_centre(pts, band=ACC_LOBE_BAND, head_mm=None, free_mm=ACC_LOBE_FREE_MM):
+    """The lobe's centre of one ear side's vertices: the centroid of those in the lowest `band` of its height. With
+    head_mm (per point its distance to the head's surface in mm, negative inside) only the points at least free_mm off
+    the head count (the ear's root on the skull is not lobe), unless fewer than ACC_LOBE_MIN_POINTS are."""
     q = [_xyz(p) for p in pts]
+    if head_mm is not None:
+        free = [p for p, d in zip(q, head_mm) if d >= free_mm]
+        q = free if len(free) >= ACC_LOBE_MIN_POINTS else q
     z0, z1 = min(p[2] for p in q), max(p[2] for p in q)
     lim = z0 + band * (z1 - z0)
     return centroid([p for p in q if p[2] <= lim])
@@ -608,9 +623,27 @@ def ring_frame(pts):
     return {"centre": c, "normal": n, "radius": r, "pierce": tuple(c[i] + r * up[i] for i in range(3))}
 
 
-def accessory_ring_ok(pierce_mm, plane_deg):
-    """The ear ring's verdict: its piercing point near the lobe's centre and its plane along the ear's."""
-    return pierce_mm <= ACC_PIERCE_MAX_MM and plane_deg <= ACC_PLANE_MAX_DEG
+def hang_normal(ear_n):
+    """A hanging ring's normal for an ear normal: its level part (the ring's plane holds the world's up), unit."""
+    x, y, _z = _xyz(ear_n)
+    ln = math.hypot(x, y)
+    return (x / ln, y / ln, 0.0) if ln > 1e-6 else (1.0, 0.0, 0.0)
+
+
+def swing_order(swings=ACC_SWING_DEG, pushes=ACC_PUSH_MM):
+    """The (swing degrees, push mm) the seat tries, the smallest change first (5 degrees cost as much as 1 mm)."""
+    return sorted(((b, a) for b in swings for a in pushes), key=lambda t: (t[0] / 5.0 + t[1], t[0]))
+
+
+def ring_clear_ok(head_inside):
+    """The ring clears the head: at most ACC_HEAD_INSIDE_MAX of its vertices inside it."""
+    return head_inside <= ACC_HEAD_INSIDE_MAX
+
+
+def accessory_ring_ok(pierce_mm, plane_deg, head_inside=0.0):
+    """The ear ring's verdict: its piercing point near the lobe's centre, its plane along the ear's hanging plane and
+    the ring clear of the head."""
+    return pierce_mm <= ACC_PIERCE_MAX_MM and plane_deg <= ACC_PLANE_MAX_DEG and ring_clear_ok(head_inside)
 
 
 SCALE_FADE = 0.08  # the same fade as clay_parts.bake_head_scale (SCALE_FADE): face and head stay in register

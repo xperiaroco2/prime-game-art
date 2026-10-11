@@ -193,7 +193,8 @@ def kit_problems(report: dict[str, Any]) -> list[str]:
             out.append(f"{where}: the ear rings were seated on {er['faces'] if er else 0} of {b['faces']} faces")
         elif er["fail_faces"]:
             out.append(f"{where}: {er['fail_faces']} faces whose ear rings miss the lobe (art #42 round 4: gap, piercing "
-                       f"point, plane; worst pierce {er['pierce_mm_max']} mm, plane {er['plane_deg_max']} deg)")
+                       f"point, plane, head; worst pierce {er['pierce_mm_max']} mm, plane {er['plane_deg_max']} deg, "
+                       f"in the head {er.get('head_inside_max', 'n/a')})")
         ms = b["moustache_seat"]
         if ms["overlap_faces"] or ms["cannot_clear_faces"]:
             out.append(f"{where}: moustache seat: {ms['overlap_faces']} faces with the nose on it, {ms['cannot_clear_faces']} not cleared")
@@ -211,7 +212,8 @@ def _rings(er: dict[str, Any] | None) -> str:
         return "not measured"
     return (f"{er['seated_sides']} sides seated on {er['faces']} faces ({er['no_ear_faces']} with hidden ears), "
             f"{er['fail_faces']} failed, max gap {er['gap_mm_max']} mm, pierce {er['pierce_mm_max']} mm, "
-            f"plane {er['plane_deg_max']} deg, inside {er['inside_share_max']}")
+            f"plane {er['plane_deg_max']} deg, inside {er['inside_share_max']}, "
+            f"in the head {er.get('head_inside_max', 'n/a')}")
 
 
 def kit_summary(report: dict[str, Any]) -> list[str]:

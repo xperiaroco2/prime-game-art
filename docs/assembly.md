@@ -235,18 +235,24 @@ pack's rings and studs follow the warped skull, but the kit builds its own ears 
 pieces (a piece's centre within -0.10..0.03 m of the eye line and over 45 mm off the centre line) onto the kit ear,
 in the ear state's shape (free or tucked; hidden ears carry nothing), and the nose pieces so their top passes 2 mm up
 through the kit nose's underside. Round 4 (the ring hung off the lobe's centre and was never turned): each side's ear
-ring is turned into the ear's plane (the plane fitted to the lower half of that ear's vertices, `kit.ear_plane`) and
-moved so its piercing point, the top of its centre line (`kit.ring_frame`: centre plus the mean radius along the
-world's up in the ring's plane), sits on the lobe's centre (`kit.lobe_centre`: the centroid of the ear's vertices in
-the lowest quarter of its height, not one vertex); the ring hangs down from there. Each piece is measured:
-`face_kit.accessories` in `build_report.json` (move, turn, the lobe's centre, gap to the ear or nose surface, share of
-the ring inside it, and for ear rings the piercing point's distance to the lobe's centre and the ring plane's angle to
-the ear's). Ok when the gap is at most 3 mm, under half the ring is buried, and for an ear ring the piercing point is
-within 3 mm of the lobe's centre and the plane within 20 degrees of the ear's (`kit.accessory_ring_ok`). A piece that
+ring hangs: its plane is the vertical plane turned to the ear's yaw (`kit.hang_normal`: the level part of the normal
+of the plane fitted to the lower half of that ear's vertices, `kit.ear_plane`; that half faces down and out on the bean
+ear, and a ring in it sank its lower half into the jaw), and it is moved so its piercing point, the top of its centre
+line (`kit.ring_frame`: centre plus the mean radius along the world's up in the ring's plane), sits on the lobe's
+centre (`kit.lobe_centre`: the centroid of the ear's vertices in the lowest quarter of its height, not one vertex,
+counting only the vertices at least 3 mm off the head: the ear's root on the skull is not lobe). Then the seat tries,
+the smallest change first (`kit.swing_order`), a swing of the ring's bottom out about the piercing point (0 to 20
+degrees) and a push out along the normal (0 to 2.5 mm) until at most 3 % of the ring's vertices are inside the head
+(`kit.ring_clear_ok`). Each piece is measured: `face_kit.accessories` in `build_report.json` (move, turn, swing, push,
+the lobe's centre, gap to the ear or nose surface, share of the ring inside it, and for ear rings the piercing point's
+distance to the lobe's centre, the ring plane's angle to the ear's hanging plane and `head_inside`, the share inside
+the head). Ok when the gap is at most 3 mm, under half the ring is buried, and for an ear ring the piercing point is
+within 3 mm of the lobe's centre, the plane within 20 degrees of the hanging plane and the ring clear of the head
+(`kit.accessory_ring_ok`). A piece that
 fails it fails the build (`accessories.SeatError`); `faces --kit-check` seats a pair of the men's Punk rings on every
 random face and fails on any miss (`docs/faces.md`). The zones, the limits and the geometry are pure Python in
-`clayface/kit.py` (`accessory_zone`, `accessory_seat_ok`, `lobe_centre`, `ear_plane`, `ring_frame`, `plane_angle_deg`,
-`accessory_seat_ok`), unit-tested in `tools/tests/test_faces_claykit.py`.
+`clayface/kit.py` (`accessory_zone`, `accessory_seat_ok`, `lobe_centre`, `ear_plane`, `hang_normal`, `swing_order`,
+`ring_frame`, `plane_angle_deg`, `ring_clear_ok`, `accessory_ring_ok`), unit-tested in `tools/tests/test_faces_claykit.py`.
 
 ## Pipeline rules learned in the final test
 
