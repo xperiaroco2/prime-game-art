@@ -86,8 +86,25 @@ class CommittedTest(unittest.TestCase):
         self.assertAlmostEqual(roof[0]["eye"][1], house_attic.roof_top(data, at[1]) + 1.6, places=2)
         package = {"package": 5, "name": "attic", "rooms": {"attic": {}}, "files": {}}
         req = R.request(package, FAMILIES, extra=views)
-        self.assertEqual([t["title"] for t in req["tiles"]], ["attic"] + [v["title"] for v in views])
+        self.assertEqual([t["title"] for t in req["tiles"]],
+                         ["attic"] + [v["title"] for v in views if v["room"] == "attic"])
         self.assertTrue(all(t["scene"] == "res://levels/house/rooms/attic.tscn" for t in req["tiles"]))
+
+    def test_the_plot_package_shows_its_views_with_its_rooms_at_their_corners(self) -> None:
+        from runner import house_layout
+        views = R.views(house_layout.load())
+        plot = [v for v in views if v["room"] == "plot"]
+        self.assertEqual(len(plot), 6)
+        self.assertEqual(plot[0]["eye"], [30.0, 1.6, 57.0])  # plan metres, 1.6 m over the ground
+        package = {"package": 7, "name": "outdoor", "rooms": {"greenhouse": {}, "garden": {}}, "files": {},
+                   "plot": {"scene": "res://levels/house/outdoor.tscn"}}
+        req = R.request(package, FAMILIES, extra=views)
+        self.assertEqual([t["title"] for t in req["tiles"]], [v["title"] for v in plot])
+        tile = req["tiles"][0]
+        self.assertEqual(tile["scene"], "res://levels/house/outdoor.tscn")
+        self.assertNotIn("rooms_at", tile)
+        self.assertEqual(tile["rooms"], [{"scene": "res://levels/house/rooms/greenhouse.tscn", "at": [58, 0, 6]},
+                                         {"scene": "res://levels/house/rooms/garden.tscn", "at": [46, 0, 2]}])
 
     def test_tile_line_prints_counts_as_ints(self) -> None:
         room = R.tile_line({"title": "Kitchen", "door": "", "lights": 2.0, "draw_calls": 41.0}, "rooms")

@@ -103,6 +103,43 @@ look = [30.0, 36.0]
 look_h = 0.5
 over_roof = true
 sun = true
+# P7's views (#128): `room = "plot"` stands in plan metres over the plot's ground (y 0), the package's rooms round it.
+[[export.sheet_views]]
+room = "plot"
+title = "yard: from the front path"
+at = [30.0, 57.0]
+look = [30.0, 44.0]
+sun = true
+[[export.sheet_views]]
+room = "plot"
+title = "street: from the far kerb"
+at = [18.0, 65.0]
+look = [40.0, 58.0]
+sun = true
+[[export.sheet_views]]
+room = "plot"
+title = "garden: from its south-west"
+at = [49.0, 28.0]
+look = [62.0, 16.0]
+sun = true
+[[export.sheet_views]]
+room = "plot"
+title = "greenhouse: inside"
+at = [60.0, 12.0]
+look = [72.0, 12.0]
+sun = true
+[[export.sheet_views]]
+room = "plot"
+title = "chill zone: at the grill"
+at = [14.0, 55.0]
+look = [8.0, 50.0]
+sun = true
+[[export.sheet_views]]
+room = "plot"
+title = "gazebo: from the yard"
+at = [14.0, 16.0]
+look = [9.0, 11.0]
+sun = true
 
 # Extra sets copied whole (files matching `files` under the raw folder `dir`), each into its own folder.
 # `build = "outdoor"`: the export writes the plot's files fresh from layouts/house/outdoor/ (`outdoor`'s pure-Python

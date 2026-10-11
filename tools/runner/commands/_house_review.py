@@ -16,7 +16,7 @@ from . import _frames, _godot, _manifest
 SCRIPT = common.ROOT / "godot" / "house" / "package_sheet.gd"
 REVIEW_DIR = "_review"  # the sheet's own files in DIR (not part of the package)
 WIDTH = 2400  # the engineer's sheet; the script adds a 1280 px copy for agents
-KIT_COLS, ROOM_COLS = 3, 4
+KIT_COLS, ROOM_COLS, PLOT_COLS = 3, 4, 3
 EYE = 1.6  # the rooms' camera height over the door's floor, m
 TIMEOUT = 900
 PROJECT = """; A committed House package staged for its look-approval sheet (house --package-sheet); not part of it.
@@ -87,18 +87,23 @@ def families(ids: list[str], patterns: dict[str, list[str]]) -> dict[str, list[s
 def views(data: dict) -> list[dict]:
     """house.toml's [[export.sheet_views]] as room-local camera tiles (#126): `at` and `look` in plan metres, `eye` and
     `look_h` their heights over the room's floor or, with `over_roof`, over the roof's top there
-    (house_attic.roof_top); `sun` adds a key light (a view outside the room's own lamps)."""
+    (house_attic.roof_top); `sun` adds a key light (a view outside the room's own lamps). A view of `room = "plot"`
+    (#128) stands in plan metres over the plot's ground and carries every room's plan corner (`rooms_at`), so the
+    plot's sheet can place the package's own room scenes round it."""
     from .. import house_attic
     rooms = {r["id"]: r for lv in data["levels"] for r in lv["rooms"]}
     out = []
     for v in data["settings"]["export"].get("sheet_views", []):
-        rx, ry = rooms[v["room"]]["rect"][:2]
+        plot = v["room"] == "plot"
+        rx, ry = (0, 0) if plot else rooms[v["room"]]["rect"][:2]
 
         def pt(xy, h):
             base = house_attic.roof_top(data, xy[1]) if v.get("over_roof") else 0.0
             return [round(xy[0] - rx, 3), round(base + h, 3), round(xy[1] - ry, 3)]
         out.append({"room": v["room"], "title": v["title"], "eye": pt(v["at"], v.get("eye", EYE)),
                     "look": pt(v["look"], v.get("look_h", 1.0)), "sun": bool(v.get("sun"))})
+        if plot:
+            out[-1]["rooms_at"] = {rid: [r["rect"][0], 0, r["rect"][1]] for rid, r in rooms.items()}
     return out
 
 
@@ -107,6 +112,12 @@ def request(package: dict, kit_families: dict[str, list[str]], kit_set: str = "h
     """The sheet request: the kit's families (a package without rooms) or the package's rooms, each from its door
     and then from the extra views (views()) of it."""
     name = f"p{package['package']}_{package['name']}"
+    if package.get("plot"):  # P7 (#128): the plot's views, each with the package's rooms placed at their corners
+        rooms = [f"res://levels/house/rooms/{r}.tscn" for r in package["rooms"]]
+        tiles = [{k: v for k, v in dict(t, scene=package["plot"]["scene"], rooms=[
+            {"scene": res, "at": t["rooms_at"][rid]} for rid, res in zip(package["rooms"], rooms)]).items()
+            if k != "rooms_at"} for t in extra or [] if t["room"] == "plot"]
+        return {"mode": "rooms", "sheet": name, "cols": PLOT_COLS, "width": WIDTH, "eye": EYE, "tiles": tiles}
     if package["rooms"]:
         tiles = []
         for room in package["rooms"]:
