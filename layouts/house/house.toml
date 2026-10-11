@@ -69,6 +69,7 @@ label = { h = 2.4, font_size = 72, outline_size = 16 }  # the room's Name label,
 "pallet" = "wood"
 "stepping_stone" = "concrete"  # the plot's and the garden's stepping stones (#128)
 "fire_pit" = "concrete"  # the chill zone's stone fire pit (#128)
+"watering_can" = "concrete"  # the greenhouse's and the garden's metal can: hard, the floor it stands on (#128)
 
 # The kit's families on the look-approval sheet (`house --package-sheet`, art #124): one tile each, in this order, by
 # id pattern (the first match wins); a piece no pattern matches goes to the last family.
