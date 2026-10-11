@@ -89,6 +89,12 @@ class CommittedTest(unittest.TestCase):
         self.assertEqual([t["title"] for t in req["tiles"]], ["attic"] + [v["title"] for v in views])
         self.assertTrue(all(t["scene"] == "res://levels/house/rooms/attic.tscn" for t in req["tiles"]))
 
+    def test_tile_line_prints_counts_as_ints(self) -> None:
+        room = R.tile_line({"title": "Kitchen", "door": "", "lights": 2.0, "draw_calls": 41.0}, "rooms")
+        self.assertEqual(room, "  Kitchen: door -, 2 lights, 41 draw calls")
+        kit = R.tile_line({"title": "Walls (12)", "pieces": 12, "draw_calls": 37.0}, "kit")
+        self.assertEqual(kit, "  Walls (12): 12 pieces, 37 draw calls")
+
 
 if __name__ == "__main__":
     unittest.main()

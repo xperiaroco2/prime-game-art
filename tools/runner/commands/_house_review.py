@@ -121,6 +121,13 @@ def request(package: dict, kit_families: dict[str, list[str]], kit_set: str = "h
             "tiles": tiles, "font_size": 64}
 
 
+def tile_line(tile: dict, mode: str) -> str:
+    """One tile's summary line; Godot's monitors are floats, the counts print as ints."""
+    extra = (f"door {tile['door'] or '-'}, {int(tile['lights'])} lights" if mode == "rooms"
+             else f"{int(tile['pieces'])} pieces")
+    return f"  {tile['title']}: {extra}, {round(tile['draw_calls'])} draw calls"
+
+
 def run(folder: Path, n: int, kit_families: dict[str, list[str]], root: Path = common.ROOT,
         extra: list[dict] | None = None) -> int:
     """Stages package n from the committed files into folder and shoots its sheet into folder/<name>.png,
@@ -155,8 +162,6 @@ def run(folder: Path, n: int, kit_families: dict[str, list[str]], root: Path = c
     for line in [x for x in _godot.noteworthy(output) if "ERROR" in x][:10]:
         common.say(f"  godot: {line}")
     for tile in json.loads(report.read_text(encoding="utf-8"))["tiles"]:
-        extra = (f"door {tile['door'] or '-'}, {tile['lights']} lights" if req["mode"] == "rooms"
-                 else f"{tile['pieces']} pieces")
-        common.say(f"  {tile['title']}: {extra}, {tile['draw_calls']} draw calls")
+        common.say(tile_line(tile, req["mode"]))
     common.ok(f"house package sheet: {(folder / (req['sheet'] + '.png')).as_posix()} and its 1280 px copy")
     return 0

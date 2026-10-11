@@ -15,9 +15,9 @@ files it writes (ARCHITECTURE 11.2: GLBs `nodes/root_type=""`, `root_scale=1.0`,
 `animation/import=true`; PNGs `compress/mode=2`), `credits`, and the import check (11.3) locally with LFS content.
 
 ## Credits
-The draft is `D:/prime-art-raw/house/export/credits/house_kit.md` (the game's `docs/credits/<id>.md` format): own
-work, plus the three textures made from ambientCG CC0 maps, `ai_generated = false`, `public_repo_ok = true`. Its
-`Source` line names this manifest; fill the approval PR once approved, then `tools\run.cmd credits`.
+The entry is `CREDITS.md` beside this file (the game's `docs/credits/<id>.md` format; copy it to
+`docs/credits/house_kit.md`): own work, plus the three textures made from ambientCG CC0 maps, `ai_generated = false`,
+`public_repo_ok = true`. Its `Source` line names this manifest and the approval PR (#125); then `tools\run.cmd credits`.
 
 ## Questions still open on prime-game #523
 - G3/G11: the kit is a set, one folder with a GLB per piece, not 11.1's `<id>/<id>.glb`.

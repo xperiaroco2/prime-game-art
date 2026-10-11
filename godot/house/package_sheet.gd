@@ -45,10 +45,17 @@ func _run() -> void:
 	root.add_child(env)
 	var ui := CanvasLayer.new()
 	var label := Label.new()
-	label.position = Vector2(16, 10)
 	label.add_theme_font_size_override("font_size", int(req.get("font_size", 64)))
 	label.add_theme_color_override("font_outline_color", Color.BLACK)
 	label.add_theme_constant_override("outline_size", 10)
+	# A dark box behind the title; in rooms mode it sits bottom left, clear of the scenes' own room-name labels
+	# (Label3D near the top middle), which it would otherwise overprint.
+	var box := StyleBoxFlat.new()
+	box.bg_color = Color(0.0, 0.0, 0.0, 0.65)
+	box.set_content_margin_all(8.0)
+	box.content_margin_left = 14.0
+	box.content_margin_right = 14.0
+	label.add_theme_stylebox_override("normal", box)
 	ui.add_child(label)
 	root.add_child(ui)
 	var stats := []
@@ -70,12 +77,17 @@ func _run() -> void:
 			return
 		cam.current = true
 		label.text = String(tile["title"])
+		label.reset_size()
+		if req["mode"] == "rooms":
+			label.position = Vector2(0, root.get_visible_rect().size.y - label.get_combined_minimum_size().y)
+		else:
+			label.position = Vector2.ZERO
 		for f in 16:
 			await process_frame
 		var img := root.get_texture().get_image()
 		img.convert(Image.FORMAT_RGB8)
 		info["title"] = tile["title"]
-		info["draw_calls"] = Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME)
+		info["draw_calls"] = int(Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME))
 		stats.append(info)
 		img.resize(tw, th, Image.INTERPOLATE_LANCZOS)
 		sheet.blit_rect(img, Rect2i(0, 0, tw, th), Vector2i((i % cols) * tw, (i / cols) * th))
