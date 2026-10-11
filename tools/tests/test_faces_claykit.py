@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 import random
 import unittest
 from unittest import mock
@@ -233,6 +234,51 @@ class Accessories(unittest.TestCase):
         src = (ROOT / "tools/blender/um/clayface/accessories.py").read_text(encoding="utf-8")
         self.assertIn("accessory_seat_ok(gap, inside)", src)
         self.assertIn("raise SeatError", src)
+
+    @staticmethod
+    def ring(centre, radius, normal_axis, tilt_deg=0.0, n=24, tube=0.0008):
+        """A torus-like ring's vertices: centre, centre-line radius, the plane's normal along x ("x") or y ("y"),
+        turned by tilt_deg about z."""
+        t = math.radians(tilt_deg)
+        out = []
+        for i in range(n):
+            a = 2 * math.pi * i / n
+            for r in (radius - tube, radius + tube):
+                u, w = r * math.cos(a), r * math.sin(a)  # u across, w up
+                x, y = (0.0, u) if normal_axis == "x" else (u, 0.0)
+                x, y = x * math.cos(t) - y * math.sin(t), x * math.sin(t) + y * math.cos(t)
+                out.append((centre[0] + x, centre[1] + y, centre[2] + w))
+        return out
+
+    def test_plane_and_ring_frame(self):
+        pts = self.ring((0.1, -0.05, 1.6), 0.006, "x")
+        n = K.plane_normal(pts)
+        self.assertAlmostEqual(abs(n[0]), 1.0, places=6)
+        f = K.ring_frame(pts)
+        self.assertAlmostEqual(f["radius"], 0.006, places=5)
+        for got, want in zip(f["pierce"], (0.1, -0.05, 1.606)):  # the top of the centre line
+            self.assertAlmostEqual(got, want, places=5)
+        self.assertAlmostEqual(K.plane_angle_deg(K.plane_normal(self.ring((0, 0, 0), 0.006, "x", 30.0)), (1, 0, 0)),
+                               30.0, places=4)
+        self.assertAlmostEqual(K.plane_angle_deg((1, 0, 0), (-1, 0, 0)), 0.0)  # a plane has no side
+
+    def test_lobe_centre_is_a_band_not_a_vertex(self):
+        ear = [(0.10 + 0.004 * math.cos(a), -0.05 + 0.007 * math.sin(a), z)
+               for z in (1.60, 1.61, 1.62, 1.63, 1.64) for a in (0, 1.5, 3, 4.5)] + [(0.13, -0.05, 1.599)]
+        c = K.lobe_centre(ear)  # the lowest quarter: the z 1.60 ring and the stray low vertex, not that vertex alone
+        self.assertLess(c[2], 1.601)
+        self.assertLess(abs(c[0] - 0.106), 0.002)
+        n = K.ear_plane([(0.10 + 0.002 * (i % 2), -0.06 + 0.002 * j, 1.60 + 0.003 * k)
+                         for i in range(2) for j in range(8) for k in range(8)])
+        self.assertAlmostEqual(abs(n[0]), 1.0, places=3)  # a flat ear in the y-z plane
+
+    def test_the_ring_measure(self):
+        self.assertTrue(K.accessory_ring_ok(0.0, 0.0))
+        self.assertTrue(K.accessory_ring_ok(K.ACC_PIERCE_MAX_MM, K.ACC_PLANE_MAX_DEG))
+        self.assertFalse(K.accessory_ring_ok(K.ACC_PIERCE_MAX_MM + 0.01, 0.0))  # off the lobe's centre
+        self.assertFalse(K.accessory_ring_ok(0.0, K.ACC_PLANE_MAX_DEG + 0.1))  # across the ear
+        src = (ROOT / "tools/blender/um/clayface/accessories.py").read_text(encoding="utf-8")
+        self.assertIn("accessory_ring_ok(pierce, plane)", src)
 
 
 class BrowMeasure(unittest.TestCase):

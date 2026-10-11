@@ -175,8 +175,8 @@ def distance_lines(report: dict[str, Any]) -> list[str]:
 def kit_problems(report: dict[str, Any]) -> list[str]:
     """The failures in a kit_check.json report: any face with a collision, a brow in the white, a visible poke, an ear
     in the hair, a pupil sinking into the white, a nose meeting a pupil or the moustache, a nose below the mouth's top,
-    brows sunk into the eyes or hidden from the front (checks.brow_visibility, art #42 round 3) or over KIT_MAX_TRIS
-    triangles."""
+    brows sunk into the eyes or hidden from the front (checks.brow_visibility, art #42 round 3), ear rings off the lobe
+    (accessories.seat_accessories, round 4) or over KIT_MAX_TRIS triangles."""
     out = []
     for g, b in report["bodies"].items():
         where = f"{g} ({b['head']})"
@@ -188,6 +188,12 @@ def kit_problems(report: dict[str, Any]) -> list[str]:
                           ("brow_hidden_faces", "faces whose brows sink into the eyes or hide from the front")):
             if b.get(key):
                 out.append(f"{where}: {b[key]} {what}")
+        er = b.get("ear_rings")
+        if er is None or (er["faces"] != b["faces"]):
+            out.append(f"{where}: the ear rings were seated on {er['faces'] if er else 0} of {b['faces']} faces")
+        elif er["fail_faces"]:
+            out.append(f"{where}: {er['fail_faces']} faces whose ear rings miss the lobe (art #42 round 4: gap, piercing "
+                       f"point, plane; worst pierce {er['pierce_mm_max']} mm, plane {er['plane_deg_max']} deg)")
         ms = b["moustache_seat"]
         if ms["overlap_faces"] or ms["cannot_clear_faces"]:
             out.append(f"{where}: moustache seat: {ms['overlap_faces']} faces with the nose on it, {ms['cannot_clear_faces']} not cleared")
@@ -200,6 +206,14 @@ def kit_problems(report: dict[str, Any]) -> list[str]:
     return out
 
 
+def _rings(er: dict[str, Any] | None) -> str:
+    if not er:
+        return "not measured"
+    return (f"{er['seated_sides']} sides seated on {er['faces']} faces ({er['no_ear_faces']} with hidden ears), "
+            f"{er['fail_faces']} failed, max gap {er['gap_mm_max']} mm, pierce {er['pierce_mm_max']} mm, "
+            f"plane {er['plane_deg_max']} deg, inside {er['inside_share_max']}")
+
+
 def kit_summary(report: dict[str, Any]) -> list[str]:
     lines = []
     for g, b in report["bodies"].items():
@@ -210,7 +224,7 @@ def kit_summary(report: dict[str, Any]) -> list[str]:
                      f"look sag max {b['look_sag_mm_max']} mm; moustache faces {ms['faces']} (nose clear min "
                      f"{ms['nose_clear_mm_min']} mm); brows tucked {b['brow_tuck_faces']}, hidden {b.get('brow_hidden_faces', 0)} "
                      f"(eye clear min {b.get('brow_eye_clear_mm_min', '-')} mm, by style {b.get('brow_eye_clear_mm_min_by_style', {})}, "
-                     f"seen min {b.get('brow_seen_min', '-')}); tris max {b['tris_max']} "
+                     f"seen min {b.get('brow_seen_min', '-')}); ear rings {_rings(b.get('ear_rings'))}; tris max {b['tris_max']} "
                      f"mean {b['tris_mean']}; {b['seconds']} s")
     return lines
 

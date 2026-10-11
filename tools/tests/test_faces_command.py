@@ -139,7 +139,9 @@ def kit_body(**kw: object) -> dict:
          "ear_hair_overlap_faces": 0, "meets_pupils_faces": 0, "nose_above_mouth_mm_min": 1.5, "look_sag_mm_max": -0.2,
          "tris_max": 1900, "tris_mean": 1500.0, "seconds": 9.0, "hairs_seen": {"hair_m_beach": 4}, "brow_tuck_faces": 1,
          "moustache_seat": {"faces": 1, "overlap_faces": 0, "cannot_clear_faces": 0, "nose_clear_mm_min": 0.4,
-                            "squash_min": 1.0}}
+                            "squash_min": 1.0},
+         "ear_rings": {"faces": 4, "seated_sides": 8, "no_ear_faces": 0, "fail_faces": 0, "fail_top": [],
+                       "gap_mm_max": 0.0, "pierce_mm_max": 0.4, "plane_deg_max": 2.0, "inside_share_max": 0.2}}
     b.update(kw)
     return b
 
@@ -155,10 +157,20 @@ class KitCheck(unittest.TestCase):
                        meets_pupils_faces=1, brow_hidden_faces=1, nose_above_mouth_mm_min=-0.3, look_sag_mm_max=0.1,
                        tris_max=2100,
                        moustache_seat={"faces": 1, "overlap_faces": 1, "cannot_clear_faces": 0, "nose_clear_mm_min": 0.0,
-                                       "squash_min": 1.0})
+                                       "squash_min": 1.0},
+                       ear_rings=dict(kit_body()["ear_rings"], faces=3, fail_faces=1, pierce_mm_max=4.2))
         problems = faces.kit_problems({"bodies": {"M": bad}})
-        self.assertEqual(len(problems), 11, problems)
+        self.assertEqual(len(problems), 12, problems)
         self.assertTrue(all(p.startswith("M (m1)") for p in problems))
+
+    def test_ear_rings_must_be_measured_on_every_face(self) -> None:
+        """art #42 round 4: a report without the ring seat, or with it on fewer faces, fails."""
+        for b in (kit_body(ear_rings=None), kit_body(ear_rings=dict(kit_body()["ear_rings"], faces=3))):
+            if b["ear_rings"] is None:
+                del b["ear_rings"]
+            problems = faces.kit_problems({"bodies": {"M": b}})
+            self.assertEqual(len(problems), 1, problems)
+            self.assertIn("ear rings were seated on", problems[0])
 
     def test_flag_defaults_and_refusal(self) -> None:
         import argparse

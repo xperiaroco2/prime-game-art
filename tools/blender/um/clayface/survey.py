@@ -7,7 +7,8 @@ body type, the updo list).
 Per body type: collisions (BAD_PAIRS, every mouth state and blink step), brows in the visible white, visible pokes
 (a brow point in front of the hair with visible hair right behind it), ears against the hair (in the item's ear
 state), the nose above the mouth, the look's sag, the moustache seat (nose clearance), noses meeting a pupil and
-triangles. The runner judges the numbers (tools/runner/commands/faces.py kit_problems).
+triangles; art #42 round 4: a pair of the men's Punk ear rings seated on every face's ears (accessories.seat_accessories:
+the gap, the piercing point against the lobe's centre, the ring's plane against the ear's). The runner judges the numbers (tools/runner/commands/faces.py kit_problems).
 """
 import random
 import time
@@ -18,6 +19,7 @@ from mathutils.bvhtree import BVHTree
 from .. import assemble, heads, zones
 from ..util import update
 from . import checks, kit
+from .accessories import SeatError, seat_accessories
 from .adapter import KitHead
 from .brows import brow_above_pad, hair_visible_at, skin_depth
 from .face import build_face
@@ -26,6 +28,8 @@ from .mesh import FWD, piece_coords
 SEEDS = {"M": 500, "W": 501}  # the lab's per-body-type seeds (500 + the body type's index)
 UPDO = "hair_w_formal_updo"
 TOP = 8  # the worst faces listed per measure
+# art #42 round 4: the ear rings every face of the check wears (m3's rings in the cast; the men's pack, both bodies)
+RING = {"file": "Punk.glb", "object": "Punk_Head", "materials": ["Earrings"], "gender": "M"}
 
 
 def hair_items(gender):
@@ -69,6 +73,41 @@ def wear(packs, rc, arm, parts, coll, item):
     parts["hair"] = obj
     update()
     return obj
+
+
+def take_ring(packs, rc, arm, coll):
+    """The ear ring template (RING), taken as the assembler takes a recipe extra; hidden, copied per face."""
+    mats = set(RING["materials"])
+    obj, _ = assemble.take_part(packs, rc["id"], "earrings", rc["gender"], RING, arm, keep=lambda m, c: m in mats)
+    for c in list(obj.users_collection):
+        c.objects.unlink(obj)
+    coll.objects.link(obj)
+    obj.hide_render = True
+    return obj
+
+
+def ring_seat(face, h, ring, item, coll):
+    """The ring seat on one face: a copy of the template seated on the kit ears, measured, removed. Returns
+    {"seated": sides, "fail": text or None, "gap_mm", "pierce_mm", "plane_deg", "inside_share"} (the worst side)."""
+    o = ring.copy()
+    o.data = ring.data.copy()
+    coll.objects.link(o)
+    update()
+    m = {"seated": 0, "fail": None, "gap_mm": 0.0, "pierce_mm": 0.0, "plane_deg": 0.0, "inside_share": 0.0}
+    try:
+        rep = seat_accessories(face, h, [o], kit.hair_flags(item)["ears"])
+    except SeatError as e:
+        m["fail"] = str(e)
+        rep = {}
+    for r in rep.get(o.name, {}).values():
+        if r.get("moved"):
+            m["seated"] += 1
+            for k in ("gap_mm", "pierce_mm", "plane_deg", "inside_share"):
+                m[k] = max(m[k], r.get(k, 0.0))
+    me = o.data
+    bpy.data.objects.remove(o, do_unlink=True)
+    bpy.data.meshes.remove(me)
+    return m
 
 
 def _tree(o, coords):
@@ -200,6 +239,18 @@ def add(stats, i, p, item, m):
         stats["updo"].append({"i": i, "brows": p["brows"], "pokes": m["pokes"], "brow_above_pad": m["brow_above_pad"]})
 
 
+def add_ring(stats, i, item, r):
+    st = stats["ear_rings"]
+    st["faces"] += 1
+    st["seated_sides"] += r["seated"]
+    st["no_ear_faces"] += int(r["seated"] == 0 and r["fail"] is None)
+    for k in ("gap_mm", "pierce_mm", "plane_deg", "inside_share"):
+        st[k + "_max"] = max(st[k + "_max"], r[k])
+    if r["fail"]:
+        st["fail_faces"] += 1
+        _top(st["fail_top"], {"i": i, "hair": item, "why": r["fail"][-300:], "n": r["pierce_mm"] + r["gap_mm"]}, "n")
+
+
 def new_stats(head_id, n):
     return {"head": head_id, "faces": 0, "requested": n, "faces_with_collision": 0, "pairs": {}, "collision_top": [],
             "brow_in_white_faces": 0, "brow_in_white_top": [], "pokes": 0, "poke_points": 0, "pokes_by_hair": {},
@@ -208,6 +259,8 @@ def new_stats(head_id, n):
             "tris_max": 0, "tris_sum": 0, "hairs_seen": {}, "picks_seen": {}, "updo": [],
             "brow_hidden_faces": 0, "brow_hidden_by": {}, "brow_hidden_top": [], "brow_eye_clear_mm_min": 99.0,
             "brow_seen_min": 1.0, "brow_eye_clear_mm_min_by_style": {},
+            "ear_rings": {"faces": 0, "seated_sides": 0, "no_ear_faces": 0, "fail_faces": 0, "fail_top": [],
+                          "gap_mm_max": 0.0, "pierce_mm_max": 0.0, "plane_deg_max": 0.0, "inside_share_max": 0.0},
             "moustache_seat": {"faces": 0, "overlap_faces": 0, "cannot_clear_faces": 0, "nose_clear_mm_min": 99.0,
                                "squash_min": 1.0}}
 
@@ -228,6 +281,7 @@ def run_body(packs, recipe, rc, n, log=print):
     faces = draw(g, n, hairs)
     stats = new_stats(rc["id"], n)
     stats["hair_items"] = len(hairs)
+    ring = take_ring(packs, rc, arm, coll)
     t0 = time.time()
     for item in hairs:  # grouped by hair: each hair is taken once
         mine = [f for f in faces if f[2] == item]
@@ -239,6 +293,7 @@ def run_body(packs, recipe, rc, n, log=print):
             h = KitHead(rc["id"], arm, parts, coll, eyes_at, item, skin_mat)
             face = build_face(h, p, skin, coll=coll, bind=False)
             add(stats, i, p, item, measure(face, item, ht))
+            add_ring(stats, i, item, ring_seat(face, h, ring, item, coll))
             face.remove()
         log("CHECK %s %s: %d faces, %.0f s" % (g, item, len(mine), time.time() - t0))
     stats["tris_mean"] = round(stats.pop("tris_sum") / max(1, stats["faces"]), 1)

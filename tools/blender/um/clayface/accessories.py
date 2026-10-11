@@ -1,14 +1,19 @@
 """Ear and nose accessories on the bean head (art #42 round 3): the pack's rings and studs follow the warped skull
 (heads.bean_warp, push_out), but the kit builds its own ears (ears.build_ears) and nose (nose.build_nose) elsewhere, so
-a ring hung where the pack's ear was. seat_accessories moves each side's ear pieces so their top passes through the
-kit ear's lobe, and the nose pieces so their top passes through the kit nose's underside, then measures the gap.
+a ring hung where the pack's ear was. seat_accessories turns each side's ear ring into the kit ear's plane and moves it
+so its piercing point (the top of its centre line) sits on the lobe's centre (round 4: kit.lobe_centre, ear_plane,
+ring_frame), and moves the nose pieces so their top passes through the kit nose's underside, then measures the gap,
+and for the ear rings the piercing point's distance and the plane's angle (kit.accessory_ring_ok).
 """
+import math
+
 import bmesh
-from mathutils import Vector
+from mathutils import Matrix, Vector
 from mathutils.bvhtree import BVHTree
 
 from .. import heads
-from .kit import accessory_seat_ok, accessory_zone
+from .kit import (accessory_ring_ok, accessory_seat_ok, accessory_zone, ear_plane, lobe_centre,
+                  plane_angle_deg, ring_frame)
 from .mesh import piece_coords
 
 PIERCE_M = 0.002  # the ring's top passes this far up through the lobe or the nose's underside
@@ -39,6 +44,46 @@ def _move(o, idx, d):
             for i in idx:
                 kb.data[i].co += dl
     me.update()
+
+
+def _turn(o, idx, rot, pivot, d):
+    """Turns the vertices idx of o (and of every shape key) by the world 3x3 rot about the world pivot, then moves them
+    by the world vector d."""
+    mw = o.matrix_world
+    inv = mw.inverted()
+    me = o.data
+    lists = [me.vertices] + ([kb.data for kb in me.shape_keys.key_blocks] if me.shape_keys else [])
+    for data in lists:
+        for i in idx:
+            p = mw @ data[i].co
+            data[i].co = inv @ (rot @ (p - pivot) + pivot + d)
+    me.update()
+
+
+def ring_measure(pts, lobe, ear_n):
+    """(piercing point's distance to the lobe's centre in mm, the ring plane's angle to the ear's in degrees)."""
+    f = ring_frame(pts)
+    return (round((Vector(f["pierce"]) - Vector(lobe)).length * 1000, 2),
+            round(plane_angle_deg(f["normal"], ear_n), 1))
+
+
+def seat_ring(o, idx, side_pts):
+    """Turns the ring idx of o into the plane of the ear side's points and moves its piercing point onto the lobe's
+    centre. Returns (lobe centre, ear normal, turn in degrees, move in mm)."""
+    lobe = Vector(lobe_centre(side_pts))
+    ear_n = Vector(ear_plane(side_pts))
+    world = piece_coords(o)
+    f = ring_frame([world[i] for i in idx])
+    rn = Vector(f["normal"])
+    if rn.dot(ear_n) < 0.0:
+        rn = -rn
+    rot = rn.rotation_difference(ear_n).to_matrix()
+    c = Vector(f["centre"])
+    _turn(o, idx, rot, c, Vector((0.0, 0.0, 0.0)))
+    world = piece_coords(o)
+    d = lobe - Vector(ring_frame([world[i] for i in idx])["pierce"])
+    _turn(o, idx, Matrix.Identity(3), c, d)
+    return lobe, ear_n, round(math.degrees(rn.angle(ear_n)), 1), round(d.length * 1000, 1)
 
 
 def _tree(o, key=None):
@@ -106,9 +151,16 @@ def seat_accessories(face, h, objs, ear_state):
                     out[z] = {"moved": False, "why": "the ears are hidden (%s)" % ear_state}
                     continue
                 side = [p for p in ear_pts if (p.x > x) == (z == "ear_l")]
-                lobe = min(side, key=lambda p: p.z)
-                target = lobe + Vector((0.0, 0.0, PIERCE_M))
-                tree = ear_tree
+                lobe, ear_n, turn, move = seat_ring(o, idx, side)
+                world = piece_coords(o)
+                pts = [world[i] for i in idx]
+                gap, inside = _gap(ear_tree, pts)
+                pierce, plane = ring_measure(pts, lobe, ear_n)
+                out[z] = {"moved": True, "move_mm": move, "turn_deg": turn, "vertices": len(idx), "gap_mm": gap,
+                          "inside_share": inside, "lobe_centre": [round(v, 4) for v in lobe],
+                          "pierce_mm": pierce, "plane_deg": plane,
+                          "ok": accessory_seat_ok(gap, inside) and accessory_ring_ok(pierce, plane)}
+                continue
             d = target - top
             _move(o, idx, d)
             world = piece_coords(o)
@@ -117,7 +169,8 @@ def seat_accessories(face, h, objs, ear_state):
                       "inside_share": inside, "ok": accessory_seat_ok(gap, inside)}
         if out:
             rep[o.name] = out
-    bad = ["%s %s: gap %s mm, inside %s" % (o, z, r["gap_mm"], r["inside_share"])
+    bad = ["%s %s: gap %s mm, inside %s, pierce %s mm, plane %s deg" % (o, z, r["gap_mm"], r["inside_share"],
+                                                                       r.get("pierce_mm"), r.get("plane_deg"))
            for o, zs in rep.items() for z, r in zs.items() if r.get("moved") and not r["ok"]]
     if bad:
         raise SeatError("ear/nose accessories not seated on the kit: " + "; ".join(bad))
