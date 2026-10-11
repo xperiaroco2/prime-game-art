@@ -77,6 +77,30 @@ stairs = ["stair*", "ladder_*", "railing_balcony_*"]
 roof = ["roof_*", "glass_roof_*", "gable_*", "glass_gable_*", "chimney_*", "dormer_*", "cornice_*"]
 outdoor = ["fence_*", "gate_post", "gazebo_*", "railing_gazebo_*"]
 
+# Extra views on a package's look-approval sheet (`house --package-sheet`, art #126), after the room's door view: `at`
+# and `look` plan metres, `eye` (default 1.6) and `look_h` (default 1.0) heights over the room's floor or, with
+# `over_roof`, over the roof's top there (house_attic.roof_top); `sun` adds a key light outside the room's lamps.
+[[export.sheet_views]]
+room = "attic"
+title = "attic: from the west gable"
+at = [19.5, 34.0]
+look = [40.0, 34.0]
+[[export.sheet_views]]
+room = "attic"
+title = "roof: the lookout from the dormer (1.6 m)"
+at = [34.9, 43.6]  # the dormer's climb-out (dressing/attic_roof/attic.toml's roof.arrive)
+look = [39.0, 41.9]  # the Lookout station
+over_roof = true
+sun = true
+[[export.sheet_views]]
+room = "attic"
+title = "roof: from the lookout (1.6 m)"
+at = [39.0, 41.9]
+look = [30.0, 36.0]
+look_h = 0.5
+over_roof = true
+sun = true
+
 # Extra sets copied whole (files matching `files` under the raw folder `dir`), each into its own folder.
 [export.sets.house_outdoor]
 dir = "house/81/build"

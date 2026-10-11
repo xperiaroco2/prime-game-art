@@ -76,6 +76,19 @@ class CommittedTest(unittest.TestCase):
         self.assertEqual([t["scene"] for t in req["tiles"]],
                          ["res://levels/house/rooms/wc.tscn", "res://levels/house/rooms/pantry.tscn"])
 
+    def test_views_follow_their_room_and_stand_over_the_roof(self) -> None:
+        from runner import house_attic, house_layout
+        data = house_layout.load()
+        views = R.views(data)
+        roof = [v for v in views if v["title"].startswith("roof:")]
+        self.assertTrue(roof and all(v["room"] == "attic" and v["sun"] for v in roof))
+        at = next(v for v in data["settings"]["export"]["sheet_views"] if v["title"] == roof[0]["title"])["at"]
+        self.assertAlmostEqual(roof[0]["eye"][1], house_attic.roof_top(data, at[1]) + 1.6, places=2)
+        package = {"package": 5, "name": "attic", "rooms": {"attic": {}}, "files": {}}
+        req = R.request(package, FAMILIES, extra=views)
+        self.assertEqual([t["title"] for t in req["tiles"]], ["attic"] + [v["title"] for v in views])
+        self.assertTrue(all(t["scene"] == "res://levels/house/rooms/attic.tscn" for t in req["tiles"]))
+
 
 if __name__ == "__main__":
     unittest.main()

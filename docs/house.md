@@ -160,8 +160,12 @@ it headless and shoots `godot/house/package_sheet.gd` in an off-screen window: `
 `p<N>_<name>_1280.png` (the agents' copy) and `.json` (per tile). A package without rooms (P1, the kit) is a line-up
 of its pieces, one tile per family of `house.toml`'s `[export.kit_families]` (id patterns, the first match wins;
 shortest in front, under a key light); a package with rooms shows each room from its door (`Doors/Door1`, else the
-first) at 1.6 m eye height looking at the room's middle, lit only by its own fixtures and a dim ambient. The outdoor
-rooms of P2 (yard, street, path, ...) carry only markers and lamps: their ground is the plot, package 7.
+first) at 1.6 m eye height looking at the room's middle, lit only by its own fixtures and a dim ambient, then from
+the extra views of it in `house.toml`'s `[[export.sheet_views]]` (#126: plan points, heights over the floor or over
+the roof's top, an optional key light): P5's attic from its west gable and the free roof's lookout from the dormer and
+from the Lookout station, at 1.6 m over the roof. A package alone has no plot round it, so the roof views look out
+into the review ambient. The outdoor rooms of P2 (yard, street, path, ...) carry only markers and lamps: their ground
+is the plot, package 7.
 
 `tools/tests/test_house_export.py` diffs the 34 art rooms against the game's greybox rooms (`D:/prime-game`, read
 only; skipped without it) on root, origin, size, Doors, Stations and Markers and expects exactly the six known
