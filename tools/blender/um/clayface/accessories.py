@@ -1,10 +1,10 @@
 """Ear and nose accessories on the bean head (art #42 round 3): the pack's rings and studs follow the warped skull
 (heads.bean_warp, push_out), but the kit builds its own ears (ears.build_ears) and nose (nose.build_nose) elsewhere, so
-a ring hung where the pack's ear was. seat_accessories turns each side's ear ring into the kit ear's plane and moves it
-so its piercing point (the top of its centre line) sits on the lobe's centre (round 4: kit.lobe_centre, ear_plane,
-ring_frame), hanging in the vertical plane of the ear's yaw and swung out until it clears the head (kit.hang_normal,
-swing_order, ring_clear_ok), and moves the nose pieces so their top passes through the kit nose's underside, then measures the gap,
-and for the ear rings the piercing point's distance and the plane's angle (kit.accessory_ring_ok).
+a ring hung where the pack's ear was. seat_accessories hangs each side's ear ring in the vertical plane of the kit
+ear's yaw with its piercing point (the top of its centre line) on the lobe's centre (round 4: kit.lobe_centre,
+ear_plane, hang_normal, ring_frame), swung out until it clears the head (kit.swing_order, ring_clear_ok), and moves the
+nose pieces so their top passes through the kit nose's underside, then measures the gap, and for the ear rings the
+piercing point's distance, the plane's angle and the share inside the head (kit.accessory_ring_ok).
 """
 import math
 
@@ -13,8 +13,8 @@ from mathutils import Matrix, Vector
 from mathutils.bvhtree import BVHTree
 
 from .. import heads
-from .kit import (accessory_ring_ok, accessory_seat_ok, accessory_zone, ear_plane, hang_normal, lobe_centre,
-                  plane_angle_deg, ring_clear_ok, ring_frame, swing_order)
+from .kit import (ACC_LOBE_FREE_MM, accessory_ring_ok, accessory_seat_ok, accessory_zone, ear_plane, hang_normal,
+                  lobe_centre, plane_angle_deg, ring_clear_ok, ring_frame, swing_order)
 from .mesh import piece_coords
 
 PIERCE_M = 0.002  # the ring's top passes this far up through the lobe or the nose's underside
@@ -123,7 +123,8 @@ def seat_ring(o, idx, side_pts, out_x, head_tree):
     share, swing, push, R = best
     _turn(o, idx, R, piv, hn * (push / 1000))
     return lobe, hn, {"turn_deg": round(math.degrees(rn.angle(hn)), 1), "move_mm": round(d.length * 1000, 1),
-                      "swing_deg": swing, "push_mm": push, "lobe_free": sum(1 for m in head_mm if m >= 3.0)}
+                      "swing_deg": swing, "push_mm": push,
+                      "lobe_free": sum(1 for m in head_mm if m >= ACC_LOBE_FREE_MM)}
 
 
 def _tree(o, key=None):
