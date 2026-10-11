@@ -45,7 +45,8 @@ def check(folder: Path, summary: dict, room_dir: str = "levels/house/rooms") -> 
 
 def package_lines(pkg: dict) -> list[str]:
     """The summary lines of the package check's report (load.json's "package"): the kit pieces with a collider, the
-    floor rays' surfaces and walks, the roof rays' first hits (miss: nothing under the ray) and every collider hit
+    floor rays' surfaces and walks, the roof rays' first hits (miss: nothing under the ray), the plot's rays over the
+    ground (art #128; hole: no ground, another package's floor) and every collider hit
     without a surface by room (a roof ray's room is "<room> roof"), named by its piece under Dressing, Shell or
     Fixtures."""
     walks = pkg.get("walks", [])
@@ -56,6 +57,9 @@ def package_lines(pkg: dict) -> list[str]:
     if pkg.get("roof_rays"):
         lines.append(f"  roof: {pkg['roof_rays']} rays down from over the ridge, first hits "
                      f"{json.dumps(pkg.get('roof_surfaces', {}), sort_keys=True)} (miss: past the eaves)")
+    if pkg.get("plot_rays"):
+        lines.append(f"  plot: {pkg['plot_rays']} rays down over the ground, surfaces hit "
+                     f"{json.dumps(pkg.get('plot_surfaces', {}), sort_keys=True)} (hole: another package's floor)")
     if pkg.get("none_at"):
         where: dict = {}
         for path, rid in pkg["none_at"].items():

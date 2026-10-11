@@ -307,6 +307,12 @@ class PackageLines(unittest.TestCase):
             "  hits without a surface (not the shell): attic: Loose/Body; attic roof: crate_1; boiler_room: boiler_1, "
             "lamp_2"])
 
+    def test_the_plot_line_counts_its_rays_by_surface(self):
+        lines = _house_export.package_lines({"rays": 0, "surfaces": {}, "plot_rays": 4,
+                                             "plot_surfaces": {"grass": 2, "hole": 1, "concrete": 1}})
+        self.assertEqual(lines[1], '  plot: 4 rays down over the ground, surfaces hit {"concrete": 1, "grass": 2, '
+                                   '"hole": 1} (hole: another package's floor)')
+
     def test_no_roof_and_no_unknown_surface_print_no_line(self):
         lines = _house_export.package_lines({"rays": 2, "surfaces": {"wood": 2}, "roof_rays": 0, "none_at": {}})
         self.assertEqual(len(lines), 1)
