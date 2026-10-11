@@ -1,0 +1,92 @@
+# Written for #118 from the raw builds of 2026-10-10; a rebuild changes the hashes below (`manifest-check --hashes` finds it).
+id = "house_garden"
+kind = "environment"
+slot = ""
+title = "The House's garden plants: trees, bushes, flower beds and the hedge"
+notes = "Built by `garden` from layouts/house/outdoor/garden.toml (docs/house-garden.md) into house/80/plants. Own work; the glass roof's pieces ship in house_kit."
+tools = ["blender 5.2.2", "prime-game-art garden (layouts/house/outdoor/garden.toml)"]
+licence = "own-work"
+licence_url = "https://github.com/xperiaroco2/prime-game-art"
+public_repo_ok = true
+ai_generated = false
+approved_by = []
+approved_at = ""
+approval_pr = ""
+
+[source]
+service = "own"
+plan = "own-work"
+model_version = ""
+task_ids = []
+generated_at = 2026-10-10
+url = "https://github.com/xperiaroco2/prime-game-art"
+
+[[files]]
+name = "bush_boxwood.glb"
+file = "house/80/plants/bush_boxwood.glb"
+sha256 = "01c1c7e85474952e067d6856f0afb4c2125447eaf0e1fdfec93d01b9a2155518"
+
+[[files]]
+name = "bush_currant.glb"
+file = "house/80/plants/bush_currant.glb"
+sha256 = "8f684561d02a735096eb070f39e551763de5e6fdc595fd2b79ecc0dc23655de8"
+
+[[files]]
+name = "bush_hydrangea.glb"
+file = "house/80/plants/bush_hydrangea.glb"
+sha256 = "5347a08260ded5180c6f3d1c71f89aa9df094559cae75f2ebee66125c9d8bf51"
+
+[[files]]
+name = "bush_lavender.glb"
+file = "house/80/plants/bush_lavender.glb"
+sha256 = "03fec39aedcf60ca28fa4182c561a34e36de68f99e02807b2692bc5bc219be02"
+
+[[files]]
+name = "flower_bed_aster.glb"
+file = "house/80/plants/flower_bed_aster.glb"
+sha256 = "a2647054dba886b029e01eea785f7886ab89617abdf3623a507d8750f143f070"
+
+[[files]]
+name = "flower_bed_dahlia.glb"
+file = "house/80/plants/flower_bed_dahlia.glb"
+sha256 = "8694f2e9b119262e5d12f825632ac7cd3c452df6e73657d747128cda13a3680b"
+
+[[files]]
+name = "flower_bed_foxglove.glb"
+file = "house/80/plants/flower_bed_foxglove.glb"
+sha256 = "6730c4c839198d3130afcd8fd7c83b85f3bff96a884b29563b60c25a097e39c2"
+
+[[files]]
+name = "flower_bed_marigold.glb"
+file = "house/80/plants/flower_bed_marigold.glb"
+sha256 = "93fffc5f0e79b4e3697be823cfd45038a8e6fa10d987c30db4c6393c9fcd5edc"
+
+[[files]]
+name = "flower_bed_rose.glb"
+file = "house/80/plants/flower_bed_rose.glb"
+sha256 = "ae37e75b3e2e93cab8f849fd69095873149170e862265ba81bbb25bbe8885786"
+
+[[files]]
+name = "flower_bed_tulip.glb"
+file = "house/80/plants/flower_bed_tulip.glb"
+sha256 = "8bdf3a315f7cfa4a6d604c6805255274c281a91c0a568d449852cfa02958bc46"
+
+[[files]]
+name = "garden_tree_apple.glb"
+file = "house/80/plants/garden_tree_apple.glb"
+sha256 = "ba744161a5a634fea97968c0cbe37d389f7dac7c4edb472db91dd72172ecdb9c"
+
+[[files]]
+name = "garden_tree_pear.glb"
+file = "house/80/plants/garden_tree_pear.glb"
+sha256 = "c01990b9d453056f2a8afbe98e8c78d6b36d1f6f8f86f73bcfadf32d23f34271"
+
+[[files]]
+name = "garden_tree_plum.glb"
+file = "house/80/plants/garden_tree_plum.glb"
+sha256 = "e74bc4c90b0e1c6ba01048966c1abd6ab39080fe4b41f1c0a6bc8207b6d1661c"
+
+[[files]]
+name = "hedge.glb"
+file = "house/80/plants/hedge.glb"
+sha256 = "df12e928aaf7c292d807f48d8dec40f8f62ec1e77d58c7a3052370a1c1a4cf77"

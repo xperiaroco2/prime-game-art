@@ -13,3 +13,65 @@ notes = """Downloaded 2026-10-06 by the locations stage-0 research (art #34) und
 [[raw]]
 file = "env/kaykit/furniture-bits/KayKit_Furniture_Bits_1.0_FREE.zip"
 sha256 = "e6d75f34c5545486b5a8f45f86209dbd49092f3e77ae23011bdb87edab89e7e4"
+
+# Unpacked files the House uses (#118): props/library.toml `files` and the glTF buffers and images they load.
+
+[[raw]]
+file = "env/kaykit/furniture-bits/KayKit_Furniture_Bits_1.0_FREE/KayKit_Furniture_Bits_1.0_FREE/Assets/gltf/armchair_pillows.bin"
+sha256 = "b40556981e1bd4593ccaf7a14593f32e20859c2f2e6022a0ed0d1a278a4194a0"
+
+[[raw]]
+file = "env/kaykit/furniture-bits/KayKit_Furniture_Bits_1.0_FREE/KayKit_Furniture_Bits_1.0_FREE/Assets/gltf/armchair_pillows.gltf"
+sha256 = "1344db27a72870fb0a1b43ffcfe12f5f3dd3284f5dcecd10ed593d6e0d940f79"
+
+[[raw]]
+file = "env/kaykit/furniture-bits/KayKit_Furniture_Bits_1.0_FREE/KayKit_Furniture_Bits_1.0_FREE/Assets/gltf/bed_double_A.bin"
+sha256 = "0eb1bc50981bdb0c0ff95b30b6783dc5d40fd61497a4a21165d366e301c6e53c"
+
+[[raw]]
+file = "env/kaykit/furniture-bits/KayKit_Furniture_Bits_1.0_FREE/KayKit_Furniture_Bits_1.0_FREE/Assets/gltf/bed_double_A.gltf"
+sha256 = "55451127bbeb9734bb88c1a761a6246eaaf89ac33eee2f703d78053719e5c4e5"
+
+[[raw]]
+file = "env/kaykit/furniture-bits/KayKit_Furniture_Bits_1.0_FREE/KayKit_Furniture_Bits_1.0_FREE/Assets/gltf/bed_single_A.bin"
+sha256 = "fc7631db4540d31cbe76dac3c672bc8836ee302796d14bba428bda84b9237f5b"
+
+[[raw]]
+file = "env/kaykit/furniture-bits/KayKit_Furniture_Bits_1.0_FREE/KayKit_Furniture_Bits_1.0_FREE/Assets/gltf/bed_single_A.gltf"
+sha256 = "7b2852bb66bf82cad3e0d03a499b1480879790fa66b645347e3e73761c4fe3f5"
+
+[[raw]]
+file = "env/kaykit/furniture-bits/KayKit_Furniture_Bits_1.0_FREE/KayKit_Furniture_Bits_1.0_FREE/Assets/gltf/chair_A_wood.bin"
+sha256 = "726ea8962909becf3d925d272928a8e26a1f345fc9f8f165e7424221c69be733"
+
+[[raw]]
+file = "env/kaykit/furniture-bits/KayKit_Furniture_Bits_1.0_FREE/KayKit_Furniture_Bits_1.0_FREE/Assets/gltf/chair_A_wood.gltf"
+sha256 = "e17a16127b9a3e44ef8888c9d52fe7ec09a06b348934627816a538720793af8d"
+
+[[raw]]
+file = "env/kaykit/furniture-bits/KayKit_Furniture_Bits_1.0_FREE/KayKit_Furniture_Bits_1.0_FREE/Assets/gltf/chair_C.bin"
+sha256 = "dbcd655953927997f2a4f61676692d053f4eb261b364fe5441276aa4614cfc9d"
+
+[[raw]]
+file = "env/kaykit/furniture-bits/KayKit_Furniture_Bits_1.0_FREE/KayKit_Furniture_Bits_1.0_FREE/Assets/gltf/chair_C.gltf"
+sha256 = "fc042915c24c52f96f0571db348a2de275b15c0065c3e561fce37d4dbc81568a"
+
+[[raw]]
+file = "env/kaykit/furniture-bits/KayKit_Furniture_Bits_1.0_FREE/KayKit_Furniture_Bits_1.0_FREE/Assets/gltf/couch_pillows.bin"
+sha256 = "3157c7ce9717ff69f198f9da0395d7a57e9ab230f2161990f86e21395608cc3e"
+
+[[raw]]
+file = "env/kaykit/furniture-bits/KayKit_Furniture_Bits_1.0_FREE/KayKit_Furniture_Bits_1.0_FREE/Assets/gltf/couch_pillows.gltf"
+sha256 = "d3396c15fc460c5db1e2db95b06bb623140c269369f2e9bc38dc4d3b5807011c"
+
+[[raw]]
+file = "env/kaykit/furniture-bits/KayKit_Furniture_Bits_1.0_FREE/KayKit_Furniture_Bits_1.0_FREE/Assets/gltf/furniturebits_texture.png"
+sha256 = "de62db37a80d1801c3d9eb674890ae04b04469e0c149481a51fa250562c628dc"
+
+[[raw]]
+file = "env/kaykit/furniture-bits/KayKit_Furniture_Bits_1.0_FREE/KayKit_Furniture_Bits_1.0_FREE/Assets/gltf/table_small.bin"
+sha256 = "e18bad66ad227a4a374fd58fbe6870a73c0f3f3687cb363506e0d77e07964066"
+
+[[raw]]
+file = "env/kaykit/furniture-bits/KayKit_Furniture_Bits_1.0_FREE/KayKit_Furniture_Bits_1.0_FREE/Assets/gltf/table_small.gltf"
+sha256 = "6ae46ef60d18cf1fe507fbb2fb20235144af2ac7101f410269a761ac91ae9aee"

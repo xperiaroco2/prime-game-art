@@ -13,3 +13,9 @@ notes = """Downloaded 2026-10-06 by the locations stage-0 research (art #34) und
 [[raw]]
 file = "env/kenney/holiday-kit/kenney_holiday-kit.zip"
 sha256 = "fde4d514d7297388d98058e8933ff614e071886f7ce57f9aea4b00d7698dd769"
+
+# Unpacked files the House uses (#118): props/library.toml `files` and the glTF buffers and images they load.
+
+[[raw]]
+file = "env/kenney/holiday-kit/kenney_holiday-kit/Models/GLB format/lantern-hanging.glb"
+sha256 = "1d7e3bfce9373db6f0a5115df399397f265ae9b7ebef694717ac29d5978337c7"

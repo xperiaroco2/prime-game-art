@@ -13,3 +13,57 @@ notes = """Downloaded 2026-10-06 by the locations stage-0 research (art #34) und
 [[raw]]
 file = "env/kenney/furniture-kit/kenney_furniture-kit.zip"
 sha256 = "e67652d0932cee41683f74711c03d3e192a2af9979ef8e6b237711f5482d46b0"
+
+# Unpacked files the House uses (#118): props/library.toml `files` and the glTF buffers and images they load.
+
+[[raw]]
+file = "env/kenney/furniture-kit/kenney_furniture-kit/Models/GLTF format/bathroomSink.glb"
+sha256 = "39d4f19608cab7e0fed52303b2c689f5f51fae1bad9b6913cb53d838875e797e"
+
+[[raw]]
+file = "env/kenney/furniture-kit/kenney_furniture-kit/Models/GLTF format/bathtub.glb"
+sha256 = "54c405c7035aab63dc41e709dc3c50fc5bcfbc4cddc91ffc54188075a6d25d01"
+
+[[raw]]
+file = "env/kenney/furniture-kit/kenney_furniture-kit/Models/GLTF format/bedBunk.glb"
+sha256 = "a3eccbc4a04340dd84878d959e15eede76f517fb8d4de6862ca46877c88d764e"
+
+[[raw]]
+file = "env/kenney/furniture-kit/kenney_furniture-kit/Models/GLTF format/cabinetTelevision.glb"
+sha256 = "811719593d676ff76f7b5904d52c845ce0396af2bc9a6a2636c4818ead320b99"
+
+[[raw]]
+file = "env/kenney/furniture-kit/kenney_furniture-kit/Models/GLTF format/chairDesk.glb"
+sha256 = "46406619186034cbe92b19b79a5f1a8e3f442a17a70a7524ef2c0ad0f35095c6"
+
+[[raw]]
+file = "env/kenney/furniture-kit/kenney_furniture-kit/Models/GLTF format/desk.glb"
+sha256 = "0164fe828f028b321730fb8c74502e353583f751be74da1682d42fff7d3c5a42"
+
+[[raw]]
+file = "env/kenney/furniture-kit/kenney_furniture-kit/Models/GLTF format/kitchenFridgeLarge.glb"
+sha256 = "5851cc59c7e12f6f34a01a2ea93d5b9540be4078c1b703f517239fcede98fb32"
+
+[[raw]]
+file = "env/kenney/furniture-kit/kenney_furniture-kit/Models/GLTF format/kitchenStove.glb"
+sha256 = "3239edb36295dfca9530a9b9a6ad0aff98ce62e7cf8d13ca2a5a1a6b2a904656"
+
+[[raw]]
+file = "env/kenney/furniture-kit/kenney_furniture-kit/Models/GLTF format/lampRoundFloor.glb"
+sha256 = "50fe1b5b588edf15bfa9cc880f71a02a4fda6036350b24733d0ef4de5cc5e908"
+
+[[raw]]
+file = "env/kenney/furniture-kit/kenney_furniture-kit/Models/GLTF format/lampRoundTable.glb"
+sha256 = "75bb644caaa3da003b4fcad7a931722dd61cd2858aab70cf660021d5061fa1b2"
+
+[[raw]]
+file = "env/kenney/furniture-kit/kenney_furniture-kit/Models/GLTF format/stoolBar.glb"
+sha256 = "a86167a9f92401a61fec7e509ad089ecc552d0f299743add3aeb919acb24e341"
+
+[[raw]]
+file = "env/kenney/furniture-kit/kenney_furniture-kit/Models/GLTF format/televisionVintage.glb"
+sha256 = "eb144cc8fb1e7f761e3665226e4266c8868679421d21d6548f24d2abad7c67cf"
+
+[[raw]]
+file = "env/kenney/furniture-kit/kenney_furniture-kit/Models/GLTF format/toilet.glb"
+sha256 = "16165cfd03c56c2cb443b800570810a22ef770f65e7a468f6761d9dc14eaaeae"

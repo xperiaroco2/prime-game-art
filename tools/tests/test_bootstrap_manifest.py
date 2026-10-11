@@ -33,7 +33,7 @@ class ManifestCommandTest(unittest.TestCase):
     def test_passing_fixture_passes(self) -> None:
         code, out = run_cli("manifest-check", "--root", str(FIXTURES / "pass"))
         self.assertEqual(code, 0, out)
-        self.assertIn("3 manifest(s), 0 problem(s)", out)
+        self.assertIn("4 manifest(s), 1 source record(s), 0 problem(s)", out)
 
     def test_failing_fixture_fails(self) -> None:
         code, out = run_cli("manifest-check", "--root", str(FIXTURES / "fail"))

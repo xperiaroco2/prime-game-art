@@ -1,0 +1,14 @@
+# A store pack: private only.
+id = "private_pack"
+title = "Private Pack"
+author = "A Store"
+url = "https://example.com/private-pack"
+licence = "restricted"
+licence_url = "https://example.com/terms"
+public_repo_ok = false
+ai_generated = false
+downloaded_at = 2026-10-06
+
+[[raw]]
+file = "env/private/private-pack/lamp.glb"
+sha256 = "0000000000000000000000000000000000000000000000000000000000000030"

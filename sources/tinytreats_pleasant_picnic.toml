@@ -13,3 +13,17 @@ notes = """Downloaded 2026-10-06 by the locations stage-0 research (art #34) und
 [[raw]]
 file = "env/tinytreats/pleasant-picnic/Tiny_Treats_Pleasant_Picnic_1.0_FREE.zip"
 sha256 = "695ddeee1f7116130da648eb2e4bb5d26fd2a04f2266b11ffd7b2d6acffa662a"
+
+# Unpacked files the House uses (#118): props/library.toml `files` and the glTF buffers and images they load.
+
+[[raw]]
+file = "env/tinytreats/pleasant-picnic/Tiny_Treats_Pleasant_Picnic_1.0_FREE/Tiny_Treats_Pleasant_Picnic_1.0_FREE/Assets/gltf/cooler.bin"
+sha256 = "67820354227c48cdd81f52cca0500b8a6d3413428f49361d7cfe7c860311e9e0"
+
+[[raw]]
+file = "env/tinytreats/pleasant-picnic/Tiny_Treats_Pleasant_Picnic_1.0_FREE/Tiny_Treats_Pleasant_Picnic_1.0_FREE/Assets/gltf/cooler.gltf"
+sha256 = "f4e40d6f2a07e04555a732c095e40eef43fff7deec1ee7c5f5f69ac8ae685e90"
+
+[[raw]]
+file = "env/tinytreats/pleasant-picnic/Tiny_Treats_Pleasant_Picnic_1.0_FREE/Tiny_Treats_Pleasant_Picnic_1.0_FREE/Assets/gltf/tiny_treats_texture_1.png"
+sha256 = "31e5c7c81bfba644a59797b1907519592c7728d4af98a705449975dd929482e5"

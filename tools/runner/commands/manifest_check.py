@@ -28,21 +28,29 @@ def run(args: argparse.Namespace) -> int:
     failed = len(errors)
     for line in errors:
         common.bad(line)
+    sources = _manifest.find_sources(root)
+    loaded = {path: _manifest.load(path) for path in sources}
+    # Every readable record by id: a set's pack-made files are checked against the record they name.
+    records = {path.stem: data for path, (data, _) in loaded.items() if isinstance(data, dict)}
     for path in manifests:
         rel = path.relative_to(root).as_posix()
         data, problem = _manifest.load(path)
-        problems = [problem] if problem else _manifest.validate(data or {}, path.parent.parent.name, path.parent.name)
+        problems = (
+            [problem]
+            if problem
+            else _manifest.validate(data or {}, path.parent.parent.name, path.parent.name, records)
+        )
         if not problem and args.hashes:
             problems += _manifest.check_raw_hashes(data or {}, common.raw_dir())
+            problems += _manifest.check_export_hashes(data or {}, path.parent)
         if problems:
             failed += 1
             common.bad(rel, "\n".join(problems))
         else:
             common.ok(rel)
-    sources = _manifest.find_sources(root)
     for path in sources:
         rel = path.relative_to(root).as_posix()
-        data, problem = _manifest.load(path)
+        data, problem = loaded[path]
         problems = [problem] if problem else _manifest.validate_source(data or {}, path.stem)
         if not problem and args.hashes:
             problems += _manifest.check_raw_hashes(data or {}, common.raw_dir())
