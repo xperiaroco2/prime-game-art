@@ -26,13 +26,17 @@ PLAN = H.plan(DATA)
 GAME = Path("D:/prime-game/levels/house")
 # mapping.md's known differences (2026-10-11), waiting on the game's answers G1 and G2 (prime-game #523; art task A4):
 # the attic is the free-roof attic on the whole footprint and holds the roof's stations; the art moved three door
-# markers onto the whole-metre wall grid and the storage's Package07 to the shelf it sits on.
+# markers onto the whole-metre wall grid and the storage's Package07 to the shelf it sits on. The game's three
+# provisional spawn_zone markers (prime-game #651, #681: Zone01 in the yard, Zone02 in the garden, Zone03 on the
+# landing) came after the art's rooms and are not in them yet.
 KNOWN = {
     "roof": "game only",
     "attic": {"origin": True, "size": True, "doors": {"Door1"}, "stations": {"Loot", "HidingSpots", "Lookout"},
               "markers": {"Knife3"}},
     "garage": {"doors": {"Door3"}},
-    "landing": {"doors": {"Door6"}},
+    "garden": {"markers": {"Zone02"}},
+    "landing": {"doors": {"Door6"}, "markers": {"Zone03"}},
+    "yard": {"markers": {"Zone01"}},
     "study": {"doors": {"Door1"}},
     "storage": {"markers": {"Package07"}},
 }
