@@ -148,6 +148,7 @@ func _package(req: Dictionary) -> Dictionary:
 	var space := root.get_world_3d().direct_space_state
 	var counts := {}
 	var named := {}
+	var none_at := {}  # collider path -> room (" roof" for the roof's rays) of every hit without a surface
 	var rays := 0
 	for r: Dictionary in req["rooms"]:
 		if not placed.has(r["id"]):
@@ -166,9 +167,41 @@ func _package(req: Dictionary) -> Dictionary:
 					var tag: Variant = _surface(col)
 					var key := "none" if tag == null else String(tag)
 					counts[key] = int(counts.get(key, 0)) + 1
+					if tag == null and not none_at.has(path):
+						none_at[path] = r["id"]
 					if path.contains("/Shell/") and (tag == null or not String(tag) in SURFACES) and not named.has(path):
 						named[path] = true
 						problems.append("%s: no known surface (%s) under %.2f, %.2f on %s" % [r["id"], key, x, z, path])
+				z += STEP
+			x += STEP
+	# The roof's rays (a room under a roof of its level): from roof_from over the floor down to it, the first hit is
+	# what a player on the roof stands on; a Shell piece there needs a known surface, a miss falls past the eaves.
+	var roof_counts := {}
+	var roof_rays := 0
+	for r: Dictionary in req["rooms"]:
+		if not placed.has(r["id"]) or not r.has("roof"):
+			continue
+		var fy := float(r["floor_y"])
+		var rr: Array = r["roof"]
+		var x := float(rr[0]) + STEP / 2
+		while x < float(rr[0]) + float(rr[2]):
+			var z := float(rr[1]) + STEP / 2
+			while z < float(rr[1]) + float(rr[3]):
+				var q := PhysicsRayQueryParameters3D.create(Vector3(x, fy + float(r["roof_from"]), z), Vector3(x, fy, z), 1)
+				var hit := space.intersect_ray(q)
+				roof_rays += 1
+				var key := "miss"
+				if not hit.is_empty():
+					var col := hit["collider"] as Node
+					var path := String(root.get_path_to(col))
+					var tag: Variant = _surface(col)
+					key = "none" if tag == null else String(tag)
+					if tag == null and not none_at.has(path):
+						none_at[path] = r["id"] + " roof"
+					if path.contains("/Shell/") and (tag == null or not String(tag) in SURFACES) and not named.has(path):
+						named[path] = true
+						problems.append("%s roof: no known surface (%s) under %.2f, %.2f on %s" % [r["id"], key, x, z, path])
+				roof_counts[key] = int(roof_counts.get(key, 0)) + 1
 				z += STEP
 			x += STEP
 	var walks: Array = []
@@ -178,5 +211,6 @@ func _package(req: Dictionary) -> Dictionary:
 		walks.append(res)
 		if not res["arrived"]:
 			problems.append("walk %s: the %.2f m capsule stops at %s" % [w["name"], 2 * RADIUS, str(res["end"])])
-	return {"problems": problems, "rays": rays, "surfaces": counts, "pieces": pieces, "walks": walks,
+	return {"problems": problems, "rays": rays, "surfaces": counts, "roof_rays": roof_rays, "roof_surfaces": roof_counts,
+		"none_at": none_at, "pieces": pieces, "walks": walks,
 		"outside": req.get("outside", []), "closed": req.get("closed", [])}

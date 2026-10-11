@@ -101,16 +101,18 @@ writes the House's game-ready package (prime-game #523) from the same layout dat
   spots: the bake comes later, #83); `Doors`, `Stations`, `Markers` with the game's names and room-local positions;
   `Placeholders` (the layout's, and every dressing prop without a GLB as a `Marker3D` with its size: never CSG).
   The attic's `Dressing` is its old things and hiding spots from `dressing/attic_roof/attic.toml` (the `attic`
-  command's own format, moved room-local; `house_export.attic_dressing`); the free roof's items are not exported yet.
+  command's own format, moved room-local; `house_export.attic_dressing`, a library prop keeping its collision: frames
+  and rugs none); the free roof's items are not exported yet.
   Colliders are the GLBs' own `-convcolonly` shapes (StaticBody3D on layer 1).
 - Footstep surfaces (#122; the game's `FootstepSurface`, its ARCHITECTURE 4.7.40): every walkable shell piece's
   instance carries `metadata/surface`, one of the game's four (`concrete`, `wood`, `carpet`, `grass`), by
   `house.toml`'s `[export.surfaces]` (id patterns, the first match wins): boards, the attic ladder and the dormer
   stair and the main stairs `wood`; lino, concrete, slabs, flat roofs and the other stairs `concrete`; `ground*`
-  `grass`; a floor tile at least half under a rug (rugs have no collider) `carpet`. The kit's GLBs carry none, so
-  `package.json`'s `surfaces` lists them for a game-side wrapper. Not tagged yet: the pitched roofs (the free roof's
-  steps sound `concrete`, the game's default) and the plot's ground inside `outdoor.glb` (one GLB with its paths and
-  street; a question in `package.json`).
+  `grass`; the free roof's pitched pieces, the attic chimneys and the dormer `concrete` (#126; the game has no tile
+  sound); a floor tile at least half under a rug (rugs have no collider) `carpet`, never a roof piece over one. A low
+  dressing prop the floor's rays meet first carries its own by `[export.prop_surfaces]` (the attic's rolled carpets
+  `carpet`, the basement's pallets `wood`). The kit's GLBs carry none, so `package.json`'s `surfaces` lists them for a game-side wrapper. Not tagged
+  yet: the plot's ground inside `outdoor.glb` (one GLB with its paths and street; a question in `package.json`).
 - `package.json`: the package, its rooms, every file's SHA-256, the props still held as markers, the level pieces in
   no room, the kit pieces' surfaces and the questions for the game side (the package's lamp count, and that the
   game's editor regenerates the minimal `.import` files). Files already in `DIR` that the package does not list (an
@@ -126,11 +128,15 @@ game root and `size_m`, a shelled room holds layer-1 static bodies, and no scene
 room at its plan origin; `house_export.check_request` writes `_check/request.json`) and fails with the room and node
 named (#122) when a walkable shell piece (one with a surface) or a dressing prop with a collider holds no layer-1
 `StaticBody3D` with a shape; when the game's footstep ray (0.3 m over the floor to 0.5 m under it, every 0.5 m over
-each room) hits a shell collider without a known surface; when a kit GLB with a surface has no collider; or when the
+each room; over a room under a roof of its level also from 10 m over its floor, every 0.5 m over the roof's rect and
+1 m round it, so the first hit is what a player on the free roof stands on) hits a shell collider without a known
+surface; when a kit GLB with a surface has no collider; or when the
 1.36 m capsule of `house --walk` (`godot/house/walker.gd`, shared with `walk.gd`) does not walk through a doorway or
 flight whose every point stands in the package (on a floored room of it, or on a pad where the house has no floor).
 The doorways and flights that leave the package are listed, walked with the package beside them. The report:
-`_check/load.json` (per room the counts, then `package`: the problems, rays, surfaces hit, kit pieces and walks).
+`_check/load.json` (per room the counts, then `package`: the problems, rays, surfaces hit, the roof's rays and first
+hits, `none_at`: every collider hit without a surface (a prop) with its room, kit pieces and walks); the command
+prints them.
 `tools/tests/test_house_export.py` runs the check on a broken fixture room (Godot needed) and expects every problem
 named.
 `--sheet` then shoots the review sheet from the export folder in an off-screen window (`godot/house/export_sheet.gd`,

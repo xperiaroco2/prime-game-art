@@ -51,6 +51,7 @@ label = { h = 2.4, font_size = 72, outline_size = 16 }  # the room's Name label,
 "floor_concrete_*" = "concrete"
 "slab_*" = "concrete"
 "roof_flat_*" = "concrete"
+"roof_pitched_*" = "concrete"  # the free roof (art #77, #126): the game has no tile sound
 "stairs_main" = "wood"
 "stairs_basement" = "concrete"
 "stairs_balcony" = "concrete"
@@ -58,6 +59,13 @@ label = { h = 2.4, font_size = 72, outline_size = 16 }  # the room's Name label,
 "ladder_attic" = "wood"
 "stair_dormer" = "wood"
 "ground*" = "grass"
+"chimney_attic*" = "concrete"  # the chimneys' tops over the free roof (#126)
+"dormer_*" = "concrete"  # the dormer's own roof
+
+# Low dressing props the floor's rays meet before the floor (a player stands on them), by id pattern (art #126).
+[export.prop_surfaces]
+"rolled_carpet" = "carpet"
+"pallet" = "wood"
 
 # The kit's families on the look-approval sheet (`house --package-sheet`, art #124): one tile each, in this order, by
 # id pattern (the first match wins); a piece no pattern matches goes to the last family.

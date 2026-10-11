@@ -81,6 +81,16 @@ def run(folder: Path, summary: dict, room_dir: str = "levels/house/rooms") -> tu
                f"GLBs with a surface hold a collider; {pkg.get('rays', 0)} rays down, surfaces hit "
                f"{json.dumps(pkg.get('surfaces', {}), sort_keys=True)}; {sum(1 for w in walks if w['arrived'])}/"
                f"{len(walks)} walks of the 1.36 m capsule arrive")
+    if pkg.get("roof_rays"):
+        common.say(f"  roof: {pkg['roof_rays']} rays down from over the ridge, first hits "
+                   f"{json.dumps(pkg.get('roof_surfaces', {}), sort_keys=True)} (miss: past the eaves)")
+    if pkg.get("none_at"):
+        where: dict = {}
+        for path, rid in pkg["none_at"].items():
+            group = next((g for g in ("Dressing", "Shell", "Fixtures") if f"/{g}/" in path), "")
+            where.setdefault(rid, []).append(path.split(f"/{group}/")[1].split("/")[0] if group else path)
+        common.say("  hits without a surface (not the shell): " + "; ".join(
+            f"{rid}: {', '.join(sorted(set(names)))}" for rid, names in sorted(where.items())))
     if pkg.get("outside"):
         common.say(f"  walks leaving the package (walked with the next): {', '.join(pkg['outside'])}")
     for line in errors[:10]:

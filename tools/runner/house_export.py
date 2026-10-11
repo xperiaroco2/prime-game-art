@@ -20,6 +20,9 @@ GLB_IMPORT = {  # ARCHITECTURE 11.2: a Node3D root, 1 unit = 1 m, animations kep
     "nodes/root_type": "", "nodes/root_scale": 1.0, "nodes/apply_root_scale": True, "animation/import": True}
 PNG_COMPRESS = 2  # VRAM Compressed under environment/ (11.2)
 SURFACES = ("concrete", "wood", "carpet", "grass")  # the game's FootstepSurface.SURFACES (ARCHITECTURE 4.7.40)
+ROOF_TYPES = ("pitched", "ridge", "chimney", "vent", "dormer", "downpipe", "glass_roof", "glass_ridge")  # never carpet
+ROOF_MARGIN = 1.0  # m round a roof's rect the check's roof rays cover (the eaves' overhang)
+ROOF_FROM = 10.0  # m over the level's floor the roof rays start (over the ridge)
 RUG = "rug"  # dressing props whose id starts so cover the floor (no collider): the tiles under them are carpet
 QUESTIONS = [  # for the game side (prime-game #523); package.json carries them (questions() adds the package's lamps)
     "G3: the room scenes are under levels/house/rooms/ (11.1 keeps assets/ data only); the game's workflow swaps them "
@@ -50,6 +53,15 @@ def surface_of(data: dict, pid: str) -> str | None:
     return None
 
 
+def prop_surface(data: dict, pid: str) -> str | None:
+    """The footstep surface a low dressing prop a player stands on carries (house.toml's [export.prop_surfaces], by
+    id pattern), or None: the rays down meet its collider before the floor (art #126: the attic's rolled carpets)."""
+    for pat, surface in settings(data).get("prop_surfaces", {}).items():
+        if fnmatch.fnmatchcase(pid, pat):
+            return surface
+    return None
+
+
 def tile_rect(data: dict, p: dict) -> tuple[float, float, float, float] | None:
     """A floor piece's footprint (x0, y0, x1, y1, plan metres) from its pivot, size and turn; None without a size."""
     size = data["pieces"][p["id"]].get("size")
@@ -65,7 +77,8 @@ def piece_surface(data: dict, p: dict, rugs: list[tuple], rx: float, ry: float) 
     """A shell piece's surface: carpet when at least half its footprint lies under the room's rugs (room-local AABBs,
     house_dressing.footprint), else its [export.surfaces] one."""
     surface = surface_of(data, p["id"])
-    rect = tile_rect(data, p) if surface and rugs else None
+    under = data["pieces"][p["id"]].get("type") not in ROOF_TYPES  # a roof over a rug stays a roof
+    rect = tile_rect(data, p) if surface and rugs and under else None
     if rect:
         x0, y0, x1, y1 = rect[0] - rx, rect[1] - ry, rect[2] - rx, rect[3] - ry
         covered = sum(max(0.0, min(x1, r[2]) - max(x0, r[0])) * max(0.0, min(y1, r[3]) - max(y0, r[1])) for r in rugs)
@@ -174,7 +187,8 @@ def room_scene(data: dict, lv: dict, room: dict, pieces: list[dict], extras: lis
                 hide.append(f"{r['id']}_{props_seen[r['id']]}")
     if index is not None:
         index.update(walkable=walkable, hide=hide)
-    house_dressing.scene_nodes(sc, [r for r in resolved if have(r["id"])],
+    tagged = [dict(r, surface=prop_surface(data, r["id"])) if prop_surface(data, r["id"]) else r for r in resolved]
+    house_dressing.scene_nodes(sc, [r for r in tagged if have(r["id"])],
                                lambda pid: asset_res(data, ex["prop_set"], pid))
     lights = [f for f in fixtures if f["room"] == room["id"] and f["type"] != "moon"]
     if lights:
@@ -205,17 +219,22 @@ def room_scene(data: dict, lv: dict, room: dict, pieces: list[dict], extras: lis
     return sc.text()
 
 
-def attic_dressing(z: dict) -> dict:
+def attic_dressing(z: dict, cat: dict | None = None) -> dict:
     """The attic's old things and hiding spots (house_attic.load("attic"): their own format in
     layouts/house/dressing/attic_roof/, plan metres) as the attic room's resolved dressing: room-local, on the floor,
     their yaw kept (the same front-+Z convention). A hero prop with its own `size` and no GLB becomes a Placeholders
-    marker like any other prop without one. The roof's items stand on the slopes: not exported yet."""
+    marker like any other prop without one. A library prop keeps its collision (cat: house_dressing.catalogue, the
+    library's by default): picture frames and rugs have none. The roof's items stand on the slopes: not exported yet."""
+    if cat is None:
+        from . import house_attic, house_dressing
+        cat = house_dressing.catalogue([house_attic.LIBRARY])
     rx, ry = z["rect"][0], z["rect"][1]
     out = []
     for it in z["items"]:
         out.append({"id": it["id"], "kind": "props", "at": (it["at"][0] - rx, 0.0, it["at"][1] - ry),
                     "yaw": float(it["yaw"]), "size": [it.get("w", 0.5), it.get("d", 0.5), it.get("h", 0.5)],
-                    "pivot": "floor", "collision": "box", "known": "w" in it})
+                    "pivot": "floor", "known": "w" in it,
+                    "collision": it.get("collision", cat.get(it["id"], {}).get("collision", "box"))})
     return {"resolved": out}
 
 
@@ -245,7 +264,8 @@ def scenes(data: dict, planned: dict, dressing: dict, fixtures: list[dict], pkg:
 def check_request(data: dict, built: dict, kit_ids=()) -> dict:
     """What godot/house/export_check.gd checks on the assembled package (its rooms placed at their plan origins): per
     room its rect, floor height and node lists (walkable shell pieces, props with a collider); the kit GLBs with a
-    surface (each must hold a layer-1 collider); and the 1.36 m capsule's walks (house_layout.walk_request over every
+    surface (each must hold a layer-1 collider); a room under a roof of its level also its `roof` rect (ROOF_MARGIN
+    round it) for the rays down from roof_from over its floor; and the 1.36 m capsule's walks (house_layout.walk_request over every
     level: each doorway and flight) whose every point stands in a room of the package, with the pads under ends that
     have no floor. The walks leaving the package are listed as `outside`, the closed kit leaves as `closed`."""
     ex = settings(data)
@@ -258,6 +278,11 @@ def check_request(data: dict, built: dict, kit_ids=()) -> dict:
                               "floor_y": lv["floor_y"], "floor": bool(room.get("floor")),
                               "scene": f"res://{ex['room_dir']}/{room['id']}.tscn",
                               "walkable": b.get("walkable", []), "hide": b.get("hide", [])})
+                roof = next((rf for rf in lv.get("roofs", []) if rf.get("room") == room["id"]), None)
+                if roof:  # the roof's rays: from over the ridge, the first hit is the roof a player walks on
+                    x, y, w, d = (float(v) for v in roof["rect"])
+                    m = ROOF_MARGIN
+                    rooms[-1].update(roof=[x - m, y - m, w + 2 * m, d + 2 * m], roof_from=ROOF_FROM)
 
     storey = data["settings"].get("floor_to_floor_m", 3.2)
 

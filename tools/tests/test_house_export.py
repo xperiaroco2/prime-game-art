@@ -142,6 +142,34 @@ class HouseExport(unittest.TestCase):
         self.assertIn('[node name="trunk_1" parent="Dressing"', t)
         self.assertIn('[node name="old_wardrobe_1" type="Marker3D" parent="Placeholders"]', t)
 
+    def test_the_free_roof_and_the_attic_carry_surfaces(self):
+        """#126: the attic's library props keep their collision (frames and rugs none), its rolled carpets are
+        carpet, the roof's pieces a ray from over the ridge meets are tagged and stay so over a rug, and the check
+        rays the roof's rect with its margin."""
+        dz = X.attic_dressing(HA.load("attic"))
+        coll = {r["id"]: r["collision"] for r in dz["resolved"]}
+        self.assertEqual((coll["picture_frame"], coll["rug"]), ("none", "none"))
+        self.assertNotEqual(coll["trunk"], "none")
+        pk = X.packages(DATA)[5]
+        built = X.scenes(DATA, PLAN, {"attic": dz}, [], pk)
+        built.pop("")
+        attic = built["attic"]
+        self.assertFalse([n for n in attic["hide"] if n.startswith(("picture_frame", "rug_"))], attic["hide"])
+        self.assertRegex(attic["text"], r'\[node name="rolled_carpet_1" parent="Dressing"[^\[]*metadata/surface = "carpet"')
+        for pid in ("roof_pitched_2x2", "roof_pitched_eave_2m", "roof_pitched_ridge_2m", "chimney_attic",
+                    "chimney_attic_n", "dormer_gable"):
+            self.assertIn(X.surface_of(DATA, pid), X.SURFACES, pid)
+        roofs = re.findall(r'\[node name="(roof_pitched\w+)" parent="Shell"[^\n]*\n[^\n]*\nmetadata/surface = "concrete"',
+                           attic["text"])
+        self.assertTrue(roofs)
+        self.assertIsNone(X.prop_surface(DATA, "crate"))
+        req = X.check_request(DATA, built, {pid for b in built.values() for pid in b["kit"]})
+        room = next(r for r in req["rooms"] if r["id"] == "attic")
+        x, y, w, d = (float(v) for v in next(lv for lv in DATA["levels"] if lv["level"] == "attic")["roofs"][0]["rect"])
+        m = X.ROOF_MARGIN
+        self.assertEqual(room["roof"], [x - m, y - m, w + 2 * m, d + 2 * m])
+        self.assertGreater(room["roof_from"], 6.0)
+
     def test_packages_split_the_rooms(self):
         pk = X.packages(DATA)
         seen = [r["id"] for n in pk for _, r in X.rooms_of(DATA, pk[n])]
