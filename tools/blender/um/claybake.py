@@ -667,6 +667,7 @@ def stubble(cid, o, spec, rgb, pivot):
     out[..., :3] = fill_gutter(out[..., :3], have)
     img = bpy.data.images.new(f"{cid}_head_stubble_col", w, h, alpha=True, float_buffer=False)
     img.colorspace_settings.name = src.colorspace_settings.name
+    img.alpha_mode = src.alpha_mode  # CHANNEL_PACKED: the alpha is the skin mask, not coverage
     img.pixels.foreach_set(out.astype(np.float32).ravel())
     img.pack()
     node.image = img
