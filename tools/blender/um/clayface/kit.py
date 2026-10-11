@@ -38,6 +38,11 @@ HEAD = load(HEAD_FILE)  # nose_flatten, bean (heads.bean_warp), rigid_margin, in
 # the kit's data in the clay library's piece keys (claylook.keys_for): a changed feature, hair flag or head re-bakes the faces
 HEAD_SHA = hashlib.sha256(HEAD_FILE.read_bytes()).hexdigest()[:16]  # the hair and extras follow the head: in their keys
 DATA_SHA = hashlib.sha256(KIT_FILE.read_bytes() + HAIR_FILE.read_bytes() + HEAD_FILE.read_bytes()).hexdigest()[:16]
+# the code that seats the extras' ear and nose pieces on the kit's ears and nose (accessories.py with this module's
+# lobe_centre, ear_plane, ring_frame): in every extra's key with the face's picks, so a changed seat or a changed ear or
+# nose pick re-bakes the extras instead of loading a ring seated by older code on another face (#42 round 4)
+SEAT_SHA = hashlib.sha256(b"".join((Path(__file__).parent / n).read_bytes().replace(b"\r\n", b"\n")
+                                   for n in ("accessories.py", "kit.py"))).hexdigest()[:16]
 
 # ----------------------------------------------------------------------------------------------- the features (data)
 SKINS = KIT["colours"]["skins"]  # the lab's clay skins (linear); a character's skin is any RGB (skin_key picks the tint)

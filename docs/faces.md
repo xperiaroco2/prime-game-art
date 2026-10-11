@@ -333,7 +333,9 @@ on, the noses barely different (the pack nose dominated). `faces/clay_head.json`
    stays hidden), per welded position (the lab's 4 mm hair and hat clearance; the report's `scalp_lift`, `push_out`).
 
 The clay library's piece keys carry the head data (`kit.DATA_SHA` for the head and the face, `kit.HEAD_SHA` and the
-head for the hair and the extras that follow it).
+head for the hair and the extras that follow it). An extra's key also holds `kit.SEAT_SHA` (the seat code), the
+picks and the ear state: a changed seat, ear or nose re-seats its rings instead of loading old ones (round 4 found
+m3's rings loaded unchanged from the library after the seat had changed).
 
 **Whole heads and own extras.** The recipe validation refuses a head that drops part of its catalogue skull (m4's jaw)
 and an extra that is not a whole item of the character's body type (m1's blue strip), and the cast build measures each

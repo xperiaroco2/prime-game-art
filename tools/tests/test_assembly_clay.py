@@ -4,6 +4,7 @@ sizes and margins of the bake, and the clay library's piece keys (docs/assembly.
 from __future__ import annotations
 
 import copy
+from unittest import mock
 import unittest
 
 from runner.commands import _assembly
@@ -85,8 +86,11 @@ class PieceKeys(unittest.TestCase):
         other = copy.deepcopy(CHAR)
         other.update(id="m9", hair={"file": "Punk.glb", "object": "Punk_Head", "materials": ["Hair"]})
         a, b = L.keys_for(RECIPE, CHAR, self.cfg), L.keys_for(RECIPE, other, self.cfg)
-        for role in ("top", "bottom", "shoes", "accessory"):
+        for role in ("top", "bottom", "shoes"):
             self.assertEqual(a[role], b[role], role)
+        # the extras are seated on the ears the hair leaves (#42 round 4): the same key exactly when the ear state is
+        ears = [L.claykit.hair_flags(L.claykit.hair_item(c["hair"], c["gender"]))["ears"] for c in (CHAR, other)]
+        self.assertEqual(ears[0] == ears[1], a["accessory"] == b["accessory"], ears)
         self.assertNotEqual(a["hair"], b["hair"])
         self.assertNotEqual(a["head"], b["head"])  # the head's key holds the hair it is built under
 
@@ -145,14 +149,28 @@ class PieceKeys(unittest.TestCase):
         self.assertNotEqual(a["head"], c["head"])
         self.assertEqual(a["hair"], c["hair"])
 
+    def test_the_seat_code_changes_only_the_extras(self) -> None:
+        # art #42 round 4: a ring seated by older code must not load from the library after the seat changed
+        a = L.keys_for(RECIPE, CHAR, self.cfg)
+        with mock.patch.object(L.claykit, "SEAT_SHA", "0" * 16):
+            b = L.keys_for(RECIPE, CHAR, self.cfg)
+        self.assertNotEqual(a["accessory"], b["accessory"])
+        for role in ("head", "hair", "eyes", "face") + L.BODY_ROLES:
+            self.assertEqual(a[role], b[role], role)
+        # the hair's stubble is painted after the load: not in the extras' keys either
+        st = copy.deepcopy(CHAR)
+        st["hair"]["stubble"] = {"strength": 0.6}
+        self.assertEqual(a["accessory"], L.keys_for(RECIPE, st, self.cfg)["accessory"])
+
     def test_face_kit_picks_change_the_face_and_head(self) -> None:
         # the kit's face is joined into the head: its picks change the head's key, the face's and not the clothing's
         bigger = copy.deepcopy(CHAR)
         bigger["face_kit"] = {"eye_size": "big", "loud": "eye_size"}
         a, b = L.keys_for(RECIPE, CHAR, self.cfg), L.keys_for(RECIPE, bigger, self.cfg)
-        for role in ("head", "face", "eyes"):
+        # the extras' ear and nose pieces are seated on the kit's ears and nose: the picks change them too (#42 r4)
+        for role in ("head", "face", "eyes", "accessory"):
             self.assertNotEqual(a[role], b[role], role)
-        for role in ("hair", "accessory") + L.BODY_ROLES:
+        for role in ("hair",) + L.BODY_ROLES:
             self.assertEqual(a[role], b[role], role)
         same = copy.deepcopy(CHAR)
         same["face_kit"] = {}  # the defaults spelled out or left out: the same piece
