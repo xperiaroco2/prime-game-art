@@ -308,13 +308,24 @@ class Mesh:
         return len(self.idx) // 3
 
 
+SURFACES = ("concrete", "wood", "carpet", "grass")  # the game's FootstepSurface.SURFACES (house_export.SURFACES)
+
+
+def paint_surface(data: dict, paint: str) -> str:
+    """The footstep surface of a paint's ground (plot.toml `[paints]` `surface`; grass when it names none)."""
+    return data["paints"][paint].get("surface", "grass")
+
+
 def ground_meshes(data: dict) -> list[Mesh]:
-    """The ground (`ground-col`: Godot makes its trimesh collider), the skirt beyond and the kerb (`kerb-col`)."""
+    """The ground, one mesh per footstep surface of its paints (`ground_<surface>-col`, sorted: Godot makes each a
+    trimesh collider the package tags, art #128), the skirt beyond and the kerb (`kerb-col`)."""
     gx, gy, gw, gd = data["ground"]
     c = data["cell_m"]
     uv = lambda p: ((p[0] - gx) / gw, (p[2] - gy) / gd)  # noqa: E731
-    g = Mesh("ground-col", 0)
+    by_surface: dict[str, Mesh] = {}
     for (i, j), paint in sorted(ground_cells(data).items()):
+        s = paint_surface(data, paint)
+        g = by_surface.setdefault(s, Mesh(f"ground_{s}-col", 0))
         xs, ys = gx + i * c, gy + j * c
         pts = [(xs, 0.0, ys), (xs + c, 0.0, ys), (xs + c, 0.0, ys + c), (xs, 0.0, ys + c)]
         g.quad(pts, (0, 1, 0), [paint_at(data, paint, p[0], p[2]) for p in pts], uv)
@@ -344,7 +355,7 @@ def ground_meshes(data: dict) -> list[Mesh]:
         k.quad([(xa, 0, y1), (xb, 0, y1), (xb, h, y1), (xa, h, y1)], (0, 0, 1), col)
         k.quad([(xa, 0, y0), (xa, 0, y1), (xa, h, y1), (xa, h, y0)], (-1, 0, 0), col)
         k.quad([(xb, 0, y0), (xb, 0, y1), (xb, h, y1), (xb, h, y0)], (1, 0, 0), col)
-    return [g, s, k]
+    return [by_surface[n] for n in sorted(by_surface)] + [s, k]
 
 
 # ---------------------------------------------------------------- props
@@ -503,6 +514,8 @@ def plan(data: dict) -> dict:
     stairs = stairs_plan(data)
     opens = fence_openings(fence)
     problems = fence["problems"] + stairs["problems"] + prop_problems(data) + flat_problems(data["sky_cfg"], data)
+    problems += [f"paint {k}: surface {paint_surface(data, k)!r} is not one of the game's {SURFACES}"
+                 for k in sorted(data["paints"]) if paint_surface(data, k) not in SURFACES]
     want = sorted(op["id"] for op in data["fence"]["openings"])
     got = sorted(o["kind"] for o in opens)
     if got != want:

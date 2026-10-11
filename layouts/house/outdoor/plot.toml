@@ -49,16 +49,19 @@ gate_posts = true
 
 # Ground paints (Q15 A: a cool dusk blue-green lawn with value variation, gravel and soil patches, worn paths).
 # `vary` is the value noise's +- fraction; `scale_m` its feature size.
+# `surface`: the game's footstep surface of the paint's ground (FootstepSurface: concrete, wood, carpet, grass;
+# art #128): the ground is one mesh per surface, `ground_<surface>-col`, so the package tags each. The game has
+# no gravel or soil sound yet: gravel is concrete, soil grass (placeholders, as the game's own).
 [paints]
-grass = { hex = "#3f5f4a", vary = 0.10, scale_m = 7.0 }
-worn = { hex = "#56604b", vary = 0.08, scale_m = 3.0 }
-soil = { hex = "#4a3a2e", vary = 0.08, scale_m = 2.0 }
-gravel = { hex = "#6d6a63", vary = 0.06, scale_m = 1.5 }
-paving = { hex = "#7a756d", vary = 0.05, scale_m = 2.0 }
-concrete = { hex = "#6f6c66", vary = 0.05, scale_m = 4.0 }
-pavement = { hex = "#5c5b59", vary = 0.04, scale_m = 3.0 }
-asphalt = { hex = "#34373d", vary = 0.05, scale_m = 5.0 }
-beyond = { hex = "#2f4a3c", vary = 0.12, scale_m = 12.0 }
+grass = { hex = "#3f5f4a", vary = 0.10, scale_m = 7.0, surface = "grass" }
+worn = { hex = "#56604b", vary = 0.08, scale_m = 3.0, surface = "grass" }
+soil = { hex = "#4a3a2e", vary = 0.08, scale_m = 2.0, surface = "grass" }
+gravel = { hex = "#6d6a63", vary = 0.06, scale_m = 1.5, surface = "concrete" }
+paving = { hex = "#7a756d", vary = 0.05, scale_m = 2.0, surface = "concrete" }
+concrete = { hex = "#6f6c66", vary = 0.05, scale_m = 4.0, surface = "concrete" }
+pavement = { hex = "#5c5b59", vary = 0.04, scale_m = 3.0, surface = "concrete" }
+asphalt = { hex = "#34373d", vary = 0.05, scale_m = 5.0, surface = "concrete" }
+beyond = { hex = "#2f4a3c", vary = 0.12, scale_m = 12.0, surface = "grass" }
 
 # Zones paint the cells in this order (a later zone wins). `rect`, or `line` (a polyline) with `width`.
 [[zones]]
