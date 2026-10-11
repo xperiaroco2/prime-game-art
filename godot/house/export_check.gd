@@ -173,7 +173,7 @@ func _package(req: Dictionary) -> Dictionary:
 		Walker.pad(self, p)
 	for i in 3:
 		await physics_frame
-	var paints: Dictionary = _paints(req, placed, problems)  # in the tree now: global poses hold
+	var paints: Dictionary = _paints(req, placed, plot_node, problems)  # in the tree now: global poses hold
 	var space := root.get_world_3d().direct_space_state
 	var counts := {}
 	var named := {}
@@ -306,12 +306,19 @@ func _package(req: Dictionary) -> Dictionary:
 ## The wall paints travel with the scenes (#132, docs/house.md "The export"): every Shell surface whose imported
 ## material is the kit's stand-in (`kit_set`) carries the kit's set material (req["material"], any ShaderMaterial when
 ## empty) with `plan_at` at its mesh's place and turn (the rooms stand at their plan origins); a painted room's
-## material holds the room's paint (its rect and colour), else "the walls do not carry the paint".
-func _paints(req: Dictionary, placed: Dictionary, problems: Array) -> Dictionary:
+## material holds the room's paint (its rect and colour), else "the walls do not carry the paint". Package 7's plot
+## scene (at the plan's origin) is checked as one more "room", `plot` (#128).
+func _paints(req: Dictionary, placed: Dictionary, plot_node: Node3D, problems: Array) -> Dictionary:
 	var want: String = String(req.get("material", ""))
 	var out := {"surfaces": 0, "bare": 0, "painted": []}
+	var targets: Array = []
 	for r: Dictionary in req["rooms"]:
-		var node: Node3D = placed.get(r["id"])
+		targets.append([r, placed.get(r["id"])])
+	if plot_node != null:
+		targets.append([{"id": "plot"}, plot_node])
+	for t: Array in targets:
+		var r: Dictionary = t[0]
+		var node: Node3D = t[1]
 		if node == null or node.get_node_or_null("Shell") == null:
 			continue
 		var bare := 0

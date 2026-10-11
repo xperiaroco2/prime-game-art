@@ -3,6 +3,8 @@ surface overrides and the scene's shape."""
 
 from __future__ import annotations
 
+import re
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -60,6 +62,51 @@ class Ground(unittest.TestCase):
     def test_transforms_turn_about_y_and_scale_evenly(self):
         self.assertEqual(P.tf(0, 1, 2, 3), "Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 2, 3)")
         self.assertIn("2, 0, 0, 0, 2, 0, 0, 0, 2", P.tf(0, 0, 0, 0, 2.0))
+
+
+class SceneInstances(unittest.TestCase):
+    """The plot scene itself (resolve() through to scene()), on a fake raw folder: a zones prop whose id the library
+    also holds is instanced from its own unique game file, and a kit piece carries the set material (#132)."""
+
+    def build(self, surfaces=None) -> dict:
+        tmp = Path(self.enterContext(tempfile.TemporaryDirectory()))
+        for rel in ("props/library/v1/deckchair.glb", "props/zones/v1/deckchair.glb",
+                    "props/zones/v1/photo_backdrop.glb", f"{DATA['settings']['kit_dir']}/fence_t.glb"):
+            (tmp / rel).parent.mkdir(parents=True, exist_ok=True)
+            (tmp / rel).write_bytes(rel.encode())
+        self.raw = tmp
+        doc = {"fence": [{"piece": "fence_t", "at": [1, 0, 2], "yaw": 90}], "stairs": {"pieces": [], "rails": []},
+               "props": []}
+        zones = [[{"src": "zones", "id": "deckchair", "pos": [5, 0, 5], "yaw": 0},
+                  {"src": "library", "id": "deckchair", "pos": [6, 0, 5], "yaw": 0},
+                  {"src": "zones", "id": "photo_backdrop", "pos": [7, 0, 5], "yaw": 0}]]
+        return P.scene(DATA, tmp, house_outdoor.load(), doc, {"roof": [], "props": [], "scatter": []}, zones,
+                       surfaces=surfaces)
+
+    def instanced(self, text: str, node: str) -> str:
+        ids = dict((i, path) for path, i in re.findall(r'\[ext_resource type="PackedScene" path="([^"]+)" id="([^"]+)"\]',
+                                                        text))
+        got = re.search(rf'\[node name="{node}" parent="Dressing" instance=ExtResource\("([^"]+)"\)\]', text)
+        self.assertIsNotNone(got, node)
+        return ids[got.group(1)]
+
+    def test_a_zones_prop_is_instanced_from_its_unique_game_file(self):
+        out = self.build()
+        text, props = out["text"], DATA["settings"]["export"]["prop_set"]
+        self.assertTrue(self.instanced(text, "deckchair_1").endswith(f"/{props}/deckchair_zones.glb"))
+        self.assertTrue(self.instanced(text, "deckchair_2").endswith(f"/{props}/deckchair.glb"))
+        self.assertTrue(self.instanced(text, "photo_backdrop_1").endswith(f"/{props}/photo_backdrop.glb"))
+        self.assertEqual(out["copies"][f"{props}/deckchair_zones.glb"], self.raw / "props/zones/v1/deckchair.glb")
+        self.assertEqual(out["copies"][f"{props}/deckchair.glb"], self.raw / "props/library/v1/deckchair.glb")
+
+    def test_a_kit_piece_carries_the_set_material_at_its_plan_pose(self):
+        sets = {"fence_t": [{"node": "fence_t/mesh", "at": [1.0, 0.5, 0.0], "surfaces": [0, 2]}]}
+        text = self.build(sets)["text"]
+        node = text[text.index('[node name="mesh" parent="Shell/fence_t_1/fence_t"]'):].split("\n\n")[0]
+        self.assertIn("surface_material_override/0 = ExtResource(", node)
+        self.assertIn("surface_material_override/2 = ExtResource(", node)
+        self.assertIn("instance_shader_parameters/plan_at = Vector4(1, 0.5, 1, 90)", node)  # local +X turns to -z
+        self.assertNotIn("surface_material_override", self.build()["text"])
 
 
 SCENE = Path(__file__).resolve().parents[2] / "assets" / "room" / "house_plot" / "export" / "outdoor.tscn"

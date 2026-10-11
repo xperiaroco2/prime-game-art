@@ -487,7 +487,7 @@ def write(data: dict, planned: dict, dressing: dict, fixtures: list[dict], out: 
     if pkg is not None and pkg.get("plot") or pkg is None and "house_outdoor" in builds:
         from . import house_export_plot as PL
         inputs = PL.load_inputs(data, raw, builds["house_outdoor"])
-        plot = PL.scene(data, raw, *inputs)
+        plot = PL.scene(data, raw, *inputs, surfaces=surfaces)
         for target, src in plot["copies"].items():
             copies[env / target] = src
     lost = sorted(t.as_posix() for t, src in copies.items() if not src.is_file())

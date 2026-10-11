@@ -118,9 +118,29 @@ def resolve(data: dict, raw: Path, p: dict) -> tuple[str, Path] | None:
     return (ex["prop_set"], game_name(order, has, src, p["id"])), raw / src / f"{p['id']}.glb"
 
 
-def scene(data: dict, raw: Path, plot: dict, plot_doc: dict, garden: dict, zones: list[dict]) -> dict:
+def set_material_nodes(sc, data: dict, name: str, sets: list[dict], yaw: float, x: float, h: float, z: float) -> None:
+    """The kit's set material on a plot piece's set surfaces (`sets`: house_export.set_surfaces of its GLB), with
+    the mesh's plan pose as `plan_at`, as the rooms' Shell pieces carry it (#132): the plot stands at the plan's
+    origin, so its pose is the plan's."""
+    from . import house_export as X
+
+    t = math.radians(float(yaw))
+    for s in sets:
+        ox, oy, oz = s["at"]
+        at = [x + math.cos(t) * ox + math.sin(t) * oz, h + oy, z - math.sin(t) * ox + math.cos(t) * oz, float(yaw) % 360]
+        parent, _, node = f"Shell/{name}/{s['node']}".rpartition("/")
+        mat = sc.res(X.material_res(data))
+        sc.nodes.append("\n".join([f'[node name="{node}" parent="{parent}"]']
+                                  + [f'surface_material_override/{i} = ExtResource("{mat}")' for i in s["surfaces"]]
+                                  + ["instance_shader_parameters/plan_at = Vector4("
+                                     + ", ".join(H._num(v) for v in at) + ")"]))
+
+
+def scene(data: dict, raw: Path, plot: dict, plot_doc: dict, garden: dict, zones: list[dict],
+          surfaces: dict | None = None) -> dict:
     """{"text": the scene, "copies": {set/file: raw source}, "walkable": Shell names with a surface, "hide": Dressing
-    names, "held": placeholder ids, "counts"}."""
+    names, "held": placeholder ids, "counts"}. `surfaces` (piece id -> house_export.set_surfaces) puts the kit's set
+    material on the Shell pieces (#132)."""
     from . import house_export as X
 
     ex = data["settings"]["export"]
@@ -154,6 +174,7 @@ def scene(data: dict, raw: Path, plot: dict, plot_doc: dict, garden: dict, zones
             sc.instance(name, "Shell", res, tf(p["yaw"], x, h, z), {"surface": surface} if surface else None)
             if surface:
                 walkable.append(name)
+            set_material_nodes(sc, data, name, (surfaces or {}).get(p["id"], []), p["yaw"], x, h, z)
         else:
             surface = X.prop_surface(data, p["id"])
             sc.instance(name, "Dressing", res, tf(p["yaw"], x, h, z, float(p.get("scale", 1.0))),
