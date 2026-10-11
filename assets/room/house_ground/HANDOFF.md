@@ -20,8 +20,9 @@ and `Markers`, and adds `Shell` (kit instances, walkable ones with `metadata/sur
 check (11.3) locally with LFS content, `load`, `playcheck`, `perf` and `shot`.
 
 ## Credits
-The drafts are `D:/prime-art-raw/house/export/credits/house_kit.md` and `house_props.md` (the game's
-`docs/credits/<id>.md` format): own work, the props made from CC0 packs named per file in the props manifest,
+The entries are `assets/kit/house_kit/CREDITS.md` and `assets/prop/house_props/CREDITS.md` in this repo (the game's
+`docs/credits/<id>.md` format; copy them to `docs/credits/house_kit.md` and `house_props.md`): own work, the props made
+from CC0 packs named per file in the props manifest,
 `ai_generated = false`, `public_repo_ok = true`. The room scenes are scenes under `levels/`, not assets: no credits
 entry unless the game wants one.
 

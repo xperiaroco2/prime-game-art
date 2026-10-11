@@ -1,0 +1,72 @@
+# House props (prime-game-art)
+
+- **Files:** `assets/environment/house_props/**` (the props a package needs: 70 files with P2; the art manifest lists all 174 with their SHA-256, and the sources below cover all 174)
+- **Author:** prime-game-art (own work, made by the art pipeline's code); Isa Lousberg (Tiny Treats), Kay Lousberg (KayKit), Kenney (the CC0 sources below)
+- **Source:** the art manifest `assets/prop/house_props/manifest.toml` in xperiaroco2/prime-game-art (approval PR: https://github.com/xperiaroco2/prime-game-art/pull/125); made from:
+  - KayKit : City Builder Bits (1.0, FREE) by Kay Lousberg (KayKit), https://kaylousberg.itch.io/city-builder-bits (downloaded 2026-10-06):
+    - `kaykit/city-builder-bits/KayKit_City_Builder_Bits_1.0_FREE/KayKit_City_Builder_Bits_1.0_FREE/Assets/gltf/car_sedan.bin`: SHA-256 `1d69e7f098a5456a8c6891c4fd718ad1c71397045c8931817550a8801f00338d`
+    - `kaykit/city-builder-bits/KayKit_City_Builder_Bits_1.0_FREE/KayKit_City_Builder_Bits_1.0_FREE/Assets/gltf/car_sedan.gltf`: SHA-256 `96c9d38e682bc2c77470af09d1a7450208559ca652bf2cf6fd2bc20b8646ef59`
+    - `kaykit/city-builder-bits/KayKit_City_Builder_Bits_1.0_FREE/KayKit_City_Builder_Bits_1.0_FREE/Assets/gltf/citybits_texture.png`: SHA-256 `6d2d9a5a13bce32209cd8c04572ab170504d68f34b1519165c9b0c41871e235b`
+  - KayKit : Furniture Bits (1.0, FREE) by Kay Lousberg (KayKit), https://kaylousberg.itch.io/furniture-bits (downloaded 2026-10-06):
+    - `kaykit/furniture-bits/KayKit_Furniture_Bits_1.0_FREE/KayKit_Furniture_Bits_1.0_FREE/Assets/gltf/armchair_pillows.bin`: SHA-256 `b40556981e1bd4593ccaf7a14593f32e20859c2f2e6022a0ed0d1a278a4194a0`
+    - `kaykit/furniture-bits/KayKit_Furniture_Bits_1.0_FREE/KayKit_Furniture_Bits_1.0_FREE/Assets/gltf/armchair_pillows.gltf`: SHA-256 `1344db27a72870fb0a1b43ffcfe12f5f3dd3284f5dcecd10ed593d6e0d940f79`
+    - `kaykit/furniture-bits/KayKit_Furniture_Bits_1.0_FREE/KayKit_Furniture_Bits_1.0_FREE/Assets/gltf/bed_double_A.bin`: SHA-256 `0eb1bc50981bdb0c0ff95b30b6783dc5d40fd61497a4a21165d366e301c6e53c`
+    - `kaykit/furniture-bits/KayKit_Furniture_Bits_1.0_FREE/KayKit_Furniture_Bits_1.0_FREE/Assets/gltf/bed_double_A.gltf`: SHA-256 `55451127bbeb9734bb88c1a761a6246eaaf89ac33eee2f703d78053719e5c4e5`
+    - `kaykit/furniture-bits/KayKit_Furniture_Bits_1.0_FREE/KayKit_Furniture_Bits_1.0_FREE/Assets/gltf/bed_single_A.bin`: SHA-256 `fc7631db4540d31cbe76dac3c672bc8836ee302796d14bba428bda84b9237f5b`
+    - `kaykit/furniture-bits/KayKit_Furniture_Bits_1.0_FREE/KayKit_Furniture_Bits_1.0_FREE/Assets/gltf/bed_single_A.gltf`: SHA-256 `7b2852bb66bf82cad3e0d03a499b1480879790fa66b645347e3e73761c4fe3f5`
+    - `kaykit/furniture-bits/KayKit_Furniture_Bits_1.0_FREE/KayKit_Furniture_Bits_1.0_FREE/Assets/gltf/chair_A_wood.bin`: SHA-256 `726ea8962909becf3d925d272928a8e26a1f345fc9f8f165e7424221c69be733`
+    - `kaykit/furniture-bits/KayKit_Furniture_Bits_1.0_FREE/KayKit_Furniture_Bits_1.0_FREE/Assets/gltf/chair_A_wood.gltf`: SHA-256 `e17a16127b9a3e44ef8888c9d52fe7ec09a06b348934627816a538720793af8d`
+    - `kaykit/furniture-bits/KayKit_Furniture_Bits_1.0_FREE/KayKit_Furniture_Bits_1.0_FREE/Assets/gltf/chair_C.bin`: SHA-256 `dbcd655953927997f2a4f61676692d053f4eb261b364fe5441276aa4614cfc9d`
+    - `kaykit/furniture-bits/KayKit_Furniture_Bits_1.0_FREE/KayKit_Furniture_Bits_1.0_FREE/Assets/gltf/chair_C.gltf`: SHA-256 `fc042915c24c52f96f0571db348a2de275b15c0065c3e561fce37d4dbc81568a`
+    - `kaykit/furniture-bits/KayKit_Furniture_Bits_1.0_FREE/KayKit_Furniture_Bits_1.0_FREE/Assets/gltf/couch_pillows.bin`: SHA-256 `3157c7ce9717ff69f198f9da0395d7a57e9ab230f2161990f86e21395608cc3e`
+    - `kaykit/furniture-bits/KayKit_Furniture_Bits_1.0_FREE/KayKit_Furniture_Bits_1.0_FREE/Assets/gltf/couch_pillows.gltf`: SHA-256 `d3396c15fc460c5db1e2db95b06bb623140c269369f2e9bc38dc4d3b5807011c`
+    - `kaykit/furniture-bits/KayKit_Furniture_Bits_1.0_FREE/KayKit_Furniture_Bits_1.0_FREE/Assets/gltf/furniturebits_texture.png`: SHA-256 `de62db37a80d1801c3d9eb674890ae04b04469e0c149481a51fa250562c628dc`
+    - `kaykit/furniture-bits/KayKit_Furniture_Bits_1.0_FREE/KayKit_Furniture_Bits_1.0_FREE/Assets/gltf/table_small.bin`: SHA-256 `e18bad66ad227a4a374fd58fbe6870a73c0f3f3687cb363506e0d77e07964066`
+    - `kaykit/furniture-bits/KayKit_Furniture_Bits_1.0_FREE/KayKit_Furniture_Bits_1.0_FREE/Assets/gltf/table_small.gltf`: SHA-256 `6ae46ef60d18cf1fe507fbb2fb20235144af2ac7101f410269a761ac91ae9aee`
+  - KayKit : Prototype Bits (1.1, FREE) by Kay Lousberg (KayKit), https://kaylousberg.itch.io/prototype-bits (downloaded 2026-10-06):
+    - `kaykit/prototype-bits/KayKit_Prototype_Bits_1.1_FREE/KayKit_Prototype_Bits_1.1_FREE/Assets/gltf/Barrel_A.bin`: SHA-256 `8b0ace6fac6c67269a75b6196b5f60248af4f250ec03b763ef659efee86b704b`
+    - `kaykit/prototype-bits/KayKit_Prototype_Bits_1.1_FREE/KayKit_Prototype_Bits_1.1_FREE/Assets/gltf/Barrel_A.gltf`: SHA-256 `7fff2cb72cc440f8b9e251878e0687daf48ddc64ee3180399a3130892d2687a2`
+    - `kaykit/prototype-bits/KayKit_Prototype_Bits_1.1_FREE/KayKit_Prototype_Bits_1.1_FREE/Assets/gltf/Box_B.bin`: SHA-256 `06898d4c8ee0547f9e1444c30c174ff47be3868f21e48114038646573292cfd9`
+    - `kaykit/prototype-bits/KayKit_Prototype_Bits_1.1_FREE/KayKit_Prototype_Bits_1.1_FREE/Assets/gltf/Box_B.gltf`: SHA-256 `8f20c52984acb8d996a7cd9bc93234bababebcddb5169663899b0936d02d8654`
+    - `kaykit/prototype-bits/KayKit_Prototype_Bits_1.1_FREE/KayKit_Prototype_Bits_1.1_FREE/Assets/gltf/Pallet_Large.bin`: SHA-256 `13e8ed324cf009d0986a5be0c16de7a775f0c8b5ccfae026162a34b708165506`
+    - `kaykit/prototype-bits/KayKit_Prototype_Bits_1.1_FREE/KayKit_Prototype_Bits_1.1_FREE/Assets/gltf/Pallet_Large.gltf`: SHA-256 `dac65d2406b4d695f5df994953f69d7adbc278dbe594e2e5a9fb1fe737444e93`
+    - `kaykit/prototype-bits/KayKit_Prototype_Bits_1.1_FREE/KayKit_Prototype_Bits_1.1_FREE/Assets/gltf/prototypebits_texture.png`: SHA-256 `dec912e8cc8f8d09c29be48dda0daad90e653939c4e6fc799309ec1ae7a4cbcd`
+  - KayKit : Restaurant Bits (1.0, FREE) by Kay Lousberg (KayKit), https://kaylousberg.itch.io/restaurant-bits (downloaded 2026-10-06):
+    - `kaykit/restaurant-bits/KayKit_Restaurant_Bits_1.0_FREE/KayKit_Restaurant_Bits_1.0_FREE/Assets/gltf/chair_A.bin`: SHA-256 `c95a15bc30e2bb9f122762590819c99934db31b7e7dbf3e54b68eb105e36148b`
+    - `kaykit/restaurant-bits/KayKit_Restaurant_Bits_1.0_FREE/KayKit_Restaurant_Bits_1.0_FREE/Assets/gltf/chair_A.gltf`: SHA-256 `0d0abdc382abedb3e4bc2e0260af663c16ff2dab0d441f09d675e0709a7a7310`
+    - `kaykit/restaurant-bits/KayKit_Restaurant_Bits_1.0_FREE/KayKit_Restaurant_Bits_1.0_FREE/Assets/gltf/restaurantbits_texture.png`: SHA-256 `1bfff8f880c5e5e1b793bc46fa1f91149b7f70766174a817b3d5962495c5e40f`
+  - Furniture Kit by Kenney, https://kenney.nl/assets/furniture-kit (downloaded 2026-10-06):
+    - `kenney/furniture-kit/kenney_furniture-kit/Models/GLTF format/bathroomSink.glb`: SHA-256 `39d4f19608cab7e0fed52303b2c689f5f51fae1bad9b6913cb53d838875e797e`
+    - `kenney/furniture-kit/kenney_furniture-kit/Models/GLTF format/bathtub.glb`: SHA-256 `54c405c7035aab63dc41e709dc3c50fc5bcfbc4cddc91ffc54188075a6d25d01`
+    - `kenney/furniture-kit/kenney_furniture-kit/Models/GLTF format/bedBunk.glb`: SHA-256 `a3eccbc4a04340dd84878d959e15eede76f517fb8d4de6862ca46877c88d764e`
+    - `kenney/furniture-kit/kenney_furniture-kit/Models/GLTF format/cabinetTelevision.glb`: SHA-256 `811719593d676ff76f7b5904d52c845ce0396af2bc9a6a2636c4818ead320b99`
+    - `kenney/furniture-kit/kenney_furniture-kit/Models/GLTF format/chairDesk.glb`: SHA-256 `46406619186034cbe92b19b79a5f1a8e3f442a17a70a7524ef2c0ad0f35095c6`
+    - `kenney/furniture-kit/kenney_furniture-kit/Models/GLTF format/desk.glb`: SHA-256 `0164fe828f028b321730fb8c74502e353583f751be74da1682d42fff7d3c5a42`
+    - `kenney/furniture-kit/kenney_furniture-kit/Models/GLTF format/kitchenFridgeLarge.glb`: SHA-256 `5851cc59c7e12f6f34a01a2ea93d5b9540be4078c1b703f517239fcede98fb32`
+    - `kenney/furniture-kit/kenney_furniture-kit/Models/GLTF format/kitchenStove.glb`: SHA-256 `3239edb36295dfca9530a9b9a6ad0aff98ce62e7cf8d13ca2a5a1a6b2a904656`
+    - `kenney/furniture-kit/kenney_furniture-kit/Models/GLTF format/lampRoundFloor.glb`: SHA-256 `50fe1b5b588edf15bfa9cc880f71a02a4fda6036350b24733d0ef4de5cc5e908`
+    - `kenney/furniture-kit/kenney_furniture-kit/Models/GLTF format/lampRoundTable.glb`: SHA-256 `75bb644caaa3da003b4fcad7a931722dd61cd2858aab70cf660021d5061fa1b2`
+    - `kenney/furniture-kit/kenney_furniture-kit/Models/GLTF format/stoolBar.glb`: SHA-256 `a86167a9f92401a61fec7e509ad089ecc552d0f299743add3aeb919acb24e341`
+    - `kenney/furniture-kit/kenney_furniture-kit/Models/GLTF format/televisionVintage.glb`: SHA-256 `eb144cc8fb1e7f761e3665226e4266c8868679421d21d6548f24d2abad7c67cf`
+    - `kenney/furniture-kit/kenney_furniture-kit/Models/GLTF format/toilet.glb`: SHA-256 `16165cfd03c56c2cb443b800570810a22ef770f65e7a468f6761d9dc14eaaeae`
+  - Holiday Kit by Kenney, https://kenney.nl/assets/holiday-kit (downloaded 2026-10-06):
+    - `kenney/holiday-kit/kenney_holiday-kit/Models/GLB format/lantern-hanging.glb`: SHA-256 `1d7e3bfce9373db6f0a5115df399397f265ae9b7ebef694717ac29d5978337c7`
+  - Survival Kit by Kenney, https://kenney.nl/assets/survival-kit (downloaded 2026-10-06):
+    - `kenney/survival-kit/kenney_survival-kit/Models/GLB format/barrel.glb`: SHA-256 `3a0d12f6bdd1badd361f64ce0fbbf878a4ccfc2de8ff1ac4ed4c1aea2a9ee04a`
+    - `kenney/survival-kit/kenney_survival-kit/Models/GLB format/box-large.glb`: SHA-256 `69b4052f32b7b27e5d2ee27041b091a07d4a2dd4d877168a701607a97609f0f6`
+    - `kenney/survival-kit/kenney_survival-kit/Models/GLB format/campfire-pit.glb`: SHA-256 `a78ce38de408456649146077e1917d70bb39f7c87c3c7370276d809d2409b0ab`
+  - Tiny Treats - House Plants (1.0, FREE) by Isa Lousberg (Tiny Treats), https://tinytreats.itch.io/house-plants (downloaded 2026-10-06):
+    - `tinytreats/house-plants/Tiny_Treats_House_Plants_1.0_FREE/Tiny_Treats_House_Plants_1.0_FREE/Assets/gltf/sansevieria_plant_medium_potted.bin`: SHA-256 `f64d73ec99ce4d7dd58aca27922561577d47dcd14c6cbeb7e643cb2652d8b7b3`
+    - `tinytreats/house-plants/Tiny_Treats_House_Plants_1.0_FREE/Tiny_Treats_House_Plants_1.0_FREE/Assets/gltf/sansevieria_plant_medium_potted.gltf`: SHA-256 `d2691dd267b1559a0136285a394f536c93e65f5a34fe5e90b9e81125fb8baefd`
+    - `tinytreats/house-plants/Tiny_Treats_House_Plants_1.0_FREE/Tiny_Treats_House_Plants_1.0_FREE/Assets/gltf/tiny_treats_texture_1.png`: SHA-256 `31e5c7c81bfba644a59797b1907519592c7728d4af98a705449975dd929482e5`
+    - `tinytreats/house-plants/Tiny_Treats_House_Plants_1.0_FREE/Tiny_Treats_House_Plants_1.0_FREE/Assets/gltf/watering_can_A.bin`: SHA-256 `4da6b1056aaf06ae413d3a7bfc185d3c68a950ca082734d74a32c563894a4aaa`
+    - `tinytreats/house-plants/Tiny_Treats_House_Plants_1.0_FREE/Tiny_Treats_House_Plants_1.0_FREE/Assets/gltf/watering_can_A.gltf`: SHA-256 `817185a454c447a7bb26f91dbbe9fc342853113f67b17c2dd348f41b60690a21`
+    - `tinytreats/house-plants/Tiny_Treats_House_Plants_1.0_FREE/Tiny_Treats_House_Plants_1.0_FREE/Assets/gltf/yucca_plant_medium_potted.bin`: SHA-256 `c85297aa8f4f987d40c2426b2df36cf4c1c0f61209b5125a0cfc83c20e0dfa69`
+    - `tinytreats/house-plants/Tiny_Treats_House_Plants_1.0_FREE/Tiny_Treats_House_Plants_1.0_FREE/Assets/gltf/yucca_plant_medium_potted.gltf`: SHA-256 `c908422bb26eae18160357e949e2008cc558f75cd541cea80a3c4e8d6c62ff3d`
+  - Tiny Treats - Pleasant Picnic (1.0, FREE) by Isa Lousberg (Tiny Treats), https://tinytreats.itch.io/pleasant-picnic (downloaded 2026-10-06):
+    - `tinytreats/pleasant-picnic/Tiny_Treats_Pleasant_Picnic_1.0_FREE/Tiny_Treats_Pleasant_Picnic_1.0_FREE/Assets/gltf/cooler.bin`: SHA-256 `67820354227c48cdd81f52cca0500b8a6d3413428f49361d7cfe7c860311e9e0`
+    - `tinytreats/pleasant-picnic/Tiny_Treats_Pleasant_Picnic_1.0_FREE/Tiny_Treats_Pleasant_Picnic_1.0_FREE/Assets/gltf/cooler.gltf`: SHA-256 `f4e40d6f2a07e04555a732c095e40eef43fff7deec1ee7c5f5f69ac8ae685e90`
+    - `tinytreats/pleasant-picnic/Tiny_Treats_Pleasant_Picnic_1.0_FREE/Tiny_Treats_Pleasant_Picnic_1.0_FREE/Assets/gltf/tiny_treats_texture_1.png`: SHA-256 `31e5c7c81bfba644a59797b1907519592c7728d4af98a705449975dd929482e5`
+- **License:** own work, under the game's terms (the engineer's E1, 2026-10-11: the public game repo has no licence file, so all rights reserved); the sources above: CC0 1.0 (https://creativecommons.org/publicdomain/zero/1.0/)
+- **AI generated:** false
+- **Public repo OK:** true (own work and CC0)
