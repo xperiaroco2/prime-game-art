@@ -3,6 +3,7 @@
 [ext_resource type="PackedScene" path="res://assets/environment/house_kit/railing_balcony_2m.glb" id="1"]
 [ext_resource type="PackedScene" path="res://assets/environment/house_kit/railing_balcony_post.glb" id="2"]
 [ext_resource type="PackedScene" path="res://assets/environment/house_kit/stairs_outdoor_landing.glb" id="3"]
+[ext_resource type="ShaderMaterial" path="res://assets/environment/house_kit/kit_set.tres" id="4"]
 
 [node name="Garden" type="Node3D"]
 metadata/size_m = Vector2i(32, 28)
@@ -44,6 +45,10 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 20, 0, 26)
 [node name="outdoor_stairs_2" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16, -1.6, 26)
 metadata/surface = "concrete"
+
+[node name="stairs_outdoor_landing" parent="Shell/outdoor_stairs_2"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(62, -1.6, 28, 0)
 
 [node name="Fixtures" type="Node3D" parent="."]
 

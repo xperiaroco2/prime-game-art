@@ -1,4 +1,4 @@
-# Written for #128 from the P7 export of 2026-10-11 (`house --export <raw>/house/export/v2/p7 --package 7`); a rebuild
+# Written for #128 from the P7 export of 2026-10-11 (`house --export <raw>/house/export/v3/p7 --package 7`, after #132); a rebuild
 # changes the hashes below (`manifest-check --hashes` finds it). The game's paths: levels/house/outdoor.tscn and
 # levels/house/rooms/<name>.
 id = "house_plot"
@@ -25,15 +25,15 @@ url = "https://github.com/xperiaroco2/prime-game-art"
 
 [[files]]
 name = "greenhouse.tscn"
-file = "house/export/v2/p7/levels/house/rooms/greenhouse.tscn"
-sha256 = "f159c8466b6f6dbe40a6a92c247d1e73027bfc66b144a5ab74d1d30d0e2d3298"
+file = "house/export/v3/p7/levels/house/rooms/greenhouse.tscn"
+sha256 = "607e7d0c2914d61e776bad395eefb372cc332c11db7ef8cf93bf73eccd35d44d"
 
 [[files]]
 name = "garden.tscn"
-file = "house/export/v2/p7/levels/house/rooms/garden.tscn"
-sha256 = "81f78501c5f338d54a2d008d5345aa6176f68c825efe48907c9bb4776024a890"
+file = "house/export/v3/p7/levels/house/rooms/garden.tscn"
+sha256 = "1b181884d927d0a75b8c6c8566ac9ebe1174a3de66ec28254d7ba9fe72a3f2fa"
 
 [[files]]
 name = "outdoor.tscn"
-file = "house/export/v2/p7/levels/house/outdoor.tscn"
-sha256 = "ea733efdc42e052d7ec875ec911d6b70f4b684d45ea0b046c08c1b3aa5c431e0"
+file = "house/export/v3/p7/levels/house/outdoor.tscn"
+sha256 = "e62f14e1b5ab835d1aae5f22bcc519f69707a5358703f55f138358be86344a1a"

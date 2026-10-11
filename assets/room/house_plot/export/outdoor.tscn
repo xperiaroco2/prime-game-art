@@ -3,74 +3,75 @@
 [ext_resource type="PackedScene" path="res://assets/environment/house_outdoor/outdoor.glb" id="1"]
 [ext_resource type="PackedScene" path="res://assets/environment/house_outdoor/backdrop.glb" id="2"]
 [ext_resource type="PackedScene" path="res://assets/environment/house_kit/fence_2m.glb" id="3"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_kit/fence_post_cap.glb" id="4"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_kit/fence_1m.glb" id="5"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_kit/fence_wicket_2m.glb" id="6"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_kit/fence_gates_8m.glb" id="7"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_kit/gate_post.glb" id="8"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_kit/stairs_outdoor_half.glb" id="9"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_kit/stairs_outdoor_landing.glb" id="10"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_kit/railing_balcony_2m.glb" id="11"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_kit/railing_balcony_post.glb" id="12"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/streetlight.glb" id="13"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/parked_car.glb" id="14"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/hydrant.glb" id="15"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/trash_bin.glb" id="16"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/utility_pole.glb" id="17"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_garden/hedge.glb" id="18"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/path_light.glb" id="19"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/mailbox.glb" id="20"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/stepping_stone.glb" id="21"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_kit/glass_roof_eave_2m.glb" id="22"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_kit/glass_roof_2x2.glb" id="23"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_kit/glass_roof_eave_2m_end.glb" id="24"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_kit/glass_roof_2x2_end.glb" id="25"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_kit/glass_roof_ridge_2m.glb" id="26"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_kit/glass_gable_tri_2m_up.glb" id="27"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_kit/glass_gable_tri_2m_down.glb" id="28"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_kit/glass_gable_band_2m.glb" id="29"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/garden_dropoff.glb" id="30"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/garden_bench.glb" id="31"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/birdbath_library.glb" id="32"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/wheelbarrow.glb" id="33"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/watering_can.glb" id="34"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/garden_post_lamp.glb" id="35"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/string_lights.glb" id="36"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_garden/garden_tree_apple.glb" id="37"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_garden/garden_tree_pear.glb" id="38"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_garden/garden_tree_plum.glb" id="39"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_garden/flower_bed_rose.glb" id="40"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_garden/flower_bed_foxglove.glb" id="41"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_garden/flower_bed_dahlia.glb" id="42"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_garden/flower_bed_marigold.glb" id="43"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_garden/flower_bed_tulip.glb" id="44"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_garden/flower_bed_aster.glb" id="45"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_garden/bush_boxwood.glb" id="46"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_garden/bush_hydrangea.glb" id="47"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_garden/bush_lavender.glb" id="48"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_garden/bush_currant.glb" id="49"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/bbq_grill.glb" id="50"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/music_speaker.glb" id="51"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/fire_pit_zones.glb" id="52"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/deckchair_zones.glb" id="53"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/bean_bag_zones.glb" id="54"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/cooler_box_zones.glb" id="55"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/string_lights_set.glb" id="56"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/lantern_zones.glb" id="57"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/picnic_table.glb" id="58"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/firewood_stack.glb" id="59"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/pose_screen.glb" id="60"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/photo_backdrop_zones.glb" id="61"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/tripod_camera_zones.glb" id="62"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/string_lights_gazebo.glb" id="63"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/planter_pot.glb" id="64"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_kit/gazebo_sector_open.glb" id="65"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_kit/gazebo_sector.glb" id="66"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_kit/gazebo_roof_sector.glb" id="67"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_kit/gazebo_finial.glb" id="68"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_kit/railing_gazebo_2m.glb" id="69"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_kit/railing_gazebo_1m.glb" id="70"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_kit/railing_gazebo_post.glb" id="71"]
+[ext_resource type="ShaderMaterial" path="res://assets/environment/house_kit/kit_set.tres" id="4"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_kit/fence_post_cap.glb" id="5"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_kit/fence_1m.glb" id="6"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_kit/fence_wicket_2m.glb" id="7"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_kit/fence_gates_8m.glb" id="8"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_kit/gate_post.glb" id="9"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_kit/stairs_outdoor_half.glb" id="10"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_kit/stairs_outdoor_landing.glb" id="11"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_kit/railing_balcony_2m.glb" id="12"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_kit/railing_balcony_post.glb" id="13"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/streetlight.glb" id="14"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/parked_car.glb" id="15"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/hydrant.glb" id="16"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/trash_bin.glb" id="17"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/utility_pole.glb" id="18"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_garden/hedge.glb" id="19"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/path_light.glb" id="20"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/mailbox.glb" id="21"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/stepping_stone.glb" id="22"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_kit/glass_roof_eave_2m.glb" id="23"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_kit/glass_roof_2x2.glb" id="24"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_kit/glass_roof_eave_2m_end.glb" id="25"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_kit/glass_roof_2x2_end.glb" id="26"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_kit/glass_roof_ridge_2m.glb" id="27"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_kit/glass_gable_tri_2m_up.glb" id="28"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_kit/glass_gable_tri_2m_down.glb" id="29"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_kit/glass_gable_band_2m.glb" id="30"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/garden_dropoff.glb" id="31"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/garden_bench.glb" id="32"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/birdbath_library.glb" id="33"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/wheelbarrow.glb" id="34"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/watering_can.glb" id="35"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/garden_post_lamp.glb" id="36"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/string_lights.glb" id="37"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_garden/garden_tree_apple.glb" id="38"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_garden/garden_tree_pear.glb" id="39"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_garden/garden_tree_plum.glb" id="40"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_garden/flower_bed_rose.glb" id="41"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_garden/flower_bed_foxglove.glb" id="42"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_garden/flower_bed_dahlia.glb" id="43"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_garden/flower_bed_marigold.glb" id="44"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_garden/flower_bed_tulip.glb" id="45"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_garden/flower_bed_aster.glb" id="46"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_garden/bush_boxwood.glb" id="47"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_garden/bush_hydrangea.glb" id="48"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_garden/bush_lavender.glb" id="49"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_garden/bush_currant.glb" id="50"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/bbq_grill.glb" id="51"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/music_speaker.glb" id="52"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/fire_pit_zones.glb" id="53"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/deckchair_zones.glb" id="54"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/bean_bag_zones.glb" id="55"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/cooler_box_zones.glb" id="56"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/string_lights_set.glb" id="57"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/lantern_zones.glb" id="58"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/picnic_table.glb" id="59"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/firewood_stack.glb" id="60"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/pose_screen.glb" id="61"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/photo_backdrop_zones.glb" id="62"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/tripod_camera_zones.glb" id="63"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/string_lights_gazebo.glb" id="64"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/planter_pot.glb" id="65"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_kit/gazebo_sector_open.glb" id="66"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_kit/gazebo_sector.glb" id="67"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_kit/gazebo_roof_sector.glb" id="68"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_kit/gazebo_finial.glb" id="69"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_kit/railing_gazebo_2m.glb" id="70"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_kit/railing_gazebo_1m.glb" id="71"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_kit/railing_gazebo_post.glb" id="72"]
 
 [node name="Outdoor" type="Node3D"]
 metadata/art_package = 7
@@ -89,1898 +90,3147 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
 [node name="fence_2m_1" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 60)
 
-[node name="fence_post_cap_1" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_1"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(0, 0, 60, 0)
+
+[node name="fence_post_cap_1" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.9, 60)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_1"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(0, 1.9, 60, 0)
 
 [node name="fence_2m_2" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0, 60)
 
-[node name="fence_post_cap_2" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_2"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(2, 0, 60, 0)
+
+[node name="fence_post_cap_2" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 1.9, 60)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_2"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(2, 1.9, 60, 0)
 
 [node name="fence_2m_3" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 0, 60)
 
-[node name="fence_post_cap_3" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_3"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(4, 0, 60, 0)
+
+[node name="fence_post_cap_3" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 1.9, 60)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_3"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(4, 1.9, 60, 0)
 
 [node name="fence_2m_4" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 0, 60)
 
-[node name="fence_post_cap_4" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_4"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(6, 0, 60, 0)
+
+[node name="fence_post_cap_4" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 1.9, 60)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_4"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(6, 1.9, 60, 0)
 
 [node name="fence_2m_5" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 0, 60)
 
-[node name="fence_post_cap_5" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_5"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(8, 0, 60, 0)
+
+[node name="fence_post_cap_5" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 1.9, 60)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_5"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(8, 1.9, 60, 0)
 
 [node name="fence_2m_6" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 0, 60)
 
-[node name="fence_post_cap_6" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_6"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(10, 0, 60, 0)
+
+[node name="fence_post_cap_6" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 1.9, 60)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_6"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(10, 1.9, 60, 0)
 
 [node name="fence_2m_7" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 0, 60)
 
-[node name="fence_post_cap_7" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_7"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(12, 0, 60, 0)
+
+[node name="fence_post_cap_7" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 1.9, 60)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_7"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(12, 1.9, 60, 0)
 
 [node name="fence_2m_8" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14, 0, 60)
 
-[node name="fence_post_cap_8" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_8"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(14, 0, 60, 0)
+
+[node name="fence_post_cap_8" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14, 1.9, 60)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_8"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(14, 1.9, 60, 0)
 
 [node name="fence_2m_9" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16, 0, 60)
 
-[node name="fence_post_cap_9" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_9"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(16, 0, 60, 0)
+
+[node name="fence_post_cap_9" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16, 1.9, 60)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_9"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(16, 1.9, 60, 0)
 
 [node name="fence_2m_10" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 18, 0, 60)
 
-[node name="fence_post_cap_10" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_10"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(18, 0, 60, 0)
+
+[node name="fence_post_cap_10" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 18, 1.9, 60)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_10"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(18, 1.9, 60, 0)
 
 [node name="fence_2m_11" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 20, 0, 60)
 
-[node name="fence_post_cap_11" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_11"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(20, 0, 60, 0)
+
+[node name="fence_post_cap_11" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 20, 1.9, 60)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_11"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(20, 1.9, 60, 0)
 
 [node name="fence_2m_12" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 22, 0, 60)
 
-[node name="fence_post_cap_12" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_12"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(22, 0, 60, 0)
+
+[node name="fence_post_cap_12" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 22, 1.9, 60)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_12"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(22, 1.9, 60, 0)
 
 [node name="fence_2m_13" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 24, 0, 60)
 
-[node name="fence_post_cap_13" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_13"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(24, 0, 60, 0)
+
+[node name="fence_post_cap_13" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 24, 1.9, 60)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_13"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(24, 1.9, 60, 0)
 
 [node name="fence_2m_14" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 26, 0, 60)
 
-[node name="fence_post_cap_14" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_14"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(26, 0, 60, 0)
+
+[node name="fence_post_cap_14" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 26, 1.9, 60)
 
-[node name="fence_1m_1" parent="Shell" instance=ExtResource("5")]
+[node name="fence_post_cap" parent="Shell/fence_post_cap_14"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(26, 1.9, 60, 0)
+
+[node name="fence_1m_1" parent="Shell" instance=ExtResource("6")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 28, 0, 60)
 
-[node name="fence_post_cap_15" parent="Shell" instance=ExtResource("4")]
+[node name="fence_1m" parent="Shell/fence_1m_1"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(28, 0, 60, 0)
+
+[node name="fence_post_cap_15" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 28, 1.9, 60)
 
-[node name="fence_wicket_2m_1" parent="Shell" instance=ExtResource("6")]
+[node name="fence_post_cap" parent="Shell/fence_post_cap_15"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(28, 1.9, 60, 0)
+
+[node name="fence_wicket_2m_1" parent="Shell" instance=ExtResource("7")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 29, 0, 60)
 
-[node name="fence_post_cap_16" parent="Shell" instance=ExtResource("4")]
+[node name="fence_wicket_2m" parent="Shell/fence_wicket_2m_1"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(29, 0, 60, 0)
+
+[node name="fence_wicket_2m_leaf" parent="Shell/fence_wicket_2m_1"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(29.31, 0, 60, 0)
+
+[node name="fence_post_cap_16" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 29, 1.9, 60)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_16"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(29, 1.9, 60, 0)
 
 [node name="fence_2m_15" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 31, 0, 60)
 
-[node name="fence_post_cap_17" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_15"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(31, 0, 60, 0)
+
+[node name="fence_post_cap_17" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 31, 1.9, 60)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_17"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(31, 1.9, 60, 0)
 
 [node name="fence_2m_16" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 33, 0, 60)
 
-[node name="fence_post_cap_18" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_16"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(33, 0, 60, 0)
+
+[node name="fence_post_cap_18" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 33, 1.9, 60)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_18"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(33, 1.9, 60, 0)
 
 [node name="fence_2m_17" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 35, 0, 60)
 
-[node name="fence_post_cap_19" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_17"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(35, 0, 60, 0)
+
+[node name="fence_post_cap_19" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 35, 1.9, 60)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_19"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(35, 1.9, 60, 0)
 
 [node name="fence_2m_18" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 37, 0, 60)
 
-[node name="fence_post_cap_20" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_18"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(37, 0, 60, 0)
+
+[node name="fence_post_cap_20" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 37, 1.9, 60)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_20"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(37, 1.9, 60, 0)
 
 [node name="fence_2m_19" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 39, 0, 60)
 
-[node name="fence_post_cap_21" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_19"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(39, 0, 60, 0)
+
+[node name="fence_post_cap_21" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 39, 1.9, 60)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_21"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(39, 1.9, 60, 0)
 
 [node name="fence_2m_20" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 41, 0, 60)
 
-[node name="fence_post_cap_22" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_20"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(41, 0, 60, 0)
+
+[node name="fence_post_cap_22" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 41, 1.9, 60)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_22"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(41, 1.9, 60, 0)
 
 [node name="fence_2m_21" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 43, 0, 60)
 
-[node name="fence_post_cap_23" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_21"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(43, 0, 60, 0)
+
+[node name="fence_post_cap_23" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 43, 1.9, 60)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_23"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(43, 1.9, 60, 0)
 
 [node name="fence_2m_22" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 45, 0, 60)
 
-[node name="fence_post_cap_24" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_22"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(45, 0, 60, 0)
+
+[node name="fence_post_cap_24" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 45, 1.9, 60)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_24"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(45, 1.9, 60, 0)
 
 [node name="fence_2m_23" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 47, 0, 60)
 
-[node name="fence_post_cap_25" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_23"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(47, 0, 60, 0)
+
+[node name="fence_post_cap_25" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 47, 1.9, 60)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_25"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(47, 1.9, 60, 0)
 
 [node name="fence_2m_24" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 49, 0, 60)
 
-[node name="fence_post_cap_26" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_24"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(49, 0, 60, 0)
+
+[node name="fence_post_cap_26" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 49, 1.9, 60)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_26"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(49, 1.9, 60, 0)
 
 [node name="fence_2m_25" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 51, 0, 60)
 
-[node name="fence_post_cap_27" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_25"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(51, 0, 60, 0)
+
+[node name="fence_post_cap_27" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 51, 1.9, 60)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_27"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(51, 1.9, 60, 0)
 
 [node name="fence_2m_26" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 53, 0, 60)
 
-[node name="fence_post_cap_28" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_26"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(53, 0, 60, 0)
+
+[node name="fence_post_cap_28" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 53, 1.9, 60)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_28"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(53, 1.9, 60, 0)
 
 [node name="fence_2m_27" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 55, 0, 60)
 
-[node name="fence_post_cap_29" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_27"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(55, 0, 60, 0)
+
+[node name="fence_post_cap_29" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 55, 1.9, 60)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_29"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(55, 1.9, 60, 0)
 
 [node name="fence_2m_28" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 57, 0, 60)
 
-[node name="fence_post_cap_30" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_28"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(57, 0, 60, 0)
+
+[node name="fence_post_cap_30" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 57, 1.9, 60)
 
-[node name="fence_1m_2" parent="Shell" instance=ExtResource("5")]
+[node name="fence_post_cap" parent="Shell/fence_post_cap_30"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(57, 1.9, 60, 0)
+
+[node name="fence_1m_2" parent="Shell" instance=ExtResource("6")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 59, 0, 60)
 
-[node name="fence_post_cap_31" parent="Shell" instance=ExtResource("4")]
+[node name="fence_1m" parent="Shell/fence_1m_2"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(59, 0, 60, 0)
+
+[node name="fence_post_cap_31" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 59, 1.9, 60)
 
-[node name="fence_gates_8m_1" parent="Shell" instance=ExtResource("7")]
+[node name="fence_post_cap" parent="Shell/fence_post_cap_31"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(59, 1.9, 60, 0)
+
+[node name="fence_gates_8m_1" parent="Shell" instance=ExtResource("8")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 60, 0, 60)
 
-[node name="gate_post_1" parent="Shell" instance=ExtResource("8")]
+[node name="gate_post_1" parent="Shell" instance=ExtResource("9")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 60, 0, 60)
 
-[node name="gate_post_2" parent="Shell" instance=ExtResource("8")]
+[node name="gate_post" parent="Shell/gate_post_1"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(60, 0, 60, 0)
+
+[node name="gate_post_2" parent="Shell" instance=ExtResource("9")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 68, 0, 60)
+
+[node name="gate_post" parent="Shell/gate_post_2"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(68, 0, 60, 0)
 
 [node name="fence_2m_29" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 68, 0, 60)
 
-[node name="fence_post_cap_32" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_29"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(68, 0, 60, 0)
+
+[node name="fence_post_cap_32" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 68, 1.9, 60)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_32"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(68, 1.9, 60, 0)
 
 [node name="fence_2m_30" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 70, 0, 60)
 
-[node name="fence_post_cap_33" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_30"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(70, 0, 60, 0)
+
+[node name="fence_post_cap_33" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 70, 1.9, 60)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_33"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(70, 1.9, 60, 0)
 
 [node name="fence_2m_31" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 72, 0, 60)
 
-[node name="fence_post_cap_34" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_31"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(72, 0, 60, 0)
+
+[node name="fence_post_cap_34" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 72, 1.9, 60)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_34"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(72, 1.9, 60, 0)
 
 [node name="fence_2m_32" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 74, 0, 60)
 
-[node name="fence_post_cap_35" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_32"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(74, 0, 60, 0)
+
+[node name="fence_post_cap_35" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 74, 1.9, 60)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_35"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(74, 1.9, 60, 0)
 
 [node name="fence_2m_33" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 76, 0, 60)
 
-[node name="fence_post_cap_36" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_33"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(76, 0, 60, 0)
+
+[node name="fence_post_cap_36" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 76, 1.9, 60)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_36"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(76, 1.9, 60, 0)
 
 [node name="fence_2m_34" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 78, 0, 60)
 
-[node name="fence_post_cap_37" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_34"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(78, 0, 60, 0)
+
+[node name="fence_post_cap_37" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 78, 1.9, 60)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_37"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(78, 1.9, 60, 0)
 
 [node name="fence_2m_35" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 80, 0, 60)
 
-[node name="fence_post_cap_38" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_35"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(80, 0, 60, 90)
+
+[node name="fence_post_cap_38" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 80, 1.9, 60)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_38"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(80, 1.9, 60, 90)
 
 [node name="fence_2m_36" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 80, 0, 58)
 
-[node name="fence_post_cap_39" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_36"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(80, 0, 58, 90)
+
+[node name="fence_post_cap_39" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 80, 1.9, 58)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_39"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(80, 1.9, 58, 90)
 
 [node name="fence_2m_37" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 80, 0, 56)
 
-[node name="fence_post_cap_40" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_37"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(80, 0, 56, 90)
+
+[node name="fence_post_cap_40" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 80, 1.9, 56)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_40"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(80, 1.9, 56, 90)
 
 [node name="fence_2m_38" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 80, 0, 54)
 
-[node name="fence_post_cap_41" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_38"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(80, 0, 54, 90)
+
+[node name="fence_post_cap_41" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 80, 1.9, 54)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_41"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(80, 1.9, 54, 90)
 
 [node name="fence_2m_39" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 80, 0, 52)
 
-[node name="fence_post_cap_42" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_39"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(80, 0, 52, 90)
+
+[node name="fence_post_cap_42" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 80, 1.9, 52)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_42"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(80, 1.9, 52, 90)
 
 [node name="fence_2m_40" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 80, 0, 50)
 
-[node name="fence_post_cap_43" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_40"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(80, 0, 50, 90)
+
+[node name="fence_post_cap_43" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 80, 1.9, 50)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_43"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(80, 1.9, 50, 90)
 
 [node name="fence_2m_41" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 80, 0, 48)
 
-[node name="fence_post_cap_44" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_41"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(80, 0, 48, 90)
+
+[node name="fence_post_cap_44" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 80, 1.9, 48)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_44"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(80, 1.9, 48, 90)
 
 [node name="fence_2m_42" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 80, 0, 46)
 
-[node name="fence_post_cap_45" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_42"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(80, 0, 46, 90)
+
+[node name="fence_post_cap_45" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 80, 1.9, 46)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_45"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(80, 1.9, 46, 90)
 
 [node name="fence_2m_43" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 80, 0, 44)
 
-[node name="fence_post_cap_46" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_43"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(80, 0, 44, 90)
+
+[node name="fence_post_cap_46" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 80, 1.9, 44)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_46"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(80, 1.9, 44, 90)
 
 [node name="fence_2m_44" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 80, 0, 42)
 
-[node name="fence_post_cap_47" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_44"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(80, 0, 42, 90)
+
+[node name="fence_post_cap_47" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 80, 1.9, 42)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_47"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(80, 1.9, 42, 90)
 
 [node name="fence_2m_45" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 80, 0, 40)
 
-[node name="fence_post_cap_48" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_45"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(80, 0, 40, 90)
+
+[node name="fence_post_cap_48" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 80, 1.9, 40)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_48"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(80, 1.9, 40, 90)
 
 [node name="fence_2m_46" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 80, 0, 38)
 
-[node name="fence_post_cap_49" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_46"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(80, 0, 38, 90)
+
+[node name="fence_post_cap_49" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 80, 1.9, 38)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_49"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(80, 1.9, 38, 90)
 
 [node name="fence_2m_47" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 80, 0, 36)
 
-[node name="fence_post_cap_50" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_47"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(80, 0, 36, 90)
+
+[node name="fence_post_cap_50" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 80, 1.9, 36)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_50"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(80, 1.9, 36, 90)
 
 [node name="fence_2m_48" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 80, 0, 34)
 
-[node name="fence_post_cap_51" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_48"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(80, 0, 34, 90)
+
+[node name="fence_post_cap_51" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 80, 1.9, 34)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_51"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(80, 1.9, 34, 90)
 
 [node name="fence_2m_49" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 80, 0, 32)
 
-[node name="fence_post_cap_52" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_49"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(80, 0, 32, 90)
+
+[node name="fence_post_cap_52" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 80, 1.9, 32)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_52"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(80, 1.9, 32, 90)
 
 [node name="fence_2m_50" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 80, 0, 30)
 
-[node name="fence_post_cap_53" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_50"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(80, 0, 30, 90)
+
+[node name="fence_post_cap_53" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 80, 1.9, 30)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_53"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(80, 1.9, 30, 90)
 
 [node name="fence_2m_51" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 80, 0, 28)
 
-[node name="fence_post_cap_54" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_51"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(80, 0, 28, 90)
+
+[node name="fence_post_cap_54" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 80, 1.9, 28)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_54"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(80, 1.9, 28, 90)
 
 [node name="fence_2m_52" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 80, 0, 26)
 
-[node name="fence_post_cap_55" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_52"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(80, 0, 26, 90)
+
+[node name="fence_post_cap_55" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 80, 1.9, 26)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_55"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(80, 1.9, 26, 90)
 
 [node name="fence_2m_53" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 80, 0, 24)
 
-[node name="fence_post_cap_56" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_53"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(80, 0, 24, 90)
+
+[node name="fence_post_cap_56" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 80, 1.9, 24)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_56"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(80, 1.9, 24, 90)
 
 [node name="fence_2m_54" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 80, 0, 22)
 
-[node name="fence_post_cap_57" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_54"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(80, 0, 22, 90)
+
+[node name="fence_post_cap_57" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 80, 1.9, 22)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_57"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(80, 1.9, 22, 90)
 
 [node name="fence_2m_55" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 80, 0, 20)
 
-[node name="fence_post_cap_58" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_55"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(80, 0, 20, 90)
+
+[node name="fence_post_cap_58" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 80, 1.9, 20)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_58"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(80, 1.9, 20, 90)
 
 [node name="fence_2m_56" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 80, 0, 18)
 
-[node name="fence_post_cap_59" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_56"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(80, 0, 18, 90)
+
+[node name="fence_post_cap_59" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 80, 1.9, 18)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_59"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(80, 1.9, 18, 90)
 
 [node name="fence_2m_57" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 80, 0, 16)
 
-[node name="fence_post_cap_60" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_57"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(80, 0, 16, 90)
+
+[node name="fence_post_cap_60" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 80, 1.9, 16)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_60"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(80, 1.9, 16, 90)
 
 [node name="fence_2m_58" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 80, 0, 14)
 
-[node name="fence_post_cap_61" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_58"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(80, 0, 14, 90)
+
+[node name="fence_post_cap_61" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 80, 1.9, 14)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_61"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(80, 1.9, 14, 90)
 
 [node name="fence_2m_59" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 80, 0, 12)
 
-[node name="fence_post_cap_62" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_59"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(80, 0, 12, 90)
+
+[node name="fence_post_cap_62" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 80, 1.9, 12)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_62"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(80, 1.9, 12, 90)
 
 [node name="fence_2m_60" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 80, 0, 10)
 
-[node name="fence_post_cap_63" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_60"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(80, 0, 10, 90)
+
+[node name="fence_post_cap_63" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 80, 1.9, 10)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_63"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(80, 1.9, 10, 90)
 
 [node name="fence_2m_61" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 80, 0, 8)
 
-[node name="fence_post_cap_64" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_61"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(80, 0, 8, 90)
+
+[node name="fence_post_cap_64" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 80, 1.9, 8)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_64"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(80, 1.9, 8, 90)
 
 [node name="fence_2m_62" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 80, 0, 6)
 
-[node name="fence_post_cap_65" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_62"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(80, 0, 6, 90)
+
+[node name="fence_post_cap_65" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 80, 1.9, 6)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_65"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(80, 1.9, 6, 90)
 
 [node name="fence_2m_63" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 80, 0, 4)
 
-[node name="fence_post_cap_66" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_63"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(80, 0, 4, 90)
+
+[node name="fence_post_cap_66" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 80, 1.9, 4)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_66"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(80, 1.9, 4, 90)
 
 [node name="fence_2m_64" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 80, 0, 2)
 
-[node name="fence_post_cap_67" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_64"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(80, 0, 2, 90)
+
+[node name="fence_post_cap_67" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 80, 1.9, 2)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_67"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(80, 1.9, 2, 90)
 
 [node name="fence_2m_65" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 80, 0, 0)
 
-[node name="fence_post_cap_68" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_65"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(80, 0, 0, 180)
+
+[node name="fence_post_cap_68" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 80, 1.9, 0)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_68"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(80, 1.9, 0, 180)
 
 [node name="fence_2m_66" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 78, 0, 0)
 
-[node name="fence_post_cap_69" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_66"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(78, 0, 0, 180)
+
+[node name="fence_post_cap_69" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 78, 1.9, 0)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_69"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(78, 1.9, 0, 180)
 
 [node name="fence_2m_67" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 76, 0, 0)
 
-[node name="fence_post_cap_70" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_67"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(76, 0, 0, 180)
+
+[node name="fence_post_cap_70" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 76, 1.9, 0)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_70"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(76, 1.9, 0, 180)
 
 [node name="fence_2m_68" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 74, 0, 0)
 
-[node name="fence_post_cap_71" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_68"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(74, 0, 0, 180)
+
+[node name="fence_post_cap_71" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 74, 1.9, 0)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_71"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(74, 1.9, 0, 180)
 
 [node name="fence_2m_69" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 72, 0, 0)
 
-[node name="fence_post_cap_72" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_69"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(72, 0, 0, 180)
+
+[node name="fence_post_cap_72" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 72, 1.9, 0)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_72"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(72, 1.9, 0, 180)
 
 [node name="fence_2m_70" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 70, 0, 0)
 
-[node name="fence_post_cap_73" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_70"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(70, 0, 0, 180)
+
+[node name="fence_post_cap_73" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 70, 1.9, 0)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_73"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(70, 1.9, 0, 180)
 
 [node name="fence_2m_71" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 68, 0, 0)
 
-[node name="fence_post_cap_74" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_71"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(68, 0, 0, 180)
+
+[node name="fence_post_cap_74" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 68, 1.9, 0)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_74"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(68, 1.9, 0, 180)
 
 [node name="fence_2m_72" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 66, 0, 0)
 
-[node name="fence_post_cap_75" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_72"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(66, 0, 0, 180)
+
+[node name="fence_post_cap_75" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 66, 1.9, 0)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_75"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(66, 1.9, 0, 180)
 
 [node name="fence_2m_73" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 64, 0, 0)
 
-[node name="fence_post_cap_76" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_73"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(64, 0, 0, 180)
+
+[node name="fence_post_cap_76" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 64, 1.9, 0)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_76"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(64, 1.9, 0, 180)
 
 [node name="fence_2m_74" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 62, 0, 0)
 
-[node name="fence_post_cap_77" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_74"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(62, 0, 0, 180)
+
+[node name="fence_post_cap_77" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 62, 1.9, 0)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_77"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(62, 1.9, 0, 180)
 
 [node name="fence_2m_75" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 60, 0, 0)
 
-[node name="fence_post_cap_78" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_75"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(60, 0, 0, 180)
+
+[node name="fence_post_cap_78" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 60, 1.9, 0)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_78"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(60, 1.9, 0, 180)
 
 [node name="fence_2m_76" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 58, 0, 0)
 
-[node name="fence_post_cap_79" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_76"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(58, 0, 0, 180)
+
+[node name="fence_post_cap_79" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 58, 1.9, 0)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_79"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(58, 1.9, 0, 180)
 
 [node name="fence_2m_77" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 56, 0, 0)
 
-[node name="fence_post_cap_80" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_77"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(56, 0, 0, 180)
+
+[node name="fence_post_cap_80" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 56, 1.9, 0)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_80"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(56, 1.9, 0, 180)
 
 [node name="fence_2m_78" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 54, 0, 0)
 
-[node name="fence_post_cap_81" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_78"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(54, 0, 0, 180)
+
+[node name="fence_post_cap_81" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 54, 1.9, 0)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_81"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(54, 1.9, 0, 180)
 
 [node name="fence_2m_79" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 52, 0, 0)
 
-[node name="fence_post_cap_82" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_79"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(52, 0, 0, 180)
+
+[node name="fence_post_cap_82" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 52, 1.9, 0)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_82"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(52, 1.9, 0, 180)
 
 [node name="fence_2m_80" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 50, 0, 0)
 
-[node name="fence_post_cap_83" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_80"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(50, 0, 0, 180)
+
+[node name="fence_post_cap_83" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 50, 1.9, 0)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_83"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(50, 1.9, 0, 180)
 
 [node name="fence_2m_81" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 48, 0, 0)
 
-[node name="fence_post_cap_84" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_81"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(48, 0, 0, 180)
+
+[node name="fence_post_cap_84" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 48, 1.9, 0)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_84"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(48, 1.9, 0, 180)
 
 [node name="fence_2m_82" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 46, 0, 0)
 
-[node name="fence_post_cap_85" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_82"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(46, 0, 0, 180)
+
+[node name="fence_post_cap_85" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 46, 1.9, 0)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_85"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(46, 1.9, 0, 180)
 
 [node name="fence_2m_83" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 44, 0, 0)
 
-[node name="fence_post_cap_86" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_83"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(44, 0, 0, 180)
+
+[node name="fence_post_cap_86" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 44, 1.9, 0)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_86"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(44, 1.9, 0, 180)
 
 [node name="fence_2m_84" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 42, 0, 0)
 
-[node name="fence_post_cap_87" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_84"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(42, 0, 0, 180)
+
+[node name="fence_post_cap_87" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 42, 1.9, 0)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_87"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(42, 1.9, 0, 180)
 
 [node name="fence_2m_85" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 40, 0, 0)
 
-[node name="fence_post_cap_88" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_85"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(40, 0, 0, 180)
+
+[node name="fence_post_cap_88" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 40, 1.9, 0)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_88"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(40, 1.9, 0, 180)
 
 [node name="fence_2m_86" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 38, 0, 0)
 
-[node name="fence_post_cap_89" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_86"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(38, 0, 0, 180)
+
+[node name="fence_post_cap_89" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 38, 1.9, 0)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_89"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(38, 1.9, 0, 180)
 
 [node name="fence_2m_87" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 36, 0, 0)
 
-[node name="fence_post_cap_90" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_87"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(36, 0, 0, 180)
+
+[node name="fence_post_cap_90" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 36, 1.9, 0)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_90"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(36, 1.9, 0, 180)
 
 [node name="fence_2m_88" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 34, 0, 0)
 
-[node name="fence_post_cap_91" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_88"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(34, 0, 0, 180)
+
+[node name="fence_post_cap_91" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 34, 1.9, 0)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_91"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(34, 1.9, 0, 180)
 
 [node name="fence_2m_89" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 32, 0, 0)
 
-[node name="fence_post_cap_92" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_89"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(32, 0, 0, 180)
+
+[node name="fence_post_cap_92" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 32, 1.9, 0)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_92"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(32, 1.9, 0, 180)
 
 [node name="fence_2m_90" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 30, 0, 0)
 
-[node name="fence_post_cap_93" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_90"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(30, 0, 0, 180)
+
+[node name="fence_post_cap_93" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 30, 1.9, 0)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_93"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(30, 1.9, 0, 180)
 
 [node name="fence_2m_91" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 28, 0, 0)
 
-[node name="fence_post_cap_94" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_91"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(28, 0, 0, 180)
+
+[node name="fence_post_cap_94" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 28, 1.9, 0)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_94"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(28, 1.9, 0, 180)
 
 [node name="fence_2m_92" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 26, 0, 0)
 
-[node name="fence_post_cap_95" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_92"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(26, 0, 0, 180)
+
+[node name="fence_post_cap_95" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 26, 1.9, 0)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_95"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(26, 1.9, 0, 180)
 
 [node name="fence_2m_93" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 24, 0, 0)
 
-[node name="fence_post_cap_96" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_93"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(24, 0, 0, 180)
+
+[node name="fence_post_cap_96" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 24, 1.9, 0)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_96"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(24, 1.9, 0, 180)
 
 [node name="fence_2m_94" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 22, 0, 0)
 
-[node name="fence_post_cap_97" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_94"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(22, 0, 0, 180)
+
+[node name="fence_post_cap_97" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 22, 1.9, 0)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_97"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(22, 1.9, 0, 180)
 
 [node name="fence_2m_95" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 20, 0, 0)
 
-[node name="fence_post_cap_98" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_95"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(20, 0, 0, 180)
+
+[node name="fence_post_cap_98" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 20, 1.9, 0)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_98"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(20, 1.9, 0, 180)
 
 [node name="fence_2m_96" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 18, 0, 0)
 
-[node name="fence_post_cap_99" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_96"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(18, 0, 0, 180)
+
+[node name="fence_post_cap_99" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 18, 1.9, 0)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_99"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(18, 1.9, 0, 180)
 
 [node name="fence_2m_97" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 16, 0, 0)
 
-[node name="fence_post_cap_100" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_97"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(16, 0, 0, 180)
+
+[node name="fence_post_cap_100" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 16, 1.9, 0)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_100"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(16, 1.9, 0, 180)
 
 [node name="fence_2m_98" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 14, 0, 0)
 
-[node name="fence_post_cap_101" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_98"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(14, 0, 0, 180)
+
+[node name="fence_post_cap_101" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 14, 1.9, 0)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_101"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(14, 1.9, 0, 180)
 
 [node name="fence_2m_99" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 12, 0, 0)
 
-[node name="fence_post_cap_102" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_99"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(12, 0, 0, 180)
+
+[node name="fence_post_cap_102" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 12, 1.9, 0)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_102"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(12, 1.9, 0, 180)
 
 [node name="fence_2m_100" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 10, 0, 0)
 
-[node name="fence_post_cap_103" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_100"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(10, 0, 0, 180)
+
+[node name="fence_post_cap_103" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 10, 1.9, 0)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_103"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(10, 1.9, 0, 180)
 
 [node name="fence_2m_101" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 8, 0, 0)
 
-[node name="fence_post_cap_104" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_101"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(8, 0, 0, 180)
+
+[node name="fence_post_cap_104" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 8, 1.9, 0)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_104"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(8, 1.9, 0, 180)
 
 [node name="fence_2m_102" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 6, 0, 0)
 
-[node name="fence_post_cap_105" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_102"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(6, 0, 0, 180)
+
+[node name="fence_post_cap_105" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 6, 1.9, 0)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_105"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(6, 1.9, 0, 180)
 
 [node name="fence_2m_103" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 4, 0, 0)
 
-[node name="fence_post_cap_106" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_103"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(4, 0, 0, 180)
+
+[node name="fence_post_cap_106" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 4, 1.9, 0)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_106"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(4, 1.9, 0, 180)
 
 [node name="fence_2m_104" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 2, 0, 0)
 
-[node name="fence_post_cap_107" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_104"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(2, 0, 0, 180)
+
+[node name="fence_post_cap_107" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 2, 1.9, 0)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_107"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(2, 1.9, 0, 180)
 
 [node name="fence_2m_105" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0, 0, 0)
 
-[node name="fence_post_cap_108" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_105"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(0, 0, 0, 270)
+
+[node name="fence_post_cap_108" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0, 1.9, 0)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_108"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(0, 1.9, 0, 270)
 
 [node name="fence_2m_106" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0, 0, 2)
 
-[node name="fence_post_cap_109" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_106"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(0, 0, 2, 270)
+
+[node name="fence_post_cap_109" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0, 1.9, 2)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_109"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(0, 1.9, 2, 270)
 
 [node name="fence_2m_107" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0, 0, 4)
 
-[node name="fence_post_cap_110" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_107"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(0, 0, 4, 270)
+
+[node name="fence_post_cap_110" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0, 1.9, 4)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_110"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(0, 1.9, 4, 270)
 
 [node name="fence_2m_108" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0, 0, 6)
 
-[node name="fence_post_cap_111" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_108"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(0, 0, 6, 270)
+
+[node name="fence_post_cap_111" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0, 1.9, 6)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_111"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(0, 1.9, 6, 270)
 
 [node name="fence_2m_109" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0, 0, 8)
 
-[node name="fence_post_cap_112" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_109"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(0, 0, 8, 270)
+
+[node name="fence_post_cap_112" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0, 1.9, 8)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_112"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(0, 1.9, 8, 270)
 
 [node name="fence_2m_110" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0, 0, 10)
 
-[node name="fence_post_cap_113" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_110"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(0, 0, 10, 270)
+
+[node name="fence_post_cap_113" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0, 1.9, 10)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_113"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(0, 1.9, 10, 270)
 
 [node name="fence_2m_111" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0, 0, 12)
 
-[node name="fence_post_cap_114" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_111"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(0, 0, 12, 270)
+
+[node name="fence_post_cap_114" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0, 1.9, 12)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_114"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(0, 1.9, 12, 270)
 
 [node name="fence_2m_112" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0, 0, 14)
 
-[node name="fence_post_cap_115" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_112"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(0, 0, 14, 270)
+
+[node name="fence_post_cap_115" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0, 1.9, 14)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_115"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(0, 1.9, 14, 270)
 
 [node name="fence_2m_113" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0, 0, 16)
 
-[node name="fence_post_cap_116" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_113"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(0, 0, 16, 270)
+
+[node name="fence_post_cap_116" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0, 1.9, 16)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_116"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(0, 1.9, 16, 270)
 
 [node name="fence_2m_114" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0, 0, 18)
 
-[node name="fence_post_cap_117" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_114"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(0, 0, 18, 270)
+
+[node name="fence_post_cap_117" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0, 1.9, 18)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_117"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(0, 1.9, 18, 270)
 
 [node name="fence_2m_115" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0, 0, 20)
 
-[node name="fence_post_cap_118" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_115"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(0, 0, 20, 270)
+
+[node name="fence_post_cap_118" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0, 1.9, 20)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_118"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(0, 1.9, 20, 270)
 
 [node name="fence_2m_116" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0, 0, 22)
 
-[node name="fence_post_cap_119" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_116"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(0, 0, 22, 270)
+
+[node name="fence_post_cap_119" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0, 1.9, 22)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_119"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(0, 1.9, 22, 270)
 
 [node name="fence_2m_117" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0, 0, 24)
 
-[node name="fence_post_cap_120" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_117"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(0, 0, 24, 270)
+
+[node name="fence_post_cap_120" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0, 1.9, 24)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_120"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(0, 1.9, 24, 270)
 
 [node name="fence_2m_118" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0, 0, 26)
 
-[node name="fence_post_cap_121" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_118"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(0, 0, 26, 270)
+
+[node name="fence_post_cap_121" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0, 1.9, 26)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_121"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(0, 1.9, 26, 270)
 
 [node name="fence_2m_119" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0, 0, 28)
 
-[node name="fence_post_cap_122" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_119"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(0, 0, 28, 270)
+
+[node name="fence_post_cap_122" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0, 1.9, 28)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_122"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(0, 1.9, 28, 270)
 
 [node name="fence_2m_120" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0, 0, 30)
 
-[node name="fence_post_cap_123" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_120"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(0, 0, 30, 270)
+
+[node name="fence_post_cap_123" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0, 1.9, 30)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_123"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(0, 1.9, 30, 270)
 
 [node name="fence_2m_121" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0, 0, 32)
 
-[node name="fence_post_cap_124" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_121"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(0, 0, 32, 270)
+
+[node name="fence_post_cap_124" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0, 1.9, 32)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_124"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(0, 1.9, 32, 270)
 
 [node name="fence_2m_122" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0, 0, 34)
 
-[node name="fence_post_cap_125" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_122"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(0, 0, 34, 270)
+
+[node name="fence_post_cap_125" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0, 1.9, 34)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_125"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(0, 1.9, 34, 270)
 
 [node name="fence_2m_123" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0, 0, 36)
 
-[node name="fence_post_cap_126" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_123"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(0, 0, 36, 270)
+
+[node name="fence_post_cap_126" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0, 1.9, 36)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_126"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(0, 1.9, 36, 270)
 
 [node name="fence_2m_124" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0, 0, 38)
 
-[node name="fence_post_cap_127" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_124"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(0, 0, 38, 270)
+
+[node name="fence_post_cap_127" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0, 1.9, 38)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_127"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(0, 1.9, 38, 270)
 
 [node name="fence_2m_125" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0, 0, 40)
 
-[node name="fence_post_cap_128" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_125"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(0, 0, 40, 270)
+
+[node name="fence_post_cap_128" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0, 1.9, 40)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_128"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(0, 1.9, 40, 270)
 
 [node name="fence_2m_126" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0, 0, 42)
 
-[node name="fence_post_cap_129" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_126"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(0, 0, 42, 270)
+
+[node name="fence_post_cap_129" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0, 1.9, 42)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_129"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(0, 1.9, 42, 270)
 
 [node name="fence_2m_127" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0, 0, 44)
 
-[node name="fence_post_cap_130" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_127"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(0, 0, 44, 270)
+
+[node name="fence_post_cap_130" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0, 1.9, 44)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_130"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(0, 1.9, 44, 270)
 
 [node name="fence_2m_128" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0, 0, 46)
 
-[node name="fence_post_cap_131" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_128"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(0, 0, 46, 270)
+
+[node name="fence_post_cap_131" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0, 1.9, 46)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_131"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(0, 1.9, 46, 270)
 
 [node name="fence_2m_129" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0, 0, 48)
 
-[node name="fence_post_cap_132" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_129"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(0, 0, 48, 270)
+
+[node name="fence_post_cap_132" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0, 1.9, 48)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_132"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(0, 1.9, 48, 270)
 
 [node name="fence_2m_130" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0, 0, 50)
 
-[node name="fence_post_cap_133" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_130"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(0, 0, 50, 270)
+
+[node name="fence_post_cap_133" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0, 1.9, 50)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_133"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(0, 1.9, 50, 270)
 
 [node name="fence_2m_131" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0, 0, 52)
 
-[node name="fence_post_cap_134" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_131"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(0, 0, 52, 270)
+
+[node name="fence_post_cap_134" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0, 1.9, 52)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_134"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(0, 1.9, 52, 270)
 
 [node name="fence_2m_132" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0, 0, 54)
 
-[node name="fence_post_cap_135" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_132"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(0, 0, 54, 270)
+
+[node name="fence_post_cap_135" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0, 1.9, 54)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_135"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(0, 1.9, 54, 270)
 
 [node name="fence_2m_133" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0, 0, 56)
 
-[node name="fence_post_cap_136" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_133"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(0, 0, 56, 270)
+
+[node name="fence_post_cap_136" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0, 1.9, 56)
+
+[node name="fence_post_cap" parent="Shell/fence_post_cap_136"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(0, 1.9, 56, 270)
 
 [node name="fence_2m_134" parent="Shell" instance=ExtResource("3")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0, 0, 58)
 
-[node name="fence_post_cap_137" parent="Shell" instance=ExtResource("4")]
+[node name="fence_2m" parent="Shell/fence_2m_134"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(0, 0, 58, 270)
+
+[node name="fence_post_cap_137" parent="Shell" instance=ExtResource("5")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0, 1.9, 58)
 
-[node name="stairs_outdoor_half_1" parent="Shell" instance=ExtResource("9")]
+[node name="fence_post_cap" parent="Shell/fence_post_cap_137"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(0, 1.9, 58, 270)
+
+[node name="stairs_outdoor_half_1" parent="Shell" instance=ExtResource("10")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 66, -1.6, 29)
 metadata/surface = "concrete"
 
-[node name="stairs_outdoor_landing_1" parent="Shell" instance=ExtResource("10")]
+[node name="stairs_outdoor_half" parent="Shell/stairs_outdoor_half_1"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(66, -1.6, 29, 270)
+
+[node name="stairs_outdoor_landing_1" parent="Shell" instance=ExtResource("11")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 62, -1.6, 28)
 metadata/surface = "concrete"
 
-[node name="stairs_outdoor_half_2" parent="Shell" instance=ExtResource("9")]
+[node name="stairs_outdoor_landing" parent="Shell/stairs_outdoor_landing_1"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(62, -1.6, 28, 0)
+
+[node name="stairs_outdoor_half_2" parent="Shell" instance=ExtResource("10")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 62, -3.2, 32)
 metadata/surface = "concrete"
 
-[node name="railing_balcony_2m_1" parent="Shell" instance=ExtResource("11")]
+[node name="stairs_outdoor_half" parent="Shell/stairs_outdoor_half_2"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(62, -3.2, 32, 90)
+
+[node name="railing_balcony_2m_1" parent="Shell" instance=ExtResource("12")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 64, 0, 32)
 
-[node name="railing_balcony_2m_2" parent="Shell" instance=ExtResource("11")]
+[node name="railing_balcony_2m_2" parent="Shell" instance=ExtResource("12")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 62, 0, 32)
 
-[node name="railing_balcony_2m_3" parent="Shell" instance=ExtResource("11")]
+[node name="railing_balcony_2m_3" parent="Shell" instance=ExtResource("12")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 62, 0, 30)
 
-[node name="railing_balcony_2m_4" parent="Shell" instance=ExtResource("11")]
+[node name="railing_balcony_2m_4" parent="Shell" instance=ExtResource("12")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 62, 0, 28)
 
-[node name="railing_balcony_2m_5" parent="Shell" instance=ExtResource("11")]
+[node name="railing_balcony_2m_5" parent="Shell" instance=ExtResource("12")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 64, 0, 28)
 
-[node name="railing_balcony_2m_6" parent="Shell" instance=ExtResource("11")]
+[node name="railing_balcony_2m_6" parent="Shell" instance=ExtResource("12")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 66, 0, 28)
 
-[node name="railing_balcony_2m_7" parent="Shell" instance=ExtResource("11")]
+[node name="railing_balcony_2m_7" parent="Shell" instance=ExtResource("12")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 66, 0, 30)
 
-[node name="railing_balcony_post_1" parent="Shell" instance=ExtResource("12")]
+[node name="railing_balcony_post_1" parent="Shell" instance=ExtResource("13")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 66, 0, 32)
 
-[node name="streetlight_1" parent="Dressing" instance=ExtResource("13")]
+[node name="streetlight_1" parent="Dressing" instance=ExtResource("14")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 0, 60.8)
 
-[node name="streetlight_2" parent="Dressing" instance=ExtResource("13")]
+[node name="streetlight_2" parent="Dressing" instance=ExtResource("14")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 22, 0, 60.8)
 
-[node name="streetlight_3" parent="Dressing" instance=ExtResource("13")]
+[node name="streetlight_3" parent="Dressing" instance=ExtResource("14")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 40, 0, 60.8)
 
-[node name="streetlight_4" parent="Dressing" instance=ExtResource("13")]
+[node name="streetlight_4" parent="Dressing" instance=ExtResource("14")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 52, 0, 60.8)
 
-[node name="streetlight_5" parent="Dressing" instance=ExtResource("13")]
+[node name="streetlight_5" parent="Dressing" instance=ExtResource("14")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 74, 0, 60.8)
 
-[node name="parked_car_1" parent="Dressing" instance=ExtResource("14")]
+[node name="parked_car_1" parent="Dressing" instance=ExtResource("15")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 13, 0, 63.3)
 
-[node name="parked_car_2" parent="Dressing" instance=ExtResource("14")]
+[node name="parked_car_2" parent="Dressing" instance=ExtResource("15")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 45, 0, 63.3)
 
-[node name="parked_car_3" parent="Dressing" instance=ExtResource("14")]
+[node name="parked_car_3" parent="Dressing" instance=ExtResource("15")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 76, 0, 64.4)
 
-[node name="hydrant_1" parent="Dressing" instance=ExtResource("15")]
+[node name="hydrant_1" parent="Dressing" instance=ExtResource("16")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 35, 0, 60.8)
 
-[node name="trash_bin_1" parent="Dressing" instance=ExtResource("16")]
+[node name="trash_bin_1" parent="Dressing" instance=ExtResource("17")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 56.8, 0, 60.6)
 
-[node name="trash_bin_2" parent="Dressing" instance=ExtResource("16")]
+[node name="trash_bin_2" parent="Dressing" instance=ExtResource("17")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 57.6, 0, 60.6)
 
-[node name="trash_bin_3" parent="Dressing" instance=ExtResource("16")]
+[node name="trash_bin_3" parent="Dressing" instance=ExtResource("17")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 70.2, 0, 49)
 
-[node name="trash_bin_4" parent="Dressing" instance=ExtResource("16")]
+[node name="trash_bin_4" parent="Dressing" instance=ExtResource("17")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 70.2, 0, 50)
 
-[node name="utility_pole_1" parent="Dressing" instance=ExtResource("17")]
+[node name="utility_pole_1" parent="Dressing" instance=ExtResource("18")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 0, 65.7)
 
-[node name="utility_pole_2" parent="Dressing" instance=ExtResource("17")]
+[node name="utility_pole_2" parent="Dressing" instance=ExtResource("18")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 34, 0, 65.7)
 
-[node name="utility_pole_3" parent="Dressing" instance=ExtResource("17")]
+[node name="utility_pole_3" parent="Dressing" instance=ExtResource("18")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 72, 0, 65.7)
 
-[node name="hedge_1" parent="Dressing" instance=ExtResource("18")]
+[node name="hedge_1" parent="Dressing" instance=ExtResource("19")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 28, 0, 47)
 
-[node name="hedge_2" parent="Dressing" instance=ExtResource("18")]
+[node name="hedge_2" parent="Dressing" instance=ExtResource("19")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 28, 0, 49)
 
-[node name="hedge_3" parent="Dressing" instance=ExtResource("18")]
+[node name="hedge_3" parent="Dressing" instance=ExtResource("19")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 28, 0, 54)
 
-[node name="hedge_4" parent="Dressing" instance=ExtResource("18")]
+[node name="hedge_4" parent="Dressing" instance=ExtResource("19")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 28, 0, 56)
 
-[node name="hedge_5" parent="Dressing" instance=ExtResource("18")]
+[node name="hedge_5" parent="Dressing" instance=ExtResource("19")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 32, 0, 47)
 
-[node name="hedge_6" parent="Dressing" instance=ExtResource("18")]
+[node name="hedge_6" parent="Dressing" instance=ExtResource("19")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 32, 0, 49)
 
-[node name="hedge_7" parent="Dressing" instance=ExtResource("18")]
+[node name="hedge_7" parent="Dressing" instance=ExtResource("19")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 32, 0, 54)
 
-[node name="hedge_8" parent="Dressing" instance=ExtResource("18")]
+[node name="hedge_8" parent="Dressing" instance=ExtResource("19")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 32, 0, 56)
 
-[node name="path_light_1" parent="Dressing" instance=ExtResource("19")]
+[node name="path_light_1" parent="Dressing" instance=ExtResource("20")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 27.4, 0, 46)
 
-[node name="path_light_2" parent="Dressing" instance=ExtResource("19")]
+[node name="path_light_2" parent="Dressing" instance=ExtResource("20")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 32.6, 0, 46)
 
-[node name="path_light_3" parent="Dressing" instance=ExtResource("19")]
+[node name="path_light_3" parent="Dressing" instance=ExtResource("20")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 27.4, 0, 51.5)
 
-[node name="path_light_4" parent="Dressing" instance=ExtResource("19")]
+[node name="path_light_4" parent="Dressing" instance=ExtResource("20")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 32.6, 0, 51.5)
 
-[node name="path_light_5" parent="Dressing" instance=ExtResource("19")]
+[node name="path_light_5" parent="Dressing" instance=ExtResource("20")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 27.4, 0, 58)
 
-[node name="path_light_6" parent="Dressing" instance=ExtResource("19")]
+[node name="path_light_6" parent="Dressing" instance=ExtResource("20")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 32.6, 0, 58)
 
-[node name="path_light_7" parent="Dressing" instance=ExtResource("19")]
+[node name="path_light_7" parent="Dressing" instance=ExtResource("20")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 58.2, 0, 50)
 
-[node name="path_light_8" parent="Dressing" instance=ExtResource("19")]
+[node name="path_light_8" parent="Dressing" instance=ExtResource("20")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 58.2, 0, 56)
 
-[node name="path_light_9" parent="Dressing" instance=ExtResource("19")]
+[node name="path_light_9" parent="Dressing" instance=ExtResource("20")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 69.6, 0, 52)
 
-[node name="path_light_10" parent="Dressing" instance=ExtResource("19")]
+[node name="path_light_10" parent="Dressing" instance=ExtResource("20")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 69.6, 0, 57)
 
-[node name="mailbox_1" parent="Dressing" instance=ExtResource("20")]
+[node name="mailbox_1" parent="Dressing" instance=ExtResource("21")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 32.2, 0, 59.3)
 
-[node name="stepping_stone_1" parent="Dressing" instance=ExtResource("21")]
+[node name="stepping_stone_1" parent="Dressing" instance=ExtResource("22")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16.5, 0, 52)
 metadata/surface = "concrete"
 
-[node name="stepping_stone_2" parent="Dressing" instance=ExtResource("21")]
+[node name="stepping_stone_2" parent="Dressing" instance=ExtResource("22")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 18.5, 0, 52)
 metadata/surface = "concrete"
 
-[node name="stepping_stone_3" parent="Dressing" instance=ExtResource("21")]
+[node name="stepping_stone_3" parent="Dressing" instance=ExtResource("22")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 20.5, 0, 52)
 metadata/surface = "concrete"
 
-[node name="stepping_stone_4" parent="Dressing" instance=ExtResource("21")]
+[node name="stepping_stone_4" parent="Dressing" instance=ExtResource("22")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 22.5, 0, 52)
 metadata/surface = "concrete"
 
-[node name="stepping_stone_5" parent="Dressing" instance=ExtResource("21")]
+[node name="stepping_stone_5" parent="Dressing" instance=ExtResource("22")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 24.5, 0, 52)
 metadata/surface = "concrete"
 
-[node name="stepping_stone_6" parent="Dressing" instance=ExtResource("21")]
+[node name="stepping_stone_6" parent="Dressing" instance=ExtResource("22")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 26.5, 0, 52)
 metadata/surface = "concrete"
 
-[node name="glass_roof_eave_2m_1" parent="Shell" instance=ExtResource("22")]
+[node name="glass_roof_eave_2m_1" parent="Shell" instance=ExtResource("23")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 58, 2.4, 6)
 
-[node name="glass_roof_2x2_1" parent="Shell" instance=ExtResource("23")]
+[node name="glass_roof_2x2_1" parent="Shell" instance=ExtResource("24")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 58, 2.4, 6)
 
-[node name="glass_roof_2x2_2" parent="Shell" instance=ExtResource("23")]
+[node name="glass_roof_2x2_2" parent="Shell" instance=ExtResource("24")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 58, 3.8, 8)
 
-[node name="glass_roof_2x2_3" parent="Shell" instance=ExtResource("23")]
+[node name="glass_roof_2x2_3" parent="Shell" instance=ExtResource("24")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 58, 5.2, 10)
 
-[node name="glass_roof_eave_2m_2" parent="Shell" instance=ExtResource("22")]
+[node name="glass_roof_eave_2m_2" parent="Shell" instance=ExtResource("23")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 60, 2.4, 6)
 
-[node name="glass_roof_2x2_4" parent="Shell" instance=ExtResource("23")]
+[node name="glass_roof_2x2_4" parent="Shell" instance=ExtResource("24")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 60, 2.4, 6)
 
-[node name="glass_roof_2x2_5" parent="Shell" instance=ExtResource("23")]
+[node name="glass_roof_2x2_5" parent="Shell" instance=ExtResource("24")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 60, 3.8, 8)
 
-[node name="glass_roof_2x2_6" parent="Shell" instance=ExtResource("23")]
+[node name="glass_roof_2x2_6" parent="Shell" instance=ExtResource("24")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 60, 5.2, 10)
 
-[node name="glass_roof_eave_2m_3" parent="Shell" instance=ExtResource("22")]
+[node name="glass_roof_eave_2m_3" parent="Shell" instance=ExtResource("23")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 62, 2.4, 6)
 
-[node name="glass_roof_2x2_7" parent="Shell" instance=ExtResource("23")]
+[node name="glass_roof_2x2_7" parent="Shell" instance=ExtResource("24")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 62, 2.4, 6)
 
-[node name="glass_roof_2x2_8" parent="Shell" instance=ExtResource("23")]
+[node name="glass_roof_2x2_8" parent="Shell" instance=ExtResource("24")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 62, 3.8, 8)
 
-[node name="glass_roof_2x2_9" parent="Shell" instance=ExtResource("23")]
+[node name="glass_roof_2x2_9" parent="Shell" instance=ExtResource("24")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 62, 5.2, 10)
 
-[node name="glass_roof_eave_2m_4" parent="Shell" instance=ExtResource("22")]
+[node name="glass_roof_eave_2m_4" parent="Shell" instance=ExtResource("23")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 64, 2.4, 6)
 
-[node name="glass_roof_2x2_10" parent="Shell" instance=ExtResource("23")]
+[node name="glass_roof_2x2_10" parent="Shell" instance=ExtResource("24")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 64, 2.4, 6)
 
-[node name="glass_roof_2x2_11" parent="Shell" instance=ExtResource("23")]
+[node name="glass_roof_2x2_11" parent="Shell" instance=ExtResource("24")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 64, 3.8, 8)
 
-[node name="glass_roof_2x2_12" parent="Shell" instance=ExtResource("23")]
+[node name="glass_roof_2x2_12" parent="Shell" instance=ExtResource("24")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 64, 5.2, 10)
 
-[node name="glass_roof_eave_2m_5" parent="Shell" instance=ExtResource("22")]
+[node name="glass_roof_eave_2m_5" parent="Shell" instance=ExtResource("23")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 66, 2.4, 6)
 
-[node name="glass_roof_2x2_13" parent="Shell" instance=ExtResource("23")]
+[node name="glass_roof_2x2_13" parent="Shell" instance=ExtResource("24")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 66, 2.4, 6)
 
-[node name="glass_roof_2x2_14" parent="Shell" instance=ExtResource("23")]
+[node name="glass_roof_2x2_14" parent="Shell" instance=ExtResource("24")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 66, 3.8, 8)
 
-[node name="glass_roof_2x2_15" parent="Shell" instance=ExtResource("23")]
+[node name="glass_roof_2x2_15" parent="Shell" instance=ExtResource("24")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 66, 5.2, 10)
 
-[node name="glass_roof_eave_2m_6" parent="Shell" instance=ExtResource("22")]
+[node name="glass_roof_eave_2m_6" parent="Shell" instance=ExtResource("23")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 68, 2.4, 6)
 
-[node name="glass_roof_2x2_16" parent="Shell" instance=ExtResource("23")]
+[node name="glass_roof_2x2_16" parent="Shell" instance=ExtResource("24")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 68, 2.4, 6)
 
-[node name="glass_roof_2x2_17" parent="Shell" instance=ExtResource("23")]
+[node name="glass_roof_2x2_17" parent="Shell" instance=ExtResource("24")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 68, 3.8, 8)
 
-[node name="glass_roof_2x2_18" parent="Shell" instance=ExtResource("23")]
+[node name="glass_roof_2x2_18" parent="Shell" instance=ExtResource("24")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 68, 5.2, 10)
 
-[node name="glass_roof_eave_2m_7" parent="Shell" instance=ExtResource("22")]
+[node name="glass_roof_eave_2m_7" parent="Shell" instance=ExtResource("23")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 70, 2.4, 6)
 
-[node name="glass_roof_2x2_19" parent="Shell" instance=ExtResource("23")]
+[node name="glass_roof_2x2_19" parent="Shell" instance=ExtResource("24")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 70, 2.4, 6)
 
-[node name="glass_roof_2x2_20" parent="Shell" instance=ExtResource("23")]
+[node name="glass_roof_2x2_20" parent="Shell" instance=ExtResource("24")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 70, 3.8, 8)
 
-[node name="glass_roof_2x2_21" parent="Shell" instance=ExtResource("23")]
+[node name="glass_roof_2x2_21" parent="Shell" instance=ExtResource("24")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 70, 5.2, 10)
 
-[node name="glass_roof_eave_2m_end_1" parent="Shell" instance=ExtResource("24")]
+[node name="glass_roof_eave_2m_end_1" parent="Shell" instance=ExtResource("25")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 72, 2.4, 6)
 
-[node name="glass_roof_2x2_end_1" parent="Shell" instance=ExtResource("25")]
+[node name="glass_roof_2x2_end_1" parent="Shell" instance=ExtResource("26")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 72, 2.4, 6)
 
-[node name="glass_roof_2x2_end_2" parent="Shell" instance=ExtResource("25")]
+[node name="glass_roof_2x2_end_2" parent="Shell" instance=ExtResource("26")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 72, 3.8, 8)
 
-[node name="glass_roof_2x2_end_3" parent="Shell" instance=ExtResource("25")]
+[node name="glass_roof_2x2_end_3" parent="Shell" instance=ExtResource("26")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 72, 5.2, 10)
 
-[node name="glass_roof_eave_2m_8" parent="Shell" instance=ExtResource("22")]
+[node name="glass_roof_eave_2m_8" parent="Shell" instance=ExtResource("23")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 74, 2.4, 18)
 
-[node name="glass_roof_2x2_22" parent="Shell" instance=ExtResource("23")]
+[node name="glass_roof_2x2_22" parent="Shell" instance=ExtResource("24")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 74, 2.4, 18)
 
-[node name="glass_roof_2x2_23" parent="Shell" instance=ExtResource("23")]
+[node name="glass_roof_2x2_23" parent="Shell" instance=ExtResource("24")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 74, 3.8, 16)
 
-[node name="glass_roof_2x2_24" parent="Shell" instance=ExtResource("23")]
+[node name="glass_roof_2x2_24" parent="Shell" instance=ExtResource("24")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 74, 5.2, 14)
 
-[node name="glass_roof_eave_2m_9" parent="Shell" instance=ExtResource("22")]
+[node name="glass_roof_eave_2m_9" parent="Shell" instance=ExtResource("23")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 72, 2.4, 18)
 
-[node name="glass_roof_2x2_25" parent="Shell" instance=ExtResource("23")]
+[node name="glass_roof_2x2_25" parent="Shell" instance=ExtResource("24")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 72, 2.4, 18)
 
-[node name="glass_roof_2x2_26" parent="Shell" instance=ExtResource("23")]
+[node name="glass_roof_2x2_26" parent="Shell" instance=ExtResource("24")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 72, 3.8, 16)
 
-[node name="glass_roof_2x2_27" parent="Shell" instance=ExtResource("23")]
+[node name="glass_roof_2x2_27" parent="Shell" instance=ExtResource("24")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 72, 5.2, 14)
 
-[node name="glass_roof_eave_2m_10" parent="Shell" instance=ExtResource("22")]
+[node name="glass_roof_eave_2m_10" parent="Shell" instance=ExtResource("23")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 70, 2.4, 18)
 
-[node name="glass_roof_2x2_28" parent="Shell" instance=ExtResource("23")]
+[node name="glass_roof_2x2_28" parent="Shell" instance=ExtResource("24")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 70, 2.4, 18)
 
-[node name="glass_roof_2x2_29" parent="Shell" instance=ExtResource("23")]
+[node name="glass_roof_2x2_29" parent="Shell" instance=ExtResource("24")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 70, 3.8, 16)
 
-[node name="glass_roof_2x2_30" parent="Shell" instance=ExtResource("23")]
+[node name="glass_roof_2x2_30" parent="Shell" instance=ExtResource("24")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 70, 5.2, 14)
 
-[node name="glass_roof_eave_2m_11" parent="Shell" instance=ExtResource("22")]
+[node name="glass_roof_eave_2m_11" parent="Shell" instance=ExtResource("23")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 68, 2.4, 18)
 
-[node name="glass_roof_2x2_31" parent="Shell" instance=ExtResource("23")]
+[node name="glass_roof_2x2_31" parent="Shell" instance=ExtResource("24")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 68, 2.4, 18)
 
-[node name="glass_roof_2x2_32" parent="Shell" instance=ExtResource("23")]
+[node name="glass_roof_2x2_32" parent="Shell" instance=ExtResource("24")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 68, 3.8, 16)
 
-[node name="glass_roof_2x2_33" parent="Shell" instance=ExtResource("23")]
+[node name="glass_roof_2x2_33" parent="Shell" instance=ExtResource("24")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 68, 5.2, 14)
 
-[node name="glass_roof_eave_2m_12" parent="Shell" instance=ExtResource("22")]
+[node name="glass_roof_eave_2m_12" parent="Shell" instance=ExtResource("23")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 66, 2.4, 18)
 
-[node name="glass_roof_2x2_34" parent="Shell" instance=ExtResource("23")]
+[node name="glass_roof_2x2_34" parent="Shell" instance=ExtResource("24")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 66, 2.4, 18)
 
-[node name="glass_roof_2x2_35" parent="Shell" instance=ExtResource("23")]
+[node name="glass_roof_2x2_35" parent="Shell" instance=ExtResource("24")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 66, 3.8, 16)
 
-[node name="glass_roof_2x2_36" parent="Shell" instance=ExtResource("23")]
+[node name="glass_roof_2x2_36" parent="Shell" instance=ExtResource("24")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 66, 5.2, 14)
 
-[node name="glass_roof_eave_2m_13" parent="Shell" instance=ExtResource("22")]
+[node name="glass_roof_eave_2m_13" parent="Shell" instance=ExtResource("23")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 64, 2.4, 18)
 
-[node name="glass_roof_2x2_37" parent="Shell" instance=ExtResource("23")]
+[node name="glass_roof_2x2_37" parent="Shell" instance=ExtResource("24")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 64, 2.4, 18)
 
-[node name="glass_roof_2x2_38" parent="Shell" instance=ExtResource("23")]
+[node name="glass_roof_2x2_38" parent="Shell" instance=ExtResource("24")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 64, 3.8, 16)
 
-[node name="glass_roof_2x2_39" parent="Shell" instance=ExtResource("23")]
+[node name="glass_roof_2x2_39" parent="Shell" instance=ExtResource("24")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 64, 5.2, 14)
 
-[node name="glass_roof_eave_2m_14" parent="Shell" instance=ExtResource("22")]
+[node name="glass_roof_eave_2m_14" parent="Shell" instance=ExtResource("23")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 62, 2.4, 18)
 
-[node name="glass_roof_2x2_40" parent="Shell" instance=ExtResource("23")]
+[node name="glass_roof_2x2_40" parent="Shell" instance=ExtResource("24")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 62, 2.4, 18)
 
-[node name="glass_roof_2x2_41" parent="Shell" instance=ExtResource("23")]
+[node name="glass_roof_2x2_41" parent="Shell" instance=ExtResource("24")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 62, 3.8, 16)
 
-[node name="glass_roof_2x2_42" parent="Shell" instance=ExtResource("23")]
+[node name="glass_roof_2x2_42" parent="Shell" instance=ExtResource("24")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 62, 5.2, 14)
 
-[node name="glass_roof_eave_2m_end_2" parent="Shell" instance=ExtResource("24")]
+[node name="glass_roof_eave_2m_end_2" parent="Shell" instance=ExtResource("25")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 60, 2.4, 18)
 
-[node name="glass_roof_2x2_end_4" parent="Shell" instance=ExtResource("25")]
+[node name="glass_roof_2x2_end_4" parent="Shell" instance=ExtResource("26")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 60, 2.4, 18)
 
-[node name="glass_roof_2x2_end_5" parent="Shell" instance=ExtResource("25")]
+[node name="glass_roof_2x2_end_5" parent="Shell" instance=ExtResource("26")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 60, 3.8, 16)
 
-[node name="glass_roof_2x2_end_6" parent="Shell" instance=ExtResource("25")]
+[node name="glass_roof_2x2_end_6" parent="Shell" instance=ExtResource("26")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 60, 5.2, 14)
 
-[node name="glass_roof_ridge_2m_1" parent="Shell" instance=ExtResource("26")]
+[node name="glass_roof_ridge_2m_1" parent="Shell" instance=ExtResource("27")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 58, 6.6, 12)
 
-[node name="glass_roof_ridge_2m_2" parent="Shell" instance=ExtResource("26")]
+[node name="glass_roof_ridge_2m_2" parent="Shell" instance=ExtResource("27")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 60, 6.6, 12)
 
-[node name="glass_roof_ridge_2m_3" parent="Shell" instance=ExtResource("26")]
+[node name="glass_roof_ridge_2m_3" parent="Shell" instance=ExtResource("27")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 62, 6.6, 12)
 
-[node name="glass_roof_ridge_2m_4" parent="Shell" instance=ExtResource("26")]
+[node name="glass_roof_ridge_2m_4" parent="Shell" instance=ExtResource("27")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 64, 6.6, 12)
 
-[node name="glass_roof_ridge_2m_5" parent="Shell" instance=ExtResource("26")]
+[node name="glass_roof_ridge_2m_5" parent="Shell" instance=ExtResource("27")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 66, 6.6, 12)
 
-[node name="glass_roof_ridge_2m_6" parent="Shell" instance=ExtResource("26")]
+[node name="glass_roof_ridge_2m_6" parent="Shell" instance=ExtResource("27")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 68, 6.6, 12)
 
-[node name="glass_roof_ridge_2m_7" parent="Shell" instance=ExtResource("26")]
+[node name="glass_roof_ridge_2m_7" parent="Shell" instance=ExtResource("27")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 70, 6.6, 12)
 
-[node name="glass_roof_ridge_2m_8" parent="Shell" instance=ExtResource("26")]
+[node name="glass_roof_ridge_2m_8" parent="Shell" instance=ExtResource("27")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 72, 6.6, 12)
 
-[node name="glass_gable_tri_2m_up_1" parent="Shell" instance=ExtResource("27")]
+[node name="glass_gable_tri_2m_up_1" parent="Shell" instance=ExtResource("28")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 58, 2.4, 6)
 
-[node name="glass_gable_tri_2m_down_1" parent="Shell" instance=ExtResource("28")]
+[node name="glass_gable_tri_2m_down_1" parent="Shell" instance=ExtResource("29")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 58, 2.4, 16)
 
-[node name="glass_gable_band_2m_1" parent="Shell" instance=ExtResource("29")]
+[node name="glass_gable_band_2m_1" parent="Shell" instance=ExtResource("30")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 58, 2.4, 8)
 
-[node name="glass_gable_tri_2m_up_2" parent="Shell" instance=ExtResource("27")]
+[node name="glass_gable_tri_2m_up_2" parent="Shell" instance=ExtResource("28")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 58, 3.8, 8)
 
-[node name="glass_gable_band_2m_2" parent="Shell" instance=ExtResource("29")]
+[node name="glass_gable_band_2m_2" parent="Shell" instance=ExtResource("30")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 58, 2.4, 14)
 
-[node name="glass_gable_tri_2m_down_2" parent="Shell" instance=ExtResource("28")]
+[node name="glass_gable_tri_2m_down_2" parent="Shell" instance=ExtResource("29")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 58, 3.8, 14)
 
-[node name="glass_gable_band_2m_3" parent="Shell" instance=ExtResource("29")]
+[node name="glass_gable_band_2m_3" parent="Shell" instance=ExtResource("30")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 58, 2.4, 10)
 
-[node name="glass_gable_band_2m_4" parent="Shell" instance=ExtResource("29")]
+[node name="glass_gable_band_2m_4" parent="Shell" instance=ExtResource("30")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 58, 3.8, 10)
 
-[node name="glass_gable_tri_2m_up_3" parent="Shell" instance=ExtResource("27")]
+[node name="glass_gable_tri_2m_up_3" parent="Shell" instance=ExtResource("28")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 58, 5.2, 10)
 
-[node name="glass_gable_band_2m_5" parent="Shell" instance=ExtResource("29")]
+[node name="glass_gable_band_2m_5" parent="Shell" instance=ExtResource("30")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 58, 2.4, 12)
 
-[node name="glass_gable_band_2m_6" parent="Shell" instance=ExtResource("29")]
+[node name="glass_gable_band_2m_6" parent="Shell" instance=ExtResource("30")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 58, 3.8, 12)
 
-[node name="glass_gable_tri_2m_down_3" parent="Shell" instance=ExtResource("28")]
+[node name="glass_gable_tri_2m_down_3" parent="Shell" instance=ExtResource("29")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 58, 5.2, 12)
 
-[node name="glass_gable_tri_2m_down_4" parent="Shell" instance=ExtResource("28")]
+[node name="glass_gable_tri_2m_down_4" parent="Shell" instance=ExtResource("29")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 74, 2.4, 8)
 
-[node name="glass_gable_tri_2m_up_4" parent="Shell" instance=ExtResource("27")]
+[node name="glass_gable_tri_2m_up_4" parent="Shell" instance=ExtResource("28")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 74, 2.4, 18)
 
-[node name="glass_gable_band_2m_7" parent="Shell" instance=ExtResource("29")]
+[node name="glass_gable_band_2m_7" parent="Shell" instance=ExtResource("30")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 74, 2.4, 10)
 
-[node name="glass_gable_tri_2m_down_5" parent="Shell" instance=ExtResource("28")]
+[node name="glass_gable_tri_2m_down_5" parent="Shell" instance=ExtResource("29")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 74, 3.8, 10)
 
-[node name="glass_gable_band_2m_8" parent="Shell" instance=ExtResource("29")]
+[node name="glass_gable_band_2m_8" parent="Shell" instance=ExtResource("30")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 74, 2.4, 16)
 
-[node name="glass_gable_tri_2m_up_5" parent="Shell" instance=ExtResource("27")]
+[node name="glass_gable_tri_2m_up_5" parent="Shell" instance=ExtResource("28")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 74, 3.8, 16)
 
-[node name="glass_gable_band_2m_9" parent="Shell" instance=ExtResource("29")]
+[node name="glass_gable_band_2m_9" parent="Shell" instance=ExtResource("30")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 74, 2.4, 12)
 
-[node name="glass_gable_band_2m_10" parent="Shell" instance=ExtResource("29")]
+[node name="glass_gable_band_2m_10" parent="Shell" instance=ExtResource("30")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 74, 3.8, 12)
 
-[node name="glass_gable_tri_2m_down_6" parent="Shell" instance=ExtResource("28")]
+[node name="glass_gable_tri_2m_down_6" parent="Shell" instance=ExtResource("29")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 74, 5.2, 12)
 
-[node name="glass_gable_band_2m_11" parent="Shell" instance=ExtResource("29")]
+[node name="glass_gable_band_2m_11" parent="Shell" instance=ExtResource("30")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 74, 2.4, 14)
 
-[node name="glass_gable_band_2m_12" parent="Shell" instance=ExtResource("29")]
+[node name="glass_gable_band_2m_12" parent="Shell" instance=ExtResource("30")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 74, 3.8, 14)
 
-[node name="glass_gable_tri_2m_up_6" parent="Shell" instance=ExtResource("27")]
+[node name="glass_gable_tri_2m_up_6" parent="Shell" instance=ExtResource("28")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 74, 5.2, 14)
 
-[node name="garden_dropoff_1" parent="Dressing" instance=ExtResource("30")]
+[node name="garden_dropoff_1" parent="Dressing" instance=ExtResource("31")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 62, 0, 24)
 
-[node name="hedge_9" parent="Dressing" instance=ExtResource("18")]
+[node name="hedge_9" parent="Dressing" instance=ExtResource("19")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 46.6, 0, 3.2)
 
-[node name="hedge_10" parent="Dressing" instance=ExtResource("18")]
+[node name="hedge_10" parent="Dressing" instance=ExtResource("19")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 46.6, 0, 5.2)
 
-[node name="hedge_11" parent="Dressing" instance=ExtResource("18")]
+[node name="hedge_11" parent="Dressing" instance=ExtResource("19")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 46.6, 0, 7.2)
 
-[node name="hedge_12" parent="Dressing" instance=ExtResource("18")]
+[node name="hedge_12" parent="Dressing" instance=ExtResource("19")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 46.6, 0, 9.2)
 
-[node name="hedge_13" parent="Dressing" instance=ExtResource("18")]
+[node name="hedge_13" parent="Dressing" instance=ExtResource("19")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 46.6, 0, 11.2)
 
-[node name="hedge_14" parent="Dressing" instance=ExtResource("18")]
+[node name="hedge_14" parent="Dressing" instance=ExtResource("19")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 46.6, 0, 13.2)
 
-[node name="hedge_15" parent="Dressing" instance=ExtResource("18")]
+[node name="hedge_15" parent="Dressing" instance=ExtResource("19")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 53, 0, 29.4)
 
-[node name="hedge_16" parent="Dressing" instance=ExtResource("18")]
+[node name="hedge_16" parent="Dressing" instance=ExtResource("19")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 55, 0, 29.4)
 
-[node name="hedge_17" parent="Dressing" instance=ExtResource("18")]
+[node name="hedge_17" parent="Dressing" instance=ExtResource("19")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 57, 0, 29.4)
 
-[node name="hedge_18" parent="Dressing" instance=ExtResource("18")]
+[node name="hedge_18" parent="Dressing" instance=ExtResource("19")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 59, 0, 29.4)
 
-[node name="hedge_19" parent="Dressing" instance=ExtResource("18")]
+[node name="hedge_19" parent="Dressing" instance=ExtResource("19")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 68.4, 0, 29.4)
 
-[node name="hedge_20" parent="Dressing" instance=ExtResource("18")]
+[node name="hedge_20" parent="Dressing" instance=ExtResource("19")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 70.4, 0, 29.4)
 
-[node name="garden_bench_1" parent="Dressing" instance=ExtResource("31")]
+[node name="garden_bench_1" parent="Dressing" instance=ExtResource("32")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 66, 0, 2.9)
 
-[node name="garden_bench_2" parent="Dressing" instance=ExtResource("31")]
+[node name="garden_bench_2" parent="Dressing" instance=ExtResource("32")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 60, 0, 21.6)
 
-[node name="garden_bench_3" parent="Dressing" instance=ExtResource("31")]
+[node name="garden_bench_3" parent="Dressing" instance=ExtResource("32")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 77.5, 0, 12)
 
-[node name="birdbath_1" parent="Dressing" instance=ExtResource("32")]
+[node name="birdbath_1" parent="Dressing" instance=ExtResource("33")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 51, 0, 18)
 
-[node name="wheelbarrow_1" parent="Dressing" instance=ExtResource("33")]
+[node name="wheelbarrow_1" parent="Dressing" instance=ExtResource("34")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 54.4, 0, 8)
 
-[node name="watering_can_1" parent="Dressing" instance=ExtResource("34")]
+[node name="watering_can_1" parent="Dressing" instance=ExtResource("35")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 57.3, 0, 13.6)
+metadata/surface = "concrete"
 
-[node name="garden_post_lamp_1" parent="Dressing" instance=ExtResource("35")]
+[node name="garden_post_lamp_1" parent="Dressing" instance=ExtResource("36")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 45.3, 0, 38.1)
 
-[node name="garden_post_lamp_2" parent="Dressing" instance=ExtResource("35")]
+[node name="garden_post_lamp_2" parent="Dressing" instance=ExtResource("36")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 49, 0, 32)
 
-[node name="garden_post_lamp_3" parent="Dressing" instance=ExtResource("35")]
+[node name="garden_post_lamp_3" parent="Dressing" instance=ExtResource("36")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 52, 0, 21.5)
 
-[node name="garden_post_lamp_4" parent="Dressing" instance=ExtResource("35")]
+[node name="garden_post_lamp_4" parent="Dressing" instance=ExtResource("36")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 57.4, 0, 3.2)
 
-[node name="garden_post_lamp_5" parent="Dressing" instance=ExtResource("35")]
+[node name="garden_post_lamp_5" parent="Dressing" instance=ExtResource("36")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 77.3, 0, 4.4)
 
-[node name="garden_post_lamp_6" parent="Dressing" instance=ExtResource("35")]
+[node name="garden_post_lamp_6" parent="Dressing" instance=ExtResource("36")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 67.5, 0, 26.6)
 
-[node name="path_light_11" parent="Dressing" instance=ExtResource("19")]
+[node name="path_light_11" parent="Dressing" instance=ExtResource("20")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 50.2, 0, 25.1)
 
-[node name="path_light_12" parent="Dressing" instance=ExtResource("19")]
+[node name="path_light_12" parent="Dressing" instance=ExtResource("20")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 57.5, 0, 26.3)
 
-[node name="path_light_13" parent="Dressing" instance=ExtResource("19")]
+[node name="path_light_13" parent="Dressing" instance=ExtResource("20")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 53.5, 0, 18.5)
 
-[node name="path_light_14" parent="Dressing" instance=ExtResource("19")]
+[node name="path_light_14" parent="Dressing" instance=ExtResource("20")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 54.8, 0, 14)
 
-[node name="path_light_15" parent="Dressing" instance=ExtResource("19")]
+[node name="path_light_15" parent="Dressing" instance=ExtResource("20")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 57.4, 0, 10.2)
 
-[node name="path_light_16" parent="Dressing" instance=ExtResource("19")]
+[node name="path_light_16" parent="Dressing" instance=ExtResource("20")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 62, 0, 3.4)
 
-[node name="path_light_17" parent="Dressing" instance=ExtResource("19")]
+[node name="path_light_17" parent="Dressing" instance=ExtResource("20")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 70, 0, 3.4)
 
-[node name="path_light_18" parent="Dressing" instance=ExtResource("19")]
+[node name="path_light_18" parent="Dressing" instance=ExtResource("20")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 77.1, 0, 16)
 
-[node name="path_light_19" parent="Dressing" instance=ExtResource("19")]
+[node name="path_light_19" parent="Dressing" instance=ExtResource("20")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 72, 0, 21)
 
-[node name="path_light_20" parent="Dressing" instance=ExtResource("19")]
+[node name="path_light_20" parent="Dressing" instance=ExtResource("20")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 64, 0, 21)
 
-[node name="string_lights_1" parent="Dressing" instance=ExtResource("36")]
+[node name="string_lights_1" parent="Dressing" instance=ExtResource("37")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 60.5, 2.4, 18.2)
 
-[node name="string_lights_2" parent="Dressing" instance=ExtResource("36")]
+[node name="string_lights_2" parent="Dressing" instance=ExtResource("37")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 71.5, 2.4, 18.2)
 
-[node name="stepping_stone_7" parent="Dressing" instance=ExtResource("21")]
+[node name="stepping_stone_7" parent="Dressing" instance=ExtResource("22")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 56, 0, 17.6)
 metadata/surface = "concrete"
 
-[node name="stepping_stone_8" parent="Dressing" instance=ExtResource("21")]
+[node name="stepping_stone_8" parent="Dressing" instance=ExtResource("22")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 56, 0, 15)
 metadata/surface = "concrete"
 
-[node name="stepping_stone_9" parent="Dressing" instance=ExtResource("21")]
+[node name="stepping_stone_9" parent="Dressing" instance=ExtResource("22")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 56, 0, 6)
 metadata/surface = "concrete"
 
-[node name="stepping_stone_10" parent="Dressing" instance=ExtResource("21")]
+[node name="stepping_stone_10" parent="Dressing" instance=ExtResource("22")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 56, 0, 8.4)
 metadata/surface = "concrete"
 
-[node name="stepping_stone_11" parent="Dressing" instance=ExtResource("21")]
+[node name="stepping_stone_11" parent="Dressing" instance=ExtResource("22")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 76, 0, 6)
 metadata/surface = "concrete"
 
-[node name="stepping_stone_12" parent="Dressing" instance=ExtResource("21")]
+[node name="stepping_stone_12" parent="Dressing" instance=ExtResource("22")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 76, 0, 8.4)
 metadata/surface = "concrete"
 
-[node name="stepping_stone_13" parent="Dressing" instance=ExtResource("21")]
+[node name="stepping_stone_13" parent="Dressing" instance=ExtResource("22")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 76, 0, 10.8)
 metadata/surface = "concrete"
 
-[node name="stepping_stone_14" parent="Dressing" instance=ExtResource("21")]
+[node name="stepping_stone_14" parent="Dressing" instance=ExtResource("22")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 76, 0, 13.2)
 metadata/surface = "concrete"
 
-[node name="stepping_stone_15" parent="Dressing" instance=ExtResource("21")]
+[node name="stepping_stone_15" parent="Dressing" instance=ExtResource("22")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 76, 0, 15.6)
 metadata/surface = "concrete"
 
-[node name="stepping_stone_16" parent="Dressing" instance=ExtResource("21")]
+[node name="stepping_stone_16" parent="Dressing" instance=ExtResource("22")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 76, 0, 18)
 metadata/surface = "concrete"
 
-[node name="stepping_stone_17" parent="Dressing" instance=ExtResource("21")]
+[node name="stepping_stone_17" parent="Dressing" instance=ExtResource("22")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 58.6, 0, 20)
 metadata/surface = "concrete"
 
-[node name="stepping_stone_18" parent="Dressing" instance=ExtResource("21")]
+[node name="stepping_stone_18" parent="Dressing" instance=ExtResource("22")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 61, 0, 20)
 metadata/surface = "concrete"
 
-[node name="stepping_stone_19" parent="Dressing" instance=ExtResource("21")]
+[node name="stepping_stone_19" parent="Dressing" instance=ExtResource("22")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 63.4, 0, 20)
 metadata/surface = "concrete"
 
-[node name="stepping_stone_20" parent="Dressing" instance=ExtResource("21")]
+[node name="stepping_stone_20" parent="Dressing" instance=ExtResource("22")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 65.8, 0, 20)
 metadata/surface = "concrete"
 
-[node name="stepping_stone_21" parent="Dressing" instance=ExtResource("21")]
+[node name="stepping_stone_21" parent="Dressing" instance=ExtResource("22")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 68.2, 0, 20)
 metadata/surface = "concrete"
 
-[node name="stepping_stone_22" parent="Dressing" instance=ExtResource("21")]
+[node name="stepping_stone_22" parent="Dressing" instance=ExtResource("22")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 72.4, 0, 20)
 metadata/surface = "concrete"
 
-[node name="stepping_stone_23" parent="Dressing" instance=ExtResource("21")]
+[node name="stepping_stone_23" parent="Dressing" instance=ExtResource("22")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 74.4, 0, 20)
 metadata/surface = "concrete"
 
-[node name="stepping_stone_24" parent="Dressing" instance=ExtResource("21")]
+[node name="stepping_stone_24" parent="Dressing" instance=ExtResource("22")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 58, 0, 4.4)
 metadata/surface = "concrete"
 
-[node name="stepping_stone_25" parent="Dressing" instance=ExtResource("21")]
+[node name="stepping_stone_25" parent="Dressing" instance=ExtResource("22")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 64, 0, 4.4)
 metadata/surface = "concrete"
 
-[node name="stepping_stone_26" parent="Dressing" instance=ExtResource("21")]
+[node name="stepping_stone_26" parent="Dressing" instance=ExtResource("22")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 70, 0, 4.4)
 metadata/surface = "concrete"
 
-[node name="garden_tree_apple_1" parent="Dressing" instance=ExtResource("37")]
+[node name="garden_tree_apple_1" parent="Dressing" instance=ExtResource("38")]
 transform = Transform3D(0.6928, 0, -0.4, 0, 0.8, 0, 0.4, 0, 0.6928, 74.354, 0, 26.533)
 
-[node name="garden_tree_pear_1" parent="Dressing" instance=ExtResource("38")]
+[node name="garden_tree_pear_1" parent="Dressing" instance=ExtResource("39")]
 transform = Transform3D(0, 0, 0.8, 0, 0.8, 0, -0.8, 0, 0, 48.939, 0, 3.908)
 
-[node name="garden_tree_plum_1" parent="Dressing" instance=ExtResource("39")]
+[node name="garden_tree_plum_1" parent="Dressing" instance=ExtResource("40")]
 transform = Transform3D(0.6928, 0, 0.4, 0, 0.8, 0, -0.4, 0, 0.6928, 76.618, 0, 22.977)
 
-[node name="garden_tree_apple_2" parent="Dressing" instance=ExtResource("37")]
+[node name="garden_tree_apple_2" parent="Dressing" instance=ExtResource("38")]
 transform = Transform3D(-0.6928, 0, -0.4, 0, 0.8, 0, 0.4, 0, -0.6928, 73.351, 0, 22.077)
 
-[node name="garden_tree_pear_2" parent="Dressing" instance=ExtResource("38")]
+[node name="garden_tree_pear_2" parent="Dressing" instance=ExtResource("39")]
 transform = Transform3D(0.4, 0, 0.6928, 0, 0.8, 0, -0.6928, 0, 0.4, 51.509, 0, 6.507)
 
-[node name="garden_tree_plum_2" parent="Dressing" instance=ExtResource("39")]
+[node name="garden_tree_plum_2" parent="Dressing" instance=ExtResource("40")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 69.62, 0, 27.662)
 
-[node name="garden_tree_apple_3" parent="Dressing" instance=ExtResource("37")]
+[node name="garden_tree_apple_3" parent="Dressing" instance=ExtResource("38")]
 transform = Transform3D(0.9659, 0, -0.2588, 0, 1, 0, 0.2588, 0, 0.9659, 47.585, 0, 22.349)
 
-[node name="garden_tree_pear_3" parent="Dressing" instance=ExtResource("38")]
+[node name="garden_tree_pear_3" parent="Dressing" instance=ExtResource("39")]
 transform = Transform3D(0.7071, 0, 0.7071, 0, 1, 0, -0.7071, 0, 0.7071, 54.716, 0, 27.608)
 
-[node name="garden_tree_plum_3" parent="Dressing" instance=ExtResource("39")]
+[node name="garden_tree_plum_3" parent="Dressing" instance=ExtResource("40")]
 transform = Transform3D(-0.5657, 0, -0.5657, 0, 0.8, 0, 0.5657, 0, -0.5657, 48.887, 0, 14.641)
 
-[node name="garden_tree_apple_4" parent="Dressing" instance=ExtResource("37")]
+[node name="garden_tree_apple_4" parent="Dressing" instance=ExtResource("38")]
 transform = Transform3D(0.7727, 0, 0.2071, 0, 0.8, 0, -0.2071, 0, 0.7727, 65.106, 0, 23.11)
 
-[node name="garden_tree_pear_4" parent="Dressing" instance=ExtResource("38")]
+[node name="garden_tree_pear_4" parent="Dressing" instance=ExtResource("39")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 51.812, 0, 9.86)
 
-[node name="garden_tree_plum_4" parent="Dressing" instance=ExtResource("39")]
+[node name="garden_tree_plum_4" parent="Dressing" instance=ExtResource("40")]
 transform = Transform3D(-0.866, 0, -0.5, 0, 1, 0, 0.5, 0, -0.866, 48.557, 0, 25.851)
 
-[node name="garden_tree_apple_5" parent="Dressing" instance=ExtResource("37")]
+[node name="garden_tree_apple_5" parent="Dressing" instance=ExtResource("38")]
 transform = Transform3D(-0.2071, 0, -0.7727, 0, 0.8, 0, 0.7727, 0, -0.2071, 53.246, 0, 13.313)
 
-[node name="garden_tree_pear_5" parent="Dressing" instance=ExtResource("38")]
+[node name="garden_tree_pear_5" parent="Dressing" instance=ExtResource("39")]
 transform = Transform3D(0.7727, 0, -0.2071, 0, 0.8, 0, 0.2071, 0, 0.7727, 52.438, 0, 2.955)
 
-[node name="flower_bed_rose_1" parent="Dressing" instance=ExtResource("40")]
+[node name="flower_bed_rose_1" parent="Dressing" instance=ExtResource("41")]
 transform = Transform3D(-0.7071, 0, -0.7071, 0, 1, 0, 0.7071, 0, -0.7071, 49.713, 0, 11.727)
 
-[node name="flower_bed_foxglove_1" parent="Dressing" instance=ExtResource("41")]
+[node name="flower_bed_foxglove_1" parent="Dressing" instance=ExtResource("42")]
 transform = Transform3D(-0.2588, 0, -0.9659, 0, 1, 0, 0.9659, 0, -0.2588, 47.509, 0, 18.675)
 
-[node name="flower_bed_dahlia_1" parent="Dressing" instance=ExtResource("42")]
+[node name="flower_bed_dahlia_1" parent="Dressing" instance=ExtResource("43")]
 transform = Transform3D(0.2588, 0, -0.9659, 0, 1, 0, 0.9659, 0, 0.2588, 72.733, 0, 24.586)
 
-[node name="flower_bed_marigold_1" parent="Dressing" instance=ExtResource("43")]
+[node name="flower_bed_marigold_1" parent="Dressing" instance=ExtResource("44")]
 transform = Transform3D(-0.9659, 0, -0.2588, 0, 1, 0, 0.2588, 0, -0.9659, 49.395, 0, 8.592)
 
-[node name="flower_bed_tulip_1" parent="Dressing" instance=ExtResource("44")]
+[node name="flower_bed_tulip_1" parent="Dressing" instance=ExtResource("45")]
 transform = Transform3D(-0.7071, 0, -0.7071, 0, 1, 0, 0.7071, 0, -0.7071, 75.732, 0, 28.752)
 
-[node name="flower_bed_aster_1" parent="Dressing" instance=ExtResource("45")]
+[node name="flower_bed_aster_1" parent="Dressing" instance=ExtResource("46")]
 transform = Transform3D(-0.7071, 0, 0.7071, 0, 1, 0, -0.7071, 0, -0.7071, 52.467, 0, 16.731)
 
-[node name="flower_bed_rose_2" parent="Dressing" instance=ExtResource("40")]
+[node name="flower_bed_rose_2" parent="Dressing" instance=ExtResource("41")]
 transform = Transform3D(0.7071, 0, -0.7071, 0, 1, 0, 0.7071, 0, 0.7071, 56.974, 0, 22.663)
 
-[node name="flower_bed_foxglove_2" parent="Dressing" instance=ExtResource("41")]
+[node name="flower_bed_foxglove_2" parent="Dressing" instance=ExtResource("42")]
 transform = Transform3D(-0.7071, 0, 0.7071, 0, 1, 0, -0.7071, 0, -0.7071, 76.734, 0, 25.658)
 
-[node name="bush_boxwood_1" parent="Dressing" instance=ExtResource("46")]
+[node name="bush_boxwood_1" parent="Dressing" instance=ExtResource("47")]
 transform = Transform3D(0.5, 0, -0.866, 0, 1, 0, 0.866, 0, 0.5, 47.203, 0, 28.352)
 
-[node name="bush_hydrangea_1" parent="Dressing" instance=ExtResource("47")]
+[node name="bush_hydrangea_1" parent="Dressing" instance=ExtResource("48")]
 transform = Transform3D(1.1108, 0, -0.2976, 0, 1.15, 0, 0.2976, 0, 1.1108, 53.666, 0, 10.714)
 
-[node name="bush_lavender_1" parent="Dressing" instance=ExtResource("48")]
+[node name="bush_lavender_1" parent="Dressing" instance=ExtResource("49")]
 transform = Transform3D(0.2976, 0, -1.1108, 0, 1.15, 0, 1.1108, 0, 0.2976, 49.976, 0, 23.76)
 
-[node name="bush_currant_1" parent="Dressing" instance=ExtResource("49")]
+[node name="bush_currant_1" parent="Dressing" instance=ExtResource("50")]
 transform = Transform3D(0.9659, 0, -0.2588, 0, 1, 0, 0.2588, 0, 0.9659, 49.44, 0, 20.156)
 
-[node name="bush_boxwood_2" parent="Dressing" instance=ExtResource("46")]
+[node name="bush_boxwood_2" parent="Dressing" instance=ExtResource("47")]
 transform = Transform3D(-0.866, 0, -0.5, 0, 1, 0, 0.5, 0, -0.866, 49.868, 0, 21.863)
 
-[node name="bush_hydrangea_2" parent="Dressing" instance=ExtResource("47")]
+[node name="bush_hydrangea_2" parent="Dressing" instance=ExtResource("48")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 53.993, 0, 6.092)
 
-[node name="bush_lavender_2" parent="Dressing" instance=ExtResource("48")]
+[node name="bush_lavender_2" parent="Dressing" instance=ExtResource("49")]
 transform = Transform3D(0.866, 0, 0.5, 0, 1, 0, -0.5, 0, 0.866, 48.418, 0, 6.601)
 
-[node name="bush_currant_2" parent="Dressing" instance=ExtResource("49")]
+[node name="bush_currant_2" parent="Dressing" instance=ExtResource("50")]
 transform = Transform3D(-0.2071, 0, 0.7727, 0, 0.8, 0, -0.7727, 0, -0.2071, 54.32, 0, 23.558)
 
-[node name="bush_boxwood_3" parent="Dressing" instance=ExtResource("46")]
+[node name="bush_boxwood_3" parent="Dressing" instance=ExtResource("47")]
 transform = Transform3D(-0.7727, 0, -0.2071, 0, 0.8, 0, 0.2071, 0, -0.7727, 72.949, 0, 2.725)
 
-[node name="bush_hydrangea_3" parent="Dressing" instance=ExtResource("47")]
+[node name="bush_hydrangea_3" parent="Dressing" instance=ExtResource("48")]
 transform = Transform3D(0.7727, 0, -0.2071, 0, 0.8, 0, 0.2071, 0, 0.7727, 71.747, 0, 27.826)
 
-[node name="bush_lavender_3" parent="Dressing" instance=ExtResource("48")]
+[node name="bush_lavender_3" parent="Dressing" instance=ExtResource("49")]
 transform = Transform3D(1.1108, 0, 0.2976, 0, 1.15, 0, -0.2976, 0, 1.1108, 59.64, 0, 27.978)
 
-[node name="bush_currant_3" parent="Dressing" instance=ExtResource("49")]
+[node name="bush_currant_3" parent="Dressing" instance=ExtResource("50")]
 transform = Transform3D(-0.9659, 0, 0.2588, 0, 1, 0, -0.2588, 0, -0.9659, 77.015, 0, 2.697)
 
-[node name="bush_boxwood_4" parent="Dressing" instance=ExtResource("46")]
+[node name="bush_boxwood_4" parent="Dressing" instance=ExtResource("47")]
 transform = Transform3D(-0.7727, 0, 0.2071, 0, 0.8, 0, -0.2071, 0, -0.7727, 54.402, 0, 4.225)
 
-[node name="bush_hydrangea_4" parent="Dressing" instance=ExtResource("47")]
+[node name="bush_hydrangea_4" parent="Dressing" instance=ExtResource("48")]
 transform = Transform3D(0.2976, 0, -1.1108, 0, 1.15, 0, 1.1108, 0, 0.2976, 52.726, 0, 27.823)
 
-[node name="bush_lavender_4" parent="Dressing" instance=ExtResource("48")]
+[node name="bush_lavender_4" parent="Dressing" instance=ExtResource("49")]
 transform = Transform3D(-0.8132, 0, -0.8132, 0, 1.15, 0, 0.8132, 0, -0.8132, 46.613, 0, 16.055)
 
-[node name="bush_currant_4" parent="Dressing" instance=ExtResource("49")]
+[node name="bush_currant_4" parent="Dressing" instance=ExtResource("50")]
 transform = Transform3D(-0.9659, 0, 0.2588, 0, 1, 0, -0.2588, 0, -0.9659, 74.937, 0, 24.425)
 
-[node name="bush_boxwood_5" parent="Dressing" instance=ExtResource("46")]
+[node name="bush_boxwood_5" parent="Dressing" instance=ExtResource("47")]
 transform = Transform3D(0.8132, 0, 0.8132, 0, 1.15, 0, -0.8132, 0, 0.8132, 67.995, 0, 22.993)
 
-[node name="bush_hydrangea_5" parent="Dressing" instance=ExtResource("47")]
+[node name="bush_hydrangea_5" parent="Dressing" instance=ExtResource("48")]
 transform = Transform3D(0.7071, 0, -0.7071, 0, 1, 0, 0.7071, 0, 0.7071, 54.564, 0, 2.604)
 
-[node name="bush_lavender_5" parent="Dressing" instance=ExtResource("48")]
+[node name="bush_lavender_5" parent="Dressing" instance=ExtResource("49")]
 transform = Transform3D(0.4, 0, 0.6928, 0, 0.8, 0, -0.6928, 0, 0.4, 66.733, 0, 21.82)
 
-[node name="bush_currant_5" parent="Dressing" instance=ExtResource("49")]
+[node name="bush_currant_5" parent="Dressing" instance=ExtResource("50")]
 transform = Transform3D(0, 0, 1.15, 0, 1.15, 0, -1.15, 0, 0, 72.497, 0, 29.375)
 
-[node name="bush_boxwood_6" parent="Dressing" instance=ExtResource("46")]
+[node name="bush_boxwood_6" parent="Dressing" instance=ExtResource("47")]
 transform = Transform3D(0.8132, 0, -0.8132, 0, 1.15, 0, 0.8132, 0, 0.8132, 46.795, 0, 24.4)
 
-[node name="bush_hydrangea_6" parent="Dressing" instance=ExtResource("47")]
+[node name="bush_hydrangea_6" parent="Dressing" instance=ExtResource("48")]
 transform = Transform3D(0, 0, -1.15, 0, 1.15, 0, 1.15, 0, 0, 51.031, 0, 14.306)
 
-[node name="bush_lavender_6" parent="Dressing" instance=ExtResource("48")]
+[node name="bush_lavender_6" parent="Dressing" instance=ExtResource("49")]
 transform = Transform3D(0.9959, 0, 0.575, 0, 1.15, 0, -0.575, 0, 0.9959, 51.564, 0, 19.33)
 
-[node name="bush_currant_6" parent="Dressing" instance=ExtResource("49")]
+[node name="bush_currant_6" parent="Dressing" instance=ExtResource("50")]
 transform = Transform3D(1.1108, 0, -0.2976, 0, 1.15, 0, 0.2976, 0, 1.1108, 56.793, 0, 18.399)
 
-[node name="bush_boxwood_7" parent="Dressing" instance=ExtResource("46")]
+[node name="bush_boxwood_7" parent="Dressing" instance=ExtResource("47")]
 transform = Transform3D(-0.866, 0, -0.5, 0, 1, 0, 0.5, 0, -0.866, 49.473, 0, 16.48)
 
-[node name="bush_hydrangea_7" parent="Dressing" instance=ExtResource("47")]
+[node name="bush_hydrangea_7" parent="Dressing" instance=ExtResource("48")]
 transform = Transform3D(0.866, 0, -0.5, 0, 1, 0, 0.5, 0, 0.866, 62.279, 0, 21.603)
 
-[node name="bush_lavender_7" parent="Dressing" instance=ExtResource("48")]
+[node name="bush_lavender_7" parent="Dressing" instance=ExtResource("49")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 57.221, 0, 27.729)
 
-[node name="bush_currant_7" parent="Dressing" instance=ExtResource("49")]
+[node name="bush_currant_7" parent="Dressing" instance=ExtResource("50")]
 transform = Transform3D(0.4, 0, -0.6928, 0, 0.8, 0, 0.6928, 0, 0.4, 74.608, 0, 2.609)
 
-[node name="bush_boxwood_8" parent="Dressing" instance=ExtResource("46")]
+[node name="bush_boxwood_8" parent="Dressing" instance=ExtResource("47")]
 transform = Transform3D(0, 0, 1.15, 0, 1.15, 0, -1.15, 0, 0, 54.889, 0, 22.121)
 
-[node name="bush_hydrangea_8" parent="Dressing" instance=ExtResource("47")]
+[node name="bush_hydrangea_8" parent="Dressing" instance=ExtResource("48")]
 transform = Transform3D(0.866, 0, 0.5, 0, 1, 0, -0.5, 0, 0.866, 49.571, 0, 18.389)
 
-[node name="bbq_grill_1" parent="Dressing" instance=ExtResource("50")]
+[node name="bbq_grill_1" parent="Dressing" instance=ExtResource("51")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 8, 0, 50)
 
-[node name="music_speaker_1" parent="Dressing" instance=ExtResource("51")]
+[node name="music_speaker_1" parent="Dressing" instance=ExtResource("52")]
 transform = Transform3D(-0.0905, 0, -0.9959, 0, 1, 0, 0.9959, 0, -0.0905, 12, 0, 55)
 
-[node name="fire_pit_1" parent="Dressing" instance=ExtResource("52")]
+[node name="fire_pit_1" parent="Dressing" instance=ExtResource("53")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.5, 0, 54.5)
 metadata/surface = "concrete"
 
-[node name="deckchair_1" parent="Dressing" instance=ExtResource("53")]
+[node name="deckchair_1" parent="Dressing" instance=ExtResource("54")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.5, 0, 52.4)
 
-[node name="deckchair_2" parent="Dressing" instance=ExtResource("53")]
+[node name="deckchair_2" parent="Dressing" instance=ExtResource("54")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 8.6, 0, 54.5)
 
-[node name="deckchair_3" parent="Dressing" instance=ExtResource("53")]
+[node name="deckchair_3" parent="Dressing" instance=ExtResource("54")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 6.5, 0, 56.6)
 
-[node name="deckchair_4" parent="Dressing" instance=ExtResource("53")]
+[node name="deckchair_4" parent="Dressing" instance=ExtResource("54")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 4.4, 0, 54.5)
 
-[node name="bean_bag_1" parent="Dressing" instance=ExtResource("54")]
+[node name="bean_bag_1" parent="Dressing" instance=ExtResource("55")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 13.8, 0, 53.4)
 
-[node name="bean_bag_2" parent="Dressing" instance=ExtResource("54")]
+[node name="bean_bag_2" parent="Dressing" instance=ExtResource("55")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 13.9, 0, 56.2)
 
-[node name="bean_bag_3" parent="Dressing" instance=ExtResource("54")]
+[node name="bean_bag_3" parent="Dressing" instance=ExtResource("55")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10.6, 0, 57)
 
-[node name="cooler_box_1" parent="Dressing" instance=ExtResource("55")]
+[node name="cooler_box_1" parent="Dressing" instance=ExtResource("56")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 8, 0, 48.5)
 
-[node name="cooler_box_2" parent="Dressing" instance=ExtResource("55")]
+[node name="cooler_box_2" parent="Dressing" instance=ExtResource("56")]
 transform = Transform3D(0.7071, 0, 0.7071, 0, 1, 0, -0.7071, 0, 0.7071, 4.2, 0, 52.4)
 
-[node name="string_lights_set_1" parent="Dressing" instance=ExtResource("56")]
+[node name="string_lights_set_1" parent="Dressing" instance=ExtResource("57")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.5, 0, 50.9)
 
-[node name="string_lights_set_2" parent="Dressing" instance=ExtResource("56")]
+[node name="string_lights_set_2" parent="Dressing" instance=ExtResource("57")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.5, 0, 57.7)
 
-[node name="string_lights_set_3" parent="Dressing" instance=ExtResource("56")]
+[node name="string_lights_set_3" parent="Dressing" instance=ExtResource("57")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 10.4, 0, 53.3)
 
-[node name="lantern_1" parent="Dressing" instance=ExtResource("57")]
+[node name="lantern_1" parent="Dressing" instance=ExtResource("58")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 0, 53)
 
-[node name="lantern_2" parent="Dressing" instance=ExtResource("57")]
+[node name="lantern_2" parent="Dressing" instance=ExtResource("58")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 0, 53)
 
-[node name="lantern_3" parent="Dressing" instance=ExtResource("57")]
+[node name="lantern_3" parent="Dressing" instance=ExtResource("58")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 0, 56)
 
-[node name="lantern_4" parent="Dressing" instance=ExtResource("57")]
+[node name="lantern_4" parent="Dressing" instance=ExtResource("58")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 0, 56)
 
-[node name="lantern_5" parent="Dressing" instance=ExtResource("57")]
+[node name="lantern_5" parent="Dressing" instance=ExtResource("58")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9, 0, 51.3)
 
-[node name="lantern_6" parent="Dressing" instance=ExtResource("57")]
+[node name="lantern_6" parent="Dressing" instance=ExtResource("58")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12.7, 0, 55.7)
 
-[node name="picnic_table_1" parent="Dressing" instance=ExtResource("58")]
+[node name="picnic_table_1" parent="Dressing" instance=ExtResource("59")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 13, 0, 49.5)
 
-[node name="firewood_stack_1" parent="Dressing" instance=ExtResource("59")]
+[node name="firewood_stack_1" parent="Dressing" instance=ExtResource("60")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 3, 0, 50)
 
-[node name="garden_tree_1" parent="Dressing" instance=ExtResource("37")]
+[node name="garden_tree_1" parent="Dressing" instance=ExtResource("38")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 0, 46.5)
 
-[node name="garden_tree_2" parent="Dressing" instance=ExtResource("37")]
+[node name="garden_tree_2" parent="Dressing" instance=ExtResource("38")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15, 0, 45.5)
 
-[node name="bush_1" parent="Dressing" instance=ExtResource("46")]
+[node name="bush_1" parent="Dressing" instance=ExtResource("47")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.8, 0, 57)
 
-[node name="bush_2" parent="Dressing" instance=ExtResource("46")]
+[node name="bush_2" parent="Dressing" instance=ExtResource("47")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15.2, 0, 57.2)
 
-[node name="bush_3" parent="Dressing" instance=ExtResource("46")]
+[node name="bush_3" parent="Dressing" instance=ExtResource("47")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.8, 0, 47.8)
 
-[node name="pose_screen_1" parent="Dressing" instance=ExtResource("60")]
+[node name="pose_screen_1" parent="Dressing" instance=ExtResource("61")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 9, 0.15, 11)
 
-[node name="photo_backdrop_1" parent="Dressing" instance=ExtResource("61")]
+[node name="photo_backdrop_1" parent="Dressing" instance=ExtResource("62")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 7.6, 0.15, 11)
 
-[node name="tripod_camera_1" parent="Dressing" instance=ExtResource("62")]
+[node name="tripod_camera_1" parent="Dressing" instance=ExtResource("63")]
 transform = Transform3D(-0.6097, 0, -0.7926, 0, 1, 0, 0.7926, 0, -0.6097, 10.9, 0.15, 12)
 
-[node name="string_lights_gazebo_1" parent="Dressing" instance=ExtResource("63")]
+[node name="string_lights_gazebo_1" parent="Dressing" instance=ExtResource("64")]
 transform = Transform3D(-0.866, 0, 0.5, 0, 1, 0, -0.5, 0, -0.866, 10.1605, 2.45, 8.99)
 
-[node name="string_lights_gazebo_2" parent="Dressing" instance=ExtResource("63")]
+[node name="string_lights_gazebo_2" parent="Dressing" instance=ExtResource("64")]
 transform = Transform3D(-0.866, 0, -0.5, 0, 1, 0, 0.5, 0, -0.866, 7.8395, 2.45, 8.99)
 
-[node name="string_lights_gazebo_3" parent="Dressing" instance=ExtResource("63")]
+[node name="string_lights_gazebo_3" parent="Dressing" instance=ExtResource("64")]
 transform = Transform3D(0.866, 0, -0.5, 0, 1, 0, 0.5, 0, 0.866, 7.8395, 2.45, 13.01)
 
-[node name="string_lights_gazebo_4" parent="Dressing" instance=ExtResource("63")]
+[node name="string_lights_gazebo_4" parent="Dressing" instance=ExtResource("64")]
 transform = Transform3D(0.866, 0, 0.5, 0, 1, 0, -0.5, 0, 0.866, 10.1605, 2.45, 13.01)
 
-[node name="lantern_7" parent="Dressing" instance=ExtResource("57")]
+[node name="lantern_7" parent="Dressing" instance=ExtResource("58")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 13.6, 0, 8.6)
 
-[node name="lantern_8" parent="Dressing" instance=ExtResource("57")]
+[node name="lantern_8" parent="Dressing" instance=ExtResource("58")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 13.6, 0, 13.4)
 
-[node name="lantern_9" parent="Dressing" instance=ExtResource("57")]
+[node name="lantern_9" parent="Dressing" instance=ExtResource("58")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9, 0.15, 8.9)
 
-[node name="lantern_10" parent="Dressing" instance=ExtResource("57")]
+[node name="lantern_10" parent="Dressing" instance=ExtResource("58")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9, 0.15, 13.1)
 
-[node name="lantern_11" parent="Dressing" instance=ExtResource("57")]
+[node name="lantern_11" parent="Dressing" instance=ExtResource("58")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 11.6, 0, 8.9)
 
-[node name="lantern_12" parent="Dressing" instance=ExtResource("57")]
+[node name="lantern_12" parent="Dressing" instance=ExtResource("58")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 11.6, 0, 13.1)
 
-[node name="garden_bench_4" parent="Dressing" instance=ExtResource("31")]
+[node name="garden_bench_4" parent="Dressing" instance=ExtResource("32")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 9, 0, 15.2)
 
-[node name="garden_bench_5" parent="Dressing" instance=ExtResource("31")]
+[node name="garden_bench_5" parent="Dressing" instance=ExtResource("32")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9, 0, 6.8)
 
-[node name="planter_pot_1" parent="Dressing" instance=ExtResource("64")]
+[node name="planter_pot_1" parent="Dressing" instance=ExtResource("65")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.8, 0, 6.8)
 
-[node name="planter_pot_2" parent="Dressing" instance=ExtResource("64")]
+[node name="planter_pot_2" parent="Dressing" instance=ExtResource("65")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.8, 0, 15.2)
 
-[node name="planter_pot_3" parent="Dressing" instance=ExtResource("64")]
+[node name="planter_pot_3" parent="Dressing" instance=ExtResource("65")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 13.2, 0, 6.8)
 
-[node name="planter_pot_4" parent="Dressing" instance=ExtResource("64")]
+[node name="planter_pot_4" parent="Dressing" instance=ExtResource("65")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 13.2, 0, 15.2)
 
-[node name="planter_pot_5" parent="Dressing" instance=ExtResource("64")]
+[node name="planter_pot_5" parent="Dressing" instance=ExtResource("65")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 13.4, 0, 7.8)
 
-[node name="planter_pot_6" parent="Dressing" instance=ExtResource("64")]
+[node name="planter_pot_6" parent="Dressing" instance=ExtResource("65")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 13.4, 0, 14.2)
 
-[node name="bush_4" parent="Dressing" instance=ExtResource("46")]
+[node name="bush_4" parent="Dressing" instance=ExtResource("47")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 0, 8)
 
-[node name="bush_5" parent="Dressing" instance=ExtResource("46")]
+[node name="bush_5" parent="Dressing" instance=ExtResource("47")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 0, 14)
 
-[node name="bush_6" parent="Dressing" instance=ExtResource("46")]
+[node name="bush_6" parent="Dressing" instance=ExtResource("47")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.4, 0, 15)
 
-[node name="bush_7" parent="Dressing" instance=ExtResource("46")]
+[node name="bush_7" parent="Dressing" instance=ExtResource("47")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.4, 0, 7)
 
-[node name="gazebo_sector_open_1" parent="Shell" instance=ExtResource("65")]
+[node name="gazebo_sector_open_1" parent="Shell" instance=ExtResource("66")]
 transform = Transform3D(0.866, 0, -0.5, 0, 1, 0, 0.5, 0, 0.866, 9, 0, 11)
 metadata/surface = "wood"
 
-[node name="gazebo_sector_1" parent="Shell" instance=ExtResource("66")]
+[node name="gazebo_sector_open" parent="Shell/gazebo_sector_open_1"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(9, 0, 11, 330)
+
+[node name="gazebo_sector_1" parent="Shell" instance=ExtResource("67")]
 transform = Transform3D(0.866, 0, 0.5, 0, 1, 0, -0.5, 0, 0.866, 9, 0, 11)
 metadata/surface = "wood"
 
-[node name="gazebo_sector_2" parent="Shell" instance=ExtResource("66")]
+[node name="gazebo_sector" parent="Shell/gazebo_sector_1"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(9, 0, 11, 30)
+
+[node name="gazebo_sector_2" parent="Shell" instance=ExtResource("67")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 9, 0, 11)
 metadata/surface = "wood"
 
-[node name="gazebo_sector_3" parent="Shell" instance=ExtResource("66")]
+[node name="gazebo_sector" parent="Shell/gazebo_sector_2"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(9, 0, 11, 90)
+
+[node name="gazebo_sector_3" parent="Shell" instance=ExtResource("67")]
 transform = Transform3D(-0.866, 0, 0.5, 0, 1, 0, -0.5, 0, -0.866, 9, 0, 11)
 metadata/surface = "wood"
 
-[node name="gazebo_sector_4" parent="Shell" instance=ExtResource("66")]
+[node name="gazebo_sector" parent="Shell/gazebo_sector_3"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(9, 0, 11, 150)
+
+[node name="gazebo_sector_4" parent="Shell" instance=ExtResource("67")]
 transform = Transform3D(-0.866, 0, -0.5, 0, 1, 0, 0.5, 0, -0.866, 9, 0, 11)
 metadata/surface = "wood"
 
-[node name="gazebo_sector_5" parent="Shell" instance=ExtResource("66")]
+[node name="gazebo_sector" parent="Shell/gazebo_sector_4"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(9, 0, 11, 210)
+
+[node name="gazebo_sector_5" parent="Shell" instance=ExtResource("67")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 9, 0, 11)
 metadata/surface = "wood"
 
-[node name="gazebo_roof_sector_1" parent="Shell" instance=ExtResource("67")]
+[node name="gazebo_sector" parent="Shell/gazebo_sector_5"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(9, 0, 11, 270)
+
+[node name="gazebo_roof_sector_1" parent="Shell" instance=ExtResource("68")]
 transform = Transform3D(0.866, 0, -0.5, 0, 1, 0, 0.5, 0, 0.866, 9, 0, 11)
 
-[node name="gazebo_roof_sector_2" parent="Shell" instance=ExtResource("67")]
+[node name="gazebo_roof_sector" parent="Shell/gazebo_roof_sector_1"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(9, 0, 11, 330)
+
+[node name="gazebo_roof_sector_2" parent="Shell" instance=ExtResource("68")]
 transform = Transform3D(0.866, 0, 0.5, 0, 1, 0, -0.5, 0, 0.866, 9, 0, 11)
 
-[node name="gazebo_roof_sector_3" parent="Shell" instance=ExtResource("67")]
+[node name="gazebo_roof_sector" parent="Shell/gazebo_roof_sector_2"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(9, 0, 11, 30)
+
+[node name="gazebo_roof_sector_3" parent="Shell" instance=ExtResource("68")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 9, 0, 11)
 
-[node name="gazebo_roof_sector_4" parent="Shell" instance=ExtResource("67")]
+[node name="gazebo_roof_sector" parent="Shell/gazebo_roof_sector_3"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(9, 0, 11, 90)
+
+[node name="gazebo_roof_sector_4" parent="Shell" instance=ExtResource("68")]
 transform = Transform3D(-0.866, 0, 0.5, 0, 1, 0, -0.5, 0, -0.866, 9, 0, 11)
 
-[node name="gazebo_roof_sector_5" parent="Shell" instance=ExtResource("67")]
+[node name="gazebo_roof_sector" parent="Shell/gazebo_roof_sector_4"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(9, 0, 11, 150)
+
+[node name="gazebo_roof_sector_5" parent="Shell" instance=ExtResource("68")]
 transform = Transform3D(-0.866, 0, -0.5, 0, 1, 0, 0.5, 0, -0.866, 9, 0, 11)
 
-[node name="gazebo_roof_sector_6" parent="Shell" instance=ExtResource("67")]
+[node name="gazebo_roof_sector" parent="Shell/gazebo_roof_sector_5"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(9, 0, 11, 210)
+
+[node name="gazebo_roof_sector_6" parent="Shell" instance=ExtResource("68")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 9, 0, 11)
 
-[node name="gazebo_finial_1" parent="Shell" instance=ExtResource("68")]
+[node name="gazebo_roof_sector" parent="Shell/gazebo_roof_sector_6"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(9, 0, 11, 270)
+
+[node name="gazebo_finial_1" parent="Shell" instance=ExtResource("69")]
 transform = Transform3D(0.866, 0, -0.5, 0, 1, 0, 0.5, 0, 0.866, 9, 0, 11)
 
-[node name="railing_gazebo_2m_1" parent="Shell" instance=ExtResource("69")]
+[node name="railing_gazebo_2m_1" parent="Shell" instance=ExtResource("70")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 0, 6)
 
-[node name="railing_gazebo_2m_2" parent="Shell" instance=ExtResource("69")]
+[node name="railing_gazebo_2m" parent="Shell/railing_gazebo_2m_1"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(4, 0, 6, 0)
+
+[node name="railing_gazebo_2m_2" parent="Shell" instance=ExtResource("70")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 0, 6)
 
-[node name="railing_gazebo_2m_3" parent="Shell" instance=ExtResource("69")]
+[node name="railing_gazebo_2m" parent="Shell/railing_gazebo_2m_2"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(6, 0, 6, 0)
+
+[node name="railing_gazebo_2m_3" parent="Shell" instance=ExtResource("70")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 0, 6)
 
-[node name="railing_gazebo_2m_4" parent="Shell" instance=ExtResource("69")]
+[node name="railing_gazebo_2m" parent="Shell/railing_gazebo_2m_3"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(8, 0, 6, 0)
+
+[node name="railing_gazebo_2m_4" parent="Shell" instance=ExtResource("70")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 0, 6)
 
-[node name="railing_gazebo_2m_5" parent="Shell" instance=ExtResource("69")]
+[node name="railing_gazebo_2m" parent="Shell/railing_gazebo_2m_4"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(10, 0, 6, 0)
+
+[node name="railing_gazebo_2m_5" parent="Shell" instance=ExtResource("70")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 0, 6)
 
-[node name="railing_gazebo_2m_6" parent="Shell" instance=ExtResource("69")]
+[node name="railing_gazebo_2m" parent="Shell/railing_gazebo_2m_5"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(12, 0, 6, 0)
+
+[node name="railing_gazebo_2m_6" parent="Shell" instance=ExtResource("70")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 14, 0, 6)
 
-[node name="railing_gazebo_1m_1" parent="Shell" instance=ExtResource("70")]
+[node name="railing_gazebo_2m" parent="Shell/railing_gazebo_2m_6"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(14, 0, 6, 270)
+
+[node name="railing_gazebo_1m_1" parent="Shell" instance=ExtResource("71")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 14, 0, 8)
 
-[node name="railing_gazebo_post_1" parent="Shell" instance=ExtResource("71")]
+[node name="railing_gazebo_1m" parent="Shell/railing_gazebo_1m_1"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(14, 0, 8, 270)
+
+[node name="railing_gazebo_post_1" parent="Shell" instance=ExtResource("72")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 14, 0, 9)
 
-[node name="railing_gazebo_2m_7" parent="Shell" instance=ExtResource("69")]
+[node name="railing_gazebo_post" parent="Shell/railing_gazebo_post_1"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(14, 0, 9, 270)
+
+[node name="railing_gazebo_2m_7" parent="Shell" instance=ExtResource("70")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 14, 0, 13)
 
-[node name="railing_gazebo_1m_2" parent="Shell" instance=ExtResource("70")]
+[node name="railing_gazebo_2m" parent="Shell/railing_gazebo_2m_7"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(14, 0, 13, 270)
+
+[node name="railing_gazebo_1m_2" parent="Shell" instance=ExtResource("71")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 14, 0, 15)
 
-[node name="railing_gazebo_2m_8" parent="Shell" instance=ExtResource("69")]
+[node name="railing_gazebo_1m" parent="Shell/railing_gazebo_1m_2"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(14, 0, 15, 270)
+
+[node name="railing_gazebo_2m_8" parent="Shell" instance=ExtResource("70")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 14, 0, 16)
 
-[node name="railing_gazebo_2m_9" parent="Shell" instance=ExtResource("69")]
+[node name="railing_gazebo_2m" parent="Shell/railing_gazebo_2m_8"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(14, 0, 16, 180)
+
+[node name="railing_gazebo_2m_9" parent="Shell" instance=ExtResource("70")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 12, 0, 16)
 
-[node name="railing_gazebo_2m_10" parent="Shell" instance=ExtResource("69")]
+[node name="railing_gazebo_2m" parent="Shell/railing_gazebo_2m_9"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(12, 0, 16, 180)
+
+[node name="railing_gazebo_2m_10" parent="Shell" instance=ExtResource("70")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 10, 0, 16)
 
-[node name="railing_gazebo_2m_11" parent="Shell" instance=ExtResource("69")]
+[node name="railing_gazebo_2m" parent="Shell/railing_gazebo_2m_10"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(10, 0, 16, 180)
+
+[node name="railing_gazebo_2m_11" parent="Shell" instance=ExtResource("70")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 8, 0, 16)
 
-[node name="railing_gazebo_2m_12" parent="Shell" instance=ExtResource("69")]
+[node name="railing_gazebo_2m" parent="Shell/railing_gazebo_2m_11"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(8, 0, 16, 180)
+
+[node name="railing_gazebo_2m_12" parent="Shell" instance=ExtResource("70")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 6, 0, 16)
 
-[node name="railing_gazebo_2m_13" parent="Shell" instance=ExtResource("69")]
+[node name="railing_gazebo_2m" parent="Shell/railing_gazebo_2m_12"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(6, 0, 16, 180)
+
+[node name="railing_gazebo_2m_13" parent="Shell" instance=ExtResource("70")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 4, 0, 16)
 
-[node name="railing_gazebo_2m_14" parent="Shell" instance=ExtResource("69")]
+[node name="railing_gazebo_2m" parent="Shell/railing_gazebo_2m_13"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(4, 0, 16, 90)
+
+[node name="railing_gazebo_2m_14" parent="Shell" instance=ExtResource("70")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 4, 0, 14)
 
-[node name="railing_gazebo_2m_15" parent="Shell" instance=ExtResource("69")]
+[node name="railing_gazebo_2m" parent="Shell/railing_gazebo_2m_14"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(4, 0, 14, 90)
+
+[node name="railing_gazebo_2m_15" parent="Shell" instance=ExtResource("70")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 4, 0, 12)
 
-[node name="railing_gazebo_2m_16" parent="Shell" instance=ExtResource("69")]
+[node name="railing_gazebo_2m" parent="Shell/railing_gazebo_2m_15"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(4, 0, 12, 90)
+
+[node name="railing_gazebo_2m_16" parent="Shell" instance=ExtResource("70")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 4, 0, 10)
 
-[node name="railing_gazebo_2m_17" parent="Shell" instance=ExtResource("69")]
+[node name="railing_gazebo_2m" parent="Shell/railing_gazebo_2m_16"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(4, 0, 10, 90)
+
+[node name="railing_gazebo_2m_17" parent="Shell" instance=ExtResource("70")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 4, 0, 8)
+
+[node name="railing_gazebo_2m" parent="Shell/railing_gazebo_2m_17"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(4, 0, 8, 90)
 
 [node name="ground_concrete" parent="Ground"]
 metadata/surface = "concrete"
