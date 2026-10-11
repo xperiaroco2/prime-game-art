@@ -1,4 +1,4 @@
-# Written for #126 from the P5 export of 2026-10-11 (`house --export <raw>/house/export/v2/p5 --package 5`); a rebuild
+# Written for #126 and re-exported for #132 (the wall paints) from the P5 export of 2026-10-11 (`house --export <raw>/house/export/v3/p5 --package 5`); a rebuild
 # changes the hashes below (`manifest-check --hashes` finds it). The game's paths: levels/house/rooms/<name>.
 id = "house_attic"
 kind = "room"
@@ -24,5 +24,5 @@ url = "https://github.com/xperiaroco2/prime-game-art"
 
 [[files]]
 name = "attic.tscn"
-file = "house/export/v2/p5/levels/house/rooms/attic.tscn"
-sha256 = "e647f0777fc5f8227c5950479f3b37d9330bcfa32f25b845f346e127f1df6948"
+file = "house/export/v3/p5/levels/house/rooms/attic.tscn"
+sha256 = "24288773db9d8a30fa6190bcd75dd60e39a406a6b06d94c57850cc0fc5e0252c"

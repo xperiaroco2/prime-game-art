@@ -77,12 +77,14 @@
   "assets/environment/house_props/sheeted_furniture.glb": "14b6e3d2c2c65ce5a54abd6fe465406b9e4f2f3b546685e5553e43fb9c32c227",
   "assets/environment/house_props/standing_mirror.glb": "0423a56f2faea6fd74ce7f532998e725bf895e81e51c3f729e61d4791f170ea1",
   "assets/environment/house_props/trunk.glb": "4df681fc99c7ead82cb2560f396ea7514d829f784efe3541f7a9e49138e41ff0",
-  "levels/house/rooms/attic.tscn": "e647f0777fc5f8227c5950479f3b37d9330bcfa32f25b845f346e127f1df6948"
+  "assets/environment/house_kit/kit_set.gdshader": "fc8c2dd82c68fc304dc4b0f9ca714d3834c5d74bec9ef87ecc88f34cfd5d4b87",
+  "assets/environment/house_kit/kit_set.tres": "6fd965f6e977e238e94541192d48f81866899dc91137e5a04a8b5c02340997af",
+  "levels/house/rooms/attic.tscn": "24288773db9d8a30fa6190bcd75dd60e39a406a6b06d94c57850cc0fc5e0252c"
  },
  "questions": [
   "G3: the room scenes are under levels/house/rooms/ (11.1 keeps assets/ data only); the game's workflow swaps them into its greybox rooms (Body/Looks out, Shell/Dressing/Fixtures in).",
   "G11: the kit and the props are sets: one folder each (house_kit, house_props), a GLB per piece, not one GLB per folder named after it as 11.1's <id>/<id>.glb says for a single asset.",
-  "Kit look: the GLBs carry vertex-colour materials; the textured look needs the art's kit_set.gdshader with the shared set_d/set_n0/set_n1 textures (a shader is not data: who owns it?).",
+  "Kit look and wall paints (#132): the room scenes put house_kit/kit_set.tres (the art's kit_set.gdshader, the shared set_d/set_n0/set_n1 textures and every room's wall paint) on the kit pieces' set surfaces, each mesh with its plan pose as the instance parameter plan_at; the shader is art code shipped as a file: who owns it?",
   "Imports: each file's .import here holds only ARCHITECTURE 11.2's options; the game's editor regenerates the .import files (and their uids) on its first import: commit the regenerated ones, not these.",
   "Surfaces: every walkable kit piece's instance carries metadata/surface (house.toml [export.surfaces]); the kit's GLBs carry none, so a game-side wrapper of a piece takes its surface from package.json's `surfaces`. The plot's ground (house_outdoor/outdoor.glb, package 7) is one GLB with its paths and street: grass needs its own node.",
   "Lights: every fixture is a real-time OmniLight3D without shadows (8 in this package); the bake comes later (#83)."

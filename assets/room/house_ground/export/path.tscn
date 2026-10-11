@@ -1,6 +1,7 @@
 [gd_scene format=3]
 
 [ext_resource type="PackedScene" path="res://assets/environment/house_kit/porch_2x2.glb" id="1"]
+[ext_resource type="ShaderMaterial" path="res://assets/environment/house_kit/kit_set.tres" id="2"]
 
 [node name="Path" type="Node3D"]
 metadata/size_m = Vector2i(2, 16)
@@ -17,6 +18,10 @@ outline_size = 16
 
 [node name="porch_2x2_1" parent="Shell" instance=ExtResource("1")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+
+[node name="porch_2x2" parent="Shell/porch_2x2_1"]
+surface_material_override/1 = ExtResource("2")
+instance_shader_parameters/plan_at = Vector4(29, 0, 44, 0)
 
 [node name="Fixtures" type="Node3D" parent="."]
 

@@ -114,6 +114,14 @@ writes the House's game-ready package (prime-game #523) from the same layout dat
   `carpet`, the basement's pallets `wood`). The kit's GLBs carry none, so `package.json`'s `surfaces` lists them
   for a game-side wrapper. Not tagged yet: the plot's ground inside `outdoor.glb` (one GLB with its paths and
   street; a question in `package.json`).
+- The kit's look and the wall paints (#132): a package with kit pieces also writes `house_kit/kit_set.gdshader` (a
+  copy of `godot/kit/kit_set.gdshader`) and `house_kit/kit_set.tres` (`house_export.material_text`: the shader, the
+  shared textures, the layers' roughness and normal strength and every painted room's paint from
+  `house_layout.paint_request`, the walk's material as a file). Each kit instance in a room's `Shell` overrides its
+  meshes' set surfaces (the GLB's primitives on `kit_set-vcol`, read from the GLB by `house_export.set_surfaces`)
+  with that material and sets the instance parameter `plan_at`: the mesh's origin and turn in the house plan's frame,
+  so the shader paints by plan rects wherever the game puts the house. The kit's GLBs stay as they are; the game
+  copies the files and loads the scene, nothing to run.
 - `package.json`: the package, its rooms, every file's SHA-256, the props still held as markers, the level pieces in
   no room, the kit pieces' surfaces and the questions for the game side (the package's lamp count, and that the
   game's editor regenerates the minimal `.import` files). Files already in `DIR` that the package does not list (an
@@ -127,7 +135,9 @@ headless and loads every room scene with `godot/house/export_check.gd` (`_check/
 game root and `size_m`, a shelled room holds layer-1 static bodies, and no scene holds CSG, `GridMap`,
 `CollisionPolygon3D`, a rigid or character body on layer 1 or a shadowed light. Then it assembles the package (each
 room at its plan origin; `house_export.check_request` writes `_check/request.json`) and fails with the room and node
-named (#122) when a walkable shell piece (one with a surface) or a dressing prop with a collider holds no layer-1
+named (#122) when a kit surface on the stand-in material in a room's `Shell` lacks the package's `kit_set.tres` or
+its `plan_at` is not the mesh's place and turn, or a painted room's material does not hold its paint (its rect and
+colour; "the walls do not carry the paint", #132); when a walkable shell piece (one with a surface) or a dressing prop with a collider holds no layer-1
 `StaticBody3D` with a shape; when the game's footstep ray (0.3 m over the floor to 0.5 m under it, every 0.5 m over
 each room; over a room under a roof of its level also from 10 m over its floor, every 0.5 m over the roof's rect and
 1 m round it, so the first hit is what a player on the free roof stands on) hits a shell collider without a known
@@ -142,7 +152,7 @@ The doorways and flights that leave the package are listed, walked with the pack
 hits, `none_at`: every collider hit without a surface (a prop) with its room, kit pieces and walks); the command
 prints them.
 `tools/tests/test_house_export.py` runs the check on a broken fixture room (Godot needed) and expects every problem
-named.
+named, and on two painted fixture rooms (a bare surface, a moved `plan_at`, a material without the room's paint).
 `--sheet` then shoots the review sheet from the export folder in an off-screen window (`godot/house/export_sheet.gd`,
 copied into `_check/`): the kitchen, the storage (basement) and the attic, those of them in the package, each from two
 eye-height views lit only by its own fixtures and a dim review ambient; `_check/sheet.png` (1280 px wide), a still per
@@ -329,7 +339,10 @@ paint). `house_layout.check_paints` (part of `validate`) refuses an unknown or u
 scene's root carries `metadata/wall_paint`; `walk_request()["paints"]` hands the rooms' rects to the walk, which puts
 the kit's set material (`godot/kit/kit_materials.gd` `make`, `paint`, `apply`; `kit_set.gdshader`, at most 16 paints)
 on the house, recolouring the inner plaster inside a painted room. The lab's rule holds: the biggest plane in a frame
-is never amber. Tested in `tools/tests/test_house_paint.py`.
+is never amber. Tested in `tools/tests/test_house_paint.py`. The export's room scenes carry the same material as
+`house_kit/kit_set.tres` with each mesh's plan pose as `plan_at` (#132, "The export"): the shader paints by the plan's
+rects, not the world's, so the game's paints need no art code and hold wherever the house stands. The kit's inner
+plaster is the teal itself (`wall_int` #3a6264), so only the bedroom, guest room, study and garage change colour.
 
 ### The second floor (#76)
 

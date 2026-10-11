@@ -646,3 +646,13 @@ sha256 = "5a8c71fbbbd6ede166d879de1be95c156b1ce81f10b80c020fbea113cb226176"
 name = "wall_storey_end_int.glb"
 file = "kits/house/v3b/wall_storey_end_int.glb"
 sha256 = "0e01f5a26fcfa710597e38c90f1a98694296227a41fd5204db9c03e724842639"
+
+[[files]]
+name = "kit_set.gdshader"
+file = "house/export/v3/p2/assets/environment/house_kit/kit_set.gdshader"
+sha256 = "fc8c2dd82c68fc304dc4b0f9ca714d3834c5d74bec9ef87ecc88f34cfd5d4b87"
+
+[[files]]
+name = "kit_set.tres"
+file = "house/export/v3/p2/assets/environment/house_kit/kit_set.tres"
+sha256 = "6fd965f6e977e238e94541192d48f81866899dc91137e5a04a8b5c02340997af"
