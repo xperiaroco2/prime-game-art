@@ -1,6 +1,6 @@
 # House props (prime-game-art)
 
-- **Files:** `assets/environment/house_props/**` (the props the committed packages need: 70 files with P2, 104 with P3 and P5; the art manifest lists all 174 with their SHA-256, and the sources below cover all 174)
+- **Files:** `assets/environment/house_props/**` (the props the committed packages need: 70 files with P2, 104 with P3 and P5, 136 with P7; the art manifest lists all 174 with their SHA-256, and the sources below cover all 174)
 - **Author:** prime-game-art (own work, made by the art pipeline's code); Isa Lousberg (Tiny Treats), Kay Lousberg (KayKit), Kenney (the CC0 sources below)
 - **Source:** the art manifest `assets/prop/house_props/manifest.toml` in xperiaroco2/prime-game-art (approval PR: https://github.com/xperiaroco2/prime-game-art/pull/125); made from:
   - KayKit : City Builder Bits (1.0, FREE) by Kay Lousberg (KayKit), https://kaylousberg.itch.io/city-builder-bits (downloaded 2026-10-06):
