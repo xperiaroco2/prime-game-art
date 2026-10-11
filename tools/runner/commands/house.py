@@ -8,7 +8,8 @@ import json
 import tomllib
 from pathlib import Path
 
-from .. import common, house_basement, house_clutter, house_dressing, house_fill, house_layout, house_lights, house_routes
+from .. import (common, house_basement, house_clutter, house_dressing, house_export, house_fill, house_layout, house_lights,
+               house_routes)
 from . import _frames, _godot, _house_bake
 
 NAME = "house"
@@ -45,6 +46,12 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
                              "island per floor kind and height instead of one per tile)")
     parser.add_argument("--review", type=Path, metavar="DIR",
                         help="with --bake: baked and real-time frames, sheet.png and measures.json into DIR")
+    parser.add_argument("--export", type=Path, metavar="DIR",
+                        help="write the game-ready package into DIR (GLBs under assets/environment/, one room scene per "
+                             "game room under levels/house/rooms/, package.json), then load every scene headless")
+    parser.add_argument("--package", type=int, metavar="N",
+                        help="with --export: only package N of house.toml's [export] (1 kit .. 8 task props)")
+    parser.add_argument("--no-godot", action="store_true", help="with --export: write only, no Godot check")
     parser.add_argument("--basement", type=Path, metavar="DIR",
                         help="stage and import like --walk, then light the basement with lamp stand-ins and shoot its "
                              "review into DIR (basement_review.toml; sheet.png, a still per room, basement.json)")
@@ -95,6 +102,8 @@ def run(args: argparse.Namespace) -> int:
     if args.check:
         return 0
     planned = house_layout.plan(data)
+    if args.export:
+        return export(data, lights, planned, dressing, args)
     found = prop_glbs(data, dressing)
     st = data["settings"]
     summary = house_layout.write_scenes(data, planned, args.out, dressing,
@@ -135,6 +144,31 @@ def run(args: argparse.Namespace) -> int:
         if args.basement:
             code = basement(data, args.layouts, args.props_spec, args.basement.resolve(), errors) or code
     return code
+
+
+def export(data: dict, lights: dict, planned: dict, dressing: dict, args: argparse.Namespace) -> int:
+    """`--export DIR`: writes the package (house_export.write), then, unless --no-godot, opens DIR as a Godot project
+    and loads every room scene headless (_house_export.check)."""
+    if args.package is not None and args.package not in house_export.packages(data):
+        raise common.Failure(f"no package {args.package} in house.toml's [export] "
+                             f"({', '.join(str(n) for n in house_export.packages(data))})")
+    fixtures = house_lights.plan(lights, data)
+    try:
+        summary = house_export.write(data, planned, dressing, fixtures, args.export, common.raw_dir(),
+                                     prop_glbs(data, dressing), args.package)
+    except ValueError as e:
+        raise common.Failure(f"house export: {e}") from e
+    glbs = sum(1 for f in summary["files"] if f.endswith(".glb"))
+    common.say(f"house export: package {summary['name']}: {len(summary['rooms'])} room scenes, {glbs} GLBs, "
+               f"{len(summary['files'])} files -> {args.export.as_posix()}")
+    if summary["placeholders"]:
+        common.say(f"  props without a GLB, as sized Placeholders markers: {', '.join(summary['placeholders'])}")
+    if summary["unplaced"]:
+        common.say(f"  level pieces in no room (not exported): {', '.join(summary['unplaced'])}")
+    if args.no_godot:
+        return 0
+    from . import _house_export
+    return _house_export.check(args.export.resolve(), summary)
 
 
 def basement(data: dict, layouts: Path, extra, folder: Path, errors: list[str] = ()) -> int:
