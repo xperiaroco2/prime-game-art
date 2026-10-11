@@ -19,15 +19,59 @@ FORMAT = 1  # package.json's format
 GLB_IMPORT = {  # ARCHITECTURE 11.2: a Node3D root, 1 unit = 1 m, animations kept
     "nodes/root_type": "", "nodes/root_scale": 1.0, "nodes/apply_root_scale": True, "animation/import": True}
 PNG_COMPRESS = 2  # VRAM Compressed under environment/ (11.2)
-QUESTIONS = [  # for the game side (prime-game #523); package.json carries them
+SURFACES = ("concrete", "wood", "carpet", "grass")  # the game's FootstepSurface.SURFACES (ARCHITECTURE 4.7.40)
+RUG = "rug"  # dressing props whose id starts so cover the floor (no collider): the tiles under them are carpet
+QUESTIONS = [  # for the game side (prime-game #523); package.json carries them (questions() adds the package's lamps)
     "G3: the room scenes are under levels/house/rooms/ (11.1 keeps assets/ data only); the game's workflow swaps them "
     "into its greybox rooms (Body/Looks out, Shell/Dressing/Fixtures in).",
     "G11: the kit and the props are sets: one folder each (house_kit, house_props), a GLB per piece, not one GLB per "
     "folder named after it as 11.1's <id>/<id>.glb says for a single asset.",
     "Kit look: the GLBs carry vertex-colour materials; the textured look needs the art's kit_set.gdshader with the "
     "shared set_d/set_n0/set_n1 textures (a shader is not data: who owns it?).",
-    "Lights: every fixture is a real-time OmniLight3D without shadows (191 in the house); the bake comes later (#83).",
+    "Imports: each file's .import here holds only ARCHITECTURE 11.2's options; the game's editor regenerates the "
+    ".import files (and their uids) on its first import: commit the regenerated ones, not these.",
+    "Surfaces: every walkable kit piece's instance carries metadata/surface (house.toml [export.surfaces]); the kit's "
+    "GLBs carry none, so a game-side wrapper of a piece takes its surface from package.json's `surfaces`. The plot's "
+    "ground (house_outdoor/outdoor.glb, package 7) is one GLB with its paths and street: grass needs its own node.",
 ]
+
+
+def questions(lights: int) -> list[str]:
+    """QUESTIONS with the package's lamp count (its rooms' fixtures, no moon spots)."""
+    return QUESTIONS + [f"Lights: every fixture is a real-time OmniLight3D without shadows ({lights} in this "
+                        "package); the bake comes later (#83)."]
+
+
+def surface_of(data: dict, pid: str) -> str | None:
+    """The footstep surface of a kit piece by house.toml's [export.surfaces] (first matching pattern), or None."""
+    for pat, surface in settings(data).get("surfaces", {}).items():
+        if fnmatch.fnmatchcase(pid, pat):
+            return surface
+    return None
+
+
+def tile_rect(data: dict, p: dict) -> tuple[float, float, float, float] | None:
+    """A floor piece's footprint (x0, y0, x1, y1, plan metres) from its pivot, size and turn; None without a size."""
+    size = data["pieces"][p["id"]].get("size")
+    if not size:
+        return None
+    ax, az = H.axes(p["turn"])
+    xs = [p["x"] + u * ax[0] + v * az[0] for u in (0, size[0]) for v in (0, size[1])]
+    ys = [p["y"] + u * ax[1] + v * az[1] for u in (0, size[0]) for v in (0, size[1])]
+    return min(xs), min(ys), max(xs), max(ys)
+
+
+def piece_surface(data: dict, p: dict, rugs: list[tuple], rx: float, ry: float) -> str | None:
+    """A shell piece's surface: carpet when at least half its footprint lies under the room's rugs (room-local AABBs,
+    house_dressing.footprint), else its [export.surfaces] one."""
+    surface = surface_of(data, p["id"])
+    rect = tile_rect(data, p) if surface and rugs else None
+    if rect:
+        x0, y0, x1, y1 = rect[0] - rx, rect[1] - ry, rect[2] - rx, rect[3] - ry
+        covered = sum(max(0.0, min(x1, r[2]) - max(x0, r[0])) * max(0.0, min(y1, r[3]) - max(y0, r[1])) for r in rugs)
+        if covered >= 0.5 * (x1 - x0) * (y1 - y0) - H.EPS:
+            return "carpet"
+    return surface
 
 
 def settings(data: dict) -> dict:
@@ -88,9 +132,11 @@ def light_node(f: dict, parent: str, rx: float, fy: float, ry: float) -> str:
 
 
 def room_scene(data: dict, lv: dict, room: dict, pieces: list[dict], extras: list[dict], resolved: list[dict],
-               fixtures: list[dict], have=lambda pid: True) -> str:
+               fixtures: list[dict], have=lambda pid: True, index: dict | None = None) -> str:
     """One room's scene text (origin at its north-west floor corner, like the game's greybox rooms). A dressing prop
-    without a GLB (have(id) false) becomes a Marker3D under Placeholders with its size, never a CSG box."""
+    without a GLB (have(id) false) becomes a Marker3D under Placeholders with its size, never a CSG box. A walkable
+    shell piece carries its footstep surface (piece_surface). `index`, when given, gets the check's node lists:
+    "walkable" (Shell/<name> with a surface) and "hide" (Dressing/<name> of the props with a collider)."""
     from . import house_dressing
 
     ex = settings(data)
@@ -110,14 +156,24 @@ def room_scene(data: dict, lv: dict, room: dict, pieces: list[dict], extras: lis
         f"font_size = {lab['font_size']}", f"outline_size = {lab['outline_size']}"]))
     sc.group("Shell")
     seen: dict = {}
-    for p in pieces:
+    rugs = [house_dressing.footprint(r) for r in resolved if r["kind"] == "props" and r["id"].startswith(RUG)]
+    walkable, hide = [], []
+    for p, h in [(p, p["h"]) for p in pieces] + [(p, p["h"] - p["floor_y"]) for p in extras]:
         seen[p["id"]] = seen.get(p["id"], 0) + 1
-        sc.instance(f"{p['id']}_{seen[p['id']]}", "Shell", asset_res(data, kit, p["id"]),
-                    H._tf(p["turn"], p["x"] - rx, p["h"], p["y"] - ry))
-    for p in extras:
-        seen[p["id"]] = seen.get(p["id"], 0) + 1
-        sc.instance(p.get("name", f"{p['id']}_{seen[p['id']]}"), "Shell", asset_res(data, kit, p["id"]),
-                    H._tf(p["turn"], p["x"] - rx, p["h"] - p["floor_y"], p["y"] - ry))
+        name = p.get("name", f"{p['id']}_{seen[p['id']]}")
+        surface = piece_surface(data, p, rugs, rx, ry)
+        sc.instance(name, "Shell", asset_res(data, kit, p["id"]), H._tf(p["turn"], p["x"] - rx, h, p["y"] - ry),
+                    {"surface": surface} if surface else None)
+        if surface:
+            walkable.append(name)
+    props_seen: dict = {}
+    for r in resolved:
+        if r["kind"] == "props" and have(r["id"]):
+            props_seen[r["id"]] = props_seen.get(r["id"], 0) + 1
+            if r.get("collision", "none") != "none":
+                hide.append(f"{r['id']}_{props_seen[r['id']]}")
+    if index is not None:
+        index.update(walkable=walkable, hide=hide)
     house_dressing.scene_nodes(sc, [r for r in resolved if have(r["id"])],
                                lambda pid: asset_res(data, ex["prop_set"], pid))
     lights = [f for f in fixtures if f["room"] == room["id"] and f["type"] != "moon"]
@@ -176,12 +232,64 @@ def scenes(data: dict, planned: dict, dressing: dict, fixtures: list[dict], pkg:
         rr = dict(room, _doors=pl["doors"][room["id"]])
         resolved = (dressing.get(room["id"]) or {}).get("resolved", [])
         pieces, ext = pl["pieces"][room["id"]], extras.get(room["id"], [])
-        out[room["id"]] = {"level": lv["level"], "node": room["node"],
-                           "text": room_scene(data, lv, rr, pieces, ext, resolved, fixtures, have),
+        index: dict = {}
+        text = room_scene(data, lv, rr, pieces, ext, resolved, fixtures, have, index)
+        out[room["id"]] = {"level": lv["level"], "node": room["node"], "text": text, **index,
+                           "lights": sum(1 for f in fixtures if f["room"] == room["id"] and f["type"] != "moon"),
                            "kit": sorted({p["id"] for p in pieces + ext}),
                            "props": sorted({r["id"] for r in resolved if have(r["id"])}),
                            "held": sorted({r["id"] for r in resolved if not have(r["id"])})}
     return out
+
+
+def check_request(data: dict, built: dict, kit_ids=()) -> dict:
+    """What godot/house/export_check.gd checks on the assembled package (its rooms placed at their plan origins): per
+    room its rect, floor height and node lists (walkable shell pieces, props with a collider); the kit GLBs with a
+    surface (each must hold a layer-1 collider); and the 1.36 m capsule's walks (house_layout.walk_request over every
+    level: each doorway and flight) whose every point stands in a room of the package, with the pads under ends that
+    have no floor. The walks leaving the package are listed as `outside`, the closed kit leaves as `closed`."""
+    ex = settings(data)
+    rooms = []
+    for lv in data["levels"]:
+        for room in lv["rooms"]:
+            if room["id"] in built:
+                b = built[room["id"]]
+                rooms.append({"id": room["id"], "level": lv["level"], "node": room["node"], "rect": room["rect"],
+                              "floor_y": lv["floor_y"], "floor": bool(room.get("floor")),
+                              "scene": f"res://{ex['room_dir']}/{room['id']}.tscn",
+                              "walkable": b.get("walkable", []), "hide": b.get("hide", [])})
+
+    storey = data["settings"].get("floor_to_floor_m", 3.2)
+
+    def inside(pt) -> bool:
+        """The point stands in the package: on a floored room of it, or, where no room of the house has a floor (a
+        pad goes there), in any room of it."""
+        here = [(lv, r) for lv in data["levels"] for r in lv["rooms"]
+                if H.inside(r["rect"], pt[0], pt[2]) and lv["floor_y"] - H.EPS <= pt[1] < lv["floor_y"] + storey]
+        floored = [r for _, r in here if r.get("floor")]
+        return any(r["id"] in built for r in (floored or [r for _, r in here]))
+    req = H.walk_request(data, [lv["level"] for lv in data["levels"]])
+    walks, outside = [], []
+    for w in req["walks"]:
+        if all(inside(pt) for pt in w["points"]):
+            walks.append({"name": w["name"], "kind": w["kind"], "points": w["points"]})
+        elif any(inside(pt) for pt in w["points"]):
+            outside.append(w["name"])
+    ends = {tuple(pt) for w in walks for pt in (w["points"][0], w["points"][-1])}
+    pads = [p for p in req["pads"] if (p[0], p[1], p[2]) in ends]
+    pieces = {asset_res(data, ex["kit_set"], pid): surface_of(data, pid) for pid in sorted(kit_ids)
+              if surface_of(data, pid)}
+    return {"rooms": rooms, "pieces": pieces, "walks": walks, "pads": pads, "outside": outside,
+            "closed": req.get("closed", [])}
+
+
+EXEMPT = ("package.json", "project.godot", "_check/*", ".godot/*", "*.import", "*.uid")  # not package files
+
+
+def stale(out: Path, files: dict) -> list[str]:
+    """Files in the export folder that the package does not list (left by an earlier export): warned, never deleted."""
+    found = (f.relative_to(out).as_posix() for f in Path(out).rglob("*") if f.is_file())
+    return sorted(f for f in found if f not in files and not any(fnmatch.fnmatch(f, pat) for pat in EXEMPT))
 
 
 def sha256(path: Path) -> str:
@@ -253,6 +361,10 @@ def write(data: dict, planned: dict, dressing: dict, fixtures: list[dict], out: 
                "rooms": {rid: {"level": r["level"], "node": r["node"], "kit": len(r["kit"]), "props": len(r["props"])}
                          for rid, r in built.items()},
                "unplaced": [p.get("name", p["id"]) for p in unplaced],
-               "placeholders": sorted({pid for r in built.values() for pid in r["held"]}), "files": files, "questions": QUESTIONS}
+               "placeholders": sorted({pid for r in built.values() for pid in r["held"]}),
+               "surfaces": {pid: surface_of(data, pid) for pid in sorted(kit_ids) if surface_of(data, pid)},
+               "files": files, "questions": questions(sum(r.get("lights", 0) for r in built.values()))}
     (out / "package.json").write_text(json.dumps(summary, indent=1), encoding="utf-8", newline="\n")
+    summary["stale"] = stale(out, files)
+    summary["check"] = check_request(data, built, kit_ids)
     return summary

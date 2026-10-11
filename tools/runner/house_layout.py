@@ -960,9 +960,10 @@ class _Scene:
     def group(self, name: str, parent: str = ".") -> None:
         self.nodes.append(f'[node name="{name}" type="Node3D" parent="{parent}"]')
 
-    def instance(self, name: str, parent: str, path: str, transform: str) -> None:
+    def instance(self, name: str, parent: str, path: str, transform: str, meta: dict | None = None) -> None:
         self.nodes.append(f'[node name="{name}" parent="{parent}" instance=ExtResource("{self.res(path)}")]\n'
-                          f"transform = {transform}")
+                          f"transform = {transform}"
+                          + "".join(f"\nmetadata/{k} = {json.dumps(v)}" for k, v in (meta or {}).items()))
 
     def marker(self, name: str, parent: str, x: float, h: float, z: float, group: str | None = None,
                meta: dict | None = None) -> None:
