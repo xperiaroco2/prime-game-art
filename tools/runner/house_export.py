@@ -11,6 +11,7 @@ import fnmatch
 import hashlib
 import json
 import shutil
+import struct
 from pathlib import Path
 
 from . import house_layout as H
@@ -24,14 +25,19 @@ ROOF_TYPES = ("pitched", "ridge", "chimney", "vent", "dormer", "downpipe", "glas
 ROOF_MARGIN = 1.0  # m round a roof's rect the check's roof rays cover (the eaves' overhang)
 ROOF_PIECES = ("roof_", "chimney_", "dormer_")  # the name prefixes of the shell pieces a ray in a roof's rect may meet
 ROOF_FROM = 10.0  # m over the level's floor the roof rays start (over the ridge)
+KIT_SHADER = "kit_set.gdshader"  # the kit's set shader, shipped once beside the kit's pieces (#132)
+KIT_MATERIAL = "kit_set.tres"  # its material: the kit's textures and every painted room's paint (#132)
+SHADER_SRC = Path(__file__).resolve().parents[2] / "godot" / "kit" / KIT_SHADER
+SET_MATERIAL = "kit_set"  # the kit GLBs' stand-in material (Blender's kit_set-vcol; Godot drops the -vcol hint)
 RUG = "rug"  # dressing props whose id starts so cover the floor (no collider): the tiles under them are carpet
 QUESTIONS = [  # for the game side (prime-game #523); package.json carries them (questions() adds the package's lamps)
     "G3: the room scenes are under levels/house/rooms/ (11.1 keeps assets/ data only); the game's workflow swaps them "
     "into its greybox rooms (Body/Looks out, Shell/Dressing/Fixtures in).",
     "G11: the kit and the props are sets: one folder each (house_kit, house_props), a GLB per piece, not one GLB per "
     "folder named after it as 11.1's <id>/<id>.glb says for a single asset.",
-    "Kit look: the GLBs carry vertex-colour materials; the textured look needs the art's kit_set.gdshader with the "
-    "shared set_d/set_n0/set_n1 textures (a shader is not data: who owns it?).",
+    "Kit look and wall paints (#132): the room scenes put house_kit/kit_set.tres (the art's kit_set.gdshader, the "
+    "shared set_d/set_n0/set_n1 textures and every room's wall paint) on the kit pieces' set surfaces, each mesh "
+    "with its plan pose as the instance parameter plan_at; the shader is art code shipped as a file: who owns it?",
     "Imports: each file's .import here holds only ARCHITECTURE 11.2's options; the game's editor regenerates the "
     ".import files (and their uids) on its first import: commit the regenerated ones, not these.",
     "Surfaces: every walkable kit piece's instance carries metadata/surface (house.toml [export.surfaces]); the kit's "
@@ -62,6 +68,87 @@ def prop_surface(data: dict, pid: str) -> str | None:
         if fnmatch.fnmatchcase(pid, pat):
             return surface
     return None
+
+
+def _gltf(path: Path) -> dict | None:
+    """A GLB's JSON chunk, or None when the file is no GLB."""
+    try:
+        with open(path, "rb") as f:
+            head = f.read(20)
+            if len(head) < 20 or head[:4] != b"glTF":
+                return None
+            return json.loads(f.read(struct.unpack_from("<I", head, 12)[0]))
+    except (OSError, ValueError):
+        return None
+
+
+def set_surfaces(path: Path) -> list[dict]:
+    """A kit GLB's surfaces on the set material as Godot imports them (#132): per mesh node its path under the GLB's
+    root (the glTF node names), its origin in the GLB and its surface indices (the primitives' order). Empty for a
+    file that is no GLB; ValueError for a set surface under a turned or scaled node (the shader's plan_at is a
+    position and a turn)."""
+    doc = _gltf(path)
+    if doc is None:
+        return []
+    mats = [str(m.get("name", "")).split("-")[0] for m in doc.get("materials", [])]
+    nodes, out = doc.get("nodes", []), []
+
+    def walk(i: int, chain: list[str], at: list[float], turned: bool) -> None:
+        nd = nodes[i]
+        turned = turned or "matrix" in nd or nd.get("rotation", [0, 0, 0, 1]) != [0, 0, 0, 1] \
+            or nd.get("scale", [1, 1, 1]) != [1, 1, 1]
+        at = [a + b for a, b in zip(at, nd.get("translation", [0, 0, 0]))]
+        chain = chain + [nd.get("name", f"node{i}")]
+        if "mesh" in nd:
+            idx = [k for k, pr in enumerate(doc["meshes"][nd["mesh"]]["primitives"])
+                   if "material" in pr and mats[pr["material"]] == SET_MATERIAL]
+            if idx and turned:
+                raise ValueError(f"{path.name}: set surfaces under a turned or scaled node {'/'.join(chain)}")
+            if idx:
+                out.append({"node": "/".join(chain), "at": [round(a, 4) for a in at], "surfaces": idx})
+        for c in nd.get("children", []):
+            walk(c, chain, at, turned)
+    for i in doc.get("scenes", [{}])[doc.get("scene", 0)].get("nodes", []):
+        walk(i, [], [0.0, 0.0, 0.0], False)
+    return out
+
+
+def material_res(data: dict, name: str = KIT_MATERIAL) -> str:
+    """The res:// path of a file in the kit's folder (the shader, the material, a texture)."""
+    return asset_res(data, settings(data)["kit_set"], "x").rsplit("/", 1)[0] + "/" + name
+
+
+def _f(v: float) -> str:
+    return f"{float(v):.6g}"
+
+
+def material_text(data: dict) -> str:
+    """The kit's set material as a resource (#132): kit_set.gdshader, the shared textures, the layers' roughness and
+    normal strength, and every painted room's paint (house_layout.paint_request, the house plan's frame; at most
+    16), as godot/kit/kit_materials.gd `make` and `paint` set them for the walk."""
+    ex, spec = settings(data), data["spec"]
+    mats = [spec["materials"][m] for m in spec.get("packs", {}).get("set", {}).get("layers", [])]
+    paints = H.paint_request(data)
+    rooms = paints["rooms"][:16]
+    pad = [{"rect": [0, 0, 0, 0], "band": [0, 0], "to": [0, 0, 0]}] * (16 - len(rooms))
+    ext = [("Shader", material_res(data, KIT_SHADER))] + [("Texture2D", material_res(data, t))
+                                                          for t in ex["kit_textures"]]
+    lines = ['[gd_resource type="ShaderMaterial" format=3]', ""]
+    lines += [f'[ext_resource type="{t}" path="{path}" id="{k}"]' for k, (t, path) in enumerate(ext, 1)]
+    lines += ["", "[resource]", 'resource_name = "kit_set_painted"', 'shader = ExtResource("1")']
+    lines += [f'shader_parameter/{Path(t).stem} = ExtResource("{k}")' for k, t in enumerate(ex["kit_textures"], 2)]
+    if len(mats) == 3:
+        for key, field in (("layer_roughness", "roughness"), ("layer_normal_strength", "normal_strength")):
+            lines.append(f"shader_parameter/{key} = Vector3({', '.join(_f(m[field]) for m in mats)})")
+    lines += [f"shader_parameter/paint_count = {len(rooms)}",
+              f"shader_parameter/paint_from = Vector3({', '.join(_f(c) for c in paints['from'])})",
+              "shader_parameter/paint_rect = PackedVector4Array("
+              + ", ".join(_f(v) for r in rooms + pad for v in r["rect"]) + ")",
+              "shader_parameter/paint_band = PackedVector2Array("
+              + ", ".join(_f(v) for r in rooms + pad for v in r["band"]) + ")",
+              "shader_parameter/paint_to = PackedVector3Array("
+              + ", ".join(_f(v) for r in rooms + pad for v in r["to"]) + ")"]
+    return "\n".join(lines) + "\n"
 
 
 def tile_rect(data: dict, p: dict) -> tuple[float, float, float, float] | None:
@@ -147,11 +234,14 @@ def light_node(f: dict, parent: str, rx: float, fy: float, ry: float) -> str:
 
 
 def room_scene(data: dict, lv: dict, room: dict, pieces: list[dict], extras: list[dict], resolved: list[dict],
-               fixtures: list[dict], have=lambda pid: True, index: dict | None = None) -> str:
+               fixtures: list[dict], have=lambda pid: True, index: dict | None = None,
+               surfaces: dict | None = None) -> str:
     """One room's scene text (origin at its north-west floor corner, like the game's greybox rooms). A dressing prop
     without a GLB (have(id) false) becomes a Marker3D under Placeholders with its size, never a CSG box. A walkable
     shell piece carries its footstep surface (piece_surface). `index`, when given, gets the check's node lists:
-    "walkable" (Shell/<name> with a surface) and "hide" (Dressing/<name> of the props with a collider)."""
+    "walkable" (Shell/<name> with a surface) and "hide" (Dressing/<name> of the props with a collider).
+    `surfaces` (piece id -> set_surfaces) puts the kit's set material (KIT_MATERIAL) on each piece's set surfaces
+    with the mesh's plan pose as `plan_at` (#132): the wall paints travel with the scene."""
     from . import house_dressing
 
     ex = settings(data)
@@ -181,6 +271,16 @@ def room_scene(data: dict, lv: dict, room: dict, pieces: list[dict], extras: lis
                     {"surface": surface} if surface else None)
         if surface:
             walkable.append(name)
+        for s in (surfaces or {}).get(p["id"], []):
+            ax, az = H.axes(p["turn"])
+            ox, oy, oz = s["at"]
+            at = [p["x"] + ax[0] * ox + az[0] * oz, fy + h + oy, p["y"] + ax[1] * ox + az[1] * oz, p["turn"] % 360]
+            parent, _, node = f"Shell/{name}/{s['node']}".rpartition("/")
+            mat = sc.res(material_res(data))
+            sc.nodes.append("\n".join([f'[node name="{node}" parent="{parent}"]']
+                                      + [f'surface_material_override/{i} = ExtResource("{mat}")' for i in s["surfaces"]]
+                                      + ["instance_shader_parameters/plan_at = Vector4("
+                                         + ", ".join(H._num(v) for v in at) + ")"]))
     props_seen: dict = {}
     for r in resolved:
         if r["kind"] == "props" and have(r["id"]):
@@ -241,7 +341,7 @@ def attic_dressing(z: dict, cat: dict | None = None) -> dict:
 
 
 def scenes(data: dict, planned: dict, dressing: dict, fixtures: list[dict], pkg: dict | None = None,
-           have=lambda pid: True) -> dict:
+           have=lambda pid: True, surfaces: dict | None = None) -> dict:
     """room id -> {"level", "node", "text", "kit": piece ids, "props": prop ids}; plus "" -> the level pieces that
     stand in no room (a list). No CSG: a dressing prop always instances its GLB (house_dressing's placeholder box is
     for the art's own review only; a prop without a GLB is a sized Marker3D under Placeholders)."""
@@ -254,7 +354,7 @@ def scenes(data: dict, planned: dict, dressing: dict, fixtures: list[dict], pkg:
         resolved = (dressing.get(room["id"]) or {}).get("resolved", [])
         pieces, ext = pl["pieces"][room["id"]], extras.get(room["id"], [])
         index: dict = {}
-        text = room_scene(data, lv, rr, pieces, ext, resolved, fixtures, have, index)
+        text = room_scene(data, lv, rr, pieces, ext, resolved, fixtures, have, index, surfaces)
         out[room["id"]] = {"level": lv["level"], "node": room["node"], "text": text, **index,
                            "lights": sum(1 for f in fixtures if f["room"] == room["id"] and f["type"] != "moon"),
                            "kit": sorted({p["id"] for p in pieces + ext}),
@@ -274,6 +374,7 @@ def check_request(data: dict, built: dict, kit_ids=()) -> dict:
     package are listed as `outside`, the closed kit leaves as `closed`."""
     ex = settings(data)
     rooms = []
+    paints = H.paint_request(data)
     for lv in data["levels"]:
         for room in lv["rooms"]:
             if room["id"] in built:
@@ -282,6 +383,9 @@ def check_request(data: dict, built: dict, kit_ids=()) -> dict:
                               "floor_y": lv["floor_y"], "floor": bool(room.get("floor")),
                               "scene": f"res://{ex['room_dir']}/{room['id']}.tscn",
                               "walkable": b.get("walkable", []), "hide": b.get("hide", [])})
+                paint = next((pr for pr in paints["rooms"] if pr["room"] == room["id"]), None)
+                if paint:
+                    rooms[-1]["paint"] = {"hex": paint["hex"], "rect": paint["rect"], "to": paint["to"]}
                 roof = next((rf for rf in lv.get("roofs", []) if rf.get("room") == room["id"]), None)
                 if roof:  # the roof's rays: from over the ridge, the first hit is the roof a player walks on
                     x, y, w, d = (float(v) for v in roof["rect"])
@@ -310,7 +414,7 @@ def check_request(data: dict, built: dict, kit_ids=()) -> dict:
     pieces = {asset_res(data, ex["kit_set"], pid): surface_of(data, pid) for pid in sorted(kit_ids)
               if surface_of(data, pid)}
     return {"rooms": rooms, "pieces": pieces, "walks": walks, "pads": pads, "outside": outside,
-            "closed": req.get("closed", [])}
+            "closed": req.get("closed", []), "material": material_res(data) if kit_ids else ""}
 
 
 EXEMPT = ("package.json", "project.godot", "_check/*", "_build/*", ".godot/*", "*.import", "*.uid")  # not package files
@@ -346,9 +450,10 @@ def write(data: dict, planned: dict, dressing: dict, fixtures: list[dict], out: 
     (ValueError) on a kit piece or set file the raw folder lacks."""
     ex = settings(data)
     pkg = packages(data)[n] if n is not None else None
-    built = scenes(data, planned, dressing, fixtures, pkg, lambda pid: pid in prop_glbs)
-    unplaced = built.pop("")
     kit_dir = raw / data["settings"]["kit_dir"]
+    surfaces = {p.stem: set_surfaces(p) for p in sorted(kit_dir.glob("*.glb"))}
+    built = scenes(data, planned, dressing, fixtures, pkg, lambda pid: pid in prop_glbs, surfaces)
+    unplaced = built.pop("")
     kit_ids = {pid for r in built.values() for pid in r["kit"]}
     if pkg is None or pkg.get("kit"):
         kit_ids |= {p.stem for p in kit_dir.glob("*.glb")}
@@ -396,6 +501,12 @@ def write(data: dict, planned: dict, dressing: dict, fixtures: list[dict], out: 
         shutil.copyfile(src, dst)
         (dst.parent / (dst.name + ".import")).write_text(import_text(dst), encoding="utf-8", newline="\n")
         files[target.as_posix()] = sha256(dst)
+    if kit_ids:  # the set material that carries the wall paints (#132): text resources, no .import
+        for name, text in ((KIT_SHADER, SHADER_SRC.read_text(encoding="utf-8")), (KIT_MATERIAL, material_text(data))):
+            target = env / ex["kit_set"] / name
+            (out / target).parent.mkdir(parents=True, exist_ok=True)
+            (out / target).write_text(text, encoding="utf-8", newline="\n")
+            files[target.as_posix()] = sha256(out / target)
     room_dir = out / ex["room_dir"]
     room_dir.mkdir(parents=True, exist_ok=True)
     for rid, r in built.items():

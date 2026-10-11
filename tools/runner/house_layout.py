@@ -977,7 +977,8 @@ class _Scene:
     def text(self) -> str:
         head = ["[gd_scene format=3]", ""]
         for path, rid in self.ext.items():
-            head.append(f'[ext_resource type="PackedScene" path="{path}" id="{rid}"]')
+            kind = "ShaderMaterial" if path.endswith(".tres") else "PackedScene"  # the kit's set material (#132)
+            head.append(f'[ext_resource type="{kind}" path="{path}" id="{rid}"]')
         return "\n".join(head + [""] + [n + "\n" for n in self.nodes])
 
 

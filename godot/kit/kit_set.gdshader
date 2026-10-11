@@ -23,6 +23,10 @@ uniform vec3 paint_from = vec3(0.0);
 uniform vec4 paint_rect[MAX_PAINTS];
 uniform vec2 paint_band[MAX_PAINTS];
 uniform vec3 paint_to[MAX_PAINTS];
+// A packaged room scene (docs/house.md "The export", #132) cannot know where the game puts the house, so each kit
+// instance carries its own plan pose: plan_at = (x, y, z, turn in degrees) of the mesh's origin in the house plan's
+// frame, the frame of paint_rect and paint_band. Unset (w < 0, the walk and the proof): the world position.
+instance uniform vec4 plan_at = vec4(0.0, 0.0, 0.0, -1.0);
 
 varying flat int v_layer;
 varying vec3 v_paint;
@@ -37,7 +41,12 @@ void vertex() {
 	v_layer = clamp(int(round((1.0 - COLOR.a) * 4.0)), 0, 2);
 	v_paint = srgb_to_linear(COLOR.rgb);
 	v_raw = COLOR.rgb;
-	v_world = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
+	if (plan_at.w < 0.0) {
+		v_world = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
+	} else {  // house_layout._tf's Y turn: x' = x cos t + z sin t, z' = -x sin t + z cos t
+		float t = radians(plan_at.w);
+		v_world = plan_at.xyz + vec3(VERTEX.x * cos(t) + VERTEX.z * sin(t), VERTEX.y, -VERTEX.x * sin(t) + VERTEX.z * cos(t));
+	}
 }
 
 void fragment() {
