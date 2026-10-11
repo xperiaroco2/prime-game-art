@@ -12,6 +12,7 @@ from . import _frames, _godot
 
 SCRIPT = common.ROOT / "godot" / "house" / "export_check.gd"
 SHEET_SCRIPT = common.ROOT / "godot" / "house" / "export_sheet.gd"
+WALKER = common.ROOT / "godot" / "house" / "walker.gd"  # export_check.gd preloads it from beside itself
 SHEET_ROOMS = ("kitchen", "storage", "attic")  # the review sheet's rooms: ground floor, basement, attic
 SHEET_TILE = (640, 360)  # two tiles per room: a 1280 px wide sheet
 CHECK_DIR = "_check"  # the check's own files in the export folder (not part of the package)
@@ -30,14 +31,23 @@ def project(folder: Path) -> None:
     """Writes the export folder's project.godot and the check script (both outside the package's files)."""
     (folder / "project.godot").write_text(PROJECT, encoding="utf-8", newline="\n")
     (folder / CHECK_DIR).mkdir(exist_ok=True)
-    for script in (SCRIPT, SHEET_SCRIPT):
+    for script in (SCRIPT, SHEET_SCRIPT, WALKER):
         shutil.copyfile(script, folder / CHECK_DIR / script.name)
 
 
 def check(folder: Path, summary: dict, room_dir: str = "levels/house/rooms") -> int:
     """Imports the package headless and loads every room scene: each must load, keep its game root and size_m, hold
-    layer-1 static bodies and nothing the game refuses. Writes <folder>/_check/load.json."""
+    layer-1 static bodies and nothing the game refuses; then the assembled package's check (summary["check"],
+    house_export.check_request: colliders, surfaces, the capsule's walks), every problem named by room and node.
+    Writes <folder>/_check/load.json (the report) and request.json."""
+    return run(folder, summary, room_dir)[0]
+
+
+def run(folder: Path, summary: dict, room_dir: str = "levels/house/rooms") -> tuple[int, list[str]]:
+    """check's work: (exit code, the problems found)."""
     project(folder)
+    request = folder / CHECK_DIR / "request.json"
+    request.write_text(json.dumps(summary.get("check", {"rooms": []}), indent=1), encoding="utf-8", newline="\n")
     code, output = _godot.godot(["--headless", "--path", folder, "--import"], TIMEOUT)
     errors = [line for line in _godot.noteworthy(output) if "ERROR" in line]
     if code != 0:
@@ -45,11 +55,12 @@ def check(folder: Path, summary: dict, room_dir: str = "levels/house/rooms") -> 
     out = folder / CHECK_DIR / "load.json"
     out.unlink(missing_ok=True)
     code, output = _godot.godot(["--headless", "--path", folder, "-s", f"res://{CHECK_DIR}/{SCRIPT.name}", "--",
-                                 f"res://{room_dir}", out.as_posix()], TIMEOUT)
+                                 f"res://{room_dir}", out.as_posix(), request.as_posix()], TIMEOUT)
     if code != 0 or not out.is_file():
         raise common.Failure(f"export_check.gd failed (exit {code}):\n" + "\n".join(output.splitlines()[-20:]))
     errors += [line for line in _godot.noteworthy(output) if "ERROR" in line]
-    rooms = json.loads(out.read_text(encoding="utf-8"))["rooms"]
+    report = json.loads(out.read_text(encoding="utf-8"))
+    rooms = report["rooms"]
     bad = []
     for rid, want in summary["rooms"].items():
         r = rooms.get(rid)
@@ -63,15 +74,24 @@ def check(folder: Path, summary: dict, room_dir: str = "levels/house/rooms") -> 
         bad += [f"{rid}: {x}" for x in r["refused"]]
         common.say(f"  {rid}: {r['instances']} instances, {r['meshes']} meshes, {r['bodies']} layer-1 bodies "
                    f"({r['shapes']} shapes), {r['lights']} lights")
+    pkg = report.get("package", {})
+    bad += pkg.get("problems", [])
+    walks = pkg.get("walks", [])
+    common.say(f"  package: {sum(1 for p in pkg.get('pieces', {}).values() if p)}/{len(pkg.get('pieces', {}))} kit "
+               f"GLBs with a surface hold a collider; {pkg.get('rays', 0)} rays down, surfaces hit "
+               f"{json.dumps(pkg.get('surfaces', {}), sort_keys=True)}; {sum(1 for w in walks if w['arrived'])}/"
+               f"{len(walks)} walks of the 1.36 m capsule arrive")
+    if pkg.get("outside"):
+        common.say(f"  walks leaving the package (walked with the next): {', '.join(pkg['outside'])}")
     for line in errors[:10]:
         common.say(f"  godot: {line}")
     for b in bad:
         common.say(f"  {b}")
     if bad or errors:
         common.bad(f"house export check: {len(bad)} problems, {len(errors)} Godot errors; {out.as_posix()}")
-        return 1
+        return 1, bad + errors
     common.ok(f"house export check: {len(rooms)} room scenes load headless from {folder.as_posix()}; {out.as_posix()}")
-    return 0
+    return 0, []
 
 
 def sheet(folder: Path, summary: dict, room_dir: str = "levels/house/rooms") -> int:

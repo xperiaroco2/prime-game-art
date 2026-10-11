@@ -171,6 +171,9 @@ def export(data: dict, lights: dict, planned: dict, dressing: dict, args: argpar
         common.say(f"  props without a GLB, as sized Placeholders markers: {', '.join(summary['placeholders'])}")
     if summary["unplaced"]:
         common.say(f"  level pieces in no room (not exported): {', '.join(summary['unplaced'])}")
+    if summary["stale"]:
+        common.warn(f"  {len(summary['stale'])} files in {args.export.as_posix()} are not in this package (an earlier "
+                    f"export; not deleted), e.g. {summary['stale'][0]}")
     if args.no_godot:
         return 0
     from . import _house_export

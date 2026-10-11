@@ -6,6 +6,9 @@ Pure Python: the scenes are built in memory, no GLB is copied."""
 
 from __future__ import annotations
 
+import contextlib
+import io
+import json
 import re
 import tempfile
 import unittest
@@ -15,7 +18,8 @@ from runner import house_attic as HA
 from runner import house_dressing as HD
 from runner import house_export as X
 from runner import house_layout as H
-from runner import house_lights as HL
+from runner import common, house_lights as HL
+from runner.commands import _house_export
 
 DATA = H.load()
 PLAN = H.plan(DATA)
@@ -25,7 +29,8 @@ GAME = Path("D:/prime-game/levels/house")
 # markers onto the whole-metre wall grid and the storage's Package07 to the shelf it sits on.
 KNOWN = {
     "roof": "game only",
-    "attic": {"origin", "size", "doors", "stations", "markers"},
+    "attic": {"origin": True, "size": True, "doors": {"Door1"}, "stations": {"Loot", "HidingSpots", "Lookout"},
+              "markers": {"Knife3"}},
     "garage": {"doors": {"Door3"}},
     "landing": {"doors": {"Door6"}},
     "study": {"doors": {"Door1"}},
@@ -104,14 +109,11 @@ class HouseExport(unittest.TestCase):
             d = diff(game[rid], self.art[rid])
             if d:
                 found[rid] = d
-        expected = {rid: (set(v) if rid == "attic" else v) for rid, v in KNOWN.items()}
-        found = {rid: (set(v) if rid == "attic" else v) for rid, v in found.items()}
-        self.assertEqual(found, expected)
+        self.assertEqual(found, KNOWN)
         self.assertEqual(len(game), 35)
 
     def test_dressed_scenes_are_game_safe(self):
-        paths = [p for p in HD.spec_paths(DATA["settings"]) if p.is_file()]
-        rep = HD.check(DATA, HD.load(H.LAYOUT_DIR / DATA["settings"]["dressing_dir"]), HD.catalogue(paths))
+        rep = dressed()
         lights = HL.load(H.LAYOUT_DIR / "lights.toml")
         scenes = X.scenes(DATA, PLAN, rep["rooms"], HL.plan(lights, DATA), have=lambda pid: pid != "door_leaf")
         scenes.pop("")
@@ -163,6 +165,171 @@ class HouseExport(unittest.TestCase):
             self.assertTrue(glb.is_file())
             self.assertIn('nodes/root_type=""', (glb.parent / (glb.name + ".import")).read_text(encoding="utf-8"))
             self.assertTrue((out / "package.json").is_file())
+
+    def test_floors_carry_the_games_surfaces(self):
+        rep = dressed()
+        scenes = X.scenes(DATA, PLAN, rep["rooms"], [])
+        scenes.pop("")
+        found = set()
+        for rid, s in scenes.items():
+            for m in re.finditer(r'\[node name="(\w+)" parent="Shell" instance=[^\]]*\]\n[^\n]*((?:\nmetadata/[^\n]*)*)',
+                                 s["text"]):
+                name, meta = m.groups()
+                surface = re.search(r'metadata/surface = "(\w+)"', meta)
+                if name.startswith(("floor_", "slab_", "stairs_")):
+                    self.assertTrue(surface, f"{rid}: {name}")
+                if surface:
+                    self.assertIn(surface.group(1), X.SURFACES, f"{rid}: {name}")
+                    self.assertIn(name, s["walkable"], rid)
+                    found.add(surface.group(1))
+        self.assertEqual(found, {"wood", "concrete", "carpet"})  # grass: the plot's ground (package 7's set)
+        self.assertIn('metadata/surface = "carpet"', scenes["living_room"]["text"])  # under its rug
+        self.assertEqual(X.surface_of(DATA, "floor_lino_2x2"), "concrete")
+        self.assertEqual(X.surface_of(DATA, "ground_tile"), "grass")
+        self.assertIsNone(X.surface_of(DATA, "wall_storey_2m_int"))
+
+    def test_check_request_keeps_the_packages_walks(self):
+        built = X.scenes(DATA, PLAN, {}, [], X.packages(DATA)[2])
+        built.pop("")
+        req = X.check_request(DATA, built, {pid for s in built.values() for pid in s["kit"]})
+        names = [w["name"] for w in req["walks"]]
+        self.assertTrue(names and not any("garage" in n for n in names), names)
+        self.assertIn("ground:garage>yard@54,44", req["outside"])
+        self.assertEqual({r["id"] for r in req["rooms"]}, set(built))
+        self.assertTrue(all(v in X.SURFACES for v in req["pieces"].values()))
+
+    def test_packages_1_2_7_8_write_with_their_lamps_and_warn_on_stale_files(self):
+        lights = HL.plan(HL.load(H.LAYOUT_DIR / "lights.toml"), DATA)
+        with tempfile.TemporaryDirectory() as tmp:
+            raw = fake_raw(Path(tmp) / "raw")
+            for n in (1, 2, 7, 8):
+                out = Path(tmp) / f"p{n}"
+                summary = X.write(DATA, PLAN, {}, lights, out, raw, {}, n)
+                rooms = {r["id"] for _, r in X.rooms_of(DATA, X.packages(DATA)[n])}
+                self.assertEqual(set(summary["rooms"]), rooms, n)
+                lamps = sum(1 for f in lights if f["room"] in rooms and f["type"] != "moon")
+                self.assertIn(f"({lamps} in this package)", summary["questions"][-1], n)
+                self.assertTrue(any(".import files" in q for q in summary["questions"]), n)
+                self.assertEqual(summary["stale"], [], n)
+                files = set(summary["files"])
+                if n == 1:
+                    self.assertIn("assets/environment/house_kit/set_d.png", files)
+                    self.assertEqual(summary["surfaces"]["floor_boards_2x2"], "wood")
+                if n == 7:
+                    self.assertIn("assets/environment/house_outdoor/outdoor.glb", files)
+                    self.assertIn("assets/environment/house_garden/rose.glb", files)
+                if n == 8:
+                    self.assertEqual(rooms, set())
+                    self.assertIn("assets/environment/house_props/task_box.glb", files)
+            old = Path(tmp) / "p2" / "assets/environment/house_kit/old_piece.glb"
+            old.write_bytes(b"glTF")
+            summary = X.write(DATA, PLAN, {}, lights, Path(tmp) / "p2", raw, {}, 2)
+            self.assertEqual(summary["stale"], ["assets/environment/house_kit/old_piece.glb"])
+            self.assertTrue(old.is_file())  # warned, never deleted
+
+
+def dressed() -> dict:
+    paths = [p for p in HD.spec_paths(DATA["settings"]) if p.is_file()]
+    return HD.check(DATA, HD.load(H.LAYOUT_DIR / DATA["settings"]["dressing_dir"]), HD.catalogue(paths))
+
+
+def fake_raw(raw: Path) -> Path:
+    """Stand-in raw files: every kit piece the house uses and its textures, a task prop, the sets' files."""
+    kit = raw / DATA["settings"]["kit_dir"]
+    (kit / "textures").mkdir(parents=True)
+    every = X.scenes(DATA, PLAN, {}, [])
+    every.pop("")
+    for pid in {pid for s in every.values() for pid in s["kit"]} | {"floor_boards_2x2"}:
+        (kit / f"{pid}.glb").write_bytes(b"glTF")
+    for t in X.settings(DATA)["kit_textures"]:
+        (kit / "textures" / t).write_bytes(b"png")
+    task = raw / DATA["settings"]["prop_dirs"][0]
+    task.mkdir(parents=True)
+    (task / "task_box.glb").write_bytes(b"glTF")
+    for sid, s in X.settings(DATA)["sets"].items():
+        (raw / s["dir"]).mkdir(parents=True, exist_ok=True)
+        for pat in s["files"]:
+            (raw / s["dir"] / pat.replace("*", "rose" if sid == "house_garden" else "a")).write_bytes(b"x")
+    return raw
+
+
+# A room that breaks every rule of the export check: a floor without a surface (the ray finds it), a walkable piece
+# and a prop with a collider listed but holding none, a CSG box, and a wall across the capsule's walk.
+BROKEN = """[gd_scene format=3]
+
+[sub_resource type="BoxShape3D" id="floor"]
+size = Vector3(2, 0.2, 4)
+
+[sub_resource type="BoxShape3D" id="wall"]
+size = Vector3(0.2, 3, 4)
+
+[node name="Bad" type="Node3D"]
+metadata/size_m = Vector2i(6, 4)
+
+[node name="Shell" type="Node3D" parent="."]
+
+[node name="floor_ok" type="Node3D" parent="Shell"]
+metadata/surface = "wood"
+
+[node name="Body" type="StaticBody3D" parent="Shell/floor_ok"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, -0.1, 2)
+
+[node name="Shape" type="CollisionShape3D" parent="Shell/floor_ok/Body"]
+shape = SubResource("floor")
+
+[node name="floor_bare" type="Node3D" parent="Shell"]
+
+[node name="Body" type="StaticBody3D" parent="Shell/floor_bare"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3, -0.1, 2)
+
+[node name="Shape" type="CollisionShape3D" parent="Shell/floor_bare/Body"]
+shape = SubResource("floor")
+
+[node name="floor_hollow" type="Node3D" parent="Shell"]
+metadata/surface = "wood"
+
+[node name="Dressing" type="Node3D" parent="."]
+
+[node name="crate_1" type="Node3D" parent="Dressing"]
+
+[node name="Wall" type="StaticBody3D" parent="Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.5, 1.5, 2)
+
+[node name="Shape" type="CollisionShape3D" parent="Dressing/Wall"]
+shape = SubResource("wall")
+
+[node name="Box" type="CSGBox3D" parent="Dressing"]
+"""
+
+
+@unittest.skipUnless(common.tool_path("GODOT_BIN", None), "Godot not found (GODOT_BIN)")
+class BrokenFixture(unittest.TestCase):
+    def test_the_check_names_every_problem(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            folder = Path(tmp)
+            rooms = folder / "levels/house/rooms"
+            rooms.mkdir(parents=True)
+            (rooms / "bad.tscn").write_text(BROKEN, encoding="utf-8", newline="\n")
+            request = {"rooms": [{"id": "bad", "rect": [0, 0, 6, 4], "floor_y": 0.0, "floor": True,
+                                  "scene": "res://levels/house/rooms/bad.tscn",
+                                  "walkable": ["floor_ok", "floor_bare", "floor_hollow"], "hide": ["crate_1"]}],
+                       "pieces": {}, "walks": [{"name": "through_wall", "kind": "door",
+                                                "points": [[1.0, 0.0, 2.0], [3.0, 0.0, 2.0], [5.5, 0.0, 2.0]]}],
+                       "pads": [[5.5, 0.0, 2.0]]}
+            summary = {"rooms": {"bad": {"node": "Bad", "kit": 3}}, "check": request}
+            with contextlib.redirect_stdout(io.StringIO()):
+                code, problems = _house_export.run(folder, summary)
+            text = "\n".join(problems)
+            self.assertEqual(code, 1, text)
+            self.assertIn("bad: Shell/floor_hollow has no layer-1 StaticBody3D", text)
+            self.assertIn("bad: Dressing/crate_1 has no layer-1 StaticBody3D", text)
+            self.assertNotIn("floor_ok", text)
+            self.assertRegex(text, r"bad: no known surface \(none\) under [\d.]+, [\d.]+ on Bad/Shell/floor_bare/Body")
+            self.assertIn("walk through_wall", text)
+            self.assertIn("bad: CSGBox3D Box", text)
+            report = json.loads((folder / "_check/load.json").read_text(encoding="utf-8"))
+            self.assertGreater(report["package"]["surfaces"].get("wood", 0), 0)
+
 
 
 if __name__ == "__main__":

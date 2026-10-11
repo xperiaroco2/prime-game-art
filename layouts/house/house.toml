@@ -41,6 +41,24 @@ prop_set = "house_props"
 kit_textures = ["set_d.png", "set_n0.png", "set_n1.png"]  # the kit's shared texture set, under <kit_dir>/textures
 label = { h = 2.4, font_size = 72, outline_size = 16 }  # the room's Name label, as on the game's greybox rooms
 
+# Footstep surfaces (art #122; the game's FootstepSurface, its ARCHITECTURE 4.7.40): the kit pieces a player walks on,
+# by id pattern (the first match wins), and the game's surface (concrete, wood, carpet or grass) their instance in a
+# room scene carries as `metadata/surface`; a floor tile at least half under a rug (no collider) is carpet instead. The
+# export check needs a layer-1 collider under each of them and a surface under every ray down onto the shell.
+[export.surfaces]
+"floor_boards_*" = "wood"
+"floor_lino_*" = "concrete"
+"floor_concrete_*" = "concrete"
+"slab_*" = "concrete"
+"roof_flat_*" = "concrete"
+"stairs_main" = "wood"
+"stairs_basement" = "concrete"
+"stairs_balcony" = "concrete"
+"stairs_outdoor_*" = "concrete"
+"ladder_attic" = "wood"
+"stair_dormer" = "wood"
+"ground*" = "grass"
+
 # Extra sets copied whole (files matching `files` under the raw folder `dir`), each into its own folder.
 [export.sets.house_outdoor]
 dir = "house/81/build"
