@@ -52,6 +52,9 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--package", type=int, metavar="N",
                         help="with --export: only package N of house.toml's [export] (1 kit .. 8 task props)")
     parser.add_argument("--no-godot", action="store_true", help="with --export: write only, no Godot check")
+    parser.add_argument("--sheet", action="store_true",
+                        help="with --export: after the check, shoot the kitchen, storage and attic off-screen from the "
+                             "export folder into DIR/_check/sheet.png")
     parser.add_argument("--basement", type=Path, metavar="DIR",
                         help="stage and import like --walk, then light the basement with lamp stand-ins and shoot its "
                              "review into DIR (basement_review.toml; sheet.png, a still per room, basement.json)")
@@ -168,7 +171,10 @@ def export(data: dict, lights: dict, planned: dict, dressing: dict, args: argpar
     if args.no_godot:
         return 0
     from . import _house_export
-    return _house_export.check(args.export.resolve(), summary)
+    code = _house_export.check(args.export.resolve(), summary)
+    if args.sheet:
+        code = _house_export.sheet(args.export.resolve(), summary) or code
+    return code
 
 
 def basement(data: dict, layouts: Path, extra, folder: Path, errors: list[str] = ()) -> int:

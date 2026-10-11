@@ -80,7 +80,7 @@ review (#78; "The basement" below). With `--walk` in the same run it goes after 
 ## The export (#119)
 
 ```
-tools/run.sh house --export DIR [--package N] [--no-godot]
+tools/run.sh house --export DIR [--package N] [--no-godot] [--sheet]
 ```
 
 writes the House's game-ready package (prime-game #523) from the same layout data into `DIR` (the raw folder's
@@ -111,6 +111,10 @@ opens `DIR` as its own Godot project (`project.godot` and `_check/` beside the p
 headless and loads every room scene with `godot/house/export_check.gd` (`_check/load.json`): each loads with its
 game root and `size_m`, a shelled room holds layer-1 static bodies, and no scene holds CSG, `GridMap`,
 `CollisionPolygon3D`, a rigid or character body on layer 1 or a shadowed light.
+`--sheet` then shoots the review sheet from the export folder in an off-screen window (`godot/house/export_sheet.gd`,
+copied into `_check/`): the kitchen, the storage (basement) and the attic, those of them in the package, each from two
+eye-height views lit only by its own fixtures and a dim review ambient; `_check/sheet.png` (1280 px wide), a still per
+view and `sheet.json` (draw calls and lights per view).
 
 `tools/tests/test_house_export.py` diffs the 34 art rooms against the game's greybox rooms (`D:/prime-game`, read
 only; skipped without it) on root, origin, size, Doors, Stations and Markers and expects exactly the six known
