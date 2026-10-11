@@ -348,3 +348,9 @@ rasterises the `bake` UV triangles to a world position per texel, weighs each sk
 `zones.stubble_weight` relative to the Head joint (the x1.3 clay head baked in; the hairline is feathered over 12 mm),
 refills the gutters and packs the copy into the `.blend`; `build_report.json` holds it under `clay_bake.stubble`
 (texels tinted, the tone, seconds). The stubble is in no library key. `recipes/clay_cast_e.json` gives w4 variant B.
+
+Not delivered in round 4: the brief's crest from the front hairline to the nape. w4 keeps the Punk's own crest, which
+ends at the crown (the back view shows the stubble below it); a try that extended it from the Punk cap's centre band
+left a ragged brim round the crown and a tongue ending mid-back, so it was dropped. The brief's variant C (the crest
+extended to the nape) was therefore built as a darker, denser stubble, the brief's fallback for a crest that already
+reaches the nape, which this one does not. A crest to the nape needs new crest geometry: a later task.
