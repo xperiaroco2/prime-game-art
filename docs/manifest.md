@@ -123,14 +123,18 @@ The House's sets (written for #118 from the 2026-10-10 builds; a rebuild changes
 | `assets/room/house_ground/` | package P2's 15 room scenes (`<room>.tscn`, the game's `levels/house/rooms/`) of `house/export/v2/p2` (#124) |
 | `assets/room/house_basement/` | package P3's 8 room scenes of `house/export/v2/p3` (#126) |
 | `assets/room/house_attic/` | package P5's room scene, the attic with the free roof, of `house/export/v2/p5` (#126) |
+| `assets/room/house_plot/` | package P7's plot scene `outdoor.tscn` (the game's `levels/house/`) and the greenhouse and garden room scenes of `house/export/v2/p7` (#128) |
 
 A set's `export/` folder holds its committed files under their manifest names, which need not be the game's paths:
 the kit's textures are `textures/set_*.png` and the props `library/`, `task/` and `zones/` here, all flat in the game's
 `assets/environment/house_kit/` and `house_props/` (the package's `package.json` and the set's `HANDOFF.md` map them;
 `house --package-sheet` stages them by SHA-256). Only what an approved package needs is committed: P1 the whole kit, P2
-its 70 props (#124), P3 and P5 the 34 more they use (#126). A prop id names one game file: the export takes it from
+its 70 props (#124), P3 and P5 the 34 more they use (#126), P7 32 more (#128). A prop id names one game file: the export takes it from
 `house.toml`'s `prop_dirs` in order (the task props first), so of the ids both `task/` and `library/` hold (`boiler`,
-`pump`, ...) only the task prop ships. Room scenes (`room`) get one set per package. Own work is `own-work` with
+`pump`, ...) only the task prop ships. P7 (#128) adds the zones' props, and 17 basenames repeat between `task/`,
+`library/` and `zones/`: the first source in `prop_dirs`, then `[export.plot]` `prop_src`'s other folders, that holds
+`<id>.glb` ships it as `<id>.glb` (the names P2, P3 and P5 shipped), any other source's as `<id>_<source>.glb`
+(`birdbath_library.glb`, `deckchair_zones.glb`; `house_export_plot.game_name`, tested over all raw props). Room scenes (`room`) get one set per package. Own work is `own-work` with
 `public_repo_ok = true` and goes to the game under the game's terms (the engineer's E1, 2026-10-11): the game repo is
 public with no licence file, so all rights reserved, and `licence_url` points to it
 (`https://github.com/xperiaroco2/prime-game`), not to this private repo.

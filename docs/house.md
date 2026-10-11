@@ -173,6 +173,19 @@ into the review ambient. Each tile's title sits in a dark box, bottom left in a 
 one). The outdoor rooms of P2 (yard, street, path, ...) carry only markers and lamps: their ground is the plot,
 package 7.
 
+Package 7 (#128) adds the plot scene `levels/house/outdoor.tscn` (`tools/runner/house_export_plot.py`; root `Outdoor`
+at the plan's coordinates, the ground's top at y 0): `Ground` (`outdoor.glb`, its nodes `ground_grass`,
+`ground_concrete` and `kerb` tagged with `metadata/surface` as editable children), `Backdrop`, `Shell` (the fence and
+gates, the outdoor stairs and rails, the greenhouse's glass roof, the gazebo, the zones' railings) and `Dressing` (the
+plot's, the garden's and the zones' props and plants; a zone's generic plant is the garden's, `[export.plot]`
+`plants`). The export rebuilds the plot's files from its layout (`build = "outdoor"`, pure Python) into
+`DIR/_build/house_outdoor` and copies them. The check rays the whole ground every 0.5 m: a ground or shell hit
+without a known surface fails, and so does a miss outside the ground's holes (`hole`: the house, terrace, garage and
+the outdoor stairs' opening, where other packages lay their floors); the command prints the counts as `plot:`. Its
+sheet is six `[[export.sheet_views]]` of `room = "plot"` (plan metres, 1.6 m over the ground, a key light), each
+loading `outdoor.tscn` with the package's rooms at their plan corners; alone, the package shows the house's footprint
+as a black hole. The flat `house_props/` names follow one rule for every package (`docs/manifest.md`).
+
 `tools/tests/test_house_export.py` diffs the 34 art rooms against the game's greybox rooms (`D:/prime-game`, read
 only; skipped without it) on root, origin, size, Doors, Stations and Markers and expects exactly the known differences:
 the six of the plan's `mapping.md` (attic and roof: question G1; garage Door3, landing Door6, study Door1,
