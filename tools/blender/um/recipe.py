@@ -158,6 +158,18 @@ class _Check:
         if not isinstance(value, list) or any(z not in zones.PIECE_ZONES for z in value):
             self.bad(where, f"must be a list of piece zone names from {', '.join(sorted(zones.PIECE_ZONES))}")
 
+    def stubble(self, value: Any, where: str) -> None:
+        """The hair's stubble tone baked into the head's skin (art #42 round 4): strength (0 to 1, how far the skin goes
+        toward the tone), darken (the tone as the hair colour times this, 0 to 1), speckle (0 to 1, per-mm noise on the
+        strength) and zone (zones.STUBBLE_ZONES)."""
+        if not self.keys(value, where, ("strength", "darken", "speckle", "zone")):
+            return
+        for key in ("strength", "darken", "speckle"):
+            if not (_num(value.get(key)) and 0.0 <= value[key] <= 1.0):
+                self.bad(f"{where}.{key}", "must be a number from 0 to 1")
+        if value.get("zone") not in zones.STUBBLE_ZONES:
+            self.bad(where + ".zone", f"must be a stubble zone name from {', '.join(sorted(zones.STUBBLE_ZONES))}")
+
     def file_name(self, value: Any, where: str) -> None:
         if not (isinstance(value, str) and value.lower().endswith(".glb") and "/" not in value and "\\" not in value):
             self.bad(where, "must be a .glb file name in the pack folder")
@@ -282,8 +294,11 @@ def _check_character(c: _Check, ch: dict[str, Any], where: str) -> None:
         role, part = spec
         w = where + (".hair" if role else f".extras[{k - 1}]")
         required = ("file", "object", "materials") + (() if role else ("role",))
-        if not _check_part(c, part, w, required, ("cut", "drop_pieces", "inflate") + (() if role else ("gender",))):
+        if not _check_part(c, part, w, required,
+                           ("cut", "drop_pieces", "inflate") + (("stubble",) if role else ("gender",))):
             continue
+        if "stubble" in part:
+            c.stubble(part["stubble"], w + ".stubble")
         if "gender" in part and part["gender"] not in GENDERS:
             c.bad(w + ".gender", "must be M or W (the pack a head item comes from; default the character's)")
         c.names(part.get("materials"), w + ".materials")

@@ -26,6 +26,7 @@ import numpy as np
 from mathutils import Matrix
 
 from . import claylook as L
+from . import zones
 from .clay import MASK_UV, is_clay, tris
 from .util import update
 
@@ -577,7 +578,108 @@ def load_piece(o, folder, arm):
         return json.load(fh)
 
 
-def bake_character(cid, arm, parts, sources, keys, gender, lib, cfg, samples=L.BAKE_SAMPLES):
+# ----------------------------------------------------------------------------------------------- stubble
+STUBBLE_CELL_M = 0.0015  # the speckle's grain: one random value per 1.5 mm cell of the head's surface
+
+
+def hair_rgb(o):
+    """A hair part's clay colour (linear RGB) from its first clay material's 'clay_rgb' node, or None."""
+    for s in o.material_slots:
+        n = clay_rgb(s.material) if is_clay(s.material) else None
+        if n is not None:
+            return [float(v) for v in n.outputs[0].default_value[:3]]
+    return None
+
+
+def _texel_positions(o, w, h):
+    """World position (h, w, 3; NaN where none) of every colour texel that the 'bake' UV islands of o's baked slot
+    (slot 0) cover, from the triangles rasterised at the texel centres."""
+    me = o.data
+    me.calc_loop_triangles()
+    nv, nl = len(me.vertices), len(me.loops)
+    co = np.empty(nv * 3)
+    me.vertices.foreach_get("co", co)
+    co = co.reshape(-1, 3)
+    mw = np.array(o.matrix_world)
+    co = co @ mw[:3, :3].T + mw[:3, 3]
+    lv = np.empty(nl, dtype=np.int64)
+    me.loops.foreach_get("vertex_index", lv)
+    uv = np.empty(nl * 2)
+    me.uv_layers["bake"].data.foreach_get("uv", uv)
+    uv = uv.reshape(-1, 2) * (w, h) - 0.5
+    nt = len(me.loop_triangles)
+    tl = np.empty(nt * 3, dtype=np.int64)
+    me.loop_triangles.foreach_get("loops", tl)
+    mi = np.empty(nt, dtype=np.int64)
+    me.loop_triangles.foreach_get("material_index", mi)
+    tl = tl.reshape(-1, 3)[mi == 0]
+    pos = np.full((h, w, 3), np.nan)
+    for t in tl:
+        p, q = uv[t], co[lv[t]]
+        x0, y0 = np.floor(p.min(0)).astype(int)
+        x1, y1 = np.ceil(p.max(0)).astype(int)
+        x0, y0, x1, y1 = max(x0, 0), max(y0, 0), min(x1, w - 1), min(y1, h - 1)
+        if x1 < x0 or y1 < y0:
+            continue
+        gx, gy = np.meshgrid(np.arange(x0, x1 + 1), np.arange(y0, y1 + 1))
+        d = (p[1, 1] - p[2, 1]) * (p[0, 0] - p[2, 0]) + (p[2, 0] - p[1, 0]) * (p[0, 1] - p[2, 1])
+        if abs(d) < 1e-12:
+            continue
+        b0 = ((p[1, 1] - p[2, 1]) * (gx - p[2, 0]) + (p[2, 0] - p[1, 0]) * (gy - p[2, 1])) / d
+        b1 = ((p[2, 1] - p[0, 1]) * (gx - p[2, 0]) + (p[0, 0] - p[2, 0]) * (gy - p[2, 1])) / d
+        b2 = 1.0 - b0 - b1
+        inside = (b0 >= -1e-4) & (b1 >= -1e-4) & (b2 >= -1e-4)
+        if inside.any():
+            bw = np.stack([b0[inside], b1[inside], b2[inside]], -1)
+            pos[gy[inside], gx[inside]] = bw @ q
+    return pos
+
+
+def _speckle(pos):
+    """A repeatable value in [0, 1) per STUBBLE_CELL_M cell of world position (the same on both sides of a seam)."""
+    c = np.floor(pos / STUBBLE_CELL_M)
+    v = np.sin(c[..., 0] * 12.9898 + c[..., 1] * 78.233 + c[..., 2] * 37.719) * 43758.5453
+    return v - np.floor(v)
+
+
+def stubble(cid, o, spec, rgb, pivot):
+    """A recipe hair's stubble (art #42 round 4) on the baked head o: its base colour image is copied (the library's
+    file is never written), the skin texels (mask A > 0.5) inside the stubble zone go toward the hair colour times
+    darken by strength x the zone's weight x (1 - speckle x a per-cell random), the gutters are refilled from the
+    islands, and the copy is packed into the .blend. Returns the report."""
+    t0 = time.time()
+    mat = next(s.material for s in o.material_slots if s.material and s.material.get("look") == "baked")
+    node = mat.node_tree.nodes["base_color"]
+    src = node.image
+    w, h = src.size
+    a = pixels(src).reshape(h, w, 4).astype(np.float64)
+    pos = _texel_positions(o, w, h)
+    have = ~np.isnan(pos[..., 0])
+    wt = np.zeros((h, w))
+    rel = pos[have] - np.asarray(pivot, dtype=np.float64)
+    wt[have] = [zones.stubble_weight(dy, dz, spec["zone"]) for dy, dz in rel[:, 1:3].tolist()]
+    sp = np.zeros((h, w))
+    sp[have] = _speckle(pos[have])
+    amt = spec["strength"] * wt * (1.0 - spec["speckle"] * sp) * (a[..., 3] > 0.5)
+    tone = lin_to_srgb(np.asarray(rgb, dtype=np.float64) * spec["darken"])
+    out = a.copy()
+    out[..., :3] = a[..., :3] * (1.0 - amt[..., None]) + tone * amt[..., None]
+    out[..., :3] = fill_gutter(out[..., :3], have)
+    img = bpy.data.images.new(f"{cid}_head_stubble_col", w, h, alpha=True, float_buffer=False)
+    img.colorspace_settings.name = src.colorspace_settings.name
+    img.pixels.foreach_set(out.astype(np.float32).ravel())
+    img.pack()
+    node.image = img
+    on = amt > 0.02
+    return {"zone": spec["zone"], "strength": spec["strength"], "darken": spec["darken"], "speckle": spec["speckle"],
+            "hair_rgb": [round(v, 4) for v in rgb], "tone_srgb": [round(float(v), 4) for v in tone],
+            "colour_px": [w, h], "texels_covered": int(have.sum()), "texels_tinted": int(on.sum()),
+            "mean_amount": round(float(amt[on].mean()), 3) if on.any() else 0.0, "image": img.name,
+            "seconds": round(time.time() - t0, 2)}
+
+
+def bake_character(cid, arm, parts, sources, keys, gender, lib, cfg, samples=L.BAKE_SAMPLES,
+                   stubble_spec=None, pivot=None):
     """The character bake from the library: each part (rest position, at the origin, after the clay pass) is loaded
     from <lib>/<gender>/<role>/<keys[role]>/ when that piece exists, else baked and written there. Returns the report
     (per part: hit or baked, the piece's numbers, seconds)."""
@@ -586,6 +688,7 @@ def bake_character(cid, arm, parts, sources, keys, gender, lib, cfg, samples=L.B
     t0 = time.time()
     dev = cycles(bpy.context.scene, samples)
     rep = {"device": dev, "samples": samples, "library": lib.replace("\\", "/"), "parts": {}}
+    rgb = hair_rgb(parts["hair"]) if stubble_spec and "hair" in parts else None  # before the hair is baked
     for role, o in parts.items():
         t = time.time()
         folder = piece_dir(lib, gender, role, keys[role])
@@ -611,6 +714,10 @@ def bake_character(cid, arm, parts, sources, keys, gender, lib, cfg, samples=L.B
                               "piece": meta.get("bake", {}), "triangles": tris(o.data),
                               "surfaces": len(o.material_slots)}
         print("CLAYBAKE", cid, role, how, keys[role], rep["parts"][role]["seconds"], "s", flush=True)
+    if stubble_spec and rgb is not None and "head" in parts:
+        rep["stubble"] = stubble(cid, parts["head"], stubble_spec, rgb, pivot)
+        print("CLAYBAKE", cid, "stubble", rep["stubble"]["texels_tinted"], "texels", rep["stubble"]["seconds"], "s",
+              flush=True)
     update()
     rep["seconds"] = round(time.time() - t0, 2)
     rep["surfaces"] = sum(p["surfaces"] for p in rep["parts"].values())

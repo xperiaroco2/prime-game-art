@@ -84,7 +84,7 @@ A recipe is JSON in `recipes/`: `um_final_test.json` (the final test's four char
 |---|---|
 | `id`, `gender` | Lowercase id; `M` or `W` (the body type) |
 | `head` | `file`, `object`, `keep` (materials kept as bald skin), `eye_materials` (where the eye centres are read); optional `as_skin` (more materials painted with the skin), `straighten` (a collar ring made a straight neck), `tuck_ears` (flatten the ears at this half-width, m), `cut` (zones) |
-| `hair`, `extras[]` | `file`, `object`, `materials` (the head regions taken); optional `cut` (zones: faces whose centre is inside go), `drop_pieces` (`um/zones.py` `PIECE_ZONES`: whole loose pieces whose bounding-box centre is inside go, as the catalogue classifies pieces; m2 drops the King's beard and moustache with `facial_hair`; w4 keeps only the Punk mohawk's crest with `punk_cap` and `punk_side_strips`), `inflate` (scale about the skull centre, e.g. 0.006); an extra also has `role` (its slot name, e.g. `moustache`) |
+| `hair`, `extras[]` | `file`, `object`, `materials` (the head regions taken); optional `cut` (zones: faces whose centre is inside go), `drop_pieces` (`um/zones.py` `PIECE_ZONES`: whole loose pieces whose bounding-box centre is inside go, as the catalogue classifies pieces; m2 drops the King's beard and moustache with `facial_hair`; w4 keeps only the Punk mohawk's crest with `punk_cap` and `punk_side_strips`; the cut zone `punk_cap_sides` instead keeps the cap's centre band, the crest down to the nape), `inflate` (scale about the skull centre, e.g. 0.006); the hair alone may have `stubble` (below); an extra also has `role` (its slot name, e.g. `moustache`) |
 | `top`, `bottom`, `shoes` | `file`, `object` |
 | `eyes`, `brows`, `mouth` | Face-kit `style`; eyes `iris`, `lash`; brows `rgb`; mouth `lip`, `dz` |
 | `skin` | `null` (the head's own skin) or `[r, g, b]` |
@@ -317,3 +317,22 @@ exact; heights 1 mm; seam overlaps 0.2 mm; each probe band's see-through and pok
 of rays cast exact. `tools/tests/test_assembly_blender.py` rebuilds the four characters at 10 % resolution against
 `tools/tests/fixtures/assembly/final_test_reference.json` (the final test's numbers) and checks their saved files, in
 one Blender run of about 25 s; it skips when Blender or the packs are missing.
+
+## Hair stubble
+
+A recipe's `hair` may carry `stubble`, the tone that shaved hair leaves on the skin (art #42 round 4: w4's mohawk). It
+is painted into the head's baked clay colour, never a new mesh or material, so the head keeps its surfaces; it needs the
+bake (`--bake`; the plain clay look has no texture to paint).
+
+| Key | What |
+|---|---|
+| `strength` | 0 to 1: how far a skin texel goes toward the tone (A light 0.35, B medium 0.6) |
+| `darken` | 0 to 1: the tone is the hair's clay colour times this |
+| `speckle` | 0 to 1: a random value per 1.5 mm of surface takes up to this share of the strength away (a grain) |
+| `zone` | `um/zones.py` `STUBBLE_ZONES`: `scalp`, the sides, back and top of the skull above a hairline from the forehead over the ears to the nape; not the face, ears or neck |
+
+`claybake.stubble` runs after the library load: it copies the head's colour image (the library's file stays as it is),
+rasterises the `bake` UV triangles to a world position per texel, weighs each skin texel (mask alpha > 0.5) with
+`zones.stubble_weight` relative to the Head joint (the x1.3 clay head baked in; the hairline is feathered over 12 mm),
+refills the gutters and packs the copy into the `.blend`; `build_report.json` holds it under `clay_bake.stubble`
+(texels tinted, the tone, seconds). The stubble is in no library key. `recipes/clay_cast_e.json` gives w4 variant B.
