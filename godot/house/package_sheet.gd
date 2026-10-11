@@ -74,7 +74,7 @@ func _run() -> void:
 		var img := root.get_texture().get_image()
 		img.convert(Image.FORMAT_RGB8)
 		info["title"] = tile["title"]
-		info["draw_calls"] = Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME)
+		info["draw_calls"] = int(Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME))
 		stats.append(info)
 		img.resize(tw, th, Image.INTERPOLATE_LANCZOS)
 		sheet.blit_rect(img, Rect2i(0, 0, tw, th), Vector2i((i % cols) * tw, (i / cols) * th))
