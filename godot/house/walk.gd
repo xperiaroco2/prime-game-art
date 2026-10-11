@@ -12,6 +12,7 @@ extends SceneTree
 
 const WATCHDOG_S: float = 170.0
 const KitMaterials := preload("res://kit/kit_materials.gd")
+const Walker := preload("walker.gd")
 const EYE: float = 1.6
 const UP := Vector3.UP
 const LAMP := Color(1.0, 0.85, 0.68)
@@ -23,9 +24,6 @@ const RADIUS: float = 0.68
 const CONTROL_RADIUS: float = 0.75  # 1.5 m: must stop at a 1.4 m door (the colliders are there)
 const SPEED: float = 3.0
 const MAX_S: float = 8.0  # a walk's limit in simulated seconds unless it sets "max_s" (the routes)
-## Moves per physics frame: the walk runs in simulated time (steps x 1/ticks), several moves a frame, so the long
-## routes (house_routes, art #78) take a quarter of their walking time on the clock.
-const SUBSTEPS: int = 4
 ## The exterior's four sides at dusk from 1.7 m eye height outside the plot's middle, aimed at the house (x 17..43, z 16..45).
 const EXTERIOR: Array = [
 	["ext_south", "south: the front (path, front door, porch)", Vector3(30, 1.7, 76), Vector3(30, 4.0, 34)],
@@ -283,14 +281,7 @@ func _placeholders() -> void:
 ## A 3 x 3 m slab (top at the end's height) under every walk end that has no floor: the yard (#81a builds it).
 func _pads() -> void:
 	for p: Array in _req["pads"]:
-		var body: StaticBody3D = StaticBody3D.new()
-		var shape: CollisionShape3D = CollisionShape3D.new()
-		var box: BoxShape3D = BoxShape3D.new()
-		box.size = Vector3(p[3], 0.2, p[4]) if p.size() > 4 else Vector3(3, 0.2, 3)  # cut back from a stairwell
-		shape.shape = box
-		body.add_child(shape)
-		body.position = Vector3(p[0], float(p[1]) - 0.1, p[2])
-		root.add_child(body)
+		Walker.pad(self, p)
 
 
 func _count_instances() -> Dictionary:
@@ -299,54 +290,9 @@ func _count_instances() -> Dictionary:
 
 
 # --- the walk check ------------------------------------------------------------------------------------------------
-## A capsule (radius r, 1.8 m) walks the waypoints [x, h, z] at `speed` (3 m/s by default); it arrives when it reaches
-## the last within 0.3 m and its height within 0.15 m. Stops early when it has not moved for 30 ticks, or after max_s
-## simulated seconds. Reports the simulated seconds and the metres walked on the floor plan.
+## The shared walker (walker.gd): a capsule of radius r walks the waypoints [x, h, z].
 func _walk(r: float, points: Array, speed: float = SPEED, max_s: float = MAX_S) -> Dictionary:
-	var body: CharacterBody3D = CharacterBody3D.new()
-	var shape: CollisionShape3D = CollisionShape3D.new()
-	var cap: CapsuleShape3D = CapsuleShape3D.new()
-	cap.radius = r
-	cap.height = 1.8
-	shape.shape = cap
-	shape.position.y = 0.9
-	body.add_child(shape)
-	body.floor_snap_length = 0.3
-	root.add_child(body)
-	body.global_position = _v(points[0]) + Vector3(0, 0.05, 0)
-	await physics_frame
-	var reached: int = 0
-	var dt: float = 1.0 / Engine.physics_ticks_per_second
-	var steps: int = 0
-	var stuck: int = 0
-	var last: Vector3 = body.global_position
-	var metres: float = 0.0
-	while steps < max_s * Engine.physics_ticks_per_second and reached < points.size() - 1 and stuck < 30:
-		if steps % SUBSTEPS == 0:
-			await physics_frame
-		steps += 1
-		var target: Vector3 = _v(points[reached + 1])
-		var flat: Vector3 = Vector3(target.x - body.global_position.x, 0, target.z - body.global_position.z)
-		while flat.length() < 0.3 and reached < points.size() - 2:  # next waypoint in the same tick: no idle ticks
-			reached += 1
-			target = _v(points[reached + 1])
-			flat = Vector3(target.x - body.global_position.x, 0, target.z - body.global_position.z)
-		if flat.length() < 0.3:
-			reached += 1
-			continue
-		var v: Vector3 = flat.normalized() * speed
-		v.y = 0.0 if body.is_on_floor() else body.velocity.y - 9.8 * dt
-		body.velocity = v
-		body.move_and_slide()
-		stuck = stuck + 1 if body.global_position.distance_to(last) < 0.002 else 0
-		metres += Vector2(body.global_position.x - last.x, body.global_position.z - last.z).length()
-		last = body.global_position
-	var end: Vector3 = body.global_position
-	var arrived: bool = reached == points.size() - 1 and absf(end.y - float(points[-1][1])) < 0.15
-	body.queue_free()
-	await physics_frame
-	return {"radius_m": r, "reached": reached + 1, "of": points.size(), "end": [snappedf(end.x, 0.01),
-		snappedf(end.y, 0.01), snappedf(end.z, 0.01)], "seconds": snappedf(steps * dt, 0.01), "metres": snappedf(metres, 0.01), "arrived": arrived}
+	return await Walker.walk(self, r, points, speed, max_s)
 
 
 # --- pictures ------------------------------------------------------------------------------------------------------
