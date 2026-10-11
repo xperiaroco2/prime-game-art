@@ -79,7 +79,8 @@ outdoor = ["fence_*", "gate_post", "gazebo_*", "railing_gazebo_*"]
 
 # Extra views on a package's look-approval sheet (`house --package-sheet`, art #126), after the room's door view: `at`
 # and `look` plan metres, `eye` (default 1.6) and `look_h` (default 1.0) heights over the room's floor or, with
-# `over_roof`, over the roof's top there (house_attic.roof_top); `sun` adds a key light outside the room's lamps.
+# `over_roof`, over the roof's top there (house_attic.roof_top); `sun` adds a key light outside the room's lamps;
+# `with` shows other packages' rooms in place beside it.
 [[export.sheet_views]]
 room = "attic"
 title = "attic: from the west gable"
@@ -100,6 +101,23 @@ look = [30.0, 36.0]
 look_h = 0.5
 over_roof = true
 sun = true
+[[export.sheet_views]]
+room = "balcony"
+title = "balcony: down the external stairs"
+at = [39.0, 23.6]  # the balcony's east end, over the flight's top (Door2, the gap at x39)
+look = [39.0, 16.0]  # near the flight's foot on the yard (upper.toml's balcony_stairs)
+look_h = -2.6  # under the balcony's floor: the flight drops 3.2 m
+sun = true
+with = ["yard"]  # the flight is the yard's (P2's yard.tscn), not the balcony scene's
+[[export.sheet_views]]
+room = "balcony"
+title = "balcony: the external stairs from the yard"
+at = [35.5, 12.5]  # on the yard north-west of the flight's foot
+eye = -1.6  # 1.6 m over the yard: the balcony's floor is 3.2 m up
+look = [39.0, 18.0]
+look_h = -1.4
+sun = true
+with = ["yard"]
 
 # Extra sets copied whole (files matching `files` under the raw folder `dir`), each into its own folder.
 [export.sets.house_outdoor]
