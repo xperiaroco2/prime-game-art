@@ -154,7 +154,9 @@ it headless and shoots `godot/house/package_sheet.gd` in an off-screen window: `
 `p<N>_<name>_1280.png` (the agents' copy) and `.json` (per tile). A package without rooms (P1, the kit) is a line-up
 of its pieces, one tile per family of `house.toml`'s `[export.kit_families]` (id patterns, the first match wins;
 shortest in front, under a key light); a package with rooms shows each room from its door (`Doors/Door1`, else the
-first) at 1.6 m eye height looking at the room's middle, lit only by its own fixtures and a dim ambient. The outdoor
+first) at 1.6 m eye height looking at the room's middle, lit only by its own fixtures and a dim ambient. Each tile's
+title sits in a dark box, bottom left in a room tile (clear of the room's own `Name` label near the top) and top left
+in a kit tile; the `.json` gives per tile its draw calls (the box counts as one). The outdoor
 rooms of P2 (yard, street, path, ...) carry only markers and lamps: their ground is the plot, package 7.
 
 `tools/tests/test_house_export.py` diffs the 34 art rooms against the game's greybox rooms (`D:/prime-game`, read
