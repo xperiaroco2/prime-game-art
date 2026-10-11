@@ -192,7 +192,9 @@ func _package(req: Dictionary) -> Dictionary:
 				roof_rays += 1
 				var key := "miss"
 				var rect: Array = r["roof_rect"]
-				if hit.is_empty() and x > float(rect[0]) and x < float(rect[0]) + float(rect[2]) 						and z > float(rect[1]) and z < float(rect[1]) + float(rect[3]):
+				var in_x := x > float(rect[0]) and x < float(rect[0]) + float(rect[2])
+				var in_z := z > float(rect[1]) and z < float(rect[1]) + float(rect[3])
+				if hit.is_empty() and in_x and in_z:
 					problems.append("%s roof: a ray at %.2f, %.2f meets no roof" % [r["id"], x, z])
 				if not hit.is_empty():
 					var col := hit["collider"] as Node

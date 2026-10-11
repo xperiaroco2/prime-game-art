@@ -267,7 +267,8 @@ def check_request(data: dict, built: dict, kit_ids=()) -> dict:
     surface (each must hold a layer-1 collider); a room under a roof of its level also its `roof` rect (ROOF_MARGIN
     round it) for the rays down from roof_from over its floor, and `roof_rect`, where a ray must meet the roof; and
     the 1.36 m capsule's walks (house_layout.walk_request over every level: each doorway and flight) whose every
-    point stands in a room of the package, with the pads under ends that have no floor. The walks leaving the package are listed as `outside`, the closed kit leaves as `closed`."""
+    point stands in a room of the package, with the pads under ends that have no floor. The walks leaving the
+    package are listed as `outside`, the closed kit leaves as `closed`."""
     ex = settings(data)
     rooms = []
     for lv in data["levels"]:
