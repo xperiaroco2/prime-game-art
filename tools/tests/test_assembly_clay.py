@@ -131,6 +131,20 @@ class PieceKeys(unittest.TestCase):
         other = dict(RECIPE, skeleton={"M": "Worker.glb", "W": "Suit.glb"})
         self.assertNotEqual(a["hair"], L.keys_for(other, CHAR, self.cfg)["hair"])
 
+    def test_the_bean_head_moves_its_hair_and_extras(self) -> None:
+        # art #42: the hair and the extras follow the bean warp of the head under them (heads.bean_warp)
+        a = L.keys_for(RECIPE, CHAR, self.cfg)
+        other = dict(CHAR, head=dict(CHAR["head"], object="Casual_Head"))
+        b = L.keys_for(RECIPE, other, self.cfg)
+        for role in ("head", "hair", "accessory", "eyes", "face"):
+            self.assertNotEqual(a[role], b[role], role)
+        for role in L.BODY_ROLES:
+            self.assertEqual(a[role], b[role], role)
+        # the pack mouth the nose flatten ends at is the recipe's mouth_dz: the head and the face, not the hair
+        c = L.keys_for(dict(RECIPE, face={"M": {"mouth_dz": -0.07}}), CHAR, self.cfg)
+        self.assertNotEqual(a["head"], c["head"])
+        self.assertEqual(a["hair"], c["hair"])
+
     def test_face_kit_picks_change_the_face_and_head(self) -> None:
         # the kit's face is joined into the head: its picks change the head's key, the face's and not the clothing's
         bigger = copy.deepcopy(CHAR)
