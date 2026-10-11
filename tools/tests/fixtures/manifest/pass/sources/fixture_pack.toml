@@ -1,0 +1,18 @@
+# A CC0 pack with one unpacked file a set uses.
+id = "fixture_pack"
+title = "Fixture Pack"
+author = "Fixture Maker"
+url = "https://example.com/fixture-pack"
+licence = "CC0-1.0"
+licence_url = "https://creativecommons.org/publicdomain/zero/1.0/"
+public_repo_ok = true
+ai_generated = false
+downloaded_at = 2026-10-06
+
+[[raw]]
+file = "env/fixture/fixture-pack.zip"
+sha256 = "0000000000000000000000000000000000000000000000000000000000000010"
+
+[[raw]]
+file = "env/fixture/fixture-pack/chair.glb"
+sha256 = "0000000000000000000000000000000000000000000000000000000000000011"

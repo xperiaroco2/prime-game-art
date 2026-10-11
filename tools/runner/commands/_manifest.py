@@ -1,5 +1,7 @@
 """The asset manifest schema (docs/manifest.md): every assets/<kind>/<id>/manifest.toml is checked by validate(), every
-source record sources/<id>.toml (a downloaded pack or library that assets are made from) by validate_source()."""
+source record sources/<id>.toml (a downloaded pack or library that assets are made from) by validate_source(). A set
+manifest (a kit's pieces, a prop library, an outdoor package) adds a per-file table, [[files]], checked against the
+source records its pack-made files name."""
 
 from __future__ import annotations
 
@@ -22,7 +24,13 @@ KIND_SLOTS: dict[str, frozenset[str]] = {
     "item": frozenset({""}),
     "prop": frozenset({""}),
     "animation": frozenset({""}),
+    # The House (#118): a modular kit's pieces, a room scene, an outdoor or garden package.
+    "kit": frozenset({""}),
+    "room": frozenset({""}),
+    "environment": frozenset({""}),
 }
+# Kinds whose manifest may hold a set of shipped files ([[files]]) rather than one asset.
+SET_KINDS = frozenset({"kit", "room", "environment", "prop"})
 # Licences an asset may carry; only the first four may ever reach the public game repo.
 PUBLIC_LICENCES = frozenset({"CC0-1.0", "CC-BY-4.0", "owned-paid-output", "own-work"})
 LICENCES = PUBLIC_LICENCES | {"restricted"}
@@ -31,10 +39,14 @@ TOP_REQUIRED = (
     "id", "kind", "slot", "source", "raw", "tools", "licence", "licence_url",
     "public_repo_ok", "ai_generated", "approved_by", "approved_at", "approval_pr",
 )  # fmt: skip
-TOP_OPTIONAL = ("title", "notes", "credit")
+TOP_OPTIONAL = ("title", "notes", "credit", "files")
 SOURCE_REQUIRED = ("service", "plan", "model_version", "task_ids", "generated_at")
 SOURCE_OPTIONAL = ("url",)
 RAW_REQUIRED = ("file", "sha256")
+# One shipped file of a set: its path inside the set's export/ folder, where it was built in the raw folder, its sha256,
+# and for a file made from a pack, the source record (sources/<id>.toml) and that record's raw files it was made from.
+FILE_REQUIRED = ("name", "file", "sha256")
+FILE_OPTIONAL = ("source", "from")
 # A source record: one download (a pack, a library) with its licence and the hashes of its raw files.
 SOURCE_RECORD_REQUIRED = (
     "id", "title", "author", "url", "licence", "licence_url", "public_repo_ok", "ai_generated", "downloaded_at", "raw",
@@ -91,10 +103,18 @@ def _keys(table: dict[str, Any], required: tuple[str, ...], optional: tuple[str,
     return errors
 
 
-def validate(data: dict[str, Any], kind_dir: str | None = None, id_dir: str | None = None) -> list[str]:
+def validate(
+    data: dict[str, Any],
+    kind_dir: str | None = None,
+    id_dir: str | None = None,
+    sources: dict[str, dict[str, Any]] | None = None,
+) -> list[str]:
     """Every problem in one parsed manifest, as readable lines; empty when it is valid. kind_dir and id_dir are the
-    folder names it was found in (assets/<kind_dir>/<id_dir>/), checked against kind and id."""
-    errors = _keys(data, TOP_REQUIRED, TOP_OPTIONAL, "")
+    folder names it was found in (assets/<kind_dir>/<id_dir>/), checked against kind and id. sources maps each source
+    record's id to its parsed record; given, a set's pack-made files are checked against it."""
+    # A set's [[files]] are its raw files, so a set may leave out [[raw]].
+    required = tuple(key for key in TOP_REQUIRED if not (key == "raw" and "files" in data))
+    errors = _keys(data, required, TOP_OPTIONAL, "")
 
     asset_id = data.get("id")
     if "id" in data:
@@ -149,6 +169,10 @@ def validate(data: dict[str, Any], kind_dir: str | None = None, id_dir: str | No
                     errors.append("free-plan AI output is never used (docs/pipeline.md, AI rules)")
 
     errors += _raw_errors(data)
+    if "files" in data:
+        if isinstance(kind, str) and kind in KIND_SLOTS and kind not in SET_KINDS:
+            errors.append(f"kind {kind!r} cannot be a set ([[files]] is for {', '.join(sorted(SET_KINDS))})")
+        errors += _files_errors(data, sources)
 
     tools = data.get("tools")
     if "tools" in data and not (isinstance(tools, list) and tools and all(_is_text(t) for t in tools)):
@@ -192,6 +216,64 @@ def _raw_errors(data: dict[str, Any]) -> list[str]:
             files = [e.get("file") for e in raw if isinstance(e.get("file"), str)]
             for file in sorted({f for f in files if files.count(f) > 1}):
                 errors.append(f"raw file {file!r} is listed twice")
+    return errors
+
+
+def _relative_path(value: Any) -> bool:
+    """A relative path with / separators and no drive, root or .. part."""
+    if not (isinstance(value, str) and value.strip()) or "\\" in value or ":" in value:
+        return False
+    pure = PurePosixPath(value)
+    return not pure.is_absolute() and ".." not in pure.parts
+
+
+def _files_errors(data: dict[str, Any], sources: dict[str, dict[str, Any]] | None) -> list[str]:
+    """[[files]]: a set's shipped files, each named once and built once; a pack-made file names its source record and
+    the record's raw files it was made from. With sources, the record must exist, list those files and be at least as
+    public as the set."""
+    files = data["files"]
+    if not (isinstance(files, list) and files and all(isinstance(f, dict) for f in files)):
+        return ["files must be one or more [[files]] tables with name, file and sha256"]
+    errors: list[str] = []
+    public = data.get("public_repo_ok") is True
+    for index, entry in enumerate(files):
+        where = f"files[{index}]: "
+        errors += _keys(entry, FILE_REQUIRED, FILE_OPTIONAL, where)
+        if "name" in entry and not _relative_path(entry["name"]):
+            errors.append(f"{where}name must be a relative path inside the set's export/ folder, with / separators")
+        if "file" in entry and not _relative_path(entry["file"]):
+            errors.append(f"{where}file must be a relative path inside the raw folder, with / separators")
+        if "sha256" in entry and not (isinstance(entry["sha256"], str) and SHA256_RE.fullmatch(entry["sha256"])):
+            errors.append(f"{where}sha256 must be 64 lowercase hex digits")
+        source_id, made_from = entry.get("source"), entry.get("from")
+        if "from" in entry:
+            if "source" not in entry:
+                errors.append(f"{where}from needs source (the record whose raw files it names)")
+            if not (isinstance(made_from, list) and made_from and all(_relative_path(f) for f in made_from)):
+                errors.append(f"{where}from must be a non-empty list of raw paths of the source record")
+        if "source" not in entry:
+            continue
+        if not (isinstance(source_id, str) and ID_RE.fullmatch(source_id)):
+            errors.append(f"{where}source must be a source record id (sources/<id>.toml)")
+            continue
+        if sources is None:
+            continue
+        record = sources.get(source_id)
+        if record is None:
+            errors.append(f"{where}source {source_id!r} has no record sources/{source_id}.toml")
+            continue
+        listed = {r.get("file") for r in record.get("raw") or [] if isinstance(r, dict)}
+        for path in made_from if isinstance(made_from, list) else []:
+            if isinstance(path, str) and path not in listed:
+                errors.append(f"{where}{path!r} is not a [[raw]] file of sources/{source_id}.toml")
+        if public and not (record.get("public_repo_ok") is True and record.get("licence") in PUBLIC_LICENCES):
+            errors.append(
+                f"{where}the set is public_repo_ok but source {source_id!r} may not reach the public game repo"
+            )
+    for key in ("name", "file"):
+        values = [f.get(key) for f in files if isinstance(f.get(key), str)]
+        for value in sorted({v for v in values if values.count(v) > 1}):
+            errors.append(f"files: {key} {value!r} is listed twice")
     return errors
 
 
@@ -269,19 +351,37 @@ def _approval(data: dict[str, Any]) -> list[str]:
 
 
 def check_raw_hashes(data: dict[str, Any], raw_dir: Path) -> list[str]:
-    """Each [[raw]] file exists under raw_dir and has its recorded sha256."""
+    """Each [[raw]] file and each set's [[files]] file exists under raw_dir and has its recorded sha256."""
     errors: list[str] = []
-    for index, entry in enumerate(data.get("raw") or []):
-        if not isinstance(entry, dict) or not isinstance(entry.get("file"), str):
-            continue
-        path = raw_dir / entry["file"]
-        if not path.is_file():
-            errors.append(f"raw[{index}]: {path.as_posix()} is missing")
-            continue
-        digest = hashlib.sha256()
-        with path.open("rb") as handle:
-            for block in iter(lambda: handle.read(1 << 20), b""):
-                digest.update(block)
-        if digest.hexdigest() != entry.get("sha256"):
-            errors.append(f"raw[{index}]: {path.as_posix()} has sha256 {digest.hexdigest()}, not the recorded one")
+    for table in ("raw", "files"):
+        entries = data.get(table)
+        for index, entry in enumerate(entries if isinstance(entries, list) else []):
+            if isinstance(entry, dict) and isinstance(entry.get("file"), str):
+                errors += _hash_errors(raw_dir / entry["file"], entry.get("sha256"), f"{table}[{index}]: ")
     return errors
+
+
+def check_export_hashes(data: dict[str, Any], asset_dir: Path) -> list[str]:
+    """Each set file already exported (assets/<kind>/<id>/export/<name>) has its recorded sha256; a file not exported
+    yet is skipped (a set is built in the raw folder first and committed once approved)."""
+    errors: list[str] = []
+    entries = data.get("files")
+    for index, entry in enumerate(entries if isinstance(entries, list) else []):
+        if isinstance(entry, dict) and isinstance(entry.get("name"), str):
+            path = asset_dir / "export" / entry["name"]
+            if path.is_file():
+                errors += _hash_errors(path, entry.get("sha256"), f"files[{index}]: ")
+    return errors
+
+
+def _hash_errors(path: Path, recorded: Any, where: str) -> list[str]:
+    """One line if path is missing or its sha256 differs from recorded."""
+    if not path.is_file():
+        return [f"{where}{path.as_posix()} is missing"]
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for block in iter(lambda: handle.read(1 << 20), b""):
+            digest.update(block)
+    if digest.hexdigest() != recorded:
+        return [f"{where}{path.as_posix()} has sha256 {digest.hexdigest()}, not the recorded one"]
+    return []
