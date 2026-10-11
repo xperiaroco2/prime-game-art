@@ -111,8 +111,9 @@ writes the House's game-ready package (prime-game #523) from the same layout dat
   `grass`; the free roof's pitched pieces, the attic chimneys and the dormer `concrete` (#126; the game has no tile
   sound); a floor tile at least half under a rug (rugs have no collider) `carpet`, never a roof piece over one. A low
   dressing prop the floor's rays meet first carries its own by `[export.prop_surfaces]` (the attic's rolled carpets
-  `carpet`, the basement's pallets `wood`). The kit's GLBs carry none, so `package.json`'s `surfaces` lists them for a game-side wrapper. Not tagged
-  yet: the plot's ground inside `outdoor.glb` (one GLB with its paths and street; a question in `package.json`).
+  `carpet`, the basement's pallets `wood`). The kit's GLBs carry none, so `package.json`'s `surfaces` lists them
+  for a game-side wrapper. Not tagged yet: the plot's ground inside `outdoor.glb` (one GLB with its paths and
+  street; a question in `package.json`).
 - `package.json`: the package, its rooms, every file's SHA-256, the props still held as markers, the level pieces in
   no room, the kit pieces' surfaces and the questions for the game side (the package's lamp count, and that the
   game's editor regenerates the minimal `.import` files). Files already in `DIR` that the package does not list (an
