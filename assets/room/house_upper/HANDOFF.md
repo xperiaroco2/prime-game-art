@@ -8,16 +8,28 @@ balcony stairs land beside). Nothing here is copied before the approval fields o
 | From this repo | To the game repo |
 |---|---|
 | P1 (`assets/kit/house_kit/HANDOFF.md`) | `assets/environment/house_kit/` (P4's rooms use 16 of its pieces: the boards and lino floors, the storey walls, the balcony's railings and the external stairs' flight and landing) |
+| `assets/kit/house_kit/export/kit_set.gdshader`, `kit_set.tres` (#132) | `assets/environment/house_kit/` (beside the kit's textures) |
 | `assets/prop/house_props/export/library/*.glb` (52 of them), `task/*.glb` (3), as `package.json` lists | `assets/environment/house_props/<file>.glb` (flat) |
 | `assets/room/house_upper/export/<room>.tscn` (7) | the content of `levels/house/rooms/<room>.tscn` (G3 below) |
 
-`package.json` beside this file lists the package's 81 game paths with their SHA-256 (the copies must hash the same),
+`package.json` beside this file lists the package's 83 game paths with their SHA-256 (the copies must hash the same),
 its rooms (game node, level, kit and prop counts) and the questions. The 7 rooms: `bedroom`, `kids_room`, `landing`,
 `study`, `bathroom`, `guest_room`, `balcony` (with the external stairs down to the yard). Each scene keeps the game
 room's root name, origin, `metadata/size_m`, `Name` label, `Doors`, `Stations` and `Markers`, and adds `Shell` (kit
 instances, walkable ones with `metadata/surface`), `Dressing` and `Fixtures` (lamps). Then the game's `check` (commit
 the `.import` files it writes), `credits`, the import check (11.3) locally with LFS content, `load`, `playcheck`,
 `perf` and `shot`.
+
+## Wall paints and the kit's look (#132)
+Every kit instance under `Shell` overrides its meshes' set surfaces (`surface_material_override/<i>`) with
+`res://assets/environment/house_kit/kit_set.tres`: the art's `kit_set.gdshader`, the kit's `set_d`, `set_n0`
+and `set_n1` textures and the House's wall paints (`layouts/house/house.toml` `[wall_paint]`). Each such mesh
+also sets `instance_shader_parameters/plan_at`, its place and turn in the house plan, so the shader paints by
+the plan wherever the game puts the House. Nothing to run: copy the two files with the kit and load the scene
+(the root's `metadata/wall_paint` stays as a note). Painted here: the bedroom and the guest room, bordeaux
+#69413c; the study, dark blue #1f2a48; the landing, teal #3a6264 (the kit's own plaster, so the colour stays and
+the textures are new). The kids' room, the bathroom and the balcony have no paint; the material gives the kit's
+textured look.
 
 ## Names in the flat props folder
 One prop has a namesake in the library: `toy_chest`. As in P3, the export resolves a prop id through `house.toml`'s
