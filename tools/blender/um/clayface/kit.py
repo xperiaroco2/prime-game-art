@@ -518,6 +518,9 @@ def accessory_seat_ok(gap_mm, inside_share):
 # plane turned to the ear's yaw (hang_normal: the ear normal's level part), then the seat tries the smallest swing
 # (ACC_SWING_DEG: the ring's bottom out about the piercing point's tangent) and push out along that normal
 # (ACC_PUSH_MM) that leaves at most ACC_HEAD_INSIDE_MAX of the ring's vertices inside the head (ring_clear_ok).
+# A deviation from the round's brief (it asked for the ring's plane within 20 degrees of the ear's own plane): the
+# plane check measures against the hanging plane, so the ring's angle to the ear's true plane (ear_n, tilted about 38
+# degrees from level on the bean ear: ear_tilt_deg) is reported per side as ear_plane_deg and not checked.
 ACC_LOBE_BAND = 0.25
 ACC_EAR_PLANE_SHARE = 0.5
 ACC_PIERCE_MAX_MM = 3.0
@@ -628,6 +631,12 @@ def hang_normal(ear_n):
     x, y, _z = _xyz(ear_n)
     ln = math.hypot(x, y)
     return (x / ln, y / ln, 0.0) if ln > 1e-6 else (1.0, 0.0, 0.0)
+
+
+def ear_tilt_deg(ear_n):
+    """The angle between the ear's own plane and the hanging plane (hang_normal) a ring is turned to, in degrees:
+    what a hanging, unswung ring's ear_plane_deg comes to."""
+    return plane_angle_deg(ear_n, hang_normal(ear_n))
 
 
 def swing_order(swings=ACC_SWING_DEG, pushes=ACC_PUSH_MM):

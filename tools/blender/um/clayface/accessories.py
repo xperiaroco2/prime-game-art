@@ -61,12 +61,13 @@ def _turn(o, idx, rot, pivot, d):
     me.update()
 
 
-def ring_measure(pts, lobe, hang_n):
+def ring_measure(pts, lobe, hang_n, ear_n):
     """(piercing point's distance to the lobe's centre in mm, the ring plane's angle to the ear's hanging plane in
-    degrees)."""
+    degrees, its angle to the ear's own plane in degrees: reported, not checked; kit.py, ear_tilt_deg)."""
     f = ring_frame(pts)
     return (round((Vector(f["pierce"]) - Vector(lobe)).length * 1000, 2),
-            round(plane_angle_deg(f["normal"], hang_n), 1))
+            round(plane_angle_deg(f["normal"], hang_n), 1),
+            round(plane_angle_deg(f["normal"], ear_n), 1))
 
 
 def _head_mm(tree, p):
@@ -86,7 +87,8 @@ def seat_ring(o, idx, side_pts, out_x, head_tree):
     """Hangs the ring idx of o from the ear side's lobe: its plane turned to the vertical plane of the ear's yaw
     (kit.hang_normal), its piercing point on the lobe's centre (the ear's lowest band off the head), then the smallest
     swing of its bottom out and push out (kit.swing_order) that clears the head (kit.ring_clear_ok). out_x: +1 for the
-    left ear, -1 for the right. Returns the lobe centre, the hanging normal and the seat's numbers."""
+    left ear, -1 for the right. Returns the lobe centre, the hanging normal and the seat's numbers (with the ear's own
+    normal, ear_normal)."""
     head_mm = [_head_mm(head_tree, p) for p in side_pts]
     lobe = Vector(lobe_centre(side_pts, head_mm=head_mm))
     ear_n = Vector(ear_plane(side_pts))
@@ -123,7 +125,7 @@ def seat_ring(o, idx, side_pts, out_x, head_tree):
     share, swing, push, R = best
     _turn(o, idx, R, piv, hn * (push / 1000))
     return lobe, hn, {"turn_deg": round(math.degrees(rn.angle(hn)), 1), "move_mm": round(d.length * 1000, 1),
-                      "swing_deg": swing, "push_mm": push,
+                      "swing_deg": swing, "push_mm": push, "ear_normal": [round(v, 4) for v in ear_n],
                       "lobe_free": sum(1 for m in head_mm if m >= ACC_LOBE_FREE_MM)}
 
 
@@ -197,10 +199,11 @@ def seat_accessories(face, h, objs, ear_state):
                 world = piece_coords(o)
                 pts = [world[i] for i in idx]
                 gap, inside = _gap(ear_tree, pts)
-                pierce, plane = ring_measure(pts, lobe, hang_n)
+                pierce, plane, ear_deg = ring_measure(pts, lobe, hang_n, seat["ear_normal"])
                 head_in = _inside(head_tree, pts)
                 out[z] = dict(seat, moved=True, vertices=len(idx), gap_mm=gap, inside_share=inside,
                               lobe_centre=[round(v, 4) for v in lobe], pierce_mm=pierce, plane_deg=plane,
+                              ear_plane_deg=ear_deg,
                               head_inside=head_in,
                               ok=accessory_seat_ok(gap, inside) and accessory_ring_ok(pierce, plane, head_in))
                 continue
@@ -212,8 +215,9 @@ def seat_accessories(face, h, objs, ear_state):
                       "inside_share": inside, "ok": accessory_seat_ok(gap, inside)}
         if out:
             rep[o.name] = out
-    bad = ["%s %s: gap %s mm, inside %s, pierce %s mm, plane %s deg, in head %s"
-           % (o, z, r["gap_mm"], r["inside_share"], r.get("pierce_mm"), r.get("plane_deg"), r.get("head_inside"))
+    bad = ["%s %s: gap %s mm, inside %s, pierce %s mm, plane %s deg (ear plane %s), in head %s"
+           % (o, z, r["gap_mm"], r["inside_share"], r.get("pierce_mm"), r.get("plane_deg"), r.get("ear_plane_deg"),
+              r.get("head_inside"))
            for o, zs in rep.items() for z, r in zs.items() if r.get("moved") and not r["ok"]]
     if bad:
         raise SeatError("ear/nose accessories not seated on the kit: " + "; ".join(bad))

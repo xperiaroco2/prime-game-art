@@ -213,7 +213,8 @@ def _rings(er: dict[str, Any] | None) -> str:
     return (f"{er['seated_sides']} sides seated on {er['faces']} faces ({er['no_ear_faces']} with hidden ears), "
             f"{er['fail_faces']} failed, max gap {er['gap_mm_max']} mm, pierce {er['pierce_mm_max']} mm, "
             f"plane {er['plane_deg_max']} deg, inside {er['inside_share_max']}, "
-            f"in the head {er.get('head_inside_max', 'n/a')}")
+            f"in the head {er.get('head_inside_max', 'n/a')}; to the ear's own plane "
+            f"{er.get('ear_plane_deg_min', 'n/a')}..{er.get('ear_plane_deg_max', 'n/a')} deg (reported, not checked)")
 
 
 def kit_summary(report: dict[str, Any]) -> list[str]:

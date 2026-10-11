@@ -299,6 +299,13 @@ class Accessories(unittest.TestCase):
         self.assertAlmostEqual(math.hypot(n[0], n[1]), 1.0)
         self.assertGreater(n[0], 0.98)
         self.assertEqual(K.hang_normal((0.0, 0.0, -1.0)), (1.0, 0.0, 0.0))
+        # the brief's deviation: a hanging ring is about 38 degrees off the bean ear's own plane, over the 20 the
+        # brief asked for; so that angle is reported per side (ear_plane_deg), not checked
+        self.assertAlmostEqual(K.ear_tilt_deg((0.773, -0.14, -0.618)), 38.2, delta=0.3)
+        self.assertGreater(K.ear_tilt_deg((0.773, -0.14, -0.618)), K.ACC_PLANE_MAX_DEG)
+        self.assertAlmostEqual(K.ear_tilt_deg((1.0, 0.0, 0.0)), 0.0)
+        src = (ROOT / "tools/blender/um/clayface/accessories.py").read_text(encoding="utf-8")
+        self.assertIn("ear_plane_deg=ear_deg", src)
         order = K.swing_order()
         self.assertEqual(order[0], (0, 0.0))  # no change first
         self.assertEqual(len(order), len(K.ACC_SWING_DEG) * len(K.ACC_PUSH_MM))

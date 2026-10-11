@@ -248,7 +248,11 @@ the lobe's centre, gap to the ear or nose surface, share of the ring inside it, 
 distance to the lobe's centre, the ring plane's angle to the ear's hanging plane and `head_inside`, the share inside
 the head). Ok when the gap is at most 3 mm, under half the ring is buried, and for an ear ring the piercing point is
 within 3 mm of the lobe's centre, the plane within 20 degrees of the hanging plane and the ring clear of the head
-(`kit.accessory_ring_ok`). A piece that
+(`kit.accessory_ring_ok`). This is a deviation from round 4's brief, which asked for the ring's plane within 20
+degrees of the ear's own plane: the bean ear's lower half is tilted about 38 degrees from level (`kit.ear_tilt_deg`),
+so a ring in that plane sinks into the jaw, and the plane check measures against the hanging plane instead. The ring's
+angle to the ear's own plane is reported per side as `ear_plane_deg` (and its range in `faces --kit-check`), not
+checked; the engineer decides on the review page whether the rings should follow the ear's tilt. A piece that
 fails it fails the build (`accessories.SeatError`); `faces --kit-check` seats a pair of the men's Punk rings on every
 random face and fails on any miss (`docs/faces.md`). The zones, the limits and the geometry are pure Python in
 `clayface/kit.py` (`accessory_zone`, `accessory_seat_ok`, `lobe_centre`, `ear_plane`, `hang_normal`, `swing_order`,
