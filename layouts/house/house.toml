@@ -87,14 +87,14 @@ at = [19.5, 34.0]
 look = [40.0, 34.0]
 [[export.sheet_views]]
 room = "attic"
-title = "roof: the lookout from the dormer (1.6 m)"
+title = "roof from dormer, 1.6 m"
 at = [34.9, 43.6]  # the dormer's climb-out (dressing/attic_roof/attic.toml's roof.arrive)
 look = [39.0, 41.9]  # the Lookout station
 over_roof = true
 sun = true
 [[export.sheet_views]]
 room = "attic"
-title = "roof: from the lookout (1.6 m)"
+title = "roof from lookout, 1.6 m"
 at = [39.0, 41.9]
 look = [30.0, 36.0]
 look_h = 0.5
