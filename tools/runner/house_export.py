@@ -22,6 +22,7 @@ PNG_COMPRESS = 2  # VRAM Compressed under environment/ (11.2)
 SURFACES = ("concrete", "wood", "carpet", "grass")  # the game's FootstepSurface.SURFACES (ARCHITECTURE 4.7.40)
 ROOF_TYPES = ("pitched", "ridge", "chimney", "vent", "dormer", "downpipe", "glass_roof", "glass_ridge")  # never carpet
 ROOF_MARGIN = 1.0  # m round a roof's rect the check's roof rays cover (the eaves' overhang)
+ROOF_PIECES = ("roof_", "chimney_", "dormer_")  # the name prefixes of the shell pieces a ray in a roof's rect may meet
 ROOF_FROM = 10.0  # m over the level's floor the roof rays start (over the ridge)
 RUG = "rug"  # dressing props whose id starts so cover the floor (no collider): the tiles under them are carpet
 QUESTIONS = [  # for the game side (prime-game #523); package.json carries them (questions() adds the package's lamps)
@@ -265,7 +266,8 @@ def check_request(data: dict, built: dict, kit_ids=()) -> dict:
     """What godot/house/export_check.gd checks on the assembled package (its rooms placed at their plan origins): per
     room its rect, floor height and node lists (walkable shell pieces, props with a collider); the kit GLBs with a
     surface (each must hold a layer-1 collider); a room under a roof of its level also its `roof` rect (ROOF_MARGIN
-    round it) for the rays down from roof_from over its floor, and `roof_rect`, where a ray must meet the roof; and
+    round it) for the rays down from roof_from over its floor, and `roof_rect`, where a ray, past the props on the
+    roof, must meet a roof piece (`roof_pieces`, ROOF_PIECES): a floor or no hit there is a hole in the roof; and
     the 1.36 m capsule's walks (house_layout.walk_request over every level: each doorway and flight) whose every
     point stands in a room of the package, with the pads under ends that have no floor. The walks leaving the
     package are listed as `outside`, the closed kit leaves as `closed`."""
@@ -284,7 +286,7 @@ def check_request(data: dict, built: dict, kit_ids=()) -> dict:
                     x, y, w, d = (float(v) for v in roof["rect"])
                     m = ROOF_MARGIN
                     rooms[-1].update(roof=[x - m, y - m, w + 2 * m, d + 2 * m], roof_rect=[x, y, w, d],
-                                     roof_from=ROOF_FROM)
+                                     roof_from=ROOF_FROM, roof_pieces=list(ROOF_PIECES))
 
     storey = data["settings"].get("floor_to_floor_m", 3.2)
 

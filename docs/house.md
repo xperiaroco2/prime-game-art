@@ -131,9 +131,12 @@ named (#122) when a walkable shell piece (one with a surface) or a dressing prop
 `StaticBody3D` with a shape; when the game's footstep ray (0.3 m over the floor to 0.5 m under it, every 0.5 m over
 each room; over a room under a roof of its level also from 10 m over its floor, every 0.5 m over the roof's rect and
 1 m round it, so the first hit is what a player on the free roof stands on) hits a shell collider without a known
-surface, or a roof ray inside the roof's rect meets nothing; when a kit GLB with a surface has no collider; or when the
-1.36 m capsule of `house --walk` (`godot/house/walker.gd`, shared with `walk.gd`) does not walk through a doorway or
-flight whose every point stands in the package (on a floored room of it, or on a pad where the house has no floor).
+surface, or a roof ray inside the roof's rect, past the props on the roof, meets no roof piece (a shell piece named
+`roof_*`, `chimney_*` or `dormer_*`, `house_export.ROOF_PIECES`): a hole, whether the ray then falls onto the attic's
+floor or meets nothing (#127; one problem per piece met, with its first ray and the count); when a kit GLB with a
+surface has no collider; or when the 1.36 m capsule of `house --walk` (`godot/house/walker.gd`, shared with
+`walk.gd`) does not walk through a doorway or flight whose every point stands in the package (on a floored room of
+it, or on a pad where the house has no floor).
 The doorways and flights that leave the package are listed, walked with the package beside them. The report:
 `_check/load.json` (per room the counts, then `package`: the problems, rays, surfaces hit, the roof's rays and first
 hits, `none_at`: every collider hit without a surface (a prop) with its room, kit pieces and walks); the command
