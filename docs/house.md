@@ -138,6 +138,25 @@ copied into `_check/`): the kitchen, the storage (basement) and the attic, those
 eye-height views lit only by its own fixtures and a dim review ambient; `_check/sheet.png` (1280 px wide), a still per
 view and `sheet.json` (draw calls and lights per view).
 
+A package goes to the game from git, not from the raw build (#124): its files are committed into the set manifests'
+`export/` folders (`docs/manifest.md`: the kit in `assets/kit/house_kit/`, the props in `assets/prop/house_props/`,
+the room scenes of a package in their own `room` set, P2's in `assets/room/house_ground/`), with the package's
+`package.json` beside the manifest that owns it and a `HANDOFF.md` for the game's import task (what to copy where,
+the credits drafts, the open questions). The engineer approves the look from
+
+```
+tools/run.sh house --package-sheet DIR --package N
+```
+
+which finds the committed `package.json` of package N under `assets/*/*/`, copies every file it lists from the
+committed copy with the same SHA-256 (`_house_review.py`; a file without one fails) to its game path in `DIR`, imports
+it headless and shoots `godot/house/package_sheet.gd` in an off-screen window: `DIR/p<N>_<name>.png` (2400 px wide),
+`p<N>_<name>_1280.png` (the agents' copy) and `.json` (per tile). A package without rooms (P1, the kit) is a line-up
+of its pieces, one tile per family of `house.toml`'s `[export.kit_families]` (id patterns, the first match wins;
+shortest in front, under a key light); a package with rooms shows each room from its door (`Doors/Door1`, else the
+first) at 1.6 m eye height looking at the room's middle, lit only by its own fixtures and a dim ambient. The outdoor
+rooms of P2 (yard, street, path, ...) carry only markers and lamps: their ground is the plot, package 7.
+
 `tools/tests/test_house_export.py` diffs the 34 art rooms against the game's greybox rooms (`D:/prime-game`, read
 only; skipped without it) on root, origin, size, Doors, Stations and Markers and expects exactly the six known
 differences of the plan's `mapping.md` (attic and roof: question G1; garage Door3, landing Door6, study Door1,

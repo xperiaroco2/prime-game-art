@@ -55,6 +55,9 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--sheet", action="store_true",
                         help="with --export: after the check, shoot the kitchen, storage and attic off-screen from the "
                              "export folder into DIR/_check/sheet.png")
+    parser.add_argument("--package-sheet", type=Path, metavar="DIR",
+                        help="with --package N: stage package N from the committed files under assets/ into DIR and "
+                             "shoot its look-approval sheet off-screen (the kit's families or each room from its door)")
     parser.add_argument("--basement", type=Path, metavar="DIR",
                         help="stage and import like --walk, then light the basement with lamp stand-ins and shoot its "
                              "review into DIR (basement_review.toml; sheet.png, a still per room, basement.json)")
@@ -104,6 +107,12 @@ def run(args: argparse.Namespace) -> int:
         raise common.Failure(f"house routes: {len(bad_routes)} problems")
     if args.check:
         return 0
+    if args.package_sheet:
+        if args.package is None:
+            raise common.Failure("--package-sheet needs --package N")
+        from . import _house_review
+        return _house_review.run(args.package_sheet.resolve(), args.package,
+                                 house_export.settings(data).get("kit_families", {"kit": ["*"]}))
     planned = house_layout.plan(data)
     if args.export:
         return export(data, lights, planned, dressing, args)
