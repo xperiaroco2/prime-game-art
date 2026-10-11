@@ -42,5 +42,7 @@ The drafts are `D:/prime-art-raw/house/export/credits/house_kit.md` and `house_p
 - Colliders are the GLBs' own `-convcolonly` shapes (`StaticBody3D`, layer 1).
 - Footsteps: the floors carry `concrete`; the pallets (low props the footstep ray meets first) carry `wood`.
 - The art's package check (`house --export --package 3`) is green: 8 scenes load with their root and `size_m`, 7/7
-  capsule walks arrive, of the 4448 rays down 4422 hit `concrete`, 22 `wood` (pallets) and 4 the boiler's plinth (a
-  prop, no surface: the game's default).
+  capsule walks arrive, of the 4448 rays down 4422 hit `concrete`, 22 `wood` (pallets) and 4 `none`: the plinth of
+  `boiler_1` under the boiler's body, where no player stands (the 0.4 m player capsule keeps its centre at least
+  0.89 m from the boiler's axis, past the plinth's corners at 0.85 m, so the game's footstep ray never meets the
+  boiler; it carries no surface).
