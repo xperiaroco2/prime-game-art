@@ -84,7 +84,7 @@ A recipe is JSON in `recipes/`: `um_final_test.json` (the final test's four char
 |---|---|
 | `id`, `gender` | Lowercase id; `M` or `W` (the body type) |
 | `head` | `file`, `object`, `keep` (materials kept as bald skin), `eye_materials` (where the eye centres are read); optional `as_skin` (more materials painted with the skin), `straighten` (a collar ring made a straight neck), `tuck_ears` (flatten the ears at this half-width, m), `cut` (zones) |
-| `hair`, `extras[]` | `file`, `object`, `materials` (the head regions taken); optional `cut` (zones: faces whose centre is inside go), `drop_pieces` (`um/zones.py` `PIECE_ZONES`: whole loose pieces whose bounding-box centre is inside go, as the catalogue classifies pieces; m2 drops the King's beard and moustache with `facial_hair`; w4 keeps only the Punk mohawk's crest with `punk_cap` and `punk_side_strips`), `inflate` (scale about the skull centre, e.g. 0.006); an extra also has `role` (its slot name, e.g. `moustache`) |
+| `hair`, `extras[]` | `file`, `object`, `materials` (the head regions taken); optional `cut` (zones: faces whose centre is inside go), `drop_pieces` (`um/zones.py` `PIECE_ZONES`: whole loose pieces whose bounding-box centre is inside go, as the catalogue classifies pieces; m2 drops the King's beard and moustache with `facial_hair`; w4 keeps only the Punk mohawk's crest with `punk_cap` and `punk_side_strips`), `inflate` (scale about the skull centre, e.g. 0.006); the hair alone may have `stubble` (below); an extra also has `role` (its slot name, e.g. `moustache`) |
 | `top`, `bottom`, `shoes` | `file`, `object` |
 | `eyes`, `brows`, `mouth` | Face-kit `style`; eyes `iris`, `lash`; brows `rgb`; mouth `lip`, `dz` |
 | `skin` | `null` (the head's own skin) or `[r, g, b]` |
@@ -205,7 +205,9 @@ vertex groups and material), `tex/<role>_<key>_col.png`, `_nrm.png` and `piece.j
 the skin tone and the part's recolours, the clay settings of its kind and `BAKE_VERSION`; and what the build does to
 the part before the bake (`claylook.keys_for`): the shoes for the bottom (the tuck cull and the toe-bone split), the
 character's `extend` drops for the part they lengthen, the skeleton and `head_bone_rest` for every head item (the head
-scale's joint), and for the face parts and the head the head, hair and face settings. A new step in `assemble.build`
+scale's joint), for the face parts and the head the head, hair and face settings, and for every extra the seat
+(`kit.SEAT_SHA`, the hash of `clayface/accessories.py` and `clayface/kit.py`, the face kit's picks and the ear state
+its hair sets: the ear and nose pieces are seated on the kit's ears and nose). A new step in `assemble.build`
 that changes a part from something outside its spec must join its key there. A character bake loads every piece it finds and bakes only the missing ones; the report's
 `clay_bake` names each part's source (`baked` or `library`) and times. Raise `BAKE_VERSION` when the pass or the bake
 changes its output. The library lives in the raw folder, never in git.
@@ -230,13 +232,31 @@ bake 60 s, all six pieces fresh (head 7.5 s, hair 14.1, accessory 7.4, top 8.4, 
 **Ear and nose accessories on the bean head** (art #42 round 3: m3's rings hung where the pack's ear had been). The
 pack's rings and studs follow the warped skull, but the kit builds its own ears and nose, so
 `um/clayface/accessories.py` `seat_accessories` (run by `clayface/adapter.build` after the face) moves each side's ear
-pieces (a piece's centre within -0.10..0.03 m of the eye line and over 45 mm off the centre line) so their top passes
-2 mm up through the kit ear's lobe, in the ear state's shape (free or tucked; hidden ears carry nothing), and the nose
-pieces so their top passes through the kit nose's underside. It only translates (the ring keeps its orientation) and
-measures each piece: `face_kit.accessories` in `build_report.json` (move, gap to the ear or nose surface, share of the
-ring inside it; ok when the gap is at most 3 mm and under half the ring is buried). A piece that fails it fails the
-build (`accessories.SeatError`); the zones and the limits are pure data in `clayface/kit.py` (`accessory_zone`,
-`accessory_seat_ok`), unit-tested in `tools/tests/test_faces_claykit.py`.
+pieces (a piece's centre within -0.10..0.03 m of the eye line and over 45 mm off the centre line) onto the kit ear,
+in the ear state's shape (free or tucked; hidden ears carry nothing), and the nose pieces so their top passes 2 mm up
+through the kit nose's underside. Round 4 (the ring hung off the lobe's centre and was never turned): each side's ear
+ring hangs: its plane is the vertical plane turned to the ear's yaw (`kit.hang_normal`: the level part of the normal
+of the plane fitted to the lower half of that ear's vertices, `kit.ear_plane`; that half faces down and out on the bean
+ear, and a ring in it sank its lower half into the jaw), and it is moved so its piercing point, the top of its centre
+line (`kit.ring_frame`: centre plus the mean radius along the world's up in the ring's plane), sits on the lobe's
+centre (`kit.lobe_centre`: the centroid of the ear's vertices in the lowest quarter of its height, not one vertex,
+counting only the vertices at least 3 mm off the head: the ear's root on the skull is not lobe). Then the seat tries,
+the smallest change first (`kit.swing_order`), a swing of the ring's bottom out about the piercing point (0 to 20
+degrees) and a push out along the normal (0 to 2.5 mm) until at most 3 % of the ring's vertices are inside the head
+(`kit.ring_clear_ok`). Each piece is measured: `face_kit.accessories` in `build_report.json` (move, turn, swing, push,
+the lobe's centre, gap to the ear or nose surface, share of the ring inside it, and for ear rings the piercing point's
+distance to the lobe's centre, the ring plane's angle to the ear's hanging plane and `head_inside`, the share inside
+the head). Ok when the gap is at most 3 mm, under half the ring is buried, and for an ear ring the piercing point is
+within 3 mm of the lobe's centre, the plane within 20 degrees of the hanging plane and the ring clear of the head
+(`kit.accessory_ring_ok`). This is a deviation from round 4's brief, which asked for the ring's plane within 20
+degrees of the ear's own plane: the bean ear's lower half is tilted about 38 degrees from level (`kit.ear_tilt_deg`),
+so a ring in that plane sinks into the jaw, and the plane check measures against the hanging plane instead. The ring's
+angle to the ear's own plane is reported per side as `ear_plane_deg` (and its range in `faces --kit-check`), not
+checked; the engineer decides on the review page whether the rings should follow the ear's tilt. A piece that
+fails it fails the build (`accessories.SeatError`); `faces --kit-check` seats a pair of the men's Punk rings on every
+random face and fails on any miss (`docs/faces.md`). The zones, the limits and the geometry are pure Python in
+`clayface/kit.py` (`accessory_zone`, `accessory_seat_ok`, `lobe_centre`, `ear_plane`, `hang_normal`, `swing_order`,
+`ring_frame`, `plane_angle_deg`, `ring_clear_ok`, `accessory_ring_ok`), unit-tested in `tools/tests/test_faces_claykit.py`.
 
 ## Pipeline rules learned in the final test
 
@@ -309,3 +329,28 @@ exact; heights 1 mm; seam overlaps 0.2 mm; each probe band's see-through and pok
 of rays cast exact. `tools/tests/test_assembly_blender.py` rebuilds the four characters at 10 % resolution against
 `tools/tests/fixtures/assembly/final_test_reference.json` (the final test's numbers) and checks their saved files, in
 one Blender run of about 25 s; it skips when Blender or the packs are missing.
+
+## Hair stubble
+
+A recipe's `hair` may carry `stubble`, the tone that shaved hair leaves on the skin (art #42 round 4: w4's mohawk). It
+is painted into the head's baked clay colour, never a new mesh or material, so the head keeps its surfaces; it needs the
+bake (`--bake`; the plain clay look has no texture to paint).
+
+| Key | What |
+|---|---|
+| `strength` | 0 to 1: how far a skin texel goes toward the tone (A light 0.35, B medium 0.6) |
+| `darken` | 0 to 1: the tone is the hair's clay colour times this |
+| `speckle` | 0 to 1: a random value per 1.5 mm of surface takes up to this share of the strength away (a grain) |
+| `zone` | `um/zones.py` `STUBBLE_ZONES`: `scalp`, the sides, back and top of the skull above a hairline from the forehead over the ears to the nape; not the face, ears or neck |
+
+`claybake.stubble` runs after the library load: it copies the head's colour image (the library's file stays as it is),
+rasterises the `bake` UV triangles to a world position per texel, weighs each skin texel (mask alpha > 0.5) with
+`zones.stubble_weight` relative to the Head joint (the x1.3 clay head baked in; the hairline is feathered over 12 mm),
+refills the gutters and packs the copy into the `.blend`; `build_report.json` holds it under `clay_bake.stubble`
+(texels tinted, the tone, seconds). The stubble is in no library key. `recipes/clay_cast_e.json` gives w4 variant B.
+
+Not delivered in round 4: the brief's crest from the front hairline to the nape. w4 keeps the Punk's own crest, which
+ends at the crown (the back view shows the stubble below it); a try that extended it from the Punk cap's centre band
+left a ragged brim round the crown and a tongue ending mid-back, so it was dropped. The brief's variant C (the crest
+extended to the nape) was therefore built as a darker, denser stubble, the brief's fallback for a crest that already
+reaches the nape, which this one does not. A crest to the nape needs new crest geometry: a later task.

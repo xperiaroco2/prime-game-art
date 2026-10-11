@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 import random
 import unittest
 from unittest import mock
@@ -233,6 +234,87 @@ class Accessories(unittest.TestCase):
         src = (ROOT / "tools/blender/um/clayface/accessories.py").read_text(encoding="utf-8")
         self.assertIn("accessory_seat_ok(gap, inside)", src)
         self.assertIn("raise SeatError", src)
+
+    @staticmethod
+    def ring(centre, radius, normal_axis, tilt_deg=0.0, n=24, tube=0.0008):
+        """A torus-like ring's vertices: centre, centre-line radius, the plane's normal along x ("x") or y ("y"),
+        turned by tilt_deg about z."""
+        t = math.radians(tilt_deg)
+        out = []
+        for i in range(n):
+            a = 2 * math.pi * i / n
+            for r in (radius - tube, radius + tube):
+                u, w = r * math.cos(a), r * math.sin(a)  # u across, w up
+                x, y = (0.0, u) if normal_axis == "x" else (u, 0.0)
+                x, y = x * math.cos(t) - y * math.sin(t), x * math.sin(t) + y * math.cos(t)
+                out.append((centre[0] + x, centre[1] + y, centre[2] + w))
+        return out
+
+    def test_plane_and_ring_frame(self):
+        pts = self.ring((0.1, -0.05, 1.6), 0.006, "x")
+        n = K.plane_normal(pts)
+        self.assertAlmostEqual(abs(n[0]), 1.0, places=6)
+        f = K.ring_frame(pts)
+        self.assertAlmostEqual(f["radius"], 0.006, places=5)
+        for got, want in zip(f["pierce"], (0.1, -0.05, 1.606)):  # the top of the centre line
+            self.assertAlmostEqual(got, want, places=5)
+        self.assertAlmostEqual(K.plane_angle_deg(K.plane_normal(self.ring((0, 0, 0), 0.006, "x", 30.0)), (1, 0, 0)),
+                               30.0, places=4)
+        self.assertAlmostEqual(K.plane_angle_deg((1, 0, 0), (-1, 0, 0)), 0.0)  # a plane has no side
+
+    def test_lobe_centre_is_a_band_not_a_vertex(self):
+        ear = [(0.10 + 0.004 * math.cos(a), -0.05 + 0.007 * math.sin(a), z)
+               for z in (1.60, 1.61, 1.62, 1.63, 1.64) for a in (0, 1.5, 3, 4.5)] + [(0.13, -0.05, 1.599)]
+        c = K.lobe_centre(ear)  # the lowest quarter: the z 1.60 ring and the stray low vertex, not that vertex alone
+        self.assertLess(c[2], 1.601)
+        self.assertLess(abs(c[0] - 0.106), 0.002)
+        n = K.ear_plane([(0.10 + 0.002 * (i % 2), -0.06 + 0.002 * j, 1.60 + 0.003 * k)
+                         for i in range(2) for j in range(8) for k in range(8)])
+        self.assertAlmostEqual(abs(n[0]), 1.0, places=3)  # a flat ear in the y-z plane
+
+    def test_the_ring_measure(self):
+        self.assertTrue(K.accessory_ring_ok(0.0, 0.0))
+        self.assertTrue(K.accessory_ring_ok(K.ACC_PIERCE_MAX_MM, K.ACC_PLANE_MAX_DEG))
+        self.assertFalse(K.accessory_ring_ok(K.ACC_PIERCE_MAX_MM + 0.01, 0.0))  # off the lobe's centre
+        self.assertFalse(K.accessory_ring_ok(0.0, K.ACC_PLANE_MAX_DEG + 0.1))  # across the ear
+        self.assertTrue(K.accessory_ring_ok(0.0, 0.0, K.ACC_HEAD_INSIDE_MAX))
+        self.assertFalse(K.accessory_ring_ok(0.0, 0.0, K.ACC_HEAD_INSIDE_MAX + 0.001))  # sunk into the head
+        src = (ROOT / "tools/blender/um/clayface/accessories.py").read_text(encoding="utf-8")
+        self.assertIn("accessory_ring_ok(pierce, plane, head_in)", src)
+
+    def test_the_lobe_leaves_out_the_ears_root_on_the_head(self):
+        # step 4: the lowest band's centroid sat on the skull (the ear's root); only the points 3 mm off the head count
+        root = [(0.08, -0.05 + 0.002 * i, 1.60) for i in range(10)]  # on the head, x 0.08
+        lobe = [(0.09 + 0.001 * (i % 2), -0.05 + 0.002 * (i // 2), 1.60) for i in range(10)]
+        top = [(0.085, -0.05, 1.64)] * 4
+        head_mm = [0.0] * 10 + [10.0] * 10 + [5.0] * 4
+        self.assertLess(K.lobe_centre(root + lobe + top)[0], 0.088)  # without the head: half on the root
+        self.assertGreater(K.lobe_centre(root + lobe + top, head_mm=head_mm)[0], 0.089)
+        few = [10.0] * 3 + [0.0] * 21  # too few free points: the whole band
+        self.assertLess(K.lobe_centre(root + lobe + top, head_mm=few)[0], 0.088)
+
+    def test_a_ring_hangs_and_swings_the_least_first(self):
+        n = K.hang_normal((0.773, -0.14, -0.618))  # the bean ear's lower half faces down and out
+        self.assertAlmostEqual(n[2], 0.0)
+        self.assertAlmostEqual(math.hypot(n[0], n[1]), 1.0)
+        self.assertGreater(n[0], 0.98)
+        self.assertEqual(K.hang_normal((0.0, 0.0, -1.0)), (1.0, 0.0, 0.0))
+        # the brief's deviation: a hanging ring is about 38 degrees off the bean ear's own plane, over the 20 the
+        # brief asked for; so that angle is reported per side (ear_plane_deg), not checked
+        self.assertAlmostEqual(K.ear_tilt_deg((0.773, -0.14, -0.618)), 38.2, delta=0.3)
+        self.assertGreater(K.ear_tilt_deg((0.773, -0.14, -0.618)), K.ACC_PLANE_MAX_DEG)
+        self.assertAlmostEqual(K.ear_tilt_deg((1.0, 0.0, 0.0)), 0.0)
+        src = (ROOT / "tools/blender/um/clayface/accessories.py").read_text(encoding="utf-8")
+        self.assertIn("ear_plane_deg=ear_deg", src)
+        order = K.swing_order()
+        self.assertEqual(order[0], (0, 0.0))  # no change first
+        self.assertEqual(len(order), len(K.ACC_SWING_DEG) * len(K.ACC_PUSH_MM))
+        cost = [b / 5.0 + a for b, a in order]
+        self.assertEqual(cost, sorted(cost))
+        self.assertLessEqual(max(K.ACC_SWING_DEG), K.ACC_PLANE_MAX_DEG)  # a swung ring still passes the plane check
+        self.assertLess(max(K.ACC_PUSH_MM), K.ACC_PIERCE_MAX_MM)  # a pushed ring still passes the piercing check
+        self.assertTrue(K.ring_clear_ok(0.0))
+        self.assertFalse(K.ring_clear_ok(0.2))
 
 
 class BrowMeasure(unittest.TestCase):

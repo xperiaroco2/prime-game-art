@@ -1,5 +1,5 @@
 {
- "description": "The face kit's proof (art #42 part B): the lab's round E cast (research/2026-10-05-faces/lab/clay_e/cast_e.py CAST_E: the ball nose on every face, the loud features moved) on round D's cast builds (research/2026-10-07-clay-d/cast/<id>_build.json: parts, skin, hair and brow colours), built in the clay look with the clay face kit. The catalogue's cuts the assembler cannot make yet are left out: w4's nose ring comes with the Punk's neck ring (cut not_facial_hair). m2's hair drops the King's pack beard and moustache as whole pieces (drop_pieces facial_hair): the kit's handlebar is his moustache, as in the lab. w4's mohawk drops the Punk's skull cap and side strips (drop_pieces punk_cap, punk_side_strips): only the crest of spikes stays.",
+ "description": "The face kit's proof (art #42 part B): the lab's round E cast (research/2026-10-05-faces/lab/clay_e/cast_e.py CAST_E: the loud features moved) on round D's cast builds (research/2026-10-07-clay-d/cast/<id>_build.json: parts, skin, hair and brow colours), built in the clay look with the clay face kit. The catalogue's cuts the assembler cannot make yet are left out: w4's nose ring comes with the Punk's neck ring (cut not_facial_hair). m2's hair drops the King's pack beard and moustache as whole pieces (drop_pieces facial_hair): the kit's handlebar is his moustache, as in the lab. The noses (art #42 round 4, the engineer's three kit noses): m1 the bean (`long`), m4 and w4 the pinocchio, m2, m3, w1, w2 and w3 the ball (`bulb`). w4's mohawk drops the Punk's skull cap and side strips (drop_pieces punk_cap, punk_side_strips): only the crest of spikes stays, ending at the crown (round 4 did not extend it to the nape); its shaved sides carry a medium stubble tone baked into the head's skin (hair stubble, zone scalp; art #42 round 4 variant B).",
  "packs": {
   "M": "refs/Ultimate_Modular_Men_Pack",
   "W": "refs/Ultimate_Modular_Women_Pack"
@@ -89,7 +89,7 @@
    },
    "face_kit": {
     "mouth": "gap_grin",
-    "nose": "bulb",
+    "nose": "long",
     "eye_size": "big",
     "pupil": "pill",
     "lid": "neutral",
@@ -366,7 +366,7 @@
    },
    "face_kit": {
     "mouth": "frown",
-    "nose": "bulb",
+    "nose": "pinocchio",
     "eye_size": "small",
     "pupil": "pill",
     "lid": "neutral",
@@ -653,7 +653,13 @@
     "materials": [
      "Pink"
     ],
-    "object": "Punk_Head"
+    "object": "Punk_Head",
+    "stubble": {
+     "strength": 0.6,
+     "darken": 0.45,
+     "speckle": 0.4,
+     "zone": "scalp"
+    }
    },
    "top": {
     "file": "Soldier.glb",
@@ -702,7 +708,7 @@
    },
    "face_kit": {
     "mouth": "toothy",
-    "nose": "bulb",
+    "nose": "pinocchio",
     "eye_size": "small",
     "pupil": "big",
     "lid": "neutral",

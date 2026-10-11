@@ -35,5 +35,46 @@ BROW_ZONE = lambda c: abs(c.x) < 0.085 and c.y < -0.125 and 1.672 < c.z < 1.722 
 # The skull centre that hair-like parts are inflated about.
 SKULL_CENTRE = (0.0, -0.055, 1.69)
 
+
+# Where shaved hair leaves a stubble tone on the head's skin (a recipe hair's "stubble" zone, art #42 round 4). Unlike
+# the boxes above, a stubble zone is relative to the Head joint in the built clay head (x1.3 baked in): dy back, dz up,
+# metres. "line" is the hairline as (dy, lowest dz) points from the forehead to the nape: above it is scalp, below it
+# the face, the ears and the neck; "feather" softens the line; in front of the first point nothing is scalp. Measured
+# on the bean head of w4 (round 4 before cast): head top dz 0.304, face front dy -0.189, back dy +0.132, the eyes about
+# dz 0.127, the kit ear dy -0.038 to 0.0 and dz 0.07 to 0.122, the nape about dz 0.03.
+STUBBLE_ZONES = {
+    "scalp": {
+        "line": ((-0.19, 0.24), (-0.12, 0.20), (-0.06, 0.155), (-0.03, 0.15), (0.0, 0.14), (0.02, 0.11),
+                 (0.06, 0.045), (0.14, 0.03)),
+        "feather": 0.012,
+    },
+}
+
+
+def stubble_line(dy: float, zone: str = "scalp") -> float | None:
+    """The zone's hairline height dz at dy (linear between the points, flat after the last); None in front of it."""
+    line = STUBBLE_ZONES[zone]["line"]
+    if dy < line[0][0]:
+        return None
+    for (y0, z0), (y1, z1) in zip(line, line[1:]):
+        if dy <= y1:
+            return z0 + (z1 - z0) * (dy - y0) / (y1 - y0)
+    return line[-1][1]
+
+
+def stubble_weight(dy: float, dz: float, zone: str = "scalp") -> float:
+    """How much stubble a skin point at (dy, dz) from the Head joint takes: 0 below the hairline, 1 a feather above
+    it, smooth between (and fading in over a feather behind the zone's front point)."""
+    z = stubble_line(dy, zone)
+    if z is None:
+        return 0.0
+    f = STUBBLE_ZONES[zone]["feather"]
+
+    def smooth(t: float) -> float:
+        t = min(1.0, max(0.0, t))
+        return t * t * (3.0 - 2.0 * t)
+
+    return smooth((dz - z) / f) * smooth((dy - STUBBLE_ZONES[zone]["line"][0][0]) / f)
+
 # Eye faces sit below this height; brows sharing the eye material (women's Formal and Medieval "Brown") sit higher.
 EYE_Z_MAX = 1.70 + 0.012

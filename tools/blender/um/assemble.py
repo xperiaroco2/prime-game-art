@@ -243,7 +243,9 @@ def clay_look(recipe, rc, arm, parts, rep, lib=None):
         scene = bpy.context.scene
         engine = scene.render.engine  # the bake runs Cycles; the review renders keep the assembler's engine
         try:
-            rep["clay_bake"] = claybake.bake_character(rc["id"], arm, parts, sources, keys, rc["gender"], lib, cfg)
+            pivot = list(arm.matrix_world @ arm.data.bones["Head"].head_local)
+            rep["clay_bake"] = claybake.bake_character(rc["id"], arm, parts, sources, keys, rc["gender"], lib, cfg,
+                                                       stubble_spec=rc["hair"].get("stubble"), pivot=pivot)
         finally:
             scene.render.engine = engine
     clay.remove_sources(sources)

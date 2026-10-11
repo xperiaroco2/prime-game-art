@@ -333,7 +333,9 @@ on, the noses barely different (the pack nose dominated). `faces/clay_head.json`
    stays hidden), per welded position (the lab's 4 mm hair and hat clearance; the report's `scalp_lift`, `push_out`).
 
 The clay library's piece keys carry the head data (`kit.DATA_SHA` for the head and the face, `kit.HEAD_SHA` and the
-head for the hair and the extras that follow it).
+head for the hair and the extras that follow it). An extra's key also holds `kit.SEAT_SHA` (the seat code), the
+picks and the ear state: a changed seat, ear or nose re-seats its rings instead of loading old ones (round 4 found
+m3's rings loaded unchanged from the library after the seat had changed).
 
 **Whole heads and own extras.** The recipe validation refuses a head that drops part of its catalogue skull (m4's jaw)
 and an extra that is not a whole item of the character's body type (m1's blue strip), and the cast build measures each
@@ -379,7 +381,10 @@ measures, in the rest pose at head scale 1: collisions between pieces that must 
 blink step), brow vertices in the visible white, visible brow pokes (a brow point with no hair in front and visible
 hair right behind it; the lab's e5 test, at every vertex and every triangle's centre and edge midpoints), the ears
 against the hair in the item's ear state, the nose's clearance above the mouth and the moustache, noses meeting a
-pupil, the brows' visibility and brow-to-eye clearance (`brow_hidden_faces`), the look's sag and triangles. It writes `kit_check.json` (with the worst faces and the formal-updo list) under
+pupil, the brows' visibility and brow-to-eye clearance (`brow_hidden_faces`), the look's sag and triangles, and (art #42 round 4) a pair of the men's Punk ear rings seated on the
+face's ears (`ear_rings`: sides seated, faces with hidden ears, the worst gap, piercing point to the lobe's centre,
+ring plane to the ear's hanging plane and share of the ring inside the head, and the range of the ring's angle to the
+ear's own plane, reported, not checked; `docs/assembly.md`, "Ear and nose accessories"); a face whose ring misses fails the check. It writes `kit_check.json` (with the worst faces and the formal-updo list) under
 `--out` (default `tools/out/faces_kit/`) and exits non-zero on any failure (`faces.kit_problems`).
 
 ## Gotchas

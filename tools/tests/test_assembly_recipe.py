@@ -199,6 +199,19 @@ class StructureTest(FakeRaw):
         data["characters"][0]["hair"]["drop_pieces"] = ["chin_tuft"]
         self.assertIn("hair.drop_pieces: must be a list of piece zone names from facial_hair", self.problems(data))
 
+    def test_hair_stubble_is_checked(self) -> None:
+        """The hair's stubble (art #42 round 4): strength, darken and speckle from 0 to 1 and a zones.STUBBLE_ZONES
+        name; an extra has none."""
+        data = mini()
+        data["characters"][0]["hair"]["stubble"] = {"strength": 0.6, "darken": 0.45, "speckle": 0.4, "zone": "scalp"}
+        recipe.load(self.write(data), self.raw)  # no RecipeError
+        data["characters"][0]["hair"]["stubble"] = {"strength": 1.5, "darken": 0.4, "speckle": 0.4, "zone": "beard"}
+        text = self.problems(data)
+        self.assertIn("hair.stubble.strength: must be a number from 0 to 1", text)
+        self.assertIn("hair.stubble.zone: must be a stubble zone name from scalp", text)
+        data["characters"][0]["hair"]["stubble"] = {"strength": 0.5}
+        self.assertIn("hair.stubble: missing key 'zone'", self.problems(data))
+
     def test_ids_are_unique_and_hands_name_a_character(self) -> None:
         data = mini()
         data["characters"].append(copy.deepcopy(data["characters"][0]))
@@ -359,3 +372,27 @@ class PieceZones(unittest.TestCase):
         for x in (0.074, -0.095):  # the side strips by the ears
             self.assertTrue(strips(self.p(x, -0.09, 1.64)))
             self.assertFalse(cap(self.p(x, -0.09, 1.64)))
+
+
+class StubbleZone(unittest.TestCase):
+    """art #42 round 4: zones.STUBBLE_ZONES["scalp"] on w4's bean head (Head-joint-relative, x1.3 baked in)."""
+
+    def test_the_scalp_takes_stubble(self) -> None:
+        for dy, dz in ((0.0, 0.30), (-0.10, 0.26), (0.12, 0.12), (0.13, 0.06), (0.03, 0.20)):  # top, crown, back, nape
+            self.assertEqual(zones.stubble_weight(dy, dz), 1.0, (dy, dz))
+
+    def test_the_face_ears_and_neck_stay_bare(self) -> None:
+        for dy, dz in ((-0.189, 0.20), (-0.20, 0.30), (-0.16, 0.127), (-0.12, 0.18),  # face, forehead, eyes, brow
+                       (-0.02, 0.10), (0.0, 0.122), (-0.038, 0.07),  # the kit ear
+                       (0.10, 0.0), (0.0, -0.02)):  # the neck
+            self.assertEqual(zones.stubble_weight(dy, dz), 0.0, (dy, dz))
+
+    def test_the_line_is_feathered_and_continuous(self) -> None:
+        z = zones.stubble_line(0.04)
+        self.assertAlmostEqual(z, 0.0775)
+        f = zones.STUBBLE_ZONES["scalp"]["feather"]
+        self.assertAlmostEqual(zones.stubble_weight(0.04, z + f / 2), 0.5)
+        self.assertIsNone(zones.stubble_line(-0.25))
+        self.assertEqual(zones.stubble_line(0.5), zones.STUBBLE_ZONES["scalp"]["line"][-1][1])
+        ws = [zones.stubble_weight(0.04, z + f * k / 20) for k in range(-5, 26)]
+        self.assertEqual(ws, sorted(ws))

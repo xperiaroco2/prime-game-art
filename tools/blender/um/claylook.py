@@ -201,13 +201,20 @@ def keys_for(recipe, rc, cfg):
     # the clay look's face is the face kit's (um/clayface): its picks, brow colour and kit data, on this head, under
     # this hair (the ear state, the brow tuck and the hair colour of the facial hair come from it)
     spec = rc.get("face_kit") or {}
-    face = {"head": rc["head"], "hair": rc["hair"], "kit": claykit.picks_for(spec, g), "brow_rgb": spec.get("brow_rgb"),
+    # the hair's stubble is painted on the head's colour after the library load (claybake.stubble): not in any key
+    hair = {k: v for k, v in rc["hair"].items() if k != "stubble"}
+    face = {"head": rc["head"], "hair": hair, "kit": claykit.picks_for(spec, g), "brow_rgb": spec.get("brow_rgb"),
             "kit_data": claykit.DATA_SHA, "pack_mouth_dz": recipe.get("face", {}).get(g, {}).get("mouth_dz")}
     keys = {"head": piece_key("head", g, rc["head"], cfg, skin, rec("head"), context=ctx("head", joined={"face": face}))}
     # the hair and the head extras move with the bean head under them (heads.bean_warp): its data is in their keys
-    keys["hair"] = piece_key("hair", g, rc["hair"], cfg, None, rec("hair"), context=ctx("hair", head_data=claykit.HEAD_SHA, on_head=rc["head"]))
+    keys["hair"] = piece_key("hair", g, hair, cfg, None, rec("hair"), context=ctx("hair", head_data=claykit.HEAD_SHA, on_head=rc["head"]))
     for e in rc.get("extras", []):
-        keys[e["role"]] = piece_key(e["role"], g, e, cfg, None, rec(e["role"]), context=ctx(e["role"], head_data=claykit.HEAD_SHA, on_head=rc["head"]),
+        # an extra's ear and nose pieces are seated on the face kit's ears and nose (clayface.accessories): the seat's
+        # code, the picks and the ear state the hair sets are in its key
+        ears = claykit.hair_flags(claykit.hair_item(rc["hair"], g))["ears"]
+        seat = {"code": claykit.SEAT_SHA, "kit": face["kit"], "ears": ears}
+        keys[e["role"]] = piece_key(e["role"], g, e, cfg, None, rec(e["role"]),
+                                    context=ctx(e["role"], head_data=claykit.HEAD_SHA, on_head=rc["head"], seat=seat),
                                     kind=kind_of(e["role"]))
     for role in BODY_ROLES:
         keys[role] = piece_key(role, g, rc[role], cfg, skin, rec(role), context=ctx(role))
