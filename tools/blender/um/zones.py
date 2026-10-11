@@ -11,9 +11,6 @@ CUT_ZONES = {
     "chin_tuft": lambda c: c.z < 1.63 and c.y < -0.12,  # Punk's goatee in "Red"
     "over_ears": lambda c: abs(c.x) > 0.084 and -0.115 < c.y < 0.0 and 1.625 < c.z < 1.735,  # hair crossing the ears
     "ears": lambda c: abs(c.x) > 0.088 and -0.11 < c.y < 0.0 and 1.62 < c.z < 1.74,  # the head's own ears
-    # art #42 round 4, w4's crest to the nape: the women's Punk skull cap (z 1.66-1.823) keeps only its centre band
-    # (|x| < 0.022); its sides go below 0.125 m from the skull centre, which spares the crest spikes standing on top
-    "punk_cap_sides": lambda c: abs(c.x) > 0.022 and _dist(c, SKULL_CENTRE) < 0.125,
 }
 
 # Named boxes that drop whole loose pieces of a split part (a recipe's "drop_pieces" list): a piece (faces joined by
@@ -37,10 +34,6 @@ BROW_ZONE = lambda c: abs(c.x) < 0.085 and c.y < -0.125 and 1.672 < c.z < 1.722 
 
 # The skull centre that hair-like parts are inflated about.
 SKULL_CENTRE = (0.0, -0.055, 1.69)
-
-
-def _dist(c, p) -> float:
-    return ((c.x - p[0]) ** 2 + (c.y - p[1]) ** 2 + (c.z - p[2]) ** 2) ** 0.5
 
 
 # Where shaved hair leaves a stubble tone on the head's skin (a recipe hair's "stubble" zone, art #42 round 4). Unlike

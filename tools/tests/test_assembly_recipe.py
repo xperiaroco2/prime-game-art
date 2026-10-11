@@ -396,10 +396,3 @@ class StubbleZone(unittest.TestCase):
         self.assertEqual(zones.stubble_line(0.5), zones.STUBBLE_ZONES["scalp"]["line"][-1][1])
         ws = [zones.stubble_weight(0.04, z + f * k / 20) for k in range(-5, 26)]
         self.assertEqual(ws, sorted(ws))
-
-    def test_punk_cap_sides_keeps_the_centre_band_and_the_crest(self) -> None:
-        cut, p = zones.CUT_ZONES["punk_cap_sides"], PieceZones.p
-        self.assertTrue(cut(p(0.09, -0.05, 1.70)))  # the cap over the side of the skull
-        self.assertTrue(cut(p(0.05, 0.03, 1.70)))  # the cap at the back
-        self.assertFalse(cut(p(0.0, 0.04, 1.68)))  # the centre band down the back
-        self.assertFalse(cut(p(0.03, -0.05, 1.82)))  # a crest spike's side on top
