@@ -8,13 +8,22 @@ look approval on the art PR).
 | From this repo | To the game repo |
 |---|---|
 | P1 (`assets/kit/house_kit/HANDOFF.md`) | `assets/environment/house_kit/` (P5's room uses 27 of its pieces: floor, knee walls, gables, the pitched roof, chimneys, vents, the dormer, the hatch ladder and the dormer stair) |
+| `assets/kit/house_kit/export/kit_set.gdshader`, `kit_set.tres` (#132) | `assets/environment/house_kit/` (beside the kit's textures) |
 | `assets/prop/house_props/export/library/*.glb` (11), as `package.json` lists | `assets/environment/house_props/<file>.glb` (flat) |
 | `assets/room/house_attic/export/attic.tscn` | the content of `levels/house/rooms/attic.tscn` (G3 below) |
 
-`package.json` beside this file lists the package's 42 game paths with their SHA-256 (the copies must hash the same),
+`package.json` beside this file lists the package's 44 game paths with their SHA-256 (the copies must hash the same),
 its room, the placeholders and the questions. The free roof is part of the attic's scene: its pitched pieces, chimneys
 and dormer sit under `Shell`. Then the game's `check`, `credits`, the import check (11.3), `load`, `playcheck`, `perf`
 and `shot`.
+
+## Wall paints and the kit's look (#132)
+Every kit instance under `Shell` overrides its meshes' set surfaces (`surface_material_override/<i>`) with
+`res://assets/environment/house_kit/kit_set.tres`: the art's `kit_set.gdshader`, the kit's `set_d`, `set_n0`
+and `set_n1` textures and the House's wall paints (`layouts/house/house.toml` `[wall_paint]`). Each such mesh
+also sets `instance_shader_parameters/plan_at`, its place and turn in the house plan, so the shader paints by
+the plan wherever the game puts the House. Nothing to run: copy the two files with the kit and load the scene
+(the root's `metadata/wall_paint` stays as a note). The attic has no paint; the material gives the kit's textured look.
 
 ## Credits
 As P2: the drafts `D:/prime-art-raw/house/export/credits/house_kit.md` and `house_props.md`; own work, the props from
