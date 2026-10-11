@@ -43,6 +43,29 @@ def check(folder: Path, summary: dict, room_dir: str = "levels/house/rooms") -> 
     return run(folder, summary, room_dir)[0]
 
 
+def package_lines(pkg: dict) -> list[str]:
+    """The summary lines of the package check's report (load.json's "package"): the kit pieces with a collider, the
+    floor rays' surfaces and walks, the roof rays' first hits (miss: nothing under the ray) and every collider hit
+    without a surface by room (a roof ray's room is "<room> roof"), named by its piece under Dressing, Shell or
+    Fixtures."""
+    walks = pkg.get("walks", [])
+    lines = [f"  package: {sum(1 for p in pkg.get('pieces', {}).values() if p)}/{len(pkg.get('pieces', {}))} kit "
+             f"GLBs with a surface hold a collider; {pkg.get('rays', 0)} rays down, surfaces hit "
+             f"{json.dumps(pkg.get('surfaces', {}), sort_keys=True)}; {sum(1 for w in walks if w['arrived'])}/"
+             f"{len(walks)} walks of the 1.36 m capsule arrive"]
+    if pkg.get("roof_rays"):
+        lines.append(f"  roof: {pkg['roof_rays']} rays down from over the ridge, first hits "
+                     f"{json.dumps(pkg.get('roof_surfaces', {}), sort_keys=True)} (miss: past the eaves)")
+    if pkg.get("none_at"):
+        where: dict = {}
+        for path, rid in pkg["none_at"].items():
+            group = next((g for g in ("Dressing", "Shell", "Fixtures") if f"/{g}/" in path), "")
+            where.setdefault(rid, []).append(path.split(f"/{group}/")[1].split("/")[0] if group else path)
+        lines.append("  hits without a surface (not the shell): " + "; ".join(
+            f"{rid}: {', '.join(sorted(set(names)))}" for rid, names in sorted(where.items())))
+    return lines
+
+
 def run(folder: Path, summary: dict, room_dir: str = "levels/house/rooms") -> tuple[int, list[str]]:
     """check's work: (exit code, the problems found)."""
     project(folder)
@@ -76,21 +99,8 @@ def run(folder: Path, summary: dict, room_dir: str = "levels/house/rooms") -> tu
                    f"({r['shapes']} shapes), {r['lights']} lights")
     pkg = report.get("package", {})
     bad += pkg.get("problems", [])
-    walks = pkg.get("walks", [])
-    common.say(f"  package: {sum(1 for p in pkg.get('pieces', {}).values() if p)}/{len(pkg.get('pieces', {}))} kit "
-               f"GLBs with a surface hold a collider; {pkg.get('rays', 0)} rays down, surfaces hit "
-               f"{json.dumps(pkg.get('surfaces', {}), sort_keys=True)}; {sum(1 for w in walks if w['arrived'])}/"
-               f"{len(walks)} walks of the 1.36 m capsule arrive")
-    if pkg.get("roof_rays"):
-        common.say(f"  roof: {pkg['roof_rays']} rays down from over the ridge, first hits "
-                   f"{json.dumps(pkg.get('roof_surfaces', {}), sort_keys=True)} (miss: past the eaves)")
-    if pkg.get("none_at"):
-        where: dict = {}
-        for path, rid in pkg["none_at"].items():
-            group = next((g for g in ("Dressing", "Shell", "Fixtures") if f"/{g}/" in path), "")
-            where.setdefault(rid, []).append(path.split(f"/{group}/")[1].split("/")[0] if group else path)
-        common.say("  hits without a surface (not the shell): " + "; ".join(
-            f"{rid}: {', '.join(sorted(set(names)))}" for rid, names in sorted(where.items())))
+    for line in package_lines(pkg):
+        common.say(line)
     if pkg.get("outside"):
         common.say(f"  walks leaving the package (walked with the next): {', '.join(pkg['outside'])}")
     for line in errors[:10]:

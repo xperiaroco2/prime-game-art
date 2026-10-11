@@ -286,6 +286,28 @@ def fake_raw(raw: Path) -> Path:
     return raw
 
 
+class PackageLines(unittest.TestCase):
+    def test_the_report_counts_misses_and_names_hits_without_a_surface(self):
+        pkg = {"pieces": {"floor_a": True, "wall_b": False}, "rays": 6, "surfaces": {"wood": 4, "none": 2},
+               "walks": [{"arrived": True}, {"arrived": False}], "roof_rays": 5,
+               "roof_surfaces": {"concrete": 2, "none": 1, "miss": 2},
+               "none_at": {"Attic/Dressing/crate_1/Body": "attic roof", "Boiler/Dressing/boiler_1/Body": "boiler_room",
+                           "Boiler/Dressing/boiler_1/Body2": "boiler_room", "Boiler/Fixtures/lamp_2": "boiler_room",
+                           "Loose/Body": "attic"}}
+        lines = _house_export.package_lines(pkg)
+        self.assertEqual(lines, [
+            '  package: 1/2 kit GLBs with a surface hold a collider; 6 rays down, surfaces hit {"none": 2, "wood": 4}; '
+            "1/2 walks of the 1.36 m capsule arrive",
+            '  roof: 5 rays down from over the ridge, first hits {"concrete": 2, "miss": 2, "none": 1} (miss: past the '
+            "eaves)",
+            "  hits without a surface (not the shell): attic: Loose/Body; attic roof: crate_1; boiler_room: boiler_1, "
+            "lamp_2"])
+
+    def test_no_roof_and_no_unknown_surface_print_no_line(self):
+        lines = _house_export.package_lines({"rays": 2, "surfaces": {"wood": 2}, "roof_rays": 0, "none_at": {}})
+        self.assertEqual(len(lines), 1)
+
+
 # A room that breaks every rule of the export check: a floor without a surface (the ray finds it), a walkable piece
 # and a prop with a collider listed but holding none, a CSG box, a wall across the capsule's walk, and a roof over
 # x 2..6 only (with a crate on it), so the roof's rays over x 0..2 fall through the hole onto floor_ok.
@@ -368,7 +390,7 @@ class BrokenFixture(unittest.TestCase):
             request = {"rooms": [{"id": "bad", "rect": [0, 0, 6, 4], "floor_y": 0.0, "floor": True,
                                   "scene": "res://levels/house/rooms/bad.tscn",
                                   "walkable": ["floor_ok", "floor_bare", "floor_hollow"], "hide": ["crate_1"],
-                                  "roof": [0, 0, 6, 4], "roof_rect": [0, 0, 6, 4], "roof_from": 6.0,
+                                  "roof": [-1, 0, 7, 4], "roof_rect": [0, 0, 6, 4], "roof_from": 6.0,
                                   "roof_pieces": list(X.ROOF_PIECES)}],
                        "pieces": {}, "walks": [{"name": "through_wall", "kind": "door",
                                                 "points": [[1.0, 0.0, 2.0], [3.0, 0.0, 2.0], [5.5, 0.0, 2.0]]}],
@@ -389,6 +411,13 @@ class BrokenFixture(unittest.TestCase):
             self.assertEqual(len(re.findall(r"bad roof: ", text)), 1, text)
             report = json.loads((folder / "_check/load.json").read_text(encoding="utf-8"))
             self.assertGreater(report["package"]["surfaces"].get("wood", 0), 0)
+            # the roof's 14 x 8 rays: 16 miss west of the rect, 32 fall through the hole onto floor_ok, 4 meet the
+            # crate (no surface), 60 the slab; the crate is named with its room's roof, the bare floor with its room
+            pkg = report["package"]
+            self.assertEqual(pkg["roof_rays"], 112)
+            self.assertEqual(pkg["roof_surfaces"], {"miss": 16, "wood": 32, "none": 4, "concrete": 60})
+            self.assertEqual(pkg["none_at"].get("Bad/Dressing/RoofCrate"), "bad roof")
+            self.assertEqual(pkg["none_at"].get("Bad/Shell/floor_bare/Body"), "bad")
 
 
 
