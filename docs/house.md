@@ -77,6 +77,52 @@ floor from above, the other levels and the ceilings hidden, a label per room), `
 `--basement DIR` stages and imports the same way, then runs `godot/house/basement.gd` off-screen for the basement's
 review (#78; "The basement" below). With `--walk` in the same run it goes after the walk and shows its route times.
 
+## The export (#119)
+
+```
+tools/run.sh house --export DIR [--package N] [--no-godot] [--sheet]
+```
+
+writes the House's game-ready package (prime-game #523) from the same layout data into `DIR` (the raw folder's
+`house/export/v<n>/`, never git), shaped like the game's tree (its ARCHITECTURE 11.1):
+
+- `assets/environment/house_kit/`: the kit pieces of `<raw>/<kit_dir>` as one GLB each and the shared texture set
+  (`set_d.png`, `set_n0.png`, `set_n1.png`) once; `house_props/`: the dressing's and the task props' GLBs;
+  `house_outdoor/`, `house_garden/`: the sets of `[export.sets]` (the plot's GLBs, sky and flats; the garden's
+  plants). Each file gets a minimal `.import` with 11.2's options (a `Node3D` root, scale 1, animations kept; images
+  VRAM compressed). The kit and props are sets of many GLBs in one folder, not 11.1's `<id>/<id>.glb` (question
+  G3/G11 to the game side, in `package.json`).
+- `levels/house/rooms/<room>.tscn`, one per game room (`house_export.py`): the root named like the game's node,
+  `metadata/size_m = Vector2i(w, d)`, `metadata/art_room` and `wall_paint`; the `Name` `Label3D` (the room's title,
+  2.4 m up in its middle, as on the greybox); `Shell` (the room's kit pieces, plus the level scene's stairs and
+  railings whose pivot stands in it: the smallest such room of their level, else of the level below; the balcony's
+  flight lands in the yard); `Dressing` and `Fixtures` (prop instances at `res://assets/environment/house_props/...`;
+  the light kit's fixtures as real-time `OmniLight3D` nodes without shadows, a spot as an omni of its range, no moon
+  spots: the bake comes later, #83); `Doors`, `Stations`, `Markers` with the game's names and room-local positions;
+  `Placeholders` (the layout's, and every dressing prop without a GLB as a `Marker3D` with its size: never CSG).
+  The attic's `Dressing` is its old things and hiding spots from `dressing/attic_roof/attic.toml` (the `attic`
+  command's own format, moved room-local; `house_export.attic_dressing`); the free roof's items are not exported yet.
+  Colliders are the GLBs' own `-convcolonly` shapes (StaticBody3D on layer 1).
+- `package.json`: the package, its rooms, every file's SHA-256, the props still held as markers, the level pieces in
+  no room and the questions for the game side.
+
+`--package N` writes one of the plan's packages from `house.toml`'s `[export]` (1 kit, 2 ground floor without the
+garage and the greenhouse, 3 basement, 4 second floor, 5 attic, 6 garage, 7 outdoor with its sets, 8 task props):
+its rooms, every GLB they instance and its sets, so each package loads alone. Unless `--no-godot`, the command then
+opens `DIR` as its own Godot project (`project.godot` and `_check/` beside the package, not part of it), imports it
+headless and loads every room scene with `godot/house/export_check.gd` (`_check/load.json`): each loads with its
+game root and `size_m`, a shelled room holds layer-1 static bodies, and no scene holds CSG, `GridMap`,
+`CollisionPolygon3D`, a rigid or character body on layer 1 or a shadowed light.
+`--sheet` then shoots the review sheet from the export folder in an off-screen window (`godot/house/export_sheet.gd`,
+copied into `_check/`): the kitchen, the storage (basement) and the attic, those of them in the package, each from two
+eye-height views lit only by its own fixtures and a dim review ambient; `_check/sheet.png` (1280 px wide), a still per
+view and `sheet.json` (draw calls and lights per view).
+
+`tools/tests/test_house_export.py` diffs the 34 art rooms against the game's greybox rooms (`D:/prime-game`, read
+only; skipped without it) on root, origin, size, Doors, Stations and Markers and expects exactly the six known
+differences of the plan's `mapping.md` (attic and roof: question G1; garage Door3, landing Door6, study Door1,
+storage Package07: G2; art task A4 settles them).
+
 ## Dressing (#75b)
 
 One file per room in `layouts/house/dressing/<room>.toml` (`room` = its id): `[[props]]` and `[[fixtures]]` (the light

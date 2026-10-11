@@ -29,3 +29,59 @@ bedroom = "#69413c"
 guest_room = "#69413c"
 study = "#1f2a48"
 garage = "#8f897d"
+
+# The game-ready package (`house --export DIR [--package N]`, art #119, docs/house.md "The export"): the paths follow the
+# game's ARCHITECTURE 11.1 (`assets/environment/<id>/<id>.glb`); the kit and the props are sets, one folder each, a GLB
+# per piece (prime-game #523 question G3/G11). Room scenes go where the game keeps its greybox rooms.
+[export]
+asset_res = "res://assets/environment/{set}/{id}.glb"
+room_dir = "levels/house/rooms"
+kit_set = "house_kit"
+prop_set = "house_props"
+kit_textures = ["set_d.png", "set_n0.png", "set_n1.png"]  # the kit's shared texture set, under <kit_dir>/textures
+label = { h = 2.4, font_size = 72, outline_size = 16 }  # the room's Name label, as on the game's greybox rooms
+
+# Extra sets copied whole (files matching `files` under the raw folder `dir`), each into its own folder.
+[export.sets.house_outdoor]
+dir = "house/81/build"
+files = ["outdoor.glb", "backdrop.glb", "sky.png", "flat_*.png"]
+[export.sets.house_garden]
+dir = "house/80/plants"
+files = ["*.glb"]
+
+# The packages of the plan (P1-P8): a package writes its rooms, every GLB they instance, and its sets. `rooms` lists
+# room ids or level names; `except` takes rooms out again. No --package writes them all.
+[[export.packages]]
+n = 1
+name = "kit"
+kit = true
+[[export.packages]]
+n = 2
+name = "ground"
+rooms = ["ground"]
+except = ["garage", "greenhouse", "garden"]
+[[export.packages]]
+n = 3
+name = "basement"
+rooms = ["basement"]
+[[export.packages]]
+n = 4
+name = "upper"
+rooms = ["upper"]
+[[export.packages]]
+n = 5
+name = "attic"
+rooms = ["attic"]
+[[export.packages]]
+n = 6
+name = "garage"
+rooms = ["garage"]
+[[export.packages]]
+n = 7
+name = "outdoor"
+rooms = ["greenhouse", "garden"]
+sets = ["house_outdoor", "house_garden"]
+[[export.packages]]
+n = 8
+name = "task_props"
+task_props = true
