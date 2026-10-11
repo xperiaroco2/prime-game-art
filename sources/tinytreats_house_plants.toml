@@ -13,3 +13,33 @@ notes = """Downloaded 2026-10-06 by the locations stage-0 research (art #34) und
 [[raw]]
 file = "env/tinytreats/house-plants/Tiny_Treats_House_Plants_1.0_FREE.zip"
 sha256 = "32d20c7079de63eebd16f95b9d683e0d8095ecc09988f26fba565374c8deb62d"
+
+# Unpacked files the House uses (#118): props/library.toml `files` and the glTF buffers and images they load.
+
+[[raw]]
+file = "env/tinytreats/house-plants/Tiny_Treats_House_Plants_1.0_FREE/Tiny_Treats_House_Plants_1.0_FREE/Assets/gltf/sansevieria_plant_medium_potted.bin"
+sha256 = "f64d73ec99ce4d7dd58aca27922561577d47dcd14c6cbeb7e643cb2652d8b7b3"
+
+[[raw]]
+file = "env/tinytreats/house-plants/Tiny_Treats_House_Plants_1.0_FREE/Tiny_Treats_House_Plants_1.0_FREE/Assets/gltf/sansevieria_plant_medium_potted.gltf"
+sha256 = "d2691dd267b1559a0136285a394f536c93e65f5a34fe5e90b9e81125fb8baefd"
+
+[[raw]]
+file = "env/tinytreats/house-plants/Tiny_Treats_House_Plants_1.0_FREE/Tiny_Treats_House_Plants_1.0_FREE/Assets/gltf/tiny_treats_texture_1.png"
+sha256 = "31e5c7c81bfba644a59797b1907519592c7728d4af98a705449975dd929482e5"
+
+[[raw]]
+file = "env/tinytreats/house-plants/Tiny_Treats_House_Plants_1.0_FREE/Tiny_Treats_House_Plants_1.0_FREE/Assets/gltf/watering_can_A.bin"
+sha256 = "4da6b1056aaf06ae413d3a7bfc185d3c68a950ca082734d74a32c563894a4aaa"
+
+[[raw]]
+file = "env/tinytreats/house-plants/Tiny_Treats_House_Plants_1.0_FREE/Tiny_Treats_House_Plants_1.0_FREE/Assets/gltf/watering_can_A.gltf"
+sha256 = "817185a454c447a7bb26f91dbbe9fc342853113f67b17c2dd348f41b60690a21"
+
+[[raw]]
+file = "env/tinytreats/house-plants/Tiny_Treats_House_Plants_1.0_FREE/Tiny_Treats_House_Plants_1.0_FREE/Assets/gltf/yucca_plant_medium_potted.bin"
+sha256 = "c85297aa8f4f987d40c2426b2df36cf4c1c0f61209b5125a0cfc83c20e0dfa69"
+
+[[raw]]
+file = "env/tinytreats/house-plants/Tiny_Treats_House_Plants_1.0_FREE/Tiny_Treats_House_Plants_1.0_FREE/Assets/gltf/yucca_plant_medium_potted.gltf"
+sha256 = "c908422bb26eae18160357e949e2008cc558f75cd541cea80a3c4e8d6c62ff3d"

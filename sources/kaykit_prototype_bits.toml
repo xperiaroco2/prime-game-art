@@ -13,3 +13,33 @@ notes = """Downloaded 2026-10-06 by the locations stage-0 research (art #34) und
 [[raw]]
 file = "env/kaykit/prototype-bits/KayKit_Prototype_Bits_1.1_FREE.zip"
 sha256 = "6dadbcd7dd13ba8582323cf3cfdec591340f83f74a959c212f8b83eb8dc42425"
+
+# Unpacked files the House uses (#118): props/library.toml `files` and the glTF buffers and images they load.
+
+[[raw]]
+file = "env/kaykit/prototype-bits/KayKit_Prototype_Bits_1.1_FREE/KayKit_Prototype_Bits_1.1_FREE/Assets/gltf/Barrel_A.bin"
+sha256 = "8b0ace6fac6c67269a75b6196b5f60248af4f250ec03b763ef659efee86b704b"
+
+[[raw]]
+file = "env/kaykit/prototype-bits/KayKit_Prototype_Bits_1.1_FREE/KayKit_Prototype_Bits_1.1_FREE/Assets/gltf/Barrel_A.gltf"
+sha256 = "7fff2cb72cc440f8b9e251878e0687daf48ddc64ee3180399a3130892d2687a2"
+
+[[raw]]
+file = "env/kaykit/prototype-bits/KayKit_Prototype_Bits_1.1_FREE/KayKit_Prototype_Bits_1.1_FREE/Assets/gltf/Box_B.bin"
+sha256 = "06898d4c8ee0547f9e1444c30c174ff47be3868f21e48114038646573292cfd9"
+
+[[raw]]
+file = "env/kaykit/prototype-bits/KayKit_Prototype_Bits_1.1_FREE/KayKit_Prototype_Bits_1.1_FREE/Assets/gltf/Box_B.gltf"
+sha256 = "8f20c52984acb8d996a7cd9bc93234bababebcddb5169663899b0936d02d8654"
+
+[[raw]]
+file = "env/kaykit/prototype-bits/KayKit_Prototype_Bits_1.1_FREE/KayKit_Prototype_Bits_1.1_FREE/Assets/gltf/Pallet_Large.bin"
+sha256 = "13e8ed324cf009d0986a5be0c16de7a775f0c8b5ccfae026162a34b708165506"
+
+[[raw]]
+file = "env/kaykit/prototype-bits/KayKit_Prototype_Bits_1.1_FREE/KayKit_Prototype_Bits_1.1_FREE/Assets/gltf/Pallet_Large.gltf"
+sha256 = "dac65d2406b4d695f5df994953f69d7adbc278dbe594e2e5a9fb1fe737444e93"
+
+[[raw]]
+file = "env/kaykit/prototype-bits/KayKit_Prototype_Bits_1.1_FREE/KayKit_Prototype_Bits_1.1_FREE/Assets/gltf/prototypebits_texture.png"
+sha256 = "dec912e8cc8f8d09c29be48dda0daad90e653939c4e6fc799309ec1ae7a4cbcd"
