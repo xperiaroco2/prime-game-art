@@ -11,6 +11,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from runner import house_attic as HA
 from runner import house_dressing as HD
 from runner import house_export as X
 from runner import house_layout as H
@@ -125,6 +126,19 @@ class HouseExport(unittest.TestCase):
         fixtures = [f for f in HL.plan(lights, DATA) if f["type"] != "moon"]
         self.assertEqual(omni, len(fixtures))
         self.assertIn('[node name="door_leaf_1" type="Marker3D" parent="Placeholders"]', scenes["hallway"]["text"])
+
+    def test_attic_holds_its_old_things(self):
+        z = HA.load("attic")
+        dz = X.attic_dressing(z)
+        self.assertEqual(len(dz["resolved"]), len(z["items"]))
+        rx, ry, w, d = z["rect"]
+        for r in dz["resolved"]:
+            x, h, y = r["at"]
+            self.assertTrue(0 <= x <= w and 0 <= y <= d and h == 0, r)
+        scenes = X.scenes(DATA, PLAN, {"attic": dz}, [], have=lambda pid: pid != "old_wardrobe")
+        t = scenes["attic"]["text"]
+        self.assertIn('[node name="trunk_1" parent="Dressing"', t)
+        self.assertIn('[node name="old_wardrobe_1" type="Marker3D" parent="Placeholders"]', t)
 
     def test_packages_split_the_rooms(self):
         pk = X.packages(DATA)

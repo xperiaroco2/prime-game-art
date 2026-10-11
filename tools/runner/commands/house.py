@@ -156,6 +156,9 @@ def export(data: dict, lights: dict, planned: dict, dressing: dict, args: argpar
         raise common.Failure(f"no package {args.package} in house.toml's [export] "
                              f"({', '.join(str(n) for n in house_export.packages(data))})")
     fixtures = house_lights.plan(lights, data)
+    if "attic" not in dressing and any(r["id"] == "attic" for lv in data["levels"] for r in lv["rooms"]):
+        from .. import house_attic
+        dressing = dict(dressing, attic=house_export.attic_dressing(house_attic.load("attic")))
     try:
         summary = house_export.write(data, planned, dressing, fixtures, args.export, common.raw_dir(),
                                      prop_glbs(data, dressing), args.package)

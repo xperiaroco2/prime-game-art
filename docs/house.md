@@ -100,6 +100,8 @@ writes the House's game-ready package (prime-game #523) from the same layout dat
   the light kit's fixtures as real-time `OmniLight3D` nodes without shadows, a spot as an omni of its range, no moon
   spots: the bake comes later, #83); `Doors`, `Stations`, `Markers` with the game's names and room-local positions;
   `Placeholders` (the layout's, and every dressing prop without a GLB as a `Marker3D` with its size: never CSG).
+  The attic's `Dressing` is its old things and hiding spots from `dressing/attic_roof/attic.toml` (the `attic`
+  command's own format, moved room-local; `house_export.attic_dressing`); the free roof's items are not exported yet.
   Colliders are the GLBs' own `-convcolonly` shapes (StaticBody3D on layer 1).
 - `package.json`: the package, its rooms, every file's SHA-256, the props still held as markers, the level pieces in
   no room and the questions for the game side.

@@ -149,6 +149,20 @@ def room_scene(data: dict, lv: dict, room: dict, pieces: list[dict], extras: lis
     return sc.text()
 
 
+def attic_dressing(z: dict) -> dict:
+    """The attic's old things and hiding spots (house_attic.load("attic"): their own format in
+    layouts/house/dressing/attic_roof/, plan metres) as the attic room's resolved dressing: room-local, on the floor,
+    their yaw kept (the same front-+Z convention). A hero prop with its own `size` and no GLB becomes a Placeholders
+    marker like any other prop without one. The roof's items stand on the slopes: not exported yet."""
+    rx, ry = z["rect"][0], z["rect"][1]
+    out = []
+    for it in z["items"]:
+        out.append({"id": it["id"], "kind": "props", "at": (it["at"][0] - rx, 0.0, it["at"][1] - ry),
+                    "yaw": float(it["yaw"]), "size": [it.get("w", 0.5), it.get("d", 0.5), it.get("h", 0.5)],
+                    "pivot": "floor", "collision": "box", "known": "w" in it})
+    return {"resolved": out}
+
+
 def scenes(data: dict, planned: dict, dressing: dict, fixtures: list[dict], pkg: dict | None = None,
            have=lambda pid: True) -> dict:
     """room id -> {"level", "node", "text", "kit": piece ids, "props": prop ids}; plus "" -> the level pieces that
