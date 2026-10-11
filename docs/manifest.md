@@ -120,8 +120,13 @@ The House's sets (written for #118 from the 2026-10-10 builds; a rebuild changes
 | `assets/prop/house_props/` | `library/` 131 (32 from CC0 packs, named by `source` and `from`), `task/` 34, `zones/` 9 GLBs; they use the kit's texture set |
 | `assets/environment/house_garden/` | the 14 garden plants of `house/80/plants` |
 | `assets/environment/house_outdoor/` | `outdoor.glb`, `backdrop.glb` (the flats embedded) and `sky.png` of `house/81/build` |
+| `assets/room/house_ground/` | package P2's 15 room scenes (`<room>.tscn`, the game's `levels/house/rooms/`) of `house/export/v2/p2` (#124) |
 
-Room scenes (`room`) get their manifests with the export command (task A1). Own work is `own-work` with
+A set's `export/` folder holds its committed files under their manifest names, which need not be the game's paths:
+the kit's textures are `textures/set_*.png` and the props `library/`, `task/` and `zones/` here, all flat in the game's
+`assets/environment/house_kit/` and `house_props/` (the package's `package.json` and the set's `HANDOFF.md` map them;
+`house --package-sheet` stages them by SHA-256). Only what an approved package needs is committed: P1 the whole kit, P2
+its 70 props (#124). Room scenes (`room`) get one set per package. Own work is `own-work` with
 `public_repo_ok = true` and goes to the game under the game's terms (the engineer's E1, 2026-10-11): the game repo is
 public with no licence file, so all rights reserved, and `licence_url` points to it
 (`https://github.com/xperiaroco2/prime-game`), not to this private repo.

@@ -1,0 +1,357 @@
+[gd_scene format=3]
+
+[ext_resource type="PackedScene" path="res://assets/environment/house_kit/floor_concrete_2x2.glb" id="1"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/terrace_table.glb" id="2"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/terrace_chair.glb" id="3"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/planter_pot.glb" id="4"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/potted_plant.glb" id="5"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/lantern.glb" id="6"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/string_lights.glb" id="7"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/porch_lamp.glb" id="8"]
+
+[node name="Terrace" type="Node3D"]
+metadata/size_m = Vector2i(20, 8)
+metadata/art_room = "terrace"
+
+[node name="Name" type="Label3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 2.4, 4)
+billboard = 1
+text = "Terrace"
+font_size = 72
+outline_size = 16
+
+[node name="Shell" type="Node3D" parent="."]
+
+[node name="floor_concrete_2x2_1" parent="Shell" instance=ExtResource("1")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+metadata/surface = "concrete"
+
+[node name="floor_concrete_2x2_2" parent="Shell" instance=ExtResource("1")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0, 0)
+metadata/surface = "concrete"
+
+[node name="floor_concrete_2x2_3" parent="Shell" instance=ExtResource("1")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 0, 0)
+metadata/surface = "concrete"
+
+[node name="floor_concrete_2x2_4" parent="Shell" instance=ExtResource("1")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 0, 0)
+metadata/surface = "concrete"
+
+[node name="floor_concrete_2x2_5" parent="Shell" instance=ExtResource("1")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 0, 0)
+metadata/surface = "concrete"
+
+[node name="floor_concrete_2x2_6" parent="Shell" instance=ExtResource("1")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 0, 0)
+metadata/surface = "concrete"
+
+[node name="floor_concrete_2x2_7" parent="Shell" instance=ExtResource("1")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 0, 0)
+metadata/surface = "concrete"
+
+[node name="floor_concrete_2x2_8" parent="Shell" instance=ExtResource("1")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14, 0, 0)
+metadata/surface = "concrete"
+
+[node name="floor_concrete_2x2_9" parent="Shell" instance=ExtResource("1")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16, 0, 0)
+metadata/surface = "concrete"
+
+[node name="floor_concrete_2x2_10" parent="Shell" instance=ExtResource("1")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 18, 0, 0)
+metadata/surface = "concrete"
+
+[node name="floor_concrete_2x2_11" parent="Shell" instance=ExtResource("1")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 2)
+metadata/surface = "concrete"
+
+[node name="floor_concrete_2x2_12" parent="Shell" instance=ExtResource("1")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0, 2)
+metadata/surface = "concrete"
+
+[node name="floor_concrete_2x2_13" parent="Shell" instance=ExtResource("1")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 0, 2)
+metadata/surface = "concrete"
+
+[node name="floor_concrete_2x2_14" parent="Shell" instance=ExtResource("1")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 0, 2)
+metadata/surface = "concrete"
+
+[node name="floor_concrete_2x2_15" parent="Shell" instance=ExtResource("1")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 0, 2)
+metadata/surface = "concrete"
+
+[node name="floor_concrete_2x2_16" parent="Shell" instance=ExtResource("1")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 0, 2)
+metadata/surface = "concrete"
+
+[node name="floor_concrete_2x2_17" parent="Shell" instance=ExtResource("1")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 0, 2)
+metadata/surface = "concrete"
+
+[node name="floor_concrete_2x2_18" parent="Shell" instance=ExtResource("1")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14, 0, 2)
+metadata/surface = "concrete"
+
+[node name="floor_concrete_2x2_19" parent="Shell" instance=ExtResource("1")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16, 0, 2)
+metadata/surface = "concrete"
+
+[node name="floor_concrete_2x2_20" parent="Shell" instance=ExtResource("1")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 18, 0, 2)
+metadata/surface = "concrete"
+
+[node name="floor_concrete_2x2_21" parent="Shell" instance=ExtResource("1")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 4)
+metadata/surface = "concrete"
+
+[node name="floor_concrete_2x2_22" parent="Shell" instance=ExtResource("1")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0, 4)
+metadata/surface = "concrete"
+
+[node name="floor_concrete_2x2_23" parent="Shell" instance=ExtResource("1")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 0, 4)
+metadata/surface = "concrete"
+
+[node name="floor_concrete_2x2_24" parent="Shell" instance=ExtResource("1")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 0, 4)
+metadata/surface = "concrete"
+
+[node name="floor_concrete_2x2_25" parent="Shell" instance=ExtResource("1")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 0, 4)
+metadata/surface = "concrete"
+
+[node name="floor_concrete_2x2_26" parent="Shell" instance=ExtResource("1")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 0, 4)
+metadata/surface = "concrete"
+
+[node name="floor_concrete_2x2_27" parent="Shell" instance=ExtResource("1")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 0, 4)
+metadata/surface = "concrete"
+
+[node name="floor_concrete_2x2_28" parent="Shell" instance=ExtResource("1")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14, 0, 4)
+metadata/surface = "concrete"
+
+[node name="floor_concrete_2x2_29" parent="Shell" instance=ExtResource("1")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16, 0, 4)
+metadata/surface = "concrete"
+
+[node name="floor_concrete_2x2_30" parent="Shell" instance=ExtResource("1")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 18, 0, 4)
+metadata/surface = "concrete"
+
+[node name="floor_concrete_2x2_31" parent="Shell" instance=ExtResource("1")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 6)
+metadata/surface = "concrete"
+
+[node name="floor_concrete_2x2_32" parent="Shell" instance=ExtResource("1")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0, 6)
+metadata/surface = "concrete"
+
+[node name="floor_concrete_2x2_33" parent="Shell" instance=ExtResource("1")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 0, 6)
+metadata/surface = "concrete"
+
+[node name="floor_concrete_2x2_34" parent="Shell" instance=ExtResource("1")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 0, 6)
+metadata/surface = "concrete"
+
+[node name="floor_concrete_2x2_35" parent="Shell" instance=ExtResource("1")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 0, 6)
+metadata/surface = "concrete"
+
+[node name="floor_concrete_2x2_36" parent="Shell" instance=ExtResource("1")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 0, 6)
+metadata/surface = "concrete"
+
+[node name="floor_concrete_2x2_37" parent="Shell" instance=ExtResource("1")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 0, 6)
+metadata/surface = "concrete"
+
+[node name="floor_concrete_2x2_38" parent="Shell" instance=ExtResource("1")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14, 0, 6)
+metadata/surface = "concrete"
+
+[node name="floor_concrete_2x2_39" parent="Shell" instance=ExtResource("1")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16, 0, 6)
+metadata/surface = "concrete"
+
+[node name="floor_concrete_2x2_40" parent="Shell" instance=ExtResource("1")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 18, 0, 6)
+metadata/surface = "concrete"
+
+[node name="Dressing" type="Node3D" parent="."]
+
+[node name="terrace_table_1" parent="Dressing" instance=ExtResource("2")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7, 0, 4)
+metadata/prop = "terrace_table"
+metadata/station = "TerraceTable"
+
+[node name="terrace_chair_1" parent="Dressing" instance=ExtResource("3")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.6, 0, 3.22)
+metadata/prop = "terrace_chair"
+metadata/station = "TerraceTable"
+
+[node name="terrace_chair_2" parent="Dressing" instance=ExtResource("3")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7.4, 0, 3.22)
+metadata/prop = "terrace_chair"
+metadata/station = "TerraceTable"
+
+[node name="terrace_chair_3" parent="Dressing" instance=ExtResource("3")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 6.6, 0, 4.78)
+metadata/prop = "terrace_chair"
+metadata/station = "TerraceTable"
+
+[node name="terrace_chair_4" parent="Dressing" instance=ExtResource("3")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 7.4, 0, 4.78)
+metadata/prop = "terrace_chair"
+metadata/station = "TerraceTable"
+
+[node name="planter_pot_1" parent="Dressing" instance=ExtResource("4")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0.5)
+metadata/prop = "planter_pot"
+
+[node name="planter_pot_2" parent="Dressing" instance=ExtResource("4")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 0, 0.5)
+metadata/prop = "planter_pot"
+
+[node name="planter_pot_3" parent="Dressing" instance=ExtResource("4")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 0, 0.5)
+metadata/prop = "planter_pot"
+
+[node name="planter_pot_4" parent="Dressing" instance=ExtResource("4")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 13, 0, 0.5)
+metadata/prop = "planter_pot"
+
+[node name="planter_pot_5" parent="Dressing" instance=ExtResource("4")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 19.5, 0, 0.5)
+metadata/prop = "planter_pot"
+
+[node name="potted_plant_1" parent="Dressing" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12.2, 0, 7.5)
+metadata/prop = "potted_plant"
+
+[node name="potted_plant_2" parent="Dressing" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15.8, 0, 7.5)
+metadata/prop = "potted_plant"
+
+[node name="Fixtures" type="Node3D" parent="."]
+
+[node name="lantern_1" parent="Fixtures" instance=ExtResource("6")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7, 0.75, 4)
+metadata/prop = "lantern"
+metadata/station = "TerraceTable"
+
+[node name="lantern_2" parent="Fixtures" instance=ExtResource("6")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.4, 0, 7.5)
+metadata/prop = "lantern"
+
+[node name="lantern_3" parent="Fixtures" instance=ExtResource("6")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 19.6, 0, 7.5)
+metadata/prop = "lantern"
+
+[node name="lantern_4" parent="Fixtures" instance=ExtResource("6")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 19.6, 0, 0.4)
+metadata/prop = "lantern"
+
+[node name="string_lights_1" parent="Fixtures" instance=ExtResource("7")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10.5, 3, 6.5)
+metadata/prop = "string_lights"
+
+[node name="string_lights_2" parent="Fixtures" instance=ExtResource("7")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15.5, 3, 6.5)
+metadata/prop = "string_lights"
+
+[node name="porch_lamp_1" parent="Fixtures" instance=ExtResource("8")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 15.3, 1.9, 7.9)
+metadata/prop = "porch_lamp"
+
+[node name="terrace_string_lights_01" type="OmniLight3D" parent="Fixtures"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 2.6, 4)
+light_color = Color(1, 0.85, 0.68, 1)
+light_energy = 0.35
+shadow_enabled = false
+omni_range = 5
+metadata/fixture = "string_lights"
+metadata/glow = false
+
+[node name="terrace_string_lights_02" type="OmniLight3D" parent="Fixtures"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15, 2.6, 4)
+light_color = Color(1, 0.85, 0.68, 1)
+light_energy = 0.35
+shadow_enabled = false
+omni_range = 5
+metadata/fixture = "string_lights"
+metadata/glow = false
+
+[node name="terrace_lantern_01" type="OmniLight3D" parent="Fixtures"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.63, 2, 0.15)
+light_color = Color(1, 0.85, 0.68, 1)
+light_energy = 0.6
+shadow_enabled = false
+omni_range = 4.5
+metadata/fixture = "lantern"
+metadata/glow = true
+
+[node name="terrace_lantern_02" type="OmniLight3D" parent="Fixtures"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16.59, 2, 0.15)
+light_color = Color(1, 0.85, 0.68, 1)
+light_energy = 0.6
+shadow_enabled = false
+omni_range = 4.5
+metadata/fixture = "lantern"
+metadata/glow = true
+
+[node name="terrace_lantern_03" type="OmniLight3D" parent="Fixtures"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 19.85, 2, 7.85)
+light_color = Color(1, 0.85, 0.68, 1)
+light_energy = 0.6
+shadow_enabled = false
+omni_range = 4.5
+metadata/fixture = "lantern"
+metadata/glow = true
+
+[node name="terrace_lantern_04" type="OmniLight3D" parent="Fixtures"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8.89, 2, 7.85)
+light_color = Color(1, 0.85, 0.68, 1)
+light_energy = 0.6
+shadow_enabled = false
+omni_range = 4.5
+metadata/fixture = "lantern"
+metadata/glow = true
+
+[node name="terrace_porch_lamp_01" type="OmniLight3D" parent="Fixtures"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.15, 2.2, 5.63)
+light_color = Color(1, 0.85, 0.68, 1)
+light_energy = 0.8
+shadow_enabled = false
+omni_range = 5
+metadata/fixture = "porch_lamp"
+metadata/glow = true
+
+[node name="Doors" type="Node3D" parent="."]
+
+[node name="Door1" type="Marker3D" parent="Doors"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14, 0, 8)
+metadata/leaf = "ajar"
+
+[node name="Stations" type="Node3D" parent="."]
+
+[node name="TerraceTable" type="Marker3D" parent="Stations"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7, 0, 4)
+
+[node name="Markers" type="Node3D" parent="."]
+
+[node name="Circle02" type="Marker3D" parent="Markers" groups=["spawn_circle"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 0.5, 4)
+
+[node name="Placeholders" type="Node3D" parent="."]
+
+[node name="door_leaf_1" type="Marker3D" parent="Placeholders"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14.73, 0, 7.2)
+metadata/prop = "door_leaf"
+metadata/size = [1.4, 0.05, 2.1]
+metadata/yaw = 90.0
+metadata/note = "no GLB yet"

@@ -59,6 +59,16 @@ label = { h = 2.4, font_size = 72, outline_size = 16 }  # the room's Name label,
 "stair_dormer" = "wood"
 "ground*" = "grass"
 
+# The kit's families on the look-approval sheet (`house --package-sheet`, art #124): one tile each, in this order, by
+# id pattern (the first match wins); a piece no pattern matches goes to the last family.
+[export.kit_families]
+openings = ["*door*", "*window*", "fence_gates_*", "fence_wicket_*", "glass_wall_*", "glass_corner", "glass_end", "glass_post"]
+walls = ["wall_*", "pillar_*", "parapet_*", "beam_*"]
+floors = ["floor_*", "ceiling_*", "slab_*", "porch_*"]
+stairs = ["stair*", "ladder_*", "railing_balcony_*"]
+roof = ["roof_*", "glass_roof_*", "gable_*", "glass_gable_*", "chimney_*", "dormer_*", "cornice_*"]
+outdoor = ["fence_*", "gate_post", "gazebo_*", "railing_gazebo_*"]
+
 # Extra sets copied whole (files matching `files` under the raw folder `dir`), each into its own folder.
 [export.sets.house_outdoor]
 dir = "house/81/build"

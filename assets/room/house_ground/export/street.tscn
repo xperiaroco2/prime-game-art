@@ -1,0 +1,76 @@
+[gd_scene format=3]
+
+
+[node name="Street" type="Node3D"]
+metadata/size_m = Vector2i(80, 6)
+metadata/art_room = "street"
+
+[node name="Name" type="Label3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 40, 2.4, 3)
+billboard = 1
+text = "Street"
+font_size = 72
+outline_size = 16
+
+[node name="Shell" type="Node3D" parent="."]
+
+[node name="Fixtures" type="Node3D" parent="."]
+
+[node name="street_streetlight_01" type="OmniLight3D" parent="Fixtures"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8.48, 5.5, 3)
+light_color = Color(1, 0.85, 0.68, 1)
+light_energy = 2
+shadow_enabled = false
+omni_range = 12
+metadata/fixture = "streetlight"
+metadata/glow = true
+
+[node name="street_streetlight_02" type="OmniLight3D" parent="Fixtures"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 24.24, 5.5, 3)
+light_color = Color(1, 0.85, 0.68, 1)
+light_energy = 2
+shadow_enabled = false
+omni_range = 12
+metadata/fixture = "streetlight"
+metadata/glow = true
+
+[node name="street_streetlight_03" type="OmniLight3D" parent="Fixtures"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 40, 5.5, 3)
+light_color = Color(1, 0.85, 0.68, 1)
+light_energy = 2
+shadow_enabled = false
+omni_range = 12
+metadata/fixture = "streetlight"
+metadata/glow = true
+
+[node name="street_streetlight_04" type="OmniLight3D" parent="Fixtures"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 55.76, 5.5, 3)
+light_color = Color(1, 0.85, 0.68, 1)
+light_energy = 2
+shadow_enabled = false
+omni_range = 12
+metadata/fixture = "streetlight"
+metadata/glow = true
+
+[node name="street_streetlight_05" type="OmniLight3D" parent="Fixtures"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 71.52, 5.5, 3)
+light_color = Color(1, 0.85, 0.68, 1)
+light_energy = 2
+shadow_enabled = false
+omni_range = 12
+metadata/fixture = "streetlight"
+metadata/glow = true
+
+[node name="Doors" type="Node3D" parent="."]
+
+[node name="Door1" type="Marker3D" parent="Doors"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 30, 0, 0)
+metadata/leaf = "kit"
+
+[node name="Door2" type="Marker3D" parent="Doors"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 64, 0, 0)
+metadata/leaf = "kit"
+
+[node name="Stations" type="Node3D" parent="."]
+
+[node name="Markers" type="Node3D" parent="."]
