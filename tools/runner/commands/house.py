@@ -112,7 +112,8 @@ def run(args: argparse.Namespace) -> int:
             raise common.Failure("--package-sheet needs --package N")
         from . import _house_review
         return _house_review.run(args.package_sheet.resolve(), args.package,
-                                 house_export.settings(data).get("kit_families", {"kit": ["*"]}))
+                                 house_export.settings(data).get("kit_families", {"kit": ["*"]}),
+                                 extra=_house_review.views(data))
     planned = house_layout.plan(data)
     if args.export:
         return export(data, lights, planned, dressing, args)

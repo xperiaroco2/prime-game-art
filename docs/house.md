@@ -101,15 +101,18 @@ writes the House's game-ready package (prime-game #523) from the same layout dat
   spots: the bake comes later, #83); `Doors`, `Stations`, `Markers` with the game's names and room-local positions;
   `Placeholders` (the layout's, and every dressing prop without a GLB as a `Marker3D` with its size: never CSG).
   The attic's `Dressing` is its old things and hiding spots from `dressing/attic_roof/attic.toml` (the `attic`
-  command's own format, moved room-local; `house_export.attic_dressing`); the free roof's items are not exported yet.
+  command's own format, moved room-local; `house_export.attic_dressing`, a library prop keeping its collision: frames
+  and rugs none); the free roof's items are not exported yet.
   Colliders are the GLBs' own `-convcolonly` shapes (StaticBody3D on layer 1).
 - Footstep surfaces (#122; the game's `FootstepSurface`, its ARCHITECTURE 4.7.40): every walkable shell piece's
   instance carries `metadata/surface`, one of the game's four (`concrete`, `wood`, `carpet`, `grass`), by
   `house.toml`'s `[export.surfaces]` (id patterns, the first match wins): boards, the attic ladder and the dormer
   stair and the main stairs `wood`; lino, concrete, slabs, flat roofs and the other stairs `concrete`; `ground*`
-  `grass`; a floor tile at least half under a rug (rugs have no collider) `carpet`. The kit's GLBs carry none, so
-  `package.json`'s `surfaces` lists them for a game-side wrapper. Not tagged yet: the pitched roofs (the free roof's
-  steps sound `concrete`, the game's default) and the plot's ground inside `outdoor.glb` (one GLB with its paths and
+  `grass`; the free roof's pitched pieces, the attic chimneys and the dormer `concrete` (#126; the game has no tile
+  sound); a floor tile at least half under a rug (rugs have no collider) `carpet`, never a roof piece over one. A low
+  dressing prop the floor's rays meet first carries its own by `[export.prop_surfaces]` (the attic's rolled carpets
+  `carpet`, the basement's pallets `wood`). The kit's GLBs carry none, so `package.json`'s `surfaces` lists them
+  for a game-side wrapper. Not tagged yet: the plot's ground inside `outdoor.glb` (one GLB with its paths and
   street; a question in `package.json`).
 - `package.json`: the package, its rooms, every file's SHA-256, the props still held as markers, the level pieces in
   no room, the kit pieces' surfaces and the questions for the game side (the package's lamp count, and that the
@@ -126,11 +129,18 @@ game root and `size_m`, a shelled room holds layer-1 static bodies, and no scene
 room at its plan origin; `house_export.check_request` writes `_check/request.json`) and fails with the room and node
 named (#122) when a walkable shell piece (one with a surface) or a dressing prop with a collider holds no layer-1
 `StaticBody3D` with a shape; when the game's footstep ray (0.3 m over the floor to 0.5 m under it, every 0.5 m over
-each room) hits a shell collider without a known surface; when a kit GLB with a surface has no collider; or when the
-1.36 m capsule of `house --walk` (`godot/house/walker.gd`, shared with `walk.gd`) does not walk through a doorway or
-flight whose every point stands in the package (on a floored room of it, or on a pad where the house has no floor).
+each room; over a room under a roof of its level also from 10 m over its floor, every 0.5 m over the roof's rect and
+1 m round it, so the first hit is what a player on the free roof stands on) hits a shell collider without a known
+surface, or a roof ray inside the roof's rect, past the props on the roof, meets no roof piece (a shell piece named
+`roof_*`, `chimney_*` or `dormer_*`, `house_export.ROOF_PIECES`): a hole, whether the ray then falls onto the attic's
+floor or meets nothing (#127; one problem per piece met, with its first ray and the count); when a kit GLB with a
+surface has no collider; or when the 1.36 m capsule of `house --walk` (`godot/house/walker.gd`, shared with
+`walk.gd`) does not walk through a doorway or flight whose every point stands in the package (on a floored room of
+it, or on a pad where the house has no floor).
 The doorways and flights that leave the package are listed, walked with the package beside them. The report:
-`_check/load.json` (per room the counts, then `package`: the problems, rays, surfaces hit, kit pieces and walks).
+`_check/load.json` (per room the counts, then `package`: the problems, rays, surfaces hit, the roof's rays and first
+hits, `none_at`: every collider hit without a surface (a prop) with its room, kit pieces and walks); the command
+prints them.
 `tools/tests/test_house_export.py` runs the check on a broken fixture room (Godot needed) and expects every problem
 named.
 `--sheet` then shoots the review sheet from the export folder in an off-screen window (`godot/house/export_sheet.gd`,
@@ -154,15 +164,20 @@ it headless and shoots `godot/house/package_sheet.gd` in an off-screen window: `
 `p<N>_<name>_1280.png` (the agents' copy) and `.json` (per tile). A package without rooms (P1, the kit) is a line-up
 of its pieces, one tile per family of `house.toml`'s `[export.kit_families]` (id patterns, the first match wins;
 shortest in front, under a key light); a package with rooms shows each room from its door (`Doors/Door1`, else the
-first) at 1.6 m eye height looking at the room's middle, lit only by its own fixtures and a dim ambient. Each tile's
-title sits in a dark box, bottom left in a room tile (clear of the room's own `Name` label near the top) and top left
-in a kit tile; the `.json` gives per tile its draw calls (the box counts as one). The outdoor
-rooms of P2 (yard, street, path, ...) carry only markers and lamps: their ground is the plot, package 7.
+first) at 1.6 m eye height looking at the room's middle, lit only by its own fixtures and a dim ambient, then from
+the extra views of it in `house.toml`'s `[[export.sheet_views]]` (#126: plan points, heights over the floor or over
+the roof's top, an optional key light): P5's attic from its west gable and the free roof's lookout from the dormer and
+from the Lookout station, at 1.6 m over the roof. A package alone has no plot round it, so the roof views look out
+into the review ambient. Each tile's title sits in a dark box, bottom left in a room tile (clear of the room's own
+`Name` label near the top) and top left in a kit tile; the `.json` gives per tile its draw calls (the box counts as
+one). The outdoor rooms of P2 (yard, street, path, ...) carry only markers and lamps: their ground is the plot,
+package 7.
 
 `tools/tests/test_house_export.py` diffs the 34 art rooms against the game's greybox rooms (`D:/prime-game`, read
-only; skipped without it) on root, origin, size, Doors, Stations and Markers and expects exactly the six known
-differences of the plan's `mapping.md` (attic and roof: question G1; garage Door3, landing Door6, study Door1,
-storage Package07: G2; art task A4 settles them), the attic's by name (Door1; Loot, HidingSpots, Lookout; Knife3).
+only; skipped without it) on root, origin, size, Doors, Stations and Markers and expects exactly the known differences:
+the six of the plan's `mapping.md` (attic and roof: question G1; garage Door3, landing Door6, study Door1,
+storage Package07: G2; art task A4 settles them), the attic's by name (Door1; Loot, HidingSpots, Lookout; Knife3); and the game's three spawn zone markers Zone01-Zone03
+(yard, garden, landing; prime-game #651, #681), which the art rooms do not carry yet.
 
 ## Dressing (#75b)
 

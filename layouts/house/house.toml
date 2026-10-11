@@ -51,6 +51,7 @@ label = { h = 2.4, font_size = 72, outline_size = 16 }  # the room's Name label,
 "floor_concrete_*" = "concrete"
 "slab_*" = "concrete"
 "roof_flat_*" = "concrete"
+"roof_pitched_*" = "concrete"  # the free roof (art #77, #126): the game has no tile sound
 "stairs_main" = "wood"
 "stairs_basement" = "concrete"
 "stairs_balcony" = "concrete"
@@ -58,6 +59,13 @@ label = { h = 2.4, font_size = 72, outline_size = 16 }  # the room's Name label,
 "ladder_attic" = "wood"
 "stair_dormer" = "wood"
 "ground*" = "grass"
+"chimney_attic*" = "concrete"  # the chimneys' tops over the free roof (#126)
+"dormer_*" = "concrete"  # the dormer's own roof
+
+# Low dressing props the floor's rays meet before the floor (a player stands on them), by id pattern (art #126).
+[export.prop_surfaces]
+"rolled_carpet" = "carpet"
+"pallet" = "wood"
 
 # The kit's families on the look-approval sheet (`house --package-sheet`, art #124): one tile each, in this order, by
 # id pattern (the first match wins); a piece no pattern matches goes to the last family.
@@ -68,6 +76,30 @@ floors = ["floor_*", "ceiling_*", "slab_*", "porch_*"]
 stairs = ["stair*", "ladder_*", "railing_balcony_*"]
 roof = ["roof_*", "glass_roof_*", "gable_*", "glass_gable_*", "chimney_*", "dormer_*", "cornice_*"]
 outdoor = ["fence_*", "gate_post", "gazebo_*", "railing_gazebo_*"]
+
+# Extra views on a package's look-approval sheet (`house --package-sheet`, art #126), after the room's door view: `at`
+# and `look` plan metres, `eye` (default 1.6) and `look_h` (default 1.0) heights over the room's floor or, with
+# `over_roof`, over the roof's top there (house_attic.roof_top); `sun` adds a key light outside the room's lamps.
+[[export.sheet_views]]
+room = "attic"
+title = "attic: from the west gable"
+at = [19.5, 34.0]
+look = [40.0, 34.0]
+[[export.sheet_views]]
+room = "attic"
+title = "roof: from dormer, 1.6 m"
+at = [34.9, 43.6]  # the dormer's climb-out (dressing/attic_roof/attic.toml's roof.arrive)
+look = [39.0, 41.9]  # the Lookout station
+over_roof = true
+sun = true
+[[export.sheet_views]]
+room = "attic"
+title = "roof: from lookout, 1.6 m"
+at = [39.0, 41.9]
+look = [30.0, 36.0]
+look_h = 0.5
+over_roof = true
+sun = true
 
 # Extra sets copied whole (files matching `files` under the raw folder `dir`), each into its own folder.
 [export.sets.house_outdoor]

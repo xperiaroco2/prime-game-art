@@ -84,11 +84,35 @@ def families(ids: list[str], patterns: dict[str, list[str]]) -> dict[str, list[s
     return {name: v for name, v in out.items() if v}
 
 
-def request(package: dict, kit_families: dict[str, list[str]], kit_set: str = "house_kit") -> dict:
-    """The sheet request: the kit's families (a package without rooms) or the package's rooms."""
+def views(data: dict) -> list[dict]:
+    """house.toml's [[export.sheet_views]] as room-local camera tiles (#126): `at` and `look` in plan metres, `eye` and
+    `look_h` their heights over the room's floor or, with `over_roof`, over the roof's top there
+    (house_attic.roof_top); `sun` adds a key light (a view outside the room's own lamps)."""
+    from .. import house_attic
+    rooms = {r["id"]: r for lv in data["levels"] for r in lv["rooms"]}
+    out = []
+    for v in data["settings"]["export"].get("sheet_views", []):
+        rx, ry = rooms[v["room"]]["rect"][:2]
+
+        def pt(xy, h):
+            base = house_attic.roof_top(data, xy[1]) if v.get("over_roof") else 0.0
+            return [round(xy[0] - rx, 3), round(base + h, 3), round(xy[1] - ry, 3)]
+        out.append({"room": v["room"], "title": v["title"], "eye": pt(v["at"], v.get("eye", EYE)),
+                    "look": pt(v["look"], v.get("look_h", 1.0)), "sun": bool(v.get("sun"))})
+    return out
+
+
+def request(package: dict, kit_families: dict[str, list[str]], kit_set: str = "house_kit",
+            extra: list[dict] | None = None) -> dict:
+    """The sheet request: the kit's families (a package without rooms) or the package's rooms, each from its door
+    and then from the extra views (views()) of it."""
     name = f"p{package['package']}_{package['name']}"
     if package["rooms"]:
-        tiles = [{"title": room, "scene": f"res://levels/house/rooms/{room}.tscn"} for room in package["rooms"]]
+        tiles = []
+        for room in package["rooms"]:
+            scene = f"res://levels/house/rooms/{room}.tscn"
+            tiles.append({"title": room, "scene": scene})
+            tiles += [dict(v, scene=scene) for v in extra or [] if v["room"] == room]
         return {"mode": "rooms", "sheet": name, "cols": ROOM_COLS, "width": WIDTH, "eye": EYE, "tiles": tiles}
     prefix = f"assets/environment/{kit_set}/"
     ids = [Path(p).stem for p in package["files"] if p.startswith(prefix) and p.endswith(".glb")]
@@ -104,7 +128,8 @@ def tile_line(tile: dict, mode: str) -> str:
     return f"  {tile['title']}: {extra}, {round(tile['draw_calls'])} draw calls"
 
 
-def run(folder: Path, n: int, kit_families: dict[str, list[str]], root: Path = common.ROOT) -> int:
+def run(folder: Path, n: int, kit_families: dict[str, list[str]], root: Path = common.ROOT,
+        extra: list[dict] | None = None) -> int:
     """Stages package n from the committed files into folder and shoots its sheet into folder/<name>.png,
     <name>_1280.png and <name>.json."""
     path, package = find_package(root, n)
@@ -118,7 +143,7 @@ def run(folder: Path, n: int, kit_families: dict[str, list[str]], root: Path = c
     (folder / "project.godot").write_text(PROJECT, encoding="utf-8", newline="\n")
     (folder / REVIEW_DIR).mkdir(exist_ok=True)
     shutil.copyfile(SCRIPT, folder / REVIEW_DIR / SCRIPT.name)
-    req = request(package, kit_families)
+    req = request(package, kit_families, extra=extra)
     req_path = folder / REVIEW_DIR / "request.json"
     req_path.write_text(json.dumps(req, indent=1), encoding="utf-8", newline="\n")
     code, output = _godot.godot(["--headless", "--path", folder, "--import"], TIMEOUT)

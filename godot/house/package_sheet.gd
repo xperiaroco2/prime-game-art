@@ -4,7 +4,8 @@ extends SceneTree
 ## files under assets/, laid out like the game's tree. Two modes:
 ##   kit: every kit piece of the request's families in a line-up, one tile per family, under a key light;
 ##   rooms: every room scene from its door (Doors/Door1, else the first) at eye height, looking into the room, lit only by its
-##     own fixtures and a dim review ambient; a room without a door is shot from the middle of its front side.
+##     own fixtures and a dim review ambient; a room without a door is shot from the middle of its front side. A tile
+##     with `eye` and `look` (room-local) is an extra view of its room; with `sun` a key light joins its lamps.
 ## Writes <out>/<sheet>.png (`width` px wide), <sheet>_1280.png (the agents' copy) and <sheet>.json (per tile).
 ##   -s res://_review/package_sheet.gd -- request=<abs json> out=<abs dir>
 
@@ -67,7 +68,7 @@ func _run() -> void:
 		holder.add_child(cam)
 		var info := {}
 		if req["mode"] == "rooms":
-			info = _room(holder, cam, String(tile["scene"]), float(req["eye"]))
+			info = _room(holder, cam, String(tile["scene"]), float(req["eye"]), tile)
 		else:
 			info = _kit(holder, cam, tile["pieces"], String(req["dir"]))
 		if info.has("error"):
@@ -106,7 +107,7 @@ func _run() -> void:
 
 ## A room scene from its first door at eye height: inward from the wall the door is nearest to, looking at the
 ## room's middle at 1 m (Door1, else the first door).
-func _room(holder: Node3D, cam: Camera3D, path: String, eye: float) -> Dictionary:
+func _room(holder: Node3D, cam: Camera3D, path: String, eye: float, tile: Dictionary = {}) -> Dictionary:
 	var ps := load(path) as PackedScene
 	if ps == null:
 		return {"error": "missing " + path}
@@ -129,6 +130,15 @@ func _room(holder: Node3D, cam: Camera3D, path: String, eye: float) -> Dictionar
 	var target := Vector3(w / 2, pos.y + 1.0, d / 2)
 	if Vector2(target.x - pos.x, target.z - pos.z).length() < 0.5:
 		target += Vector3(0, 0, 1)
+	if tile.has("eye"):  # an extra view (house.toml's [[export.sheet_views]]): its own eye and target, room-local
+		door = ""
+		cam.position = Vector3(tile["eye"][0], tile["eye"][1], tile["eye"][2])
+		target = Vector3(tile["look"][0], tile["look"][1], tile["look"][2])
+	if tile.get("sun", false):  # outside the room's own lamps: a low key light from the south-west
+		var sun := DirectionalLight3D.new()
+		sun.rotation_degrees = Vector3(-35, -140, 0)
+		sun.light_energy = 1.2
+		holder.add_child(sun)
 	cam.look_at_from_position(cam.position, target)
 	return {"room": String(sc.name), "door": door, "size_m": [size.x, size.y], "eye": cam.position.y,
 		"lights": sc.find_children("*", "Light3D", true, false).size()}

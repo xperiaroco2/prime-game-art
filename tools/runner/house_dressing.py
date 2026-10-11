@@ -391,6 +391,7 @@ def scene_nodes(sc, resolved: list[dict], res_of) -> list[str]:
             name = f"{r['id']}_{seen[r['id']]}"
             x, h, z = r["at"]
             meta = [f'metadata/prop = "{r["id"]}"'] + ([f'metadata/station = "{r["station"]}"'] if r.get("station") else [])
+            meta += [f'metadata/surface = "{r["surface"]}"'] if r.get("surface") else []  # house_export.prop_surface
             path = res_of(r["id"])
             if path:
                 sc.nodes.append("\n".join([f'[node name="{name}" parent="{parent}" instance=ExtResource("{sc.res(path)}")]',

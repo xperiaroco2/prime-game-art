@@ -26,13 +26,17 @@ PLAN = H.plan(DATA)
 GAME = Path("D:/prime-game/levels/house")
 # mapping.md's known differences (2026-10-11), waiting on the game's answers G1 and G2 (prime-game #523; art task A4):
 # the attic is the free-roof attic on the whole footprint and holds the roof's stations; the art moved three door
-# markers onto the whole-metre wall grid and the storage's Package07 to the shelf it sits on.
+# markers onto the whole-metre wall grid and the storage's Package07 to the shelf it sits on. The game's three
+# provisional spawn_zone markers (prime-game #651, #681: Zone01 in the yard, Zone02 in the garden, Zone03 on the
+# landing) came after the art's rooms and are not in them yet.
 KNOWN = {
     "roof": "game only",
     "attic": {"origin": True, "size": True, "doors": {"Door1"}, "stations": {"Loot", "HidingSpots", "Lookout"},
               "markers": {"Knife3"}},
     "garage": {"doors": {"Door3"}},
-    "landing": {"doors": {"Door6"}},
+    "garden": {"markers": {"Zone02"}},
+    "landing": {"doors": {"Door6"}, "markers": {"Zone03"}},
+    "yard": {"markers": {"Zone01"}},
     "study": {"doors": {"Door1"}},
     "storage": {"markers": {"Package07"}},
 }
@@ -141,6 +145,39 @@ class HouseExport(unittest.TestCase):
         t = scenes["attic"]["text"]
         self.assertIn('[node name="trunk_1" parent="Dressing"', t)
         self.assertIn('[node name="old_wardrobe_1" type="Marker3D" parent="Placeholders"]', t)
+
+    def test_the_free_roof_and_the_attic_carry_surfaces(self):
+        """#126: the attic's library props keep their collision (frames and rugs none), its rolled carpets are
+        carpet, the roof's pieces a ray from over the ridge meets are tagged and stay so over a rug, and the check
+        rays the roof's rect with its margin."""
+        dz = X.attic_dressing(HA.load("attic"))
+        coll = {r["id"]: r["collision"] for r in dz["resolved"]}
+        self.assertEqual((coll["picture_frame"], coll["rug"]), ("none", "none"))
+        self.assertNotEqual(coll["trunk"], "none")
+        pk = X.packages(DATA)[5]
+        built = X.scenes(DATA, PLAN, {"attic": dz}, [], pk)
+        built.pop("")
+        attic = built["attic"]
+        self.assertFalse([n for n in attic["hide"] if n.startswith(("picture_frame", "rug_"))], attic["hide"])
+        self.assertRegex(attic["text"], r'\[node name="rolled_carpet_1" parent="Dressing"[^\[]*metadata/surface = "carpet"')
+        for pid in ("roof_pitched_2x2", "roof_pitched_eave_2m", "roof_pitched_ridge_2m", "chimney_attic",
+                    "chimney_attic_n", "dormer_gable"):
+            self.assertIn(X.surface_of(DATA, pid), X.SURFACES, pid)
+        roofs = re.findall(r'\[node name="(roof_pitched\w+)" parent="Shell"[^\n]*\n[^\n]*\nmetadata/surface = "concrete"',
+                           attic["text"])
+        self.assertTrue(roofs)
+        self.assertIsNone(X.prop_surface(DATA, "crate"))
+        req = X.check_request(DATA, built, {pid for b in built.values() for pid in b["kit"]})
+        room = next(r for r in req["rooms"] if r["id"] == "attic")
+        x, y, w, d = (float(v) for v in next(lv for lv in DATA["levels"] if lv["level"] == "attic")["roofs"][0]["rect"])
+        m = X.ROOF_MARGIN
+        self.assertEqual(room["roof"], [x - m, y - m, w + 2 * m, d + 2 * m])
+        self.assertEqual(room["roof_rect"], [x, y, w, d])
+        self.assertGreater(room["roof_from"], 6.0)
+        self.assertEqual(room["roof_pieces"], list(X.ROOF_PIECES))
+        shell = re.findall(r'\[node name="([a-z_]+?)(?:_\d+)?" parent="Shell"', attic["text"])
+        self.assertTrue([n for n in shell if n.startswith(X.ROOF_PIECES) and n.startswith("roof_pitched")])
+        self.assertFalse([n for n in shell if n.startswith("floor") and n.startswith(X.ROOF_PIECES)])
 
     def test_packages_split_the_rooms(self):
         pk = X.packages(DATA)
@@ -253,8 +290,31 @@ def fake_raw(raw: Path) -> Path:
     return raw
 
 
+class PackageLines(unittest.TestCase):
+    def test_the_report_counts_misses_and_names_hits_without_a_surface(self):
+        pkg = {"pieces": {"floor_a": True, "wall_b": False}, "rays": 6, "surfaces": {"wood": 4, "none": 2},
+               "walks": [{"arrived": True}, {"arrived": False}], "roof_rays": 5,
+               "roof_surfaces": {"concrete": 2, "none": 1, "miss": 2},
+               "none_at": {"Attic/Dressing/crate_1/Body": "attic roof", "Boiler/Dressing/boiler_1/Body": "boiler_room",
+                           "Boiler/Dressing/boiler_1/Body2": "boiler_room", "Boiler/Fixtures/lamp_2": "boiler_room",
+                           "Loose/Body": "attic"}}
+        lines = _house_export.package_lines(pkg)
+        self.assertEqual(lines, [
+            '  package: 1/2 kit GLBs with a surface hold a collider; 6 rays down, surfaces hit {"none": 2, "wood": 4}; '
+            "1/2 walks of the 1.36 m capsule arrive",
+            '  roof: 5 rays down from over the ridge, first hits {"concrete": 2, "miss": 2, "none": 1} (miss: past the '
+            "eaves)",
+            "  hits without a surface (not the shell): attic: Loose/Body; attic roof: crate_1; boiler_room: boiler_1, "
+            "lamp_2"])
+
+    def test_no_roof_and_no_unknown_surface_print_no_line(self):
+        lines = _house_export.package_lines({"rays": 2, "surfaces": {"wood": 2}, "roof_rays": 0, "none_at": {}})
+        self.assertEqual(len(lines), 1)
+
+
 # A room that breaks every rule of the export check: a floor without a surface (the ray finds it), a walkable piece
-# and a prop with a collider listed but holding none, a CSG box, and a wall across the capsule's walk.
+# and a prop with a collider listed but holding none, a CSG box, a wall across the capsule's walk, and a roof over
+# x 2..6 only (with a crate on it), so the roof's rays over x 0..2 fall through the hole onto floor_ok.
 BROKEN = """[gd_scene format=3]
 
 [sub_resource type="BoxShape3D" id="floor"]
@@ -262,6 +322,12 @@ size = Vector3(2, 0.2, 4)
 
 [sub_resource type="BoxShape3D" id="wall"]
 size = Vector3(0.2, 3, 4)
+
+[sub_resource type="BoxShape3D" id="roof"]
+size = Vector3(4, 0.2, 4)
+
+[sub_resource type="BoxShape3D" id="crate"]
+size = Vector3(1, 0.4, 1)
 
 [node name="Bad" type="Node3D"]
 metadata/size_m = Vector2i(6, 4)
@@ -288,6 +354,15 @@ shape = SubResource("floor")
 [node name="floor_hollow" type="Node3D" parent="Shell"]
 metadata/surface = "wood"
 
+[node name="roof_slab" type="Node3D" parent="Shell"]
+metadata/surface = "concrete"
+
+[node name="Body" type="StaticBody3D" parent="Shell/roof_slab"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 3.2, 2)
+
+[node name="Shape" type="CollisionShape3D" parent="Shell/roof_slab/Body"]
+shape = SubResource("roof")
+
 [node name="Dressing" type="Node3D" parent="."]
 
 [node name="crate_1" type="Node3D" parent="Dressing"]
@@ -297,6 +372,12 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.5, 1.5, 2)
 
 [node name="Shape" type="CollisionShape3D" parent="Dressing/Wall"]
 shape = SubResource("wall")
+
+[node name="RoofCrate" type="StaticBody3D" parent="Dressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 3.5, 2)
+
+[node name="Shape" type="CollisionShape3D" parent="Dressing/RoofCrate"]
+shape = SubResource("crate")
 
 [node name="Box" type="CSGBox3D" parent="Dressing"]
 """
@@ -312,7 +393,9 @@ class BrokenFixture(unittest.TestCase):
             (rooms / "bad.tscn").write_text(BROKEN, encoding="utf-8", newline="\n")
             request = {"rooms": [{"id": "bad", "rect": [0, 0, 6, 4], "floor_y": 0.0, "floor": True,
                                   "scene": "res://levels/house/rooms/bad.tscn",
-                                  "walkable": ["floor_ok", "floor_bare", "floor_hollow"], "hide": ["crate_1"]}],
+                                  "walkable": ["floor_ok", "floor_bare", "floor_hollow"], "hide": ["crate_1"],
+                                  "roof": [-1, 0, 7, 4], "roof_rect": [0, 0, 6, 4], "roof_from": 6.0,
+                                  "roof_pieces": list(X.ROOF_PIECES)}],
                        "pieces": {}, "walks": [{"name": "through_wall", "kind": "door",
                                                 "points": [[1.0, 0.0, 2.0], [3.0, 0.0, 2.0], [5.5, 0.0, 2.0]]}],
                        "pads": [[5.5, 0.0, 2.0]]}
@@ -323,12 +406,22 @@ class BrokenFixture(unittest.TestCase):
             self.assertEqual(code, 1, text)
             self.assertIn("bad: Shell/floor_hollow has no layer-1 StaticBody3D", text)
             self.assertIn("bad: Dressing/crate_1 has no layer-1 StaticBody3D", text)
-            self.assertNotIn("floor_ok", text)
+            self.assertNotRegex(text, r"bad: [^\n]*floor_ok")
             self.assertRegex(text, r"bad: no known surface \(none\) under [\d.]+, [\d.]+ on Bad/Shell/floor_bare/Body")
             self.assertIn("walk through_wall", text)
             self.assertIn("bad: CSGBox3D Box", text)
+            # the hole over x 0..2: its 4 x 8 rays fall onto floor_ok, one problem; over the slab and its crate none
+            self.assertIn("bad roof: a hole at 0.25, 0.25, 32 rays meet Bad/Shell/floor_ok/Body", text)
+            self.assertEqual(len(re.findall(r"bad roof: ", text)), 1, text)
             report = json.loads((folder / "_check/load.json").read_text(encoding="utf-8"))
             self.assertGreater(report["package"]["surfaces"].get("wood", 0), 0)
+            # the roof's 14 x 8 rays: 16 miss west of the rect, 32 fall through the hole onto floor_ok, 4 meet the
+            # crate (no surface), 60 the slab; the crate is named with its room's roof, the bare floor with its room
+            pkg = report["package"]
+            self.assertEqual(pkg["roof_rays"], 112)
+            self.assertEqual(pkg["roof_surfaces"], {"miss": 16, "wood": 32, "none": 4, "concrete": 60})
+            self.assertEqual(pkg["none_at"].get("Bad/Dressing/RoofCrate"), "bad roof")
+            self.assertEqual(pkg["none_at"].get("Bad/Shell/floor_bare/Body"), "bad")
 
 
 

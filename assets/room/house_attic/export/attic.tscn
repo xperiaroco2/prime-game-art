@@ -1,0 +1,1896 @@
+[gd_scene format=3]
+
+[ext_resource type="PackedScene" path="res://assets/environment/house_kit/wall_knee_2m_ext.glb" id="1"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_kit/wall_knee_2m_window_ext.glb" id="2"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_kit/wall_knee_corner_ext.glb" id="3"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_kit/floor_boards_2x2_hatch.glb" id="4"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_kit/floor_boards_2x2.glb" id="5"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_kit/floor_boards_2x1.glb" id="6"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_kit/chimney_attic.glb" id="7"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_kit/chimney_attic_n.glb" id="8"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_kit/roof_vent.glb" id="9"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_kit/roof_vent_n.glb" id="10"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_kit/stair_dormer.glb" id="11"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_kit/roof_pitched_eave_2m.glb" id="12"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_kit/roof_pitched_2x2.glb" id="13"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_kit/roof_pitched_verge_2_l.glb" id="14"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_kit/roof_pitched_verge_2_r.glb" id="15"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_kit/roof_pitched_corner_l.glb" id="16"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_kit/roof_pitched_corner_r.glb" id="17"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_kit/roof_pitched_ridge_2m.glb" id="18"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_kit/roof_pitched_ridge_end_l.glb" id="19"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_kit/roof_pitched_ridge_end_r.glb" id="20"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_kit/roof_downpipe.glb" id="21"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_kit/roof_pitched_2x1.glb" id="22"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_kit/dormer_gable.glb" id="23"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_kit/gable_tri_2m_up.glb" id="24"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_kit/gable_tri_2m_down.glb" id="25"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_kit/gable_band_2m.glb" id="26"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_kit/ladder_attic.glb" id="27"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/old_wardrobe.glb" id="28"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/trunk.glb" id="29"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/cardboard_box.glb" id="30"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/sheeted_furniture.glb" id="31"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/rolled_carpet.glb" id="32"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/crate.glb" id="33"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/picture_frame.glb" id="34"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/standing_mirror.glb" id="35"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/rug.glb" id="36"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/potted_plant.glb" id="37"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/old_bicycle.glb" id="38"]
+
+[node name="Attic" type="Node3D"]
+metadata/size_m = Vector2i(24, 20)
+metadata/art_room = "attic"
+
+[node name="Name" type="Label3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 2.4, 10)
+billboard = 1
+text = "Attic"
+font_size = 72
+outline_size = 16
+
+[node name="Shell" type="Node3D" parent="."]
+
+[node name="wall_knee_2m_ext_1" parent="Shell" instance=ExtResource("1")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 2, 0, 0)
+
+[node name="wall_knee_2m_ext_2" parent="Shell" instance=ExtResource("1")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 4, 0, 0)
+
+[node name="wall_knee_2m_ext_3" parent="Shell" instance=ExtResource("1")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 6, 0, 0)
+
+[node name="wall_knee_2m_window_ext_1" parent="Shell" instance=ExtResource("2")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 8, 0, 0)
+
+[node name="wall_knee_2m_ext_4" parent="Shell" instance=ExtResource("1")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 10, 0, 0)
+
+[node name="wall_knee_2m_ext_5" parent="Shell" instance=ExtResource("1")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 12, 0, 0)
+
+[node name="wall_knee_2m_ext_6" parent="Shell" instance=ExtResource("1")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 14, 0, 0)
+
+[node name="wall_knee_2m_ext_7" parent="Shell" instance=ExtResource("1")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 16, 0, 0)
+
+[node name="wall_knee_2m_window_ext_2" parent="Shell" instance=ExtResource("2")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 18, 0, 0)
+
+[node name="wall_knee_2m_ext_8" parent="Shell" instance=ExtResource("1")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 20, 0, 0)
+
+[node name="wall_knee_2m_ext_9" parent="Shell" instance=ExtResource("1")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 22, 0, 0)
+
+[node name="wall_knee_2m_ext_10" parent="Shell" instance=ExtResource("1")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 24, 0, 0)
+
+[node name="wall_knee_2m_ext_11" parent="Shell" instance=ExtResource("1")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 20)
+
+[node name="wall_knee_2m_ext_12" parent="Shell" instance=ExtResource("1")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0, 20)
+
+[node name="wall_knee_2m_ext_13" parent="Shell" instance=ExtResource("1")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 0, 20)
+
+[node name="wall_knee_2m_window_ext_3" parent="Shell" instance=ExtResource("2")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 0, 20)
+
+[node name="wall_knee_2m_ext_14" parent="Shell" instance=ExtResource("1")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 0, 20)
+
+[node name="wall_knee_2m_ext_15" parent="Shell" instance=ExtResource("1")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 0, 20)
+
+[node name="wall_knee_2m_ext_16" parent="Shell" instance=ExtResource("1")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 0, 20)
+
+[node name="wall_knee_2m_ext_17" parent="Shell" instance=ExtResource("1")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14, 0, 20)
+
+[node name="wall_knee_2m_window_ext_4" parent="Shell" instance=ExtResource("2")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16, 0, 20)
+
+[node name="wall_knee_2m_ext_18" parent="Shell" instance=ExtResource("1")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 18, 0, 20)
+
+[node name="wall_knee_2m_ext_19" parent="Shell" instance=ExtResource("1")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 20, 0, 20)
+
+[node name="wall_knee_2m_ext_20" parent="Shell" instance=ExtResource("1")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 22, 0, 20)
+
+[node name="wall_knee_2m_ext_21" parent="Shell" instance=ExtResource("1")]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0, 0, 0)
+
+[node name="wall_knee_2m_ext_22" parent="Shell" instance=ExtResource("1")]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0, 0, 2)
+
+[node name="wall_knee_2m_ext_23" parent="Shell" instance=ExtResource("1")]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0, 0, 4)
+
+[node name="wall_knee_2m_ext_24" parent="Shell" instance=ExtResource("1")]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0, 0, 6)
+
+[node name="wall_knee_2m_ext_25" parent="Shell" instance=ExtResource("1")]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0, 0, 8)
+
+[node name="wall_knee_2m_ext_26" parent="Shell" instance=ExtResource("1")]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0, 0, 10)
+
+[node name="wall_knee_2m_ext_27" parent="Shell" instance=ExtResource("1")]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0, 0, 12)
+
+[node name="wall_knee_2m_ext_28" parent="Shell" instance=ExtResource("1")]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0, 0, 14)
+
+[node name="wall_knee_2m_ext_29" parent="Shell" instance=ExtResource("1")]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0, 0, 16)
+
+[node name="wall_knee_2m_ext_30" parent="Shell" instance=ExtResource("1")]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0, 0, 18)
+
+[node name="wall_knee_2m_ext_31" parent="Shell" instance=ExtResource("1")]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 24, 0, 2)
+
+[node name="wall_knee_2m_ext_32" parent="Shell" instance=ExtResource("1")]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 24, 0, 4)
+
+[node name="wall_knee_2m_ext_33" parent="Shell" instance=ExtResource("1")]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 24, 0, 6)
+
+[node name="wall_knee_2m_ext_34" parent="Shell" instance=ExtResource("1")]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 24, 0, 8)
+
+[node name="wall_knee_2m_ext_35" parent="Shell" instance=ExtResource("1")]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 24, 0, 10)
+
+[node name="wall_knee_2m_ext_36" parent="Shell" instance=ExtResource("1")]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 24, 0, 12)
+
+[node name="wall_knee_2m_ext_37" parent="Shell" instance=ExtResource("1")]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 24, 0, 14)
+
+[node name="wall_knee_2m_ext_38" parent="Shell" instance=ExtResource("1")]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 24, 0, 16)
+
+[node name="wall_knee_2m_ext_39" parent="Shell" instance=ExtResource("1")]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 24, 0, 18)
+
+[node name="wall_knee_2m_ext_40" parent="Shell" instance=ExtResource("1")]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 24, 0, 20)
+
+[node name="wall_knee_corner_ext_1" parent="Shell" instance=ExtResource("3")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 0, 0, 0)
+
+[node name="wall_knee_corner_ext_2" parent="Shell" instance=ExtResource("3")]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0, 0, 20)
+
+[node name="wall_knee_corner_ext_3" parent="Shell" instance=ExtResource("3")]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 24, 0, 0)
+
+[node name="wall_knee_corner_ext_4" parent="Shell" instance=ExtResource("3")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 24, 0, 20)
+
+[node name="floor_boards_2x2_hatch_1" parent="Shell" instance=ExtResource("4")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9, 0, 4)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_1" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_2" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0, 0)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_3" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 0, 0)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_4" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 0, 0)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_5" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 0, 0)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_6" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 0, 0)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_7" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 0, 0)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_8" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14, 0, 0)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_9" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16, 0, 0)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_10" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 18, 0, 0)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_11" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 20, 0, 0)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_12" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 22, 0, 0)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_13" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 2)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_14" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0, 2)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_15" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 0, 2)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_16" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 0, 2)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_17" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 0, 2)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_18" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 0, 2)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_19" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 0, 2)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_20" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14, 0, 2)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_21" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16, 0, 2)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_22" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 18, 0, 2)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_23" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 20, 0, 2)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_24" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 22, 0, 2)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_25" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 4)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_26" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0, 4)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_27" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 0, 4)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_28" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 0, 4)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_29" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 0, 4)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_30" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14, 0, 4)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_31" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16, 0, 4)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_32" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 18, 0, 4)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_33" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 20, 0, 4)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_34" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 22, 0, 4)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_35" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 6)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_36" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0, 6)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_37" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 0, 6)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_38" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 0, 6)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_39" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 0, 6)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_40" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 0, 6)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_41" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 0, 6)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_42" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14, 0, 6)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_43" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16, 0, 6)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_44" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 18, 0, 6)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_45" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 20, 0, 6)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_46" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 22, 0, 6)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_47" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 8)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_48" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0, 8)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_49" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 0, 8)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_50" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 0, 8)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_51" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 0, 8)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_52" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 0, 8)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_53" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 0, 8)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_54" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14, 0, 8)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_55" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16, 0, 8)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_56" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 18, 0, 8)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_57" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 20, 0, 8)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_58" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 22, 0, 8)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_59" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 10)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_60" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0, 10)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_61" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 0, 10)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_62" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 0, 10)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_63" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 0, 10)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_64" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 0, 10)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_65" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 0, 10)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_66" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14, 0, 10)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_67" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16, 0, 10)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_68" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 18, 0, 10)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_69" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 20, 0, 10)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_70" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 22, 0, 10)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_71" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 12)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_72" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0, 12)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_73" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 0, 12)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_74" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 0, 12)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_75" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 0, 12)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_76" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 0, 12)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_77" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 0, 12)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_78" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14, 0, 12)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_79" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16, 0, 12)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_80" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 18, 0, 12)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_81" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 20, 0, 12)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_82" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 22, 0, 12)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_83" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 14)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_84" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0, 14)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_85" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 0, 14)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_86" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 0, 14)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_87" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 0, 14)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_88" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 0, 14)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_89" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 0, 14)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_90" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14, 0, 14)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_91" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16, 0, 14)
+metadata/surface = "carpet"
+
+[node name="floor_boards_2x2_92" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 18, 0, 14)
+metadata/surface = "carpet"
+
+[node name="floor_boards_2x2_93" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 20, 0, 14)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_94" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 22, 0, 14)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_95" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 16)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_96" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0, 16)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_97" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 0, 16)
+metadata/surface = "carpet"
+
+[node name="floor_boards_2x2_98" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 0, 16)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_99" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 0, 16)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_100" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 0, 16)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_101" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 0, 16)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_102" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14, 0, 16)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_103" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16, 0, 16)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_104" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 18, 0, 16)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_105" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 20, 0, 16)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_106" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 22, 0, 16)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_107" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 18)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_108" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0, 18)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_109" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 0, 18)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_110" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 0, 18)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_111" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 0, 18)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_112" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 0, 18)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_113" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 0, 18)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_114" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14, 0, 18)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_115" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16, 0, 18)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_116" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 18, 0, 18)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_117" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 20, 0, 18)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x2_118" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 22, 0, 18)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x1_1" parent="Shell" instance=ExtResource("6")]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 9, 0, 4)
+metadata/surface = "wood"
+
+[node name="floor_boards_2x1_2" parent="Shell" instance=ExtResource("6")]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 12, 0, 4)
+metadata/surface = "wood"
+
+[node name="chimney_attic_1" parent="Shell" instance=ExtResource("7")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 22, 0, 15.5)
+metadata/surface = "concrete"
+
+[node name="chimney_attic_n_1" parent="Shell" instance=ExtResource("8")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.5, 0, 3)
+metadata/surface = "concrete"
+
+[node name="roof_vent_1" parent="Shell" instance=ExtResource("9")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9.85, 4.9819, 12.35)
+
+[node name="roof_vent_n_1" parent="Shell" instance=ExtResource("10")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12.85, 4.6319, 6.35)
+
+[node name="stair_dormer_1" parent="Shell" instance=ExtResource("11")]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 17.5, 0, 15.85)
+metadata/surface = "wood"
+
+[node name="roof_pitched_eave_2m_1" parent="Shell" instance=ExtResource("12")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.2, 0)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_1" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.2, 0)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_2" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.9, 2)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_3" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.6, 4)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_4" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.3, 6)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_5" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 5, 8)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_eave_2m_2" parent="Shell" instance=ExtResource("12")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 2.2, 0)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_6" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 2.2, 0)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_7" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 2.9, 2)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_8" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 3.6, 4)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_9" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 4.3, 6)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_10" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 5, 8)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_eave_2m_3" parent="Shell" instance=ExtResource("12")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 2.2, 0)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_11" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 2.2, 0)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_12" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 2.9, 2)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_13" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 3.6, 4)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_14" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 4.3, 6)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_15" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 5, 8)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_eave_2m_4" parent="Shell" instance=ExtResource("12")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 2.2, 0)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_16" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 2.2, 0)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_17" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 2.9, 2)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_18" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 3.6, 4)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_19" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 4.3, 6)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_20" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 5, 8)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_eave_2m_5" parent="Shell" instance=ExtResource("12")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 2.2, 0)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_21" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 2.2, 0)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_22" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 2.9, 2)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_23" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 3.6, 4)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_24" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 4.3, 6)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_25" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 5, 8)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_eave_2m_6" parent="Shell" instance=ExtResource("12")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 2.2, 0)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_26" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 2.2, 0)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_27" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 2.9, 2)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_28" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 3.6, 4)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_29" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 4.3, 6)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_30" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 5, 8)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_eave_2m_7" parent="Shell" instance=ExtResource("12")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 2.2, 0)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_31" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 2.2, 0)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_32" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 2.9, 2)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_33" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 3.6, 4)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_34" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 4.3, 6)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_35" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 5, 8)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_eave_2m_8" parent="Shell" instance=ExtResource("12")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14, 2.2, 0)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_36" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14, 2.2, 0)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_37" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14, 2.9, 2)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_38" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14, 3.6, 4)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_39" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14, 4.3, 6)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_40" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14, 5, 8)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_eave_2m_9" parent="Shell" instance=ExtResource("12")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16, 2.2, 0)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_41" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16, 2.2, 0)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_42" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16, 2.9, 2)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_43" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16, 3.6, 4)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_44" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16, 4.3, 6)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_45" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16, 5, 8)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_eave_2m_10" parent="Shell" instance=ExtResource("12")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 18, 2.2, 0)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_46" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 18, 2.2, 0)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_47" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 18, 2.9, 2)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_48" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 18, 3.6, 4)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_49" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 18, 4.3, 6)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_50" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 18, 5, 8)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_eave_2m_11" parent="Shell" instance=ExtResource("12")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 20, 2.2, 0)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_51" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 20, 2.2, 0)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_52" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 20, 2.9, 2)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_53" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 20, 3.6, 4)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_54" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 20, 4.3, 6)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_55" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 20, 5, 8)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_eave_2m_12" parent="Shell" instance=ExtResource("12")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 22, 2.2, 0)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_56" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 22, 2.2, 0)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_57" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 22, 2.9, 2)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_58" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 22, 3.6, 4)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_59" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 22, 4.3, 6)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_60" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 22, 5, 8)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_verge_2_l_1" parent="Shell" instance=ExtResource("14")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.2, 0)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_verge_2_r_1" parent="Shell" instance=ExtResource("15")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 24, 2.2, 0)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_verge_2_l_2" parent="Shell" instance=ExtResource("14")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.9, 2)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_verge_2_r_2" parent="Shell" instance=ExtResource("15")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 24, 2.9, 2)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_verge_2_l_3" parent="Shell" instance=ExtResource("14")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.6, 4)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_verge_2_r_3" parent="Shell" instance=ExtResource("15")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 24, 3.6, 4)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_verge_2_l_4" parent="Shell" instance=ExtResource("14")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.3, 6)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_verge_2_r_4" parent="Shell" instance=ExtResource("15")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 24, 4.3, 6)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_verge_2_l_5" parent="Shell" instance=ExtResource("14")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 5, 8)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_verge_2_r_5" parent="Shell" instance=ExtResource("15")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 24, 5, 8)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_corner_l_1" parent="Shell" instance=ExtResource("16")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.2, 0)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_corner_r_1" parent="Shell" instance=ExtResource("17")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 24, 2.2, 0)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_eave_2m_13" parent="Shell" instance=ExtResource("12")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 24, 2.2, 20)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_61" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 24, 2.2, 20)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_62" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 24, 2.9, 18)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_63" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 24, 3.6, 16)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_64" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 24, 4.3, 14)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_65" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 24, 5, 12)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_eave_2m_14" parent="Shell" instance=ExtResource("12")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 22, 2.2, 20)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_66" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 22, 2.2, 20)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_67" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 22, 2.9, 18)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_68" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 22, 3.6, 16)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_69" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 22, 4.3, 14)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_70" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 22, 5, 12)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_eave_2m_15" parent="Shell" instance=ExtResource("12")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 20, 2.2, 20)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_71" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 20, 2.2, 20)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_72" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 20, 2.9, 18)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_73" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 20, 3.6, 16)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_74" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 20, 4.3, 14)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_75" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 20, 5, 12)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_eave_2m_16" parent="Shell" instance=ExtResource("12")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 18, 2.2, 20)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_76" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 18, 5, 12)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_eave_2m_17" parent="Shell" instance=ExtResource("12")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 16, 2.2, 20)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_77" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 16, 2.2, 20)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_78" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 16, 2.9, 18)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_79" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 16, 3.6, 16)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_80" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 16, 4.3, 14)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_81" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 16, 5, 12)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_eave_2m_18" parent="Shell" instance=ExtResource("12")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 14, 2.2, 20)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_82" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 14, 2.2, 20)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_83" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 14, 2.9, 18)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_84" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 14, 3.6, 16)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_85" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 14, 4.3, 14)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_86" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 14, 5, 12)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_eave_2m_19" parent="Shell" instance=ExtResource("12")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 12, 2.2, 20)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_87" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 12, 2.2, 20)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_88" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 12, 2.9, 18)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_89" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 12, 3.6, 16)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_90" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 12, 4.3, 14)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_91" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 12, 5, 12)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_eave_2m_20" parent="Shell" instance=ExtResource("12")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 10, 2.2, 20)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_92" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 10, 2.2, 20)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_93" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 10, 2.9, 18)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_94" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 10, 3.6, 16)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_95" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 10, 4.3, 14)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_96" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 10, 5, 12)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_eave_2m_21" parent="Shell" instance=ExtResource("12")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 8, 2.2, 20)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_97" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 8, 2.2, 20)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_98" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 8, 2.9, 18)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_99" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 8, 3.6, 16)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_100" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 8, 4.3, 14)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_101" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 8, 5, 12)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_eave_2m_22" parent="Shell" instance=ExtResource("12")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 6, 2.2, 20)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_102" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 6, 2.2, 20)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_103" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 6, 2.9, 18)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_104" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 6, 3.6, 16)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_105" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 6, 4.3, 14)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_106" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 6, 5, 12)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_eave_2m_23" parent="Shell" instance=ExtResource("12")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 4, 2.2, 20)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_107" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 4, 2.2, 20)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_108" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 4, 2.9, 18)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_109" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 4, 3.6, 16)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_110" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 4, 4.3, 14)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_111" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 4, 5, 12)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_eave_2m_24" parent="Shell" instance=ExtResource("12")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 2, 2.2, 20)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_112" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 2, 2.2, 20)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_113" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 2, 2.9, 18)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_114" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 2, 3.6, 16)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_115" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 2, 4.3, 14)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_2x2_116" parent="Shell" instance=ExtResource("13")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 2, 5, 12)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_verge_2_l_6" parent="Shell" instance=ExtResource("14")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 24, 2.2, 20)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_verge_2_r_6" parent="Shell" instance=ExtResource("15")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 0, 2.2, 20)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_verge_2_l_7" parent="Shell" instance=ExtResource("14")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 24, 2.9, 18)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_verge_2_r_7" parent="Shell" instance=ExtResource("15")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 0, 2.9, 18)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_verge_2_l_8" parent="Shell" instance=ExtResource("14")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 24, 3.6, 16)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_verge_2_r_8" parent="Shell" instance=ExtResource("15")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 0, 3.6, 16)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_verge_2_l_9" parent="Shell" instance=ExtResource("14")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 24, 4.3, 14)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_verge_2_r_9" parent="Shell" instance=ExtResource("15")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 0, 4.3, 14)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_verge_2_l_10" parent="Shell" instance=ExtResource("14")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 24, 5, 12)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_verge_2_r_10" parent="Shell" instance=ExtResource("15")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 0, 5, 12)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_corner_l_2" parent="Shell" instance=ExtResource("16")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 24, 2.2, 20)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_corner_r_2" parent="Shell" instance=ExtResource("17")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 0, 2.2, 20)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_ridge_2m_1" parent="Shell" instance=ExtResource("18")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 5.7, 10)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_ridge_2m_2" parent="Shell" instance=ExtResource("18")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 5.7, 10)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_ridge_2m_3" parent="Shell" instance=ExtResource("18")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 5.7, 10)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_ridge_2m_4" parent="Shell" instance=ExtResource("18")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 5.7, 10)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_ridge_2m_5" parent="Shell" instance=ExtResource("18")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 5.7, 10)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_ridge_2m_6" parent="Shell" instance=ExtResource("18")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 5.7, 10)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_ridge_2m_7" parent="Shell" instance=ExtResource("18")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 5.7, 10)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_ridge_2m_8" parent="Shell" instance=ExtResource("18")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14, 5.7, 10)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_ridge_2m_9" parent="Shell" instance=ExtResource("18")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16, 5.7, 10)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_ridge_2m_10" parent="Shell" instance=ExtResource("18")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 18, 5.7, 10)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_ridge_2m_11" parent="Shell" instance=ExtResource("18")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 20, 5.7, 10)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_ridge_2m_12" parent="Shell" instance=ExtResource("18")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 22, 5.7, 10)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_ridge_end_l_1" parent="Shell" instance=ExtResource("19")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 5.7, 10)
+metadata/surface = "concrete"
+
+[node name="roof_pitched_ridge_end_r_1" parent="Shell" instance=ExtResource("20")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 24, 5.7, 10)
+metadata/surface = "concrete"
+
+[node name="roof_downpipe_1" parent="Shell" instance=ExtResource("21")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.4, 2.2, 0)
+
+[node name="roof_downpipe_2" parent="Shell" instance=ExtResource("21")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 23.6, 2.2, 0)
+
+[node name="roof_downpipe_3" parent="Shell" instance=ExtResource("21")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 23.6, 2.2, 20)
+
+[node name="roof_downpipe_4" parent="Shell" instance=ExtResource("21")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 0.4, 2.2, 20)
+
+[node name="roof_pitched_2x1_1" parent="Shell" instance=ExtResource("22")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 18, 2.2, 20)
+metadata/surface = "concrete"
+
+[node name="dormer_gable_1" parent="Shell" instance=ExtResource("23")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 18, 2.55, 19)
+metadata/surface = "concrete"
+
+[node name="gable_tri_2m_up_1" parent="Shell" instance=ExtResource("24")]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0, 2.2, 0)
+
+[node name="gable_tri_2m_down_1" parent="Shell" instance=ExtResource("25")]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0, 2.2, 18)
+
+[node name="gable_band_2m_1" parent="Shell" instance=ExtResource("26")]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0, 2.2, 2)
+
+[node name="gable_tri_2m_up_2" parent="Shell" instance=ExtResource("24")]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0, 2.9, 2)
+
+[node name="gable_band_2m_2" parent="Shell" instance=ExtResource("26")]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0, 2.2, 16)
+
+[node name="gable_tri_2m_down_2" parent="Shell" instance=ExtResource("25")]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0, 2.9, 16)
+
+[node name="gable_band_2m_3" parent="Shell" instance=ExtResource("26")]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0, 2.2, 4)
+
+[node name="gable_band_2m_4" parent="Shell" instance=ExtResource("26")]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0, 2.9, 4)
+
+[node name="gable_tri_2m_up_3" parent="Shell" instance=ExtResource("24")]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0, 3.6, 4)
+
+[node name="gable_band_2m_5" parent="Shell" instance=ExtResource("26")]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0, 2.2, 14)
+
+[node name="gable_band_2m_6" parent="Shell" instance=ExtResource("26")]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0, 2.9, 14)
+
+[node name="gable_tri_2m_down_3" parent="Shell" instance=ExtResource("25")]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0, 3.6, 14)
+
+[node name="gable_band_2m_7" parent="Shell" instance=ExtResource("26")]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0, 2.2, 6)
+
+[node name="gable_band_2m_8" parent="Shell" instance=ExtResource("26")]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0, 2.9, 6)
+
+[node name="gable_band_2m_9" parent="Shell" instance=ExtResource("26")]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0, 3.6, 6)
+
+[node name="gable_tri_2m_up_4" parent="Shell" instance=ExtResource("24")]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0, 4.3, 6)
+
+[node name="gable_band_2m_10" parent="Shell" instance=ExtResource("26")]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0, 2.2, 12)
+
+[node name="gable_band_2m_11" parent="Shell" instance=ExtResource("26")]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0, 2.9, 12)
+
+[node name="gable_band_2m_12" parent="Shell" instance=ExtResource("26")]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0, 3.6, 12)
+
+[node name="gable_tri_2m_down_4" parent="Shell" instance=ExtResource("25")]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0, 4.3, 12)
+
+[node name="gable_band_2m_13" parent="Shell" instance=ExtResource("26")]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0, 2.2, 8)
+
+[node name="gable_band_2m_14" parent="Shell" instance=ExtResource("26")]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0, 2.9, 8)
+
+[node name="gable_band_2m_15" parent="Shell" instance=ExtResource("26")]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0, 3.6, 8)
+
+[node name="gable_band_2m_16" parent="Shell" instance=ExtResource("26")]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0, 4.3, 8)
+
+[node name="gable_tri_2m_up_5" parent="Shell" instance=ExtResource("24")]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0, 5, 8)
+
+[node name="gable_band_2m_17" parent="Shell" instance=ExtResource("26")]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0, 2.2, 10)
+
+[node name="gable_band_2m_18" parent="Shell" instance=ExtResource("26")]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0, 2.9, 10)
+
+[node name="gable_band_2m_19" parent="Shell" instance=ExtResource("26")]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0, 3.6, 10)
+
+[node name="gable_band_2m_20" parent="Shell" instance=ExtResource("26")]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0, 4.3, 10)
+
+[node name="gable_tri_2m_down_5" parent="Shell" instance=ExtResource("25")]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0, 5, 10)
+
+[node name="gable_tri_2m_down_6" parent="Shell" instance=ExtResource("25")]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 24, 2.2, 2)
+
+[node name="gable_tri_2m_up_6" parent="Shell" instance=ExtResource("24")]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 24, 2.2, 20)
+
+[node name="gable_band_2m_21" parent="Shell" instance=ExtResource("26")]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 24, 2.2, 4)
+
+[node name="gable_tri_2m_down_7" parent="Shell" instance=ExtResource("25")]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 24, 2.9, 4)
+
+[node name="gable_band_2m_22" parent="Shell" instance=ExtResource("26")]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 24, 2.2, 18)
+
+[node name="gable_tri_2m_up_7" parent="Shell" instance=ExtResource("24")]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 24, 2.9, 18)
+
+[node name="gable_band_2m_23" parent="Shell" instance=ExtResource("26")]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 24, 2.2, 6)
+
+[node name="gable_band_2m_24" parent="Shell" instance=ExtResource("26")]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 24, 2.9, 6)
+
+[node name="gable_tri_2m_down_8" parent="Shell" instance=ExtResource("25")]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 24, 3.6, 6)
+
+[node name="gable_band_2m_25" parent="Shell" instance=ExtResource("26")]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 24, 2.2, 16)
+
+[node name="gable_band_2m_26" parent="Shell" instance=ExtResource("26")]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 24, 2.9, 16)
+
+[node name="gable_tri_2m_up_8" parent="Shell" instance=ExtResource("24")]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 24, 3.6, 16)
+
+[node name="gable_band_2m_27" parent="Shell" instance=ExtResource("26")]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 24, 2.2, 8)
+
+[node name="gable_band_2m_28" parent="Shell" instance=ExtResource("26")]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 24, 2.9, 8)
+
+[node name="gable_band_2m_29" parent="Shell" instance=ExtResource("26")]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 24, 3.6, 8)
+
+[node name="gable_tri_2m_down_9" parent="Shell" instance=ExtResource("25")]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 24, 4.3, 8)
+
+[node name="gable_band_2m_30" parent="Shell" instance=ExtResource("26")]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 24, 2.2, 14)
+
+[node name="gable_band_2m_31" parent="Shell" instance=ExtResource("26")]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 24, 2.9, 14)
+
+[node name="gable_band_2m_32" parent="Shell" instance=ExtResource("26")]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 24, 3.6, 14)
+
+[node name="gable_tri_2m_up_9" parent="Shell" instance=ExtResource("24")]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 24, 4.3, 14)
+
+[node name="gable_band_2m_33" parent="Shell" instance=ExtResource("26")]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 24, 2.2, 10)
+
+[node name="gable_band_2m_34" parent="Shell" instance=ExtResource("26")]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 24, 2.9, 10)
+
+[node name="gable_band_2m_35" parent="Shell" instance=ExtResource("26")]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 24, 3.6, 10)
+
+[node name="gable_band_2m_36" parent="Shell" instance=ExtResource("26")]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 24, 4.3, 10)
+
+[node name="gable_tri_2m_down_10" parent="Shell" instance=ExtResource("25")]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 24, 5, 10)
+
+[node name="gable_band_2m_37" parent="Shell" instance=ExtResource("26")]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 24, 2.2, 12)
+
+[node name="gable_band_2m_38" parent="Shell" instance=ExtResource("26")]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 24, 2.9, 12)
+
+[node name="gable_band_2m_39" parent="Shell" instance=ExtResource("26")]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 24, 3.6, 12)
+
+[node name="gable_band_2m_40" parent="Shell" instance=ExtResource("26")]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 24, 4.3, 12)
+
+[node name="gable_tri_2m_up_10" parent="Shell" instance=ExtResource("24")]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 24, 5, 12)
+
+[node name="hatch_ladder" parent="Shell" instance=ExtResource("27")]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 10.35, -3.2, 4.32)
+metadata/surface = "wood"
+
+[node name="Dressing" type="Node3D" parent="."]
+
+[node name="old_wardrobe_1" parent="Dressing" instance=ExtResource("28")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0, 0.5)
+metadata/prop = "old_wardrobe"
+
+[node name="trunk_1" parent="Dressing" instance=ExtResource("29")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 0, 0.5)
+metadata/prop = "trunk"
+
+[node name="cardboard_box_1" parent="Dressing" instance=ExtResource("30")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.3, 0, 0.4)
+metadata/prop = "cardboard_box"
+
+[node name="cardboard_box_2" parent="Dressing" instance=ExtResource("30")]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 5.9, 0, 0.4)
+metadata/prop = "cardboard_box"
+
+[node name="cardboard_box_3" parent="Dressing" instance=ExtResource("30")]
+transform = Transform3D(0.9659, 0, 0.2588, 0, 1, 0, -0.2588, 0, 0.9659, 5.5, 0, 0.95)
+metadata/prop = "cardboard_box"
+
+[node name="sheeted_furniture_1" parent="Dressing" instance=ExtResource("31")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15.5, 0, 1)
+metadata/prop = "sheeted_furniture"
+
+[node name="rolled_carpet_1" parent="Dressing" instance=ExtResource("32")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 18, 0, 0.35)
+metadata/prop = "rolled_carpet"
+metadata/surface = "carpet"
+
+[node name="rolled_carpet_2" parent="Dressing" instance=ExtResource("32")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 18, 0, 0.72)
+metadata/prop = "rolled_carpet"
+metadata/surface = "carpet"
+
+[node name="crate_1" parent="Dressing" instance=ExtResource("33")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 20.4, 0, 0.45)
+metadata/prop = "crate"
+
+[node name="crate_2" parent="Dressing" instance=ExtResource("33")]
+transform = Transform3D(0.9903, 0, 0.1392, 0, 1, 0, -0.1392, 0, 0.9903, 21, 0, 0.45)
+metadata/prop = "crate"
+
+[node name="picture_frame_1" parent="Dressing" instance=ExtResource("34")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 22.3, 0, 0.2)
+metadata/prop = "picture_frame"
+
+[node name="picture_frame_2" parent="Dressing" instance=ExtResource("34")]
+transform = Transform3D(0.9945, 0, 0.1045, 0, 1, 0, -0.1045, 0, 0.9945, 22.9, 0, 0.25)
+metadata/prop = "picture_frame"
+
+[node name="picture_frame_3" parent="Dressing" instance=ExtResource("34")]
+transform = Transform3D(0.9976, 0, -0.0698, 0, 1, 0, 0.0698, 0, 0.9976, 22.6, 0, 0.35)
+metadata/prop = "picture_frame"
+
+[node name="trunk_2" parent="Dressing" instance=ExtResource("29")]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 23.4, 0, 2.2)
+metadata/prop = "trunk"
+
+[node name="standing_mirror_1" parent="Dressing" instance=ExtResource("35")]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 0.5, 0, 4)
+metadata/prop = "standing_mirror"
+
+[node name="sheeted_furniture_2" parent="Dressing" instance=ExtResource("31")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 6.2)
+metadata/prop = "sheeted_furniture"
+
+[node name="old_wardrobe_2" parent="Dressing" instance=ExtResource("28")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 1, 0, 19.5)
+metadata/prop = "old_wardrobe"
+
+[node name="trunk_3" parent="Dressing" instance=ExtResource("29")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 3, 0, 19.5)
+metadata/prop = "trunk"
+
+[node name="sheeted_furniture_3" parent="Dressing" instance=ExtResource("31")]
+transform = Transform3D(0.9848, 0, 0.1736, 0, 1, 0, -0.1736, 0, 0.9848, 4.9, 0, 18.4)
+metadata/prop = "sheeted_furniture"
+
+[node name="trunk_4" parent="Dressing" instance=ExtResource("29")]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 6.3, 0, 16)
+metadata/prop = "trunk"
+
+[node name="crate_3" parent="Dressing" instance=ExtResource("33")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.2, 0, 14.6)
+metadata/prop = "crate"
+
+[node name="crate_4" parent="Dressing" instance=ExtResource("33")]
+transform = Transform3D(0.9848, 0, -0.1736, 0, 1, 0, 0.1736, 0, 0.9848, 3.8, 0, 14.6)
+metadata/prop = "crate"
+
+[node name="rug_1" parent="Dressing" instance=ExtResource("36")]
+transform = Transform3D(0.9962, 0, 0.0872, 0, 1, 0, -0.0872, 0, 0.9962, 4.5, 0, 16.2)
+metadata/prop = "rug"
+
+[node name="cardboard_box_4" parent="Dressing" instance=ExtResource("30")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.8, 0, 19.6)
+metadata/prop = "cardboard_box"
+
+[node name="cardboard_box_5" parent="Dressing" instance=ExtResource("30")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7.4, 0, 19.6)
+metadata/prop = "cardboard_box"
+
+[node name="cardboard_box_6" parent="Dressing" instance=ExtResource("30")]
+transform = Transform3D(0.9397, 0, 0.342, 0, 1, 0, -0.342, 0, 0.9397, 7.1, 0, 19.05)
+metadata/prop = "cardboard_box"
+
+[node name="picture_frame_4" parent="Dressing" instance=ExtResource("34")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 8.2, 0, 19.8)
+metadata/prop = "picture_frame"
+
+[node name="picture_frame_5" parent="Dressing" instance=ExtResource("34")]
+transform = Transform3D(-0.9962, 0, 0.0872, 0, 1, 0, -0.0872, 0, -0.9962, 8.6, 0, 19.75)
+metadata/prop = "picture_frame"
+
+[node name="picture_frame_6" parent="Dressing" instance=ExtResource("34")]
+transform = Transform3D(-0.9945, 0, -0.1045, 0, 1, 0, 0.1045, 0, -0.9945, 8.4, 0, 19.65)
+metadata/prop = "picture_frame"
+
+[node name="potted_plant_1" parent="Dressing" instance=ExtResource("37")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9.4, 0, 19.5)
+metadata/prop = "potted_plant"
+
+[node name="sheeted_furniture_4" parent="Dressing" instance=ExtResource("31")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 13.8, 0, 17.4)
+metadata/prop = "sheeted_furniture"
+
+[node name="trunk_5" parent="Dressing" instance=ExtResource("29")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 13.6, 0, 19.5)
+metadata/prop = "trunk"
+
+[node name="old_bicycle_1" parent="Dressing" instance=ExtResource("38")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 20.4, 0, 19.45)
+metadata/prop = "old_bicycle"
+
+[node name="cardboard_box_7" parent="Dressing" instance=ExtResource("30")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 22.4, 0, 19.6)
+metadata/prop = "cardboard_box"
+
+[node name="cardboard_box_8" parent="Dressing" instance=ExtResource("30")]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 23, 0, 19.6)
+metadata/prop = "cardboard_box"
+
+[node name="cardboard_box_9" parent="Dressing" instance=ExtResource("30")]
+transform = Transform3D(0.9781, 0, -0.2079, 0, 1, 0, 0.2079, 0, 0.9781, 22.7, 0, 19.05)
+metadata/prop = "cardboard_box"
+
+[node name="rolled_carpet_3" parent="Dressing" instance=ExtResource("32")]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 23.6, 0, 17)
+metadata/prop = "rolled_carpet"
+metadata/surface = "carpet"
+
+[node name="rug_2" parent="Dressing" instance=ExtResource("36")]
+transform = Transform3D(0.9986, 0, -0.0523, 0, 1, 0, 0.0523, 0, 0.9986, 17.5, 0, 15)
+metadata/prop = "rug"
+
+[node name="sheeted_furniture_5" parent="Dressing" instance=ExtResource("31")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 22.9, 0, 3.6)
+metadata/prop = "sheeted_furniture"
+
+[node name="crate_5" parent="Dressing" instance=ExtResource("33")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 21.2, 0, 2.9)
+metadata/prop = "crate"
+
+[node name="cardboard_box_10" parent="Dressing" instance=ExtResource("30")]
+transform = Transform3D(0.866, 0, 0.5, 0, 1, 0, -0.5, 0, 0.866, 18.5, 0, 3)
+metadata/prop = "cardboard_box"
+
+[node name="trunk_6" parent="Dressing" instance=ExtResource("29")]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 16.5, 0, 4.2)
+metadata/prop = "trunk"
+
+[node name="Fixtures" type="Node3D" parent="."]
+
+[node name="attic_bare_bulb_01" type="OmniLight3D" parent="Fixtures"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 2.7, 3.333)
+light_color = Color(1, 0.85, 0.68, 1)
+light_energy = 1
+shadow_enabled = false
+omni_range = 6
+metadata/fixture = "bare_bulb"
+metadata/glow = true
+
+[node name="attic_bare_bulb_02" type="OmniLight3D" parent="Fixtures"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 18, 2.7, 3.333)
+light_color = Color(1, 0.85, 0.68, 1)
+light_energy = 1
+shadow_enabled = false
+omni_range = 6
+metadata/fixture = "bare_bulb"
+metadata/glow = true
+
+[node name="attic_bare_bulb_03" type="OmniLight3D" parent="Fixtures"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 2.7, 10)
+light_color = Color(1, 0.85, 0.68, 1)
+light_energy = 1
+shadow_enabled = false
+omni_range = 6
+metadata/fixture = "bare_bulb"
+metadata/glow = true
+
+[node name="attic_bare_bulb_04" type="OmniLight3D" parent="Fixtures"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 18, 2.7, 10)
+light_color = Color(1, 0.85, 0.68, 1)
+light_energy = 1
+shadow_enabled = false
+omni_range = 6
+metadata/fixture = "bare_bulb"
+metadata/glow = true
+
+[node name="attic_bare_bulb_05" type="OmniLight3D" parent="Fixtures"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 2.7, 16.667)
+light_color = Color(1, 0.85, 0.68, 1)
+light_energy = 1
+shadow_enabled = false
+omni_range = 6
+metadata/fixture = "bare_bulb"
+metadata/glow = true
+
+[node name="attic_table_lamp_01" type="OmniLight3D" parent="Fixtures"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.3, 0.9, 10)
+light_color = Color(1, 0.85, 0.68, 1)
+light_energy = 0.5
+shadow_enabled = false
+omni_range = 3.5
+metadata/fixture = "table_lamp"
+metadata/glow = true
+
+[node name="attic_table_lamp_02" type="OmniLight3D" parent="Fixtures"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 17.7, 0.9, 10)
+light_color = Color(1, 0.85, 0.68, 1)
+light_energy = 0.5
+shadow_enabled = false
+omni_range = 3.5
+metadata/fixture = "table_lamp"
+metadata/glow = true
+
+[node name="attic_bare_bulb_dormer" type="OmniLight3D" parent="Fixtures"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 17, 4.357, 17.8)
+light_color = Color(1, 0.85, 0.68, 1)
+light_energy = 1
+shadow_enabled = false
+omni_range = 6
+metadata/fixture = "bare_bulb"
+metadata/glow = true
+
+[node name="Doors" type="Node3D" parent="."]
+
+[node name="Stations" type="Node3D" parent="."]
+
+[node name="HidingSpots" type="Marker3D" parent="Stations"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 0, 15)
+
+[node name="Lookout" type="Marker3D" parent="Stations"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 21, 3.092, 17.9)
+
+[node name="Loot" type="Marker3D" parent="Stations"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 23, 3.057, 2)
+
+[node name="Markers" type="Node3D" parent="."]
+
+[node name="Knife3" type="Marker3D" parent="Markers" groups=["spawn_knife"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 18, 0, 13)
+
+[node name="Placeholders" type="Node3D" parent="."]
+
+[node name="rocking_horse_1" type="Marker3D" parent="Placeholders"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.5, 0, 14.2)
+metadata/prop = "rocking_horse"
+metadata/size = [1.0, 0.4, 0.9]
+metadata/yaw = 90.0
+metadata/note = "no GLB yet"
+
+[node name="mannequin_2" type="Marker3D" parent="Placeholders"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.6, 0, 16.6)
+metadata/prop = "mannequin"
+metadata/size = [0.5, 0.4, 1.7]
+metadata/yaw = 60.0
+metadata/note = "no GLB yet"
