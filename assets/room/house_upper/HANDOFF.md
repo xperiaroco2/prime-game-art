@@ -14,7 +14,7 @@ balcony stairs land beside). Nothing here is copied before the approval fields o
 
 `package.json` beside this file lists the package's 83 game paths with their SHA-256 (the copies must hash the same),
 its rooms (game node, level, kit and prop counts) and the questions. The 7 rooms: `bedroom`, `kids_room`, `landing`,
-`study`, `bathroom`, `guest_room`, `balcony` (with the external stairs down to the yard). Each scene keeps the game
+`study`, `bathroom`, `guest_room`, `balcony` (its external stairs down to the yard are P2's, in `yard.tscn`). Each scene keeps the game
 room's root name, origin, `metadata/size_m`, `Name` label, `Doors`, `Stations` and `Markers`, and adds `Shell` (kit
 instances, walkable ones with `metadata/surface`), `Dressing` and `Fixtures` (lamps). Then the game's `check` (commit
 the `.import` files it writes), `credits`, the import check (11.3) locally with LFS content, `load`, `playcheck`,
