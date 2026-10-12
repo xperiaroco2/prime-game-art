@@ -228,10 +228,14 @@ def sheet_layout(rows: int, cams: int, width: int = 1280) -> dict:
     return {"tile": [tile_w, tile_w * 9 // 16], "per_line": per_line}
 
 
+COST_HEAD = ("real-time / shadowed lights in view (of the scene's); draw calls; shadow draw calls with every shadow "
+             "redrawn; GPU ms cached / redrawn (per camera)")
+
+
 def numbers_md(zone: str, table: dict[str, list[dict]], reference: str | list[str], cam_names: list[str],
                note: str = "real-time diffuse direct light with shadows plus the bake's own bounce",
                extra: dict[str, str] | None = None,
-               extra_head: str = "real-time / shadowed lights, draw calls (per camera)") -> str:
+               extra_head: str = COST_HEAD) -> str:
     """measures per row label (one dict per camera) as a markdown table: L* mean, dark % and C* p90 per camera, and
     per reference row each other row's L* difference camera by camera and their mean (the first reference: the
     real-time row unless the caller names others); `extra` adds one last column per label (shot_costs)."""
@@ -255,13 +259,22 @@ def numbers_md(zone: str, table: dict[str, list[dict]], reference: str | list[st
 
 
 def shot_costs(shots: list[dict]) -> dict[str, str]:
-    """bake_shots.gd's per-shot stats (row, cam, rt_lights, shadowed, draw_calls) as one cell per row: real-time /
-    shadowed lights and draw calls, camera by camera ("4/4, 61; ...")."""
+    """bake_shots.gd's per-shot stats as one cell per row, camera by camera: the real-time / shadowed lights in view
+    and in the scene, the draw calls with the shadows cached, the shadow draw calls and the GPU ms with every shadow
+    redrawn ("1/1 of 34/34, 171 dc, 412 sdc, 1.20 / 3.40 ms; ..."), led by the row's probe count when it has probes.
+    #83b's shots (draw_calls only) keep their old cell ("0/0, 30")."""
     out: dict[str, list[str]] = {}
+    probes: dict[str, int] = {}
     for s in sorted(shots, key=lambda s: (s["row"], s["cam"])):
-        out.setdefault(s["row"], []).append(f"{s.get('rt_lights', 0)}/{s.get('shadowed', 0)}, "
-                                             f"{int(s.get('draw_calls', 0))}")
-    return {k: "; ".join(v) for k, v in out.items()}
+        if "draw_calls_cached" not in s:
+            cell = f"{s.get('rt_lights', 0)}/{s.get('shadowed', 0)}, {int(s.get('draw_calls', 0))}"
+        else:
+            cell = (f"{s['rt_in_view']}/{s['shadowed_in_view']} of {s['rt_lights']}/{s['shadowed']}, "
+                    f"{round(s['draw_calls_cached'])} dc, {round(s['shadow_draw_calls_redrawn'])} sdc, "
+                    f"{s['gpu_ms_cached']:.2f} / {s['gpu_ms_redrawn']:.2f} ms")
+        out.setdefault(s["row"], []).append(cell)
+        probes[s["row"]] = max(probes.get(s["row"], 0), int(s.get("probes", 0)))
+    return {k: (f"{probes[k]} probes; " if probes[k] else "") + "; ".join(v) for k, v in out.items()}
 
 
 def build_args(zone: str, tag: str, texel: float, bake: dict, uv2_json: str, bake_json: str, above: float = 1.0,

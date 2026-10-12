@@ -7,8 +7,9 @@ extends SceneTree
 ## _nospec also sets light_specular 0 (diffuse only, what a lightmap holds). A row with `sheen` (#83c,
 ## house_bake.sheen_mode) is baked plus: lm_specular (LightmapGI.specular_intensity, a directional bake), probes (one
 ## ReflectionProbe per box of `probes`), n (the nearest n lights of `glow_types` as specular-only real-time lights on a
-## black additive copy of the lightmapped meshes, render layer 2), shadow (those lights shadowed). Per shot: draw
-## calls, the lights whose range reaches the camera, the real-time and shadowed lights on lightmapped meshes. The sheet
+## black additive copy of the lightmapped meshes, render layer 2), shadow (those lights shadowed). Per shot: _cost (the
+## real-time lights in the scene and in view, shadowed or not; draw calls, shadow draw calls and GPU ms with the shadows
+## cached and with every shadow redrawn), the row's probe count. The sheet
 ## tile of a row's first camera carries the row's label; the measured frame has none.
 ##   -s res://house/bake_shots.gd -- jobs=<abs json> out=<abs dir>  (an off-screen window; a headless Godot draws nothing)
 
@@ -37,6 +38,7 @@ func _run() -> void:
 	var lines := int(ceil(rows.size() / float(per)))
 	var sheet := Image.create(tw * ncol * per, th * lines, false, Image.FORMAT_RGB8)
 	var stats := []
+	RenderingServer.viewport_set_measure_render_time(root.get_viewport_rid(), true)
 	var tag_layer := CanvasLayer.new()
 	var tag := Label.new()
 	tag.position = Vector2(16, 8)
@@ -109,17 +111,8 @@ func _run() -> void:
 			var img := root.get_texture().get_image()
 			img.convert(Image.FORMAT_RGB8)
 			img.save_png("%s/%s_%d.png" % [out, row["label"], ci])
-			var draws := Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME)
-			var near := 0
-			for l: Light3D in lights:
-				var rng: float = l.get("omni_range") if l is OmniLight3D else l.get("spot_range")
-				if l.global_position.distance_to(cam.global_position) < rng:
-					near += 1
-			var rt := 0 if mode == "baked" else near
-			var shadowed := 0 if mode in ["baked", "realtime"] else near
-			if not sh.is_empty():
-				rt = added.size()
-				shadowed = added.size() if bool(sh["shadow"]) else 0
+			var rt_l: Array = added if not sh.is_empty() else ([] if mode == "baked" else lights)
+			var cost: Dictionary = await _cost(cam, rt_l)
 			if ci == 0:  # the sheet's tile carries the row's label; the measured frame above has none
 				tag.text = str(row["label"]).trim_prefix(str(row.get("zone", "")) + "_")
 				tag_layer.visible = true
@@ -132,8 +125,10 @@ func _run() -> void:
 				(l as Node).queue_free()
 			img.resize(tw, th, Image.INTERPOLATE_LANCZOS)
 			sheet.blit_rect(img, Rect2i(0, 0, tw, th), Vector2i(((ri % per) * ncol + ci) * tw, (ri / per) * th))
-			stats.append({"row": row["label"], "cam": ci, "draw_calls": draws, "lights_reaching_camera": near,
-				"rt_lights": rt, "shadowed": shadowed, "note": spec_info})
+			var st := {"row": row["label"], "cam": ci, "note": spec_info,
+				"probes": (row["probes"] as Array).size() if sh.get("probes", false) else 0}
+			st.merge(cost)
+			stats.append(st)
 		root.remove_child(sc)
 		sc.free()
 	sheet.save_png(out + "/sheet.png")
@@ -207,3 +202,39 @@ func _sheen_lights(lights: Array, at: Vector3, n: int, shadow: bool, types: Arra
 		l.get_parent().add_child(d)
 		out.append(d)
 	return out
+
+
+## A shot's cost, the same way for every row: the real-time lights `rt` (all, and in view: the range sphere meets the
+## camera's frustum) and their shadowed share; then per frame, averaged over 8 drawn frames, the draw calls, shadow
+## draw calls and GPU ms with the shadows cached ("cached"), and again with every shadowed light nudged 1 mm each frame
+## ("redrawn": every shadow re-rendered, the worst case of a player moving in each lamp's range).
+func _cost(cam: Camera3D, rt: Array) -> Dictionary:
+	var planes := cam.get_frustum()
+	var c := {"rt_lights": rt.size(), "rt_in_view": 0, "shadowed": 0, "shadowed_in_view": 0}
+	for l: Light3D in rt:
+		var rng: float = l.get("omni_range") if l is OmniLight3D else l.get("spot_range")
+		var seen := true
+		for p: Plane in planes:
+			if p.distance_to(l.global_position) > rng:
+				seen = false
+				break
+		c["rt_in_view"] += int(seen)
+		c["shadowed"] += int(l.shadow_enabled)
+		c["shadowed_in_view"] += int(seen and l.shadow_enabled)
+	var vp := root.get_viewport_rid()
+	for phase in ["cached", "redrawn"]:
+		var sum := [0.0, 0.0, 0.0]
+		for i in 10:  # the first 2 frames settle (the GPU timer lags a frame or two)
+			if phase == "redrawn":
+				for l: Light3D in rt:
+					if l.shadow_enabled:
+						l.position.y += 0.001 if i % 2 == 0 else -0.001
+			await RenderingServer.frame_post_draw
+			if i >= 2:
+				sum[0] += root.get_render_info(Viewport.RENDER_INFO_TYPE_VISIBLE, Viewport.RENDER_INFO_DRAW_CALLS_IN_FRAME)
+				sum[1] += root.get_render_info(Viewport.RENDER_INFO_TYPE_SHADOW, Viewport.RENDER_INFO_DRAW_CALLS_IN_FRAME)
+				sum[2] += RenderingServer.viewport_get_measured_render_time_gpu(vp)
+		c["draw_calls_" + phase] = sum[0] / 8
+		c["shadow_draw_calls_" + phase] = sum[1] / 8
+		c["gpu_ms_" + phase] = sum[2] / 8
+	return c

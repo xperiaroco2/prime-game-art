@@ -106,16 +106,23 @@ class PresetSheen(unittest.TestCase):
 
 class SheenNumbers(unittest.TestCase):
     def test_costs_per_camera(self):
-        shots = [{"row": "g_a", "cam": 1, "rt_lights": 4, "shadowed": 4, "draw_calls": 70.0},
-                 {"row": "g_a", "cam": 0, "rt_lights": 3, "shadowed": 0, "draw_calls": 61.0},
-                 {"row": "g_b", "cam": 0, "draw_calls": 30}]  # #83b's shots have no light counts
-        self.assertEqual(B.shot_costs(shots), {"g_a": "3/0, 61; 4/4, 70", "g_b": "0/0, 30"})
+        shot = lambda cam, rt, sh, dc, ms: {"row": "g_a", "cam": cam, "probes": 7, "rt_lights": rt, "shadowed": sh,
+                                            "rt_in_view": rt // 2, "shadowed_in_view": sh // 2,
+                                            "draw_calls_cached": dc, "shadow_draw_calls_cached": 0.0,
+                                            "shadow_draw_calls_redrawn": 2.0 * dc, "gpu_ms_cached": ms,
+                                            "gpu_ms_redrawn": 2 * ms}
+        shots = [shot(1, 4, 4, 70.4, 1.5), shot(0, 12, 0, 61.0, 1.234),
+                 {"row": "g_b", "cam": 0, "draw_calls": 30}]  # #83b's shots: draw calls only
+        self.assertEqual(B.shot_costs(shots),
+                         {"g_a": "7 probes; 6/0 of 12/0, 61 dc, 122 sdc, 1.23 / 2.47 ms; "
+                                 "2/2 of 4/4, 70 dc, 141 sdc, 1.50 / 3.00 ms",
+                          "g_b": "0/0, 30"})
 
     def test_numbers_with_a_cost_column(self):
         m = lambda lum: {"L_mean": lum, "dark_pct": 10.0, "C_p90": 20.0}
         md = B.numbers_md("g", {"g_h": [m(10.0)], "g_b": [m(8.0)]}, ["g_h", "g_b"], ["seam"],
                           extra={"g_b": "0/0, 30"})
-        self.assertIn("| real-time / shadowed lights, draw calls (per camera) |", md)
+        self.assertIn(f"| {B.COST_HEAD} |", md)
         self.assertIn("|---|---|---|---|---|", md)
         self.assertIn("| g_b | 8.0 / 10.0 / 20.0 | -2.0 (-2.0) |  | 0/0, 30 |", md)
         self.assertIn("| g_h | 10.0 / 10.0 / 20.0 |  | +2.0 (+2.0) |  |", md)
