@@ -86,9 +86,23 @@ class Cameras(unittest.TestCase):
             self.assertTrue(x < cam[0] < x + w and z < cam[2] < z + d, (rid, cam))
             self.assertTrue(x < cam[3] < x + w and z < cam[5] < z + d, (rid, cam))
 
+    def test_wall_camera_faces_the_north_wall(self):
+        data = house_layout.load()
+        cams = B.views(data, ["living_room", "kitchen"], ["kitchen"])
+        self.assertEqual(len(cams), 4)
+        self.assertEqual(B.view_names(["living_room", "kitchen"], ["kitchen"]),
+                         ["E1 living_room", "E1 kitchen", "wall kitchen", "seam"])
+        x, z, w, d = next(r["rect"] for lv in data["levels"] for r in lv["rooms"] if r["id"] == "kitchen")
+        eye, look = cams[2][:3], cams[2][3:]
+        self.assertTrue(x < eye[0] < x + w and z < eye[2] < z + d)
+        self.assertTrue(z < look[2] < eye[2], cams[2])
+        self.assertEqual(cams[3], B.views(data, ["living_room"])[1])
+
     def test_unknown_room(self):
         with self.assertRaises(ValueError):
             B.views(house_layout.load(), ["nowhere"])
+        with self.assertRaises(ValueError):
+            B.views(house_layout.load(), ["kitchen"], ["nowhere"])
 
 
 class Measures(unittest.TestCase):

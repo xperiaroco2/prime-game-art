@@ -1,0 +1,28 @@
+# The kitchen pilot's C2-white props for `house --bake --props-dir` (#83; docs/house.md "Baking with lab props").
+# --props-dir D:/prime-art-raw/research/2026-10-12-kitchen-pilot/round2/opus/C2w (round 2's build, kp_r2_build.py;
+# the engineer's pick, #34 comment 6124431104). The ids swap wherever a room dresses them (the pantry's counters too).
+# The lab also built bread_bowl.glb; no room dresses a bread_bowl, so it is left out.
+label = "C2-white"
+
+[props]
+assembly_island = "assembly_island.glb"
+fridge = "fridge.glb"
+kitchen_counter = "kitchen_counter.glb"
+kitchen_sink = "kitchen_sink.glb"
+kitchen_upper = "kitchen_upper.glb"
+order_board = "order_board.glb"
+stove = "stove.glb"
+
+# The tiled backsplash strips behind the north-wall worktops, from the worktop (0.9 m) to the uppers (1.45 m); the
+# lab's placements (round2/scripts/kp_r2_shoot.py SPLASH), room-local like the dressing.
+[[extra]]
+id = "kp_backsplash_l"
+room = "kitchen"
+glb = "detail/backsplash_l.glb"
+at = [1.47, 0.9, 0.1]
+
+[[extra]]
+id = "kp_backsplash_r"
+room = "kitchen"
+glb = "detail/backsplash_r.glb"
+at = [5.9, 0.9, 0.1]
