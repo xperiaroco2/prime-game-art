@@ -363,9 +363,11 @@ character's face arrives as:
   not draw it: it turns on "vertex colour as albedo" only after it has handled a mesh's first surface (docs/kit.md,
   "Paint"), and the eyes are one surface, so they drew plain white (art #42, PR #139). `export --textured` therefore
   bakes the attribute's flat colours into a palette texture `fb_eye_palette` (16 px per colour, nearest filtering)
-  on a new UV map and drops `COLOR_0` (`export_glb.palette_part`; docs/godot.md, "Textured export"), and
-  `godot-check --textured` fails `eye_pupils` when the eyes as Godot draws them have no near-black vertices; roughness the white's (0.17; the lab's pupil had 0.3). The part godot-check
-  finds the eyes by.
+  on a new UV map `palette` in place of the face kit's `UVMap` (no texture read it) and drops `COLOR_0`
+  (`export_glb.palette_part`; docs/godot.md, "Textured export"), and `godot-check --textured` fails `eye_pupils` when
+  the eyes as Godot draws them have no near-black vertices. Measured on slice_m1 (2026-10-12): the old GLB 1008
+  near-white and 0 near-black eye vertices, the new one 176 and 98 of 274; `frames --face Idle` shows the pupils.
+  Roughness the white's (0.17; the lab's pupil had 0.3). The part godot-check finds the eyes by.
 - **Shape keys** (glTF morph targets): on the head `mouth_a`, `mouth_e`, `mouth_o`, `mouth_closed` (the mouth states
   over the rest mouth), `blink_half`, `blink`, `ears_tuck`, `ears_hide`; on the eyes `look_l`, `look_r`, `look_u`,
   `look_d` (yaw and pitch combine; the check proves no pupil sinks into the white at any blend). The ear keys are set

@@ -148,13 +148,14 @@ def _colour_attribute_base(mat):
 
 
 def palette_part(bpy, o):
-    """A part with one material whose base colour is a colour attribute and no UV map: the attribute's flat colours
-    become a palette texture (palette_layout) on a new UV map, wired into the base colour in place of the attribute.
-    Returns {"material", "colours", "px"} or None when the part does not qualify."""
+    """A part with one material whose base colour is a colour attribute and no image texture: the attribute's flat
+    colours become a palette texture (palette_layout) on a new UV map `palette`, wired into the base colour in place of
+    the attribute. The part's old UV maps go (no texture reads them; the clay eyes keep the face kit's UVMap).
+    Returns {"material", "colours", "px", "uv_dropped"} or None when the part does not qualify."""
     me = o.data
     mats = [s.material for s in o.material_slots]
     node = _colour_attribute_base(mats[0]) if len(mats) == 1 else None
-    if node is None or me.uv_layers:
+    if node is None or any(n.type == "TEX_IMAGE" for n in mats[0].node_tree.nodes):
         return None
     attr = me.color_attributes.get(node.layer_name) if node.layer_name else me.color_attributes.active_color
     if attr is None:
@@ -164,6 +165,9 @@ def palette_part(bpy, o):
     else:
         per_loop = [tuple(attr.data[lp.vertex_index].color[:3]) for lp in me.loops]
     side, uv, pixels = palette_layout(per_loop)
+    dropped = [layer.name for layer in me.uv_layers]
+    for name in dropped:
+        me.uv_layers.remove(me.uv_layers[name])
     mat = mats[0]
     img = bpy.data.images.new(f"{mat.name}_palette", side, side, alpha=False)
     img.pixels.foreach_set(pixels)
@@ -173,6 +177,7 @@ def palette_part(bpy, o):
     for c in per_loop:
         coords.extend(uv[tuple(round(float(x), 4) for x in c)])
     layer.data.foreach_set("uv", coords)
+    layer.active = layer.active_render = True
     nt = mat.node_tree
     tex = nt.nodes.new("ShaderNodeTexImage")
     tex.image = img
@@ -181,7 +186,7 @@ def palette_part(bpy, o):
     nt.links.new(tex.outputs["Color"], principled.inputs["Base Color"])
     nt.nodes.remove(node)
     me.update()
-    return {"material": mat.name, "colours": len(uv), "px": side}
+    return {"material": mat.name, "colours": len(uv), "px": side, "uv_dropped": dropped}
 
 
 def ensure_uvs(o, name="bake"):
