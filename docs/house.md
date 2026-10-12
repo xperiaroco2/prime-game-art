@@ -183,8 +183,12 @@ shortest in front, under a key light); a package with rooms shows each room from
 first) at 1.6 m eye height looking at the room's middle, lit only by its own fixtures and a dim ambient, then from
 the extra views of it in `house.toml`'s `[[export.sheet_views]]` (#126: plan points, heights over the floor or over
 the roof's top, an optional key light): P5's attic from its west gable and the free roof's lookout from the dormer and
-from the Lookout station, at 1.6 m over the roof. A package alone has no plot round it, so the roof views look out
-into the review ambient. Each tile's title sits in a dark box, bottom left in a room tile (clear of the room's own
+from the Lookout station, at 1.6 m over the roof. A view's `with` (#130) names rooms of other packages shown in place
+beside the view's room, each at its plan offset from that room (its rect corner and floor height): P4's balcony views
+show the yard's external flight (`with = ["yard"]`, P2's `yard.tscn`), since the flight belongs to the yard, not the
+balcony. `_house_review.neighbours` finds the other committed packages whose `package.json` lists those rooms' scenes
+and stages them beside the package (a game path two packages share has the same bytes in both). A package alone has
+no plot round it, so the roof views look out into the review ambient. Each tile's title sits in a dark box, bottom left in a room tile (clear of the room's own
 `Name` label near the top) and top left in a kit tile; the `.json` gives per tile its draw calls (the box counts as
 one). The outdoor rooms of P2 (yard, street, path, ...) carry only markers and lamps: their ground is the plot,
 package 7.
