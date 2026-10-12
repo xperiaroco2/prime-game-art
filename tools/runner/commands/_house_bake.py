@@ -2,8 +2,9 @@
 and prop GLBs the zone scenes use, imports them, builds each zone's bake scene headless (godot/house/zone_build.gd),
 bakes it in the editor through the lmbake plugin in an off-screen window (night only: house_bake.editor_allowed),
 then shoots the baked and real-time frames (godot/house/bake_shots.gd) and measures them. With `--grid` each zone is
-built and baked once per variant of house_bake.variants (texel x denoiser x bounce energy). Every Godot run takes the
-heavy-run lock (common.run)."""
+built and baked once per variant of house_bake.variants (texel x denoiser x bounce energy); with `--diag` once per
+house_bake.diag_variants (#83b: the darkness against real time). Every Godot run takes the heavy-run lock
+(common.run)."""
 
 from __future__ import annotations
 
@@ -48,7 +49,7 @@ def night_or_fail(raw: Path) -> None:
 
 
 def run(data: dict, lights: dict, zones: list[str], preset: str, review: Path | None, no_bake: bool,
-        props: dict, grid: bool = False, merge: bool = False) -> int:
+        props: dict, grid: bool = False, merge: bool = False, diag: bool = False) -> int:
     unknown = [z for z in zones if z not in lights["zones"]]
     if unknown:
         raise common.Failure(f"house --bake: no zone {', '.join(unknown)} in lights.toml")
@@ -65,16 +66,25 @@ def run(data: dict, lights: dict, zones: list[str], preset: str, review: Path | 
     uv2 = work / "uv2.json"
     pieces = json.loads((raw / data["settings"]["kit_dir"] / "pieces.json").read_text(encoding="utf-8"))
     uv2.write_text(json.dumps(house_bake.uv2_table(pieces)), encoding="utf-8", newline="\n")
-    report: dict = {"preset": preset, "grid": grid, "merge": merge, "zones": {}}
+    report: dict = {"preset": preset, "grid": grid, "merge": merge, "diag": diag, "zones": {}}
     for zone in zones:
         report["zones"][zone] = {}
-        for v in house_bake.variants(lights, zone, preset, grid, merge):
+        for v in zone_variants(lights, zone, preset, grid, merge, diag, review is not None and not no_bake):
             report["zones"][zone][v["tag"]] = bake_variant(zone, v, work, raw, no_bake)
     (work / "bake_report.json").write_text(json.dumps(report, indent=1), encoding="utf-8", newline="\n")
     if review and not no_bake:
-        shoot(data, lights, zones, preset, grid, merge, review)
-    common.ok(f"house --bake: {len(zones)} zones ({'grid' if grid else preset}); {(work / 'bake_report.json').as_posix()}")
+        shoot(data, lights, zones, preset, grid, merge, review, diag)
+    kind = "diag" if diag else "grid" if grid else preset
+    common.ok(f"house --bake: {len(zones)} zones ({kind}); {(work / 'bake_report.json').as_posix()}")
     return 0
+
+
+def zone_variants(lights: dict, zone: str, preset: str, grid: bool, merge: bool, diag: bool,
+                  reference: bool = False) -> list[dict]:
+    """The zone's bakes: --diag's, or the preset's or grid's (with `reference`, a review: the reference bake too)."""
+    if diag:
+        return house_bake.diag_variants(lights, zone)
+    return house_bake.variants(lights, zone, preset, grid, merge, reference)
 
 
 def bake_variant(zone: str, v: dict, work: Path, raw: Path, no_bake: bool) -> dict:
@@ -83,7 +93,8 @@ def bake_variant(zone: str, v: dict, work: Path, raw: Path, no_bake: bool) -> di
     bake_json = work / f"bake_{tag}.json"
     bake_json.write_text(json.dumps(v["bake"]), encoding="utf-8", newline="\n")
     args = house_bake.build_args(zone, tag, v["texel"], v["bake"], (work / "uv2.json").as_posix(),
-                                 bake_json.as_posix(), merge=v["merge"])
+                                 bake_json.as_posix(), merge=v["merge"],
+                                 lights=v.get("lights", "static"))
     code, out = _godot.godot(["--headless", "--path", _godot.PROJECT, "-s", BUILD, "--", *args], TIMEOUT)
     built = BAKE_DIR / f"{zone}_{tag}_build.json"
     if code != 0 or not built.is_file():
@@ -99,8 +110,14 @@ def bake_variant(zone: str, v: dict, work: Path, raw: Path, no_bake: bool) -> di
     scene = f"res://import/house/bake/{zone}_{tag}.scn"
     log = BAKE_DIR / f"{zone}_{tag}_bake_log.txt"
     log.unlink(missing_ok=True)
-    code, out = _godot.godot(["--editor", "--path", _godot.PROJECT, "--position", _frames.POSITION,
-                              "--resolution", "1280x720", "--", f"lmbake={scene}"], TIMEOUT)
+    project = Path(_godot.PROJECT) / "project.godot"
+    kept = project.read_bytes()  # the editor rewrites the committed file's header comment on save: put it back
+    try:
+        code, out = _godot.godot(["--editor", "--path", _godot.PROJECT, "--position", _frames.POSITION,
+                                  "--resolution", "1280x720", "--", f"lmbake={scene}"], TIMEOUT)
+    finally:
+        if project.read_bytes() != kept:
+            project.write_bytes(kept)
     z["bake"] = {"exit": code, "seconds": round(time.time() - t0),
                  "log": log.read_text(encoding="utf-8") if log.is_file() else ""}
     if code != 0 or not log.is_file() or "light_data=none" in z["bake"]["log"]:
@@ -109,23 +126,21 @@ def bake_variant(zone: str, v: dict, work: Path, raw: Path, no_bake: bool) -> di
     return z
 
 
-def shoot(data: dict, lights: dict, zones: list[str], preset: str, grid: bool, merge: bool, review: Path) -> None:
-    """Per zone its real-time row (the first variant's scene without its lightmap), then one baked row per variant,
-    from its review rooms' E1 cameras and seam camera: the frames, sheet.png (about 1280 px across),
-    measures.json and numbers.md (L*, dark %, C* p90 per frame; each baked row's L* against real time) into
-    `review`."""
+def shoot(data: dict, lights: dict, zones: list[str], preset: str, grid: bool, merge: bool, review: Path,
+          diag: bool = False) -> None:
+    """Per zone the rows of house_bake.shot_rows (the preset and the grid: the real-time row, the first variant's scene
+    without its lightmap, then one baked row per variant; --diag: its modes) from its review rooms' E1 cameras and
+    seam camera: the frames, sheet.png (about 1280 px across), measures.json and numbers.md (L*, dark %, C* p90 per
+    frame; each row's L* against the reference rows) into `review`."""
     rows = []
     for zone in zones:
         if zone not in REVIEW_ROOMS:
             common.say(f"  bake: no review rooms for {zone} (not shot)")
             continue
         cams = house_bake.views(data, REVIEW_ROOMS[zone])
-        tags = [v["tag"] for v in house_bake.variants(lights, zone, preset, grid, merge)]
         scene = "res://import/house/bake/{}_{}.scn"
-        rows.append({"label": f"{zone}_realtime", "zone": zone, "scene": scene.format(zone, tags[0]),
-                     "mode": "realtime", "cams": cams})
-        rows += [{"label": f"{zone}_{t}_baked", "zone": zone, "scene": scene.format(zone, t), "mode": "baked",
-                  "cams": cams} for t in tags]
+        rows += [{**r, "zone": zone, "scene": scene.format(zone, r["tag"]), "cams": cams}
+                 for r in house_bake.shot_rows(zone, zone_variants(lights, zone, preset, grid, merge, diag, True))]
     if not rows:
         return
     jobs = common.OUT / "house" / "bake" / "shots.json"
@@ -142,8 +157,18 @@ def shoot(data: dict, lights: dict, zones: list[str], preset: str, grid: bool, m
         numbers[row["label"]] = [house_bake.measures(*house_bake.read_png(f)) for f in frames if f.is_file()]
     (review / "measures.json").write_text(json.dumps(numbers, indent=1), encoding="utf-8", newline="\n")
     md = "\n".join(house_bake.numbers_md(z, {k: v for k, v in numbers.items() if k.startswith(z + "_")},
-                                         f"{z}_realtime", ["E1 " + r for r in REVIEW_ROOMS[z]] + ["seam"])
+                                         references(z, rows, diag), ["E1 " + r for r in REVIEW_ROOMS[z]] + ["seam"])
                    for z in zones if z in REVIEW_ROOMS)
     (review / "numbers.md").write_text(md, encoding="utf-8", newline="\n")
     for name, ms in numbers.items():
         common.say(f"  {name}: L* " + ", ".join(str(m["L_mean"]) for m in ms))
+
+
+def references(zone: str, rows: list[dict], diag: bool) -> list[str]:
+    """The rows numbers.md measures the others against: first the right reference (hybrid_nospec: real-time diffuse
+    direct light with shadows plus the bake's own bounce, #83b), then the leaking real-time row; --diag adds real time
+    with shadows (with and without specular) and the hybrid row."""
+    mine = [r for r in rows if r["zone"] == zone]
+    first = [r["label"] for r in mine if r["mode"] == house_bake.REFERENCE_MODE]
+    others = ("realtime", "realtime_shadow", "realtime_shadow_nospec", "hybrid") if diag else ("realtime",)
+    return first + [r["label"] for r in mine if r["mode"] in others]

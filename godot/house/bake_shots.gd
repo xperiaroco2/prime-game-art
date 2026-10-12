@@ -1,7 +1,11 @@
 extends SceneTree
 ## The House's bake review (#83, from #83a; `house --bake`): pictures of the baked zones in an off-screen window (labrun.py godot --window). Each row of the jobs file
-## is one bake scene in one mode (baked: its LightmapGI data; realtime: no lightmap, the lights dynamic) seen from
-## the row's cameras; the tiles go into one sheet. Per shot: draw calls and the lights whose range reaches the camera.
+## is one bake scene in one mode seen from
+## the row's cameras; the tiles go into one sheet. Modes (#83b, house_bake.MODES): baked (its LightmapGI data);
+## realtime (no lightmap, the lights dynamic, unshadowed as the light kit writes them); realtime_shadow (the same with
+## shadows); hybrid (its lightmap, baked with lights=dynamic, and the lights dynamic with shadows); a mode ending in
+## _nospec also sets light_specular 0 (diffuse only, what a lightmap holds). Per shot: draw calls and the lights
+## whose range reaches the camera.
 ##   -s res://house/bake_shots.gd -- jobs=<abs json> out=<abs dir>  (an off-screen window; a headless Godot draws nothing)
 
 func _initialize() -> void:
@@ -39,12 +43,16 @@ func _run() -> void:
 			sc.add_child(s2)
 		var lm: LightmapGI = sc.get_node_or_null("LightmapGI")
 		var lights: Array = sc.find_children("*", "Light3D", true, false)
-		if row["mode"] == "realtime":
-			if lm:
-				lm.light_data = null
-				lm.visible = false
+		var mode: String = row["mode"]
+		if mode.begins_with("realtime") and lm:
+			lm.light_data = null
+			lm.visible = false
+		if mode != "baked":
 			for l: Light3D in lights:
 				l.light_bake_mode = Light3D.BAKE_DYNAMIC
+				l.shadow_enabled = mode != "realtime"
+				if mode.ends_with("nospec"):
+					l.light_specular = 0.0
 		root.add_child(sc)
 		var cam := Camera3D.new()
 		cam.fov = 70

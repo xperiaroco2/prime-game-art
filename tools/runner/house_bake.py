@@ -84,18 +84,72 @@ def variant_tag(texel: float, denoiser: bool, energy: float, merge: bool = False
     return f"t{texel:g}_d{int(bool(denoiser))}_e{round(energy * 10)}" + ("_m" if merge else "")
 
 
-def variants(lights: dict, zone: str, preset: str | None = None, grid: bool = False, merge: bool = False) -> list[dict]:
+def variants(lights: dict, zone: str, preset: str | None = None, grid: bool = False, merge: bool = False,
+             reference: bool = False) -> list[dict]:
     """The bakes of one zone: the preset's texel with lights.toml's [bake] (tag = the preset's name), or with `grid`
     every GRID_TEXELS x GRID_DENOISER x GRID_ENERGIES variant. Each: tag, texel, bake (a copy with the overrides),
-    merge."""
+    merge. With `reference` (a review) the first variant's reference bake follows (reference_variant)."""
     bake = lights["bake"]
     if not grid:
         texel = float(lights["zones"][zone][lights["presets"][preset]["lightmap"]])
         tag = preset + ("_m" if merge else "")
-        return [{"tag": tag, "texel": texel, "bake": dict(bake), "merge": merge}]
-    return [{"tag": variant_tag(t, d, e, merge), "texel": t,
-             "bake": {**bake, "denoiser": d, "bounce_indirect_energy": e}, "merge": merge}
-            for t in GRID_TEXELS for d in GRID_DENOISER for e in GRID_ENERGIES]
+        vs = [{"tag": tag, "texel": texel, "bake": dict(bake), "merge": merge}]
+    else:
+        vs = [{"tag": variant_tag(t, d, e, merge), "texel": t,
+               "bake": {**bake, "denoiser": d, "bounce_indirect_energy": e}, "merge": merge}
+              for t in GRID_TEXELS for d in GRID_DENOISER for e in GRID_ENERGIES]
+    return vs + [reference_variant(vs[0])] if reference else vs
+
+
+# The review's light modes (#83b); each row's mode is how bake_shots.gd lights it:
+#   realtime         no lightmap, the lights dynamic without shadows (the light kit's real-time lights: they leak
+#                    through walls, so this was a wrong reference for a bake)
+#   realtime_shadow  no lightmap, the lights dynamic with shadows (direct light only, occluded as the bake occludes)
+#   realtime_shadow_nospec  the same with the lights' specular at 0 (diffuse direct light only)
+#   baked            the bake's lightmap, the lights static (what the game would ship)
+#   hybrid           a bake made with the lights dynamic (its lightmap holds only their bounce) plus the lights in
+#                    real time with shadows: Godot's own direct light with Godot's own bounce
+#   hybrid_nospec    the same with the lights' specular at 0: what a diffuse lightmap can hold, the bake's reference
+MODES = ("realtime", "realtime_shadow", "realtime_shadow_nospec", "baked", "hybrid", "hybrid_nospec")
+REFERENCE_MODE = "hybrid_nospec"
+# [bake] before #83b (the denoiser on): the before row of the diagnostic run.
+BEFORE_83B = {"denoiser": True, "bounce_indirect_energy": 1.5}
+
+
+def reference_variant(v: dict) -> dict:
+    """The reference bake beside a variant: the same settings baked with the lights dynamic (its lightmap holds only
+    their bounce), shot as hybrid_nospec."""
+    return {**v, "tag": v["tag"] + "_ld", "lights": "dynamic", "modes": [REFERENCE_MODE]}
+
+
+def diag_variants(lights: dict, zone: str) -> list[dict]:
+    """The diagnostic bakes of one zone at its High texel: the chosen settings (denoiser off, bounce energy 1.5),
+    the same with no bounce (direct light only), the same with the lights dynamic (bounce only, for the hybrid rows)
+    and the default before #83b (BEFORE_83B, the before row). Each: tag, texel, bake, merge, lights, modes. (#83b's
+    directional lightmap measured as the base within 0.2 L*: it is not in the run.)"""
+    texel = float(lights["zones"][zone]["texel_high"])
+    base = {**lights["bake"], "denoiser": False, "bounce_indirect_energy": 1.5}
+    tag = variant_tag(texel, False, 1.5)
+    old = {**lights["bake"], **BEFORE_83B}
+    v = lambda t, b, li, modes: {"tag": t, "texel": texel, "bake": b, "merge": False, "lights": li, "modes": modes}
+    return [v(tag, base, "static", ["realtime", "realtime_shadow", "realtime_shadow_nospec", "baked"]),
+            v(tag + "_b0", {**base, "bounces": 0}, "static", ["baked"]),
+            v(tag + "_ld", base, "dynamic", ["hybrid", "hybrid_nospec"]),
+            v(variant_tag(texel, old["denoiser"], old["bounce_indirect_energy"]) + "_old", old, "static", ["baked"])]
+
+
+def shot_rows(zone: str, vs: list[dict]) -> list[dict]:
+    """The review rows of one zone's variants: label, tag, mode. A variant without `modes` (the preset and the grid)
+    is shot baked, and the first variant also gives the leaking real-time row first."""
+    rows = []
+    for i, v in enumerate(vs):
+        modes = v.get("modes") or (["realtime", "baked"] if i == 0 else ["baked"])
+        for mode in modes:
+            if mode not in MODES:
+                raise ValueError(f"unknown shot mode {mode}")
+            label = f"{zone}_{mode}" if mode.startswith("realtime") else f"{zone}_{v['tag']}_{mode}"
+            rows.append({"label": label, "tag": v["tag"], "mode": mode})
+    return rows
 
 
 def sheet_layout(rows: int, cams: int, width: int = 1280) -> dict:
@@ -105,28 +159,36 @@ def sheet_layout(rows: int, cams: int, width: int = 1280) -> dict:
     return {"tile": [tile_w, tile_w * 9 // 16], "per_line": per_line}
 
 
-def numbers_md(zone: str, table: dict[str, list[dict]], reference: str, cam_names: list[str]) -> str:
+def numbers_md(zone: str, table: dict[str, list[dict]], reference: str | list[str], cam_names: list[str],
+               note: str = "real-time diffuse direct light with shadows plus the bake's own bounce") -> str:
     """measures per row label (one dict per camera) as a markdown table: L* mean, dark % and C* p90 per camera, and
-    each baked row's L* difference from the reference (real-time) row, camera by camera."""
-    ref = table.get(reference, [])
-    head = "| row | " + " | ".join(f"{c} L* / dark % / C* p90" for c in cam_names) + " | dL* vs real time (mean) |"
-    lines = [f"# House bake grid: {zone}", "", f"Reference: `{reference}` (no lightmap, the lights dynamic).", "", head,
-             "|" + "---|" * (len(cam_names) + 2)]
+    per reference row each other row's L* difference camera by camera and their mean (the first reference: the
+    real-time row unless the caller names others)."""
+    refs = [reference] if isinstance(reference, str) else list(reference)
+    head = ("| row | " + " | ".join(f"{c} L* / dark % / C* p90" for c in cam_names) + " | "
+            + " | ".join(f"dL* vs {r} (per camera; mean)" for r in refs) + " |")
+    lines = [f"# House bake grid: {zone}", "", f"Reference: `{refs[0]}` ({note}).", "", head,
+             "|" + "---|" * (len(cam_names) + 1 + len(refs))]
     for label, ms in table.items():
         cells = [f"{m['L_mean']} / {m['dark_pct']} / {m['C_p90']}" for m in ms]
         cells += [""] * (len(cam_names) - len(cells))
-        deltas = [m["L_mean"] - r["L_mean"] for m, r in zip(ms, ref)]
-        delta = "" if label == reference or not deltas else f"{sum(deltas) / len(deltas):+.1f}"
-        lines.append(f"| {label} | " + " | ".join(cells) + f" | {delta} |")
+        for r in refs:
+            deltas = [m["L_mean"] - x["L_mean"] for m, x in zip(ms, table.get(r, []))]
+            cells.append("" if label == r or not deltas else
+                         " / ".join(f"{d:+.1f}" for d in deltas) + f" ({sum(deltas) / len(deltas):+.1f})")
+        lines.append(f"| {label} | " + " | ".join(cells) + " |")
     return "\n".join(lines) + "\n"
 
 
 def build_args(zone: str, tag: str, texel: float, bake: dict, uv2_json: str, bake_json: str, above: float = 1.0,
-               merge: bool = False) -> list[str]:
-    """The user arguments of zone_build.gd for one zone and preset."""
+               merge: bool = False, lights: str = "static") -> list[str]:
+    """The user arguments of zone_build.gd for one zone and preset; lights=dynamic bakes with the lights dynamic (the
+    lightmap keeps only their bounce)."""
+    if lights not in ("static", "dynamic"):
+        raise ValueError(f"lights must be static or dynamic, not {lights}")
     return [f"zone={zone}", f"tag={tag}", f"texel={texel:g}", f"denoiser={int(bool(bake['denoiser']))}",
-            f"energy={float(bake['bounce_indirect_energy']):g}", f"above={above:g}", f"merge={int(merge)}",
-            f"uv2={uv2_json}", f"bake={bake_json}"]
+            f"energy={float(bake['bounce_indirect_energy']):g}", f"bounces={int(bake['bounces'])}", f"above={above:g}",
+            f"merge={int(merge)}", f"lights={lights}", f"uv2={uv2_json}", f"bake={bake_json}"]
 
 
 def e1_cam(rect: list[float], floor_y: float) -> list[float]:
