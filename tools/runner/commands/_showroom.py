@@ -101,10 +101,13 @@ def gpu_table(record: dict[str, Any]) -> list[str]:
 
 
 # Godot's soft shadow filter levels (RenderingServer.ShadowQuality, the project setting's values) by index.
+STATUS = ("PROPOSAL, NOT CHOSEN: the engineer has not picked a variant (art #140). Variants 3 to 6 still look washed "
+          "out next to the approved Blender face (pale hair, little key-light shading); the sky's ambient energy and "
+          "the key light are open. Do not copy into the game until this says chosen.")
 SHADOW_FILTER = ("hard", "very low", "low", "medium", "high", "ultra")
 SHADOW_FILTER_SETTING = "rendering/lights_and_shadows/directional_shadow/soft_shadow_filter_quality"
 
-# The recommended look per graphics preset: what the game copies (godot/showroom/look_presets.json, written by
+# The proposed look per graphics preset, not chosen yet (STATUS): what the game will copy once the engineer says yes (godot/showroom/look_presets.json, written by
 # `showroom --write-presets`). Each preset turns on everything the one before it does.
 LOOK_ENVIRONMENT = {
     "background_mode": "BG_COLOR or BG_SKY (the map's choice; the sky below lights it either way)",
@@ -214,7 +217,8 @@ def preset_problems(presets: dict[str, dict[str, Any]] | None = None) -> list[st
 def presets_document(timing: list[dict[str, Any]] | None = None) -> dict[str, Any]:
     """The JSON the game side copies: the shared environment and lights, then the presets."""
     doc: dict[str, Any] = {
-        "about": "The recommended character look per graphics preset, from the showroom (prime-game-art #140, "
+        "status": STATUS,
+        "about": "The proposed character look per graphics preset (see status), from the showroom (prime-game-art #140, "
                  "docs/godot.md 'Showroom and recommended look settings'). Godot 4.7.2, Forward+. Property names are "
                  "Environment, DirectionalLight3D, StandardMaterial3D and ProjectSettings names; 'clay' materials are "
                  "the character materials whose name ends in _clay.",

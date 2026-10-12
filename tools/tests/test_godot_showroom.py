@@ -88,6 +88,11 @@ class PresetsTest(unittest.TestCase):
         self.assertEqual(_showroom.preset_problems(bad), ["Ultra: soft shadow filter 6 is not one of 0 to 5",
                                                           "Medium's soft shadow filter 2 is below Low's 3"])
 
+    def test_the_presets_say_they_are_a_proposal(self) -> None:
+        doc = _showroom.presets_document()
+        self.assertEqual(next(iter(doc)), "status")
+        self.assertTrue(doc["status"].startswith("PROPOSAL, NOT CHOSEN"))
+
     def test_docs_name_the_shadow_filter_levels(self) -> None:
         docs = (common.ROOT / "docs" / "godot.md").read_text(encoding="utf-8")
         for name, preset in _showroom.PRESETS.items():

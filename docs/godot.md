@@ -248,9 +248,12 @@ resized to 1920 x 1080 and the full body framed, after a 120-frame warm-up, aver
 settling frames, three rounds in turn, the median round kept. `--write-presets` writes
 `godot/showroom/look_presets.json` from `_showroom.PRESETS` (a test keeps them equal).
 
-**The recommended look per graphics preset** (`godot/showroom/look_presets.json`, which the game side copies; this repo
-does not touch the game): every preset uses AgX, the sky as ambient and reflections and the catch light; each turns on
-everything the one below does. The shadow filter is the project setting
+**The proposed look per graphics preset: a proposal, not chosen.** No variant is chosen yet: the engineer approves
+the look (art #140), and variants 3 to 6, whose settings the presets below use, still look washed out next to the
+approved Blender face (see "What the sheets show"). The values are the next grid's starting point, not settled ones;
+`godot/showroom/look_presets.json` says so in its `status` (`_showroom.STATUS`) until a chosen variant replaces it,
+and the game side copies it only then (this repo does not touch the game). As proposed, every preset uses AgX, the
+sky as ambient and reflections and the catch light; each turns on everything the one below does. The shadow filter is the project setting
 `rendering/lights_and_shadows/directional_shadow/soft_shadow_filter_quality`, whose values are Godot's
 `RenderingServer.ShadowQuality`: 0 hard, 1 very low, 2 low, 3 medium, 4 high, 5 ultra (`_showroom.SHADOW_FILTER`).
 Low uses 2, the level of the showroom's variants 1 to 4; High uses 4, the level of variant 5's soft shadows; Ultra
@@ -290,7 +293,8 @@ clay costs nothing measurable and is barely visible. Open for the next grid: the
 the key light (stronger).
 
 
-The look is the engineer's to approve (art #140); until he says yes these settings are a proposal.
+The look is the engineer's to approve (art #140); until he picks a variant these settings are a proposal, and
+`look_presets.json`'s `status` says so.
 
 ## The SkeletonProfileHumanoid trial (`godot-check --humanoid`)
 
