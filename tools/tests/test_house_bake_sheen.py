@@ -45,6 +45,10 @@ class SheenGrid(unittest.TestCase):
         rows = B.shot_rows("ground", [base, direc, ld])
         self.assertLessEqual(len(rows), 9)
         self.assertEqual([r["mode"] for r in rows if "sheen" not in r], ["baked", "hybrid"])
+        modes = [r["mode"] for r in rows]  # the engineer's choice: the sheen lights and the probes together
+        self.assertIn("sheen12_shadow_probes", modes)
+        self.assertEqual(B.sheen_mode("sheen12_shadow_probes"), {"lm_specular": 0.0, "probes": True, "n": 12,
+                                                                 "shadow": True})
         for r in rows:  # a lightmap lobe needs the directional bake
             if r.get("sheen", {}).get("lm_specular"):
                 self.assertEqual(r["tag"], direc["tag"])

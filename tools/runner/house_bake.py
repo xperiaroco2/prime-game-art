@@ -174,14 +174,16 @@ def sheen_mode(mode: str) -> dict | None:
 
 def sheen_variants(lights: dict, zone: str) -> list[dict]:
     """The sheen grid of one zone at its High texel (#83c): the default bake (bake only, probes, the specular-only
-    real-time lights), the same bake directional (the lightmap's own specular lobe, alone and with probes) and the
-    same with the lights dynamic (the `hybrid` reference: every lamp real-time with shadows and specular)."""
+    real-time lights, alone and with the probes), the same bake directional (the lightmap's own specular lobe, alone
+    and with probes) and the same with the lights dynamic (the `hybrid` reference: every lamp real-time with shadows
+    and specular)."""
     texel = float(lights["zones"][zone]["texel_high"])
     base = {**lights["bake"], "directional": False, "specular_intensity": 0.0}
     tag = variant_tag(texel, base["denoiser"], base["bounce_indirect_energy"])
     v = lambda t, b, li, modes: {"tag": t, "texel": texel, "bake": b, "merge": False, "lights": li, "modes": modes}
-    return [v(tag, base, "static", ["baked", "probes", "sheen4_shadow", "sheen12_shadow", "sheen12"]),
-            v(tag + "_dir", {**base, "directional": True}, "static", ["lmspec5", "lmspec10", "lmspec10_probes"]),
+    return [v(tag, base, "static", ["baked", "probes", "sheen4_shadow", "sheen12_shadow",
+                                        "sheen12_shadow_probes", "sheen12"]),
+            v(tag + "_dir", {**base, "directional": True}, "static", ["lmspec10", "lmspec10_probes"]),
             v(tag + "_ld", base, "dynamic", ["hybrid"])]
 
 
