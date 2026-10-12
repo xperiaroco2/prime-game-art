@@ -29,11 +29,15 @@
    "shadow": false
   },
   "catch": {
-   "type": "DirectionalLight3D, a child of the camera, from up-left of the view (-0.3, 0.4, 1)",
-   "energy": 0.1,
-   "specular": 4.0,
+   "type": "OmniLight3D, a child of the camera at (-0.25, 0.3, 0) (up-left of the view)",
+   "energy": 0.3,
+   "specular": 16.0,
+   "light_size": 0.2,
+   "omni_range": 50.0,
+   "omni_attenuation": 0.0,
    "shadow": false,
-   "why": "the eyes' glint (fb_eye, roughness 0.17); too weak to light anything else"
+   "light_cull_mask": "the eye layer alone (render layer 20); the eye meshes (material *_eye) on it too",
+   "why": "the eyes' glint (fb_eye, roughness 0.17): a small spherical area light, so the glint is a few pixels wide; it lights nothing but the eyes"
   }
  },
  "presets": {
@@ -157,13 +161,5 @@
     "rendering/reflections/sky_reflections/roughness_layers": 8
    }
   }
- },
- "measured_gpu_ms": {
-  "stand": 0.861,
-  "agx": 0.895,
-  "refl": 1.122,
-  "ssao": 1.432,
-  "soft": 3.745,
-  "sss": 3.555
  }
 }

@@ -26,6 +26,15 @@ class VariantsTest(unittest.TestCase):
         for a, b in zip(_showroom.VARIANTS, _showroom.VARIANTS[1:]):
             self.assertTrue(all(b[k] for k in _showroom.EFFECTS if a[k]), f"{b['id']} drops an effect of {a['id']}")
 
+    def test_the_catch_light_is_the_presets_catch_light(self) -> None:
+        catch = _showroom.LOOK_LIGHTS["catch"]
+        self.assertEqual(catch["type"].split(",")[0], "OmniLight3D")
+        for v in _showroom.VARIANTS:
+            if v["catch_light"]:
+                self.assertEqual((v["catch_energy"], v["catch_specular"], v["catch_size"]),
+                                 (catch["energy"], catch["specular"], catch["light_size"]), v["id"])
+                self.assertGreater(v["catch_size"], 0.0, "a point light's glint on the eyes is under a pixel")
+
     def test_selection(self) -> None:
         self.assertEqual([v["id"] for v in _showroom.variants("sss,stand")], ["stand", "sss"])
         self.assertEqual(len(_showroom.variants("")), len(_showroom.VARIANTS))

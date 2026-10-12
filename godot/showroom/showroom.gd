@@ -5,8 +5,8 @@ extends SceneTree
 ##   godot --path godot --position -30000,-30000 --resolution 640x800 -s res://showroom/showroom.gd
 ##       -- <res://import/x.glb> <out folder> <showroom_spec.json>
 ## The spec (tools/runner/commands/_showroom.py) lists the variants; each sets the tonemapper and exposure, the ambient
-## source (a flat colour or the studio sky), sky reflections, the key light's specular, SSAO, soft shadows (the key
-## light's angular size: PCSS) and subsurface scattering on the materials whose name ends in _clay. Writes face.png
+## source (a flat colour or the studio sky), sky reflections, the key light's specular, the eyes' catch light (energy,
+## specular, size), SSAO, soft shadows (the key light's angular size: PCSS) and subsurface scattering on the materials whose name ends in _clay. Writes face.png
 ## (the approved sheet's crops, then per variant the face front and three-quarter), body.png (per variant the full
 ## body) and showroom.json (each variant's GPU time averaged over drawn frames with the window at the timing size).
 ## The frames stand (godot/frames/frames.gd) stays the measuring stand; its look is the first variant here.
@@ -25,9 +25,8 @@ const SSAO_INTENSITY: float = 1.5
 const KEY_ANGULAR_DEG: float = 1.5
 const SSS_STRENGTH: float = 0.25
 const SSAO_LIGHT_AFFECT: float = 0.2  # a little contact shade on directly lit clay too, as Blender's AO-like look
-const CATCH_DIR: Vector3 = Vector3(-0.3, 0.4, 1.0)  # the catch light comes from up-left of the view (camera space)
-const CATCH_ENERGY: float = 0.1
-const CATCH_SPECULAR: float = 4.0
+const CATCH_OFFSET: Vector3 = Vector3(-0.25, 0.3, 0.0)  # the catch light sits up-left of the camera (camera space)
+const EYE_LAYER: int = 1 << 19  # render layer 20: the eye meshes, the only thing the catch light lights
 
 var _label: Label
 var _scene: Node
@@ -36,7 +35,7 @@ var _player: AnimationPlayer
 var _camera: Camera3D
 var _env: Environment
 var _key: DirectionalLight3D
-var _catch: DirectionalLight3D
+var _catch: OmniLight3D
 var _clay: Array[BaseMaterial3D] = []
 var _sky_name: String = ""
 
@@ -74,6 +73,9 @@ func _run(scene_path: String, out_dir: String, spec: Dictionary) -> void:
 		_fail("no animation %s" % clip)
 		return
 	_collect_clay()
+	if _mark_eyes() == 0:
+		_fail("no eye mesh (a material whose name ends in _eye)")
+		return
 	_stage(spec["hdri"])
 	Character.pose_at(_player, _skeleton, clip, 0.0)
 	await process_frame
@@ -173,6 +175,19 @@ func _collect_clay() -> void:
 				_clay.append(mat as BaseMaterial3D)
 
 
+## Puts the meshes with an eye material (a name ending in _eye) on the eye layer as well; returns how many.
+func _mark_eyes() -> int:
+	var count: int = 0
+	for mesh: MeshInstance3D in Character.meshes(_scene):
+		for s: int in mesh.mesh.get_surface_count():
+			var mat: Material = mesh.get_active_material(s)
+			if mat != null and mat.resource_name.ends_with("_eye"):
+				mesh.layers |= EYE_LAYER
+				count += 1
+				break
+	return count
+
+
 ## A studio: the background colour of the frames stand, a sky (the HDRI, else a ProceduralSky) for the ambient light
 ## and reflections of the variants that use it, a floor, a key, a fill and a rim light, a perspective camera, a label.
 func _stage(hdri: String) -> void:
@@ -213,12 +228,14 @@ func _stage(hdri: String) -> void:
 	_camera.far = 100.0
 	root.add_child(_camera)
 	_camera.make_current()
-	# the catch light: rides on the camera; so weak it lights nothing, its specular gives the glossy eyes their glint
-	_catch = DirectionalLight3D.new()
+	# the catch light: a small spherical area light riding on the camera that lights the eye meshes alone (its cull
+	# mask), so its glint on the glossy eyes is as big and bright as a studio softbox's without lighting the face
+	_catch = OmniLight3D.new()
 	_camera.add_child(_catch)
-	_catch.basis = Basis.looking_at(-CATCH_DIR.normalized(), Vector3.UP)
-	_catch.light_energy = CATCH_ENERGY
-	_catch.light_specular = CATCH_SPECULAR
+	_catch.position = CATCH_OFFSET
+	_catch.light_cull_mask = EYE_LAYER
+	_catch.omni_range = 50.0
+	_catch.omni_attenuation = 0.0
 	_catch.shadow_enabled = false
 	var layer: CanvasLayer = CanvasLayer.new()
 	root.add_child(layer)
@@ -253,6 +270,9 @@ func _apply(v: Dictionary) -> void:
 	_key.light_energy = float(v["key_energy"])
 	_key.light_specular = float(v["key_specular"])
 	_catch.visible = bool(v["catch_light"])
+	_catch.light_energy = float(v["catch_energy"])
+	_catch.light_specular = float(v["catch_specular"])
+	_catch.light_size = float(v["catch_size"])
 	_key.directional_shadow_max_distance = 12.0
 	if v["soft_shadows"]:
 		_key.light_angular_distance = KEY_ANGULAR_DEG

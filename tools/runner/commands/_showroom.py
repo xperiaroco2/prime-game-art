@@ -29,10 +29,15 @@ APPROVED_RECTS = [[218, 0, 214, 258], [668, 0, 214, 258]]
 # Every variant sets every key: the order of the grid does not matter. The first run (2026-10-12) lit the sky variants
 # with the studio sky at ambient energy 1.0 and the stand's key light: washed out, no shading on the face, no glint in
 # the eyes; from the third variant on the sky is dimmer, the key light stronger, and a catch light gives the eyes their
-# highlight.
+# highlight. The second run's catch light (a directional light, energy 0.1, specular 4.0) left no glint: a sun's
+# highlight on eyes of roughness 0.17 is under a pixel. The catch light is now a small spherical area light (an
+# OmniLight3D with light_size) on the camera that lights the eye meshes alone (its cull mask, the eye layer). One grid
+# (size 0.1, 0.2, 0.35 m by energy 0.3, 1.0, specular 16) chose size 0.2 at energy 0.3: a clear glint on the pupil;
+# energy 1.0 blows out the whites.
+CATCH = {"catch_energy": 0.3, "catch_specular": 16.0, "catch_size": 0.2}
 _STAND = {"tonemap": "linear", "exposure": 1.0, "ambient": "color", "ambient_energy": 0.55, "reflections": False,
-          "key_energy": 1.05, "key_specular": 0.15, "catch_light": False, "ssao": False, "soft_shadows": False,
-          "sss": False}
+          "key_energy": 1.05, "key_specular": 0.15, "catch_light": False, **CATCH, "ssao": False,
+          "soft_shadows": False, "sss": False}
 _LIT = {**_STAND, "tonemap": "agx", "exposure": 1.0, "ambient": "sky", "ambient_energy": 0.4, "reflections": True,
         "key_energy": 2.0, "key_specular": 0.6, "catch_light": True}
 VARIANTS: list[dict[str, Any]] = [
@@ -110,9 +115,12 @@ LOOK_LIGHTS = {
     "key": {"type": "DirectionalLight3D", "energy": 2.0, "specular": 0.6, "shadow": True},
     "fill": {"type": "DirectionalLight3D", "energy": 0.35, "specular": 0.0, "shadow": False},
     "rim": {"type": "DirectionalLight3D", "energy": 0.30, "specular": 0.0, "shadow": False},
-    "catch": {"type": "DirectionalLight3D, a child of the camera, from up-left of the view (-0.3, 0.4, 1)",
-              "energy": 0.1, "specular": 4.0, "shadow": False,
-              "why": "the eyes' glint (fb_eye, roughness 0.17); too weak to light anything else"},
+    "catch": {"type": "OmniLight3D, a child of the camera at (-0.25, 0.3, 0) (up-left of the view)",
+              "energy": CATCH["catch_energy"], "specular": CATCH["catch_specular"],
+              "light_size": CATCH["catch_size"], "omni_range": 50.0, "omni_attenuation": 0.0, "shadow": False,
+              "light_cull_mask": "the eye layer alone (render layer 20); the eye meshes (material *_eye) on it too",
+              "why": "the eyes' glint (fb_eye, roughness 0.17): a small spherical area light, so the glint is a few "
+                     "pixels wide; it lights nothing but the eyes"},
 }
 PRESETS: dict[str, dict[str, Any]] = {
     "Low": {

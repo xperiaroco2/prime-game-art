@@ -236,7 +236,7 @@ Each **variant** (`_showroom.VARIANTS`, at most six in one grid, each sets every
 |---|---|---|
 | 1 | frames stand | the stand as is: linear, colour ambient 0.55, no reflections, key 1.05 with specular 0.15 |
 | 2 | AgX | the AgX tonemapper, exposure 1.2; nothing else |
-| 3 | AgX + sky + catch | the studio sky as ambient (0.4) and reflections, exposure 1.0, key 2.0 with specular 0.6, and a **catch light**: a directional light on the camera from up-left of the view, energy 0.1, specular 4.0, which lights nothing but gives the glossy eyes (`fb_eye`, roughness 0.17) their glint |
+| 3 | AgX + sky + catch | the studio sky as ambient (0.4) and reflections, exposure 1.0, key 2.0 with specular 0.6, and a **catch light** for the eyes' glint: an `OmniLight3D` on the camera, up-left of the view at (-0.25, 0.3, 0), `light_size` 0.2 (a spherical area light: the glint on the glossy `fb_eye`, roughness 0.17, is a few pixels wide, not a sun's sub-pixel dot), energy 0.3, specular 16, no attenuation, and a cull mask of render layer 20 alone, on which the showroom also puts the meshes with an `_eye` material: it lights the eyes and nothing else |
 | 4 | + SSAO | radius 0.6, intensity 1.5, light affect 0.2 |
 | 5 | + soft shadows | the key light's angular size 1.5 degrees (PCSS), soft shadow filter quality high, blur 1.0 |
 | 6 | + SSS clay | subsurface scattering on the materials whose name ends in `_clay`, strength 0.25, skin mode on the head; quality medium |
@@ -259,25 +259,31 @@ everything the one below does.
 | High | soft shadows | 4096, filter high, key angular 1.5 degrees | full size, medium | off | 4x |
 | Ultra | SSS on the clay | 4096, filter ultra, key angular 1.5 degrees | full size, high | quality medium, strength 0.25 | 4x |
 
-**Measured** (2026-10-12, slice_m1 at Idle 0.00 s, NVIDIA GeForce RTX 4060, vulkan forward_plus, Godot 4.7.2; the
+**Measured** (2026-10-12, the third run, slice_m1 at Idle 0.00 s, NVIDIA GeForce RTX 4060, vulkan forward_plus, Godot 4.7.2; the
 GPU time of the whole frame with one character, the floor and the sky; `D:/prime-art-raw/review/char/140/`):
 
 | Variant | Effects | GPU ms (1920x1080) | Step ms |
 |---|---|---:|---:|
-| 1 frames stand | linear | 0.86 |  |
-| 2 AgX | agx | 0.90 | +0.03 |
-| 3 AgX+sky+catch | reflections, catch_light, agx | 1.12 | +0.23 |
-| 4 +SSAO | reflections, catch_light, ssao, agx | 1.43 | +0.31 |
-| 5 +soft shadows | reflections, catch_light, ssao, soft_shadows, agx | 3.75 | +2.31 |
-| 6 +SSS clay | reflections, catch_light, ssao, soft_shadows, sss, agx | 3.56 | -0.19 |
+| 1 frames stand | linear | 0.76 |  |
+| 2 AgX | agx | 0.77 | +0.02 |
+| 3 AgX+sky+catch | reflections, catch_light, agx | 0.90 | +0.12 |
+| 4 +SSAO | reflections, catch_light, ssao, agx | 1.58 | +0.69 |
+| 5 +soft shadows | reflections, catch_light, ssao, soft_shadows, agx | 3.52 | +1.94 |
+| 6 +SSS clay | reflections, catch_light, ssao, soft_shadows, sss, agx | 3.79 | +0.27 |
+
+The steps move between runs by a few tenths of a ms (the second run had SSAO at +0.31 and SSS at -0.19); soft
+shadows (PCSS) are the one step that stands out every time.
 
 What the sheets show (the first grid, before the engineer looks): AgX alone (2) keeps the stand's colours and rolls
 off the highlights; the sky-lit variants (3 to 6) add a soft sheen to the clay and the pupils but look **washed out**
 next to the Blender face (pale hair, little key-light shading on the face): the studio HDRI's ambient is strong even at
-energy 0.4 (the first run at 1.0 was paler still). The eyes have a soft sheen but **no sharp glint** yet. SSAO darkens
-the hair roots a little; soft shadows (PCSS) cost about 2.3 ms at 1920 x 1080 and change little on a face; SSS on the
+energy 0.4 (the first run at 1.0 was paler still). The eyes' glint: the second run's catch light (a directional light, energy 0.1, specular 4.0) left none, since a
+sun's highlight on roughness 0.17 is under a pixel; one grid of the area light (size 0.1, 0.2, 0.35 by energy 0.3,
+1.0) chose size 0.2 at energy 0.3, a clear glint on the pupil (energy 1.0 blows out the whites); it costs no
+measurable GPU time. SSAO darkens
+the hair roots a little; soft shadows (PCSS) cost about 2 ms at 1920 x 1080 and change little on a face; SSS on the
 clay costs nothing measurable and is barely visible. Open for the next grid: the sky's ambient energy (lower) against
-the key light (stronger), and the eye glint (the catch light's strength, or a lower eye roughness).
+the key light (stronger).
 
 
 The look is the engineer's to approve (art #140); until he says yes these settings are a proposal.
