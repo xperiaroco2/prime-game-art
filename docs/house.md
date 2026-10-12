@@ -649,7 +649,8 @@ tools/run.sh house --bake ZONES [--preset high|low] [--grid] [--diag] [--merge] 
    unwraps it (one lightmap island per floor instead of one per tile). Meshes without UV2 stay Dynamic.
 3. The editor bakes it: Godot opens the project with the `lmbake` plugin (`-- lmbake=<scene>`; without that argument
    the plugin does nothing) in a 1280x720 window at `-30000,-30000` (off-screen, never minimized); the plugin presses
-   the LightmapGI's bake button, answers the file dialog, saves and quits. `house --bake` refuses this step outside
+   the LightmapGI's bake button, answers the file dialog, saves and quits (the driver puts back `project.godot`,
+   whose header comment the editor rewrites on save). `house --bake` refuses this step outside
    00:00-08:00 local unless the manager wrote a daytime grant (`<raw>/research/2026-10-06-locations/lab/
    editor_window.txt`, `until YYYY-MM-DD HH:MM`, the lab runner's rule); agents never write that file.
    `--no-bake` stops after step 2 and runs by day.
@@ -702,7 +703,10 @@ Every 83q bake was 5.1-5.9 L* darker than the real-time row. `--diag` on the gro
 
 So no `[bake]` setting caused the gap and raising the energies would only hide the shadows. The default bake is
 measured against `hybrid_nospec`: -0.8 / -1.8 / -0.8 L* (the default before #83b: -1.1 / -2.3 / -0.9). The kitchen
-is 0.3 L* outside 1.5: its direct light alone is 1.3 L* under the shadow-mapped real time (point 3).
+is 0.3 L* outside 1.5: its direct light alone is 1.3 L* under the shadow-mapped real time (point 3), and the bake's
+own bounce is 0.5 L* under the hybrid's. Back faces are not the leak: the same run with every shadow caster
+double-sided (as the ray tracer occludes) measured the same to 0.1 L* on every row. No energy is raised to close
+it.
 
 Every Godot run takes the heavy-run lock (`common.heavy_lock`), one at a time; a run that waits for it is normal. The
 whole command can pass 180 s: an agent starts it in the background with its log under `tools/out/`. Bakes are night
