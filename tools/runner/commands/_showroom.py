@@ -107,8 +107,9 @@ STATUS = ("PROPOSAL, NOT CHOSEN: the engineer has not picked a variant (art #140
 SHADOW_FILTER = ("hard", "very low", "low", "medium", "high", "ultra")
 SHADOW_FILTER_SETTING = "rendering/lights_and_shadows/directional_shadow/soft_shadow_filter_quality"
 
-# The proposed look per graphics preset, not chosen yet (STATUS): what the game will copy once the engineer says yes (godot/showroom/look_presets.json, written by
-# `showroom --write-presets`). Each preset turns on everything the one before it does.
+# The proposed look per graphics preset, not chosen yet (STATUS): what the game will copy once the engineer says yes
+# (godot/showroom/look_presets.json, written by `showroom --write-presets`). Each preset turns on everything the one
+# before it does.
 LOOK_ENVIRONMENT = {
     "background_mode": "BG_COLOR or BG_SKY (the map's choice; the sky below lights it either way)",
     "sky": "PanoramaSkyMaterial on a studio or the map's HDRI, energy_multiplier 1.0, radiance_size 256",
@@ -218,8 +219,9 @@ def presets_document(timing: list[dict[str, Any]] | None = None) -> dict[str, An
     """The JSON the game side copies: the shared environment and lights, then the presets."""
     doc: dict[str, Any] = {
         "status": STATUS,
-        "about": "The proposed character look per graphics preset (see status), from the showroom (prime-game-art #140, "
-                 "docs/godot.md 'Showroom and recommended look settings'). Godot 4.7.2, Forward+. Property names are "
+        "about": "The proposed character look per graphics preset (see status), from the showroom "
+                 "(prime-game-art #140, docs/godot.md 'Showroom and recommended look settings'). Godot 4.7.2, "
+                 "Forward+. Property names are "
                  "Environment, DirectionalLight3D, StandardMaterial3D and ProjectSettings names; 'clay' materials are "
                  "the character materials whose name ends in _clay.",
         "environment": LOOK_ENVIRONMENT,
