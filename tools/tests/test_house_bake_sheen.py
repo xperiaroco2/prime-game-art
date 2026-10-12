@@ -94,6 +94,11 @@ class PresetSheen(unittest.TestCase):
         self.lights["presets"]["low"]["sheen"] = "glitter"
         self.assertTrue(any("presets.low: sheen" in p for p in house_lights.validate(self.lights, self.data)))
 
+    def test_a_sheen_count_off_glow_count_is_refused(self):
+        self.lights["presets"]["high"]["sheen"] = "sheen8_shadow"
+        self.assertTrue(any("presets.high: sheen 'sheen8_shadow' lights 8 lamps, glow_count is 12" in p
+                            for p in house_lights.validate(self.lights, self.data)))
+
 
 class SheenNumbers(unittest.TestCase):
     def test_costs_per_camera(self):

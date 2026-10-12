@@ -99,8 +99,12 @@ def validate(lights: dict, data: dict) -> list[str]:
     for name, p in lights["presets"].items():
         if p.get("lightmap") not in ("texel_high", "texel_low"):
             problems.append(f"presets.{name}: lightmap {p.get('lightmap')!r} is not texel_high or texel_low")
-        if "sheen" in p and house_bake.sheen_mode(str(p["sheen"])) is None:
+        sheen = house_bake.sheen_mode(str(p["sheen"])) if "sheen" in p else None
+        if "sheen" in p and sheen is None:
             problems.append(f"presets.{name}: sheen {p['sheen']!r} is not a sheen mode (house_bake.sheen_mode)")
+        elif sheen and sheen["n"] and sheen["n"] != p.get("glow_count"):
+            problems.append(f"presets.{name}: sheen {p['sheen']!r} lights {sheen['n']} lamps, glow_count is "
+                            f"{p.get('glow_count')}")
     return problems
 
 
