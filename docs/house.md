@@ -138,8 +138,9 @@ game root and `size_m`, a shelled room holds layer-1 static bodies, and no scene
 `CollisionPolygon3D`, a rigid or character body on layer 1 or a shadowed light. Then it assembles the package (each
 room at its plan origin; `house_export.check_request` writes `_check/request.json`) and fails with the room and node
 named (#122) when a kit surface on the stand-in material in a room's (or the plot's, as `plot`) `Shell` lacks the package's `kit_set.tres` or
-its `plan_at` is not the mesh's place and turn, or a painted room's material does not hold its paint (its rect and
-colour; "the walls do not carry the paint", #132); when a walkable shell piece (one with a surface) or a dressing prop with a collider holds no layer-1
+its `plan_at` is not the mesh's place and turn, or a painted room's material does not hold its paint (its rect, its
+band of heights `paint_band`, the kit plaster's colour it replaces `paint_from` and its colour; "the walls do not
+carry the paint", #132); when a walkable shell piece (one with a surface) or a dressing prop with a collider holds no layer-1
 `StaticBody3D` with a shape; when the game's footstep ray (0.3 m over the floor to 0.5 m under it, every 0.5 m over
 each room; over a room under a roof of its level also from 10 m over its floor, every 0.5 m over the roof's rect and
 1 m round it, so the first hit is what a player on the free roof stands on) hits a shell collider without a known
@@ -154,7 +155,8 @@ The doorways and flights that leave the package are listed, walked with the pack
 hits, `none_at`: every collider hit without a surface (a prop) with its room, kit pieces and walks); the command
 prints them.
 `tools/tests/test_house_export.py` runs the check on a broken fixture room (Godot needed) and expects every problem
-named, and on two painted fixture rooms (a bare surface, a moved `plan_at`, a material without the room's paint).
+named, and on four painted fixture rooms (a bare surface, a moved `plan_at`, a material without the room's paint,
+one with another level's band, one with another source colour).
 `--sheet` then shoots the review sheet from the export folder in an off-screen window (`godot/house/export_sheet.gd`,
 copied into `_check/`): the kitchen, the storage (basement) and the attic, those of them in the package, each from two
 eye-height views lit only by its own fixtures and a dim review ambient; `_check/sheet.png` (1280 px wide), a still per
