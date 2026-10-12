@@ -107,7 +107,7 @@ def handoff(asset_id: str, cast: str, rows: list[dict], left: list[tuple[str, st
     return f"""# {asset_id}: handoff to the game (art #42 part C)
 
 The slice character for M6.2: cast `{cast}` in the clay look with the clay face kit, the textures baked and embedded,
-carrying {len(rows)} clips of the MVP animation set on the same skeleton. **Not approved yet**: the game takes it once
+carrying {len(rows)} clips of the MVP animation set on the same skeleton. The game takes it only once
 manifest.toml's approval fields are set (the engineer approves the look on the review page).
 
 {size_note(info, eye_height)}

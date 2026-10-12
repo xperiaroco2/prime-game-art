@@ -1,8 +1,8 @@
 # slice_m1: handoff to the game (art #42 part C)
 
 The slice character for M6.2: cast `m1` in the clay look with the clay face kit, the textures baked and embedded,
-carrying 25 clips of the MVP animation set on the same skeleton. **Not approved yet**: the game takes it once
-manifest.toml's approval fields are set (the engineer approves the look on the review page).
+carrying 25 clips of the MVP animation set on the same skeleton. The game takes it only once
+manifest.toml's approval fields are set (the engineer approves the look on the review page). They are set: approved 2026-10-12 in PR #139 (the hair is reworked later, art #117).
 
 Rest height 1.846 m, feet at -0.004 m; scaled uniformly so the eyes are at 1.60 m (the engineer's `eyes16`, 2026-10-12; contract v1's plasticine window 1.70 to 1.90 m). The game's capsule is 1.8 m tall, so the hair top passes it by a few cm: the game decides if that matters.
 
