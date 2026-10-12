@@ -116,7 +116,9 @@ writes the House's game-ready package (prime-game #523) from the same layout dat
   for a game-side wrapper. Not tagged yet: the plot's ground inside `outdoor.glb` (one GLB with its paths and
   street; a question in `package.json`).
 - The kit's look and the wall paints (#132): a package with kit pieces also writes `house_kit/kit_set.gdshader` (a
-  copy of `godot/kit/kit_set.gdshader`) and `house_kit/kit_set.tres` (`house_export.material_text`: the shader, the
+  copy of `godot/kit/kit_set.gdshader`; the shipped one, `assets/kit/house_kit/export/kit_set.gdshader`, must equal
+  its source: `tools/tests/test_kit_shader_copy.py` fails on drift, so a shader change ships with a re-export) and
+  `house_kit/kit_set.tres` (`house_export.material_text`: the shader, the
   shared textures, the layers' roughness and normal strength and every painted room's paint from
   `house_layout.paint_request`, the walk's material as a file). Each kit instance in a room's `Shell` (and in package
   7's plot scene, `house_export_plot.set_material_nodes`, #128) overrides its
