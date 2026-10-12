@@ -12,7 +12,7 @@ import json
 import time
 from pathlib import Path
 
-from .. import common, house_bake, house_lights
+from .. import common, house_bake, house_bake_props, house_lights, house_sky
 from . import _frames, _godot
 
 BUILD = "res://house/zone_build.gd"
@@ -49,7 +49,8 @@ def night_or_fail(raw: Path) -> None:
 
 
 def run(data: dict, lights: dict, zones: list[str], preset: str, review: Path | None, no_bake: bool,
-        props: dict, grid: bool = False, merge: bool = False, diag: bool = False, sheen: bool = False) -> int:
+        props: dict, grid: bool = False, merge: bool = False, diag: bool = False, sheen: bool = False,
+        before: Path | None = None, label: str | None = None) -> int:
     unknown = [z for z in zones if z not in lights["zones"]]
     if unknown:
         raise common.Failure(f"house --bake: no zone {', '.join(unknown)} in lights.toml")
@@ -74,6 +75,8 @@ def run(data: dict, lights: dict, zones: list[str], preset: str, review: Path | 
     (work / "bake_report.json").write_text(json.dumps(report, indent=1), encoding="utf-8", newline="\n")
     if review and not no_bake:
         shoot(data, lights, zones, preset, grid, merge, review, diag, sheen)
+        if before:
+            compare(data, lights, zones, preset, review, before, label or "after")
     kind = "sheen" if sheen else "diag" if diag else "grid" if grid else preset
     common.ok(f"house --bake: {len(zones)} zones ({kind}); {(work / 'bake_report.json').as_posix()}")
     return 0
@@ -175,6 +178,45 @@ def shoot(data: dict, lights: dict, zones: list[str], preset: str, grid: bool, m
     (review / "numbers.md").write_text(md, encoding="utf-8", newline="\n")
     for name, ms in numbers.items():
         common.say(f"  {name}: L* " + ", ".join(str(m["L_mean"]) for m in ms))
+
+
+def compare(data: dict, lights: dict, zones: list[str], preset: str, review: Path, before: Path, label: str) -> None:
+    """The before / after review (--before, docs/house.md "Baking with lab props"): per zone the before run's baked row
+    over this run's baked and sheen rows (house_bake_props.compare_rows) from the same cameras, as before_after.png
+    (about 1280 px across, each row titled) and before_after.md (house_bake.numbers_md against the before row)."""
+    sheen = lights["presets"][preset].get("sheen")
+    titles, tiles, table, md = [], [], {}, []
+    for zone in [z for z in zones if z in REVIEW_ROOMS]:
+        cams = house_bake.views(data, REVIEW_ROOMS[zone])
+        tw, th = house_bake_props.tile_size(len(cams))
+        rows = house_bake_props.compare_rows(zone, preset, sheen, label)
+        ztable = {}
+        for r in rows:
+            folder = before if r["side"] == "before" else review
+            line, ms = [], []
+            for ci in range(len(cams)):
+                f = folder / f"{r['row']}_{ci}.png"
+                if not f.is_file():
+                    common.say(f"  compare: no {f.as_posix()} (a grey tile)")
+                    line.append(None)
+                    continue
+                w, h, px = house_bake.read_png(f)
+                ms.append(house_bake.measures(w, h, px))
+                line.append(house_bake_props.downscale(w, h, px, tw, th))
+            titles.append(f"{zone} {r['title']}")
+            tiles.append(line)
+            ztable[r["title"]] = ms
+        table.update(ztable)
+        md.append(house_bake.numbers_md(zone, ztable, rows[0]["title"],
+                                        ["E1 " + r for r in REVIEW_ROOMS[zone]] + ["seam"],
+                                        note=f"the props as committed, baked; before: {before.as_posix()}"))
+    if not tiles:
+        return
+    width = max(len(line) for line in tiles) * tw
+    rows_px = house_bake_props.sheet(tiles, titles, tw, th)
+    house_sky.write_png(review / "before_after.png", width, len(rows_px), rows_px)
+    (review / "before_after.md").write_text("\n".join(md), encoding="utf-8", newline="\n")
+    common.say(f"  compare: {(review / 'before_after.png').as_posix()} ({len(titles)} rows)")
 
 
 SHEEN_NOTE = "every lamp real-time with shadows and specular plus the bake's bounce: the sheen's target"
