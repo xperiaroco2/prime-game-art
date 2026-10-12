@@ -50,10 +50,20 @@ def committed(root: Path) -> dict[str, Path]:
     return found
 
 
-def find_package(root: Path, n: int) -> tuple[Path, dict]:
-    """The committed package.json of package n (beside a set manifest under assets/)."""
+def house_packages(root: Path) -> list[tuple[Path, dict]]:
+    """The committed House packages under assets/*/*/: a package.json with a package number (a slice character's
+    package.json lists its files without one, #42)."""
+    out = []
     for path in sorted((root / "assets").glob("*/*/package.json")):
         data = json.loads(path.read_text(encoding="utf-8"))
+        if "package" in data:
+            out.append((path, data))
+    return out
+
+
+def find_package(root: Path, n: int) -> tuple[Path, dict]:
+    """The committed package.json of package n (beside a set manifest under assets/)."""
+    for path, data in house_packages(root):
         if data.get("package") == n:
             return path, data
     raise common.Failure(f"no committed package.json of package {n} under assets/*/*/")
@@ -118,8 +128,7 @@ def neighbours(root: Path, package: dict, extra: list[dict]) -> list[dict]:
     want = {f"levels/house/rooms/{w['room']}.tscn" for v in extra if v["room"] in package["rooms"]
             for w in v.get("with", [])}
     out = []
-    for path in sorted((root / "assets").glob("*/*/package.json")) if want else []:
-        data = json.loads(path.read_text(encoding="utf-8"))
+    for _, data in house_packages(root) if want else []:
         if data.get("package") != package["package"] and want & set(data.get("files", {})):
             out.append(data)
     return out
