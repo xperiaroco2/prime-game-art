@@ -3,15 +3,15 @@ id = "house_garden"
 kind = "environment"
 slot = ""
 title = "The House's garden plants: trees, bushes, flower beds and the hedge"
-notes = "Built by `garden` from layouts/house/outdoor/garden.toml (docs/house-garden.md) into house/80/plants. Own work; the glass roof's pieces ship in house_kit."
+notes = "Built by `garden` from layouts/house/outdoor/garden.toml (docs/house-garden.md) into house/80/plants. Own work; the glass roof's pieces ship in house_kit. Package P7 (#128) ships 14 of the 14 under export/ (the plot scene, assets/room/house_plot, places them). Approved by the engineer on 2026-10-12 in PR #131."
 tools = ["blender 5.2.2", "prime-game-art garden (layouts/house/outdoor/garden.toml)"]
 licence = "own-work"
 licence_url = "https://github.com/xperiaroco2/prime-game"
 public_repo_ok = true
 ai_generated = false
-approved_by = []
-approved_at = ""
-approval_pr = ""
+approved_by = ["xperiaroco2"]
+approved_at = 2026-10-12
+approval_pr = "https://github.com/xperiaroco2/prime-game-art/pull/131"
 
 [source]
 service = "own"

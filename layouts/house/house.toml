@@ -61,11 +61,15 @@ label = { h = 2.4, font_size = 72, outline_size = 16 }  # the room's Name label,
 "ground*" = "grass"
 "chimney_attic*" = "concrete"  # the chimneys' tops over the free roof (#126)
 "dormer_*" = "concrete"  # the dormer's own roof
+"gazebo_sector*" = "wood"  # the photo gazebo's deck (#128)
 
 # Low dressing props the floor's rays meet before the floor (a player stands on them), by id pattern (art #126).
 [export.prop_surfaces]
 "rolled_carpet" = "carpet"
 "pallet" = "wood"
+"stepping_stone" = "concrete"  # the plot's and the garden's stepping stones (#128)
+"fire_pit" = "concrete"  # the chill zone's stone fire pit (#128)
+"watering_can" = "concrete"  # the greenhouse's and the garden's metal can: hard, the floor it stands on (#128)
 
 # The kit's families on the look-approval sheet (`house --package-sheet`, art #124): one tile each, in this order, by
 # id pattern (the first match wins); a piece no pattern matches goes to the last family.
@@ -118,14 +122,66 @@ look = [39.0, 18.0]
 look_h = -1.4
 sun = true
 with = ["yard"]
+# P7's views (#128): `room = "plot"` stands in plan metres over the plot's ground (y 0), the package's rooms round it.
+[[export.sheet_views]]
+room = "plot"
+title = "yard: from the front path"
+at = [30.0, 57.0]
+look = [30.0, 44.0]
+sun = true
+[[export.sheet_views]]
+room = "plot"
+title = "street: from the far kerb"
+at = [18.0, 65.0]
+look = [40.0, 58.0]
+sun = true
+[[export.sheet_views]]
+room = "plot"
+title = "garden: from its south-west"
+at = [49.0, 28.0]
+look = [62.0, 16.0]
+sun = true
+[[export.sheet_views]]
+room = "plot"
+title = "greenhouse: inside"
+at = [60.0, 12.0]
+look = [72.0, 12.0]
+sun = true
+[[export.sheet_views]]
+room = "plot"
+title = "chill zone: at the grill"
+at = [14.0, 55.0]
+look = [8.0, 50.0]
+sun = true
+[[export.sheet_views]]
+room = "plot"
+title = "gazebo: from the yard"
+at = [14.0, 16.0]
+look = [9.0, 11.0]
+sun = true
 
 # Extra sets copied whole (files matching `files` under the raw folder `dir`), each into its own folder.
+# `build = "outdoor"`: the export writes the plot's files fresh from layouts/house/outdoor/ (`outdoor`'s pure-Python
+# build, its ground one mesh per footstep surface, art #128) into DIR/_build/house_outdoor, not from `dir`; the flats'
+# PNGs stay out (backdrop.glb embeds them).
 [export.sets.house_outdoor]
 dir = "house/81/build"
-files = ["outdoor.glb", "backdrop.glb", "sky.png", "flat_*.png"]
+build = "outdoor"
+files = ["outdoor.glb", "backdrop.glb", "sky.png"]
 [export.sets.house_garden]
 dir = "house/80/plants"
 files = ["*.glb"]
+
+# Package 7's plot scene (art #128, house_export_plot.py): everything outside the house no room scene holds, at plan
+# coordinates. `garden`: the garden's build (garden.json) under the raw folder; `prop_src`: the folder of each prop
+# source the garden and the zones name (`#87` is the library). The flat house_props/ names follow prop_dirs, then these
+# folders: the first source holding an id ships `<id>.glb`, any other `<id>_<source>.glb`.
+[export.plot]
+scene = "levels/house/outdoor.tscn"
+garden = "house/80/build/garden.json"
+prop_src = { tasks = "props/task/v1", library = "props/library/v1", "#87" = "props/library/v1", zones = "props/zones/v1" }
+# The zones' generic plants (`#87` bush and garden_tree, no library GLB) as the garden's plants (house_garden).
+plants = { bush = "bush_boxwood", garden_tree = "garden_tree_apple" }
 
 # The packages of the plan (P1-P8): a package writes its rooms, every GLB they instance, and its sets. `rooms` lists
 # room ids or level names; `except` takes rooms out again. No --package writes them all.
@@ -159,6 +215,7 @@ n = 7
 name = "outdoor"
 rooms = ["greenhouse", "garden"]
 sets = ["house_outdoor", "house_garden"]
+plot = true
 [[export.packages]]
 n = 8
 name = "task_props"

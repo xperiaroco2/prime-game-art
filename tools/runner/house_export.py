@@ -42,7 +42,8 @@ QUESTIONS = [  # for the game side (prime-game #523); package.json carries them 
     ".import files (and their uids) on its first import: commit the regenerated ones, not these.",
     "Surfaces: every walkable kit piece's instance carries metadata/surface (house.toml [export.surfaces]); the kit's "
     "GLBs carry none, so a game-side wrapper of a piece takes its surface from package.json's `surfaces`. The plot's "
-    "ground (house_outdoor/outdoor.glb, package 7) is one GLB with its paths and street: grass needs its own node.",
+    "ground (house_outdoor/outdoor.glb, package 7) is one mesh per surface (ground_grass, ground_concrete, kerb); "
+    "outdoor.tscn tags each node (editable children of Ground).",
 ]
 
 
@@ -416,7 +417,7 @@ def check_request(data: dict, built: dict, kit_ids=()) -> dict:
             "closed": req.get("closed", []), "material": material_res(data) if kit_ids else ""}
 
 
-EXEMPT = ("package.json", "project.godot", "_check/*", ".godot/*", "*.import", "*.uid")  # not package files
+EXEMPT = ("package.json", "project.godot", "_check/*", "_build/*", ".godot/*", "*.import", "*.uid")  # not package files
 
 
 def stale(out: Path, files: dict) -> list[str]:
@@ -469,12 +470,26 @@ def write(data: dict, planned: dict, dressing: dict, fixtures: list[dict], out: 
     for pid, src in sorted({**extra, **{pid: prop_glbs[pid] for pid in prop_ids}}.items()):
         copies[env / ex["prop_set"] / f"{pid}.glb"] = src
     set_ids = list(ex.get("sets", {})) if pkg is None else pkg.get("sets", [])
+    builds: dict[str, Path] = {}
     for sid in set_ids:
         s = ex["sets"][sid]
         folder = raw / s["dir"]
+        if s.get("build") == "outdoor":  # pure Python, seconds: the plot's files fresh from its layout (art #128)
+            from . import house_outdoor
+            folder = builds[sid] = Path(out) / "_build" / sid
+            made = house_outdoor.write(house_outdoor.load(), folder)
+            if made["problems"]:
+                raise ValueError(f"the plot's build: {made['problems'][0]}")
         for f in sorted(folder.iterdir()) if folder.is_dir() else []:
             if f.is_file() and any(fnmatch.fnmatch(f.name, pat) for pat in s["files"]):
                 copies[env / sid / f.name] = f
+    plot = None
+    if pkg is not None and pkg.get("plot") or pkg is None and "house_outdoor" in builds:
+        from . import house_export_plot as PL
+        inputs = PL.load_inputs(data, raw, builds["house_outdoor"])
+        plot = PL.scene(data, raw, *inputs, surfaces=surfaces)
+        for target, src in plot["copies"].items():
+            copies[env / target] = src
     lost = sorted(t.as_posix() for t, src in copies.items() if not src.is_file())
     if lost:
         raise ValueError(f"{len(lost)} files missing in the raw folder, e.g. {lost[0]} (build the kit and props)")
@@ -497,14 +512,34 @@ def write(data: dict, planned: dict, dressing: dict, fixtures: list[dict], out: 
     for rid, r in built.items():
         (room_dir / f"{rid}.tscn").write_text(r["text"], encoding="utf-8", newline="\n")
         files[f"{ex['room_dir']}/{rid}.tscn"] = sha256(room_dir / f"{rid}.tscn")
+    if plot:
+        rel = plot["res"].removeprefix("res://")
+        (out / rel).parent.mkdir(parents=True, exist_ok=True)
+        (out / rel).write_text(plot["text"], encoding="utf-8", newline="\n")
+        files[rel] = sha256(out / rel)
+    if plot:  # the plot's kit pieces (fence, outdoor stairs, the gazebo's deck, the glass roof) beside the rooms'
+        kit_ids = set(kit_ids) | {k[len(ex["kit_set"]) + 1:-4] for k in plot["copies"]
+                                  if k.startswith(ex["kit_set"] + "/")}
     summary = {"format": FORMAT, "package": n, "name": pkg["name"] if pkg else "all",
                "rooms": {rid: {"level": r["level"], "node": r["node"], "kit": len(r["kit"]), "props": len(r["props"])}
                          for rid, r in built.items()},
                "unplaced": [p.get("name", p["id"]) for p in unplaced],
-               "placeholders": sorted({pid for r in built.values() for pid in r["held"]}),
+               "placeholders": sorted({pid for r in built.values() for pid in r["held"]} |
+                                      set(plot["held"] if plot else [])),
                "surfaces": {pid: surface_of(data, pid) for pid in sorted(kit_ids) if surface_of(data, pid)},
                "files": files, "questions": questions(sum(r.get("lights", 0) for r in built.values()))}
+    if plot:
+        summary["plot"] = {"scene": plot["res"], **plot["counts"], "held": plot["held"]}
     (out / "package.json").write_text(json.dumps(summary, indent=1), encoding="utf-8", newline="\n")
     summary["stale"] = stale(out, files)
     summary["check"] = check_request(data, built, kit_ids)
+    if plot:
+        from . import house_outdoor
+        p_data = inputs[0]
+        summary["check"]["plot"] = {"scene": plot["res"], "rect": p_data["ground"],
+                                    "holes": [h["rect"] for h in house_outdoor.holes(p_data)],
+                                    "walkable": plot["walkable"], "hide": plot["hide"]}
+        summary["check"]["pieces"].update({asset_res(data, ex["kit_set"], k[len(ex["kit_set"]) + 1:-4]): surface_of(
+            data, k[len(ex["kit_set"]) + 1:-4]) for k in plot["copies"] if k.startswith(ex["kit_set"] + "/")
+            and surface_of(data, k[len(ex["kit_set"]) + 1:-4])})
     return summary

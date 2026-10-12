@@ -110,14 +110,16 @@ writes the House's game-ready package (prime-game #523) from the same layout dat
   stair and the main stairs `wood`; lino, concrete, slabs, flat roofs and the other stairs `concrete`; `ground*`
   `grass`; the free roof's pitched pieces, the attic chimneys and the dormer `concrete` (#126; the game has no tile
   sound); a floor tile at least half under a rug (rugs have no collider) `carpet`, never a roof piece over one. A low
-  dressing prop the floor's rays meet first carries its own by `[export.prop_surfaces]` (the attic's rolled carpets
+  dressing prop the floor's rays meet first carries its own by `[export.prop_surfaces]` (the greenhouse's watering can
+  `concrete`, the attic's rolled carpets
   `carpet`, the basement's pallets `wood`). The kit's GLBs carry none, so `package.json`'s `surfaces` lists them
   for a game-side wrapper. Not tagged yet: the plot's ground inside `outdoor.glb` (one GLB with its paths and
   street; a question in `package.json`).
 - The kit's look and the wall paints (#132): a package with kit pieces also writes `house_kit/kit_set.gdshader` (a
   copy of `godot/kit/kit_set.gdshader`) and `house_kit/kit_set.tres` (`house_export.material_text`: the shader, the
   shared textures, the layers' roughness and normal strength and every painted room's paint from
-  `house_layout.paint_request`, the walk's material as a file). Each kit instance in a room's `Shell` overrides its
+  `house_layout.paint_request`, the walk's material as a file). Each kit instance in a room's `Shell` (and in package
+  7's plot scene, `house_export_plot.set_material_nodes`, #128) overrides its
   meshes' set surfaces (the GLB's primitives on `kit_set-vcol`, read from the GLB by `house_export.set_surfaces`)
   with that material and sets the instance parameter `plan_at`: the mesh's origin and turn in the house plan's frame,
   so the shader paints by plan rects wherever the game puts the house. The kit's GLBs stay as they are; the game
@@ -135,7 +137,7 @@ headless and loads every room scene with `godot/house/export_check.gd` (`_check/
 game root and `size_m`, a shelled room holds layer-1 static bodies, and no scene holds CSG, `GridMap`,
 `CollisionPolygon3D`, a rigid or character body on layer 1 or a shadowed light. Then it assembles the package (each
 room at its plan origin; `house_export.check_request` writes `_check/request.json`) and fails with the room and node
-named (#122) when a kit surface on the stand-in material in a room's `Shell` lacks the package's `kit_set.tres` or
+named (#122) when a kit surface on the stand-in material in a room's (or the plot's, as `plot`) `Shell` lacks the package's `kit_set.tres` or
 its `plan_at` is not the mesh's place and turn, or a painted room's material does not hold its paint (its rect and
 colour; "the walls do not carry the paint", #132); when a walkable shell piece (one with a surface) or a dressing prop with a collider holds no layer-1
 `StaticBody3D` with a shape; when the game's footstep ray (0.3 m over the floor to 0.5 m under it, every 0.5 m over
@@ -182,6 +184,19 @@ into the review ambient. Each tile's title sits in a dark box, bottom left in a 
 `Name` label near the top) and top left in a kit tile; the `.json` gives per tile its draw calls (the box counts as
 one). The outdoor rooms of P2 (yard, street, path, ...) carry only markers and lamps: their ground is the plot,
 package 7.
+
+Package 7 (#128) adds the plot scene `levels/house/outdoor.tscn` (`tools/runner/house_export_plot.py`; root `Outdoor`
+at the plan's coordinates, the ground's top at y 0): `Ground` (`outdoor.glb`, its nodes `ground_grass`,
+`ground_concrete` and `kerb` tagged with `metadata/surface` as editable children), `Backdrop`, `Shell` (the fence and
+gates, the outdoor stairs and rails, the greenhouse's glass roof, the gazebo, the zones' railings) and `Dressing` (the
+plot's, the garden's and the zones' props and plants; a zone's generic plant is the garden's, `[export.plot]`
+`plants`). The export rebuilds the plot's files from its layout (`build = "outdoor"`, pure Python) into
+`DIR/_build/house_outdoor` and copies them. The check rays the whole ground every 0.5 m: a ground or shell hit
+without a known surface fails, and so does a miss outside the ground's holes (`hole`: the house, terrace, garage and
+the outdoor stairs' opening, where other packages lay their floors); the command prints the counts as `plot:`. Its
+sheet is six `[[export.sheet_views]]` of `room = "plot"` (plan metres, 1.6 m over the ground, a key light), each
+loading `outdoor.tscn` with the package's rooms at their plan corners; alone, the package shows the house's footprint
+as a black hole. The flat `house_props/` names follow one rule for every package (`docs/manifest.md`).
 
 `tools/tests/test_house_export.py` diffs the 34 art rooms against the game's greybox rooms (`D:/prime-game`, read
 only; skipped without it) on root, origin, size, Doors, Stations and Markers and expects exactly the known differences:

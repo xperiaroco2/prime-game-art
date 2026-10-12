@@ -26,7 +26,8 @@ tools/run.sh outdoor [--check] [--out DIR] [--layouts DIR] [--proof [DIR]] [--ki
 
 Pure Python, about 5 s, no lock. `--check` only validates. Otherwise it writes into `--out` (default
 `<raw>/house/81/build`): `outdoor.json` (the fence, stair and railing placements, the openings, the stairs' walk
-points, the props, the lights, the summary), `outdoor.glb` (the meshes `ground-col`, `skirt`, `kerb-col`),
+points, the props, the lights, the summary), `outdoor.glb` (the meshes `ground_<surface>-col`, one per footstep surface: each paint of `plot.toml` names its
+game surface, `ground_grass-col` and `ground_concrete-col` (#128); `skirt`, `kerb-col`),
 `backdrop.glb` (one ring mesh per flat, its textures embedded), `sky.png`, `flat_<id>.png`,
 and `plan.png` (top-down, 14 px per metre: paints, holes grey, fence white, openings green, stairs blue, lights orange,
 other props magenta). It fails on any problem.

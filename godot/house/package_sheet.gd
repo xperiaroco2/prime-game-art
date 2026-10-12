@@ -114,7 +114,14 @@ func _room(holder: Node3D, cam: Camera3D, path: String, eye: float, tile: Dictio
 		return {"error": "missing " + path}
 	var sc: Node3D = ps.instantiate()
 	holder.add_child(sc)
-	var size: Vector2i = sc.get_meta("size_m")
+	var size: Vector2i = sc.get_meta("size_m", Vector2i(1, 1))  # the plot scene (#128) has no size_m
+	for r: Dictionary in tile.get("rooms", []):  # the plot's views: the package's rooms at their plan corners
+		var rs := load(String(r["scene"])) as PackedScene
+		if rs == null:
+			return {"error": "missing " + String(r["scene"])}
+		var rn: Node3D = rs.instantiate()
+		rn.position = Vector3(r["at"][0], r["at"][1], r["at"][2])
+		holder.add_child(rn)
 	var w := float(size.x)
 	var d := float(size.y)
 	var pos := Vector3(w / 2, 0, INSET)

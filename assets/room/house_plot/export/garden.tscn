@@ -1,0 +1,230 @@
+[gd_scene format=3]
+
+[ext_resource type="PackedScene" path="res://assets/environment/house_kit/railing_balcony_2m.glb" id="1"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_kit/railing_balcony_post.glb" id="2"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_kit/stairs_outdoor_landing.glb" id="3"]
+[ext_resource type="ShaderMaterial" path="res://assets/environment/house_kit/kit_set.tres" id="4"]
+
+[node name="Garden" type="Node3D"]
+metadata/size_m = Vector2i(32, 28)
+metadata/art_room = "garden"
+
+[node name="Name" type="Label3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16, 2.4, 14)
+billboard = 1
+text = "Garden"
+font_size = 72
+outline_size = 16
+
+[node name="Shell" type="Node3D" parent="."]
+
+[node name="railing_balcony_2m_1" parent="Shell" instance=ExtResource("1")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16, 0, 26)
+
+[node name="railing_balcony_2m_2" parent="Shell" instance=ExtResource("1")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 18, 0, 26)
+
+[node name="railing_balcony_post_1" parent="Shell" instance=ExtResource("2")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16, 0, 26)
+
+[node name="railing_balcony_post_2" parent="Shell" instance=ExtResource("2")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 20, 0, 26)
+
+[node name="railing_balcony_2m_3" parent="Shell" instance=ExtResource("1")]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 16, 0, 26)
+
+[node name="railing_balcony_post_3" parent="Shell" instance=ExtResource("2")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16, 0, 26)
+
+[node name="railing_balcony_2m_4" parent="Shell" instance=ExtResource("1")]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 20, 0, 26)
+
+[node name="railing_balcony_post_4" parent="Shell" instance=ExtResource("2")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 20, 0, 26)
+
+[node name="outdoor_stairs_2" parent="Shell" instance=ExtResource("3")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16, -1.6, 26)
+metadata/surface = "concrete"
+
+[node name="stairs_outdoor_landing" parent="Shell/outdoor_stairs_2"]
+surface_material_override/0 = ExtResource("4")
+instance_shader_parameters/plan_at = Vector4(62, -1.6, 28, 0)
+
+[node name="Fixtures" type="Node3D" parent="."]
+
+[node name="garden_string_lights_01" type="OmniLight3D" parent="Fixtures"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 2.6, 14)
+light_color = Color(1, 0.85, 0.68, 1)
+light_energy = 0.35
+shadow_enabled = false
+omni_range = 5
+metadata/fixture = "string_lights"
+metadata/glow = false
+
+[node name="garden_string_lights_02" type="OmniLight3D" parent="Fixtures"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 24, 2.6, 14)
+light_color = Color(1, 0.85, 0.68, 1)
+light_energy = 0.35
+shadow_enabled = false
+omni_range = 5
+metadata/fixture = "string_lights"
+metadata/glow = false
+
+[node name="garden_path_light_01" type="OmniLight3D" parent="Fixtures"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.45, 0.5, 3.95)
+light_color = Color(1, 0.85, 0.68, 1)
+light_energy = 0.3
+shadow_enabled = false
+omni_range = 3
+metadata/fixture = "path_light"
+metadata/glow = false
+
+[node name="garden_path_light_02" type="OmniLight3D" parent="Fixtures"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12.15, 0.5, 3.95)
+light_color = Color(1, 0.85, 0.68, 1)
+light_energy = 0.3
+shadow_enabled = false
+omni_range = 3
+metadata/fixture = "path_light"
+metadata/glow = false
+
+[node name="garden_path_light_03" type="OmniLight3D" parent="Fixtures"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 19.85, 0.5, 3.95)
+light_color = Color(1, 0.85, 0.68, 1)
+light_energy = 0.3
+shadow_enabled = false
+omni_range = 3
+metadata/fixture = "path_light"
+metadata/glow = false
+
+[node name="garden_path_light_04" type="OmniLight3D" parent="Fixtures"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 27.55, 0.5, 3.95)
+light_color = Color(1, 0.85, 0.68, 1)
+light_energy = 0.3
+shadow_enabled = false
+omni_range = 3
+metadata/fixture = "path_light"
+metadata/glow = false
+
+[node name="garden_path_light_05" type="OmniLight3D" parent="Fixtures"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.45, 0.5, 10.65)
+light_color = Color(1, 0.85, 0.68, 1)
+light_energy = 0.3
+shadow_enabled = false
+omni_range = 3
+metadata/fixture = "path_light"
+metadata/glow = false
+
+[node name="garden_path_light_06" type="OmniLight3D" parent="Fixtures"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12.15, 0.5, 10.65)
+light_color = Color(1, 0.85, 0.68, 1)
+light_energy = 0.3
+shadow_enabled = false
+omni_range = 3
+metadata/fixture = "path_light"
+metadata/glow = false
+
+[node name="garden_path_light_07" type="OmniLight3D" parent="Fixtures"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 19.85, 0.5, 10.65)
+light_color = Color(1, 0.85, 0.68, 1)
+light_energy = 0.3
+shadow_enabled = false
+omni_range = 3
+metadata/fixture = "path_light"
+metadata/glow = false
+
+[node name="garden_path_light_08" type="OmniLight3D" parent="Fixtures"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 27.55, 0.5, 10.65)
+light_color = Color(1, 0.85, 0.68, 1)
+light_energy = 0.3
+shadow_enabled = false
+omni_range = 3
+metadata/fixture = "path_light"
+metadata/glow = false
+
+[node name="garden_path_light_09" type="OmniLight3D" parent="Fixtures"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.45, 0.5, 17.35)
+light_color = Color(1, 0.85, 0.68, 1)
+light_energy = 0.3
+shadow_enabled = false
+omni_range = 3
+metadata/fixture = "path_light"
+metadata/glow = false
+
+[node name="garden_path_light_10" type="OmniLight3D" parent="Fixtures"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12.15, 0.5, 17.35)
+light_color = Color(1, 0.85, 0.68, 1)
+light_energy = 0.3
+shadow_enabled = false
+omni_range = 3
+metadata/fixture = "path_light"
+metadata/glow = false
+
+[node name="garden_garden_post_lamp_01" type="OmniLight3D" parent="Fixtures"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 19.85, 2.4, 17.35)
+light_color = Color(1, 0.85, 0.68, 1)
+light_energy = 0.8
+shadow_enabled = false
+omni_range = 6
+metadata/fixture = "garden_post_lamp"
+metadata/glow = true
+
+[node name="garden_garden_post_lamp_02" type="OmniLight3D" parent="Fixtures"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 27.55, 2.4, 17.35)
+light_color = Color(1, 0.85, 0.68, 1)
+light_energy = 0.8
+shadow_enabled = false
+omni_range = 6
+metadata/fixture = "garden_post_lamp"
+metadata/glow = true
+
+[node name="garden_garden_post_lamp_03" type="OmniLight3D" parent="Fixtures"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.45, 2.4, 24.05)
+light_color = Color(1, 0.85, 0.68, 1)
+light_energy = 0.8
+shadow_enabled = false
+omni_range = 6
+metadata/fixture = "garden_post_lamp"
+metadata/glow = true
+
+[node name="garden_garden_post_lamp_04" type="OmniLight3D" parent="Fixtures"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12.15, 2.4, 24.05)
+light_color = Color(1, 0.85, 0.68, 1)
+light_energy = 0.8
+shadow_enabled = false
+omni_range = 6
+metadata/fixture = "garden_post_lamp"
+metadata/glow = true
+
+[node name="garden_garden_post_lamp_05" type="OmniLight3D" parent="Fixtures"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 19.85, 2.4, 24.05)
+light_color = Color(1, 0.85, 0.68, 1)
+light_energy = 0.8
+shadow_enabled = false
+omni_range = 6
+metadata/fixture = "garden_post_lamp"
+metadata/glow = true
+
+[node name="garden_garden_post_lamp_06" type="OmniLight3D" parent="Fixtures"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 27.55, 2.4, 24.05)
+light_color = Color(1, 0.85, 0.68, 1)
+light_energy = 0.8
+shadow_enabled = false
+omni_range = 6
+metadata/fixture = "garden_post_lamp"
+metadata/glow = true
+
+[node name="Doors" type="Node3D" parent="."]
+
+[node name="Stations" type="Node3D" parent="."]
+
+[node name="GardenDropOff" type="Marker3D" parent="Stations"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16, 0, 22)
+
+[node name="Markers" type="Node3D" parent="."]
+
+[node name="Circle03" type="Marker3D" parent="Markers" groups=["spawn_circle"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14, 0.46, 22)
+
+[node name="Knife4" type="Marker3D" parent="Markers" groups=["spawn_knife"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, -0.04, 8)

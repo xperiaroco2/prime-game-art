@@ -255,6 +255,8 @@ class HouseExport(unittest.TestCase):
                 if n == 7:
                     self.assertIn("assets/environment/house_outdoor/outdoor.glb", files)
                     self.assertIn("assets/environment/house_garden/rose.glb", files)
+                    self.assertIn("plot", summary)
+                    self.assertTrue(summary["plot"]["scene"].startswith("res://"))
                 if n == 8:
                     self.assertEqual(rooms, set())
                     self.assertIn("assets/environment/house_props/task_box.glb", files)
@@ -287,6 +289,9 @@ def fake_raw(raw: Path) -> Path:
         (raw / s["dir"]).mkdir(parents=True, exist_ok=True)
         for pat in s["files"]:
             (raw / s["dir"] / pat.replace("*", "rose" if sid == "house_garden" else "a")).write_bytes(b"x")
+    garden = raw / X.settings(DATA)["plot"]["garden"]  # the garden's build, empty: the plot scene's input (#128)
+    garden.parent.mkdir(parents=True, exist_ok=True)
+    garden.write_text('{"roof": [], "props": [], "scatter": []}', encoding="utf-8")
     return raw
 
 
@@ -306,6 +311,12 @@ class PackageLines(unittest.TestCase):
             "eaves)",
             "  hits without a surface (not the shell): attic: Loose/Body; attic roof: crate_1; boiler_room: boiler_1, "
             "lamp_2"])
+
+    def test_the_plot_line_counts_its_rays_by_surface(self):
+        lines = _house_export.package_lines({"rays": 0, "surfaces": {}, "plot_rays": 4,
+                                             "plot_surfaces": {"grass": 2, "hole": 1, "concrete": 1}})
+        self.assertEqual(lines[1], '  plot: 4 rays down over the ground, surfaces hit {"concrete": 1, "grass": 2, '
+                                   "\"hole\": 1} (hole: another package's floor)")
 
     def test_no_roof_and_no_unknown_surface_print_no_line(self):
         lines = _house_export.package_lines({"rays": 2, "surfaces": {"wood": 2}, "roof_rays": 0, "none_at": {}})

@@ -88,9 +88,19 @@ class GroundTest(unittest.TestCase):
 
     def test_the_meshes(self) -> None:
         meshes = {m.name: m for m in ho.ground_meshes(DATA)}
-        self.assertEqual(meshes["ground-col"].tris, 2 * len(self.CELLS))
-        self.assertTrue(all(abs(p[1]) < 1e-9 for p in meshes["ground-col"].pos))  # one flat sheet: nothing z-fights
-        self.assertTrue(all(0 <= u <= 1 and 0 <= v <= 1 for u, v in meshes["ground-col"].uv1))
+        ground = [m for name, m in meshes.items() if name.startswith("ground_")]
+        self.assertEqual(sorted(m.name for m in ground), ["ground_concrete-col", "ground_grass-col"])  # art #128
+        self.assertEqual(sum(m.tris for m in ground), 2 * len(self.CELLS))
+        for m in ground:
+            self.assertTrue(all(abs(p[1]) < 1e-9 for p in m.pos))  # one flat sheet: nothing z-fights
+            self.assertTrue(all(0 <= u <= 1 and 0 <= v <= 1 for u, v in m.uv1))
+        for (i, j), paint in self.CELLS.items():  # each cell lies in its paint's surface mesh
+            if (i, j) in ((30, 50), (40, 63)):
+                want = f"ground_{ho.paint_surface(DATA, paint)}-col"
+                x, z = DATA["ground"][0] + i + 0.5, DATA["ground"][1] + j + 0.5
+                self.assertTrue(any(abs(p[0] - x) <= 0.5 and abs(p[2] - z) <= 0.5 for p in meshes[want].pos), (i, j))
+        self.assertEqual(ho.paint_surface(DATA, "asphalt"), "concrete")
+        self.assertEqual(ho.paint_surface(DATA, "grass"), "grass")
         self.assertAlmostEqual(max(p[1] for p in meshes["kerb-col"].pos), DATA["kerb"]["height"])
         for m in meshes.values():  # every triangle faces its normal
             for t in range(m.tris):

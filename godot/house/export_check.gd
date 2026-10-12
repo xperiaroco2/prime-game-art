@@ -153,11 +153,27 @@ func _package(req: Dictionary) -> Dictionary:
 					problems.append("%s: %s/%s missing" % [r["id"], group, name])
 				elif not _collides(n):
 					problems.append("%s: %s/%s has no layer-1 StaticBody3D" % [r["id"], group, name])
+	# Package 7's plot scene (art #128): at the plan's origin; its walkable shell pieces need a layer-1 body.
+	var plot: Dictionary = req.get("plot", {})
+	var plot_node: Node3D = null
+	if not plot.is_empty():
+		var pk := load(String(plot["scene"])) as PackedScene
+		if pk == null:
+			problems.append("plot: %s does not load" % plot["scene"])
+		else:
+			plot_node = pk.instantiate() as Node3D
+			root.add_child(plot_node)
+			for name: String in plot.get("walkable", []):
+				var n := plot_node.get_node_or_null("Shell/%s" % name)
+				if n == null:
+					problems.append("plot: Shell/%s missing" % name)
+				elif not _collides(n):
+					problems.append("plot: Shell/%s has no layer-1 StaticBody3D" % name)
 	for p: Array in req.get("pads", []):
 		Walker.pad(self, p)
 	for i in 3:
 		await physics_frame
-	var paints: Dictionary = _paints(req, placed, problems)  # in the tree now: global poses hold
+	var paints: Dictionary = _paints(req, placed, plot_node, problems)  # in the tree now: global poses hold
 	var space := root.get_world_3d().direct_space_state
 	var counts := {}
 	var named := {}
@@ -232,6 +248,45 @@ func _package(req: Dictionary) -> Dictionary:
 				roof_counts[key] = int(roof_counts.get(key, 0)) + 1
 				z += STEP
 			x += STEP
+	# The plot's rays (#128): the footstep ray every STEP over the ground's rect. The ground and the shell need a known
+	# surface; a ray meets nothing only in a hole of the ground (where another package lays its floor: `hole`).
+	var plot_counts := {}
+	var plot_rays := 0
+	var plot_miss := []  # [x, z, count] of the rays outside the holes that meet nothing
+	if plot_node != null:
+		var pr: Array = plot["rect"]
+		var x := float(pr[0]) + STEP / 2
+		while x < float(pr[0]) + float(pr[2]):
+			var z := float(pr[1]) + STEP / 2
+			while z < float(pr[1]) + float(pr[3]):
+				var q := PhysicsRayQueryParameters3D.create(Vector3(x, ABOVE, z), Vector3(x, -BELOW, z), 1)
+				var hit := space.intersect_ray(q)
+				plot_rays += 1
+				var in_hole := false
+				for h: Array in plot.get("holes", []):
+					if x > float(h[0]) and x < float(h[0]) + float(h[2]) and z > float(h[1]) and z < float(h[1]) + float(h[3]):
+						in_hole = true
+				var key := "hole" if in_hole else "miss"
+				if not hit.is_empty():
+					var col := hit["collider"] as Node
+					var path := String(root.get_path_to(col))
+					var tag: Variant = _surface(col)
+					key = "none" if tag == null else String(tag)
+					if tag == null and not none_at.has(path):
+						none_at[path] = "plot"
+					var ground := path.contains("/Ground/") or path.contains("/Shell/")
+					if ground and (tag == null or not String(tag) in SURFACES) and not named.has(path):
+						named[path] = true
+						problems.append("plot: no known surface (%s) under %.2f, %.2f on %s" % [key, x, z, path])
+				elif not in_hole:
+					if plot_miss.is_empty():
+						plot_miss = [x, z, 0]
+					plot_miss[2] += 1
+				plot_counts[key] = int(plot_counts.get(key, 0)) + 1
+				z += STEP
+			x += STEP
+	if not plot_miss.is_empty():
+		problems.append("plot: %d rays outside the ground's holes meet nothing, the first at %.2f, %.2f" % [plot_miss[2], plot_miss[0], plot_miss[1]])
 	for at: String in holes:  # one problem per piece met: the first ray and the count
 		var h: Array = holes[at]
 		problems.append("%s roof: a hole at %.2f, %.2f, %d rays meet %s" % [h[0], h[1], h[2], h[3], at.get_slice("|", 1)])
@@ -243,6 +298,7 @@ func _package(req: Dictionary) -> Dictionary:
 		if not res["arrived"]:
 			problems.append("walk %s: the %.2f m capsule stops at %s" % [w["name"], 2 * RADIUS, str(res["end"])])
 	return {"problems": problems, "paints": paints, "rays": rays, "surfaces": counts, "roof_rays": roof_rays, "roof_surfaces": roof_counts,
+		"plot_rays": plot_rays, "plot_surfaces": plot_counts,
 		"none_at": none_at, "pieces": pieces, "walks": walks,
 		"outside": req.get("outside", []), "closed": req.get("closed", [])}
 
@@ -250,12 +306,19 @@ func _package(req: Dictionary) -> Dictionary:
 ## The wall paints travel with the scenes (#132, docs/house.md "The export"): every Shell surface whose imported
 ## material is the kit's stand-in (`kit_set`) carries the kit's set material (req["material"], any ShaderMaterial when
 ## empty) with `plan_at` at its mesh's place and turn (the rooms stand at their plan origins); a painted room's
-## material holds the room's paint (its rect and colour), else "the walls do not carry the paint".
-func _paints(req: Dictionary, placed: Dictionary, problems: Array) -> Dictionary:
+## material holds the room's paint (its rect and colour), else "the walls do not carry the paint". Package 7's plot
+## scene (at the plan's origin) is checked as one more "room", `plot` (#128).
+func _paints(req: Dictionary, placed: Dictionary, plot_node: Node3D, problems: Array) -> Dictionary:
 	var want: String = String(req.get("material", ""))
 	var out := {"surfaces": 0, "bare": 0, "painted": []}
+	var targets: Array = []
 	for r: Dictionary in req["rooms"]:
-		var node: Node3D = placed.get(r["id"])
+		targets.append([r, placed.get(r["id"])])
+	if plot_node != null:
+		targets.append([{"id": "plot"}, plot_node])
+	for t: Array in targets:
+		var r: Dictionary = t[0]
+		var node: Node3D = t[1]
 		if node == null or node.get_node_or_null("Shell") == null:
 			continue
 		var bare := 0
