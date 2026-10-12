@@ -3,15 +3,15 @@ id = "house_props"
 kind = "prop"
 slot = ""
 title = "The House's props: the dressing library, the task-station props and the zone props"
-notes = "Built by `props-library --build` (props/library.toml: 99 procedural, 32 re-painted from CC0 packs), `props` (props/tasks.toml) and the zones (layouts/house/outdoor/zones). Own work, except each file with a source: a CC0 pack model re-scaled and re-painted. All use the kit's texture set (house_kit), which ships once. The [[files]] list all 174 props of the raw build; only the props a committed package needs are committed under export/, the rest stay raw until their package. P2 committed 70 of the 174 (#124), approved by the engineer on 2026-10-11 in PR #125. P3 and P5 committed 34 more (#126), approved by the engineer on 2026-10-11 in PR #127, which the approval fields below name (the set format has no per-file approval; a later package's approval moves them to its PR): library/ cage_lamp, desk, filing_cabinet, fuel_barrel, industrial_pendant, jerrycan, metal_shelving, office_chair, old_bicycle, old_wardrobe, pallet, pipe_run, rolled_carpet, safelight_red, sheeted_furniture, standing_mirror, tool_wall, toolbox_cart, trunk; task/ boiler, bun_shelf, cable_drum, car_parts_shelf, delivery_box_stack, enlarger, generator, meat_freezer, photo_board, pump, switchboard, tray_table, wall_switch, water_tank, wine_rack."
+notes = "Built by `props-library --build` (props/library.toml: 99 procedural, 32 re-painted from CC0 packs), `props` (props/tasks.toml) and the zones (layouts/house/outdoor/zones). Own work, except each file with a source: a CC0 pack model re-scaled and re-painted. All use the kit's texture set (house_kit), which ships once. The [[files]] list all 174 props of the raw build; only the props a committed package needs are committed under export/, the rest stay raw until their package. P2 committed 70 of the 174 (#124), approved by the engineer on 2026-10-11 in PR #125. P3 and P5 committed 34 more (#126), approved by the engineer on 2026-10-11 in PR #127 (the set format has no per-file approval; a later package's approval moves the fields below to its PR): library/ cage_lamp, desk, filing_cabinet, fuel_barrel, industrial_pendant, jerrycan, metal_shelving, office_chair, old_bicycle, old_wardrobe, pallet, pipe_run, rolled_carpet, safelight_red, sheeted_furniture, standing_mirror, tool_wall, toolbox_cart, trunk; task/ boiler, bun_shelf, cable_drum, car_parts_shelf, delivery_box_stack, enlarger, generator, meat_freezer, photo_board, pump, switchboard, tray_table, wall_switch, water_tank, wine_rack. P4 committed 10 more (#129), approved by the engineer on 2026-10-12 in PR #130, which the approval fields below name: library/ balcony_chair, bathtub, bunk_bed, double_bed, single_bed, toy_spill, wardrobe; task/ computer_set, photo_printer, toy_chest."
 tools = ["blender 5.2.2", "prime-game-art props-library and props (props/library.toml, props/tasks.toml)"]
 licence = "own-work"
 licence_url = "https://github.com/xperiaroco2/prime-game"
 public_repo_ok = true
 ai_generated = false
 approved_by = ["xperiaroco2"]
-approved_at = 2026-10-11
-approval_pr = "https://github.com/xperiaroco2/prime-game-art/pull/127"
+approved_at = 2026-10-12
+approval_pr = "https://github.com/xperiaroco2/prime-game-art/pull/130"
 
 [source]
 service = "own"

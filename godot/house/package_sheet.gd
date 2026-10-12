@@ -6,6 +6,7 @@ extends SceneTree
 ##   rooms: every room scene from its door (Doors/Door1, else the first) at eye height, looking into the room, lit only by its
 ##     own fixtures and a dim review ambient; a room without a door is shot from the middle of its front side. A tile
 ##     with `eye` and `look` (room-local) is an extra view of its room; with `sun` a key light joins its lamps.
+##     Its `with` rooms (other packages' scenes, staged beside it) join it in place at their offsets.
 ## Writes <out>/<sheet>.png (`width` px wide), <sheet>_1280.png (the agents' copy) and <sheet>.json (per tile).
 ##   -s res://_review/package_sheet.gd -- request=<abs json> out=<abs dir>
 
@@ -134,6 +135,13 @@ func _room(holder: Node3D, cam: Camera3D, path: String, eye: float, tile: Dictio
 		door = ""
 		cam.position = Vector3(tile["eye"][0], tile["eye"][1], tile["eye"][2])
 		target = Vector3(tile["look"][0], tile["look"][1], tile["look"][2])
+		for wr in tile.get("with", []):  # another package's room in place beside this one (its offset, room-local)
+			var wp := load(String(wr["scene"])) as PackedScene
+			if wp == null:
+				return {"error": "missing " + String(wr["scene"])}
+			var other: Node3D = wp.instantiate()
+			other.position = Vector3(wr["offset"][0], wr["offset"][1], wr["offset"][2])
+			holder.add_child(other)
 	if tile.get("sun", false):  # outside the room's own lamps: a low key light from the south-west
 		var sun := DirectionalLight3D.new()
 		sun.rotation_degrees = Vector3(-35, -140, 0)
