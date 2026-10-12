@@ -82,8 +82,9 @@ def _merge(face, names, name, coll):
 
 def eye_material():
     """The eyes' one glossy material (the manager's call, 2026-10-10: one surface for the whites and the pupils): the
-    base colour is the colour attribute EYE_RGB (glTF COLOR_0, which Godot's importer multiplies into the albedo), the
-    roughness the white's (kit.GLOSS)."""
+    base colour is the colour attribute EYE_RGB (the textured export bakes it into a palette texture, export_glb.
+    palette_part: Godot 4.7.2 does not draw a one-surface mesh's vertex colours), the roughness the white's
+    (kit.GLOSS)."""
     mat = bpy.data.materials.get(EYE_MATERIAL)
     if mat is not None:
         return mat

@@ -202,9 +202,13 @@ def textured_audit(path: Path) -> dict[str, Any]:
             "image_bytes": sum(i["bytes"] for i in images)}
 
 
+# export_glb.palette_part names its image <material>_palette: flat colours (the eyes' whites and pupils), no normal map.
+PALETTE_SUFFIX = "_palette"
+
+
 def textured_check(audit: dict[str, Any], surfaces_cap: int, max_px: int) -> list[str]:
     """Problems with a textured character: no texture at all, an image that is not PNG or JPEG or is larger than
-    max_px on a side, a textured material without a normal map, a normal-mapped surface without UVs or tangents, more
+    max_px on a side, a textured material without a normal map (a palette, export_glb.palette_part, aside), a normal-mapped surface without UVs or tangents, more
     surfaces than surfaces_cap."""
     problems: list[str] = []
     if not any(m["base"] is not None for m in audit["materials"]):
@@ -214,8 +218,10 @@ def textured_check(audit: dict[str, Any], surfaces_cap: int, max_px: int) -> lis
             problems.append(f"image {im['name']}: not a PNG or JPEG")
         elif max(im["px"]) > max_px:
             problems.append(f"image {im['name']}: {im['px'][0]} x {im['px'][1]} px, over {max_px}")
+    images = audit["images"]
     for m in audit["materials"]:
-        if m["base"] is not None and m["normal"] is None:
+        palette = m["base"] is not None and m["base"] < len(images) and images[m["base"]]["name"].endswith(PALETTE_SUFFIX)
+        if m["base"] is not None and m["normal"] is None and not palette:
             problems.append(f"material {m['name']}: a base colour texture without a normal map")
     mats = audit["materials"]
     for name, surfaces in sorted(audit["meshes"].items()):

@@ -359,8 +359,12 @@ character's face arrives as:
   (`TEXCOORD_1`) marks the parts the game may tint: brows at (1, 0), facial hair at (0, 1), the rest at (0, 0).
 - **The eyes** (`<id>_eyes`): the whites and the pupils, glossy, not baked, as ONE material `fb_eye` (one surface;
   the manager's call of 2026-10-10 to keep the character within the contract's 8): its base colour is the colour
-  attribute `eye_rgb` (corner domain, linear; glTF `COLOR_0`, which Godot's importer multiplies into the albedo), the
-  kit's white or pupil colour per face; roughness the white's (0.17; the lab's pupil had 0.3). The part godot-check
+  attribute `eye_rgb` (corner domain, linear), the kit's white or pupil colour per face. Godot 4.7.2's importer does
+  not draw it: it turns on "vertex colour as albedo" only after it has handled a mesh's first surface (docs/kit.md,
+  "Paint"), and the eyes are one surface, so they drew plain white (art #42, PR #139). `export --textured` therefore
+  bakes the attribute's flat colours into a palette texture `fb_eye_palette` (16 px per colour, nearest filtering)
+  on a new UV map and drops `COLOR_0` (`export_glb.palette_part`; docs/godot.md, "Textured export"), and
+  `godot-check --textured` fails `eye_pupils` when the eyes as Godot draws them have no near-black vertices; roughness the white's (0.17; the lab's pupil had 0.3). The part godot-check
   finds the eyes by.
 - **Shape keys** (glTF morph targets): on the head `mouth_a`, `mouth_e`, `mouth_o`, `mouth_closed` (the mouth states
   over the rest mouth), `blink_half`, `blink`, `ears_tuck`, `ears_hide`; on the eyes `look_l`, `look_r`, `look_u`,

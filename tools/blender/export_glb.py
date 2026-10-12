@@ -16,8 +16,11 @@ the options without Blender.
 
 --textured (the clay look's baked characters, docs/godot.md, "Textured export"): TEXTURED_OPTIONS on top, the baked
 PNGs embedded, tangents for the normal maps, morph targets (with their normals and tangents) kept, vertex colours where
-a material reads them; a part without any UV map gets a spherical one (glossy parts have none, and Godot cannot make
-tangents without UVs), and a zero TANGENT the exporter writes is replaced by a unit one (fix_zero_tangents).
+a material reads them; a part whose material takes its base colour from a colour attribute (the clay eyes' `fb_eye`:
+whites and pupils) gets that colour as a small palette texture instead (palette_part, art #42: Godot 4.7.2's
+importer leaves a mesh's first surface without its vertex colours, so the eyes drew blank white); a part without any
+UV map gets a spherical one (glossy parts have none, and Godot cannot make tangents without UVs), and a zero TANGENT
+the exporter writes is replaced by a unit one (fix_zero_tangents).
 """
 
 import math
@@ -99,6 +102,86 @@ TEXTURED_OPTIONS = {
 def options(textured=False):
     """The export options: EXPORT_OPTIONS, with TEXTURED_OPTIONS on top for a textured export."""
     return dict(EXPORT_OPTIONS, **(TEXTURED_OPTIONS if textured else {}))
+
+
+PALETTE_BLOCK_PX = 16  # one flat block per colour, so linear filtering and the first mip levels keep it pure
+
+
+def linear_to_srgb(c):
+    """One linear channel encoded as sRGB (the palette's PNG is an sRGB colour texture)."""
+    c = max(0.0, min(1.0, c))
+    return 12.92 * c if c <= 0.0031308 else 1.055 * c ** (1 / 2.4) - 0.055
+
+
+def palette_layout(colours, block=PALETTE_BLOCK_PX):
+    """A palette texture for a few flat colours (linear RGB tuples): the unique colours, rounded to 4 decimals, each a
+    block x block square on a grid, the side a power of two. Returns (side px, {colour: (u, v)} at each block's centre
+    with v from the bottom as in Blender, the RGBA pixels bottom row first, sRGB-encoded)."""
+    uniq = sorted({tuple(round(float(x), 4) for x in c[:3]) for c in colours})
+    if not uniq:
+        raise ValueError("no colours")
+    cols = math.ceil(math.sqrt(len(uniq)))
+    side = 1
+    while side < cols * block:
+        side *= 2
+    uv = {c: (((i % cols) + 0.5) * block / side, ((i // cols) + 0.5) * block / side) for i, c in enumerate(uniq)}
+    enc = [tuple(linear_to_srgb(x) for x in c) + (1.0,) for c in uniq]
+    pixels = []
+    for y in range(side):
+        for x in range(side):
+            col, row = x // block, y // block
+            i = row * cols + col if col < cols else len(uniq) - 1
+            pixels.extend(enc[min(i, len(uniq) - 1)])
+    return side, uv, pixels
+
+
+def _colour_attribute_base(mat):
+    """The colour attribute a material's Principled base colour reads directly, or None."""
+    if mat is None or not mat.use_nodes:
+        return None
+    for n in mat.node_tree.nodes:
+        if n.type == "BSDF_PRINCIPLED":
+            links = n.inputs["Base Color"].links
+            if links and links[0].from_node.type == "VERTEX_COLOR":
+                return links[0].from_node
+    return None
+
+
+def palette_part(bpy, o):
+    """A part with one material whose base colour is a colour attribute and no UV map: the attribute's flat colours
+    become a palette texture (palette_layout) on a new UV map, wired into the base colour in place of the attribute.
+    Returns {"material", "colours", "px"} or None when the part does not qualify."""
+    me = o.data
+    mats = [s.material for s in o.material_slots]
+    node = _colour_attribute_base(mats[0]) if len(mats) == 1 else None
+    if node is None or me.uv_layers:
+        return None
+    attr = me.color_attributes.get(node.layer_name) if node.layer_name else me.color_attributes.active_color
+    if attr is None:
+        return None
+    if attr.domain == "CORNER":
+        per_loop = [tuple(d.color[:3]) for d in attr.data]
+    else:
+        per_loop = [tuple(attr.data[lp.vertex_index].color[:3]) for lp in me.loops]
+    side, uv, pixels = palette_layout(per_loop)
+    mat = mats[0]
+    img = bpy.data.images.new(f"{mat.name}_palette", side, side, alpha=False)
+    img.pixels.foreach_set(pixels)
+    img.pack()
+    layer = me.uv_layers.new(name="palette")
+    coords = []
+    for c in per_loop:
+        coords.extend(uv[tuple(round(float(x), 4) for x in c)])
+    layer.data.foreach_set("uv", coords)
+    nt = mat.node_tree
+    tex = nt.nodes.new("ShaderNodeTexImage")
+    tex.image = img
+    tex.interpolation = "Closest"
+    principled = next(n for n in nt.nodes if n.type == "BSDF_PRINCIPLED")
+    nt.links.new(tex.outputs["Color"], principled.inputs["Base Color"])
+    nt.nodes.remove(node)
+    me.update()
+    return {"material": mat.name, "colours": len(uv), "px": side}
 
 
 def ensure_uvs(o, name="bake"):
@@ -291,6 +374,7 @@ def main():
         pb.scale = (1.0, 1.0, 1.0)
     bpy.context.view_layer.update()
 
+    palettes = {o.name: r for o in parts for r in [palette_part(bpy, o)] if r} if args.textured else {}
     uv_added = [o.name for o in parts if ensure_uvs(o)] if args.textured else []
     info = describe(bpy, arm, parts)
     opts = options(args.textured)
@@ -299,7 +383,7 @@ def main():
     if result != {"FINISHED"}:
         raise SystemExit(f"the glTF exporter returned {result}")
     if args.textured:
-        info["textured"] = {"uv_added": uv_added, "tangents_fixed": fix_zero_tangents(args.glb)}
+        info["textured"] = {"uv_added": uv_added, "palettes": palettes, "tangents_fixed": fix_zero_tangents(args.glb)}
     info.update({
         "blend": os.path.abspath(args.blend).replace("\\", "/"),
         "glb": os.path.abspath(args.glb).replace("\\", "/"),

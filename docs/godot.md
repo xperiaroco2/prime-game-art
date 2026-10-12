@@ -67,7 +67,12 @@ textures, so their export and check differ from the flat-colour pack look's:
 - `export --textured` puts `TEXTURED_OPTIONS` (`export_glb.py`) on top of the options above: `export_image_format`
   `AUTO` (the baked PNGs embedded as PNG), `export_tangents` on (the normal maps need them), `export_morph`,
   `export_morph_normal` and `export_morph_tangent` on with `export_try_sparse_sk` off (the face kit's shape keys, art
-  #42 part B), `export_vertex_color` `MATERIAL`. A part without any UV map (a glossy part that samples no texture)
+  #42 part B), `export_vertex_color` `MATERIAL`. A part whose one material takes its base colour straight from a
+  colour attribute (the clay eyes' `fb_eye`: whites and pupils) gets those flat colours as a palette texture
+  `<material>_palette` (16 px per colour, nearest filtering, a power-of-two side) on a new UV map in place of the
+  attribute (`palette_part`): Godot 4.7.2's importer turns on "vertex colour as albedo" only after a mesh's first
+  surface (docs/kit.md, "Paint"), so the one-surface eyes drew plain white (art #42); the palette needs no normal map.
+  A part without any UV map (a glossy part that samples no texture)
   gets a spherical one, since Godot cannot make tangents for blend shapes without UVs; a TANGENT the exporter writes
   that is not a unit vector (a glTF-Validator error, seen on single vertices of the lab's cast) is replaced by a unit
   one perpendicular to the normal. The export check then allows images, and the command writes
@@ -76,10 +81,13 @@ textures, so their export and check differ from the flat-colour pack look's:
   texture at all, an image that is not PNG or JPEG or is over the contract's `texture_character_px` (1024), a textured
   material without a normal map, a normal-mapped surface without UVs or tangents, more surfaces than the contract's
   `surfaces_per_character_cap` (8).
-- `godot-check --textured` replaces `flat_colours` with `textured` (some surface has an albedo texture),
-  `normal_maps` (every textured surface has a normal map), `texture_size` (no albedo or normal texture side over
-  `texture_character_px`) and `surfaces_cap` (the surfaces within `surfaces_per_character_cap`); `inspect.gd` reports
-  each material's `albedo_px`, `normal_mapped` and `normal_px`. Every other check is the same.
+- `godot-check --textured` replaces `flat_colours` with `textured` (some surface has an albedo texture), `normal_maps`
+  (every textured surface but the eyes' palette has a normal map), `eye_pupils` (the `_eyes` part as Godot draws it,
+  `inspect.gd`'s albedo at each vertex from the colour, the vertex colours if used as albedo and the texture at the
+  UV: at least 2 % near-white and 2 % near-black vertices, else the eyes have lost their pupils), `texture_size` (no
+  albedo or normal texture side over `texture_character_px`) and `surfaces_cap` (the surfaces within
+  `surfaces_per_character_cap`); `inspect.gd` reports each material's `albedo_px`, `normal_mapped` and `normal_px`.
+  Every other check is the same.
 
 Measured on 2026-10-09 (`recipes/clay_round_d.json`): m1 8 surfaces, 12 images 4.41 MB, GLB 6.12 MB; w1 7
 surfaces, 10 images 3.46 MB, GLB 5.13 MB; every map at most 1024 px; validator 0 errors; godot-check passes with the

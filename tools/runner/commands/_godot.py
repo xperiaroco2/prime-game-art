@@ -384,9 +384,12 @@ def _textured(c: Checks, dump: dict[str, Any], contract: dict[str, Any]) -> None
     mats = [(m["name"], mat) for m in dump["meshes"] for mat in m["materials"]]
     with_tex = [f"{n}/{mat['name']}" for n, mat in mats if mat.get("textured")]
     c.add("textured", bool(with_tex), f"{len(with_tex)} of {len(mats)} surfaces textured" if with_tex else "no textured surface")
-    flat_nrm = [f"{n}/{mat['name']}" for n, mat in mats if mat.get("textured") and not mat.get("normal_mapped")]
-    c.add("normal_maps", not flat_nrm, "every textured surface normal-mapped" if not flat_nrm else
-          f"textured without a normal map: {', '.join(flat_nrm)}")
+    flat_nrm = [f"{n}/{mat['name']}" for n, mat in mats if mat.get("textured") and not mat.get("normal_mapped")
+                and not n.endswith("_eyes")]
+    c.add("normal_maps", not flat_nrm, "every textured surface normal-mapped (the eyes' palette aside)" if not flat_nrm
+          else f"textured without a normal map: {', '.join(flat_nrm)}")
+    good, detail = eye_pupils(dump)
+    c.add("eye_pupils", good, detail)
     sides = [max(mat.get(k) or [0]) for _, mat in mats for k in ("albedo_px", "normal_px")]
     cap_px = limits["texture_character_px"]
     c.add("texture_size", max(sides, default=0) <= cap_px,
@@ -395,6 +398,27 @@ def _textured(c: Checks, dump: dict[str, Any], contract: dict[str, Any]) -> None
     cap = limits["surfaces_per_character_cap"]
     c.add("surfaces_cap", surfaces <= cap, f"{surfaces} surfaces (contract: target {limits['surfaces_per_character_target']}, "
           f"cap {cap})")
+
+
+def eye_pupils(dump: dict[str, Any], least: float = 0.02) -> tuple[bool, str]:
+    """Whether the eyes show their pupils as Godot draws them (art #42): the _eyes part's surfaces, from inspect.gd's
+    tones (the albedo at each vertex: colour, vertex colour if used as albedo, texture at the UV), need both
+    near-white and near-black vertices, each at least `least` of the vertices."""
+    eyes = _part(dump, "eyes")
+    if eyes is None:
+        return False, "no _eyes part"
+    tones = [mat["tones"] for mat in eyes["materials"] if mat.get("tones")]
+    if not tones:
+        return False, f"{eyes['name']}: no albedo tones in the dump"
+    n = sum(t["vertices"] for t in tones)
+    white, black = sum(t["white"] for t in tones), sum(t["black"] for t in tones)
+    good = n > 0 and white >= least * n and black >= least * n
+    how = "texture" if any(t.get("image") for t in tones) else (
+        "vertex colours" if any(t.get("uses_vertex_colours") for t in tones) else "flat colour")
+    unused = " (COLOR_0 present, not used as albedo)" if any(
+        t.get("has_vertex_colours") and not t.get("uses_vertex_colours") for t in tones) else ""
+    return good, (f"{eyes['name']}: {white} near-white, {black} near-black of {n} vertices from the {how}{unused}"
+                  + ("" if good else ": no pupils"))
 
 
 def _loops(c: Checks, anims: dict[str, Any], seams: dict[str, dict[str, float]]) -> None:
