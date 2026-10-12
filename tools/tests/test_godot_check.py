@@ -123,6 +123,14 @@ class WithoutExportJsonTest(unittest.TestCase):
         self.assertEqual(got["pack_floor"], "fail")  # the fixture has 7 bones and 2 animations
         self.assertNotIn("expectations", statuses(dump()))
 
+    def test_a_bare_glb_expects_the_names_godot_gives(self) -> None:
+        summary = {"meshes": {"m1_head": {}}, "skins": [["Root", "Hips"]],
+                   "animations": {"Idle_Loop": {"duration_s": 2.5}, "Jump_Start": {"duration_s": 0.3}}}
+        got = _godot.expect_from_summary("slice_m1.glb", summary)
+        self.assertEqual(got["animations"], {"Idle": 2.5, "Jump_Start": 0.3})
+        self.assertEqual(got["loop_suffix"], ["Idle"])
+        self.assertEqual((got["source"], got["parts"], got["bones"]), ("slice_m1.glb", ["m1_head"], ["Root", "Hips"]))
+
 
 class LoopModesTest(unittest.TestCase):
     def test_cycles_that_play_once_warn_and_open_cycles_are_named(self) -> None:

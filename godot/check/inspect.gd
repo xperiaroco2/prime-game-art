@@ -125,6 +125,9 @@ func _mesh(scene: Node, mesh: MeshInstance3D) -> Dictionary:
 				entry["normal_mapped"] = base.normal_enabled and base.normal_texture != null
 				if entry["normal_mapped"]:
 					entry["normal_px"] = [base.normal_texture.get_width(), base.normal_texture.get_height()]
+				entry["vertex_colour_albedo"] = base.vertex_color_use_as_albedo
+				if str(mesh.name).ends_with("_eyes"):
+					entry["tones"] = _tones(mesh.mesh.surface_get_arrays(s), base)
 			materials.append(entry)
 	return {
 		"name": str(mesh.name),
@@ -138,6 +141,48 @@ func _mesh(scene: Node, mesh: MeshInstance3D) -> Dictionary:
 		"vertices": vertices,
 		"materials": materials,
 		"rest_bounds": Character.bounds(Character.skinned_points(mesh)),
+	}
+
+
+# The albedo Godot draws at each vertex of a surface (linear): the albedo colour, times the vertex colour when the
+# material uses it as albedo, times the albedo texture at the vertex's UV. Counts the near-white and near-black
+# vertices, so the check sees whether the eyes show their pupils (art #42).
+func _tones(arrays: Array, base: BaseMaterial3D) -> Dictionary:
+	var verts: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
+	var colours: Variant = arrays[Mesh.ARRAY_COLOR]
+	var uvs: Variant = arrays[Mesh.ARRAY_TEX_UV]
+	var image: Image = null
+	if base.albedo_texture != null:
+		image = base.albedo_texture.get_image()
+		if image != null and image.is_compressed():
+			image.decompress()
+	var use_vc: bool = base.vertex_color_use_as_albedo and colours is PackedColorArray and (colours as PackedColorArray).size() == verts.size()
+	var white: int = 0
+	var black: int = 0
+	var lo: float = INF
+	var hi: float = -INF
+	for i: int in verts.size():
+		var c: Color = base.albedo_color.srgb_to_linear()
+		if use_vc:
+			var v: Color = (colours as PackedColorArray)[i]
+			c *= v.srgb_to_linear() if base.vertex_color_is_srgb else v
+		if image != null and uvs is PackedVector2Array and (uvs as PackedVector2Array).size() == verts.size():
+			var uv: Vector2 = (uvs as PackedVector2Array)[i]
+			var x: int = clampi(int(fposmod(uv.x, 1.0) * image.get_width()), 0, image.get_width() - 1)
+			var y: int = clampi(int(fposmod(uv.y, 1.0) * image.get_height()), 0, image.get_height() - 1)
+			c *= image.get_pixel(x, y).srgb_to_linear()
+		var lum: float = 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b
+		lo = minf(lo, lum)
+		hi = maxf(hi, lum)
+		if lum >= 0.5:
+			white += 1
+		elif lum <= 0.05:
+			black += 1
+	return {
+		"vertices": verts.size(), "white": white, "black": black,
+		"lum_min": snappedf(lo, 0.0001) if verts.size() else 0.0, "lum_max": snappedf(hi, 0.0001) if verts.size() else 0.0,
+		"has_vertex_colours": colours is PackedColorArray and (colours as PackedColorArray).size() > 0,
+		"image": image != null, "uses_vertex_colours": use_vc,
 	}
 
 

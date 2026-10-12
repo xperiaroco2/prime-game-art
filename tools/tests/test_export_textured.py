@@ -72,6 +72,11 @@ class Audit(unittest.TestCase):
         self.assertIn("without UVs and tangents", " ".join(_export.textured_check(self.audit(tangent=False), 8, 1024)))
         self.assertIn("over the contract's cap", " ".join(_export.textured_check(self.audit(surfaces=9), 8, 1024)))
 
+    def test_a_palette_needs_no_normal_map(self) -> None:
+        a = self.audit(normal=False)
+        a["images"][0]["name"] = "fb_eye_palette"
+        self.assertEqual(_export.textured_check(a, 8, 1024), [])
+
     def test_jpeg_size(self) -> None:
         sof = b"\xff\xd8" + b"\xff\xe0" + struct.pack(">H", 4) + b"ab" + b"\xff\xc0" + struct.pack(">HBHH", 17, 8, 300, 200)
         self.assertEqual(_export.image_size(sof + bytes(10)), (200, 300))
@@ -82,15 +87,26 @@ class GodotTextured(unittest.TestCase):
     CONTRACT = {"budgets": {"limits": {"texture_character_px": 1024, "surfaces_per_character_cap": 8,
                                        "surfaces_per_character_target": 6}}}
 
-    def checks(self, materials: list[dict], surfaces: int) -> dict[str, str]:
+    EYES = {"name": "m1_eyes", "surfaces": 1, "rest_bounds": {"min": [0, 0, 0], "max": [1, 1, 1]},
+            "materials": [{"name": "fb_eye", "textured": True, "normal_mapped": False, "albedo_px": [32, 32],
+                           "tones": {"vertices": 100, "white": 70, "black": 25, "image": True}}]}
+
+    def checks(self, materials: list[dict], surfaces: int, eyes: dict | None = None) -> dict[str, str]:
         c = _godot.Checks()
-        _godot._textured(c, {"meshes": [{"name": "m1_top", "surfaces": surfaces, "materials": materials}]}, self.CONTRACT)
+        meshes = [{"name": "m1_top", "surfaces": surfaces, "materials": materials}] + ([eyes] if eyes else [])
+        _godot._textured(c, {"meshes": meshes}, self.CONTRACT)
         return {i["check"]: i["status"] for i in c.items}
 
     def test_a_baked_character_passes(self) -> None:
         good = {"name": "clay", "textured": True, "normal_mapped": True, "albedo_px": [512, 512], "normal_px": [1024, 1024]}
-        got = self.checks([good, {"name": "eye_white", "textured": False, "normal_mapped": False}], 2)
+        got = self.checks([good], 2, self.EYES)
         self.assertEqual(set(got.values()), {"pass"}, got)
+
+    def test_blank_eyes_fail(self) -> None:
+        good = {"name": "clay", "textured": True, "normal_mapped": True, "albedo_px": [512, 512], "normal_px": [1024, 1024]}
+        blank = {"name": "fb_eye", "textured": False, "tones": {"vertices": 100, "white": 100, "black": 0}}
+        self.assertEqual(self.checks([good], 2, dict(self.EYES, materials=[blank]))["eye_pupils"], "fail")
+        self.assertEqual(self.checks([good], 2)["eye_pupils"], "fail")
 
     def test_each_failure(self) -> None:
         bad = {"name": "clay", "textured": True, "normal_mapped": False, "albedo_px": [2048, 2048]}

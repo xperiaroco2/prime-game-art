@@ -9,6 +9,7 @@ tools/run.py export <character.blend> [...] [--out DIR]          GLB with fixed 
 tools/run.py godot-check <glb> [...] [--out DIR] [--strict-contract] [--humanoid]
                                                                   import headless in godot/; assertions; report.json
 tools/run.py frames <glb> [--clips A,B] [--compare all|A,B|''] [--video A,B] [--blend FILE] [--out DIR]
+                  [--face CLIP [--face-beside PNG --face-rects 'x,y,w,h;...']]
                                                                   Godot-rendered frame sheets (off-screen window)
 ```
 
@@ -67,7 +68,12 @@ textures, so their export and check differ from the flat-colour pack look's:
 - `export --textured` puts `TEXTURED_OPTIONS` (`export_glb.py`) on top of the options above: `export_image_format`
   `AUTO` (the baked PNGs embedded as PNG), `export_tangents` on (the normal maps need them), `export_morph`,
   `export_morph_normal` and `export_morph_tangent` on with `export_try_sparse_sk` off (the face kit's shape keys, art
-  #42 part B), `export_vertex_color` `MATERIAL`. A part without any UV map (a glossy part that samples no texture)
+  #42 part B), `export_vertex_color` `MATERIAL`. A part whose one material takes its base colour straight from a
+  colour attribute (the clay eyes' `fb_eye`: whites and pupils) gets those flat colours as a palette texture
+  `<material>_palette` (16 px per colour, nearest filtering, a power-of-two side) on a new UV map in place of the
+  attribute (`palette_part`): Godot 4.7.2's importer turns on "vertex colour as albedo" only after a mesh's first
+  surface (docs/kit.md, "Paint"), so the one-surface eyes drew plain white (art #42); the palette needs no normal map.
+  A part without any UV map (a glossy part that samples no texture)
   gets a spherical one, since Godot cannot make tangents for blend shapes without UVs; a TANGENT the exporter writes
   that is not a unit vector (a glTF-Validator error, seen on single vertices of the lab's cast) is replaced by a unit
   one perpendicular to the normal. The export check then allows images, and the command writes
@@ -76,10 +82,13 @@ textures, so their export and check differ from the flat-colour pack look's:
   texture at all, an image that is not PNG or JPEG or is over the contract's `texture_character_px` (1024), a textured
   material without a normal map, a normal-mapped surface without UVs or tangents, more surfaces than the contract's
   `surfaces_per_character_cap` (8).
-- `godot-check --textured` replaces `flat_colours` with `textured` (some surface has an albedo texture),
-  `normal_maps` (every textured surface has a normal map), `texture_size` (no albedo or normal texture side over
-  `texture_character_px`) and `surfaces_cap` (the surfaces within `surfaces_per_character_cap`); `inspect.gd` reports
-  each material's `albedo_px`, `normal_mapped` and `normal_px`. Every other check is the same.
+- `godot-check --textured` replaces `flat_colours` with `textured` (some surface has an albedo texture), `normal_maps`
+  (every textured surface but the eyes' palette has a normal map), `eye_pupils` (the `_eyes` part as Godot draws it,
+  `inspect.gd`'s albedo at each vertex from the colour, the vertex colours if used as albedo and the texture at the
+  UV: at least 2 % near-white and 2 % near-black vertices, else the eyes have lost their pupils), `texture_size` (no
+  albedo or normal texture side over `texture_character_px`) and `surfaces_cap` (the surfaces within
+  `surfaces_per_character_cap`); `inspect.gd` reports each material's `albedo_px`, `normal_mapped` and `normal_px`.
+  Every other check is the same.
 
 Measured on 2026-10-09 (`recipes/clay_round_d.json`): m1 8 surfaces, 12 images 4.41 MB, GLB 6.12 MB; w1 7
 surfaces, 10 images 3.46 MB, GLB 5.13 MB; every map at most 1024 px; validator 0 errors; godot-check passes with the
@@ -140,10 +149,10 @@ without Godot:
 | `facing_plus_z` | the eyes are at least 5 cm in front of the Head joint, the shoes reach further forward than back from the ankles, the left wrist is at +X |
 | `flat_colours` | no surface has an albedo texture (with `--textured`: the textured checks instead, "Textured export" above) |
 | `godot_output` | no ERROR line in Godot's import and inspection output (warnings are listed) |
-| `contract_height`, `contract_eye_height` | the contract v1 body gates (height 1.70 to 1.80 m to the top, eyes 1.6 +- 0.08 m): **warnings** unless `--strict-contract` |
+| `contract_height`, `contract_eye_height` | the contract v1 body gates (height 1.70 to 1.80 m to the top, 1.90 m with `--textured`, the plasticine look; eyes 1.6 +- 0.08 m): **warnings** unless `--strict-contract` |
 | `loop_modes` | **warning** while a cycle (`Idle*`, `Walk*`, `Run*`) imports with loop_mode NONE; names the open cycles |
 | `loop_suffix` | an action named as a loop (`_Loop`, art #33) imports with loop_mode LINEAR under its name without the suffix (`Idle_Loop` becomes `Idle`); `animations` and `animation_lengths` compare Godot's names |
-| `expectations`, `pack_floor` | only for a GLB without its `<stem>.export.json`: a **warning** that parts, bones and animations then come from the GLB itself (what it already lacks is not caught; no rest joints, hierarchy or Blender height), and a failure below the Ultimate Modular rig's 62 bones and 24 actions |
+| `expectations`, `pack_floor` | only for a GLB without its `<stem>.export.json`: a **warning** that parts, bones and animations then come from the GLB itself (what it already lacks is not caught; no rest joints, hierarchy or Blender height; the clip names are taken as Godot gives them, a `_Loop` suffix dropped and checked by `loop_suffix`), and a failure below the Ultimate Modular rig's 62 bones and 24 actions |
 
 The contract v1 gates are warnings by default because contract v1 was written for the earlier single base body: every
 final-test character is taller (m1_rex 1.967 m with his hair, m2_walt 1.858, w1_ivy 1.845, w2_nova 1.844; without hair
@@ -197,6 +206,10 @@ vertical extent, Blender's `ortho_scale` with a vertical sensor fit), composed w
 0.6 degrees on the 10 cm lever, fails the command). `--video` writes every frame of one cycle (a closed loop frames 0
 to last - 1, an open loop and a one-off frames 0 to last) and `tools/blender/encode_clips.py` encodes it with
 Blender's FFmpeg as H.264 in MP4 (480 x 600, 24 fps, constant quality, the cycle three times) into `clips/<clip>.mp4`.
+`--face CLIP` adds `sheets/face.png`: close-ups of the head (every skinned vertex above the Head bone's origin less
+4 cm) at the clip's first frame, front and three-quarter from the character's right (yaw -35 degrees, as the faces
+sheets), cells of 316 x 395 px; `--face-beside` puts crops of an approved sheet (`--face-rects`, pixels) to their left,
+for the faces gate's before/after (docs/faces.md). `slice` runs it with the first review clip.
 
 **Measured** on whole frames (2026-10-03, every clip of m1_rex and w1_ivy, 62 joints and 124 axis points): Godot and
 Blender agree within 0.017 mm everywhere. Before the optimizer was turned off they differed by up to 16.7 mm (m1_rex
@@ -229,6 +242,42 @@ plain import's, twisted and off the ground (`humanoid/m1_rex_humanoid_defaults_W
 keeping those position tracks is exact here because the trial retargets onto the same rig; on a skeleton with other
 proportions the feet's absolute positions would not fit (the reason Godot drops them by default). That trade-off is the
 contract v2's.
+
+## The slice character (`slice`, art #42 part C)
+
+The game's first character (prime-game M6.2/M7, prime-game#522): one cast member of `recipes/clay_cast_e.json` in the
+clay look with the clay face kit and its baked textures, carrying the MVP animation set's exported clips for its body
+type, in place, in **one GLB** (body, skeleton and clips: prime-game `docs/ARCHITECTURE.md` section 11.1 takes a
+character as `assets/characters/<id>/<id>.glb`; the contract wants one clip library on the contract skeleton, and the
+slice has one body). Settings: `recipes/slice_character.toml` (the cast id, the recipe, the set, the review clips and
+`eye_height_m`, the `exclude` table with a reason per clip). One command:
+
+```
+tools/run.py anim-set --set mvp --body men --out <raw>/anim-sets/slice-42c        # once per body type, if not built
+tools/run.py slice [--cast m1] --anim-set <raw>/anim-sets/slice-42c --asset assets/character/slice_m1 --review <raw>/review/char/42d
+```
+
+`slice` assembles the cast member (`assemble --look clay --bake`; `--blend` reuses a saved one), puts the set's clips
+on its armature in Blender (`tools/blender/slice_actions.py`; it refuses a rest pose that differs from the set's,
+then scales the rig, the parts with their shape keys and the clips' location keys uniformly about the floor so the
+eyes' rest centre is at `eye_height_m`, 1.60 m: the engineer's `eyes16`, 2026-10-12),
+exports with `export --textured`, runs `godot-check --strict-contract --humanoid --textured`, `frames` of the review
+clips with the Blender comparison and an 8-view turnaround, and with `--asset` writes the asset folder:
+`export/slice_<cast>.glb`, `manifest.toml` (kind `character`, one `[[clips]]` table per clip with its source, licence,
+`public_repo_ok` and `ai_generated`; a clip whose source is not `public_repo_ok` stays out and is listed),
+`package.json` (the file, its bytes and SHA-256, the game folder) and `HANDOFF.md` (what to copy where, the import
+settings, the clip table with the avatar states each clip serves, sizes, what was left off). `--cast` builds another
+member with the same settings. The approval fields stay empty until the engineer approves the look.
+
+Measured (m1, 2026-10-12): 7.45 MB GLB (10 embedded images, 4.44 MB), 6 parts on one skeleton of 64 bones, 9392
+triangles, 25 clips at 30 fps; glTF-Validator 0 errors (6 `NODE_SKINNED_MESH_NON_ROOT` warnings, as every export);
+`frames` within 0.022 mm of Blender. Left off: `Knockdown`, `Crawl_Start`, `Crawl_Loop`, `Getup_Back`, `Getup_Fours`
+(the knockdown is a ragdoll: prime-game#522, art #115) and the set's review-only clips (`export = false`).
+
+**The height.** Built at the pack's size, m1 stood 1.986 m with the eyes at 1.722 m (the clay look's head is 1.3
+times the pack's, with hair on top). The engineer chose `eyes16` (2026-10-12): `slice` scales the character so the
+eyes are at 1.60 m (about 1.845 m tall), and the contract's plasticine window is 1.70 to 1.90 m
+(`plasticine_height_max_m`, docs/contract.md); `godot-check --textured` applies it.
 
 ## Findings for later tasks
 

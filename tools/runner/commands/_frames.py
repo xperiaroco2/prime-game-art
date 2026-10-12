@@ -89,6 +89,36 @@ def spec(character: str, animations: dict[str, float], compare: list[str], video
             "clips": clips}
 
 
+FACE_YAWS = (0.0, -YAW_DEG)  # the face close-up: front and three-quarter from the right, as the faces sheets
+FACE_CELL = (316, 395)  # four cells (two approved, two Godot) make a sheet about 1284 px wide
+
+
+def parse_rects(text: str) -> list[list[int]]:
+    """'x,y,w,h;x,y,w,h' (pixels of the approved sheet) -> [[x, y, w, h], ...]; each a positive size."""
+    rects = []
+    for part in (p.strip() for p in text.split(";")):
+        if not part:
+            continue
+        nums = [int(v) for v in part.split(",")]
+        if len(nums) != 4 or nums[0] < 0 or nums[1] < 0 or nums[2] <= 0 or nums[3] <= 0:
+            raise ValueError(f"not a rectangle x,y,w,h: {part!r}")
+        rects.append(nums)
+    return rects
+
+
+def face_spec(character: str, clip: str, beside: str = "", rects: list[list[int]] | None = None,
+              t: float = 0.0) -> dict[str, Any]:
+    """The spec's `face` entry: Godot's close-ups of the head (FACE_YAWS) at time t of one animation, after the
+    approved sheet's crops (`beside`, `rects`) when given, in one sheet `sheets/face.png`."""
+    if beside and not rects:
+        raise ValueError("an approved sheet needs its crop rectangles")
+    title = f"{character}   face close-up at {label(clip)} {t:.2f} s"
+    if beside:
+        title += f"   left {len(rects or [])}: the approved sheet, right {len(FACE_YAWS)}: Godot"
+    return {"clip": clip, "t": t, "yaws": list(FACE_YAWS), "pitch_deg": 0.0, "cell": list(FACE_CELL),
+            "beside": beside, "beside_rects": (rects or []) if beside else [], "title": title}
+
+
 def _dist(a: list[float], b: list[float]) -> float:
     return sum((x - y) ** 2 for x, y in zip(a, b)) ** 0.5
 

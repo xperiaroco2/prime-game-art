@@ -14,7 +14,7 @@ from pathlib import Path
 from runner import common, house_export as X, house_layout as H
 from runner.commands import _house_review as R
 
-PACKAGES = sorted((common.ROOT / "assets").glob("*/*/package.json"))
+PACKAGES = [path for path, _ in R.house_packages(common.ROOT)]
 FAMILIES = X.settings(H.load())["kit_families"]
 
 
@@ -43,6 +43,20 @@ class FamiliesTest(unittest.TestCase):
         glbs = [f for f in package["files"] if f.endswith(".glb")]
         self.assertEqual(len(pieces), len(glbs))
         self.assertEqual(len(set(pieces)), len(pieces))
+
+
+class HousePackagesTest(unittest.TestCase):
+    def test_a_package_json_without_a_number_is_not_a_house_package(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            for rel, data in (("room/house_ground", {"package": 2, "files": {}}),
+                              ("character/slice_m1", {"asset": "slice_m1", "files": [{"name": "slice_m1.glb"}]})):
+                (root / "assets" / rel).mkdir(parents=True)
+                (root / "assets" / rel / "package.json").write_text(json.dumps(data), encoding="utf-8")
+            got = R.house_packages(root)
+            self.assertEqual([(p.parent.name, d["package"]) for p, d in got], [("house_ground", 2)])
+            self.assertEqual(R.neighbours(root, {"package": 4, "rooms": {"balcony": {}}},
+                                          [{"room": "balcony", "with": [{"room": "hall"}]}]), [])
 
 
 class CommittedTest(unittest.TestCase):

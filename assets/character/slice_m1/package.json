@@ -1,0 +1,11 @@
+{
+ "asset": "slice_m1",
+ "game_dir": "assets/characters/slice_m1",
+ "files": [
+  {
+   "name": "slice_m1.glb",
+   "bytes": 7274456,
+   "sha256": "b9716a446b935078caadaa01dcfacf0088ea36c4cd1268d155c7aab22aac06b2"
+  }
+ ]
+}

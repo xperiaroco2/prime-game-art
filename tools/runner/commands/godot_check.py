@@ -49,7 +49,7 @@ def run(args: argparse.Namespace) -> int:
 
         for glb in glbs:
             out = (args.out or _godot.OUT).resolve() / glb.stem
-            _humanoid.trial(glb, out, contract)
+            _humanoid.trial(glb, out, contract, textured=args.textured)
     return 1 if failed else 0
 
 

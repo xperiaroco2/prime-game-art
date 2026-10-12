@@ -91,3 +91,24 @@ class FramesInGodotTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class FaceSpecTest(unittest.TestCase):
+    def test_rects_parse(self) -> None:
+        self.assertEqual(_frames.parse_rects("218,0,214,258; 667,0,215,258;"), [[218, 0, 214, 258], [667, 0, 215, 258]])
+        self.assertEqual(_frames.parse_rects(""), [])
+        for bad in ("1,2,3", "0,0,0,5", "-1,0,4,4"):
+            with self.assertRaises(ValueError):
+                _frames.parse_rects(bad)
+
+    def test_face_spec(self) -> None:
+        f = _frames.face_spec("slice_m1", "CharacterArmature|Idle", "C:/a.png", [[0, 0, 10, 10]])
+        self.assertEqual(f["yaws"], [0.0, -_frames.YAW_DEG])
+        self.assertEqual(f["beside_rects"], [[0, 0, 10, 10]])
+        self.assertIn("approved", f["title"])
+        plain = _frames.face_spec("slice_m1", "CharacterArmature|Idle")
+        self.assertEqual((plain["beside"], plain["beside_rects"]), ("", []))
+        with self.assertRaises(ValueError):
+            _frames.face_spec("slice_m1", "CharacterArmature|Idle", "C:/a.png", [])
+        # four cells and the gaps: about 1280 px wide
+        self.assertLess(abs(4 * _frames.FACE_CELL[0] + 5 * 4 - 1280), 30)

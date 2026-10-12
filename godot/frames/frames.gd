@@ -96,6 +96,28 @@ func _run(scene_path: String, out_dir: String, spec: Dictionary) -> void:
 			entry["video_frames"] = n
 		record["clips"][clip["label"]] = entry
 		print("FRAMES sheet ", clip["label"], " ", times.size(), " frames")
+	if spec.has("face"):
+		var face: Dictionary = spec["face"]
+		if not _player.has_animation(face["clip"]):
+			_fail("no animation %s for the face close-up" % face["clip"])
+			return
+		var shots: Array[Image] = []
+		var beside: String = face.get("beside", "")
+		if beside != "":
+			var approved: Image = Image.load_from_file(beside)
+			if approved == null:
+				_fail("cannot read %s" % beside)
+				return
+			for r: Array in face["beside_rects"]:
+				shots.append(approved.get_region(Rect2i(int(r[0]), int(r[1]), int(r[2]), int(r[3]))))
+		var cams: Array = []
+		for yaw: float in face["yaws"]:
+			cams.append(_face_frame(face["clip"], float(face["t"]), float(yaw), float(face["pitch_deg"]), size))
+			shots.append(await _shot(face["clip"], float(face["t"]), "Godot  yaw %d" % int(yaw)))
+		var sheet: Image = await _sheet(shots, Vector2i(int(face["cell"][0]), int(face["cell"][1])), face["title"])
+		_save(sheet, "%s/sheets/face.png" % out_dir)
+		record["face"] = {"clip": face["clip"], "t": face["t"], "cameras": cams, "beside": beside}
+		print("FRAMES sheet face ", shots.size(), " cells")
 	var json_path: String = "%s/frames.json" % out_dir
 	if not Character.write_json(json_path, record):
 		_fail("cannot write %s" % json_path)
@@ -194,6 +216,42 @@ func _frame(name: String, times: Array, yaw_deg: float, pitch_deg: float, size: 
 	return {"centre": Character.vec(centre), "back": Character.vec(back), "up": Character.vec(up),
 			"right": Character.vec(right), "distance": 10.0, "ortho_size": snappedf(ortho, 0.00001),
 			"yaw_deg": yaw_deg, "pitch_deg": pitch_deg, "projection": "orthogonal, size = the vertical extent"}
+
+
+## A close-up camera on the head: it fits the skinned vertices above the Head bone's origin (face, hair, ears) at
+## one time of one clip, with the window's aspect and a margin.
+func _face_frame(name: String, t: float, yaw_deg: float, pitch_deg: float, size: Vector2i) -> Dictionary:
+	var yaw: float = deg_to_rad(yaw_deg)
+	var pitch: float = deg_to_rad(pitch_deg)
+	var back: Vector3 = Vector3(sin(yaw) * cos(pitch), sin(pitch), cos(yaw) * cos(pitch))
+	var right: Vector3 = Vector3.UP.cross(back).normalized()
+	var up: Vector3 = back.cross(right).normalized()
+	Character.pose_at(_player, _skeleton, name, t)
+	var head: int = _skeleton.find_bone("Head")
+	var floor_y: float = -INF
+	if head >= 0:
+		floor_y = (_skeleton.global_transform * _skeleton.get_bone_global_pose(head)).origin.y - 0.04
+	var lo: Vector2 = Vector2(INF, INF)
+	var hi: Vector2 = Vector2(-INF, -INF)
+	var depth: float = 0.0
+	var count: int = 0
+	for mesh: MeshInstance3D in Character.meshes(_scene):
+		for p: Vector3 in Character.skinned_points(mesh, 1):
+			if p.y < floor_y:
+				continue
+			var q: Vector2 = Vector2(p.dot(right), p.dot(up))
+			lo = lo.min(q)
+			hi = hi.max(q)
+			depth += p.dot(back)
+			count += 1
+	var mid: Vector2 = (lo + hi) * 0.5
+	var extent: Vector2 = hi - lo
+	var ortho: float = maxf(extent.y, extent.x / (float(size.x) / float(size.y))) * MARGIN
+	var centre: Vector3 = right * mid.x + up * mid.y + back * (depth / maxf(count, 1))
+	_camera.size = ortho
+	_camera.look_at_from_position(centre + back * 10.0, centre, up)
+	return {"centre": Character.vec(centre), "back": Character.vec(back), "ortho_size": snappedf(ortho, 0.00001),
+			"yaw_deg": yaw_deg, "pitch_deg": pitch_deg, "above_y": snappedf(floor_y, 0.0001), "points": count}
 
 
 func _shot(name: String, t: float, text: String) -> Image:

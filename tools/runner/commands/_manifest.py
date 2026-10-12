@@ -17,6 +17,8 @@ from typing import Any
 # and mouth as changeable face slots, a face accessory (face_accessory) and a back item (back_item).
 KIND_SLOTS: dict[str, frozenset[str]] = {
     "body": frozenset({""}),
+    # A game-ready character (art #42 part C): body, outfit, face and its clips in one GLB, one asset.
+    "character": frozenset({""}),
     "clothing": frozenset({"top", "bottom", "shoes"}),
     "hair": frozenset({"hair_or_hat"}),
     "face": frozenset({"eyes", "mouth"}),
@@ -39,7 +41,13 @@ TOP_REQUIRED = (
     "id", "kind", "slot", "source", "raw", "tools", "licence", "licence_url",
     "public_repo_ok", "ai_generated", "approved_by", "approved_at", "approval_pr",
 )  # fmt: skip
-TOP_OPTIONAL = ("title", "notes", "credit", "files")
+TOP_OPTIONAL = ("title", "notes", "credit", "files", "clips")
+# Kinds whose manifest may list the animation clips they carry ([[clips]]), each with its own provenance.
+CLIP_KINDS = frozenset({"character", "animation"})
+# One clip: its name in the export, whether it loops, its source clip key (ual:Idle_Loop, tm:package-lift), its record
+# (a source record id, or the Meshy batch file batches/<id>.toml), its licence and flags; a Meshy clip's task id.
+CLIP_REQUIRED = ("name", "loop", "source", "record", "licence", "licence_url", "public_repo_ok", "ai_generated")
+CLIP_OPTIONAL = ("task_id",)
 SOURCE_REQUIRED = ("service", "plan", "model_version", "task_ids", "generated_at")
 SOURCE_OPTIONAL = ("url",)
 RAW_REQUIRED = ("file", "sha256")
@@ -174,6 +182,11 @@ def validate(
             errors.append(f"kind {kind!r} cannot be a set ([[files]] is for {', '.join(sorted(SET_KINDS))})")
         errors += _files_errors(data, sources)
 
+    if "clips" in data:
+        if isinstance(kind, str) and kind in KIND_SLOTS and kind not in CLIP_KINDS:
+            errors.append(f"kind {kind!r} carries no clips ([[clips]] is for {', '.join(sorted(CLIP_KINDS))})")
+        errors += _clips_errors(data, sources)
+
     tools = data.get("tools")
     if "tools" in data and not (isinstance(tools, list) and tools and all(_is_text(t) for t in tools)):
         errors.append("tools must be a non-empty list of strings (the generator and every tool that changed the asset)")
@@ -274,6 +287,43 @@ def _files_errors(data: dict[str, Any], sources: dict[str, dict[str, Any]] | Non
         values = [f.get(key) for f in files if isinstance(f.get(key), str)]
         for value in sorted({v for v in values if values.count(v) > 1}):
             errors.append(f"files: {key} {value!r} is listed twice")
+    return errors
+
+
+def _clips_errors(data: dict[str, Any], sources: dict[str, dict[str, Any]] | None) -> list[str]:
+    """[[clips]]: each clip's keys, licence and flags; names once; a public asset carries only public clips, and an
+    asset with an AI-generated clip is AI-generated itself; a record that is not a batch file names a source record."""
+    clips = data["clips"]
+    if not (isinstance(clips, list) and clips and all(isinstance(c, dict) for c in clips)):
+        return ["clips must be one or more [[clips]] tables"]
+    errors: list[str] = []
+    names: set[str] = set()
+    for i, clip in enumerate(clips):
+        where = f"clips[{i}] ({clip.get('name', '?')})"
+        errors += _keys(clip, CLIP_REQUIRED, CLIP_OPTIONAL, f"{where}: ")
+        name = clip.get("name")
+        if not _is_text(name):
+            errors.append(f"{where}: name must be a non-empty string")
+        elif name in names:
+            errors.append(f"{where}: the name is listed twice")
+        else:
+            names.add(name)
+        for key in ("loop", "ai_generated"):
+            if key in clip and not isinstance(clip[key], bool):
+                errors.append(f"{where}: {key} must be true or false")
+        for key in ("source", "record"):
+            if key in clip and not _is_text(clip[key]):
+                errors.append(f"{where}: {key} must be a non-empty string")
+        errors += [f"{where}: {e}" for e in _licence_errors(clip, "clip")]
+        record = clip.get("record")
+        if sources is not None and _is_text(record) and not record.startswith("batches/") and record not in sources:
+            errors.append(f"{where}: record {record!r} is no source record (sources/<id>.toml) or batches/ file")
+        if data.get("public_repo_ok") is True and clip.get("public_repo_ok") is not True:
+            errors.append(f"{where}: the asset is public_repo_ok but the clip is not")
+        if clip.get("ai_generated") is True and data.get("ai_generated") is not True:
+            errors.append(f"{where}: an AI-generated clip makes the asset ai_generated")
+        if clip.get("ai_generated") is True and "task_id" not in clip:
+            errors.append(f"{where}: an AI-generated clip needs its task_id")
     return errors
 
 
