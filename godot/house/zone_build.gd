@@ -137,6 +137,8 @@ func _initialize() -> void:
 	lm.bounce_indirect_energy = float(bake["bounce_indirect_energy"])
 	lm.use_denoiser = bool(bake["denoiser"])
 	lm.directional = bool(bake["directional"])
+	if bake.has("specular_intensity"):  # #83c: the directional lightmap's specular lobe (0: none)
+		lm.set("specular_intensity", float(bake["specular_intensity"]))
 	lm.interior = bool(bake["interior"])
 	lm.environment_mode = LightmapGI.ENVIRONMENT_MODE_DISABLED
 	out.add_child(lm)

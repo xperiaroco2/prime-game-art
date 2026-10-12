@@ -16,7 +16,7 @@ import math
 import tomllib
 from pathlib import Path
 
-from . import house_layout as H
+from . import house_bake, house_layout as H
 
 LIGHTS = H.LAYOUT_DIR / "lights.toml"
 MOUNTS = ("ceiling", "wall", "floor")
@@ -99,6 +99,8 @@ def validate(lights: dict, data: dict) -> list[str]:
     for name, p in lights["presets"].items():
         if p.get("lightmap") not in ("texel_high", "texel_low"):
             problems.append(f"presets.{name}: lightmap {p.get('lightmap')!r} is not texel_high or texel_low")
+        if "sheen" in p and house_bake.sheen_mode(str(p["sheen"])) is None:
+            problems.append(f"presets.{name}: sheen {p['sheen']!r} is not a sheen mode (house_bake.sheen_mode)")
     return problems
 
 
