@@ -678,9 +678,12 @@ tools/run.sh house --bake ZONES [--preset high|low] [--grid] [--diag] [--sheen] 
 7. `--sheen` (#83c) bakes a zone three ways at its High texel (`[bake]`; the same directional; the same with the
    lights dynamic) and shoots the sheen grid: the bake alone, `probes`, `sheen4_shadow`, `sheen12_shadow`,
    `sheen12_shadow_probes`, `sheen12`, `lmspec10`, `lmspec10_probes` and `hybrid` (the modes: `house_bake.sheen_mode`,
-   "The sheen" below); `numbers.md` adds the real-time and shadowed lights and the draw calls per camera, and each row's first sheet tile
-   carries its label (the measured frames have none). A preset review (`--review` without a grid) also shoots the
-   preset's `sheen` row. About seven minutes for the ground floor.
+   "The sheen" below); `numbers.md` adds each shot's cost, the same way for every row (`bake_shots.gd` `_cost`): the
+   real-time and shadowed lights in view (the range sphere meets the camera's frustum) and in the scene, the draw
+   calls, and the shadow draw calls and GPU ms with the shadows cached and with every shadow redrawn (each shadowed
+   light nudged 1 mm per frame: a player moving in every lamp's range), averaged over 8 frames; each row's first
+   sheet tile carries its label (the measured frames have none). A preset review (`--review` without a grid) also
+   shoots the preset's `sheen` row. About seven minutes for the ground floor.
 
 ### Why the bakes looked darker (#83b)
 
@@ -723,18 +726,20 @@ not the leak: a manual run (every shadow caster set double-sided by hand, as the
 
 The engineer chose (2026-10-12) the middle way between the bake alone and `hybrid`: the bake, plus real-time
 specular from the nearest lamps, plus reflection probes, shown first as shots. `--sheen` on the ground floor
-(2026-10-12, `D:/prime-art-raw/review/house/83c`: frames, `sheet.png`, `numbers.md`; L* of E1 living room / E1
-kitchen / seam; lights per camera are real-time / shadowed on the lightmapped rooms):
+(2026-10-12, `D:/prime-art-raw/review/house/83c`: frames, `sheet.png`, `numbers.md`; per camera E1 living room / E1
+kitchen / seam; lights: real-time / shadowed in view, of the scene's; GPU ms: one run each on the RTX 4060 at
+1280x720, shadows cached then all redrawn):
 
-| row | how | L* | over the bake | to `hybrid` | lights | draw calls |
-|---|---|---|---|---|---|---|
-| `baked` (before) | the bake alone | 7.7 / 19.1 / 9.0 | | -2.9 / -4.4 / -2.7 | 0 / 0 | 171 / 138 / 140 |
-| `probes` | a ReflectionProbe per room | 7.7 / 19.2 / 9.0 | +0.0 / +0.1 / +0.0 | -2.9 / -4.3 / -2.7 | 0 / 0 | 171 / 138 / 140 |
-| `lmspec5`, `lmspec10`, `lmspec10_probes` | a directional bake (+ probes) | 7.5 / 18.8 / 8.8 | -0.2 / -0.3 / -0.2 | -3.1 / -4.7 / -2.9 | 0 / 0 | 171 / 138 / 140 |
-| `sheen4_shadow` (Low) | the nearest 4 glow lamps, specular only, shadowed | 9.6 / 20.5 / 10.6 | +1.9 / +1.4 / +1.6 | -1.0 / -3.0 / -1.1 | 4 / 4 | 880 / 556 / 547 |
-| `sheen12_shadow` (High) | the nearest 12, shadowed | 9.8 / 21.5 / 10.9 | +2.1 / +2.4 / +1.9 | -0.8 / -2.0 / -0.8 | 12 / 12 | 880 / 556 / 547 |
-| `sheen12` | the nearest 12, unshadowed (leaks through walls) | 10.4 / 23.0 / 11.8 | +2.7 / +3.9 / +2.8 | -0.2 / -0.5 / +0.1 | 12 / 0 | 880 / 556 / 547 |
-| `hybrid` (reference) | every lamp real-time with shadows and specular, plus the bake's bounce | 10.6 / 23.5 / 11.7 | +2.9 / +4.4 / +2.7 | | 34 dynamic (1 / 4 / 3 reach the camera), all shadowed | 171 / 138 / 140 |
+| row | how | L* | over the bake | to `hybrid` | lights in view | draw calls | shadow draw calls, all redrawn | GPU ms cached; redrawn |
+|---|---|---|---|---|---|---|---|---|
+| `baked` (before) | the bake alone | 7.7 / 19.1 / 9.0 | | -2.9 / -4.4 / -2.7 | 0 | 171 / 138 / 140 | 0 | 0.6 / 0.4 / 0.5; 0.6 / 0.4 / 0.7 |
+| `probes` | a ReflectionProbe per room (8) | 7.7 / 19.2 / 9.0 | +0.0 / +0.1 / +0.0 | -2.9 / -4.3 / -2.7 | 0 | 171 / 138 / 140 | 0 | 0.7 / 0.6 / 1.0; 0.9 / 0.8 / 1.0 |
+| `lmspec10`, `lmspec10_probes` | a directional bake (+ probes) | 7.5 / 18.8 / 8.8 | -0.2 / -0.3 / -0.2 | -3.1 / -4.7 / -2.9 | 0 | 171 / 138 / 140 | 0 | 1.3-1.9 |
+| `sheen4_shadow` (Low) | the nearest 4 glow lamps, specular only, shadowed | 9.6 / 20.5 / 10.6 | +1.9 / +1.4 / +1.6 | -1.0 / -3.0 / -1.1 | 4/4 of 4/4 | 880 / 556 / 547 | 635 / 709 / 511 | 2.4 / 1.7 / 1.3; 3.2 / 1.8 / 2.2 |
+| `sheen12_shadow` (High) | the nearest 12, shadowed | 9.8 / 21.5 / 10.9 | +2.1 / +2.4 / +1.9 | -0.8 / -2.0 / -0.8 | 10/10, 6/6, 8/8 of 12/12 | 880 / 556 / 547 | 1796 / 1312 / 1354 | 1.6 / 1.9 / 1.7; 2.6 / 2.7 / 2.5 |
+| `sheen12_shadow_probes` | the same plus the 8 probes | 9.8 / 21.6 / 10.9 | +2.1 / +2.5 / +1.9 | -0.8 / -1.9 / -0.8 | as High | 880 / 555 / 545 | 1796 / 1312 / 1354 | 1.8 / 2.0 / 2.3; 3.3 / 2.7 / 3.2 |
+| `sheen12` | the nearest 12, unshadowed (leaks through walls) | 10.4 / 23.0 / 11.8 | +2.7 / +3.9 / +2.8 | -0.2 / -0.5 / +0.1 | 10/0, 6/0, 8/0 of 12/0 | 880 / 556 / 547 | 0 | 1.7 / 1.5 / 2.0; 1.9 / 1.6 / 2.0 |
+| `hybrid` (reference) | every lamp real-time with shadows and specular, plus the bake's bounce | 10.6 / 23.5 / 11.7 | +2.9 / +4.4 / +2.7 | | 23/23, 15/15, 17/17 of 34/34 | 171 / 138 / 140 | 4002 / 2217 / 2288 | 2.4 / 2.1 / 2.0; 5.8 / 3.3 / 2.7 |
 
 - **The method: specular-only real-time lights.** Godot 4.7.2 has no per-light diffuse switch (`light_specular` 0
   makes a light diffuse-only, not the other way round), and a Static light is skipped on lightmapped meshes. So the
@@ -746,13 +751,22 @@ kitchen / seam; lights per camera are real-time / shadowed on the lightmapped ro
   mask (they would light the copies in real time). Shadowed, the sheen stops at walls; unshadowed (`sheen12`) it is
   `hybrid`'s brightness but shines through walls, so it is out.
 - **The presets** (`[presets.*] sheen`, checked by `house` against `house_bake.sheen_mode` and `glow_count`): High
-  `sheen12_shadow` (between the bake and `hybrid` on all three cameras: 12 real-time lights, 12 shadowed), Low
-  `sheen4_shadow` (4 and 4; 58-90 % of High's gain per camera, 76 % on the mean). The look waits for the engineer's yes
-  on the review sheet.
-- **The cost.** 12 shadowed omni lights per frame (High) or 4 (Low): each shadowed omni renders the scene into the
-  shadow atlas again. The copies are transparent (additive), drawn one by one: the draw calls go from 138-171 to
-  547-880 per frame with 1243 meshes in the zone. The next saving, untested: copies only of the shiny surfaces
-  (floors, polished furniture, ceilings) and only within the sheen lights' range.
+  `sheen12_shadow` (between the bake and `hybrid` on all three cameras: 12 real-time lights, all shadowed, 6-10 of
+  them in view), Low `sheen4_shadow` (4 and 4; 58-90 % of High's gain per camera, 76 % on the mean). The look waits
+  for the engineer's yes on the review sheet.
+- **The cost.** The GPU times are single runs and scatter by up to about 1 ms between like rows (`sheen4_shadow`'s
+  living room reads slower than `sheen12_shadow`'s), so only larger differences count. Against the bake alone the
+  sheen adds about 1-1.5 ms with the shadows cached and 2 ms with all redrawn, and the draw calls go from 138-171 to
+  547-880: the copies are transparent (additive) and drawn one by one (1243 meshes in the zone). Against `hybrid`
+  it is not cheaper on every count: it has fewer shadowed lights in view (6-10 against 15-23) and about half
+  (45-59 %) of `hybrid`'s shadow draw calls when every shadow is redrawn (1312-1796 against 2217-4002; GPU 2.5-2.7
+  against 2.7-5.8 ms), but with the shadows cached the GPU time is within the scatter (1.6-1.9 against 2.0-2.4 ms)
+  and it has 3-5 times `hybrid`'s visible draw calls (the CPU's side). So it is the cheapest of the candidates that
+  bring the sheen back without light through walls (probes and a directional bake bring none, `sheen12` leaks), and
+  it saves `hybrid`'s shadow work, not its draw calls; it also keeps the bake's look below `hybrid`'s brightness,
+  which `hybrid` cannot. Low has a third to a half of High's shadow draw calls (511-709). The next saving,
+  untested: copies only of the shiny surfaces (floors, polished furniture, ceilings) and only within the sheen
+  lights' range.
 - **Ruled out.** `LightmapGI.specular_intensity` (the directional lightmap's specular lobe in the latest docs) does not
   exist in Godot 4.7.2 (`bake_shots.gd` noted it on every `lmspec` shot); a directional bake alone is 0.2-0.3 L* under
   the plain one. Reflection probes (update once, interior, box projection, no ambient; one per room, 8 on the ground
