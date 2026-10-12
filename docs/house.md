@@ -688,7 +688,7 @@ Every 83q bake was 5.1-5.9 L* darker than the real-time row. `--diag` on the gro
 | `t8_d0_e15` baked (the default) | direct light and three bounces | 7.7 / 19.1 / 9.0 |
 | `t8_d1_e15_old` baked (before) | the same with the denoiser on | 7.4 / 18.6 / 8.9 |
 | `hybrid` | real-time direct light with shadows and specular, plus the bake's bounce | 10.6 / 23.5 / 11.7 |
-| `hybrid_nospec` (the reference) | the same, diffuse only | REF |
+| `hybrid_nospec` (the reference) | the same, diffuse only | 8.5 / 20.9 / 9.8 |
 
 1. Leaking: the light kit's real-time lights have no shadows (`shadow_enabled` is off, as the game's export writes
    them), so the old reference lit every room through its walls, floors and props: shadows alone take 2.0 / 5.4 /
@@ -701,7 +701,8 @@ Every 83q bake was 5.1-5.9 L* darker than the real-time row. `--diag` on the gro
    light (shadow-map bias against traced rays), and its three bounces add 1.1 / 1.6 / 1.2 L*, as the hybrid row's.
 
 So no `[bake]` setting caused the gap and raising the energies would only hide the shadows. The default bake is
-measured against `hybrid_nospec`: DELTA L*.
+measured against `hybrid_nospec`: -0.8 / -1.8 / -0.8 L* (the default before #83b: -1.1 / -2.3 / -0.9). The kitchen
+is 0.3 L* outside 1.5: its direct light alone is 1.3 L* under the shadow-mapped real time (point 3).
 
 Every Godot run takes the heavy-run lock (`common.heavy_lock`), one at a time; a run that waits for it is normal. The
 whole command can pass 180 s: an agent starts it in the background with its log under `tools/out/`. Bakes are night
