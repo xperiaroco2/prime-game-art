@@ -676,9 +676,9 @@ tools/run.sh house --bake ZONES [--preset high|low] [--grid] [--diag] [--sheen] 
    `realtime_shadow_nospec`, the three static bakes, `hybrid` and `hybrid_nospec` (a `_nospec` mode sets every
    light's `light_specular` to 0). About six minutes for the ground floor.
 7. `--sheen` (#83c) bakes a zone three ways at its High texel (`[bake]`; the same directional; the same with the
-   lights dynamic) and shoots the sheen grid: the bake alone, `probes`, `sheen4_shadow`, `sheen12_shadow`, `sheen12`,
-   `lmspec5`, `lmspec10`, `lmspec10_probes` and `hybrid` (the modes: `house_bake.sheen_mode`, "The sheen" below);
-   `numbers.md` adds the real-time and shadowed lights and the draw calls per camera, and each row's first sheet tile
+   lights dynamic) and shoots the sheen grid: the bake alone, `probes`, `sheen4_shadow`, `sheen12_shadow`,
+   `sheen12_shadow_probes`, `sheen12`, `lmspec10`, `lmspec10_probes` and `hybrid` (the modes: `house_bake.sheen_mode`,
+   "The sheen" below); `numbers.md` adds the real-time and shadowed lights and the draw calls per camera, and each row's first sheet tile
    carries its label (the measured frames have none). A preset review (`--review` without a grid) also shoots the
    preset's `sheen` row. About seven minutes for the ground floor.
 
@@ -755,9 +755,11 @@ kitchen / seam; lights per camera are real-time / shadowed on the lightmapped ro
   (floors, polished furniture, ceilings) and only within the sheen lights' range.
 - **Ruled out.** `LightmapGI.specular_intensity` (the directional lightmap's specular lobe in the latest docs) does not
   exist in Godot 4.7.2 (`bake_shots.gd` noted it on every `lmspec` shot); a directional bake alone is 0.2-0.3 L* under
-  the plain one. Reflection probes (update once, interior, box projection, no ambient; one per room, about the
-  default 256 px cubemap each in the reflection atlas) add at most 0.1 L*: the rooms they capture are dark and the
-  matte surfaces blur the lamp shapes away. They stay out of both presets.
+  the plain one. Reflection probes (update once, interior, box projection, no ambient; one per room, 8 on the ground
+  floor, about the default 256 px cubemap each in the reflection atlas) add at most 0.1 L* alone and at most 0.1 L*
+  on top of the sheen lights (`sheen12_shadow_probes` against `sheen12_shadow`), at a GPU cost within the scatter;
+  why they add so little is not measured. They stay out of both presets: the engineer's choice named them, so
+  dropping them waits for his yes with the look.
 - **The game side** (not in this task; the room packages of `--export` are unchanged): the game ships the bake, and
   this sheen is how it keeps its shine. It needs the copies on render layer 2 with the twin materials (made once at
   load), a pool of `glow_count` specular-only lights (cull mask layer 2, shadowed) moved to the glow fixtures nearest
