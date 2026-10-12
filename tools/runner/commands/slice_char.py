@@ -94,7 +94,7 @@ manifest.toml's approval fields are set (the engineer approves the look on the r
 
 The path is prime-game's `docs/ARCHITECTURE.md` section 11.1 (`assets/characters/<id>/<id>.glb`, `<id>` the manifest's
 `id`); the PR shape is its section 11.2: the GLB through LFS, its `.import` committed, `docs/credits/{asset_id}.md`
-and `toolsun.cmd credits`. `package.json` lists the file with its SHA-256; the credit draft is the manifest's
+and `tools/run.sh credits`. `package.json` lists the file with its SHA-256; the credit draft is the manifest's
 `credit` (`public_repo_ok = true`, `ai_generated = true`) and the per-clip table below (the Meshy clips are owned
 output of the Pro plan, `ai_generated = true`).
 
