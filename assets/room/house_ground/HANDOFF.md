@@ -1,12 +1,13 @@
 # House package P2, the shell and the ground floor: the game-side handoff (art #124, prime-game #523)
 
 For the game's own import task, after P1 (the kit). Nothing here is copied before the approval fields of this
-manifest and of `assets/prop/house_props/manifest.toml` are set (the engineer's look approval on the art PR).
+manifest and of `assets/prop/house_props/manifest.toml` are set (the engineer's look approval on the art PR). They are set: P2 is approved and merged
+(#125, 2026-10-11).
 
 ## What to copy where (ARCHITECTURE 11.1)
 | From this repo | To the game repo |
 |---|---|
-| P1 (`assets/kit/house_kit/HANDOFF.md`) | `assets/environment/house_kit/` (P2's rooms use 20 of its pieces) |
+| P1 (`assets/kit/house_kit/HANDOFF.md`) | `assets/environment/house_kit/` (P2's rooms use 17 of its pieces) |
 | `assets/kit/house_kit/export/kit_set.gdshader`, `kit_set.tres` (#132) | `assets/environment/house_kit/` (beside the kit's textures) |
 | `assets/prop/house_props/export/library/*.glb` (66), `task/*.glb` (4) | `assets/environment/house_props/<file>.glb` (flat) |
 | `assets/room/house_ground/export/<room>.tscn` (15) | the content of `levels/house/rooms/<room>.tscn` (G3 below) |

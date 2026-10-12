@@ -385,7 +385,8 @@ def check_request(data: dict, built: dict, kit_ids=()) -> dict:
                               "walkable": b.get("walkable", []), "hide": b.get("hide", [])})
                 paint = next((pr for pr in paints["rooms"] if pr["room"] == room["id"]), None)
                 if paint:
-                    rooms[-1]["paint"] = {"hex": paint["hex"], "rect": paint["rect"], "to": paint["to"]}
+                    rooms[-1]["paint"] = {"hex": paint["hex"], "rect": paint["rect"], "band": paint["band"],
+                                          "to": paint["to"], "from": paints["from"]}
                 roof = next((rf for rf in lv.get("roofs", []) if rf.get("room") == room["id"]), None)
                 if roof:  # the roof's rays: from over the ridge, the first hit is the roof a player walks on
                     x, y, w, d = (float(v) for v in roof["rect"])

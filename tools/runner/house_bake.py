@@ -88,12 +88,16 @@ def variants(lights: dict, zone: str, preset: str | None = None, grid: bool = Fa
              reference: bool = False) -> list[dict]:
     """The bakes of one zone: the preset's texel with lights.toml's [bake] (tag = the preset's name), or with `grid`
     every GRID_TEXELS x GRID_DENOISER x GRID_ENERGIES variant. Each: tag, texel, bake (a copy with the overrides),
-    merge. With `reference` (a review) the first variant's reference bake follows (reference_variant)."""
+    merge. A preset with a `sheen` mode (#83c) is shot real time, baked and with its sheen. With `reference` (a
+    review) the first variant's reference bake follows (reference_variant)."""
     bake = lights["bake"]
     if not grid:
-        texel = float(lights["zones"][zone][lights["presets"][preset]["lightmap"]])
+        p = lights["presets"][preset]
+        texel = float(lights["zones"][zone][p["lightmap"]])
         tag = preset + ("_m" if merge else "")
         vs = [{"tag": tag, "texel": texel, "bake": dict(bake), "merge": merge}]
+        if p.get("sheen"):
+            vs[0]["modes"] = ["realtime", "baked", p["sheen"]]
     else:
         vs = [{"tag": variant_tag(t, d, e, merge), "texel": t,
                "bake": {**bake, "denoiser": d, "bounce_indirect_energy": e}, "merge": merge}
@@ -112,6 +116,7 @@ def variants(lights: dict, zone: str, preset: str | None = None, grid: bool = Fa
 #   hybrid_nospec    the same with the lights' specular at 0: what a diffuse lightmap can hold, the bake's reference
 MODES = ("realtime", "realtime_shadow", "realtime_shadow_nospec", "baked", "hybrid", "hybrid_nospec")
 REFERENCE_MODE = "hybrid_nospec"
+REFERENCE_NOTE = "real-time diffuse direct light with shadows plus the bake's own bounce"
 # [bake] before #83b (the denoiser on): the before row of the diagnostic run.
 BEFORE_83B = {"denoiser": True, "bounce_indirect_energy": 1.5}
 
@@ -138,17 +143,81 @@ def diag_variants(lights: dict, zone: str) -> list[dict]:
             v(variant_tag(texel, old["denoiser"], old["bounce_indirect_energy"]) + "_old", old, "static", ["baked"])]
 
 
+# The sheen (#83c): a lightmap holds diffuse light only, so the lamps' specular (the grazing sheen on floors, polished
+# furniture and ceilings) comes back on top of the bake. A sheen mode is the baked mode plus any of these tokens,
+# joined by "_":
+#   lmspec<k>  the directional lightmap's own specular lobe, LightmapGI.specular_intensity k / 10 (needs a bake
+#              with directional = true; no real-time light)
+#   probes     one ReflectionProbe per room of the zone (update once, interior, box projection, no ambient): it
+#              captures the baked rooms and reflects them
+#   sheen<n>   the nearest n glow fixtures (to the camera) as real-time lights that add specular only: they light a
+#              copy of the lightmapped meshes (render layer 2) whose material is black, additive and without ambient,
+#              so their diffuse light is never added twice
+#   shadow     with sheen<n>: those lights cast shadows (no sheen through walls)
+def sheen_mode(mode: str) -> dict | None:
+    """A sheen mode's settings ({"lm_specular", "probes", "n", "shadow"}), or None when `mode` is not one."""
+    out = {"lm_specular": 0.0, "probes": False, "n": 0, "shadow": False}
+    for p in mode.split("_"):
+        m = re.fullmatch(r"(lmspec|sheen)(\d+)|probes|shadow", p)
+        if not m:
+            return None
+        if m.group(1) == "lmspec":
+            out["lm_specular"] = int(m.group(2)) / 10
+        elif m.group(1) == "sheen":
+            out["n"] = int(m.group(2))
+        else:
+            out[p] = True
+    if out["shadow"] and not out["n"]:
+        return None
+    return out if out["lm_specular"] or out["probes"] or out["n"] else None
+
+
+def sheen_variants(lights: dict, zone: str) -> list[dict]:
+    """The sheen grid of one zone at its High texel (#83c): the default bake (bake only, probes, the specular-only
+    real-time lights, alone and with the probes), the same bake directional (the lightmap's own specular lobe, alone
+    and with probes) and the same with the lights dynamic (the `hybrid` reference: every lamp real-time with shadows
+    and specular)."""
+    texel = float(lights["zones"][zone]["texel_high"])
+    base = {**lights["bake"], "directional": False, "specular_intensity": 0.0}
+    tag = variant_tag(texel, base["denoiser"], base["bounce_indirect_energy"])
+    v = lambda t, b, li, modes: {"tag": t, "texel": texel, "bake": b, "merge": False, "lights": li, "modes": modes}
+    return [v(tag, base, "static", ["baked", "probes", "sheen4_shadow", "sheen12_shadow",
+                                        "sheen12_shadow_probes", "sheen12"]),
+            v(tag + "_dir", {**base, "directional": True}, "static", ["lmspec10", "lmspec10_probes"]),
+            v(tag + "_ld", base, "dynamic", ["hybrid"])]
+
+
+def glow_types(lights: dict) -> list[str]:
+    """The fixture types that may get a real-time light (glow = true), sorted."""
+    return sorted(t for t, v in lights["types"].items() if v.get("glow"))
+
+
+def probe_boxes(data: dict, room_ids: list[str], height: float = 3.0) -> list[dict]:
+    """One reflection probe box per room: room, centre and size (Godot x, y, z) over the room's rect from its level's
+    floor to `height` (the kit's storey wall)."""
+    found = {r["id"]: (r["rect"], lv["floor_y"]) for lv in data["levels"] for r in lv["rooms"]}
+    out = []
+    for rid in room_ids:
+        if rid not in found:
+            raise ValueError(f"no room {rid}")
+        (x, z, w, d), y = found[rid]
+        out.append({"room": rid, "center": [x + w / 2, y + height / 2, z + d / 2], "size": [w, height, d]})
+    return out
+
+
 def shot_rows(zone: str, vs: list[dict]) -> list[dict]:
-    """The review rows of one zone's variants: label, tag, mode. A variant without `modes` (the preset and the grid)
-    is shot baked, and the first variant also gives the leaking real-time row first."""
+    """The review rows of one zone's variants: label, tag, mode (and a sheen mode's settings as `sheen`). A variant
+    without `modes` (the preset and the grid) is shot baked, and the first variant also gives the leaking real-time
+    row first."""
     rows = []
     for i, v in enumerate(vs):
         modes = v.get("modes") or (["realtime", "baked"] if i == 0 else ["baked"])
         for mode in modes:
-            if mode not in MODES:
+            sheen = None if mode in MODES else sheen_mode(mode)
+            if mode not in MODES and sheen is None:
                 raise ValueError(f"unknown shot mode {mode}")
             label = f"{zone}_{mode}" if mode.startswith("realtime") else f"{zone}_{v['tag']}_{mode}"
-            rows.append({"label": label, "tag": v["tag"], "mode": mode})
+            rows.append({"label": label, "tag": v["tag"], "mode": mode, **({"sheen": sheen} if sheen else {})})
     return rows
 
 
@@ -159,16 +228,23 @@ def sheet_layout(rows: int, cams: int, width: int = 1280) -> dict:
     return {"tile": [tile_w, tile_w * 9 // 16], "per_line": per_line}
 
 
+COST_HEAD = ("real-time / shadowed lights in view (of the scene's); draw calls; shadow draw calls with every shadow "
+             "redrawn; GPU ms cached / redrawn (per camera)")
+
+
 def numbers_md(zone: str, table: dict[str, list[dict]], reference: str | list[str], cam_names: list[str],
-               note: str = "real-time diffuse direct light with shadows plus the bake's own bounce") -> str:
+               note: str = "real-time diffuse direct light with shadows plus the bake's own bounce",
+               extra: dict[str, str] | None = None,
+               extra_head: str = COST_HEAD) -> str:
     """measures per row label (one dict per camera) as a markdown table: L* mean, dark % and C* p90 per camera, and
     per reference row each other row's L* difference camera by camera and their mean (the first reference: the
-    real-time row unless the caller names others)."""
+    real-time row unless the caller names others); `extra` adds one last column per label (shot_costs)."""
     refs = [reference] if isinstance(reference, str) else list(reference)
     head = ("| row | " + " | ".join(f"{c} L* / dark % / C* p90" for c in cam_names) + " | "
-            + " | ".join(f"dL* vs {r} (per camera; mean)" for r in refs) + " |")
+            + " | ".join(f"dL* vs {r} (per camera; mean)" for r in refs) + (f" | {extra_head}" if extra else "")
+            + " |")
     lines = [f"# House bake grid: {zone}", "", f"Reference: `{refs[0]}` ({note}).", "", head,
-             "|" + "---|" * (len(cam_names) + 1 + len(refs))]
+             "|" + "---|" * (len(cam_names) + 1 + len(refs) + (1 if extra else 0))]
     for label, ms in table.items():
         cells = [f"{m['L_mean']} / {m['dark_pct']} / {m['C_p90']}" for m in ms]
         cells += [""] * (len(cam_names) - len(cells))
@@ -176,8 +252,29 @@ def numbers_md(zone: str, table: dict[str, list[dict]], reference: str | list[st
             deltas = [m["L_mean"] - x["L_mean"] for m, x in zip(ms, table.get(r, []))]
             cells.append("" if label == r or not deltas else
                          " / ".join(f"{d:+.1f}" for d in deltas) + f" ({sum(deltas) / len(deltas):+.1f})")
+        if extra:
+            cells.append(extra.get(label, ""))
         lines.append(f"| {label} | " + " | ".join(cells) + " |")
     return "\n".join(lines) + "\n"
+
+
+def shot_costs(shots: list[dict]) -> dict[str, str]:
+    """bake_shots.gd's per-shot stats as one cell per row, camera by camera: the real-time / shadowed lights in view
+    and in the scene, the draw calls with the shadows cached, the shadow draw calls and the GPU ms with every shadow
+    redrawn ("1/1 of 34/34, 171 dc, 412 sdc, 1.20 / 3.40 ms; ..."), led by the row's probe count when it has probes.
+    #83b's shots (draw_calls only) keep their old cell ("0/0, 30")."""
+    out: dict[str, list[str]] = {}
+    probes: dict[str, int] = {}
+    for s in sorted(shots, key=lambda s: (s["row"], s["cam"])):
+        if "draw_calls_cached" not in s:
+            cell = f"{s.get('rt_lights', 0)}/{s.get('shadowed', 0)}, {int(s.get('draw_calls', 0))}"
+        else:
+            cell = (f"{s['rt_in_view']}/{s['shadowed_in_view']} of {s['rt_lights']}/{s['shadowed']}, "
+                    f"{round(s['draw_calls_cached'])} dc, {round(s['shadow_draw_calls_redrawn'])} sdc, "
+                    f"{s['gpu_ms_cached']:.2f} / {s['gpu_ms_redrawn']:.2f} ms")
+        out.setdefault(s["row"], []).append(cell)
+        probes[s["row"]] = max(probes.get(s["row"], 0), int(s.get("probes", 0)))
+    return {k: (f"{probes[k]} probes; " if probes[k] else "") + "; ".join(v) for k, v in out.items()}
 
 
 def build_args(zone: str, tag: str, texel: float, bake: dict, uv2_json: str, bake_json: str, above: float = 1.0,

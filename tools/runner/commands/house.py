@@ -44,6 +44,10 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--diag", action="store_true",
                         help="with --bake: the diagnostic bakes of #83b instead of the preset (real time with and "
                              "without shadows, direct only, the hybrid row, the old default; docs/house.md)")
+    parser.add_argument("--sheen", action="store_true",
+                        help="with --bake: the sheen grid of #83c instead of the preset (the bake plus the lamps' "
+                             "specular: the directional lightmap's lobe, reflection probes, specular-only real-time "
+                             "lights; docs/house.md)")
     parser.add_argument("--merge", action="store_true",
                         help="with --bake: weld each room level's floor tiles into one unwrapped mesh (one lightmap "
                              "island per floor kind and height instead of one per tile)")
@@ -149,7 +153,7 @@ def run(args: argparse.Namespace) -> int:
             raise common.Failure("--bake needs the scenes in godot/import/house (drop --out)")
         zones = list(lights["zones"]) if args.bake == "all" else args.bake.split(",")
         return _house_bake.run(data, lights, zones, args.preset, args.review, args.no_bake, found, args.grid,
-                               args.merge, args.diag)
+                               args.merge, args.diag, args.sheen)
     if (args.walk or args.basement) and args.out.resolve() != DEFAULT_OUT.resolve():
         raise common.Failure("--walk and --basement need the scenes in godot/import/house (drop --out)")
     code = 0

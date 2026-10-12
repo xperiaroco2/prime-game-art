@@ -14,6 +14,7 @@ later packages add dressing data (`layouts/house/dressing/`, #75b) and only rege
 | `layouts/house/dressing/attic_roof/attic.toml`, `tools/runner/house_attic.py`, `commands/attic.py` | The attic's old things and hiding spots, the climb-out, the free roof's items and lookout, and their checks (below; art #77) |
 | `tools/runner/commands/house.py` | The `house` command |
 | `tools/tests/test_house_layout.py` | The rules, the plan's conventions, the design doc's 35 rooms and the game's greybox marker names |
+| `tools/tests/_house_greybox.py`, `fixtures/house_greybox.json`, `test_house_greybox.py` | The game's greybox and design doc rooms, pinned; the live drift check ("The game's greybox, pinned") |
 | `layouts/house/dressing/<room>.toml` | One room's props and light fixtures (#75b); the ground floor's eight rooms and the greenhouse (#80, `docs/house-garden.md`) |
 | `layouts/house/routes.toml` | The design doc's routes (§7) as waypoints for the walk, with the doc's lengths and times (#78; "Routes" below) |
 | `layouts/house/basement_review.toml` | The basement's review pictures: lamp stand-ins per fixture id, exposure, ambient, the shots and the far edge's L* (#78) |
@@ -113,10 +114,13 @@ writes the House's game-ready package (prime-game #523) from the same layout dat
   dressing prop the floor's rays meet first carries its own by `[export.prop_surfaces]` (the greenhouse's watering can
   `concrete`, the attic's rolled carpets
   `carpet`, the basement's pallets `wood`). The kit's GLBs carry none, so `package.json`'s `surfaces` lists them
-  for a game-side wrapper. Not tagged yet: the plot's ground inside `outdoor.glb` (one GLB with its paths and
-  street; a question in `package.json`).
+  for a game-side wrapper. The plot's ground (`house_outdoor/outdoor.glb`, package 7) is one mesh per footstep
+  surface since #128 (`ground_grass` `grass`, `ground_concrete` and `kerb` `concrete`); `outdoor.tscn` tags each as an
+  editable child of `Ground` with `metadata/surface`.
 - The kit's look and the wall paints (#132): a package with kit pieces also writes `house_kit/kit_set.gdshader` (a
-  copy of `godot/kit/kit_set.gdshader`) and `house_kit/kit_set.tres` (`house_export.material_text`: the shader, the
+  copy of `godot/kit/kit_set.gdshader`; the shipped one, `assets/kit/house_kit/export/kit_set.gdshader`, must equal
+  its source: `tools/tests/test_kit_shader_copy.py` fails on drift, so a shader change ships with a re-export) and
+  `house_kit/kit_set.tres` (`house_export.material_text`: the shader, the
   shared textures, the layers' roughness and normal strength and every painted room's paint from
   `house_layout.paint_request`, the walk's material as a file). Each kit instance in a room's `Shell` (and in package
   7's plot scene, `house_export_plot.set_material_nodes`, #128) overrides its
@@ -138,8 +142,9 @@ game root and `size_m`, a shelled room holds layer-1 static bodies, and no scene
 `CollisionPolygon3D`, a rigid or character body on layer 1 or a shadowed light. Then it assembles the package (each
 room at its plan origin; `house_export.check_request` writes `_check/request.json`) and fails with the room and node
 named (#122) when a kit surface on the stand-in material in a room's (or the plot's, as `plot`) `Shell` lacks the package's `kit_set.tres` or
-its `plan_at` is not the mesh's place and turn, or a painted room's material does not hold its paint (its rect and
-colour; "the walls do not carry the paint", #132); when a walkable shell piece (one with a surface) or a dressing prop with a collider holds no layer-1
+its `plan_at` is not the mesh's place and turn, or a painted room's material does not hold its paint (its rect, its
+band of heights `paint_band`, the kit plaster's colour it replaces `paint_from` and its colour; "the walls do not
+carry the paint", #132); when a walkable shell piece (one with a surface) or a dressing prop with a collider holds no layer-1
 `StaticBody3D` with a shape; when the game's footstep ray (0.3 m over the floor to 0.5 m under it, every 0.5 m over
 each room; over a room under a roof of its level also from 10 m over its floor, every 0.5 m over the roof's rect and
 1 m round it, so the first hit is what a player on the free roof stands on) hits a shell collider without a known
@@ -154,7 +159,8 @@ The doorways and flights that leave the package are listed, walked with the pack
 hits, `none_at`: every collider hit without a surface (a prop) with its room, kit pieces and walks); the command
 prints them.
 `tools/tests/test_house_export.py` runs the check on a broken fixture room (Godot needed) and expects every problem
-named, and on two painted fixture rooms (a bare surface, a moved `plan_at`, a material without the room's paint).
+named, and on four painted fixture rooms (a bare surface, a moved `plan_at`, a material without the room's paint,
+one with another level's band, one with another source colour).
 `--sheet` then shoots the review sheet from the export folder in an off-screen window (`godot/house/export_sheet.gd`,
 copied into `_check/`): the kitchen, the storage (basement) and the attic, those of them in the package, each from two
 eye-height views lit only by its own fixtures and a dim review ambient; `_check/sheet.png` (1280 px wide), a still per
@@ -164,7 +170,8 @@ A package goes to the game from git, not from the raw build (#124): its files ar
 `export/` folders (`docs/manifest.md`: the kit in `assets/kit/house_kit/`, the props in `assets/prop/house_props/`,
 the room scenes of a package in their own `room` set, P2's in `assets/room/house_ground/`), with the package's
 `package.json` beside the manifest that owns it and a `HANDOFF.md` for the game's import task (what to copy where,
-the credits drafts, the open questions). The engineer approves the look from
+the credits entries, the open questions). P1 to P5 and P7 are approved and merged, their manifests' approval fields set: P1 and P2 in #125, P3 and P5
+in #127, P4 in #130, P7 (with the props, the outdoor and garden sets) in #131. The engineer approves the look from
 
 ```
 tools/run.sh house --package-sheet DIR --package N
@@ -179,8 +186,12 @@ shortest in front, under a key light); a package with rooms shows each room from
 first) at 1.6 m eye height looking at the room's middle, lit only by its own fixtures and a dim ambient, then from
 the extra views of it in `house.toml`'s `[[export.sheet_views]]` (#126: plan points, heights over the floor or over
 the roof's top, an optional key light): P5's attic from its west gable and the free roof's lookout from the dormer and
-from the Lookout station, at 1.6 m over the roof. A package alone has no plot round it, so the roof views look out
-into the review ambient. Each tile's title sits in a dark box, bottom left in a room tile (clear of the room's own
+from the Lookout station, at 1.6 m over the roof. A view's `with` (#130) names rooms of other packages shown in place
+beside the view's room, each at its plan offset from that room (its rect corner and floor height): P4's balcony views
+show the yard's external flight (`with = ["yard"]`, P2's `yard.tscn`), since the flight belongs to the yard, not the
+balcony. `_house_review.neighbours` finds the other committed packages whose `package.json` lists those rooms' scenes
+and stages them beside the package (a game path two packages share has the same bytes in both). A package alone has
+no plot round it, so the roof views look out into the review ambient. Each tile's title sits in a dark box, bottom left in a room tile (clear of the room's own
 `Name` label near the top) and top left in a kit tile; the `.json` gives per tile its draw calls (the box counts as
 one). The outdoor rooms of P2 (yard, street, path, ...) carry only markers and lamps: their ground is the plot,
 package 7.
@@ -198,11 +209,26 @@ sheet is six `[[export.sheet_views]]` of `room = "plot"` (plan metres, 1.6 m ove
 loading `outdoor.tscn` with the package's rooms at their plan corners; alone, the package shows the house's footprint
 as a black hole. The flat `house_props/` names follow one rule for every package (`docs/manifest.md`).
 
-`tools/tests/test_house_export.py` diffs the 34 art rooms against the game's greybox rooms (`D:/prime-game`, read
-only; skipped without it) on root, origin, size, Doors, Stations and Markers and expects exactly the known differences:
+`tools/tests/test_house_export.py` diffs the 34 art rooms against the game's greybox rooms (pinned, below) on root,
+origin, size, Doors, Stations and Markers and expects exactly the known differences:
 the six of the plan's `mapping.md` (attic and roof: question G1; garage Door3, landing Door6, study Door1,
 storage Package07: G2; art task A4 settles them), the attic's by name (Door1; Loot, HidingSpots, Lookout; Knife3); and the game's three spawn zone markers Zone01-Zone03
 (yard, garden, landing; prime-game #651, #681), which the art rooms do not carry yet.
+
+### The game's greybox, pinned (#34)
+The House tests never read the game's live checkout: a marker the game added once turned `main` red. They read
+`tools/tests/fixtures/house_greybox.json`, a snapshot of `D:/prime-game` at a recorded commit (`game_commit`): the
+design doc's room table (`docs/design/house-map.md`) and per greybox room scene its root, origin, `size_m`, Doors,
+Stations and Markers (`test_house_export.py`) and the names of its `Marker3D` doors and stations
+(`test_house_layout.py`). `tools/tests/test_house_greybox.py` compares the live checkout with the snapshot (skipped
+without `D:/prime-game`) and fails only on what the game removed or moved; a new room, marker or design row is not
+drift. When the art takes a game change on purpose, refresh the snapshot and update the known differences in the
+same commit:
+
+```
+$PYTHON_BIN tools/tests/_house_greybox.py           # rewrite the snapshot from D:/prime-game (--game DIR)
+$PYTHON_BIN tools/tests/_house_greybox.py --check   # list the drift, write nothing
+```
 
 ## Dressing (#75b)
 
@@ -610,13 +636,14 @@ and regenerate.
 - **Bake** (`[bake]`): the LightmapGI settings every zone shares (quality, bounces, the bounce energy at most 1.5,
   denoiser, interior).
 - **Presets** (`[presets.high]`, `[presets.low]`): the lightmap resolution, the real-time glow count (the nearest
-  fixtures with `glow`), SSAO, shadowed spots, fog (`look.md` §4.5 of the plan).
+  fixtures with `glow`) and its `sheen` mode (#83c, "The sheen" below), SSAO, shadowed spots, fog (`look.md` §4.5 of
+  the plan).
 
-Every light is `light_bake_mode` Static (baked; not drawn in real time where a lightmap covers it); no shadows. The
-`house` command writes `lights/<level>.tscn` (a level's lights in plot coordinates) and `zones/<zone>.tscn` (the
-zone's room scenes, the level pieces standing in them, its lights, and as `Above` the next level's rooms over it: the
-floor slabs that are the zone's ceiling; a basement room under the yard has its own yard slab, #108, in its room
-scene). A bake needs the editor (below).
+Every light is `light_bake_mode` Static (baked; not drawn in real time where a lightmap covers it); no shadows (the
+sheen lights, #83c, are separate copies). The `house` command writes `lights/<level>.tscn` (a level's lights in plot
+coordinates) and `zones/<zone>.tscn` (the zone's room scenes, the level pieces standing in them, its lights, and as
+`Above` the next level's rooms over it: the floor slabs that are the zone's ceiling; a basement room under the yard has
+its own yard slab, #108, in its room scene). A bake needs the editor (below).
 
 ### Baking a zone
 
@@ -635,7 +662,7 @@ engineer's yes.
 `godot/house/zone_build.gd`, `godot/house/bake_shots.gd`, the `godot/addons/lmbake` editor plugin):
 
 ```
-tools/run.sh house --bake ZONES [--preset high|low] [--grid] [--diag] [--merge] [--no-bake] [--review DIR]
+tools/run.sh house --bake ZONES [--preset high|low] [--grid] [--diag] [--sheen] [--merge] [--no-bake] [--review DIR]
 ```
 
 1. `house` writes the zone scenes into `godot/import/house` (so `--bake` refuses `--out`); the kit and prop GLBs the
@@ -674,6 +701,15 @@ tools/run.sh house --bake ZONES [--preset high|low] [--grid] [--diag] [--merge] 
    lights dynamic; the default before #83b, denoiser on) and shoots eight rows: `realtime`, `realtime_shadow`,
    `realtime_shadow_nospec`, the three static bakes, `hybrid` and `hybrid_nospec` (a `_nospec` mode sets every
    light's `light_specular` to 0). About six minutes for the ground floor.
+7. `--sheen` (#83c) bakes a zone three ways at its High texel (`[bake]`; the same directional; the same with the
+   lights dynamic) and shoots the sheen grid: the bake alone, `probes`, `sheen4_shadow`, `sheen12_shadow`,
+   `sheen12_shadow_probes`, `sheen12`, `lmspec10`, `lmspec10_probes` and `hybrid` (the modes: `house_bake.sheen_mode`,
+   "The sheen" below); `numbers.md` adds each shot's cost, the same way for every row (`bake_shots.gd` `_cost`): the
+   real-time and shadowed lights in view (the range sphere meets the camera's frustum) and in the scene, the draw
+   calls, and the shadow draw calls and GPU ms with the shadows cached and with every shadow redrawn (each shadowed
+   light nudged 1 mm per frame: a player moving in every lamp's range), averaged over 8 frames; each row's first
+   sheet tile carries its label (the measured frames have none). A preset review (`--review` without a grid) also
+   shoots the preset's `sheen` row. About seven minutes for the ground floor.
 
 ### Why the bakes looked darker (#83b)
 
@@ -695,18 +731,80 @@ Every 83q bake was 5.1-5.9 L* darker than the real-time row. `--diag` on the gro
    them), so the old reference lit every room through its walls, floors and props: shadows alone take 2.0 / 5.4 /
    2.4 L* off. The bake is right here; the real-time row was not a valid reference.
 2. Specular: a lightmap holds diffuse light only; the lamps' specular (`light_specular` 0.5) is 2.3 / 2.9 / 2.0 L*
-   of the real-time frame (the grazing sheen on floors and ceilings). A directional lightmap (`directional = true`)
-   measured within 0.2 L* of the default: it does not bring the sheen back. It needs real-time light (the High
-   preset's glow lights, or the lamps dynamic as in `hybrid`) or reflection probes: a look question.
+   of the real-time frame (the grazing sheen on floors and ceilings). A directional lightmap does not bring it back
+   (below); #83c brings it back with specular-only real-time lights ("The sheen").
 3. The rest is the bake itself: its direct light is 0.6 / 1.3 / 0.6 L* under Godot's shadowed real-time diffuse
    light (shadow-map bias against traced rays), and its three bounces add 1.1 / 1.6 / 1.2 L*, as the hybrid row's.
 
+Ruled out by the same run: the ambient light (the environment's ambient colour is black in every row), exposure and
+the tonemapper (every row uses the same environment), and the `Above` slabs and the texel (the 83q grid).
+
 So no `[bake]` setting caused the gap and raising the energies would only hide the shadows. The default bake is
-measured against `hybrid_nospec`: -0.8 / -1.8 / -0.8 L* (the default before #83b: -1.1 / -2.3 / -0.9). The kitchen
-is 0.3 L* outside 1.5: its direct light alone is 1.3 L* under the shadow-mapped real time (point 3), and the bake's
-own bounce is 0.5 L* under the hybrid's. Back faces are not the leak: the same run with every shadow caster
-double-sided (as the ray tracer occludes) measured the same to 0.1 L* on every row. No energy is raised to close
-it.
+measured against `hybrid_nospec`, not `realtime_shadow_nospec`: a bake holds direct light and bounce, and
+`realtime_shadow_nospec` has no bounce at all, while `hybrid_nospec` is Godot's shadowed real-time diffuse light
+plus the same bake's bounce, so only the way the direct light is made differs. Against it: -0.8 / -1.8 / -0.8 L*
+(the default before #83b: -1.1 / -2.3 / -0.9). The kitchen is 0.3 L* outside 1.5: its direct light alone is 1.3 L*
+under the shadow-mapped real time (point 3), and the bake's own bounce is 0.5 L* under the hybrid's. Back faces are
+not the leak: a manual run (every shadow caster set double-sided by hand, as the ray tracer occludes; not a mode of
+`--diag`) measured the same to 0.1 L* on every row. No energy is raised to close it.
+
+### The sheen (#83c)
+
+The engineer chose (2026-10-12) the middle way between the bake alone and `hybrid`: the bake, plus real-time
+specular from the nearest lamps, plus reflection probes, shown first as shots. `--sheen` on the ground floor
+(2026-10-12, `D:/prime-art-raw/review/house/83c`: frames, `sheet.png`, `numbers.md`; per camera E1 living room / E1
+kitchen / seam; lights: real-time / shadowed in view, of the scene's; GPU ms: one run each on the RTX 4060 at
+1280x720, shadows cached then all redrawn):
+
+| row | how | L* | over the bake | to `hybrid` | lights in view | draw calls | shadow draw calls, all redrawn | GPU ms cached; redrawn |
+|---|---|---|---|---|---|---|---|---|
+| `baked` (before) | the bake alone | 7.7 / 19.1 / 9.0 | | -2.9 / -4.4 / -2.7 | 0 | 171 / 138 / 140 | 0 | 0.6 / 0.4 / 0.5; 0.6 / 0.4 / 0.7 |
+| `probes` | a ReflectionProbe per room (8) | 7.7 / 19.2 / 9.0 | +0.0 / +0.1 / +0.0 | -2.9 / -4.3 / -2.7 | 0 | 171 / 138 / 140 | 0 | 0.7 / 0.6 / 1.0; 0.9 / 0.8 / 1.0 |
+| `lmspec10`, `lmspec10_probes` | a directional bake (+ probes) | 7.5 / 18.8 / 8.8 | -0.2 / -0.3 / -0.2 | -3.1 / -4.7 / -2.9 | 0 | 171 / 138 / 140 | 0 | 1.3-1.9 |
+| `sheen4_shadow` (Low) | the nearest 4 glow lamps, specular only, shadowed | 9.6 / 20.5 / 10.6 | +1.9 / +1.4 / +1.6 | -1.0 / -3.0 / -1.1 | 4/4 of 4/4 | 880 / 556 / 547 | 635 / 709 / 511 | 2.4 / 1.7 / 1.3; 3.2 / 1.8 / 2.2 |
+| `sheen12_shadow` (High) | the nearest 12, shadowed | 9.8 / 21.5 / 10.9 | +2.1 / +2.4 / +1.9 | -0.8 / -2.0 / -0.8 | 10/10, 6/6, 8/8 of 12/12 | 880 / 556 / 547 | 1796 / 1312 / 1354 | 1.6 / 1.9 / 1.7; 2.6 / 2.7 / 2.5 |
+| `sheen12_shadow_probes` | the same plus the 8 probes | 9.8 / 21.6 / 10.9 | +2.1 / +2.5 / +1.9 | -0.8 / -1.9 / -0.8 | as High | 880 / 555 / 545 | 1796 / 1312 / 1354 | 1.8 / 2.0 / 2.3; 3.3 / 2.7 / 3.2 |
+| `sheen12` | the nearest 12, unshadowed (leaks through walls) | 10.4 / 23.0 / 11.8 | +2.7 / +3.9 / +2.8 | -0.2 / -0.5 / +0.1 | 10/0, 6/0, 8/0 of 12/0 | 880 / 556 / 547 | 0 | 1.7 / 1.5 / 2.0; 1.9 / 1.6 / 2.0 |
+| `hybrid` (reference) | every lamp real-time with shadows and specular, plus the bake's bounce | 10.6 / 23.5 / 11.7 | +2.9 / +4.4 / +2.7 | | 23/23, 15/15, 17/17 of 34/34 | 171 / 138 / 140 | 4002 / 2217 / 2288 | 2.4 / 2.1 / 2.0; 5.8 / 3.3 / 2.7 |
+
+- **The method: specular-only real-time lights.** Godot 4.7.2 has no per-light diffuse switch (`light_specular` 0
+  makes a light diffuse-only, not the other way round), and a Static light is skipped on lightmapped meshes. So the
+  sheen lights reach a copy of the lightmapped meshes instead: each copy (render layer 2, no shadow casting, no GI)
+  has its material's black, additive, ambient-free twin (`bake_shots.gd` `_overlay`: albedo black, so no diffuse;
+  `disable_ambient_light`, so the lightmap and the probes are not added twice; roughness and normal maps kept). The
+  sheen lights are the nearest `glow_count` glow fixtures to the camera, copied with bake mode Disabled, cull mask
+  layer 2 only, the lamp's own energy, range and `light_specular`; the baked lamps leave layer 2 out of their cull
+  mask (they would light the copies in real time). Shadowed, the sheen stops at walls; unshadowed (`sheen12`) it is
+  `hybrid`'s brightness but shines through walls, so it is out.
+- **The presets** (`[presets.*] sheen`, checked by `house` against `house_bake.sheen_mode` and `glow_count`): High
+  `sheen12_shadow` (between the bake and `hybrid` on all three cameras: 12 real-time lights, all shadowed, 6-10 of
+  them in view), Low `sheen4_shadow` (4 and 4; 58-90 % of High's gain per camera, 76 % on the mean). The look waits
+  for the engineer's yes on the review sheet.
+- **The cost.** The GPU times are single runs and scatter by up to about 1 ms between like rows (`sheen4_shadow`'s
+  living room reads slower than `sheen12_shadow`'s), so only larger differences count. Against the bake alone the
+  sheen adds about 1-1.5 ms with the shadows cached and 2 ms with all redrawn, and the draw calls go from 138-171 to
+  547-880: the copies are transparent (additive) and drawn one by one (1243 meshes in the zone). Against `hybrid`
+  it is not cheaper on every count: it has fewer shadowed lights in view (6-10 against 15-23) and about half
+  (45-59 %) of `hybrid`'s shadow draw calls when every shadow is redrawn (1312-1796 against 2217-4002; GPU 2.5-2.7
+  against 2.7-5.8 ms), but with the shadows cached the GPU time is within the scatter (1.6-1.9 against 2.0-2.4 ms)
+  and it has 3-5 times `hybrid`'s visible draw calls (the CPU's side). So it is the cheapest of the candidates that
+  bring the sheen back without light through walls (probes and a directional bake bring none, `sheen12` leaks), and
+  it saves `hybrid`'s shadow work, not its draw calls; it also keeps the bake's look below `hybrid`'s brightness,
+  which `hybrid` cannot. Low has a third to a half of High's shadow draw calls (511-709). The next saving,
+  untested: copies only of the shiny surfaces (floors, polished furniture, ceilings) and only within the sheen
+  lights' range.
+- **Ruled out.** `LightmapGI.specular_intensity` (the directional lightmap's specular lobe in the latest docs) does not
+  exist in Godot 4.7.2 (`bake_shots.gd` noted it on every `lmspec` shot); a directional bake alone is 0.2-0.3 L* under
+  the plain one. Reflection probes (update once, interior, box projection, no ambient; one per room, 8 on the ground
+  floor, about the default 256 px cubemap each in the reflection atlas) add at most 0.1 L* alone and at most 0.1 L*
+  on top of the sheen lights (`sheen12_shadow_probes` against `sheen12_shadow`), at a GPU cost within the scatter;
+  why they add so little is not measured. They stay out of both presets: the engineer's choice named them, so
+  dropping them waits for his yes with the look.
+- **The game side** (not in this task; the room packages of `--export` are unchanged): the game ships the bake, and
+  this sheen is how it keeps its shine. It needs the copies on render layer 2 with the twin materials (made once at
+  load), a pool of `glow_count` specular-only lights (cull mask layer 2, shadowed) moved to the glow fixtures nearest
+  the player each few frames, and the baked lamps' cull mask without layer 2; dynamic objects (players, props
+  without UV2) keep being lit by the Static lamps in real time as today.
 
 Every Godot run takes the heavy-run lock (`common.heavy_lock`), one at a time; a run that waits for it is normal. The
 whole command can pass 180 s: an agent starts it in the background with its log under `tools/out/`. Bakes are night
