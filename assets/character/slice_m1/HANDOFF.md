@@ -4,24 +4,17 @@ The slice character for M6.2: cast `m1` in the clay look with the clay face kit,
 carrying 25 clips of the MVP animation set on the same skeleton. **Not approved yet**: the game takes it once
 manifest.toml's approval fields are set (the engineer approves the look on the review page).
 
+Rest height 1.846 m, feet at -0.004 m; scaled uniformly so the eyes are at 1.60 m (the engineer's `eyes16`, 2026-10-12; contract v1's plasticine window 1.70 to 1.90 m). The game's capsule is 1.8 m tall, so the hair top passes it by a few cm: the game decides if that matters.
+
 ## Known deviations
 
-`godot-check --strict-contract --humanoid --textured` passes every check but these
-(the contract v1 body gates):
-
-- `contract_height` fail: 1.986 m to the top (contract v1: 1.7 to 1.8 m)
-- `contract_eye_height` warn: eyes at 1.722 m (contract v1: 1.6 +- 0.08 m)
-
-The clay look's head is 1.3 times the pack's, with hair on top, so the body is taller than the contract's 1.70 to
-1.80 m and the eyes sit above the camera's 1.6 m. **Open: the engineer decides** (art PR #139, docs/godot.md "Open: the
-height"): widen the contract's window for the clay look (a contract change), scale the export, or let the game scale
-the body. Do not import before the decision; this section is rewritten with it.
+None: `godot-check --strict-contract --humanoid --textured` passes every check.
 
 ## What to copy where
 
 | From (this folder) | To (prime-game) | Size | LFS |
 |---|---|---|---|
-| `export/slice_m1.glb` | `assets/characters/slice_m1/slice_m1.glb` | 7.45 MB | yes (one object) |
+| `export/slice_m1.glb` | `assets/characters/slice_m1/slice_m1.glb` | 7.27 MB | yes (one object) |
 
 The path is prime-game's `docs/ARCHITECTURE.md` section 11.1 (`assets/characters/<id>/<id>.glb`, `<id>` the manifest's
 `id`); the PR shape is its section 11.2: the GLB through LFS, its `.import` committed, `docs/credits/slice_m1.md`
@@ -45,8 +38,8 @@ library as a `.res` and share it once a second body arrives.
 
 ## Sizes
 
-- GLB 7.45 MB, 6 parts on one skeleton of 64 bones,
-  10 embedded images (4.44 MB), height 1.9864 m;
+- GLB 7.27 MB, 6 parts on one skeleton of 64 bones,
+  11 embedded images (4.44 MB), height 1.846 m;
 - in place: no root motion; the game moves the body (the locomotion clips' `speed_m_s` is the ground speed at rate
   1.0: play at speed / speed_m_s).
 
