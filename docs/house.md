@@ -613,11 +613,11 @@ and regenerate.
   fixtures with `glow`) and its `sheen` mode (#83c, "The sheen" below), SSAO, shadowed spots, fog (`look.md` §4.5 of
   the plan).
 
-Every light is `light_bake_mode` Static (baked; not drawn in real time where a lightmap covers it); no shadows (the sheen lights, #83c, are separate copies). The
-`house` command writes `lights/<level>.tscn` (a level's lights in plot coordinates) and `zones/<zone>.tscn` (the
-zone's room scenes, the level pieces standing in them, its lights, and as `Above` the next level's rooms over it: the
-floor slabs that are the zone's ceiling; a basement room under the yard has its own yard slab, #108, in its room
-scene). A bake needs the editor (below).
+Every light is `light_bake_mode` Static (baked; not drawn in real time where a lightmap covers it); no shadows (the
+sheen lights, #83c, are separate copies). The `house` command writes `lights/<level>.tscn` (a level's lights in plot
+coordinates) and `zones/<zone>.tscn` (the zone's room scenes, the level pieces standing in them, its lights, and as
+`Above` the next level's rooms over it: the floor slabs that are the zone's ceiling; a basement room under the yard has
+its own yard slab, #108, in its room scene). A bake needs the editor (below).
 
 ### Baking a zone
 
@@ -745,9 +745,10 @@ kitchen / seam; lights per camera are real-time / shadowed on the lightmapped ro
   layer 2 only, the lamp's own energy, range and `light_specular`; the baked lamps leave layer 2 out of their cull
   mask (they would light the copies in real time). Shadowed, the sheen stops at walls; unshadowed (`sheen12`) it is
   `hybrid`'s brightness but shines through walls, so it is out.
-- **The presets** (`[presets.*] sheen`, checked by `house` against `house_bake.sheen_mode`): High `sheen12_shadow`
-  (between the bake and `hybrid` on all three cameras: 12 real-time lights, 12 shadowed), Low `sheen4_shadow` (4 and
-  4; 70-80 % of High's gain). The look waits for the engineer's yes on the review sheet.
+- **The presets** (`[presets.*] sheen`, checked by `house` against `house_bake.sheen_mode` and `glow_count`): High
+  `sheen12_shadow` (between the bake and `hybrid` on all three cameras: 12 real-time lights, 12 shadowed), Low
+  `sheen4_shadow` (4 and 4; 58-90 % of High's gain per camera, 76 % on the mean). The look waits for the engineer's yes
+  on the review sheet.
 - **The cost.** 12 shadowed omni lights per frame (High) or 4 (Low): each shadowed omni renders the scene into the
   shadow atlas again. The copies are transparent (additive), drawn one by one: the draw calls go from 138-171 to
   547-880 per frame with 1243 meshes in the zone. The next saving, untested: copies only of the shiny surfaces
