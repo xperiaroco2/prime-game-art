@@ -2,7 +2,7 @@
 
 For the game's own import task, after P1 (the kit), P2 and P4 (the floor under the hatch). Nothing here is copied
 before the approval fields of this manifest and of `assets/prop/house_props/manifest.toml` are set (the engineer's
-look approval on the art PR).
+look approval on the art PR). They are set: P5 is approved and merged (#127, 2026-10-11).
 
 ## What to copy where (ARCHITECTURE 11.1)
 | From this repo | To the game repo |
@@ -26,7 +26,8 @@ the plan wherever the game puts the House. Nothing to run: copy the two files wi
 (the root's `metadata/wall_paint` stays as a note). The attic has no paint; the material gives the kit's textured look.
 
 ## Credits
-As P2: the drafts `D:/prime-art-raw/house/export/credits/house_kit.md` and `house_props.md`; own work, the props from
+As P2: the entries `assets/kit/house_kit/CREDITS.md` and `assets/prop/house_props/CREDITS.md` (copy them to
+`docs/credits/house_kit.md` and `house_props.md`); own work, the props from
 CC0 packs named per file in the props manifest, `ai_generated = false`, `public_repo_ok = true`.
 
 ## Questions still open on prime-game #523

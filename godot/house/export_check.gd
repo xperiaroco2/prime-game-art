@@ -361,17 +361,35 @@ func _paints(req: Dictionary, placed: Dictionary, plot_node: Node3D, problems: A
 	return out
 
 
-## The material paints `paint`'s rect (x0, z0, x1, z1 in the plan) with its colour (kit_materials.gd `paint`).
+## The material paints `paint`'s rect (x0, z0, x1, z1 in the plan) with its colour (kit_materials.gd `paint`); when
+## the request names them, also over its band of heights (`band`, y0, y1) and from the kit's plaster (`from`, the
+## material's `paint_from`): a material with the right rect but a wrong band or source colour paints nothing there.
 func _holds(mat: ShaderMaterial, paint: Dictionary) -> bool:
 	var count: Variant = mat.get_shader_parameter("paint_count")
 	var rects: Variant = mat.get_shader_parameter("paint_rect")
 	var tos: Variant = mat.get_shader_parameter("paint_to")
+	var bands: Variant = mat.get_shader_parameter("paint_band")
 	if not (count is int and rects is PackedVector4Array and tos is PackedVector3Array):
 		return false
+	if paint.has("band") and not (bands is PackedVector2Array):
+		return false
+	if paint.has("from"):
+		var src: Variant = mat.get_shader_parameter("paint_from")
+		var fr := Vector3(float(paint["from"][0]), float(paint["from"][1]), float(paint["from"][2]))
+		if not (src is Vector3 and (src as Vector3).distance_to(fr) < 0.01):
+			return false
 	var want := Vector4(float(paint["rect"][0]), float(paint["rect"][1]), float(paint["rect"][2]), float(paint["rect"][3]))
 	var to := Vector3(float(paint["to"][0]), float(paint["to"][1]), float(paint["to"][2]))
-	for i in mini(int(count), mini(rects.size(), tos.size())):
+	var n := mini(int(count), mini(rects.size(), tos.size()))
+	if paint.has("band"):
+		n = mini(n, (bands as PackedVector2Array).size())
+	for i in n:
 		var d: Vector4 = rects[i] - want
-		if maxf(maxf(absf(d.x), absf(d.y)), maxf(absf(d.z), absf(d.w))) < 0.01 and tos[i].distance_to(to) < 0.01:
-			return true
+		if maxf(maxf(absf(d.x), absf(d.y)), maxf(absf(d.z), absf(d.w))) >= 0.01 or tos[i].distance_to(to) >= 0.01:
+			continue
+		if paint.has("band"):
+			var b: Vector2 = (bands as PackedVector2Array)[i]
+			if b.distance_to(Vector2(float(paint["band"][0]), float(paint["band"][1]))) >= 0.01:
+				continue
+		return true
 	return false
