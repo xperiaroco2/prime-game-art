@@ -3,15 +3,15 @@ id = "house_outdoor"
 kind = "environment"
 slot = ""
 title = "The House's plot: ground, fence, street, outdoor stairs, sky and backdrop"
-notes = "Built by `outdoor` from layouts/house/outdoor/plot.toml and sky.toml (docs/house-outdoor.md) into house/81/build; the backdrop flats are embedded in backdrop.glb. Package P7 (#128) rebuilds them in its export (the ground one mesh per footstep surface: ground_grass, ground_concrete, kerb) and ships them under export/ with the plot scene (assets/room/house_plot). Not approved yet: the approval fields wait for the engineer's look approval on the P7 PR. Own work."
+notes = "Built by `outdoor` from layouts/house/outdoor/plot.toml and sky.toml (docs/house-outdoor.md) into house/81/build; the backdrop flats are embedded in backdrop.glb. Package P7 (#128) rebuilds them in its export (the ground one mesh per footstep surface: ground_grass, ground_concrete, kerb) and ships them under export/ with the plot scene (assets/room/house_plot). Approved by the engineer on 2026-10-12 in PR #131. Own work."
 tools = ["blender 5.2.2", "prime-game-art outdoor (layouts/house/outdoor/plot.toml, sky.toml)"]
 licence = "own-work"
 licence_url = "https://github.com/xperiaroco2/prime-game"
 public_repo_ok = true
 ai_generated = false
-approved_by = []
-approved_at = ""
-approval_pr = ""
+approved_by = ["xperiaroco2"]
+approved_at = 2026-10-12
+approval_pr = "https://github.com/xperiaroco2/prime-game-art/pull/131"
 
 [source]
 service = "own"
