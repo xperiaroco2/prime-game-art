@@ -113,8 +113,9 @@ writes the House's game-ready package (prime-game #523) from the same layout dat
   dressing prop the floor's rays meet first carries its own by `[export.prop_surfaces]` (the greenhouse's watering can
   `concrete`, the attic's rolled carpets
   `carpet`, the basement's pallets `wood`). The kit's GLBs carry none, so `package.json`'s `surfaces` lists them
-  for a game-side wrapper. Not tagged yet: the plot's ground inside `outdoor.glb` (one GLB with its paths and
-  street; a question in `package.json`).
+  for a game-side wrapper. The plot's ground (`house_outdoor/outdoor.glb`, package 7) is one mesh per footstep
+  surface since #128 (`ground_grass` `grass`, `ground_concrete` and `kerb` `concrete`); `outdoor.tscn` tags each as an
+  editable child of `Ground` with `metadata/surface`.
 - The kit's look and the wall paints (#132): a package with kit pieces also writes `house_kit/kit_set.gdshader` (a
   copy of `godot/kit/kit_set.gdshader`; the shipped one, `assets/kit/house_kit/export/kit_set.gdshader`, must equal
   its source: `tools/tests/test_kit_shader_copy.py` fails on drift, so a shader change ships with a re-export) and
