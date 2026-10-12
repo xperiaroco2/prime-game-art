@@ -684,7 +684,9 @@ tools/run.sh house --bake ZONES [--preset high|low] [--grid] [--diag] [--sheen] 
 4. With `--review DIR` the zone's first variant is also baked with its lights dynamic (`<tag>_ld`: the lightmap
    holds only their bounce) for the reference row, and `bake_shots.gd` (an off-screen window) shoots each zone's
    rows from two E1 cameras (a room corner at 1.6 m across to
-   three quarters of the room) and one seam camera (level along the first room's middle line from 1 m inside its north
+   three quarters of the room), the ground's kitchen wall camera (`REVIEW_WALL`: from the room's middle line at 55 %
+   of its depth at the north wall, where the worktops, uppers and fridge stand and the E1 camera has its back; #83)
+   and one seam camera (level along the first room's middle line from 1 m inside its north
    wall: ceiling and floor tiles in frame, never inside a wall). The rows: `realtime` (no lightmap, the light kit's
    lights dynamic and unshadowed: they leak through walls), the baked rows, and the reference `hybrid_nospec` (the
    `_ld` lightmap plus the lights in real time with shadows and `light_specular` 0: what a diffuse lightmap can hold;
@@ -733,7 +735,7 @@ tools/run.sh house --bake ZONES --props-dir DIR [--props-map TOML] [--review DIR
   dresses one.
 - `--before DIR` (with `--review`, a preset bake): an earlier review of the same preset, usually the committed props.
   The review then also holds `before_after.png` and `before_after.md`. The PNG is about 1280 px across: per zone the
-  before run's baked row, this run's baked row and its preset sheen row, from the same three cameras. Each row's
+  before run's baked row, this run's baked row and its preset sheen row, from the same cameras. Each row's
   first tile carries its title in a 5x7 pixel font. The md holds the frame measures against the before row.
 - The props go through the bake as the committed ones do (`light_baking=2`, Godot unwraps their UV2).
 

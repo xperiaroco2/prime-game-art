@@ -301,13 +301,26 @@ def seam_cam(rect: list[float], floor_y: float) -> list[float]:
     return [x + w / 2, floor_y + 1.6, z + 1.0, x + w / 2, floor_y + 1.6, z + d * 0.6]
 
 
-def views(data: dict, room_ids: list[str]) -> list[list[float]]:
-    """E1 cameras of the given rooms, then the first room's seam camera."""
+def wall_cam(rect: list[float], floor_y: float) -> list[float]:
+    """A view of the room's north wall from its middle line at 55 % of its depth, eye height down to 1.1 m: the
+    worktops, uppers and backsplash a kitchen dresses there (the E1 camera stands at that wall, #83)."""
+    x, z, w, d = rect
+    return [x + w / 2, floor_y + 1.6, z + d * 0.55, x + w / 2, floor_y + 1.1, z + 0.2]
+
+
+def views(data: dict, room_ids: list[str], wall: list[str] = ()) -> list[list[float]]:
+    """E1 cameras of the given rooms, the wall cameras of the `wall` rooms, then the first room's seam camera."""
     found = {r["id"]: (r["rect"], lv["floor_y"]) for lv in data["levels"] for r in lv["rooms"]}
-    missing = [r for r in room_ids if r not in found]
+    missing = [r for r in [*room_ids, *wall] if r not in found]
     if missing:
         raise ValueError(f"no room {', '.join(missing)}")
-    return [e1_cam(*found[r]) for r in room_ids] + [seam_cam(*found[room_ids[0]])]
+    return ([e1_cam(*found[r]) for r in room_ids] + [wall_cam(*found[r]) for r in wall]
+            + [seam_cam(*found[room_ids[0]])])
+
+
+def view_names(room_ids: list[str], wall: list[str] = ()) -> list[str]:
+    """The column names of views(): `E1 <room>`, `wall <room>`, `seam`."""
+    return ["E1 " + r for r in room_ids] + ["wall " + r for r in wall] + ["seam"]
 
 
 # ---------------------------------------------------------------- frame measures

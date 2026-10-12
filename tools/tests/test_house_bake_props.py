@@ -112,18 +112,19 @@ class Compare(unittest.TestCase):
         lights = tomllib.loads((common.ROOT / "layouts" / "house" / "lights.toml").read_text(encoding="utf-8"))
         data = house_layout.load()
         sheen = lights["presets"]["high"].get("sheen")
+        n = len(B.views(data, _house_bake.REVIEW_ROOMS["ground"], _house_bake.REVIEW_WALL["ground"]))
         with tempfile.TemporaryDirectory() as tmp:
             before, after = Path(tmp) / "before", Path(tmp) / "after"
             frames = [(before, "ground_high_baked", 60), (after, "ground_high_baked", 120),
                       (after, f"ground_high_{sheen}", 180)]
             for folder, row, grey in frames:
-                for ci in range(3):
+                for ci in range(n):
                     house_sky.write_png(folder / f"{row}_{ci}.png", 64, 36, [bytes([grey] * 64 * 3)] * 36)
-            (after / f"ground_high_{sheen}_2.png").unlink()  # a missing frame: a grey tile
+            (after / f"ground_high_{sheen}_{n - 1}.png").unlink()  # a missing frame: a grey tile
             _house_bake.compare(data, lights, ["ground"], "high", after, before, "C2-white")
             w, h, px = B.read_png(after / "before_after.png")
-            tw, th = P.tile_size(3)
-            self.assertEqual((w, h), (3 * tw, 3 * th))
+            tw, th = P.tile_size(n)
+            self.assertEqual((w, h), (n * tw, 3 * th))
             self.assertEqual(px[th * w + tw * 2], (120, 120, 120))  # the second row's last tile, its corner
             self.assertEqual(px[2 * th * w + w - 1], (48, 48, 48))
             md = (after / "before_after.md").read_text(encoding="utf-8")
