@@ -14,6 +14,7 @@ later packages add dressing data (`layouts/house/dressing/`, #75b) and only rege
 | `layouts/house/dressing/attic_roof/attic.toml`, `tools/runner/house_attic.py`, `commands/attic.py` | The attic's old things and hiding spots, the climb-out, the free roof's items and lookout, and their checks (below; art #77) |
 | `tools/runner/commands/house.py` | The `house` command |
 | `tools/tests/test_house_layout.py` | The rules, the plan's conventions, the design doc's 35 rooms and the game's greybox marker names |
+| `tools/tests/_house_greybox.py`, `fixtures/house_greybox.json`, `test_house_greybox.py` | The game's greybox and design doc rooms, pinned; the live drift check ("The game's greybox, pinned") |
 | `layouts/house/dressing/<room>.toml` | One room's props and light fixtures (#75b); the ground floor's eight rooms and the greenhouse (#80, `docs/house-garden.md`) |
 | `layouts/house/routes.toml` | The design doc's routes (§7) as waypoints for the walk, with the doc's lengths and times (#78; "Routes" below) |
 | `layouts/house/basement_review.toml` | The basement's review pictures: lamp stand-ins per fixture id, exposure, ambient, the shots and the far edge's L* (#78) |
@@ -113,10 +114,13 @@ writes the House's game-ready package (prime-game #523) from the same layout dat
   dressing prop the floor's rays meet first carries its own by `[export.prop_surfaces]` (the greenhouse's watering can
   `concrete`, the attic's rolled carpets
   `carpet`, the basement's pallets `wood`). The kit's GLBs carry none, so `package.json`'s `surfaces` lists them
-  for a game-side wrapper. Not tagged yet: the plot's ground inside `outdoor.glb` (one GLB with its paths and
-  street; a question in `package.json`).
+  for a game-side wrapper. The plot's ground (`house_outdoor/outdoor.glb`, package 7) is one mesh per footstep
+  surface since #128 (`ground_grass` `grass`, `ground_concrete` and `kerb` `concrete`); `outdoor.tscn` tags each as an
+  editable child of `Ground` with `metadata/surface`.
 - The kit's look and the wall paints (#132): a package with kit pieces also writes `house_kit/kit_set.gdshader` (a
-  copy of `godot/kit/kit_set.gdshader`) and `house_kit/kit_set.tres` (`house_export.material_text`: the shader, the
+  copy of `godot/kit/kit_set.gdshader`; the shipped one, `assets/kit/house_kit/export/kit_set.gdshader`, must equal
+  its source: `tools/tests/test_kit_shader_copy.py` fails on drift, so a shader change ships with a re-export) and
+  `house_kit/kit_set.tres` (`house_export.material_text`: the shader, the
   shared textures, the layers' roughness and normal strength and every painted room's paint from
   `house_layout.paint_request`, the walk's material as a file). Each kit instance in a room's `Shell` (and in package
   7's plot scene, `house_export_plot.set_material_nodes`, #128) overrides its
@@ -138,8 +142,9 @@ game root and `size_m`, a shelled room holds layer-1 static bodies, and no scene
 `CollisionPolygon3D`, a rigid or character body on layer 1 or a shadowed light. Then it assembles the package (each
 room at its plan origin; `house_export.check_request` writes `_check/request.json`) and fails with the room and node
 named (#122) when a kit surface on the stand-in material in a room's (or the plot's, as `plot`) `Shell` lacks the package's `kit_set.tres` or
-its `plan_at` is not the mesh's place and turn, or a painted room's material does not hold its paint (its rect and
-colour; "the walls do not carry the paint", #132); when a walkable shell piece (one with a surface) or a dressing prop with a collider holds no layer-1
+its `plan_at` is not the mesh's place and turn, or a painted room's material does not hold its paint (its rect, its
+band of heights `paint_band`, the kit plaster's colour it replaces `paint_from` and its colour; "the walls do not
+carry the paint", #132); when a walkable shell piece (one with a surface) or a dressing prop with a collider holds no layer-1
 `StaticBody3D` with a shape; when the game's footstep ray (0.3 m over the floor to 0.5 m under it, every 0.5 m over
 each room; over a room under a roof of its level also from 10 m over its floor, every 0.5 m over the roof's rect and
 1 m round it, so the first hit is what a player on the free roof stands on) hits a shell collider without a known
@@ -154,7 +159,8 @@ The doorways and flights that leave the package are listed, walked with the pack
 hits, `none_at`: every collider hit without a surface (a prop) with its room, kit pieces and walks); the command
 prints them.
 `tools/tests/test_house_export.py` runs the check on a broken fixture room (Godot needed) and expects every problem
-named, and on two painted fixture rooms (a bare surface, a moved `plan_at`, a material without the room's paint).
+named, and on four painted fixture rooms (a bare surface, a moved `plan_at`, a material without the room's paint,
+one with another level's band, one with another source colour).
 `--sheet` then shoots the review sheet from the export folder in an off-screen window (`godot/house/export_sheet.gd`,
 copied into `_check/`): the kitchen, the storage (basement) and the attic, those of them in the package, each from two
 eye-height views lit only by its own fixtures and a dim review ambient; `_check/sheet.png` (1280 px wide), a still per
@@ -164,7 +170,8 @@ A package goes to the game from git, not from the raw build (#124): its files ar
 `export/` folders (`docs/manifest.md`: the kit in `assets/kit/house_kit/`, the props in `assets/prop/house_props/`,
 the room scenes of a package in their own `room` set, P2's in `assets/room/house_ground/`), with the package's
 `package.json` beside the manifest that owns it and a `HANDOFF.md` for the game's import task (what to copy where,
-the credits drafts, the open questions). The engineer approves the look from
+the credits entries, the open questions). P1 to P5 and P7 are approved and merged, their manifests' approval fields set: P1 and P2 in #125, P3 and P5
+in #127, P4 in #130, P7 (with the props, the outdoor and garden sets) in #131. The engineer approves the look from
 
 ```
 tools/run.sh house --package-sheet DIR --package N
@@ -179,8 +186,12 @@ shortest in front, under a key light); a package with rooms shows each room from
 first) at 1.6 m eye height looking at the room's middle, lit only by its own fixtures and a dim ambient, then from
 the extra views of it in `house.toml`'s `[[export.sheet_views]]` (#126: plan points, heights over the floor or over
 the roof's top, an optional key light): P5's attic from its west gable and the free roof's lookout from the dormer and
-from the Lookout station, at 1.6 m over the roof. A package alone has no plot round it, so the roof views look out
-into the review ambient. Each tile's title sits in a dark box, bottom left in a room tile (clear of the room's own
+from the Lookout station, at 1.6 m over the roof. A view's `with` (#130) names rooms of other packages shown in place
+beside the view's room, each at its plan offset from that room (its rect corner and floor height): P4's balcony views
+show the yard's external flight (`with = ["yard"]`, P2's `yard.tscn`), since the flight belongs to the yard, not the
+balcony. `_house_review.neighbours` finds the other committed packages whose `package.json` lists those rooms' scenes
+and stages them beside the package (a game path two packages share has the same bytes in both). A package alone has
+no plot round it, so the roof views look out into the review ambient. Each tile's title sits in a dark box, bottom left in a room tile (clear of the room's own
 `Name` label near the top) and top left in a kit tile; the `.json` gives per tile its draw calls (the box counts as
 one). The outdoor rooms of P2 (yard, street, path, ...) carry only markers and lamps: their ground is the plot,
 package 7.
@@ -198,11 +209,26 @@ sheet is six `[[export.sheet_views]]` of `room = "plot"` (plan metres, 1.6 m ove
 loading `outdoor.tscn` with the package's rooms at their plan corners; alone, the package shows the house's footprint
 as a black hole. The flat `house_props/` names follow one rule for every package (`docs/manifest.md`).
 
-`tools/tests/test_house_export.py` diffs the 34 art rooms against the game's greybox rooms (`D:/prime-game`, read
-only; skipped without it) on root, origin, size, Doors, Stations and Markers and expects exactly the known differences:
+`tools/tests/test_house_export.py` diffs the 34 art rooms against the game's greybox rooms (pinned, below) on root,
+origin, size, Doors, Stations and Markers and expects exactly the known differences:
 the six of the plan's `mapping.md` (attic and roof: question G1; garage Door3, landing Door6, study Door1,
 storage Package07: G2; art task A4 settles them), the attic's by name (Door1; Loot, HidingSpots, Lookout; Knife3); and the game's three spawn zone markers Zone01-Zone03
 (yard, garden, landing; prime-game #651, #681), which the art rooms do not carry yet.
+
+### The game's greybox, pinned (#34)
+The House tests never read the game's live checkout: a marker the game added once turned `main` red. They read
+`tools/tests/fixtures/house_greybox.json`, a snapshot of `D:/prime-game` at a recorded commit (`game_commit`): the
+design doc's room table (`docs/design/house-map.md`) and per greybox room scene its root, origin, `size_m`, Doors,
+Stations and Markers (`test_house_export.py`) and the names of its `Marker3D` doors and stations
+(`test_house_layout.py`). `tools/tests/test_house_greybox.py` compares the live checkout with the snapshot (skipped
+without `D:/prime-game`) and fails only on what the game removed or moved; a new room, marker or design row is not
+drift. When the art takes a game change on purpose, refresh the snapshot and update the known differences in the
+same commit:
+
+```
+$PYTHON_BIN tools/tests/_house_greybox.py           # rewrite the snapshot from D:/prime-game (--game DIR)
+$PYTHON_BIN tools/tests/_house_greybox.py --check   # list the drift, write nothing
+```
 
 ## Dressing (#75b)
 

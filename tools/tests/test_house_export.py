@@ -1,7 +1,7 @@
 """The House export (tools/runner/house_export.py, docs/house.md "The export", art #119): the room scenes carry the
 game's node names, `metadata/size_m`, the `Name` label and the Doors, Stations and Markers of the game's greybox rooms
-(D:/prime-game/levels/house/rooms/*.tscn, read only; skipped when missing) with exactly the known differences of the
-plan's mapping.md; no CSG, no GridMap, real-time lights without shadows, every path under res://assets/environment/.
+(D:/prime-game/levels/house/rooms/*.tscn, pinned in tools/tests/fixtures/house_greybox.json) with exactly the known
+differences of the plan's mapping.md; no CSG, no GridMap, real-time lights without shadows, every path under res://assets/environment/.
 Pure Python: the scenes are built in memory, no GLB is copied."""
 
 from __future__ import annotations
@@ -21,9 +21,11 @@ from runner import house_layout as H
 from runner import common, house_lights as HL
 from runner.commands import _house_export
 
+from . import _house_greybox as G
+from ._house_greybox import parse
+
 DATA = H.load()
 PLAN = H.plan(DATA)
-GAME = Path("D:/prime-game/levels/house")
 # mapping.md's known differences (2026-10-11), waiting on the game's answers G1 and G2 (prime-game #523; art task A4):
 # the attic is the free-roof attic on the whole footprint and holds the roof's stations; the art moved three door
 # markers onto the whole-metre wall grid and the storage's Package07 to the shelf it sits on. The game's three
@@ -40,38 +42,6 @@ KNOWN = {
     "study": {"doors": {"Door1"}},
     "storage": {"markers": {"Package07"}},
 }
-NODE = re.compile(r'\[node name="(\w+)" type="(\w+)" parent="(\w+)"((?:[^\]\[]|\[[^\]]*\])*)\]\n'
-                  r'(?:transform = Transform3D\(([^)]*)\))?')
-
-
-def parse(text: str) -> dict:
-    """A room scene's root, size_m and its Doors, Stations and Markers: name -> (x, h, z, groups)."""
-    root = re.search(r'\[node name="(\w+)" type="Node3D"(?: unique_id=\d+)?\]', text).group(1)
-    size = re.search(r"metadata/size_m = Vector2i\((\d+), (\d+)\)", text)
-    out = {"root": root, "size": (int(size.group(1)), int(size.group(2))) if size else None,
-           "doors": {}, "stations": {}, "markers": {}}
-    for m in NODE.finditer(text):
-        name, _, parent, rest, tf = m.groups()
-        if parent in ("Doors", "Stations", "Markers"):
-            pos = tuple(round(float(v), 3) for v in (tf or "0,0,0,0,0,0,0,0,0,0,0,0").split(",")[9:12])
-            groups = re.search(r"groups=\[([^\]]*)\]", rest)
-            out[parent.lower()][name] = (*pos, groups.group(1) if groups else "")
-    return out
-
-
-def game_rooms() -> dict:
-    house = (GAME / "house.tscn").read_text(encoding="utf-8")
-    ids = dict(re.findall(r'path="res://levels/house/rooms/(\w+)\.tscn" id="(\w+)"', house))
-    ids = {v: k for k, v in ids.items()}
-    out = {}
-    for m in re.finditer(r'\[node name="\w+" parent="\w+"[^\]]*instance=ExtResource\("(\w+)"\)\]\n'
-                         r'(?:transform = Transform3D\(([^)]*)\))?', house):
-        rid = ids[m.group(1)]
-        out[rid] = parse((GAME / "rooms" / f"{rid}.tscn").read_text(encoding="utf-8"))
-        out[rid]["origin"] = tuple(round(float(v), 3) for v in (m.group(2) or "0," * 11 + "0").split(",")[9:12])
-    return out
-
-
 def diff(game: dict, art: dict) -> dict:
     """What differs between a game room and an art room: field -> True, or for a marker group the names that differ."""
     out = {}
@@ -104,9 +74,9 @@ class HouseExport(unittest.TestCase):
         self.assertEqual(self.unplaced, [])
 
     def test_against_the_games_greybox(self):
-        if not (GAME / "house.tscn").is_file():
-            self.skipTest("the game repo is not at D:/prime-game")
-        game = game_rooms()
+        # the pinned snapshot (tools/tests/_house_greybox.py), not the live checkout: a marker the game adds later
+        # does not turn this red; test_house_greybox.py watches the live checkout for removed or moved ones
+        game = G.load()["rooms"]
         found = {rid: "game only" for rid in game.keys() - self.art.keys()}
         found |= {rid: "art only" for rid in self.art.keys() - game.keys()}
         for rid in game.keys() & self.art.keys():
@@ -452,6 +422,12 @@ class WallPaints(unittest.TestCase):
         request = X.check_request(DATA, {"kitchen": {}}, {"wall_2m"})
         self.assertEqual(request["material"], X.material_res(DATA))
         self.assertEqual(request["rooms"][0]["paint"]["hex"], kitchen["hex"])
+        # the check compares the band and the plaster's source colour too (#133's minor): the request carries them
+        self.assertEqual(request["rooms"][0]["paint"]["band"], kitchen["band"])
+        self.assertEqual(request["rooms"][0]["paint"]["from"], paints["from"])
+        bands = re.search(r"paint_band = PackedVector2Array\(([^)]*)\)", text).group(1).split(", ")
+        self.assertEqual([float(v) for v in bands[2 * k:2 * k + 2]], [float(v) for v in kitchen["band"]])
+        self.assertIn(f"paint_from = Vector3({', '.join(X._f(c) for c in paints['from'])})", text)
 
 
 PAINTED = """[gd_scene format=3]
@@ -539,32 +515,45 @@ class BrokenFixture(unittest.TestCase):
                                                      newline="\n")
             rooms = folder / "levels/house/rooms"
             rooms.mkdir(parents=True)
-            to = ", ".join(str(v) for v in H.paint_request(DATA)["rooms"][0]["to"])
-            (rooms / "painted.tscn").write_text(PAINTED.format(paint="", name="Painted"), encoding="utf-8",
-                                                newline="\n")
-            (rooms / "good.tscn").write_text(PAINTED.format(
-                paint=f"shader_parameter/paint_count = 1\nshader_parameter/paint_rect = PackedVector4Array(10, 20, "
-                      f"14, 24)\nshader_parameter/paint_to = PackedVector3Array({to})", name="Good"),
-                encoding="utf-8", newline="\n")
-            paint = {"hex": "#3a6264", "rect": [10, 20, 14, 24], "to": H.paint_request(DATA)["rooms"][0]["to"]}
+            req = H.paint_request(DATA)
+            first = req["rooms"][0]
+            to = ", ".join(str(v) for v in first["to"])
+            src = ", ".join(str(v) for v in req["from"])
+
+            def paint(band: list, source: str) -> str:
+                return (f"shader_parameter/paint_count = 1\nshader_parameter/paint_from = Vector3({source})\n"
+                        f"shader_parameter/paint_rect = PackedVector4Array(10, 20, 14, 24)\n"
+                        f"shader_parameter/paint_band = PackedVector2Array({band[0]}, {band[1]})\n"
+                        f"shader_parameter/paint_to = PackedVector3Array({to})")
+            # good: rect, band, source and colour; banded: the band of another level; sourced: another source colour
+            scenes = {"painted": "", "good": paint(first["band"], src),
+                      "banded": paint([first["band"][0] + 3.0, first["band"][1] + 3.0], src),
+                      "sourced": paint(first["band"], "0.5, 0.5, 0.5")}
+            for rid, text in scenes.items():
+                (rooms / f"{rid}.tscn").write_text(PAINTED.format(paint=text, name=rid.title()), encoding="utf-8",
+                                                   newline="\n")
+            want = X.check_request(DATA, {first["room"]: {}}, set())["rooms"][0]["paint"]
+            self.assertEqual((want["band"], want["from"]), (first["band"], req["from"]))
+            paint_ = dict(want, rect=[10, 20, 14, 24])
             request = {"rooms": [{"id": rid, "rect": [10, 20, 4, 4], "floor_y": 0.0, "floor": False,
                                   "scene": f"res://levels/house/rooms/{rid}.tscn", "walkable": [], "hide": [],
-                                  "paint": paint} for rid in ("painted", "good")],
+                                  "paint": paint_} for rid in scenes],
                        "pieces": {}, "walks": [], "pads": [], "material": ""}
-            summary = {"rooms": {"painted": {"node": "Painted", "kit": 0}, "good": {"node": "Good", "kit": 0}},
-                       "check": request}
+            summary = {"rooms": {rid: {"node": rid.title(), "kit": 0} for rid in scenes}, "check": request}
             with contextlib.redirect_stdout(io.StringIO()):
                 code, problems = _house_export.run(folder, summary)
             text = "\n".join(problems)
             self.assertEqual(code, 1, text)
             self.assertIn("painted: 2 kit surfaces without the kit's set material at their plan place, e.g. "
                           "Shell/wall_bare surface 0", text)
-            self.assertIn("painted: the walls do not carry the paint #3a6264", text)
+            self.assertIn(f"painted: the walls do not carry the paint {want['hex']}", text)
             self.assertIn("good: 2 kit surfaces without", text)
             self.assertNotIn("good: the walls", text)
+            self.assertIn("banded: the walls do not carry the paint", text)
+            self.assertIn("sourced: the walls do not carry the paint", text)
             report = json.loads((folder / "_check/load.json").read_text(encoding="utf-8"))
             self.assertEqual(report["package"]["paints"]["painted"], ["good"])
-            self.assertEqual(report["package"]["paints"]["surfaces"], 6)
+            self.assertEqual(report["package"]["paints"]["surfaces"], 12)
 
 
 

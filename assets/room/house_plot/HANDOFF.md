@@ -3,7 +3,8 @@
 For the game's own import task, after P1 (the kit) and P2 (the outdoor rooms' markers and lamps: yard, street, path,
 driveway). Nothing here is copied before the approval fields of this manifest, of
 `assets/environment/house_outdoor/manifest.toml`, `assets/environment/house_garden/manifest.toml` and of
-`assets/prop/house_props/manifest.toml` (P7's 32 props) are set (the engineer's look approval on the art PR).
+`assets/prop/house_props/manifest.toml` (P7's 32 props) are set (the engineer's look approval on the art PR). They are set:
+P7 is approved and merged (#131, 2026-10-12).
 
 ## What to copy where (ARCHITECTURE 11.1)
 | From this repo | To the game repo |
@@ -12,7 +13,7 @@ driveway). Nothing here is copied before the approval fields of this manifest, o
 | `assets/kit/house_kit/export/kit_set.gdshader`, `kit_set.tres` (#132) | `assets/environment/house_kit/` (beside the kit's textures) |
 | `assets/environment/house_outdoor/export/*` (3) | `assets/environment/house_outdoor/` |
 | `assets/environment/house_garden/export/*.glb` (14) | `assets/environment/house_garden/` |
-| `assets/prop/house_props/export/{library,task,zones}/*.glb`, as `package.json` lists | `assets/environment/house_props/<game name>` (flat; the naming rule below) |
+| `assets/prop/house_props/export/{library,task,zones}/*.glb` (20, 7 and 9), as `package.json` lists | `assets/environment/house_props/<game name>` (flat; the naming rule below) |
 | `assets/room/house_plot/export/outdoor.tscn` | `levels/house/outdoor.tscn` (new: the plot round the house) |
 | `assets/room/house_plot/export/greenhouse.tscn`, `garden.tscn` | the content of `levels/house/rooms/greenhouse.tscn`, `garden.tscn` (G3) |
 
