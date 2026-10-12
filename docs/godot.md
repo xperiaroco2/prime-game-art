@@ -11,6 +11,8 @@ tools/run.py godot-check <glb> [...] [--out DIR] [--strict-contract] [--humanoid
 tools/run.py frames <glb> [--clips A,B] [--compare all|A,B|''] [--video A,B] [--blend FILE] [--out DIR]
                   [--face CLIP [--face-beside PNG --face-rects 'x,y,w,h;...']]
                                                                   Godot-rendered frame sheets (off-screen window)
+tools/run.py showroom [<glb>] [--variants a,b] [--clip Idle] [--hdri HDR] [--beside PNG [--beside-rects ...]]
+                  [--out DIR] | --write-presets            look variants, face and body sheets, GPU ms (off-screen)
 ```
 
 A full run for one character: `assemble --modes none --blend` about 9 s, `export` about 8 s, `godot-check` about 3 s
@@ -215,6 +217,70 @@ for the faces gate's before/after (docs/faces.md). `slice` runs it with the firs
 Blender agree within 0.017 mm everywhere. Before the optimizer was turned off they differed by up to 16.7 mm (m1_rex
 Run, a hand) and by 3.65 degrees on m1_rex's Roll `Foot.L`, which the joint-only comparison of the time could not see.
 The poses in the comparison images match.
+
+## Showroom and recommended look settings (`showroom`, art #140)
+
+The frames stand above is a **measuring stand**: linear tonemapper, no reflected light (no glint in an eye, no sheen
+on the clay), a flat colour ambient, no SSAO, simple shadows. It shows poses and seams honestly and stays as it is.
+The showroom asks the other question: how close can the game's renderer bring a character to its Blender renders?
+`tools/run.py showroom [<glb>]` (default the approved slice character m1) stages the GLB like `frames` and runs
+`godot/showroom/showroom.gd` in an off-screen window (640 x 800, `--position -30000,-30000`, never headless). The
+studio: the frames stand's grey background and floor, Poly Haven's CC0 `studio_small_09` HDRI from the raw folder
+(`sources/polyhaven_hdris_2k.toml`; missing: a ProceduralSky) as a `PanoramaSkyMaterial` that lights and reflects
+but is not seen, a key light with shadows, a fill and a rim light (the stand's three directions), and a perspective
+camera with a 22 degree lens fitted to the head (front and three-quarter) or the whole body.
+
+Each **variant** (`_showroom.VARIANTS`, at most six in one grid, each sets every key) adds to the one before it:
+
+| # | Variant | What it changes |
+|---|---|---|
+| 1 | frames stand | the stand as is: linear, colour ambient 0.55, no reflections, key 1.05 with specular 0.15 |
+| 2 | AgX | the AgX tonemapper, exposure 1.2; nothing else |
+| 3 | AgX + sky + catch | the studio sky as ambient (0.4) and reflections, exposure 1.0, key 2.0 with specular 0.6, and a **catch light**: a directional light on the camera from up-left of the view, energy 0.1, specular 4.0, which lights nothing but gives the glossy eyes (`fb_eye`, roughness 0.17) their glint |
+| 4 | + SSAO | radius 0.6, intensity 1.5, light affect 0.2 |
+| 5 | + soft shadows | the key light's angular size 1.5 degrees (PCSS), soft shadow filter quality high, blur 1.0 |
+| 6 | + SSS clay | subsurface scattering on the materials whose name ends in `_clay`, strength 0.25, skin mode on the head; quality medium |
+
+It writes `face.png` (the approved Blender sheet's crops first, `--beside`, then per variant front and 3/4, 256 x 320
+cells), `body.png` (per variant the full body), `shots/` at window size, `showroom.json` and `gpu_ms.md`: the GPU time
+per variant (`RenderingServer.viewport_get_measured_render_time_gpu`, as in art #137's bake shots) with the window
+resized to 1920 x 1080 and the full body framed, after a 120-frame warm-up, averaged over 30 drawn frames after 6
+settling frames, three rounds in turn, the median round kept. `--write-presets` writes
+`godot/showroom/look_presets.json` from `_showroom.PRESETS` (a test keeps them equal).
+
+**The recommended look per graphics preset** (`godot/showroom/look_presets.json`, which the game side copies; this repo
+does not touch the game): every preset uses AgX, the sky as ambient and reflections and the catch light; each turns on
+everything the one below does.
+
+| Preset | Adds | Shadows | SSAO | SSS on clay | MSAA |
+|---|---|---|---|---|---|
+| Low | AgX, sky ambient and reflections, catch light | 2048, filter low, hard | off | off | off |
+| Medium | SSAO | 4096, filter medium | half size, low | off | 2x |
+| High | soft shadows | 4096, filter high, key angular 1.5 degrees | full size, medium | off | 4x |
+| Ultra | SSS on the clay | 4096, filter ultra, key angular 1.5 degrees | full size, high | quality medium, strength 0.25 | 4x |
+
+**Measured** (2026-10-12, slice_m1 at Idle 0.00 s, NVIDIA GeForce RTX 4060, vulkan forward_plus, Godot 4.7.2; the
+GPU time of the whole frame with one character, the floor and the sky; `D:/prime-art-raw/review/char/140/`):
+
+| Variant | Effects | GPU ms (1920x1080) | Step ms |
+|---|---|---:|---:|
+| 1 frames stand | linear | 0.86 |  |
+| 2 AgX | agx | 0.90 | +0.03 |
+| 3 AgX+sky+catch | reflections, catch_light, agx | 1.12 | +0.23 |
+| 4 +SSAO | reflections, catch_light, ssao, agx | 1.43 | +0.31 |
+| 5 +soft shadows | reflections, catch_light, ssao, soft_shadows, agx | 3.75 | +2.31 |
+| 6 +SSS clay | reflections, catch_light, ssao, soft_shadows, sss, agx | 3.56 | -0.19 |
+
+What the sheets show (the first grid, before the engineer looks): AgX alone (2) keeps the stand's colours and rolls
+off the highlights; the sky-lit variants (3 to 6) add a soft sheen to the clay and the pupils but look **washed out**
+next to the Blender face (pale hair, little key-light shading on the face): the studio HDRI's ambient is strong even at
+energy 0.4 (the first run at 1.0 was paler still). The eyes have a soft sheen but **no sharp glint** yet. SSAO darkens
+the hair roots a little; soft shadows (PCSS) cost about 2.3 ms at 1920 x 1080 and change little on a face; SSS on the
+clay costs nothing measurable and is barely visible. Open for the next grid: the sky's ambient energy (lower) against
+the key light (stronger), and the eye glint (the catch light's strength, or a lower eye roughness).
+
+
+The look is the engineer's to approve (art #140); until he says yes these settings are a proposal.
 
 ## The SkeletonProfileHumanoid trial (`godot-check --humanoid`)
 
