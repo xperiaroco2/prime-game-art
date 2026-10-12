@@ -141,9 +141,25 @@ class Manifest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             f = Path(tmp) / "x.glb"
             f.write_bytes(b"abc")
-            pkg = _slice.package_json("slice_m1", {"x.glb": f}, "assets/characters/slice")
+            pkg = _slice.package_json("slice_m1", {"x.glb": f}, _slice.game_dir("slice_m1"))
+        self.assertEqual(pkg["game_dir"], "assets/characters/slice_m1")
         self.assertEqual(pkg["files"][0]["bytes"], 3)
         self.assertEqual(pkg["files"][0]["sha256"], "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad")
+
+    def test_body_credit_leads(self):
+        body = "Ultimate Modular Men Pack by Quaternius (CC0 1.0)"
+        text = _slice.manifest_toml("slice_m1", "m1", "r", self.rows(), [], ["blender"], "2026-10-12", [], (body,))
+        credit = tomllib.loads(text)["credit"]
+        self.assertTrue(credit.startswith(body + "; "))
+        self.assertEqual(credit.count(body), 1)
+
+    def test_source_credit(self):
+        self.assertEqual(_slice.source_credit({"credit": "X by Y"}), "X by Y")
+        self.assertEqual(_slice.source_credit({"title": "Pack", "author": "Q", "licence": "CC0-1.0"}),
+                         "Pack by Q (CC0-1.0)")
+        for gender, record in _slice.PACK_RECORDS.items():
+            with open(common.ROOT / "sources" / f"{record}.toml", "rb") as fh:
+                self.assertIn("Quaternius", _slice.source_credit(tomllib.load(fh)), gender)
 
 
 if __name__ == "__main__":

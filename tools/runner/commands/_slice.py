@@ -18,6 +18,8 @@ SETTINGS = common.ROOT / "recipes" / "slice_character.toml"
 SOURCES = common.ROOT / "sources"
 BATCHES = common.ROOT / "batches"
 GAME_LICENCE_URL = "https://github.com/xperiaroco2/prime-game"
+# prime-game docs/ARCHITECTURE.md section 11.1: a character lands as assets/characters/<id>/<id>.glb.
+GAME_CHARACTERS = "assets/characters"
 
 # A clip key's library -> the source record of its raw files (`pack` per body type: the Ultimate Modular pack's own
 # actions). `tm` clips come from Meshy batches instead (their batch file and generation.json).
@@ -168,12 +170,15 @@ def _q(text: str) -> str:
 
 
 def manifest_toml(asset_id: str, cast: str, recipe: str, rows: list[dict], raw: list[tuple[str, str]],
-                  tools: list[str], generated_at: str, left: list[tuple[str, str]]) -> str:
+                  tools: list[str], generated_at: str, left: list[tuple[str, str]],
+                  body_credits: tuple[str, ...] = ()) -> str:
     """manifest.toml of the character (kind `character`, docs/manifest.md): own work made from CC0 packs and Meshy's
-    paid-plan clips, one [[clips]] table per clip with its own provenance, approval empty."""
+    paid-plan clips, one [[clips]] table per clip with its own provenance, approval empty; `body_credits` (the body
+    pack's credit) lead the credit line."""
     ai = any(r["ai_generated"] for r in rows)
     tasks = sorted({r["task_id"] for r in rows if r.get("task_id")})
-    credits = sorted({r["credit"] for r in rows if r.get("credit")})
+    clip_credits = {r["credit"] for r in rows if r.get("credit")} - set(body_credits)
+    credits = list(dict.fromkeys(body_credits)) + sorted(clip_credits)
     left_text = "; ".join(f"{n} ({why})" for n, why in left)
     lines = [
         f"# Written by `tools/run.py slice` (art #42 part C); a rebuild changes the hashes below.",
@@ -211,6 +216,21 @@ def manifest_toml(asset_id: str, cast: str, recipe: str, rows: list[dict], raw: 
         if r.get("task_id"):
             lines.append(f"task_id = {_q(r['task_id'])}")
     return "\n".join(lines) + "\n"
+
+
+def game_dir(asset_id: str) -> str:
+    """Where the character lands in prime-game: its docs/ARCHITECTURE.md section 11.1, `assets/characters/<id>/`."""
+    return f"{GAME_CHARACTERS}/{asset_id}"
+
+
+PACK_RECORDS = {"M": "quaternius_ultimate_modular_men", "W": "quaternius_ultimate_modular_women"}
+
+
+def source_credit(record: dict[str, Any]) -> str:
+    """A source record's credit line: its `credit`, else "<title> by <author> (<licence>)"."""
+    if record.get("credit"):
+        return record["credit"]
+    return f"{record.get('title', record.get('id', '?'))} by {record.get('author', '?')} ({record.get('licence', '?')})"
 
 
 def package_json(asset_id: str, files: dict[str, Path], game_dir: str) -> dict[str, Any]:

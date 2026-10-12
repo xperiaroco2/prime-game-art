@@ -20,7 +20,6 @@ from . import _anim, _anim_set, _godot, _slice, export
 
 NAME = "slice"
 HELP = "build the slice character: a clay cast member with the animation set's clips, exported, checked, its asset folder"
-GAME_DIR = "assets/characters/slice"
 
 
 def add_arguments(parser: argparse.ArgumentParser) -> None:
@@ -71,6 +70,12 @@ def _raw_files(raw: Path, recipe: dict, char: dict, rows: list[dict], anim_glb: 
     return [(f, _slice.sha256(raw / f)) for f in sorted(files) if (raw / f).is_file()]
 
 
+def _body_credit(gender: str) -> str:
+    """The credit of the Ultimate Modular pack the cast member's body comes from (its source record)."""
+    with open(common.ROOT / "sources" / f"{_slice.PACK_RECORDS[gender]}.toml", "rb") as fh:
+        return _slice.source_credit(tomllib.load(fh))
+
+
 def handoff(asset_id: str, cast: str, rows: list[dict], left: list[tuple[str, str]], glb: Path, info: dict,
             textures: dict) -> str:
     mb = glb.stat().st_size / 1e6
@@ -85,10 +90,17 @@ manifest.toml's approval fields are set (the engineer approves the look on the r
 
 | From (this folder) | To (prime-game) | Size | LFS |
 |---|---|---|---|
-| `export/{glb.name}` | `{GAME_DIR}/{glb.name}` | {mb:.2f} MB | yes (one object) |
+| `export/{glb.name}` | `{_slice.game_dir(asset_id)}/{glb.name}` | {mb:.2f} MB | yes (one object) |
 
-`package.json` lists the file with its SHA-256; the credit draft is the manifest's `credit` and the per-clip table
-below (CC0 sources need no credit; the Meshy clips are owned output of the Pro plan, `ai_generated = true`).
+The path is prime-game's `docs/ARCHITECTURE.md` section 11.1 (`assets/characters/<id>/<id>.glb`, `<id>` the manifest's
+`id`); the PR shape is its section 11.2: the GLB through LFS, its `.import` committed, `docs/credits/{asset_id}.md`
+and `toolsun.cmd credits`. `package.json` lists the file with its SHA-256; the credit draft is the manifest's
+`credit` (`public_repo_ok = true`, `ai_generated = true`) and the per-clip table below (the Meshy clips are owned
+output of the Pro plan, `ai_generated = true`).
+
+**The game's import check.** `tools/assets/asset_contract.json` (section 11.3) still lists `Knockdown`, `Crawl` and
+`Getup_Fours`, the slice's provisional list; this GLB leaves them out on purpose (the knockdown is a ragdoll,
+prime-game#522 and art #115). The import PR edits the contract's clip list to the clips below that the avatar maps.
 
 One GLB holds the body and the clips: the contract (docs/contract.md, "Animation") wants one shared library on the
 contract skeleton, and the slice has one body, so the clips ride with it; the game can save the AnimationPlayer's
@@ -204,9 +216,10 @@ def run(args: argparse.Namespace) -> int:
         tools = [f"blender {pins.BLENDER}",
                  "prime-game-art assemble (clay look, bake, face kit), anim-set, slice", "Godot 4.7.2 (checks)"]
         text = _slice.manifest_toml(asset_id, cast, settings["recipe"], rows, _raw_files(raw, recipe, char, rows,
-                                    anim_glb), tools, datetime.date.today().isoformat(), left)
+                                    anim_glb), tools, datetime.date.today().isoformat(), left,
+                                    (_body_credit(char["gender"]),))
         (asset / "manifest.toml").write_text(text, encoding="utf-8", newline="\n")
-        pkg = _slice.package_json(asset_id, {glb.name: shipped}, GAME_DIR)
+        pkg = _slice.package_json(asset_id, {glb.name: shipped}, _slice.game_dir(asset_id))
         (asset / "package.json").write_text(json.dumps(pkg, indent=1) + "\n", encoding="utf-8", newline="\n")
         (asset / "HANDOFF.md").write_text(handoff(asset_id, cast, rows, left, shipped, info, textures),
                                           encoding="utf-8", newline="\n")
