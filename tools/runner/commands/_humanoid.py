@@ -80,7 +80,7 @@ def pose_deviation(plain: dict[str, Any], retargeted: dict[str, Any], renamed: d
     return {"max_mm": round(worst * 1000, 3), "where": where, "joints_compared": compared}
 
 
-def trial(glb: Path, out: Path, contract: dict[str, Any]) -> dict[str, Any]:
+def trial(glb: Path, out: Path, contract: dict[str, Any], textured: bool = False) -> dict[str, Any]:
     """Imports glb with the BoneMap once per VARIANTS entry, checks each like godot-check and compares its poses with
     the plain import (which godot-check staged first). Writes <out>/humanoid.json and prints a summary; never fails
     the command."""
@@ -111,7 +111,7 @@ def trial(glb: Path, out: Path, contract: dict[str, Any]) -> dict[str, Any]:
     for variant, res_path in staged.items():
         dump, more = _godot.inspect(res_path, out / f"humanoid_{variant}_inspect.json", _request())
         mine = _godot.lines_for(lines, res_path, list(staged.values()))
-        checks = _godot.evaluate(dump, expect, contract, mine + more, renamed=renamed)
+        checks = _godot.evaluate(dump, expect, contract, mine + more, renamed=renamed, textured=textured)
         dev = pose_deviation(plain, dump, renamed)
         report["variants"][variant] = {
             "res_path": res_path,
