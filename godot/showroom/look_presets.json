@@ -60,7 +60,7 @@
    },
    "project_settings": {
     "rendering/lights_and_shadows/directional_shadow/size": 2048,
-    "rendering/lights_and_shadows/directional_shadow/soft_shadow_filter_quality": 1,
+    "rendering/lights_and_shadows/directional_shadow/soft_shadow_filter_quality": 2,
     "rendering/environment/subsurface_scattering/subsurface_scattering_quality": 0,
     "rendering/anti_aliasing/quality/msaa_3d": 0,
     "rendering/reflections/sky_reflections/roughness_layers": 6
@@ -88,7 +88,7 @@
    },
    "project_settings": {
     "rendering/lights_and_shadows/directional_shadow/size": 4096,
-    "rendering/lights_and_shadows/directional_shadow/soft_shadow_filter_quality": 2,
+    "rendering/lights_and_shadows/directional_shadow/soft_shadow_filter_quality": 3,
     "rendering/environment/ssao/quality": 1,
     "rendering/environment/ssao/half_size": true,
     "rendering/environment/subsurface_scattering/subsurface_scattering_quality": 0,
@@ -119,7 +119,7 @@
    },
    "project_settings": {
     "rendering/lights_and_shadows/directional_shadow/size": 4096,
-    "rendering/lights_and_shadows/directional_shadow/soft_shadow_filter_quality": 3,
+    "rendering/lights_and_shadows/directional_shadow/soft_shadow_filter_quality": 4,
     "rendering/environment/ssao/quality": 2,
     "rendering/environment/ssao/half_size": false,
     "rendering/environment/subsurface_scattering/subsurface_scattering_quality": 0,

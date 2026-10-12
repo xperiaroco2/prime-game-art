@@ -100,6 +100,10 @@ def gpu_table(record: dict[str, Any]) -> list[str]:
     return lines
 
 
+# Godot's soft shadow filter levels (RenderingServer.ShadowQuality, the project setting's values) by index.
+SHADOW_FILTER = ("hard", "very low", "low", "medium", "high", "ultra")
+SHADOW_FILTER_SETTING = "rendering/lights_and_shadows/directional_shadow/soft_shadow_filter_quality"
+
 # The recommended look per graphics preset: what the game copies (godot/showroom/look_presets.json, written by
 # `showroom --write-presets`). Each preset turns on everything the one before it does.
 LOOK_ENVIRONMENT = {
@@ -130,7 +134,7 @@ PRESETS: dict[str, dict[str, Any]] = {
         "materials": {"clay_subsurf_scatter_enabled": False},
         "project_settings": {
             "rendering/lights_and_shadows/directional_shadow/size": 2048,
-            "rendering/lights_and_shadows/directional_shadow/soft_shadow_filter_quality": 1,
+            SHADOW_FILTER_SETTING: SHADOW_FILTER.index("low"),  # what variants 1 to 4 measured
             "rendering/environment/subsurface_scattering/subsurface_scattering_quality": 0,
             "rendering/anti_aliasing/quality/msaa_3d": 0,
             "rendering/reflections/sky_reflections/roughness_layers": 6,
@@ -143,7 +147,7 @@ PRESETS: dict[str, dict[str, Any]] = {
         "materials": {"clay_subsurf_scatter_enabled": False},
         "project_settings": {
             "rendering/lights_and_shadows/directional_shadow/size": 4096,
-            "rendering/lights_and_shadows/directional_shadow/soft_shadow_filter_quality": 2,
+            SHADOW_FILTER_SETTING: SHADOW_FILTER.index("medium"),
             "rendering/environment/ssao/quality": 1,
             "rendering/environment/ssao/half_size": True,
             "rendering/environment/subsurface_scattering/subsurface_scattering_quality": 0,
@@ -158,7 +162,7 @@ PRESETS: dict[str, dict[str, Any]] = {
         "materials": {"clay_subsurf_scatter_enabled": False},
         "project_settings": {
             "rendering/lights_and_shadows/directional_shadow/size": 4096,
-            "rendering/lights_and_shadows/directional_shadow/soft_shadow_filter_quality": 3,
+            SHADOW_FILTER_SETTING: SHADOW_FILTER.index("high"),  # what variant 5 measured
             "rendering/environment/ssao/quality": 2,
             "rendering/environment/ssao/half_size": False,
             "rendering/environment/subsurface_scattering/subsurface_scattering_quality": 0,
@@ -174,7 +178,7 @@ PRESETS: dict[str, dict[str, Any]] = {
                       "head_subsurf_scatter_skin_mode": True},
         "project_settings": {
             "rendering/lights_and_shadows/directional_shadow/size": 4096,
-            "rendering/lights_and_shadows/directional_shadow/soft_shadow_filter_quality": 4,
+            SHADOW_FILTER_SETTING: SHADOW_FILTER.index("high"),  # ultra (5) is not measured
             "rendering/environment/ssao/quality": 3,
             "rendering/environment/ssao/half_size": False,
             "rendering/environment/subsurface_scattering/subsurface_scattering_quality": 2,
@@ -186,13 +190,20 @@ PRESETS: dict[str, dict[str, Any]] = {
 
 
 def preset_problems(presets: dict[str, dict[str, Any]] | None = None) -> list[str]:
-    """What is wrong with the presets: the four names in order, and each turning on at least the effects of the one
-    before it."""
+    """What is wrong with the presets: the four names in order, each turning on at least the effects of the one before
+    it, and soft shadow filter levels that are Godot's (0 to 5) and do not go down."""
     presets = PRESETS if presets is None else presets
     problems = []
     if list(presets) != ["Low", "Medium", "High", "Ultra"]:
         problems.append(f"presets {list(presets)}, not Low, Medium, High, Ultra")
     names = list(presets)
+    levels = [presets[n].get("project_settings", {}).get(SHADOW_FILTER_SETTING) for n in names]
+    for name, level in zip(names, levels):
+        if level is not None and level not in range(len(SHADOW_FILTER)):
+            problems.append(f"{name}: soft shadow filter {level} is not one of 0 to {len(SHADOW_FILTER) - 1}")
+    for (lower, a), (upper, b) in zip(zip(names, levels), zip(names[1:], levels[1:])):
+        if isinstance(a, int) and isinstance(b, int) and b < a:
+            problems.append(f"{upper}'s soft shadow filter {b} is below {lower}'s {a}")
     for lower, upper in zip(names, names[1:]):
         missing = set(presets[lower]["effects"]) - set(presets[upper]["effects"])
         if missing:

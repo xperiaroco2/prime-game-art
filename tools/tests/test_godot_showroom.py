@@ -79,6 +79,22 @@ class PresetsTest(unittest.TestCase):
         self.assertEqual(_showroom.preset_problems(bad), ["Medium drops ssao that Low turns on"])
         self.assertIn("not Low, Medium, High, Ultra", _showroom.preset_problems({"Low": {"effects": []}})[0])
 
+    def test_shadow_filter_levels(self) -> None:
+        levels = [p["project_settings"][_showroom.SHADOW_FILTER_SETTING] for p in _showroom.PRESETS.values()]
+        self.assertEqual(levels, [2, 3, 4, 4])
+        self.assertEqual(_showroom.SHADOW_FILTER[2], "low")
+        bad = {n: {"effects": [], "project_settings": {_showroom.SHADOW_FILTER_SETTING: q}}
+               for n, q in zip(["Low", "Medium", "High", "Ultra"], [3, 2, 4, 6])}
+        self.assertEqual(_showroom.preset_problems(bad), ["Ultra: soft shadow filter 6 is not one of 0 to 5",
+                                                          "Medium's soft shadow filter 2 is below Low's 3"])
+
+    def test_docs_name_the_shadow_filter_levels(self) -> None:
+        docs = (common.ROOT / "docs" / "godot.md").read_text(encoding="utf-8")
+        for name, preset in _showroom.PRESETS.items():
+            level = preset["project_settings"][_showroom.SHADOW_FILTER_SETTING]
+            row = next(ln for ln in docs.splitlines() if ln.startswith(f"| {name} | "))
+            self.assertIn(f"filter {level} ({_showroom.SHADOW_FILTER[level]})", row, name)
+
     def test_committed_file_is_current(self) -> None:
         path = common.ROOT / "godot" / "showroom" / "look_presets.json"
         committed = json.loads(path.read_text(encoding="utf-8"))

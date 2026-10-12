@@ -250,14 +250,18 @@ settling frames, three rounds in turn, the median round kept. `--write-presets` 
 
 **The recommended look per graphics preset** (`godot/showroom/look_presets.json`, which the game side copies; this repo
 does not touch the game): every preset uses AgX, the sky as ambient and reflections and the catch light; each turns on
-everything the one below does.
+everything the one below does. The shadow filter is the project setting
+`rendering/lights_and_shadows/directional_shadow/soft_shadow_filter_quality`, whose values are Godot's
+`RenderingServer.ShadowQuality`: 0 hard, 1 very low, 2 low, 3 medium, 4 high, 5 ultra (`_showroom.SHADOW_FILTER`).
+Low uses 2, the level of the showroom's variants 1 to 4; High uses 4, the level of variant 5's soft shadows; Ultra
+stays at 4, since ultra (5) has not been measured.
 
 | Preset | Adds | Shadows | SSAO | SSS on clay | MSAA |
 |---|---|---|---|---|---|
-| Low | AgX, sky ambient and reflections, catch light | 2048, filter low, hard | off | off | off |
-| Medium | SSAO | 4096, filter medium | half size, low | off | 2x |
-| High | soft shadows | 4096, filter high, key angular 1.5 degrees | full size, medium | off | 4x |
-| Ultra | SSS on the clay | 4096, filter ultra, key angular 1.5 degrees | full size, high | quality medium, strength 0.25 | 4x |
+| Low | AgX, sky ambient and reflections, catch light | 2048, filter 2 (low) | off | off | off |
+| Medium | SSAO | 4096, filter 3 (medium) | half size, low | off | 2x |
+| High | soft shadows | 4096, filter 4 (high), key angular 1.5 degrees | full size, medium | off | 4x |
+| Ultra | SSS on the clay | 4096, filter 4 (high), key angular 1.5 degrees | full size, high | quality medium, strength 0.25 | 4x |
 
 **Measured** (2026-10-12, the third run, slice_m1 at Idle 0.00 s, NVIDIA GeForce RTX 4060, vulkan forward_plus, Godot 4.7.2; the
 GPU time of the whole frame with one character, the floor and the sky; `D:/prime-art-raw/review/char/140/`):
