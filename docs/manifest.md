@@ -44,7 +44,7 @@ TOML puts every key after a `[table]` header into that table, so the top-level k
 | Field | Rule |
 |---|---|
 | `id` | Lowercase letters, digits and underscores; equal to the asset's folder name |
-| `kind` | `body`, `clothing`, `hair`, `face`, `accessory`, `item`, `prop`, `animation`, `kit` (a modular kit's pieces), `room` (room scenes) or `environment` (an outdoor or garden package); equal to the folder under `assets/` |
+| `kind` | `body`, `character` (an assembled game character: body, outfit, face and clips in one GLB, art #42), `clothing`, `hair`, `face`, `accessory`, `item`, `prop`, `animation`, `kit` (a modular kit's pieces), `room` (room scenes) or `environment` (an outdoor or garden package); equal to the folder under `assets/` |
 | `slot` | The cosmetic slot the asset fills (table below); `""` for a kind that fills none |
 | `title`, `notes` | Optional strings |
 | `source.service` | Who made it: `meshy`, `quaternius`, `own`, ... |
@@ -78,7 +78,7 @@ Unknown keys are refused, so a typo cannot hide a missing field.
 | `hair` | `hair_or_hat` (a hairstyle; a hat takes the same slot) |
 | `face` | `eyes`, `mouth` (changeable like the hairstyle) |
 | `accessory` | `hair_or_hat` (a hat), `face_accessory`, `back_item` |
-| `body`, `item`, `prop`, `animation`, `kit`, `room`, `environment` | `""` |
+| `body`, `character`, `item`, `prop`, `animation`, `kit`, `room`, `environment` | `""` |
 
 A character's outfit sets are saved presets of pieces, not assets, so they have no manifest. The slot names follow the
 character contract (`contract/`, issue #4); if the contract renames a slot, `tools/runner/commands/_manifest.py` follows
@@ -139,6 +139,28 @@ its 70 props (#124), P3 and P5 the 34 more they use (#126), P4 10 more (#129), P
 `public_repo_ok = true` and goes to the game under the game's terms (the engineer's E1, 2026-10-11): the game repo is
 public with no licence file, so all rights reserved, and `licence_url` points to it
 (`https://github.com/xperiaroco2/prime-game`), not to this private repo.
+
+## Clips
+
+A `character` or `animation` manifest lists the clips its export carries, one `[[clips]]` table each, because one
+GLB mixes sources (art #42 part C, `assets/character/slice_m1/`: Quaternius CC0 clips and Meshy text-to-motion):
+
+```toml
+[[clips]]
+name = "Pickup_Package"                       # the action and glTF animation name
+loop = false
+source = "tm:package-lift"                    # the clip key it is built from (through `from`)
+record = "batches/2026-10-b5-anim-mvp.toml"   # a source record id, or the Meshy batch file
+licence = "owned-paid-output"
+licence_url = "https://www.meshy.ai/terms-of-use"
+public_repo_ok = true
+ai_generated = true
+task_id = "01a110b7-..."                      # required for an AI-generated clip
+```
+
+Names are listed once; a record that is not a `batches/` file must be a source record; a `public_repo_ok` asset
+carries only public clips (a private clip stays out of the export and is listed in `notes`), and an AI-generated clip
+makes the asset `ai_generated`. The asset's own `licence` covers the art's own work (`own-work`, the game's terms).
 
 ## Credits for the game
 
