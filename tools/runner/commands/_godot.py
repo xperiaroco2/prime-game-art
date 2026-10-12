@@ -208,16 +208,23 @@ def expectations(glb: Path) -> dict[str, Any]:
             "actions": {g: name for name, (g, _) in names.items()},
             "loop_suffix": sorted(g for g, loops in names.values() if loops),
         }
-    summary = _export.summarize(_export.glb_json(glb))
+    return expect_from_summary(glb.name, _export.summarize(_export.glb_json(glb)))
+
+
+def expect_from_summary(source: str, summary: dict[str, Any]) -> dict[str, Any]:
+    """The expectations from a GLB's own summary (_export.summarize) when no .export.json lies beside it: the
+    animations under the names Godot gives them (a loop suffix dropped, art #33), and those must import looping."""
+    names = {name: godot_name(name) for name in summary["animations"]}
     return {
-        "source": glb.name,
+        "source": source,
         "parts": sorted(summary["meshes"]),
         "bones": summary["skins"][0] if summary["skins"] else [],
         "bone_parents": {},
         "rest_heads_m": {},
-        "animations": {name: a["duration_s"] for name, a in summary["animations"].items()},
+        "animations": {names[name][0]: a["duration_s"] for name, a in summary["animations"].items()},
         "height_m": None,
         "seams": {},
+        "loop_suffix": sorted(g for g, loops in names.values() if loops),
     }
 
 
