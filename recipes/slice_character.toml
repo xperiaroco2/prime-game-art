@@ -1,0 +1,21 @@
+# The slice character (art #42 part C, the game's M6.2 vertical slice): one cast character of `recipe` in the clay
+# look with the clay face kit and its baked textures, carrying the animation set's exported clips for its body type
+# minus `exclude`. `tools/run.py slice` builds, exports and checks it (docs/godot.md, "The slice character");
+# `--cast` builds another cast member with the same settings.
+
+cast = "m1"
+recipe = "clay_cast_e"
+set = "mvp"
+
+# The clips `frames` renders for the review sheet (set names; Godot drops the _Loop suffix).
+review_clips = ["Idle_Loop", "Jog_Fwd_Loop", "Sprint_Fwd_Loop", "Carry_Upper_Loop", "Pickup_Package",
+                "Putdown_Package"]
+
+# Exported clips of the set left off the character, each with the reason. The knockdown, the downed state and the
+# get-up wait for the ragdoll (art #115, a contract change the engineer decides): issue #42's brief for part C.
+[exclude]
+Knockdown = "the knockdown's fall: the ragdoll task (#115) decides falls"
+Crawl_Start = "downed: from lying on the back onto all fours, after the fall (#115)"
+Crawl_Loop = "downed: the crawl after the fall (#115)"
+Getup_Back = "the get-up after a revive, from lying on the back (#115)"
+Getup_Fours = "the get-up after a revive, from all fours (#115)"

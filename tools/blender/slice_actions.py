@@ -1,0 +1,127 @@
+"""Puts an animation set's clips on a saved character (art #42 part C: the slice character; docs/godot.md, "The slice
+character"). Runs inside Blender:
+
+    blender -b --python slice_actions.py -- --character <id>.blend --anim <set>_<body>.blend --clips A,B,...
+        --out <slice>.blend --json <slice>.actions.json
+
+The character is a saved one (`assemble --blend`, docs/assembly.md, "The saved character"): one armature with the
+transforms applied and the body type's pack actions. The set's file (`anim-set`, docs/animations.md, "Animation sets")
+holds the same rig with the clips baked under their own names, its transforms applied the same way (location keys in
+metres). This drops the pack's actions, appends the named clips, checks that every clip's bones exist on the
+character's rig and that the two rigs' rest poses agree (the toes excepted: their rest follows each shoe), and saves a
+copy at the set's 30 fps that `export --textured` accepts.
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import re
+import sys
+
+import bpy
+
+# The rest heads of the two rigs must agree within this (the set's donor and the character share the body type's
+# skeleton; the toes follow the shoe, so they differ and are only reported).
+REST_TOLERANCE_M = 0.002
+TOES = ("Toe.L", "Toe.R")
+BONE_RE = re.compile(r'pose\.bones\["([^"]+)"\]')
+
+
+def _fcurves(action):
+    for layer in action.layers:
+        for strip in layer.strips:
+            for bag in strip.channelbags:
+                yield from bag.fcurves
+
+
+def _one_armature(objects):
+    arms = [o for o in objects if o.type == "ARMATURE"]
+    if len(arms) != 1:
+        raise SystemExit(f"expected one armature, found {[o.name for o in arms]}")
+    return arms[0]
+
+
+def main(argv):
+    ap = argparse.ArgumentParser(prog="slice_actions.py")
+    ap.add_argument("--character", required=True)
+    ap.add_argument("--anim", required=True)
+    ap.add_argument("--clips", required=True, help="comma list of the set's action names to put on the character")
+    ap.add_argument("--out", required=True)
+    ap.add_argument("--json", required=True)
+    a = ap.parse_args(argv)
+    clips = [c for c in a.clips.split(",") if c]
+
+    bpy.ops.wm.open_mainfile(filepath=os.path.abspath(a.character))
+    arm = _one_armature(bpy.data.objects)
+    parts = sorted((o for o in bpy.data.objects if o.type == "MESH"), key=lambda o: o.name)
+    dropped = sorted(act.name for act in bpy.data.actions)
+    if arm.animation_data:
+        for track in list(arm.animation_data.nla_tracks):
+            arm.animation_data.nla_tracks.remove(track)
+        arm.animation_data.action = None
+    for act in list(bpy.data.actions):
+        bpy.data.actions.remove(act)
+
+    with bpy.data.libraries.load(os.path.abspath(a.anim), link=False) as (src, dst):
+        missing = [c for c in clips if c not in src.actions]
+        if missing:
+            raise SystemExit(f"the set's file has no action {missing}")
+        dst.actions = list(clips)
+        dst.armatures = list(src.armatures)
+    if len(dst.armatures) != 1:
+        raise SystemExit(f"the set's file holds {len(dst.armatures)} armatures, expected one")
+    donor = dst.armatures[0]
+    bones = {b.name: b for b in arm.data.bones}
+    rest = {}
+    for b in donor.bones:
+        mine = bones.get(b.name)
+        if mine is None:
+            raise SystemExit(f"the set's rig has bone {b.name!r}, the character's rig has not")
+        rest[b.name] = (mine.head_local - b.head_local).length
+    if set(bones) - set(rest):
+        raise SystemExit(f"the character's rig has bones the set's has not: {sorted(set(bones) - set(rest))}")
+    body_err = max(v for k, v in rest.items() if k not in TOES)
+    if body_err > REST_TOLERANCE_M:
+        worst = max((k for k in rest if k not in TOES), key=rest.get)
+        raise SystemExit(f"the rest poses differ by {body_err * 1000:.2f} mm at {worst} (tolerance "
+                         f"{REST_TOLERANCE_M * 1000} mm)")
+    bpy.data.armatures.remove(donor)
+
+    actions = {}
+    for name in clips:
+        act = bpy.data.actions.get(name)
+        if act is None:
+            raise SystemExit(f"{name} was not appended")
+        unknown = sorted({m.group(1) for fc in _fcurves(act) for m in [BONE_RE.search(fc.data_path)] if m} - set(bones))
+        if unknown:
+            raise SystemExit(f"{name} animates bones the rig lacks: {unknown}")
+        act.use_fake_user = True
+        actions[name] = [int(act.frame_range[0]), int(act.frame_range[1])]
+    for pb in arm.pose.bones:
+        pb.location = (0.0, 0.0, 0.0)
+        pb.rotation_quaternion = (1.0, 0.0, 0.0, 0.0)
+        pb.rotation_euler = (0.0, 0.0, 0.0)
+        pb.scale = (1.0, 1.0, 1.0)
+
+    scene = bpy.context.scene
+    scene.render.fps = 30
+    scene.render.fps_base = 1.0
+    scene.frame_start = min(r[0] for r in actions.values())
+    scene.frame_end = max(r[1] for r in actions.values())
+    os.makedirs(os.path.dirname(os.path.abspath(a.out)), exist_ok=True)
+    bpy.context.preferences.filepaths.save_version = 0
+    bpy.ops.wm.save_as_mainfile(filepath=os.path.abspath(a.out), copy=True, compress=True)
+    report = {"character": a.character.replace("\\", "/"), "anim": a.anim.replace("\\", "/"),
+              "out": a.out.replace("\\", "/"), "armature": arm.name, "bones": len(bones),
+              "parts": [o.name for o in parts], "fps": 30, "dropped_actions": dropped, "actions": actions,
+              "rest_max_mm": round(body_err * 1000, 4),
+              "toes_rest_mm": {t: round(rest[t] * 1000, 2) for t in TOES if t in rest}}
+    with open(a.json, "w", encoding="utf-8") as fh:
+        json.dump(report, fh, indent=1)
+    print("SLICE", json.dumps({k: report[k] for k in ("bones", "rest_max_mm", "toes_rest_mm")}), len(actions), "clips")
+
+
+if __name__ == "__main__":
+    main(sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else [])
