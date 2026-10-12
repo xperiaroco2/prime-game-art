@@ -1,0 +1,316 @@
+# Written by `tools/run.py slice` (art #42 part C); a rebuild changes the hashes below.
+id = "slice_m1"
+kind = "character"
+slot = ""
+title = "The slice character: cast m1 of clay_cast_e in the clay look with its clips"
+notes = "The game M6.2 slice body (#42 part C): the Ultimate Modular men or women pack pieces of the cast recipe, the clay look baked into textures and the clay face kit (own work), with the animation set clips listed below. Left off: Jog_Bwd_TTM_Loop (a review candidate the set does not export (export = false)); Jog_Bwd_R2_Loop (a review candidate the set does not export (export = false)); Strafe_Left_R2_Loop (a review candidate the set does not export (export = false)); Knockdown (the knockdown's fall: the ragdoll task (#115) decides falls); Crawl_Start (downed: from lying on the back onto all fours, after the fall (#115)); Crawl_Start_R2 (a review candidate the set does not export (export = false)); Crawl_Loop (downed: the crawl after the fall (#115)); Crawl_R2_Loop (a review candidate the set does not export (export = false)); Getup_Back (the get-up after a revive, from lying on the back (#115)); Getup_Fours (the get-up after a revive, from all fours (#115))."
+tools = ["blender 5.2.2", "prime-game-art assemble (clay look, bake, face kit), anim-set, slice", "Godot 4.7.2 (checks)"]
+licence = "own-work"
+licence_url = "https://github.com/xperiaroco2/prime-game"
+credit = "Ultimate Modular Men Pack by Quaternius (CC0 1.0); Universal Animation Library 2 by Quaternius (CC0 1.0); Universal Animation Library by Quaternius (CC0 1.0)"
+public_repo_ok = true
+ai_generated = true
+approved_by = []
+approved_at = ""
+approval_pr = ""
+
+[source]
+service = "own"
+plan = "own-work; Meshy Pro (monthly) for the text-to-motion clips"
+model_version = "meshy text-to-motion (prime)"
+task_ids = ["01a110b6-ad19-71b4-8bcb-d39541e78714", "01a110b6-f03e-71aa-8a5d-7ee60d2e9653", "01a110b7-32c3-761f-b52f-82be52e6eb96", "01a110b7-7514-7700-8538-a08f29a4b06b"]
+generated_at = 2026-10-12
+url = "https://github.com/xperiaroco2/prime-game-art"
+
+[[raw]]
+file = "2026-10-b5-anim-mvp/package-lift/text_to_motion-clip.fbx"
+sha256 = "05beb15810e8b142429ae2a0adffa1c07bceab02ebf955daedbe7341230bdf79"
+
+[[raw]]
+file = "2026-10-b5-anim-mvp/shove-stumble/text_to_motion-clip.fbx"
+sha256 = "574efa74a38a62ad063f886db9801d283e875f4e09b93d09efc17f9388434176"
+
+[[raw]]
+file = "2026-10-b5-anim-mvp/strafe-left/text_to_motion-clip.fbx"
+sha256 = "ae9e4c4e6c39ef6b7c5ca1b016fa8aea1fe34cc1fb58e142356fcd37fa8c39e2"
+
+[[raw]]
+file = "2026-10-b5-anim-mvp/turn-left-90/text_to_motion-clip.fbx"
+sha256 = "fd05eb2239bf559ff639f967151d086b84b80444d901a344d6a35b3eba3d4849"
+
+[[raw]]
+file = "anim-sets/slice-42c/men/anim_mvp_men.glb"
+sha256 = "cd308cc14ec179dcc673a177e776906f9b1147c6dc9514b78c549b91b6bc800f"
+
+[[raw]]
+file = "refs/Ultimate_Modular_Men_Pack/Adventurer.glb"
+sha256 = "4a8639cd8eee9d8a150464edc25eb0536ced464790704a64e40c8620d99f66db"
+
+[[raw]]
+file = "refs/Ultimate_Modular_Men_Pack/Beach Character.glb"
+sha256 = "67c366f8c1e9ba3d3767213bc8660579a4f8028ed647a33c53d05596e8dd888c"
+
+[[raw]]
+file = "refs/Ultimate_Modular_Men_Pack/Business Man.glb"
+sha256 = "82b81257c1e94cd9ee48cb1dcbe5ff506e81c9ce67cd0c5af542d8712dca546e"
+
+[[raw]]
+file = "refs/Ultimate_Modular_Men_Pack/Worker.glb"
+sha256 = "9c28614f465b7dc105f908c20c22fc045f4b07caf8c5ef0e9f8049eceb6dd38d"
+
+[[clips]]
+name = "Idle_Loop"
+loop = true
+source = "ual:Idle_Loop"
+record = "quaternius_ual1_standard"
+licence = "CC0-1.0"
+licence_url = "https://creativecommons.org/publicdomain/zero/1.0/"
+public_repo_ok = true
+ai_generated = false
+
+[[clips]]
+name = "Turn_Left"
+loop = false
+source = "tm:turn-left-90"
+record = "batches/2026-10-b5-anim-mvp.toml"
+licence = "owned-paid-output"
+licence_url = "https://www.meshy.ai/terms-of-use"
+public_repo_ok = true
+ai_generated = true
+task_id = "01a110b6-f03e-71aa-8a5d-7ee60d2e9653"
+
+[[clips]]
+name = "Turn_Right"
+loop = false
+source = "tm:turn-left-90"
+record = "batches/2026-10-b5-anim-mvp.toml"
+licence = "owned-paid-output"
+licence_url = "https://www.meshy.ai/terms-of-use"
+public_repo_ok = true
+ai_generated = true
+task_id = "01a110b6-f03e-71aa-8a5d-7ee60d2e9653"
+
+[[clips]]
+name = "Jog_Fwd_Loop"
+loop = true
+source = "ual:Jog_Fwd_Loop"
+record = "quaternius_ual1_standard"
+licence = "CC0-1.0"
+licence_url = "https://creativecommons.org/publicdomain/zero/1.0/"
+public_repo_ok = true
+ai_generated = false
+
+[[clips]]
+name = "Jog_Bwd_Loop"
+loop = true
+source = "ual:Jog_Fwd_Loop"
+record = "quaternius_ual1_standard"
+licence = "CC0-1.0"
+licence_url = "https://creativecommons.org/publicdomain/zero/1.0/"
+public_repo_ok = true
+ai_generated = false
+
+[[clips]]
+name = "Strafe_Left_Loop"
+loop = true
+source = "tm:strafe-left"
+record = "batches/2026-10-b5-anim-mvp.toml"
+licence = "owned-paid-output"
+licence_url = "https://www.meshy.ai/terms-of-use"
+public_repo_ok = true
+ai_generated = true
+task_id = "01a110b6-ad19-71b4-8bcb-d39541e78714"
+
+[[clips]]
+name = "Strafe_Right_Loop"
+loop = true
+source = "tm:strafe-left"
+record = "batches/2026-10-b5-anim-mvp.toml"
+licence = "owned-paid-output"
+licence_url = "https://www.meshy.ai/terms-of-use"
+public_repo_ok = true
+ai_generated = true
+task_id = "01a110b6-ad19-71b4-8bcb-d39541e78714"
+
+[[clips]]
+name = "Sprint_Fwd_Loop"
+loop = true
+source = "ual:Sprint_Loop"
+record = "quaternius_ual1_standard"
+licence = "CC0-1.0"
+licence_url = "https://creativecommons.org/publicdomain/zero/1.0/"
+public_repo_ok = true
+ai_generated = false
+
+[[clips]]
+name = "Crouch_Idle_Loop"
+loop = true
+source = "ual:Crouch_Idle_Loop"
+record = "quaternius_ual1_standard"
+licence = "CC0-1.0"
+licence_url = "https://creativecommons.org/publicdomain/zero/1.0/"
+public_repo_ok = true
+ai_generated = false
+
+[[clips]]
+name = "Crouch_Fwd_Loop"
+loop = true
+source = "ual:Crouch_Fwd_Loop"
+record = "quaternius_ual1_standard"
+licence = "CC0-1.0"
+licence_url = "https://creativecommons.org/publicdomain/zero/1.0/"
+public_repo_ok = true
+ai_generated = false
+
+[[clips]]
+name = "Jump_Start"
+loop = false
+source = "ual:Jump_Start"
+record = "quaternius_ual1_standard"
+licence = "CC0-1.0"
+licence_url = "https://creativecommons.org/publicdomain/zero/1.0/"
+public_repo_ok = true
+ai_generated = false
+
+[[clips]]
+name = "Jump_Air_Loop"
+loop = true
+source = "ual:Jump_Loop"
+record = "quaternius_ual1_standard"
+licence = "CC0-1.0"
+licence_url = "https://creativecommons.org/publicdomain/zero/1.0/"
+public_repo_ok = true
+ai_generated = false
+
+[[clips]]
+name = "Jump_Land"
+loop = false
+source = "ual:Jump_Land"
+record = "quaternius_ual1_standard"
+licence = "CC0-1.0"
+licence_url = "https://creativecommons.org/publicdomain/zero/1.0/"
+public_repo_ok = true
+ai_generated = false
+
+[[clips]]
+name = "Shove_Stumble"
+loop = false
+source = "tm:shove-stumble"
+record = "batches/2026-10-b5-anim-mvp.toml"
+licence = "owned-paid-output"
+licence_url = "https://www.meshy.ai/terms-of-use"
+public_repo_ok = true
+ai_generated = true
+task_id = "01a110b7-32c3-761f-b52f-82be52e6eb96"
+
+[[clips]]
+name = "Push_Upper_Loop"
+loop = true
+source = "ual:Push_Loop"
+record = "quaternius_ual1_standard"
+licence = "CC0-1.0"
+licence_url = "https://creativecommons.org/publicdomain/zero/1.0/"
+public_repo_ok = true
+ai_generated = false
+
+[[clips]]
+name = "Knife_Swing"
+loop = false
+source = "pack:Sword_Slash"
+record = "quaternius_ultimate_modular_men"
+licence = "CC0-1.0"
+licence_url = "https://creativecommons.org/publicdomain/zero/1.0/"
+public_repo_ok = true
+ai_generated = false
+
+[[clips]]
+name = "Carry_Upper_Loop"
+loop = true
+source = "ual2:Walk_Carry_Loop"
+record = "quaternius_ual2_standard"
+licence = "CC0-1.0"
+licence_url = "https://creativecommons.org/publicdomain/zero/1.0/"
+public_repo_ok = true
+ai_generated = false
+
+[[clips]]
+name = "Pickup_One"
+loop = false
+source = "ual2:Farm_Harvest"
+record = "quaternius_ual2_standard"
+licence = "CC0-1.0"
+licence_url = "https://creativecommons.org/publicdomain/zero/1.0/"
+public_repo_ok = true
+ai_generated = false
+
+[[clips]]
+name = "Putdown_One"
+loop = false
+source = "ual2:Farm_Harvest"
+record = "quaternius_ual2_standard"
+licence = "CC0-1.0"
+licence_url = "https://creativecommons.org/publicdomain/zero/1.0/"
+public_repo_ok = true
+ai_generated = false
+
+[[clips]]
+name = "Pickup_Package"
+loop = false
+source = "tm:package-lift"
+record = "batches/2026-10-b5-anim-mvp.toml"
+licence = "owned-paid-output"
+licence_url = "https://www.meshy.ai/terms-of-use"
+public_repo_ok = true
+ai_generated = true
+task_id = "01a110b7-7514-7700-8538-a08f29a4b06b"
+
+[[clips]]
+name = "Putdown_Package"
+loop = false
+source = "tm:package-lift"
+record = "batches/2026-10-b5-anim-mvp.toml"
+licence = "owned-paid-output"
+licence_url = "https://www.meshy.ai/terms-of-use"
+public_repo_ok = true
+ai_generated = true
+task_id = "01a110b7-7514-7700-8538-a08f29a4b06b"
+
+[[clips]]
+name = "Raise_In"
+loop = false
+source = "ual:Fixing_Kneeling"
+record = "quaternius_ual1_standard"
+licence = "CC0-1.0"
+licence_url = "https://creativecommons.org/publicdomain/zero/1.0/"
+public_repo_ok = true
+ai_generated = false
+
+[[clips]]
+name = "Raise_Work_Loop"
+loop = true
+source = "ual:Fixing_Kneeling"
+record = "quaternius_ual1_standard"
+licence = "CC0-1.0"
+licence_url = "https://creativecommons.org/publicdomain/zero/1.0/"
+public_repo_ok = true
+ai_generated = false
+
+[[clips]]
+name = "Raise_Out"
+loop = false
+source = "ual:Fixing_Kneeling"
+record = "quaternius_ual1_standard"
+licence = "CC0-1.0"
+licence_url = "https://creativecommons.org/publicdomain/zero/1.0/"
+public_repo_ok = true
+ai_generated = false
+
+[[clips]]
+name = "Talk_Upper_Loop"
+loop = true
+source = "ual:Idle_Talking_Loop"
+record = "quaternius_ual1_standard"
+licence = "CC0-1.0"
+licence_url = "https://creativecommons.org/publicdomain/zero/1.0/"
+public_repo_ok = true
+ai_generated = false
