@@ -230,6 +230,40 @@ keeping those position tracks is exact here because the trial retargets onto the
 proportions the feet's absolute positions would not fit (the reason Godot drops them by default). That trade-off is the
 contract v2's.
 
+## The slice character (`slice`, art #42 part C)
+
+The game's first character (prime-game M6.2/M7, prime-game#522): one cast member of `recipes/clay_cast_e.json` in the
+clay look with the clay face kit and its baked textures, carrying the MVP animation set's exported clips for its body
+type, in place, in **one GLB** (body, skeleton and clips: prime-game `docs/ARCHITECTURE.md` section 11.1 takes a
+character as `assets/characters/<id>/<id>.glb`; the contract wants one clip library on the contract skeleton, and the
+slice has one body). Settings: `recipes/slice_character.toml` (the cast id, the recipe, the set, the review clips and
+the `exclude` table with a reason per clip). One command:
+
+```
+tools/run.py anim-set --set mvp --body men --out <raw>/anim-sets/slice-42c        # once per body type, if not built
+tools/run.py slice [--cast m1] --anim-set <raw>/anim-sets/slice-42c     --asset assets/character/slice_m1 --review <raw>/review/char/42c
+```
+
+`slice` assembles the cast member (`assemble --look clay --bake`; `--blend` reuses a saved one), puts the set's clips
+on its armature in Blender (`tools/blender/slice_actions.py`; it refuses a rest pose that differs from the set's),
+exports with `export --textured`, runs `godot-check --strict-contract --humanoid --textured`, `frames` of the review
+clips with the Blender comparison and an 8-view turnaround, and with `--asset` writes the asset folder:
+`export/slice_<cast>.glb`, `manifest.toml` (kind `character`, one `[[clips]]` table per clip with its source, licence,
+`public_repo_ok` and `ai_generated`; a clip whose source is not `public_repo_ok` stays out and is listed),
+`package.json` (the file, its bytes and SHA-256, the game folder) and `HANDOFF.md` (what to copy where, the import
+settings, the clip table with the avatar states each clip serves, sizes, what was left off). `--cast` builds another
+member with the same settings. The approval fields stay empty until the engineer approves the look.
+
+Measured (m1, 2026-10-12): 7.45 MB GLB (10 embedded images, 4.44 MB), 6 parts on one skeleton of 64 bones, 9392
+triangles, 25 clips at 30 fps; glTF-Validator 0 errors (6 `NODE_SKINNED_MESH_NON_ROOT` warnings, as every export);
+`frames` within 0.022 mm of Blender. Left off: `Knockdown`, `Crawl_Start`, `Crawl_Loop`, `Getup_Back`, `Getup_Fours`
+(the knockdown is a ragdoll: prime-game#522, art #115) and the set's review-only clips (`export = false`).
+
+**Open: the height.** `--strict-contract` fails `contract_height` (1.986 m against the contract v1's 1.70 to 1.80 m;
+eyes 1.722 m): the clay look's head is 1.3 times the pack's, with hair on top. Every other check passes, and `slice`
+returns 1 until the engineer decides: widen the window for the clay look (a contract change), scale the export, or let
+the game scale the body.
+
 ## Findings for later tasks
 
 - **Toe bones (art #25):** assembled characters have 64 bones since art #25 (`Toe.L`, `Toe.R`). The export and
