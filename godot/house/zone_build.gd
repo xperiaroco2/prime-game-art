@@ -9,7 +9,8 @@ extends SceneTree
 ## ceiling; at a tenth they gave one texel per tile: per-tile seams and no lamp pools); above=0.1 keeps #83a's rule.
 ## #108: the yard slab (slab_yard_*, slab_edge_yard_*, beam_*) is in the zone's own room scenes, not Above, so it
 ## bakes at the full texel like every other piece of the zone; the flat rule only sorts Above and merge=1's floor tiles.
-## Overrides of bake.json: denoiser=0|1 energy=<f>; merge=1 welds each room level's floor tiles into one mesh and
+## Overrides of bake.json: denoiser=0|1 energy=<f> bounces=<n>; lights=dynamic bakes with every light BAKE_DYNAMIC (the
+## lightmap keeps only their bounce; #83b's hybrid row lights them in real time with shadows); merge=1 welds each room level's floor tiles into one mesh and
 ## unwraps it (lightmap_unwrap) so the floor has one lightmap island instead of one per tile and face.
 ##   godot --headless --path godot -s res://house/zone_build.gd -- zone=ground tag=high texel=12 uv2=<abs> bake=<abs>
 
@@ -35,6 +36,9 @@ func _initialize() -> void:
 		bake["denoiser"] = a["denoiser"] == "1"
 	if a.has("energy"):
 		bake["bounce_indirect_energy"] = float(a["energy"])
+	if a.has("bounces"):
+		bake["bounces"] = int(a["bounces"])
+	var lights_dynamic: bool = a.get("lights", "static") == "dynamic"
 	var above_k := float(a.get("above", "1.0"))
 	var merge: bool = a.get("merge", "0") == "1"
 	var groups := {}
@@ -118,10 +122,13 @@ func _initialize() -> void:
 	for l: Light3D in src.find_children("*", "Light3D", true, false):
 		var c: Light3D = l.duplicate()
 		c.transform = _xf(l, src)
+		if lights_dynamic:
+			c.light_bake_mode = Light3D.BAKE_DYNAMIC
 		lights.add_child(c)
 		c.owner = out
 		nl += 1
 	stats["lights"] = nl
+	stats["lights_mode"] = "dynamic" if lights_dynamic else "static"
 	stats["box"] = [box.position.x, box.position.y, box.position.z, box.size.x, box.size.y, box.size.z]
 	var lm := LightmapGI.new()
 	lm.name = "LightmapGI"

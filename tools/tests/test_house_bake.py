@@ -66,9 +66,13 @@ class Staging(unittest.TestCase):
         self.assertEqual(B.PROP_TEXEL_PER_M, 5.0)
 
     def test_build_args(self):
-        args = B.build_args("ground", "high", 12.0, {"denoiser": True, "bounce_indirect_energy": 1.0}, "u.json", "b.json")
-        self.assertEqual(args, ["zone=ground", "tag=high", "texel=12", "denoiser=1", "energy=1", "above=1", "merge=0",
-                                "uv2=u.json", "bake=b.json"])
+        bake = {"denoiser": True, "bounce_indirect_energy": 1.0, "bounces": 3}
+        args = B.build_args("ground", "high", 12.0, bake, "u.json", "b.json")
+        self.assertEqual(args, ["zone=ground", "tag=high", "texel=12", "denoiser=1", "energy=1", "bounces=3", "above=1",
+                                "merge=0", "lights=static", "uv2=u.json", "bake=b.json"])
+        self.assertIn("lights=dynamic", B.build_args("ground", "x", 8.0, bake, "u", "b", lights="dynamic"))
+        with self.assertRaises(ValueError):
+            B.build_args("ground", "x", 8.0, bake, "u", "b", lights="baked")
 
 
 class Cameras(unittest.TestCase):
@@ -162,8 +166,74 @@ class Grid(unittest.TestCase):
         m = lambda lum: {"L_mean": lum, "dark_pct": 10.0, "C_p90": 20.0}
         md = B.numbers_md("ground", {"ground_realtime": [m(40.0), m(50.0)], "ground_high_baked": [m(30.0), m(45.0)]},
                           "ground_realtime", ["E1 kitchen", "seam"])
-        self.assertIn("| ground_high_baked | 30.0 / 10.0 / 20.0 | 45.0 / 10.0 / 20.0 | -7.5 |", md)
+        self.assertIn("| ground_high_baked | 30.0 / 10.0 / 20.0 | 45.0 / 10.0 / 20.0 | -10.0 / -5.0 (-7.5) |", md)
         self.assertIn("| ground_realtime | 40.0 / 10.0 / 20.0 | 50.0 / 10.0 / 20.0 |  |", md)
+
+    def test_numbers_against_several_references(self):
+        m = lambda lum: {"L_mean": lum, "dark_pct": 10.0, "C_p90": 20.0}
+        table = {"g_realtime": [m(40.0)], "g_realtime_shadow": [m(30.0)], "g_x_baked": [m(31.0)]}
+        md = B.numbers_md("g", table, ["g_realtime", "g_realtime_shadow"], ["seam"])
+        self.assertIn("dL* vs g_realtime (per camera; mean) | dL* vs g_realtime_shadow (per camera; mean) |", md)
+        self.assertIn("| g_x_baked | 31.0 / 10.0 / 20.0 | -9.0 (-9.0) | +1.0 (+1.0) |", md)
+        self.assertIn("| g_realtime_shadow | 30.0 / 10.0 / 20.0 | -10.0 (-10.0) |  |", md)
+
+
+class Diagnostic(unittest.TestCase):
+    """#83b: the diagnostic bakes and their shot rows."""
+
+    def setUp(self):
+        self.lights = tomllib.loads(LIGHTS.read_text(encoding="utf-8"))
+
+    def test_four_bakes_at_the_high_texel(self):
+        vs = B.diag_variants(self.lights, "ground")
+        texel = self.lights["zones"]["ground"]["texel_high"]
+        self.assertEqual(len({v["tag"] for v in vs}), 4)
+        self.assertTrue(all(v["texel"] == texel and not v["merge"] for v in vs))
+        base, b0, ld, old = vs
+        self.assertEqual((base["bake"]["denoiser"], base["bake"]["bounce_indirect_energy"]), (False, 1.5))
+        self.assertEqual(base["bake"], self.lights["bake"])  # #83b's default is the chosen settings
+        self.assertEqual(b0["bake"], {**base["bake"], "bounces": 0})
+        self.assertEqual((ld["lights"], ld["bake"]), ("dynamic", base["bake"]))
+        self.assertEqual(old["bake"], {**self.lights["bake"], **B.BEFORE_83B})
+        self.assertEqual(old["tag"], "t8_d1_e15_old")
+        self.assertEqual([v["lights"] for v in (base, b0, old)], ["static"] * 3)
+
+    def test_rows_and_modes(self):
+        rows = B.shot_rows("ground", B.diag_variants(self.lights, "ground"))
+        self.assertEqual([r["mode"] for r in rows], ["realtime", "realtime_shadow", "realtime_shadow_nospec", "baked",
+                                                     "baked", "hybrid", "hybrid_nospec", "baked"])
+        self.assertEqual(rows[0]["label"], "ground_realtime")
+        self.assertEqual(rows[1]["label"], "ground_realtime_shadow")
+        self.assertEqual(rows[6]["label"], "ground_t8_d0_e15_ld_hybrid_nospec")
+        self.assertEqual(len({r["label"] for r in rows}), len(rows))
+        self.assertLessEqual(len(rows), 8)  # the brief's bound: about 8 rows of three cameras
+
+    def test_the_preset_and_grid_rows(self):
+        self.assertEqual(B.shot_rows("ground", B.variants(self.lights, "ground", "high")),
+                         [{"label": "ground_realtime", "tag": "high", "mode": "realtime"},
+                          {"label": "ground_high_baked", "tag": "high", "mode": "baked"}])
+        rows = B.shot_rows("ground", B.variants(self.lights, "ground", "high", reference=True))
+        self.assertEqual([r["label"] for r in rows],
+                         ["ground_realtime", "ground_high_baked", "ground_high_ld_hybrid_nospec"])
+        grid = B.variants(self.lights, "ground", "high", grid=True, reference=True)
+        self.assertEqual(len(grid), 13)
+        self.assertEqual(grid[-1], {**grid[0], "tag": grid[0]["tag"] + "_ld", "lights": "dynamic",
+                                    "modes": ["hybrid_nospec"]})
+        self.assertNotIn("lights", grid[0])  # the reference is a copy
+
+    def test_unknown_mode(self):
+        with self.assertRaises(ValueError):
+            B.shot_rows("ground", [{"tag": "x", "modes": ["daylight"]}])
+
+    def test_references_put_the_right_one_first(self):
+        rows = [{**r, "zone": "ground"} for r in B.shot_rows("ground", B.diag_variants(self.lights, "ground"))]
+        self.assertEqual(_house_bake.references("ground", rows, True),
+                         ["ground_t8_d0_e15_ld_hybrid_nospec", "ground_realtime", "ground_realtime_shadow",
+                          "ground_realtime_shadow_nospec", "ground_t8_d0_e15_ld_hybrid"])
+        rows = [{**r, "zone": "ground"} for r in
+                B.shot_rows("ground", B.variants(self.lights, "ground", "high", reference=True))]
+        self.assertEqual(_house_bake.references("ground", rows, False),
+                         ["ground_high_ld_hybrid_nospec", "ground_realtime"])
 
 
 class EditorRefusedByDay(unittest.TestCase):
