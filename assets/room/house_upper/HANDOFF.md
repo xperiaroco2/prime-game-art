@@ -7,7 +7,7 @@ balcony stairs land beside). Nothing here is copied before the approval fields o
 ## What to copy where (ARCHITECTURE 11.1)
 | From this repo | To the game repo |
 |---|---|
-| P1 (`assets/kit/house_kit/HANDOFF.md`) | `assets/environment/house_kit/` (P4's rooms use 16 of its pieces: the boards and lino floors, the storey walls, the balcony's railings and the external stairs' flight and landing) |
+| P1 (`assets/kit/house_kit/HANDOFF.md`) | `assets/environment/house_kit/` (P4's rooms use 16 of its pieces: the boards and lino floors, the storey walls, the balcony's railings, and `stairs_outdoor_half` and `stairs_outdoor_landing` for the main stairs' upper flight and landing in `landing.tscn`) |
 | `assets/kit/house_kit/export/kit_set.gdshader`, `kit_set.tres` (#132) | `assets/environment/house_kit/` (beside the kit's textures) |
 | `assets/prop/house_props/export/library/*.glb` (52 of them), `task/*.glb` (3), as `package.json` lists | `assets/environment/house_props/<file>.glb` (flat) |
 | `assets/room/house_upper/export/<room>.tscn` (7) | the content of `levels/house/rooms/<room>.tscn` (G3 below) |
@@ -37,7 +37,8 @@ One prop has a namesake in the library: `toy_chest`. As in P3, the export resolv
 library's; one game file `assets/environment/house_props/<id>.glb` per id, the same bytes in every package.
 
 ## Credits
-As P2: the drafts `D:/prime-art-raw/house/export/credits/house_kit.md` and `house_props.md`; own work, the props from
+As P2: the entries `assets/kit/house_kit/CREDITS.md` and `assets/prop/house_props/CREDITS.md` (copy them to
+`docs/credits/house_kit.md` and `house_props.md`); own work, the props from
 CC0 packs named per file in the props manifest, `ai_generated = false`, `public_repo_ok = true`.
 
 ## The balcony loop (Q6, answered)

@@ -35,8 +35,8 @@ the plan wherever the game puts the House. Nothing to run: copy the two files wi
 look.
 
 ## Credits
-The drafts are `D:/prime-art-raw/house/export/credits/house_kit.md` and `house_props.md` (the game's
-`docs/credits/<id>.md` format): own work, the props made from CC0 packs named per file in the props manifest,
+The entries are `assets/kit/house_kit/CREDITS.md` and `assets/prop/house_props/CREDITS.md` in this repo (the game's
+`docs/credits/<id>.md` format; copy them to `docs/credits/house_kit.md` and `house_props.md`): own work, the props made from CC0 packs named per file in the props manifest,
 `ai_generated = false`, `public_repo_ok = true`. The room scenes are scenes under `levels/`, not assets.
 
 ## Questions still open on prime-game #523

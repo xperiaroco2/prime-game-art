@@ -168,7 +168,7 @@ A package goes to the game from git, not from the raw build (#124): its files ar
 `export/` folders (`docs/manifest.md`: the kit in `assets/kit/house_kit/`, the props in `assets/prop/house_props/`,
 the room scenes of a package in their own `room` set, P2's in `assets/room/house_ground/`), with the package's
 `package.json` beside the manifest that owns it and a `HANDOFF.md` for the game's import task (what to copy where,
-the credits drafts, the open questions). The engineer approves the look from
+the credits entries, the open questions). The engineer approves the look from
 
 ```
 tools/run.sh house --package-sheet DIR --package N

@@ -12,7 +12,7 @@ driveway). Nothing here is copied before the approval fields of this manifest, o
 | `assets/kit/house_kit/export/kit_set.gdshader`, `kit_set.tres` (#132) | `assets/environment/house_kit/` (beside the kit's textures) |
 | `assets/environment/house_outdoor/export/*` (3) | `assets/environment/house_outdoor/` |
 | `assets/environment/house_garden/export/*.glb` (14) | `assets/environment/house_garden/` |
-| `assets/prop/house_props/export/{library,task,zones}/*.glb`, as `package.json` lists | `assets/environment/house_props/<game name>` (flat; the naming rule below) |
+| `assets/prop/house_props/export/{library,task,zones}/*.glb` (20, 7 and 9), as `package.json` lists | `assets/environment/house_props/<game name>` (flat; the naming rule below) |
 | `assets/room/house_plot/export/outdoor.tscn` | `levels/house/outdoor.tscn` (new: the plot round the house) |
 | `assets/room/house_plot/export/greenhouse.tscn`, `garden.tscn` | the content of `levels/house/rooms/greenhouse.tscn`, `garden.tscn` (G3) |
 
