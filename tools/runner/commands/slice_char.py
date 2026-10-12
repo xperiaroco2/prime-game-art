@@ -77,23 +77,31 @@ def _body_credit(gender: str) -> str:
 
 
 def known_deviations(found: list[str]) -> str:
-    """HANDOFF.md's section on the contract checks the export does not pass (the open height decision, #42)."""
+    """HANDOFF.md's section on the checks the export does not pass (godot-check's non-pass results)."""
     if not found:
         return "None: `godot-check --strict-contract --humanoid --textured` passes every check."
     lines = "\n".join(f"- {d}" for d in found)
-    return f"""`godot-check --strict-contract --humanoid --textured` passes every check but these
-(the contract v1 body gates):
+    return f"""`godot-check --strict-contract --humanoid --textured` passes every check but these:
 
 {lines}
 
-The clay look's head is 1.3 times the pack's, with hair on top, so the body is taller than the contract's 1.70 to
-1.80 m and the eyes sit above the camera's 1.6 m. **Open: the engineer decides** (art PR #139, docs/godot.md "Open: the
-height"): widen the contract's window for the clay look (a contract change), scale the export, or let the game scale
-the body. Do not import before the decision; this section is rewritten with it."""
+Each is a deviation the game's import task must know before it takes the GLB."""
+
+
+def size_note(info: dict, eye_height: float | None) -> str:
+    """HANDOFF.md's line on the character's size: its rest height and feet from the export's description, and the
+    eye height it was scaled to (the engineer's `eyes16`, art #42)."""
+    height, feet = info.get("height_m"), info.get("feet_y_m")
+    text = f"Rest height {height:.3f} m, feet at {feet:+.3f} m" if height is not None and feet is not None else "Size unknown"
+    if eye_height:
+        text += (f"; scaled uniformly so the eyes are at {eye_height:.2f} m (the engineer's `eyes16`, 2026-10-12; "
+                 "contract v1's plasticine window 1.70 to 1.90 m). The game's capsule is 1.8 m tall, so the hair top "
+                 "passes it by a few cm: the game decides if that matters")
+    return text + "."
 
 
 def handoff(asset_id: str, cast: str, rows: list[dict], left: list[tuple[str, str]], glb: Path, info: dict,
-            textures: dict, found: list[str]) -> str:
+            textures: dict, found: list[str], eye_height: float | None = None) -> str:
     mb = glb.stat().st_size / 1e6
     tex = textures.get("images", [])
     return f"""# {asset_id}: handoff to the game (art #42 part C)
@@ -101,6 +109,8 @@ def handoff(asset_id: str, cast: str, rows: list[dict], left: list[tuple[str, st
 The slice character for M6.2: cast `{cast}` in the clay look with the clay face kit, the textures baked and embedded,
 carrying {len(rows)} clips of the MVP animation set on the same skeleton. **Not approved yet**: the game takes it once
 manifest.toml's approval fields are set (the engineer approves the look on the review page).
+
+{size_note(info, eye_height)}
 
 ## Known deviations
 
@@ -198,7 +208,9 @@ def run(args: argparse.Namespace) -> int:
     sliced = out / "blend" / f"{asset_id}.blend"
     blender.run_script("slice_actions.py", ["--character", str(blend), "--anim", str(anim_blend), "--clips",
                                             ",".join(r["name"] for r in rows), "--out", str(sliced), "--json",
-                                            str(out / "blend" / f"{asset_id}.actions.json")], timeout=900)
+                                            str(out / "blend" / f"{asset_id}.actions.json")]
+                       + (["--eye-height", str(settings["eye_height_m"])] if settings.get("eye_height_m") else []),
+                       timeout=900)
     common.ok(f"{len(rows)} clips on {sliced}")
     exp = out / "export"
     if not export.export_one(sliced, exp, textured=True):
@@ -244,7 +256,8 @@ def run(args: argparse.Namespace) -> int:
         (asset / "manifest.toml").write_text(text, encoding="utf-8", newline="\n")
         pkg = _slice.package_json(asset_id, {glb.name: shipped}, _slice.game_dir(asset_id))
         (asset / "package.json").write_text(json.dumps(pkg, indent=1) + "\n", encoding="utf-8", newline="\n")
-        (asset / "HANDOFF.md").write_text(handoff(asset_id, cast, rows, left, shipped, info, textures, found),
+        (asset / "HANDOFF.md").write_text(handoff(asset_id, cast, rows, left, shipped, info, textures, found,
+                                                  settings.get("eye_height_m")),
                                           encoding="utf-8", newline="\n")
         common.ok(f"asset folder {asset}")
     return 1 if failed else 0

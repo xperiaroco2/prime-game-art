@@ -62,9 +62,13 @@ and sockets live in the Godot scene instead.
 **Axes and size.** glTF, Y up, 1 unit = 1 m, front +Z (`Vector3.MODEL_FRONT`; Blender shows it as -Y, and the
 character's left at +X). Feet at y = 0 and the origin between them, transforms applied, so a model drops into the
 scene without fix-up nodes. The character scene turns the model 180 degrees to face -Z, like the greybox. Height
-1.75 m (1.70 to 1.80 allowed, the ADR sketch's window) with the eyes near 1.6 m: the game's capsule is 1.8 m tall with a 0.4 m radius and the
-camera sits at 1.6 m, so a taller body would poke out of its own collision shape and the first-person view would not
-match the body. T-pose rest, arms horizontal and palms down, the pose Godot's profile uses.
+1.75 m (1.70 to 1.80 allowed, the ADR sketch's window) with the eyes near 1.6 m: the game's capsule is 1.8 m tall with
+a 0.4 m radius and the camera sits at 1.6 m, so a taller body would poke out of its own collision shape and the
+first-person view would not match the body. **The plasticine look** (the baked clay characters, `godot-check
+--textured`) may stand 1.70 to 1.90 m (`plasticine_height_max_m`), the eyes window 1.6 +- 0.08 m unchanged: its head
+is 1.3 times the pack's, with hair on top, so a character scaled until its eyes are at the camera's 1.6 m stands
+about 1.85 m. The engineer chose that scale (`eyes16`, 2026-10-12, art PR #139) over a shorter body with the eyes
+below the camera. The hair top then passes the 1.8 m capsule by a few cm; the game side decides if that matters. T-pose rest, arms horizontal and palms down, the pose Godot's profile uses.
 
 **Weights.** At most 4 influences per vertex (one glTF joint set, and the budget's assumption for about 20
 skinned bodies on screen), none below 0.01, summing to 1.
@@ -113,7 +117,7 @@ imported, split at UV seams and hard edges, close to what the GPU draws (a glTF 
 | n-gons, loose vertices and edges, non-manifold edges (more than two faces on an edge): fail | yes | yes | yes | yes |
 | open edges, debris parts under 4 faces, UVs outside 0..1, unapplied modifiers, extra materials: warn | yes | yes | yes | yes |
 | a UV map on every mesh; location 0, rotation 0, scale 1 on every mesh and armature | yes | yes | yes | yes |
-| height 1.70 to 1.80 m; feet at y = 0 | fail | | | feet warn |
+| height 1.70 to 1.80 m (plasticine look 1.90 m); feet at y = 0 | fail | | | feet warn |
 | eyes near 1.6 m (from the eye bones) | warn | | | |
 | facing: toes towards +Z, left hand at +X | fail | | | |
 | one armature, skinned; no extra bones; parents as in the profile; duplicate names after the map | yes | yes | | |

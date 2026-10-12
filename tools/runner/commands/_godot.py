@@ -347,8 +347,10 @@ def evaluate(dump: dict[str, Any], expect: dict[str, Any], contract: dict[str, A
         _facing(c, dump, skeleton, renamed)
         rules = contract["kinds"]["body"]
         severity = rules["height"] if strict_contract else "warn"
-        c.add("contract_height", body["height_min_m"] <= height <= body["height_max_m"],
-              f"{height:.3f} m to the top (contract v1: {body['height_min_m']} to {body['height_max_m']} m)", severity)
+        top = body["plasticine_height_max_m"] if textured else body["height_max_m"]  # the baked clay look
+        look = " for the plasticine look" if textured else ""
+        c.add("contract_height", body["height_min_m"] <= height <= top,
+              f"{height:.3f} m to the top (contract v1{look}: {body['height_min_m']} to {top} m)", severity)
         eyes = _part(dump, "eyes")
         if eyes:
             eye = _centre(eyes["rest_bounds"])[1]

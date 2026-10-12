@@ -6,6 +6,9 @@
 cast = "m1"
 recipe = "clay_cast_e"
 set = "mvp"
+# The character is scaled uniformly so its eyes' rest centre is at this height (the engineer's `eyes16`,
+# 2026-10-12: the plasticine head and hair made the pack-sized cast 1.99 m tall with the eyes at 1.72 m).
+eye_height_m = 1.60
 
 # The clips `frames` renders for the review sheet (set names; Godot drops the _Loop suffix).
 review_clips = ["Idle_Loop", "Jog_Fwd_Loop", "Sprint_Fwd_Loop", "Carry_Upper_Loop", "Pickup_Package",

@@ -172,13 +172,43 @@ class Deviations(unittest.TestCase):
                          ["`contract_height` fail: 1.986 m to the top", "`contract_eye_height` warn: eyes at 1.722 m"])
         self.assertEqual(_slice.deviations(self.CHECKS[:1]), [])
 
-    def test_handoff_section_names_each_deviation_and_the_open_decision(self):
+    def test_handoff_section_names_each_deviation(self):
         from runner.commands import slice_char
         text = slice_char.known_deviations(_slice.deviations(self.CHECKS))
         self.assertIn("- `contract_height` fail: 1.986 m to the top", text)
         self.assertIn("- `contract_eye_height` warn", text)
-        self.assertIn("Open: the engineer decides", text)
+        self.assertNotIn("Open:", text)
         self.assertTrue(slice_char.known_deviations([]).startswith("None"))
+
+    def test_size_note(self):
+        from runner.commands import slice_char
+        info = {"height_m": 1.8453, "feet_y_m": 0.0}
+        self.assertEqual(slice_char.size_note(info, None), "Rest height 1.845 m, feet at +0.000 m.")
+        text = slice_char.size_note(info, 1.6)
+        self.assertIn("eyes are at 1.60 m", text)
+        self.assertIn("capsule is 1.8 m", text)
+        self.assertTrue(slice_char.size_note({}, None).startswith("Size unknown"))
+
+    def test_handoff_document(self):
+        from runner.commands import slice_char
+        with tempfile.TemporaryDirectory() as tmp:
+            glb = Path(tmp) / "slice_m1.glb"
+            glb.write_bytes(b"x" * 1000)
+            rows = [{"name": "Idle_Loop", "godot_name": "Idle", "source": "ual:Idle_Loop", "loop": True, "layer": "full",
+                     "licence": "CC0-1.0", "ai_generated": False, "serves": ["idle"], "seconds": 2.0}]
+            text = slice_char.handoff("slice_m1", "m1", rows, [("Knockdown", "the ragdoll")], glb,
+                                      {"height_m": 1.845, "feet_y_m": 0.0}, {}, [], 1.6)
+        self.assertTrue(text.startswith("# slice_m1: handoff to the game"))
+        self.assertIn("eyes are at 1.60 m", text)
+        self.assertIn("## Known deviations\n\nNone:", text)
+        self.assertIn("`assets/characters/slice_m1/slice_m1.glb`", text)
+        self.assertIn("`Knockdown`: the ragdoll", text)
+
+    def test_eye_height_setting(self):
+        base = {"cast": "m1", "recipe": "r", "set": "mvp"}
+        self.assertEqual(_slice.check_settings(dict(base, eye_height_m=1.6), SET), [])
+        self.assertEqual(len(_slice.check_settings(dict(base, eye_height_m=3), SET)), 1)
+        self.assertEqual(len(_slice.check_settings(dict(base, eye_height_m=True), SET)), 1)
 
 
 if __name__ == "__main__":

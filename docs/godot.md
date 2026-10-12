@@ -148,7 +148,7 @@ without Godot:
 | `facing_plus_z` | the eyes are at least 5 cm in front of the Head joint, the shoes reach further forward than back from the ankles, the left wrist is at +X |
 | `flat_colours` | no surface has an albedo texture (with `--textured`: the textured checks instead, "Textured export" above) |
 | `godot_output` | no ERROR line in Godot's import and inspection output (warnings are listed) |
-| `contract_height`, `contract_eye_height` | the contract v1 body gates (height 1.70 to 1.80 m to the top, eyes 1.6 +- 0.08 m): **warnings** unless `--strict-contract` |
+| `contract_height`, `contract_eye_height` | the contract v1 body gates (height 1.70 to 1.80 m to the top, 1.90 m with `--textured`, the plasticine look; eyes 1.6 +- 0.08 m): **warnings** unless `--strict-contract` |
 | `loop_modes` | **warning** while a cycle (`Idle*`, `Walk*`, `Run*`) imports with loop_mode NONE; names the open cycles |
 | `loop_suffix` | an action named as a loop (`_Loop`, art #33) imports with loop_mode LINEAR under its name without the suffix (`Idle_Loop` becomes `Idle`); `animations` and `animation_lengths` compare Godot's names |
 | `expectations`, `pack_floor` | only for a GLB without its `<stem>.export.json`: a **warning** that parts, bones and animations then come from the GLB itself (what it already lacks is not caught; no rest joints, hierarchy or Blender height; the clip names are taken as Godot gives them, a `_Loop` suffix dropped and checked by `loop_suffix`), and a failure below the Ultimate Modular rig's 62 bones and 24 actions |
@@ -245,15 +245,17 @@ clay look with the clay face kit and its baked textures, carrying the MVP animat
 type, in place, in **one GLB** (body, skeleton and clips: prime-game `docs/ARCHITECTURE.md` section 11.1 takes a
 character as `assets/characters/<id>/<id>.glb`; the contract wants one clip library on the contract skeleton, and the
 slice has one body). Settings: `recipes/slice_character.toml` (the cast id, the recipe, the set, the review clips and
-the `exclude` table with a reason per clip). One command:
+`eye_height_m`, the `exclude` table with a reason per clip). One command:
 
 ```
 tools/run.py anim-set --set mvp --body men --out <raw>/anim-sets/slice-42c        # once per body type, if not built
-tools/run.py slice [--cast m1] --anim-set <raw>/anim-sets/slice-42c     --asset assets/character/slice_m1 --review <raw>/review/char/42c
+tools/run.py slice [--cast m1] --anim-set <raw>/anim-sets/slice-42c --asset assets/character/slice_m1 --review <raw>/review/char/42d
 ```
 
 `slice` assembles the cast member (`assemble --look clay --bake`; `--blend` reuses a saved one), puts the set's clips
-on its armature in Blender (`tools/blender/slice_actions.py`; it refuses a rest pose that differs from the set's),
+on its armature in Blender (`tools/blender/slice_actions.py`; it refuses a rest pose that differs from the set's,
+then scales the rig, the parts with their shape keys and the clips' location keys uniformly about the floor so the
+eyes' rest centre is at `eye_height_m`, 1.60 m: the engineer's `eyes16`, 2026-10-12),
 exports with `export --textured`, runs `godot-check --strict-contract --humanoid --textured`, `frames` of the review
 clips with the Blender comparison and an 8-view turnaround, and with `--asset` writes the asset folder:
 `export/slice_<cast>.glb`, `manifest.toml` (kind `character`, one `[[clips]]` table per clip with its source, licence,
@@ -267,10 +269,10 @@ triangles, 25 clips at 30 fps; glTF-Validator 0 errors (6 `NODE_SKINNED_MESH_NON
 `frames` within 0.022 mm of Blender. Left off: `Knockdown`, `Crawl_Start`, `Crawl_Loop`, `Getup_Back`, `Getup_Fours`
 (the knockdown is a ragdoll: prime-game#522, art #115) and the set's review-only clips (`export = false`).
 
-**Open: the height.** `--strict-contract` fails `contract_height` (1.986 m against the contract v1's 1.70 to 1.80 m;
-eyes 1.722 m): the clay look's head is 1.3 times the pack's, with hair on top. Every other check passes, and `slice`
-returns 1 until the engineer decides: widen the window for the clay look (a contract change), scale the export, or let
-the game scale the body.
+**The height.** Built at the pack's size, m1 stood 1.986 m with the eyes at 1.722 m (the clay look's head is 1.3
+times the pack's, with hair on top). The engineer chose `eyes16` (2026-10-12): `slice` scales the character so the
+eyes are at 1.60 m (about 1.845 m tall), and the contract's plasticine window is 1.70 to 1.90 m
+(`plasticine_height_max_m`, docs/contract.md); `godot-check --textured` applies it.
 
 ## Findings for later tasks
 

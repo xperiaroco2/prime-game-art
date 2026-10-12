@@ -9,7 +9,9 @@ transforms applied and the body type's pack actions. The set's file (`anim-set`,
 holds the same rig with the clips baked under their own names, its transforms applied the same way (location keys in
 metres). This drops the pack's actions, appends the named clips, checks that every clip's bones exist on the
 character's rig and that the two rigs' rest poses agree (the toes excepted: their rest follows each shoe), and saves a
-copy at the set's 30 fps that `export --textured` accepts.
+copy at the set's 30 fps that `export --textured` accepts. With `--eye-height H` it then scales the whole character
+uniformly about the origin (the floor) so the eyes' rest centre is at H metres: the rig's rest, every part's mesh
+with its shape keys, and every clip's location keys (the engineer's `eyes16`, art #42).
 """
 
 from __future__ import annotations
@@ -21,6 +23,7 @@ import re
 import sys
 
 import bpy
+from mathutils import Matrix
 
 # The rest heads of the two rigs must agree within this (the set's donor and the character share the body type's
 # skeleton; the toes follow the shoe, so they differ and are only reported).
@@ -43,6 +46,39 @@ def _one_armature(objects):
     return arms[0]
 
 
+def _eye_z(parts):
+    """The eyes' rest centre height (the middle of their lowest and highest vertex, as godot-check measures it)."""
+    eyes = next((o for o in parts if o.name.endswith("_eyes")), None)
+    if eyes is None:
+        raise SystemExit("no _eyes part to scale by")
+    zs = [(eyes.matrix_world @ v.co).z for v in eyes.data.vertices]
+    return (min(zs) + max(zs)) / 2
+
+
+def scale_character(arm, parts, actions, s):
+    """Scales the character by s about the origin: the rig's rest bones, every part with its shape keys, and the
+    clips' location keys (pose locations are in the bones' rest space, so they scale with it)."""
+    for o in [arm] + parts:
+        if not all(abs(a - b) < 1e-6 for ra, rb in zip(o.matrix_world, Matrix.Identity(4)) for a, b in zip(ra, rb)):
+            raise SystemExit(f"{o.name} has a transform; the saved character has its transforms applied")
+    m = Matrix.Scale(s, 4)
+    arm.data.transform(m)
+    for o in parts:
+        o.data.transform(m, shape_keys=True)
+        o.data.update()
+    keys = 0
+    for act in actions:
+        for fc in _fcurves(act):
+            if fc.data_path.endswith(".location") or fc.data_path == "location":
+                for kp in fc.keyframe_points:
+                    kp.co[1] *= s
+                    kp.handle_left[1] *= s
+                    kp.handle_right[1] *= s
+                    keys += 1
+                fc.update()
+    return keys
+
+
 def main(argv):
     ap = argparse.ArgumentParser(prog="slice_actions.py")
     ap.add_argument("--character", required=True)
@@ -50,6 +86,7 @@ def main(argv):
     ap.add_argument("--clips", required=True, help="comma list of the set's action names to put on the character")
     ap.add_argument("--out", required=True)
     ap.add_argument("--json", required=True)
+    ap.add_argument("--eye-height", type=float, help="scale the character so its eyes' rest centre is at this height (m)")
     a = ap.parse_args(argv)
     clips = [c for c in a.clips.split(",") if c]
 
@@ -105,6 +142,13 @@ def main(argv):
         pb.rotation_euler = (0.0, 0.0, 0.0)
         pb.scale = (1.0, 1.0, 1.0)
 
+    eyes_before = _eye_z(parts)
+    scale, scaled_keys = 1.0, 0
+    if a.eye_height:
+        scale = a.eye_height / eyes_before
+        scaled_keys = scale_character(arm, parts, [bpy.data.actions[n] for n in actions], scale)
+    eyes_after = _eye_z(parts)
+
     scene = bpy.context.scene
     scene.render.fps = 30
     scene.render.fps_base = 1.0
@@ -117,10 +161,12 @@ def main(argv):
               "out": a.out.replace("\\", "/"), "armature": arm.name, "bones": len(bones),
               "parts": [o.name for o in parts], "fps": 30, "dropped_actions": dropped, "actions": actions,
               "rest_max_mm": round(body_err * 1000, 4),
-              "toes_rest_mm": {t: round(rest[t] * 1000, 2) for t in TOES if t in rest}}
+              "toes_rest_mm": {t: round(rest[t] * 1000, 2) for t in TOES if t in rest},
+              "scale": round(scale, 6), "eyes_m": [round(eyes_before, 4), round(eyes_after, 4)],
+              "scaled_location_keys": scaled_keys}
     with open(a.json, "w", encoding="utf-8") as fh:
         json.dump(report, fh, indent=1)
-    print("SLICE", json.dumps({k: report[k] for k in ("bones", "rest_max_mm", "toes_rest_mm")}), len(actions), "clips")
+    print("SLICE", json.dumps({k: report[k] for k in ("bones", "rest_max_mm", "toes_rest_mm", "scale", "eyes_m")}), len(actions), "clips")
 
 
 if __name__ == "__main__":

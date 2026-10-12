@@ -29,7 +29,7 @@ RECORDS = {
     "pack:men": "quaternius_ultimate_modular_men",
     "pack:women": "quaternius_ultimate_modular_women",
 }
-SETTINGS_KEYS = {"cast", "recipe", "set", "review_clips", "exclude"}
+SETTINGS_KEYS = {"cast", "recipe", "set", "eye_height_m", "review_clips", "exclude"}
 
 
 def load_settings(path: Path = SETTINGS) -> dict[str, Any]:
@@ -52,6 +52,9 @@ def check_settings(settings: dict[str, Any], set_data: dict[str, Any]) -> list[s
             errors.append(f"exclude: {name} is no exported clip of the set")
         if not (isinstance(reason, str) and reason):
             errors.append(f"exclude: {name} needs a reason")
+    eye = settings.get("eye_height_m")
+    if eye is not None and not (isinstance(eye, (int, float)) and not isinstance(eye, bool) and 1.0 <= eye <= 2.0):
+        errors.append("eye_height_m must be a height in metres between 1.0 and 2.0")
     for name in settings.get("review_clips", []):
         if name not in exported or name in exclude:
             errors.append(f"review_clips: {name} is not on the character")
