@@ -86,9 +86,24 @@ class CommittedTest(unittest.TestCase):
         self.assertAlmostEqual(roof[0]["eye"][1], house_attic.roof_top(data, at[1]) + 1.6, places=2)
         package = {"package": 5, "name": "attic", "rooms": {"attic": {}}, "files": {}}
         req = R.request(package, FAMILIES, extra=views)
-        self.assertEqual([t["title"] for t in req["tiles"]],
-                         ["attic"] + [v["title"] for v in views if v["room"] == "attic"])
+        attic = [v["title"] for v in views if v["room"] == "attic"]
+        self.assertEqual([t["title"] for t in req["tiles"]], ["attic"] + attic)
         self.assertTrue(all(t["scene"] == "res://levels/house/rooms/attic.tscn" for t in req["tiles"]))
+
+    def test_balcony_view_looks_down_the_external_stairs(self) -> None:
+        from runner import house_layout
+        views = [v for v in R.views(house_layout.load()) if v["room"] == "balcony"]
+        self.assertEqual(len(views), 2)
+        self.assertTrue(all(v["look"][1] < 0.0 for v in views))  # the flight's foot is under the balcony's floor
+        # the flight is the yard's (P2): the yard joins in place, its origin 30 m west, 3.2 m down, 21 m north
+        self.assertEqual(views[0]["with"], [{"room": "yard", "scene": "res://levels/house/rooms/yard.tscn",
+                                             "offset": [-30.0, -3.2, -21.0]}])
+        package = {"package": 4, "name": "upper", "rooms": {"landing": {}, "balcony": {}}, "files": {}}
+        req = R.request(package, FAMILIES, extra=views)
+        self.assertEqual([t["title"] for t in req["tiles"]], ["landing", "balcony"] + [v["title"] for v in views])
+        self.assertEqual(req["tiles"][-1]["scene"], "res://levels/house/rooms/balcony.tscn")
+        self.assertEqual([p["package"] for p in R.neighbours(R.common.ROOT, {"package": 4, "rooms": {"balcony": {}}},
+                                                             views)], [2])
 
     def test_the_plot_package_shows_its_views_with_its_rooms_at_their_corners(self) -> None:
         from runner import house_layout

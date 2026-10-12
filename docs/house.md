@@ -374,7 +374,9 @@ the main stairs' U-turn adds about 4 m, the route passes south of the dining set
 north on the yard, so the route steps off its foot and goes back south round its west side, under the balcony (the east
 side is too narrow for the 0.68 m capsule beside the terrace's corner planter). Q6's U-turn option (two runs in the
 same 2 x 6 m rect, the foot on the terrace under the balcony) is an estimate, not walked: 54.3 to 56.1 m with
-`loop_length` for a half-landing at y 18.5 or 17.6 (12.1 to 12.5 s), still over the doc's 10.2 s; the engineer decides.
+`loop_length` for a half-landing at y 18.5 or 17.6 (12.1 to 12.5 s), still over the doc's 10.2 s. The engineer's
+answer (2026-10-11, #129): the loop stays as built, 62.6 m and about 13.9 s (the walk: 13.85 s); the game may tune it.
+Package P4's `HANDOFF.md` records it.
 
 The walk's second-floor proof is `upper.png` (1280 px): `plan_upper.png` (the second floor from above, the attic and
 roof hidden, a label per room) beside `balcony_loop.png` (the loop's waypoints as a ribbon over the same top-down,
@@ -481,7 +483,8 @@ Defaults used (for the engineer; data, easy to change):
   `placeholder`. The default, a straight flight with a 1 m top landing, did not let the 1.36 m capsule turn (the wine
   route jammed); a straight flight climbing south hit the capsule's head on the north wall's slab edge. The pantry's
   two jar shelves moved off the stairwell to the east and north walls.
-- Q6: the balcony stairs run straight north, the foot on the yard at y 15.
+- Q6: the balcony stairs run straight north, the foot on the yard at y 15; answered by the engineer (2026-10-11,
+  #129): the loop stays as built (62.6 m, about 13.9 s against the doc's 10.2 s), the game may tune it.
 - Q11 B: a wall paint per room (`[wall_paint]` in `house.toml`, "Wall paint"); the garage's neutral #8f897d is this
   doc's reading of "the garage stays concrete-neutral".
 - Q21 A: dense, lived-in dressing: the inventory's props plus the seeded clutter layer ("Clutter", art #104).

@@ -120,16 +120,17 @@ The House's sets (written for #118 from the 2026-10-10 builds; a rebuild changes
 | `assets/prop/house_props/` | `library/` 131 (32 from CC0 packs, named by `source` and `from`), `task/` 34, `zones/` 9 GLBs; they use the kit's texture set |
 | `assets/environment/house_garden/` | the 14 garden plants of `house/80/plants` |
 | `assets/environment/house_outdoor/` | `outdoor.glb`, `backdrop.glb` (the flats embedded) and `sky.png` of `house/81/build` |
-| `assets/room/house_ground/` | package P2's 15 room scenes (`<room>.tscn`, the game's `levels/house/rooms/`) of `house/export/v2/p2` (#124) |
-| `assets/room/house_basement/` | package P3's 8 room scenes of `house/export/v2/p3` (#126) |
-| `assets/room/house_attic/` | package P5's room scene, the attic with the free roof, of `house/export/v2/p5` (#126) |
-| `assets/room/house_plot/` | package P7's plot scene `outdoor.tscn` (the game's `levels/house/`) and the greenhouse and garden room scenes of `house/export/v2/p7` (#128) |
+| `assets/room/house_ground/` | package P2's 15 room scenes (`<room>.tscn`, the game's `levels/house/rooms/`) of `house/export/v3/p2` (#124) |
+| `assets/room/house_basement/` | package P3's 8 room scenes of `house/export/v3/p3` (#126) |
+| `assets/room/house_attic/` | package P5's room scene, the attic with the free roof, of `house/export/v3/p5` (#126) |
+| `assets/room/house_upper/` | package P4's 7 room scenes, the second floor with the balcony and its external stairs, of `house/export/v3/p4` (#129) |
+| `assets/room/house_plot/` | package P7's plot scene `outdoor.tscn` (the game's `levels/house/`) and the greenhouse and garden room scenes of `house/export/v3/p7` (#128) |
 
 A set's `export/` folder holds its committed files under their manifest names, which need not be the game's paths:
 the kit's textures are `textures/set_*.png` and the props `library/`, `task/` and `zones/` here, all flat in the game's
 `assets/environment/house_kit/` and `house_props/` (the package's `package.json` and the set's `HANDOFF.md` map them;
 `house --package-sheet` stages them by SHA-256). Only what an approved package needs is committed: P1 the whole kit, P2
-its 70 props (#124), P3 and P5 the 34 more they use (#126), P7 32 more (#128). A prop id names one game file: the export takes it from
+its 70 props (#124), P3 and P5 the 34 more they use (#126), P4 10 more (#129), P7 32 more (#128). A prop id names one game file: the export takes it from
 `house.toml`'s `prop_dirs` in order (the task props first), so of the ids both `task/` and `library/` hold (`boiler`,
 `pump`, ...) only the task prop ships. P7 (#128) adds the zones' props, and 17 basenames repeat between `task/`,
 `library/` and `zones/`: the first source in `prop_dirs`, then `[export.plot]` `prop_src`'s other folders, that holds

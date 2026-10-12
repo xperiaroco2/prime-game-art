@@ -87,23 +87,41 @@ def families(ids: list[str], patterns: dict[str, list[str]]) -> dict[str, list[s
 def views(data: dict) -> list[dict]:
     """house.toml's [[export.sheet_views]] as room-local camera tiles (#126): `at` and `look` in plan metres, `eye` and
     `look_h` their heights over the room's floor or, with `over_roof`, over the roof's top there
-    (house_attic.roof_top); `sun` adds a key light (a view outside the room's own lamps). A view of `room = "plot"`
-    (#128) stands in plan metres over the plot's ground and carries every room's plan corner (`rooms_at`), so the
-    plot's sheet can place the package's own room scenes round it."""
+    (house_attic.roof_top); `sun` adds a key light (a view outside the room's own lamps); `with` names rooms of other
+    packages shown in place beside it (the balcony's external stairs are the yard's, P2), each with its offset. A view
+    of `room = "plot"` (#128) stands in plan metres over the plot's ground and carries every room's plan corner
+    (`rooms_at`), so the plot's sheet can place the package's own room scenes round it."""
     from .. import house_attic
-    rooms = {r["id"]: r for lv in data["levels"] for r in lv["rooms"]}
+    rooms = {r["id"]: (r, lv["floor_y"]) for lv in data["levels"] for r in lv["rooms"]}
     out = []
     for v in data["settings"]["export"].get("sheet_views", []):
         plot = v["room"] == "plot"
-        rx, ry = (0, 0) if plot else rooms[v["room"]]["rect"][:2]
+        (rx, ry), fy = ((0, 0), 0.0) if plot else (rooms[v["room"]][0]["rect"][:2], rooms[v["room"]][1])
 
         def pt(xy, h):
             base = house_attic.roof_top(data, xy[1]) if v.get("over_roof") else 0.0
             return [round(xy[0] - rx, 3), round(base + h, 3), round(xy[1] - ry, 3)]
-        out.append({"room": v["room"], "title": v["title"], "eye": pt(v["at"], v.get("eye", EYE)),
-                    "look": pt(v["look"], v.get("look_h", 1.0)), "sun": bool(v.get("sun"))})
+        view = {"room": v["room"], "title": v["title"], "eye": pt(v["at"], v.get("eye", EYE)),
+                "look": pt(v["look"], v.get("look_h", 1.0)), "sun": bool(v.get("sun"))}
         if plot:
-            out[-1]["rooms_at"] = {rid: [r["rect"][0], 0, r["rect"][1]] for rid, r in rooms.items()}
+            view["rooms_at"] = {rid: [r["rect"][0], 0, r["rect"][1]] for rid, (r, _) in rooms.items()}
+        if v.get("with"):
+            view["with"] = [{"room": o, "scene": f"res://levels/house/rooms/{o}.tscn",
+                             "offset": [round(rooms[o][0]["rect"][0] - rx, 3), round(rooms[o][1] - fy, 3),
+                                        round(rooms[o][0]["rect"][1] - ry, 3)]} for o in v["with"]]
+        out.append(view)
+    return out
+
+
+def neighbours(root: Path, package: dict, extra: list[dict]) -> list[dict]:
+    """The other committed packages holding the rooms the package's extra views show `with` it."""
+    want = {f"levels/house/rooms/{w['room']}.tscn" for v in extra if v["room"] in package["rooms"]
+            for w in v.get("with", [])}
+    out = []
+    for path in sorted((root / "assets").glob("*/*/package.json")) if want else []:
+        data = json.loads(path.read_text(encoding="utf-8"))
+        if data.get("package") != package["package"] and want & set(data.get("files", {})):
+            out.append(data)
     return out
 
 
@@ -145,7 +163,10 @@ def run(folder: Path, n: int, kit_families: dict[str, list[str]], root: Path = c
     <name>_1280.png and <name>.json."""
     path, package = find_package(root, n)
     folder.mkdir(parents=True, exist_ok=True)
-    missing = stage(package, committed(root), folder)
+    files = committed(root)
+    missing = stage(package, files, folder)
+    for other in neighbours(root, package, extra or []):  # a shared game path has the same bytes in every package
+        missing += stage(other, files, folder)
     if missing:
         raise common.Failure(f"package {n} ({path.as_posix()}): {len(missing)} files have no committed copy with "
                              f"their sha256, e.g. {missing[0]}")
