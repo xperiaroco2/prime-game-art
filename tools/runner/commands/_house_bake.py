@@ -110,8 +110,14 @@ def bake_variant(zone: str, v: dict, work: Path, raw: Path, no_bake: bool) -> di
     scene = f"res://import/house/bake/{zone}_{tag}.scn"
     log = BAKE_DIR / f"{zone}_{tag}_bake_log.txt"
     log.unlink(missing_ok=True)
-    code, out = _godot.godot(["--editor", "--path", _godot.PROJECT, "--position", _frames.POSITION,
-                              "--resolution", "1280x720", "--", f"lmbake={scene}"], TIMEOUT)
+    project = Path(_godot.PROJECT) / "project.godot"
+    kept = project.read_bytes()  # the editor rewrites the committed file's header comment on save: put it back
+    try:
+        code, out = _godot.godot(["--editor", "--path", _godot.PROJECT, "--position", _frames.POSITION,
+                                  "--resolution", "1280x720", "--", f"lmbake={scene}"], TIMEOUT)
+    finally:
+        if project.read_bytes() != kept:
+            project.write_bytes(kept)
     z["bake"] = {"exit": code, "seconds": round(time.time() - t0),
                  "log": log.read_text(encoding="utf-8") if log.is_file() else ""}
     if code != 0 or not log.is_file() or "light_data=none" in z["bake"]["log"]:
