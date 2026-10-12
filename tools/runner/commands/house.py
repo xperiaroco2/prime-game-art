@@ -131,6 +131,8 @@ def run(args: argparse.Namespace) -> int:
                                  house_export.settings(data).get("kit_families", {"kit": ["*"]}),
                                  extra=_house_review.views(data))
     planned = house_layout.plan(data)
+    if args.export and (args.props_dir or args.props_map or args.before):
+        raise common.Failure("--props-dir, --props-map and --before are for --bake, not --export")
     if args.export:
         return export(data, lights, planned, dressing, args)
     found = prop_glbs(data, dressing)
