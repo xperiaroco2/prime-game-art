@@ -221,7 +221,8 @@ def run(args: argparse.Namespace) -> int:
     sheets = []
     if not args.no_frames:
         names = ",".join(_godot.godot_name(n)[0] for n in settings.get("review_clips", []))
-        failed |= bool(_runner("frames", str(glb), "--clips", names, "--compare", names, "--out", str(out / "frames")))
+        failed |= bool(_runner("frames", str(glb), "--clips", names, "--compare", names, "--out", str(out / "frames"),
+                               "--face", names.split(",")[0]))
         sheets += sorted((out / "frames" / "sheets").glob("*.png"))
         failed |= bool(_runner("render", str(glb), "--pose", kept[0], "--cell", "320", "--out", str(out / "turnaround")))
         sheets += sorted((out / "turnaround").glob("*.png"))

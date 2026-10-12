@@ -9,6 +9,7 @@ tools/run.py export <character.blend> [...] [--out DIR]          GLB with fixed 
 tools/run.py godot-check <glb> [...] [--out DIR] [--strict-contract] [--humanoid]
                                                                   import headless in godot/; assertions; report.json
 tools/run.py frames <glb> [--clips A,B] [--compare all|A,B|''] [--video A,B] [--blend FILE] [--out DIR]
+                  [--face CLIP [--face-beside PNG --face-rects 'x,y,w,h;...']]
                                                                   Godot-rendered frame sheets (off-screen window)
 ```
 
@@ -205,6 +206,10 @@ vertical extent, Blender's `ortho_scale` with a vertical sensor fit), composed w
 0.6 degrees on the 10 cm lever, fails the command). `--video` writes every frame of one cycle (a closed loop frames 0
 to last - 1, an open loop and a one-off frames 0 to last) and `tools/blender/encode_clips.py` encodes it with
 Blender's FFmpeg as H.264 in MP4 (480 x 600, 24 fps, constant quality, the cycle three times) into `clips/<clip>.mp4`.
+`--face CLIP` adds `sheets/face.png`: close-ups of the head (every skinned vertex above the Head bone's origin less
+4 cm) at the clip's first frame, front and three-quarter from the character's right (yaw -35 degrees, as the faces
+sheets), cells of 316 x 395 px; `--face-beside` puts crops of an approved sheet (`--face-rects`, pixels) to their left,
+for the faces gate's before/after (docs/faces.md). `slice` runs it with the first review clip.
 
 **Measured** on whole frames (2026-10-03, every clip of m1_rex and w1_ivy, 62 joints and 124 axis points): Godot and
 Blender agree within 0.017 mm everywhere. Before the optimizer was turned off they differed by up to 16.7 mm (m1_rex

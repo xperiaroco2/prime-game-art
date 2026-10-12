@@ -25,6 +25,10 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
                         help="clips Blender renders beside Godot's frames, joints compared (default all the rendered clips; '' for none)")
     parser.add_argument("--video", default="", help=f"clips to encode as looping MP4 (e.g. {','.join(_frames.VIDEO)}; default none)")
     parser.add_argument("--blend", type=Path, help="the character .blend for the comparison (default: the one the export names)")
+    parser.add_argument("--face", default="", help="also a face close-up sheet (sheets/face.png, front and three-quarter) "
+                        "at the first frame of this clip, e.g. Idle")
+    parser.add_argument("--face-beside", type=Path, help="an approved face sheet whose crops go left of Godot's close-ups")
+    parser.add_argument("--face-rects", default="", help="the crops of --face-beside in pixels: 'x,y,w,h;x,y,w,h'")
 
 
 def run(args: argparse.Namespace) -> int:
@@ -52,6 +56,18 @@ def run(args: argparse.Namespace) -> int:
     out.mkdir(parents=True, exist_ok=True)
     spec = _frames.spec(glb.stem, animations, compare, video, expect.get("seams"), expect.get("fps", _frames.FPS),
                         set(expect.get("loop_suffix", [])))
+    if args.face:
+        if args.face not in by_label:
+            raise common.Failure(f"unknown clip {args.face} for --face; {glb.name} has: {', '.join(sorted(by_label))}")
+        beside = ""
+        if args.face_beside:
+            if not args.face_beside.is_file():
+                raise common.Failure(f"no approved sheet {args.face_beside.as_posix()}")
+            beside = args.face_beside.resolve().as_posix()
+        try:
+            spec["face"] = _frames.face_spec(glb.stem, by_label[args.face], beside, _frames.parse_rects(args.face_rects))
+        except ValueError as e:
+            raise common.Failure(f"--face: {e}") from e
     for clip in spec["clips"]:
         if clip["open_cycle"]:
             common.warn(f"{clip['label']}: its last key does not repeat its first; one cycle is {clip['cycle_s']:.3f} s, "
