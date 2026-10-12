@@ -1,7 +1,7 @@
 """The House export (tools/runner/house_export.py, docs/house.md "The export", art #119): the room scenes carry the
 game's node names, `metadata/size_m`, the `Name` label and the Doors, Stations and Markers of the game's greybox rooms
-(D:/prime-game/levels/house/rooms/*.tscn, read only; skipped when missing) with exactly the known differences of the
-plan's mapping.md; no CSG, no GridMap, real-time lights without shadows, every path under res://assets/environment/.
+(D:/prime-game/levels/house/rooms/*.tscn, pinned in tools/tests/fixtures/house_greybox.json) with exactly the known
+differences of the plan's mapping.md; no CSG, no GridMap, real-time lights without shadows, every path under res://assets/environment/.
 Pure Python: the scenes are built in memory, no GLB is copied."""
 
 from __future__ import annotations
@@ -21,9 +21,11 @@ from runner import house_layout as H
 from runner import common, house_lights as HL
 from runner.commands import _house_export
 
+from . import _house_greybox as G
+from ._house_greybox import parse
+
 DATA = H.load()
 PLAN = H.plan(DATA)
-GAME = Path("D:/prime-game/levels/house")
 # mapping.md's known differences (2026-10-11), waiting on the game's answers G1 and G2 (prime-game #523; art task A4):
 # the attic is the free-roof attic on the whole footprint and holds the roof's stations; the art moved three door
 # markers onto the whole-metre wall grid and the storage's Package07 to the shelf it sits on. The game's three
@@ -40,38 +42,6 @@ KNOWN = {
     "study": {"doors": {"Door1"}},
     "storage": {"markers": {"Package07"}},
 }
-NODE = re.compile(r'\[node name="(\w+)" type="(\w+)" parent="(\w+)"((?:[^\]\[]|\[[^\]]*\])*)\]\n'
-                  r'(?:transform = Transform3D\(([^)]*)\))?')
-
-
-def parse(text: str) -> dict:
-    """A room scene's root, size_m and its Doors, Stations and Markers: name -> (x, h, z, groups)."""
-    root = re.search(r'\[node name="(\w+)" type="Node3D"(?: unique_id=\d+)?\]', text).group(1)
-    size = re.search(r"metadata/size_m = Vector2i\((\d+), (\d+)\)", text)
-    out = {"root": root, "size": (int(size.group(1)), int(size.group(2))) if size else None,
-           "doors": {}, "stations": {}, "markers": {}}
-    for m in NODE.finditer(text):
-        name, _, parent, rest, tf = m.groups()
-        if parent in ("Doors", "Stations", "Markers"):
-            pos = tuple(round(float(v), 3) for v in (tf or "0,0,0,0,0,0,0,0,0,0,0,0").split(",")[9:12])
-            groups = re.search(r"groups=\[([^\]]*)\]", rest)
-            out[parent.lower()][name] = (*pos, groups.group(1) if groups else "")
-    return out
-
-
-def game_rooms() -> dict:
-    house = (GAME / "house.tscn").read_text(encoding="utf-8")
-    ids = dict(re.findall(r'path="res://levels/house/rooms/(\w+)\.tscn" id="(\w+)"', house))
-    ids = {v: k for k, v in ids.items()}
-    out = {}
-    for m in re.finditer(r'\[node name="\w+" parent="\w+"[^\]]*instance=ExtResource\("(\w+)"\)\]\n'
-                         r'(?:transform = Transform3D\(([^)]*)\))?', house):
-        rid = ids[m.group(1)]
-        out[rid] = parse((GAME / "rooms" / f"{rid}.tscn").read_text(encoding="utf-8"))
-        out[rid]["origin"] = tuple(round(float(v), 3) for v in (m.group(2) or "0," * 11 + "0").split(",")[9:12])
-    return out
-
-
 def diff(game: dict, art: dict) -> dict:
     """What differs between a game room and an art room: field -> True, or for a marker group the names that differ."""
     out = {}
@@ -104,9 +74,9 @@ class HouseExport(unittest.TestCase):
         self.assertEqual(self.unplaced, [])
 
     def test_against_the_games_greybox(self):
-        if not (GAME / "house.tscn").is_file():
-            self.skipTest("the game repo is not at D:/prime-game")
-        game = game_rooms()
+        # the pinned snapshot (tools/tests/_house_greybox.py), not the live checkout: a marker the game adds later
+        # does not turn this red; test_house_greybox.py watches the live checkout for removed or moved ones
+        game = G.load()["rooms"]
         found = {rid: "game only" for rid in game.keys() - self.art.keys()}
         found |= {rid: "art only" for rid in self.art.keys() - game.keys()}
         for rid in game.keys() & self.art.keys():

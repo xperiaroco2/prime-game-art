@@ -14,6 +14,7 @@ later packages add dressing data (`layouts/house/dressing/`, #75b) and only rege
 | `layouts/house/dressing/attic_roof/attic.toml`, `tools/runner/house_attic.py`, `commands/attic.py` | The attic's old things and hiding spots, the climb-out, the free roof's items and lookout, and their checks (below; art #77) |
 | `tools/runner/commands/house.py` | The `house` command |
 | `tools/tests/test_house_layout.py` | The rules, the plan's conventions, the design doc's 35 rooms and the game's greybox marker names |
+| `tools/tests/_house_greybox.py`, `fixtures/house_greybox.json`, `test_house_greybox.py` | The game's greybox and design doc rooms, pinned; the live drift check ("The game's greybox, pinned") |
 | `layouts/house/dressing/<room>.toml` | One room's props and light fixtures (#75b); the ground floor's eight rooms and the greenhouse (#80, `docs/house-garden.md`) |
 | `layouts/house/routes.toml` | The design doc's routes (§7) as waypoints for the walk, with the doc's lengths and times (#78; "Routes" below) |
 | `layouts/house/basement_review.toml` | The basement's review pictures: lamp stand-ins per fixture id, exposure, ambient, the shots and the far edge's L* (#78) |
@@ -207,11 +208,26 @@ sheet is six `[[export.sheet_views]]` of `room = "plot"` (plan metres, 1.6 m ove
 loading `outdoor.tscn` with the package's rooms at their plan corners; alone, the package shows the house's footprint
 as a black hole. The flat `house_props/` names follow one rule for every package (`docs/manifest.md`).
 
-`tools/tests/test_house_export.py` diffs the 34 art rooms against the game's greybox rooms (`D:/prime-game`, read
-only; skipped without it) on root, origin, size, Doors, Stations and Markers and expects exactly the known differences:
+`tools/tests/test_house_export.py` diffs the 34 art rooms against the game's greybox rooms (pinned, below) on root,
+origin, size, Doors, Stations and Markers and expects exactly the known differences:
 the six of the plan's `mapping.md` (attic and roof: question G1; garage Door3, landing Door6, study Door1,
 storage Package07: G2; art task A4 settles them), the attic's by name (Door1; Loot, HidingSpots, Lookout; Knife3); and the game's three spawn zone markers Zone01-Zone03
 (yard, garden, landing; prime-game #651, #681), which the art rooms do not carry yet.
+
+### The game's greybox, pinned (#34)
+The House tests never read the game's live checkout: a marker the game added once turned `main` red. They read
+`tools/tests/fixtures/house_greybox.json`, a snapshot of `D:/prime-game` at a recorded commit (`game_commit`): the
+design doc's room table (`docs/design/house-map.md`) and per greybox room scene its root, origin, `size_m`, Doors,
+Stations and Markers (`test_house_export.py`) and the names of its `Marker3D` doors and stations
+(`test_house_layout.py`). `tools/tests/test_house_greybox.py` compares the live checkout with the snapshot (skipped
+without `D:/prime-game`) and fails only on what the game removed or moved; a new room, marker or design row is not
+drift. When the art takes a game change on purpose, refresh the snapshot and update the known differences in the
+same commit:
+
+```
+$PYTHON_BIN tools/tests/_house_greybox.py           # rewrite the snapshot from D:/prime-game (--game DIR)
+$PYTHON_BIN tools/tests/_house_greybox.py --check   # list the drift, write nothing
+```
 
 ## Dressing (#75b)
 

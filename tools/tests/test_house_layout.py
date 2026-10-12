@@ -1,23 +1,22 @@
 """The house layout engine (tools/runner/house_layout.py, docs/house.md): the layout data holds the grid rules, the
 rooms match the design doc, the wall modules, corners, floors, railings and stairs land where the kit's conventions
 say, and the scenes carry the game's marker names. Pure Python; the checks against the game's design doc and greybox
-skip when D:/prime-game is missing."""
+read their pinned snapshot (tools/tests/_house_greybox.py), not the live D:/prime-game."""
 
 from __future__ import annotations
 
 import copy
-import re
 import tempfile
 import unittest
 from pathlib import Path
 
 from runner import house_layout as H
 
+from . import _house_greybox as G
+
 DATA = H.load()
 PLAN = H.plan(DATA)
-GAME = Path("D:/prime-game")
-DOC = GAME / "docs" / "design" / "house-map.md"
-GREYBOX = GAME / "levels" / "house" / "rooms"
+GREYBOX = G.load()
 # The free roof (art #77) is ahead of the game: until the game side takes it, the design doc and the greybox still
 # have the roof deck. These are the differences the game side must make (listed in the PR); the comparisons expect them.
 PENDING_ROOMS = {"Roof": None, "Attic": [18, 24, 24, 20]}  # no Roof room; the attic on the whole footprint
@@ -121,10 +120,8 @@ class LayoutDataTest(unittest.TestCase):
         odd = one_room(d=5, walls="knee", roofs=[{"id": "x", "room": "r", "rect": [0, 0, 6, 5], "gables": True}])
         self.assertTrue(any("even" in p for p in H.plan(odd)["problems"]))
 
-    @unittest.skipUnless(DOC.is_file(), "the game's design doc is missing")
     def test_rooms_match_the_design_doc(self) -> None:
-        rows = re.findall(r"^\| ([^|]+?) \| (\d+), (\d+) \| (\d+) x (\d+) m \|", DOC.read_text(encoding="utf-8"), re.M)
-        doc = {t: [int(x), int(y), int(w), int(d)] for t, x, y, w, d in rows}
+        doc = dict(GREYBOX["design_rooms"])
         ours = {r["title"]: r["rect"] for lv in DATA["levels"] for r in lv["rooms"]}
         if "Roof" in doc:  # the game side has not taken the free roof yet (#77)
             self.assertEqual(len(doc), 35)
@@ -132,16 +129,14 @@ class LayoutDataTest(unittest.TestCase):
                 doc.pop(title) if rect is None else doc.__setitem__(title, rect)
         self.assertEqual(ours, doc)
 
-    @unittest.skipUnless(GREYBOX.is_dir(), "the game's greybox rooms are missing")
     def test_door_markers_match_the_greybox(self) -> None:
         for lv in DATA["levels"]:
             for room in lv["rooms"]:
-                text = (GREYBOX / f"{room['id']}.tscn").read_text(encoding="utf-8")
-                theirs = sorted(re.findall(r'\[node name="(\w+)" type="Marker3D" parent="Doors"', text))
+                theirs = GREYBOX["rooms"][room["id"]]["doors_marker3d"]
                 ours = sorted(d["names"][room["id"]] for L in DATA["levels"] for d in L.get("doors", [])
                               if room["id"] in d.get("names", {}))
                 self.assertEqual(ours, sorted(set(theirs) - PENDING_DOORS.get(room["id"], set())), room["id"])
-                stations = set(re.findall(r'\[node name="(\w+)" type="Marker3D" parent="Stations"', text))
+                stations = set(GREYBOX["rooms"][room["id"]]["stations_marker3d"])
                 self.assertEqual(sorted(s["name"] for s in room.get("stations", [])),
                                  sorted(stations | PENDING_STATIONS.get(room["id"], set())), room["id"])
 
