@@ -162,5 +162,24 @@ class Manifest(unittest.TestCase):
                 self.assertIn("Quaternius", _slice.source_credit(tomllib.load(fh)), gender)
 
 
+class Deviations(unittest.TestCase):
+    CHECKS = [{"check": "feet_at_zero", "status": "pass", "detail": "ok"},
+              {"check": "contract_eye_height", "status": "warn", "detail": "eyes at 1.722 m"},
+              {"check": "contract_height", "status": "fail", "detail": "1.986 m to the top"}]
+
+    def test_only_checks_that_did_not_pass_failures_first(self):
+        self.assertEqual(_slice.deviations(self.CHECKS),
+                         ["`contract_height` fail: 1.986 m to the top", "`contract_eye_height` warn: eyes at 1.722 m"])
+        self.assertEqual(_slice.deviations(self.CHECKS[:1]), [])
+
+    def test_handoff_section_names_each_deviation_and_the_open_decision(self):
+        from runner.commands import slice_char
+        text = slice_char.known_deviations(_slice.deviations(self.CHECKS))
+        self.assertIn("- `contract_height` fail: 1.986 m to the top", text)
+        self.assertIn("- `contract_eye_height` warn", text)
+        self.assertIn("Open: the engineer decides", text)
+        self.assertTrue(slice_char.known_deviations([]).startswith("None"))
+
+
 if __name__ == "__main__":
     unittest.main()

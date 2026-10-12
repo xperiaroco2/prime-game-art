@@ -249,3 +249,13 @@ def clip_table(rows: list[dict]) -> str:
                    f"{r.get('seconds', '')} | `{src}` | {r['licence']} | {str(r['ai_generated']).lower()} | "
                    f"{'; '.join(r['serves'])} |")
     return "\n".join(out)
+
+
+DEVIATION_ORDER = {"fail": 0, "warn": 1}
+
+
+def deviations(checks: list[dict[str, Any]]) -> list[str]:
+    """The godot-check results the game's import task must know: every check that did not pass, failures first."""
+    bad = [c for c in checks if c.get("status") in DEVIATION_ORDER]
+    bad.sort(key=lambda c: DEVIATION_ORDER[c["status"]])
+    return [f"`{c['check']}` {c['status']}: {c.get('detail', '')}" for c in bad]

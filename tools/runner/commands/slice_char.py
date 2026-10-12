@@ -76,8 +76,24 @@ def _body_credit(gender: str) -> str:
         return _slice.source_credit(tomllib.load(fh))
 
 
+def known_deviations(found: list[str]) -> str:
+    """HANDOFF.md's section on the contract checks the export does not pass (the open height decision, #42)."""
+    if not found:
+        return "None: `godot-check --strict-contract --humanoid --textured` passes every check."
+    lines = "\n".join(f"- {d}" for d in found)
+    return f"""`godot-check --strict-contract --humanoid --textured` passes every check but these
+(the contract v1 body gates):
+
+{lines}
+
+The clay look's head is 1.3 times the pack's, with hair on top, so the body is taller than the contract's 1.70 to
+1.80 m and the eyes sit above the camera's 1.6 m. **Open: the engineer decides** (art PR #139, docs/godot.md "Open: the
+height"): widen the contract's window for the clay look (a contract change), scale the export, or let the game scale
+the body. Do not import before the decision; this section is rewritten with it."""
+
+
 def handoff(asset_id: str, cast: str, rows: list[dict], left: list[tuple[str, str]], glb: Path, info: dict,
-            textures: dict) -> str:
+            textures: dict, found: list[str]) -> str:
     mb = glb.stat().st_size / 1e6
     tex = textures.get("images", [])
     return f"""# {asset_id}: handoff to the game (art #42 part C)
@@ -85,6 +101,10 @@ def handoff(asset_id: str, cast: str, rows: list[dict], left: list[tuple[str, st
 The slice character for M6.2: cast `{cast}` in the clay look with the clay face kit, the textures baked and embedded,
 carrying {len(rows)} clips of the MVP animation set on the same skeleton. **Not approved yet**: the game takes it once
 manifest.toml's approval fields are set (the engineer approves the look on the review page).
+
+## Known deviations
+
+{known_deviations(found)}
 
 ## What to copy where
 
@@ -208,6 +228,9 @@ def run(args: argparse.Namespace) -> int:
         if r["name"] in lengths:
             r["seconds"] = lengths[r["name"]]
     (out / "clips.json").write_text(json.dumps({"rows": rows, "left": left}, indent=1), encoding="utf-8")
+    check_report = out / "godot-check" / asset_id / "report.json"
+    found = (_slice.deviations(json.loads(check_report.read_text(encoding="utf-8")).get("checks", []))
+             if check_report.is_file() else ["`godot-check` did not write its report"])
     if args.asset:
         asset = args.asset.resolve()
         (asset / "export").mkdir(parents=True, exist_ok=True)
@@ -221,7 +244,7 @@ def run(args: argparse.Namespace) -> int:
         (asset / "manifest.toml").write_text(text, encoding="utf-8", newline="\n")
         pkg = _slice.package_json(asset_id, {glb.name: shipped}, _slice.game_dir(asset_id))
         (asset / "package.json").write_text(json.dumps(pkg, indent=1) + "\n", encoding="utf-8", newline="\n")
-        (asset / "HANDOFF.md").write_text(handoff(asset_id, cast, rows, left, shipped, info, textures),
+        (asset / "HANDOFF.md").write_text(handoff(asset_id, cast, rows, left, shipped, info, textures, found),
                                           encoding="utf-8", newline="\n")
         common.ok(f"asset folder {asset}")
     return 1 if failed else 0

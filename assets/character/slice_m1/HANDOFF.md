@@ -4,6 +4,19 @@ The slice character for M6.2: cast `m1` in the clay look with the clay face kit,
 carrying 25 clips of the MVP animation set on the same skeleton. **Not approved yet**: the game takes it once
 manifest.toml's approval fields are set (the engineer approves the look on the review page).
 
+## Known deviations
+
+`godot-check --strict-contract --humanoid --textured` passes every check but these
+(the contract v1 body gates):
+
+- `contract_height` fail: 1.986 m to the top (contract v1: 1.7 to 1.8 m)
+- `contract_eye_height` warn: eyes at 1.722 m (contract v1: 1.6 +- 0.08 m)
+
+The clay look's head is 1.3 times the pack's, with hair on top, so the body is taller than the contract's 1.70 to
+1.80 m and the eyes sit above the camera's 1.6 m. **Open: the engineer decides** (art PR #139, docs/godot.md "Open: the
+height"): widen the contract's window for the clay look (a contract change), scale the export, or let the game scale
+the body. Do not import before the decision; this section is rewritten with it.
+
 ## What to copy where
 
 | From (this folder) | To (prime-game) | Size | LFS |
