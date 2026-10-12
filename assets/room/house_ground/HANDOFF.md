@@ -1,7 +1,8 @@
 # House package P2, the shell and the ground floor: the game-side handoff (art #124, prime-game #523)
 
 For the game's own import task, after P1 (the kit). Nothing here is copied before the approval fields of this
-manifest and of `assets/prop/house_props/manifest.toml` are set (the engineer's look approval on the art PR).
+manifest and of `assets/prop/house_props/manifest.toml` are set (the engineer's look approval on the art PR). They are set: P2 is approved and merged
+(#125, 2026-10-11).
 
 ## What to copy where (ARCHITECTURE 11.1)
 | From this repo | To the game repo |

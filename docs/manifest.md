@@ -130,7 +130,8 @@ A set's `export/` folder holds its committed files under their manifest names, w
 the kit's textures are `textures/set_*.png` and the props `library/`, `task/` and `zones/` here, all flat in the game's
 `assets/environment/house_kit/` and `house_props/` (the package's `package.json` and the set's `HANDOFF.md` map them;
 `house --package-sheet` stages them by SHA-256). Only what an approved package needs is committed: P1 the whole kit, P2
-its 70 props (#124), P3 and P5 the 34 more they use (#126), P4 10 more (#129), P7 32 more (#128). A prop id names one game file: the export takes it from
+its 70 props (#124), P3 and P5 the 34 more they use (#126), P4 10 more (#129), P7 32 more (#128). P1 to P5 and P7 are approved and merged, their manifests' approval fields set: P1 and P2 in #125, P3 and P5
+in #127, P4 in #130, P7 (with the props, the outdoor and garden sets) in #131. A prop id names one game file: the export takes it from
 `house.toml`'s `prop_dirs` in order (the task props first), so of the ids both `task/` and `library/` hold (`boiler`,
 `pump`, ...) only the task prop ships. P7 (#128) adds the zones' props, and 17 basenames repeat between `task/`,
 `library/` and `zones/`: the first source in `prop_dirs`, then `[export.plot]` `prop_src`'s other folders, that holds
@@ -144,9 +145,10 @@ public with no licence file, so all rights reserved, and `licence_url` points to
 
 The game takes an asset with `docs/credits/<id>.md` in its own format (its `docs/ARCHITECTURE.md` section 11.2, example
 `docs/credits/kenney_chair.md`): `Files`, `Author`, `Source` (the art manifest, or the download page with the file's
-SHA-256), `License` with its URL, `AI generated` and `Public repo OK`. Drafts are written to the raw folder,
-`house/export/credits/<id>.md`, never committed here; the game's own task workflow copies them into its PR once the
-manifest is approved.
+SHA-256), `License` with its URL, `AI generated` and `Public repo OK`. `house --export` drafts them into the raw
+folder, `house/export/credits/<id>.md`; an approved set commits its entry as `CREDITS.md` beside its manifest (the
+House's: `assets/kit/house_kit/`, `assets/prop/house_props/`, `assets/environment/house_outdoor/` and
+`house_garden/`), and the game's own task workflow copies it into its PR as `docs/credits/<id>.md`.
 
 ## Source records
 

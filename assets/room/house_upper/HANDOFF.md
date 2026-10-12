@@ -2,7 +2,8 @@
 
 For the game's own import task, after P1 (the kit) and P2 (the ground floor: the main stairs and the terrace the
 balcony stairs land beside). Nothing here is copied before the approval fields of this manifest and of
-`assets/prop/house_props/manifest.toml` are set (the engineer's look approval on the art PR).
+`assets/prop/house_props/manifest.toml` are set (the engineer's look approval on the art PR). They are set: P4 is approved and
+merged (#130, 2026-10-12).
 
 ## What to copy where (ARCHITECTURE 11.1)
 | From this repo | To the game repo |

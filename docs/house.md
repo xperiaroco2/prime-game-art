@@ -170,7 +170,8 @@ A package goes to the game from git, not from the raw build (#124): its files ar
 `export/` folders (`docs/manifest.md`: the kit in `assets/kit/house_kit/`, the props in `assets/prop/house_props/`,
 the room scenes of a package in their own `room` set, P2's in `assets/room/house_ground/`), with the package's
 `package.json` beside the manifest that owns it and a `HANDOFF.md` for the game's import task (what to copy where,
-the credits entries, the open questions). The engineer approves the look from
+the credits entries, the open questions). P1 to P5 and P7 are approved and merged, their manifests' approval fields set: P1 and P2 in #125, P3 and P5
+in #127, P4 in #130, P7 (with the props, the outdoor and garden sets) in #131. The engineer approves the look from
 
 ```
 tools/run.sh house --package-sheet DIR --package N

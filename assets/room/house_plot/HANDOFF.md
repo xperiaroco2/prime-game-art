@@ -3,7 +3,8 @@
 For the game's own import task, after P1 (the kit) and P2 (the outdoor rooms' markers and lamps: yard, street, path,
 driveway). Nothing here is copied before the approval fields of this manifest, of
 `assets/environment/house_outdoor/manifest.toml`, `assets/environment/house_garden/manifest.toml` and of
-`assets/prop/house_props/manifest.toml` (P7's 32 props) are set (the engineer's look approval on the art PR).
+`assets/prop/house_props/manifest.toml` (P7's 32 props) are set (the engineer's look approval on the art PR). They are set:
+P7 is approved and merged (#131, 2026-10-12).
 
 ## What to copy where (ARCHITECTURE 11.1)
 | From this repo | To the game repo |

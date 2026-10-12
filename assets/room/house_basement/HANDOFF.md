@@ -2,7 +2,7 @@
 
 For the game's own import task, after P1 (the kit) and P2 (the ground floor). Nothing here is copied before the
 approval fields of this manifest and of `assets/prop/house_props/manifest.toml` are set (the engineer's look approval
-on the art PR).
+on the art PR). They are set: P3 is approved and merged (#127, 2026-10-11).
 
 ## What to copy where (ARCHITECTURE 11.1)
 | From this repo | To the game repo |

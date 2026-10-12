@@ -1,7 +1,8 @@
 # House package P1, the kit: the game-side handoff (art #124, prime-game #523)
 
 For the game's own import task. Nothing here is copied before the manifest's approval fields are set (the engineer's
-look approval on the art PR; ARCHITECTURE 11.2 takes an art asset only then).
+look approval on the art PR; ARCHITECTURE 11.2 takes an art asset only then). They are set: P1 is approved
+and merged (#125, 2026-10-11).
 
 ## What to copy where (ARCHITECTURE 11.1)
 | From this repo | To the game repo |
