@@ -272,7 +272,7 @@ texel_low = 1.0
 quality = "high"        # low, medium, high, ultra
 bounces = 3
 bounce_indirect_energy = 1.5
-denoiser = true
+denoiser = false        # #83b: the manager's choice from the 83q grid (the denoiser changed L* by under 0.5)
 directional = false
 interior = true
 
