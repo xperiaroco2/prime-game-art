@@ -635,7 +635,7 @@ engineer's yes.
 `godot/house/zone_build.gd`, `godot/house/bake_shots.gd`, the `godot/addons/lmbake` editor plugin):
 
 ```
-tools/run.sh house --bake ZONES [--preset high|low] [--grid] [--merge] [--no-bake] [--review DIR]
+tools/run.sh house --bake ZONES [--preset high|low] [--grid] [--diag] [--merge] [--no-bake] [--review DIR]
 ```
 
 1. `house` writes the zone scenes into `godot/import/house` (so `--bake` refuses `--out`); the kit and prop GLBs the
@@ -653,15 +653,55 @@ tools/run.sh house --bake ZONES [--preset high|low] [--grid] [--merge] [--no-bak
    00:00-08:00 local unless the manager wrote a daytime grant (`<raw>/research/2026-10-06-locations/lab/
    editor_window.txt`, `until YYYY-MM-DD HH:MM`, the lab runner's rule); agents never write that file.
    `--no-bake` stops after step 2 and runs by day.
-4. With `--review DIR`, `bake_shots.gd` (an off-screen window) shoots each zone's real-time row (the first scene
-   without its lightmap, the lights dynamic) and its baked rows from two E1 cameras (a room corner at 1.6 m across to
+4. With `--review DIR` the zone's first variant is also baked with its lights dynamic (`<tag>_ld`: the lightmap
+   holds only their bounce) for the reference row, and `bake_shots.gd` (an off-screen window) shoots each zone's
+   rows from two E1 cameras (a room corner at 1.6 m across to
    three quarters of the room) and one seam camera (level along the first room's middle line from 1 m inside its north
-   wall: ceiling and floor tiles in frame, never inside a wall); into `DIR`: the frames, `sheet.png` (about 1280 px
-   across), `measures.json` and `numbers.md` (L* mean, the share under L* 20, C* p90 per frame, as the house lab
-   measures; each baked row's L* against real time). Zones with review rooms: ground, basement, upper.
+   wall: ceiling and floor tiles in frame, never inside a wall). The rows: `realtime` (no lightmap, the light kit's
+   lights dynamic and unshadowed: they leak through walls), the baked rows, and the reference `hybrid_nospec` (the
+   `_ld` lightmap plus the lights in real time with shadows and `light_specular` 0: what a diffuse lightmap can hold;
+   see "Why the bakes looked darker" below). Into `DIR`: the frames, `sheet.png` (about 1280 px across),
+   `measures.json` and `numbers.md` (L* mean, the share under L* 20, C* p90 per frame, as the house lab measures;
+   each row's L* against the reference, camera by camera, then against `realtime`). Zones with review rooms:
+   ground, basement, upper.
 5. `--grid` bakes a zone once per variant: texel 8 / 12 / 16 per m x the denoiser on / off x bounce energy 1.0 / 1.5,
    tags `t<texel>_d<0|1>_e<energy x 10>` (`_m` with `--merge`). Twelve variants of the ground floor are about 12
-   editor runs of 21-22 s plus the builds: well under half an hour.
+   editor runs of 21-22 s plus the builds: well under half an hour. The 83q grid (2026-10-11, ground) put all twelve
+   within 0.8 L* of each other: texel, denoiser and bounce energy do not change the brightness; `[bake]` is texel 8
+   (High), denoiser off, bounce energy 1.5 since #83b.
+6. `--diag` (#83b) bakes a zone four ways at its High texel (`[bake]`; the same with no bounce; the same with the
+   lights dynamic; the default before #83b, denoiser on) and shoots eight rows: `realtime`, `realtime_shadow`,
+   `realtime_shadow_nospec`, the three static bakes, `hybrid` and `hybrid_nospec` (a `_nospec` mode sets every
+   light's `light_specular` to 0). About six minutes for the ground floor.
+
+### Why the bakes looked darker (#83b)
+
+Every 83q bake was 5.1-5.9 L* darker than the real-time row. `--diag` on the ground floor (2026-10-12,
+`D:/prime-art-raw/review/house/83b`; L* of E1 living room / E1 kitchen / seam) splits the gap into three parts:
+
+| row | what it holds | L* |
+|---|---|---|
+| `realtime` | direct light, unshadowed, diffuse and specular (the old reference) | 11.5 / 27.1 / 12.8 |
+| `realtime_shadow` | the same with shadows | 9.5 / 21.7 / 10.4 |
+| `realtime_shadow_nospec` | the same, diffuse only | 7.2 / 18.8 / 8.4 |
+| `t8_d0_e15_b0` baked | the bake's direct light only | 6.6 / 17.5 / 7.8 |
+| `t8_d0_e15` baked (the default) | direct light and three bounces | 7.7 / 19.1 / 9.0 |
+| `t8_d1_e15_old` baked (before) | the same with the denoiser on | 7.4 / 18.6 / 8.9 |
+| `hybrid` | real-time direct light with shadows and specular, plus the bake's bounce | 10.6 / 23.5 / 11.7 |
+| `hybrid_nospec` (the reference) | the same, diffuse only | REF |
+
+1. Leaking: the light kit's real-time lights have no shadows (`shadow_enabled` is off, as the game's export writes
+   them), so the old reference lit every room through its walls, floors and props: shadows alone take 2.0 / 5.4 /
+   2.4 L* off. The bake is right here; the real-time row was not a valid reference.
+2. Specular: a lightmap holds diffuse light only; the lamps' specular (`light_specular` 0.5) is 2.3 / 2.9 / 2.0 L*
+   of the real-time frame (the grazing sheen on floors and ceilings). A directional lightmap (`directional = true`)
+   measured within 0.2 L* of the default: it does not bring the sheen back. It needs real-time light (the High
+   preset's glow lights, or the lamps dynamic as in `hybrid`) or reflection probes: a look question.
+3. The rest is the bake itself: its direct light is 0.6 / 1.3 / 0.6 L* under Godot's shadowed real-time diffuse
+   light (shadow-map bias against traced rays), and its three bounces add 1.1 / 1.6 / 1.2 L*, as the hybrid row's.
+
+So no `[bake]` setting caused the gap and raising the energies would only hide the shadows. The default bake is
+measured against `hybrid_nospec`: DELTA L*.
 
 Every Godot run takes the heavy-run lock (`common.heavy_lock`), one at a time; a run that waits for it is normal. The
 whole command can pass 180 s: an agent starts it in the background with its log under `tools/out/`. Bakes are night
