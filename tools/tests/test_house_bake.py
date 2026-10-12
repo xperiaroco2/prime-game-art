@@ -209,12 +209,16 @@ class Diagnostic(unittest.TestCase):
         self.assertLessEqual(len(rows), 8)  # the brief's bound: about 8 rows of three cameras
 
     def test_the_preset_and_grid_rows(self):
-        self.assertEqual(B.shot_rows("ground", B.variants(self.lights, "ground", "high")),
-                         [{"label": "ground_realtime", "tag": "high", "mode": "realtime"},
-                          {"label": "ground_high_baked", "tag": "high", "mode": "baked"}])
+        sheen = self.lights["presets"]["high"]["sheen"]  # #83c: the preset's sheen row follows the bake
+        rows = B.shot_rows("ground", B.variants(self.lights, "ground", "high"))
+        self.assertEqual(rows[:2], [{"label": "ground_realtime", "tag": "high", "mode": "realtime"},
+                                    {"label": "ground_high_baked", "tag": "high", "mode": "baked"}])
+        self.assertEqual(rows[2], {"label": f"ground_high_{sheen}", "tag": "high", "mode": sheen,
+                                   "sheen": B.sheen_mode(sheen)})
         rows = B.shot_rows("ground", B.variants(self.lights, "ground", "high", reference=True))
         self.assertEqual([r["label"] for r in rows],
-                         ["ground_realtime", "ground_high_baked", "ground_high_ld_hybrid_nospec"])
+                         ["ground_realtime", "ground_high_baked", f"ground_high_{sheen}",
+                          "ground_high_ld_hybrid_nospec"])
         grid = B.variants(self.lights, "ground", "high", grid=True, reference=True)
         self.assertEqual(len(grid), 13)
         self.assertEqual(grid[-1], {**grid[0], "tag": grid[0]["tag"] + "_ld", "lights": "dynamic",

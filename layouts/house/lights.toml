@@ -2,8 +2,8 @@
 # and the Low and High presets. Taste data: the engineer may change any number here and regenerate (`house`).
 # Counts per room are inventory.md §8 of the house plan (191 fixtures); positions are generated (`place`); a room's
 # `fixed` list adds practicals at given points, `at` = [x, h over the room's floor, y] in plot metres. Every fixture
-# is baked (LightmapGI, light_bake_mode Static); a type with `glow = true` may also get the cheap real-time glow
-# (unshadowed omni, distance fade) for the nearest `glow_count` of the preset.
+# is baked (LightmapGI, light_bake_mode Static); a type with `glow = true` may also get the preset's real-time sheen
+# (#83c): the nearest `glow_count` of them add their specular only, shadowed, on top of the bake (the preset's `sheen`).
 
 [colors]  # linear-ish Godot colours; c2 is the lab's lamp c2 (baked and real-time match, lab round 3)
 c2 = [1.0, 0.85, 0.68]
@@ -272,19 +272,21 @@ texel_low = 1.0
 quality = "high"        # low, medium, high, ultra
 bounces = 3
 bounce_indirect_energy = 1.5
-denoiser = false        # #83b: the manager's choice from the 83q grid (the denoiser changed L* by under 0.5)
+denoiser = false        # #83b: the manager's choice from the 83q grid (the denoiser changed L* by at most 0.5)
 directional = false
 interior = true
 
 [presets.high]
 lightmap = "texel_high"
 glow_count = 12
+sheen = "sheen12_shadow"  # #83c: the nearest 12 glow fixtures add specular only, shadowed (house_bake.sheen_mode)
 ssao = "half"
 shadowed_spots = 4
 fog = false
 [presets.low]
 lightmap = "texel_low"
 glow_count = 4
+sheen = "sheen4_shadow"   # #83c: the nearest 4, shadowed (+1.6 L* over the bake against High's +2.1)
 ssao = "off"
 shadowed_spots = 2
 fog = true

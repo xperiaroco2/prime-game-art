@@ -3,8 +3,8 @@ and prop GLBs the zone scenes use, imports them, builds each zone's bake scene h
 bakes it in the editor through the lmbake plugin in an off-screen window (night only: house_bake.editor_allowed),
 then shoots the baked and real-time frames (godot/house/bake_shots.gd) and measures them. With `--grid` each zone is
 built and baked once per variant of house_bake.variants (texel x denoiser x bounce energy); with `--diag` once per
-house_bake.diag_variants (#83b: the darkness against real time). Every Godot run takes the heavy-run lock
-(common.run)."""
+house_bake.diag_variants (#83b: the darkness against real time); with `--sheen` once per house_bake.sheen_variants
+(#83c: the lamps' specular on top of the bake). Every Godot run takes the heavy-run lock (common.run)."""
 
 from __future__ import annotations
 
@@ -12,7 +12,7 @@ import json
 import time
 from pathlib import Path
 
-from .. import common, house_bake
+from .. import common, house_bake, house_lights
 from . import _frames, _godot
 
 BUILD = "res://house/zone_build.gd"
@@ -49,7 +49,7 @@ def night_or_fail(raw: Path) -> None:
 
 
 def run(data: dict, lights: dict, zones: list[str], preset: str, review: Path | None, no_bake: bool,
-        props: dict, grid: bool = False, merge: bool = False, diag: bool = False) -> int:
+        props: dict, grid: bool = False, merge: bool = False, diag: bool = False, sheen: bool = False) -> int:
     unknown = [z for z in zones if z not in lights["zones"]]
     if unknown:
         raise common.Failure(f"house --bake: no zone {', '.join(unknown)} in lights.toml")
@@ -66,22 +66,25 @@ def run(data: dict, lights: dict, zones: list[str], preset: str, review: Path | 
     uv2 = work / "uv2.json"
     pieces = json.loads((raw / data["settings"]["kit_dir"] / "pieces.json").read_text(encoding="utf-8"))
     uv2.write_text(json.dumps(house_bake.uv2_table(pieces)), encoding="utf-8", newline="\n")
-    report: dict = {"preset": preset, "grid": grid, "merge": merge, "diag": diag, "zones": {}}
+    report: dict = {"preset": preset, "grid": grid, "merge": merge, "diag": diag, "sheen": sheen, "zones": {}}
     for zone in zones:
         report["zones"][zone] = {}
-        for v in zone_variants(lights, zone, preset, grid, merge, diag, review is not None and not no_bake):
+        for v in zone_variants(lights, zone, preset, grid, merge, diag, review is not None and not no_bake, sheen):
             report["zones"][zone][v["tag"]] = bake_variant(zone, v, work, raw, no_bake)
     (work / "bake_report.json").write_text(json.dumps(report, indent=1), encoding="utf-8", newline="\n")
     if review and not no_bake:
-        shoot(data, lights, zones, preset, grid, merge, review, diag)
-    kind = "diag" if diag else "grid" if grid else preset
+        shoot(data, lights, zones, preset, grid, merge, review, diag, sheen)
+    kind = "sheen" if sheen else "diag" if diag else "grid" if grid else preset
     common.ok(f"house --bake: {len(zones)} zones ({kind}); {(work / 'bake_report.json').as_posix()}")
     return 0
 
 
 def zone_variants(lights: dict, zone: str, preset: str, grid: bool, merge: bool, diag: bool,
-                  reference: bool = False) -> list[dict]:
-    """The zone's bakes: --diag's, or the preset's or grid's (with `reference`, a review: the reference bake too)."""
+                  reference: bool = False, sheen: bool = False) -> list[dict]:
+    """The zone's bakes: --sheen's, --diag's, or the preset's or grid's (with `reference`, a review: the reference
+    bake too)."""
+    if sheen:
+        return house_bake.sheen_variants(lights, zone)
     if diag:
         return house_bake.diag_variants(lights, zone)
     return house_bake.variants(lights, zone, preset, grid, merge, reference)
@@ -127,20 +130,26 @@ def bake_variant(zone: str, v: dict, work: Path, raw: Path, no_bake: bool) -> di
 
 
 def shoot(data: dict, lights: dict, zones: list[str], preset: str, grid: bool, merge: bool, review: Path,
-          diag: bool = False) -> None:
+          diag: bool = False, sheen: bool = False) -> None:
     """Per zone the rows of house_bake.shot_rows (the preset and the grid: the real-time row, the first variant's scene
     without its lightmap, then one baked row per variant; --diag: its modes) from its review rooms' E1 cameras and
-    seam camera: the frames, sheet.png (about 1280 px across), measures.json and numbers.md (L*, dark %, C* p90 per
-    frame; each row's L* against the reference rows) into `review`."""
+    seam camera: the frames, sheet.png (about 1280 px across, a label per row), measures.json and numbers.md (L*,
+    dark %, C* p90 per frame; each row's L* against the reference rows; real-time and shadowed lights and draw calls
+    per camera) into `review`. A sheen row also carries the zone's probe boxes and the glow types."""
     rows = []
+    glow = house_bake.glow_types(lights)
+    rooms_of = house_lights.zone_rooms(lights, data)
     for zone in zones:
         if zone not in REVIEW_ROOMS:
             common.say(f"  bake: no review rooms for {zone} (not shot)")
             continue
         cams = house_bake.views(data, REVIEW_ROOMS[zone])
         scene = "res://import/house/bake/{}_{}.scn"
-        rows += [{**r, "zone": zone, "scene": scene.format(zone, r["tag"]), "cams": cams}
-                 for r in house_bake.shot_rows(zone, zone_variants(lights, zone, preset, grid, merge, diag, True))]
+        probes = house_bake.probe_boxes(data, rooms_of[zone])
+        rows += [{**r, "zone": zone, "scene": scene.format(zone, r["tag"]), "cams": cams,
+                  **({"probes": probes, "glow_types": glow} if "sheen" in r else {})}
+                 for r in house_bake.shot_rows(zone, zone_variants(lights, zone, preset, grid, merge, diag, True,
+                                                                   sheen))]
     if not rows:
         return
     jobs = common.OUT / "house" / "bake" / "shots.json"
@@ -156,19 +165,30 @@ def shoot(data: dict, lights: dict, zones: list[str], preset: str, grid: bool, m
         frames = [review / f"{row['label']}_{ci}.png" for ci in range(len(row["cams"]))]
         numbers[row["label"]] = [house_bake.measures(*house_bake.read_png(f)) for f in frames if f.is_file()]
     (review / "measures.json").write_text(json.dumps(numbers, indent=1), encoding="utf-8", newline="\n")
+    shots = json.loads((review / "shots.json").read_text(encoding="utf-8")).get("shots", [])
+    costs = house_bake.shot_costs(shots)
     md = "\n".join(house_bake.numbers_md(z, {k: v for k, v in numbers.items() if k.startswith(z + "_")},
-                                         references(z, rows, diag), ["E1 " + r for r in REVIEW_ROOMS[z]] + ["seam"])
+                                         references(z, rows, diag, sheen),
+                                         ["E1 " + r for r in REVIEW_ROOMS[z]] + ["seam"],
+                                         note=SHEEN_NOTE if sheen else house_bake.REFERENCE_NOTE, extra=costs)
                    for z in zones if z in REVIEW_ROOMS)
     (review / "numbers.md").write_text(md, encoding="utf-8", newline="\n")
     for name, ms in numbers.items():
         common.say(f"  {name}: L* " + ", ".join(str(m["L_mean"]) for m in ms))
 
 
-def references(zone: str, rows: list[dict], diag: bool) -> list[str]:
+SHEEN_NOTE = "every lamp real-time with shadows and specular plus the bake's bounce: the sheen's target"
+
+
+def references(zone: str, rows: list[dict], diag: bool, sheen: bool = False) -> list[str]:
     """The rows numbers.md measures the others against: first the right reference (hybrid_nospec: real-time diffuse
     direct light with shadows plus the bake's own bounce, #83b), then the leaking real-time row; --diag adds real time
-    with shadows (with and without specular) and the hybrid row."""
+    with shadows (with and without specular) and the hybrid row; --sheen: hybrid (the look's target), then the bake
+    alone (the before row)."""
     mine = [r for r in rows if r["zone"] == zone]
+    if sheen:
+        return ([r["label"] for r in mine if r["mode"] == "hybrid"]
+                + [r["label"] for r in mine if r["mode"] == "baked"])
     first = [r["label"] for r in mine if r["mode"] == house_bake.REFERENCE_MODE]
     others = ("realtime", "realtime_shadow", "realtime_shadow_nospec", "hybrid") if diag else ("realtime",)
     return first + [r["label"] for r in mine if r["mode"] in others]
