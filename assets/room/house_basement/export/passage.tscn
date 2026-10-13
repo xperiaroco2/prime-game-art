@@ -11,8 +11,8 @@
 [ext_resource type="PackedScene" path="res://assets/environment/house_props/crate.glb" id="9"]
 [ext_resource type="PackedScene" path="res://assets/environment/house_props/open_box.glb" id="10"]
 [ext_resource type="PackedScene" path="res://assets/environment/house_props/cardboard_box.glb" id="11"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/book_stack.glb" id="12"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/radiator.glb" id="13"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/radiator.glb" id="12"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/book_stack.glb" id="13"]
 [ext_resource type="PackedScene" path="res://assets/environment/house_props/paper_stack.glb" id="14"]
 [ext_resource type="PackedScene" path="res://assets/environment/house_props/bottles.glb" id="15"]
 [ext_resource type="PackedScene" path="res://assets/environment/house_props/wall_clock.glb" id="16"]
@@ -383,11 +383,7 @@ metadata/prop = "open_box"
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.68, 0, 0.35)
 metadata/prop = "cardboard_box"
 
-[node name="book_stack_1" parent="Dressing" instance=ExtResource("12")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.63, 0, 0.295)
-metadata/prop = "book_stack"
-
-[node name="radiator_1" parent="Dressing" instance=ExtResource("13")]
+[node name="radiator_1" parent="Dressing" instance=ExtResource("12")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 7.42, 0.12, 5.9)
 metadata/prop = "radiator"
 
@@ -407,7 +403,7 @@ metadata/prop = "cardboard_box"
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 7.65, 0.4, 5.05)
 metadata/prop = "cardboard_box"
 
-[node name="radiator_2" parent="Dressing" instance=ExtResource("13")]
+[node name="radiator_2" parent="Dressing" instance=ExtResource("12")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 3.48, 0.12, 5.9)
 metadata/prop = "radiator"
 
@@ -427,23 +423,23 @@ metadata/prop = "cardboard_box"
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.11, 0.4, 0.35)
 metadata/prop = "cardboard_box"
 
-[node name="radiator_3" parent="Dressing" instance=ExtResource("13")]
+[node name="radiator_3" parent="Dressing" instance=ExtResource("12")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 5.54, 0.12, 5.9)
 metadata/prop = "radiator"
 
-[node name="radiator_4" parent="Dressing" instance=ExtResource("13")]
+[node name="radiator_4" parent="Dressing" instance=ExtResource("12")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 2.44, 0.12, 5.9)
 metadata/prop = "radiator"
 
-[node name="radiator_5" parent="Dressing" instance=ExtResource("13")]
+[node name="radiator_5" parent="Dressing" instance=ExtResource("12")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 0.1, 0.12, 1.12)
 metadata/prop = "radiator"
 
-[node name="radiator_6" parent="Dressing" instance=ExtResource("13")]
+[node name="radiator_6" parent="Dressing" instance=ExtResource("12")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 0.99, 0.12, 5.9)
 metadata/prop = "radiator"
 
-[node name="radiator_7" parent="Dressing" instance=ExtResource("13")]
+[node name="radiator_7" parent="Dressing" instance=ExtResource("12")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 0.1, 0.12, 4.76)
 metadata/prop = "radiator"
 
@@ -487,51 +483,57 @@ metadata/prop = "crate"
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0.4, 1.25)
 metadata/prop = "crate"
 
-[node name="book_stack_2" parent="Dressing" instance=ExtResource("12")]
+[node name="Detail" type="Node3D" parent="."]
+
+[node name="book_stack_1" parent="Detail" instance=ExtResource("13")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.63, 0, 0.295)
+metadata/prop = "book_stack"
+
+[node name="book_stack_2" parent="Detail" instance=ExtResource("13")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.32, 0.8, 5.53)
 metadata/prop = "book_stack"
 
-[node name="paper_stack_1" parent="Dressing" instance=ExtResource("14")]
+[node name="paper_stack_1" parent="Detail" instance=ExtResource("14")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.73, 0.4, 0.36)
 metadata/prop = "paper_stack"
 
-[node name="bottles_1" parent="Dressing" instance=ExtResource("15")]
+[node name="bottles_1" parent="Detail" instance=ExtResource("15")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.28, 0.8, 0.33)
 metadata/prop = "bottles"
 
-[node name="paper_stack_2" parent="Dressing" instance=ExtResource("14")]
+[node name="paper_stack_2" parent="Detail" instance=ExtResource("14")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 7.66, 0.8, 5.1)
 metadata/prop = "paper_stack"
 
-[node name="book_stack_3" parent="Dressing" instance=ExtResource("12")]
+[node name="book_stack_3" parent="Detail" instance=ExtResource("13")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 6.3, 0.8, 5.63)
 metadata/prop = "book_stack"
 
-[node name="paper_stack_3" parent="Dressing" instance=ExtResource("14")]
+[node name="paper_stack_3" parent="Detail" instance=ExtResource("14")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.11, 0.8, 0.36)
 metadata/prop = "paper_stack"
 
-[node name="bottles_2" parent="Dressing" instance=ExtResource("15")]
+[node name="bottles_2" parent="Detail" instance=ExtResource("15")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 3.18, 0.8, 1.51)
 metadata/prop = "bottles"
 
-[node name="bottles_3" parent="Dressing" instance=ExtResource("15")]
+[node name="bottles_3" parent="Detail" instance=ExtResource("15")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 1.19, 0.8, 1.46)
 metadata/prop = "bottles"
 
-[node name="book_stack_4" parent="Dressing" instance=ExtResource("12")]
+[node name="book_stack_4" parent="Detail" instance=ExtResource("13")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.32, 0.8, 2.04)
 metadata/prop = "book_stack"
 
-[node name="bottles_4" parent="Dressing" instance=ExtResource("15")]
+[node name="bottles_4" parent="Detail" instance=ExtResource("15")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 6.26, 0.8, 4.68)
 metadata/prop = "bottles"
 
-[node name="book_stack_5" parent="Dressing" instance=ExtResource("12")]
+[node name="book_stack_5" parent="Detail" instance=ExtResource("13")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.92, 0.8, 1.19)
 metadata/prop = "book_stack"
 
-[node name="wall_clock_1" parent="Dressing" instance=ExtResource("16")]
+[node name="wall_clock_1" parent="Detail" instance=ExtResource("16")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 4, 1.85, 5.9)
 metadata/prop = "wall_clock"
 
