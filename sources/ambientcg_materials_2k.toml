@@ -111,3 +111,27 @@ sha256 = "cd20f4039f62ca2b2430b8a4521774572a31ee586babac058a3afe178ed9ef5f"
 [[raw]]
 file = "env/ambientcg/WoodFloor051/WoodFloor051_2K-JPG/WoodFloor051_2K-JPG_NormalGL.jpg"
 sha256 = "4c49e6dad811b850ddf496cbab5c247292d4df61f25ba3108ba43d83aa242780"
+
+[[raw]]
+file = "env/ambientcg/Wood092/Wood092_2K-JPG/Wood092_2K-JPG_Color.jpg"
+sha256 = "f070ac5b7e936666d5fcde0ab24744ec2cbb314ad01c9b389c9fae0d6a6a9f51"
+
+[[raw]]
+file = "env/ambientcg/Wood092/Wood092_2K-JPG/Wood092_2K-JPG_NormalGL.jpg"
+sha256 = "1493a96b0c938cf301f894c164d9582965f654e638cb4598091e8de05ef05bd1"
+
+[[raw]]
+file = "env/ambientcg/Wood049/Wood049_2K-JPG/Wood049_2K-JPG_Color.jpg"
+sha256 = "447ca1455fa88d37465319638f1c99107f02f50fcf491d3c15314658d21e4d5e"
+
+[[raw]]
+file = "env/ambientcg/Wood049/Wood049_2K-JPG/Wood049_2K-JPG_NormalGL.jpg"
+sha256 = "8f2d5697c79927c85a10e48e82701a7054df77166d4654a2931e650f7f4c77f6"
+
+[[raw]]
+file = "env/ambientcg/Tiles107/Tiles107_2K-JPG/Tiles107_2K-JPG_Color.jpg"
+sha256 = "a74664ca3721976b9407d5b1bba65534f616eb2519ae16d76b4ec5f426530bdb"
+
+[[raw]]
+file = "env/ambientcg/Tiles107/Tiles107_2K-JPG/Tiles107_2K-JPG_NormalGL.jpg"
+sha256 = "063e5e1ad15fadcf7453a2b6be8cb80d5d88da8aa79068f894a39f1414fef4db"

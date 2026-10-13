@@ -6,7 +6,8 @@
 
 The geometry comes from props_task.py (pure Python); the objects, detail textures, materials and the export are the
 kit's (kit_build.py), so a prop shares the kit's materials and paint encoding. The game surface's material is
-named `surface_game-vcol` (Godot imports it as `surface_game`). Writes <out>/<id>.glb, <out>/textures/ and
+named `surface_game-vcol` (Godot imports it as `surface_game`). A prop with look = "fine" is painted on the
+dressing library's fine pack (prop_lib.materials). Writes <out>/<id>.glb, <out>/textures/ and
 <out>/build.json.
 """
 
@@ -16,6 +17,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import kit_build  # noqa: E402
+import prop_lib  # noqa: E402
 import props_task  # noqa: E402
 
 
@@ -30,8 +32,9 @@ def main():
     out.mkdir(parents=True, exist_ok=True)
     only = {s for s in a["only"].split(",") if s}
     kit_build.clear_scene(bpy)
-    textures = kit_build.make_textures(bpy, np, spec, Path(a["ambientcg"]), out / "textures")
-    mats = kit_build.make_materials(bpy, spec, textures)
+    # the kit's materials; with the spec's library, the world look's fine pack as one `kit_fine-vcol` (its shared
+    # textures are the library's, props/library/v1/textures/fine/, mapped by name in Godot: none are written here)
+    mats, textures = prop_lib.materials(bpy, np, spec, Path(a["ambientcg"]), out)
     mats[props_task.SURFACE_MATERIAL].name = f"{props_task.SURFACE_MATERIAL}-vcol"
     for name, m in spec["materials"].items():  # an emissive material (props/zones.toml: bulbs, candles, embers)
         if m.get("emission"):

@@ -106,9 +106,9 @@ func _frame_info() -> Dictionary:
 		"primitives": RenderingServer.get_rendering_info(RenderingServer.RENDERING_INFO_TOTAL_PRIMITIVES_IN_FRAME)}
 
 
-## The dressing layer's share of a view's draw calls: the same view drawn again with every room's Dressing group hidden.
+## The dressing layer's share of a view's draw calls: the same view drawn again with every room's Dressing and Detail groups hidden (#147).
 func _dressing_draw_calls(all: int) -> Dictionary:
-	var groups: Array[Node] = _house.find_children("Dressing", "Node3D", true, false)
+	var groups: Array[Node] = _house.find_children("Dressing", "Node3D", true, false) + _house.find_children("Detail", "Node3D", true, false)
 	for g: Node in groups:
 		(g as Node3D).visible = false
 	await _grab()
@@ -118,14 +118,14 @@ func _dressing_draw_calls(all: int) -> Dictionary:
 	return {"dressing_draw_calls": all - bare}
 
 
-## The meshes and triangles under a room's Dressing and Fixtures groups (walk.gd's count).
+## The meshes and triangles under a room's Dressing, Detail and Fixtures groups (walk.gd's count).
 func _dressing_triangles(path: String) -> Dictionary:
 	var meshes: int = 0
 	var tris: int = 0
 	var room: Node = _house.get_node_or_null(path) if path != "" else null
 	if room == null:
 		return {"dressing_meshes": 0, "dressing_triangles": 0, "dressing_node": "missing: " + path}
-	for group: String in ["Dressing", "Fixtures"]:
+	for group: String in ["Dressing", "Detail", "Fixtures"]:
 		var g: Node = room.get_node_or_null(group)
 		if g == null:
 			continue

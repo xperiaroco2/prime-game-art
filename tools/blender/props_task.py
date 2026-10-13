@@ -20,6 +20,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import kit_geom  # noqa: E402
 from kit_geom import EPS, Mesh, Piece  # noqa: E402
+import prop_geom as pg  # noqa: E402  - the world look's shared builders, Style and fine pack
 
 try:
     import tomllib
@@ -44,7 +45,21 @@ def load_spec(path: Path) -> dict:
     spec["materials"] = {**kit["materials"], **spec.get("materials", {})}
     spec["packs"] = kit.get("packs", {})  # kit v2 (#86) packs plaster, wood and concrete into one `set` material
     spec["roles"] = {**spec.get("roles", {}), **kit["roles"]}
+    if spec.get("library"):  # the world look: the dressing library's fine pack, its paints and [style]
+        lib = tomllib.loads((path.parents[1] / spec["library"]).read_text(encoding="utf-8"))
+        ls = pg.lib_spec(lib, kit)
+        fine = {r: v for r, v in ls["roles"].items() if ls["materials"][v["material"]].get("pack") == pg.FINE}
+        spec["clashes"] = sorted(set(spec["clashes"]) | (set(fine) & set(spec["roles"])))
+        spec["materials"].update({k: v for k, v in ls["materials"].items() if v.get("pack") == pg.FINE})
+        spec["packs"] = {**spec["packs"], pg.FINE: ls["packs"][pg.FINE]}
+        spec["roles"].update(fine)
+        spec["style"] = lib.get("style", {})
     return spec
+
+
+def style(spec: dict) -> pg.Style:
+    """The world look's Style from the spec's library ([style]); the defaults without one."""
+    return pg.Style.from_lib(spec)
 
 
 # --- primitives ----------------------------------------------------------------------------------------------------
@@ -434,6 +449,82 @@ def build_board(pc: Piece, p: dict, spec: dict) -> None:
         pc.collide_box((-w / 2 + post, y0, zb), (w / 2 - post, y1, zf))
     else:
         pc.collide_box((x0, y0, -d / 2), (x1, y1, d / 2))
+
+
+def build_board_fine(pc: Piece, p: dict, spec: dict) -> None:
+    """The order board in the world look (C2-white, docs/decisions/2026-10-13-house-world-look.md): the chalk board
+    on two posts with bolts, steel feet with rubber pads and gussets, a chalk tray with chalk and an eraser, order-slip
+    clips on the header. Stand mount only."""
+    m = pc.mesh
+    st = style(spec)
+    w, d, h = _dims(p)
+    bw, bh = p["board"]
+    fr, post, header = p.get("frame", 0.05), 0.07, p.get("header", 0.06)
+    x0, x1 = -bw / 2, bw / 2
+    y1 = h - header
+    y0 = y1 - bh
+    zb, zf = -0.025, 0.03
+    c = 0.006
+    for (a0, a1, b0, b1) in ((x0, x1, y0, y0 + fr), (x0, x1, y1 - fr, y1), (x0, x0 + fr, y0 + fr, y1 - fr),
+                             (x1 - fr, x1, y0 + fr, y1 - fr)):
+        cbox(m, (a0, b0, zb), (a1, b1, zf), "wood_front_dark", c)
+    m.box((x0 + fr, y0 + fr, zb + 0.005), (x1 - fr, y1 - fr, 0.01), "wood_front_dark", faces="+x-x+y-y-z")
+    surface(m, x0 + fr, x1 - fr, y0 + fr, y1 - fr, 0.01)
+    cbox(m, (x0 + 0.1, y0 - 0.04, 0.0), (x1 - 0.1, y0, 0.08), "wood_front_dark", c)
+    for sx in (-1, 1):
+        xa = sx * (w / 2 - post / 2)
+        cbox(m, (xa - post / 2, 0.012, -0.035), (xa + post / 2, h, 0.035), "wood_front_dark", c)
+        cbox(m, (xa - post / 2, 0.012, -d / 2), (xa + post / 2, 0.06, d / 2), "steel_black", 0.008)
+        for zz in (-d / 2 + 0.04, d / 2 - 0.04):  # rubber pads under the feet
+            pg.cyl(m, "y", (xa, zz), 0.02, 0.0, 0.012, "rubber_black", 8, caps=(False, True))
+        for yy in (y0 + 0.1, y1 - 0.1):  # bolts through the posts
+            pg.cyl(m, "z", (xa, yy), 0.012, 0.035, 0.042, "steel_warm", 6, caps=(False, True))
+        for zs in (1, -1):  # gussets from the foot up the post
+            pg.bar(m, (xa, 0.06, zs * 0.03), (xa, 0.3, zs * 0.035), 0.02, "steel_warm", 0.01)
+    cbox(m, (-w / 2, h - header, -0.03), (w / 2, h, 0.03), "wood_front_dark", c)
+    for k, x in enumerate((-0.5, -0.38, 0.2)):  # chalk sticks on the tray
+        pg.box(m, (x, y0, 0.03), (x + 0.07, y0 + 0.012, 0.042), "porcelain_white" if k < 2 else "paint_red")
+    pg.box(m, (0.3, y0, 0.02), (0.48, y0 + 0.03, 0.07), "rubber_black", "+x-x+y+z-z")  # the eraser
+    for x in (-0.6, 0.0, 0.6):  # clips on the header for order slips
+        pg.box(m, (x - 0.025, y1 - 0.05, zf), (x + 0.025, y1 + 0.005, zf + 0.012), "steel_warm")
+    pc.collide_box((-w / 2, 0, -d / 2), (-w / 2 + post, h, d / 2))
+    pc.collide_box((w / 2 - post, 0, -d / 2), (w / 2, h, d / 2))
+    pc.collide_box((-w / 2 + post, y0, zb), (w / 2 - post, y1, zf))
+
+
+def build_island_fine(pc: Piece, p: dict, spec: dict) -> None:
+    """The assembly island in the world look (C2-white): the oiled-wood worktop (60 mm), a painted (cabinet green) carcass on the
+    style's plinth, `doors` bays of a door under a drawer on the front (+Z) and seamed panels on the back, warm steel
+    corner guards and a chrome towel bar on the +X end. Fronts and handles end inside the worktop's edge."""
+    m = pc.mesh
+    st = style(spec)
+    w, d, h = _dims(p)
+    o, tt = 0.05, 0.06
+    zf = d / 2 - st.reach - 0.002  # the fronts' back: the handles end 2 mm inside the worktop's edge
+    pg.worktop(m, st, -w / 2, w / 2, -d / 2, d / 2, "worktop_wood", y=h, t=tt)
+    pg.cbox(m, (-w / 2 + o, st.plinth, -zf), (w / 2 - o, h - tt, zf), "cabinet_green", st.bevel)
+    zp = zf + st.front_t - st.plinth_setback
+    pg.box(m, (-w / 2 + o + 0.04, 0.0, -zp), (w / 2 - o - 0.04, st.plinth, zp), "rubber_black", "+x-x+z-z")
+    n = p.get("doors", 4)
+    dw = (w - 2 * o - 0.04) / n
+    yd = h - tt - 0.165  # the drawers' bottom
+    for i in range(n):
+        x = -w / 2 + o + 0.02 + i * dw
+        pg.front(m, st, x, x + dw, st.plinth + 0.005, yd - 0.005, zf, "cabinet_green", i % 2 == 0,
+                 line="steel_black")
+        pg.front(m, st, x, x + dw, yd, h - tt - 0.01, zf, "cabinet_green", True, "h", line="steel_black")
+        if i < n - 1:  # the back: a seam per bay
+            pg.box(m, (x + dw - 0.003, st.plinth + 0.01, -zf - 0.002), (x + dw + 0.003, h - tt - 0.01, -zf),
+                   "steel_black", "-z")
+    for sx in (-1, 1):
+        for sz in (-1, 1):
+            x, z = sx * (w / 2 - o), sz * zf
+            pg.box(m, (x - 0.012, st.plinth, z - 0.012), (x + 0.012, h - tt, z + 0.012), "steel_warm", "+x-x+z-z")
+    xb = w / 2 - o + 0.04
+    pg.rod(m, (xb, h - 0.14, -0.3), (xb, h - 0.14, 0.3), 0.009, "chrome", 8)
+    for zz in (-0.3, 0.3):
+        pg.cyl(m, "x", (h - 0.14, zz), 0.008, w / 2 - o + 0.012, xb, "chrome", 6, caps=(False, False))
+    _full_collider(pc, p)
 
 
 def build_island(pc: Piece, p: dict, spec: dict) -> None:
@@ -1041,11 +1132,16 @@ BUILDERS = {
 
 
 # --- describe and check --------------------------------------------------------------------------------------------
+LOOKS = {"fine"}  # a prop's `look`: none, the kit's paint; "fine", the world look (the spec's library)
+FINE_BUILDERS = {"board": build_board_fine, "island": build_island_fine}
+
+
 def build_prop(p: dict, spec: dict) -> Piece:
     if p["type"] not in BUILDERS:
         raise ValueError(f"{p['id']}: unknown prop type {p['type']}")
     pc = Piece(p["id"], p["kind"])
-    BUILDERS[p["type"]](pc, p, spec)
+    builders = FINE_BUILDERS if p.get("look") == "fine" else BUILDERS
+    builders[p["type"]](pc, p, spec)
     pc.meshes = [m for m in pc.meshes if m.faces]
     if p["type"] in FITTED:
         props_zone.fit(pc, p)
@@ -1081,7 +1177,7 @@ def build_all(spec: dict) -> list[dict]:
 
 
 def check_spec(spec: dict) -> list[str]:
-    problems = [f"role {r}: redefines a kit role" for r in spec.get("clashes", [])]
+    problems = [f"role {r}: defined twice (the kit's, the props' or the library's roles)" for r in spec.get("clashes", [])]
     ids = [p["id"] for p in spec["props"]]
     problems += [f"{i}: the id is used twice" for i in sorted({i for i in ids if ids.count(i) > 1})]
     for name, r in spec["roles"].items():
@@ -1095,6 +1191,13 @@ def check_spec(spec: dict) -> list[str]:
         for key in ("w", "d", "h", "station", "chain", "room"):
             if key not in p:
                 problems.append(f"{p['id']}: no {key}")
+        look = p.get("look")
+        if look is not None and look not in LOOKS:
+            problems.append(f"{p['id']}: unknown look {look!r} (known: {', '.join(sorted(LOOKS))})")
+        elif look == "fine" and pg.FINE not in spec["packs"]:
+            problems.append(f"{p['id']}: look fine needs the spec's library (its fine pack)")
+        elif look == "fine" and p["type"] not in FINE_BUILDERS:
+            problems.append(f"{p['id']}: type {p['type']} has no fine look (fine: {', '.join(sorted(FINE_BUILDERS))})")
     return problems
 
 

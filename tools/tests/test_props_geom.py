@@ -19,6 +19,7 @@ import prop_geom  # noqa: E402
 LIB = _props.load()
 KIT = json.loads((common.ROOT / LIB["kit_spec"]).read_text(encoding="utf-8"))
 SPEC = prop_geom.lib_spec(LIB, KIT)
+STYLE = prop_geom.Style.from_lib(LIB)
 PROC = [p for p in LIB["prop"] if p["route"] == "proc"]
 
 
@@ -65,7 +66,7 @@ class PrimitiveTest(unittest.TestCase):
 class LibraryGeometryTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.built = {p["id"]: prop_geom.build(p, SPEC) for p in PROC}
+        cls.built = {p["id"]: prop_geom.build(p, SPEC, STYLE) for p in PROC}
 
     def test_every_shape_has_a_builder(self):
         self.assertEqual(sorted({p["shape"] for p in PROC} - set(prop_geom.BUILDERS)), [])
@@ -155,6 +156,141 @@ class CleanTest(unittest.TestCase):
         self.assertEqual(prop_geom.clean(m), 3)
         self.assertEqual(m.faces, [[0, 1, 2, 3], [0, 1, 2]])  # the twin, the flat triangle, the 2-corner face go
         self.assertEqual(m.roles, ["a", "c"])
+
+
+
+class FinePackTest(unittest.TestCase):
+    """The world look's fine pack in the spec (docs/decisions/2026-10-13-house-world-look.md): one exported material,
+    the layer in vertex alpha in steps of 1/16, the paint not divided by a detail mean."""
+
+    def test_fine_roles_export_as_one_material(self) -> None:
+        fine_roles = [r for r, v in LIB["roles"].items() if v["material"] == "fine"]
+        self.assertGreaterEqual(len(fine_roles), 8)
+        self.assertEqual({kit_geom.export_material(SPEC, SPEC["roles"][r]["material"]) for r in fine_roles}, {"fine"})
+        self.assertNotIn("fine", SPEC["materials"])
+
+    def test_the_layer_is_the_vertex_alpha(self) -> None:
+        names = [layer["name"] for layer in LIB["fine"]["layers"]]
+        for role in ("wood_front", "worktop_stone", "steel_warm", "rubber_black"):
+            k = names.index(LIB["roles"][role]["layer"])
+            self.assertAlmostEqual(kit_geom.role_colour(SPEC, role)[3], 1.0 - k / 16, places=5)
+        # the set pack keeps its 0.25 step
+        self.assertEqual(kit_geom.layer_alpha(SPEC, "wood"), 0.75)
+
+    def test_the_fine_paint_is_the_hex(self) -> None:
+        # no division by a detail mean: the fine shader scales its detail itself
+        self.assertEqual(kit_geom.role_colour(SPEC, "steel_warm")[:3], [round(0xc4 / 255, 5), round(0xbc / 255, 5),
+                                                                        round(0xb0 / 255, 5)])
+
+    def test_layer_values_and_glass_tint(self) -> None:
+        steel = SPEC["materials"]["fine_steel"]
+        self.assertEqual((steel["pack"], steel["metallic"], steel["roughness"]), ("fine", 0.6, 0.42))
+        self.assertEqual(SPEC["materials"]["fine_wood_front"]["fine_source"], "Wood092")
+        glass = SPEC["materials"]["glass_tint"]
+        self.assertEqual((glass["alpha"], glass["metallic"], glass["roughness"]), (0.38, 0.15, 0.05))
+        self.assertEqual(SPEC["packs"]["fine"]["layers"][0], "fine_wood_front")
+
+    def test_the_plants_library_has_no_fine_pack(self) -> None:
+        plain = dict(LIB)
+        plain.pop("fine")
+        spec = prop_geom.lib_spec(plain, KIT)
+        self.assertNotIn("fine", spec["packs"])
+
+
+
+KITCHEN = ["fridge", "kitchen_counter", "kitchen_sink", "kitchen_upper", "stove"]
+
+
+class WorldLookBuilderTest(unittest.TestCase):
+    """The world look's style and shared builders (docs/decisions/2026-10-13-house-world-look.md) and the kitchen's
+    C2-white props built through them."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        props = {p["id"]: p for p in LIB["prop"]}
+        cls.props = {pid: props[pid] for pid in KITCHEN}
+        cls.built = {pid: prop_geom.build(p, SPEC, STYLE) for pid, p in cls.props.items()}
+
+    def test_style_reads_the_library(self) -> None:
+        s = LIB["style"]
+        self.assertEqual((STYLE.bevel, STYLE.bevel_small, STYLE.handle_r, STYLE.plinth, STYLE.worktop),
+                         (s["bevel_m"], s["bevel_small_m"], s["handle_radius_m"], s["plinth_m"], s["worktop_m"]))
+        self.assertAlmostEqual(STYLE.reach, s["front_thickness_m"] + s["handle_standoff_m"] + s["handle_radius_m"])
+        self.assertEqual(prop_geom.Style.from_lib({}), prop_geom.Style())
+
+    def test_the_backsplash_runs_are_exact_tiled_strips(self) -> None:
+        props = {p["id"]: p for p in LIB["prop"]}
+        for pid, length in (("backsplash_l", 2.7), ("backsplash_r", 2.2)):
+            p = props[pid]
+            d = prop_geom.build(p, SPEC, STYLE)
+            self.assertEqual(prop_geom.size_error(d, p), [0.0, 0.0, 0.0], pid)
+            self.assertEqual(d["size_m"][0], length)
+            self.assertEqual(d["roles"], ["steel_warm", "tile_splash"])
+            self.assertEqual((d["colliders"], p["pivot"], _props.prop_layer(LIB, p)), ([], "wall", "base"))
+            self.assertAlmostEqual(d["bounds_m"]["min"][2], 0.0)  # the back on the wall
+
+    def test_front_frame(self) -> None:
+        rails, (a, b) = prop_geom.front_frame(0.0, 0.5, 0.0, 0.7, 0.003)
+        self.assertEqual(len(rails), 4)
+        self.assertEqual([round(v, 4) for v in (*a, *b)], [0.06, 0.06, 0.44, 0.64])
+        for lo, hi in rails:  # inside the seam gap
+            self.assertTrue(0.003 <= lo[0] < hi[0] <= 0.497 and 0.003 <= lo[1] < hi[1] <= 0.697)
+        _, (a, _) = prop_geom.front_frame(0.0, 0.2, 0.0, 0.16, 0.003)  # a small front: narrower rails
+        self.assertEqual([round(v, 4) for v in a], [0.036, 0.036])  # 18 % of the width
+
+    def test_handle_span(self) -> None:
+        (x0, y0), (x1, y1) = prop_geom.handle_span(0.0, 0.5, 0.0, 0.7, True, "v")
+        self.assertEqual([round(v, 4) for v in (x0, y0, x1, y1)], [0.46, 0.48, 0.46, 0.64])
+        self.assertEqual(prop_geom.handle_span(0.0, 0.5, 0.0, 0.7, False, "v", low=True)[0], (0.04, 0.06))
+        (x0, y0), (x1, y1) = prop_geom.handle_span(0.0, 1.0, 0.6, 0.76, True, "h")
+        self.assertEqual((round(y0, 4), round(y1, 4)), (0.68, 0.68))
+        self.assertAlmostEqual(x0 + x1, 1.0)
+
+    def test_round_rect(self) -> None:
+        pts = prop_geom.round_rect(-0.3, 0.3, -0.2, 0.2, 0.05, 6)
+        self.assertEqual(len(pts), 4 * 7)
+        self.assertEqual(max(x for x, _ in pts), 0.3)
+        self.assertEqual(min(z for _, z in pts), -0.2)
+        front = prop_geom.round_rect(-0.3, 0.3, -0.2, 0.2, 0.05, 6, front_only=True)
+        self.assertEqual(len(front), 2 * 7 + 2)
+        self.assertIn((-0.3, -0.2), front)
+        self.assertIn((0.3, -0.2), front)
+        m = kit_geom.Mesh("t")
+        prop_geom.rslab(m, -0.3, 0.3, 0.0, 1.0, -0.2, 0.2, 0.05, "enamel_white", bottom=True)
+        self.assertTrue(all(n == 2 for n in _edges(m).values()), "a closed slab")
+
+    def test_grate_bars(self) -> None:
+        bars = prop_geom.grate_bars(0.1, 0.0, 0.15, 0.27, cross=3)
+        self.assertEqual(len(bars), 4 + 3 + 1)
+        zs = [a[1] for a, b, _ in bars[4:7]]
+        self.assertEqual([round(z, 4) for z in zs], [-0.135, 0.0, 0.135])
+        for a, b, _ in bars:
+            for x, z in (a, b):
+                self.assertTrue(-0.05 - 1e-9 <= x <= 0.25 + 1e-9 and -0.27 - 1e-9 <= z <= 0.27 + 1e-9)
+
+    def test_kitchen_props_stay_inside_their_size(self) -> None:
+        # round 2's fixes: counter and sink tops, handles and pulls inside size_m (they stood 5 to 10 mm proud)
+        for pid, p in self.props.items():
+            want = _props.size_xyz(p.get("built_size_m", p["size_m"]))
+            for got, w in zip(self.built[pid]["size_m"], want):
+                self.assertLessEqual(got, w + 1e-4, f"{pid}: built {self.built[pid]['size_m']}, want {want}")
+                self.assertGreaterEqual(got, w - 0.015, f"{pid}: built {self.built[pid]['size_m']}, want {want}")
+
+    def test_kitchen_props_on_the_fine_pack(self) -> None:
+        for pid, d in self.built.items():
+            mats = {kit_geom.export_material(SPEC, SPEC["roles"][r]["material"]) for r in d["roles"]}
+            self.assertLessEqual(mats, {"fine", "glass_tint"}, pid)
+            lo, hi = LIB["budgets"][self.props[pid]["class"]]
+            self.assertTrue(lo <= d["triangles"] <= hi, f"{pid}: {d['triangles']} triangles, class {lo} to {hi}")
+
+    def test_stove_colliders_leave_the_hood_gap(self) -> None:
+        cols = self.built["stove"]["colliders"]
+        self.assertEqual(len(cols), 2)
+        tops = sorted(max(q[1] for q in c["points"]) for c in cols)
+        bottoms = sorted(min(q[1] for q in c["points"]) for c in cols)
+        self.assertAlmostEqual(tops[0], 1.04, places=3)  # the stove with its backguard
+        self.assertAlmostEqual(bottoms[1], 1.45, places=3)  # the hood
+        self.assertEqual(len(self.built["fridge"]["colliders"]), 1)
 
 
 if __name__ == "__main__":

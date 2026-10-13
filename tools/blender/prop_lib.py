@@ -7,6 +7,7 @@ The task props (#82) use it too: `materials`, `import_pack` and `export_prop` ar
 
 from __future__ import annotations
 
+import json
 import sys
 from pathlib import Path
 
@@ -18,11 +19,83 @@ import prop_geom  # noqa: E402
 EMISSION_STRENGTH = 1.0  # the bulbs' glow in the GLB; the map's lights do the lighting
 
 
-def materials(bpy, np, spec: dict, ambientcg: Path, out: Path) -> tuple[dict, dict]:
-    """One `kit_<name>-vcol` material per spec material (detail textures from ambientCG as the kit makes them)."""
-    textures = kit_build.make_textures(bpy, np, spec, ambientcg, out / "textures")
-    mats = kit_build.make_materials(bpy, spec, textures)
+FINE_DETAIL_MEAN = 0.5  # the fine pack's detail is stored linear with this mean (room for the grain's highlights)
+
+
+def materials(bpy, np, spec: dict, ambientcg: Path, out: Path, fine: dict | None = None) -> tuple[dict, dict]:
+    """One `kit_<name>-vcol` material per spec material (detail textures from ambientCG as the kit makes them). The
+    fine pack (props/library.toml [fine]) exports as one plain white `kit_fine-vcol`; with `fine`, its shared
+    textures are written per tier into <out>/textures/fine/ (fine_textures)."""
+    plain = {k: v for k, v in spec["materials"].items() if v.get("pack") != prop_geom.FINE}
+    kit_spec = dict(spec, materials=plain, packs={k: v for k, v in spec["packs"].items() if k != prop_geom.FINE})
+    textures = kit_build.make_textures(bpy, np, kit_spec, ambientcg, out / "textures")
+    mats = kit_build.make_materials(bpy, kit_spec, textures)
+    if prop_geom.FINE in spec["packs"]:
+        layers = [spec["materials"][m] for m in spec["packs"][prop_geom.FINE]["layers"]]
+        mat = bpy.data.materials.new(f"kit_{prop_geom.FINE}-vcol")
+        mat.use_nodes = True
+        bsdf = mat.node_tree.nodes.get("Principled BSDF")
+        bsdf.inputs["Base Color"].default_value = (1, 1, 1, 1)
+        bsdf.inputs["Roughness"].default_value = sum(m["roughness"] for m in layers) / len(layers)
+        mats[prop_geom.FINE] = mat
+        if fine is not None:
+            textures[prop_geom.FINE] = fine_textures(bpy, np, fine, ambientcg, out / "textures" / prop_geom.FINE)
     return mats, textures
+
+
+def _save(bpy, np, name: str, arr, size: int, path: Path) -> str:
+    img = bpy.data.images.new(name, size, size, alpha=True, float_buffer=False)
+    img.colorspace_settings.name = "Non-Color"
+    img.alpha_mode = "STRAIGHT"
+    img.pixels.foreach_set(arr.astype(np.float32).ravel())
+    img.filepath_raw = str(path)
+    img.file_format = "PNG"
+    bpy.context.scene.render.image_settings.color_mode = "RGBA"
+    img.save()
+    bpy.data.images.remove(img)
+    return str(path)
+
+
+def fine_textures(bpy, np, fine: dict, ambientcg: Path, out: Path) -> dict:
+    """The fine pack's shared textures, one set per tier (docs/decisions/2026-10-13-house-world-look.md), all linear
+    (Non-Color) RGBA PNGs in <out>/<tier>/: fine_d.png (textured layer k's grey detail in channel k, the source's
+    linear luminance scaled to mean FINE_DETAIL_MEAN, natural contrast), fine_n0.png (layer 0's OpenGL normal XY in
+    RG, layer 1's in BA), fine_n1.png (layers 2 and 3). <out>/fine.json: the layers, each textured layer's measured
+    detail mean per tier (the shader's gain is its inverse) and the files."""
+    textured = [layer for layer in fine["layers"] if layer.get("source")]
+    report = {"layers": fine["layers"], "tiers": {}}
+    for tier, size in fine["tiers"].items():
+        folder = out / tier
+        folder.mkdir(parents=True, exist_ok=True)
+        n = size * size
+        d = np.ones((n, 4), dtype=np.float32)
+        nrm = [np.full((n, 4), 0.5, dtype=np.float32) for _ in range(2)]
+        means = {}
+        for k, layer in enumerate(textured[:4]):
+            base = ambientcg / layer["source"] / f"{layer['source']}_2K-JPG"
+            col = bpy.data.images.load(str(base / f"{layer['source']}_2K-JPG_Color.jpg"), check_existing=False)
+            col.scale(size, size)
+            px = np.empty(n * 4, dtype=np.float32)
+            col.pixels.foreach_get(px)
+            px = px.reshape(-1, 4)[:, :3]
+            lin = np.where(px <= 0.04045, px / 12.92, ((px + 0.055) / 1.055) ** 2.4)
+            lum = lin @ np.array([0.2126, 0.7152, 0.0722], dtype=np.float32)
+            d[:, k] = np.clip(FINE_DETAIL_MEAN * lum / max(float(lum.mean()), 1e-6), 0.0, 1.0)
+            means[layer["name"]] = round(float(d[:, k].mean()), 4)
+            bpy.data.images.remove(col)
+            nm = bpy.data.images.load(str(base / f"{layer['source']}_2K-JPG_NormalGL.jpg"), check_existing=False)
+            nm.colorspace_settings.name = "Non-Color"
+            nm.scale(size, size)
+            px = np.empty(n * 4, dtype=np.float32)
+            nm.pixels.foreach_get(px)
+            nrm[k // 2][:, 2 * (k % 2):2 * (k % 2) + 2] = px.reshape(-1, 4)[:, 0:2]
+            bpy.data.images.remove(nm)
+        files = {"d": _save(bpy, np, f"fine_d_{tier}", d, size, folder / "fine_d.png"),
+                 "n0": _save(bpy, np, f"fine_n0_{tier}", nrm[0], size, folder / "fine_n0.png"),
+                 "n1": _save(bpy, np, f"fine_n1_{tier}", nrm[1], size, folder / "fine_n1.png")}
+        report["tiers"][tier] = {"size": size, "files": files, "detail_mean": means}
+    (out / "fine.json").write_text(json.dumps(report, indent=1), encoding="utf-8")
+    return report
 
 
 def set_emission(mats: dict, spec: dict, role: str | None) -> None:

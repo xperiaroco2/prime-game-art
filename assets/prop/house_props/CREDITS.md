@@ -1,8 +1,17 @@
 # House props (prime-game-art)
 
-- **Files:** `assets/environment/house_props/**` (the props the committed packages need: 70 files with P2, 104 with P3 and P5, 136 with P7; the art manifest lists all 174 with their SHA-256, and the sources below cover all 174)
-- **Author:** prime-game-art (own work, made by the art pipeline's code); Isa Lousberg (Tiny Treats), Kay Lousberg (KayKit), Kenney (the CC0 sources below)
-- **Source:** the art manifest `assets/prop/house_props/manifest.toml` in xperiaroco2/prime-game-art (approval PR: https://github.com/xperiaroco2/prime-game-art/pull/125); made from:
+- **Files:** `assets/environment/house_props/**` (the props the committed packages need: 70 files with P2, 104 with P3 and P5, 114 with P4, 146 with P7, 148 with #147's two backsplash runs, of which P2 ships 72: 68 library, 4 task; the art manifest lists all 176 with their SHA-256, and the sources below cover all 176), and `assets/environment/house_props/fine/` (#147: the fine texture pack, `high/` and `low/` `fine_d.png`, `fine_n0.png`, `fine_n1.png`, made from the ambientCG maps below)
+- **Author:** prime-game-art (own work, made by the art pipeline's code); Isa Lousberg (Tiny Treats), Kay Lousberg (KayKit), Kenney, ambientCG (Lennart Demes) (the CC0 sources below)
+- **Source:** the art manifest `assets/prop/house_props/manifest.toml` in xperiaroco2/prime-game-art (approval PRs: https://github.com/xperiaroco2/prime-game-art/pull/125 to /pull/131; #147's changes wait for the engineer's approval); made from:
+  - ambientCG PBR materials, 2K-JPG (19 chosen for the location prototypes) by ambientCG (Lennart Demes), https://ambientcg.com (downloaded 2026-10-06):
+    - `ambientcg/Concrete034/Concrete034_2K-JPG/Concrete034_2K-JPG_Color.jpg`: SHA-256 `fa27982687596d7aa080db1e9b88c30f48a3c32eb3e50b27a2ea27c431e4cde9`
+    - `ambientcg/Concrete034/Concrete034_2K-JPG/Concrete034_2K-JPG_NormalGL.jpg`: SHA-256 `b077dfe6b3b8fbe794d82b9014d030fa01984a25ab67d2e21310995e6ea5b881`
+    - `ambientcg/Tiles107/Tiles107_2K-JPG/Tiles107_2K-JPG_Color.jpg`: SHA-256 `a74664ca3721976b9407d5b1bba65534f616eb2519ae16d76b4ec5f426530bdb`
+    - `ambientcg/Tiles107/Tiles107_2K-JPG/Tiles107_2K-JPG_NormalGL.jpg`: SHA-256 `063e5e1ad15fadcf7453a2b6be8cb80d5d88da8aa79068f894a39f1414fef4db`
+    - `ambientcg/Wood049/Wood049_2K-JPG/Wood049_2K-JPG_Color.jpg`: SHA-256 `447ca1455fa88d37465319638f1c99107f02f50fcf491d3c15314658d21e4d5e`
+    - `ambientcg/Wood049/Wood049_2K-JPG/Wood049_2K-JPG_NormalGL.jpg`: SHA-256 `8f2d5697c79927c85a10e48e82701a7054df77166d4654a2931e650f7f4c77f6`
+    - `ambientcg/Wood092/Wood092_2K-JPG/Wood092_2K-JPG_Color.jpg`: SHA-256 `f070ac5b7e936666d5fcde0ab24744ec2cbb314ad01c9b389c9fae0d6a6a9f51`
+    - `ambientcg/Wood092/Wood092_2K-JPG/Wood092_2K-JPG_NormalGL.jpg`: SHA-256 `1493a96b0c938cf301f894c164d9582965f654e638cb4598091e8de05ef05bd1`
   - KayKit : City Builder Bits (1.0, FREE) by Kay Lousberg (KayKit), https://kaylousberg.itch.io/city-builder-bits (downloaded 2026-10-06):
     - `kaykit/city-builder-bits/KayKit_City_Builder_Bits_1.0_FREE/KayKit_City_Builder_Bits_1.0_FREE/Assets/gltf/car_sedan.bin`: SHA-256 `1d69e7f098a5456a8c6891c4fd718ad1c71397045c8931817550a8801f00338d`
     - `kaykit/city-builder-bits/KayKit_City_Builder_Bits_1.0_FREE/KayKit_City_Builder_Bits_1.0_FREE/Assets/gltf/car_sedan.gltf`: SHA-256 `96c9d38e682bc2c77470af09d1a7450208559ca652bf2cf6fd2bc20b8646ef59`
@@ -42,8 +51,6 @@
     - `kenney/furniture-kit/kenney_furniture-kit/Models/GLTF format/cabinetTelevision.glb`: SHA-256 `811719593d676ff76f7b5904d52c845ce0396af2bc9a6a2636c4818ead320b99`
     - `kenney/furniture-kit/kenney_furniture-kit/Models/GLTF format/chairDesk.glb`: SHA-256 `46406619186034cbe92b19b79a5f1a8e3f442a17a70a7524ef2c0ad0f35095c6`
     - `kenney/furniture-kit/kenney_furniture-kit/Models/GLTF format/desk.glb`: SHA-256 `0164fe828f028b321730fb8c74502e353583f751be74da1682d42fff7d3c5a42`
-    - `kenney/furniture-kit/kenney_furniture-kit/Models/GLTF format/kitchenFridgeLarge.glb`: SHA-256 `5851cc59c7e12f6f34a01a2ea93d5b9540be4078c1b703f517239fcede98fb32`
-    - `kenney/furniture-kit/kenney_furniture-kit/Models/GLTF format/kitchenStove.glb`: SHA-256 `3239edb36295dfca9530a9b9a6ad0aff98ce62e7cf8d13ca2a5a1a6b2a904656`
     - `kenney/furniture-kit/kenney_furniture-kit/Models/GLTF format/lampRoundFloor.glb`: SHA-256 `50fe1b5b588edf15bfa9cc880f71a02a4fda6036350b24733d0ef4de5cc5e908`
     - `kenney/furniture-kit/kenney_furniture-kit/Models/GLTF format/lampRoundTable.glb`: SHA-256 `75bb644caaa3da003b4fcad7a931722dd61cd2858aab70cf660021d5061fa1b2`
     - `kenney/furniture-kit/kenney_furniture-kit/Models/GLTF format/stoolBar.glb`: SHA-256 `a86167a9f92401a61fec7e509ad089ecc552d0f299743add3aeb919acb24e341`

@@ -64,11 +64,13 @@ def role_colour(spec: dict, role: str) -> list[float]:
 
 def layer_alpha(spec: dict, material: str) -> float:
     """The vertex colour's alpha: which layer of its pack a material is (look.md section 5: plaster, wood and concrete
-    share one `set` material; the shader picks the layer's detail by alpha: 1.0, 0.75, 0.5, 0.25). 1.0 unpacked."""
+    share one `set` material; the shader picks the layer's detail by alpha: 1.0, 0.75, 0.5, 0.25). 1.0 unpacked. A
+    pack's `alpha_step` (default 0.25) sets the step: the props' fine pack has 16 layers in steps of 1/16."""
     pack = spec["materials"][material].get("pack")
     if not pack:
         return 1.0
-    return round(1.0 - 0.25 * spec["packs"][pack]["layers"].index(material), 5)
+    step = spec["packs"][pack].get("alpha_step", 0.25)
+    return round(1.0 - step * spec["packs"][pack]["layers"].index(material), 5)
 
 
 def export_material(spec: dict, material: str) -> str:
@@ -1603,8 +1605,9 @@ def check_spec(spec: dict) -> list[str]:
         if pack and (pack not in spec.get("packs", {}) or name not in spec["packs"][pack]["layers"]):
             problems.append(f"material {name}: not a layer of pack {pack}")
     for pack, d in spec.get("packs", {}).items():
-        if not 1 <= len(d["layers"]) <= 4:
-            problems.append(f"pack {pack}: {len(d['layers'])} layers (1 to 4: the vertex alpha holds them)")
+        most = round(1.0 / d.get("alpha_step", 0.25))
+        if not 1 <= len(d["layers"]) <= most:
+            problems.append(f"pack {pack}: {len(d['layers'])} layers (1 to {most}: the vertex alpha holds them)")
     return problems
 
 

@@ -6,11 +6,13 @@ extends SceneTree
 ## Pictures need a real window placed off-screen (the runner passes --position -30000,-30000), never headless:
 ##   godot --path godot --position -30000,-30000 --resolution 1600x900 -s res://props/lineup.gd -- <request.json> <out dir>
 ## request.json: {"textures": "<dir with set_d.png ...>", "pack": {"roughness": [..], "normal_strength": [..]},
+##   "fine": {"folder": "<textures/fine/<tier>>", "json": "<textures/fine/fine.json>", "tier": "high"} (optional),
 ##   "sheets": [{"file": "lineup_1.png", "title": "...", "rows": [[{"id", "scene", "min": [x, y, z], "max": [..]}]]}]}.
 ## Writes <out>/<file> per sheet (1280 px wide) and <out>/lineup.json (the rows and the anchors found); prints
 ## LINEUP saved <dir>.
 
 const KitMaterials := preload("res://kit/kit_materials.gd")
+const PropMaterials := preload("res://props/prop_materials.gd")
 const WATCHDOG_S: float = 170.0
 const SHEET_W: int = 1280
 const ROW_MAX_H: int = 420
@@ -26,6 +28,7 @@ const ANCHOR_LIGHT := Color(1.0, 0.82, 0.6)
 
 var _camera: Camera3D
 var _set: Material
+var _fine: Material  # the world look's fine pack (props/prop_materials.gd), when the request names its tier
 var _anchors: Dictionary = {}
 var _title_label: Label
 
@@ -51,6 +54,9 @@ func _run(args: PackedStringArray) -> void:
 	DirAccess.make_dir_recursive_absolute(out)
 	if request.get("textures", "") != "" and FileAccess.file_exists(String(request["textures"]).path_join("set_d.png")):
 		_set = KitMaterials.make(request["textures"], request.get("pack", {}))
+	var fine: Dictionary = request.get("fine", {})
+	if fine.has("folder") and FileAccess.file_exists(String(fine["folder"]).path_join("fine_d.png")):
+		_fine = PropMaterials.make(fine["folder"], PropMaterials.read_json(fine["json"]), fine.get("tier", "high"), true)
 	_environment()
 	_camera = Camera3D.new()
 	_camera.projection = Camera3D.PROJECTION_ORTHOGONAL
@@ -158,6 +164,8 @@ func _build_row(row: Array, origin: Vector3) -> Array:
 		holder.add_child(n)
 		if _set != null:
 			KitMaterials.apply(n, _set)
+		if _fine != null:
+			PropMaterials.apply(n, _fine)
 		for a: Node in n.find_children("LightAnchor*", "", true, false):
 			var anchor: Node3D = a as Node3D
 			_anchors[p["id"]] = [anchor.position.x, anchor.position.y, anchor.position.z]
