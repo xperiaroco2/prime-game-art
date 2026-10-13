@@ -44,7 +44,7 @@ copies (+112 MB of texture memory for the kitchen).
    the whole house in one place.
 4. **Texture tiers.** Two tiers from the same sources: High 1024 px, Low 512 px (`[fine].tiers`). The game imports
    them VRAM-compressed with mipmaps. A third tier needs no code: a new entry in `tiers`.
-5. **Classes.** `hero` [1500, 4000] triangles joins the budgets for the pieces players look at up close
+5. **Classes.** `hero` [1200, 4000] triangles joins the budgets for the pieces players look at up close
    (appliances, room centres: the stove and the fridge); `room` stays [400, 1500].
 6. **Layers by preset.** Every library prop is `base` or `detail` (`layer`, default by class in `[layers]`:
    `clutter` is detail, the rest base). Low shows the base layer only, and the room must read clean with it; High

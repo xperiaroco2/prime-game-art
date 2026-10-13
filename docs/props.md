@@ -22,12 +22,17 @@ Every room's props follow these rules; the numbers are data in `props/library.to
    a new texture is a `[fine]` layer from a recorded CC0 source. A prop has at most two surfaces (fine, glass).
 4. **Shared textures, two tiers.** The GLB has no textures; Godot maps `kit_fine` to one ShaderMaterial with one
    texture set per tier (High 1024 px, Low 512 px, from the same sources), VRAM-compressed on import.
-5. **Classes.** `hero` (1,500 to 4,000 triangles) for the pieces players look at up close (appliances, a room's
+5. **Classes.** `hero` (1,200 to 4,000 triangles) for the pieces players look at up close (appliances, a room's
    centre piece); `room` (400 to 1,500) for the rest of the furniture; `clutter` for the small things.
 6. **Base and detail layers** (`layer`, default by class in `[layers]`): the base layer alone makes the room read
    clean on Low; small props and fine decor are `detail` (clutter by default), which High and Ultra add. A detail
    prop has no collider.
-7. **Route.** Hard-surface props are code (the shared builders, `prop_geom.py`'s `Style`). Meshy only for organic
+7. **Shared builders** (`prop_geom.py`, "the world look"): `Style` (from `[style]`), `front` (a bevelled door or
+   drawer front, raised panel or framed glass, with its handle and hinges), `bar_handle`, `plinth`, `worktop`,
+   `backsplash`, `burner` and `burner_grate`, `tap`, `rslab` (soft vertical edges). Fronts and handles stay inside
+   `size_m`; a builder may name its own collider boxes (the stove's body and hood leave the gap over the hob open).
+   The kitchen's `kitchen_counter` (with `sink`), `kitchen_upper`, `stove` and `fridge` are built from them.
+8. **Route.** Hard-surface props are code (the shared builders, `prop_geom.py`'s `Style`). Meshy only for organic
    one-offs (food, soft goods, plants) at a hero budget, as a recorded batch (`docs/meshy.md`).
 
 ## Procedural props: the House map's task stations
@@ -150,14 +155,14 @@ The library is data: a paint, a size, a source file or a shape changes without a
 |---|---|
 | `[materials]` | Library material name to the kit's material (`kits/house.json`). The **one place** that names materials: when kit v2 (#86) merges plaster, wood and concrete into one `set` material, re-point the lines here. At most `max_materials` (8) targets; a target the kit lacks must be in `new_materials` (`emissive`, `fine`, `glass_tint`). |
 | `[material_props]` | Roughness, metallic and alpha of a new material that is no kit material (`glass_tint`). |
-| `[budgets]` | Triangles by class, `[min, max]` (`look.md` §6): `dressing` 150 to 600, `room` 400 to 1,500, `fixture` 100 to 400, `vehicle` 400 to 3,000 (the parked cars), `clutter` 12 to 400 (the small lived-in props of #104: books, cups, plates, bottles, pots, papers, frames' kin, baskets, shoes, toys; all `collision = "none"`, batch 3, placed by `house --clutter`, docs/house.md "Clutter"), `hero` 1,500 to 4,000 (the pieces players look at up close: the stove, the fridge). |
+| `[budgets]` | Triangles by class, `[min, max]` (`look.md` §6): `dressing` 150 to 600, `room` 400 to 1,500, `fixture` 100 to 400, `vehicle` 400 to 3,000 (the parked cars), `clutter` 12 to 400 (the small lived-in props of #104: books, cups, plates, bottles, pots, papers, frames' kin, baskets, shoes, toys; all `collision = "none"`, batch 3, placed by `house --clutter`, docs/house.md "Clutter"), `hero` 1,200 to 4,000 (the pieces players look at up close: the stove, the fridge). |
 | `[layers]` | The layer by preset (`base` or `detail`) per class, and the `default`: `clutter` is `detail`. A prop's own `layer` overrides it; a detail prop must have `collision = "none"`. |
 | `[style]` | The world look's measures (bevels, segments, the handle, front gap and thickness, plinth, worktop line, `floor_shade`) and the direction's `paints`; the shared builders read them ("World look rules"). |
 | `[fine]` | The fine pack: `source` (the CC0 record of its textures), `tiers` (px per tier, High over Low) and `layers` in order (at most 16): a textured layer has `source`, `roughness`, `normal_strength`; a flat one `metallic` and `roughness`. |
 | `[roles]` | The props' paints: a library material and an sRGB hex (the D1 palette, `look.md` §7). A role on the fine pack also names its `layer`. A prop may also name the kit's roles (`trim`, `fence`, `lino`, `glass` ...). |
 | `[skip]` | Inventory ids this library does not make, with the package that does. |
 | `script` | The Blender build script (default `prop_build.py`); another mapping file in this format names its own, such as `props/plants.toml`'s `plant_build.py` (the garden's plants, `docs/house-garden.md`). |
-| `[[prop]]` | One prop: `id`, `batch` (the build order: 1 indoor furniture and dressing, 2 outdoor, fixtures and vehicles), `name`, `class`, `size_m` (the inventory's L x W x H: along X, along Z, up), `count` (placements), `route` (`pack` or `proc`), `roles`, `pivot`, `collision`, optional `layer`. |
+| `[[prop]]` | One prop: `id`, `batch` (the build order: 1 indoor furniture and dressing, 2 outdoor, fixtures and vehicles), `name`, `class`, `size_m` (the inventory's L x W x H: along X, along Z, up), `count` (placements), `route` (`pack` or `proc`), `roles`, `pivot`, `collision`, optional `layer` and `built_size_m` (the built box when fixed parts reach past the inventory's: the stove's hood, the sink's tap; the size checks use it). |
 | pack props | `source` (a `sources/<id>.toml` record), `files` (relative to `<raw>/env`; several are stacked, the next on top of the one before), `src_size` and `src_triangles` (measured from the glTF), `yaw_deg` (a turn about +Y that brings the front to +Z), `scale` (uniform), `stretch` (fit the box per axis), `decimate` (the source is over the class's budget), `pack_size_m` (the part the pack supplies when `extras` add the rest), `extras` (procedural additions such as a wall mirror), `paint` (the roles of the source's colour clusters, dark to light, when the luminance order paints a prop wrong). |
 | proc props | `shape` (a builder) and `params`. Generic builders cover most furniture: `cabinet` (doors, drawers, plinth or legs, top, cornice, sink), `table` (legs, top, shelf), `shelving` (shelves, items), `bench` (back, slats, cushion); the rest are one builder per prop. |
 
