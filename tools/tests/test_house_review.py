@@ -142,5 +142,66 @@ class CommittedTest(unittest.TestCase):
         self.assertEqual(kit, "  Walls (12): 12 pieces, 37 draw calls")
 
 
+class ContextTest(unittest.TestCase):
+    """#144: a room tile stages the rooms owning walls on its sides and the slab over it, as context."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.data = H.load()
+        cls.ctx = R.context(cls.data)
+
+    def _rooms(self, room: str, why: str) -> list[str]:
+        return [c["room"] for c in self.ctx[room] if c["why"] == why]
+
+    def test_the_kitchen_gets_its_neighbours_walls_and_the_upper_floor_over_it(self) -> None:
+        # a shared wall belongs to the first of its two rooms in ground.toml: the dining room's and the stairs' walls
+        # bound the kitchen, the kitchen owns the one it shares with the hallway
+        self.assertEqual(self._rooms("kitchen", "walls"), ["dining_room", "stairs"])
+        self.assertEqual(self._rooms("kitchen", "ceiling"), ["study", "bathroom", "guest_room"])
+        study = next(c for c in self.ctx["kitchen"] if c["room"] == "study")
+        self.assertEqual(study["offset"], [0.0, 3.2, -6.0])  # its corner 6 m north, its floor one storey up
+        self.assertEqual(self._rooms("hallway", "walls"), ["living_room", "stairs", "kitchen"])
+
+    def test_the_slab_over_a_room_comes_from_the_next_level_up_and_the_top_has_its_own_roof(self) -> None:
+        self.assertEqual(self._rooms("bedroom", "ceiling"), ["attic"])
+        self.assertEqual(self.ctx["attic"], [])
+        # the basement's ceiling: the ground floor's rooms with a floor over it, not the yard's areas
+        self.assertIn("kitchen", self._rooms("boiler_room", "ceiling"))
+        self.assertNotIn("yard", [c["room"] for cs in self.ctx.values() for c in cs])
+        # the terrace (an open room) sits under the balcony
+        self.assertEqual(self._rooms("terrace", "ceiling"), ["balcony"])
+
+    def test_areas_get_no_context_and_no_room_is_its_own(self) -> None:
+        self.assertNotIn("yard", self.ctx)
+        for room, cs in self.ctx.items():
+            self.assertNotIn(room, [c["room"] for c in cs])
+
+    def test_room_tiles_carry_their_staged_context_and_skip_their_with_rooms(self) -> None:
+        package = {"package": 2, "name": "ground", "rooms": {"kitchen": {}}, "files": {}}
+        have = {"levels/house/rooms/dining_room.tscn", "levels/house/rooms/study.tscn"}
+        req = R.request(package, FAMILIES, ctx=self.ctx, have=have)
+        tile = req["tiles"][0]
+        self.assertEqual([(c["room"], c["scene"]) for c in tile["context"]],
+                         [("dining_room", "res://levels/house/rooms/dining_room.tscn"),
+                          ("study", "res://levels/house/rooms/study.tscn")])
+        views = [{"room": "kitchen", "title": "kitchen: east", "eye": [1, 1.6, 1], "look": [2, 1, 2], "sun": False,
+                  "with": [{"room": "study", "scene": "res://levels/house/rooms/study.tscn", "offset": [0, 3.2, -6]}]}]
+        req = R.request(package, FAMILIES, extra=views, ctx=self.ctx, have=have)
+        self.assertEqual([c["room"] for c in req["tiles"][1]["context"]], ["dining_room"])
+        self.assertNotIn("context", R.request(package, FAMILIES)["tiles"][0])
+
+    def test_neighbours_find_the_packages_holding_the_context_rooms(self) -> None:
+        package = {"package": 2, "name": "ground", "rooms": {"kitchen": {}}, "files": {}}
+        got = [p["package"] for p in R.neighbours(R.common.ROOT, package, [], self.ctx)]
+        if not got:
+            self.skipTest("the upper package is not committed")
+        self.assertEqual(got, [4])
+
+    def test_tile_line_adds_the_context_draw_calls(self) -> None:
+        room = R.tile_line({"title": "Kitchen", "door": "", "lights": 2.0, "draw_calls": 41.0,
+                            "context_draw_calls": 30.0}, "rooms")
+        self.assertEqual(room, "  Kitchen: door -, 2 lights, 41 draw calls (+30 context)")
+
+
 if __name__ == "__main__":
     unittest.main()

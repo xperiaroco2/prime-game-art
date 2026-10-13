@@ -123,10 +123,45 @@ def views(data: dict) -> list[dict]:
     return out
 
 
-def neighbours(root: Path, package: dict, extra: list[dict]) -> list[dict]:
-    """The other committed packages holding the rooms the package's extra views show `with` it."""
+def context(data: dict) -> dict[str, list[dict]]:
+    """Per walled room (kind room or open) of the layout, the rooms its tiles stage round it as context (#144), each
+    {room, why, offset}: why "walls", a room of its level owning a wall on its sides (house_layout.wall_edges gives a
+    shared wall to the first of its two rooms, so the other room's scene has a gap there), and "ceiling", a room with a
+    floor on the next level up over it (its ceiling is that room's floor slab; the top level's roof is its own). The
+    offset is that room's plan corner and floor height from this room's, in the level files' room order."""
+    from .. import house_layout
+    levels = data["levels"]
+    out: dict[str, list[dict]] = {}
+    for lv in levels:
+        owners: dict[str, set] = {}
+        for e in house_layout.wall_edges(lv).values():
+            for rid in e["rooms"]:
+                if rid != e["owner"]:
+                    owners.setdefault(rid, set()).add(e["owner"])
+        higher = [o["floor_y"] for o in levels if o["floor_y"] > lv["floor_y"] + house_layout.EPS]
+        above = [o for o in levels if higher and abs(o["floor_y"] - min(higher)) < house_layout.EPS]
+
+        def entry(other: dict, fy: float, why: str, room: dict) -> dict:
+            return {"room": other["id"], "why": why,
+                    "offset": [round(other["rect"][0] - room["rect"][0], 3), round(fy - lv["floor_y"], 3),
+                               round(other["rect"][1] - room["rect"][1], 3)]}
+        for room in lv["rooms"]:
+            if room["kind"] == "area":
+                continue
+            out[room["id"]] = [entry(o, lv["floor_y"], "walls", room) for o in lv["rooms"]
+                               if o["id"] in owners.get(room["id"], ())]
+            out[room["id"]] += [entry(o, up["floor_y"], "ceiling", room) for up in above for o in up["rooms"]
+                                if o["kind"] != "area" and o.get("floor")
+                                and house_layout.overlap(o["rect"], room["rect"])]
+    return out
+
+
+def neighbours(root: Path, package: dict, extra: list[dict], ctx: dict | None = None) -> list[dict]:
+    """The other committed packages holding the rooms the package's extra views show `with` it and its rooms'
+    context rooms (context())."""
     want = {f"levels/house/rooms/{w['room']}.tscn" for v in extra if v["room"] in package["rooms"]
             for w in v.get("with", [])}
+    want |= {f"levels/house/rooms/{c['room']}.tscn" for r in package["rooms"] for c in (ctx or {}).get(r, [])}
     out = []
     for _, data in house_packages(root) if want else []:
         if data.get("package") != package["package"] and want & set(data.get("files", {})):
@@ -135,9 +170,10 @@ def neighbours(root: Path, package: dict, extra: list[dict]) -> list[dict]:
 
 
 def request(package: dict, kit_families: dict[str, list[str]], kit_set: str = "house_kit",
-            extra: list[dict] | None = None) -> dict:
+            extra: list[dict] | None = None, ctx: dict | None = None, have: set | None = None) -> dict:
     """The sheet request: the kit's families (a package without rooms) or the package's rooms, each from its door
-    and then from the extra views (views()) of it."""
+    and then from the extra views (views()) of it; a room tile's `context` lists its context rooms (context()) whose
+    scenes are staged (`have`: game paths; None: all), less the rooms its view shows `with` it."""
     name = f"p{package['package']}_{package['name']}"
     if package.get("plot"):  # P7 (#128): the plot's views, each with the package's rooms placed at their corners
         rooms = [f"res://levels/house/rooms/{r}.tscn" for r in package["rooms"]]
@@ -151,6 +187,12 @@ def request(package: dict, kit_families: dict[str, list[str]], kit_set: str = "h
             scene = f"res://levels/house/rooms/{room}.tscn"
             tiles.append({"title": room, "scene": scene})
             tiles += [dict(v, scene=scene) for v in extra or [] if v["room"] == room]
+        for t in tiles:
+            near = [c for c in (ctx or {}).get(t.get("room", t["title"]), [])
+                    if c["room"] not in {w["room"] for w in t.get("with", [])}
+                    and (have is None or f"levels/house/rooms/{c['room']}.tscn" in have)]
+            if near:
+                t["context"] = [dict(c, scene=f"res://levels/house/rooms/{c['room']}.tscn") for c in near]
         return {"mode": "rooms", "sheet": name, "cols": ROOM_COLS, "width": WIDTH, "eye": EYE, "tiles": tiles}
     prefix = f"assets/environment/{kit_set}/"
     ids = [Path(p).stem for p in package["files"] if p.startswith(prefix) and p.endswith(".glb")]
@@ -163,19 +205,22 @@ def tile_line(tile: dict, mode: str) -> str:
     """One tile's summary line; Godot's monitors are floats, the counts print as ints."""
     extra = (f"door {tile['door'] or '-'}, {int(tile['lights'])} lights" if mode == "rooms"
              else f"{int(tile['pieces'])} pieces")
-    return f"  {tile['title']}: {extra}, {round(tile['draw_calls'])} draw calls"
+    near = f" (+{round(tile['context_draw_calls'])} context)" if "context_draw_calls" in tile else ""
+    return f"  {tile['title']}: {extra}, {round(tile['draw_calls'])} draw calls{near}"
 
 
 def run(folder: Path, n: int, kit_families: dict[str, list[str]], root: Path = common.ROOT,
-        extra: list[dict] | None = None) -> int:
+        extra: list[dict] | None = None, ctx: dict | None = None) -> int:
     """Stages package n from the committed files into folder and shoots its sheet into folder/<name>.png,
     <name>_1280.png and <name>.json."""
     path, package = find_package(root, n)
     folder.mkdir(parents=True, exist_ok=True)
     files = committed(root)
     missing = stage(package, files, folder)
-    for other in neighbours(root, package, extra or []):  # a shared game path has the same bytes in every package
+    have = set(package["files"])
+    for other in neighbours(root, package, extra or [], ctx):  # a shared game path has the same bytes in every package
         missing += stage(other, files, folder)
+        have |= set(other["files"])
     if missing:
         raise common.Failure(f"package {n} ({path.as_posix()}): {len(missing)} files have no committed copy with "
                              f"their sha256, e.g. {missing[0]}")
@@ -184,7 +229,11 @@ def run(folder: Path, n: int, kit_families: dict[str, list[str]], root: Path = c
     (folder / "project.godot").write_text(PROJECT, encoding="utf-8", newline="\n")
     (folder / REVIEW_DIR).mkdir(exist_ok=True)
     shutil.copyfile(SCRIPT, folder / REVIEW_DIR / SCRIPT.name)
-    req = request(package, kit_families, extra=extra)
+    req = request(package, kit_families, extra=extra, ctx=ctx, have=have)
+    lost = sorted({c["room"] for r in package["rooms"] for c in (ctx or {}).get(r, [])}
+                  - {c["room"] for t in req["tiles"] for c in t.get("context", [])})
+    if lost:
+        common.say(f"  context rooms with no committed scene (not staged): {', '.join(lost)}")
     req_path = folder / REVIEW_DIR / "request.json"
     req_path.write_text(json.dumps(req, indent=1), encoding="utf-8", newline="\n")
     code, output = _godot.godot(["--headless", "--path", folder, "--import"], TIMEOUT)
