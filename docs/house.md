@@ -133,8 +133,10 @@ writes the House's game-ready package (prime-game #523) from the same layout dat
 - The props' fine pack (#147; the world look's `kit_fine` material, `docs/props.md` "World look rules"): a package
   with a prop holding a `kit_fine` surface also writes `house_props/fine/<tier>/fine_d.png`, `fine_n0.png`,
   `fine_n1.png` (and `fine_d1.png`, `fine_n2.png`, `fine_n3.png` when the build's textured layers need them: #150)
-  of both tiers from `house.toml` `[export]` `fine_dir` (the raw build's
-  `props/library/v1/textures/fine`; `.import` VRAM compressed with mipmaps), `house_props/prop_fine.gdshader` (a copy
+  of both tiers from `house.toml` `[export]` `fine_dir` (#147: the raw build's `props/library/v1/textures/fine`;
+  since #150 `review/house/150/build/textures/fine`, the build with the living room's soft layers, whose 16 props
+  `prop_dirs` also takes first, before `props/library/v1`, until the manager moves that build into a library version;
+  `.import` VRAM compressed with mipmaps), `house_props/prop_fine.gdshader` (a copy
   of `godot/props/prop_fine.gdshader`; `tools/tests/test_house_layers.py` fails when the committed copy drifts) and
   `prop_fine_high.tres`, `prop_fine_low.tres` (`house_export.fine_material_text`: the shader, the tier's textures, the
   layers' roughness, metallic, normal strength and gain). Each such prop instance in a room overrides its `kit_fine`
@@ -189,7 +191,10 @@ the room scenes of a package in their own `room` set, P2's in `assets/room/house
 `package.json` beside the manifest that owns it and a `HANDOFF.md` for the game's import task (what to copy where,
 the credits entries, the open questions). P1 to P5 and P7 are approved and merged, their manifests' approval fields set: P1 and P2 in #125, P3 and P5
 in #127, P4 in #130, P7 (with the props, the outdoor and garden sets) in #131; #147 changed P2 and the props (the
-C2-white kitchen, the fine pack, the Detail node), so their approval fields wait again. The engineer approves the look from
+C2-white kitchen, the fine pack, the Detail node; approved in #149), and #150 changed them again (the living room in
+the world look, the fine pack's eight slots), so their approval fields wait again. The packages P3 to P5 place some of
+#150's rebuilt props (armchair, bookcase, dresser, rug, sideboard, small_table) and are not re-exported: their
+committed scenes carry no `kit_fine` override for them (P2's `HANDOFF.md`, an open question). The engineer approves the look from
 
 ```
 tools/run.sh house --package-sheet DIR --package N

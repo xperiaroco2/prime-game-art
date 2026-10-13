@@ -38,7 +38,12 @@ Every room's props follow these rules; the numbers are data in `props/library.to
    `size_m`; a builder may name its own collider boxes (the stove's body and hood leave the gap over the hob open).
    The kitchen's `kitchen_counter` (with `sink`), `kitchen_upper`, `stove`, `fridge` and the backsplash runs
    (`backsplash_l`, `backsplash_r`: shape `backsplash`, wall pivot, no collider) are built from them; so are the
-   task props `assembly_island` and `order_board` (`props/tasks.toml`, `look = "fine"`).
+   task props `assembly_island` and `order_board` (`props/tasks.toml`, `look = "fine"`). The living room's pieces
+   (#150) add upholstered seats with cushions (`sofa`, its armchair variant), shelving with books (`bookcase`), a
+   mantel surround with a stone hearth (`mantel_fireplace`), a TV unit with its TV (`tv_unit`), `coffee_table`,
+   `sideboard` (the sideboard and the dresser), `side_table` and `carpet_rug`, and six clutter-class detail props for
+   the living room's detail layer: `living_tray`, `magazine_fan`, `mantel_clock`, `standing_frame`, `throw_basket`,
+   `candle_pair` (12 to 400 triangles each, no collider).
 8. **Route.** Hard-surface props are code (the shared builders, `prop_geom.py`'s `Style`). Meshy only for organic
    one-offs (food, soft goods, plants) at a hero budget, as a recorded batch (`docs/meshy.md`).
 
