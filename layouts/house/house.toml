@@ -97,6 +97,18 @@ at = [38.0, 33.6]  # #147: the C2-white run, its backsplashes and wall cabinets
 look = [37.6, 30.0]
 look_h = 1.0
 [[export.sheet_views]]
+room = "living_room"
+title = "living room: across the sofa to the fireplace"
+at = [22.6, 38.4]  # #150: behind the main sofa, the mantel, the rug and the armchairs
+look = [22.0, 43.0]
+look_h = 0.9
+[[export.sheet_views]]
+room = "living_room"
+title = "living room: the TV corner and the shelves"
+at = [24.8, 40.5]  # #150: from the east armchair across the room to the TV unit
+look = [18.6, 34.0]
+look_h = 0.9
+[[export.sheet_views]]
 room = "attic"
 title = "attic: from the west gable"
 at = [19.5, 34.0]
