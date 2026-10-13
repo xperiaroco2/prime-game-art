@@ -65,9 +65,28 @@ at = [0.5, 0, 0.5]
 id = "potted_plant"
 at = [7.5, 0, 13.5]
 
+# The walls' art (#150 UPDATE A): the large prints in the base layer (an abstract above the fireplace, a city poster
+# above the west sideboard, the burger poster on the north wall); the small frames are the detail layer. Placed where
+# they leave the generated fill as it was (house --clutter: the same furniture, the bean bag in place).
 [[props]]
-id = "picture_frame"
-at = [1.2, 1.4, 0.1]
+id = "art_photos"
+at = [1.2, 1.35, 0.1]
+face = "S"
+
+[[props]]
+id = "art_burger"
+at = [4.45, 1.25, 0.1]
+face = "S"
+
+[[props]]
+id = "art_city"
+at = [0.1, 1.2, 12.9]
+face = "E"
+
+[[props]]
+id = "art_score"
+at = [1.85, 1.3, 0.1]
+face = "S"
 
 [[props]]
 id = "picture_frame"
@@ -80,8 +99,8 @@ at = [7.9, 1.4, 6.5]
 face = "W"
 
 [[props]]
-id = "picture_frame"
-at = [4.0, 1.6, 13.9]
+id = "art_abstract"
+at = [4.0, 1.55, 13.9]
 face = "N"
 
 [[fixtures]]
@@ -106,9 +125,17 @@ id = "wall_sconce"
 at = [0.1, 1.95, 9.0]
 face = "E"
 
+# A side table with a lamp and a bowl at the TV sofa's south end (#150).
+[[props]]
+id = "small_table"
+at = [3.35, 0, 3.4]
+
 # The detail layer (#150, class clutter: the rooms' Detail node): the mantel's clock, candlesticks and two photo
-# frames, a tray on the coffee table, magazines and a photo frame on the side table, a throw basket by the east
-# armchair. Only on the hand-placed pieces above: the generated block's hosts move when a piece's size changes.
+# frames; the coffee table's tray (candles, a remote), books, magazines and a laptop; a photo frame on the side table;
+# the games console, candle jars and a vase on the TV unit's top (clear of the TV's pedestal); board games and a
+# plant on the north bookcases; a lamp and a bowl on the TV sofa's side table; slippers by the TV sofa; a throw basket
+# by the east armchair. Only on the hand-placed pieces above: the generated block's hosts move when a piece's size
+# changes.
 [[props]]
 id = "mantel_clock"
 at = [4.0, 1.3, 13.68]
@@ -130,9 +157,59 @@ at = [3.67, 0.4, 11.64]
 face = "S"
 
 [[props]]
+id = "coffee_books"
+at = [4.33, 0.4, 11.66]
+face = "S"
+
+[[props]]
 id = "magazine_fan"
-at = [1.5, 0.7, 13.15]
-face = "N"
+at = [3.75, 0.4, 11.93]
+face = "S"
+
+[[props]]
+id = "laptop"
+at = [4.3, 0.4, 11.95]
+face = "S"
+
+[[props]]
+id = "game_console"
+at = [0.41, 0.42, 4.7]
+face = "E"
+
+[[props]]
+id = "candle_jars"
+at = [0.47, 0.42, 5.42]
+face = "E"
+
+[[props]]
+id = "deco_vase"
+at = [0.49, 0.42, 5.62]
+face = "E"
+
+[[props]]
+id = "board_games"
+at = [5.5, 2.0, 0.3]
+face = "S"
+
+[[props]]
+id = "table_plant"
+at = [6.75, 2.0, 0.3]
+face = "S"
+
+[[props]]
+id = "side_lamp"
+at = [3.35, 0.7, 3.57]
+face = "W"
+
+[[props]]
+id = "deco_bowl"
+at = [3.35, 0.7, 3.22]
+face = "W"
+
+[[props]]
+id = "slippers"
+at = [2.45, 0, 5.75]
+face = "E"
 
 [[props]]
 id = "standing_frame"
@@ -146,7 +223,7 @@ face = "N"
 
 [[props]]
 id = "standing_frame"
-at = [1.8, 0.7, 13.4]
+at = [1.75, 0.7, 12.98]
 face = "N"
 
 [[props]]
@@ -267,8 +344,8 @@ at = [4.4, 0.12, 0.1]
 face = "S"
 
 [[props]]
-id = "potted_plant"
-at = [0.35, 0, 8.6]
+id = "floor_plant"
+at = [0.4, 0, 8.6]
 face = "E"
 
 [[props]]
@@ -292,93 +369,88 @@ at = [5.43, 0, 13.4]
 face = "N"
 
 [[props]]
-id = "fruit_bowl"
-at = [4.19, 0.4, 11.69]
-face = "S"
-
-[[props]]
-id = "book_stack"
-at = [3.82, 0.4, 11.94]
-face = "S"
-
-[[props]]
-id = "cup_set"
-at = [4.14, 0.4, 11.96]
-face = "S"
-
-[[props]]
-id = "book_row"
-at = [0.26, 1, 5.34]
-face = "E"
-
-[[props]]
 id = "vase_flowers"
-at = [0.22, 1, 4.46]
-face = "E"
-
-[[props]]
-id = "vase_flowers"
-at = [0.47, 1, 5.5]
-face = "E"
-
-[[props]]
-id = "book_row"
-at = [0.46, 1, 4.64]
-face = "E"
-
-[[props]]
-id = "book_stack"
-at = [7.29, 0.7, 8.76]
+at = [7.26, 0.7, 8.44]
 face = "W"
 
 [[props]]
 id = "cup_set"
-at = [7.31, 0.7, 8.43]
+at = [7.31, 0.7, 8.73]
 face = "W"
 
 [[props]]
-id = "paper_stack"
-at = [0.36, 0.4, 1.97]
-face = "E"
-
-[[props]]
-id = "bottles"
-at = [0.48, 0.9, 9.84]
+id = "book_stack"
+at = [0.33, 0.4, 1.84]
 face = "E"
 
 [[props]]
 id = "fruit_bowl"
-at = [0.34, 0.9, 10.42]
+at = [0.39, 0.9, 9.72]
 face = "E"
 
 [[props]]
 id = "bottles"
-at = [0.23, 0.9, 9.54]
-face = "E"
-
-[[props]]
-id = "vase_flowers"
-at = [0.3, 0.9, 9.88]
-face = "E"
-
-[[props]]
-id = "book_stack"
-at = [0.49, 0.9, 3.6]
+at = [0.38, 0.9, 10.34]
 face = "E"
 
 [[props]]
 id = "bottles"
-at = [0.54, 0.9, 2.89]
+at = [0.33, 0.9, 9.19]
 face = "E"
 
 [[props]]
 id = "vase_flowers"
-at = [0.26, 0.9, 3.33]
+at = [0.5, 0.9, 2.88]
 face = "E"
 
 [[props]]
 id = "book_stack"
-at = [0.49, 0.9, 3.25]
+at = [0.39, 0.9, 3.3]
+face = "E"
+
+[[props]]
+id = "bottles"
+at = [0.28, 0.9, 3.64]
+face = "E"
+
+[[props]]
+id = "book_stack"
+at = [0.28, 0.9, 2.85]
+face = "E"
+
+[[props]]
+id = "fruit_bowl"
+at = [0.34, 0.9, 13.46]
+face = "E"
+
+[[props]]
+id = "fruit_bowl"
+at = [0.34, 0.9, 13.01]
+face = "E"
+
+[[props]]
+id = "vase_flowers"
+at = [0.45, 0.9, 13.77]
+face = "E"
+
+[[props]]
+id = "vase_flowers"
+at = [0.45, 0.9, 12.72]
+face = "E"
+
+[[props]]
+id = "book_stack"
+at = [0.43, 0.9, 12]
+face = "E"
+
+[[props]]
+id = "bottles"
+at = [0.23, 0.9, 11.44]
+face = "E"
+
+[[props]]
+id = "vase_flowers"
+at = [0.5, 0.9, 11.58]
 face = "E"
 
 [[props]]
@@ -388,17 +460,17 @@ face = "W"
 
 [[props]]
 id = "picture_frame"
-at = [7.9, 1.4, 3.29]
-face = "W"
-
-[[props]]
-id = "picture_frame"
 at = [7.9, 1.4, 8.2]
 face = "W"
 
 [[props]]
+id = "picture_frame"
+at = [7.9, 1.4, 3.29]
+face = "W"
+
+[[props]]
 id = "wall_shelf"
-at = [0.1, 1.45, 12.9]
+at = [0.1, 1.45, 5]
 face = "E"
 
 [[props]]
@@ -413,7 +485,7 @@ face = "W"
 
 [[props]]
 id = "picture_frame"
-at = [7.9, 1.4, 5.79]
+at = [7.9, 1.4, 7.57]
 face = "W"
 
 [[props]]
@@ -423,8 +495,8 @@ face = "N"
 
 [[props]]
 id = "book_stack"
-at = [0.245, 0, 2.4]
-face = "E"
+at = [7.755, 0, 5.54]
+face = "W"
 
 [[props]]
 id = "toy_blocks"
