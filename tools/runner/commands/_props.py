@@ -22,6 +22,7 @@ COLLISIONS = ("box", "hull", "boxes", "none")
 SCALE_TOLERANCE = 0.10  # a pack prop's scaled box against its inventory size, per axis (props.md §5)
 STRETCH_LIMIT = 1.5  # with stretch = true the builder fits per axis: the largest axis factor over the smallest
 LAYERS = ("base", "detail")  # a prop's layer by preset (#140 item 4): base on every preset, detail on High/Ultra
+FINE_SLOTS = 8  # textured fine layers: two detail textures of four channels (prop_lib.FINE_SLOTS)
 FINE_MAX_LAYERS = 16  # the fine pack's vertex alpha holds the layer in steps of 1/16
 STYLE_LENGTHS = ("bevel_m", "bevel_small_m", "handle_radius_m", "handle_standoff_m", "front_gap_m",
                  "front_thickness_m", "plinth_m", "plinth_setback_m", "worktop_m", "worktop_thickness_m")
@@ -208,9 +209,9 @@ def check_look(lib: dict[str, Any], roles: dict[str, Any], sources: dict[str, di
         layers = fine.get("layers", [])
         if not 1 <= len(layers) <= FINE_MAX_LAYERS:
             problems.append(f"fine: {len(layers)} layers (1 to {FINE_MAX_LAYERS}: the vertex alpha holds them)")
-        kinds = ["t" if layer.get("source") else "f" for layer in layers]
-        if "".join(kinds) != "".join(sorted(kinds, reverse=True)) or kinds.count("t") > 4:
-            problems.append("fine: the textured layers come first, at most four (the shader's four detail channels)")
+        textured = sum(1 for layer in layers if layer.get("source"))
+        if textured > FINE_SLOTS:
+            problems.append(f"fine: {textured} textured layers (at most {FINE_SLOTS}: the shader's detail slots)")
         for k, layer in enumerate(layers):
             name = layer.get("name", f"#{k}")
             if name in layer_names:

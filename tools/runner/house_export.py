@@ -33,7 +33,8 @@ FINE_MATERIAL = "kit_fine"  # the world look's props' stand-in material (Blender
 FINE_SHADER = "prop_fine.gdshader"  # the fine pack's shader, shipped once beside the props (#147)
 FINE_SHADER_SRC = Path(__file__).resolve().parents[2] / "godot" / "props" / FINE_SHADER
 FINE_DIR = "fine"  # house_props/fine/<tier>/fine_d.png, fine_n0.png, fine_n1.png: the fine pack's shared textures
-FINE_TEXTURES = ("d", "n0", "n1")
+FINE_TEXTURES = ("d", "d1", "n0", "n1", "n2", "n3")  # in this order; a build writes the ones its slots need
+FINE_SLOTS = 8  # textured layers (prop_lib.FINE_SLOTS)
 FINE_LAYERS = 16  # prop_fine.gdshader's layer arrays
 RUG = "rug"  # dressing props whose id starts so cover the floor (no collider): the tiles under them are carpet
 QUESTIONS = [  # for the game side (prime-game #523); package.json carries them (questions() adds the package's lamps)
@@ -163,31 +164,55 @@ def fine_tiers(data: dict, raw: Path) -> dict:
     return json.loads(path.read_text(encoding="utf-8")) if settings(data).get("fine_dir") and path.is_file() else {}
 
 
+def fine_keys(fine: dict, tier: str) -> list[str]:
+    """The tier's texture keys (FINE_TEXTURES order): the ones its build's `files` name."""
+    files = fine.get("tiers", {}).get(tier, {}).get("files", {})
+    return [k for k in FINE_TEXTURES if k in files]
+
+
+def fine_slots(layers: list[dict]) -> list[int]:
+    """Each layer's texture slot (its `slot`, else its place among the textured layers), -1 for a flat finish."""
+    out, nxt = [], 0
+    for x in layers:
+        if x.get("source") and nxt < FINE_SLOTS:
+            out.append(int(x.get("slot", nxt)))
+            nxt = out[-1] + 1
+        else:
+            out.append(-1)
+    return out
+
+
 def fine_res(data: dict, name: str) -> str:
     """The res:// path of a file of the fine pack in the props' folder (the shader, a tier's material or texture)."""
     return asset_res(data, settings(data)["prop_set"], "x").rsplit("/", 1)[0] + "/" + name
 
 
 def fine_material_text(data: dict, fine: dict, tier: str) -> str:
-    """The fine pack's material of one tier as a resource (#147): prop_fine.gdshader, the tier's three shared
-    textures and the layers' values, as godot/props/prop_materials.gd `make` sets them."""
+    """The fine pack's material of one tier as a resource (#147): prop_fine.gdshader, the tier's shared textures
+    and the layers' values, as godot/props/prop_materials.gd `make` sets them."""
     layers = fine.get("layers", [])[:FINE_LAYERS]
     means = fine.get("tiers", {}).get(tier, {}).get("detail_mean", {})
+    keys = fine_keys(fine, tier)
     ext = [("Shader", fine_res(data, FINE_SHADER))] + [
-        ("Texture2D", fine_res(data, f"{FINE_DIR}/{tier}/fine_{k}.png")) for k in FINE_TEXTURES]
+        ("Texture2D", fine_res(data, f"{FINE_DIR}/{tier}/fine_{k}.png")) for k in keys]
     pad = lambda vals: vals + [0.0] * (FINE_LAYERS - len(vals))
     arr = lambda key, dflt: "PackedFloat32Array(" + ", ".join(
         _f(v) for v in pad([float(x.get(key, dflt)) for x in layers])) + ")"
-    gain = [1.0 / max(float(means[x["name"]]), 0.05) if k < 4 and x.get("name") in means else 2.0
-            for k, x in enumerate((layers + [{}] * 4)[:4])]
+    slots = fine_slots(layers)
+    gain = [2.0] * FINE_SLOTS
+    for x, s in zip(layers, slots):
+        if s >= 0 and x.get("name") in means:
+            gain[s] = 1.0 / max(float(means[x["name"]]), 0.05)
     lines = ['[gd_resource type="ShaderMaterial" format=3]', ""]
     lines += [f'[ext_resource type="{t}" path="{path}" id="{k}"]' for k, (t, path) in enumerate(ext, 1)]
     lines += ["", "[resource]", f'resource_name = "prop_fine_{tier}"', 'shader = ExtResource("1")']
-    lines += [f'shader_parameter/fine_{t} = ExtResource("{k}")' for k, t in enumerate(FINE_TEXTURES, 2)]
+    lines += [f'shader_parameter/fine_{t} = ExtResource("{k}")' for k, t in enumerate(keys, 2)]
     lines += [f"shader_parameter/layer_roughness = {arr('roughness', 0.7)}",
               f"shader_parameter/layer_metallic = {arr('metallic', 0.0)}",
               f"shader_parameter/layer_normal_strength = {arr('normal_strength', 0.0)}",
-              f"shader_parameter/layer_gain = Vector4({', '.join(_f(g) for g in gain)})"]
+              "shader_parameter/layer_slot = PackedInt32Array("
+              + ", ".join(str(v) for v in slots + [-1] * (FINE_LAYERS - len(slots))) + ")",
+              f"shader_parameter/slot_gain = PackedFloat32Array({', '.join(_f(g) for g in gain)})"]
     return "\n".join(lines) + "\n"
 
 
@@ -527,7 +552,7 @@ def write(data: dict, planned: dict, dressing: dict, fixtures: list[dict], out: 
         raise ValueError(f"{len(shipped)} props on the fine pack ({sorted(shipped)[0]}, ...) but no fine.json under "
                          f"<raw>/{ex.get('fine_dir', '')} (build the library: props-library --build)")
     for tier, t in fine_pack.get("tiers", {}).items():  # the fine pack's shared textures (#147), once per tier
-        for k in FINE_TEXTURES:
+        for k in fine_keys(fine_pack, tier):
             copies[env / ex["prop_set"] / FINE_DIR / tier / f"fine_{k}.png"] = Path(t["files"][k])
     set_ids = list(ex.get("sets", {})) if pkg is None else pkg.get("sets", [])
     builds: dict[str, Path] = {}

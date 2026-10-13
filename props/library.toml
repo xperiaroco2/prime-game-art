@@ -71,7 +71,8 @@ worktop_thickness_m = 0.03
 floor_shade = [0.82, 0.25]  # a soft occlusion toward the floor: x0.82 at the floor, none from 0.25 m up
 paints = ["wood_front", "wood_front_dark", "worktop_wood", "worktop_stone", "tile_splash", "enamel_white",
           "steel_warm", "steel_black", "chrome", "glass_tint", "glass_dark", "rubber_black", "porcelain_white",
-          "enamel_cream"]
+          "enamel_cream", "upholstery", "upholstery_light", "cushion_rust", "cushion_mustard", "throw_cream",
+          "carpet_field", "carpet_border", "stone_light", "stone_dark", "book_cream", "book_teal", "book_mustard"]
 
 # The fine pack: ONE shared opaque material (`kit_fine-vcol`) for the world look's props, as the kit's `set` pack
 # (docs/kit.md "Materials"): the paint is the vertex colour, its alpha picks the layer (1 - k/16 for layer k), and
@@ -91,6 +92,11 @@ layers = [
     {name = "chrome", metallic = 0.8, roughness = 0.2},
     {name = "gloss", metallic = 0.3, roughness = 0.06},  # dark glass panels (oven window, clock)
     {name = "paint", metallic = 0.0, roughness = 0.7},   # rubber, plastic, painted parts
+    # The living room's soft goods (#150): appended, so the kitchen's layers keep their index (a textured layer's
+    # slot is its place among the textured ones: fabric 4, weave 5, carpet 6).
+    {name = "fabric", source = "Fabric036", roughness = 0.92, normal_strength = 0.55},  # linen upholstery
+    {name = "weave", source = "Fabric061", roughness = 0.88, normal_strength = 0.6},    # cushions, throws
+    {name = "carpet", source = "Carpet016", roughness = 0.96, normal_strength = 0.7},   # rugs
 ]
 
 # The props' paints: a library material and an sRGB hex (D1 palette, look.md section 7). The kit's roles
@@ -143,6 +149,20 @@ paint_red = {material = "fine", layer = "paint", hex = "#b02a22"}
 paint_blue = {material = "fine", layer = "paint", hex = "#2d5a8a"}
 cabinet_green = {material = "fine", layer = "paint", hex = "#4e5f57"}
 glass_tint = {material = "glass_tint", hex = "#86918b"}
+# The living room's paints (#150): the room's earlier hues (warm taupe, terracotta, mustard, cream) on the soft
+# layers, a light stone surround, book spines on the paint layer.
+upholstery = {material = "fine", layer = "fabric", hex = "#6b5a52"}
+upholstery_light = {material = "fine", layer = "fabric", hex = "#b9ad9c"}
+cushion_rust = {material = "fine", layer = "weave", hex = "#b5593a"}
+cushion_mustard = {material = "fine", layer = "weave", hex = "#d0a02c"}
+throw_cream = {material = "fine", layer = "weave", hex = "#d8cdb4"}
+carpet_field = {material = "fine", layer = "carpet", hex = "#a9573c"}
+carpet_border = {material = "fine", layer = "carpet", hex = "#d8cdb4"}
+stone_light = {material = "fine", layer = "stone", hex = "#cfc8bb"}
+stone_dark = {material = "fine", layer = "stone", hex = "#55524c"}
+book_cream = {material = "fine", layer = "paint", hex = "#d8cdb4"}
+book_teal = {material = "fine", layer = "paint", hex = "#1f6f73"}
+book_mustard = {material = "fine", layer = "paint", hex = "#c79a2e"}
 
 # Inventory props this library does not make, and who does (the manager's split of 2026-10-10).
 [skip]
