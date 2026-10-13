@@ -43,7 +43,10 @@ Every room's props follow these rules; the numbers are data in `props/library.to
    mantel surround with a stone hearth (`mantel_fireplace`), a TV unit with its TV (`tv_unit`), `coffee_table`,
    `sideboard` (the sideboard and the dresser), `side_table` and `carpet_rug`, and six clutter-class detail props for
    the living room's detail layer: `living_tray`, `magazine_fan`, `mantel_clock`, `standing_frame`, `throw_basket`,
-   `candle_pair` (12 to 400 triangles each, no collider).
+   `candle_pair` (12 to 400 triangles each, no collider). Round 2 adds 16 more: five pieces of wall art drawn
+   procedurally (`art_abstract`, `art_city`, `art_burger`, `art_photos`, `art_score`), ten detail props (`board_games`,
+   `candle_jars`, `coffee_books`, `deco_bowl`, `deco_vase`, `game_console`, `laptop`, `side_lamp`, `slippers`,
+   `table_plant`) and `floor_plant` (its pot the only collider): 22 new living-room props and 10 rebuilt ones.
 8. **Route.** Hard-surface props are code (the shared builders, `prop_geom.py`'s `Style`). Meshy only for organic
    one-offs (food, soft goods, plants) at a hero budget, as a recorded batch (`docs/meshy.md`).
 
