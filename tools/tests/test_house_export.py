@@ -467,6 +467,74 @@ instance_shader_parameters/plan_at = Vector4(11, 0, 22, 0)
 """
 
 
+class FinePackExport(unittest.TestCase):
+    """#147: a package with a prop on `kit_fine` ships the fine pack (both tiers' textures with mipmaps, the shader,
+    one material per tier); without the pack's fine.json it refuses; a package without such a prop ships none of it."""
+    TASK = 8  # the task-props package: every GLB of the first prop dir, no rooms
+
+    def _raw(self, tmp: str, fine: bool = True, fine_prop: bool = True) -> Path:
+        raw = Path(tmp) / "raw"
+        task = raw / DATA["settings"]["prop_dirs"][0]
+        task.mkdir(parents=True)
+        (task / "crate.glb").write_bytes(b"glTF")
+        if fine_prop:
+            (task / "island.glb").write_bytes(_glb([{"name": "island", "mesh": 0}],
+                                                   [{"primitives": [{"material": 0}]}], ["kit_fine-vcol"]))
+        if fine:
+            d = raw / X.settings(DATA)["fine_dir"]
+            tiers = {}
+            for tier in ("high", "low"):
+                (d / tier).mkdir(parents=True)
+                for k in X.FINE_TEXTURES:
+                    (d / tier / f"fine_{k}.png").write_bytes(f"{tier}-{k}".encode())
+                tiers[tier] = {"files": {k: str(d / tier / f"fine_{k}.png") for k in X.FINE_TEXTURES},
+                               "detail_mean": {"wood_front": 0.5}}
+            (d / "fine.json").write_text(json.dumps({"layers": [{"name": "wood_front"}], "tiers": tiers}),
+                                         encoding="utf-8")
+        return raw
+
+    def test_the_fine_textures_import_with_mipmaps(self):
+        fine = X.import_text(Path("out/assets/environment/house_props/fine/low/fine_n0.png"))
+        self.assertIn("compress/mode=2", fine)
+        self.assertIn("mipmaps/generate=true", fine)
+        kit = X.import_text(Path("out/assets/environment/house_kit/textures/set_d.png"))
+        self.assertIn("compress/mode=2", kit)
+        self.assertNotIn("mipmaps", kit)
+
+    def test_write_ships_the_pack_with_a_fine_prop(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            raw, out = self._raw(tmp), Path(tmp) / "out"
+            with contextlib.redirect_stdout(io.StringIO()):
+                summary = X.write(DATA, PLAN, {}, [], out, raw, {}, self.TASK)
+            env = "assets/environment/house_props"
+            for tier in ("high", "low"):
+                for k in X.FINE_TEXTURES:
+                    rel = f"{env}/fine/{tier}/fine_{k}.png"
+                    self.assertIn(rel, summary["files"])
+                    self.assertEqual((out / rel).read_bytes(), f"{tier}-{k}".encode())
+                    imp = (out / (rel + ".import")).read_text(encoding="utf-8")
+                    self.assertIn("compress/mode=2", imp)
+                    self.assertIn("mipmaps/generate=true", imp)
+                self.assertIn(f'path="res://{env}/fine/{tier}/fine_d.png"',
+                              (out / env / f"prop_fine_{tier}.tres").read_text(encoding="utf-8"))
+            self.assertIn(f"{env}/{X.FINE_SHADER}", summary["files"])
+            self.assertNotIn("mipmaps", (out / env / "island.glb.import").read_text(encoding="utf-8"))
+
+    def test_write_refuses_a_fine_prop_without_the_pack(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            raw = self._raw(tmp, fine=False)
+            with self.assertRaisesRegex(ValueError, r"1 props on the fine pack \(island, \.\.\.\) but no fine\.json"):
+                X.write(DATA, PLAN, {}, [], Path(tmp) / "out", raw, {}, self.TASK)
+
+    def test_no_fine_prop_ships_no_pack(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            raw = self._raw(tmp, fine_prop=False)
+            with contextlib.redirect_stdout(io.StringIO()):
+                summary = X.write(DATA, PLAN, {}, [], Path(tmp) / "out", raw, {}, self.TASK)
+            self.assertIn("assets/environment/house_props/crate.glb", summary["files"])
+            self.assertFalse([f for f in summary["files"] if "fine" in f], summary["files"])
+
+
 @unittest.skipUnless(common.tool_path("GODOT_BIN", None), "Godot not found (GODOT_BIN)")
 class BrokenFixture(unittest.TestCase):
     def test_the_check_names_every_problem(self):
