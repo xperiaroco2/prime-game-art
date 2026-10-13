@@ -1,5 +1,5 @@
 {
- "status": "PROPOSAL, NOT CHOSEN: the engineer has not approved the look (art #140). Step 2's tuning grid recommends the clay's specular 0.1 (darker, richer hair) and a sharp eye glint; the face is still brighter and flatter than the Blender sheet (skin L* +9, shading -7). Do not copy into the game until this says chosen.",
+ "status": "PROPOSAL, NOT CHOSEN: the engineer has not approved the look (art #140). Step 2's tuning grid recommends the clay's specular 0.1 and a sharp eye glint; step 3's warm grid half the ambient from the sky, half a dark warm colour, and a fill of 0.12: the face within 3 L* of the Blender sheet's (step 2: +7 to +9). Do not copy into the game until this says chosen.",
  "about": "The proposed character look per graphics preset (see status), from the showroom (prime-game-art #140, docs/godot.md 'Showroom and recommended look settings'). Godot 4.7.2, Forward+. Property names are Environment, DirectionalLight3D, StandardMaterial3D and ProjectSettings names; 'clay' materials are the character materials whose name ends in _clay.",
  "environment": {
   "background_mode": "BG_COLOR or BG_SKY (the map's choice; the sky below lights it either way)",
@@ -7,10 +7,15 @@
   "tonemap_mode": "TONE_MAPPER_AGX",
   "tonemap_exposure": 1.0,
   "ambient_light_source": "AMBIENT_SOURCE_SKY",
-  "ambient_light_energy": 0.15,
-  "ambient_light_sky_contribution": 1.0,
+  "ambient_light_energy": 0.12,
+  "ambient_light_color": [
+   1.0,
+   0.8,
+   0.62
+  ],
+  "ambient_light_sky_contribution": 0.5,
   "reflected_light_source": "REFLECTION_SOURCE_SKY",
-  "why": "at ambient_light_sky_contribution 1.0 Godot ignores ambient_light_energy and ambient_light_color: the sky lights at its own radiance (step 2's T2, energy 0.4 to 0.15, changed nothing); a weaker sky ambient is untested"
+  "why": "half the ambient from the sky, half a dark warm colour (step 3's W3): the face 4 L* darker, warmer and better shaded, the closest single change; at ambient_light_sky_contribution 1.0 Godot ignores ambient_light_energy and ambient_light_color (step 2's T2 changed nothing), and the sky's energy_multiplier at 0.5 (W2) moved no face number"
  },
  "lights": {
   "key": {
@@ -21,9 +26,10 @@
   },
   "fill": {
    "type": "DirectionalLight3D",
-   "energy": 0.35,
+   "energy": 0.12,
    "specular": 0.0,
-   "shadow": false
+   "shadow": false,
+   "why": "a weaker fill (0.35 to 0.12, step 3's W4) gives the face more of the key's shading"
   },
   "rim": {
    "type": "DirectionalLight3D",

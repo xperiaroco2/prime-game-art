@@ -1,9 +1,10 @@
 """`showroom`: how close Godot can make a character look to its Blender renders (art #140). Godot 4.7.2 renders one
 character under up to eight look variants (the ladder: the frames stand as is, then AgX, sky reflections, SSAO, soft
-shadows, subsurface scattering on the clay; or step 2's tuning grid, `--grid tune`) in an off-screen window (never
-headless, never minimized): a face sheet (front and three-quarter, the approved Blender sheet first) and a full-body
-sheet, each variant's GPU time and, beside an approved sheet, a numeric check of the faces against it (look.md).
-`--write-presets` writes the recommended look per graphics preset, godot/showroom/look_presets.json (docs/godot.md)."""
+shadows, subsurface scattering on the clay; or step 2's tuning grid, `--grid tune`, or step 3's, `--grid warm`) in an
+off-screen window (never headless, never minimized): a face sheet (front and three-quarter, the approved Blender sheet
+first) and a full-body sheet, each variant's GPU time, its pixel change against its parent variant (change.md) and,
+beside an approved sheet, a numeric check of the faces against it (look.md). `--write-presets` writes the recommended
+look per graphics preset, godot/showroom/look_presets.json (docs/godot.md)."""
 
 from __future__ import annotations
 
@@ -26,7 +27,8 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("glb", type=Path, nargs="?", default=DEFAULT_GLB, help=f"an exported character (default {DEFAULT_GLB.as_posix()})")
     parser.add_argument("--out", type=Path, help="output folder (default tools/out/showroom/<stem>/)")
     parser.add_argument("--grid", choices=sorted(_showroom.GRIDS), default="ladder",
-                        help="ladder: the six look steps (default); tune: step 2's tuning grid on variant 4")
+                        help="ladder: the six look steps (default); tune: step 2's tuning grid on variant 4; "
+                             "warm: step 3's grid on variant 5 (sky ambient, fill, exposure with a warm key)")
     parser.add_argument("--variants", default="", help="comma list of the grid's variant ids (default all)")
     parser.add_argument("--clip", default="Idle", help="the pose: time 0 of this animation (default Idle)")
     parser.add_argument("--hdri", type=Path, help=f"the studio sky (default <raw>/{_showroom.HDRI}; missing: a ProceduralSky)")
@@ -103,13 +105,32 @@ def run(args: argparse.Namespace) -> int:
               f"(renderer {record.get('renderer', '?')}, sky {record.get('sky', '?')})")
     for line in table:
         common.say(f"verify: {line}")
+    labels = {v["id"]: v["label"] for v in chosen}
+    parents = [(v["id"], v["parent"]) for v in chosen if v.get("parent") in labels]
+    if parents:
+        change = change_check(out / "shots", parents, labels)
+        (out / "change.md").write_text("\n".join(change) + "\n", encoding="utf-8", newline="\n")
+        for line in change:
+            common.say(f"verify: {line}")
     if beside:
-        labels = {v["id"]: v["label"] for v in chosen}
         look = look_check(out / "shots", record["variants"], labels, len(spec["beside_rects"]))
         (out / "look.md").write_text("\n".join(look) + "\n", encoding="utf-8", newline="\n")
         for line in look:
             common.say(f"verify: {line}")
     return 0
+
+
+def change_check(shots: Path, parents: list[tuple[str, str]], labels: dict[str, str]) -> list[str]:
+    """Each variant's pixel change against its parent over its three shots (face front and 3/4, body)."""
+    rows = []
+    for child, parent in parents:
+        shares = []
+        for shot in ("face0", "face1", "body"):
+            width, _, a = house_bake.read_png(shots / f"{child}_{shot}.png")
+            _, _, b = house_bake.read_png(shots / f"{parent}_{shot}.png")
+            shares.append(_showroom.pixel_change(a, b, width, _showroom.LABEL_ROWS))
+        rows.append((labels[child], labels[parent], sum(shares) / len(shares)))
+    return _showroom.change_table(rows)
 
 
 def look_check(shots: Path, ids: list[str], labels: dict[str, str], approved: int) -> list[str]:

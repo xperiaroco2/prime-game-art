@@ -85,8 +85,17 @@ class TuningTest(unittest.TestCase):
     def test_the_ladder_takes_the_recommendation(self) -> None:
         four = _showroom.variants("ssao")[0]
         t3, t6 = _showroom.variants("t3,t6", "tune")
-        for key in ("ambient_energy", "clay_specular", "key_energy", "key_kelvin", "agx_contrast"):
+        w3, w4 = _showroom.variants("w3,w4", "warm")
+        for key in ("clay_specular", "key_energy", "key_kelvin", "agx_contrast", "exposure"):
             self.assertEqual(four[key], t3[key], key)
+        for key in ("sky_contribution", "ambient_color", "ambient_energy"):
+            self.assertEqual(four[key], w3[key], key)
+        self.assertEqual(four["fill_energy"], w4["fill_energy"])
+        env = _showroom.presets_document()["environment"]
+        self.assertEqual(
+            (env["ambient_light_sky_contribution"], env["ambient_light_color"], env["ambient_light_energy"]),
+            (w3["sky_contribution"], w3["ambient_color"], w3["ambient_energy"]))
+        self.assertEqual(_showroom.presets_document()["lights"]["fill"]["energy"], w4["fill_energy"])
         for key in ("eye_roughness", "catch_energy", "catch_size"):
             self.assertEqual(four[key], t6[key], key)
         materials = _showroom.presets_document()["materials"]
@@ -155,6 +164,40 @@ class MeasuresTest(unittest.TestCase):
         lines = _showroom.look_table(blender, [("T1 base", pale)])
         self.assertEqual(lines[2], "| Blender (approved) | 80.0 | 12.0 | 20.0 | 30.0 | 0 |")
         self.assertEqual(lines[3], "| T1 base | 86.0 (+6.0) | 8.0 (-4.0) | 10.0 (-10.0) | 50.0 (+20.0) | 40.0 |")
+
+
+class WarmTest(unittest.TestCase):
+    def test_every_warm_variant_sets_every_key_and_names_its_parent(self) -> None:
+        self.assertLessEqual(len(_showroom.WARM), _showroom.MAX_VARIANTS)
+        ids = [v["id"] for v in _showroom.WARM]
+        self.assertEqual(len(set(ids)), len(ids))
+        for i, v in enumerate(_showroom.WARM):
+            self.assertEqual(set(v) - {"id", "label", "parent"}, set(_showroom.KEYS), v["id"])
+            self.assertTrue(v["parent"] == "" or v["parent"] in ids[:i], f"{v['id']}: parent before it")
+
+    def test_the_base_is_ladder_variant_5(self) -> None:
+        base = {k: v for k, v in _showroom.WARM[0].items() if k not in ("id", "label", "parent")}
+        self.assertEqual(base, {**_showroom._LIT_STEP2, "ssao": True, "soft_shadows": True}, "step 2's variant 5")
+
+    def test_each_changes_its_parent(self) -> None:
+        by_id = {v["id"]: v for v in _showroom.WARM}
+        for v in _showroom.WARM[1:]:
+            parent = by_id[v["parent"]]
+            self.assertTrue(any(v[k] != parent[k] for k in _showroom.KEYS), v["id"])
+
+    def test_pixel_change(self) -> None:
+        a = [(10, 10, 10)] * 8
+        b = [(10, 10, 10)] * 4 + [(10, 12, 10), (10, 13, 10), (0, 0, 0), (10, 10, 10)]
+        self.assertEqual(_showroom.pixel_change(a, b, 2), 0.25, "only differences over 2 count")
+        self.assertEqual(_showroom.pixel_change(a, b, 2, skip_rows=3), 0.5, "the label rows are skipped")
+        self.assertEqual(_showroom.pixel_change(a, b, 2, skip_rows=9), 0.0)
+        with self.assertRaisesRegex(ValueError, "shots of 8 and 2 pixels"):
+            _showroom.pixel_change(a, a[:2], 2)
+
+    def test_change_table(self) -> None:
+        lines = _showroom.change_table([("W2 sky", "W1 base", 0.004), ("W3 share", "W1 base", 0.42)])
+        self.assertEqual(lines[2], "| W2 sky | W1 base | 0.4 % | no: a no-op |")
+        self.assertEqual(lines[3], "| W3 share | W1 base | 42.0 % | yes |")
 
 
 class TableTest(unittest.TestCase):

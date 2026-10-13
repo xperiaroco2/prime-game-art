@@ -47,15 +47,24 @@ CATCH = {"catch_energy": 0.6, "catch_specular": 16.0, "catch_size": 0.06}
 EYE_ROUGHNESS = 0.05
 _STAND = {"tonemap": "linear", "exposure": 1.0, "agx_white": AGX_WHITE, "agx_contrast": AGX_CONTRAST,
           "ambient": "color", "ambient_energy": 0.55, "ambient_color": [1.0, 1.0, 1.0], "sky_contribution": 1.0,
-          "reflections": False, "key_energy": 1.05, "key_kelvin": 0, "key_specular": 0.15, "clay_specular": 0.5,
+          "reflections": False, "sky_energy": 1.0, "fill_energy": 0.35, "key_energy": 1.05, "key_kelvin": 0,
+          "key_specular": 0.15, "clay_specular": 0.5,
           "eye_roughness": -1.0, "catch_light": False, **CATCH, "ssao": False, "soft_shadows": False, "sss": False}
 # The sky-lit look of step 1 (2026-10-12): the base of step 2's tuning grid.
 _LIT_STEP1 = {**_STAND, "tonemap": "agx", "exposure": 1.0, "ambient": "sky", "ambient_energy": 0.4, "reflections": True,
               "key_energy": 2.0, "key_specular": 0.6, "catch_light": True, **CATCH_STEP1}
-# The sky-lit look since step 2 (the recommendation, still a proposal): step 1's with the grid's T3 (sky ambient 0.15,
-# the clay's specular 0.1) and T6's eye glint; see TUNING and docs/godot.md. At sky_contribution 1.0 Godot ignores
-# ambient_energy (and ambient_color): the sky lights at its own radiance whatever the energy says.
-_LIT = {**_LIT_STEP1, "ambient_energy": 0.15, "clay_specular": 0.1, "eye_roughness": EYE_ROUGHNESS, **CATCH}
+# The sky-lit look of step 2: step 1's with the tuning grid's T3 (sky ambient 0.15, the clay's specular 0.1) and T6's
+# eye glint; see TUNING and docs/godot.md. At sky_contribution 1.0 Godot ignores ambient_energy (and ambient_color):
+# the sky lights at its own radiance whatever the energy says. The base of step 3's warm grid (WARM).
+_LIT_STEP2 = {**_LIT_STEP1, "ambient_energy": 0.15, "clay_specular": 0.1, "eye_roughness": EYE_ROUGHNESS, **CATCH}
+# Step 3's levers (WARM): half the ambient from the sky, half a dark warm colour; a weaker fill; exposure down with a
+# warm key.
+_SHARE = {"sky_contribution": 0.5, "ambient_color": [1.0, 0.8, 0.62], "ambient_energy": 0.12}
+_FILL = {"fill_energy": 0.12}
+_EXPOSE = {"exposure": 0.8, "key_kelvin": 4000, "key_energy": 2.5}
+# The sky-lit look since step 3 (the recommendation, still a proposal): step 2's with the warm grid's W3 (sky share
+# 0.5, dark warm ambient) and W4 (fill 0.12); see WARM and docs/godot.md.
+_LIT = {**_LIT_STEP2, **_SHARE, **_FILL}
 VARIANTS: list[dict[str, Any]] = [
     {"id": "stand", "label": "1 frames stand", **_STAND},
     {"id": "agx", "label": "2 AgX", **{**_STAND, "tonemap": "agx", "exposure": 1.2}},
@@ -86,7 +95,27 @@ TUNING: list[dict[str, Any]] = [
                                                     "ambient_energy": 0.25}},
     {"id": "t8", "label": "T8 T6 sky refl. off", **{**_T6, "reflections": False}},
 ]
-GRIDS = {"ladder": VARIANTS, "tune": TUNING}
+
+# The warm grid of step 3 (2026-10-13): on ladder variant 5 (the closest measured: soft shadows bring the shading
+# back), the levers step 2 left untested, each named in its label; `parent` is the variant it changes, whose shots its
+# own must differ from (pixel_change; a variant that changes nothing is a no-op, not a finding). The sky's ambient for
+# real: the sky's energy multiplier, or its share below 1 (only then do ambient_energy and ambient_color count) with a
+# dark warm colour; the fill light weaker; exposure down with a warm key (a warmer key alone washed the skin out in
+# step 2: exposure stayed 1.0). W6 joins the three, W7 lowers the sky's share further, W8 is W6 at Low's cost.
+# Kept as run: its base is step 2's ladder variant 5, before W3 and W4 became the ladder's base.
+_SOFT = {**_LIT_STEP2, "ssao": True, "soft_shadows": True}
+_W6 = {**_SOFT, **_SHARE, **_FILL, **_EXPOSE}
+WARM: list[dict[str, Any]] = [
+    {"id": "w1", "label": "W1 base: 5 soft shadows", "parent": "", **_SOFT},
+    {"id": "w2", "label": "W2 sky energy x0.5", "parent": "w1", **{**_SOFT, "sky_energy": 0.5}},
+    {"id": "w3", "label": "W3 sky share 0.5, warm amb.", "parent": "w1", **{**_SOFT, **_SHARE}},
+    {"id": "w4", "label": "W4 fill 0.12", "parent": "w1", **{**_SOFT, **_FILL}},
+    {"id": "w5", "label": "W5 exp. 0.8, key 4000K x2.5", "parent": "w1", **{**_SOFT, **_EXPOSE}},
+    {"id": "w6", "label": "W6 W3+W4+W5", "parent": "w5", **_W6},
+    {"id": "w7", "label": "W7 W6 sky share 0.25", "parent": "w6", **{**_W6, "sky_contribution": 0.25}},
+    {"id": "w8", "label": "W8 W6 Low: hard, no SSAO", "parent": "w6", **{**_W6, "ssao": False, "soft_shadows": False}},
+]
+GRIDS = {"ladder": VARIANTS, "tune": TUNING, "warm": WARM}
 KEYS = tuple(_STAND)
 EFFECTS = ("reflections", "catch_light", "ssao", "soft_shadows", "sss")
 
@@ -228,6 +257,32 @@ def distance(m: dict[str, float], ref: dict[str, float]) -> float:
     return round(sum(abs(m[k] - ref[k]) for k in MEASURES), 1)
 
 
+def pixel_change(a: list[tuple[int, int, int]], b: list[tuple[int, int, int]], width: int, skip_rows: int = 0,
+                 tolerance: int = 2) -> float:
+    """The share (0 to 1) of pixels, below the first skip_rows rows (the label strip), whose channels differ by more
+    than tolerance between two shots of the same size: did a setting reach the frame?"""
+    if len(a) != len(b):
+        raise ValueError(f"shots of {len(a)} and {len(b)} pixels")
+    start = skip_rows * width
+    if start >= len(a):
+        return 0.0
+    changed = sum(1 for p, q in zip(a[start:], b[start:])
+                  if max(abs(p[0] - q[0]), abs(p[1] - q[1]), abs(p[2] - q[2])) > tolerance)
+    return changed / (len(a) - start)
+
+
+LABEL_ROWS = 60  # a shot's label strip (font 34 at y 8): not counted by pixel_change
+NO_OP = 0.005  # under half a percent of the pixels changed: the variant's setting did not reach the frame
+
+
+def change_table(rows: list[tuple[str, str, float]]) -> list[str]:
+    """A markdown table of each variant's pixel change against its parent (label, parent label, share), no-ops named."""
+    lines = ["| Variant | Against | Pixels changed | Reaches the frame |", "|---|---|---:|---|"]
+    for label, parent, share in rows:
+        lines.append(f"| {label} | {parent} | {100 * share:.1f} % | {'no: a no-op' if share < NO_OP else 'yes'} |")
+    return lines
+
+
 def look_table(blender: dict[str, float], rows: list[tuple[str, dict[str, float]]]) -> list[str]:
     """A markdown table: Blender's measures, then per variant its measures, their differences and the distance."""
     lines = ["| Shots | skin L* | skin C* | shade (L* p90-p10) | hair L* | distance |",
@@ -241,8 +296,9 @@ def look_table(blender: dict[str, float], rows: list[tuple[str, dict[str, float]
 
 # Godot's soft shadow filter levels (RenderingServer.ShadowQuality, the project setting's values) by index.
 STATUS = ("PROPOSAL, NOT CHOSEN: the engineer has not approved the look (art #140). Step 2's tuning grid recommends "
-          "the clay's specular 0.1 (darker, richer hair) and a sharp eye glint; the face is still brighter and flatter "
-          "than the Blender sheet (skin L* +9, shading -7). Do not copy into the game until this says chosen.")
+          "the clay's specular 0.1 and a sharp eye glint; step 3's warm grid half the ambient from the sky, half a dark "
+          "warm colour, and a fill of 0.12: the face within 3 L* of the Blender sheet's (step 2: +7 to +9). "
+          "Do not copy into the game until this says chosen.")
 SHADOW_FILTER = ("hard", "very low", "low", "medium", "high", "ultra")
 SHADOW_FILTER_SETTING = "rendering/lights_and_shadows/directional_shadow/soft_shadow_filter_quality"
 
@@ -255,16 +311,19 @@ LOOK_ENVIRONMENT = {
     "tonemap_mode": "TONE_MAPPER_AGX",
     "tonemap_exposure": 1.0,
     "ambient_light_source": "AMBIENT_SOURCE_SKY",
-    "ambient_light_energy": 0.15,
-    "ambient_light_sky_contribution": 1.0,
+    "ambient_light_energy": _SHARE["ambient_energy"],
+    "ambient_light_color": _SHARE["ambient_color"],
+    "ambient_light_sky_contribution": _SHARE["sky_contribution"],
     "reflected_light_source": "REFLECTION_SOURCE_SKY",
-    "why": "at ambient_light_sky_contribution 1.0 Godot ignores ambient_light_energy and ambient_light_color: the sky "
-           "lights at its own radiance (step 2's T2, energy 0.4 to 0.15, changed nothing); a weaker sky ambient is "
-           "untested",
+    "why": "half the ambient from the sky, half a dark warm colour (step 3's W3): the face 4 L* darker, warmer and "
+           "better shaded, the closest single change; at ambient_light_sky_contribution 1.0 Godot ignores "
+           "ambient_light_energy and ambient_light_color (step 2's T2 changed nothing), and the sky's "
+           "energy_multiplier at 0.5 (W2) moved no face number",
 }
 LOOK_LIGHTS = {
     "key": {"type": "DirectionalLight3D", "energy": 2.0, "specular": 0.6, "shadow": True},
-    "fill": {"type": "DirectionalLight3D", "energy": 0.35, "specular": 0.0, "shadow": False},
+    "fill": {"type": "DirectionalLight3D", "energy": _FILL["fill_energy"], "specular": 0.0, "shadow": False,
+             "why": "a weaker fill (0.35 to 0.12, step 3's W4) gives the face more of the key's shading"},
     "rim": {"type": "DirectionalLight3D", "energy": 0.30, "specular": 0.0, "shadow": False},
     "catch": {"type": "OmniLight3D, a child of the camera at (-0.25, 0.3, 0) (up-left of the view)",
               "energy": CATCH["catch_energy"], "specular": CATCH["catch_specular"],

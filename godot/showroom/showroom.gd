@@ -6,7 +6,8 @@ extends SceneTree
 ##       -- <res://import/x.glb> <out folder> <showroom_spec.json>
 ## The spec (tools/runner/commands/_showroom.py) lists the variants; each sets the tonemapper, its exposure and AgX's
 ## white and contrast, the ambient source (a flat colour or the studio sky; its energy, colour and the sky's share), sky
-## reflections, the key light's energy, colour and specular, the clay's specular, the eyes' roughness and their catch
+## reflections, the sky's energy multiplier (its ambient and reflections), the key light's energy, colour and
+## specular, the fill light's energy, the clay's specular, the eyes' roughness and their catch
 ## light (energy, specular, size), SSAO, soft shadows (the key light's angular size: PCSS) and subsurface scattering
 ## on the materials whose name ends in _clay. Writes face.png (the approved sheet's crops, also saved as
 ## shots/approved_<n>.png, then per variant the face front and three-quarter), body.png (per variant the full body) and
@@ -37,6 +38,8 @@ var _player: AnimationPlayer
 var _camera: Camera3D
 var _env: Environment
 var _key: DirectionalLight3D
+var _fill: DirectionalLight3D
+var _sky_material: Material
 var _catch: OmniLight3D
 var _clay: Array[BaseMaterial3D] = []
 var _eyes: Array[BaseMaterial3D] = []
@@ -215,16 +218,18 @@ func _stage(hdri: String) -> void:
 		var pano: PanoramaSkyMaterial = PanoramaSkyMaterial.new()
 		pano.panorama = ImageTexture.create_from_image(image)
 		sky.sky_material = pano
+		_sky_material = pano
 		_sky_name = hdri.get_file()
 	else:
-		sky.sky_material = ProceduralSkyMaterial.new()
+		_sky_material = ProceduralSkyMaterial.new()
+		sky.sky_material = _sky_material
 		_sky_name = "ProceduralSky"
 	_env.sky = sky
 	var world: WorldEnvironment = WorldEnvironment.new()
 	world.environment = _env
 	root.add_child(world)
 	_key = _light(Vector3(-2.0, 3.2, 3.0), 1.05, true)
-	_light(Vector3(3.0, 1.6, 2.0), 0.35, false)
+	_fill = _light(Vector3(3.0, 1.6, 2.0), 0.35, false)
 	_light(Vector3(0.5, 2.5, -3.0), 0.30, false)
 	var floor_mesh: MeshInstance3D = MeshInstance3D.new()
 	var plane: PlaneMesh = PlaneMesh.new()
@@ -284,6 +289,8 @@ func _apply(v: Dictionary) -> void:
 	_env.ssao_radius = SSAO_RADIUS
 	_env.ssao_intensity = SSAO_INTENSITY
 	_env.ssao_light_affect = SSAO_LIGHT_AFFECT
+	_sky_material.set("energy_multiplier", float(v["sky_energy"]))  # both sky materials have it
+	_fill.light_energy = float(v["fill_energy"])
 	_key.light_energy = float(v["key_energy"])
 	_key.light_specular = float(v["key_specular"])
 	var warm: Array = v["key_color"]
