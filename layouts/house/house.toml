@@ -77,6 +77,7 @@ fine_tier = "high"
 "stepping_stone" = "concrete"  # the plot's and the garden's stepping stones (#128)
 "fire_pit" = "concrete"  # the chill zone's stone fire pit (#128)
 "watering_can" = "concrete"  # the greenhouse's and the garden's metal can: hard, the floor it stands on (#128)
+"fireplace" = "concrete"  # the living room's stone hearth catches the floor rays (#150)
 
 # The kit's families on the look-approval sheet (`house --package-sheet`, art #124): one tile each, in this order, by
 # id pattern (the first match wins); a piece no pattern matches goes to the last family.
