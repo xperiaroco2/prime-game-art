@@ -50,7 +50,7 @@ sha256 = "39d6c195fff714b7ee6f712fc90b6208a0dd356db6b79f05cbda0a7e3275bc63"
 [[files]]
 name = "living_room.tscn"
 file = "review/house/150/export/p2/levels/house/rooms/living_room.tscn"
-sha256 = "f74f7606e458a7f70161c90ceec900500f89f3f4e12952a70d2fff097d953b5d"
+sha256 = "d06d2248bce61d8d2708c2052ae4e14e708ab4dbf10f7950857e32b0e36b5bc7"
 
 [[files]]
 name = "outdoor_stairs.tscn"
