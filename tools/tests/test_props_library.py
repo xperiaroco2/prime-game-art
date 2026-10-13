@@ -121,7 +121,7 @@ class WorldLookTest(unittest.TestCase):
     [fine] and the fine pack's roles."""
 
     def test_the_hero_class_and_the_direction(self) -> None:
-        self.assertEqual(LIB["budgets"]["hero"], [1500, 4000])
+        self.assertEqual(LIB["budgets"]["hero"], [1200, 4000])
         self.assertEqual(LIB["style"]["direction"], "C2-white")
         names = [layer["name"] for layer in LIB["fine"]["layers"]]
         self.assertEqual([layer.get("source") for layer in LIB["fine"]["layers"][:4]],

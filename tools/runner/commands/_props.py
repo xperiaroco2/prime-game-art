@@ -419,7 +419,7 @@ def check_build(lib: dict[str, Any], props: list[dict[str, Any]], out: Path) -> 
             problems.append(f"{pid}: collision {p.get('collision', 'box')} but no collider")
         if p["class"] == "fixture" and not rec.get("light_anchor"):
             problems.append(f"{pid}: a fixture without an emissive part")
-        want = size_xyz(p["size_m"])
+        want = size_xyz(p.get("built_size_m", p["size_m"]))
         if any(abs(e) > max(0.03, 0.12 * w) for e, w in zip(rec["size_error_m"], want)):
             notes.append(f"{pid}: built {rec['size_m']} m, inventory {want} m (x, y, z)")
     return problems, notes

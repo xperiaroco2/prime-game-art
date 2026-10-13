@@ -47,6 +47,7 @@ def main():
     props = [p for p in lib["prop"] if (not batch or p["batch"] == batch) and (not only or p["id"] in only)]
     for o in list(bpy.data.objects):
         bpy.data.objects.remove(o, do_unlink=True)
+    style = prop_geom.Style.from_lib(lib)
     mats, textures = prop_lib.materials(bpy, np, spec, Path(a["ambientcg"]), out, lib.get("fine"))
     path = out / "build.json"
     report = json.loads(path.read_text(encoding="utf-8")) if path.is_file() else {"props": {}}
@@ -62,7 +63,7 @@ def main():
                 pc = prop_geom.pack_piece(p, parts, spec)
                 rec["src_triangles"] = src
             else:
-                pc = prop_geom.build_proc(p)
+                pc = prop_geom.build_proc(p, style)
             prop_geom.finish(pc, p, spec)
             d = prop_geom.describe(pc, spec)
             rec.update(prop_lib.export_prop(bpy, bmesh, d, spec, mats, out / f"{p['id']}.glb"))
