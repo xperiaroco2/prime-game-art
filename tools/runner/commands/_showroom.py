@@ -370,15 +370,14 @@ def masked_table(blender: dict[str, float], base: str, rows: list[tuple[str, dic
 
 
 # Godot's soft shadow filter levels (RenderingServer.ShadowQuality, the project setting's values) by index.
-STATUS = ("PROPOSAL, NOT CHOSEN: the engineer has not approved the look (art #140). Step 2's tuning grid recommends "
-          "the clay's specular 0.1 and a sharp eye glint; step 3's warm grid half the ambient from the sky, half a "
-          "dark warm colour, and a fill of 0.12; its exposure grid an exposure of 0.9: High's face about 2 L* brighter "
-          "than the Blender sheet's (step 2: +7 to +9), its shading matched; the hair 7 L* darker. Do not copy into "
-          "the game until this says chosen.")
+STATUS = ("APPROVED: the engineer approved this look per graphics preset on 2026-10-13 (art PR #148, issue #140) as "
+          "the game's recommended look: Low = ladder variant 3 (AgX, sky, eye catch light), Medium = 4 (+SSAO), "
+          "High = 5 (+soft shadows), Ultra = 6 (+SSS on the clay), all at tonemap exposure 0.9. Still open: the hair "
+          "5 to 7 L* darker than Blender's, and the game-side wiring is untested.")
 SHADOW_FILTER = ("hard", "very low", "low", "medium", "high", "ultra")
 SHADOW_FILTER_SETTING = "rendering/lights_and_shadows/directional_shadow/soft_shadow_filter_quality"
 
-# The proposed look per graphics preset, not chosen yet (STATUS): what the game will copy once the engineer says yes
+# The approved look per graphics preset (STATUS): what the game copies
 # (godot/showroom/look_presets.json, written by `showroom --write-presets`). Each preset turns on everything the one
 # before it does.
 LOOK_ENVIRONMENT = {

@@ -248,11 +248,12 @@ resized to 1920 x 1080 and the full body framed, after a 120-frame warm-up, aver
 settling frames, three rounds in turn, the median round kept. `--write-presets` writes
 `godot/showroom/look_presets.json` from `_showroom.PRESETS` (a test keeps them equal).
 
-**The proposed look per graphics preset: a proposal, not chosen.** No variant is chosen yet: the engineer approves
-the look (art #140). Step 2's tuning grid (below) set the clay's specular to 0.1 and the eyes' glint, step 3's the
-sky's ambient share, the fill and the exposure (0.9). The values are a recommendation, not settled ones;
-`godot/showroom/look_presets.json` says so in its `status` (`_showroom.STATUS`) until a chosen variant replaces it,
-and the game side copies it only then (this repo does not touch the game). As proposed, every preset uses AgX, the
+**The look per graphics preset: approved.** The engineer approved it on 2026-10-13 (art PR #148, issue #140) as the
+game's recommended look: Low = ladder variant 3, Medium = 4, High = 5, Ultra = 6, all at exposure 0.9. Step 2's tuning
+grid (below) set the clay's specular to 0.1 and the eyes' glint, step 3's the sky's ambient share, the fill and the
+exposure (0.9). `godot/showroom/look_presets.json` says so in its `status` (`_showroom.STATUS`); the game side copies
+it (this repo does not touch the game). **Still open:** the hair is 5 to 7 L* darker than Blender's, and the
+game-side wiring is untested. Every preset uses AgX, the
 sky as ambient and reflections and the catch light; each turns on everything the one below does. The shadow filter is the project setting
 `rendering/lights_and_shadows/directional_shadow/soft_shadow_filter_quality`, whose values are Godot's
 `RenderingServer.ShadowQuality`: 0 hard, 1 very low, 2 low, 3 medium, 4 high, 5 ultra (`_showroom.SHADOW_FILTER`).
@@ -447,8 +448,8 @@ What it shows:
   darkens the face much; the measure on the base's skin pixels is the cross-check, itself a guide (it keeps pixels
   that a variant moves into shadow, so it reads W3's shading as +9.2 where the split reads -1.6).
 
-The look is the engineer's to approve (art #140); until he says yes these settings are a proposal, and
-`look_presets.json`'s `status` says so.
+The engineer approved these settings per graphics preset on 2026-10-13 (art PR #148, issue #140);
+`look_presets.json`'s `status` says so. The hair and the game-side wiring above stay open.
 
 ## The SkeletonProfileHumanoid trial (`godot-check --humanoid`)
 
