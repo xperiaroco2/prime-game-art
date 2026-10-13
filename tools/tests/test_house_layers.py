@@ -85,8 +85,7 @@ class FinePack(unittest.TestCase):
         self.assertTrue(found and all(s["surfaces"] for s in found), found)
 
     def test_the_shipped_shader_is_its_source(self):
-        if not SHIPPED.is_file():
-            self.skipTest("the fine pack is not shipped yet")
+        self.assertTrue(SHIPPED.is_file(), f"{SHIPPED.relative_to(ROOT).as_posix()} is missing")
         src = X.FINE_SHADER_SRC.read_bytes().replace(b"\r\n", b"\n")
         self.assertEqual(SHIPPED.read_bytes().replace(b"\r\n", b"\n"), src,
                          f"{SHIPPED.relative_to(ROOT).as_posix()} differs from its source: re-export the props' "
