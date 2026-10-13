@@ -71,7 +71,8 @@ floor_shade = [0.82, 0.25]  # a soft occlusion toward the floor: x0.82 at the fl
 paints = ["wood_front", "wood_front_dark", "worktop_wood", "worktop_stone", "tile_splash", "enamel_white",
           "steel_warm", "steel_black", "chrome", "glass_tint", "glass_dark", "rubber_black", "porcelain_white",
           "enamel_cream", "upholstery", "upholstery_light", "cushion_rust", "cushion_mustard", "throw_cream",
-          "carpet_field", "carpet_border", "stone_light", "stone_dark", "book_cream", "book_teal", "book_mustard"]
+          "carpet_field", "carpet_border", "stone_light", "stone_dark", "book_cream", "book_teal", "book_mustard", "book_red", "book_navy", "book_sage",
+          "book_grey"]
 
 # The fine pack: ONE shared opaque material (`kit_fine-vcol`) for the world look's props, as the kit's `set` pack
 # (docs/kit.md "Materials"): the paint is the vertex colour, its alpha picks the layer (1 - k/16 for layer k), and
@@ -162,6 +163,10 @@ stone_dark = {material = "fine", layer = "stone", hex = "#55524c"}
 book_cream = {material = "fine", layer = "paint", hex = "#d8cdb4"}
 book_teal = {material = "fine", layer = "paint", hex = "#1f6f73"}
 book_mustard = {material = "fine", layer = "paint", hex = "#c79a2e"}
+book_red = {material = "fine", layer = "paint", hex = "#8a3a30"}
+book_navy = {material = "fine", layer = "paint", hex = "#2c3e57"}
+book_sage = {material = "fine", layer = "paint", hex = "#7a8a70"}
+book_grey = {material = "fine", layer = "paint", hex = "#4a4845"}
 
 # Inventory props this library does not make, and who does (the manager's split of 2026-10-10).
 [skip]
@@ -278,7 +283,8 @@ count = 5
 route = "proc"
 shape = "bookcase"  # the world look: wood fronts, books, a cupboard below (#150)
 params = {shelves = 4, doors_h = 0.72}
-roles = ["wood_front", "wood_front_dark", "book_cream", "book_teal", "book_mustard", "paint_red", "paint_blue", "cabinet_green", "steel_black", "chrome"]
+roles = ["wood_front", "wood_front_dark", "book_cream", "book_teal", "book_mustard", "book_red", "book_navy", "book_sage",
+         "book_grey", "steel_black", "chrome"]
 pivot = "floor"
 collision = "box"
 

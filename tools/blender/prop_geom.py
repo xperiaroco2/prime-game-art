@@ -2178,8 +2178,9 @@ def build_sofa(m, s, R, prm, rng):
     for k in range(int(prm.get("pillows", 2))):
         sx = -1 if k % 2 == 0 else 1
         cx = sx * (hx - arm_w - 0.2) if n > 1 else 0.0
-        r = min(0.18, (H - yc) / 2 - 0.01)
-        blob(m, (cx, H - r - 0.004, -hz + back_d + 0.17), r + (0.01 if n > 1 else 0.0), r, 0.065, paints[k % 2], 8, 5)
+        r = min(0.19, (H - yc) / 2 - 0.01)  # a plump square pillow leaning on the back cushions
+        zc = -hz + back_d + 0.16
+        cushion(m, (cx - r, H - 2 * r - 0.004, zc - 0.065), (cx + r, H - 0.004, zc + 0.065), paints[k % 2], 0.055)
     if prm.get("throw"):  # a folded blanket over the left arm: over the top and down both sides
         z0, z1 = -0.18, 0.22
         cushion(m, (-hx, arm_h - 0.004, z0), (-hx + arm_w + 0.012, arm_h + 0.02, z1), "throw_cream", 0.008)
@@ -2212,7 +2213,8 @@ def build_bookcase(m, s, R, prm, rng):
         y = dh
     n = int(prm.get("shelves", 4))
     step = (H - 0.03 - y) / n
-    paints = ["book_cream", "book_teal", "book_mustard", "paint_red", "paint_blue", "cabinet_green", "wood_front_dark"]
+    paints = ["book_cream", "book_teal", "book_mustard", "book_red", "book_navy", "book_sage", "book_grey",
+              "book_cream"]
     for i in range(n):
         y0 = y + step * i
         cbox(m, (-hx + t, y0, -hz + 0.01), (hx - t, y0 + t, zf + st.front_t), body, st.bevel_small)
