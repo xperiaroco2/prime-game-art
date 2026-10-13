@@ -10,8 +10,10 @@ kit_spec = "kits/house.json"
 out = "props/library/v1"  # under the raw folder: D:/prime-art-raw/props/library/v1/<id>.glb
 review = "review/house/87"  # line-up sheets, under the raw folder
 licences = ["CC0-1.0"]
-max_materials = 6
-new_materials = ["emissive"]  # materials the props need that kit v1 lacks (kit v2, #86, adds them)
+max_materials = 8
+# materials the props need that the kit lacks: emissive (kit v2, #86), and the world look's fine pack and tinted
+# glass (docs/decisions/2026-10-13-house-world-look.md); their properties are in [material_props] and [fine]
+new_materials = ["emissive", "fine", "glass_tint"]
 
 # batch: the build order (1: indoor furniture and dressing; 2: outdoor, fixtures, vehicles).
 
@@ -24,6 +26,12 @@ concrete = "concrete"
 metal = "metal"
 glass = "glass"
 emissive = "emissive"
+fine = "fine"
+glass_tint = "glass_tint"
+
+# The properties of the new materials that are no kit material (fine's are per layer, in [fine]).
+[material_props]
+glass_tint = {roughness = 0.05, metallic = 0.15, alpha = 0.38}  # round 2: reads as glass, contents visible
 
 
 # Triangles by class, [min, max] (look.md section 6). `vehicle` is the parked cars (the car of #79 has 3,000 to 5,000).
@@ -33,6 +41,57 @@ room = [400, 1500]
 fixture = [100, 400]
 vehicle = [400, 3000]
 clutter = [12, 400]  # small lived-in props on surfaces, walls and floors (art #104): no collider
+hero = [1200, 4000]  # the pieces players look at up close: appliances and room centres (the world-look ADR;
+# 1,200: the C2 fridge, a plain enamel box by design, is about 1,300 of real parts)
+
+# Layers by preset (#140 item 4; the world-look ADR): a prop is `base` (the room reads clean with it alone, on the
+# Low preset) or `detail` (small props and fine decor that High and Ultra add). A prop's `layer` field overrides
+# its class's default here. A detail prop has no collider: the presets never change what blocks a player.
+[layers]
+default = "base"
+clutter = "detail"
+
+# The House's world look (docs/decisions/2026-10-13-house-world-look.md, the kitchen pilot's C2-white): the shared
+# measures every room's procedural props are built with (tools/blender/prop_geom.py `Style`) and the direction's
+# paints. Present-day, well made, never worn; not plasticine (only the characters are).
+[style]
+direction = "C2-white"
+bevel_m = 0.010          # the chamfer of a body or a slab
+bevel_small_m = 0.003    # the chamfer of a front, a top, a small part
+segments = 16            # round parts of a hero prop (burners, knobs); 8 to 10 on room props
+handle = "bar"           # one handle everywhere: a round bar on two standoffs
+handle_radius_m = 0.007
+handle_standoff_m = 0.03
+front_gap_m = 0.003      # the seam around a door or drawer front
+front_thickness_m = 0.019
+plinth_m = 0.1           # one kick height for counters, sink, stove, fridge and island
+plinth_setback_m = 0.075
+worktop_m = 0.9          # one worktop line
+worktop_thickness_m = 0.03
+floor_shade = [0.82, 0.25]  # a soft occlusion toward the floor: x0.82 at the floor, none from 0.25 m up
+paints = ["wood_front", "wood_front_dark", "worktop_wood", "worktop_stone", "tile_splash", "enamel_white",
+          "steel_warm", "steel_black", "chrome", "glass_tint", "glass_dark", "rubber_black", "porcelain_white",
+          "enamel_cream"]
+
+# The fine pack: ONE shared opaque material (`kit_fine-vcol`) for the world look's props, as the kit's `set` pack
+# (docs/kit.md "Materials"): the paint is the vertex colour, its alpha picks the layer (1 - k/16 for layer k), and
+# godot/props/prop_fine.gdshader reads the layer's grey detail and normal from shared textures, built once per tier
+# from the same ambientCG sources (`tiers`, px) and VRAM-compressed on import. A layer without a source is a flat
+# finish (metallic and roughness only). Order matters: the index is the layer.
+[fine]
+source = "ambientcg_materials_2k"  # the sources/ record every textured layer comes from (CC0)
+tiers = {high = 1024, low = 512}
+layers = [
+    {name = "wood_front", source = "Wood092", roughness = 0.6, normal_strength = 0.45},
+    {name = "worktop_wood", source = "Wood049", roughness = 0.5, normal_strength = 0.5},
+    {name = "stone", source = "Concrete034", roughness = 0.4, normal_strength = 0.25},
+    {name = "tile", source = "Tiles107", roughness = 0.22, normal_strength = 0.8},
+    {name = "enamel", metallic = 0.0, roughness = 0.2},
+    {name = "steel", metallic = 0.6, roughness = 0.42},  # warm brushed steel
+    {name = "chrome", metallic = 0.8, roughness = 0.2},
+    {name = "gloss", metallic = 0.3, roughness = 0.06},  # dark glass panels (oven window, clock)
+    {name = "paint", metallic = 0.0, roughness = 0.7},   # rubber, plastic, painted parts
+]
 
 # The props' paints: a library material and an sRGB hex (D1 palette, look.md section 7). The kit's roles
 # (kits/house.json: trim, boards, lino, fence, concrete, glass ...) can be named too. A pack prop's source colours
@@ -66,6 +125,24 @@ gravel = {material = "concrete", hex = "#8a8579"}
 bulb = {material = "emissive", hex = "#ffd9ad"}
 tube = {material = "emissive", hex = "#e6eef2"}
 safelight = {material = "emissive", hex = "#d0201a"}
+# The world look's paints (C2-white, kitchen pilot round 2): on the fine pack, each on its layer.
+wood_front = {material = "fine", layer = "wood_front", hex = "#6b4a32"}
+wood_front_dark = {material = "fine", layer = "wood_front", hex = "#3d2a1e"}
+worktop_wood = {material = "fine", layer = "worktop_wood", hex = "#a5774c"}
+worktop_stone = {material = "fine", layer = "stone", hex = "#8a857c"}
+tile_splash = {material = "fine", layer = "tile", hex = "#e4dfd4"}
+enamel_white = {material = "fine", layer = "enamel", hex = "#ece7dd"}
+enamel_cream = {material = "fine", layer = "enamel", hex = "#e0d9c6"}  # the stove
+porcelain_white = {material = "fine", layer = "enamel", hex = "#d6d2c6"}
+steel_warm = {material = "fine", layer = "steel", hex = "#c4bcb0"}
+steel_black = {material = "fine", layer = "steel", hex = "#23211f"}
+chrome = {material = "fine", layer = "chrome", hex = "#c4c6c4"}
+glass_dark = {material = "fine", layer = "gloss", hex = "#1c2428"}
+rubber_black = {material = "fine", layer = "paint", hex = "#1c1b1a"}
+paint_red = {material = "fine", layer = "paint", hex = "#b02a22"}
+paint_blue = {material = "fine", layer = "paint", hex = "#2d5a8a"}
+cabinet_green = {material = "fine", layer = "paint", hex = "#4e5f57"}
+glass_tint = {material = "glass_tint", hex = "#86918b"}
 
 # Inventory props this library does not make, and who does (the manager's split of 2026-10-10).
 [skip]
@@ -356,18 +433,12 @@ collision = "box"
 id = "fridge"
 batch = 1
 name = "Fridge"
-class = "room"
+class = "hero"
 size_m = [0.7, 0.7, 1.8]
 count = 1
-route = "pack"
-source = "kenney_furniture_kit"
-files = ["kenney/furniture-kit/kenney_furniture-kit/Models/GLTF format/kitchenFridgeLarge.glb"]
-src_size = [0.52, 0.92, 0.4055]
-src_triangles = 436
-yaw_deg = 0
-scale = 1.623
-stretch = true
-roles = ["appliance", "metal_grey"]
+route = "proc"
+shape = "fridge"  # the world look's C2-white fridge (warm-white enamel)
+roles = ["enamel_white", "steel_warm", "steel_black", "chrome", "rubber_black", "glass_dark"]
 pivot = "floor"
 collision = "box"
 
@@ -392,9 +463,8 @@ class = "room"
 size_m = [1.0, 0.6, 0.9]
 count = 7
 route = "proc"
-shape = "cabinet"
-params = {doors = 2, drawers = 1, top = "lino", plinth = 1}
-roles = ["wood_mid", "lino", "metal_grey"]
+shape = "kitchen_counter"  # the world look's C2-white floor unit
+roles = ["wood_front", "wood_front_dark", "worktop_stone", "steel_warm", "steel_black", "chrome", "rubber_black"]
 pivot = "floor"
 collision = "box"
 
@@ -404,13 +474,43 @@ batch = 1
 name = "Kitchen sink unit"
 class = "room"
 size_m = [1.2, 0.6, 0.9]
+built_size_m = [1.2, 0.6, 1.222]  # the tap stands 0.32 m over the worktop
 count = 1
 route = "proc"
-shape = "cabinet"
-params = {doors = 2, top = "lino", plinth = 1, sink = 1}
-roles = ["wood_mid", "lino", "metal_grey"]
+shape = "kitchen_counter"
+params = {sink = 1}
+roles = ["wood_front", "wood_front_dark", "worktop_stone", "steel_warm", "steel_black", "chrome", "rubber_black",
+         "paint_red", "paint_blue"]
 pivot = "floor"
 collision = "box"
+
+[[prop]]
+id = "backsplash_l"
+batch = 1
+name = "Kitchen backsplash, the left north-wall run (2.7 m)"
+class = "room"
+size_m = [2.7, 0.016, 0.558]
+count = 1
+route = "proc"
+shape = "backsplash"  # the world look's tiled strip with a warm steel cap; placed on the worktop line at the wall
+roles = ["tile_splash", "steel_warm"]
+pivot = "wall"
+collision = "none"
+layer = "base"
+
+[[prop]]
+id = "backsplash_r"
+batch = 1
+name = "Kitchen backsplash, the right north-wall run (2.2 m)"
+class = "room"
+size_m = [2.2, 0.016, 0.558]
+count = 1
+route = "proc"
+shape = "backsplash"
+roles = ["tile_splash", "steel_warm"]
+pivot = "wall"
+collision = "none"
+layer = "base"
 
 [[prop]]
 id = "kitchen_upper"
@@ -420,9 +520,8 @@ class = "room"
 size_m = [1.0, 0.35, 0.7]
 count = 5
 route = "proc"
-shape = "cabinet"
-params = {doors = 2}
-roles = ["wood_mid", "metal_grey"]
+shape = "kitchen_upper"  # the world look's C2-white wall cabinet, tinted glass doors
+roles = ["wood_front", "wood_front_dark", "glass_tint", "porcelain_white", "steel_black", "chrome"]
 pivot = "wall"
 collision = "box"
 
@@ -587,19 +686,14 @@ collision = "hull"
 id = "stove"
 batch = 1
 name = "Stove with hood"
-class = "room"
+class = "hero"
 size_m = [0.7, 0.65, 0.9]
+built_size_m = [0.7, 0.65, 1.9]  # the hood and its flue reach 1.9 m on the wall
 count = 1
-route = "pack"
-source = "kenney_furniture_kit"
-files = ["kenney/furniture-kit/kenney_furniture-kit/Models/GLTF format/kitchenStove.glb"]
-src_size = [0.43, 0.45, 0.45]
-src_triangles = 830
-yaw_deg = 0
-scale = 1.7
-stretch = true
-extras = ["hood"]
-roles = ["appliance", "metal_dark"]
+route = "proc"
+shape = "stove"  # the world look's C2-white range
+roles = ["enamel_cream", "steel_warm", "steel_black", "chrome", "rubber_black", "glass_dark", "glass_tint",
+         "porcelain_white"]
 pivot = "floor"
 collision = "box"
 

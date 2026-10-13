@@ -49,7 +49,46 @@ class SpecTest(unittest.TestCase):
     def test_a_clash_with_a_kit_role_is_reported(self) -> None:
         spec = copy.deepcopy(SPEC)
         spec["clashes"] = ["trim"]
-        self.assertIn("role trim: redefines a kit role", G.check_spec(spec))
+        self.assertIn("role trim: defined twice (the kit's, the props' or the library's roles)", G.check_spec(spec))
+
+
+class WorldLookTest(unittest.TestCase):
+    """The kitchen's task props in the world look (look = "fine", #143): the library's fine pack, paints and style."""
+
+    FINE = ("order_board", "assembly_island")
+
+    def test_the_library_brings_the_fine_pack_and_its_paints(self) -> None:
+        self.assertIn(G.pg.FINE, SPEC["packs"])
+        self.assertEqual(SPEC["materials"][SPEC["roles"]["worktop_wood"]["material"]]["pack"], G.pg.FINE)
+        self.assertIn(G.pg.FINE, G.kit_geom.export_materials(SPEC))
+        self.assertEqual(G.style(SPEC).plinth, SPEC["style"]["plinth_m"])
+
+    def test_the_kitchen_props_are_fine_and_painted_on_the_pack(self) -> None:
+        for pid in self.FINE:
+            self.assertEqual(PROPS[pid].get("look"), "fine", pid)
+            mats = {G.kit_geom.export_material(SPEC, SPEC["roles"][r]["material"])
+                    for m in BUILT[pid]["meshes"] for r in m["roles"]}
+            self.assertIn(G.pg.FINE, mats, pid)
+            self.assertNotIn("set", mats, pid)  # no kit plaster or wood left on them
+        self.assertIn("worktop_wood", {r for m in BUILT["assembly_island"]["meshes"] for r in m["roles"]})
+
+    def test_the_island_keeps_its_handles_inside_its_size(self) -> None:
+        b = BUILT["assembly_island"]["bounds_m"]
+        p = PROPS["assembly_island"]
+        self.assertLessEqual(b["max"][2], p["d"] / 2 + 1e-6)
+        self.assertLessEqual(b["max"][0], p["w"] / 2 + 1e-6)
+
+    def test_an_unknown_or_unbuilt_look_is_reported(self) -> None:
+        spec = copy.deepcopy(SPEC)
+        board = next(p for p in spec["props"] if p["id"] == "order_board")
+        board["look"] = "shiny"
+        self.assertTrue(any("unknown look 'shiny'" in s for s in G.check_spec(spec)))
+        board["look"] = "fine"
+        spec["props"][0]["look"] = "fine"
+        spec["props"][0]["type"] = "wine_rack"
+        self.assertTrue(any("has no fine look" in s for s in G.check_spec(spec)))
+        del spec["packs"][G.pg.FINE]
+        self.assertTrue(any("needs the spec's library" in s for s in G.check_spec(spec)))
 
 
 class PropTest(unittest.TestCase):

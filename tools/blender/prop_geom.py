@@ -14,6 +14,7 @@ from __future__ import annotations
 import math
 import random
 import zlib
+from dataclasses import dataclass
 
 import kit_geom
 from kit_geom import EPS, Mesh, Piece
@@ -21,28 +22,48 @@ from kit_geom import EPS, Mesh, Piece
 CH = 0.004  # the chamfer of the soft boxes, metres (2 to 5 mm reads as clay in the lightmap)
 UV2_MARGIN = 0.02  # the lightmap island margin as a share of the prop's largest size
 LIGHT_ANCHOR = "LightAnchor"
+FINE = "fine"  # the world look's shared textured pack (props/library.toml [fine])
+FINE_STEP = 1.0 / 16  # its layer k has vertex alpha 1 - k/16
 
 
 # --- the spec: kit materials and roles plus the library's ---------------------------------------------------------
 def lib_spec(lib: dict, kit: dict) -> dict:
     """A kit_geom-style spec: the kit's materials named by the library's [materials] table (plus the new ones, such
     as emissive, which have no detail texture), the kit's roles and the library's roles mapped to kit materials, and
-    the kit's packs (v2: plaster, wood and concrete export as one `kit_set-vcol` material, the layer in vertex alpha)."""
+    the kit's packs (v2: plaster, wood and concrete export as one `kit_set-vcol` material, the layer in vertex alpha).
+    The world look's fine pack (`[fine]`, docs/decisions/2026-10-13-house-world-look.md) becomes the pack `fine`: one
+    spec material `fine_<layer>` per layer (its roughness, metallic, normal strength and texture `fine_source`), the
+    layer in vertex alpha in steps of 1/16, exported as one `kit_fine-vcol`; its roles point at their layer's
+    material. Its paint is not divided by a detail mean: the fine shader scales the detail itself (`layer_gain`)."""
     used = set(lib["materials"].values())
+    fine = lib.get("fine")
     mats = {}
     for name in sorted(used):
+        if fine is not None and name == FINE:
+            continue
         if name in kit["materials"]:
             mats[name] = dict(kit["materials"][name])
         elif name in lib.get("new_materials", []):
             mats[name] = {"tile_m": 1.0, "roughness": 0.5, "emissive": name == "emissive"}
+            mats[name].update(lib.get("material_props", {}).get(name, {}))
         else:
             raise ValueError(f"[materials] names {name!r}, which the kit lacks and new_materials does not add")
     for name, m in kit["materials"].items():
         mats.setdefault(name, dict(m))
+    packs = {k: dict(v) for k, v in kit.get("packs", {}).items()}
+    if fine is not None:
+        for layer in fine["layers"]:
+            mats[f"{FINE}_{layer['name']}"] = {
+                "pack": FINE, "tile_m": 1.0, "roughness": layer["roughness"], "metallic": layer.get("metallic", 0.0),
+                "normal_strength": layer.get("normal_strength", 0.0), "fine_source": layer.get("source", "")}
+        packs[FINE] = {"layers": [f"{FINE}_{layer['name']}" for layer in fine["layers"]], "alpha_step": FINE_STEP}
     roles = {r: dict(v) for r, v in kit["roles"].items()}
     for r, v in lib["roles"].items():
-        roles[r] = {"material": lib["materials"][v["material"]], "hex": v["hex"]}
-    return {"materials": mats, "roles": roles, "packs": {k: dict(v) for k, v in kit.get("packs", {}).items()}}
+        target = lib["materials"][v["material"]]
+        if fine is not None and target == FINE:
+            target = f"{FINE}_{v['layer']}"
+        roles[r] = {"material": target, "hex": v["hex"]}
+    return {"materials": mats, "roles": roles, "packs": packs}
 
 
 def is_emissive(spec: dict, role: str) -> bool:
@@ -1697,6 +1718,396 @@ def build_radiator(m, s, R, prm, rng):
     cyl(m, "x", (0.03, zb + W * 0.55), 0.018, -hx, -hx + 0.02, metal, 6)
 
 
+# --- the world look: the style and the shared builders (docs/decisions/2026-10-13-house-world-look.md) --------------
+# Ported from the kitchen pilot's round 2 (the lab's kp_r2_build.py, direction C2-white). Every hard-surface prop of
+# a room is made of these parts with one Style, so a room has one handle, one plinth and one worktop line. Paints are
+# the fine pack's roles (props/library.toml [roles], `material = "fine"`), named here by what they are.
+@dataclass(frozen=True)
+class Style:
+    """props/library.toml [style] in metres: bevels, round segments, the bar handle, fronts, plinth, worktop."""
+    bevel: float = 0.010
+    bevel_small: float = 0.003
+    segments: int = 16
+    handle_r: float = 0.007
+    standoff: float = 0.03
+    gap: float = 0.003
+    front_t: float = 0.019
+    plinth: float = 0.1
+    plinth_setback: float = 0.075
+    worktop: float = 0.9
+    worktop_t: float = 0.03
+
+    @classmethod
+    def from_lib(cls, lib: dict) -> "Style":
+        s = lib.get("style", {})
+        return cls(**{f: s[k] for k, f in STYLE_KEYS.items() if k in s})
+
+    @property
+    def reach(self) -> float:
+        """How far a front with its bar handle stands out of the body it hangs on."""
+        return self.front_t + self.standoff + self.handle_r
+
+
+STYLE_KEYS = {"bevel_m": "bevel", "bevel_small_m": "bevel_small", "segments": "segments",
+              "handle_radius_m": "handle_r", "handle_standoff_m": "standoff", "front_gap_m": "gap",
+              "front_thickness_m": "front_t", "plinth_m": "plinth", "plinth_setback_m": "plinth_setback",
+              "worktop_m": "worktop", "worktop_thickness_m": "worktop_t"}
+
+
+def _style(prm: dict) -> Style:
+    return prm.get("style") or Style()
+
+
+def front_frame(x0: float, x1: float, y0: float, y1: float, gap: float, rail: float = 0.06) -> tuple[list, tuple]:
+    """A framed (shaker) front inside its seam gap: the four rails as ((x, y), (x, y)) rectangles (bottom, top, left,
+    right) and the centre panel's rectangle. The rail narrows on a small front (18 % of the width, 25 % of the
+    height)."""
+    f = min(rail, (x1 - x0) * 0.18, (y1 - y0) * 0.25)
+    rails = [((x0 + gap, y0 + gap), (x1 - gap, y0 + f)), ((x0 + gap, y1 - f), (x1 - gap, y1 - gap)),
+             ((x0 + gap, y0 + f), (x0 + f, y1 - f)), ((x1 - f, y0 + f), (x1 - gap, y1 - f))]
+    return rails, ((x0 + f, y0 + f), (x1 - f, y1 - f))
+
+
+def handle_span(x0: float, x1: float, y0: float, y1: float, hinge_left: bool, handle: str, low: bool = False,
+                inset: float = 0.04, length: float = 0.16) -> tuple[tuple, tuple]:
+    """The bar handle's two ends (x, y) on a front: `v` upright on the side away from the hinge, near the top (`low`:
+    near the bottom, a wall cabinet's door); `h` level across the middle of a drawer."""
+    if handle == "v":
+        hx = x1 - inset if hinge_left else x0 + inset
+        ya, yb = (y0 + 0.06, y0 + 0.06 + length) if low else (y1 - 0.06 - length, y1 - 0.06)
+        return (hx, ya), (hx, yb)
+    cx, cy = (x0 + x1) / 2, (y0 + y1) / 2
+    w = min(length, (x1 - x0) * 0.4)
+    return (cx - w, cy), (cx + w, cy)
+
+
+def grate_bars(xc: float, zc: float, hw: float, hd: float, cross: int = 3) -> list[tuple]:
+    """A burner grate's bars as ((x, z), (x, z), width): the frame, `cross` cross bars evenly between its ends and
+    a spine along z."""
+    x0, x1, z0, z1 = xc - hw, xc + hw, zc - hd, zc + hd
+    bars = [((x0, z0), (x1, z0), 0.012), ((x0, z1), (x1, z1), 0.012), ((x0, z0), (x0, z1), 0.012),
+            ((x1, z0), (x1, z1), 0.012)]
+    for k in range(cross):
+        z = z0 + (z1 - z0) * (k + 1) / (cross + 1)
+        bars.append(((x0, z), (x1, z), 0.01))
+    bars.append(((xc, z0), (xc, z1), 0.01))
+    return bars
+
+
+def round_rect(x0: float, x1: float, z0: float, z1: float, r: float, n: int = 6, front_only: bool = False) -> list:
+    """A rectangle in XZ with rounded corners (n segments a quarter; `front_only`: only the two at +z), as points in
+    order round the outline: the plan of an appliance's body or a door with soft vertical edges."""
+    pts = []
+    for cx, cz, a0, rounded in ((x1 - r, z1 - r, 0.0, True), (x0 + r, z1 - r, 90.0, True),
+                                (x0 + r, z0 + r, 180.0, not front_only), (x1 - r, z0 + r, 270.0, not front_only)):
+        if not rounded:
+            pts.append((x0 if a0 == 180.0 else x1, z0))
+            continue
+        for k in range(n + 1):
+            a = math.radians(a0 + 90.0 * k / n)
+            pts.append((round(cx + r * math.cos(a), 6), round(cz + r * math.sin(a), 6)))
+    return pts
+
+
+def rslab(m: Mesh, x0: float, x1: float, y0: float, y1: float, z0: float, z1: float, r: float, role: str, n: int = 6,
+          front_only: bool = False, bottom: bool = False) -> None:
+    """An upright slab from y0 to y1 on a round_rect plan."""
+    slab_xz(m, round_rect(x0, x1, z0, z1, r, n, front_only), y0, y1, role, bottom)
+
+
+def bar_handle(m: Mesh, st: Style, p0, p1, z: float, role: str = "chrome", standoff: float | None = None) -> None:
+    """The one handle: a round bar from p0 to p1 (x, y) on two standoffs out of the front plane z (facing +z). It
+    reaches z + standoff + the bar's radius."""
+    so = st.standoff if standoff is None else standoff
+    zz = z + so - st.handle_r
+    rod(m, (p0[0], p0[1], zz), (p1[0], p1[1], zz), st.handle_r, role, 8)
+    for t in (0.08, 0.92):
+        x, y = p0[0] + (p1[0] - p0[0]) * t, p0[1] + (p1[1] - p0[1]) * t
+        cyl(m, "z", (x, y), st.handle_r * 0.85, z, zz, role, 6, caps=(False, False))
+
+
+def front(m: Mesh, st: Style, x0: float, x1: float, y0: float, y1: float, z: float, role: str, hinge_left: bool = True,
+          handle: str | None = "v", low: bool = False, glass: str | None = None, line: str | None = None,
+          hinge_role: str = "steel_black") -> float:
+    """A door or drawer front on the plane z (its back), facing +z, inside a seam gap: a bevelled slab with a raised
+    centre panel (`line`: a thin outline round the panel in that paint), or with `glass` a framed door with a pane in
+    that paint. Its bar handle (`v`, `h` or None, see handle_span) and, on an upright handle's door, two hinge barrels.
+    Returns the front's face plane (z + front_t)."""
+    g, t = st.gap, st.front_t
+    rails, (a, b) = front_frame(x0, x1, y0, y1, g)
+    if glass:
+        for lo, hi in rails:
+            cbox(m, (lo[0], lo[1], z), (hi[0], hi[1], z + t), role, st.bevel_small)
+        box(m, (a[0], a[1], z + 0.006), (b[0], b[1], z + 0.009), glass, "+z-z")
+    else:
+        cbox(m, (x0 + g, y0 + g, z), (x1 - g, y1 - g, z + t), role, st.bevel_small)
+        box(m, (a[0], a[1], z + t), (b[0], b[1], z + t + 0.004), role, "+x-x+y-y+z")
+        if line:
+            box(m, (a[0] - 0.008, a[1] - 0.008, z + t), (b[0] + 0.008, b[1] + 0.008, z + t + 0.001), line, "+z")
+    if handle:
+        p0, p1 = handle_span(x0, x1, y0, y1, hinge_left, handle, low)
+        bar_handle(m, st, p0, p1, z + t)
+    if handle == "v":
+        hx = x0 + g + 0.002 if hinge_left else x1 - g - 0.002
+        for yy in (y0 + 0.07, y1 - 0.11):
+            cyl(m, "y", (hx, z + 0.002), 0.005, yy, yy + 0.04, hinge_role, 6)
+    return z + t
+
+
+def plinth(m: Mesh, st: Style, x0: float, x1: float, z0: float, z1: float, role: str = "rubber_black") -> None:
+    """The kick: one height (st.plinth) under every floor unit; its front z1 sits st.plinth_setback behind the fronts."""
+    box(m, (x0, 0.0, z0), (x1, st.plinth, z1), role, "+x-x+z")
+
+
+def worktop(m: Mesh, st: Style, x0: float, x1: float, z0: float, z1: float, role: str, y: float | None = None,
+            t: float | None = None, upstand: float = 0.0) -> None:
+    """A worktop slab from y - t to y (default the style's worktop line and thickness), bevelled, with an optional
+    upstand along its back edge z0."""
+    y = st.worktop if y is None else y
+    t = st.worktop_t if t is None else t
+    cbox(m, (x0, y - t, z0), (x1, y, z1), role, st.bevel_small)
+    if upstand:
+        box(m, (x0, y, z0), (x1, y + upstand, z0 + 0.012), role, "+x-x+y+z")
+
+
+def backsplash(m: Mesh, st: Style, L: float, H: float, role: str = "tile_splash", cap: str = "steel_warm") -> None:
+    """A wall strip behind a run (back at z = 0, bottom centre on the worktop): one tiled slab and a steel cap."""
+    cbox(m, (-L / 2, 0.0, 0.0), (L / 2, H, 0.012), role, st.bevel_small)
+    box(m, (-L / 2, H, 0.0), (L / 2, H + 0.008, 0.016), cap, "+x-x+y+z")
+
+
+def burner(m: Mesh, st: Style, x: float, z: float, y: float, r: float, role: str = "steel_black",
+           cap: str = "rubber_black") -> None:
+    """A gas burner on a hob at height y: the spill ring, the crown and the cap."""
+    n = st.segments
+    cyl(m, "y", (x, z), r, y, y + 0.006, role, n, caps=(False, True))
+    cyl(m, "y", (x, z), r * 0.55, y + 0.006, y + 0.018, role, n, caps=(False, True))
+    cyl(m, "y", (x, z), r * 0.35, y + 0.018, y + 0.024, cap, 8, caps=(False, True))
+
+
+def burner_grate(m: Mesh, xc: float, zc: float, hw: float, hd: float, y0: float, y1: float,
+                 role: str = "steel_black", cross: int = 3) -> None:
+    """A cast-iron pan grate over a pair of burners: bars at y1 (grate_bars) on four corner feet from y0."""
+    for (a, b, w) in grate_bars(xc, zc, hw, hd, cross):
+        bar(m, (a[0], y1, a[1]), (b[0], y1, b[1]), w, role)
+    for x in (xc - hw, xc + hw):
+        for z in (zc - hd, zc + hd):
+            box(m, (x - 0.008, y0, z - 0.008), (x + 0.008, y1, z + 0.008), role, "+x-x+z-z")
+
+
+def tap(m: Mesh, st: Style, x: float, z: float, y: float, role: str = "chrome",
+        levers: tuple = ("paint_red", "paint_blue")) -> None:
+    """A pillar tap on a deck at height y: the base, the column, a swan neck toward +z (0.15 m out, 0.315 m up) and
+    two lever valves with a hot and a cold dot."""
+    n = 10
+    cyl(m, "y", (x, z), 0.024, y, y + 0.02, role, n)
+    cyl(m, "y", (x, z), 0.014, y + 0.02, y + 0.24, role, n, caps=(False, False))
+    prev = (x, y + 0.24, z)
+    for i in range(1, 6):
+        a = math.pi * i / 5
+        p = (x, y + 0.24 + 0.075 * math.sin(a), z + 0.075 - 0.075 * math.cos(a))
+        rod(m, prev, p, 0.011, role, n - 2)
+        prev = p
+    rod(m, prev, (prev[0], prev[1] - 0.04, prev[2]), 0.012, role, n - 2)
+    for dx, dot in zip((-0.075, 0.075), levers):
+        cyl(m, "y", (x + dx, z), 0.018, y, y + 0.045, role, n)
+        bar(m, (x + dx, y + 0.05, z), (x + dx, y + 0.06, z + 0.07), 0.012, role, 0.008)
+        cyl(m, "z", (x + dx, y + 0.052), 0.008, z - 0.004, z + 0.006, dot, 6)
+
+
+def _boxes(prm: dict) -> list:
+    """The builder's own collider boxes (build_proc reads them back; empty: one box round the prop)."""
+    return prm.setdefault("_boxes", [])
+
+
+def build_kitchen_counter(m, s, R, prm, rng):
+    """A C2-white floor unit (per 1 m) or with `sink` the sink unit: plinth, carcass, stone worktop (the backsplash
+    is the wall's, so no upstand) and a steel edge trim, a drawer over two doors (the sink unit: two doors, a steel bowl and drainer, a pillar tap).
+    Fronts and handles end inside the worktop's edge, so the unit stays inside size_m."""
+    st = _style(prm)
+    L, W, H = s
+    hx, hz = L / 2, W / 2
+    sink = bool(prm.get("sink"))
+    tt = st.worktop_t
+    zf = hz - st.reach - 0.002  # the fronts' back: the handles end 2 mm inside the worktop's edge
+    plinth(m, st, -hx + 0.01, hx - 0.01, -hz + 0.02, zf + st.front_t - st.plinth_setback)
+    sx0, sx1 = -0.08, hx - 0.07  # the sink's cut-out in the worktop
+    z0, z1 = -hz + 0.1, hz - 0.08
+    if sink:  # the carcass stops under the bowl; side panels close the ends up to the worktop
+        cbox(m, (-hx + 0.008, st.plinth, -hz), (hx - 0.008, H - 0.19, zf), "wood_front", st.bevel)
+        for xa, xb in ((-hx + 0.008, -hx + 0.026), (hx - 0.026, hx - 0.008)):
+            cbox(m, (xa, H - 0.2, -hz), (xb, H - tt, zf), "wood_front", st.bevel_small)
+        box(m, (-hx + 0.026, H - 0.2, -hz), (hx - 0.026, H - tt, -hz + 0.018), "wood_front", "+z")
+        for a, b, c, d in ((-hx, sx0, -hz, hz), (sx1, hx, -hz, hz), (sx0, sx1, -hz, z0), (sx0, sx1, z1, hz)):
+            worktop(m, st, a, b, c, d, "worktop_stone", y=H)
+    else:
+        cbox(m, (-hx + 0.008, st.plinth, -hz), (hx - 0.008, H - tt, zf), "wood_front", st.bevel)
+        worktop(m, st, -hx, hx, -hz, hz, "worktop_stone", y=H)
+    box(m, (-hx, H - tt - 0.004, hz - 0.004), (hx, H - tt, hz), "steel_warm", "+y-y+z")
+    yt = H - tt - 0.004
+    if not sink:
+        front(m, st, -hx + 0.01, hx - 0.01, yt - 0.16, yt, zf, "wood_front", True, "h", line="wood_front_dark")
+        yt -= 0.16
+    front(m, st, -hx + 0.01, 0.0, st.plinth + 0.005, yt, zf, "wood_front", True, line="wood_front_dark")
+    front(m, st, 0.0, hx - 0.01, st.plinth + 0.005, yt, zf, "wood_front", False, line="wood_front_dark")
+    _boxes(prm).append(((-hx, 0.0, -hz), (hx, H, hz)))
+    if not sink:
+        return
+    steel = "steel_warm"
+    loft(m, (sx0 + 0.03, sx1 - 0.03, z0 + 0.03, z1 - 0.03, H - 0.18), (sx0 + 0.02, sx1 - 0.02, z0 + 0.02, z1 - 0.02, H),
+         steel, inner=0.006, inner_role=steel)
+    for lo, hi in (((sx0, H, z0), (sx1, H + 0.008, z0 + 0.02)), ((sx0, H, z1 - 0.02), (sx1, H + 0.008, z1)),
+                   ((sx0, H, z0 + 0.02), (sx0 + 0.02, H + 0.008, z1 - 0.02)),
+                   ((sx1 - 0.02, H, z0 + 0.02), (sx1, H + 0.008, z1 - 0.02))):
+        box(m, lo, hi, steel, "+x-x+y+z-z")
+    cyl(m, "y", ((sx0 + sx1) / 2, (z0 + z1) / 2), 0.03, H - 0.176, H - 0.174, "steel_black", 10, caps=(False, True))
+    box(m, (-hx + 0.04, H, z0), (sx0 - 0.01, H + 0.006, z1), steel, "+x-x+y+z-z")  # the drainer and its ribs
+    for k in range(7):
+        x = -hx + 0.07 + k * 0.055
+        box(m, (x, H + 0.006, z0 + 0.03), (x + 0.012, H + 0.01, z1 - 0.03), steel, "+x-x+y+z-z")
+    tap(m, st, (sx0 + sx1) / 2, -hz + 0.055, H)
+
+
+def build_backsplash(m, s, R, prm, rng):
+    """A tiled wall strip behind a worktop run (the world look; its size: the run's length, the strip with its cap
+    16 mm deep, its height plus the 8 mm cap): authored at the wall, the bottom on the worktop line."""
+    st = _style(prm)
+    L, W, H = s
+    backsplash(m, st, L, H - 0.008, R[0], R[-1])
+
+
+def build_kitchen_upper(m, s, R, prm, rng):
+    """A C2-white wall cabinet (per 1 m, wall pivot): carcass, a dark crown, a shelf with plates and glasses behind
+    two tinted-glass doors whose handles sit low; everything inside the 0.35 m depth."""
+    st = _style(prm)
+    L, W, H = s
+    hx = L / 2
+    zf = W - st.reach - 0.002
+    p = 0.018  # an open carcass (back, sides, bottom, top) so the glass doors show what is inside
+    cbox(m, (-hx, 0.0, 0.0), (hx, H, p), "wood_front", st.bevel_small)
+    for xa, xb in ((-hx, -hx + p), (hx - p, hx)):
+        cbox(m, (xa, 0.0, p), (xb, H, zf), "wood_front", st.bevel_small)
+    for ya, yb in ((0.0, p), (H - 0.04 - p, H - 0.04)):
+        cbox(m, (-hx + p, ya, p), (hx - p, yb, zf), "wood_front", st.bevel_small)
+    cbox(m, (-hx, H - 0.04, 0.0), (hx, H, W), "wood_front_dark", st.bevel_small)
+    for i in range(6):
+        x = -hx + 0.1 + i * 0.03
+        cyl(m, "x", (p + 0.1, 0.15), 0.1, x, x + 0.012, "porcelain_white", 10)
+    for i in range(4):
+        x = 0.1 + i * 0.09
+        cyl(m, "y", (x, 0.15), 0.03, 0.37, 0.465, "glass_tint", 10, r1=0.034)
+    box(m, (-hx + 0.02, 0.36, 0.02), (hx - 0.02, 0.37, zf - 0.02), "wood_front", "+y-y+z")
+    top = H - 0.045
+    front(m, st, -hx + 0.004, 0.0, 0.004, top, zf, "wood_front", True, low=True, glass="glass_tint")
+    front(m, st, 0.0, hx - 0.004, 0.004, top, zf, "wood_front", False, low=True, glass="glass_tint")
+
+
+def build_stove(m, s, R, prm, rng):
+    """The C2-white range (hero): cream enamel body on the plinth, a steel hob with four burners under two cast-iron
+    grates, a backguard with a clock, a control panel of five knobs, the oven door with its window and the rack
+    behind it, a storage drawer, and the steel hood with its flue up to `hood_top` (wall side). The stove's own box
+    and the hood's are its colliders."""
+    st = _style(prm)
+    L, W, H = s
+    hx, hz = L / 2, W / 2
+    hood_top = prm.get("hood_top", 1.9)
+    body, steel = "enamel_cream", "steel_warm"
+    so = 0.035
+    zf = hz - 0.03 - so - 0.001  # the oven door's back: its handle ends 1 mm inside the hob's edge
+    plinth(m, st, -hx + 0.02, hx - 0.02, -hz + 0.02, zf + 0.03 - st.plinth_setback)
+    cbox(m, (-hx, st.plinth, -hz), (hx, H - 0.03, zf), body, st.bevel)
+    cbox(m, (-hx, H - 0.03, -hz), (hx, H, hz), steel, st.bevel_small)
+    cbox(m, (-hx, H, -hz), (hx, H + 0.14, -hz + 0.04), body, st.bevel_small)  # the backguard and its clock
+    box(m, (-0.08, H + 0.05, -hz + 0.04), (0.08, H + 0.11, -hz + 0.043), "glass_dark", "+z")
+    for sx in (-1, 1):
+        for sz in (-1, 1):
+            burner(m, st, sx * 0.165, sz * 0.14, H, 0.075 if sz < 0 else 0.06)
+        burner_grate(m, sx * 0.165, 0.0, 0.15, 0.27, H, H + 0.03)
+    cbox(m, (-hx + 0.01, H - 0.14, zf), (hx - 0.01, H - 0.035, zf + 0.025), steel, st.bevel_small)
+    for k in range(5):
+        x = -0.26 + k * 0.13
+        cyl(m, "z", (x, H - 0.088), 0.03, zf + 0.025, zf + 0.03, "steel_black", st.segments)
+        cyl(m, "z", (x, H - 0.088), 0.02, zf + 0.03, zf + 0.055, "rubber_black", st.segments)
+        box(m, (x - 0.004, H - 0.088, zf + 0.055), (x + 0.004, H - 0.07, zf + 0.057), "porcelain_white", "+z")
+    y0, y1 = 0.2, H - 0.16
+    cbox(m, (-hx + 0.012, y0, zf), (hx - 0.012, y1, zf + 0.03), body, st.bevel_small)
+    wx = 0.24
+    box(m, (-wx, y0 + 0.12, zf + 0.03), (wx, y1 - 0.1, zf + 0.032), "glass_dark", "+z")
+    box(m, (-wx - 0.015, y0 + 0.105, zf + 0.03), (wx + 0.015, y0 + 0.12, zf + 0.034), steel, "+y-y+z")
+    box(m, (-wx - 0.015, y1 - 0.1, zf + 0.03), (wx + 0.015, y1 - 0.085, zf + 0.034), steel, "+y-y+z")
+    for k in range(9):  # the oven rack seen through the window
+        x = -0.2 + k * 0.05
+        bar(m, (x, 0.42, -hz + 0.1), (x, 0.42, zf - 0.02), 0.005, "chrome")
+    box(m, (-hx + 0.02, y0 - 0.006, zf + 0.002), (hx - 0.02, y0, zf + 0.026), "rubber_black", "+y-y+z")
+    bar_handle(m, st, (-0.27, y1 - 0.05), (0.27, y1 - 0.05), zf + 0.03, standoff=so)
+    front(m, st, -hx + 0.012, hx - 0.012, st.plinth + 0.005, y0 - 0.012, zf, body, True, "h")
+    zb = -hz  # the hood: canopy, flue, light strip, grease filter, rivets and a switch
+    loft(m, (-hx, hx, zb, zb + 0.5, 1.45), (-0.13, 0.13, zb, zb + 0.24, 1.66), steel, top=True)
+    box(m, (-0.13, 1.66, zb), (0.13, hood_top, zb + 0.24), steel, "+x-x+y+z")
+    box(m, (-hx + 0.04, 1.446, zb + 0.06), (hx - 0.04, 1.45, zb + 0.44), "steel_black", "-y")
+    for k in range(7):
+        z = zb + 0.08 + k * 0.05
+        box(m, (-hx + 0.06, 1.441, z), (hx - 0.06, 1.446, z + 0.012), steel, "-y+z-z")
+    box(m, (-0.2, 1.441, zb + 0.455), (0.2, 1.447, zb + 0.48), "glass_tint", "-y")
+    for k in range(8):
+        x = -hx + 0.06 + k * 0.083
+        cyl(m, "z", (x, 1.47), 0.006, zb + 0.5, zb + 0.504, "chrome", 6, caps=(False, True))
+    cyl(m, "z", (0.28, 1.5), 0.012, zb + 0.46, zb + 0.49, "steel_black", 8)
+    _boxes(prm).extend([((-hx, 0.0, -hz), (hx, H + 0.14, hz)), ((-hx, 1.45, zb), (hx, hood_top, zb + 0.5))])
+
+
+def build_fridge(m, s, R, prm, rng):
+    """The C2-white fridge (hero): warm-white enamel body and two doors on the plinth line, gaskets, long chrome pulls,
+    hinge covers, a top grille, a kick plate with vents, a water dispenser and a badge; the handles and hinges end
+    inside size_m."""
+    st = _style(prm)
+    L, W, H = s
+    hx, hz = L / 2 - 0.006, W / 2
+    body = prm.get("body", "enamel_white")
+    hf = hz - 0.062  # the doors' face: the pulls end inside size_m
+    zf = hf - 0.04
+    plinth(m, st, -hx + 0.02, hx - 0.02, -hz + 0.02, hf - st.plinth_setback)
+    n = st.segments
+    rslab(m, -hx, hx, st.plinth, H, -hz, zf, 0.025, body, 8)  # soft vertical edges, as a real appliance
+    split = 1.15
+    for y0, y1, low in ((st.plinth + 0.005, split, False), (split + 0.012, H - 0.05, True)):
+        rslab(m, -hx + 0.004, hx - 0.004, y0, y1, zf, hf, 0.018, body, 8, front_only=True, bottom=True)
+        for lo, hi in (((-hx + 0.004, y0 + 0.004), (hx - 0.004, y0 + 0.012)), ((-hx + 0.004, y1 - 0.012),
+                       (hx - 0.004, y1 - 0.004)), ((-hx + 0.004, y0 + 0.012), (-hx + 0.012, y1 - 0.012)),
+                       ((hx - 0.012, y0 + 0.012), (hx - 0.004, y1 - 0.012))):  # the gasket round the door
+            box(m, (lo[0], lo[1], zf - 0.004), (hi[0], hi[1], zf), "rubber_black", "+x-x+y-y+z")
+        hy0, hy1 = (y0 + 0.05, y0 + 0.4) if low else (y1 - 0.5, y1 - 0.05)
+        hxp = hx - 0.06
+        rod(m, (hxp, hy0, hf + 0.048), (hxp, hy1, hf + 0.048), 0.012, "chrome", n)
+        for yy in (hy0 + 0.02, hy1 - 0.02):
+            cyl(m, "z", (hxp, yy), 0.01, hf, hf + 0.048, "chrome", 12, caps=(False, False))
+            cyl(m, "z", (hxp, yy), 0.016, hf, hf + 0.004, "chrome", 12, caps=(False, True))
+    cbox(m, (-hx + 0.01, 0.0, hf - 0.08), (hx - 0.01, st.plinth - 0.004, hf - 0.06), "steel_warm", st.bevel_small)
+    for k in range(5):
+        box(m, (-hx + 0.08, 0.02 + k * 0.016, hf - 0.06), (hx - 0.08, 0.027 + k * 0.016, hf - 0.058), "rubber_black",
+            "+z+y-y")
+    cbox(m, (-hx + 0.004, H - 0.044, zf), (hx - 0.004, H - 0.004, zf + 0.02), "steel_warm", st.bevel_small)
+    for k in range(24):
+        x = -hx + 0.05 + k * ((2 * hx - 0.1) / 23)
+        box(m, (x - 0.008, H - 0.036, zf + 0.02), (x + 0.008, H - 0.012, zf + 0.021), "rubber_black", "+z")
+    for y0, y1, x1 in ((H - 0.09, H - 0.046, 0.05), (split - 0.02, split + 0.03, 0.04),
+                       (st.plinth + 0.01, st.plinth + 0.05, 0.04)):
+        rslab(m, -hx - 0.004, -hx + x1, y0, y1, zf - 0.01, hf + 0.004, 0.008, "chrome", 6, front_only=True,
+              bottom=True)
+    box(m, (-0.08, H - 0.12, hf), (0.08, H - 0.1, hf + 0.003), "chrome", "+x-x+y-y+z")
+    cbox(m, (-0.22, 1.32, hf - 0.012), (-0.02, 1.58, hf + 0.004), "steel_black", st.bevel_small)
+    box(m, (-0.19, 1.36, hf + 0.004), (-0.05, 1.5, hf + 0.006), "glass_dark", "+z")
+    cyl(m, "y", (-0.12, hf - 0.002), 0.012, 1.48, 1.5, "chrome", 8)
+    box(m, (-0.21, 1.33, hf + 0.004), (-0.03, 1.336, hf + 0.03), "steel_black", "+y-y+z+x-x")
+    for k in range(6):  # side ribs
+        y = 0.2 + k * 0.27
+        for sx in (-1, 1):
+            box(m, (sx * hx - (0.002 if sx < 0 else 0.0), y, -hz + 0.05), (sx * hx + (0.002 if sx > 0 else 0.0),
+                y + 0.004, zf - 0.05), "steel_black", "+x" if sx > 0 else "-x")
+    for b in range(4):  # the dispenser's buttons and the temperature panel's
+        cyl(m, "z", (-0.19 + b * 0.045, 1.63), 0.01, hf, hf + 0.004, "steel_black", 12, caps=(False, True))
+
+
 BUILDERS = {name[6:]: fn for name, fn in dict(globals()).items() if name.startswith("build_") and callable(fn)}
 
 
@@ -1814,12 +2225,17 @@ def seed(pid: str) -> random.Random:
     return random.Random(zlib.crc32(pid.encode("utf-8")))
 
 
-def build_proc(p: dict) -> Piece:
+def build_proc(p: dict, style: Style | None = None) -> Piece:
+    """A procedural prop from its builder; `style` is the library's [style] (Style.from_lib) for the world look's
+    builders. A builder may name its own collider boxes (`_boxes`), which `finish` uses for `collision = "box"`."""
     if p["shape"] not in BUILDERS:
         raise ValueError(f"{p['id']}: no builder for shape {p['shape']!r}")
     pc = Piece(p["id"], "prop")
     L, W, H = p["size_m"]
-    BUILDERS[p["shape"]](pc.mesh, (L, W, H), list(p["roles"]), dict(p.get("params", {})), seed(p["id"]))
+    prm = dict(p.get("params", {}))
+    prm["style"] = style or Style()
+    BUILDERS[p["shape"]](pc.mesh, (L, W, H), list(p["roles"]), prm, seed(p["id"]))
+    pc.part_boxes = prm.get("_boxes", [])
     return pc
 
 
@@ -1869,7 +2285,10 @@ def finish(pc: Piece, p: dict, spec: dict) -> None:
         d = (-cx, -lo[1], -cz)
     _move(m, d)
     col = p.get("collision", "box")
-    if col == "box":
+    if col == "box" and getattr(pc, "part_boxes", None):
+        for blo, bhi in pc.part_boxes:
+            pc.collide_box([blo[i] + d[i] for i in range(3)], [bhi[i] + d[i] for i in range(3)])
+    elif col == "box":
         pc.collide_box([lo[i] + d[i] for i in range(3)], [hi[i] + d[i] for i in range(3)])
     elif col == "hull":
         pc.collide([list(v) for v in m.verts])
@@ -1902,14 +2321,16 @@ def describe(pc: Piece, spec: dict) -> dict:
     return out
 
 
-def build(p: dict, spec: dict) -> dict:
+def build(p: dict, spec: dict, style: Style | None = None) -> dict:
     """A procedural prop, finished and described."""
-    pc = build_proc(p)
+    pc = build_proc(p, style)
     finish(pc, p, spec)
     return describe(pc, spec)
 
 
 def size_error(d: dict, p: dict) -> list[float]:
-    """The built size minus the inventory size per glTF axis (x, y, z)."""
-    want = (p["size_m"][0], p["size_m"][2], p["size_m"][1])
+    """The built size minus the inventory size per glTF axis (x, y, z); `built_size_m` when fixed parts reach past
+    the inventory's box (the stove's hood, the sink's tap)."""
+    size = p.get("built_size_m", p["size_m"])
+    want = (size[0], size[2], size[1])
     return [round(d["size_m"][i] - want[i], 4) for i in range(3)]

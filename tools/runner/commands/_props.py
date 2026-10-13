@@ -21,6 +21,11 @@ PIVOTS = ("floor", "wall", "ceiling")
 COLLISIONS = ("box", "hull", "boxes", "none")
 SCALE_TOLERANCE = 0.10  # a pack prop's scaled box against its inventory size, per axis (props.md §5)
 STRETCH_LIMIT = 1.5  # with stretch = true the builder fits per axis: the largest axis factor over the smallest
+LAYERS = ("base", "detail")  # a prop's layer by preset (#140 item 4): base on every preset, detail on High/Ultra
+FINE_MAX_LAYERS = 16  # the fine pack's vertex alpha holds the layer in steps of 1/16
+STYLE_LENGTHS = ("bevel_m", "bevel_small_m", "handle_radius_m", "handle_standoff_m", "front_gap_m",
+                 "front_thickness_m", "plinth_m", "plinth_setback_m", "worktop_m", "worktop_thickness_m")
+HANDLES = ("bar",)
 
 
 def load(path: Path = LIBRARY) -> dict[str, Any]:
@@ -142,6 +147,99 @@ def sources_index(folder: Path = SOURCES) -> dict[str, dict[str, Any]]:
     return out
 
 
+def prop_layer(lib: dict[str, Any], p: dict[str, Any]) -> str:
+    """The prop's layer by preset: its own `layer`, else its class's default in [layers], else [layers].default."""
+    layers = lib.get("layers", {})
+    return p.get("layer") or layers.get(p.get("class"), layers.get("default", "base"))
+
+
+def _unit(v: Any) -> bool:
+    return isinstance(v, (int, float)) and not isinstance(v, bool) and 0.0 <= v <= 1.0
+
+
+def check_look(lib: dict[str, Any], roles: dict[str, Any], sources: dict[str, dict[str, Any]]) -> list[str]:
+    """The world look's tables (docs/decisions/2026-10-13-house-world-look.md): [layers], [style], [fine],
+    [material_props] and the roles on the fine pack. Pure."""
+    problems: list[str] = []
+    for cls, layer in lib.get("layers", {}).items():
+        if layer not in LAYERS:
+            problems.append(f"layers: {cls} = {layer!r} is not one of {LAYERS}")
+        if cls != "default" and cls not in lib.get("budgets", {}):
+            problems.append(f"layers: {cls} is not a class in [budgets]")
+    style = lib.get("style")
+    if style is not None:
+        for k in STYLE_LENGTHS:
+            v = style.get(k)
+            if not isinstance(v, (int, float)) or isinstance(v, bool) or not 0.0 < v < 2.0:
+                problems.append(f"style: {k} must be a length in metres (0 to 2), not {v!r}")
+        if style.get("bevel_small_m", 0) > style.get("bevel_m", 0):
+            problems.append("style: bevel_small_m is over bevel_m")
+        if style.get("handle") not in HANDLES:
+            problems.append(f"style: handle {style.get('handle')!r} is not one of {HANDLES}")
+        if not isinstance(style.get("segments"), int) or not 6 <= style["segments"] <= 32:
+            problems.append("style: segments must be a whole number from 6 to 32")
+        shade = style.get("floor_shade", [])
+        if len(shade) != 2 or not _unit(shade[0]) or not 0 < shade[1] < 2:
+            problems.append("style: floor_shade must be [factor 0..1, height in metres]")
+        for r in style.get("paints", []):
+            if r not in roles:
+                problems.append(f"style: paint {r!r} is no role")
+    materials = lib.get("materials", {})
+    news = set(lib.get("new_materials", []))
+    for name, props in lib.get("material_props", {}).items():
+        if name not in news:
+            problems.append(f"material_props: {name} is not in new_materials")
+        for k, v in props.items():
+            if k not in ("roughness", "metallic", "alpha") or not _unit(v):
+                problems.append(f"material_props: {name}.{k} = {v!r} (roughness, metallic, alpha: 0 to 1)")
+    fine = lib.get("fine")
+    layer_names: list[str] = []
+    if fine is not None:
+        tiers = fine.get("tiers", {})
+        sizes = [tiers.get("high", 0), tiers.get("low", 0)]
+        if any(not isinstance(v, int) or v < 64 or v & (v - 1) for v in sizes) or sizes[0] <= sizes[1]:
+            problems.append(f"fine: tiers must be high > low, powers of two of at least 64 px, not {tiers}")
+        rec = sources.get(fine.get("source", ""))
+        if rec is None:
+            problems.append(f"fine: source {fine.get('source')!r} has no record in sources/")
+        elif rec.get("licence") not in lib.get("licences", ["CC0-1.0"]) or rec.get("public_repo_ok") is not True:
+            problems.append(f"fine: source {fine.get('source')} is not an allowed, public licence")
+        raw_files = " ".join(r.get("file", "") for r in (rec or {}).get("raw", []))
+        layers = fine.get("layers", [])
+        if not 1 <= len(layers) <= FINE_MAX_LAYERS:
+            problems.append(f"fine: {len(layers)} layers (1 to {FINE_MAX_LAYERS}: the vertex alpha holds them)")
+        kinds = ["t" if layer.get("source") else "f" for layer in layers]
+        if "".join(kinds) != "".join(sorted(kinds, reverse=True)) or kinds.count("t") > 4:
+            problems.append("fine: the textured layers come first, at most four (the shader's four detail channels)")
+        for k, layer in enumerate(layers):
+            name = layer.get("name", f"#{k}")
+            if name in layer_names:
+                problems.append(f"fine: layer {name} twice")
+            layer_names.append(name)
+            for key in ("roughness", "metallic", "normal_strength"):
+                if key in layer and not _unit(layer[key]):
+                    problems.append(f"fine: layer {name}: {key} {layer[key]!r} is not 0 to 1")
+            if "roughness" not in layer:
+                problems.append(f"fine: layer {name} has no roughness")
+            src = layer.get("source")
+            if src:
+                if f"/{src}/" not in raw_files:
+                    problems.append(f"fine: layer {name}: {src} is not in the source record's raw files")
+                if "normal_strength" not in layer:
+                    problems.append(f"fine: textured layer {name} has no normal_strength")
+            elif "normal_strength" in layer:
+                problems.append(f"fine: flat layer {name} has a normal_strength but no source")
+        if "fine" not in materials.values():
+            problems.append("fine: no [materials] line targets the fine pack")
+    for name, r in lib.get("roles", {}).items():
+        on_fine = materials.get(r.get("material")) == "fine"
+        if on_fine and r.get("layer") not in layer_names:
+            problems.append(f"role {name}: layer {r.get('layer')!r} is not a layer of [fine]")
+        if not on_fine and "layer" in r:
+            problems.append(f"role {name}: a layer belongs to roles on the fine pack")
+    return problems
+
+
 def check(lib: dict[str, Any], sources: dict[str, dict[str, Any]], kit_spec: dict[str, Any] | None = None
           ) -> list[str]:
     """Every problem of the mapping file, as text; empty when clean. Pure: reads no raw file."""
@@ -165,6 +263,7 @@ def check(lib: dict[str, Any], sources: dict[str, dict[str, Any]], kit_spec: dic
         hx = r.get("hex", "")
         if not (len(hx) == 7 and hx.startswith("#") and all(c in "0123456789abcdefABCDEF" for c in hx[1:])):
             problems.append(f"role {name}: hex {hx!r} is not #rrggbb")
+    problems += check_look(lib, roles, sources)
     seen: set[str] = set()
     skip = lib.get("skip", {})
     for p in lib.get("prop", []):
@@ -183,6 +282,11 @@ def check(lib: dict[str, Any], sources: dict[str, dict[str, Any]], kit_spec: dic
             problems.append(f"{where}: pivot {p.get('pivot')!r} is not one of {PIVOTS}")
         if p.get("collision") not in COLLISIONS:
             problems.append(f"{where}: collision {p.get('collision')!r} is not one of {COLLISIONS}")
+        layer = prop_layer(lib, p)
+        if layer not in LAYERS:
+            problems.append(f"{where}: layer {layer!r} is not one of {LAYERS}")
+        elif layer == "detail" and p.get("collision") != "none":
+            problems.append(f"{where}: a detail-layer prop has no collider (the presets never change what blocks)")
         size = p.get("size_m", [])
         if len(size) != 3 or min(size, default=0) <= 0:
             problems.append(f"{where}: size_m must be three positive metres (L x W x H)")
@@ -315,7 +419,7 @@ def check_build(lib: dict[str, Any], props: list[dict[str, Any]], out: Path) -> 
             problems.append(f"{pid}: collision {p.get('collision', 'box')} but no collider")
         if p["class"] == "fixture" and not rec.get("light_anchor"):
             problems.append(f"{pid}: a fixture without an emissive part")
-        want = size_xyz(p["size_m"])
+        want = size_xyz(p.get("built_size_m", p["size_m"]))
         if any(abs(e) > max(0.03, 0.12 * w) for e, w in zip(rec["size_error_m"], want)):
             notes.append(f"{pid}: built {rec['size_m']} m, inventory {want} m (x, y, z)")
     return problems, notes

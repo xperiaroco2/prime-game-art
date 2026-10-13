@@ -34,6 +34,9 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--out", type=Path, help="with --build: the output folder (default <raw>/props/library/v<n>)")
     parser.add_argument("--no-blender", action="store_true", help="with --build: check the GLBs already built")
     parser.add_argument("--no-godot", action="store_true", help="with --build: skip the Godot import check")
+    parser.add_argument("--fine-compare", metavar="DIR", default="",
+                        help="with --build: GLBs by prop id (<DIR>/<id>.glb, e.g. the kitchen pilot's) whose surfaces "
+                             "and embedded texture memory the fine pack's check reports beside the built props'")
     parser.add_argument("--sheets", type=Path, help="with --build: also shoot the line-up sheets into this folder "
                                                     "(an off-screen Godot window)")
 
@@ -97,6 +100,8 @@ def build(args: argparse.Namespace, path: Path, lib: dict) -> list[str]:
         return problems
     built = json.loads((out / "build.json").read_text(encoding="utf-8"))["props"]
     dump = godot_check(props, built, out)
+    dump["fine"] = fine_check(props, out, Path(args.fine_compare) if args.fine_compare else None)
+    dump["problems"] += dump["fine"].get("problems", [])
     problems += dump.pop("problems")
     if args.sheets and not problems:
         problems += sheets(props, built, dump, out, args.sheets.resolve())
@@ -143,6 +148,45 @@ def godot_check(props: list[dict], built: dict, out: Path) -> dict:
     return dump
 
 
+FINE_CHECK = "res://props/fine_check.gd"
+
+
+def fine_check(props: list[dict], out: Path, compare: Path | None) -> dict:
+    """The world look's fine pack in Godot (godot/props/fine_check.gd, headless, after godot_check imported the
+    props): per tier one shared material and texture set on every prop's `kit_fine` surfaces, its texture memory
+    (BPTC with mipmaps), each prop's surfaces; `compare`: the same counts for <compare>/<id>.glb. {} without the
+    pack's textures or a prop on it."""
+    fine = out / "textures" / "fine"
+    lib = _props.load()
+    on_fine = [p["id"] for p in props
+               if any(lib["roles"].get(r, {}).get("material") == "fine" for r in p.get("roles", []))]
+    if not (fine / "fine.json").is_file() or not on_fine:
+        return {}
+    request = {"fine": fine.as_posix(), "scenes": {i: f"res://import/prop_{i}.glb" for i in on_fine}, "compare": {}}
+    if compare is not None:
+        request["compare"] = {i: (compare / f"{i}.glb").as_posix() for i in on_fine if (compare / f"{i}.glb").is_file()}
+    work = common.OUT / "props"
+    req, dump_path = work / "fine_request.json", work / "fine_check.json"
+    req.write_text(json.dumps(request), encoding="utf-8")
+    dump_path.unlink(missing_ok=True)
+    code, output = _godot.godot(["--headless", "--path", _godot.PROJECT, "-s", FINE_CHECK, "--",
+                                 req.as_posix(), dump_path.as_posix()], CHECK_TIMEOUT)
+    if not dump_path.is_file():
+        tail = "\n".join(output.splitlines()[-20:])
+        raise common.Failure(f"fine_check.gd failed (exit code {code}):\n{tail}")
+    dump = json.loads(dump_path.read_text(encoding="utf-8"))
+    tiers = ", ".join(f"{t} {v['size']} px {v['mb']} MB shared by {v['shared_by']}" for t, v in dump["tiers"].items())
+    what = f"fine pack: one material and texture set per tier ({tiers}) on {len(on_fine)} props"
+    if dump["compare"]:
+        ours = sum(dump["props"][i]["surfaces"] for i in dump["compare"])
+        theirs = sum(v["surfaces"] for v in dump["compare"].values())
+        mb = sum(v["texture_bytes"] for v in dump["compare"].values()) / 1048576
+        what += f"; surfaces {ours} against {theirs} and {mb:.1f} MB of embedded textures in {compare.as_posix()}"
+    (common.bad if dump["problems"] else common.ok)(what)
+    (out / "fine_check.json").write_text(json.dumps(dump, indent=1), encoding="utf-8")
+    return dump
+
+
 def sheets(props: list[dict], built: dict, dump: dict, out: Path, folder: Path) -> list[str]:
     """The line-up sheets (_props.sheet_plan) from godot/props/lineup.gd in a window off-screen."""
     kit = json.loads((common.ROOT / _props.load()["kit_spec"]).read_text(encoding="utf-8"))
@@ -153,6 +197,9 @@ def sheets(props: list[dict], built: dict, dump: dict, out: Path, folder: Path) 
                "pack": {"roughness": [m["roughness"] for m in layers],
                         "normal_strength": [m["normal_strength"] for m in layers]},
                "sheets": []}
+    fine = out / "textures" / "fine"
+    if (fine / "fine.json").is_file():  # the world look's fine pack, High tier (docs/props.md "World look rules")
+        request["fine"] = {"folder": (fine / "high").as_posix(), "json": (fine / "fine.json").as_posix(), "tier": "high"}
     for k, rows in enumerate(plan, 1):
         count = sum(len(r) for r in rows)
         batches = sorted({str(by_id[i]["batch"]) for r in rows for i in r})

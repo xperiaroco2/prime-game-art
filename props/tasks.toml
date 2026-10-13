@@ -8,8 +8,11 @@
 # nodes (extra meshes: lids are leaves with their hinge as origin; on/off are state meshes the game shows or hides),
 # mount (where it stands), notes. Sizes come from the plan's props.md section 7; where a stand or a fitting adds to
 # the size given there, `plan_size` keeps the plan's number and `notes` says why.
+# look = "fine": the prop is built in the world look (C2-white) by its fine builder, on the dressing library's
+# fine pack, paints and [style] (`library`; docs/props.md "World look rules").
 
 kit = "kits/house.json"
+library = "props/library.toml"  # the world look: its fine pack, paints and [style] for the props with look = "fine"
 version = 1
 
 [budget_tris]
@@ -161,6 +164,7 @@ room = "garage"
 id = "order_board"
 type = "board"
 kind = "hero"
+look = "fine"  # the world look, C2-white (docs/decisions/2026-10-13-house-world-look.md)
 w = 1.74
 d = 0.5
 h = 2.1
@@ -179,6 +183,7 @@ notes = "The marker is mid-kitchen by the island: the board stands on two posts,
 id = "assembly_island"
 type = "island"
 kind = "room"
+look = "fine"
 w = 2.4
 d = 1.0
 h = 0.9

@@ -5,6 +5,38 @@ command, art #82) and the dressing library (`props/library.toml`, the `props-lib
 library's `tools/blender/prop_lib.py` is meant as the shared prop helper (materials, paint by role, pivot, UV2,
 collision, one GLB per prop); the task props keep their own `props_task.py` for now.
 
+## World look rules
+
+The House's look is C2-white from the kitchen pilot (ADR `docs/decisions/2026-10-13-house-world-look.md`, #143).
+Every room's props follow these rules; the numbers are data in `props/library.toml` and `props-library` checks them.
+
+1. **Not plasticine, never worn.** Only the characters are plasticine. The world is a present-day, well-made home:
+   no wear, chips, dirt or grime. Richness comes from parts, materials and density, not damage.
+2. **Real parts, one style per room** (`[style]`): bodies, fronts, plinths, tops and hardware are separate parts;
+   bevels of 10 mm on bodies and slabs and 3 mm on fronts and small parts; one bar handle (7 mm round bar on two
+   30 mm standoffs), one plinth (0.1 m, set back 75 mm) and one worktop line (0.9 m, 30 mm thick) per room; a soft
+   shade toward the floor (x0.82 at the floor, none from 0.25 m up).
+3. **Materials: the fine pack.** Opaque paints sit on one shared material, `fine`, each role on a layer (`[fine]`):
+   textured wood fronts (Wood092), worktop wood (Wood049), stone (Concrete034) and tile (Tiles107); flat enamel,
+   warm steel, chrome, dark gloss and paint. Glass is `glass_tint`. A new paint is a role with a `layer` and a hex;
+   a new texture is a `[fine]` layer from a recorded CC0 source. A prop has at most two surfaces (fine, glass).
+4. **Shared textures, two tiers.** The GLB has no textures; Godot maps `kit_fine` to one ShaderMaterial with one
+   texture set per tier (High 1024 px, Low 512 px, from the same sources), VRAM-compressed on import.
+5. **Classes.** `hero` (1,200 to 4,000 triangles) for the pieces players look at up close (appliances, a room's
+   centre piece); `room` (400 to 1,500) for the rest of the furniture; `clutter` for the small things.
+6. **Base and detail layers** (`layer`, default by class in `[layers]`): the base layer alone makes the room read
+   clean on Low; small props and fine decor are `detail` (clutter by default), which High and Ultra add. A detail
+   prop has no collider.
+7. **Shared builders** (`prop_geom.py`, "the world look"): `Style` (from `[style]`), `front` (a bevelled door or
+   drawer front, raised panel or framed glass, with its handle and hinges), `bar_handle`, `plinth`, `worktop`,
+   `backsplash`, `burner` and `burner_grate`, `tap`, `rslab` (soft vertical edges). Fronts and handles stay inside
+   `size_m`; a builder may name its own collider boxes (the stove's body and hood leave the gap over the hob open).
+   The kitchen's `kitchen_counter` (with `sink`), `kitchen_upper`, `stove`, `fridge` and the backsplash runs
+   (`backsplash_l`, `backsplash_r`: shape `backsplash`, wall pivot, no collider) are built from them; so are the
+   task props `assembly_island` and `order_board` (`props/tasks.toml`, `look = "fine"`).
+8. **Route.** Hard-surface props are code (the shared builders, `prop_geom.py`'s `Style`). Meshy only for organic
+   one-offs (food, soft goods, plants) at a hero budget, as a recorded batch (`docs/meshy.md`).
+
 ## Procedural props: the House map's task stations
 
 The House map (request #73) needs props where the five task chains happen (design doc §6; the plan's
@@ -45,10 +77,15 @@ Every value is the engineer's to change (sizes, paints, mounts), as data:
 - `materials.surface_game`: the game's writable surface, a material of its own that only the boards and the computer
   use.
 - `roles`: the prop paints (a material and a hex colour each).
+- `library`: the dressing library (`props/library.toml`) whose fine pack, fine-pack paints and `[style]` join the
+  spec, for the props in the world look ("World look rules"); a fine paint may not share a name with a kit or prop
+  role.
 - `[[props]]`: `id`, `type` (the builder), `kind` (the budget), `w`, `d`, `h` (the built bounds, width along X,
   depth along Z, height along Y, within 1 cm), `chain`, `station` (the game's marker under `Stations`), `room`,
   `count`, and per type: `mount` (`wall`, `floor`, `post`, `stand`, `table`), `surface`, `nodes`, `board`, `style`,
-  `plan_size` (the plan's size where a stand or fitting adds to it) and `notes`.
+  `plan_size` (the plan's size where a stand or fitting adds to it) and `notes`; `look = "fine"` builds the prop
+  with its type's fine builder (`props_task.FINE_BUILDERS`: `board` on a stand, `island`) on the library's fine pack,
+  and `check_spec` refuses it for a type without one or a spec without `library`.
 
 ### Conventions
 
@@ -123,12 +160,16 @@ The library is data: a paint, a size, a source file or a shape changes without a
 
 | Field | What |
 |---|---|
-| `[materials]` | Library material name to the kit's material (`kits/house.json`). The **one place** that names materials: when kit v2 (#86) merges plaster, wood and concrete into one `set` material, re-point the lines here. At most `max_materials` (6) targets; a target the kit lacks must be in `new_materials` (`emissive`). |
-| `[budgets]` | Triangles by class, `[min, max]` (`look.md` §6): `dressing` 150 to 600, `room` 400 to 1,500, `fixture` 100 to 400, `vehicle` 400 to 3,000 (the parked cars), `clutter` 12 to 400 (the small lived-in props of #104: books, cups, plates, bottles, pots, papers, frames' kin, baskets, shoes, toys; all `collision = "none"`, batch 3, placed by `house --clutter`, docs/house.md "Clutter"). |
-| `[roles]` | The props' paints: a library material and an sRGB hex (the D1 palette, `look.md` §7). A prop may also name the kit's roles (`trim`, `fence`, `lino`, `glass` ...). |
+| `[materials]` | Library material name to the kit's material (`kits/house.json`). The **one place** that names materials: when kit v2 (#86) merges plaster, wood and concrete into one `set` material, re-point the lines here. At most `max_materials` (8) targets; a target the kit lacks must be in `new_materials` (`emissive`, `fine`, `glass_tint`). |
+| `[material_props]` | Roughness, metallic and alpha of a new material that is no kit material (`glass_tint`). |
+| `[budgets]` | Triangles by class, `[min, max]` (`look.md` §6): `dressing` 150 to 600, `room` 400 to 1,500, `fixture` 100 to 400, `vehicle` 400 to 3,000 (the parked cars), `clutter` 12 to 400 (the small lived-in props of #104: books, cups, plates, bottles, pots, papers, frames' kin, baskets, shoes, toys; all `collision = "none"`, batch 3, placed by `house --clutter`, docs/house.md "Clutter"), `hero` 1,200 to 4,000 (the pieces players look at up close: the stove, the fridge). |
+| `[layers]` | The layer by preset (`base` or `detail`) per class, and the `default`: `clutter` is `detail`. A prop's own `layer` overrides it; a detail prop must have `collision = "none"`. |
+| `[style]` | The world look's measures (bevels, segments, the handle, front gap and thickness, plinth, worktop line, `floor_shade`) and the direction's `paints`; the shared builders read them ("World look rules"). |
+| `[fine]` | The fine pack: `source` (the CC0 record of its textures), `tiers` (px per tier, High over Low) and `layers` in order (at most 16): a textured layer has `source`, `roughness`, `normal_strength`; a flat one `metallic` and `roughness`. |
+| `[roles]` | The props' paints: a library material and an sRGB hex (the D1 palette, `look.md` §7). A role on the fine pack also names its `layer`. A prop may also name the kit's roles (`trim`, `fence`, `lino`, `glass` ...). |
 | `[skip]` | Inventory ids this library does not make, with the package that does. |
 | `script` | The Blender build script (default `prop_build.py`); another mapping file in this format names its own, such as `props/plants.toml`'s `plant_build.py` (the garden's plants, `docs/house-garden.md`). |
-| `[[prop]]` | One prop: `id`, `batch` (the build order: 1 indoor furniture and dressing, 2 outdoor, fixtures and vehicles), `name`, `class`, `size_m` (the inventory's L x W x H: along X, along Z, up), `count` (placements), `route` (`pack` or `proc`), `roles`, `pivot`, `collision`. |
+| `[[prop]]` | One prop: `id`, `batch` (the build order: 1 indoor furniture and dressing, 2 outdoor, fixtures and vehicles), `name`, `class`, `size_m` (the inventory's L x W x H: along X, along Z, up), `count` (placements), `route` (`pack` or `proc`), `roles`, `pivot`, `collision`, optional `layer` and `built_size_m` (the built box when fixed parts reach past the inventory's: the stove's hood, the sink's tap; the size checks use it). |
 | pack props | `source` (a `sources/<id>.toml` record), `files` (relative to `<raw>/env`; several are stacked, the next on top of the one before), `src_size` and `src_triangles` (measured from the glTF), `yaw_deg` (a turn about +Y that brings the front to +Z), `scale` (uniform), `stretch` (fit the box per axis), `decimate` (the source is over the class's budget), `pack_size_m` (the part the pack supplies when `extras` add the rest), `extras` (procedural additions such as a wall mirror), `paint` (the roles of the source's colour clusters, dark to light, when the luminance order paints a prop wrong). |
 | proc props | `shape` (a builder) and `params`. Generic builders cover most furniture: `cabinet` (doors, drawers, plinth or legs, top, cornice, sink), `table` (legs, top, shelf), `shelving` (shelves, items), `bench` (back, slats, cushion); the rest are one builder per prop. |
 
@@ -203,12 +244,19 @@ library order cut into 4 sheets (`_props.sheet_plan`), on each sheet tallest fir
 1.8 m capsule and labelled with the ids, shot orthographic from the front-right and above, the kit's set shader on
 the `kit_set` surfaces and a small warm light at each LightAnchor. Out: `DIR/lineup_<n>.png` (1280 px wide) and
 `DIR/lineup.json` (the rows and the anchors Godot found). Review pictures only: the raw GLBs are not committed.
+The line-up puts the fine pack's ShaderMaterial (`godot/props/prop_materials.gd`, the High tier) on the `kit_fine`
+surfaces.
+
+`--fine-compare DIR` (with `--build`) runs `godot/props/fine_check.gd` headless on the built props: per prop its
+surfaces, images and texture bytes, that every `kit_fine` surface gets the same shared texture resources, and the
+fine textures' memory per tier (BPTC with mipmaps); DIR holds GLBs to measure against (the kitchen pilot's), compared
+prop by prop. Out: `<out>/fine_check.json`.
 
 ### The command
 
 ```
 tools/run.sh props-library [--measure] [--table FILE] [--build [--batch N] [--only IDS] [--out DIR] [--no-blender]
-                  [--no-godot] [--sheets DIR]]
+                  [--no-godot] [--sheets DIR] [--fine-compare DIR]]
 ```
 
 It checks the mapping file (no raw file needed); `--measure` reads every pack file in `<raw>/env` again (a pure
