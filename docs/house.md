@@ -138,7 +138,12 @@ writes the House's game-ready package (prime-game #523) from the same layout dat
   `prop_fine_high.tres`, `prop_fine_low.tres` (`house_export.fine_material_text`: the shader, the tier's textures, the
   layers' roughness, metallic, normal strength and gain). Each such prop instance in a room overrides its `kit_fine`
   surfaces with `prop_fine_<fine_tier>.tres` (`fine_tier = "high"`; `house_export.set_surfaces` reads them from the
-  GLB). The game swaps the tier per graphics preset (P2's `HANDOFF.md`).
+  GLB). The game swaps the tier per graphics preset (P2's `HANDOFF.md`). Only a package holding a `kit_fine` prop
+  ships the fine pack, and every such package writes it under the same game paths (today P2, committed with it, and
+  P8 `task_props`, whose `assembly_island` and `order_board` carry it). The art repo commits it once, under
+  `assets/prop/house_props/export/`; a later package that lists it must hash the same (one fine build), never a second,
+  different copy under those paths: after a rebuild of the fine pack, re-export and re-commit every committed package
+  that lists it.
 - `package.json`: the package, its rooms, every file's SHA-256, the props still held as markers, the level pieces in
   no room, the kit pieces' surfaces and the questions for the game side (the package's lamp count, and that the
   game's editor regenerates the minimal `.import` files). Files already in `DIR` that the package does not list (an

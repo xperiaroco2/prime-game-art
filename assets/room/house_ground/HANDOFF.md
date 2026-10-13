@@ -46,10 +46,21 @@ own plaster, so the colour stays and the textures are new).
   `res://assets/environment/house_props/prop_fine_high.tres`: `prop_fine.gdshader` with the shared `fine_d`, `fine_n0`,
   `fine_n1` textures. A game-side wrapper of a prop applies `kit_fine` -> that material by name, as with the kit's
   `set`. Import the PNGs VRAM compressed with mipmaps (`compress/mode=2`, `mipmaps/generate=true`; the shader reads
-  them `filter_linear_mipmap_anisotropic`, the normal maps as plain data).
+  them `filter_linear_mipmap_anisotropic`, the normal maps as plain data). `fine_n0.png` and `fine_n1.png` are normal
+  maps holding two layers' XY each (`.rg` and `.ba`; the shader rebuilds Z): never import them with Godot's
+  normal-map hint (its RGTC keeps only `.rg` and loses the second layer); on Ultra import them lossless
+  (`compress/mode=0`) if VRAM compression bands their shading.
 - **Tier per preset (a proposal; the game decides).** High and Ultra: `prop_fine_high.tres` (1024 px, 3 PNGs 7.2 MB on
   disk). Low and Medium: `prop_fine_low.tres` (512 px, 1.8 MB), swapped on the overrides when the preset loads (or
-  set the high resource's three textures and `layer_gain` from the low one: the gain differs per tier).
+  set the high resource's three textures and `layer_gain` from the low one: today both tiers' gain is
+  `Vector4(2, 2, 2, 2)`, but it comes from each tier's measured detail mean in `fine.json`, so a rebuild of the fine
+  pack may make it differ).
+- **One fine pack per game.** Every package with a `kit_fine` prop writes the fine pack (the 6 PNGs, the shader, the
+  two `.tres`) under the same game paths, `assets/environment/house_props/fine/` and `prop_fine*`. Today only P2 is
+  committed with it (the task-props package P8, which holds `assembly_island` and `order_board`, would list it too).
+  Copy it into the game once; a later package that lists it again must hash the same (one fine build), never a second,
+  different copy under those paths: after a rebuild of the fine pack re-export and re-commit every committed package
+  that lists it.
 - **The Detail node.** Each room's `detail`-layer props (`props/library.toml` `[layers]`: the clutter) sit under
   `Detail` beside `Dressing` and `Fixtures`; base props stay in `Dressing`. Proposal for #140 item 4: Low hides
   `Detail` (`visible = false`; detail props carry no colliders, so hiding changes no collision), Medium and up show it. Task stations, fixtures and the shell never sit there.
