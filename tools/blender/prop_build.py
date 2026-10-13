@@ -47,7 +47,7 @@ def main():
     props = [p for p in lib["prop"] if (not batch or p["batch"] == batch) and (not only or p["id"] in only)]
     for o in list(bpy.data.objects):
         bpy.data.objects.remove(o, do_unlink=True)
-    mats, textures = prop_lib.materials(bpy, np, spec, Path(a["ambientcg"]), out)
+    mats, textures = prop_lib.materials(bpy, np, spec, Path(a["ambientcg"]), out, lib.get("fine"))
     path = out / "build.json"
     report = json.loads(path.read_text(encoding="utf-8")) if path.is_file() else {"props": {}}
     report["textures"] = textures

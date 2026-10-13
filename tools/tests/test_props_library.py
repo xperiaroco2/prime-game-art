@@ -204,3 +204,10 @@ class WorldLookTest(unittest.TestCase):
         def edit(lib):
             lib["fine"]["layers"] += [{"name": f"flat{k}", "roughness": 0.5} for k in range(10)]
         self.assertIn("fine: 19 layers (1 to 16: the vertex alpha holds them)", _problems(edit))
+
+    def test_textured_layers_come_first(self) -> None:
+        def edit(lib):
+            lib["fine"]["layers"].append({"name": "late", "source": "Wood092", "roughness": 0.5,
+                                          "normal_strength": 0.2})
+        self.assertIn("fine: the textured layers come first, at most four (the shader's four detail channels)",
+                      _problems(edit))

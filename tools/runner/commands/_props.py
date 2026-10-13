@@ -208,6 +208,9 @@ def check_look(lib: dict[str, Any], roles: dict[str, Any], sources: dict[str, di
         layers = fine.get("layers", [])
         if not 1 <= len(layers) <= FINE_MAX_LAYERS:
             problems.append(f"fine: {len(layers)} layers (1 to {FINE_MAX_LAYERS}: the vertex alpha holds them)")
+        kinds = ["t" if layer.get("source") else "f" for layer in layers]
+        if "".join(kinds) != "".join(sorted(kinds, reverse=True)) or kinds.count("t") > 4:
+            problems.append("fine: the textured layers come first, at most four (the shader's four detail channels)")
         for k, layer in enumerate(layers):
             name = layer.get("name", f"#{k}")
             if name in layer_names:

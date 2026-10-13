@@ -159,3 +159,41 @@ class CleanTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class FinePackTest(unittest.TestCase):
+    """The world look's fine pack in the spec (docs/decisions/2026-10-13-house-world-look.md): one exported material,
+    the layer in vertex alpha in steps of 1/16, the paint not divided by a detail mean."""
+
+    def test_fine_roles_export_as_one_material(self) -> None:
+        fine_roles = [r for r, v in LIB["roles"].items() if v["material"] == "fine"]
+        self.assertGreaterEqual(len(fine_roles), 8)
+        self.assertEqual({kit_geom.export_material(SPEC, SPEC["roles"][r]["material"]) for r in fine_roles}, {"fine"})
+        self.assertNotIn("fine", SPEC["materials"])
+
+    def test_the_layer_is_the_vertex_alpha(self) -> None:
+        names = [layer["name"] for layer in LIB["fine"]["layers"]]
+        for role in ("wood_front", "worktop_stone", "steel_warm", "rubber_black"):
+            k = names.index(LIB["roles"][role]["layer"])
+            self.assertAlmostEqual(kit_geom.role_colour(SPEC, role)[3], 1.0 - k / 16, places=5)
+        # the set pack keeps its 0.25 step
+        self.assertEqual(kit_geom.layer_alpha(SPEC, "wood"), 0.75)
+
+    def test_the_fine_paint_is_the_hex(self) -> None:
+        # no division by a detail mean: the fine shader scales its detail itself
+        self.assertEqual(kit_geom.role_colour(SPEC, "steel_warm")[:3], [round(0xc4 / 255, 5), round(0xbc / 255, 5),
+                                                                        round(0xb0 / 255, 5)])
+
+    def test_layer_values_and_glass_tint(self) -> None:
+        steel = SPEC["materials"]["fine_steel"]
+        self.assertEqual((steel["pack"], steel["metallic"], steel["roughness"]), ("fine", 0.6, 0.42))
+        self.assertEqual(SPEC["materials"]["fine_wood_front"]["fine_source"], "Wood092")
+        glass = SPEC["materials"]["glass_tint"]
+        self.assertEqual((glass["alpha"], glass["metallic"], glass["roughness"]), (0.38, 0.15, 0.05))
+        self.assertEqual(SPEC["packs"]["fine"]["layers"][0], "fine_wood_front")
+
+    def test_the_plants_library_has_no_fine_pack(self) -> None:
+        plain = dict(LIB)
+        plain.pop("fine")
+        spec = prop_geom.lib_spec(plain, KIT)
+        self.assertNotIn("fine", spec["packs"])

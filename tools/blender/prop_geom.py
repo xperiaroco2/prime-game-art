@@ -21,28 +21,48 @@ from kit_geom import EPS, Mesh, Piece
 CH = 0.004  # the chamfer of the soft boxes, metres (2 to 5 mm reads as clay in the lightmap)
 UV2_MARGIN = 0.02  # the lightmap island margin as a share of the prop's largest size
 LIGHT_ANCHOR = "LightAnchor"
+FINE = "fine"  # the world look's shared textured pack (props/library.toml [fine])
+FINE_STEP = 1.0 / 16  # its layer k has vertex alpha 1 - k/16
 
 
 # --- the spec: kit materials and roles plus the library's ---------------------------------------------------------
 def lib_spec(lib: dict, kit: dict) -> dict:
     """A kit_geom-style spec: the kit's materials named by the library's [materials] table (plus the new ones, such
     as emissive, which have no detail texture), the kit's roles and the library's roles mapped to kit materials, and
-    the kit's packs (v2: plaster, wood and concrete export as one `kit_set-vcol` material, the layer in vertex alpha)."""
+    the kit's packs (v2: plaster, wood and concrete export as one `kit_set-vcol` material, the layer in vertex alpha).
+    The world look's fine pack (`[fine]`, docs/decisions/2026-10-13-house-world-look.md) becomes the pack `fine`: one
+    spec material `fine_<layer>` per layer (its roughness, metallic, normal strength and texture `fine_source`), the
+    layer in vertex alpha in steps of 1/16, exported as one `kit_fine-vcol`; its roles point at their layer's
+    material. Its paint is not divided by a detail mean: the fine shader scales the detail itself (`layer_gain`)."""
     used = set(lib["materials"].values())
+    fine = lib.get("fine")
     mats = {}
     for name in sorted(used):
+        if fine is not None and name == FINE:
+            continue
         if name in kit["materials"]:
             mats[name] = dict(kit["materials"][name])
         elif name in lib.get("new_materials", []):
             mats[name] = {"tile_m": 1.0, "roughness": 0.5, "emissive": name == "emissive"}
+            mats[name].update(lib.get("material_props", {}).get(name, {}))
         else:
             raise ValueError(f"[materials] names {name!r}, which the kit lacks and new_materials does not add")
     for name, m in kit["materials"].items():
         mats.setdefault(name, dict(m))
+    packs = {k: dict(v) for k, v in kit.get("packs", {}).items()}
+    if fine is not None:
+        for layer in fine["layers"]:
+            mats[f"{FINE}_{layer['name']}"] = {
+                "pack": FINE, "tile_m": 1.0, "roughness": layer["roughness"], "metallic": layer.get("metallic", 0.0),
+                "normal_strength": layer.get("normal_strength", 0.0), "fine_source": layer.get("source", "")}
+        packs[FINE] = {"layers": [f"{FINE}_{layer['name']}" for layer in fine["layers"]], "alpha_step": FINE_STEP}
     roles = {r: dict(v) for r, v in kit["roles"].items()}
     for r, v in lib["roles"].items():
-        roles[r] = {"material": lib["materials"][v["material"]], "hex": v["hex"]}
-    return {"materials": mats, "roles": roles, "packs": {k: dict(v) for k, v in kit.get("packs", {}).items()}}
+        target = lib["materials"][v["material"]]
+        if fine is not None and target == FINE:
+            target = f"{FINE}_{v['layer']}"
+        roles[r] = {"material": target, "hex": v["hex"]}
+    return {"materials": mats, "roles": roles, "packs": packs}
 
 
 def is_emissive(spec: dict, role: str) -> bool:
