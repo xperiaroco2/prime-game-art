@@ -192,9 +192,9 @@ the room scenes of a package in their own `room` set, P2's in `assets/room/house
 the credits entries, the open questions). P1 to P5 and P7 are approved and merged, their manifests' approval fields set: P1 and P2 in #125, P3 and P5
 in #127, P4 in #130, P7 (with the props, the outdoor and garden sets) in #131; #147 changed P2 and the props (the
 C2-white kitchen, the fine pack, the Detail node; approved in #149), and #150 changed them again (the living room in
-the world look, the fine pack's eight slots), so their approval fields wait again. The packages P3 to P5 place some of
-#150's rebuilt props (armchair, bookcase, dresser, rug, sideboard, small_table) and are not re-exported: their
-committed scenes carry no `kit_fine` override for them (P2's `HANDOFF.md`, an open question). The engineer approves the look from
+the world look, the fine pack's eight slots), so their approval fields wait again. #150 also re-exported P3 to P5, which place
+some of its rebuilt props (armchair, bookcase, dresser, rug, sideboard, small_table): their scenes override those
+props' `kit_fine` surfaces too, list the fine pack and gain the Detail node, and their approval fields wait as well. The engineer approves the look from
 
 ```
 tools/run.sh house --package-sheet DIR --package N

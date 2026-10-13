@@ -57,7 +57,7 @@ own plaster, so the colour stays and the textures are new).
   `Vector4(2, 2, 2, 2)`, but it comes from each tier's measured detail mean in `fine.json`, so a rebuild of the fine
   pack may make it differ).
 - **One fine pack per game.** Every package with a `kit_fine` prop writes the fine pack (the 6 PNGs, the shader, the
-  two `.tres`) under the same game paths, `assets/environment/house_props/fine/` and `prop_fine*`. Today only P2 is
+  two `.tres`) under the same game paths, `assets/environment/house_props/fine/` and `prop_fine*`. Since #150 P2 to P5 are
   committed with it (the task-props package P8, which holds `assembly_island` and `order_board`, would list it too).
   Copy it into the game once; a later package that lists it again must hash the same (one fine build), never a second,
   different copy under those paths: after a rebuild of the fine pack re-export and re-commit every committed package
@@ -81,10 +81,10 @@ own plaster, so the colour stays and the textures are new).
   Carpet016), `fine_n2.png` and `fine_n3.png` their normals; `prop_fine.gdshader` and both `.tres` read all six PNGs
   per tier and carry `slot_gain` (8 values) instead of one gain per four slots. On disk: high 16.0 MB (6 PNGs, 1024 px),
   low 4.0 MB (512 px). The "one fine pack per game" rule above holds: copy the new pack over the old one.
-- **Open: the packages P3, P4 and P5 are not re-exported.** Their committed scenes place `armchair`, `bookcase`,
-  `dresser`, `rug`, `sideboard` and `small_table` (house_upper, house_attic, house_basement) without a `kit_fine`
-  override; with the new GLBs those rooms need the game-side `kit_fine` -> `prop_fine_*.tres` wrapper, or a re-export
-  of those packages (the art manager decides).
+- **P3, P4 and P5 re-exported.** Their scenes place some of the rebuilt props (`sideboard` in house_basement; the
+  six of `armchair`, `bookcase`, `dresser`, `rug`, `sideboard`, `small_table` in house_upper; `rug` in house_attic), so
+  #150 re-exports them too: the same `kit_fine` overrides, the fine pack in their `package.json`, #147's `Detail` node;
+  their approval fields wait with P2's.
 - **LFS.** #150 adds 11.8 MB of LFS objects: the 16 GLBs (0.79 MB, the 10 replaced weighed 0.57 MB) and the 6 new PNGs
   (11.0 MB).
 
