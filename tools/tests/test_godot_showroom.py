@@ -86,8 +86,11 @@ class TuningTest(unittest.TestCase):
         four = _showroom.variants("ssao")[0]
         t3, t6 = _showroom.variants("t3,t6", "tune")
         w3, w4 = _showroom.variants("w3,w4", "warm")
-        for key in ("clay_specular", "key_energy", "key_kelvin", "agx_contrast", "exposure"):
+        for key in ("clay_specular", "key_energy", "key_kelvin", "agx_contrast"):
             self.assertEqual(four[key], t3[key], key)
+        x2 = _showroom.variants("x2", "expose")[0]
+        self.assertEqual(four["exposure"], x2["exposure"], "the exposure grid's X2")
+        self.assertEqual(_showroom.presets_document()["environment"]["tonemap_exposure"], x2["exposure"])
         for key in ("sky_contribution", "ambient_color", "ambient_energy"):
             self.assertEqual(four[key], w3[key], key)
         self.assertEqual(four["fill_energy"], w4["fill_energy"])
@@ -205,7 +208,9 @@ class WarmTest(unittest.TestCase):
         by_id = {v["id"]: v for v in _showroom.EXPOSE}
         self.assertLessEqual(len(_showroom.EXPOSE), _showroom.MAX_VARIANTS)
         self.assertEqual({k: by_id["x1"][k] for k in _showroom.KEYS},
-                         {k: _showroom.VARIANTS[4][k] for k in _showroom.KEYS}, "the ladder's variant 5")
+                         {**{k: _showroom.VARIANTS[4][k] for k in _showroom.KEYS}, "exposure": 1.0},
+                         "the ladder's variant 5 before X2's exposure")
+        self.assertEqual(_showroom.VARIANTS[4]["exposure"], by_id["x2"]["exposure"], "X2 is the recommendation")
         for v in _showroom.EXPOSE[1:]:
             parent = by_id[v["parent"]]
             changed = {k for k in _showroom.KEYS if v[k] != parent[k]}

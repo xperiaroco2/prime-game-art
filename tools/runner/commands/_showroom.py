@@ -62,9 +62,13 @@ _LIT_STEP2 = {**_LIT_STEP1, "ambient_energy": 0.15, "clay_specular": 0.1, "eye_r
 _SHARE = {"sky_contribution": 0.5, "ambient_color": [1.0, 0.8, 0.62], "ambient_energy": 0.12}
 _FILL = {"fill_energy": 0.12}
 _EXPOSE = {"exposure": 0.8, "key_kelvin": 4000, "key_energy": 2.5}
-# The sky-lit look since step 3 (the recommendation, still a proposal): step 2's with the warm grid's W3 (sky share
-# 0.5, dark warm ambient) and W4 (fill 0.12); see WARM and docs/godot.md.
-_LIT = {**_LIT_STEP2, **_SHARE, **_FILL}
+# The sky-lit look of step 3's warm grid: step 2's with its W3 (sky share 0.5, dark warm ambient) and W4 (fill 0.12);
+# see WARM. The base of the exposure grid (EXPOSE).
+_LIT_WARM = {**_LIT_STEP2, **_SHARE, **_FILL}
+# The sky-lit look since step 3 (the recommendation, still a proposal): the warm grid's with the exposure grid's X2,
+# exposure 0.9; see EXPOSE and docs/godot.md.
+EXPOSURE = 0.9
+_LIT = {**_LIT_WARM, "exposure": EXPOSURE}
 VARIANTS: list[dict[str, Any]] = [
     {"id": "stand", "label": "1 frames stand", **_STAND},
     {"id": "agx", "label": "2 AgX", **{**_STAND, "tonemap": "agx", "exposure": 1.2}},
@@ -119,7 +123,8 @@ WARM: list[dict[str, Any]] = [
 # to 2.5) at once, so the exposure was never tried alone. On the recommendation (ladder variant 5, High: W3 and W4),
 # the exposure alone at 0.9, 0.8 and 0.7; the 4000 K key's colour alone at the key's energy 2.0; the two together; and
 # the key at 2.5 with them (W5's levers on the new base), each against the parent that isolates its one change.
-_HIGH = {**_LIT, "ssao": True, "soft_shadows": True}
+# Kept as run: its base is the ladder's variant 5 before X2's exposure 0.9 joined the ladder.
+_HIGH = {**_LIT_WARM, "ssao": True, "soft_shadows": True}
 _WARM_KEY = {**_HIGH, "key_kelvin": 4000}
 EXPOSE: list[dict[str, Any]] = [
     {"id": "x1", "label": "X1 base: 5 (High)", "parent": "", **_HIGH},
@@ -379,7 +384,7 @@ LOOK_ENVIRONMENT = {
     "background_mode": "BG_COLOR or BG_SKY (the map's choice; the sky below lights it either way)",
     "sky": "PanoramaSkyMaterial on a studio or the map's HDRI, energy_multiplier 1.0, radiance_size 256",
     "tonemap_mode": "TONE_MAPPER_AGX",
-    "tonemap_exposure": 1.0,
+    "tonemap_exposure": EXPOSURE,
     "ambient_light_source": "AMBIENT_SOURCE_SKY",
     "ambient_light_energy": _SHARE["ambient_energy"],
     "ambient_light_color": _SHARE["ambient_color"],
@@ -388,7 +393,8 @@ LOOK_ENVIRONMENT = {
     "why": "half the ambient from the sky, half a dark warm colour (step 3's W3): the face 4 L* darker, warmer and "
            "better shaded, the closest single change; at ambient_light_sky_contribution 1.0 Godot ignores "
            "ambient_light_energy and ambient_light_color (step 2's T2 changed nothing), and the sky's "
-           "energy_multiplier at 0.5 (W2) did not reach the face's skin (a no-op for the face)",
+           "energy_multiplier at 0.5 (W2) did not reach the face's skin (a no-op for the face). Exposure 0.9 (the "
+           "exposure grid's X2) brings the skin 1 to 2 L* darker, nearer Blender's; 0.8 and 0.7 overshoot",
 }
 LOOK_LIGHTS = {
     "key": {"type": "DirectionalLight3D", "energy": 2.0, "specular": 0.6, "shadow": True},

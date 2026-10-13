@@ -5,7 +5,7 @@
   "background_mode": "BG_COLOR or BG_SKY (the map's choice; the sky below lights it either way)",
   "sky": "PanoramaSkyMaterial on a studio or the map's HDRI, energy_multiplier 1.0, radiance_size 256",
   "tonemap_mode": "TONE_MAPPER_AGX",
-  "tonemap_exposure": 1.0,
+  "tonemap_exposure": 0.9,
   "ambient_light_source": "AMBIENT_SOURCE_SKY",
   "ambient_light_energy": 0.12,
   "ambient_light_color": [
@@ -15,7 +15,7 @@
   ],
   "ambient_light_sky_contribution": 0.5,
   "reflected_light_source": "REFLECTION_SOURCE_SKY",
-  "why": "half the ambient from the sky, half a dark warm colour (step 3's W3): the face 4 L* darker, warmer and better shaded, the closest single change; at ambient_light_sky_contribution 1.0 Godot ignores ambient_light_energy and ambient_light_color (step 2's T2 changed nothing), and the sky's energy_multiplier at 0.5 (W2) did not reach the face's skin (a no-op for the face)"
+  "why": "half the ambient from the sky, half a dark warm colour (step 3's W3): the face 4 L* darker, warmer and better shaded, the closest single change; at ambient_light_sky_contribution 1.0 Godot ignores ambient_light_energy and ambient_light_color (step 2's T2 changed nothing), and the sky's energy_multiplier at 0.5 (W2) did not reach the face's skin (a no-op for the face). Exposure 0.9 (the exposure grid's X2) brings the skin 1 to 2 L* darker, nearer Blender's; 0.8 and 0.7 overshoot"
  },
  "lights": {
   "key": {
