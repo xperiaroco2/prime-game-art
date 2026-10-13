@@ -1,6 +1,8 @@
-"""The living room's round-2 props (#150, docs/props.md): the floor plant collides only with its pot, the detail
-layer's small props have no collider and keep to the clutter budget, and the wall art's drawn layers stay inside the
-frame's depth on the wall. Pure Python, no Blender (the generic checks are test_props_geom's)."""
+"""The living room's new props (#150, docs/props.md): every one builds at its size_m (never more than 15 mm over it,
+so a detail prop does not overhang the top it stands on), at its pivot and under its class's triangle budget; the
+floor plant collides only with its pot, the detail layer's small props have no collider and keep to the clutter
+budget, and the wall art's drawn layers stay inside the frame's depth on the wall. Pure Python, no Blender (the
+library-wide checks are test_props_geom's)."""
 
 from __future__ import annotations
 
@@ -21,8 +23,11 @@ STYLE = prop_geom.Style.from_lib(LIB)
 BY_ID = {p["id"]: p for p in LIB["prop"]}
 
 ART = ("art_abstract", "art_city", "art_burger", "art_photos", "art_score")
-DETAIL = ("table_plant", "side_lamp", "game_console", "board_games", "slippers", "laptop", "deco_vase", "deco_bowl",
+DETAIL = ("living_tray", "magazine_fan", "mantel_clock", "standing_frame", "throw_basket", "candle_pair",
+          "table_plant", "side_lamp", "game_console", "board_games", "slippers", "laptop", "deco_vase", "deco_bowl",
           "coffee_books", "candle_jars", "art_photos", "art_score")
+NEW = DETAIL + ("floor_plant", "art_abstract", "art_city", "art_burger")
+OVER_M = 0.015  # a detail prop may stand at most this far over its size_m
 
 
 def _build(pid: str) -> dict:
@@ -30,8 +35,39 @@ def _build(pid: str) -> dict:
 
 
 class LivingRoundTwoTest(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.built = {pid: _build(pid) for pid in NEW}
+
+    def test_every_new_prop_builds_at_its_size(self):
+        for pid in NEW:
+            p, d = BY_ID[pid], self.built[pid]
+            want = _props.size_xyz(p.get("built_size_m", p["size_m"]))
+            for got, w in zip(d["size_m"], want):
+                msg = f"{pid}: built {d['size_m']}, want {want}"
+                self.assertLessEqual(got, w + OVER_M, msg)
+                self.assertGreaterEqual(got, w - max(0.03, 0.12 * w), msg)
+
+    def test_every_new_prop_sits_at_its_pivot(self):
+        for pid in NEW:
+            p, b = BY_ID[pid], self.built[pid]["bounds_m"]
+            lo, hi = b["min"], b["max"]
+            self.assertAlmostEqual(lo[0] + hi[0], 0.0, places=3, msg=f"{pid}: not centred across")
+            self.assertAlmostEqual(lo[1], 0.0, places=4, msg=f"{pid}: not on its base")
+            if p["pivot"] == "wall":
+                self.assertAlmostEqual(lo[2], 0.0, places=4, msg=f"{pid}: its back is off the wall")
+            else:
+                self.assertEqual(p["pivot"], "floor", pid)
+                self.assertAlmostEqual(lo[2] + hi[2], 0.0, places=3, msg=f"{pid}: not centred in depth")
+
+    def test_every_new_prop_keeps_its_class_budget(self):
+        for pid in NEW:
+            p = BY_ID[pid]
+            self.assertLessEqual(self.built[pid]["triangles"], LIB["budgets"][p["class"]][1], pid)
+
     def test_the_floor_plant_collides_with_its_pot_only(self):
-        d = _build("floor_plant")
+        d = self.built["floor_plant"]
+        self.assertEqual(BY_ID["floor_plant"]["collision"], "box")
         self.assertEqual(len(d["colliders"]), 1)
         pts = d["colliders"][0]["points"]
         top = max(p[1] for p in pts)
@@ -44,7 +80,7 @@ class LivingRoundTwoTest(unittest.TestCase):
             p = BY_ID[pid]
             self.assertEqual(p["class"], "clutter", pid)
             self.assertEqual(p["collision"], "none", pid)
-            d = _build(pid)
+            d = self.built[pid]
             self.assertEqual(d["colliders"], [], pid)
             self.assertLessEqual(d["triangles"], tri_max, pid)
 
@@ -53,7 +89,7 @@ class LivingRoundTwoTest(unittest.TestCase):
             p = BY_ID[pid]
             self.assertEqual(p["pivot"], "wall", pid)
             depth = p["size_m"][1]
-            b = _build(pid)["bounds_m"]
+            b = self.built[pid]["bounds_m"]
             self.assertGreaterEqual(b["min"][2], -1e-4, f"{pid}: behind the wall")
             self.assertLessEqual(b["max"][2], depth + 1e-4, f"{pid}: deeper than its frame")
             self.assertAlmostEqual(b["max"][0] - b["min"][0], p["size_m"][0], delta=0.01, msg=pid)
