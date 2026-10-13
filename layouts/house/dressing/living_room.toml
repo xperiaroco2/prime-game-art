@@ -223,7 +223,7 @@ face = "N"
 
 [[props]]
 id = "standing_frame"
-at = [1.75, 0.7, 12.98]
+at = [1.74, 0.7, 13.0]
 face = "N"
 
 [[props]]

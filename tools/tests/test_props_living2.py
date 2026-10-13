@@ -1,13 +1,16 @@
 """The living room's new props (#150, docs/props.md): every one builds at its size_m (never more than 15 mm over it,
 so a detail prop does not overhang the top it stands on), at its pivot and under its class's triangle budget; the
 floor plant collides only with its pot, the detail layer's small props have no collider and keep to the clutter
-budget, and the wall art's drawn layers stay inside the frame's depth on the wall. Pure Python, no Blender (the
-library-wide checks are test_props_geom's)."""
+budget, the wall art's drawn layers stay inside the frame's depth on the wall, and a detail prop on a round side
+table stands fully on its top with a 1 cm margin. Pure Python, no Blender (the library-wide checks are
+test_props_geom's)."""
 
 from __future__ import annotations
 
 import json
+import math
 import sys
+import tomllib
 import unittest
 
 from runner import common
@@ -28,6 +31,9 @@ DETAIL = ("living_tray", "magazine_fan", "mantel_clock", "standing_frame", "thro
           "coffee_books", "candle_jars", "art_photos", "art_score")
 NEW = DETAIL + ("floor_plant", "art_abstract", "art_city", "art_burger")
 OVER_M = 0.015  # a detail prop may stand at most this far over its size_m
+TOP_MARGIN_M = 0.01  # a detail prop on a side table keeps this far inside the top's edge
+DRESSING = common.ROOT / "layouts" / "house" / "dressing" / "living_room.toml"
+FACES = {"S": 0, "E": 90, "N": 180, "W": -90}  # house_dressing.FACES
 
 
 def _build(pid: str) -> dict:
@@ -94,6 +100,33 @@ class LivingRoundTwoTest(unittest.TestCase):
             self.assertLessEqual(b["max"][2], depth + 1e-4, f"{pid}: deeper than its frame")
             self.assertAlmostEqual(b["max"][0] - b["min"][0], p["size_m"][0], delta=0.01, msg=pid)
             self.assertAlmostEqual(b["max"][1] - b["min"][1], p["size_m"][2], delta=0.01, msg=pid)
+
+    def test_the_detail_on_a_side_table_stands_on_its_top(self):
+        items = tomllib.loads(DRESSING.read_text(encoding="utf-8"))["props"]
+        tables = [i for i in items if i["id"] == "small_table"]
+        r = min(BY_ID["small_table"]["size_m"][:2]) / 2  # prop_geom.build_side_table: a round top
+        top = BY_ID["small_table"]["size_m"][2]
+        # the side lamp's shade may reach past the top over its much smaller round base: its bounds do not tell
+        on = [(i, t) for i in items if i["id"] in DETAIL and i["id"] != "side_lamp" and abs(i["at"][1] - top) < 1e-6
+              for t in tables if math.dist((i["at"][0], i["at"][2]), (t["at"][0], t["at"][2])) < r]
+        self.assertTrue(any(i["id"] == "standing_frame" for i, _ in on), "no standing frame on a side table")
+        for item, table in on:
+            if item["id"] not in self.built:
+                continue
+            b = self.built[item["id"]]["bounds_m"]
+            a = math.radians(float(item.get("yaw", FACES[item.get("face", "S")])))
+            half = ((b["max"][0] - b["min"][0]) / 2, (b["max"][2] - b["min"][2]) / 2)
+            mid = ((b["max"][0] + b["min"][0]) / 2, (b["max"][2] + b["min"][2]) / 2)
+            if abs(half[0] - half[1]) < 0.05 * max(half):  # a square footprint is a round prop (the bowl): its disc
+                pts, extra = [mid], max(half)
+            else:  # a rectangle (the frame): its four corners
+                pts, extra = [(mid[0] + sx * half[0], mid[1] + sz * half[1]) for sx in (-1, 1) for sz in (-1, 1)], 0.0
+            for x, z in pts:
+                wx = item["at"][0] + x * math.cos(a) + z * math.sin(a)
+                wz = item["at"][2] - x * math.sin(a) + z * math.cos(a)
+                d = math.dist((wx, wz), (table["at"][0], table["at"][2])) + extra
+                self.assertLessEqual(d, r - TOP_MARGIN_M, f"{item['id']} at {item['at']}: reaches {d:.3f} m "
+                                     f"from the side table's centre, its top's radius {r} m")
 
 
 if __name__ == "__main__":
