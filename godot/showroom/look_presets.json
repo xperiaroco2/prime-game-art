@@ -8,7 +8,9 @@
   "tonemap_exposure": 1.0,
   "ambient_light_source": "AMBIENT_SOURCE_SKY",
   "ambient_light_energy": 0.15,
-  "reflected_light_source": "REFLECTION_SOURCE_SKY"
+  "ambient_light_sky_contribution": 1.0,
+  "reflected_light_source": "REFLECTION_SOURCE_SKY",
+  "why": "at ambient_light_sky_contribution 1.0 Godot ignores ambient_light_energy and ambient_light_color: the sky lights at its own radiance (step 2's T2, energy 0.4 to 0.15, changed nothing); a weaker sky ambient is untested"
  },
  "lights": {
   "key": {

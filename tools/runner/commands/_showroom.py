@@ -53,7 +53,8 @@ _STAND = {"tonemap": "linear", "exposure": 1.0, "agx_white": AGX_WHITE, "agx_con
 _LIT_STEP1 = {**_STAND, "tonemap": "agx", "exposure": 1.0, "ambient": "sky", "ambient_energy": 0.4, "reflections": True,
               "key_energy": 2.0, "key_specular": 0.6, "catch_light": True, **CATCH_STEP1}
 # The sky-lit look since step 2 (the recommendation, still a proposal): step 1's with the grid's T3 (sky ambient 0.15,
-# the clay's specular 0.1) and T6's eye glint; see TUNING and docs/godot.md.
+# the clay's specular 0.1) and T6's eye glint; see TUNING and docs/godot.md. At sky_contribution 1.0 Godot ignores
+# ambient_energy (and ambient_color): the sky lights at its own radiance whatever the energy says.
 _LIT = {**_LIT_STEP1, "ambient_energy": 0.15, "clay_specular": 0.1, "eye_roughness": EYE_ROUGHNESS, **CATCH}
 VARIANTS: list[dict[str, Any]] = [
     {"id": "stand", "label": "1 frames stand", **_STAND},
@@ -67,6 +68,8 @@ VARIANTS: list[dict[str, Any]] = [
 # The tuning grid of step 2 (2026-10-13): on variant 4 (sky-lit, SSAO, hard shadows), each row changes only what the
 # step-1 findings point at, named in its label: the sky's ambient energy, the clay's specular (its sky reflections),
 # a warm and stronger key, AgX's contrast, a glint the eyes catch, a warm ambient, the sky reflections off.
+# T2 changed nothing (found after the run): at sky_contribution 1.0 Godot ignores ambient_energy; T7 is the only row
+# that lowers the sky's share. Kept as run, so the table matches its sheets.
 _T2 = {**_LIT_STEP1, "ssao": True, "ambient_energy": 0.15}
 _T3 = {**_T2, "clay_specular": 0.1}
 _T4 = {**_T3, "key_kelvin": 4000, "key_energy": 3.0}
@@ -253,7 +256,11 @@ LOOK_ENVIRONMENT = {
     "tonemap_exposure": 1.0,
     "ambient_light_source": "AMBIENT_SOURCE_SKY",
     "ambient_light_energy": 0.15,
+    "ambient_light_sky_contribution": 1.0,
     "reflected_light_source": "REFLECTION_SOURCE_SKY",
+    "why": "at ambient_light_sky_contribution 1.0 Godot ignores ambient_light_energy and ambient_light_color: the sky "
+           "lights at its own radiance (step 2's T2, energy 0.4 to 0.15, changed nothing); a weaker sky ambient is "
+           "untested",
 }
 LOOK_LIGHTS = {
     "key": {"type": "DirectionalLight3D", "energy": 2.0, "specular": 0.6, "shadow": True},

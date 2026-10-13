@@ -236,7 +236,7 @@ Each **variant** of the ladder (`_showroom.VARIANTS`, `--grid ladder`, the defau
 |---|---|---|
 | 1 | frames stand | the stand as is: linear, colour ambient 0.55, no reflections, key 1.05 with specular 0.15 |
 | 2 | AgX | the AgX tonemapper, exposure 1.2; nothing else |
-| 3 | AgX + sky + catch | the studio sky as ambient (0.15) and reflections, exposure 1.0, key 2.0 with specular 0.6, the clay's specular (`metallic_specular` of the `_clay` materials) 0.1 instead of Godot's 0.5, and a **catch light** for the eyes' glint: an `OmniLight3D` on the camera, up-left of the view at (-0.25, 0.3, 0), `light_size` 0.06 (a small spherical area light), energy 0.6, specular 16, no attenuation, and a cull mask of render layer 20 alone, on which the showroom also puts the meshes with an `_eye` material: it lights the eyes and nothing else; the eye materials at roughness 0.05 (exported 0.17), so the glint is a small sharp dot (step 2's grid, below) |
+| 3 | AgX + sky + catch | the studio sky as ambient (at full strength: sky contribution 1.0, where Godot ignores the ambient energy) and reflections, exposure 1.0, key 2.0 with specular 0.6, the clay's specular (`metallic_specular` of the `_clay` materials) 0.1 instead of Godot's 0.5, and a **catch light** for the eyes' glint: an `OmniLight3D` on the camera, up-left of the view at (-0.25, 0.3, 0), `light_size` 0.06 (a small spherical area light), energy 0.6, specular 16, no attenuation, and a cull mask of render layer 20 alone, on which the showroom also puts the meshes with an `_eye` material: it lights the eyes and nothing else; the eye materials at roughness 0.05 (exported 0.17), so the glint is a small sharp dot (step 2's grid, below) |
 | 4 | + SSAO | radius 0.6, intensity 1.5, light affect 0.2 |
 | 5 | + soft shadows | the key light's angular size 1.5 degrees (PCSS), soft shadow filter quality high, blur 1.0 |
 | 6 | + SSS clay | subsurface scattering on the materials whose name ends in `_clay`, strength 0.25, skin mode on the head; quality medium |
@@ -284,13 +284,14 @@ shadows (PCSS) are the one step that stands out every time.
 
 What the sheets show (the first grid, before the engineer looks): AgX alone (2) keeps the stand's colours and rolls
 off the highlights; the sky-lit variants (3 to 6) add a soft sheen to the clay and the pupils but look **washed out**
-next to the Blender face (pale hair, little key-light shading on the face): the studio HDRI's ambient is strong even at
-energy 0.4 (the first run at 1.0 was paler still). The eyes' glint: the second run's catch light (a directional light, energy 0.1, specular 4.0) left none, since a
+next to the Blender face (pale hair, little key-light shading on the face): the first run (ambient energy 1.0, key 1.05)
+was paler than the second (0.4, key 2.0), but at sky contribution 1.0 Godot ignores the ambient energy, so the
+stronger key made the difference (step 2, below). The eyes' glint: the second run's catch light (a directional light, energy 0.1, specular 4.0) left none, since a
 sun's highlight on roughness 0.17 is under a pixel; one grid of the area light (size 0.1, 0.2, 0.35 by energy 0.3,
 1.0) chose size 0.2 at energy 0.3, a clear glint on the pupil (energy 1.0 blows out the whites); it costs no
 measurable GPU time. SSAO darkens
 the hair roots a little; soft shadows (PCSS) cost about 2 ms at 1920 x 1080 and change little on a face; SSS on the
-clay costs nothing measurable and is barely visible. Step 2's grid below answered the open question (the clay's specular, not the ambient).
+clay costs nothing measurable and is barely visible. Step 2's grid below found the main cause, the clay's specular; the ambient's strength it did not test (below).
 
 
 ### Step 2: the tuning grid and the numeric check (2026-10-13)
@@ -308,7 +309,7 @@ approved Blender crops). A guide beside the eye: framing and pose differ a littl
 |---|---:|---:|---:|---:|---:|---:|
 | Blender (approved) | 66.7 | 12.8 | 23.8 | 28.6 | 0 | |
 | T1 base (4 +SSAO) | 75.9 (+9.2) | 10.7 (-2.1) | 16.9 (-6.9) | 33.0 (+4.4) | 22.6 | 1.76 |
-| T2 ambient 0.15 | 75.9 (+9.2) | 10.7 (-2.1) | 16.9 (-6.9) | 33.0 (+4.4) | 22.6 | 1.85 |
+| T2 ambient 0.15 (no effect: below) | 75.9 (+9.2) | 10.7 (-2.1) | 16.9 (-6.9) | 33.0 (+4.4) | 22.6 | 1.85 |
 | T3 +clay spec 0.1 | 75.7 (+9.0) | 11.3 (-1.5) | 16.3 (-7.5) | 25.2 (-3.4) | **21.4** | 1.95 |
 | T4 +key 4000K x3 | 81.1 (+14.4) | 10.3 (-2.5) | 11.7 (-12.1) | 30.9 (+2.3) | 31.3 | 1.98 |
 | T5 +AgX contrast 1.6 | 83.5 (+16.8) | 10.1 (-2.7) | 11.4 (-12.4) | 27.2 (-1.4) | 33.3 | 2.00 |
@@ -317,9 +318,14 @@ approved Blender crops). A guide beside the eye: framing and pose differ a littl
 | T8 T6 sky refl. off | 83.3 (+16.6) | 10.2 (-2.6) | 11.1 (-12.7) | 27.1 (-1.5) | 33.4 | 1.98 |
 
 What it shows:
-- **The sky's ambient is not the veil.** 0.4 to 0.15 (T2) changes no number; turning the sky reflections off (T8)
-  neither. The pale hair comes from the clay's **specular** at Godot's default 0.5: the key light's sheen on the
-  roughness-0.8 clay. At 0.1 (T3) the hair drops from L* 33.0 to 25.2 (Blender 28.6) and reads as dark rich brown.
+- **T2 tested nothing: the sky's ambient strength is still untested.** Godot uses `ambient_light_energy` (and
+  `ambient_light_color`) only while `ambient_light_sky_contribution` is below 1.0 (the `Environment` class reference);
+  steps 1 and 2 left it at 1.0, so the sky's ambient is the sky's own radiance and the energy 0.4 or 0.15 never
+  reached it. T1's and T2's shots differ only in their labels (under 1 % of the pixels, all in the label strip at
+  the top). The only variant that lowered the sky's share is T7 (contribution 0.4). Turning the sky reflections off
+  (T8) changes half the pixels by about 1.5 of 255 and no number by more than 0.3. The pale hair comes from the
+  clay's **specular** at Godot's default 0.5: the key light's sheen on the roughness-0.8 clay. At 0.1 (T3) the hair
+  drops from L* 33.0 to 25.2 (Blender 28.6) and reads as dark rich brown.
 - **A stronger, warmer key makes it worse.** 4000 K at energy 3.0 (T4) brightens the face (+5 L*) and flattens it
   (shading 16.3 to 11.7: the lit side rolls off into AgX's shoulder); the hair turns orange-red. AgX contrast 1.6 (T5)
   brightens further. A warm ambient (T7) brings the skin's chroma to Blender's (12.2 against 12.8) but not its shading.
@@ -330,7 +336,8 @@ What it shows:
   (21.4) and the hair within 3.4 L* of Blender, with the glint. The ladder rerun with it measures variant 4 at 21.4 and
   variant 5 (soft shadows) at 15.9, the closest: PCSS's soft terminator gives the face its shading back (19.6).
 - **Still open:** the face is about 7 to 9 L* brighter and its shading 4 to 7 lower than Blender's. The levers this grid
-  did not try: the exposure down (about 0.8), the fill light weaker, the key from further to the side, the key's
+  did not try: the sky's ambient lower (`ambient_light_sky_contribution` under 1.0 with a dark ambient colour, or the
+  sky's `energy_multiplier`), the exposure down (about 0.8), the fill light weaker, the key from further to the side, the key's
   specular (0.6) lower.
 
 The look is the engineer's to approve (art #140); until he says yes these settings are a proposal, and
