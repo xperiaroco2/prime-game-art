@@ -684,7 +684,9 @@ tools/run.sh house --bake ZONES [--preset high|low] [--grid] [--diag] [--sheen] 
 4. With `--review DIR` the zone's first variant is also baked with its lights dynamic (`<tag>_ld`: the lightmap
    holds only their bounce) for the reference row, and `bake_shots.gd` (an off-screen window) shoots each zone's
    rows from two E1 cameras (a room corner at 1.6 m across to
-   three quarters of the room) and one seam camera (level along the first room's middle line from 1 m inside its north
+   three quarters of the room), the ground's kitchen wall camera (`REVIEW_WALL`: from the room's middle line at 55 %
+   of its depth at the north wall, where the worktops, uppers and fridge stand and the E1 camera has its back; #83)
+   and one seam camera (level along the first room's middle line from 1 m inside its north
    wall: ceiling and floor tiles in frame, never inside a wall). The rows: `realtime` (no lightmap, the light kit's
    lights dynamic and unshadowed: they leak through walls), the baked rows, and the reference `hybrid_nospec` (the
    `_ld` lightmap plus the lights in real time with shadows and `light_specular` 0: what a diffuse lightmap can hold;
@@ -710,6 +712,40 @@ tools/run.sh house --bake ZONES [--preset high|low] [--grid] [--diag] [--sheen] 
    light nudged 1 mm per frame: a player moving in every lamp's range), averaged over 8 frames; each row's first
    sheet tile carries its label (the measured frames have none). A preset review (`--review` without a grid) also
    shoots the preset's `sheen` row. About seven minutes for the ground floor.
+
+### Baking with lab props (#83)
+
+A lab builds new props as GLBs outside the repo (the kitchen pilot's C2-white, `D:/prime-art-raw/research/
+2026-10-12-kitchen-pilot/round2/opus/C2w`). `house --bake` can bake and shoot them in place of the committed ones:
+
+```
+tools/run.sh house --bake ZONES --props-dir DIR [--props-map TOML] [--review DIR [--before DIR]] [--no-bake]
+```
+
+- `--props-dir DIR`: each `DIR/<id>.glb` whose id a room dresses replaces that prop (also a prop that had no GLB and
+  stood as a placeholder box). The swap is by id, in every room that dresses it (C2-white's counters land in the
+  pantry too). Only the scenes under `godot/import/house` and the staged copies in `godot/import` change. Both are
+  ignored, and the next `house` run writes them back from the committed props. The raw prop folders and `props/`
+  are not touched.
+- `--props-map TOML` (`tools/runner/house_bake_props.py`): `[props]` maps a prop id to a GLB path in DIR (then only
+  those swap); `[[extra]]` adds a piece no room dresses (`id`, `room`, `glb`, room-local `at = [x, h, z]`, `yaw`)
+  to that room's `Dressing` group; `label` names the after rows. A mapped id no room dresses, an extra id that is a
+  dressing prop, or a missing file fails the command. `props/bake/kitchen_c2w.toml` is C2-white's: seven kitchen
+  props and the two backsplash strips at the lab's placements. The lab's `bread_bowl` is left out because no room
+  dresses one.
+- `--before DIR` (with `--review`, a preset bake): an earlier review of the same preset, usually the committed props.
+  The review then also holds `before_after.png` and `before_after.md`. The PNG is about 1280 px across: per zone the
+  before run's baked row, this run's baked row and its preset sheen row, from the same cameras. Each row's
+  first tile carries its title in a 5x7 pixel font. The md holds the frame measures against the before row.
+- The props go through the bake as the committed ones do (`light_baking=2`, Godot unwraps their UV2).
+
+The C2-white review (#83, night or a daytime grant; two runs of about 3-4 minutes each, one at a time):
+
+```
+tools/run.sh house --bake ground --review D:/prime-art-raw/review/house/83k/today
+tools/run.sh house --bake ground --props-dir D:/prime-art-raw/research/2026-10-12-kitchen-pilot/round2/opus/C2w \
+  --props-map props/bake/kitchen_c2w.toml --review D:/prime-art-raw/review/house/83k --before D:/prime-art-raw/review/house/83k/today
+```
 
 ### Why the bakes looked darker (#83b)
 

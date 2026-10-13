@@ -8,8 +8,8 @@ import json
 import tomllib
 from pathlib import Path
 
-from .. import (common, house_basement, house_clutter, house_dressing, house_export, house_fill, house_layout, house_lights,
-               house_routes)
+from .. import (common, house_basement, house_bake_props, house_clutter, house_dressing, house_export, house_fill,
+               house_layout, house_lights, house_routes)
 from . import _frames, _godot, _house_bake
 
 NAME = "house"
@@ -51,6 +51,15 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--merge", action="store_true",
                         help="with --bake: weld each room level's floor tiles into one unwrapped mesh (one lightmap "
                              "island per floor kind and height instead of one per tile)")
+    parser.add_argument("--props-dir", type=Path, metavar="DIR",
+                        help="with --bake: stage GLBs from DIR in place of the props named after them (or in "
+                             "--props-map) for the bake and its review; the committed props are not touched")
+    parser.add_argument("--props-map", type=Path, metavar="TOML",
+                        help="with --props-dir: prop id -> GLB in DIR, extra pieces per room, the sheet's label "
+                             "(tools/runner/house_bake_props.py)")
+    parser.add_argument("--before", type=Path, metavar="DIR",
+                        help="with --bake and --review: an earlier review of the same preset; adds before_after.png "
+                             "and before_after.md (its baked row over this run's baked and sheen rows)")
     parser.add_argument("--review", type=Path, metavar="DIR",
                         help="with --bake: baked and real-time frames, sheet.png and measures.json into DIR")
     parser.add_argument("--export", type=Path, metavar="DIR",
@@ -122,9 +131,14 @@ def run(args: argparse.Namespace) -> int:
                                  house_export.settings(data).get("kit_families", {"kit": ["*"]}),
                                  extra=_house_review.views(data))
     planned = house_layout.plan(data)
+    if args.export and (args.props_dir or args.props_map or args.before):
+        raise common.Failure("--props-dir, --props-map and --before are for --bake, not --export")
     if args.export:
         return export(data, lights, planned, dressing, args)
     found = prop_glbs(data, dressing)
+    label = None
+    if args.props_dir or args.props_map or args.before:
+        found, dressing, label = lab_props(args, found, dressing)
     st = data["settings"]
     summary = house_layout.write_scenes(data, planned, args.out, dressing,
                                         lambda pid: st["prop_res"].format(id=pid) if pid in found else None)
@@ -153,7 +167,7 @@ def run(args: argparse.Namespace) -> int:
             raise common.Failure("--bake needs the scenes in godot/import/house (drop --out)")
         zones = list(lights["zones"]) if args.bake == "all" else args.bake.split(",")
         return _house_bake.run(data, lights, zones, args.preset, args.review, args.no_bake, found, args.grid,
-                               args.merge, args.diag, args.sheen)
+                               args.merge, args.diag, args.sheen, args.before, label)
     if (args.walk or args.basement) and args.out.resolve() != DEFAULT_OUT.resolve():
         raise common.Failure("--walk and --basement need the scenes in godot/import/house (drop --out)")
     code = 0
@@ -267,6 +281,29 @@ def check_dressing(data: dict, layouts: Path, extra) -> dict:
     common.say(f"house dressing: {len(result['rooms'])} rooms hold (bounds, overlaps, stations, the capsule's paths); "
                f"{report.as_posix()}")
     return result["rooms"]
+
+
+def lab_props(args, found: dict, dressing: dict) -> tuple[dict, dict, str | None]:
+    """--props-dir, --props-map and --before (bake only): the prop table and dressing with the lab props swapped in and
+    the extras added (house_bake_props), and the after rows' label."""
+    if not args.bake or (args.props_map and not args.props_dir):
+        raise common.Failure("--props-dir and --before need --bake; --props-map needs --props-dir")
+    if args.before and (not args.review or args.grid or args.diag or args.sheen):
+        raise common.Failure("--before needs --review and a preset bake (no --grid, --diag or --sheen)")
+    if not args.props_dir:
+        return found, dressing, None
+    if not args.props_dir.is_dir():
+        raise common.Failure(f"--props-dir: no folder {args.props_dir.as_posix()}")
+    try:
+        mapping = house_bake_props.load_map(args.props_map)
+        known = {r["id"] for rep in dressing.values() for r in rep["resolved"]}
+        got = house_bake_props.swap(found, known, args.props_dir, mapping)
+        dressing = house_bake_props.add_extras(dressing, mapping["extra"])
+    except (OSError, ValueError) as e:
+        raise common.Failure(str(e)) from None
+    common.say(f"  props-dir {args.props_dir.as_posix()}: {len(got['swapped'])} props swapped "
+               f"({', '.join(got['swapped'])}), {len(got['extra'])} extra pieces")
+    return got["found"], dressing, mapping["label"] or args.props_dir.name
 
 
 def prop_glbs(data: dict, dressing: dict) -> dict:
