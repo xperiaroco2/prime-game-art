@@ -1,6 +1,6 @@
 """`showroom`: how close Godot can make a character look to its Blender renders (art #140). Godot 4.7.2 renders one
 character under up to eight look variants (the ladder: the frames stand as is, then AgX, sky reflections, SSAO, soft
-shadows, subsurface scattering on the clay; or step 2's tuning grid, `--grid tune`, or step 3's, `--grid warm`) in an
+shadows, subsurface scattering on the clay; or step 2's tuning grid, `--grid tune`, or step 3's, `--grid warm` and `--grid expose`) in an
 off-screen window (never headless, never minimized): a face sheet (front and three-quarter, the approved Blender sheet
 first) and a full-body sheet, each variant's GPU time, its pixel change against its parent variant (change.md) and,
 beside an approved sheet, a numeric check of the faces against it (look.md). `--write-presets` writes the recommended
@@ -28,7 +28,8 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--out", type=Path, help="output folder (default tools/out/showroom/<stem>/)")
     parser.add_argument("--grid", choices=sorted(_showroom.GRIDS), default="ladder",
                         help="ladder: the six look steps (default); tune: step 2's tuning grid on variant 4; "
-                             "warm: step 3's grid on variant 5 (sky ambient, fill, exposure with a warm key)")
+                             "warm: step 3's grid on variant 5 (sky ambient, fill, exposure with a warm key); "
+                             "expose: step 3's exposure and warm key apart, on the recommendation's variant 5")
     parser.add_argument("--variants", default="", help="comma list of the grid's variant ids (default all)")
     parser.add_argument("--clip", default="Idle", help="the pose: time 0 of this animation (default Idle)")
     parser.add_argument("--hdri", type=Path, help=f"the studio sky (default <raw>/{_showroom.HDRI}; missing: a ProceduralSky)")

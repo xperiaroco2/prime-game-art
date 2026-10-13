@@ -115,13 +115,29 @@ WARM: list[dict[str, Any]] = [
     {"id": "w7", "label": "W7 W6 sky share 0.25", "parent": "w6", **{**_W6, "sky_contribution": 0.25}},
     {"id": "w8", "label": "W8 W6 Low: hard, no SSAO", "parent": "w6", **{**_W6, "ssao": False, "soft_shadows": False}},
 ]
-GRIDS = {"ladder": VARIANTS, "tune": TUNING, "warm": WARM}
+# The exposure grid of step 3 (2026-10-13, after the review of #148): W5 lowered the exposure and raised the key (2.0
+# to 2.5) at once, so the exposure was never tried alone. On the recommendation (ladder variant 5, High: W3 and W4),
+# the exposure alone at 0.9, 0.8 and 0.7; the 4000 K key's colour alone at the key's energy 2.0; the two together; and
+# the key at 2.5 with them (W5's levers on the new base), each against the parent that isolates its one change.
+_HIGH = {**_LIT, "ssao": True, "soft_shadows": True}
+_WARM_KEY = {**_HIGH, "key_kelvin": 4000}
+EXPOSE: list[dict[str, Any]] = [
+    {"id": "x1", "label": "X1 base: 5 (High)", "parent": "", **_HIGH},
+    {"id": "x2", "label": "X2 exposure 0.9", "parent": "x1", **{**_HIGH, "exposure": 0.9}},
+    {"id": "x3", "label": "X3 exposure 0.8", "parent": "x1", **{**_HIGH, "exposure": 0.8}},
+    {"id": "x4", "label": "X4 exposure 0.7", "parent": "x1", **{**_HIGH, "exposure": 0.7}},
+    {"id": "x5", "label": "X5 key 4000K (x2.0)", "parent": "x1", **_WARM_KEY},
+    {"id": "x6", "label": "X6 X5 exposure 0.8", "parent": "x5", **{**_WARM_KEY, "exposure": 0.8}},
+    {"id": "x7", "label": "X7 X5 exposure 0.7", "parent": "x5", **{**_WARM_KEY, "exposure": 0.7}},
+    {"id": "x8", "label": "X8 X6 key x2.5", "parent": "x6", **{**_WARM_KEY, "exposure": 0.8, "key_energy": 2.5}},
+]
+GRIDS = {"ladder": VARIANTS, "tune": TUNING, "warm": WARM, "expose": EXPOSE}
 KEYS = tuple(_STAND)
 EFFECTS = ("reflections", "catch_light", "ssao", "soft_shadows", "sss")
 
 
 def variants(only: str = "", grid: str = "ladder") -> list[dict[str, Any]]:
-    """The variants of a grid (ladder or tune) named in a comma list of ids (all when empty), in grid order; ValueError
+    """The variants of a grid (ladder, tune, warm or expose) named in a comma list of ids (all when empty), in grid order; ValueError
     on an unknown grid or id."""
     if grid not in GRIDS:
         raise ValueError(f"unknown grid {grid}; known: {', '.join(GRIDS)}")

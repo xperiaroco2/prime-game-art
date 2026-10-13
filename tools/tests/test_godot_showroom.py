@@ -185,6 +185,18 @@ class WarmTest(unittest.TestCase):
             parent = by_id[v["parent"]]
             self.assertTrue(any(v[k] != parent[k] for k in _showroom.KEYS), v["id"])
 
+    def test_expose_grid(self) -> None:
+        by_id = {v["id"]: v for v in _showroom.EXPOSE}
+        self.assertLessEqual(len(_showroom.EXPOSE), _showroom.MAX_VARIANTS)
+        self.assertEqual({k: by_id["x1"][k] for k in _showroom.KEYS},
+                         {k: _showroom.VARIANTS[4][k] for k in _showroom.KEYS}, "the ladder's variant 5")
+        for v in _showroom.EXPOSE[1:]:
+            parent = by_id[v["parent"]]
+            changed = {k for k in _showroom.KEYS if v[k] != parent[k]}
+            self.assertEqual(len(changed), 1, f"{v['id']} changes one setting against its parent: {changed}")
+        self.assertEqual(by_id["x5"]["key_energy"], by_id["x1"]["key_energy"], "the key's colour alone")
+        self.assertEqual(_showroom.variants("x1,x4", "expose"), [by_id["x1"], by_id["x4"]])
+
     def test_pixel_change(self) -> None:
         a = [(10, 10, 10)] * 8
         b = [(10, 10, 10)] * 4 + [(10, 12, 10), (10, 13, 10), (0, 0, 0), (10, 10, 10)]
