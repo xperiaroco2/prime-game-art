@@ -190,10 +190,19 @@ from the Lookout station, at 1.6 m over the roof. A view's `with` (#130) names r
 beside the view's room, each at its plan offset from that room (its rect corner and floor height): P4's balcony views
 show the yard's external flight (`with = ["yard"]`, P2's `yard.tscn`), since the flight belongs to the yard, not the
 balcony. `_house_review.neighbours` finds the other committed packages whose `package.json` lists those rooms' scenes
-and stages them beside the package (a game path two packages share has the same bytes in both). A package alone has
-no plot round it, so the roof views look out into the review ambient. Each tile's title sits in a dark box, bottom left in a room tile (clear of the room's own
-`Name` label near the top) and top left in a kit tile; the `.json` gives per tile its draw calls (the box counts as
-one). The outdoor rooms of P2 (yard, street, path, ...) carry only markers and lamps: their ground is the plot,
+and stages them beside the package (a game path two packages share has the same bytes in both). Every room tile (#144)
+also stages its context, so it reads as in the game rather than against black: `_house_review.context` names, from
+the layout, the rooms of its level owning a wall on its sides (a shared wall is in the scene of the first of its two
+rooms in the level file, so the other room's scene has a gap there: the kitchen's north and west-upper walls are the
+dining room's and the stairs') and the walled rooms of the next level up over it (its ceiling is their floor slab;
+the attic's roof is its own; areas such as the yard get none). They come from the committed packages that hold them
+(the same SHA-256 rule; a room in no package, such as the garage, is named and skipped), join the tile at their plan
+offsets with their lights and labels off, so a room is still lit only by its own fixtures, and are left out of its
+draw calls: the `.json` gives them as `context_draw_calls` (and their rooms as `context`), counted in the shot frame
+after the room's own count. A view's `with` rooms stay its own. A package alone has no plot round it, so the roof
+views look out into the review ambient. Each tile's title sits in a dark box, bottom left in a room tile (clear of
+the room's own `Name` label near the top) and top left in a kit tile; the `.json` gives per tile its draw calls (the
+box counts as one). The outdoor rooms of P2 (yard, street, path, ...) carry only markers and lamps: their ground is the plot,
 package 7.
 
 Package 7 (#128) adds the plot scene `levels/house/outdoor.tscn` (`tools/runner/house_export_plot.py`; root `Outdoor`

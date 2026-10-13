@@ -7,6 +7,9 @@ extends SceneTree
 ##     own fixtures and a dim review ambient; a room without a door is shot from the middle of its front side. A tile
 ##     with `eye` and `look` (room-local) is an extra view of its room; with `sun` a key light joins its lamps.
 ##     Its `with` rooms (other packages' scenes, staged beside it) join it in place at their offsets.
+##     Its `context` rooms (#144: the rooms owning walls on its sides, the rooms whose floor is its ceiling) join it
+##     in place too, their lights and labels off; the tile's draw calls are counted without them, then
+##     `context_draw_calls` with them, in the frame that is shot.
 ## Writes <out>/<sheet>.png (`width` px wide), <sheet>_1280.png (the agents' copy) and <sheet>.json (per tile).
 ##   -s res://_review/package_sheet.gd -- request=<abs json> out=<abs dir>
 
@@ -83,12 +86,22 @@ func _run() -> void:
 			label.position = Vector2(0, root.get_visible_rect().size.y - label.get_combined_minimum_size().y)
 		else:
 			label.position = Vector2.ZERO
+		var near := holder.get_node_or_null("Context") as Node3D
+		if near:  # the tile's own draw calls first, without its context
+			near.visible = false
 		for f in 16:
 			await process_frame
-		var img := root.get_texture().get_image()
-		img.convert(Image.FORMAT_RGB8)
 		info["title"] = tile["title"]
 		info["draw_calls"] = int(Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME))
+		if near:
+			near.visible = true
+			for f in 16:
+				await process_frame
+			var total := int(Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME))
+			info["context_draw_calls"] = total - int(info["draw_calls"])
+			info["context"] = near.get_children().map(func(n): return String(n.name))
+		var img := root.get_texture().get_image()
+		img.convert(Image.FORMAT_RGB8)
 		stats.append(info)
 		img.resize(tw, th, Image.INTERPOLATE_LANCZOS)
 		sheet.blit_rect(img, Rect2i(0, 0, tw, th), Vector2i((i % cols) * tw, (i / cols) * th))
@@ -149,6 +162,20 @@ func _room(holder: Node3D, cam: Camera3D, path: String, eye: float, tile: Dictio
 			var other: Node3D = wp.instantiate()
 			other.position = Vector3(wr["offset"][0], wr["offset"][1], wr["offset"][2])
 			holder.add_child(other)
+	if tile.has("context"):  # #144: the walls its neighbours own and the slab over it, unlit by their own lamps
+		var near := Node3D.new()
+		near.name = "Context"
+		holder.add_child(near)
+		for cr in tile["context"]:
+			var cp := load(String(cr["scene"])) as PackedScene
+			if cp == null:
+				return {"error": "missing " + String(cr["scene"])}
+			var other: Node3D = cp.instantiate()
+			other.name = String(cr["room"])
+			other.position = Vector3(cr["offset"][0], cr["offset"][1], cr["offset"][2])
+			near.add_child(other)
+			for n in other.find_children("*", "Light3D", true, false) + other.find_children("*", "Label3D", true, false):
+				(n as Node3D).visible = false
 	if tile.get("sun", false):  # outside the room's own lamps: a low key light from the south-west
 		var sun := DirectionalLight3D.new()
 		sun.rotation_degrees = Vector3(-35, -140, 0)

@@ -1,0 +1,166 @@
+{
+ "status": "PROPOSAL, NOT CHOSEN: the engineer has not picked a variant (art #140). Variants 3 to 6 still look washed out next to the approved Blender face (pale hair, little key-light shading); the sky's ambient energy and the key light are open. Do not copy into the game until this says chosen.",
+ "about": "The proposed character look per graphics preset (see status), from the showroom (prime-game-art #140, docs/godot.md 'Showroom and recommended look settings'). Godot 4.7.2, Forward+. Property names are Environment, DirectionalLight3D, StandardMaterial3D and ProjectSettings names; 'clay' materials are the character materials whose name ends in _clay.",
+ "environment": {
+  "background_mode": "BG_COLOR or BG_SKY (the map's choice; the sky below lights it either way)",
+  "sky": "PanoramaSkyMaterial on a studio or the map's HDRI, energy_multiplier 1.0, radiance_size 256",
+  "tonemap_mode": "TONE_MAPPER_AGX",
+  "tonemap_exposure": 1.0,
+  "ambient_light_source": "AMBIENT_SOURCE_SKY",
+  "ambient_light_energy": 0.4,
+  "reflected_light_source": "REFLECTION_SOURCE_SKY"
+ },
+ "lights": {
+  "key": {
+   "type": "DirectionalLight3D",
+   "energy": 2.0,
+   "specular": 0.6,
+   "shadow": true
+  },
+  "fill": {
+   "type": "DirectionalLight3D",
+   "energy": 0.35,
+   "specular": 0.0,
+   "shadow": false
+  },
+  "rim": {
+   "type": "DirectionalLight3D",
+   "energy": 0.3,
+   "specular": 0.0,
+   "shadow": false
+  },
+  "catch": {
+   "type": "OmniLight3D, a child of the camera at (-0.25, 0.3, 0) (up-left of the view)",
+   "energy": 0.3,
+   "specular": 16.0,
+   "light_size": 0.2,
+   "omni_range": 50.0,
+   "omni_attenuation": 0.0,
+   "shadow": false,
+   "light_cull_mask": "the eye layer alone (render layer 20); the eye meshes (material *_eye) on it too",
+   "why": "the eyes' glint (fb_eye, roughness 0.17): a small spherical area light, so the glint is a few pixels wide; it lights nothing but the eyes"
+  }
+ },
+ "presets": {
+  "Low": {
+   "effects": [
+    "agx",
+    "sky_ambient",
+    "sky_reflections",
+    "catch_light"
+   ],
+   "environment": {
+    "ssao_enabled": false
+   },
+   "key_light": {
+    "light_angular_distance": 0.0,
+    "shadow_blur": 1.0
+   },
+   "materials": {
+    "clay_subsurf_scatter_enabled": false
+   },
+   "project_settings": {
+    "rendering/lights_and_shadows/directional_shadow/size": 2048,
+    "rendering/lights_and_shadows/directional_shadow/soft_shadow_filter_quality": 2,
+    "rendering/environment/subsurface_scattering/subsurface_scattering_quality": 0,
+    "rendering/anti_aliasing/quality/msaa_3d": 0,
+    "rendering/reflections/sky_reflections/roughness_layers": 6
+   }
+  },
+  "Medium": {
+   "effects": [
+    "agx",
+    "sky_ambient",
+    "sky_reflections",
+    "catch_light",
+    "ssao"
+   ],
+   "environment": {
+    "ssao_enabled": true,
+    "ssao_radius": 0.6,
+    "ssao_intensity": 1.5
+   },
+   "key_light": {
+    "light_angular_distance": 0.0,
+    "shadow_blur": 1.0
+   },
+   "materials": {
+    "clay_subsurf_scatter_enabled": false
+   },
+   "project_settings": {
+    "rendering/lights_and_shadows/directional_shadow/size": 4096,
+    "rendering/lights_and_shadows/directional_shadow/soft_shadow_filter_quality": 3,
+    "rendering/environment/ssao/quality": 1,
+    "rendering/environment/ssao/half_size": true,
+    "rendering/environment/subsurface_scattering/subsurface_scattering_quality": 0,
+    "rendering/anti_aliasing/quality/msaa_3d": 1,
+    "rendering/reflections/sky_reflections/roughness_layers": 8
+   }
+  },
+  "High": {
+   "effects": [
+    "agx",
+    "sky_ambient",
+    "sky_reflections",
+    "catch_light",
+    "ssao",
+    "soft_shadows"
+   ],
+   "environment": {
+    "ssao_enabled": true,
+    "ssao_radius": 0.6,
+    "ssao_intensity": 1.5
+   },
+   "key_light": {
+    "light_angular_distance": 1.5,
+    "shadow_blur": 1.0
+   },
+   "materials": {
+    "clay_subsurf_scatter_enabled": false
+   },
+   "project_settings": {
+    "rendering/lights_and_shadows/directional_shadow/size": 4096,
+    "rendering/lights_and_shadows/directional_shadow/soft_shadow_filter_quality": 4,
+    "rendering/environment/ssao/quality": 2,
+    "rendering/environment/ssao/half_size": false,
+    "rendering/environment/subsurface_scattering/subsurface_scattering_quality": 0,
+    "rendering/anti_aliasing/quality/msaa_3d": 2,
+    "rendering/reflections/sky_reflections/roughness_layers": 8
+   }
+  },
+  "Ultra": {
+   "effects": [
+    "agx",
+    "sky_ambient",
+    "sky_reflections",
+    "catch_light",
+    "ssao",
+    "soft_shadows",
+    "sss"
+   ],
+   "environment": {
+    "ssao_enabled": true,
+    "ssao_radius": 0.6,
+    "ssao_intensity": 1.5
+   },
+   "key_light": {
+    "light_angular_distance": 1.5,
+    "shadow_blur": 1.0
+   },
+   "materials": {
+    "clay_subsurf_scatter_enabled": true,
+    "clay_subsurf_scatter_strength": 0.25,
+    "head_subsurf_scatter_skin_mode": true
+   },
+   "project_settings": {
+    "rendering/lights_and_shadows/directional_shadow/size": 4096,
+    "rendering/lights_and_shadows/directional_shadow/soft_shadow_filter_quality": 4,
+    "rendering/environment/ssao/quality": 3,
+    "rendering/environment/ssao/half_size": false,
+    "rendering/environment/subsurface_scattering/subsurface_scattering_quality": 2,
+    "rendering/anti_aliasing/quality/msaa_3d": 2,
+    "rendering/reflections/sky_reflections/roughness_layers": 8
+   }
+  }
+ }
+}
