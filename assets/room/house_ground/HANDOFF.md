@@ -52,7 +52,7 @@ own plaster, so the colour stays and the textures are new).
   set the high resource's three textures and `layer_gain` from the low one: the gain differs per tier).
 - **The Detail node.** Each room's `detail`-layer props (`props/library.toml` `[layers]`: the clutter) sit under
   `Detail` beside `Dressing` and `Fixtures`; base props stay in `Dressing`. Proposal for #140 item 4: Low hides
-  `Detail` (`visible = false`, its colliders off), Medium and up show it. Task stations, fixtures and the shell never sit there.
+  `Detail` (`visible = false`; detail props carry no colliders, so hiding changes no collision), Medium and up show it. Task stations, fixtures and the shell never sit there.
 - **LFS.** #147 adds 9.8 MB of LFS objects: the 9 GLBs (0.84 MB, the 7 replaced weighed 0.43 MB) and the 6 PNGs
   (8.96 MB).
 
