@@ -29,6 +29,12 @@ KIT_SHADER = "kit_set.gdshader"  # the kit's set shader, shipped once beside the
 KIT_MATERIAL = "kit_set.tres"  # its material: the kit's textures and every painted room's paint (#132)
 SHADER_SRC = Path(__file__).resolve().parents[2] / "godot" / "kit" / KIT_SHADER
 SET_MATERIAL = "kit_set"  # the kit GLBs' stand-in material (Blender's kit_set-vcol; Godot drops the -vcol hint)
+FINE_MATERIAL = "kit_fine"  # the world look's props' stand-in material (Blender's kit_fine-vcol, #143)
+FINE_SHADER = "prop_fine.gdshader"  # the fine pack's shader, shipped once beside the props (#147)
+FINE_SHADER_SRC = Path(__file__).resolve().parents[2] / "godot" / "props" / FINE_SHADER
+FINE_DIR = "fine"  # house_props/fine/<tier>/fine_d.png, fine_n0.png, fine_n1.png: the fine pack's shared textures
+FINE_TEXTURES = ("d", "n0", "n1")
+FINE_LAYERS = 16  # prop_fine.gdshader's layer arrays
 RUG = "rug"  # dressing props whose id starts so cover the floor (no collider): the tiles under them are carpet
 QUESTIONS = [  # for the game side (prime-game #523); package.json carries them (questions() adds the package's lamps)
     "G3: the room scenes are under levels/house/rooms/ (11.1 keeps assets/ data only); the game's workflow swaps them "
@@ -82,11 +88,11 @@ def _gltf(path: Path) -> dict | None:
         return None
 
 
-def set_surfaces(path: Path) -> list[dict]:
+def set_surfaces(path: Path, material: str = SET_MATERIAL, posed: bool = True) -> list[dict]:
     """A kit GLB's surfaces on the set material as Godot imports them (#132): per mesh node its path under the GLB's
     root (the glTF node names), its origin in the GLB and its surface indices (the primitives' order). Empty for a
     file that is no GLB; ValueError for a set surface under a turned or scaled node (the shader's plan_at is a
-    position and a turn)."""
+    position and a turn) unless `posed` is false. `material` names another stand-in: a prop's FINE_MATERIAL (#147)."""
     doc = _gltf(path)
     if doc is None:
         return []
@@ -101,8 +107,8 @@ def set_surfaces(path: Path) -> list[dict]:
         chain = chain + [nd.get("name", f"node{i}")]
         if "mesh" in nd:
             idx = [k for k, pr in enumerate(doc["meshes"][nd["mesh"]]["primitives"])
-                   if "material" in pr and mats[pr["material"]] == SET_MATERIAL]
-            if idx and turned:
+                   if "material" in pr and mats[pr["material"]] == material]
+            if idx and turned and posed:
                 raise ValueError(f"{path.name}: set surfaces under a turned or scaled node {'/'.join(chain)}")
             if idx:
                 out.append({"node": "/".join(chain), "at": [round(a, 4) for a in at], "surfaces": idx})
@@ -148,6 +154,40 @@ def material_text(data: dict) -> str:
               + ", ".join(_f(v) for r in rooms + pad for v in r["band"]) + ")",
               "shader_parameter/paint_to = PackedVector3Array("
               + ", ".join(_f(v) for r in rooms + pad for v in r["to"]) + ")"]
+    return "\n".join(lines) + "\n"
+
+
+def fine_tiers(data: dict, raw: Path) -> dict:
+    """The fine pack's build (#143, `props-library --build`): fine.json from the raw folder's `fine_dir`, or {}."""
+    path = raw / settings(data).get("fine_dir", "") / "fine.json"
+    return json.loads(path.read_text(encoding="utf-8")) if settings(data).get("fine_dir") and path.is_file() else {}
+
+
+def fine_res(data: dict, name: str) -> str:
+    """The res:// path of a file of the fine pack in the props' folder (the shader, a tier's material or texture)."""
+    return asset_res(data, settings(data)["prop_set"], "x").rsplit("/", 1)[0] + "/" + name
+
+
+def fine_material_text(data: dict, fine: dict, tier: str) -> str:
+    """The fine pack's material of one tier as a resource (#147): prop_fine.gdshader, the tier's three shared
+    textures and the layers' values, as godot/props/prop_materials.gd `make` sets them."""
+    layers = fine.get("layers", [])[:FINE_LAYERS]
+    means = fine.get("tiers", {}).get(tier, {}).get("detail_mean", {})
+    ext = [("Shader", fine_res(data, FINE_SHADER))] + [
+        ("Texture2D", fine_res(data, f"{FINE_DIR}/{tier}/fine_{k}.png")) for k in FINE_TEXTURES]
+    pad = lambda vals: vals + [0.0] * (FINE_LAYERS - len(vals))
+    arr = lambda key, dflt: "PackedFloat32Array(" + ", ".join(
+        _f(v) for v in pad([float(x.get(key, dflt)) for x in layers])) + ")"
+    gain = [1.0 / max(float(means[x["name"]]), 0.05) if k < 4 and x.get("name") in means else 2.0
+            for k, x in enumerate((layers + [{}] * 4)[:4])]
+    lines = ['[gd_resource type="ShaderMaterial" format=3]', ""]
+    lines += [f'[ext_resource type="{t}" path="{path}" id="{k}"]' for k, (t, path) in enumerate(ext, 1)]
+    lines += ["", "[resource]", f'resource_name = "prop_fine_{tier}"', 'shader = ExtResource("1")']
+    lines += [f'shader_parameter/fine_{t} = ExtResource("{k}")' for k, t in enumerate(FINE_TEXTURES, 2)]
+    lines += [f"shader_parameter/layer_roughness = {arr('roughness', 0.7)}",
+              f"shader_parameter/layer_metallic = {arr('metallic', 0.0)}",
+              f"shader_parameter/layer_normal_strength = {arr('normal_strength', 0.0)}",
+              f"shader_parameter/layer_gain = Vector4({', '.join(_f(g) for g in gain)})"]
     return "\n".join(lines) + "\n"
 
 
@@ -235,13 +275,15 @@ def light_node(f: dict, parent: str, rx: float, fy: float, ry: float) -> str:
 
 def room_scene(data: dict, lv: dict, room: dict, pieces: list[dict], extras: list[dict], resolved: list[dict],
                fixtures: list[dict], have=lambda pid: True, index: dict | None = None,
-               surfaces: dict | None = None) -> str:
+               surfaces: dict | None = None, fine: dict | None = None) -> str:
     """One room's scene text (origin at its north-west floor corner, like the game's greybox rooms). A dressing prop
     without a GLB (have(id) false) becomes a Marker3D under Placeholders with its size, never a CSG box. A walkable
     shell piece carries its footstep surface (piece_surface). `index`, when given, gets the check's node lists:
     "walkable" (Shell/<name> with a surface) and "hide" (Dressing/<name> of the props with a collider).
     `surfaces` (piece id -> set_surfaces) puts the kit's set material (KIT_MATERIAL) on each piece's set surfaces
-    with the mesh's plan pose as `plan_at` (#132): the wall paints travel with the scene."""
+    with the mesh's plan pose as `plan_at` (#132): the wall paints travel with the scene. `fine` (prop id ->
+    set_surfaces(..., FINE_MATERIAL)) puts the fine pack's material of `fine_tier` on the props' kit_fine surfaces
+    (#147): one shared resource, so the game swaps the tier for the whole house in one place."""
     from . import house_dressing
 
     ex = settings(data)
@@ -290,8 +332,13 @@ def room_scene(data: dict, lv: dict, room: dict, pieces: list[dict], extras: lis
     if index is not None:
         index.update(walkable=walkable, hide=hide)
     tagged = [dict(r, surface=prop_surface(data, r["id"])) if prop_surface(data, r["id"]) else r for r in resolved]
+    fine_mat = fine_res(data, f"prop_fine_{ex.get('fine_tier', 'high')}.tres")
+
+    def fine_of(pid: str) -> list:
+        return [(s["node"], [f'surface_material_override/{i} = ExtResource("{sc.res(fine_mat)}")' for i in s["surfaces"]])
+                for s in (fine or {}).get(pid, [])]
     house_dressing.scene_nodes(sc, [r for r in tagged if have(r["id"])],
-                               lambda pid: asset_res(data, ex["prop_set"], pid))
+                               lambda pid: asset_res(data, ex["prop_set"], pid), fine_of)
     lights = [f for f in fixtures if f["room"] == room["id"] and f["type"] != "moon"]
     if lights:
         if not any(n.startswith('[node name="Fixtures"') for n in sc.nodes):
@@ -341,7 +388,7 @@ def attic_dressing(z: dict, cat: dict | None = None) -> dict:
 
 
 def scenes(data: dict, planned: dict, dressing: dict, fixtures: list[dict], pkg: dict | None = None,
-           have=lambda pid: True, surfaces: dict | None = None) -> dict:
+           have=lambda pid: True, surfaces: dict | None = None, fine: dict | None = None) -> dict:
     """room id -> {"level", "node", "text", "kit": piece ids, "props": prop ids}; plus "" -> the level pieces that
     stand in no room (a list). No CSG: a dressing prop always instances its GLB (house_dressing's placeholder box is
     for the art's own review only; a prop without a GLB is a sized Marker3D under Placeholders)."""
@@ -354,7 +401,7 @@ def scenes(data: dict, planned: dict, dressing: dict, fixtures: list[dict], pkg:
         resolved = (dressing.get(room["id"]) or {}).get("resolved", [])
         pieces, ext = pl["pieces"][room["id"]], extras.get(room["id"], [])
         index: dict = {}
-        text = room_scene(data, lv, rr, pieces, ext, resolved, fixtures, have, index, surfaces)
+        text = room_scene(data, lv, rr, pieces, ext, resolved, fixtures, have, index, surfaces, fine)
         out[room["id"]] = {"level": lv["level"], "node": room["node"], "text": text, **index,
                            "lights": sum(1 for f in fixtures if f["room"] == room["id"] and f["type"] != "moon"),
                            "kit": sorted({p["id"] for p in pieces + ext}),
@@ -442,6 +489,8 @@ def import_text(path: Path) -> str:
         head = ['importer="scene"', 'type="PackedScene"']
     else:
         params, head = [f"compress/mode={PNG_COMPRESS}"], ['importer="texture"', 'type="CompressedTexture2D"']
+        if path.parent.parent.name == FINE_DIR:  # the fine pack's textures (#147): sampled at every distance
+            params.append("mipmaps/generate=true")
     return "\n".join(["[remap]", "", *head, "", "[params]", "", *params]) + "\n"
 
 
@@ -453,7 +502,8 @@ def write(data: dict, planned: dict, dressing: dict, fixtures: list[dict], out: 
     pkg = packages(data)[n] if n is not None else None
     kit_dir = raw / data["settings"]["kit_dir"]
     surfaces = {p.stem: set_surfaces(p) for p in sorted(kit_dir.glob("*.glb"))}
-    built = scenes(data, planned, dressing, fixtures, pkg, lambda pid: pid in prop_glbs, surfaces)
+    fine = {pid: f for pid, src in prop_glbs.items() if (f := set_surfaces(src, FINE_MATERIAL, posed=False))}
+    built = scenes(data, planned, dressing, fixtures, pkg, lambda pid: pid in prop_glbs, surfaces, fine)
     unplaced = built.pop("")
     kit_ids = {pid for r in built.values() for pid in r["kit"]}
     if pkg is None or pkg.get("kit"):
@@ -470,6 +520,15 @@ def write(data: dict, planned: dict, dressing: dict, fixtures: list[dict], out: 
     extra = {p.stem: p for p in task_dir.glob("*.glb")} if pkg is None or pkg.get("task_props") else {}
     for pid, src in sorted({**extra, **{pid: prop_glbs[pid] for pid in prop_ids}}.items()):
         copies[env / ex["prop_set"] / f"{pid}.glb"] = src
+    shipped = {pid for pid in {**extra, **{pid: 1 for pid in prop_ids}}
+               if set_surfaces(extra.get(pid) or prop_glbs[pid], FINE_MATERIAL, posed=False)}
+    fine_pack = fine_tiers(data, raw) if shipped else {}
+    if shipped and not fine_pack:
+        raise ValueError(f"{len(shipped)} props on the fine pack ({sorted(shipped)[0]}, ...) but no fine.json under "
+                         f"<raw>/{ex.get('fine_dir', '')} (build the library: props-library --build)")
+    for tier, t in fine_pack.get("tiers", {}).items():  # the fine pack's shared textures (#147), once per tier
+        for k in FINE_TEXTURES:
+            copies[env / ex["prop_set"] / FINE_DIR / tier / f"fine_{k}.png"] = Path(t["files"][k])
     set_ids = list(ex.get("sets", {})) if pkg is None else pkg.get("sets", [])
     builds: dict[str, Path] = {}
     for sid in set_ids:
@@ -506,6 +565,13 @@ def write(data: dict, planned: dict, dressing: dict, fixtures: list[dict], out: 
         for name, text in ((KIT_SHADER, SHADER_SRC.read_text(encoding="utf-8")), (KIT_MATERIAL, material_text(data))):
             target = env / ex["kit_set"] / name
             (out / target).parent.mkdir(parents=True, exist_ok=True)
+            (out / target).write_text(text, encoding="utf-8", newline="\n")
+            files[target.as_posix()] = sha256(out / target)
+    if fine_pack:  # the fine pack's shader and one material per tier (#147): text resources, no .import
+        texts = [(FINE_SHADER, FINE_SHADER_SRC.read_text(encoding="utf-8"))] + [
+            (f"prop_fine_{tier}.tres", fine_material_text(data, fine_pack, tier)) for tier in fine_pack["tiers"]]
+        for name, text in texts:
+            target = env / ex["prop_set"] / name
             (out / target).write_text(text, encoding="utf-8", newline="\n")
             files[target.as_posix()] = sha256(out / target)
     room_dir = out / ex["room_dir"]

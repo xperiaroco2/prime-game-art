@@ -32,27 +32,33 @@ STATION_CLEAR = 1.0
 STATION_REACH = 2.0  # a station counts as reached from a capsule centre this close to its marker
 SPAWN_CLEAR = 0.5
 TOL = 0.02
+BASE, DETAIL = "base", "detail"  # the props' layers by preset (docs/props.md "World look rules")
 PIECE_HALF = {"pillar_concrete": 0.2}  # free layout pieces that block the capsule: half their square section (kit v2)
 
 
 # ---------------------------------------------------------------- loading
 
 def catalogue(paths) -> dict:
-    """id -> size [L along X, W along Z, H], pivot, collision, class, spec; later files win. Missing files are skipped."""
+    """id -> size [L along X, W along Z, H], pivot, collision, class, layer, spec; later files win. Missing files are
+    skipped. The layer (`base` or `detail`, docs/props.md "World look rules") is the library prop's own `layer`, else
+    its class's in the library's `[layers]`, else that table's `default`; the task props are `base`."""
     cat: dict = {}
     for path in paths:
         p = Path(path)
         if not p.is_file():
             continue
         data = tomllib.loads(p.read_text(encoding="utf-8"))
+        layers = data.get("layers", {})
         for e in data.get("prop", []):  # the dressing library (#87)
+            cls = e.get("class", "")
             cat[e["id"]] = {"size": list(e["size_m"]), "pivot": e.get("pivot", "floor"),
-                            "collision": e.get("collision", "box"), "class": e.get("class", ""), "spec": p.name}
+                            "collision": e.get("collision", "box"), "class": cls,
+                            "layer": e.get("layer", layers.get(cls, layers.get("default", BASE))), "spec": p.name}
         for e in data.get("props", []):  # the task props (#82): w x d x h, on the floor unless wall-mounted
             if all(k in e for k in ("w", "d", "h")):
                 cat[e["id"]] = {"size": [e["w"], e["d"], e["h"]],
                                 "pivot": "wall" if e.get("mount") == "wall" else "floor",
-                                "collision": "box", "class": e.get("kind", ""), "spec": p.name}
+                                "collision": "box", "class": e.get("kind", ""), "layer": BASE, "spec": p.name}
     return cat
 
 
@@ -83,6 +89,7 @@ def resolve(item: dict, cat: dict) -> dict:
     r["size"] = list(item.get("size", spec.get("size", [0.5, 0.5, 0.5])))
     r["pivot"] = item.get("pivot", spec.get("pivot", "floor"))
     r["collision"] = item.get("collision", spec.get("collision", "box"))
+    r["layer"] = item.get("layer", spec.get("layer", BASE))
     r["yaw"] = float(item["yaw"]) if "yaw" in item else float(FACES.get(item.get("face", "S"), 0))
     return r
 
@@ -376,15 +383,19 @@ def tf_yaw(yaw: float, x: float, h: float, z: float) -> str:
     return "Transform3D(" + ", ".join(hl._num(n) for n in (c, 0, s, 0, 1, 0, -s, 0, c, x, h, z)) + ")"
 
 
-def scene_nodes(sc, resolved: list[dict], res_of) -> list[str]:
-    """Adds the Dressing and Fixtures groups to a room scene (house_layout._Scene); res_of(id) is the GLB's res://
-    path or None, where a named placeholder box of the prop's size stands in. Returns the placeholder ids."""
+def scene_nodes(sc, resolved: list[dict], res_of, overrides=None) -> list[str]:
+    """Adds the Dressing, Detail and Fixtures groups to a room scene (house_layout._Scene): the base layer's props
+    under Dressing, the detail layer's under Detail (#147: a graphics preset hides one node; a detail prop has no
+    collider), the fixtures under Fixtures. res_of(id) is the GLB's res:// path or None, where a named placeholder
+    box of the prop's size stands in. overrides(id), when given, lists the instance's material overrides as (node
+    path inside the GLB, [scene lines]) pairs (house_export's fine pack). Returns the placeholder ids."""
     placeholders, seen = [], {}
-    for group in ("props", "fixtures"):
-        rs = [r for r in resolved if r["kind"] == group]
+    batches = [("Dressing", [r for r in resolved if r["kind"] == "props" and r.get("layer", BASE) != DETAIL]),
+               ("Detail", [r for r in resolved if r["kind"] == "props" and r.get("layer", BASE) == DETAIL]),
+               ("Fixtures", [r for r in resolved if r["kind"] == "fixtures"])]
+    for parent, rs in batches:
         if not rs:
             continue
-        parent = "Dressing" if group == "props" else "Fixtures"
         sc.group(parent)
         for r in rs:
             seen[r["id"]] = seen.get(r["id"], 0) + 1
@@ -396,6 +407,9 @@ def scene_nodes(sc, resolved: list[dict], res_of) -> list[str]:
             if path:
                 sc.nodes.append("\n".join([f'[node name="{name}" parent="{parent}" instance=ExtResource("{sc.res(path)}")]',
                                            f"transform = {tf_yaw(r['yaw'], x, h, z)}"] + meta))
+                for node, extra in (overrides(r["id"]) if overrides else []):
+                    sub, _, leaf = f"{parent}/{name}/{node}".rpartition("/")
+                    sc.nodes.append("\n".join([f'[node name="{leaf}" parent="{sub}"]'] + extra))
                 continue
             placeholders.append(r["id"])
             x0, x1, y0, y1, z0, z1 = local_box(r)
