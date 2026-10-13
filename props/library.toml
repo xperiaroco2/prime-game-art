@@ -71,7 +71,9 @@ worktop_thickness_m = 0.03
 floor_shade = [0.82, 0.25]  # a soft occlusion toward the floor: x0.82 at the floor, none from 0.25 m up
 paints = ["wood_front", "wood_front_dark", "worktop_wood", "worktop_stone", "tile_splash", "enamel_white",
           "steel_warm", "steel_black", "chrome", "glass_tint", "glass_dark", "rubber_black", "porcelain_white",
-          "enamel_cream", "upholstery", "upholstery_light", "cushion_rust", "cushion_mustard", "throw_cream",
+          "enamel_cream", "upholstery", "upholstery_light", "upholstery_warm", "cushion_teal",
+          "soil_dark", "leaf_green", "leaf_dark", "art_white", "art_sky", "art_pink", "art_terracotta", "art_bun",
+          "art_patty", "cushion_rust", "cushion_mustard", "throw_cream",
           "carpet_field", "carpet_border", "stone_light", "stone_dark", "book_cream", "book_teal", "book_mustard", "book_red", "book_navy", "book_sage",
           "book_grey"]
 
@@ -154,6 +156,18 @@ glass_tint = {material = "glass_tint", hex = "#86918b"}
 # layers, a light stone surround, book spines on the paint layer.
 upholstery = {material = "fine", layer = "fabric", hex = "#6b5a52"}
 upholstery_light = {material = "fine", layer = "fabric", hex = "#b9ad9c"}
+upholstery_warm = {material = "fine", layer = "fabric", hex = "#b5593a"}  # round 2: the room's terracotta accent back
+cushion_teal = {material = "fine", layer = "weave", hex = "#1f6f73"}
+# Round 2's detail layer and wall art (#150): plants on the paint layer, the prints' flat colours.
+soil_dark = {material = "fine", layer = "paint", hex = "#2e241d"}
+leaf_green = {material = "fine", layer = "paint", hex = "#4f7a45"}
+leaf_dark = {material = "fine", layer = "paint", hex = "#2f5236"}
+art_white = {material = "fine", layer = "paint", hex = "#efe9df"}
+art_sky = {material = "fine", layer = "paint", hex = "#9cc2d2"}
+art_pink = {material = "fine", layer = "paint", hex = "#e2a38c"}
+art_terracotta = {material = "fine", layer = "paint", hex = "#c2643f"}
+art_bun = {material = "fine", layer = "paint", hex = "#c98a3e"}
+art_patty = {material = "fine", layer = "paint", hex = "#4a2c1e"}
 cushion_rust = {material = "fine", layer = "weave", hex = "#b5593a"}
 cushion_mustard = {material = "fine", layer = "weave", hex = "#d0a02c"}
 throw_cream = {material = "fine", layer = "weave", hex = "#d8cdb4"}
@@ -218,8 +232,8 @@ size_m = [0.9, 0.9, 0.9]
 count = 3
 route = "proc"
 shape = "sofa"  # the sofa builder with one seat (#150)
-params = {seats = 1, pillows = 1}
-roles = ["upholstery", "cushion_rust", "wood_front_dark"]
+params = {seats = 1, pillows = 1, body = "upholstery_warm", pillow_paints = ["cushion_mustard"]}
+roles = ["upholstery_warm", "cushion_mustard", "wood_front_dark"]
 pivot = "floor"
 collision = "box"
 
@@ -679,8 +693,8 @@ size_m = [2.0, 0.9, 0.85]
 count = 2
 route = "proc"
 shape = "sofa"  # the world look: linen upholstery, loose cushions (#150)
-params = {seats = 3, pillows = 2, throw = 1}
-roles = ["upholstery", "cushion_rust", "cushion_mustard", "throw_cream", "wood_front_dark"]
+params = {seats = 3, pillows = 2, throw = 1, body = "upholstery_warm", pillow_paints = ["cushion_mustard", "cushion_teal"]}
+roles = ["upholstery_warm", "cushion_mustard", "cushion_teal", "throw_cream", "wood_front_dark"]
 pivot = "floor"
 collision = "box"
 
@@ -2199,4 +2213,227 @@ route = "proc"
 shape = "candle_pair"
 roles = ["steel_warm", "enamel_cream", "steel_black"]
 pivot = "floor"
+collision = "none"
+
+# ---- Round 2 of the living room (#150): its dense detail layer and wall art. The prints are drawn by
+# prop_geom.py (_art) as flat painted shapes: own work, no image file, no outside picture.
+
+[[prop]]
+id = "floor_plant"
+batch = 1
+name = "Fiddle-leaf fig in a stone planter"
+class = "dressing"
+size_m = [0.5, 0.5, 1.5]
+count = 2
+route = "proc"
+shape = "house_plant"
+params = {tall = 1, pot = "stone_light"}
+roles = ["stone_light", "soil_dark", "leaf_green", "leaf_dark", "wood_front_dark"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "table_plant"
+batch = 1
+name = "Small potted plant"
+class = "clutter"
+size_m = [0.21, 0.21, 0.38]
+count = 3
+route = "proc"
+shape = "house_plant"
+params = {pot = "enamel_white"}
+roles = ["enamel_white", "soil_dark", "leaf_green", "leaf_dark"]
+pivot = "floor"
+collision = "none"
+
+[[prop]]
+id = "side_lamp"
+batch = 1
+name = "Table lamp, glazed base and linen shade"
+class = "clutter"
+size_m = [0.32, 0.32, 0.52]
+count = 2
+route = "proc"
+shape = "side_lamp"
+params = {base = "book_teal"}
+roles = ["steel_warm", "book_teal", "upholstery_light", "throw_cream"]
+pivot = "floor"
+collision = "none"
+
+[[prop]]
+id = "game_console"
+batch = 1
+name = "Games console and two controllers"
+class = "clutter"
+size_m = [0.64, 0.32, 0.06]
+count = 1
+route = "proc"
+shape = "game_console"
+roles = ["enamel_white", "rubber_black", "steel_black", "paint_blue"]
+pivot = "floor"
+collision = "none"
+
+[[prop]]
+id = "board_games"
+batch = 1
+name = "Stack of board games"
+class = "clutter"
+size_m = [0.42, 0.3, 0.15]
+count = 2
+route = "proc"
+shape = "board_games"
+params = {boxes = 3}
+roles = ["art_white", "paint_red", "book_navy", "book_mustard", "book_teal"]
+pivot = "floor"
+collision = "none"
+
+[[prop]]
+id = "slippers"
+batch = 1
+name = "Pair of felt slippers"
+class = "clutter"
+size_m = [0.24, 0.28, 0.09]
+count = 1
+route = "proc"
+shape = "slippers"
+params = {upper = "cushion_teal"}
+roles = ["throw_cream", "cushion_teal"]
+pivot = "floor"
+collision = "none"
+
+[[prop]]
+id = "laptop"
+batch = 1
+name = "Closed laptop with a tablet on it"
+class = "clutter"
+size_m = [0.34, 0.24, 0.03]
+count = 1
+route = "proc"
+shape = "laptop"
+roles = ["steel_warm", "steel_black", "rubber_black", "glass_dark"]
+pivot = "floor"
+collision = "none"
+
+[[prop]]
+id = "deco_vase"
+batch = 1
+name = "Stoneware vase with dried grass"
+class = "clutter"
+size_m = [0.12, 0.12, 0.51]
+count = 2
+route = "proc"
+shape = "ceramic"
+params = {kind = "vase", body = "stone_dark", glaze = "book_mustard"}
+roles = ["stone_dark", "book_mustard", "worktop_wood", "throw_cream"]
+pivot = "floor"
+collision = "none"
+
+[[prop]]
+id = "deco_bowl"
+batch = 1
+name = "Glazed bowl with wooden balls"
+class = "clutter"
+size_m = [0.3, 0.3, 0.1]
+count = 1
+route = "proc"
+shape = "ceramic"
+params = {kind = "bowl", body = "stone_light", glaze = "book_teal"}
+roles = ["stone_light", "book_teal", "worktop_wood"]
+pivot = "floor"
+collision = "none"
+
+[[prop]]
+id = "coffee_books"
+batch = 1
+name = "Stack of coffee-table books"
+class = "clutter"
+size_m = [0.34, 0.26, 0.13]
+count = 2
+route = "proc"
+shape = "coffee_books"
+roles = ["book_cream", "book_navy", "book_red", "book_sage", "book_teal", "steel_warm"]
+pivot = "floor"
+collision = "none"
+
+[[prop]]
+id = "candle_jars"
+batch = 1
+name = "Three candles in stoneware jars"
+class = "clutter"
+size_m = [0.25, 0.08, 0.11]
+count = 2
+route = "proc"
+shape = "candle_jars"
+roles = ["stone_light", "stone_dark", "enamel_cream", "steel_black"]
+pivot = "floor"
+collision = "none"
+
+[[prop]]
+id = "art_abstract"
+batch = 1
+name = "Large framed print, mid-century shapes"
+class = "dressing"
+size_m = [1.2, 0.04, 0.85]
+count = 1
+route = "proc"
+shape = "framed_art"
+params = {art = "abstract", frame = 0.035, mat = 0.07, frame_paint = "wood_front_dark"}
+roles = ["wood_front_dark", "art_white", "book_mustard", "art_terracotta", "book_navy", "book_teal", "book_sage"]
+pivot = "wall"
+collision = "none"
+
+[[prop]]
+id = "art_city"
+batch = 1
+name = "City poster at sunset, thin black frame"
+class = "dressing"
+size_m = [0.7, 0.03, 1.0]
+count = 1
+route = "proc"
+shape = "framed_art"
+params = {art = "city", frame = 0.02, frame_paint = "steel_black"}
+roles = ["steel_black", "art_white", "art_sky", "art_pink", "book_mustard", "book_navy", "book_teal", "book_grey"]
+pivot = "wall"
+collision = "none"
+
+[[prop]]
+id = "art_burger"
+batch = 1
+name = "The House kitchen's burger poster"
+class = "dressing"
+size_m = [0.6, 0.03, 0.85]
+count = 1
+route = "proc"
+shape = "framed_art"
+params = {art = "burger", frame = 0.02, frame_paint = "worktop_wood"}
+roles = ["worktop_wood", "book_navy", "art_white", "book_mustard", "art_bun", "leaf_green", "art_patty", "paint_red"]
+pivot = "wall"
+collision = "none"
+
+[[prop]]
+id = "art_photos"
+batch = 1
+name = "Framed grid of holiday photos"
+class = "clutter"
+size_m = [0.6, 0.03, 0.45]
+count = 2
+route = "proc"
+shape = "framed_art"
+params = {art = "photos", frame = 0.025, mat = 0.03, frame_paint = "worktop_wood"}
+roles = ["worktop_wood", "art_white", "art_sky", "art_pink", "book_cream", "leaf_green", "book_sage", "art_terracotta", "book_navy", "book_mustard"]
+pivot = "wall"
+collision = "none"
+
+[[prop]]
+id = "art_score"
+batch = 1
+name = "Framed game-night score sheet"
+class = "clutter"
+size_m = [0.4, 0.03, 0.5]
+count = 1
+route = "proc"
+shape = "framed_art"
+params = {art = "score", frame = 0.018, mat = 0.03, frame_paint = "steel_black"}
+roles = ["steel_black", "art_white", "paint_red", "book_grey", "book_navy"]
+pivot = "wall"
 collision = "none"

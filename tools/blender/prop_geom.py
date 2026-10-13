@@ -2152,8 +2152,8 @@ def book_run(m: Mesh, x0: float, x1: float, y: float, z0: float, depth: float, h
 
 def build_sofa(m, s, R, prm, rng):
     """An upholstered sofa (or with `seats` 1 an armchair) in the world look: tapered wood legs, a base, arms and a
-    back in linen (`upholstery`), loose seat and back cushions, woven throw pillows (`pillows`) and with `throw` a
-    blanket over the left arm. Colliders: the seat and the back."""
+    back in linen (`body`, default `upholstery`), loose seat and back cushions, woven throw pillows (`pillows`,
+    painted in turn from `pillow_paints`) and with `throw` a blanket (`throw_paint`) over the left arm. Colliders: the seat and the back."""
     L, W, H = s
     hx, hz = L / 2, W / 2
     n = int(prm.get("seats", 3))
@@ -2174,18 +2174,20 @@ def build_sofa(m, s, R, prm, rng):
     for a, b in zip(xs, xs[1:]):
         cushion(m, (a + 0.006, ys, -hz + back_d - 0.02), (b - 0.006, yc, hz - 0.01), up, 0.04)
         cushion(m, (a + 0.01, yc, -hz + back_d - 0.06), (b - 0.01, H, -hz + back_d + 0.1), up, 0.06)
-    paints = ["cushion_rust", "cushion_mustard"]
+    paints = list(prm.get("pillow_paints", ["cushion_rust", "cushion_mustard"]))
     for k in range(int(prm.get("pillows", 2))):
         sx = -1 if k % 2 == 0 else 1
         cx = sx * (hx - arm_w - 0.2) if n > 1 else 0.0
         r = min(0.19, (H - yc) / 2 - 0.01)  # a plump square pillow leaning on the back cushions
         zc = -hz + back_d + 0.16
-        cushion(m, (cx - r, H - 2 * r - 0.004, zc - 0.065), (cx + r, H - 0.004, zc + 0.065), paints[k % 2], 0.055)
+        cushion(m, (cx - r, H - 2 * r - 0.004, zc - 0.065), (cx + r, H - 0.004, zc + 0.065), paints[k % len(paints)],
+                0.055)
     if prm.get("throw"):  # a folded blanket over the left arm: over the top and down both sides
         z0, z1 = -0.18, 0.22
-        cushion(m, (-hx, arm_h - 0.004, z0), (-hx + arm_w + 0.012, arm_h + 0.02, z1), "throw_cream", 0.008)
-        cushion(m, (-hx, arm_h - 0.3, z0), (-hx + 0.016, arm_h, z1), "throw_cream", 0.006)
-        cushion(m, (-hx + arm_w - 0.004, yc + 0.02, z0), (-hx + arm_w + 0.012, arm_h, z1), "throw_cream", 0.006)
+        tp = prm.get("throw_paint", "throw_cream")
+        cushion(m, (-hx, arm_h - 0.004, z0), (-hx + arm_w + 0.012, arm_h + 0.02, z1), tp, 0.008)
+        cushion(m, (-hx, arm_h - 0.3, z0), (-hx + 0.016, arm_h, z1), tp, 0.006)
+        cushion(m, (-hx + arm_w - 0.004, yc + 0.02, z0), (-hx + arm_w + 0.012, arm_h, z1), tp, 0.006)
     _boxes(prm).extend([((-hx, 0.0, -hz), (hx, yc, hz)), ((-hx, yc, -hz), (hx, H, -hz + back_d + 0.1))])
 
 
@@ -2488,6 +2490,284 @@ def build_candle_pair(m, s, R, prm, rng):
         cyl(m, "y", (x, 0.0), 0.012, stick - 0.02, stick, "steel_warm", 10, r1=0.022)
         cyl(m, "y", (x, 0.0), 0.011, stick, h - 0.008, "enamel_cream", 8, r1=0.009)
         cyl(m, "y", (x, 0.0), 0.002, h - 0.008, h, "steel_black", 3)
+
+
+# ---- The living room's round 2 (#150): plants, a table lamp, the games console, games, slippers, a laptop, ceramics,
+# books, candles and framed art (the art drawn as flat painted shapes: no image texture, no outside picture).
+
+def _leaf(m: Mesh, x: float, y: float, z: float, size: float, role: str, n: int = 6, k: int = 3) -> None:
+    """A leaf as a flat ellipsoid, long along the way it points out from the stem (x or z)."""
+    long_x = abs(x) >= abs(z)
+    blob(m, (x, y, z), size if long_x else size * 0.55, size * 0.22, size * 0.55 if long_x else size, role, n, k)
+
+
+def build_house_plant(m, s, R, prm, rng):
+    """A potted house plant: a tapered ceramic pot (`pot`) with soil, stems and a crown of leaves in two greens; with
+    `tall` a fiddle-leaf fig: a trunk with leaves all the way up. A tall plant's collider is its pot."""
+    L, W, H = s
+    r = min(L, W) / 2
+    pot = prm.get("pot", "enamel_white")
+    tall = bool(prm.get("tall"))
+    ph = H * (0.28 if tall else 0.36)
+    pr = r * (0.55 if tall else 0.62)
+    cyl(m, "y", (0.0, 0.0), pr * 0.78, 0.0, ph, pot, 12, r1=pr, caps=(True, False))
+    cyl(m, "y", (0.0, 0.0), pr * 0.97, ph - 0.004, ph - 0.004, "soil_dark", 12, caps=(False, True))
+    n = int(prm.get("leaves", 12 if tall else 7))
+    size = r * (0.42 if tall else 0.5)
+    if tall:
+        rod(m, (0.0, ph - 0.02, 0.0), (0.02, H * 0.9, -0.01), 0.012, "wood_front_dark", 5)
+    for i in range(n):
+        a = i * math.pi / 2 + 0.3 * (i // 4 - 1) if tall else i * 2.39996 + rng.random() * 0.3
+        t = (i + 1) / n
+        y = ph + (H - ph - size * 0.3) * (0.25 + 0.75 * t if tall else 0.45 + 0.55 * rng.random())
+        d = (r - size) * ((0.92 + 0.08 * rng.random()) if tall else (0.85 + 0.15 * rng.random()))
+        x, z = math.cos(a) * d, math.sin(a) * d
+        if not tall:
+            rod(m, (0.0, ph, 0.0), (x * 0.7, y, z * 0.7), 0.004, "leaf_dark", 4)
+        _leaf(m, x, y, z, size, "leaf_green" if i % 3 else "leaf_dark", 8)
+    if tall:
+        _boxes(prm).append(((-pr, 0.0, -pr), (pr, ph, pr)))
+
+
+def build_side_lamp(m, s, R, prm, rng):
+    """A table lamp: a round glazed ceramic base (`base`), a brass neck and a linen drum shade."""
+    L, W, H = s
+    r = min(L, W) / 2
+    base = prm.get("base", "book_teal")
+    cyl(m, "y", (0.0, 0.0), r * 0.42, 0.0, 0.012, "steel_warm", 12)
+    blob(m, (0.0, 0.012 + H * 0.2, 0.0), r * 0.55, H * 0.2, r * 0.55, base, 10, 5)
+    cyl(m, "y", (0.0, 0.0), 0.012, 0.012 + H * 0.38, H * 0.6, "steel_warm", 6)
+    sy = H * 0.56
+    cyl(m, "y", (0.0, 0.0), r, sy, H, "upholstery_light", 16, r1=r * 0.72, caps=(False, False))
+    cyl(m, "y", (0.0, 0.0), r * 0.98, sy, H, "throw_cream", 16, r1=r * 0.7, caps=(False, False), flip=True)
+
+
+def build_game_console(m, s, R, prm, rng):
+    """A present-day games console lying flat (white shell, black core, a blue light) with two controllers beside
+    it, one white, one black."""
+    L, W, H = s
+    hx, hz = L / 2, W / 2
+    cx1 = hx - 0.01
+    cx0 = cx1 - 0.3
+    cbox(m, (cx0, 0.0, -hz), (cx1, H * 0.8, hz - 0.12), "enamel_white", 0.008)
+    box(m, (cx0 + 0.02, H * 0.3, hz - 0.12), (cx1 - 0.02, H * 0.5, hz - 0.118), "rubber_black", "+z")
+    box(m, (cx0 + 0.03, H * 0.5, hz - 0.12), (cx0 + 0.07, H * 0.56, hz - 0.1185), "paint_blue", "+z")
+    for k, (body, grip) in enumerate((("enamel_white", "rubber_black"), ("rubber_black", "steel_black"))):
+        x = -hx + 0.09 + k * 0.17
+        z = hz - 0.06 + (0.01 if k else 0.0)
+        cbox(m, (x - 0.055, 0.0, z - 0.03), (x + 0.055, 0.03, z + 0.025), body, 0.008)
+        for sx in (-1, 1):
+            blob(m, (x + sx * 0.05, 0.016, z + 0.025), 0.025, 0.016, 0.03, body, 6, 3)
+        for sx in (-1, 1):
+            cyl(m, "y", (x + sx * 0.022, z + 0.008), 0.008, 0.03, 0.036, grip, 6)
+        box(m, (x - 0.012, 0.03, z - 0.02), (x + 0.012, 0.031, z - 0.008), "paint_blue", "+y")
+
+
+def build_board_games(m, s, R, prm, rng):
+    """A stack of board-game boxes: white boxes under coloured lids, each with a band across its top and side."""
+    L, W, H = s
+    lids = [r for r in ("paint_red", "book_navy", "book_mustard", "book_teal", "paint_blue") if r in R] or ["paint_red"]
+    n = int(prm.get("boxes", 3))
+    t = H / n
+    y = 0.0
+    for k in range(n):
+        f = 1.0 - 0.12 * k * rng.random()
+        hx, hz = L / 2 * f - 0.005 * k, W / 2 * f
+        dx, dz = (rng.random() - 0.5) * 0.01, (rng.random() - 0.5) * 0.01
+        lid, band = lids[(k + 1) % len(lids)], lids[(k + 2) % len(lids)]
+        box(m, (dx - hx, y, dz - hz), (dx + hx, y + t * 0.3, dz + hz), "art_white", "+x-x-y+z-z")
+        cbox(m, (dx - hx, y + t * 0.3, dz - hz), (dx + hx, y + t - 0.001, dz + hz), lid, 0.003)
+        box(m, (dx - hx * 0.6, y + t - 0.001, dz - hz), (dx - hx * 0.2, y + t, dz + hz), band, "+y")
+        box(m, (dx - hx * 0.6, y + t * 0.3, dz + hz), (dx - hx * 0.2, y + t - 0.001, dz + hz + 0.0008), band, "+z")
+        y += t
+
+
+def build_slippers(m, s, R, prm, rng):
+    """A pair of felt slippers side by side, the left one a little ahead: soles, a closed toe, a soft heel."""
+    L, W, H = s
+    upper = prm.get("upper", "cushion_teal")
+    for k, sx in enumerate((-1, 1)):
+        x = sx * L / 4
+        z0, z1 = -W / 2 + (0.0 if k else 0.025), W / 2 - (0.025 if k else 0.0)
+        w = L / 2 - 0.02
+        cushion(m, (x - w / 2, 0.0, z0), (x + w / 2, 0.022, z1), "throw_cream", 0.008)
+        cushion(m, (x - w / 2 + 0.004, 0.02, z1 - (z1 - z0) * 0.55), (x + w / 2 - 0.004, H, z1 - 0.004), upper, 0.025)
+        cushion(m, (x - w / 2 + 0.006, 0.02, z0 + 0.004), (x + w / 2 - 0.006, H * 0.55, z0 + 0.03), upper, 0.01)
+
+
+def build_laptop(m, s, R, prm, rng):
+    """A closed laptop in warm aluminium with a tablet lying on it, its dark screen up."""
+    L, W, H = s
+    hx, hz = L / 2, W / 2
+    cbox(m, (-hx, 0.0, -hz), (hx, H * 0.45, hz), "steel_warm", 0.004)
+    box(m, (-hx + 0.01, H * 0.2, hz), (hx - 0.01, H * 0.24, hz + 0.0008), "steel_black", "+z")
+    tx0, tz0 = -hx + 0.06, -hz + 0.035
+    cbox(m, (tx0, H * 0.45, tz0), (tx0 + L * 0.68, H - 0.0006, tz0 + W * 0.75), "rubber_black", 0.003)
+    box(m, (tx0 + 0.008, H - 0.0006, tz0 + 0.008), (tx0 + L * 0.68 - 0.008, H, tz0 + W * 0.75 - 0.008),
+        "glass_dark", "+y")
+
+
+def build_ceramic(m, s, R, prm, rng):
+    """Stoneware for a shelf or a table: `kind` vase (a bellied vase with dried grass stems and seed heads) or bowl
+    (a wide glazed bowl with three wooden balls)."""
+    L, W, H = s
+    r = min(L, W) / 2
+    body = prm.get("body", "stone_dark")
+    glaze = prm.get("glaze", "book_mustard")
+    if prm.get("kind", "vase") == "bowl":
+        cyl(m, "y", (0.0, 0.0), r * 0.45, 0.0, H * 0.75, body, 14, r1=r, caps=(True, False))
+        cyl(m, "y", (0.0, 0.0), r * 0.4, 0.012, H * 0.75, glaze, 14, r1=r * 0.95, caps=(True, False), flip=True)
+        for k in range(3):
+            a = k * 2.1 + 0.3
+            blob(m, (math.cos(a) * r * 0.3, H * 0.62, math.sin(a) * r * 0.3), r * 0.24, r * 0.24, r * 0.24,
+                 "worktop_wood", 8, 4)
+        return
+    vh = H * 0.5
+    cyl(m, "y", (0.0, 0.0), r * 0.55, 0.0, vh * 0.45, body, 12, r1=r * 0.68, caps=(True, False))
+    cyl(m, "y", (0.0, 0.0), r * 0.68, vh * 0.45, vh * 0.85, body, 12, r1=r * 0.3, caps=(False, False))
+    cyl(m, "y", (0.0, 0.0), r * 0.3, vh * 0.85, vh, glaze, 12, r1=r * 0.34, caps=(False, True))
+    for k in range(5):
+        a = k * 2 * math.pi / 5 + rng.random() * 0.3
+        d = r * (0.8 + 0.15 * rng.random()) - 0.014
+        top = (math.cos(a) * d, H * (0.82 + 0.15 * rng.random()), math.sin(a) * d)
+        rod(m, (0.0, vh * 0.9, 0.0), top, 0.003, "worktop_wood", 4)
+        blob(m, (top[0], top[1] - 0.02, top[2]), 0.014, 0.035, 0.014, "throw_cream", 5, 3)
+
+
+def build_coffee_books(m, s, R, prm, rng):
+    """Three large hardcover books stacked a little askew (cream page blocks inset in their covers), a small brass
+    dish on top."""
+    L, W, H = s
+    covers = [r for r in R if r.startswith("book_") and r != "book_cream"] or ["book_navy"]
+    n = 3
+    t = (H - 0.012) / n
+    y = 0.0
+    for k in range(n):
+        f = 1.0 - 0.1 * k
+        hx, hz = L / 2 * f, W / 2 * f
+        dx = (rng.random() - 0.5) * 0.03
+        c = covers[(k * 2 + 1) % len(covers)]
+        box(m, (dx - hx, y, -hz), (dx + hx, y + 0.004, hz), c)
+        box(m, (dx - hx + 0.004, y + 0.004, -hz + 0.004), (dx + hx - 0.006, y + t - 0.004, hz - 0.004), "book_cream",
+            "+x+z-z")
+        box(m, (dx - hx, y + 0.004, -hz), (dx - hx + 0.004, y + t - 0.004, hz), c, "-x+z-z")
+        box(m, (dx - hx, y + t - 0.004, -hz), (dx + hx, y + t, hz), c, "+y+x-x+z-z")
+        y += t
+    cyl(m, "y", (0.0, 0.0), 0.035, y, H, "steel_warm", 12, r1=0.05)
+
+
+def build_candle_jars(m, s, R, prm, rng):
+    """Three scented candles in stoneware jars of different heights, cream wax and a black wick each."""
+    L, W, H = s
+    r = min(W / 2, L / 6) - 0.004
+    for k, f in enumerate((1.0, 0.72, 0.85)):
+        x = -L / 2 + r + 0.004 + k * (L - 2 * r - 0.008) / 2
+        h = H * f
+        jar = ("stone_light", "stone_dark", "stone_light")[k]
+        cyl(m, "y", (x, 0.0), r, 0.0, h - 0.012, jar, 10, caps=(True, False))
+        cyl(m, "y", (x, 0.0), r * 0.86, h - 0.016, h - 0.016, "enamel_cream", 10, caps=(False, True))
+        tube(m, "y", (x, 0.0), r * 0.86, r, h - 0.012, h - 0.002, jar, 10)
+        cyl(m, "y", (x, 0.0), 0.0018, h - 0.016, h - 0.006, "steel_black", 3)
+
+
+def _art(m: Mesh, kind: str, x0: float, x1: float, y0: float, y1: float, z: float, rng: random.Random) -> None:
+    """The picture inside a frame, drawn as flat painted shapes in layers toward +z: `kind` abstract (mid-century
+    shapes), city (a skyline poster at sunset), photos (a grid of six holiday photos), score (a game night's score
+    sheet with tallies and the winner ringed) or burger (the House kitchen's burger poster)."""
+    w, h = x1 - x0, y1 - y0
+    zz = [z]
+
+    step = 0.0003  # one layer in front of the last; shapes that never overlap share a layer (lay=False)
+
+    def q(a, b, c, d, role, lay=True):
+        zz[0] += step if lay else 0.0
+        box(m, (x0 + a * w, y0 + b * h, zz[0] - step), (x0 + c * w, y0 + d * h, zz[0]), role, "+z")
+
+    def disk(cx, cy, r, role, n=14):  # r in metres
+        zz[0] += step
+        cyl(m, "z", (x0 + cx * w, y0 + cy * h), r, zz[0] - step, zz[0], role, n, caps=(False, True))
+
+    if kind == "abstract":
+        q(0, 0, 1, 1, "art_white")
+        disk(0.33, 0.58, 0.27 * h, "book_mustard", 20)
+        q(0.5, 0.0, 0.78, 0.5, "art_terracotta")
+        disk(0.64, 0.5, 0.14 * w, "art_terracotta", 20)
+        q(0.08, 0.12, 0.42, 0.2, "book_navy")
+        disk(0.86, 0.8, 0.08 * h, "book_teal", 14)
+        q(0.84, 0.08, 0.9, 0.6, "book_sage")
+    elif kind == "city":
+        q(0, 0, 1, 1, "art_sky")
+        q(0, 0.14, 1, 0.55, "art_pink")
+        disk(0.68, 0.55, 0.14 * h, "book_mustard", 16)
+        x, lit = 0.04, []
+        zz[0] += step
+        while x < 0.92:
+            bw = 0.06 + 0.05 * rng.random()
+            bh = 0.3 + 0.42 * rng.random()
+            q(x, 0.14, min(x + bw, 0.96), 0.14 + bh, rng.choice(["book_navy", "book_teal", "book_grey"]), False)
+            lit += [(x + 0.015 + (bw - 0.04) * rng.random(), 0.2 + (bh - 0.1) * rng.random()) for _ in range(2)]
+            x += bw + 0.01
+        zz[0] += step
+        for wx, wy in lit:
+            q(wx, wy, wx + 0.015, wy + 0.025, "book_mustard", False)
+        q(0, 0, 1, 0.14, "art_white")
+        q(0.08, 0.05, 0.55, 0.09, "book_navy")
+        q(0.62, 0.05, 0.9, 0.08, "book_grey")
+    elif kind == "photos":
+        q(0, 0, 1, 1, "art_white")
+        skies, grounds = ["art_sky", "art_pink", "book_cream"], ["leaf_green", "book_sage", "art_terracotta", "book_navy"]
+        for i in range(3):
+            for j in range(2):
+                a, b = 0.05 + i * 0.32, 0.07 + j * 0.47
+                q(a, b, a + 0.26, b + 0.4, rng.choice(skies))
+                q(a, b, a + 0.26, b + 0.17, rng.choice(grounds))
+                disk(a + 0.06 + 0.14 * rng.random(), b + 0.28, 0.035 * h, rng.choice(["book_mustard", "art_white"]), 8)
+    elif kind == "score":
+        q(0, 0, 1, 1, "art_white")
+        q(0, 0.84, 1, 1, "paint_red")
+        q(0.08, 0.89, 0.5, 0.95, "art_white")
+        zz[0] += step
+        for c in (0.3, 0.53, 0.76):
+            q(c - 0.004, 0.06, c + 0.004, 0.84, "book_grey", False)
+        for r in range(5):
+            y = 0.2 + r * 0.13
+            q(0.04, y - 0.003, 0.96, y + 0.003, "book_grey", False)
+            q(0.06, y + 0.03, 0.22, y + 0.07, "book_navy", False)
+            for c in (0.3, 0.53, 0.76):
+                for k in range(1 + int(rng.random() * 4)):
+                    q(c + 0.03 + k * 0.03, y + 0.02, c + 0.037 + k * 0.03, y + 0.1, "steel_black", False)
+        zz[0] += step
+        tube(m, "z", (x0 + 0.65 * w, y0 + 0.73 * h), 0.06 * h, 0.075 * h, zz[0] - step, zz[0], "paint_red", 14)
+    else:  # burger
+        q(0, 0, 1, 1, "book_navy")
+        q(0.15, 0.82, 0.85, 0.9, "art_white")
+        q(0.3, 0.75, 0.7, 0.78, "book_mustard")
+        disk(0.5, 0.44, 0.33 * w, "art_bun", 20)
+        q(0.1, 0.1, 0.9, 0.44, "book_navy")
+        q(0.15, 0.4, 0.85, 0.45, "leaf_green")
+        q(0.19, 0.35, 0.81, 0.4, "book_mustard")
+        q(0.18, 0.26, 0.82, 0.35, "art_patty")
+        q(0.2, 0.16, 0.8, 0.26, "art_bun")
+        for k in range(5):
+            sx, sy = 0.32 + 0.09 * k, 0.55 + 0.06 * ((k * 2) % 3)
+            q(sx, sy, sx + 0.025, sy + 0.015, "art_white")
+        disk(0.84, 0.66, 0.08 * w, "paint_red", 12)
+        q(0.8, 0.645, 0.88, 0.675, "art_white")
+
+
+def build_framed_art(m, s, R, prm, rng):
+    """A framed picture for the wall (wall pivot: the back at -z): a `frame_paint` frame `frame` wide, a white mat
+    `mat` wide and the picture `art` (see _art), drawn by this repo."""
+    L, W, H = s
+    hx, z0, z1 = L / 2, -W / 2, W / 2
+    f = float(prm.get("frame", 0.03))
+    fr = prm.get("frame_paint", "wood_front_dark")
+    mat = float(prm.get("mat", 0.0))
+    box(m, (-hx + f, f, z0), (hx - f, H - f, z1 - 0.008), "art_white", "+z")
+    for lo, hi in (((-hx, 0.0, z0), (hx, f, z1)), ((-hx, H - f, z0), (hx, H, z1)),
+                   ((-hx, f, z0), (-hx + f, H - f, z1)), ((hx - f, f, z0), (hx, H - f, z1))):
+        box(m, lo, hi, fr, "+x-x+y-y+z")
+    _art(m, prm.get("art", "abstract"), -hx + f + mat, hx - f - mat, f + mat, H - f - mat, z1 - 0.008, rng)
 
 
 BUILDERS = {name[6:]: fn for name, fn in dict(globals()).items() if name.startswith("build_") and callable(fn)}
