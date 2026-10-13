@@ -91,6 +91,12 @@ outdoor = ["fence_*", "gate_post", "gazebo_*", "railing_gazebo_*"]
 # `over_roof`, over the roof's top there (house_attic.roof_top); `sun` adds a key light outside the room's lamps;
 # `with` shows other packages' rooms in place beside it.
 [[export.sheet_views]]
+room = "kitchen"
+title = "kitchen: the north-wall worktops"
+at = [38.0, 33.6]  # #147: the C2-white run, its backsplashes and wall cabinets
+look = [37.6, 30.0]
+look_h = 1.0
+[[export.sheet_views]]
 room = "attic"
 title = "attic: from the west gable"
 at = [19.5, 34.0]
