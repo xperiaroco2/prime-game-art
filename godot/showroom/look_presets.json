@@ -1,14 +1,21 @@
 {
- "status": "PROPOSAL, NOT CHOSEN: the engineer has not picked a variant (art #140). Variants 3 to 6 still look washed out next to the approved Blender face (pale hair, little key-light shading); the sky's ambient energy and the key light are open. Do not copy into the game until this says chosen.",
+ "status": "APPROVED: the engineer approved this look per graphics preset on 2026-10-13 (art PR #148, issue #140) as the game's recommended look: Low = ladder variant 3 (AgX, sky, eye catch light), Medium = 4 (+SSAO), High = 5 (+soft shadows), Ultra = 6 (+SSS on the clay), all at tonemap exposure 0.9. Still open: the hair 5 to 7 L* darker than Blender's, and the game-side wiring is untested.",
  "about": "The proposed character look per graphics preset (see status), from the showroom (prime-game-art #140, docs/godot.md 'Showroom and recommended look settings'). Godot 4.7.2, Forward+. Property names are Environment, DirectionalLight3D, StandardMaterial3D and ProjectSettings names; 'clay' materials are the character materials whose name ends in _clay.",
  "environment": {
   "background_mode": "BG_COLOR or BG_SKY (the map's choice; the sky below lights it either way)",
   "sky": "PanoramaSkyMaterial on a studio or the map's HDRI, energy_multiplier 1.0, radiance_size 256",
   "tonemap_mode": "TONE_MAPPER_AGX",
-  "tonemap_exposure": 1.0,
+  "tonemap_exposure": 0.9,
   "ambient_light_source": "AMBIENT_SOURCE_SKY",
-  "ambient_light_energy": 0.4,
-  "reflected_light_source": "REFLECTION_SOURCE_SKY"
+  "ambient_light_energy": 0.12,
+  "ambient_light_color": [
+   1.0,
+   0.8,
+   0.62
+  ],
+  "ambient_light_sky_contribution": 0.5,
+  "reflected_light_source": "REFLECTION_SOURCE_SKY",
+  "why": "half the ambient from the sky, half a dark warm colour (step 3's W3): the face 4 L* darker, warmer and better shaded, the closest single change; at ambient_light_sky_contribution 1.0 Godot ignores ambient_light_energy and ambient_light_color (step 2's T2 changed nothing), and the sky's energy_multiplier at 0.5 (W2) did not reach the face's skin (a no-op for the face). Exposure 0.9 (the exposure grid's X2) brings the skin 1 to 2 L* darker, nearer Blender's; 0.8 and 0.7 overshoot"
  },
  "lights": {
   "key": {
@@ -19,9 +26,10 @@
   },
   "fill": {
    "type": "DirectionalLight3D",
-   "energy": 0.35,
+   "energy": 0.12,
    "specular": 0.0,
-   "shadow": false
+   "shadow": false,
+   "why": "a weaker fill (0.35 to 0.12, step 3's W4) gives the face more of the key's shading"
   },
   "rim": {
    "type": "DirectionalLight3D",
@@ -31,15 +39,20 @@
   },
   "catch": {
    "type": "OmniLight3D, a child of the camera at (-0.25, 0.3, 0) (up-left of the view)",
-   "energy": 0.3,
+   "energy": 0.6,
    "specular": 16.0,
-   "light_size": 0.2,
+   "light_size": 0.06,
    "omni_range": 50.0,
    "omni_attenuation": 0.0,
    "shadow": false,
    "light_cull_mask": "the eye layer alone (render layer 20); the eye meshes (material *_eye) on it too",
-   "why": "the eyes' glint (fb_eye, roughness 0.17): a small spherical area light, so the glint is a few pixels wide; it lights nothing but the eyes"
+   "why": "the eyes' glint (fb_eye at roughness 0.05, see LOOK_MATERIALS): a small spherical area light, so the glint is a small sharp dot; it lights nothing but the eyes"
   }
+ },
+ "materials": {
+  "clay_metallic_specular": 0.1,
+  "eye_roughness": 0.05,
+  "why": "the clay's specular at Godot's default 0.5 lays the key light's sheen and the sky's reflections over the roughness-0.8 clay (the hair turns pale brown); 0.1 keeps it matte as in Blender. The eyes (materials *_eye, exported at roughness 0.17) at 0.05 take the catch light as a sharp glint"
  },
  "presets": {
   "Low": {

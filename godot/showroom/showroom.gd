@@ -1,14 +1,17 @@
 extends SceneTree
-## The showroom (art #140, docs/godot.md "Showroom and recommended look settings"): one character under up to six look
+## The showroom (art #140, docs/godot.md "Showroom and recommended look settings"): one character under up to eight look
 ## variants, rendered by Godot in a real window for `tools/run.py showroom`. Never headless and never minimized
 ## (Godot does not draw then); the runner opens the window off-screen:
 ##   godot --path godot --position -30000,-30000 --resolution 640x800 -s res://showroom/showroom.gd
 ##       -- <res://import/x.glb> <out folder> <showroom_spec.json>
-## The spec (tools/runner/commands/_showroom.py) lists the variants; each sets the tonemapper and exposure, the ambient
-## source (a flat colour or the studio sky), sky reflections, the key light's specular, the eyes' catch light (energy,
-## specular, size), SSAO, soft shadows (the key light's angular size: PCSS) and subsurface scattering on the materials whose name ends in _clay. Writes face.png
-## (the approved sheet's crops, then per variant the face front and three-quarter), body.png (per variant the full
-## body) and showroom.json (each variant's GPU time averaged over drawn frames with the window at the timing size).
+## The spec (tools/runner/commands/_showroom.py) lists the variants; each sets the tonemapper, its exposure and AgX's
+## white and contrast, the ambient source (a flat colour or the studio sky; its energy, colour and the sky's share), sky
+## reflections, the sky's energy multiplier (its ambient and reflections), the key light's energy, colour and
+## specular, the fill light's energy, the clay's specular, the eyes' roughness and their catch
+## light (energy, specular, size), SSAO, soft shadows (the key light's angular size: PCSS) and subsurface scattering
+## on the materials whose name ends in _clay. Writes face.png (the approved sheet's crops, also saved as
+## shots/approved_<n>.png, then per variant the face front and three-quarter), body.png (per variant the full body) and
+## showroom.json (each variant's GPU time averaged over drawn frames with the window at the timing size).
 ## The frames stand (godot/frames/frames.gd) stays the measuring stand; its look is the first variant here.
 ## Prints SHOWROOM saved <path>, or SHOWROOM error <why> and exits 1.
 
@@ -35,8 +38,12 @@ var _player: AnimationPlayer
 var _camera: Camera3D
 var _env: Environment
 var _key: DirectionalLight3D
+var _fill: DirectionalLight3D
+var _sky_material: Material
 var _catch: OmniLight3D
 var _clay: Array[BaseMaterial3D] = []
+var _eyes: Array[BaseMaterial3D] = []
+var _eye_roughness: Array[float] = []  # as exported
 var _sky_name: String = ""
 
 
@@ -98,7 +105,9 @@ func _run(scene_path: String, out_dir: String, spec: Dictionary) -> void:
 			_fail("cannot read %s" % beside)
 			return
 		for r: Array in spec["beside_rects"]:
-			face_shots.append(approved.get_region(Rect2i(int(r[0]), int(r[1]), int(r[2]), int(r[3]))))
+			var crop: Image = approved.get_region(Rect2i(int(r[0]), int(r[1]), int(r[2]), int(r[3])))
+			_save(crop, "%s/shots/approved_%d.png" % [out_dir, face_shots.size()])
+			face_shots.append(crop)
 	var body_shots: Array[Image] = []
 	for v: Dictionary in spec["variants"]:
 		_apply(v)
@@ -114,9 +123,9 @@ func _run(scene_path: String, out_dir: String, spec: Dictionary) -> void:
 		record["variants"].append(v["id"])
 		print("SHOWROOM variant ", v["id"])
 	var fc: Vector2i = Vector2i(int(spec["face_cell"][0]), int(spec["face_cell"][1]))
-	_save(await _sheet(face_shots, fc, 4, spec["face_title"]), "%s/face.png" % out_dir)
+	_save(await _sheet(face_shots, fc, int(spec["face_cols"]), spec["face_title"]), "%s/face.png" % out_dir)
 	var bc: Vector2i = Vector2i(int(spec["body_cell"][0]), int(spec["body_cell"][1]))
-	_save(await _sheet(body_shots, bc, 3, spec["body_title"]), "%s/body.png" % out_dir)
+	_save(await _sheet(body_shots, bc, int(spec["body_cols"]), spec["body_title"]), "%s/body.png" % out_dir)
 	# GPU time per variant, the full body framed in a window at the timing size (the label hidden)
 	_label.visible = false
 	DisplayServer.window_set_size(Vector2i(int(spec["timing_size"][0]), int(spec["timing_size"][1])))
@@ -175,16 +184,22 @@ func _collect_clay() -> void:
 				_clay.append(mat as BaseMaterial3D)
 
 
-## Puts the meshes with an eye material (a name ending in _eye) on the eye layer as well; returns how many.
+## Puts the meshes with an eye material (a name ending in _eye) on the eye layer as well and keeps the eye materials
+## with their exported roughness; returns how many meshes.
 func _mark_eyes() -> int:
 	var count: int = 0
 	for mesh: MeshInstance3D in Character.meshes(_scene):
+		var marked: bool = false
 		for s: int in mesh.mesh.get_surface_count():
 			var mat: Material = mesh.get_active_material(s)
-			if mat != null and mat.resource_name.ends_with("_eye"):
-				mesh.layers |= EYE_LAYER
-				count += 1
-				break
+			if mat is BaseMaterial3D and mat.resource_name.ends_with("_eye"):
+				if not _eyes.has(mat):
+					_eyes.append(mat as BaseMaterial3D)
+					_eye_roughness.append((mat as BaseMaterial3D).roughness)
+				if not marked:
+					mesh.layers |= EYE_LAYER
+					count += 1
+					marked = true
 	return count
 
 
@@ -203,16 +218,18 @@ func _stage(hdri: String) -> void:
 		var pano: PanoramaSkyMaterial = PanoramaSkyMaterial.new()
 		pano.panorama = ImageTexture.create_from_image(image)
 		sky.sky_material = pano
+		_sky_material = pano
 		_sky_name = hdri.get_file()
 	else:
-		sky.sky_material = ProceduralSkyMaterial.new()
+		_sky_material = ProceduralSkyMaterial.new()
+		sky.sky_material = _sky_material
 		_sky_name = "ProceduralSky"
 	_env.sky = sky
 	var world: WorldEnvironment = WorldEnvironment.new()
 	world.environment = _env
 	root.add_child(world)
 	_key = _light(Vector3(-2.0, 3.2, 3.0), 1.05, true)
-	_light(Vector3(3.0, 1.6, 2.0), 0.35, false)
+	_fill = _light(Vector3(3.0, 1.6, 2.0), 0.35, false)
 	_light(Vector3(0.5, 2.5, -3.0), 0.30, false)
 	var floor_mesh: MeshInstance3D = MeshInstance3D.new()
 	var plane: PlaneMesh = PlaneMesh.new()
@@ -260,6 +277,11 @@ func _light(at: Vector3, energy: float, shadow: bool) -> DirectionalLight3D:
 func _apply(v: Dictionary) -> void:
 	_env.tonemap_mode = Environment.TONE_MAPPER_AGX if v["tonemap"] == "agx" else Environment.TONE_MAPPER_LINEAR
 	_env.tonemap_exposure = float(v["exposure"])
+	_env.tonemap_agx_white = float(v["agx_white"])
+	_env.tonemap_agx_contrast = float(v["agx_contrast"])
+	var tint: Array = v["ambient_color"]
+	_env.ambient_light_color = Color(float(tint[0]), float(tint[1]), float(tint[2]))
+	_env.ambient_light_sky_contribution = float(v["sky_contribution"])
 	_env.ambient_light_source = Environment.AMBIENT_SOURCE_SKY if v["ambient"] == "sky" else Environment.AMBIENT_SOURCE_COLOR
 	_env.ambient_light_energy = float(v["ambient_energy"])
 	_env.reflected_light_source = Environment.REFLECTION_SOURCE_SKY if v["reflections"] else Environment.REFLECTION_SOURCE_DISABLED
@@ -267,8 +289,12 @@ func _apply(v: Dictionary) -> void:
 	_env.ssao_radius = SSAO_RADIUS
 	_env.ssao_intensity = SSAO_INTENSITY
 	_env.ssao_light_affect = SSAO_LIGHT_AFFECT
+	_sky_material.set("energy_multiplier", float(v["sky_energy"]))  # both sky materials have it
+	_fill.light_energy = float(v["fill_energy"])
 	_key.light_energy = float(v["key_energy"])
 	_key.light_specular = float(v["key_specular"])
+	var warm: Array = v["key_color"]
+	_key.light_color = Color(float(warm[0]), float(warm[1]), float(warm[2]))
 	_catch.visible = bool(v["catch_light"])
 	_catch.light_energy = float(v["catch_energy"])
 	_catch.light_specular = float(v["catch_specular"])
@@ -284,7 +310,11 @@ func _apply(v: Dictionary) -> void:
 		RenderingServer.directional_soft_shadow_filter_set_quality(RenderingServer.SHADOW_QUALITY_SOFT_LOW)
 	RenderingServer.sub_surface_scattering_set_quality(RenderingServer.SUB_SURFACE_SCATTERING_QUALITY_MEDIUM
 			if v["sss"] else RenderingServer.SUB_SURFACE_SCATTERING_QUALITY_DISABLED)
+	var eye_rough: float = float(v["eye_roughness"])  # negative: the exported roughness
+	for i: int in _eyes.size():
+		_eyes[i].roughness = eye_rough if eye_rough >= 0.0 else _eye_roughness[i]
 	for mat: BaseMaterial3D in _clay:
+		mat.metallic_specular = float(v["clay_specular"])
 		mat.subsurf_scatter_enabled = bool(v["sss"])
 		mat.subsurf_scatter_strength = SSS_STRENGTH
 		mat.subsurf_scatter_skin_mode = mat.resource_name.contains("head")
