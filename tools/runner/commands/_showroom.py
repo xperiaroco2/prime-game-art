@@ -263,9 +263,30 @@ def face_measures(width: int, height: int, px: list[tuple[int, int, int]], lab, 
     return {k: round(v, 1) for k, v in out.items()}
 
 
+# The check's tone split counts a pixel by its colour, so a variant that tints the floor warm (a 4000 K key) has the
+# floor counted as skin, and one that darkens the face (exposure) has its shaded skin counted as hair. Beside it, a
+# grid with a base (its variant with no parent) is measured on the base's skin pixels (skin_pixels of the base's face
+# shots: the same camera and pose): what the light does to the same patch of face.
+SKIN_MEASURES = ("skin_L", "skin_C", "shade")
+
+
+def masked_measures(px: list[tuple[int, int, int]], only: list[int], lab) -> dict[str, float]:
+    """SKIN_MEASURES of one face shot over the given pixel indices (another shot's skin_pixels), whatever their tone;
+    nan with fewer than 20."""
+    nan = float("nan")
+    if len(only) < 20:
+        return {k: nan for k in SKIN_MEASURES}
+    values = [lab(*px[i]) for i in only]
+    skin = sorted(v[0] for v in values)
+    chroma = sum(math.hypot(v[1], v[2]) for v in values) / len(values)
+    return {"skin_L": round(sum(skin) / len(skin), 1), "skin_C": round(chroma, 1),
+            "shade": round(skin[int(0.9 * len(skin))] - skin[int(0.1 * len(skin))], 1)}
+
+
 def mean_measures(shots: list[dict[str, float]]) -> dict[str, float]:
     """The mean of each measure over shots (front and three-quarter)."""
-    return {k: round(sum(m[k] for m in shots) / len(shots), 1) for k in MEASURES}
+    keys = [k for k in MEASURES if all(k in m for m in shots)]
+    return {k: round(sum(m[k] for m in shots) / len(shots), 1) for k in keys}
 
 
 def distance(m: dict[str, float], ref: dict[str, float]) -> float:
@@ -328,6 +349,18 @@ def look_table(blender: dict[str, float], rows: list[tuple[str, dict[str, float]
     for label, m in rows:
         cells = [f"{m[k]:.1f} ({m[k] - blender[k]:+.1f})" for k in MEASURES]
         lines.append(f"| {label} | " + " | ".join(cells) + f" | {distance(m, blender):.1f} |")
+    return lines
+
+
+def masked_table(blender: dict[str, float], base: str, rows: list[tuple[str, dict[str, float]]]) -> list[str]:
+    """A markdown table of SKIN_MEASURES on the base's skin pixels against Blender's, and their distance."""
+    lines = [f"| On the skin pixels of {base} | skin L* | skin C* | shade (L* p90-p10) | skin distance |",
+             "|---|---:|---:|---:|---:|"]
+    lines.append("| Blender (approved) | " + " | ".join(f"{blender[k]:.1f}" for k in SKIN_MEASURES) + " | 0 |")
+    for label, m in rows:
+        cells = [f"{m[k]:.1f} ({m[k] - blender[k]:+.1f})" for k in SKIN_MEASURES]
+        gap = round(sum(abs(m[k] - blender[k]) for k in SKIN_MEASURES), 1)
+        lines.append(f"| {label} | " + " | ".join(cells) + f" | {gap:.1f} |")
     return lines
 
 

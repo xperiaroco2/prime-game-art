@@ -114,7 +114,8 @@ def run(args: argparse.Namespace) -> int:
         for line in change:
             common.say(f"verify: {line}")
     if beside:
-        look = look_check(out / "shots", record["variants"], labels, len(spec["beside_rects"]))
+        base = next((v["id"] for v in chosen if v.get("parent") == ""), "") if parents else ""
+        look = look_check(out / "shots", record["variants"], labels, len(spec["beside_rects"]), base)
         (out / "look.md").write_text("\n".join(look) + "\n", encoding="utf-8", newline="\n")
         for line in look:
             common.say(f"verify: {line}")
@@ -136,11 +137,24 @@ def change_check(shots: Path, parents: list[tuple[str, str]], labels: dict[str, 
     return _showroom.change_table(rows)
 
 
-def look_check(shots: Path, ids: list[str], labels: dict[str, str], approved: int) -> list[str]:
-    """The numeric check against Blender: the face measures of the approved crops and of each variant's face shots."""
+def look_check(shots: Path, ids: list[str], labels: dict[str, str], approved: int, base: str = "") -> list[str]:
+    """The numeric check against Blender: the face measures of the approved crops and of each variant's face shots;
+    with a base variant, also each variant's measures on the base's skin pixels (_showroom.masked_measures)."""
+    def read(name: str):
+        return house_bake.read_png(shots / name)
+
     def measures(name: str) -> dict[str, float]:
-        width, height, px = house_bake.read_png(shots / name)
-        return _showroom.face_measures(width, height, px, house_bake.srgb_lab)
+        return _showroom.face_measures(*read(name), house_bake.srgb_lab)
     blender = _showroom.mean_measures([measures(f"approved_{i}.png") for i in range(approved)])
     rows = [(labels[i], _showroom.mean_measures([measures(f"{i}_face0.png"), measures(f"{i}_face1.png")])) for i in ids]
-    return _showroom.look_table(blender, rows)
+    lines = _showroom.look_table(blender, rows)
+    if base:
+        masks = {}
+        for shot in ("face0", "face1"):
+            width, height, px = read(f"{base}_{shot}.png")
+            masks[shot] = _showroom.skin_pixels(width, height, px, house_bake.srgb_lab, grid=160)
+        masked = [(labels[i], _showroom.mean_measures([_showroom.masked_measures(read(f"{i}_{shot}.png")[2], masks[shot],
+                                                                                  house_bake.srgb_lab)
+                                                       for shot in ("face0", "face1")])) for i in ids]
+        lines += [""] + _showroom.masked_table(blender, labels[base], masked)
+    return lines

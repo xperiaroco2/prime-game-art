@@ -166,6 +166,22 @@ class MeasuresTest(unittest.TestCase):
         self.assertEqual(lines[3], "| T1 base | 86.0 (+6.0) | 8.0 (-4.0) | 10.0 (-10.0) | 50.0 (+20.0) | 40.0 |")
 
 
+    def test_masked_measures_and_table(self) -> None:
+        px = [(90, 4, 8)] * 10 + [(70, 4, 8)] * 10 + [(30, 10, 20)] * 10 + [(80, 0, 0)] * 10
+        m = _showroom.masked_measures(px, list(range(10, 40)), lab)
+        self.assertEqual(m["skin_L"], 60.0, "every given pixel counts, whatever its tone")
+        self.assertEqual(m["shade"], 50.0)
+        self.assertAlmostEqual(m["skin_C"], (80 ** 0.5 + 500 ** 0.5 + 0) / 3, delta=0.05)
+        few = _showroom.masked_measures(px, list(range(19)), lab)
+        self.assertNotEqual(few["shade"], few["shade"], "too few pixels: nan")
+        self.assertEqual(_showroom.mean_measures([m, m]), m, "the skin measures alone")
+        blender = {"skin_L": 66.7, "skin_C": 12.8, "shade": 23.8, "hair_L": 28.6}
+        lines = _showroom.masked_table(blender, "X1", [("X2", {"skin_L": 67.8, "skin_C": 13.4, "shade": 25.3})])
+        self.assertEqual(lines[0], "| On the skin pixels of X1 | skin L* | skin C* | shade (L* p90-p10) | skin distance |")
+        self.assertEqual(lines[2], "| Blender (approved) | 66.7 | 12.8 | 23.8 | 0 |")
+        self.assertEqual(lines[3], "| X2 | 67.8 (+1.1) | 13.4 (+0.6) | 25.3 (+1.5) | 3.2 |")
+
+
 class WarmTest(unittest.TestCase):
     def test_every_warm_variant_sets_every_key_and_names_its_parent(self) -> None:
         self.assertLessEqual(len(_showroom.WARM), _showroom.MAX_VARIANTS)
