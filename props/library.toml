@@ -33,7 +33,6 @@ glass_tint = "glass_tint"
 [material_props]
 glass_tint = {roughness = 0.05, metallic = 0.15, alpha = 0.38}  # round 2: reads as glass, contents visible
 
-
 # Triangles by class, [min, max] (look.md section 6). `vehicle` is the parked cars (the car of #79 has 3,000 to 5,000).
 [budgets]
 dressing = [150, 600]
@@ -211,17 +210,12 @@ name = "Armchair"
 class = "room"
 size_m = [0.9, 0.9, 0.9]
 count = 3
-route = "pack"
-source = "kaykit_furniture_bits"
-files = ["kaykit/furniture-bits/KayKit_Furniture_Bits_1.0_FREE/KayKit_Furniture_Bits_1.0_FREE/Assets/gltf/armchair_pillows.gltf"]
-src_size = [1.8, 1.2241, 1.6]
-src_triangles = 614
-yaw_deg = 0
-scale = 0.606
-stretch = true
-roles = ["fabric", "fabric_accent", "wood_dark"]
+route = "proc"
+shape = "sofa"  # the sofa builder with one seat (#150)
+params = {seats = 1, pillows = 1}
+roles = ["upholstery", "cushion_rust", "wood_front_dark"]
 pivot = "floor"
-collision = "hull"
+collision = "box"
 
 [[prop]]
 id = "basin"
@@ -282,9 +276,9 @@ class = "room"
 size_m = [1.0, 0.35, 2.0]
 count = 5
 route = "proc"
-shape = "shelving"
-params = {shelves = 5, items = "books", back = 1}
-roles = ["wood_mid", "cream", "fabric_accent", "mustard"]
+shape = "bookcase"  # the world look: wood fronts, books, a cupboard below (#150)
+params = {shelves = 4, doors_h = 0.72}
+roles = ["wood_front", "wood_front_dark", "book_cream", "book_teal", "book_mustard", "paint_red", "paint_blue", "cabinet_green", "steel_black", "chrome"]
 pivot = "floor"
 collision = "box"
 
@@ -328,9 +322,8 @@ class = "room"
 size_m = [1.1, 0.6, 0.4]
 count = 1
 route = "proc"
-shape = "table"
-params = {legs = 4, top = 0.05}
-roles = ["wood_mid"]
+shape = "coffee_table"  # the world look (#150)
+roles = ["worktop_wood", "wood_front_dark", "wood_front"]
 pivot = "floor"
 collision = "box"
 
@@ -444,8 +437,8 @@ class = "room"
 size_m = [1.6, 0.5, 1.3]
 count = 1
 route = "proc"
-shape = "fireplace"
-roles = ["brick", "trim", "metal_dark"]
+shape = "mantel_fireplace"  # the world look: stone surround, wood mantel (#150)
+roles = ["stone_light", "stone_dark", "wood_front_dark", "steel_black"]
 pivot = "floor"
 collision = "box"
 
@@ -646,9 +639,9 @@ class = "room"
 size_m = [1.6, 0.45, 0.9]
 count = 1
 route = "proc"
-shape = "cabinet"
-params = {doors = 3, legs = 4}
-roles = ["wood_dark", "metal_grey"]
+shape = "sideboard"  # the world look (#150)
+params = {doors = 3}
+roles = ["wood_front", "wood_front_dark", "worktop_wood", "chrome", "steel_black"]
 pivot = "floor"
 collision = "box"
 
@@ -673,21 +666,16 @@ collision = "hull"
 [[prop]]
 id = "sofa"
 batch = 1
-name = "Sofa"
+name = "Sofa (three seats)"
 class = "room"
 size_m = [2.0, 0.9, 0.85]
 count = 2
-route = "pack"
-source = "kaykit_furniture_bits"
-files = ["kaykit/furniture-bits/KayKit_Furniture_Bits_1.0_FREE/KayKit_Furniture_Bits_1.0_FREE/Assets/gltf/couch_pillows.gltf"]
-src_size = [3.0, 1.2241, 1.6]
-src_triangles = 808
-yaw_deg = 0
-scale = 0.625
-stretch = true
-roles = ["fabric", "fabric_accent", "wood_dark"]
+route = "proc"
+shape = "sofa"  # the world look: linen upholstery, loose cushions (#150)
+params = {seats = 3, pillows = 2, throw = 1}
+roles = ["upholstery", "cushion_rust", "cushion_mustard", "throw_cream", "wood_front_dark"]
 pivot = "floor"
-collision = "hull"
+collision = "box"
 
 [[prop]]
 id = "standing_mirror"
@@ -809,18 +797,14 @@ collision = "box"
 [[prop]]
 id = "tv_cabinet"
 batch = 1
-name = "TV cabinet with old TV"
+name = "TV unit with a flat TV"
 class = "room"
 size_m = [1.4, 0.5, 1.0]
 count = 1
-route = "pack"
-source = "kenney_furniture_kit"
-files = ["kenney/furniture-kit/kenney_furniture-kit/Models/GLTF format/cabinetTelevision.glb", "kenney/furniture-kit/kenney_furniture-kit/Models/GLTF format/televisionVintage.glb"]
-src_size = [0.8, 0.58, 0.27]
-src_triangles = 434
-yaw_deg = 0
-scale = 1.787
-roles = ["wood_dark", "metal_dark", "appliance"]
+route = "proc"
+shape = "tv_unit"  # the world look (#150)
+params = {unit_h = 0.42}
+roles = ["wood_front", "wood_front_dark", "worktop_wood", "steel_black", "rubber_black", "glass_dark", "chrome"]
 pivot = "floor"
 collision = "box"
 
@@ -1011,13 +995,13 @@ collision = "box"
 id = "dresser"
 batch = 1
 name = "Dresser"
-class = "dressing"
+class = "room"
 size_m = [1.2, 0.5, 0.9]
 count = 1
 route = "proc"
-shape = "cabinet"
-params = {drawers = 3, legs = 4}
-roles = ["wood_mid", "metal_grey"]
+shape = "sideboard"  # the world look, three drawers (#150)
+params = {drawers = 3}
+roles = ["wood_front", "wood_front_dark", "worktop_wood", "chrome"]
 pivot = "floor"
 collision = "box"
 
@@ -1367,8 +1351,8 @@ class = "dressing"
 size_m = [3.0, 2.0, 0.02]
 count = 9
 route = "proc"
-shape = "rug"
-roles = ["fabric_accent", "cream"]
+shape = "carpet_rug"  # the carpet layer (#150)
+roles = ["carpet_field", "carpet_border"]
 pivot = "floor"
 collision = "none"
 
@@ -1392,14 +1376,9 @@ name = "Small round table"
 class = "dressing"
 size_m = [0.7, 0.7, 0.7]
 count = 6
-route = "pack"
-source = "kaykit_furniture_bits"
-files = ["kaykit/furniture-bits/KayKit_Furniture_Bits_1.0_FREE/KayKit_Furniture_Bits_1.0_FREE/Assets/gltf/table_small.gltf"]
-src_size = [1.0, 1.0, 1.0]
-src_triangles = 168
-yaw_deg = 0
-scale = 0.7
-roles = ["wood_mid"]
+route = "proc"
+shape = "side_table"  # the world look (#150)
+roles = ["worktop_wood", "wood_front_dark"]
 pivot = "floor"
 collision = "hull"
 

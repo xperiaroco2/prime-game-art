@@ -2108,6 +2108,278 @@ def build_fridge(m, s, R, prm, rng):
         cyl(m, "z", (-0.19 + b * 0.045, 1.63), 0.01, hf, hf + 0.004, "steel_black", 12, caps=(False, True))
 
 
+# ---- The living room in the world look (#150): upholstery, shelving with books, a mantel, a TV unit.
+
+def cushion(m: Mesh, lo, hi, role: str, soft: float = 0.03) -> None:
+    """An upholstered block: a box with a soft chamfer (`soft`, at most a third of its smallest side)."""
+    c = min(soft, *((hi[i] - lo[i]) / 3.1 for i in range(3)))
+    cbox(m, lo, hi, role, c)
+
+
+def leg(m: Mesh, x: float, z: float, y0: float, y1: float, r: float, role: str, taper: float = 0.7, n: int = 8) -> None:
+    """A round furniture leg from y0 up to y1, tapering to `taper` of its radius at the foot."""
+    cyl(m, "y", (x, z), r * taper, y0, y1, role, n, r1=r)
+
+
+def book_run(m: Mesh, x0: float, x1: float, y: float, z0: float, depth: float, h_max: float, paints: list,
+             rng: random.Random, gap: float = 0.12, lie: float = 0.1) -> None:
+    """Books on a shelf from x0 to x1 at y, spines at the front z0 + depth: standing books of varied width, height
+    and depth (`gap`: the chance of a gap, `lie`: of a short stack lying flat), never past x1 or h_max."""
+    x = x0
+    while x < x1 - 0.03:
+        r = rng.random()
+        if r < gap:
+            x += 0.03 + 0.05 * rng.random()
+            continue
+        if r < gap + lie and x1 - x > 0.26:  # a few books lying flat
+            w = 0.18 + 0.05 * rng.random()
+            yy = y
+            for _ in range(2 + int(rng.random() * 2)):
+                t = 0.025 + 0.015 * rng.random()
+                if yy + t > y + h_max:
+                    break
+                box(m, (x, yy, z0 + depth - w * 0.95), (x + w, yy + t - 0.002, z0 + depth), rng.choice(paints),
+                    "+x-x+y+z")
+                yy += t
+            x += w + 0.01
+            continue
+        bw = min(0.022 + 0.026 * rng.random(), x1 - x)
+        bh = min(h_max, 0.17 + 0.11 * rng.random())
+        bd = min(depth, 0.15 + 0.07 * rng.random())
+        box(m, (x, y, z0 + depth - bd), (x + bw - 0.002, y + bh, z0 + depth), rng.choice(paints), "+x-x+y+z")
+        x += bw
+
+
+def build_sofa(m, s, R, prm, rng):
+    """An upholstered sofa (or with `seats` 1 an armchair) in the world look: tapered wood legs, a base, arms and a
+    back in linen (`upholstery`), loose seat and back cushions, woven throw pillows (`pillows`) and with `throw` a
+    blanket over the left arm. Colliders: the seat and the back."""
+    L, W, H = s
+    hx, hz = L / 2, W / 2
+    n = int(prm.get("seats", 3))
+    up = prm.get("body", "upholstery")
+    arm_w = float(prm.get("arm", 0.17 if n > 1 else 0.15))
+    ya, ys, yc = 0.1, 0.4, 0.52  # the base's bottom, the seat deck, the seat cushions' top
+    back_d = 0.2
+    for sx in (-1, 1):
+        for sz in (-1, 1):
+            leg(m, sx * (hx - 0.07), sz * (hz - 0.07), 0.0, ya + 0.01, 0.022, "wood_front_dark")
+    cushion(m, (-hx + arm_w - 0.01, ya, -hz + 0.02), (hx - arm_w + 0.01, ys, hz - 0.03), up, 0.025)
+    arm_h = min(H - 0.18, 0.64)
+    for sx in (-1, 1):
+        x0, x1 = (-hx, -hx + arm_w) if sx < 0 else (hx - arm_w, hx)
+        cushion(m, (x0, ya, -hz), (x1, arm_h, hz), up, 0.05)
+    cushion(m, (-hx + arm_w - 0.02, ya, -hz), (hx - arm_w + 0.02, H - 0.06, -hz + back_d), up, 0.05)
+    xs = [-hx + arm_w + (L - 2 * arm_w) * k / n for k in range(n + 1)]
+    for a, b in zip(xs, xs[1:]):
+        cushion(m, (a + 0.006, ys, -hz + back_d - 0.02), (b - 0.006, yc, hz - 0.01), up, 0.04)
+        cushion(m, (a + 0.01, yc, -hz + back_d - 0.06), (b - 0.01, H, -hz + back_d + 0.1), up, 0.06)
+    paints = ["cushion_rust", "cushion_mustard"]
+    for k in range(int(prm.get("pillows", 2))):
+        sx = -1 if k % 2 == 0 else 1
+        cx = sx * (hx - arm_w - 0.2) if n > 1 else 0.0
+        r = min(0.18, (H - yc) / 2 - 0.01)
+        blob(m, (cx, H - r - 0.004, -hz + back_d + 0.17), r + (0.01 if n > 1 else 0.0), r, 0.065, paints[k % 2], 8, 5)
+    if prm.get("throw"):  # a folded blanket over the left arm: over the top and down both sides
+        z0, z1 = -0.18, 0.22
+        cushion(m, (-hx, arm_h - 0.004, z0), (-hx + arm_w + 0.012, arm_h + 0.02, z1), "throw_cream", 0.008)
+        cushion(m, (-hx, arm_h - 0.3, z0), (-hx + 0.016, arm_h, z1), "throw_cream", 0.006)
+        cushion(m, (-hx + arm_w - 0.004, yc + 0.02, z0), (-hx + arm_w + 0.012, arm_h, z1), "throw_cream", 0.006)
+    _boxes(prm).extend([((-hx, 0.0, -hz), (hx, yc, hz)), ((-hx, yc, -hz), (hx, H, -hz + back_d + 0.1))])
+
+
+def build_bookcase(m, s, R, prm, rng):
+    """A bookcase in the wood fronts: plinth, bevelled sides and a top with a small cornice, a dark back, `shelves`
+    shelves of books (book_run) over a cupboard of two doors `doors_h` high (0: none)."""
+    st = _style(prm)
+    L, W, H = s
+    hx, hz = L / 2, W / 2
+    t = 0.022
+    body = prm.get("body", "wood_front")
+    dh = float(prm.get("doors_h", 0.72))
+    zf = hz - st.reach - 0.002
+    plinth(m, st, -hx + t, hx - t, -hz + 0.02, zf + st.front_t - 0.03, body)
+    for sx in (-1, 1):
+        cbox(m, (hx - t if sx > 0 else -hx, 0, -hz), (hx if sx > 0 else -hx + t, H - 0.03, zf + st.front_t),
+             body, st.bevel_small)
+    cbox(m, (-hx, H - 0.03, -hz), (hx, H, hz), body, st.bevel_small)
+    box(m, (-hx + t, st.plinth, -hz), (hx - t, H - 0.03, -hz + 0.01), "wood_front_dark", "+z")
+    y = st.plinth
+    if dh:
+        cbox(m, (-hx + t, st.plinth, -hz + 0.01), (hx - t, dh, zf), body, st.bevel_small)
+        front(m, st, -hx + t, 0.0, st.plinth + 0.004, dh, zf, body, True, line="wood_front_dark")
+        front(m, st, 0.0, hx - t, st.plinth + 0.004, dh, zf, body, False, line="wood_front_dark")
+        y = dh
+    n = int(prm.get("shelves", 4))
+    step = (H - 0.03 - y) / n
+    paints = ["book_cream", "book_teal", "book_mustard", "paint_red", "paint_blue", "cabinet_green", "wood_front_dark"]
+    for i in range(n):
+        y0 = y + step * i
+        cbox(m, (-hx + t, y0, -hz + 0.01), (hx - t, y0 + t, zf + st.front_t), body, st.bevel_small)
+        book_run(m, -hx + t + 0.012, hx - t - 0.012, y0 + t, -hz + 0.02, min(0.24, zf + hz - 0.03),
+                 step - t - 0.025, paints, rng)
+
+
+def build_tv_unit(m, s, R, prm, rng):
+    """A low TV unit in the wood fronts on steel legs (two doors either side of an open shelf with a set-top box),
+    an oak top and a flat TV on a pedestal: black frame, dark glass screen. The TV's top is the prop's height."""
+    st = _style(prm)
+    L, W, H = s
+    hx, hz = L / 2, W / 2
+    uh = float(prm.get("unit_h", 0.42))
+    zf = hz - st.reach - 0.002
+    for sx in (-1, 1):
+        for sz in (-1, 1):
+            leg(m, sx * (hx - 0.06), sz * (hz - 0.08), 0.0, 0.1, 0.014, "steel_black", 0.8)
+    cbox(m, (-hx + 0.005, 0.1, -hz), (hx - 0.005, uh - 0.03, zf), "wood_front", st.bevel)
+    worktop(m, st, -hx, hx, -hz, hz, "worktop_wood", y=uh)
+    ow = 0.42  # the open middle shelf
+    front(m, st, -hx + 0.01, -ow / 2, 0.104, uh - 0.034, zf, "wood_front", True, "h", line="wood_front_dark")
+    front(m, st, ow / 2, hx - 0.01, 0.104, uh - 0.034, zf, "wood_front", False, "h", line="wood_front_dark")
+    box(m, (-ow / 2, 0.12, zf - 0.32), (ow / 2, uh - 0.05, zf + 0.001), "wood_front_dark", "+z+y-y+x-x")
+    cbox(m, (-0.13, 0.12, zf - 0.24), (0.13, 0.165, zf - 0.04), "rubber_black", 0.004)  # the set-top box
+    box(m, (0.07, 0.14, zf - 0.04), (0.1, 0.146, zf - 0.039), "chrome", "+z")
+    tw = min(L - 0.3, 1.1)
+    td = 0.035
+    cbox(m, (-0.16, uh, -0.1), (0.16, uh + 0.012, 0.08), "steel_black", 0.003)  # the pedestal
+    box(m, (-0.03, uh + 0.012, -0.05), (0.03, uh + 0.08, -0.02), "steel_black", "+x-x+z-z")
+    y0 = uh + 0.06
+    cbox(m, (-tw / 2, y0, -0.06), (tw / 2, H, -0.06 + td), "rubber_black", 0.004)
+    box(m, (-tw / 2 + 0.008, y0 + 0.012, -0.06 + td), (tw / 2 - 0.008, H - 0.008, -0.06 + td + 0.002), "glass_dark",
+        "+z")
+    cbox(m, (-tw / 2 + 0.1, y0 + 0.08, -0.1), (tw / 2 - 0.1, H - 0.08, -0.06), "rubber_black", 0.01)  # the back
+    _boxes(prm).extend([((-hx, 0.0, -hz), (hx, uh, hz)), ((-tw / 2, uh, -0.1), (tw / 2, H, -0.06 + td + 0.002))])
+
+
+def build_mantel_fireplace(m, s, R, prm, rng):
+    """A fireplace in the world look: a light stone surround (legs with bases, a header with a moulding), a wood
+    mantel shelf, a dark stone hearth, a black steel firebox with a grate and three logs."""
+    st = _style(prm)
+    L, W, H = s
+    hx, hz = L / 2, W / 2
+    hearth_h = 0.05
+    ox, oy = 0.42, 0.72  # the opening's half width and height
+    mantel_y = H - 0.07
+    zb = -hz + 0.02
+    zs = hz - 0.16  # the surround's face
+    cbox(m, (-hx + 0.02, 0.0, -hz), (hx - 0.02, hearth_h, hz), "stone_dark", st.bevel)
+    for sx in (-1, 1):
+        x0, x1 = (-hx + 0.1, -ox) if sx < 0 else (ox, hx - 0.1)
+        cbox(m, (x0, hearth_h, zb), (x1, mantel_y - 0.12, zs), "stone_light", st.bevel)
+        cbox(m, (x0 - 0.015, hearth_h, zb), (x1 + 0.015, hearth_h + 0.12, zs + 0.015), "stone_light", st.bevel_small)
+    cbox(m, (-ox - 0.01, oy, zb), (ox + 0.01, mantel_y - 0.12, zs), "stone_light", st.bevel)
+    cbox(m, (-hx + 0.08, mantel_y - 0.12, zb), (hx - 0.08, mantel_y - 0.06, zs + 0.03), "stone_light", st.bevel_small)
+    cbox(m, (-hx + 0.09, mantel_y - 0.06, zb), (hx - 0.09, mantel_y, zs + 0.012), "stone_light", st.bevel_small)
+    cbox(m, (-hx, mantel_y, -hz), (hx, H, zs + 0.08), "wood_front_dark", st.bevel)
+    zi = zb + 0.01  # the firebox: steel back, sides and top, a stone floor inside the opening
+    box(m, (-ox, hearth_h, zi), (ox, oy, zi + 0.01), "steel_black", "+z")
+    for sx in (-1, 1):
+        box(m, (sx * ox - (0.01 if sx > 0 else 0), hearth_h, zi), (sx * ox + (0 if sx > 0 else 0.01), oy, zs),
+            "steel_black", "-x" if sx > 0 else "+x")
+    box(m, (-ox, oy - 0.01, zi), (ox, oy, zs), "steel_black", "-y")
+    box(m, (-ox, hearth_h, zi), (ox, hearth_h + 0.004, zs), "stone_dark", "+y")
+    cbox(m, (-ox + 0.006, oy - 0.03, zs - 0.006), (ox - 0.006, oy, zs + 0.006), "steel_black", 0.003)  # the lintel
+    yg = hearth_h + 0.1  # the grate: two rails on four feet and five bars
+    for sx in (-1, 1):
+        rod(m, (sx * 0.24, yg, zi + 0.08), (sx * 0.24, yg, zs - 0.08), 0.008, "steel_black")
+        for zz in (zi + 0.1, zs - 0.1):
+            rod(m, (sx * 0.24, hearth_h, zz), (sx * 0.24, yg, zz), 0.008, "steel_black", caps=False)
+    for k in range(5):
+        z = zi + 0.1 + (zs - zi - 0.2) * k / 4
+        rod(m, (-0.26, yg + 0.008, z), (0.26, yg + 0.008, z), 0.006, "steel_black")
+    for p0, p1, r in (((-0.22, yg + 0.05, zi + 0.12), (0.2, yg + 0.05, zi + 0.18), 0.045),
+                      ((-0.2, yg + 0.05, zs - 0.14), (0.22, yg + 0.06, zs - 0.18), 0.042),
+                      ((-0.12, yg + 0.13, zi + 0.16), (0.16, yg + 0.12, zs - 0.16), 0.04)):
+        rod(m, p0, p1, r, "wood_front_dark", 8)
+    _boxes(prm).extend([((-hx, 0.0, -hz), (hx, hearth_h, hz)), ((-hx + 0.08, hearth_h, -hz), (-ox, H, zs + 0.08)),
+                        ((ox, hearth_h, -hz), (hx - 0.08, H, zs + 0.08)), ((-hx, oy, -hz), (hx, H, zs + 0.08))])
+
+
+def build_coffee_table(m, s, R, prm, rng):
+    """A coffee table: a bevelled oak top on an apron, four tapered legs and a lower shelf in the wood fronts."""
+    st = _style(prm)
+    L, W, H = s
+    hx, hz = L / 2, W / 2
+    tt = 0.035
+    i = 0.06
+    cbox(m, (-hx, H - tt, -hz), (hx, H, hz), "worktop_wood", st.bevel_small)
+    for sx in (-1, 1):
+        for sz in (-1, 1):
+            leg(m, sx * (hx - i), sz * (hz - i), 0.0, H - tt, 0.022, "wood_front_dark", 0.6)
+    for x0, x1, z0, z1 in ((-hx + i, hx - i, -hz + i - 0.012, -hz + i + 0.008),
+                           (-hx + i, hx - i, hz - i - 0.008, hz - i + 0.012),
+                           (-hx + i - 0.012, -hx + i + 0.008, -hz + i, hz - i),
+                           (hx - i - 0.008, hx - i + 0.012, -hz + i, hz - i)):
+        box(m, (x0, H - tt - 0.07, z0), (x1, H - tt, z1), "wood_front_dark", "+x-x-y+z-z")
+    cbox(m, (-hx + i - 0.01, 0.1, -hz + i - 0.01), (hx - i + 0.01, 0.12, hz - i + 0.01), "wood_front", st.bevel_small)
+
+
+def build_sideboard(m, s, R, prm, rng):
+    """A sideboard or a chest of drawers in the wood fronts: an oak top, a carcass on four tapered legs, `doors`
+    doors or `drawers` drawers (raised panels, a dark line, the bar handle)."""
+    st = _style(prm)
+    L, W, H = s
+    hx, hz = L / 2, W / 2
+    lh = 0.14
+    zf = hz - st.reach - 0.002
+    for sx in (-1, 1):
+        for sz in (-1, 1):
+            leg(m, sx * (hx - 0.06), sz * (hz - 0.07), 0.0, lh + 0.01, 0.018, "wood_front_dark", 0.6)
+    cbox(m, (-hx + 0.01, lh, -hz), (hx - 0.01, H - 0.03, zf), "wood_front", st.bevel)
+    worktop(m, st, -hx, hx, -hz, hz, "worktop_wood", y=H)
+    y0, y1 = lh + 0.006, H - 0.034
+    if prm.get("drawers"):
+        n = int(prm["drawers"])
+        for k in range(n):
+            a, b = y0 + (y1 - y0) * k / n, y0 + (y1 - y0) * (k + 1) / n
+            front(m, st, -hx + 0.012, hx - 0.012, a, b, zf, "wood_front", True, "h", line="wood_front_dark")
+    else:
+        n = int(prm.get("doors", 3))
+        xs = [-hx + 0.012 + (L - 0.024) * k / n for k in range(n + 1)]
+        for k, (a, b) in enumerate(zip(xs, xs[1:])):
+            front(m, st, a, b, y0, y1, zf, "wood_front", k < n / 2, line="wood_front_dark")
+
+
+def build_side_table(m, s, R, prm, rng):
+    """A round side table: an oak top with an undercut edge on three splayed, tapered legs and a ring."""
+    L, W, H = s
+    r = min(L, W) / 2
+    n = 20
+    cyl(m, "y", (0.0, 0.0), r, H - 0.03, H, "worktop_wood", n)
+    cyl(m, "y", (0.0, 0.0), r - 0.012, H - 0.034, H - 0.03, "worktop_wood", n, caps=(True, False))
+    for k in range(3):
+        a = math.radians(90 + 120 * k)
+        top = (math.cos(a) * r * 0.55, H - 0.034, math.sin(a) * r * 0.55)
+        foot = (math.cos(a) * r * 0.8, 0.0, math.sin(a) * r * 0.8)
+        rod(m, foot, top, 0.016, "wood_front_dark", 8)
+    tube(m, "y", (0.0, 0.0), r * 0.62, r * 0.62 + 0.012, H * 0.3, H * 0.3 + 0.012, "wood_front_dark", 16)
+
+
+def build_carpet_rug(m, s, R, prm, rng):
+    """A rug on the carpet layer: a field with a light border band and an inner frame, short fringes at both ends
+    (`fringe`)."""
+    L, W, H = s
+    hx, hz = L / 2, W / 2
+    field, border = prm.get("field", "carpet_field"), prm.get("border", "carpet_border")
+    box(m, (-hx, 0, -hz), (hx, H * 0.7, hz), field, "+x-x+y+z-z")
+    b, w = 0.1, 0.07
+    for x0, x1, z0, z1 in ((-hx + b, hx - b, -hz + b, -hz + b + w), (-hx + b, hx - b, hz - b - w, hz - b),
+                           (-hx + b, -hx + b + w, -hz + b + w, hz - b - w), (hx - b - w, hx - b, -hz + b + w, hz - b - w)):
+        box(m, (x0, H * 0.7, z0), (x1, H, z1), border, "+x-x+y+z-z")
+    i = b + w + 0.14
+    for x0, x1, z0, z1 in ((-hx + i, hx - i, -hz + i, -hz + i + 0.025), (-hx + i, hx - i, hz - i - 0.025, hz - i),
+                           (-hx + i, -hx + i + 0.025, -hz + i + 0.025, hz - i - 0.025),
+                           (hx - i - 0.025, hx - i, -hz + i + 0.025, hz - i - 0.025)):
+        box(m, (x0, H * 0.7, z0), (x1, H * 0.85, z1), border, "+x-x+y+z-z")
+    if prm.get("fringe", True):  # the fringes lie inside the box: the rug's ends are short of size_m by 5 cm
+        for sx in (-1, 1):
+            z = -hz + 0.03
+            while z < hz - 0.04:
+                xa, xb = sorted((sx * hx, sx * (hx - 0.05)))
+                box(m, (xa, 0, z), (xb, H * 0.75, z + 0.012), border, "+y")
+                z += 0.045
+
+
 BUILDERS = {name[6:]: fn for name, fn in dict(globals()).items() if name.startswith("build_") and callable(fn)}
 
 

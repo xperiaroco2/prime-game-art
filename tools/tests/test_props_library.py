@@ -73,15 +73,15 @@ class LibraryTest(unittest.TestCase):
 
     def test_a_wrong_scale_is_found(self) -> None:
         lib = copy.deepcopy(LIB)
-        sofa = next(p for p in lib["prop"] if p["id"] == "sofa")
-        sofa.pop("stretch")
-        sofa["scale"] = 1.0
-        self.assertTrue(any("sofa: scaled" in s for s in _props.check(lib, SOURCES, KIT)))
+        bed = next(p for p in lib["prop"] if p["id"] == "double_bed")
+        bed.pop("stretch")
+        bed["scale"] = 1.0
+        self.assertTrue(any("double_bed: scaled" in s for s in _props.check(lib, SOURCES, KIT)))
 
     def test_a_distorting_stretch_is_found(self) -> None:
         lib = copy.deepcopy(LIB)
-        sofa = next(p for p in lib["prop"] if p["id"] == "sofa")
-        sofa["size_m"] = [2.0, 0.3, 0.85]
+        bed = next(p for p in lib["prop"] if p["id"] == "double_bed")
+        bed["size_m"] = [1.6, 2.1, 0.2]
         self.assertTrue(any("distorts" in s for s in _props.check(lib, SOURCES, KIT)))
 
     def test_a_private_source_is_refused(self) -> None:
