@@ -85,6 +85,12 @@ own plaster, so the colour stays and the textures are new).
   six of `armchair`, `bookcase`, `dresser`, `rug`, `sideboard`, `small_table` in house_upper; `rug` in house_attic), so
   #150 re-exports them too: the same `kit_fine` overrides, the fine pack in their `package.json`, #147's `Detail` node;
   their approval fields wait with P2's.
+- **Round 2 (#150).** `sofa` and `armchair` are re-coloured in a warm terracotta fabric (same file names). Five
+  pieces of wall art hang in the living room: `art_abstract`, `art_city`, `art_burger` under `Dressing` (the base
+  layer) and `art_photos`, `art_score` under `Detail`; eleven more detail-layer props join them: `board_games`,
+  `candle_jars`, `coffee_books`, `deco_bowl`, `deco_vase`, `floor_plant` (its pot the only collider), `game_console`,
+  `laptop`, `side_lamp`, `slippers`, `table_plant`. Only `living_room.tscn` changed among the room scenes. The 16 new
+  GLBs and the two replaced ones add 0.57 MB of LFS objects.
 - **LFS.** #150 adds 11.8 MB of LFS objects: the 16 GLBs (0.79 MB, the 10 replaced weighed 0.57 MB) and the 6 new PNGs
   (11.0 MB).
 

@@ -3,7 +3,7 @@ id = "house_props"
 kind = "prop"
 slot = ""
 title = "The House's props: the dressing library, the task-station props and the zone props"
-notes = "Built by `props-library --build` (props/library.toml: 111 procedural, 28 re-painted from CC0 packs), `props` (props/tasks.toml) and the zones (layouts/house/outdoor/zones). Own work, except each file with a source: a CC0 pack model re-scaled and re-painted. All use the kit's texture set (house_kit), which ships once. The [[files]] list all 182 props of the raw build (174 before #147's two backsplash runs, 176 before #150's six detail props) and the fine pack's 15 files (#147, #150); only the props a committed package needs are committed under export/, the rest stay raw until their package. P2 committed 70 props (#124; 72 since #147 added backsplash_l and backsplash_r: 68 library/, 4 task/), approved by the engineer on 2026-10-11 in PR #125. P3 and P5 committed 34 more (#126), approved by the engineer on 2026-10-11 in PR #127 (the set format has no per-file approval; a later package's approval moves the fields below to its PR, which they now name: P7's, PR #131): library/ cage_lamp, desk, filing_cabinet, fuel_barrel, industrial_pendant, jerrycan, metal_shelving, office_chair, old_bicycle, old_wardrobe, pallet, pipe_run, rolled_carpet, safelight_red, sheeted_furniture, standing_mirror, tool_wall, toolbox_cart, trunk; task/ boiler, bun_shelf, cable_drum, car_parts_shelf, delivery_box_stack, enlarger, generator, meat_freezer, photo_board, pump, switchboard, tray_table, wall_switch, water_tank, wine_rack. P4 committed 10 more (#129), approved by the engineer on 2026-10-12 in PR #130: library/ balcony_chair, bathtub, bunk_bed, double_bed, single_bed, toy_spill, wardrobe; task/ computer_set, photo_printer, toy_chest. P7 (#128) committed 32 more, approved by the engineer on 2026-10-12 in PR #131: library/ birdbath, firewood_stack, garden_bench, garden_post_lamp, greenhouse_shelf, hose_reel, hydrant, mailbox, parked_car, path_light, picnic_table, potting_bench, stepping_stone, streetlight, watering_can, wheelbarrow; task/ bbq_grill, garden_dropoff, herb_bed, herb_board, music_speaker, pose_screen, utility_pole; zones/ bean_bag, cooler_box, deckchair, fire_pit, lantern, photo_backdrop, string_lights_gazebo, string_lights_set, tripod_camera. The game folder house_props/ is flat: a basename two sources share ships from the first source in prop_dirs (task, library), then zones, as <id>.glb, from any other as <id>_<source>.glb (house_export_plot.game_name; P7 ships bean_bag_zones.glb, birdbath_library.glb, cooler_box_zones.glb, deckchair_zones.glb, fire_pit_zones.glb, lantern_zones.glb, photo_backdrop_zones.glb, tripod_camera_zones.glb). #147 rebuilt the kitchen in C2-white (the world look, #143): fridge, stove, kitchen_counter, kitchen_sink, kitchen_upper, task/ assembly_island and order_board re-built (now all procedural, own work), library/ backsplash_l and backsplash_r added (148 props committed in all: 70 + 34 + 10 + 32 + 2), and the fine texture pack shipped: fine/high/ (1024 px) and fine/low/ (512 px) fine_d.png, fine_n0.png, fine_n1.png, made from 4 ambientCG CC0 maps (Wood092, Wood049, Concrete034, Tiles107; props/library.toml [fine]), with prop_fine.gdshader and prop_fine_high.tres / prop_fine_low.tres (the kit_fine material, P2's v4 export); approved by the engineer on 2026-10-13 in PR #149. #150 rebuilt the living room in the world look: library/ armchair, bookcase, coffee_table, dresser, fireplace, rug, sideboard, small_table, sofa and tv_cabinet re-built (now all procedural, own work; armchair, small_table, sofa and tv_cabinet were re-painted CC0 pack models before) and six detail-layer props added: library/ candle_pair, living_tray, magazine_fan, mantel_clock, standing_frame, throw_basket (154 props committed in all); the fine pack grew to eight texture slots: fine/high/ and fine/low/ fine_d1.png (slots 4-7), fine_n2.png and fine_n3.png beside fine_d, fine_n0 and fine_n1, made from 3 more ambientCG CC0 maps (Fabric036, Fabric061, Carpet016), and prop_fine.gdshader and its two materials read them; the 16 props and the fine files come from the build in review/house/150/build (layouts/house/house.toml prop_dirs and fine_dir; the manager may move it into a library version later). The approval fields wait for the engineer's yes on #150's sheets."
+notes = "Built by `props-library --build` (props/library.toml: 111 procedural, 28 re-painted from CC0 packs), `props` (props/tasks.toml) and the zones (layouts/house/outdoor/zones). Own work, except each file with a source: a CC0 pack model re-scaled and re-painted. All use the kit's texture set (house_kit), which ships once. The [[files]] list all 198 props of the raw build (174 before #147's two backsplash runs, 176 before #150's six detail props, 182 before #150's round 2) and the fine pack's 15 files (#147, #150); only the props a committed package needs are committed under export/, the rest stay raw until their package. P2 committed 70 props (#124; 72 since #147 added backsplash_l and backsplash_r: 68 library/, 4 task/), approved by the engineer on 2026-10-11 in PR #125. P3 and P5 committed 34 more (#126), approved by the engineer on 2026-10-11 in PR #127 (the set format has no per-file approval; a later package's approval moves the fields below to its PR, which they now name: P7's, PR #131): library/ cage_lamp, desk, filing_cabinet, fuel_barrel, industrial_pendant, jerrycan, metal_shelving, office_chair, old_bicycle, old_wardrobe, pallet, pipe_run, rolled_carpet, safelight_red, sheeted_furniture, standing_mirror, tool_wall, toolbox_cart, trunk; task/ boiler, bun_shelf, cable_drum, car_parts_shelf, delivery_box_stack, enlarger, generator, meat_freezer, photo_board, pump, switchboard, tray_table, wall_switch, water_tank, wine_rack. P4 committed 10 more (#129), approved by the engineer on 2026-10-12 in PR #130: library/ balcony_chair, bathtub, bunk_bed, double_bed, single_bed, toy_spill, wardrobe; task/ computer_set, photo_printer, toy_chest. P7 (#128) committed 32 more, approved by the engineer on 2026-10-12 in PR #131: library/ birdbath, firewood_stack, garden_bench, garden_post_lamp, greenhouse_shelf, hose_reel, hydrant, mailbox, parked_car, path_light, picnic_table, potting_bench, stepping_stone, streetlight, watering_can, wheelbarrow; task/ bbq_grill, garden_dropoff, herb_bed, herb_board, music_speaker, pose_screen, utility_pole; zones/ bean_bag, cooler_box, deckchair, fire_pit, lantern, photo_backdrop, string_lights_gazebo, string_lights_set, tripod_camera. The game folder house_props/ is flat: a basename two sources share ships from the first source in prop_dirs (task, library), then zones, as <id>.glb, from any other as <id>_<source>.glb (house_export_plot.game_name; P7 ships bean_bag_zones.glb, birdbath_library.glb, cooler_box_zones.glb, deckchair_zones.glb, fire_pit_zones.glb, lantern_zones.glb, photo_backdrop_zones.glb, tripod_camera_zones.glb). #147 rebuilt the kitchen in C2-white (the world look, #143): fridge, stove, kitchen_counter, kitchen_sink, kitchen_upper, task/ assembly_island and order_board re-built (now all procedural, own work), library/ backsplash_l and backsplash_r added (148 props committed in all: 70 + 34 + 10 + 32 + 2), and the fine texture pack shipped: fine/high/ (1024 px) and fine/low/ (512 px) fine_d.png, fine_n0.png, fine_n1.png, made from 4 ambientCG CC0 maps (Wood092, Wood049, Concrete034, Tiles107; props/library.toml [fine]), with prop_fine.gdshader and prop_fine_high.tres / prop_fine_low.tres (the kit_fine material, P2's v4 export); approved by the engineer on 2026-10-13 in PR #149. #150 rebuilt the living room in the world look: library/ armchair, bookcase, coffee_table, dresser, fireplace, rug, sideboard, small_table, sofa and tv_cabinet re-built (now all procedural, own work; armchair, small_table, sofa and tv_cabinet were re-painted CC0 pack models before) and six detail-layer props added: library/ candle_pair, living_tray, magazine_fan, mantel_clock, standing_frame, throw_basket (154 props committed in all); the fine pack grew to eight texture slots: fine/high/ and fine/low/ fine_d1.png (slots 4-7), fine_n2.png and fine_n3.png beside fine_d, fine_n0 and fine_n1, made from 3 more ambientCG CC0 maps (Fabric036, Fabric061, Carpet016), and prop_fine.gdshader and its two materials read them; the 16 props and the fine files come from library v2 (props/library/v2: v1 with #150's build laid over it; layouts/house/house.toml prop_dirs and fine_dir). #150's round 2 re-coloured sofa and armchair (a warm terracotta fabric) and added 16 more living-room props (170 props committed in all): the wall art art_abstract, art_city and art_burger (base layer) and art_photos and art_score (detail layer), drawn procedurally (own work), and the detail-layer props board_games, candle_jars, coffee_books, deco_bowl, deco_vase, floor_plant (its pot the only collider), game_console, laptop, side_lamp, slippers and table_plant. The approval fields wait for the engineer's yes on #150's sheets."
 tools = ["blender 5.2.2", "prime-game-art props-library and props (props/library.toml, props/tasks.toml)"]
 licence = "own-work"
 licence_url = "https://github.com/xperiaroco2/prime-game"
@@ -29,7 +29,32 @@ sha256 = "42dbf5a35d5497a6c877f4ea5ca8f23c47b037685d6cc7900775cb4ef9963318"
 [[files]]
 name = "library/armchair.glb"
 file = "props/library/v2/armchair.glb"
-sha256 = "bbde4254e3fc6bc8e8f05eac83807f9e43bdec3b3a4ff08070cb798d3cb85ffc"
+sha256 = "83fd33c6e2cd694e44a516a71e73687ace5f11da698e85699f8747f7fb9cec7b"
+
+[[files]]
+name = "library/art_abstract.glb"
+file = "props/library/v2/art_abstract.glb"
+sha256 = "eae9202def7d095e32aea4336eaf3ea2e46f7edb03dc4ea202bce4cec3d37c60"
+
+[[files]]
+name = "library/art_burger.glb"
+file = "props/library/v2/art_burger.glb"
+sha256 = "36ef606a846a904fabf787a902dde0d151d1ce02ce39b4b4e9aac0adafb628be"
+
+[[files]]
+name = "library/art_city.glb"
+file = "props/library/v2/art_city.glb"
+sha256 = "bfaa50524877c3b8ba31d2a17afd2cf733ce9ded083524cf8fbed7169e70ecbb"
+
+[[files]]
+name = "library/art_photos.glb"
+file = "props/library/v2/art_photos.glb"
+sha256 = "5b164aacf3dcc68c77fc5ccabad6fad90202f2bcc224c798015f967898bf8575"
+
+[[files]]
+name = "library/art_score.glb"
+file = "props/library/v2/art_score.glb"
+sha256 = "f308d18d5df82bcebf3c03ea5eabe7a1819d6f543c7031a15a778cb7203fc873"
 
 [[files]]
 name = "library/backsplash_l.glb"
@@ -90,6 +115,11 @@ file = "props/library/v2/birdbath.glb"
 sha256 = "673cc93f61ea5c379b96d2c96d396030922b6ade060a92517a18db23c76a5749"
 
 [[files]]
+name = "library/board_games.glb"
+file = "props/library/v2/board_games.glb"
+sha256 = "8759edc4ce1f10d425a2c5fcff1a8610860c4faa003dbd11db8ab38a17bb6b5e"
+
+[[files]]
 name = "library/boiler.glb"
 file = "props/library/v2/boiler.glb"
 sha256 = "371290686f4e05b69e4d10aa8ce5b0fa316cbd440d09fdda40408f52260fbe7e"
@@ -137,6 +167,11 @@ file = "props/library/v2/cage_lamp.glb"
 sha256 = "fcf9ccf9c2080bed262fea5a240093bd9d28895b5c0ad2ea07c274606fb920aa"
 
 [[files]]
+name = "library/candle_jars.glb"
+file = "props/library/v2/candle_jars.glb"
+sha256 = "a0ba0e4a5e08100a5769805a829fbd955f1266feb4c86fbf6ff3946a99a35a0c"
+
+[[files]]
 name = "library/candle_pair.glb"
 file = "props/library/v2/candle_pair.glb"
 sha256 = "e2f31d368734212ab8208170db309b42488e8ea16afa72a9337dc69af94ee57d"
@@ -155,6 +190,11 @@ sha256 = "ea694d6f7131ef6ecd087e1bcb0e0d38c69e7de599c8297dc92e05817c3e2f29"
 name = "library/coat_rack.glb"
 file = "props/library/v2/coat_rack.glb"
 sha256 = "53ff10c0e804891aeab3b0a7229ca533fd11abafd56988d15e4147df72b175e8"
+
+[[files]]
+name = "library/coffee_books.glb"
+file = "props/library/v2/coffee_books.glb"
+sha256 = "773b96e387a2ebc5be79a67f60ec9ae2ac63e6bacb39a755942129eca8198b39"
 
 [[files]]
 name = "library/coffee_table.glb"
@@ -194,6 +234,16 @@ sha256 = "9be60961398d54e950eee7fc48dd69934c53085e1f387e5a620fbfa6c5fe95e9"
 name = "library/deckchair.glb"
 file = "props/library/v2/deckchair.glb"
 sha256 = "ce976db18833023f61cb8e3238eae8c6f61b99c0bc3113203750fe3c845b21f9"
+
+[[files]]
+name = "library/deco_bowl.glb"
+file = "props/library/v2/deco_bowl.glb"
+sha256 = "7d5a15a3ccaf379284ff6580f1849453f81bd90d9f936f16953d7aec2dbe36fd"
+
+[[files]]
+name = "library/deco_vase.glb"
+file = "props/library/v2/deco_vase.glb"
+sha256 = "1742a2b05b6515290093e57d948b99b23f218e3ac7fe23c9234c69de2be807ff"
 
 [[files]]
 name = "library/desk.glb"
@@ -266,6 +316,11 @@ source = "kenney_furniture_kit"
 from = ["env/kenney/furniture-kit/kenney_furniture-kit/Models/GLTF format/lampRoundFloor.glb"]
 
 [[files]]
+name = "library/floor_plant.glb"
+file = "props/library/v2/floor_plant.glb"
+sha256 = "6dd66389e956de3335c58aa1f5013867e14e88af3f36d125c6d9ba5730acff3f"
+
+[[files]]
 name = "library/fluorescent_tube.glb"
 file = "props/library/v2/fluorescent_tube.glb"
 sha256 = "0f64062ed0845d3a8093ca51c62d813b6487a6c40d4d6f72fc04dd41155a5063"
@@ -286,6 +341,11 @@ file = "props/library/v2/fuel_barrel.glb"
 sha256 = "f496ca0bc0da900155cac399c6e63b29025b22f27642aa9f735363df4338695b"
 source = "kenney_survival_kit"
 from = ["env/kenney/survival-kit/kenney_survival-kit/Models/GLB format/barrel.glb"]
+
+[[files]]
+name = "library/game_console.glb"
+file = "props/library/v2/game_console.glb"
+sha256 = "0bed41400e0b5e3ca39ace090af96046e3514f225e89c44547cd5c948ba869c2"
 
 [[files]]
 name = "library/garden_bench.glb"
@@ -358,6 +418,11 @@ file = "props/library/v2/lantern.glb"
 sha256 = "a335b0b5c795f13a1ce7f554573c971b33a7eb944e8e387614440eb99265cdee"
 source = "kenney_holiday_kit"
 from = ["env/kenney/holiday-kit/kenney_holiday-kit/Models/GLB format/lantern-hanging.glb"]
+
+[[files]]
+name = "library/laptop.glb"
+file = "props/library/v2/laptop.glb"
+sha256 = "90fc078d007bcaacf25c475d00cab4a363cabf99c42da307fbee75b29cca6f36"
 
 [[files]]
 name = "library/laundry_basket.glb"
@@ -557,6 +622,11 @@ file = "props/library/v2/shoes.glb"
 sha256 = "0c903e20ddc451bcdad3fd00c0cd75c732c343de1c131a29cd24d849e34123c8"
 
 [[files]]
+name = "library/side_lamp.glb"
+file = "props/library/v2/side_lamp.glb"
+sha256 = "f1ac44580fe50bd3eeefc1b11a14c7096d1be1c46dda02cdc3e1b6ac054e3f6d"
+
+[[files]]
 name = "library/sideboard.glb"
 file = "props/library/v2/sideboard.glb"
 sha256 = "af120821cd3ad084ad40b64b3455f55146e7ccbf20956e28c58f13a3b53cf09b"
@@ -569,6 +639,11 @@ source = "kaykit_furniture_bits"
 from = ["env/kaykit/furniture-bits/KayKit_Furniture_Bits_1.0_FREE/KayKit_Furniture_Bits_1.0_FREE/Assets/gltf/bed_single_A.gltf", "env/kaykit/furniture-bits/KayKit_Furniture_Bits_1.0_FREE/KayKit_Furniture_Bits_1.0_FREE/Assets/gltf/bed_single_A.bin", "env/kaykit/furniture-bits/KayKit_Furniture_Bits_1.0_FREE/KayKit_Furniture_Bits_1.0_FREE/Assets/gltf/furniturebits_texture.png"]
 
 [[files]]
+name = "library/slippers.glb"
+file = "props/library/v2/slippers.glb"
+sha256 = "518461123841e196e1b1289a5f2075fc581dbc2fcdee41df29ccc3fb224de588"
+
+[[files]]
 name = "library/small_table.glb"
 file = "props/library/v2/small_table.glb"
 sha256 = "41a8683ddc0d95b2650e030f961047b1e64b3412c1eeae61341ea2fb3f8c6d82"
@@ -576,7 +651,7 @@ sha256 = "41a8683ddc0d95b2650e030f961047b1e64b3412c1eeae61341ea2fb3f8c6d82"
 [[files]]
 name = "library/sofa.glb"
 file = "props/library/v2/sofa.glb"
-sha256 = "0b54b2f58d98afcf90db398bc5e07645a0353386d3ac3f548d8a15a752781afe"
+sha256 = "b9509781ce27e2d2283ce108cdfdcb69ecd86d0a7f272dd90dcb0615099c35c7"
 
 [[files]]
 name = "library/standing_frame.glb"
@@ -626,6 +701,11 @@ file = "props/library/v2/table_lamp.glb"
 sha256 = "5f81801533ffc4a4d83ca03b604d983d1f3f180a71b2df187a18dbdc8dc419ef"
 source = "kenney_furniture_kit"
 from = ["env/kenney/furniture-kit/kenney_furniture-kit/Models/GLTF format/lampRoundTable.glb"]
+
+[[files]]
+name = "library/table_plant.glb"
+file = "props/library/v2/table_plant.glb"
+sha256 = "0ce01d787e9f31eb7177cec10c6e2c10a9e90426ce478bf0ccc7a5b63e4ec809"
 
 [[files]]
 name = "library/terrace_chair.glb"
