@@ -194,7 +194,8 @@ in #127, P4 in #130, P7 (with the props, the outdoor and garden sets) in #131; #
 C2-white kitchen, the fine pack, the Detail node; approved in #149), and #150 changed them again (the living room in
 the world look, the fine pack's eight slots), so their approval fields wait again. #150 also re-exported P3 to P5, which place
 some of its rebuilt props (armchair, bookcase, dresser, rug, sideboard, small_table): their scenes override those
-props' `kit_fine` surfaces too, list the fine pack and gain the Detail node, and their approval fields wait as well. The engineer approves the look from
+props' `kit_fine` surfaces too, list the fine pack and gain the Detail node, and their approval fields wait as well. #150's round 2 (the warm sofa and armchairs, wall art and 16 more living-room props) re-exported
+P2 and, for the armchair's new bytes, P4's `package.json` (into `<raw>/review/house/150b/export/`). The engineer approves the look from
 
 ```
 tools/run.sh house --package-sheet DIR --package N
@@ -320,7 +321,8 @@ is the same on every machine; `tools/tests/test_house_clutter.py` fails when a f
 - Surface clutter on the tops of `HOSTS` furniture (counters, the stove, tables, the sideboard, desks, nightstands,
   the dresser, crates, the filing cabinet ...): up to 4 per top by its area, 16 per room, the room's least used kind
   first, apart from what already stands on the top (a lamp, the computer). A station's own prop carries nothing, so
-  the stations read as before.
+  the stations read as before. The TV unit (`tv_cabinet`) is no host since #150: its top is the TV's, and the
+  living room's hand-placed detail layer dresses it.
 - Wall dressing (`picture_frame` at 1.4 m, `wall_shelf` at 1.45 m, `wall_clock` at 1.85 m) in the widest free span of a
   real wall face: 0.35 m off corners, clear of door openings, of windows (1.15 m round their centre), of the stairs
   and holes, and of anything in front of the wall at its height. The generator hall takes clocks only: its sight
