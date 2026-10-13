@@ -1,6 +1,6 @@
 # House props (prime-game-art)
 
-- **Files:** `assets/environment/house_props/**` (the props the committed packages need: 70 files with P2, 104 with P3 and P5, 136 with P7, 138 with #147's backsplash runs; the art manifest lists all 176 with their SHA-256, and the sources below cover all 176), and `assets/environment/house_props/fine/` (#147: the fine texture pack, `high/` and `low/` `fine_d.png`, `fine_n0.png`, `fine_n1.png`, made from the ambientCG maps below)
+- **Files:** `assets/environment/house_props/**` (the props the committed packages need: 70 files with P2, 104 with P3 and P5, 114 with P4, 146 with P7, 148 with #147's two backsplash runs, of which P2 ships 72: 68 library, 4 task; the art manifest lists all 176 with their SHA-256, and the sources below cover all 176), and `assets/environment/house_props/fine/` (#147: the fine texture pack, `high/` and `low/` `fine_d.png`, `fine_n0.png`, `fine_n1.png`, made from the ambientCG maps below)
 - **Author:** prime-game-art (own work, made by the art pipeline's code); Isa Lousberg (Tiny Treats), Kay Lousberg (KayKit), Kenney, ambientCG (Lennart Demes) (the CC0 sources below)
 - **Source:** the art manifest `assets/prop/house_props/manifest.toml` in xperiaroco2/prime-game-art (approval PRs: https://github.com/xperiaroco2/prime-game-art/pull/125 to /pull/131; #147's changes wait for the engineer's approval); made from:
   - ambientCG PBR materials, 2K-JPG (19 chosen for the location prototypes) by ambientCG (Lennart Demes), https://ambientcg.com (downloaded 2026-10-06):

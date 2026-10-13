@@ -130,7 +130,7 @@ A set's `export/` folder holds its committed files under their manifest names, w
 the kit's textures are `textures/set_*.png` and the props `library/`, `task/` and `zones/` here, all flat in the game's
 `assets/environment/house_kit/` and `house_props/` (the package's `package.json` and the set's `HANDOFF.md` map them;
 `house --package-sheet` stages them by SHA-256). Only what an approved package needs is committed: P1 the whole kit, P2
-its 70 props (#124), P3 and P5 the 34 more they use (#126), P4 10 more (#129), P7 32 more (#128). P1 to P5 and P7 are approved and merged, their manifests' approval fields set: P1 and P2 in #125, P3 and P5
+its 70 props (#124; 72 since #147's two backsplash runs: 68 library, 4 task), P3 and P5 the 34 more they use (#126), P4 10 more (#129), P7 32 more (#128). P1 to P5 and P7 are approved and merged, their manifests' approval fields set: P1 and P2 in #125, P3 and P5
 in #127, P4 in #130, P7 (with the props, the outdoor and garden sets) in #131. #147 changed P2 and the props (the C2-white kitchen, the fine pack): their
 approval fields are empty again until the engineer approves its sheet. A prop id names one game file: the export takes it from
 `house.toml`'s `prop_dirs` in order (the task props first), so of the ids both `task/` and `library/` hold (`boiler`,
