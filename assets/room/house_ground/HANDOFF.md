@@ -2,8 +2,9 @@
 
 For the game's own import task, after P1 (the kit). Nothing here is copied before the approval fields of this
 manifest and of `assets/prop/house_props/manifest.toml` are set (the engineer's look approval on the art PR). P2 was approved and merged
-(#125, 2026-10-11); #147 changed it (the C2-white kitchen, the fine pack, the Detail node, below), so both
-manifests' approval fields are empty again until the engineer approves #147's sheet.
+(#125, 2026-10-11); #147 changed it (the C2-white kitchen, the fine pack, the Detail node, below; approved in #149),
+and #150 changed it again (the living room, the fine pack's eight slots, below), so both manifests' approval fields
+are empty again until the engineer approves #150's sheet.
 
 ## What to copy where (ARCHITECTURE 11.1)
 | From this repo | To the game repo |
@@ -11,7 +12,7 @@ manifests' approval fields are empty again until the engineer approves #147's sh
 | P1 (`assets/kit/house_kit/HANDOFF.md`) | `assets/environment/house_kit/` (P2's rooms use 17 of its pieces) |
 | `assets/kit/house_kit/export/kit_set.gdshader`, `kit_set.tres` (#132) | `assets/environment/house_kit/` (beside the kit's textures) |
 | `assets/prop/house_props/export/library/*.glb` (68), `task/*.glb` (4) | `assets/environment/house_props/<file>.glb` (flat) |
-| `assets/prop/house_props/export/fine/high/*.png`, `fine/low/*.png` (3 each, #147) | `assets/environment/house_props/fine/high/`, `fine/low/` |
+| `assets/prop/house_props/export/fine/high/*.png`, `fine/low/*.png` (6 each: 3 since #147, 3 more since #150) | `assets/environment/house_props/fine/high/`, `fine/low/` |
 | `assets/prop/house_props/export/prop_fine.gdshader`, `prop_fine_high.tres`, `prop_fine_low.tres` (#147) | `assets/environment/house_props/` |
 | `assets/room/house_ground/export/<room>.tscn` (15) | the content of `levels/house/rooms/<room>.tscn` (G3 below) |
 
@@ -67,10 +68,30 @@ own plaster, so the colour stays and the textures are new).
 - **LFS.** #147 adds 9.8 MB of LFS objects: the 9 GLBs (0.84 MB, the 7 replaced weighed 0.43 MB) and the 6 PNGs
   (8.96 MB).
 
+## The living room and the fine pack's eight slots (#150)
+- **What changed.** The living room is rebuilt in the world look (the ADR `docs/decisions/2026-10-13-house-world-look.md`):
+  `sofa`, `armchair`, `bookcase`, `tv_cabinet` (a TV unit with its TV), `fireplace` (a mantel surround with a stone
+  hearth), `coffee_table`, `sideboard`, `dresser`, `rug` and `small_table` replace their old GLBs (same file names; all
+  procedural now, `armchair`, `small_table`, `sofa` and `tv_cabinet` were re-painted pack models). Six new detail-layer
+  props sit under the living room's `Detail` node: `candle_pair`, `living_tray`, `magazine_fan`, `mantel_clock`,
+  `standing_frame`, `throw_basket`. The fireplace's hearth is a `concrete` surface (`[export.prop_surfaces]`).
+- **Other P2 rooms.** The dining room, hallway, kitchen, stairs and WC place some of the rebuilt props, so their scenes
+  override those `kit_fine` surfaces with `prop_fine_high.tres` too.
+- **The fine pack's eight slots.** `fine_d1.png` holds slots 4-7 (fabric, weave, carpet: ambientCG Fabric036, Fabric061,
+  Carpet016), `fine_n2.png` and `fine_n3.png` their normals; `prop_fine.gdshader` and both `.tres` read all six PNGs
+  per tier and carry `slot_gain` (8 values) instead of one gain per four slots. On disk: high 16.0 MB (6 PNGs, 1024 px),
+  low 4.0 MB (512 px). The "one fine pack per game" rule above holds: copy the new pack over the old one.
+- **Open: the packages P3, P4 and P5 are not re-exported.** Their committed scenes place `armchair`, `bookcase`,
+  `dresser`, `rug`, `sideboard` and `small_table` (house_upper, house_attic, house_basement) without a `kit_fine`
+  override; with the new GLBs those rooms need the game-side `kit_fine` -> `prop_fine_*.tres` wrapper, or a re-export
+  of those packages (the art manager decides).
+- **LFS.** #150 adds 11.8 MB of LFS objects: the 16 GLBs (0.79 MB, the 10 replaced weighed 0.57 MB) and the 6 new PNGs
+  (11.0 MB).
+
 ## Credits
 The entries are `assets/kit/house_kit/CREDITS.md` and `assets/prop/house_props/CREDITS.md` in this repo (the game's
 `docs/credits/<id>.md` format; copy them to `docs/credits/house_kit.md` and `house_props.md`): own work, the props made
-from CC0 packs named per file in the props manifest, the fine pack from four ambientCG CC0 maps (#147),
+from CC0 packs named per file in the props manifest, the fine pack from seven ambientCG CC0 maps (#147, #150),
 `ai_generated = false`, `public_repo_ok = true`. The room scenes are scenes under `levels/`, not assets: no credits
 entry unless the game wants one.
 
