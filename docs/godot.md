@@ -230,27 +230,27 @@ studio: the frames stand's grey background and floor, Poly Haven's CC0 `studio_s
 but is not seen, a key light with shadows, a fill and a rim light (the stand's three directions), and a perspective
 camera with a 22 degree lens fitted to the head (front and three-quarter) or the whole body.
 
-Each **variant** of the ladder (`_showroom.VARIANTS`, `--grid ladder`, the default; at most eight variants in one grid, each sets every key) adds to the one before it:
+Each **variant** of the ladder (`_showroom.VARIANTS`, `--grid ladder`, the default; at most eight variants in one grid, each sets every key) adds to the one before it (since step 3; `--grid tune` and `--grid warm` are steps 2 and 3's tuning grids, below):
 
 | # | Variant | What it changes |
 |---|---|---|
 | 1 | frames stand | the stand as is: linear, colour ambient 0.55, no reflections, key 1.05 with specular 0.15 |
 | 2 | AgX | the AgX tonemapper, exposure 1.2; nothing else |
-| 3 | AgX + sky + catch | the studio sky as ambient (at full strength: sky contribution 1.0, where Godot ignores the ambient energy) and reflections, exposure 1.0, key 2.0 with specular 0.6, the clay's specular (`metallic_specular` of the `_clay` materials) 0.1 instead of Godot's 0.5, and a **catch light** for the eyes' glint: an `OmniLight3D` on the camera, up-left of the view at (-0.25, 0.3, 0), `light_size` 0.06 (a small spherical area light), energy 0.6, specular 16, no attenuation, and a cull mask of render layer 20 alone, on which the showroom also puts the meshes with an `_eye` material: it lights the eyes and nothing else; the eye materials at roughness 0.05 (exported 0.17), so the glint is a small sharp dot (step 2's grid, below) |
+| 3 | AgX + sky + catch | the studio sky as reflections and half the ambient (sky contribution 0.5; the other half a dark warm colour (1.0, 0.8, 0.62) at energy 0.12: step 3's grid, below), the fill 0.12 (the stand's 0.35), exposure 1.0, key 2.0 with specular 0.6, the clay's specular (`metallic_specular` of the `_clay` materials) 0.1 instead of Godot's 0.5, and a **catch light** for the eyes' glint: an `OmniLight3D` on the camera, up-left of the view at (-0.25, 0.3, 0), `light_size` 0.06 (a small spherical area light), energy 0.6, specular 16, no attenuation, and a cull mask of render layer 20 alone, on which the showroom also puts the meshes with an `_eye` material: it lights the eyes and nothing else; the eye materials at roughness 0.05 (exported 0.17), so the glint is a small sharp dot (step 2's grid, below) |
 | 4 | + SSAO | radius 0.6, intensity 1.5, light affect 0.2 |
 | 5 | + soft shadows | the key light's angular size 1.5 degrees (PCSS), soft shadow filter quality high, blur 1.0 |
 | 6 | + SSS clay | subsurface scattering on the materials whose name ends in `_clay`, strength 0.25, skin mode on the head; quality medium |
 
 It writes `face.png` (the approved Blender sheet's crops first, `--beside`, then per variant front and 3/4, 256 x 320
-cells in 4 columns, or 208 x 260 in 6 for more than 14 shots), `look.md` beside an approved sheet (the numeric check below), `body.png` (per variant the full body), `shots/` at window size, `showroom.json` and `gpu_ms.md`: the GPU time
+cells in 4 columns, or 208 x 260 in 6 for more than 14 shots), `look.md` beside an approved sheet (the numeric check below), `change.md` for a grid whose variants name a `parent` (step 3, below), `body.png` (per variant the full body), `shots/` at window size, `showroom.json` and `gpu_ms.md`: the GPU time
 per variant (`RenderingServer.viewport_get_measured_render_time_gpu`, as in art #137's bake shots) with the window
 resized to 1920 x 1080 and the full body framed, after a 120-frame warm-up, averaged over 30 drawn frames after 6
 settling frames, three rounds in turn, the median round kept. `--write-presets` writes
 `godot/showroom/look_presets.json` from `_showroom.PRESETS` (a test keeps them equal).
 
 **The proposed look per graphics preset: a proposal, not chosen.** No variant is chosen yet: the engineer approves
-the look (art #140). Step 2's tuning grid (below) set the clay's specular to 0.1 and the eyes' glint; the face is still
-brighter and flatter than the approved Blender face (see "What the sheets show"). The values are a recommendation, not settled ones;
+the look (art #140). Step 2's tuning grid (below) set the clay's specular to 0.1 and the eyes' glint, step 3's the
+sky's ambient share and the fill. The values are a recommendation, not settled ones;
 `godot/showroom/look_presets.json` says so in its `status` (`_showroom.STATUS`) until a chosen variant replaces it,
 and the game side copies it only then (this repo does not touch the game). As proposed, every preset uses AgX, the
 sky as ambient and reflections and the catch light; each turns on everything the one below does. The shadow filter is the project setting
@@ -266,23 +266,23 @@ stays at 4, since ultra (5) has not been measured.
 | High | soft shadows | 4096, filter 4 (high), key angular 1.5 degrees | full size, medium | off | 4x |
 | Ultra | SSS on the clay | 4096, filter 4 (high), key angular 1.5 degrees | full size, high | quality medium, strength 0.25 | 4x |
 
-**Measured** (2026-10-13, the ladder with step 2's recommendation, slice_m1 at Idle 0.00 s, NVIDIA GeForce RTX 4060,
+**Measured** (2026-10-13, the ladder with step 3's recommendation, slice_m1 at Idle 0.00 s, NVIDIA GeForce RTX 4060,
 vulkan forward_plus, Godot 4.7.2; the GPU time of the whole frame with one character, the floor and the sky;
-`D:/prime-art-raw/review/char/140b/ladder/`):
+`D:/prime-art-raw/review/char/140c/ladder/`):
 
 | Variant | Effects | GPU ms (1920x1080) | Step ms |
 |---|---|---:|---:|
 | 1 frames stand | linear | 0.76 |  |
-| 2 AgX | agx | 0.78 | +0.02 |
-| 3 AgX+sky+catch | reflections, catch_light, agx | 0.90 | +0.12 |
-| 4 +SSAO | reflections, catch_light, ssao, agx | 1.66 | +0.76 |
-| 5 +soft shadows | reflections, catch_light, ssao, soft_shadows, agx | 3.52 | +1.85 |
-| 6 +SSS clay | reflections, catch_light, ssao, soft_shadows, sss, agx | 3.95 | +0.43 |
+| 2 AgX | agx | 0.77 | +0.02 |
+| 3 AgX+sky+catch | reflections, catch_light, agx | 0.95 | +0.18 |
+| 4 +SSAO | reflections, catch_light, ssao, agx | 1.64 | +0.68 |
+| 5 +soft shadows | reflections, catch_light, ssao, soft_shadows, agx | 3.53 | +1.89 |
+| 6 +SSS clay | reflections, catch_light, ssao, soft_shadows, sss, agx | 3.86 | +0.33 |
 
 The steps move between runs by a few tenths of a ms (the second run had SSAO at +0.31 and SSS at -0.19); soft
 shadows (PCSS) are the one step that stands out every time.
 
-What the sheets show (the first grid, before the engineer looks): AgX alone (2) keeps the stand's colours and rolls
+What the sheets showed in step 1 (history; the first grid, before the engineer looks): AgX alone (2) keeps the stand's colours and rolls
 off the highlights; the sky-lit variants (3 to 6) add a soft sheen to the clay and the pupils but look **washed out**
 next to the Blender face (pale hair, little key-light shading on the face): the first run (ambient energy 1.0, key 1.05)
 was paler than the second (0.4, key 2.0), but at sky contribution 1.0 Godot ignores the ambient energy, so the
@@ -294,7 +294,7 @@ the hair roots a little; soft shadows (PCSS) cost about 2 ms at 1920 x 1080 and 
 clay costs nothing measurable and is barely visible. Step 2's grid below found the main cause, the clay's specular; the ambient's strength it did not test (below).
 
 
-### Step 2: the tuning grid and the numeric check (2026-10-13)
+### Step 2: the tuning grid and the numeric check (2026-10-13, history)
 
 `showroom --grid tune --beside <approved sheet>` (`_showroom.TUNING`) renders eight variants on step 1's variant 4
 (sky-lit, SSAO, hard shadows), each named by what it changes; T2 to T6 add up, T7 and T8 branch off T6. Beside an
@@ -335,10 +335,58 @@ What it shows:
 - **Recommended: T3 with T6's eye glint**, now the ladder's base (variants 3 to 6, the presets): the smallest distance
   (21.4) and the hair within 3.4 L* of Blender, with the glint. The ladder rerun with it measures variant 4 at 21.4 and
   variant 5 (soft shadows) at 15.9, the closest: PCSS's soft terminator gives the face its shading back (19.6).
-- **Still open:** the face is about 7 to 9 L* brighter and its shading 4 to 7 lower than Blender's. The levers this grid
-  did not try: the sky's ambient lower (`ambient_light_sky_contribution` under 1.0 with a dark ambient colour, or the
+- **Left open** (step 3 took it up, below): the face was about 7 to 9 L* brighter and its shading 4 to 7 lower than
+  Blender's. The levers this grid did not try: the sky's ambient lower (`ambient_light_sky_contribution` under 1.0 with a dark ambient colour, or the
   sky's `energy_multiplier`), the exposure down (about 0.8), the fill light weaker, the key from further to the side, the key's
   specular (0.6) lower.
+
+### Step 3: the sky's ambient for real, the fill, exposure with a warm key (2026-10-13)
+
+`showroom --grid warm --beside <approved sheet>` (`_showroom.WARM`) renders eight variants on step 2's ladder
+variant 5 (soft shadows, SSAO, the clay's specular 0.1, the eye glint: the closest measured, 15.9), each named by what
+it changes and naming its `parent`. For such a grid the command also writes `change.md`: per variant the share of
+pixels (below the label strip, over its three shots) whose channels differ by more than 2 of 255 from its parent's;
+under 0.5 % it is reported as **a no-op**, not as a finding (step 2's T2 was one). Sheets and tables:
+`D:/prime-art-raw/review/char/140c/warm/`; the ladder rerun with the recommendation: `.../140c/ladder/`.
+
+| Shots | skin L* | skin C* | shade | hair L* | distance | changed vs parent | GPU ms |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| Blender (approved) | 66.7 | 12.8 | 23.8 | 28.6 | 0 | | |
+| W1 base: 5 soft shadows | 73.7 (+7.0) | 11.7 (-1.1) | 19.6 (-4.2) | 25.0 (-3.6) | 15.9 | | 3.63 |
+| W2 sky energy x0.5 | 73.7 (+7.0) | 11.7 (-1.1) | 19.6 (-4.2) | 25.0 (-3.6) | 15.9 | 30.3 % (W1) | 3.63 |
+| W3 sky share 0.5, warm amb. | 69.7 (+3.0) | 13.1 (+0.3) | 22.2 (-1.6) | 22.9 (-5.7) | **10.6** | 80.8 % (W1) | 3.62 |
+| W4 fill 0.12 | 72.8 (+6.1) | 11.9 (-0.9) | 20.5 (-3.3) | 24.4 (-4.2) | 14.5 | 15.3 % (W1) | 3.63 |
+| W5 exp. 0.8, key 4000K x2.5 | 76.2 (+9.5) | 10.8 (-2.0) | 13.2 (-10.6) | 26.6 (-2.0) | 24.1 | 100 % (W1) | 3.63 |
+| W6 W3+W4+W5 | 74.8 (+8.1) | 12.4 (-0.4) | 10.0 (-13.8) | 26.7 (-1.9) | 24.2 | 80.7 % (W5) | 3.62 |
+| W7 W6 sky share 0.25 | 74.7 (+8.0) | 13.2 (+0.4) | 8.2 (-15.6) | 26.8 (-1.8) | 25.8 | 79.3 % (W6) | 3.62 |
+| W8 W6 Low: hard, no SSAO | 74.8 (+8.1) | 12.9 (+0.1) | 10.0 (-13.8) | 26.2 (-2.4) | 24.4 | 11.7 % (W6) | 0.92 |
+
+What it shows:
+- **Every setting reached the frame** (no no-op). The sky's `energy_multiplier` at 0.5 (W2) changes 30 % of the
+  pixels a little and no face number: the sky's ambient barely lights this face; halving its share does.
+- **The sky's ambient share is the lever** (W3): `ambient_light_sky_contribution` 0.5 with a dark warm colour
+  (1.0, 0.8, 0.62) at energy 0.12 brings the skin 4 L* darker, its chroma to Blender's and its shading up by 2.6. A
+  weaker fill (W4, 0.35 to 0.12) adds a little shading.
+- **A brighter key flattens the face even with the exposure down.** Exposure 0.8 with a 4000 K key at 2.5 (W5) makes
+  the skin brighter and the shading collapse (13.2): the lit side rolls into AgX's shoulder, and the warm key tints the
+  floor and shirt orange. With it, W3 and W4 no longer help (W6, W7); its hair is the closest (26.7), its face is not.
+- **Hard shadows and no SSAO** (W8) cost 2.7 ms less and move no number by more than 0.6.
+- **Recommended: W3 with W4** (sky share 0.5, dark warm ambient 0.12, fill 0.12), now the ladder's base (variants 3 to
+  6) and the presets. The ladder rerun with it (`.../140c/ladder/look.md`):
+
+| Ladder variant | skin L* | skin C* | shade | hair L* | distance | GPU ms |
+|---|---:|---:|---:|---:|---:|---:|
+| 3 AgX+sky+catch (Low) | 72.2 (+5.5) | 12.6 (-0.2) | 20.1 (-3.7) | 22.6 (-6.0) | 15.4 | 0.95 |
+| 4 +SSAO (Medium) | 71.8 (+5.1) | 12.6 (-0.2) | 20.6 (-3.2) | 22.4 (-6.2) | 14.7 | 1.64 |
+| 5 +soft shadows (High) | 69.8 (+3.1) | 13.0 (+0.2) | 24.7 (+0.9) | 22.6 (-6.0) | **10.2** | 3.53 |
+| 6 +SSS clay (Ultra) | 70.0 (+3.3) | 12.9 (+0.1) | 23.0 (-0.8) | 24.5 (-4.1) | 8.3 | 3.86 |
+
+  **High** (variant 5, 3.5 ms at 1920 x 1080 with one character) is the closest a High preset can afford: the skin 3
+  L* brighter than Blender's, its chroma and shading matched. **Low** (variant 3, under 1 ms) is the cheapest
+  acceptable: as close as step 2's best (15.4 against 15.9), the face 5 L* bright and a little flatter. Ultra's SSS
+  lifts the hair (8.3).
+- **Still open:** the hair is now 4 to 6 L* darker than Blender's (step 2: 3 lighter or darker); its lever is the
+  hair's own colour or specular, not the light. The key from further to the side and its specular are untried.
 
 The look is the engineer's to approve (art #140); until he says yes these settings are a proposal, and
 `look_presets.json`'s `status` says so.
