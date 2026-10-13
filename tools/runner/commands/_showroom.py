@@ -296,9 +296,9 @@ def look_table(blender: dict[str, float], rows: list[tuple[str, dict[str, float]
 
 # Godot's soft shadow filter levels (RenderingServer.ShadowQuality, the project setting's values) by index.
 STATUS = ("PROPOSAL, NOT CHOSEN: the engineer has not approved the look (art #140). Step 2's tuning grid recommends "
-          "the clay's specular 0.1 and a sharp eye glint; step 3's warm grid half the ambient from the sky, half a dark "
-          "warm colour, and a fill of 0.12: the face within 3 L* of the Blender sheet's (step 2: +7 to +9). "
-          "Do not copy into the game until this says chosen.")
+          "the clay's specular 0.1 and a sharp eye glint; step 3's warm grid half the ambient from the sky, half a "
+          "dark warm colour, and a fill of 0.12: High's face about 3 L* brighter than the Blender sheet's (step 2: "
+          "+7 to +9), its shading matched; the hair 6 L* darker. Do not copy into the game until this says chosen.")
 SHADOW_FILTER = ("hard", "very low", "low", "medium", "high", "ultra")
 SHADOW_FILTER_SETTING = "rendering/lights_and_shadows/directional_shadow/soft_shadow_filter_quality"
 
