@@ -40,6 +40,11 @@ kit_set = "house_kit"
 prop_set = "house_props"
 kit_textures = ["set_d.png", "set_n0.png", "set_n1.png"]  # the kit's shared texture set, under <kit_dir>/textures
 label = { h = 2.4, font_size = 72, outline_size = 16 }  # the room's Name label, as on the game's greybox rooms
+# The world look's fine pack (#143, #147; docs/props.md "World look rules"): its build (fine.json and one texture
+# folder per tier) under the raw folder; a package with a prop on it ships house_props/fine/<tier>/, the shader and
+# one material per tier; the room scenes put `fine_tier`'s material on the props' kit_fine surfaces.
+fine_dir = "props/library/v1/textures/fine"
+fine_tier = "high"
 
 # Footstep surfaces (art #122; the game's FootstepSurface, its ARCHITECTURE 4.7.40): the kit pieces a player walks on,
 # by id pattern (the first match wins), and the game's surface (concrete, wood, carpet or grass) their instance in a
