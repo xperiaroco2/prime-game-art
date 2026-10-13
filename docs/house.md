@@ -132,7 +132,8 @@ writes the House's game-ready package (prime-game #523) from the same layout dat
   copies the files and loads the scene, nothing to run.
 - The props' fine pack (#147; the world look's `kit_fine` material, `docs/props.md` "World look rules"): a package
   with a prop holding a `kit_fine` surface also writes `house_props/fine/<tier>/fine_d.png`, `fine_n0.png`,
-  `fine_n1.png` of both tiers from `house.toml` `[export]` `fine_dir` (the raw build's
+  `fine_n1.png` (and `fine_d1.png`, `fine_n2.png`, `fine_n3.png` when the build's textured layers need them: #150)
+  of both tiers from `house.toml` `[export]` `fine_dir` (the raw build's
   `props/library/v1/textures/fine`; `.import` VRAM compressed with mipmaps), `house_props/prop_fine.gdshader` (a copy
   of `godot/props/prop_fine.gdshader`; `tools/tests/test_house_layers.py` fails when the committed copy drifts) and
   `prop_fine_high.tres`, `prop_fine_low.tres` (`house_export.fine_material_text`: the shader, the tier's textures, the

@@ -18,8 +18,13 @@ Every room's props follow these rules; the numbers are data in `props/library.to
    shade toward the floor (x0.82 at the floor, none from 0.25 m up).
 3. **Materials: the fine pack.** Opaque paints sit on one shared material, `fine`, each role on a layer (`[fine]`):
    textured wood fronts (Wood092), worktop wood (Wood049), stone (Concrete034) and tile (Tiles107); flat enamel,
-   warm steel, chrome, dark gloss and paint. Glass is `glass_tint`. A new paint is a role with a `layer` and a hex;
-   a new texture is a `[fine]` layer from a recorded CC0 source. A prop has at most two surfaces (fine, glass).
+   warm steel, chrome, dark gloss and paint; the living room's soft goods (#150): textured fabric (Fabric036, linen
+   upholstery), weave (Fabric061, cushions and throws) and carpet (Carpet016, rugs). Glass is `glass_tint`. A new
+   paint is a role with a `layer` and a hex; a new texture is a `[fine]` layer from a recorded CC0 source, appended
+   at the end so the built GLBs keep their layer indices (at most 8 textured layers: a textured layer's slot is its
+   place among the textured ones; `fine_d.png` and `fine_d1.png` hold four slots' detail each, `fine_n0.png` to
+   `fine_n3.png` two slots' normals each, and a build writes only the files its slots need). A prop has at most two
+   surfaces (fine, glass).
 4. **Shared textures, two tiers.** The GLB has no textures; Godot maps `kit_fine` to one ShaderMaterial with one
    texture set per tier (High 1024 px, Low 512 px, from the same sources), VRAM-compressed on import.
 5. **Classes.** `hero` (1,200 to 4,000 triangles) for the pieces players look at up close (appliances, a room's
@@ -165,7 +170,7 @@ The library is data: a paint, a size, a source file or a shape changes without a
 | `[budgets]` | Triangles by class, `[min, max]` (`look.md` §6): `dressing` 150 to 600, `room` 400 to 1,500, `fixture` 100 to 400, `vehicle` 400 to 3,000 (the parked cars), `clutter` 12 to 400 (the small lived-in props of #104: books, cups, plates, bottles, pots, papers, frames' kin, baskets, shoes, toys; all `collision = "none"`, batch 3, placed by `house --clutter`, docs/house.md "Clutter"), `hero` 1,200 to 4,000 (the pieces players look at up close: the stove, the fridge). |
 | `[layers]` | The layer by preset (`base` or `detail`) per class, and the `default`: `clutter` is `detail`. A prop's own `layer` overrides it; a detail prop must have `collision = "none"`. |
 | `[style]` | The world look's measures (bevels, segments, the handle, front gap and thickness, plinth, worktop line, `floor_shade`) and the direction's `paints`; the shared builders read them ("World look rules"). |
-| `[fine]` | The fine pack: `source` (the CC0 record of its textures), `tiers` (px per tier, High over Low) and `layers` in order (at most 16): a textured layer has `source`, `roughness`, `normal_strength`; a flat one `metallic` and `roughness`. |
+| `[fine]` | The fine pack: `source` (the CC0 record of its textures), `tiers` (px per tier, High over Low) and `layers` in order (at most 16, at most 8 of them textured; a new layer goes at the end): a textured layer has `source`, `roughness`, `normal_strength`; a flat one `metallic` and `roughness`. |
 | `[roles]` | The props' paints: a library material and an sRGB hex (the D1 palette, `look.md` §7). A role on the fine pack also names its `layer`. A prop may also name the kit's roles (`trim`, `fence`, `lino`, `glass` ...). |
 | `[skip]` | Inventory ids this library does not make, with the package that does. |
 | `script` | The Blender build script (default `prop_build.py`); another mapping file in this format names its own, such as `props/plants.toml`'s `plant_build.py` (the garden's plants, `docs/house-garden.md`). |
