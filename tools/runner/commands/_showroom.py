@@ -4,6 +4,7 @@ recommended look per graphics preset (Low / Medium / High / Ultra) the game side
 
 from __future__ import annotations
 
+import math
 from typing import Any
 
 from .. import common
@@ -13,6 +14,8 @@ SCRIPT = "res://showroom/showroom.gd"
 WINDOW = (640, 800)  # each shot; scaled down into its sheet cell
 FACE_CELL = (256, 320)  # 4 columns: about 1040 x 1340 px with the title
 BODY_CELL = (320, 400)  # 3 columns: about 980 x 860 px
+FACE_CELL_WIDE = (208, 260)  # 6 columns, for more than 14 face shots: about 1280 x 850 px with 3 rows
+BODY_CELL_WIDE = (304, 380)  # 4 columns, for more than 6 variants: about 1240 x 830 px
 FACE_YAWS = (0.0, -35.0)  # front and three-quarter from the character's right, as the faces sheets
 BODY_YAW = 35.0
 BODY_PITCH = 8.0
@@ -34,12 +37,24 @@ APPROVED_RECTS = [[218, 0, 214, 258], [668, 0, 214, 258]]
 # OmniLight3D with light_size) on the camera that lights the eye meshes alone (its cull mask, the eye layer). One grid
 # (size 0.1, 0.2, 0.35 m by energy 0.3, 1.0, specular 16) chose size 0.2 at energy 0.3: a clear glint on the pupil;
 # energy 1.0 blows out the whites.
-CATCH = {"catch_energy": 0.3, "catch_specular": 16.0, "catch_size": 0.2}
-_STAND = {"tonemap": "linear", "exposure": 1.0, "ambient": "color", "ambient_energy": 0.55, "reflections": False,
-          "key_energy": 1.05, "key_specular": 0.15, "catch_light": False, **CATCH, "ssao": False,
-          "soft_shadows": False, "sss": False}
-_LIT = {**_STAND, "tonemap": "agx", "exposure": 1.0, "ambient": "sky", "ambient_energy": 0.4, "reflections": True,
-        "key_energy": 2.0, "key_specular": 0.6, "catch_light": True}
+AGX_WHITE = 16.29  # Godot 4.7.2's Environment defaults (tonemap_agx_white, tonemap_agx_contrast)
+AGX_CONTRAST = 1.25
+MAX_VARIANTS = 8
+# Step 2's grid (TUNING, T6) made the glint sharp: eye roughness 0.05 (fb_eye exports 0.17), the light 0.06 m at
+# energy 0.6, a small bright dot on the pupil like the Blender sheet's instead of a soft blob.
+CATCH_STEP1 = {"catch_energy": 0.3, "catch_specular": 16.0, "catch_size": 0.2}
+CATCH = {"catch_energy": 0.6, "catch_specular": 16.0, "catch_size": 0.06}
+EYE_ROUGHNESS = 0.05
+_STAND = {"tonemap": "linear", "exposure": 1.0, "agx_white": AGX_WHITE, "agx_contrast": AGX_CONTRAST,
+          "ambient": "color", "ambient_energy": 0.55, "ambient_color": [1.0, 1.0, 1.0], "sky_contribution": 1.0,
+          "reflections": False, "key_energy": 1.05, "key_kelvin": 0, "key_specular": 0.15, "clay_specular": 0.5,
+          "eye_roughness": -1.0, "catch_light": False, **CATCH, "ssao": False, "soft_shadows": False, "sss": False}
+# The sky-lit look of step 1 (2026-10-12): the base of step 2's tuning grid.
+_LIT_STEP1 = {**_STAND, "tonemap": "agx", "exposure": 1.0, "ambient": "sky", "ambient_energy": 0.4, "reflections": True,
+              "key_energy": 2.0, "key_specular": 0.6, "catch_light": True, **CATCH_STEP1}
+# The sky-lit look since step 2 (the recommendation, still a proposal): step 1's with the grid's T3 (sky ambient 0.15,
+# the clay's specular 0.1) and T6's eye glint; see TUNING and docs/godot.md.
+_LIT = {**_LIT_STEP1, "ambient_energy": 0.15, "clay_specular": 0.1, "eye_roughness": EYE_ROUGHNESS, **CATCH}
 VARIANTS: list[dict[str, Any]] = [
     {"id": "stand", "label": "1 frames stand", **_STAND},
     {"id": "agx", "label": "2 AgX", **{**_STAND, "tonemap": "agx", "exposure": 1.2}},
@@ -48,18 +63,71 @@ VARIANTS: list[dict[str, Any]] = [
     {"id": "soft", "label": "5 +soft shadows", **{**_LIT, "ssao": True, "soft_shadows": True}},
     {"id": "sss", "label": "6 +SSS clay", **{**_LIT, "ssao": True, "soft_shadows": True, "sss": True}},
 ]
+
+# The tuning grid of step 2 (2026-10-13): on variant 4 (sky-lit, SSAO, hard shadows), each row changes only what the
+# step-1 findings point at, named in its label: the sky's ambient energy, the clay's specular (its sky reflections),
+# a warm and stronger key, AgX's contrast, a glint the eyes catch, a warm ambient, the sky reflections off.
+_T2 = {**_LIT_STEP1, "ssao": True, "ambient_energy": 0.15}
+_T3 = {**_T2, "clay_specular": 0.1}
+_T4 = {**_T3, "key_kelvin": 4000, "key_energy": 3.0}
+_T5 = {**_T4, "agx_contrast": 1.6}
+_T6 = {**_T5, "eye_roughness": EYE_ROUGHNESS, **CATCH}
+TUNING: list[dict[str, Any]] = [
+    {"id": "t1", "label": "T1 base (4 +SSAO)", **{**_LIT_STEP1, "ssao": True}},
+    {"id": "t2", "label": "T2 ambient 0.15", **_T2},
+    {"id": "t3", "label": "T3 +clay spec 0.1", **_T3},
+    {"id": "t4", "label": "T4 +key 4000K x3", **_T4},
+    {"id": "t5", "label": "T5 +AgX contrast 1.6", **_T5},
+    {"id": "t6", "label": "T6 +eye glint", **_T6},
+    {"id": "t7", "label": "T7 T6+warm ambient", **{**_T6, "ambient_color": [1.0, 0.78, 0.6], "sky_contribution": 0.4,
+                                                    "ambient_energy": 0.25}},
+    {"id": "t8", "label": "T8 T6 sky refl. off", **{**_T6, "reflections": False}},
+]
+GRIDS = {"ladder": VARIANTS, "tune": TUNING}
 KEYS = tuple(_STAND)
 EFFECTS = ("reflections", "catch_light", "ssao", "soft_shadows", "sss")
 
 
-def variants(only: str = "") -> list[dict[str, Any]]:
-    """The variants named in a comma list of ids (all when empty), in grid order; ValueError on an unknown id."""
+def variants(only: str = "", grid: str = "ladder") -> list[dict[str, Any]]:
+    """The variants of a grid (ladder or tune) named in a comma list of ids (all when empty), in grid order; ValueError
+    on an unknown grid or id."""
+    if grid not in GRIDS:
+        raise ValueError(f"unknown grid {grid}; known: {', '.join(GRIDS)}")
     wanted = [v for v in only.split(",") if v]
-    ids = [v["id"] for v in VARIANTS]
+    ids = [v["id"] for v in GRIDS[grid]]
     unknown = [v for v in wanted if v not in ids]
     if unknown:
         raise ValueError(f"unknown variants {', '.join(unknown)}; known: {', '.join(ids)}")
-    return [v for v in VARIANTS if not wanted or v["id"] in wanted]
+    return [v for v in GRIDS[grid] if not wanted or v["id"] in wanted]
+
+
+def kelvin_rgb(kelvin: float) -> list[float]:
+    """A light colour (sRGB, 0 to 1) for a colour temperature in kelvin (Tanner Helland's fit of the black body, good
+    from 1000 to 40000 K); 0 is plain white."""
+    if kelvin <= 0:
+        return [1.0, 1.0, 1.0]
+    t = min(max(kelvin, 1000.0), 40000.0) / 100.0
+    if t <= 66:
+        r = 255.0
+        g = 99.4708025861 * math.log(t) - 161.1195681661
+    else:
+        r = 329.698727446 * (t - 60) ** -0.1332047592
+        g = 288.1221695283 * (t - 60) ** -0.0755148492
+    if t >= 66:
+        b = 255.0
+    elif t <= 19:
+        b = 0.0
+    else:
+        b = 138.5177312231 * math.log(t - 10) - 305.0447927307
+    return [round(min(max(c, 0.0), 255.0) / 255.0, 4) for c in (r, g, b)]
+
+
+def layout(cells: int, face: bool) -> tuple[int, list[int]]:
+    """The columns and cell size of a sheet of `cells` shots: step 1's 4 face or 3 body columns while they fit (14
+    face cells, 6 body cells), else 6 face or 4 body narrower columns: a sheet stays about 1280 px on its long side."""
+    if face:
+        return (4, list(FACE_CELL)) if cells <= 14 else (6, list(FACE_CELL_WIDE))
+    return (3, list(BODY_CELL)) if cells <= 6 else (4, list(BODY_CELL_WIDE))
 
 
 def spec(character: str, clip: str, hdri: str, chosen: list[dict[str, Any]], beside: str = "",
@@ -70,14 +138,18 @@ def spec(character: str, clip: str, hdri: str, chosen: list[dict[str, Any]], bes
         raise ValueError("an approved sheet needs its crop rectangles")
     if not chosen:
         raise ValueError("no variants")
-    if len(chosen) > 6:
-        raise ValueError("at most 6 variants in one grid")
+    if len(chosen) > MAX_VARIANTS:
+        raise ValueError(f"at most {MAX_VARIANTS} variants in one grid")
+    chosen = [{**v, "key_color": kelvin_rgb(v["key_kelvin"])} for v in chosen]
+    face_cols, face_cell = layout(2 * len(chosen) + (len(rects or []) if beside else 0), True)
+    body_cols, body_cell = layout(len(chosen), False)
     face_title = f"{character}   face at {clip} 0.00 s   {len(chosen)} Godot look variants, front and 3/4"
     if beside:
         face_title += "   (first: the approved Blender sheet)"
     return {"character": character, "clip": clip, "hdri": hdri, "variants": chosen, "window": list(WINDOW),
             "fov_deg": FOV_DEG, "face_yaws": list(FACE_YAWS), "body_yaw": BODY_YAW, "body_pitch": BODY_PITCH,
-            "face_cell": list(FACE_CELL), "body_cell": list(BODY_CELL), "beside": beside,
+            "face_cell": face_cell, "face_cols": face_cols, "body_cell": body_cell, "body_cols": body_cols,
+            "beside": beside,
             "beside_rects": (rects or []) if beside else [], "face_title": face_title,
             "body_title": f"{character}   full body at {clip} 0.00 s   {len(chosen)} Godot look variants",
             "timing_size": list(TIMING_SIZE), "timing_frames": TIMING_FRAMES, "settle_frames": SETTLE_FRAMES,
@@ -100,10 +172,74 @@ def gpu_table(record: dict[str, Any]) -> list[str]:
     return lines
 
 
+# The numeric check against Blender (step 2): the face shots' warm pixels (hue 20 to 85 degrees, chroma 5 or more;
+# not the grey background, the eye whites or the olive shirt) split into hair (dark, or mid and saturated: brown) and
+# skin; per shot the skin's mean L* and chroma, its shading (L* p90 - p10: how much the key light models the face)
+# and the hair's mean L*. A guide beside the eye, not a judge: framing and pose differ a little between the sheets.
+MEASURES = ("skin_L", "skin_C", "shade", "hair_L")
+
+
+def tone(lum: float, a: float, b: float) -> str:
+    """'hair', 'skin' or '' (not counted) for a CIELAB pixel."""
+    chroma = math.hypot(a, b)
+    hue = math.degrees(math.atan2(b, a))
+    if chroma < 5 or not 20 <= hue <= 85:
+        return ""
+    return "hair" if lum < 50 or (lum < 65 and chroma > 18) else "skin"
+
+
+def face_measures(width: int, height: int, px: list[tuple[int, int, int]], lab, grid: int = 160) -> dict[str, float]:
+    """MEASURES of one face shot (8-bit RGB pixels) on a grid of about `grid` pixels across; `lab` converts sRGB to
+    CIELAB. Shades with fewer than 20 samples count as missing (nan)."""
+    step = max(1, width // grid)
+    skin: list[float] = []
+    chroma: list[float] = []
+    hair: list[float] = []
+    for y in range(step // 2, height, step):
+        for x in range(step // 2, width, step):
+            lum, a, b = lab(*px[y * width + x])
+            kind = tone(lum, a, b)
+            if kind == "skin":
+                skin.append(lum)
+                chroma.append(math.hypot(a, b))
+            elif kind == "hair":
+                hair.append(lum)
+    nan = float("nan")
+    skin.sort()
+    out = {"skin_L": nan, "skin_C": nan, "shade": nan, "hair_L": nan}
+    if len(skin) >= 20:
+        out.update(skin_L=sum(skin) / len(skin), skin_C=sum(chroma) / len(chroma),
+                   shade=skin[int(0.9 * len(skin))] - skin[int(0.1 * len(skin))])
+    if len(hair) >= 20:
+        out["hair_L"] = sum(hair) / len(hair)
+    return {k: round(v, 1) for k, v in out.items()}
+
+
+def mean_measures(shots: list[dict[str, float]]) -> dict[str, float]:
+    """The mean of each measure over shots (front and three-quarter)."""
+    return {k: round(sum(m[k] for m in shots) / len(shots), 1) for k in MEASURES}
+
+
+def distance(m: dict[str, float], ref: dict[str, float]) -> float:
+    """How far a variant's measures are from Blender's: the sum of the absolute differences (L* and C* units)."""
+    return round(sum(abs(m[k] - ref[k]) for k in MEASURES), 1)
+
+
+def look_table(blender: dict[str, float], rows: list[tuple[str, dict[str, float]]]) -> list[str]:
+    """A markdown table: Blender's measures, then per variant its measures, their differences and the distance."""
+    lines = ["| Shots | skin L* | skin C* | shade (L* p90-p10) | hair L* | distance |",
+             "|---|---:|---:|---:|---:|---:|"]
+    lines.append("| Blender (approved) | " + " | ".join(f"{blender[k]:.1f}" for k in MEASURES) + " | 0 |")
+    for label, m in rows:
+        cells = [f"{m[k]:.1f} ({m[k] - blender[k]:+.1f})" for k in MEASURES]
+        lines.append(f"| {label} | " + " | ".join(cells) + f" | {distance(m, blender):.1f} |")
+    return lines
+
+
 # Godot's soft shadow filter levels (RenderingServer.ShadowQuality, the project setting's values) by index.
-STATUS = ("PROPOSAL, NOT CHOSEN: the engineer has not picked a variant (art #140). Variants 3 to 6 still look washed "
-          "out next to the approved Blender face (pale hair, little key-light shading); the sky's ambient energy and "
-          "the key light are open. Do not copy into the game until this says chosen.")
+STATUS = ("PROPOSAL, NOT CHOSEN: the engineer has not approved the look (art #140). Step 2's tuning grid recommends "
+          "the clay's specular 0.1 (darker, richer hair) and a sharp eye glint; the face is still brighter and flatter "
+          "than the Blender sheet (skin L* +9, shading -7). Do not copy into the game until this says chosen.")
 SHADOW_FILTER = ("hard", "very low", "low", "medium", "high", "ultra")
 SHADOW_FILTER_SETTING = "rendering/lights_and_shadows/directional_shadow/soft_shadow_filter_quality"
 
@@ -116,7 +252,7 @@ LOOK_ENVIRONMENT = {
     "tonemap_mode": "TONE_MAPPER_AGX",
     "tonemap_exposure": 1.0,
     "ambient_light_source": "AMBIENT_SOURCE_SKY",
-    "ambient_light_energy": 0.4,
+    "ambient_light_energy": 0.15,
     "reflected_light_source": "REFLECTION_SOURCE_SKY",
 }
 LOOK_LIGHTS = {
@@ -127,8 +263,15 @@ LOOK_LIGHTS = {
               "energy": CATCH["catch_energy"], "specular": CATCH["catch_specular"],
               "light_size": CATCH["catch_size"], "omni_range": 50.0, "omni_attenuation": 0.0, "shadow": False,
               "light_cull_mask": "the eye layer alone (render layer 20); the eye meshes (material *_eye) on it too",
-              "why": "the eyes' glint (fb_eye, roughness 0.17): a small spherical area light, so the glint is a few "
-                     "pixels wide; it lights nothing but the eyes"},
+              "why": "the eyes' glint (fb_eye at roughness 0.05, see LOOK_MATERIALS): a small spherical area "
+                     "light, so the glint is a small sharp dot; it lights nothing but the eyes"},
+}
+LOOK_MATERIALS = {
+    "clay_metallic_specular": 0.1,
+    "eye_roughness": EYE_ROUGHNESS,
+    "why": "the clay's specular at Godot's default 0.5 lays the key light's sheen and the sky's reflections over the "
+           "roughness-0.8 clay (the hair turns pale brown); 0.1 keeps it matte as in Blender. The eyes (materials *_eye, "
+           "exported at roughness 0.17) at 0.05 take the catch light as a sharp glint",
 }
 PRESETS: dict[str, dict[str, Any]] = {
     "Low": {
@@ -226,6 +369,7 @@ def presets_document(timing: list[dict[str, Any]] | None = None) -> dict[str, An
                  "the character materials whose name ends in _clay.",
         "environment": LOOK_ENVIRONMENT,
         "lights": LOOK_LIGHTS,
+        "materials": LOOK_MATERIALS,
         "presets": PRESETS,
     }
     if timing:

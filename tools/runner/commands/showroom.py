@@ -1,8 +1,9 @@
 """`showroom`: how close Godot can make a character look to its Blender renders (art #140). Godot 4.7.2 renders one
-character under up to six look variants (the frames stand as is, then AgX, sky reflections, SSAO, soft shadows,
-subsurface scattering on the clay) in an off-screen window (never headless, never minimized): a face sheet (front and
-three-quarter, the approved Blender sheet first) and a full-body sheet, and each variant's GPU time. `--write-presets`
-writes the recommended look per graphics preset, godot/showroom/look_presets.json (docs/godot.md)."""
+character under up to eight look variants (the ladder: the frames stand as is, then AgX, sky reflections, SSAO, soft
+shadows, subsurface scattering on the clay; or step 2's tuning grid, `--grid tune`) in an off-screen window (never
+headless, never minimized): a face sheet (front and three-quarter, the approved Blender sheet first) and a full-body
+sheet, each variant's GPU time and, beside an approved sheet, a numeric check of the faces against it (look.md).
+`--write-presets` writes the recommended look per graphics preset, godot/showroom/look_presets.json (docs/godot.md)."""
 
 from __future__ import annotations
 
@@ -11,7 +12,7 @@ import json
 import shutil
 from pathlib import Path
 
-from .. import common
+from .. import common, house_bake
 from . import _frames, _godot, _showroom
 
 NAME = "showroom"
@@ -24,7 +25,9 @@ DEFAULT_GLB = Path("assets/character/slice_m1/export/slice_m1.glb")
 def add_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("glb", type=Path, nargs="?", default=DEFAULT_GLB, help=f"an exported character (default {DEFAULT_GLB.as_posix()})")
     parser.add_argument("--out", type=Path, help="output folder (default tools/out/showroom/<stem>/)")
-    parser.add_argument("--variants", default="", help=f"comma list of {', '.join(v['id'] for v in _showroom.VARIANTS)} (default all)")
+    parser.add_argument("--grid", choices=sorted(_showroom.GRIDS), default="ladder",
+                        help="ladder: the six look steps (default); tune: step 2's tuning grid on variant 4")
+    parser.add_argument("--variants", default="", help="comma list of the grid's variant ids (default all)")
     parser.add_argument("--clip", default="Idle", help="the pose: time 0 of this animation (default Idle)")
     parser.add_argument("--hdri", type=Path, help=f"the studio sky (default <raw>/{_showroom.HDRI}; missing: a ProceduralSky)")
     parser.add_argument("--beside", type=Path, help="the approved Blender faces sheet whose crops lead the face sheet")
@@ -65,7 +68,7 @@ def run(args: argparse.Namespace) -> int:
             raise common.Failure(f"no approved sheet {args.beside.as_posix()}")
         beside = args.beside.resolve().as_posix()
     try:
-        chosen = _showroom.variants(args.variants)
+        chosen = _showroom.variants(args.variants, args.grid)
         spec = _showroom.spec(glb.stem, by_label[args.clip], hdri.resolve().as_posix() if hdri.is_file() else "",
                               chosen, beside, _frames.parse_rects(args.beside_rects) if beside else None)
     except ValueError as e:
@@ -100,4 +103,20 @@ def run(args: argparse.Namespace) -> int:
               f"(renderer {record.get('renderer', '?')}, sky {record.get('sky', '?')})")
     for line in table:
         common.say(f"verify: {line}")
+    if beside:
+        labels = {v["id"]: v["label"] for v in chosen}
+        look = look_check(out / "shots", record["variants"], labels, len(spec["beside_rects"]))
+        (out / "look.md").write_text("\n".join(look) + "\n", encoding="utf-8", newline="\n")
+        for line in look:
+            common.say(f"verify: {line}")
     return 0
+
+
+def look_check(shots: Path, ids: list[str], labels: dict[str, str], approved: int) -> list[str]:
+    """The numeric check against Blender: the face measures of the approved crops and of each variant's face shots."""
+    def measures(name: str) -> dict[str, float]:
+        width, height, px = house_bake.read_png(shots / name)
+        return _showroom.face_measures(width, height, px, house_bake.srgb_lab)
+    blender = _showroom.mean_measures([measures(f"approved_{i}.png") for i in range(approved)])
+    rows = [(labels[i], _showroom.mean_measures([measures(f"{i}_face0.png"), measures(f"{i}_face1.png")])) for i in ids]
+    return _showroom.look_table(blender, rows)

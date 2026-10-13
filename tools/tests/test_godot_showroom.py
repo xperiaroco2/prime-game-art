@@ -58,8 +58,103 @@ class SpecTest(unittest.TestCase):
             _showroom.spec("m1", "Idle", "", _showroom.variants(), "C:/a.png", [])
         with self.assertRaisesRegex(ValueError, "no variants"):
             _showroom.spec("m1", "Idle", "", [])
-        with self.assertRaisesRegex(ValueError, "at most 6"):
+        with self.assertRaisesRegex(ValueError, "at most 8"):
             _showroom.spec("m1", "Idle", "", _showroom.variants() * 2)
+
+    def test_tuning_spec_is_wider(self) -> None:
+        s = _showroom.spec("m1", "Idle", "", _showroom.variants("", "tune"), "C:/a.png", _showroom.APPROVED_RECTS)
+        self.assertEqual((s["face_cols"], s["body_cols"]), (6, 4))
+        self.assertEqual(s["variants"][3]["key_color"], _showroom.kelvin_rgb(4000))
+        ladder = _showroom.spec("m1", "Idle", "", _showroom.variants(), "C:/a.png", _showroom.APPROVED_RECTS)
+        self.assertEqual((ladder["face_cols"], ladder["face_cell"], ladder["body_cols"]), (4, [256, 320], 3))
+        self.assertEqual(ladder["variants"][0]["key_color"], [1.0, 1.0, 1.0])
+
+
+class TuningTest(unittest.TestCase):
+    def test_every_tuning_variant_sets_every_key(self) -> None:
+        self.assertLessEqual(len(_showroom.TUNING), _showroom.MAX_VARIANTS)
+        for v in _showroom.TUNING:
+            self.assertEqual(set(v) - {"id", "label"}, set(_showroom.KEYS), v["id"])
+        self.assertEqual(len({v["id"] for v in _showroom.TUNING}), len(_showroom.TUNING))
+
+    def test_the_base_is_variant_4(self) -> None:
+        base = {k: v for k, v in _showroom.TUNING[0].items() if k not in ("id", "label")}
+        self.assertEqual(base, {**_showroom._LIT_STEP1, "ssao": True}, "T1 is step 1's variant 4")
+        self.assertEqual(_showroom.TUNING[1]["catch_size"], _showroom.CATCH_STEP1["catch_size"])
+
+    def test_the_ladder_takes_the_recommendation(self) -> None:
+        four = _showroom.variants("ssao")[0]
+        t3, t6 = _showroom.variants("t3,t6", "tune")
+        for key in ("ambient_energy", "clay_specular", "key_energy", "key_kelvin", "agx_contrast"):
+            self.assertEqual(four[key], t3[key], key)
+        for key in ("eye_roughness", "catch_energy", "catch_size"):
+            self.assertEqual(four[key], t6[key], key)
+        materials = _showroom.presets_document()["materials"]
+        self.assertEqual((materials["clay_metallic_specular"], materials["eye_roughness"]),
+                         (four["clay_specular"], four["eye_roughness"]))
+
+    def test_grids(self) -> None:
+        self.assertEqual([v["id"] for v in _showroom.variants("t2,t1", "tune")], ["t1", "t2"])
+        with self.assertRaisesRegex(ValueError, "unknown grid nope"):
+            _showroom.variants("", "nope")
+        with self.assertRaisesRegex(ValueError, "unknown variants stand"):
+            _showroom.variants("stand", "tune")
+
+
+class ColourTest(unittest.TestCase):
+    def test_kelvin(self) -> None:
+        self.assertEqual(_showroom.kelvin_rgb(0), [1.0, 1.0, 1.0])
+        warm = _showroom.kelvin_rgb(4000)
+        self.assertEqual(warm[0], 1.0)
+        self.assertGreater(warm[1], warm[2])
+        self.assertAlmostEqual(warm[1], 0.81, delta=0.02)
+        self.assertAlmostEqual(warm[2], 0.65, delta=0.02)
+        self.assertLess(_showroom.kelvin_rgb(3500)[2], warm[2], "lower is warmer")
+        day = _showroom.kelvin_rgb(6600)
+        self.assertGreater(min(day), 0.95)
+        self.assertEqual(_showroom.kelvin_rgb(10)[2], 0.0)
+
+    def test_layout(self) -> None:
+        self.assertEqual(_showroom.layout(14, True), (4, list(_showroom.FACE_CELL)))
+        self.assertEqual(_showroom.layout(18, True), (6, list(_showroom.FACE_CELL_WIDE)))
+        self.assertEqual(_showroom.layout(6, False), (3, list(_showroom.BODY_CELL)))
+        self.assertEqual(_showroom.layout(8, False), (4, list(_showroom.BODY_CELL_WIDE)))
+
+
+def lab(r: int, g: int, b: int) -> tuple[float, float, float]:
+    """A stand-in for house_bake.srgb_lab: the tests give CIELAB triples directly as 'pixels'."""
+    return float(r), float(g), float(b)
+
+
+class MeasuresTest(unittest.TestCase):
+    def test_tone(self) -> None:
+        self.assertEqual(_showroom.tone(80.0, 0.5, 1.0), "", "the grey background")
+        self.assertEqual(_showroom.tone(95.0, -1.0, 2.0), "", "an eye white")
+        self.assertEqual(_showroom.tone(45.0, -6.0, 25.0), "", "the olive shirt (hue over 85)")
+        self.assertEqual(_showroom.tone(25.0, 12.0, 20.0), "hair")
+        self.assertEqual(_showroom.tone(58.0, 12.0, 17.0), "hair", "pale but saturated brown")
+        self.assertEqual(_showroom.tone(82.0, 5.0, 9.0), "skin")
+        self.assertEqual(_showroom.tone(60.0, 6.0, 9.0), "skin", "skin in shade: mid and unsaturated")
+
+    def test_face_measures(self) -> None:
+        px = [(90, 4, 8)] * 50 + [(70, 4, 8)] * 50 + [(30, 10, 20)] * 40 + [(80, 0, 0)] * 60
+        m = _showroom.face_measures(len(px), 1, px, lab)
+        self.assertEqual(m["skin_L"], 80.0)
+        self.assertEqual(m["shade"], 20.0)
+        self.assertEqual(m["hair_L"], 30.0)
+        self.assertAlmostEqual(m["skin_C"], 8.9, delta=0.05)
+        few = _showroom.face_measures(10, 1, [(90, 4, 8)] * 10, lab)
+        self.assertNotEqual(few["skin_L"], few["skin_L"], "too few samples: nan")
+
+    def test_table_and_distance(self) -> None:
+        blender = {"skin_L": 80.0, "skin_C": 12.0, "shade": 20.0, "hair_L": 30.0}
+        pale = {"skin_L": 86.0, "skin_C": 8.0, "shade": 10.0, "hair_L": 50.0}
+        self.assertEqual(_showroom.distance(pale, blender), 40.0)
+        self.assertEqual(_showroom.mean_measures([blender, pale]),
+                         {"skin_L": 83.0, "skin_C": 10.0, "shade": 15.0, "hair_L": 40.0})
+        lines = _showroom.look_table(blender, [("T1 base", pale)])
+        self.assertEqual(lines[2], "| Blender (approved) | 80.0 | 12.0 | 20.0 | 30.0 | 0 |")
+        self.assertEqual(lines[3], "| T1 base | 86.0 (+6.0) | 8.0 (-4.0) | 10.0 (-10.0) | 50.0 (+20.0) | 40.0 |")
 
 
 class TableTest(unittest.TestCase):
@@ -92,6 +187,7 @@ class PresetsTest(unittest.TestCase):
         doc = _showroom.presets_document()
         self.assertEqual(next(iter(doc)), "status")
         self.assertTrue(doc["status"].startswith("PROPOSAL, NOT CHOSEN"))
+        self.assertEqual(doc["environment"]["ambient_light_energy"], _showroom.variants("ssao")[0]["ambient_energy"])
 
     def test_docs_name_the_shadow_filter_levels(self) -> None:
         docs = (common.ROOT / "docs" / "godot.md").read_text(encoding="utf-8")
