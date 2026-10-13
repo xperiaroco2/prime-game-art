@@ -218,6 +218,17 @@ class WorldLookBuilderTest(unittest.TestCase):
         self.assertAlmostEqual(STYLE.reach, s["front_thickness_m"] + s["handle_standoff_m"] + s["handle_radius_m"])
         self.assertEqual(prop_geom.Style.from_lib({}), prop_geom.Style())
 
+    def test_the_backsplash_runs_are_exact_tiled_strips(self) -> None:
+        props = {p["id"]: p for p in LIB["prop"]}
+        for pid, length in (("backsplash_l", 2.7), ("backsplash_r", 2.2)):
+            p = props[pid]
+            d = prop_geom.build(p, SPEC, STYLE)
+            self.assertEqual(prop_geom.size_error(d, p), [0.0, 0.0, 0.0], pid)
+            self.assertEqual(d["size_m"][0], length)
+            self.assertEqual(d["roles"], ["steel_warm", "tile_splash"])
+            self.assertEqual((d["colliders"], p["pivot"], _props.prop_layer(LIB, p)), ([], "wall", "base"))
+            self.assertAlmostEqual(d["bounds_m"]["min"][2], 0.0)  # the back on the wall
+
     def test_front_frame(self) -> None:
         rails, (a, b) = prop_geom.front_frame(0.0, 0.5, 0.0, 0.7, 0.003)
         self.assertEqual(len(rails), 4)

@@ -485,6 +485,34 @@ pivot = "floor"
 collision = "box"
 
 [[prop]]
+id = "backsplash_l"
+batch = 1
+name = "Kitchen backsplash, the left north-wall run (2.7 m)"
+class = "room"
+size_m = [2.7, 0.016, 0.558]
+count = 1
+route = "proc"
+shape = "backsplash"  # the world look's tiled strip with a warm steel cap; placed on the worktop line at the wall
+roles = ["tile_splash", "steel_warm"]
+pivot = "wall"
+collision = "none"
+layer = "base"
+
+[[prop]]
+id = "backsplash_r"
+batch = 1
+name = "Kitchen backsplash, the right north-wall run (2.2 m)"
+class = "room"
+size_m = [2.2, 0.016, 0.558]
+count = 1
+route = "proc"
+shape = "backsplash"
+roles = ["tile_splash", "steel_warm"]
+pivot = "wall"
+collision = "none"
+layer = "base"
+
+[[prop]]
 id = "kitchen_upper"
 batch = 1
 name = "Upper kitchen cabinet (per 1 m)"

@@ -1968,6 +1968,14 @@ def build_kitchen_counter(m, s, R, prm, rng):
     tap(m, st, (sx0 + sx1) / 2, -hz + 0.055, H)
 
 
+def build_backsplash(m, s, R, prm, rng):
+    """A tiled wall strip behind a worktop run (the world look; its size: the run's length, the strip with its cap
+    16 mm deep, its height plus the 8 mm cap): authored at the wall, the bottom on the worktop line."""
+    st = _style(prm)
+    L, W, H = s
+    backsplash(m, st, L, H - 0.008, R[0], R[-1])
+
+
 def build_kitchen_upper(m, s, R, prm, rng):
     """A C2-white wall cabinet (per 1 m, wall pivot): carcass, a dark crown, a shelf with plates and glasses behind
     two tinted-glass doors whose handles sit low; everything inside the 0.35 m depth."""
