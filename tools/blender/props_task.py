@@ -493,7 +493,7 @@ def build_board_fine(pc: Piece, p: dict, spec: dict) -> None:
 
 
 def build_island_fine(pc: Piece, p: dict, spec: dict) -> None:
-    """The assembly island in the world look (C2-white): the oiled-wood worktop (60 mm), a wood carcass on the
+    """The assembly island in the world look (C2-white): the oiled-wood worktop (60 mm), a painted (cabinet green) carcass on the
     style's plinth, `doors` bays of a door under a drawer on the front (+Z) and seamed panels on the back, warm steel
     corner guards and a chrome towel bar on the +X end. Fronts and handles end inside the worktop's edge."""
     m = pc.mesh
@@ -502,7 +502,7 @@ def build_island_fine(pc: Piece, p: dict, spec: dict) -> None:
     o, tt = 0.05, 0.06
     zf = d / 2 - st.reach - 0.002  # the fronts' back: the handles end 2 mm inside the worktop's edge
     pg.worktop(m, st, -w / 2, w / 2, -d / 2, d / 2, "worktop_wood", y=h, t=tt)
-    pg.cbox(m, (-w / 2 + o, st.plinth, -zf), (w / 2 - o, h - tt, zf), "wood_front", st.bevel)
+    pg.cbox(m, (-w / 2 + o, st.plinth, -zf), (w / 2 - o, h - tt, zf), "cabinet_green", st.bevel)
     zp = zf + st.front_t - st.plinth_setback
     pg.box(m, (-w / 2 + o + 0.04, 0.0, -zp), (w / 2 - o - 0.04, st.plinth, zp), "rubber_black", "+x-x+z-z")
     n = p.get("doors", 4)
@@ -510,12 +510,12 @@ def build_island_fine(pc: Piece, p: dict, spec: dict) -> None:
     yd = h - tt - 0.165  # the drawers' bottom
     for i in range(n):
         x = -w / 2 + o + 0.02 + i * dw
-        pg.front(m, st, x, x + dw, st.plinth + 0.005, yd - 0.005, zf, "wood_front", i % 2 == 0,
-                 line="wood_front_dark")
-        pg.front(m, st, x, x + dw, yd, h - tt - 0.01, zf, "wood_front", True, "h", line="wood_front_dark")
+        pg.front(m, st, x, x + dw, st.plinth + 0.005, yd - 0.005, zf, "cabinet_green", i % 2 == 0,
+                 line="steel_black")
+        pg.front(m, st, x, x + dw, yd, h - tt - 0.01, zf, "cabinet_green", True, "h", line="steel_black")
         if i < n - 1:  # the back: a seam per bay
             pg.box(m, (x + dw - 0.003, st.plinth + 0.01, -zf - 0.002), (x + dw + 0.003, h - tt - 0.01, -zf),
-                   "wood_front_dark", "-z")
+                   "steel_black", "-z")
     for sx in (-1, 1):
         for sz in (-1, 1):
             x, z = sx * (w / 2 - o), sz * zf
