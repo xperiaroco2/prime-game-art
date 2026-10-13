@@ -117,10 +117,10 @@ The House's sets (written for #118 from the 2026-10-10 builds; a rebuild changes
 | Manifest | Files |
 |---|---|
 | `assets/kit/house_kit/` | the kit v3b's 121 GLBs (with the greenhouse's 5 glass roof pieces, byte-identical in `house/80/kit`) and the shared texture set `textures/set_d.png`, `set_n0.png`, `set_n1.png`, made from 6 ambientCG maps |
-| `assets/prop/house_props/` | `library/` 131 (32 from CC0 packs, named by `source` and `from`), `task/` 34, `zones/` 9 GLBs; they use the kit's texture set |
+| `assets/prop/house_props/` | `library/` 133 (30 from CC0 packs, named by `source` and `from`; #147 rebuilt the kitchen's in C2-white and added `backsplash_l`, `backsplash_r`), `task/` 34, `zones/` 9 GLBs; they use the kit's texture set, the world look's props also the fine pack (#147): `fine/high/` and `fine/low/` `fine_d.png`, `fine_n0.png`, `fine_n1.png`, made from 4 ambientCG maps, with `prop_fine.gdshader`, `prop_fine_high.tres`, `prop_fine_low.tres` |
 | `assets/environment/house_garden/` | the 14 garden plants of `house/80/plants` |
 | `assets/environment/house_outdoor/` | `outdoor.glb`, `backdrop.glb` (the flats embedded) and `sky.png` of `house/81/build` |
-| `assets/room/house_ground/` | package P2's 15 room scenes (`<room>.tscn`, the game's `levels/house/rooms/`) of `house/export/v3/p2` (#124) |
+| `assets/room/house_ground/` | package P2's 15 room scenes (`<room>.tscn`, the game's `levels/house/rooms/`) of `house/export/v4/p2` (#124; re-exported for #147) |
 | `assets/room/house_basement/` | package P3's 8 room scenes of `house/export/v3/p3` (#126) |
 | `assets/room/house_attic/` | package P5's room scene, the attic with the free roof, of `house/export/v3/p5` (#126) |
 | `assets/room/house_upper/` | package P4's 7 room scenes, the second floor with the balcony and its external stairs, of `house/export/v3/p4` (#129) |
@@ -131,7 +131,8 @@ the kit's textures are `textures/set_*.png` and the props `library/`, `task/` an
 `assets/environment/house_kit/` and `house_props/` (the package's `package.json` and the set's `HANDOFF.md` map them;
 `house --package-sheet` stages them by SHA-256). Only what an approved package needs is committed: P1 the whole kit, P2
 its 70 props (#124), P3 and P5 the 34 more they use (#126), P4 10 more (#129), P7 32 more (#128). P1 to P5 and P7 are approved and merged, their manifests' approval fields set: P1 and P2 in #125, P3 and P5
-in #127, P4 in #130, P7 (with the props, the outdoor and garden sets) in #131. A prop id names one game file: the export takes it from
+in #127, P4 in #130, P7 (with the props, the outdoor and garden sets) in #131. #147 changed P2 and the props (the C2-white kitchen, the fine pack): their
+approval fields are empty again until the engineer approves its sheet. A prop id names one game file: the export takes it from
 `house.toml`'s `prop_dirs` in order (the task props first), so of the ids both `task/` and `library/` hold (`boiler`,
 `pump`, ...) only the task prop ships. P7 (#128) adds the zones' props, and 17 basenames repeat between `task/`,
 `library/` and `zones/`: the first source in `prop_dirs`, then `[export.plot]` `prop_src`'s other folders, that holds

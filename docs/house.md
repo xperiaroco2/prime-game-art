@@ -97,7 +97,9 @@ writes the House's game-ready package (prime-game #523) from the same layout dat
   `metadata/size_m = Vector2i(w, d)`, `metadata/art_room` and `wall_paint`; the `Name` `Label3D` (the room's title,
   2.4 m up in its middle, as on the greybox); `Shell` (the room's kit pieces, plus the level scene's stairs and
   railings whose pivot stands in it: the smallest such room of their level, else of the level below; the balcony's
-  flight lands in the yard); `Dressing` and `Fixtures` (prop instances at `res://assets/environment/house_props/...`;
+  flight lands in the yard); `Dressing`, `Detail` (#147: the props of `props/library.toml`'s `detail` layer, its
+  `[layers]` by class, so a graphics preset hides one node; base props stay in `Dressing`; `house_dressing.scene_nodes`)
+  and `Fixtures` (prop instances at `res://assets/environment/house_props/...`;
   the light kit's fixtures as real-time `OmniLight3D` nodes without shadows, a spot as an omni of its range, no moon
   spots: the bake comes later, #83); `Doors`, `Stations`, `Markers` with the game's names and room-local positions;
   `Placeholders` (the layout's, and every dressing prop without a GLB as a `Marker3D` with its size: never CSG).
@@ -128,6 +130,15 @@ writes the House's game-ready package (prime-game #523) from the same layout dat
   with that material and sets the instance parameter `plan_at`: the mesh's origin and turn in the house plan's frame,
   so the shader paints by plan rects wherever the game puts the house. The kit's GLBs stay as they are; the game
   copies the files and loads the scene, nothing to run.
+- The props' fine pack (#147; the world look's `kit_fine` material, `docs/props.md` "World look rules"): a package
+  with a prop holding a `kit_fine` surface also writes `house_props/fine/<tier>/fine_d.png`, `fine_n0.png`,
+  `fine_n1.png` of both tiers from `house.toml` `[export]` `fine_dir` (the raw build's
+  `props/library/v1/textures/fine`; `.import` VRAM compressed with mipmaps), `house_props/prop_fine.gdshader` (a copy
+  of `godot/props/prop_fine.gdshader`; `tools/tests/test_house_layers.py` fails when the committed copy drifts) and
+  `prop_fine_high.tres`, `prop_fine_low.tres` (`house_export.fine_material_text`: the shader, the tier's textures, the
+  layers' roughness, metallic, normal strength and gain). Each such prop instance in a room overrides its `kit_fine`
+  surfaces with `prop_fine_<fine_tier>.tres` (`fine_tier = "high"`; `house_export.set_surfaces` reads them from the
+  GLB). The game swaps the tier per graphics preset (P2's `HANDOFF.md`).
 - `package.json`: the package, its rooms, every file's SHA-256, the props still held as markers, the level pieces in
   no room, the kit pieces' surfaces and the questions for the game side (the package's lamp count, and that the
   game's editor regenerates the minimal `.import` files). Files already in `DIR` that the package does not list (an
@@ -171,7 +182,8 @@ A package goes to the game from git, not from the raw build (#124): its files ar
 the room scenes of a package in their own `room` set, P2's in `assets/room/house_ground/`), with the package's
 `package.json` beside the manifest that owns it and a `HANDOFF.md` for the game's import task (what to copy where,
 the credits entries, the open questions). P1 to P5 and P7 are approved and merged, their manifests' approval fields set: P1 and P2 in #125, P3 and P5
-in #127, P4 in #130, P7 (with the props, the outdoor and garden sets) in #131. The engineer approves the look from
+in #127, P4 in #130, P7 (with the props, the outdoor and garden sets) in #131; #147 changed P2 and the props (the
+C2-white kitchen, the fine pack, the Detail node), so their approval fields wait again. The engineer approves the look from
 
 ```
 tools/run.sh house --package-sheet DIR --package N
