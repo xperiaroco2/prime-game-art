@@ -31,7 +31,9 @@ Every room's props follow these rules; the numbers are data in `props/library.to
    drawer front, raised panel or framed glass, with its handle and hinges), `bar_handle`, `plinth`, `worktop`,
    `backsplash`, `burner` and `burner_grate`, `tap`, `rslab` (soft vertical edges). Fronts and handles stay inside
    `size_m`; a builder may name its own collider boxes (the stove's body and hood leave the gap over the hob open).
-   The kitchen's `kitchen_counter` (with `sink`), `kitchen_upper`, `stove` and `fridge` are built from them.
+   The kitchen's `kitchen_counter` (with `sink`), `kitchen_upper`, `stove`, `fridge` and the backsplash runs
+   (`backsplash_l`, `backsplash_r`: shape `backsplash`, wall pivot, no collider) are built from them; so are the
+   task props `assembly_island` and `order_board` (`props/tasks.toml`, `look = "fine"`).
 8. **Route.** Hard-surface props are code (the shared builders, `prop_geom.py`'s `Style`). Meshy only for organic
    one-offs (food, soft goods, plants) at a hero budget, as a recorded batch (`docs/meshy.md`).
 
@@ -75,10 +77,15 @@ Every value is the engineer's to change (sizes, paints, mounts), as data:
 - `materials.surface_game`: the game's writable surface, a material of its own that only the boards and the computer
   use.
 - `roles`: the prop paints (a material and a hex colour each).
+- `library`: the dressing library (`props/library.toml`) whose fine pack, fine-pack paints and `[style]` join the
+  spec, for the props in the world look ("World look rules"); a fine paint may not share a name with a kit or prop
+  role.
 - `[[props]]`: `id`, `type` (the builder), `kind` (the budget), `w`, `d`, `h` (the built bounds, width along X,
   depth along Z, height along Y, within 1 cm), `chain`, `station` (the game's marker under `Stations`), `room`,
   `count`, and per type: `mount` (`wall`, `floor`, `post`, `stand`, `table`), `surface`, `nodes`, `board`, `style`,
-  `plan_size` (the plan's size where a stand or fitting adds to it) and `notes`.
+  `plan_size` (the plan's size where a stand or fitting adds to it) and `notes`; `look = "fine"` builds the prop
+  with its type's fine builder (`props_task.FINE_BUILDERS`: `board` on a stand, `island`) on the library's fine pack,
+  and `check_spec` refuses it for a type without one or a spec without `library`.
 
 ### Conventions
 
@@ -237,12 +244,19 @@ library order cut into 4 sheets (`_props.sheet_plan`), on each sheet tallest fir
 1.8 m capsule and labelled with the ids, shot orthographic from the front-right and above, the kit's set shader on
 the `kit_set` surfaces and a small warm light at each LightAnchor. Out: `DIR/lineup_<n>.png` (1280 px wide) and
 `DIR/lineup.json` (the rows and the anchors Godot found). Review pictures only: the raw GLBs are not committed.
+The line-up puts the fine pack's ShaderMaterial (`godot/props/prop_materials.gd`, the High tier) on the `kit_fine`
+surfaces.
+
+`--fine-compare DIR` (with `--build`) runs `godot/props/fine_check.gd` headless on the built props: per prop its
+surfaces, images and texture bytes, that every `kit_fine` surface gets the same shared texture resources, and the
+fine textures' memory per tier (BPTC with mipmaps); DIR holds GLBs to measure against (the kitchen pilot's), compared
+prop by prop. Out: `<out>/fine_check.json`.
 
 ### The command
 
 ```
 tools/run.sh props-library [--measure] [--table FILE] [--build [--batch N] [--only IDS] [--out DIR] [--no-blender]
-                  [--no-godot] [--sheets DIR]]
+                  [--no-godot] [--sheets DIR] [--fine-compare DIR]]
 ```
 
 It checks the mapping file (no raw file needed); `--measure` reads every pack file in `<raw>/env` again (a pure

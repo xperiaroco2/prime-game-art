@@ -55,6 +55,23 @@ copies (+112 MB of texture memory for the kitchen).
    hero budget, as a recorded batch: the pilot's Meshy stove needed scale, pivot and collider work, carried its own
    2K texture and broke up at the clutter budget.
 
+## Measured (#143)
+
+`props-library --build --only fridge,stove,kitchen_counter,kitchen_sink,kitchen_upper --fine-compare <lab C2w GLBs>`
+runs `godot/props/fine_check.gd` headless in Godot 4.7.2 (`<raw>/review/house/143/fine_check.json`):
+
+| | the lab's C2w GLBs | the repo (fine pack) |
+|---|---|---|
+| surfaces of the five props (a draw call each per view) | 38 (7 to 8 per prop) | 7 (1 per prop, 2 with glass: the uppers and the stove) |
+| texture memory | 69.3 MB embedded in the five GLBs (RGBA8 with mipmaps; +112 MB for the whole pilot kitchen) | 4.0 MB High (1024 px) or 1.0 MB Low (512 px), BPTC with mipmaps, for the whole house |
+| textures shared | no: each GLB its own copies | yes: every `kit_fine` surface has the same three image resources |
+
+The lab counted 141-142 draw calls for the whole kitchen view (with the walls, the dressing and the lights); the
+five props' share drops from 38 surfaces to 7 per placement, so the kitchen's count falls by about 31 per set of
+the five. The task props `assembly_island` (1,210 triangles, `room`) and `order_board` (734, `hero`) are on the
+fine pack too, with the game surface as the board's second surface. The plain enamel fridge is 1,296 triangles,
+under the brief's "about 1,500": the hero class's floor is 1,200 so it fits without padding.
+
 ## Consequences
 
 - New rooms reuse the `[style]`, the fine pack's roles and the shared builders; a taste change is a hex, a layer
