@@ -91,8 +91,11 @@ own plaster, so the colour stays and the textures are new).
   `candle_jars`, `coffee_books`, `deco_bowl`, `deco_vase`, `floor_plant` (its pot the only collider), `game_console`,
   `laptop`, `side_lamp`, `slippers`, `table_plant`. Only `living_room.tscn` changed among the room scenes. The 16 new
   GLBs and the two replaced ones add 0.57 MB of LFS objects.
-- **LFS.** #150 adds 11.8 MB of LFS objects: the 16 GLBs (0.79 MB, the 10 replaced weighed 0.57 MB) and the 6 new PNGs
-  (11.0 MB).
+- **LFS.** #150 adds 12.4 MB of LFS objects: round 1's 16 GLBs (6 new, 10 rebuilt; 0.79 MB, the 10 replaced weighed
+  0.57 MB) and 6 new PNGs (11.0 MB), round 2's 16 new GLBs and the re-coloured sofa and armchair (0.57 MB). P2 now
+  places 93 props (72 on main: the 22 new ones joined, `book_row` left).
+- **Standing frame (#150).** The side table's frame moved 1 cm inward onto the round top (1.74, 0.7, 13.0); only
+  `living_room.tscn` and `package.json` changed, re-exported into review/house/150c/export/p2.
 
 ## Credits
 The entries are `assets/kit/house_kit/CREDITS.md` and `assets/prop/house_props/CREDITS.md` in this repo (the game's

@@ -867,7 +867,7 @@ metadata/prop = "standing_frame"
 surface_material_override/0 = ExtResource("11")
 
 [node name="standing_frame_3" parent="Detail" instance=ExtResource("47")]
-transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 1.75, 0.7, 12.98)
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 1.74, 0.7, 13)
 metadata/prop = "standing_frame"
 
 [node name="standing_frame" parent="Detail/standing_frame_3"]
