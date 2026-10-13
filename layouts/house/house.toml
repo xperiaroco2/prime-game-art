@@ -11,9 +11,8 @@ levels = ["basement", "ground", "upper", "attic"]
 # its size and pivot (later files win); the raw folders its GLB is looked for in, in order; its res:// path when staged.
 dressing_dir = "dressing"
 prop_specs = ["props/tasks.toml", "props/library.toml"]
-# #150: the living room's rebuilt and detail props come from their review build until the manager moves them into
-# a library version (the raw v1 is not overwritten without the engineer's yes); every other prop from v1.
-prop_dirs = ["props/task/v1", "review/house/150/build", "props/library/v1"]
+# #150: library v2 is v1 with the living room's rebuilt and detail props laid over it (v1 is never overwritten).
+prop_dirs = ["props/task/v1", "props/library/v2"]
 prop_res = "res://import/prop_{id}.glb"
 # Per-room wall paint (Q11 = B, the engineer 2026-10-10; look.md section 4): the inner plaster's colour per room id; a
 # room not listed keeps the kit's (role wall_int, #3a6264). Teal is the base, oxblood the bedrooms, ink-blue only the
@@ -45,7 +44,7 @@ label = { h = 2.4, font_size = 72, outline_size = 16 }  # the room's Name label,
 # The world look's fine pack (#143, #147; docs/props.md "World look rules"): its build (fine.json and one texture
 # folder per tier) under the raw folder; a package with a prop on it ships house_props/fine/<tier>/, the shader and
 # one material per tier; the room scenes put `fine_tier`'s material on the props' kit_fine surfaces.
-fine_dir = "review/house/150/build/textures/fine"  # #150: the eight-slot pack (v1 holds the four-slot one)
+fine_dir = "props/library/v2/textures/fine"  # #150: the eight-slot pack (v1 holds the four-slot one)
 fine_tier = "high"
 
 # Footstep surfaces (art #122; the game's FootstepSurface, its ARCHITECTURE 4.7.40): the kit pieces a player walks on,

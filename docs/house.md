@@ -134,8 +134,8 @@ writes the House's game-ready package (prime-game #523) from the same layout dat
   with a prop holding a `kit_fine` surface also writes `house_props/fine/<tier>/fine_d.png`, `fine_n0.png`,
   `fine_n1.png` (and `fine_d1.png`, `fine_n2.png`, `fine_n3.png` when the build's textured layers need them: #150)
   of both tiers from `house.toml` `[export]` `fine_dir` (#147: the raw build's `props/library/v1/textures/fine`;
-  since #150 `review/house/150/build/textures/fine`, the build with the living room's soft layers, whose 16 props
-  `prop_dirs` also takes first, before `props/library/v1`, until the manager moves that build into a library version;
+  since #150 `props/library/v2/textures/fine`: library v2 is v1 with the living room's 16 rebuilt props and their
+  eight-slot fine pack laid over it, and `prop_dirs` names v2; v1 stays the approved version-1 build;
   `.import` VRAM compressed with mipmaps), `house_props/prop_fine.gdshader` (a copy
   of `godot/props/prop_fine.gdshader`; `tools/tests/test_house_layers.py` fails when the committed copy drifts) and
   `prop_fine_high.tres`, `prop_fine_low.tres` (`house_export.fine_material_text`: the shader, the tier's textures, the

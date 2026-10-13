@@ -161,7 +161,7 @@ Art #87 (map request #73) makes one shared library of generic props (furniture, 
 things) so that every room package places furniture instead of making it. Task props (#82a, #82b), the car and its
 lift (#79), vegetation (#80), the gazebo (#81b) and kit pieces are made elsewhere; `[skip]` in the mapping file names
 who makes each. The plan is `D:/prime-art-raw/research/2026-10-10-house-plan/` (`props.md`, `inventory.md` §9,
-`look.md` §5 and §6). The GLBs stay in the raw folder (`D:/prime-art-raw/props/library/v1/`) until the engineer
+`look.md` §5 and §6). The GLBs stay in the raw folder (`D:/prime-art-raw/props/library/v2/`; v1 is the version-1 build, #150) until the engineer
 approves the look on a review page; then they come into the repo under `assets/prop/<id>/` with their manifests.
 
 ### The mapping file: `props/library.toml`
@@ -212,7 +212,7 @@ clutter of art #104 and its story pieces: `laundry_basket`, `drying_rack`, `open
 ### The build
 
 `tools/run.sh props-library --build [--batch 1|2] [--only id,...]` builds the props in one headless Blender run
-(`tools/blender/prop_build.py`) into `D:/prime-art-raw/props/library/v1/`: one `<id>.glb` per prop, `textures/`
+(`tools/blender/prop_build.py`) into the mapping file's `out`, `D:/prime-art-raw/props/library/v2/`: one `<id>.glb` per prop, `textures/`
 (the kit's detail maps), `build.json` (what each GLB holds; batches accumulate) and `props.md` (the build table); then
 it checks every GLB: the mesh and collider nodes, UV2 and vertex colours, at most `max_materials` materials all named
 `-vcol`, glTF-Validator, the class's maximum triangles, a collider unless `none`, a fixture's light anchor. Under the

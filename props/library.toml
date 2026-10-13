@@ -5,9 +5,10 @@
 # Paints and shapes are taste data: changing a hex or a prop's roles needs no code change.
 
 library = "house"
-version = 1
+version = 2
 kit_spec = "kits/house.json"
-out = "props/library/v1"  # under the raw folder: D:/prime-art-raw/props/library/v1/<id>.glb
+out = "props/library/v2"  # under the raw folder: D:/prime-art-raw/props/library/v2/<id>.glb (v2, #150: v1 with the
+# living room's 16 rebuilt props and the eight-slot fine pack laid over it; v1 stays the approved version-1 build)
 review = "review/house/87"  # line-up sheets, under the raw folder
 licences = ["CC0-1.0"]
 max_materials = 8

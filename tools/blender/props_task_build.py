@@ -33,7 +33,7 @@ def main():
     only = {s for s in a["only"].split(",") if s}
     kit_build.clear_scene(bpy)
     # the kit's materials; with the spec's library, the world look's fine pack as one `kit_fine-vcol` (its shared
-    # textures are the library's, props/library/v1/textures/fine/, mapped by name in Godot: none are written here)
+    # textures are the library's, props/library/v2/textures/fine/, mapped by name in Godot: none are written here)
     mats, textures = prop_lib.materials(bpy, np, spec, Path(a["ambientcg"]), out)
     mats[props_task.SURFACE_MATERIAL].name = f"{props_task.SURFACE_MATERIAL}-vcol"
     for name, m in spec["materials"].items():  # an emissive material (props/zones.toml: bulbs, candles, embers)
