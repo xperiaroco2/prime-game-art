@@ -258,28 +258,49 @@ def distance(m: dict[str, float], ref: dict[str, float]) -> float:
 
 
 def pixel_change(a: list[tuple[int, int, int]], b: list[tuple[int, int, int]], width: int, skip_rows: int = 0,
-                 tolerance: int = 2) -> float:
+                 tolerance: int = 2, only: list[int] | None = None) -> float:
     """The share (0 to 1) of pixels, below the first skip_rows rows (the label strip), whose channels differ by more
-    than tolerance between two shots of the same size: did a setting reach the frame?"""
+    than tolerance between two shots of the same size: did a setting reach the frame? With `only` (pixel indices, such
+    as skin_pixels'), the share of those pixels alone."""
     if len(a) != len(b):
         raise ValueError(f"shots of {len(a)} and {len(b)} pixels")
     start = skip_rows * width
-    if start >= len(a):
+    indices = range(start, len(a)) if only is None else [i for i in only if start <= i < len(a)]
+    if not indices:
         return 0.0
-    changed = sum(1 for p, q in zip(a[start:], b[start:])
-                  if max(abs(p[0] - q[0]), abs(p[1] - q[1]), abs(p[2] - q[2])) > tolerance)
-    return changed / (len(a) - start)
+    changed = sum(1 for i in indices
+                  if max(abs(a[i][0] - b[i][0]), abs(a[i][1] - b[i][1]), abs(a[i][2] - b[i][2])) > tolerance)
+    return changed / len(indices)
+
+
+def skin_pixels(width: int, height: int, px: list[tuple[int, int, int]], lab, grid: int = 320) -> list[int]:
+    """The indices of a face shot's skin pixels (tone 'skin', as face_measures counts them) on a grid of about `grid`
+    pixels across: the face region whose change pixel_change measures apart from the hair, shirt and background."""
+    step = max(1, width // grid)
+    return [y * width + x for y in range(step // 2, height, step) for x in range(step // 2, width, step)
+            if tone(*lab(*px[y * width + x])) == "skin"]
 
 
 LABEL_ROWS = 60  # a shot's label strip (font 34 at y 8): not counted by pixel_change
 NO_OP = 0.005  # under half a percent of the pixels changed: the variant's setting did not reach the frame
 
 
-def change_table(rows: list[tuple[str, str, float]]) -> list[str]:
-    """A markdown table of each variant's pixel change against its parent (label, parent label, share), no-ops named."""
-    lines = ["| Variant | Against | Pixels changed | Reaches the frame |", "|---|---|---:|---|"]
-    for label, parent, share in rows:
-        lines.append(f"| {label} | {parent} | {100 * share:.1f} % | {'no: a no-op' if share < NO_OP else 'yes'} |")
+def change_table(rows: list[tuple[str, str, list[float]]]) -> list[str]:
+    """A markdown table of each variant's pixel change against its parent, per shot: the skin of the face front and
+    three-quarter shots, then the whole body shot (label, parent label, [face0 skin, face1 skin, body]). A variant
+    reaches the face when either face shot's skin changes by NO_OP or more; one that changes only the body is named
+    so, one that changes neither is a no-op."""
+    lines = ["| Variant | Against | Face front skin | Face 3/4 skin | Body shot | Reaches the face |",
+             "|---|---|---:|---:|---:|---|"]
+    for label, parent, (face0, face1, body) in rows:
+        if max(face0, face1) >= NO_OP:
+            verdict = "yes"
+        elif body >= NO_OP:
+            verdict = "no: the body only"
+        else:
+            verdict = "no: a no-op"
+        cells = " | ".join(f"{100 * v:.1f} %" for v in (face0, face1, body))
+        lines.append(f"| {label} | {parent} | {cells} | {verdict} |")
     return lines
 
 
@@ -318,7 +339,7 @@ LOOK_ENVIRONMENT = {
     "why": "half the ambient from the sky, half a dark warm colour (step 3's W3): the face 4 L* darker, warmer and "
            "better shaded, the closest single change; at ambient_light_sky_contribution 1.0 Godot ignores "
            "ambient_light_energy and ambient_light_color (step 2's T2 changed nothing), and the sky's "
-           "energy_multiplier at 0.5 (W2) moved no face number",
+           "energy_multiplier at 0.5 (W2) did not reach the face's skin (a no-op for the face)",
 }
 LOOK_LIGHTS = {
     "key": {"type": "DirectionalLight3D", "energy": 2.0, "specular": 0.6, "shadow": True},

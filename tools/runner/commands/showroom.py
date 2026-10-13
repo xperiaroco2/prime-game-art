@@ -121,15 +121,17 @@ def run(args: argparse.Namespace) -> int:
 
 
 def change_check(shots: Path, parents: list[tuple[str, str]], labels: dict[str, str]) -> list[str]:
-    """Each variant's pixel change against its parent over its three shots (face front and 3/4, body)."""
+    """Each variant's pixel change against its parent per shot: the face shots' skin (the parent's skin pixels) and
+    the whole body shot, so the body's floor and shirt cannot hide a change that misses the face."""
     rows = []
     for child, parent in parents:
         shares = []
         for shot in ("face0", "face1", "body"):
-            width, _, a = house_bake.read_png(shots / f"{child}_{shot}.png")
+            width, height, a = house_bake.read_png(shots / f"{child}_{shot}.png")
             _, _, b = house_bake.read_png(shots / f"{parent}_{shot}.png")
-            shares.append(_showroom.pixel_change(a, b, width, _showroom.LABEL_ROWS))
-        rows.append((labels[child], labels[parent], sum(shares) / len(shares)))
+            only = _showroom.skin_pixels(width, height, b, house_bake.srgb_lab) if shot != "body" else None
+            shares.append(_showroom.pixel_change(a, b, width, _showroom.LABEL_ROWS, only=only))
+        rows.append((labels[child], labels[parent], shares))
     return _showroom.change_table(rows)
 
 

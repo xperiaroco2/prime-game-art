@@ -344,26 +344,32 @@ What it shows:
 
 `showroom --grid warm --beside <approved sheet>` (`_showroom.WARM`) renders eight variants on step 2's ladder
 variant 5 (soft shadows, SSAO, the clay's specular 0.1, the eye glint: the closest measured, 15.9), each named by what
-it changes and naming its `parent`. For such a grid the command also writes `change.md`: per variant the share of
-pixels (below the label strip, over its three shots) whose channels differ by more than 2 of 255 from its parent's;
-under 0.5 % it is reported as **a no-op**, not as a finding (step 2's T2 was one). Sheets and tables:
+it changes and naming its `parent`. For such a grid the command also writes `change.md`: per variant and per shot
+the share of pixels (below the label strip) whose channels differ by more than 2 of 255 from its parent's, in the two
+face shots counted over the parent's skin pixels alone (`_showroom.skin_pixels`, the pixels the numeric check calls
+skin), in the body shot over all. A variant whose face skin changes under 0.5 % in both face shots does **not reach
+the face**: "the body only" when the body shot changes, else **a no-op**; either is reported as such, not as a finding
+(step 2's T2 was a no-op). The shots are reported apart because the body shot's floor and background change with
+settings that miss the face (W2 below: 89 % of the body shot, 0.1 % of the face's skin). Sheets and tables:
 `D:/prime-art-raw/review/char/140c/warm/`; the ladder rerun with the recommendation: `.../140c/ladder/`.
 
-| Shots | skin L* | skin C* | shade | hair L* | distance | changed vs parent | GPU ms |
+| Shots | skin L* | skin C* | shade | hair L* | distance | face skin changed (front, 3/4) vs parent | GPU ms |
 |---|---:|---:|---:|---:|---:|---:|---:|
 | Blender (approved) | 66.7 | 12.8 | 23.8 | 28.6 | 0 | | |
 | W1 base: 5 soft shadows | 73.7 (+7.0) | 11.7 (-1.1) | 19.6 (-4.2) | 25.0 (-3.6) | 15.9 | | 3.63 |
-| W2 sky energy x0.5 | 73.7 (+7.0) | 11.7 (-1.1) | 19.6 (-4.2) | 25.0 (-3.6) | 15.9 | 30.3 % (W1) | 3.63 |
-| W3 sky share 0.5, warm amb. | 69.7 (+3.0) | 13.1 (+0.3) | 22.2 (-1.6) | 22.9 (-5.7) | **10.6** | 80.8 % (W1) | 3.62 |
-| W4 fill 0.12 | 72.8 (+6.1) | 11.9 (-0.9) | 20.5 (-3.3) | 24.4 (-4.2) | 14.5 | 15.3 % (W1) | 3.63 |
-| W5 exp. 0.8, key 4000K x2.5 | 76.2 (+9.5) | 10.8 (-2.0) | 13.2 (-10.6) | 26.6 (-2.0) | 24.1 | 100 % (W1) | 3.63 |
-| W6 W3+W4+W5 | 74.8 (+8.1) | 12.4 (-0.4) | 10.0 (-13.8) | 26.7 (-1.9) | 24.2 | 80.7 % (W5) | 3.62 |
-| W7 W6 sky share 0.25 | 74.7 (+8.0) | 13.2 (+0.4) | 8.2 (-15.6) | 26.8 (-1.8) | 25.8 | 79.3 % (W6) | 3.62 |
-| W8 W6 Low: hard, no SSAO | 74.8 (+8.1) | 12.9 (+0.1) | 10.0 (-13.8) | 26.2 (-2.4) | 24.4 | 11.7 % (W6) | 0.92 |
+| W2 sky energy x0.5 | 73.7 (+7.0) | 11.7 (-1.1) | 19.6 (-4.2) | 25.0 (-3.6) | 15.9 | 0.0 %, 0.1 % (W1): **not the face** | 3.63 |
+| W3 sky share 0.5, warm amb. | 69.7 (+3.0) | 13.1 (+0.3) | 22.2 (-1.6) | 22.9 (-5.7) | **10.6** | 100 %, 100 % (W1) | 3.62 |
+| W4 fill 0.12 | 72.8 (+6.1) | 11.9 (-0.9) | 20.5 (-3.3) | 24.4 (-4.2) | 14.5 | 52.1 %, 16.4 % (W1) | 3.63 |
+| W5 exp. 0.8, key 4000K x2.5 | 76.2 (+9.5) | 10.8 (-2.0) | 13.2 (-10.6) | 26.6 (-2.0) | 24.1 | 100 %, 100 % (W1) | 3.63 |
+| W6 W3+W4+W5 | 74.8 (+8.1) | 12.4 (-0.4) | 10.0 (-13.8) | 26.7 (-1.9) | 24.2 | 100 %, 100 % (W5) | 3.62 |
+| W7 W6 sky share 0.25 | 74.7 (+8.0) | 13.2 (+0.4) | 8.2 (-15.6) | 26.8 (-1.8) | 25.8 | 99.7 %, 100 % (W6) | 3.62 |
+| W8 W6 Low: hard, no SSAO | 74.8 (+8.1) | 12.9 (+0.1) | 10.0 (-13.8) | 26.2 (-2.4) | 24.4 | 13.6 %, 9.1 % (W6) | 0.92 |
 
 What it shows:
-- **Every setting reached the frame** (no no-op). The sky's `energy_multiplier` at 0.5 (W2) changes 30 % of the
-  pixels a little and no face number: the sky's ambient barely lights this face; halving its share does.
+- **W2 does not reach the face.** The sky's `energy_multiplier` at 0.5 changes 89 % of the body shot's pixels
+  but 0.0 and 0.1 % of the face's skin, and no face number: for the face it is a no-op, not
+  a finding. Why the multiplier misses the face's skin while halving the sky's share (W3) darkens it by 4 L* this grid
+  does not show. Every other variant reaches the face.
 - **The sky's ambient share is the lever** (W3): `ambient_light_sky_contribution` 0.5 with a dark warm colour
   (1.0, 0.8, 0.62) at energy 0.12 brings the skin 4 L* darker, its chroma to Blender's and its shading up by 2.6. A
   weaker fill (W4, 0.35 to 0.12) adds a little shading.

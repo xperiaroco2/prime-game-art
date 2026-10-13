@@ -6,7 +6,7 @@ from __future__ import annotations
 import json
 import unittest
 
-from runner import common
+from runner import common, house_bake
 from runner.commands import _showroom
 
 
@@ -194,10 +194,29 @@ class WarmTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "shots of 8 and 2 pixels"):
             _showroom.pixel_change(a, a[:2], 2)
 
+    def test_pixel_change_only(self) -> None:
+        a = [(10, 10, 10)] * 8
+        b = [(10, 10, 10)] * 4 + [(10, 12, 10), (10, 13, 10), (0, 0, 0), (10, 10, 10)]
+        self.assertEqual(_showroom.pixel_change(a, b, 2, only=[0, 1, 2, 7]), 0.0, "the change outside is not counted")
+        self.assertEqual(_showroom.pixel_change(a, b, 2, only=[5, 6]), 1.0)
+        self.assertEqual(_showroom.pixel_change(a, b, 2, skip_rows=3, only=[1, 6, 7]), 0.5, "the label rows are skipped")
+        self.assertEqual(_showroom.pixel_change(a, b, 2, only=[]), 0.0)
+
+    def test_skin_pixels(self) -> None:
+        skin, grey = (200, 160, 130), (128, 128, 128)
+        px = [skin, grey, grey, skin]
+        lab = house_bake.srgb_lab
+        self.assertEqual(_showroom.tone(*lab(*skin)), "skin")
+        self.assertEqual(_showroom.skin_pixels(2, 2, px, lab), [0, 3])
+
     def test_change_table(self) -> None:
-        lines = _showroom.change_table([("W2 sky", "W1 base", 0.004), ("W3 share", "W1 base", 0.42)])
-        self.assertEqual(lines[2], "| W2 sky | W1 base | 0.4 % | no: a no-op |")
-        self.assertEqual(lines[3], "| W3 share | W1 base | 42.0 % | yes |")
+        lines = _showroom.change_table([("W2 sky", "W1 base", [0.0, 0.004, 0.89]),
+                                        ("W3 share", "W1 base", [0.42, 0.40, 0.81]),
+                                        ("W9 none", "W1 base", [0.0, 0.0, 0.001])])
+        self.assertEqual(lines[0], "| Variant | Against | Face front skin | Face 3/4 skin | Body shot | Reaches the face |")
+        self.assertEqual(lines[2], "| W2 sky | W1 base | 0.0 % | 0.4 % | 89.0 % | no: the body only |")
+        self.assertEqual(lines[3], "| W3 share | W1 base | 42.0 % | 40.0 % | 81.0 % | yes |")
+        self.assertEqual(lines[4], "| W9 none | W1 base | 0.0 % | 0.0 % | 0.1 % | no: a no-op |")
 
 
 class TableTest(unittest.TestCase):

@@ -15,7 +15,7 @@
   ],
   "ambient_light_sky_contribution": 0.5,
   "reflected_light_source": "REFLECTION_SOURCE_SKY",
-  "why": "half the ambient from the sky, half a dark warm colour (step 3's W3): the face 4 L* darker, warmer and better shaded, the closest single change; at ambient_light_sky_contribution 1.0 Godot ignores ambient_light_energy and ambient_light_color (step 2's T2 changed nothing), and the sky's energy_multiplier at 0.5 (W2) moved no face number"
+  "why": "half the ambient from the sky, half a dark warm colour (step 3's W3): the face 4 L* darker, warmer and better shaded, the closest single change; at ambient_light_sky_contribution 1.0 Godot ignores ambient_light_energy and ambient_light_color (step 2's T2 changed nothing), and the sky's energy_multiplier at 0.5 (W2) did not reach the face's skin (a no-op for the face)"
  },
  "lights": {
   "key": {
