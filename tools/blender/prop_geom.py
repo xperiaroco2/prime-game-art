@@ -2382,6 +2382,114 @@ def build_carpet_rug(m, s, R, prm, rng):
                 z += 0.045
 
 
+# ---- The living room's detail layer (#150): the small things on its tables, mantel and floor (class clutter).
+
+def build_living_tray(m, s, R, prm, rng):
+    """A low oak tray with two pillar candles and a stoneware bowl, a TV remote lying beside it at +x."""
+    L, W, H = s
+    hz, x0 = W / 2, -L / 2
+    x1 = L / 2 - 0.075  # the tray's east edge; the remote lies past it
+    box(m, (x0, 0, -hz), (x1, 0.008, hz), "worktop_wood")
+    for a, b, c, d in ((x0, x1, -hz, -hz + 0.01), (x0, x1, hz - 0.01, hz), (x0, x0 + 0.01, -hz + 0.01, hz - 0.01),
+                       (x1 - 0.01, x1, -hz + 0.01, hz - 0.01)):
+        box(m, (a, 0.008, c), (b, 0.032, d), "worktop_wood", "+x-x+y+z-z")
+    for cx, cz, r, h in ((x0 + 0.06, -0.04, 0.034, H - 0.006), (x0 + 0.13, 0.045, 0.03, H * 0.68)):
+        cyl(m, "y", (cx, cz), r, 0.008, h, "enamel_cream", 14)
+        cyl(m, "y", (cx, cz), 0.0025, h, h + 0.006, "steel_black", 4)
+    cyl(m, "y", (x1 - 0.08, 0.0), 0.035, 0.008, 0.055, "stone_dark", 14, r1=0.06, caps=(True, False))
+    cyl(m, "y", (x1 - 0.08, 0.0), 0.05, 0.02, 0.05, "stone_light", 14, r1=0.055, caps=(True, False))
+    rx0, rx1 = L / 2 - 0.05, L / 2
+    cbox(m, (rx0, 0, -0.085), (rx1, 0.018, 0.085), "rubber_black", 0.006)
+    box(m, (rx0 + 0.016, 0.018, -0.07), (rx0 + 0.034, 0.021, -0.055), "paint_red", "+y+x-x+z-z")
+    for k in range(4):
+        z = -0.035 + k * 0.03
+        box(m, (rx0 + 0.01, 0.018, z), (rx1 - 0.01, 0.0205, z + 0.018), "steel_black", "+y+x-x+z-z")
+
+
+def build_magazine_fan(m, s, R, prm, rng):
+    """Four magazines fanned out on a table: glossy covers of different colours over cream page edges."""
+    L, W, H = s
+    covers = [r for r in R if r.startswith("book_")] or ["book_red"]
+    w, d, t = L - 0.09, W - 0.06, H / 4
+    for k in range(4):
+        x, z, y = -L / 2 + k * 0.03, -W / 2 + k * 0.02, k * t
+        box(m, (x, y, z), (x + w, y + t * 0.75, z + d), "book_cream", "+x-x+z-z-y")
+        box(m, (x, y + t * 0.75, z), (x + w, y + t, z + d), covers[(k * 3 + 1) % len(covers)])
+        box(m, (x + 0.02, y + t, z + 0.02), (x + w * 0.6, y + t + 0.0005, z + 0.05), "book_cream", "+y")
+
+
+def build_mantel_clock(m, s, R, prm, rng):
+    """A mantel clock: a walnut case on a stepped plinth, a round enamel dial in a brass bezel, black hands."""
+    L, W, H = s
+    hx, hz = L / 2, W / 2
+    cbox(m, (-hx, 0, -hz), (hx, 0.025, hz), "wood_front_dark", 0.005)
+    cbox(m, (-hx + 0.02, 0.025, -hz + 0.01), (hx - 0.02, H * 0.55, hz - 0.01), "wood_front_dark", 0.006)
+    r = min(hx - 0.03, H * 0.42)
+    yc = H - r - 0.004
+    cyl(m, "z", (0.0, yc), r, -hz + 0.01, hz - 0.012, "wood_front_dark", 16)
+    tube(m, "z", (0.0, yc), r * 0.78, r * 0.9, hz - 0.012, hz - 0.002, "steel_warm", 12)
+    cyl(m, "z", (0.0, yc), r * 0.78, hz - 0.012, hz - 0.008, "enamel_white", 16, caps=(False, True))
+    box(m, (-0.003, yc, hz - 0.008), (0.003, yc + r * 0.55, hz - 0.006), "steel_black", "+z")
+    box(m, (0.0, yc - 0.003, hz - 0.007), (r * 0.42, yc + 0.003, hz - 0.005), "steel_black", "+z")
+    for k in range(12):
+        a = math.radians(30 * k)
+        x, y = math.sin(a) * r * 0.66, yc + math.cos(a) * r * 0.66
+        box(m, (x - 0.003, y - 0.003, hz - 0.008), (x + 0.003, y + 0.003, hz - 0.0065), "steel_black", "+z")
+
+
+def build_standing_frame(m, s, R, prm, rng):
+    """A small photo frame standing on its strut: an oak frame, a cream mat and a landscape photo in two bands."""
+    L, W, H = s
+    hx, f, t = L / 2, 0.018, 0.014
+    z1 = W / 2
+    z0 = z1 - t
+    for lo, hi in (((-hx, 0, z0), (hx, f, z1)), ((-hx, H - f, z0), (hx, H, z1)),
+                   ((-hx, f, z0), (-hx + f, H - f, z1)), ((hx - f, f, z0), (hx, H - f, z1))):
+        box(m, lo, hi, "worktop_wood")
+    box(m, (-hx + f, f, z0 + 0.002), (hx - f, H - f, z1 - 0.004), "book_cream")
+    m2 = 0.02
+    box(m, (-hx + f + m2, f + m2, z1 - 0.004), (hx - f - m2, (H - f) * 0.55, z1 - 0.0035), "book_sage", "+z")
+    box(m, (-hx + f + m2, (H - f) * 0.55, z1 - 0.004), (hx - f - m2, H - f - m2, z1 - 0.0035), "book_teal", "+z")
+    rod(m, (0.0, 0.0, -W / 2), (0.0, H * 0.6, z0), 0.004, "wood_front_dark", 4)
+
+
+def build_throw_basket(m, s, R, prm, rng):
+    """A woven basket of oak bands with a cream throw folded into it, one fold hanging over its front rim."""
+    L, W, H = s
+    hx, hz = L / 2, W / 2
+    hb = H * 0.62  # the basket's rim
+    box(m, (-hx + 0.01, 0, -hz + 0.01), (hx - 0.01, 0.015, hz - 0.01), "wood_front_dark")
+    n = 5
+    for k in range(n):
+        y0, y1 = 0.01 + k * (hb - 0.01) / n, 0.01 + (k + 1) * (hb - 0.01) / n
+        role = "worktop_wood" if k % 2 == 0 else "wood_front"
+        inset = 0.0 if k % 2 == 0 else 0.004
+        for lo, hi in (((-hx + inset, y0, -hz + inset), (hx - inset, y1, -hz + 0.012)),
+                       ((-hx + inset, y0, hz - 0.012), (hx - inset, y1, hz - inset)),
+                       ((-hx + inset, y0, -hz + 0.012), (-hx + 0.012, y1, hz - 0.012)),
+                       ((hx - 0.012, y0, -hz + 0.012), (hx - inset, y1, hz - 0.012))):
+            box(m, lo, hi, role, "+x-x+y+z-z")
+    box(m, (-hx + 0.02, hb - 0.03, -hz + 0.02), (hx - 0.02, hb, hz - 0.02), "throw_cream", "+y")
+    for dx, y0, y1 in ((0.0, hb, hb + 0.07), (0.02, hb + 0.07, hb + 0.13)):
+        box(m, (-hx + 0.04 + dx, y0, -hz + 0.035), (hx - 0.05 + dx, y1, hz - 0.01), "throw_cream", "+x-x+z-z")
+    cushion(m, (-hx + 0.025, hb + 0.13, -hz + 0.035), (hx - 0.065, H, hz - 0.01), "throw_cream", 0.025)
+    cushion(m, (-hx + 0.08, hb * 0.35, hz - 0.012), (hx - 0.1, hb + 0.02, hz), "throw_cream", 0.004)
+
+
+def build_candle_pair(m, s, R, prm, rng):
+    """Two brass candlesticks of different heights with cream taper candles."""
+    L, W, H = s
+    for x, h in ((-L / 2 + 0.05, H - 0.004), (L / 2 - 0.05, H * 0.8)):
+        stick = h - 0.16
+        cyl(m, "y", (x, 0.0), 0.045, 0.0, 0.012, "steel_warm", 12)
+        cyl(m, "y", (x, 0.0), 0.03, 0.012, 0.03, "steel_warm", 12, r1=0.012, caps=(False, False))
+        cyl(m, "y", (x, 0.0), 0.009, 0.03, stick - 0.02, "steel_warm", 6)
+        cyl(m, "y", (x, 0.0), 0.012, stick - 0.04, stick - 0.03, "steel_warm", 8)
+        cyl(m, "y", (x, 0.0), 0.012, stick - 0.02, stick, "steel_warm", 10, r1=0.022)
+        cyl(m, "y", (x, 0.0), 0.011, stick, h - 0.008, "enamel_cream", 8, r1=0.009)
+        cyl(m, "y", (x, 0.0), 0.002, h - 0.008, h, "steel_black", 3)
+
+
 BUILDERS = {name[6:]: fn for name, fn in dict(globals()).items() if name.startswith("build_") and callable(fn)}
 
 

@@ -2119,3 +2119,83 @@ shape = "radiator"
 roles = ["cream", "metal_grey"]
 pivot = "wall"
 collision = "box"
+
+# The living room's detail layer in the world look (#150): small things on its tables, mantel and floor, on the fine
+# pack; class clutter, so they sit in the rooms' Detail node and a graphics preset can hide them.
+[[prop]]
+id = "living_tray"
+batch = 1
+name = "Tray with candles and a remote"
+class = "clutter"
+size_m = [0.42, 0.26, 0.14]
+count = 1
+route = "proc"
+shape = "living_tray"
+roles = ["worktop_wood", "enamel_cream", "stone_dark", "stone_light", "rubber_black", "steel_black", "paint_red"]
+pivot = "floor"
+collision = "none"
+
+[[prop]]
+id = "magazine_fan"
+batch = 1
+name = "Fanned magazines"
+class = "clutter"
+size_m = [0.32, 0.3, 0.024]
+count = 1
+route = "proc"
+shape = "magazine_fan"
+roles = ["book_teal", "book_mustard", "book_red", "book_navy", "book_cream"]
+pivot = "floor"
+collision = "none"
+
+[[prop]]
+id = "mantel_clock"
+batch = 1
+name = "Mantel clock"
+class = "clutter"
+size_m = [0.26, 0.1, 0.24]
+count = 1
+route = "proc"
+shape = "mantel_clock"
+roles = ["wood_front_dark", "steel_warm", "enamel_white", "steel_black"]
+pivot = "floor"
+collision = "none"
+
+[[prop]]
+id = "standing_frame"
+batch = 1
+name = "Standing photo frame"
+class = "clutter"
+size_m = [0.18, 0.08, 0.23]
+count = 3
+route = "proc"
+shape = "standing_frame"
+roles = ["worktop_wood", "book_cream", "book_sage", "book_teal", "wood_front_dark"]
+pivot = "floor"
+collision = "none"
+
+[[prop]]
+id = "throw_basket"
+batch = 1
+name = "Basket with a folded throw"
+class = "clutter"
+size_m = [0.44, 0.34, 0.46]
+count = 1
+route = "proc"
+shape = "throw_basket"
+roles = ["worktop_wood", "wood_front", "wood_front_dark", "throw_cream"]
+pivot = "floor"
+collision = "none"
+
+[[prop]]
+id = "candle_pair"
+batch = 1
+name = "Pair of brass candlesticks"
+class = "clutter"
+size_m = [0.2, 0.09, 0.32]
+count = 2
+route = "proc"
+shape = "candle_pair"
+roles = ["steel_warm", "enamel_cream", "steel_black"]
+pivot = "floor"
+collision = "none"
