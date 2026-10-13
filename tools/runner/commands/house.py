@@ -129,7 +129,7 @@ def run(args: argparse.Namespace) -> int:
         from . import _house_review
         return _house_review.run(args.package_sheet.resolve(), args.package,
                                  house_export.settings(data).get("kit_families", {"kit": ["*"]}),
-                                 extra=_house_review.views(data))
+                                 extra=_house_review.views(data), ctx=_house_review.context(data))
     planned = house_layout.plan(data)
     if args.export and (args.props_dir or args.props_map or args.before):
         raise common.Failure("--props-dir, --props-map and --before are for --bake, not --export")
