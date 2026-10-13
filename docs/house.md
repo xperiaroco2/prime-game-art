@@ -199,10 +199,10 @@ the attic's roof is its own; areas such as the yard get none). They come from th
 (the same SHA-256 rule; a room in no package, such as the garage, is named and skipped), join the tile at their plan
 offsets with their lights and labels off, so a room is still lit only by its own fixtures, and are left out of its
 draw calls: the `.json` gives them as `context_draw_calls` (and their rooms as `context`), counted in the shot frame
-after the room's own count. A view's `with` rooms stay its own. A package alone has
-no plot round it, so the roof views look out into the review ambient. Each tile's title sits in a dark box, bottom left in a room tile (clear of the room's own
-`Name` label near the top) and top left in a kit tile; the `.json` gives per tile its draw calls (the box counts as
-one). The outdoor rooms of P2 (yard, street, path, ...) carry only markers and lamps: their ground is the plot,
+after the room's own count. A view's `with` rooms stay its own. A package alone has no plot round it, so the roof
+views look out into the review ambient. Each tile's title sits in a dark box, bottom left in a room tile (clear of
+the room's own `Name` label near the top) and top left in a kit tile; the `.json` gives per tile its draw calls (the
+box counts as one). The outdoor rooms of P2 (yard, street, path, ...) carry only markers and lamps: their ground is the plot,
 package 7.
 
 Package 7 (#128) adds the plot scene `levels/house/outdoor.tscn` (`tools/runner/house_export_plot.py`; root `Outdoor`

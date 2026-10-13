@@ -73,7 +73,8 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
                              "export folder into DIR/_check/sheet.png")
     parser.add_argument("--package-sheet", type=Path, metavar="DIR",
                         help="with --package N: stage package N from the committed files under assets/ into DIR and "
-                             "shoot its look-approval sheet off-screen (the kit's families or each room from its door)")
+                             "shoot its look-approval sheet off-screen (the kit's families or each room from its door, its neighbours' walls and "
+                             "the slab over it staged round it as unlit context)")
     parser.add_argument("--basement", type=Path, metavar="DIR",
                         help="stage and import like --walk, then light the basement with lamp stand-ins and shoot its "
                              "review into DIR (basement_review.toml; sheet.png, a still per room, basement.json)")
