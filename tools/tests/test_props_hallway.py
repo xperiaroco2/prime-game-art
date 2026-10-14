@@ -92,6 +92,10 @@ class HallwayPropsTest(unittest.TestCase):
             if "size" in item:
                 L, W, H = item["size"]
                 built = {"bounds_m": {"min": [-L / 2, 0.0, -W / 2], "max": [L / 2, H, W / 2]}}
+            elif "shape" not in BY_ID.get(item["id"], {"shape": ""}):  # a pack prop: its box from size_m
+                x, y, z = _props.size_xyz(BY_ID[item["id"]]["size_m"])
+                z0 = 0.0 if BY_ID[item["id"]].get("pivot") == "wall" else -z / 2
+                built = {"bounds_m": {"min": [-x / 2, 0.0, z0], "max": [x / 2, y, z0 + z]}}
             else:
                 built = cls.built.get(item["id"]) or _build(item["id"])
             cls.placed.append((item, built, _footprint(item, built)))
