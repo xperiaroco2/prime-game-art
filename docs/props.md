@@ -148,6 +148,23 @@ Every room's props follow these rules; the numbers are data in `props/library.to
    dressing, never clutter. `tools/tests/test_props_basement.py` checks the pieces' size against `size_m`, pivot,
    budget and collider, 0.3 m around every station and spawn, the task props, the doors' openings, the counts and
    the `Name` label (in no piece and on no light fixture).
+   The plant rooms, the passage and the darkroom's island (#172, library v13) finish the basement in the same
+   rules. The generator hall keeps the Generator and its station point clear inside `floor_gen_zone` (yellow and
+   black keep-clear blocks); round it `cable_tray` runs and `isolator`s on the walls, the `control_desk` (three
+   screens, a phone, a logbook), `drum_bund` and `drum_bund_b` (drums on yellow spill bunds), `fire_point`
+   (extinguishers, a fire blanket, a sand bucket), `tool_chest`, `parts_shelving` (the generator's spares) and
+   `gen_log` (the daily check board with a burger doodle). The boiler room: `wall_boiler`, `hw_cylinder`,
+   `insulated_pipes`, `valve_panel`, `expansion_vessel`, `water_softener` and `mop_sink`. The pump room: `pump_set`
+   and `pump_set_b` on plinths, `sump_cover`, `wall_hose_reel` and `pump_chart`. The switch room: `elec_cabinet`,
+   `elec_cabinet_b`, `meter_panel`, `switch_mat`, `first_aid_box` and `lectern` (the logbook). The darkroom's island:
+   `dev_bench` (trays, tongs, a timer) and `cutting_table` (a trimmer and party prints) with stools. The signs
+   `sign_ear`, `sign_volt`, `sign_no_smoking`, `sign_generator`, `sign_plant`, `sign_first_aid`, `sign_boiler`,
+   `sign_pump` and `sign_switch` are clutter, the detail layer, so the base layer reads clean on Low. The boiler
+   room's and the switch room's bare bulbs are `fluorescent_tube` fixtures now. The six rooms are hand-placed
+   (`layouts/house/dressing/{generator_hall,boiler_room,pump_room,switch_room,passage,darkroom}.toml`; the clutter
+   rules of the five plant rooms are empty), never emptier than before (142, 107, 72, 60, 46 and 99 props, main 140,
+   105, 71, 60, 45 and 93), and nothing derelict stays (no pipe runs, jerrycans, barrels, crates, cardboard boxes or
+   metal shelving). `tools/tests/test_props_basement.py` checks all eight rooms the same way.
 8. **Route.** Hard-surface props are code (the shared builders, `prop_geom.py`'s `Style`). Meshy only for organic
    one-offs (food, soft goods, plants) at a hero budget, as a recorded batch (`docs/meshy.md`).
 
@@ -266,7 +283,8 @@ Art #87 (map request #73) makes one shared library of generic props (furniture, 
 things) so that every room package places furniture instead of making it. Task props (#82a, #82b), the car and its
 lift (#79), vegetation (#80), the gazebo (#81b) and kit pieces are made elsewhere; `[skip]` in the mapping file names
 who makes each. The plan is `D:/prime-art-raw/research/2026-10-10-house-plan/` (`props.md`, `inventory.md` §9,
-`look.md` §5 and §6). The GLBs stay in the raw folder (`D:/prime-art-raw/props/library/v12/`: v11 with
+`look.md` §5 and §6). The GLBs stay in the raw folder (`D:/prime-art-raw/props/library/v13/`: v12 with
+#172's plant rooms and the darkroom's island; v12 v11 with
 #170's basement working rooms; v11 v10 with #168's attic; v10 v9 with #166's kids' room and study; v9 v8 with #164's bedroom and guest room; v8 v7 with #162's rebuilt landing runner; v7 v6 with #162's landing and bathroom built over it; v6 v5 with #158's WC, pantry and stairs; v5 v4 with #156's hallway; v4 v3 with #153's dining room; v3 is v2 with #152's
 cream sofa and armchairs, v2 v1 with #150's living room, v1 the version-1 build) until the engineer approves the look
 on a review page; then they come into the repo under `assets/prop/<id>/` with their manifests.
@@ -320,7 +338,7 @@ clutter of art #104 and its story pieces: `laundry_basket`, `drying_rack`, `open
 
 `tools/run.sh props-library --build [--batch 1|2] [--only id,...]` builds the props in one headless Blender run
 (`tools/blender/prop_build.py`) into the mapping file's `out`,
-`D:/prime-art-raw/props/library/v12/`: one `<id>.glb` per prop, `textures/`
+`D:/prime-art-raw/props/library/v13/`: one `<id>.glb` per prop, `textures/`
 (the kit's detail maps), `build.json` (what each GLB holds; batches accumulate) and `props.md` (the build table); then
 it checks every GLB: the mesh and collider nodes, UV2 and vertex colours, at most `max_materials` materials all named
 `-vcol`, glTF-Validator, the class's maximum triangles, a collider unless `none`, a fixture's light anchor. Under the
