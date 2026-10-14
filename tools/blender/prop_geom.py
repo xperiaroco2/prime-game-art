@@ -5499,11 +5499,12 @@ def build_isolator(m, s, R, prm, rng):
     L, W, H = s
     hz = W / 2
     bh = 0.3
-    cbox(m, (-0.13, 0.0, -hz), (0.13, bh, hz - 0.01), "metal_grey", 0.01)
-    box(m, (-0.08, 0.09, hz - 0.01), (0.08, 0.25, hz - 0.004), "safety_yellow", "+z")
-    cyl(m, "z", (0.0, 0.17), 0.045, hz - 0.004, hz + 0.01, "steel_black", 10)
-    bar(m, (-0.07, 0.17, hz + 0.02), (0.07, 0.17, hz + 0.02), 0.025, "paint_red", h=0.02, ref=(0, 0, 1))
-    _text(m, "OFF  ON", -0.12, 0.12, 0.05, hz - 0.004, 0.03, "steel_black")
+    f = hz - 0.035  # the box's front: the plate, the hub and the handle stay inside the depth W
+    cbox(m, (-L / 2 + 0.01, 0.0, -hz), (L / 2 - 0.01, bh, f), "metal_grey", 0.01)
+    box(m, (-0.08, 0.09, f), (0.08, 0.25, f + 0.006), "safety_yellow", "+z")
+    cyl(m, "z", (0.0, 0.17), 0.045, f + 0.006, f + 0.02, "steel_black", 10)
+    bar(m, (-0.07, 0.17, f + 0.025), (0.07, 0.17, f + 0.025), 0.025, "paint_red", h=0.02, ref=(0, 0, 1))
+    _text(m, "OFF  ON", -0.12, 0.12, 0.05, f + 0.006, 0.03, "steel_black")
     for x in (-L / 2 + 0.06, L / 2 - 0.06):
         cyl(m, "y", (x * 0.5, -hz + 0.03), 0.014, bh, H, "steel_warm", 8)
 
@@ -5600,7 +5601,7 @@ def build_fire_point(m, s, R, prm, rng):
     extinguisher and a black-banded CO2 one on brackets, a fire blanket pouch and a red sand bucket on a hook."""
     L, W, H = s
     hx, hz = L / 2, W / 2
-    b0 = 0.25
+    b0 = 0.0  # the board to the floor: the piece stands at its size from h 0
     box(m, (-hx, b0, -hz), (hx, H, -hz + 0.02), "enamel_white")
     box(m, (-hx, H - 0.2, -hz + 0.02), (hx, H, -hz + 0.024), "paint_red", "+z")
     _text(m, "FIRE POINT", -hx + 0.05, hx - 0.05, H - 0.1, -hz + 0.025, 0.11, "art_white")
@@ -5737,7 +5738,7 @@ def build_hw_cylinder(m, s, R, prm, rng):
     """A hot-water cylinder: a white insulated body with a domed top on a black stand, a label plate and a
     temperature gauge, a red immersion heater cap, steel pipes out of its side with valves, a blue cold inlet."""
     L, W, H = s
-    r = min(L, W) / 2 - 0.06
+    r = min(L, W) / 2 - 0.03
     box(m, (-r, 0.0, -r), (r, 0.12, r), "steel_black")
     cyl(m, "y", (0.0, 0.0), r, 0.12, H - 0.2, "enamel_white", 16)
     blob(m, (0.0, H - 0.2, 0.0), r, 0.14, r, "enamel_white", 16, 3, floor=H - 0.2)
@@ -6033,12 +6034,14 @@ def build_lectern(m, s, R, prm, rng):
     """A steel lectern with the room's logbook open on its sloped top (the reader at +z): a base plate, a square
     post, a book ledge and a pen on a chain."""
     L, W, H = s
+    H -= 0.02  # the slope's top edge: the book and the pen on it reach the full height
     hx, hz = L / 2, W / 2
     box(m, (-0.22, 0.0, -0.2), (0.22, 0.02, 0.2), "steel_black")
     box(m, (-0.04, 0.02, -0.04), (0.04, H - 0.18, 0.04), "steel_black")
-    bar(m, (0.0, H - 0.2, hz - 0.03), (0.0, H - 0.02, -hz + 0.03), L, "steel_black", h=0.025, ref=(1, 0, 0))
     ang = math.atan2(0.18, W - 0.06)
     ny, nz = math.cos(ang), math.sin(ang)
+    # the sloped slabs lie flat on the slope: their width along x (the slope's direction x its normal)
+    bar(m, (0.0, H - 0.2, hz - 0.03), (0.0, H - 0.02, -hz + 0.03), L, "steel_black", h=0.025, ref=(0, ny, nz))
 
     def on(x, t, lift):
         z = hz - 0.03 - t * (W - 0.06)
@@ -6047,13 +6050,13 @@ def build_lectern(m, s, R, prm, rng):
     for x0, x1 in ((-hx + 0.04, -0.005), (0.005, hx - 0.04)):
         a, b = on(x0, 0.12, 0.004), on(x1, 0.9, 0.012)
         bar(m, ((x0 + x1) / 2, a[1], a[2]), ((x0 + x1) / 2, b[1], b[2]), x1 - x0, "art_white", h=0.012,
-            ref=(1, 0, 0))
+            ref=(0, ny, nz))
         for k in range(5):
             t = 0.25 + k * 0.12
             c0, c1 = on(x0 + 0.03, t, 0.019), on(x1 - 0.03, t, 0.019)
             bar(m, c0, c1, 0.006, "metal_dark", h=0.001, ref=(0, ny, nz))
     a, b = on(0.0, 0.1, 0.0), on(0.0, 0.95, 0.0)
-    bar(m, (0.0, a[1], a[2]), (0.0, b[1], b[2]), L - 0.04, "book_navy", h=0.008, ref=(1, 0, 0))
+    bar(m, (0.0, a[1], a[2]), (0.0, b[1], b[2]), L - 0.04, "book_navy", h=0.008, ref=(0, ny, nz))
     bar(m, (-hx + 0.02, H - 0.2, hz - 0.01), (hx - 0.02, H - 0.2, hz - 0.01), 0.03, "steel_black", h=0.04,
         ref=(0, 1, 0))
     rod(m, on(hx - 0.06, 0.95, 0.03), on(hx - 0.1, 0.5, 0.03), 0.006, "paint_blue")
