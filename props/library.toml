@@ -7,9 +7,11 @@
 library = "house"
 version = 4
 kit_spec = "kits/house.json"
-out = "props/library/v4"  # under the raw folder: D:/prime-art-raw/props/library/v4/<id>.glb (v4, #153: v3 with the dining room's props laid over it; v3, #152: v2 with the cream
-# sofa and armchairs rebuilt over it; v2, #150: v1 with the living room's 16 rebuilt props and the eight-slot fine pack
-# laid over it; v1 stays the approved version-1 build; no folder is ever overwritten)
+# the build goes under the raw folder: D:/prime-art-raw/props/library/v4/<id>.glb (v4, #153: v3 with the dining
+# room's props laid over it; v3, #152: v2 with the cream sofa and armchairs rebuilt over it; v2, #150: v1 with the
+# living room's 16 rebuilt props and the eight-slot fine pack laid over it; v1 stays the approved version-1 build;
+# no folder is ever overwritten)
+out = "props/library/v4"
 review = "review/house/87"  # line-up sheets, under the raw folder
 licences = ["CC0-1.0"]
 max_materials = 8
