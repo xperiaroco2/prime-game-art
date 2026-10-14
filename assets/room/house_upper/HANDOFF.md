@@ -47,6 +47,11 @@ tier, the shader, the two `.tres`; one copy per game, P2's `HANDOFF.md`). Every 
 node beside `Dressing` and `Fixtures` (empty here until a room's detail pass). The approval fields wait for the
 engineer's yes.
 
+## The engineer's paints of 2026-10-14 (#152)
+
+The landing is warm greige `#d9d1c5` (it was teal) and every ceiling warm sand `#d8c7b4` (P1's rebuilt pieces); the
+armchair is cream `#e4d9c6`. Changed: `landing.tscn`, `kit_set.tres` and `package.json`.
+
 ## Credits
 As P2: the entries `assets/kit/house_kit/CREDITS.md` and `assets/prop/house_props/CREDITS.md` (copy them to
 `docs/credits/house_kit.md` and `house_props.md`); own work, the props from

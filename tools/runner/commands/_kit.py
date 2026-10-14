@@ -59,7 +59,7 @@ def lineup_groups(pieces: list[dict[str, Any]]) -> list[list]:
 def default_out(spec: dict[str, Any]) -> Path:
     """A kit's build folder: <raw>/kits/<kit>/v<version>; for the House kit the House layout's `kit_dir`
     (layouts/house/house.toml, the one setting `house`, `attic`, `zones`, `outdoor` and `garden` read) while it names a
-    build of the spec's version (v3 or v3b for version 3), so a plain `kit` rebuilds the folder the map uses."""
+    build of the spec's version (v3, v3b or v3c for version 3), so a plain `kit` rebuilds the folder the map uses."""
     if spec["kit"] == "house" and HOUSE_SETTINGS.is_file():
         with HOUSE_SETTINGS.open("rb") as f:
             kit_dir = tomllib.load(f).get("kit_dir", "")

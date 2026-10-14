@@ -1,8 +1,9 @@
 # The house generator's settings (art #75, docs/house.md). One file per level beside this one.
 # The kit: its spec in the repo and its GLBs under the raw folder (kit v3: the 0.35 roof pitch, #77; v2 #86; v1's ids are kept).
-# v3b: #77's full v3 build in its own folder (v3/ holds a stale in-between build of #77, left untouched); a plain `kit` builds here.
+# v3b: #77's full v3 build in its own folder (v3/ holds a stale in-between build of #77, left untouched).
+# v3c (#152): v3b with the pieces the warm sand ceiling (#D8C7B4) changes rebuilt over it; a plain `kit` builds here.
 kit_spec = "kits/house.json"
-kit_dir = "kits/house/v3b"
+kit_dir = "kits/house/v3c"
 # Where the generated scenes find a piece and each other inside the godot/ project (godot/import/ is ignored).
 kit_res = "res://import/kit_{id}.glb"
 scene_res = "res://import/house"
@@ -11,21 +12,24 @@ levels = ["basement", "ground", "upper", "attic"]
 # its size and pivot (later files win); the raw folders its GLB is looked for in, in order; its res:// path when staged.
 dressing_dir = "dressing"
 prop_specs = ["props/tasks.toml", "props/library.toml"]
-# #150: library v2 is v1 with the living room's rebuilt and detail props laid over it (v1 is never overwritten).
-prop_dirs = ["props/task/v1", "props/library/v2"]
+# #150: library v2 is v1 with the living room's rebuilt and detail props laid over it (v1 is never overwritten);
+# #152: library v3 is v2 with the cream sofa and armchairs rebuilt over it (v2 is never overwritten).
+prop_dirs = ["props/task/v1", "props/library/v3"]
 prop_res = "res://import/prop_{id}.glb"
-# Per-room wall paint (Q11 = B, the engineer 2026-10-10; look.md section 4): the inner plaster's colour per room id; a
-# room not listed keeps the kit's (role wall_int, #3a6264). Teal is the base, oxblood the bedrooms, ink-blue only the
-# study; the garage is a neutral concrete grey (the basement's walls are the kit's concrete already). The lab's rule:
-# the biggest plane in a frame is never amber. The scene writer puts it on the room's root (`metadata/wall_paint`);
+# Per-room wall paint (the engineer's choice of 2026-10-14, #152; before it Q11 = B of 2026-10-10, look.md section 4):
+# the inner plaster's colour per room id; a room not listed keeps the kit's (role wall_int, #3a6264). The living room
+# is terracotta on every wall; the kitchen, hallway, dining room, stairs and landing a warm greige (they were teal);
+# oxblood the bedrooms, ink-blue only the study; the garage is a neutral concrete grey (the basement's walls are the
+# kit's concrete already). Under every room the kit's ceiling is warm sand (#152). The lab's rule: the biggest plane
+# in a frame is never amber. The scene writer puts it on the room's root (`metadata/wall_paint`);
 # the kit's material (godot/kit/kit_materials.gd `paint`) recolours that room's inner plaster.
 [wall_paint]
-kitchen = "#3a6264"
-hallway = "#3a6264"
-living_room = "#3a6264"
-dining_room = "#3a6264"
-stairs = "#3a6264"
-landing = "#3a6264"
+kitchen = "#d9d1c5"
+hallway = "#d9d1c5"
+living_room = "#a3533b"
+dining_room = "#d9d1c5"
+stairs = "#d9d1c5"
+landing = "#d9d1c5"
 bedroom = "#69413c"
 guest_room = "#69413c"
 study = "#1f2a48"
@@ -44,7 +48,7 @@ label = { h = 2.4, font_size = 72, outline_size = 16 }  # the room's Name label,
 # The world look's fine pack (#143, #147; docs/props.md "World look rules"): its build (fine.json and one texture
 # folder per tier) under the raw folder; a package with a prop on it ships house_props/fine/<tier>/, the shader and
 # one material per tier; the room scenes put `fine_tier`'s material on the props' kit_fine surfaces.
-fine_dir = "props/library/v2/textures/fine"  # #150: the eight-slot pack (v1 holds the four-slot one)
+fine_dir = "props/library/v3/textures/fine"  # #150: the eight-slot pack (v1 holds the four-slot one); v3 (#152) the same bytes
 fine_tier = "high"
 
 # Footstep surfaces (art #122; the game's FootstepSurface, its ARCHITECTURE 4.7.40): the kit pieces a player walks on,
@@ -204,7 +208,7 @@ files = ["*.glb"]
 [export.plot]
 scene = "levels/house/outdoor.tscn"
 garden = "house/80/build/garden.json"
-prop_src = { tasks = "props/task/v1", library = "props/library/v2", "#87" = "props/library/v2", zones = "props/zones/v1" }
+prop_src = { tasks = "props/task/v1", library = "props/library/v3", "#87" = "props/library/v3", zones = "props/zones/v1" }
 # The zones' generic plants (`#87` bush and garden_tree, no library GLB) as the garden's plants (house_garden).
 plants = { bush = "bush_boxwood", garden_tree = "garden_tree_apple" }
 

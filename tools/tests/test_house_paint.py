@@ -1,13 +1,17 @@
 """The House's per-room wall paint (Q11 = B, docs/house.md "Wall paint"): house.toml's [wall_paint], its checks, the
 room scenes' metadata and what the kit's material gets (house_layout.paint_request, kit_materials.gd `paint`)."""
 import copy
+import json
 import tempfile
+import tomllib
 import unittest
 from pathlib import Path
 
 from runner import house_layout as hl
 
 TEAL, OXBLOOD, INK = "#3a6264", "#69413c", "#1f2a48"
+TERRACOTTA, GREIGE = "#a3533b", "#d9d1c5"  # #152
+SAND, CREAM = "#d8c7b4", "#e4d9c6"  # #152: the ceiling, the sofa body
 
 
 class WallPaintTest(unittest.TestCase):
@@ -15,10 +19,13 @@ class WallPaintTest(unittest.TestCase):
     def setUpClass(cls):
         cls.data = hl.load(hl.LAYOUT_DIR)
 
-    def test_q11_b(self):
+    def test_the_engineers_paints(self):
+        """Q11 B's per-room paint with the engineer's choice of 2026-10-14 (#152) over its teal base."""
         paint = self.data["settings"]["wall_paint"]
-        for rid in ("kitchen", "hallway", "living_room", "dining_room", "landing", "stairs"):
-            self.assertEqual(paint[rid], TEAL, rid)
+        self.assertEqual(paint["living_room"], TERRACOTTA)
+        for rid in ("kitchen", "hallway", "dining_room", "landing", "stairs"):
+            self.assertEqual(paint[rid], GREIGE, rid)
+        self.assertNotIn(TEAL, paint.values())
         self.assertEqual(paint["bedroom"], OXBLOOD)
         self.assertEqual(paint["guest_room"], OXBLOOD)
         self.assertEqual([r for r, h in paint.items() if h == INK], ["study"])
@@ -34,11 +41,19 @@ class WallPaintTest(unittest.TestCase):
         self.assertIn("terrace is open", problems)
         self.assertTrue(any("wall_paint" in p for p in hl.validate(bad)))
 
+    def test_ceiling_and_sofa_colours(self):
+        """#152: the warm sand ceiling (the kit's `ceiling` role) and the cream sofa body (`upholstery_warm`)."""
+        root = Path(__file__).resolve().parents[2]
+        kit = json.loads((root / "kits" / "house.json").read_text(encoding="utf-8"))
+        self.assertEqual(kit["roles"]["ceiling"]["hex"].lower(), SAND)
+        lib = tomllib.loads((root / "props" / "library.toml").read_text(encoding="utf-8"))
+        self.assertEqual(lib["roles"]["upholstery_warm"]["hex"].lower(), CREAM)
+
     def test_request(self):
         req = hl.paint_request(self.data)
         self.assertEqual(req["kit_hex"], TEAL)
         rooms = {r["room"]: r for r in req["rooms"]}
-        self.assertEqual(rooms["kitchen"]["to"], req["from"])  # teal is the kit's paint
+        self.assertNotEqual(rooms["kitchen"]["to"], req["from"])  # greige over the kit's teal (#152)
         self.assertNotEqual(rooms["bedroom"]["to"], req["from"])
         study = next(r for lv in self.data["levels"] for r in lv["rooms"] if r["id"] == "study")
         x, y, w, d = study["rect"]
