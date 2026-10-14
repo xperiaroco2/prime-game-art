@@ -205,8 +205,14 @@ def export(data: dict, lights: dict, planned: dict, dressing: dict, args: argpar
         from .. import house_attic
         dressing = dict(dressing, attic=house_export.attic_dressing(house_attic.load("attic")))
     try:
-        summary = house_export.write(data, planned, dressing, fixtures, args.export, common.raw_dir(),
-                                     prop_glbs(data, dressing), args.package)
+        glbs = prop_glbs(data, dressing)
+        ex = house_export.settings(data)
+        merge = None if args.no_merge else merger(  # the merged shell and batched dressing ship in the package (#107)
+            data, glbs, Path(args.export) / "_build" / "merged",
+            house_export.asset_res(data, ex["kit_set"], f"{house_export.MERGED_DIR}/{{id}}"),
+            house_export.asset_res(data, ex["prop_set"], f"{house_export.MERGED_DIR}/{{id}}"))
+        summary = house_export.write(data, planned, dressing, fixtures, args.export, common.raw_dir(), glbs,
+                                     args.package, merge)
     except ValueError as e:
         raise common.Failure(f"house export: {e}") from e
     glbs = sum(1 for f in summary["files"] if f.endswith(".glb"))
@@ -334,7 +340,8 @@ def prop_glbs(data: dict, dressing: dict) -> dict:
     return found
 
 
-def merger(data: dict, found: dict | None = None):
+def merger(data: dict, found: dict | None = None, out: Path | None = None, kit_res: str | None = None,
+           prop_res: str | None = None):
     """The merged shell's callable for house_layout.write_scenes (#107), or None without the kit's pieces.json: per room
     the static kit pieces (not house.toml's [merge] keep, which the game moves or opens) of each class (floor_*,
     ceiling_*, the rest: shell) merged into one GLB (house_merge.merge) under _house_bake.MERGED, named
@@ -343,13 +350,18 @@ def merger(data: dict, found: dict | None = None):
     Its `batch` (the batched dressing, #107): per room and group (Dressing, Detail, Fixtures) the static props (found:
     prop id -> GLB; not a station, not house.toml's [merge] keep_props) merged into one GLB batch_<level>_<room>_<group>
     (one surface per material, staged as prop_<name>, which Godot unwraps for the bake like any prop); each prop
-    instance stays with its colliders, name and metadata, its visual nodes hidden."""
+    instance stays with its colliders, name and metadata, its visual nodes hidden.
+    `out`, `kit_res` and `prop_res` (the export's, #107) put the GLBs elsewhere and name their res:// paths ({id}: the
+    GLB's stem); the callable's `files` maps each written GLB's stem to its path. A batch's "add" entries carry the
+    stem as a third item (house_dressing.scene_nodes' overrides key)."""
     kit = common.raw_dir() / data["settings"]["kit_dir"]
     if not (kit / "pieces.json").is_file():
         return None
     uv2 = house_bake.uv2_table(json.loads((kit / "pieces.json").read_text(encoding="utf-8")))
     keep = set(data["settings"].get("merge", {}).get("keep", []))
-    out = _house_bake.MERGED
+    out = Path(out) if out else _house_bake.MERGED
+    kit_res = kit_res or data["settings"]["kit_res"]
+    prop_res = prop_res or data["settings"]["prop_res"]
     out.mkdir(parents=True, exist_ok=True)
     for old in out.glob("*.glb"):
         old.unlink()
@@ -368,9 +380,10 @@ def merger(data: dict, found: dict | None = None):
                 continue
             name = f"{cls}_m_{level}_{rid}"
             rec = house_merge.merge(items, out / f"{name}.glb")
+            merge.files[name] = out / f"{name}.glb"
             merge.uv2[name] = rec["classes"][cls]["uv2_per_m"]
             hide |= {it["node"] for it in items}
-            add.append((f"merged_{cls}", data["settings"]["kit_res"].format(id=name)))
+            add.append((f"merged_{cls}", kit_res.format(id=name)))
         merge.hidden += len(hide)
         return {"hide": hide, "add": add}
 
@@ -394,10 +407,11 @@ def merger(data: dict, found: dict | None = None):
             return {"hide": {}, "add": []}
         name = f"batch_{level}_{rid}_{parent.lower()}"
         house_merge.merge(its, out / f"{name}.glb")
+        merge.files[name] = out / f"{name}.glb"
         merge.batched.append(name)
         merge.props += len(its)
-        return {"hide": hide, "add": [(f"batch_{parent.lower()}", data["settings"]["prop_res"].format(id=name))]}
-    merge.uv2, merge.hidden, merge.batch, merge.batched, merge.props = {}, 0, batch, [], 0
+        return {"hide": hide, "add": [(f"batch_{parent.lower()}", prop_res.format(id=name), name)]}
+    merge.uv2, merge.hidden, merge.batch, merge.batched, merge.props, merge.files = {}, 0, batch, [], 0, {}
     return merge
 
 

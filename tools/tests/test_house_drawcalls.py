@@ -100,6 +100,17 @@ class BatchHook(unittest.TestCase):
         self.assertFalse(any(n.startswith('[node name="desk" parent="Dressing/desk_1"]') for n in nodes))
         self.assertTrue(nodes[-1].startswith('[node name="batch_dressing" parent="Dressing" instance=ExtResource('))
 
+    def test_a_batch_with_a_key_gets_its_overrides(self):
+        def batch(parent, items):  # the export's batch: a third item names the batch for the fine pack's overrides
+            return {"hide": {}, "add": [("batch_dressing", "res://merged/batch_g_r_dressing.glb", "batch_g_r_dressing")]}
+
+        def overrides(key):
+            return [("merged_props", ["surface_material_override/1 = 2"])] if key == "batch_g_r_dressing" else []
+        nodes = self.scene(batch, overrides)
+        self.assertTrue(nodes[-2].startswith('[node name="batch_dressing" parent="Dressing" instance=ExtResource('))
+        self.assertEqual(nodes[-1], '[node name="merged_props" parent="Dressing/batch_dressing"]\n'
+                                    'surface_material_override/1 = 2')
+
 
 if __name__ == "__main__":
     unittest.main()

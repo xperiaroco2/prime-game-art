@@ -408,7 +408,7 @@ def scene_nodes(sc, resolved: list[dict], res_of, overrides=None, batch=None) ->
     box of the prop's size stands in. overrides(id), when given, lists the instance's material overrides as (node
     path inside the GLB, [scene lines]) pairs (house_export's fine pack). batch(parent, [(record, node name)]) (#107,
     the batched dressing), when given, returns {"hide": node name -> the GLB's visual node names a batch now draws,
-    "add": [(node name, res path)]}: every prop instance stays (its colliders, name and metadata) with those visual
+    "add": [(node name, res path[, overrides key])]}: every prop instance stays (its colliders, name and metadata) with those visual
     nodes hidden, and the batch instances join the same group (a graphics preset hiding Detail hides its batch too).
     Returns the placeholder ids."""
     placeholders, seen = [], {}
@@ -449,9 +449,12 @@ def scene_nodes(sc, resolved: list[dict], res_of, overrides=None, batch=None) ->
                 f"size = Vector3({hl._num(L)}, {hl._num(H)}, {hl._num(W)})",
                 f"use_collision = {'false' if r['collision'] == 'none' else 'true'}",
                 "metadata/placeholder = true"] + meta))
-        for node, path in batched["add"]:
+        for node, path, *key in batched["add"]:  # key: the batch's overrides key (house_export's fine pack)
             sc.nodes.append("\n".join([f'[node name="{node}" parent="{parent}" instance=ExtResource("{sc.res(path)}")]',
                                        "transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)"]))
+            for sub_node, extra in (overrides(key[0]) if overrides and key else []):
+                sub, _, leaf = f"{parent}/{node}/{sub_node}".rpartition("/")
+                sc.nodes.append("\n".join([f'[node name="{leaf}" parent="{sub}"]'] + extra))
     return placeholders
 
 
