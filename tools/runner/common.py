@@ -114,6 +114,19 @@ HEAVY_NAMES = ("blender", "godot")
 _HEAVY_THREADS = threading.Lock()
 
 
+HEAVY_PROBE_ENV = "ART_HEAVY_PROBE"  # a file the test runner reads: created when this process starts Blender or Godot
+
+
+def _note_heavy() -> None:
+    """Creates the HEAVY_PROBE_ENV file, if set: the test runner's check of its fast/heavy split (#159)."""
+    probe = os.environ.get(HEAVY_PROBE_ENV)
+    if probe:
+        try:
+            Path(probe).touch()
+        except OSError:
+            pass
+
+
 def is_heavy(cmd: list[str]) -> bool:
     """True when cmd starts Blender or Godot (by the executable's file name)."""
     return bool(cmd) and Path(str(cmd[0])).name.lower().startswith(HEAVY_NAMES)
@@ -229,6 +242,7 @@ def run(
     (is_heavy, or heavy=True) first takes the heavy-run lock; heavy=False skips it (a version probe). The timeout
     counts from the start of the process, not the wait."""
     if is_heavy(cmd) if heavy is None else heavy:
+        _note_heavy()
         with heavy_lock(" ".join(Path(str(c)).name if i == 0 else str(c) for i, c in enumerate(cmd[:6]))):
             return _run(cmd, timeout, cwd, heavy_env())
     return _run(cmd, timeout, cwd, None)

@@ -49,6 +49,16 @@ class HeavyLockTest(unittest.TestCase):
         patcher.start()
         self.addCleanup(patcher.stop)
         os.environ.pop(common.HEAVY_HELD_ENV, None)
+        # Its fake heavy runs (python -c, heavy=True) are not Blender: keep them out of the test runner's probe.
+        os.environ.pop(common.HEAVY_PROBE_ENV, None)
+
+    def test_a_heavy_run_touches_the_probe(self) -> None:
+        probe = Path(self.tmp.name) / "probe"
+        with mock.patch.dict(os.environ, {common.HEAVY_PROBE_ENV: str(probe)}):
+            common.run([sys.executable, "-c", "print(1)"], 30, heavy=False)
+            self.assertFalse(probe.exists())
+            common.run([sys.executable, "-c", "print(1)"], 30, heavy=True)
+            self.assertTrue(probe.exists())
 
     def hold_in_child(self, seconds: float, child_env: dict | None = None) -> subprocess.Popen:
         child = subprocess.Popen(

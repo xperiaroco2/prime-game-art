@@ -19,12 +19,11 @@ an orphan, which the lock no longer counts (look for leftover processes after a 
 
 - A waiting run prints `heavy-run lock: waiting for <holder>` to stderr once (the holder is in `heavy.lock.holder`) and
   fails after 2 hours (`ART_HEAVY_LOCK_WAIT`, seconds). The process timeout counts from the process's start.
-- `verify` and a full `selftest` hold the lock for their whole run: their Blender tests do not take it again
-  (`ART_HEAVY_LOCK_HELD` in the children's environment), and the wait for it is outside their timeouts. A long bake
-  elsewhere delays a `verify`; a `verify` delays the bakes queued behind it.
-- `selftest -p <pattern>` does not hold it: a pure-Python test file runs at once, and each Blender or Godot process
-  its tests start takes the lock itself. Those waits count against its 1800 s timeout, so run a narrowed Blender test
-  when no long bake holds the lock.
+- `verify` and `selftest` hold the lock only around their heavy test files (#159, `docs/decisions/2026-10-14-verify-affected.md`):
+  the fast files run first in parallel without it, then the heavy files one at a time inside it; their Blender tests
+  do not take it again (`ART_HEAVY_LOCK_HELD` in the children's environment), and each file's 1800 s timeout starts
+  after the wait. A long bake elsewhere delays the heavy part of a `verify`; that part delays the bakes queued behind
+  it. A fast file that starts Blender or Godot is red (the runner's heavy probe, `ART_HEAVY_PROBE`).
 - `doctor`'s version probes never wait for it. Not locked: `frames --video`'s ffmpeg and the game repo's own tools.
 - `ART_HEAVY_LOCK=off` turns it off; `ART_HEAVY_LOCK=<path>` moves it; with no raw folder (the laptop's raw-free lane)
   there is no lock.

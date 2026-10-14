@@ -1,0 +1,90 @@
+# Which heavy test files a change needs (`verify`, tools/runner/commands/_testrun.py; docs/decisions/2026-10-14-verify-affected.md).
+# Every fast test file always runs; this file only picks the heavy ones (Blender, Godot).
+# Patterns are fnmatch patterns on repo-relative POSIX paths; `*` also crosses `/`.
+# A changed path that is shared runs the full suite; a path in an area runs that area's heavy tests; a light path
+# needs no heavy test; a path in none of them runs the full suite (and test_verify_affected names it).
+
+shared = [
+  "tools/run.py", "tools/run.sh", "tools/run.cmd",
+  "tools/runner/__init__.py", "tools/runner/common.py", "tools/runner/cli.py", "tools/runner/pins.py",
+  "tools/runner/blender.py",
+  "tools/runner/commands/__init__.py", "tools/runner/commands/_testrun.py", "tools/runner/commands/selftest.py",
+  "tools/runner/commands/verify.py",
+  "tools/tests/__init__.py", "tools/tests/_*.py", "tools/tests/areas.toml", "tools/tests/fixtures/*",
+  "godot/project.godot", "godot/addons/*", "godot/lib/*",
+]
+
+light = [
+  "*.md", "docs/*", ".claude/*", ".gitignore", ".gitattributes",
+  "assets/*", "sources/*", "batches/*",
+  "tools/githooks/*", "tools/workflows/*", "tools/tests/timings.json",
+  "tools/runner/commands/ab_tally.py", "tools/runner/commands/cost.py", "tools/runner/commands/doctor.py",
+  "tools/runner/commands/wait.py", "tools/runner/commands/workflow_check.py", "tools/runner/commands/_workflow_lint.py",
+  "tools/runner/commands/manifest_check.py", "tools/runner/commands/_manifest.py",
+  "tools/runner/commands/raw_backup.py", "tools/runner/commands/pins.py", "tools/runner/commands/nightly.py",
+]
+
+[area.anim]
+sources = [
+  "tools/blender/anim_*", "tools/blender/retarget*", "tools/blender/slice_actions.py", "tools/blender/encode_clips.py",
+  "tools/runner/commands/_anim*.py", "tools/runner/commands/anim_*.py", "tools/runner/commands/retarget.py",
+  "tools/runner/commands/slice_char.py", "tools/runner/commands/_slice.py",
+]
+tests = ["test_anim_*", "test_retarget_*", "test_slice_*"]
+
+[area.assembly]
+sources = [
+  "tools/blender/um/*", "tools/blender/assemble_characters.py", "recipes/*",
+  "tools/runner/commands/_assembly.py", "tools/runner/commands/assemble.py",
+]
+tests = ["test_assembly_*", "test_export_*", "test_godot_*", "test_contract_*"]
+
+[area.review]
+sources = [
+  "tools/blender/render_views.py", "tools/blender/probe.py", "tools/blender/make_fixture.py",
+  "tools/runner/commands/_review.py", "tools/runner/commands/probe.py", "tools/runner/commands/render.py",
+]
+tests = ["test_blender_review*", "test_assembly_*", "test_faces_*", "test_godot_frames*"]
+
+[area.catalogue]
+sources = ["catalogue/*", "tools/blender/catalogue*", "tools/runner/commands/_catalogue.py", "tools/runner/commands/catalogue.py"]
+tests = ["test_catalogue_*", "test_assembly_*"]
+
+[area.contract]
+sources = [
+  "contract/*", "tools/godot/*", "tools/blender/contract_io.py", "tools/blender/check_model.py",
+  "tools/blender/rename_bones.py", "tools/blender/make_contract_fixture.py",
+  "tools/runner/commands/_contract.py", "tools/runner/commands/contract.py", "tools/runner/commands/check.py",
+  "tools/runner/commands/rename_bones.py", "tools/runner/commands/_checks.py", "tools/runner/commands/_humanoid.py",
+]
+tests = ["test_contract_*", "test_godot_check*", "test_export_*"]
+
+[area.export]
+sources = [
+  "tools/blender/export_glb.py", "tools/blender/compare_frames.py",
+  "tools/runner/commands/_export.py", "tools/runner/commands/export.py", "tools/runner/commands/_godot.py",
+  "tools/runner/commands/godot_check.py", "tools/runner/commands/_frames.py", "tools/runner/commands/frames.py",
+  "tools/runner/commands/_showroom.py", "tools/runner/commands/showroom.py",
+  "godot/check/*", "godot/frames/*", "godot/showroom/*",
+]
+tests = ["test_export_*", "test_godot_*"]
+
+[area.faces]
+sources = ["faces/*", "tools/blender/faces_*", "tools/runner/commands/faces.py"]
+tests = ["test_faces_*"]
+
+[area.meshy]
+sources = ["tools/blender/meshy_rig_input.py", "tools/runner/commands/_meshy_*.py", "tools/runner/commands/meshy.py"]
+tests = ["test_meshy_*"]
+
+[area.house]
+sources = [
+  "layouts/*", "kits/*", "props/*",
+  "tools/runner/house_*.py", "tools/runner/commands/_house_*.py", "tools/runner/commands/house.py",
+  "tools/runner/commands/attic.py", "tools/runner/commands/garden.py", "tools/runner/commands/outdoor.py",
+  "tools/runner/commands/zones.py", "tools/runner/commands/kit.py", "tools/runner/commands/_kit.py",
+  "tools/runner/commands/props.py", "tools/runner/commands/_props.py", "tools/runner/commands/props_library.py",
+  "tools/blender/kit_*", "tools/blender/prop_*", "tools/blender/props_*", "tools/blender/plant_*",
+  "godot/house/*", "godot/kit/*", "godot/props/*", "godot/garden/*", "godot/outdoor/*",
+]
+tests = ["test_house_*", "test_kit_*", "test_props_*"]
