@@ -116,6 +116,25 @@ at = [24.8, 40.5]  # #150: from the east armchair across the room to the TV unit
 look = [18.6, 34.0]
 look_h = 0.9
 [[export.sheet_views]]
+room = "dining_room"
+title = "dining room: across the table"
+at = [40.6, 27.6]  # #153: from the east dressers down the set table to the west sideboard
+look = [31.0, 27.2]
+look_h = 0.8
+[[export.sheet_views]]
+room = "dining_room"
+title = "dining room: the set table"
+at = [37.3, 28.4]  # #153: close on the place settings, the serving board and the tulips
+eye = 1.5
+look = [35.3, 27.0]
+look_h = 0.76
+[[export.sheet_views]]
+room = "dining_room"
+title = "dining room: the sideboard wall"
+at = [33.6, 28.1]  # #153: the west sideboard, its bottles and fruit, the still life over it
+look = [30.1, 28.75]
+look_h = 1.1
+[[export.sheet_views]]
 room = "attic"
 title = "attic: from the west gable"
 at = [19.5, 34.0]
