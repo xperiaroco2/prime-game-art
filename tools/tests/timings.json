@@ -1,0 +1,761 @@
+{
+ "note": "per file, run alone and serially on the desktop (2026-10-14, #159): wall seconds, class, whether it started Blender or Godot; `selftest --write-timings` rewrites it",
+ "files": [
+  {
+   "file": "test_ab_tally.py",
+   "seconds": 1.1,
+   "heavy": false,
+   "launched": false,
+   "tests": 8
+  },
+  {
+   "file": "test_agents_types.py",
+   "seconds": 0.2,
+   "heavy": false,
+   "launched": false,
+   "tests": 4
+  },
+  {
+   "file": "test_anim_edit_blender.py",
+   "seconds": 33.9,
+   "heavy": true,
+   "launched": true,
+   "tests": 11
+  },
+  {
+   "file": "test_anim_edit_grip.py",
+   "seconds": 0.2,
+   "heavy": false,
+   "launched": false,
+   "tests": 15
+  },
+  {
+   "file": "test_anim_edit_lean.py",
+   "seconds": 0.2,
+   "heavy": false,
+   "launched": false,
+   "tests": 3
+  },
+  {
+   "file": "test_anim_edit_math.py",
+   "seconds": 0.2,
+   "heavy": false,
+   "launched": false,
+   "tests": 24
+  },
+  {
+   "file": "test_anim_edit_relax.py",
+   "seconds": 0.2,
+   "heavy": false,
+   "launched": false,
+   "tests": 15
+  },
+  {
+   "file": "test_anim_edit_relax_blender.py",
+   "seconds": 73.7,
+   "heavy": true,
+   "launched": true,
+   "tests": 4
+  },
+  {
+   "file": "test_anim_edit_settle.py",
+   "seconds": 0.2,
+   "heavy": false,
+   "launched": false,
+   "tests": 5
+  },
+  {
+   "file": "test_anim_grip_blender.py",
+   "seconds": 34.5,
+   "heavy": true,
+   "launched": true,
+   "tests": 4
+  },
+  {
+   "file": "test_anim_math.py",
+   "seconds": 0.2,
+   "heavy": false,
+   "launched": false,
+   "tests": 11
+  },
+  {
+   "file": "test_anim_review.py",
+   "seconds": 0.7,
+   "heavy": false,
+   "launched": false,
+   "tests": 7
+  },
+  {
+   "file": "test_anim_set_blender.py",
+   "seconds": 6.8,
+   "heavy": true,
+   "launched": true,
+   "tests": 4
+  },
+  {
+   "file": "test_anim_set_cfg.py",
+   "seconds": 0.3,
+   "heavy": false,
+   "launched": false,
+   "tests": 17
+  },
+  {
+   "file": "test_anim_set_checks.py",
+   "seconds": 0.3,
+   "heavy": false,
+   "launched": false,
+   "tests": 6
+  },
+  {
+   "file": "test_anim_sources.py",
+   "seconds": 0.2,
+   "heavy": false,
+   "launched": false,
+   "tests": 4
+  },
+  {
+   "file": "test_anim_toes.py",
+   "seconds": 1.8,
+   "heavy": true,
+   "launched": true,
+   "tests": 3
+  },
+  {
+   "file": "test_anim_ual2.py",
+   "seconds": 0.8,
+   "heavy": false,
+   "launched": false,
+   "tests": 14
+  },
+  {
+   "file": "test_anim_ual2_layer_blender.py",
+   "seconds": 31.3,
+   "heavy": true,
+   "launched": true,
+   "tests": 1
+  },
+  {
+   "file": "test_anim_ual2_source.py",
+   "seconds": 0.3,
+   "heavy": false,
+   "launched": false,
+   "tests": 4
+  },
+  {
+   "file": "test_assembly_blender.py",
+   "seconds": 17.0,
+   "heavy": true,
+   "launched": true,
+   "tests": 4
+  },
+  {
+   "file": "test_assembly_clay.py",
+   "seconds": 0.3,
+   "heavy": false,
+   "launched": false,
+   "tests": 17
+  },
+  {
+   "file": "test_assembly_clay_blender.py",
+   "seconds": 9.0,
+   "heavy": true,
+   "launched": true,
+   "tests": 2
+  },
+  {
+   "file": "test_assembly_command.py",
+   "seconds": 1.0,
+   "heavy": false,
+   "launched": false,
+   "tests": 14
+  },
+  {
+   "file": "test_assembly_jaw.py",
+   "seconds": 0.2,
+   "heavy": false,
+   "launched": false,
+   "tests": 11
+  },
+  {
+   "file": "test_assembly_recipe.py",
+   "seconds": 0.8,
+   "heavy": false,
+   "launched": false,
+   "tests": 36
+  },
+  {
+   "file": "test_assembly_sources.py",
+   "seconds": 1.1,
+   "heavy": false,
+   "launched": false,
+   "tests": 8
+  },
+  {
+   "file": "test_blender_review.py",
+   "seconds": 18.2,
+   "heavy": true,
+   "launched": true,
+   "tests": 26
+  },
+  {
+   "file": "test_bootstrap_doctor.py",
+   "seconds": 0.5,
+   "heavy": false,
+   "launched": false,
+   "tests": 5
+  },
+  {
+   "file": "test_bootstrap_hook.py",
+   "seconds": 4.2,
+   "heavy": false,
+   "launched": false,
+   "tests": 4
+  },
+  {
+   "file": "test_bootstrap_manifest.py",
+   "seconds": 0.8,
+   "heavy": false,
+   "launched": false,
+   "tests": 16
+  },
+  {
+   "file": "test_bootstrap_verify.py",
+   "seconds": 0.7,
+   "heavy": false,
+   "launched": false,
+   "tests": 3
+  },
+  {
+   "file": "test_catalogue_blender.py",
+   "seconds": 69.1,
+   "heavy": true,
+   "launched": true,
+   "tests": 1
+  },
+  {
+   "file": "test_catalogue_command.py",
+   "seconds": 0.9,
+   "heavy": false,
+   "launched": false,
+   "tests": 7
+  },
+  {
+   "file": "test_catalogue_data.py",
+   "seconds": 0.3,
+   "heavy": false,
+   "launched": false,
+   "tests": 25
+  },
+  {
+   "file": "test_cli.py",
+   "seconds": 0.7,
+   "heavy": false,
+   "launched": false,
+   "tests": 3
+  },
+  {
+   "file": "test_common_heavy_lock.py",
+   "seconds": 7.4,
+   "heavy": false,
+   "launched": false,
+   "tests": 12
+  },
+  {
+   "file": "test_contract_checks.py",
+   "seconds": 0.3,
+   "heavy": false,
+   "launched": false,
+   "tests": 17
+  },
+  {
+   "file": "test_contract_data.py",
+   "seconds": 0.4,
+   "heavy": false,
+   "launched": false,
+   "tests": 19
+  },
+  {
+   "file": "test_contract_tools.py",
+   "seconds": 21.4,
+   "heavy": true,
+   "launched": true,
+   "tests": 9
+  },
+  {
+   "file": "test_cost_transcripts.py",
+   "seconds": 0.3,
+   "heavy": false,
+   "launched": false,
+   "tests": 14
+  },
+  {
+   "file": "test_export_glb.py",
+   "seconds": 20.9,
+   "heavy": true,
+   "launched": true,
+   "tests": 10
+  },
+  {
+   "file": "test_export_textured.py",
+   "seconds": 0.2,
+   "heavy": false,
+   "launched": false,
+   "tests": 8
+  },
+  {
+   "file": "test_faces_blender.py",
+   "seconds": 21.8,
+   "heavy": true,
+   "launched": true,
+   "tests": 8
+  },
+  {
+   "file": "test_faces_clayhead.py",
+   "seconds": 0.3,
+   "heavy": false,
+   "launched": false,
+   "tests": 8
+  },
+  {
+   "file": "test_faces_claykit.py",
+   "seconds": 0.4,
+   "heavy": false,
+   "launched": false,
+   "tests": 24
+  },
+  {
+   "file": "test_faces_command.py",
+   "seconds": 1.1,
+   "heavy": false,
+   "launched": false,
+   "tests": 16
+  },
+  {
+   "file": "test_faces_styles.py",
+   "seconds": 0.2,
+   "heavy": false,
+   "launched": false,
+   "tests": 15
+  },
+  {
+   "file": "test_godot_check.py",
+   "seconds": 25.5,
+   "heavy": true,
+   "launched": true,
+   "tests": 17
+  },
+  {
+   "file": "test_godot_eye_pupils.py",
+   "seconds": 0.2,
+   "heavy": false,
+   "launched": false,
+   "tests": 9
+  },
+  {
+   "file": "test_godot_frames.py",
+   "seconds": 28.7,
+   "heavy": true,
+   "launched": true,
+   "tests": 9
+  },
+  {
+   "file": "test_godot_loop_names.py",
+   "seconds": 0.2,
+   "heavy": false,
+   "launched": false,
+   "tests": 5
+  },
+  {
+   "file": "test_godot_showroom.py",
+   "seconds": 0.2,
+   "heavy": false,
+   "launched": false,
+   "tests": 32
+  },
+  {
+   "file": "test_house_attic.py",
+   "seconds": 18.0,
+   "heavy": false,
+   "launched": false,
+   "tests": 22
+  },
+  {
+   "file": "test_house_bake.py",
+   "seconds": 0.4,
+   "heavy": false,
+   "launched": false,
+   "tests": 27
+  },
+  {
+   "file": "test_house_bake_props.py",
+   "seconds": 1.7,
+   "heavy": false,
+   "launched": false,
+   "tests": 11
+  },
+  {
+   "file": "test_house_bake_sheen.py",
+   "seconds": 0.3,
+   "heavy": false,
+   "launched": false,
+   "tests": 12
+  },
+  {
+   "file": "test_house_basement.py",
+   "seconds": 0.7,
+   "heavy": false,
+   "launched": false,
+   "tests": 21
+  },
+  {
+   "file": "test_house_clutter.py",
+   "seconds": 58.6,
+   "heavy": false,
+   "launched": false,
+   "tests": 9
+  },
+  {
+   "file": "test_house_dressing.py",
+   "seconds": 0.7,
+   "heavy": false,
+   "launched": false,
+   "tests": 12
+  },
+  {
+   "file": "test_house_export.py",
+   "seconds": 13.8,
+   "heavy": true,
+   "launched": true,
+   "tests": 22
+  },
+  {
+   "file": "test_house_export_plot.py",
+   "seconds": 0.3,
+   "heavy": false,
+   "launched": false,
+   "tests": 9
+  },
+  {
+   "file": "test_house_fill.py",
+   "seconds": 1.1,
+   "heavy": false,
+   "launched": false,
+   "tests": 6
+  },
+  {
+   "file": "test_house_garden.py",
+   "seconds": 2.5,
+   "heavy": false,
+   "launched": false,
+   "tests": 16
+  },
+  {
+   "file": "test_house_garden_scene.py",
+   "seconds": 0.9,
+   "heavy": false,
+   "launched": false,
+   "tests": 6
+  },
+  {
+   "file": "test_house_greybox.py",
+   "seconds": 0.2,
+   "heavy": false,
+   "launched": false,
+   "tests": 3
+  },
+  {
+   "file": "test_house_layers.py",
+   "seconds": 0.2,
+   "heavy": false,
+   "launched": false,
+   "tests": 7
+  },
+  {
+   "file": "test_house_layout.py",
+   "seconds": 0.5,
+   "heavy": false,
+   "launched": false,
+   "tests": 33
+  },
+  {
+   "file": "test_house_lights.py",
+   "seconds": 0.4,
+   "heavy": false,
+   "launched": false,
+   "tests": 12
+  },
+  {
+   "file": "test_house_outdoor.py",
+   "seconds": 0.9,
+   "heavy": false,
+   "launched": false,
+   "tests": 19
+  },
+  {
+   "file": "test_house_outdoor_scene.py",
+   "seconds": 4.2,
+   "heavy": false,
+   "launched": false,
+   "tests": 8
+  },
+  {
+   "file": "test_house_paint.py",
+   "seconds": 0.4,
+   "heavy": false,
+   "launched": false,
+   "tests": 6
+  },
+  {
+   "file": "test_house_plants.py",
+   "seconds": 0.6,
+   "heavy": false,
+   "launched": false,
+   "tests": 4
+  },
+  {
+   "file": "test_house_review.py",
+   "seconds": 3.1,
+   "heavy": false,
+   "launched": false,
+   "tests": 16
+  },
+  {
+   "file": "test_house_routes.py",
+   "seconds": 1.3,
+   "heavy": false,
+   "launched": false,
+   "tests": 6
+  },
+  {
+   "file": "test_house_upper.py",
+   "seconds": 0.6,
+   "heavy": false,
+   "launched": false,
+   "tests": 7
+  },
+  {
+   "file": "test_house_zones.py",
+   "seconds": 1.1,
+   "heavy": false,
+   "launched": false,
+   "tests": 12
+  },
+  {
+   "file": "test_house_zones_shoot.py",
+   "seconds": 0.4,
+   "heavy": false,
+   "launched": false,
+   "tests": 3
+  },
+  {
+   "file": "test_kit_shader_copy.py",
+   "seconds": 0.2,
+   "heavy": false,
+   "launched": false,
+   "tests": 1
+  },
+  {
+   "file": "test_kit_spec.py",
+   "seconds": 109.0,
+   "heavy": false,
+   "launched": false,
+   "tests": 51
+  },
+  {
+   "file": "test_manifest_sets.py",
+   "seconds": 0.7,
+   "heavy": false,
+   "launched": false,
+   "tests": 8
+  },
+  {
+   "file": "test_meshy_animation.py",
+   "seconds": 0.9,
+   "heavy": false,
+   "launched": false,
+   "tests": 10
+  },
+  {
+   "file": "test_meshy_api.py",
+   "seconds": 0.3,
+   "heavy": false,
+   "launched": false,
+   "tests": 16
+  },
+  {
+   "file": "test_meshy_backup.py",
+   "seconds": 1.0,
+   "heavy": false,
+   "launched": false,
+   "tests": 4
+  },
+  {
+   "file": "test_meshy_batch.py",
+   "seconds": 0.8,
+   "heavy": false,
+   "launched": false,
+   "tests": 15
+  },
+  {
+   "file": "test_meshy_images.py",
+   "seconds": 1.4,
+   "heavy": false,
+   "launched": false,
+   "tests": 23
+  },
+  {
+   "file": "test_meshy_rig_input.py",
+   "seconds": 0.4,
+   "heavy": false,
+   "launched": false,
+   "tests": 3
+  },
+  {
+   "file": "test_meshy_run.py",
+   "seconds": 1.3,
+   "heavy": false,
+   "launched": false,
+   "tests": 21
+  },
+  {
+   "file": "test_props_dining.py",
+   "seconds": 0.5,
+   "heavy": false,
+   "launched": false,
+   "tests": 8
+  },
+  {
+   "file": "test_props_geom.py",
+   "seconds": 1.7,
+   "heavy": false,
+   "launched": false,
+   "tests": 30
+  },
+  {
+   "file": "test_props_godot.py",
+   "seconds": 0.2,
+   "heavy": false,
+   "launched": false,
+   "tests": 5
+  },
+  {
+   "file": "test_props_hallway.py",
+   "seconds": 0.6,
+   "heavy": false,
+   "launched": false,
+   "tests": 10
+  },
+  {
+   "file": "test_props_library.py",
+   "seconds": 0.3,
+   "heavy": false,
+   "launched": false,
+   "tests": 20
+  },
+  {
+   "file": "test_props_living2.py",
+   "seconds": 0.5,
+   "heavy": false,
+   "launched": false,
+   "tests": 7
+  },
+  {
+   "file": "test_props_task.py",
+   "seconds": 1.0,
+   "heavy": false,
+   "launched": false,
+   "tests": 21
+  },
+  {
+   "file": "test_props_zone.py",
+   "seconds": 0.4,
+   "heavy": false,
+   "launched": false,
+   "tests": 9
+  },
+  {
+   "file": "test_retarget_blender.py",
+   "seconds": 15.2,
+   "heavy": true,
+   "launched": true,
+   "tests": 1
+  },
+  {
+   "file": "test_retarget_map.py",
+   "seconds": 0.2,
+   "heavy": false,
+   "launched": false,
+   "tests": 12
+  },
+  {
+   "file": "test_retarget_meshy_blender.py",
+   "seconds": 4.4,
+   "heavy": true,
+   "launched": true,
+   "tests": 1
+  },
+  {
+   "file": "test_retarget_meshy_map.py",
+   "seconds": 0.2,
+   "heavy": false,
+   "launched": false,
+   "tests": 11
+  },
+  {
+   "file": "test_retarget_smpl_blender.py",
+   "seconds": 5.2,
+   "heavy": true,
+   "launched": true,
+   "tests": 4
+  },
+  {
+   "file": "test_retarget_smpl_map.py",
+   "seconds": 0.2,
+   "heavy": false,
+   "launched": false,
+   "tests": 5
+  },
+  {
+   "file": "test_retarget_smpl_source.py",
+   "seconds": 0.3,
+   "heavy": false,
+   "launched": false,
+   "tests": 4
+  },
+  {
+   "file": "test_retarget_ual2_blender.py",
+   "seconds": 13.1,
+   "heavy": true,
+   "launched": true,
+   "tests": 1
+  },
+  {
+   "file": "test_slice_character.py",
+   "seconds": 0.3,
+   "heavy": false,
+   "launched": false,
+   "tests": 20
+  },
+  {
+   "file": "test_wait_log.py",
+   "seconds": 0.2,
+   "heavy": false,
+   "launched": false,
+   "tests": 17
+  },
+  {
+   "file": "test_workflow_check_scripts.py",
+   "seconds": 1.6,
+   "heavy": false,
+   "launched": false,
+   "tests": 20
+  },
+  {
+   "file": "test_workflow_lab_round.py",
+   "seconds": 0.3,
+   "heavy": false,
+   "launched": false,
+   "tests": 3
+  }
+ ]
+}
