@@ -131,6 +131,23 @@ Every room's props follow these rules; the numbers are data in `props/library.to
    (`layouts/house/dressing/attic_roof/attic.toml`, 63 items, main 44); the twelve hiding spots, the pick-ups and the
    clear areas stay. `tools/tests/test_props_attic.py` checks the pieces' size against `size_m`, pivot, budget and
    collider, the spots, stations and clear areas, the item count and the `Name` label.
+   The basement's storage room, darkroom and corridor (#170, library v12) are functional, not homely: clean,
+   well-organised, present-day working rooms on the kit's concrete under bright work lights (never derelict, wet or
+   creepy), the fun from the game's own world. The storage: `store_shelving` and `store_shelving_b` (steel shelving
+   with labelled crates, boxes and the burger kitchen's stock), `bread_rack` (the buns' rack by the bun shelf),
+   `loaded_pallet` (a wrapped delivery pallet) with its `pallet_jack`, `store_workbench`, `step_ladder`, `hand_trolley`
+   (the delivery trolley), the floor markings `floor_bay`, `floor_lane` and `floor_hatch` (flat paint, no collider),
+   the signs `aisle_sign_1` to `aisle_sign_3`, `sign_staff`, `sign_buns`, `sign_meat`, `sign_wine`, `sign_parts`,
+   `sign_deliveries` and `sign_way_out`, and the detail-layer `clipboard` (delivery notes); its twelve bare bulbs are
+   `fluorescent_tube` fixtures now. The darkroom: `lab_sink`, `chem_shelf` (chemicals and paper boxes), `light_table`
+   (a fixture with a light anchor), `print_line` and `print_line_b` (drying lines of clipped party and gazebo prints)
+   and `sign_darkroom`, beside main's enlargers, tray tables, safelights and PhotoBoard. The corridor: `rubber_runner`
+   (rubber matting), `work_hooks` (work jackets on hooks), `fire_extinguisher` and `fuse_box`. The three rooms are
+   hand-placed (`layouts/house/dressing/{storage,darkroom,corridor}.toml`; their clutter rules are empty), never
+   emptier than before (157, 93 and 49 props, main 155, 92 and 49); flat floor markings and wall signs are
+   dressing, never clutter. `tools/tests/test_props_basement.py` checks the pieces' size against `size_m`, pivot,
+   budget and collider, 0.3 m around every station and spawn, the task props, the doors' openings, the counts and
+   the `Name` label (in no piece and on no light fixture).
 8. **Route.** Hard-surface props are code (the shared builders, `prop_geom.py`'s `Style`). Meshy only for organic
    one-offs (food, soft goods, plants) at a hero budget, as a recorded batch (`docs/meshy.md`).
 
@@ -249,8 +266,8 @@ Art #87 (map request #73) makes one shared library of generic props (furniture, 
 things) so that every room package places furniture instead of making it. Task props (#82a, #82b), the car and its
 lift (#79), vegetation (#80), the gazebo (#81b) and kit pieces are made elsewhere; `[skip]` in the mapping file names
 who makes each. The plan is `D:/prime-art-raw/research/2026-10-10-house-plan/` (`props.md`, `inventory.md` §9,
-`look.md` §5 and §6). The GLBs stay in the raw folder (`D:/prime-art-raw/props/library/v11/`: v10 with
-#168's attic; v10 v9 with #166's kids' room and study; v9 v8 with #164's bedroom and guest room; v8 v7 with #162's rebuilt landing runner; v7 v6 with #162's landing and bathroom built over it; v6 v5 with #158's WC, pantry and stairs; v5 v4 with #156's hallway; v4 v3 with #153's dining room; v3 is v2 with #152's
+`look.md` §5 and §6). The GLBs stay in the raw folder (`D:/prime-art-raw/props/library/v12/`: v11 with
+#170's basement working rooms; v11 v10 with #168's attic; v10 v9 with #166's kids' room and study; v9 v8 with #164's bedroom and guest room; v8 v7 with #162's rebuilt landing runner; v7 v6 with #162's landing and bathroom built over it; v6 v5 with #158's WC, pantry and stairs; v5 v4 with #156's hallway; v4 v3 with #153's dining room; v3 is v2 with #152's
 cream sofa and armchairs, v2 v1 with #150's living room, v1 the version-1 build) until the engineer approves the look
 on a review page; then they come into the repo under `assets/prop/<id>/` with their manifests.
 
@@ -303,7 +320,7 @@ clutter of art #104 and its story pieces: `laundry_basket`, `drying_rack`, `open
 
 `tools/run.sh props-library --build [--batch 1|2] [--only id,...]` builds the props in one headless Blender run
 (`tools/blender/prop_build.py`) into the mapping file's `out`,
-`D:/prime-art-raw/props/library/v11/`: one `<id>.glb` per prop, `textures/`
+`D:/prime-art-raw/props/library/v12/`: one `<id>.glb` per prop, `textures/`
 (the kit's detail maps), `build.json` (what each GLB holds; batches accumulate) and `props.md` (the build table); then
 it checks every GLB: the mesh and collider nodes, UV2 and vertex colours, at most `max_materials` materials all named
 `-vcol`, glTF-Validator, the class's maximum triangles, a collider unless `none`, a fixture's light anchor. Under the
