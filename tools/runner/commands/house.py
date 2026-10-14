@@ -8,8 +8,8 @@ import json
 import tomllib
 from pathlib import Path
 
-from .. import (common, house_basement, house_bake_props, house_clutter, house_dressing, house_export, house_fill,
-               house_layout, house_lights, house_routes)
+from .. import (common, house_bake, house_basement, house_bake_props, house_clutter, house_dressing, house_export,
+               house_fill, house_layout, house_lights, house_merge, house_routes)
 from . import _frames, _godot, _house_bake
 
 NAME = "house"
@@ -60,6 +60,11 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--before", type=Path, metavar="DIR",
                         help="with --bake and --review: an earlier review of the same preset; adds before_after.png "
                              "and before_after.md (its baked row over this run's baked and sheen rows)")
+    parser.add_argument("--count", type=Path, metavar="DIR",
+                        help="with --bake: build without baking and count the draw calls per review view, baked and "
+                             "High, against lights.toml's [budget] (draw_calls.json and .md, the frames; #107)")
+    parser.add_argument("--no-merge", action="store_true",
+                        help="draw every kit piece as its own instance (the scenes before #107's merged shell)")
     parser.add_argument("--review", type=Path, metavar="DIR",
                         help="with --bake: baked and real-time frames, sheet.png and measures.json into DIR")
     parser.add_argument("--export", type=Path, metavar="DIR",
@@ -141,8 +146,13 @@ def run(args: argparse.Namespace) -> int:
     if args.props_dir or args.props_map or args.before:
         found, dressing, label = lab_props(args, found, dressing)
     st = data["settings"]
+    merge = None if args.no_merge else merger(data)
     summary = house_layout.write_scenes(data, planned, args.out, dressing,
-                                        lambda pid: st["prop_res"].format(id=pid) if pid in found else None)
+                                        lambda pid: st["prop_res"].format(id=pid) if pid in found else None, merge)
+    if merge:
+        (_house_bake.MERGED / "uv2.json").write_text(json.dumps(merge.uv2, indent=1), encoding="utf-8", newline="\n")
+        common.say(f"  merged shell: {len(merge.uv2)} merged meshes for {merge.hidden} piece instances "
+                   f"(#107; {_house_bake.MERGED.as_posix()})")
     held = {rid: ids for rid, ids in summary["placeholders"].items() if ids}
     if summary["props"]:
         common.say(f"  dressing: {sum(summary['props'].values())} props and fixtures in {len(dressing)} rooms, "
@@ -168,7 +178,8 @@ def run(args: argparse.Namespace) -> int:
             raise common.Failure("--bake needs the scenes in godot/import/house (drop --out)")
         zones = list(lights["zones"]) if args.bake == "all" else args.bake.split(",")
         return _house_bake.run(data, lights, zones, args.preset, args.review, args.no_bake, found, args.grid,
-                               args.merge, args.diag, args.sheen, args.before, label)
+                               args.merge, args.diag, args.sheen, args.before, label,
+                               args.count.resolve() if args.count else None)
     if (args.walk or args.basement) and args.out.resolve() != DEFAULT_OUT.resolve():
         raise common.Failure("--walk and --basement need the scenes in godot/import/house (drop --out)")
     code = 0
@@ -321,18 +332,60 @@ def prop_glbs(data: dict, dressing: dict) -> dict:
     return found
 
 
+def merger(data: dict):
+    """The merged shell's callable for house_layout.write_scenes (#107), or None without the kit's pieces.json: per room
+    the static kit pieces (not house.toml's [merge] keep, which the game moves or opens) of each class (floor_*,
+    ceiling_*, the rest: shell) merged into one GLB (house_merge.merge) under _house_bake.MERGED, named
+    <class>_m_<level>_<room> (staged as kit_<name>, so the bake's flat rule and UV2 table find it); a class of one
+    piece stays an instance. The callable's `uv2` (name -> UV2 units per metre) goes to MERGED/uv2.json."""
+    kit = common.raw_dir() / data["settings"]["kit_dir"]
+    if not (kit / "pieces.json").is_file():
+        return None
+    uv2 = house_bake.uv2_table(json.loads((kit / "pieces.json").read_text(encoding="utf-8")))
+    keep = set(data["settings"].get("merge", {}).get("keep", []))
+    out = _house_bake.MERGED
+    out.mkdir(parents=True, exist_ok=True)
+    for old in out.glob("*.glb"):
+        old.unlink()
+
+    def merge(level: str, rid: str, pieces: list[dict]) -> dict:
+        by: dict[str, list[dict]] = {}
+        for p in pieces:
+            if p["id"] in keep or not (kit / f"{p['id']}.glb").is_file():
+                continue
+            cls = next((c for c in ("floor", "ceiling") if p["id"].startswith(c + "_")), "shell")
+            by.setdefault(cls, []).append({**p, "glb": kit / f"{p['id']}.glb", "class": cls,
+                                           "uv2_per_m": uv2.get(p["id"])})
+        hide, add = set(), []
+        for cls, items in sorted(by.items()):
+            if len(items) < 2:
+                continue
+            name = f"{cls}_m_{level}_{rid}"
+            rec = house_merge.merge(items, out / f"{name}.glb")
+            merge.uv2[name] = rec["classes"][cls]["uv2_per_m"]
+            hide |= {it["node"] for it in items}
+            add.append((f"merged_{cls}", data["settings"]["kit_res"].format(id=name)))
+        merge.hidden += len(hide)
+        return {"hide": hide, "add": add}
+    merge.uv2, merge.hidden = {}, 0
+    return merge
+
+
 def stage(data: dict, summary: dict, props: dict | None = None) -> list[str]:
     """Stages the pieces and props the scenes use (the kit folder, the prop GLBs), imports them headless; returns the
     import's error lines."""
     kit = common.raw_dir() / data["settings"]["kit_dir"]
     names = {pid: f"kit_{pid}" for pid in summary["pieces"]}
+    merged = {Path(r).stem: _house_bake.MERGED / f"{Path(r).stem[4:]}.glb" for r in summary.get("merged", [])}
     missing = [pid for pid in names if not (kit / f"{pid}.glb").is_file()]
     if missing:
         raise common.Failure(f"no {', '.join(sorted(missing))} in {kit.as_posix()} (build the kit first)")
     props = props or {}
-    _godot.clear_staged(set(names.values()) | {f"prop_{pid}" for pid in props})
+    _godot.clear_staged(set(names.values()) | set(merged) | {f"prop_{pid}" for pid in props})
     for pid, name in names.items():
         _godot.stage(kit / f"{pid}.glb", name)
+    for name, glb in merged.items():
+        _godot.stage(glb, name, house_bake.KIT_IMPORT)
     for pid, glb in props.items():
         _godot.stage(glb, f"prop_{pid}")
     errors = [line for line in _godot.import_project() if "ERROR" in line]

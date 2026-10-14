@@ -276,6 +276,12 @@ denoiser = false        # #83b: the manager's choice from the 83q grid (the deno
 directional = false
 interior = true
 
+# Draw calls per view (#107): `house --bake ZONES --count DIR` counts them from the bake review's cameras and WARNs
+# over these (no failure yet). baked: the bake alone (no real-time light); high: the High preset's sheen row (the
+# nearest glow lamps real time, shadowed), its visible draw calls and its shadow draw calls (high_shadow).
+[budget]
+baked = 150
+
 [presets.high]
 lightmap = "texel_high"
 glow_count = 12

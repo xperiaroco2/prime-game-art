@@ -56,7 +56,7 @@ func _initialize() -> void:
 	var k := 0
 	var box := AABB()
 	for mi: MeshInstance3D in src.find_children("*", "MeshInstance3D", true, false):
-		if mi.mesh == null:
+		if mi.mesh == null or not mi.visible:  # #107: a hidden piece mesh is drawn by its room's merged shell
 			continue
 		var pid := _piece(mi)
 		var above := str(src.get_path_to(mi)).begins_with("Above")

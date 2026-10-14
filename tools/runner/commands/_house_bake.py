@@ -19,6 +19,7 @@ BUILD = "res://house/zone_build.gd"
 SHOTS = "res://house/bake_shots.gd"
 BAKE_DIR = _godot.PROJECT / "import" / "house" / "bake"
 TIMEOUT = 900
+MERGED = common.OUT / "house" / "merged"  # the merged shell's GLBs and uv2.json (#107; commands/house.py merger)
 REVIEW_ROOMS = {"ground": ["living_room", "kitchen"], "basement": ["storage", "generator_hall"],
                 "upper": ["bedroom", "landing"]}
 # Rooms also shot facing their north wall (house_bake.wall_cam): the kitchen's worktops, uppers and fridge (#83).
@@ -34,6 +35,8 @@ def stage(data: dict, scenes: Path, props: dict) -> list[str]:
     for name in sorted(names):
         if name.startswith("kit_"):
             src, params = kit / f"{name[4:]}.glb", house_bake.KIT_IMPORT
+            if "_m_" in name and (MERGED / f"{name[4:]}.glb").is_file():
+                src = MERGED / f"{name[4:]}.glb"
         else:
             src, params = props.get(name[5:]), house_bake.PROP_IMPORT
         if src is None or not Path(src).is_file():
@@ -52,11 +55,14 @@ def night_or_fail(raw: Path) -> None:
 
 def run(data: dict, lights: dict, zones: list[str], preset: str, review: Path | None, no_bake: bool,
         props: dict, grid: bool = False, merge: bool = False, diag: bool = False, sheen: bool = False,
-        before: Path | None = None, label: str | None = None) -> int:
+        before: Path | None = None, label: str | None = None, count: Path | None = None) -> int:
     unknown = [z for z in zones if z not in lights["zones"]]
     if unknown:
         raise common.Failure(f"house --bake: no zone {', '.join(unknown)} in lights.toml")
     raw = common.raw_dir()
+    if count and (review or grid or diag or sheen):
+        raise common.Failure("--count is a preset build without a bake: no --review, --grid, --diag or --sheen")
+    no_bake = no_bake or bool(count)
     if not no_bake:
         night_or_fail(raw)
     staged = stage(data, _godot.PROJECT / "import" / "house", props)
@@ -68,13 +74,17 @@ def run(data: dict, lights: dict, zones: list[str], preset: str, review: Path | 
     work.mkdir(parents=True, exist_ok=True)
     uv2 = work / "uv2.json"
     pieces = json.loads((raw / data["settings"]["kit_dir"] / "pieces.json").read_text(encoding="utf-8"))
-    uv2.write_text(json.dumps(house_bake.uv2_table(pieces)), encoding="utf-8", newline="\n")
+    merged = MERGED / "uv2.json"
+    extra = json.loads(merged.read_text(encoding="utf-8")) if merged.is_file() else {}
+    uv2.write_text(json.dumps({**house_bake.uv2_table(pieces), **extra}), encoding="utf-8", newline="\n")
     report: dict = {"preset": preset, "grid": grid, "merge": merge, "diag": diag, "sheen": sheen, "zones": {}}
     for zone in zones:
         report["zones"][zone] = {}
         for v in zone_variants(lights, zone, preset, grid, merge, diag, review is not None and not no_bake, sheen):
             report["zones"][zone][v["tag"]] = bake_variant(zone, v, work, raw, no_bake)
     (work / "bake_report.json").write_text(json.dumps(report, indent=1), encoding="utf-8", newline="\n")
+    if count:
+        shoot(data, lights, zones, preset, False, merge, count, count=True)
     if review and not no_bake:
         shoot(data, lights, zones, preset, grid, merge, review, diag, sheen)
         if before:
@@ -135,7 +145,7 @@ def bake_variant(zone: str, v: dict, work: Path, raw: Path, no_bake: bool) -> di
 
 
 def shoot(data: dict, lights: dict, zones: list[str], preset: str, grid: bool, merge: bool, review: Path,
-          diag: bool = False, sheen: bool = False) -> None:
+          diag: bool = False, sheen: bool = False, count: bool = False) -> None:
     """Per zone the rows of house_bake.shot_rows (the preset and the grid: the real-time row, the first variant's scene
     without its lightmap, then one baked row per variant; --diag: its modes) from its review rooms' E1 cameras, wall
     cameras (REVIEW_WALL) and seam camera: the frames, sheet.png (about 1280 px across, a label per row), measures.json
@@ -153,7 +163,7 @@ def shoot(data: dict, lights: dict, zones: list[str], preset: str, grid: bool, m
         probes = house_bake.probe_boxes(data, rooms_of[zone])
         rows += [{**r, "zone": zone, "scene": scene.format(zone, r["tag"]), "cams": cams,
                   **({"probes": probes, "glow_types": glow} if "sheen" in r else {})}
-                 for r in house_bake.shot_rows(zone, zone_variants(lights, zone, preset, grid, merge, diag, True,
+                 for r in house_bake.shot_rows(zone, zone_variants(lights, zone, preset, grid, merge, diag, not count,
                                                                    sheen))]
     if not rows:
         return
@@ -165,6 +175,9 @@ def shoot(data: dict, lights: dict, zones: list[str], preset: str, grid: bool, m
                               "-s", SHOTS, "--", f"jobs={jobs.as_posix()}", f"out={review.as_posix()}"], TIMEOUT)
     if code != 0:
         raise common.Failure(f"bake_shots.gd exited {code}:\n" + "\n".join(out.splitlines()[-15:]))
+    if count:
+        write_counts(lights, zones, rows, review)
+        return
     numbers: dict[str, list[dict]] = {}
     for row in rows:
         frames = [review / f"{row['label']}_{ci}.png" for ci in range(len(row["cams"]))]
@@ -219,6 +232,25 @@ def compare(data: dict, lights: dict, zones: list[str], preset: str, review: Pat
     house_sky.write_png(review / "before_after.png", width, len(rows_px), rows_px)
     (review / "before_after.md").write_text("\n".join(md), encoding="utf-8", newline="\n")
     common.say(f"  compare: {(review / 'before_after.png').as_posix()} ({len(titles)} rows)")
+
+
+def write_counts(lights: dict, zones: list[str], rows: list[dict], folder: Path) -> dict:
+    """--count: draw_calls.json and draw_calls.md (house_bake.draw_calls_md) from the shots, a WARN line per view over
+    lights.toml's [budget]; with a draw_calls.json in `folder`/../before, the table reads before -> after."""
+    shots = json.loads((folder / "shots.json").read_text(encoding="utf-8")).get("shots", [])
+    table = house_bake.draw_calls(shots, rows)
+    names = {z: house_bake.view_names(REVIEW_ROOMS[z], REVIEW_WALL.get(z, [])) for z in zones if z in REVIEW_ROOMS}
+    budget = lights.get("budget", {})
+    old = folder.parent / "before" / "draw_calls.json"
+    before = json.loads(old.read_text(encoding="utf-8"))["table"] if old.is_file() and old.parent != folder else None
+    (folder / "draw_calls.json").write_text(json.dumps({"budget": budget, "views": names, "table": table}, indent=1),
+                                            encoding="utf-8", newline="\n")
+    (folder / "draw_calls.md").write_text(house_bake.draw_calls_md(table, names, budget, before), encoding="utf-8",
+                                          newline="\n")
+    for line in house_bake.budget_warnings(budget, table, names):
+        common.say(f"  {line}")
+    common.say(f"  draw calls: {(folder / 'draw_calls.md').as_posix()}")
+    return table
 
 
 SHEEN_NOTE = "every lamp real-time with shadows and specular plus the bake's bounce: the sheen's target"

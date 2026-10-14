@@ -992,10 +992,14 @@ class _Scene:
         return "\n".join(head + [""] + [n + "\n" for n in self.nodes])
 
 
-def write_scenes(data: dict, planned: dict, out: Path, dressing: dict | None = None, res_of=None) -> dict:
+def write_scenes(data: dict, planned: dict, out: Path, dressing: dict | None = None, res_of=None,
+                 merge=None) -> dict:
     """One .tscn per room and level, and house.tscn, into out (the scene_res folder's files). Returns a summary.
     dressing: room id -> its checked dressing (house_dressing.check's rooms); res_of(prop id): the staged GLB's
-    res:// path, or None for a named placeholder box of the prop's size."""
+    res:// path, or None for a named placeholder box of the prop's size. merge(level, room id, pieces) (#107, the
+    merged shell): pieces are {"id", "node", "transform"} of the room's Shell; it returns {"hide": the node names whose
+    visual mesh the merged meshes draw, "add": [(node name, res path)]}: every piece instance stays (its colliders and
+    name), a hidden one only stops drawing, and the merged instances join the Shell."""
     from . import house_dressing
 
     st = data["settings"]
@@ -1016,11 +1020,20 @@ def write_scenes(data: dict, planned: dict, out: Path, dressing: dict | None = N
                 sc.nodes[0] += "\n" + f'metadata/wall_paint = "{wall_paint(data, room["id"])}"'
             sc.group("Shell")
             seen: dict = {}
+            shell = []
             for p in pl["pieces"][room["id"]]:
                 seen[p["id"]] = seen.get(p["id"], 0) + 1
-                sc.instance(f"{p['id']}_{seen[p['id']]}", "Shell", kit_res.format(id=p["id"]),
-                            _tf(p["turn"], p["x"] - rx, p["h"], p["y"] - ry))
+                shell.append({"id": p["id"], "node": f"{p['id']}_{seen[p['id']]}",
+                              "transform": _tf(p["turn"], p["x"] - rx, p["h"], p["y"] - ry)})
                 summary["pieces"][p["id"]] = summary["pieces"].get(p["id"], 0) + 1
+            merged = merge(name, room["id"], shell) if merge else {"hide": set(), "add": []}
+            for p in shell:
+                sc.instance(p["node"], "Shell", kit_res.format(id=p["id"]), p["transform"])
+                if p["node"] in merged["hide"]:
+                    sc.nodes.append(f'[node name="{p["id"]}" parent="Shell/{p["node"]}"]\nvisible = false')
+            for node, path in merged["add"]:
+                sc.instance(node, "Shell", path, _tf(0, 0, 0, 0))
+                summary.setdefault("merged", []).append(path)
             count += len(pl["pieces"][room["id"]])
             sc.group("Doors")
             for dm in pl["doors"][room["id"]]:
