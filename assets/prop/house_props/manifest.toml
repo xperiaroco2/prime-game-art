@@ -10,11 +10,12 @@
 # #168: the attic built into props/library/v11 (a copy of v10);
 # #170: the basement's working rooms built into props/library/v12 (a copy of v11).
 # #172: the basement's plant rooms built into props/library/v13 (a copy of v12); every library file from it.
+# #82: the 19 task-chain props rebuilt in the world look into props/task/v3 (a copy of v2); every task file from it.
 id = "house_props"
 kind = "prop"
 slot = ""
 title = "The House's props: the dressing library, the task-station props and the zone props"
-notes = "Built by `props-library --build` (props/library.toml: 328 props, 303 procedural, 25 re-painted from CC0 packs), `props` (props/tasks.toml) and the zones (layouts/house/outdoor/zones). Own work, except each file with a source: a CC0 pack model re-scaled and re-painted. All use the kit's texture set (house_kit), which ships once. The [[files]] list all 371 props of the raw build (332 before #172, 300 before #170, 286 before #168, 272 before #166, 256 before #164, 246 before #162, 225 before #158, 210 before #156, 198 before #153, 174 before #147's two backsplash runs, 176 before #150's six detail props, 182 before #150's round 2) and the fine pack's 15 files (#147, #150); only the props a committed package needs are committed under export/, the rest stay raw until their package. P2 committed 70 props (#124; 72 since #147 added backsplash_l and backsplash_r: 68 library/, 4 task/), approved by the engineer on 2026-10-11 in PR #125. P3 and P5 committed 34 more (#126), approved by the engineer on 2026-10-11 in PR #127 (the set format has no per-file approval; a later package's approval moves the fields below to its PR, which they now name: P7's, PR #131): library/ cage_lamp, desk, filing_cabinet, fuel_barrel, industrial_pendant, jerrycan, metal_shelving, office_chair, old_bicycle, old_wardrobe, pallet, pipe_run, rolled_carpet, safelight_red, sheeted_furniture, standing_mirror, tool_wall, toolbox_cart, trunk; task/ boiler, bun_shelf, cable_drum, car_parts_shelf, delivery_box_stack, enlarger, generator, meat_freezer, photo_board, pump, switchboard, tray_table, wall_switch, water_tank, wine_rack. P4 committed 10 more (#129), approved by the engineer on 2026-10-12 in PR #130: library/ balcony_chair, bathtub, bunk_bed, double_bed, single_bed, toy_spill, wardrobe; task/ computer_set, photo_printer, toy_chest. P7 (#128) committed 32 more, approved by the engineer on 2026-10-12 in PR #131: library/ birdbath, firewood_stack, garden_bench, garden_post_lamp, greenhouse_shelf, hose_reel, hydrant, mailbox, parked_car, path_light, picnic_table, potting_bench, stepping_stone, streetlight, watering_can, wheelbarrow; task/ bbq_grill, garden_dropoff, herb_bed, herb_board, music_speaker, pose_screen, utility_pole; zones/ bean_bag, cooler_box, deckchair, fire_pit, lantern, photo_backdrop, string_lights_gazebo, string_lights_set, tripod_camera. The game folder house_props/ is flat: a basename two sources share ships from the first source in prop_dirs (task, library), then zones, as <id>.glb, from any other as <id>_<source>.glb (house_export_plot.game_name; P7 ships bean_bag_zones.glb, birdbath_library.glb, cooler_box_zones.glb, deckchair_zones.glb, fire_pit_zones.glb, lantern_zones.glb, photo_backdrop_zones.glb, tripod_camera_zones.glb). #147 rebuilt the kitchen in C2-white (the world look, #143): fridge, stove, kitchen_counter, kitchen_sink, kitchen_upper, task/ assembly_island and order_board re-built (now all procedural, own work), library/ backsplash_l and backsplash_r added (148 props committed in all: 70 + 34 + 10 + 32 + 2), and the fine texture pack shipped: fine/high/ (1024 px) and fine/low/ (512 px) fine_d.png, fine_n0.png, fine_n1.png, made from 4 ambientCG CC0 maps (Wood092, Wood049, Concrete034, Tiles107; props/library.toml [fine]), with prop_fine.gdshader and prop_fine_high.tres / prop_fine_low.tres (the kit_fine material, P2's v4 export); approved by the engineer on 2026-10-13 in PR #149. #150 rebuilt the living room in the world look: library/ armchair, bookcase, coffee_table, dresser, fireplace, rug, sideboard, small_table, sofa and tv_cabinet re-built (now all procedural, own work; armchair, small_table, sofa and tv_cabinet were re-painted CC0 pack models before) and six detail-layer props added: library/ candle_pair, living_tray, magazine_fan, mantel_clock, standing_frame, throw_basket (154 props committed in all); the fine pack grew to eight texture slots: fine/high/ and fine/low/ fine_d1.png (slots 4-7), fine_n2.png and fine_n3.png beside fine_d, fine_n0 and fine_n1, made from 3 more ambientCG CC0 maps (Fabric036, Fabric061, Carpet016), and prop_fine.gdshader and its two materials read them; the 16 props and the fine files come from library v2 (props/library/v2: v1 with #150's build laid over it; layouts/house/house.toml prop_dirs and fine_dir). #150's round 2 re-coloured sofa and armchair (a warm terracotta fabric) and added 16 more living-room props (170 props committed in all): the wall art art_abstract, art_city and art_burger (base layer) and art_photos and art_score (detail layer), drawn procedurally (own work), and the detail-layer props board_games, candle_jars, coffee_books, deco_bowl, deco_vase, floor_plant (its pot the only collider), game_console, laptop, side_lamp, slippers and table_plant. Approved by the engineer on 2026-10-14 in PR #151. Approved under the engineer's blanket yes of 2026-10-14 (build the House, judge in a playtest; #34) in PR #154. #153 rebuilt the dining room in the world look: library/ dining_chair (now procedural, own work; it was a re-painted CC0 KayKit model) and chandelier (a three-shade pendant) and task/ dining_table (an oiled-oak table on the fine pack) re-built, and 12 props added (182 props committed in all): the wall art art_still_life (base layer), art_delivery and art_gazebo (detail layer), drawn procedurally (own work), the display_cabinet, the dining_rug and the detail-layer props bottle_rack, fruit_dish, homework, mail_stack, place_setting, serving_board and tulip_vase; every library file now from library v4 (props/library/v4: v3 with #153's build laid over it) and every task file from task v2 (v1 with the dining table rebuilt). Approved under the engineer's blanket yes of 2026-10-14 (build the House, judge in a playtest; #34) in PR #155. #156 dressed the hallway in the world look: 15 props added (196 props committed in all: library/doormat.glb, which no package uses since the hallway's hall_doormat replaced it, is no longer committed), all procedural, own work: the base-layer hall_console (an oak console), hall_mirror (an arched mirror; its pane the new mirror_glass paint), coat_hooks (a hook rail with coats and a scarf), hall_bench (with a seat pad and a shoe shelf), hall_runner (a navy runner), umbrella_stand, gallery_wall (six frames hung salon-style) and the wall art art_blueprint (the generator's blueprint), and the detail-layer hall_doormat, key_bowl, parcels, shoe_pairs, sports_bag, wall_calendar and photo_row (a family photo row), drawn procedurally; no other prop changed, every library file now from library v5 (props/library/v5: v4 with #156's build laid over it). Approved under the engineer's blanket yes of 2026-10-14 (build the House, judge in a playtest; #34) in PR #157. #158 dressed the ground floor's small rooms (the WC, the pantry and the stairs) in the world look: 21 props added (217 props committed in all), all procedural, own work: the WC's base-layer wc_toilet (a close-coupled toilet), wc_vanity (an oak vanity with a sit-on basin), mirror_cabinet, washer, tumble_dryer, wc_tiles (a tiled lower wall) and the wall art art_wash (a washing-day joke print), and the detail-layer towel_ring, roll_holder, pedal_bin, toilet_brush and reed_diffuser; the pantry's pantry_shelf and pantry_shelf_buns (shelving units stocked with jars, tins, boxes, bottles and, on the second, the burger kitchen's buns), veg_rack (baskets of potatoes and onions), drink_crates, step_stool and broom_set; the stairs' stair_runner (one per half flight), stair_gallery (frames going up the wall) and landing_plant; no other prop changed, every library file now from library v6 (props/library/v6: v5 with #158's build laid over it). Approved under the engineer's blanket yes of 2026-10-14 (build the House, judge in a playtest; #34) in PR #161. #162 dressed the upper floor's landing and bathroom in the world look: 10 props added (227 props committed in all), all procedural, own work: the bathroom's room-class bath_tub (a built-in bath with a glass shower screen), bath_vanity (the WC's oak vanity at 0.9 m), bath_shelf (open shelves of bottles), bath_tiles, bath_tiles_short and bath_tiles_shower (tiled lower walls and the shower corner, base layer), and its dressing towel_rail (a heated ladder rail with towels), bath_mat and the wall art art_bubbles (a bath-time joke print); the landing's landing_runner (an 8.5 m terracotta runner); no other prop changed, every library file now from library v8 (props/library/v8: v7, v6 with #162's build laid over it, with the landing_runner rebuilt in round 2: terracotta wool, a deep rust border of the same tone and a soft square motif instead of the slate field and cream lines). Approved under the engineer's blanket yes of 2026-10-14 (build the House, judge in a playtest; #34) in PR #163. #164 dressed the upper floor's bedroom and guest room in the world look: 16 props added and 3 no longer committed (240 props committed in all: library/double_bed.glb, single_bed.glb and nightstand.glb, which no package uses since the new beds and bedside tables replaced them, stay in the list and raw), all procedural, own work: the bedroom's room-class bedroom_bed (a double bed: an oak frame, a padded linen headboard, white bedding, a cream duvet, scatter cushions and a rust throw), bedroom_wardrobe (three white doors, a mirror door in the middle), bed_bench (an oak bench at the bed's foot), the dressing dresser_mirror (an arched brass-framed mirror), bedroom_rug (cream wool, a terracotta border) and the detail-layer dresser_set (perfume bottles on a brass tray, a jewellery dish, a hairbrush); the guest room's guest_bed (a made-up single bed), guest_wardrobe (two white doors), clothes_rail (shirts and a jacket on hangers, shoes on an oak shelf), guest_rug (sage, a cream border), suitcase (the guest's navy hard-shell case with a burger sticker), storage_boxes (a tidy stack of labelled boxes) and the detail-layer towel_stack (folded guest towels); both rooms' bedside_table (oak, two drawers), curtains (floor-length cream curtains on a black rod) and the detail-layer bedside_set (a glass of water, a phone on its charging cable, a paperback); no other prop changed, every library file now from library v9 (props/library/v9: v8 with #164's build laid over it). Approved under the engineer's blanket yes of 2026-10-14 (build the House, judge in a playtest; #34) in PR #165. #166 dressed the upper floor's kids' room and study in the world look: 14 props added and 3 no longer committed (251 props committed in all: library/bunk_bed.glb, wardrobe.glb and laundry_pile.glb, which no package places since the kids' room's new bed and wardrobe replaced them, stay in the list and raw), all procedural, own work: the kids' room's room-class kids_bed (a single oak bed with a starry navy duvet and a folded yellow blanket), kids_wardrobe (a white two-door wardrobe), kids_bookcase (white shelves of books and toys), toy_cubby (a low cube unit with coloured bins and books), play_rug (a teal play mat with a yellow road border), the wall art art_rocket (a rocket poster), art_dino (a dinosaur print) and art_drawing (a child's burger drawing), and the detail-layer toy_set (a toy rocket, a truck and a ball); the study's room-class study_bookcase (an oak bookcase full of books over a cupboard), study_rug (a terracotta rug with a cream border), pin_board (a cork board with the generator's blueprint and a delivery schedule), monitor_set (a monitor, keyboard, mouse and a mug) and the wall art art_certificate (a framed certificate); no other prop changed, every library file now from library v10 (props/library/v10: v9 with #166's build laid over it). Approved under the engineer's blanket yes of 2026-10-14 (build the House, judge in a playtest; #34) in PR #167. #168 dressed the attic as a well-kept family attic: 14 props added (265 committed in all), all procedural, own work: attic_shelving and attic_shelving_b (steel shelving loaded with labelled boxes and crates), storage_box (a labelled cardboard box) and storage_crate (a lidded plastic crate), sheeted_sofa and sheeted_dresser (furniture under dust sheets), leaning_frames (framed pictures leaning on the knee wall), holiday_decor (a boxed tree and garlands), rocking_horse and mannequin (a dress form; both hero-class skips before), sports_kit, and the game's own burger_sign (a burger stall's sign), delivery_bag (a retired delivery bag) and generator_part; old_wardrobe (a present-day white wardrobe), sheeted_furniture, old_bicycle (a city bike) and trunk rebuilt in the present-day look (new bytes, same names; only the attic places them); no other prop changed, every library file now from library v11 (props/library/v11: v10 with #168's build laid over it). Approved under the engineer's blanket yes of 2026-10-14 (build the House, judge in a playtest; #34) in PR #169. #170 dressed the basement's storage room, darkroom and corridor as clean, well-organised working rooms: 32 props added and fluorescent_tube (a library prop listed before, now placed in the storage instead of its bare bulbs) committed (298 committed in all), all procedural, own work: the storage's store_shelving and store_shelving_b (steel shelving with labelled crates, boxes and the burger kitchen's stock), bread_rack (the buns' rack), pallet_jack, loaded_pallet (a wrapped delivery pallet), store_workbench, step_ladder, hand_trolley (a delivery trolley), the floor markings floor_bay, floor_lane and floor_hatch, the signs aisle_sign_1 to aisle_sign_3, sign_staff, sign_buns, sign_meat, sign_wine, sign_parts, sign_deliveries and sign_way_out, and the detail-layer clipboard (delivery notes); the darkroom's lab_sink, chem_shelf (chemicals and paper boxes), light_table, print_line and print_line_b (drying lines of clipped party and gazebo prints) and sign_darkroom; the corridor's rubber_runner (rubber matting), work_hooks (work jackets on hooks), fire_extinguisher and fuse_box; no other prop changed, every library file now from library v12 (props/library/v12: v11 with #170's build laid over it). Approved under the engineer's blanket yes of 2026-10-14 (build the House, judge in a playtest; #34) in PR #171. #172 dressed the basement's generator hall, boiler room, pump room, switch room and passage as clean, well-organised plant rooms and gave the darkroom a central work island: 39 props added (337 committed in all), all procedural, own work: the generator hall's cable_tray (wall cable trays), isolator, control_desk (three screens, a phone, a logbook), drum_bund and drum_bund_b (drums on yellow spill bunds), floor_gen_zone (keep-clear blocks round the generator), fire_point, tool_chest, parts_shelving (the generator's spares) and gen_log (the daily check board); the boiler room's wall_boiler, hw_cylinder, insulated_pipes, valve_panel, expansion_vessel, water_softener and mop_sink; the pump room's pump_set and pump_set_b (pumps on plinths), sump_cover, wall_hose_reel and pump_chart; the switch room's elec_cabinet, elec_cabinet_b, meter_panel, switch_mat, first_aid_box and lectern (the logbook); the darkroom island's dev_bench (developing trays) and cutting_table (a print table); and the detail-layer signs sign_ear, sign_volt, sign_no_smoking, sign_generator, sign_plant, sign_first_aid, sign_boiler, sign_pump and sign_switch; no other prop changed, every library file now from library v13 (props/library/v13: v12 with #172's build laid over it). Approved under the engineer's blanket yes of 2026-10-14 (build the House, judge in a playtest; #34) in PR #173, which the approval fields name."
+notes = "Built by `props-library --build` (props/library.toml: 328 props, 303 procedural, 25 re-painted from CC0 packs), `props` (props/tasks.toml) and the zones (layouts/house/outdoor/zones). Own work, except each file with a source: a CC0 pack model re-scaled and re-painted. All use the kit's texture set (house_kit), which ships once. The [[files]] list all 371 props of the raw build (332 before #172, 300 before #170, 286 before #168, 272 before #166, 256 before #164, 246 before #162, 225 before #158, 210 before #156, 198 before #153, 174 before #147's two backsplash runs, 176 before #150's six detail props, 182 before #150's round 2) and the fine pack's 15 files (#147, #150); only the props a committed package needs are committed under export/, the rest stay raw until their package. P2 committed 70 props (#124; 72 since #147 added backsplash_l and backsplash_r: 68 library/, 4 task/), approved by the engineer on 2026-10-11 in PR #125. P3 and P5 committed 34 more (#126), approved by the engineer on 2026-10-11 in PR #127 (the set format has no per-file approval; a later package's approval moves the fields below to its PR, which they now name: P7's, PR #131): library/ cage_lamp, desk, filing_cabinet, fuel_barrel, industrial_pendant, jerrycan, metal_shelving, office_chair, old_bicycle, old_wardrobe, pallet, pipe_run, rolled_carpet, safelight_red, sheeted_furniture, standing_mirror, tool_wall, toolbox_cart, trunk; task/ boiler, bun_shelf, cable_drum, car_parts_shelf, delivery_box_stack, enlarger, generator, meat_freezer, photo_board, pump, switchboard, tray_table, wall_switch, water_tank, wine_rack. P4 committed 10 more (#129), approved by the engineer on 2026-10-12 in PR #130: library/ balcony_chair, bathtub, bunk_bed, double_bed, single_bed, toy_spill, wardrobe; task/ computer_set, photo_printer, toy_chest. P7 (#128) committed 32 more, approved by the engineer on 2026-10-12 in PR #131: library/ birdbath, firewood_stack, garden_bench, garden_post_lamp, greenhouse_shelf, hose_reel, hydrant, mailbox, parked_car, path_light, picnic_table, potting_bench, stepping_stone, streetlight, watering_can, wheelbarrow; task/ bbq_grill, garden_dropoff, herb_bed, herb_board, music_speaker, pose_screen, utility_pole; zones/ bean_bag, cooler_box, deckchair, fire_pit, lantern, photo_backdrop, string_lights_gazebo, string_lights_set, tripod_camera. The game folder house_props/ is flat: a basename two sources share ships from the first source in prop_dirs (task, library), then zones, as <id>.glb, from any other as <id>_<source>.glb (house_export_plot.game_name; P7 ships bean_bag_zones.glb, birdbath_library.glb, cooler_box_zones.glb, deckchair_zones.glb, fire_pit_zones.glb, lantern_zones.glb, photo_backdrop_zones.glb, tripod_camera_zones.glb). #147 rebuilt the kitchen in C2-white (the world look, #143): fridge, stove, kitchen_counter, kitchen_sink, kitchen_upper, task/ assembly_island and order_board re-built (now all procedural, own work), library/ backsplash_l and backsplash_r added (148 props committed in all: 70 + 34 + 10 + 32 + 2), and the fine texture pack shipped: fine/high/ (1024 px) and fine/low/ (512 px) fine_d.png, fine_n0.png, fine_n1.png, made from 4 ambientCG CC0 maps (Wood092, Wood049, Concrete034, Tiles107; props/library.toml [fine]), with prop_fine.gdshader and prop_fine_high.tres / prop_fine_low.tres (the kit_fine material, P2's v4 export); approved by the engineer on 2026-10-13 in PR #149. #150 rebuilt the living room in the world look: library/ armchair, bookcase, coffee_table, dresser, fireplace, rug, sideboard, small_table, sofa and tv_cabinet re-built (now all procedural, own work; armchair, small_table, sofa and tv_cabinet were re-painted CC0 pack models before) and six detail-layer props added: library/ candle_pair, living_tray, magazine_fan, mantel_clock, standing_frame, throw_basket (154 props committed in all); the fine pack grew to eight texture slots: fine/high/ and fine/low/ fine_d1.png (slots 4-7), fine_n2.png and fine_n3.png beside fine_d, fine_n0 and fine_n1, made from 3 more ambientCG CC0 maps (Fabric036, Fabric061, Carpet016), and prop_fine.gdshader and its two materials read them; the 16 props and the fine files come from library v2 (props/library/v2: v1 with #150's build laid over it; layouts/house/house.toml prop_dirs and fine_dir). #150's round 2 re-coloured sofa and armchair (a warm terracotta fabric) and added 16 more living-room props (170 props committed in all): the wall art art_abstract, art_city and art_burger (base layer) and art_photos and art_score (detail layer), drawn procedurally (own work), and the detail-layer props board_games, candle_jars, coffee_books, deco_bowl, deco_vase, floor_plant (its pot the only collider), game_console, laptop, side_lamp, slippers and table_plant. Approved by the engineer on 2026-10-14 in PR #151. Approved under the engineer's blanket yes of 2026-10-14 (build the House, judge in a playtest; #34) in PR #154. #153 rebuilt the dining room in the world look: library/ dining_chair (now procedural, own work; it was a re-painted CC0 KayKit model) and chandelier (a three-shade pendant) and task/ dining_table (an oiled-oak table on the fine pack) re-built, and 12 props added (182 props committed in all): the wall art art_still_life (base layer), art_delivery and art_gazebo (detail layer), drawn procedurally (own work), the display_cabinet, the dining_rug and the detail-layer props bottle_rack, fruit_dish, homework, mail_stack, place_setting, serving_board and tulip_vase; every library file now from library v4 (props/library/v4: v3 with #153's build laid over it) and every task file from task v2 (v1 with the dining table rebuilt). Approved under the engineer's blanket yes of 2026-10-14 (build the House, judge in a playtest; #34) in PR #155. #156 dressed the hallway in the world look: 15 props added (196 props committed in all: library/doormat.glb, which no package uses since the hallway's hall_doormat replaced it, is no longer committed), all procedural, own work: the base-layer hall_console (an oak console), hall_mirror (an arched mirror; its pane the new mirror_glass paint), coat_hooks (a hook rail with coats and a scarf), hall_bench (with a seat pad and a shoe shelf), hall_runner (a navy runner), umbrella_stand, gallery_wall (six frames hung salon-style) and the wall art art_blueprint (the generator's blueprint), and the detail-layer hall_doormat, key_bowl, parcels, shoe_pairs, sports_bag, wall_calendar and photo_row (a family photo row), drawn procedurally; no other prop changed, every library file now from library v5 (props/library/v5: v4 with #156's build laid over it). Approved under the engineer's blanket yes of 2026-10-14 (build the House, judge in a playtest; #34) in PR #157. #158 dressed the ground floor's small rooms (the WC, the pantry and the stairs) in the world look: 21 props added (217 props committed in all), all procedural, own work: the WC's base-layer wc_toilet (a close-coupled toilet), wc_vanity (an oak vanity with a sit-on basin), mirror_cabinet, washer, tumble_dryer, wc_tiles (a tiled lower wall) and the wall art art_wash (a washing-day joke print), and the detail-layer towel_ring, roll_holder, pedal_bin, toilet_brush and reed_diffuser; the pantry's pantry_shelf and pantry_shelf_buns (shelving units stocked with jars, tins, boxes, bottles and, on the second, the burger kitchen's buns), veg_rack (baskets of potatoes and onions), drink_crates, step_stool and broom_set; the stairs' stair_runner (one per half flight), stair_gallery (frames going up the wall) and landing_plant; no other prop changed, every library file now from library v6 (props/library/v6: v5 with #158's build laid over it). Approved under the engineer's blanket yes of 2026-10-14 (build the House, judge in a playtest; #34) in PR #161. #162 dressed the upper floor's landing and bathroom in the world look: 10 props added (227 props committed in all), all procedural, own work: the bathroom's room-class bath_tub (a built-in bath with a glass shower screen), bath_vanity (the WC's oak vanity at 0.9 m), bath_shelf (open shelves of bottles), bath_tiles, bath_tiles_short and bath_tiles_shower (tiled lower walls and the shower corner, base layer), and its dressing towel_rail (a heated ladder rail with towels), bath_mat and the wall art art_bubbles (a bath-time joke print); the landing's landing_runner (an 8.5 m terracotta runner); no other prop changed, every library file now from library v8 (props/library/v8: v7, v6 with #162's build laid over it, with the landing_runner rebuilt in round 2: terracotta wool, a deep rust border of the same tone and a soft square motif instead of the slate field and cream lines). Approved under the engineer's blanket yes of 2026-10-14 (build the House, judge in a playtest; #34) in PR #163. #164 dressed the upper floor's bedroom and guest room in the world look: 16 props added and 3 no longer committed (240 props committed in all: library/double_bed.glb, single_bed.glb and nightstand.glb, which no package uses since the new beds and bedside tables replaced them, stay in the list and raw), all procedural, own work: the bedroom's room-class bedroom_bed (a double bed: an oak frame, a padded linen headboard, white bedding, a cream duvet, scatter cushions and a rust throw), bedroom_wardrobe (three white doors, a mirror door in the middle), bed_bench (an oak bench at the bed's foot), the dressing dresser_mirror (an arched brass-framed mirror), bedroom_rug (cream wool, a terracotta border) and the detail-layer dresser_set (perfume bottles on a brass tray, a jewellery dish, a hairbrush); the guest room's guest_bed (a made-up single bed), guest_wardrobe (two white doors), clothes_rail (shirts and a jacket on hangers, shoes on an oak shelf), guest_rug (sage, a cream border), suitcase (the guest's navy hard-shell case with a burger sticker), storage_boxes (a tidy stack of labelled boxes) and the detail-layer towel_stack (folded guest towels); both rooms' bedside_table (oak, two drawers), curtains (floor-length cream curtains on a black rod) and the detail-layer bedside_set (a glass of water, a phone on its charging cable, a paperback); no other prop changed, every library file now from library v9 (props/library/v9: v8 with #164's build laid over it). Approved under the engineer's blanket yes of 2026-10-14 (build the House, judge in a playtest; #34) in PR #165. #166 dressed the upper floor's kids' room and study in the world look: 14 props added and 3 no longer committed (251 props committed in all: library/bunk_bed.glb, wardrobe.glb and laundry_pile.glb, which no package places since the kids' room's new bed and wardrobe replaced them, stay in the list and raw), all procedural, own work: the kids' room's room-class kids_bed (a single oak bed with a starry navy duvet and a folded yellow blanket), kids_wardrobe (a white two-door wardrobe), kids_bookcase (white shelves of books and toys), toy_cubby (a low cube unit with coloured bins and books), play_rug (a teal play mat with a yellow road border), the wall art art_rocket (a rocket poster), art_dino (a dinosaur print) and art_drawing (a child's burger drawing), and the detail-layer toy_set (a toy rocket, a truck and a ball); the study's room-class study_bookcase (an oak bookcase full of books over a cupboard), study_rug (a terracotta rug with a cream border), pin_board (a cork board with the generator's blueprint and a delivery schedule), monitor_set (a monitor, keyboard, mouse and a mug) and the wall art art_certificate (a framed certificate); no other prop changed, every library file now from library v10 (props/library/v10: v9 with #166's build laid over it). Approved under the engineer's blanket yes of 2026-10-14 (build the House, judge in a playtest; #34) in PR #167. #168 dressed the attic as a well-kept family attic: 14 props added (265 committed in all), all procedural, own work: attic_shelving and attic_shelving_b (steel shelving loaded with labelled boxes and crates), storage_box (a labelled cardboard box) and storage_crate (a lidded plastic crate), sheeted_sofa and sheeted_dresser (furniture under dust sheets), leaning_frames (framed pictures leaning on the knee wall), holiday_decor (a boxed tree and garlands), rocking_horse and mannequin (a dress form; both hero-class skips before), sports_kit, and the game's own burger_sign (a burger stall's sign), delivery_bag (a retired delivery bag) and generator_part; old_wardrobe (a present-day white wardrobe), sheeted_furniture, old_bicycle (a city bike) and trunk rebuilt in the present-day look (new bytes, same names; only the attic places them); no other prop changed, every library file now from library v11 (props/library/v11: v10 with #168's build laid over it). Approved under the engineer's blanket yes of 2026-10-14 (build the House, judge in a playtest; #34) in PR #169. #170 dressed the basement's storage room, darkroom and corridor as clean, well-organised working rooms: 32 props added and fluorescent_tube (a library prop listed before, now placed in the storage instead of its bare bulbs) committed (298 committed in all), all procedural, own work: the storage's store_shelving and store_shelving_b (steel shelving with labelled crates, boxes and the burger kitchen's stock), bread_rack (the buns' rack), pallet_jack, loaded_pallet (a wrapped delivery pallet), store_workbench, step_ladder, hand_trolley (a delivery trolley), the floor markings floor_bay, floor_lane and floor_hatch, the signs aisle_sign_1 to aisle_sign_3, sign_staff, sign_buns, sign_meat, sign_wine, sign_parts, sign_deliveries and sign_way_out, and the detail-layer clipboard (delivery notes); the darkroom's lab_sink, chem_shelf (chemicals and paper boxes), light_table, print_line and print_line_b (drying lines of clipped party and gazebo prints) and sign_darkroom; the corridor's rubber_runner (rubber matting), work_hooks (work jackets on hooks), fire_extinguisher and fuse_box; no other prop changed, every library file now from library v12 (props/library/v12: v11 with #170's build laid over it). Approved under the engineer's blanket yes of 2026-10-14 (build the House, judge in a playtest; #34) in PR #171. #172 dressed the basement's generator hall, boiler room, pump room, switch room and passage as clean, well-organised plant rooms and gave the darkroom a central work island: 39 props added (337 committed in all), all procedural, own work: the generator hall's cable_tray (wall cable trays), isolator, control_desk (three screens, a phone, a logbook), drum_bund and drum_bund_b (drums on yellow spill bunds), floor_gen_zone (keep-clear blocks round the generator), fire_point, tool_chest, parts_shelving (the generator's spares) and gen_log (the daily check board); the boiler room's wall_boiler, hw_cylinder, insulated_pipes, valve_panel, expansion_vessel, water_softener and mop_sink; the pump room's pump_set and pump_set_b (pumps on plinths), sump_cover, wall_hose_reel and pump_chart; the switch room's elec_cabinet, elec_cabinet_b, meter_panel, switch_mat, first_aid_box and lectern (the logbook); the darkroom island's dev_bench (developing trays) and cutting_table (a print table); and the detail-layer signs sign_ear, sign_volt, sign_no_smoking, sign_generator, sign_plant, sign_first_aid, sign_boiler, sign_pump and sign_switch; no other prop changed, every library file now from library v13 (props/library/v13: v12 with #172's build laid over it). Approved under the engineer's blanket yes of 2026-10-14 (build the House, judge in a playtest; #34) in PR #173. #82 rebuilt the 19 task-chain props that were still the older procedural kit-paint pieces in the world look on the fine pack (props_task_fine.py; every task-chain prop now carries it): bun_shelf, meat_freezer, bbq_grill, herb_bed, herb_board, delivery_box_stack, wine_rack, wine_rack_freestanding, garden_dropoff, terrace_table, workbench, pose_screen, computer_set, photo_printer, photo_board, car_parts_shelf, generator (a canopy genset with generator_on and generator_off state meshes), wall_switch and wall_switch_post (their _on and _off state meshes in signal green and signal red); same sizes, pivots, fronts and colliders; every task file now from task v3 (props/task/v3: v2 with #82's build laid over it). Package P8 (task_props: all 34 task props and the fine pack) is committed with its package.json and HANDOFF.md beside this manifest, which owns every P8 file; birdbath, bulkhead_stairs, wall_switch_post, wine_rack_freestanding and workbench join export/task/ with it (all 34 task props committed, 342 props in all). The 12 room-defining task props keep the kit paint. Approved under the engineer's blanket yes of 2026-10-14 (build the House, judge in a playtest; #34) in PR #174, which the approval fields name."
 tools = ["blender 5.2.2", "prime-game-art props-library and props (props/library.toml, props/tasks.toml)"]
 licence = "own-work"
 licence_url = "https://github.com/xperiaroco2/prime-game"
@@ -22,7 +23,7 @@ public_repo_ok = true
 ai_generated = false
 approved_by = ["xperiaroco2"]
 approved_at = 2026-10-14
-approval_pr = "https://github.com/xperiaroco2/prime-game-art/pull/173"
+approval_pr = "https://github.com/xperiaroco2/prime-game-art/pull/174"
 
 [source]
 service = "own"
@@ -994,173 +995,173 @@ sha256 = "fa1d2b2ba87e3172f36af30e5b5adfb40cd7646df9843de57a00cc78e9830bfd"
 
 [[files]]
 name = "task/assembly_island.glb"
-file = "props/task/v2/assembly_island.glb"
+file = "props/task/v3/assembly_island.glb"
 sha256 = "41cd36989d6947242ed2457086ed72245a00c404dc8c7313fac222152e1194fc"
 
 [[files]]
 name = "task/bbq_grill.glb"
-file = "props/task/v2/bbq_grill.glb"
-sha256 = "b96ca78d01bd889c07845c1ca05ffad9c5db4921d37d3f295abcb65a37427a5a"
+file = "props/task/v3/bbq_grill.glb"
+sha256 = "d267aca7fb85345b1b3226aaf006a0135817fba786bee7814896de74525aadf3"
 
 [[files]]
 name = "task/birdbath.glb"
-file = "props/task/v2/birdbath.glb"
+file = "props/task/v3/birdbath.glb"
 sha256 = "729cf7cbb0ebf3e55628d533a2724a0b832b9ef47b56c4b29fd2b4c7d99ac3c7"
 
 [[files]]
 name = "task/boiler.glb"
-file = "props/task/v2/boiler.glb"
+file = "props/task/v3/boiler.glb"
 sha256 = "8d0ae90a568bac518251af8d10faaaa211f780625bbf85de58feaf7513b776c4"
 
 [[files]]
 name = "task/bulkhead_stairs.glb"
-file = "props/task/v2/bulkhead_stairs.glb"
+file = "props/task/v3/bulkhead_stairs.glb"
 sha256 = "1aeae9653871bf834147a0b3750d07eb9fe7ee4411739732017881aa28056692"
 
 [[files]]
 name = "task/bun_shelf.glb"
-file = "props/task/v2/bun_shelf.glb"
-sha256 = "d1b6c8d6a5f31c49bf817e3eabf98bd13df8a64115d27f83c8bbcb619c028149"
+file = "props/task/v3/bun_shelf.glb"
+sha256 = "c84834ba323055377d1a8e87b54534f1897e85be8dc551c8744976a454ca0488"
 
 [[files]]
 name = "task/cable_drum.glb"
-file = "props/task/v2/cable_drum.glb"
+file = "props/task/v3/cable_drum.glb"
 sha256 = "dbd79a84f54f8dea6d836b4b0702d4a14f51fd415d4b0bd4378e5d3598f2495d"
 
 [[files]]
 name = "task/car_parts_shelf.glb"
-file = "props/task/v2/car_parts_shelf.glb"
-sha256 = "124d34b16b263b3e5be36e01323226ae7a1e8a497690a445cdb78e815a7fcb80"
+file = "props/task/v3/car_parts_shelf.glb"
+sha256 = "19d74fb4486f43995a64ccc840859980439c6eb0a8a2b6a1c7d2236f3f247f15"
 
 [[files]]
 name = "task/computer_set.glb"
-file = "props/task/v2/computer_set.glb"
-sha256 = "646eb97a4b1f0cf88498cd44a9adb0336bdcdcaf743550a02448227d372c2e68"
+file = "props/task/v3/computer_set.glb"
+sha256 = "7f1a22bb105ea0d3a7534d9f2390d45c7492d49e5bf230d9aaa66f1b4798464e"
 
 [[files]]
 name = "task/delivery_box_stack.glb"
-file = "props/task/v2/delivery_box_stack.glb"
-sha256 = "0cabfa9369821f051a809a87f14353b66b950b71f800752089ae12409cca7a59"
+file = "props/task/v3/delivery_box_stack.glb"
+sha256 = "8cefc0b9d9116f4d7f4ef4408cfef3d54816a0027f3fa9ff76a874e668414686"
 
 [[files]]
 name = "task/dining_table.glb"
-file = "props/task/v2/dining_table.glb"
+file = "props/task/v3/dining_table.glb"
 sha256 = "7ffd3f00d07667bebb8be56e185cc457d88074eb4b469a6e0f6ae0a1aa48dad7"
 
 [[files]]
 name = "task/enlarger.glb"
-file = "props/task/v2/enlarger.glb"
+file = "props/task/v3/enlarger.glb"
 sha256 = "5c99bdfc323fcab9ded81041d633082d3740413dc2a697c2642087d5d47c9c5a"
 
 [[files]]
 name = "task/garden_dropoff.glb"
-file = "props/task/v2/garden_dropoff.glb"
-sha256 = "79a6ccfad4b0f6cc02d9272d56eeb93f506604bda5d5c63e5be60986f441a577"
+file = "props/task/v3/garden_dropoff.glb"
+sha256 = "ceb57d481fece5a7030a7e68554e0bcc066cb9ed6bc0a3fb08084b61ced0ad13"
 
 [[files]]
 name = "task/generator.glb"
-file = "props/task/v2/generator.glb"
-sha256 = "0c4e50d735e8c0b14d7089208cfd9e0031d161c36560248deeea25090a9da385"
+file = "props/task/v3/generator.glb"
+sha256 = "c020c15697ca8b026a491f5529fe29ab1a258a3ee64e1f36e6da6287138ba62d"
 
 [[files]]
 name = "task/herb_bed.glb"
-file = "props/task/v2/herb_bed.glb"
-sha256 = "a1292ee19682203dc9f1a172d00678927348c914ae2b294271271e352b1236ca"
+file = "props/task/v3/herb_bed.glb"
+sha256 = "267d8f1685e90fc5fc299446adc68d387fc196812e7db64e1aa45df2b77897ce"
 
 [[files]]
 name = "task/herb_board.glb"
-file = "props/task/v2/herb_board.glb"
-sha256 = "37659caceb9fde070ede4ae1d442f8f113aaae3ac020ef88373895d06f34f488"
+file = "props/task/v3/herb_board.glb"
+sha256 = "9596be1e2d1640fe18deb2d0b55f8cdfafdcff2256db8815963ddf6fc0290fcd"
 
 [[files]]
 name = "task/meat_freezer.glb"
-file = "props/task/v2/meat_freezer.glb"
-sha256 = "bea07dac546584c95984a31a9996f8eb3c93ab6c1898332010dd00bcaa77f56d"
+file = "props/task/v3/meat_freezer.glb"
+sha256 = "7c55c94536089f4b87f921cf258efb04f28281388010dff98523604f6a3cbe27"
 
 [[files]]
 name = "task/music_speaker.glb"
-file = "props/task/v2/music_speaker.glb"
+file = "props/task/v3/music_speaker.glb"
 sha256 = "29db010e43d195397df1d78a233812b097aea9cd4a511a6e729f0e404b61a2e8"
 
 [[files]]
 name = "task/order_board.glb"
-file = "props/task/v2/order_board.glb"
+file = "props/task/v3/order_board.glb"
 sha256 = "196b1b59dfaee986d2c25ed7e8c9215a85a9b72a89b802ea48b86e3b90b160f1"
 
 [[files]]
 name = "task/photo_board.glb"
-file = "props/task/v2/photo_board.glb"
-sha256 = "4a97f7ba0fe404aaa30189923530a991f51ad8c2c3f13e695160d0dcac9d5d26"
+file = "props/task/v3/photo_board.glb"
+sha256 = "d9c0b78d03f57939fa5b75920b3c487f1176215ff1850aacd4616e60d6680f6f"
 
 [[files]]
 name = "task/photo_printer.glb"
-file = "props/task/v2/photo_printer.glb"
-sha256 = "6488b296174ffe21c826c25bb305667e29dd41f428c056bd63b221a5c67a5da1"
+file = "props/task/v3/photo_printer.glb"
+sha256 = "c98935928dfd38f1529c3b0e15b06f53fc3d31f9506ad11755428bc32702a972"
 
 [[files]]
 name = "task/pose_screen.glb"
-file = "props/task/v2/pose_screen.glb"
-sha256 = "3dc6976643d42b0f6e92e89eb5f01bb8e2a51a0f89434ba7cd04cfe3b71c9a70"
+file = "props/task/v3/pose_screen.glb"
+sha256 = "ad123cfeed6dd285ed8a0279adfd844dc90d2f69baf93dcf0c345dece16ee0b7"
 
 [[files]]
 name = "task/pump.glb"
-file = "props/task/v2/pump.glb"
+file = "props/task/v3/pump.glb"
 sha256 = "87c968ddb67873396db136d7d6276c56eedc5ba23bb1a6568f877e2d70ab9b57"
 
 [[files]]
 name = "task/switchboard.glb"
-file = "props/task/v2/switchboard.glb"
+file = "props/task/v3/switchboard.glb"
 sha256 = "7aa4f986cd7858aa25cb66a01f6a6d070e38994a18be5c9f4c064e53103ce548"
 
 [[files]]
 name = "task/terrace_table.glb"
-file = "props/task/v2/terrace_table.glb"
-sha256 = "837aa4090f21fbe3cc09f701ba3349cebf40f913fcaf4439b6e8b3dd14d46f66"
+file = "props/task/v3/terrace_table.glb"
+sha256 = "bfe40b3680334adca2b6cc4084efb1a065398505f969a47714983469b9493b62"
 
 [[files]]
 name = "task/toy_chest.glb"
-file = "props/task/v2/toy_chest.glb"
+file = "props/task/v3/toy_chest.glb"
 sha256 = "075299c5183ac71fec73bb86e02052bc3a049f98fb2ecf6325bcd62dd929ec8a"
 
 [[files]]
 name = "task/tray_table.glb"
-file = "props/task/v2/tray_table.glb"
+file = "props/task/v3/tray_table.glb"
 sha256 = "e7a1dbf0741fb47c8ae7219b882303ef6997aa970f16eacde12e614e7b6e0af7"
 
 [[files]]
 name = "task/utility_pole.glb"
-file = "props/task/v2/utility_pole.glb"
+file = "props/task/v3/utility_pole.glb"
 sha256 = "f821054e7a492982fbb6ea26364514952aafce0b0b5e8436da93c8c90254b517"
 
 [[files]]
 name = "task/wall_switch.glb"
-file = "props/task/v2/wall_switch.glb"
-sha256 = "97e6e64b87ec8c9a4172924a10096651a4685e0293c72459277649fbcdb78f42"
+file = "props/task/v3/wall_switch.glb"
+sha256 = "b4c7270e0defe6ccf036b147cbbc497d76336b917c17e9a6598937a6f94a1aa5"
 
 [[files]]
 name = "task/wall_switch_post.glb"
-file = "props/task/v2/wall_switch_post.glb"
-sha256 = "9f5703af0acfef95c62edbab2579508ba89eee4d294178077b147acfde4b6718"
+file = "props/task/v3/wall_switch_post.glb"
+sha256 = "ecd258679d23ede9809c98f2dc081b828024f126994c43ebcdfb6750d1a2d008"
 
 [[files]]
 name = "task/water_tank.glb"
-file = "props/task/v2/water_tank.glb"
+file = "props/task/v3/water_tank.glb"
 sha256 = "5fb9b738d5cb9f2b7af67581a3b770bacc95c3efe2e3958e9e87f28d893fb303"
 
 [[files]]
 name = "task/wine_rack.glb"
-file = "props/task/v2/wine_rack.glb"
-sha256 = "65d6383d42215cc2ff37bf643c79d30f062fc64bb8577803abb2a0d482a0f821"
+file = "props/task/v3/wine_rack.glb"
+sha256 = "af0391748d738cc0373119f243ae89ceeb50a79867e9cb7454e9c310f70f9e65"
 
 [[files]]
 name = "task/wine_rack_freestanding.glb"
-file = "props/task/v2/wine_rack_freestanding.glb"
-sha256 = "2ac74a5fd81707a448e357155965dad98053ef23f44897e29fbe9f3f2395b498"
+file = "props/task/v3/wine_rack_freestanding.glb"
+sha256 = "ebd433a715e30d7bc4c2670236bc1da9f0a2795030022cd13c489c1b4bc8d3fb"
 
 [[files]]
 name = "task/workbench.glb"
-file = "props/task/v2/workbench.glb"
-sha256 = "45b213e219b9045cdec38069a6c99080015298b9ae9bcffc36121282d5418495"
+file = "props/task/v3/workbench.glb"
+sha256 = "91b445540a1b0b07e051a0c8f6aa571015730d2bbb14880a1dc3518a82437f96"
 
 [[files]]
 name = "zones/bean_bag.glb"
