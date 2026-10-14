@@ -63,6 +63,7 @@ class WallPaintTest(unittest.TestCase):
         x, y, w, d = study["rect"]
         self.assertEqual(rooms["study"]["rect"], [x, y, x + w, y + d])
         self.assertEqual(rooms["study"]["band"], [3.1, 6.3])  # the second floor: 3.2 - 0.1 to 3.2 + 3.1
+        self.assertEqual(rooms["attic"]["band"], [6.3, 12.4])  # #168: the knee level up to its gables' tops (6.4 + 6.0)
         self.assertLessEqual(len(req["rooms"]), 16)  # kit_set.gdshader's MAX_PAINTS
         self.assertEqual(hl.walk_request(self.data)["paints"], req)
 

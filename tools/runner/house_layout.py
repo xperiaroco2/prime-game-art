@@ -781,6 +781,16 @@ def _spans(cells: list[int]) -> list[tuple[int, int]]:
 HEX = re.compile(r"^#[0-9a-fA-F]{6}$")
 PAINT_ROLE = "wall_int"  # the kit's inner plaster: the role a room's paint replaces (kits/house.json roles)
 PAINT_BAND = (-0.1, 3.1)  # metres above the level's floor that a room's paint covers (the storey's walls)
+# A knee-walled level (the attic, #168): the band runs up to its gables' tops, above the roof's ridge (knee 2.2 +
+# 0.35 per metre over a 10 m half-depth = 5.7 m, plus the slab), so the gable triangles take the paint too.
+PAINT_TOP_KNEE = 6.0
+
+
+def paint_band(level: dict) -> list[float]:
+    """The heights (world y) a room's paint covers on this level: PAINT_BAND above its floor, up to PAINT_TOP_KNEE
+    on a knee-walled level."""
+    top = PAINT_TOP_KNEE if level.get("walls") == "knee" else PAINT_BAND[1]
+    return [round(level["floor_y"] + PAINT_BAND[0], 3), round(level["floor_y"] + top, 3)]
 
 
 def check_paints(data: dict) -> list[str]:
@@ -820,7 +830,7 @@ def paint_request(data: dict) -> dict:
                 continue
             x, y, w, d = r["rect"]
             out.append({"room": r["id"], "level": lv["level"], "hex": hexc, "rect": [x, y, x + w, y + d],
-                        "band": [round(lv["floor_y"] + PAINT_BAND[0], 3), round(lv["floor_y"] + PAINT_BAND[1], 3)],
+                        "band": paint_band(lv),
                         "to": paint_vcol(spec, hexc)})
     kit_hex = spec["roles"][PAINT_ROLE]["hex"]
     return {"from": paint_vcol(spec, kit_hex), "kit_hex": kit_hex, "rooms": out}
