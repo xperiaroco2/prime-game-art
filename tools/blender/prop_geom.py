@@ -5076,7 +5076,7 @@ def build_loaded_pallet(m, s, R, prm, rng):
                         _icon(m, "burger", xm, y0 + lh * 0.575, 0.05, z1 + 0.002, "steel_black")
     for sx in (-1, 1):
         for sz in (-1, 1):
-            x, z = sx * (hx - 0.01), sz * (hz - 0.01)
+            x, z = sx * (hx - 0.02), sz * (hz - 0.02)  # the corner boards stay inside the size (#170)
             box(m, (x - 0.02, ph, z - 0.02), (x + 0.02, H, z + 0.02), "art_white", "+x-x+z-z+y")
     y = ph + (H - ph) * 0.5
     box(m, (-hx - 0.003, y - 0.015, -hz - 0.003), (hx + 0.003, y + 0.015, hz + 0.003), "paint_blue", "+x-x+z-z")
@@ -5278,10 +5278,10 @@ def build_print_line(m, s, R, prm, rng):
     L, W, H = s
     hx = L / 2
     wy = H - float(prm.get("drop", 0.85))
-    for x in (-hx + 0.02, hx - 0.02):
+    for x in (-hx + 0.04, hx - 0.04):  # the ceiling plates stay inside the length (#170)
         bar(m, (x, wy - 0.02, 0.0), (x, H, 0.0), 0.012, "steel_black")
         box(m, (x - 0.04, H - 0.006, -0.025), (x + 0.04, H, 0.025), "steel_black")
-    bar(m, (-hx + 0.02, wy, 0.0), (hx - 0.02, wy, 0.0), 0.004, "steel_black")
+    bar(m, (-hx + 0.04, wy, 0.0), (hx - 0.04, wy, 0.0), 0.004, "steel_black")
     n = int(prm.get("n", 7))
     grounds = ["art_sky", "art_pink", "book_sage", "book_mustard", "art_terracotta", "book_teal", "art_white"]
     people = ["paint_red", "paint_blue", "book_mustard", "leaf_green", "book_navy", "art_terracotta"]
@@ -5312,15 +5312,15 @@ def build_light_table(m, s, R, prm, rng):
     L, W, H = s
     hx, hz = L / 2, W / 2
     st = prm["style"]
-    ty = H
+    ty = H - 0.04  # the loupe stands 4 cm over the panel: the whole stays inside the height (#170)
     for sx in (-1, 1):
         for sz in (-1, 1):
             x, z = sx * (hx - 0.04), sz * (hz - 0.04)
             box(m, (x - 0.02, 0.0, z - 0.02), (x + 0.02, ty - 0.12, z + 0.02), "steel_black", "+x-x+z-z")
     box(m, (-hx + 0.04, 0.12, -hz + 0.04), (hx - 0.04, 0.14, hz - 0.04), "steel_black", "+y-y+x-x+z-z")
-    box(m, (-hx + 0.01, ty - 0.12, -hz + 0.01), (hx - 0.01, ty - 0.04, hz - 0.01), "book_grey", "+x-x-y+z-z")
-    box(m, (-0.3, ty - 0.11, hz - 0.01), (0.3, ty - 0.05, hz), "book_grey", "+z+x-x+y-y")
-    bar(m, (-0.1, ty - 0.08, hz + 0.02), (0.1, ty - 0.08, hz + 0.02), 2 * st.handle_r, "chrome")
+    box(m, (-hx + 0.01, ty - 0.12, -hz + 0.01), (hx - 0.01, ty - 0.04, hz - 0.05), "book_grey", "+x-x-y+z-z")
+    box(m, (-0.3, ty - 0.11, hz - 0.05), (0.3, ty - 0.05, hz - 0.04), "book_grey", "+z+x-x+y-y")
+    bar(m, (-0.1, ty - 0.08, hz - 0.02), (0.1, ty - 0.08, hz - 0.02), 2 * st.handle_r, "chrome")
     fr = 0.05
     for lo, hi in (((-hx, ty - 0.04, -hz), (hx, ty, -hz + fr)), ((-hx, ty - 0.04, hz - fr), (hx, ty, hz)),
                    ((-hx, ty - 0.04, -hz + fr), (-hx + fr, ty, hz - fr)), ((hx - fr, ty - 0.04, -hz + fr),
