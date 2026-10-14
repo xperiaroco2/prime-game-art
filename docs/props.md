@@ -87,6 +87,16 @@ Every room's props follow these rules; the numbers are data in `props/library.to
    mirror, bench and runner by the stairs. `tools/tests/test_props_small_rooms.py` checks the new props' sizes,
    pivots, budgets and colliders, that the runner fits the kit's flight, that the rooms have no station, spawn or
    task prop today and the dressing keeps 0.3 m from any, and that their doors stay clear.
+   The upper floor's landing and bathroom (#162, library v7): `bath_tub` (a built-in bath with a slide-rail shower,
+   a hinged `glass_tint` screen, bottles and a rubber duck; its collider is the tub only), `bath_vanity` (the WC's
+   vanity builder at 0.9 m), `towel_rail` (a heated ladder rail with two towels), `bath_shelf` (an open oak unit with
+   towels, a basket, bottles and a plant), `bath_mat`, the white tiled walls `bath_tiles`, `bath_tiles_short` and
+   `bath_tiles_shower` (2 m behind the shower; layer base like `wc_tiles`), the joke print `art_bubbles` and the
+   slate `landing_runner`. Both rooms are hand-placed (their clutter rules are empty) and reuse the hallway's
+   consoles, bench and lamps, the living room's bookcases and plants and the WC's toilet, mirror cabinet and detail
+   layer. `tools/tests/test_props_upper_rooms.py` checks the new props as above, the stations and spawns (none
+   today), the doors, the attic ladder's and the stairs' walk ways, each room's prop count against its count before
+   the pass and that the `Name` label sits in no piece.
 8. **Route.** Hard-surface props are code (the shared builders, `prop_geom.py`'s `Style`). Meshy only for organic
    one-offs (food, soft goods, plants) at a hero budget, as a recorded batch (`docs/meshy.md`).
 
@@ -205,8 +215,8 @@ Art #87 (map request #73) makes one shared library of generic props (furniture, 
 things) so that every room package places furniture instead of making it. Task props (#82a, #82b), the car and its
 lift (#79), vegetation (#80), the gazebo (#81b) and kit pieces are made elsewhere; `[skip]` in the mapping file names
 who makes each. The plan is `D:/prime-art-raw/research/2026-10-10-house-plan/` (`props.md`, `inventory.md` §9,
-`look.md` §5 and §6). The GLBs stay in the raw folder (`D:/prime-art-raw/props/library/v6/`: v5 with #158's WC,
-pantry and stairs built over it; v5 v4 with #156's hallway; v4 v3 with #153's dining room; v3 is v2 with #152's
+`look.md` §5 and §6). The GLBs stay in the raw folder (`D:/prime-art-raw/props/library/v7/`: v6 with #162's landing
+and bathroom built over it; v6 v5 with #158's WC, pantry and stairs; v5 v4 with #156's hallway; v4 v3 with #153's dining room; v3 is v2 with #152's
 cream sofa and armchairs, v2 v1 with #150's living room, v1 the version-1 build) until the engineer approves the look
 on a review page; then they come into the repo under `assets/prop/<id>/` with their manifests.
 
@@ -259,7 +269,7 @@ clutter of art #104 and its story pieces: `laundry_basket`, `drying_rack`, `open
 
 `tools/run.sh props-library --build [--batch 1|2] [--only id,...]` builds the props in one headless Blender run
 (`tools/blender/prop_build.py`) into the mapping file's `out`,
-`D:/prime-art-raw/props/library/v6/`: one `<id>.glb` per prop, `textures/`
+`D:/prime-art-raw/props/library/v7/`: one `<id>.glb` per prop, `textures/`
 (the kit's detail maps), `build.json` (what each GLB holds; batches accumulate) and `props.md` (the build table); then
 it checks every GLB: the mesh and collider nodes, UV2 and vertex colours, at most `max_materials` materials all named
 `-vcol`, glTF-Validator, the class's maximum triangles, a collider unless `none`, a fixture's light anchor. Under the
