@@ -135,6 +135,30 @@ at = [33.6, 28.1]  # #153: the west sideboard, its bottles and fruit, the still 
 look = [30.1, 28.75]
 look_h = 1.1
 [[export.sheet_views]]
+room = "hallway"
+title = "hallway: from the front door"
+at = [30.0, 43.2]  # #156: in from the front door, down the runner to the console and mirror
+look = [29.3, 36.3]
+look_h = 1.0
+[[export.sheet_views]]
+room = "hallway"
+title = "hallway: from the far end"
+at = [30.6, 36.9]  # #156: from beside the console back to the front door and the coat corner
+look = [29.5, 44.0]
+look_h = 0.9
+[[export.sheet_views]]
+room = "hallway"
+title = "hallway: the console and mirror"
+at = [29.2, 38.4]  # #156: close on the console's keys, mail and lamp under the arched mirror
+look = [29.0, 36.1]
+look_h = 1.25
+[[export.sheet_views]]
+room = "hallway"
+title = "hallway: the coat corner"
+at = [28.4, 41.2]  # #156: the west wall's hooks, coats, bench, shoes and sports bag
+look = [26.1, 42.6]
+look_h = 0.9
+[[export.sheet_views]]
 room = "attic"
 title = "attic: from the west gable"
 at = [19.5, 34.0]
