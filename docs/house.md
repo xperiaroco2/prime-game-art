@@ -153,6 +153,8 @@ writes the House's game-ready package (prime-game #523) from the same layout dat
   `props/library/v12/textures/fine`, the same bytes: v11 with the basement's 32 working-room props built over it,
   and `prop_dirs` names library v12; since #172 `props/library/v13/textures/fine`, the same bytes: v12 with the
   basement's plant rooms' and the darkroom island's 39 props built over it, and `prop_dirs` names library v13;
+  since #79 `props/library/v14/textures/fine`, the same bytes: v13 with the garage's 11 props built over it, and
+  `prop_dirs` names library v14;
   since #82 `prop_dirs` names task v3 (task v2 with the 19 task-chain props rebuilt in the world look);
   v1 stays the approved version-1 build;
   `.import` VRAM compressed with mipmaps), `house_props/prop_fine.gdshader` (a copy
@@ -303,13 +305,19 @@ named `CSGBox3D` of its size (colliding unless `collision = "none"`, `metadata/p
 
 The `house` command checks the dressing after the layout and fails on a problem (`tools/out/house/dressing.json`):
 - every id known, the footprint inside the room's wall faces (open edges: the rect), a wall prop's back on a wall
-  face and not on a door opening, no two solid props overlapping (solid: a collider, spanning 0.3 to 1.8 m);
+  face and not on a door opening, no two solid props overlapping (solid: a collider, spanning 0.3 to 1.8 m)
+  unless both carry the same `assembly` (parts of one machine that nest by design: the garage's lift posts, arms
+  and car, `assembly = "car_lift"`);
 - no solid prop within 1 m of a station marker unless it is that station's, none within 0.5 m of a spawn marker;
 - the 1.36 m capsule on a 0.1 m grid (walls 0.2 m with the doors' 1.4 m openings, floor holes and stairs as
   obstacles) reaches from the room's first door, with the props in place, every door (0.8 m in), stair foot, flight
   top, station (within 2 m) and spawn marker (within 1 m) that it reaches in the empty room. What the empty room
   itself does not reach is a note: the pantry stairs' top (its target, half a metre past the top, lies within the
   capsule's radius of the stairwell's railing; the walk climbs it).
+  A prop whose size box overstates what stands in the way gives its real blockers as `blocks = [[x0, z0, x1, z1],
+  ...]` (prop-local metres about its pivot, before the turn), used for the capsule's grid only: the garage's lift
+  posts and arms block with their posts, power unit and carriages, not the floor between the posts
+  (`tools/tests/test_props_garage.py` holds the blocks to the builders' colliders).
 
 With a dressing, `--walk` also lights and shoots it (`house_dressing.review_request`): a c2 stand-in omni light (no
 shadows) at every light fixture replaces the shell's one centre lamp in those rooms (real-time review light; the bake
