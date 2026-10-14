@@ -114,7 +114,8 @@ outdoor = ["fence_*", "gate_post", "gazebo_*", "railing_gazebo_*"]
 # Extra views on a package's look-approval sheet (`house --package-sheet`, art #126), after the room's door view: `at`
 # and `look` plan metres, `eye` (default 1.6) and `look_h` (default 1.0) heights over the room's floor or, with
 # `over_roof`, over the roof's top there (house_attic.roof_top); `sun` adds a key light outside the room's lamps;
-# `with` shows other packages' rooms in place beside it.
+# `with` shows other packages' rooms in place beside it; `raise` = { nodes, dy } moves the room scene's nodes up for that
+# view (#79: the garage's car and lift arms in their raised pose).
 [[export.sheet_views]]
 room = "kitchen"
 title = "kitchen: the north-wall worktops"
@@ -364,6 +365,37 @@ title = "gazebo: from the yard"
 at = [14.0, 16.0]
 look = [9.0, 11.0]
 sun = true
+[[export.sheet_views]]
+room = "garage"
+title = "garage: from the gates"
+at = [64.0, 47.4]  # #79: in through the gates to the car on its lift, the panel's blind side on the left
+look = [64.0, 39.0]
+look_h = 1.0
+[[export.sheet_views]]
+room = "garage"
+title = "garage: from the side door"
+at = [54.7, 44.0]  # #79: from the yard's door across the lift to the workbench and the part picture
+look = [70.0, 39.0]
+look_h = 1.0
+[[export.sheet_views]]
+room = "garage"
+title = "garage: from the lift panel"
+at = [57.0, 46.0]  # #79: the panel holder's eye at LiftPanel, looking at the car: the space under it hidden
+look = [64.0, 41.0]
+look_h = 0.6
+[[export.sheet_views]]
+room = "garage"
+title = "garage: the car raised"
+at = [60.0, 46.6]  # #79: the lift's raised pose (lift_raise_m 1.24): the arms and the car moved up together
+look = [64.0, 41.0]
+look_h = 1.0
+raise = { nodes = ["Dressing/lift_arms_1", "Dressing/garage_car_1"], dy = 1.24 }
+[[export.sheet_views]]
+room = "garage"
+title = "garage: the car lowered"
+at = [60.0, 46.6]
+look = [64.0, 41.0]
+look_h = 1.0
 
 # Extra sets copied whole (files matching `files` under the raw folder `dir`), each into its own folder.
 # `build = "outdoor"`: the export writes the plot's files fresh from layouts/house/outdoor/ (`outdoor`'s pure-Python

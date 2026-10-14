@@ -119,6 +119,15 @@ class CommittedTest(unittest.TestCase):
         self.assertEqual([p["package"] for p in R.neighbours(R.common.ROOT, {"package": 4, "rooms": {"balcony": {}}},
                                                              views)], [2])
 
+    def test_garage_views_raise_the_car_with_its_arms(self) -> None:
+        from runner import house_layout
+        views = [v for v in R.views(house_layout.load()) if v["room"] == "garage"]
+        self.assertEqual(len(views), 5)
+        raised = [v for v in views if "raise" in v]
+        self.assertEqual(len(raised), 1)  # one raised view; the lowered one beside it is the scene's pose
+        self.assertEqual(raised[0]["raise"], {"nodes": ["Dressing/lift_arms_1", "Dressing/garage_car_1"], "dy": 1.24})
+        self.assertEqual(views[0]["eye"], [10.0, 1.6, 13.4])  # room-local: the garage's corner is (54, 34)
+
     def test_the_plot_package_shows_its_views_with_its_rooms_at_their_corners(self) -> None:
         from runner import house_layout
         views = R.views(house_layout.load())
