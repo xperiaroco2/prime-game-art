@@ -634,7 +634,10 @@ lies on the roof). The light fixtures are #83a's. The rooms' dressing (`<room>.t
   fixtures in all).
 - **Items**: inside the floor (the knee walls' inner face), off the hatch hole and the kept-free rects, off each other,
   the chimneys and the stair, under the roof line (the kit's pitch from the eaves), the inventory's counts (section 6:
-  44 old things in the attic; the Loot crate on the roof; the deck's vents, antenna and water tank are gone).
+  63 old things in the attic since #168's pass, 44 before it: shelving runs of labelled storage boxes and lidded crates,
+  wardrobes and trunks, furniture under dust sheets, suitcases, rolled rugs, leaning frames, a rocking horse, a dress
+  form, a bicycle, holiday decorations, sports kit and the game's own things (a burger-stall sign, a delivery bag in
+  the detail layer, a generator part); the Loot crate on the roof; the deck's vents, antenna and water tank are gone).
 - **Hiding spots** (`[[spots]]`: `name`, `at`, `h`, `in` the prop that holds it): the game's rule (levels/CLAUDE.md:
   a package put down anywhere must stay pickable) as a test: a 0.4 m-radius player walks a 0.1 m grid from `arrive`;
   a spot is reachable if some reached point is within 1.0 m of it in plan, the spot is at most 2.0 m high, and the
