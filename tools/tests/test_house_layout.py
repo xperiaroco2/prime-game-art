@@ -62,7 +62,7 @@ class LayoutDataTest(unittest.TestCase):
         self.assertNotIn("roof", {lv["level"] for lv in DATA["levels"]})
 
     def test_the_kit_path_is_one_setting(self) -> None:
-        self.assertEqual(DATA["settings"]["kit_dir"], "kits/house/v3b")
+        self.assertEqual(DATA["settings"]["kit_dir"], "kits/house/v3c")
         self.assertIn("{id}", DATA["settings"]["kit_res"])
 
     def test_every_planned_piece_is_in_the_kit(self) -> None:

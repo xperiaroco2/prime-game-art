@@ -8,7 +8,8 @@ later packages add dressing data (`layouts/house/dressing/`, #75b) and only rege
 
 | File | What |
 |---|---|
-| `layouts/house/house.toml` | Settings: the kit spec, the kit folder under the raw folder (`kit_dir`: `kits/house/v3b`, the full v3 build of #77 beside a stale in-between `v3/`, and the folder a plain `kit` builds into; the versions share the piece ids, so it is the one setting that switches kits), the `res://` paths of the pieces and scenes, the level order |
+| `layouts/house/house.toml` | Settings: the kit spec, the kit folder under the raw folder (`kit_dir`: `kits/house/v3c`, the full v3 build of #77 (`v3b`, beside a stale in-between `v3/`) with the 12 pieces
+the warm sand ceiling changes rebuilt over it (#152), and the folder a plain `kit` builds into; the versions share the piece ids, so it is the one setting that switches kits), the `res://` paths of the pieces and scenes, the level order |
 | `layouts/house/{basement,ground,upper,attic}.toml` | One level each: `floor_y`, the default wall family, the house `footprint`; `[[rooms]]`, `[[doors]]`, `[[windows]]`, `[[holes]]`, `[[stairs]]` (a U-turn lists its lower half and landing in `below`), `[[pieces]]` (one free kit piece each: `piece`, `room`, `at` = [x, h, y] of its pivot, `turn`; the porch and the chimneys), `[[roofs]]` (a pitched roof from the kit over a room: `room`, `rect`, `gables`, optional `h`, `windows`: gable windows as [x, y] centres; the attic's), `[[dormers]]` (a dormer cut into a roof: the free roof's climb-out, art #77), `[[cornices]]` (brackets under an overhanging deck: `piece`, `room`, `rect` of the walls below, `every`, optional `h`; the roof deck's), `[[placeholders]]` |
 | `tools/runner/house_layout.py` | Load, validate, plan (choose the pieces), write the scenes |
 | `layouts/house/dressing/attic_roof/attic.toml`, `tools/runner/house_attic.py`, `commands/attic.py` | The attic's old things and hiding spots, the climb-out, the free roof's items and lookout, and their checks (below; art #77) |
@@ -135,7 +136,8 @@ writes the House's game-ready package (prime-game #523) from the same layout dat
   `fine_n1.png` (and `fine_d1.png`, `fine_n2.png`, `fine_n3.png` when the build's textured layers need them: #150)
   of both tiers from `house.toml` `[export]` `fine_dir` (#147: the raw build's `props/library/v1/textures/fine`;
   since #150 `props/library/v2/textures/fine`: library v2 is v1 with the living room's 16 rebuilt props and their
-  eight-slot fine pack laid over it, and `prop_dirs` names v2; v1 stays the approved version-1 build;
+  eight-slot fine pack laid over it; since #152 `props/library/v3/textures/fine`, the same bytes: library v3 is v2 with
+  the cream sofa and armchairs rebuilt over it, and `prop_dirs` names v3; v1 stays the approved version-1 build;
   `.import` VRAM compressed with mipmaps), `house_props/prop_fine.gdshader` (a copy
   of `godot/props/prop_fine.gdshader`; `tools/tests/test_house_layers.py` fails when the committed copy drifts) and
   `prop_fine_high.tres`, `prop_fine_low.tres` (`house_export.fine_material_text`: the shader, the tier's textures, the
@@ -407,8 +409,9 @@ lamps draw no real-time shadow passes: follow-up #107.
 
 ### Wall paint (#104)
 
-`house.toml`'s `[wall_paint]` maps a walled room's id to a `#rrggbb` paint (Q11 B: teal #3a6264 in the kitchen,
-hallway, living and dining rooms, stairs and landing; oxblood #69413c in the bedroom and guest room; ink-blue #1f2a48
+`house.toml`'s `[wall_paint]` maps a walled room's id to a `#rrggbb` paint (the engineer's choice of 2026-10-14, #152,
+over Q11 B's teal base: terracotta #a3533b on every wall of the living room; warm greige #d9d1c5 in the kitchen,
+hallway, dining room, stairs and landing; oxblood #69413c in the bedroom and guest room; ink-blue #1f2a48
 in the study; the garage a concrete-neutral #8f897d; the basement keeps the kit's concrete; any other room the kit's
 paint). `house_layout.check_paints` (part of `validate`) refuses an unknown or unwalled room and a bad hex; the room
 scene's root carries `metadata/wall_paint`; `walk_request()["paints"]` hands the rooms' rects to the walk, which puts
@@ -417,7 +420,9 @@ on the house, recolouring the inner plaster inside a painted room. The lab's rul
 is never amber. Tested in `tools/tests/test_house_paint.py`. The export's room scenes carry the same material as
 `house_kit/kit_set.tres` with each mesh's plan pose as `plan_at` (#132, "The export"): the shader paints by the plan's
 rects, not the world's, so the game's paints need no art code and hold wherever the house stands. The kit's inner
-plaster is the teal itself (`wall_int` #3a6264), so only the bedroom, guest room, study and garage change colour.
+plaster is still the teal (`wall_int` #3a6264), so a walled room not listed (the bathroom, for one) stays teal. Every
+ceiling is the kit's warm sand (`ceiling` #d8c7b4, kit v3c, #152; it was slate #3c4652): one colour for the whole
+house, a vertex colour in the kit's GLBs, with no per-room ceiling paint.
 
 ### The second floor (#76)
 
@@ -546,7 +551,9 @@ Defaults used (for the engineer; data, easy to change):
 - Q6: the balcony stairs run straight north, the foot on the yard at y 15; answered by the engineer (2026-10-11,
   #129): the loop stays as built (62.6 m, about 13.9 s against the doc's 10.2 s), the game may tune it.
 - Q11 B: a wall paint per room (`[wall_paint]` in `house.toml`, "Wall paint"); the garage's neutral #8f897d is this
-  doc's reading of "the garage stays concrete-neutral".
+  doc's reading of "the garage stays concrete-neutral". The engineer's choice of 2026-10-14 (#152) replaced its teal
+  base: the living room terracotta #a3533b, the kitchen, hallway, dining room, stairs and landing warm greige #d9d1c5,
+  the whole house's ceiling warm sand #d8c7b4, the sofa and armchairs cream #e4d9c6.
 - Q21 A: dense, lived-in dressing: the inventory's props plus the seeded clutter layer ("Clutter", art #104).
 - Q7 B: 16 windows on the ground floor, 16 on the second floor, 4 knee windows in the attic, 5 in the garage.
 - Q9 B: leaves standing ajar at the front door, the terrace door and the garage side door; the greenhouse door is

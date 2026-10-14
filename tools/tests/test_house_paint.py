@@ -8,6 +8,7 @@ from pathlib import Path
 from runner import house_layout as hl
 
 TEAL, OXBLOOD, INK = "#3a6264", "#69413c", "#1f2a48"
+TERRACOTTA, GREIGE = "#a3533b", "#d9d1c5"  # #152
 
 
 class WallPaintTest(unittest.TestCase):
@@ -15,10 +16,13 @@ class WallPaintTest(unittest.TestCase):
     def setUpClass(cls):
         cls.data = hl.load(hl.LAYOUT_DIR)
 
-    def test_q11_b(self):
+    def test_the_engineers_paints(self):
+        """Q11 B's per-room paint with the engineer's choice of 2026-10-14 (#152) over its teal base."""
         paint = self.data["settings"]["wall_paint"]
-        for rid in ("kitchen", "hallway", "living_room", "dining_room", "landing", "stairs"):
-            self.assertEqual(paint[rid], TEAL, rid)
+        self.assertEqual(paint["living_room"], TERRACOTTA)
+        for rid in ("kitchen", "hallway", "dining_room", "landing", "stairs"):
+            self.assertEqual(paint[rid], GREIGE, rid)
+        self.assertNotIn(TEAL, paint.values())
         self.assertEqual(paint["bedroom"], OXBLOOD)
         self.assertEqual(paint["guest_room"], OXBLOOD)
         self.assertEqual([r for r, h in paint.items() if h == INK], ["study"])

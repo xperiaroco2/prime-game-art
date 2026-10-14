@@ -37,7 +37,7 @@
  "roles": {
   "wall_int": {"material": "plaster", "hex": "#3a6264"},
   "wall_ext": {"material": "plaster", "hex": "#4f6a72"},
-  "ceiling": {"material": "plaster", "hex": "#3c4652"},
+  "ceiling": {"material": "plaster", "hex": "#d8c7b4"},
   "lino": {"material": "plaster", "hex": "#87796b"},
   "trim": {"material": "wood", "hex": "#3d2a1e"},
   "boards": {"material": "wood", "hex": "#534941"},

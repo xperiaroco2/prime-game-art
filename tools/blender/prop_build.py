@@ -2,7 +2,7 @@
 calls it (tools/run.py props-library --build); by hand, background only:
 
   blender -b --factory-startup --python-exit-code 1 --python tools/blender/prop_build.py -- \
-      --library props/library.toml --kit kits/house.json --out D:/prime-art-raw/props/library/v2 \
+      --library props/library.toml --kit kits/house.json --out D:/prime-art-raw/props/library/v3 \
       --ambientcg D:/prime-art-raw/env/ambientcg --env D:/prime-art-raw/env [--batch 1] [--only id,...]
 
 Per prop: <out>/<id>.glb; for the run: <out>/textures/ (the kit's detail maps) and <out>/build.json (merged with the
