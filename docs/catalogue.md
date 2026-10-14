@@ -199,7 +199,8 @@ trousers' upper edge) is not known.
   through: the men's Worker boots allow 72 poke rays because the Worker outfit itself shows 70
   (`bottom_m_adventurer x shoes_m_worker` passes with 70 and rendered clean). The same rule gives identical geometry
   different verdicts when the references differ (`bottom_m_adventurer` and `bottom_m_worker` with the Hoodie shoes).
-- `verify` regenerates the catalogue once (`test_catalogue_blender.py`, about 85 s with Blender and the packs).
+- `verify --full` (and `verify` after a catalogue change) regenerates the catalogue once (`test_catalogue_blender.py`,
+  about 85 s with Blender and the packs).
 - Hair floating above a smaller skull (men's hair on women's skulls) passes the scalp rule (no hole, no poke); a
   visible gap at the hairline is a look question, not measured.
 - The rays look at seams horizontally (at the bone axes); a gap seen only from above or below (into a wide collar)
