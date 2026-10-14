@@ -1212,6 +1212,7 @@ def build_all(spec: dict) -> list[dict]:
 
 def check_spec(spec: dict) -> list[str]:
     problems = [f"role {r}: defined twice (the kit's, the props' or the library's roles)" for r in spec.get("clashes", [])]
+    problems += props_task_fine.check_paints(spec)
     ids = [p["id"] for p in spec["props"]]
     problems += [f"{i}: the id is used twice" for i in sorted({i for i in ids if ids.count(i) > 1})]
     for name, r in spec["roles"].items():
@@ -1276,6 +1277,10 @@ def check_prop(d: dict, p: dict, spec: dict) -> list[str]:
         twins = len(seen) - len(set(seen))
         if twins:
             problems.append(f"{pid}: {m['name']} has {twins} faces on the same vertices as another (Blender merges them)")
+    if p.get("look") == "fine":  # #82: a fine prop's paints are on the fine pack, the tinted glass or the game surface
+        off = props_task_fine.off_roles({r for m in d["meshes"] for r in m["roles"]}, spec)
+        if off:
+            problems.append(f"{pid}: paints off the fine pack: {', '.join(off)}")
     names = {m["name"] for m in d["meshes"]}
     for node in p.get("nodes", []):
         if f"{pid}_{node}" not in names:
@@ -1316,3 +1321,8 @@ import props_zone  # noqa: E402
 
 BUILDERS.update(props_zone.BUILDERS)
 FITTED = props_zone.FITTED
+
+# --- the task props in the world look (art #82): their fine builders live in props_task_fine.py ----------------------
+import props_task_fine  # noqa: E402
+
+FINE_BUILDERS.update(props_task_fine.FINE_BUILDERS)

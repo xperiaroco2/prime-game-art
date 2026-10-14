@@ -85,7 +85,7 @@ class WorldLookTest(unittest.TestCase):
         self.assertTrue(any("unknown look 'shiny'" in s for s in G.check_spec(spec)))
         board["look"] = "fine"
         spec["props"][0]["look"] = "fine"
-        spec["props"][0]["type"] = "wine_rack"
+        spec["props"][0]["type"] = "boiler"  # a room-defining type without a fine builder (#82 gave the racks one)
         self.assertTrue(any("has no fine look" in s for s in G.check_spec(spec)))
         del spec["packs"][G.pg.FINE]
         self.assertTrue(any("needs the spec's library" in s for s in G.check_spec(spec)))
@@ -131,10 +131,10 @@ class PropTest(unittest.TestCase):
         for pid in ("wall_switch", "wall_switch_post"):
             names = {m["name"]: m for m in BUILT[pid]["meshes"]}
             on, off = names[f"{pid}_on"], names[f"{pid}_off"]
-            self.assertIn("lamp_green", on["roles"])
-            self.assertNotIn("lamp_red", on["roles"])
-            self.assertIn("lamp_red", off["roles"])
-            self.assertNotIn("lamp_green", off["roles"])
+            self.assertIn("signal_green", on["roles"])  # #82: the world look's lamps (lamp_green, lamp_red before)
+            self.assertNotIn("signal_red", on["roles"])
+            self.assertIn("signal_red", off["roles"])
+            self.assertNotIn("signal_green", off["roles"])
             # the lever points up when on, down when off (the lamp window sits at the top in both)
             self.assertGreater(min(v[1] for v in on["verts"]), min(v[1] for v in off["verts"]) + 0.1)
 
