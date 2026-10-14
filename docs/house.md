@@ -427,8 +427,8 @@ lamps draw no real-time shadow passes: follow-up #107.
 `house.toml`'s `[wall_paint]` maps a walled room's id to a `#rrggbb` paint (the engineer's choice of 2026-10-14, #152,
 over Q11 B's teal base: terracotta #a3533b on every wall of the living room; warm greige #d9d1c5 in the kitchen,
 hallway, dining room, stairs and landing; the WC soft blue-grey #cfd5d3, the pantry pale sage #d3d6c3 (#158) and the
-bathroom pale green-grey #d8dfd6 over its white tiles (#162); oxblood #69413c in the bedroom and guest room; ink-blue #1f2a48
-in the study; the garage a concrete-neutral #8f897d; the basement keeps the kit's concrete; any other room the kit's
+bathroom pale green-grey #d8dfd6 over its white tiles (#162); oxblood #69413c in the bedroom and guest room; a pale sky blue
+#c9d7de in the kids' room (#166); ink-blue #1f2a48 in the study; the garage a concrete-neutral #8f897d; the basement keeps the kit's concrete; any other room the kit's
 paint). `house_layout.check_paints` (part of `validate`) refuses an unknown or unwalled room and a bad hex; the room
 scene's root carries `metadata/wall_paint`; `walk_request()["paints"]` hands the rooms' rects to the walk, which puts
 the kit's set material (`godot/kit/kit_materials.gd` `make`, `paint`, `apply`; `kit_set.gdshader`, at most 16 paints)
