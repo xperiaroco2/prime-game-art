@@ -5,16 +5,17 @@
 # Paints and shapes are taste data: changing a hex or a prop's roles needs no code change.
 
 library = "house"
-version = 9
+version = 10
 kit_spec = "kits/house.json"
-# the build goes under the raw folder: D:/prime-art-raw/props/library/v9/<id>.glb (v9, #164: v8 with the bedroom's and
+# the build goes under the raw folder: D:/prime-art-raw/props/library/v10/<id>.glb (v10, #166: v9 with the kids' room's
+# and the study's props laid over it; v9, #164: v8 with the bedroom's and
 # the guest room's props laid over it; v8, #162 round 2: v7 with the
 # rebuilt landing runner and the landing's sitting area laid over it; v7, #162: v6 with the
 # landing's and the bathroom's props laid over it; v6, #158: v5 with the WC's, the
 # pantry's and the stairs' props laid over it; v5, #156: v4 with the hallway's props laid over it; v4, #153: v3 with the dining room's props; v3, #152: v2 with the cream sofa and armchairs
 # rebuilt over it; v2, #150: v1 with the living room's 16 rebuilt props and the eight-slot fine pack laid over it;
 # v1 stays the approved version-1 build; no folder is ever overwritten)
-out = "props/library/v9"
+out = "props/library/v10"
 review = "review/house/87"  # line-up sheets, under the raw folder
 licences = ["CC0-1.0"]
 max_materials = 8
@@ -3457,3 +3458,197 @@ shape = "clothes_rail"
 roles = ["steel_black", "worktop_wood", "book_cream", "rubber_black", "coat_camel", "wood_front_dark", "paint_red", "chrome", "wood_front", "art_white", "book_sage", "coat_navy", "cushion_teal"]
 pivot = "floor"
 collision = "box"
+
+# ---- #166: the kids' room and the study (library v10) ----
+
+[[prop]]
+id = "kids_bed"
+batch = 1
+name = "Kids' single bed, an oak headboard, a navy duvet with little stars"
+class = "room"
+size_m = [1.0, 2.05, 0.95]
+count = 1
+route = "proc"
+shape = "made_bed"
+params = {head_wood = true, duvet = "book_navy", spots = ["book_mustard", "art_white"], throw = "book_mustard", cushions = ["paint_red", "book_teal"]}
+roles = ["worktop_wood", "wood_front_dark", "art_white", "book_navy", "book_mustard", "paint_red", "book_teal"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "kids_wardrobe"
+batch = 1
+name = "Kids' two-door wardrobe, white with oak trim"
+class = "room"
+size_m = [1.0, 0.56, 1.9]
+count = 1
+route = "proc"
+shape = "wardrobe_modern"
+params = {doors = 2}
+roles = ["worktop_wood", "enamel_white", "wood_front_dark"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "toy_cubby"
+batch = 1
+name = "Low cube storage: coloured fabric bins and books under an oak top"
+class = "room"
+size_m = [1.2, 0.4, 0.8]
+count = 1
+route = "proc"
+shape = "toy_cubby"
+roles = ["rubber_black", "enamel_white", "worktop_wood", "book_red", "book_mustard", "book_teal", "book_sage", "art_white"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "kids_bookcase"
+batch = 1
+name = "Kids' white bookcase, four shelves of books"
+class = "room"
+size_m = [0.8, 0.32, 1.5]
+count = 1
+route = "proc"
+shape = "bookcase"
+params = {body = "enamel_white", doors_h = 0, shelves = 4}
+roles = ["enamel_white", "wood_front_dark", "book_cream", "book_teal", "book_mustard", "book_red", "book_navy", "book_sage"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "study_bookcase"
+batch = 1
+name = "Study bookcase in warm oak: four shelves of books over a cupboard"
+class = "room"
+size_m = [1.0, 0.36, 2.2]
+count = 1
+route = "proc"
+shape = "bookcase"
+params = {body = "worktop_wood", shelves = 4}
+roles = ["worktop_wood", "wood_front_dark", "book_cream", "book_teal", "book_mustard", "book_red", "book_navy", "book_sage"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "play_rug"
+batch = 1
+name = "Kids' play rug, teal with a mustard border and a row of squares"
+class = "dressing"
+size_m = [2.4, 1.8, 0.012]
+count = 1
+route = "proc"
+shape = "carpet_rug"
+params = {field = "book_teal", border = "book_mustard", motif = 0.4, fringe = false}
+roles = ["book_teal", "book_mustard"]
+pivot = "floor"
+collision = "none"
+
+[[prop]]
+id = "study_rug"
+batch = 1
+name = "Study rug, warm rust with a cream border"
+class = "dressing"
+size_m = [2.6, 1.9, 0.012]
+count = 1
+route = "proc"
+shape = "carpet_rug"
+params = {field = "carpet_rust", border = "throw_cream"}
+roles = ["carpet_rust", "throw_cream"]
+pivot = "floor"
+collision = "none"
+
+[[prop]]
+id = "pin_board"
+batch = 1
+name = "Cork pin board: the generator's blueprint, a delivery schedule, sticky notes, a photo"
+class = "room"
+size_m = [1.2, 0.03, 0.85]
+count = 1
+route = "proc"
+shape = "pin_board"
+roles = ["worktop_wood", "kraft", "blueprint_blue", "art_white", "book_navy", "book_grey", "leaf_green", "book_mustard", "art_pink", "book_sage", "art_sky", "steel_black", "paint_red"]
+pivot = "wall"
+collision = "none"
+
+[[prop]]
+id = "art_rocket"
+batch = 1
+name = "Kids' poster: a rocket climbing past a ringed planet"
+class = "dressing"
+size_m = [0.5, 0.02, 0.7]
+count = 1
+route = "proc"
+shape = "framed_art"
+params = {art = "rocket", frame = 0.015, frame_paint = "art_white"}
+roles = ["art_white", "book_navy", "book_mustard", "art_terracotta", "paint_red", "art_sky"]
+pivot = "wall"
+collision = "none"
+
+[[prop]]
+id = "art_dino"
+batch = 1
+name = "Kids' poster: a friendly long-necked dinosaur, a volcano behind"
+class = "dressing"
+size_m = [0.7, 0.02, 0.5]
+count = 1
+route = "proc"
+shape = "framed_art"
+params = {art = "dino", frame = 0.015, frame_paint = "art_white"}
+roles = ["art_white", "art_sky", "book_mustard", "book_grey", "art_terracotta", "leaf_green", "book_teal", "steel_black"]
+pivot = "wall"
+collision = "none"
+
+[[prop]]
+id = "art_drawing"
+batch = 1
+name = "A child's crayon drawing taped up: a sun, a house or a burger, plasticine people"
+class = "clutter"
+size_m = [0.42, 0.01, 0.3]
+count = 1
+route = "proc"
+shape = "framed_art"
+params = {art = "drawing", frame = 0.004, frame_paint = "art_white"}
+roles = ["art_white", "book_mustard", "leaf_green", "book_red", "book_navy", "wood_front_dark", "art_sky", "art_bun", "art_patty", "book_teal", "paint_red", "art_pink"]
+pivot = "wall"
+collision = "none"
+
+[[prop]]
+id = "art_certificate"
+batch = 1
+name = "A framed certificate: a cream sheet, a title, a red seal"
+class = "clutter"
+size_m = [0.4, 0.02, 0.3]
+count = 1
+route = "proc"
+shape = "framed_art"
+params = {art = "certificate", frame = 0.02, mat = 0.02}
+roles = ["wood_front_dark", "art_white", "book_cream", "book_mustard", "book_navy", "book_grey", "paint_red", "steel_black"]
+pivot = "wall"
+collision = "none"
+
+[[prop]]
+id = "monitor_set"
+batch = 1
+name = "A desk's work things: a slim monitor with a delivery map, a keyboard, a mouse, a mug, a notepad"
+class = "clutter"
+size_m = [0.8, 0.45, 0.48]
+count = 1
+route = "proc"
+shape = "monitor_set"
+roles = ["steel_black", "metal_grey", "art_sky", "art_white", "book_mustard", "book_navy", "paint_red", "book_teal", "rubber_black", "porcelain_white", "wood_dark"]
+pivot = "floor"
+collision = "none"
+
+[[prop]]
+id = "toy_set"
+batch = 1
+name = "Toys: a toy rocket on its fins, a dump truck and a ball"
+class = "clutter"
+size_m = [0.6, 0.3, 0.3]
+count = 1
+route = "proc"
+shape = "toy_set"
+roles = ["art_white", "paint_red", "art_sky", "rubber_black", "book_grey", "paint_blue", "glass_dark", "book_mustard", "book_teal"]
+pivot = "floor"
+collision = "none"

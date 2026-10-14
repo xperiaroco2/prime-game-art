@@ -2915,6 +2915,74 @@ def _art(m: Mesh, kind: str, x0: float, x1: float, y0: float, y1: float, z: floa
         disk(0.8, 0.48, 0.04 * w, "book_mustard", 12)
         q(0.835, 0.465, 0.87, 0.485, "art_terracotta")
         q(0.2, 0.18, 0.8, 0.22, "book_sage")
+    elif kind == "rocket":  # #166: a kids' room poster: a rocket climbing past a ringed planet into the stars
+        q(0, 0, 1, 1, "book_navy")
+        for k in range(14):
+            sx, sy = rng.random() * 0.9 + 0.03, rng.random() * 0.9 + 0.05
+            q(sx, sy, sx + 0.018, sy + 0.012, "art_white", False)
+        disk(0.76, 0.78, 0.13 * w, "book_mustard", 18)
+        q(0.56, 0.765, 0.96, 0.795, "art_terracotta")
+        disk(0.5, 0.12, 0.09 * w, "book_mustard", 12)
+        disk(0.5, 0.15, 0.055 * w, "paint_red", 12)
+        q(0.4, 0.2, 0.6, 0.6, "art_white")
+        for k, (a, b) in enumerate(((0.42, 0.58), (0.44, 0.56), (0.465, 0.535))):
+            q(a, 0.6 + 0.05 * k, b, 0.65 + 0.05 * k, "paint_red" if k else "art_white")
+        q(0.3, 0.2, 0.4, 0.32, "paint_red", False)
+        q(0.6, 0.2, 0.7, 0.32, "paint_red", False)
+        disk(0.5, 0.46, 0.06 * w, "art_sky", 14)
+        q(0.4, 0.26, 0.6, 0.28, "paint_red")
+    elif kind == "dino":  # #166: a kids' room poster: a friendly long-necked dinosaur under the sun, a volcano behind
+        q(0, 0, 1, 1, "art_sky")
+        disk(0.82, 0.8, 0.09 * w, "book_mustard", 16)
+        for k, (a, b) in enumerate(((0.05, 0.4), (0.1, 0.35), (0.15, 0.3))):
+            q(a, 0.25 + 0.12 * k, b, 0.37 + 0.12 * k, "book_grey" if k < 2 else "art_terracotta")
+        q(0, 0, 1, 0.26, "leaf_green")
+        disk(0.55, 0.36, 0.17 * w, "book_teal", 20)
+        q(0.42, 0.14, 0.48, 0.32, "book_teal", False)
+        q(0.62, 0.14, 0.68, 0.32, "book_teal", False)
+        q(0.66, 0.38, 0.74, 0.62, "book_teal", False)
+        q(0.66, 0.6, 0.84, 0.68, "book_teal", False)
+        q(0.22, 0.3, 0.42, 0.36, "book_teal", False)
+        q(0.14, 0.27, 0.24, 0.31, "book_teal", False)
+        for k in range(5):
+            q(0.44 + 0.05 * k, 0.5 + 0.012 * (2 - abs(k - 2)), 0.47 + 0.05 * k, 0.55 + 0.012 * (2 - abs(k - 2)),
+              "book_mustard", False)
+        zz[0] += step
+        q(0.78, 0.635, 0.8, 0.655, "steel_black", False)
+        q(0.74, 0.61, 0.82, 0.62, "art_terracotta", False)
+    elif kind == "drawing":  # #166: a child's crayon drawing: a sun, a house or a burger, plasticine people, grass
+        q(0, 0, 1, 1, "art_white")
+        disk(0.15, 0.8, 0.08 * w, "book_mustard", 12)
+        for a, b, c, d in ((0.04, 0.78, 0.07, 0.82), (0.23, 0.78, 0.26, 0.82), (0.13, 0.62, 0.17, 0.66),
+                           (0.13, 0.94, 0.17, 0.98)):
+            q(a, b, c, d, "book_mustard", False)
+        q(0, 0, 1, 0.12, "leaf_green")
+        if rng.random() < 0.5:
+            q(0.38, 0.12, 0.68, 0.42, "book_red")
+            for k in range(4):
+                q(0.35 + 0.04 * k, 0.42 + 0.06 * k, 0.71 - 0.04 * k, 0.48 + 0.06 * k, "book_navy", False)
+            q(0.49, 0.12, 0.57, 0.28, "wood_front_dark", False)
+            q(0.41, 0.28, 0.47, 0.36, "art_sky", False)
+            q(0.59, 0.28, 0.65, 0.36, "art_sky", False)
+        else:
+            q(0.36, 0.42, 0.7, 0.62, "art_bun")
+            q(0.34, 0.34, 0.72, 0.42, "art_patty")
+            q(0.35, 0.31, 0.71, 0.34, "leaf_green")
+            q(0.36, 0.22, 0.7, 0.31, "art_bun")
+        for k, (cx, body) in enumerate(((0.8, "book_teal"), (0.9, "paint_red"))):
+            q(cx - 0.035, 0.12, cx + 0.035, 0.3 - 0.04 * k, body, False)
+            disk(cx, 0.36 - 0.04 * k, 0.045 * w, "art_pink", 10)
+    elif kind == "certificate":  # #166: a framed certificate: a cream sheet, a title, lines of text, a red seal
+        q(0, 0, 1, 1, "book_cream")
+        q(0.04, 0.05, 0.96, 0.95, "book_mustard")
+        q(0.06, 0.08, 0.94, 0.92, "book_cream")
+        q(0.2, 0.74, 0.8, 0.84, "book_navy")
+        for k in range(4):
+            q(0.18, 0.6 - 0.09 * k, 0.82 - 0.08 * (k % 2), 0.625 - 0.09 * k, "book_grey", False)
+        disk(0.78, 0.22, 0.09 * min(w, h), "paint_red", 14)
+        q(0.74, 0.08, 0.76, 0.16, "paint_red", False)
+        q(0.8, 0.08, 0.82, 0.16, "paint_red", False)
+        q(0.14, 0.18, 0.5, 0.195, "steel_black", False)
     else:  # burger
         q(0, 0, 1, 1, "book_navy")
         q(0.15, 0.82, 0.85, 0.9, "art_white")
@@ -4020,6 +4088,17 @@ def build_made_bed(m, s, R, prm, rng):
     zt = -hz + hb + 0.5  # the duvet's top edge, the sheet turned down over it
     cushion(m, (-hx, yb - 0.04, zt), (hx, ym + 0.08, hz - 0.005), duvet, 0.05)
     cushion(m, (-hx + 0.005, ym + 0.05, zt - 0.02), (hx - 0.005, ym + 0.1, zt + 0.2), "art_white", 0.02)
+    spots = list(prm.get("spots", []))  # #166: a fun duvet: little squares of these paints over its top
+    if spots:
+        z, k = zt + 0.3, 0
+        while z < hz - 0.7:
+            x = -hx + 0.14 + 0.09 * (k % 2)
+            while x < hx - 0.12:
+                box(m, (x - 0.035, ym + 0.078, z - 0.035), (x + 0.035, ym + 0.084, z + 0.035), spots[k % len(spots)],
+                    "+y")
+                x += 0.18
+                k += 1
+            z += 0.17
     n = 2 if L > 1.3 else 1
     pw = (L - 0.16) / n
     for k in range(n):  # pillows lying against the headboard
@@ -4191,6 +4270,144 @@ def build_clothes_rail(m, s, R, prm, rng):
         bot = yh - (0.95 if long else 0.7)
         cushion(m, (x - 0.025, bot, -0.21), (x + 0.025, yh - 0.1, 0.21), role, 0.012)
         box(m, (x - 0.03, yh - 0.16, -0.06), (x + 0.03, yh - 0.1, 0.06), role)
+
+
+# ---- The kids' room and the study (#166) ------------------------------------------------------------------------
+
+def build_toy_cubby(m, s, R, prm, rng):
+    """A low cube storage unit for a kids' room: a `body` carcass of `cols` x `rows` open cubes on a dark plinth under
+    an oak top; fabric bins (`bins` paints, a white label and a hand hole each) in most cubes, books in the others.
+    Collider: one box."""
+    st = _style(prm)
+    L, W, H = s
+    hx, hz = L / 2, W / 2
+    body, top = prm.get("body", "enamel_white"), prm.get("trim", "worktop_wood")
+    t, yp, yt = 0.02, 0.05, H - 0.03
+    box(m, (-hx + 0.03, 0.0, -hz + 0.02), (hx - 0.03, yp, hz - 0.03), "rubber_black")
+    for sx in (-1, 1):
+        cbox(m, (hx - t if sx > 0 else -hx, yp, -hz), (hx if sx > 0 else -hx + t, yt, hz), body, st.bevel_small)
+    box(m, (-hx + t, yp, -hz), (hx - t, yt, -hz + 0.01), body, "+z")
+    cols, rows = int(prm.get("cols", 3)), int(prm.get("rows", 2))
+    cw, ch = (L - 2 * t) / cols, (yt - yp) / rows
+    for i in range(1, cols):
+        x = -hx + t + cw * i
+        box(m, (x - t / 2, yp, -hz + 0.01), (x + t / 2, yt, hz), body, "+x-x+z")
+    for j in range(rows):
+        y = yp + ch * j
+        box(m, (-hx + t, y, -hz + 0.01), (hx - t, y + t, hz), body, "+y+z")
+    worktop(m, st, -hx, hx, -hz, hz, top, y=H, t=0.03)
+    bins = list(prm.get("bins", ["book_red", "book_mustard", "book_teal", "book_sage"]))
+    books = ["book_cream", "book_teal", "book_mustard", "book_red", "book_navy", "book_sage"]
+    for j in range(rows):
+        for i in range(cols):
+            x0, x1 = -hx + t + cw * i + t / 2, -hx + t + cw * (i + 1) - t / 2
+            y0 = yp + ch * j + t
+            k = i + j * cols
+            if k % 3 == 1:
+                book_run(m, x0 + 0.01, x1 - 0.01, y0, -hz + 0.02, W - 0.06, ch - t - 0.03, books, rng)
+                continue
+            y1 = y0 + (ch - t) * 0.85
+            cushion(m, (x0 + 0.012, y0, -hz + 0.03), (x1 - 0.012, y1, hz - 0.012), bins[k % len(bins)], 0.02)
+            xm = (x0 + x1) / 2
+            box(m, (xm - 0.06, y0 + 0.08, hz - 0.012), (xm + 0.06, y0 + 0.12, hz - 0.008), "art_white", "+z")
+            box(m, (xm - 0.045, y1 - 0.07, hz - 0.012), (xm + 0.045, y1 - 0.045, hz - 0.009), "rubber_black", "+z")
+
+
+def build_pin_board(m, s, R, prm, rng):
+    """A cork pin board in an oak frame for a study wall (wall pivot, the back at z 0): the House generator's
+    blueprint, a delivery schedule (a ruled sheet, its rows ticked off), sticky notes and a family photo, each held by
+    a red pin."""
+    L, W, H = s
+    hx = L / 2
+    f = 0.03
+    for lo, hi in (((-hx, 0, 0), (hx, f, W)), ((-hx, H - f, 0), (hx, H, W)), ((-hx, f, 0), (-hx + f, H - f, W)),
+                   ((hx - f, f, 0), (hx, H - f, W))):
+        box(m, lo, hi, prm.get("frame_paint", "worktop_wood"), "+x-x+y-y+z")
+    z = W - 0.012
+    box(m, (-hx + f, f, 0.0), (hx - f, H - f, z), "kraft", "+z")
+    pins = []
+    bx0, bx1, by0, by1 = -hx + 0.07, -hx + 0.07 + L * 0.42, H * 0.3, H - 0.07
+    _art(m, "blueprint", bx0, bx1, by0, by1, z, rng)
+    pins += [(bx0 + 0.02, by1 - 0.02), (bx1 - 0.02, by1 - 0.02)]
+    sx0, sx1, sy0, sy1 = bx1 + 0.06, bx1 + 0.06 + L * 0.24, H * 0.18, H - 0.09
+    box(m, (sx0, sy0, z), (sx1, sy1, z + 0.002), "art_white", "+z")
+    box(m, (sx0 + 0.02, sy1 - 0.06, z + 0.002), (sx1 - 0.02, sy1 - 0.03, z + 0.003), "book_navy", "+z")
+    rows = int((sy1 - sy0 - 0.1) / 0.045)
+    for k in range(rows):
+        y = sy1 - 0.1 - 0.045 * k
+        box(m, (sx0 + 0.05, y, z + 0.002), (sx1 - 0.02, y + 0.008, z + 0.003), "book_grey", "+z")
+        if k < rows - 2:
+            box(m, (sx0 + 0.02, y - 0.004, z + 0.002), (sx0 + 0.036, y + 0.012, z + 0.003), "leaf_green", "+z")
+    pins.append(((sx0 + sx1) / 2, sy1 - 0.015))
+    notes = ["book_mustard", "art_pink", "book_sage", "art_sky", "book_mustard"]
+    nx0 = sx1 + 0.05
+    for k, role in enumerate(notes):
+        x = nx0 + 0.1 * (k % 2)
+        y = H - 0.17 - 0.12 * (k // 2) - 0.02 * (k % 2)
+        if x + 0.08 > hx - f - 0.02 or y < f + 0.3:
+            continue
+        box(m, (x, y, z), (x + 0.08, y + 0.08, z + 0.002), role, "+z")
+        box(m, (x + 0.012, y + 0.04, z + 0.002), (x + 0.068, y + 0.046, z + 0.003), "steel_black", "+z")
+        pins.append((x + 0.04, y + 0.068))
+    px0, px1 = hx - f - 0.2, hx - f - 0.04
+    box(m, (px0, f + 0.06, z), (px1, f + 0.24, z + 0.002), "art_white", "+z")
+    _art(m, "family", px0 + 0.012, px1 - 0.012, f + 0.09, f + 0.228, z + 0.002, rng)
+    pins.append(((px0 + px1) / 2, f + 0.225))
+    for x, y in pins:
+        cyl(m, "z", (x, y), 0.007, z + 0.004, W, "paint_red", 8, caps=(False, True))
+
+
+def build_monitor_set(m, s, R, prm, rng):
+    """A desk's work things (desk-top pivot): a slim monitor on its stand showing a delivery map, a keyboard, a mouse
+    on its pad, a mug and a notepad with a pen."""
+    L, W, H = s
+    hx, hz = L / 2, W / 2
+    zb = -hz + 0.1
+    box(m, (-0.11, 0.0, zb - 0.08), (0.11, 0.012, zb + 0.06), "steel_black")
+    box(m, (-0.025, 0.012, zb - 0.03), (0.025, 0.2, zb - 0.01), "metal_grey")
+    sw = min(hx - 0.05, 0.3)
+    box(m, (-sw, 0.12, zb - 0.01), (sw, H, zb + 0.015), "steel_black")
+    box(m, (-sw + 0.012, 0.135, zb + 0.015), (sw - 0.012, H - 0.012, zb + 0.016), "art_sky", "+z")
+    for a, b, c, d, role in ((0.1, 0.25, 0.55, 0.9, "art_white"), (0.6, 0.55, 0.92, 0.9, "art_white"),
+                             (0.6, 0.12, 0.92, 0.48, "book_mustard"), (0.1, 0.06, 0.55, 0.18, "book_navy")):
+        x0, x1 = -sw + 0.012 + a * (2 * sw - 0.024), -sw + 0.012 + c * (2 * sw - 0.024)
+        y0, y1 = 0.135 + b * (H - 0.147), 0.135 + d * (H - 0.147)
+        box(m, (x0, y0, zb + 0.016), (x1, y1, zb + 0.017), role, "+z")
+    for k in range(6):
+        x = -sw + 0.05 + 0.04 * k
+        box(m, (x, 0.32, zb + 0.017), (x + 0.025, 0.33, zb + 0.018), "paint_red" if k % 2 else "book_teal", "+z")
+    zk = hz - 0.13
+    cbox(m, (-0.22, 0.0, zk - 0.07), (0.22, 0.018, zk + 0.07), "steel_black", 0.004)
+    box(m, (-0.205, 0.018, zk - 0.055), (0.205, 0.022, zk + 0.055), "metal_grey", "+y")
+    box(m, (0.24, 0.0, zk - 0.1), (hx - 0.01, 0.003, zk + 0.08), "rubber_black")
+    blob(m, ((0.24 + hx) / 2, 0.012, zk), 0.03, 0.016, 0.05, "steel_black", 8, 4, floor=0.0)
+    cyl(m, "y", (-hx + 0.06, zk - 0.04), 0.04, 0.0, 0.1, "porcelain_white", 12)
+    cyl(m, "y", (-hx + 0.06, zk - 0.04), 0.034, 0.09, 0.095, "wood_dark", 12, caps=(False, True))
+    box(m, (-hx + 0.03, 0.0, hz - 0.04), (-hx + 0.18, 0.012, hz - 0.002), "art_white")
+    rod(m, (-hx + 0.05, 0.016, hz - 0.03), (-hx + 0.17, 0.016, hz - 0.012), 0.004, "book_navy", 6)
+
+
+def build_toy_set(m, s, R, prm, rng):
+    """A kids' room's toys on a shelf or the floor: a toy rocket on its fins, a dump truck and a ball."""
+    L, W, H = s
+    hx, hz = L / 2, W / 2
+    rx, rz = -hx + 0.07, 0.0
+    cyl(m, "y", (rx, rz), 0.045, 0.04, H * 0.66, "art_white", 8)
+    cyl(m, "y", (rx, rz), 0.045, H * 0.66, H, "paint_red", 8, r1=0.004)
+    cyl(m, "z", (rx, H * 0.5), 0.022, 0.044, 0.05, "art_sky", 10, caps=(False, True))
+    for x0, z0, x1, z1 in ((rx - 0.07, rz - 0.006, rx - 0.04, rz + 0.006), (rx + 0.04, rz - 0.006, rx + 0.07, rz + 0.006),
+                           (rx - 0.006, rz + 0.04, rx + 0.006, rz + 0.065)):
+        box(m, (x0, 0.0, z0), (x1, 0.11, z1), "paint_red")
+    tx = 0.04
+    for x in (tx - 0.09, tx + 0.09):
+        for z in (-hz + 0.03, hz - 0.03):
+            cyl(m, "z", (x, 0.035), 0.035, z - 0.015, z + 0.015, "rubber_black", 8)
+    box(m, (tx - 0.13, 0.03, -hz + 0.045), (tx + 0.13, 0.06, hz - 0.045), "book_grey")
+    cbox(m, (tx + 0.05, 0.06, -hz + 0.05), (tx + 0.13, 0.15, hz - 0.05), "paint_blue", 0.01)
+    box(m, (tx + 0.125, 0.1, -hz + 0.07), (tx + 0.131, 0.14, hz - 0.07), "glass_dark", "+x")
+    loft(m, (tx - 0.13, tx + 0.04, -hz + 0.05, hz - 0.05, 0.06), (tx - 0.15, tx + 0.04, -hz + 0.045, hz - 0.045, 0.14),
+         "book_mustard", inner=0.01)
+    blob(m, (hx - 0.075, 0.075, 0.0), 0.075, 0.075, 0.075, "book_teal", 10, 5)
 
 
 BUILDERS = {name[6:]: fn for name, fn in dict(globals()).items() if name.startswith("build_") and callable(fn)}
