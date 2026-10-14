@@ -133,13 +133,14 @@ RULES = {
         "floor": (),
         "hosts": (),
     },
-    "kids_room": {
-        "furn": ("@toys", "@reading", "@laundry", "bean_bag"),
-        "fill": ("bookcase", "dresser", "wardrobe", "toy_chest"),
-        "island": ("bean_bag", "small_table"),
-        "mid": ("toy_chest", "small_table", "stool", "cardboard_box+"),
-        "wall": ("picture_frame", "wall_shelf", "picture_frame", "wall_clock"),
-        "floor": ("toy_blocks", "toy_blocks", "book_stack", "basket", "shoes"),
+    "kids_room": {  # #166: every prop is hand-placed
+        "furn": (),
+        "fill": (),
+        "island": (),
+        "mid": (),
+        "wall": (),
+        "floor": (),
+        "hosts": (),
     },
     "landing": {  # #162: every prop is hand-placed
         # an empty `hosts`, not a missing one: a missing key means every host takes surface clutter (see below)
@@ -151,12 +152,14 @@ RULES = {
         "floor": (),
         "hosts": (),
     },
-    "study": {
-        "furn": ("@desk_work", "@reading", "cardboard_box+"),
-        "fill": ("bookcase", "filing_cabinet", "bookcase", "sideboard"),
-        "mid": ("filing_cabinet", "potted_plant", "small_table"),
-        "wall": ("picture_frame", "wall_shelf", "wall_clock", "picture_frame", "wall_shelf"),
-        "floor": ("book_stack", "book_stack", "paper_stack", "basket"),
+    "study": {  # #166: every prop is hand-placed
+        "furn": (),
+        "fill": (),
+        "island": (),
+        "mid": (),
+        "wall": (),
+        "floor": (),
+        "hosts": (),
     },
     "bathroom": {  # #162: every prop is hand-placed
         # an empty `hosts`, not a missing one: a missing key means every host takes surface clutter (see below)

@@ -319,7 +319,7 @@ face = "N"
 
 [[fixtures]]
 id = "pendant_shade"
-at = [4.0, 3.0, 5.0]
+at = [4.0, 3.0, 6.2]
 
 [[fixtures]]
 id = "floor_lamp"
