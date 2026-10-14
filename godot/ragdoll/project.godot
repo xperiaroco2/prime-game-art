@@ -1,0 +1,22 @@
+; The ragdoll proof (art #115, `tools/run.py ragdoll --fall`; docs/godot.md, "The ragdoll"): its own small project
+; because it runs on the game's physics engine, Jolt Physics (prime-game project.godot), and the import-check project
+; godot/ keeps Godot's default. Godot's scan of godot/ skips this folder (it holds a project.godot). The physics layers
+; are the game's. import/ and .godot/ are ignored.
+
+config_version=5
+
+[application]
+
+config/name="prime-game-art ragdoll proof"
+config/features=PackedStringArray("4.7", "Forward Plus")
+
+[layer_names]
+
+3d_physics/layer_1="world"
+3d_physics/layer_2="living_players"
+3d_physics/layer_3="downed"
+3d_physics/layer_4="movers"
+
+[physics]
+
+3d/physics_engine="Jolt Physics"

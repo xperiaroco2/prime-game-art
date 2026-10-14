@@ -14,3 +14,5 @@ raw/
 # The Godot import check (docs/godot.md): Godot's cache and the GLBs godot-check and frames copy in to import.
 godot/.godot/
 godot/import/
+godot/ragdoll/.godot/
+godot/ragdoll/import/

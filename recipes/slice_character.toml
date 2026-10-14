@@ -17,8 +17,8 @@ review_clips = ["Idle_Loop", "Jog_Fwd_Loop", "Sprint_Fwd_Loop", "Carry_Upper_Loo
 # Exported clips of the set left off the character, each with the reason. The knockdown, the downed state and the
 # get-up wait for the ragdoll (art #115, a contract change the engineer decides): issue #42's brief for part C.
 [exclude]
-Knockdown = "the knockdown's fall: the ragdoll task (#115) decides falls"
-Crawl_Start = "downed: from lying on the back onto all fours, after the fall (#115)"
-Crawl_Loop = "downed: the crawl after the fall (#115)"
-Getup_Back = "the get-up after a revive, from lying on the back (#115)"
-Getup_Fours = "the get-up after a revive, from all fours (#115)"
+Knockdown = "the knockdown is a ragdoll (#115): the package's ragdoll data"
+Crawl_Start = "downed is the ragdoll lying where it fell (#115): no downed clip"
+Crawl_Loop = "downed is the ragdoll lying where it fell (#115): no downed clip"
+Getup_Back = "a revived player stands up at once (#115): no get-up clip"
+Getup_Fours = "a revived player stands up at once (#115): no get-up clip"

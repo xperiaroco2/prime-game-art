@@ -82,10 +82,44 @@ Jog_Fwd + Carry_Upper).
 - `Jog_Bwd_TTM_Loop`: a review candidate the set does not export (export = false)
 - `Jog_Bwd_R2_Loop`: a review candidate the set does not export (export = false)
 - `Strafe_Left_R2_Loop`: a review candidate the set does not export (export = false)
-- `Knockdown`: the knockdown's fall: the ragdoll task (#115) decides falls
-- `Crawl_Start`: downed: from lying on the back onto all fours, after the fall (#115)
+- `Knockdown`: the knockdown is a ragdoll (#115): the package's ragdoll data
+- `Crawl_Start`: downed is the ragdoll lying where it fell (#115): no downed clip
 - `Crawl_Start_R2`: a review candidate the set does not export (export = false)
-- `Crawl_Loop`: downed: the crawl after the fall (#115)
+- `Crawl_Loop`: downed is the ragdoll lying where it fell (#115): no downed clip
 - `Crawl_R2_Loop`: a review candidate the set does not export (export = false)
-- `Getup_Back`: the get-up after a revive, from lying on the back (#115)
-- `Getup_Fours`: the get-up after a revive, from all fours (#115)
+- `Getup_Back`: a revived player stands up at once (#115): no get-up clip
+- `Getup_Fours`: a revived player stands up at once (#115): no get-up clip
+
+## Ragdoll (art #115)
+
+The knockdown is a ragdoll (prime-game PR #754, KE7); the knockdown, downed and get-up clips are gone. `export/slice_m1.ragdoll.json`
+holds the ragdoll data: 16 bodies, each on one bone of this GLB's skeleton, with its shape and offset in the
+bone's rest frame, its mass (70 kg in all) and its joint to its physical parent (type, limits,
+anchor). The game builds the bones from it at spawn with art's reference builder, `godot/ragdoll/builder.gd` (copy it
+as it is): `build(skeleton, data)` adds a `PhysicalBoneSimulator3D` with one `PhysicalBone3D` per body;
+`start(sim, data, velocity)` at the knockdown starts the simulation from the current (standing) pose with the avatar's
+velocity and links the bodies with `Joint3D` nodes; `stop(sim)` at a revive. The parts are on layer 3
+(`downed`) with mask 1 (`world`): never players,
+another ragdoll or itself. Bones without a body follow their parent (fingers the hand, toes the foot, the shoulders
+and upper chest the chest); the sockets' `BoneAttachment3D`s follow the simulated bones with no change. The rig's feet
+hang from `Root`, so a foot's joint links it to the lower leg (the builder's `Joint3D`s, not `PhysicalBone3D`'s own
+joint). Proven on Jolt Physics, the game's engine: `tools/run.py ragdoll <glb> --fall`.
+
+| Bone | Profile | Physical parent | Shape | kg | Joint |
+|---|---|---|---|---|---|
+| `Body` | Hips | - | box | 9.94 | root |
+| `Abdomen` | Spine | Body | box | 8.16 | cone |
+| `Torso` | Chest | Abdomen | box | 13.55 | cone |
+| `Neck` | Neck | Torso | capsule | 5.67 | cone |
+| `UpperArm.L` | LeftUpperArm | Torso | capsule | 1.96 | cone |
+| `LowerArm.L` | LeftLowerArm | UpperArm.L | capsule | 1.12 | hinge |
+| `Wrist.L` | LeftHand | LowerArm.L | box | 1.00 | cone |
+| `UpperLeg.L` | LeftUpperLeg | Body | capsule | 7.00 | cone |
+| `LowerLeg.L` | LeftLowerLeg | UpperLeg.L | capsule | 3.25 | hinge |
+| `Foot.L` | LeftFoot | LowerLeg.L | box | 2.00 | cone |
+| `UpperArm.R` | RightUpperArm | Torso | capsule | 1.96 | cone |
+| `LowerArm.R` | RightLowerArm | UpperArm.R | capsule | 1.12 | hinge |
+| `Wrist.R` | RightHand | LowerArm.R | box | 1.00 | cone |
+| `UpperLeg.R` | RightUpperLeg | Body | capsule | 7.00 | cone |
+| `LowerLeg.R` | RightLowerLeg | UpperLeg.R | capsule | 3.25 | hinge |
+| `Foot.R` | RightFoot | LowerLeg.R | box | 2.00 | cone |
