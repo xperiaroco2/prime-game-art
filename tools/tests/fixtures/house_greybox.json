@@ -1,6 +1,6 @@
 {
  "design_rooms": {
-  "Attic": [20, 26, 20, 14],
+  "Attic": [18, 24, 24, 20],
   "Balcony": [30, 21, 10, 3],
   "Bathroom": [34, 32, 8, 4],
   "Bedroom": [18, 24, 8, 10],
@@ -26,7 +26,6 @@
   "Path": [29, 44, 2, 16],
   "Photo zone": [4, 6, 10, 10],
   "Pump room": [44, 42, 10, 8],
-  "Roof": [17, 23, 26, 22],
   "Stairs": [26, 30, 8, 6],
   "Storage": [14, 18, 16, 16],
   "Street": [0, 60, 80, 6],
@@ -36,23 +35,21 @@
   "WC": [18, 24, 6, 6],
   "Yard": [0, 0, 80, 60]
  },
- "game_commit": "78135b8c5edd8349631ff6e7417d8cea8e0c77ca",
+ "game_commit": "605aed5f502a371d6e0fc6daf3cfc28864b35f9b",
  "rooms": {
   "attic": {
-   "doors": {
-    "Door1": [20.0, 0.0, 7.0, ""]
-   },
-   "doors_marker3d": ["Door1"],
-   "markers": {
-    "Knife3": [16.0, 0.0, 11.0, "\"spawn_knife\""]
-   },
-   "origin": [20.0, 6.4, 26.0],
+   "doors": {},
+   "doors_marker3d": [],
+   "markers": {},
+   "origin": [18.0, 6.4, 24.0],
    "root": "Attic",
-   "size": [20, 14],
+   "size": [24, 20],
    "stations": {
-    "HidingSpots": [4.0, 0.0, 10.0, ""]
+    "HidingSpots": [4.0, 0.0, 15.0, ""],
+    "Lookout": [21.0, 3.092, 17.9, ""],
+    "Loot": [23.0, 3.057, 2.0, ""]
    },
-   "stations_marker3d": ["HidingSpots"]
+   "stations_marker3d": ["HidingSpots", "Lookout", "Loot"]
   },
   "balcony": {
    "doors": {
@@ -206,7 +203,7 @@
    "markers": {
     "Circle03": [14.0, 0.46, 22.0, "\"spawn_circle\""],
     "Knife4": [4.0, -0.04, 8.0, "\"spawn_knife\""],
-    "Zone02": [6.0, 0.5, 18.0, "\"spawn_zone\""]
+    "Zone02": [6.0, 0.5, 23.0, "\"spawn_zone\""]
    },
    "origin": [46.0, 0.0, 2.0],
    "root": "Garden",
@@ -318,7 +315,7 @@
     "Door3": [8.0, 0.0, 10.0, ""],
     "Door4": [8.0, 0.0, 16.0, ""],
     "Door5": [6.0, 0.0, 0.0, ""],
-    "Door6": [8.0, 0.0, 1.0, ""]
+    "Door6": [8.0, 0.0, 4.0, ""]
    },
    "doors_marker3d": ["Door1", "Door2", "Door3", "Door4", "Door5", "Door6"],
    "markers": {
@@ -411,7 +408,9 @@
     "Door1": [5.0, 0.0, 0.0, ""]
    },
    "doors_marker3d": ["Door1"],
-   "markers": {},
+   "markers": {
+    "Knife3": [6.5, 0.0, 4.5, "\"spawn_knife\""]
+   },
    "origin": [44.0, -3.2, 42.0],
    "root": "PumpRoom",
    "size": [10, 8],
@@ -419,21 +418,6 @@
     "SwitchC": [8.0, 0.0, 6.0, ""]
    },
    "stations_marker3d": ["SwitchC"]
-  },
-  "roof": {
-   "doors": {
-    "Door1": [23.0, 0.0, 10.0, ""]
-   },
-   "doors_marker3d": ["Door1"],
-   "markers": {},
-   "origin": [17.0, 6.4, 23.0],
-   "root": "Roof",
-   "size": [26, 22],
-   "stations": {
-    "Lookout": [13.0, 0.0, 19.5, ""],
-    "Loot": [24.5, 0.0, 2.0, ""]
-   },
-   "stations_marker3d": ["Lookout", "Loot"]
   },
   "stairs": {
    "doors": {
@@ -461,7 +445,7 @@
     "Package04": [13.5, 0.0, 1.5, "\"spawn_package\""],
     "Package05": [1.5, 0.0, 5.0, "\"spawn_package\""],
     "Package06": [5.0, 0.0, 6.0, "\"spawn_package\""],
-    "Package07": [14.0, 0.0, 5.5, "\"spawn_package\""],
+    "Package07": [12.5, 0.0, 2.6, "\"spawn_package\""],
     "Package08": [1.5, 0.0, 11.0, "\"spawn_package\""],
     "Package09": [5.0, 0.0, 13.5, "\"spawn_package\""],
     "Package10": [14.5, 0.0, 14.5, "\"spawn_package\""]
@@ -494,7 +478,7 @@
   },
   "study": {
    "doors": {
-    "Door1": [0.0, 0.0, 1.0, ""]
+    "Door1": [0.0, 0.0, 4.0, ""]
    },
    "doors_marker3d": ["Door1"],
    "markers": {
@@ -557,20 +541,20 @@
    },
    "doors_marker3d": ["Door1", "Door2"],
    "markers": {
-    "Respawn1": [1.5, -0.06, 1.5, "\"spawn_respawn\""],
-    "Respawn2": [78.5, -0.06, 1.5, "\"spawn_respawn\""],
-    "Respawn3": [1.5, -0.06, 58.5, "\"spawn_respawn\""],
-    "Respawn4": [78.5, -0.06, 58.5, "\"spawn_respawn\""],
-    "RoundPlayer01": [24.0, -0.06, 52.0, "\"spawn_round_player\""],
-    "RoundPlayer02": [26.5, -0.06, 52.0, "\"spawn_round_player\""],
-    "RoundPlayer03": [33.5, -0.06, 52.0, "\"spawn_round_player\""],
-    "RoundPlayer04": [36.0, -0.06, 52.0, "\"spawn_round_player\""],
-    "RoundPlayer05": [38.5, -0.06, 52.0, "\"spawn_round_player\""],
-    "RoundPlayer06": [24.0, -0.06, 55.0, "\"spawn_round_player\""],
-    "RoundPlayer07": [26.5, -0.06, 55.0, "\"spawn_round_player\""],
-    "RoundPlayer08": [33.5, -0.06, 55.0, "\"spawn_round_player\""],
-    "RoundPlayer09": [36.0, -0.06, 55.0, "\"spawn_round_player\""],
-    "RoundPlayer10": [38.5, -0.06, 55.0, "\"spawn_round_player\""],
+    "Respawn1": [1.5, 0.0, 1.5, "\"spawn_respawn\""],
+    "Respawn2": [78.5, 0.0, 1.5, "\"spawn_respawn\""],
+    "Respawn3": [1.5, 0.0, 58.5, "\"spawn_respawn\""],
+    "Respawn4": [78.5, 0.0, 58.5, "\"spawn_respawn\""],
+    "RoundPlayer01": [24.0, 0.0, 52.0, "\"spawn_round_player\""],
+    "RoundPlayer02": [26.5, 0.0, 52.0, "\"spawn_round_player\""],
+    "RoundPlayer03": [33.5, 0.0, 52.0, "\"spawn_round_player\""],
+    "RoundPlayer04": [36.0, 0.0, 52.0, "\"spawn_round_player\""],
+    "RoundPlayer05": [38.5, 0.0, 52.0, "\"spawn_round_player\""],
+    "RoundPlayer06": [24.0, 0.0, 55.0, "\"spawn_round_player\""],
+    "RoundPlayer07": [26.5, 0.0, 55.0, "\"spawn_round_player\""],
+    "RoundPlayer08": [33.5, 0.0, 55.0, "\"spawn_round_player\""],
+    "RoundPlayer09": [36.0, 0.0, 55.0, "\"spawn_round_player\""],
+    "RoundPlayer10": [38.5, 0.0, 55.0, "\"spawn_round_player\""],
     "Zone01": [48.0, 0.5, 37.0, "\"spawn_zone\""]
    },
    "origin": [0.0, 0.0, 0.0],

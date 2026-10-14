@@ -26,24 +26,23 @@ from ._house_greybox import parse
 
 DATA = H.load()
 PLAN = H.plan(DATA)
-# mapping.md's known differences (2026-10-11), waiting on the game's answers G1 and G2 (prime-game #523; art task A4):
-# the attic is the free-roof attic on the whole footprint and holds the roof's stations; the art moved three door
-# markers onto the whole-metre wall grid and the storage's Package07 to the shelf it sits on. The game's three
-# provisional spawn_zone markers (prime-game #651, #681: Zone01 in the yard, Zone02 in the garden, Zone03 on the
-# landing) came after the art's rooms and are not in them yet; nor are the spawn_drop_* groups the game gave four
-# stations at prime-game 78135b8c (DiningTable, Workbench, GardenDropOff, TerraceTable; places unchanged).
+# The known differences since the game imported the art's House (prime-game PR #1043, snapshot at prime-game 605aed5f):
+# the game took the art's rooms (the attic on the whole footprint, G1; the roof dropped; the art's door and Package07
+# places, G2) except the garage, which it swaps later (P6: Door3 on the wall grid; spawn_drop_* on its Workbench). The
+# game moved the attic's Knife3 to the pump room, and its yard spawns stand at 0.0 where the art's plot has -0.06. Its
+# provisional spawn_zone markers (prime-game #651, #681: Zone01 yard, Zone02 garden, Zone03 landing) and the
+# spawn_drop_* groups of four stations (prime-game 78135b8c: DiningTable, Workbench, GardenDropOff, TerraceTable; places
+# unchanged) are not in the art's rooms yet.
+YARD_SPAWNS = {f"Respawn{i}" for i in range(1, 5)} | {f"RoundPlayer{i:02d}" for i in range(1, 11)}
 KNOWN = {
-    "roof": "game only",
-    "attic": {"origin": True, "size": True, "doors": {"Door1"}, "stations": {"Loot", "HidingSpots", "Lookout"},
-              "markers": {"Knife3"}},
+    "attic": {"markers": {"Knife3"}},
+    "pump_room": {"markers": {"Knife3"}},
     "dining_room": {"stations": {"DiningTable"}},
     "garage": {"doors": {"Door3"}, "stations": {"Workbench"}},
     "garden": {"stations": {"GardenDropOff"}, "markers": {"Zone02"}},
-    "landing": {"doors": {"Door6"}, "markers": {"Zone03"}},
+    "landing": {"markers": {"Zone03"}},
     "terrace": {"stations": {"TerraceTable"}},
-    "yard": {"markers": {"Zone01"}},
-    "study": {"doors": {"Door1"}},
-    "storage": {"markers": {"Package07"}},
+    "yard": {"markers": {"Zone01"} | YARD_SPAWNS},
 }
 def diff(game: dict, art: dict) -> dict:
     """What differs between a game room and an art room: field -> True, or for a marker group the names that differ."""
@@ -103,7 +102,7 @@ class HouseExport(unittest.TestCase):
             if d:
                 found[rid] = d
         self.assertEqual(found, KNOWN)
-        self.assertEqual(len(game), 35)
+        self.assertEqual(len(game), 34)
 
     def test_dressed_scenes_are_game_safe(self):
         rep = dressed()
