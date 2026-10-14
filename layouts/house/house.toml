@@ -231,6 +231,18 @@ at = [19.5, 34.0]
 look = [40.0, 34.0]
 [[export.sheet_views]]
 room = "attic"
+title = "attic: from the hatch"
+at = [28.0, 31.2]  # #168: where a player steps off the ladder (attic.toml's arrive), toward the south-west corner
+look = [20.5, 41.0]
+look_h = 0.8
+[[export.sheet_views]]
+room = "attic"
+title = "attic: toward the dormer"
+at = [24.5, 32.5]  # #168: across the stored things to the climb-out stair and the dormer's window
+look = [35.0, 42.0]
+look_h = 1.2
+[[export.sheet_views]]
+room = "attic"
 title = "roof: from dormer, 1.6 m"
 at = [34.9, 43.6]  # the dormer's climb-out (dressing/attic_roof/attic.toml's roof.arrive)
 look = [39.0, 41.9]  # the Lookout station
