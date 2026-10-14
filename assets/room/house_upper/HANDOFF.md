@@ -30,8 +30,8 @@ and `set_n1` textures and the House's wall paints (`layouts/house/house.toml` `[
 also sets `instance_shader_parameters/plan_at`, its place and turn in the house plan, so the shader paints by
 the plan wherever the game puts the House. Nothing to run: copy the two files with the kit and load the scene
 (the root's `metadata/wall_paint` stays as a note). Painted here: the bedroom and the guest room, bordeaux
-#69413c; the study, dark blue #1f2a48; the landing, teal #3a6264 (the kit's own plaster, so the colour stays and
-the textures are new). The kids' room and the balcony have no paint (the bathroom's pale green-grey since #162); the material gives the kit's
+#69413c; the study, dark blue #1f2a48; the landing, warm greige #d9d1c5 (teal #3a6264, the kit's own
+plaster, before #152). The kids' room and the balcony have no paint (the bathroom's pale green-grey since #162); the material gives the kit's
 textured look.
 
 ## Names in the flat props folder
@@ -59,11 +59,15 @@ this package's scenes are unchanged.
 
 ## The landing and the bathroom (#162)
 
-The landing (67 props, 49 different) and the bathroom (40 props, 34 different) are dressed in the world look; the
+The landing (75 props, 51 different) and the bathroom (40 props, 34 different) are dressed in the world look; the
 bathroom is pale green-grey `#d8dfd6` over white tiled lower walls. Changed: `landing.tscn`, `bathroom.tscn` and
 `package.json` (10 new props in `house_props`: `bath_tub`, `bath_vanity`, `towel_rail`, `bath_shelf`, `bath_mat`,
 `bath_tiles`, `bath_tiles_short`, `bath_tiles_shower`, `art_bubbles`, `landing_runner`). Draw calls of the room
-itself on the package sheet, before/after: landing door 41/62, along 46/57; bathroom door 45/47, across 36/42.
+itself on the package sheet, before/after: landing door 41/68, along 46/62; bathroom door 45/47, across 36/42.
+The review's round 2 brought back the landing's sitting area south of the stairwell (a sofa against the railing, two
+armchairs facing each other over a coffee table on a rug, a side table with a lamp, a floor lamp and figs; main had
+one there) and rebuilt `landing_runner` in terracotta tone on tone (the slate one read as a road); `landing.tscn`
+and `package.json` re-exported into `<raw>/review/house/162/export/p4b`.
 
 ## Credits
 As P2: the entries `assets/kit/house_kit/CREDITS.md` and `assets/prop/house_props/CREDITS.md` (copy them to
