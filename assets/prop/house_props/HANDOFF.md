@@ -24,8 +24,9 @@ writes), `credits` and the import check (11.3) locally with LFS content.
 ## The world look (#82)
 The 22 task-chain props are built on the fine pack (`docs/props.md`, "The task props in the world look"): their
 `kit_fine` surfaces take `res://assets/environment/house_props/prop_fine_high.tres` (or `prop_fine_low.tres`: the game
-swaps the tier per graphics preset, as in P2's `HANDOFF.md`). A room scene of P2-P5 or P7 already overrides them; a
-scene the game builds itself must set `surface_material_override` on those surfaces the same way. The 12 room-defining
+swaps the tier per graphics preset, as in P2's `HANDOFF.md`). A room scene of P2-P5 or P7 and P7's plot scene
+`outdoor.tscn` (the yard's bbq_grill, pose_screen and garden_dropoff) already override them; a scene the game builds
+itself must set `surface_material_override` on those surfaces the same way. The 12 room-defining
 props (boiler, pump, water_tank, switchboard, cable_drum, enlarger, tray_table, toy_chest, utility_pole, birdbath,
 bulkhead_stairs, music_speaker) keep the kit's paint and need no material.
 

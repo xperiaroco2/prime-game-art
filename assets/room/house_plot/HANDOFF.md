@@ -70,6 +70,14 @@ package's scenes are unchanged.
 Only `package.json` changed: the shared `kit_set.tres` carries the attic's paint and hashes anew; this
 package's scenes are unchanged.
 
+## The task props in the world look (#82)
+
+The task props of task v3 are built on the fine pack. `greenhouse.tscn` and `outdoor.tscn` (the yard's `bbq_grill`,
+`pose_screen` and `garden_dropoff`) override their `kit_fine` surfaces with
+`res://assets/environment/house_props/prop_fine_high.tres`, as the room scenes of P2-P5 do; `package.json` now lists
+the fine pack (`prop_fine.gdshader`, `prop_fine_high.tres`, `prop_fine_low.tres` and the 12 PNGs under `fine/`), the
+same build and hashes as P2's and P8's (`assets/prop/house_props/HANDOFF.md`). The task props' GLBs hash anew.
+
 
 ## Credits
 `CREDITS.md` beside `assets/environment/house_outdoor/manifest.toml` and `assets/environment/house_garden/manifest.toml`

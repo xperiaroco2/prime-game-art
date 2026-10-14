@@ -130,7 +130,7 @@
   "assets/environment/house_props/prop_fine_low.tres": "284dfcce2b4af66e53b545f7948c934677ed84b3003717efdda998fc826fd819",
   "levels/house/rooms/greenhouse.tscn": "a1256adc8afef2748843a4c3228a59bcf23db793c5e9b2af0ad45e7ea84ee6fe",
   "levels/house/rooms/garden.tscn": "1b181884d927d0a75b8c6c8566ac9ebe1174a3de66ec28254d7ba9fe72a3f2fa",
-  "levels/house/outdoor.tscn": "e62f14e1b5ab835d1aae5f22bcc519f69707a5358703f55f138358be86344a1a"
+  "levels/house/outdoor.tscn": "02fd46e66adc1d2064f08a2e44172c93ff69f538cbd0be0182f555ac08fab13a"
  },
  "questions": [
   "G3: the room scenes are under levels/house/rooms/ (11.1 keeps assets/ data only); the game's workflow swaps them into its greybox rooms (Body/Looks out, Shell/Dressing/Fixtures in).",

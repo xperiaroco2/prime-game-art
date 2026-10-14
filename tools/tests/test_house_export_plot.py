@@ -140,6 +140,15 @@ class CommittedScene(unittest.TestCase):
         self.assertGreater(text.count('parent="Shell"'), 50)
         self.assertGreater(text.count('parent="Dressing"'), 50)
 
+    def test_the_yards_fine_props_carry_the_fine_material(self):
+        """#82's review: the task props of the world look in the yard override their kit_fine surfaces."""
+        text = SCENE.read_text(encoding="utf-8")
+        got = re.search(r'path="res://[^"]+/prop_fine_\w+\.tres" id="([^"]+)"', text)
+        self.assertIsNotNone(got)
+        for name in ("bbq_grill_1", "pose_screen_1", "garden_dropoff_1"):
+            self.assertRegex(text, rf'parent="Dressing/{name}[^"]*"\]\nsurface_material_override/\d+ = '
+                                   rf'ExtResource\("{got.group(1)}"\)')
+
 
 if __name__ == "__main__":
     unittest.main()
