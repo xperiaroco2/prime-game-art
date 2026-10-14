@@ -492,6 +492,38 @@ def build_board_fine(pc: Piece, p: dict, spec: dict) -> None:
     pc.collide_box((-w / 2 + post, y0, zb), (w / 2 - post, y1, zf))
 
 
+def build_table_fine(pc: Piece, p: dict, spec: dict) -> None:
+    """The dining table in the world look (#153): a 40 mm oiled-oak top with a soft edge and a dark shadow line under
+    it, an apron set in 70 mm, four square legs tapering to the floor set in at the corners, a centre stretcher on two
+    cross rails low between them; the top stays clear for the game's drop-offs."""
+    m = pc.mesh
+    st = style(spec)
+    w, d, h = _dims(p)
+    tt, ins, ah = 0.04, 0.07, 0.09
+    pg.cbox(m, (-w / 2, h - tt, -d / 2), (w / 2, h, d / 2), "worktop_wood", st.bevel)
+    pg.box(m, (-w / 2 + 0.02, h - tt - 0.004, -d / 2 + 0.02), (w / 2 - 0.02, h - tt, d / 2 - 0.02), "wood_front_dark",
+           "+x-x-y+z-z")
+    x0, z0 = w / 2 - ins - 0.08, d / 2 - ins - 0.02  # the legs' outer corner
+    for sx in (-1, 1):
+        for sz in (-1, 1):
+            cx, cz = sx * (x0 - 0.035), sz * (z0 - 0.035)
+            pg.cyl(m, "y", (cx, cz), 0.032, 0.0, h - tt - 0.004, "worktop_wood", 4, r1=0.05, phase=math.pi / 4)
+    for sz in (-1, 1):  # the apron: long rails and the end rails, set in under the top
+        pg.cbox(m, (-x0 + 0.03, h - tt - 0.004 - ah, sz * z0 - 0.012), (x0 - 0.03, h - tt - 0.004, sz * z0 + 0.012),
+                "worktop_wood", st.bevel_small)
+    for sx in (-1, 1):
+        pg.cbox(m, (sx * x0 - 0.012, h - tt - 0.004 - ah, -z0 + 0.03), (sx * x0 + 0.012, h - tt - 0.004, z0 - 0.03),
+                "worktop_wood", st.bevel_small)
+        pg.cbox(m, (sx * (x0 - 0.035) - 0.02, 0.14, -z0 + 0.06), (sx * (x0 - 0.035) + 0.02, 0.19, z0 - 0.06),
+                "worktop_wood", st.bevel_small)
+    pg.cbox(m, (-x0 + 0.055, 0.15, -0.02), (x0 - 0.055, 0.19, 0.02), "worktop_wood", st.bevel_small)
+    for sx in (-1, 1):  # felt pads under the feet
+        for sz in (-1, 1):
+            cx, cz = sx * (x0 - 0.035), sz * (z0 - 0.035)
+            pg.box(m, (cx - 0.02, -0.0, cz - 0.02), (cx + 0.02, 0.003, cz + 0.02), "rubber_black", "+x-x+z-z")
+    _full_collider(pc, p)
+
+
 def build_island_fine(pc: Piece, p: dict, spec: dict) -> None:
     """The assembly island in the world look (C2-white): the oiled-wood worktop (60 mm), a painted (cabinet green) carcass on the
     style's plinth, `doors` bays of a door under a drawer on the front (+Z) and seamed panels on the back, warm steel
@@ -1133,7 +1165,7 @@ BUILDERS = {
 
 # --- describe and check --------------------------------------------------------------------------------------------
 LOOKS = {"fine"}  # a prop's `look`: none, the kit's paint; "fine", the world look (the spec's library)
-FINE_BUILDERS = {"board": build_board_fine, "island": build_island_fine}
+FINE_BUILDERS = {"board": build_board_fine, "island": build_island_fine, "table": build_table_fine}
 
 
 def build_prop(p: dict, spec: dict) -> Piece:

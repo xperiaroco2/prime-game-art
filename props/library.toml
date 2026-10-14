@@ -5,9 +5,9 @@
 # Paints and shapes are taste data: changing a hex or a prop's roles needs no code change.
 
 library = "house"
-version = 3
+version = 4
 kit_spec = "kits/house.json"
-out = "props/library/v3"  # under the raw folder: D:/prime-art-raw/props/library/v3/<id>.glb (v3, #152: v2 with the cream
+out = "props/library/v4"  # under the raw folder: D:/prime-art-raw/props/library/v4/<id>.glb (v4, #153: v3 with the dining room's props laid over it; v3, #152: v2 with the cream
 # sofa and armchairs rebuilt over it; v2, #150: v1 with the living room's 16 rebuilt props and the eight-slot fine pack
 # laid over it; v1 stays the approved version-1 build; no folder is ever overwritten)
 review = "review/house/87"  # line-up sheets, under the raw folder
@@ -75,7 +75,7 @@ paints = ["wood_front", "wood_front_dark", "worktop_wood", "worktop_stone", "til
           "enamel_cream", "upholstery", "upholstery_light", "upholstery_warm", "cushion_teal",
           "soil_dark", "leaf_green", "leaf_dark", "art_white", "art_sky", "art_pink", "art_terracotta", "art_bun",
           "art_patty", "cushion_rust", "cushion_mustard", "throw_cream",
-          "carpet_field", "carpet_border", "stone_light", "stone_dark", "book_cream", "book_teal", "book_mustard", "book_red", "book_navy", "book_sage",
+          "carpet_field", "carpet_border", "carpet_slate", "stone_light", "stone_dark", "book_cream", "book_teal", "book_mustard", "book_red", "book_navy", "book_sage",
           "book_grey"]
 
 # The fine pack: ONE shared opaque material (`kit_fine-vcol`) for the world look's props, as the kit's `set` pack
@@ -174,6 +174,7 @@ cushion_mustard = {material = "fine", layer = "weave", hex = "#d0a02c"}
 throw_cream = {material = "fine", layer = "weave", hex = "#d8cdb4"}
 carpet_field = {material = "fine", layer = "carpet", hex = "#a9573c"}
 carpet_border = {material = "fine", layer = "carpet", hex = "#d8cdb4"}
+carpet_slate = {material = "fine", layer = "carpet", hex = "#4f5a63"}  # #153: the dining rug
 stone_light = {material = "fine", layer = "stone", hex = "#cfc8bb"}
 stone_dark = {material = "fine", layer = "stone", hex = "#55524c"}
 book_cream = {material = "fine", layer = "paint", hex = "#d8cdb4"}
@@ -384,21 +385,16 @@ collision = "box"
 [[prop]]
 id = "dining_chair"
 batch = 1
-name = "Dining chair"
+name = "Dining chair, oak frame and an upholstered seat"
 class = "room"
 size_m = [0.45, 0.45, 0.9]
 count = 8
-route = "pack"
-source = "kaykit_furniture_bits"
-files = ["kaykit/furniture-bits/KayKit_Furniture_Bits_1.0_FREE/KayKit_Furniture_Bits_1.0_FREE/Assets/gltf/chair_A_wood.gltf"]
-src_size = [0.75, 1.2583, 0.8451]
-src_triangles = 308
-yaw_deg = 0
-scale = 0.617
-stretch = true
-roles = ["wood_mid"]
+route = "proc"
+shape = "dining_chair"  # the world look (#153): was the KayKit pack chair
+params = {wood = "worktop_wood", seat = "upholstery"}
+roles = ["worktop_wood", "upholstery"]
 pivot = "floor"
-collision = "hull"
+collision = "box"
 
 [[prop]]
 id = "double_bed"
@@ -1649,13 +1645,13 @@ collision = "none"
 [[prop]]
 id = "chandelier"
 batch = 2
-name = "Chandelier (fixture)"
+name = "Pendant of three domed shades over the dining table (fixture)"
 class = "fixture"
-size_m = [0.9, 0.9, 0.7]
+size_m = [1.5, 0.36, 0.8]
 count = 1
 route = "proc"
-shape = "chandelier"
-roles = ["bulb", "metal_dark"]
+shape = "pendant_trio"  # the world look (#153): was a six-arm chandelier
+roles = ["bulb", "steel_black", "steel_warm"]
 pivot = "ceiling"
 collision = "none"
 
@@ -2437,4 +2433,168 @@ shape = "framed_art"
 params = {art = "score", frame = 0.018, mat = 0.03, frame_paint = "steel_black"}
 roles = ["steel_black", "art_white", "paint_red", "book_grey", "book_navy"]
 pivot = "wall"
+collision = "none"
+
+# ---- The dining room (#153): its rug, display cabinet, wall art and the dense detail layer (the set table,
+# the sideboard's things, homework, the mail). The prints are drawn by prop_geom.py (_art): own work.
+
+[[prop]]
+id = "dining_rug"
+batch = 1
+name = "Dining rug, slate field and a cream border"
+class = "dressing"
+size_m = [4.2, 2.8, 0.012]
+count = 1
+route = "proc"
+shape = "carpet_rug"
+params = {field = "carpet_slate", border = "carpet_border"}
+roles = ["carpet_slate", "carpet_border"]
+pivot = "floor"
+collision = "none"
+
+[[prop]]
+id = "display_cabinet"
+batch = 1
+name = "Display cabinet, glass doors over panelled doors, plates and glasses"
+class = "hero"
+size_m = [1.0, 0.42, 1.95]
+count = 1
+route = "proc"
+shape = "display_cabinet"
+roles = ["wood_front", "wood_front_dark", "chrome", "steel_black", "porcelain_white", "enamel_white", "book_teal", "glass_dark", "glass_tint"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "art_still_life"
+batch = 1
+name = "Large framed still-life print: a jug, a bottle and lemons"
+class = "dressing"
+size_m = [1.1, 0.04, 0.8]
+count = 1
+route = "proc"
+shape = "framed_art"
+params = {art = "still_life", frame = 0.03, mat = 0.06, frame_paint = "worktop_wood"}
+roles = ["worktop_wood", "art_white", "book_cream", "book_navy", "art_terracotta", "book_teal", "book_sage", "book_mustard", "art_pink"]
+pivot = "wall"
+collision = "none"
+
+[[prop]]
+id = "art_delivery"
+batch = 1
+name = "Framed street map with a delivery route to the door"
+class = "clutter"
+size_m = [0.45, 0.025, 0.6]
+count = 1
+route = "proc"
+shape = "framed_art"
+params = {art = "delivery", frame = 0.018, mat = 0.03, frame_paint = "steel_black"}
+roles = ["steel_black", "art_white", "book_navy", "book_mustard", "book_sage", "art_sky", "book_grey", "paint_red", "art_bun"]
+pivot = "wall"
+collision = "none"
+
+[[prop]]
+id = "art_gazebo"
+batch = 1
+name = "Framed photo strip from the yard's photo gazebo"
+class = "clutter"
+size_m = [0.2, 0.02, 0.62]
+count = 1
+route = "proc"
+shape = "framed_art"
+params = {art = "gazebo", frame = 0.015, mat = 0.012, frame_paint = "wood_front_dark"}
+roles = ["wood_front_dark", "art_white", "art_sky", "art_pink", "book_mustard", "book_sage", "art_bun", "book_cream", "art_terracotta", "book_navy", "paint_red", "book_teal", "art_patty"]
+pivot = "wall"
+collision = "none"
+
+[[prop]]
+id = "place_setting"
+batch = 1
+name = "Place setting: slate mat, plates, napkin, cutlery, a water glass"
+class = "clutter"
+size_m = [0.46, 0.34, 0.13]
+count = 4
+route = "proc"
+shape = "place_setting"
+roles = ["stone_dark", "porcelain_white", "enamel_white", "throw_cream", "chrome", "glass_tint"]
+pivot = "floor"
+collision = "none"
+
+[[prop]]
+id = "serving_board"
+batch = 1
+name = "Bread board with a loaf, a glass water jug, salt and pepper"
+class = "clutter"
+size_m = [0.64, 0.27, 0.24]
+count = 1
+route = "proc"
+shape = "serving_board"
+roles = ["worktop_wood", "art_bun", "book_cream", "chrome", "wood_front_dark", "steel_black", "glass_tint"]
+pivot = "floor"
+collision = "none"
+
+[[prop]]
+id = "fruit_dish"
+batch = 1
+name = "Stoneware bowl of apples, oranges, pears and bananas"
+class = "clutter"
+size_m = [0.32, 0.32, 0.17]
+count = 1
+route = "proc"
+shape = "fruit_dish"
+roles = ["stone_light", "enamel_white", "paint_red", "art_bun", "leaf_green", "book_mustard"]
+pivot = "floor"
+collision = "none"
+
+[[prop]]
+id = "tulip_vase"
+batch = 1
+name = "Tulips in a glazed vase"
+class = "clutter"
+size_m = [0.2, 0.2, 0.46]
+count = 1
+route = "proc"
+shape = "flower_vase"
+roles = ["book_teal", "leaf_green", "leaf_dark", "art_pink", "paint_red", "art_white"]
+pivot = "floor"
+collision = "none"
+
+[[prop]]
+id = "bottle_rack"
+batch = 1
+name = "Black steel wine rack with six bottles"
+class = "dressing"
+layer = "detail"  # six bottles need more than the clutter budget; still a small thing on the sideboard
+size_m = [0.36, 0.3, 0.25]
+count = 1
+route = "proc"
+shape = "wine_rack"
+roles = ["glass_dark", "paint_red", "steel_black", "book_mustard", "book_cream", "art_white"]
+pivot = "floor"
+collision = "none"
+
+[[prop]]
+id = "homework"
+batch = 1
+name = "Homework: an open exercise book, a pencil case, a calculator"
+class = "clutter"
+size_m = [0.56, 0.25, 0.04]
+count = 1
+route = "proc"
+shape = "homework"
+roles = ["art_white", "art_sky", "book_navy", "paint_red", "book_mustard", "leaf_green", "book_cream", "rubber_black", "glass_dark", "art_pink"]
+pivot = "floor"
+collision = "none"
+
+[[prop]]
+id = "mail_stack"
+batch = 1
+name = "The day's mail with a burger delivery flyer on top"
+class = "clutter"
+size_m = [0.3, 0.22, 0.025]
+count = 1
+route = "proc"
+shape = "mail_stack"
+roles = ["art_white", "book_cream", "art_sky", "paint_red", "book_navy", "art_bun", "art_patty"]
+pivot = "floor"
 collision = "none"

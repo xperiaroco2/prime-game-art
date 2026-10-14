@@ -2738,6 +2738,60 @@ def _art(m: Mesh, kind: str, x0: float, x1: float, y0: float, y1: float, z: floa
                     q(c + 0.03 + k * 0.03, y + 0.02, c + 0.037 + k * 0.03, y + 0.1, "steel_black", False)
         zz[0] += step
         tube(m, "z", (x0 + 0.65 * w, y0 + 0.73 * h), 0.06 * h, 0.075 * h, zz[0] - step, zz[0], "paint_red", 14)
+    elif kind == "still_life":  # #153: a mid-century still-life print: a jug, a bottle, a bowl of lemons on a table
+        q(0, 0, 1, 1, "book_cream")
+        q(0, 0, 1, 0.3, "book_navy")
+        q(0, 0.3, 1, 0.33, "art_terracotta")
+        q(0.12, 0.33, 0.34, 0.7, "book_teal")
+        disk(0.23, 0.7, 0.11 * w, "book_teal", 18)
+        q(0.33, 0.48, 0.38, 0.62, "book_teal")
+        q(0.16, 0.4, 0.3, 0.43, "art_white", False)
+        q(0.44, 0.33, 0.52, 0.78, "book_sage")
+        q(0.465, 0.78, 0.495, 0.9, "book_sage")
+        q(0.455, 0.5, 0.505, 0.6, "art_white")
+        disk(0.74, 0.36, 0.17 * w, "art_white", 20)
+        q(0.56, 0.2, 0.92, 0.36, "book_navy")
+        for cx, cy in ((0.66, 0.42), (0.75, 0.44), (0.84, 0.42), (0.7, 0.5), (0.8, 0.5)):
+            disk(cx, cy, 0.045 * w, "book_mustard", 12)
+        q(0.62, 0.36, 0.86, 0.38, "art_white")
+        disk(0.86, 0.82, 0.07 * h, "art_pink", 14)
+    elif kind == "delivery":  # #153: the House's street map with a delivery route dotted to the door and a pin
+        q(0, 0, 1, 1, "art_white")
+        q(0, 0.86, 1, 1, "book_navy")
+        q(0.08, 0.9, 0.6, 0.95, "art_white", False)
+        q(0.7, 0.9, 0.92, 0.94, "book_mustard", False)
+        q(0.06, 0.52, 0.42, 0.8, "book_sage")
+        q(0.58, 0.06, 0.94, 0.3, "book_sage", False)
+        q(0, 0.36, 1, 0.42, "art_sky")
+        zz[0] += step
+        for c in (0.18, 0.5, 0.8):
+            q(c - 0.012, 0.0, c + 0.012, 0.86, "book_grey", False)
+        for r in (0.22, 0.62):
+            q(0.0, r - 0.01, 1.0, r + 0.01, "book_grey", False)
+        zz[0] += step
+        pts = [(0.18, 0.06), (0.18, 0.22), (0.5, 0.22), (0.5, 0.62), (0.8, 0.62), (0.8, 0.74)]
+        for (ax, ay), (bx, by) in zip(pts, pts[1:]):
+            n = max(2, int((abs(bx - ax) * w + abs(by - ay) * h) / 0.03))
+            for k in range(n):
+                t = k / n
+                px, py = ax + (bx - ax) * t, ay + (by - ay) * t
+                q(px - 0.008, py - 0.006, px + 0.008, py + 0.006, "paint_red", False)
+        disk(0.8, 0.78, 0.04 * w, "paint_red", 14)
+        disk(0.8, 0.78, 0.016 * w, "art_white", 10)
+        q(0.66, 0.66, 0.74, 0.72, "art_bun")
+    elif kind == "gazebo":  # #153: a strip of four photos from the yard's photo gazebo: plasticine people posing
+        q(0, 0, 1, 1, "art_white")
+        backs = ("art_sky", "art_pink", "book_mustard", "book_sage")
+        heads = ("art_bun", "art_pink", "book_cream", "art_terracotta")
+        for i in range(4):
+            b0 = 0.03 + (3 - i) * 0.24
+            q(0.08, b0, 0.92, b0 + 0.21, backs[i])
+            for j, cx in enumerate((0.3, 0.7) if i != 2 else (0.25, 0.5, 0.75)):
+                body = ("book_navy", "paint_red", "book_teal", "art_terracotta")[(i + j) % 4]
+                q(cx - 0.12, b0, cx + 0.12, b0 + 0.08 + 0.02 * (j % 2), body, False)
+                disk(cx, b0 + 0.13 + 0.01 * ((i + j) % 2), 0.13 * w, heads[(i + j) % 4], 10)
+            if i == 1:  # someone holds up a burger
+                disk(0.5, b0 + 0.17, 0.07 * w, "art_patty", 10)
     else:  # burger
         q(0, 0, 1, 1, "book_navy")
         q(0.15, 0.82, 0.85, 0.9, "art_white")
@@ -2768,6 +2822,282 @@ def build_framed_art(m, s, R, prm, rng):
                    ((-hx, f, z0), (-hx + f, H - f, z1)), ((hx - f, f, z0), (hx, H - f, z1))):
         box(m, lo, hi, fr, "+x-x+y-y+z")
     _art(m, prm.get("art", "abstract"), -hx + f + mat, hx - f - mat, f + mat, H - f - mat, z1 - 0.008, rng)
+
+
+# ---- The dining room in the world look (#153): the chairs, the pendant, the display cabinet and its detail layer.
+
+def build_dining_chair(m, s, R, prm, rng):
+    """A present-day dining chair: an oak frame (`wood`) of tapered front legs, back legs rising into the back posts,
+    rails and low stretchers, a back of a wide top rail and a lower rail with three slats between them, and an
+    upholstered seat pad (`seat`). Colliders: the seat and the back."""
+    L, W, H = s
+    hx, hz = L / 2, W / 2
+    wood, seat = prm.get("wood", "worktop_wood"), prm.get("seat", "upholstery")
+    ys = 0.42  # the frame's top under the pad
+    xl, zb = hx - 0.028, -hz + 0.03
+    for sx in (-1, 1):
+        leg(m, sx * xl, hz - 0.028, 0.0, ys, 0.02, wood, 0.7, 10)
+        rod(m, (sx * xl, 0.0, zb + 0.01), (sx * xl, ys, zb), 0.019, wood, 10)
+        rod(m, (sx * xl, ys, zb), (sx * (xl - 0.004), H - 0.012, -hz + 0.02), 0.017, wood, 10)
+        box(m, (sx * xl - 0.012, ys - 0.07, zb), (sx * xl + 0.012, ys - 0.005, hz - 0.028), wood, "+x-x-y")
+        box(m, (sx * xl - 0.009, 0.16, zb), (sx * xl + 0.009, 0.185, hz - 0.028), wood, "+x-x+y-y")
+    box(m, (-xl, ys - 0.07, hz - 0.04), (xl, ys - 0.005, hz - 0.016), wood, "+z-z-y")
+    box(m, (-xl, ys - 0.07, zb - 0.012), (xl, ys - 0.005, zb + 0.012), wood, "+z-z-y")
+    cushion(m, (-hx + 0.006, ys - 0.005, -hz + 0.05), (hx - 0.006, ys + 0.05, hz - 0.004), seat, 0.02)
+    zr = -hz + 0.006
+    cbox(m, (-xl + 0.01, H - 0.11, zr), (xl - 0.01, H - 0.02, zr + 0.03), wood, 0.004)
+    cbox(m, (-xl + 0.01, ys + 0.15, zr + 0.004), (xl - 0.01, ys + 0.19, zr + 0.028), wood, 0.004)
+    for k in (-1, 0, 1):
+        x = k * (xl - 0.01) / 2.4
+        box(m, (x - 0.017, ys + 0.19, zr + 0.009), (x + 0.017, H - 0.11, zr + 0.023), wood, "+x-x+z-z")
+    _boxes(prm).extend([((-hx, 0.0, -hz), (hx, ys + 0.05, hz)), ((-hx, ys, -hz), (hx, H, -hz + 0.06))])
+
+
+def build_pendant_trio(m, s, R, prm, rng):
+    """A present-day pendant over a long table: a slim black steel canopy bar on the ceiling, three drops and three
+    domed shades (black outside, warm brass inside) with a warm bulb in each (the light anchor). Ceiling pivot."""
+    L, W, H = s
+    hx = L / 2
+    lamp = R[0]
+    cbox(m, (-hx + 0.05, H - 0.03, -0.035), (hx - 0.05, H, 0.035), "steel_black", 0.004)
+    r = min(W / 2, (L - 0.1) / 6) - 0.005
+    sh = 0.2  # the shade's height
+    for k in (-1, 0, 1):
+        x = k * (L - 2 * r - 0.02) / 2
+        rod(m, (x, sh + 0.04, 0.0), (x, H - 0.03, 0.0), 0.003, "steel_black", 3, caps=False)
+        cyl(m, "y", (x, 0.0), 0.022, sh, sh + 0.05, "steel_black", 6, r1=0.016, caps=(False, True))
+        cyl(m, "y", (x, 0.0), r, 0.0, sh, "steel_black", 12, r1=r * 0.3, caps=(False, True))
+        cyl(m, "y", (x, 0.0), r * 0.97, 0.002, sh - 0.004, "steel_warm", 12, r1=r * 0.28, caps=(False, True),
+            flip=True)
+        bulb(m, (x, 0.06, 0.0), 0.035, lamp, 0.045)
+
+
+def build_display_cabinet(m, s, R, prm, rng):
+    """A tall display cabinet in the wood fronts: plinth, carcass and top, two panelled doors below, two framed glass
+    doors (`glass`) above a dark back: white plates standing in a rail, a stack of bowls and a jug on the lowest
+    shelf, stemmed glasses and a decanter above. Collider: the body."""
+    st = _style(prm)
+    L, W, H = s
+    hx, hz = L / 2, W / 2
+    body, glass = prm.get("body", "wood_front"), prm.get("glass", "glass_tint")
+    t = 0.022
+    zf = hz - st.reach - 0.002
+    yb = 0.86  # the base's top: the glass doors start here
+    plinth(m, st, -hx + t, hx - t, -hz + 0.02, zf - st.plinth_setback, "wood_front_dark")
+    for sx in (-1, 1):
+        cbox(m, (hx - t if sx > 0 else -hx, 0.0, -hz), (hx if sx > 0 else -hx + t, H - 0.03, zf + st.front_t), body,
+             st.bevel_small)
+    cbox(m, (-hx, H - 0.03, -hz), (hx, H, zf + st.front_t + 0.01), body, st.bevel_small)
+    box(m, (-hx + t, st.plinth, -hz), (hx - t, H - 0.03, -hz + 0.012), "wood_front_dark", "+z")
+    cbox(m, (-hx + t, st.plinth, -hz + 0.012), (hx - t, yb, zf), body, st.bevel_small)
+    front(m, st, -hx + t, 0.0, st.plinth + 0.004, yb - 0.004, zf, body, True, line="wood_front_dark")
+    front(m, st, 0.0, hx - t, st.plinth + 0.004, yb - 0.004, zf, body, False, line="wood_front_dark")
+    zi0, zi1 = -hz + 0.012, zf - 0.006  # the glass part's inside
+    cbox(m, (-hx + t, yb, zi0), (hx - t, yb + t, zf), body, st.bevel_small)
+    n = 3
+    step = (H - 0.03 - yb - t) / n
+    for i in range(n):
+        y = yb + t + step * i
+        if i:
+            box(m, (-hx + t, y - 0.016, zi0), (hx - t, y, zi1), body, "+y-y+z")
+        if i == 0:  # plates standing in a rail at the back, a stack of bowls and a jug in front
+            box(m, (-hx + t, y, zi0 + 0.03), (hx - t, y + 0.012, zi0 + 0.04), "wood_front_dark", "+y+z-z")
+            for k in range(6):
+                x = -hx + 0.1 + k * (L - 0.2) / 5
+                cyl(m, "z", (x, y + 0.115), 0.11, zi0 + 0.012, zi0 + 0.026, "porcelain_white", 14)
+            for j in range(3):
+                cyl(m, "y", (-hx + 0.2, zi1 - 0.1), 0.05 - 0.003 * j, y + j * 0.03, y + j * 0.03 + 0.028,
+                    "enamel_white", 12, r1=0.075 - 0.003 * j)
+            cyl(m, "y", (hx - 0.2, zi1 - 0.09), 0.055, y, y + 0.14, "book_teal", 12, r1=0.045)
+            cyl(m, "y", (hx - 0.2, zi1 - 0.09), 0.045, y + 0.14, y + 0.18, "book_teal", 12, r1=0.05)
+        else:  # stemmed glasses in two rows, on the top shelf a decanter
+            for row, zc in enumerate((zi0 + 0.07, zi1 - 0.06)):
+                for k in range(4 - row):
+                    x = -hx + 0.12 + (k + 0.5 * row) * (L - 0.34) / 3
+                    cyl(m, "y", (x, zc), 0.028, y, y + 0.006, "chrome", 8)
+                    cyl(m, "y", (x, zc), 0.005, y + 0.006, y + 0.07, "chrome", 4)
+                    cyl(m, "y", (x, zc), 0.012, y + 0.07, y + 0.15, "chrome", 8, r1=0.032, caps=(False, False))
+            if i == 2:
+                cyl(m, "y", (hx - 0.14, zi1 - 0.1), 0.055, y, y + 0.14, "glass_dark", 10, r1=0.06)
+                cyl(m, "y", (hx - 0.14, zi1 - 0.1), 0.016, y + 0.14, y + 0.22, "glass_dark", 8)
+    front(m, st, -hx + t, 0.0, yb + t + 0.004, H - 0.034, zf, body, True, glass=glass)
+    front(m, st, 0.0, hx - t, yb + t + 0.004, H - 0.034, zf, body, False, glass=glass)
+    _boxes(prm).append(((-hx, 0.0, -hz), (hx, H, zf + st.front_t)))
+
+
+# The dining room's detail layer (class clutter): the set table, the sideboard's things, homework and the mail.
+
+def _plate(m: Mesh, x: float, z: float, y: float, r: float, role: str, h: float = 0.022) -> None:
+    """A plate: a foot rising into the rim, the well inside it."""
+    cyl(m, "y", (x, z), r * 0.62, y, y + h, role, 16, r1=r, caps=(True, False))
+    cyl(m, "y", (x, z), r * 0.6, y + h * 0.4, y + h, role, 16, r1=r * 0.94, caps=(True, False), flip=True)
+
+
+def _tumbler(m: Mesh, x: float, z: float, y: float, r: float, h: float, role: str = "glass_tint") -> None:
+    """A drinking glass: a thick base and the open sides, outside and in."""
+    cyl(m, "y", (x, z), r * 0.92, y, y + 0.012, role, 12, r1=r * 0.94)
+    cyl(m, "y", (x, z), r * 0.94, y + 0.012, y + h, role, 12, r1=r, caps=(False, False))
+    cyl(m, "y", (x, z), r * 0.86, y + 0.012, y + h, role, 12, r1=r * 0.92, caps=(False, False), flip=True)
+
+
+def build_place_setting(m, s, R, prm, rng):
+    """One place at the table, its diner at +z: a slate placemat (`mat`), a dinner plate with a side plate on it, a
+    folded linen napkin (`napkin`) with a fork on the left, a knife and a spoon on the right, a water glass at the top
+    right."""
+    L, W, H = s
+    hx, hz = L / 2, W / 2
+    box(m, (-hx, 0.0, -hz), (hx, 0.004, hz), prm.get("mat", "stone_dark"), "+x-x+y+z-z")
+    _plate(m, 0.0, 0.02, 0.004, 0.13, "porcelain_white")
+    _plate(m, 0.0, 0.02, 0.022, 0.085, "enamel_white", 0.016)
+    cbox(m, (-hx + 0.015, 0.004, -0.07), (-hx + 0.075, 0.016, 0.12), prm.get("napkin", "throw_cream"), 0.003)
+    box(m, (-hx + 0.04, 0.016, -0.05), (-hx + 0.05, 0.019, 0.1), "chrome", "+y+x-x+z-z")
+    box(m, (-hx + 0.034, 0.016, -0.08), (-hx + 0.056, 0.019, -0.05), "chrome", "+y+x-x+z-z")
+    for x, z0, z1 in ((0.155, -0.08, 0.13), (0.19, -0.05, 0.13)):
+        box(m, (x - 0.006, 0.004, z0), (x + 0.006, 0.007, z1), "chrome", "+y+x-x+z-z")
+    _tumbler(m, hx - 0.045, -hz + 0.04, 0.004, 0.035, H - 0.004)
+
+
+def build_serving_board(m, s, R, prm, rng):
+    """The middle of the table: an oak bread board with a scored loaf and a bread knife, a glass water jug, a salt
+    and a pepper mill."""
+    L, W, H = s
+    hx, hz = L / 2, W / 2
+    bx0, bx1 = -hx, -hx + 0.4
+    rslab(m, bx0, bx1 - 0.06, 0.0, 0.022, -hz, hz, 0.03, "worktop_wood")
+    box(m, (bx1 - 0.062, 0.0, -0.025), (bx1, 0.022, 0.025), "worktop_wood", "+x+y+z-z")
+    blob(m, (bx0 + 0.15, 0.022 + 0.05, -0.01), 0.12, 0.055, 0.075, "art_bun", 8, 4, floor=0.022)
+    for k in range(3):
+        x = bx0 + 0.08 + k * 0.06
+        box(m, (x, 0.12, -0.05), (x + 0.012, 0.124, 0.03), "book_cream", "+y")
+    box(m, (bx0 + 0.04, 0.022, hz - 0.06), (bx0 + 0.22, 0.025, hz - 0.035), "chrome", "+y+x-x+z-z")
+    cbox(m, (bx0 + 0.22, 0.022, hz - 0.064), (bx0 + 0.33, 0.04, hz - 0.03), "wood_front_dark", 0.004)
+    jx, jz = hx - 0.09, -0.03
+    cyl(m, "y", (jx, jz), 0.07, 0.0, 0.012, "glass_tint", 10, r1=0.07)
+    cyl(m, "y", (jx, jz), 0.07, 0.012, H - 0.01, "glass_tint", 10, r1=0.055, caps=(False, False))
+    cyl(m, "y", (jx, jz), 0.062, 0.012, H - 0.01, "glass_tint", 10, r1=0.05, caps=(False, False), flip=True)
+    box(m, (jx - 0.01, H - 0.035, jz + 0.05), (jx + 0.01, H, jz + 0.075), "glass_tint", "+x-x+y+z")
+    for k, role in enumerate(("wood_front_dark", "steel_black")):
+        x = hx - 0.22 + k * 0.06
+        cyl(m, "y", (x, hz - 0.05), 0.022, 0.0, 0.12, role, 8, r1=0.018, caps=(True, False))
+        blob(m, (x, 0.13, hz - 0.05), 0.02, 0.016, 0.02, role, 6, 3)
+
+
+def build_fruit_dish(m, s, R, prm, rng):
+    """A wide stoneware fruit bowl (light outside, white glaze inside) heaped with apples, oranges, pears and a
+    bunch of bananas."""
+    L, W, H = s
+    r = min(L, W) / 2
+    hb = H * 0.42
+    cyl(m, "y", (0.0, 0.0), r * 0.42, 0.0, hb, "stone_light", 12, r1=r, caps=(True, False))
+    cyl(m, "y", (0.0, 0.0), r * 0.38, 0.012, hb, "enamel_white", 12, r1=r * 0.95, caps=(True, False), flip=True)
+    fruit = (("paint_red", 0.042), ("art_bun", 0.045), ("leaf_green", 0.04), ("paint_red", 0.042), ("art_bun", 0.045),
+             ("leaf_green", 0.04))
+    for k, (role, fr) in enumerate(fruit):
+        a = k * 2 * math.pi / 5
+        d = 0.0 if k == 5 else r * 0.52
+        y = hb - 0.01 + (0.03 if k == 5 else 0.0)
+        blob(m, (math.cos(a) * d, y, math.sin(a) * d), fr, fr * (1.2 if role == "leaf_green" else 0.95), fr, role,
+             6, 4)
+    for k in range(3):  # the bananas lie across the top
+        z = -0.02 + k * 0.022
+        blob(m, (0.02, H - 0.025 - 0.006 * k, z), r * 0.6, 0.017, 0.017, "book_mustard", 6, 3)
+
+
+def build_flower_vase(m, s, R, prm, rng):
+    """Tulips in a glazed ceramic vase (`glaze`): a cylinder vase, green stems, a few long leaves and closed heads in
+    pink, red and white."""
+    L, W, H = s
+    r = min(L, W) / 2
+    vh = H * 0.42
+    vr = r * 0.42
+    cyl(m, "y", (0.0, 0.0), vr, 0.0, vh, prm.get("glaze", "book_teal"), 10, r1=vr * 0.88)
+    heads = ("art_pink", "paint_red", "art_white", "art_pink", "paint_red", "art_white")
+    for k, role in enumerate(heads):
+        a = k * 2.39996 + rng.random() * 0.4
+        d = (r - 0.03) * (0.4 + 0.6 * rng.random())
+        top = (math.cos(a) * d, H - 0.05 - 0.07 * rng.random(), math.sin(a) * d)
+        rod(m, (0.0, vh - 0.02, 0.0), top, 0.003, "leaf_green", 4)
+        blob(m, (top[0], top[1] + 0.012, top[2]), 0.022, 0.032, 0.022, role, 6, 3)
+    for k in range(4):
+        a = k * math.pi / 2 + 0.4
+        _leaf(m, math.cos(a) * (r - 0.012) * 0.6, vh + 0.06, math.sin(a) * (r - 0.012) * 0.6, 0.06, "leaf_dark", 6)
+
+
+def build_wine_rack(m, s, R, prm, rng):
+    """A small black steel wine rack on a sideboard: two rows of three bottles lying with their necks out (dark glass,
+    cream and white labels, red, black and gold capsules) in the frame's two hoops."""
+    L, W, H = s
+    hx, hz = L / 2, W / 2
+    br = min(L / 6, H / 4) - 0.006
+    caps = ("paint_red", "steel_black", "book_mustard")
+    for row in range(2):
+        y = br + 0.012 + row * (2 * br + 0.012)
+        for k in range(3):
+            x = -hx + 0.006 + br + k * (L - 0.012 - 2 * br) / 2
+            z0, z1 = -hz, hz - 0.1
+            cyl(m, "z", (x, y), br, z0, z1, "glass_dark", 8)
+            cyl(m, "z", (x, y), br, z1, z1 + 0.04, "glass_dark", 8, r1=br * 0.35, caps=(False, False))
+            cyl(m, "z", (x, y), br * 0.35, z1 + 0.04, hz - 0.035, "glass_dark", 6, caps=(False, False))
+            cyl(m, "z", (x, y), br * 0.37, hz - 0.035, hz, caps[(k + row) % 3], 6, caps=(False, True))
+            cyl(m, "z", (x, y), br * 1.01, z1 - 0.12, z1 - 0.04, "book_cream" if (k + row) % 2 else "art_white", 8,
+                caps=(False, False))
+    for z in (-hz + 0.04, hz - 0.14):
+        box(m, (-hx, 0.0, z - 0.004), (hx, 0.008, z + 0.004), "steel_black", "+y+z-z")
+        box(m, (-hx, H - 0.008, z - 0.004), (hx, H, z + 0.004), "steel_black", "+y-y+z-z")
+        for x in (-hx, hx - 0.008):
+            box(m, (x, 0.0, z - 0.004), (x + 0.008, H, z + 0.004), "steel_black", "+x-x+z-z")
+
+
+def build_homework(m, s, R, prm, rng):
+    """Homework left at the end of the table: an open exercise book with ruled lines and a few written ones, a pencil
+    case with pencils beside it, a calculator and an eraser."""
+    L, W, H = s
+    hx, hz = L / 2, W / 2
+    bx0, bz0 = -hx, -hz + 0.02
+    for k in range(2):  # the two open pages
+        a = bx0 + k * 0.17
+        box(m, (a, 0.0, bz0), (a + 0.168, 0.008, bz0 + 0.23), "art_white", "+x-x+y+z-z")
+        for j in range(9):
+            z = bz0 + 0.03 + j * 0.021
+            box(m, (a + 0.012, 0.008, z), (a + 0.156, 0.0082, z + 0.0015), "art_sky", "+y")
+            if j < 6 - 3 * k:
+                box(m, (a + 0.016, 0.0083, z + 0.004), (a + 0.04 + 0.1 * rng.random(), 0.0085, z + 0.012),
+                    "book_navy", "+y")
+    box(m, (bx0 + 0.168, 0.0, bz0), (bx0 + 0.172, 0.009, bz0 + 0.23), "paint_red", "+y")
+    px = bx0 + 0.37
+    cushion(m, (px, 0.0, -hz + 0.03), (px + 0.065, 0.04, -hz + 0.23), "book_navy", 0.015)
+    for k, role in enumerate(("book_mustard", "paint_red", "leaf_green")):
+        x = px + 0.08 + k * 0.014
+        cyl(m, "z", (x, 0.004), 0.004, -hz + 0.04 + k * 0.02, -hz + 0.2, role, 6)
+        cyl(m, "z", (x, 0.004), 0.004, -hz + 0.2, -hz + 0.215, "book_cream", 6, r1=0.0005)
+    cx = hx - 0.05
+    cbox(m, (cx - 0.04, 0.0, hz - 0.15), (cx + 0.04, 0.014, hz - 0.01), "rubber_black", 0.003)
+    box(m, (cx - 0.03, 0.014, hz - 0.14), (cx + 0.03, 0.0145, hz - 0.11), "glass_dark", "+y")
+    for i in range(4):
+        for j in range(4):
+            x, z = cx - 0.032 + i * 0.016, hz - 0.1 + j * 0.02
+            box(m, (x, 0.014, z), (x + 0.012, 0.0155, z + 0.014), "art_white" if i < 3 else "book_mustard", "+y")
+    cbox(m, (bx0 + 0.25, 0.0, hz - 0.05), (bx0 + 0.3, 0.012, hz - 0.025), "art_pink", 0.003)
+
+
+def build_mail_stack(m, s, R, prm, rng):
+    """The day's mail on the sideboard: envelopes laid a little askew with red stamps, and on top a burger place's
+    delivery flyer (navy, a bun-coloured burger, a red price disc)."""
+    L, W, H = s
+    hx, hz = L / 2, W / 2
+    y = 0.0
+    for k, role in enumerate(("art_white", "book_cream", "art_sky", "art_white")):
+        dx = (rng.random() - 0.5) * 0.04
+        w, d = hx - 0.012 - 0.01 * k, hz - 0.01 - 0.008 * k
+        box(m, (dx - w, y, -d), (dx + w, y + 0.004, d), role, "+x-x+y+z-z")
+        box(m, (dx + w * 0.4, y + 0.004, -d + 0.015), (dx + w * 0.75, y + 0.0045, -d + 0.035), "paint_red", "+y")
+        y += 0.0045
+    box(m, (-hx + 0.03, y, -hz + 0.03), (hx - 0.04, y + 0.002, hz - 0.01), "book_navy", "+x-x+y+z-z")
+    yy = y + 0.002
+    cyl(m, "y", (-0.03, 0.0), 0.06, yy, yy + 0.0005, "art_bun", 16, caps=(False, True))
+    box(m, (-0.09, yy + 0.0005, -0.012), (0.03, yy + 0.001, 0.012), "art_patty", "+y")
+    cyl(m, "y", (0.08, -0.05), 0.025, yy, yy + 0.001, "paint_red", 12, caps=(False, True))
+    box(m, (-0.11, yy, 0.07), (0.1, yy + 0.0005, 0.085), "art_white", "+y")
 
 
 BUILDERS = {name[6:]: fn for name, fn in dict(globals()).items() if name.startswith("build_") and callable(fn)}
