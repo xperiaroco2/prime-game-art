@@ -23,7 +23,8 @@ ROOMS = {r["id"]: (lv, r) for lv in DATA["levels"] for r in lv["rooms"]}
 class Clutter(unittest.TestCase):
     def test_every_rule_room_is_generated(self) -> None:
         self.assertEqual(set(GEN), set(hc.RULES))
-        self.assertGreaterEqual(sum(len(v[2]) for v in GEN.values()), 150)
+        # #170 and #172 hand-placed the basement: the other rooms still generate 112 items
+        self.assertGreaterEqual(sum(len(v[2]) for v in GEN.values()), 100)
 
     def test_the_blocks_are_current_and_seeded(self) -> None:
         for rid, (path, text, _) in GEN.items():  # the files were written by an earlier run: the same seeds
