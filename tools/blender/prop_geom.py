@@ -3437,6 +3437,23 @@ def build_photo_row(m, s, R, prm, rng):
     _framed(m, hx - 0.24, hx, 0.02, H - 0.02, z0, z1 - 0.004, 0.015, 0.02, "art_white", "family", rng)
 
 
+
+# A salon hang of six frames (#156 round 2, the hallway's far wall): (x0, x1, y0, y1) as fractions of the prop's
+# width and height, the frame's paint and the picture (see _art); 4 cm between the frames.
+GALLERY = ((0.0, 0.3, 0.4, 1.0, "steel_black", "city"), (0.34, 0.66, 0.55, 1.0, "worktop_wood", "family"),
+           (0.7, 1.0, 0.45, 1.0, "art_white", "abstract"), (0.0, 0.3, 0.0, 0.36, "worktop_wood", "photos"),
+           (0.34, 0.66, 0.0, 0.51, "steel_black", "still_life"), (0.7, 1.0, 0.0, 0.41, "steel_black", "family"))
+
+
+def build_gallery_wall(m, s, R, prm, rng):
+    """A gallery wall (wall pivot: the backs at -z): six frames hung salon-style, a skyline poster, two family
+    portraits of plasticine people, a mid-century print, a grid of holiday photos and a still life, drawn by this
+    repo (see _art)."""
+    L, W, H = s
+    hx, z0, z1 = L / 2, -W / 2, W / 2
+    for a, b, c, d, fr, kind in GALLERY:
+        _framed(m, -hx + a * L, -hx + b * L, c * H, d * H, z0, z1, 0.02, 0.03, fr, kind, rng)
+
 BUILDERS = {name[6:]: fn for name, fn in dict(globals()).items() if name.startswith("build_") and callable(fn)}
 
 

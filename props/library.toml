@@ -2673,7 +2673,7 @@ id = "hall_runner"
 batch = 1
 name = "Hall runner, navy field and a cream border"
 class = "dressing"
-size_m = [4.2, 0.9, 0.012]
+size_m = [5.2, 1.5, 0.012]
 count = 1
 route = "proc"
 shape = "carpet_rug"
@@ -2700,12 +2700,25 @@ id = "art_blueprint"
 batch = 1
 name = "Large framed blueprint of the House generator"
 class = "dressing"
-size_m = [1.0, 0.035, 0.75]
+size_m = [1.2, 0.035, 0.9]
 count = 1
 route = "proc"
 shape = "framed_art"
 params = {art = "blueprint", frame = 0.025, mat = 0.05, frame_paint = "steel_black"}
 roles = ["steel_black", "art_white", "blueprint_blue", "art_sky", "book_mustard"]
+pivot = "wall"
+collision = "none"
+
+[[prop]]
+id = "gallery_wall"
+batch = 1
+name = "Gallery wall: six frames hung salon-style (a skyline, two family portraits, a print, holiday photos, a still life)"
+class = "room"  # the far wall's large piece in the base layer; six frames need more than the dressing budget
+size_m = [1.3, 0.03, 1.0]
+count = 1
+route = "proc"
+shape = "gallery_wall"
+roles = ["steel_black", "worktop_wood", "art_white", "art_sky", "art_pink", "book_navy", "book_teal", "book_grey", "book_mustard", "book_sage", "art_terracotta", "book_cream", "leaf_green", "paint_red", "art_bun", "art_patty"]
 pivot = "wall"
 collision = "none"
 
@@ -2778,7 +2791,7 @@ collision = "none"
 [[prop]]
 id = "photo_row"
 batch = 1
-name = "Three small frames: two family portraits and six holiday photos"
+name = "A row of three small frames: two family portraits and, between them, a grid of six holiday photos"
 class = "dressing"
 layer = "detail"  # three frames need more than the clutter budget; still small wall decor
 size_m = [0.9, 0.02, 0.32]
