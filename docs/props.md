@@ -56,8 +56,8 @@ Every room's props follow these rules; the numbers are data in `props/library.to
    detail props `place_setting`, `serving_board`, `fruit_dish`, `tulip_vase`, `bottle_rack` (shape `wine_rack`;
    dressing class for its six bottles), `homework` and `mail_stack`; the task prop `dining_table` is the oiled-oak
    `table` on tapered legs (`look = "fine"`, `props_task.build_table_fine`). `tools/tests/test_props_dining.py`
-   checks their sizes, pivots, budgets and colliders and that the table-top items stand on the top and keep its
-   middle (x 6.25 to 6.7 m) clear for the game's drop-offs.
+   checks their sizes, pivots, budgets and colliders and that the table-top items stand on the top and keep a
+   0.6 m band round the `DiningTable` station (x 6.0 m, the delivery chain's drop-off) clear.
 8. **Route.** Hard-surface props are code (the shared builders, `prop_geom.py`'s `Style`). Meshy only for organic
    one-offs (food, soft goods, plants) at a hero budget, as a recorded batch (`docs/meshy.md`).
 

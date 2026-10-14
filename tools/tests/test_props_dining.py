@@ -1,8 +1,8 @@
 """The dining room's new props (#153, docs/props.md "World look rules"): every one builds at its size_m (never more
 than 15 mm over it), at its pivot and under its class's triangle budget; the dining chair collides with its seat and
 its back, the display cabinet with one box, the detail layer has no collider; the wall art's drawn layers stay inside
-the frame's depth; and every detail prop on the dining table stands on its top with a 1 cm margin while the table's
-middle stays clear for the game's drop-offs. Pure Python, no Blender (the library-wide checks are test_props_geom's)."""
+the frame's depth; and every detail prop on the dining table stands on its top with a 1 cm margin while a 0.6 m band
+round the DiningTable station (layouts/house/ground.toml, the delivery chain's drop-off) stays clear. Pure Python, no Blender (the library-wide checks are test_props_geom's)."""
 
 from __future__ import annotations
 
@@ -31,7 +31,8 @@ DETAIL = ("art_delivery", "art_gazebo", "place_setting", "serving_board", "fruit
 NEW = DETAIL + ("dining_chair", "chandelier", "dining_rug", "display_cabinet", "art_still_life", "bottle_rack")
 OVER_M = 0.015  # a prop may stand at most this far over its size_m
 TOP_MARGIN_M = 0.01  # a detail prop on the table keeps this far inside the top's edge
-CLEAR_X = (6.25, 6.7)  # room-local x band across the table's middle kept free for the game's drop-offs
+CLEAR_HALF_M = 0.3  # the table-top band kept free on each side of the DiningTable station (the delivery drop-off)
+GROUND = common.ROOT / "layouts" / "house" / "ground.toml"
 DRESSING = common.ROOT / "layouts" / "house" / "dressing" / "dining_room.toml"
 FACES = {"S": 0, "E": 90, "N": 180, "W": -90}  # house_dressing.FACES
 
@@ -127,6 +128,11 @@ class DiningRoomPropsTest(unittest.TestCase):
         items = tomllib.loads(DRESSING.read_text(encoding="utf-8"))["props"]
         table = next(i for i in items if i["id"] == "dining_table")
         t = TASKS["dining_table"]
+        self.assertEqual(t.get("chain"), "delivery")
+        room = next(r for r in tomllib.loads(GROUND.read_text(encoding="utf-8"))["rooms"] if r["id"] == "dining_room")
+        station = next(s for s in room["stations"] if s["name"] == t["station"])["at"]
+        clear = (station[0] - CLEAR_HALF_M, station[0] + CLEAR_HALF_M)
+        self.assertTrue(abs(table["at"][0] - station[0]) < t["w"] / 2 - CLEAR_HALF_M, "the station is off the table")
         x0, x1 = table["at"][0] - t["w"] / 2 + TOP_MARGIN_M, table["at"][0] + t["w"] / 2 - TOP_MARGIN_M
         z0, z1 = table["at"][2] - t["d"] / 2 + TOP_MARGIN_M, table["at"][2] + t["d"] / 2 - TOP_MARGIN_M
         on = [i for i in items if abs(i["at"][1] - t["h"]) < 1e-6 and x0 < i["at"][0] < x1 and z0 < i["at"][2] < z1]
@@ -137,8 +143,8 @@ class DiningRoomPropsTest(unittest.TestCase):
                 msg = f"{item['id']} at {item['at']}: a corner at ({x:.3f}, {z:.3f}) is off the table's top"
                 self.assertTrue(x0 <= x <= x1 and z0 <= z <= z1, msg)
             xs = [x for x, _ in _footprint(item, built)]
-            self.assertTrue(max(xs) <= CLEAR_X[0] or min(xs) >= CLEAR_X[1],
-                            f"{item['id']} at {item['at']} reaches into the table's clear middle {CLEAR_X}")
+            self.assertTrue(max(xs) <= clear[0] or min(xs) >= clear[1],
+                            f"{item['id']} at {item['at']} reaches into the drop-off band round the station {clear}")
 
 
 if __name__ == "__main__":

@@ -5,9 +5,9 @@
 # Ids are the dressing library's (props/library.toml, #87) and the task props' (props/tasks.toml, #82); an id with
 # no GLB yet is generated as a named, sized placeholder box. Positions are the engineer's to change.
 # #153, the world look: an oak table and chairs on a slate rug under a three-shade pendant, a sideboard with a large
-# still-life print on the west wall, a display cabinet on the north wall; the detail layer half-sets the table (four
-# places at its west end, bread and a jug, tulips), leaves homework and a laptop at its east end and keeps its middle
-# clear for the game's drop-offs.
+# still-life print on the west wall, a display cabinet on the north wall; the detail layer half-sets the table (three
+# places, bread and a jug at its west end, a fourth place, tulips, homework and a laptop at its east end) and keeps
+# a 0.6 m band round the DiningTable station (x 6.0, the delivery chain's drop-off) clear.
 room = "dining_room"
 
 [[props]]
@@ -135,7 +135,7 @@ face = "N"
 
 [[props]]
 id = "place_setting"
-at = [6.0, 0.76, 2.6]
+at = [7.0, 0.76, 2.6]
 face = "N"
 
 [[props]]
@@ -150,12 +150,12 @@ face = "W"
 
 [[props]]
 id = "serving_board"
-at = [5.47, 0.76, 3.0]
+at = [5.32, 0.76, 3.0]
 face = "S"
 
 [[props]]
 id = "tulip_vase"
-at = [5.98, 0.76, 3.02]
+at = [6.55, 0.76, 3.0]
 
 [[props]]
 id = "homework"
@@ -164,8 +164,8 @@ face = "S"
 
 [[props]]
 id = "laptop"
-at = [7.2, 0.76, 2.72]
-face = "N"
+at = [7.3, 0.76, 2.97]
+face = "E"
 
 [[props]]
 id = "bottle_rack"
