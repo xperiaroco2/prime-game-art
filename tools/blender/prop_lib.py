@@ -19,6 +19,7 @@ import prop_geom  # noqa: E402
 EMISSION_STRENGTH = 1.0  # the bulbs' glow in the GLB; the map's lights do the lighting
 
 
+FINE_SLOTS = 8  # textured layers: fine_d and fine_d1 hold four details each, fine_n0-n3 two normals each
 FINE_DETAIL_MEAN = 0.5  # the fine pack's detail is stored linear with this mean (room for the grain's highlights)
 
 
@@ -58,20 +59,25 @@ def _save(bpy, np, name: str, arr, size: int, path: Path) -> str:
 
 def fine_textures(bpy, np, fine: dict, ambientcg: Path, out: Path) -> dict:
     """The fine pack's shared textures, one set per tier (docs/decisions/2026-10-13-house-world-look.md), all linear
-    (Non-Color) RGBA PNGs in <out>/<tier>/: fine_d.png (textured layer k's grey detail in channel k, the source's
-    linear luminance scaled to mean FINE_DETAIL_MEAN, natural contrast), fine_n0.png (layer 0's OpenGL normal XY in
-    RG, layer 1's in BA), fine_n1.png (layers 2 and 3). <out>/fine.json: the layers, each textured layer's measured
-    detail mean per tier (the shader's gain is its inverse) and the files."""
-    textured = [layer for layer in fine["layers"] if layer.get("source")]
-    report = {"layers": fine["layers"], "tiers": {}}
+    (Non-Color) RGBA PNGs in <out>/<tier>/. Textured layer number s (its slot: its place among the textured layers,
+    at most FINE_SLOTS) has its grey detail (the source's linear luminance scaled to mean FINE_DETAIL_MEAN, natural
+    contrast) in channel s % 4 of fine_d.png (slots 0-3) or fine_d1.png (4-7), and its OpenGL normal XY in RG (even
+    slot) or BA (odd) of fine_n<s // 2>.png. Only the files the slots need are written. <out>/fine.json: the layers
+    with each textured layer's `slot`, its measured detail mean per tier (the shader's gain is its inverse) and the
+    files."""
+    layers = [dict(layer) for layer in fine["layers"]]
+    textured = [layer for layer in layers if layer.get("source")][:FINE_SLOTS]
+    for slot, layer in enumerate(textured):
+        layer["slot"] = slot
+    report = {"layers": layers, "tiers": {}}
     for tier, size in fine["tiers"].items():
         folder = out / tier
         folder.mkdir(parents=True, exist_ok=True)
         n = size * size
-        d = np.ones((n, 4), dtype=np.float32)
-        nrm = [np.full((n, 4), 0.5, dtype=np.float32) for _ in range(2)]
+        d = [np.ones((n, 4), dtype=np.float32) for _ in range((len(textured) + 3) // 4)]
+        nrm = [np.full((n, 4), 0.5, dtype=np.float32) for _ in range((len(textured) + 1) // 2)]
         means = {}
-        for k, layer in enumerate(textured[:4]):
+        for k, layer in enumerate(textured):
             base = ambientcg / layer["source"] / f"{layer['source']}_2K-JPG"
             col = bpy.data.images.load(str(base / f"{layer['source']}_2K-JPG_Color.jpg"), check_existing=False)
             col.scale(size, size)
@@ -80,8 +86,8 @@ def fine_textures(bpy, np, fine: dict, ambientcg: Path, out: Path) -> dict:
             px = px.reshape(-1, 4)[:, :3]
             lin = np.where(px <= 0.04045, px / 12.92, ((px + 0.055) / 1.055) ** 2.4)
             lum = lin @ np.array([0.2126, 0.7152, 0.0722], dtype=np.float32)
-            d[:, k] = np.clip(FINE_DETAIL_MEAN * lum / max(float(lum.mean()), 1e-6), 0.0, 1.0)
-            means[layer["name"]] = round(float(d[:, k].mean()), 4)
+            d[k // 4][:, k % 4] = np.clip(FINE_DETAIL_MEAN * lum / max(float(lum.mean()), 1e-6), 0.0, 1.0)
+            means[layer["name"]] = round(float(d[k // 4][:, k % 4].mean()), 4)
             bpy.data.images.remove(col)
             nm = bpy.data.images.load(str(base / f"{layer['source']}_2K-JPG_NormalGL.jpg"), check_existing=False)
             nm.colorspace_settings.name = "Non-Color"
@@ -90,9 +96,11 @@ def fine_textures(bpy, np, fine: dict, ambientcg: Path, out: Path) -> dict:
             nm.pixels.foreach_get(px)
             nrm[k // 2][:, 2 * (k % 2):2 * (k % 2) + 2] = px.reshape(-1, 4)[:, 0:2]
             bpy.data.images.remove(nm)
-        files = {"d": _save(bpy, np, f"fine_d_{tier}", d, size, folder / "fine_d.png"),
-                 "n0": _save(bpy, np, f"fine_n0_{tier}", nrm[0], size, folder / "fine_n0.png"),
-                 "n1": _save(bpy, np, f"fine_n1_{tier}", nrm[1], size, folder / "fine_n1.png")}
+        files = {}
+        for key, arrs in (("d", d), ("n", nrm)):
+            for i, arr in enumerate(arrs):
+                name = ("d" if i == 0 else f"d{i}") if key == "d" else f"n{i}"
+                files[name] = _save(bpy, np, f"fine_{name}_{tier}", arr, size, folder / f"fine_{name}.png")
         report["tiers"][tier] = {"size": size, "files": files, "detail_mean": means}
     (out / "fine.json").write_text(json.dumps(report, indent=1), encoding="utf-8")
     return report

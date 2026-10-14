@@ -573,9 +573,15 @@ metadata/prop = "potted_plant"
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 0.6, 0, 5.33)
 metadata/prop = "armchair"
 
+[node name="armchair" parent="Dressing/armchair_1"]
+surface_material_override/0 = ExtResource("12")
+
 [node name="small_table_1" parent="Dressing" instance=ExtResource("25")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 0.5, 0, 6.17)
 metadata/prop = "small_table"
+
+[node name="small_table" parent="Dressing/small_table_1"]
+surface_material_override/0 = ExtResource("12")
 
 [node name="kitchen_counter_8" parent="Dressing" instance=ExtResource("14")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 0.45, 0, 11.54)
@@ -599,6 +605,9 @@ surface_material_override/0 = ExtResource("12")
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 7.625, 0, 12.15)
 metadata/prop = "sideboard"
 
+[node name="sideboard" parent="Dressing/sideboard_1"]
+surface_material_override/0 = ExtResource("12")
+
 [node name="kitchen_counter_10" parent="Dressing" instance=ExtResource("14")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 6.76, 0, 13.55)
 metadata/prop = "kitchen_counter"
@@ -621,6 +630,9 @@ surface_material_override/0 = ExtResource("12")
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 0.375, 0, 13)
 metadata/prop = "sideboard"
 
+[node name="sideboard" parent="Dressing/sideboard_2"]
+surface_material_override/0 = ExtResource("12")
+
 [node name="kitchen_counter_12" parent="Dressing" instance=ExtResource("14")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 7.55, 0, 8.46)
 metadata/prop = "kitchen_counter"
@@ -638,6 +650,9 @@ surface_material_override/0 = ExtResource("12")
 [node name="sideboard_3" parent="Dressing" instance=ExtResource("27")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 7.625, 0, 5.84)
 metadata/prop = "sideboard"
+
+[node name="sideboard" parent="Dressing/sideboard_3"]
+surface_material_override/0 = ExtResource("12")
 
 [node name="kitchen_counter_14" parent="Dressing" instance=ExtResource("14")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 2.18, 0, 13.55)

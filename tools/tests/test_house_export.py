@@ -30,14 +30,17 @@ PLAN = H.plan(DATA)
 # the attic is the free-roof attic on the whole footprint and holds the roof's stations; the art moved three door
 # markers onto the whole-metre wall grid and the storage's Package07 to the shelf it sits on. The game's three
 # provisional spawn_zone markers (prime-game #651, #681: Zone01 in the yard, Zone02 in the garden, Zone03 on the
-# landing) came after the art's rooms and are not in them yet.
+# landing) came after the art's rooms and are not in them yet; nor are the spawn_drop_* groups the game gave four
+# stations at prime-game 78135b8c (DiningTable, Workbench, GardenDropOff, TerraceTable; places unchanged).
 KNOWN = {
     "roof": "game only",
     "attic": {"origin": True, "size": True, "doors": {"Door1"}, "stations": {"Loot", "HidingSpots", "Lookout"},
               "markers": {"Knife3"}},
-    "garage": {"doors": {"Door3"}},
-    "garden": {"markers": {"Zone02"}},
+    "dining_room": {"stations": {"DiningTable"}},
+    "garage": {"doors": {"Door3"}, "stations": {"Workbench"}},
+    "garden": {"stations": {"GardenDropOff"}, "markers": {"Zone02"}},
     "landing": {"doors": {"Door6"}, "markers": {"Zone03"}},
+    "terrace": {"stations": {"TerraceTable"}},
     "yard": {"markers": {"Zone01"}},
     "study": {"doors": {"Door1"}},
     "storage": {"markers": {"Package07"}},

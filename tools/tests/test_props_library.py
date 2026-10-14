@@ -73,15 +73,15 @@ class LibraryTest(unittest.TestCase):
 
     def test_a_wrong_scale_is_found(self) -> None:
         lib = copy.deepcopy(LIB)
-        sofa = next(p for p in lib["prop"] if p["id"] == "sofa")
-        sofa.pop("stretch")
-        sofa["scale"] = 1.0
-        self.assertTrue(any("sofa: scaled" in s for s in _props.check(lib, SOURCES, KIT)))
+        bed = next(p for p in lib["prop"] if p["id"] == "double_bed")
+        bed.pop("stretch")
+        bed["scale"] = 1.0
+        self.assertTrue(any("double_bed: scaled" in s for s in _props.check(lib, SOURCES, KIT)))
 
     def test_a_distorting_stretch_is_found(self) -> None:
         lib = copy.deepcopy(LIB)
-        sofa = next(p for p in lib["prop"] if p["id"] == "sofa")
-        sofa["size_m"] = [2.0, 0.3, 0.85]
+        bed = next(p for p in lib["prop"] if p["id"] == "double_bed")
+        bed["size_m"] = [1.6, 2.1, 0.2]
         self.assertTrue(any("distorts" in s for s in _props.check(lib, SOURCES, KIT)))
 
     def test_a_private_source_is_refused(self) -> None:
@@ -202,12 +202,14 @@ class WorldLookTest(unittest.TestCase):
 
     def test_at_most_sixteen_fine_layers(self) -> None:
         def edit(lib):
-            lib["fine"]["layers"] += [{"name": f"flat{k}", "roughness": 0.5} for k in range(10)]
-        self.assertIn("fine: 19 layers (1 to 16: the vertex alpha holds them)", _problems(edit))
+            lib["fine"]["layers"] += [{"name": f"flat{k}", "roughness": 0.5} for k in range(17)]
+        n = len(LIB["fine"]["layers"]) + 17
+        self.assertIn(f"fine: {n} layers (1 to 16: the vertex alpha holds them)", _problems(edit))
 
-    def test_textured_layers_come_first(self) -> None:
+    def test_at_most_eight_textured_layers(self) -> None:
+        textured = sum(1 for layer in LIB["fine"]["layers"] if layer.get("source"))
+
         def edit(lib):
-            lib["fine"]["layers"].append({"name": "late", "source": "Wood092", "roughness": 0.5,
-                                          "normal_strength": 0.2})
-        self.assertIn("fine: the textured layers come first, at most four (the shader's four detail channels)",
-                      _problems(edit))
+            lib["fine"]["layers"] += [{"name": f"late{k}", "source": "Wood092", "roughness": 0.5,
+                                       "normal_strength": 0.2} for k in range(9 - textured)]
+        self.assertIn("fine: 9 textured layers (at most 8: the shader's detail slots)", _problems(edit))

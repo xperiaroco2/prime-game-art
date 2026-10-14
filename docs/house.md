@@ -132,8 +132,11 @@ writes the House's game-ready package (prime-game #523) from the same layout dat
   copies the files and loads the scene, nothing to run.
 - The props' fine pack (#147; the world look's `kit_fine` material, `docs/props.md` "World look rules"): a package
   with a prop holding a `kit_fine` surface also writes `house_props/fine/<tier>/fine_d.png`, `fine_n0.png`,
-  `fine_n1.png` of both tiers from `house.toml` `[export]` `fine_dir` (the raw build's
-  `props/library/v1/textures/fine`; `.import` VRAM compressed with mipmaps), `house_props/prop_fine.gdshader` (a copy
+  `fine_n1.png` (and `fine_d1.png`, `fine_n2.png`, `fine_n3.png` when the build's textured layers need them: #150)
+  of both tiers from `house.toml` `[export]` `fine_dir` (#147: the raw build's `props/library/v1/textures/fine`;
+  since #150 `props/library/v2/textures/fine`: library v2 is v1 with the living room's 16 rebuilt props and their
+  eight-slot fine pack laid over it, and `prop_dirs` names v2; v1 stays the approved version-1 build;
+  `.import` VRAM compressed with mipmaps), `house_props/prop_fine.gdshader` (a copy
   of `godot/props/prop_fine.gdshader`; `tools/tests/test_house_layers.py` fails when the committed copy drifts) and
   `prop_fine_high.tres`, `prop_fine_low.tres` (`house_export.fine_material_text`: the shader, the tier's textures, the
   layers' roughness, metallic, normal strength and gain). Each such prop instance in a room overrides its `kit_fine`
@@ -188,7 +191,11 @@ the room scenes of a package in their own `room` set, P2's in `assets/room/house
 `package.json` beside the manifest that owns it and a `HANDOFF.md` for the game's import task (what to copy where,
 the credits entries, the open questions). P1 to P5 and P7 are approved and merged, their manifests' approval fields set: P1 and P2 in #125, P3 and P5
 in #127, P4 in #130, P7 (with the props, the outdoor and garden sets) in #131; #147 changed P2 and the props (the
-C2-white kitchen, the fine pack, the Detail node), so their approval fields wait again. The engineer approves the look from
+C2-white kitchen, the fine pack, the Detail node; approved in #149), and #150 changed them again (the living room in
+the world look, the fine pack's eight slots), so their approval fields wait again. #150 also re-exported P3 to P5, which place
+some of its rebuilt props (armchair, bookcase, dresser, rug, sideboard, small_table): their scenes override those
+props' `kit_fine` surfaces too, list the fine pack and gain the Detail node, and their approval fields wait as well. #150's round 2 (the warm sofa and armchairs, wall art and 16 more living-room props) re-exported
+P2 and, for the armchair's new bytes, P4's `package.json` (into `<raw>/review/house/150b/export/`). The engineer approves the look from
 
 ```
 tools/run.sh house --package-sheet DIR --package N
@@ -314,7 +321,8 @@ is the same on every machine; `tools/tests/test_house_clutter.py` fails when a f
 - Surface clutter on the tops of `HOSTS` furniture (counters, the stove, tables, the sideboard, desks, nightstands,
   the dresser, crates, the filing cabinet ...): up to 4 per top by its area, 16 per room, the room's least used kind
   first, apart from what already stands on the top (a lamp, the computer). A station's own prop carries nothing, so
-  the stations read as before.
+  the stations read as before. The TV unit (`tv_cabinet`) is no host since #150: its top is the TV's, and the
+  living room's hand-placed detail layer dresses it.
 - Wall dressing (`picture_frame` at 1.4 m, `wall_shelf` at 1.45 m, `wall_clock` at 1.85 m) in the widest free span of a
   real wall face: 0.35 m off corners, clear of door openings, of windows (1.15 m round their centre), of the stairs
   and holes, and of anything in front of the wall at its height. The generator hall takes clocks only: its sight

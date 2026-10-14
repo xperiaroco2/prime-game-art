@@ -36,7 +36,7 @@ CORNER = 0.35  # no wall or floor item this close to a room corner
 WINDOW_HALF = 1.15  # a window is 2 m wide: wall items keep this far from its centre
 STAIR_GAP = 0.3
 
-# host id -> the clutter its top carries
+# host id -> the clutter its top carries (no tv_cabinet: its top is the TV's, #150)
 HOSTS = {
     "kitchen_counter": ("cup_set", "plate_stack", "bottles", "cooking_pot", "fruit_bowl"),
     "stove": ("cooking_pot",),
@@ -47,7 +47,6 @@ HOSTS = {
     "dresser": ("book_stack", "vase_flowers", "bottles"),
     "nightstand": ("book_stack", "cup_set"),
     "small_table": ("cup_set", "vase_flowers", "book_stack"),
-    "tv_cabinet": ("book_row", "vase_flowers"),
     "filing_cabinet": ("paper_stack", "book_stack"),
     "toy_chest": ("toy_blocks",),
     "tray_table": ("paper_stack", "bottles"),
@@ -81,7 +80,7 @@ RULES = {
     "living_room": {
         "furn": ("@reading", "@packing"),
         "fill": ("radiator", "bookcase", "sideboard", "bookcase", "dresser"),
-        "mid": ("potted_plant", "armchair", "small_table", "potted_plant", "bean_bag"),
+        "mid": ("floor_plant", "armchair", "small_table", "potted_plant", "bean_bag"),
         "wall": ("picture_frame", "picture_frame", "picture_frame", "wall_shelf", "picture_frame", "wall_clock",
                  "picture_frame"),
         "floor": ("basket", "book_stack", "toy_blocks"),

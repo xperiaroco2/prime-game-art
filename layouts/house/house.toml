@@ -11,7 +11,8 @@ levels = ["basement", "ground", "upper", "attic"]
 # its size and pivot (later files win); the raw folders its GLB is looked for in, in order; its res:// path when staged.
 dressing_dir = "dressing"
 prop_specs = ["props/tasks.toml", "props/library.toml"]
-prop_dirs = ["props/task/v1", "props/library/v1"]
+# #150: library v2 is v1 with the living room's rebuilt and detail props laid over it (v1 is never overwritten).
+prop_dirs = ["props/task/v1", "props/library/v2"]
 prop_res = "res://import/prop_{id}.glb"
 # Per-room wall paint (Q11 = B, the engineer 2026-10-10; look.md section 4): the inner plaster's colour per room id; a
 # room not listed keeps the kit's (role wall_int, #3a6264). Teal is the base, oxblood the bedrooms, ink-blue only the
@@ -43,7 +44,7 @@ label = { h = 2.4, font_size = 72, outline_size = 16 }  # the room's Name label,
 # The world look's fine pack (#143, #147; docs/props.md "World look rules"): its build (fine.json and one texture
 # folder per tier) under the raw folder; a package with a prop on it ships house_props/fine/<tier>/, the shader and
 # one material per tier; the room scenes put `fine_tier`'s material on the props' kit_fine surfaces.
-fine_dir = "props/library/v1/textures/fine"
+fine_dir = "props/library/v2/textures/fine"  # #150: the eight-slot pack (v1 holds the four-slot one)
 fine_tier = "high"
 
 # Footstep surfaces (art #122; the game's FootstepSurface, its ARCHITECTURE 4.7.40): the kit pieces a player walks on,
@@ -75,6 +76,7 @@ fine_tier = "high"
 "stepping_stone" = "concrete"  # the plot's and the garden's stepping stones (#128)
 "fire_pit" = "concrete"  # the chill zone's stone fire pit (#128)
 "watering_can" = "concrete"  # the greenhouse's and the garden's metal can: hard, the floor it stands on (#128)
+"fireplace" = "concrete"  # the living room's stone hearth catches the floor rays (#150)
 
 # The kit's families on the look-approval sheet (`house --package-sheet`, art #124): one tile each, in this order, by
 # id pattern (the first match wins); a piece no pattern matches goes to the last family.
@@ -96,6 +98,18 @@ title = "kitchen: the north-wall worktops"
 at = [38.0, 33.6]  # #147: the C2-white run, its backsplashes and wall cabinets
 look = [37.6, 30.0]
 look_h = 1.0
+[[export.sheet_views]]
+room = "living_room"
+title = "living room: across the sofa to the fireplace"
+at = [22.6, 38.4]  # #150: behind the main sofa, the mantel, the rug and the armchairs
+look = [22.0, 43.0]
+look_h = 0.9
+[[export.sheet_views]]
+room = "living_room"
+title = "living room: the TV corner and the shelves"
+at = [24.8, 40.5]  # #150: from the east armchair across the room to the TV unit
+look = [18.6, 34.0]
+look_h = 0.9
 [[export.sheet_views]]
 room = "attic"
 title = "attic: from the west gable"
@@ -190,7 +204,7 @@ files = ["*.glb"]
 [export.plot]
 scene = "levels/house/outdoor.tscn"
 garden = "house/80/build/garden.json"
-prop_src = { tasks = "props/task/v1", library = "props/library/v1", "#87" = "props/library/v1", zones = "props/zones/v1" }
+prop_src = { tasks = "props/task/v1", library = "props/library/v2", "#87" = "props/library/v2", zones = "props/zones/v1" }
 # The zones' generic plants (`#87` bush and garden_tree, no library GLB) as the garden's plants (house_garden).
 plants = { bush = "bush_boxwood", garden_tree = "garden_tree_apple" }
 

@@ -2,16 +2,23 @@
 
 [ext_resource type="Shader" path="res://assets/environment/house_props/prop_fine.gdshader" id="1"]
 [ext_resource type="Texture2D" path="res://assets/environment/house_props/fine/high/fine_d.png" id="2"]
-[ext_resource type="Texture2D" path="res://assets/environment/house_props/fine/high/fine_n0.png" id="3"]
-[ext_resource type="Texture2D" path="res://assets/environment/house_props/fine/high/fine_n1.png" id="4"]
+[ext_resource type="Texture2D" path="res://assets/environment/house_props/fine/high/fine_d1.png" id="3"]
+[ext_resource type="Texture2D" path="res://assets/environment/house_props/fine/high/fine_n0.png" id="4"]
+[ext_resource type="Texture2D" path="res://assets/environment/house_props/fine/high/fine_n1.png" id="5"]
+[ext_resource type="Texture2D" path="res://assets/environment/house_props/fine/high/fine_n2.png" id="6"]
+[ext_resource type="Texture2D" path="res://assets/environment/house_props/fine/high/fine_n3.png" id="7"]
 
 [resource]
 resource_name = "prop_fine_high"
 shader = ExtResource("1")
 shader_parameter/fine_d = ExtResource("2")
-shader_parameter/fine_n0 = ExtResource("3")
-shader_parameter/fine_n1 = ExtResource("4")
-shader_parameter/layer_roughness = PackedFloat32Array(0.6, 0.5, 0.4, 0.22, 0.2, 0.42, 0.2, 0.06, 0.7, 0, 0, 0, 0, 0, 0, 0)
+shader_parameter/fine_d1 = ExtResource("3")
+shader_parameter/fine_n0 = ExtResource("4")
+shader_parameter/fine_n1 = ExtResource("5")
+shader_parameter/fine_n2 = ExtResource("6")
+shader_parameter/fine_n3 = ExtResource("7")
+shader_parameter/layer_roughness = PackedFloat32Array(0.6, 0.5, 0.4, 0.22, 0.2, 0.42, 0.2, 0.06, 0.7, 0.92, 0.88, 0.96, 0, 0, 0, 0)
 shader_parameter/layer_metallic = PackedFloat32Array(0, 0, 0, 0, 0, 0.6, 0.8, 0.3, 0, 0, 0, 0, 0, 0, 0, 0)
-shader_parameter/layer_normal_strength = PackedFloat32Array(0.45, 0.5, 0.25, 0.8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
-shader_parameter/layer_gain = Vector4(2, 2, 2, 2)
+shader_parameter/layer_normal_strength = PackedFloat32Array(0.45, 0.5, 0.25, 0.8, 0, 0, 0, 0, 0, 0.55, 0.6, 0.7, 0, 0, 0, 0)
+shader_parameter/layer_slot = PackedInt32Array(0, 1, 2, 3, -1, -1, -1, -1, -1, 4, 5, 6, -1, -1, -1, -1)
+shader_parameter/slot_gain = PackedFloat32Array(2, 2, 2, 2, 2, 2.00401, 2, 2)

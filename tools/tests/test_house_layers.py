@@ -60,22 +60,26 @@ class Layers(unittest.TestCase):
 
 
 class FinePack(unittest.TestCase):
-    FINE = {"layers": [{"name": "wood_front", "roughness": 0.6, "normal_strength": 0.45},
-                       {"name": "steel", "metallic": 0.6, "roughness": 0.42}],
-            "tiers": {"low": {"size": 512, "detail_mean": {"wood_front": 0.25}}}}
+    FINE = {"layers": [{"name": "wood_front", "source": "Wood092", "roughness": 0.6, "normal_strength": 0.45},
+                       {"name": "steel", "metallic": 0.6, "roughness": 0.42},
+                       {"name": "fabric", "source": "Fabric036", "roughness": 0.9, "normal_strength": 0.5}],
+            "tiers": {"low": {"size": 512, "detail_mean": {"wood_front": 0.25, "fabric": 0.5},
+                              "files": {k: f"fine_{k}.png" for k in ("d", "n0")}}}}
 
     def test_a_tier_material_holds_the_pack(self):
         data = {"settings": {"export": {"asset_res": "res://assets/environment/{set}/{id}.glb",
                                         "prop_set": "house_props"}}}
         text = X.fine_material_text(data, self.FINE, "low")
         self.assertIn('path="res://assets/environment/house_props/prop_fine.gdshader"', text)
-        for k in X.FINE_TEXTURES:
+        for k in ("d", "n0"):
             self.assertIn(f'path="res://assets/environment/house_props/fine/low/fine_{k}.png"', text)
+        self.assertNotIn("fine_d1", text)  # only the files the build wrote
         rough = re.search(r"layer_roughness = PackedFloat32Array\(([^)]*)\)", text).group(1).split(", ")
         self.assertEqual(len(rough), X.FINE_LAYERS)
-        self.assertEqual(rough[:2], ["0.6", "0.42"])
+        self.assertEqual(rough[:3], ["0.6", "0.42", "0.9"])
         self.assertIn("layer_metallic = PackedFloat32Array(0, 0.6,", text)
-        self.assertIn("layer_gain = Vector4(4, 2, 2, 2)", text)
+        self.assertIn("layer_slot = PackedInt32Array(0, -1, 1, -1,", text)  # a textured layer after a flat one
+        self.assertIn("slot_gain = PackedFloat32Array(4, 2, 2, 2, 2, 2, 2, 2)", text)
 
     def test_fine_surfaces_of_a_built_prop(self):
         raw = Path("D:/prime-art-raw/props/library/v1/fridge.glb")

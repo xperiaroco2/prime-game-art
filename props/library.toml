@@ -5,9 +5,10 @@
 # Paints and shapes are taste data: changing a hex or a prop's roles needs no code change.
 
 library = "house"
-version = 1
+version = 2
 kit_spec = "kits/house.json"
-out = "props/library/v1"  # under the raw folder: D:/prime-art-raw/props/library/v1/<id>.glb
+out = "props/library/v2"  # under the raw folder: D:/prime-art-raw/props/library/v2/<id>.glb (v2, #150: v1 with the
+# living room's 16 rebuilt props and the eight-slot fine pack laid over it; v1 stays the approved version-1 build)
 review = "review/house/87"  # line-up sheets, under the raw folder
 licences = ["CC0-1.0"]
 max_materials = 8
@@ -32,7 +33,6 @@ glass_tint = "glass_tint"
 # The properties of the new materials that are no kit material (fine's are per layer, in [fine]).
 [material_props]
 glass_tint = {roughness = 0.05, metallic = 0.15, alpha = 0.38}  # round 2: reads as glass, contents visible
-
 
 # Triangles by class, [min, max] (look.md section 6). `vehicle` is the parked cars (the car of #79 has 3,000 to 5,000).
 [budgets]
@@ -71,7 +71,11 @@ worktop_thickness_m = 0.03
 floor_shade = [0.82, 0.25]  # a soft occlusion toward the floor: x0.82 at the floor, none from 0.25 m up
 paints = ["wood_front", "wood_front_dark", "worktop_wood", "worktop_stone", "tile_splash", "enamel_white",
           "steel_warm", "steel_black", "chrome", "glass_tint", "glass_dark", "rubber_black", "porcelain_white",
-          "enamel_cream"]
+          "enamel_cream", "upholstery", "upholstery_light", "upholstery_warm", "cushion_teal",
+          "soil_dark", "leaf_green", "leaf_dark", "art_white", "art_sky", "art_pink", "art_terracotta", "art_bun",
+          "art_patty", "cushion_rust", "cushion_mustard", "throw_cream",
+          "carpet_field", "carpet_border", "stone_light", "stone_dark", "book_cream", "book_teal", "book_mustard", "book_red", "book_navy", "book_sage",
+          "book_grey"]
 
 # The fine pack: ONE shared opaque material (`kit_fine-vcol`) for the world look's props, as the kit's `set` pack
 # (docs/kit.md "Materials"): the paint is the vertex colour, its alpha picks the layer (1 - k/16 for layer k), and
@@ -91,6 +95,11 @@ layers = [
     {name = "chrome", metallic = 0.8, roughness = 0.2},
     {name = "gloss", metallic = 0.3, roughness = 0.06},  # dark glass panels (oven window, clock)
     {name = "paint", metallic = 0.0, roughness = 0.7},   # rubber, plastic, painted parts
+    # The living room's soft goods (#150): appended, so the kitchen's layers keep their index (a textured layer's
+    # slot is its place among the textured ones: fabric 4, weave 5, carpet 6).
+    {name = "fabric", source = "Fabric036", roughness = 0.92, normal_strength = 0.55},  # linen upholstery
+    {name = "weave", source = "Fabric061", roughness = 0.88, normal_strength = 0.6},    # cushions, throws
+    {name = "carpet", source = "Carpet016", roughness = 0.96, normal_strength = 0.7},   # rugs
 ]
 
 # The props' paints: a library material and an sRGB hex (D1 palette, look.md section 7). The kit's roles
@@ -143,6 +152,36 @@ paint_red = {material = "fine", layer = "paint", hex = "#b02a22"}
 paint_blue = {material = "fine", layer = "paint", hex = "#2d5a8a"}
 cabinet_green = {material = "fine", layer = "paint", hex = "#4e5f57"}
 glass_tint = {material = "glass_tint", hex = "#86918b"}
+# The living room's paints (#150): the room's earlier hues (warm taupe, terracotta, mustard, cream) on the soft
+# layers, a light stone surround, book spines on the paint layer.
+upholstery = {material = "fine", layer = "fabric", hex = "#6b5a52"}
+upholstery_light = {material = "fine", layer = "fabric", hex = "#b9ad9c"}
+upholstery_warm = {material = "fine", layer = "fabric", hex = "#b5593a"}  # round 2: the room's terracotta accent back
+cushion_teal = {material = "fine", layer = "weave", hex = "#1f6f73"}
+# Round 2's detail layer and wall art (#150): plants on the paint layer, the prints' flat colours.
+soil_dark = {material = "fine", layer = "paint", hex = "#2e241d"}
+leaf_green = {material = "fine", layer = "paint", hex = "#4f7a45"}
+leaf_dark = {material = "fine", layer = "paint", hex = "#2f5236"}
+art_white = {material = "fine", layer = "paint", hex = "#efe9df"}
+art_sky = {material = "fine", layer = "paint", hex = "#9cc2d2"}
+art_pink = {material = "fine", layer = "paint", hex = "#e2a38c"}
+art_terracotta = {material = "fine", layer = "paint", hex = "#c2643f"}
+art_bun = {material = "fine", layer = "paint", hex = "#c98a3e"}
+art_patty = {material = "fine", layer = "paint", hex = "#4a2c1e"}
+cushion_rust = {material = "fine", layer = "weave", hex = "#b5593a"}
+cushion_mustard = {material = "fine", layer = "weave", hex = "#d0a02c"}
+throw_cream = {material = "fine", layer = "weave", hex = "#d8cdb4"}
+carpet_field = {material = "fine", layer = "carpet", hex = "#a9573c"}
+carpet_border = {material = "fine", layer = "carpet", hex = "#d8cdb4"}
+stone_light = {material = "fine", layer = "stone", hex = "#cfc8bb"}
+stone_dark = {material = "fine", layer = "stone", hex = "#55524c"}
+book_cream = {material = "fine", layer = "paint", hex = "#d8cdb4"}
+book_teal = {material = "fine", layer = "paint", hex = "#1f6f73"}
+book_mustard = {material = "fine", layer = "paint", hex = "#c79a2e"}
+book_red = {material = "fine", layer = "paint", hex = "#8a3a30"}
+book_navy = {material = "fine", layer = "paint", hex = "#2c3e57"}
+book_sage = {material = "fine", layer = "paint", hex = "#7a8a70"}
+book_grey = {material = "fine", layer = "paint", hex = "#4a4845"}
 
 # Inventory props this library does not make, and who does (the manager's split of 2026-10-10).
 [skip]
@@ -191,17 +230,12 @@ name = "Armchair"
 class = "room"
 size_m = [0.9, 0.9, 0.9]
 count = 3
-route = "pack"
-source = "kaykit_furniture_bits"
-files = ["kaykit/furniture-bits/KayKit_Furniture_Bits_1.0_FREE/KayKit_Furniture_Bits_1.0_FREE/Assets/gltf/armchair_pillows.gltf"]
-src_size = [1.8, 1.2241, 1.6]
-src_triangles = 614
-yaw_deg = 0
-scale = 0.606
-stretch = true
-roles = ["fabric", "fabric_accent", "wood_dark"]
+route = "proc"
+shape = "sofa"  # the sofa builder with one seat (#150)
+params = {seats = 1, pillows = 1, body = "upholstery_warm", pillow_paints = ["cushion_mustard"]}
+roles = ["upholstery_warm", "cushion_mustard", "wood_front_dark"]
 pivot = "floor"
-collision = "hull"
+collision = "box"
 
 [[prop]]
 id = "basin"
@@ -262,9 +296,10 @@ class = "room"
 size_m = [1.0, 0.35, 2.0]
 count = 5
 route = "proc"
-shape = "shelving"
-params = {shelves = 5, items = "books", back = 1}
-roles = ["wood_mid", "cream", "fabric_accent", "mustard"]
+shape = "bookcase"  # the world look: wood fronts, books, a cupboard below (#150)
+params = {shelves = 4, doors_h = 0.72}
+roles = ["wood_front", "wood_front_dark", "book_cream", "book_teal", "book_mustard", "book_red", "book_navy", "book_sage",
+         "book_grey", "steel_black", "chrome"]
 pivot = "floor"
 collision = "box"
 
@@ -308,9 +343,8 @@ class = "room"
 size_m = [1.1, 0.6, 0.4]
 count = 1
 route = "proc"
-shape = "table"
-params = {legs = 4, top = 0.05}
-roles = ["wood_mid"]
+shape = "coffee_table"  # the world look (#150)
+roles = ["worktop_wood", "wood_front_dark", "wood_front"]
 pivot = "floor"
 collision = "box"
 
@@ -424,8 +458,8 @@ class = "room"
 size_m = [1.6, 0.5, 1.3]
 count = 1
 route = "proc"
-shape = "fireplace"
-roles = ["brick", "trim", "metal_dark"]
+shape = "mantel_fireplace"  # the world look: stone surround, wood mantel (#150)
+roles = ["stone_light", "stone_dark", "wood_front_dark", "steel_black"]
 pivot = "floor"
 collision = "box"
 
@@ -626,9 +660,9 @@ class = "room"
 size_m = [1.6, 0.45, 0.9]
 count = 1
 route = "proc"
-shape = "cabinet"
-params = {doors = 3, legs = 4}
-roles = ["wood_dark", "metal_grey"]
+shape = "sideboard"  # the world look (#150)
+params = {doors = 3}
+roles = ["wood_front", "wood_front_dark", "worktop_wood", "chrome", "steel_black"]
 pivot = "floor"
 collision = "box"
 
@@ -653,21 +687,16 @@ collision = "hull"
 [[prop]]
 id = "sofa"
 batch = 1
-name = "Sofa"
+name = "Sofa (three seats)"
 class = "room"
 size_m = [2.0, 0.9, 0.85]
 count = 2
-route = "pack"
-source = "kaykit_furniture_bits"
-files = ["kaykit/furniture-bits/KayKit_Furniture_Bits_1.0_FREE/KayKit_Furniture_Bits_1.0_FREE/Assets/gltf/couch_pillows.gltf"]
-src_size = [3.0, 1.2241, 1.6]
-src_triangles = 808
-yaw_deg = 0
-scale = 0.625
-stretch = true
-roles = ["fabric", "fabric_accent", "wood_dark"]
+route = "proc"
+shape = "sofa"  # the world look: linen upholstery, loose cushions (#150)
+params = {seats = 3, pillows = 2, throw = 1, body = "upholstery_warm", pillow_paints = ["cushion_mustard", "cushion_teal"]}
+roles = ["upholstery_warm", "cushion_mustard", "cushion_teal", "throw_cream", "wood_front_dark"]
 pivot = "floor"
-collision = "hull"
+collision = "box"
 
 [[prop]]
 id = "standing_mirror"
@@ -789,18 +818,14 @@ collision = "box"
 [[prop]]
 id = "tv_cabinet"
 batch = 1
-name = "TV cabinet with old TV"
+name = "TV unit with a flat TV"
 class = "room"
 size_m = [1.4, 0.5, 1.0]
 count = 1
-route = "pack"
-source = "kenney_furniture_kit"
-files = ["kenney/furniture-kit/kenney_furniture-kit/Models/GLTF format/cabinetTelevision.glb", "kenney/furniture-kit/kenney_furniture-kit/Models/GLTF format/televisionVintage.glb"]
-src_size = [0.8, 0.58, 0.27]
-src_triangles = 434
-yaw_deg = 0
-scale = 1.787
-roles = ["wood_dark", "metal_dark", "appliance"]
+route = "proc"
+shape = "tv_unit"  # the world look (#150)
+params = {unit_h = 0.42}
+roles = ["wood_front", "wood_front_dark", "worktop_wood", "steel_black", "rubber_black", "glass_dark", "chrome"]
 pivot = "floor"
 collision = "box"
 
@@ -991,13 +1016,13 @@ collision = "box"
 id = "dresser"
 batch = 1
 name = "Dresser"
-class = "dressing"
+class = "room"
 size_m = [1.2, 0.5, 0.9]
 count = 1
 route = "proc"
-shape = "cabinet"
-params = {drawers = 3, legs = 4}
-roles = ["wood_mid", "metal_grey"]
+shape = "sideboard"  # the world look, three drawers (#150)
+params = {drawers = 3}
+roles = ["wood_front", "wood_front_dark", "worktop_wood", "chrome"]
 pivot = "floor"
 collision = "box"
 
@@ -1347,8 +1372,8 @@ class = "dressing"
 size_m = [3.0, 2.0, 0.02]
 count = 9
 route = "proc"
-shape = "rug"
-roles = ["fabric_accent", "cream"]
+shape = "carpet_rug"  # the carpet layer (#150)
+roles = ["carpet_field", "carpet_border"]
 pivot = "floor"
 collision = "none"
 
@@ -1372,14 +1397,9 @@ name = "Small round table"
 class = "dressing"
 size_m = [0.7, 0.7, 0.7]
 count = 6
-route = "pack"
-source = "kaykit_furniture_bits"
-files = ["kaykit/furniture-bits/KayKit_Furniture_Bits_1.0_FREE/KayKit_Furniture_Bits_1.0_FREE/Assets/gltf/table_small.gltf"]
-src_size = [1.0, 1.0, 1.0]
-src_triangles = 168
-yaw_deg = 0
-scale = 0.7
-roles = ["wood_mid"]
+route = "proc"
+shape = "side_table"  # the world look (#150)
+roles = ["worktop_wood", "wood_front_dark"]
 pivot = "floor"
 collision = "hull"
 
@@ -2114,3 +2134,306 @@ shape = "radiator"
 roles = ["cream", "metal_grey"]
 pivot = "wall"
 collision = "box"
+
+# The living room's detail layer in the world look (#150): small things on its tables, mantel and floor, on the fine
+# pack; class clutter, so they sit in the rooms' Detail node and a graphics preset can hide them.
+[[prop]]
+id = "living_tray"
+batch = 1
+name = "Tray with candles and a remote"
+class = "clutter"
+size_m = [0.42, 0.26, 0.14]
+count = 1
+route = "proc"
+shape = "living_tray"
+roles = ["worktop_wood", "enamel_cream", "stone_dark", "stone_light", "rubber_black", "steel_black", "paint_red"]
+pivot = "floor"
+collision = "none"
+
+[[prop]]
+id = "magazine_fan"
+batch = 1
+name = "Fanned magazines"
+class = "clutter"
+size_m = [0.32, 0.3, 0.024]
+count = 1
+route = "proc"
+shape = "magazine_fan"
+roles = ["book_teal", "book_mustard", "book_red", "book_navy", "book_cream"]
+pivot = "floor"
+collision = "none"
+
+[[prop]]
+id = "mantel_clock"
+batch = 1
+name = "Mantel clock"
+class = "clutter"
+size_m = [0.26, 0.1, 0.24]
+count = 1
+route = "proc"
+shape = "mantel_clock"
+roles = ["wood_front_dark", "steel_warm", "enamel_white", "steel_black"]
+pivot = "floor"
+collision = "none"
+
+[[prop]]
+id = "standing_frame"
+batch = 1
+name = "Standing photo frame"
+class = "clutter"
+size_m = [0.18, 0.08, 0.23]
+count = 3
+route = "proc"
+shape = "standing_frame"
+roles = ["worktop_wood", "book_cream", "book_sage", "book_teal", "wood_front_dark"]
+pivot = "floor"
+collision = "none"
+
+[[prop]]
+id = "throw_basket"
+batch = 1
+name = "Basket with a folded throw"
+class = "clutter"
+size_m = [0.44, 0.34, 0.46]
+count = 1
+route = "proc"
+shape = "throw_basket"
+roles = ["worktop_wood", "wood_front", "wood_front_dark", "throw_cream"]
+pivot = "floor"
+collision = "none"
+
+[[prop]]
+id = "candle_pair"
+batch = 1
+name = "Pair of brass candlesticks"
+class = "clutter"
+size_m = [0.2, 0.09, 0.32]
+count = 2
+route = "proc"
+shape = "candle_pair"
+roles = ["steel_warm", "enamel_cream", "steel_black"]
+pivot = "floor"
+collision = "none"
+
+# ---- Round 2 of the living room (#150): its dense detail layer and wall art. The prints are drawn by
+# prop_geom.py (_art) as flat painted shapes: own work, no image file, no outside picture.
+
+[[prop]]
+id = "floor_plant"
+batch = 1
+name = "Fiddle-leaf fig in a stone planter"
+class = "dressing"
+size_m = [0.5, 0.5, 1.5]
+count = 2
+route = "proc"
+shape = "house_plant"
+params = {tall = 1, pot = "stone_light"}
+roles = ["stone_light", "soil_dark", "leaf_green", "leaf_dark", "wood_front_dark"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "table_plant"
+batch = 1
+name = "Small potted plant"
+class = "clutter"
+size_m = [0.21, 0.21, 0.38]
+count = 3
+route = "proc"
+shape = "house_plant"
+params = {pot = "enamel_white"}
+roles = ["enamel_white", "soil_dark", "leaf_green", "leaf_dark"]
+pivot = "floor"
+collision = "none"
+
+[[prop]]
+id = "side_lamp"
+batch = 1
+name = "Table lamp, glazed base and linen shade"
+class = "clutter"
+size_m = [0.32, 0.32, 0.52]
+count = 2
+route = "proc"
+shape = "side_lamp"
+params = {base = "book_teal"}
+roles = ["steel_warm", "book_teal", "upholstery_light", "throw_cream"]
+pivot = "floor"
+collision = "none"
+
+[[prop]]
+id = "game_console"
+batch = 1
+name = "Games console and two controllers"
+class = "clutter"
+size_m = [0.64, 0.32, 0.06]
+count = 1
+route = "proc"
+shape = "game_console"
+roles = ["enamel_white", "rubber_black", "steel_black", "paint_blue"]
+pivot = "floor"
+collision = "none"
+
+[[prop]]
+id = "board_games"
+batch = 1
+name = "Stack of board games"
+class = "clutter"
+size_m = [0.42, 0.3, 0.15]
+count = 2
+route = "proc"
+shape = "board_games"
+params = {boxes = 3}
+roles = ["art_white", "paint_red", "book_navy", "book_mustard", "book_teal"]
+pivot = "floor"
+collision = "none"
+
+[[prop]]
+id = "slippers"
+batch = 1
+name = "Pair of felt slippers"
+class = "clutter"
+size_m = [0.24, 0.28, 0.09]
+count = 1
+route = "proc"
+shape = "slippers"
+params = {upper = "cushion_teal"}
+roles = ["throw_cream", "cushion_teal"]
+pivot = "floor"
+collision = "none"
+
+[[prop]]
+id = "laptop"
+batch = 1
+name = "Closed laptop with a tablet on it"
+class = "clutter"
+size_m = [0.34, 0.24, 0.03]
+count = 1
+route = "proc"
+shape = "laptop"
+roles = ["steel_warm", "steel_black", "rubber_black", "glass_dark"]
+pivot = "floor"
+collision = "none"
+
+[[prop]]
+id = "deco_vase"
+batch = 1
+name = "Stoneware vase with dried grass"
+class = "clutter"
+size_m = [0.12, 0.12, 0.51]
+count = 2
+route = "proc"
+shape = "ceramic"
+params = {kind = "vase", body = "stone_dark", glaze = "book_mustard"}
+roles = ["stone_dark", "book_mustard", "worktop_wood", "throw_cream"]
+pivot = "floor"
+collision = "none"
+
+[[prop]]
+id = "deco_bowl"
+batch = 1
+name = "Glazed bowl with wooden balls"
+class = "clutter"
+size_m = [0.3, 0.3, 0.1]
+count = 1
+route = "proc"
+shape = "ceramic"
+params = {kind = "bowl", body = "stone_light", glaze = "book_teal"}
+roles = ["stone_light", "book_teal", "worktop_wood"]
+pivot = "floor"
+collision = "none"
+
+[[prop]]
+id = "coffee_books"
+batch = 1
+name = "Stack of coffee-table books"
+class = "clutter"
+size_m = [0.34, 0.26, 0.13]
+count = 2
+route = "proc"
+shape = "coffee_books"
+roles = ["book_cream", "book_navy", "book_red", "book_sage", "book_teal", "steel_warm"]
+pivot = "floor"
+collision = "none"
+
+[[prop]]
+id = "candle_jars"
+batch = 1
+name = "Three candles in stoneware jars"
+class = "clutter"
+size_m = [0.25, 0.08, 0.11]
+count = 2
+route = "proc"
+shape = "candle_jars"
+roles = ["stone_light", "stone_dark", "enamel_cream", "steel_black"]
+pivot = "floor"
+collision = "none"
+
+[[prop]]
+id = "art_abstract"
+batch = 1
+name = "Large framed print, mid-century shapes"
+class = "dressing"
+size_m = [1.2, 0.04, 0.85]
+count = 1
+route = "proc"
+shape = "framed_art"
+params = {art = "abstract", frame = 0.035, mat = 0.07, frame_paint = "wood_front_dark"}
+roles = ["wood_front_dark", "art_white", "book_mustard", "art_terracotta", "book_navy", "book_teal", "book_sage"]
+pivot = "wall"
+collision = "none"
+
+[[prop]]
+id = "art_city"
+batch = 1
+name = "City poster at sunset, thin black frame"
+class = "dressing"
+size_m = [0.7, 0.03, 1.0]
+count = 1
+route = "proc"
+shape = "framed_art"
+params = {art = "city", frame = 0.02, frame_paint = "steel_black"}
+roles = ["steel_black", "art_white", "art_sky", "art_pink", "book_mustard", "book_navy", "book_teal", "book_grey"]
+pivot = "wall"
+collision = "none"
+
+[[prop]]
+id = "art_burger"
+batch = 1
+name = "The House kitchen's burger poster"
+class = "dressing"
+size_m = [0.6, 0.03, 0.85]
+count = 1
+route = "proc"
+shape = "framed_art"
+params = {art = "burger", frame = 0.02, frame_paint = "worktop_wood"}
+roles = ["worktop_wood", "book_navy", "art_white", "book_mustard", "art_bun", "leaf_green", "art_patty", "paint_red"]
+pivot = "wall"
+collision = "none"
+
+[[prop]]
+id = "art_photos"
+batch = 1
+name = "Framed grid of holiday photos"
+class = "clutter"
+size_m = [0.6, 0.03, 0.45]
+count = 2
+route = "proc"
+shape = "framed_art"
+params = {art = "photos", frame = 0.025, mat = 0.03, frame_paint = "worktop_wood"}
+roles = ["worktop_wood", "art_white", "art_sky", "art_pink", "book_cream", "leaf_green", "book_sage", "art_terracotta", "book_navy", "book_mustard"]
+pivot = "wall"
+collision = "none"
+
+[[prop]]
+id = "art_score"
+batch = 1
+name = "Framed game-night score sheet"
+class = "clutter"
+size_m = [0.4, 0.03, 0.5]
+count = 1
+route = "proc"
+shape = "framed_art"
+params = {art = "score", frame = 0.018, mat = 0.03, frame_paint = "steel_black"}
+roles = ["steel_black", "art_white", "paint_red", "book_grey", "book_navy"]
+pivot = "wall"
+collision = "none"

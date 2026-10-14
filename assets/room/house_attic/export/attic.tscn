@@ -37,8 +37,9 @@
 [ext_resource type="PackedScene" path="res://assets/environment/house_props/picture_frame.glb" id="35"]
 [ext_resource type="PackedScene" path="res://assets/environment/house_props/standing_mirror.glb" id="36"]
 [ext_resource type="PackedScene" path="res://assets/environment/house_props/rug.glb" id="37"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/potted_plant.glb" id="38"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/old_bicycle.glb" id="39"]
+[ext_resource type="ShaderMaterial" path="res://assets/environment/house_props/prop_fine_high.tres" id="38"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/potted_plant.glb" id="39"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/old_bicycle.glb" id="40"]
 
 [node name="Attic" type="Node3D"]
 metadata/size_m = Vector2i(24, 20)
@@ -3363,6 +3364,9 @@ metadata/prop = "crate"
 transform = Transform3D(0.9962, 0, 0.0872, 0, 1, 0, -0.0872, 0, 0.9962, 4.5, 0, 16.2)
 metadata/prop = "rug"
 
+[node name="rug" parent="Dressing/rug_1"]
+surface_material_override/0 = ExtResource("38")
+
 [node name="cardboard_box_4" parent="Dressing" instance=ExtResource("31")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.8, 0, 19.6)
 metadata/prop = "cardboard_box"
@@ -3387,7 +3391,7 @@ metadata/prop = "picture_frame"
 transform = Transform3D(-0.9945, 0, -0.1045, 0, 1, 0, 0.1045, 0, -0.9945, 8.4, 0, 19.65)
 metadata/prop = "picture_frame"
 
-[node name="potted_plant_1" parent="Dressing" instance=ExtResource("38")]
+[node name="potted_plant_1" parent="Dressing" instance=ExtResource("39")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9.4, 0, 19.5)
 metadata/prop = "potted_plant"
 
@@ -3399,7 +3403,7 @@ metadata/prop = "sheeted_furniture"
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 13.6, 0, 19.5)
 metadata/prop = "trunk"
 
-[node name="old_bicycle_1" parent="Dressing" instance=ExtResource("39")]
+[node name="old_bicycle_1" parent="Dressing" instance=ExtResource("40")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 20.4, 0, 19.45)
 metadata/prop = "old_bicycle"
 
@@ -3423,6 +3427,9 @@ metadata/surface = "carpet"
 [node name="rug_2" parent="Dressing" instance=ExtResource("37")]
 transform = Transform3D(0.9986, 0, -0.0523, 0, 1, 0, 0.0523, 0, 0.9986, 17.5, 0, 15)
 metadata/prop = "rug"
+
+[node name="rug" parent="Dressing/rug_2"]
+surface_material_override/0 = ExtResource("38")
 
 [node name="sheeted_furniture_5" parent="Dressing" instance=ExtResource("32")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 22.9, 0, 3.6)

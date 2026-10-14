@@ -36,7 +36,7 @@
   "WC": [18, 24, 6, 6],
   "Yard": [0, 0, 80, 60]
  },
- "game_commit": "d467f868bd26979f8714a6262680341b2dd30d27",
+ "game_commit": "78135b8c5edd8349631ff6e7417d8cea8e0c77ca",
  "rooms": {
   "attic": {
    "doors": {
@@ -162,7 +162,7 @@
    "root": "DiningRoom",
    "size": [12, 6],
    "stations": {
-    "DiningTable": [6.0, 0.0, 3.0, ""]
+    "DiningTable": [6.0, 0.0, 3.0, "\"spawn_drop_dining_table\""]
    },
    "stations_marker3d": ["DiningTable"]
   },
@@ -196,7 +196,7 @@
    "stations": {
     "CarLift": [10.0, 0.0, 7.0, ""],
     "LiftPanel": [3.0, 0.0, 12.0, ""],
-    "Workbench": [16.0, 0.0, 3.0, ""]
+    "Workbench": [16.0, 0.0, 3.0, "\"spawn_drop_workbench\""]
    },
    "stations_marker3d": ["CarLift", "LiftPanel", "Workbench"]
   },
@@ -212,7 +212,7 @@
    "root": "Garden",
    "size": [32, 28],
    "stations": {
-    "GardenDropOff": [16.0, 0.0, 22.0, ""]
+    "GardenDropOff": [16.0, 0.0, 22.0, "\"spawn_drop_garden\""]
    },
    "stations_marker3d": ["GardenDropOff"]
   },
@@ -534,7 +534,7 @@
    "root": "Terrace",
    "size": [20, 8],
    "stations": {
-    "TerraceTable": [7.0, 0.0, 4.0, ""]
+    "TerraceTable": [7.0, 0.0, 4.0, "\"spawn_drop_terrace_table\""]
    },
    "stations_marker3d": ["TerraceTable"]
   },

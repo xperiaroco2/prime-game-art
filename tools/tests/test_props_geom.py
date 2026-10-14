@@ -293,5 +293,39 @@ class WorldLookBuilderTest(unittest.TestCase):
         self.assertEqual(len(self.built["fridge"]["colliders"]), 1)
 
 
+LIVING = ("sofa", "armchair", "bookcase", "tv_cabinet", "fireplace", "coffee_table", "sideboard", "dresser", "rug",
+          "small_table")
+
+
+class LivingRoomTest(unittest.TestCase):
+    """The living room's pieces in the world look (#150): procedural, every paint on the fine pack."""
+
+    def test_the_pieces_are_proc_on_the_fine_pack(self) -> None:
+        props = {p["id"]: p for p in LIB["prop"]}
+        for pid in LIVING:
+            p = props[pid]
+            self.assertEqual(p["route"], "proc", pid)
+            pc = prop_geom.build_proc(p, STYLE)
+            used = set(pc.mesh.roles)
+            self.assertTrue(used <= set(p["roles"]), (pid, sorted(used - set(p["roles"]))))
+            self.assertEqual({LIB["roles"][r]["material"] for r in used}, {"fine"}, pid)
+
+    def test_the_soft_layers_are_textured(self) -> None:
+        layers = {x["name"]: x for x in LIB["fine"]["layers"]}
+        for name, src in (("fabric", "Fabric036"), ("weave", "Fabric061"), ("carpet", "Carpet016")):
+            self.assertEqual(layers[name]["source"], src)
+        names = [x["name"] for x in LIB["fine"]["layers"]]
+        self.assertEqual(names[:9], ["wood_front", "worktop_wood", "stone", "tile", "enamel", "steel", "chrome",
+                                     "gloss", "paint"])  # the kitchen's GLBs keep their layer indices
+
+    def test_book_runs_stay_on_their_shelf(self) -> None:
+        m = kit_geom.Mesh("books")
+        prop_geom.book_run(m, -0.4, 0.4, 0.5, -0.15, 0.24, 0.3, ["book_cream", "book_teal"], prop_geom.seed("x"))
+        self.assertTrue(m.verts)
+        self.assertLessEqual(max(v[0] for v in m.verts), 0.4 + 1e-6)
+        self.assertGreaterEqual(min(v[1] for v in m.verts), 0.5 - 1e-6)
+        self.assertLessEqual(max(v[1] for v in m.verts), 0.8 + 1e-6)
+
+
 if __name__ == "__main__":
     unittest.main()

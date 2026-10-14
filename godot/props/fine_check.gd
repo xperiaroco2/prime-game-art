@@ -2,7 +2,7 @@ extends SceneTree
 ## The fine pack's shared-texture check for `tools/run.py props-library --build` (#143; docs/decisions/
 ## 2026-10-13-house-world-look.md): per tier ONE ShaderMaterial (props/prop_materials.gd, its textures with mipmaps
 ## and BPTC-compressed as the import does) goes on every prop's `kit_fine` surfaces; the check asserts that every such
-## surface of every prop holds that same material and the same three texture objects, and measures per tier the
+## surface of every prop holds that same material and the same texture objects (fine_d, fine_d1, fine_n0-n3: the ones fine.json names), and measures per tier the
 ## texture memory and per prop its surfaces (one draw call each). `compare` names other GLBs (the kitchen pilot's lab
 ## props) loaded at run time for the same counts and their embedded images' memory (RGBA8 with mipmaps).
 ##   godot --headless --path godot -s res://props/fine_check.gd -- <request.json> <out.json>
@@ -10,7 +10,6 @@ extends SceneTree
 ##   "compare": {"<id>": "<absolute .glb>"}}. Prints FINE ok|failed; exit code 1 on a problem.
 
 const PropMaterials := preload("res://props/prop_materials.gd")
-const KEYS: Array[String] = ["fine_d", "fine_n0", "fine_n1"]
 
 
 func _initialize() -> void:
@@ -27,10 +26,11 @@ func _initialize() -> void:
 	var problems: Array = out["problems"]
 	for tier: String in fine.get("tiers", {}):
 		var mat: ShaderMaterial = PropMaterials.make(fine_dir.path_join(tier), fine, tier, false)
+		var tex_keys: Array = PropMaterials.keys(fine, tier).map(func(k: String) -> String: return "fine_" + k)
 		var bytes: int = 0
 		var formats: Array = []
 		var size: int = 0
-		for key: String in KEYS:
+		for key: String in tex_keys:
 			var image: Image = Image.load_from_file(fine_dir.path_join(tier).path_join("%s.png" % key))
 			image.generate_mipmaps()
 			var err: Error = image.compress(Image.COMPRESS_BPTC)
@@ -40,7 +40,7 @@ func _initialize() -> void:
 			formats.append(image.get_format())
 			size = image.get_width()
 			mat.set_shader_parameter(key, ImageTexture.create_from_image(image))
-		var textures: Array = KEYS.map(func(k: String) -> Object: return mat.get_shader_parameter(k))
+		var textures: Array = tex_keys.map(func(k: String) -> Object: return mat.get_shader_parameter(k))
 		var shared_by: int = 0
 		for id: String in req["scenes"]:
 			var packed: PackedScene = load(req["scenes"][id]) as PackedScene
@@ -58,7 +58,7 @@ func _initialize() -> void:
 					if base == null or base.resource_name != "kit_fine":
 						continue
 					var m: ShaderMaterial = mi.get_surface_override_material(i) as ShaderMaterial
-					if m != mat or KEYS.map(func(k: String) -> Object: return m.get_shader_parameter(k)) != textures:
+					if m != mat or tex_keys.map(func(k: String) -> Object: return m.get_shader_parameter(k)) != textures:
 						same = false
 			if not same:
 				problems.append("%s %s: a kit_fine surface without the shared material (%d of %d set)"
@@ -68,7 +68,7 @@ func _initialize() -> void:
 			out["props"][id] = counts
 			n.free()
 		out["tiers"][tier] = {"size": size, "bytes": bytes, "mb": snappedf(bytes / 1048576.0, 0.01),
-			"formats": formats, "textures": KEYS.size(), "shared_by": shared_by}
+			"formats": formats, "textures": tex_keys.size(), "shared_by": shared_by}
 	for id: String in req.get("compare", {}):
 		var doc: GLTFDocument = GLTFDocument.new()
 		var state: GLTFState = GLTFState.new()
