@@ -138,6 +138,8 @@ writes the House's game-ready package (prime-game #523) from the same layout dat
   eight-slot fine pack laid over it; since #152 `props/library/v3/textures/fine`, the same bytes: library v3 is v2 with
   the cream sofa and armchairs rebuilt over it; since #153 `props/library/v4/textures/fine`, the same bytes: v3 with
   the dining room built over it, and `prop_dirs` names library v4 and task v2 (task v1 with the oak dining table);
+  since #156 `props/library/v5/textures/fine`, the same bytes: v4 with the hallway's 14 props built over it, and
+  `prop_dirs` names library v5 and task v2;
   v1 stays the approved version-1 build;
   `.import` VRAM compressed with mipmaps), `house_props/prop_fine.gdshader` (a copy
   of `godot/props/prop_fine.gdshader`; `tools/tests/test_house_layers.py` fails when the committed copy drifts) and

@@ -95,14 +95,14 @@ ROOMS = {
     "living_room": {"sofa", "armchair", "coffee_table", "tv_cabinet", "bookcase", "fireplace"},
     "stairs": {"console_table"},
     "kitchen": {"order_board", "assembly_island", "kitchen_counter", "kitchen_upper", "fridge", "stove", "kitchen_sink"},
-    "hallway": {"coat_rack"},
+    "hallway": {"hall_console", "hall_mirror", "coat_hooks", "hall_bench", "hall_runner"},  # #156
     "terrace": {"terrace_table", "terrace_chair"},
     "greenhouse": {"herb_board", "herb_bed", "potting_bench"},
 }
 FIXTURES = {
     "wc": {"wall_sconce": 1}, "pantry": {"bare_bulb": 1}, "dining_room": {"chandelier": 1, "wall_sconce": 2},
     "living_room": {"floor_lamp": 2, "table_lamp": 1, "wall_sconce": 2}, "stairs": {"wall_sconce": 2},
-    "kitchen": {"pendant_shade": 3, "wall_sconce": 1}, "hallway": {"wall_sconce": 2, "porch_lamp": 1},
+    "kitchen": {"pendant_shade": 3, "wall_sconce": 1}, "hallway": {"pendant_shade": 1, "wall_sconce": 2, "porch_lamp": 1},
     "terrace": {"lantern": 4, "string_lights": 2, "porch_lamp": 1},
     "greenhouse": {"string_lights": 2, "bare_bulb": 4},
 }

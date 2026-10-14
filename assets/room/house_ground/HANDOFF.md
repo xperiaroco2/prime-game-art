@@ -116,6 +116,28 @@ gone. Changed: `dining_room.tscn` and `package.json`; in the props set, 15 GLBs 
 views (the room only, before/after): from the door 33/44, across the table 40/47, the set table 36/41, the sideboard
 wall 16/12.
 
+## The hallway in the world look (#156)
+
+The hallway is rebuilt as an entrance hall: an oak `hall_console` with the arched `hall_mirror` over it, `coat_hooks`
+with coats, scarves and bags over the `hall_bench` (cushion, shoe shelf), a navy `hall_runner`, an `umbrella_stand`
+and the large `art_blueprint` in the base layer; under `Detail` a `key_bowl`, `mail_stack` and `side_lamp` on the
+console, a `photo_row` and a `wall_calendar`, the `hall_doormat`, `shoe_pairs`, a `sports_bag` and `parcels` by the
+door. Pack and library props kept: `dresser`, `floor_plant`, `table_plant`, `floor_lamp`, `radiator`, the
+`wall_clock`, and `art_abstract`, `art_city`, `art_photos`, `standing_frame` and the `pendant_shade` fixture from
+earlier rooms. The bookcases, console tables, coat racks, shoe racks, wall shelf, open box and the old clutter (boxes,
+bottles, paper and book stacks) are gone. Nothing stands within 0.3 m of
+a station or on a spawn (`test_props_hallway`). Changed: `hallway.tscn` and `package.json` only; in the props set, 14
+new GLBs, 626 KB of LFS (no other room's prop changed). Draw calls in the hallway's package-sheet views (the room only,
+before/after): the default tile 28/31, from the front door 28/31, from the far end 33/29, the console and mirror
+11/14, the coat corner 18/14.
+
+The density pass (#156, export p2c) put back a `bookcase` on each long wall and a third plant (`potted_plant`), hung
+the `gallery_wall` (six frames) beside the mirror, enlarged `art_blueprint` (1.2 x 0.9 m) and the `hall_runner`
+(5.2 x 1.5 m), and moved the `umbrella_stand`, `parcels` and `wall_calendar` where the front-door view sees them;
+`art_photos` left the hall. One new GLB (`gallery_wall`), two rebuilt (`art_blueprint`, `hall_runner`); the props set
+no longer commits `doormat.glb` (no package places it). Draw calls (the room only, main/now): the default tile 28/34,
+from the front door 28/34, from the far end 33/31, the console and mirror 11/17, the coat corner 18/15.
+
 ## Credits
 The entries are `assets/kit/house_kit/CREDITS.md` and `assets/prop/house_props/CREDITS.md` in this repo (the game's
 `docs/credits/<id>.md` format; copy them to `docs/credits/house_kit.md` and `house_props.md`): own work, the props made
