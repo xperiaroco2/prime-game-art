@@ -42,7 +42,7 @@ class WallPaintTest(unittest.TestCase):
         req = hl.paint_request(self.data)
         self.assertEqual(req["kit_hex"], TEAL)
         rooms = {r["room"]: r for r in req["rooms"]}
-        self.assertEqual(rooms["kitchen"]["to"], req["from"])  # teal is the kit's paint
+        self.assertNotEqual(rooms["kitchen"]["to"], req["from"])  # greige over the kit's teal (#152)
         self.assertNotEqual(rooms["bedroom"]["to"], req["from"])
         study = next(r for lv in self.data["levels"] for r in lv["rooms"] if r["id"] == "study")
         x, y, w, d = study["rect"]
