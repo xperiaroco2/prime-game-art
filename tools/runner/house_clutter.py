@@ -139,13 +139,15 @@ RULES = {
         "wall": ("picture_frame", "wall_shelf", "picture_frame", "wall_clock"),
         "floor": ("toy_blocks", "toy_blocks", "book_stack", "basket", "shoes"),
     },
-    "landing": {
-        "furn": ("@reading", "@laundry"),
-        "fill": ("radiator", "bookcase", "landing_bench", "dresser", "console_table"),
-        "island": ("armchair", "small_table"),
-        "mid": ("potted_plant", "console_table", "potted_plant"),
-        "wall": ("picture_frame", "picture_frame", "picture_frame", "wall_shelf", "picture_frame"),
-        "floor": ("basket",),
+    "landing": {  # #162: every prop is hand-placed
+        # an empty `hosts`, not a missing one: a missing key means every host takes surface clutter (see below)
+        "furn": (),
+        "fill": (),
+        "island": (),
+        "mid": (),
+        "wall": (),
+        "floor": (),
+        "hosts": (),
     },
     "study": {
         "furn": ("@desk_work", "@reading", "cardboard_box+"),
@@ -154,12 +156,15 @@ RULES = {
         "wall": ("picture_frame", "wall_shelf", "wall_clock", "picture_frame", "wall_shelf"),
         "floor": ("book_stack", "book_stack", "paper_stack", "basket"),
     },
-    "bathroom": {
-        "furn": ("@laundry", "@drying", "radiator"),
-        "fill": ("dresser", "console_table", "nightstand"),
-        "mid": ("potted_plant", "stool"),
-        "wall": ("wall_shelf", "picture_frame", "wall_shelf"),
-        "floor": ("basket",),
+    "bathroom": {  # #162: every prop is hand-placed
+        # an empty `hosts`, not a missing one: a missing key means every host takes surface clutter (see below)
+        "furn": (),
+        "fill": (),
+        "island": (),
+        "mid": (),
+        "wall": (),
+        "floor": (),
+        "hosts": (),
     },
     "guest_room": {
         "furn": ("@reading", "@packing"),

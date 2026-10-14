@@ -3,11 +3,13 @@
 # #153: the dining room built into props/library/v4 (a copy of v3) and props/task/v2 (a copy of v1); every file from them.
 # #156: the hallway built into props/library/v5 (a copy of v4); every library file from it.
 # #158: the WC, the pantry and the stairs built into props/library/v6 (a copy of v5); every library file from it.
+# #162: the landing and the bathroom built into props/library/v7 (a copy of v6).
+# #162 round 2: the landing runner rebuilt into props/library/v8 (a copy of v7); every library file from it.
 id = "house_props"
 kind = "prop"
 slot = ""
 title = "The House's props: the dressing library, the task-station props and the zone props"
-notes = "Built by `props-library --build` (props/library.toml: 203 props, 178 procedural, 25 re-painted from CC0 packs), `props` (props/tasks.toml) and the zones (layouts/house/outdoor/zones). Own work, except each file with a source: a CC0 pack model re-scaled and re-painted. All use the kit's texture set (house_kit), which ships once. The [[files]] list all 246 props of the raw build (225 before #158, 210 before #156, 198 before #153, 174 before #147's two backsplash runs, 176 before #150's six detail props, 182 before #150's round 2) and the fine pack's 15 files (#147, #150); only the props a committed package needs are committed under export/, the rest stay raw until their package. P2 committed 70 props (#124; 72 since #147 added backsplash_l and backsplash_r: 68 library/, 4 task/), approved by the engineer on 2026-10-11 in PR #125. P3 and P5 committed 34 more (#126), approved by the engineer on 2026-10-11 in PR #127 (the set format has no per-file approval; a later package's approval moves the fields below to its PR, which they now name: P7's, PR #131): library/ cage_lamp, desk, filing_cabinet, fuel_barrel, industrial_pendant, jerrycan, metal_shelving, office_chair, old_bicycle, old_wardrobe, pallet, pipe_run, rolled_carpet, safelight_red, sheeted_furniture, standing_mirror, tool_wall, toolbox_cart, trunk; task/ boiler, bun_shelf, cable_drum, car_parts_shelf, delivery_box_stack, enlarger, generator, meat_freezer, photo_board, pump, switchboard, tray_table, wall_switch, water_tank, wine_rack. P4 committed 10 more (#129), approved by the engineer on 2026-10-12 in PR #130: library/ balcony_chair, bathtub, bunk_bed, double_bed, single_bed, toy_spill, wardrobe; task/ computer_set, photo_printer, toy_chest. P7 (#128) committed 32 more, approved by the engineer on 2026-10-12 in PR #131: library/ birdbath, firewood_stack, garden_bench, garden_post_lamp, greenhouse_shelf, hose_reel, hydrant, mailbox, parked_car, path_light, picnic_table, potting_bench, stepping_stone, streetlight, watering_can, wheelbarrow; task/ bbq_grill, garden_dropoff, herb_bed, herb_board, music_speaker, pose_screen, utility_pole; zones/ bean_bag, cooler_box, deckchair, fire_pit, lantern, photo_backdrop, string_lights_gazebo, string_lights_set, tripod_camera. The game folder house_props/ is flat: a basename two sources share ships from the first source in prop_dirs (task, library), then zones, as <id>.glb, from any other as <id>_<source>.glb (house_export_plot.game_name; P7 ships bean_bag_zones.glb, birdbath_library.glb, cooler_box_zones.glb, deckchair_zones.glb, fire_pit_zones.glb, lantern_zones.glb, photo_backdrop_zones.glb, tripod_camera_zones.glb). #147 rebuilt the kitchen in C2-white (the world look, #143): fridge, stove, kitchen_counter, kitchen_sink, kitchen_upper, task/ assembly_island and order_board re-built (now all procedural, own work), library/ backsplash_l and backsplash_r added (148 props committed in all: 70 + 34 + 10 + 32 + 2), and the fine texture pack shipped: fine/high/ (1024 px) and fine/low/ (512 px) fine_d.png, fine_n0.png, fine_n1.png, made from 4 ambientCG CC0 maps (Wood092, Wood049, Concrete034, Tiles107; props/library.toml [fine]), with prop_fine.gdshader and prop_fine_high.tres / prop_fine_low.tres (the kit_fine material, P2's v4 export); approved by the engineer on 2026-10-13 in PR #149. #150 rebuilt the living room in the world look: library/ armchair, bookcase, coffee_table, dresser, fireplace, rug, sideboard, small_table, sofa and tv_cabinet re-built (now all procedural, own work; armchair, small_table, sofa and tv_cabinet were re-painted CC0 pack models before) and six detail-layer props added: library/ candle_pair, living_tray, magazine_fan, mantel_clock, standing_frame, throw_basket (154 props committed in all); the fine pack grew to eight texture slots: fine/high/ and fine/low/ fine_d1.png (slots 4-7), fine_n2.png and fine_n3.png beside fine_d, fine_n0 and fine_n1, made from 3 more ambientCG CC0 maps (Fabric036, Fabric061, Carpet016), and prop_fine.gdshader and its two materials read them; the 16 props and the fine files come from library v2 (props/library/v2: v1 with #150's build laid over it; layouts/house/house.toml prop_dirs and fine_dir). #150's round 2 re-coloured sofa and armchair (a warm terracotta fabric) and added 16 more living-room props (170 props committed in all): the wall art art_abstract, art_city and art_burger (base layer) and art_photos and art_score (detail layer), drawn procedurally (own work), and the detail-layer props board_games, candle_jars, coffee_books, deco_bowl, deco_vase, floor_plant (its pot the only collider), game_console, laptop, side_lamp, slippers and table_plant. Approved by the engineer on 2026-10-14 in PR #151. Approved under the engineer's blanket yes of 2026-10-14 (build the House, judge in a playtest; #34) in PR #154. #153 rebuilt the dining room in the world look: library/ dining_chair (now procedural, own work; it was a re-painted CC0 KayKit model) and chandelier (a three-shade pendant) and task/ dining_table (an oiled-oak table on the fine pack) re-built, and 12 props added (182 props committed in all): the wall art art_still_life (base layer), art_delivery and art_gazebo (detail layer), drawn procedurally (own work), the display_cabinet, the dining_rug and the detail-layer props bottle_rack, fruit_dish, homework, mail_stack, place_setting, serving_board and tulip_vase; every library file now from library v4 (props/library/v4: v3 with #153's build laid over it) and every task file from task v2 (v1 with the dining table rebuilt). Approved under the engineer's blanket yes of 2026-10-14 (build the House, judge in a playtest; #34) in PR #155. #156 dressed the hallway in the world look: 15 props added (196 props committed in all: library/doormat.glb, which no package uses since the hallway's hall_doormat replaced it, is no longer committed), all procedural, own work: the base-layer hall_console (an oak console), hall_mirror (an arched mirror; its pane the new mirror_glass paint), coat_hooks (a hook rail with coats and a scarf), hall_bench (with a seat pad and a shoe shelf), hall_runner (a navy runner), umbrella_stand, gallery_wall (six frames hung salon-style) and the wall art art_blueprint (the generator's blueprint), and the detail-layer hall_doormat, key_bowl, parcels, shoe_pairs, sports_bag, wall_calendar and photo_row (a family photo row), drawn procedurally; no other prop changed, every library file now from library v5 (props/library/v5: v4 with #156's build laid over it). Approved under the engineer's blanket yes of 2026-10-14 (build the House, judge in a playtest; #34) in PR #157. #158 dressed the ground floor's small rooms (the WC, the pantry and the stairs) in the world look: 21 props added (217 props committed in all), all procedural, own work: the WC's base-layer wc_toilet (a close-coupled toilet), wc_vanity (an oak vanity with a sit-on basin), mirror_cabinet, washer, tumble_dryer, wc_tiles (a tiled lower wall) and the wall art art_wash (a washing-day joke print), and the detail-layer towel_ring, roll_holder, pedal_bin, toilet_brush and reed_diffuser; the pantry's pantry_shelf and pantry_shelf_buns (shelving units stocked with jars, tins, boxes, bottles and, on the second, the burger kitchen's buns), veg_rack (baskets of potatoes and onions), drink_crates, step_stool and broom_set; the stairs' stair_runner (one per half flight), stair_gallery (frames going up the wall) and landing_plant; no other prop changed, every library file now from library v6 (props/library/v6: v5 with #158's build laid over it). Approved under the engineer's blanket yes of 2026-10-14 (build the House, judge in a playtest; #34) in PR #161, which the approval fields name."
+notes = "Built by `props-library --build` (props/library.toml: 213 props, 188 procedural, 25 re-painted from CC0 packs), `props` (props/tasks.toml) and the zones (layouts/house/outdoor/zones). Own work, except each file with a source: a CC0 pack model re-scaled and re-painted. All use the kit's texture set (house_kit), which ships once. The [[files]] list all 256 props of the raw build (246 before #162, 225 before #158, 210 before #156, 198 before #153, 174 before #147's two backsplash runs, 176 before #150's six detail props, 182 before #150's round 2) and the fine pack's 15 files (#147, #150); only the props a committed package needs are committed under export/, the rest stay raw until their package. P2 committed 70 props (#124; 72 since #147 added backsplash_l and backsplash_r: 68 library/, 4 task/), approved by the engineer on 2026-10-11 in PR #125. P3 and P5 committed 34 more (#126), approved by the engineer on 2026-10-11 in PR #127 (the set format has no per-file approval; a later package's approval moves the fields below to its PR, which they now name: P7's, PR #131): library/ cage_lamp, desk, filing_cabinet, fuel_barrel, industrial_pendant, jerrycan, metal_shelving, office_chair, old_bicycle, old_wardrobe, pallet, pipe_run, rolled_carpet, safelight_red, sheeted_furniture, standing_mirror, tool_wall, toolbox_cart, trunk; task/ boiler, bun_shelf, cable_drum, car_parts_shelf, delivery_box_stack, enlarger, generator, meat_freezer, photo_board, pump, switchboard, tray_table, wall_switch, water_tank, wine_rack. P4 committed 10 more (#129), approved by the engineer on 2026-10-12 in PR #130: library/ balcony_chair, bathtub, bunk_bed, double_bed, single_bed, toy_spill, wardrobe; task/ computer_set, photo_printer, toy_chest. P7 (#128) committed 32 more, approved by the engineer on 2026-10-12 in PR #131: library/ birdbath, firewood_stack, garden_bench, garden_post_lamp, greenhouse_shelf, hose_reel, hydrant, mailbox, parked_car, path_light, picnic_table, potting_bench, stepping_stone, streetlight, watering_can, wheelbarrow; task/ bbq_grill, garden_dropoff, herb_bed, herb_board, music_speaker, pose_screen, utility_pole; zones/ bean_bag, cooler_box, deckchair, fire_pit, lantern, photo_backdrop, string_lights_gazebo, string_lights_set, tripod_camera. The game folder house_props/ is flat: a basename two sources share ships from the first source in prop_dirs (task, library), then zones, as <id>.glb, from any other as <id>_<source>.glb (house_export_plot.game_name; P7 ships bean_bag_zones.glb, birdbath_library.glb, cooler_box_zones.glb, deckchair_zones.glb, fire_pit_zones.glb, lantern_zones.glb, photo_backdrop_zones.glb, tripod_camera_zones.glb). #147 rebuilt the kitchen in C2-white (the world look, #143): fridge, stove, kitchen_counter, kitchen_sink, kitchen_upper, task/ assembly_island and order_board re-built (now all procedural, own work), library/ backsplash_l and backsplash_r added (148 props committed in all: 70 + 34 + 10 + 32 + 2), and the fine texture pack shipped: fine/high/ (1024 px) and fine/low/ (512 px) fine_d.png, fine_n0.png, fine_n1.png, made from 4 ambientCG CC0 maps (Wood092, Wood049, Concrete034, Tiles107; props/library.toml [fine]), with prop_fine.gdshader and prop_fine_high.tres / prop_fine_low.tres (the kit_fine material, P2's v4 export); approved by the engineer on 2026-10-13 in PR #149. #150 rebuilt the living room in the world look: library/ armchair, bookcase, coffee_table, dresser, fireplace, rug, sideboard, small_table, sofa and tv_cabinet re-built (now all procedural, own work; armchair, small_table, sofa and tv_cabinet were re-painted CC0 pack models before) and six detail-layer props added: library/ candle_pair, living_tray, magazine_fan, mantel_clock, standing_frame, throw_basket (154 props committed in all); the fine pack grew to eight texture slots: fine/high/ and fine/low/ fine_d1.png (slots 4-7), fine_n2.png and fine_n3.png beside fine_d, fine_n0 and fine_n1, made from 3 more ambientCG CC0 maps (Fabric036, Fabric061, Carpet016), and prop_fine.gdshader and its two materials read them; the 16 props and the fine files come from library v2 (props/library/v2: v1 with #150's build laid over it; layouts/house/house.toml prop_dirs and fine_dir). #150's round 2 re-coloured sofa and armchair (a warm terracotta fabric) and added 16 more living-room props (170 props committed in all): the wall art art_abstract, art_city and art_burger (base layer) and art_photos and art_score (detail layer), drawn procedurally (own work), and the detail-layer props board_games, candle_jars, coffee_books, deco_bowl, deco_vase, floor_plant (its pot the only collider), game_console, laptop, side_lamp, slippers and table_plant. Approved by the engineer on 2026-10-14 in PR #151. Approved under the engineer's blanket yes of 2026-10-14 (build the House, judge in a playtest; #34) in PR #154. #153 rebuilt the dining room in the world look: library/ dining_chair (now procedural, own work; it was a re-painted CC0 KayKit model) and chandelier (a three-shade pendant) and task/ dining_table (an oiled-oak table on the fine pack) re-built, and 12 props added (182 props committed in all): the wall art art_still_life (base layer), art_delivery and art_gazebo (detail layer), drawn procedurally (own work), the display_cabinet, the dining_rug and the detail-layer props bottle_rack, fruit_dish, homework, mail_stack, place_setting, serving_board and tulip_vase; every library file now from library v4 (props/library/v4: v3 with #153's build laid over it) and every task file from task v2 (v1 with the dining table rebuilt). Approved under the engineer's blanket yes of 2026-10-14 (build the House, judge in a playtest; #34) in PR #155. #156 dressed the hallway in the world look: 15 props added (196 props committed in all: library/doormat.glb, which no package uses since the hallway's hall_doormat replaced it, is no longer committed), all procedural, own work: the base-layer hall_console (an oak console), hall_mirror (an arched mirror; its pane the new mirror_glass paint), coat_hooks (a hook rail with coats and a scarf), hall_bench (with a seat pad and a shoe shelf), hall_runner (a navy runner), umbrella_stand, gallery_wall (six frames hung salon-style) and the wall art art_blueprint (the generator's blueprint), and the detail-layer hall_doormat, key_bowl, parcels, shoe_pairs, sports_bag, wall_calendar and photo_row (a family photo row), drawn procedurally; no other prop changed, every library file now from library v5 (props/library/v5: v4 with #156's build laid over it). Approved under the engineer's blanket yes of 2026-10-14 (build the House, judge in a playtest; #34) in PR #157. #158 dressed the ground floor's small rooms (the WC, the pantry and the stairs) in the world look: 21 props added (217 props committed in all), all procedural, own work: the WC's base-layer wc_toilet (a close-coupled toilet), wc_vanity (an oak vanity with a sit-on basin), mirror_cabinet, washer, tumble_dryer, wc_tiles (a tiled lower wall) and the wall art art_wash (a washing-day joke print), and the detail-layer towel_ring, roll_holder, pedal_bin, toilet_brush and reed_diffuser; the pantry's pantry_shelf and pantry_shelf_buns (shelving units stocked with jars, tins, boxes, bottles and, on the second, the burger kitchen's buns), veg_rack (baskets of potatoes and onions), drink_crates, step_stool and broom_set; the stairs' stair_runner (one per half flight), stair_gallery (frames going up the wall) and landing_plant; no other prop changed, every library file now from library v6 (props/library/v6: v5 with #158's build laid over it). Approved under the engineer's blanket yes of 2026-10-14 (build the House, judge in a playtest; #34) in PR #161. #162 dressed the upper floor's landing and bathroom in the world look: 10 props added (227 props committed in all), all procedural, own work: the bathroom's room-class bath_tub (a built-in bath with a glass shower screen), bath_vanity (the WC's oak vanity at 0.9 m), bath_shelf (open shelves of bottles), bath_tiles, bath_tiles_short and bath_tiles_shower (tiled lower walls and the shower corner, base layer), and its dressing towel_rail (a heated ladder rail with towels), bath_mat and the wall art art_bubbles (a bath-time joke print); the landing's landing_runner (an 8.5 m terracotta runner); no other prop changed, every library file now from library v8 (props/library/v8: v7, v6 with #162's build laid over it, with the landing_runner rebuilt in round 2: terracotta wool, a deep rust border of the same tone and a soft square motif instead of the slate field and cream lines). Approved under the engineer's blanket yes of 2026-10-14 (build the House, judge in a playtest; #34) in PR #163, which the approval fields name."
 tools = ["blender 5.2.2", "prime-game-art props-library and props (props/library.toml, props/tasks.toml)"]
 licence = "own-work"
 licence_url = "https://github.com/xperiaroco2/prime-game"
@@ -15,7 +17,7 @@ public_repo_ok = true
 ai_generated = false
 approved_by = ["xperiaroco2"]
 approved_at = 2026-10-14
-approval_pr = "https://github.com/xperiaroco2/prime-game-art/pull/161"
+approval_pr = "https://github.com/xperiaroco2/prime-game-art/pull/163"
 
 [source]
 service = "own"
@@ -27,7 +29,7 @@ url = "https://github.com/xperiaroco2/prime-game-art"
 
 [[files]]
 name = "library/antenna.glb"
-file = "props/library/v6/antenna.glb"
+file = "props/library/v8/antenna.glb"
 sha256 = "42dbf5a35d5497a6c877f4ea5ca8f23c47b037685d6cc7900775cb4ef9963318"
 
 [[files]]
@@ -37,622 +39,622 @@ sha256 = "b847a86aa9539786172d9283bc63065912873cac1e59b0edd5cc34cca0ed4d39"
 
 [[files]]
 name = "library/art_abstract.glb"
-file = "props/library/v6/art_abstract.glb"
+file = "props/library/v8/art_abstract.glb"
 sha256 = "eae9202def7d095e32aea4336eaf3ea2e46f7edb03dc4ea202bce4cec3d37c60"
 
 [[files]]
 name = "library/art_burger.glb"
-file = "props/library/v6/art_burger.glb"
+file = "props/library/v8/art_burger.glb"
 sha256 = "36ef606a846a904fabf787a902dde0d151d1ce02ce39b4b4e9aac0adafb628be"
 
 [[files]]
 name = "library/art_city.glb"
-file = "props/library/v6/art_city.glb"
+file = "props/library/v8/art_city.glb"
 sha256 = "bfaa50524877c3b8ba31d2a17afd2cf733ce9ded083524cf8fbed7169e70ecbb"
 
 [[files]]
 name = "library/art_photos.glb"
-file = "props/library/v6/art_photos.glb"
+file = "props/library/v8/art_photos.glb"
 sha256 = "5b164aacf3dcc68c77fc5ccabad6fad90202f2bcc224c798015f967898bf8575"
 
 [[files]]
 name = "library/art_score.glb"
-file = "props/library/v6/art_score.glb"
+file = "props/library/v8/art_score.glb"
 sha256 = "f308d18d5df82bcebf3c03ea5eabe7a1819d6f543c7031a15a778cb7203fc873"
 
 [[files]]
 name = "library/backsplash_l.glb"
-file = "props/library/v6/backsplash_l.glb"
+file = "props/library/v8/backsplash_l.glb"
 sha256 = "acd3328c1503ecc691324428976019fa4021bbc9df3a7f359fd14ab72df1bb82"
 
 [[files]]
 name = "library/backsplash_r.glb"
-file = "props/library/v6/backsplash_r.glb"
+file = "props/library/v8/backsplash_r.glb"
 sha256 = "9930e9d47820fd4affa9c0a41ae3b6b2e02d7c9cb9170090e9cad71a890ddf24"
 
 [[files]]
 name = "library/balcony_chair.glb"
-file = "props/library/v6/balcony_chair.glb"
+file = "props/library/v8/balcony_chair.glb"
 sha256 = "8d120d3cddbeeb27fde31f7ef3dd906d4a44b1fa3d26c3f51b901353b2e87811"
 source = "kaykit_furniture_bits"
 from = ["env/kaykit/furniture-bits/KayKit_Furniture_Bits_1.0_FREE/KayKit_Furniture_Bits_1.0_FREE/Assets/gltf/chair_C.gltf", "env/kaykit/furniture-bits/KayKit_Furniture_Bits_1.0_FREE/KayKit_Furniture_Bits_1.0_FREE/Assets/gltf/chair_C.bin", "env/kaykit/furniture-bits/KayKit_Furniture_Bits_1.0_FREE/KayKit_Furniture_Bits_1.0_FREE/Assets/gltf/furniturebits_texture.png"]
 
 [[files]]
 name = "library/bare_bulb.glb"
-file = "props/library/v6/bare_bulb.glb"
+file = "props/library/v8/bare_bulb.glb"
 sha256 = "3fa27f0beaa21733b63a725a55f5c5a5698761de7ab9c7b88bc6d675e93a63e2"
 
 [[files]]
 name = "library/barrel.glb"
-file = "props/library/v6/barrel.glb"
+file = "props/library/v8/barrel.glb"
 sha256 = "8b7ac3de705cb36d6a10df27a20c910461776f36986e84f3fc0d922e7f002b1d"
 source = "kaykit_prototype_bits"
 from = ["env/kaykit/prototype-bits/KayKit_Prototype_Bits_1.1_FREE/KayKit_Prototype_Bits_1.1_FREE/Assets/gltf/Barrel_A.gltf", "env/kaykit/prototype-bits/KayKit_Prototype_Bits_1.1_FREE/KayKit_Prototype_Bits_1.1_FREE/Assets/gltf/Barrel_A.bin", "env/kaykit/prototype-bits/KayKit_Prototype_Bits_1.1_FREE/KayKit_Prototype_Bits_1.1_FREE/Assets/gltf/prototypebits_texture.png"]
 
 [[files]]
 name = "library/basin.glb"
-file = "props/library/v6/basin.glb"
+file = "props/library/v8/basin.glb"
 sha256 = "23fc458c4d2c9b6ba078592a21319190684e3a5179bffd6f372d720957637910"
 source = "kenney_furniture_kit"
 from = ["env/kenney/furniture-kit/kenney_furniture-kit/Models/GLTF format/bathroomSink.glb"]
 
 [[files]]
 name = "library/basket.glb"
-file = "props/library/v6/basket.glb"
+file = "props/library/v8/basket.glb"
 sha256 = "f933514615e10e4fcde6e81ed7f412b97a30428360cfd8f7c8a8a0432a0a26d7"
 
 [[files]]
 name = "library/bathtub.glb"
-file = "props/library/v6/bathtub.glb"
+file = "props/library/v8/bathtub.glb"
 sha256 = "3708c2c70a6b710a4530ed83d1f87ded9fecdcd77f509b984f38b168efbc1cec"
 source = "kenney_furniture_kit"
 from = ["env/kenney/furniture-kit/kenney_furniture-kit/Models/GLTF format/bathtub.glb"]
 
 [[files]]
 name = "library/bean_bag.glb"
-file = "props/library/v6/bean_bag.glb"
+file = "props/library/v8/bean_bag.glb"
 sha256 = "6312d90ece8a1fcf9f635946ff491b7e68e493aac3e838f762023847ce2153c7"
 
 [[files]]
 name = "library/birdbath.glb"
-file = "props/library/v6/birdbath.glb"
+file = "props/library/v8/birdbath.glb"
 sha256 = "673cc93f61ea5c379b96d2c96d396030922b6ade060a92517a18db23c76a5749"
 
 [[files]]
 name = "library/board_games.glb"
-file = "props/library/v6/board_games.glb"
+file = "props/library/v8/board_games.glb"
 sha256 = "8759edc4ce1f10d425a2c5fcff1a8610860c4faa003dbd11db8ab38a17bb6b5e"
 
 [[files]]
 name = "library/boiler.glb"
-file = "props/library/v6/boiler.glb"
+file = "props/library/v8/boiler.glb"
 sha256 = "371290686f4e05b69e4d10aa8ce5b0fa316cbd440d09fdda40408f52260fbe7e"
 
 [[files]]
 name = "library/book_row.glb"
-file = "props/library/v6/book_row.glb"
+file = "props/library/v8/book_row.glb"
 sha256 = "7a25753420b0419c4a26f6b09b6f894c21669b86efd5f5007c9e0b9ac573dbe7"
 
 [[files]]
 name = "library/book_stack.glb"
-file = "props/library/v6/book_stack.glb"
+file = "props/library/v8/book_stack.glb"
 sha256 = "987aee8d7a01a9e6086f6c8de2a7a09699164111daa68534c624c66670a556f8"
 
 [[files]]
 name = "library/bookcase.glb"
-file = "props/library/v6/bookcase.glb"
+file = "props/library/v8/bookcase.glb"
 sha256 = "e1279e839d3e95968d1bd196a5bba513ccb11efa354e646c0d8bead152b573e7"
 
 [[files]]
 name = "library/boots.glb"
-file = "props/library/v6/boots.glb"
+file = "props/library/v8/boots.glb"
 sha256 = "253284af240228e19d34da4db8eb9ce97dc49a99f6c490a595907999c4d11bcf"
 
 [[files]]
 name = "library/bottles.glb"
-file = "props/library/v6/bottles.glb"
+file = "props/library/v8/bottles.glb"
 sha256 = "6bd6c74541fb6c37597a940b2d3ae7ce3fc62fff33dbd0b35d894d66fd7374af"
 
 [[files]]
 name = "library/bunk_bed.glb"
-file = "props/library/v6/bunk_bed.glb"
+file = "props/library/v8/bunk_bed.glb"
 sha256 = "33743d9b49457e20ef04dfe4e9a7300074c220c032faa34dc9759ba7e2b13043"
 source = "kenney_furniture_kit"
 from = ["env/kenney/furniture-kit/kenney_furniture-kit/Models/GLTF format/bedBunk.glb"]
 
 [[files]]
 name = "library/cable_drum.glb"
-file = "props/library/v6/cable_drum.glb"
+file = "props/library/v8/cable_drum.glb"
 sha256 = "c5e4ed65660bde9613f89f8a2070afeed6d93bcc4e5e75b2114503b83819790e"
 
 [[files]]
 name = "library/cage_lamp.glb"
-file = "props/library/v6/cage_lamp.glb"
+file = "props/library/v8/cage_lamp.glb"
 sha256 = "fcf9ccf9c2080bed262fea5a240093bd9d28895b5c0ad2ea07c274606fb920aa"
 
 [[files]]
 name = "library/candle_jars.glb"
-file = "props/library/v6/candle_jars.glb"
+file = "props/library/v8/candle_jars.glb"
 sha256 = "a0ba0e4a5e08100a5769805a829fbd955f1266feb4c86fbf6ff3946a99a35a0c"
 
 [[files]]
 name = "library/candle_pair.glb"
-file = "props/library/v6/candle_pair.glb"
+file = "props/library/v8/candle_pair.glb"
 sha256 = "e2f31d368734212ab8208170db309b42488e8ea16afa72a9337dc69af94ee57d"
 
 [[files]]
 name = "library/cardboard_box.glb"
-file = "props/library/v6/cardboard_box.glb"
+file = "props/library/v8/cardboard_box.glb"
 sha256 = "b7404592e7a869d2395957830cef962ad46604f51ed6d78ad02b67340cf8415a"
 
 [[files]]
 name = "library/chandelier.glb"
-file = "props/library/v6/chandelier.glb"
+file = "props/library/v8/chandelier.glb"
 sha256 = "e4a57c04c14fa3bfaa636003443690f2887c2ac70c0d1b270457531ab7a32802"
 
 [[files]]
 name = "library/coat_rack.glb"
-file = "props/library/v6/coat_rack.glb"
+file = "props/library/v8/coat_rack.glb"
 sha256 = "53ff10c0e804891aeab3b0a7229ca533fd11abafd56988d15e4147df72b175e8"
 
 [[files]]
 name = "library/coffee_books.glb"
-file = "props/library/v6/coffee_books.glb"
+file = "props/library/v8/coffee_books.glb"
 sha256 = "773b96e387a2ebc5be79a67f60ec9ae2ac63e6bacb39a755942129eca8198b39"
 
 [[files]]
 name = "library/coffee_table.glb"
-file = "props/library/v6/coffee_table.glb"
+file = "props/library/v8/coffee_table.glb"
 sha256 = "179495017df2c501f92c8a9d95c634fa86bc44f646b57936e8a7ee9b7f54126b"
 
 [[files]]
 name = "library/console_table.glb"
-file = "props/library/v6/console_table.glb"
+file = "props/library/v8/console_table.glb"
 sha256 = "ba6c88467e3a4739b0cebcd5973767b22e6ced18353538eb57d69d2cc2dee976"
 
 [[files]]
 name = "library/cooking_pot.glb"
-file = "props/library/v6/cooking_pot.glb"
+file = "props/library/v8/cooking_pot.glb"
 sha256 = "f1d6e99d19021a4c914ad51e8575065bed8f8d8935586d0c554e8bd43fd3a12c"
 
 [[files]]
 name = "library/cooler_box.glb"
-file = "props/library/v6/cooler_box.glb"
+file = "props/library/v8/cooler_box.glb"
 sha256 = "e447d9e5bb7ef220169c65c30f8a327110c2ec79de1ef49161ed8ff075d61ec8"
 source = "tinytreats_pleasant_picnic"
 from = ["env/tinytreats/pleasant-picnic/Tiny_Treats_Pleasant_Picnic_1.0_FREE/Tiny_Treats_Pleasant_Picnic_1.0_FREE/Assets/gltf/cooler.gltf", "env/tinytreats/pleasant-picnic/Tiny_Treats_Pleasant_Picnic_1.0_FREE/Tiny_Treats_Pleasant_Picnic_1.0_FREE/Assets/gltf/cooler.bin", "env/tinytreats/pleasant-picnic/Tiny_Treats_Pleasant_Picnic_1.0_FREE/Tiny_Treats_Pleasant_Picnic_1.0_FREE/Assets/gltf/tiny_treats_texture_1.png"]
 
 [[files]]
 name = "library/crate.glb"
-file = "props/library/v6/crate.glb"
+file = "props/library/v8/crate.glb"
 sha256 = "9ecb555e41e1779d469fbdc1db034e6a8b27f3472cdf033233356cc7b0881d70"
 source = "kaykit_prototype_bits"
 from = ["env/kaykit/prototype-bits/KayKit_Prototype_Bits_1.1_FREE/KayKit_Prototype_Bits_1.1_FREE/Assets/gltf/Box_B.gltf", "env/kaykit/prototype-bits/KayKit_Prototype_Bits_1.1_FREE/KayKit_Prototype_Bits_1.1_FREE/Assets/gltf/Box_B.bin", "env/kaykit/prototype-bits/KayKit_Prototype_Bits_1.1_FREE/KayKit_Prototype_Bits_1.1_FREE/Assets/gltf/prototypebits_texture.png"]
 
 [[files]]
 name = "library/cup_set.glb"
-file = "props/library/v6/cup_set.glb"
+file = "props/library/v8/cup_set.glb"
 sha256 = "9be60961398d54e950eee7fc48dd69934c53085e1f387e5a620fbfa6c5fe95e9"
 
 [[files]]
 name = "library/deckchair.glb"
-file = "props/library/v6/deckchair.glb"
+file = "props/library/v8/deckchair.glb"
 sha256 = "ce976db18833023f61cb8e3238eae8c6f61b99c0bc3113203750fe3c845b21f9"
 
 [[files]]
 name = "library/deco_bowl.glb"
-file = "props/library/v6/deco_bowl.glb"
+file = "props/library/v8/deco_bowl.glb"
 sha256 = "7d5a15a3ccaf379284ff6580f1849453f81bd90d9f936f16953d7aec2dbe36fd"
 
 [[files]]
 name = "library/deco_vase.glb"
-file = "props/library/v6/deco_vase.glb"
+file = "props/library/v8/deco_vase.glb"
 sha256 = "1742a2b05b6515290093e57d948b99b23f218e3ac7fe23c9234c69de2be807ff"
 
 [[files]]
 name = "library/desk.glb"
-file = "props/library/v6/desk.glb"
+file = "props/library/v8/desk.glb"
 sha256 = "96c2afd42d4ce09c4e02c7a265815a8b482367ec219aa1eb5e69f0141c256a76"
 source = "kenney_furniture_kit"
 from = ["env/kenney/furniture-kit/kenney_furniture-kit/Models/GLTF format/desk.glb"]
 
 [[files]]
 name = "library/dining_chair.glb"
-file = "props/library/v6/dining_chair.glb"
+file = "props/library/v8/dining_chair.glb"
 sha256 = "554f66a86e830817ecca96041b3b6df837a67711f600fd87058ed303af3b0d22"
 
 [[files]]
 name = "library/doormat.glb"
-file = "props/library/v6/doormat.glb"
+file = "props/library/v8/doormat.glb"
 sha256 = "ee03592f454d199c7438d2bc152e21d074b5f75c421617f8daaac91f868eefac"
 
 [[files]]
 name = "library/double_bed.glb"
-file = "props/library/v6/double_bed.glb"
+file = "props/library/v8/double_bed.glb"
 sha256 = "d1baa2c52c5d9aa4812ac8f5c4297d93357f0b8abea2b27f5dfd7c30ec7e987c"
 source = "kaykit_furniture_bits"
 from = ["env/kaykit/furniture-bits/KayKit_Furniture_Bits_1.0_FREE/KayKit_Furniture_Bits_1.0_FREE/Assets/gltf/bed_double_A.gltf", "env/kaykit/furniture-bits/KayKit_Furniture_Bits_1.0_FREE/KayKit_Furniture_Bits_1.0_FREE/Assets/gltf/bed_double_A.bin", "env/kaykit/furniture-bits/KayKit_Furniture_Bits_1.0_FREE/KayKit_Furniture_Bits_1.0_FREE/Assets/gltf/furniturebits_texture.png"]
 
 [[files]]
 name = "library/dresser.glb"
-file = "props/library/v6/dresser.glb"
+file = "props/library/v8/dresser.glb"
 sha256 = "45bb0dc4f446d989af86b89f343dd42bf6c4822a621b41d0f1b3853c931b1c69"
 
 [[files]]
 name = "library/drying_rack.glb"
-file = "props/library/v6/drying_rack.glb"
+file = "props/library/v8/drying_rack.glb"
 sha256 = "21dce23a64a9e66c8e983de9f2505a2685177f171a5e78b47f08bed4851f1dd0"
 
 [[files]]
 name = "library/enlarger.glb"
-file = "props/library/v6/enlarger.glb"
+file = "props/library/v8/enlarger.glb"
 sha256 = "5e9c651d7532476217331ad6fbd8f40fc506bcc5f94936db55f9cfd50998b2d5"
 
 [[files]]
 name = "library/filing_cabinet.glb"
-file = "props/library/v6/filing_cabinet.glb"
+file = "props/library/v8/filing_cabinet.glb"
 sha256 = "a3340b3af3bb217ea6fa28b540b24a454ea9dd838fdc358a69832da6ac7ba9ff"
 
 [[files]]
 name = "library/fire_pit.glb"
-file = "props/library/v6/fire_pit.glb"
+file = "props/library/v8/fire_pit.glb"
 sha256 = "2be16a0ce393f9209ba72a33b4454b877477be5c7a1a9712760f2209fb9c1de1"
 source = "kenney_survival_kit"
 from = ["env/kenney/survival-kit/kenney_survival-kit/Models/GLB format/campfire-pit.glb"]
 
 [[files]]
 name = "library/fireplace.glb"
-file = "props/library/v6/fireplace.glb"
+file = "props/library/v8/fireplace.glb"
 sha256 = "28426020feb3f13237c831977fb4a0b1d618b8ac52418831c2d8ec915f934767"
 
 [[files]]
 name = "library/firewood_stack.glb"
-file = "props/library/v6/firewood_stack.glb"
+file = "props/library/v8/firewood_stack.glb"
 sha256 = "a8643b0e3e3cb8417b99a1fbef166e7210ce2d9f28098a7f9a675fb4a092a2f1"
 
 [[files]]
 name = "library/floor_lamp.glb"
-file = "props/library/v6/floor_lamp.glb"
+file = "props/library/v8/floor_lamp.glb"
 sha256 = "ed405d6e5d38ca32195ebef5c215b311b3a239b0d73f41a6b416bdb57aabe78d"
 source = "kenney_furniture_kit"
 from = ["env/kenney/furniture-kit/kenney_furniture-kit/Models/GLTF format/lampRoundFloor.glb"]
 
 [[files]]
 name = "library/floor_plant.glb"
-file = "props/library/v6/floor_plant.glb"
+file = "props/library/v8/floor_plant.glb"
 sha256 = "6dd66389e956de3335c58aa1f5013867e14e88af3f36d125c6d9ba5730acff3f"
 
 [[files]]
 name = "library/fluorescent_tube.glb"
-file = "props/library/v6/fluorescent_tube.glb"
+file = "props/library/v8/fluorescent_tube.glb"
 sha256 = "0f64062ed0845d3a8093ca51c62d813b6487a6c40d4d6f72fc04dd41155a5063"
 
 [[files]]
 name = "library/fridge.glb"
-file = "props/library/v6/fridge.glb"
+file = "props/library/v8/fridge.glb"
 sha256 = "904e64e043783f5f2905cee18838b6955b4b13d775e043dad3db1fbc9b0dbece"
 
 [[files]]
 name = "library/fruit_bowl.glb"
-file = "props/library/v6/fruit_bowl.glb"
+file = "props/library/v8/fruit_bowl.glb"
 sha256 = "9b1af4fbf0fa44d4d61c13d90d80e606d3631687e7ec59153af9f5638f12f4ea"
 
 [[files]]
 name = "library/fuel_barrel.glb"
-file = "props/library/v6/fuel_barrel.glb"
+file = "props/library/v8/fuel_barrel.glb"
 sha256 = "f496ca0bc0da900155cac399c6e63b29025b22f27642aa9f735363df4338695b"
 source = "kenney_survival_kit"
 from = ["env/kenney/survival-kit/kenney_survival-kit/Models/GLB format/barrel.glb"]
 
 [[files]]
 name = "library/gallery_wall.glb"
-file = "props/library/v6/gallery_wall.glb"
+file = "props/library/v8/gallery_wall.glb"
 sha256 = "7119bd108b5d92e1a99497624344186126c465882f164a9b8ce28d22be62bc44"
 
 [[files]]
 name = "library/game_console.glb"
-file = "props/library/v6/game_console.glb"
+file = "props/library/v8/game_console.glb"
 sha256 = "0bed41400e0b5e3ca39ace090af96046e3514f225e89c44547cd5c948ba869c2"
 
 [[files]]
 name = "library/garden_bench.glb"
-file = "props/library/v6/garden_bench.glb"
+file = "props/library/v8/garden_bench.glb"
 sha256 = "76cb167aa4049e6381e1bc78574feaa10325896d47e86832630b40f3c8c8d6cb"
 
 [[files]]
 name = "library/garden_post_lamp.glb"
-file = "props/library/v6/garden_post_lamp.glb"
+file = "props/library/v8/garden_post_lamp.glb"
 sha256 = "fc897160f323e9fb9ca6d94ebffde51c02d0f7c98e4b2c7ac3a0c657204cf3ab"
 
 [[files]]
 name = "library/gravel_patch.glb"
-file = "props/library/v6/gravel_patch.glb"
+file = "props/library/v8/gravel_patch.glb"
 sha256 = "46a16512144a1762f77c9d131172d7ba67787bf792fd885c783ee92b53b4d1f6"
 
 [[files]]
 name = "library/greenhouse_shelf.glb"
-file = "props/library/v6/greenhouse_shelf.glb"
+file = "props/library/v8/greenhouse_shelf.glb"
 sha256 = "1e7d89a47641be0fa652026448d2e17b47725f652f977771809604e3b157ba2d"
 
 [[files]]
 name = "library/hose_reel.glb"
-file = "props/library/v6/hose_reel.glb"
+file = "props/library/v8/hose_reel.glb"
 sha256 = "049c6cf79d377a3fe734bba623e36cca9d12ef0a2e5cd3db00cf9308d84127a5"
 
 [[files]]
 name = "library/hydrant.glb"
-file = "props/library/v6/hydrant.glb"
+file = "props/library/v8/hydrant.glb"
 sha256 = "7c58fe9bca9e85f480b6c018d8fc401e91c0fd8952f1907fdebef37314e0ee90"
 
 [[files]]
 name = "library/industrial_pendant.glb"
-file = "props/library/v6/industrial_pendant.glb"
+file = "props/library/v8/industrial_pendant.glb"
 sha256 = "edfde0e533204fa816dabec9786cd0d79ffd478d7418561cfaa20c30903c66cb"
 
 [[files]]
 name = "library/jar_shelf.glb"
-file = "props/library/v6/jar_shelf.glb"
+file = "props/library/v8/jar_shelf.glb"
 sha256 = "0d45fea9e63c74a03df88deaf53013ed9f655553a03fbb6abe0c4bccd7459e1a"
 
 [[files]]
 name = "library/jerrycan.glb"
-file = "props/library/v6/jerrycan.glb"
+file = "props/library/v8/jerrycan.glb"
 sha256 = "78edf02d12083233a6286e2d9c8f342ea30c4d4b24041f85ed3925656f7edcd1"
 
 [[files]]
 name = "library/kitchen_counter.glb"
-file = "props/library/v6/kitchen_counter.glb"
+file = "props/library/v8/kitchen_counter.glb"
 sha256 = "28c6f94721eb7b6362bc765fde1284eadd523760a5bd78b8b0f99f3a0415ffd8"
 
 [[files]]
 name = "library/kitchen_sink.glb"
-file = "props/library/v6/kitchen_sink.glb"
+file = "props/library/v8/kitchen_sink.glb"
 sha256 = "6fbf1e36d4a33e0cdced8474802eaee60a788e2874b6991836295231017f877e"
 
 [[files]]
 name = "library/kitchen_upper.glb"
-file = "props/library/v6/kitchen_upper.glb"
+file = "props/library/v8/kitchen_upper.glb"
 sha256 = "72ba83d081b24740cdd8d4f25971dbd77a21b5c8ec7139b7d2f8d0105f96183e"
 
 [[files]]
 name = "library/landing_bench.glb"
-file = "props/library/v6/landing_bench.glb"
+file = "props/library/v8/landing_bench.glb"
 sha256 = "064a40ac6db541def4c605521e4ea398e4d2979edf5e25071c78cf325804e317"
 
 [[files]]
 name = "library/lantern.glb"
-file = "props/library/v6/lantern.glb"
+file = "props/library/v8/lantern.glb"
 sha256 = "a335b0b5c795f13a1ce7f554573c971b33a7eb944e8e387614440eb99265cdee"
 source = "kenney_holiday_kit"
 from = ["env/kenney/holiday-kit/kenney_holiday-kit/Models/GLB format/lantern-hanging.glb"]
 
 [[files]]
 name = "library/laptop.glb"
-file = "props/library/v6/laptop.glb"
+file = "props/library/v8/laptop.glb"
 sha256 = "90fc078d007bcaacf25c475d00cab4a363cabf99c42da307fbee75b29cca6f36"
 
 [[files]]
 name = "library/laundry_basket.glb"
-file = "props/library/v6/laundry_basket.glb"
+file = "props/library/v8/laundry_basket.glb"
 sha256 = "fe21ac357db1efd6160a50c296728c1f29bc64be0f67a46ca693eeddb0499de1"
 
 [[files]]
 name = "library/laundry_pile.glb"
-file = "props/library/v6/laundry_pile.glb"
+file = "props/library/v8/laundry_pile.glb"
 sha256 = "5a525eefca757934fd4ce81726fa95bc32ca09d37a8698ea5aebf2b5559e37df"
 
 [[files]]
 name = "library/living_tray.glb"
-file = "props/library/v6/living_tray.glb"
+file = "props/library/v8/living_tray.glb"
 sha256 = "23b94ca8de7e946688b04fbcafd6810ff19384d0fddce1cd76ed959c25bdf1d8"
 
 [[files]]
 name = "library/loot_crate.glb"
-file = "props/library/v6/loot_crate.glb"
+file = "props/library/v8/loot_crate.glb"
 sha256 = "e9ad1c227318f86a75f82472937161399f3fb527fc8b070e8b7624b844f4890b"
 source = "kenney_survival_kit"
 from = ["env/kenney/survival-kit/kenney_survival-kit/Models/GLB format/box-large.glb"]
 
 [[files]]
 name = "library/magazine_fan.glb"
-file = "props/library/v6/magazine_fan.glb"
+file = "props/library/v8/magazine_fan.glb"
 sha256 = "b3494c51ebf1544e114ff014d866a913511aa773e73cacf3e2d55db70b9e906b"
 
 [[files]]
 name = "library/mailbox.glb"
-file = "props/library/v6/mailbox.glb"
+file = "props/library/v8/mailbox.glb"
 sha256 = "82b607ad941448537abdd23ce3e2834acb0f9967a5a8311aa1c36fdc8a4db7f7"
 
 [[files]]
 name = "library/mantel_clock.glb"
-file = "props/library/v6/mantel_clock.glb"
+file = "props/library/v8/mantel_clock.glb"
 sha256 = "21d0ec3efbfd07c0841fad7df67596aa4911bd99c30ceebfe98bd1f059e7a05d"
 
 [[files]]
 name = "library/metal_shelving.glb"
-file = "props/library/v6/metal_shelving.glb"
+file = "props/library/v8/metal_shelving.glb"
 sha256 = "0a22a7332034b66d6ec3edec90e1afcde2389eec84a0a499356206142f13152a"
 
 [[files]]
 name = "library/nightstand.glb"
-file = "props/library/v6/nightstand.glb"
+file = "props/library/v8/nightstand.glb"
 sha256 = "267a41dd96343ce70ccbcb119132dcf733952c7f4e083dddd11058584d374fb6"
 
 [[files]]
 name = "library/office_chair.glb"
-file = "props/library/v6/office_chair.glb"
+file = "props/library/v8/office_chair.glb"
 sha256 = "0f25cd192117830e3ca925746e6a647204bbd71374a098d2e512abe81605f3e1"
 source = "kenney_furniture_kit"
 from = ["env/kenney/furniture-kit/kenney_furniture-kit/Models/GLTF format/chairDesk.glb"]
 
 [[files]]
 name = "library/old_bicycle.glb"
-file = "props/library/v6/old_bicycle.glb"
+file = "props/library/v8/old_bicycle.glb"
 sha256 = "575cffe1df4ada94efbce35a4fd272330ec557bc66e218b19e3e20c09e53d844"
 
 [[files]]
 name = "library/old_wardrobe.glb"
-file = "props/library/v6/old_wardrobe.glb"
+file = "props/library/v8/old_wardrobe.glb"
 sha256 = "17f59b7e43a32c0cc1cd263e3c1ad5278afc4066e9c0ddbf5233650eaf21b7d8"
 
 [[files]]
 name = "library/open_box.glb"
-file = "props/library/v6/open_box.glb"
+file = "props/library/v8/open_box.glb"
 sha256 = "2a050922d6751c731b0b45a69bbbacd86e92ea2b9c68e8cbec788fca3214dced"
 
 [[files]]
 name = "library/pallet.glb"
-file = "props/library/v6/pallet.glb"
+file = "props/library/v8/pallet.glb"
 sha256 = "5eb05912184daa24dcbfe23adce684524bcddae8718f19f9af151aeb2ecefed2"
 source = "kaykit_prototype_bits"
 from = ["env/kaykit/prototype-bits/KayKit_Prototype_Bits_1.1_FREE/KayKit_Prototype_Bits_1.1_FREE/Assets/gltf/Pallet_Large.gltf", "env/kaykit/prototype-bits/KayKit_Prototype_Bits_1.1_FREE/KayKit_Prototype_Bits_1.1_FREE/Assets/gltf/Pallet_Large.bin", "env/kaykit/prototype-bits/KayKit_Prototype_Bits_1.1_FREE/KayKit_Prototype_Bits_1.1_FREE/Assets/gltf/prototypebits_texture.png"]
 
 [[files]]
 name = "library/paper_stack.glb"
-file = "props/library/v6/paper_stack.glb"
+file = "props/library/v8/paper_stack.glb"
 sha256 = "7337bdbb9b4dcf8cf53336b3783a923a07696c1cca4fc6c741f9c73fe5586634"
 
 [[files]]
 name = "library/parked_car.glb"
-file = "props/library/v6/parked_car.glb"
+file = "props/library/v8/parked_car.glb"
 sha256 = "3d4dc36a0bcdc5b0cce8de6f7fddc36599a084eab64e2878c3a51c93319280fe"
 source = "kaykit_city_builder_bits"
 from = ["env/kaykit/city-builder-bits/KayKit_City_Builder_Bits_1.0_FREE/KayKit_City_Builder_Bits_1.0_FREE/Assets/gltf/car_sedan.gltf", "env/kaykit/city-builder-bits/KayKit_City_Builder_Bits_1.0_FREE/KayKit_City_Builder_Bits_1.0_FREE/Assets/gltf/car_sedan.bin", "env/kaykit/city-builder-bits/KayKit_City_Builder_Bits_1.0_FREE/KayKit_City_Builder_Bits_1.0_FREE/Assets/gltf/citybits_texture.png"]
 
 [[files]]
 name = "library/path_light.glb"
-file = "props/library/v6/path_light.glb"
+file = "props/library/v8/path_light.glb"
 sha256 = "688ce43dd333bccf8e3077a24e0f96f85d5d63e11dd094de9aa49778f5c41d4c"
 
 [[files]]
 name = "library/pendant_shade.glb"
-file = "props/library/v6/pendant_shade.glb"
+file = "props/library/v8/pendant_shade.glb"
 sha256 = "92dfbe81e742940cc4770ff892aa95d6f64b2d4bdcfce30a5296696d0a957790"
 
 [[files]]
 name = "library/photo_backdrop.glb"
-file = "props/library/v6/photo_backdrop.glb"
+file = "props/library/v8/photo_backdrop.glb"
 sha256 = "47cc840c911e272deb10f2bfbf0474c1a3d656f7439fa942a741be548f0f775c"
 
 [[files]]
 name = "library/picnic_table.glb"
-file = "props/library/v6/picnic_table.glb"
+file = "props/library/v8/picnic_table.glb"
 sha256 = "80898f1e9793541cbee1d3f751e64bf4dddf02a83fa7649fee92b121c824798a"
 
 [[files]]
 name = "library/picture_frame.glb"
-file = "props/library/v6/picture_frame.glb"
+file = "props/library/v8/picture_frame.glb"
 sha256 = "d2094d13102dfd027acb1ae619d76e93dc19d4752280c522f93f9cfff3a13a32"
 
 [[files]]
 name = "library/pipe_run.glb"
-file = "props/library/v6/pipe_run.glb"
+file = "props/library/v8/pipe_run.glb"
 sha256 = "3816e06b3e26722a63e2ec0f48c13bc477b62ea6adee4e38bbd0a54d649e903a"
 
 [[files]]
 name = "library/planter_pot.glb"
-file = "props/library/v6/planter_pot.glb"
+file = "props/library/v8/planter_pot.glb"
 sha256 = "640a09909e51e882f7532f36260885ae822502ae0579693945955a7b28c81b22"
 source = "tinytreats_house_plants"
 from = ["env/tinytreats/house-plants/Tiny_Treats_House_Plants_1.0_FREE/Tiny_Treats_House_Plants_1.0_FREE/Assets/gltf/yucca_plant_medium_potted.gltf", "env/tinytreats/house-plants/Tiny_Treats_House_Plants_1.0_FREE/Tiny_Treats_House_Plants_1.0_FREE/Assets/gltf/yucca_plant_medium_potted.bin", "env/tinytreats/house-plants/Tiny_Treats_House_Plants_1.0_FREE/Tiny_Treats_House_Plants_1.0_FREE/Assets/gltf/tiny_treats_texture_1.png"]
 
 [[files]]
 name = "library/plate_stack.glb"
-file = "props/library/v6/plate_stack.glb"
+file = "props/library/v8/plate_stack.glb"
 sha256 = "15294b3595d2a43bf8a688eb17ad0c4a96f10c37d361c8bd908203d5588f56af"
 
 [[files]]
 name = "library/porch_lamp.glb"
-file = "props/library/v6/porch_lamp.glb"
+file = "props/library/v8/porch_lamp.glb"
 sha256 = "32bbe516d9d7dc260e855008e1da5ce762809c5367186b62e8c59d908bc4d3b7"
 
 [[files]]
 name = "library/potted_plant.glb"
-file = "props/library/v6/potted_plant.glb"
+file = "props/library/v8/potted_plant.glb"
 sha256 = "4b1d0cf3b7e546c1473bbbcd2fc7c1bc3315c88adfe7c815547485355afb7768"
 source = "tinytreats_house_plants"
 from = ["env/tinytreats/house-plants/Tiny_Treats_House_Plants_1.0_FREE/Tiny_Treats_House_Plants_1.0_FREE/Assets/gltf/sansevieria_plant_medium_potted.gltf", "env/tinytreats/house-plants/Tiny_Treats_House_Plants_1.0_FREE/Tiny_Treats_House_Plants_1.0_FREE/Assets/gltf/sansevieria_plant_medium_potted.bin", "env/tinytreats/house-plants/Tiny_Treats_House_Plants_1.0_FREE/Tiny_Treats_House_Plants_1.0_FREE/Assets/gltf/tiny_treats_texture_1.png"]
 
 [[files]]
 name = "library/potting_bench.glb"
-file = "props/library/v6/potting_bench.glb"
+file = "props/library/v8/potting_bench.glb"
 sha256 = "d8debb0db1c63dd21065cd4eb2272b93caf29cb2069079aea8d1942fb4925326"
 
 [[files]]
 name = "library/pump.glb"
-file = "props/library/v6/pump.glb"
+file = "props/library/v8/pump.glb"
 sha256 = "963c92e3fa9654fbfcaa64fdb893edcbd4a2d1bcdf7ec974c6106e5441581f7d"
 
 [[files]]
 name = "library/radiator.glb"
-file = "props/library/v6/radiator.glb"
+file = "props/library/v8/radiator.glb"
 sha256 = "43224032bd6ede8d9f015cf97c4ca748b65811fe922f2c344141045f9cdaeb68"
 
 [[files]]
 name = "library/rolled_carpet.glb"
-file = "props/library/v6/rolled_carpet.glb"
+file = "props/library/v8/rolled_carpet.glb"
 sha256 = "6434e1bc24816bfc8b17a171013b09e46fa89f0023d825bbedcdca8616804d01"
 
 [[files]]
 name = "library/roof_vent.glb"
-file = "props/library/v6/roof_vent.glb"
+file = "props/library/v8/roof_vent.glb"
 sha256 = "074f922e23b62071cd8786c9a9a3fa034abfdb8abcc2f7f1b05d67db7c321eb0"
 
 [[files]]
 name = "library/roof_water_tank.glb"
-file = "props/library/v6/roof_water_tank.glb"
+file = "props/library/v8/roof_water_tank.glb"
 sha256 = "83aa5cb39b12fb945b861e06b7e5dd0c810728dbf8f7de28212de3d7e597fec0"
 
 [[files]]
 name = "library/rug.glb"
-file = "props/library/v6/rug.glb"
+file = "props/library/v8/rug.glb"
 sha256 = "0757f583ad931335604c27121a91cd6a20ee925b71cfd0ec377f59d6d4e0e0e4"
 
 [[files]]
 name = "library/safelight_red.glb"
-file = "props/library/v6/safelight_red.glb"
+file = "props/library/v8/safelight_red.glb"
 sha256 = "bb26938f2996b651c91da059febdebc1250c55c87d2538df86361665ea785b0d"
 
 [[files]]
 name = "library/sheeted_furniture.glb"
-file = "props/library/v6/sheeted_furniture.glb"
+file = "props/library/v8/sheeted_furniture.glb"
 sha256 = "14b6e3d2c2c65ce5a54abd6fe465406b9e4f2f3b546685e5553e43fb9c32c227"
 
 [[files]]
 name = "library/shoe_rack.glb"
-file = "props/library/v6/shoe_rack.glb"
+file = "props/library/v8/shoe_rack.glb"
 sha256 = "19c123031396cf219267769727d008256099024ed273dec42d51e20df68b279d"
 
 [[files]]
 name = "library/shoes.glb"
-file = "props/library/v6/shoes.glb"
+file = "props/library/v8/shoes.glb"
 sha256 = "0c903e20ddc451bcdad3fd00c0cd75c732c343de1c131a29cd24d849e34123c8"
 
 [[files]]
 name = "library/side_lamp.glb"
-file = "props/library/v6/side_lamp.glb"
+file = "props/library/v8/side_lamp.glb"
 sha256 = "f1ac44580fe50bd3eeefc1b11a14c7096d1be1c46dda02cdc3e1b6ac054e3f6d"
 
 [[files]]
 name = "library/sideboard.glb"
-file = "props/library/v6/sideboard.glb"
+file = "props/library/v8/sideboard.glb"
 sha256 = "af120821cd3ad084ad40b64b3455f55146e7ccbf20956e28c58f13a3b53cf09b"
 
 [[files]]
 name = "library/single_bed.glb"
-file = "props/library/v6/single_bed.glb"
+file = "props/library/v8/single_bed.glb"
 sha256 = "5f208352de6b989106980d994ef6db053c2a2e4e74d6bd60f7b71ad2728fdccd"
 source = "kaykit_furniture_bits"
 from = ["env/kaykit/furniture-bits/KayKit_Furniture_Bits_1.0_FREE/KayKit_Furniture_Bits_1.0_FREE/Assets/gltf/bed_single_A.gltf", "env/kaykit/furniture-bits/KayKit_Furniture_Bits_1.0_FREE/KayKit_Furniture_Bits_1.0_FREE/Assets/gltf/bed_single_A.bin", "env/kaykit/furniture-bits/KayKit_Furniture_Bits_1.0_FREE/KayKit_Furniture_Bits_1.0_FREE/Assets/gltf/furniturebits_texture.png"]
 
 [[files]]
 name = "library/slippers.glb"
-file = "props/library/v6/slippers.glb"
+file = "props/library/v8/slippers.glb"
 sha256 = "518461123841e196e1b1289a5f2075fc581dbc2fcdee41df29ccc3fb224de588"
 
 [[files]]
 name = "library/small_table.glb"
-file = "props/library/v6/small_table.glb"
+file = "props/library/v8/small_table.glb"
 sha256 = "41a8683ddc0d95b2650e030f961047b1e64b3412c1eeae61341ea2fb3f8c6d82"
 
 [[files]]
@@ -662,327 +664,327 @@ sha256 = "e0d9f423a3b87a34b41bc7e2b7d92ce3773e965e3e1809dbdd4f0b0fe7ef333e"
 
 [[files]]
 name = "library/standing_frame.glb"
-file = "props/library/v6/standing_frame.glb"
+file = "props/library/v8/standing_frame.glb"
 sha256 = "0421952d7104d62d6074293722a04da0cb7ab0c2fa9efa4215650a6da326f193"
 
 [[files]]
 name = "library/standing_mirror.glb"
-file = "props/library/v6/standing_mirror.glb"
+file = "props/library/v8/standing_mirror.glb"
 sha256 = "0423a56f2faea6fd74ce7f532998e725bf895e81e51c3f729e61d4791f170ea1"
 
 [[files]]
 name = "library/stepping_stone.glb"
-file = "props/library/v6/stepping_stone.glb"
+file = "props/library/v8/stepping_stone.glb"
 sha256 = "1c7cedf37323c955388a258a555bde1b76149d8bf588bc1c48f102433df8c3b3"
 
 [[files]]
 name = "library/stool.glb"
-file = "props/library/v6/stool.glb"
+file = "props/library/v8/stool.glb"
 sha256 = "50eac176fc886fce565ec01f0fe019405d14665768dc6e245798633eaa82919b"
 source = "kenney_furniture_kit"
 from = ["env/kenney/furniture-kit/kenney_furniture-kit/Models/GLTF format/stoolBar.glb"]
 
 [[files]]
 name = "library/stove.glb"
-file = "props/library/v6/stove.glb"
+file = "props/library/v8/stove.glb"
 sha256 = "1b26ba1fe5a740a9a3e3354460858984ced537d7a5806b101f03304367fc647e"
 
 [[files]]
 name = "library/streetlight.glb"
-file = "props/library/v6/streetlight.glb"
+file = "props/library/v8/streetlight.glb"
 sha256 = "fa44884f495391957c70da277808dc04718237c9329910eabdeef89cfd126888"
 
 [[files]]
 name = "library/string_lights.glb"
-file = "props/library/v6/string_lights.glb"
+file = "props/library/v8/string_lights.glb"
 sha256 = "0343eb89d911e47166a8261d2b2d04051db412812b55d4dceb6a217503eba94b"
 
 [[files]]
 name = "library/switchboard.glb"
-file = "props/library/v6/switchboard.glb"
+file = "props/library/v8/switchboard.glb"
 sha256 = "89323c63699ae6603397684b77c6ff55168f42cb441b4b6ded381cfb849ed5eb"
 
 [[files]]
 name = "library/table_lamp.glb"
-file = "props/library/v6/table_lamp.glb"
+file = "props/library/v8/table_lamp.glb"
 sha256 = "5f81801533ffc4a4d83ca03b604d983d1f3f180a71b2df187a18dbdc8dc419ef"
 source = "kenney_furniture_kit"
 from = ["env/kenney/furniture-kit/kenney_furniture-kit/Models/GLTF format/lampRoundTable.glb"]
 
 [[files]]
 name = "library/table_plant.glb"
-file = "props/library/v6/table_plant.glb"
+file = "props/library/v8/table_plant.glb"
 sha256 = "0ce01d787e9f31eb7177cec10c6e2c10a9e90426ce478bf0ccc7a5b63e4ec809"
 
 [[files]]
 name = "library/terrace_chair.glb"
-file = "props/library/v6/terrace_chair.glb"
+file = "props/library/v8/terrace_chair.glb"
 sha256 = "4374326affbb4a93bfe71fdf57c628671f229b52d10c2457b85913e19fb95cda"
 source = "kaykit_restaurant_bits"
 from = ["env/kaykit/restaurant-bits/KayKit_Restaurant_Bits_1.0_FREE/KayKit_Restaurant_Bits_1.0_FREE/Assets/gltf/chair_A.gltf", "env/kaykit/restaurant-bits/KayKit_Restaurant_Bits_1.0_FREE/KayKit_Restaurant_Bits_1.0_FREE/Assets/gltf/chair_A.bin", "env/kaykit/restaurant-bits/KayKit_Restaurant_Bits_1.0_FREE/KayKit_Restaurant_Bits_1.0_FREE/Assets/gltf/restaurantbits_texture.png"]
 
 [[files]]
 name = "library/throw_basket.glb"
-file = "props/library/v6/throw_basket.glb"
+file = "props/library/v8/throw_basket.glb"
 sha256 = "7252f5b0670889651b14f5a0ee6c7c3a00a3ec8cc129a55128b1e23357e0ab54"
 
 [[files]]
 name = "library/toilet.glb"
-file = "props/library/v6/toilet.glb"
+file = "props/library/v8/toilet.glb"
 sha256 = "fecf4f891427a15effd92d499c9565432f3c16b87ccc3887eda3224ca049bbff"
 source = "kenney_furniture_kit"
 from = ["env/kenney/furniture-kit/kenney_furniture-kit/Models/GLTF format/toilet.glb"]
 
 [[files]]
 name = "library/tool_wall.glb"
-file = "props/library/v6/tool_wall.glb"
+file = "props/library/v8/tool_wall.glb"
 sha256 = "67a5c401746f9ad7e539e4ce9e8c3944462d6fcc9e76ce208389a69b8ac52dc6"
 
 [[files]]
 name = "library/toolbox_cart.glb"
-file = "props/library/v6/toolbox_cart.glb"
+file = "props/library/v8/toolbox_cart.glb"
 sha256 = "dda3d4a62652a5eee32d2bbe68c8445e1a11c6774e30ced18cc4b3bb45223760"
 
 [[files]]
 name = "library/towel_rack.glb"
-file = "props/library/v6/towel_rack.glb"
+file = "props/library/v8/towel_rack.glb"
 sha256 = "bb1518bc58daab131926258329e156b637717e122f68c1301ac3ada050198d43"
 
 [[files]]
 name = "library/toy_blocks.glb"
-file = "props/library/v6/toy_blocks.glb"
+file = "props/library/v8/toy_blocks.glb"
 sha256 = "eade167fcf48952a19f4b85983ba6523891a64f759a6b7fd46d6cbd4e0525697"
 
 [[files]]
 name = "library/toy_chest.glb"
-file = "props/library/v6/toy_chest.glb"
+file = "props/library/v8/toy_chest.glb"
 sha256 = "c966fee8c346c36716b698dd0fb8ab56d0ffcd5b99d8ebe78ea1b8ef11e8333d"
 
 [[files]]
 name = "library/toy_spill.glb"
-file = "props/library/v6/toy_spill.glb"
+file = "props/library/v8/toy_spill.glb"
 sha256 = "dd4880d3063cd7d87e7655ab5fc8f314a951f375958c2aa15e265ebdcf3949b3"
 
 [[files]]
 name = "library/trash_bin.glb"
-file = "props/library/v6/trash_bin.glb"
+file = "props/library/v8/trash_bin.glb"
 sha256 = "2193f2b19206444b70300428b2bf13f3dabb2a818e08f16ec4d4e2aeecc9b2c1"
 
 [[files]]
 name = "library/tray_table.glb"
-file = "props/library/v6/tray_table.glb"
+file = "props/library/v8/tray_table.glb"
 sha256 = "c9ac40b8cf07a8e68f55c4ef68884f8b230be245d0ef8e536c5e011f651135f4"
 
 [[files]]
 name = "library/tripod_camera.glb"
-file = "props/library/v6/tripod_camera.glb"
+file = "props/library/v8/tripod_camera.glb"
 sha256 = "e849ea675d2727e6451a89debb2e11c89e0c60981cbcb0d822754591ea76aa58"
 
 [[files]]
 name = "library/trunk.glb"
-file = "props/library/v6/trunk.glb"
+file = "props/library/v8/trunk.glb"
 sha256 = "4df681fc99c7ead82cb2560f396ea7514d829f784efe3541f7a9e49138e41ff0"
 
 [[files]]
 name = "library/tv_cabinet.glb"
-file = "props/library/v6/tv_cabinet.glb"
+file = "props/library/v8/tv_cabinet.glb"
 sha256 = "b25eac9d7a87674183517bc66fe8b92e335c82a875b168d47c5651155d74f0e7"
 
 [[files]]
 name = "library/tyre_stack.glb"
-file = "props/library/v6/tyre_stack.glb"
+file = "props/library/v8/tyre_stack.glb"
 sha256 = "ee23b8bb7e4831f2b7b028857dd2a0c40eeff6ba7f006064fdc6a33e19f8c4e7"
 
 [[files]]
 name = "library/utility_pole.glb"
-file = "props/library/v6/utility_pole.glb"
+file = "props/library/v8/utility_pole.glb"
 sha256 = "c80b3226c57144775dd7948868445e048366b9c57f7ab098f875f1b5b8cbb949"
 
 [[files]]
 name = "library/vase_flowers.glb"
-file = "props/library/v6/vase_flowers.glb"
+file = "props/library/v8/vase_flowers.glb"
 sha256 = "f3a429ec69f5f7f76dfa256b62617ae65ba86ec64a6e26e73f1f99343e8873af"
 
 [[files]]
 name = "library/wall_clock.glb"
-file = "props/library/v6/wall_clock.glb"
+file = "props/library/v8/wall_clock.glb"
 sha256 = "e66c0740f22cdd2a717ac50ba7d88e29e137464c594683545416bb01a34f6372"
 
 [[files]]
 name = "library/wall_sconce.glb"
-file = "props/library/v6/wall_sconce.glb"
+file = "props/library/v8/wall_sconce.glb"
 sha256 = "2b4ceada9eb81b1d522f657dd19a3b19832c409ac8425f2bc9e3bb9b57080328"
 
 [[files]]
 name = "library/wall_shelf.glb"
-file = "props/library/v6/wall_shelf.glb"
+file = "props/library/v8/wall_shelf.glb"
 sha256 = "50e8a201ae0cf5a3d8a8be0a346b09d283bd71b1ee004fcb49d440443ac2bf68"
 
 [[files]]
 name = "library/wardrobe.glb"
-file = "props/library/v6/wardrobe.glb"
+file = "props/library/v8/wardrobe.glb"
 sha256 = "7c41d2586bdab4bd6b7b9f59b93a6d3c74a23ef634d00e3fd1d62fe765f75238"
 
 [[files]]
 name = "library/washing_line.glb"
-file = "props/library/v6/washing_line.glb"
+file = "props/library/v8/washing_line.glb"
 sha256 = "ef0018d7597cdcee9b1c504f575df9f9e6453ba4d6f75118a7d4481c30d3cd01"
 
 [[files]]
 name = "library/water_tank.glb"
-file = "props/library/v6/water_tank.glb"
+file = "props/library/v8/water_tank.glb"
 sha256 = "40e9b341cfe58036a2fc30d28b78dac323bacb957b4b4500e12ae479295e7797"
 
 [[files]]
 name = "library/watering_can.glb"
-file = "props/library/v6/watering_can.glb"
+file = "props/library/v8/watering_can.glb"
 sha256 = "60a0629d699b0b4ee3d29d5107c5d20d7fc5228f61d3241c723639fa2ff1584e"
 source = "tinytreats_house_plants"
 from = ["env/tinytreats/house-plants/Tiny_Treats_House_Plants_1.0_FREE/Tiny_Treats_House_Plants_1.0_FREE/Assets/gltf/watering_can_A.gltf", "env/tinytreats/house-plants/Tiny_Treats_House_Plants_1.0_FREE/Tiny_Treats_House_Plants_1.0_FREE/Assets/gltf/watering_can_A.bin", "env/tinytreats/house-plants/Tiny_Treats_House_Plants_1.0_FREE/Tiny_Treats_House_Plants_1.0_FREE/Assets/gltf/tiny_treats_texture_1.png"]
 
 [[files]]
 name = "library/wheelbarrow.glb"
-file = "props/library/v6/wheelbarrow.glb"
+file = "props/library/v8/wheelbarrow.glb"
 sha256 = "cd401c34e98ba89364410e2124b6ff8f01b17fb0b102843f2523a0d50d6d6b5a"
 
 [[files]]
 name = "library/window_box.glb"
-file = "props/library/v6/window_box.glb"
+file = "props/library/v8/window_box.glb"
 sha256 = "e7020c4824a3ec00ac5a0e7f1407e6aad6c696b0943429fcaee851e93558c433"
 
 [[files]]
 name = "library/wine_bottle_crate.glb"
-file = "props/library/v6/wine_bottle_crate.glb"
+file = "props/library/v8/wine_bottle_crate.glb"
 sha256 = "181fd2de5a5a093b8030d2aa78c985e1f8f47c4341a172d4db1a5002674d386d"
 
 [[files]]
 name = "library/art_delivery.glb"
-file = "props/library/v6/art_delivery.glb"
+file = "props/library/v8/art_delivery.glb"
 sha256 = "0cb8b40889ff863a33ee6eb07073e1b9b6988e210a5b42aeb02b39e1d2eb382e"
 
 [[files]]
 name = "library/art_gazebo.glb"
-file = "props/library/v6/art_gazebo.glb"
+file = "props/library/v8/art_gazebo.glb"
 sha256 = "28b62a87fa5f4278e385f8294106e98204b189a3ebb12a953af61db752633612"
 
 [[files]]
 name = "library/art_still_life.glb"
-file = "props/library/v6/art_still_life.glb"
+file = "props/library/v8/art_still_life.glb"
 sha256 = "56c6de0c6b46a33f1d822c68bfc9c4124f9bc89c609061ea6427acfaf7626ccc"
 
 [[files]]
 name = "library/bottle_rack.glb"
-file = "props/library/v6/bottle_rack.glb"
+file = "props/library/v8/bottle_rack.glb"
 sha256 = "c67ca6d2734c371ff29234e310b4f8662875b9f67f8a0ba7a9bc0f19d1ca4685"
 
 [[files]]
 name = "library/display_cabinet.glb"
-file = "props/library/v6/display_cabinet.glb"
+file = "props/library/v8/display_cabinet.glb"
 sha256 = "a46f1cd247f3846f01adc21c9449a452567a0317fb8fa3c304884ee38b09f933"
 
 [[files]]
 name = "library/dining_rug.glb"
-file = "props/library/v6/dining_rug.glb"
+file = "props/library/v8/dining_rug.glb"
 sha256 = "9651f91c0631cbada9e31b40fbde7a6825438f332b620e3253c0b16f65ed3b4e"
 
 [[files]]
 name = "library/fruit_dish.glb"
-file = "props/library/v6/fruit_dish.glb"
+file = "props/library/v8/fruit_dish.glb"
 sha256 = "d7f4753c1d53afe6ed138f04d43ec80b4d569690bf1d5d9370e47793e0fdbc89"
 
 [[files]]
 name = "library/homework.glb"
-file = "props/library/v6/homework.glb"
+file = "props/library/v8/homework.glb"
 sha256 = "8356093b0f76ee3b12078c6abc4c26c98ed59ca171fb38928a824796efde1a2d"
 
 [[files]]
 name = "library/mail_stack.glb"
-file = "props/library/v6/mail_stack.glb"
+file = "props/library/v8/mail_stack.glb"
 sha256 = "ac707da258442ac82431865780fa33b5767de544ad05823ba09283133dfb6fa6"
 
 [[files]]
 name = "library/place_setting.glb"
-file = "props/library/v6/place_setting.glb"
+file = "props/library/v8/place_setting.glb"
 sha256 = "557e2fcb14dba37725d082aa9913f4fcf0bb50432e72cd935eebe1cfcd113e84"
 
 [[files]]
 name = "library/serving_board.glb"
-file = "props/library/v6/serving_board.glb"
+file = "props/library/v8/serving_board.glb"
 sha256 = "5549101b6dcacfa09cb0aa3baeb95384a0fcb6caa3d78402951dc74e38575581"
 
 [[files]]
 name = "library/tulip_vase.glb"
-file = "props/library/v6/tulip_vase.glb"
+file = "props/library/v8/tulip_vase.glb"
 sha256 = "9c97fda8df7bb1794996c4ce8b6697b45322c9b1b49d00389e4f4abc9d13e419"
 
 [[files]]
 name = "library/art_blueprint.glb"
-file = "props/library/v6/art_blueprint.glb"
+file = "props/library/v8/art_blueprint.glb"
 sha256 = "1c4f3629617b26eb30656ce231775b1b9872bbc17f405f3aabab294e19287a58"
 
 [[files]]
 name = "library/coat_hooks.glb"
-file = "props/library/v6/coat_hooks.glb"
+file = "props/library/v8/coat_hooks.glb"
 sha256 = "e474d1565b5de8607d62fecaf57aead7845d160ec6fea8b6d041961c0ffd0533"
 
 [[files]]
 name = "library/hall_bench.glb"
-file = "props/library/v6/hall_bench.glb"
+file = "props/library/v8/hall_bench.glb"
 sha256 = "a47a937c125deae5decf0417f8cfc92e783a10a9e5f5703e2f93890dd0e7c67a"
 
 [[files]]
 name = "library/hall_console.glb"
-file = "props/library/v6/hall_console.glb"
+file = "props/library/v8/hall_console.glb"
 sha256 = "21fd8d477dab7d5884ff89690d3914044612797f9f849d3d1cbde1558fece950"
 
 [[files]]
 name = "library/hall_doormat.glb"
-file = "props/library/v6/hall_doormat.glb"
+file = "props/library/v8/hall_doormat.glb"
 sha256 = "01fd24f140f6b65c78768e6834237138ccc6cd723acba82bbd5b55653b1b8abb"
 
 [[files]]
 name = "library/hall_mirror.glb"
-file = "props/library/v6/hall_mirror.glb"
+file = "props/library/v8/hall_mirror.glb"
 sha256 = "824214cf487e1a0f1acf772a0be9595ad08e7fc51b84b04569c924825d6ff9e4"
 
 [[files]]
 name = "library/hall_runner.glb"
-file = "props/library/v6/hall_runner.glb"
+file = "props/library/v8/hall_runner.glb"
 sha256 = "c46b1e713baab875035fb3e0a9a157bdb289649d6920639f6ec4797ec4cedb87"
 
 [[files]]
 name = "library/key_bowl.glb"
-file = "props/library/v6/key_bowl.glb"
+file = "props/library/v8/key_bowl.glb"
 sha256 = "cfcab96d44021c405dda3bb8975f2947cf70a40870306dd5dc829e2bc4a32aa4"
 
 [[files]]
 name = "library/parcels.glb"
-file = "props/library/v6/parcels.glb"
+file = "props/library/v8/parcels.glb"
 sha256 = "302b212d0af0ac7ae692b8ebc125967ef098957a19eb7013151ef06f2b858046"
 
 [[files]]
 name = "library/photo_row.glb"
-file = "props/library/v6/photo_row.glb"
+file = "props/library/v8/photo_row.glb"
 sha256 = "a3100913071132fbb1ab9ef310535440a7502a711fd397f2b7d5e57e037812c8"
 
 [[files]]
 name = "library/shoe_pairs.glb"
-file = "props/library/v6/shoe_pairs.glb"
+file = "props/library/v8/shoe_pairs.glb"
 sha256 = "9587968d8725312a7e2e384013d6a7ca5b8d2d885e8f71d512a9d60a23cca53f"
 
 [[files]]
 name = "library/sports_bag.glb"
-file = "props/library/v6/sports_bag.glb"
+file = "props/library/v8/sports_bag.glb"
 sha256 = "88c612ef0edbf146077888486c618cae1820c001d3e9cae6350a47cbc4cdc7fa"
 
 [[files]]
 name = "library/umbrella_stand.glb"
-file = "props/library/v6/umbrella_stand.glb"
+file = "props/library/v8/umbrella_stand.glb"
 sha256 = "5e5df7b2421f6ffc63d044f10656d1b4c56ef3d067b7613a15e9667f0d021532"
 
 [[files]]
 name = "library/wall_calendar.glb"
-file = "props/library/v6/wall_calendar.glb"
+file = "props/library/v8/wall_calendar.glb"
 sha256 = "fa1d2b2ba87e3172f36af30e5b5adfb40cd7646df9843de57a00cc78e9830bfd"
 
 [[files]]
@@ -1202,84 +1204,84 @@ sha256 = "9d9426bf78ed768f3905e1490209f2888d1bab994606eea20b02f0d09b41a2a4"
 
 [[files]]
 name = "fine/high/fine_d.png"
-file = "props/library/v6/textures/fine/high/fine_d.png"
+file = "props/library/v8/textures/fine/high/fine_d.png"
 sha256 = "90fcb489549dcea6029e62edd362b4305a6e9146978305c5c0040e512a73d1df"
 source = "ambientcg_materials_2k"
 from = ["env/ambientcg/Wood092/Wood092_2K-JPG/Wood092_2K-JPG_Color.jpg", "env/ambientcg/Wood049/Wood049_2K-JPG/Wood049_2K-JPG_Color.jpg", "env/ambientcg/Concrete034/Concrete034_2K-JPG/Concrete034_2K-JPG_Color.jpg", "env/ambientcg/Tiles107/Tiles107_2K-JPG/Tiles107_2K-JPG_Color.jpg"]
 
 [[files]]
 name = "fine/high/fine_d1.png"
-file = "props/library/v6/textures/fine/high/fine_d1.png"
+file = "props/library/v8/textures/fine/high/fine_d1.png"
 sha256 = "996076c39a8c23a52329e89f9904aebf5c2afbb7bb55e65b856ab07aa25e5e54"
 source = "ambientcg_materials_2k"
 from = ["env/ambientcg/Fabric036/Fabric036_2K-JPG/Fabric036_2K-JPG_Color.jpg", "env/ambientcg/Fabric061/Fabric061_2K-JPG/Fabric061_2K-JPG_Color.jpg", "env/ambientcg/Carpet016/Carpet016_2K-JPG/Carpet016_2K-JPG_Color.jpg"]
 
 [[files]]
 name = "fine/high/fine_n0.png"
-file = "props/library/v6/textures/fine/high/fine_n0.png"
+file = "props/library/v8/textures/fine/high/fine_n0.png"
 sha256 = "0fb2690866a3b14c29ccd2f57ce9445111bb976eec790d7eeb4e46d58be5995a"
 source = "ambientcg_materials_2k"
 from = ["env/ambientcg/Wood092/Wood092_2K-JPG/Wood092_2K-JPG_NormalGL.jpg", "env/ambientcg/Wood049/Wood049_2K-JPG/Wood049_2K-JPG_NormalGL.jpg"]
 
 [[files]]
 name = "fine/high/fine_n1.png"
-file = "props/library/v6/textures/fine/high/fine_n1.png"
+file = "props/library/v8/textures/fine/high/fine_n1.png"
 sha256 = "638df3ea8aba4362e5be72567d1ea8f9d074954348482637ee4a74d6eec4684f"
 source = "ambientcg_materials_2k"
 from = ["env/ambientcg/Concrete034/Concrete034_2K-JPG/Concrete034_2K-JPG_NormalGL.jpg", "env/ambientcg/Tiles107/Tiles107_2K-JPG/Tiles107_2K-JPG_NormalGL.jpg"]
 
 [[files]]
 name = "fine/high/fine_n2.png"
-file = "props/library/v6/textures/fine/high/fine_n2.png"
+file = "props/library/v8/textures/fine/high/fine_n2.png"
 sha256 = "df6dcb1c8e8f0d8f8caad7c578293e2af4f2d896e4b1f6ae9a62a19405d20084"
 source = "ambientcg_materials_2k"
 from = ["env/ambientcg/Fabric036/Fabric036_2K-JPG/Fabric036_2K-JPG_NormalGL.jpg", "env/ambientcg/Fabric061/Fabric061_2K-JPG/Fabric061_2K-JPG_NormalGL.jpg"]
 
 [[files]]
 name = "fine/high/fine_n3.png"
-file = "props/library/v6/textures/fine/high/fine_n3.png"
+file = "props/library/v8/textures/fine/high/fine_n3.png"
 sha256 = "b40a101d8aecd023698adf590b32d05c2b90f09abc778eed65ff79db0bec06d2"
 source = "ambientcg_materials_2k"
 from = ["env/ambientcg/Carpet016/Carpet016_2K-JPG/Carpet016_2K-JPG_NormalGL.jpg"]
 
 [[files]]
 name = "fine/low/fine_d.png"
-file = "props/library/v6/textures/fine/low/fine_d.png"
+file = "props/library/v8/textures/fine/low/fine_d.png"
 sha256 = "1fba9f51adeedd517ed70196b4aa197899a7142b4af152df12a6dffc106b761f"
 source = "ambientcg_materials_2k"
 from = ["env/ambientcg/Wood092/Wood092_2K-JPG/Wood092_2K-JPG_Color.jpg", "env/ambientcg/Wood049/Wood049_2K-JPG/Wood049_2K-JPG_Color.jpg", "env/ambientcg/Concrete034/Concrete034_2K-JPG/Concrete034_2K-JPG_Color.jpg", "env/ambientcg/Tiles107/Tiles107_2K-JPG/Tiles107_2K-JPG_Color.jpg"]
 
 [[files]]
 name = "fine/low/fine_d1.png"
-file = "props/library/v6/textures/fine/low/fine_d1.png"
+file = "props/library/v8/textures/fine/low/fine_d1.png"
 sha256 = "fe07a1190c689bc0dcc7fa01bd0cf58a819cb9f9ba5b64cf9e9cc49d453de52f"
 source = "ambientcg_materials_2k"
 from = ["env/ambientcg/Fabric036/Fabric036_2K-JPG/Fabric036_2K-JPG_Color.jpg", "env/ambientcg/Fabric061/Fabric061_2K-JPG/Fabric061_2K-JPG_Color.jpg", "env/ambientcg/Carpet016/Carpet016_2K-JPG/Carpet016_2K-JPG_Color.jpg"]
 
 [[files]]
 name = "fine/low/fine_n0.png"
-file = "props/library/v6/textures/fine/low/fine_n0.png"
+file = "props/library/v8/textures/fine/low/fine_n0.png"
 sha256 = "5c9d8d171b8dcef081be4adfde10f9dce4475bac13334cf2c8feed928564415d"
 source = "ambientcg_materials_2k"
 from = ["env/ambientcg/Wood092/Wood092_2K-JPG/Wood092_2K-JPG_NormalGL.jpg", "env/ambientcg/Wood049/Wood049_2K-JPG/Wood049_2K-JPG_NormalGL.jpg"]
 
 [[files]]
 name = "fine/low/fine_n1.png"
-file = "props/library/v6/textures/fine/low/fine_n1.png"
+file = "props/library/v8/textures/fine/low/fine_n1.png"
 sha256 = "af3239e5b477ea81284fa2b0b0da28b30fa7c73384478cdf7a26f88b2bb280b0"
 source = "ambientcg_materials_2k"
 from = ["env/ambientcg/Concrete034/Concrete034_2K-JPG/Concrete034_2K-JPG_NormalGL.jpg", "env/ambientcg/Tiles107/Tiles107_2K-JPG/Tiles107_2K-JPG_NormalGL.jpg"]
 
 [[files]]
 name = "fine/low/fine_n2.png"
-file = "props/library/v6/textures/fine/low/fine_n2.png"
+file = "props/library/v8/textures/fine/low/fine_n2.png"
 sha256 = "f484f775c49c2945214e44e699cca166330cfab41a48a718210d9929d68a9766"
 source = "ambientcg_materials_2k"
 from = ["env/ambientcg/Fabric036/Fabric036_2K-JPG/Fabric036_2K-JPG_NormalGL.jpg", "env/ambientcg/Fabric061/Fabric061_2K-JPG/Fabric061_2K-JPG_NormalGL.jpg"]
 
 [[files]]
 name = "fine/low/fine_n3.png"
-file = "props/library/v6/textures/fine/low/fine_n3.png"
+file = "props/library/v8/textures/fine/low/fine_n3.png"
 sha256 = "ce0ad3e509be34c23ccaffed764843862fe8704b0f4f430168860d4c03c02f07"
 source = "ambientcg_materials_2k"
 from = ["env/ambientcg/Carpet016/Carpet016_2K-JPG/Carpet016_2K-JPG_NormalGL.jpg"]
@@ -1301,105 +1303,155 @@ sha256 = "284dfcce2b4af66e53b545f7948c934677ed84b3003717efdda998fc826fd819"
 
 [[files]]
 name = "library/wc_toilet.glb"
-file = "props/library/v6/wc_toilet.glb"
+file = "props/library/v8/wc_toilet.glb"
 sha256 = "1a50e1be48d17a781bf5b397bf4f4c31e7b2c0d1df0ddbe0626ba9b2a7919451"
 
 [[files]]
 name = "library/wc_vanity.glb"
-file = "props/library/v6/wc_vanity.glb"
+file = "props/library/v8/wc_vanity.glb"
 sha256 = "a3d7fc5c45c4767ffc8dc1eb845261319c720cbda032cc7feebe10a835f03061"
 
 [[files]]
 name = "library/mirror_cabinet.glb"
-file = "props/library/v6/mirror_cabinet.glb"
+file = "props/library/v8/mirror_cabinet.glb"
 sha256 = "2958355c4aa66f1012da95ff01cfdc2a64385c04eab7ec3b5b91a7a2f809391d"
 
 [[files]]
 name = "library/washer.glb"
-file = "props/library/v6/washer.glb"
+file = "props/library/v8/washer.glb"
 sha256 = "498384545af4de777d08272c92395615e11d9c97984487b28fad54b7b70addfd"
 
 [[files]]
 name = "library/tumble_dryer.glb"
-file = "props/library/v6/tumble_dryer.glb"
+file = "props/library/v8/tumble_dryer.glb"
 sha256 = "c533b995d3eaf7bb71bf39bec2c5aff865cb9fff13866db28697525fc2a74d16"
 
 [[files]]
 name = "library/wc_tiles.glb"
-file = "props/library/v6/wc_tiles.glb"
+file = "props/library/v8/wc_tiles.glb"
 sha256 = "65f40d04380df0f7339dcc6c87570f74047aa24acaa46268da75ec7cfa98c912"
 
 [[files]]
 name = "library/art_wash.glb"
-file = "props/library/v6/art_wash.glb"
+file = "props/library/v8/art_wash.glb"
 sha256 = "6166b47b4df75578077dd41acc9a9dd292bd85a501c41b288f99802f5b235252"
 
 [[files]]
 name = "library/towel_ring.glb"
-file = "props/library/v6/towel_ring.glb"
+file = "props/library/v8/towel_ring.glb"
 sha256 = "1398df3b581354fdf5d1f6856f1490d129bcdd5d3273ba536ced53660d25b6d4"
 
 [[files]]
 name = "library/roll_holder.glb"
-file = "props/library/v6/roll_holder.glb"
+file = "props/library/v8/roll_holder.glb"
 sha256 = "3aae07f591a4fd62c9330a6f7b542adc211624476798ca79a63bdfe1991d18b3"
 
 [[files]]
 name = "library/pedal_bin.glb"
-file = "props/library/v6/pedal_bin.glb"
+file = "props/library/v8/pedal_bin.glb"
 sha256 = "7988f870ac1b15c851035f6137d0a6799e62add28fb14127c71972020adcfd82"
 
 [[files]]
 name = "library/toilet_brush.glb"
-file = "props/library/v6/toilet_brush.glb"
+file = "props/library/v8/toilet_brush.glb"
 sha256 = "bd99b51cba5cfcca268e7e3cdeec1a3fc125447dc29af9c09e1c0f4b155c6bd7"
 
 [[files]]
 name = "library/reed_diffuser.glb"
-file = "props/library/v6/reed_diffuser.glb"
+file = "props/library/v8/reed_diffuser.glb"
 sha256 = "06c72c5d1245b8dbcc3ae555598ed8a8ecb3af29b196b183ba9df034ed4ffce3"
 
 [[files]]
 name = "library/pantry_shelf.glb"
-file = "props/library/v6/pantry_shelf.glb"
+file = "props/library/v8/pantry_shelf.glb"
 sha256 = "4560e4ec6cfb16faf469e831a9f74eab0b8f172827837eae286e88e7a3c9d0ff"
 
 [[files]]
 name = "library/pantry_shelf_buns.glb"
-file = "props/library/v6/pantry_shelf_buns.glb"
+file = "props/library/v8/pantry_shelf_buns.glb"
 sha256 = "4d0d8855f8c3ff38f1bb1250ce0934ade902745c32c606b2701103ab7f4380fc"
 
 [[files]]
 name = "library/veg_rack.glb"
-file = "props/library/v6/veg_rack.glb"
+file = "props/library/v8/veg_rack.glb"
 sha256 = "344a56b8ba9e5e2110fdb9ad52ea67fdebe746b69ca186119dd4fb5b583e4b31"
 
 [[files]]
 name = "library/drink_crates.glb"
-file = "props/library/v6/drink_crates.glb"
+file = "props/library/v8/drink_crates.glb"
 sha256 = "5f1e11e3c0ee4d8caaaadbacae1a1f93e9ae23445699a07ebe6db81fdbef5a96"
 
 [[files]]
 name = "library/step_stool.glb"
-file = "props/library/v6/step_stool.glb"
+file = "props/library/v8/step_stool.glb"
 sha256 = "cb238f5861e67dac3f73698caea8e7327b4edbc0f059cb04fa9809d1cf227c5a"
 
 [[files]]
 name = "library/broom_set.glb"
-file = "props/library/v6/broom_set.glb"
+file = "props/library/v8/broom_set.glb"
 sha256 = "6bd2d883f841488b69d84706c1d509b32aa3eed8a62fa7568ea4e11cef30db64"
 
 [[files]]
 name = "library/stair_runner.glb"
-file = "props/library/v6/stair_runner.glb"
+file = "props/library/v8/stair_runner.glb"
 sha256 = "123b53a29b37e549f1c0921d620cd9c49b597fb2dc2e689d25be6b74ef12ee7e"
 
 [[files]]
 name = "library/stair_gallery.glb"
-file = "props/library/v6/stair_gallery.glb"
+file = "props/library/v8/stair_gallery.glb"
 sha256 = "86ae096e5d1636cdca5913b8240951f92082406b6fa4001b4e9bf57ea276a8be"
 
 [[files]]
 name = "library/landing_plant.glb"
-file = "props/library/v6/landing_plant.glb"
+file = "props/library/v8/landing_plant.glb"
 sha256 = "a9da6b1ffa04e0d1157f306fcf3d1c85ff17f5893d676cf5b9b08365dee57675"
+
+[[files]]
+name = "library/bath_tub.glb"
+file = "props/library/v8/bath_tub.glb"
+sha256 = "c79535457ee6690f73670389f3072fb96238a9b7f58a888b3f71b17cc2663261"
+
+[[files]]
+name = "library/bath_vanity.glb"
+file = "props/library/v8/bath_vanity.glb"
+sha256 = "d31a8d718ef702a45f4f85b8708961536896186e6f8f475dc019222d8000092e"
+
+[[files]]
+name = "library/towel_rail.glb"
+file = "props/library/v8/towel_rail.glb"
+sha256 = "3f214838a705d6606673ae9567fe081012ddc285fd3d59a04b62bbd719432755"
+
+[[files]]
+name = "library/bath_shelf.glb"
+file = "props/library/v8/bath_shelf.glb"
+sha256 = "0e6381bb73daa4cecbc8647eda37b11c4ad2380b980ae2d19638d761656dae64"
+
+[[files]]
+name = "library/bath_mat.glb"
+file = "props/library/v8/bath_mat.glb"
+sha256 = "dc710fa420c7abf5559d8e19c3970ec41d50a18bc5b9eb6ddebab9d5e927bb37"
+
+[[files]]
+name = "library/bath_tiles.glb"
+file = "props/library/v8/bath_tiles.glb"
+sha256 = "aba1d30a5a13794911194fbe9c95e8fbc61bf8b44b3e87c5f73d906d66ee03b7"
+
+[[files]]
+name = "library/bath_tiles_short.glb"
+file = "props/library/v8/bath_tiles_short.glb"
+sha256 = "fdfd949a8e8781e10f37e6bfb341fc79b64875aa767813937e451a18bcb2e827"
+
+[[files]]
+name = "library/bath_tiles_shower.glb"
+file = "props/library/v8/bath_tiles_shower.glb"
+sha256 = "3e4421fd4d2e099ab84306e9b2da4cb46649d1c7c5f0a4b5c0d5c63a111651e2"
+
+[[files]]
+name = "library/art_bubbles.glb"
+file = "props/library/v8/art_bubbles.glb"
+sha256 = "0463ec0460466cf2e7e4ce21506f103ee75b46ba853c8fc35ce2c0d52ee8ccd7"
+
+[[files]]
+name = "library/landing_runner.glb"
+file = "props/library/v8/landing_runner.glb"
+sha256 = "fbf7b37eb784a67c9eff7ea923ece3b8279c48562b7dba39e4c3092e01b29a96"

@@ -16,13 +16,15 @@ prop_specs = ["props/tasks.toml", "props/library.toml"]
 # #152: library v3 is v2 with the cream sofa and armchairs rebuilt over it (v2 is never overwritten).
 # #153: library v4 is v3 with the dining room's props laid over it; task v2 is v1 with the world-look dining table.
 # #156: v5 is v4 with the hallway's props; #158: v6 is v5 with the WC's, the pantry's and the stairs' props.
-prop_dirs = ["props/task/v2", "props/library/v6"]
+# #162: v7 is v6 with the landing's and the bathroom's props; v8 is v7 with the rebuilt landing runner (round 2).
+prop_dirs = ["props/task/v2", "props/library/v8"]
 prop_res = "res://import/prop_{id}.glb"
 # Per-room wall paint (the engineer's choice of 2026-10-14, #152; before it Q11 = B of 2026-10-10, look.md section 4):
 # the inner plaster's colour per room id; a room not listed keeps the kit's (role wall_int, #3a6264). The living room
 # is terracotta on every wall; the kitchen, hallway, dining room, stairs and landing a warm greige (they were teal);
-# the WC a soft blue-grey #cfd5d3 and the pantry a pale sage #d3d6c3 (#158: the manager's present-day defaults under
-# the engineer's blanket yes of 2026-10-14); oxblood the bedrooms, ink-blue only the study; the garage is a neutral
+# the WC a soft blue-grey #cfd5d3 and the pantry a pale sage #d3d6c3 (#158), the bathroom a pale green-grey #d8dfd6
+# over its white tiles (#162; both the manager's present-day defaults under the engineer's blanket yes of 2026-10-14);
+# oxblood the bedrooms, ink-blue only the study; the garage is a neutral
 # concrete grey (the basement's walls are the kit's concrete already). Under every room the kit's ceiling is warm sand
 # (#152). The lab's rule: the biggest plane in a frame is never amber. The scene writer puts it on the room's root
 # (`metadata/wall_paint`); the kit's material (godot/kit/kit_materials.gd `paint`) recolours that room's inner plaster.
@@ -35,6 +37,7 @@ stairs = "#d9d1c5"
 landing = "#d9d1c5"
 wc = "#cfd5d3"
 pantry = "#d3d6c3"
+bathroom = "#d8dfd6"
 bedroom = "#69413c"
 guest_room = "#69413c"
 study = "#1f2a48"
@@ -53,7 +56,7 @@ label = { h = 2.4, font_size = 72, outline_size = 16 }  # the room's Name label,
 # The world look's fine pack (#143, #147; docs/props.md "World look rules"): its build (fine.json and one texture
 # folder per tier) under the raw folder; a package with a prop on it ships house_props/fine/<tier>/, the shader and
 # one material per tier; the room scenes put `fine_tier`'s material on the props' kit_fine surfaces.
-fine_dir = "props/library/v6/textures/fine"  # #150: the eight-slot pack (v1 holds the four-slot one); v3 to v6 the same bytes
+fine_dir = "props/library/v8/textures/fine"  # #150: the eight-slot pack (v1 holds the four-slot one); v3 to v8 the same bytes
 fine_tier = "high"
 
 # Footstep surfaces (art #122; the game's FootstepSurface, its ARCHITECTURE 4.7.40): the kit pieces a player walks on,
@@ -181,6 +184,18 @@ at = [31.6, 30.8]  # #158: from the dining room door to the runners, the photos 
 look = [27.2, 35.4]
 look_h = 1.2
 [[export.sheet_views]]
+room = "landing"
+title = "landing: up its length from the south"
+at = [30.6, 42.8]  # #162: from the south bench past the bookcases, consoles and runners to the balcony door
+look = [30.0, 26.0]
+look_h = 1.1
+[[export.sheet_views]]
+room = "bathroom"
+title = "bathroom: across to the door"
+at = [41.3, 33.4]  # #162: from the window past the vanity, toilet and shelves to the towel rail and the door
+look = [34.3, 34.4]
+look_h = 1.0
+[[export.sheet_views]]
 room = "attic"
 title = "attic: from the west gable"
 at = [19.5, 34.0]
@@ -274,7 +289,7 @@ files = ["*.glb"]
 [export.plot]
 scene = "levels/house/outdoor.tscn"
 garden = "house/80/build/garden.json"
-prop_src = { tasks = "props/task/v2", library = "props/library/v6", "#87" = "props/library/v6", zones = "props/zones/v1" }
+prop_src = { tasks = "props/task/v2", library = "props/library/v8", "#87" = "props/library/v8", zones = "props/zones/v1" }
 # The zones' generic plants (`#87` bush and garden_tree, no library GLB) as the garden's plants (house_garden).
 plants = { bush = "bush_boxwood", garden_tree = "garden_tree_apple" }
 

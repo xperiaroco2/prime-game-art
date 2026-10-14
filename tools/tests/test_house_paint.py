@@ -32,7 +32,8 @@ class WallPaintTest(unittest.TestCase):
         self.assertEqual(hl.check_paints(self.data), [])
         self.assertEqual(paint["wc"], "#cfd5d3")  # #158: soft blue-grey
         self.assertEqual(paint["pantry"], "#d3d6c3")  # #158: pale sage
-        self.assertIsNone(hl.wall_paint(self.data, "bathroom"))  # not listed: the kit's own
+        self.assertEqual(paint["bathroom"], "#d8dfd6")  # #162: pale green-grey over the white tiles
+        self.assertIsNone(hl.wall_paint(self.data, "kids_room"))  # not listed: the kit's own
 
     def test_checks(self):
         bad = copy.deepcopy(self.data)
@@ -69,10 +70,10 @@ class WallPaintTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             hl.write_scenes(self.data, planned, Path(tmp))
             bedroom = (Path(tmp) / "upper" / "bedroom.tscn").read_text(encoding="utf-8")
-            bathroom = (Path(tmp) / "upper" / "bathroom.tscn").read_text(encoding="utf-8")
+            kids = (Path(tmp) / "upper" / "kids_room.tscn").read_text(encoding="utf-8")
         head = bedroom.split("\n\n")[2]  # the root node's block (after the header and the resources)
         self.assertIn(f'metadata/wall_paint = "{OXBLOOD}"', head)
-        self.assertNotIn("wall_paint", bathroom)
+        self.assertNotIn("wall_paint", kids)
 
     def test_godot_side(self):
         shader = (hl.ROOT / "godot" / "kit" / "kit_set.gdshader").read_text(encoding="utf-8")

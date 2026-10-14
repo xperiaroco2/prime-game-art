@@ -2361,7 +2361,8 @@ def build_side_table(m, s, R, prm, rng):
 
 def build_carpet_rug(m, s, R, prm, rng):
     """A rug on the carpet layer: a field with a light border band and an inner frame, short fringes at both ends
-    (`fringe`)."""
+    (`fringe`). `motif` (#162, a hallway runner): instead of the inner frame, small squares of the border's paint
+    every `motif` metres down the middle, a soft pattern rather than lines along the length."""
     L, W, H = s
     hx, hz = L / 2, W / 2
     field, border = prm.get("field", "carpet_field"), prm.get("border", "carpet_border")
@@ -2370,11 +2371,18 @@ def build_carpet_rug(m, s, R, prm, rng):
     for x0, x1, z0, z1 in ((-hx + b, hx - b, -hz + b, -hz + b + w), (-hx + b, hx - b, hz - b - w, hz - b),
                            (-hx + b, -hx + b + w, -hz + b + w, hz - b - w), (hx - b - w, hx - b, -hz + b + w, hz - b - w)):
         box(m, (x0, H * 0.7, z0), (x1, H, z1), border, "+x-x+y+z-z")
+    step = float(prm.get("motif", 0.0))
     i = b + w + 0.14
-    for x0, x1, z0, z1 in ((-hx + i, hx - i, -hz + i, -hz + i + 0.025), (-hx + i, hx - i, hz - i - 0.025, hz - i),
-                           (-hx + i, -hx + i + 0.025, -hz + i + 0.025, hz - i - 0.025),
-                           (hx - i - 0.025, hx - i, -hz + i + 0.025, hz - i - 0.025)):
-        box(m, (x0, H * 0.7, z0), (x1, H * 0.85, z1), border, "+x-x+y+z-z")
+    if step > 0:
+        n = max(1, int((L - 2 * i) / step))
+        for k in range(n):
+            cx, q = -(n - 1) * step / 2 + k * step, min(0.07, hz / 4)
+            box(m, (cx - q, H * 0.7, -q), (cx + q, H * 0.85, q), border, "+x-x+y+z-z")
+    else:
+        for x0, x1, z0, z1 in ((-hx + i, hx - i, -hz + i, -hz + i + 0.025), (-hx + i, hx - i, hz - i - 0.025, hz - i),
+                               (-hx + i, -hx + i + 0.025, -hz + i + 0.025, hz - i - 0.025),
+                               (hx - i - 0.025, hx - i, -hz + i + 0.025, hz - i - 0.025)):
+            box(m, (x0, H * 0.7, z0), (x1, H * 0.85, z1), border, "+x-x+y+z-z")
     if prm.get("fringe", True):  # the fringes lie inside the box: the rug's ends are short of size_m by 5 cm
         for sx in (-1, 1):
             z = -hz + 0.03
@@ -2885,6 +2893,28 @@ def _art(m: Mesh, kind: str, x0: float, x1: float, y0: float, y1: float, z: floa
                           (0.12, 0.6, 0.05), (0.88, 0.64, 0.06), (0.5, 0.86, 0.05)):
             disk(cx, cy, r * w, "art_white", 12)
         q(0.6, 0.27, 0.84, 0.36, "book_sage")
+    elif kind == "bubbles":  # #162: the bathroom's joke print: a plasticine person deep in bubbles, a duck on watch
+        q(0, 0, 1, 1, "book_teal")
+        q(0.06, 0.06, 0.94, 0.94, "art_sky")
+        q(0.78, 0.7, 0.84, 0.94, "steel_black")
+        q(0.7, 0.66, 0.88, 0.7, "steel_black")
+        for k in range(4):
+            q(0.72 + 0.04 * k, 0.5 + 0.03 * (k % 2), 0.735 + 0.04 * k, 0.62, "art_white", False)
+        disk(0.4, 0.5, 0.13 * min(w, h), "art_pink", 16)
+        zz[0] += step
+        for dx in (-0.05, 0.05):
+            q(0.4 + dx - 0.014, 0.53 - 0.014, 0.4 + dx + 0.014, 0.53 + 0.014, "steel_black", False)
+        q(0.36, 0.44, 0.44, 0.46, "art_terracotta", False)
+        q(0.1, 0.12, 0.9, 0.36, "art_white")
+        q(0.14, 0.06, 0.18, 0.12, "steel_black", False)
+        q(0.82, 0.06, 0.86, 0.12, "steel_black", False)
+        for cx, cy, r in ((0.16, 0.38, 0.07), (0.3, 0.4, 0.08), (0.52, 0.39, 0.07), (0.62, 0.42, 0.06),
+                          (0.22, 0.48, 0.05), (0.58, 0.55, 0.04), (0.12, 0.6, 0.03), (0.66, 0.3, 0.05)):
+            disk(cx, cy, r * w, "art_white", 12)
+        disk(0.76, 0.42, 0.06 * w, "book_mustard", 12)
+        disk(0.8, 0.48, 0.04 * w, "book_mustard", 12)
+        q(0.835, 0.465, 0.87, 0.485, "art_terracotta")
+        q(0.2, 0.18, 0.8, 0.22, "book_sage")
     else:  # burger
         q(0, 0, 1, 1, "book_navy")
         q(0.15, 0.82, 0.85, 0.9, "art_white")
@@ -3849,6 +3879,113 @@ def build_stair_gallery(m, s, R, prm, rng):
     for a, b, fh, fr, kind in STAIR_FRAMES:
         yc = pitch * (a + b) / 2 * L
         _framed(m, -hx + a * L, -hx + b * L, yc - fh / 2, yc + fh / 2, z0, z1, 0.018, 0.02, fr, kind, rng)
+
+
+# ---- The upper floor's bathroom in the world look (#162).
+
+def build_bath_tub(m, s, R, prm, rng):
+    """A present-day built-in bath (front +z, its back on the wall at -z, the shower end at -x): a white apron on a
+    recessed kick, a rim round a porcelain well, a wall mixer and a slide-rail shower at the shower end, a hinged
+    glass screen with a chrome edge on the rim over the shower end, two bottles and a rubber duck on the rim.
+    Collider: the tub's box (the screen and the shower rise above it)."""
+    st = _style(prm)
+    L, W, H = s
+    hx, hz = L / 2, W / 2
+    body, well = prm.get("body", "enamel_white"), prm.get("well", "porcelain_white")
+    yr, rw, yf = 0.56, 0.07, 0.14
+    plinth(m, st, -hx + 0.02, hx - 0.02, -hz + 0.02, hz - 0.05)
+    box(m, (-hx + 0.01, st.plinth, -hz), (hx - 0.01, yr - 0.03, hz - 0.01), body, "+x-x+z")
+    for lo, hi in (((-hx, yr - 0.03, -hz), (hx, yr, -hz + rw)), ((-hx, yr - 0.03, hz - rw), (hx, yr, hz)),
+                   ((-hx, yr - 0.03, -hz + rw), (-hx + rw, yr, hz - rw)), ((hx - rw, yr - 0.03, -hz + rw),
+                                                                         (hx, yr, hz - rw))):
+        cbox(m, lo, hi, body, st.bevel_small)
+    i0, i1, k0, k1 = -hx + rw, hx - rw, -hz + rw, hz - rw
+    box(m, (i0, yf - 0.01, k0), (i1, yf, k1), well, "+y")
+    box(m, (i0 - 0.005, yf, k0), (i0, yr - 0.03, k1), well, "+x")
+    box(m, (i1, yf, k0), (i1 + 0.005, yr - 0.03, k1), well, "-x")
+    box(m, (i0, yf, k0 - 0.005), (i1, yr - 0.03, k0), well, "+z")
+    box(m, (i0, yf, k1), (i1, yr - 0.03, k1 + 0.005), well, "-z")
+    cyl(m, "y", (i0 + 0.25, 0.0), 0.022, yf, yf + 0.003, "chrome", 10)
+    xs = -hx + 0.3  # the mixer and the shower rail at the shower end, on the wall
+    cyl(m, "z", (xs, yr + 0.2), 0.03, -hz, -hz + 0.05, "chrome", 12)
+    rod(m, (xs - 0.08, yr + 0.2, -hz + 0.04), (xs + 0.08, yr + 0.2, -hz + 0.04), 0.012, "chrome", 8)
+    rod(m, (xs, yr + 0.18, -hz + 0.05), (xs, yr + 0.18, -hz + 0.17), 0.011, "chrome", 8)
+    rod(m, (xs, yr + 0.18, -hz + 0.17), (xs, yr + 0.14, -hz + 0.17), 0.011, "chrome", 8)
+    rod(m, (xs, yr + 0.35, -hz + 0.035), (xs, H - 0.2, -hz + 0.035), 0.011, "chrome", 8)
+    for y in (yr + 0.35, H - 0.2):
+        rod(m, (xs, y, -hz), (xs, y, -hz + 0.035), 0.01, "chrome", 6)
+    rod(m, (xs, H - 0.2, -hz + 0.035), (xs, H - 0.04, -hz + 0.2), 0.01, "chrome", 6)
+    cyl(m, "y", (xs, -hz + 0.22), 0.1, H - 0.04, H, "chrome", 16)
+    cyl(m, "y", (xs, -hz + 0.22), 0.088, H - 0.041, H - 0.04, "steel_black", 16, caps=(True, False))
+    rod(m, (xs, yr + 0.55, -hz + 0.05), (xs + 0.04, yr + 0.62, -hz + 0.08), 0.014, "chrome", 8)
+    zs, x1 = hz - rw / 2, -hx + 0.85  # the screen on the rim's front edge
+    box(m, (-hx + 0.03, yr, zs - 0.004), (x1, H - 0.08, zs + 0.004), "glass_tint")
+    rod(m, (-hx + 0.015, yr, zs), (-hx + 0.015, H - 0.08, zs), 0.012, "chrome", 8)
+    for y in (yr + 0.002, H - 0.082):
+        box(m, (-hx + 0.03, y - 0.002, zs - 0.006), (x1, y + 0.002, zs + 0.006), "chrome")
+    box(m, (x1 - 0.004, yr, zs - 0.006), (x1, H - 0.08, zs + 0.006), "chrome")
+    for dx, role, h in ((0.0, "book_teal", 0.2), (0.07, "art_white", 0.16)):  # bottles in the far corner
+        x = hx - rw / 2 - 0.02 - dx
+        cyl(m, "y", (x, -hz + rw / 2), 0.026, yr, yr + h, role, 8)
+        cyl(m, "y", (x, -hz + rw / 2), 0.01, yr + h, yr + h + 0.03, "steel_black", 6)
+    xd, zd = hx - 0.3, hz - rw / 2  # the duck on the front rim
+    blob(m, (xd, yr + 0.035, zd), 0.045, 0.035, 0.03, "book_mustard", 8, 4)
+    blob(m, (xd + 0.03, yr + 0.085, zd), 0.026, 0.026, 0.026, "book_mustard", 8, 4)
+    box(m, (xd + 0.05, yr + 0.078, zd - 0.008), (xd + 0.075, yr + 0.088, zd + 0.008), "art_terracotta")
+    _boxes(prm).append(((-hx, 0.0, -hz), (hx, yr, hz)))
+
+
+def build_towel_rail(m, s, R, prm, rng):
+    """A heated towel rail (wall pivot, the back at z 0): two chrome uprights on wall brackets, bars up the ladder,
+    the valves at the foot, a bath towel over an upper bar and a hand towel over a low one."""
+    L, W, H = s
+    hx, zr = L / 2, W - 0.03
+    for sx in (-1, 1):
+        x = sx * (hx - 0.02)
+        rod(m, (x, 0.08, zr), (x, H, zr), 0.014, "chrome", 10)
+        for y in (0.18, H - 0.1):
+            rod(m, (x, y, 0.0), (x, y, zr), 0.009, "chrome", 6)
+        cyl(m, "y", (x, zr), 0.016, 0.0, 0.08, "chrome", 8)
+    y = 0.16
+    while y < H - 0.02:
+        rod(m, (-hx + 0.03, y, zr), (hx - 0.03, y, zr), 0.009, "chrome", 6, caps=False)
+        y += 0.075
+    big, small = prm.get("towel", "cushion_teal"), prm.get("hand", "throw_cream")
+    for (y0, y1, a, b, role) in ((0.42, 0.92, -hx + 0.05, hx - 0.05, big), (0.12, 0.47, -hx + 0.12, hx - 0.12, small)):
+        cushion(m, (a, y0, zr + 0.016), (b, y1 + 0.02, zr + 0.03), role, 0.006)
+        cushion(m, (a, y0 + 0.12, zr - 0.03), (b, y1 + 0.02, zr - 0.016), role, 0.006)
+        rod(m, (a + 0.01, y1 + 0.02, zr), (b - 0.01, y1 + 0.02, zr), 0.022, role, 8)
+
+
+def build_bath_shelf(m, s, R, prm, rng):
+    """An open oak shelf unit for the bathroom (front +z): two sides, five shelves, rolled towels at the foot, a
+    basket of spares, a row of bath bottles, folded towels and a small plant on top. Collider: one box."""
+    st = _style(prm)
+    L, W, H = s
+    hx, hz = L / 2, W / 2
+    wood, t = prm.get("body", "wood_front"), 0.02
+    Hs = H - 0.24  # the unit's top; the plant stands on it
+    for xa, xb in ((-hx, -hx + t), (hx - t, hx)):
+        cbox(m, (xa, 0.0, -hz), (xb, Hs, hz), wood, st.bevel_small)
+    ys = [0.04, 0.36, 0.68, 0.94, Hs - t]
+    for y in ys:
+        cbox(m, (-hx + t, y, -hz), (hx - t, y + t, hz), wood, st.bevel_small)
+    a, b = -hx + t + 0.01, hx - t - 0.01
+    for k, role in enumerate(("cushion_teal", "throw_cream", "cushion_teal")):  # rolled towels
+        x = a + 0.07 + k * 0.14
+        if x + 0.065 < b:
+            cyl(m, "z", (x, ys[0] + t + 0.065), 0.065, -hz + 0.02, hz - 0.02, role, 10)
+    cbox(m, (a + 0.02, ys[1] + t, -hz + 0.03), (b - 0.02, ys[1] + t + 0.2, hz - 0.03), "kraft", 0.01)
+    box(m, (a + 0.04, ys[1] + t + 0.2, -hz + 0.05), (b - 0.04, ys[1] + t + 0.205, hz - 0.05), "throw_cream", "+y")
+    _stock(m, "bottles", a, b, ys[2] + t, -hz + 0.02, hz - 0.02, ys[3] - ys[2] - t - 0.03)
+    for j, role in enumerate(("throw_cream", "cushion_teal", "throw_cream", "art_white")):  # folded towels
+        y0 = ys[3] + t + j * 0.05
+        cushion(m, (a + 0.03, y0, -hz + 0.03), (b - 0.03, y0 + 0.048, hz - 0.03), role, 0.008)
+    pr = min(hz, 0.09)
+    cyl(m, "y", (0.0, 0.0), pr * 0.8, Hs, Hs + 0.11, "stone_light", 10, r1=pr)
+    for i in range(5):
+        an = i * 2.39996
+        _leaf(m, math.cos(an) * 0.05, Hs + 0.15 + 0.03 * (i % 2), math.sin(an) * 0.05, 0.06, "leaf_green", 6)
 
 
 BUILDERS = {name[6:]: fn for name, fn in dict(globals()).items() if name.startswith("build_") and callable(fn)}

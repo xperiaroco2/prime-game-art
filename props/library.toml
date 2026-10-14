@@ -5,13 +5,15 @@
 # Paints and shapes are taste data: changing a hex or a prop's roles needs no code change.
 
 library = "house"
-version = 6
+version = 8
 kit_spec = "kits/house.json"
-# the build goes under the raw folder: D:/prime-art-raw/props/library/v6/<id>.glb (v6, #158: v5 with the WC's, the
+# the build goes under the raw folder: D:/prime-art-raw/props/library/v8/<id>.glb (v8, #162 round 2: v7 with the
+# rebuilt landing runner and the landing's sitting area laid over it; v7, #162: v6 with the
+# landing's and the bathroom's props laid over it; v6, #158: v5 with the WC's, the
 # pantry's and the stairs' props laid over it; v5, #156: v4 with the hallway's props laid over it; v4, #153: v3 with the dining room's props; v3, #152: v2 with the cream sofa and armchairs
 # rebuilt over it; v2, #150: v1 with the living room's 16 rebuilt props and the eight-slot fine pack laid over it;
 # v1 stays the approved version-1 build; no folder is ever overwritten)
-out = "props/library/v6"
+out = "props/library/v8"
 review = "review/house/87"  # line-up sheets, under the raw folder
 licences = ["CC0-1.0"]
 max_materials = 8
@@ -79,7 +81,7 @@ paints = ["wood_front", "wood_front_dark", "worktop_wood", "worktop_stone", "til
           "art_patty", "cushion_rust", "cushion_mustard", "throw_cream",
           "carpet_field", "carpet_border", "carpet_slate", "stone_light", "stone_dark", "book_cream", "book_teal", "book_mustard", "book_red", "book_navy", "book_sage",
           "book_grey", "mirror_glass", "coat_navy", "coat_camel", "kraft", "kraft_tape", "blueprint_blue", "carpet_navy",
-          "coir"]
+          "coir", "carpet_rust"]
 
 # The fine pack: ONE shared opaque material (`kit_fine-vcol`) for the world look's props, as the kit's `set` pack
 # (docs/kit.md "Materials"): the paint is the vertex colour, its alpha picks the layer (1 - k/16 for layer k), and
@@ -197,6 +199,7 @@ kraft_tape = {material = "fine", layer = "paint", hex = "#8d6a44"}
 blueprint_blue = {material = "fine", layer = "paint", hex = "#2b4f7a"}
 carpet_navy = {material = "fine", layer = "carpet", hex = "#34465c"}
 coir = {material = "fine", layer = "carpet", hex = "#a07c52"}
+carpet_rust = {material = "fine", layer = "carpet", hex = "#8a4732"}  # #162: the landing runner's border, a tone of carpet_field
 
 # Inventory props this library does not make, and who does (the manager's split of 2026-10-10).
 [skip]
@@ -3096,5 +3099,143 @@ route = "proc"
 shape = "house_plant"
 params = {pot = "stone_light", leaves = 12}
 roles = ["stone_light", "soil_dark", "leaf_green", "leaf_dark"]
+pivot = "floor"
+collision = "none"
+
+# ---- The upper floor's landing and bathroom (#162) in the world look.
+
+[[prop]]
+id = "bath_tub"
+batch = 1
+name = "Built-in white bath with a slide-rail shower, a hinged glass screen, bottles and a rubber duck"
+class = "room"
+size_m = [1.7, 0.75, 2.0]
+count = 1
+route = "proc"
+shape = "bath_tub"
+roles = ["enamel_white", "porcelain_white", "rubber_black", "chrome", "steel_black", "glass_tint", "book_teal", "art_white", "book_mustard", "art_terracotta"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "bath_vanity"
+batch = 1
+name = "Bathroom vanity: oak drawers, stone top, round sit-on basin and a pillar tap"
+class = "room"
+size_m = [0.9, 0.48, 1.08]
+count = 1
+route = "proc"
+shape = "wc_vanity"
+roles = ["wood_front", "wood_front_dark", "worktop_stone", "porcelain_white", "chrome", "paint_red", "paint_blue", "rubber_black"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "towel_rail"
+batch = 1
+name = "Heated chrome towel rail with a teal bath towel and a cream hand towel"
+class = "dressing"
+size_m = [0.5, 0.12, 1.1]
+count = 1
+route = "proc"
+shape = "towel_rail"
+roles = ["chrome", "cushion_teal", "throw_cream"]
+pivot = "wall"
+collision = "none"
+
+[[prop]]
+id = "bath_shelf"
+batch = 1
+name = "Open oak bathroom shelf: rolled towels, a basket of spares, bath bottles, folded towels, a small plant"
+class = "room"
+size_m = [0.5, 0.32, 1.5]
+count = 1
+route = "proc"
+shape = "bath_shelf"
+roles = ["wood_front", "cushion_teal", "throw_cream", "kraft", "paint_red", "book_mustard", "glass_dark", "art_white", "leaf_dark", "steel_black", "stone_light", "leaf_green"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "bath_mat"
+batch = 1
+name = "Cream bath mat with a teal border"
+class = "dressing"
+size_m = [0.8, 0.5, 0.012]
+count = 1
+route = "proc"
+shape = "carpet_rug"
+params = {field = "throw_cream", border = "cushion_teal", fringe = false}
+roles = ["throw_cream", "cushion_teal"]
+pivot = "floor"
+collision = "none"
+
+[[prop]]
+id = "bath_tiles"
+batch = 1
+name = "Tiled lower bathroom wall (3.9 m, 1.2 m high, a warm steel cap)"
+class = "room"  # like the WC's wc_tiles: a room-defining wall piece that reads on Low
+layer = "base"
+size_m = [3.9, 0.016, 1.2]
+count = 1
+route = "proc"
+shape = "backsplash"
+roles = ["tile_splash", "steel_warm"]
+pivot = "wall"
+collision = "none"
+
+[[prop]]
+id = "bath_tiles_short"
+batch = 1
+name = "Tiled lower bathroom wall (2.1 m, 1.2 m high, a warm steel cap)"
+class = "room"
+layer = "base"
+size_m = [2.1, 0.016, 1.2]
+count = 1
+route = "proc"
+shape = "backsplash"
+roles = ["tile_splash", "steel_warm"]
+pivot = "wall"
+collision = "none"
+
+[[prop]]
+id = "bath_tiles_shower"
+batch = 1
+name = "Tiled shower wall over the bath (1.8 m, 2 m high, a warm steel cap)"
+class = "room"
+layer = "base"
+size_m = [1.8, 0.016, 2.0]
+count = 1
+route = "proc"
+shape = "backsplash"
+roles = ["tile_splash", "steel_warm"]
+pivot = "wall"
+collision = "none"
+
+[[prop]]
+id = "art_bubbles"
+batch = 1
+name = "Framed joke print: a plasticine person deep in bubbles, a rubber duck on watch"
+class = "dressing"
+size_m = [0.5, 0.03, 0.65]
+count = 1
+route = "proc"
+shape = "framed_art"
+params = {art = "bubbles", frame = 0.025, mat = 0.04, frame_paint = "steel_black"}
+roles = ["steel_black", "art_white", "book_teal", "art_sky", "art_pink", "art_terracotta", "book_mustard", "book_sage"]
+pivot = "wall"
+collision = "none"
+
+[[prop]]
+id = "landing_runner"
+batch = 1
+name = "Landing runner, terracotta wool with a deep rust border and a soft square motif"
+class = "dressing"
+size_m = [8.5, 1.0, 0.012]
+count = 1
+route = "proc"
+shape = "carpet_rug"
+params = {field = "carpet_field", border = "carpet_rust", motif = 0.6}  # #162 round 2: tone on tone, never lanes
+roles = ["carpet_field", "carpet_rust"]
 pivot = "floor"
 collision = "none"

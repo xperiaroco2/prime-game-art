@@ -10,7 +10,7 @@ merged in #130 (2026-10-12); #150 re-exported it, so they wait again (below).
 |---|---|
 | P1 (`assets/kit/house_kit/HANDOFF.md`) | `assets/environment/house_kit/` (P4's rooms use 16 of its pieces: the boards and lino floors, the storey walls, the balcony's railings, and `stairs_outdoor_half` and `stairs_outdoor_landing` for the main stairs' upper flight and landing in `landing.tscn`) |
 | `assets/kit/house_kit/export/kit_set.gdshader`, `kit_set.tres` (#132) | `assets/environment/house_kit/` (beside the kit's textures) |
-| `assets/prop/house_props/export/library/*.glb` (52 of them), `task/*.glb` (3), as `package.json` lists | `assets/environment/house_props/<file>.glb` (flat) |
+| `assets/prop/house_props/export/library/*.glb` and `task/*.glb` (107 in all), as `package.json` lists | `assets/environment/house_props/<file>.glb` (flat) |
 | `assets/prop/house_props/export/fine/high/*.png`, `fine/low/*.png` (6 each, #147, #150) | `assets/environment/house_props/fine/high/`, `fine/low/` |
 | `assets/prop/house_props/export/prop_fine.gdshader`, `prop_fine_high.tres`, `prop_fine_low.tres` (#147) | `assets/environment/house_props/` |
 | `assets/room/house_upper/export/<room>.tscn` (7) | the content of `levels/house/rooms/<room>.tscn` (G3 below) |
@@ -30,8 +30,8 @@ and `set_n1` textures and the House's wall paints (`layouts/house/house.toml` `[
 also sets `instance_shader_parameters/plan_at`, its place and turn in the house plan, so the shader paints by
 the plan wherever the game puts the House. Nothing to run: copy the two files with the kit and load the scene
 (the root's `metadata/wall_paint` stays as a note). Painted here: the bedroom and the guest room, bordeaux
-#69413c; the study, dark blue #1f2a48; the landing, teal #3a6264 (the kit's own plaster, so the colour stays and
-the textures are new). The kids' room, the bathroom and the balcony have no paint; the material gives the kit's
+#69413c; the study, dark blue #1f2a48; the landing, warm greige #d9d1c5 (teal #3a6264, the kit's own
+plaster, before #152). The kids' room and the balcony have no paint (the bathroom's pale green-grey since #162); the material gives the kit's
 textured look.
 
 ## Names in the flat props folder
@@ -57,6 +57,18 @@ armchair is cream `#e4d9c6`. Changed: `landing.tscn`, `kit_set.tres` and `packag
 Only `package.json` changed: the shared `kit_set.tres` carries the WC's and the pantry's paints and hashes anew;
 this package's scenes are unchanged.
 
+## The landing and the bathroom (#162)
+
+The landing (75 props, 51 different) and the bathroom (40 props, 33 different) are dressed in the world look; the
+bathroom is pale green-grey `#d8dfd6` over white tiled lower walls. Changed: `landing.tscn`, `bathroom.tscn` and
+`package.json` (10 new props in `house_props`: `bath_tub`, `bath_vanity`, `towel_rail`, `bath_shelf`, `bath_mat`,
+`bath_tiles`, `bath_tiles_short`, `bath_tiles_shower`, `art_bubbles`, `landing_runner`). Draw calls of the room
+itself on the package sheet, before/after: landing door 41/68, along 46/62; bathroom door 45/47, across 36/42.
+The review's round 2 brought back the landing's sitting area south of the stairwell (a sofa against the railing, two
+armchairs facing each other over a coffee table on a rug, a side table with a lamp, a floor lamp and figs; main had
+one there) and rebuilt `landing_runner` in terracotta tone on tone (the slate one read as a road); `landing.tscn`
+and `package.json` re-exported into `<raw>/review/house/162/export/p4b`.
+
 ## Credits
 As P2: the entries `assets/kit/house_kit/CREDITS.md` and `assets/prop/house_props/CREDITS.md` (copy them to
 `docs/credits/house_kit.md` and `house_props.md`); own work, the props from
@@ -80,8 +92,8 @@ it later (a U-turn flight would give about 12.1 to 12.5 s, docs/house.md "The se
 - Footsteps: the boards `wood`, the bathroom's lino and the balcony's external stairs `concrete`, the floor under the
   rugs `carpet`.
 - The art's package check (`house --export --package 4`) is green: 7 scenes load with their root and `size_m`, the
-  6/6 capsule walks inside the package arrive (each room's door to the landing), of the 2040 rays down 1655 hit `wood`,
-  160 `carpet`, 136 `concrete` and 1 the bean bag in `kids_room` (a prop, no surface: the game's default). The main
+  6/6 capsule walks inside the package arrive (each room's door to the landing), of the 2040 rays down 1687 hit `wood`,
+  128 `carpet`, 136 `concrete` and 1 the bean bag in `kids_room` (a prop, no surface: the game's default). The main
   stairs, the balcony stairs and the balcony loop leave the package (P2's rooms and the yard): the art's whole-house
   walk (`house --walk`, 2026-10-11) walks them, all arriving: the main stairs up 3.85 s and down 3.2 s, the balcony
   stairs up 3.17 s and down 2.58 s, the loop 13.85 s (21/21 points). The hatch ladder up to the attic is P5's piece

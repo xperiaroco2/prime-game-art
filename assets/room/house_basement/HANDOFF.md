@@ -54,6 +54,11 @@ warm sand ceiling hash anew; this package's scenes are unchanged.
 Only `package.json` changed: the shared `kit_set.tres` carries the WC's and the pantry's paints and hashes anew;
 this package's scenes are unchanged.
 
+## The bathroom's paint (#162)
+
+Only `package.json` changed: the shared `kit_set.tres` carries the bathroom's paint and hashes anew; this
+package's scenes are unchanged.
+
 ## Credits
 The entries are `assets/kit/house_kit/CREDITS.md` and `assets/prop/house_props/CREDITS.md` in this repo (the game's
 `docs/credits/<id>.md` format; copy them to `docs/credits/house_kit.md` and `house_props.md`): own work, the props made from CC0 packs named per file in the props manifest,

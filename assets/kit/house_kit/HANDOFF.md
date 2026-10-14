@@ -28,6 +28,11 @@ carries the new wall paints. P1's `package.json` now also lists `kit_set.gdshade
 `kit_set.tres` now carries the WC's soft blue-grey (#CFD5D3) and the pantry's pale sage (#D3D6C3) beside the
 other rooms' paints; no kit piece changed. Copy it over the game's `house_kit/kit_set.tres`.
 
+## The bathroom's paint (#162)
+
+`kit_set.tres` now carries the bathroom's pale green-grey (#D8DFD6) beside the other rooms' paints; no kit
+piece changed. Copy it over the game's `house_kit/kit_set.tres`.
+
 ## Credits
 The entry is `CREDITS.md` beside this file (the game's `docs/credits/<id>.md` format; copy it to
 `docs/credits/house_kit.md`): own work, plus the three textures made from ambientCG CC0 maps, `ai_generated = false`,

@@ -154,6 +154,11 @@ Changed: `wc.tscn`, `pantry.tscn`, `stairs.tscn` and `package.json`; in the prop
 views (the room only, before/after): the WC's door view 41/41, across 36/31; the pantry's door view 25/26, across
 30/33; the stairs' door view 19/24, across the flights 18/23.
 
+## The bathroom's paint (#162)
+
+Only `package.json` changed: the shared `kit_set.tres` carries the bathroom's paint and hashes anew; this
+package's scenes are unchanged.
+
 ## Credits
 The entries are `assets/kit/house_kit/CREDITS.md` and `assets/prop/house_props/CREDITS.md` in this repo (the game's
 `docs/credits/<id>.md` format; copy them to `docs/credits/house_kit.md` and `house_props.md`): own work, the props made
