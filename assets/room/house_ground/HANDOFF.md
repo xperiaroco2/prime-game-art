@@ -152,7 +152,7 @@ replaced, never with nothing. Nothing stands within 0.3 m of a station or on a s
 Changed: `wc.tscn`, `pantry.tscn`, `stairs.tscn` and `package.json`; in the props set, 21 new GLBs, 1.81 MB of LFS
 (no other room's prop changed); the shared `kit_set.tres` carries the two new paints. Draw calls in the package-sheet
 views (the room only, before/after): the WC's door view 41/41, across 36/31; the pantry's door view 25/26, across
-30/32; the stairs' door view 19/24, across the flights 18/23.
+30/33; the stairs' door view 19/24, across the flights 18/23.
 
 ## Credits
 The entries are `assets/kit/house_kit/CREDITS.md` and `assets/prop/house_props/CREDITS.md` in this repo (the game's
