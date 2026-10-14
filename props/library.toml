@@ -3485,7 +3485,7 @@ count = 1
 route = "proc"
 shape = "wardrobe_modern"
 params = {doors = 2}
-roles = ["worktop_wood", "enamel_white", "wood_front_dark"]
+roles = ["worktop_wood", "enamel_white", "wood_front_dark", "chrome", "steel_black"]
 pivot = "floor"
 collision = "box"
 
@@ -3498,7 +3498,7 @@ size_m = [1.2, 0.4, 0.8]
 count = 1
 route = "proc"
 shape = "toy_cubby"
-roles = ["rubber_black", "enamel_white", "worktop_wood", "book_red", "book_mustard", "book_teal", "book_sage", "art_white"]
+roles = ["rubber_black", "enamel_white", "worktop_wood", "book_red", "book_mustard", "book_teal", "book_sage", "art_white", "book_cream", "book_navy"]
 pivot = "floor"
 collision = "box"
 
@@ -3512,7 +3512,7 @@ count = 1
 route = "proc"
 shape = "bookcase"
 params = {body = "enamel_white", doors_h = 0, shelves = 4}
-roles = ["enamel_white", "wood_front_dark", "book_cream", "book_teal", "book_mustard", "book_red", "book_navy", "book_sage"]
+roles = ["enamel_white", "wood_front_dark", "book_cream", "book_teal", "book_mustard", "book_red", "book_navy", "book_sage", "book_grey"]
 pivot = "floor"
 collision = "box"
 
@@ -3526,7 +3526,7 @@ count = 1
 route = "proc"
 shape = "bookcase"
 params = {body = "worktop_wood", shelves = 4}
-roles = ["worktop_wood", "wood_front_dark", "book_cream", "book_teal", "book_mustard", "book_red", "book_navy", "book_sage"]
+roles = ["worktop_wood", "wood_front_dark", "book_cream", "book_teal", "book_mustard", "book_red", "book_navy", "book_sage", "book_grey", "chrome", "steel_black"]
 pivot = "floor"
 collision = "box"
 
@@ -3567,7 +3567,7 @@ size_m = [1.2, 0.03, 0.85]
 count = 1
 route = "proc"
 shape = "pin_board"
-roles = ["worktop_wood", "kraft", "blueprint_blue", "art_white", "book_navy", "book_grey", "leaf_green", "book_mustard", "art_pink", "book_sage", "art_sky", "steel_black", "paint_red"]
+roles = ["worktop_wood", "kraft", "blueprint_blue", "art_white", "book_navy", "book_grey", "leaf_green", "book_mustard", "art_pink", "book_sage", "art_sky", "steel_black", "paint_red", "art_terracotta", "book_cream", "book_teal"]
 pivot = "wall"
 collision = "none"
 
