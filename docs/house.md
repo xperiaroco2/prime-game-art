@@ -136,7 +136,9 @@ writes the House's game-ready package (prime-game #523) from the same layout dat
   of both tiers from `house.toml` `[export]` `fine_dir` (#147: the raw build's `props/library/v1/textures/fine`;
   since #150 `props/library/v2/textures/fine`: library v2 is v1 with the living room's 16 rebuilt props and their
   eight-slot fine pack laid over it; since #152 `props/library/v3/textures/fine`, the same bytes: library v3 is v2 with
-  the cream sofa and armchairs rebuilt over it, and `prop_dirs` names v3; v1 stays the approved version-1 build;
+  the cream sofa and armchairs rebuilt over it; since #153 `props/library/v4/textures/fine`, the same bytes: v3 with
+  the dining room built over it, and `prop_dirs` names library v4 and task v2 (task v1 with the oak dining table);
+  v1 stays the approved version-1 build;
   `.import` VRAM compressed with mipmaps), `house_props/prop_fine.gdshader` (a copy
   of `godot/props/prop_fine.gdshader`; `tools/tests/test_house_layers.py` fails when the committed copy drifts) and
   `prop_fine_high.tres`, `prop_fine_low.tres` (`house_export.fine_material_text`: the shader, the tier's textures, the
@@ -323,7 +325,9 @@ is the same on every machine; `tools/tests/test_house_clutter.py` fails when a f
   clearances, the capsule's reach) finds no new problem in the room, else the generator tries the next span or wall;
   an id ending in `+` stacks a second one on top (box and crate stacks). Their tops host surface clutter.
 - Surface clutter on the tops of `HOSTS` furniture (counters, the stove, tables, the sideboard, desks, nightstands,
-  the dresser, crates, the filing cabinet ...): up to 4 per top by its area, 16 per room, the room's least used kind
+  the dresser, crates, the filing cabinet ...; a room's `RULES` key `hosts` may name the only host ids whose tops
+  take it: the dining room's are the console table, the dressers and small tables since #153, so its hand-placed
+  detail layer keeps the dining table and the sideboards): up to 4 per top by its area, 16 per room, the room's least used kind
   first, apart from what already stands on the top (a lamp, the computer). A station's own prop carries nothing, so
   the stations read as before. The TV unit (`tv_cabinet`) is no host since #150: its top is the TV's, and the
   living room's hand-placed detail layer dresses it.
