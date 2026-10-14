@@ -43,6 +43,8 @@
   "assets/environment/house_kit/gable_tri_2m_down.glb": "64bf9b621eff2e5509cd7f086e5294c57f9ee361e97353cef75fc02f0d6dc710",
   "assets/environment/house_kit/gable_tri_2m_up.glb": "8cb160e0fb5d2b5c3994b83007a2f8508b8310c06fea484b4be9d0e7c73a7130",
   "assets/environment/house_kit/ladder_attic.glb": "c00f2f05acae8fcfa088784f84ca847c77c0919002f9d6301bf43f7677e2dd47",
+  "assets/environment/house_kit/merged/floor_m_attic_attic.glb": "4c5049f3f167f7aeb49d562aaa937bf82b479168ff5a55922233e5e6a4224f18",
+  "assets/environment/house_kit/merged/shell_m_attic_attic.glb": "b4757b8c7630fb583e00df30c87285f434e9caf7f22adb3019d88833d3663ce1",
   "assets/environment/house_kit/roof_downpipe.glb": "4cbed35461671c3c50fd841de48950915659b298adbdbb5117eb377fd756aeb8",
   "assets/environment/house_kit/roof_pitched_2x1.glb": "df4680a1c673dd6e6ea3f884563b2446f28158408c77ab70595862e01b84bf3a",
   "assets/environment/house_kit/roof_pitched_2x2.glb": "3e2e7c4dbf0887516e921287a31245455ecc129181890932af5d28adf3f41c70",
@@ -83,6 +85,7 @@
   "assets/environment/house_props/holiday_decor.glb": "ebeb2e615eb59fe0f5ea98fc906e57695d800173d0c8f4788217d01abab2b17a",
   "assets/environment/house_props/leaning_frames.glb": "c96f9dee7abc35e9553f7a0a067f36cf174b70338100689d3c7df3f14f6923c1",
   "assets/environment/house_props/mannequin.glb": "e74bf8b4b4bcaf14312026c03a3a2468eb7dd28978f963190564fe0b06ed29b8",
+  "assets/environment/house_props/merged/batch_attic_attic_dressing.glb": "a2d9cdc09838a0719fe54b3e613b7ceb89f3ad9d371a1dd43da07c7c19183e8f",
   "assets/environment/house_props/old_bicycle.glb": "1706b96cf79e795d64ad2a26d8f1b083662db136fc92aeda1a0811c5a2d93082",
   "assets/environment/house_props/old_wardrobe.glb": "e24196a2b62e69768bce341e134aaba5eb9b7b9f587e1d7bd1f78f70bec68a9d",
   "assets/environment/house_props/potted_plant.glb": "4b1d0cf3b7e546c1473bbbcd2fc7c1bc3315c88adfe7c815547485355afb7768",
@@ -104,7 +107,7 @@
   "assets/environment/house_props/prop_fine.gdshader": "ab82a7a0ed78bccde04553935fe681378a20d970371cb09060cce31b9d5c3bca",
   "assets/environment/house_props/prop_fine_high.tres": "319567d45aa17b22a3776ce15d6609b571cfa4cbac5739ef5f08e7fb795a6f86",
   "assets/environment/house_props/prop_fine_low.tres": "284dfcce2b4af66e53b545f7948c934677ed84b3003717efdda998fc826fd819",
-  "levels/house/rooms/attic.tscn": "46dcdde69e1fde861e76b2ae2bb09b9a2f6911cd4b933cbaefea99dbf71831b7"
+  "levels/house/rooms/attic.tscn": "6bc8134b94a35aa1859b5c2c6062d33b6137196141ead3d9beea4e8e8d04b2b4"
  },
  "questions": [
   "G3: the room scenes are under levels/house/rooms/ (11.1 keeps assets/ data only); the game's workflow swaps them into its greybox rooms (Body/Looks out, Shell/Dressing/Fixtures in).",

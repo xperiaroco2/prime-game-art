@@ -2,14 +2,17 @@
 
 [ext_resource type="PackedScene" path="res://assets/environment/house_kit/floor_concrete_2x2.glb" id="1"]
 [ext_resource type="ShaderMaterial" path="res://assets/environment/house_kit/kit_set.tres" id="2"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/terrace_table.glb" id="3"]
-[ext_resource type="ShaderMaterial" path="res://assets/environment/house_props/prop_fine_high.tres" id="4"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/terrace_chair.glb" id="5"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/planter_pot.glb" id="6"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/potted_plant.glb" id="7"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/lantern.glb" id="8"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/string_lights.glb" id="9"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/porch_lamp.glb" id="10"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_kit/merged/floor_m_ground_terrace.glb" id="3"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/terrace_table.glb" id="4"]
+[ext_resource type="ShaderMaterial" path="res://assets/environment/house_props/prop_fine_high.tres" id="5"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/terrace_chair.glb" id="6"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/planter_pot.glb" id="7"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/potted_plant.glb" id="8"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/merged/batch_ground_terrace_dressing.glb" id="9"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/lantern.glb" id="10"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/string_lights.glb" id="11"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/porch_lamp.glb" id="12"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/merged/batch_ground_terrace_fixtures.glb" id="13"]
 
 [node name="Terrace" type="Node3D"]
 metadata/size_m = Vector2i(20, 8)
@@ -31,6 +34,7 @@ metadata/surface = "concrete"
 [node name="floor_concrete_2x2" parent="Shell/floor_concrete_2x2_1"]
 surface_material_override/0 = ExtResource("2")
 instance_shader_parameters/plan_at = Vector4(22, 0, 16, 0)
+visible = false
 
 [node name="floor_concrete_2x2_2" parent="Shell" instance=ExtResource("1")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0, 0)
@@ -39,6 +43,7 @@ metadata/surface = "concrete"
 [node name="floor_concrete_2x2" parent="Shell/floor_concrete_2x2_2"]
 surface_material_override/0 = ExtResource("2")
 instance_shader_parameters/plan_at = Vector4(24, 0, 16, 0)
+visible = false
 
 [node name="floor_concrete_2x2_3" parent="Shell" instance=ExtResource("1")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 0, 0)
@@ -47,6 +52,7 @@ metadata/surface = "concrete"
 [node name="floor_concrete_2x2" parent="Shell/floor_concrete_2x2_3"]
 surface_material_override/0 = ExtResource("2")
 instance_shader_parameters/plan_at = Vector4(26, 0, 16, 0)
+visible = false
 
 [node name="floor_concrete_2x2_4" parent="Shell" instance=ExtResource("1")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 0, 0)
@@ -55,6 +61,7 @@ metadata/surface = "concrete"
 [node name="floor_concrete_2x2" parent="Shell/floor_concrete_2x2_4"]
 surface_material_override/0 = ExtResource("2")
 instance_shader_parameters/plan_at = Vector4(28, 0, 16, 0)
+visible = false
 
 [node name="floor_concrete_2x2_5" parent="Shell" instance=ExtResource("1")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 0, 0)
@@ -63,6 +70,7 @@ metadata/surface = "concrete"
 [node name="floor_concrete_2x2" parent="Shell/floor_concrete_2x2_5"]
 surface_material_override/0 = ExtResource("2")
 instance_shader_parameters/plan_at = Vector4(30, 0, 16, 0)
+visible = false
 
 [node name="floor_concrete_2x2_6" parent="Shell" instance=ExtResource("1")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 0, 0)
@@ -71,6 +79,7 @@ metadata/surface = "concrete"
 [node name="floor_concrete_2x2" parent="Shell/floor_concrete_2x2_6"]
 surface_material_override/0 = ExtResource("2")
 instance_shader_parameters/plan_at = Vector4(32, 0, 16, 0)
+visible = false
 
 [node name="floor_concrete_2x2_7" parent="Shell" instance=ExtResource("1")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 0, 0)
@@ -79,6 +88,7 @@ metadata/surface = "concrete"
 [node name="floor_concrete_2x2" parent="Shell/floor_concrete_2x2_7"]
 surface_material_override/0 = ExtResource("2")
 instance_shader_parameters/plan_at = Vector4(34, 0, 16, 0)
+visible = false
 
 [node name="floor_concrete_2x2_8" parent="Shell" instance=ExtResource("1")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14, 0, 0)
@@ -87,6 +97,7 @@ metadata/surface = "concrete"
 [node name="floor_concrete_2x2" parent="Shell/floor_concrete_2x2_8"]
 surface_material_override/0 = ExtResource("2")
 instance_shader_parameters/plan_at = Vector4(36, 0, 16, 0)
+visible = false
 
 [node name="floor_concrete_2x2_9" parent="Shell" instance=ExtResource("1")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16, 0, 0)
@@ -95,6 +106,7 @@ metadata/surface = "concrete"
 [node name="floor_concrete_2x2" parent="Shell/floor_concrete_2x2_9"]
 surface_material_override/0 = ExtResource("2")
 instance_shader_parameters/plan_at = Vector4(38, 0, 16, 0)
+visible = false
 
 [node name="floor_concrete_2x2_10" parent="Shell" instance=ExtResource("1")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 18, 0, 0)
@@ -103,6 +115,7 @@ metadata/surface = "concrete"
 [node name="floor_concrete_2x2" parent="Shell/floor_concrete_2x2_10"]
 surface_material_override/0 = ExtResource("2")
 instance_shader_parameters/plan_at = Vector4(40, 0, 16, 0)
+visible = false
 
 [node name="floor_concrete_2x2_11" parent="Shell" instance=ExtResource("1")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 2)
@@ -111,6 +124,7 @@ metadata/surface = "concrete"
 [node name="floor_concrete_2x2" parent="Shell/floor_concrete_2x2_11"]
 surface_material_override/0 = ExtResource("2")
 instance_shader_parameters/plan_at = Vector4(22, 0, 18, 0)
+visible = false
 
 [node name="floor_concrete_2x2_12" parent="Shell" instance=ExtResource("1")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0, 2)
@@ -119,6 +133,7 @@ metadata/surface = "concrete"
 [node name="floor_concrete_2x2" parent="Shell/floor_concrete_2x2_12"]
 surface_material_override/0 = ExtResource("2")
 instance_shader_parameters/plan_at = Vector4(24, 0, 18, 0)
+visible = false
 
 [node name="floor_concrete_2x2_13" parent="Shell" instance=ExtResource("1")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 0, 2)
@@ -127,6 +142,7 @@ metadata/surface = "concrete"
 [node name="floor_concrete_2x2" parent="Shell/floor_concrete_2x2_13"]
 surface_material_override/0 = ExtResource("2")
 instance_shader_parameters/plan_at = Vector4(26, 0, 18, 0)
+visible = false
 
 [node name="floor_concrete_2x2_14" parent="Shell" instance=ExtResource("1")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 0, 2)
@@ -135,6 +151,7 @@ metadata/surface = "concrete"
 [node name="floor_concrete_2x2" parent="Shell/floor_concrete_2x2_14"]
 surface_material_override/0 = ExtResource("2")
 instance_shader_parameters/plan_at = Vector4(28, 0, 18, 0)
+visible = false
 
 [node name="floor_concrete_2x2_15" parent="Shell" instance=ExtResource("1")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 0, 2)
@@ -143,6 +160,7 @@ metadata/surface = "concrete"
 [node name="floor_concrete_2x2" parent="Shell/floor_concrete_2x2_15"]
 surface_material_override/0 = ExtResource("2")
 instance_shader_parameters/plan_at = Vector4(30, 0, 18, 0)
+visible = false
 
 [node name="floor_concrete_2x2_16" parent="Shell" instance=ExtResource("1")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 0, 2)
@@ -151,6 +169,7 @@ metadata/surface = "concrete"
 [node name="floor_concrete_2x2" parent="Shell/floor_concrete_2x2_16"]
 surface_material_override/0 = ExtResource("2")
 instance_shader_parameters/plan_at = Vector4(32, 0, 18, 0)
+visible = false
 
 [node name="floor_concrete_2x2_17" parent="Shell" instance=ExtResource("1")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 0, 2)
@@ -159,6 +178,7 @@ metadata/surface = "concrete"
 [node name="floor_concrete_2x2" parent="Shell/floor_concrete_2x2_17"]
 surface_material_override/0 = ExtResource("2")
 instance_shader_parameters/plan_at = Vector4(34, 0, 18, 0)
+visible = false
 
 [node name="floor_concrete_2x2_18" parent="Shell" instance=ExtResource("1")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14, 0, 2)
@@ -167,6 +187,7 @@ metadata/surface = "concrete"
 [node name="floor_concrete_2x2" parent="Shell/floor_concrete_2x2_18"]
 surface_material_override/0 = ExtResource("2")
 instance_shader_parameters/plan_at = Vector4(36, 0, 18, 0)
+visible = false
 
 [node name="floor_concrete_2x2_19" parent="Shell" instance=ExtResource("1")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16, 0, 2)
@@ -175,6 +196,7 @@ metadata/surface = "concrete"
 [node name="floor_concrete_2x2" parent="Shell/floor_concrete_2x2_19"]
 surface_material_override/0 = ExtResource("2")
 instance_shader_parameters/plan_at = Vector4(38, 0, 18, 0)
+visible = false
 
 [node name="floor_concrete_2x2_20" parent="Shell" instance=ExtResource("1")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 18, 0, 2)
@@ -183,6 +205,7 @@ metadata/surface = "concrete"
 [node name="floor_concrete_2x2" parent="Shell/floor_concrete_2x2_20"]
 surface_material_override/0 = ExtResource("2")
 instance_shader_parameters/plan_at = Vector4(40, 0, 18, 0)
+visible = false
 
 [node name="floor_concrete_2x2_21" parent="Shell" instance=ExtResource("1")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 4)
@@ -191,6 +214,7 @@ metadata/surface = "concrete"
 [node name="floor_concrete_2x2" parent="Shell/floor_concrete_2x2_21"]
 surface_material_override/0 = ExtResource("2")
 instance_shader_parameters/plan_at = Vector4(22, 0, 20, 0)
+visible = false
 
 [node name="floor_concrete_2x2_22" parent="Shell" instance=ExtResource("1")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0, 4)
@@ -199,6 +223,7 @@ metadata/surface = "concrete"
 [node name="floor_concrete_2x2" parent="Shell/floor_concrete_2x2_22"]
 surface_material_override/0 = ExtResource("2")
 instance_shader_parameters/plan_at = Vector4(24, 0, 20, 0)
+visible = false
 
 [node name="floor_concrete_2x2_23" parent="Shell" instance=ExtResource("1")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 0, 4)
@@ -207,6 +232,7 @@ metadata/surface = "concrete"
 [node name="floor_concrete_2x2" parent="Shell/floor_concrete_2x2_23"]
 surface_material_override/0 = ExtResource("2")
 instance_shader_parameters/plan_at = Vector4(26, 0, 20, 0)
+visible = false
 
 [node name="floor_concrete_2x2_24" parent="Shell" instance=ExtResource("1")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 0, 4)
@@ -215,6 +241,7 @@ metadata/surface = "concrete"
 [node name="floor_concrete_2x2" parent="Shell/floor_concrete_2x2_24"]
 surface_material_override/0 = ExtResource("2")
 instance_shader_parameters/plan_at = Vector4(28, 0, 20, 0)
+visible = false
 
 [node name="floor_concrete_2x2_25" parent="Shell" instance=ExtResource("1")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 0, 4)
@@ -223,6 +250,7 @@ metadata/surface = "concrete"
 [node name="floor_concrete_2x2" parent="Shell/floor_concrete_2x2_25"]
 surface_material_override/0 = ExtResource("2")
 instance_shader_parameters/plan_at = Vector4(30, 0, 20, 0)
+visible = false
 
 [node name="floor_concrete_2x2_26" parent="Shell" instance=ExtResource("1")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 0, 4)
@@ -231,6 +259,7 @@ metadata/surface = "concrete"
 [node name="floor_concrete_2x2" parent="Shell/floor_concrete_2x2_26"]
 surface_material_override/0 = ExtResource("2")
 instance_shader_parameters/plan_at = Vector4(32, 0, 20, 0)
+visible = false
 
 [node name="floor_concrete_2x2_27" parent="Shell" instance=ExtResource("1")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 0, 4)
@@ -239,6 +268,7 @@ metadata/surface = "concrete"
 [node name="floor_concrete_2x2" parent="Shell/floor_concrete_2x2_27"]
 surface_material_override/0 = ExtResource("2")
 instance_shader_parameters/plan_at = Vector4(34, 0, 20, 0)
+visible = false
 
 [node name="floor_concrete_2x2_28" parent="Shell" instance=ExtResource("1")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14, 0, 4)
@@ -247,6 +277,7 @@ metadata/surface = "concrete"
 [node name="floor_concrete_2x2" parent="Shell/floor_concrete_2x2_28"]
 surface_material_override/0 = ExtResource("2")
 instance_shader_parameters/plan_at = Vector4(36, 0, 20, 0)
+visible = false
 
 [node name="floor_concrete_2x2_29" parent="Shell" instance=ExtResource("1")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16, 0, 4)
@@ -255,6 +286,7 @@ metadata/surface = "concrete"
 [node name="floor_concrete_2x2" parent="Shell/floor_concrete_2x2_29"]
 surface_material_override/0 = ExtResource("2")
 instance_shader_parameters/plan_at = Vector4(38, 0, 20, 0)
+visible = false
 
 [node name="floor_concrete_2x2_30" parent="Shell" instance=ExtResource("1")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 18, 0, 4)
@@ -263,6 +295,7 @@ metadata/surface = "concrete"
 [node name="floor_concrete_2x2" parent="Shell/floor_concrete_2x2_30"]
 surface_material_override/0 = ExtResource("2")
 instance_shader_parameters/plan_at = Vector4(40, 0, 20, 0)
+visible = false
 
 [node name="floor_concrete_2x2_31" parent="Shell" instance=ExtResource("1")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 6)
@@ -271,6 +304,7 @@ metadata/surface = "concrete"
 [node name="floor_concrete_2x2" parent="Shell/floor_concrete_2x2_31"]
 surface_material_override/0 = ExtResource("2")
 instance_shader_parameters/plan_at = Vector4(22, 0, 22, 0)
+visible = false
 
 [node name="floor_concrete_2x2_32" parent="Shell" instance=ExtResource("1")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0, 6)
@@ -279,6 +313,7 @@ metadata/surface = "concrete"
 [node name="floor_concrete_2x2" parent="Shell/floor_concrete_2x2_32"]
 surface_material_override/0 = ExtResource("2")
 instance_shader_parameters/plan_at = Vector4(24, 0, 22, 0)
+visible = false
 
 [node name="floor_concrete_2x2_33" parent="Shell" instance=ExtResource("1")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 0, 6)
@@ -287,6 +322,7 @@ metadata/surface = "concrete"
 [node name="floor_concrete_2x2" parent="Shell/floor_concrete_2x2_33"]
 surface_material_override/0 = ExtResource("2")
 instance_shader_parameters/plan_at = Vector4(26, 0, 22, 0)
+visible = false
 
 [node name="floor_concrete_2x2_34" parent="Shell" instance=ExtResource("1")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 0, 6)
@@ -295,6 +331,7 @@ metadata/surface = "concrete"
 [node name="floor_concrete_2x2" parent="Shell/floor_concrete_2x2_34"]
 surface_material_override/0 = ExtResource("2")
 instance_shader_parameters/plan_at = Vector4(28, 0, 22, 0)
+visible = false
 
 [node name="floor_concrete_2x2_35" parent="Shell" instance=ExtResource("1")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 0, 6)
@@ -303,6 +340,7 @@ metadata/surface = "concrete"
 [node name="floor_concrete_2x2" parent="Shell/floor_concrete_2x2_35"]
 surface_material_override/0 = ExtResource("2")
 instance_shader_parameters/plan_at = Vector4(30, 0, 22, 0)
+visible = false
 
 [node name="floor_concrete_2x2_36" parent="Shell" instance=ExtResource("1")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 0, 6)
@@ -311,6 +349,7 @@ metadata/surface = "concrete"
 [node name="floor_concrete_2x2" parent="Shell/floor_concrete_2x2_36"]
 surface_material_override/0 = ExtResource("2")
 instance_shader_parameters/plan_at = Vector4(32, 0, 22, 0)
+visible = false
 
 [node name="floor_concrete_2x2_37" parent="Shell" instance=ExtResource("1")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 0, 6)
@@ -319,6 +358,7 @@ metadata/surface = "concrete"
 [node name="floor_concrete_2x2" parent="Shell/floor_concrete_2x2_37"]
 surface_material_override/0 = ExtResource("2")
 instance_shader_parameters/plan_at = Vector4(34, 0, 22, 0)
+visible = false
 
 [node name="floor_concrete_2x2_38" parent="Shell" instance=ExtResource("1")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14, 0, 6)
@@ -327,6 +367,7 @@ metadata/surface = "concrete"
 [node name="floor_concrete_2x2" parent="Shell/floor_concrete_2x2_38"]
 surface_material_override/0 = ExtResource("2")
 instance_shader_parameters/plan_at = Vector4(36, 0, 22, 0)
+visible = false
 
 [node name="floor_concrete_2x2_39" parent="Shell" instance=ExtResource("1")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16, 0, 6)
@@ -335,6 +376,7 @@ metadata/surface = "concrete"
 [node name="floor_concrete_2x2" parent="Shell/floor_concrete_2x2_39"]
 surface_material_override/0 = ExtResource("2")
 instance_shader_parameters/plan_at = Vector4(38, 0, 22, 0)
+visible = false
 
 [node name="floor_concrete_2x2_40" parent="Shell" instance=ExtResource("1")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 18, 0, 6)
@@ -343,95 +385,148 @@ metadata/surface = "concrete"
 [node name="floor_concrete_2x2" parent="Shell/floor_concrete_2x2_40"]
 surface_material_override/0 = ExtResource("2")
 instance_shader_parameters/plan_at = Vector4(40, 0, 22, 0)
+visible = false
+
+[node name="merged_floor" parent="Shell" instance=ExtResource("3")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+
+[node name="merged_floor" parent="Shell/merged_floor"]
+surface_material_override/0 = ExtResource("2")
+instance_shader_parameters/plan_at = Vector4(22, 0, 16, 0)
 
 [node name="Dressing" type="Node3D" parent="."]
 
-[node name="terrace_table_1" parent="Dressing" instance=ExtResource("3")]
+[node name="terrace_table_1" parent="Dressing" instance=ExtResource("4")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7, 0, 4)
 metadata/prop = "terrace_table"
 metadata/station = "TerraceTable"
 
 [node name="terrace_table" parent="Dressing/terrace_table_1"]
-surface_material_override/0 = ExtResource("4")
+surface_material_override/0 = ExtResource("5")
 
-[node name="terrace_chair_1" parent="Dressing" instance=ExtResource("5")]
+[node name="terrace_chair_1" parent="Dressing" instance=ExtResource("6")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.6, 0, 3.22)
 metadata/prop = "terrace_chair"
 metadata/station = "TerraceTable"
 
-[node name="terrace_chair_2" parent="Dressing" instance=ExtResource("5")]
+[node name="terrace_chair_2" parent="Dressing" instance=ExtResource("6")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7.4, 0, 3.22)
 metadata/prop = "terrace_chair"
 metadata/station = "TerraceTable"
 
-[node name="terrace_chair_3" parent="Dressing" instance=ExtResource("5")]
+[node name="terrace_chair_3" parent="Dressing" instance=ExtResource("6")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 6.6, 0, 4.78)
 metadata/prop = "terrace_chair"
 metadata/station = "TerraceTable"
 
-[node name="terrace_chair_4" parent="Dressing" instance=ExtResource("5")]
+[node name="terrace_chair_4" parent="Dressing" instance=ExtResource("6")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 7.4, 0, 4.78)
 metadata/prop = "terrace_chair"
 metadata/station = "TerraceTable"
 
-[node name="planter_pot_1" parent="Dressing" instance=ExtResource("6")]
+[node name="planter_pot_1" parent="Dressing" instance=ExtResource("7")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0.5)
 metadata/prop = "planter_pot"
 
-[node name="planter_pot_2" parent="Dressing" instance=ExtResource("6")]
+[node name="planter_pot" parent="Dressing/planter_pot_1"]
+visible = false
+
+[node name="planter_pot_2" parent="Dressing" instance=ExtResource("7")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 0, 0.5)
 metadata/prop = "planter_pot"
 
-[node name="planter_pot_3" parent="Dressing" instance=ExtResource("6")]
+[node name="planter_pot" parent="Dressing/planter_pot_2"]
+visible = false
+
+[node name="planter_pot_3" parent="Dressing" instance=ExtResource("7")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 0, 0.5)
 metadata/prop = "planter_pot"
 
-[node name="planter_pot_4" parent="Dressing" instance=ExtResource("6")]
+[node name="planter_pot" parent="Dressing/planter_pot_3"]
+visible = false
+
+[node name="planter_pot_4" parent="Dressing" instance=ExtResource("7")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 13, 0, 0.5)
 metadata/prop = "planter_pot"
 
-[node name="planter_pot_5" parent="Dressing" instance=ExtResource("6")]
+[node name="planter_pot" parent="Dressing/planter_pot_4"]
+visible = false
+
+[node name="planter_pot_5" parent="Dressing" instance=ExtResource("7")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 19.5, 0, 0.5)
 metadata/prop = "planter_pot"
 
-[node name="potted_plant_1" parent="Dressing" instance=ExtResource("7")]
+[node name="planter_pot" parent="Dressing/planter_pot_5"]
+visible = false
+
+[node name="potted_plant_1" parent="Dressing" instance=ExtResource("8")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12.2, 0, 7.5)
 metadata/prop = "potted_plant"
 
-[node name="potted_plant_2" parent="Dressing" instance=ExtResource("7")]
+[node name="potted_plant" parent="Dressing/potted_plant_1"]
+visible = false
+
+[node name="potted_plant_2" parent="Dressing" instance=ExtResource("8")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15.8, 0, 7.5)
 metadata/prop = "potted_plant"
 
+[node name="potted_plant" parent="Dressing/potted_plant_2"]
+visible = false
+
+[node name="batch_dressing" parent="Dressing" instance=ExtResource("9")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+
 [node name="Fixtures" type="Node3D" parent="."]
 
-[node name="lantern_1" parent="Fixtures" instance=ExtResource("8")]
+[node name="lantern_1" parent="Fixtures" instance=ExtResource("10")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7, 0.75, 4)
 metadata/prop = "lantern"
 metadata/station = "TerraceTable"
 
-[node name="lantern_2" parent="Fixtures" instance=ExtResource("8")]
+[node name="lantern_2" parent="Fixtures" instance=ExtResource("10")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.4, 0, 7.5)
 metadata/prop = "lantern"
 
-[node name="lantern_3" parent="Fixtures" instance=ExtResource("8")]
+[node name="lantern" parent="Fixtures/lantern_2"]
+visible = false
+
+[node name="lantern_3" parent="Fixtures" instance=ExtResource("10")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 19.6, 0, 7.5)
 metadata/prop = "lantern"
 
-[node name="lantern_4" parent="Fixtures" instance=ExtResource("8")]
+[node name="lantern" parent="Fixtures/lantern_3"]
+visible = false
+
+[node name="lantern_4" parent="Fixtures" instance=ExtResource("10")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 19.6, 0, 0.4)
 metadata/prop = "lantern"
 
-[node name="string_lights_1" parent="Fixtures" instance=ExtResource("9")]
+[node name="lantern" parent="Fixtures/lantern_4"]
+visible = false
+
+[node name="string_lights_1" parent="Fixtures" instance=ExtResource("11")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10.5, 3, 6.5)
 metadata/prop = "string_lights"
 
-[node name="string_lights_2" parent="Fixtures" instance=ExtResource("9")]
+[node name="string_lights" parent="Fixtures/string_lights_1"]
+visible = false
+
+[node name="string_lights_2" parent="Fixtures" instance=ExtResource("11")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15.5, 3, 6.5)
 metadata/prop = "string_lights"
 
-[node name="porch_lamp_1" parent="Fixtures" instance=ExtResource("10")]
+[node name="string_lights" parent="Fixtures/string_lights_2"]
+visible = false
+
+[node name="porch_lamp_1" parent="Fixtures" instance=ExtResource("12")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 15.3, 1.9, 7.9)
 metadata/prop = "porch_lamp"
+
+[node name="porch_lamp" parent="Fixtures/porch_lamp_1"]
+visible = false
+
+[node name="batch_fixtures" parent="Fixtures" instance=ExtResource("13")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
 
 [node name="terrace_string_lights_01" type="OmniLight3D" parent="Fixtures"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 2.6, 4)

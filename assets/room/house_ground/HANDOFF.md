@@ -194,3 +194,21 @@ entry unless the game wants one.
   at least half under a rug carry `carpet`.
 - The art's package check (`house --export --package 2`) is green: every scene loads with its root and `size_m`,
   10/10 capsule walks arrive, none of the 25536 rays down hits a shell collider without a surface (80 hit nothing).
+
+## Merged shell (#107)
+
+Draw calls, not the look. Each room's own static kit pieces of a class (floors, ceilings, the rest of the shell) are
+drawn by one merged mesh per material, `Shell/merged_<class>` (`house_kit/merged/<class>_m_<level>_<room>.glb`, the
+kit's set material on its `kit_set` surfaces with `plan_at` at the room's origin), and each room's static dressing by
+one mesh per group, `Dressing/batch_dressing`, `Detail/batch_detail`, `Fixtures/batch_fixtures`
+(`house_props/merged/batch_*.glb`, the fine material on its `kit_fine` surfaces; a preset hiding `Detail` hides its
+batch too). Here: 15 merged shell meshes and 21 batches, committed in `export/merged/`
+(copy them to `assets/environment/house_kit/merged/` and `assets/environment/house_props/merged/`, as
+`package.json` lists them).
+- Every piece and prop instance is still there with its name, transform, colliders and metadata (`surface`,
+  `station`, `prop`); only its own mesh node carries `visible = false`. `test_house_contract` checks every
+  game-facing node and collider of this package against main's export (layouts/house/export_contract.json): unchanged.
+- Never merged: the pieces the game moves or opens (house.toml `[merge] keep`: gates, wicket, garage door, glass door,
+  the attic ladder and hatch boards), task stations and `[merge] keep_props` (the garage's car, lift arms and lift
+  panel). A game-side script that moves another prop must move it out of its batch (ask the art side).
+- Numbers: the export sheet's kitchen views draw 43 and 42 calls before, 23 and 23 after; the bake review's cameras (`house --bake --count`): baked 236/165/257/180 -> 125/110/157/103 and High 875/499/823/561 -> 234/205/303/193 (kitchen, living room, wall kitchen, hallway).

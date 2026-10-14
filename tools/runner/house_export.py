@@ -10,6 +10,7 @@ from __future__ import annotations
 import fnmatch
 import hashlib
 import json
+import re
 import shutil
 import struct
 from pathlib import Path
@@ -32,6 +33,7 @@ SET_MATERIAL = "kit_set"  # the kit GLBs' stand-in material (Blender's kit_set-v
 FINE_MATERIAL = "kit_fine"  # the world look's props' stand-in material (Blender's kit_fine-vcol, #143)
 FINE_SHADER = "prop_fine.gdshader"  # the fine pack's shader, shipped once beside the props (#147)
 FINE_SHADER_SRC = Path(__file__).resolve().parents[2] / "godot" / "props" / FINE_SHADER
+MERGED_DIR = "merged"  # house_kit/merged/<class>_m_<level>_<room>.glb, house_props/merged/batch_*.glb (#107)
 FINE_DIR = "fine"  # house_props/fine/<tier>/fine_d.png, fine_n0.png, fine_n1.png: the fine pack's shared textures
 FINE_TEXTURES = ("d", "d1", "n0", "n1", "n2", "n3")  # in this order; a build writes the ones its slots need
 FINE_SLOTS = 8  # textured layers (prop_lib.FINE_SLOTS)
@@ -97,7 +99,8 @@ def set_surfaces(path: Path, material: str = SET_MATERIAL, posed: bool = True) -
     doc = _gltf(path)
     if doc is None:
         return []
-    mats = [str(m.get("name", "")).split("-")[0] for m in doc.get("materials", [])]
+    # a batch's variant of a stand-in (`kit_fine__1-vcol`, house_merge.variant_name) is that stand-in too
+    mats = [re.sub(r"__\d+$", "", str(m.get("name", "")).split("-")[0]) for m in doc.get("materials", [])]
     nodes, out = doc.get("nodes", []), []
 
     def walk(i: int, chain: list[str], at: list[float], turned: bool) -> None:
@@ -300,7 +303,7 @@ def light_node(f: dict, parent: str, rx: float, fy: float, ry: float) -> str:
 
 def room_scene(data: dict, lv: dict, room: dict, pieces: list[dict], extras: list[dict], resolved: list[dict],
                fixtures: list[dict], have=lambda pid: True, index: dict | None = None,
-               surfaces: dict | None = None, fine: dict | None = None) -> str:
+               surfaces: dict | None = None, fine: dict | None = None, merge=None) -> str:
     """One room's scene text (origin at its north-west floor corner, like the game's greybox rooms). A dressing prop
     without a GLB (have(id) false) becomes a Marker3D under Placeholders with its size, never a CSG box. A walkable
     shell piece carries its footstep surface (piece_surface). `index`, when given, gets the check's node lists:
@@ -308,7 +311,10 @@ def room_scene(data: dict, lv: dict, room: dict, pieces: list[dict], extras: lis
     `surfaces` (piece id -> set_surfaces) puts the kit's set material (KIT_MATERIAL) on each piece's set surfaces
     with the mesh's plan pose as `plan_at` (#132): the wall paints travel with the scene. `fine` (prop id ->
     set_surfaces(..., FINE_MATERIAL)) puts the fine pack's material of `fine_tier` on the props' kit_fine surfaces
-    (#147): one shared resource, so the game swaps the tier for the whole house in one place."""
+    (#147): one shared resource, so the game swaps the tier for the whole house in one place. `merge` (#107,
+    commands.house.merger with the export's paths) merges the room's own static pieces per class (merged_<class> under
+    Shell, plan_at at the room's origin) and batches its static dressing (batch_<group>, the fine material on its
+    kit_fine surfaces); every piece and prop instance stays, its visual mesh hidden (house_contract pins the rest)."""
     from . import house_dressing
 
     ex = settings(data)
@@ -332,6 +338,17 @@ def room_scene(data: dict, lv: dict, room: dict, pieces: list[dict], extras: lis
     seen: dict = {}
     rugs = [house_dressing.footprint(r) for r in resolved if r["kind"] == "props" and r["id"].startswith(RUG)]
     walkable, hide = [], []
+    shell, counted = [], {}  # the merged shell (#107): the room's own pieces, named and placed as below
+    for p in pieces:
+        counted[p["id"]] = counted.get(p["id"], 0) + 1
+        shell.append({"id": p["id"], "node": p.get("name", f"{p['id']}_{counted[p['id']]}"),
+                      "transform": H._tf(p["turn"], p["x"] - rx, p["h"], p["y"] - ry)})
+    merged = merge(lv["level"], room["id"], shell) if merge else {"hide": set(), "add": []}
+
+    def set_lines(s: dict, at: list[float]) -> list[str]:
+        mat = sc.res(material_res(data))
+        return ([f'surface_material_override/{i} = ExtResource("{mat}")' for i in s["surfaces"]]
+                + ["instance_shader_parameters/plan_at = Vector4(" + ", ".join(H._num(v) for v in at) + ")"])
     for p, h in [(p, p["h"]) for p in pieces] + [(p, p["h"] - p["floor_y"]) for p in extras]:
         seen[p["id"]] = seen.get(p["id"], 0) + 1
         name = p.get("name", f"{p['id']}_{seen[p['id']]}")
@@ -340,16 +357,25 @@ def room_scene(data: dict, lv: dict, room: dict, pieces: list[dict], extras: lis
                     {"surface": surface} if surface else None)
         if surface:
             walkable.append(name)
+        lines: dict[str, list[str]] = {}
         for s in (surfaces or {}).get(p["id"], []):
             ax, az = H.axes(p["turn"])
             ox, oy, oz = s["at"]
             at = [p["x"] + ax[0] * ox + az[0] * oz, fy + h + oy, p["y"] + ax[1] * ox + az[1] * oz, p["turn"] % 360]
-            parent, _, node = f"Shell/{name}/{s['node']}".rpartition("/")
-            mat = sc.res(material_res(data))
-            sc.nodes.append("\n".join([f'[node name="{node}" parent="{parent}"]']
-                                      + [f'surface_material_override/{i} = ExtResource("{mat}")' for i in s["surfaces"]]
-                                      + ["instance_shader_parameters/plan_at = Vector4("
-                                         + ", ".join(H._num(v) for v in at) + ")"]))
+            lines.setdefault(s["node"], []).extend(set_lines(s, at))
+        if p in pieces and name in merged["hide"]:  # the merged mesh draws it; the instance keeps its colliders
+            lines.setdefault(p["id"], []).append("visible = false")
+        for node, extra in lines.items():
+            parent, _, leaf = f"Shell/{name}/{node}".rpartition("/")
+            sc.nodes.append("\n".join([f'[node name="{leaf}" parent="{parent}"]'] + extra))
+    for node, path in merged["add"]:  # its vertices are room-local: the set surfaces' plan_at is the room's origin
+        sc.instance(node, "Shell", path, H._tf(0, 0, 0, 0))
+        stem = path.rsplit("/", 1)[-1][:-4]
+        for s in set_surfaces(merge.files[stem]):
+            ox, oy, oz = s["at"]
+            parent, _, leaf = f"Shell/{node}/{s['node']}".rpartition("/")
+            sc.nodes.append("\n".join([f'[node name="{leaf}" parent="{parent}"]']
+                                      + set_lines(s, [rx + ox, fy + oy, ry + oz, 0])))
     props_seen: dict = {}
     for r in resolved:
         if r["kind"] == "props" and have(r["id"]):
@@ -362,10 +388,15 @@ def room_scene(data: dict, lv: dict, room: dict, pieces: list[dict], extras: lis
     fine_mat = fine_res(data, f"prop_fine_{ex.get('fine_tier', 'high')}.tres")
 
     def fine_of(pid: str) -> list:
+        got = (fine or {}).get(pid, [])
+        if merge and pid in merge.files:  # a batch (#107): its kit_fine surfaces, merged per material
+            got = set_surfaces(merge.files[pid], FINE_MATERIAL, posed=False)
         return [(s["node"], [f'surface_material_override/{i} = ExtResource("{sc.res(fine_mat)}")' for i in s["surfaces"]])
-                for s in (fine or {}).get(pid, [])]
+                for s in got]
+    hook = getattr(merge, "batch", None)
     house_dressing.scene_nodes(sc, [r for r in tagged if have(r["id"])],
-                               lambda pid: asset_res(data, ex["prop_set"], pid), fine_of)
+                               lambda pid: asset_res(data, ex["prop_set"], pid), fine_of,
+                               (lambda parent, items: hook(lv["level"], room["id"], parent, items)) if hook else None)
     lights = [f for f in fixtures if f["room"] == room["id"] and f["type"] != "moon"]
     if lights:
         if not any(n.startswith('[node name="Fixtures"') for n in sc.nodes):
@@ -417,7 +448,7 @@ def attic_dressing(z: dict, cat: dict | None = None) -> dict:
 
 
 def scenes(data: dict, planned: dict, dressing: dict, fixtures: list[dict], pkg: dict | None = None,
-           have=lambda pid: True, surfaces: dict | None = None, fine: dict | None = None) -> dict:
+           have=lambda pid: True, surfaces: dict | None = None, fine: dict | None = None, merge=None) -> dict:
     """room id -> {"level", "node", "text", "kit": piece ids, "props": prop ids}; plus "" -> the level pieces that
     stand in no room (a list). No CSG: a dressing prop always instances its GLB (house_dressing's placeholder box is
     for the art's own review only; a prop without a GLB is a sized Marker3D under Placeholders)."""
@@ -430,7 +461,7 @@ def scenes(data: dict, planned: dict, dressing: dict, fixtures: list[dict], pkg:
         resolved = (dressing.get(room["id"]) or {}).get("resolved", [])
         pieces, ext = pl["pieces"][room["id"]], extras.get(room["id"], [])
         index: dict = {}
-        text = room_scene(data, lv, rr, pieces, ext, resolved, fixtures, have, index, surfaces, fine)
+        text = room_scene(data, lv, rr, pieces, ext, resolved, fixtures, have, index, surfaces, fine, merge)
         out[room["id"]] = {"level": lv["level"], "node": room["node"], "text": text, **index,
                            "lights": sum(1 for f in fixtures if f["room"] == room["id"] and f["type"] != "moon"),
                            "kit": sorted({p["id"] for p in pieces + ext}),
@@ -524,15 +555,16 @@ def import_text(path: Path) -> str:
 
 
 def write(data: dict, planned: dict, dressing: dict, fixtures: list[dict], out: Path, raw: Path,
-          prop_glbs: dict[str, Path], n: int | None = None) -> dict:
+          prop_glbs: dict[str, Path], n: int | None = None, merge=None) -> dict:
     """Writes a package (or all of them) into out; returns the summary that also goes to out/package.json. Fails
-    (ValueError) on a kit piece or set file the raw folder lacks."""
+    (ValueError) on a kit piece or set file the raw folder lacks. `merge` (#107): see room_scene; its GLBs ship
+    under the kit's and the props' MERGED_DIR."""
     ex = settings(data)
     pkg = packages(data)[n] if n is not None else None
     kit_dir = raw / data["settings"]["kit_dir"]
     surfaces = {p.stem: set_surfaces(p) for p in sorted(kit_dir.glob("*.glb"))}
     fine = {pid: f for pid, src in prop_glbs.items() if (f := set_surfaces(src, FINE_MATERIAL, posed=False))}
-    built = scenes(data, planned, dressing, fixtures, pkg, lambda pid: pid in prop_glbs, surfaces, fine)
+    built = scenes(data, planned, dressing, fixtures, pkg, lambda pid: pid in prop_glbs, surfaces, fine, merge)
     unplaced = built.pop("")
     kit_ids = {pid for r in built.values() for pid in r["kit"]}
     if pkg is None or pkg.get("kit"):
@@ -581,6 +613,8 @@ def write(data: dict, planned: dict, dressing: dict, fixtures: list[dict], out: 
     for tier, t in fine_pack.get("tiers", {}).items():  # the fine pack's shared textures (#147), once per tier
         for k in fine_keys(fine_pack, tier):
             copies[env / ex["prop_set"] / FINE_DIR / tier / f"fine_{k}.png"] = Path(t["files"][k])
+    for stem, src in sorted((merge.files if merge else {}).items()):  # the merged shell and batches (#107)
+        copies[env / ex["prop_set" if stem.startswith("batch_") else "kit_set"] / MERGED_DIR / f"{stem}.glb"] = src
     lost = sorted(t.as_posix() for t, src in copies.items() if not src.is_file())
     if lost:
         raise ValueError(f"{len(lost)} files missing in the raw folder, e.g. {lost[0]} (build the kit and props)")

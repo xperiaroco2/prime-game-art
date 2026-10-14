@@ -5,11 +5,12 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import tomllib
 from pathlib import Path
 
-from .. import (common, house_basement, house_bake_props, house_clutter, house_dressing, house_export, house_fill,
-               house_layout, house_lights, house_routes)
+from .. import (common, house_bake, house_basement, house_bake_props, house_clutter, house_dressing, house_export,
+               house_fill, house_layout, house_lights, house_merge, house_routes)
 from . import _frames, _godot, _house_bake
 
 NAME = "house"
@@ -60,6 +61,11 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--before", type=Path, metavar="DIR",
                         help="with --bake and --review: an earlier review of the same preset; adds before_after.png "
                              "and before_after.md (its baked row over this run's baked and sheen rows)")
+    parser.add_argument("--count", type=Path, metavar="DIR",
+                        help="with --bake: build without baking and count the draw calls per review view, baked and "
+                             "High, against lights.toml's [budget] (draw_calls.json and .md, the frames; #107)")
+    parser.add_argument("--no-merge", action="store_true",
+                        help="draw every kit piece as its own instance (the scenes before #107's merged shell)")
     parser.add_argument("--review", type=Path, metavar="DIR",
                         help="with --bake: baked and real-time frames, sheet.png and measures.json into DIR")
     parser.add_argument("--export", type=Path, metavar="DIR",
@@ -141,8 +147,15 @@ def run(args: argparse.Namespace) -> int:
     if args.props_dir or args.props_map or args.before:
         found, dressing, label = lab_props(args, found, dressing)
     st = data["settings"]
+    merge = None if args.no_merge else merger(data, found)
     summary = house_layout.write_scenes(data, planned, args.out, dressing,
-                                        lambda pid: st["prop_res"].format(id=pid) if pid in found else None)
+                                        lambda pid: st["prop_res"].format(id=pid) if pid in found else None, merge)
+    if merge:
+        uv2 = {k: v for k, v in merge.uv2.items() if v is not None}  # no null entry: zone_build.gd reads a float
+        (_house_bake.MERGED / "uv2.json").write_text(json.dumps(uv2, indent=1), encoding="utf-8", newline="\n")
+        common.say(f"  merged shell: {len(merge.uv2)} merged meshes for {merge.hidden} piece instances; batched "
+                   f"dressing: {len(merge.batched)} batches for {merge.props} props (#107; "
+                   f"{_house_bake.MERGED.as_posix()})")
     held = {rid: ids for rid, ids in summary["placeholders"].items() if ids}
     if summary["props"]:
         common.say(f"  dressing: {sum(summary['props'].values())} props and fixtures in {len(dressing)} rooms, "
@@ -168,7 +181,8 @@ def run(args: argparse.Namespace) -> int:
             raise common.Failure("--bake needs the scenes in godot/import/house (drop --out)")
         zones = list(lights["zones"]) if args.bake == "all" else args.bake.split(",")
         return _house_bake.run(data, lights, zones, args.preset, args.review, args.no_bake, found, args.grid,
-                               args.merge, args.diag, args.sheen, args.before, label)
+                               args.merge, args.diag, args.sheen, args.before, label,
+                               args.count.resolve() if args.count else None)
     if (args.walk or args.basement) and args.out.resolve() != DEFAULT_OUT.resolve():
         raise common.Failure("--walk and --basement need the scenes in godot/import/house (drop --out)")
     code = 0
@@ -192,8 +206,14 @@ def export(data: dict, lights: dict, planned: dict, dressing: dict, args: argpar
         from .. import house_attic
         dressing = dict(dressing, attic=house_export.attic_dressing(house_attic.load("attic")))
     try:
-        summary = house_export.write(data, planned, dressing, fixtures, args.export, common.raw_dir(),
-                                     prop_glbs(data, dressing), args.package)
+        glbs = prop_glbs(data, dressing)
+        ex = house_export.settings(data)
+        merge = None if args.no_merge else merger(  # the merged shell and batched dressing ship in the package (#107)
+            data, glbs, Path(args.export) / "_build" / "merged",
+            house_export.asset_res(data, ex["kit_set"], f"{house_export.MERGED_DIR}/{{id}}"),
+            house_export.asset_res(data, ex["prop_set"], f"{house_export.MERGED_DIR}/{{id}}"))
+        summary = house_export.write(data, planned, dressing, fixtures, args.export, common.raw_dir(), glbs,
+                                     args.package, merge)
     except ValueError as e:
         raise common.Failure(f"house export: {e}") from e
     glbs = sum(1 for f in summary["files"] if f.endswith(".glb"))
@@ -321,20 +341,109 @@ def prop_glbs(data: dict, dressing: dict) -> dict:
     return found
 
 
+def merger(data: dict, found: dict | None = None, out: Path | None = None, kit_res: str | None = None,
+           prop_res: str | None = None):
+    """The merged shell's callable for house_layout.write_scenes (#107), or None without the kit's pieces.json: per room
+    the static kit pieces (not house.toml's [merge] keep, which the game moves or opens) of each class (floor_*,
+    ceiling_*, the rest: shell) merged into one GLB (house_merge.merge) under _house_bake.MERGED, named
+    <class>_m_<level>_<room> (staged as kit_<name>, so the bake's flat rule and UV2 table find it); a class of one
+    piece stays an instance. The callable's `uv2` (name -> UV2 units per metre) goes to MERGED/uv2.json.
+    Its `batch` (the batched dressing, #107): per room and group (Dressing, Detail, Fixtures) the static props (found:
+    prop id -> GLB; not a station, not house.toml's [merge] keep_props) merged into one GLB batch_<level>_<room>_<group>
+    (one surface per material, staged as prop_<name>, which Godot unwraps for the bake like any prop); each prop
+    instance stays with its colliders, name and metadata, its visual nodes hidden.
+    `out`, `kit_res` and `prop_res` (the export's, #107) put the GLBs elsewhere and name their res:// paths ({id}: the
+    GLB's stem); the callable's `files` maps each written GLB's stem to its path. A batch's "add" entries carry the
+    stem as a third item (house_dressing.scene_nodes' overrides key)."""
+    kit = common.raw_dir() / data["settings"]["kit_dir"]
+    if not (kit / "pieces.json").is_file():
+        return None
+    uv2 = house_bake.uv2_table(json.loads((kit / "pieces.json").read_text(encoding="utf-8")))
+    keep = set(data["settings"].get("merge", {}).get("keep", []))
+    out = Path(out) if out else _house_bake.MERGED
+    kit_res = kit_res or data["settings"]["kit_res"]
+    prop_res = prop_res or data["settings"]["prop_res"]
+    out.mkdir(parents=True, exist_ok=True)
+    for old in out.glob("*.glb"):
+        old.unlink()
+    visuals: dict = {}
+
+    def visual_nodes(glb) -> list:
+        if glb not in visuals:
+            visuals[glb] = sorted({p["node"] for p in house_merge.visual(Path(glb))})
+        return visuals[glb]
+
+    def merge(level: str, rid: str, pieces: list[dict]) -> dict:
+        by: dict[str, list[dict]] = {}
+        for p in pieces:
+            if p["id"] in keep or not (kit / f"{p['id']}.glb").is_file():
+                continue
+            cls = next((c for c in ("floor", "ceiling") if p["id"].startswith(c + "_")), "shell")
+            by.setdefault(cls, []).append({**p, "glb": kit / f"{p['id']}.glb", "class": cls,
+                                           "uv2_per_m": uv2.get(p["id"])})
+        hide, add = set(), []
+        for cls, items in sorted(by.items()):
+            if len(items) < 2:
+                continue
+            for it in items:  # the scene hides only the node named after the piece: a second mesh would draw twice
+                if visual_nodes(it["glb"]) != [it["id"]]:
+                    raise ValueError(f"{it['glb']}: a merged kit piece's visual nodes must be [{it['id']!r}], not "
+                                     f"{visual_nodes(it['glb'])} (list the piece in house.toml's [merge] keep)")
+            name = f"{cls}_m_{level}_{rid}"
+            rec = house_merge.merge(items, out / f"{name}.glb")
+            merge.files[name] = out / f"{name}.glb"
+            merge.uv2[name] = rec["classes"][cls]["uv2_per_m"]
+            hide |= {it["node"] for it in items}
+            add.append((f"merged_{cls}", kit_res.format(id=name)))
+        merge.hidden += len(hide)
+        return {"hide": hide, "add": add}
+
+    keep_props = set(data["settings"].get("merge", {}).get("keep_props", []))
+
+    def batch(level: str, rid: str, parent: str, items: list) -> dict:
+        its, hide = [], {}
+        for r, node in items:
+            glb = (found or {}).get(r["id"])
+            if r.get("station") or r["id"] in keep_props or glb is None:
+                continue
+            names = visual_nodes(glb)
+            if not names or not all(re.fullmatch(r"[A-Za-z0-9_]+", v or "") for v in names):
+                continue
+            its.append({"glb": Path(glb), "transform": house_dressing.tf_yaw(r["yaw"], *r["at"]), "class": "props",
+                        "uv2_per_m": None})
+            hide[node] = names
+        if len(its) < 2:
+            return {"hide": {}, "add": []}
+        name = f"batch_{level}_{rid}_{parent.lower()}"
+        house_merge.merge(its, out / f"{name}.glb")
+        merge.files[name] = out / f"{name}.glb"
+        merge.batched.append(name)
+        merge.props += len(its)
+        return {"hide": hide, "add": [(f"batch_{parent.lower()}", prop_res.format(id=name), name)]}
+    merge.uv2, merge.hidden, merge.batch, merge.batched, merge.props, merge.files = {}, 0, batch, [], 0, {}
+    return merge
+
+
 def stage(data: dict, summary: dict, props: dict | None = None) -> list[str]:
     """Stages the pieces and props the scenes use (the kit folder, the prop GLBs), imports them headless; returns the
     import's error lines."""
     kit = common.raw_dir() / data["settings"]["kit_dir"]
     names = {pid: f"kit_{pid}" for pid in summary["pieces"]}
+    merged = {Path(r).stem: _house_bake.MERGED / f"{Path(r).stem[4:]}.glb" for r in summary.get("merged", [])}
+    batched = {f"prop_{g.stem}": g for g in _house_bake.MERGED.glob("batch_*.glb")} if merged else {}
     missing = [pid for pid in names if not (kit / f"{pid}.glb").is_file()]
     if missing:
         raise common.Failure(f"no {', '.join(sorted(missing))} in {kit.as_posix()} (build the kit first)")
     props = props or {}
-    _godot.clear_staged(set(names.values()) | {f"prop_{pid}" for pid in props})
+    _godot.clear_staged(set(names.values()) | set(merged) | set(batched) | {f"prop_{pid}" for pid in props})
     for pid, name in names.items():
         _godot.stage(kit / f"{pid}.glb", name)
+    for name, glb in merged.items():
+        _godot.stage(glb, name, house_bake.KIT_IMPORT)
     for pid, glb in props.items():
         _godot.stage(glb, f"prop_{pid}")
+    for name, glb in batched.items():
+        _godot.stage(glb, name)
     errors = [line for line in _godot.import_project() if "ERROR" in line]
     for line in errors[:10]:
         common.say(f"  import: {line}")

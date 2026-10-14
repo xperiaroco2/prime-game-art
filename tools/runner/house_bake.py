@@ -394,3 +394,71 @@ def measures(width: int, height: int, px: list[tuple[int, int, int]], grid: int 
     cs.sort()
     return {"L_mean": round(sum(ls) / len(ls), 1), "dark_pct": round(100 * sum(v < 20 for v in ls) / len(ls), 1),
             "C_p90": round(cs[min(len(cs) - 1, int(0.9 * len(cs)))], 1)}
+
+
+# ---------------------------------------------------------------- draw calls per view (#107)
+# `house --bake ZONES --count DIR` builds the zones without baking and shoots the preset's rows from the review
+# cameras: the draw calls do not depend on the lightmap's data. "baked" is the bake alone (no real-time light),
+# "high" the High preset's sheen row (the nearest glow lamps real time, shadowed). lights.toml's [budget] holds the
+# per-view limits; a view over one is a WARN, not a failure (#107).
+COUNT_KINDS = {"baked": "baked", "high": "sheen"}
+
+
+def count_kind(mode: str) -> str | None:
+    """The budget kind a shot row's mode counts as: baked, high (a sheen mode) or None (the leaking real-time row)."""
+    if mode == "baked":
+        return "baked"
+    return "high" if sheen_mode(mode) else None
+
+
+def draw_calls(shots: list[dict], rows: list[dict]) -> dict[str, dict[str, list[dict]]]:
+    """bake_shots.gd's shots as zone -> kind -> one {"dc", "sdc"} per camera (shadows cached; the shadow draw calls
+    with every shadow redrawn, the worst case)."""
+    kinds = {r["label"]: (r["zone"], count_kind(r["mode"])) for r in rows}
+    out: dict[str, dict[str, list[dict]]] = {}
+    for s in sorted(shots, key=lambda s: (s["row"], s["cam"])):
+        zone, kind = kinds.get(s["row"], (None, None))
+        if kind is None:
+            continue
+        out.setdefault(zone, {}).setdefault(kind, []).append(
+            {"dc": round(s.get("draw_calls_cached", s.get("draw_calls", 0))),
+             "sdc": round(s.get("shadow_draw_calls_redrawn", 0))})
+    return out
+
+
+def budget_warnings(budget: dict, table: dict[str, dict[str, list[dict]]],
+                    names: dict[str, list[str]]) -> list[str]:
+    """One WARN line per view over lights.toml's [budget] (baked, high: visible draw calls; high_shadow: shadow draw
+    calls of the High row)."""
+    out = []
+    for zone, kinds in table.items():
+        for kind, cams in kinds.items():
+            for ci, c in enumerate(cams):
+                view = names.get(zone, [])[ci] if ci < len(names.get(zone, [])) else str(ci)
+                for key, val in ((kind, c["dc"]), (kind + "_shadow", c["sdc"])):
+                    lim = budget.get(key)
+                    if lim is not None and val > lim:
+                        out.append(f"WARN draw calls: {zone} {view} {key} {val} > {lim}")
+    return out
+
+
+def draw_calls_md(table: dict[str, dict[str, list[dict]]], names: dict[str, list[str]], budget: dict,
+                  before: dict | None = None) -> str:
+    """The per-view table: draw calls and shadow draw calls per zone, view and kind (with `before`: before -> after)."""
+    lines = ["# House draw calls per view (#107)", "",
+             f"Budget (lights.toml [budget]): {', '.join(f'{k} {v}' for k, v in sorted(budget.items())) or 'none'}. "
+             "dc: draw calls, shadows cached; sdc: shadow draw calls, every shadow redrawn.", "",
+             "| zone | view | baked dc | High dc | High sdc |", "|---|---|---|---|---|"]
+
+    def cell(zone, kind, ci, key):
+        now = table.get(zone, {}).get(kind, [])
+        if ci >= len(now):
+            return ""
+        was = (before or {}).get(zone, {}).get(kind, [])
+        val = now[ci][key]
+        return f"{was[ci][key]} -> {val}" if ci < len(was) else str(val)
+    for zone in table:
+        for ci, view in enumerate(names.get(zone, [])):
+            lines.append(f"| {zone} | {view} | {cell(zone, 'baked', ci, 'dc')} | {cell(zone, 'high', ci, 'dc')} | "
+                         f"{cell(zone, 'high', ci, 'sdc')} |")
+    return "\n".join(lines) + "\n"

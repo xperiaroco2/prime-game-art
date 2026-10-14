@@ -401,12 +401,16 @@ def tf_yaw(yaw: float, x: float, h: float, z: float) -> str:
     return "Transform3D(" + ", ".join(hl._num(n) for n in (c, 0, s, 0, 1, 0, -s, 0, c, x, h, z)) + ")"
 
 
-def scene_nodes(sc, resolved: list[dict], res_of, overrides=None) -> list[str]:
+def scene_nodes(sc, resolved: list[dict], res_of, overrides=None, batch=None) -> list[str]:
     """Adds the Dressing, Detail and Fixtures groups to a room scene (house_layout._Scene): the base layer's props
     under Dressing, the detail layer's under Detail (#147: a graphics preset hides one node; a detail prop has no
     collider), the fixtures under Fixtures. res_of(id) is the GLB's res:// path or None, where a named placeholder
     box of the prop's size stands in. overrides(id), when given, lists the instance's material overrides as (node
-    path inside the GLB, [scene lines]) pairs (house_export's fine pack). Returns the placeholder ids."""
+    path inside the GLB, [scene lines]) pairs (house_export's fine pack). batch(parent, [(record, node name)]) (#107,
+    the batched dressing), when given, returns {"hide": node name -> the GLB's visual node names a batch now draws,
+    "add": [(node name, res path[, overrides key])]}: every prop instance stays (its colliders, name and metadata) with those visual
+    nodes hidden, and the batch instances join the same group (a graphics preset hiding Detail hides its batch too).
+    Returns the placeholder ids."""
     placeholders, seen = [], {}
     batches = [("Dressing", [r for r in resolved if r["kind"] == "props" and r.get("layer", BASE) != DETAIL]),
                ("Detail", [r for r in resolved if r["kind"] == "props" and r.get("layer", BASE) == DETAIL]),
@@ -415,9 +419,12 @@ def scene_nodes(sc, resolved: list[dict], res_of, overrides=None) -> list[str]:
         if not rs:
             continue
         sc.group(parent)
+        named = []
         for r in rs:
             seen[r["id"]] = seen.get(r["id"], 0) + 1
-            name = f"{r['id']}_{seen[r['id']]}"
+            named.append((r, f"{r['id']}_{seen[r['id']]}"))
+        batched = batch(parent, [(r, n) for r, n in named if res_of(r["id"])]) if batch else {"hide": {}, "add": []}
+        for r, name in named:
             x, h, z = r["at"]
             meta = [f'metadata/prop = "{r["id"]}"'] + ([f'metadata/station = "{r["station"]}"'] if r.get("station") else [])
             meta += [f'metadata/surface = "{r["surface"]}"'] if r.get("surface") else []  # house_export.prop_surface
@@ -425,7 +432,10 @@ def scene_nodes(sc, resolved: list[dict], res_of, overrides=None) -> list[str]:
             if path:
                 sc.nodes.append("\n".join([f'[node name="{name}" parent="{parent}" instance=ExtResource("{sc.res(path)}")]',
                                            f"transform = {tf_yaw(r['yaw'], x, h, z)}"] + meta))
-                for node, extra in (overrides(r["id"]) if overrides else []):
+                lines = {node: list(extra) for node, extra in (overrides(r["id"]) if overrides else [])}
+                for node in batched["hide"].get(name, []):
+                    lines.setdefault(node, []).append("visible = false")
+                for node, extra in lines.items():
                     sub, _, leaf = f"{parent}/{name}/{node}".rpartition("/")
                     sc.nodes.append("\n".join([f'[node name="{leaf}" parent="{sub}"]'] + extra))
                 continue
@@ -439,6 +449,12 @@ def scene_nodes(sc, resolved: list[dict], res_of, overrides=None) -> list[str]:
                 f"size = Vector3({hl._num(L)}, {hl._num(H)}, {hl._num(W)})",
                 f"use_collision = {'false' if r['collision'] == 'none' else 'true'}",
                 "metadata/placeholder = true"] + meta))
+        for node, path, *key in batched["add"]:  # key: the batch's overrides key (house_export's fine pack)
+            sc.nodes.append("\n".join([f'[node name="{node}" parent="{parent}" instance=ExtResource("{sc.res(path)}")]',
+                                       "transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)"]))
+            for sub_node, extra in (overrides(key[0]) if overrides and key else []):
+                sub, _, leaf = f"{parent}/{node}/{sub_node}".rpartition("/")
+                sc.nodes.append("\n".join([f'[node name="{leaf}" parent="{sub}"]'] + extra))
     return placeholders
 
 
