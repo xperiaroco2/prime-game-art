@@ -96,8 +96,8 @@ face = "N"
 
 [[props]]
 id = "pump_set_b"
-at = [8.5, 0, 3.2]
-face = "N"
+at = [9.2, 0, 3.4]
+face = "W"
 
 [[props]]
 id = "sump_cover"
