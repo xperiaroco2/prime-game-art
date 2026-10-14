@@ -51,7 +51,8 @@ Every room's props follow these rules; the numbers are data in `props/library.to
    back), `pendant_trio` (three shades on a ceiling bar; the `chandelier` id, one light anchor), `display_cabinet`
    (hero: glazed upper doors over a closed base; one collider box), the slate `dining_rug` (`carpet_rug`, paint
    `carpet_slate`), the base-layer still life `art_still_life` and the detail-layer `art_delivery` and
-   `art_gazebo` (`framed_art` kinds `still_life`, `delivery`, `gazebo`: a parcel van and the photo gazebo), and the
+   `art_gazebo` (`framed_art` kinds `still_life`, `delivery`, `gazebo`: a delivery route on the House's street
+   map and a photo strip from the gazebo), and the
    detail props `place_setting`, `serving_board`, `fruit_dish`, `tulip_vase`, `bottle_rack` (shape `wine_rack`;
    dressing class for its six bottles), `homework` and `mail_stack`; the task prop `dining_table` is the oiled-oak
    `table` on tapered legs (`look = "fine"`, `props_task.build_table_fine`). `tools/tests/test_props_dining.py`
