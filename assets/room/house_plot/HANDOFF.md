@@ -50,6 +50,11 @@ kit's textured look (390 set surfaces, the package check finds none without it).
 Only `package.json` changed: the shared `kit_set.tres` carries the new wall paints and the rebuilt kit pieces of the
 warm sand ceiling hash anew; this package's scenes are unchanged.
 
+## The WC's and the pantry's paints (#158)
+
+Only `package.json` changed: the shared `kit_set.tres` carries the WC's and the pantry's paints and hashes anew;
+this package's scenes are unchanged.
+
 ## Credits
 `CREDITS.md` beside `assets/environment/house_outdoor/manifest.toml` and `assets/environment/house_garden/manifest.toml`
 (own work), and `assets/prop/house_props/CREDITS.md` (own work and CC0 packs, named per file in the props manifest);
