@@ -9,7 +9,7 @@ import unittest
 from pathlib import Path
 
 from runner import common, house_layout as H, house_outdoor
-from runner import house_export_plot as P
+from runner import house_export as X, house_export_plot as P
 
 DATA = H.load()
 ORDER = ["props/task/v1", "props/library/v1", "props/zones/v1"]
@@ -68,7 +68,7 @@ class SceneInstances(unittest.TestCase):
     """The plot scene itself (resolve() through to scene()), on a fake raw folder: a zones prop whose id the library
     also holds is instanced from its own unique game file, and a kit piece carries the set material (#132)."""
 
-    def build(self, surfaces=None) -> dict:
+    def build(self, surfaces=None, fine=None) -> dict:
         tmp = Path(self.enterContext(tempfile.TemporaryDirectory()))
         for rel in ("props/library/v13/deckchair.glb", "props/zones/v1/deckchair.glb",
                     "props/zones/v1/photo_backdrop.glb", f"{DATA['settings']['kit_dir']}/fence_t.glb"):
@@ -81,7 +81,7 @@ class SceneInstances(unittest.TestCase):
                   {"src": "library", "id": "deckchair", "pos": [6, 0, 5], "yaw": 0},
                   {"src": "zones", "id": "photo_backdrop", "pos": [7, 0, 5], "yaw": 0}]]
         return P.scene(DATA, tmp, house_outdoor.load(), doc, {"roof": [], "props": [], "scatter": []}, zones,
-                       surfaces=surfaces)
+                       surfaces=surfaces, fine=fine)
 
     def instanced(self, text: str, node: str) -> str:
         ids = dict((i, path) for path, i in re.findall(r'\[ext_resource type="PackedScene" path="([^"]+)" id="([^"]+)"\]',
@@ -107,6 +107,20 @@ class SceneInstances(unittest.TestCase):
         self.assertIn("surface_material_override/2 = ExtResource(", node)
         self.assertIn("instance_shader_parameters/plan_at = Vector4(1, 0.5, 1, 90)", node)  # local +X turns to -z
         self.assertNotIn("surface_material_override", self.build()["text"])
+
+    def test_a_fine_prop_carries_the_fine_material(self):
+        """#82's review: the yard's world-look props take the fine pack's material as the rooms' props do."""
+        sets = [{"node": "photo_backdrop/body", "at": [0, 0, 0], "surfaces": [1]}]
+        out = self.build(fine=lambda src: sets if src.name == "photo_backdrop.glb" else [])
+        text, props = out["text"], DATA["settings"]["export"]["prop_set"]
+        node = text[text.index('[node name="body" parent="Dressing/photo_backdrop_1/photo_backdrop"]'):].split(
+            "\n\n")[0]
+        mat = re.search(r'surface_material_override/1 = ExtResource\("([^"]+)"\)', node).group(1)
+        tier = DATA["settings"]["export"].get("fine_tier", "high")
+        self.assertIn(f'path="{X.fine_res(DATA, f"prop_fine_{tier}.tres")}" id="{mat}"', text)
+        self.assertEqual(out["fine"], [f"{props}/photo_backdrop.glb"])
+        self.assertEqual(text.count("surface_material_override"), 1)
+        self.assertEqual(self.build()["fine"], [])
 
 
 SCENE = Path(__file__).resolve().parents[2] / "assets" / "room" / "house_plot" / "export" / "outdoor.tscn"
