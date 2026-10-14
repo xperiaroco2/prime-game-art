@@ -999,7 +999,8 @@ def write_scenes(data: dict, planned: dict, out: Path, dressing: dict | None = N
     res:// path, or None for a named placeholder box of the prop's size. merge(level, room id, pieces) (#107, the
     merged shell): pieces are {"id", "node", "transform"} of the room's Shell; it returns {"hide": the node names whose
     visual mesh the merged meshes draw, "add": [(node name, res path)]}: every piece instance stays (its colliders and
-    name), a hidden one only stops drawing, and the merged instances join the Shell."""
+    name), a hidden one only stops drawing, and the merged instances join the Shell. merge.batch(level, room id, group, [(record, node name)]), when
+    the hook has one, batches the room's static dressing (house_dressing.scene_nodes' batch)."""
     from . import house_dressing
 
     st = data["settings"]
@@ -1052,8 +1053,11 @@ def write_scenes(data: dict, planned: dict, out: Path, dressing: dict | None = N
                     sc.marker(p["name"], "Placeholders", p["at"][0] - rx, p["at"][1], p["at"][2] - ry, meta={"note": p["note"], **({"size": p["size"]} if "size" in p else {})})
             rep = (dressing or {}).get(room["id"])
             if rep:
-                summary["placeholders"][room["id"]] = house_dressing.scene_nodes(sc, rep["resolved"],
-                                                                                 res_of or (lambda i: None))
+                hook = getattr(merge, "batch", None)
+                summary["placeholders"][room["id"]] = house_dressing.scene_nodes(
+                    sc, rep["resolved"], res_of or (lambda i: None),
+                    batch=(lambda parent, items, lv_=name, rid=room["id"]: hook(lv_, rid, parent, items)) if hook
+                    else None)
                 for r in rep["resolved"]:
                     summary["props"][r["id"]] = summary["props"].get(r["id"], 0) + 1
             (out / name / f"{room['id']}.tscn").write_text(sc.text(), encoding="utf-8", newline="\n")

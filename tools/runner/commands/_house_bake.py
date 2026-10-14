@@ -19,7 +19,7 @@ BUILD = "res://house/zone_build.gd"
 SHOTS = "res://house/bake_shots.gd"
 BAKE_DIR = _godot.PROJECT / "import" / "house" / "bake"
 TIMEOUT = 900
-MERGED = common.OUT / "house" / "merged"  # the merged shell's GLBs and uv2.json (#107; commands/house.py merger)
+MERGED = common.OUT / "house" / "merged"  # the merged shell's and batched dressing's GLBs, uv2.json (#107; house.py merger)
 REVIEW_ROOMS = {"ground": ["living_room", "kitchen"], "basement": ["storage", "generator_hall"],
                 "upper": ["bedroom", "landing"]}
 # Rooms also shot facing their north wall (house_bake.wall_cam): the kitchen's worktops, uppers and fridge (#83).
@@ -37,6 +37,8 @@ def stage(data: dict, scenes: Path, props: dict) -> list[str]:
             src, params = kit / f"{name[4:]}.glb", house_bake.KIT_IMPORT
             if "_m_" in name and (MERGED / f"{name[4:]}.glb").is_file():
                 src = MERGED / f"{name[4:]}.glb"
+        elif name.startswith("prop_batch_"):
+            src, params = MERGED / f"{name[5:]}.glb", house_bake.PROP_IMPORT
         else:
             src, params = props.get(name[5:]), house_bake.PROP_IMPORT
         if src is None or not Path(src).is_file():
