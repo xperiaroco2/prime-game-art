@@ -365,6 +365,12 @@ def merger(data: dict, found: dict | None = None, out: Path | None = None, kit_r
     out.mkdir(parents=True, exist_ok=True)
     for old in out.glob("*.glb"):
         old.unlink()
+    visuals: dict = {}
+
+    def visual_nodes(glb) -> list:
+        if glb not in visuals:
+            visuals[glb] = sorted({p["node"] for p in house_merge.visual(Path(glb))})
+        return visuals[glb]
 
     def merge(level: str, rid: str, pieces: list[dict]) -> dict:
         by: dict[str, list[dict]] = {}
@@ -378,6 +384,10 @@ def merger(data: dict, found: dict | None = None, out: Path | None = None, kit_r
         for cls, items in sorted(by.items()):
             if len(items) < 2:
                 continue
+            for it in items:  # the scene hides only the node named after the piece: a second mesh would draw twice
+                if visual_nodes(it["glb"]) != [it["id"]]:
+                    raise ValueError(f"{it['glb']}: a merged kit piece's visual nodes must be [{it['id']!r}], not "
+                                     f"{visual_nodes(it['glb'])} (list the piece in house.toml's [merge] keep)")
             name = f"{cls}_m_{level}_{rid}"
             rec = house_merge.merge(items, out / f"{name}.glb")
             merge.files[name] = out / f"{name}.glb"
@@ -388,7 +398,6 @@ def merger(data: dict, found: dict | None = None, out: Path | None = None, kit_r
         return {"hide": hide, "add": add}
 
     keep_props = set(data["settings"].get("merge", {}).get("keep_props", []))
-    visuals: dict = {}
 
     def batch(level: str, rid: str, parent: str, items: list) -> dict:
         its, hide = [], {}
@@ -396,13 +405,12 @@ def merger(data: dict, found: dict | None = None, out: Path | None = None, kit_r
             glb = (found or {}).get(r["id"])
             if r.get("station") or r["id"] in keep_props or glb is None:
                 continue
-            if glb not in visuals:
-                visuals[glb] = sorted({p["node"] for p in house_merge.visual(Path(glb))})
-            if not visuals[glb] or not all(re.fullmatch(r"[A-Za-z0-9_]+", v or "") for v in visuals[glb]):
+            names = visual_nodes(glb)
+            if not names or not all(re.fullmatch(r"[A-Za-z0-9_]+", v or "") for v in names):
                 continue
             its.append({"glb": Path(glb), "transform": house_dressing.tf_yaw(r["yaw"], *r["at"]), "class": "props",
                         "uv2_per_m": None})
-            hide[node] = visuals[glb]
+            hide[node] = names
         if len(its) < 2:
             return {"hide": {}, "add": []}
         name = f"batch_{level}_{rid}_{parent.lower()}"
