@@ -4457,6 +4457,39 @@ def _tub(m, x0, x1, y0, z0, z1, h, body, lid, label="art_white"):
     box(m, (xm - 0.07, y0 + h - lh + 0.008, z1), (xm + 0.07, y0 + h - 0.008, z1 + 0.002), label, "+z")
 
 
+def _lab_stock(m, x0, x1, y, z0, z1, gap, rng):
+    """One shelf of a darkroom's stock from x0 to x1: brown chemical bottles with white labels, white jugs with blue
+    caps and stacks of flat photo paper boxes with a coloured band."""
+    x = x0
+    zm = (z0 + z1) / 2
+    while True:
+        kind = rng.choice(("bottles", "jug", "paper", "paper"))
+        w = {"bottles": 0.3, "jug": 0.16, "paper": 0.36}[kind]
+        if x + w > x1:
+            break
+        if kind == "bottles":
+            for k in range(3):
+                bx = x + 0.05 + 0.1 * k
+                h = min(gap - 0.06, 0.2)
+                cyl(m, "y", (bx, zm + 0.05), 0.045, y, y + h, "bottle_brown", 8)
+                cyl(m, "y", (bx, zm + 0.05), 0.018, y + h, y + h + 0.04, "steel_black", 6)
+                box(m, (bx - 0.035, y + h * 0.35, zm + 0.095), (bx + 0.035, y + h * 0.7, zm + 0.0965), "art_white",
+                    "+z")
+        elif kind == "jug":
+            h = min(gap - 0.04, 0.26)
+            cbox(m, (x, y, zm - 0.05), (x + 0.14, y + h, zm + 0.08), "enamel_white", 0.01)
+            cyl(m, "y", (x + 0.04, zm + 0.02), 0.02, y + h, y + h + 0.03, "paint_blue", 8)
+            box(m, (x + 0.02, y + h * 0.3, zm + 0.08), (x + 0.12, y + h * 0.6, zm + 0.0815), "book_mustard", "+z")
+        else:
+            band = rng.choice(("paint_red", "book_mustard", "book_teal", "paint_blue"))
+            ny = min(4, max(1, int(gap / 0.07)))
+            for k in range(ny):
+                yy = y + 0.065 * k
+                box(m, (x, yy, z0 + 0.02), (x + 0.32, yy + 0.06, z1 - 0.02), "art_white", "+x-x+y+z")
+                box(m, (x + 0.02, yy + 0.015, z1 - 0.02), (x + 0.12, yy + 0.045, z1 - 0.019), band, "+z")
+        x += w + rng.uniform(0.02, 0.05)
+
+
 def build_storage_shelving(m, s, R, prm, rng):
     """A present-day boltless steel shelving bay (`frame` uprights and beams, oak `deck` shelves, X braces at the
     ends) stocked as a well-kept attic keeps it: labelled lidded boxes, plastic tubs with coloured lids and shoeboxes,
@@ -4486,6 +4519,11 @@ def build_storage_shelving(m, s, R, prm, rng):
             bar(m, (x, a, hz - u), (x, b, -hz + u), 0.014, frame, h=0.004, ref=(1, 0, 0))
     tags = ["paint_red", "book_teal", "book_mustard", "leaf_green", "paint_blue", "art_pink"]
     lids = ["book_teal", "book_mustard", "paint_blue", "book_sage", "art_terracotta"]
+    if prm.get("stock") == "lab":  # #170: the darkroom's chemicals and photo paper
+        for i, y in enumerate(ys):
+            top = ys[i + 1] - 0.06 if i + 1 < len(ys) else H - 0.01
+            _lab_stock(m, -hx + u + 0.03, hx - u - 0.03, y, -hz + 0.04, hz - 0.035, top - y - 0.02, rng)
+        return
     for i, y in enumerate(ys):
         top = ys[i + 1] - 0.06 if i + 1 < len(ys) else H - 0.01
         gap = top - y
@@ -4825,6 +4863,540 @@ def build_city_bike(m, s, R, prm, rng):
     loft(m, (x0 + 0.02, x1 - 0.02, -0.14, 0.14, y0), (x0, x1, -0.17, 0.17, y1), "coir", inner=0.012,
          inner_role="coir")
     bar(m, (0.36, H - 0.1, 0.0), (x0 + 0.01, y1 - 0.04, 0.0), 0.02, R[2])
+
+
+# ---- #170: the basement's working rooms (the storage, the darkroom, the corridor) ----
+
+# A 3 x 5 pixel block font for the signs: one string per row, "1" lit. Runs of lit pixels merge into one quad.
+_FONT = {
+    "A": ("010", "101", "111", "101", "101"), "B": ("110", "101", "110", "101", "110"),
+    "C": ("011", "100", "100", "100", "011"), "D": ("110", "101", "101", "101", "110"),
+    "E": ("111", "100", "110", "100", "111"), "F": ("111", "100", "110", "100", "100"),
+    "G": ("011", "100", "101", "101", "011"), "H": ("101", "101", "111", "101", "101"),
+    "I": ("111", "010", "010", "010", "111"), "K": ("101", "101", "110", "101", "101"),
+    "L": ("100", "100", "100", "100", "111"), "M": ("101", "111", "111", "101", "101"),
+    "N": ("110", "101", "101", "101", "101"), "O": ("010", "101", "101", "101", "010"),
+    "P": ("110", "101", "110", "100", "100"), "R": ("110", "101", "110", "101", "101"),
+    "S": ("011", "100", "010", "001", "110"), "T": ("111", "010", "010", "010", "010"),
+    "U": ("101", "101", "101", "101", "111"), "V": ("101", "101", "101", "101", "010"),
+    "W": ("101", "101", "111", "111", "101"), "X": ("101", "101", "010", "101", "101"),
+    "Y": ("101", "101", "010", "010", "010"), "Z": ("111", "001", "010", "100", "111"),
+    "0": ("111", "101", "101", "101", "111"), "1": ("010", "110", "010", "010", "111"),
+    "2": ("110", "001", "010", "100", "111"), "3": ("110", "001", "010", "001", "110"),
+    "4": ("101", "101", "111", "001", "001"), "5": ("111", "100", "110", "001", "110"),
+    "6": ("011", "100", "111", "101", "111"), "7": ("111", "001", "010", "010", "010"),
+    "8": ("111", "101", "111", "101", "111"), "9": ("111", "101", "111", "001", "110"),
+    "-": ("000", "000", "111", "000", "000"), "!": ("010", "010", "010", "000", "010"),
+    ">": ("100", "010", "001", "010", "100"), " ": ("000", "000", "000", "000", "000"),
+}
+
+
+def _text(m: Mesh, txt: str, x0: float, x1: float, ymid: float, z: float, cap: float, role: str,
+          back: bool = False) -> None:
+    """Block letters of the 3 x 5 font, centred between x0 and x1 on ymid, `cap` high (smaller when the line would
+    not fit), front faces only on the plane z (facing +z; `back`: facing -z, mirrored so it reads from behind)."""
+    txt = txt.upper()
+    n = len(txt)
+    if not n:
+        return
+    px = min(cap / 5, (x1 - x0) / (4 * n - 1))
+    w = (4 * n - 1) * px
+    xs, top = (x0 + x1) / 2 - w / 2, ymid + 2.5 * px
+    for i, ch in enumerate(txt):
+        for r, row in enumerate(_FONT.get(ch, _FONT[" "])):
+            c = 0
+            while c < 3:
+                if row[c] != "1":
+                    c += 1
+                    continue
+                e = c
+                while e + 1 < 3 and row[e + 1] == "1":
+                    e += 1
+                xa, xb = xs + (i * 4 + c) * px, xs + (i * 4 + e + 1) * px
+                ya, yb = top - (r + 1) * px, top - r * px
+                if back:
+                    box(m, (-xb, ya, z - 0.001), (-xa, yb, z), role, "-z")
+                else:
+                    box(m, (xa, ya, z), (xb, yb, z + 0.001), role, "+z")
+                c = e + 1
+
+
+def _icon(m: Mesh, kind: str, cx: float, cy: float, r: float, z: float, ink: str) -> None:
+    """A pictogram on the plane z: a person, a burger, an arrow (east) or a camera."""
+    if kind == "person":
+        blob(m, (cx, cy + r * 0.62, z), r * 0.26, r * 0.26, 0.004, ink, 8, 2)
+        box(m, (cx - r * 0.34, cy - r * 0.35, z), (cx + r * 0.34, cy + r * 0.3, z + 0.003), ink, "+z")
+        box(m, (cx - r * 0.3, cy - r * 0.95, z), (cx - r * 0.06, cy - r * 0.35, z + 0.003), ink, "+z")
+        box(m, (cx + r * 0.06, cy - r * 0.95, z), (cx + r * 0.3, cy - r * 0.35, z + 0.003), ink, "+z")
+    elif kind == "burger":
+        blob(m, (cx, cy + r * 0.3, z), r * 0.85, r * 0.45, 0.005, "art_bun", 8, 2, ry_bottom=r * 0.05)
+        box(m, (cx - r * 0.85, cy - r * 0.3, z), (cx + r * 0.85, cy + r * 0.05, z + 0.006), "art_patty", "+z")
+        box(m, (cx - r * 0.9, cy + r * 0.05, z), (cx + r * 0.9, cy + r * 0.17, z + 0.007), "leaf_green", "+z")
+        box(m, (cx - r * 0.8, cy - r * 0.6, z), (cx + r * 0.8, cy - r * 0.32, z + 0.005), "art_bun", "+z")
+    elif kind == "arrow":
+        box(m, (cx - r * 0.9, cy - r * 0.18, z), (cx + r * 0.2, cy + r * 0.18, z + 0.003), ink, "+z")
+        for k in range(4):
+            t = k / 4
+            box(m, (cx + r * (0.2 + 0.7 * t), cy - r * 0.6 * (1 - t), z),
+                (cx + r * (0.2 + 0.7 * (t + 0.25)), cy + r * 0.6 * (1 - t), z + 0.003), ink, "+z")
+    elif kind == "camera":
+        box(m, (cx - r * 0.85, cy - r * 0.5, z), (cx + r * 0.85, cy + r * 0.45, z + 0.003), ink, "+z")
+        box(m, (cx - r * 0.3, cy + r * 0.45, z), (cx + r * 0.3, cy + r * 0.7, z + 0.003), ink, "+z")
+        blob(m, (cx, cy, z + 0.003), r * 0.36, r * 0.36, 0.003, "art_white", 8, 2)
+
+
+def build_sign_plate(m, s, R, prm, rng):
+    """A sign: a `plate` panel with soft edges, an optional `band` strip along its top with `band_text`, one or two
+    lines of `text` ("|" splits them) in block letters in `ink`, an `icon` left of the text. `hang` > 0 hangs the
+    plate on two rods (pivot ceiling) and letters it on both faces. The back at -z."""
+    L, W, H = s
+    hx, hz = L / 2, W / 2
+    plate, band, ink = prm.get("plate", "art_white"), prm.get("band", "none"), prm.get("ink", "steel_black")
+    hang = float(prm.get("hang", 0.0))
+    ph = H - hang
+    cbox(m, (-hx, 0.0, -hz), (hx, ph, hz), plate, min(0.004, W / 3.2))
+    for x in ((-hx * 0.7, hx * 0.7) if hang > 0 else ()):
+        bar(m, (x, ph - 0.01, 0.0), (x, H, 0.0), 0.008, "steel_black")
+    faces = (False, True) if hang > 0 else (False,)
+    top = ph - 0.015
+    if band != "none":
+        bh = ph * float(prm.get("band_h", 0.3))
+        for bk in faces:
+            z = -hz - 0.001 if bk else hz
+            box(m, (-hx + 0.012, top - bh, z), (hx - 0.012, top, z + 0.001), band, "-z" if bk else "+z")
+            if prm.get("band_text"):
+                zt = -hz - 0.001 if bk else hz + 0.001
+                _text(m, prm["band_text"], -hx + 0.03, hx - 0.03, top - bh / 2, zt, bh * 0.6,
+                      prm.get("band_ink", "art_white"), back=bk)
+        top -= bh + 0.01
+    lines = [t for t in str(prm.get("text", "")).split("|") if t]
+    icon = prm.get("icon", "none")
+    x0 = -hx + 0.03
+    area = top - 0.015
+    if icon != "none":
+        r = min(area * 0.42, L * 0.16)
+        for bk in faces:
+            if not bk:
+                _icon(m, icon, x0 + r, 0.015 + area / 2, r, hz + 0.001, ink)
+        x0 += 2.2 * r
+    for k, t in enumerate(lines):
+        lh = area / max(1, len(lines))
+        ym = top - lh * (k + 0.5)
+        for bk in faces:
+            zt = -hz - 0.002 if bk else hz + 0.001
+            _text(m, t, x0, hx - 0.03, ym, zt, lh * 0.62, ink, back=bk)
+
+
+def build_bread_rack(m, s, R, prm, rng):
+    """The buns' bakery rack on castors: four warm-steel uprights, tray runners and five trays, loose buns on some
+    trays and bagged bun packs with a white label on the others."""
+    L, W, H = s
+    hx, hz = L / 2, W / 2
+    u = 0.025
+    for sx in (-1, 1):
+        for sz in (-1, 1):
+            x, z = sx * (hx - u / 2 - 0.02), sz * (hz - u / 2 - 0.02)
+            box(m, (x - u / 2, 0.09, z - u / 2), (x + u / 2, H, z + u / 2), "steel_warm", "+x-x+y+z-z")
+            cyl(m, "x", (0.04, z), 0.04, x - 0.012, x + 0.012, "rubber_black", 8)
+            box(m, (x - 0.02, 0.07, z - 0.02), (x + 0.02, 0.09, z + 0.02), "steel_black")
+    for y in (0.12, H - 0.02):
+        for sz in (-1, 1):
+            z = sz * (hz - u / 2 - 0.02)
+            box(m, (-hx + 0.02, y - 0.02, z - u / 2), (hx - 0.02, y, z + u / 2), "steel_warm", "+y-y+z-z")
+    n = 5
+    for k in range(n):
+        y = 0.3 + (H - 0.45) * k / (n - 1)
+        box(m, (-hx + 0.04, y - 0.015, -hz + 0.035), (hx - 0.04, y, hz - 0.035), "steel_warm", "+x-x+y-y+z-z")
+        if k % 2 == 0:
+            for i in range(3):
+                for j in range(2):
+                    bx = -hx + 0.04 + (L - 0.08) * (i + 0.5) / 3
+                    bz = -hz + 0.035 + (W - 0.07) * (j + 0.5) / 2
+                    blob(m, (bx, y + 0.003, bz), 0.075, 0.05, 0.075, "art_bun", 7, 2, floor=0.0)
+        else:
+            for i in range(3):
+                bx0 = -hx + 0.05 + (L - 0.1) * i / 3
+                bx1 = bx0 + (L - 0.1) / 3 - 0.02
+                cushion(m, (bx0, y, -hz + 0.05), (bx1, y + 0.1, hz - 0.05), "art_bun", 0.03)
+                box(m, ((bx0 + bx1) / 2 - 0.04, y + 0.03, hz - 0.05), ((bx0 + bx1) / 2 + 0.04, y + 0.07, hz - 0.049),
+                    "art_white", "+z")
+
+
+def build_pallet_jack(m, s, R, prm, rng):
+    """A hand pallet jack: two `body` forks with rollers at their tips (toward +z), the pump block with its steering
+    wheels, the tow handle up and back with a black grip loop."""
+    L, W, H = s
+    hx, hz = L / 2, W / 2
+    body = prm.get("body", "paint_red")
+    fz0 = -hz + 0.32
+    for sx in (-1, 1):
+        x = sx * (hx - 0.08)
+        box(m, (x - 0.08, 0.035, fz0), (x + 0.08, 0.085, hz - 0.02), body, "+x-x+y+z")
+        cyl(m, "x", (0.035, hz - 0.06), 0.035, x - 0.05, x + 0.05, "rubber_black", 8)
+    box(m, (-hx + 0.02, 0.035, fz0 - 0.12), (hx - 0.02, 0.25, fz0), body, "+x-x+y+z-z")
+    cyl(m, "y", (0.0, fz0 - 0.16), 0.07, 0.25, 0.42, body, 10)
+    cyl(m, "y", (0.0, fz0 - 0.16), 0.03, 0.42, 0.5, "chrome", 8)
+    for x in (-0.06, 0.06):
+        cyl(m, "x", (0.09, fz0 - 0.2), 0.09, x - 0.025, x + 0.025, "rubber_black", 10)
+    top = (0.0, H - 0.06, -hz + 0.03)
+    bar(m, (0.0, 0.5, fz0 - 0.16), top, 0.035, body, ref=(1, 0, 0))
+    bar(m, (-0.13, H - 0.04, -hz + 0.02), (0.13, H - 0.04, -hz + 0.02), 0.03, "rubber_black")
+    for x in (-0.13, 0.13):
+        bar(m, (x, H - 0.04, -hz + 0.02), (0.0, H - 0.2, -hz + 0.05), 0.025, "rubber_black")
+    box(m, (-0.02, H - 0.2, -hz + 0.06), (0.02, H - 0.17, -hz + 0.1), "steel_black")
+
+
+def build_loaded_pallet(m, s, R, prm, rng):
+    """A delivery on its pallet (the game's deliveries): a pale wood pallet under `layers` of taped kraft boxes, the
+    top one's label with the burger mark, white corner boards and a blue strap round the stack."""
+    L, W, H = s
+    hx, hz = L / 2, W / 2
+    ph = 0.15
+    for z in (-hz + 0.05, 0.0, hz - 0.05):
+        box(m, (-hx, 0.0, z - 0.05), (hx, 0.08, z + 0.05), "worktop_wood", "+x-x+y+z-z")
+    for k in range(7):
+        x = -hx + 0.05 + (L - 0.1) * k / 6
+        box(m, (x - 0.05, 0.08, -hz), (x + 0.05, ph, hz), "worktop_wood", "+x-x+y+z-z")
+    nl = int(prm.get("layers", 3))
+    lh = (H - ph - 0.01) / nl
+    nx, nz = 2, 2
+    for k in range(nl):
+        y0 = ph + lh * k
+        for i in range(nx):
+            for j in range(nz):
+                x0 = -hx + 0.02 + (L - 0.04) * i / nx
+                z0 = -hz + 0.02 + (W - 0.04) * j / nz
+                x1, z1 = x0 + (L - 0.04) / nx - 0.01, z0 + (W - 0.04) / nz - 0.01
+                cbox(m, (x0, y0, z0), (x1, y0 + lh - 0.008, z1), "kraft", 0.004)
+                xm = (x0 + x1) / 2
+                box(m, (xm - 0.03, y0 + lh - 0.009, z0), (xm + 0.03, y0 + lh - 0.007, z1), "kraft_tape", "+y")
+                if j == nz - 1:
+                    box(m, (xm - 0.09, y0 + lh * 0.4, z1), (xm + 0.09, y0 + lh * 0.75, z1 + 0.002), "art_white", "+z")
+                    if k == nl - 1:
+                        _icon(m, "burger", xm, y0 + lh * 0.575, 0.05, z1 + 0.002, "steel_black")
+    for sx in (-1, 1):
+        for sz in (-1, 1):
+            x, z = sx * (hx - 0.01), sz * (hz - 0.01)
+            box(m, (x - 0.02, ph, z - 0.02), (x + 0.02, H, z + 0.02), "art_white", "+x-x+z-z+y")
+    y = ph + (H - ph) * 0.5
+    box(m, (-hx - 0.003, y - 0.015, -hz - 0.003), (hx + 0.003, y + 0.015, hz + 0.003), "paint_blue", "+x-x+z-z")
+
+
+def build_workbench(m, s, R, prm, rng):
+    """A present-day workbench: a black steel frame, an oak top, a lower shelf with a tool case, a three-drawer
+    `drawers` unit on the right with bar handles, a vice on the front left and a pegged back rail with tools."""
+    L, W, H = s
+    hx, hz = L / 2, W / 2
+    st = prm["style"]
+    top_y = 0.9
+    u = 0.04
+    for sx in (-1, 1):
+        for sz in (-1, 1):
+            x, z = sx * (hx - u / 2 - 0.03), sz * (hz - u / 2 - 0.03)
+            box(m, (x - u / 2, 0.0, z - u / 2), (x + u / 2, top_y - 0.04, z + u / 2), "steel_black", "+x-x+z-z")
+    for y in (0.15, top_y - 0.08):
+        for sz in (-1, 1):
+            z = sz * (hz - u / 2 - 0.03)
+            box(m, (-hx + 0.03, y - 0.03, z - u / 2), (hx - 0.03, y, z + u / 2), "steel_black", "+y-y+z-z")
+    cbox(m, (-hx, top_y - 0.04, -hz + 0.1), (hx, top_y, hz), "worktop_wood", st.bevel)
+    box(m, (-hx + 0.05, 0.15, -hz + 0.05), (hx - 0.05, 0.17, hz - 0.05), "worktop_wood", "+y-y+x-x+z-z")
+    cbox(m, (-hx + 0.15, 0.17, -hz + 0.12), (-hx + 0.65, 0.39, hz - 0.15), "paint_red", 0.008)
+    dx0, dx1 = hx - 0.55, hx - 0.07
+    box(m, (dx0, 0.17, -hz + 0.12), (dx1, top_y - 0.08, hz - 0.08), prm.get("drawers", "paint_blue"),
+        "+x-x+y+z-z")
+    nd = 3
+    for k in range(nd):
+        y0 = 0.19 + (top_y - 0.29) * k / nd
+        y1 = 0.19 + (top_y - 0.29) * (k + 1) / nd - 0.006
+        box(m, (dx0 + 0.01, y0, hz - 0.08), (dx1 - 0.01, y1, hz - 0.065), prm.get("drawers", "paint_blue"),
+            "+x-x+y-y+z")
+        bar(m, ((dx0 + dx1) / 2 - 0.12, (y0 + y1) / 2, hz - 0.035), ((dx0 + dx1) / 2 + 0.12, (y0 + y1) / 2,
+            hz - 0.035), 2 * st.handle_r, "chrome")
+    vx = -hx + 0.25
+    box(m, (vx - 0.09, top_y, hz - 0.2), (vx + 0.09, top_y + 0.08, hz - 0.05), "steel_black")
+    box(m, (vx - 0.09, top_y + 0.01, hz - 0.05), (vx + 0.09, top_y + 0.09, hz - 0.02), "paint_blue")
+    bar(m, (vx, top_y + 0.04, hz - 0.02), (vx, top_y + 0.04, hz - 0.002), 0.012, "chrome")
+    bar(m, (vx - 0.08, top_y + 0.04, hz - 0.006), (vx + 0.08, top_y + 0.04, hz - 0.006), 0.01, "chrome")
+    box(m, (-hx + 0.02, top_y, -hz + 0.02), (hx - 0.02, H - 0.02, -hz + 0.05), "worktop_wood", "+x-x+y+z")
+    for k in range(6):
+        x = -hx + 0.3 + (L - 0.6) * k / 5
+        bar(m, (x, H - 0.1, -hz + 0.05), (x, H - 0.1, -hz + 0.09), 0.008, "chrome")
+        role = ("paint_red", "steel_black", "paint_blue", "book_mustard", "steel_black", "paint_red")[k]
+        box(m, (x - 0.012, H - 0.32, -hz + 0.07), (x + 0.012, H - 0.12, -hz + 0.095), role)
+    cbox(m, (0.0, top_y, -hz + 0.15), (0.32, top_y + 0.06, -hz + 0.35), "book_mustard", 0.006)
+
+
+def build_step_ladder(m, s, R, prm, rng):
+    """An aluminium step ladder standing open: front stiles with four treads, rear stiles, a top cap with a tool
+    tray in `cap` and rubber feet; the front faces +z."""
+    L, W, H = s
+    hx, hz = L / 2, W / 2
+    cap = prm.get("cap", "paint_blue")
+    zt0, zt1 = -0.1, 0.06
+    for sx in (-1, 1):
+        x = sx * (hx - 0.03)
+        bar(m, (x, 0.02, hz - 0.03), (x, H - 0.06, zt1), 0.045, "steel_warm", h=0.022, ref=(1, 0, 0))
+        bar(m, (x * 0.92, 0.02, -hz + 0.03), (x * 0.92, H - 0.06, zt0), 0.04, "steel_warm", h=0.02, ref=(1, 0, 0))
+        box(m, (x - 0.03, 0.0, hz - 0.06), (x + 0.03, 0.03, hz), "rubber_black")
+        box(m, (x * 0.92 - 0.03, 0.0, -hz), (x * 0.92 + 0.03, 0.03, -hz + 0.06), "rubber_black")
+    nt = 4
+    for k in range(nt):
+        t = (k + 1) / (nt + 1)
+        y = 0.02 + (H - 0.08) * t
+        z = (hz - 0.03) + (zt1 - (hz - 0.03)) * t
+        box(m, (-hx + 0.05, y - 0.02, z - 0.05), (hx - 0.05, y, z + 0.05), "steel_warm", "+x-x+y-y+z-z")
+        for xx in range(4):
+            x = -hx + 0.1 + (L - 0.2) * xx / 3
+            box(m, (x - 0.01, y, z - 0.045), (x + 0.01, y + 0.003, z + 0.045), "rubber_black", "+y")
+    box(m, (-hx + 0.02, H - 0.07, zt0 - 0.03), (hx - 0.02, H, zt1 + 0.03), cap)
+    box(m, (-hx + 0.06, H - 0.004, zt0), (hx - 0.06, H - 0.003, zt1), "steel_black", "+y")
+    for sx in (-1, 1):
+        bar(m, (sx * (hx - 0.06), 0.55, hz * 0.5), (sx * (hx - 0.06), 0.55, -hz * 0.5), 0.012, "steel_black",
+            ref=(1, 0, 0))
+
+
+def build_hand_trolley(m, s, R, prm, rng):
+    """A delivery sack truck: a `frame` tube frame with a loop handle, a steel toe plate, two rubber wheels at the
+    back and two taped kraft boxes on the plate."""
+    L, W, H = s
+    hx, hz = L / 2, W / 2
+    frame = prm.get("frame", "paint_red")
+    zb = -hz + 0.12
+    for sx in (-1, 1):
+        x = sx * (hx - 0.1)
+        bar(m, (x, 0.06, zb), (x, H - 0.1, zb - 0.04), 0.028, frame, ref=(1, 0, 0))
+        cyl(m, "x", (0.12, -hz + 0.12), 0.12, sx * (hx - 0.06), sx * hx, "rubber_black", 12)
+        cyl(m, "x", (0.12, -hz + 0.12), 0.05, sx * (hx - 0.065), sx * (hx + 0.003) * 0.999,
+            "steel_warm", 8)
+    bar(m, (-hx + 0.03, 0.12, -hz + 0.12), (hx - 0.03, 0.12, -hz + 0.12), 0.025, "steel_black")
+    for y in (0.5, 0.9):
+        bar(m, (-hx + 0.1, y, zb - 0.02), (hx - 0.1, y, zb - 0.02), 0.022, frame)
+    bar(m, (-hx + 0.1, H - 0.1, zb - 0.04), (-hx + 0.16, H - 0.02, zb - 0.04), 0.028, frame, ref=(0, 0, 1))
+    bar(m, (hx - 0.1, H - 0.1, zb - 0.04), (hx - 0.16, H - 0.02, zb - 0.04), 0.028, frame, ref=(0, 0, 1))
+    bar(m, (-hx + 0.16, H - 0.02, zb - 0.04), (hx - 0.16, H - 0.02, zb - 0.04), 0.03, "rubber_black")
+    box(m, (-hx + 0.08, 0.0, zb), (hx - 0.08, 0.02, hz), "steel_warm", "+x-x+y+z")
+    y = 0.02
+    for k, (w, h) in enumerate(((0.44, 0.34), (0.38, 0.28))):
+        cbox(m, (-w / 2, y, zb + 0.02), (w / 2, y + h, hz - 0.03), "kraft", 0.004)
+        box(m, (-0.03, y + h - 0.001, zb + 0.02), (0.03, y + h + 0.001, hz - 0.03), "kraft_tape", "+y")
+        box(m, (-0.08, y + h * 0.4, hz - 0.03), (0.06, y + h * 0.7, hz - 0.028), "art_white", "+z")
+        y += h
+
+
+def build_floor_marking(m, s, R, prm, rng):
+    """Floor tape, 4 mm over the floor: `kind` "bay" (an outline of `tape` w wide), "lane" (a walkway's two edge
+    strips along L) or "hatch" (an outline filled with `tape` and black stripes: keep clear)."""
+    L, W, H = s
+    hx, hz = L / 2, W / 2
+    tape, w = prm.get("tape", "safety_yellow"), float(prm.get("w", 0.06))
+    kind = prm.get("kind", "bay")
+    if kind == "lane":
+        for z0 in (-hz, hz - w):
+            box(m, (-hx, 0.0, z0), (hx, H, z0 + w), tape, "+y+x-x+z-z")
+        return
+    for lo, hi in (((-hx, 0, -hz), (hx, H, -hz + w)), ((-hx, 0, hz - w), (hx, H, hz)),
+                   ((-hx, 0, -hz + w), (-hx + w, H, hz - w)), ((hx - w, 0, -hz + w), (hx, H, hz - w))):
+        box(m, lo, hi, tape, "+y+x-x+z-z")
+    if kind == "hatch":
+        n = max(2, int((L - 2 * w) / 0.16))
+        sw = (L - 2 * w) / n
+        for k in range(n):
+            x0 = -hx + w + sw * k
+            box(m, (x0, 0.0, -hz + w), (x0 + sw, H * 0.75, hz - w), tape if k % 2 == 0 else "steel_black", "+y")
+
+
+def build_clipboard(m, s, R, prm, rng):
+    """A clipboard on a wall nail: a hardboard board, a steel clip, a delivery note of written lines and ticks, a pen
+    on a cord. The back at -z."""
+    L, W, H = s
+    hx = L / 2
+    box(m, (-hx, 0.0, -W / 2), (hx, H, -W / 2 + 0.004), "kraft_tape")
+    box(m, (-hx + 0.012, 0.012, -W / 2 + 0.004), (hx - 0.012, H - 0.04, -W / 2 + 0.007), "art_white", "+z+x-x+y-y")
+    cbox(m, (-0.05, H - 0.055, -W / 2 + 0.004), (0.05, H - 0.02, -W / 2 + 0.016), "chrome", 0.003)
+    z = -W / 2 + 0.0072
+    for k in range(9):
+        y = H - 0.075 - k * 0.026
+        if y < 0.03:
+            break
+        box(m, (-hx + 0.03, y, z), (hx - 0.05 - 0.02 * (k % 3), y + 0.004, z + 0.0005), "book_grey", "+z")
+        if k % 2 == 0:
+            box(m, (hx - 0.04, y - 0.002, z), (hx - 0.028, y + 0.008, z + 0.0006), "paint_blue", "+z")
+    bar(m, (hx + 0.006, H - 0.03, -W / 2 + 0.006), (hx + 0.006, H - 0.18, -W / 2 + 0.006), 0.009, "paint_blue")
+
+
+def build_lab_sink(m, s, R, prm, rng):
+    """The darkroom's stainless sink unit: a cabinet with two doors and bar handles on a plinth, a top with a deep
+    basin, a tall swan-neck tap, a steel splash-back and a shelf of brown chemical bottles and white jugs over it."""
+    L, W, H = s
+    hx, hz = L / 2, W / 2
+    st = prm["style"]
+    ty = 0.9
+    plinth(m, st, -hx + 0.02, hx - 0.02, -hz + 0.05, hz - 0.08)
+    box(m, (-hx, st.plinth, -hz + 0.05), (hx, ty - 0.03, hz - 0.02), "steel_warm", "+x-x+z-z")
+    for sx in (-1, 1):
+        x0, x1 = (-hx + 0.005, -0.003) if sx < 0 else (0.003, hx - 0.005)
+        box(m, (x0, st.plinth + 0.005, hz - 0.02), (x1, ty - 0.04, hz), "steel_warm", "+x-x+y-y+z")
+        xh = -0.05 if sx < 0 else 0.05
+        bar(m, (xh, ty - 0.2, hz + 0.03), (xh, ty - 0.4, hz + 0.03), 2 * st.handle_r, "chrome")
+    loft(m, (-hx, hx, -hz + 0.05, hz, ty - 0.03), (-hx, hx, -hz + 0.05, hz, ty), "steel_warm", top=True)
+    bx0, bx1, bz0, bz1 = -hx + 0.12, hx * 0.35, -hz + 0.15, hz - 0.08
+    loft(m, (bx0 + 0.02, bx1 - 0.02, bz0 + 0.02, bz1 - 0.02, ty - 0.3), (bx0, bx1, bz0, bz1, ty + 0.002),
+         "chrome", inner=0.012, top=False)
+    box(m, (bx0 + 0.02, ty - 0.3, bz0 + 0.02), (bx1 - 0.02, ty - 0.29, bz1 - 0.02), "chrome", "+y")
+    tx = (bx0 + bx1) / 2
+    cyl(m, "y", (tx, -hz + 0.1), 0.02, ty, ty + 0.38, "chrome", 8)
+    bar(m, (tx, ty + 0.38, -hz + 0.1), (tx, ty + 0.38, -hz + 0.3), 0.022, "chrome")
+    bar(m, (tx, ty + 0.38, -hz + 0.3), (tx, ty + 0.28, -hz + 0.32), 0.02, "chrome")
+    for dx, role in ((-0.07, "paint_blue"), (0.07, "paint_red")):
+        bar(m, (tx + dx, ty + 0.12, -hz + 0.1), (tx + dx, ty + 0.12, -hz + 0.16), 0.014, role)
+    box(m, (-hx, ty, -hz + 0.05), (hx, ty + 0.3, -hz + 0.07), "steel_warm", "+x-x+y+z")
+    sy = H - 0.3
+    box(m, (-hx + 0.02, sy - 0.02, -hz + 0.05), (hx - 0.02, sy, -hz + 0.27), "steel_warm", "+x-x+y-y+z")
+    for sx in (-1, 1):
+        bar(m, (sx * (hx - 0.1), sy - 0.02, -hz + 0.06), (sx * (hx - 0.1), sy - 0.2, -hz + 0.06), 0.02,
+            "steel_black")
+    x = -hx + 0.08
+    k = 0
+    while x < hx - 0.12:
+        if k % 3 == 2:
+            cbox(m, (x, sy, -hz + 0.1), (x + 0.12, sy + 0.24, -hz + 0.22), "enamel_white", 0.01)
+            cyl(m, "y", (x + 0.06, -hz + 0.16), 0.02, sy + 0.24, sy + 0.27, "paint_blue", 8)
+            box(m, (x + 0.02, sy + 0.06, -hz + 0.22), (x + 0.1, sy + 0.14, -hz + 0.221), "book_mustard", "+z")
+            x += 0.15
+        else:
+            cyl(m, "y", (x + 0.045, -hz + 0.16), 0.045, sy, sy + 0.2, "bottle_brown", 10)
+            cyl(m, "y", (x + 0.045, -hz + 0.16), 0.018, sy + 0.2, sy + 0.25, "steel_black", 8)
+            box(m, (x + 0.01, sy + 0.06, -hz + 0.204), (x + 0.08, sy + 0.13, -hz + 0.2055), "art_white", "+z")
+            x += 0.11
+        k += 1
+
+
+def build_print_line(m, s, R, prm, rng):
+    """A darkroom drying line hung from the ceiling (pivot ceiling): two drop rods, a steel wire and `n` prints on
+    wooden pegs, party photos of the game's own world: plasticine people on pastel grounds and the photo gazebo's
+    white frame. Detail layer."""
+    L, W, H = s
+    hx = L / 2
+    wy = H - float(prm.get("drop", 0.85))
+    for x in (-hx + 0.02, hx - 0.02):
+        bar(m, (x, wy - 0.02, 0.0), (x, H, 0.0), 0.012, "steel_black")
+        box(m, (x - 0.04, H - 0.006, -0.025), (x + 0.04, H, 0.025), "steel_black")
+    bar(m, (-hx + 0.02, wy, 0.0), (hx - 0.02, wy, 0.0), 0.004, "steel_black")
+    n = int(prm.get("n", 7))
+    grounds = ["art_sky", "art_pink", "book_sage", "book_mustard", "art_terracotta", "book_teal", "art_white"]
+    people = ["paint_red", "paint_blue", "book_mustard", "leaf_green", "book_navy", "art_terracotta"]
+    skins = ["art_pink", "art_bun", "art_terracotta"]
+    pw, ph = 0.16, 0.21
+    for k in range(n):
+        cx = -hx + 0.25 + (L - 0.5) * (k + 0.5) / n + rng.uniform(-0.03, 0.03)
+        top = wy - 0.01
+        box(m, (cx - 0.008, top - 0.02, -0.006), (cx + 0.008, wy + 0.012, 0.006), "worktop_wood")
+        box(m, (cx - pw / 2, top - ph, -0.001), (cx + pw / 2, top, 0.001), "art_white", "+z-z")
+        g = grounds[(k + int(prm.get("seed", 0))) % len(grounds)]
+        box(m, (cx - pw / 2 + 0.01, top - ph + 0.03, 0.001), (cx + pw / 2 - 0.01, top - 0.01, 0.0015), g, "+z")
+        if k % 3 == 1:
+            gx0, gx1, gy = cx - 0.055, cx + 0.055, top - ph + 0.035
+            for x in (gx0, gx1):
+                box(m, (x - 0.004, gy, 0.0015), (x + 0.004, gy + 0.13, 0.002), "art_white", "+z")
+            box(m, (gx0 - 0.01, gy + 0.13, 0.0015), (gx1 + 0.01, gy + 0.145, 0.002), "art_white", "+z")
+        for j in range(1 + k % 2 + (k % 3 == 0)):
+            px = cx - 0.035 * (k % 2) + 0.05 * j - (0.02 if k % 3 == 0 else 0.0)
+            by = top - ph + 0.035
+            cbox(m, (px - 0.018, by, 0.0015), (px + 0.018, by + 0.05, 0.006), rng.choice(people), 0.003)
+            blob(m, (px, by + 0.068, 0.004), 0.02, 0.02, 0.004, rng.choice(skins), 6, 2)
+
+
+def build_light_table(m, s, R, prm, rng):
+    """A light table for checking negatives: a black steel stand, a grey cabinet with a drawer, a warm-steel frame
+    round a glowing white panel (`tube`), negative strips, two contact prints and a loupe on it."""
+    L, W, H = s
+    hx, hz = L / 2, W / 2
+    st = prm["style"]
+    ty = H
+    for sx in (-1, 1):
+        for sz in (-1, 1):
+            x, z = sx * (hx - 0.04), sz * (hz - 0.04)
+            box(m, (x - 0.02, 0.0, z - 0.02), (x + 0.02, ty - 0.12, z + 0.02), "steel_black", "+x-x+z-z")
+    box(m, (-hx + 0.04, 0.12, -hz + 0.04), (hx - 0.04, 0.14, hz - 0.04), "steel_black", "+y-y+x-x+z-z")
+    box(m, (-hx + 0.01, ty - 0.12, -hz + 0.01), (hx - 0.01, ty - 0.04, hz - 0.01), "book_grey", "+x-x-y+z-z")
+    box(m, (-0.3, ty - 0.11, hz - 0.01), (0.3, ty - 0.05, hz), "book_grey", "+z+x-x+y-y")
+    bar(m, (-0.1, ty - 0.08, hz + 0.02), (0.1, ty - 0.08, hz + 0.02), 2 * st.handle_r, "chrome")
+    fr = 0.05
+    for lo, hi in (((-hx, ty - 0.04, -hz), (hx, ty, -hz + fr)), ((-hx, ty - 0.04, hz - fr), (hx, ty, hz)),
+                   ((-hx, ty - 0.04, -hz + fr), (-hx + fr, ty, hz - fr)), ((hx - fr, ty - 0.04, -hz + fr),
+                                                                          (hx, ty, hz - fr))):
+        box(m, lo, hi, "steel_warm", "+x-x+y-y+z-z")
+    box(m, (-hx + fr, ty - 0.01, -hz + fr), (hx - fr, ty - 0.008, hz - fr), "tube", "+y")
+    for k in range(4):
+        z = -hz + fr + 0.06 + 0.07 * k
+        box(m, (-hx + fr + 0.05, ty - 0.008, z), (-0.05, ty - 0.007, z + 0.035), "glass_dark", "+y")
+    for k, g in enumerate(("art_sky", "art_pink")):
+        x0 = 0.05 + 0.2 * k
+        box(m, (x0, ty - 0.008, -0.1), (x0 + 0.16, ty - 0.006, 0.11), "art_white", "+y")
+        box(m, (x0 + 0.01, ty - 0.006, -0.09), (x0 + 0.15, ty - 0.005, 0.07), g, "+y")
+    cyl(m, "y", (0.3, 0.2), 0.03, ty - 0.008, ty + 0.04, "chrome", 10)
+
+
+def build_fire_extinguisher(m, s, R, prm, rng):
+    """A fire extinguisher on its wall bracket: a black bracket plate, a red cylinder with a domed top and a white
+    label band, the chrome valve with its black lever and gauge, the hose down its side. The back at -z."""
+    L, W, H = s
+    hz = W / 2
+    r = min(L / 2 - 0.02, W / 2 - 0.01)
+    cz = -hz + 0.012 + r
+    box(m, (-0.04, 0.12, -hz), (0.04, H * 0.8, -hz + 0.01), "steel_black")
+    box(m, (-r - 0.005, H * 0.62, -hz), (r + 0.005, H * 0.66, cz), "steel_black", "+x-x+y-y+z")
+    cyl(m, "y", (0.0, cz), r, 0.0, H - 0.16, "paint_red", 12)
+    blob(m, (0.0, H - 0.16, cz), r, 0.04, r, "paint_red", 12, 2, floor=H - 0.16)
+    cyl(m, "y", (0.0, cz), r * 1.002, H * 0.3, H * 0.5, "art_white", 12, caps=(False, False))
+    cyl(m, "y", (0.0, cz), 0.018, H - 0.13, H - 0.06, "chrome", 8)
+    bar(m, (-0.01, H - 0.05, cz), (0.07, H - 0.02, cz), 0.018, "steel_black", ref=(0, 0, 1))
+    bar(m, (-0.01, H - 0.08, cz), (0.06, H - 0.07, cz), 0.016, "steel_black", ref=(0, 0, 1))
+    cyl(m, "z", (0.0, H - 0.1), 0.016, cz + 0.015, cz + 0.03, "art_white", 8)
+    bar(m, (-0.02, H - 0.1, cz + 0.01), (-r - 0.01, H - 0.2, cz + 0.01), 0.014, "rubber_black")
+    bar(m, (-r - 0.01, H - 0.2, cz + 0.01), (-r - 0.01, H * 0.25, cz + 0.01), 0.014, "rubber_black")
+    cyl(m, "y", (-r - 0.01, cz + 0.01), 0.014, H * 0.18, H * 0.25, "steel_black", 6)
+
+
+def build_fuse_box(m, s, R, prm, rng):
+    """A consumer unit on the wall: a white enamel cabinet with a door seam, a smoked window over a row of breakers,
+    a yellow warning triangle, a key lock, two steel conduits up to the ceiling line. The back at -z."""
+    L, W, H = s
+    hx, hz = L / 2, W / 2
+    bh = H - float(prm.get("conduit", 0.0))
+    cbox(m, (-hx, 0.0, -hz), (hx, bh, hz - 0.012), "enamel_white", 0.008)
+    box(m, (-hx + 0.012, 0.012, hz - 0.012), (hx - 0.012, bh - 0.012, hz - 0.004), "enamel_white", "+x-x+y-y+z")
+    wy0, wy1 = bh * 0.55, bh * 0.78
+    box(m, (-hx + 0.04, wy0, hz - 0.004), (hx - 0.04, wy1, hz - 0.003), "glass_dark", "+z")
+    n = max(4, int((L - 0.1) / 0.035))
+    for k in range(n):
+        x = -hx + 0.05 + (L - 0.1) * (k + 0.5) / n
+        box(m, (x - 0.006, (wy0 + wy1) / 2 - 0.012, hz - 0.003), (x + 0.006, (wy0 + wy1) / 2 + 0.012, hz - 0.002),
+            "paint_blue" if k % 4 == 0 else "art_white", "+z")
+    tx, ty, tr = 0.0, bh * 0.3, 0.05
+    for k in range(5):
+        t = k / 5
+        box(m, (tx - tr * (1 - t), ty - tr * 0.8 + 1.6 * tr * t, hz - 0.004),
+            (tx + tr * (1 - t), ty - tr * 0.8 + 1.6 * tr * (t + 0.2), hz - 0.003), "safety_yellow", "+z")
+    box(m, (tx - 0.004, ty - tr * 0.4, hz - 0.003), (tx + 0.004, ty + tr * 0.25, hz - 0.002), "steel_black", "+z")
+    cyl(m, "z", (hx - 0.04, bh * 0.5), 0.01, hz - 0.004, hz + 0.004, "chrome", 8)
+    for x in (-hx * 0.5, hx * 0.5):
+        if H > bh:
+            cyl(m, "y", (x, -hz + 0.03), 0.016, bh, H, "steel_warm", 8)
+
+
+def build_rubber_matting(m, s, R, prm, rng):
+    """A ribbed rubber floor runner: a `mat` slab with cross ribs every `pitch` and bevelled ends."""
+    L, W, H = s
+    hx, hz = L / 2, W / 2
+    mat = prm.get("mat", "rubber_mat")
+    t = H * 0.6
+    box(m, (-hx, 0.0, -hz), (hx, t, hz), mat, "+y+x-x+z-z")
+    pitch = float(prm.get("pitch", 0.12))
+    n = int((L - 0.1) / pitch)
+    for k in range(n):
+        x = -hx + 0.05 + pitch * (k + 0.5)
+        box(m, (x - 0.018, t, -hz + 0.04), (x + 0.018, H, hz - 0.04), mat, "+y+x-x")
 
 
 BUILDERS = {name[6:]: fn for name, fn in dict(globals()).items() if name.startswith("build_") and callable(fn)}
