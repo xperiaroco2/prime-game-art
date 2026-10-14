@@ -153,15 +153,17 @@ writes the House's game-ready package (prime-game #523) from the same layout dat
   `props/library/v12/textures/fine`, the same bytes: v11 with the basement's 32 working-room props built over it,
   and `prop_dirs` names library v12; since #172 `props/library/v13/textures/fine`, the same bytes: v12 with the
   basement's plant rooms' and the darkroom island's 39 props built over it, and `prop_dirs` names library v13;
+  since #82 `prop_dirs` names task v3 (task v2 with the 19 task-chain props rebuilt in the world look);
   v1 stays the approved version-1 build;
   `.import` VRAM compressed with mipmaps), `house_props/prop_fine.gdshader` (a copy
   of `godot/props/prop_fine.gdshader`; `tools/tests/test_house_layers.py` fails when the committed copy drifts) and
   `prop_fine_high.tres`, `prop_fine_low.tres` (`house_export.fine_material_text`: the shader, the tier's textures, the
-  layers' roughness, metallic, normal strength and gain). Each such prop instance in a room overrides its `kit_fine`
+  layers' roughness, metallic, normal strength and gain). Each such prop instance in a room, and since #82 in P7's plot scene
+  `outdoor.tscn` (`house_export_plot.fine_nodes`), overrides its `kit_fine`
   surfaces with `prop_fine_<fine_tier>.tres` (`fine_tier = "high"`; `house_export.set_surfaces` reads them from the
   GLB). The game swaps the tier per graphics preset (P2's `HANDOFF.md`). Only a package holding a `kit_fine` prop
-  ships the fine pack, and every such package writes it under the same game paths (today P2, committed with it, and
-  P8 `task_props`, whose `assembly_island` and `order_board` carry it). The art repo commits it once, under
+  ships the fine pack, and every such package writes it under the same game paths (P2, committed with it, the other
+  room packages that place a fine prop, and since #82 P8 `task_props`, whose 22 task-chain props all carry it). The art repo commits it once, under
   `assets/prop/house_props/export/`; a later package that lists it must hash the same (one fine build), never a second,
   different copy under those paths: after a rebuild of the fine pack, re-export and re-commit every committed package
   that lists it.
@@ -207,7 +209,8 @@ A package goes to the game from git, not from the raw build (#124): its files ar
 `export/` folders (`docs/manifest.md`: the kit in `assets/kit/house_kit/`, the props in `assets/prop/house_props/`,
 the room scenes of a package in their own `room` set, P2's in `assets/room/house_ground/`), with the package's
 `package.json` beside the manifest that owns it and a `HANDOFF.md` for the game's import task (what to copy where,
-the credits entries, the open questions). P1 to P5 and P7 are approved and merged, their manifests' approval fields set: P1 and P2 in #125, P3 and P5
+the credits entries, the open questions). P8 `task_props` (#82) has no room scenes: its `package.json` and
+`HANDOFF.md` sit beside `assets/prop/house_props/manifest.toml`, which owns every P8 file. P1 to P5 and P7 are approved and merged, their manifests' approval fields set: P1 and P2 in #125, P3 and P5
 in #127, P4 in #130, P7 (with the props, the outdoor and garden sets) in #131; #147 changed P2 and the props (the
 C2-white kitchen, the fine pack, the Detail node; approved in #149), and #150 changed them again (the living room in
 the world look, the fine pack's eight slots), so their approval fields wait again. #150 also re-exported P3 to P5, which place

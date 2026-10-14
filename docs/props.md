@@ -174,9 +174,24 @@ The House map (request #73) needs props where the five task chains happen (desig
 `inventory.md` §7) and a few room-defining pieces no pack has. Art #82 builds them as repo code in the House kit's
 way (`docs/kit.md`): a spec (`props/tasks.toml`), a pure-Python geometry module (`tools/blender/props_task.py`), a
 headless Blender builder (`props_task_build.py`, which reuses the kit's `kit_build.py` for objects, materials and the
-export) and the `props` command. The GLBs stay in the raw folder (`D:/prime-art-raw/props/task/v2/`: v1 with #153's
-dining table rebuilt over it) until the
+export) and the `props` command. The GLBs stay in the raw folder (`D:/prime-art-raw/props/task/v3/`: v2 with #82's
+19 task-chain props rebuilt over it; v2 is v1 with #153's dining table rebuilt over it) until the
 engineer approves the look; then they come into the repo with their manifests.
+
+**The task props in the world look (#82, task v3).** Every task-chain prop (the five chains' 22 props) is built
+on the dressing library's fine pack (`look = "fine"`); the 12 room-defining props (boiler, pump, water_tank,
+switchboard, cable_drum, enlarger, tray_table, toy_chest, utility_pole, birdbath, bulkhead_stairs, music_speaker)
+keep the kit paint. `tools/blender/props_task_fine.py` holds the fine builders (`FINE_BUILDERS`): the types in
+`RECOLOURED` (box_stack, wine_rack, bun_shelf, parts_shelf with labels or tags; potting_bench, workbench,
+chest_freezer, grill, herb_bed, switch, printer) keep their kit geometry and swap every kit paint for its fine paint
+through `props/tasks.toml`'s `[fine_paint]` map (old paint -> fine paint, the fine paints in `props/library.toml`);
+the generator (a canopy genset), the computer (a flat monitor) and the screen and cork boards have builders of their
+own, the chalk board stays `props_task.build_board_fine`. `check_spec` and `check_prop` refuse a fine prop with a paint
+off the fine pack. States: each wall switch and the generator carry two state meshes in one GLB (`<id>_on` with
+`signal_green`, `<id>_off` with `signal_red`; the generator's a status bar and a beacon, `nodes = ["on", "off"]`); the
+game shows one and hides the other. The printer keeps `photo_printer_photo`, the freezer and the grill their `_lid`
+leaves, the boards and the computer their `surface_game` surface. Sizes, pivots, fronts and colliders are unchanged
+(`tools/tests/test_props_task_fine.py`).
 
 ### The command
 
@@ -191,7 +206,7 @@ tools/run.sh props [--spec props/tasks.toml] [--out DIR] [--only id,...] [--no-b
 | `--only` | Only these props |
 | `--no-build` | Checks the GLBs already in `--out` |
 | `--no-godot` | Skips the Godot import |
-| `--review DIR` | Also renders the line-up sheets `lineup_<group>.png` (1280 px wide: each prop from the front and from 3/4, orthographic, with a 1.8 m grey capsule; Workbench with the vertex paint) and `switch_8m.png` (the post switch on and off from 8 m at a 1.6 m eye, 75 degree field of view) |
+| `--review DIR` | Also renders the line-up sheets `lineup_<group>.png` (1280 px wide: each prop from the front and from 3/4, orthographic, with a 1.8 m grey capsule; Workbench with the vertex paint) , `switch_8m.png` (the post switch on and off from 8 m at a 1.6 m eye, 75 degree field of view) and `states.png` (the switches and the generator, on and off side by side, #82) |
 
 It takes the heavy-run lock (Blender, Godot): run it in the background with its log under `tools/out/` and check it
 with `tools/run.sh wait`. It writes into `--out`: `<id>.glb`, `textures/`, `build.json`, `reports/<id>.json`,

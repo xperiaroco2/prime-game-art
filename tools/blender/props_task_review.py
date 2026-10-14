@@ -8,6 +8,8 @@ wide) at its left, and renders it from the front and from three-quarters (Workbe
 colours, cavity and shadow, orthographic so the sizes compare). One sheet per group, 1280 px wide: two props a row,
 each as a front and a 3/4 cell of 320 px. `switch_8m.png` (1280 x 720) shows the post switch on and off from 8 m at
 a 1.6 m eye height (Godot's default 75 degree vertical field of view), the question of #82b's acceptance.
+`states.png` (1280 x 664) puts each state prop's `on` and `off` meshes side by side (#82): the wall switch and the post
+switch from 3/4, the generator from the front and from 3/4.
 """
 
 from __future__ import annotations
@@ -230,6 +232,35 @@ def switch_8m(glbs: Path, out: Path) -> str:
     return str(path)
 
 
+STATE_CELLS = [("wall_switch", 20, 8), ("wall_switch_post", 20, 8), ("generator", 0, 6), ("generator", 38, 20)]
+
+
+def states(glbs: Path, out: Path) -> str:
+    """The state props' on and off meshes side by side: two cells a prop view, four a row."""
+    band = 24
+    sheet = np.empty((band + 2 * CELL, 4 * CELL, 3), dtype=np.float32)
+    sheet[:] = rv.BACKGROUND
+    rv.draw_text(sheet, "PROPS 82: STATES  LEFT ON  RIGHT OFF", 6, 6, 2)
+    scale = rv.label_scale(CELL) // 2 or 1
+    for i, (pid, az, el) in enumerate(STATE_CELLS):
+        top, left = band + (i // 2) * CELL, (i % 2) * 2 * CELL
+        for k, state in enumerate(("on", "off")):
+            clear()
+            cam = setup(CELL, CELL)
+            objs = import_prop(glbs / f"{pid}.glb", state=state)
+            lo, hi = world_bounds(objs)
+            aim(cam, lo, hi, az, el)
+            img = render(out / "cells" / f"state_{pid}_{az}_{state}.png")
+            paste(sheet, img, top, left + k * CELL)
+            rv.draw_text(sheet, f"{pid} {state.upper()}", left + k * CELL + 6, top + 6, scale)
+        sheet[top, left:left + 2 * CELL] = 0.7
+        sheet[top:top + CELL, left] = 0.7
+    path = out / "states.png"
+    rv.write_png(path, sheet)
+    print(f"REVIEW {path}")
+    return str(path)
+
+
 def main() -> None:
     a = args()
     spec = props_task.load_spec(Path(a["spec"]))
@@ -238,6 +269,9 @@ def main() -> None:
     lineups(spec, glbs, out)
     if (glbs / "wall_switch_post.glb").is_file():  # props/tasks.toml only
         switch_8m(glbs, out)
+    if (glbs / "generator.glb").is_file():
+        (out / "cells").mkdir(parents=True, exist_ok=True)
+        states(glbs, out)
 
 
 if __name__ == "__main__":

@@ -31,47 +31,48 @@
 [ext_resource type="PackedScene" path="res://assets/environment/house_kit/glass_gable_tri_2m_down.glb" id="29"]
 [ext_resource type="PackedScene" path="res://assets/environment/house_kit/glass_gable_band_2m.glb" id="30"]
 [ext_resource type="PackedScene" path="res://assets/environment/house_props/garden_dropoff.glb" id="31"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/garden_bench.glb" id="32"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/birdbath_library.glb" id="33"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/wheelbarrow.glb" id="34"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/watering_can.glb" id="35"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/garden_post_lamp.glb" id="36"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/string_lights.glb" id="37"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_garden/garden_tree_apple.glb" id="38"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_garden/garden_tree_pear.glb" id="39"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_garden/garden_tree_plum.glb" id="40"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_garden/flower_bed_rose.glb" id="41"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_garden/flower_bed_foxglove.glb" id="42"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_garden/flower_bed_dahlia.glb" id="43"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_garden/flower_bed_marigold.glb" id="44"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_garden/flower_bed_tulip.glb" id="45"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_garden/flower_bed_aster.glb" id="46"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_garden/bush_boxwood.glb" id="47"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_garden/bush_hydrangea.glb" id="48"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_garden/bush_lavender.glb" id="49"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_garden/bush_currant.glb" id="50"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/bbq_grill.glb" id="51"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/music_speaker.glb" id="52"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/fire_pit_zones.glb" id="53"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/deckchair_zones.glb" id="54"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/bean_bag_zones.glb" id="55"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/cooler_box_zones.glb" id="56"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/string_lights_set.glb" id="57"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/lantern_zones.glb" id="58"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/picnic_table.glb" id="59"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/firewood_stack.glb" id="60"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/pose_screen.glb" id="61"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/photo_backdrop_zones.glb" id="62"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/tripod_camera_zones.glb" id="63"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/string_lights_gazebo.glb" id="64"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/planter_pot.glb" id="65"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_kit/gazebo_sector_open.glb" id="66"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_kit/gazebo_sector.glb" id="67"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_kit/gazebo_roof_sector.glb" id="68"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_kit/gazebo_finial.glb" id="69"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_kit/railing_gazebo_2m.glb" id="70"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_kit/railing_gazebo_1m.glb" id="71"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_kit/railing_gazebo_post.glb" id="72"]
+[ext_resource type="ShaderMaterial" path="res://assets/environment/house_props/prop_fine_high.tres" id="32"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/garden_bench.glb" id="33"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/birdbath_library.glb" id="34"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/wheelbarrow.glb" id="35"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/watering_can.glb" id="36"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/garden_post_lamp.glb" id="37"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/string_lights.glb" id="38"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_garden/garden_tree_apple.glb" id="39"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_garden/garden_tree_pear.glb" id="40"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_garden/garden_tree_plum.glb" id="41"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_garden/flower_bed_rose.glb" id="42"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_garden/flower_bed_foxglove.glb" id="43"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_garden/flower_bed_dahlia.glb" id="44"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_garden/flower_bed_marigold.glb" id="45"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_garden/flower_bed_tulip.glb" id="46"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_garden/flower_bed_aster.glb" id="47"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_garden/bush_boxwood.glb" id="48"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_garden/bush_hydrangea.glb" id="49"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_garden/bush_lavender.glb" id="50"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_garden/bush_currant.glb" id="51"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/bbq_grill.glb" id="52"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/music_speaker.glb" id="53"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/fire_pit_zones.glb" id="54"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/deckchair_zones.glb" id="55"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/bean_bag_zones.glb" id="56"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/cooler_box_zones.glb" id="57"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/string_lights_set.glb" id="58"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/lantern_zones.glb" id="59"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/picnic_table.glb" id="60"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/firewood_stack.glb" id="61"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/pose_screen.glb" id="62"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/photo_backdrop_zones.glb" id="63"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/tripod_camera_zones.glb" id="64"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/string_lights_gazebo.glb" id="65"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/planter_pot.glb" id="66"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_kit/gazebo_sector_open.glb" id="67"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_kit/gazebo_sector.glb" id="68"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_kit/gazebo_roof_sector.glb" id="69"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_kit/gazebo_finial.glb" id="70"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_kit/railing_gazebo_2m.glb" id="71"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_kit/railing_gazebo_1m.glb" id="72"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_kit/railing_gazebo_post.glb" id="73"]
 
 [node name="Outdoor" type="Node3D"]
 metadata/art_package = 7
@@ -2494,6 +2495,9 @@ transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 74, 5.2, 14)
 [node name="garden_dropoff_1" parent="Dressing" instance=ExtResource("31")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 62, 0, 24)
 
+[node name="garden_dropoff" parent="Dressing/garden_dropoff_1"]
+surface_material_override/0 = ExtResource("32")
+
 [node name="hedge_9" parent="Dressing" instance=ExtResource("19")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 46.6, 0, 3.2)
 
@@ -2530,41 +2534,41 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 68.4, 0, 29.4)
 [node name="hedge_20" parent="Dressing" instance=ExtResource("19")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 70.4, 0, 29.4)
 
-[node name="garden_bench_1" parent="Dressing" instance=ExtResource("32")]
+[node name="garden_bench_1" parent="Dressing" instance=ExtResource("33")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 66, 0, 2.9)
 
-[node name="garden_bench_2" parent="Dressing" instance=ExtResource("32")]
+[node name="garden_bench_2" parent="Dressing" instance=ExtResource("33")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 60, 0, 21.6)
 
-[node name="garden_bench_3" parent="Dressing" instance=ExtResource("32")]
+[node name="garden_bench_3" parent="Dressing" instance=ExtResource("33")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 77.5, 0, 12)
 
-[node name="birdbath_1" parent="Dressing" instance=ExtResource("33")]
+[node name="birdbath_1" parent="Dressing" instance=ExtResource("34")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 51, 0, 18)
 
-[node name="wheelbarrow_1" parent="Dressing" instance=ExtResource("34")]
+[node name="wheelbarrow_1" parent="Dressing" instance=ExtResource("35")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 54.4, 0, 8)
 
-[node name="watering_can_1" parent="Dressing" instance=ExtResource("35")]
+[node name="watering_can_1" parent="Dressing" instance=ExtResource("36")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 57.3, 0, 13.6)
 metadata/surface = "concrete"
 
-[node name="garden_post_lamp_1" parent="Dressing" instance=ExtResource("36")]
+[node name="garden_post_lamp_1" parent="Dressing" instance=ExtResource("37")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 45.3, 0, 38.1)
 
-[node name="garden_post_lamp_2" parent="Dressing" instance=ExtResource("36")]
+[node name="garden_post_lamp_2" parent="Dressing" instance=ExtResource("37")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 49, 0, 32)
 
-[node name="garden_post_lamp_3" parent="Dressing" instance=ExtResource("36")]
+[node name="garden_post_lamp_3" parent="Dressing" instance=ExtResource("37")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 52, 0, 21.5)
 
-[node name="garden_post_lamp_4" parent="Dressing" instance=ExtResource("36")]
+[node name="garden_post_lamp_4" parent="Dressing" instance=ExtResource("37")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 57.4, 0, 3.2)
 
-[node name="garden_post_lamp_5" parent="Dressing" instance=ExtResource("36")]
+[node name="garden_post_lamp_5" parent="Dressing" instance=ExtResource("37")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 77.3, 0, 4.4)
 
-[node name="garden_post_lamp_6" parent="Dressing" instance=ExtResource("36")]
+[node name="garden_post_lamp_6" parent="Dressing" instance=ExtResource("37")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 67.5, 0, 26.6)
 
 [node name="path_light_11" parent="Dressing" instance=ExtResource("20")]
@@ -2597,10 +2601,10 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 72, 0, 21)
 [node name="path_light_20" parent="Dressing" instance=ExtResource("20")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 64, 0, 21)
 
-[node name="string_lights_1" parent="Dressing" instance=ExtResource("37")]
+[node name="string_lights_1" parent="Dressing" instance=ExtResource("38")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 60.5, 2.4, 18.2)
 
-[node name="string_lights_2" parent="Dressing" instance=ExtResource("37")]
+[node name="string_lights_2" parent="Dressing" instance=ExtResource("38")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 71.5, 2.4, 18.2)
 
 [node name="stepping_stone_7" parent="Dressing" instance=ExtResource("22")]
@@ -2683,323 +2687,332 @@ metadata/surface = "concrete"
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 70, 0, 4.4)
 metadata/surface = "concrete"
 
-[node name="garden_tree_apple_1" parent="Dressing" instance=ExtResource("38")]
+[node name="garden_tree_apple_1" parent="Dressing" instance=ExtResource("39")]
 transform = Transform3D(0.6928, 0, -0.4, 0, 0.8, 0, 0.4, 0, 0.6928, 74.354, 0, 26.533)
 
-[node name="garden_tree_pear_1" parent="Dressing" instance=ExtResource("39")]
+[node name="garden_tree_pear_1" parent="Dressing" instance=ExtResource("40")]
 transform = Transform3D(0, 0, 0.8, 0, 0.8, 0, -0.8, 0, 0, 48.939, 0, 3.908)
 
-[node name="garden_tree_plum_1" parent="Dressing" instance=ExtResource("40")]
+[node name="garden_tree_plum_1" parent="Dressing" instance=ExtResource("41")]
 transform = Transform3D(0.6928, 0, 0.4, 0, 0.8, 0, -0.4, 0, 0.6928, 76.618, 0, 22.977)
 
-[node name="garden_tree_apple_2" parent="Dressing" instance=ExtResource("38")]
+[node name="garden_tree_apple_2" parent="Dressing" instance=ExtResource("39")]
 transform = Transform3D(-0.6928, 0, -0.4, 0, 0.8, 0, 0.4, 0, -0.6928, 73.351, 0, 22.077)
 
-[node name="garden_tree_pear_2" parent="Dressing" instance=ExtResource("39")]
+[node name="garden_tree_pear_2" parent="Dressing" instance=ExtResource("40")]
 transform = Transform3D(0.4, 0, 0.6928, 0, 0.8, 0, -0.6928, 0, 0.4, 51.509, 0, 6.507)
 
-[node name="garden_tree_plum_2" parent="Dressing" instance=ExtResource("40")]
+[node name="garden_tree_plum_2" parent="Dressing" instance=ExtResource("41")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 69.62, 0, 27.662)
 
-[node name="garden_tree_apple_3" parent="Dressing" instance=ExtResource("38")]
+[node name="garden_tree_apple_3" parent="Dressing" instance=ExtResource("39")]
 transform = Transform3D(0.9659, 0, -0.2588, 0, 1, 0, 0.2588, 0, 0.9659, 47.585, 0, 22.349)
 
-[node name="garden_tree_pear_3" parent="Dressing" instance=ExtResource("39")]
+[node name="garden_tree_pear_3" parent="Dressing" instance=ExtResource("40")]
 transform = Transform3D(0.7071, 0, 0.7071, 0, 1, 0, -0.7071, 0, 0.7071, 54.716, 0, 27.608)
 
-[node name="garden_tree_plum_3" parent="Dressing" instance=ExtResource("40")]
+[node name="garden_tree_plum_3" parent="Dressing" instance=ExtResource("41")]
 transform = Transform3D(-0.5657, 0, -0.5657, 0, 0.8, 0, 0.5657, 0, -0.5657, 48.887, 0, 14.641)
 
-[node name="garden_tree_apple_4" parent="Dressing" instance=ExtResource("38")]
+[node name="garden_tree_apple_4" parent="Dressing" instance=ExtResource("39")]
 transform = Transform3D(0.7727, 0, 0.2071, 0, 0.8, 0, -0.2071, 0, 0.7727, 65.106, 0, 23.11)
 
-[node name="garden_tree_pear_4" parent="Dressing" instance=ExtResource("39")]
+[node name="garden_tree_pear_4" parent="Dressing" instance=ExtResource("40")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 51.812, 0, 9.86)
 
-[node name="garden_tree_plum_4" parent="Dressing" instance=ExtResource("40")]
+[node name="garden_tree_plum_4" parent="Dressing" instance=ExtResource("41")]
 transform = Transform3D(-0.866, 0, -0.5, 0, 1, 0, 0.5, 0, -0.866, 48.557, 0, 25.851)
 
-[node name="garden_tree_apple_5" parent="Dressing" instance=ExtResource("38")]
+[node name="garden_tree_apple_5" parent="Dressing" instance=ExtResource("39")]
 transform = Transform3D(-0.2071, 0, -0.7727, 0, 0.8, 0, 0.7727, 0, -0.2071, 53.246, 0, 13.313)
 
-[node name="garden_tree_pear_5" parent="Dressing" instance=ExtResource("39")]
+[node name="garden_tree_pear_5" parent="Dressing" instance=ExtResource("40")]
 transform = Transform3D(0.7727, 0, -0.2071, 0, 0.8, 0, 0.2071, 0, 0.7727, 52.438, 0, 2.955)
 
-[node name="flower_bed_rose_1" parent="Dressing" instance=ExtResource("41")]
+[node name="flower_bed_rose_1" parent="Dressing" instance=ExtResource("42")]
 transform = Transform3D(-0.7071, 0, -0.7071, 0, 1, 0, 0.7071, 0, -0.7071, 49.713, 0, 11.727)
 
-[node name="flower_bed_foxglove_1" parent="Dressing" instance=ExtResource("42")]
+[node name="flower_bed_foxglove_1" parent="Dressing" instance=ExtResource("43")]
 transform = Transform3D(-0.2588, 0, -0.9659, 0, 1, 0, 0.9659, 0, -0.2588, 47.509, 0, 18.675)
 
-[node name="flower_bed_dahlia_1" parent="Dressing" instance=ExtResource("43")]
+[node name="flower_bed_dahlia_1" parent="Dressing" instance=ExtResource("44")]
 transform = Transform3D(0.2588, 0, -0.9659, 0, 1, 0, 0.9659, 0, 0.2588, 72.733, 0, 24.586)
 
-[node name="flower_bed_marigold_1" parent="Dressing" instance=ExtResource("44")]
+[node name="flower_bed_marigold_1" parent="Dressing" instance=ExtResource("45")]
 transform = Transform3D(-0.9659, 0, -0.2588, 0, 1, 0, 0.2588, 0, -0.9659, 49.395, 0, 8.592)
 
-[node name="flower_bed_tulip_1" parent="Dressing" instance=ExtResource("45")]
+[node name="flower_bed_tulip_1" parent="Dressing" instance=ExtResource("46")]
 transform = Transform3D(-0.7071, 0, -0.7071, 0, 1, 0, 0.7071, 0, -0.7071, 75.732, 0, 28.752)
 
-[node name="flower_bed_aster_1" parent="Dressing" instance=ExtResource("46")]
+[node name="flower_bed_aster_1" parent="Dressing" instance=ExtResource("47")]
 transform = Transform3D(-0.7071, 0, 0.7071, 0, 1, 0, -0.7071, 0, -0.7071, 52.467, 0, 16.731)
 
-[node name="flower_bed_rose_2" parent="Dressing" instance=ExtResource("41")]
+[node name="flower_bed_rose_2" parent="Dressing" instance=ExtResource("42")]
 transform = Transform3D(0.7071, 0, -0.7071, 0, 1, 0, 0.7071, 0, 0.7071, 56.974, 0, 22.663)
 
-[node name="flower_bed_foxglove_2" parent="Dressing" instance=ExtResource("42")]
+[node name="flower_bed_foxglove_2" parent="Dressing" instance=ExtResource("43")]
 transform = Transform3D(-0.7071, 0, 0.7071, 0, 1, 0, -0.7071, 0, -0.7071, 76.734, 0, 25.658)
 
-[node name="bush_boxwood_1" parent="Dressing" instance=ExtResource("47")]
+[node name="bush_boxwood_1" parent="Dressing" instance=ExtResource("48")]
 transform = Transform3D(0.5, 0, -0.866, 0, 1, 0, 0.866, 0, 0.5, 47.203, 0, 28.352)
 
-[node name="bush_hydrangea_1" parent="Dressing" instance=ExtResource("48")]
+[node name="bush_hydrangea_1" parent="Dressing" instance=ExtResource("49")]
 transform = Transform3D(1.1108, 0, -0.2976, 0, 1.15, 0, 0.2976, 0, 1.1108, 53.666, 0, 10.714)
 
-[node name="bush_lavender_1" parent="Dressing" instance=ExtResource("49")]
+[node name="bush_lavender_1" parent="Dressing" instance=ExtResource("50")]
 transform = Transform3D(0.2976, 0, -1.1108, 0, 1.15, 0, 1.1108, 0, 0.2976, 49.976, 0, 23.76)
 
-[node name="bush_currant_1" parent="Dressing" instance=ExtResource("50")]
+[node name="bush_currant_1" parent="Dressing" instance=ExtResource("51")]
 transform = Transform3D(0.9659, 0, -0.2588, 0, 1, 0, 0.2588, 0, 0.9659, 49.44, 0, 20.156)
 
-[node name="bush_boxwood_2" parent="Dressing" instance=ExtResource("47")]
+[node name="bush_boxwood_2" parent="Dressing" instance=ExtResource("48")]
 transform = Transform3D(-0.866, 0, -0.5, 0, 1, 0, 0.5, 0, -0.866, 49.868, 0, 21.863)
 
-[node name="bush_hydrangea_2" parent="Dressing" instance=ExtResource("48")]
+[node name="bush_hydrangea_2" parent="Dressing" instance=ExtResource("49")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 53.993, 0, 6.092)
 
-[node name="bush_lavender_2" parent="Dressing" instance=ExtResource("49")]
+[node name="bush_lavender_2" parent="Dressing" instance=ExtResource("50")]
 transform = Transform3D(0.866, 0, 0.5, 0, 1, 0, -0.5, 0, 0.866, 48.418, 0, 6.601)
 
-[node name="bush_currant_2" parent="Dressing" instance=ExtResource("50")]
+[node name="bush_currant_2" parent="Dressing" instance=ExtResource("51")]
 transform = Transform3D(-0.2071, 0, 0.7727, 0, 0.8, 0, -0.7727, 0, -0.2071, 54.32, 0, 23.558)
 
-[node name="bush_boxwood_3" parent="Dressing" instance=ExtResource("47")]
+[node name="bush_boxwood_3" parent="Dressing" instance=ExtResource("48")]
 transform = Transform3D(-0.7727, 0, -0.2071, 0, 0.8, 0, 0.2071, 0, -0.7727, 72.949, 0, 2.725)
 
-[node name="bush_hydrangea_3" parent="Dressing" instance=ExtResource("48")]
+[node name="bush_hydrangea_3" parent="Dressing" instance=ExtResource("49")]
 transform = Transform3D(0.7727, 0, -0.2071, 0, 0.8, 0, 0.2071, 0, 0.7727, 71.747, 0, 27.826)
 
-[node name="bush_lavender_3" parent="Dressing" instance=ExtResource("49")]
+[node name="bush_lavender_3" parent="Dressing" instance=ExtResource("50")]
 transform = Transform3D(1.1108, 0, 0.2976, 0, 1.15, 0, -0.2976, 0, 1.1108, 59.64, 0, 27.978)
 
-[node name="bush_currant_3" parent="Dressing" instance=ExtResource("50")]
+[node name="bush_currant_3" parent="Dressing" instance=ExtResource("51")]
 transform = Transform3D(-0.9659, 0, 0.2588, 0, 1, 0, -0.2588, 0, -0.9659, 77.015, 0, 2.697)
 
-[node name="bush_boxwood_4" parent="Dressing" instance=ExtResource("47")]
+[node name="bush_boxwood_4" parent="Dressing" instance=ExtResource("48")]
 transform = Transform3D(-0.7727, 0, 0.2071, 0, 0.8, 0, -0.2071, 0, -0.7727, 54.402, 0, 4.225)
 
-[node name="bush_hydrangea_4" parent="Dressing" instance=ExtResource("48")]
+[node name="bush_hydrangea_4" parent="Dressing" instance=ExtResource("49")]
 transform = Transform3D(0.2976, 0, -1.1108, 0, 1.15, 0, 1.1108, 0, 0.2976, 52.726, 0, 27.823)
 
-[node name="bush_lavender_4" parent="Dressing" instance=ExtResource("49")]
+[node name="bush_lavender_4" parent="Dressing" instance=ExtResource("50")]
 transform = Transform3D(-0.8132, 0, -0.8132, 0, 1.15, 0, 0.8132, 0, -0.8132, 46.613, 0, 16.055)
 
-[node name="bush_currant_4" parent="Dressing" instance=ExtResource("50")]
+[node name="bush_currant_4" parent="Dressing" instance=ExtResource("51")]
 transform = Transform3D(-0.9659, 0, 0.2588, 0, 1, 0, -0.2588, 0, -0.9659, 74.937, 0, 24.425)
 
-[node name="bush_boxwood_5" parent="Dressing" instance=ExtResource("47")]
+[node name="bush_boxwood_5" parent="Dressing" instance=ExtResource("48")]
 transform = Transform3D(0.8132, 0, 0.8132, 0, 1.15, 0, -0.8132, 0, 0.8132, 67.995, 0, 22.993)
 
-[node name="bush_hydrangea_5" parent="Dressing" instance=ExtResource("48")]
+[node name="bush_hydrangea_5" parent="Dressing" instance=ExtResource("49")]
 transform = Transform3D(0.7071, 0, -0.7071, 0, 1, 0, 0.7071, 0, 0.7071, 54.564, 0, 2.604)
 
-[node name="bush_lavender_5" parent="Dressing" instance=ExtResource("49")]
+[node name="bush_lavender_5" parent="Dressing" instance=ExtResource("50")]
 transform = Transform3D(0.4, 0, 0.6928, 0, 0.8, 0, -0.6928, 0, 0.4, 66.733, 0, 21.82)
 
-[node name="bush_currant_5" parent="Dressing" instance=ExtResource("50")]
+[node name="bush_currant_5" parent="Dressing" instance=ExtResource("51")]
 transform = Transform3D(0, 0, 1.15, 0, 1.15, 0, -1.15, 0, 0, 72.497, 0, 29.375)
 
-[node name="bush_boxwood_6" parent="Dressing" instance=ExtResource("47")]
+[node name="bush_boxwood_6" parent="Dressing" instance=ExtResource("48")]
 transform = Transform3D(0.8132, 0, -0.8132, 0, 1.15, 0, 0.8132, 0, 0.8132, 46.795, 0, 24.4)
 
-[node name="bush_hydrangea_6" parent="Dressing" instance=ExtResource("48")]
+[node name="bush_hydrangea_6" parent="Dressing" instance=ExtResource("49")]
 transform = Transform3D(0, 0, -1.15, 0, 1.15, 0, 1.15, 0, 0, 51.031, 0, 14.306)
 
-[node name="bush_lavender_6" parent="Dressing" instance=ExtResource("49")]
+[node name="bush_lavender_6" parent="Dressing" instance=ExtResource("50")]
 transform = Transform3D(0.9959, 0, 0.575, 0, 1.15, 0, -0.575, 0, 0.9959, 51.564, 0, 19.33)
 
-[node name="bush_currant_6" parent="Dressing" instance=ExtResource("50")]
+[node name="bush_currant_6" parent="Dressing" instance=ExtResource("51")]
 transform = Transform3D(1.1108, 0, -0.2976, 0, 1.15, 0, 0.2976, 0, 1.1108, 56.793, 0, 18.399)
 
-[node name="bush_boxwood_7" parent="Dressing" instance=ExtResource("47")]
+[node name="bush_boxwood_7" parent="Dressing" instance=ExtResource("48")]
 transform = Transform3D(-0.866, 0, -0.5, 0, 1, 0, 0.5, 0, -0.866, 49.473, 0, 16.48)
 
-[node name="bush_hydrangea_7" parent="Dressing" instance=ExtResource("48")]
+[node name="bush_hydrangea_7" parent="Dressing" instance=ExtResource("49")]
 transform = Transform3D(0.866, 0, -0.5, 0, 1, 0, 0.5, 0, 0.866, 62.279, 0, 21.603)
 
-[node name="bush_lavender_7" parent="Dressing" instance=ExtResource("49")]
+[node name="bush_lavender_7" parent="Dressing" instance=ExtResource("50")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 57.221, 0, 27.729)
 
-[node name="bush_currant_7" parent="Dressing" instance=ExtResource("50")]
+[node name="bush_currant_7" parent="Dressing" instance=ExtResource("51")]
 transform = Transform3D(0.4, 0, -0.6928, 0, 0.8, 0, 0.6928, 0, 0.4, 74.608, 0, 2.609)
 
-[node name="bush_boxwood_8" parent="Dressing" instance=ExtResource("47")]
+[node name="bush_boxwood_8" parent="Dressing" instance=ExtResource("48")]
 transform = Transform3D(0, 0, 1.15, 0, 1.15, 0, -1.15, 0, 0, 54.889, 0, 22.121)
 
-[node name="bush_hydrangea_8" parent="Dressing" instance=ExtResource("48")]
+[node name="bush_hydrangea_8" parent="Dressing" instance=ExtResource("49")]
 transform = Transform3D(0.866, 0, 0.5, 0, 1, 0, -0.5, 0, 0.866, 49.571, 0, 18.389)
 
-[node name="bbq_grill_1" parent="Dressing" instance=ExtResource("51")]
+[node name="bbq_grill_1" parent="Dressing" instance=ExtResource("52")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 8, 0, 50)
 
-[node name="music_speaker_1" parent="Dressing" instance=ExtResource("52")]
+[node name="bbq_grill" parent="Dressing/bbq_grill_1"]
+surface_material_override/0 = ExtResource("32")
+
+[node name="bbq_grill_lid" parent="Dressing/bbq_grill_1"]
+surface_material_override/0 = ExtResource("32")
+
+[node name="music_speaker_1" parent="Dressing" instance=ExtResource("53")]
 transform = Transform3D(-0.0905, 0, -0.9959, 0, 1, 0, 0.9959, 0, -0.0905, 12, 0, 55)
 
-[node name="fire_pit_1" parent="Dressing" instance=ExtResource("53")]
+[node name="fire_pit_1" parent="Dressing" instance=ExtResource("54")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.5, 0, 54.5)
 metadata/surface = "concrete"
 
-[node name="deckchair_1" parent="Dressing" instance=ExtResource("54")]
+[node name="deckchair_1" parent="Dressing" instance=ExtResource("55")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.5, 0, 52.4)
 
-[node name="deckchair_2" parent="Dressing" instance=ExtResource("54")]
+[node name="deckchair_2" parent="Dressing" instance=ExtResource("55")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 8.6, 0, 54.5)
 
-[node name="deckchair_3" parent="Dressing" instance=ExtResource("54")]
+[node name="deckchair_3" parent="Dressing" instance=ExtResource("55")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 6.5, 0, 56.6)
 
-[node name="deckchair_4" parent="Dressing" instance=ExtResource("54")]
+[node name="deckchair_4" parent="Dressing" instance=ExtResource("55")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 4.4, 0, 54.5)
 
-[node name="bean_bag_1" parent="Dressing" instance=ExtResource("55")]
+[node name="bean_bag_1" parent="Dressing" instance=ExtResource("56")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 13.8, 0, 53.4)
 
-[node name="bean_bag_2" parent="Dressing" instance=ExtResource("55")]
+[node name="bean_bag_2" parent="Dressing" instance=ExtResource("56")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 13.9, 0, 56.2)
 
-[node name="bean_bag_3" parent="Dressing" instance=ExtResource("55")]
+[node name="bean_bag_3" parent="Dressing" instance=ExtResource("56")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10.6, 0, 57)
 
-[node name="cooler_box_1" parent="Dressing" instance=ExtResource("56")]
+[node name="cooler_box_1" parent="Dressing" instance=ExtResource("57")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 8, 0, 48.5)
 
-[node name="cooler_box_2" parent="Dressing" instance=ExtResource("56")]
+[node name="cooler_box_2" parent="Dressing" instance=ExtResource("57")]
 transform = Transform3D(0.7071, 0, 0.7071, 0, 1, 0, -0.7071, 0, 0.7071, 4.2, 0, 52.4)
 
-[node name="string_lights_set_1" parent="Dressing" instance=ExtResource("57")]
+[node name="string_lights_set_1" parent="Dressing" instance=ExtResource("58")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.5, 0, 50.9)
 
-[node name="string_lights_set_2" parent="Dressing" instance=ExtResource("57")]
+[node name="string_lights_set_2" parent="Dressing" instance=ExtResource("58")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.5, 0, 57.7)
 
-[node name="string_lights_set_3" parent="Dressing" instance=ExtResource("57")]
+[node name="string_lights_set_3" parent="Dressing" instance=ExtResource("58")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 10.4, 0, 53.3)
 
-[node name="lantern_1" parent="Dressing" instance=ExtResource("58")]
+[node name="lantern_1" parent="Dressing" instance=ExtResource("59")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 0, 53)
 
-[node name="lantern_2" parent="Dressing" instance=ExtResource("58")]
+[node name="lantern_2" parent="Dressing" instance=ExtResource("59")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 0, 53)
 
-[node name="lantern_3" parent="Dressing" instance=ExtResource("58")]
+[node name="lantern_3" parent="Dressing" instance=ExtResource("59")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 0, 56)
 
-[node name="lantern_4" parent="Dressing" instance=ExtResource("58")]
+[node name="lantern_4" parent="Dressing" instance=ExtResource("59")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 0, 56)
 
-[node name="lantern_5" parent="Dressing" instance=ExtResource("58")]
+[node name="lantern_5" parent="Dressing" instance=ExtResource("59")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9, 0, 51.3)
 
-[node name="lantern_6" parent="Dressing" instance=ExtResource("58")]
+[node name="lantern_6" parent="Dressing" instance=ExtResource("59")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12.7, 0, 55.7)
 
-[node name="picnic_table_1" parent="Dressing" instance=ExtResource("59")]
+[node name="picnic_table_1" parent="Dressing" instance=ExtResource("60")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 13, 0, 49.5)
 
-[node name="firewood_stack_1" parent="Dressing" instance=ExtResource("60")]
+[node name="firewood_stack_1" parent="Dressing" instance=ExtResource("61")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 3, 0, 50)
 
-[node name="garden_tree_1" parent="Dressing" instance=ExtResource("38")]
+[node name="garden_tree_1" parent="Dressing" instance=ExtResource("39")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 0, 46.5)
 
-[node name="garden_tree_2" parent="Dressing" instance=ExtResource("38")]
+[node name="garden_tree_2" parent="Dressing" instance=ExtResource("39")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15, 0, 45.5)
 
-[node name="bush_1" parent="Dressing" instance=ExtResource("47")]
+[node name="bush_1" parent="Dressing" instance=ExtResource("48")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.8, 0, 57)
 
-[node name="bush_2" parent="Dressing" instance=ExtResource("47")]
+[node name="bush_2" parent="Dressing" instance=ExtResource("48")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15.2, 0, 57.2)
 
-[node name="bush_3" parent="Dressing" instance=ExtResource("47")]
+[node name="bush_3" parent="Dressing" instance=ExtResource("48")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.8, 0, 47.8)
 
-[node name="pose_screen_1" parent="Dressing" instance=ExtResource("61")]
+[node name="pose_screen_1" parent="Dressing" instance=ExtResource("62")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 9, 0.15, 11)
 
-[node name="photo_backdrop_1" parent="Dressing" instance=ExtResource("62")]
+[node name="pose_screen" parent="Dressing/pose_screen_1"]
+surface_material_override/0 = ExtResource("32")
+
+[node name="photo_backdrop_1" parent="Dressing" instance=ExtResource("63")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 7.6, 0.15, 11)
 
-[node name="tripod_camera_1" parent="Dressing" instance=ExtResource("63")]
+[node name="tripod_camera_1" parent="Dressing" instance=ExtResource("64")]
 transform = Transform3D(-0.6097, 0, -0.7926, 0, 1, 0, 0.7926, 0, -0.6097, 10.9, 0.15, 12)
 
-[node name="string_lights_gazebo_1" parent="Dressing" instance=ExtResource("64")]
+[node name="string_lights_gazebo_1" parent="Dressing" instance=ExtResource("65")]
 transform = Transform3D(-0.866, 0, 0.5, 0, 1, 0, -0.5, 0, -0.866, 10.1605, 2.45, 8.99)
 
-[node name="string_lights_gazebo_2" parent="Dressing" instance=ExtResource("64")]
+[node name="string_lights_gazebo_2" parent="Dressing" instance=ExtResource("65")]
 transform = Transform3D(-0.866, 0, -0.5, 0, 1, 0, 0.5, 0, -0.866, 7.8395, 2.45, 8.99)
 
-[node name="string_lights_gazebo_3" parent="Dressing" instance=ExtResource("64")]
+[node name="string_lights_gazebo_3" parent="Dressing" instance=ExtResource("65")]
 transform = Transform3D(0.866, 0, -0.5, 0, 1, 0, 0.5, 0, 0.866, 7.8395, 2.45, 13.01)
 
-[node name="string_lights_gazebo_4" parent="Dressing" instance=ExtResource("64")]
+[node name="string_lights_gazebo_4" parent="Dressing" instance=ExtResource("65")]
 transform = Transform3D(0.866, 0, 0.5, 0, 1, 0, -0.5, 0, 0.866, 10.1605, 2.45, 13.01)
 
-[node name="lantern_7" parent="Dressing" instance=ExtResource("58")]
+[node name="lantern_7" parent="Dressing" instance=ExtResource("59")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 13.6, 0, 8.6)
 
-[node name="lantern_8" parent="Dressing" instance=ExtResource("58")]
+[node name="lantern_8" parent="Dressing" instance=ExtResource("59")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 13.6, 0, 13.4)
 
-[node name="lantern_9" parent="Dressing" instance=ExtResource("58")]
+[node name="lantern_9" parent="Dressing" instance=ExtResource("59")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9, 0.15, 8.9)
 
-[node name="lantern_10" parent="Dressing" instance=ExtResource("58")]
+[node name="lantern_10" parent="Dressing" instance=ExtResource("59")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9, 0.15, 13.1)
 
-[node name="lantern_11" parent="Dressing" instance=ExtResource("58")]
+[node name="lantern_11" parent="Dressing" instance=ExtResource("59")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 11.6, 0, 8.9)
 
-[node name="lantern_12" parent="Dressing" instance=ExtResource("58")]
+[node name="lantern_12" parent="Dressing" instance=ExtResource("59")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 11.6, 0, 13.1)
 
-[node name="garden_bench_4" parent="Dressing" instance=ExtResource("32")]
+[node name="garden_bench_4" parent="Dressing" instance=ExtResource("33")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 9, 0, 15.2)
 
-[node name="garden_bench_5" parent="Dressing" instance=ExtResource("32")]
+[node name="garden_bench_5" parent="Dressing" instance=ExtResource("33")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9, 0, 6.8)
 
-[node name="planter_pot_1" parent="Dressing" instance=ExtResource("65")]
+[node name="planter_pot_1" parent="Dressing" instance=ExtResource("66")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.8, 0, 6.8)
 
-[node name="planter_pot_2" parent="Dressing" instance=ExtResource("65")]
+[node name="planter_pot_2" parent="Dressing" instance=ExtResource("66")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.8, 0, 15.2)
 
-[node name="planter_pot_3" parent="Dressing" instance=ExtResource("65")]
+[node name="planter_pot_3" parent="Dressing" instance=ExtResource("66")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 13.2, 0, 6.8)
 
-[node name="planter_pot_4" parent="Dressing" instance=ExtResource("65")]
+[node name="planter_pot_4" parent="Dressing" instance=ExtResource("66")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 13.2, 0, 15.2)
 
-[node name="planter_pot_5" parent="Dressing" instance=ExtResource("65")]
+[node name="planter_pot_5" parent="Dressing" instance=ExtResource("66")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 13.4, 0, 7.8)
 
-[node name="planter_pot_6" parent="Dressing" instance=ExtResource("65")]
+[node name="planter_pot_6" parent="Dressing" instance=ExtResource("66")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 13.4, 0, 14.2)
 
-[node name="bush_4" parent="Dressing" instance=ExtResource("47")]
+[node name="bush_4" parent="Dressing" instance=ExtResource("48")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 0, 8)
 
-[node name="bush_5" parent="Dressing" instance=ExtResource("47")]
+[node name="bush_5" parent="Dressing" instance=ExtResource("48")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 0, 14)
 
-[node name="bush_6" parent="Dressing" instance=ExtResource("47")]
+[node name="bush_6" parent="Dressing" instance=ExtResource("48")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.4, 0, 15)
 
-[node name="bush_7" parent="Dressing" instance=ExtResource("47")]
+[node name="bush_7" parent="Dressing" instance=ExtResource("48")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.4, 0, 7)
 
-[node name="gazebo_sector_open_1" parent="Shell" instance=ExtResource("66")]
+[node name="gazebo_sector_open_1" parent="Shell" instance=ExtResource("67")]
 transform = Transform3D(0.866, 0, -0.5, 0, 1, 0, 0.5, 0, 0.866, 9, 0, 11)
 metadata/surface = "wood"
 
@@ -3007,7 +3020,7 @@ metadata/surface = "wood"
 surface_material_override/0 = ExtResource("4")
 instance_shader_parameters/plan_at = Vector4(9, 0, 11, 330)
 
-[node name="gazebo_sector_1" parent="Shell" instance=ExtResource("67")]
+[node name="gazebo_sector_1" parent="Shell" instance=ExtResource("68")]
 transform = Transform3D(0.866, 0, 0.5, 0, 1, 0, -0.5, 0, 0.866, 9, 0, 11)
 metadata/surface = "wood"
 
@@ -3015,7 +3028,7 @@ metadata/surface = "wood"
 surface_material_override/0 = ExtResource("4")
 instance_shader_parameters/plan_at = Vector4(9, 0, 11, 30)
 
-[node name="gazebo_sector_2" parent="Shell" instance=ExtResource("67")]
+[node name="gazebo_sector_2" parent="Shell" instance=ExtResource("68")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 9, 0, 11)
 metadata/surface = "wood"
 
@@ -3023,7 +3036,7 @@ metadata/surface = "wood"
 surface_material_override/0 = ExtResource("4")
 instance_shader_parameters/plan_at = Vector4(9, 0, 11, 90)
 
-[node name="gazebo_sector_3" parent="Shell" instance=ExtResource("67")]
+[node name="gazebo_sector_3" parent="Shell" instance=ExtResource("68")]
 transform = Transform3D(-0.866, 0, 0.5, 0, 1, 0, -0.5, 0, -0.866, 9, 0, 11)
 metadata/surface = "wood"
 
@@ -3031,7 +3044,7 @@ metadata/surface = "wood"
 surface_material_override/0 = ExtResource("4")
 instance_shader_parameters/plan_at = Vector4(9, 0, 11, 150)
 
-[node name="gazebo_sector_4" parent="Shell" instance=ExtResource("67")]
+[node name="gazebo_sector_4" parent="Shell" instance=ExtResource("68")]
 transform = Transform3D(-0.866, 0, -0.5, 0, 1, 0, 0.5, 0, -0.866, 9, 0, 11)
 metadata/surface = "wood"
 
@@ -3039,7 +3052,7 @@ metadata/surface = "wood"
 surface_material_override/0 = ExtResource("4")
 instance_shader_parameters/plan_at = Vector4(9, 0, 11, 210)
 
-[node name="gazebo_sector_5" parent="Shell" instance=ExtResource("67")]
+[node name="gazebo_sector_5" parent="Shell" instance=ExtResource("68")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 9, 0, 11)
 metadata/surface = "wood"
 
@@ -3047,185 +3060,185 @@ metadata/surface = "wood"
 surface_material_override/0 = ExtResource("4")
 instance_shader_parameters/plan_at = Vector4(9, 0, 11, 270)
 
-[node name="gazebo_roof_sector_1" parent="Shell" instance=ExtResource("68")]
+[node name="gazebo_roof_sector_1" parent="Shell" instance=ExtResource("69")]
 transform = Transform3D(0.866, 0, -0.5, 0, 1, 0, 0.5, 0, 0.866, 9, 0, 11)
 
 [node name="gazebo_roof_sector" parent="Shell/gazebo_roof_sector_1"]
 surface_material_override/0 = ExtResource("4")
 instance_shader_parameters/plan_at = Vector4(9, 0, 11, 330)
 
-[node name="gazebo_roof_sector_2" parent="Shell" instance=ExtResource("68")]
+[node name="gazebo_roof_sector_2" parent="Shell" instance=ExtResource("69")]
 transform = Transform3D(0.866, 0, 0.5, 0, 1, 0, -0.5, 0, 0.866, 9, 0, 11)
 
 [node name="gazebo_roof_sector" parent="Shell/gazebo_roof_sector_2"]
 surface_material_override/0 = ExtResource("4")
 instance_shader_parameters/plan_at = Vector4(9, 0, 11, 30)
 
-[node name="gazebo_roof_sector_3" parent="Shell" instance=ExtResource("68")]
+[node name="gazebo_roof_sector_3" parent="Shell" instance=ExtResource("69")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 9, 0, 11)
 
 [node name="gazebo_roof_sector" parent="Shell/gazebo_roof_sector_3"]
 surface_material_override/0 = ExtResource("4")
 instance_shader_parameters/plan_at = Vector4(9, 0, 11, 90)
 
-[node name="gazebo_roof_sector_4" parent="Shell" instance=ExtResource("68")]
+[node name="gazebo_roof_sector_4" parent="Shell" instance=ExtResource("69")]
 transform = Transform3D(-0.866, 0, 0.5, 0, 1, 0, -0.5, 0, -0.866, 9, 0, 11)
 
 [node name="gazebo_roof_sector" parent="Shell/gazebo_roof_sector_4"]
 surface_material_override/0 = ExtResource("4")
 instance_shader_parameters/plan_at = Vector4(9, 0, 11, 150)
 
-[node name="gazebo_roof_sector_5" parent="Shell" instance=ExtResource("68")]
+[node name="gazebo_roof_sector_5" parent="Shell" instance=ExtResource("69")]
 transform = Transform3D(-0.866, 0, -0.5, 0, 1, 0, 0.5, 0, -0.866, 9, 0, 11)
 
 [node name="gazebo_roof_sector" parent="Shell/gazebo_roof_sector_5"]
 surface_material_override/0 = ExtResource("4")
 instance_shader_parameters/plan_at = Vector4(9, 0, 11, 210)
 
-[node name="gazebo_roof_sector_6" parent="Shell" instance=ExtResource("68")]
+[node name="gazebo_roof_sector_6" parent="Shell" instance=ExtResource("69")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 9, 0, 11)
 
 [node name="gazebo_roof_sector" parent="Shell/gazebo_roof_sector_6"]
 surface_material_override/0 = ExtResource("4")
 instance_shader_parameters/plan_at = Vector4(9, 0, 11, 270)
 
-[node name="gazebo_finial_1" parent="Shell" instance=ExtResource("69")]
+[node name="gazebo_finial_1" parent="Shell" instance=ExtResource("70")]
 transform = Transform3D(0.866, 0, -0.5, 0, 1, 0, 0.5, 0, 0.866, 9, 0, 11)
 
-[node name="railing_gazebo_2m_1" parent="Shell" instance=ExtResource("70")]
+[node name="railing_gazebo_2m_1" parent="Shell" instance=ExtResource("71")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 0, 6)
 
 [node name="railing_gazebo_2m" parent="Shell/railing_gazebo_2m_1"]
 surface_material_override/0 = ExtResource("4")
 instance_shader_parameters/plan_at = Vector4(4, 0, 6, 0)
 
-[node name="railing_gazebo_2m_2" parent="Shell" instance=ExtResource("70")]
+[node name="railing_gazebo_2m_2" parent="Shell" instance=ExtResource("71")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 0, 6)
 
 [node name="railing_gazebo_2m" parent="Shell/railing_gazebo_2m_2"]
 surface_material_override/0 = ExtResource("4")
 instance_shader_parameters/plan_at = Vector4(6, 0, 6, 0)
 
-[node name="railing_gazebo_2m_3" parent="Shell" instance=ExtResource("70")]
+[node name="railing_gazebo_2m_3" parent="Shell" instance=ExtResource("71")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 0, 6)
 
 [node name="railing_gazebo_2m" parent="Shell/railing_gazebo_2m_3"]
 surface_material_override/0 = ExtResource("4")
 instance_shader_parameters/plan_at = Vector4(8, 0, 6, 0)
 
-[node name="railing_gazebo_2m_4" parent="Shell" instance=ExtResource("70")]
+[node name="railing_gazebo_2m_4" parent="Shell" instance=ExtResource("71")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 0, 6)
 
 [node name="railing_gazebo_2m" parent="Shell/railing_gazebo_2m_4"]
 surface_material_override/0 = ExtResource("4")
 instance_shader_parameters/plan_at = Vector4(10, 0, 6, 0)
 
-[node name="railing_gazebo_2m_5" parent="Shell" instance=ExtResource("70")]
+[node name="railing_gazebo_2m_5" parent="Shell" instance=ExtResource("71")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 0, 6)
 
 [node name="railing_gazebo_2m" parent="Shell/railing_gazebo_2m_5"]
 surface_material_override/0 = ExtResource("4")
 instance_shader_parameters/plan_at = Vector4(12, 0, 6, 0)
 
-[node name="railing_gazebo_2m_6" parent="Shell" instance=ExtResource("70")]
+[node name="railing_gazebo_2m_6" parent="Shell" instance=ExtResource("71")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 14, 0, 6)
 
 [node name="railing_gazebo_2m" parent="Shell/railing_gazebo_2m_6"]
 surface_material_override/0 = ExtResource("4")
 instance_shader_parameters/plan_at = Vector4(14, 0, 6, 270)
 
-[node name="railing_gazebo_1m_1" parent="Shell" instance=ExtResource("71")]
+[node name="railing_gazebo_1m_1" parent="Shell" instance=ExtResource("72")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 14, 0, 8)
 
 [node name="railing_gazebo_1m" parent="Shell/railing_gazebo_1m_1"]
 surface_material_override/0 = ExtResource("4")
 instance_shader_parameters/plan_at = Vector4(14, 0, 8, 270)
 
-[node name="railing_gazebo_post_1" parent="Shell" instance=ExtResource("72")]
+[node name="railing_gazebo_post_1" parent="Shell" instance=ExtResource("73")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 14, 0, 9)
 
 [node name="railing_gazebo_post" parent="Shell/railing_gazebo_post_1"]
 surface_material_override/0 = ExtResource("4")
 instance_shader_parameters/plan_at = Vector4(14, 0, 9, 270)
 
-[node name="railing_gazebo_2m_7" parent="Shell" instance=ExtResource("70")]
+[node name="railing_gazebo_2m_7" parent="Shell" instance=ExtResource("71")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 14, 0, 13)
 
 [node name="railing_gazebo_2m" parent="Shell/railing_gazebo_2m_7"]
 surface_material_override/0 = ExtResource("4")
 instance_shader_parameters/plan_at = Vector4(14, 0, 13, 270)
 
-[node name="railing_gazebo_1m_2" parent="Shell" instance=ExtResource("71")]
+[node name="railing_gazebo_1m_2" parent="Shell" instance=ExtResource("72")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 14, 0, 15)
 
 [node name="railing_gazebo_1m" parent="Shell/railing_gazebo_1m_2"]
 surface_material_override/0 = ExtResource("4")
 instance_shader_parameters/plan_at = Vector4(14, 0, 15, 270)
 
-[node name="railing_gazebo_2m_8" parent="Shell" instance=ExtResource("70")]
+[node name="railing_gazebo_2m_8" parent="Shell" instance=ExtResource("71")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 14, 0, 16)
 
 [node name="railing_gazebo_2m" parent="Shell/railing_gazebo_2m_8"]
 surface_material_override/0 = ExtResource("4")
 instance_shader_parameters/plan_at = Vector4(14, 0, 16, 180)
 
-[node name="railing_gazebo_2m_9" parent="Shell" instance=ExtResource("70")]
+[node name="railing_gazebo_2m_9" parent="Shell" instance=ExtResource("71")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 12, 0, 16)
 
 [node name="railing_gazebo_2m" parent="Shell/railing_gazebo_2m_9"]
 surface_material_override/0 = ExtResource("4")
 instance_shader_parameters/plan_at = Vector4(12, 0, 16, 180)
 
-[node name="railing_gazebo_2m_10" parent="Shell" instance=ExtResource("70")]
+[node name="railing_gazebo_2m_10" parent="Shell" instance=ExtResource("71")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 10, 0, 16)
 
 [node name="railing_gazebo_2m" parent="Shell/railing_gazebo_2m_10"]
 surface_material_override/0 = ExtResource("4")
 instance_shader_parameters/plan_at = Vector4(10, 0, 16, 180)
 
-[node name="railing_gazebo_2m_11" parent="Shell" instance=ExtResource("70")]
+[node name="railing_gazebo_2m_11" parent="Shell" instance=ExtResource("71")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 8, 0, 16)
 
 [node name="railing_gazebo_2m" parent="Shell/railing_gazebo_2m_11"]
 surface_material_override/0 = ExtResource("4")
 instance_shader_parameters/plan_at = Vector4(8, 0, 16, 180)
 
-[node name="railing_gazebo_2m_12" parent="Shell" instance=ExtResource("70")]
+[node name="railing_gazebo_2m_12" parent="Shell" instance=ExtResource("71")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 6, 0, 16)
 
 [node name="railing_gazebo_2m" parent="Shell/railing_gazebo_2m_12"]
 surface_material_override/0 = ExtResource("4")
 instance_shader_parameters/plan_at = Vector4(6, 0, 16, 180)
 
-[node name="railing_gazebo_2m_13" parent="Shell" instance=ExtResource("70")]
+[node name="railing_gazebo_2m_13" parent="Shell" instance=ExtResource("71")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 4, 0, 16)
 
 [node name="railing_gazebo_2m" parent="Shell/railing_gazebo_2m_13"]
 surface_material_override/0 = ExtResource("4")
 instance_shader_parameters/plan_at = Vector4(4, 0, 16, 90)
 
-[node name="railing_gazebo_2m_14" parent="Shell" instance=ExtResource("70")]
+[node name="railing_gazebo_2m_14" parent="Shell" instance=ExtResource("71")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 4, 0, 14)
 
 [node name="railing_gazebo_2m" parent="Shell/railing_gazebo_2m_14"]
 surface_material_override/0 = ExtResource("4")
 instance_shader_parameters/plan_at = Vector4(4, 0, 14, 90)
 
-[node name="railing_gazebo_2m_15" parent="Shell" instance=ExtResource("70")]
+[node name="railing_gazebo_2m_15" parent="Shell" instance=ExtResource("71")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 4, 0, 12)
 
 [node name="railing_gazebo_2m" parent="Shell/railing_gazebo_2m_15"]
 surface_material_override/0 = ExtResource("4")
 instance_shader_parameters/plan_at = Vector4(4, 0, 12, 90)
 
-[node name="railing_gazebo_2m_16" parent="Shell" instance=ExtResource("70")]
+[node name="railing_gazebo_2m_16" parent="Shell" instance=ExtResource("71")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 4, 0, 10)
 
 [node name="railing_gazebo_2m" parent="Shell/railing_gazebo_2m_16"]
 surface_material_override/0 = ExtResource("4")
 instance_shader_parameters/plan_at = Vector4(4, 0, 10, 90)
 
-[node name="railing_gazebo_2m_17" parent="Shell" instance=ExtResource("70")]
+[node name="railing_gazebo_2m_17" parent="Shell" instance=ExtResource("71")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 4, 0, 8)
 
 [node name="railing_gazebo_2m" parent="Shell/railing_gazebo_2m_17"]

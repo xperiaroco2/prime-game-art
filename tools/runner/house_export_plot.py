@@ -136,11 +136,25 @@ def set_material_nodes(sc, data: dict, name: str, sets: list[dict], yaw: float, 
                                      + ", ".join(H._num(v) for v in at) + ")"]))
 
 
+def fine_nodes(sc, data: dict, name: str, sets: list[dict]) -> None:
+    """The fine pack's material (#147, house_export.fine_res of the export's `fine_tier`) on a Dressing prop's
+    kit_fine surfaces (`sets`: house_export.set_surfaces(glb, FINE_MATERIAL, posed=False)), as the room scenes'
+    props carry it (#82): without it a world-look prop shows its GLB's plain kit_fine stand-in."""
+    from . import house_export as X
+
+    mat = sc.res(X.fine_res(data, f"prop_fine_{data['settings']['export'].get('fine_tier', 'high')}.tres"))
+    for s in sets:
+        parent, _, node = f"Dressing/{name}/{s['node']}".rpartition("/")
+        sc.nodes.append("\n".join([f'[node name="{node}" parent="{parent}"]']
+                                  + [f'surface_material_override/{i} = ExtResource("{mat}")' for i in s["surfaces"]]))
+
+
 def scene(data: dict, raw: Path, plot: dict, plot_doc: dict, garden: dict, zones: list[dict],
-          surfaces: dict | None = None) -> dict:
+          surfaces: dict | None = None, fine=None) -> dict:
     """{"text": the scene, "copies": {set/file: raw source}, "walkable": Shell names with a surface, "hide": Dressing
-    names, "held": placeholder ids, "counts"}. `surfaces` (piece id -> house_export.set_surfaces) puts the kit's set
-    material on the Shell pieces (#132)."""
+    names, "held": placeholder ids, "fine": game files on the fine pack, "counts"}. `surfaces` (piece id ->
+    house_export.set_surfaces) puts the kit's set material on the Shell pieces (#132); `fine(src)` (a prop's raw GLB
+    -> its kit_fine surfaces) puts the fine pack's material on the Dressing props' (#82)."""
     from . import house_export as X
 
     ex = data["settings"]["export"]
@@ -153,7 +167,7 @@ def scene(data: dict, raw: Path, plot: dict, plot_doc: dict, garden: dict, zones
     sc.group("Dressing")
     copies: dict[str, Path] = {}
     seen: dict[str, int] = {}
-    walkable, hide, held = [], [], []
+    walkable, hide, held, on_fine = [], [], [], set()
     for p in placements(plot_doc, garden, zones):
         got = resolve(data, raw, p)
         seen[p["id"]] = seen.get(p["id"], 0) + 1
@@ -180,10 +194,15 @@ def scene(data: dict, raw: Path, plot: dict, plot_doc: dict, garden: dict, zones
             sc.instance(name, "Dressing", res, tf(p["yaw"], x, h, z, float(p.get("scale", 1.0))),
                         {"surface": surface} if surface else None)
             hide.append(name)
+            sets = fine(src) if fine else []
+            if sets:
+                fine_nodes(sc, data, name, sets)
+                on_fine.add(f"{set_id}/{fname}")
     text = sc.text().rstrip("\n") + "\n\n" + "\n\n".join(overrides) + '\n\n[editable path="Ground"]\n'
     counts = {"shell": sum(1 for n in sc.nodes if 'parent="Shell"' in n),
               "dressing": sum(1 for n in sc.nodes if 'parent="Dressing"' in n), "placeholders": len(held)}
     return {"text": text, "copies": copies, "walkable": walkable, "hide": hide, "held": sorted(set(held)),
+            "fine": sorted(on_fine),
             "counts": counts, "res": f"res://{ex.get('plot', {}).get('scene', 'levels/house/outdoor.tscn')}"}
 
 

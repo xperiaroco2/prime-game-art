@@ -549,15 +549,6 @@ def write(data: dict, planned: dict, dressing: dict, fixtures: list[dict], out: 
     extra = {p.stem: p for p in task_dir.glob("*.glb")} if pkg is None or pkg.get("task_props") else {}
     for pid, src in sorted({**extra, **{pid: prop_glbs[pid] for pid in prop_ids}}.items()):
         copies[env / ex["prop_set"] / f"{pid}.glb"] = src
-    shipped = {pid for pid in {**extra, **{pid: 1 for pid in prop_ids}}
-               if set_surfaces(extra.get(pid) or prop_glbs[pid], FINE_MATERIAL, posed=False)}
-    fine_pack = fine_tiers(data, raw) if shipped else {}
-    if shipped and not fine_pack:
-        raise ValueError(f"{len(shipped)} props on the fine pack ({sorted(shipped)[0]}, ...) but no fine.json under "
-                         f"<raw>/{ex.get('fine_dir', '')} (build the library: props-library --build)")
-    for tier, t in fine_pack.get("tiers", {}).items():  # the fine pack's shared textures (#147), once per tier
-        for k in fine_keys(fine_pack, tier):
-            copies[env / ex["prop_set"] / FINE_DIR / tier / f"fine_{k}.png"] = Path(t["files"][k])
     set_ids = list(ex.get("sets", {})) if pkg is None else pkg.get("sets", [])
     builds: dict[str, Path] = {}
     for sid in set_ids:
@@ -576,9 +567,20 @@ def write(data: dict, planned: dict, dressing: dict, fixtures: list[dict], out: 
     if pkg is not None and pkg.get("plot") or pkg is None and "house_outdoor" in builds:
         from . import house_export_plot as PL
         inputs = PL.load_inputs(data, raw, builds["house_outdoor"])
-        plot = PL.scene(data, raw, *inputs, surfaces=surfaces)
+        plot = PL.scene(data, raw, *inputs, surfaces=surfaces,
+                        fine=lambda src: set_surfaces(src, FINE_MATERIAL, posed=False))  # the yard's fine props (#82)
         for target, src in plot["copies"].items():
             copies[env / target] = src
+    shipped = {pid for pid in {**extra, **{pid: 1 for pid in prop_ids}}
+               if set_surfaces(extra.get(pid) or prop_glbs[pid], FINE_MATERIAL, posed=False)}
+    shipped |= set(plot["fine"] if plot else [])
+    fine_pack = fine_tiers(data, raw) if shipped else {}
+    if shipped and not fine_pack:
+        raise ValueError(f"{len(shipped)} props on the fine pack ({sorted(shipped)[0]}, ...) but no fine.json under "
+                         f"<raw>/{ex.get('fine_dir', '')} (build the library: props-library --build)")
+    for tier, t in fine_pack.get("tiers", {}).items():  # the fine pack's shared textures (#147), once per tier
+        for k in fine_keys(fine_pack, tier):
+            copies[env / ex["prop_set"] / FINE_DIR / tier / f"fine_{k}.png"] = Path(t["files"][k])
     lost = sorted(t.as_posix() for t, src in copies.items() if not src.is_file())
     if lost:
         raise ValueError(f"{len(lost)} files missing in the raw folder, e.g. {lost[0]} (build the kit and props)")

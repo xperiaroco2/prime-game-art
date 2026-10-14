@@ -209,6 +209,17 @@ safety_yellow = {material = "fine", layer = "paint", hex = "#e3b51f"}  # #170: f
 hivis_yellow = {material = "fine", layer = "fabric", hex = "#cfd82a"}  # #170: the work vests on the corridor's hooks
 rubber_mat = {material = "fine", layer = "paint", hex = "#565b57"}  # #170: the corridor's ribbed matting, a mid grey (never road-dark)
 bottle_brown = {material = "fine", layer = "gloss", hex = "#4a2a14"}  # #170: the darkroom's chemical bottles
+# #82: the task props in the world look (props/tasks.toml [fine_paint]): the state lamps (on green, off red), the
+# switch boxes' grey, the buns, the wine bottles and their foil, a light herb and the photo board's cork.
+signal_green = {material = "fine", layer = "paint", hex = "#3fbf55"}
+signal_red = {material = "fine", layer = "paint", hex = "#d8342a"}
+switch_grey = {material = "fine", layer = "paint", hex = "#5d6f78"}
+bun_golden = {material = "fine", layer = "paint", hex = "#d9a75e"}
+bun_brown = {material = "fine", layer = "paint", hex = "#7d4a24"}
+wine_green = {material = "fine", layer = "gloss", hex = "#23381f"}
+foil_red = {material = "fine", layer = "paint", hex = "#6a1f25"}
+leaf_light = {material = "fine", layer = "paint", hex = "#7a9a4a"}
+cork = {material = "fine", layer = "paint", hex = "#b48a5e"}
 
 # Inventory props this library does not make, and who does (the manager's split of 2026-10-10).
 [skip]
