@@ -4190,7 +4190,7 @@ size_m = [1.3, 0.65, 1.45]
 count = 1
 route = "proc"
 shape = "lab_sink"
-roles = ["art_white", "book_mustard", "bottle_brown", "chrome", "enamel_white", "paint_blue", "paint_red", "steel_black", "steel_warm"]
+roles = ["art_white", "book_mustard", "bottle_brown", "chrome", "enamel_white", "paint_blue", "paint_red", "rubber_black", "steel_black", "steel_warm"]
 pivot = "floor"
 collision = "box"
 
