@@ -33,6 +33,11 @@ other rooms' paints; no kit piece changed. Copy it over the game's `house_kit/ki
 `kit_set.tres` now carries the bathroom's pale green-grey (#D8DFD6) beside the other rooms' paints; no kit
 piece changed. Copy it over the game's `house_kit/kit_set.tres`.
 
+## The kids' room's paint (#166)
+
+`kit_set.tres` now carries the kids' room's pale sky blue (#C9D7DE) beside the other rooms' paints; no kit
+piece changed. Copy it over the game's `house_kit/kit_set.tres`.
+
 ## Credits
 The entry is `CREDITS.md` beside this file (the game's `docs/credits/<id>.md` format; copy it to
 `docs/credits/house_kit.md`): own work, plus the three textures made from ambientCG CC0 maps, `ai_generated = false`,

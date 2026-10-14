@@ -50,6 +50,11 @@ this package's scenes are unchanged.
 Only `package.json` changed: the shared `kit_set.tres` carries the bathroom's paint and hashes anew; this
 package's scenes are unchanged.
 
+## The kids' room's paint (#166)
+
+Only `package.json` changed: the shared `kit_set.tres` carries the kids' room's paint and hashes anew; this
+package's scenes are unchanged.
+
 ## Credits
 As P2: the entries `assets/kit/house_kit/CREDITS.md` and `assets/prop/house_props/CREDITS.md` (copy them to
 `docs/credits/house_kit.md` and `house_props.md`); own work, the props from
