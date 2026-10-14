@@ -17,8 +17,8 @@ class PinnedGreybox(unittest.TestCase):
     def test_the_snapshot_holds_the_house(self):
         snap = G.load()
         self.assertEqual(len(snap["game_commit"]), 40)
-        self.assertEqual(len(snap["rooms"]), 35)
-        self.assertEqual(len(snap["design_rooms"]), 35)
+        self.assertEqual(len(snap["rooms"]), 34)
+        self.assertEqual(len(snap["design_rooms"]), 34)
         kitchen = snap["rooms"]["kitchen"]
         self.assertEqual(kitchen["root"], "Kitchen")
         self.assertIsInstance(kitchen["origin"], tuple)
