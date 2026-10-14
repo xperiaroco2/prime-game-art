@@ -11,32 +11,40 @@
 [ext_resource type="PackedScene" path="res://assets/environment/house_kit/wall_storey_corner_ext.glb" id="9"]
 [ext_resource type="PackedScene" path="res://assets/environment/house_kit/floor_boards_2x2.glb" id="10"]
 [ext_resource type="PackedScene" path="res://assets/environment/house_props/dining_table.glb" id="11"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/dining_chair.glb" id="12"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/sideboard.glb" id="13"]
-[ext_resource type="ShaderMaterial" path="res://assets/environment/house_props/prop_fine_high.tres" id="14"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/potted_plant.glb" id="15"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/picture_frame.glb" id="16"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/drying_rack.glb" id="17"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/laundry_basket.glb" id="18"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/open_box.glb" id="19"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/cardboard_box.glb" id="20"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/console_table.glb" id="21"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/radiator.glb" id="22"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/bookcase.glb" id="23"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/dresser.glb" id="24"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/armchair.glb" id="25"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/small_table.glb" id="26"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/laundry_pile.glb" id="27"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/book_stack.glb" id="28"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/vase_flowers.glb" id="29"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/fruit_bowl.glb" id="30"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/bottles.glb" id="31"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/paper_stack.glb" id="32"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/wall_clock.glb" id="33"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/wall_shelf.glb" id="34"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/basket.glb" id="35"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/chandelier.glb" id="36"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/wall_sconce.glb" id="37"]
+[ext_resource type="ShaderMaterial" path="res://assets/environment/house_props/prop_fine_high.tres" id="12"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/dining_rug.glb" id="13"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/dining_chair.glb" id="14"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/sideboard.glb" id="15"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/dresser.glb" id="16"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/display_cabinet.glb" id="17"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/floor_plant.glb" id="18"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/bookcase.glb" id="19"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/radiator.glb" id="20"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/art_still_life.glb" id="21"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/console_table.glb" id="22"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/potted_plant.glb" id="23"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/picture_frame.glb" id="24"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/art_gazebo.glb" id="25"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/art_delivery.glb" id="26"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/place_setting.glb" id="27"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/serving_board.glb" id="28"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/tulip_vase.glb" id="29"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/homework.glb" id="30"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/laptop.glb" id="31"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/bottle_rack.glb" id="32"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/candle_pair.glb" id="33"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/fruit_dish.glb" id="34"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/board_games.glb" id="35"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/mail_stack.glb" id="36"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/table_plant.glb" id="37"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/book_stack.glb" id="38"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/bottles.glb" id="39"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/vase_flowers.glb" id="40"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/paper_stack.glb" id="41"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/wall_clock.glb" id="42"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/basket.glb" id="43"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/chandelier.glb" id="44"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/wall_sconce.glb" id="45"]
 
 [node name="DiningRoom" type="Node3D"]
 metadata/size_m = Vector2i(12, 6)
@@ -329,297 +337,332 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 0, 3)
 metadata/prop = "dining_table"
 metadata/station = "DiningTable"
 
-[node name="dining_chair_1" parent="Dressing" instance=ExtResource("12")]
+[node name="dining_table" parent="Dressing/dining_table_1"]
+surface_material_override/0 = ExtResource("12")
+
+[node name="dining_rug_1" parent="Dressing" instance=ExtResource("13")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 0, 3)
+metadata/prop = "dining_rug"
+
+[node name="dining_rug" parent="Dressing/dining_rug_1"]
+surface_material_override/0 = ExtResource("12")
+
+[node name="dining_chair_1" parent="Dressing" instance=ExtResource("14")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 0, 2.15)
 metadata/prop = "dining_chair"
 metadata/station = "DiningTable"
 
-[node name="dining_chair_2" parent="Dressing" instance=ExtResource("12")]
+[node name="dining_chair" parent="Dressing/dining_chair_1"]
+surface_material_override/0 = ExtResource("12")
+
+[node name="dining_chair_2" parent="Dressing" instance=ExtResource("14")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 0, 2.15)
 metadata/prop = "dining_chair"
 metadata/station = "DiningTable"
 
-[node name="dining_chair_3" parent="Dressing" instance=ExtResource("12")]
+[node name="dining_chair" parent="Dressing/dining_chair_2"]
+surface_material_override/0 = ExtResource("12")
+
+[node name="dining_chair_3" parent="Dressing" instance=ExtResource("14")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7, 0, 2.15)
 metadata/prop = "dining_chair"
 metadata/station = "DiningTable"
 
-[node name="dining_chair_4" parent="Dressing" instance=ExtResource("12")]
+[node name="dining_chair" parent="Dressing/dining_chair_3"]
+surface_material_override/0 = ExtResource("12")
+
+[node name="dining_chair_4" parent="Dressing" instance=ExtResource("14")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 5, 0, 3.85)
 metadata/prop = "dining_chair"
 metadata/station = "DiningTable"
 
-[node name="dining_chair_5" parent="Dressing" instance=ExtResource("12")]
+[node name="dining_chair" parent="Dressing/dining_chair_4"]
+surface_material_override/0 = ExtResource("12")
+
+[node name="dining_chair_5" parent="Dressing" instance=ExtResource("14")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 6, 0, 3.85)
 metadata/prop = "dining_chair"
 metadata/station = "DiningTable"
 
-[node name="dining_chair_6" parent="Dressing" instance=ExtResource("12")]
+[node name="dining_chair" parent="Dressing/dining_chair_5"]
+surface_material_override/0 = ExtResource("12")
+
+[node name="dining_chair_6" parent="Dressing" instance=ExtResource("14")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 7, 0, 3.85)
 metadata/prop = "dining_chair"
 metadata/station = "DiningTable"
 
-[node name="dining_chair_7" parent="Dressing" instance=ExtResource("12")]
+[node name="dining_chair" parent="Dressing/dining_chair_6"]
+surface_material_override/0 = ExtResource("12")
+
+[node name="dining_chair_7" parent="Dressing" instance=ExtResource("14")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 4.25, 0, 3)
 metadata/prop = "dining_chair"
 metadata/station = "DiningTable"
 
-[node name="dining_chair_8" parent="Dressing" instance=ExtResource("12")]
+[node name="dining_chair" parent="Dressing/dining_chair_7"]
+surface_material_override/0 = ExtResource("12")
+
+[node name="dining_chair_8" parent="Dressing" instance=ExtResource("14")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 7.75, 0, 3)
 metadata/prop = "dining_chair"
 metadata/station = "DiningTable"
 
-[node name="sideboard_1" parent="Dressing" instance=ExtResource("13")]
+[node name="dining_chair" parent="Dressing/dining_chair_8"]
+surface_material_override/0 = ExtResource("12")
+
+[node name="sideboard_1" parent="Dressing" instance=ExtResource("15")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 11.65, 0, 3)
 metadata/prop = "sideboard"
 
 [node name="sideboard" parent="Dressing/sideboard_1"]
-surface_material_override/0 = ExtResource("14")
+surface_material_override/0 = ExtResource("12")
 
-[node name="potted_plant_1" parent="Dressing" instance=ExtResource("15")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 11.5, 0, 0.55)
-metadata/prop = "potted_plant"
-
-[node name="picture_frame_1" parent="Dressing" instance=ExtResource("16")]
-transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 5, 1.4, 5.9)
-metadata/prop = "picture_frame"
-
-[node name="picture_frame_2" parent="Dressing" instance=ExtResource("16")]
-transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 10.5, 1.4, 5.9)
-metadata/prop = "picture_frame"
-
-[node name="picture_frame_3" parent="Dressing" instance=ExtResource("16")]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 0.1, 1.4, 5)
-metadata/prop = "picture_frame"
-
-[node name="drying_rack_1" parent="Dressing" instance=ExtResource("17")]
-transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 10.52, 0, 5.575)
-metadata/prop = "drying_rack"
-
-[node name="laundry_basket_1" parent="Dressing" instance=ExtResource("18")]
-transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 11.47, 0, 5.65)
-metadata/prop = "laundry_basket"
-
-[node name="open_box_1" parent="Dressing" instance=ExtResource("19")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7.62, 0, 0.35)
-metadata/prop = "open_box"
-
-[node name="cardboard_box_1" parent="Dressing" instance=ExtResource("20")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8.22, 0, 0.35)
-metadata/prop = "cardboard_box"
-
-[node name="console_table_1" parent="Dressing" instance=ExtResource("21")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10.66, 0, 0.325)
-metadata/prop = "console_table"
-
-[node name="radiator_1" parent="Dressing" instance=ExtResource("22")]
-transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 0.62, 0.12, 5.9)
-metadata/prop = "radiator"
-
-[node name="sideboard_2" parent="Dressing" instance=ExtResource("13")]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 0.375, 0, 4.96)
+[node name="sideboard_2" parent="Dressing" instance=ExtResource("15")]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 0.335, 0, 4.75)
 metadata/prop = "sideboard"
 
 [node name="sideboard" parent="Dressing/sideboard_2"]
-surface_material_override/0 = ExtResource("14")
+surface_material_override/0 = ExtResource("12")
 
-[node name="bookcase_1" parent="Dressing" instance=ExtResource("23")]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 0.325, 0, 1.46)
-metadata/prop = "bookcase"
-
-[node name="bookcase" parent="Dressing/bookcase_1"]
-surface_material_override/0 = ExtResource("14")
-
-[node name="dresser_1" parent="Dressing" instance=ExtResource("24")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9.11, 0, 0.4)
+[node name="dresser_1" parent="Dressing" instance=ExtResource("16")]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 11.6, 0, 1.35)
 metadata/prop = "dresser"
 
 [node name="dresser" parent="Dressing/dresser_1"]
-surface_material_override/0 = ExtResource("14")
+surface_material_override/0 = ExtResource("12")
 
-[node name="radiator_2" parent="Dressing" instance=ExtResource("22")]
-transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 3.34, 0.12, 5.9)
-metadata/prop = "radiator"
-
-[node name="dresser_2" parent="Dressing" instance=ExtResource("24")]
-transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 11.6, 0, 1.48)
+[node name="dresser_2" parent="Dressing" instance=ExtResource("16")]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 11.6, 0, 4.85)
 metadata/prop = "dresser"
 
 [node name="dresser" parent="Dressing/dresser_2"]
-surface_material_override/0 = ExtResource("14")
+surface_material_override/0 = ExtResource("12")
 
-[node name="radiator_3" parent="Dressing" instance=ExtResource("22")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.1, 0.12, 0.1)
+[node name="display_cabinet_1" parent="Dressing" instance=ExtResource("17")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7.85, 0, 0.31)
+metadata/prop = "display_cabinet"
+
+[node name="display_cabinet" parent="Dressing/display_cabinet_1"]
+surface_material_override/0 = ExtResource("12")
+
+[node name="floor_plant_1" parent="Dressing" instance=ExtResource("18")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 11.5, 0, 0.42)
+metadata/prop = "floor_plant"
+
+[node name="floor_plant" parent="Dressing/floor_plant_1"]
+surface_material_override/0 = ExtResource("12")
+
+[node name="bookcase_1" parent="Dressing" instance=ExtResource("19")]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 0.325, 0, 1.2)
+metadata/prop = "bookcase"
+
+[node name="bookcase" parent="Dressing/bookcase_1"]
+surface_material_override/0 = ExtResource("12")
+
+[node name="radiator_1" parent="Dressing" instance=ExtResource("20")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0.12, 0.1)
 metadata/prop = "radiator"
 
-[node name="dresser_3" parent="Dressing" instance=ExtResource("24")]
-transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 11.6, 0, 4.44)
-metadata/prop = "dresser"
-
-[node name="dresser" parent="Dressing/dresser_3"]
-surface_material_override/0 = ExtResource("14")
-
-[node name="radiator_4" parent="Dressing" instance=ExtResource("22")]
-transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 4.38, 0.12, 5.9)
+[node name="radiator_2" parent="Dressing" instance=ExtResource("20")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 0.12, 0.1)
 metadata/prop = "radiator"
 
-[node name="radiator_5" parent="Dressing" instance=ExtResource("22")]
-transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 6.04, 0.12, 5.9)
-metadata/prop = "radiator"
+[node name="art_still_life_1" parent="Dressing" instance=ExtResource("21")]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 0.1, 1.2, 4.75)
+metadata/prop = "art_still_life"
 
-[node name="armchair_1" parent="Dressing" instance=ExtResource("25")]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 9.2, 0, 3.7)
-metadata/prop = "armchair"
+[node name="art_still_life" parent="Dressing/art_still_life_1"]
+surface_material_override/0 = ExtResource("12")
 
-[node name="armchair" parent="Dressing/armchair_1"]
-surface_material_override/0 = ExtResource("14")
+[node name="console_table_1" parent="Dressing" instance=ExtResource("22")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 10.18, 0, 5.675)
+metadata/prop = "console_table"
 
-[node name="small_table_1" parent="Dressing" instance=ExtResource("26")]
-transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 8.85, 0, 2.35)
-metadata/prop = "small_table"
-
-[node name="small_table" parent="Dressing/small_table_1"]
-surface_material_override/0 = ExtResource("14")
-
-[node name="armchair_2" parent="Dressing" instance=ExtResource("25")]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 10.2, 0, 1.7)
-metadata/prop = "armchair"
-
-[node name="armchair" parent="Dressing/armchair_2"]
-surface_material_override/0 = ExtResource("14")
-
-[node name="small_table_2" parent="Dressing" instance=ExtResource("26")]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 7.6, 0, 1.35)
-metadata/prop = "small_table"
-
-[node name="small_table" parent="Dressing/small_table_2"]
-surface_material_override/0 = ExtResource("14")
-
-[node name="potted_plant_2" parent="Dressing" instance=ExtResource("15")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.81, 0, 0.35)
+[node name="potted_plant_1" parent="Dressing" instance=ExtResource("23")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 9.29, 0, 5.65)
 metadata/prop = "potted_plant"
 
-[node name="picture_frame_4" parent="Dressing" instance=ExtResource("16")]
-transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 3.77, 1.4, 5.9)
+[node name="picture_frame_1" parent="Dressing" instance=ExtResource("24")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 3.83, 1.4, 5.9)
 metadata/prop = "picture_frame"
 
-[node name="picture_frame_5" parent="Dressing" instance=ExtResource("16")]
-transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 6.22, 1.4, 5.9)
-metadata/prop = "picture_frame"
-
-[node name="picture_frame_6" parent="Dressing" instance=ExtResource("16")]
-transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 9.53, 1.4, 5.9)
-metadata/prop = "picture_frame"
-
-[node name="picture_frame_7" parent="Dressing" instance=ExtResource("16")]
-transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 5.61, 1.4, 5.9)
+[node name="picture_frame_2" parent="Dressing" instance=ExtResource("24")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 3.19, 1.4, 5.9)
 metadata/prop = "picture_frame"
 
 [node name="Detail" type="Node3D" parent="."]
 
-[node name="laundry_pile_1" parent="Detail" instance=ExtResource("27")]
-transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 9.57, 0, 5.55)
-metadata/prop = "laundry_pile"
+[node name="art_gazebo_1" parent="Detail" instance=ExtResource("25")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 4.95, 1.25, 5.9)
+metadata/prop = "art_gazebo"
 
-[node name="book_stack_1" parent="Detail" instance=ExtResource("28")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7.17, 0, 0.295)
+[node name="art_gazebo" parent="Detail/art_gazebo_1"]
+surface_material_override/0 = ExtResource("12")
+
+[node name="art_delivery_1" parent="Detail" instance=ExtResource("26")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 10.3, 1.32, 5.9)
+metadata/prop = "art_delivery"
+
+[node name="art_delivery" parent="Detail/art_delivery_1"]
+surface_material_override/0 = ExtResource("12")
+
+[node name="place_setting_1" parent="Detail" instance=ExtResource("27")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 5, 0.76, 2.6)
+metadata/prop = "place_setting"
+
+[node name="place_setting" parent="Detail/place_setting_1"]
+surface_material_override/0 = ExtResource("12")
+
+[node name="place_setting_2" parent="Detail" instance=ExtResource("27")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 6, 0.76, 2.6)
+metadata/prop = "place_setting"
+
+[node name="place_setting" parent="Detail/place_setting_2"]
+surface_material_override/0 = ExtResource("12")
+
+[node name="place_setting_3" parent="Detail" instance=ExtResource("27")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 0.76, 3.4)
+metadata/prop = "place_setting"
+
+[node name="place_setting" parent="Detail/place_setting_3"]
+surface_material_override/0 = ExtResource("12")
+
+[node name="place_setting_4" parent="Detail" instance=ExtResource("27")]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 4.75, 0.76, 3)
+metadata/prop = "place_setting"
+
+[node name="place_setting" parent="Detail/place_setting_4"]
+surface_material_override/0 = ExtResource("12")
+
+[node name="serving_board_1" parent="Detail" instance=ExtResource("28")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.47, 0.76, 3)
+metadata/prop = "serving_board"
+
+[node name="serving_board" parent="Detail/serving_board_1"]
+surface_material_override/0 = ExtResource("12")
+
+[node name="tulip_vase_1" parent="Detail" instance=ExtResource("29")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.98, 0.76, 3.02)
+metadata/prop = "tulip_vase"
+
+[node name="tulip_vase" parent="Detail/tulip_vase_1"]
+surface_material_override/0 = ExtResource("12")
+
+[node name="homework_1" parent="Detail" instance=ExtResource("30")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7, 0.76, 3.35)
+metadata/prop = "homework"
+
+[node name="homework" parent="Detail/homework_1"]
+surface_material_override/0 = ExtResource("12")
+
+[node name="laptop_1" parent="Detail" instance=ExtResource("31")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 7.2, 0.76, 2.72)
+metadata/prop = "laptop"
+
+[node name="laptop" parent="Detail/laptop_1"]
+surface_material_override/0 = ExtResource("12")
+
+[node name="bottle_rack_1" parent="Detail" instance=ExtResource("32")]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 0.335, 0.9, 4.2)
+metadata/prop = "bottle_rack"
+
+[node name="bottle_rack" parent="Detail/bottle_rack_1"]
+surface_material_override/0 = ExtResource("12")
+
+[node name="candle_pair_1" parent="Detail" instance=ExtResource("33")]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 0.3, 0.9, 4.78)
+metadata/prop = "candle_pair"
+
+[node name="candle_pair" parent="Detail/candle_pair_1"]
+surface_material_override/0 = ExtResource("12")
+
+[node name="fruit_dish_1" parent="Detail" instance=ExtResource("34")]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 0.33, 0.9, 5.28)
+metadata/prop = "fruit_dish"
+
+[node name="fruit_dish" parent="Detail/fruit_dish_1"]
+surface_material_override/0 = ExtResource("12")
+
+[node name="board_games_1" parent="Detail" instance=ExtResource("35")]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 11.62, 0.9, 2.5)
+metadata/prop = "board_games"
+
+[node name="board_games" parent="Detail/board_games_1"]
+surface_material_override/0 = ExtResource("12")
+
+[node name="mail_stack_1" parent="Detail" instance=ExtResource("36")]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 11.62, 0.9, 3.45)
+metadata/prop = "mail_stack"
+
+[node name="mail_stack" parent="Detail/mail_stack_1"]
+surface_material_override/0 = ExtResource("12")
+
+[node name="table_plant_1" parent="Detail" instance=ExtResource("37")]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 11.62, 0.9, 3)
+metadata/prop = "table_plant"
+
+[node name="table_plant" parent="Detail/table_plant_1"]
+surface_material_override/0 = ExtResource("12")
+
+[node name="book_stack_1" parent="Detail" instance=ExtResource("38")]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 11.48, 0.9, 1.62)
 metadata/prop = "book_stack"
 
-[node name="vase_flowers_1" parent="Detail" instance=ExtResource("29")]
-transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 11.63, 0.9, 2.71)
-metadata/prop = "vase_flowers"
-
-[node name="book_stack_2" parent="Detail" instance=ExtResource("28")]
-transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 11.56, 0.9, 2.42)
-metadata/prop = "book_stack"
-
-[node name="fruit_bowl_1" parent="Detail" instance=ExtResource("30")]
-transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 11.67, 0.9, 2.99)
-metadata/prop = "fruit_bowl"
-
-[node name="bottles_1" parent="Detail" instance=ExtResource("31")]
-transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 11.66, 0.9, 3.36)
+[node name="bottles_1" parent="Detail" instance=ExtResource("39")]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 11.68, 0.9, 1.61)
 metadata/prop = "bottles"
 
-[node name="paper_stack_1" parent="Detail" instance=ExtResource("32")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8.27, 0.4, 0.31)
+[node name="vase_flowers_1" parent="Detail" instance=ExtResource("40")]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 11.5, 0.9, 0.86)
+metadata/prop = "vase_flowers"
+
+[node name="book_stack_2" parent="Detail" instance=ExtResource("38")]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 11.68, 0.9, 1.27)
+metadata/prop = "book_stack"
+
+[node name="vase_flowers_2" parent="Detail" instance=ExtResource("40")]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 11.5, 0.9, 4.66)
+metadata/prop = "vase_flowers"
+
+[node name="bottles_2" parent="Detail" instance=ExtResource("39")]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 11.68, 0.9, 4.76)
+metadata/prop = "bottles"
+
+[node name="book_stack_3" parent="Detail" instance=ExtResource("38")]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 11.63, 0.9, 5.17)
+metadata/prop = "book_stack"
+
+[node name="paper_stack_1" parent="Detail" instance=ExtResource("41")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 10.03, 0.8, 5.66)
 metadata/prop = "paper_stack"
 
-[node name="paper_stack_2" parent="Detail" instance=ExtResource("32")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10.76, 0.8, 0.31)
+[node name="paper_stack_2" parent="Detail" instance=ExtResource("41")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 10.43, 0.8, 5.66)
 metadata/prop = "paper_stack"
 
-[node name="book_stack_3" parent="Detail" instance=ExtResource("28")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10.23, 0.8, 0.29)
-metadata/prop = "book_stack"
-
-[node name="bottles_2" parent="Detail" instance=ExtResource("31")]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 0.23, 0.9, 5.22)
-metadata/prop = "bottles"
-
-[node name="vase_flowers_2" parent="Detail" instance=ExtResource("29")]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 0.45, 0.9, 5.12)
-metadata/prop = "vase_flowers"
-
-[node name="fruit_bowl_2" parent="Detail" instance=ExtResource("30")]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 0.39, 0.9, 4.7)
-metadata/prop = "fruit_bowl"
-
-[node name="bottles_3" parent="Detail" instance=ExtResource("31")]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 0.43, 0.9, 5.37)
-metadata/prop = "bottles"
-
-[node name="book_stack_4" parent="Detail" instance=ExtResource("28")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9.38, 0.9, 0.39)
-metadata/prop = "book_stack"
-
-[node name="vase_flowers_3" parent="Detail" instance=ExtResource("29")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8.96, 0.9, 0.26)
-metadata/prop = "vase_flowers"
-
-[node name="bottles_4" parent="Detail" instance=ExtResource("31")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8.82, 0.9, 0.54)
-metadata/prop = "bottles"
-
-[node name="vase_flowers_4" parent="Detail" instance=ExtResource("29")]
-transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 11.7, 0.9, 1.08)
-metadata/prop = "vase_flowers"
-
-[node name="book_stack_5" parent="Detail" instance=ExtResource("28")]
-transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 11.48, 0.9, 1.2)
-metadata/prop = "book_stack"
-
-[node name="vase_flowers_5" parent="Detail" instance=ExtResource("29")]
-transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 11.7, 0.9, 1.58)
-metadata/prop = "vase_flowers"
-
-[node name="bottles_5" parent="Detail" instance=ExtResource("31")]
-transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 11.43, 0.9, 1.64)
-metadata/prop = "bottles"
-
-[node name="wall_clock_1" parent="Detail" instance=ExtResource("33")]
-transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 10.02, 1.85, 5.9)
+[node name="wall_clock_1" parent="Detail" instance=ExtResource("42")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 6.12, 1.85, 5.9)
 metadata/prop = "wall_clock"
 
-[node name="wall_shelf_1" parent="Detail" instance=ExtResource("34")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.17, 1.45, 0.1)
-metadata/prop = "wall_shelf"
-
-[node name="basket_1" parent="Detail" instance=ExtResource("35")]
-transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 5.21, 0, 5.68)
+[node name="basket_1" parent="Detail" instance=ExtResource("43")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 5.47, 0, 5.68)
 metadata/prop = "basket"
 
 [node name="Fixtures" type="Node3D" parent="."]
 
-[node name="chandelier_1" parent="Fixtures" instance=ExtResource("36")]
+[node name="chandelier_1" parent="Fixtures" instance=ExtResource("44")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 3, 3)
 metadata/prop = "chandelier"
 
-[node name="wall_sconce_1" parent="Fixtures" instance=ExtResource("37")]
+[node name="chandelier" parent="Fixtures/chandelier_1"]
+surface_material_override/1 = ExtResource("12")
+
+[node name="wall_sconce_1" parent="Fixtures" instance=ExtResource("45")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 11.9, 1.95, 1.2)
 metadata/prop = "wall_sconce"
 
-[node name="wall_sconce_2" parent="Fixtures" instance=ExtResource("37")]
+[node name="wall_sconce_2" parent="Fixtures" instance=ExtResource("45")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 11.9, 1.95, 4.8)
 metadata/prop = "wall_sconce"
 

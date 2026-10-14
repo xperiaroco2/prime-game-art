@@ -1,6 +1,7 @@
 # Written for #124, re-exported for #132 (the wall paints), for #147 (the C2-white kitchen, the Detail node) and for #150 (the living room) from the P2 export of 2026-10-13 (`house --export <raw>/review/house/150/export/p2 --package 2`); a rebuild
 # changes the hashes below (`manifest-check --hashes` finds it). The game's paths: levels/house/rooms/<name>.
 # #152 (the engineer's paints of 2026-10-14): re-exported as P2 into <raw>/review/house/152/export/p2 (`house --export ... --package 2`); the files it changed point there.
+# #153 (the dining room in the world look): re-exported as P2 into <raw>/review/house/153/export/p2; only dining_room.tscn and package.json changed.
 id = "house_ground"
 kind = "room"
 slot = ""
@@ -13,7 +14,7 @@ public_repo_ok = true
 ai_generated = false
 approved_by = ["xperiaroco2"]
 approved_at = 2026-10-14
-approval_pr = "https://github.com/xperiaroco2/prime-game-art/pull/154"
+approval_pr = "PR_TBD_URL"
 
 [source]
 service = "own"
@@ -30,8 +31,8 @@ sha256 = "d999d8911d4db5f5c6a56ef10ed505ff8671a1c5290cccdc8be2d28606c1c80e"
 
 [[files]]
 name = "dining_room.tscn"
-file = "review/house/152/export/p2/levels/house/rooms/dining_room.tscn"
-sha256 = "cc4750bfb73bb9f9ae2f945885bfa16dc3ff5e2e343e9be18e4e19d93b646e8d"
+file = "review/house/153/export/p2/levels/house/rooms/dining_room.tscn"
+sha256 = "669f379cd74282c1be6765d92ee16f51fe954c47723b89af8ba49a7fd77b962f"
 
 [[files]]
 name = "driveway.tscn"
