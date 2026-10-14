@@ -65,11 +65,13 @@ Every room's props follow these rules; the numbers are data in `props/library.to
    `blueprint`: the generator's blueprint), and the detail props `hall_doormat` (coir), `key_bowl`, `parcels` (kraft
    boxes with tape), `shoe_pairs` (`_shoe_pair`), `sports_bag`, `wall_calendar` (kind `calendar`) and `photo_row` (three
    small frames: family portraits of plasticine people and holiday photos, `_art` kind `family`; dressing class);
-   `framed_art` draws through the shared `_framed` helper.
+   `framed_art` draws through the shared `_framed` helper. The far wall's large piece is `gallery_wall` (six frames
+   hung salon-style from the `GALLERY` table, class `room` for its triangles, no collider).
    `tools/tests/test_props_hallway.py` checks their sizes, pivots, budgets and colliders, that the console's things
-   stand on its top without touching, that the dressing keeps 0.3 m from every station and spawn in the room (read
-   from `layouts/house/ground.toml` and `props/tasks.toml`; the hallway has none) and that the fronts of its four
-   doors (1.4 m by 0.8 m) stay clear.
+   stand on its top without touching, that the room has no station, spawn or task prop (by design; a new one fails the
+   test until the dressing is checked against it), that the dressing keeps 0.3 m from every station and spawn in the
+   room (read from `layouts/house/ground.toml` and `props/tasks.toml`) and that the fronts of its four doors (1.4 m by
+   0.8 m) stay clear.
 8. **Route.** Hard-surface props are code (the shared builders, `prop_geom.py`'s `Style`). Meshy only for organic
    one-offs (food, soft goods, plants) at a hero budget, as a recorded batch (`docs/meshy.md`).
 
