@@ -4519,6 +4519,11 @@ def build_storage_shelving(m, s, R, prm, rng):
             bar(m, (x, a, hz - u), (x, b, -hz + u), 0.014, frame, h=0.004, ref=(1, 0, 0))
     tags = ["paint_red", "book_teal", "book_mustard", "leaf_green", "paint_blue", "art_pink"]
     lids = ["book_teal", "book_mustard", "paint_blue", "book_sage", "art_terracotta"]
+    if prm.get("stock") == "parts":  # #172: the generator's spares
+        for i, y in enumerate(ys):
+            top = ys[i + 1] - 0.06 if i + 1 < len(ys) else H - 0.01
+            _parts_stock(m, -hx + u + 0.03, hx - u - 0.03, y, -hz + 0.04, hz - 0.035, top - y - 0.02, rng)
+        return
     if prm.get("stock") == "lab":  # #170: the darkroom's chemicals and photo paper
         for i, y in enumerate(ys):
             top = ys[i + 1] - 0.06 if i + 1 < len(ys) else H - 0.01
@@ -4922,7 +4927,8 @@ def _text(m: Mesh, txt: str, x0: float, x1: float, ymid: float, z: float, cap: f
 
 
 def _icon(m: Mesh, kind: str, cx: float, cy: float, r: float, z: float, ink: str) -> None:
-    """A pictogram on the plane z: a person, a burger, an arrow (east) or a camera."""
+    """A pictogram on the plane z: a person, a burger, an arrow (east), a camera, ear protection, a bolt, a first-aid
+    cross or a flame (#172)."""
     if kind == "person":
         blob(m, (cx, cy + r * 0.62, z), r * 0.26, r * 0.26, 0.004, ink, 8, 2)
         box(m, (cx - r * 0.34, cy - r * 0.35, z), (cx + r * 0.34, cy + r * 0.3, z + 0.003), ink, "+z")
@@ -4939,6 +4945,26 @@ def _icon(m: Mesh, kind: str, cx: float, cy: float, r: float, z: float, ink: str
             t = k / 4
             box(m, (cx + r * (0.2 + 0.7 * t), cy - r * 0.6 * (1 - t), z),
                 (cx + r * (0.2 + 0.7 * (t + 0.25)), cy + r * 0.6 * (1 - t), z + 0.003), ink, "+z")
+    elif kind == "ear":  # #172: ear protection, a headband over two muffs
+        for k in range(5):
+            a0, a1 = math.pi * k / 5, math.pi * (k + 1) / 5
+            box(m, (cx + r * 0.62 * math.cos(a1) - 0.004, cy + r * 0.1 + r * 0.62 * math.sin(a0) - 0.004, z),
+                (cx + r * 0.62 * math.cos(a0) + 0.004, cy + r * 0.1 + r * 0.62 * math.sin(a1) + 0.004, z + 0.003),
+                ink, "+z")
+        for sx in (-1, 1):
+            blob(m, (cx + sx * r * 0.62, cy - r * 0.15, z), r * 0.24, r * 0.36, 0.004, ink, 8, 2)
+    elif kind == "bolt":  # #172: high voltage, a zigzag bolt in a triangle's place
+        pts = ((0.25, 0.95), (-0.3, 0.05), (0.08, 0.05), (-0.25, -0.95))
+        for (x0, y0), (x1, y1) in zip(pts, pts[1:]):
+            bar(m, (cx + r * x0, cy + r * y0, z + 0.002), (cx + r * x1, cy + r * y1, z + 0.002), r * 0.18, ink,
+                h=0.003, ref=(0, 0, 1))
+    elif kind == "cross":  # #172: first aid
+        box(m, (cx - r * 0.25, cy - r * 0.75, z), (cx + r * 0.25, cy + r * 0.75, z + 0.003), ink, "+z")
+        box(m, (cx - r * 0.75, cy - r * 0.25, z), (cx + r * 0.75, cy + r * 0.25, z + 0.003), ink, "+z")
+    elif kind == "flame":  # #172: no naked flames
+        blob(m, (cx, cy - r * 0.2, z), r * 0.42, r * 0.65, 0.004, ink, 8, 3, ry_bottom=r * 0.4)
+        box(m, (cx - r * 0.85, cy - r * 0.08, z + 0.004), (cx + r * 0.85, cy + r * 0.08, z + 0.007), "paint_red",
+            "+z")
     elif kind == "camera":
         box(m, (cx - r * 0.85, cy - r * 0.5, z), (cx + r * 0.85, cy + r * 0.45, z + 0.003), ink, "+z")
         box(m, (cx - r * 0.3, cy + r * 0.45, z), (cx + r * 0.3, cy + r * 0.7, z + 0.003), ink, "+z")
@@ -5185,7 +5211,8 @@ def build_hand_trolley(m, s, R, prm, rng):
 
 def build_floor_marking(m, s, R, prm, rng):
     """Floor tape, 4 mm over the floor: `kind` "bay" (an outline of `tape` w wide), "lane" (a walkway's two edge
-    strips along L) or "hatch" (an outline filled with `tape` and black stripes: keep clear)."""
+    strips along L), "hatch" (an outline filled with `tape` and black stripes: keep clear) or "zone" (#172: a
+    border of `tape` and black blocks `seg` long round a machine)."""
     L, W, H = s
     hx, hz = L / 2, W / 2
     tape, w = prm.get("tape", "safety_yellow"), float(prm.get("w", 0.06))
@@ -5193,6 +5220,16 @@ def build_floor_marking(m, s, R, prm, rng):
     if kind == "lane":
         for z0 in (-hz, hz - w):
             box(m, (-hx, 0.0, z0), (hx, H, z0 + w), tape, "+y+x-x+z-z")
+        return
+    if kind == "zone":  # #172: a keep-clear border of yellow and black blocks round a machine
+        seg = float(prm.get("seg", 0.25))
+        for a0, a1, b0, b1, along_x in ((-hx, hx, -hz, -hz + w, True), (-hx, hx, hz - w, hz, True),
+                                        (-hz + w, hz - w, -hx, -hx + w, False), (-hz + w, hz - w, hx - w, hx, False)):
+            n = max(1, round((a1 - a0) / seg))
+            for k in range(n):
+                u0, u1 = a0 + (a1 - a0) * k / n, a0 + (a1 - a0) * (k + 1) / n
+                lo, hi = ((u0, 0.0, b0), (u1, H, b1)) if along_x else ((b0, 0.0, u0), (b1, H, u1))
+                box(m, lo, hi, tape if k % 2 == 0 else "steel_black", "+y+x-x+z-z")
         return
     for lo, hi in (((-hx, 0, -hz), (hx, H, -hz + w)), ((-hx, 0, hz - w), (hx, H, hz)),
                    ((-hx, 0, -hz + w), (-hx + w, H, hz - w)), ((hx - w, 0, -hz + w), (hx, H, hz - w))):
@@ -5397,6 +5434,715 @@ def build_rubber_matting(m, s, R, prm, rng):
     for k in range(n):
         x = -hx + 0.05 + pitch * (k + 0.5)
         box(m, (x - 0.018, t, -hz + 0.04), (x + 0.018, H, hz - 0.04), mat, "+y+x-x")
+
+
+# ---- #172: the basement's plant rooms and the darkroom's island
+
+def _parts_stock(m, x0, x1, y, z0, z1, gap, rng):
+    """One shelf of the generator's spares from x0 to x1: boxed filters with a coloured band, coiled drive belts,
+    oil jugs and kraft parts boxes with white labels."""
+    x = x0
+    zm = (z0 + z1) / 2
+    while True:
+        kind = rng.choice(("filters", "belts", "jugs", "box", "box"))
+        w = {"filters": 0.34, "belts": 0.3, "jugs": 0.28, "box": 0.4}[kind]
+        if x + w > x1:
+            break
+        if kind == "filters":
+            for k in range(2):
+                cx = x + 0.085 + k * 0.17
+                cyl(m, "y", (cx, zm), 0.07, y, y + min(gap, 0.22), "paint_blue" if k == 0 else "art_white", 6,
+                    caps=(False, True))
+        elif kind == "belts":
+            for k in range(min(2, int(gap / 0.03))):
+                tube(m, "y", (x + w / 2, zm), 0.09, 0.12, y + k * 0.025, y + k * 0.025 + 0.02, "rubber_black", 6)
+        elif kind == "jugs":
+            for k in range(2):
+                cx = x + 0.07 + k * 0.14
+                h = min(gap - 0.02, 0.26)
+                box(m, (cx - 0.06, y, zm - 0.09), (cx + 0.06, y + h, zm + 0.09), "paint_red" if k else "safety_yellow")
+                cyl(m, "y", (cx + 0.02, zm), 0.02, y + h, y + h + 0.03, "steel_black", 6)
+                box(m, (cx - 0.045, y + h * 0.35, zm + 0.09), (cx + 0.045, y + h * 0.7, zm + 0.092), "art_white",
+                    "+z")
+        else:
+            h = min(gap - 0.02, rng.choice((0.2, 0.26, 0.3)))
+            box(m, (x + 0.01, y, z0 + 0.02), (x + w - 0.01, y + h, z1 - 0.01), "kraft", "+x-x+y+z")
+            box(m, (x + 0.08, y + h * 0.4, z1 - 0.01), (x + w - 0.08, y + h * 0.75, z1 - 0.008), "art_white", "+z")
+            box(m, (x + 0.02, y + h - 0.03, z1 - 0.01), (x + 0.06, y + h - 0.005, z1 - 0.008),
+                rng.choice(("paint_red", "paint_blue", "leaf_green")), "+z")
+        x += w + 0.03
+
+
+def build_cable_tray(m, s, R, prm, rng):
+    """A perforated steel cable tray along a wall (the back at -z, pivot wall): side rails, a slotted floor, wall
+    brackets every metre and bundled cables (black, grey and one red) lying in it."""
+    L, W, H = s
+    hx, hz = L / 2, W / 2
+    z0, z1 = -hz + 0.05, hz
+    box(m, (-hx, H - 0.02, z0), (hx, H - 0.012, z1), "steel_warm", "+y-y")
+    for z in (z0, z1 - 0.008):
+        box(m, (-hx, H - 0.02, z), (hx, H, z + 0.008), "steel_warm")
+    n = max(2, int(L / 1.0) + 1)
+    for k in range(n):
+        x = -hx + 0.05 + (L - 0.1) * k / (n - 1)
+        box(m, (x - 0.02, 0.0, -hz), (x + 0.02, H - 0.02, -hz + 0.05), "steel_black")
+        bar(m, (x, 0.02, -hz + 0.03), (x, H - 0.03, z1 - 0.02), 0.012, "steel_black", ref=(1, 0, 0))
+    cols = ("rubber_black", "metal_grey", "rubber_black", "paint_red", "metal_dark")
+    for k, c in enumerate(cols):
+        z = z0 + 0.03 + (z1 - z0 - 0.06) * k / (len(cols) - 1)
+        cyl(m, "x", (H - 0.003, z), 0.012, -hx, hx, c, 6)
+
+
+def build_isolator(m, s, R, prm, rng):
+    """A rotary isolator on the wall (the back at -z): a grey box with a yellow plate and a red handle, two steel
+    conduits up to the cable tray."""
+    L, W, H = s
+    hz = W / 2
+    bh = 0.3
+    cbox(m, (-0.13, 0.0, -hz), (0.13, bh, hz - 0.01), "metal_grey", 0.01)
+    box(m, (-0.08, 0.09, hz - 0.01), (0.08, 0.25, hz - 0.004), "safety_yellow", "+z")
+    cyl(m, "z", (0.0, 0.17), 0.045, hz - 0.004, hz + 0.01, "steel_black", 10)
+    bar(m, (-0.07, 0.17, hz + 0.02), (0.07, 0.17, hz + 0.02), 0.025, "paint_red", h=0.02, ref=(0, 0, 1))
+    _text(m, "OFF  ON", -0.12, 0.12, 0.05, hz - 0.004, 0.03, "steel_black")
+    for x in (-L / 2 + 0.06, L / 2 - 0.06):
+        cyl(m, "y", (x * 0.5, -hz + 0.03), 0.014, bh, H, "steel_warm", 8)
+
+
+def build_control_desk(m, s, R, prm, rng):
+    """The generator's control desk (the operator at +z): a grey steel console on a plinth, a dark top, three
+    screens on a back rail (load bars, a fuel gauge, a one-line diagram), a keyboard, a desk phone, a logbook and a
+    red stop button in a yellow guard."""
+    L, W, H = s
+    hx, hz = L / 2, W / 2
+    top = 0.76
+    box(m, (-hx + 0.03, 0.0, -hz + 0.03), (hx - 0.03, 0.08, hz - 0.12), "steel_black")
+    cbox(m, (-hx, 0.08, -hz), (-hx + 0.5, top - 0.03, hz - 0.1), "metal_grey", 0.01)
+    cbox(m, (hx - 0.5, 0.08, -hz), (hx, top - 0.03, hz - 0.1), "metal_grey", 0.01)
+    box(m, (-hx + 0.5, 0.2, -hz), (hx - 0.5, top - 0.03, -hz + 0.03), "metal_grey")
+    for x0 in (-hx, hx - 0.5):
+        for k in range(3):
+            y = 0.14 + k * 0.19
+            box(m, (x0 + 0.04, y, hz - 0.1), (x0 + 0.46, y + 0.16, hz - 0.095), "metal_grey", "+z")
+            box(m, (x0 + 0.17, y + 0.12, hz - 0.095), (x0 + 0.33, y + 0.135, hz - 0.08), "chrome")
+    cbox(m, (-hx, top - 0.03, -hz), (hx, top, hz), "steel_black", 0.008)
+    box(m, (-hx + 0.05, top, -hz + 0.02), (hx - 0.05, top + 0.05, -hz + 0.06), "metal_grey")
+    sw = (L - 0.3) / 3
+    shows = ("bars", "gauge", "line")
+    for k in range(3):
+        x0 = -hx + 0.15 + k * sw
+        cx = x0 + sw / 2
+        bar(m, (cx, top + 0.05, -hz + 0.05), (cx, top + 0.16, -hz + 0.07), 0.04, "steel_black", ref=(1, 0, 0))
+        y0, y1 = top + 0.14, H - 0.01
+        cbox(m, (x0 + 0.02, y0, -hz + 0.06), (x0 + sw - 0.02, y1, -hz + 0.1), "steel_black", 0.006)
+        sx0, sx1, sy0, sy1, z = x0 + 0.05, x0 + sw - 0.05, y0 + 0.03, y1 - 0.03, -hz + 0.101
+        box(m, (sx0, sy0, z - 0.001), (sx1, sy1, z), "blueprint_blue", "+z")
+        if shows[k] == "bars":
+            for i in range(6):
+                bx = sx0 + 0.03 + i * (sx1 - sx0 - 0.06) / 6
+                hh = (sy1 - sy0 - 0.06) * (0.35 + 0.1 * ((i * 7) % 5))
+                box(m, (bx, sy0 + 0.03, z), (bx + 0.05, sy0 + 0.03 + hh, z + 0.001), "leaf_green" if i < 5 else
+                    "safety_yellow", "+z")
+        elif shows[k] == "gauge":
+            cxs, cys, r = (sx0 + sx1) / 2, (sy0 + sy1) / 2 - 0.02, (sy1 - sy0) * 0.36
+            tube(m, "z", (cxs, cys), r * 0.8, r, z, z + 0.001, "art_white", 16)
+            bar(m, (cxs, cys, z + 0.002), (cxs + r * 0.55, cys + r * 0.5, z + 0.002), 0.01, "paint_red",
+                h=0.001, ref=(0, 0, 1))
+            _text(m, "FUEL 78", sx0, sx1, sy1 - 0.025, z + 0.001, 0.025, "art_white")
+        else:
+            for i in range(3):
+                yy = sy0 + 0.05 + i * (sy1 - sy0 - 0.1) / 2
+                box(m, (sx0 + 0.04, yy, z), (sx1 - 0.04, yy + 0.008, z + 0.001), "art_white", "+z")
+                box(m, (sx0 + 0.1 + i * 0.08, yy - 0.02, z), (sx0 + 0.14 + i * 0.08, yy + 0.028, z + 0.001),
+                    "leaf_green" if i != 1 else "paint_red", "+z")
+    box(m, (-0.25, top, 0.02), (0.25, top + 0.02, 0.2), "metal_dark")
+    box(m, (0.32, top, 0.06), (0.38, top + 0.02, 0.15), "metal_dark")
+    box(m, (-hx + 0.12, top, -0.05), (-hx + 0.36, top + 0.07, 0.15), "steel_black")
+    box(m, (-hx + 0.14, top + 0.07, -0.03), (-hx + 0.34, top + 0.09, 0.03), "steel_black")
+    box(m, (hx - 0.55, top, 0.05), (hx - 0.3, top + 0.03, 0.38), "book_navy")
+    box(m, (hx - 0.54, top + 0.03, 0.06), (hx - 0.31, top + 0.034, 0.37), "art_white", "+y")
+    box(m, (hx - 0.22, top, -0.1), (hx - 0.08, top + 0.06, 0.04), "safety_yellow")
+    cyl(m, "y", (hx - 0.15, -0.03), 0.04, top + 0.06, top + 0.1, "paint_red", 10)
+
+
+def build_drum_bund(m, s, R, prm, rng):
+    """A spill bund of four drums: a yellow steel sump tray on feet with a black grating deck, four steel drums
+    (rolling rings, a bung and a white label each) and a hazard band round the tray."""
+    L, W, H = s
+    hx, hz = L / 2, W / 2
+    th = 0.28
+    for sx in (-1, 1):
+        for sz in (-1, 1):
+            box(m, (sx * hx - (0.08 if sx > 0 else -0.0), 0.0, sz * hz - (0.08 if sz > 0 else 0.0)),
+                (sx * hx + (0.0 if sx > 0 else 0.08), 0.05, sz * hz + (0.0 if sz > 0 else 0.08)), "steel_black")
+    box(m, (-hx, 0.05, -hz), (hx, th, hz), "safety_yellow", "+x-x-y+z-z")
+    for k in range(int(L / 0.2)):
+        x = -hx + 0.1 + k * 0.2
+        box(m, (x, th - 0.06, hz), (x + 0.1, th - 0.02, hz + 0.002), "steel_black", "+z")
+    for k in range(9):
+        x = -hx + 0.02 + (L - 0.04) * k / 8
+        box(m, (x - 0.008, th - 0.03, -hz + 0.02), (x + 0.008, th, hz - 0.02), "steel_black", "+y+x-x")
+    r = min(hx, hz) / 2 - 0.03
+    cols = prm.get("drums", ["paint_blue", "paint_blue", "paint_red", "metal_dark"])
+    for i, (sx, sz) in enumerate(((-1, -1), (1, -1), (-1, 1), (1, 1))):
+        cx, cz = sx * hx / 2, sz * hz / 2
+        c = cols[i % len(cols)]
+        cyl(m, "y", (cx, cz), r, th, H - 0.01, c, 12)
+        for y in (th + (H - th) * 0.33, th + (H - th) * 0.66):
+            cyl(m, "y", (cx, cz), r + 0.012, y - 0.012, y + 0.012, c, 12, caps=(False, False))
+        cyl(m, "y", (cx, cz), r + 0.008, H - 0.02, H, c, 12, caps=(False, False))
+        cyl(m, "y", (cx + r * 0.5, cz), 0.025, H - 0.01, H, "steel_black", 8)
+        box(m, (cx - r * 0.45, th + (H - th) * 0.42, cz + sz * (r - 0.01)),
+            (cx + r * 0.45, th + (H - th) * 0.58, cz + sz * (r + 0.004)), "art_white", "+z" if sz > 0 else "-z")
+
+
+def build_fire_point(m, s, R, prm, rng):
+    """A fire point on the wall (the back at -z): a white board under a red FIRE POINT header, a red water
+    extinguisher and a black-banded CO2 one on brackets, a fire blanket pouch and a red sand bucket on a hook."""
+    L, W, H = s
+    hx, hz = L / 2, W / 2
+    b0 = 0.25
+    box(m, (-hx, b0, -hz), (hx, H, -hz + 0.02), "enamel_white")
+    box(m, (-hx, H - 0.2, -hz + 0.02), (hx, H, -hz + 0.024), "paint_red", "+z")
+    _text(m, "FIRE POINT", -hx + 0.05, hx - 0.05, H - 0.1, -hz + 0.025, 0.11, "art_white")
+    for i, band in enumerate(("art_white", "steel_black")):
+        cx = -hx + 0.2 + i * 0.32
+        r = 0.08
+        cz = -hz + 0.03 + r
+        box(m, (cx - 0.04, 0.9, -hz + 0.02), (cx + 0.04, 1.15, -hz + 0.03), "steel_black")
+        cyl(m, "y", (cx, cz), r, 0.6, 1.22, "paint_red", 12)
+        blob(m, (cx, 1.22, cz), r, 0.035, r, "paint_red", 12, 2, floor=1.22)
+        cyl(m, "y", (cx, cz), r * 1.01, 0.95, 1.05, band, 12, caps=(False, False))
+        cyl(m, "y", (cx, cz), 0.016, 1.25, 1.3, "chrome", 8)
+        bar(m, (cx - 0.01, 1.31, cz), (cx + 0.07, 1.33, cz), 0.016, "steel_black", ref=(0, 0, 1))
+        bar(m, (cx - r - 0.01, 1.2, cz + 0.01), (cx - r - 0.01, 0.75, cz + 0.01), 0.014, "rubber_black")
+    bx = hx - 0.17
+    cbox(m, (bx - 0.13, 1.1, -hz + 0.02), (bx + 0.13, 1.45, -hz + 0.07), "paint_red", 0.01)
+    box(m, (bx - 0.09, 1.25, -hz + 0.07), (bx + 0.09, 1.38, -hz + 0.072), "art_white", "+z")
+    box(m, (bx - 0.05, 1.08, -hz + 0.05), (bx - 0.02, 1.1, -hz + 0.07), "art_white")
+    box(m, (bx + 0.02, 1.08, -hz + 0.05), (bx + 0.05, 1.1, -hz + 0.07), "art_white")
+    rod(m, (bx, 0.88, -hz + 0.02), (bx, 0.88, -hz + 0.07), 0.008, "steel_black")
+    cyl(m, "y", (bx, -hz + 0.17), 0.12, 0.5, 0.82, "paint_red", 12, r1=0.14)
+    cyl(m, "y", (bx, -hz + 0.17), 0.125, 0.79, 0.792, "stone_light", 12)
+    _text(m, "SAND", bx - 0.09, bx + 0.09, 0.66, -hz + 0.17 + 0.132, 0.06, "art_white")
+    rod(m, (bx - 0.13, 0.82, -hz + 0.17), (bx, 0.88, -hz + 0.07), 0.006, "steel_black")
+    rod(m, (bx + 0.13, 0.82, -hz + 0.17), (bx, 0.88, -hz + 0.07), 0.006, "steel_black")
+
+
+def build_tool_chest(m, s, R, prm, rng):
+    """A roller tool chest (the front at +z): a `body` cabinet of drawers on castors with chrome pulls, a top box
+    with a lifted lid's lip and a black rubber mat, a side handle and a few tools on the mat."""
+    L, W, H = s
+    hx, hz = L / 2 - 0.03, W / 2
+    body = prm.get("body", "paint_red")
+    ch = 0.12
+    for sx in (-1, 1):
+        for sz in (-1, 1):
+            cyl(m, "x", (0.05, sz * (hz - 0.08)), 0.05, sx * (hx - 0.1) - 0.025, sx * (hx - 0.1) + 0.025,
+                "rubber_black", 8)
+    y1 = H * 0.62
+    cbox(m, (-hx, ch - 0.02, -hz), (hx, y1, hz - 0.01), body, 0.012)
+    nd = 6
+    for k in range(nd):
+        y0 = ch + (y1 - ch - 0.02) * k / nd
+        yt = ch + (y1 - ch - 0.02) * (k + 1) / nd
+        box(m, (-hx + 0.03, y0 + 0.006, hz - 0.01), (hx - 0.03, yt - 0.006, hz - 0.004), body, "+z+y-y")
+        box(m, (-hx + 0.12, yt - 0.04, hz - 0.004), (hx - 0.12, yt - 0.025, hz + 0.012), "chrome")
+    box(m, (-hx, y1, -hz), (hx, y1 + 0.02, hz), "rubber_black", "+y+z-z+x-x")
+    t0 = y1 + 0.06
+    cbox(m, (-hx + 0.02, t0, -hz + 0.02), (hx - 0.02, H - 0.04, hz - 0.03), body, 0.01)
+    for k in range(3):
+        y0 = t0 + (H - 0.06 - t0) * k / 3
+        yt = t0 + (H - 0.06 - t0) * (k + 1) / 3
+        box(m, (-hx + 0.03, y0 + 0.005, hz - 0.03), (hx - 0.05, yt - 0.005, hz - 0.024), body, "+z")
+        box(m, (-hx + 0.2, yt - 0.03, hz - 0.024), (hx - 0.2, yt - 0.018, hz - 0.01), "chrome")
+    cbox(m, (-hx + 0.01, H - 0.04, -hz + 0.01), (hx - 0.01, H, hz - 0.02), body, 0.01)
+    for z in (-hz * 0.6, hz * 0.6):
+        rod(m, (hx + 0.01, H * 0.4, z), (hx + 0.03, H * 0.4, z), 0.012, "chrome")
+    rod(m, (hx + 0.03, H * 0.4, -hz * 0.6), (hx + 0.03, H * 0.4, hz * 0.6), 0.014, "chrome")
+    bar(m, (-hx + 0.15, y1 + 0.03, 0.05), (-hx + 0.4, y1 + 0.03, 0.12), 0.025, "steel_black", h=0.015)
+    bar(m, (0.0, y1 + 0.03, 0.1), (0.25, y1 + 0.03, 0.05), 0.02, "chrome", h=0.012)
+
+
+def build_whiteboard(m, s, R, prm, rng):
+    """A whiteboard on the wall (the back at -z): an aluminium frame, a marker tray, a `title` header, then `kind`
+    "log" (rows of a daily check, ticks and one cross, a burger doodle in a corner) or "chart" (a grid of a rota with
+    coloured blocks and a bar chart)."""
+    L, W, H = s
+    hx, hz = L / 2, W / 2
+    box(m, (-hx, 0.03, -hz), (hx, H, -hz + 0.015), "chrome")
+    box(m, (-hx + 0.02, 0.05, -hz + 0.015), (hx - 0.02, H - 0.02, -hz + 0.018), "art_white", "+z")
+    box(m, (-hx + 0.05, 0.0, -hz), (hx - 0.05, 0.035, -hz + 0.06), "chrome")
+    for k, c in enumerate(("paint_red", "paint_blue", "steel_black")):
+        cyl(m, "x", (0.045, -hz + 0.04), 0.008, -hx + 0.1 + k * 0.14, -hx + 0.22 + k * 0.14, c, 6)
+    z = -hz + 0.019
+    title = str(prm.get("title", "DAILY CHECK"))
+    _text(m, title, -hx + 0.06, hx - 0.06, H - 0.08, z, 0.06, prm.get("ink", "paint_blue"))
+    if prm.get("kind", "log") == "log":
+        rows = 6
+        for i in range(rows):
+            y = H - 0.16 - i * (H - 0.28) / rows
+            box(m, (-hx + 0.06, y - 0.004, z), (hx - 0.36, y + 0.004, z + 0.001), "metal_dark", "+z")
+            mark = "paint_red" if i == 3 else "leaf_green"
+            bar(m, (hx - 0.3, y + 0.01, z + 0.001), (hx - 0.27, y - 0.01, z + 0.001), 0.008, mark, h=0.001,
+                ref=(0, 0, 1))
+            bar(m, (hx - 0.27, y - 0.01, z + 0.001), (hx - 0.22, y + 0.03, z + 0.001), 0.008, mark, h=0.001,
+                ref=(0, 0, 1))
+        _icon(m, "burger", hx - 0.12, 0.18, 0.07, z, "steel_black")
+    else:
+        nx, ny = 5, 4
+        gx0, gx1, gy0, gy1 = -hx + 0.06, 0.05, 0.12, H - 0.15
+        for i in range(nx + 1):
+            x = gx0 + (gx1 - gx0) * i / nx
+            box(m, (x - 0.003, gy0, z), (x + 0.003, gy1, z + 0.001), "metal_dark", "+z")
+        for j in range(ny + 1):
+            y = gy0 + (gy1 - gy0) * j / ny
+            box(m, (gx0, y - 0.003, z), (gx1, y + 0.003, z + 0.001), "metal_dark", "+z")
+        cols = ("leaf_green", "book_mustard", "paint_blue", "art_pink")
+        for i in range(nx):
+            for j in range(ny):
+                if (i * 3 + j) % 4 == 0:
+                    x = gx0 + (gx1 - gx0) * i / nx
+                    y = gy0 + (gy1 - gy0) * j / ny
+                    box(m, (x + 0.012, y + 0.012, z + 0.001), (x + (gx1 - gx0) / nx - 0.012,
+                        y + (gy1 - gy0) / ny - 0.012, z + 0.002), cols[(i + j) % 4], "+z")
+        for i in range(5):
+            x = 0.12 + i * (hx - 0.2) / 5
+            h = (gy1 - gy0) * (0.3 + 0.13 * ((i * 3) % 5))
+            box(m, (x, gy0, z + 0.001), (x + (hx - 0.2) / 7, gy0 + h, z + 0.002), "paint_blue" if i != 3 else
+                "paint_red", "+z")
+
+
+def build_wall_boiler(m, s, R, prm, rng):
+    """A present-day wall-hung boiler (the back at -z): a white casing with a soft front, a display and two dials,
+    a grey underside, four steel pipes with lever valves down to the floor and a flue stub out of its top."""
+    L, W, H = s
+    hx, hz = L / 2, W / 2
+    c0 = H - 0.75
+    cbox(m, (-hx, c0, -hz), (hx, H - 0.08, hz), "enamel_white", 0.03)
+    box(m, (-hx + 0.03, c0 - 0.01, -hz + 0.03), (hx - 0.03, c0, hz - 0.03), "metal_grey", "-y")
+    box(m, (-0.09, c0 + 0.1, hz), (0.09, c0 + 0.17, hz + 0.004), "glass_dark", "+z")
+    box(m, (-0.07, c0 + 0.12, hz + 0.004), (0.02, c0 + 0.15, hz + 0.005), "art_sky", "+z")
+    for x in (-0.13, 0.13):
+        cyl(m, "z", (x, c0 + 0.135), 0.022, hz, hz + 0.015, "metal_grey", 10)
+    box(m, (-hx + 0.03, H - 0.2, hz), (hx - 0.03, H - 0.19, hz + 0.002), "metal_grey", "+z")
+    cyl(m, "y", (0.0, -hz + 0.12), 0.05, H - 0.08, H, "enamel_white", 10)
+    for i, x in enumerate((-0.15, -0.05, 0.05, 0.15)):
+        cyl(m, "y", (x, 0.0), 0.011, 0.0, c0 - 0.01, "steel_warm", 8)
+        y = c0 - 0.12 - (i % 2) * 0.05
+        cyl(m, "y", (x, 0.0), 0.018, y - 0.03, y + 0.03, "chrome", 8)
+        bar(m, (x, y, 0.02), (x, y, 0.07), 0.012, "paint_blue" if i % 2 else "paint_red", ref=(1, 0, 0))
+
+
+def build_hw_cylinder(m, s, R, prm, rng):
+    """A hot-water cylinder: a white insulated body with a domed top on a black stand, a label plate and a
+    temperature gauge, a red immersion heater cap, steel pipes out of its side with valves, a blue cold inlet."""
+    L, W, H = s
+    r = min(L, W) / 2 - 0.06
+    box(m, (-r, 0.0, -r), (r, 0.12, r), "steel_black")
+    cyl(m, "y", (0.0, 0.0), r, 0.12, H - 0.2, "enamel_white", 16)
+    blob(m, (0.0, H - 0.2, 0.0), r, 0.14, r, "enamel_white", 16, 3, floor=H - 0.2)
+    for y in (0.3, H - 0.4):
+        tube(m, "y", (0.0, 0.0), r, r + 0.008, y, y + 0.03, "metal_grey", 16)
+    box(m, (-0.1, H * 0.55, r - 0.01), (0.1, H * 0.66, r + 0.006), "art_white", "+z")
+    box(m, (-0.08, H * 0.62, r + 0.006), (0.08, H * 0.64, r + 0.007), "paint_red", "+z")
+    cyl(m, "z", (0.0, H * 0.45), 0.045, r - 0.01, r + 0.02, "chrome", 12)
+    cyl(m, "z", (0.0, H * 0.45), 0.036, r + 0.02, r + 0.022, "art_white", 12)
+    cyl(m, "z", (0.0, 0.42), 0.07, r - 0.01, r + 0.05, "paint_red", 12)
+    for y, c in ((H - 0.3, "paint_red"), (0.25, "paint_blue")):
+        rod(m, (r - 0.02, y, 0.0), (L / 2 - 0.02, y, 0.0), 0.016, "steel_warm", 8)
+        cyl(m, "x", (y, 0.0), 0.024, r + 0.04, r + 0.08, "chrome", 8)
+        bar(m, (r + 0.06, y + 0.02, 0.0), (r + 0.06, y + 0.02, 0.06), 0.012, c, ref=(1, 0, 0))
+    rod(m, (0.0, H - 0.08, 0.0), (0.0, H, 0.0), 0.016, "steel_warm", 8)
+
+
+def build_insulated_pipes(m, s, R, prm, rng):
+    """Lagged heating pipes along a wall (the back at -z): two foil-grey lagged runs on black brackets, red (flow)
+    and blue (return) bands with yellow arrows, a gate valve with a red wheel and one with a blue wheel."""
+    L, W, H = s
+    hx, hz = L / 2, W / 2
+    r = min(0.06, H / 5)
+    for k, (y, c) in enumerate(((H - r - 0.03, "paint_red"), (r + 0.06, "paint_blue"))):
+        z = -hz + 0.06 + r
+        cyl(m, "x", (y, z), r, -hx, hx, "metal_grey", 10)
+        for x in (-hx + 0.4, hx - 0.4):
+            cyl(m, "x", (y, z), r * 1.02, x - 0.06, x + 0.06, c, 10, caps=(False, False))
+            for i in range(3):
+                t = i / 3
+                box(m, (x + 0.08 + 0.03 * t, y - 0.03 * (1 - t), z + r), (x + 0.11 + 0.03 * t, y + 0.03 * (1 - t),
+                    z + r + 0.003), "safety_yellow", "+z")
+        vx = -0.4 + k * 0.8
+        cyl(m, "x", (y, z), r * 1.3, vx - 0.07, vx + 0.07, "metal_dark", 10)
+        rod(m, (vx, y, z + r * 1.3), (vx, y, hz - 0.02), 0.012, "chrome")
+        tube(m, "z", (vx, y), 0.06, 0.075, hz - 0.03, hz, c, 12)
+    for x in (-hx + 0.15, 0.0, hx - 0.15):
+        box(m, (x - 0.02, 0.0, -hz), (x + 0.02, H, -hz + 0.04), "steel_black")
+        for y in (H - r - 0.03, r + 0.06):
+            tube(m, "x", (y, -hz + 0.06 + r), r * 1.02, r * 1.1, x - 0.02, x + 0.02, "steel_black", 10)
+
+
+def build_valve_panel(m, s, R, prm, rng):
+    """A valve manifold on the wall (the back at -z): a grey backboard, a steel header pipe with four drops, each
+    with a lever valve (red or blue) and a white tag, three dial gauges with red needles."""
+    L, W, H = s
+    hx, hz = L / 2, W / 2
+    box(m, (-hx, 0.0, -hz), (hx, H, -hz + 0.02), "metal_grey")
+    zp = -hz + 0.1
+    cyl(m, "x", (H * 0.7, zp), 0.035, -hx + 0.06, hx - 0.06, "steel_warm", 10)
+    for k in range(4):
+        x = -hx + 0.18 + (L - 0.36) * k / 3
+        cyl(m, "y", (x, zp), 0.022, 0.0, H * 0.7, "steel_warm", 8)
+        y = H * 0.35
+        cyl(m, "y", (x, zp), 0.034, y - 0.04, y + 0.04, "chrome", 8)
+        bar(m, (x, y + 0.02, zp + 0.03), (x, y + 0.02, hz - 0.01), 0.018, "paint_red" if k % 2 == 0 else
+            "paint_blue", ref=(1, 0, 0))
+        box(m, (x - 0.04, 0.12, -hz + 0.02), (x + 0.04, 0.17, -hz + 0.024), "art_white", "+z")
+        box(m, (x - 0.03, H * 0.7 + 0.05, -hz + 0.02), (x + 0.03, H * 0.7 + 0.065, -hz + 0.023),
+            "safety_yellow", "+z")
+    for k in range(3):
+        x = -hx + 0.3 + (L - 0.6) * k / 2
+        y = H * 0.88
+        rod(m, (x, H * 0.7 + 0.03, zp), (x, y - 0.05, zp), 0.01, "steel_warm")
+        cyl(m, "z", (x, y), 0.055, zp - 0.02, zp + 0.02, "steel_black", 14)
+        cyl(m, "z", (x, y), 0.047, zp + 0.02, zp + 0.022, "art_white", 14)
+        bar(m, (x, y, zp + 0.024), (x + 0.03, y + 0.025, zp + 0.024), 0.006, "paint_red", h=0.002, ref=(0, 0, 1))
+
+
+def build_expansion_vessel(m, s, R, prm, rng):
+    """A pressure (expansion) vessel: a red domed steel tank on three black legs, a white label, a steel pipe off
+    its top with a gauge."""
+    L, W, H = s
+    r = min(L, W) / 2 - 0.02
+    for k in range(3):
+        a = k * 2 * math.pi / 3 + 0.5
+        rod(m, (math.cos(a) * r * 0.7, 0.0, math.sin(a) * r * 0.7), (math.cos(a) * r * 0.6, 0.18,
+            math.sin(a) * r * 0.6), 0.015, "steel_black")
+    blob(m, (0.0, 0.26, 0.0), r, 0.1, r, "paint_red", 14, 2)
+    cyl(m, "y", (0.0, 0.0), r, 0.26, H - 0.22, "paint_red", 14)
+    blob(m, (0.0, H - 0.22, 0.0), r, 0.1, r, "paint_red", 14, 2, floor=H - 0.22)
+    tube(m, "y", (0.0, 0.0), r, r + 0.006, (H - 0.22 + 0.26) / 2 - 0.01, (H - 0.22 + 0.26) / 2 + 0.01,
+         "metal_dark", 14)
+    box(m, (-0.08, 0.35, r - 0.01), (0.08, 0.46, r + 0.004), "art_white", "+z")
+    rod(m, (0.0, H - 0.13, 0.0), (0.0, H - 0.05, 0.0), 0.016, "steel_warm")
+    cyl(m, "z", (0.0, H - 0.05), 0.04, -0.015, 0.015, "steel_black", 12)
+    cyl(m, "z", (0.0, H - 0.05), 0.033, 0.015, 0.017, "art_white", 12)
+
+
+def build_water_softener(m, s, R, prm, rng):
+    """A water softener: a blue resin column with a black control head and a small display beside a white brine
+    tank with a lid, the hoses between them and to the wall."""
+    L, W, H = s
+    hx, hz = L / 2, W / 2
+    r = 0.13
+    cx = -hx + r + 0.02
+    cyl(m, "y", (cx, 0.0), r, 0.0, H - 0.2, "paint_blue", 14)
+    blob(m, (cx, H - 0.2, 0.0), r, 0.04, r, "paint_blue", 14, 2, floor=H - 0.2)
+    cbox(m, (cx - 0.12, H - 0.2, -0.1), (cx + 0.12, H, 0.1), "steel_black", 0.02)
+    box(m, (cx - 0.06, H - 0.12, 0.1), (cx + 0.06, H - 0.06, 0.104), "glass_dark", "+z")
+    box(m, (cx - 0.045, H - 0.1, 0.104), (cx + 0.02, H - 0.08, 0.105), "leaf_green", "+z")
+    tx0 = cx + r + 0.06
+    cbox(m, (tx0, 0.0, -hz + 0.02), (hx, H * 0.72, hz - 0.02), "enamel_white", 0.03)
+    cbox(m, (tx0 - 0.005, H * 0.72, -hz + 0.015), (hx + 0.0, H * 0.72 + 0.04, hz - 0.015), "metal_grey", 0.01)
+    box(m, ((tx0 + hx) / 2 - 0.08, H * 0.5, hz - 0.02), ((tx0 + hx) / 2 + 0.08, H * 0.6, hz - 0.016), "paint_blue",
+        "+z")
+    rod(m, (cx + 0.1, H - 0.1, -0.05), (tx0 + 0.05, H * 0.72 + 0.02, -0.05), 0.01, "art_white")
+    rod(m, (cx, H - 0.05, -0.1), (cx, H - 0.05, -hz), 0.012, "art_white")
+    rod(m, (cx - 0.06, H - 0.1, -0.1), (cx - 0.06, H - 0.1, -hz), 0.012, "steel_black")
+
+
+def build_mop_sink(m, s, R, prm, rng):
+    """A cleaner's mop sink against the wall (the back at -z): a low stainless basin on legs, a wall tap with two
+    handles, a yellow mop bucket on castors with its wringer and a mop leaning on the wall."""
+    L, W, H = s
+    hx, hz = L / 2, W / 2
+    bx1 = hx * 0.15
+    for x in (-hx + 0.04, bx1 - 0.04):
+        for z in (-hz + 0.06, hz - 0.06):
+            rod(m, (x, 0.0, z), (x, 0.35, z), 0.015, "chrome")
+    cbox(m, (-hx, 0.35, -hz), (bx1, 0.55, hz), "chrome", 0.01)
+    box(m, (-hx + 0.04, 0.4, -hz + 0.04), (bx1 - 0.04, 0.551, hz - 0.04), "metal_dark", "+y")
+    box(m, ((-hx + bx1) / 2 - 0.1, 0.8, -hz), ((-hx + bx1) / 2 + 0.1, 0.86, -hz + 0.02), "chrome")
+    rod(m, ((-hx + bx1) / 2, 0.83, -hz + 0.02), ((-hx + bx1) / 2, 0.83, -hz + 0.16), 0.014, "chrome")
+    rod(m, ((-hx + bx1) / 2, 0.83, -hz + 0.16), ((-hx + bx1) / 2, 0.75, -hz + 0.16), 0.012, "chrome")
+    for x, c in ((-0.08, "paint_red"), (0.08, "paint_blue")):
+        cyl(m, "z", ((-hx + bx1) / 2 + x, 0.83), 0.02, -hz + 0.02, -hz + 0.06, c, 8)
+    cx, cz = (bx1 + hx) / 2 + 0.02, 0.04
+    for x in (cx - 0.12, cx + 0.12):
+        for z in (cz - 0.1, cz + 0.1):
+            cyl(m, "y", (x, z), 0.02, 0.0, 0.04, "rubber_black", 6)
+    cyl(m, "y", (cx, cz), 0.15, 0.04, 0.34, "safety_yellow", 12, r1=0.17)
+    box(m, (cx - 0.1, 0.34, cz - 0.08), (cx + 0.1, 0.42, cz + 0.06), "steel_black")
+    rod(m, (cx + 0.06, 0.04, cz), (cx + 0.06, H - 0.02, -hz + 0.03), 0.014, "paint_blue")
+    blob(m, (cx + 0.06, 0.12, cz - 0.01), 0.07, 0.1, 0.07, "art_white", 8, 3)
+
+
+def build_pump_set(m, s, R, prm, rng):
+    """A pump set on a concrete plinth: a `motor` electric motor with cooling fins and a terminal box, a yellow
+    coupling guard, the pump's dark volute, a suction pipe out of its end and a discharge pipe up with a valve and a
+    gauge."""
+    L, W, H = s
+    hx, hz = L / 2, W / 2
+    motor = prm.get("motor", "paint_blue")
+    box(m, (-hx, 0.0, -hz), (hx, 0.15, hz), "stone_light")
+    box(m, (-hx + 0.08, 0.15, -hz + 0.1), (hx - 0.25, 0.2, hz - 0.1), "steel_black")
+    yc = 0.42
+    mx0, mx1 = -hx + 0.12, -0.05
+    cyl(m, "x", (yc, 0.0), 0.2, mx0, mx1, motor, 12)
+    for k in range(4):
+        x = mx0 + 0.05 + k * (mx1 - mx0 - 0.1) / 3
+        cyl(m, "x", (yc, 0.0), 0.215, x - 0.01, x + 0.01, motor, 12, caps=(False, False))
+    box(m, (-0.32, yc + 0.18, -0.08), (-0.14, yc + 0.28, 0.08), motor)
+    box(m, (mx0 + 0.05, 0.2, -0.15), (mx1 - 0.05, yc - 0.15, 0.15), motor)
+    cyl(m, "x", (yc, 0.0), 0.1, mx1, 0.15, "safety_yellow", 10)
+    cyl(m, "z", (0.3, yc), 0.2, -0.13, 0.13, "metal_dark", 14)
+    box(m, (0.18, 0.2, -0.12), (0.42, yc - 0.15, 0.12), "metal_dark")
+    cyl(m, "x", (yc, 0.0), 0.08, 0.5, hx, "steel_warm", 10)
+    tube(m, "x", (yc, 0.0), 0.08, 0.12, hx - 0.06, hx - 0.03, "steel_warm", 10)
+    cyl(m, "y", (0.3, 0.0), 0.07, yc + 0.18, H, "steel_warm", 10)
+    yv = H * 0.68
+    cyl(m, "y", (0.3, 0.0), 0.1, yv - 0.06, yv + 0.06, "metal_dark", 10)
+    rod(m, (0.3, yv, 0.1), (0.3, yv, 0.2), 0.01, "chrome")
+    tube(m, "z", (0.3, yv), 0.06, 0.075, 0.18, 0.2, "paint_red", 12)
+    rod(m, (0.37, H * 0.85, 0.0), (0.45, H * 0.85, 0.0), 0.008, "steel_warm")
+    cyl(m, "x", (H * 0.85, 0.0), 0.045, 0.45, 0.48, "steel_black", 12)
+    cyl(m, "x", (H * 0.85, 0.0), 0.038, 0.48, 0.482, "art_white", 12)
+    for y in (yc + 0.25, H - 0.1):
+        tube(m, "y", (0.3, 0.0), 0.07, 0.11, y, y + 0.025, "steel_warm", 10)
+
+
+def build_sump_cover(m, s, R, prm, rng):
+    """A sump's steel chequer-plate cover flush on the floor: a frame, a plate of raised treads, two lifting slots
+    and a yellow border."""
+    L, W, H = s
+    hx, hz = L / 2, W / 2
+    box(m, (-hx, 0.0, -hz), (hx, H * 0.5, hz), "safety_yellow", "+y+x-x+z-z")
+    box(m, (-hx + 0.05, H * 0.5, -hz + 0.05), (hx - 0.05, H * 0.7, hz - 0.05), "metal_grey", "+y+x-x+z-z")
+    for i in range(int((L - 0.14) / 0.08)):
+        for j in range(int((W - 0.14) / 0.08)):
+            x = -hx + 0.09 + i * 0.08
+            z = -hz + 0.09 + j * 0.08
+            if (i + j) % 2:
+                box(m, (x - 0.025, H * 0.7, z - 0.006), (x + 0.025, H, z + 0.006), "metal_grey", "+y")
+            else:
+                box(m, (x - 0.006, H * 0.7, z - 0.025), (x + 0.006, H, z + 0.025), "metal_grey", "+y")
+    for x in (-hx * 0.6, hx * 0.6):
+        box(m, (x - 0.04, H * 0.7, -0.01), (x + 0.04, H * 0.71, 0.01), "steel_black", "+y")
+
+
+def build_wall_hose_reel(m, s, R, prm, rng):
+    """A wall hose reel (the back at -z): a black bracket plate, a red drum on its arm wound with a hose, the hose's
+    end with a nozzle hanging down and a red isolating valve on the feed."""
+    L, W, H = s
+    hx, hz = L / 2, W / 2
+    cy = H * 0.55
+    box(m, (-0.1, cy - 0.2, -hz), (0.1, cy + 0.2, -hz + 0.015), "steel_black")
+    cyl(m, "z", (0.0, cy), 0.03, -hz + 0.015, hz - 0.02, "steel_black", 8)
+    r = min(hx, cy) - 0.02
+    for z in (-hz + 0.06, hz - 0.03):
+        cyl(m, "z", (0.0, cy), r, z - 0.012, z, "paint_red", 16)
+    cyl(m, "z", (0.0, cy), r * 0.42, -hz + 0.06, hz - 0.03, "paint_red", 12)
+    for k in range(3):
+        z = -hz + 0.075 + k * (W - 0.12) / 3
+        tube(m, "z", (0.0, cy), r * 0.42, r * 0.8, z, z + (W - 0.12) / 3 - 0.005, "rubber_black", 10)
+    rod(m, (r * 0.75, cy, 0.0), (r * 0.9, 0.18, 0.02), 0.014, "rubber_black")
+    cyl(m, "y", (r * 0.9, 0.02), 0.02, 0.06, 0.18, "chrome", 8, r1=0.016)
+    rod(m, (-0.06, cy - 0.2, -hz + 0.03), (-0.06, 0.0, -hz + 0.03), 0.014, "steel_warm")
+    cyl(m, "y", (-0.06, -hz + 0.03), 0.026, 0.12, 0.2, "chrome", 8)
+    bar(m, (-0.06, 0.17, -hz + 0.05), (-0.06, 0.17, -hz + 0.12), 0.014, "paint_red", ref=(1, 0, 0))
+
+
+def build_elec_cabinet(m, s, R, prm, rng):
+    """An electrical cabinet (the front at +z): a grey steel body on a black plinth, `doors` doors with a vertical
+    handle each, top and bottom louvres, a yellow warning triangle, a white label plate and a small window over a
+    row of breakers."""
+    L, W, H = s
+    hx, hz = L / 2, W / 2
+    box(m, (-hx + 0.02, 0.0, -hz + 0.02), (hx - 0.02, 0.1, hz - 0.03), "steel_black")
+    cbox(m, (-hx, 0.1, -hz), (hx, H, hz - 0.01), "metal_grey", 0.01)
+    cbox(m, (-hx - 0.0, H - 0.04, -hz), (hx, H, hz - 0.005), "metal_grey", 0.008)
+    for sx in (-1, 1):
+        for i in range(5):
+            y = H * 0.3 + i * 0.05
+            box(m, (sx * hx - 0.002 * sx, y, -hz * 0.5), (sx * hx + 0.002 * sx, y + 0.02, hz * 0.5), "steel_black",
+                "+x" if sx > 0 else "-x")
+    nd = int(prm.get("doors", 2))
+    dw = (L - 0.04) / nd
+    for k in range(nd):
+        x0 = -hx + 0.02 + k * dw
+        box(m, (x0 + 0.005, 0.13, hz - 0.01), (x0 + dw - 0.005, H - 0.03, hz - 0.004), "metal_grey", "+z")
+        hxh = x0 + dw - 0.06 if k % 2 == 0 else x0 + 0.06
+        hix = x0 + 0.02 if k % 2 == 0 else x0 + dw - 0.02
+        for y in (0.35, H - 0.35):
+            cyl(m, "y", (hix, hz - 0.004), 0.01, y - 0.05, y + 0.05, "steel_black", 6)
+        box(m, (x0 + 0.1, H * 0.12, hz - 0.004), (x0 + dw - 0.14, H * 0.18, hz + 0.008), "steel_black")
+        box(m, (hxh - 0.012, H * 0.48, hz - 0.004), (hxh + 0.012, H * 0.6, hz + 0.01), "steel_black")
+        for y0 in (0.2, H - 0.25):
+            for i in range(4):
+                y = y0 + i * 0.03
+                box(m, (x0 + 0.08, y, hz - 0.004), (x0 + dw - 0.12, y + 0.012, hz - 0.002), "steel_black", "+z")
+        tx, ty, tr = x0 + dw / 2 - 0.02, H * 0.72, 0.045
+        for i in range(5):
+            t = i / 5
+            box(m, (tx - tr * (1 - t), ty - tr * 0.8 + 1.6 * tr * t, hz - 0.004),
+                (tx + tr * (1 - t), ty - tr * 0.8 + 1.6 * tr * (t + 0.2), hz - 0.003), "safety_yellow", "+z")
+        box(m, (tx - 0.004, ty - tr * 0.4, hz - 0.003), (tx + 0.004, ty + tr * 0.25, hz - 0.002), "steel_black", "+z")
+        box(m, (x0 + 0.08, H * 0.82, hz - 0.004), (x0 + dw - 0.12, H * 0.86, hz - 0.002), "art_white", "+z")
+        wy0, wy1 = H * 0.36, H * 0.44
+        box(m, (x0 + 0.07, wy0, hz - 0.004), (x0 + dw - 0.11, wy1, hz - 0.003), "glass_dark", "+z")
+        nb = max(3, int((dw - 0.2) / 0.035))
+        for i in range(nb):
+            x = x0 + 0.08 + (dw - 0.2) * (i + 0.5) / nb
+            box(m, (x - 0.006, (wy0 + wy1) / 2 - 0.012, hz - 0.003), (x + 0.006, (wy0 + wy1) / 2 + 0.012,
+                hz - 0.002), "paint_red" if i == 2 else "art_white", "+z")
+
+
+def build_meter_panel(m, s, R, prm, rng):
+    """A meter board on the wall (the back at -z): a plywood backboard, three white meters with dark displays and
+    green digits, a red main switch, steel conduits up from each to the top."""
+    L, W, H = s
+    hx, hz = L / 2, W / 2
+    box(m, (-hx, 0.0, -hz), (hx, H * 0.8, -hz + 0.018), "wood_mid")
+    for k in range(3):
+        x = -hx + 0.2 + (L - 0.4) * k / 2
+        cbox(m, (x - 0.1, H * 0.35, -hz + 0.018), (x + 0.1, H * 0.62, hz), "enamel_white", 0.01)
+        box(m, (x - 0.07, H * 0.53, hz), (x + 0.07, H * 0.58, hz + 0.003), "glass_dark", "+z")
+        for i in range(5):
+            box(m, (x - 0.06 + i * 0.025, H * 0.54, hz + 0.003), (x - 0.045 + i * 0.025, H * 0.57, hz + 0.004),
+                "leaf_green", "+z")
+        box(m, (x - 0.06, H * 0.4, hz), (x + 0.06, H * 0.45, hz + 0.002), "art_white", "+z")
+        cyl(m, "y", (x, -hz + 0.04), 0.016, H * 0.62, H, "steel_warm", 8)
+        cyl(m, "y", (x, -hz + 0.04), 0.016, 0.0, H * 0.35, "steel_warm", 8)
+    cbox(m, (-0.08, H * 0.08, -hz + 0.018), (0.08, H * 0.26, hz - 0.02), "metal_grey", 0.008)
+    bar(m, (0.0, H * 0.17, hz - 0.02), (0.0, H * 0.17, hz + 0.01), 0.03, "paint_red", h=0.06, ref=(1, 0, 0))
+
+
+def build_first_aid_box(m, s, R, prm, rng):
+    """A green first-aid box on the wall (the back at -z) with a white cross, a carrying handle and two catches."""
+    L, W, H = s
+    hx, hz = L / 2, W / 2
+    cbox(m, (-hx, 0.0, -hz), (hx, H - 0.03, hz), "safety_green", 0.015)
+    box(m, (-hx + 0.01, H * 0.5 - 0.004, hz), (hx - 0.01, H * 0.5 + 0.004, hz + 0.002), "metal_dark", "+z")
+    c = min(L, H) * 0.18
+    box(m, (-c * 0.35, H * 0.5 - c, hz + 0.002), (c * 0.35, H * 0.5 + c, hz + 0.004), "art_white", "+z")
+    box(m, (-c, H * 0.5 - c * 0.35, hz + 0.002), (c, H * 0.5 + c * 0.35, hz + 0.004), "art_white", "+z")
+    bar(m, (-0.07, H - 0.015, 0.0), (0.07, H - 0.015, 0.0), 0.02, "steel_black", h=0.03, ref=(0, 1, 0))
+    for x in (-hx + 0.05, hx - 0.05):
+        box(m, (x - 0.015, H * 0.45, hz), (x + 0.015, H * 0.55, hz + 0.012), "art_white")
+
+
+def build_lectern(m, s, R, prm, rng):
+    """A steel lectern with the room's logbook open on its sloped top (the reader at +z): a base plate, a square
+    post, a book ledge and a pen on a chain."""
+    L, W, H = s
+    hx, hz = L / 2, W / 2
+    box(m, (-0.22, 0.0, -0.2), (0.22, 0.02, 0.2), "steel_black")
+    box(m, (-0.04, 0.02, -0.04), (0.04, H - 0.18, 0.04), "steel_black")
+    bar(m, (0.0, H - 0.2, hz - 0.03), (0.0, H - 0.02, -hz + 0.03), L, "steel_black", h=0.025, ref=(1, 0, 0))
+    ang = math.atan2(0.18, W - 0.06)
+    ny, nz = math.cos(ang), math.sin(ang)
+
+    def on(x, t, lift):
+        z = hz - 0.03 - t * (W - 0.06)
+        y = H - 0.2 + t * 0.18
+        return (x, y + 0.0125 * ny + lift * ny, z + 0.0125 * nz + lift * nz)
+    for x0, x1 in ((-hx + 0.04, -0.005), (0.005, hx - 0.04)):
+        a, b = on(x0, 0.12, 0.004), on(x1, 0.9, 0.012)
+        bar(m, ((x0 + x1) / 2, a[1], a[2]), ((x0 + x1) / 2, b[1], b[2]), x1 - x0, "art_white", h=0.012,
+            ref=(1, 0, 0))
+        for k in range(5):
+            t = 0.25 + k * 0.12
+            c0, c1 = on(x0 + 0.03, t, 0.019), on(x1 - 0.03, t, 0.019)
+            bar(m, c0, c1, 0.006, "metal_dark", h=0.001, ref=(0, ny, nz))
+    a, b = on(0.0, 0.1, 0.0), on(0.0, 0.95, 0.0)
+    bar(m, (0.0, a[1], a[2]), (0.0, b[1], b[2]), L - 0.04, "book_navy", h=0.008, ref=(1, 0, 0))
+    bar(m, (-hx + 0.02, H - 0.2, hz - 0.01), (hx - 0.02, H - 0.2, hz - 0.01), 0.03, "steel_black", h=0.04,
+        ref=(0, 1, 0))
+    rod(m, on(hx - 0.06, 0.95, 0.03), on(hx - 0.1, 0.5, 0.03), 0.006, "paint_blue")
+
+
+def build_dev_bench(m, s, R, prm, rng):
+    """The darkroom's central developing island: a black steel frame, a white top with a raised lip, four
+    developing trays (red, white, grey, white) with their baths and tongs, a timer, a lower shelf of chemical jugs
+    and photo paper boxes; worked from both long sides."""
+    L, W, H = s
+    H -= 0.1  # the work top; the things on it reach the full height
+    hx, hz = L / 2, W / 2
+    for sx in (-1, 1):
+        for sz in (-1, 1):
+            box(m, (sx * (hx - 0.04) - 0.025, 0.0, sz * (hz - 0.04) - 0.025),
+                (sx * (hx - 0.04) + 0.025, H - 0.06, sz * (hz - 0.04) + 0.025), "steel_black")
+    box(m, (-hx + 0.04, 0.12, -hz + 0.06), (hx - 0.04, 0.15, hz - 0.06), "steel_black")
+    box(m, (-hx, H - 0.06, -hz), (hx, H - 0.02, hz), "enamel_white")
+    for z0, z1 in ((-hz, -hz + 0.025), (hz - 0.025, hz)):
+        box(m, (-hx, H - 0.02, z0), (hx, H, z1), "enamel_white", "+y+z-z+x-x")
+    for x0, x1 in ((-hx, -hx + 0.025), (hx - 0.025, hx)):
+        box(m, (x0, H - 0.02, -hz + 0.025), (x1, H, hz - 0.025), "enamel_white", "+y+x-x")
+    cols = ("paint_red", "art_white", "metal_grey", "art_white")
+    tw = (L - 0.5) / 4
+    for k, c in enumerate(cols):
+        x0 = -hx + 0.25 + k * tw
+        for zs in (-1, 1):
+            z0, z1 = (0.06, hz - 0.08) if zs > 0 else (-hz + 0.08, -0.06)
+            box(m, (x0 + 0.04, H - 0.02, z0), (x0 + tw - 0.04, H + 0.05, z1), c, "+x-x+z-z")
+            box(m, (x0 + 0.06, H + 0.02, z0 + 0.02), (x0 + tw - 0.06, H + 0.035, z1 - 0.02), "glass_dark", "+y")
+            if (k + (zs > 0)) % 2 == 0:
+                bar(m, (x0 + 0.1, H + 0.06, z0 + 0.05), (x0 + tw - 0.1, H + 0.06, z1 - 0.1), 0.012,
+                    "paint_blue" if k % 2 else "safety_yellow", h=0.008)
+    box(m, (hx - 0.2, H, -0.06), (hx - 0.06, H + 0.08, 0.06), "steel_black")
+    box(m, (hx - 0.18, H + 0.02, 0.06), (hx - 0.08, H + 0.06, 0.062), "art_white", "+z")
+    x = -hx + 0.12
+    while x < hx - 0.3:
+        if rng.random() < 0.5:
+            for k in range(2):
+                box(m, (x + k * 0.13, 0.15, -0.1), (x + k * 0.13 + 0.11, 0.42, 0.1), "art_white" if k else
+                    "bottle_brown")
+                cyl(m, "y", (x + k * 0.13 + 0.055, 0.0), 0.022, 0.42, 0.46, "paint_blue", 6)
+            x += 0.32
+        else:
+            for k in range(3):
+                box(m, (x, 0.15 + k * 0.05, -0.18), (x + 0.36, 0.15 + (k + 1) * 0.05 - 0.004, 0.18), "steel_black")
+                box(m, (x, 0.15 + k * 0.05 + 0.015, 0.18), (x + 0.36, 0.15 + k * 0.05 + 0.03, 0.182),
+                    "paint_red" if k % 2 else "safety_yellow", "+z")
+            x += 0.44
+
+
+def build_cutting_table(m, s, R, prm, rng):
+    """The darkroom's print table: an oak top on black steel legs with a stretcher shelf, a green cutting mat with
+    a grid, a rotary trimmer, stacks of the gazebo's party prints (plasticine people), a box of frames on the shelf
+    and a roll of tape."""
+    L, W, H = s
+    H -= 0.1  # the work top; the things on it reach the full height
+    hx, hz = L / 2, W / 2
+    for sx in (-1, 1):
+        for sz in (-1, 1):
+            box(m, (sx * (hx - 0.08) - 0.025, 0.0, sz * (hz - 0.08) - 0.025),
+                (sx * (hx - 0.08) + 0.025, H - 0.04, sz * (hz - 0.08) + 0.025), "steel_black")
+    box(m, (-hx + 0.08, 0.15, -hz + 0.1), (hx - 0.08, 0.18, hz - 0.1), "worktop_wood")
+    cbox(m, (-hx, H - 0.04, -hz), (hx, H, hz), "worktop_wood", 0.008)
+    mx0, mx1, mz0, mz1 = -hx + 0.1, 0.25, -hz + 0.12, hz - 0.12
+    box(m, (mx0, H, mz0), (mx1, H + 0.004, mz1), "leaf_green", "+y+x-x+z-z")
+    for i in range(1, 8):
+        x = mx0 + (mx1 - mx0) * i / 8
+        box(m, (x - 0.002, H + 0.004, mz0 + 0.02), (x + 0.002, H + 0.005, mz1 - 0.02), "art_white", "+y")
+    for j in range(1, 5):
+        z = mz0 + (mz1 - mz0) * j / 5
+        box(m, (mx0 + 0.02, H + 0.004, z - 0.002), (mx1 - 0.02, H + 0.005, z + 0.002), "art_white", "+y")
+    box(m, (mx0 + 0.15, H + 0.004, -0.05), (mx0 + 0.75, H + 0.03, 0.05), "steel_black")
+    box(m, (mx0 + 0.15, H + 0.03, -0.012), (mx0 + 0.75, H + 0.05, 0.012), "chrome")
+    box(m, (mx0 + 0.4, H + 0.03, -0.03), (mx0 + 0.48, H + 0.09, 0.03), "paint_red")
+    faces = ("art_sky", "art_pink", "art_terracotta", "leaf_green", "book_mustard")
+    for k in range(4):
+        x = 0.4 + (k % 2) * 0.42
+        z = -hz + 0.3 + (k // 2) * 0.55
+        n = 3 + k
+        for i in range(n):
+            y = H + i * 0.004
+            box(m, (x, y, z), (x + 0.3, y + 0.004, z + 0.22), "art_white", "+y+z")
+        box(m, (x + 0.03, H + n * 0.004, z + 0.03), (x + 0.27, H + n * 0.004 + 0.001, z + 0.19),
+            faces[k % len(faces)], "+y")
+        blob(m, (x + 0.15, H + n * 0.004 + 0.002, z + 0.11), 0.03, 0.003, 0.04, "art_terracotta", 6, 2)
+    cbox(m, (-0.3, 0.18, -0.25), (0.4, 0.5, 0.25), "steel_black", 0.01)
+    box(m, (-0.2, 0.3, 0.25), (0.3, 0.38, 0.252), "art_white", "+z")
+    tube(m, "y", (hx - 0.2, hz - 0.25), 0.03, 0.05, H, H + 0.05, "kraft_tape", 10)
 
 
 BUILDERS = {name[6:]: fn for name, fn in dict(globals()).items() if name.startswith("build_") and callable(fn)}
