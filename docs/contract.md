@@ -14,7 +14,7 @@ The source is the ADR sketch in the
 xperiaroco2/prime-game#165, with
 [the engineer's answers](https://github.com/xperiaroco2/prime-game/issues/165#issuecomment-5954455064) of 2026-10-02:
 five fingers for gestures, clothing in pieces with sets as presets, eyes and mouth changeable like the hair, one
-neutral body in v1, animations only (no ragdoll).
+neutral body in v1, animations only (no ragdoll). Since 2026-10-11 the knockdown is a ragdoll ("Ragdoll" below).
 
 ## Commands
 
@@ -87,9 +87,32 @@ talking need no mesh change), `hair_or_hat`, `face_accessory` and `back_item` (r
 and never derived from a role.
 
 **Animation.** Skeletal clips on the contract skeleton in one shared library, in place, loops suffixed `_loop`; no
-ragdoll: falls, downed and dead are clips too. Eyes and mouth animate by texture frames, never bones or blend shapes;
+the knockdown is a ragdoll ("Ragdoll" below); every other state is a clip. Eyes and mouth animate by texture frames, never bones or blend shapes;
 how a rigid eye or mouth piece shows its frames (its own texture frames or per-instance shader parameters) waits for
 the style answers (H2).
+
+**Ragdoll.** The knockdown is a ragdoll (the engineer, 2026-10-11, prime-game#516 answer 3; art #115): the body
+falls under physics at once, a dead body keeps its ragdoll pose, a revived player stands up at once; the knockdown,
+lying-downed and get-up clips are gone. Idle, walk, run, carry, pick up and put down and crouch stay clips.
+- *Who builds it.* The art side measures the ragdoll data per body type from the character's GLB
+  (`tools/run.py ragdoll`) and ships it in the character package as `export/<id>.ragdoll.json` (listed in
+  `package.json`). The game builds the PhysicalBone3D nodes from it at import under a PhysicalBoneSimulator3D;
+  `godot/ragdoll/builder.gd` is the reference builder the game copies (`build`, `start`, `stop`).
+- *The data.* 16 bodies: `Body` (the pelvis, the root body; `Hips` follows it), `Abdomen`, `Torso` (the chest),
+  `Neck` (the neck and head as one body, shaped to the head and hair), and per side `UpperArm`, `LowerArm`, `Wrist`,
+  `UpperLeg`, `LowerLeg`, `Foot`. Fingers, toes, `Hips`, `Chest`, the shoulders, the head and the sockets follow their
+  simulated owner (`followers`). Per body: its bone (the export's 64-bone names) and contract `profile` name, the
+  shape (`box` with `size`, or `capsule` along the bone's Y with `radius` and `height`), `offset` and `rotation`
+  (a quaternion) in the bone's rest frame, `mass_share` and `mass_kg` (70 kg in all), and its joint to its physical
+  parent: `cone` (`swing_deg`, `twist_deg`), `hinge` (`axis` in the bone frame, `min_deg`..`max_deg`, positive the
+  anatomical bend) or `pin`, with its `anchor` in the bone frame. `material` holds friction, bounce and damping;
+  `collision` the layer rule. Units are metres, kilograms and degrees; limits are from the standing pose.
+- *Collision.* Every body is on the `downed` layer (3) with the `world` mask (1) only: a ragdoll never collides with
+  players or other ragdolls (prime-game#754).
+- *Sockets.* No socket changes: the BoneAttachment3D sockets (the carried package, hair and hats) follow their bones,
+  which follow the simulated bodies; the fall proof asserts it.
+- *Proof.* `tools/run.py ragdoll <glb> --fall` (Godot 4.7.2, Jolt Physics, headless) asserts the fall; `--shots DIR`
+  shoots it off-screen (docs/godot.md, "The ragdoll").
 
 **Budgets.** Above the target warns, above the cap fails.
 
