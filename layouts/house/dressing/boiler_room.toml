@@ -239,32 +239,37 @@ face = "E"
 
 [[props]]
 id = "sign_volt"
-at = [0.1, 1.6, 5.2]
-face = "E"
+at = [3.2, 1.55, 0.1]
+face = "S"
 
 [[props]]
 id = "store_shelving_b"
-at = [0.35, 0, 6.7]
+at = [0.35, 0, 6.2]
 face = "E"
 
 [[props]]
 id = "storage_box"
-at = [0.35, 2.0, 5.98]
+at = [0.35, 2.0, 5.48]
 face = "E"
 
 [[props]]
 id = "storage_crate"
-at = [0.35, 2.0, 6.46]
+at = [0.35, 2.0, 5.96]
 face = "E"
 
 [[props]]
 id = "storage_box"
-at = [0.35, 2.0, 6.94]
+at = [0.35, 2.0, 6.44]
 face = "E"
 
 [[props]]
 id = "storage_crate"
-at = [0.35, 2.0, 7.42]
+at = [0.35, 2.0, 6.92]
+face = "E"
+
+[[props]]
+id = "tool_wall"
+at = [0.1, 1.0, 8.3]
 face = "E"
 
 # the south wall: shelving of spares and stock; the mop sink by the east wall
