@@ -2900,11 +2900,13 @@ def build_display_cabinet(m, s, R, prm, rng):
         y = yb + t + step * i
         if i:
             box(m, (-hx + t, y - 0.016, zi0), (hx - t, y, zi1), body, "+y-y+z")
-        if i == 0:  # plates standing in a rail at the back, a stack of bowls and a jug in front
-            box(m, (-hx + t, y, zi0 + 0.03), (hx - t, y + 0.012, zi0 + 0.04), "wood_front_dark", "+y+z-z")
+        if i == 0:  # plates standing in a rail at the back, each a little in front of the last, inside the sides
+            box(m, (-hx + t, y, zi0 + 0.052), (hx - t, y + 0.012, zi0 + 0.062), "wood_front_dark", "+y+z-z")
+            pr = 0.1
             for k in range(6):
-                x = -hx + 0.1 + k * (L - 0.2) / 5
-                cyl(m, "z", (x, y + 0.115), 0.11, zi0 + 0.012, zi0 + 0.026, "porcelain_white", 14)
+                x = -hx + t + pr + 0.01 + k * (L - 2 * t - 2 * pr - 0.02) / 5
+                z = zi0 + 0.004 + 0.007 * k
+                cyl(m, "z", (x, y + pr + 0.004), pr, z, z + 0.01, "porcelain_white", 14)
             for j in range(3):
                 cyl(m, "y", (-hx + 0.2, zi1 - 0.1), 0.05 - 0.003 * j, y + j * 0.03, y + j * 0.03 + 0.028,
                     "enamel_white", 12, r1=0.075 - 0.003 * j)

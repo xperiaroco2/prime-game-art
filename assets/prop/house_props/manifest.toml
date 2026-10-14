@@ -871,7 +871,7 @@ sha256 = "c67ca6d2734c371ff29234e310b4f8662875b9f67f8a0ba7a9bc0f19d1ca4685"
 [[files]]
 name = "library/display_cabinet.glb"
 file = "props/library/v4/display_cabinet.glb"
-sha256 = "fdd6260833fc267eb1d87dcb597ccc1ba2c73fa58e9e935bea4b1c8c3766b93b"
+sha256 = "a46f1cd247f3846f01adc21c9449a452567a0317fb8fa3c304884ee38b09f933"
 
 [[files]]
 name = "library/dining_rug.glb"
@@ -961,7 +961,7 @@ sha256 = "0cabfa9369821f051a809a87f14353b66b950b71f800752089ae12409cca7a59"
 [[files]]
 name = "task/dining_table.glb"
 file = "props/task/v2/dining_table.glb"
-sha256 = "d996d7ff959f021bc27857ee410a167b2bae6c785cbe3384929b8a15e8a1c826"
+sha256 = "7ffd3f00d07667bebb8be56e185cc457d88074eb4b469a6e0f6ae0a1aa48dad7"
 
 [[files]]
 name = "task/enlarger.glb"

@@ -508,11 +508,13 @@ def build_table_fine(pc: Piece, p: dict, spec: dict) -> None:
         for sz in (-1, 1):
             cx, cz = sx * (x0 - 0.035), sz * (z0 - 0.035)
             pg.cyl(m, "y", (cx, cz), 0.032, 0.0, h - tt - 0.004, "worktop_wood", 4, r1=0.05, phase=math.pi / 4)
-    for sz in (-1, 1):  # the apron: long rails and the end rails, set in under the top
-        pg.cbox(m, (-x0 + 0.03, h - tt - 0.004 - ah, sz * z0 - 0.012), (x0 - 0.03, h - tt - 0.004, sz * z0 + 0.012),
+    for sz in (-1, 1):  # the apron: long rails and the end rails, flush with the legs' outer faces
+        pg.cbox(m, (-x0 + 0.03, h - tt - 0.004 - ah, sz * (z0 - 0.012) - 0.012),
+                (x0 - 0.03, h - tt - 0.004, sz * (z0 - 0.012) + 0.012),
                 "worktop_wood", st.bevel_small)
     for sx in (-1, 1):
-        pg.cbox(m, (sx * x0 - 0.012, h - tt - 0.004 - ah, -z0 + 0.03), (sx * x0 + 0.012, h - tt - 0.004, z0 - 0.03),
+        pg.cbox(m, (sx * (x0 - 0.012) - 0.012, h - tt - 0.004 - ah, -z0 + 0.03),
+                (sx * (x0 - 0.012) + 0.012, h - tt - 0.004, z0 - 0.03),
                 "worktop_wood", st.bevel_small)
         pg.cbox(m, (sx * (x0 - 0.035) - 0.02, 0.14, -z0 + 0.06), (sx * (x0 - 0.035) + 0.02, 0.19, z0 - 0.06),
                 "worktop_wood", st.bevel_small)
