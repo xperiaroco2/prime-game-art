@@ -2967,7 +2967,7 @@ collision = "none"
 id = "wc_tiles"
 batch = 1
 name = "Tiled lower wall behind the toilet and basin (3 m, 1.2 m high, a warm steel cap)"
-class = "clutter"
+class = "room"  # like the kitchen's backsplash: a room-defining wall piece
 layer = "base"  # a flat tiled strip: few triangles, but the room reads with it on Low
 size_m = [3.0, 0.016, 1.2]
 count = 1
@@ -3081,7 +3081,7 @@ count = 1
 route = "proc"
 shape = "stair_gallery"
 params = {pitch = 0.5333}
-roles = ["steel_black", "worktop_wood", "art_white", "art_sky", "book_sage", "art_pink", "book_cream", "book_navy", "paint_red", "book_teal", "book_mustard", "art_terracotta", "art_bun"]
+roles = ["steel_black", "worktop_wood", "art_white", "art_sky", "book_sage", "art_pink", "book_cream", "book_navy", "paint_red", "book_teal", "book_mustard", "art_terracotta", "art_bun", "art_patty", "leaf_green"]
 pivot = "wall"
 collision = "none"
 
