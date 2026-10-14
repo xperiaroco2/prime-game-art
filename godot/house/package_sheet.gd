@@ -5,7 +5,7 @@ extends SceneTree
 ##   kit: every kit piece of the request's families in a line-up, one tile per family, under a key light;
 ##   rooms: every room scene from its door (Doors/Door1, else the first) at eye height, looking into the room, lit only by its
 ##     own fixtures and a dim review ambient; a room without a door is shot from the middle of its front side, DOORLESS
-##     m in (#168: the attic's north wall is lined with shelving taller than the eye's view down). A tile
+##     (1 m) in (#168: the attic's north wall is lined with shelving taller than the eye's view down). A tile
 ##     with `eye` and `look` (room-local) is an extra view of its room; with `sun` a key light joins its lamps.
 ##     Its `with` rooms (other packages' scenes, staged beside it) join it in place at their offsets.
 ##     Its `context` rooms (#144: the rooms owning walls on its sides, the rooms whose floor is its ceiling) join it
