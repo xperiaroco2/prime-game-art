@@ -436,8 +436,40 @@ Pass 1's measures, 2026-10-10, before (main's dressing) and after the clutter, w
   switch room); the clutter adds 0 to 350 on the walked floors and up to 750 in the basement, one mesh counted
   once per lamp that shadows it.
 
-Meeting 150 needs the shell merged (MultiMesh or merged static walls) and a count under the baked light (#83), whose
-lamps draw no real-time shadow passes: follow-up #107.
+### Draw calls (#107)
+
+The House drew one instance per kit piece and per dressing prop, each drawn again into every shadowing lamp's map:
+165-431 draw calls per bake review view under the baked light alone and 499-2,718 under the High preset. #107 merges
+what does not move, where the scenes are written, so the walk, the bake and the export all get it:
+- **The merged shell** (`tools/runner/house_merge.py`, `commands/house.py merger`): per room, its own static kit
+  pieces of each class (`floor_*`, `ceiling_*`, the rest) become one GLB, one surface per material, the pieces'
+  vertices in room space, their UV2 islands packed into one atlas (the bake's flat rule and `lightmap_size_hint` come
+  from the pieces' UV2 table). Every piece instance stays, with its name, colliders and `metadata/surface`; only its
+  mesh node gets `visible = false`. house.toml `[merge] keep` names the pieces the game moves or opens (gates, garage
+  door, glass door, the attic ladder and hatch boards); a class of one piece stays an instance.
+- **The batched dressing**: per room and group (Dressing, Detail, Fixtures) the static props become one GLB
+  (`batch_<level>_<room>_<group>`), never a task station nor `[merge] keep_props` (the garage's car, lift arms and
+  lift panel); each prop instance stays with its colliders and metadata, its visual nodes hidden; the batch joins the
+  same group, so a preset hiding Detail hides its batch too.
+- **The export** ships them per package: `house_kit/merged/<class>_m_<level>_<room>.glb` (the set material on their
+  `kit_set` surfaces, `plan_at` at the room's origin) and `house_props/merged/batch_*.glb` (the fine material on their
+  `kit_fine` surfaces), committed in the room set's `export/merged/`. `layouts/house/export_contract.json` pins every
+  game-facing node and collider of the committed scenes (`tools/runner/house_contract.py`,
+  `test_house_contract`): a re-export may change only visual overrides and the `merged_*`/`batch_*` nodes.
+- **The budget**: `house --bake ZONES --count DIR` builds the zones without baking and counts each review view, baked
+  and High (the preset's 12 nearest glow lamps, shadowed), against lights.toml `[budget]` (baked 150, High 350,
+  High shadow 2,500); over it is a WARN, not a failure. `--no-merge` draws the scenes as before.
+
+Before -> after on the bake's review cameras (2026-10-15, `review/house/107/after-batch/draw_calls.md`): baked ground
+236/165/257/180 -> 125/110/157/103, upper 214/191/164 -> 102/100/80, basement 431/171/316 -> 224/101/183; High ground
+875/499/823/561 -> 234/205/303/193, upper 1,060/891/676 -> 202/200/158, basement 2,719/1,018/1,630 -> 440/193/349.
+Over the budget still: the basement's storage view (baked 224, High 440: many shelves of distinct materials, and the
+merged meshes' room-sized bounds pull the neighbours' batches into view) and seam (baked 183), the ground's wall
+kitchen view (baked 157). High shadow draw calls fell in the basement (3,266 -> 2,482) but rose 10-35 % on the ground
+and upper floors: a room-sized batch enters every cube face of every shadowing lamp; splitting batches into cells of
+about 3 m is the follow-up. The look is unchanged (mean dL* 0.00-0.03 per view, `review/house/107/look/look.md`),
+and the ground's bake still bakes without seams (`review/house/107/bake-ground/vs_1014.png`). GPU ms High cached:
+kitchen 3.17 -> 1.03, wall kitchen 5.12 -> 1.19, seam 3.80 -> 1.01, living 4.49 -> 4.31.
 
 ### Wall paint (#104)
 
