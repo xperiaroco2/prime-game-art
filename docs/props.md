@@ -206,7 +206,7 @@ tools/run.sh props [--spec props/tasks.toml] [--out DIR] [--only id,...] [--no-b
 | `--only` | Only these props |
 | `--no-build` | Checks the GLBs already in `--out` |
 | `--no-godot` | Skips the Godot import |
-| `--review DIR` | Also renders the line-up sheets `lineup_<group>.png` (1280 px wide: each prop from the front and from 3/4, orthographic, with a 1.8 m grey capsule; Workbench with the vertex paint) and `switch_8m.png` (the post switch on and off from 8 m at a 1.6 m eye, 75 degree field of view) |
+| `--review DIR` | Also renders the line-up sheets `lineup_<group>.png` (1280 px wide: each prop from the front and from 3/4, orthographic, with a 1.8 m grey capsule; Workbench with the vertex paint) , `switch_8m.png` (the post switch on and off from 8 m at a 1.6 m eye, 75 degree field of view) and `states.png` (the switches and the generator, on and off side by side, #82) |
 
 It takes the heavy-run lock (Blender, Godot): run it in the background with its log under `tools/out/` and check it
 with `tools/run.sh wait`. It writes into `--out`: `<id>.glb`, `textures/`, `build.json`, `reports/<id>.json`,
