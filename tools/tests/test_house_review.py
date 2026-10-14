@@ -132,7 +132,7 @@ class CommittedTest(unittest.TestCase):
         from runner import house_layout
         views = R.views(house_layout.load())
         plot = [v for v in views if v["room"] == "plot"]
-        self.assertEqual(len(plot), 6)
+        self.assertEqual(len(plot), 7)
         self.assertEqual(plot[0]["eye"], [30.0, 1.6, 57.0])  # plan metres, 1.6 m over the ground
         package = {"package": 7, "name": "outdoor", "rooms": {"greenhouse": {}, "garden": {}}, "files": {},
                    "plot": {"scene": "res://levels/house/outdoor.tscn"}}

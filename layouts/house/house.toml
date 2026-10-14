@@ -366,6 +366,12 @@ at = [14.0, 16.0]
 look = [9.0, 11.0]
 sun = true
 [[export.sheet_views]]
+room = "plot"
+title = "driveway: from the street (#79)"
+at = [66.0, 66.0]
+look = [63.0, 54.0]
+sun = true
+[[export.sheet_views]]
 room = "garage"
 title = "garage: from the gates"
 at = [64.0, 47.4]  # #79: in through the gates to the car on its lift, the panel's blind side on the left
