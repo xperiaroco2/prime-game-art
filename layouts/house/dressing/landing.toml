@@ -5,10 +5,13 @@
 # Ids are the dressing library's (props/library.toml, #87) and the task props' (props/tasks.toml, #82); an id with
 # no GLB yet is generated as a named, sized placeholder box. Positions are the engineer's to change.
 room = "landing"
-# #162: the upper floor's hub in the world look, every prop hand-placed (the clutter rules are empty): two slate
+# #162: the upper floor's hub in the world look, every prop hand-placed (the clutter rules are empty): two terracotta
 # runners down the walk from the stairs to the six doors; consoles with lamps under the prints and the family
-# gallery; three bookcases; a reading corner and a dresser on the west wall; the bench with the photos on the south
-# wall; plants, a delivery by the study door and the laundry basket by the bathroom door. The area round the attic
+# gallery; three bookcases; the sitting area south of the stairwell's railing (round 2: main had one there; a sofa
+# against the railing, two armchairs facing each other over a coffee table on a rug, a side table with a lamp, a
+# floor lamp and a plant) and a dresser on the west wall; the bench with the photos on the south wall; plants, a
+# big fig with a print in the middle of the east wall, a delivery by the study door and the laundry basket by the
+# bathroom door. The area round the attic
 # hatch's ladder (x 1 to 3.5, z 3 to 6) and the stairs' top (x 4 to 5.5, z 8 to 10) stays clear.
 
 [[props]]
@@ -252,34 +255,74 @@ at = [0.1, 1.5, 10.5]
 face = "E"
 
 [[props]]
+id = "sofa"
+at = [2.0, 0.0, 12.52]
+face = "S"
+
+[[props]]
+id = "rug"
+at = [2.1, 0.0, 13.8]
+face = "S"
+
+[[props]]
+id = "coffee_table"
+at = [2.1, 0.0, 13.75]
+face = "S"
+
+[[props]]
+id = "magazine_fan"
+at = [1.8, 0.4, 13.75]
+face = "S"
+
+[[props]]
+id = "living_tray"
+at = [2.35, 0.4, 13.75]
+face = "S"
+
+[[props]]
 id = "armchair"
-at = [0.65, 0.0, 13.3]
+at = [0.7, 0.0, 13.85]
 face = "E"
+
+[[props]]
+id = "armchair"
+at = [3.5, 0.0, 13.85]
+face = "W"
 
 [[props]]
 id = "throw_basket"
-at = [1.35, 0.0, 13.3]
-face = "E"
+at = [3.6, 0.0, 14.75]
+face = "N"
 
 [[props]]
 id = "art_score"
-at = [0.1, 1.3, 13.3]
+at = [0.1, 1.3, 13.85]
 face = "E"
 
 [[props]]
 id = "small_table"
-at = [0.5, 0.0, 14.6]
+at = [0.45, 0.0, 12.5]
 face = "E"
 
 [[props]]
 id = "side_lamp"
-at = [0.35, 0.7, 14.42]
+at = [0.45, 0.7, 12.5]
 face = "E"
 
 [[props]]
-id = "magazine_fan"
-at = [0.65, 0.7, 14.75]
+id = "floor_plant"
+at = [0.4, 0.0, 14.85]
 face = "E"
+
+[[props]]
+id = "floor_plant"
+at = [7.55, 0.0, 8.5]
+face = "W"
+
+[[props]]
+id = "art_photos"
+at = [7.9, 1.6, 8.5]
+face = "W"
 
 [[props]]
 id = "toy_blocks"
@@ -318,7 +361,7 @@ face = "N"
 
 [[props]]
 id = "sports_bag"
-at = [1.2, 0.0, 15.0]
+at = [2.0, 0.0, 17.6]
 face = "E"
 
 [[props]]
@@ -343,7 +386,7 @@ face = "E"
 
 [[props]]
 id = "wall_calendar"
-at = [0.1, 1.4, 14.9]
+at = [0.1, 1.4, 17.0]
 face = "E"
 
 [[fixtures]]
@@ -365,6 +408,11 @@ face = "E"
 id = "wall_sconce"
 at = [0.1, 1.9, 17.5]
 face = "E"
+
+[[fixtures]]
+id = "floor_lamp"
+at = [3.35, 0.0, 12.45]
+face = "S"
 
 [[fixtures]]
 id = "pendant_shade"
