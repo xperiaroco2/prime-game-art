@@ -515,7 +515,7 @@ metadata/prop = "place_setting"
 surface_material_override/0 = ExtResource("12")
 
 [node name="place_setting_2" parent="Detail" instance=ExtResource("27")]
-transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 6, 0.76, 2.6)
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 7, 0.76, 2.6)
 metadata/prop = "place_setting"
 
 [node name="place_setting" parent="Detail/place_setting_2"]
@@ -536,14 +536,14 @@ metadata/prop = "place_setting"
 surface_material_override/0 = ExtResource("12")
 
 [node name="serving_board_1" parent="Detail" instance=ExtResource("28")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.47, 0.76, 3)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.32, 0.76, 3)
 metadata/prop = "serving_board"
 
 [node name="serving_board" parent="Detail/serving_board_1"]
 surface_material_override/0 = ExtResource("12")
 
 [node name="tulip_vase_1" parent="Detail" instance=ExtResource("29")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.98, 0.76, 3.02)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.55, 0.76, 3)
 metadata/prop = "tulip_vase"
 
 [node name="tulip_vase" parent="Detail/tulip_vase_1"]
@@ -557,7 +557,7 @@ metadata/prop = "homework"
 surface_material_override/0 = ExtResource("12")
 
 [node name="laptop_1" parent="Detail" instance=ExtResource("31")]
-transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 7.2, 0.76, 2.72)
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 7.3, 0.76, 2.97)
 metadata/prop = "laptop"
 
 [node name="laptop" parent="Detail/laptop_1"]
