@@ -6,7 +6,8 @@ TEXCOORD_0, TEXCOORD_1 and COLOR_0; collider nodes `-convcolonly` / `-colonly` /
 visual primitives by the piece's transform in the room (the scene's own `Transform3D` text, so the merged mesh sits
 exactly where the instances drew) and writes one GLB: a node `merged_<class>` per class (`floor`, `ceiling`, `shell`:
 the bake treats floors and ceilings apart, `zone_build.gd`), each a mesh with one primitive per material (the kit's
-material names kept, so the export's set material and `plan_at` find them). UV0 (the kit's box projection) and the
+material names kept, so the export's set material and `plan_at` find them; a name whose prop GLBs give it
+different values gets one primitive per variant, `material_key`). UV0 (the kit's box projection) and the
 vertex colours (the paint and layer) are copied unchanged: the look is the instances'. UV2 (the lightmap UV) is
 repacked: each piece's own UV2 island set, scaled to metres by its `uv2_per_m` (the kit's `pieces.json`), is
 shelf-packed with a GAP between pieces into one square of side S metres, so the merged mesh has one uniform density
@@ -132,6 +133,29 @@ def pack(sizes: list[tuple[float, float]], gap: float = GAP_M) -> tuple[list[tup
     return at, max(width, y + shelf)
 
 
+def material_key(material: dict) -> str:
+    """A material's values without its name (base colour, emission and its strength, roughness, metallic, alpha mode,
+    every extension): two prop GLBs may give one name different values (#184's review: a red safelight and a bare
+    bulb both `kit_emissive-vcol`), so the merge groups surfaces by name and these values. Refuses a texture: the
+    merged GLB carries no images."""
+    def textured(v) -> bool:
+        return isinstance(v, dict) and ("index" in v or any(textured(x) for x in v.values()))
+    if textured({k: v for k, v in material.items() if k != "name"}):
+        raise ValueError(f"material {material.get('name')!r} has a texture; the merged GLB carries no images")
+    return json.dumps({k: v for k, v in material.items() if k != "name"}, sort_keys=True, separators=(",", ":"))
+
+
+def variant_name(name: str, keys: list, key: str) -> str:
+    """The merged surface's material name: the source name for its first variant, `<name>__<n>` before the Godot hint
+    suffix (`kit_emissive__1-vcol`, so Godot still reads `-vcol`) for the n-th further one. Appends key to keys."""
+    keys.append(key)
+    n = len(keys) - 1
+    if n == 0:
+        return name
+    base, dash, hint = name.partition("-")
+    return f"{base}__{n}{dash}{hint}"
+
+
 def merge(items: list[dict], out: Path, gap: float = GAP_M) -> dict:
     """items: {"glb": path, "transform": the scene's Transform3D text, "class": "floor" | "ceiling" | "shell",
     "uv2_per_m": the piece's UV2 density, None for a piece without UV2}. Writes out (a GLB) and returns {"classes": {class: {"uv2_per_m",
@@ -145,6 +169,8 @@ def merge(items: list[dict], out: Path, gap: float = GAP_M) -> dict:
     record: dict = {"classes": {}}
     nodes, meshes, materials, accessors, views, blob = [], [], [], [], [], bytearray()
     mat_index: dict = {}
+    variant: dict = {}  # material key -> its surface's material name (one per distinct material, across classes)
+    variants: dict = {}  # a source material name -> its variants' keys in first-seen order
 
     def put(data: bytes, comp: int, kind: str, count: int, target: int | None, minmax=None) -> int:
         while len(blob) % 4:
@@ -176,8 +202,15 @@ def merge(items: list[dict], out: Path, gap: float = GAP_M) -> dict:
             m = rows_of(it["transform"])
             k = 1.0 / (it.get("uv2_per_m") or 1.0)
             for p in cache[it["glb"]]:
-                g = groups.setdefault(p["material"]["name"], {"material": p["material"], "pos": [], "nrm": [],
-                                                              "uv0": [], "uv1": [], "col": [], "idx": []})
+                key = material_key(p["material"])
+                if key not in variant:
+                    variant[key] = variant_name(p["material"]["name"], variants.setdefault(p["material"]["name"], []),
+                                                key)
+                name = variant[key]
+                g = groups.setdefault(name, {"material": {**p["material"], "name": name}, "key": key, "pos": [],
+                                             "nrm": [], "uv0": [], "uv1": [], "col": [], "idx": []})
+                if material_key(g["material"]) != key or g["material"]["name"] != name:  # (the review of #184)
+                    raise ValueError(f"{it['glb']}: material {p['material']['name']!r} differs within its surface")
                 base = len(g["pos"])
                 g["pos"] += [_apply(m, v) for v in p["pos"]]
                 g["nrm"] += [_rot(m, v) for v in (p["nrm"] or [(0, 1, 0)] * len(p["pos"]))]

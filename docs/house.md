@@ -450,7 +450,10 @@ what does not move, where the scenes are written, so the walk, the bake and the 
 - **The batched dressing**: per room and group (Dressing, Detail, Fixtures) the static props become one GLB
   (`batch_<level>_<room>_<group>`), never a task station nor `[merge] keep_props` (the garage's car, lift arms and
   lift panel); each prop instance stays with its colliders and metadata, its visual nodes hidden; the batch joins the
-  same group, so a preset hiding Detail hides its batch too.
+  same group, so a preset hiding Detail hides its batch too. A surface is one material's name *and* values: prop
+  GLBs may give one name different values (the darkroom's red safelight and its bare bulb are both
+  `kit_emissive-vcol`), so each further variant gets its own surface, named `<name>__<n>-vcol` (`material_key`,
+  `variant_name`); the export's stand-in lookup reads `kit_fine__1` as `kit_fine`.
 - **The export** ships them per package: `house_kit/merged/<class>_m_<level>_<room>.glb` (the set material on their
   `kit_set` surfaces, `plan_at` at the room's origin) and `house_props/merged/batch_*.glb` (the fine material on their
   `kit_fine` surfaces), committed in the room set's `export/merged/`. `layouts/house/export_contract.json` pins every

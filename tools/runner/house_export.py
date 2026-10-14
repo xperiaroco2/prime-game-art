@@ -10,6 +10,7 @@ from __future__ import annotations
 import fnmatch
 import hashlib
 import json
+import re
 import shutil
 import struct
 from pathlib import Path
@@ -98,7 +99,8 @@ def set_surfaces(path: Path, material: str = SET_MATERIAL, posed: bool = True) -
     doc = _gltf(path)
     if doc is None:
         return []
-    mats = [str(m.get("name", "")).split("-")[0] for m in doc.get("materials", [])]
+    # a batch's variant of a stand-in (`kit_fine__1-vcol`, house_merge.variant_name) is that stand-in too
+    mats = [re.sub(r"__\d+$", "", str(m.get("name", "")).split("-")[0]) for m in doc.get("materials", [])]
     nodes, out = doc.get("nodes", []), []
 
     def walk(i: int, chain: list[str], at: list[float], turned: bool) -> None:
