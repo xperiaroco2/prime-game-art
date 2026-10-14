@@ -3439,7 +3439,7 @@ def build_photo_row(m, s, R, prm, rng):
 
 
 # A salon hang of six frames (#156 round 2, the hallway's far wall): (x0, x1, y0, y1) as fractions of the prop's
-# width and height, the frame's paint and the picture (see _art); 4 cm between the frames.
+# width and height, the frame's paint and the picture (see _art); gaps of 0.04 of the width and height.
 GALLERY = ((0.0, 0.3, 0.4, 1.0, "steel_black", "city"), (0.34, 0.66, 0.55, 1.0, "worktop_wood", "family"),
            (0.7, 1.0, 0.45, 1.0, "art_white", "abstract"), (0.0, 0.3, 0.0, 0.36, "worktop_wood", "photos"),
            (0.34, 0.66, 0.0, 0.51, "steel_black", "still_life"), (0.7, 1.0, 0.0, 0.41, "steel_black", "family"))
