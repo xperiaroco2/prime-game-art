@@ -4,7 +4,8 @@ extends SceneTree
 ## files under assets/, laid out like the game's tree. Two modes:
 ##   kit: every kit piece of the request's families in a line-up, one tile per family, under a key light;
 ##   rooms: every room scene from its door (Doors/Door1, else the first) at eye height, looking into the room, lit only by its
-##     own fixtures and a dim review ambient; a room without a door is shot from the middle of its front side. A tile
+##     own fixtures and a dim review ambient; a room without a door is shot from the middle of its front side, DOORLESS
+##     (1 m) in (#168: the attic's north wall is lined with shelving taller than the eye's view down). A tile
 ##     with `eye` and `look` (room-local) is an extra view of its room; with `sun` a key light joins its lamps.
 ##     Its `with` rooms (other packages' scenes, staged beside it) join it in place at their offsets.
 ##     Its `context` rooms (#144: the rooms owning walls on its sides, the rooms whose floor is its ceiling) join it
@@ -15,6 +16,7 @@ extends SceneTree
 
 const SMALL := 1280
 const INSET := 0.3
+const DOORLESS := 1.0  # a door-less room's camera: this far in from its front wall, in front of what lines it
 const ELEV := 40.0  # the kit tiles' camera elevation, degrees
 const ASPECT := 4.0 / 3.0  # the kit tiles' aspect
 
@@ -137,7 +139,7 @@ func _room(holder: Node3D, cam: Camera3D, path: String, eye: float, tile: Dictio
 		holder.add_child(rn)
 	var w := float(size.x)
 	var d := float(size.y)
-	var pos := Vector3(w / 2, 0, INSET)
+	var pos := Vector3(w / 2, 0, DOORLESS)
 	var door := ""
 	var doors := sc.get_node_or_null("Doors")
 	if doors and doors.get_child_count() > 0:

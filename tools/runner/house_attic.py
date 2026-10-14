@@ -53,10 +53,15 @@ CLIMB_TOL = 0.01  # a stair's top against the dormer's sill (m)
 MAX_SLOPE = 45.0  # Godot's floor limit: a steeper stair is not walked
 # inventory.md section 6: the attic's props (light fixtures: #83a). The roof's: the deck's vents, antenna and water tank
 # went with the deck (art #77; the free roof's vent pipes and aerial are kit pieces, its craft); the Loot crate stays.
+# #168: the room-by-room pass: 44 old things became 63; the cardboard boxes and crates are labelled storage boxes and
+# lidded crates, the picture-frame trios leaning frames; shelving runs, dust-sheeted furniture, suitcases, holiday
+# decorations, sports kit and the game's own things (a burger-stall sign, a delivery bag, a generator part) joined.
 COUNTS = {
-    "attic": {"trunk": 6, "sheeted_furniture": 5, "old_wardrobe": 2, "mannequin": 1, "standing_mirror": 1,
-              "rocking_horse": 1, "rolled_carpet": 3, "old_bicycle": 1, "cardboard_box": 10, "crate": 5,
-              "picture_frame": 6, "potted_plant": 1, "rug": 2},
+    "attic": {"trunk": 6, "sheeted_furniture": 5, "sheeted_sofa": 2, "sheeted_dresser": 1, "old_wardrobe": 2,
+              "mannequin": 1, "standing_mirror": 1, "rocking_horse": 1, "rolled_carpet": 3, "old_bicycle": 1,
+              "storage_box": 11, "storage_boxes": 1, "storage_crate": 8, "attic_shelving": 5, "attic_shelving_b": 3,
+              "leaning_frames": 2, "suitcase": 2, "holiday_decor": 1, "burger_sign": 1, "delivery_bag": 1,
+              "generator_part": 1, "sports_kit": 1, "potted_plant": 1, "rug": 2},
     "roof": {"loot_crate": 1},
 }
 MIN_SPOTS = 10  # the brief: about 12

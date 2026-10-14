@@ -136,18 +136,18 @@ class HouseExport(unittest.TestCase):
         self.assertIn('[node name="old_wardrobe_1" type="Marker3D" parent="Placeholders"]', t)
 
     def test_the_free_roof_and_the_attic_carry_surfaces(self):
-        """#126: the attic's library props keep their collision (frames and rugs none), its rolled carpets are
-        carpet, the roof's pieces a ray from over the ridge meets are tagged and stay so over a rug, and the check
-        rays the roof's rect with its margin."""
+        """#126: the attic's library props keep their collision (#168: the delivery bag and rugs none), its
+        rolled carpets are carpet, the roof's pieces a ray from over the ridge meets are tagged and stay so over a
+        rug, and the check rays the roof's rect with its margin."""
         dz = X.attic_dressing(HA.load("attic"))
         coll = {r["id"]: r["collision"] for r in dz["resolved"]}
-        self.assertEqual((coll["picture_frame"], coll["rug"]), ("none", "none"))
+        self.assertEqual((coll["delivery_bag"], coll["rug"]), ("none", "none"))
         self.assertNotEqual(coll["trunk"], "none")
         pk = X.packages(DATA)[5]
         built = X.scenes(DATA, PLAN, {"attic": dz}, [], pk)
         built.pop("")
         attic = built["attic"]
-        self.assertFalse([n for n in attic["hide"] if n.startswith(("picture_frame", "rug_"))], attic["hide"])
+        self.assertFalse([n for n in attic["hide"] if n.startswith(("delivery_bag", "rug_"))], attic["hide"])
         self.assertRegex(attic["text"], r'\[node name="rolled_carpet_1" parent="Dressing"[^\[]*metadata/surface = "carpet"')
         for pid in ("roof_pitched_2x2", "roof_pitched_eave_2m", "roof_pitched_ridge_2m", "chimney_attic",
                     "chimney_attic_n", "dormer_gable"):

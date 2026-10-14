@@ -85,6 +85,12 @@ The task props stay: the toy chest (Circle08's room), the Printer station's comp
 calls of the room itself on the package sheet, before/after: kids' room door 51/49, across 50/65; study door 48/56,
 across 41/55; bedroom 54/54 and 55/55. Re-exported into `<raw>/review/house/166/export/p4`.
 
+## The attic's paint (#168)
+
+Only `package.json` changed: the shared `kit_set.tres` carries the attic's paint and hashes anew; this
+package's scenes are unchanged.
+
+
 ## Credits
 As P2: the entries `assets/kit/house_kit/CREDITS.md` and `assets/prop/house_props/CREDITS.md` (copy them to
 `docs/credits/house_kit.md` and `house_props.md`); own work, the props from

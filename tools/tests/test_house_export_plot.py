@@ -70,7 +70,7 @@ class SceneInstances(unittest.TestCase):
 
     def build(self, surfaces=None) -> dict:
         tmp = Path(self.enterContext(tempfile.TemporaryDirectory()))
-        for rel in ("props/library/v10/deckchair.glb", "props/zones/v1/deckchair.glb",
+        for rel in ("props/library/v11/deckchair.glb", "props/zones/v1/deckchair.glb",
                     "props/zones/v1/photo_backdrop.glb", f"{DATA['settings']['kit_dir']}/fence_t.glb"):
             (tmp / rel).parent.mkdir(parents=True, exist_ok=True)
             (tmp / rel).write_bytes(rel.encode())
@@ -97,7 +97,7 @@ class SceneInstances(unittest.TestCase):
         self.assertTrue(self.instanced(text, "deckchair_2").endswith(f"/{props}/deckchair.glb"))
         self.assertTrue(self.instanced(text, "photo_backdrop_1").endswith(f"/{props}/photo_backdrop.glb"))
         self.assertEqual(out["copies"][f"{props}/deckchair_zones.glb"], self.raw / "props/zones/v1/deckchair.glb")
-        self.assertEqual(out["copies"][f"{props}/deckchair.glb"], self.raw / "props/library/v10/deckchair.glb")
+        self.assertEqual(out["copies"][f"{props}/deckchair.glb"], self.raw / "props/library/v11/deckchair.glb")
 
     def test_a_kit_piece_carries_the_set_material_at_its_plan_pose(self):
         sets = {"fence_t": [{"node": "fence_t/mesh", "at": [1.0, 0.5, 0.0], "surfaces": [0, 2]}]}

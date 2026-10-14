@@ -19,7 +19,8 @@ prop_specs = ["props/tasks.toml", "props/library.toml"]
 # #162: v7 is v6 with the landing's and the bathroom's props; v8 is v7 with the rebuilt landing runner (round 2).
 # #164: v9 is v8 with the bedroom's and the guest room's props laid over it.
 # #166: v10 is v9 with the kids' room's and the study's props laid over it.
-prop_dirs = ["props/task/v2", "props/library/v10"]
+# #168: v11 is v10 with the attic's 18 props laid over it.
+prop_dirs = ["props/task/v2", "props/library/v11"]
 prop_res = "res://import/prop_{id}.glb"
 # Per-room wall paint (the engineer's choice of 2026-10-14, #152; before it Q11 = B of 2026-10-10, look.md section 4):
 # the inner plaster's colour per room id; a room not listed keeps the kit's (role wall_int, #3a6264). The living room
@@ -27,7 +28,8 @@ prop_res = "res://import/prop_{id}.glb"
 # the WC a soft blue-grey #cfd5d3 and the pantry a pale sage #d3d6c3 (#158), the bathroom a pale green-grey #d8dfd6
 # over its white tiles (#162; both the manager's present-day defaults under the engineer's blanket yes of 2026-10-14);
 # oxblood the bedrooms, a pale sky blue #c9d7de the kids' room (#166, the same blanket yes), ink-blue only the
-# study; the garage is a neutral concrete grey (the basement's walls are the kit's concrete already). Under every
+# study; the attic's knee walls and gables a warm white #ece7de, painted boards under the warm sand roof (#168, the same
+# blanket yes); the garage is a neutral concrete grey (the basement's walls are the kit's concrete already). Under every
 # room the kit's ceiling is warm sand (#152). The lab's rule: the biggest plane in a frame is never amber. The scene writer puts it on the room's root
 # (`metadata/wall_paint`); the kit's material (godot/kit/kit_materials.gd `paint`) recolours that room's inner plaster.
 [wall_paint]
@@ -44,6 +46,7 @@ bedroom = "#69413c"
 guest_room = "#69413c"
 kids_room = "#c9d7de"
 study = "#1f2a48"
+attic = "#ece7de"
 garage = "#8f897d"
 
 # The game-ready package (`house --export DIR [--package N]`, art #119, docs/house.md "The export"): the paths follow the
@@ -59,7 +62,7 @@ label = { h = 2.4, font_size = 72, outline_size = 16 }  # the room's Name label,
 # The world look's fine pack (#143, #147; docs/props.md "World look rules"): its build (fine.json and one texture
 # folder per tier) under the raw folder; a package with a prop on it ships house_props/fine/<tier>/, the shader and
 # one material per tier; the room scenes put `fine_tier`'s material on the props' kit_fine surfaces.
-fine_dir = "props/library/v10/textures/fine"  # #150: the eight-slot pack (v1 holds the four-slot one); v3 to v10 the same bytes
+fine_dir = "props/library/v11/textures/fine"  # #150: the eight-slot pack (v1 holds the four-slot one); v3 to v11 the same bytes
 fine_tier = "high"
 
 # Footstep surfaces (art #122; the game's FootstepSurface, its ARCHITECTURE 4.7.40): the kit pieces a player walks on,
@@ -229,6 +232,18 @@ at = [19.5, 34.0]
 look = [40.0, 34.0]
 [[export.sheet_views]]
 room = "attic"
+title = "attic: from the hatch"
+at = [28.0, 31.2]  # #168: where a player steps off the ladder (attic.toml's arrive), toward the south-west corner
+look = [20.5, 41.0]
+look_h = 0.8
+[[export.sheet_views]]
+room = "attic"
+title = "attic: toward the dormer"
+at = [24.5, 32.5]  # #168: across the stored things to the climb-out stair and the dormer's window
+look = [35.0, 42.0]
+look_h = 1.2
+[[export.sheet_views]]
+room = "attic"
 title = "roof: from dormer, 1.6 m"
 at = [34.9, 43.6]  # the dormer's climb-out (dressing/attic_roof/attic.toml's roof.arrive)
 look = [39.0, 41.9]  # the Lookout station
@@ -316,7 +331,7 @@ files = ["*.glb"]
 [export.plot]
 scene = "levels/house/outdoor.tscn"
 garden = "house/80/build/garden.json"
-prop_src = { tasks = "props/task/v2", library = "props/library/v10", "#87" = "props/library/v10", zones = "props/zones/v1" }
+prop_src = { tasks = "props/task/v2", library = "props/library/v11", "#87" = "props/library/v11", zones = "props/zones/v1" }
 # The zones' generic plants (`#87` bush and garden_tree, no library GLB) as the garden's plants (house_garden).
 plants = { bush = "bush_boxwood", garden_tree = "garden_tree_apple" }
 

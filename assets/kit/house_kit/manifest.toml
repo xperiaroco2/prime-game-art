@@ -3,11 +3,12 @@
 # #158 (the WC's and pantry's paints): kit_set.tres from <raw>/review/house/158/export/p2 (P2's export; the paints are one shared material); package.json names its new hash.
 # #162 (the bathroom's paint): kit_set.tres from <raw>/review/house/162/export/p4 (P4's export; the paints are one shared material); package.json names its new hash.
 # #166 (the kids' room's paint): kit_set.tres from <raw>/review/house/166/export/p4 (P4's export; the paints are one shared material); package.json names its new hash.
+# #168 (the attic's paint): kit_set.tres from <raw>/review/house/168/export/p5b (P5's export; the paints are one shared material); package.json names its new hash.
 id = "house_kit"
 kind = "kit"
 slot = ""
 title = "The House's modular kit v3c: 121 pieces and the shared texture set"
-notes = "Built by `kit` from kits/house.json (docs/kit.md) into kits/house/v3c (v3b with the 12 pieces of the warm sand ceiling rebuilt, #152). Own work; the three textures are packed, grey-averaged derivatives of ambientCG CC0 maps (PaintedPlaster017, WoodFloor051, Concrete034). The greenhouse's glass roof pieces (house/80/kit) are byte-identical to the kit's and ship here. Our own work goes to the game under the game's terms (the engineer's E1, 2026-10-11): the public game repo has no licence file, so all rights reserved. Approved under the engineer's blanket yes of 2026-10-14 (build the House, judge in a playtest; #34) in PR #154. #158 added the WC's and the pantry's wall paints to the shared kit_set.tres (from P2's export, review/house/158/export/p2); no kit piece changed; approved under the engineer's blanket yes of 2026-10-14 (build the House, judge in a playtest; #34) in PR #161. #162 added the bathroom's wall paint to the shared kit_set.tres (from P4's export, review/house/162/export/p4); no kit piece changed; approved under the engineer's blanket yes of 2026-10-14 (build the House, judge in a playtest; #34) in PR #163. #166 added the kids' room's wall paint to the shared kit_set.tres (from P4's export, review/house/166/export/p4); no kit piece changed; approved under the engineer's blanket yes of 2026-10-14 (build the House, judge in a playtest; #34) in PR #167, which the approval fields name."
+notes = "Built by `kit` from kits/house.json (docs/kit.md) into kits/house/v3c (v3b with the 12 pieces of the warm sand ceiling rebuilt, #152). Own work; the three textures are packed, grey-averaged derivatives of ambientCG CC0 maps (PaintedPlaster017, WoodFloor051, Concrete034). The greenhouse's glass roof pieces (house/80/kit) are byte-identical to the kit's and ship here. Our own work goes to the game under the game's terms (the engineer's E1, 2026-10-11): the public game repo has no licence file, so all rights reserved. Approved under the engineer's blanket yes of 2026-10-14 (build the House, judge in a playtest; #34) in PR #154. #158 added the WC's and the pantry's wall paints to the shared kit_set.tres (from P2's export, review/house/158/export/p2); no kit piece changed; approved under the engineer's blanket yes of 2026-10-14 (build the House, judge in a playtest; #34) in PR #161. #162 added the bathroom's wall paint to the shared kit_set.tres (from P4's export, review/house/162/export/p4); no kit piece changed; approved under the engineer's blanket yes of 2026-10-14 (build the House, judge in a playtest; #34) in PR #163. #166 added the kids' room's wall paint to the shared kit_set.tres (from P4's export, review/house/166/export/p4); no kit piece changed; approved under the engineer's blanket yes of 2026-10-14 (build the House, judge in a playtest; #34) in PR #167. #168 added the attic's warm white paint (#ece7de, the knee walls and gables) to the shared kit_set.tres (from P5's export, review/house/168/export/p5b); no kit piece changed; approved under the engineer's blanket yes of 2026-10-14 (build the House, judge in a playtest; #34) in PR #169, which the approval fields name."
 tools = ["blender 5.2.2", "prime-game-art kit (kits/house.json)"]
 licence = "own-work"
 licence_url = "https://github.com/xperiaroco2/prime-game"
@@ -15,7 +16,7 @@ public_repo_ok = true
 ai_generated = false
 approved_by = ["xperiaroco2"]
 approved_at = 2026-10-14
-approval_pr = "https://github.com/xperiaroco2/prime-game-art/pull/167"
+approval_pr = "https://github.com/xperiaroco2/prime-game-art/pull/169"
 
 [source]
 service = "own"
@@ -658,5 +659,5 @@ sha256 = "fc8c2dd82c68fc304dc4b0f9ca714d3834c5d74bec9ef87ecc88f34cfd5d4b87"
 
 [[files]]
 name = "kit_set.tres"
-file = "review/house/166/export/p4/assets/environment/house_kit/kit_set.tres"
-sha256 = "34e19220c655a67ec00b88269955deb7f95467e6fec838f947dc990ef7e1628e"
+file = "review/house/168/export/p5b/assets/environment/house_kit/kit_set.tres"
+sha256 = "18009a7771f73e760cb6a271fbff7ca62670daf228f3a396644f4a690c64fcfb"

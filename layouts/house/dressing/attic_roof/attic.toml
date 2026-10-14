@@ -13,7 +13,7 @@ eave_h = 2.2                       # the knee wall; the roof climbs gable_rise_p
 clear = [[26, 27, 4, 4], [33.4, 39.5, 3.2, 4.5], [35, 36, 2, 2]]
 arrive = [28.0, 31.2]              # where a player steps off the ladder (the walk's start)
 
-# --- the north eave ---
+# --- the north eave: the shelving run, the wardrobe and the trunks ---
 [[items]]
 id = "old_wardrobe"
 at = [20, 24.5]
@@ -21,16 +21,28 @@ at = [20, 24.5]
 id = "trunk"
 at = [22, 24.5]
 [[items]]
-id = "cardboard_box"
+id = "storage_box"
 at = [23.3, 24.4]
 [[items]]
-id = "cardboard_box"
+id = "storage_box"
 at = [23.9, 24.4]
 yaw = 90.0
 [[items]]
-id = "cardboard_box"
+id = "storage_box"
 at = [23.5, 24.95]
 yaw = 15.0
+[[items]]
+id = "attic_shelving"
+at = [26.6, 24.4]
+[[items]]
+id = "attic_shelving_b"
+at = [28.8, 24.4]
+[[items]]
+id = "attic_shelving"
+at = [31.0, 24.4]
+[[items]]
+id = "storage_boxes"
+at = [32.5, 24.4]
 [[items]]
 id = "sheeted_furniture"
 at = [33.5, 25]
@@ -41,23 +53,15 @@ at = [36, 24.35]
 id = "rolled_carpet"
 at = [36, 24.72]
 [[items]]
-id = "crate"
-at = [38.4, 24.45]
+id = "storage_crate"
+at = [38.3, 24.45]
 [[items]]
-id = "crate"
+id = "storage_crate"
 at = [39, 24.45]
 yaw = 8.0
 [[items]]
-id = "picture_frame"
-at = [40.3, 24.2]
-[[items]]
-id = "picture_frame"
-at = [40.9, 24.25]
-yaw = 6.0
-[[items]]
-id = "picture_frame"
-at = [40.6, 24.35]
-yaw = -4.0
+id = "leaning_frames"
+at = [40.6, 24.3]
 [[items]]
 id = "trunk"
 at = [41.4, 26.2]
@@ -72,13 +76,27 @@ yaw = 90.0
 id = "sheeted_furniture"
 at = [19, 30.2]
 [[items]]
+id = "attic_shelving_b"
+at = [18.4, 33.0]
+yaw = 90.0
+[[items]]
+id = "attic_shelving"
+at = [18.4, 35.2]
+yaw = 90.0
+[[items]]
+id = "suitcase"
+at = [18.4, 36.7]
+yaw = 90.0
+[[items]]
+id = "suitcase"
+at = [18.4, 37.2]
+yaw = 90.0
+[[items]]
 id = "rocking_horse"
-src = "placeholder"
-size = [1.0, 0.4, 0.9]
 at = [19.5, 38.2]
 yaw = 90.0
 
-# --- the south-west corner: the HidingSpots station (22, 39) ---
+# --- the south-west corner: the HidingSpots station (22, 39), kept 0.3 m clear ---
 [[items]]
 id = "old_wardrobe"
 at = [19, 43.5]
@@ -93,8 +111,6 @@ at = [22.9, 42.4]
 yaw = 10.0
 [[items]]
 id = "mannequin"
-src = "placeholder"
-size = [0.5, 0.4, 1.7]
 at = [20.6, 40.6]
 yaw = 60.0
 [[items]]
@@ -102,43 +118,42 @@ id = "trunk"
 at = [24.3, 40]
 yaw = 90.0
 [[items]]
-id = "crate"
-at = [21.2, 38.6]
+id = "storage_crate"
+at = [21.35, 38.1]
 [[items]]
-id = "crate"
-at = [21.8, 38.6]
-yaw = -10.0
+id = "storage_crate"
+at = [21.35, 38.6]
 [[items]]
 id = "rug"
-at = [22.5, 40.2]
+at = [22.6, 40.5]
 yaw = 5.0
 [[items]]
-id = "cardboard_box"
+id = "storage_box"
 at = [24.8, 43.6]
 [[items]]
-id = "cardboard_box"
+id = "storage_box"
 at = [25.4, 43.6]
 [[items]]
-id = "cardboard_box"
+id = "storage_box"
 at = [25.1, 43.05]
 yaw = 20.0
 [[items]]
-id = "picture_frame"
-at = [26.2, 43.8]
+id = "leaning_frames"
+at = [26.4, 43.75]
 yaw = 180.0
-[[items]]
-id = "picture_frame"
-at = [26.6, 43.75]
-yaw = 175.0
-[[items]]
-id = "picture_frame"
-at = [26.4, 43.65]
-yaw = 186.0
 [[items]]
 id = "potted_plant"
 at = [27.4, 43.5]
 
-# --- the south-east ---
+# --- the south eave and the south-east ---
+[[items]]
+id = "attic_shelving"
+at = [29.2, 43.6]
+yaw = 180.0
+[[items]]
+id = "storage_crate"
+at = [30.6, 43.6]
+yaw = 180.0
 [[items]]
 id = "sheeted_furniture"
 at = [31.8, 41.4]
@@ -147,17 +162,21 @@ id = "trunk"
 at = [31.6, 43.5]
 yaw = 180.0
 [[items]]
+id = "holiday_decor"
+at = [32.7, 43.55]
+yaw = 180.0
+[[items]]
 id = "old_bicycle"
 at = [38.4, 43.45]
 [[items]]
-id = "cardboard_box"
+id = "storage_box"
 at = [40.4, 43.6]
 [[items]]
-id = "cardboard_box"
+id = "storage_box"
 at = [41, 43.6]
 yaw = 90.0
 [[items]]
-id = "cardboard_box"
+id = "storage_box"
 at = [40.7, 43.05]
 yaw = -12.0
 [[items]]
@@ -169,21 +188,67 @@ id = "rug"
 at = [35.5, 39]
 yaw = -3.0
 
-# --- the east ---
+# --- the east gable: the game's own things kept from the stall and the deliveries ---
 [[items]]
 id = "sheeted_furniture"
 at = [40.9, 27.6]
 [[items]]
-id = "crate"
+id = "storage_crate"
 at = [39.2, 26.9]
 [[items]]
-id = "cardboard_box"
+id = "storage_box"
 at = [36.5, 27]
 yaw = 30.0
 [[items]]
 id = "trunk"
 at = [34.5, 28.2]
 yaw = 90.0
+[[items]]
+id = "burger_sign"
+at = [41.8, 31.0]
+yaw = -90.0
+[[items]]
+id = "generator_part"
+at = [41.4, 33.2]
+yaw = -90.0
+[[items]]
+id = "delivery_bag"
+at = [41.5, 34.3]
+yaw = -90.0
+[[items]]
+id = "sports_kit"
+at = [41.6, 35.6]
+yaw = -90.0
+[[items]]
+id = "storage_crate"
+at = [41.55, 37.2]
+yaw = -90.0
+
+# --- the middle: furniture under dust sheets and a back-to-back shelving island ---
+[[items]]
+id = "sheeted_sofa"
+at = [24.5, 33.0]
+[[items]]
+id = "sheeted_dresser"
+at = [22.3, 32.0]
+yaw = 90.0
+[[items]]
+id = "sheeted_sofa"
+at = [35.5, 31.0]
+yaw = 180.0
+[[items]]
+id = "attic_shelving"
+at = [32.0, 35.0]
+[[items]]
+id = "attic_shelving_b"
+at = [32.0, 35.51]
+yaw = 180.0
+[[items]]
+id = "storage_box"
+at = [34.0, 35.2]
+[[items]]
+id = "storage_crate"
+at = [30.4, 35.2]
 
 # The hiding spots: where a package may lie among the old things. `at` = [x, y], `h` above the attic floor, `in` the
 # prop that holds it (left out of the line-of-sight test: an open trunk, a wardrobe's doors, a dust sheet lifted).
@@ -221,7 +286,7 @@ in = "trunk"
 name = "CrateWest"
 at = [21.5, 38.6]
 h = 0.4
-in = "crate"
+in = "storage_crate"
 [[spots]]
 name = "SheetSouthWest"
 at = [22.9, 42.4]
@@ -231,7 +296,7 @@ in = "sheeted_furniture"
 name = "BoxSouth"
 at = [25.1, 43.05]
 h = 0.4
-in = "cardboard_box"
+in = "storage_box"
 [[spots]]
 name = "TrunkSouthEast"
 at = [31.6, 43.5]

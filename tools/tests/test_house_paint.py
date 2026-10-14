@@ -34,6 +34,7 @@ class WallPaintTest(unittest.TestCase):
         self.assertEqual(paint["pantry"], "#d3d6c3")  # #158: pale sage
         self.assertEqual(paint["bathroom"], "#d8dfd6")  # #162: pale green-grey over the white tiles
         self.assertEqual(paint["kids_room"], "#c9d7de")  # #166: a pale sky blue beside the greige landing
+        self.assertEqual(paint["attic"], "#ece7de")  # #168: a warm white on the knee walls and gables, never the teal
 
     def test_checks(self):
         bad = copy.deepcopy(self.data)
@@ -62,6 +63,7 @@ class WallPaintTest(unittest.TestCase):
         x, y, w, d = study["rect"]
         self.assertEqual(rooms["study"]["rect"], [x, y, x + w, y + d])
         self.assertEqual(rooms["study"]["band"], [3.1, 6.3])  # the second floor: 3.2 - 0.1 to 3.2 + 3.1
+        self.assertEqual(rooms["attic"]["band"], [6.3, 12.4])  # #168: the knee level up to its gables' tops (6.4 + 6.0)
         self.assertLessEqual(len(req["rooms"]), 16)  # kit_set.gdshader's MAX_PAINTS
         self.assertEqual(hl.walk_request(self.data)["paints"], req)
 

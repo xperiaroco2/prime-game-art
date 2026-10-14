@@ -59,10 +59,13 @@ class LibraryTest(unittest.TestCase):
                                  ("CC0-1.0", True, False), p["id"])
 
     def test_no_task_or_hero_prop_is_here(self) -> None:
-        for pid in ("generator", "wall_switch", "car", "car_lift", "order_board", "assembly_island", "mannequin",
-                    "rocking_horse", "gazebo", "garden_tree"):
+        for pid in ("generator", "wall_switch", "car", "car_lift", "order_board", "assembly_island", "gazebo",
+                    "garden_tree"):
             self.assertNotIn(pid, PROPS)
             self.assertIn(pid, LIB["skip"])
+        for pid in ("mannequin", "rocking_horse"):  # #168: the attic's dress form and rocking horse are library props
+            self.assertIn(pid, PROPS)
+            self.assertNotIn(pid, LIB["skip"])
 
     def test_wall_and_ceiling_props(self) -> None:
         self.assertEqual(PROPS["picture_frame"]["pivot"], "wall")

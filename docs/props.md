@@ -119,6 +119,18 @@ Every room's props follow these rules; the numbers are data in `props/library.to
    props, main 64 and 63); `bunk_bed`, `wardrobe` and `laundry_pile` are no longer placed. `test_props_upper_rooms.py`
    covers them (the spawns Circle08 and Circle10 and the Printer station's points keep 0.3 m clear; the task props
    boxed from `props/tasks.toml`; the `Name` label in no piece and on no light fixture).
+   The attic (#168, library v11), a well-kept family attic: `attic_shelving` and `attic_shelving_b`
+   (`storage_shelving`: steel shelving loaded with labelled boxes and crates), `storage_box` (`lidded_box`, a labelled
+   cardboard box) and `storage_crate` (`plastic_tub`, a lidded plastic crate) in place of the placeholder boxes and
+   crates, `sheeted_sofa` and `sheeted_dresser` (`sheeted_form`: furniture under dust sheets), `leaning_frames`
+   (framed pictures leaning on the knee wall), `holiday_decor` (a boxed tree and garlands), `rocking_horse`,
+   `mannequin` (`dress_form`; both were hero-class skips before), `sports_kit`, and the game's own world:
+   `burger_sign` (signage kept from a burger stall), `delivery_bag` (a retired delivery bag) and `generator_part`;
+   `old_wardrobe` (now `wardrobe_modern`, white), `sheeted_furniture`, `old_bicycle` (`city_bike`) and `trunk` are
+   rebuilt in the present-day look. The pieces are placed by the attic's data
+   (`layouts/house/dressing/attic_roof/attic.toml`, 63 items, main 44); the twelve hiding spots, the pick-ups and the
+   clear areas stay. `tools/tests/test_props_attic.py` checks the pieces' size against `size_m`, pivot, budget and
+   collider, the spots, stations and clear areas, the item count and the `Name` label.
 8. **Route.** Hard-surface props are code (the shared builders, `prop_geom.py`'s `Style`). Meshy only for organic
    one-offs (food, soft goods, plants) at a hero budget, as a recorded batch (`docs/meshy.md`).
 
@@ -237,8 +249,8 @@ Art #87 (map request #73) makes one shared library of generic props (furniture, 
 things) so that every room package places furniture instead of making it. Task props (#82a, #82b), the car and its
 lift (#79), vegetation (#80), the gazebo (#81b) and kit pieces are made elsewhere; `[skip]` in the mapping file names
 who makes each. The plan is `D:/prime-art-raw/research/2026-10-10-house-plan/` (`props.md`, `inventory.md` §9,
-`look.md` §5 and §6). The GLBs stay in the raw folder (`D:/prime-art-raw/props/library/v10/`: v9 with
-#166's kids' room and study; v9 v8 with #164's bedroom and guest room; v8 v7 with #162's rebuilt landing runner; v7 v6 with #162's landing and bathroom built over it; v6 v5 with #158's WC, pantry and stairs; v5 v4 with #156's hallway; v4 v3 with #153's dining room; v3 is v2 with #152's
+`look.md` §5 and §6). The GLBs stay in the raw folder (`D:/prime-art-raw/props/library/v11/`: v10 with
+#168's attic; v10 v9 with #166's kids' room and study; v9 v8 with #164's bedroom and guest room; v8 v7 with #162's rebuilt landing runner; v7 v6 with #162's landing and bathroom built over it; v6 v5 with #158's WC, pantry and stairs; v5 v4 with #156's hallway; v4 v3 with #153's dining room; v3 is v2 with #152's
 cream sofa and armchairs, v2 v1 with #150's living room, v1 the version-1 build) until the engineer approves the look
 on a review page; then they come into the repo under `assets/prop/<id>/` with their manifests.
 
@@ -291,7 +303,7 @@ clutter of art #104 and its story pieces: `laundry_basket`, `drying_rack`, `open
 
 `tools/run.sh props-library --build [--batch 1|2] [--only id,...]` builds the props in one headless Blender run
 (`tools/blender/prop_build.py`) into the mapping file's `out`,
-`D:/prime-art-raw/props/library/v10/`: one `<id>.glb` per prop, `textures/`
+`D:/prime-art-raw/props/library/v11/`: one `<id>.glb` per prop, `textures/`
 (the kit's detail maps), `build.json` (what each GLB holds; batches accumulate) and `props.md` (the build table); then
 it checks every GLB: the mesh and collider nodes, UV2 and vertex colours, at most `max_materials` materials all named
 `-vcol`, glTF-Validator, the class's maximum triangles, a collider unless `none`, a fixture's light anchor. Under the
