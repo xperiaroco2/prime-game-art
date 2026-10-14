@@ -131,6 +131,13 @@ new GLBs, 626 KB of LFS (no other room's prop changed). Draw calls in the hallwa
 before/after): the default tile 28/31, from the front door 28/31, from the far end 33/29, the console and mirror
 11/14, the coat corner 18/14.
 
+The density pass (#156, export p2c) put back a `bookcase` on each long wall and a third plant (`potted_plant`), hung
+the `gallery_wall` (six frames) beside the mirror, enlarged `art_blueprint` (1.2 x 0.9 m) and the `hall_runner`
+(5.2 x 1.5 m), and moved the `umbrella_stand`, `parcels` and `wall_calendar` where the front-door view sees them;
+`art_photos` left the hall. One new GLB (`gallery_wall`), two rebuilt (`art_blueprint`, `hall_runner`); the props set
+no longer commits `doormat.glb` (no package places it). Draw calls (the room only, main/now): the default tile 28/34,
+from the front door 28/34, from the far end 33/31, the console and mirror 11/17, the coat corner 18/15.
+
 ## Credits
 The entries are `assets/kit/house_kit/CREDITS.md` and `assets/prop/house_props/CREDITS.md` in this repo (the game's
 `docs/credits/<id>.md` format; copy them to `docs/credits/house_kit.md` and `house_props.md`): own work, the props made
