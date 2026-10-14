@@ -144,6 +144,8 @@ writes the House's game-ready package (prime-game #523) from the same layout dat
   since #158 `props/library/v6/textures/fine`, the same bytes: v5 with the WC's, the pantry's and the stairs' 21
   props built over it, and `prop_dirs` names library v6 and task v2; since #162 `props/library/v7/textures/fine`, the
   same bytes: v6 with the landing's and the bathroom's 10 props built over it, and `prop_dirs` names library v7;
+  since #162's second round `props/library/v8/textures/fine`, the same bytes: v7 with the rebuilt landing runner
+  built over it, and `prop_dirs` names library v8;
   v1 stays the approved version-1 build;
   `.import` VRAM compressed with mipmaps), `house_props/prop_fine.gdshader` (a copy
   of `godot/props/prop_fine.gdshader`; `tools/tests/test_house_layers.py` fails when the committed copy drifts) and

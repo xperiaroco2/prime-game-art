@@ -5,14 +5,15 @@
 # Paints and shapes are taste data: changing a hex or a prop's roles needs no code change.
 
 library = "house"
-version = 7
+version = 8
 kit_spec = "kits/house.json"
-# the build goes under the raw folder: D:/prime-art-raw/props/library/v7/<id>.glb (v7, #162: v6 with the
+# the build goes under the raw folder: D:/prime-art-raw/props/library/v8/<id>.glb (v8, #162 round 2: v7 with the
+# rebuilt landing runner and the landing's sitting area laid over it; v7, #162: v6 with the
 # landing's and the bathroom's props laid over it; v6, #158: v5 with the WC's, the
 # pantry's and the stairs' props laid over it; v5, #156: v4 with the hallway's props laid over it; v4, #153: v3 with the dining room's props; v3, #152: v2 with the cream sofa and armchairs
 # rebuilt over it; v2, #150: v1 with the living room's 16 rebuilt props and the eight-slot fine pack laid over it;
 # v1 stays the approved version-1 build; no folder is ever overwritten)
-out = "props/library/v7"
+out = "props/library/v8"
 review = "review/house/87"  # line-up sheets, under the raw folder
 licences = ["CC0-1.0"]
 max_materials = 8
@@ -80,7 +81,7 @@ paints = ["wood_front", "wood_front_dark", "worktop_wood", "worktop_stone", "til
           "art_patty", "cushion_rust", "cushion_mustard", "throw_cream",
           "carpet_field", "carpet_border", "carpet_slate", "stone_light", "stone_dark", "book_cream", "book_teal", "book_mustard", "book_red", "book_navy", "book_sage",
           "book_grey", "mirror_glass", "coat_navy", "coat_camel", "kraft", "kraft_tape", "blueprint_blue", "carpet_navy",
-          "coir"]
+          "coir", "carpet_rust"]
 
 # The fine pack: ONE shared opaque material (`kit_fine-vcol`) for the world look's props, as the kit's `set` pack
 # (docs/kit.md "Materials"): the paint is the vertex colour, its alpha picks the layer (1 - k/16 for layer k), and
@@ -198,6 +199,7 @@ kraft_tape = {material = "fine", layer = "paint", hex = "#8d6a44"}
 blueprint_blue = {material = "fine", layer = "paint", hex = "#2b4f7a"}
 carpet_navy = {material = "fine", layer = "carpet", hex = "#34465c"}
 coir = {material = "fine", layer = "carpet", hex = "#a07c52"}
+carpet_rust = {material = "fine", layer = "carpet", hex = "#8a4732"}  # #162: the landing runner's border, a tone of carpet_field
 
 # Inventory props this library does not make, and who does (the manager's split of 2026-10-10).
 [skip]
@@ -3227,13 +3229,13 @@ collision = "none"
 [[prop]]
 id = "landing_runner"
 batch = 1
-name = "Landing runner, slate field and a cream border"
+name = "Landing runner, terracotta wool with a deep rust border and a soft square motif"
 class = "dressing"
 size_m = [8.5, 1.0, 0.012]
 count = 1
 route = "proc"
 shape = "carpet_rug"
-params = {field = "carpet_slate", border = "carpet_border"}
-roles = ["carpet_slate", "carpet_border"]
+params = {field = "carpet_field", border = "carpet_rust", motif = 0.6}  # #162 round 2: tone on tone, never lanes
+roles = ["carpet_field", "carpet_rust"]
 pivot = "floor"
 collision = "none"

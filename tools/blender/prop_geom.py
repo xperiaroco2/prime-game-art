@@ -2361,7 +2361,8 @@ def build_side_table(m, s, R, prm, rng):
 
 def build_carpet_rug(m, s, R, prm, rng):
     """A rug on the carpet layer: a field with a light border band and an inner frame, short fringes at both ends
-    (`fringe`)."""
+    (`fringe`). `motif` (#162, a hallway runner): instead of the inner frame, small squares of the border's paint
+    every `motif` metres down the middle, a soft pattern rather than lines along the length."""
     L, W, H = s
     hx, hz = L / 2, W / 2
     field, border = prm.get("field", "carpet_field"), prm.get("border", "carpet_border")
@@ -2370,11 +2371,18 @@ def build_carpet_rug(m, s, R, prm, rng):
     for x0, x1, z0, z1 in ((-hx + b, hx - b, -hz + b, -hz + b + w), (-hx + b, hx - b, hz - b - w, hz - b),
                            (-hx + b, -hx + b + w, -hz + b + w, hz - b - w), (hx - b - w, hx - b, -hz + b + w, hz - b - w)):
         box(m, (x0, H * 0.7, z0), (x1, H, z1), border, "+x-x+y+z-z")
+    step = float(prm.get("motif", 0.0))
     i = b + w + 0.14
-    for x0, x1, z0, z1 in ((-hx + i, hx - i, -hz + i, -hz + i + 0.025), (-hx + i, hx - i, hz - i - 0.025, hz - i),
-                           (-hx + i, -hx + i + 0.025, -hz + i + 0.025, hz - i - 0.025),
-                           (hx - i - 0.025, hx - i, -hz + i + 0.025, hz - i - 0.025)):
-        box(m, (x0, H * 0.7, z0), (x1, H * 0.85, z1), border, "+x-x+y+z-z")
+    if step > 0:
+        n = max(1, int((L - 2 * i) / step))
+        for k in range(n):
+            cx, q = -(n - 1) * step / 2 + k * step, min(0.07, hz / 4)
+            box(m, (cx - q, H * 0.7, -q), (cx + q, H * 0.85, q), border, "+x-x+y+z-z")
+    else:
+        for x0, x1, z0, z1 in ((-hx + i, hx - i, -hz + i, -hz + i + 0.025), (-hx + i, hx - i, hz - i - 0.025, hz - i),
+                               (-hx + i, -hx + i + 0.025, -hz + i + 0.025, hz - i - 0.025),
+                               (hx - i - 0.025, hx - i, -hz + i + 0.025, hz - i - 0.025)):
+            box(m, (x0, H * 0.7, z0), (x1, H * 0.85, z1), border, "+x-x+y+z-z")
     if prm.get("fringe", True):  # the fringes lie inside the box: the rug's ends are short of size_m by 5 cm
         for sx in (-1, 1):
             z = -hz + 0.03

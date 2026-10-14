@@ -1,7 +1,7 @@
 """`props-library`: the House dressing library (props/library.toml, docs/props.md). Checks the mapping file: classes,
 budgets, paints, the sources' licences and the scale of every pack prop against its inventory size; `--measure` reads
 the packs' glTF files again and compares their bounds and triangles with the record; `--build` makes the GLBs in
-headless Blender (tools/blender/prop_build.py) into the mapping file's out, <raw>/props/library/v7/, and checks them:
+headless Blender (tools/blender/prop_build.py) into the mapping file's out, <raw>/props/library/v8/, and checks them:
 nodes, UV2, vertex colours, `-vcol` materials, glTF-Validator, the class's triangle budget; then Godot's headless import (sizes, pivot, Y up, UV2,
 vertex colours, closed collision, the fixtures' LightAnchor; godot/check/kit.gd); `--sheets DIR` adds the line-up sheets
 from an off-screen Godot window (godot/props/lineup.gd)."""
