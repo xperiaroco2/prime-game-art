@@ -101,71 +101,71 @@ id = "storage_box"
 at = [3.3, 1.02, 0.35]
 face = "S"
 
-# the south wall: deliveries come down the outdoor stairs and wait here
+# deliveries come down the outdoor stairs and wait in the south-west corner and on the north wall, clear of the walk
 
 [[props]]
 id = "pallet"
-at = [1.0, 0, 5.4]
+at = [0.75, 0, 5.4]
 face = "S"
 
 [[props]]
 id = "storage_box"
-at = [0.7, 0.15, 5.4]
+at = [0.35, 0.15, 5.4]
 face = "S"
 
 [[props]]
 id = "storage_box"
-at = [0.7, 0.49, 5.4]
+at = [0.35, 0.49, 5.4]
 face = "S"
 
 [[props]]
 id = "storage_box"
-at = [0.7, 0.83, 5.4]
+at = [0.35, 0.83, 5.4]
 face = "S"
 
 [[props]]
 id = "storage_box"
-at = [1.3, 0.15, 5.4]
+at = [0.95, 0.15, 5.4]
 face = "S"
 
 [[props]]
 id = "storage_box"
-at = [1.3, 0.49, 5.4]
+at = [0.95, 0.49, 5.4]
 face = "S"
 
 [[props]]
 id = "storage_box"
-at = [1.3, 0.83, 5.4]
+at = [0.95, 0.83, 5.4]
 face = "S"
 
 [[props]]
 id = "parcels"
-at = [2.2, 0.0, 5.6]
+at = [4.0, 0.0, 0.35]
 face = "S"
 
 [[props]]
 id = "parcels"
-at = [2.2, 0.46, 5.6]
+at = [4.0, 0.46, 0.35]
 face = "S"
 
 [[props]]
 id = "parcels"
-at = [2.2, 0.92, 5.6]
+at = [4.0, 0.92, 0.35]
 face = "S"
 
 [[props]]
 id = "parcels"
-at = [2.75, 0.0, 5.6]
+at = [4.55, 0.0, 0.35]
 face = "S"
 
 [[props]]
 id = "parcels"
-at = [2.75, 0.46, 5.6]
+at = [4.55, 0.46, 0.35]
 face = "S"
 
 [[props]]
 id = "parcels"
-at = [2.75, 0.92, 5.6]
+at = [4.55, 0.92, 0.35]
 face = "S"
 
 [[props]]
@@ -175,17 +175,17 @@ face = "N"
 
 [[props]]
 id = "delivery_bag"
-at = [3.35, 0, 5.6]
+at = [5.1, 0, 0.35]
 face = "S"
 
 [[props]]
 id = "delivery_bag"
-at = [3.35, 0.46, 5.6]
+at = [5.1, 0.46, 0.35]
 face = "S"
 
 [[props]]
 id = "delivery_bag"
-at = [3.35, 0.92, 5.6]
+at = [5.1, 0.92, 0.35]
 face = "S"
 
 [[props]]

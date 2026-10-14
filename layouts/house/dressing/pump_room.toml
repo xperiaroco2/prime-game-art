@@ -96,7 +96,7 @@ face = "N"
 
 [[props]]
 id = "pump_set_b"
-at = [5.9, 0, 3.6]
+at = [8.5, 0, 3.2]
 face = "N"
 
 [[props]]

@@ -393,52 +393,52 @@ face = "N"
 
 [[props]]
 id = "store_shelving"
-at = [5.5, 0, 8.75]
+at = [5.5, 0, 9.05]
 face = "N"
 
 [[props]]
 id = "storage_box"
-at = [4.78, 2.0, 8.75]
+at = [4.78, 2.0, 9.05]
 face = "N"
 
 [[props]]
 id = "storage_crate"
-at = [5.26, 2.0, 8.75]
+at = [5.26, 2.0, 9.05]
 face = "N"
 
 [[props]]
 id = "storage_box"
-at = [5.74, 2.0, 8.75]
+at = [5.74, 2.0, 9.05]
 face = "N"
 
 [[props]]
 id = "storage_crate"
-at = [6.22, 2.0, 8.75]
+at = [6.22, 2.0, 9.05]
 face = "N"
 
 [[props]]
 id = "store_shelving_b"
-at = [5.5, 0, 9.25]
+at = [5.5, 0, 9.55]
 face = "S"
 
 [[props]]
 id = "storage_box"
-at = [4.78, 2.0, 9.25]
+at = [4.78, 2.0, 9.55]
 face = "S"
 
 [[props]]
 id = "storage_crate"
-at = [5.26, 2.0, 9.25]
+at = [5.26, 2.0, 9.55]
 face = "S"
 
 [[props]]
 id = "storage_box"
-at = [5.74, 2.0, 9.25]
+at = [5.74, 2.0, 9.55]
 face = "S"
 
 [[props]]
 id = "storage_crate"
-at = [6.22, 2.0, 9.25]
+at = [6.22, 2.0, 9.55]
 face = "S"
 
 [[props]]
