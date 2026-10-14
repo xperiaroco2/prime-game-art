@@ -43,7 +43,7 @@
    "level": "ground",
    "node": "Hallway",
    "kit": 4,
-   "props": 23
+   "props": 29
   },
   "terrace": {
    "level": "ground",
@@ -267,7 +267,7 @@
   "levels/house/rooms/living_room.tscn": "9823287aed34254a14c90466751a5a41888e209995cb9acfee2c01227a1b4eb0",
   "levels/house/rooms/stairs.tscn": "55dcf52c71e6328b36ac168654390acfcf9a05d384bfe6ac963f0fe70365f7ac",
   "levels/house/rooms/kitchen.tscn": "031a7bee64794533789a8669f3ee117dd629bffe78a8b5a5204f60f8ebc71f9f",
-  "levels/house/rooms/hallway.tscn": "dc7014d27b4b5c778d2de8ef349861812d2b65d3ab684e481fcab7636efa8e4a",
+  "levels/house/rooms/hallway.tscn": "5f10a5aea70c3c1723d2e37d475952e7dba36ddfde733e002f8e73c94bd98cb7",
   "levels/house/rooms/terrace.tscn": "8b23b8525b371f5f219ad6e4b7c489c2071f2b50b4ca0e57d135439cbb5a5186",
   "levels/house/rooms/yard.tscn": "a69b3e1a1cb7460a36ecaa2b0b7e70a3032270cdba02adbd8fbdef7408f1d2be",
   "levels/house/rooms/street.tscn": "55294850f18dd5bec8d343a3cbc2219f3ecd2ca1cbcbb4902efe8bc6c285f4c8",
