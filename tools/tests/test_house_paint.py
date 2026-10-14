@@ -34,6 +34,7 @@ class WallPaintTest(unittest.TestCase):
         self.assertEqual(paint["pantry"], "#d3d6c3")  # #158: pale sage
         self.assertEqual(paint["bathroom"], "#d8dfd6")  # #162: pale green-grey over the white tiles
         self.assertEqual(paint["kids_room"], "#c9d7de")  # #166: a pale sky blue beside the greige landing
+        self.assertEqual(paint["attic"], "#ece7de")  # #168: a warm white on the knee walls and gables, never the teal
 
     def test_checks(self):
         bad = copy.deepcopy(self.data)
