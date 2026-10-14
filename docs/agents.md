@@ -26,6 +26,9 @@ The drivers overlap: a long agent pays every one of the others on every call.
      `exit=<n>`, prints the `verify:` lines or the last 8 lines and returns n, or 124 while the run goes on (then call
      it again; never start the run again).
    - No Monitor or wait tool may hold the agent idle longer than that.
+   - A task's `verify` is the affected run (the fast tests in parallel, the heavy tests its change needs: a few
+     minutes, not the old 10-18); `verify --full` is the art manager's night run on `main`
+     (`docs/decisions/2026-10-14-verify-affected.md`). Both still go to the background.
 2. **Short agents** (the long agents).
    - A builder step ends at about 60 calls (this replaces the 120 calls of #51's first levers), or earlier at the
      step's natural end.
