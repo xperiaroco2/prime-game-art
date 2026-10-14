@@ -73,6 +73,18 @@ and `package.json` re-exported into `<raw>/review/house/162/export/p4b`.
 
 The bedroom (57 props, 43 different) and the guest room (52 props, 41 different; as many as before, each piece replaced by a better one) are dressed in the world look on their bordeaux `#69413c`. Changed: `bedroom.tscn`, `guest_room.tscn` and `package.json` (16 new props in `house_props`: `bedroom_bed`, `guest_bed`, `bedroom_wardrobe`, `guest_wardrobe`, `bedside_table`, `bedside_set`, `dresser_set`, `dresser_mirror`, `curtains`, `bedroom_rug`, `guest_rug`, `bed_bench`, `suitcase`, `towel_stack`, `storage_boxes`, `clothes_rail`; `double_bed`, `single_bed` and `nightstand` leave the package, which no longer places them). Draw calls of the room itself on the package sheet, before/after: bedroom door 42/54, across 52/55; guest room door 40/45, across 37/53. Re-exported into `<raw>/review/house/164/export/p4`.
 
+## The kids' room and the study (#166)
+
+The kids' room (65 props, 41 different; main had 64) is dressed in the world look on a new pale sky blue `#c9d7de`,
+the study (64 props, 38 different; main had 63) on its navy. Changed: `kids_room.tscn`, `study.tscn`, `bedroom.tscn`
+(its pendant moved off the `Name` label) and `package.json` (14 new props in `house_props`: `kids_bed`,
+`kids_wardrobe`, `kids_bookcase`, `toy_cubby`, `play_rug`, `art_rocket`, `art_dino`, `art_drawing`, `toy_set`,
+`study_bookcase`, `study_rug`, `pin_board`, `monitor_set`, `art_certificate`; `bunk_bed`, `wardrobe` and
+`laundry_pile` leave the package, which no longer places them; the shared `kit_set.tres` carries the new paint).
+The task props stay: the toy chest (Circle08's room), the Printer station's computer set and photo printer. Draw
+calls of the room itself on the package sheet, before/after: kids' room door 51/49, across 50/65; study door 48/56,
+across 41/55; bedroom 54/54 and 55/55. Re-exported into `<raw>/review/house/166/export/p4`.
+
 ## Credits
 As P2: the entries `assets/kit/house_kit/CREDITS.md` and `assets/prop/house_props/CREDITS.md` (copy them to
 `docs/credits/house_kit.md` and `house_props.md`); own work, the props from
