@@ -69,6 +69,10 @@ sources = [
 ]
 tests = ["test_export_*", "test_godot_*"]
 
+[area.ragdoll]
+sources = ["godot/ragdoll/*", "tools/runner/commands/_ragdoll.py", "tools/runner/commands/ragdoll.py"]
+tests = ["test_ragdoll_*", "test_slice_*"]
+
 [area.faces]
 sources = ["faces/*", "tools/blender/faces_*", "tools/runner/commands/faces.py"]
 tests = ["test_faces_*"]
