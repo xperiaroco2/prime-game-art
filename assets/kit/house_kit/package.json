@@ -173,7 +173,7 @@
   "assets/environment/house_kit/wall_storey_end_ext.glb": "5a8c71fbbbd6ede166d879de1be95c156b1ce81f10b80c020fbea113cb226176",
   "assets/environment/house_kit/wall_storey_end_int.glb": "0e01f5a26fcfa710597e38c90f1a98694296227a41fd5204db9c03e724842639",
   "assets/environment/house_kit/kit_set.gdshader": "fc8c2dd82c68fc304dc4b0f9ca714d3834c5d74bec9ef87ecc88f34cfd5d4b87",
-  "assets/environment/house_kit/kit_set.tres": "34e19220c655a67ec00b88269955deb7f95467e6fec838f947dc990ef7e1628e"
+  "assets/environment/house_kit/kit_set.tres": "5d5f5a01df3d3910f113ad1aee4f5c02db737dcec7423b54b0e1547d9d21b23e"
  },
  "questions": [
   "G3: the room scenes are under levels/house/rooms/ (11.1 keeps assets/ data only); the game's workflow swaps them into its greybox rooms (Body/Looks out, Shell/Dressing/Fixtures in).",

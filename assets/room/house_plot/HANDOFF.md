@@ -65,6 +65,12 @@ package's scenes are unchanged.
 Only `package.json` changed: the shared `kit_set.tres` carries the kids' room's paint and hashes anew; this
 package's scenes are unchanged.
 
+## The attic's paint (#168)
+
+Only `package.json` changed: the shared `kit_set.tres` carries the attic's paint and hashes anew; this
+package's scenes are unchanged.
+
+
 ## Credits
 `CREDITS.md` beside `assets/environment/house_outdoor/manifest.toml` and `assets/environment/house_garden/manifest.toml`
 (own work), and `assets/prop/house_props/CREDITS.md` (own work and CC0 packs, named per file in the props manifest);
