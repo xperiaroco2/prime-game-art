@@ -34,7 +34,7 @@ section wins:
 | Clothing | **Pieces in v1:** `top`, `bottom`, `shoes` (skinned, weights transferred from the body), plus a hat or hair (`hair_or_hat`), a face accessory (`face_accessory`) and a back item (`back_item`), rigid on sockets. **Sets are saved presets of pieces**, not separate meshes |
 | Face | **Eyes and mouth are changeable slots, like the hairstyle** (`eyes`, `mouth`). V1 (separate eyeballs) and V3 (a painted face) decide how they are built |
 | Colour | Every piece is **recoloured from one shared palette**; flat colours with no textures, soft light and shadows, no outline by default (compared in renders) |
-| Motion | **Animations only.** Falls and knockdowns are canned animations; no ragdoll and no physical wobble |
+| Motion | **Animations only.** Falls and knockdowns are canned animations; no ragdoll and no physical wobble (changed 2026-10-11 for the knockdown: it is a ragdoll, every other state a clip; `docs/contract.md`, art #115) |
 | First person | **Hands with forearms in the sleeves of your top**, running off the screen edge, plus your own shadow; never floating hands. A true first-person body may come later |
 | Names | A player's name shows only when you aim at them up close. A game rule, built in the game repo; the engineer, as the designer, may object on #165 |
 | AI rules | Never name How to Fish or any other game or character in a prompt, never upload their screenshots, no personal photos; `ai_generated` recorded per asset; never free-plan output |
@@ -61,7 +61,7 @@ it does not choose.
                 (fingers included) unweighted or weighted, A-pose to T-pose applied as rest if needed
  7 weights      4 influences, normalized, none below 0.01; clothing pieces get weights transferred from the body
  8 palette      drop the AI texture; per-face colour snapped to the shared palette; face decals by hand
- 9 animations   bake each source clip onto the contract rig (falls and knockdowns included); fix contacts
+ 9 animations   bake each source clip onto the contract rig (the knockdown is a ragdoll, not a clip: #115); fix contacts
                 (hands meet, reach the head); retime for feel; first-person arm clips for the hands-in-sleeves view
 10 export       export: fixed glTF export options; Khronos glTF-Validator (pinned) -> report.json; a non-zero exit
                 fails; then godot-check (headless import into godot/) and frames (off-screen Godot sheets)

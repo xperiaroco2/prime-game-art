@@ -86,8 +86,8 @@ talking need no mesh change), `hair_or_hat`, `face_accessory` and `back_item` (r
 `bottom` and `shoes` (skinned to profile bones). A set is a preset of pieces, one per slot. Cosmetics are public data
 and never derived from a role.
 
-**Animation.** Skeletal clips on the contract skeleton in one shared library, in place, loops suffixed `_loop`; no
-the knockdown is a ragdoll ("Ragdoll" below); every other state is a clip. Eyes and mouth animate by texture frames, never bones or blend shapes;
+**Animation.** Skeletal clips on the contract skeleton in one shared library, in place, loops suffixed `_loop`; the
+knockdown is a ragdoll ("Ragdoll" below); every other state is a clip. Eyes and mouth animate by texture frames, never bones or blend shapes;
 how a rigid eye or mouth piece shows its frames (its own texture frames or per-instance shader parameters) waits for
 the style answers (H2).
 
