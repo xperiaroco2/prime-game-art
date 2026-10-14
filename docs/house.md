@@ -208,7 +208,8 @@ A package goes to the game from git, not from the raw build (#124): its files ar
 `export/` folders (`docs/manifest.md`: the kit in `assets/kit/house_kit/`, the props in `assets/prop/house_props/`,
 the room scenes of a package in their own `room` set, P2's in `assets/room/house_ground/`), with the package's
 `package.json` beside the manifest that owns it and a `HANDOFF.md` for the game's import task (what to copy where,
-the credits entries, the open questions). P1 to P5 and P7 are approved and merged, their manifests' approval fields set: P1 and P2 in #125, P3 and P5
+the credits entries, the open questions). P8 `task_props` (#82) has no room scenes: its `package.json` and
+`HANDOFF.md` sit beside `assets/prop/house_props/manifest.toml`, which owns every P8 file. P1 to P5 and P7 are approved and merged, their manifests' approval fields set: P1 and P2 in #125, P3 and P5
 in #127, P4 in #130, P7 (with the props, the outdoor and garden sets) in #131; #147 changed P2 and the props (the
 C2-white kitchen, the fine pack, the Detail node; approved in #149), and #150 changed them again (the living room in
 the world look, the fine pack's eight slots), so their approval fields wait again. #150 also re-exported P3 to P5, which place
