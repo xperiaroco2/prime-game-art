@@ -55,6 +55,9 @@ node = "Stairs"
 rect = [26, 30, 8, 6]
 kind = "room"
 floor = "boards"
+# #158: the Name label off the room's middle (30, 33), which is inside the upper flight's top: over the open half,
+# seen whole from the door and across to the flights
+label_at = [31.0, 33.0]
 
 [[rooms]]
 id = "kitchen"

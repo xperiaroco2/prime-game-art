@@ -95,7 +95,8 @@ writes the House's game-ready package (prime-game #523) from the same layout dat
   G3/G11 to the game side, in `package.json`).
 - `levels/house/rooms/<room>.tscn`, one per game room (`house_export.py`): the root named like the game's node,
   `metadata/size_m = Vector2i(w, d)`, `metadata/art_room` and `wall_paint`; the `Name` `Label3D` (the room's title,
-  2.4 m up in its middle, as on the greybox); `Shell` (the room's kit pieces, plus the level scene's stairs and
+  2.4 m up in its middle, as on the greybox, or over the layout room's `label_at` in plan metres where the middle is
+  inside a piece: the stairs, #158); `Shell` (the room's kit pieces, plus the level scene's stairs and
   railings whose pivot stands in it: the smallest such room of their level, else of the level below; the balcony's
   flight lands in the yard); `Dressing`, `Detail` (#147: the props of `props/library.toml`'s `detail` layer, its
   `[layers]` by class, so a graphics preset hides one node; base props stay in `Dressing`; `house_dressing.scene_nodes`)

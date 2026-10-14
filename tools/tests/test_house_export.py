@@ -76,6 +76,22 @@ class HouseExport(unittest.TestCase):
             self.assertIn('[node name="Name" type="Label3D" parent="."]', s["text"], rid)
         self.assertEqual(self.unplaced, [])
 
+    def test_the_name_label_stands_in_the_middle_or_at_label_at(self):
+        # #158: the stairs' middle is inside the upper flight's top, so its layout moves the label over the open half
+        moved = 0
+        for lv in DATA["levels"]:
+            for r in lv["rooms"]:
+                rx, ry, w, d = r["rect"]
+                x, y = r.get("label_at", (rx + w / 2, ry + d / 2))
+                moved += "label_at" in r
+                self.assertTrue(rx < x < rx + w and ry < y < ry + d, r["id"])
+                tf = re.search(r'name="Name" type="Label3D" parent="\."\]\ntransform = Transform3D\(([^)]*)\)',
+                               self.scenes[r["id"]]["text"]).group(1)
+                self.assertEqual([round(float(v), 3) for v in tf.split(",")[9:]],
+                                 [round(x - rx, 3), 2.4, round(y - ry, 3)], r["id"])
+        self.assertEqual(moved, 1)
+        self.assertIn("Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 2.4, 3)", self.scenes["stairs"]["text"])
+
     def test_against_the_games_greybox(self):
         # the pinned snapshot (tools/tests/_house_greybox.py), not the live checkout: a marker the game adds later
         # does not turn this red; test_house_greybox.py watches the live checkout for removed or moved ones
