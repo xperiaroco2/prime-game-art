@@ -4959,3 +4959,45 @@ shape = "steel_cupboard"
 roles = ["switch_grey", "art_white", "chrome", "steel_black"]
 pivot = "floor"
 collision = "box"
+
+[[prop]]
+id = "pegboard_tools"
+batch = 1
+name = "A garage pegboard tool wall: spanners on a rail, screwdrivers, a hammer, pliers, a saw, a level, a shelf of tins"
+class = "room"
+size_m = [2.0, 0.14, 1.2]
+count = 1
+route = "proc"
+shape = "pegboard_tools"
+roles = ["art_white", "chrome", "leaf_green", "paint_blue", "paint_red", "safety_yellow", "steel_black", "steel_warm", "worktop_wood"]
+layer = "base"
+pivot = "wall"
+collision = "box"
+
+[[prop]]
+id = "air_compressor"
+batch = 1
+name = "A wheeled garage air compressor, red tank, a coiled yellow air hose on its handle"
+class = "room"
+size_m = [0.8, 0.38, 0.72]
+count = 1
+route = "proc"
+shape = "air_compressor"
+roles = ["paint_red", "safety_yellow", "art_white", "chrome", "rubber_black", "steel_black", "steel_warm"]
+layer = "base"
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "garden_tool_rack"
+batch = 1
+name = "A wall rail of garden tools: spade, fork, leaf rake, broom, hoe and shears"
+class = "dressing"
+size_m = [1.4, 0.12, 1.75]
+count = 1
+route = "proc"
+shape = "garden_tool_rack"
+roles = ["steel_black", "leaf_green", "paint_blue", "rubber_black", "steel_warm", "worktop_wood"]
+layer = "base"
+pivot = "wall"
+collision = "box"

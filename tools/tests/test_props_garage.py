@@ -28,11 +28,13 @@ BY_ID = {p["id"]: p for p in LIB["prop"]}
 LAYOUT = common.ROOT / "layouts" / "house"
 TASKS = {t["id"]: t for t in tomllib.loads((common.ROOT / "props" / "tasks.toml").read_text(encoding="utf-8"))["props"]}
 
-SOLID = ("garage_car", "lift_posts", "lift_arms", "lift_panel", "tyre_rack", "steel_cupboard")
-WALL = ("part_picture",)
+SOLID = ("garage_car", "lift_posts", "lift_arms", "lift_panel", "tyre_rack", "steel_cupboard", "air_compressor")
+WALL = ("part_picture", "pegboard_tools", "garden_tool_rack")
+NO_COLLIDER = ("part_picture", "floor_lift_zone")
 FLAT = ("floor_lift_zone",)
 NEW = SOLID + WALL + FLAT
-COLLIDERS = {"garage_car": 2, "lift_posts": 3, "lift_arms": 2, "lift_panel": 1, "tyre_rack": 1, "steel_cupboard": 1}
+COLLIDERS = {"garage_car": 2, "lift_posts": 3, "lift_arms": 2, "lift_panel": 1, "tyre_rack": 1, "steel_cupboard": 1,
+             "air_compressor": 1, "pegboard_tools": 1, "garden_tool_rack": 1}
 MOVING = ("lift_arms", "garage_car")  # the CarLift station's pieces the game raises and drops together
 OVER_M = 0.015
 CLEAR_M = 0.3
@@ -156,8 +158,11 @@ class GaragePropsTest(unittest.TestCase):
                 for pt in c["points"]:
                     self.assertLessEqual(abs(pt[0]), sx / 2 + OVER_M, pid)
                     self.assertTrue(-1e-3 <= pt[1] <= sy + OVER_M, pid)
-                    self.assertLessEqual(abs(pt[2]), sz / 2 + OVER_M, pid)
-        for pid in WALL + FLAT:
+                    if pid in WALL:  # the back on the wall: z from 0 to the depth
+                        self.assertTrue(-1e-3 <= pt[2] <= sz + OVER_M, pid)
+                    else:
+                        self.assertLessEqual(abs(pt[2]), sz / 2 + OVER_M, pid)
+        for pid in NO_COLLIDER:
             self.assertEqual(self.built[pid]["colliders"], [], pid)
             self.assertEqual(BY_ID[pid].get("layer"), "base", pid)
 

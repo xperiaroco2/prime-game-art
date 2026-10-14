@@ -6347,6 +6347,120 @@ def build_tyre_rack(m, s, R, prm, rng):
         box(m, (x0 + 0.02, top - 0.001, -0.03), (x1 - 0.02, top + 0.002, 0.03), "kraft_tape", "+y")
 
 
+def build_pegboard_tools(m, s, R, prm, rng):
+    """#79: a garage pegboard tool wall (wall pivot, the board's back on the wall): a board in R[0] in a steel frame,
+    its peg holes, and a full set hung in rows: spanners on a rail, screwdrivers, a hammer, pliers, a saw, a spirit
+    level, a tape measure and a small shelf of tins. Every tool is new and clean."""
+    L, W, H = s
+    hx = L / 2
+    zb = 0.03
+    cbox(m, (-hx, 0.0, 0.0), (hx, H, zb), R[0], 0.004)
+    for x0, x1, y0, y1 in ((-hx, hx, 0.0, 0.03), (-hx, hx, H - 0.03, H), (-hx, -hx + 0.03, 0.0, H), (hx - 0.03, hx, 0.0, H)):
+        box(m, (x0, y0, zb), (x1, y1, zb + 0.008), "steel_black", "+z+x-x+y-y")
+    step = 0.15
+    for i in range(int((L - 0.1) / step)):
+        for j in range(int((H - 0.1) / step)):
+            x, y = -hx + 0.1 + i * step, 0.1 + j * step
+            box(m, (x - 0.006, y - 0.006, zb), (x + 0.006, y + 0.006, zb + 0.0005), "steel_black", "+z")
+    z1 = zb + 0.012
+    # spanners on a rail, top left
+    box(m, (-hx + 0.1, H - 0.16, zb), (-hx + 0.75, H - 0.14, z1), "steel_black", "+z+y-y")
+    for k in range(8):
+        x = -hx + 0.14 + k * 0.08
+        ln = 0.14 + 0.018 * k
+        rod(m, (x, H - 0.17, z1), (x, H - 0.17 - ln, z1), 0.008, "chrome", 6)
+        box(m, (x - 0.02, H - 0.19 - ln, zb + 0.004), (x + 0.02, H - 0.17 - ln, z1 + 0.004), "chrome", "+z+x-x-y")
+    # screwdrivers, top right: handles in three colours
+    for k, role in enumerate(("paint_red", "safety_yellow", "paint_blue", "paint_red", "safety_yellow", "paint_blue")):
+        x = 0.25 + k * 0.09
+        cyl(m, "y", (x, z1 + 0.02), 0.016, H - 0.25, H - 0.13, role, 8)
+        rod(m, (x, H - 0.25, z1 + 0.02), (x, H - 0.4 - 0.02 * (k % 3), z1 + 0.02), 0.004, "chrome", 5)
+    # the hammer and the pliers, middle left
+    box(m, (-hx + 0.2, 0.4, zb), (-hx + 0.24, 0.7, z1 + 0.02), "worktop_wood", "+z+x-x-y")
+    box(m, (-hx + 0.13, 0.7, zb), (-hx + 0.31, 0.75, z1 + 0.03), "steel_black", "+z+x-x+y-y")
+    for sx, role in ((-1, "paint_red"), (1, "paint_red")):
+        rod(m, (-hx + 0.45, 0.7, z1), (-hx + 0.45 + sx * 0.04, 0.5, z1), 0.008, role, 6)
+    rod(m, (-hx + 0.45, 0.7, z1), (-hx + 0.45, 0.78, z1), 0.009, "steel_black", 6)
+    # the saw, middle
+    bar(m, (-0.25, 0.68, z1), (0.25, 0.68, z1), 0.1, "steel_warm", h=0.003)
+    box(m, (0.25, 0.62, zb), (0.37, 0.74, z1 + 0.015), "paint_red", "+z+x-x+y-y")
+    # the spirit level and the tape measure
+    box(m, (-0.3, 0.38, zb), (0.4, 0.43, z1 + 0.025), "safety_yellow", "+z+x-x+y-y")
+    box(m, (0.0, 0.395, z1 + 0.025), (0.06, 0.415, z1 + 0.027), "steel_black", "+z")
+    cyl(m, "z", (0.6, 0.6), 0.04, zb, z1 + 0.035, "safety_yellow", 10, cap_role="steel_black")
+    # a small shelf of tins, bottom right
+    box(m, (0.45, 0.2, zb), (hx - 0.08, 0.22, 0.13), "steel_black", "+y-y+z")
+    for k, role in enumerate(("paint_blue", "art_white", "paint_red", "leaf_green")):
+        x = 0.52 + k * 0.1
+        cyl(m, "y", (x, 0.08), 0.035, 0.22, 0.31 + 0.02 * (k % 2), role, 10, cap_role="chrome")
+
+
+def build_air_compressor(m, s, R, prm, rng):
+    """#79: a garage air compressor on wheels: a horizontal tank in R[0], a motor and pump on top, a gauge and outlet
+    on a front plate, a handle, rubber feet, and a coiled air hose in R[1] hung on its handle."""
+    L, W, H = s
+    hx, hz = L / 2, W / 2
+    r = 0.16
+    cyl(m, "x", (r + 0.04, 0.0), r, -hx + 0.07, hx - 0.03, R[0], 16, cap_role=R[0])
+    for x, d in ((-hx + 0.07, -0.03), (hx - 0.03, 0.03)):
+        cyl(m, "x", (r + 0.04, 0.0), r * 0.85, x, x + d, R[0], 16)
+    for sz in (-1, 1):
+        cyl(m, "z", (-hx + 0.13, 0.09), 0.09, sz * (hz - 0.05), sz * hz, "rubber_black", 12, cap_role="steel_black")
+        box(m, (hx - 0.22, 0.0, sz * 0.12 - 0.03), (hx - 0.16, 0.05, sz * 0.12 + 0.03), "rubber_black")
+    ytop = 2 * r + 0.04
+    cbox(m, (-0.2, ytop, -0.11), (0.12, ytop + 0.17, 0.11), "steel_black", 0.01)  # the motor
+    for k in range(5):
+        box(m, (-0.18 + k * 0.06, ytop + 0.17, -0.1), (-0.16 + k * 0.06, ytop + 0.19, 0.1), "steel_black", "+y+x-x")
+    cyl(m, "y", (0.22, 0.0), 0.06, ytop, ytop + 0.14, "steel_warm", 10, cap_role="steel_black")  # the pump head
+    box(m, (0.12, ytop + 0.02, hz - 0.1), (0.3, ytop + 0.16, hz - 0.08), "art_white", "+z+x-x+y-y")
+    cyl(m, "z", (0.17, ytop + 0.09), 0.035, hz - 0.08, hz - 0.06, "chrome", 12, cap_role="art_white")
+    cyl(m, "z", (0.26, ytop + 0.09), 0.02, hz - 0.08, hz - 0.04, "safety_yellow", 8)
+    # the handle: two uprights at the wheel end and a grip
+    for sz in (-1, 1):
+        rod(m, (-hx + 0.05, 0.25, sz * 0.12), (-hx + 0.02, H - 0.03, sz * 0.12), 0.012, "steel_black", 6)
+    box(m, (-hx, H - 0.04, -0.14), (-hx + 0.035, H, 0.14), "rubber_black")
+    # the coiled hose on the handle
+    tube(m, "x", (H - 0.16, 0.0), 0.09, 0.115, -hx + 0.035, -hx + 0.1, R[1], 14)
+
+
+def build_garden_tool_rack(m, s, R, prm, rng):
+    """#79: a wall rail of garden tools (wall pivot): a steel rail in R[0] with hooks, a spade, a fork, a leaf rake,
+    a broom, a hoe and shears, their wooden handles hanging to just above the floor."""
+    L, W, H = s
+    hx = L / 2
+    yr = H - 0.12
+    cbox(m, (-hx, yr - 0.04, 0.0), (hx, yr + 0.04, 0.03), R[0], 0.004)
+    n = 5
+    xs = [-hx + 0.12 + (L - 0.24) * k / (n - 1) for k in range(n)]
+    zc = 0.08
+    for x in xs:
+        box(m, (x - 0.01, yr - 0.02, 0.03), (x + 0.01, yr, zc + 0.02), "steel_black", "+y-y+x-x+z")
+        rod(m, (x, yr + 0.08, zc), (x, 0.42, zc), 0.016, "worktop_wood", 6)
+    x = xs[0]  # the spade
+    cbox(m, (x - 0.09, 0.08, zc - 0.012), (x + 0.09, 0.42, zc + 0.012), "steel_warm", 0.004)
+    box(m, (x - 0.07, yr + 0.08, zc - 0.02), (x + 0.07, yr + 0.11, zc + 0.02), "rubber_black")
+    x = xs[1]  # the fork
+    box(m, (x - 0.09, 0.38, zc - 0.012), (x + 0.09, 0.42, zc + 0.012), "steel_warm")
+    for k in range(4):
+        xt = x - 0.075 + k * 0.05
+        rod(m, (xt, 0.38, zc), (xt, 0.1, zc), 0.007, "steel_warm", 5)
+    x = xs[2]  # the leaf rake: a fan of tines in green
+    for k in range(9):
+        a = math.radians(-40 + 10 * k)
+        rod(m, (x, 0.42, zc), (x + 0.3 * math.sin(a), 0.42 - 0.3 * math.cos(a), zc), 0.005, R[1], 4)
+    box(m, (x - 0.2, 0.2, zc - 0.008), (x + 0.2, 0.22, zc + 0.008), R[1])
+    x = xs[3]  # the broom: a head with bristles
+    cbox(m, (x - 0.16, 0.22, zc - 0.03), (x + 0.16, 0.3, zc + 0.03), "paint_blue", 0.005)
+    box(m, (x - 0.15, 0.0, zc - 0.025), (x + 0.15, 0.22, zc + 0.025), "rubber_black", "+x-x+y-y+z-z")
+    x = xs[4]  # the hoe
+    box(m, (x - 0.08, 0.3, zc - 0.006), (x + 0.08, 0.42, zc + 0.006), "steel_warm")
+    # shears on two pegs between the spade and the fork
+    xm = (xs[0] + xs[1]) / 2
+    for sx in (-1, 1):
+        rod(m, (xm, yr - 0.05, 0.05), (xm + sx * 0.05, yr - 0.5, 0.05), 0.008, "steel_warm", 5)
+        rod(m, (xm, yr - 0.05, 0.05), (xm - sx * 0.02, yr + 0.1, 0.05), 0.014, R[1], 6)
+
+
 BUILDERS = {name[6:]: fn for name, fn in dict(globals()).items() if name.startswith("build_") and callable(fn)}
 
 
