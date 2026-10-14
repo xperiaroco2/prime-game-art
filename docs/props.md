@@ -74,7 +74,7 @@ Every room's props follow these rules; the numbers are data in `props/library.to
    0.8 m) stay clear.
    The ground floor's small rooms (#158) add the WC's `wc_toilet` (a close-coupled porcelain toilet), `wc_vanity`
    (oak drawers, a stone top, a sit-on basin and the pillar `tap`), `mirror_cabinet`, `washer` and `tumble_dryer`
-   (shape `washing_machine`), the tiled lower wall `wc_tiles` (shape `backsplash`, class clutter on the base layer)
+   (shape `washing_machine`), the tiled lower wall `wc_tiles` (shape `backsplash`, class room on the base layer, like the kitchen's backsplash)
    and the joke print `art_wash` (`framed_art` kind `wash`: a plasticine person in suds, rated five stars), with the
    detail props `towel_ring`, `roll_holder`, `pedal_bin`, `toilet_brush` and `reed_diffuser`; the pantry's
    `pantry_shelf` and `pantry_shelf_buns` (hero: one `pantry_shelf` builder stocked shelf by shelf from `stock`,
