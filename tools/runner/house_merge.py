@@ -134,7 +134,7 @@ def pack(sizes: list[tuple[float, float]], gap: float = GAP_M) -> tuple[list[tup
 
 def merge(items: list[dict], out: Path, gap: float = GAP_M) -> dict:
     """items: {"glb": path, "transform": the scene's Transform3D text, "class": "floor" | "ceiling" | "shell",
-    "uv2_per_m": the piece's UV2 density}. Writes out (a GLB) and returns {"classes": {class: {"uv2_per_m",
+    "uv2_per_m": the piece's UV2 density, None for a piece without UV2}. Writes out (a GLB) and returns {"classes": {class: {"uv2_per_m",
     "materials", "vertices", "triangles", "pieces"}}}."""
     cache: dict = {}
     by_class: dict = {}
@@ -161,17 +161,20 @@ def merge(items: list[dict], out: Path, gap: float = GAP_M) -> dict:
     for cls in sorted(by_class):
         its = by_class[cls]
         # UV2: each piece's islands' box, in metres at its density, packed into one square
+        # (a class with a piece lacking UV2, such as a prop Godot unwraps on import, gets no TEXCOORD_1 at all)
+        has_uv2 = all(p["uv1"] for it in its for p in cache[it["glb"]])
         boxes = []
         for it in its:
-            uv = [t for p in cache[it["glb"]] if p["uv1"] for t in p["uv1"]]
+            uv = [t for p in cache[it["glb"]] if p["uv1"] for t in p["uv1"]] or [(0.0, 0.0), (1.0, 1.0)]
             u0, v0 = min(t[0] for t in uv), min(t[1] for t in uv)
             u1, v1 = max(t[0] for t in uv), max(t[1] for t in uv)
-            boxes.append((u0, v0, (u1 - u0) / it["uv2_per_m"], (v1 - v0) / it["uv2_per_m"]))
+            per = it.get("uv2_per_m") or 1.0
+            boxes.append((u0, v0, (u1 - u0) / per, (v1 - v0) / per))
         corners, side = pack([(b[2], b[3]) for b in boxes], gap)
         groups: dict = {}
         for it, box, corner in zip(its, boxes, corners):
             m = rows_of(it["transform"])
-            k = 1.0 / it["uv2_per_m"]
+            k = 1.0 / (it.get("uv2_per_m") or 1.0)
             for p in cache[it["glb"]]:
                 g = groups.setdefault(p["material"]["name"], {"material": p["material"], "pos": [], "nrm": [],
                                                               "uv0": [], "uv1": [], "col": [], "idx": []})
@@ -183,7 +186,9 @@ def merge(items: list[dict], out: Path, gap: float = GAP_M) -> dict:
                              for t in (p["uv1"] or [(box[0], box[1])] * len(p["pos"]))]
                 g["col"] += p["col"] or [(1, 1, 1, 1)] * len(p["pos"])
                 g["idx"] += [base + i for i in p["idx"]]
-        prims, rec = [], {"uv2_per_m": 1.0 / side, "materials": [], "vertices": 0, "triangles": 0, "pieces": len(its)}
+        prims = []
+        rec = {"uv2_per_m": 1.0 / side if has_uv2 else None, "materials": [], "vertices": 0, "triangles": 0,
+               "pieces": len(its)}
         for name in sorted(groups):
             g = groups[name]
             if name not in mat_index:
@@ -199,11 +204,12 @@ def merge(items: list[dict], out: Path, gap: float = GAP_M) -> dict:
                 "NORMAL": put(struct.pack(f"<{3 * n}f", *[c for v in g["nrm"] for c in v]), 5126, "VEC3", n, 34962),
                 "TEXCOORD_0": put(struct.pack(f"<{2 * n}f", *[c for v in g["uv0"] for c in v]), 5126, "VEC2", n,
                                   34962),
-                "TEXCOORD_1": put(struct.pack(f"<{2 * n}f", *[c for v in g["uv1"] for c in v]), 5126, "VEC2", n,
-                                  34962),
                 "COLOR_0": put(struct.pack(f"<{4 * n}H", *[max(0, min(65535, round(c * 65535))) for v in g["col"]
                                                             for c in v]), 5123, "VEC4", n, 34962),
             }
+            if has_uv2:
+                att["TEXCOORD_1"] = put(struct.pack(f"<{2 * n}f", *[c for v in g["uv1"] for c in v]), 5126, "VEC2", n,
+                                        34962)
             acc = accessors[att["COLOR_0"]]
             acc["normalized"] = True
             idx = put(struct.pack(f"<{len(g['idx'])}{'I' if big else 'H'}", *g["idx"]), 5125 if big else 5123,
@@ -213,7 +219,8 @@ def merge(items: list[dict], out: Path, gap: float = GAP_M) -> dict:
             rec["vertices"] += n
             rec["triangles"] += len(g["idx"]) // 3
         meshes.append({"name": f"merged_{cls}", "primitives": prims})
-        nodes.append({"name": f"merged_{cls}", "mesh": len(meshes) - 1, "extras": {"uv2_per_m": rec["uv2_per_m"]}})
+        nodes.append({"name": f"merged_{cls}", "mesh": len(meshes) - 1,
+                      **({"extras": {"uv2_per_m": rec["uv2_per_m"]}} if has_uv2 else {})})
         record["classes"][cls] = rec
     gltf = {"asset": {"version": "2.0", "generator": "prime-game-art house_merge (#107)"},
             "scene": 0, "scenes": [{"name": "Scene", "nodes": list(range(len(nodes)))}],
