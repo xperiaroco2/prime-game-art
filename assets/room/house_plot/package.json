@@ -112,7 +112,7 @@
   "assets/environment/house_props/watering_can.glb": "60a0629d699b0b4ee3d29d5107c5d20d7fc5228f61d3241c723639fa2ff1584e",
   "assets/environment/house_props/wheelbarrow.glb": "cd401c34e98ba89364410e2124b6ff8f01b17fb0b102843f2523a0d50d6d6b5a",
   "assets/environment/house_kit/kit_set.gdshader": "fc8c2dd82c68fc304dc4b0f9ca714d3834c5d74bec9ef87ecc88f34cfd5d4b87",
-  "assets/environment/house_kit/kit_set.tres": "61be1ab777333abbd161ba6554b3c4dc4b6b336e20467a5bf0cb257e4ca8d4e2",
+  "assets/environment/house_kit/kit_set.tres": "c22b96186ee6f2e3321f330e9b4573dcd87af9552f352a44b2843c4f9bfd0d2e",
   "levels/house/rooms/greenhouse.tscn": "607e7d0c2914d61e776bad395eefb372cc332c11db7ef8cf93bf73eccd35d44d",
   "levels/house/rooms/garden.tscn": "1b181884d927d0a75b8c6c8566ac9ebe1174a3de66ec28254d7ba9fe72a3f2fa",
   "levels/house/outdoor.tscn": "e62f14e1b5ab835d1aae5f22bcc519f69707a5358703f55f138358be86344a1a"
