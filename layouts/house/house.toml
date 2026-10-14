@@ -262,6 +262,36 @@ at = [39.4, 28.0]  # #170: from the generator hall's door along the matting to t
 look = [30.0, 28.0]
 look_h = 1.2
 [[export.sheet_views]]
+room = "generator_hall"
+title = "generator hall: across the plant"
+at = [57.3, 41.3]  # #172: from the south-east corner over the generator's marked floor to the fuel bund and the desk
+look = [45.0, 26.0]
+look_h = 1.0
+[[export.sheet_views]]
+room = "boiler_room"
+title = "boiler room: toward the boilers"
+at = [30.6, 45.4]  # #172: from the south-west corner along the boilers, the cylinder and the pipework to the door
+look = [39.0, 35.0]
+look_h = 1.2
+[[export.sheet_views]]
+room = "pump_room"
+title = "pump room: across the pumps"
+at = [53.4, 49.4]  # #172: from the south-east corner over the pump plinths and the tank to the door
+look = [45.0, 43.0]
+look_h = 0.9
+[[export.sheet_views]]
+room = "switch_room"
+title = "switch room: along the cabinets"
+at = [42.5, 16.6]  # #172: from the north-west corner along the cabinets and the meter panel to the door
+look = [49.5, 21.4]
+look_h = 1.1
+[[export.sheet_views]]
+room = "passage"
+title = "passage: toward the hall"
+at = [65.4, 33.4]  # #172: from the far corner along the lit passage back to the generator hall's door
+look = [58.3, 29.0]
+look_h = 1.2
+[[export.sheet_views]]
 room = "attic"
 title = "roof: from dormer, 1.6 m"
 at = [34.9, 43.6]  # the dormer's climb-out (dressing/attic_roof/attic.toml's roof.arrive)
