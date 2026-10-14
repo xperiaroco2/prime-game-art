@@ -92,3 +92,21 @@ CC0 packs named per file in the props manifest, `ai_generated = false`, `public_
   attic's 1920 rays down hit 1857 `wood` and 59 `carpet`, nothing without a surface; the roof's 2288 rays down from
   over the ridge hit 2100 `concrete` and miss 188, all past the eaves and the gables (no floor there). The hatch
   ladder's walk needs the floor under it (P4) and the dormer's climb-out has no walk in the check yet.
+
+## Merged shell (#107)
+
+Draw calls, not the look. Each room's own static kit pieces of a class (floors, ceilings, the rest of the shell) are
+drawn by one merged mesh per material, `Shell/merged_<class>` (`house_kit/merged/<class>_m_<level>_<room>.glb`, the
+kit's set material on its `kit_set` surfaces with `plan_at` at the room's origin), and each room's static dressing by
+one mesh per group, `Dressing/batch_dressing`, `Detail/batch_detail`, `Fixtures/batch_fixtures`
+(`house_props/merged/batch_*.glb`, the fine material on its `kit_fine` surfaces; a preset hiding `Detail` hides its
+batch too). Here: 2 merged shell meshes and 1 batches, committed in `export/merged/`
+(copy them to `assets/environment/house_kit/merged/` and `assets/environment/house_props/merged/`, as
+`package.json` lists them).
+- Every piece and prop instance is still there with its name, transform, colliders and metadata (`surface`,
+  `station`, `prop`); only its own mesh node carries `visible = false`. `test_house_contract` checks every
+  game-facing node and collider of this package against main's export (layouts/house/export_contract.json): unchanged.
+- Never merged: the pieces the game moves or opens (house.toml `[merge] keep`: gates, wicket, garage door, glass door,
+  the attic ladder and hatch boards), task stations and `[merge] keep_props` (the garage's car, lift arms and lift
+  panel). A game-side script that moves another prop must move it out of its batch (ask the art side).
+- Numbers: the export sheet's attic views draw 66 and 68 calls before, 15 and 15 after.
