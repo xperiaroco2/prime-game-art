@@ -4468,7 +4468,7 @@ def build_storage_shelving(m, s, R, prm, rng):
     u = 0.035
     for sx in (-1, 1):
         for sz in (-1, 1):
-            x, z = sx * (hx - u / 2), sz * (hz - u / 2)
+            x, z = sx * (hx - u / 2 - 0.01), sz * (hz - u / 2 - 0.01)  # the feet's 10 mm lip inside size_m
             box(m, (x - u / 2, 0.012, z - u / 2), (x + u / 2, H, z + u / 2), frame, "+x-x+y+z-z")
             box(m, (x - u / 2 - 0.01, 0.0, z - u / 2 - 0.01), (x + u / 2 + 0.01, 0.012, z + u / 2 + 0.01),
                 "rubber_black", "+x-x+y+z-z")
@@ -4480,7 +4480,7 @@ def build_storage_shelving(m, s, R, prm, rng):
         for z0, z1, fc in ((hz - 0.03, hz, "+y-y+z"), (-hz, -hz + 0.03, "+y-y-z")):
             box(m, (-hx + u, y - 0.055, z0), (hx - u, y, z1), frame, fc)
     for sx in (-1, 1):
-        x = sx * (hx - u / 2)
+        x = sx * (hx - u / 2 - 0.01)
         for a, b in zip(ys, ys[1:]):
             bar(m, (x, a, -hz + u), (x, b, hz - u), 0.014, frame, h=0.004, ref=(1, 0, 0))
             bar(m, (x, a, hz - u), (x, b, -hz + u), 0.014, frame, h=0.004, ref=(1, 0, 0))
@@ -4544,7 +4544,7 @@ def build_holiday_decor(m, s, R, prm, rng):
         blob(m, (x, th - 0.02 + rng.uniform(-0.02, 0.03), z), r, r, r,
              ("paint_red", "book_mustard", "art_white", "leaf_green", "paint_blue")[k % 5], 6, 3)
     for k in range(3):
-        x = -hx + 0.1 + (tx1 + hx - 0.2) * k / 2
+        x = -hx + 0.13 + (tx1 + hx - 0.26) * k / 2  # the 0.12 m garlands stay inside size_m
         blob(m, (x, th + 0.01, rng.uniform(-0.1, 0.1)), 0.12, 0.03, 0.06, ("leaf_green", "book_mustard", "paint_red")[k],
              6, 2)
     tube(m, "y", (tx1 - 0.16, hz - 0.16), 0.06, 0.1, th - 0.02, th + 0.03, "leaf_dark", 10)
@@ -4702,8 +4702,8 @@ def build_leaning_frames(m, s, R, prm, rng):
     hx, hz = L / 2, W / 2
     rng = random.Random(77)
     specs = [(-hx, -hx + L * 0.9, H, -hz, "worktop_wood", prm.get("back", "city")),
-             (-hx + L * 0.28, hx, H * 0.7, -hz + W * 0.36, "steel_black", "photos"),
-             (-hx + L * 0.06, -hx + L * 0.5, H * 0.48, -hz + W * 0.7, "art_white", "abstract")]
+             (-hx + L * 0.28, hx, H * 0.7, -hz + (W - 0.04) / 2, "steel_black", "photos"),
+             (-hx + L * 0.06, -hx + L * 0.5, H * 0.48, hz - 0.04, "art_white", "abstract")]  # the front at size_m's
     for x0, x1, h, z0, fr, kind in specs:
         _framed(m, x0, x1, 0.012, h, z0, z0 + 0.03, 0.035, 0.04, fr, kind, rng)
         for x in (x0 + 0.05, x1 - 0.05):
@@ -4741,9 +4741,9 @@ def build_sheeted_form(m, s, R, prm, rng):
     for k in range(nf):
         x = -hx + 0.12 + (L - 0.24) * k / (nf - 1) + rng.uniform(-0.03, 0.03)
         hf = H * rng.uniform(0.32, 0.5)
-        blob(m, (x, hf / 2, hz - 0.005), 0.035, hf / 2, 0.03, cloth, 6, 3)
+        blob(m, (x, hf / 2, hz - 0.02), 0.035, hf / 2, 0.03, cloth, 6, 3)  # 10 mm proud: inside size_m
     for sx in (-1, 1):
-        blob(m, (sx * (hx - 0.005), H * 0.2, hz * 0.2), 0.03, H * 0.2, hz * 0.4, cloth, 6, 3)
+        blob(m, (sx * (hx - 0.02), H * 0.2, hz * 0.2), 0.03, H * 0.2, hz * 0.4, cloth, 6, 3)
     leg(m, hx - 0.1, hz - 0.09, 0.0, 0.1, 0.025, "worktop_wood")
 
 
