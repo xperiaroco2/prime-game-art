@@ -158,7 +158,8 @@ writes the House's game-ready package (prime-game #523) from the same layout dat
   `.import` VRAM compressed with mipmaps), `house_props/prop_fine.gdshader` (a copy
   of `godot/props/prop_fine.gdshader`; `tools/tests/test_house_layers.py` fails when the committed copy drifts) and
   `prop_fine_high.tres`, `prop_fine_low.tres` (`house_export.fine_material_text`: the shader, the tier's textures, the
-  layers' roughness, metallic, normal strength and gain). Each such prop instance in a room overrides its `kit_fine`
+  layers' roughness, metallic, normal strength and gain). Each such prop instance in a room, and since #82 in P7's plot scene
+  `outdoor.tscn` (`house_export_plot.fine_nodes`), overrides its `kit_fine`
   surfaces with `prop_fine_<fine_tier>.tres` (`fine_tier = "high"`; `house_export.set_surfaces` reads them from the
   GLB). The game swaps the tier per graphics preset (P2's `HANDOFF.md`). Only a package holding a `kit_fine` prop
   ships the fine pack, and every such package writes it under the same game paths (P2, committed with it, the other
