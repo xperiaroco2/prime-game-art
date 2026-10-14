@@ -1,0 +1,117 @@
+# The garage's dressing (art #79, package P6; docs/house.md "Dressing", docs/props.md "The garage"): the props and
+# light fixtures of one room, as data. at = [x, h, z]: room-local metres like the room's stations (x east, h above the
+# floor, z south from the room's north-west corner) at the prop's pivot (floor: the footprint's centre; wall: the
+# back's bottom centre on the wall's face; ceiling: the top's centre). face = the way the prop's front (+Z) looks.
+# Every prop is hand-placed (house_clutter.RULES keeps the room empty). The room (18 x 14 m, concrete grey #8f897d):
+# the gates (8 m) in the south wall at x 6 to 14, the side door to the yard in the west wall at z 10, the back door to
+# the outdoor stairs in the north wall at x 11. The car stands on its two-post lift at CarLift (10, 7), its nose to
+# the north; the lift panel's pedestal at LiftPanel (3, 12) has its blind side: a tyre rack and two tall cupboards
+# between it and the car (tools/tests/test_props_garage.py casts the rays). Positions are the engineer's to change.
+room = "garage"
+
+# The car on its lift (the CarLift station's set): the posts stay; the arms and the car move together, by
+# `lift_raise_m` (1.24 m: the sills' underside from 0.16 m to the car repair ADR's 1.4 m, RD2), the game's drop.
+
+[[props]]
+id = "lift_posts"
+at = [10.0, 0, 7.0]
+face = "N"
+station = "CarLift"
+note = "static: the posts across the car's middle, x 8.2 to 11.8"
+
+[[props]]
+id = "lift_arms"
+at = [10.0, 0.04, 7.0]
+face = "N"
+station = "CarLift"
+note = "moves with the car: the pads' tops at 0.16 m under the sills (raised: +1.24 m)"
+
+[[props]]
+id = "garage_car"
+at = [10.0, 0, 7.0]
+face = "N"
+station = "CarLift"
+note = "moves with the arms: lowered on its wheels; raised, its underside at 1.4 m (RD2)"
+
+[[props]]
+id = "floor_lift_zone"
+at = [10.0, 0, 7.0]
+face = "N"
+station = "CarLift"
+
+# The lift panel and its blind side: the holder stands at LiftPanel (3, 12), looking north at the pedestal; behind
+# it a closed-back tyre rack and two tall steel cupboards hide the space under the car.
+
+[[props]]
+id = "lift_panel"
+at = [3.0, 0, 11.6]
+face = "S"
+station = "LiftPanel"
+note = "its front 0.25 m north of the station marker"
+
+[[props]]
+id = "tyre_rack"
+at = [2.9, 0, 11.0]
+face = "S"
+station = "LiftPanel"
+note = "its closed back toward the car"
+
+[[props]]
+id = "steel_cupboard"
+at = [4.6, 0, 11.05]
+face = "S"
+
+[[props]]
+id = "steel_cupboard"
+at = [5.85, 0, 11.05]
+face = "S"
+
+# The part picture: on the east wall beside the car, where the fitter sees it.
+
+[[props]]
+id = "part_picture"
+at = [17.9, 1.3, 6.5]
+face = "W"
+
+# The workbench (the delivery drop-off, the motor oil) under the east window, its front 1.1 m from the station.
+
+[[props]]
+id = "workbench"
+at = [17.5, 0, 3.0]
+face = "W"
+station = "Workbench"
+
+[[props]]
+id = "tool_chest"
+at = [16.6, 0, 0.45]
+face = "S"
+
+[[props]]
+id = "parts_shelving"
+at = [6.6, 0, 0.35]
+face = "S"
+
+[[props]]
+id = "parts_shelving"
+at = [8.7, 0, 0.35]
+face = "S"
+
+[[props]]
+id = "drum_bund_b"
+at = [17.1, 0, 13.1]
+face = "W"
+
+[[props]]
+id = "wall_hose_reel"
+at = [17.9, 1.2, 11.0]
+face = "W"
+
+[[props]]
+id = "fire_point"
+at = [1.3, 0, 0.1]
+face = "S"
+
+[[props]]
+id = "sign_no_smoking"
+at = [2.6, 1.5, 0.1]
+face = "S"
