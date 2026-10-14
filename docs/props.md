@@ -58,13 +58,13 @@ Every room's props follow these rules; the numbers are data in `props/library.to
    `table` on tapered legs (`look = "fine"`, `props_task.build_table_fine`). `tools/tests/test_props_dining.py`
    checks their sizes, pivots, budgets and colliders and that the table-top items stand on the top and keep a
    0.6 m band round the `DiningTable` station (x 6.0 m, the delivery chain's drop-off) clear.
-   The hallway (#156) adds `hall_console` (an oak console with two drawers over a basket shelf; one collider box), `hall_mirror` (an
-   arched mirror; its pane the gloss-layer paint `mirror_glass`), `coat_hooks` (a wall rail with coats and a scarf;
-   one box collider), `hall_bench` (a seat pad, a shoe shelf with shoes), the navy `hall_runner` (`carpet_rug`, paint
-   `carpet_navy`), `umbrella_stand` and the base-layer `art_blueprint` (`framed_art` kind `blueprint`: the
-   generator's blueprint), and the detail props `hall_doormat` (coir), `key_bowl`, `parcels` (kraft boxes with
-   tape), `shoe_pairs` (`_shoe_pair`), `sports_bag`, `wall_calendar` (kind `calendar`) and `photo_row` (three small
-   frames: family portraits of plasticine people and holiday photos, `_art` kind `family`; dressing class);
+   The hallway (#156) adds `hall_console` (an oak console with two drawers over a basket shelf; one collider box),
+   `hall_mirror` (an arched mirror; its pane the gloss-layer paint `mirror_glass`), `coat_hooks` (a wall rail with coats
+   and a scarf; one box collider), `hall_bench` (a seat pad, a shoe shelf with shoes), the navy `hall_runner`
+   (`carpet_rug`, paint `carpet_navy`), `umbrella_stand` and the base-layer `art_blueprint` (`framed_art` kind
+   `blueprint`: the generator's blueprint), and the detail props `hall_doormat` (coir), `key_bowl`, `parcels` (kraft
+   boxes with tape), `shoe_pairs` (`_shoe_pair`), `sports_bag`, `wall_calendar` (kind `calendar`) and `photo_row` (three
+   small frames: family portraits of plasticine people and holiday photos, `_art` kind `family`; dressing class);
    `framed_art` draws through the shared `_framed` helper.
    `tools/tests/test_props_hallway.py` checks their sizes, pivots, budgets and colliders, that the console's things
    stand on its top without touching, that the dressing keeps 0.3 m from every station and spawn in the room (read
@@ -189,8 +189,8 @@ things) so that every room package places furniture instead of making it. Task p
 lift (#79), vegetation (#80), the gazebo (#81b) and kit pieces are made elsewhere; `[skip]` in the mapping file names
 who makes each. The plan is `D:/prime-art-raw/research/2026-10-10-house-plan/` (`props.md`, `inventory.md` §9,
 `look.md` §5 and §6). The GLBs stay in the raw folder (`D:/prime-art-raw/props/library/v5/`: v4 with #156's
-hallway built over it; v4 v3 with #153's dining room; v3 is v2 with #152's cream sofa and armchairs, v2 v1 with #150's living room, v1 the
-version-1 build) until the engineer
+hallway built over it; v4 v3 with #153's dining room; v3 is v2 with #152's cream sofa and armchairs, v2 v1 with
+#150's living room, v1 the version-1 build) until the engineer
 approves the look on a review page; then they come into the repo under `assets/prop/<id>/` with their manifests.
 
 ### The mapping file: `props/library.toml`
