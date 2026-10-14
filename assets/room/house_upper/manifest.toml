@@ -1,5 +1,6 @@
 # Written for #129 and for #150 (the rebuilt living-room props, the Detail node) from the P4 export of 2026-10-13 (`house --export <raw>/review/house/150b/export/p4 --package 4`, round 2: only package.json changed, the warm armchair's sha256); a rebuild
 # changes the hashes below (`manifest-check --hashes` finds it). The game's paths: levels/house/rooms/<name>.
+# #152 (the engineer's paints of 2026-10-14): re-exported as P4 into <raw>/review/house/152/export/p4 (`house --export ... --package 4`); the files it changed point there.
 id = "house_upper"
 kind = "room"
 slot = ""
@@ -10,9 +11,9 @@ licence = "own-work"
 licence_url = "https://github.com/xperiaroco2/prime-game"
 public_repo_ok = true
 ai_generated = false
-approved_by = ["xperiaroco2"]
-approved_at = 2026-10-14
-approval_pr = "https://github.com/xperiaroco2/prime-game-art/pull/151"
+approved_by = []
+approved_at = ""
+approval_pr = ""
 
 [source]
 service = "own"
@@ -34,8 +35,8 @@ sha256 = "26760a9128cc62298a779408534d0852e33499af950512551567455b0f580003"
 
 [[files]]
 name = "landing.tscn"
-file = "review/house/150b/export/p4/levels/house/rooms/landing.tscn"
-sha256 = "336963e6985f5101d916a57e2b24f838098c6943237023bde9533f488ea04ad7"
+file = "review/house/152/export/p4/levels/house/rooms/landing.tscn"
+sha256 = "d8f7976504a89064b036347c4a20ed737fa60a787ed208ff743ceb7d6908112b"
 
 [[files]]
 name = "study.tscn"

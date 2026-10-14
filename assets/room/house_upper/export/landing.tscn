@@ -39,7 +39,7 @@
 [node name="Landing" type="Node3D"]
 metadata/size_m = Vector2i(8, 20)
 metadata/art_room = "landing"
-metadata/wall_paint = "#3a6264"
+metadata/wall_paint = "#d9d1c5"
 
 [node name="Name" type="Label3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 2.4, 10)
