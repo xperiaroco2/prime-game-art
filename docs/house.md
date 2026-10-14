@@ -148,7 +148,8 @@ writes the House's game-ready package (prime-game #523) from the same layout dat
   built over it, and `prop_dirs` names library v8; since #164 `props/library/v9/textures/fine`, the same bytes: v8
   with the bedroom's and the guest room's 16 props built over it, and `prop_dirs` names library v9;
   since #166 `props/library/v10/textures/fine`, the same bytes: v9 with the kids' room's and the study's 14 props
-  built over it, and `prop_dirs` names library v10;
+  built over it, and `prop_dirs` names library v10; since #168 `props/library/v11/textures/fine`, the same bytes:
+  v10 with the attic's 18 props built over it, and `prop_dirs` names library v11;
   v1 stays the approved version-1 build;
   `.import` VRAM compressed with mipmaps), `house_props/prop_fine.gdshader` (a copy
   of `godot/props/prop_fine.gdshader`; `tools/tests/test_house_layers.py` fails when the committed copy drifts) and
