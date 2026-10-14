@@ -1,6 +1,7 @@
 # Written for #128 from the P7 export of 2026-10-11 (`house --export <raw>/house/export/v3/p7 --package 7`, after #132); a rebuild
 # changes the hashes below (`manifest-check --hashes` finds it). The game's paths: levels/house/outdoor.tscn and
 # levels/house/rooms/<name>.
+# #152 (the engineer's paints of 2026-10-14): re-exported as P7 into <raw>/review/house/152/export/p7 (`house --export ... --package 7`); the files it changed point there.
 id = "house_plot"
 kind = "room"
 slot = ""
@@ -11,9 +12,9 @@ licence = "own-work"
 licence_url = "https://github.com/xperiaroco2/prime-game"
 public_repo_ok = true
 ai_generated = false
-approved_by = ["xperiaroco2"]
-approved_at = 2026-10-12
-approval_pr = "https://github.com/xperiaroco2/prime-game-art/pull/131"
+approved_by = []
+approved_at = ""
+approval_pr = ""
 
 [source]
 service = "own"

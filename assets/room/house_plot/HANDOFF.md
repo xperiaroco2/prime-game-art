@@ -45,6 +45,11 @@ sets `instance_shader_parameters/plan_at`, its place and turn in the house plan 
 Nothing to run: copy the two files with the kit and load the scenes. P7 has no painted room; the material gives the
 kit's textured look (390 set surfaces, the package check finds none without it).
 
+## The engineer's paints of 2026-10-14 (#152)
+
+Only `package.json` changed: the shared `kit_set.tres` carries the new wall paints and the rebuilt kit pieces of the
+warm sand ceiling hash anew; this package's scenes are unchanged.
+
 ## Credits
 `CREDITS.md` beside `assets/environment/house_outdoor/manifest.toml` and `assets/environment/house_garden/manifest.toml`
 (own work), and `assets/prop/house_props/CREDITS.md` (own work and CC0 packs, named per file in the props manifest);

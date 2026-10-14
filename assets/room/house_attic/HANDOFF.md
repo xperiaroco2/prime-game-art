@@ -35,6 +35,11 @@ tier, the shader, the two `.tres`; one copy per game, P2's `HANDOFF.md`). Every 
 node beside `Dressing` and `Fixtures` (empty here until a room's detail pass). The approval fields wait for the
 engineer's yes.
 
+## The engineer's paints of 2026-10-14 (#152)
+
+Only `package.json` changed: the shared `kit_set.tres` carries the new wall paints and the rebuilt kit pieces of the
+warm sand ceiling hash anew; this package's scenes are unchanged.
+
 ## Credits
 As P2: the entries `assets/kit/house_kit/CREDITS.md` and `assets/prop/house_props/CREDITS.md` (copy them to
 `docs/credits/house_kit.md` and `house_props.md`); own work, the props from
