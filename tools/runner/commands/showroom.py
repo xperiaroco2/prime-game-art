@@ -1,8 +1,10 @@
 """`showroom`: how close Godot can make a character look to its Blender renders (art #140). Godot 4.7.2 renders one
-character under up to six look variants (the frames stand as is, then AgX, sky reflections, SSAO, soft shadows,
-subsurface scattering on the clay) in an off-screen window (never headless, never minimized): a face sheet (front and
-three-quarter, the approved Blender sheet first) and a full-body sheet, and each variant's GPU time. `--write-presets`
-writes the recommended look per graphics preset, godot/showroom/look_presets.json (docs/godot.md)."""
+character under up to eight look variants (the ladder: the frames stand as is, then AgX, sky reflections, SSAO, soft
+shadows, subsurface scattering on the clay; or step 2's tuning grid, `--grid tune`, or step 3's, `--grid warm` and `--grid expose`) in an
+off-screen window (never headless, never minimized): a face sheet (front and three-quarter, the approved Blender sheet
+first) and a full-body sheet, each variant's GPU time, its pixel change against its parent variant (change.md) and,
+beside an approved sheet, a numeric check of the faces against it (look.md). `--write-presets` writes the recommended
+look per graphics preset, godot/showroom/look_presets.json (docs/godot.md)."""
 
 from __future__ import annotations
 
@@ -11,7 +13,7 @@ import json
 import shutil
 from pathlib import Path
 
-from .. import common
+from .. import common, house_bake
 from . import _frames, _godot, _showroom
 
 NAME = "showroom"
@@ -24,7 +26,11 @@ DEFAULT_GLB = Path("assets/character/slice_m1/export/slice_m1.glb")
 def add_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("glb", type=Path, nargs="?", default=DEFAULT_GLB, help=f"an exported character (default {DEFAULT_GLB.as_posix()})")
     parser.add_argument("--out", type=Path, help="output folder (default tools/out/showroom/<stem>/)")
-    parser.add_argument("--variants", default="", help=f"comma list of {', '.join(v['id'] for v in _showroom.VARIANTS)} (default all)")
+    parser.add_argument("--grid", choices=sorted(_showroom.GRIDS), default="ladder",
+                        help="ladder: the six look steps (default); tune: step 2's tuning grid on variant 4; "
+                             "warm: step 3's grid on variant 5 (sky ambient, fill, exposure with a warm key); "
+                             "expose: step 3's exposure and warm key apart, on the recommendation's variant 5")
+    parser.add_argument("--variants", default="", help="comma list of the grid's variant ids (default all)")
     parser.add_argument("--clip", default="Idle", help="the pose: time 0 of this animation (default Idle)")
     parser.add_argument("--hdri", type=Path, help=f"the studio sky (default <raw>/{_showroom.HDRI}; missing: a ProceduralSky)")
     parser.add_argument("--beside", type=Path, help="the approved Blender faces sheet whose crops lead the face sheet")
@@ -65,7 +71,7 @@ def run(args: argparse.Namespace) -> int:
             raise common.Failure(f"no approved sheet {args.beside.as_posix()}")
         beside = args.beside.resolve().as_posix()
     try:
-        chosen = _showroom.variants(args.variants)
+        chosen = _showroom.variants(args.variants, args.grid)
         spec = _showroom.spec(glb.stem, by_label[args.clip], hdri.resolve().as_posix() if hdri.is_file() else "",
                               chosen, beside, _frames.parse_rects(args.beside_rects) if beside else None)
     except ValueError as e:
@@ -100,4 +106,55 @@ def run(args: argparse.Namespace) -> int:
               f"(renderer {record.get('renderer', '?')}, sky {record.get('sky', '?')})")
     for line in table:
         common.say(f"verify: {line}")
+    labels = {v["id"]: v["label"] for v in chosen}
+    parents = [(v["id"], v["parent"]) for v in chosen if v.get("parent") in labels]
+    if parents:
+        change = change_check(out / "shots", parents, labels)
+        (out / "change.md").write_text("\n".join(change) + "\n", encoding="utf-8", newline="\n")
+        for line in change:
+            common.say(f"verify: {line}")
+    if beside:
+        base = next((v["id"] for v in chosen if v.get("parent") == ""), "") if parents else ""
+        look = look_check(out / "shots", record["variants"], labels, len(spec["beside_rects"]), base)
+        (out / "look.md").write_text("\n".join(look) + "\n", encoding="utf-8", newline="\n")
+        for line in look:
+            common.say(f"verify: {line}")
     return 0
+
+
+def change_check(shots: Path, parents: list[tuple[str, str]], labels: dict[str, str]) -> list[str]:
+    """Each variant's pixel change against its parent per shot: the face shots' skin (the parent's skin pixels) and
+    the whole body shot, so the body's floor and shirt cannot hide a change that misses the face."""
+    rows = []
+    for child, parent in parents:
+        shares = []
+        for shot in ("face0", "face1", "body"):
+            width, height, a = house_bake.read_png(shots / f"{child}_{shot}.png")
+            _, _, b = house_bake.read_png(shots / f"{parent}_{shot}.png")
+            only = _showroom.skin_pixels(width, height, b, house_bake.srgb_lab) if shot != "body" else None
+            shares.append(_showroom.pixel_change(a, b, width, _showroom.LABEL_ROWS, only=only))
+        rows.append((labels[child], labels[parent], shares))
+    return _showroom.change_table(rows)
+
+
+def look_check(shots: Path, ids: list[str], labels: dict[str, str], approved: int, base: str = "") -> list[str]:
+    """The numeric check against Blender: the face measures of the approved crops and of each variant's face shots;
+    with a base variant, also each variant's measures on the base's skin pixels (_showroom.masked_measures)."""
+    def read(name: str):
+        return house_bake.read_png(shots / name)
+
+    def measures(name: str) -> dict[str, float]:
+        return _showroom.face_measures(*read(name), house_bake.srgb_lab)
+    blender = _showroom.mean_measures([measures(f"approved_{i}.png") for i in range(approved)])
+    rows = [(labels[i], _showroom.mean_measures([measures(f"{i}_face0.png"), measures(f"{i}_face1.png")])) for i in ids]
+    lines = _showroom.look_table(blender, rows)
+    if base:
+        masks = {}
+        for shot in ("face0", "face1"):
+            width, height, px = read(f"{base}_{shot}.png")
+            masks[shot] = _showroom.skin_pixels(width, height, px, house_bake.srgb_lab, grid=160)
+        masked = [(labels[i], _showroom.mean_measures([_showroom.masked_measures(read(f"{i}_{shot}.png")[2], masks[shot],
+                                                                                  house_bake.srgb_lab)
+                                                       for shot in ("face0", "face1")])) for i in ids]
+        lines += [""] + _showroom.masked_table(blender, labels[base], masked)
+    return lines
