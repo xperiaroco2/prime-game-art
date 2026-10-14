@@ -5,13 +5,13 @@
 # Paints and shapes are taste data: changing a hex or a prop's roles needs no code change.
 
 library = "house"
-version = 5
+version = 6
 kit_spec = "kits/house.json"
-# the build goes under the raw folder: D:/prime-art-raw/props/library/v5/<id>.glb (v5, #156: v4 with the hallway's
-# props laid over it; v4, #153: v3 with the dining room's props; v3, #152: v2 with the cream sofa and armchairs
+# the build goes under the raw folder: D:/prime-art-raw/props/library/v6/<id>.glb (v6, #158: v5 with the WC's, the
+# pantry's and the stairs' props laid over it; v5, #156: v4 with the hallway's props laid over it; v4, #153: v3 with the dining room's props; v3, #152: v2 with the cream sofa and armchairs
 # rebuilt over it; v2, #150: v1 with the living room's 16 rebuilt props and the eight-slot fine pack laid over it;
 # v1 stays the approved version-1 build; no folder is ever overwritten)
-out = "props/library/v5"
+out = "props/library/v6"
 review = "review/house/87"  # line-up sheets, under the raw folder
 licences = ["CC0-1.0"]
 max_materials = 8
@@ -2814,4 +2814,287 @@ shape = "framed_art"
 params = {art = "calendar", frame = 0.006, mat = 0.0, frame_paint = "steel_black"}
 roles = ["steel_black", "art_white", "art_sky", "art_bun", "leaf_green", "art_patty", "paint_red", "book_cream", "book_mustard"]
 pivot = "wall"
+collision = "none"
+
+# ---- The ground floor's small rooms (#158): the WC, the pantry and the stairs in the world look.
+
+[[prop]]
+id = "wc_toilet"
+batch = 1
+name = "Close-coupled toilet: porcelain pan and cistern, white seat and lid, chrome flush"
+class = "room"
+size_m = [0.38, 0.65, 0.8]
+count = 1
+route = "proc"
+shape = "wc_toilet"
+roles = ["porcelain_white", "enamel_white", "chrome", "steel_black"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "wc_vanity"
+batch = 1
+name = "Small vanity: oak drawers, stone top, round sit-on basin and a pillar tap"
+class = "room"
+size_m = [0.6, 0.42, 1.08]
+count = 1
+route = "proc"
+shape = "wc_vanity"
+roles = ["wood_front", "wood_front_dark", "worktop_stone", "porcelain_white", "chrome", "paint_red", "paint_blue", "rubber_black"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "mirror_cabinet"
+batch = 1
+name = "Mirror cabinet with two mirrored doors and a shelf with a soap pump and a toothbrush mug"
+class = "dressing"
+size_m = [0.6, 0.15, 0.75]
+count = 1
+route = "proc"
+shape = "mirror_cabinet"
+roles = ["enamel_white", "mirror_glass", "steel_warm", "book_teal", "chrome", "porcelain_white", "paint_red"]
+pivot = "wall"
+collision = "none"
+
+[[prop]]
+id = "towel_ring"
+batch = 1
+name = "Chrome towel ring with a teal hand towel"
+class = "clutter"
+size_m = [0.22, 0.07, 0.3]
+count = 1
+route = "proc"
+shape = "towel_ring"
+roles = ["chrome", "cushion_teal", "throw_cream"]
+pivot = "wall"
+collision = "none"
+
+[[prop]]
+id = "roll_holder"
+batch = 1
+name = "Chrome toilet-roll holder with a spare roll on its shelf"
+class = "clutter"
+size_m = [0.16, 0.13, 0.25]
+count = 1
+route = "proc"
+shape = "roll_holder"
+roles = ["chrome", "art_white"]
+pivot = "wall"
+collision = "none"
+
+[[prop]]
+id = "pedal_bin"
+batch = 1
+name = "Small brushed-steel pedal bin"
+class = "clutter"
+size_m = [0.24, 0.27, 0.3]
+count = 1
+route = "proc"
+shape = "pedal_bin"
+roles = ["steel_warm", "steel_black", "rubber_black"]
+pivot = "floor"
+collision = "none"
+
+[[prop]]
+id = "toilet_brush"
+batch = 1
+name = "Toilet brush in a steel holder"
+class = "clutter"
+size_m = [0.1, 0.1, 0.38]
+count = 1
+route = "proc"
+shape = "toilet_brush"
+roles = ["steel_warm", "steel_black", "rubber_black", "chrome"]
+pivot = "floor"
+collision = "none"
+
+[[prop]]
+id = "reed_diffuser"
+batch = 1
+name = "Reed diffuser in a dark glass bottle"
+class = "clutter"
+size_m = [0.12, 0.12, 0.28]
+count = 1
+route = "proc"
+shape = "reed_diffuser"
+roles = ["glass_dark", "chrome", "wood_front_dark"]
+pivot = "floor"
+collision = "none"
+
+[[prop]]
+id = "washer"
+batch = 1
+name = "Front-loading washing machine"
+class = "room"
+size_m = [0.6, 0.6, 0.85]
+count = 1
+route = "proc"
+shape = "washing_machine"
+roles = ["enamel_white", "steel_warm", "steel_black", "glass_dark", "chrome"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "tumble_dryer"
+batch = 1
+name = "Tumble dryer matching the washer"
+class = "room"
+size_m = [0.6, 0.6, 0.85]
+count = 1
+route = "proc"
+shape = "washing_machine"
+params = {dryer = 1}
+roles = ["enamel_white", "steel_warm", "steel_black", "glass_dark", "chrome"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "art_wash"
+batch = 1
+name = "Framed joke print: a plasticine person scrubbing up in suds, rated five stars"
+class = "dressing"
+size_m = [0.42, 0.03, 0.54]
+count = 1
+route = "proc"
+shape = "framed_art"
+params = {art = "wash", frame = 0.025, mat = 0.04, frame_paint = "steel_black"}
+roles = ["steel_black", "art_white", "art_sky", "book_mustard", "book_teal", "art_pink", "art_terracotta", "book_sage"]
+pivot = "wall"
+collision = "none"
+
+[[prop]]
+id = "wc_tiles"
+batch = 1
+name = "Tiled lower wall behind the toilet and basin (3 m, 1.2 m high, a warm steel cap)"
+class = "clutter"
+layer = "base"  # a flat tiled strip: few triangles, but the room reads with it on Low
+size_m = [3.0, 0.016, 1.2]
+count = 1
+route = "proc"
+shape = "backsplash"
+roles = ["tile_splash", "steel_warm"]
+pivot = "wall"
+collision = "none"
+
+[[prop]]
+id = "pantry_shelf"
+batch = 1
+name = "Pantry shelving: baskets of potatoes and onions, sauces, cereal boxes, jars and tins"
+class = "hero"
+size_m = [1.2, 0.45, 2.0]
+count = 2
+route = "proc"
+shape = "pantry_shelf"
+params = {stock = ["baskets", "bottles", "boxes", "jars", "tins"]}
+roles = ["enamel_white", "worktop_wood", "throw_cream", "kraft", "book_mustard", "book_red", "paint_red", "glass_dark", "art_white", "leaf_dark", "steel_black", "book_teal", "book_cream", "paint_blue", "art_bun", "glass_tint", "art_terracotta", "art_patty", "steel_warm", "leaf_green", "book_navy"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "pantry_shelf_buns"
+batch = 1
+name = "Pantry shelving: the burger kitchen's store, bags of buns, jars, boxes and sauces"
+class = "hero"
+size_m = [1.2, 0.45, 2.0]
+count = 2
+route = "proc"
+shape = "pantry_shelf"
+params = {stock = ["baskets", "buns", "jars", "boxes", "bottles"]}
+roles = ["enamel_white", "worktop_wood", "throw_cream", "kraft", "book_mustard", "book_red", "paint_red", "glass_dark", "art_white", "leaf_dark", "steel_black", "book_teal", "book_cream", "paint_blue", "art_bun", "glass_tint", "art_terracotta", "art_patty", "steel_warm"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "veg_rack"
+batch = 1
+name = "Two-tier oak vegetable rack with potatoes and onions"
+class = "room"
+size_m = [0.7, 0.4, 0.6]
+count = 1
+route = "proc"
+shape = "veg_rack"
+roles = ["worktop_wood", "kraft", "kraft_tape", "book_mustard", "book_red"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "step_stool"
+batch = 1
+name = "Folding two-step stool"
+class = "dressing"
+size_m = [0.44, 0.5, 0.55]
+count = 1
+route = "proc"
+shape = "step_stool"
+roles = ["enamel_white", "rubber_black"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "broom_set"
+batch = 1
+name = "Broom against the wall, a dustpan and brush on the floor"
+class = "dressing"
+size_m = [0.55, 0.42, 1.3]
+count = 1
+route = "proc"
+shape = "broom_set"
+roles = ["book_teal", "rubber_black", "steel_warm"]
+pivot = "floor"
+collision = "none"
+
+[[prop]]
+id = "drink_crates"
+batch = 1
+name = "Two stacked drinks crates, the top one full of bottles"
+class = "room"
+size_m = [0.4, 0.3, 0.62]
+count = 2
+route = "proc"
+shape = "drink_crates"
+roles = ["paint_red", "book_teal", "steel_black", "glass_dark", "steel_warm", "book_mustard"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "stair_runner"
+batch = 1
+name = "Navy stair runner with cream edges and brass rods, for one half flight (9 risers, 3 m run)"
+class = "dressing"
+size_m = [0.94, 3.0, 1.6]
+count = 2
+route = "proc"
+shape = "stair_runner"
+params = {risers = 9, rise = 1.6, run = 3.0}
+roles = ["carpet_navy", "carpet_border", "steel_warm"]
+pivot = "floor"
+collision = "none"
+
+[[prop]]
+id = "stair_gallery"
+batch = 1
+name = "Five family photos going up the stair wall"
+class = "room"
+size_m = [2.6, 0.03, 1.48]
+count = 1
+route = "proc"
+shape = "stair_gallery"
+params = {pitch = 0.5333}
+roles = ["steel_black", "worktop_wood", "art_white", "art_sky", "book_sage", "art_pink", "book_cream", "book_navy", "paint_red", "book_teal", "book_mustard", "art_terracotta", "art_bun"]
+pivot = "wall"
+collision = "none"
+
+[[prop]]
+id = "landing_plant"
+batch = 1
+name = "Leafy plant in a stone pot for the stair landing"
+class = "dressing"
+size_m = [0.42, 0.42, 0.9]
+count = 1
+route = "proc"
+shape = "house_plant"
+params = {pot = "stone_light", leaves = 12}
+roles = ["stone_light", "soil_dark", "leaf_green", "leaf_dark"]
+pivot = "floor"
 collision = "none"

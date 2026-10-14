@@ -2870,6 +2870,21 @@ def _art(m: Mesh, kind: str, x0: float, x1: float, y0: float, y1: float, z: floa
             cx, cy = (j + 0.5) / n, 0.46 + lift[j]
             for dx in (-0.035, 0.035):
                 q(cx + dx - 0.01, cy - 0.01, cx + dx + 0.01, cy + 0.01, "steel_black", False)
+    elif kind == "wash":  # #158: the WC's joke print: a plasticine person scrubbing up in suds, rated five stars
+        q(0, 0, 1, 1, "art_sky")
+        q(0.08, 0.05, 0.92, 0.2, "art_white")
+        for k in range(5):
+            disk(0.18 + 0.16 * k, 0.125, 0.05 * w, "book_mustard", 10)
+        q(0.28, 0.22, 0.72, 0.46, "book_teal")
+        disk(0.5, 0.58, 0.16 * min(w, h), "art_pink", 16)
+        zz[0] += step
+        for dx in (-0.06, 0.06):
+            q(0.5 + dx - 0.015, 0.6 - 0.015, 0.5 + dx + 0.015, 0.6 + 0.015, "steel_black", False)
+        q(0.45, 0.51, 0.55, 0.53, "art_terracotta", False)
+        for cx, cy, r in ((0.18, 0.4, 0.09), (0.82, 0.44, 0.1), (0.26, 0.8, 0.07), (0.74, 0.8, 0.08),
+                          (0.12, 0.6, 0.05), (0.88, 0.64, 0.06), (0.5, 0.86, 0.05)):
+            disk(cx, cy, r * w, "art_white", 12)
+        q(0.6, 0.27, 0.84, 0.36, "book_sage")
     else:  # burger
         q(0, 0, 1, 1, "book_navy")
         q(0.15, 0.82, 0.85, 0.9, "art_white")
@@ -3453,6 +3468,388 @@ def build_gallery_wall(m, s, R, prm, rng):
     hx, z0, z1 = L / 2, -W / 2, W / 2
     for a, b, c, d, fr, kind in GALLERY:
         _framed(m, -hx + a * L, -hx + b * L, c * H, d * H, z0, z1, 0.02, 0.03, fr, kind, rng)
+
+
+# ---- The ground floor's small rooms in the world look (#158): the WC, the pantry and the stairs.
+
+def build_wc_toilet(m, s, R, prm, rng):
+    """A present-day close-coupled toilet (front +z, its back on the wall at -z): a porcelain foot and bowl, a white
+    seat and closed lid on a chrome hinge bar, a rounded cistern with a chrome dual-flush button. Collider: one box."""
+    st = _style(prm)
+    L, W, H = s
+    hx, hz = L / 2, W / 2
+    por, seat = prm.get("body", "porcelain_white"), prm.get("seat", "enamel_white")
+    ct, yp, n = 0.17, 0.4, 20
+    pr, sq = hx - 0.012, 1.3
+    zc = hz - pr * sq - 0.004
+    cyl(m, "y", (0.0, zc - 0.03), pr * 0.6, 0.0, yp - 0.14, por, n, r1=pr * 0.72, sq=1.4)
+    cyl(m, "y", (0.0, zc), pr * 0.74, yp - 0.14, yp - 0.02, por, n, r1=pr * 0.98, sq=sq)
+    cyl(m, "y", (0.0, zc), pr * 0.98, yp - 0.02, yp, por, n, r1=pr, sq=sq)
+    cyl(m, "y", (0.0, zc), pr, yp, yp + 0.018, seat, n, sq=sq)
+    cyl(m, "y", (0.0, zc), pr * 0.97, yp + 0.018, yp + 0.04, seat, n, r1=pr * 0.93, sq=sq)
+    rod(m, (-0.08, yp + 0.02, zc - pr * sq + 0.01), (0.08, yp + 0.02, zc - pr * sq + 0.01), 0.008, "chrome", 8)
+    cbox(m, (-hx, yp - 0.04, -hz), (hx, H - 0.025, -hz + ct), por, st.bevel)
+    cbox(m, (-hx, H - 0.025, -hz), (hx, H - 0.006, -hz + ct + 0.006), por, st.bevel_small)
+    cyl(m, "y", (0.0, -hz + ct / 2), 0.03, H - 0.006, H, "chrome", 14)
+    box(m, (-0.002, H - 0.0005, -hz + ct / 2 - 0.028), (0.002, H, -hz + ct / 2 + 0.028), "steel_black", "+y")
+
+
+def build_wc_vanity(m, s, R, prm, rng):
+    """A small vanity unit (front +z): an oak drawer box on a plinth, a stone top, a round porcelain sit-on basin
+    with a chrome drain and a pillar tap behind it. Collider: one box."""
+    st = _style(prm)
+    L, W, H = s
+    hx, hz = L / 2, W / 2
+    body, top = prm.get("body", "wood_front"), prm.get("top", "worktop_stone")
+    yt = 0.75
+    zf = hz - st.reach - 0.002
+    plinth(m, st, -hx + 0.02, hx - 0.02, -hz + 0.02, zf - 0.04)
+    cbox(m, (-hx, st.plinth, -hz), (hx, yt - 0.03, zf), body, st.bevel_small)
+    front(m, st, -hx + 0.004, hx - 0.004, st.plinth + 0.004, 0.42, zf, body, True, "h", line="wood_front_dark")
+    front(m, st, -hx + 0.004, hx - 0.004, 0.42, yt - 0.034, zf, body, True, "h", line="wood_front_dark")
+    worktop(m, st, -hx, hx, -hz, hz, top, y=yt)
+    r, zb = min(hx, hz) - 0.03, 0.03
+    cyl(m, "y", (0.0, zb), r * 0.8, yt, yt + 0.13, "porcelain_white", 20, r1=r, caps=(True, False))
+    cyl(m, "y", (0.0, zb), r * 0.72, yt + 0.02, yt + 0.13, "porcelain_white", 20, r1=r - 0.012, caps=(True, False),
+        flip=True)
+    tube(m, "y", (0.0, zb), r - 0.012, r, yt + 0.128, yt + 0.13, "porcelain_white", 20)
+    cyl(m, "y", (0.0, zb), 0.02, yt + 0.021, yt + 0.024, "chrome", 10)
+    tap(m, st, 0.0, -hz + 0.045, yt)
+
+
+def build_mirror_cabinet(m, s, R, prm, rng):
+    """A mirror cabinet for the wall over the basin (wall pivot, the back at z 0): a white body with two mirrored
+    doors and a slim shelf under it with a soap pump and a toothbrush mug."""
+    st = _style(prm)
+    L, W, H = s
+    hx = L / 2
+    body = prm.get("body", "enamel_white")
+    yb, d = 0.12, W - 0.03
+    cbox(m, (-hx, yb, 0.0), (hx, H, d - 0.02), body, st.bevel_small)
+    for a, b in ((-hx, 0.0), (0.0, hx)):
+        cbox(m, (a + 0.002, yb + 0.004, d - 0.02), (b - 0.002, H - 0.004, d - 0.003), body, st.bevel_small)
+        box(m, (a + 0.014, yb + 0.016, d - 0.003), (b - 0.014, H - 0.016, d), "mirror_glass", "+z")
+    cbox(m, (-hx + 0.04, 0.0, 0.0), (hx - 0.04, 0.012, W), "steel_warm", 0.002)
+    cyl(m, "y", (-hx + 0.12, W * 0.55), 0.03, 0.012, 0.13, "book_teal", 12)
+    cyl(m, "y", (-hx + 0.12, W * 0.55), 0.008, 0.13, 0.155, "chrome", 8)
+    rod(m, (-hx + 0.12, 0.15, W * 0.55), (-hx + 0.12, 0.15, W * 0.55 + 0.03), 0.006, "chrome", 6)
+    cyl(m, "y", (hx - 0.12, W * 0.55), 0.032, 0.012, 0.1, "porcelain_white", 12, r1=0.036)
+    for dx, role in ((-0.008, "paint_red"), (0.01, "book_teal")):
+        rod(m, (hx - 0.12 + dx, 0.06, W * 0.55), (hx - 0.12 + dx * 2, 0.17, W * 0.55 - 0.005), 0.005, role, 6)
+
+
+def build_towel_ring(m, s, R, prm, rng):
+    """A chrome towel ring on a wall rose (wall pivot) with a folded hand towel hanging through it."""
+    L, W, H = s
+    towel = prm.get("towel", "cushion_teal")
+    yr = H - 0.025
+    cyl(m, "z", (0.0, yr), 0.025, 0.0, 0.012, "chrome", 12)
+    rod(m, (0.0, yr, 0.01), (0.0, yr, 0.04), 0.007, "chrome", 8)
+    r, yc, zc, n = 0.075, yr - 0.08, 0.045, 12
+    pts = [(r * math.cos(2 * math.pi * k / n), yc + r * math.sin(2 * math.pi * k / n)) for k in range(n + 1)]
+    for (a, b), (c, d) in zip(pts, pts[1:]):
+        rod(m, (a, b, zc), (c, d, zc), 0.006, "chrome", 4)
+    hw = L / 2 - 0.01
+    cushion(m, (-hw, 0.0, zc - 0.012), (-0.002, yc - r + 0.01, zc + 0.012), towel, 0.006)
+    cushion(m, (0.002, 0.03, zc - 0.012), (hw, yc - r + 0.01, zc + 0.012), towel, 0.006)
+    rod(m, (-hw * 0.9, yc - r + 0.004, zc), (hw * 0.9, yc - r + 0.004, zc), 0.014, towel, 8)
+    box(m, (-hw, 0.04, zc + 0.012), (-0.002, 0.055, zc + 0.0125), "throw_cream", "+z")
+
+
+def build_roll_holder(m, s, R, prm, rng):
+    """A chrome toilet-roll holder (wall pivot): a back plate, an arm with a roll on it and the paper's end hanging,
+    and a little shelf on top with a spare roll."""
+    L, W, H = s
+    hx = L / 2
+    yr, rr = 0.075, 0.055
+    cbox(m, (-hx, yr - 0.02, 0.0), (-hx + 0.025, yr + 0.02, 0.012), "chrome", 0.002)
+    rod(m, (-hx + 0.012, yr, 0.012), (-hx + 0.012, yr, rr + 0.012), 0.006, "chrome", 6)
+    rod(m, (-hx + 0.012, yr, rr + 0.012), (hx - 0.01, yr, rr + 0.012), 0.006, "chrome", 6)
+    tube(m, "x", (yr, rr + 0.012), 0.02, rr, -hx + 0.02, hx - 0.012, "art_white", 14)
+    box(m, (-hx + 0.022, 0.0, 2 * rr + 0.008), (hx - 0.014, yr, 2 * rr + 0.012), "art_white", "+z-z+x-x")
+    cbox(m, (-hx, yr + rr + 0.004, 0.0), (hx, yr + rr + 0.012, W), "chrome", 0.002)
+    cyl(m, "y", (0.0, W / 2), 0.05, yr + rr + 0.012, H, "art_white", 12)
+
+
+def build_pedal_bin(m, s, R, prm, rng):
+    """A small brushed-steel pedal bin with a black lid and a black pedal at the front."""
+    L, W, H = s
+    r = min(L, W - 0.03) / 2
+    zc = -0.015
+    cyl(m, "y", (0.0, zc), r * 0.94, 0.0, H - 0.03, "steel_warm", 16, r1=r)
+    cyl(m, "y", (0.0, zc), r, H - 0.03, H, "steel_black", 16, r1=r * 0.82)
+    cbox(m, (-0.06, 0.0, zc + r * 0.9), (0.06, 0.02, W / 2), "rubber_black", 0.003)
+    cbox(m, (-0.02, 0.0, zc + r * 0.85), (0.02, 0.06, zc + r * 0.98), "steel_black", 0.002)
+
+
+def build_toilet_brush(m, s, R, prm, rng):
+    """A toilet brush in a steel holder: a black handle with a chrome knob."""
+    L, W, H = s
+    r = min(L, W) / 2
+    cyl(m, "y", (0.0, 0.0), r * 0.9, 0.0, 0.14, "steel_warm", 12, r1=r)
+    tube(m, "y", (0.0, 0.0), r * 0.8, r, 0.14, 0.145, "steel_black", 12)
+    rod(m, (0.0, 0.12, 0.0), (0.0, H - 0.02, 0.0), 0.009, "rubber_black", 8)
+    cyl(m, "y", (0.0, 0.0), 0.016, H - 0.02, H, "chrome", 10)
+
+
+def build_reed_diffuser(m, s, R, prm, rng):
+    """A reed diffuser: a dark glass bottle with a chrome collar and a fan of reeds."""
+    L, W, H = s
+    cyl(m, "y", (0.0, 0.0), 0.03, 0.0, 0.08, "glass_dark", 12, r1=0.026)
+    cyl(m, "y", (0.0, 0.0), 0.01, 0.08, 0.1, "chrome", 10)
+    hx = L / 2 - 0.004
+    for k in range(7):
+        a = 2 * math.pi * k / 7 + 0.3
+        x, z = hx * math.cos(a), hx * math.sin(a) * 0.9
+        rod(m, (0.0, 0.09, 0.0), (x, H - 0.03 * (k % 3), z), 0.0025, "wood_front_dark", 4, caps=False)
+
+
+def build_washing_machine(m, s, R, prm, rng):
+    """A front-loading washer (or with `dryer` its matching dryer): a white enamel body, a control strip with a
+    detergent drawer, a dark display and a chrome dial, a round door (chrome ring, dark glass or the dryer's white
+    door) with a handle and a kick panel. Collider: one box."""
+    st = _style(prm)
+    L, W, H = s
+    hx, hz = L / 2, W / 2
+    body = prm.get("body", "enamel_white")
+    dryer = bool(prm.get("dryer"))
+    zf = hz - 0.02
+    cbox(m, (-hx, 0.0, -hz), (hx, H, zf), body, st.bevel)
+    yp = H - 0.13
+    box(m, (-hx + 0.02, yp, zf), (hx - 0.02, yp + 0.004, zf + 0.004), "steel_warm", "+z+y-y")
+    cbox(m, (-hx + 0.03, yp + 0.025, zf), (-hx + 0.2, H - 0.025, zf + 0.012), body, st.bevel_small)
+    box(m, (-hx + 0.05, yp + 0.03, zf + 0.012), (-hx + 0.18, yp + 0.04, zf + 0.0125), "steel_black", "+z")
+    box(m, (0.0, yp + 0.04, zf), (0.14, H - 0.04, zf + 0.004), "glass_dark", "+z+x-x+y-y")
+    cyl(m, "z", (hx - 0.09, yp + 0.065), 0.032, zf, zf + 0.018, "chrome", 16)
+    cyl(m, "z", (hx - 0.09, yp + 0.065), 0.024, zf + 0.018, zf + 0.02, "steel_black", 16)
+    yc, ro = 0.42, min(hx - 0.07, 0.22)
+    ri = ro - 0.04
+    tube(m, "z", (0.0, yc), ri, ro, zf, zf + 0.016, "chrome", 28)
+    cyl(m, "z", (0.0, yc), ri, zf, zf + 0.01, "enamel_white" if dryer else "glass_dark", 28, caps=(False, True))
+    cbox(m, (ro - 0.03, yc - 0.06, zf + 0.012), (ro + 0.01, yc + 0.06, zf + 0.02), "steel_black", 0.003)
+    box(m, (-hx + 0.03, 0.03, zf), (hx - 0.03, 0.1, zf + 0.004), body, "+z+x-x+y-y")
+    if dryer:
+        for k in range(6):
+            x = -0.15 + 0.06 * k
+            box(m, (x, 0.05, zf + 0.004), (x + 0.03, 0.08, zf + 0.0045), "steel_black", "+z")
+
+
+def _stock(m: Mesh, kind: str, x0: float, x1: float, y: float, z0: float, z1: float, hmax: float) -> None:
+    """One shelf of a pantry's stock along x from x0 to x1, standing on y, from the back z0 to the front z1, under
+    hmax: `jars` (glass jars of pasta, rice and lentils with coloured lids), `tins`, `boxes` (cereal and pasta
+    boxes), `bottles` (sauces and oil), `buns` (bags of burger buns) or `baskets` (wicker baskets of potatoes and
+    onions)."""
+    zc = (z0 + z1) / 2 + 0.02
+    x = x0
+    k = 0
+    if kind == "jars":
+        while x < x1 - 0.1:
+            r, h = 0.045 + 0.01 * (k % 2), min(hmax, 0.13 + 0.025 * ((k * 5) % 3))
+            fill = ("art_bun", "art_white", "art_terracotta", "book_mustard", "art_patty")[k % 5]
+            cyl(m, "y", (x + r, zc), r - 0.004, y + 0.003, y + h * 0.78, fill, 8)
+            cyl(m, "y", (x + r, zc), r, y, y + h - 0.02, "glass_tint", 8, caps=(False, False))
+            cyl(m, "y", (x + r, zc), r + 0.002, y + h - 0.02, y + h, ("steel_warm", "paint_red", "book_cream")[k % 3], 8)
+            x += 2 * r + 0.012
+            k += 1
+    elif kind == "tins":
+        while x < x1 - 0.08:
+            r, h = 0.037, 0.11
+            for j in range(2 if k % 3 else 1):
+                yy = y + j * (h + 0.002)
+                cyl(m, "y", (x + r, zc), r, yy, yy + h, "steel_warm", 8)
+                cyl(m, "y", (x + r, zc), r + 0.001, yy + 0.015, yy + h - 0.015,
+                    ("paint_red", "leaf_green", "book_mustard", "book_navy", "art_terracotta")[(k + j) % 5], 8,
+                    caps=(False, False))
+            x += 2 * r + 0.008
+            k += 1
+    elif kind == "boxes":
+        while x < x1 - 0.06:
+            w, h = 0.07 + 0.015 * (k % 2), min(hmax, 0.24 + 0.03 * (k % 3))
+            role = ("book_mustard", "paint_red", "book_teal", "book_cream", "paint_blue", "kraft")[k % 6]
+            box(m, (x, y, z0 + 0.02), (x + w, y + h, z1 - 0.01), role, "+x-x+y+z")
+            box(m, (x + 0.008, y + h * 0.35, z1 - 0.01), (x + w - 0.008, y + h * 0.75, z1 - 0.0095),
+                "art_white" if k % 2 else "art_bun", "+z")
+            x += w + 0.006
+            k += 1
+    elif kind == "bottles":
+        while x < x1 - 0.07:
+            r, h = 0.03 + 0.005 * (k % 2), min(hmax, 0.2 + 0.04 * (k % 3))
+            role = ("paint_red", "book_mustard", "glass_dark", "art_white", "leaf_dark")[k % 5]
+            cyl(m, "y", (x + r, zc), r, y, y + h * 0.7, role, 8)
+            cyl(m, "y", (x + r, zc), r, y + h * 0.7, y + h * 0.88, role, 8, r1=0.012, caps=(False, False))
+            cyl(m, "y", (x + r, zc), 0.013, y + h * 0.88, y + h, "steel_black" if k % 2 else "art_white", 6)
+            x += 2 * r + 0.012
+            k += 1
+    elif kind == "buns":
+        while x < x1 - 0.2:
+            w = 0.2
+            cbox(m, (x, y, z0 + 0.03), (x + w, y + 0.085, z1 - 0.02), "glass_tint", 0.01)
+            for j in range(2):
+                for i in range(2):
+                    blob(m, (x + 0.05 + 0.1 * i, y + 0.035, zc - 0.05 + 0.1 * j), 0.045, 0.035, 0.045, "art_bun", 7, 3,
+                         floor=y)
+            x += w + 0.015
+    else:  # baskets
+        while x < x1 - 0.25:
+            w = min(0.32, x1 - x)
+            hb = min(hmax - 0.05, 0.16)
+            cushion(m, (x, y, z0 + 0.03), (x + w, y + hb, z1 - 0.02), "throw_cream", 0.012)
+            for i in range(5):
+                bx = x + 0.05 + (w - 0.1) * i / 4
+                for j, dz in enumerate((-0.07, 0.04)):
+                    role = ("kraft", "book_mustard", "book_red")[(k + i + j) % 3 if k % 2 else 0]
+                    blob(m, (bx, y + hb + 0.012, zc + dz), 0.04, 0.03, 0.035, role, 6, 3)
+            x += w + 0.02
+            k += 1
+
+
+def build_pantry_shelf(m, s, R, prm, rng):
+    """A pantry shelving unit (front +z): white enamel sides and top, a back panel, oak shelves stocked from the
+    bottom up by `stock` (see _stock: baskets, bottles, boxes, jars, tins, buns). Collider: one box."""
+    st = _style(prm)
+    L, W, H = s
+    hx, hz = L / 2, W / 2
+    body, shelf = prm.get("body", "enamel_white"), prm.get("shelf", "worktop_wood")
+    stock = list(prm.get("stock", ["baskets", "bottles", "boxes", "jars", "tins"]))
+    t = 0.022
+    for sx in (-1, 1):
+        x0, x1 = (hx - t, hx) if sx > 0 else (-hx, -hx + t)
+        cbox(m, (x0, 0.0, -hz), (x1, H - 0.025, hz), body, st.bevel_small)
+    cbox(m, (-hx, H - 0.025, -hz), (hx, H, hz), body, st.bevel_small)
+    box(m, (-hx + t, 0.0, -hz), (hx - t, H - 0.025, -hz + 0.008), body, "+z")
+    box(m, (-hx + t, 0.0, hz - 0.04), (hx - t, 0.06, hz - 0.03), body, "+z+y")
+    y0, n = 0.06, len(stock)
+    step = (H - 0.025 - y0) / n
+    for i, kind in enumerate(stock):
+        y = y0 + step * i
+        cbox(m, (-hx + t, y, -hz + 0.008), (hx - t, y + t, hz - 0.01), shelf, st.bevel_small)
+        _stock(m, kind, -hx + t + 0.015, hx - t - 0.015, y + t, -hz + 0.02, hz - 0.02, step - t - 0.03)
+
+
+def build_veg_rack(m, s, R, prm, rng):
+    """A two-tier oak vegetable rack (front +z): four legs, two trays with low rails, potatoes in the lower one and
+    onions (gold and red) in the upper. Collider: one box."""
+    st = _style(prm)
+    L, W, H = s
+    hx, hz = L / 2, W / 2
+    wood = prm.get("body", "worktop_wood")
+    for sx in (-1, 1):
+        for sz in (-1, 1):
+            x0 = hx - 0.03 if sx > 0 else -hx
+            z0 = hz - 0.03 if sz > 0 else -hz
+            cbox(m, (x0, 0.0, z0), (x0 + 0.03, H, z0 + 0.03), wood, st.bevel_small)
+    for yt, roles in ((0.08, ("kraft", "kraft_tape")), (H * 0.52, ("book_mustard", "book_red"))):
+        cbox(m, (-hx + 0.03, yt, -hz + 0.03), (hx - 0.03, yt + 0.015, hz - 0.03), wood, st.bevel_small)
+        for z in (-hz + 0.03, hz - 0.045):
+            cbox(m, (-hx + 0.03, yt, z), (hx - 0.03, yt + 0.09, z + 0.015), wood, st.bevel_small)
+        nx, nz = 6, 2
+        for i in range(nx):
+            for j in range(nz):
+                x = -hx + 0.08 + (L - 0.16) * i / (nx - 1) + 0.01 * rng.random()
+                z = -hz + 0.09 + (W - 0.18) * j / (nz - 1)
+                rx = 0.035 + 0.008 * rng.random()
+                blob(m, (x, yt + 0.015 + rx * 0.8, z), rx, rx * 0.8, rx * 0.9, roles[(i + j) % 2], 6, 4)
+
+
+def build_step_stool(m, s, R, prm, rng):
+    """A folding two-step stool (front +z): a white steel frame, two treads with black grips. Collider: one box."""
+    L, W, H = s
+    hx, hz = L / 2, W / 2
+    frame = prm.get("body", "enamel_white")
+    for sx in (-1, 1):
+        x = sx * (hx - 0.012)
+        rod(m, (x, 0.0, hz - 0.012), (x, H - 0.02, -hz + 0.1), 0.012, frame, 8)
+        rod(m, (x, 0.0, -hz + 0.012), (x, H - 0.02, -hz + 0.1), 0.012, frame, 8)
+        cbox(m, (x - 0.012, 0.0, hz - 0.03), (x + 0.012, 0.015, hz), "rubber_black", 0.003)
+        cbox(m, (x - 0.012, 0.0, -hz), (x + 0.012, 0.015, -hz + 0.03), "rubber_black", 0.003)
+    for y, z0, z1 in ((H * 0.48, 0.0, hz - 0.03), (H - 0.03, -hz + 0.02, -hz + 0.24)):
+        cbox(m, (-hx + 0.01, y, z0), (hx - 0.01, y + 0.03, z1), frame, 0.004)
+        cbox(m, (-hx + 0.03, y + 0.03, z0 + 0.02), (hx - 0.03, y + 0.034, z1 - 0.02), "rubber_black", 0.001)
+
+
+def build_broom_set(m, s, R, prm, rng):
+    """A broom leaning on the wall (the back at -z) and a dustpan with its brush on the floor beside it."""
+    L, W, H = s
+    hx, hz = L / 2, W / 2
+    xb = -hx + 0.14
+    cbox(m, (xb - 0.13, 0.0, hz - 0.1), (xb + 0.13, 0.06, hz - 0.04), "book_teal", 0.004)
+    box(m, (xb - 0.12, 0.06, hz - 0.095), (xb + 0.12, 0.09, hz - 0.045), "rubber_black", "+y+x-x+z-z")
+    rod(m, (xb, 0.09, hz - 0.07), (xb, H - 0.02, -hz + 0.015), 0.012, "steel_warm", 8)
+    cyl(m, "y", (xb, -hz + 0.015), 0.014, H - 0.02, H, "book_teal", 8)
+    xp = hx - 0.12
+    cbox(m, (xp - 0.11, 0.0, -0.06), (xp + 0.11, 0.008, 0.12), "book_teal", 0.002)
+    box(m, (xp - 0.115, 0.008, -0.06), (xp - 0.11, 0.05, 0.08), "book_teal", "+x-x+y")
+    box(m, (xp + 0.11, 0.008, -0.06), (xp + 0.115, 0.05, 0.08), "book_teal", "+x-x+y")
+    box(m, (xp - 0.11, 0.008, -0.064), (xp + 0.11, 0.07, -0.06), "book_teal", "+z-z+y")
+    rod(m, (xp, 0.04, -0.064), (xp, 0.07, -0.19), 0.012, "book_teal", 6)
+    cbox(m, (xp - 0.1, 0.075, -0.02), (xp + 0.1, 0.1, 0.03), "book_teal", 0.003)
+    box(m, (xp - 0.095, 0.05, -0.012), (xp + 0.095, 0.075, 0.022), "rubber_black", "+x-x+z-z")
+
+
+def build_drink_crates(m, s, R, prm, rng):
+    """Two stacked plastic drinks crates (a red under a teal), the top one full of bottles: necks and caps over
+    its rim. Collider: one box."""
+    L, W, H = s
+    hx, hz = L / 2, W / 2
+    hc = H * 0.4
+    for k, role in enumerate(("paint_red", "book_teal")):
+        y0 = k * hc
+        cbox(m, (-hx, y0, -hz), (hx, y0 + 0.02, hz), role, 0.004)
+        for x0 in (-hx, hx - 0.012):
+            cbox(m, (x0, y0, -hz), (x0 + 0.012, y0 + hc, hz), role, 0.003)
+        for z0 in (-hz, hz - 0.012):
+            cbox(m, (-hx + 0.012, y0, z0), (hx - 0.012, y0 + hc, z0 + 0.012), role, 0.003)
+            box(m, (-0.07, y0 + hc - 0.07, z0 - 0.0005 if z0 < 0 else z0 + 0.012),
+                (0.07, y0 + hc - 0.04, z0 if z0 < 0 else z0 + 0.0125), "steel_black", "-z" if z0 < 0 else "+z")
+    nx, nz = 4, 3
+    for i in range(nx):
+        for j in range(nz):
+            x = -hx + 0.012 + (L - 0.024) * (i + 0.5) / nx
+            z = -hz + 0.012 + (W - 0.024) * (j + 0.5) / nz
+            cyl(m, "y", (x, z), 0.028, hc + 0.02, H - 0.06, "glass_dark", 6, r1=0.012, caps=(False, False))
+            cyl(m, "y", (x, z), 0.012, H - 0.06, H - 0.012, "glass_dark", 6, caps=(False, False))
+            cyl(m, "y", (x, z), 0.014, H - 0.012, H, ("paint_red", "steel_warm", "book_mustard")[(i + j) % 3], 6,
+                caps=(False, True))
+
+
+def build_stair_runner(m, s, R, prm, rng):
+    """A stair runner for one of the kit's half flights (floor pivot; the foot's riser at +z, climbing toward -z):
+    `risers` risers of `rise` / risers and treads of `run` / (risers - 1) (kit_geom.stair_numbers), a wool runner
+    6 mm proud on every tread and riser with cream edge stripes, and a warm brass stair rod at each tread's back."""
+    L, W, H = s
+    n, rise, run = int(prm.get("risers", 9)), float(prm.get("rise", 1.6)), float(prm.get("run", 3.0))
+    h, g, t = rise / n, run / (n - 1), 0.006
+    hr, e = L / 2 - 0.02, 0.04
+    body, edge = prm.get("body", "carpet_navy"), prm.get("edge", "carpet_border")
+    zf = run / 2
+    for i in range(1, n + 1):
+        za = zf - (i - 1) * g
+        for a, b, role in ((-hr, -hr + e, edge), (-hr + e, hr - e, body), (hr - e, hr, edge)):
+            box(m, (a, (i - 1) * h, za), (b, i * h + (t if i < n else 0.0), za + t), role, "+x-x+z")
+            if i < n:
+                box(m, (a, i * h, za - g), (b, i * h + t, za), role, "+x-x+y")
+        if i < n:
+            cyl(m, "x", (i * h + 0.011, za - g + 0.012), 0.007, -hr - 0.018, hr + 0.018, "steel_warm", 6)
+
+
+# Frames going up a stair wall (#158): (x0, x1) fractions of the width, the frame's height (m), its paint and its
+# picture (see _art); the centres follow the flight's pitch.
+STAIR_FRAMES = ((0.0, 0.16, 0.3, "steel_black", "family"), (0.2, 0.4, 0.4, "worktop_wood", "photos"),
+                (0.44, 0.58, 0.3, "art_white", "family"), (0.62, 0.8, 0.38, "steel_black", "gazebo"),
+                (0.84, 1.0, 0.32, "worktop_wood", "family"))
+
+
+def build_stair_gallery(m, s, R, prm, rng):
+    """Family photos going up the stairs (wall pivot: the backs at -z): five frames (STAIR_FRAMES) whose centres
+    climb at `pitch` (the flight's rise per run) from the left: plasticine family portraits, holiday photos and a
+    photo strip from the yard's gazebo, drawn by this repo (see _art)."""
+    L, W, H = s
+    hx, z0, z1 = L / 2, -W / 2, W / 2
+    pitch = float(prm.get("pitch", 1.6 / 3.0))
+    for a, b, fh, fr, kind in STAIR_FRAMES:
+        yc = pitch * (a + b) / 2 * L
+        _framed(m, -hx + a * L, -hx + b * L, yc - fh / 2, yc + fh / 2, z0, z1, 0.018, 0.02, fr, kind, rng)
+
 
 BUILDERS = {name[6:]: fn for name, fn in dict(globals()).items() if name.startswith("build_") and callable(fn)}
 
