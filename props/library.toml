@@ -5,9 +5,10 @@
 # Paints and shapes are taste data: changing a hex or a prop's roles needs no code change.
 
 library = "house"
-version = 10
+version = 11
 kit_spec = "kits/house.json"
-# the build goes under the raw folder: D:/prime-art-raw/props/library/v10/<id>.glb (v10, #166: v9 with the kids' room's
+# the build goes under the raw folder: D:/prime-art-raw/props/library/v11/<id>.glb (v11, #168: v10 with the attic's
+# rebuilt and new pieces laid over it; v10, #166: v9 with the kids' room's
 # and the study's props laid over it; v9, #164: v8 with the bedroom's and
 # the guest room's props laid over it; v8, #162 round 2: v7 with the
 # rebuilt landing runner and the landing's sitting area laid over it; v7, #162: v6 with the
@@ -15,7 +16,7 @@ kit_spec = "kits/house.json"
 # pantry's and the stairs' props laid over it; v5, #156: v4 with the hallway's props laid over it; v4, #153: v3 with the dining room's props; v3, #152: v2 with the cream sofa and armchairs
 # rebuilt over it; v2, #150: v1 with the living room's 16 rebuilt props and the eight-slot fine pack laid over it;
 # v1 stays the approved version-1 build; no folder is ever overwritten)
-out = "props/library/v10"
+out = "props/library/v11"
 review = "review/house/87"  # line-up sheets, under the raw folder
 licences = ["CC0-1.0"]
 max_materials = 8
@@ -228,14 +229,12 @@ hedge = "vegetation: #80"
 herb_bed = "task prop: #82a/#82b (the car and lift: #79)"
 herb_board = "task prop: #82a/#82b (the car and lift: #79)"
 lift_panel = "garage: #79"
-mannequin = "hero class (props.md section 3, Q20): not in the library"
 meat_freezer = "task prop: #82a/#82b (the car and lift: #79)"
 music_speaker = "task prop: #82a/#82b (the car and lift: #79)"
 order_board = "task prop: #82a/#82b (the car and lift: #79)"
 photo_board = "task prop: #82a/#82b (the car and lift: #79)"
 photo_printer = "task prop: #82a/#82b (the car and lift: #79)"
 pose_screen = "task prop: #82a/#82b (the car and lift: #79)"
-rocking_horse = "hero class (props.md section 3, Q20): not in the library"
 terrace_table = "task prop: #82a/#82b (the car and lift: #79)"
 wall_switch = "task prop: #82a/#82b (the car and lift: #79)"
 wine_rack = "task prop: #82a/#82b (the car and lift: #79)"
@@ -590,14 +589,14 @@ collision = "box"
 [[prop]]
 id = "old_wardrobe"
 batch = 1
-name = "Old wardrobe"
+name = "Stored wardrobe: a present-day white two-door wardrobe kept in the attic (#168)"
 class = "room"
 size_m = [1.4, 0.6, 1.9]
 count = 2
 route = "proc"
-shape = "cabinet"
-params = {doors = 2, legs = 4, cornice = 1}
-roles = ["wood_dark", "metal_dark"]
+shape = "wardrobe_modern"
+params = {doors = 2}
+roles = ["worktop_wood", "enamel_white", "wood_front_dark", "chrome", "steel_black"]
 pivot = "floor"
 collision = "box"
 
@@ -657,13 +656,14 @@ collision = "hull"
 [[prop]]
 id = "sheeted_furniture"
 batch = 1
-name = "Furniture under a dust sheet"
+name = "An armchair under a dust sheet: its arms, back and seat read, an oak leg shows (#168)"
 class = "room"
 size_m = [1.0, 1.0, 1.0]
 count = 5
 route = "proc"
-shape = "sheeted"
-roles = ["cream"]
+shape = "sheeted_form"
+roles = ["cream", "worktop_wood"]
+params = {form = "armchair", seed = 3}
 pivot = "floor"
 collision = "hull"
 
@@ -820,13 +820,13 @@ collision = "box"
 [[prop]]
 id = "trunk"
 batch = 1
-name = "Old trunk"
+name = "Storage trunk: navy with chrome fittings and oak slats (#168)"
 class = "room"
 size_m = [0.9, 0.5, 0.5]
 count = 6
 route = "proc"
 shape = "trunk"
-roles = ["rust_red", "metal_dark", "wood_dark"]
+roles = ["book_navy", "chrome", "worktop_wood"]
 pivot = "floor"
 collision = "box"
 
@@ -1245,13 +1245,13 @@ collision = "hull"
 [[prop]]
 id = "old_bicycle"
 batch = 1
-name = "Old bicycle"
+name = "Bicycle with a wicker basket, sage green (#168)"
 class = "dressing"
 size_m = [1.7, 0.5, 1.0]
 count = 1
 route = "proc"
-shape = "bicycle"
-roles = ["rust_red", "rubber", "metal_grey"]
+shape = "city_bike"
+roles = ["book_sage", "rubber_black", "chrome", "coir"]
 pivot = "floor"
 collision = "hull"
 
@@ -3652,3 +3652,194 @@ shape = "toy_set"
 roles = ["art_white", "paint_red", "art_sky", "rubber_black", "book_grey", "paint_blue", "glass_dark", "book_mustard", "book_teal"]
 pivot = "floor"
 collision = "none"
+
+# ---- #168: the attic, a well-kept family attic (library v11) ----
+
+[[prop]]
+id = "attic_shelving"
+batch = 1
+name = "Steel shelving bay stocked with labelled boxes, lidded tubs and shoeboxes"
+class = "room"
+size_m = [2, 0.5, 1.9]
+count = 1
+route = "proc"
+shape = "storage_shelving"
+params = {seed = 168}
+roles = ["steel_black", "worktop_wood", "rubber_black", "kraft", "art_white", "paint_red", "book_teal", "book_mustard", "leaf_green", "paint_blue", "art_pink", "enamel_white", "book_sage", "art_terracotta"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "attic_shelving_b"
+batch = 1
+name = "Steel shelving bay, the second stock"
+class = "room"
+size_m = [2, 0.5, 1.9]
+count = 1
+route = "proc"
+shape = "storage_shelving"
+params = {seed = 41}
+roles = ["steel_black", "worktop_wood", "rubber_black", "kraft", "art_white", "paint_red", "book_teal", "book_mustard", "leaf_green", "paint_blue", "art_pink", "enamel_white", "book_sage", "art_terracotta"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "storage_box"
+batch = 1
+name = "Lidded kraft storage box with a label and a colour tab"
+class = "dressing"
+size_m = [0.5, 0.4, 0.34]
+count = 1
+route = "proc"
+shape = "lidded_box"
+params = {tag = "paint_red"}
+roles = ["kraft", "art_white", "paint_red", "steel_black", "rubber_black", "kraft_tape"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "storage_crate"
+batch = 1
+name = "Plastic storage tub with a teal lid"
+class = "dressing"
+size_m = [0.6, 0.4, 0.34]
+count = 1
+route = "proc"
+shape = "plastic_tub"
+params = {lid = "book_teal"}
+roles = ["enamel_white", "book_teal", "art_white"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "holiday_decor"
+batch = 1
+name = "Holiday things: a tub of baubles and tinsel, the boxed tree and a wreath"
+class = "room"
+size_m = [0.95, 0.6, 0.8]
+count = 1
+route = "proc"
+shape = "holiday_decor"
+roles = ["enamel_white", "paint_red", "book_mustard", "art_white", "leaf_green", "paint_blue", "leaf_dark", "kraft", "wood_mid"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "burger_sign"
+batch = 1
+name = "The burger stall's sign, kept: a red board, a bulb border, a burger and the word"
+class = "room"
+size_m = [1.4, 0.15, 0.8]
+count = 1
+route = "proc"
+shape = "burger_sign"
+roles = ["worktop_wood", "paint_red", "cream", "art_bun", "art_patty", "book_mustard", "leaf_green", "art_white"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "delivery_bag"
+batch = 1
+name = "A retired delivery backpack with a burger patch"
+class = "clutter"
+size_m = [0.42, 0.4, 0.46]
+count = 1
+route = "proc"
+shape = "delivery_bag"
+roles = ["paint_red", "art_white", "steel_black", "art_bun", "art_patty", "rubber_black"]
+pivot = "floor"
+collision = "none"
+
+[[prop]]
+id = "generator_part"
+batch = 1
+name = "A spare generator engine on a pallet with a service tag"
+class = "room"
+size_m = [0.8, 0.5, 0.55]
+count = 1
+route = "proc"
+shape = "generator_part"
+roles = ["worktop_wood", "safety_green", "metal_grey", "metal_dark", "rubber_black", "paint_red", "steel_black", "cream", "art_white"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "sports_kit"
+batch = 1
+name = "Sports kit: a bin of balls with rackets, a hockey stick and a skateboard"
+class = "room"
+size_m = [0.9, 0.4, 1.1]
+count = 1
+route = "proc"
+shape = "sports_kit"
+roles = ["steel_black", "art_white", "art_terracotta", "leaf_green", "rubber_black", "book_navy", "paint_red", "worktop_wood", "book_teal"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "leaning_frames"
+batch = 1
+name = "Three framed pictures standing against the knee wall"
+class = "room"
+size_m = [1, 0.25, 0.9]
+count = 1
+route = "proc"
+shape = "leaning_frames"
+params = {back = "city"}
+roles = ["worktop_wood", "steel_black", "art_white", "art_sky", "art_pink", "book_mustard", "book_navy", "book_teal", "book_grey", "book_cream", "leaf_green", "book_sage", "art_terracotta", "rubber_black"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "sheeted_sofa"
+batch = 1
+name = "A sofa under a dust sheet"
+class = "room"
+size_m = [2, 0.95, 0.9]
+count = 1
+route = "proc"
+shape = "sheeted_form"
+params = {form = "sofa", seed = 5}
+roles = ["cream", "worktop_wood"]
+pivot = "floor"
+collision = "hull"
+
+[[prop]]
+id = "sheeted_dresser"
+batch = 1
+name = "A dresser with its mirror under a dust sheet"
+class = "room"
+size_m = [1.2, 0.55, 1.3]
+count = 1
+route = "proc"
+shape = "sheeted_form"
+params = {form = "dresser", seed = 9}
+roles = ["cream", "worktop_wood"]
+pivot = "floor"
+collision = "hull"
+
+[[prop]]
+id = "mannequin"
+batch = 1
+name = "Dress form on an oak tripod with a tape measure"
+class = "room"
+size_m = [0.38, 0.32, 1.71]
+count = 1
+route = "proc"
+shape = "dress_form"
+roles = ["worktop_wood", "chrome", "upholstery_light", "book_mustard"]
+pivot = "floor"
+collision = "hull"
+
+[[prop]]
+id = "rocking_horse"
+batch = 1
+name = "Painted wooden rocking horse with a red saddle"
+class = "room"
+size_m = [1, 0.4, 0.9]
+count = 1
+route = "proc"
+shape = "rocking_horse"
+roles = ["worktop_wood", "art_white", "steel_black", "wood_dark", "paint_red"]
+pivot = "floor"
+collision = "box"
