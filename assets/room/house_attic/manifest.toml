@@ -4,7 +4,7 @@
 # #158 (the WC's and pantry's paints): only package.json changed, the shared kit_set.tres's new hash; this package's scenes are unchanged.
 # #162 (the bathroom's paint): only package.json changed, the shared kit_set.tres's new hash; this package's scenes are unchanged.
 # #166 (the kids' room's paint): only package.json changed, the shared kit_set.tres's new hash; this package's scenes are unchanged.
-# #168 (the attic, a well-kept family attic, and its paint): re-exported as P5 into <raw>/review/house/168/export/p5 (`house --export ... --package 5`); attic.tscn and package.json point there.
+# #168 (the attic, a well-kept family attic, and its paint): re-exported as P5 into <raw>/review/house/168/export/p5 (`house --export ... --package 5`); attic.tscn points there; package.json is from the re-export p5b (the gables' paint band; attic.tscn the same bytes).
 id = "house_attic"
 kind = "room"
 slot = ""

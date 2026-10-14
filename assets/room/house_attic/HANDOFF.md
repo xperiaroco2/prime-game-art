@@ -67,7 +67,10 @@ retired delivery bag and generator part. Changed: `attic.tscn` and `package.json
 `generator_part`; `old_wardrobe`, `sheeted_furniture`, `old_bicycle` and `trunk` rebuilt, same names; `cardboard_box`,
 `crate` and `picture_frame` leave the package; the shared `kit_set.tres` carries the new paint). The twelve hiding
 spots, the pick-ups, the clear areas and the free roof's items stay. Draw calls on the package sheet, before/after:
-DRAWCALLS. Re-exported into `<raw>/review/house/168/export/p5`.
+from the north wall 54/69, from the west gable 52/68,
+from the hatch 32/41, toward the dormer 45/58, the roof from the dormer 38/44, from the lookout 54/64. Re-exported
+into `<raw>/review/house/168/export/p5`, then `p5b` for the gables' paint band (`attic.tscn` the same bytes;
+`package.json` names the new `kit_set.tres` hash).
 
 ## Credits
 As P2: the entries `assets/kit/house_kit/CREDITS.md` and `assets/prop/house_props/CREDITS.md` (copy them to
