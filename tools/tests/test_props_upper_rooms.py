@@ -1,11 +1,13 @@
-"""The upper floor's landing and bathroom (#162), bedroom and guest room (#164, docs/props.md "World look rules"):
+"""The upper floor's landing and bathroom (#162), bedroom and guest room (#164), kids' room and study (#166,
+docs/props.md "World look rules"):
 their new props build at their
 size_m (never more than 15 mm over it), at their pivot and under their class's triangle budget; the furniture
 collides with one box inside its size, the wall pieces and the flat pieces have no collider and the wall pieces stay
 inside their depth; each room's dressing keeps 0.3 m from every station and spawn marker in it (read from
-layouts/house/upper.toml and props/tasks.toml: the bedroom's Circle07 and the guest room's Circle09, asserted), leaves its doors' openings, the attic hatch's
+layouts/house/upper.toml and props/tasks.toml: the bedroom's Circle07, the guest room's Circle09, the kids' room's
+Circle08, the study's Circle10 and Printer station, asserted), leaves its doors' openings, the attic hatch's
 ladder and the stairs' top clear, keeps its prop count (never emptier than before the pass) and keeps its Name label
-out of every piece. Pure Python, no Blender."""
+out of every piece and light fixture (#166). Pure Python, no Blender."""
 
 from __future__ import annotations
 
@@ -29,25 +31,35 @@ BY_ID = {p["id"]: p for p in LIB["prop"]}
 LAYOUT = common.ROOT / "layouts" / "house"
 HOUSE = tomllib.loads((LAYOUT / "house.toml").read_text(encoding="utf-8"))
 TASKS = tomllib.loads((common.ROOT / "props" / "tasks.toml").read_text(encoding="utf-8"))["props"]
-ROOMS = ("landing", "bathroom", "bedroom", "guest_room")
-DOORS = {"landing": 6, "bathroom": 1, "bedroom": 1, "guest_room": 1}
-# The [[props]] entries on main before each room's pass (#162, #164; fixtures not counted; the test counts the same
+ROOMS = ("landing", "bathroom", "bedroom", "guest_room", "kids_room", "study")
+DOORS = {"landing": 6, "bathroom": 1, "bedroom": 1, "guest_room": 1, "kids_room": 1, "study": 1}
+# The [[props]] entries on main before each room's pass (#162, #164, #166; fixtures not counted; the test counts the same
 # after it).
-BEFORE = {"landing": 66, "bathroom": 40, "bedroom": 57, "guest_room": 52}
+BEFORE = {"landing": 66, "bathroom": 40, "bedroom": 57, "guest_room": 52, "kids_room": 64, "study": 63}
 # The stations, spawn markers and task props each room must keep clear (#164: the two spawn circles).
-POINTS = {"landing": [], "bathroom": [], "bedroom": ["Circle07"], "guest_room": ["Circle09"]}
+# #166: the kids' room's toy chest and the study's computer and printer are task props (props/tasks.toml).
+POINTS = {"landing": [], "bathroom": [], "bedroom": ["Circle07"], "guest_room": ["Circle09"],
+          "kids_room": ["Circle08", "toy_chest"], "study": ["Circle10", "Printer", "computer_set", "photo_printer"]}
 # The big furniture main's landing had (a sitting area: armchairs and a rug) that the pass keeps (round 2): one of
 # each id group at least.
 BIG = {"landing": [("sofa", "armchair"), ("rug",)],
        # #164: main's bed, wardrobes, dresser and armchair, replaced by better ones, never dropped
        "bedroom": [("bedroom_bed",), ("bedroom_wardrobe",), ("dresser",), ("armchair",), ("bedside_table",)],
-       "guest_room": [("guest_bed",), ("guest_wardrobe", "clothes_rail"), ("dresser",), ("armchair",), ("bedside_table",)]}
+       "guest_room": [("guest_bed",), ("guest_wardrobe", "clothes_rail"), ("dresser",), ("armchair",), ("bedside_table",)],
+       # #166: main's bunk bed, desk, chair, wardrobe, bookcases, toy chest and beanbags; the study's desks, chairs,
+       # bookcases, filing cabinets, armchair and sideboards
+       "kids_room": [("kids_bed", "bunk_bed"), ("desk",), ("office_chair",), ("kids_wardrobe", "wardrobe"),
+                     ("kids_bookcase", "bookcase"), ("toy_chest",), ("bean_bag",), ("dresser",)],
+       "study": [("desk",), ("office_chair",), ("study_bookcase", "bookcase"), ("filing_cabinet",), ("armchair",),
+                 ("sideboard",)]}
 
 SOLID = ("bath_tub", "bath_vanity", "bath_shelf",
          "bedroom_bed", "guest_bed", "bedroom_wardrobe", "guest_wardrobe", "bedside_table", "bed_bench", "suitcase",
-         "storage_boxes", "clothes_rail")
-WALL = ("towel_rail", "art_bubbles", "bath_tiles", "bath_tiles_short", "bath_tiles_shower", "dresser_mirror", "curtains")
-FLAT = WALL + ("bath_mat", "landing_runner", "bedroom_rug", "guest_rug", "bedside_set", "dresser_set", "towel_stack")
+         "storage_boxes", "clothes_rail", "kids_bed", "kids_wardrobe", "toy_cubby", "kids_bookcase", "study_bookcase")
+WALL = ("towel_rail", "art_bubbles", "bath_tiles", "bath_tiles_short", "bath_tiles_shower", "dresser_mirror", "curtains",
+        "pin_board", "art_rocket", "art_dino", "art_drawing", "art_certificate")
+FLAT = WALL + ("bath_mat", "landing_runner", "bedroom_rug", "guest_rug", "bedside_set", "dresser_set", "towel_stack",
+                "play_rug", "study_rug", "monitor_set", "toy_set")
 NEW = SOLID + FLAT
 OVER_M = 0.015  # a prop may stand at most this far over its size_m
 CLEAR_M = 0.3  # nothing of the dressing this close to a station's point or a spawn marker
@@ -117,6 +129,9 @@ class UpperRoomsPropsTest(unittest.TestCase):
                 if "size" in item:
                     L, W, H = item["size"]
                     built = {"bounds_m": {"min": [-L / 2, 0.0, -W / 2], "max": [L / 2, H, W / 2]}}
+                elif item["id"] not in BY_ID:  # #166: a task prop (the study's computer and printer): its w, d, h
+                    t = next(t for t in TASKS if t["id"] == item["id"])
+                    built = {"bounds_m": {"min": [-t["w"] / 2, 0.0, -t["d"] / 2], "max": [t["w"] / 2, t["h"], t["d"] / 2]}}
                 elif "shape" not in BY_ID.get(item["id"], {"shape": ""}):  # a pack prop: its box from size_m
                     x, y, z = _props.size_xyz(BY_ID[item["id"]]["size_m"])
                     z0 = 0.0 if BY_ID[item["id"]].get("pivot") == "wall" else -z / 2
@@ -260,6 +275,17 @@ class UpperRoomsPropsTest(unittest.TestCase):
                 y1 = item["at"][1] + built["bounds_m"]["max"][1]
                 self.assertFalse(_box_dist(fp, lx, lz) < 0.2 and y0 - 0.3 < h < y1 + 0.3,
                                  f"{rid}: the Name label at ({lx}, {h}, {lz}) is inside {item['id']} at {item['at']}")
+            dressing = tomllib.loads((LAYOUT / "dressing" / f"{rid}.toml").read_text(encoding="utf-8"))
+            for item in dressing.get("fixtures", []):  # #166: nor on a light fixture (#165's label sat on a pendant)
+                p = BY_ID[item["id"]]
+                x, y, z = _props.size_xyz(p["size_m"])
+                z0 = 0.0 if p.get("pivot") == "wall" else -z / 2
+                y0 = -y if p.get("pivot") == "ceiling" else 0.0
+                fp = _footprint(item, {"bounds_m": {"min": [-x / 2, y0, z0], "max": [x / 2, y0 + y, z0 + z]}})
+                lo, hi = item["at"][1] + y0, item["at"][1] + y0 + y
+                self.assertFalse(_box_dist(fp, lx, lz) < 0.2 and lo - 0.3 < h < hi + 0.3,
+                                 f"{rid}: the Name label at ({lx}, {h}, {lz}) is on the fixture {item['id']} at "
+                                 f"{item['at']}")
 
 
 if __name__ == "__main__":

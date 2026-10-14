@@ -15,16 +15,16 @@ from runner import house_layout as hl  # noqa: E402
 # room-defining and task-critical props per room (inventory.md section 5; the rocking horse is hero class, not made)
 ROOMS = {
     "bedroom": {"bedroom_bed", "bedroom_wardrobe", "bedside_table", "dresser", "curtains", "bedroom_rug"},  # #164
-    "kids_room": {"bunk_bed", "desk", "bookcase", "toy_chest"},
+    "kids_room": {"kids_bed", "desk", "kids_bookcase", "toy_chest", "kids_wardrobe", "play_rug"},  # #166
     "landing": {"hall_console", "hall_bench", "landing_runner", "bookcase", "sofa", "rug"},  # #162
-    "study": {"desk", "computer_set", "photo_printer", "office_chair", "bookcase", "filing_cabinet"},
+    "study": {"desk", "computer_set", "photo_printer", "office_chair", "study_bookcase", "filing_cabinet"},  # #166
     "bathroom": {"bath_tub", "wc_toilet", "bath_vanity", "towel_rail"},  # #162
     "guest_room": {"guest_bed", "guest_wardrobe", "bedside_table", "clothes_rail", "suitcase", "storage_boxes"},  # #164
     "balcony": {"balcony_chair", "small_table", "planter_pot"},
 }
 FIXTURES = {
-    "bedroom": {"table_lamp": 2, "pendant_shade": 1, "floor_lamp": 1}, "kids_room": {"table_lamp": 1, "pendant_shade": 1},
-    "landing": {"wall_sconce": 4, "floor_lamp": 1, "pendant_shade": 2}, "study": {"table_lamp": 1, "pendant_shade": 1},
+    "bedroom": {"table_lamp": 2, "pendant_shade": 1, "floor_lamp": 1}, "kids_room": {"table_lamp": 2, "pendant_shade": 1, "floor_lamp": 1},
+    "landing": {"wall_sconce": 4, "floor_lamp": 1, "pendant_shade": 2}, "study": {"table_lamp": 2, "pendant_shade": 1, "floor_lamp": 1},
     "bathroom": {"wall_sconce": 2}, "guest_room": {"table_lamp": 3, "floor_lamp": 1},
     "balcony": {"lantern": 2, "string_lights": 1},
 }
