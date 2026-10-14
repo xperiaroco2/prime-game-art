@@ -112,6 +112,7 @@ Windows: `tools\run.cmd <command>`. Git Bash: `tools/run.sh <command>`. Python 3
 | `retarget [--body] [--library ual2\|tm] [--clips] [--blend] [--floor]` | Bakes Universal Animation Library (UAL1, UAL2) and Meshy text-to-motion (`tm`) clips onto a body type's Ultimate Modular armature (`docs/animations.md`) |
 | `anim-review <inventory\|clips\|pairs\|rates\|sheets\|table\|all> [--body] [--sources] [--clips]` | Judges animations in motion: inventory, measures, strips, MP4 clips, side-by-side pairs, the game's speeds (`rates`), sheets, table (`docs/animations.md`) |
 | `anim-set [--set mvp] [--body] [--clips] [--out] [--no-export] [--no-godot]` | Builds an animation set per body type from its settings (sources, clip edits, loops, layers): `.blend`, GLB, godot-check and the set's checks into `<raw>/anim-sets/<set>/` (`docs/animations.md`) |
+| `nightly [--worktree DIR] [--no-issue]` | The night run (the art manager, each night, in the background): fetches `origin/main` into the dedicated worktree `<main checkout>-wt/nightly` (created if missing), runs `verify --full` there with the log in `tools/out/nightly/<date>.log`, appends a one-line summary to `tools/out/nightly/summary.log`; red: opens or comments on the issue "nightly: verify --full is red on main" (`docs/decisions/2026-10-14-verify-affected.md`) |
 | `workflow-check <script.js>...` | Refuses a workflow script that breaks the cost rules (LF, `meta`, `node --check`, `agentType`, effort, models, `BOUNDS`, the 180 s wait rule); the manager runs it before every launch (`docs/agents.md`) |
 | `wait <log> [--max S]` | Waits at most 170 s (the default and maximum `--max`) for a background run's last log line `exit=<n>`; prints its `verify:` lines or last 8 lines and returns n, 124 while it runs (`docs/agents.md`, rule 1) |
 | `ab-tally <judge.json>...` | Counts the art critic's Sonnet/Opus A/B: per side the valid (and serious), invalid and unsure remarks, the misses and the $, and the stop rule's verdict (`docs/decisions/2026-10-08-art-critic-model-ab.md`) |
@@ -149,7 +150,7 @@ these rules:
 
 ## Definition of done
 1. `tools/run.py verify` (the affected run) is green; paste its tail. Red: stop and report. The full suite
-   (`verify --full`) runs nightly on `main`; a red night run becomes a fix task.
+   (`verify --full`) runs nightly on `main` (`nightly`); a red night run opens an issue that becomes a fix task.
 2. A fresh-context review of the diff; fix the findings or list them in the PR.
 3. Docs updated if durable knowledge changed (`docs/`, an ADR for a decision).
 4. A PR into `main` (or a stacked PR into its parent branch) with:

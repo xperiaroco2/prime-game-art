@@ -40,18 +40,26 @@ heavy files 465 s, the 88 fast files 251 s, of which `test_kit_spec.py` alone is
      or a pattern matches nothing, so the map cannot drift silently.
 
    `verify` prints the heavy files it chose and the first reason for each.
-4. **`verify --full` = the night run**: every test file (parallel fast, then heavy) and `manifest-check`. The art
-   manager runs it once a night on an up-to-date `main` checkout, in the background with its log under `tools/out/`
-   (`tools/run.sh verify --full > tools/out/night/verify-full-<date>.log 2>&1`). A red night run opens an issue (the
-   red files, the log's tail) that becomes the morning's fix task. `selftest` keeps its meaning (every test file,
-   `-p` narrows it) on the same runner; `--write-timings` refreshes `timings.json`.
+4. **`verify --full` = the night run**: every test file (parallel fast, then heavy) and `manifest-check`. The
+   procedure is the runner command `nightly`: it fetches `origin/main`, creates or moves the dedicated worktree
+   `<main checkout>-wt/nightly` (`D:/prime-game-art-wt/nightly`; never the main checkout or a task worktree, and it
+   refuses local edits there), runs `verify --full` in it with the log in `tools/out/nightly/<date>.log` and appends a
+   one-line summary (green or red, minutes, the red step and files) to `tools/out/nightly/summary.log`. A red run
+   opens the issue "nightly: verify --full is red on main" (or comments on it while it is open) with the red files and
+   the log's tail; it becomes the morning's fix task. A green run files nothing. Who triggers it: the art manager,
+   once a night, in the background (`tools/run.sh nightly > tools/out/nightly/run.log 2>&1`); a scheduled trigger
+   may call the same command later. `selftest` keeps its meaning (every test file, `-p` narrows it) on the same
+   runner; `--write-timings` refreshes `timings.json`.
 5. **No GitHub CI** (the engineer: "if it runs locally, why GitHub"): the heavy tests need Blender, Godot and the raw
    folder, which only the desktop has.
 
 ## Consequences
 
-- Measured on this branch (#159): `verify --full` 592 s, green (fast part 8 at a time about 120 s, heavy part about 470 s; before: 10-18 minutes); `verify` against `origin/main`
-  with this change's own diff selects the full suite (it changes `common.py`); `verify --base HEAD` with docs-only changes: 117 s, green (no heavy file). A House change (`layouts/`, `props/`, `tools/runner/house_*.py`) selects only `test_house_export.py` (14 s): about 2.5 minutes. The fast part's floor is `test_kit_spec.py` (about 115 s).
+- Measured on this branch (#159): `verify --full` 592 s, green (the fast part 8 files at a time, about 120 s; the
+  heavy part about 470 s), against 10-18 minutes before. `verify` against `origin/main` with this change's own diff
+  selects the full suite (it changes `common.py`); `verify --base HEAD` with docs-only changes: 117 s, green (no heavy
+  file). A House change (`layouts/`, `props/`, `tools/runner/house_*.py`) selects only `test_house_export.py`
+  (14 s): about 2.5 minutes. The fast part's floor is `test_kit_spec.py` (about 115 s).
 - A character-pipeline regression that a House task cannot cause is found by the night run, not by the task gate; a
   regression the map misses is found the next morning at the latest.
 - New source paths need an entry in `areas.toml` (the test names them); new heavy tests are picked up by their
