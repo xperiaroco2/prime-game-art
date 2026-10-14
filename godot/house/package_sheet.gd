@@ -159,10 +159,10 @@ func _room(holder: Node3D, cam: Camera3D, path: String, eye: float, tile: Dictio
 		target = Vector3(tile["look"][0], tile["look"][1], tile["look"][2])
 		if tile.has("raise"):  # #79: nodes of the room scene moved up for this view (the lift's raised pose)
 			var up: Dictionary = tile["raise"]
-			for path in up["nodes"]:
-				var rn := sc.get_node_or_null(NodePath(String(path))) as Node3D
+			for np in up["nodes"]:
+				var rn := sc.get_node_or_null(NodePath(String(np))) as Node3D
 				if rn == null:
-					return {"error": "missing node " + String(path)}
+					return {"error": "missing node " + String(np)}
 				rn.position.y += float(up["dy"])
 		for wr in tile.get("with", []):  # another package's room in place beside this one (its offset, room-local)
 			var wp := load(String(wr["scene"])) as PackedScene
