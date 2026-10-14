@@ -76,6 +76,13 @@ class AreasTest(unittest.TestCase):
         ]
         self.assertEqual(unmapped, [], "add these to tools/tests/areas.toml (an area, light or shared)")
 
+    def test_every_heavy_file_is_in_an_area(self) -> None:
+        # A heavy file no area's `tests` pattern names would run only when it changes itself or the full suite runs:
+        # the task gate would skip it silently until the night run.
+        patterns = [p for _, tests in self.areas.areas.values() for p in tests]
+        orphans = [p.name for p in tr.test_files() if tr.is_heavy_file(p) and not tr.matches(p.name, patterns)]
+        self.assertEqual(orphans, [], "add these heavy files to an area's `tests` in tools/tests/areas.toml")
+
     @unittest.skipUnless(HAVE_GIT, "needs git")
     def test_no_stale_pattern(self) -> None:
         files = tracked_files()

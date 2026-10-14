@@ -36,8 +36,8 @@ heavy files 465 s, the 88 fast files 251 s, of which `test_kit_spec.py` alone is
      helpers and fixtures, the test runner itself, `areas.toml`, `godot/project.godot`, `godot/addons`, `godot/lib`)
      runs the full suite;
    - a light path (docs, manifests, source records, workflows) needs no heavy file;
-   - a path in none of them runs the full suite. `test_verify_affected.py` fails while any tracked file is unmapped
-     or a pattern matches nothing, so the map cannot drift silently.
+   - a path in none of them runs the full suite. `test_verify_affected.py` fails while any tracked file is unmapped,
+     a heavy test file is in no area's `tests`, or a pattern matches nothing, so the map cannot drift silently.
 
    `verify` prints the heavy files it chose and the first reason for each.
 4. **`verify --full` = the night run**: every test file (parallel fast, then heavy) and `manifest-check`. The
@@ -62,5 +62,5 @@ heavy files 465 s, the 88 fast files 251 s, of which `test_kit_spec.py` alone is
   (14 s): about 2.5 minutes. The fast part's floor is `test_kit_spec.py` (about 115 s).
 - A character-pipeline regression that a House task cannot cause is found by the night run, not by the task gate; a
   regression the map misses is found the next morning at the latest.
-- New source paths need an entry in `areas.toml` (the test names them); new heavy tests are picked up by their
-  file's text and their name's area pattern.
+- New source paths need an entry in `areas.toml` (the test names them); a new heavy test file is found by its
+  text and must match an area's `tests` pattern (the test names it).
