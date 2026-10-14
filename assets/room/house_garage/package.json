@@ -50,7 +50,7 @@
   "assets/environment/house_props/lift_arms.glb": "701c267dc113a07b2b3029d1da492988383b925af0bf069dadb4627f5205d2c3",
   "assets/environment/house_props/lift_panel.glb": "d22650794d94a9a4d949258bf355e2bdcbd7b1c7c60a9f1f9a330ff5cde30ca1",
   "assets/environment/house_props/lift_posts.glb": "520ab8b9a3a56435fba20f8290b4d7333204ba4628e4f1137d2c38b6a9bf20d2",
-  "assets/environment/house_props/merged/batch_ground_garage_dressing.glb": "bba0c62c97af4015d5c1f58322a6b65ba708a9959545ecafa8d5ddd94a94dd37",
+  "assets/environment/house_props/merged/batch_ground_garage_dressing.glb": "567457719f74756e0b6fbaac5da88c955380e5024410a2b951a804b4e23bf95f",
   "assets/environment/house_props/old_bicycle.glb": "1706b96cf79e795d64ad2a26d8f1b083662db136fc92aeda1a0811c5a2d93082",
   "assets/environment/house_props/part_picture.glb": "83514b9e6bcdb9ddfa6738566314fec3945fb19d6e93bb6b2589244600711cb6",
   "assets/environment/house_props/parts_shelving.glb": "518e76a3a2e8db3ce941f2efda60c8f7e9ed642cbdd7c092903a6ab2da2fd190",
@@ -68,7 +68,7 @@
   "assets/environment/house_props/prop_fine.gdshader": "ab82a7a0ed78bccde04553935fe681378a20d970371cb09060cce31b9d5c3bca",
   "assets/environment/house_props/prop_fine_high.tres": "319567d45aa17b22a3776ce15d6609b571cfa4cbac5739ef5f08e7fb795a6f86",
   "assets/environment/house_props/prop_fine_low.tres": "284dfcce2b4af66e53b545f7948c934677ed84b3003717efdda998fc826fd819",
-  "levels/house/rooms/garage.tscn": "81888feaae4f72080f36808de5d56acbccb0802e2d21936825ba80e51ad84bfa"
+  "levels/house/rooms/garage.tscn": "02d860c8aeca938fe5b7c14fd8d5adc8af5657f61b0ba677b668bd3ee4e8e842"
  },
  "questions": [
   "G3: the room scenes are under levels/house/rooms/ (11.1 keeps assets/ data only); the game's workflow swaps them into its greybox rooms (Body/Looks out, Shell/Dressing/Fixtures in).",

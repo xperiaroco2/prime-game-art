@@ -11,6 +11,7 @@
 # #166 (the kids' room's paint): only package.json changed, the shared kit_set.tres's new hash; this package's scenes are unchanged.
 # #168 (the attic's paint): only package.json changed, the shared kit_set.tres's new hash; this package's scenes are unchanged.
 # #82 (the task props in the world look): re-exported as P2 into <raw>/review/house/82/export/p2; only terrace.tscn and package.json changed.
+# #107's material fix (a batch kept one material per name, so lamps or roughness variants shared values): re-exported as P2 into <raw>/review/house/107/export2/p2 (`house --export ... --package 2 --sheet`); only batch_ground_kitchen_dressing.glb, kitchen.tscn and package.json changed and point there.
 id = "house_ground"
 kind = "room"
 slot = ""
@@ -55,8 +56,8 @@ sha256 = "8f9487c6d4fa71006d833a672b5c1baaff0d99a056950740cd8e58bb25aa46de"
 
 [[files]]
 name = "kitchen.tscn"
-file = "review/house/107/export/p2/levels/house/rooms/kitchen.tscn"
-sha256 = "02e1a6d52327e2139b7bd682047f3e779c52b060cc489498b778bffbbe8f7296"
+file = "review/house/107/export2/p2/levels/house/rooms/kitchen.tscn"
+sha256 = "526c99acff58de3a880d426a2fd9576df05c49202eb817035504292032f7b220"
 
 [[files]]
 name = "living_room.tscn"
@@ -220,8 +221,8 @@ sha256 = "e95c6f65c68b5627462d1d09a3eef95a550e65a3a8aa8928f25ce634e8327936"
 
 [[files]]
 name = "merged/batch_ground_kitchen_dressing.glb"
-file = "review/house/107/export/p2/assets/environment/house_props/merged/batch_ground_kitchen_dressing.glb"
-sha256 = "9fc9eba93f2b53922ae8a3b22ac1bb6f4b690d16a38b514feb37db9b6d305503"
+file = "review/house/107/export2/p2/assets/environment/house_props/merged/batch_ground_kitchen_dressing.glb"
+sha256 = "3866f640c03f3c272cfd61e2319a1d3fc9bfe26f9a5ea0061efc6bb7be18f5ab"
 
 [[files]]
 name = "merged/batch_ground_kitchen_fixtures.glb"

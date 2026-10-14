@@ -8,6 +8,7 @@
 # #170 (the storage, the darkroom and the corridor dressed): re-exported as P3 into <raw>/review/house/170/export/p3 (`house --export ... --package 3`); the three changed scenes and package.json point there.
 # #172 (the plant rooms, the passage and the darkroom's island dressed): re-exported as P3 into <raw>/review/house/172/export/p3 (`house --export ... --package 3`); the six changed scenes and package.json point there; the dressing fixes that cleared the doc routes re-exported it into <raw>/review/house/172/export/p3b (four scenes) and p3c (the pump room); each changed scene and package.json point at the newest.
 # #82 (the task props in the world look): re-exported as P3 into <raw>/review/house/82/export/p3; only boiler_room.tscn, darkroom.tscn, generator_hall.tscn, pump_room.tscn, storage.tscn, switch_room.tscn and package.json changed.
+# #107's material fix (a batch kept one material per name, so lamps or roughness variants shared values): re-exported as P3 into <raw>/review/house/107/export2/p3 (`house --export ... --package 3 --sheet`); only batch_basement_boiler_room_fixtures.glb, batch_basement_darkroom_fixtures.glb, batch_basement_storage_fixtures.glb, batch_basement_switch_room_fixtures.glb and package.json changed and point there.
 id = "house_basement"
 kind = "room"
 slot = ""
@@ -162,8 +163,8 @@ sha256 = "0df28acbdc5d1fbeff8f165ade6151592aff3d01875b91d07a39b5b913e45b91"
 
 [[files]]
 name = "merged/batch_basement_boiler_room_fixtures.glb"
-file = "review/house/107/export/p3/assets/environment/house_props/merged/batch_basement_boiler_room_fixtures.glb"
-sha256 = "ba3a882d85b9e802c39b02ec0b55c7df6014344fd90b036e96e132bd2cfdb936"
+file = "review/house/107/export2/p3/assets/environment/house_props/merged/batch_basement_boiler_room_fixtures.glb"
+sha256 = "5e5f21d8eb6b565b82c4554b2a0cb0230c617c43ab01e64d0fcc67157408b1a5"
 
 [[files]]
 name = "merged/batch_basement_corridor_detail.glb"
@@ -192,8 +193,8 @@ sha256 = "300f5dcfac2561f463f4251efcd75efc138541daccc8076f0ca21370362d9d2b"
 
 [[files]]
 name = "merged/batch_basement_darkroom_fixtures.glb"
-file = "review/house/107/export/p3/assets/environment/house_props/merged/batch_basement_darkroom_fixtures.glb"
-sha256 = "8de34ee6d45070df1ddecf271a0f8c6b2241bff50b691458c920164272fc8155"
+file = "review/house/107/export2/p3/assets/environment/house_props/merged/batch_basement_darkroom_fixtures.glb"
+sha256 = "25468d2f37f1e7d353d6036c171686ed9d37788bbc85760b69bcec23c822214a"
 
 [[files]]
 name = "merged/batch_basement_generator_hall_detail.glb"
@@ -252,8 +253,8 @@ sha256 = "7ebd8f24834edc976b2024be2a1b2c9bbb0c5ae5c08a44d24c058e0fc3591247"
 
 [[files]]
 name = "merged/batch_basement_storage_fixtures.glb"
-file = "review/house/107/export/p3/assets/environment/house_props/merged/batch_basement_storage_fixtures.glb"
-sha256 = "2b41c858971729d40ae4e558a8ff610f35fc7acfa6b04ecffed64eafe57652c4"
+file = "review/house/107/export2/p3/assets/environment/house_props/merged/batch_basement_storage_fixtures.glb"
+sha256 = "c928d9364618c3603cd1bfe06523cdbdb1c0b38d08d52ef2ae499afca6d8f803"
 
 [[files]]
 name = "merged/batch_basement_switch_room_detail.glb"
@@ -267,5 +268,5 @@ sha256 = "d6900b2a86a99d1e1186cecd1425c42eb03cbcf1f36368f6ce51fb4b65160b94"
 
 [[files]]
 name = "merged/batch_basement_switch_room_fixtures.glb"
-file = "review/house/107/export/p3/assets/environment/house_props/merged/batch_basement_switch_room_fixtures.glb"
-sha256 = "a49636a5921d9aa1edefce133839814179f39659746f7bb82ecdf3aa98bc5525"
+file = "review/house/107/export2/p3/assets/environment/house_props/merged/batch_basement_switch_room_fixtures.glb"
+sha256 = "c216475eaecc3977896a1ce5ccdba575d6c35838cf1c339f4c5801093a27c959"

@@ -1,5 +1,6 @@
 # Written for #79 from the P6 export of 2026-10-14 (`house --export <raw>/review/house/79/export/p6 --package 6`); a rebuild
 # changes the hash below (`manifest-check --hashes` finds it). The game's path: levels/house/rooms/garage.tscn.
+# #107's material fix (a batch kept one material per name, so lamps or roughness variants shared values): re-exported as P6 into <raw>/review/house/107/export2/p6 (`house --export ... --package 6 --sheet`); only batch_ground_garage_dressing.glb, garage.tscn and package.json changed and point there.
 id = "house_garage"
 kind = "room"
 slot = ""
@@ -24,8 +25,8 @@ url = "https://github.com/xperiaroco2/prime-game-art"
 
 [[files]]
 name = "garage.tscn"
-file = "review/house/107/export/p6/levels/house/rooms/garage.tscn"
-sha256 = "81888feaae4f72080f36808de5d56acbccb0802e2d21936825ba80e51ad84bfa"
+file = "review/house/107/export2/p6/levels/house/rooms/garage.tscn"
+sha256 = "02d860c8aeca938fe5b7c14fd8d5adc8af5657f61b0ba677b668bd3ee4e8e842"
 
 [[files]]
 name = "merged/floor_m_ground_garage.glb"
@@ -39,5 +40,5 @@ sha256 = "6ad4f1b23115094ed15c9d39862d27fe6a902c00994a1d5f1edd192d3d526384"
 
 [[files]]
 name = "merged/batch_ground_garage_dressing.glb"
-file = "review/house/107/export/p6/assets/environment/house_props/merged/batch_ground_garage_dressing.glb"
-sha256 = "bba0c62c97af4015d5c1f58322a6b65ba708a9959545ecafa8d5ddd94a94dd37"
+file = "review/house/107/export2/p6/assets/environment/house_props/merged/batch_ground_garage_dressing.glb"
+sha256 = "567457719f74756e0b6fbaac5da88c955380e5024410a2b951a804b4e23bf95f"

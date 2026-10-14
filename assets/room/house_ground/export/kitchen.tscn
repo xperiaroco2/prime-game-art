@@ -839,6 +839,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
 
 [node name="merged_props" parent="Dressing/batch_dressing"]
 surface_material_override/0 = ExtResource("14")
+surface_material_override/1 = ExtResource("14")
 
 [node name="Detail" type="Node3D" parent="."]
 
