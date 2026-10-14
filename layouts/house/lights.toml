@@ -145,7 +145,7 @@ angle = 35.0
 # The fixtures per room (room id -> type -> count); `place = "perimeter"` spaces a room's floor fixtures along its
 # edges 2 m in (the yard: the rest of the plot holds the house).
 [rooms.storage]
-bare_bulb = 12
+fluorescent_tube = 12  # #170: bright work light (was 12 bare bulbs)
 cage_lamp = 2
 [rooms.darkroom]
 bare_bulb = 3

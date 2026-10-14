@@ -20,7 +20,7 @@ ROOMS = [r["id"] for r in LEVEL["rooms"]]
 # inventory.md section 3: the doors and each room's light fixtures
 DOORS = {(30, 28), (22, 34), (40, 28), (40, 38), (49, 42), (46, 22), (58, 31)}
 FIXTURES = {
-    "storage": {"bare_bulb": 12, "cage_lamp": 2},
+    "storage": {"fluorescent_tube": 12, "cage_lamp": 2},  # #170: tubes for the bare bulbs
     "darkroom": {"safelight_red": 6, "bare_bulb": 3},
     "corridor": {"cage_lamp": 4},
     "boiler_room": {"cage_lamp": 3, "bare_bulb": 2},

@@ -1,10 +1,13 @@
 # The darkroom's dressing (art #78, docs/house.md "Dressing"): the props and light fixtures of one room, as data.
 # at = [x, h, z]: room-local metres like the room's stations (x east, h above the floor, z south from the room's
 # north-west corner) at the prop's pivot (floor: the footprint's centre; wall: the back's bottom centre on the wall's
-# face; ceiling: the top's centre). face = the way the prop's front (+Z) looks: N, E, S or W.
+# face; ceiling: the top's centre). face = the way the prop's front (+Z) looks: N, E, S or W (or yaw = degrees).
 # Ids are the dressing library's (props/library.toml, #87) and the task props' (props/tasks.toml, #82). Fixtures are
 # the lamps' meshes only (their light is #83a's, layouts/house/lights.toml). Positions are the engineer's to change.
+# #170: every prop is hand-placed (house_clutter.RULES keeps the room empty); the photo gazebo's lab (16 x 10 m): two wet benches with enlargers, a sink, chemicals, light tables, drying lines of prints; the PhotoBoard station kept clear.
 room = "darkroom"
+
+# the task props and their stations (props/tasks.toml): unchanged
 
 [[props]]
 id = "photo_board"
@@ -33,51 +36,459 @@ id = "enlarger"
 at = [15.5, 0.9, 2.4]
 face = "W"
 
-[[props]]
-id = "metal_shelving"
-at = [2, 0, 9.65]
-face = "N"
+# the west wall: filing cabinets, the wet bench (a tray table with its enlarger), the sink, chemicals, paper
 
 [[props]]
-id = "metal_shelving"
-at = [14, 0, 9.65]
-face = "N"
-
-[[props]]
-id = "crate"
-at = [3.6, 0, 9.6]
-
-[[props]]
-id = "crate"
-at = [3.6, 0.4, 9.6]
-
-[[props]]
-id = "crate"
-at = [12.4, 0, 9.6]
-
-[[props]]
-id = "crate"
-at = [12.4, 0.4, 9.6]
-
-[[props]]
-id = "cardboard_box"
-at = [15.5, 0, 6]
-face = "W"
-
-[[props]]
-id = "cardboard_box"
-at = [15.5, 0.4, 6]
-face = "W"
-
-[[props]]
-id = "cardboard_box"
-at = [15.5, 0, 6.6]
-face = "W"
-
-[[props]]
-id = "cardboard_box"
-at = [0.45, 0, 8.2]
+id = "filing_cabinet"
+at = [0.4, 0, 0.75]
 face = "E"
+
+[[props]]
+id = "filing_cabinet"
+at = [0.4, 0, 1.3]
+face = "E"
+
+[[props]]
+id = "paper_stack"
+at = [0.4, 1.3, 0.75]
+face = "E"
+
+[[props]]
+id = "storage_box"
+at = [0.4, 1.3, 1.3]
+face = "E"
+
+[[props]]
+id = "stool"
+at = [1.35, 0, 3.0]
+face = "W"
+
+[[props]]
+id = "bottles"
+at = [0.5, 0.9, 3.6]
+face = "E"
+
+[[props]]
+id = "clipboard"
+at = [0.1, 1.4, 3.95]
+face = "E"
+
+[[props]]
+id = "lab_sink"
+at = [0.425, 0, 5.0]
+face = "E"
+
+[[props]]
+id = "wall_calendar"
+at = [0.1, 1.5, 5.85]
+face = "E"
+
+[[props]]
+id = "chem_shelf"
+at = [0.325, 0, 6.85]
+face = "E"
+
+[[props]]
+id = "storage_box"
+at = [0.35, 0.0, 8.3]
+face = "E"
+
+[[props]]
+id = "storage_box"
+at = [0.35, 0.34, 8.3]
+face = "E"
+
+[[props]]
+id = "storage_box"
+at = [0.35, 0.68, 8.3]
+face = "E"
+
+[[props]]
+id = "storage_box"
+at = [0.35, 0.0, 8.85]
+face = "E"
+
+[[props]]
+id = "storage_box"
+at = [0.35, 0.34, 8.85]
+face = "E"
+
+[[props]]
+id = "art_gazebo"
+at = [0.1, 1.25, 9.4]
+face = "E"
+
+# the north wall: chemicals, paper boxes, a light table with its stool, filing cabinets; the clock by the door
+
+[[props]]
+id = "chem_shelf"
+at = [2.0, 0, 0.325]
+face = "S"
+
+[[props]]
+id = "storage_box"
+at = [3.15, 0.0, 0.3]
+face = "S"
+
+[[props]]
+id = "storage_box"
+at = [3.15, 0.34, 0.3]
+face = "S"
+
+[[props]]
+id = "light_table"
+at = [4.4, 0, 0.45]
+face = "S"
+
+[[props]]
+id = "stool"
+at = [4.4, 0, 1.25]
+face = "N"
+
+[[props]]
+id = "storage_crate"
+at = [5.5, 0.0, 0.3]
+face = "S"
+
+[[props]]
+id = "storage_crate"
+at = [5.5, 0.34, 0.3]
+face = "S"
+
+[[props]]
+id = "wall_clock"
+at = [6.5, 2.0, 0.1]
+face = "S"
+
+[[props]]
+id = "art_photos"
+at = [9.5, 1.4, 0.1]
+face = "S"
+
+[[props]]
+id = "chem_shelf"
+at = [10.6, 0, 0.325]
+face = "S"
+
+[[props]]
+id = "storage_box"
+at = [11.75, 0.0, 0.3]
+face = "S"
+
+[[props]]
+id = "storage_box"
+at = [11.75, 0.34, 0.3]
+face = "S"
+
+[[props]]
+id = "storage_box"
+at = [11.75, 0.68, 0.3]
+face = "S"
+
+[[props]]
+id = "filing_cabinet"
+at = [12.4, 0, 0.4]
+face = "S"
+
+[[props]]
+id = "filing_cabinet"
+at = [12.95, 0, 0.4]
+face = "S"
+
+[[props]]
+id = "paper_stack"
+at = [12.4, 1.3, 0.4]
+face = "S"
+
+[[props]]
+id = "parcels"
+at = [12.95, 1.3, 0.4]
+face = "S"
+
+[[props]]
+id = "chem_shelf"
+at = [14.45, 0, 0.325]
+face = "S"
+
+[[props]]
+id = "storage_box"
+at = [15.6, 0.0, 0.3]
+face = "S"
+
+[[props]]
+id = "storage_box"
+at = [15.6, 0.34, 0.3]
+face = "S"
+
+# the east wall: the second wet bench and its stool, a light table, chemicals, cabinets, prints
+
+[[props]]
+id = "stool"
+at = [14.65, 0, 3.0]
+face = "E"
+
+[[props]]
+id = "bottles"
+at = [15.5, 0.9, 3.6]
+face = "W"
+
+[[props]]
+id = "clipboard"
+at = [15.9, 1.4, 4.0]
+face = "W"
+
+[[props]]
+id = "art_gazebo"
+at = [15.9, 1.4, 1.5]
+face = "W"
+
+[[props]]
+id = "light_table"
+at = [15.55, 0, 5.2]
+face = "W"
+
+[[props]]
+id = "chem_shelf"
+at = [15.675, 0, 7.0]
+face = "W"
+
+[[props]]
+id = "filing_cabinet"
+at = [15.6, 0, 8.6]
+face = "W"
+
+[[props]]
+id = "filing_cabinet"
+at = [15.6, 0, 9.15]
+face = "W"
+
+[[props]]
+id = "paper_stack"
+at = [15.6, 1.3, 8.6]
+face = "W"
+
+[[props]]
+id = "storage_box"
+at = [15.6, 1.3, 9.15]
+face = "W"
+
+[[props]]
+id = "art_photos"
+at = [15.9, 1.45, 8.85]
+face = "W"
+
+[[props]]
+id = "wall_calendar"
+at = [15.9, 1.5, 5.95]
+face = "W"
+
+# the south wall: two dry benches with prints, frames and a mug, chemicals, the pin board of party prints
+
+[[props]]
+id = "desk"
+at = [2.6, 0, 9.55]
+face = "N"
+
+[[props]]
+id = "stool"
+at = [2.6, 0, 8.75]
+face = "S"
+
+[[props]]
+id = "paper_stack"
+at = [2.3, 0.75, 9.55]
+face = "N"
+
+[[props]]
+id = "standing_frame"
+at = [2.75, 0.75, 9.7]
+face = "N"
+
+[[props]]
+id = "standing_frame"
+at = [2.95, 0.75, 9.65]
+face = "N"
+
+[[props]]
+id = "cup_set"
+at = [3.05, 0.75, 9.4]
+face = "N"
+
+[[props]]
+id = "basket"
+at = [2.1, 0, 9.6]
+face = "N"
+
+[[props]]
+id = "photo_row"
+at = [2.6, 1.3, 9.9]
+face = "N"
+
+[[props]]
+id = "chem_shelf"
+at = [4.6, 0, 9.675]
+face = "N"
+
+[[props]]
+id = "storage_box"
+at = [6.0, 0.0, 9.65]
+face = "N"
+
+[[props]]
+id = "storage_box"
+at = [6.0, 0.34, 9.65]
+face = "N"
+
+[[props]]
+id = "art_photos"
+at = [6.6, 1.4, 9.9]
+face = "N"
+
+[[props]]
+id = "pin_board"
+at = [8.0, 1.2, 9.9]
+face = "N"
+
+[[props]]
+id = "art_photos"
+at = [9.4, 1.4, 9.9]
+face = "N"
+
+[[props]]
+id = "storage_box"
+at = [10.0, 0.0, 9.65]
+face = "N"
+
+[[props]]
+id = "storage_box"
+at = [10.0, 0.34, 9.65]
+face = "N"
+
+[[props]]
+id = "desk"
+at = [12.0, 0, 9.55]
+face = "N"
+
+[[props]]
+id = "stool"
+at = [12.0, 0, 8.75]
+face = "S"
+
+[[props]]
+id = "paper_stack"
+at = [11.7, 0.75, 9.55]
+face = "N"
+
+[[props]]
+id = "standing_frame"
+at = [12.2, 0.75, 9.7]
+face = "N"
+
+[[props]]
+id = "cup_set"
+at = [12.45, 0.75, 9.45]
+face = "N"
+
+[[props]]
+id = "basket"
+at = [12.45, 0, 9.6]
+face = "N"
+
+[[props]]
+id = "photo_row"
+at = [12.0, 1.3, 9.9]
+face = "N"
+
+[[props]]
+id = "chem_shelf"
+at = [14.2, 0, 9.675]
+face = "N"
+
+# the drying lines over the room: clipped party and gazebo prints (detail layer)
+
+[[props]]
+id = "print_line"
+at = [4.0, 3.0, 5.0]
+face = "S"
+
+[[props]]
+id = "print_line_b"
+at = [4.0, 3.0, 6.6]
+face = "S"
+
+[[props]]
+id = "print_line_b"
+at = [12.0, 3.0, 5.0]
+face = "S"
+
+[[props]]
+id = "print_line"
+at = [12.0, 3.0, 6.6]
+face = "S"
+
+# paper and chemical stock on the chemical shelves' tops
+
+[[props]]
+id = "storage_box"
+at = [0.325, 1.9, 6.55]
+face = "E"
+
+[[props]]
+id = "storage_crate"
+at = [0.325, 1.9, 7.15]
+face = "E"
+
+[[props]]
+id = "storage_box"
+at = [1.7, 1.9, 0.325]
+face = "S"
+
+[[props]]
+id = "storage_crate"
+at = [2.3, 1.9, 0.325]
+face = "S"
+
+[[props]]
+id = "storage_box"
+at = [10.3, 1.9, 0.325]
+face = "S"
+
+[[props]]
+id = "storage_crate"
+at = [10.9, 1.9, 0.325]
+face = "S"
+
+[[props]]
+id = "storage_box"
+at = [14.15, 1.9, 0.325]
+face = "S"
+
+[[props]]
+id = "storage_crate"
+at = [14.75, 1.9, 0.325]
+face = "S"
+
+[[props]]
+id = "storage_box"
+at = [15.675, 1.9, 6.7]
+face = "W"
+
+[[props]]
+id = "storage_crate"
+at = [15.675, 1.9, 7.3]
+face = "W"
+
+[[props]]
+id = "storage_box"
+at = [13.9, 1.9, 9.675]
+face = "N"
+
+[[props]]
+id = "storage_crate"
+at = [14.5, 1.9, 9.675]
+face = "N"
+
+# light fixtures
 
 [[fixtures]]
 id = "safelight_red"
@@ -123,387 +534,4 @@ at = [12, 3, 4]
 
 # ---- clutter (art #104): generated by `house --clutter` (tools/runner/house_clutter.py); edit its RULES, not this block
 
-[[props]]
-id = "crate"
-at = [12.53, 0, 0.35]
-face = "S"
 
-[[props]]
-id = "crate"
-at = [12.53, 0.4, 0.35]
-face = "S"
-
-[[props]]
-id = "cardboard_box"
-at = [13.13, 0, 0.35]
-face = "S"
-
-[[props]]
-id = "barrel"
-at = [11.88, 0, 0.45]
-face = "S"
-
-[[props]]
-id = "open_box"
-at = [10.69, 0, 0.35]
-face = "S"
-
-[[props]]
-id = "cardboard_box"
-at = [11.29, 0, 0.35]
-face = "S"
-
-[[props]]
-id = "book_stack"
-at = [10.24, 0, 0.295]
-face = "S"
-
-[[props]]
-id = "metal_shelving"
-at = [14.92, 0, 0.4]
-face = "S"
-
-[[props]]
-id = "filing_cabinet"
-at = [15.67, 0, 9.55]
-face = "N"
-
-[[props]]
-id = "sideboard"
-at = [11.31, 0, 9.625]
-face = "N"
-
-[[props]]
-id = "metal_shelving"
-at = [1.08, 0, 0.4]
-face = "S"
-
-[[props]]
-id = "filing_cabinet"
-at = [0.71, 0, 9.55]
-face = "N"
-
-[[props]]
-id = "sideboard"
-at = [9.67, 0, 9.625]
-face = "N"
-
-[[props]]
-id = "metal_shelving"
-at = [4.54, 0, 0.4]
-face = "S"
-
-[[props]]
-id = "filing_cabinet"
-at = [8.58, 0, 9.55]
-face = "N"
-
-[[props]]
-id = "sideboard"
-at = [0.375, 0, 7.11]
-face = "E"
-
-[[props]]
-id = "metal_shelving"
-at = [7.29, 0, 9.6]
-face = "N"
-
-[[props]]
-id = "filing_cabinet"
-at = [15.55, 0, 0.94]
-face = "W"
-
-[[props]]
-id = "sideboard"
-at = [15.625, 0, 8.05]
-face = "W"
-
-[[props]]
-id = "metal_shelving"
-at = [0.4, 0, 5.27]
-face = "E"
-
-[[props]]
-id = "filing_cabinet"
-at = [6.71, 0, 0.45]
-face = "S"
-
-[[props]]
-id = "sideboard"
-at = [4.69, 0, 9.625]
-face = "N"
-
-[[props]]
-id = "filing_cabinet"
-at = [2.81, 0, 0.45]
-face = "S"
-
-[[props]]
-id = "sideboard"
-at = [15.625, 0, 4.91]
-face = "W"
-
-[[props]]
-id = "filing_cabinet"
-at = [9.82, 0, 0.45]
-face = "S"
-
-[[props]]
-id = "filing_cabinet"
-at = [5.83, 0, 0.45]
-face = "S"
-
-[[props]]
-id = "filing_cabinet"
-at = [0.45, 0, 1.38]
-face = "E"
-
-[[props]]
-id = "filing_cabinet"
-at = [6, 0, 9.55]
-face = "N"
-
-[[props]]
-id = "filing_cabinet"
-at = [0.45, 0, 8.74]
-face = "E"
-
-[[props]]
-id = "filing_cabinet"
-at = [15.55, 0, 1.48]
-face = "W"
-
-[[props]]
-id = "cardboard_box"
-at = [1.75, 0, 4.25]
-face = "N"
-
-[[props]]
-id = "cardboard_box"
-at = [1.75, 0.4, 4.25]
-face = "N"
-
-[[props]]
-id = "crate"
-at = [5.75, 0, 7.25]
-face = "N"
-
-[[props]]
-id = "crate"
-at = [5.75, 0.4, 7.25]
-face = "N"
-
-[[props]]
-id = "metal_shelving"
-at = [13.75, 0, 7.25]
-face = "N"
-
-[[props]]
-id = "cardboard_box"
-at = [8.25, 0, 4]
-face = "S"
-
-[[props]]
-id = "cardboard_box"
-at = [8.25, 0.4, 4]
-face = "S"
-
-[[props]]
-id = "crate"
-at = [14.25, 0, 3.5]
-face = "E"
-
-[[props]]
-id = "crate"
-at = [14.25, 0.4, 3.5]
-face = "E"
-
-[[props]]
-id = "metal_shelving"
-at = [4.75, 0, 7.75]
-face = "W"
-
-[[props]]
-id = "cardboard_box"
-at = [10.75, 0, 4.25]
-face = "N"
-
-[[props]]
-id = "cardboard_box"
-at = [10.75, 0.4, 4.25]
-face = "N"
-
-[[props]]
-id = "crate"
-at = [7.25, 0, 3.75]
-face = "N"
-
-[[props]]
-id = "crate"
-at = [7.25, 0.4, 3.75]
-face = "N"
-
-[[props]]
-id = "metal_shelving"
-at = [13, 0, 6.25]
-face = "S"
-
-[[props]]
-id = "cardboard_box"
-at = [12.5, 0, 7.75]
-face = "S"
-
-[[props]]
-id = "cardboard_box"
-at = [12.5, 0.4, 7.75]
-face = "S"
-
-[[props]]
-id = "crate"
-at = [1.5, 0, 8.25]
-face = "E"
-
-[[props]]
-id = "crate"
-at = [1.5, 0.4, 8.25]
-face = "E"
-
-[[props]]
-id = "metal_shelving"
-at = [2.5, 0, 6.5]
-face = "N"
-
-[[props]]
-id = "cardboard_box"
-at = [2.5, 0, 3.75]
-face = "S"
-
-[[props]]
-id = "cardboard_box"
-at = [2.5, 0.4, 3.75]
-face = "S"
-
-[[props]]
-id = "crate"
-at = [8, 0, 3.25]
-face = "S"
-
-[[props]]
-id = "crate"
-at = [8, 0.4, 3.25]
-face = "S"
-
-[[props]]
-id = "metal_shelving"
-at = [3, 0, 2.25]
-face = "S"
-
-[[props]]
-id = "stool"
-at = [2.32, 0, 0.325]
-face = "S"
-
-[[props]]
-id = "paper_stack"
-at = [0.56, 0.9, 3.6]
-face = "E"
-
-[[props]]
-id = "bottles"
-at = [0.68, 0.9, 3.11]
-face = "E"
-
-[[props]]
-id = "paper_stack"
-at = [0.26, 0.9, 2.85]
-face = "E"
-
-[[props]]
-id = "bottles"
-at = [0.33, 0.9, 3.51]
-face = "E"
-
-[[props]]
-id = "bottles"
-at = [15.38, 0.9, 3.31]
-face = "W"
-
-[[props]]
-id = "paper_stack"
-at = [15.71, 0.9, 3.25]
-face = "W"
-
-[[props]]
-id = "paper_stack"
-at = [15.71, 0.9, 2.85]
-face = "W"
-
-[[props]]
-id = "bottles"
-at = [15.68, 0.9, 3.61]
-face = "W"
-
-[[props]]
-id = "book_stack"
-at = [3.57, 0.8, 9.54]
-face = "S"
-
-[[props]]
-id = "book_stack"
-at = [12.32, 0.8, 9.54]
-face = "S"
-
-[[props]]
-id = "book_stack"
-at = [15.44, 0.8, 6.02]
-face = "W"
-
-[[props]]
-id = "book_stack"
-at = [15.44, 0.4, 6.57]
-face = "W"
-
-[[props]]
-id = "paper_stack"
-at = [0.46, 0.4, 8.2]
-face = "E"
-
-[[props]]
-id = "book_stack"
-at = [12.55, 0.8, 0.33]
-face = "S"
-
-[[props]]
-id = "book_stack"
-at = [13.1, 0.4, 0.28]
-face = "S"
-
-[[props]]
-id = "paper_stack"
-at = [11.24, 0.4, 0.31]
-face = "S"
-
-[[props]]
-id = "wall_shelf"
-at = [10.64, 1.45, 9.9]
-face = "N"
-
-[[props]]
-id = "wall_shelf"
-at = [15.9, 1.45, 6.12]
-face = "W"
-
-[[props]]
-id = "picture_frame"
-at = [4.38, 1.4, 9.9]
-face = "N"
-
-[[props]]
-id = "paper_stack"
-at = [13.65, 0, 0.27]
-face = "S"
-
-[[props]]
-id = "bottles"
-at = [6.27, 0, 0.195]
-face = "S"

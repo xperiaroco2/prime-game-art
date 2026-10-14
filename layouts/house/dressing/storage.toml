@@ -1,11 +1,13 @@
 # The storage's dressing (art #78, docs/house.md "Dressing"): the props and light fixtures of one room, as data.
 # at = [x, h, z]: room-local metres like the room's stations (x east, h above the floor, z south from the room's
 # north-west corner) at the prop's pivot (floor: the footprint's centre; wall: the back's bottom centre on the wall's
-# face; ceiling: the top's centre). face = the way the prop's front (+Z) looks: N, E, S or W.
+# face; ceiling: the top's centre). face = the way the prop's front (+Z) looks: N, E, S or W (or yaw = degrees).
 # Ids are the dressing library's (props/library.toml, #87) and the task props' (props/tasks.toml, #82). Fixtures are
 # the lamps' meshes only (their light is #83a's, layouts/house/lights.toml). Positions are the engineer's to change.
-# Pillars: four kit pillars in basement.toml [[pieces]].
+# #170: every prop is hand-placed (house_clutter.RULES keeps the room empty); the burger kitchen's and the house's store (16 x 16 m): metal shelving with labelled stock, a delivery bay, floor markings and signs; six stations and ten package spawns kept clear.
 room = "storage"
+
+# the task props and their stations (props/tasks.toml): unchanged
 
 [[props]]
 id = "bun_shelf"
@@ -63,116 +65,394 @@ at = [13, 0, 15.65]
 face = "N"
 station = "PartsShelf"
 
-[[props]]
-id = "metal_shelving"
-at = [15.65, 0, 3]
-face = "W"
+# the north wall: the buns' bread racks, labelled shelving runs, the meat freezer's sign and clipboard
 
 [[props]]
-id = "metal_shelving"
-at = [15.65, 0, 5.5]
-face = "W"
-
-[[props]]
-id = "metal_shelving"
-at = [12, 0, 0.35]
+id = "bread_rack"
+at = [0.47, 0, 0.35]
 face = "S"
 
 [[props]]
-id = "metal_shelving"
-at = [3.5, 0, 15.65]
-face = "N"
+id = "bread_rack"
+at = [1.14, 0, 0.35]
+face = "S"
 
 [[props]]
-id = "metal_shelving"
-at = [10.5, 0, 15.65]
-face = "N"
+id = "sign_buns"
+at = [0.8, 1.9, 0.1]
+face = "S"
 
 [[props]]
-id = "metal_shelving"
-at = [9, 0, 7.5]
+id = "bread_rack"
+at = [5.62, 0, 2.75]
+face = "S"
+
+[[props]]
+id = "store_shelving"
+at = [2.55, 0, 0.35]
+face = "S"
+
+[[props]]
+id = "store_shelving_b"
+at = [4.6, 0, 0.35]
+face = "S"
+
+[[props]]
+id = "storage_crate"
+at = [5.82, 0.0, 0.4]
 face = "E"
-note = "a free-standing aisle"
+
+[[props]]
+id = "storage_crate"
+at = [5.82, 0.34, 0.4]
+face = "E"
+
+[[props]]
+id = "store_shelving"
+at = [7.05, 0, 0.35]
+face = "S"
+
+[[props]]
+id = "sign_meat"
+at = [9.0, 1.3, 0.1]
+face = "S"
+
+[[props]]
+id = "clipboard"
+at = [9.75, 1.25, 0.1]
+face = "S"
+
+[[props]]
+id = "store_shelving"
+at = [11.05, 0, 0.35]
+face = "S"
+
+[[props]]
+id = "store_shelving_b"
+at = [13.1, 0, 0.35]
+face = "S"
+
+[[props]]
+id = "hand_trolley"
+at = [14.5, 0, 0.4]
+face = "S"
+
+[[props]]
+id = "storage_box"
+at = [15.35, 0.0, 0.32]
+face = "S"
+
+[[props]]
+id = "storage_box"
+at = [15.35, 0.34, 0.32]
+face = "S"
+
+[[props]]
+id = "storage_box"
+at = [15.35, 0.68, 0.32]
+face = "S"
+
+[[props]]
+id = "aisle_sign_3"
+at = [4.6, 3.0, 1.1]
+face = "S"
+
+# the east wall: shelving, low stock behind the stairwell, the extinguisher and the way-out sign by the door
+
+[[props]]
+id = "store_shelving"
+at = [15.65, 0, 2.25]
+face = "W"
+
+[[props]]
+id = "store_shelving_b"
+at = [15.65, 0, 4.3]
+face = "W"
+
+[[props]]
+id = "step_ladder"
+at = [15.0, 0, 5.6]
+face = "W"
+
+[[props]]
+id = "storage_crate"
+at = [15.7, 0.0, 6.2]
+face = "W"
+
+[[props]]
+id = "storage_crate"
+at = [15.7, 0.34, 6.2]
+face = "W"
+
+[[props]]
+id = "storage_crate"
+at = [15.7, 0.68, 6.2]
+face = "W"
+
+[[props]]
+id = "storage_box"
+at = [15.7, 0.0, 7.0]
+face = "W"
+
+[[props]]
+id = "storage_box"
+at = [15.7, 0.34, 7.0]
+face = "W"
+
+[[props]]
+id = "wall_clock"
+at = [15.9, 2.2, 6.6]
+face = "W"
+
+[[props]]
+id = "fire_extinguisher"
+at = [15.9, 0.35, 8.6]
+face = "W"
+
+[[props]]
+id = "floor_hatch"
+at = [15.4, 0, 8.6]
+face = "W"
+
+[[props]]
+id = "sign_way_out"
+at = [15.9, 1.8, 8.9]
+face = "W"
+
+# the delivery bay by the corridor door: a marked bay, a loaded pallet, the pallet jack, empty pallets
+
+[[props]]
+id = "floor_bay"
+at = [15.0, 0, 12.6]
+face = "W"
+
+[[props]]
+id = "loaded_pallet"
+at = [15.3, 0, 12.3]
+face = "W"
+
+[[props]]
+id = "pallet_jack"
+at = [14.45, 0, 12.6]
+face = "N"
 
 [[props]]
 id = "pallet"
-at = [5.9, 0, 15.4]
-
-[[props]]
-id = "crate"
-at = [5.6, 0.15, 15.4]
-
-[[props]]
-id = "crate"
-at = [6.2, 0.15, 15.4]
-
-[[props]]
-id = "crate"
-at = [5.9, 0.55, 15.4]
+at = [15.3, 0.0, 13.55]
+face = "W"
 
 [[props]]
 id = "pallet"
-at = [8, 0, 4.5]
-
-[[props]]
-id = "crate"
-at = [7.7, 0.15, 4.5]
-
-[[props]]
-id = "crate"
-at = [8.3, 0.15, 4.5]
-
-[[props]]
-id = "crate"
-at = [8, 0.55, 4.5]
+at = [15.3, 0.15, 13.55]
+face = "W"
 
 [[props]]
 id = "pallet"
-at = [6, 0, 0.5]
+at = [15.3, 0.3, 13.55]
+face = "W"
 
 [[props]]
-id = "crate"
-at = [5.7, 0.15, 0.5]
+id = "sign_deliveries"
+at = [15.9, 1.7, 12.3]
+face = "W"
 
 [[props]]
-id = "crate"
-at = [6.3, 0.15, 0.5]
+id = "clipboard"
+at = [15.9, 1.35, 11.0]
+face = "W"
 
 [[props]]
-id = "crate"
-at = [6, 0.55, 0.5]
+id = "parcels"
+at = [13.85, 0, 13.7]
+face = "W"
 
 [[props]]
-id = "pallet"
-at = [5, 0, 3.8]
+id = "parcels"
+at = [13.85, 0.46, 13.7]
+face = "W"
 
 [[props]]
-id = "crate"
-at = [4.7, 0.15, 3.8]
+id = "art_delivery"
+at = [15.9, 1.3, 13.6]
+face = "W"
 
 [[props]]
-id = "crate"
-at = [5.3, 0.15, 3.8]
+id = "trash_bin"
+at = [15.55, 0, 15.0]
+face = "W"
 
 [[props]]
-id = "crate"
-at = [5, 0.55, 3.8]
+id = "storage_box"
+at = [15.6, 0.0, 15.6]
+face = "N"
 
 [[props]]
-id = "barrel"
-at = [0.45, 0, 10.5]
+id = "storage_box"
+at = [15.6, 0.34, 15.6]
+face = "N"
 
 [[props]]
-id = "barrel"
-at = [0.45, 0, 12.2]
+id = "floor_lane"
+at = [11.2, 0, 11.1]
+face = "S"
 
 [[props]]
-id = "barrel"
-at = [15.5, 0, 0.5]
+id = "floor_lane"
+at = [9.0, 0, 7.0]
+face = "E"
+
+# the south wall: the parts shelf's sign, the workbench with its cart and stool, low crates by the door
+
+[[props]]
+id = "sign_parts"
+at = [13.0, 2.1, 15.9]
+face = "N"
+
+[[props]]
+id = "toolbox_cart"
+at = [11.45, 0, 15.65]
+face = "N"
+
+[[props]]
+id = "bottles"
+at = [11.45, 0.9, 15.65]
+face = "N"
+
+[[props]]
+id = "store_workbench"
+at = [10.0, 0, 15.5]
+face = "N"
+
+[[props]]
+id = "stool"
+at = [10.3, 0, 14.6]
+face = "N"
+
+[[props]]
+id = "clipboard"
+at = [9.3, 1.6, 15.9]
+face = "N"
+
+[[props]]
+id = "paper_stack"
+at = [9.55, 0.9, 15.35]
+face = "N"
+
+[[props]]
+id = "cup_set"
+at = [10.45, 0.9, 15.3]
+face = "N"
+
+[[props]]
+id = "mail_stack"
+at = [9.9, 0.9, 15.25]
+face = "N"
+
+[[props]]
+id = "sign_darkroom"
+at = [6.5, 1.6, 15.9]
+face = "N"
+
+[[props]]
+id = "wall_calendar"
+at = [11.45, 1.4, 15.9]
+face = "N"
+
+[[props]]
+id = "storage_crate"
+at = [10.2, 0.0, 4.9]
+face = "S"
+
+[[props]]
+id = "storage_crate"
+at = [10.2, 0.34, 4.9]
+face = "S"
+
+[[props]]
+id = "storage_crate"
+at = [5.2, 0.0, 15.65]
+face = "N"
+
+[[props]]
+id = "storage_crate"
+at = [5.2, 0.34, 15.65]
+face = "N"
+
+[[props]]
+id = "storage_crate"
+at = [5.2, 0.68, 15.65]
+face = "N"
+
+[[props]]
+id = "storage_crate"
+at = [5.85, 0.0, 15.65]
+face = "N"
+
+[[props]]
+id = "storage_crate"
+at = [5.85, 0.34, 15.65]
+face = "N"
+
+[[props]]
+id = "storage_box"
+at = [6.5, 0.0, 15.65]
+face = "N"
+
+[[props]]
+id = "storage_box"
+at = [6.5, 0.34, 15.65]
+face = "N"
+
+[[props]]
+id = "storage_box"
+at = [6.5, 0.68, 15.65]
+face = "N"
+
+[[props]]
+id = "store_shelving_b"
+at = [3.6, 0, 15.65]
+face = "N"
+
+[[props]]
+id = "store_shelving"
+at = [1.5, 0, 15.65]
+face = "N"
+
+# the west wall: shelving, the wine's crates and sign, the tool wall over its cart, the switch's keep-clear hatch
+
+[[props]]
+id = "store_shelving_b"
+at = [0.35, 0, 3.2]
+face = "E"
+
+[[props]]
+id = "clipboard"
+at = [0.1, 1.4, 1.5]
+face = "E"
+
+[[props]]
+id = "storage_crate"
+at = [0.4, 0.0, 5.2]
+face = "E"
+
+[[props]]
+id = "storage_crate"
+at = [0.4, 0.34, 5.2]
+face = "E"
+
+[[props]]
+id = "storage_crate"
+at = [0.4, 0.68, 5.2]
+face = "E"
+
+[[props]]
+id = "art_burger"
+at = [0.1, 1.2, 5.2]
+face = "E"
 
 [[props]]
 id = "wine_bottle_crate"
-at = [0.3, 0, 6.3]
+at = [0.3, 0.0, 6.3]
 face = "E"
 
 [[props]]
@@ -187,644 +467,420 @@ face = "E"
 
 [[props]]
 id = "wine_bottle_crate"
-at = [0.3, 0, 9.6]
+at = [0.3, 0.0, 9.65]
 face = "E"
 
 [[props]]
 id = "wine_bottle_crate"
-at = [0.3, 0.3, 9.6]
+at = [0.3, 0.3, 9.65]
 face = "E"
 
 [[props]]
 id = "wine_bottle_crate"
-at = [0.3, 0.6, 9.6]
+at = [0.3, 0.6, 9.65]
 face = "E"
 
 [[props]]
-id = "cardboard_box"
-at = [11.6, 0, 5]
+id = "sign_wine"
+at = [0.1, 2.05, 8.0]
+face = "E"
 
 [[props]]
-id = "cardboard_box"
-at = [11.6, 0.4, 5]
+id = "wall_calendar"
+at = [0.1, 1.4, 10.4]
+face = "E"
 
 [[props]]
-id = "cardboard_box"
-at = [11, 0, 4.45]
+id = "tool_wall"
+at = [0.1, 1.0, 11.9]
+face = "E"
 
 [[props]]
-id = "cardboard_box"
-at = [10.4, 0, 5]
+id = "toolbox_cart"
+at = [0.375, 0, 11.6]
+face = "E"
 
 [[props]]
-id = "cardboard_box"
-at = [10.4, 0.4, 5]
+id = "paper_stack"
+at = [0.38, 0.9, 11.4]
+face = "E"
 
 [[props]]
-id = "cardboard_box"
-at = [4.4, 0, 10]
+id = "bottles"
+at = [0.38, 0.9, 11.85]
+face = "E"
 
 [[props]]
-id = "cardboard_box"
-at = [4.4, 0.4, 10]
+id = "stool"
+at = [1.1, 0, 12.6]
+face = "E"
 
 [[props]]
-id = "cardboard_box"
-at = [5, 0, 9.45]
+id = "floor_hatch"
+at = [0.6, 0, 14.0]
+face = "E"
+
+# the aisles: two back-to-back shelving islands with hanging aisle numbers, crates at their ends
+
+[[props]]
+id = "store_shelving"
+at = [6.55, 0, 6.3]
+face = "W"
+
+[[props]]
+id = "store_shelving_b"
+at = [7.05, 0, 6.3]
+face = "E"
+
+[[props]]
+id = "aisle_sign_1"
+at = [6.8, 3.0, 6.3]
+face = "E"
+
+[[props]]
+id = "storage_crate"
+at = [6.8, 0.0, 5.0]
+face = "S"
+
+[[props]]
+id = "storage_crate"
+at = [6.8, 0.34, 5.0]
+face = "S"
+
+[[props]]
+id = "storage_crate"
+at = [6.8, 0.68, 5.0]
+face = "S"
+
+[[props]]
+id = "storage_box"
+at = [6.8, 0.0, 7.6]
+face = "S"
+
+[[props]]
+id = "storage_box"
+at = [6.8, 0.34, 7.6]
+face = "S"
+
+[[props]]
+id = "store_shelving"
+at = [13.0, 0, 3.95]
+face = "S"
+
+[[props]]
+id = "store_shelving_b"
+at = [13.0, 0, 4.45]
+face = "N"
+
+[[props]]
+id = "aisle_sign_2"
+at = [13.0, 3.0, 4.2]
+face = "S"
+
+[[props]]
+id = "storage_crate"
+at = [11.75, 0.0, 4.2]
+face = "E"
+
+[[props]]
+id = "storage_crate"
+at = [11.75, 0.34, 4.2]
+face = "E"
+
+[[props]]
+id = "storage_crate"
+at = [11.75, 0.68, 4.2]
+face = "E"
+
+[[props]]
+id = "storage_box"
+at = [14.25, 0.0, 4.2]
+face = "E"
+
+[[props]]
+id = "storage_box"
+at = [14.25, 0.34, 4.2]
+face = "E"
+
+# a second pallet bay by the wine (the wine route's legs keep clear south of it), the delivery trolley by the parts shelf
+
+[[props]]
+id = "floor_bay"
+at = [3.4, 0, 6.2]
+face = "E"
+
+[[props]]
+id = "loaded_pallet"
+at = [3.4, 0, 6.2]
+face = "E"
+
+[[props]]
+id = "hand_trolley"
+at = [14.55, 0, 15.55]
+face = "N"
+
+[[props]]
+id = "parcels"
+at = [14.55, 0.03, 15.53]
+face = "N"
+
+[[props]]
+id = "parcels"
+at = [14.55, 0.49, 15.53]
+face = "N"
+
+# overstock on the shelving tops
+
+[[props]]
+id = "storage_box"
+at = [1.9, 2.0, 0.35]
+face = "S"
+
+[[props]]
+id = "storage_crate"
+at = [2.55, 2.0, 0.35]
+face = "S"
+
+[[props]]
+id = "storage_box"
+at = [3.2, 2.0, 0.35]
+face = "S"
+
+[[props]]
+id = "storage_box"
+at = [3.95, 2.0, 0.35]
+face = "S"
+
+[[props]]
+id = "storage_crate"
+at = [4.6, 2.0, 0.35]
+face = "S"
+
+[[props]]
+id = "storage_box"
+at = [5.25, 2.0, 0.35]
+face = "S"
+
+[[props]]
+id = "storage_box"
+at = [6.4, 2.0, 0.35]
+face = "S"
+
+[[props]]
+id = "storage_crate"
+at = [7.05, 2.0, 0.35]
+face = "S"
+
+[[props]]
+id = "storage_box"
+at = [7.7, 2.0, 0.35]
+face = "S"
+
+[[props]]
+id = "storage_box"
+at = [10.4, 2.0, 0.35]
+face = "S"
+
+[[props]]
+id = "storage_crate"
+at = [11.05, 2.0, 0.35]
+face = "S"
+
+[[props]]
+id = "storage_box"
+at = [11.7, 2.0, 0.35]
+face = "S"
+
+[[props]]
+id = "storage_box"
+at = [12.45, 2.0, 0.35]
+face = "S"
+
+[[props]]
+id = "storage_crate"
+at = [13.1, 2.0, 0.35]
+face = "S"
+
+[[props]]
+id = "storage_box"
+at = [13.75, 2.0, 0.35]
+face = "S"
+
+[[props]]
+id = "storage_box"
+at = [15.65, 2.0, 1.6]
+face = "W"
+
+[[props]]
+id = "storage_crate"
+at = [15.65, 2.0, 2.25]
+face = "W"
+
+[[props]]
+id = "storage_box"
+at = [15.65, 2.0, 2.9]
+face = "W"
+
+[[props]]
+id = "storage_box"
+at = [15.65, 2.0, 3.65]
+face = "W"
+
+[[props]]
+id = "storage_crate"
+at = [15.65, 2.0, 4.3]
+face = "W"
+
+[[props]]
+id = "storage_box"
+at = [15.65, 2.0, 4.95]
+face = "W"
+
+[[props]]
+id = "storage_box"
+at = [2.95, 2.0, 15.65]
+face = "N"
+
+[[props]]
+id = "storage_crate"
+at = [3.6, 2.0, 15.65]
+face = "N"
+
+[[props]]
+id = "storage_box"
+at = [4.25, 2.0, 15.65]
+face = "N"
+
+[[props]]
+id = "storage_box"
+at = [0.85, 2.0, 15.65]
+face = "N"
+
+[[props]]
+id = "storage_crate"
+at = [1.5, 2.0, 15.65]
+face = "N"
+
+[[props]]
+id = "storage_box"
+at = [2.15, 2.0, 15.65]
+face = "N"
+
+[[props]]
+id = "storage_box"
+at = [0.35, 2.0, 2.55]
+face = "E"
+
+[[props]]
+id = "storage_crate"
+at = [0.35, 2.0, 3.2]
+face = "E"
+
+[[props]]
+id = "storage_box"
+at = [0.35, 2.0, 3.85]
+face = "E"
+
+[[props]]
+id = "storage_box"
+at = [6.55, 2.0, 5.975]
+face = "W"
+
+[[props]]
+id = "storage_crate"
+at = [6.55, 2.0, 6.625]
+face = "W"
+
+[[props]]
+id = "storage_box"
+at = [7.05, 2.0, 5.975]
+face = "E"
+
+[[props]]
+id = "storage_crate"
+at = [7.05, 2.0, 6.625]
+face = "E"
+
+[[props]]
+id = "storage_box"
+at = [12.675, 2.0, 3.95]
+face = "S"
+
+[[props]]
+id = "storage_crate"
+at = [13.325, 2.0, 3.95]
+face = "S"
+
+[[props]]
+id = "storage_box"
+at = [12.675, 2.0, 4.45]
+face = "N"
+
+[[props]]
+id = "storage_crate"
+at = [13.325, 2.0, 4.45]
+face = "N"
+
+# light fixtures
 
 [[fixtures]]
-id = "bare_bulb"
+id = "fluorescent_tube"
 at = [2, 3, 3]
 
 [[fixtures]]
-id = "bare_bulb"
+id = "fluorescent_tube"
 at = [6, 3, 3]
 
 [[fixtures]]
-id = "bare_bulb"
+id = "fluorescent_tube"
 at = [10, 3, 3]
 
 [[fixtures]]
-id = "bare_bulb"
+id = "fluorescent_tube"
 at = [14.5, 3, 3]
 
 [[fixtures]]
-id = "bare_bulb"
+id = "fluorescent_tube"
 at = [2, 3, 8]
 
 [[fixtures]]
-id = "bare_bulb"
+id = "fluorescent_tube"
 at = [6, 3, 8]
 
 [[fixtures]]
-id = "bare_bulb"
+id = "fluorescent_tube"
 at = [10, 3, 8]
 
 [[fixtures]]
-id = "bare_bulb"
+id = "fluorescent_tube"
 at = [14.5, 3, 8]
 
 [[fixtures]]
-id = "bare_bulb"
+id = "fluorescent_tube"
 at = [2, 3, 13]
 
 [[fixtures]]
-id = "bare_bulb"
+id = "fluorescent_tube"
 at = [6, 3, 13]
 
 [[fixtures]]
-id = "bare_bulb"
+id = "fluorescent_tube"
 at = [10, 3, 13]
 
 [[fixtures]]
-id = "bare_bulb"
+id = "fluorescent_tube"
 at = [14.5, 3, 13]
 
 [[fixtures]]
 id = "cage_lamp"
 at = [15.9, 2.2, 8]
 face = "W"
-note = "beside the corridor door"
 
 [[fixtures]]
 id = "cage_lamp"
 at = [0.1, 2.2, 14]
 face = "E"
-note = "over switch A"
 
 # ---- clutter (art #104): generated by `house --clutter` (tools/runner/house_clutter.py); edit its RULES, not this block
 
-[[props]]
-id = "crate"
-at = [0.35, 0, 1.03]
-face = "E"
 
-[[props]]
-id = "crate"
-at = [0.35, 0.4, 1.03]
-face = "E"
-
-[[props]]
-id = "cardboard_box"
-at = [0.35, 0, 1.63]
-face = "E"
-
-[[props]]
-id = "barrel"
-at = [0.45, 0, 0.38]
-face = "E"
-
-[[props]]
-id = "toolbox_cart"
-at = [0.375, 0, 5.01]
-face = "E"
-
-[[props]]
-id = "tool_wall"
-at = [0.1, 1, 5.01]
-face = "E"
-
-[[props]]
-id = "crate"
-at = [0.35, 0, 5.76]
-face = "E"
-
-[[props]]
-id = "jerrycan"
-at = [0.25, 0, 4.36]
-face = "E"
-
-[[props]]
-id = "open_box"
-at = [2.94, 0, 0.35]
-face = "S"
-
-[[props]]
-id = "cardboard_box"
-at = [3.54, 0, 0.35]
-face = "S"
-
-[[props]]
-id = "book_stack"
-at = [2.49, 0, 0.295]
-face = "S"
-
-[[props]]
-id = "metal_shelving"
-at = [14.16, 0, 0.4]
-face = "S"
-
-[[props]]
-id = "crate"
-at = [0.35, 0, 15.05]
-face = "E"
-
-[[props]]
-id = "crate"
-at = [0.35, 0.4, 15.05]
-face = "E"
-
-[[props]]
-id = "metal_shelving"
-at = [0.4, 0, 2.97]
-face = "E"
-
-[[props]]
-id = "cardboard_box"
-at = [10.45, 0, 0.35]
-face = "S"
-
-[[props]]
-id = "cardboard_box"
-at = [10.45, 0.4, 0.35]
-face = "S"
-
-[[props]]
-id = "metal_shelving"
-at = [15.6, 0, 7.96]
-face = "W"
-
-[[props]]
-id = "crate"
-at = [4.9, 0, 15.65]
-face = "N"
-
-[[props]]
-id = "crate"
-at = [4.9, 0.4, 15.65]
-face = "N"
-
-[[props]]
-id = "cardboard_box"
-at = [4.6, 0, 0.35]
-face = "S"
-
-[[props]]
-id = "cardboard_box"
-at = [4.6, 0.4, 0.35]
-face = "S"
-
-[[props]]
-id = "crate"
-at = [15.67, 0, 15.65]
-face = "N"
-
-[[props]]
-id = "crate"
-at = [15.67, 0.4, 15.65]
-face = "N"
-
-[[props]]
-id = "cardboard_box"
-at = [0.35, 0, 15.63]
-face = "E"
-
-[[props]]
-id = "cardboard_box"
-at = [0.35, 0.4, 15.63]
-face = "E"
-
-[[props]]
-id = "crate"
-at = [7.81, 0, 0.35]
-face = "S"
-
-[[props]]
-id = "crate"
-at = [7.81, 0.4, 0.35]
-face = "S"
-
-[[props]]
-id = "cardboard_box"
-at = [14.29, 0, 15.65]
-face = "N"
-
-[[props]]
-id = "cardboard_box"
-at = [14.29, 0.4, 15.65]
-face = "N"
-
-[[props]]
-id = "crate"
-at = [0.35, 0, 11.09]
-face = "E"
-
-[[props]]
-id = "crate"
-at = [0.35, 0.4, 11.09]
-face = "E"
-
-[[props]]
-id = "cardboard_box"
-at = [2.07, 0, 0.35]
-face = "S"
-
-[[props]]
-id = "cardboard_box"
-at = [2.07, 0.4, 0.35]
-face = "S"
-
-[[props]]
-id = "crate"
-at = [1.52, 0, 15.65]
-face = "N"
-
-[[props]]
-id = "crate"
-at = [1.52, 0.4, 15.65]
-face = "N"
-
-[[props]]
-id = "cardboard_box"
-at = [0.35, 0, 14.51]
-face = "E"
-
-[[props]]
-id = "cardboard_box"
-at = [0.35, 0.4, 14.51]
-face = "E"
-
-[[props]]
-id = "crate"
-at = [1.28, 0, 0.35]
-face = "S"
-
-[[props]]
-id = "crate"
-at = [1.28, 0.4, 0.35]
-face = "S"
-
-[[props]]
-id = "cardboard_box"
-at = [2.21, 0, 15.65]
-face = "N"
-
-[[props]]
-id = "cardboard_box"
-at = [2.21, 0.4, 15.65]
-face = "N"
-
-[[props]]
-id = "crate"
-at = [0.35, 0, 12.79]
-face = "E"
-
-[[props]]
-id = "crate"
-at = [0.35, 0.4, 12.79]
-face = "E"
-
-[[props]]
-id = "cardboard_box"
-at = [7.08, 0, 0.35]
-face = "S"
-
-[[props]]
-id = "cardboard_box"
-at = [7.08, 0.4, 0.35]
-face = "S"
-
-[[props]]
-id = "crate"
-at = [0.84, 0, 15.65]
-face = "N"
-
-[[props]]
-id = "crate"
-at = [0.84, 0.4, 15.65]
-face = "N"
-
-[[props]]
-id = "cardboard_box"
-at = [0.35, 0, 13.56]
-face = "E"
-
-[[props]]
-id = "cardboard_box"
-at = [0.35, 0.4, 13.56]
-face = "E"
-
-[[props]]
-id = "crate"
-at = [15.13, 0, 15.65]
-face = "N"
-
-[[props]]
-id = "crate"
-at = [15.13, 0.4, 15.65]
-face = "N"
-
-[[props]]
-id = "cardboard_box"
-at = [15.65, 0, 1.4]
-face = "W"
-
-[[props]]
-id = "cardboard_box"
-at = [15.65, 0.4, 1.4]
-face = "W"
-
-[[props]]
-id = "crate"
-at = [15.65, 0, 15.02]
-face = "W"
-
-[[props]]
-id = "crate"
-at = [15.65, 0.4, 15.02]
-face = "W"
-
-[[props]]
-id = "crate"
-at = [6, 0, 6.75]
-face = "E"
-
-[[props]]
-id = "crate"
-at = [6, 0.4, 6.75]
-face = "E"
-
-[[props]]
-id = "metal_shelving"
-at = [11.75, 0, 3.5]
-face = "S"
-
-[[props]]
-id = "cardboard_box"
-at = [1.25, 0, 3.5]
-face = "E"
-
-[[props]]
-id = "cardboard_box"
-at = [1.25, 0.4, 3.5]
-face = "E"
-
-[[props]]
-id = "barrel"
-at = [11.05, 0, 2.55]
-face = "W"
-
-[[props]]
-id = "crate"
-at = [6.5, 0, 3.75]
-face = "S"
-
-[[props]]
-id = "crate"
-at = [6.5, 0.4, 3.75]
-face = "S"
-
-[[props]]
-id = "metal_shelving"
-at = [2, 0, 6]
-face = "N"
-
-[[props]]
-id = "cardboard_box"
-at = [6.25, 0, 5]
-face = "S"
-
-[[props]]
-id = "cardboard_box"
-at = [6.25, 0.4, 5]
-face = "S"
-
-[[props]]
-id = "barrel"
-at = [6.55, 0, 8.8]
-face = "S"
-
-[[props]]
-id = "crate"
-at = [12, 0, 4.5]
-face = "W"
-
-[[props]]
-id = "crate"
-at = [12, 0.4, 4.5]
-face = "W"
-
-[[props]]
-id = "metal_shelving"
-at = [14, 0, 5]
-face = "N"
-
-[[props]]
-id = "cardboard_box"
-at = [8, 0, 6.5]
-face = "W"
-
-[[props]]
-id = "cardboard_box"
-at = [8, 0.4, 6.5]
-face = "W"
-
-[[props]]
-id = "barrel"
-at = [13.55, 0, 3.05]
-face = "W"
-
-[[props]]
-id = "crate"
-at = [14.25, 0, 4]
-face = "S"
-
-[[props]]
-id = "crate"
-at = [14.25, 0.4, 4]
-face = "S"
-
-[[props]]
-id = "metal_shelving"
-at = [6.5, 0, 2.5]
-face = "N"
-
-[[props]]
-id = "cardboard_box"
-at = [9, 0, 1.25]
-face = "S"
-
-[[props]]
-id = "cardboard_box"
-at = [9, 0.4, 1.25]
-face = "S"
-
-[[props]]
-id = "barrel"
-at = [8.05, 0, 8.8]
-face = "E"
-
-[[props]]
-id = "crate"
-at = [10.25, 0, 3.5]
-face = "E"
-
-[[props]]
-id = "crate"
-at = [10.25, 0.4, 3.5]
-face = "E"
-
-[[props]]
-id = "cardboard_box"
-at = [6, 0, 5.75]
-face = "E"
-
-[[props]]
-id = "cardboard_box"
-at = [6, 0.4, 5.75]
-face = "E"
-
-[[props]]
-id = "barrel"
-at = [7.3, 0, 8.55]
-face = "E"
-
-[[props]]
-id = "book_stack"
-at = [5.92, 0.95, 15.39]
-face = "S"
-
-[[props]]
-id = "paper_stack"
-at = [7.95, 0.95, 4.51]
-face = "S"
-
-[[props]]
-id = "bottles"
-at = [5.96, 0.95, 0.54]
-face = "S"
-
-[[props]]
-id = "paper_stack"
-at = [5.05, 0.95, 3.81]
-face = "S"
-
-[[props]]
-id = "book_stack"
-at = [11.57, 0.8, 4.98]
-face = "S"
-
-[[props]]
-id = "book_stack"
-at = [10.97, 0.4, 4.43]
-face = "S"
-
-[[props]]
-id = "paper_stack"
-at = [10.35, 0.8, 4.96]
-face = "S"
-
-[[props]]
-id = "paper_stack"
-at = [4.45, 0.8, 10.01]
-face = "S"
-
-[[props]]
-id = "book_stack"
-at = [4.92, 0.4, 9.44]
-face = "S"
-
-[[props]]
-id = "bottles"
-at = [0.28, 0.8, 0.94]
-face = "E"
-
-[[props]]
-id = "paper_stack"
-at = [0.31, 0.4, 1.68]
-face = "E"
-
-[[props]]
-id = "bottles"
-at = [0.43, 0.4, 5.77]
-face = "E"
-
-[[props]]
-id = "book_stack"
-at = [3.56, 0.4, 0.28]
-face = "S"
-
-[[props]]
-id = "bottles"
-at = [0.43, 0.8, 15.11]
-face = "E"
-
-[[props]]
-id = "paper_stack"
-at = [10.4, 0.8, 0.31]
-face = "S"
-
-[[props]]
-id = "bottles"
-at = [4.81, 0.8, 15.69]
-face = "N"
-
-[[props]]
-id = "wall_shelf"
-at = [5.67, 1.45, 0.1]
-face = "S"
-
-[[props]]
-id = "wall_shelf"
-at = [2.78, 1.45, 0.1]
-face = "S"
-
-[[props]]
-id = "wall_clock"
-at = [8.56, 1.85, 0.1]
-face = "S"
-
-[[props]]
-id = "basket"
-at = [15.68, 0, 13.18]
-face = "W"
-
-[[props]]
-id = "bottles"
-at = [15.805, 0, 14.09]
-face = "W"
-
-[[props]]
-id = "paper_stack"
-at = [15.73, 0, 12.27]
-face = "W"
