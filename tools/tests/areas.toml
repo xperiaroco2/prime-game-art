@@ -21,7 +21,7 @@ light = [
   "tools/runner/commands/ab_tally.py", "tools/runner/commands/cost.py", "tools/runner/commands/doctor.py",
   "tools/runner/commands/wait.py", "tools/runner/commands/workflow_check.py", "tools/runner/commands/_workflow_lint.py",
   "tools/runner/commands/manifest_check.py", "tools/runner/commands/_manifest.py",
-  "tools/runner/commands/raw_backup.py", "tools/runner/commands/pins.py",
+  "tools/runner/commands/raw_backup.py", "tools/runner/commands/pins.py", "tools/runner/commands/nightly.py",
 ]
 
 [area.anim]
