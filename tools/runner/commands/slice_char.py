@@ -16,7 +16,7 @@ import tomllib
 from pathlib import Path
 
 from .. import blender, common, pins
-from . import _anim, _anim_set, _godot, _slice, export
+from . import _anim, _anim_set, _godot, _ragdoll, _slice, export, ragdoll
 
 NAME = "slice"
 HELP = "build the slice character: a clay cast member with the animation set's clips, exported, checked, its asset folder"
@@ -260,5 +260,7 @@ def run(args: argparse.Namespace) -> int:
         (asset / "HANDOFF.md").write_text(handoff(asset_id, cast, rows, left, shipped, info, textures, found,
                                                   settings.get("eye_height_m")),
                                           encoding="utf-8", newline="\n")
+        # The ragdoll data (art #115): measured from the shipped GLB, listed in package.json, explained in HANDOFF.md.
+        ragdoll.put_in_asset(asset, _ragdoll.measure(shipped))
         common.ok(f"asset folder {asset}")
     return 1 if failed else 0

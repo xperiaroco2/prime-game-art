@@ -152,7 +152,7 @@ class ContractTest(unittest.TestCase):
         character = budgets["character"]
         self.assertEqual((character["triangles_target"], character["triangles_cap"]), (8000, 12000))
         self.assertEqual((self.contract["body"]["height_min_m"], self.contract["body"]["height_max_m"]), (1.7, 1.8))
-        self.assertFalse(self.contract["animation"]["ragdoll"])
+        self.assertEqual(self.contract["animation"]["ragdoll"], "knockdown")
 
 
 class BoneMapTest(unittest.TestCase):

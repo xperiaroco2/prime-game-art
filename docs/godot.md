@@ -514,6 +514,44 @@ times the pack's, with hair on top). The engineer chose `eyes16` (2026-10-12): `
 eyes are at 1.60 m (about 1.845 m tall), and the contract's plasticine window is 1.70 to 1.90 m
 (`plasticine_height_max_m`, docs/contract.md); `godot-check --textured` applies it.
 
+## The ragdoll (`ragdoll`, art #115)
+
+The knockdown is a ragdoll (docs/contract.md, "Ragdoll"). `tools/run.py ragdoll <glb> [--out DIR] [--asset DIR]
+[--fall] [--shots DIR]`:
+- measures the ragdoll data from the GLB in plain Python (`tools/runner/commands/_ragdoll.py`, about 0.3 s): the
+  GLB's joint nodes are Godot's bone frames, so the shapes need no axis conversion and no Blender run. Each body's
+  shape is fitted to the vertices its bone (or a follower, `FIT`) weights most: a box, or a capsule along the bone's
+  Y whose radius is about the 85th percentile of their distances. It checks the schema and values (`check`, `shapes_in_bounds`) and writes
+  `tools/out/ragdoll/<stem>/<stem>.ragdoll.json`;
+- `--asset DIR` writes `export/<id>.ragdoll.json` into the character's asset folder, lists it in `package.json` and
+  puts the "Ragdoll (art #115)" section in `HANDOFF.md` (replacing an earlier one). `slice --asset` does the same;
+- `--fall` runs the proof headless; `--shots DIR` runs it in an off-screen window (`--position -30000,-30000`) and
+  copies `fall_sheet.png` (8 moments x front and side, 1280x400), `shapes_sheet.png` (the bodies over the standing
+  character, 640x400) and `fall.json` into DIR. Both run `--fixed-fps 60`.
+
+**`godot/ragdoll/`** is its own Godot project: the game runs Jolt Physics, and the art project `godot/` uses the
+default engine, which a shared change would alter. It carries the game's physics layer names. Godot's scan of
+`godot/` skips a folder holding a `project.godot`; its `.godot/` and `import/` are ignored.
+- `builder.gd` is the reference builder the game copies. `build(skeleton, data)` adds a PhysicalBoneSimulator3D and
+  one PhysicalBone3D per body (their own joints off); `start(sim, data, velocity)` starts the simulation from the
+  current pose, gives every body the avatar's velocity, and one physics frame later links the bodies with Joint3D
+  nodes (ConeTwist, Hinge, Pin; the twist axis along the bone). The rig's feet hang from `Root`, not from the lower
+  legs, so PhysicalBone3D's own joints could not link them. `stop(sim)` ends it (a revive).
+- `fall.gd` stages a floor (layer `world`) and a player box (layer `living_players`) in the fall path, pauses `Idle`
+  at 0 s, starts the fall at 3 m/s forwards, and asserts: no NaN; in the fall no joint more than 25 degrees past its
+  limit or 40 mm apart; over the last 0.5 s at rest no joint more than 12 degrees past or 25 mm apart; no body
+  faster than 12 m/s after 0.5 s; at rest by 3.5 s, lying below 0.45 m and not through the floor (so the player box
+  was passed through); every body on layer 3 with mask 1; a hat on `Head` and the package on the chest
+  (BoneAttachment3D sockets) within 2 mm of their simulated bones.
+
+Measured on slice_m1 (Jolt, 2026-10-14): at rest from about 1.7 s, the worst joint about 21 degrees past its limit
+in the fall (the feet, dragged along the floor), at rest 6 to 12 degrees (it varies with the landing) and the
+ankles about 20 mm apart; the sockets within 0.01 mm. Tuned with one grid of 11 settings: 2 kg feet and 1 kg hands
+(the mass taken from the trunk), `angular_damp` 6, 40 degree ankle cones and 30 degree spine cones; a hinge ankle and
+lighter feet did worse. The BoneAttachment3Ds update on the same `skeleton_updated` signal after a script's handler:
+compared inside the handler they lag one update (about 0.1 m at the fall's speed); `fall.gd` compares them after the
+frame. Outside that signal `get_bone_global_pose` returns the animation pose, not the simulated one.
+
 ## Findings for later tasks
 
 - **Toe bones (art #25):** assembled characters have 64 bones since art #25 (`Toe.L`, `Toe.R`). The export and

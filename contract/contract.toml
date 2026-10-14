@@ -178,7 +178,13 @@ rule = "a set is a preset of pieces: one piece id per slot; a slot it leaves out
 
 [animation]
 source = "skeletal clips on the contract skeleton, one shared AnimationLibrary"
-ragdoll = false              # animations only (the engineer, 2026-10-02): downed and dead are clips too
+# The knockdown is a ragdoll (the engineer, 2026-10-11, prime-game#516 answer 3; art #115): the body falls under
+# physics at once and a dead body keeps its ragdoll pose; a revived player stands up at once. Every other state is a
+# clip. The character package ships the ragdoll data (`export/<id>.ragdoll.json`); the game builds the PhysicalBone3D
+# nodes from it at import (godot/ragdoll/builder.gd is the reference builder). docs/contract.md, "Ragdoll".
+ragdoll = "knockdown"
+ragdoll_data = "export/<id>.ragdoll.json"
+ragdoll_collision = "layer downed (3), mask world (1) only: never players or other ragdolls"
 in_place = true              # root_motion_track stays empty
 loop_suffix = "_loop"
 markers = ["foot_l", "foot_r", "land"]
