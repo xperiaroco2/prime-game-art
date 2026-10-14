@@ -16,9 +16,9 @@ from runner import house_layout as hl  # noqa: E402
 ROOMS = {
     "bedroom": {"double_bed", "wardrobe", "nightstand", "dresser"},
     "kids_room": {"bunk_bed", "desk", "bookcase", "toy_chest"},
-    "landing": {"landing_bench", "console_table"},
+    "landing": {"hall_console", "hall_bench", "landing_runner", "bookcase"},  # #162
     "study": {"desk", "computer_set", "photo_printer", "office_chair", "bookcase", "filing_cabinet"},
-    "bathroom": {"bathtub", "toilet", "basin"},
+    "bathroom": {"bath_tub", "wc_toilet", "bath_vanity", "towel_rail"},  # #162
     "guest_room": {"single_bed", "wardrobe", "nightstand"},
     "balcony": {"balcony_chair", "small_table", "planter_pot"},
 }
