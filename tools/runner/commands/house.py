@@ -151,7 +151,8 @@ def run(args: argparse.Namespace) -> int:
     summary = house_layout.write_scenes(data, planned, args.out, dressing,
                                         lambda pid: st["prop_res"].format(id=pid) if pid in found else None, merge)
     if merge:
-        (_house_bake.MERGED / "uv2.json").write_text(json.dumps(merge.uv2, indent=1), encoding="utf-8", newline="\n")
+        uv2 = {k: v for k, v in merge.uv2.items() if v is not None}  # no null entry: zone_build.gd reads a float
+        (_house_bake.MERGED / "uv2.json").write_text(json.dumps(uv2, indent=1), encoding="utf-8", newline="\n")
         common.say(f"  merged shell: {len(merge.uv2)} merged meshes for {merge.hidden} piece instances; batched "
                    f"dressing: {len(merge.batched)} batches for {merge.props} props (#107; "
                    f"{_house_bake.MERGED.as_posix()})")

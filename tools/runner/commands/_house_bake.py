@@ -78,6 +78,7 @@ def run(data: dict, lights: dict, zones: list[str], preset: str, review: Path | 
     pieces = json.loads((raw / data["settings"]["kit_dir"] / "pieces.json").read_text(encoding="utf-8"))
     merged = MERGED / "uv2.json"
     extra = json.loads(merged.read_text(encoding="utf-8")) if merged.is_file() else {}
+    extra = {k: v for k, v in extra.items() if v is not None}  # no null entry: zone_build.gd reads a float
     uv2.write_text(json.dumps({**house_bake.uv2_table(pieces), **extra}), encoding="utf-8", newline="\n")
     report: dict = {"preset": preset, "grid": grid, "merge": merge, "diag": diag, "sheen": sheen, "zones": {}}
     for zone in zones:
