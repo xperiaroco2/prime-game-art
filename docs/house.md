@@ -153,6 +153,7 @@ writes the House's game-ready package (prime-game #523) from the same layout dat
   `props/library/v12/textures/fine`, the same bytes: v11 with the basement's 32 working-room props built over it,
   and `prop_dirs` names library v12; since #172 `props/library/v13/textures/fine`, the same bytes: v12 with the
   basement's plant rooms' and the darkroom island's 39 props built over it, and `prop_dirs` names library v13;
+  since #82 `prop_dirs` names task v3 (task v2 with the 19 task-chain props rebuilt in the world look);
   v1 stays the approved version-1 build;
   `.import` VRAM compressed with mipmaps), `house_props/prop_fine.gdshader` (a copy
   of `godot/props/prop_fine.gdshader`; `tools/tests/test_house_layers.py` fails when the committed copy drifts) and
@@ -160,8 +161,8 @@ writes the House's game-ready package (prime-game #523) from the same layout dat
   layers' roughness, metallic, normal strength and gain). Each such prop instance in a room overrides its `kit_fine`
   surfaces with `prop_fine_<fine_tier>.tres` (`fine_tier = "high"`; `house_export.set_surfaces` reads them from the
   GLB). The game swaps the tier per graphics preset (P2's `HANDOFF.md`). Only a package holding a `kit_fine` prop
-  ships the fine pack, and every such package writes it under the same game paths (today P2, committed with it, and
-  P8 `task_props`, whose `assembly_island` and `order_board` carry it). The art repo commits it once, under
+  ships the fine pack, and every such package writes it under the same game paths (P2, committed with it, the other
+  room packages that place a fine prop, and since #82 P8 `task_props`, whose 22 task-chain props all carry it). The art repo commits it once, under
   `assets/prop/house_props/export/`; a later package that lists it must hash the same (one fine build), never a second,
   different copy under those paths: after a rebuild of the fine pack, re-export and re-commit every committed package
   that lists it.
