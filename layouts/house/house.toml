@@ -243,6 +243,24 @@ at = [24.5, 32.5]  # #168: across the stored things to the climb-out stair and t
 look = [35.0, 42.0]
 look_h = 1.2
 [[export.sheet_views]]
+room = "storage"
+title = "storage: across the aisles"
+at = [14.8, 18.8]  # #170: from the north-west corner over the bread racks and the aisles to the parts shelf
+look = [27.0, 31.0]
+look_h = 0.9
+[[export.sheet_views]]
+room = "darkroom"
+title = "darkroom: along the benches"
+at = [29.2, 39.0]  # #170: from the east end along the developing benches, the drying lines and the print board
+look = [15.0, 39.0]
+look_h = 1.1
+[[export.sheet_views]]
+room = "corridor"
+title = "corridor: toward the storage"
+at = [39.4, 28.0]  # #170: from the generator hall's door along the matting to the storage door
+look = [30.0, 28.0]
+look_h = 1.2
+[[export.sheet_views]]
 room = "attic"
 title = "roof: from dormer, 1.6 m"
 at = [34.9, 43.6]  # the dormer's climb-out (dressing/attic_roof/attic.toml's roof.arrive)
