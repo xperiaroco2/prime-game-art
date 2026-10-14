@@ -1,0 +1,2295 @@
+{
+ "house_attic": {
+  "attic.tscn": {
+   "colliders": 556,
+   "groups": {
+    "Attic": {
+     "nodes": [
+      1,
+      "a209c69d9291e01b"
+     ]
+    },
+    "Detail": {
+     "nodes": [
+      2,
+      "e5bfc9f65b037095"
+     ]
+    },
+    "Doors": {
+     "nodes": [
+      1,
+      "b2a0968b9b95e65c"
+     ]
+    },
+    "Dressing": {
+     "colliders": [
+      60,
+      "47353165424d67b1"
+     ],
+     "nodes": [
+      63,
+      "e63c3ac0e7fcfff9"
+     ]
+    },
+    "Fixtures": {
+     "nodes": [
+      9,
+      "0465651a057d7024"
+     ]
+    },
+    "Markers": {
+     "nodes": [
+      2,
+      "8970d619c4387dde"
+     ]
+    },
+    "Name": {
+     "nodes": [
+      1,
+      "0f05b740f9d40c17"
+     ]
+    },
+    "Shell": {
+     "colliders": [
+      496,
+      "74946076b4ae3dec"
+     ],
+     "nodes": [
+      420,
+      "3acf025b5940b308"
+     ]
+    },
+    "Stations": {
+     "nodes": [
+      4,
+      "c38af7f2f68fbb79"
+     ]
+    }
+   },
+   "nodes": 503,
+   "sha": "0829f611c83d50a8828fec3efd20da118ff9b15e6ceb836ef0a6ca451c33023f"
+  }
+ },
+ "house_basement": {
+  "boiler_room.tscn": {
+   "colliders": 123,
+   "groups": {
+    "BoilerRoom": {
+     "nodes": [
+      1,
+      "5530e3d736e9151e"
+     ]
+    },
+    "Detail": {
+     "nodes": [
+      21,
+      "86c5244d6dca0490"
+     ]
+    },
+    "Doors": {
+     "nodes": [
+      2,
+      "8d024ebb8fcbcd4d"
+     ]
+    },
+    "Dressing": {
+     "colliders": [
+      66,
+      "4abe4f5a44005f96"
+     ],
+     "nodes": [
+      88,
+      "5e039dbf932207bd"
+     ]
+    },
+    "Fixtures": {
+     "nodes": [
+      11,
+      "d570dcf9baec0abd"
+     ]
+    },
+    "Markers": {
+     "nodes": [
+      1,
+      "257567c54fbc76fe"
+     ]
+    },
+    "Name": {
+     "nodes": [
+      1,
+      "4ff12c84c88abba5"
+     ]
+    },
+    "Shell": {
+     "colliders": [
+      57,
+      "9e4f7943da6075a9"
+     ],
+     "nodes": [
+      56,
+      "be4110d01f66e12a"
+     ]
+    },
+    "Stations": {
+     "nodes": [
+      2,
+      "483b4b3d35f62309"
+     ]
+    }
+   },
+   "nodes": 183,
+   "sha": "33ff38ff5f2ef2d477fe03114e22d1363ffc986260502f52629197ead8d85d53"
+  },
+  "corridor.tscn": {
+   "colliders": 49,
+   "groups": {
+    "Corridor": {
+     "nodes": [
+      1,
+      "ff5b32614aaa993d"
+     ]
+    },
+    "Detail": {
+     "nodes": [
+      19,
+      "46c669fd1f04c0a7"
+     ]
+    },
+    "Doors": {
+     "nodes": [
+      3,
+      "8816fcdf1a628689"
+     ]
+    },
+    "Dressing": {
+     "colliders": [
+      24,
+      "7a72562d192ca958"
+     ],
+     "nodes": [
+      32,
+      "2574d18168296be2"
+     ]
+    },
+    "Fixtures": {
+     "nodes": [
+      9,
+      "e53846f4530ae1e9"
+     ]
+    },
+    "Markers": {
+     "nodes": [
+      1,
+      "257567c54fbc76fe"
+     ]
+    },
+    "Name": {
+     "nodes": [
+      1,
+      "9e6246aa5cabafea"
+     ]
+    },
+    "Shell": {
+     "colliders": [
+      25,
+      "0c237d7882fda25b"
+     ],
+     "nodes": [
+      24,
+      "40ccf72e7b607ab9"
+     ]
+    },
+    "Stations": {
+     "nodes": [
+      1,
+      "90a3e1f7eb15bc3a"
+     ]
+    }
+   },
+   "nodes": 91,
+   "sha": "02ded460d37eecb864edbbd618080ab597ce75bcf00245d0f0e02d941364c20e"
+  },
+  "darkroom.tscn": {
+   "colliders": 137,
+   "groups": {
+    "Darkroom": {
+     "nodes": [
+      1,
+      "9e5bfda1ee41e358"
+     ]
+    },
+    "Detail": {
+     "nodes": [
+      33,
+      "7e43d0e4832387f9"
+     ]
+    },
+    "Doors": {
+     "nodes": [
+      2,
+      "0489f77add78e407"
+     ]
+    },
+    "Dressing": {
+     "colliders": [
+      68,
+      "a830431ba9c6de5b"
+     ],
+     "nodes": [
+      68,
+      "9b546d0922e13691"
+     ]
+    },
+    "Fixtures": {
+     "nodes": [
+      19,
+      "625858ccb93f5b4f"
+     ]
+    },
+    "Markers": {
+     "nodes": [
+      1,
+      "257567c54fbc76fe"
+     ]
+    },
+    "Name": {
+     "nodes": [
+      1,
+      "65e8962cab85cfae"
+     ]
+    },
+    "Shell": {
+     "colliders": [
+      69,
+      "29206accefbf9cd5"
+     ],
+     "nodes": [
+      70,
+      "7f5904050350a967"
+     ]
+    },
+    "Stations": {
+     "nodes": [
+      2,
+      "f16cf4007bcbe9d5"
+     ]
+    }
+   },
+   "nodes": 197,
+   "sha": "8ab9f59cf501b8419f9a25b5cfc94009ce75d75d63a957da809772dde62f3df5"
+  },
+  "generator_hall.tscn": {
+   "colliders": 311,
+   "groups": {
+    "Detail": {
+     "nodes": [
+      22,
+      "50dd7ed6a1c8c698"
+     ]
+    },
+    "Doors": {
+     "nodes": [
+      6,
+      "a615c4ce1112b546"
+     ]
+    },
+    "Dressing": {
+     "colliders": [
+      85,
+      "3e2016e192a7a8b7"
+     ],
+     "nodes": [
+      122,
+      "d59155d7b7beb238"
+     ]
+    },
+    "Fixtures": {
+     "nodes": [
+      29,
+      "7d95e837fbcf1ba7"
+     ]
+    },
+    "GeneratorHall": {
+     "nodes": [
+      1,
+      "ca7043e337ddd968"
+     ]
+    },
+    "Markers": {
+     "nodes": [
+      1,
+      "257567c54fbc76fe"
+     ]
+    },
+    "Name": {
+     "nodes": [
+      1,
+      "d7f65c1064067969"
+     ]
+    },
+    "Shell": {
+     "colliders": [
+      226,
+      "3a396376f2e83e8f"
+     ],
+     "nodes": [
+      221,
+      "a303c946ddb62e70"
+     ]
+    },
+    "Stations": {
+     "nodes": [
+      2,
+      "dd20691f1072132a"
+     ]
+    }
+   },
+   "nodes": 405,
+   "sha": "933347c464b7ebc80e5a1c41bf3c768861ef649ab7d63aeefa01966045a55b6e"
+  },
+  "passage.tscn": {
+   "colliders": 65,
+   "groups": {
+    "Detail": {
+     "nodes": [
+      18,
+      "075badbada8495bb"
+     ]
+    },
+    "Doors": {
+     "nodes": [
+      2,
+      "929005c105140d0d"
+     ]
+    },
+    "Dressing": {
+     "colliders": [
+      23,
+      "a16a3eddb9ad4b4b"
+     ],
+     "nodes": [
+      30,
+      "d37fb0b69a6cb288"
+     ]
+    },
+    "Fixtures": {
+     "nodes": [
+      7,
+      "fff94d27ba0cf86c"
+     ]
+    },
+    "Markers": {
+     "nodes": [
+      1,
+      "257567c54fbc76fe"
+     ]
+    },
+    "Name": {
+     "nodes": [
+      1,
+      "a43d641535346a30"
+     ]
+    },
+    "Passage": {
+     "nodes": [
+      1,
+      "bc5a60bf2fd9e0af"
+     ]
+    },
+    "Shell": {
+     "colliders": [
+      42,
+      "f78f8abe77e08c41"
+     ],
+     "nodes": [
+      43,
+      "2d0582c755ff9b34"
+     ]
+    },
+    "Stations": {
+     "nodes": [
+      1,
+      "90a3e1f7eb15bc3a"
+     ]
+    }
+   },
+   "nodes": 104,
+   "sha": "e5f3bfd137818681fd6bd7b2be7d3f7aa9dd5a01714f86b5be895670954a078b"
+  },
+  "pump_room.tscn": {
+   "colliders": 107,
+   "groups": {
+    "Detail": {
+     "nodes": [
+      18,
+      "bc9bb343fa830e03"
+     ]
+    },
+    "Doors": {
+     "nodes": [
+      2,
+      "912164db42872990"
+     ]
+    },
+    "Dressing": {
+     "colliders": [
+      40,
+      "24f419d7916bd6e1"
+     ],
+     "nodes": [
+      56,
+      "cb0f6a97eb57af29"
+     ]
+    },
+    "Fixtures": {
+     "nodes": [
+      7,
+      "3fd36908896c38b7"
+     ]
+    },
+    "Markers": {
+     "nodes": [
+      1,
+      "257567c54fbc76fe"
+     ]
+    },
+    "Name": {
+     "nodes": [
+      1,
+      "083f9ef9c074d688"
+     ]
+    },
+    "PumpRoom": {
+     "nodes": [
+      1,
+      "a01d5c251c9f23f9"
+     ]
+    },
+    "Shell": {
+     "colliders": [
+      67,
+      "3cde840fc1ac08ee"
+     ],
+     "nodes": [
+      68,
+      "702499aa508864fa"
+     ]
+    },
+    "Stations": {
+     "nodes": [
+      2,
+      "843483b5355ddf6e"
+     ]
+    }
+   },
+   "nodes": 156,
+   "sha": "5a92c592458bfd4d3648a0b405b9fe227c4614127f41e024a9c4c4b35687b4d6"
+  },
+  "storage.tscn": {
+   "colliders": 257,
+   "groups": {
+    "Detail": {
+     "nodes": [
+      19,
+      "aaac4a3a2d904be2"
+     ]
+    },
+    "Doors": {
+     "nodes": [
+      3,
+      "535af5de9c2841a0"
+     ]
+    },
+    "Dressing": {
+     "colliders": [
+      127,
+      "f2065c45fdb1163e"
+     ],
+     "nodes": [
+      140,
+      "61ff1b7ffa39192a"
+     ]
+    },
+    "Fixtures": {
+     "nodes": [
+      29,
+      "5bf5261f49018573"
+     ]
+    },
+    "Markers": {
+     "nodes": [
+      11,
+      "b1c33c75f8f22217"
+     ]
+    },
+    "Name": {
+     "nodes": [
+      1,
+      "daf4645706c76c41"
+     ]
+    },
+    "Shell": {
+     "colliders": [
+      130,
+      "f2bb0ccb7bff00a1"
+     ],
+     "nodes": [
+      127,
+      "254f61998483b6f4"
+     ]
+    },
+    "Stations": {
+     "nodes": [
+      7,
+      "16ab87aa038149f1"
+     ]
+    },
+    "Storage": {
+     "nodes": [
+      1,
+      "814c503add9b0766"
+     ]
+    }
+   },
+   "nodes": 338,
+   "sha": "3f647213cb9a7c585fcb3acf74b8d1aebaa3d8c956cdb2571550979f19082c09"
+  },
+  "switch_room.tscn": {
+   "colliders": 68,
+   "groups": {
+    "Detail": {
+     "nodes": [
+      25,
+      "77baf4d9767d802a"
+     ]
+    },
+    "Doors": {
+     "nodes": [
+      2,
+      "0d0d2ca0b6684dce"
+     ]
+    },
+    "Dressing": {
+     "colliders": [
+      29,
+      "5a436dc6005d7170"
+     ],
+     "nodes": [
+      37,
+      "e0e8b3c257a00c57"
+     ]
+    },
+    "Fixtures": {
+     "nodes": [
+      7,
+      "e2ad40350e054a40"
+     ]
+    },
+    "Markers": {
+     "nodes": [
+      1,
+      "257567c54fbc76fe"
+     ]
+    },
+    "Name": {
+     "nodes": [
+      1,
+      "91e00b184021d127"
+     ]
+    },
+    "Shell": {
+     "colliders": [
+      39,
+      "89145c1b5cd8d9be"
+     ],
+     "nodes": [
+      40,
+      "1a7426a272840bc0"
+     ]
+    },
+    "Stations": {
+     "nodes": [
+      2,
+      "daf216531203f1cf"
+     ]
+    },
+    "SwitchRoom": {
+     "nodes": [
+      1,
+      "2e1679a7959aca72"
+     ]
+    }
+   },
+   "nodes": 116,
+   "sha": "ba760ad54c69afbe459cf3aadf954f3e06053aba0505124ef08ba67f8f15a323"
+  }
+ },
+ "house_garage": {
+  "garage.tscn": {
+   "colliders": 183,
+   "groups": {
+    "Detail": {
+     "nodes": [
+      2,
+      "2f6382c0f231bdd8"
+     ]
+    },
+    "Doors": {
+     "nodes": [
+      4,
+      "d869b441c95344e0"
+     ]
+    },
+    "Dressing": {
+     "colliders": [
+      26,
+      "cc067ae70d7178ec"
+     ],
+     "nodes": [
+      25,
+      "981850d5713b2618"
+     ]
+    },
+    "Fixtures": {
+     "nodes": [
+      7,
+      "bed82c2d7b79730d"
+     ]
+    },
+    "Garage": {
+     "nodes": [
+      1,
+      "e3dc0ff079050fc2"
+     ]
+    },
+    "Markers": {
+     "nodes": [
+      3,
+      "f441fe037fb37a98"
+     ]
+    },
+    "Name": {
+     "nodes": [
+      1,
+      "627ca357c486ea67"
+     ]
+    },
+    "Shell": {
+     "colliders": [
+      157,
+      "868b53d7511599d9"
+     ],
+     "nodes": [
+      101,
+      "b5e761f471d0ef74"
+     ]
+    },
+    "Stations": {
+     "nodes": [
+      4,
+      "17911f63dc91c13b"
+     ]
+    }
+   },
+   "nodes": 148,
+   "sha": "213087717d645fb57088b66a03f2c9b5929fccaf43ee4c5e56fc7d8d7efef92b"
+  }
+ },
+ "house_ground": {
+  "chill_zone.tscn": {
+   "colliders": 0,
+   "groups": {
+    "ChillZone": {
+     "nodes": [
+      1,
+      "80b80770cd53a0d5"
+     ]
+    },
+    "Doors": {
+     "nodes": [
+      1,
+      "b2a0968b9b95e65c"
+     ]
+    },
+    "Fixtures": {
+     "nodes": [
+      10,
+      "05dc5c1db971412f"
+     ]
+    },
+    "Markers": {
+     "nodes": [
+      1,
+      "257567c54fbc76fe"
+     ]
+    },
+    "Name": {
+     "nodes": [
+      1,
+      "22dca07542536631"
+     ]
+    },
+    "Shell": {
+     "nodes": [
+      1,
+      "4caeab5aa99b4aad"
+     ]
+    },
+    "Stations": {
+     "nodes": [
+      3,
+      "dd814a5a0fb6e55f"
+     ]
+    }
+   },
+   "nodes": 18,
+   "sha": "7ebd4704f4c0dc07d8ba8bed72b4a1284d94b8a14e27df6d517eb53ca7db83bd"
+  },
+  "dining_room.tscn": {
+   "colliders": 92,
+   "groups": {
+    "Detail": {
+     "nodes": [
+      28,
+      "8ac601f88423ec4c"
+     ]
+    },
+    "DiningRoom": {
+     "nodes": [
+      1,
+      "8a3932774ce2bf71"
+     ]
+    },
+    "Doors": {
+     "nodes": [
+      5,
+      "4f0c6a59a1325afe"
+     ]
+    },
+    "Dressing": {
+     "colliders": [
+      28,
+      "3d5da382a9d305cf"
+     ],
+     "nodes": [
+      25,
+      "32d22697b9f0c480"
+     ]
+    },
+    "Fixtures": {
+     "nodes": [
+      7,
+      "32a629d8f28a69a7"
+     ]
+    },
+    "Markers": {
+     "nodes": [
+      2,
+      "8b73cb8bcf0ad1ba"
+     ]
+    },
+    "Name": {
+     "nodes": [
+      1,
+      "e119c78afc2ef38a"
+     ]
+    },
+    "Shell": {
+     "colliders": [
+      64,
+      "2fb4432d2e832f14"
+     ],
+     "nodes": [
+      37,
+      "1e1c57015db17059"
+     ]
+    },
+    "Stations": {
+     "nodes": [
+      2,
+      "39870356c5104394"
+     ]
+    }
+   },
+   "nodes": 108,
+   "sha": "393389d113df02abdfba5acfafa2903ed81490a0f2bb6f461dc2287f63c5b0f3"
+  },
+  "driveway.tscn": {
+   "colliders": 0,
+   "groups": {
+    "Doors": {
+     "nodes": [
+      3,
+      "5876d053792371de"
+     ]
+    },
+    "Driveway": {
+     "nodes": [
+      1,
+      "9fada71e368662df"
+     ]
+    },
+    "Fixtures": {
+     "nodes": [
+      5,
+      "01d4af4506c0f2f4"
+     ]
+    },
+    "Markers": {
+     "nodes": [
+      1,
+      "257567c54fbc76fe"
+     ]
+    },
+    "Name": {
+     "nodes": [
+      1,
+      "096784193aafb252"
+     ]
+    },
+    "Shell": {
+     "nodes": [
+      1,
+      "4caeab5aa99b4aad"
+     ]
+    },
+    "Stations": {
+     "nodes": [
+      1,
+      "90a3e1f7eb15bc3a"
+     ]
+    }
+   },
+   "nodes": 13,
+   "sha": "3af665ac97af0a2a3074ade07ab48bcc65d4a686a2960f28d54c843d1658e92b"
+  },
+  "hallway.tscn": {
+   "colliders": 50,
+   "groups": {
+    "Detail": {
+     "nodes": [
+      13,
+      "9cff17083411ef81"
+     ]
+    },
+    "Doors": {
+     "nodes": [
+      5,
+      "4d4ccc5533c79c9c"
+     ]
+    },
+    "Dressing": {
+     "colliders": [
+      14,
+      "3ad9b03f9158703c"
+     ],
+     "nodes": [
+      21,
+      "d374bf2de2b512ce"
+     ]
+    },
+    "Fixtures": {
+     "nodes": [
+      8,
+      "354b6372ce78c508"
+     ]
+    },
+    "Hallway": {
+     "nodes": [
+      1,
+      "10ce6f7ab3c1d00f"
+     ]
+    },
+    "Markers": {
+     "nodes": [
+      1,
+      "257567c54fbc76fe"
+     ]
+    },
+    "Name": {
+     "nodes": [
+      1,
+      "668ba7b9cc52d9ff"
+     ]
+    },
+    "Placeholders": {
+     "nodes": [
+      2,
+      "9af5dab81e810737"
+     ]
+    },
+    "Shell": {
+     "colliders": [
+      36,
+      "778d7cad742c68f5"
+     ],
+     "nodes": [
+      22,
+      "7cc18aeaca93ac7d"
+     ]
+    },
+    "Stations": {
+     "nodes": [
+      1,
+      "90a3e1f7eb15bc3a"
+     ]
+    }
+   },
+   "nodes": 75,
+   "sha": "3d32e54b58c4d5a7e9ccfa0e1dd165f4fc0e63f48747f622406e2de746dd276a"
+  },
+  "kitchen.tscn": {
+   "colliders": 126,
+   "groups": {
+    "Detail": {
+     "nodes": [
+      21,
+      "3808a92d989b941b"
+     ]
+    },
+    "Doors": {
+     "nodes": [
+      4,
+      "09ea09ed33856554"
+     ]
+    },
+    "Dressing": {
+     "colliders": [
+      45,
+      "ba27d63710f4fe04"
+     ],
+     "nodes": [
+      47,
+      "c6b550f60a0a3689"
+     ]
+    },
+    "Fixtures": {
+     "colliders": [
+      1,
+      "92b627550712f904"
+     ],
+     "nodes": [
+      10,
+      "f91234ece76b88b7"
+     ]
+    },
+    "Kitchen": {
+     "nodes": [
+      1,
+      "8e87fd38b0d45f03"
+     ]
+    },
+    "Markers": {
+     "nodes": [
+      3,
+      "aed7a746aca69fc2"
+     ]
+    },
+    "Name": {
+     "nodes": [
+      1,
+      "7283ac9b6db6e43d"
+     ]
+    },
+    "Shell": {
+     "colliders": [
+      80,
+      "3252ca237980543e"
+     ],
+     "nodes": [
+      48,
+      "d8209a1677d29137"
+     ]
+    },
+    "Stations": {
+     "nodes": [
+      2,
+      "99eff173b33da948"
+     ]
+    }
+   },
+   "nodes": 137,
+   "sha": "dc1598e93b385c5d62998851742a08678192c3e24ad814abe0ee585a15e7664c"
+  },
+  "living_room.tscn": {
+   "colliders": 134,
+   "groups": {
+    "Detail": {
+     "nodes": [
+      46,
+      "9d9ee98ba33c746e"
+     ]
+    },
+    "Doors": {
+     "nodes": [
+      3,
+      "3e8e8026177069c5"
+     ]
+    },
+    "Dressing": {
+     "colliders": [
+      47,
+      "fb10784fcf1a4914"
+     ],
+     "nodes": [
+      49,
+      "1440cf513da5c5a4"
+     ]
+    },
+    "Fixtures": {
+     "colliders": [
+      4,
+      "dbe563124ab50828"
+     ],
+     "nodes": [
+      12,
+      "badc90f81c97ef6b"
+     ]
+    },
+    "LivingRoom": {
+     "nodes": [
+      1,
+      "2d041f657378ce97"
+     ]
+    },
+    "Markers": {
+     "nodes": [
+      2,
+      "f399f0f11ee07815"
+     ]
+    },
+    "Name": {
+     "nodes": [
+      1,
+      "c88f36b847f127f0"
+     ]
+    },
+    "Shell": {
+     "colliders": [
+      83,
+      "b20d89f15bda5449"
+     ],
+     "nodes": [
+      50,
+      "48f74d87bcb65ca6"
+     ]
+    },
+    "Stations": {
+     "nodes": [
+      1,
+      "90a3e1f7eb15bc3a"
+     ]
+    }
+   },
+   "nodes": 165,
+   "sha": "d9199d985e8821fc51c3183cf79149c02d1ab7e247ec5da93aac70af7e6bb880"
+  },
+  "outdoor_stairs.tscn": {
+   "colliders": 9,
+   "groups": {
+    "Doors": {
+     "nodes": [
+      1,
+      "b2a0968b9b95e65c"
+     ]
+    },
+    "Fixtures": {
+     "nodes": [
+      3,
+      "29b753ec10356a38"
+     ]
+    },
+    "Markers": {
+     "nodes": [
+      1,
+      "257567c54fbc76fe"
+     ]
+    },
+    "Name": {
+     "nodes": [
+      1,
+      "b81f0ddc44c40c69"
+     ]
+    },
+    "OutdoorStairs": {
+     "nodes": [
+      1,
+      "952efc4dae5f620d"
+     ]
+    },
+    "Shell": {
+     "colliders": [
+      9,
+      "e33ef8e8ee75ea67"
+     ],
+     "nodes": [
+      10,
+      "46516d0397dc8727"
+     ]
+    },
+    "Stations": {
+     "nodes": [
+      1,
+      "90a3e1f7eb15bc3a"
+     ]
+    }
+   },
+   "nodes": 18,
+   "sha": "737f4f3c5448105111623e1de5e746ab1dfb812f486690778243e379b963f0ea"
+  },
+  "pantry.tscn": {
+   "colliders": 47,
+   "groups": {
+    "Detail": {
+     "nodes": [
+      8,
+      "08ddbc499eff15e7"
+     ]
+    },
+    "Doors": {
+     "nodes": [
+      2,
+      "4a737466852cea94"
+     ]
+    },
+    "Dressing": {
+     "colliders": [
+      18,
+      "0796cd1699c797c2"
+     ],
+     "nodes": [
+      21,
+      "944c6e91ee3af501"
+     ]
+    },
+    "Fixtures": {
+     "nodes": [
+      3,
+      "fec230ce3d20e497"
+     ]
+    },
+    "Markers": {
+     "nodes": [
+      1,
+      "257567c54fbc76fe"
+     ]
+    },
+    "Name": {
+     "nodes": [
+      1,
+      "14d75fefb04bb31b"
+     ]
+    },
+    "Pantry": {
+     "nodes": [
+      1,
+      "3bedecba0f9fc908"
+     ]
+    },
+    "Shell": {
+     "colliders": [
+      29,
+      "e5ecd32cf41addfb"
+     ],
+     "nodes": [
+      21,
+      "9830b15b86db7095"
+     ]
+    },
+    "Stations": {
+     "nodes": [
+      1,
+      "90a3e1f7eb15bc3a"
+     ]
+    }
+   },
+   "nodes": 59,
+   "sha": "9ca4d9941f1c84c607d0d2681b4e9a648460f5e0eb26e5275fe88b1b698f6bca"
+  },
+  "path.tscn": {
+   "colliders": 3,
+   "groups": {
+    "Doors": {
+     "nodes": [
+      3,
+      "560015ba93a1b328"
+     ]
+    },
+    "Fixtures": {
+     "nodes": [
+      10,
+      "004206ac77755dcf"
+     ]
+    },
+    "Markers": {
+     "nodes": [
+      1,
+      "257567c54fbc76fe"
+     ]
+    },
+    "Name": {
+     "nodes": [
+      1,
+      "8e4c75c8f9f369f7"
+     ]
+    },
+    "Path": {
+     "nodes": [
+      1,
+      "cd1d87f2e99710bd"
+     ]
+    },
+    "Shell": {
+     "colliders": [
+      3,
+      "5cf86c0eb428353a"
+     ],
+     "nodes": [
+      2,
+      "716a8ca8731ee95c"
+     ]
+    },
+    "Stations": {
+     "nodes": [
+      1,
+      "90a3e1f7eb15bc3a"
+     ]
+    }
+   },
+   "nodes": 19,
+   "sha": "7f2d3fdae98ba5f5c90cd4b3174da04fc1dc5e03e946ec6c876af0ef66f6dd77"
+  },
+  "photo_zone.tscn": {
+   "colliders": 0,
+   "groups": {
+    "Doors": {
+     "nodes": [
+      2,
+      "43416c105341968a"
+     ]
+    },
+    "Fixtures": {
+     "nodes": [
+      11,
+      "3b312a1ea2486178"
+     ]
+    },
+    "Markers": {
+     "nodes": [
+      1,
+      "257567c54fbc76fe"
+     ]
+    },
+    "Name": {
+     "nodes": [
+      1,
+      "3336c6588048e592"
+     ]
+    },
+    "PhotoZone": {
+     "nodes": [
+      1,
+      "d1c0ef05d729764d"
+     ]
+    },
+    "Shell": {
+     "nodes": [
+      1,
+      "4caeab5aa99b4aad"
+     ]
+    },
+    "Stations": {
+     "nodes": [
+      2,
+      "65564bc5fb17683d"
+     ]
+    }
+   },
+   "nodes": 19,
+   "sha": "42ca0adad74729ac86eae7847e1edf5f326010b2167e508488761e1e531663fd"
+  },
+  "stairs.tscn": {
+   "colliders": 33,
+   "groups": {
+    "Detail": {
+     "nodes": [
+      9,
+      "51e226717f88935a"
+     ]
+    },
+    "Doors": {
+     "nodes": [
+      3,
+      "2a0c2b00232d27c9"
+     ]
+    },
+    "Dressing": {
+     "colliders": [
+      11,
+      "575f571d6f7eb2c0"
+     ],
+     "nodes": [
+      22,
+      "0b9ca264b7291d0f"
+     ]
+    },
+    "Fixtures": {
+     "nodes": [
+      5,
+      "680a59f23eb97dd1"
+     ]
+    },
+    "Markers": {
+     "nodes": [
+      1,
+      "257567c54fbc76fe"
+     ]
+    },
+    "Name": {
+     "nodes": [
+      1,
+      "e25fa452330ab26c"
+     ]
+    },
+    "Shell": {
+     "colliders": [
+      22,
+      "5ccd11fcfabcce12"
+     ],
+     "nodes": [
+      21,
+      "2df3da354a1e999d"
+     ]
+    },
+    "Stairs": {
+     "nodes": [
+      1,
+      "7df13e41fce319c9"
+     ]
+    },
+    "Stations": {
+     "nodes": [
+      1,
+      "90a3e1f7eb15bc3a"
+     ]
+    }
+   },
+   "nodes": 64,
+   "sha": "a944556e401f0346fb8fabc7a7fbed43a504344df069406db189981ee3349dcd"
+  },
+  "street.tscn": {
+   "colliders": 0,
+   "groups": {
+    "Doors": {
+     "nodes": [
+      3,
+      "94db097f8906333a"
+     ]
+    },
+    "Fixtures": {
+     "nodes": [
+      6,
+      "1378804fa1eb36b5"
+     ]
+    },
+    "Markers": {
+     "nodes": [
+      1,
+      "257567c54fbc76fe"
+     ]
+    },
+    "Name": {
+     "nodes": [
+      1,
+      "4f342a047847a3d1"
+     ]
+    },
+    "Shell": {
+     "nodes": [
+      1,
+      "4caeab5aa99b4aad"
+     ]
+    },
+    "Stations": {
+     "nodes": [
+      1,
+      "90a3e1f7eb15bc3a"
+     ]
+    },
+    "Street": {
+     "nodes": [
+      1,
+      "90265f96466e28f0"
+     ]
+    }
+   },
+   "nodes": 14,
+   "sha": "17bb414f5d9d076eb3516bdbd367d730945e013acd15a666e4196d11338e271d"
+  },
+  "terrace.tscn": {
+   "colliders": 56,
+   "groups": {
+    "Doors": {
+     "nodes": [
+      2,
+      "cced3b4cbea6b2f5"
+     ]
+    },
+    "Dressing": {
+     "colliders": [
+      12,
+      "14044a1d592b9364"
+     ],
+     "nodes": [
+      13,
+      "d1c21b63141bf921"
+     ]
+    },
+    "Fixtures": {
+     "colliders": [
+      4,
+      "8b12e3371454e793"
+     ],
+     "nodes": [
+      15,
+      "1d80845c99fe5d11"
+     ]
+    },
+    "Markers": {
+     "nodes": [
+      2,
+      "c495fc0b04961ba3"
+     ]
+    },
+    "Name": {
+     "nodes": [
+      1,
+      "c36eee7e9304514c"
+     ]
+    },
+    "Placeholders": {
+     "nodes": [
+      2,
+      "e9a89732c7da5719"
+     ]
+    },
+    "Shell": {
+     "colliders": [
+      40,
+      "8353f5f5b1b6480c"
+     ],
+     "nodes": [
+      41,
+      "feb364f2954c39ef"
+     ]
+    },
+    "Stations": {
+     "nodes": [
+      2,
+      "9fa744eb73c5d224"
+     ]
+    },
+    "Terrace": {
+     "nodes": [
+      1,
+      "b2153bb37113e21c"
+     ]
+    }
+   },
+   "nodes": 79,
+   "sha": "c00e83863231f2921572162650e572e2f1adb956e175531032f93aec2e837561"
+  },
+  "wc.tscn": {
+   "colliders": 51,
+   "groups": {
+    "Detail": {
+     "nodes": [
+      17,
+      "765c016589f4d8d0"
+     ]
+    },
+    "Doors": {
+     "nodes": [
+      2,
+      "804c157f4a9b55ad"
+     ]
+    },
+    "Dressing": {
+     "colliders": [
+      13,
+      "89777e9ebbd82935"
+     ],
+     "nodes": [
+      19,
+      "aa0f981660c8d8c9"
+     ]
+    },
+    "Fixtures": {
+     "nodes": [
+      3,
+      "a46ac9e0eabda397"
+     ]
+    },
+    "Markers": {
+     "nodes": [
+      1,
+      "257567c54fbc76fe"
+     ]
+    },
+    "Name": {
+     "nodes": [
+      1,
+      "cd2f4ca448efebb9"
+     ]
+    },
+    "Shell": {
+     "colliders": [
+      38,
+      "19e8f7b3452f46fb"
+     ],
+     "nodes": [
+      27,
+      "53f2c7d001844bd3"
+     ]
+    },
+    "Stations": {
+     "nodes": [
+      1,
+      "90a3e1f7eb15bc3a"
+     ]
+    },
+    "WC": {
+     "nodes": [
+      1,
+      "7beb1a2d527e8b5f"
+     ]
+    }
+   },
+   "nodes": 72,
+   "sha": "1f3278c67fd8181786de6d4660f10bbd06ad5373d0b68aa7eb819bab1c4bd579"
+  },
+  "yard.tscn": {
+   "colliders": 3,
+   "groups": {
+    "Doors": {
+     "nodes": [
+      3,
+      "c81e8fffd3ce2ab4"
+     ]
+    },
+    "Fixtures": {
+     "nodes": [
+      13,
+      "4f0f66302ec6caf2"
+     ]
+    },
+    "Markers": {
+     "nodes": [
+      15,
+      "66931bc0653135ee"
+     ]
+    },
+    "Name": {
+     "nodes": [
+      1,
+      "0871d63d6c496f41"
+     ]
+    },
+    "Shell": {
+     "colliders": [
+      3,
+      "960ccf6c982dc03c"
+     ],
+     "nodes": [
+      2,
+      "9d5fb4d2ff960be8"
+     ]
+    },
+    "Stations": {
+     "nodes": [
+      1,
+      "90a3e1f7eb15bc3a"
+     ]
+    },
+    "Yard": {
+     "nodes": [
+      1,
+      "2543e287dfc9adfc"
+     ]
+    }
+   },
+   "nodes": 36,
+   "sha": "86b3ed6db04e1258d6d9ef62a6d5bdcd51f60df165adabc3fe5862b1e09d861c"
+  }
+ },
+ "house_plot": {
+  "garden.tscn": {
+   "colliders": 9,
+   "groups": {
+    "Doors": {
+     "nodes": [
+      1,
+      "b2a0968b9b95e65c"
+     ]
+    },
+    "Fixtures": {
+     "nodes": [
+      19,
+      "c499ee07dfa5334d"
+     ]
+    },
+    "Garden": {
+     "nodes": [
+      1,
+      "b55027b4831e18a4"
+     ]
+    },
+    "Markers": {
+     "nodes": [
+      3,
+      "d67afa835c016667"
+     ]
+    },
+    "Name": {
+     "nodes": [
+      1,
+      "a2c71b06102b01c7"
+     ]
+    },
+    "Shell": {
+     "colliders": [
+      9,
+      "4ebd1314f33189cc"
+     ],
+     "nodes": [
+      10,
+      "412fa8448834c161"
+     ]
+    },
+    "Stations": {
+     "nodes": [
+      2,
+      "5b92e2a89a065e6a"
+     ]
+    }
+   },
+   "nodes": 37,
+   "sha": "6a0cdf5ab748816b614cd57876ea419c539ce736ceac45bf978ca6db8d8d7446"
+  },
+  "greenhouse.tscn": {
+   "colliders": 256,
+   "groups": {
+    "Doors": {
+     "nodes": [
+      2,
+      "fbfe3a6637cd6850"
+     ]
+    },
+    "Dressing": {
+     "colliders": [
+      34,
+      "e6a06496d7fda7c3"
+     ],
+     "nodes": [
+      33,
+      "9266c46a7b02ad68"
+     ]
+    },
+    "Fixtures": {
+     "nodes": [
+      13,
+      "3c571de11b93e32d"
+     ]
+    },
+    "Greenhouse": {
+     "nodes": [
+      1,
+      "a1d45bd2bbb5a868"
+     ]
+    },
+    "Markers": {
+     "nodes": [
+      1,
+      "257567c54fbc76fe"
+     ]
+    },
+    "Name": {
+     "nodes": [
+      1,
+      "c8ba521a7ec8d73c"
+     ]
+    },
+    "Shell": {
+     "colliders": [
+      222,
+      "80989568d41b93ad"
+     ],
+     "nodes": [
+      78,
+      "bf90a80b34b2abd8"
+     ]
+    },
+    "Stations": {
+     "nodes": [
+      3,
+      "63afb2e94848604c"
+     ]
+    }
+   },
+   "nodes": 132,
+   "sha": "3c6386132f6daf028526324d0b4feda77cc9eaa4031f4d5cae4744f1416e2005"
+  },
+  "outdoor.tscn": {
+   "colliders": 784,
+   "groups": {
+    "Backdrop": {
+     "nodes": [
+      1,
+      "92d1bd5d8bfdb42e"
+     ]
+    },
+    "Dressing": {
+     "colliders": [
+      190,
+      "a9478b30f07de13e"
+     ],
+     "nodes": [
+      204,
+      "0f3135d25513e517"
+     ]
+    },
+    "Ground": {
+     "colliders": [
+      3,
+      "ada05524c19cbba4"
+     ],
+     "nodes": [
+      4,
+      "864b6b5c04bba280"
+     ]
+    },
+    "Outdoor": {
+     "nodes": [
+      1,
+      "edd1a0f9ba5e994a"
+     ]
+    },
+    "Shell": {
+     "colliders": [
+      591,
+      "d2de782412b9bf24"
+     ],
+     "nodes": [
+      418,
+      "6cc7803358500e51"
+     ]
+    }
+   },
+   "nodes": 628,
+   "sha": "b9c30069b1c40d12724a094a712f307e665800eee183bce9aa5597ca527bdff0"
+  }
+ },
+ "house_upper": {
+  "balcony.tscn": {
+   "colliders": 33,
+   "groups": {
+    "Balcony": {
+     "nodes": [
+      1,
+      "ab0c28e4d88de6fe"
+     ]
+    },
+    "Doors": {
+     "nodes": [
+      3,
+      "0e9c787e32f1cccf"
+     ]
+    },
+    "Dressing": {
+     "colliders": [
+      7,
+      "71696cad39bfd376"
+     ],
+     "nodes": [
+      8,
+      "de91a674739a35c4"
+     ]
+    },
+    "Fixtures": {
+     "colliders": [
+      2,
+      "901b6d0530535f1b"
+     ],
+     "nodes": [
+      7,
+      "900c8b853f6f7233"
+     ]
+    },
+    "Markers": {
+     "nodes": [
+      1,
+      "257567c54fbc76fe"
+     ]
+    },
+    "Name": {
+     "nodes": [
+      1,
+      "96bee6983e8bd73f"
+     ]
+    },
+    "Shell": {
+     "colliders": [
+      24,
+      "65333a206322bf5f"
+     ],
+     "nodes": [
+      25,
+      "7765143e4bb6d811"
+     ]
+    },
+    "Stations": {
+     "nodes": [
+      1,
+      "90a3e1f7eb15bc3a"
+     ]
+    }
+   },
+   "nodes": 47,
+   "sha": "8a02fbf34b5d073129103d23f65ea737a3da06acfa8dbe61782705a3630d38be"
+  },
+  "bathroom.tscn": {
+   "colliders": 31,
+   "groups": {
+    "Bathroom": {
+     "nodes": [
+      1,
+      "5ff8abc5c70b70f2"
+     ]
+    },
+    "Detail": {
+     "nodes": [
+      20,
+      "60d31821c1fbd9db"
+     ]
+    },
+    "Doors": {
+     "nodes": [
+      2,
+      "ac18884aee723c3e"
+     ]
+    },
+    "Dressing": {
+     "colliders": [
+      9,
+      "0d95f4e2a6eb03a4"
+     ],
+     "nodes": [
+      22,
+      "99105a042633fdfe"
+     ]
+    },
+    "Fixtures": {
+     "nodes": [
+      5,
+      "90a1199252037276"
+     ]
+    },
+    "Markers": {
+     "nodes": [
+      1,
+      "257567c54fbc76fe"
+     ]
+    },
+    "Name": {
+     "nodes": [
+      1,
+      "ace9acdf084a56d0"
+     ]
+    },
+    "Shell": {
+     "colliders": [
+      22,
+      "2c7af08072f493d2"
+     ],
+     "nodes": [
+      16,
+      "a163b5e5df521c52"
+     ]
+    },
+    "Stations": {
+     "nodes": [
+      1,
+      "90a3e1f7eb15bc3a"
+     ]
+    }
+   },
+   "nodes": 69,
+   "sha": "d7c27272507b4c9d374fdacb6b9d20b904b2743ed60189108b7950dfccb540e1"
+  },
+  "bedroom.tscn": {
+   "colliders": 92,
+   "groups": {
+    "Bedroom": {
+     "nodes": [
+      1,
+      "8cd8bd851e0389ef"
+     ]
+    },
+    "Detail": {
+     "nodes": [
+      33,
+      "0ac17092184b0be9"
+     ]
+    },
+    "Doors": {
+     "nodes": [
+      2,
+      "261e3d8bda44d6c8"
+     ]
+    },
+    "Dressing": {
+     "colliders": [
+      18,
+      "eef99564da9e2921"
+     ],
+     "nodes": [
+      26,
+      "7d9d1ddad18e632a"
+     ]
+    },
+    "Fixtures": {
+     "colliders": [
+      3,
+      "686bf9194f23d9d9"
+     ],
+     "nodes": [
+      8,
+      "68fd055da6c66a19"
+     ]
+    },
+    "Markers": {
+     "nodes": [
+      2,
+      "bbbfcb57118c9469"
+     ]
+    },
+    "Name": {
+     "nodes": [
+      1,
+      "59cfc2f48df40b57"
+     ]
+    },
+    "Shell": {
+     "colliders": [
+      71,
+      "bdab244127df0a3f"
+     ],
+     "nodes": [
+      44,
+      "f261a9e5001f62de"
+     ]
+    },
+    "Stations": {
+     "nodes": [
+      1,
+      "90a3e1f7eb15bc3a"
+     ]
+    }
+   },
+   "nodes": 118,
+   "sha": "dbc36a2024b75526e1b07c206728af488bf721247bca86e12108db294d6f0b54"
+  },
+  "guest_room.tscn": {
+   "colliders": 78,
+   "groups": {
+    "Detail": {
+     "nodes": [
+      25,
+      "aca8fc499a8b6f48"
+     ]
+    },
+    "Doors": {
+     "nodes": [
+      2,
+      "2fc162c165090e62"
+     ]
+    },
+    "Dressing": {
+     "colliders": [
+      21,
+      "24a2d5f7f8b54b42"
+     ],
+     "nodes": [
+      29,
+      "3fb4d25992ba2202"
+     ]
+    },
+    "Fixtures": {
+     "colliders": [
+      4,
+      "e93a9d602ca0e461"
+     ],
+     "nodes": [
+      7,
+      "ee8b56bfe31cbdd8"
+     ]
+    },
+    "GuestRoom": {
+     "nodes": [
+      1,
+      "0f6b626de14a9fb0"
+     ]
+    },
+    "Markers": {
+     "nodes": [
+      2,
+      "8aeecdfd99e643fd"
+     ]
+    },
+    "Name": {
+     "nodes": [
+      1,
+      "ddebc01787fc9685"
+     ]
+    },
+    "Shell": {
+     "colliders": [
+      53,
+      "41fdfe18b8aa6f2b"
+     ],
+     "nodes": [
+      28,
+      "6d047c7a0dec71ae"
+     ]
+    },
+    "Stations": {
+     "nodes": [
+      1,
+      "90a3e1f7eb15bc3a"
+     ]
+    }
+   },
+   "nodes": 96,
+   "sha": "b19081f021d683b8eade78db8dcb407458b1299fc7bad975fc1ac2c640cbdc04"
+  },
+  "kids_room.tscn": {
+   "colliders": 93,
+   "groups": {
+    "Detail": {
+     "nodes": [
+      36,
+      "f328ff015f6002bf"
+     ]
+    },
+    "Doors": {
+     "nodes": [
+      2,
+      "ccbdfd8426b6cfa4"
+     ]
+    },
+    "Dressing": {
+     "colliders": [
+      23,
+      "3f5d2822b133663d"
+     ],
+     "nodes": [
+      31,
+      "7515713321f2b8ff"
+     ]
+    },
+    "Fixtures": {
+     "colliders": [
+      3,
+      "74e69b3dd428e2ae"
+     ],
+     "nodes": [
+      7,
+      "4a79210d2b51adb7"
+     ]
+    },
+    "KidsRoom": {
+     "nodes": [
+      1,
+      "5b2ece72dcdc0421"
+     ]
+    },
+    "Markers": {
+     "nodes": [
+      2,
+      "170626cdfe0720c8"
+     ]
+    },
+    "Name": {
+     "nodes": [
+      1,
+      "bb89ea39e82eb738"
+     ]
+    },
+    "Shell": {
+     "colliders": [
+      67,
+      "fa5fc5f9ed06eb65"
+     ],
+     "nodes": [
+      40,
+      "ffb3a7df1c9603eb"
+     ]
+    },
+    "Stations": {
+     "nodes": [
+      1,
+      "90a3e1f7eb15bc3a"
+     ]
+    }
+   },
+   "nodes": 121,
+   "sha": "ecb83f71407cda8d36626a2552f183dc0e6efd284f36529c2d2603a543f8d361"
+  },
+  "landing.tscn": {
+   "colliders": 110,
+   "groups": {
+    "Detail": {
+     "nodes": [
+      42,
+      "4baab551b1acbaf4"
+     ]
+    },
+    "Doors": {
+     "nodes": [
+      7,
+      "86de6eb5606ee6c2"
+     ]
+    },
+    "Dressing": {
+     "colliders": [
+      25,
+      "e43ff388b720f6c4"
+     ],
+     "nodes": [
+      35,
+      "0c60af3412764dd1"
+     ]
+    },
+    "Fixtures": {
+     "colliders": [
+      1,
+      "a547962e747a3c67"
+     ],
+     "nodes": [
+      14,
+      "270aa9b64f6201a3"
+     ]
+    },
+    "Landing": {
+     "nodes": [
+      1,
+      "f19fa96fbdd8a63e"
+     ]
+    },
+    "Markers": {
+     "nodes": [
+      1,
+      "257567c54fbc76fe"
+     ]
+    },
+    "Name": {
+     "nodes": [
+      1,
+      "28d6863f06c2c86d"
+     ]
+    },
+    "Shell": {
+     "colliders": [
+      84,
+      "a2ae376ebbbf71cd"
+     ],
+     "nodes": [
+      68,
+      "0a0bd40f225412fb"
+     ]
+    },
+    "Stations": {
+     "nodes": [
+      1,
+      "90a3e1f7eb15bc3a"
+     ]
+    }
+   },
+   "nodes": 170,
+   "sha": "14af1bf264b0a2add884c4a5a11e4660eb01e0c0cac0b41a24abe1db0e3fc294"
+  },
+  "study.tscn": {
+   "colliders": 85,
+   "groups": {
+    "Detail": {
+     "nodes": [
+      30,
+      "d10e6654f4bf6aa1"
+     ]
+    },
+    "Doors": {
+     "nodes": [
+      2,
+      "2fc162c165090e62"
+     ]
+    },
+    "Dressing": {
+     "colliders": [
+      29,
+      "e107e2d1888bbc27"
+     ],
+     "nodes": [
+      36,
+      "1d7917f645329238"
+     ]
+    },
+    "Fixtures": {
+     "colliders": [
+      3,
+      "ad8aefaa22208d36"
+     ],
+     "nodes": [
+      7,
+      "d6ae0c0ee2b56615"
+     ]
+    },
+    "Markers": {
+     "nodes": [
+      2,
+      "6f6a7f5aa3ba606b"
+     ]
+    },
+    "Name": {
+     "nodes": [
+      1,
+      "0781ac7580abb387"
+     ]
+    },
+    "Shell": {
+     "colliders": [
+      53,
+      "4a873b84d229a8ec"
+     ],
+     "nodes": [
+      32,
+      "68df1cc4c041f0fd"
+     ]
+    },
+    "Stations": {
+     "nodes": [
+      2,
+      "5be0c3440653a657"
+     ]
+    },
+    "Study": {
+     "nodes": [
+      1,
+      "434d50bda95dc9a0"
+     ]
+    }
+   },
+   "nodes": 113,
+   "sha": "4f5f09cc2fd80c1052db743c5c6b03d66a6b0dcfbeb4cbae640de60d4f6647c1"
+  }
+ }
+}
