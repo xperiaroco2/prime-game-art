@@ -122,3 +122,49 @@ face = "S"
 id = "sign_no_smoking"
 at = [2.6, 1.5, 0.1]
 face = "S"
+
+# The garage's world-look dressing (#79): a pegboard tool wall, a city bike and the garden tools on the west wall;
+# labelled boxes under the north-east window; the compressor under the part picture and a spare fridge on the east
+# wall; a store shelving bay of labelled boxes by the gates. The six fluorescent tubes: lights.toml's ceiling grid.
+
+[[props]]
+id = "pegboard_tools"
+at = [0.1, 1.0, 1.4]
+face = "E"
+
+[[props]]
+id = "old_bicycle"
+at = [0.36, 0, 6.3]
+face = "E"
+note = "the sage city bike (#168) on its stand along the wall"
+
+[[props]]
+id = "garden_tool_rack"
+at = [0.1, 0.03, 8.0]
+face = "E"
+
+[[props]]
+id = "storage_boxes"
+at = [13.6, 0, 0.33]
+face = "S"
+
+[[props]]
+id = "storage_boxes"
+at = [14.5, 0, 0.33]
+face = "S"
+
+[[props]]
+id = "air_compressor"
+at = [17.7, 0, 6.5]
+face = "W"
+
+[[props]]
+id = "fridge"
+at = [17.55, 0, 8.8]
+face = "W"
+note = "the spare fridge (drinks for the yard)"
+
+[[props]]
+id = "store_shelving"
+at = [15.38, 0, 13.65]
+face = "N"
