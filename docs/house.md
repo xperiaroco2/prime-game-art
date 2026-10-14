@@ -212,7 +212,7 @@ A package goes to the game from git, not from the raw build (#124): its files ar
 the room scenes of a package in their own `room` set, P2's in `assets/room/house_ground/`), with the package's
 `package.json` beside the manifest that owns it and a `HANDOFF.md` for the game's import task (what to copy where,
 the credits entries, the open questions). P8 `task_props` (#82) has no room scenes: its `package.json` and
-`HANDOFF.md` sit beside `assets/prop/house_props/manifest.toml`, which owns every P8 file. P1 to P5 and P7 are approved and merged, their manifests' approval fields set: P1 and P2 in #125, P3 and P5
+`HANDOFF.md` sit beside `assets/prop/house_props/manifest.toml`, which owns every P8 file. P6 `garage` (#79) is committed in `assets/room/house_garage/` (its `HANDOFF.md`: the car and lift nodes the game moves, the panel's blind side, the part picture's surface). P1 to P5 and P7 are approved and merged, their manifests' approval fields set: P1 and P2 in #125, P3 and P5
 in #127, P4 in #130, P7 (with the props, the outdoor and garden sets) in #131; #147 changed P2 and the props (the
 C2-white kitchen, the fine pack, the Detail node; approved in #149), and #150 changed them again (the living room in
 the world look, the fine pack's eight slots), so their approval fields wait again. #150 also re-exported P3 to P5, which place
@@ -246,7 +246,7 @@ the layout, the rooms of its level owning a wall on its sides (a shared wall is 
 rooms in the level file, so the other room's scene has a gap there: the kitchen's north and west-upper walls are the
 dining room's and the stairs') and the walled rooms of the next level up over it (its ceiling is their floor slab;
 the attic's roof is its own; areas such as the yard get none). They come from the committed packages that hold them
-(the same SHA-256 rule; a room in no package, such as the garage, is named and skipped), join the tile at their plan
+(the same SHA-256 rule; a room in no committed package is named and skipped), join the tile at their plan
 offsets with their lights and labels off, so a room is still lit only by its own fixtures, and are left out of its
 draw calls: the `.json` gives them as `context_draw_calls` (and their rooms as `context`), counted in the shot frame
 after the room's own count. A view's `with` rooms stay its own. A package alone has no plot round it, so the roof
