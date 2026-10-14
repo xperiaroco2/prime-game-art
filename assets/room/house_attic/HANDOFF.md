@@ -9,12 +9,12 @@ look approval on the art PR). P5 was approved and merged in #127 (2026-10-11); #
 |---|---|
 | P1 (`assets/kit/house_kit/HANDOFF.md`) | `assets/environment/house_kit/` (P5's room uses 27 of its pieces: floor, knee walls, gables, the pitched roof, chimneys, vents, the dormer, the hatch ladder and the dormer stair) |
 | `assets/kit/house_kit/export/kit_set.gdshader`, `kit_set.tres` (#132) | `assets/environment/house_kit/` (beside the kit's textures) |
-| `assets/prop/house_props/export/library/*.glb` (11), as `package.json` lists | `assets/environment/house_props/<file>.glb` (flat) |
+| `assets/prop/house_props/export/library/*.glb` (24), as `package.json` lists | `assets/environment/house_props/<file>.glb` (flat) |
 | `assets/prop/house_props/export/fine/high/*.png`, `fine/low/*.png` (6 each, #147, #150) | `assets/environment/house_props/fine/high/`, `fine/low/` |
 | `assets/prop/house_props/export/prop_fine.gdshader`, `prop_fine_high.tres`, `prop_fine_low.tres` (#147) | `assets/environment/house_props/` |
 | `assets/room/house_attic/export/attic.tscn` | the content of `levels/house/rooms/attic.tscn` (G3 below) |
 
-`package.json` beside this file lists the package's 44 game paths with their SHA-256 (the copies must hash the same),
+`package.json` beside this file lists the package's 72 game paths with their SHA-256 (the copies must hash the same),
 its room, the placeholders and the questions. The free roof is part of the attic's scene: its pitched pieces, chimneys
 and dormer sit under `Shell`. Then the game's `check`, `credits`, the import check (11.3), `load`, `playcheck`, `perf`
 and `shot`.
@@ -25,7 +25,7 @@ Every kit instance under `Shell` overrides its meshes' set surfaces (`surface_ma
 and `set_n1` textures and the House's wall paints (`layouts/house/house.toml` `[wall_paint]`). Each such mesh
 also sets `instance_shader_parameters/plan_at`, its place and turn in the house plan, so the shader paints by
 the plan wherever the game puts the House. Nothing to run: copy the two files with the kit and load the scene
-(the root's `metadata/wall_paint` stays as a note). The attic has no paint; the material gives the kit's textured look.
+(the root's `metadata/wall_paint` stays as a note). The attic's knee walls and gables carry a warm white (`#ece7de`, #168) under the warm sand roof.
 
 ## The rebuilt props, the fine pack and the Detail node (#150)
 P5 is re-exported for #150: its scenes place the rebuilt rug (`docs/props.md`, the living room's pieces;
@@ -54,6 +54,20 @@ package's scenes are unchanged.
 
 Only `package.json` changed: the shared `kit_set.tres` carries the kids' room's paint and hashes anew; this
 package's scenes are unchanged.
+
+## The attic, a well-kept family attic (#168)
+
+The attic (63 items, 24 different props; main had 44 and 11) is dressed as a well-kept family attic on a new warm
+white paint: steel shelving runs and a back-to-back island loaded with labelled boxes and plastic crates, a sofa and
+a dresser under dust sheets, a white wardrobe, suitcases, a rolled rug, holiday decorations, the rocking horse and a
+dress form, framed pictures leaning on the knee wall, a city bike, sports kit and the game's own burger-stall sign,
+retired delivery bag and generator part. Changed: `attic.tscn` and `package.json` (14 new props in `house_props`:
+`attic_shelving`, `attic_shelving_b`, `storage_box`, `storage_crate`, `sheeted_sofa`, `sheeted_dresser`,
+`leaning_frames`, `holiday_decor`, `rocking_horse`, `mannequin`, `sports_kit`, `burger_sign`, `delivery_bag`,
+`generator_part`; `old_wardrobe`, `sheeted_furniture`, `old_bicycle` and `trunk` rebuilt, same names; `cardboard_box`,
+`crate` and `picture_frame` leave the package; the shared `kit_set.tres` carries the new paint). The twelve hiding
+spots, the pick-ups, the clear areas and the free roof's items stay. Draw calls on the package sheet, before/after:
+DRAWCALLS. Re-exported into `<raw>/review/house/168/export/p5`.
 
 ## Credits
 As P2: the entries `assets/kit/house_kit/CREDITS.md` and `assets/prop/house_props/CREDITS.md` (copy them to
