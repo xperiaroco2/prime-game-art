@@ -16,7 +16,7 @@ prop_specs = ["props/tasks.toml", "props/library.toml"]
 # #152: library v3 is v2 with the cream sofa and armchairs rebuilt over it (v2 is never overwritten).
 # #153: library v4 is v3 with the dining room's props laid over it; task v2 is v1 with the world-look dining table.
 # #156: v5 is v4 with the hallway's props; #158: v6 is v5 with the WC's, the pantry's and the stairs' props.
-# #162: v7 is v6 with the landing's and the bathroom's props.
+# #162: v7 is v6 with the landing's and the bathroom's props; v8 is v7 with the rebuilt landing runner (round 2).
 prop_dirs = ["props/task/v2", "props/library/v8"]
 prop_res = "res://import/prop_{id}.glb"
 # Per-room wall paint (the engineer's choice of 2026-10-14, #152; before it Q11 = B of 2026-10-10, look.md section 4):

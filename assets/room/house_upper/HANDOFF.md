@@ -10,7 +10,7 @@ merged in #130 (2026-10-12); #150 re-exported it, so they wait again (below).
 |---|---|
 | P1 (`assets/kit/house_kit/HANDOFF.md`) | `assets/environment/house_kit/` (P4's rooms use 16 of its pieces: the boards and lino floors, the storey walls, the balcony's railings, and `stairs_outdoor_half` and `stairs_outdoor_landing` for the main stairs' upper flight and landing in `landing.tscn`) |
 | `assets/kit/house_kit/export/kit_set.gdshader`, `kit_set.tres` (#132) | `assets/environment/house_kit/` (beside the kit's textures) |
-| `assets/prop/house_props/export/library/*.glb` (101 of them), `task/*.glb` (3), as `package.json` lists | `assets/environment/house_props/<file>.glb` (flat) |
+| `assets/prop/house_props/export/library/*.glb` and `task/*.glb` (107 in all), as `package.json` lists | `assets/environment/house_props/<file>.glb` (flat) |
 | `assets/prop/house_props/export/fine/high/*.png`, `fine/low/*.png` (6 each, #147, #150) | `assets/environment/house_props/fine/high/`, `fine/low/` |
 | `assets/prop/house_props/export/prop_fine.gdshader`, `prop_fine_high.tres`, `prop_fine_low.tres` (#147) | `assets/environment/house_props/` |
 | `assets/room/house_upper/export/<room>.tscn` (7) | the content of `levels/house/rooms/<room>.tscn` (G3 below) |
@@ -59,7 +59,7 @@ this package's scenes are unchanged.
 
 ## The landing and the bathroom (#162)
 
-The landing (75 props, 51 different) and the bathroom (40 props, 34 different) are dressed in the world look; the
+The landing (75 props, 51 different) and the bathroom (40 props, 33 different) are dressed in the world look; the
 bathroom is pale green-grey `#d8dfd6` over white tiled lower walls. Changed: `landing.tscn`, `bathroom.tscn` and
 `package.json` (10 new props in `house_props`: `bath_tub`, `bath_vanity`, `towel_rail`, `bath_shelf`, `bath_mat`,
 `bath_tiles`, `bath_tiles_short`, `bath_tiles_shower`, `art_bubbles`, `landing_runner`). Draw calls of the room
