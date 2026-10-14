@@ -5,15 +5,16 @@
 # Paints and shapes are taste data: changing a hex or a prop's roles needs no code change.
 
 library = "house"
-version = 8
+version = 9
 kit_spec = "kits/house.json"
-# the build goes under the raw folder: D:/prime-art-raw/props/library/v8/<id>.glb (v8, #162 round 2: v7 with the
+# the build goes under the raw folder: D:/prime-art-raw/props/library/v9/<id>.glb (v9, #164: v8 with the bedroom's and
+# the guest room's props laid over it; v8, #162 round 2: v7 with the
 # rebuilt landing runner and the landing's sitting area laid over it; v7, #162: v6 with the
 # landing's and the bathroom's props laid over it; v6, #158: v5 with the WC's, the
 # pantry's and the stairs' props laid over it; v5, #156: v4 with the hallway's props laid over it; v4, #153: v3 with the dining room's props; v3, #152: v2 with the cream sofa and armchairs
 # rebuilt over it; v2, #150: v1 with the living room's 16 rebuilt props and the eight-slot fine pack laid over it;
 # v1 stays the approved version-1 build; no folder is ever overwritten)
-out = "props/library/v8"
+out = "props/library/v9"
 review = "review/house/87"  # line-up sheets, under the raw folder
 licences = ["CC0-1.0"]
 max_materials = 8
@@ -3239,3 +3240,220 @@ params = {field = "carpet_field", border = "carpet_rust", motif = 0.6}  # #162 r
 roles = ["carpet_field", "carpet_rust"]
 pivot = "floor"
 collision = "none"
+
+# ---- The upper floor's bedroom and guest room (#164) in the world look: made-up beds, a present-day wardrobe,
+# bedside tables with their small things, curtains, the guest's suitcase, towels, clothes rail and tidy storage.
+
+[[prop]]
+id = "bedroom_bed"
+batch = 1
+name = "Double bed: oak frame, padded linen headboard, white bedding, a cream duvet, scatter cushions and a rust throw"
+class = "room"
+size_m = [1.8, 2.2, 1.15]
+count = 1
+route = "proc"
+shape = "made_bed"
+roles = ["worktop_wood", "wood_front_dark", "upholstery_light", "art_white", "throw_cream", "cushion_teal", "cushion_mustard", "cushion_rust"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "guest_bed"
+batch = 1
+name = "Single guest bed: oak frame and headboard, white bedding, a sky-blue duvet, a mustard cushion and a sage throw"
+class = "room"
+size_m = [1.0, 2.05, 0.95]
+count = 1
+route = "proc"
+shape = "made_bed"
+params = {head_wood = true, duvet = "art_sky", throw = "book_sage", cushions = ["cushion_mustard"]}
+roles = ["worktop_wood", "wood_front_dark", "art_white", "art_sky", "book_sage", "cushion_mustard"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "bedroom_wardrobe"
+batch = 1
+name = "Three-door wardrobe: white doors, a mirror door in the middle, oak plinth and top"
+class = "room"
+size_m = [2.0, 0.62, 2.2]
+count = 1
+route = "proc"
+shape = "wardrobe_modern"
+params = {doors = 3, mirror = true}
+roles = ["worktop_wood", "enamel_white", "wood_front_dark", "mirror_glass", "chrome", "steel_black"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "guest_wardrobe"
+batch = 1
+name = "Two-door wardrobe: white doors, oak plinth and top"
+class = "room"
+size_m = [1.2, 0.6, 2.1]
+count = 1
+route = "proc"
+shape = "wardrobe_modern"
+params = {doors = 2}
+roles = ["worktop_wood", "enamel_white", "wood_front_dark", "chrome", "steel_black"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "bedside_table"
+batch = 1
+name = "Bedside table: oak top, two drawers on tapered legs"
+class = "room"
+size_m = [0.5, 0.42, 0.55]
+count = 1
+route = "proc"
+shape = "sideboard"
+params = {drawers = 2}
+roles = ["wood_front", "wood_front_dark", "worktop_wood", "chrome"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "bedside_set"
+batch = 1
+name = "A glass of water, a phone on its charging cable and a paperback"
+class = "clutter"
+size_m = [0.26, 0.16, 0.12]
+count = 1
+route = "proc"
+shape = "bedside_set"
+roles = ["glass_tint", "rubber_black", "glass_dark", "art_white", "book_teal"]
+pivot = "floor"
+collision = "none"
+
+[[prop]]
+id = "dresser_set"
+batch = 1
+name = "Perfume bottles on a brass tray, a jewellery dish and a hairbrush"
+class = "clutter"
+size_m = [0.42, 0.2, 0.16]
+count = 1
+route = "proc"
+shape = "dresser_set"
+roles = ["steel_warm", "glass_tint", "rubber_black", "chrome", "porcelain_white", "wood_front_dark"]
+pivot = "floor"
+collision = "none"
+
+[[prop]]
+id = "dresser_mirror"
+batch = 1
+name = "Arched mirror over the dresser in a slim brass frame"
+class = "dressing"
+size_m = [0.8, 0.035, 1.0]
+count = 1
+route = "proc"
+shape = "hall_mirror"
+roles = ["steel_warm", "mirror_glass"]
+pivot = "wall"
+collision = "none"
+
+[[prop]]
+id = "curtains"
+batch = 1
+name = "Floor-length cream curtains on a black rod, one window"
+class = "dressing"
+size_m = [1.8, 0.14, 2.45]
+count = 1
+route = "proc"
+shape = "curtains"
+roles = ["steel_black", "throw_cream"]
+pivot = "wall"
+collision = "none"
+
+[[prop]]
+id = "bedroom_rug"
+batch = 1
+name = "Bedroom rug, cream wool with a terracotta border"
+class = "dressing"
+size_m = [3.2, 2.4, 0.012]
+count = 1
+route = "proc"
+shape = "carpet_rug"
+params = {field = "throw_cream", border = "carpet_field"}
+roles = ["throw_cream", "carpet_field"]
+pivot = "floor"
+collision = "none"
+
+[[prop]]
+id = "guest_rug"
+batch = 1
+name = "Guest room rug, sage with a cream border"
+class = "dressing"
+size_m = [2.4, 1.7, 0.012]
+count = 1
+route = "proc"
+shape = "carpet_rug"
+params = {field = "book_sage", border = "throw_cream"}
+roles = ["book_sage", "throw_cream"]
+pivot = "floor"
+collision = "none"
+
+[[prop]]
+id = "bed_bench"
+batch = 1
+name = "Oak bench at the foot of the bed, a teal seat pad and a shoe shelf"
+class = "room"
+size_m = [1.4, 0.4, 0.47]
+count = 1
+route = "proc"
+shape = "hall_bench"
+roles = ["worktop_wood", "cushion_teal", "art_white", "enamel_white", "paint_red", "art_patty", "rubber_black"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "suitcase"
+batch = 1
+name = "The guest's navy hard-shell suitcase with a luggage tag and a burger sticker"
+class = "dressing"
+size_m = [0.44, 0.27, 0.72]
+count = 1
+route = "proc"
+shape = "suitcase"
+roles = ["rubber_black", "coat_navy", "steel_black", "chrome", "art_white", "art_bun", "art_patty"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "towel_stack"
+batch = 1
+name = "Fresh folded towels for the guest, a rolled flannel and a wrapped soap"
+class = "clutter"
+size_m = [0.36, 0.26, 0.2]
+count = 1
+route = "proc"
+shape = "towel_stack"
+roles = ["cushion_teal", "throw_cream", "art_white", "paint_red"]
+pivot = "floor"
+collision = "none"
+
+[[prop]]
+id = "storage_boxes"
+batch = 1
+name = "A tidy stack of lidded storage boxes with labels"
+class = "dressing"
+size_m = [0.8, 0.45, 0.8]
+count = 1
+route = "proc"
+shape = "storage_boxes"
+roles = ["kraft", "art_white", "book_teal", "rubber_black"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "clothes_rail"
+batch = 1
+name = "Black steel clothes rail: shirts and a jacket on hangers, two pairs of shoes on an oak shelf"
+class = "room"
+size_m = [1.2, 0.5, 1.7]
+count = 1
+route = "proc"
+shape = "clothes_rail"
+roles = ["steel_black", "worktop_wood", "book_cream", "rubber_black", "coat_camel", "wood_front_dark", "paint_red", "chrome", "wood_front", "art_white", "book_sage", "coat_navy", "cushion_teal"]
+pivot = "floor"
+collision = "box"

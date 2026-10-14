@@ -124,12 +124,14 @@ RULES = {
         "hosts": (),
     },
     # the upper floor
-    "bedroom": {
-        "furn": ("@reading", "@laundry", "standing_mirror"),
-        "fill": ("radiator", "wardrobe", "dresser", "bookcase", "trunk"),
-        "mid": ("potted_plant", "trunk", "nightstand"),
-        "wall": ("picture_frame", "picture_frame", "picture_frame", "wall_shelf", "wall_clock"),
-        "floor": ("shoes", "basket", "book_stack"),
+    "bedroom": {  # #164: every prop is hand-placed (the fill lined the walls with trunks and dressers)
+        "furn": (),
+        "fill": (),
+        "island": (),
+        "mid": (),
+        "wall": (),
+        "floor": (),
+        "hosts": (),
     },
     "kids_room": {
         "furn": ("@toys", "@reading", "@laundry", "bean_bag"),
@@ -166,12 +168,14 @@ RULES = {
         "floor": (),
         "hosts": (),
     },
-    "guest_room": {
-        "furn": ("@reading", "@packing"),
-        "fill": ("radiator", "wardrobe", "dresser", "bookcase", "trunk"),
-        "mid": ("potted_plant", "trunk", "nightstand", "small_table"),
-        "wall": ("picture_frame", "picture_frame", "wall_shelf", "picture_frame", "wall_clock"),
-        "floor": ("shoes", "basket", "book_stack"),
+    "guest_room": {  # #164: every prop is hand-placed
+        "furn": (),
+        "fill": (),
+        "island": (),
+        "mid": (),
+        "wall": (),
+        "floor": (),
+        "hosts": (),
     },
     # the basement
     "storage": {

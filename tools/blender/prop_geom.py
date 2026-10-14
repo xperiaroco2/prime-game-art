@@ -3988,6 +3988,211 @@ def build_bath_shelf(m, s, R, prm, rng):
         _leaf(m, math.cos(an) * 0.05, Hs + 0.15 + 0.03 * (i % 2), math.sin(an) * 0.05, 0.06, "leaf_green", 6)
 
 
+# ---- The upper floor's bedroom and guest room (#164) in the world look.
+
+def build_made_bed(m, s, R, prm, rng):
+    """A made-up bed (front +z = the foot, the headboard at -z): an oak frame on short legs, an upholstered
+    headboard (`head`) or with `head_wood` an oak panel, a white mattress, a duvet (`duvet`) draped down the sides
+    with its white sheet turned down, pillows, upright scatter cushions (`cushions`) and a throw (`throw`) across
+    the foot. Collider: one box round the bed."""
+    L, W, H = s
+    hx, hz = L / 2, W / 2
+    wood = prm.get("frame", "worktop_wood")
+    duvet, throw = prm.get("duvet", "throw_cream"), prm.get("throw", "cushion_rust")
+    yl, yb, ym = 0.08, 0.3, 0.5  # the legs' top, the base's top (the mattress's foot), the mattress's top
+    for sx in (-1, 1):
+        for z in (-hz + 0.14, hz - 0.06):
+            leg(m, sx * (hx - 0.06), z, 0.0, yl + 0.01, 0.025, "wood_front_dark", 0.8)
+    cbox(m, (-hx + 0.01, yl, -hz + 0.08), (hx - 0.01, yb, hz), wood, 0.012)
+    hb = 0.09  # the headboard's depth
+    if prm.get("head_wood"):
+        cbox(m, (-hx, 0.0, -hz), (hx, H, -hz + hb), wood, 0.012)
+        box(m, (-hx + 0.06, H * 0.55, -hz + hb), (hx - 0.06, H * 0.55 + 0.012, -hz + hb + 0.004), "wood_front_dark",
+            "+y+z")
+    else:
+        head = prm.get("head", "upholstery_light")
+        cbox(m, (-hx, 0.0, -hz), (hx, yb + 0.05, -hz + hb), wood, 0.01)
+        n = max(2, int(L / 0.45))
+        xs = [-hx + L * k / n for k in range(n + 1)]
+        for a, b in zip(xs, xs[1:]):  # padded channels
+            cushion(m, (a + 0.004, yb + 0.05, -hz + 0.01), (b - 0.004, H, -hz + hb + 0.02), head, 0.045)
+    cushion(m, (-hx + 0.03, yb, -hz + hb + 0.01), (hx - 0.03, ym, hz - 0.02), "art_white", 0.04)
+    zt = -hz + hb + 0.5  # the duvet's top edge, the sheet turned down over it
+    cushion(m, (-hx, yb - 0.04, zt), (hx, ym + 0.08, hz - 0.005), duvet, 0.05)
+    cushion(m, (-hx + 0.005, ym + 0.05, zt - 0.02), (hx - 0.005, ym + 0.1, zt + 0.2), "art_white", 0.02)
+    n = 2 if L > 1.3 else 1
+    pw = (L - 0.16) / n
+    for k in range(n):  # pillows lying against the headboard
+        a = -hx + 0.08 + k * pw
+        cushion(m, (a + 0.02, ym - 0.01, -hz + hb + 0.03), (a + pw - 0.02, ym + 0.15, -hz + hb + 0.4), "art_white",
+                0.06)
+    paints = list(prm.get("cushions", ["cushion_teal", "cushion_mustard"]))
+    cw = 0.42 if n > 1 else 0.38
+    cx = [(-0.25, 0.25)[k] * (L / 1.8) for k in range(2)] if n > 1 else [0.0]
+    for k, x in enumerate(cx):  # upright scatter cushions in front of the pillows
+        cushion(m, (x - cw / 2, ym + 0.06, -hz + hb + 0.4), (x + cw / 2, min(H - 0.05, ym + 0.46), -hz + hb + 0.53),
+                paints[k % len(paints)], 0.06)
+    if n > 1:  # a lumbar cushion in the middle
+        cushion(m, (-0.22, ym + 0.08, -hz + hb + 0.55), (0.22, ym + 0.3, -hz + hb + 0.66), throw, 0.05)
+    t0 = hz - 0.6  # the throw across the foot and down over the end
+    cushion(m, (-hx - 0.0, ym + 0.07, t0), (hx, ym + 0.11, hz), throw, 0.015)
+    cushion(m, (-hx, yb - 0.02, hz - 0.03), (hx, ym + 0.1, hz), throw, 0.01)
+
+
+def build_wardrobe_modern(m, s, R, prm, rng):
+    """A present-day wardrobe: an oak plinth and top, a `body` carcass, `doors` full-height doors (raised panels, long
+    upright bar handles); with `mirror` the middle door is a framed mirror. Collider: one box."""
+    st = _style(prm)
+    L, W, H = s
+    hx, hz = L / 2, W / 2
+    oak, body = prm.get("trim", "worktop_wood"), prm.get("body", "enamel_white")
+    zf = hz - st.reach - 0.002
+    yp = 0.08
+    cbox(m, (-hx + 0.04, 0.0, -hz + 0.02), (hx - 0.04, yp, zf - 0.04), oak, st.bevel_small)
+    cbox(m, (-hx + 0.01, yp, -hz), (hx - 0.01, H - 0.035, zf), body, st.bevel)
+    worktop(m, st, -hx, hx, -hz, hz, oak, y=H, t=0.035)
+    n = int(prm.get("doors", 3))
+    xs = [-hx + 0.012 + (L - 0.024) * k / n for k in range(n + 1)]
+    mid = n // 2 if prm.get("mirror") else -1
+    for k, (a, b) in enumerate(zip(xs, xs[1:])):
+        front(m, st, a, b, yp + 0.006, H - 0.04, zf, body, k < n / 2 or (n % 2 and k == n // 2),
+              glass="mirror_glass" if k == mid else None, line=None if k == mid else "wood_front_dark")
+
+
+def build_bedside_set(m, s, R, prm, rng):
+    """A bedside's small things: a glass of water, a phone on its white charging cable, a paperback."""
+    L, W, H = s
+    hx, hz = L / 2, W / 2
+    _tumbler(m, -hx + 0.04, -hz + 0.05, 0.0, 0.035, H - 0.005)
+    cyl(m, "y", (-hx + 0.04, -hz + 0.05), 0.029, 0.012, H * 0.7, "glass_tint", 10)
+    px, pz = 0.02, hz - 0.06  # the phone, face up
+    box(m, (px - 0.036, 0.0, pz - 0.055), (px + 0.036, 0.009, pz + 0.055), "rubber_black")
+    box(m, (px - 0.032, 0.009, pz - 0.05), (px + 0.032, 0.0095, pz + 0.05), "glass_dark", "+y")
+    rod(m, (px, 0.004, pz - 0.055), (px + 0.03, 0.004, -hz + 0.01), 0.003, "art_white", 4)
+    box(m, (hx - 0.11, 0.0, -hz + 0.01), (hx - 0.005, 0.022, -hz + 0.15), prm.get("book", "book_teal"))
+    box(m, (hx - 0.106, 0.004, -hz + 0.014), (hx - 0.002, 0.018, -hz + 0.146), "art_white", "+x+z")
+
+
+def build_dresser_set(m, s, R, prm, rng):
+    """A dresser top's things: a brass tray with three perfume bottles, a white jewellery dish and a hairbrush."""
+    L, W, H = s
+    hx, hz = L / 2, W / 2
+    tx = -hx + 0.12
+    box(m, (-hx, 0.0, -hz), (tx + 0.12, 0.012, hz - 0.03), "steel_warm")
+    for k, (x, r, h, cap) in enumerate(((-hx + 0.05, 0.026, H - 0.03, "steel_warm"), (-hx + 0.12, 0.03, H - 0.06,
+                                         "rubber_black"), (-hx + 0.19, 0.022, H - 0.05, "chrome"))):
+        z = -hz + 0.06 + 0.04 * (k % 2)
+        cyl(m, "y", (x, z), r, 0.012, 0.012 + h * 0.75, "glass_tint", 10)
+        cyl(m, "y", (x, z), r * 0.45, 0.012 + h * 0.75, 0.012 + h, cap, 8)
+    cyl(m, "y", (hx - 0.08, -hz + 0.06), 0.05, 0.0, 0.025, "porcelain_white", 14, r1=0.04)
+    box(m, (hx - 0.16, 0.0, hz - 0.06), (hx - 0.01, 0.025, hz - 0.02), "wood_front_dark")
+    box(m, (hx - 0.11, 0.025, hz - 0.055), (hx - 0.015, 0.035, hz - 0.025), "rubber_black", "+x-x+y+z-z")
+
+
+def build_curtains(m, s, R, prm, rng):
+    """Floor-length curtains for one window (wall pivot, the back at z 0): a black rod on two brackets with round
+    finials, a gathered panel (`cloth`) at each side of the window, `panel` wide, in soft vertical folds."""
+    L, W, H = s
+    hx = L / 2
+    cloth, pw = prm.get("cloth", "throw_cream"), float(prm.get("panel", 0.38))
+    yr, zr = H - 0.04, W - 0.035
+    rod(m, (-hx + 0.03, yr, zr), (hx - 0.03, yr, zr), 0.012, "steel_black", 8)
+    for sx in (-1, 1):
+        cyl(m, "x", (yr, zr), 0.025, *sorted((sx * (hx - 0.03), sx * hx)), "steel_black", 8)
+        rod(m, (sx * (hx - 0.12), yr, 0.0), (sx * (hx - 0.12), yr, zr), 0.008, "steel_black", 6)
+        k, r = 5, pw / 10
+        for i in range(k):
+            x = sx * (hx - 0.05 - r - i * 2 * r * 0.95)
+            z = zr - 0.02 - (0.025 if i % 2 else 0.0)
+            cyl(m, "y", (x, z), r, 0.01, yr - 0.02, cloth, 7, r1=r * 0.9)
+
+
+def build_suitcase(m, s, R, prm, rng):
+    """An upright hard-shell suitcase (`shell`): ribbed sides, four spinner wheels, a top carry handle, a pulled-down
+    telescopic handle and a white luggage tag on the side; a burger sticker on the front."""
+    L, W, H = s
+    hx, hz = L / 2, W / 2
+    sh = prm.get("shell", "coat_navy")
+    yw, yt = 0.06, H - 0.06  # the wheels' top, the shell's top
+    for sx in (-1, 1):
+        for sz in (-1, 1):
+            cyl(m, "x", (0.025, sz * (hz - 0.04)), 0.025, *sorted((sx * (hx - 0.06), sx * (hx - 0.03))), "rubber_black", 8)
+    cushion(m, (-hx, yw, -hz + 0.01), (hx, yt, hz - 0.01), sh, 0.05)
+    box(m, (-hx - 0.0, yw + 0.02, -0.006), (hx, yt - 0.02, 0.006), "steel_black", "+x-x+y")
+    for x in (-hx * 0.5, 0.0, hx * 0.5):
+        box(m, (x - 0.015, yw + 0.06, hz - 0.012), (x + 0.015, yt - 0.06, hz), sh, "+x-x+y-y+z")
+    for sx in (-1, 1):
+        rod(m, (sx * 0.1, yt, -hz + 0.05), (sx * 0.1, H - 0.012, -hz + 0.05), 0.008, "chrome", 6)
+    box(m, (-0.12, H - 0.025, -hz + 0.03), (0.12, H, -hz + 0.07), "rubber_black")
+    box(m, (-0.07, yt, 0.0), (0.07, yt + 0.03, 0.03), "rubber_black")
+    box(m, (hx, yt - 0.18, -0.03), (hx + 0.004, yt - 0.08, 0.03), "art_white", "+x+y-y+z-z")
+    cyl(m, "z", (hx * 0.4, yt - 0.14), 0.045, hz - 0.004, hz + 0.0, "art_bun", 12)
+    cyl(m, "z", (hx * 0.4, yt - 0.14), 0.035, hz - 0.002, hz + 0.002, "art_patty", 12)
+
+
+def build_towel_stack(m, s, R, prm, rng):
+    """Fresh towels for a guest: three folded towels (`paints` in turn), a rolled flannel and a wrapped soap."""
+    L, W, H = s
+    hx, hz = L / 2, W / 2
+    paints = list(prm.get("paints", ["cushion_teal", "throw_cream", "art_white"]))
+    th = (H - 0.05) / 3
+    for k in range(3):
+        d = 0.01 * (k % 2)
+        cushion(m, (-hx + d, k * th, -hz + d), (hx - 0.06 + d, (k + 1) * th - 0.003, hz - d), paints[k % len(paints)],
+                0.012)
+    y = 3 * th
+    cyl(m, "z", (hx - 0.04, 0.035), 0.033, -hz + 0.03, hz - 0.03, paints[0], 10)
+    box(m, (-0.07, y, -0.05), (0.03, y + 0.035, 0.03), "art_white")
+    box(m, (-0.03, y, -0.051), (-0.01, y + 0.036, 0.031), "paint_red", "+y+z-z")
+
+
+def build_storage_boxes(m, s, R, prm, rng):
+    """A tidy stack of lidded storage boxes (kraft bodies, `lid` lids) with white label plates and dark hand holes:
+    one wide box at the foot, two on it and a shoebox on top. Collider: one box."""
+    L, W, H = s
+    hx, hz = L / 2, W / 2
+    lid = prm.get("lid", "art_white")
+    h1 = H * 0.42
+    h2 = H * 0.35
+    rows = [((-hx, hx), -hz, hz, 0.0, h1), ((-hx + 0.01, -0.01), -hz + 0.02, hz - 0.03, h1, h1 + h2),
+            ((0.01, hx - 0.02), -hz + 0.03, hz - 0.02, h1, h1 + h2), ((-hx * 0.7, hx * 0.1), -hz + 0.06, hz - 0.12, h1 + h2,
+                                                                         H)]
+    for k, ((x0, x1), z0, z1, y0, y1) in enumerate(rows):
+        box(m, (x0 + 0.01, y0, z0 + 0.01), (x1 - 0.01, y1 - 0.03, z1 - 0.01), "kraft")
+        cbox(m, (x0, y1 - 0.035, z0), (x1, y1, z1), lid if k != 3 else "book_teal", 0.006)
+        xm = (x0 + x1) / 2
+        box(m, (xm - 0.07, (y0 + y1) / 2 - 0.02, z1 - 0.01), (xm + 0.07, (y0 + y1) / 2 + 0.03, z1 - 0.008), "art_white",
+            "+z")
+        box(m, (xm - 0.05, y1 - 0.08, z1 - 0.01), (xm + 0.05, y1 - 0.055, z1 - 0.009), "rubber_black", "+z")
+
+
+def build_clothes_rail(m, s, R, prm, rng):
+    """A guest's clothes rail in black steel: two uprights on foot bars, a top rail with shirts and a jacket on
+    hangers (`paints` in turn), a low oak shelf with two pairs of shoes. Collider: one box."""
+    L, W, H = s
+    hx, hz = L / 2, W / 2
+    for sx in (-1, 1):
+        x = sx * (hx - 0.02)
+        rod(m, (x, 0.02, 0.0), (x, H - 0.02, 0.0), 0.014, "steel_black", 8)
+        rod(m, (x, 0.02, -hz + 0.02), (x, 0.02, hz - 0.02), 0.016, "steel_black", 8)
+    rod(m, (-hx + 0.02, H - 0.03, 0.0), (hx - 0.02, H - 0.03, 0.0), 0.012, "steel_black", 8)
+    cbox(m, (-hx + 0.04, 0.16, -hz + 0.1), (hx - 0.04, 0.185, hz - 0.1), "worktop_wood", 0.004)
+    _shoe_pair(m, -hx * 0.45, 0.185, 0.0, 0.27, 0.085, 0.09, "book_cream", "rubber_black")
+    _shoe_pair(m, hx * 0.4, 0.185, 0.0, 0.28, 0.09, 0.1, "coat_camel", "wood_front_dark", "paint_red")
+    paints = list(prm.get("paints", ["art_white", "book_sage", "coat_navy", "cushion_teal", "coat_camel"]))
+    n = int(prm.get("hangers", 6))
+    yh = H - 0.03
+    for k in range(n):
+        x = -hx + 0.14 + (L - 0.28) * k / max(1, n - 1)
+        role = paints[k % len(paints)]
+        long = role in ("coat_navy", "coat_camel")
+        rod(m, (x, yh, 0.0), (x, yh - 0.06, 0.0), 0.004, "chrome", 4)
+        rod(m, (x, yh - 0.14, -0.2), (x, yh - 0.14, 0.2), 0.007, "wood_front", 6)
+        bot = yh - (0.95 if long else 0.7)
+        cushion(m, (x - 0.025, bot, -0.21), (x + 0.025, yh - 0.1, 0.21), role, 0.012)
+        box(m, (x - 0.03, yh - 0.16, -0.06), (x + 0.03, yh - 0.1, 0.06), role)
+
+
 BUILDERS = {name[6:]: fn for name, fn in dict(globals()).items() if name.startswith("build_") and callable(fn)}
 
 

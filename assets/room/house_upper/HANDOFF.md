@@ -10,12 +10,12 @@ merged in #130 (2026-10-12); #150 re-exported it, so they wait again (below).
 |---|---|
 | P1 (`assets/kit/house_kit/HANDOFF.md`) | `assets/environment/house_kit/` (P4's rooms use 16 of its pieces: the boards and lino floors, the storey walls, the balcony's railings, and `stairs_outdoor_half` and `stairs_outdoor_landing` for the main stairs' upper flight and landing in `landing.tscn`) |
 | `assets/kit/house_kit/export/kit_set.gdshader`, `kit_set.tres` (#132) | `assets/environment/house_kit/` (beside the kit's textures) |
-| `assets/prop/house_props/export/library/*.glb` and `task/*.glb` (107 in all), as `package.json` lists | `assets/environment/house_props/<file>.glb` (flat) |
+| `assets/prop/house_props/export/library/*.glb` and `task/*.glb` (122 in all), as `package.json` lists | `assets/environment/house_props/<file>.glb` (flat) |
 | `assets/prop/house_props/export/fine/high/*.png`, `fine/low/*.png` (6 each, #147, #150) | `assets/environment/house_props/fine/high/`, `fine/low/` |
 | `assets/prop/house_props/export/prop_fine.gdshader`, `prop_fine_high.tres`, `prop_fine_low.tres` (#147) | `assets/environment/house_props/` |
 | `assets/room/house_upper/export/<room>.tscn` (7) | the content of `levels/house/rooms/<room>.tscn` (G3 below) |
 
-`package.json` beside this file lists the package's 83 game paths with their SHA-256 (the copies must hash the same),
+`package.json` beside this file lists the package's 165 game paths with their SHA-256 (122 prop GLBs, the fine pack's 12 PNGs, shader and two materials, 21 kit files, 7 scenes) (the copies must hash the same),
 its rooms (game node, level, kit and prop counts) and the questions. The 7 rooms: `bedroom`, `kids_room`, `landing`,
 `study`, `bathroom`, `guest_room`, `balcony` (its external stairs down to the yard are P2's, in `yard.tscn`). Each scene keeps the game
 room's root name, origin, `metadata/size_m`, `Name` label, `Doors`, `Stations` and `Markers`, and adds `Shell` (kit
@@ -68,6 +68,10 @@ The review's round 2 brought back the landing's sitting area south of the stairw
 armchairs facing each other over a coffee table on a rug, a side table with a lamp, a floor lamp and figs; main had
 one there) and rebuilt `landing_runner` in terracotta tone on tone (the slate one read as a road); `landing.tscn`
 and `package.json` re-exported into `<raw>/review/house/162/export/p4b`.
+
+## The bedroom and the guest room (#164)
+
+The bedroom (57 props, 43 different) and the guest room (52 props, 41 different; as many as before, each piece replaced by a better one) are dressed in the world look on their bordeaux `#69413c`. Changed: `bedroom.tscn`, `guest_room.tscn` and `package.json` (16 new props in `house_props`: `bedroom_bed`, `guest_bed`, `bedroom_wardrobe`, `guest_wardrobe`, `bedside_table`, `bedside_set`, `dresser_set`, `dresser_mirror`, `curtains`, `bedroom_rug`, `guest_rug`, `bed_bench`, `suitcase`, `towel_stack`, `storage_boxes`, `clothes_rail`; `double_bed`, `single_bed` and `nightstand` leave the package, which no longer places them). Draw calls of the room itself on the package sheet, before/after: bedroom door 42/54, across 52/55; guest room door 40/45, across 37/53. Re-exported into `<raw>/review/house/164/export/p4`.
 
 ## Credits
 As P2: the entries `assets/kit/house_kit/CREDITS.md` and `assets/prop/house_props/CREDITS.md` (copy them to

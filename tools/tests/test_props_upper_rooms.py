@@ -1,8 +1,9 @@
-"""The upper floor's landing and bathroom (#162, docs/props.md "World look rules"): their new props build at their
+"""The upper floor's landing and bathroom (#162), bedroom and guest room (#164, docs/props.md "World look rules"):
+their new props build at their
 size_m (never more than 15 mm over it), at their pivot and under their class's triangle budget; the furniture
 collides with one box inside its size, the wall pieces and the flat pieces have no collider and the wall pieces stay
 inside their depth; each room's dressing keeps 0.3 m from every station and spawn marker in it (read from
-layouts/house/upper.toml and props/tasks.toml: none today, asserted), leaves its doors' openings, the attic hatch's
+layouts/house/upper.toml and props/tasks.toml: the bedroom's Circle07 and the guest room's Circle09, asserted), leaves its doors' openings, the attic hatch's
 ladder and the stairs' top clear, keeps its prop count (never emptier than before the pass) and keeps its Name label
 out of every piece. Pure Python, no Blender."""
 
@@ -28,17 +29,25 @@ BY_ID = {p["id"]: p for p in LIB["prop"]}
 LAYOUT = common.ROOT / "layouts" / "house"
 HOUSE = tomllib.loads((LAYOUT / "house.toml").read_text(encoding="utf-8"))
 TASKS = tomllib.loads((common.ROOT / "props" / "tasks.toml").read_text(encoding="utf-8"))["props"]
-ROOMS = ("landing", "bathroom")
-DOORS = {"landing": 6, "bathroom": 1}
-# The [[props]] entries on main before #162's pass (fixtures not counted; the test counts the same after it).
-BEFORE = {"landing": 66, "bathroom": 40}
+ROOMS = ("landing", "bathroom", "bedroom", "guest_room")
+DOORS = {"landing": 6, "bathroom": 1, "bedroom": 1, "guest_room": 1}
+# The [[props]] entries on main before each room's pass (#162, #164; fixtures not counted; the test counts the same
+# after it).
+BEFORE = {"landing": 66, "bathroom": 40, "bedroom": 57, "guest_room": 52}
+# The stations, spawn markers and task props each room must keep clear (#164: the two spawn circles).
+POINTS = {"landing": [], "bathroom": [], "bedroom": ["Circle07"], "guest_room": ["Circle09"]}
 # The big furniture main's landing had (a sitting area: armchairs and a rug) that the pass keeps (round 2): one of
 # each id group at least.
-BIG = {"landing": [("sofa", "armchair"), ("rug",)]}
+BIG = {"landing": [("sofa", "armchair"), ("rug",)],
+       # #164: main's bed, wardrobes, dresser and armchair, replaced by better ones, never dropped
+       "bedroom": [("bedroom_bed",), ("bedroom_wardrobe",), ("dresser",), ("armchair",), ("bedside_table",)],
+       "guest_room": [("guest_bed",), ("guest_wardrobe", "clothes_rail"), ("dresser",), ("armchair",), ("bedside_table",)]}
 
-SOLID = ("bath_tub", "bath_vanity", "bath_shelf")
-WALL = ("towel_rail", "art_bubbles", "bath_tiles", "bath_tiles_short", "bath_tiles_shower")
-FLAT = WALL + ("bath_mat", "landing_runner")
+SOLID = ("bath_tub", "bath_vanity", "bath_shelf",
+         "bedroom_bed", "guest_bed", "bedroom_wardrobe", "guest_wardrobe", "bedside_table", "bed_bench", "suitcase",
+         "storage_boxes", "clothes_rail")
+WALL = ("towel_rail", "art_bubbles", "bath_tiles", "bath_tiles_short", "bath_tiles_shower", "dresser_mirror", "curtains")
+FLAT = WALL + ("bath_mat", "landing_runner", "bedroom_rug", "guest_rug", "bedside_set", "dresser_set", "towel_stack")
 NEW = SOLID + FLAT
 OVER_M = 0.015  # a prop may stand at most this far over its size_m
 CLEAR_M = 0.3  # nothing of the dressing this close to a station's point or a spawn marker
@@ -168,12 +177,11 @@ class UpperRoomsPropsTest(unittest.TestCase):
             self.assertGreaterEqual(b["min"][2], -1e-4, f"{pid}: behind the wall")
             self.assertLessEqual(b["max"][2], depth + OVER_M, f"{pid}: deeper than its size")
 
-    def test_the_rooms_have_no_station_or_spawn_today(self):
+    def test_the_rooms_points_are_known(self):
         for rid in ROOMS:
             _, points = _points(rid)
-            self.assertEqual([p["name"] for p in points], [],
-                             f"{rid} has no station, spawn marker or task prop today (#162); a new one must be kept "
-                             "clear by the test below")
+            self.assertEqual(sorted(p["name"] for p in points), POINTS[rid],
+                             f"{rid}: its stations, spawn markers and task props changed; the test below keeps them clear")
 
     def test_the_dressing_keeps_clear_of_every_station_and_spawn(self):
         for rid in ROOMS:
@@ -212,7 +220,7 @@ class UpperRoomsPropsTest(unittest.TestCase):
                                              f"{dr['at']}")
 
     def test_the_rooms_are_hand_placed(self):
-        """#162: the clutter rules of the two rooms are empty, so `house --clutter` never refills them."""
+        """#162, #164: the clutter rules of the rooms are empty, so `house --clutter` never refills them."""
         from runner import house_clutter
         for rid in ROOMS:
             self.assertTrue(all(not v for v in house_clutter.RULES[rid].values()), rid)
@@ -234,7 +242,7 @@ class UpperRoomsPropsTest(unittest.TestCase):
             self.assertEqual(len(self.placed[rid]), len(dressing["props"]), rid)
             self.assertGreaterEqual(len(dressing["props"]), BEFORE[rid], rid)
 
-    def test_the_landing_keeps_mains_big_furniture(self):
+    def test_the_rooms_keep_mains_big_furniture(self):
         for rid, groups in BIG.items():
             ids = {item["id"] for item, _, _ in self.placed[rid]}
             for group in groups:
