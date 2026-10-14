@@ -9,12 +9,12 @@ on the art PR). P3 was approved and merged in #127 (2026-10-11); #150 re-exporte
 |---|---|
 | P1 (`assets/kit/house_kit/HANDOFF.md`) | `assets/environment/house_kit/` (P3's rooms use 9 of its pieces) |
 | `assets/kit/house_kit/export/kit_set.gdshader`, `kit_set.tres` (#132) | `assets/environment/house_kit/` (beside the kit's textures) |
-| `assets/prop/house_props/export/library/*.glb` (32 of them), `task/*.glb` (15), as `package.json` lists | `assets/environment/house_props/<file>.glb` (flat) |
+| `assets/prop/house_props/export/library/*.glb` (85 of them), `task/*.glb` (15), as `package.json` lists | `assets/environment/house_props/<file>.glb` (flat) |
 | `assets/prop/house_props/export/fine/high/*.png`, `fine/low/*.png` (6 each, #147, #150) | `assets/environment/house_props/fine/high/`, `fine/low/` |
 | `assets/prop/house_props/export/prop_fine.gdshader`, `prop_fine_high.tres`, `prop_fine_low.tres` (#147) | `assets/environment/house_props/` |
 | `assets/room/house_basement/export/<room>.tscn` (8) | the content of `levels/house/rooms/<room>.tscn` (G3 below) |
 
-`package.json` beside this file lists the package's 69 game paths with their SHA-256 (the copies must hash the same),
+`package.json` beside this file lists the package's 137 game paths with their SHA-256 (the copies must hash the same),
 its rooms (game node, level, kit and prop counts) and the questions. The 8 rooms: `storage`, `darkroom`, `corridor`,
 `boiler_room`, `generator_hall`, `pump_room`, `switch_room`, `passage`. Each scene keeps the game room's root name,
 origin, `metadata/size_m`, `Name` label, `Doors`, `Stations` and `Markers`, and adds `Shell` (kit instances, walkable
@@ -69,6 +69,17 @@ package's scenes are unchanged.
 Only `package.json` changed: the shared `kit_set.tres` carries the attic's paint and hashes anew; this
 package's scenes are unchanged.
 
+## The storage, the darkroom and the corridor dressed (#170)
+
+P3 is re-exported for #170: `storage.tscn`, `darkroom.tscn` and `corridor.tscn` change (the other five scenes keep
+their bytes). The three rooms are dressed by hand (`layouts/house/dressing/storage.toml`, `darkroom.toml`,
+`corridor.toml`) as clean, well-organised working rooms with library v12's 32 basement props (`docs/props.md`, the
+basement's pieces): steel shelving, the buns' bread rack, a delivery pallet with its pallet jack, a workbench, a step
+ladder, a delivery trolley, floor markings and signs in the storage; a lab sink, a chemicals shelf, a light table and
+drying lines of prints in the darkroom; rubber matting, work hooks, a fire extinguisher and a fuse box in the
+corridor. The storage's twelve bare bulbs are `fluorescent_tube` fixtures now (`layouts/house/lights.toml`). Copy the
+new props with the others `package.json` lists; every station, spawn and marker keeps its place.
+
 
 ## Credits
 The entries are `assets/kit/house_kit/CREDITS.md` and `assets/prop/house_props/CREDITS.md` in this repo (the game's
@@ -88,7 +99,7 @@ The entries are `assets/kit/house_kit/CREDITS.md` and `assets/prop/house_props/C
 - Colliders are the GLBs' own `-convcolonly` shapes (`StaticBody3D`, layer 1).
 - Footsteps: the floors carry `concrete`; the pallets (low props the footstep ray meets first) carry `wood`.
 - The art's package check (`house --export --package 3`) is green: 8 scenes load with their root and `size_m`, 7/7
-  capsule walks arrive, of the 4448 rays down 4422 hit `concrete`, 22 `wood` (pallets) and 4 `none`: the plinth of
+  capsule walks arrive, of the 4448 rays down 4434 hit `concrete`, 10 `wood` (pallets) and 4 `none`: the plinth of
   `boiler_1` under the boiler's body, where no player stands (the 0.4 m player capsule keeps its centre at least
   0.89 m from the boiler's axis, past the plinth's corners at 0.85 m, so the game's footstep ray never meets the
   boiler; it carries no surface).

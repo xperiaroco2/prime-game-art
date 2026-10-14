@@ -5,9 +5,10 @@
 # Paints and shapes are taste data: changing a hex or a prop's roles needs no code change.
 
 library = "house"
-version = 11
+version = 12
 kit_spec = "kits/house.json"
-# the build goes under the raw folder: D:/prime-art-raw/props/library/v11/<id>.glb (v11, #168: v10 with the attic's
+# the build goes under the raw folder: D:/prime-art-raw/props/library/v12/<id>.glb (v12, #170: v11 with the
+# basement's working-room pieces laid over it; v11, #168: v10 with the attic's
 # rebuilt and new pieces laid over it; v10, #166: v9 with the kids' room's
 # and the study's props laid over it; v9, #164: v8 with the bedroom's and
 # the guest room's props laid over it; v8, #162 round 2: v7 with the
@@ -16,7 +17,7 @@ kit_spec = "kits/house.json"
 # pantry's and the stairs' props laid over it; v5, #156: v4 with the hallway's props laid over it; v4, #153: v3 with the dining room's props; v3, #152: v2 with the cream sofa and armchairs
 # rebuilt over it; v2, #150: v1 with the living room's 16 rebuilt props and the eight-slot fine pack laid over it;
 # v1 stays the approved version-1 build; no folder is ever overwritten)
-out = "props/library/v11"
+out = "props/library/v12"
 review = "review/house/87"  # line-up sheets, under the raw folder
 licences = ["CC0-1.0"]
 max_materials = 8
@@ -203,6 +204,10 @@ blueprint_blue = {material = "fine", layer = "paint", hex = "#2b4f7a"}
 carpet_navy = {material = "fine", layer = "carpet", hex = "#34465c"}
 coir = {material = "fine", layer = "carpet", hex = "#a07c52"}
 carpet_rust = {material = "fine", layer = "carpet", hex = "#8a4732"}  # #162: the landing runner's border, a tone of carpet_field
+safety_yellow = {material = "fine", layer = "paint", hex = "#e3b51f"}  # #170: floor tape, signs, the warning triangle
+hivis_yellow = {material = "fine", layer = "fabric", hex = "#cfd82a"}  # #170: the work vests on the corridor's hooks
+rubber_mat = {material = "fine", layer = "paint", hex = "#565b57"}  # #170: the corridor's ribbed matting, a mid grey (never road-dark)
+bottle_brown = {material = "fine", layer = "gloss", hex = "#4a2a14"}  # #170: the darkroom's chemical bottles
 
 # Inventory props this library does not make, and who does (the manager's split of 2026-10-10).
 [skip]
@@ -3842,4 +3847,460 @@ route = "proc"
 shape = "rocking_horse"
 roles = ["worktop_wood", "art_white", "steel_black", "wood_dark", "paint_red"]
 pivot = "floor"
+collision = "box"
+
+# ---- #170: the basement's working rooms: the storage, the darkroom and the corridor (library v12) ----
+
+[[prop]]
+id = "store_shelving"
+batch = 1
+name = "Steel store shelving bay of labelled boxes, tubs and shoeboxes"
+class = "room"
+size_m = [2.0, 0.5, 2.0]
+count = 1
+route = "proc"
+shape = "storage_shelving"
+params = {seed = 170, frame = "steel_warm"}
+roles = ["art_pink", "art_terracotta", "art_white", "book_mustard", "book_sage", "book_teal", "enamel_white", "kraft", "leaf_green", "paint_blue", "paint_red", "rubber_black", "steel_black", "steel_warm", "worktop_wood"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "store_shelving_b"
+batch = 1
+name = "Steel store shelving bay, the second stock"
+class = "room"
+size_m = [2.0, 0.5, 2.0]
+count = 1
+route = "proc"
+shape = "storage_shelving"
+params = {seed = 71, frame = "steel_warm"}
+roles = ["art_pink", "art_terracotta", "art_white", "book_mustard", "book_sage", "book_teal", "enamel_white", "kraft", "leaf_green", "paint_blue", "paint_red", "rubber_black", "steel_black", "steel_warm", "worktop_wood"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "bread_rack"
+batch = 1
+name = "The buns' bakery rack on castors: trays of buns and bagged bun packs"
+class = "room"
+size_m = [0.62, 0.5, 1.75]
+count = 1
+route = "proc"
+shape = "bread_rack"
+roles = ["art_bun", "art_white", "rubber_black", "steel_black", "steel_warm"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "pallet_jack"
+batch = 1
+name = "A red hand pallet jack, its tow handle up"
+class = "dressing"
+size_m = [0.55, 1.5, 1.2]
+count = 1
+route = "proc"
+shape = "pallet_jack"
+roles = ["chrome", "paint_red", "rubber_black", "steel_black"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "loaded_pallet"
+batch = 1
+name = "A delivery on its pallet: taped kraft boxes, the burger mark, corner boards and a strap"
+class = "room"
+size_m = [1.2, 0.8, 1.25]
+count = 1
+route = "proc"
+shape = "loaded_pallet"
+params = {layers = 3}
+roles = ["art_bun", "art_patty", "art_white", "kraft", "kraft_tape", "leaf_green", "paint_blue", "steel_black", "worktop_wood"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "store_workbench"
+batch = 1
+name = "A workbench: steel frame, oak top, blue drawers, a vice, a tool case and a tool rail"
+class = "room"
+size_m = [1.8, 0.75, 1.45]
+count = 1
+route = "proc"
+shape = "workbench"
+roles = ["book_mustard", "chrome", "paint_blue", "paint_red", "steel_black", "worktop_wood"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "step_ladder"
+batch = 1
+name = "An aluminium step ladder standing open, a blue top cap"
+class = "dressing"
+size_m = [0.5, 0.8, 1.6]
+count = 1
+route = "proc"
+shape = "step_ladder"
+roles = ["paint_blue", "rubber_black", "steel_black", "steel_warm"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "hand_trolley"
+batch = 1
+name = "A delivery sack truck with two boxes on it"
+class = "dressing"
+size_m = [0.55, 0.55, 1.25]
+count = 1
+route = "proc"
+shape = "hand_trolley"
+roles = ["art_white", "kraft", "kraft_tape", "paint_red", "rubber_black", "steel_black", "steel_warm"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "floor_bay"
+batch = 1
+name = "Yellow floor tape: a pallet bay's outline"
+class = "dressing"
+size_m = [2.4, 1.6, 0.004]
+count = 1
+route = "proc"
+shape = "floor_marking"
+params = {kind = "bay"}
+roles = ["safety_yellow", "steel_black"]
+layer = "base"
+pivot = "floor"
+collision = "none"
+
+[[prop]]
+id = "floor_lane"
+batch = 1
+name = "Yellow floor tape: a walkway's two edge lines"
+class = "dressing"
+size_m = [6.0, 1.2, 0.004]
+count = 1
+route = "proc"
+shape = "floor_marking"
+params = {kind = "lane"}
+roles = ["safety_yellow", "steel_black"]
+layer = "base"
+pivot = "floor"
+collision = "none"
+
+[[prop]]
+id = "floor_hatch"
+batch = 1
+name = "Yellow and black hatched floor tape: keep clear"
+class = "dressing"
+size_m = [1.2, 0.9, 0.004]
+count = 1
+route = "proc"
+shape = "floor_marking"
+params = {kind = "hatch"}
+roles = ["safety_yellow", "steel_black"]
+layer = "base"
+pivot = "floor"
+collision = "none"
+
+[[prop]]
+id = "aisle_sign_1"
+batch = 1
+name = "A hanging aisle sign: AISLE 1"
+class = "dressing"
+size_m = [0.6, 0.02, 0.82]
+count = 1
+route = "proc"
+shape = "sign_plate"
+params = {text = "AISLE 1", plate = "safety_yellow", hang = 0.6}
+roles = ["art_bun", "art_patty", "art_white", "leaf_green", "safety_yellow", "steel_black"]
+layer = "base"
+pivot = "ceiling"
+collision = "none"
+
+[[prop]]
+id = "aisle_sign_2"
+batch = 1
+name = "A hanging aisle sign: AISLE 2"
+class = "dressing"
+size_m = [0.6, 0.02, 0.82]
+count = 1
+route = "proc"
+shape = "sign_plate"
+params = {text = "AISLE 2", plate = "safety_yellow", hang = 0.6}
+roles = ["art_bun", "art_patty", "art_white", "leaf_green", "safety_yellow", "steel_black"]
+layer = "base"
+pivot = "ceiling"
+collision = "none"
+
+[[prop]]
+id = "aisle_sign_3"
+batch = 1
+name = "A hanging aisle sign: AISLE 3"
+class = "dressing"
+size_m = [0.6, 0.02, 0.82]
+count = 1
+route = "proc"
+shape = "sign_plate"
+params = {text = "AISLE 3", plate = "safety_yellow", hang = 0.6}
+roles = ["art_bun", "art_patty", "art_white", "leaf_green", "safety_yellow", "steel_black"]
+layer = "base"
+pivot = "ceiling"
+collision = "none"
+
+[[prop]]
+id = "sign_staff"
+batch = 1
+name = "A wall sign: STAFF ONLY, burger stock"
+class = "dressing"
+size_m = [0.5, 0.012, 0.32]
+count = 1
+route = "proc"
+shape = "sign_plate"
+params = {band = "paint_red", band_text = "STAFF ONLY", text = "BURGER|STOCK", icon = "person"}
+roles = ["art_bun", "art_patty", "art_white", "leaf_green", "paint_red", "steel_black"]
+layer = "base"
+pivot = "wall"
+collision = "none"
+
+[[prop]]
+id = "sign_buns"
+batch = 1
+name = "A station sign: BUNS"
+class = "dressing"
+size_m = [0.5, 0.012, 0.25]
+count = 1
+route = "proc"
+shape = "sign_plate"
+params = {band = "book_mustard", band_text = "STOCK", text = "BUNS", icon = "burger"}
+roles = ["art_bun", "art_patty", "art_white", "book_mustard", "leaf_green", "steel_black"]
+layer = "base"
+pivot = "wall"
+collision = "none"
+
+[[prop]]
+id = "sign_meat"
+batch = 1
+name = "A station sign: PATTIES, keep frozen"
+class = "dressing"
+size_m = [0.5, 0.012, 0.25]
+count = 1
+route = "proc"
+shape = "sign_plate"
+params = {band = "paint_blue", band_text = "KEEP FROZEN", text = "PATTIES"}
+roles = ["art_bun", "art_patty", "art_white", "leaf_green", "paint_blue", "steel_black"]
+layer = "base"
+pivot = "wall"
+collision = "none"
+
+[[prop]]
+id = "sign_wine"
+batch = 1
+name = "A station sign: WINE"
+class = "dressing"
+size_m = [0.4, 0.012, 0.22]
+count = 1
+route = "proc"
+shape = "sign_plate"
+params = {band = "book_red", band_text = "CELLAR", text = "WINE"}
+roles = ["art_bun", "art_patty", "art_white", "book_red", "leaf_green", "steel_black"]
+layer = "base"
+pivot = "wall"
+collision = "none"
+
+[[prop]]
+id = "sign_parts"
+batch = 1
+name = "A station sign: PARTS and spares"
+class = "dressing"
+size_m = [0.5, 0.012, 0.25]
+count = 1
+route = "proc"
+shape = "sign_plate"
+params = {band = "steel_black", band_text = "WORKSHOP", text = "PARTS"}
+roles = ["art_bun", "art_patty", "art_white", "leaf_green", "steel_black"]
+layer = "base"
+pivot = "wall"
+collision = "none"
+
+[[prop]]
+id = "sign_deliveries"
+batch = 1
+name = "A station sign: DELIVERIES IN, an arrow"
+class = "dressing"
+size_m = [0.6, 0.012, 0.25]
+count = 1
+route = "proc"
+shape = "sign_plate"
+params = {band = "leaf_green", band_text = "DELIVERIES", text = "IN", icon = "arrow"}
+roles = ["art_bun", "art_patty", "art_white", "leaf_green", "steel_black"]
+layer = "base"
+pivot = "wall"
+collision = "none"
+
+[[prop]]
+id = "sign_way_out"
+batch = 1
+name = "A green wall sign: WAY OUT with an arrow"
+class = "dressing"
+size_m = [0.42, 0.012, 0.16]
+count = 1
+route = "proc"
+shape = "sign_plate"
+params = {plate = "leaf_green", ink = "art_white", text = "WAY OUT", icon = "arrow"}
+roles = ["art_bun", "art_patty", "art_white", "leaf_green", "steel_black"]
+layer = "base"
+pivot = "wall"
+collision = "none"
+
+[[prop]]
+id = "sign_darkroom"
+batch = 1
+name = "A door sign: DARKROOM, knock first"
+class = "dressing"
+size_m = [0.45, 0.012, 0.28]
+count = 1
+route = "proc"
+shape = "sign_plate"
+params = {band = "paint_red", band_text = "LAB", text = "DARKROOM|KNOCK FIRST", icon = "camera"}
+roles = ["art_bun", "art_patty", "art_white", "leaf_green", "paint_red", "steel_black"]
+layer = "base"
+pivot = "wall"
+collision = "none"
+
+[[prop]]
+id = "clipboard"
+batch = 1
+name = "A clipboard of delivery notes on a wall nail"
+class = "clutter"
+size_m = [0.23, 0.02, 0.32]
+count = 1
+route = "proc"
+shape = "clipboard"
+roles = ["art_white", "book_grey", "chrome", "kraft_tape", "paint_blue"]
+pivot = "wall"
+collision = "none"
+
+[[prop]]
+id = "lab_sink"
+batch = 1
+name = "The darkroom's stainless sink unit with a tall tap and a shelf of chemicals"
+class = "room"
+size_m = [1.3, 0.65, 1.45]
+count = 1
+route = "proc"
+shape = "lab_sink"
+roles = ["art_white", "book_mustard", "bottle_brown", "chrome", "enamel_white", "paint_blue", "paint_red", "rubber_black", "steel_black", "steel_warm"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "print_line"
+batch = 1
+name = "A drying line of party prints (plasticine people, the photo gazebo) on pegs"
+class = "dressing"
+size_m = [3.0, 0.06, 1.15]
+count = 1
+route = "proc"
+shape = "print_line"
+params = {n = 7, seed = 0}
+roles = ["art_bun", "art_pink", "art_sky", "art_terracotta", "art_white", "book_mustard", "book_navy", "book_sage", "book_teal", "leaf_green", "paint_blue", "paint_red", "steel_black", "worktop_wood"]
+layer = "detail"
+pivot = "ceiling"
+collision = "none"
+
+[[prop]]
+id = "print_line_b"
+batch = 1
+name = "A drying line of party prints, the second set"
+class = "dressing"
+size_m = [3.0, 0.06, 1.15]
+count = 1
+route = "proc"
+shape = "print_line"
+params = {n = 7, seed = 3}
+roles = ["art_bun", "art_pink", "art_sky", "art_terracotta", "art_white", "book_mustard", "book_navy", "book_sage", "book_teal", "leaf_green", "paint_blue", "paint_red", "steel_black", "worktop_wood"]
+layer = "detail"
+pivot = "ceiling"
+collision = "none"
+
+[[prop]]
+id = "light_table"
+batch = 1
+name = "A light table: a glowing panel, negatives, contact prints and a loupe"
+class = "dressing"
+size_m = [1.2, 0.7, 0.9]
+count = 1
+route = "proc"
+shape = "light_table"
+roles = ["art_pink", "art_sky", "art_white", "book_grey", "chrome", "glass_dark", "steel_black", "steel_warm", "tube"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "chem_shelf"
+batch = 1
+name = "Black steel shelving of chemicals, jugs and photo paper boxes"
+class = "room"
+size_m = [1.6, 0.45, 1.9]
+count = 1
+route = "proc"
+shape = "storage_shelving"
+params = {seed = 17, stock = "lab"}
+roles = ["art_pink", "art_terracotta", "art_white", "book_mustard", "book_sage", "book_teal", "bottle_brown", "enamel_white", "kraft", "leaf_green", "paint_blue", "paint_red", "rubber_black", "steel_black", "worktop_wood"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "rubber_runner"
+batch = 1
+name = "A ribbed grey rubber floor runner"
+class = "dressing"
+size_m = [8.6, 1.0, 0.012]
+count = 1
+route = "proc"
+shape = "rubber_matting"
+roles = ["rubber_mat"]
+pivot = "floor"
+collision = "none"
+
+[[prop]]
+id = "work_hooks"
+batch = 1
+name = "Wall hooks with a navy work jacket, a hi-vis vest and a cap"
+class = "room"
+size_m = [1.3, 0.28, 1.25]
+count = 1
+route = "proc"
+shape = "coat_hooks"
+params = {coat = "coat_navy", coat2 = "hivis_yellow"}
+roles = ["book_navy", "book_teal", "coat_camel", "coat_navy", "cushion_mustard", "hivis_yellow", "steel_black", "throw_cream", "wood_front_dark", "worktop_wood"]
+pivot = "wall"
+collision = "box"
+
+[[prop]]
+id = "fire_extinguisher"
+batch = 1
+name = "A fire extinguisher on its wall bracket"
+class = "dressing"
+size_m = [0.18, 0.17, 0.62]
+count = 1
+route = "proc"
+shape = "fire_extinguisher"
+roles = ["art_white", "chrome", "paint_red", "rubber_black", "steel_black"]
+pivot = "wall"
+collision = "box"
+
+[[prop]]
+id = "fuse_box"
+batch = 1
+name = "A white consumer unit with a smoked window, a warning triangle and conduits"
+class = "dressing"
+size_m = [0.5, 0.13, 1.1]
+count = 1
+route = "proc"
+shape = "fuse_box"
+params = {conduit = 0.5}
+roles = ["art_white", "chrome", "enamel_white", "glass_dark", "paint_blue", "safety_yellow", "steel_black", "steel_warm"]
+pivot = "wall"
 collision = "box"

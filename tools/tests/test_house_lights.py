@@ -30,7 +30,7 @@ class LightData(unittest.TestCase):
         by_type: dict = {}
         for f in fixtures:
             by_type[f["type"]] = by_type.get(f["type"], 0) + 1
-        self.assertEqual(by_type["bare_bulb"], 29)
+        self.assertEqual(by_type["bare_bulb"], 17)  # #170: the storage's 12 are fluorescent tubes
         self.assertEqual(by_type["cage_lamp"], 22)
         self.assertEqual(by_type["path_light"], 28)
         self.assertEqual(by_type["chandelier"], 1)
@@ -91,7 +91,7 @@ class Placement(unittest.TestCase):
 
     def test_colours(self):
         by = {f["name"]: f for f in FIX}
-        self.assertEqual(by["storage_bare_bulb_01"]["color"], LIGHTS["colors"]["c2"])
+        self.assertEqual(by["darkroom_bare_bulb_01"]["color"], LIGHTS["colors"]["c2"])
         self.assertEqual(by["darkroom_safelight_red_01"]["color"], LIGHTS["colors"]["safelight"])
         self.assertEqual(by["greenhouse_bare_bulb_01"]["color"], LIGHTS["colors"]["green_cold"])
         self.assertEqual(by["garage_fluorescent_tube_01"]["color"], LIGHTS["colors"]["cool"])
@@ -124,7 +124,7 @@ class Scenes(unittest.TestCase):
             self.assertEqual(sum(s["levels"].values()), len(FIX))
             self.assertEqual(sum(z["fixtures"] for z in s["zones"].values()), 191 - 2 + 1)
             text = (out / "zones" / "basement.tscn").read_text(encoding="utf-8")
-            self.assertIn('[node name="storage_bare_bulb_01" type="OmniLight3D" parent="Lights"]', text)
+            self.assertIn('[node name="storage_fluorescent_tube_01" type="OmniLight3D" parent="Lights"]', text)  # #170
             self.assertIn("light_bake_mode = 1", text)
             self.assertIn('parent="Above"', text)  # the ground floor's slabs are the basement's ceiling
             self.assertIn("res://import/house/basement/storage.tscn", text)

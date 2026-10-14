@@ -1,38 +1,266 @@
 # The corridor's dressing (art #78, docs/house.md "Dressing"): the props and light fixtures of one room, as data.
 # at = [x, h, z]: room-local metres like the room's stations (x east, h above the floor, z south from the room's
 # north-west corner) at the prop's pivot (floor: the footprint's centre; wall: the back's bottom centre on the wall's
-# face; ceiling: the top's centre). face = the way the prop's front (+Z) looks: N, E, S or W.
+# face; ceiling: the top's centre). face = the way the prop's front (+Z) looks: N, E, S or W (or yaw = degrees).
 # Ids are the dressing library's (props/library.toml, #87) and the task props' (props/tasks.toml, #82). Fixtures are
 # the lamps' meshes only (their light is #83a's, layouts/house/lights.toml). Positions are the engineer's to change.
+# #170: every prop is hand-placed (house_clutter.RULES keeps the room empty); the staff corridor (10 x 4 m): a rubber runner, work jackets, shoe racks, the fuse board and the extinguisher; the walk kept clear.
 room = "corridor"
 
-[[props]]
-id = "pipe_run"
-at = [1.1, 2.6, 0.2]
+# the north wall: the extinguisher, work jackets on hooks over shoe racks, the fuse board, a stocked shelf
 
 [[props]]
-id = "pipe_run"
-at = [3.1, 2.6, 0.2]
+id = "fire_extinguisher"
+at = [0.55, 0.35, 0.1]
+face = "S"
 
 [[props]]
-id = "pipe_run"
-at = [5.1, 2.6, 0.2]
+id = "work_hooks"
+at = [1.9, 0.75, 0.1]
+face = "S"
 
 [[props]]
-id = "pipe_run"
-at = [7.1, 2.6, 0.2]
+id = "shoe_rack"
+at = [1.9, 0, 0.25]
+face = "S"
 
 [[props]]
-id = "pipe_run"
-at = [5, 2.6, 3.8]
+id = "boots"
+at = [1.7, 0.5, 0.25]
+face = "S"
 
 [[props]]
-id = "crate"
-at = [8.5, 0, 3.65]
+id = "boots"
+at = [2.1, 0.5, 0.25]
+face = "S"
 
 [[props]]
-id = "crate"
-at = [8.5, 0.4, 3.65]
+id = "shoes"
+at = [2.0, 0, 0.6]
+face = "S"
+
+[[props]]
+id = "work_hooks"
+at = [3.6, 0.75, 0.1]
+face = "S"
+
+[[props]]
+id = "shoe_rack"
+at = [3.6, 0, 0.25]
+face = "S"
+
+[[props]]
+id = "shoes"
+at = [3.4, 0.5, 0.25]
+face = "S"
+
+[[props]]
+id = "shoes"
+at = [3.8, 0.5, 0.25]
+face = "S"
+
+[[props]]
+id = "shoes"
+at = [3.5, 0, 0.6]
+face = "S"
+
+[[props]]
+id = "clipboard"
+at = [4.5, 1.4, 0.1]
+face = "S"
+
+[[props]]
+id = "fuse_box"
+at = [5.1, 1.0, 0.1]
+face = "S"
+
+[[props]]
+id = "wall_clock"
+at = [5.1, 2.25, 0.1]
+face = "S"
+
+[[props]]
+id = "floor_hatch"
+at = [5.1, 0, 0.55]
+face = "S"
+
+[[props]]
+id = "store_shelving_b"
+at = [6.9, 0, 0.35]
+face = "S"
+
+[[props]]
+id = "storage_box"
+at = [6.25, 2.0, 0.35]
+face = "S"
+
+[[props]]
+id = "storage_crate"
+at = [6.85, 2.0, 0.35]
+face = "S"
+
+[[props]]
+id = "sign_way_out"
+at = [8.6, 1.9, 0.1]
+face = "S"
+
+[[props]]
+id = "umbrella_stand"
+at = [8.5, 0, 0.25]
+face = "S"
+
+[[props]]
+id = "trash_bin"
+at = [9.35, 0, 0.45]
+face = "S"
+
+# the end walls: the staff-only sign and a delivery clipboard by the storage door, prints by the far door
+
+[[props]]
+id = "sign_staff"
+at = [0.1, 1.5, 0.65]
+face = "E"
+
+[[props]]
+id = "clipboard"
+at = [0.1, 1.4, 3.3]
+face = "E"
+
+[[props]]
+id = "art_gazebo"
+at = [9.9, 1.4, 0.6]
+face = "W"
+
+[[props]]
+id = "picture_frame"
+at = [9.9, 1.4, 3.35]
+face = "W"
+
+[[props]]
+id = "fire_extinguisher"
+at = [9.9, 0.35, 0.5]
+face = "W"
+
+# the south wall: a bench with a kit bag, radiators, the framed floor plan, a stocked shelf, crates and boxes
+
+[[props]]
+id = "hall_bench"
+at = [1.4, 0, 3.71]
+face = "N"
+
+[[props]]
+id = "sports_bag"
+at = [1.2, 0.47, 3.7]
+face = "N"
+
+[[props]]
+id = "mail_stack"
+at = [1.7, 0.47, 3.72]
+face = "N"
+
+[[props]]
+id = "art_photos"
+at = [1.4, 1.2, 3.9]
+face = "N"
+
+[[props]]
+id = "boots"
+at = [2.2, 0, 3.6]
+face = "N"
+
+[[props]]
+id = "boots"
+at = [2.45, 0, 3.6]
+face = "N"
+
+[[props]]
+id = "radiator"
+at = [3.1, 0.12, 3.9]
+face = "N"
+
+[[props]]
+id = "art_blueprint"
+at = [3.1, 1.3, 3.9]
+face = "N"
+
+[[props]]
+id = "store_shelving"
+at = [5.3, 0, 3.65]
+face = "N"
+
+[[props]]
+id = "storage_box"
+at = [4.65, 2.0, 3.65]
+face = "N"
+
+[[props]]
+id = "storage_crate"
+at = [5.3, 2.0, 3.65]
+face = "N"
+
+[[props]]
+id = "storage_box"
+at = [5.95, 2.0, 3.65]
+face = "N"
+
+[[props]]
+id = "radiator"
+at = [7.1, 0.12, 3.9]
+face = "N"
+
+[[props]]
+id = "art_burger"
+at = [7.1, 1.25, 3.9]
+face = "N"
+
+[[props]]
+id = "storage_crate"
+at = [8.3, 0.0, 3.65]
+face = "N"
+
+[[props]]
+id = "storage_crate"
+at = [8.3, 0.34, 3.65]
+face = "N"
+
+[[props]]
+id = "parcels"
+at = [8.3, 0.68, 3.65]
+face = "N"
+
+[[props]]
+id = "storage_box"
+at = [9.15, 0.0, 3.65]
+face = "N"
+
+[[props]]
+id = "storage_box"
+at = [9.15, 0.34, 3.65]
+face = "N"
+
+[[props]]
+id = "storage_box"
+at = [9.15, 0.68, 3.65]
+face = "N"
+
+[[props]]
+id = "wall_calendar"
+at = [8.6, 1.5, 3.9]
+face = "N"
+
+[[props]]
+id = "parcels"
+at = [9.15, 1.02, 3.65]
+face = "N"
+
+# the rubber runner down the walk
+
+[[props]]
+id = "rubber_runner"
+at = [5.0, 0, 2.0]
+face = "S"
+
+# light fixtures
 
 [[fixtures]]
 id = "cage_lamp"
@@ -56,212 +284,4 @@ face = "N"
 
 # ---- clutter (art #104): generated by `house --clutter` (tools/runner/house_clutter.py); edit its RULES, not this block
 
-[[props]]
-id = "crate"
-at = [5.05, 0, 0.35]
-face = "S"
 
-[[props]]
-id = "crate"
-at = [5.05, 0.4, 0.35]
-face = "S"
-
-[[props]]
-id = "cardboard_box"
-at = [5.65, 0, 0.35]
-face = "S"
-
-[[props]]
-id = "barrel"
-at = [4.4, 0, 0.45]
-face = "S"
-
-[[props]]
-id = "open_box"
-at = [7.8, 0, 0.35]
-face = "S"
-
-[[props]]
-id = "cardboard_box"
-at = [8.4, 0, 0.35]
-face = "S"
-
-[[props]]
-id = "book_stack"
-at = [7.35, 0, 0.295]
-face = "S"
-
-[[props]]
-id = "radiator"
-at = [9.29, 0.12, 3.9]
-face = "N"
-
-[[props]]
-id = "metal_shelving"
-at = [1.77, 0, 3.6]
-face = "N"
-
-[[props]]
-id = "crate"
-at = [6.93, 0, 0.35]
-face = "S"
-
-[[props]]
-id = "crate"
-at = [6.93, 0.4, 0.35]
-face = "S"
-
-[[props]]
-id = "cardboard_box"
-at = [0.33, 0, 0.35]
-face = "S"
-
-[[props]]
-id = "cardboard_box"
-at = [0.33, 0.4, 0.35]
-face = "S"
-
-[[props]]
-id = "radiator"
-at = [7.71, 0.12, 3.9]
-face = "N"
-
-[[props]]
-id = "metal_shelving"
-at = [2.34, 0, 0.4]
-face = "S"
-
-[[props]]
-id = "crate"
-at = [6.92, 0, 3.65]
-face = "N"
-
-[[props]]
-id = "crate"
-at = [6.92, 0.4, 3.65]
-face = "N"
-
-[[props]]
-id = "cardboard_box"
-at = [6.29, 0, 0.35]
-face = "S"
-
-[[props]]
-id = "cardboard_box"
-at = [6.29, 0.4, 0.35]
-face = "S"
-
-[[props]]
-id = "radiator"
-at = [6.13, 0.12, 3.9]
-face = "N"
-
-[[props]]
-id = "metal_shelving"
-at = [4.2, 0, 3.6]
-face = "N"
-
-[[props]]
-id = "crate"
-at = [0.96, 0, 0.35]
-face = "S"
-
-[[props]]
-id = "crate"
-at = [0.96, 0.4, 0.35]
-face = "S"
-
-[[props]]
-id = "cardboard_box"
-at = [3.63, 0, 0.35]
-face = "S"
-
-[[props]]
-id = "cardboard_box"
-at = [3.63, 0.4, 0.35]
-face = "S"
-
-[[props]]
-id = "radiator"
-at = [9.42, 0.12, 0.1]
-face = "S"
-
-[[props]]
-id = "crate"
-at = [9.65, 0, 0.71]
-face = "W"
-
-[[props]]
-id = "crate"
-at = [9.65, 0.4, 0.71]
-face = "W"
-
-[[props]]
-id = "radiator"
-at = [0.1, 0.12, 3.42]
-face = "E"
-
-[[props]]
-id = "bottles"
-at = [8.56, 0.8, 3.58]
-face = "S"
-
-[[props]]
-id = "paper_stack"
-at = [5, 0.8, 0.36]
-face = "S"
-
-[[props]]
-id = "book_stack"
-at = [5.57, 0.4, 0.39]
-face = "S"
-
-[[props]]
-id = "paper_stack"
-at = [8.45, 0.4, 0.36]
-face = "S"
-
-[[props]]
-id = "bottles"
-at = [6.84, 0.8, 0.38]
-face = "S"
-
-[[props]]
-id = "book_stack"
-at = [0.35, 0.8, 0.33]
-face = "S"
-
-[[props]]
-id = "book_stack"
-at = [6.94, 0.8, 3.58]
-face = "N"
-
-[[props]]
-id = "paper_stack"
-at = [6.29, 0.8, 0.36]
-face = "S"
-
-[[props]]
-id = "bottles"
-at = [0.97, 0.8, 0.23]
-face = "S"
-
-[[props]]
-id = "book_stack"
-at = [3.6, 0.8, 0.39]
-face = "S"
-
-[[props]]
-id = "bottles"
-at = [9.63, 0.8, 0.67]
-face = "W"
-
-[[props]]
-id = "wall_clock"
-at = [5.37, 1.85, 0.1]
-face = "S"
-
-[[props]]
-id = "picture_frame"
-at = [7.6, 1.4, 0.1]
-face = "S"

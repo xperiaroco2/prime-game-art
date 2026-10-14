@@ -149,7 +149,9 @@ writes the House's game-ready package (prime-game #523) from the same layout dat
   with the bedroom's and the guest room's 16 props built over it, and `prop_dirs` names library v9;
   since #166 `props/library/v10/textures/fine`, the same bytes: v9 with the kids' room's and the study's 14 props
   built over it, and `prop_dirs` names library v10; since #168 `props/library/v11/textures/fine`, the same bytes:
-  v10 with the attic's 18 props built over it, and `prop_dirs` names library v11;
+  v10 with the attic's 18 props built over it, and `prop_dirs` names library v11; since #170
+  `props/library/v12/textures/fine`, the same bytes: v11 with the basement's 32 working-room props built over it,
+  and `prop_dirs` names library v12;
   v1 stays the approved version-1 build;
   `.import` VRAM compressed with mipmaps), `house_props/prop_fine.gdshader` (a copy
   of `godot/props/prop_fine.gdshader`; `tools/tests/test_house_layers.py` fails when the committed copy drifts) and
@@ -475,6 +477,11 @@ water tank, three switchboards, three cable drums, two enlargers, two tray table
 fixtures (meshes only; #83a lights them). Kit pillars are `[[pieces]]` in `basement.toml`; the dressing check counts
 them as obstacles (`house_dressing.PIECE_HALF`).
 
+Since #170 the storage, the darkroom and the corridor are dressed by hand as clean working rooms (library v12's
+basement pieces, `docs/props.md` World look rules 7; 157, 93 and 49 props; `house_clutter` has no rules for them), and
+the storage's twelve fixtures are `fluorescent_tube` work lights instead of bare bulbs (`layouts/house/lights.toml`;
+55 fixtures in all, as before).
+
 `tools/runner/house_basement.py` (run by `house`, rows in `tools/out/house/basement.json`; tests
 `tools/tests/test_house_basement.py`) checks the level design on the plan at eye height (1.6 m):
 - the intended dead ends (the darkroom, the boiler, pump and switch rooms) have exactly one door and no stairs;
@@ -500,7 +507,7 @@ manager waives the wine time if a later change puts it over 1 s while it still a
 garage and switches must stay within 1 s. The waypoints are not bent to fit.
 
 Review pictures (`house --basement DIR`, `godot/house/basement.gd`, settings in `layouts/house/basement_review.toml`):
-a real-time omni at each of the 55 fixtures by its id (cool pendants and cage lamps, warm bare bulbs, red
+a real-time omni at each of the 55 fixtures by its id (cool pendants, cage lamps and fluorescent tubes, warm bare bulbs, red
 safelights: Q23 B), a faint cool ambient and one fixed exposure for the zone (Q24 A); nothing baked and not the light
 pass (#83a). A shot per room from 0.3 m inside a door at 1.6 m, the hall from the passage and from the switch room,
 the basement from above with labels and the last walk's route times (`tools/out/house/routes.json`), and the median
