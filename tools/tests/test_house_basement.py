@@ -23,10 +23,10 @@ FIXTURES = {
     "storage": {"fluorescent_tube": 12, "cage_lamp": 2},  # #170: tubes for the bare bulbs
     "darkroom": {"safelight_red": 6, "bare_bulb": 3},
     "corridor": {"cage_lamp": 4},
-    "boiler_room": {"cage_lamp": 3, "bare_bulb": 2},
+    "boiler_room": {"cage_lamp": 3, "fluorescent_tube": 2},  # #172: tubes for the bare bulbs
     "generator_hall": {"industrial_pendant": 10, "cage_lamp": 4},
     "pump_room": {"cage_lamp": 3},
-    "switch_room": {"cage_lamp": 2, "bare_bulb": 1},
+    "switch_room": {"cage_lamp": 2, "fluorescent_tube": 1},  # #172
     "passage": {"cage_lamp": 3},
 }
 # the stations' task props (props/tasks.toml) and the procedural room props of #82, per room

@@ -18,22 +18,24 @@
 [ext_resource type="PackedScene" path="res://assets/environment/house_props/storage_crate.glb" id="16"]
 [ext_resource type="PackedScene" path="res://assets/environment/house_props/desk.glb" id="17"]
 [ext_resource type="PackedScene" path="res://assets/environment/house_props/pin_board.glb" id="18"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/paper_stack.glb" id="19"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/bottles.glb" id="20"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/clipboard.glb" id="21"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/wall_calendar.glb" id="22"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/art_gazebo.glb" id="23"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/wall_clock.glb" id="24"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/art_photos.glb" id="25"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/parcels.glb" id="26"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/standing_frame.glb" id="27"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/cup_set.glb" id="28"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/basket.glb" id="29"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/photo_row.glb" id="30"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/print_line.glb" id="31"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/print_line_b.glb" id="32"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/safelight_red.glb" id="33"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/bare_bulb.glb" id="34"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/dev_bench.glb" id="19"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/cutting_table.glb" id="20"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/paper_stack.glb" id="21"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/bottles.glb" id="22"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/clipboard.glb" id="23"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/wall_calendar.glb" id="24"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/art_gazebo.glb" id="25"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/wall_clock.glb" id="26"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/art_photos.glb" id="27"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/parcels.glb" id="28"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/standing_frame.glb" id="29"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/cup_set.glb" id="30"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/basket.glb" id="31"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/photo_row.glb" id="32"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/print_line.glb" id="33"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/print_line_b.glb" id="34"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/safelight_red.glb" id="35"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/bare_bulb.glb" id="36"]
 
 [node name="Darkroom" type="Node3D"]
 metadata/size_m = Vector2i(16, 10)
@@ -957,190 +959,220 @@ metadata/prop = "storage_crate"
 [node name="storage_crate" parent="Dressing/storage_crate_8"]
 surface_material_override/0 = ExtResource("11")
 
+[node name="dev_bench_1" parent="Dressing" instance=ExtResource("19")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.2, 0, 4.4)
+metadata/prop = "dev_bench"
+
+[node name="dev_bench" parent="Dressing/dev_bench_1"]
+surface_material_override/0 = ExtResource("11")
+
+[node name="stool_6" parent="Dressing" instance=ExtResource("12")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 3.3, 0, 5.4)
+metadata/prop = "stool"
+
+[node name="stool_7" parent="Dressing" instance=ExtResource("12")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 5.1, 0, 5.4)
+metadata/prop = "stool"
+
+[node name="cutting_table_1" parent="Dressing" instance=ExtResource("20")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 11.8, 0, 4.4)
+metadata/prop = "cutting_table"
+
+[node name="cutting_table" parent="Dressing/cutting_table_1"]
+surface_material_override/0 = ExtResource("11")
+
+[node name="stool_8" parent="Dressing" instance=ExtResource("12")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 11.2, 0, 5.4)
+metadata/prop = "stool"
+
+[node name="stool_9" parent="Dressing" instance=ExtResource("12")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 12.4, 0, 5.4)
+metadata/prop = "stool"
+
 [node name="Detail" type="Node3D" parent="."]
 
-[node name="paper_stack_1" parent="Detail" instance=ExtResource("19")]
+[node name="paper_stack_1" parent="Detail" instance=ExtResource("21")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 0.4, 1.3, 0.75)
 metadata/prop = "paper_stack"
 
-[node name="bottles_1" parent="Detail" instance=ExtResource("20")]
+[node name="bottles_1" parent="Detail" instance=ExtResource("22")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 0.5, 0.9, 3.6)
 metadata/prop = "bottles"
 
-[node name="clipboard_1" parent="Detail" instance=ExtResource("21")]
+[node name="clipboard_1" parent="Detail" instance=ExtResource("23")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 0.1, 1.4, 3.95)
 metadata/prop = "clipboard"
 
 [node name="clipboard" parent="Detail/clipboard_1"]
 surface_material_override/0 = ExtResource("11")
 
-[node name="wall_calendar_1" parent="Detail" instance=ExtResource("22")]
+[node name="wall_calendar_1" parent="Detail" instance=ExtResource("24")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 0.1, 1.5, 5.85)
 metadata/prop = "wall_calendar"
 
 [node name="wall_calendar" parent="Detail/wall_calendar_1"]
 surface_material_override/0 = ExtResource("11")
 
-[node name="art_gazebo_1" parent="Detail" instance=ExtResource("23")]
+[node name="art_gazebo_1" parent="Detail" instance=ExtResource("25")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 0.1, 1.25, 9.4)
 metadata/prop = "art_gazebo"
 
 [node name="art_gazebo" parent="Detail/art_gazebo_1"]
 surface_material_override/0 = ExtResource("11")
 
-[node name="wall_clock_1" parent="Detail" instance=ExtResource("24")]
+[node name="wall_clock_1" parent="Detail" instance=ExtResource("26")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.5, 2, 0.1)
 metadata/prop = "wall_clock"
 
-[node name="art_photos_1" parent="Detail" instance=ExtResource("25")]
+[node name="art_photos_1" parent="Detail" instance=ExtResource("27")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9.5, 1.4, 0.1)
 metadata/prop = "art_photos"
 
 [node name="art_photos" parent="Detail/art_photos_1"]
 surface_material_override/0 = ExtResource("11")
 
-[node name="paper_stack_2" parent="Detail" instance=ExtResource("19")]
+[node name="paper_stack_2" parent="Detail" instance=ExtResource("21")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12.4, 1.3, 0.4)
 metadata/prop = "paper_stack"
 
-[node name="parcels_1" parent="Detail" instance=ExtResource("26")]
+[node name="parcels_1" parent="Detail" instance=ExtResource("28")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12.95, 1.3, 0.4)
 metadata/prop = "parcels"
 
 [node name="parcels" parent="Detail/parcels_1"]
 surface_material_override/0 = ExtResource("11")
 
-[node name="bottles_2" parent="Detail" instance=ExtResource("20")]
+[node name="bottles_2" parent="Detail" instance=ExtResource("22")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 15.5, 0.9, 3.6)
 metadata/prop = "bottles"
 
-[node name="clipboard_2" parent="Detail" instance=ExtResource("21")]
+[node name="clipboard_2" parent="Detail" instance=ExtResource("23")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 15.9, 1.4, 4)
 metadata/prop = "clipboard"
 
 [node name="clipboard" parent="Detail/clipboard_2"]
 surface_material_override/0 = ExtResource("11")
 
-[node name="art_gazebo_2" parent="Detail" instance=ExtResource("23")]
+[node name="art_gazebo_2" parent="Detail" instance=ExtResource("25")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 15.9, 1.4, 1.5)
 metadata/prop = "art_gazebo"
 
 [node name="art_gazebo" parent="Detail/art_gazebo_2"]
 surface_material_override/0 = ExtResource("11")
 
-[node name="paper_stack_3" parent="Detail" instance=ExtResource("19")]
+[node name="paper_stack_3" parent="Detail" instance=ExtResource("21")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 15.6, 1.3, 8.6)
 metadata/prop = "paper_stack"
 
-[node name="art_photos_2" parent="Detail" instance=ExtResource("25")]
+[node name="art_photos_2" parent="Detail" instance=ExtResource("27")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 15.9, 1.45, 8.85)
 metadata/prop = "art_photos"
 
 [node name="art_photos" parent="Detail/art_photos_2"]
 surface_material_override/0 = ExtResource("11")
 
-[node name="wall_calendar_2" parent="Detail" instance=ExtResource("22")]
+[node name="wall_calendar_2" parent="Detail" instance=ExtResource("24")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 15.9, 1.5, 5.95)
 metadata/prop = "wall_calendar"
 
 [node name="wall_calendar" parent="Detail/wall_calendar_2"]
 surface_material_override/0 = ExtResource("11")
 
-[node name="paper_stack_4" parent="Detail" instance=ExtResource("19")]
+[node name="paper_stack_4" parent="Detail" instance=ExtResource("21")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 2.3, 0.75, 9.55)
 metadata/prop = "paper_stack"
 
-[node name="standing_frame_1" parent="Detail" instance=ExtResource("27")]
+[node name="standing_frame_1" parent="Detail" instance=ExtResource("29")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 2.75, 0.75, 9.7)
 metadata/prop = "standing_frame"
 
 [node name="standing_frame" parent="Detail/standing_frame_1"]
 surface_material_override/0 = ExtResource("11")
 
-[node name="standing_frame_2" parent="Detail" instance=ExtResource("27")]
+[node name="standing_frame_2" parent="Detail" instance=ExtResource("29")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 2.95, 0.75, 9.65)
 metadata/prop = "standing_frame"
 
 [node name="standing_frame" parent="Detail/standing_frame_2"]
 surface_material_override/0 = ExtResource("11")
 
-[node name="cup_set_1" parent="Detail" instance=ExtResource("28")]
+[node name="cup_set_1" parent="Detail" instance=ExtResource("30")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 3.05, 0.75, 9.4)
 metadata/prop = "cup_set"
 
-[node name="basket_1" parent="Detail" instance=ExtResource("29")]
+[node name="basket_1" parent="Detail" instance=ExtResource("31")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 2.1, 0, 9.6)
 metadata/prop = "basket"
 
-[node name="photo_row_1" parent="Detail" instance=ExtResource("30")]
+[node name="photo_row_1" parent="Detail" instance=ExtResource("32")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 2.6, 1.3, 9.9)
 metadata/prop = "photo_row"
 
 [node name="photo_row" parent="Detail/photo_row_1"]
 surface_material_override/0 = ExtResource("11")
 
-[node name="art_photos_3" parent="Detail" instance=ExtResource("25")]
+[node name="art_photos_3" parent="Detail" instance=ExtResource("27")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 6.6, 1.4, 9.9)
 metadata/prop = "art_photos"
 
 [node name="art_photos" parent="Detail/art_photos_3"]
 surface_material_override/0 = ExtResource("11")
 
-[node name="art_photos_4" parent="Detail" instance=ExtResource("25")]
+[node name="art_photos_4" parent="Detail" instance=ExtResource("27")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 9.4, 1.4, 9.9)
 metadata/prop = "art_photos"
 
 [node name="art_photos" parent="Detail/art_photos_4"]
 surface_material_override/0 = ExtResource("11")
 
-[node name="paper_stack_5" parent="Detail" instance=ExtResource("19")]
+[node name="paper_stack_5" parent="Detail" instance=ExtResource("21")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 11.7, 0.75, 9.55)
 metadata/prop = "paper_stack"
 
-[node name="standing_frame_3" parent="Detail" instance=ExtResource("27")]
+[node name="standing_frame_3" parent="Detail" instance=ExtResource("29")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 12.2, 0.75, 9.7)
 metadata/prop = "standing_frame"
 
 [node name="standing_frame" parent="Detail/standing_frame_3"]
 surface_material_override/0 = ExtResource("11")
 
-[node name="cup_set_2" parent="Detail" instance=ExtResource("28")]
+[node name="cup_set_2" parent="Detail" instance=ExtResource("30")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 12.45, 0.75, 9.45)
 metadata/prop = "cup_set"
 
-[node name="basket_2" parent="Detail" instance=ExtResource("29")]
+[node name="basket_2" parent="Detail" instance=ExtResource("31")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 12.45, 0, 9.6)
 metadata/prop = "basket"
 
-[node name="photo_row_2" parent="Detail" instance=ExtResource("30")]
+[node name="photo_row_2" parent="Detail" instance=ExtResource("32")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 12, 1.3, 9.9)
 metadata/prop = "photo_row"
 
 [node name="photo_row" parent="Detail/photo_row_2"]
 surface_material_override/0 = ExtResource("11")
 
-[node name="print_line_1" parent="Detail" instance=ExtResource("31")]
+[node name="print_line_1" parent="Detail" instance=ExtResource("33")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 3, 5)
 metadata/prop = "print_line"
 
 [node name="print_line" parent="Detail/print_line_1"]
 surface_material_override/0 = ExtResource("11")
 
-[node name="print_line_b_1" parent="Detail" instance=ExtResource("32")]
+[node name="print_line_b_1" parent="Detail" instance=ExtResource("34")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 3, 6.6)
 metadata/prop = "print_line_b"
 
 [node name="print_line_b" parent="Detail/print_line_b_1"]
 surface_material_override/0 = ExtResource("11")
 
-[node name="print_line_b_2" parent="Detail" instance=ExtResource("32")]
+[node name="print_line_b_2" parent="Detail" instance=ExtResource("34")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 3, 5)
 metadata/prop = "print_line_b"
 
 [node name="print_line_b" parent="Detail/print_line_b_2"]
 surface_material_override/0 = ExtResource("11")
 
-[node name="print_line_2" parent="Detail" instance=ExtResource("31")]
+[node name="print_line_2" parent="Detail" instance=ExtResource("33")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 3, 6.6)
 metadata/prop = "print_line"
 
@@ -1149,39 +1181,39 @@ surface_material_override/0 = ExtResource("11")
 
 [node name="Fixtures" type="Node3D" parent="."]
 
-[node name="safelight_red_1" parent="Fixtures" instance=ExtResource("33")]
+[node name="safelight_red_1" parent="Fixtures" instance=ExtResource("35")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3, 2.2, 0.1)
 metadata/prop = "safelight_red"
 
-[node name="safelight_red_2" parent="Fixtures" instance=ExtResource("33")]
+[node name="safelight_red_2" parent="Fixtures" instance=ExtResource("35")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 13, 2.2, 0.1)
 metadata/prop = "safelight_red"
 
-[node name="safelight_red_3" parent="Fixtures" instance=ExtResource("33")]
+[node name="safelight_red_3" parent="Fixtures" instance=ExtResource("35")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 0.1, 2.2, 3)
 metadata/prop = "safelight_red"
 
-[node name="safelight_red_4" parent="Fixtures" instance=ExtResource("33")]
+[node name="safelight_red_4" parent="Fixtures" instance=ExtResource("35")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 15.9, 2.2, 3)
 metadata/prop = "safelight_red"
 
-[node name="safelight_red_5" parent="Fixtures" instance=ExtResource("33")]
+[node name="safelight_red_5" parent="Fixtures" instance=ExtResource("35")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 5, 2.2, 9.9)
 metadata/prop = "safelight_red"
 
-[node name="safelight_red_6" parent="Fixtures" instance=ExtResource("33")]
+[node name="safelight_red_6" parent="Fixtures" instance=ExtResource("35")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 11, 2.2, 9.9)
 metadata/prop = "safelight_red"
 
-[node name="bare_bulb_1" parent="Fixtures" instance=ExtResource("34")]
+[node name="bare_bulb_1" parent="Fixtures" instance=ExtResource("36")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 3, 6)
 metadata/prop = "bare_bulb"
 
-[node name="bare_bulb_2" parent="Fixtures" instance=ExtResource("34")]
+[node name="bare_bulb_2" parent="Fixtures" instance=ExtResource("36")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 3, 4)
 metadata/prop = "bare_bulb"
 
-[node name="bare_bulb_3" parent="Fixtures" instance=ExtResource("34")]
+[node name="bare_bulb_3" parent="Fixtures" instance=ExtResource("36")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 3, 4)
 metadata/prop = "bare_bulb"
 

@@ -21,7 +21,8 @@ prop_specs = ["props/tasks.toml", "props/library.toml"]
 # #166: v10 is v9 with the kids' room's and the study's props laid over it.
 # #168: v11 is v10 with the attic's 18 props laid over it.
 # #170: v12 is v11 with the basement's 32 working-room props laid over it.
-prop_dirs = ["props/task/v2", "props/library/v12"]
+# #172: v13 is v12 with the basement's plant rooms' and the darkroom island's 39 props laid over it.
+prop_dirs = ["props/task/v2", "props/library/v13"]
 prop_res = "res://import/prop_{id}.glb"
 # Per-room wall paint (the engineer's choice of 2026-10-14, #152; before it Q11 = B of 2026-10-10, look.md section 4):
 # the inner plaster's colour per room id; a room not listed keeps the kit's (role wall_int, #3a6264). The living room
@@ -63,7 +64,7 @@ label = { h = 2.4, font_size = 72, outline_size = 16 }  # the room's Name label,
 # The world look's fine pack (#143, #147; docs/props.md "World look rules"): its build (fine.json and one texture
 # folder per tier) under the raw folder; a package with a prop on it ships house_props/fine/<tier>/, the shader and
 # one material per tier; the room scenes put `fine_tier`'s material on the props' kit_fine surfaces.
-fine_dir = "props/library/v12/textures/fine"  # #150: the eight-slot pack (v1 holds the four-slot one); v3 to v12 the same bytes
+fine_dir = "props/library/v13/textures/fine"  # #150: the eight-slot pack (v1 holds the four-slot one); v3 to v13 the same bytes
 fine_tier = "high"
 
 # Footstep surfaces (art #122; the game's FootstepSurface, its ARCHITECTURE 4.7.40): the kit pieces a player walks on,
@@ -262,6 +263,36 @@ at = [39.4, 28.0]  # #170: from the generator hall's door along the matting to t
 look = [30.0, 28.0]
 look_h = 1.2
 [[export.sheet_views]]
+room = "generator_hall"
+title = "generator hall: across the plant"
+at = [57.3, 41.3]  # #172: from the south-east corner over the generator's marked floor to the fuel bund and the desk
+look = [45.0, 26.0]
+look_h = 1.0
+[[export.sheet_views]]
+room = "boiler_room"
+title = "boiler room: toward the boilers"
+at = [30.6, 45.4]  # #172: from the south-west corner along the boilers, the cylinder and the pipework to the door
+look = [39.0, 35.0]
+look_h = 1.2
+[[export.sheet_views]]
+room = "pump_room"
+title = "pump room: across the pumps"
+at = [53.4, 49.4]  # #172: from the south-east corner over the pump plinths and the tank to the door
+look = [45.0, 43.0]
+look_h = 0.9
+[[export.sheet_views]]
+room = "switch_room"
+title = "switch room: along the cabinets"
+at = [42.5, 16.6]  # #172: from the north-west corner along the cabinets and the meter panel to the door
+look = [49.5, 21.4]
+look_h = 1.1
+[[export.sheet_views]]
+room = "passage"
+title = "passage: toward the hall"
+at = [65.4, 33.4]  # #172: from the far corner along the lit passage back to the generator hall's door
+look = [58.3, 29.0]
+look_h = 1.2
+[[export.sheet_views]]
 room = "attic"
 title = "roof: from dormer, 1.6 m"
 at = [34.9, 43.6]  # the dormer's climb-out (dressing/attic_roof/attic.toml's roof.arrive)
@@ -350,7 +381,7 @@ files = ["*.glb"]
 [export.plot]
 scene = "levels/house/outdoor.tscn"
 garden = "house/80/build/garden.json"
-prop_src = { tasks = "props/task/v2", library = "props/library/v12", "#87" = "props/library/v12", zones = "props/zones/v1" }
+prop_src = { tasks = "props/task/v2", library = "props/library/v13", "#87" = "props/library/v13", zones = "props/zones/v1" }
 # The zones' generic plants (`#87` bush and garden_tree, no library GLB) as the garden's plants (house_garden).
 plants = { bush = "bush_boxwood", garden_tree = "garden_tree_apple" }
 

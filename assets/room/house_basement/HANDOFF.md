@@ -9,7 +9,7 @@ on the art PR). P3 was approved and merged in #127 (2026-10-11); #150 re-exporte
 |---|---|
 | P1 (`assets/kit/house_kit/HANDOFF.md`) | `assets/environment/house_kit/` (P3's rooms use 9 of its pieces) |
 | `assets/kit/house_kit/export/kit_set.gdshader`, `kit_set.tres` (#132) | `assets/environment/house_kit/` (beside the kit's textures) |
-| `assets/prop/house_props/export/library/*.glb` (85 of them), `task/*.glb` (15), as `package.json` lists | `assets/environment/house_props/<file>.glb` (flat) |
+| `assets/prop/house_props/export/library/*.glb` (113 of them), `task/*.glb` (15), as `package.json` lists | `assets/environment/house_props/<file>.glb` (flat) |
 | `assets/prop/house_props/export/fine/high/*.png`, `fine/low/*.png` (6 each, #147, #150) | `assets/environment/house_props/fine/high/`, `fine/low/` |
 | `assets/prop/house_props/export/prop_fine.gdshader`, `prop_fine_high.tres`, `prop_fine_low.tres` (#147) | `assets/environment/house_props/` |
 | `assets/room/house_basement/export/<room>.tscn` (8) | the content of `levels/house/rooms/<room>.tscn` (G3 below) |
@@ -79,6 +79,22 @@ ladder, a delivery trolley, floor markings and signs in the storage; a lab sink,
 drying lines of prints in the darkroom; rubber matting, work hooks, a fire extinguisher and a fuse box in the
 corridor. The storage's twelve bare bulbs are `fluorescent_tube` fixtures now (`layouts/house/lights.toml`). Copy the
 new props with the others `package.json` lists; every station, spawn and marker keeps its place.
+
+## The plant rooms, the passage and the darkroom's island dressed (#172)
+
+P3 is re-exported for #172: `generator_hall.tscn`, `boiler_room.tscn`, `pump_room.tscn`, `switch_room.tscn`,
+`passage.tscn` and `darkroom.tscn` change (`storage.tscn` and `corridor.tscn` keep their bytes). The five plant rooms
+are dressed by hand (`layouts/house/dressing/<room>.toml`) as clean, well-kept plant rooms with library v13's 39
+props (`docs/props.md`, the plant rooms' pieces): cable trays, isolators, a control desk with screens, fuel drums on
+spill bunds, a fire point, a tool chest, spares shelving, a check board and keep-clear floor blocks round the
+generator in the hall; a wall boiler, a hot-water cylinder, lagged pipes, a valve board, a pressure vessel, a water
+softener and a mop sink in the boiler room; two pump sets on plinths, a sump cover, a hose reel and a rota chart in
+the pump room; electrical cabinets, a meter board, a rubber mat, a first-aid box and a lectern with the logbook in
+the switch room; safety and door signs (the detail layer) throughout. The darkroom gains a central work island (a
+developing bench and a print table with stools). The boiler room's two and the switch room's one bare bulbs are
+`fluorescent_tube` fixtures now (`layouts/house/lights.toml`). The package lists 113 library props (85 before):
+the derelict pieces these rooms placed (pipe runs, jerrycans, barrels, crates, cardboard boxes, metal shelving) are
+gone from them. Every station, spawn and marker keeps its place.
 
 
 ## Credits

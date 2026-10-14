@@ -30,7 +30,7 @@ class LightData(unittest.TestCase):
         by_type: dict = {}
         for f in fixtures:
             by_type[f["type"]] = by_type.get(f["type"], 0) + 1
-        self.assertEqual(by_type["bare_bulb"], 17)  # #170: the storage's 12 are fluorescent tubes
+        self.assertEqual(by_type["bare_bulb"], 14)  # #170: the storage's 12 are fluorescent tubes; #172: 3 more
         self.assertEqual(by_type["cage_lamp"], 22)
         self.assertEqual(by_type["path_light"], 28)
         self.assertEqual(by_type["chandelier"], 1)

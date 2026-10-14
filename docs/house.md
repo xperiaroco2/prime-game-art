@@ -151,7 +151,8 @@ writes the House's game-ready package (prime-game #523) from the same layout dat
   built over it, and `prop_dirs` names library v10; since #168 `props/library/v11/textures/fine`, the same bytes:
   v10 with the attic's 18 props built over it, and `prop_dirs` names library v11; since #170
   `props/library/v12/textures/fine`, the same bytes: v11 with the basement's 32 working-room props built over it,
-  and `prop_dirs` names library v12;
+  and `prop_dirs` names library v12; since #172 `props/library/v13/textures/fine`, the same bytes: v12 with the
+  basement's plant rooms' and the darkroom island's 39 props built over it, and `prop_dirs` names library v13;
   v1 stays the approved version-1 build;
   `.import` VRAM compressed with mipmaps), `house_props/prop_fine.gdshader` (a copy
   of `godot/props/prop_fine.gdshader`; `tools/tests/test_house_layers.py` fails when the committed copy drifts) and
@@ -481,6 +482,12 @@ Since #170 the storage, the darkroom and the corridor are dressed by hand as cle
 basement pieces, `docs/props.md` World look rules 7; 157, 93 and 49 props; `house_clutter` has no rules for them), and
 the storage's twelve fixtures are `fluorescent_tube` work lights instead of bare bulbs (`layouts/house/lights.toml`;
 55 fixtures in all, as before).
+
+Since #172 the generator hall, the boiler room, the pump room, the switch room and the passage are dressed by hand
+the same way (library v13's plant-room pieces, `docs/props.md` World look rules 7; 142, 107, 72, 60 and 46 props;
+`house_clutter` has no rules for them), and the darkroom has a central work island (a developing bench and a print
+table with stools, 99 props, the walk round it at least 1.2 m). The boiler room's two and the switch room's one bare
+bulbs are `fluorescent_tube` work lights (55 fixtures in all, as before).
 
 `tools/runner/house_basement.py` (run by `house`, rows in `tools/out/house/basement.json`; tests
 `tools/tests/test_house_basement.py`) checks the level design on the plan at eye height (1.6 m):

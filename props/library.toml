@@ -5,9 +5,10 @@
 # Paints and shapes are taste data: changing a hex or a prop's roles needs no code change.
 
 library = "house"
-version = 12
+version = 13
 kit_spec = "kits/house.json"
-# the build goes under the raw folder: D:/prime-art-raw/props/library/v12/<id>.glb (v12, #170: v11 with the
+# the build goes under the raw folder: D:/prime-art-raw/props/library/v13/<id>.glb (v13, #172: v12 with the
+# basement's plant rooms' pieces and the darkroom's island laid over it; v12, #170: v11 with the
 # basement's working-room pieces laid over it; v11, #168: v10 with the attic's
 # rebuilt and new pieces laid over it; v10, #166: v9 with the kids' room's
 # and the study's props laid over it; v9, #164: v8 with the bedroom's and
@@ -17,7 +18,7 @@ kit_spec = "kits/house.json"
 # pantry's and the stairs' props laid over it; v5, #156: v4 with the hallway's props laid over it; v4, #153: v3 with the dining room's props; v3, #152: v2 with the cream sofa and armchairs
 # rebuilt over it; v2, #150: v1 with the living room's 16 rebuilt props and the eight-slot fine pack laid over it;
 # v1 stays the approved version-1 build; no folder is ever overwritten)
-out = "props/library/v12"
+out = "props/library/v13"
 review = "review/house/87"  # line-up sheets, under the raw folder
 licences = ["CC0-1.0"]
 max_materials = 8
@@ -4303,4 +4304,536 @@ shape = "fuse_box"
 params = {conduit = 0.5}
 roles = ["art_white", "chrome", "enamel_white", "glass_dark", "paint_blue", "safety_yellow", "steel_black", "steel_warm"]
 pivot = "wall"
+collision = "box"
+
+# ---- #172: the basement's plant rooms (the generator hall, the boiler, pump and switch rooms) and the darkroom's island (library v13) ----
+
+[[prop]]
+id = "cable_tray"
+batch = 1
+name = "A perforated steel cable tray on wall brackets with bundled cables"
+class = "dressing"
+size_m = [3.0, 0.3, 0.12]
+count = 1
+route = "proc"
+shape = "cable_tray"
+roles = ["metal_dark", "metal_grey", "paint_red", "rubber_black", "steel_black", "steel_warm"]
+pivot = "wall"
+collision = "none"
+
+[[prop]]
+id = "isolator"
+batch = 1
+name = "A grey rotary isolator with a red handle, conduits up to the tray"
+class = "clutter"
+size_m = [0.3, 0.1, 1.6]
+count = 1
+route = "proc"
+shape = "isolator"
+roles = ["metal_grey", "paint_red", "safety_yellow", "steel_black", "steel_warm"]
+pivot = "wall"
+collision = "none"
+
+[[prop]]
+id = "control_desk"
+batch = 1
+name = "The generator's control desk: three screens (load, fuel, one-line), a phone, a logbook, a stop button"
+class = "room"
+size_m = [2.0, 0.9, 1.25]
+count = 1
+route = "proc"
+shape = "control_desk"
+roles = ["art_white", "blueprint_blue", "book_navy", "chrome", "leaf_green", "metal_dark", "metal_grey", "paint_red", "safety_yellow", "steel_black"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "drum_bund"
+batch = 1
+name = "Four steel fuel drums on a yellow spill bund"
+class = "room"
+size_m = [1.35, 1.35, 1.2]
+count = 1
+route = "proc"
+shape = "drum_bund"
+roles = ["art_white", "metal_dark", "paint_blue", "paint_red", "safety_yellow", "steel_black"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "drum_bund_b"
+batch = 1
+name = "Four steel drums on a yellow spill bund, the oils"
+class = "room"
+size_m = [1.35, 1.35, 1.2]
+count = 1
+route = "proc"
+shape = "drum_bund"
+params = {drums = ["metal_dark", "paint_red", "leaf_green", "metal_dark"]}
+roles = ["art_white", "leaf_green", "metal_dark", "paint_blue", "paint_red", "safety_yellow", "steel_black"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "floor_gen_zone"
+batch = 1
+name = "Yellow and black keep-clear blocks round the generator"
+class = "dressing"
+size_m = [5.0, 3.4, 0.004]
+count = 1
+route = "proc"
+shape = "floor_marking"
+params = {kind = "zone", w = 0.12, seg = 0.4}
+roles = ["safety_yellow", "steel_black"]
+layer = "base"
+pivot = "floor"
+collision = "none"
+
+[[prop]]
+id = "fire_point"
+batch = 1
+name = "A fire point: two extinguishers, a fire blanket and a sand bucket under a red header"
+class = "room"
+size_m = [1.0, 0.3, 1.9]
+count = 1
+route = "proc"
+shape = "fire_point"
+roles = ["art_white", "chrome", "enamel_white", "paint_red", "rubber_black", "steel_black", "stone_light"]
+pivot = "wall"
+collision = "box"
+
+[[prop]]
+id = "tool_chest"
+batch = 1
+name = "A red roller tool chest with a top box"
+class = "room"
+size_m = [1.0, 0.5, 1.6]
+count = 1
+route = "proc"
+shape = "tool_chest"
+roles = ["chrome", "paint_red", "rubber_black", "steel_black"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "parts_shelving"
+batch = 1
+name = "Steel shelving of the generator's spares: filters, belts, oil jugs, parts boxes"
+class = "room"
+size_m = [2.0, 0.5, 2.0]
+count = 1
+route = "proc"
+shape = "storage_shelving"
+params = {seed = 172, frame = "steel_warm", stock = "parts"}
+roles = ["art_pink", "art_terracotta", "art_white", "book_mustard", "book_sage", "book_teal", "enamel_white", "kraft", "leaf_green", "paint_blue", "paint_red", "rubber_black", "safety_yellow", "steel_black", "steel_warm", "worktop_wood"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "gen_log"
+batch = 1
+name = "A whiteboard: the generator's daily check, ticks and a burger doodle"
+class = "dressing"
+size_m = [1.2, 0.05, 0.9]
+count = 1
+route = "proc"
+shape = "whiteboard"
+params = {title = "GENERATOR CHECK"}
+roles = ["art_bun", "art_patty", "art_pink", "art_white", "book_mustard", "chrome", "leaf_green", "metal_dark", "paint_blue", "paint_red", "steel_black"]
+layer = "base"
+pivot = "wall"
+collision = "none"
+
+[[prop]]
+id = "sign_ear"
+batch = 1
+name = "A blue safety sign: ear protection must be worn"
+class = "clutter"
+size_m = [0.4, 0.012, 0.3]
+count = 1
+route = "proc"
+shape = "sign_plate"
+params = {band = "paint_blue", band_text = "MUST WEAR", text = "EAR|PROTECTION", icon = "ear", ink = "paint_blue"}
+roles = ["art_bun", "art_patty", "art_white", "leaf_green", "paint_blue", "paint_red", "steel_black"]
+pivot = "wall"
+collision = "none"
+
+[[prop]]
+id = "sign_volt"
+batch = 1
+name = "A yellow safety sign: danger, high voltage"
+class = "clutter"
+size_m = [0.4, 0.012, 0.3]
+count = 1
+route = "proc"
+shape = "sign_plate"
+params = {plate = "safety_yellow", band = "steel_black", band_text = "DANGER", text = "HIGH|VOLTAGE", icon = "bolt"}
+roles = ["art_bun", "art_patty", "art_white", "leaf_green", "paint_red", "safety_yellow", "steel_black"]
+pivot = "wall"
+collision = "none"
+
+[[prop]]
+id = "sign_no_smoking"
+batch = 1
+name = "A red safety sign: no smoking, no flames"
+class = "clutter"
+size_m = [0.4, 0.012, 0.3]
+count = 1
+route = "proc"
+shape = "sign_plate"
+params = {band = "paint_red", band_text = "NO SMOKING", text = "NO|FLAMES", icon = "flame"}
+roles = ["art_bun", "art_patty", "art_white", "leaf_green", "paint_red", "steel_black"]
+pivot = "wall"
+collision = "none"
+
+[[prop]]
+id = "sign_generator"
+batch = 1
+name = "A door sign: GENERATOR, keep clear"
+class = "clutter"
+size_m = [0.5, 0.012, 0.3]
+count = 1
+route = "proc"
+shape = "sign_plate"
+params = {band = "safety_yellow", band_ink = "steel_black", band_text = "GENERATOR", text = "KEEP CLEAR"}
+roles = ["art_bun", "art_patty", "art_white", "leaf_green", "paint_red", "safety_yellow", "steel_black"]
+pivot = "wall"
+collision = "none"
+
+[[prop]]
+id = "sign_plant"
+batch = 1
+name = "A door sign: PLANT ROOM, staff only"
+class = "clutter"
+size_m = [0.45, 0.012, 0.3]
+count = 1
+route = "proc"
+shape = "sign_plate"
+params = {band = "steel_black", band_text = "PLANT ROOM", text = "STAFF ONLY", icon = "person"}
+roles = ["art_bun", "art_patty", "art_white", "leaf_green", "paint_red", "steel_black"]
+pivot = "wall"
+collision = "none"
+
+[[prop]]
+id = "sign_first_aid"
+batch = 1
+name = "A green sign: FIRST AID"
+class = "clutter"
+size_m = [0.35, 0.012, 0.16]
+count = 1
+route = "proc"
+shape = "sign_plate"
+params = {plate = "safety_green", ink = "art_white", text = "FIRST AID", icon = "cross"}
+roles = ["art_bun", "art_patty", "art_white", "leaf_green", "paint_red", "safety_green", "steel_black"]
+pivot = "wall"
+collision = "none"
+
+[[prop]]
+id = "wall_boiler"
+batch = 1
+name = "A present-day white wall-hung boiler with a display, valves and pipes to the floor"
+class = "room"
+size_m = [0.5, 0.38, 1.6]
+count = 1
+route = "proc"
+shape = "wall_boiler"
+roles = ["art_sky", "chrome", "enamel_white", "glass_dark", "metal_grey", "paint_blue", "paint_red", "steel_warm"]
+pivot = "wall"
+collision = "box"
+
+[[prop]]
+id = "hw_cylinder"
+batch = 1
+name = "A white insulated hot-water cylinder with a gauge, an immersion cap and valved pipes"
+class = "room"
+size_m = [0.8, 0.7, 1.95]
+count = 1
+route = "proc"
+shape = "hw_cylinder"
+roles = ["art_white", "chrome", "enamel_white", "metal_grey", "paint_blue", "paint_red", "steel_black", "steel_warm"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "insulated_pipes"
+batch = 1
+name = "Lagged flow and return pipes on wall brackets, coloured bands, arrows and gate valves"
+class = "room"
+size_m = [3.0, 0.3, 0.45]
+count = 1
+route = "proc"
+shape = "insulated_pipes"
+roles = ["chrome", "metal_dark", "metal_grey", "paint_blue", "paint_red", "safety_yellow", "steel_black"]
+layer = "base"
+pivot = "wall"
+collision = "none"
+
+[[prop]]
+id = "valve_panel"
+batch = 1
+name = "A valve manifold board: four lever valves with tags and three gauges"
+class = "room"
+size_m = [1.2, 0.3, 0.9]
+count = 1
+route = "proc"
+shape = "valve_panel"
+roles = ["art_white", "chrome", "metal_grey", "paint_blue", "paint_red", "safety_yellow", "steel_black", "steel_warm"]
+layer = "base"
+pivot = "wall"
+collision = "none"
+
+[[prop]]
+id = "expansion_vessel"
+batch = 1
+name = "A red pressure vessel on three legs with a gauge"
+class = "dressing"
+size_m = [0.5, 0.5, 0.9]
+count = 1
+route = "proc"
+shape = "expansion_vessel"
+roles = ["art_white", "metal_dark", "paint_red", "steel_black", "steel_warm"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "water_softener"
+batch = 1
+name = "A water softener: a blue resin column and a white brine tank"
+class = "dressing"
+size_m = [0.8, 0.45, 1.15]
+count = 1
+route = "proc"
+shape = "water_softener"
+roles = ["art_white", "enamel_white", "glass_dark", "leaf_green", "metal_grey", "paint_blue", "steel_black"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "mop_sink"
+batch = 1
+name = "A cleaner's mop sink with a wall tap, a yellow mop bucket and a mop"
+class = "room"
+size_m = [1.1, 0.55, 1.3]
+count = 1
+route = "proc"
+shape = "mop_sink"
+roles = ["art_white", "chrome", "metal_dark", "paint_blue", "paint_red", "rubber_black", "safety_yellow", "steel_black"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "sign_boiler"
+batch = 1
+name = "A door sign: BOILER ROOM, hot pipes"
+class = "clutter"
+size_m = [0.45, 0.012, 0.28]
+count = 1
+route = "proc"
+shape = "sign_plate"
+params = {band = "paint_red", band_text = "BOILER ROOM", text = "HOT PIPES"}
+roles = ["art_bun", "art_patty", "art_white", "leaf_green", "paint_red", "steel_black"]
+pivot = "wall"
+collision = "none"
+
+[[prop]]
+id = "pump_set"
+batch = 1
+name = "A blue pump set on a concrete plinth with its valve and gauge"
+class = "room"
+size_m = [1.5, 0.7, 1.3]
+count = 1
+route = "proc"
+shape = "pump_set"
+roles = ["art_white", "chrome", "metal_dark", "paint_blue", "paint_red", "safety_yellow", "steel_black", "steel_warm", "stone_light"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "pump_set_b"
+batch = 1
+name = "A green pump set on a concrete plinth, the standby"
+class = "room"
+size_m = [1.5, 0.7, 1.3]
+count = 1
+route = "proc"
+shape = "pump_set"
+params = {motor = "leaf_green"}
+roles = ["art_white", "chrome", "leaf_green", "metal_dark", "paint_blue", "paint_red", "safety_yellow", "steel_black", "steel_warm", "stone_light"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "sump_cover"
+batch = 1
+name = "A sump's chequer-plate cover in a yellow border"
+class = "dressing"
+size_m = [1.0, 0.8, 0.02]
+count = 1
+route = "proc"
+shape = "sump_cover"
+roles = ["metal_grey", "safety_yellow", "steel_black"]
+layer = "base"
+pivot = "floor"
+collision = "none"
+
+[[prop]]
+id = "wall_hose_reel"
+batch = 1
+name = "A red wall hose reel with its valve"
+class = "dressing"
+size_m = [0.6, 0.32, 0.7]
+count = 1
+route = "proc"
+shape = "wall_hose_reel"
+roles = ["chrome", "paint_red", "rubber_black", "steel_black", "steel_warm"]
+pivot = "wall"
+collision = "box"
+
+[[prop]]
+id = "pump_chart"
+batch = 1
+name = "A wall chart: the pumps' rota grid and a bar chart"
+class = "dressing"
+size_m = [1.0, 0.05, 0.75]
+count = 1
+route = "proc"
+shape = "whiteboard"
+params = {title = "PUMP ROTA", kind = "chart"}
+roles = ["art_bun", "art_patty", "art_pink", "art_white", "book_mustard", "chrome", "leaf_green", "metal_dark", "paint_blue", "paint_red", "steel_black"]
+layer = "base"
+pivot = "wall"
+collision = "none"
+
+[[prop]]
+id = "sign_pump"
+batch = 1
+name = "A door sign: PUMP ROOM, mind the pipes"
+class = "clutter"
+size_m = [0.45, 0.012, 0.28]
+count = 1
+route = "proc"
+shape = "sign_plate"
+params = {band = "paint_blue", band_text = "PUMP ROOM", text = "MIND THE|PIPES"}
+roles = ["art_bun", "art_patty", "art_white", "leaf_green", "paint_blue", "paint_red", "steel_black"]
+pivot = "wall"
+collision = "none"
+
+[[prop]]
+id = "elec_cabinet"
+batch = 1
+name = "A grey one-door electrical cabinet with louvres, a window of breakers and a warning triangle"
+class = "dressing"
+size_m = [0.8, 0.5, 2.0]
+count = 1
+route = "proc"
+shape = "elec_cabinet"
+params = {doors = 1}
+roles = ["art_white", "glass_dark", "metal_grey", "paint_red", "safety_yellow", "steel_black"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "elec_cabinet_b"
+batch = 1
+name = "A grey two-door electrical cabinet"
+class = "dressing"
+size_m = [1.2, 0.5, 2.0]
+count = 1
+route = "proc"
+shape = "elec_cabinet"
+params = {doors = 2}
+roles = ["art_white", "glass_dark", "metal_grey", "paint_red", "safety_yellow", "steel_black"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "meter_panel"
+batch = 1
+name = "A meter board: three meters with green digits, a red main switch and conduits"
+class = "dressing"
+size_m = [1.1, 0.18, 1.2]
+count = 1
+route = "proc"
+shape = "meter_panel"
+roles = ["art_white", "enamel_white", "glass_dark", "leaf_green", "metal_grey", "paint_red", "steel_warm", "wood_mid"]
+pivot = "wall"
+collision = "box"
+
+[[prop]]
+id = "switch_mat"
+batch = 1
+name = "A ribbed grey rubber safety mat before the cabinets"
+class = "dressing"
+size_m = [3.0, 1.0, 0.012]
+count = 1
+route = "proc"
+shape = "rubber_matting"
+roles = ["rubber_mat"]
+pivot = "floor"
+collision = "none"
+
+[[prop]]
+id = "first_aid_box"
+batch = 1
+name = "A green first-aid box with a white cross"
+class = "clutter"
+size_m = [0.4, 0.15, 0.34]
+count = 1
+route = "proc"
+shape = "first_aid_box"
+roles = ["art_white", "metal_dark", "safety_green", "steel_black"]
+pivot = "wall"
+collision = "none"
+
+[[prop]]
+id = "lectern"
+batch = 1
+name = "A steel lectern with the room's logbook open on it"
+class = "dressing"
+size_m = [0.55, 0.5, 1.2]
+count = 1
+route = "proc"
+shape = "lectern"
+roles = ["art_white", "book_navy", "metal_dark", "paint_blue", "steel_black"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "sign_switch"
+batch = 1
+name = "A door sign: SWITCH ROOM, isolate first"
+class = "clutter"
+size_m = [0.45, 0.012, 0.28]
+count = 1
+route = "proc"
+shape = "sign_plate"
+params = {band = "paint_red", band_text = "SWITCH ROOM", text = "ISOLATE|FIRST", icon = "bolt"}
+roles = ["art_bun", "art_patty", "art_white", "leaf_green", "paint_red", "steel_black"]
+pivot = "wall"
+collision = "none"
+
+[[prop]]
+id = "dev_bench"
+batch = 1
+name = "The darkroom's developing island: four trays with tongs, a timer, chemicals and paper below"
+class = "room"
+size_m = [3.6, 1.2, 1.0]
+count = 1
+route = "proc"
+shape = "dev_bench"
+roles = ["art_white", "bottle_brown", "enamel_white", "glass_dark", "metal_grey", "paint_blue", "paint_red", "safety_yellow", "steel_black"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "cutting_table"
+batch = 1
+name = "A print table: a cutting mat, a rotary trimmer, stacks of party prints, a box of frames"
+class = "room"
+size_m = [2.4, 1.2, 1.0]
+count = 1
+route = "proc"
+shape = "cutting_table"
+roles = ["art_pink", "art_sky", "art_terracotta", "art_white", "book_mustard", "chrome", "kraft_tape", "leaf_green", "paint_red", "steel_black", "worktop_wood"]
+pivot = "floor"
 collision = "box"

@@ -1,10 +1,12 @@
-"""The basement's storage, darkroom and corridor (#170, docs/props.md "World look rules"): functional, present-day
-working rooms. Their new props build at their size_m (never more than 15 mm over it), at their pivot and under their
+"""The basement's storage, darkroom and corridor (#170) and its plant rooms: the generator hall, the boiler, pump and
+switch rooms, the passage, and the darkroom's central island (#172; docs/props.md "World look rules"): functional,
+present-day working rooms. Their new props build at their size_m (never more than 15 mm over it), at their pivot and under their
 class's triangle budget; the furniture collides with one box inside its size, the wall pieces stay inside their depth,
 the flat, wall-sign and hanging pieces have no collider; each room's dressing keeps 0.3 m from every station and
 spawn marker in it (read from layouts/house/basement.toml: the storage's six stations and ten package spawns, the
-darkroom's PhotoBoard, asserted), keeps its task props, leaves its doors' openings clear, keeps its prop count (never
-emptier than before the pass) and main's big pieces, and keeps its Name label out of every piece and light fixture.
+darkroom's PhotoBoard, the plant rooms' Generator and switches B to D, asserted), keeps its task props, leaves its doors' openings clear, keeps its prop count (never
+emptier than before the pass) and main's big pieces, and keeps its Name label out of every piece and light fixture; the darkroom's island leaves a 1.2 m walk round it and the
+door's line to the photo board clear.
 Pure Python, no Blender."""
 
 from __future__ import annotations
@@ -30,33 +32,59 @@ BY_ID = {p["id"]: p for p in LIB["prop"]}
 LAYOUT = common.ROOT / "layouts" / "house"
 HOUSE = tomllib.loads((LAYOUT / "house.toml").read_text(encoding="utf-8"))
 TASKS = {t["id"]: t for t in tomllib.loads((common.ROOT / "props" / "tasks.toml").read_text(encoding="utf-8"))["props"]}
-ROOMS = ("storage", "darkroom", "corridor")
-DOORS = {"storage": 2, "darkroom": 1, "corridor": 2}
+ROOMS = ("storage", "darkroom", "corridor", "generator_hall", "boiler_room", "pump_room", "switch_room", "passage")
+DOORS = {"storage": 2, "darkroom": 1, "corridor": 2, "generator_hall": 5, "boiler_room": 1, "pump_room": 1,
+         "switch_room": 1, "passage": 1}
 # The [[props]] entries on main before the pass (fixtures not counted; the generated clutter blocks included).
-BEFORE = {"storage": 155, "darkroom": 92, "corridor": 49}
+BEFORE = {"storage": 155, "darkroom": 93, "corridor": 49,  # darkroom: main after #170
+          "generator_hall": 140, "boiler_room": 105, "pump_room": 71, "switch_room": 60, "passage": 45}  # #172
 # The stations and spawn markers each room keeps clear.
 POINTS = {"storage": sorted(["Buns", "Meat", "WineRack", "Boxes", "SwitchA", "PartsShelf"]
                             + [f"Package{k:02d}" for k in range(1, 11)]),
-          "darkroom": ["PhotoBoard"], "corridor": []}
+          "darkroom": ["PhotoBoard"], "corridor": [], "generator_hall": ["Generator"], "boiler_room": ["SwitchB"],
+          "pump_room": ["SwitchC"], "switch_room": ["SwitchD"], "passage": []}
 # The task props (props/tasks.toml) each room keeps, by count (test_house_basement holds the same).
 TASK_PROPS = {"storage": {"bun_shelf": 2, "meat_freezer": 1, "wine_rack": 1, "delivery_box_stack": 3, "wall_switch": 1,
                           "car_parts_shelf": 1},
-              "darkroom": {"photo_board": 1, "enlarger": 2, "tray_table": 2}, "corridor": {}}
+              "darkroom": {"photo_board": 1, "enlarger": 2, "tray_table": 2}, "corridor": {},
+              "generator_hall": {"generator": 1, "cable_drum": 3}, "boiler_room": {"boiler": 1, "wall_switch": 1},
+              "pump_room": {"wall_switch": 1, "water_tank": 1, "pump": 1},
+              "switch_room": {"wall_switch": 1, "switchboard": 3, "cable_drum": 2}, "passage": {}}
 # Main's big pieces, replaced by better ones, never dropped: one of each id group at least (the darkroom's
 # sideboards became dry benches).
 BIG = {"storage": [("store_shelving", "store_shelving_b"), ("loaded_pallet",), ("store_workbench",), ("toolbox_cart",),
                    ("tool_wall",)],
        "darkroom": [("chem_shelf",), ("filing_cabinet",), ("desk",), ("stool",), ("lab_sink",), ("light_table",)],
-       "corridor": [("store_shelving", "store_shelving_b"), ("radiator",), ("work_hooks",), ("shoe_rack",)]}
+       "corridor": [("store_shelving", "store_shelving_b"), ("radiator",), ("work_hooks",), ("shoe_rack",)],
+       # #172: main's metal shelving became spares shelving, its sideboards tool chests and workbenches, the switch
+       # room's shelving its electrical cabinets
+       "generator_hall": [("parts_shelving",), ("toolbox_cart",), ("tool_wall",), ("tool_chest", "store_workbench"),
+                          ("pallet",)],
+       "boiler_room": [("store_shelving", "store_shelving_b"), ("toolbox_cart",), ("tool_wall",)],
+       "pump_room": [("store_shelving", "store_shelving_b"), ("toolbox_cart",)],
+       "switch_room": [("desk",), ("office_chair",), ("filing_cabinet",), ("elec_cabinet", "elec_cabinet_b")],
+       "passage": [("store_shelving", "store_shelving_b")]}
 
 SOLID = ("store_shelving", "store_shelving_b", "bread_rack", "pallet_jack", "loaded_pallet", "store_workbench",
-         "step_ladder", "hand_trolley", "lab_sink", "light_table", "chem_shelf")
-WALL_SOLID = ("work_hooks", "fire_extinguisher", "fuse_box")
+         "step_ladder", "hand_trolley", "lab_sink", "light_table", "chem_shelf",
+         # #172
+         "control_desk", "drum_bund", "drum_bund_b", "tool_chest", "parts_shelving", "hw_cylinder", "expansion_vessel",
+         "water_softener", "mop_sink", "pump_set", "pump_set_b", "elec_cabinet", "elec_cabinet_b", "lectern",
+         "dev_bench", "cutting_table")
+WALL_SOLID = ("work_hooks", "fire_extinguisher", "fuse_box", "fire_point", "wall_boiler", "wall_hose_reel",
+              "meter_panel")  # the last four: #172
 WALL = ("sign_staff", "sign_buns", "sign_meat", "sign_wine", "sign_parts", "sign_deliveries", "sign_way_out",
-        "sign_darkroom", "clipboard")
+        "sign_darkroom", "clipboard",
+        # #172
+        "cable_tray", "isolator", "gen_log", "sign_ear", "sign_volt", "sign_no_smoking", "sign_generator", "sign_plant",
+        "sign_first_aid", "insulated_pipes", "valve_panel", "sign_boiler", "pump_chart", "sign_pump", "first_aid_box",
+        "sign_switch")
 HUNG = ("aisle_sign_1", "aisle_sign_2", "aisle_sign_3", "print_line", "print_line_b")
-FLAT = ("floor_bay", "floor_lane", "floor_hatch", "rubber_runner")
-NEW = SOLID + WALL_SOLID + WALL + HUNG + FLAT
+FLAT = ("floor_bay", "floor_lane", "floor_hatch", "rubber_runner", "floor_gen_zone", "switch_mat")  # last two: #172
+LOW = ("sump_cover",)  # #172: a 20 mm floor plate, walked over (no collider)
+NEW = SOLID + WALL_SOLID + WALL + HUNG + FLAT + LOW
+ISLAND = ("dev_bench", "cutting_table")  # #172: the darkroom's central island
+WALK_M = 1.2  # the walk round the island
 OVER_M = 0.015  # a prop may stand at most this far over its size_m
 CLEAR_M = 0.3  # nothing of the dressing this close to a station's point or a spawn marker
 DOOR_CLEAR_M = 1.4  # house_dressing.DOOR_CLEAR["door"]: the opening's clear width
@@ -186,7 +214,7 @@ class BasementPropsTest(unittest.TestCase):
                     self.assertLessEqual(abs(pt[2]), sz / 2 + OVER_M, pid)
 
     def test_the_flat_wall_and_hanging_pieces_have_no_collider(self):
-        for pid in WALL + HUNG + FLAT:
+        for pid in WALL + HUNG + FLAT + LOW:
             self.assertEqual(BY_ID[pid]["collision"], "none", pid)
             self.assertEqual(self.built[pid]["colliders"], [], pid)
         for pid in FLAT:
@@ -292,6 +320,29 @@ class BasementPropsTest(unittest.TestCase):
                 self.assertFalse(_box_dist(fp, lx, lz) < 0.2 and lo - 0.3 < h < hi + 0.3,
                                  f"{rid}: the Name label at ({lx}, {h}, {lz}) is on the fixture {item['id']} at "
                                  f"{item['at']}")
+
+
+    def test_the_darkroom_island_leaves_the_walk_round_it(self):
+        """#172: a 1.2 m walk between the island's benches and every other solid floor piece and wall face; the door's
+        line to the photo board (x 8, a 0.6 m band) stays clear."""
+        room, _ = _points("darkroom")
+        w, d = room["rect"][2], room["rect"][3]
+        island = [(it, fp) for it, _, fp in self.placed["darkroom"] if it["id"] in ISLAND]
+        self.assertEqual(sorted(it["id"] for it, _ in island), sorted(ISLAND))
+        others = [(it, fp) for it, _, fp in self.placed["darkroom"]
+                  if it["id"] not in ISLAND + ("stool",) and it["at"][1] < 0.5
+                  and BY_ID.get(it["id"], {}).get("collision", "box") != "none"
+                  and BY_ID.get(it["id"], {}).get("pivot", "floor") == "floor"]
+        self.assertGreater(len(others), 10)
+        for it, fp in island:
+            xs, zs = [p[0] for p in fp], [p[1] for p in fp]
+            self.assertGreaterEqual(min(min(xs), w - max(xs), min(zs), d - max(zs)), WALK_M, it["id"])
+            self.assertTrue(max(xs) < 8 - 0.3 or min(xs) > 8 + 0.3, f"{it['id']} on the door's line to the board")
+            for ot, ofp in others:
+                ox, oz = [p[0] for p in ofp], [p[1] for p in ofp]
+                gap = math.hypot(max(min(ox) - max(xs), 0.0, min(xs) - max(ox)),
+                                 max(min(oz) - max(zs), 0.0, min(zs) - max(oz)))
+                self.assertGreaterEqual(gap, WALK_M - 1e-6, f"{it['id']} at {it['at']}: {ot['id']} at {ot['at']}")
 
 
 if __name__ == "__main__":

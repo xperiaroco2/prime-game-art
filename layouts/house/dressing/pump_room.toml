@@ -1,10 +1,13 @@
 # The pump room's dressing (art #78, docs/house.md "Dressing"): the props and light fixtures of one room, as data.
 # at = [x, h, z]: room-local metres like the room's stations (x east, h above the floor, z south from the room's
 # north-west corner) at the prop's pivot (floor: the footprint's centre; wall: the back's bottom centre on the wall's
-# face; ceiling: the top's centre). face = the way the prop's front (+Z) looks: N, E, S or W.
+# face; ceiling: the top's centre). face = the way the prop's front (+Z) looks: N, E, S or W (or yaw = degrees).
 # Ids are the dressing library's (props/library.toml, #87) and the task props' (props/tasks.toml, #82). Fixtures are
 # the lamps' meshes only (their light is #83a's, layouts/house/lights.toml). Positions are the engineer's to change.
+# #172: every prop is hand-placed (house_clutter.RULES keeps the room empty); the water plant (10 x 8 m): pump sets on plinths, the sump cover, valves, the tank, a hose reel, the pump chart; switch C kept in sight from the door.
 room = "pump_room"
+
+# kept from main: the task props, their stations, the pipe runs
 
 [[props]]
 id = "wall_switch"
@@ -22,44 +25,362 @@ id = "pump"
 at = [3.5, 0, 6.8]
 face = "N"
 
-[[props]]
-id = "pipe_run"
-at = [1.1, 2.6, 0.2]
+# pipes and trays: insulated pipes high on the north and west walls, cable trays on the east and south
 
 [[props]]
-id = "pipe_run"
-at = [3.1, 2.6, 0.2]
+id = "insulated_pipes"
+at = [1.6, 2.55, 0.1]
+face = "S"
 
 [[props]]
-id = "pipe_run"
-at = [5.1, 2.6, 0.2]
+id = "insulated_pipes"
+at = [4.6, 2.55, 0.1]
+face = "S"
 
 [[props]]
-id = "pipe_run"
-at = [7.1, 2.6, 0.2]
+id = "insulated_pipes"
+at = [7.6, 2.55, 0.1]
+face = "S"
 
 [[props]]
-id = "pipe_run"
-at = [8.9, 2.6, 0.2]
-
-[[props]]
-id = "pipe_run"
-at = [0.2, 2.6, 1.1]
+id = "insulated_pipes"
+at = [0.1, 2.55, 1.6]
 face = "E"
 
 [[props]]
-id = "pipe_run"
-at = [0.2, 2.6, 3.1]
+id = "insulated_pipes"
+at = [0.1, 2.55, 4.6]
 face = "E"
 
 [[props]]
-id = "pipe_run"
-at = [0.2, 2.6, 5.1]
+id = "cable_tray"
+at = [9.9, 2.3, 1.6]
+face = "W"
+
+[[props]]
+id = "cable_tray"
+at = [9.9, 2.3, 4.6]
+face = "W"
+
+[[props]]
+id = "cable_tray"
+at = [1.6, 2.3, 7.9]
+face = "N"
+
+[[props]]
+id = "cable_tray"
+at = [4.6, 2.3, 7.9]
+face = "N"
+
+[[props]]
+id = "cable_tray"
+at = [7.6, 2.3, 7.9]
+face = "N"
+
+[[props]]
+id = "cable_tray"
+at = [0.1, 2.25, 1.6]
 face = "E"
 
 [[props]]
-id = "barrel"
-at = [9.4, 0, 0.5]
+id = "cable_tray"
+at = [0.1, 2.25, 4.6]
+face = "E"
+
+# two pump sets on plinths beside the old pump, the sump cover, a pressure vessel
+
+[[props]]
+id = "pump_set"
+at = [3.4, 0, 3.6]
+face = "N"
+
+[[props]]
+id = "pump_set_b"
+at = [9.2, 0, 3.4]
+face = "W"
+
+[[props]]
+id = "sump_cover"
+at = [6.0, 0, 6.3]
+face = "N"
+
+[[props]]
+id = "expansion_vessel"
+at = [8.0, 0, 1.0]
+face = "S"
+
+# the north wall: valves and insulated pipes, the room's signs by the door
+
+[[props]]
+id = "valve_panel"
+at = [2.0, 0.8, 0.1]
+face = "S"
+
+[[props]]
+id = "clipboard"
+at = [3.0, 1.3, 0.1]
+face = "S"
+
+[[props]]
+id = "clipboard"
+at = [3.3, 1.3, 0.1]
+face = "S"
+
+[[props]]
+id = "insulated_pipes"
+at = [2.0, 1.95, 0.1]
+face = "S"
+
+[[props]]
+id = "insulated_pipes"
+at = [8.0, 1.95, 0.1]
+face = "S"
+
+[[props]]
+id = "sign_pump"
+at = [6.3, 1.6, 0.1]
+face = "S"
+
+[[props]]
+id = "sign_ear"
+at = [7.0, 1.55, 0.1]
+face = "S"
+
+[[props]]
+id = "wall_clock"
+at = [8.4, 1.5, 0.1]
+face = "S"
+
+[[props]]
+id = "fire_extinguisher"
+at = [3.9, 0.35, 0.1]
+face = "S"
+
+[[props]]
+id = "toolbox_cart"
+at = [9.4, 0, 0.9]
+face = "W"
+
+[[props]]
+id = "parcels"
+at = [6.9, 0.0, 0.35]
+face = "S"
+
+[[props]]
+id = "parcels"
+at = [6.9, 0.46, 0.35]
+face = "S"
+
+[[props]]
+id = "parcels"
+at = [6.9, 0.92, 0.35]
+face = "S"
+
+# the east wall: the hose reel and the pumps' log sheets; the south wall: the pump chart and shelving
+
+[[props]]
+id = "wall_hose_reel"
+at = [9.9, 0.9, 2.2]
+face = "W"
+
+[[props]]
+id = "clipboard"
+at = [9.9, 1.4, 3.0]
+face = "W"
+
+[[props]]
+id = "clipboard"
+at = [9.9, 1.4, 3.3]
+face = "W"
+
+[[props]]
+id = "clipboard"
+at = [9.9, 1.4, 3.6]
+face = "W"
+
+[[props]]
+id = "pump_chart"
+at = [4.6, 1.0, 7.9]
+face = "N"
+
+[[props]]
+id = "clipboard"
+at = [5.4, 1.4, 7.9]
+face = "N"
+
+[[props]]
+id = "clipboard"
+at = [5.7, 1.4, 7.9]
+face = "N"
+
+[[props]]
+id = "store_shelving"
+at = [8.6, 0, 7.65]
+face = "N"
+
+[[props]]
+id = "storage_box"
+at = [7.88, 2.0, 7.65]
+face = "N"
+
+[[props]]
+id = "storage_crate"
+at = [8.36, 2.0, 7.65]
+face = "N"
+
+[[props]]
+id = "storage_box"
+at = [8.84, 2.0, 7.65]
+face = "N"
+
+[[props]]
+id = "storage_crate"
+at = [9.32, 2.0, 7.65]
+face = "N"
+
+[[props]]
+id = "pallet"
+at = [6.4, 0, 7.35]
+face = "N"
+
+[[props]]
+id = "storage_box"
+at = [6.1, 0.15, 7.35]
+face = "N"
+
+[[props]]
+id = "storage_box"
+at = [6.1, 0.49, 7.35]
+face = "N"
+
+[[props]]
+id = "storage_box"
+at = [6.1, 0.83, 7.35]
+face = "N"
+
+[[props]]
+id = "storage_box"
+at = [6.7, 0.15, 7.35]
+face = "N"
+
+[[props]]
+id = "storage_box"
+at = [6.7, 0.49, 7.35]
+face = "N"
+
+[[props]]
+id = "storage_box"
+at = [6.7, 0.83, 7.35]
+face = "N"
+
+[[props]]
+id = "clipboard"
+at = [3.85, 1.4, 7.9]
+face = "N"
+
+# the west wall: shelving, the first-aid point and low stock
+
+[[props]]
+id = "store_shelving_b"
+at = [0.35, 0, 2.2]
+face = "E"
+
+[[props]]
+id = "storage_box"
+at = [0.35, 2.0, 1.48]
+face = "E"
+
+[[props]]
+id = "storage_crate"
+at = [0.35, 2.0, 1.96]
+face = "E"
+
+[[props]]
+id = "storage_box"
+at = [0.35, 2.0, 2.44]
+face = "E"
+
+[[props]]
+id = "storage_crate"
+at = [0.35, 2.0, 2.92]
+face = "E"
+
+[[props]]
+id = "first_aid_box"
+at = [0.1, 1.3, 7.0]
+face = "E"
+
+[[props]]
+id = "sign_first_aid"
+at = [0.1, 1.75, 7.0]
+face = "E"
+
+[[props]]
+id = "storage_box"
+at = [1.65, 0.0, 7.6]
+face = "N"
+
+[[props]]
+id = "storage_box"
+at = [1.65, 0.34, 7.6]
+face = "N"
+
+[[props]]
+id = "storage_box"
+at = [1.65, 0.68, 7.6]
+face = "N"
+
+[[props]]
+id = "storage_box"
+at = [1.65, 1.02, 7.6]
+face = "N"
+
+[[props]]
+id = "storage_crate"
+at = [2.3, 0.0, 7.6]
+face = "N"
+
+[[props]]
+id = "storage_crate"
+at = [2.3, 0.34, 7.6]
+face = "N"
+
+[[props]]
+id = "storage_crate"
+at = [2.3, 0.68, 7.6]
+face = "N"
+
+[[props]]
+id = "storage_crate"
+at = [2.3, 1.02, 7.6]
+face = "N"
+
+[[props]]
+id = "storage_box"
+at = [2.95, 0.0, 7.6]
+face = "N"
+
+[[props]]
+id = "storage_box"
+at = [2.95, 0.34, 7.6]
+face = "N"
+
+[[props]]
+id = "storage_box"
+at = [2.95, 0.68, 7.6]
+face = "N"
+
+[[props]]
+id = "storage_box"
+at = [2.95, 1.02, 7.6]
+face = "N"
+
+[[props]]
+id = "wall_calendar"
+at = [6.0, 1.3, 7.9]
+face = "N"
+
+# light fixtures
 
 [[fixtures]]
 id = "cage_lamp"
@@ -79,297 +400,4 @@ face = "N"
 
 # ---- clutter (art #104): generated by `house --clutter` (tools/runner/house_clutter.py); edit its RULES, not this block
 
-[[props]]
-id = "toolbox_cart"
-at = [8.03, 0, 7.625]
-face = "N"
 
-[[props]]
-id = "tool_wall"
-at = [8.03, 1, 7.9]
-face = "N"
-
-[[props]]
-id = "crate"
-at = [8.78, 0, 7.65]
-face = "N"
-
-[[props]]
-id = "jerrycan"
-at = [7.38, 0, 7.75]
-face = "N"
-
-[[props]]
-id = "crate"
-at = [9.65, 0, 4.96]
-face = "W"
-
-[[props]]
-id = "crate"
-at = [9.65, 0.4, 4.96]
-face = "W"
-
-[[props]]
-id = "cardboard_box"
-at = [9.65, 0, 5.56]
-face = "W"
-
-[[props]]
-id = "barrel"
-at = [9.55, 0, 4.31]
-face = "W"
-
-[[props]]
-id = "metal_shelving"
-at = [5.24, 0, 7.6]
-face = "N"
-
-[[props]]
-id = "crate"
-at = [0.35, 0, 0.33]
-face = "E"
-
-[[props]]
-id = "crate"
-at = [0.35, 0.4, 0.33]
-face = "E"
-
-[[props]]
-id = "toolbox_cart"
-at = [9.57, 0, 7.625]
-face = "N"
-
-[[props]]
-id = "metal_shelving"
-at = [0.4, 0, 3.71]
-face = "E"
-
-[[props]]
-id = "crate"
-at = [6.72, 0, 7.65]
-face = "N"
-
-[[props]]
-id = "crate"
-at = [6.72, 0.4, 7.65]
-face = "N"
-
-[[props]]
-id = "toolbox_cart"
-at = [3.85, 0, 7.625]
-face = "N"
-
-[[props]]
-id = "metal_shelving"
-at = [9.6, 0, 2.97]
-face = "W"
-
-[[props]]
-id = "crate"
-at = [0.33, 0, 7.65]
-face = "N"
-
-[[props]]
-id = "crate"
-at = [0.33, 0.4, 7.65]
-face = "N"
-
-[[props]]
-id = "toolbox_cart"
-at = [2.27, 0, 0.375]
-face = "S"
-
-[[props]]
-id = "metal_shelving"
-at = [0.4, 0, 1.67]
-face = "E"
-
-[[props]]
-id = "crate"
-at = [0.87, 0, 7.65]
-face = "N"
-
-[[props]]
-id = "crate"
-at = [0.87, 0.4, 7.65]
-face = "N"
-
-[[props]]
-id = "toolbox_cart"
-at = [3.11, 0, 7.625]
-face = "N"
-
-[[props]]
-id = "crate"
-at = [2.91, 0, 0.35]
-face = "S"
-
-[[props]]
-id = "crate"
-at = [2.91, 0.4, 0.35]
-face = "S"
-
-[[props]]
-id = "toolbox_cart"
-at = [9.625, 0, 6.78]
-face = "W"
-
-[[props]]
-id = "crate"
-at = [3.45, 0, 0.35]
-face = "S"
-
-[[props]]
-id = "crate"
-at = [3.45, 0.4, 0.35]
-face = "S"
-
-[[props]]
-id = "toolbox_cart"
-at = [1.94, 0, 7.625]
-face = "N"
-
-[[props]]
-id = "crate"
-at = [0.94, 0, 0.35]
-face = "S"
-
-[[props]]
-id = "crate"
-at = [0.94, 0.4, 0.35]
-face = "S"
-
-[[props]]
-id = "toolbox_cart"
-at = [9.625, 0, 1.39]
-face = "W"
-
-[[props]]
-id = "crate"
-at = [1.48, 0, 0.35]
-face = "S"
-
-[[props]]
-id = "crate"
-at = [1.48, 0.4, 0.35]
-face = "S"
-
-[[props]]
-id = "toolbox_cart"
-at = [0.375, 0, 6.85]
-face = "E"
-
-[[props]]
-id = "crate"
-at = [3, 0, 2.5]
-face = "W"
-
-[[props]]
-id = "crate"
-at = [3, 0.4, 2.5]
-face = "W"
-
-[[props]]
-id = "barrel"
-at = [1.3, 0, 3.3]
-face = "W"
-
-[[props]]
-id = "crate"
-at = [3.25, 0, 3]
-face = "S"
-
-[[props]]
-id = "crate"
-at = [3.25, 0.4, 3]
-face = "S"
-
-[[props]]
-id = "barrel"
-at = [1.8, 0, 1.8]
-face = "W"
-
-[[props]]
-id = "jerrycan"
-at = [1.35, 0, 7.75]
-face = "N"
-
-[[props]]
-id = "book_stack"
-at = [8.85, 0.4, 7.58]
-face = "N"
-
-[[props]]
-id = "bottles"
-at = [9.69, 0.8, 5.02]
-face = "W"
-
-[[props]]
-id = "paper_stack"
-at = [9.66, 0.4, 5.56]
-face = "W"
-
-[[props]]
-id = "book_stack"
-at = [0.38, 0.8, 0.3]
-face = "E"
-
-[[props]]
-id = "paper_stack"
-at = [6.72, 0.8, 7.66]
-face = "N"
-
-[[props]]
-id = "bottles"
-at = [0.39, 0.8, 7.58]
-face = "N"
-
-[[props]]
-id = "book_stack"
-at = [0.94, 0.8, 7.68]
-face = "N"
-
-[[props]]
-id = "paper_stack"
-at = [2.96, 0.8, 0.36]
-face = "S"
-
-[[props]]
-id = "bottles"
-at = [3.46, 0.8, 0.28]
-face = "S"
-
-[[props]]
-id = "bottles"
-at = [0.95, 0.8, 0.28]
-face = "S"
-
-[[props]]
-id = "paper_stack"
-at = [1.43, 0.8, 0.36]
-face = "S"
-
-[[props]]
-id = "book_stack"
-at = [2.94, 0.8, 2.57]
-face = "W"
-
-[[props]]
-id = "bottles"
-at = [3.21, 0.8, 3.08]
-face = "S"
-
-[[props]]
-id = "wall_shelf"
-at = [2.27, 1.45, 0.1]
-face = "S"
-
-[[props]]
-id = "wall_clock"
-at = [7.72, 1.85, 0.1]
-face = "S"
-
-[[props]]
-id = "bottles"
-at = [0.195, 0, 5.61]
-face = "E"
