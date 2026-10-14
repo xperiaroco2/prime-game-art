@@ -142,7 +142,8 @@ writes the House's game-ready package (prime-game #523) from the same layout dat
   since #156 `props/library/v5/textures/fine`, the same bytes: v4 with the hallway's 14 props built over it, and
   `prop_dirs` names library v5 and task v2;
   since #158 `props/library/v6/textures/fine`, the same bytes: v5 with the WC's, the pantry's and the stairs' 21
-  props built over it, and `prop_dirs` names library v6 and task v2;
+  props built over it, and `prop_dirs` names library v6 and task v2; since #162 `props/library/v7/textures/fine`, the
+  same bytes: v6 with the landing's and the bathroom's 10 props built over it, and `prop_dirs` names library v7;
   v1 stays the approved version-1 build;
   `.import` VRAM compressed with mipmaps), `house_props/prop_fine.gdshader` (a copy
   of `godot/props/prop_fine.gdshader`; `tools/tests/test_house_layers.py` fails when the committed copy drifts) and
@@ -422,7 +423,8 @@ lamps draw no real-time shadow passes: follow-up #107.
 
 `house.toml`'s `[wall_paint]` maps a walled room's id to a `#rrggbb` paint (the engineer's choice of 2026-10-14, #152,
 over Q11 B's teal base: terracotta #a3533b on every wall of the living room; warm greige #d9d1c5 in the kitchen,
-hallway, dining room, stairs and landing; oxblood #69413c in the bedroom and guest room; ink-blue #1f2a48
+hallway, dining room, stairs and landing; the WC soft blue-grey #cfd5d3, the pantry pale sage #d3d6c3 (#158) and the
+bathroom pale green-grey #d8dfd6 over its white tiles (#162); oxblood #69413c in the bedroom and guest room; ink-blue #1f2a48
 in the study; the garage a concrete-neutral #8f897d; the basement keeps the kit's concrete; any other room the kit's
 paint). `house_layout.check_paints` (part of `validate`) refuses an unknown or unwalled room and a bad hex; the room
 scene's root carries `metadata/wall_paint`; `walk_request()["paints"]` hands the rooms' rects to the walk, which puts
@@ -565,7 +567,8 @@ Defaults used (for the engineer; data, easy to change):
   doc's reading of "the garage stays concrete-neutral". The engineer's choice of 2026-10-14 (#152) replaced its teal
   base: the living room terracotta #a3533b, the kitchen, hallway, dining room, stairs and landing warm greige #d9d1c5,
   the whole house's ceiling warm sand #d8c7b4, the sofa and armchairs cream #e4d9c6. #158 added the WC's soft
-  blue-grey #cfd5d3 and the pantry's pale sage #d3d6c3 (they showed the kit's teal).
+  blue-grey #cfd5d3 and the pantry's pale sage #d3d6c3, #162 the bathroom's pale green-grey #d8dfd6 (they showed
+  the kit's teal).
 - Q21 A: dense, lived-in dressing: the inventory's props plus the seeded clutter layer ("Clutter", art #104).
 - Q7 B: 16 windows on the ground floor, 16 on the second floor, 4 knee windows in the attic, 5 in the garage.
 - Q9 B: leaves standing ajar at the front door, the terrace door and the garage side door; the greenhouse door is

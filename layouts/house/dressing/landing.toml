@@ -4,56 +4,346 @@
 # face; ceiling: the top's centre). face = the way the prop's front (+Z) looks: N, E, S or W (or yaw = degrees).
 # Ids are the dressing library's (props/library.toml, #87) and the task props' (props/tasks.toml, #82); an id with
 # no GLB yet is generated as a named, sized placeholder box. Positions are the engineer's to change.
-# The hatch ladder is the kit's ladder_attic (layouts/house/attic.toml), the stairwell railing the layout's.
 room = "landing"
+# #162: the upper floor's hub in the world look, every prop hand-placed (the clutter rules are empty): two slate
+# runners down the walk from the stairs to the six doors; consoles with lamps under the prints and the family
+# gallery; three bookcases; a reading corner and a dresser on the west wall; the bench with the photos on the south
+# wall; plants, a delivery by the study door and the laundry basket by the bathroom door. The area round the attic
+# hatch's ladder (x 1 to 3.5, z 3 to 6) and the stairs' top (x 4 to 5.5, z 8 to 10) stays clear.
 
 [[props]]
-id = "landing_bench"
-at = [7.7, 0, 7.0]
+id = "landing_runner"
+at = [6.0, 0.0, 5.25]
+face = "E"
+
+[[props]]
+id = "landing_runner"
+at = [6.0, 0.0, 14.75]
+face = "E"
+
+[[props]]
+id = "hall_console"
+at = [2.2, 0.0, 0.3]
+face = "S"
+
+[[props]]
+id = "side_lamp"
+at = [1.85, 0.82, 0.3]
+face = "S"
+
+[[props]]
+id = "deco_bowl"
+at = [2.3, 0.82, 0.3]
+face = "S"
+
+[[props]]
+id = "standing_frame"
+at = [2.62, 0.82, 0.3]
+face = "S"
+
+[[props]]
+id = "art_abstract"
+at = [2.2, 1.25, 0.1]
+face = "S"
+
+[[props]]
+id = "wall_clock"
+at = [4.2, 1.7, 0.1]
+face = "S"
+
+[[props]]
+id = "landing_plant"
+at = [0.4, 0.0, 0.5]
+face = "S"
+
+[[props]]
+id = "bookcase"
+at = [0.275, 0.0, 2.1]
+face = "E"
+
+[[props]]
+id = "basket"
+at = [0.275, 2.0, 2.1]
+face = "E"
+
+[[props]]
+id = "basket"
+at = [0.4, 0.0, 3.0]
+face = "E"
+
+[[props]]
+id = "slippers"
+at = [0.4, 0.0, 5.2]
+face = "E"
+
+[[props]]
+id = "floor_plant"
+at = [7.5, 0.0, 0.45]
 face = "W"
 
 [[props]]
-id = "console_table"
-at = [0.275, 0, 1.5]
-face = "E"
+id = "art_city"
+at = [7.4, 1.3, 0.1]
+face = "S"
 
 [[props]]
-id = "console_table"
-at = [0.275, 0, 18.5]
-face = "E"
+id = "radiator"
+at = [7.9, 0.12, 1.9]
+face = "W"
 
 [[props]]
-id = "potted_plant"
-at = [7.6, 0, 0.4]
+id = "parcels"
+at = [7.5, 0.0, 5.45]
+face = "W"
 
 [[props]]
-id = "potted_plant"
-at = [7.6, 0, 19.6]
+id = "wall_calendar"
+at = [7.9, 1.4, 5.2]
+face = "W"
+
+[[props]]
+id = "hall_console"
+at = [7.7, 0.0, 7.0]
+face = "W"
+
+[[props]]
+id = "side_lamp"
+at = [7.7, 0.82, 6.62]
+face = "W"
+
+[[props]]
+id = "coffee_books"
+at = [7.68, 0.82, 7.05]
+face = "W"
+
+[[props]]
+id = "candle_jars"
+at = [7.7, 0.82, 7.4]
+face = "W"
+
+[[props]]
+id = "gallery_wall"
+at = [7.9, 1.1, 7.0]
+face = "W"
+
+[[props]]
+id = "laundry_basket"
+at = [7.6, 0.0, 11.2]
+face = "W"
+
+[[props]]
+id = "bookcase"
+at = [7.725, 0.0, 12.5]
+face = "W"
+
+[[props]]
+id = "bookcase"
+at = [7.725, 0.0, 13.5]
+face = "W"
+
+[[props]]
+id = "deco_vase"
+at = [7.72, 2.0, 12.5]
+face = "W"
+
+[[props]]
+id = "deco_bowl"
+at = [7.72, 2.0, 13.5]
+face = "W"
+
+[[props]]
+id = "floor_plant"
+at = [7.5, 0.0, 14.65]
+face = "W"
+
+[[props]]
+id = "shoe_pairs"
+at = [7.6, 0.0, 17.1]
+face = "W"
+
+[[props]]
+id = "radiator"
+at = [7.9, 0.12, 18.3]
+face = "W"
+
+[[props]]
+id = "art_still_life"
+at = [7.9, 1.3, 18.3]
+face = "W"
+
+[[props]]
+id = "floor_plant"
+at = [7.5, 0.0, 19.6]
+face = "W"
+
+[[props]]
+id = "hall_bench"
+at = [4.0, 0.0, 19.71]
 face = "N"
 
 [[props]]
-id = "picture_frame"
-at = [0.1, 1.4, 1.5]
+id = "homework"
+at = [4.2, 0.47, 19.7]
+face = "N"
+
+[[props]]
+id = "photo_row"
+at = [4.0, 1.05, 19.9]
+face = "N"
+
+[[props]]
+id = "art_gazebo"
+at = [4.95, 0.9, 19.9]
+face = "N"
+
+[[props]]
+id = "throw_basket"
+at = [2.9, 0.0, 19.7]
+face = "N"
+
+[[props]]
+id = "art_city"
+at = [2.9, 1.1, 19.9]
+face = "N"
+
+[[props]]
+id = "hall_console"
+at = [6.4, 0.0, 19.7]
+face = "N"
+
+[[props]]
+id = "side_lamp"
+at = [5.98, 0.82, 19.7]
+face = "N"
+
+[[props]]
+id = "key_bowl"
+at = [6.4, 0.82, 19.7]
+face = "N"
+
+[[props]]
+id = "candle_pair"
+at = [6.62, 0.82, 19.7]
+face = "N"
+
+[[props]]
+id = "table_plant"
+at = [6.85, 0.82, 19.7]
+face = "N"
+
+[[props]]
+id = "art_blueprint"
+at = [6.4, 1.25, 19.9]
+face = "N"
+
+[[props]]
+id = "landing_plant"
+at = [0.4, 0.0, 19.5]
+face = "N"
+
+[[props]]
+id = "art_delivery"
+at = [0.1, 1.5, 7.5]
 face = "E"
 
 [[props]]
-id = "picture_frame"
-at = [0.1, 1.4, 18.5]
+id = "art_burger"
+at = [0.1, 1.5, 10.5]
 face = "E"
 
 [[props]]
-id = "picture_frame"
-at = [7.9, 1.4, 7.0]
+id = "armchair"
+at = [0.65, 0.0, 13.3]
+face = "E"
+
+[[props]]
+id = "throw_basket"
+at = [1.35, 0.0, 13.3]
+face = "E"
+
+[[props]]
+id = "art_score"
+at = [0.1, 1.3, 13.3]
+face = "E"
+
+[[props]]
+id = "small_table"
+at = [0.5, 0.0, 14.6]
+face = "E"
+
+[[props]]
+id = "side_lamp"
+at = [0.35, 0.7, 14.42]
+face = "E"
+
+[[props]]
+id = "magazine_fan"
+at = [0.65, 0.7, 14.75]
+face = "E"
+
+[[props]]
+id = "toy_blocks"
+at = [1.2, 0.0, 17.3]
+face = "E"
+
+[[props]]
+id = "dresser"
+at = [0.35, 0.0, 18.2]
+face = "E"
+
+[[props]]
+id = "tulip_vase"
+at = [0.35, 0.9, 17.8]
+face = "E"
+
+[[props]]
+id = "board_games"
+at = [0.35, 0.9, 18.3]
+face = "E"
+
+[[props]]
+id = "table_plant"
+at = [0.35, 0.9, 18.65]
+face = "E"
+
+[[props]]
+id = "art_photos"
+at = [0.1, 1.35, 18.2]
+face = "E"
+
+[[props]]
+id = "book_stack"
+at = [3.6, 0.47, 19.7]
+face = "N"
+
+[[props]]
+id = "sports_bag"
+at = [1.2, 0.0, 15.0]
+face = "E"
+
+[[props]]
+id = "floor_plant"
+at = [4.7, 0.0, 0.55]
+face = "S"
+
+[[props]]
+id = "mail_stack"
+at = [7.5, 0.46, 5.45]
 face = "W"
 
 [[props]]
-id = "picture_frame"
-at = [7.9, 1.5, 18.5]
-face = "W"
+id = "hall_doormat"
+at = [6.0, 0.0, 0.6]
+face = "S"
 
 [[props]]
-id = "rug"
-at = [6.0, 0, 13.0]
+id = "art_gazebo"
+at = [0.1, 1.4, 8.3]
+face = "E"
+
+[[props]]
+id = "wall_calendar"
+at = [0.1, 1.4, 14.9]
 face = "E"
 
 [[fixtures]]
@@ -63,7 +353,7 @@ face = "W"
 
 [[fixtures]]
 id = "wall_sconce"
-at = [7.9, 1.9, 13.0]
+at = [7.9, 1.9, 14.6]
 face = "W"
 
 [[fixtures]]
@@ -85,288 +375,3 @@ id = "pendant_shade"
 at = [6.0, 3.0, 16.0]
 
 # ---- clutter (art #104): generated by `house --clutter` (tools/runner/house_clutter.py); edit its RULES, not this block
-
-[[props]]
-id = "armchair"
-at = [7.4, 0, 11.99]
-face = "W"
-
-[[props]]
-id = "small_table"
-at = [7.5, 0, 12.84]
-face = "W"
-
-[[props]]
-id = "book_stack"
-at = [7.555, 0.7, 12.84]
-face = "W"
-
-[[fixtures]]
-id = "floor_lamp"
-at = [7.6, 0, 11.24]
-face = "W"
-
-[[props]]
-id = "laundry_basket"
-at = [7.65, 0, 1.91]
-face = "W"
-
-[[props]]
-id = "laundry_pile"
-at = [7.55, 0, 2.61]
-face = "W"
-
-[[props]]
-id = "radiator"
-at = [7.9, 0.12, 8.45]
-face = "W"
-
-[[props]]
-id = "bookcase"
-at = [3.72, 0, 19.675]
-face = "N"
-
-[[props]]
-id = "landing_bench"
-at = [7.65, 0, 14.09]
-face = "W"
-
-[[props]]
-id = "dresser"
-at = [0.4, 0, 14.36]
-face = "E"
-
-[[props]]
-id = "console_table"
-at = [4.86, 0, 19.675]
-face = "N"
-
-[[props]]
-id = "radiator"
-at = [7.9, 0.12, 5.55]
-face = "W"
-
-[[props]]
-id = "bookcase"
-at = [0.325, 0, 13.03]
-face = "E"
-
-[[props]]
-id = "landing_bench"
-at = [0.78, 0, 19.65]
-face = "N"
-
-[[props]]
-id = "dresser"
-at = [7.6, 0, 18.2]
-face = "W"
-
-[[props]]
-id = "console_table"
-at = [0.68, 0, 0.325]
-face = "S"
-
-[[props]]
-id = "radiator"
-at = [0.1, 0.12, 2.64]
-face = "E"
-
-[[props]]
-id = "bookcase"
-at = [2.02, 0, 19.675]
-face = "N"
-
-[[props]]
-id = "landing_bench"
-at = [2.77, 0, 0.35]
-face = "S"
-
-[[props]]
-id = "dresser"
-at = [6.1, 0, 19.6]
-face = "N"
-
-[[props]]
-id = "radiator"
-at = [0.1, 0.12, 17.34]
-face = "E"
-
-[[props]]
-id = "radiator"
-at = [4.33, 0.12, 0.1]
-face = "S"
-
-[[props]]
-id = "armchair"
-at = [5.2, 0, 14.45]
-face = "W"
-
-[[props]]
-id = "small_table"
-at = [2.85, 0, 14.6]
-face = "S"
-
-[[props]]
-id = "armchair"
-at = [3.2, 0, 4.2]
-face = "S"
-
-[[props]]
-id = "small_table"
-at = [3.85, 0, 5.1]
-face = "E"
-
-[[props]]
-id = "armchair"
-at = [5.95, 0, 12.95]
-face = "E"
-
-[[props]]
-id = "small_table"
-at = [2.6, 0, 17.85]
-face = "S"
-
-[[props]]
-id = "armchair"
-at = [3.2, 0, 16.7]
-face = "E"
-
-[[props]]
-id = "small_table"
-at = [3.1, 0, 1.35]
-face = "S"
-
-[[props]]
-id = "armchair"
-at = [5.95, 0, 18.45]
-face = "S"
-
-[[props]]
-id = "small_table"
-at = [2.1, 0, 1.85]
-face = "E"
-
-[[props]]
-id = "potted_plant"
-at = [7.65, 0, 17.3]
-face = "W"
-
-[[props]]
-id = "potted_plant"
-at = [7.65, 0, 1.12]
-face = "W"
-
-[[props]]
-id = "book_stack"
-at = [7.63, 0.5, 7.47]
-face = "W"
-
-[[props]]
-id = "paper_stack"
-at = [0.26, 0.8, 1.9]
-face = "E"
-
-[[props]]
-id = "vase_flowers"
-at = [0.21, 0.8, 1.31]
-face = "E"
-
-[[props]]
-id = "paper_stack"
-at = [0.26, 0.8, 18.55]
-face = "E"
-
-[[props]]
-id = "book_stack"
-at = [0.24, 0.8, 18.12]
-face = "E"
-
-[[props]]
-id = "cup_set"
-at = [7.26, 0.7, 12.78]
-face = "W"
-
-[[props]]
-id = "bottles"
-at = [0.38, 0.9, 14.57]
-face = "E"
-
-[[props]]
-id = "bottles"
-at = [0.43, 0.9, 14.12]
-face = "E"
-
-[[props]]
-id = "vase_flowers"
-at = [0.35, 0.9, 14.81]
-face = "E"
-
-[[props]]
-id = "book_stack"
-at = [4.53, 0.8, 19.63]
-face = "N"
-
-[[props]]
-id = "vase_flowers"
-at = [5.22, 0.8, 19.61]
-face = "N"
-
-[[props]]
-id = "bottles"
-at = [7.68, 0.9, 18.06]
-face = "W"
-
-[[props]]
-id = "book_stack"
-at = [7.48, 0.9, 18.42]
-face = "W"
-
-[[props]]
-id = "bottles"
-at = [7.48, 0.9, 17.86]
-face = "W"
-
-[[props]]
-id = "vase_flowers"
-at = [7.46, 0.9, 18.1]
-face = "W"
-
-[[props]]
-id = "paper_stack"
-at = [0.58, 0.8, 0.31]
-face = "S"
-
-[[props]]
-id = "paper_stack"
-at = [1.03, 0.8, 0.31]
-face = "S"
-
-[[props]]
-id = "picture_frame"
-at = [7.9, 1.4, 5.78]
-face = "W"
-
-[[props]]
-id = "picture_frame"
-at = [7.9, 1.4, 2.4]
-face = "W"
-
-[[props]]
-id = "picture_frame"
-at = [7.9, 1.4, 8.22]
-face = "W"
-
-[[props]]
-id = "wall_shelf"
-at = [7.9, 1.45, 14.15]
-face = "W"
-
-[[props]]
-id = "picture_frame"
-at = [7.9, 1.4, 0.88]
-face = "W"
-
-[[props]]
-id = "basket"
-at = [7.68, 0, 19.1]
-face = "W"
