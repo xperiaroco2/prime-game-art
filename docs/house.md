@@ -147,6 +147,8 @@ writes the House's game-ready package (prime-game #523) from the same layout dat
   since #162's second round `props/library/v8/textures/fine`, the same bytes: v7 with the rebuilt landing runner
   built over it, and `prop_dirs` names library v8; since #164 `props/library/v9/textures/fine`, the same bytes: v8
   with the bedroom's and the guest room's 16 props built over it, and `prop_dirs` names library v9;
+  since #166 `props/library/v10/textures/fine`, the same bytes: v9 with the kids' room's and the study's 14 props
+  built over it, and `prop_dirs` names library v10;
   v1 stays the approved version-1 build;
   `.import` VRAM compressed with mipmaps), `house_props/prop_fine.gdshader` (a copy
   of `godot/props/prop_fine.gdshader`; `tools/tests/test_house_layers.py` fails when the committed copy drifts) and
@@ -427,8 +429,8 @@ lamps draw no real-time shadow passes: follow-up #107.
 `house.toml`'s `[wall_paint]` maps a walled room's id to a `#rrggbb` paint (the engineer's choice of 2026-10-14, #152,
 over Q11 B's teal base: terracotta #a3533b on every wall of the living room; warm greige #d9d1c5 in the kitchen,
 hallway, dining room, stairs and landing; the WC soft blue-grey #cfd5d3, the pantry pale sage #d3d6c3 (#158) and the
-bathroom pale green-grey #d8dfd6 over its white tiles (#162); oxblood #69413c in the bedroom and guest room; ink-blue #1f2a48
-in the study; the garage a concrete-neutral #8f897d; the basement keeps the kit's concrete; any other room the kit's
+bathroom pale green-grey #d8dfd6 over its white tiles (#162); oxblood #69413c in the bedroom and guest room; a pale sky blue
+#c9d7de in the kids' room (#166); ink-blue #1f2a48 in the study; the garage a concrete-neutral #8f897d; the basement keeps the kit's concrete; any other room the kit's
 paint). `house_layout.check_paints` (part of `validate`) refuses an unknown or unwalled room and a bad hex; the room
 scene's root carries `metadata/wall_paint`; `walk_request()["paints"]` hands the rooms' rects to the walk, which puts
 the kit's set material (`godot/kit/kit_materials.gd` `make`, `paint`, `apply`; `kit_set.gdshader`, at most 16 paints)
