@@ -27,9 +27,9 @@ TIMINGS = TESTS / "timings.json"
 FILE_TIMEOUT = 1800
 DEFAULT_PATTERN = "test*.py"
 # A test file is heavy when it (or a tools/tests/_*.py helper it imports) looks the Blender or Godot binary up, the way
-# its skip condition does (`tool_path(pins.BLENDER_ENV, ...)`, `have(pins.GODOT_ENV, ...)`), or starts one.
+# its skip condition does (`tool_path(pins.BLENDER_ENV, ...)`, `tool_path("GODOT_BIN", ...)`), or starts one.
 HEAVY_MARKERS = re.compile(
-    r"(?:tool_path|have)\(\s*pins\.(?:BLENDER|GODOT)_ENV|\b(?:blender|godot)_bin\(|\bblender\.run_script\("
+    r"(?:tool_path|have)\(\s*(?:pins\.(?:BLENDER|GODOT)_ENV|[\"'](?:BLENDER|GODOT)_BIN[\"'])|\b(?:blender|godot)_bin\(|\bblender\.run_script\("
 )
 _HELPER_IMPORT = re.compile(r"^\s*from\s+\.(?:\s+import\s+|(\w+)\s+import\s)(\w+)?", re.M)
 
