@@ -211,6 +211,18 @@ at = [41.0, 42.6]  # #164: from the storage corner past the desk and the beds to
 look = [34.5, 39.2]
 look_h = 1.1
 [[export.sheet_views]]
+room = "kids_room"
+title = "kids' room: across to the door"
+at = [19.3, 43.2]  # #166: from the south-west corner past the play table and the play rug to the wardrobe and the door
+look = [25.6, 39.6]
+look_h = 1.0
+[[export.sheet_views]]
+room = "study"
+title = "study: across to the door"
+at = [41.2, 31.0]  # #166: from the reading corner past the Printer desk and the rug to the work desk and the door
+look = [34.3, 28.0]
+look_h = 1.1
+[[export.sheet_views]]
 room = "attic"
 title = "attic: from the west gable"
 at = [19.5, 34.0]
