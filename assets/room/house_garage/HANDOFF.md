@@ -1,8 +1,8 @@
 # House package P6, the garage: the game-side handoff (art #79, prime-game #523)
 
 For the game's own import task, after P1 (the kit) and P2 (the ground floor: the yard the side door opens onto). The
-car repair chain (M7; the game's car repair ADR, RD2 and R5) plays here. Nothing here is copied before the approval
-fields of this manifest and of `assets/prop/house_props/manifest.toml` are set.
+car repair chain (M7; the game's car repair ADR, RD2 and R5) plays here. The approval fields of this manifest and of
+`assets/prop/house_props/manifest.toml` are set (PR #181, under the engineer's blanket yes of 2026-10-14).
 
 ## What to copy where (ARCHITECTURE 11.1)
 | From this repo | To the game repo |
@@ -36,11 +36,13 @@ Coordinates are the room's (metres, +Y up); the car faces north (-Z), on `CarLif
 
 ## The lift panel and its blind side
 `Dressing/lift_panel_1` (`lift_panel.glb`) stands at (3, 0, 11.6), its front facing south to the `LiftPanel` marker
-(3, 0, 12), about 5 m from the car (RD2). Between it and the car stand `tyre_rack_1` (2.9, 0, 11.0) and two
+(3, 0, 12), the layout's point: about 8.6 m from the lift's centre (10, 7) and about 6.8 m from the car's nearest
+point, so FARTHER than RD2's 5 m placeholder (kept as the layout has it; the game's R5 moves it). Between it and the car stand `tyre_rack_1` (2.9, 0, 11.0) and two
 `steel_cupboard` (4.6 and 5.85, 0, 11.05), 2 m tall: from the panel's eye points (the marker and a half ring of
 0.75 m round it, eyes at 1.0, 1.3 and 1.6 m) no ray reaches the space under the car (84 points, heights 0.15 to
 1.25 m; `tools/tests/test_props_garage.py`; without the cupboards 1753 of the rays reach). The game's R5 places the
-panel's interaction on the pedestal.
+panel's interaction on the pedestal; the blind side is proved only for a holder within that 0.75 m half ring south of
+the marker and for the raised car, so R5's use radius should stay inside it (or ask the art side to re-check).
 
 ## The part picture
 `Dressing/part_picture_1` (`part_picture.glb`) hangs on the east wall at (17.9, 1.3, 6.5), facing west into the room.
