@@ -239,7 +239,7 @@ the roof's top, an optional key light): P5's attic from its west gable and the f
 from the Lookout station, at 1.6 m over the roof. A view's `with` (#130) names rooms of other packages shown in place
 beside the view's room, each at its plan offset from that room (its rect corner and floor height): P4's balcony views
 show the yard's external flight (`with = ["yard"]`, P2's `yard.tscn`), since the flight belongs to the yard, not the
-balcony. `_house_review.neighbours` finds the other committed packages whose `package.json` lists those rooms' scenes
+balcony. A view's `raise = {nodes, dy}` (#79) moves those nodes of the room scene up by `dy` metres for that view only: P6's "the car raised" lifts `Dressing/lift_arms_1` and `Dressing/garage_car_1` by 1.24 m. `_house_review.neighbours` finds the other committed packages whose `package.json` lists those rooms' scenes
 and stages them beside the package (a game path two packages share has the same bytes in both). Every room tile (#144)
 also stages its context, so it reads as in the game rather than against black: `_house_review.context` names, from
 the layout, the rooms of its level owning a wall on its sides (a shared wall is in the scene of the first of its two
@@ -264,7 +264,7 @@ plot's, the garden's and the zones' props and plants; a zone's generic plant is 
 `DIR/_build/house_outdoor` and copies them. The check rays the whole ground every 0.5 m: a ground or shell hit
 without a known surface fails, and so does a miss outside the ground's holes (`hole`: the house, terrace, garage and
 the outdoor stairs' opening, where other packages lay their floors); the command prints the counts as `plot:`. Its
-sheet is six `[[export.sheet_views]]` of `room = "plot"` (plan metres, 1.6 m over the ground, a key light), each
+sheet is seven `[[export.sheet_views]]` of `room = "plot"` (the seventh, #79, the driveway from the street) (plan metres, 1.6 m over the ground, a key light), each
 loading `outdoor.tscn` with the package's rooms at their plan corners; alone, the package shows the house's footprint
 as a black hole. The flat `house_props/` names follow one rule for every package (`docs/manifest.md`).
 
