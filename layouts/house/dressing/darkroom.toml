@@ -488,6 +488,38 @@ id = "storage_crate"
 at = [14.5, 1.9, 9.675]
 face = "N"
 
+# #172: the central work island: the developing bench west, the print-cutting table east, stools
+
+[[props]]
+id = "dev_bench"
+at = [4.2, 0, 4.4]
+face = "S"
+
+[[props]]
+id = "stool"
+at = [3.3, 0, 5.4]
+face = "N"
+
+[[props]]
+id = "stool"
+at = [5.1, 0, 5.4]
+face = "N"
+
+[[props]]
+id = "cutting_table"
+at = [11.8, 0, 4.4]
+face = "S"
+
+[[props]]
+id = "stool"
+at = [11.2, 0, 5.4]
+face = "N"
+
+[[props]]
+id = "stool"
+at = [12.4, 0, 5.4]
+face = "N"
+
 # light fixtures
 
 [[fixtures]]

@@ -153,7 +153,7 @@ safelight_red = 6
 [rooms.corridor]
 cage_lamp = 4
 [rooms.boiler_room]
-bare_bulb = 2
+fluorescent_tube = 2  # #172: bright work light (was 2 bare bulbs)
 cage_lamp = 3
 [rooms.generator_hall]
 cage_lamp = 4
@@ -161,7 +161,7 @@ industrial_pendant = 10
 [rooms.pump_room]
 cage_lamp = 3
 [rooms.switch_room]
-bare_bulb = 1
+fluorescent_tube = 1  # #172: bright work light (was a bare bulb)
 cage_lamp = 2
 [rooms.passage]
 cage_lamp = 3
