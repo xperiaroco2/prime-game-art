@@ -1793,14 +1793,14 @@ metadata/prop = "floor_lane"
 surface_material_override/0 = ExtResource("12")
 
 [node name="control_desk_1" parent="Dressing" instance=ExtResource("14")]
-transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 4.5, 0, 11)
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 12, 0, 5)
 metadata/prop = "control_desk"
 
 [node name="control_desk" parent="Dressing/control_desk_1"]
 surface_material_override/0 = ExtResource("12")
 
 [node name="office_chair_1" parent="Dressing" instance=ExtResource("15")]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 3.5, 0, 11)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 0, 4)
 metadata/prop = "office_chair"
 
 [node name="insulated_pipes_1" parent="Dressing" instance=ExtResource("16")]
@@ -2091,7 +2091,7 @@ metadata/prop = "storage_crate"
 surface_material_override/0 = ExtResource("12")
 
 [node name="trash_bin_1" parent="Dressing" instance=ExtResource("21")]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 3.4, 0, 12.4)
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 10.3, 0, 4.4)
 metadata/prop = "trash_bin"
 
 [node name="floor_hatch_1" parent="Dressing" instance=ExtResource("22")]
