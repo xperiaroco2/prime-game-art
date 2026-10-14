@@ -11,12 +11,16 @@ room = "garage"
 
 # The car on its lift (the CarLift station's set): the posts stay; the arms and the car move together, by
 # `lift_raise_m` (1.24 m: the sills' underside from 0.16 m to the car repair ADR's 1.4 m, RD2), the game's drop.
+# One `assembly`: the three nest by design (the overlap check skips them). `blocks`: the capsule's real blockers
+# (the posts and the power unit; the arms' two carriages), not the size boxes across the floor between the posts.
 
 [[props]]
 id = "lift_posts"
 at = [10.0, 0, 7.0]
 face = "N"
 station = "CarLift"
+assembly = "car_lift"
+blocks = [[-1.71, -0.16, -1.39, 0.16], [-1.69, 0.16, -1.41, 0.3], [1.39, -0.16, 1.71, 0.16]]
 note = "static: the posts across the car's middle, x 8.2 to 11.8"
 
 [[props]]
@@ -24,6 +28,8 @@ id = "lift_arms"
 at = [10.0, 0.04, 7.0]
 face = "N"
 station = "CarLift"
+assembly = "car_lift"
+blocks = [[-1.39, -0.18, -1.21, 0.18], [1.21, -0.18, 1.39, 0.18]]
 note = "moves with the car: the pads' tops at 0.16 m under the sills (raised: +1.24 m)"
 
 [[props]]
@@ -31,6 +37,7 @@ id = "garage_car"
 at = [10.0, 0, 7.0]
 face = "N"
 station = "CarLift"
+assembly = "car_lift"
 note = "moves with the arms: lowered on its wheels; raised, its underside at 1.4 m (RD2)"
 
 [[props]]

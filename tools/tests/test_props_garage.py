@@ -161,6 +161,21 @@ class GaragePropsTest(unittest.TestCase):
             self.assertEqual(self.built[pid]["colliders"], [], pid)
             self.assertEqual(BY_ID[pid].get("layer"), "base", pid)
 
+    def test_the_dressing_blocks_are_the_builders_colliders(self):
+        """house_dressing's capsule grid uses an item's `blocks` instead of its size box: they must be its real
+        colliders' footprints (every collider that reaches the capsule's heights, 0.3 to 1.8 m)."""
+        blocked = [i for i in _dressing() if "blocks" in i]
+        self.assertEqual(sorted(i["id"] for i in blocked), ["lift_arms", "lift_posts"])
+        for item in blocked:
+            want = []
+            for c in self.built[item["id"]]["colliders"]:
+                xs, ys, zs = zip(*c["points"])
+                if min(ys) < 1.8 and max(ys) > 0.3:
+                    want.append([round(min(xs), 2), round(min(zs), 2), round(max(xs), 2), round(max(zs), 2)])
+            self.assertEqual(sorted(want), sorted([round(v, 2) for v in b] for b in item["blocks"]), item["id"])
+        self.assertEqual({i["id"] for i in _dressing() if i.get("assembly") == "car_lift"},
+                         {"lift_posts", "lift_arms", "garage_car"})
+
     def test_the_car_and_the_lift_are_separate_pieces(self):
         items = {i["id"]: i for i in _dressing() if i.get("station") == "CarLift"}
         self.assertEqual(sorted(items), ["floor_lift_zone", "garage_car", "lift_arms", "lift_posts"])
