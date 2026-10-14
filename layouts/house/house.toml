@@ -184,6 +184,18 @@ at = [31.6, 30.8]  # #158: from the dining room door to the runners, the photos 
 look = [27.2, 35.4]
 look_h = 1.2
 [[export.sheet_views]]
+room = "landing"
+title = "landing: up its length from the south"
+at = [30.6, 42.8]  # #162: from the south bench past the bookcases, consoles and runners to the balcony door
+look = [30.0, 26.0]
+look_h = 1.1
+[[export.sheet_views]]
+room = "bathroom"
+title = "bathroom: across to the door"
+at = [41.3, 33.4]  # #162: from the window past the vanity, toilet and shelves to the towel rail and the door
+look = [34.3, 34.4]
+look_h = 1.0
+[[export.sheet_views]]
 room = "attic"
 title = "attic: from the west gable"
 at = [19.5, 34.0]
