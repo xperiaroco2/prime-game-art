@@ -75,3 +75,14 @@ https://github.com/xperiaroco2/prime-game-art/issues/16#issuecomment-6058026953)
   art manager still merges after the gate.
 - `approved_by` in a manifest names the engineer for the look; earlier manifests that list the designer stay as they
   are.
+
+## Amendment (2026-10-14)
+For the House's room-by-room pass the engineer gave a blanket yes in chat on 2026-10-14 (#34): build the whole House
+first and judge it in a playtest; no more rounds of shade or tint variants.
+- The art manager merges each room's PR after its fresh-context review and a green `verify`, without a per-room yes
+  on the look.
+- The engineer judges the rooms in a playtest and raises the changes he wants as tasks.
+- His blanket yes fills the approval fields of the sets a room's PR changes: `approved_by = ["xperiaroco2"]`,
+  `approved_at` the PR's date, `approval_pr` that PR, the notes saying "approved under the engineer's blanket yes of
+  2026-10-14 (build the House, judge in a playtest; #34)".
+- Characters, faces and anything outside the House's room pass keep the per-asset yes.
