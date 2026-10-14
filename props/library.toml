@@ -5,13 +5,13 @@
 # Paints and shapes are taste data: changing a hex or a prop's roles needs no code change.
 
 library = "house"
-version = 4
+version = 5
 kit_spec = "kits/house.json"
-# the build goes under the raw folder: D:/prime-art-raw/props/library/v4/<id>.glb (v4, #153: v3 with the dining
-# room's props laid over it; v3, #152: v2 with the cream sofa and armchairs rebuilt over it; v2, #150: v1 with the
-# living room's 16 rebuilt props and the eight-slot fine pack laid over it; v1 stays the approved version-1 build;
-# no folder is ever overwritten)
-out = "props/library/v4"
+# the build goes under the raw folder: D:/prime-art-raw/props/library/v5/<id>.glb (v5, #156: v4 with the hallway's
+# props laid over it; v4, #153: v3 with the dining room's props; v3, #152: v2 with the cream sofa and armchairs
+# rebuilt over it; v2, #150: v1 with the living room's 16 rebuilt props and the eight-slot fine pack laid over it;
+# v1 stays the approved version-1 build; no folder is ever overwritten)
+out = "props/library/v5"
 review = "review/house/87"  # line-up sheets, under the raw folder
 licences = ["CC0-1.0"]
 max_materials = 8
@@ -78,7 +78,8 @@ paints = ["wood_front", "wood_front_dark", "worktop_wood", "worktop_stone", "til
           "soil_dark", "leaf_green", "leaf_dark", "art_white", "art_sky", "art_pink", "art_terracotta", "art_bun",
           "art_patty", "cushion_rust", "cushion_mustard", "throw_cream",
           "carpet_field", "carpet_border", "carpet_slate", "stone_light", "stone_dark", "book_cream", "book_teal", "book_mustard", "book_red", "book_navy", "book_sage",
-          "book_grey"]
+          "book_grey", "mirror_glass", "coat_navy", "coat_camel", "kraft", "kraft_tape", "blueprint_blue", "carpet_navy",
+          "coir"]
 
 # The fine pack: ONE shared opaque material (`kit_fine-vcol`) for the world look's props, as the kit's `set` pack
 # (docs/kit.md "Materials"): the paint is the vertex colour, its alpha picks the layer (1 - k/16 for layer k), and
@@ -186,6 +187,16 @@ book_red = {material = "fine", layer = "paint", hex = "#8a3a30"}
 book_navy = {material = "fine", layer = "paint", hex = "#2c3e57"}
 book_sage = {material = "fine", layer = "paint", hex = "#7a8a70"}
 book_grey = {material = "fine", layer = "paint", hex = "#4a4845"}
+# The hallway's paints (#156): the arched mirror's pane on the gloss layer, wool coats on the fabric layer, the
+# parcels' kraft and tape, the blueprint's blue, the navy runner and the coir doormat on the carpet layer.
+mirror_glass = {material = "fine", layer = "gloss", hex = "#aab4b5"}
+coat_navy = {material = "fine", layer = "fabric", hex = "#2f3d52"}
+coat_camel = {material = "fine", layer = "fabric", hex = "#a8784e"}
+kraft = {material = "fine", layer = "paint", hex = "#b08a5c"}
+kraft_tape = {material = "fine", layer = "paint", hex = "#8d6a44"}
+blueprint_blue = {material = "fine", layer = "paint", hex = "#2b4f7a"}
+carpet_navy = {material = "fine", layer = "carpet", hex = "#34465c"}
+coir = {material = "fine", layer = "carpet", hex = "#a07c52"}
 
 # Inventory props this library does not make, and who does (the manager's split of 2026-10-10).
 [skip]
@@ -2599,4 +2610,195 @@ route = "proc"
 shape = "mail_stack"
 roles = ["art_white", "book_cream", "art_sky", "paint_red", "book_navy", "art_bun", "art_patty"]
 pivot = "floor"
+collision = "none"
+
+# ---- The hallway (#156): the entrance console under an arched mirror, the coat hooks over a bench, the umbrella
+# stand, the navy runner, the generator blueprint (base layer) and the detail layer by the door (keys, shoes, parcels,
+# a sports bag, a doormat, a calendar, a row of family photos). The prints are drawn by prop_geom.py (_art): own work.
+
+[[prop]]
+id = "hall_console"
+batch = 1
+name = "Entrance console: oak top, two drawers, tapered legs, a shelf with two baskets"
+class = "room"
+size_m = [1.2, 0.4, 0.82]
+count = 1
+route = "proc"
+shape = "hall_console"
+roles = ["worktop_wood", "wood_front", "wood_front_dark", "chrome", "throw_cream", "upholstery"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "hall_mirror"
+batch = 1
+name = "Arched wall mirror in a slim brass frame"
+class = "dressing"
+size_m = [0.7, 0.035, 1.0]
+count = 1
+route = "proc"
+shape = "hall_mirror"
+roles = ["steel_warm", "mirror_glass"]
+pivot = "wall"
+collision = "none"
+
+[[prop]]
+id = "coat_hooks"
+batch = 1
+name = "Wall hooks under a hat shelf with two coats, a scarf, a tote bag and a cap"
+class = "room"
+size_m = [1.3, 0.28, 1.25]
+count = 1
+route = "proc"
+shape = "coat_hooks"
+roles = ["worktop_wood", "steel_black", "coat_navy", "coat_camel", "wood_front_dark", "cushion_mustard", "book_navy", "throw_cream", "book_teal"]
+pivot = "wall"
+collision = "box"
+
+[[prop]]
+id = "hall_bench"
+batch = 1
+name = "Hall bench: oak, a teal seat pad, a slatted shoe shelf with two pairs"
+class = "room"
+size_m = [1.1, 0.38, 0.47]
+count = 1
+route = "proc"
+shape = "hall_bench"
+roles = ["worktop_wood", "cushion_teal", "art_white", "enamel_white", "paint_red", "art_patty", "rubber_black"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "hall_runner"
+batch = 1
+name = "Hall runner, navy field and a cream border"
+class = "dressing"
+size_m = [4.2, 0.9, 0.012]
+count = 1
+route = "proc"
+shape = "carpet_rug"
+params = {field = "carpet_navy", border = "carpet_border"}
+roles = ["carpet_navy", "carpet_border"]
+pivot = "floor"
+collision = "none"
+
+[[prop]]
+id = "umbrella_stand"
+batch = 1
+name = "Umbrella stand with a red and a navy umbrella"
+class = "dressing"
+size_m = [0.26, 0.26, 0.85]
+count = 1
+route = "proc"
+shape = "umbrella_stand"
+roles = ["steel_black", "steel_warm", "paint_red", "book_navy", "chrome", "wood_front_dark"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "art_blueprint"
+batch = 1
+name = "Large framed blueprint of the House generator"
+class = "dressing"
+size_m = [1.0, 0.035, 0.75]
+count = 1
+route = "proc"
+shape = "framed_art"
+params = {art = "blueprint", frame = 0.025, mat = 0.05, frame_paint = "steel_black"}
+roles = ["steel_black", "art_white", "blueprint_blue", "art_sky", "book_mustard"]
+pivot = "wall"
+collision = "none"
+
+[[prop]]
+id = "hall_doormat"
+batch = 1
+name = "Coir doormat with a slate border"
+class = "clutter"
+size_m = [0.9, 0.6, 0.015]
+count = 1
+route = "proc"
+shape = "carpet_rug"
+params = {field = "coir", border = "carpet_slate", fringe = false}
+roles = ["coir", "carpet_slate"]
+pivot = "floor"
+collision = "none"
+
+[[prop]]
+id = "key_bowl"
+batch = 1
+name = "Stoneware key bowl with keys, a car fob and a key tag"
+class = "clutter"
+size_m = [0.2, 0.2, 0.05]
+count = 1
+route = "proc"
+shape = "key_bowl"
+roles = ["stone_dark", "book_teal", "chrome", "steel_warm", "rubber_black", "paint_red"]
+pivot = "floor"
+collision = "none"
+
+[[prop]]
+id = "parcels"
+batch = 1
+name = "Two delivery parcels with tape and a burger-delivery label"
+class = "clutter"
+size_m = [0.52, 0.38, 0.46]
+count = 1
+route = "proc"
+shape = "parcels"
+roles = ["kraft", "kraft_tape", "art_white", "book_navy", "art_bun", "art_patty", "paint_red"]
+pivot = "floor"
+collision = "none"
+
+[[prop]]
+id = "shoe_pairs"
+batch = 1
+name = "Shoes in pairs: black running trainers and a child's blue trainers"
+class = "clutter"
+size_m = [0.42, 0.3, 0.1]
+count = 2
+route = "proc"
+shape = "shoe_pairs"
+roles = ["rubber_black", "enamel_white", "book_mustard", "paint_blue", "paint_red"]
+pivot = "floor"
+collision = "none"
+
+[[prop]]
+id = "sports_bag"
+batch = 1
+name = "Navy sports holdall with a white cycling helmet on it"
+class = "clutter"
+size_m = [0.62, 0.32, 0.45]
+count = 1
+route = "proc"
+shape = "sports_bag"
+roles = ["book_navy", "paint_red", "steel_black", "rubber_black", "art_white", "glass_dark"]
+pivot = "floor"
+collision = "none"
+
+[[prop]]
+id = "photo_row"
+batch = 1
+name = "Three small frames: two family portraits and six holiday photos"
+class = "dressing"
+layer = "detail"  # three frames need more than the clutter budget; still small wall decor
+size_m = [0.9, 0.02, 0.32]
+count = 1
+route = "proc"
+shape = "photo_row"
+roles = ["steel_black", "worktop_wood", "art_white", "art_sky", "art_pink", "book_cream", "book_sage", "book_navy", "paint_red", "book_teal", "book_mustard", "art_terracotta", "art_bun", "leaf_green"]
+pivot = "wall"
+collision = "none"
+
+[[prop]]
+id = "wall_calendar"
+batch = 1
+name = "Wall calendar with a burger for the month and a few days marked"
+class = "clutter"
+size_m = [0.3, 0.01, 0.45]
+count = 1
+route = "proc"
+shape = "framed_art"
+params = {art = "calendar", frame = 0.006, mat = 0.0, frame_paint = "steel_black"}
+roles = ["steel_black", "art_white", "art_sky", "art_bun", "leaf_green", "art_patty", "paint_red", "book_cream", "book_mustard"]
+pivot = "wall"
 collision = "none"
