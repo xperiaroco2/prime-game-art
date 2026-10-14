@@ -6,6 +6,11 @@
    "name": "slice_m1.glb",
    "bytes": 7274456,
    "sha256": "b9716a446b935078caadaa01dcfacf0088ea36c4cd1268d155c7aab22aac06b2"
+  },
+  {
+   "name": "slice_m1.ragdoll.json",
+   "bytes": 10184,
+   "sha256": "5956866fb54e51932d84baa707896f9ad456e58b3b7ce970b643352a841466d3"
   }
  ]
 }

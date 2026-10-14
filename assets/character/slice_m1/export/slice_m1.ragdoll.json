@@ -1,0 +1,653 @@
+{
+ "format": "prime-ragdoll",
+ "version": 1,
+ "asset": "slice_m1",
+ "glb": "slice_m1.glb",
+ "units": "metres, kilograms, degrees; shapes and anchors in the bone's rest frame (Y along the bone)",
+ "rotation": "a quaternion [x, y, z, w] in the bone's rest frame",
+ "hinge": "flexion about `axis` (in the bone's frame), positive is the anatomical bend; limits from the start pose",
+ "cone": "swing_deg: the half-angle around the bone's Y; twist_deg: either way about Y; from the start pose",
+ "total_mass_kg": 70.0,
+ "collision": {
+  "layer": 3,
+  "layer_name": "downed",
+  "mask": [
+   1
+  ],
+  "mask_names": [
+   "world"
+  ]
+ },
+ "material": {
+  "friction": 0.8,
+  "bounce": 0.0,
+  "linear_damp": 0.1,
+  "angular_damp": 6.0
+ },
+ "bounds": {
+  "min": [
+   -0.7762,
+   -0.0036,
+   -0.1494
+  ],
+  "max": [
+   0.7758,
+   1.8424,
+   0.2629
+  ]
+ },
+ "bones": [
+  {
+   "bone": "Body",
+   "profile": "Hips",
+   "parent": null,
+   "shape": "box",
+   "mass_share": 0.142,
+   "joint": null,
+   "vertices": 206,
+   "size": [
+    0.1884,
+    0.18,
+    0.1934
+   ],
+   "offset": [
+    0.0038,
+    0.0781,
+    0.0221
+   ],
+   "rotation": [
+    0.0,
+    0.0,
+    0.0,
+    1.0
+   ],
+   "mass_kg": 9.94,
+   "skeleton_parent": "Root"
+  },
+  {
+   "bone": "Abdomen",
+   "profile": "Spine",
+   "parent": "Body",
+   "shape": "box",
+   "mass_share": 0.1166,
+   "joint": {
+    "type": "cone",
+    "swing_deg": 30.0,
+    "twist_deg": 15.0,
+    "anchor": [
+     0.0,
+     0.0,
+     0.0
+    ]
+   },
+   "vertices": 163,
+   "size": [
+    0.2137,
+    0.1726,
+    0.1719
+   ],
+   "offset": [
+    -0.0021,
+    0.0833,
+    0.0355
+   ],
+   "rotation": [
+    0.0,
+    0.0,
+    0.0,
+    1.0
+   ],
+   "mass_kg": 8.162,
+   "skeleton_parent": "Hips"
+  },
+  {
+   "bone": "Torso",
+   "profile": "Chest",
+   "parent": "Abdomen",
+   "shape": "box",
+   "mass_share": 0.1936,
+   "joint": {
+    "type": "cone",
+    "swing_deg": 30.0,
+    "twist_deg": 15.0,
+    "anchor": [
+     0.0,
+     0.0,
+     0.0
+    ]
+   },
+   "vertices": 744,
+   "size": [
+    0.2694,
+    0.2389,
+    0.1758
+   ],
+   "offset": [
+    0.0004,
+    0.2329,
+    0.0165
+   ],
+   "rotation": [
+    0.0,
+    0.0,
+    0.0,
+    1.0
+   ],
+   "mass_kg": 13.552,
+   "skeleton_parent": "Abdomen"
+  },
+  {
+   "bone": "Neck",
+   "profile": "Neck",
+   "parent": "Torso",
+   "shape": "capsule",
+   "mass_share": 0.081,
+   "joint": {
+    "type": "cone",
+    "swing_deg": 40.0,
+    "twist_deg": 45.0,
+    "anchor": [
+     0.0,
+     0.0,
+     0.0
+    ]
+   },
+   "fit": "Head",
+   "vertices": 3645,
+   "radius": 0.1478,
+   "height": 0.3057,
+   "offset": [
+    0.0011,
+    0.2389,
+    0.0041
+   ],
+   "rotation": [
+    0.0,
+    0.0,
+    0.0,
+    1.0
+   ],
+   "mass_kg": 5.67,
+   "skeleton_parent": "Chest"
+  },
+  {
+   "bone": "UpperArm.L",
+   "profile": "LeftUpperArm",
+   "parent": "Torso",
+   "shape": "capsule",
+   "mass_share": 0.028,
+   "joint": {
+    "type": "cone",
+    "swing_deg": 80.0,
+    "twist_deg": 45.0,
+    "anchor": [
+     0.0,
+     0.0,
+     0.0
+    ]
+   },
+   "vertices": 165,
+   "radius": 0.049,
+   "height": 0.1616,
+   "offset": [
+    -0.003,
+    0.0843,
+    0.0113
+   ],
+   "rotation": [
+    0.0,
+    0.0,
+    0.0,
+    1.0
+   ],
+   "mass_kg": 1.96,
+   "skeleton_parent": "Shoulder.L"
+  },
+  {
+   "bone": "LowerArm.L",
+   "profile": "LeftLowerArm",
+   "parent": "UpperArm.L",
+   "shape": "capsule",
+   "mass_share": 0.016,
+   "joint": {
+    "type": "hinge",
+    "min_deg": -5.0,
+    "max_deg": 140.0,
+    "anchor": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "axis": [
+     -0.0098,
+     0.0,
+     -1.0
+    ]
+   },
+   "vertices": 110,
+   "radius": 0.0346,
+   "height": 0.1888,
+   "offset": [
+    -0.0002,
+    0.1149,
+    -0.0006
+   ],
+   "rotation": [
+    0.0,
+    0.0,
+    0.0,
+    1.0
+   ],
+   "mass_kg": 1.12,
+   "skeleton_parent": "UpperArm.L"
+  },
+  {
+   "bone": "Wrist.L",
+   "profile": "LeftHand",
+   "parent": "LowerArm.L",
+   "shape": "box",
+   "mass_share": 0.0143,
+   "joint": {
+    "type": "cone",
+    "swing_deg": 50.0,
+    "twist_deg": 20.0,
+    "anchor": [
+     0.0,
+     0.0,
+     0.0
+    ]
+   },
+   "vertices": 487,
+   "size": [
+    0.1502,
+    0.2068,
+    0.054
+   ],
+   "offset": [
+    0.0082,
+    0.1322,
+    -0.0088
+   ],
+   "rotation": [
+    0.0,
+    0.0,
+    0.0,
+    1.0
+   ],
+   "mass_kg": 1.001,
+   "skeleton_parent": "LowerArm.L"
+  },
+  {
+   "bone": "UpperLeg.L",
+   "profile": "LeftUpperLeg",
+   "parent": "Body",
+   "shape": "capsule",
+   "mass_share": 0.1,
+   "joint": {
+    "type": "cone",
+    "swing_deg": 60.0,
+    "twist_deg": 20.0,
+    "anchor": [
+     0.0,
+     0.0,
+     0.0
+    ]
+   },
+   "vertices": 253,
+   "radius": 0.0781,
+   "height": 0.4111,
+   "offset": [
+    0.0011,
+    0.1593,
+    0.0112
+   ],
+   "rotation": [
+    0.0,
+    0.0,
+    0.0,
+    1.0
+   ],
+   "mass_kg": 7.0,
+   "skeleton_parent": "Body"
+  },
+  {
+   "bone": "LowerLeg.L",
+   "profile": "LeftLowerLeg",
+   "parent": "UpperLeg.L",
+   "shape": "capsule",
+   "mass_share": 0.0465,
+   "joint": {
+    "type": "hinge",
+    "min_deg": -5.0,
+    "max_deg": 140.0,
+    "anchor": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "axis": [
+     1.0,
+     0.0,
+     0.0
+    ]
+   },
+   "vertices": 387,
+   "radius": 0.0624,
+   "height": 0.4414,
+   "offset": [
+    -0.0026,
+    0.2559,
+    0.0209
+   ],
+   "rotation": [
+    0.0,
+    0.0,
+    0.0,
+    1.0
+   ],
+   "mass_kg": 3.255,
+   "skeleton_parent": "UpperLeg.L"
+  },
+  {
+   "bone": "Foot.L",
+   "profile": "LeftFoot",
+   "parent": "LowerLeg.L",
+   "shape": "box",
+   "mass_share": 0.0286,
+   "joint": {
+    "type": "cone",
+    "swing_deg": 40.0,
+    "twist_deg": 10.0,
+    "anchor": [
+     -0.0026,
+     -0.0175,
+     -0.0618
+    ]
+   },
+   "vertices": 140,
+   "size": [
+    0.0878,
+    0.1895,
+    0.0724
+   ],
+   "offset": [
+    0.0117,
+    0.1006,
+    -0.0154
+   ],
+   "rotation": [
+    0.0,
+    0.0,
+    0.0,
+    1.0
+   ],
+   "mass_kg": 2.002,
+   "skeleton_parent": "Root"
+  },
+  {
+   "bone": "UpperArm.R",
+   "profile": "RightUpperArm",
+   "parent": "Torso",
+   "shape": "capsule",
+   "mass_share": 0.028,
+   "joint": {
+    "type": "cone",
+    "swing_deg": 80.0,
+    "twist_deg": 45.0,
+    "anchor": [
+     0.0,
+     0.0,
+     0.0
+    ]
+   },
+   "vertices": 191,
+   "radius": 0.0506,
+   "height": 0.1641,
+   "offset": [
+    0.0014,
+    0.0824,
+    0.0103
+   ],
+   "rotation": [
+    0.0,
+    0.0,
+    0.0,
+    1.0
+   ],
+   "mass_kg": 1.96,
+   "skeleton_parent": "Shoulder.R"
+  },
+  {
+   "bone": "LowerArm.R",
+   "profile": "RightLowerArm",
+   "parent": "UpperArm.R",
+   "shape": "capsule",
+   "mass_share": 0.016,
+   "joint": {
+    "type": "hinge",
+    "min_deg": -5.0,
+    "max_deg": 140.0,
+    "anchor": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "axis": [
+     -0.0098,
+     0.0,
+     1.0
+    ]
+   },
+   "vertices": 114,
+   "radius": 0.0341,
+   "height": 0.1869,
+   "offset": [
+    0.0006,
+    0.1111,
+    -0.001
+   ],
+   "rotation": [
+    0.0,
+    0.0,
+    0.0,
+    1.0
+   ],
+   "mass_kg": 1.12,
+   "skeleton_parent": "UpperArm.R"
+  },
+  {
+   "bone": "Wrist.R",
+   "profile": "RightHand",
+   "parent": "LowerArm.R",
+   "shape": "box",
+   "mass_share": 0.0143,
+   "joint": {
+    "type": "cone",
+    "swing_deg": 50.0,
+    "twist_deg": 20.0,
+    "anchor": [
+     0.0,
+     0.0,
+     0.0
+    ]
+   },
+   "vertices": 499,
+   "size": [
+    0.1477,
+    0.2074,
+    0.0548
+   ],
+   "offset": [
+    -0.008,
+    0.131,
+    -0.0092
+   ],
+   "rotation": [
+    0.0,
+    0.0,
+    0.0,
+    1.0
+   ],
+   "mass_kg": 1.001,
+   "skeleton_parent": "LowerArm.R"
+  },
+  {
+   "bone": "UpperLeg.R",
+   "profile": "RightUpperLeg",
+   "parent": "Body",
+   "shape": "capsule",
+   "mass_share": 0.1,
+   "joint": {
+    "type": "cone",
+    "swing_deg": 60.0,
+    "twist_deg": 20.0,
+    "anchor": [
+     0.0,
+     0.0,
+     0.0
+    ]
+   },
+   "vertices": 255,
+   "radius": 0.0797,
+   "height": 0.4085,
+   "offset": [
+    0.0018,
+    0.156,
+    0.0095
+   ],
+   "rotation": [
+    0.0,
+    0.0,
+    0.0,
+    1.0
+   ],
+   "mass_kg": 7.0,
+   "skeleton_parent": "Body"
+  },
+  {
+   "bone": "LowerLeg.R",
+   "profile": "RightLowerLeg",
+   "parent": "UpperLeg.R",
+   "shape": "capsule",
+   "mass_share": 0.0465,
+   "joint": {
+    "type": "hinge",
+    "min_deg": -5.0,
+    "max_deg": 140.0,
+    "anchor": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "axis": [
+     1.0,
+     0.0,
+     -0.0
+    ]
+   },
+   "vertices": 391,
+   "radius": 0.0605,
+   "height": 0.453,
+   "offset": [
+    0.0016,
+    0.2495,
+    0.0201
+   ],
+   "rotation": [
+    0.0,
+    0.0,
+    0.0,
+    1.0
+   ],
+   "mass_kg": 3.255,
+   "skeleton_parent": "UpperLeg.R"
+  },
+  {
+   "bone": "Foot.R",
+   "profile": "RightFoot",
+   "parent": "LowerLeg.R",
+   "shape": "box",
+   "mass_share": 0.0286,
+   "joint": {
+    "type": "cone",
+    "swing_deg": 40.0,
+    "twist_deg": 10.0,
+    "anchor": [
+     0.0016,
+     -0.0168,
+     -0.0605
+    ]
+   },
+   "vertices": 135,
+   "size": [
+    0.0889,
+    0.1909,
+    0.0727
+   ],
+   "offset": [
+    -0.0118,
+    0.1013,
+    -0.0152
+   ],
+   "rotation": [
+    0.0,
+    0.0,
+    0.0,
+    1.0
+   ],
+   "mass_kg": 2.002,
+   "skeleton_parent": "Root"
+  }
+ ],
+ "followers": {
+  "Chest": "Torso",
+  "Head": "Neck",
+  "Hips": "Body",
+  "Index1.L": "Wrist.L",
+  "Index1.R": "Wrist.R",
+  "Index2.L": "Wrist.L",
+  "Index2.R": "Wrist.R",
+  "Index3.L": "Wrist.L",
+  "Index3.R": "Wrist.R",
+  "Index4.L": "Wrist.L",
+  "Index4.R": "Wrist.R",
+  "Middle1.L": "Wrist.L",
+  "Middle1.R": "Wrist.R",
+  "Middle2.L": "Wrist.L",
+  "Middle2.R": "Wrist.R",
+  "Middle3.L": "Wrist.L",
+  "Middle3.R": "Wrist.R",
+  "Middle4.L": "Wrist.L",
+  "Middle4.R": "Wrist.R",
+  "PT.L": null,
+  "PT.R": null,
+  "Pinky1.L": "Wrist.L",
+  "Pinky1.R": "Wrist.R",
+  "Pinky2.L": "Wrist.L",
+  "Pinky2.R": "Wrist.R",
+  "Pinky3.L": "Wrist.L",
+  "Pinky3.R": "Wrist.R",
+  "Pinky4.L": "Wrist.L",
+  "Pinky4.R": "Wrist.R",
+  "Ring1.L": "Wrist.L",
+  "Ring1.R": "Wrist.R",
+  "Ring2.L": "Wrist.L",
+  "Ring2.R": "Wrist.R",
+  "Ring3.L": "Wrist.L",
+  "Ring3.R": "Wrist.R",
+  "Ring4.L": "Wrist.L",
+  "Ring4.R": "Wrist.R",
+  "Root": null,
+  "Shoulder.L": "Torso",
+  "Shoulder.R": "Torso",
+  "Thumb1.L": "Wrist.L",
+  "Thumb1.R": "Wrist.R",
+  "Thumb2.L": "Wrist.L",
+  "Thumb2.R": "Wrist.R",
+  "Thumb3.L": "Wrist.L",
+  "Thumb3.R": "Wrist.R",
+  "Toe.L": "Foot.L",
+  "Toe.R": "Foot.R"
+ },
+ "unweighted_or_above_hips": {}
+}
