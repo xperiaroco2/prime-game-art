@@ -29,9 +29,9 @@ TASKS = tomllib.loads((common.ROOT / "props" / "tasks.toml").read_text(encoding=
 DRESSING = tomllib.loads((LAYOUT / "dressing" / "hallway.toml").read_text(encoding="utf-8"))
 
 SOLID = ("hall_console", "coat_hooks", "hall_bench", "umbrella_stand")
-WALL = ("hall_mirror", "coat_hooks", "art_blueprint", "photo_row", "wall_calendar")
+WALL = ("hall_mirror", "coat_hooks", "art_blueprint", "photo_row", "wall_calendar", "gallery_wall")
 DETAIL = ("hall_doormat", "key_bowl", "parcels", "shoe_pairs", "sports_bag", "photo_row", "wall_calendar")
-NEW = SOLID + DETAIL + ("hall_mirror", "hall_runner", "art_blueprint")
+NEW = SOLID + DETAIL + ("hall_mirror", "hall_runner", "art_blueprint", "gallery_wall")
 ON_CONSOLE = ("key_bowl", "mail_stack", "side_lamp")
 OVER_M = 0.015  # a prop may stand at most this far over its size_m
 TOP_MARGIN_M = 0.01  # a thing on the console keeps this far inside its top's edge
@@ -173,6 +173,12 @@ class HallwayPropsTest(unittest.TestCase):
                          or max(p[1] for p in fa) <= min(p[1] for p in fb)
                          or max(p[1] for p in fb) <= min(p[1] for p in fa))
                 self.assertTrue(apart, f"{a['id']} and {b['id']} overlap on the console")
+
+    def test_the_hallway_has_no_station_or_spawn_by_design(self):
+        _, points = _hallway()
+        self.assertEqual([p["name"] for p in points], [],
+                         "the hallway has no station, spawn marker or task prop by design (#156); a new one must be "
+                         "kept clear by the test below")
 
     def test_the_dressing_keeps_clear_of_every_station_and_spawn(self):
         _, points = _hallway()
