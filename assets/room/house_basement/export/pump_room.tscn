@@ -665,7 +665,7 @@ metadata/prop = "pump_set"
 surface_material_override/0 = ExtResource("11")
 
 [node name="pump_set_b_1" parent="Dressing" instance=ExtResource("14")]
-transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 8.5, 0, 3.2)
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 9.2, 0, 3.4)
 metadata/prop = "pump_set_b"
 
 [node name="pump_set_b" parent="Dressing/pump_set_b_1"]

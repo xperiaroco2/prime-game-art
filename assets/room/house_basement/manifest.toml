@@ -6,7 +6,7 @@
 # #166 (the kids' room's paint): only package.json changed, the shared kit_set.tres's new hash; this package's scenes are unchanged.
 # #168 (the attic's paint): only package.json changed, the shared kit_set.tres's new hash; this package's scenes are unchanged.
 # #170 (the storage, the darkroom and the corridor dressed): re-exported as P3 into <raw>/review/house/170/export/p3 (`house --export ... --package 3`); the three changed scenes and package.json point there.
-# #172 (the plant rooms, the passage and the darkroom's island dressed): re-exported as P3 into <raw>/review/house/172/export/p3 (`house --export ... --package 3`); the six changed scenes and package.json point there; the dressing fix that cleared the doc routes re-exported it into <raw>/review/house/172/export/p3b, and the four scenes it changed and package.json point there.
+# #172 (the plant rooms, the passage and the darkroom's island dressed): re-exported as P3 into <raw>/review/house/172/export/p3 (`house --export ... --package 3`); the six changed scenes and package.json point there; the dressing fixes that cleared the doc routes re-exported it into <raw>/review/house/172/export/p3b (four scenes) and p3c (the pump room); each changed scene and package.json point at the newest.
 id = "house_basement"
 kind = "room"
 slot = ""
@@ -56,8 +56,8 @@ sha256 = "fab5ac4932dfd6389dacd61dd0d674fda5e33a4fe0db6c476e893db5a2394c7e"
 
 [[files]]
 name = "pump_room.tscn"
-file = "review/house/172/export/p3b/levels/house/rooms/pump_room.tscn"
-sha256 = "bcd5cfe30ba32d383e361f2322e0c87167e631e22d7553db6bb43e226f653afb"
+file = "review/house/172/export/p3c/levels/house/rooms/pump_room.tscn"
+sha256 = "1dd126217f8ae38017f99b6d9c8f07c2e02bf266eced3fde4f080469a3c444ab"
 
 [[files]]
 name = "storage.tscn"
