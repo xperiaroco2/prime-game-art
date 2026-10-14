@@ -95,7 +95,8 @@ writes the House's game-ready package (prime-game #523) from the same layout dat
   G3/G11 to the game side, in `package.json`).
 - `levels/house/rooms/<room>.tscn`, one per game room (`house_export.py`): the root named like the game's node,
   `metadata/size_m = Vector2i(w, d)`, `metadata/art_room` and `wall_paint`; the `Name` `Label3D` (the room's title,
-  2.4 m up in its middle, as on the greybox); `Shell` (the room's kit pieces, plus the level scene's stairs and
+  2.4 m up in its middle, as on the greybox, or over the layout room's `label_at` in plan metres where the middle is
+  inside a piece: the stairs, #158); `Shell` (the room's kit pieces, plus the level scene's stairs and
   railings whose pivot stands in it: the smallest such room of their level, else of the level below; the balcony's
   flight lands in the yard); `Dressing`, `Detail` (#147: the props of `props/library.toml`'s `detail` layer, its
   `[layers]` by class, so a graphics preset hides one node; base props stay in `Dressing`; `house_dressing.scene_nodes`)
@@ -140,6 +141,8 @@ writes the House's game-ready package (prime-game #523) from the same layout dat
   the dining room built over it, and `prop_dirs` names library v4 and task v2 (task v1 with the oak dining table);
   since #156 `props/library/v5/textures/fine`, the same bytes: v4 with the hallway's 14 props built over it, and
   `prop_dirs` names library v5 and task v2;
+  since #158 `props/library/v6/textures/fine`, the same bytes: v5 with the WC's, the pantry's and the stairs' 21
+  props built over it, and `prop_dirs` names library v6 and task v2;
   v1 stays the approved version-1 build;
   `.import` VRAM compressed with mipmaps), `house_props/prop_fine.gdshader` (a copy
   of `godot/props/prop_fine.gdshader`; `tools/tests/test_house_layers.py` fails when the committed copy drifts) and
@@ -561,7 +564,8 @@ Defaults used (for the engineer; data, easy to change):
 - Q11 B: a wall paint per room (`[wall_paint]` in `house.toml`, "Wall paint"); the garage's neutral #8f897d is this
   doc's reading of "the garage stays concrete-neutral". The engineer's choice of 2026-10-14 (#152) replaced its teal
   base: the living room terracotta #a3533b, the kitchen, hallway, dining room, stairs and landing warm greige #d9d1c5,
-  the whole house's ceiling warm sand #d8c7b4, the sofa and armchairs cream #e4d9c6.
+  the whole house's ceiling warm sand #d8c7b4, the sofa and armchairs cream #e4d9c6. #158 added the WC's soft
+  blue-grey #cfd5d3 and the pantry's pale sage #d3d6c3 (they showed the kit's teal).
 - Q21 A: dense, lived-in dressing: the inventory's props plus the seeded clutter layer ("Clutter", art #104).
 - Q7 B: 16 windows on the ground floor, 16 on the second floor, 4 knee windows in the attic, 5 in the garage.
 - Q9 B: leaves standing ajar at the front door, the terrace door and the garage side door; the greenhouse door is

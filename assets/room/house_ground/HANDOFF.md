@@ -39,7 +39,7 @@ own plaster, so the colour stays and the textures are new).
   `docs/decisions/2026-10-13-house-world-look.md`): `fridge`, `stove`, `kitchen_counter`, `kitchen_sink`,
   `kitchen_upper`, `assembly_island`, `order_board` replace their old GLBs (same file names), and two new
   `backsplash_l.glb`, `backsplash_r.glb` (tiled strips with a steel cap) stand on the kitchen's north-wall worktop runs.
-  The pantry's shelves are `kitchen_upper` too, so the pantry shows the new cabinet. The kitchen's clutter was
+  The pantry's shelves were `kitchen_upper` too until #158 gave it its own shelving. The kitchen's clutter was
   re-seeded (2 items fewer).
 - **The fine material.** The rebuilt props carry a `kit_fine` material: vertex colour paint, the alpha picks one of
   the fine layers (wood fronts, worktop wood, stone, tile; enamel, steel, chrome, gloss, paint). The room scenes
@@ -137,6 +137,22 @@ the `gallery_wall` (six frames) beside the mirror, enlarged `art_blueprint` (1.2
 `art_photos` left the hall. One new GLB (`gallery_wall`), two rebuilt (`art_blueprint`, `hall_runner`); the props set
 no longer commits `doormat.glb` (no package places it). Draw calls (the room only, main/now): the default tile 28/34,
 from the front door 28/34, from the far end 33/31, the console and mirror 11/17, the coat corner 18/15.
+
+## The WC, the pantry and the stairs in the world look (#158)
+
+The WC (painted soft blue-grey #CFD5D3) is a WC with a laundry corner: a close-coupled `wc_toilet`, an oak
+`wc_vanity` under a `mirror_cabinet`, `wc_tiles` (a tiled lower wall), a `washer` and a `tumble_dryer`, the wall art
+`art_wash` (a washing-day joke print), and under `Detail` a `towel_ring`, `roll_holder`, `pedal_bin`, `toilet_brush`
+and `reed_diffuser` beside the kept dressers, plants, drying rack and towel rack. The pantry (pale sage #D3D6C3) is
+the burger kitchen's store: three `pantry_shelf` units and two `pantry_shelf_buns` stocked with jars, tins, cereal
+boxes, pasta, bottles and buns, a `veg_rack` with potatoes and onions, `drink_crates` stacked in pairs, crates and
+baskets on the floor, a `step_stool` and a `broom_set`. The stairs get a `stair_runner` on each half flight, a `stair_gallery` of frames going up the wall and a
+`landing_plant`. The junk clutter (nightstands, kitchen uppers, the pack crates, a barrel, the old toilet and basin) is
+replaced, never with nothing. Nothing stands within 0.3 m of a station or on a spawn (`test_props_small_rooms`).
+Changed: `wc.tscn`, `pantry.tscn`, `stairs.tscn` and `package.json`; in the props set, 21 new GLBs, 1.81 MB of LFS
+(no other room's prop changed); the shared `kit_set.tres` carries the two new paints. Draw calls in the package-sheet
+views (the room only, before/after): the WC's door view 41/41, across 36/31; the pantry's door view 25/26, across
+30/33; the stairs' door view 19/24, across the flights 18/23.
 
 ## Credits
 The entries are `assets/kit/house_kit/CREDITS.md` and `assets/prop/house_props/CREDITS.md` in this repo (the game's

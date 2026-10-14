@@ -49,6 +49,11 @@ engineer's yes.
 Only `package.json` changed: the shared `kit_set.tres` carries the new wall paints and the rebuilt kit pieces of the
 warm sand ceiling hash anew; this package's scenes are unchanged.
 
+## The WC's and the pantry's paints (#158)
+
+Only `package.json` changed: the shared `kit_set.tres` carries the WC's and the pantry's paints and hashes anew;
+this package's scenes are unchanged.
+
 ## Credits
 The entries are `assets/kit/house_kit/CREDITS.md` and `assets/prop/house_props/CREDITS.md` in this repo (the game's
 `docs/credits/<id>.md` format; copy them to `docs/credits/house_kit.md` and `house_props.md`): own work, the props made from CC0 packs named per file in the props manifest,

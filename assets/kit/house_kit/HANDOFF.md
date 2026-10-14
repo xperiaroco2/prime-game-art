@@ -23,6 +23,11 @@ it change bytes under the same names: `ceiling_1x1`, `ceiling_2x2`, the board an
 undersides are the ceilings below), `roof_flat_1x1`, `roof_flat_2x2`, `slab_edge_1m`, `slab_edge_2m`. `kit_set.tres`
 carries the new wall paints. P1's `package.json` now also lists `kit_set.gdshader` and `kit_set.tres`.
 
+## The WC's and the pantry's paints (#158)
+
+`kit_set.tres` now carries the WC's soft blue-grey (#CFD5D3) and the pantry's pale sage (#D3D6C3) beside the
+other rooms' paints; no kit piece changed. Copy it over the game's `house_kit/kit_set.tres`.
+
 ## Credits
 The entry is `CREDITS.md` beside this file (the game's `docs/credits/<id>.md` format; copy it to
 `docs/credits/house_kit.md`): own work, plus the three textures made from ambientCG CC0 maps, `ai_generated = false`,

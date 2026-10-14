@@ -321,9 +321,11 @@ def room_scene(data: dict, lv: dict, room: dict, pieces: list[dict], extras: lis
         meta.append(f'metadata/wall_paint = "{H.wall_paint(data, room["id"])}"')
     sc.nodes[0] += "\n" + "\n".join(meta)
     lab = ex["label"]
+    # the room's middle, or its layout's `label_at` (plan metres) where the middle is inside a piece (#158: the stairs)
+    lx, ly = (room["label_at"][0] - rx, room["label_at"][1] - ry) if room.get("label_at") else (w / 2, d / 2)
     sc.nodes.append("\n".join([
         '[node name="Name" type="Label3D" parent="."]',
-        f"transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, {H._num(w / 2)}, {H._num(lab['h'])}, {H._num(d / 2)})",
+        f"transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, {H._num(lx)}, {H._num(lab['h'])}, {H._num(ly)})",
         "billboard = 1", f"text = {json.dumps(room.get('title', room['node']))}",
         f"font_size = {lab['font_size']}", f"outline_size = {lab['outline_size']}"]))
     sc.group("Shell")

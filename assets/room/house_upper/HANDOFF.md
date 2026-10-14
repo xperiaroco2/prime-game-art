@@ -52,6 +52,11 @@ engineer's yes.
 The landing is warm greige `#d9d1c5` (it was teal) and every ceiling warm sand `#d8c7b4` (P1's rebuilt pieces); the
 armchair is cream `#e4d9c6`. Changed: `landing.tscn`, `kit_set.tres` and `package.json`.
 
+## The WC's and the pantry's paints (#158)
+
+Only `package.json` changed: the shared `kit_set.tres` carries the WC's and the pantry's paints and hashes anew;
+this package's scenes are unchanged.
+
 ## Credits
 As P2: the entries `assets/kit/house_kit/CREDITS.md` and `assets/prop/house_props/CREDITS.md` (copy them to
 `docs/credits/house_kit.md` and `house_props.md`); own work, the props from

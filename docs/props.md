@@ -72,6 +72,21 @@ Every room's props follow these rules; the numbers are data in `props/library.to
    test until the dressing is checked against it), that the dressing keeps 0.3 m from every station and spawn in the
    room (read from `layouts/house/ground.toml` and `props/tasks.toml`) and that the fronts of its four doors (1.4 m by
    0.8 m) stay clear.
+   The ground floor's small rooms (#158) add the WC's `wc_toilet` (a close-coupled porcelain toilet), `wc_vanity`
+   (oak drawers, a stone top, a sit-on basin and the pillar `tap`), `mirror_cabinet`, `washer` and `tumble_dryer`
+   (shape `washing_machine`), the tiled lower wall `wc_tiles` (shape `backsplash`, class room on the base layer,
+   like the kitchen's backsplash) and the joke print `art_wash` (`framed_art` kind `wash`: a plasticine person in
+   suds, rated five stars), with the
+   detail props `towel_ring`, `roll_holder`, `pedal_bin`, `toilet_brush` and `reed_diffuser`; the pantry's
+   `pantry_shelf` and `pantry_shelf_buns` (hero: one `pantry_shelf` builder stocked shelf by shelf from `stock`,
+   `_stock`'s jars, tins, cereal boxes, sauces, bags of burger buns and baskets of potatoes and onions), `veg_rack`,
+   `drink_crates`, `step_stool` and `broom_set`; and the stairs' `stair_runner` (a navy runner over every tread and
+   riser of the kit's half flight, its numbers from `kit_geom.stair_numbers`; one per flight), `stair_gallery` (five
+   family photos stepping up at the flight's pitch, `STAIR_FRAMES`) and `landing_plant` (no collider: the landing
+   stays walkable). The three rooms are hand-placed (their clutter rules are empty) and reuse the hallway's console,
+   mirror, bench and runner by the stairs. `tools/tests/test_props_small_rooms.py` checks the new props' sizes,
+   pivots, budgets and colliders, that the runner fits the kit's flight, that the rooms have no station, spawn or
+   task prop today and the dressing keeps 0.3 m from any, and that their doors stay clear.
 8. **Route.** Hard-surface props are code (the shared builders, `prop_geom.py`'s `Style`). Meshy only for organic
    one-offs (food, soft goods, plants) at a hero budget, as a recorded batch (`docs/meshy.md`).
 
@@ -190,10 +205,10 @@ Art #87 (map request #73) makes one shared library of generic props (furniture, 
 things) so that every room package places furniture instead of making it. Task props (#82a, #82b), the car and its
 lift (#79), vegetation (#80), the gazebo (#81b) and kit pieces are made elsewhere; `[skip]` in the mapping file names
 who makes each. The plan is `D:/prime-art-raw/research/2026-10-10-house-plan/` (`props.md`, `inventory.md` §9,
-`look.md` §5 and §6). The GLBs stay in the raw folder (`D:/prime-art-raw/props/library/v5/`: v4 with #156's
-hallway built over it; v4 v3 with #153's dining room; v3 is v2 with #152's cream sofa and armchairs, v2 v1 with
-#150's living room, v1 the version-1 build) until the engineer
-approves the look on a review page; then they come into the repo under `assets/prop/<id>/` with their manifests.
+`look.md` §5 and §6). The GLBs stay in the raw folder (`D:/prime-art-raw/props/library/v6/`: v5 with #158's WC,
+pantry and stairs built over it; v5 v4 with #156's hallway; v4 v3 with #153's dining room; v3 is v2 with #152's
+cream sofa and armchairs, v2 v1 with #150's living room, v1 the version-1 build) until the engineer approves the look
+on a review page; then they come into the repo under `assets/prop/<id>/` with their manifests.
 
 ### The mapping file: `props/library.toml`
 
@@ -244,7 +259,7 @@ clutter of art #104 and its story pieces: `laundry_basket`, `drying_rack`, `open
 
 `tools/run.sh props-library --build [--batch 1|2] [--only id,...]` builds the props in one headless Blender run
 (`tools/blender/prop_build.py`) into the mapping file's `out`,
-`D:/prime-art-raw/props/library/v5/`: one `<id>.glb` per prop, `textures/`
+`D:/prime-art-raw/props/library/v6/`: one `<id>.glb` per prop, `textures/`
 (the kit's detail maps), `build.json` (what each GLB holds; batches accumulate) and `props.md` (the build table); then
 it checks every GLB: the mesh and collider nodes, UV2 and vertex colours, at most `max_materials` materials all named
 `-vcol`, glTF-Validator, the class's maximum triangles, a collider unless `none`, a fixture's light anchor. Under the
