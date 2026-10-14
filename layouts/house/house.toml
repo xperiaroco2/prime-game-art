@@ -163,6 +163,24 @@ at = [28.4, 41.2]  # #156: the west wall's hooks, coats, bench, shoes and sports
 look = [26.1, 42.6]
 look_h = 0.9
 [[export.sheet_views]]
+room = "wc"
+title = "wc: across to the door"
+at = [23.0, 25.3]  # #158: from the dresser past the washer and dryer to the vanity, the toilet's tiled wall and the door
+look = [18.6, 28.6]
+look_h = 0.9
+[[export.sheet_views]]
+room = "pantry"
+title = "pantry: across to the door"
+at = [26.3, 29.4]  # #158: from the stairwell's top landing to the north and east shelving and the door
+look = [29.7, 24.8]
+look_h = 1.0
+[[export.sheet_views]]
+room = "stairs"
+title = "stairs: across to the flights"
+at = [31.6, 30.8]  # #158: from the dining room door to the runners, the photos up the south wall and the landing plant
+look = [27.2, 35.4]
+look_h = 1.2
+[[export.sheet_views]]
 room = "attic"
 title = "attic: from the west gable"
 at = [19.5, 34.0]
