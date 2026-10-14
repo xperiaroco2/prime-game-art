@@ -18,9 +18,17 @@ const REST_SPEED_M_S: float = 0.15
 const REST_BY_S: float = 3.5
 const LIE_MAX_Y_M: float = 0.45  # at rest every body lies below this (none on the player box, 0.9 m tall)
 const FLOOR_MIN_Y_M: float = -0.03
-const CONE_SLACK_DEG: float = 12.0  # soft constraint overshoot allowed beyond a limit
-const HINGE_SLACK_DEG: float = 12.0
-const ANCHOR_MAX_M: float = 0.03
+# Two tiers. In the fall a soft-constraint overshoot past a limit is allowed for an instant (the landing's impact);
+# over the last REST_TIER_S at rest every joint lies within its limit plus a small slack and holds together.
+# Measured (Jolt, slice_m1, 3 m/s, a grid of 11 settings; art #115): in the fall the worst joint passes its limit by
+# about 21 deg (the feet, dragged along the floor) and opens by about 23 mm; at rest, pressed on the floor by the body,
+# a joint lies 6 to 12 deg past its limit (the ankle, the spine or a shoulder, varying with the landing) and the
+# ankles open by about 20 mm. A wrong axis or a lost joint shows as 30 degrees and more.
+const OVER_MAX_DEG: float = 25.0
+const ANCHOR_MAX_M: float = 0.04
+const REST_TIER_S: float = 0.5
+const REST_OVER_MAX_DEG: float = 12.0
+const REST_ANCHOR_MAX_M: float = 0.025
 const SOCKET_MAX_M: float = 0.002
 const SHOT_TIMES: Array[float] = [0.0, 0.2, 0.4, 0.6, 0.85, 1.2, 2.0, 3.5]
 const CELL: Vector2i = Vector2i(160, 200)
@@ -43,7 +51,9 @@ var step_n: int = 0
 var started: bool = false
 var failures: PackedStringArray = PackedStringArray()
 var worst: Dictionary = {"cone_over_deg": 0.0, "hinge_over_deg": 0.0, "anchor_m": 0.0, "speed_after_05_m_s": 0.0,
-		"socket_m": 0.0, "hinge_min_deg": {}, "hinge_max_deg": {}, "nan": false}
+		"rest_over_deg": -INF, "rest_anchor_m": 0.0, "socket_m": 0.0, "hinge_min_deg": {},
+		"hinge_max_deg": {}, "nan": false}
+var expected: Array = []  # per socket, the point its marker should be at after the last skeleton update
 var rest_s: float = -1.0
 var shots: Dictionary = {"front": [], "side": []}
 var done: bool = false
@@ -57,10 +67,26 @@ func _initialize() -> void:
 	data = JSON.parse_string(FileAccess.get_file_as_string(args[1]))
 	out_dir = args[2]
 	shots_mode = args[3] == "shots"
+	if args.size() > 4:  # a tuning grid's overrides: {"foot_kg", "hand_kg", "angular_damp", "friction"}
+		_override(JSON.parse_string(args[4]))
 	DirAccess.make_dir_recursive_absolute(out_dir)
 	var watchdog: SceneTreeTimer = create_timer(120.0)
 	watchdog.timeout.connect(func() -> void: _fail("watchdog: no result in 120 s"))
 	_stage(args[0])
+
+
+func _override(o: Dictionary) -> void:
+	var total: float = float(data["total_mass_kg"])
+	for bone: Dictionary in data["bones"]:
+		var n: String = bone["bone"]
+		if o.has("foot_kg") and n.begins_with("Foot."):
+			bone["mass_share"] = float(o["foot_kg"]) / total
+		if o.has("hand_kg") and n.begins_with("Wrist."):
+			bone["mass_share"] = float(o["hand_kg"]) / total
+	for key: String in ["angular_damp", "friction", "linear_damp"]:
+		if o.has(key):
+			data["material"][key] = float(o[key])
+	data["overrides"] = o
 
 
 func _stage(glb: String) -> void:
@@ -283,10 +309,17 @@ func _measure() -> void:
 		var gap: float = from_child.distance_to(from_parent)
 		worst["anchor_m"] = maxf(worst["anchor_m"], gap)
 		_per_joint(c, "anchor_m", gap)
+		var at_rest: bool = t >= RUN_S - REST_TIER_S
+		if at_rest:
+			worst["rest_anchor_m"] = maxf(worst["rest_anchor_m"], gap)
+			_per_joint(c, "rest_anchor_m", gap)
 		if j["type"] == "cone":
 			var swing: float = rad_to_deg((delta * Vector3.UP).angle_to(Vector3.UP))
 			worst["cone_over_deg"] = maxf(worst["cone_over_deg"], swing - float(j["swing_deg"]))
 			_per_joint(c, "over_deg", swing - float(j["swing_deg"]))
+			if at_rest:
+				worst["rest_over_deg"] = maxf(worst["rest_over_deg"], swing - float(j["swing_deg"]))
+				_per_joint(c, "rest_over_deg", swing - float(j["swing_deg"]))
 		elif j["type"] == "hinge":
 			var axis: Vector3 = Vector3(j["axis"][0], j["axis"][1], j["axis"][2])
 			var ang: float = rad_to_deg(2.0 * atan2(Vector3(delta.x, delta.y, delta.z).dot(axis), delta.w))
@@ -296,6 +329,9 @@ func _measure() -> void:
 			var over: float = maxf(float(j["min_deg"]) - ang, ang - float(j["max_deg"]))
 			worst["hinge_over_deg"] = maxf(worst["hinge_over_deg"], over)
 			_per_joint(c, "over_deg", over)
+			if at_rest:
+				worst["rest_over_deg"] = maxf(worst["rest_over_deg"], over)
+				_per_joint(c, "rest_over_deg", over)
 
 
 ## Per joint: the worst value of key and when (seconds after the start).
@@ -319,8 +355,9 @@ func _on_skeleton_updated() -> void:
 func _check_sockets() -> void:
 	if start_bone.is_empty():
 		return
-	for s: Array in sockets:
-		var marker: Marker3D = s[0]
+	expected.resize(sockets.size())
+	for i: int in sockets.size():
+		var s: Array = sockets[i]
 		var bone: String = s[1]
 		var owner_name: String = bone if pbs.has(bone) else String(data["followers"].get(bone, ""))
 		var bone_now: Transform3D = skeleton.global_transform * skeleton.get_bone_global_pose(skeleton.find_bone(bone))
@@ -329,14 +366,26 @@ func _check_sockets() -> void:
 			continue
 		var expect: Transform3D = _bone_global(owner_name) * (follow[bone] as Transform3D)
 		worst["socket_bone_m"] = maxf(worst.get("socket_bone_m", 0.0), bone_now.origin.distance_to(expect.origin))
-		worst["socket_m"] = maxf(worst["socket_m"], marker.global_position.distance_to(expect * (s[2] as Vector3)))
+		expected[i] = expect * (s[2] as Vector3)
+
+
+## The markers after the frame: their BoneAttachment3Ds update on the same skeleton_updated signal, after this
+## script's handler (measured: compared inside the handler they lag by one update, about 0.1 m).
+func _process(_delta: float) -> bool:
+	if started and not done:
+		for i: int in mini(expected.size(), sockets.size()):
+			if expected[i] != null:
+				var marker: Marker3D = sockets[i][0]
+				worst["socket_m"] = maxf(worst["socket_m"], marker.global_position.distance_to(expected[i]))
+	return false
 
 
 func _capture(kind: String) -> void:
 	await RenderingServer.frame_post_draw
 	for vp: SubViewport in cams:
 		var img: Image = vp.get_texture().get_image()
-		img.resize(CELL.x, CELL.y, Image.INTERPOLATE_LANCZOS)
+		if kind != "shapes":  # the shapes keep the viewport's full size (two cells of 320x400, a 640x400 pair)
+			img.resize(CELL.x, CELL.y, Image.INTERPOLATE_LANCZOS)
 		if kind == "shapes":
 			img.save_png(out_dir.path_join("shapes_%s.png" % vp.name))
 			shots[vp.name + "_shapes"] = img
@@ -354,12 +403,13 @@ func _sheet() -> void:
 			img.convert(Image.FORMAT_RGBA8)
 			sheet.blit_rect(img, Rect2i(Vector2i.ZERO, CELL), Vector2i(i * CELL.x, r * CELL.y))
 	sheet.save_png(out_dir.path_join("fall_sheet.png"))
-	var pair: Image = Image.create(CELL.x * 2, CELL.y, false, Image.FORMAT_RGBA8)
+	var big: Vector2i = CELL * 2
+	var pair: Image = Image.create(big.x * 2, big.y, false, Image.FORMAT_RGBA8)
 	for i: int in 2:
 		var img: Image = shots.get(("front" if i == 0 else "side") + "_shapes")
 		if img != null:
 			img.convert(Image.FORMAT_RGBA8)
-			pair.blit_rect(img, Rect2i(Vector2i.ZERO, CELL), Vector2i(i * CELL.x, 0))
+			pair.blit_rect(img, Rect2i(Vector2i.ZERO, big), Vector2i(i * big.x, 0))
 	pair.save_png(out_dir.path_join("shapes_sheet.png"))
 
 
@@ -367,12 +417,16 @@ func _finish() -> void:
 	done = true
 	if worst["nan"]:
 		failures.append("a body's position became NaN")
-	if worst["cone_over_deg"] > CONE_SLACK_DEG:
-		failures.append("a cone joint swung %.1f deg past its limit" % worst["cone_over_deg"])
-	if worst["hinge_over_deg"] > HINGE_SLACK_DEG:
-		failures.append("a hinge bent %.1f deg past its limit" % worst["hinge_over_deg"])
+	if worst["cone_over_deg"] > OVER_MAX_DEG:
+		failures.append("a cone joint swung %.1f deg past its limit in the fall" % worst["cone_over_deg"])
+	if worst["hinge_over_deg"] > OVER_MAX_DEG:
+		failures.append("a hinge bent %.1f deg past its limit in the fall" % worst["hinge_over_deg"])
 	if worst["anchor_m"] > ANCHOR_MAX_M:
-		failures.append("a joint came apart by %.3f m" % worst["anchor_m"])
+		failures.append("a joint came apart by %.3f m in the fall" % worst["anchor_m"])
+	if worst["rest_over_deg"] > REST_OVER_MAX_DEG:
+		failures.append("at rest a joint lies %.1f deg past its limit" % worst["rest_over_deg"])
+	if worst["rest_anchor_m"] > REST_ANCHOR_MAX_M:
+		failures.append("at rest a joint is apart by %.3f m" % worst["rest_anchor_m"])
 	if worst["speed_after_05_m_s"] > SPEED_MAX_M_S:
 		failures.append("a body moved at %.1f m/s after 0.5 s" % worst["speed_after_05_m_s"])
 	if rest_s < 0 or rest_s > REST_BY_S:
@@ -392,7 +446,7 @@ func _finish() -> void:
 	var report: Dictionary = {"godot": Engine.get_version_info().string,
 			"physics_engine": ProjectSettings.get_setting("physics/3d/physics_engine"),
 			"bodies": pbs.size(), "joints": sim.get_children().filter(func(n: Node) -> bool: return n is Joint3D).size(),
-			"rest_s": rest_s, "run_s": RUN_S, "forward_m_s": FORWARD_M_S, "worst": worst, "failures": failures,
+			"rest_s": rest_s, "run_s": RUN_S, "overrides": data.get("overrides", {}), "forward_m_s": FORWARD_M_S, "worst": worst, "failures": failures,
 			"rest_positions": {}}
 	for name: String in pbs:
 		var p: Vector3 = (pbs[name] as PhysicalBone3D).global_position

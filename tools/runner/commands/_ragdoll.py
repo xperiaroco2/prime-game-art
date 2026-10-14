@@ -27,7 +27,7 @@ SHRINK = 0.92  # shapes a little inside the skin, so limbs resting on the floor 
 # ragdoll or a client-only object; nor with each other (their own layer is not in their mask).
 COLLISION = {"layer": 3, "layer_name": "downed", "mask": [1], "mask_names": ["world"]}
 # Body defaults for every PhysicalBone3D (the builder applies them); the angular damping settles the body.
-MATERIAL = {"friction": 0.8, "bounce": 0.0, "linear_damp": 0.1, "angular_damp": 3.0}
+MATERIAL = {"friction": 0.8, "bounce": 0.0, "linear_damp": 0.1, "angular_damp": 6.0}
 
 # The simulated bones of the Ultimate Modular rig (the export's 64-bone names, the game keeps them until a contract
 # v2), their humanoid profile names (tools/runner/commands/_humanoid.py), physical parent, shape kind, mass share
@@ -41,8 +41,8 @@ SIDES = (("L", "Left", 1.0), ("R", "Right", -1.0))
 _TRUNK = [
     # bone, profile, parent, shape, share, joint
     ("Body", "Hips", None, "box", 0.142, None),
-    ("Abdomen", "Spine", "Body", "box", 0.139, {"type": "cone", "swing_deg": 25.0, "twist_deg": 15.0}),
-    ("Torso", "Chest", "Abdomen", "box", 0.216, {"type": "cone", "swing_deg": 25.0, "twist_deg": 15.0}),
+    ("Abdomen", "Spine", "Body", "box", 0.1166, {"type": "cone", "swing_deg": 30.0, "twist_deg": 15.0}),
+    ("Torso", "Chest", "Abdomen", "box", 0.1936, {"type": "cone", "swing_deg": 30.0, "twist_deg": 15.0}),
     ("Neck", "Neck", "Torso", "capsule", 0.081, {"type": "cone", "swing_deg": 40.0, "twist_deg": 45.0}),
 ]
 # Bones whose vertices shape another body: the head and the neck are one body, jointed at the neck's base, its shape
@@ -53,11 +53,15 @@ _LIMB = [
     ("UpperArm", "UpperArm", "Torso", "capsule", 0.028, {"type": "cone", "swing_deg": 80.0, "twist_deg": 45.0}),
     ("LowerArm", "LowerArm", "UpperArm", "capsule", 0.016,
      {"type": "hinge", "min_deg": -5.0, "max_deg": 140.0, "bend": [0.0, 0.0, 1.0]}),
-    ("Wrist", "Hand", "LowerArm", "box", 0.006, {"type": "cone", "swing_deg": 50.0, "twist_deg": 20.0}),
+    ("Wrist", "Hand", "LowerArm", "box", 0.0143, {"type": "cone", "swing_deg": 50.0, "twist_deg": 20.0}),
     ("UpperLeg", "UpperLeg", "Body", "capsule", 0.100, {"type": "cone", "swing_deg": 60.0, "twist_deg": 20.0}),
     ("LowerLeg", "LowerLeg", "UpperLeg", "capsule", 0.0465,
      {"type": "hinge", "min_deg": -5.0, "max_deg": 140.0, "bend": [0.0, 0.0, -1.0]}),
-    ("Foot", "Foot", "LowerLeg", "box", 0.0145, {"type": "cone", "swing_deg": 30.0, "twist_deg": 10.0}),
+    # The ankle is a 40 degree cone (a real ankle: about 50 degrees of plantarflexion). Measured on Jolt (one grid,
+    # art #115): a 30 degree cone, a hinge (-20..45) and 1 kg feet let the feet, dragged along the floor at the
+    # knockdown, pass their limits by 25 to 33 degrees; 2 kg feet and 1 kg hands with angular_damp 6 bring the worst
+    # joint to about 21 (the spine's cones are 30 degrees: 25 left the abdomen 8 degrees past at rest).
+    ("Foot", "Foot", "LowerLeg", "box", 0.0286, {"type": "cone", "swing_deg": 40.0, "twist_deg": 10.0}),
 ]
 
 
