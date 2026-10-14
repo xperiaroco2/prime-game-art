@@ -4,11 +4,15 @@
 
 Pure Python. The checks, per room, in room-local metres (x east, z south from the room's north-west corner):
 - every id is known (a catalogue entry, or its own `size`), `face` or `yaw` valid, the footprint inside the room's
-  wall faces (a wall prop's back on one), no two solid props overlapping;
+  wall faces (a wall prop's back on one), no two solid props overlapping (two parts of one machine, the same
+  `assembly`, may: the garage's lift and car);
 - no solid prop within 1 m of a station marker unless it is that station's (`station = "<marker>"`), none within
   0.5 m of a spawn marker;
 - the capsule (1.36 m wide, the walk's) reaches, on a 0.1 m grid with the props in place, every door, stair foot,
-  station and spawn marker that it reaches in the empty room; what the empty room itself blocks is a note.
+  station and spawn marker that it reaches in the empty room; what the empty room itself blocks is a note. A prop
+  whose size box overstates what stands in the way gives its real blockers as `blocks = [[x0, z0, x1, z1], ...]`
+  (prop-local metres about its pivot, before the turn; the lift's arms: only its two carriages), used for the
+  capsule's grid only.
 """
 from __future__ import annotations
 
@@ -117,6 +121,18 @@ def footprint(r: dict) -> tuple[float, float, float, float]:
     x, z = r["at"][0], r["at"][2]
     return (x + min(p[0] for p in pts), z + min(p[1] for p in pts),
             x + max(p[0] for p in pts), z + max(p[1] for p in pts))
+
+
+def walk_boxes(r: dict) -> list[tuple[float, float, float, float]]:
+    """The room-local AABBs that block the capsule: the item's `blocks` turned like the prop, else its footprint."""
+    if "blocks" not in r:
+        return [r["fp"]]
+    x, z, out = r["at"][0], r["at"][2], []
+    for x0, z0, x1, z1 in r["blocks"]:
+        pts = [_rot(r["yaw"], a, b) for a in (x0, x1) for b in (z0, z1)]
+        out.append((x + min(p[0] for p in pts), z + min(p[1] for p in pts),
+                    x + max(p[0] for p in pts), z + max(p[1] for p in pts)))
+    return out
 
 
 def span(r: dict) -> tuple[float, float]:
@@ -310,6 +326,8 @@ def check_room(level: dict, room: dict, dressing: dict, cat: dict, levels: list[
     solids = [r for r in res if solid(r)]
     for i, a in enumerate(solids):
         for b in solids[i + 1:]:
+            if a.get("assembly") and a.get("assembly") == b.get("assembly"):
+                continue  # parts of one machine (the lift's posts, arms and car) nest by design
             (a0, a1), (b0, b1) = span(a), span(b)
             if a0 < b1 - TOL and b0 < a1 - TOL and _overlap(a["fp"], b["fp"]):
                 problems.append(f"{where}: {a['id']} at {a['at']} overlaps {b['id']} at {b['at']}")
@@ -333,7 +351,7 @@ def check_room(level: dict, room: dict, dressing: dict, cat: dict, levels: list[
     # the capsule on the grid: the empty room, then with the props
     base = sh["walls"] + sh["holes"] + sh["stairs"]
     nx, nz, empty = _grid(sh, base)
-    _, _, dressed = _grid(sh, base + [r["fp"] for r in solids])
+    _, _, dressed = _grid(sh, base + [b for r in solids for b in walk_boxes(r)])
     tg = targets(room, sh)
     reach = {}
     if tg:

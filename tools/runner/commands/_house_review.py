@@ -115,6 +115,8 @@ def views(data: dict) -> list[dict]:
                 "look": pt(v["look"], v.get("look_h", 1.0)), "sun": bool(v.get("sun"))}
         if plot:
             view["rooms_at"] = {rid: [r["rect"][0], 0, r["rect"][1]] for rid, (r, _) in rooms.items()}
+        if v.get("raise"):  # #79: scene nodes moved up for this view (the garage's car and lift arms raised)
+            view["raise"] = {"nodes": list(v["raise"]["nodes"]), "dy": float(v["raise"]["dy"])}
         if v.get("with"):
             view["with"] = [{"room": o, "scene": f"res://levels/house/rooms/{o}.tscn",
                              "offset": [round(rooms[o][0]["rect"][0] - rx, 3), round(rooms[o][1] - fy, 3),

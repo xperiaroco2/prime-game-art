@@ -61,6 +61,16 @@ class Rules(unittest.TestCase):
                      "on the door opening"):
             self.assertIn(want, text)
 
+    def test_one_assembly_nests_and_blocks_replace_the_size_box(self):
+        both = [{"id": "box1", "at": [5.4, 0, 0.6], "assembly": "lift"}, {"id": "box1", "at": [5.4, 0.5, 1.0], "assembly": "lift"}]
+        self.assertFalse([p for p in made_up(both)["problems"] if "overlaps" in p])
+        r = hd.resolve({"id": "box1", "at": [2, 0, 1], "size": [2.0, 1.0, 1.0], "face": "E",
+                        "blocks": [[-1.0, -0.5, -0.8, 0.5]]}, CAT)
+        r["fp"] = hd.footprint(r)
+        self.assertEqual([tuple(round(v, 3) for v in b) for b in hd.walk_boxes(r)], [(1.5, 1.8, 2.5, 2.0)])
+        del r["blocks"]
+        self.assertEqual(hd.walk_boxes(r), [r["fp"]])
+
     def test_turns_follow_the_kit(self):
         r = hd.resolve({"id": "box1", "at": [2, 0, 1], "size": [2.0, 1.0, 1.0], "face": "E"}, CAT)
         self.assertEqual(tuple(round(v, 3) for v in hd.footprint(r)), (1.5, 0.0, 2.5, 2.0))
@@ -98,6 +108,8 @@ ROOMS = {
     "hallway": {"hall_console", "hall_mirror", "coat_hooks", "hall_bench", "hall_runner"},  # #156
     "terrace": {"terrace_table", "terrace_chair"},
     "greenhouse": {"herb_board", "herb_bed", "potting_bench"},
+    "garage": {"garage_car", "lift_posts", "lift_arms", "lift_panel", "part_picture", "workbench", "tyre_rack",
+               "steel_cupboard"},  # #79
 }
 FIXTURES = {
     "wc": {"wall_sconce": 1}, "pantry": {"bare_bulb": 1}, "dining_room": {"chandelier": 1, "wall_sconce": 2},
@@ -105,10 +117,14 @@ FIXTURES = {
     "kitchen": {"pendant_shade": 3, "wall_sconce": 1}, "hallway": {"pendant_shade": 1, "wall_sconce": 2, "porch_lamp": 1},
     "terrace": {"lantern": 4, "string_lights": 2, "porch_lamp": 1},
     "greenhouse": {"string_lights": 2, "bare_bulb": 4},
+    "garage": {},  # its six fluorescent tubes: lights.toml's ceiling grid
 }
 STATION_PROPS = {"DiningTable": {"dining_table"}, "OrderBoard": {"order_board", "assembly_island"},
                  "TerraceTable": {"terrace_table"},
-                 "HerbBoard": {"herb_board"}, "HerbBeds": {"herb_bed"}}
+                 "HerbBoard": {"herb_board"}, "HerbBeds": {"herb_bed"},
+                 "CarLift": {"lift_posts", "lift_arms", "garage_car"}, "LiftPanel": {"lift_panel"},
+                 "Workbench": {"workbench"}}
+STAND_OFF = {"Workbench": 1.6}  # the garage's marker is where the player stands, 1.1 m in front of the bench (#79)
 
 
 class GroundFloor(unittest.TestCase):
@@ -144,7 +160,8 @@ class GroundFloor(unittest.TestCase):
                 tagged = {it["id"] for it in self.files[rid]["props"] if it.get("station") == s["name"]}
                 self.assertTrue(STATION_PROPS[s["name"]] <= tagged, f"{rid} {s['name']}")
                 main = next(it for it in self.files[rid]["props"] if it["id"] in STATION_PROPS[s["name"]])
-                self.assertLess(abs(main["at"][0] - s["at"][0]) + abs(main["at"][2] - s["at"][2]), 1.3)
+                self.assertLess(abs(main["at"][0] - s["at"][0]) + abs(main["at"][2] - s["at"][2]),
+                                STAND_OFF.get(s["name"], 1.3))
 
     def test_the_checks_hold(self):
         st = self.data["settings"]

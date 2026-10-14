@@ -153,6 +153,8 @@ writes the House's game-ready package (prime-game #523) from the same layout dat
   `props/library/v12/textures/fine`, the same bytes: v11 with the basement's 32 working-room props built over it,
   and `prop_dirs` names library v12; since #172 `props/library/v13/textures/fine`, the same bytes: v12 with the
   basement's plant rooms' and the darkroom island's 39 props built over it, and `prop_dirs` names library v13;
+  since #79 `props/library/v14/textures/fine`, the same bytes: v13 with the garage's 11 props built over it, and
+  `prop_dirs` names library v14;
   since #82 `prop_dirs` names task v3 (task v2 with the 19 task-chain props rebuilt in the world look);
   v1 stays the approved version-1 build;
   `.import` VRAM compressed with mipmaps), `house_props/prop_fine.gdshader` (a copy
@@ -210,7 +212,7 @@ A package goes to the game from git, not from the raw build (#124): its files ar
 the room scenes of a package in their own `room` set, P2's in `assets/room/house_ground/`), with the package's
 `package.json` beside the manifest that owns it and a `HANDOFF.md` for the game's import task (what to copy where,
 the credits entries, the open questions). P8 `task_props` (#82) has no room scenes: its `package.json` and
-`HANDOFF.md` sit beside `assets/prop/house_props/manifest.toml`, which owns every P8 file. P1 to P5 and P7 are approved and merged, their manifests' approval fields set: P1 and P2 in #125, P3 and P5
+`HANDOFF.md` sit beside `assets/prop/house_props/manifest.toml`, which owns every P8 file. P6 `garage` (#79) is committed in `assets/room/house_garage/` (its `HANDOFF.md`: the car and lift nodes the game moves, the panel's blind side, the part picture's surface). P1 to P5 and P7 are approved and merged, their manifests' approval fields set: P1 and P2 in #125, P3 and P5
 in #127, P4 in #130, P7 (with the props, the outdoor and garden sets) in #131; #147 changed P2 and the props (the
 C2-white kitchen, the fine pack, the Detail node; approved in #149), and #150 changed them again (the living room in
 the world look, the fine pack's eight slots), so their approval fields wait again. #150 also re-exported P3 to P5, which place
@@ -237,14 +239,14 @@ the roof's top, an optional key light): P5's attic from its west gable and the f
 from the Lookout station, at 1.6 m over the roof. A view's `with` (#130) names rooms of other packages shown in place
 beside the view's room, each at its plan offset from that room (its rect corner and floor height): P4's balcony views
 show the yard's external flight (`with = ["yard"]`, P2's `yard.tscn`), since the flight belongs to the yard, not the
-balcony. `_house_review.neighbours` finds the other committed packages whose `package.json` lists those rooms' scenes
+balcony. A view's `raise = {nodes, dy}` (#79) moves those nodes of the room scene up by `dy` metres for that view only: P6's "the car raised" lifts `Dressing/lift_arms_1` and `Dressing/garage_car_1` by 1.24 m. `_house_review.neighbours` finds the other committed packages whose `package.json` lists those rooms' scenes
 and stages them beside the package (a game path two packages share has the same bytes in both). Every room tile (#144)
 also stages its context, so it reads as in the game rather than against black: `_house_review.context` names, from
 the layout, the rooms of its level owning a wall on its sides (a shared wall is in the scene of the first of its two
 rooms in the level file, so the other room's scene has a gap there: the kitchen's north and west-upper walls are the
 dining room's and the stairs') and the walled rooms of the next level up over it (its ceiling is their floor slab;
 the attic's roof is its own; areas such as the yard get none). They come from the committed packages that hold them
-(the same SHA-256 rule; a room in no package, such as the garage, is named and skipped), join the tile at their plan
+(the same SHA-256 rule; a room in no committed package is named and skipped), join the tile at their plan
 offsets with their lights and labels off, so a room is still lit only by its own fixtures, and are left out of its
 draw calls: the `.json` gives them as `context_draw_calls` (and their rooms as `context`), counted in the shot frame
 after the room's own count. A view's `with` rooms stay its own. A package alone has no plot round it, so the roof
@@ -262,7 +264,7 @@ plot's, the garden's and the zones' props and plants; a zone's generic plant is 
 `DIR/_build/house_outdoor` and copies them. The check rays the whole ground every 0.5 m: a ground or shell hit
 without a known surface fails, and so does a miss outside the ground's holes (`hole`: the house, terrace, garage and
 the outdoor stairs' opening, where other packages lay their floors); the command prints the counts as `plot:`. Its
-sheet is six `[[export.sheet_views]]` of `room = "plot"` (plan metres, 1.6 m over the ground, a key light), each
+sheet is seven `[[export.sheet_views]]` of `room = "plot"` (the seventh, #79, the driveway from the street) (plan metres, 1.6 m over the ground, a key light), each
 loading `outdoor.tscn` with the package's rooms at their plan corners; alone, the package shows the house's footprint
 as a black hole. The flat `house_props/` names follow one rule for every package (`docs/manifest.md`).
 
@@ -303,13 +305,19 @@ named `CSGBox3D` of its size (colliding unless `collision = "none"`, `metadata/p
 
 The `house` command checks the dressing after the layout and fails on a problem (`tools/out/house/dressing.json`):
 - every id known, the footprint inside the room's wall faces (open edges: the rect), a wall prop's back on a wall
-  face and not on a door opening, no two solid props overlapping (solid: a collider, spanning 0.3 to 1.8 m);
+  face and not on a door opening, no two solid props overlapping (solid: a collider, spanning 0.3 to 1.8 m)
+  unless both carry the same `assembly` (parts of one machine that nest by design: the garage's lift posts, arms
+  and car, `assembly = "car_lift"`);
 - no solid prop within 1 m of a station marker unless it is that station's, none within 0.5 m of a spawn marker;
 - the 1.36 m capsule on a 0.1 m grid (walls 0.2 m with the doors' 1.4 m openings, floor holes and stairs as
   obstacles) reaches from the room's first door, with the props in place, every door (0.8 m in), stair foot, flight
   top, station (within 2 m) and spawn marker (within 1 m) that it reaches in the empty room. What the empty room
   itself does not reach is a note: the pantry stairs' top (its target, half a metre past the top, lies within the
   capsule's radius of the stairwell's railing; the walk climbs it).
+  A prop whose size box overstates what stands in the way gives its real blockers as `blocks = [[x0, z0, x1, z1],
+  ...]` (prop-local metres about its pivot, before the turn), used for the capsule's grid only: the garage's lift
+  posts and arms block with their posts, power unit and carriages, not the floor between the posts
+  (`tools/tests/test_props_garage.py` holds the blocks to the builders' colliders).
 
 With a dressing, `--walk` also lights and shoots it (`house_dressing.review_request`): a c2 stand-in omni light (no
 shadows) at every light fixture replaces the shell's one centre lamp in those rooms (real-time review light; the bake

@@ -6148,6 +6148,319 @@ def build_cutting_table(m, s, R, prm, rng):
     tube(m, "y", (hx - 0.2, hz - 0.25), 0.03, 0.05, H, H + 0.05, "kraft_tape", 10)
 
 
+# ---- #79: the garage (package P6): the car on its two-post lift, the lift's panel, the part picture, the tyre rack ----
+
+def build_hatchback(m, s, R, prm, rng):
+    """#79: a present-day five-door hatchback, the nose at +z, no badge, brand or text: the body in R[0], sills whose
+    underside is the car's lowest body line (`sill`, 0.16 m: the lift's arm pads meet it), four wheels, dark glass,
+    lamps and blank plates. Its two collider boxes (the body from the sills up, the cabin) stop line-of-sight rays; the
+    wheels have none, so the space under the raised car is free between them."""
+    L, W, H = s
+    hx, hz = L / 2, W / 2
+    body = R[0]
+    sill = float(prm.get("sill", 0.16))
+    bw = hx - 0.05  # the body's half width; the mirrors reach hx
+    wr, wb, tw = 0.31, 1.25, 0.2  # wheel radius, half wheelbase, tyre width
+    for sz in (-1, 1):
+        for sx in (-1, 1):
+            xo = sx * (bw - 0.01)
+            cyl(m, "x", (wr, sz * wb), wr, min(xo, xo - sx * tw), max(xo, xo - sx * tw), "rubber_black", 14,
+                phase=0.0)  # a corner on the floor: the sills stay at `sill`
+            r0, r1 = sorted((sx * (bw - 0.03), sx * (bw - 0.004)))
+            cyl(m, "x", (wr, sz * wb), 0.2, r0, r1, "steel_warm", 10)
+            h0, h1 = sorted((sx * (bw - 0.004), sx * (bw + 0.004)))
+            cyl(m, "x", (wr, sz * wb), 0.05, h0, h1, "chrome", 8)
+            for k in range(5):  # the wheel arch's black trim
+                a0, a1 = math.radians(20 + 28 * k), math.radians(20 + 28 * (k + 1))
+                p0 = (sx * (bw + 0.004), wr + 0.37 * math.sin(a0), sz * wb + 0.37 * math.cos(a0))
+                p1 = (sx * (bw + 0.004), wr + 0.37 * math.sin(a1), sz * wb + 0.37 * math.cos(a1))
+                bar(m, p0, p1, 0.05, "rubber_black", h=0.012, ref=(sx, 0.0, 0.0))
+    cbox(m, (-bw, sill, -0.92), (bw, 0.44, 0.92), body, 0.02)  # the sills
+    box(m, (-(bw - 0.26), sill, -1.85), (bw - 0.26, 0.44, 1.85), "steel_black")  # the floor pan between the wheels
+    cbox(m, (-bw, 0.42, -hz + 0.06), (bw, 0.8, hz - 0.08), body, 0.03)  # the body over the wheels
+    cbox(m, (-bw, 0.78, -hz + 0.06), (bw, 0.88, 0.95), body, 0.02)  # the waist under the cabin
+    loft(m, (-bw, bw, 0.95, hz - 0.08, 0.78), (-bw + 0.05, bw - 0.05, 0.95, hz - 0.22, 0.86), body, top=True)  # bonnet
+    cbox(m, (-bw + 0.02, 0.2, hz - 0.24), (bw - 0.02, 0.52, hz - 0.006), body, 0.03)  # the front bumper
+    cbox(m, (-bw + 0.02, 0.2, -hz), (bw - 0.02, 0.55, -hz + 0.22), body, 0.03)  # the rear bumper
+    box(m, (-0.45, 0.24, hz - 0.012), (0.45, 0.36, hz - 0.004), "steel_black", "+z")  # the lower grille
+    box(m, (-0.26, 0.3, hz - 0.006), (0.26, 0.41, hz), "art_white", "+z+x-x+y-y")  # a blank plate
+    box(m, (-0.26, 0.34, -hz), (0.26, 0.45, -hz + 0.004), "art_white", "-z+x-x+y-y")
+    box(m, (-0.4, 0.58, hz - 0.095), (0.4, 0.72, hz - 0.075), "steel_black", "+z+y-y+x-x")  # the upper grille
+    for sx in (-1, 1):
+        x0, x1 = sorted((sx * 0.48, sx * (bw - 0.06)))
+        box(m, (x0, 0.64, hz - 0.095), (x1, 0.75, hz - 0.075), "enamel_white", "+z+y-y+x-x")  # headlamps
+        box(m, (x0, 0.64, -hz + 0.045), (x1, 0.8, -hz + 0.06), "signal_red", "-z+y-y+x-x")  # tail lamps
+        xs = sx * bw
+        for z in (0.92, -0.08, -0.98):  # the door seams
+            box(m, (min(xs, xs + sx * 0.003), 0.44, z - 0.006), (max(xs, xs + sx * 0.003), 0.86, z + 0.006),
+                "steel_black", "+x-x")
+        for z in (0.4, -0.55):  # the door pulls
+            box(m, (min(xs, xs + sx * 0.014), 0.74, z - 0.09), (max(xs, xs + sx * 0.014), 0.77, z + 0.09), "chrome")
+        cbox(m, (min(xs, sx * hx), 0.9, 0.7), (max(xs, sx * hx), 1.0, 0.86), body, 0.01)  # the mirrors
+        # the pillars: A at the windscreen, B between the doors, C and D at the hatch
+        for (z0, z1, w) in ((0.93, -0.03, 0.07), (-0.5, -0.62, 0.07), (-1.42, -1.36, 0.16), (-1.83, -1.6, 0.07)):
+            bar(m, (sx * (bw - 0.005), 0.88, z0), (sx * 0.665, 1.43, z1), w, body, h=0.03, ref=(sx, 0.0, 0.0))
+    loft(m, (-bw + 0.01, bw - 0.01, -1.86, 0.95, 0.88), (-0.66, 0.66, -1.62, -0.05, 1.44), "glass_dark")  # the glass
+    cbox(m, (-0.7, 1.42, -1.66), (0.7, H, 0.0), body, 0.02)  # the roof
+    prm["_boxes"] = [((-bw, sill, -hz), (bw, 0.88, hz)), ((-0.8, 0.88, -1.8), (0.8, 1.44, 0.9))]
+
+
+def build_lift_posts(m, s, R, prm, rng):
+    """#79: the two-post lift's static part (the car's long axis along z): two posts in R[0] on base plates, their
+    carriage tracks on the inner faces, chrome rams on the outer faces, the power unit (its motor in R[1]) on the west
+    post and a floor cover plate between them; one collider box per post and one for the power unit. The carriages
+    and arms are the separate `lift_arms`, which the game moves with the car."""
+    L, W, H = s
+    hx, hz = L / 2, W / 2
+    px = hx - 0.25
+    boxes = []
+    for sx in (-1, 1):
+        cx = sx * px
+        box(m, (cx - 0.25, 0.0, -hz), (cx + 0.25, 0.02, hz), "steel_black", "+y+x-x+z-z")
+        cbox(m, (cx - 0.16, 0.02, -0.16), (cx + 0.16, H - 0.06, 0.16), R[0], 0.012)
+        cbox(m, (cx - 0.18, H - 0.06, -0.18), (cx + 0.18, H, 0.18), "steel_black", 0.008)
+        xi = cx - sx * 0.16
+        box(m, (min(xi, xi - sx * 0.004), 0.1, -0.06), (max(xi, xi - sx * 0.004), H - 0.2, 0.06), "steel_black", "+x-x")
+        for k, y in enumerate((0.3, 0.36, 0.42)):
+            box(m, (cx - 0.163, y, -0.163), (cx + 0.163, y + 0.06, 0.163),
+                "safety_yellow" if k % 2 == 0 else "steel_black", "+x-x+z-z")
+        cyl(m, "y", (cx + sx * 0.21, 0.0), 0.04, 0.02, H - 0.4, "chrome", 8)
+        _text(m, "3000 KG", cx - 0.13, cx + 0.13, 1.9, 0.161, 0.05, "art_white")
+        boxes.append(((cx - 0.16, 0.0, -0.16), (cx + 0.16, H, 0.16)))
+    cbox(m, (-px - 0.14, 1.0, 0.16), (-px + 0.14, 1.45, 0.27), "steel_black", 0.01)  # the power unit
+    cyl(m, "y", (-px, 0.225), 0.07, 1.45, 1.75, R[1], 10)  # its motor
+    boxes.append(((-px - 0.14, 1.0, 0.16), (-px + 0.14, 1.75, hz)))
+    box(m, (-px + 0.16, 0.0, -0.18), (px - 0.16, 0.025, 0.18), "steel_warm", "+y+z-z")  # the floor cover plate
+    prm["_boxes"] = boxes
+
+
+def build_lift_arms(m, s, R, prm, rng):
+    """#79: the lift's moving part: two carriages in R[1] (they ride the posts' inner faces) and four swing arms in
+    R[0] to rubber pads under the car's sills (the pads' tops at 0.12 m: the dressing puts this piece 0.04 m up, under
+    the sills at 0.16 m). One collider box per carriage; the thin arms have none."""
+    L, W, H = s
+    hx, hz = L / 2, W / 2
+    cw, pad_x, pad_z = 0.18, 0.62, hz - 0.07
+    boxes = []
+    for sx in (-1, 1):
+        x0, x1 = sorted((sx * hx, sx * (hx - cw)))
+        cbox(m, (x0, 0.0, -0.18), (x1, H, 0.18), R[1], 0.01)
+        box(m, (x0, H - 0.12, -0.181), (x1, H - 0.06, 0.181), "safety_yellow", "+z-z")
+        boxes.append(((x0, 0.0, -0.18), (x1, H, 0.18)))
+        for sz in (-1, 1):
+            root = (sx * (hx - cw), 0.04, sz * 0.1)
+            tip = (sx * pad_x, 0.04, sz * pad_z)
+            bar(m, root, tip, 0.1, R[0], h=0.07)
+            cyl(m, "y", (sx * pad_x, sz * pad_z), 0.07, 0.0, 0.1, "steel_black", 10)
+            cyl(m, "y", (sx * pad_x, sz * pad_z), 0.065, 0.1, 0.12, "rubber_black", 10)
+    prm["_boxes"] = boxes
+
+
+def build_lift_panel(m, s, R, prm, rng):
+    """#79: the lift's control pedestal (the `LiftPanel` station: the holder stands in front of it, +z): a post on a
+    base plate, a control box in R[0] with hold-to-run UP and DOWN buttons, a red mushroom stop, a key switch and a
+    LIFT label under a yellow and black header."""
+    L, W, H = s
+    hx, hz = L / 2, W / 2
+    box(m, (-hx, 0.0, -hz), (hx, 0.03, hz), "steel_black", "+y+x-x+z-z")
+    cbox(m, (-0.05, 0.03, -0.05), (0.05, 1.0, 0.05), "steel_black", 0.006)
+    cbox(m, (-hx + 0.02, 1.0, -0.12), (hx - 0.02, H, 0.1), R[0], 0.01)
+    for k in range(6):
+        x0 = -hx + 0.03 + (L - 0.06) * k / 6
+        box(m, (x0, H - 0.07, 0.1), (x0 + (L - 0.06) / 6, H - 0.02, 0.104),
+            "safety_yellow" if k % 2 == 0 else "steel_black", "+z+y-y")
+    box(m, (-0.15, 1.36, 0.1), (0.15, 1.42, 0.104), "art_white", "+z+y-y")
+    _text(m, "LIFT", -0.12, 0.12, 1.39, 0.105, 0.04, "steel_black")
+    cyl(m, "z", (-0.09, 1.25), 0.03, 0.1, 0.125, "signal_green", 10)
+    cyl(m, "z", (0.0, 1.25), 0.03, 0.1, 0.125, "steel_black", 10)
+    cyl(m, "z", (0.11, 1.22), 0.045, 0.1, 0.13, "paint_red", 12)
+    cyl(m, "z", (0.11, 1.22), 0.035, 0.13, hz, "paint_red", 12)
+    cyl(m, "z", (-0.09, 1.12), 0.018, 0.1, 0.115, "chrome", 8)
+    for x, up in ((-0.09, True), (0.0, False)):  # the arrows under the two buttons
+        y0, y1 = (1.17, 1.2) if up else (1.2, 1.17)
+        m.poly([(x - 0.015, y0, 0.101), (x + 0.015, y0, 0.101), (x, y1, 0.101)], (0, 0, 1), "art_white")
+
+
+def build_part_picture(m, s, R, prm, rng):
+    """#79: the frame on a garage wall that shows the part the car needs (the car repair's RD3): a frame in R[0], a
+    yellow PART NEEDED header and a white panel the game draws the part on (`PART_SURFACE`: x within 0.05 m of the
+    frame's sides, y from 0.05 m to the header, 0.024 m off the wall)."""
+    L, W, H = s
+    hx = L / 2
+    box(m, (-hx, 0.0, 0.0), (hx, H, 0.02), R[0], "+x-x+y-y+z")
+    cbox(m, (-hx, 0.0, 0.02), (hx, 0.05, W), R[0], 0.004)
+    cbox(m, (-hx, H - 0.05, 0.02), (hx, H, W), R[0], 0.004)
+    cbox(m, (-hx, 0.05, 0.02), (-hx + 0.05, H - 0.05, W), R[0], 0.004)
+    cbox(m, (hx - 0.05, 0.05, 0.02), (hx, H - 0.05, W), R[0], 0.004)
+    box(m, (-hx + 0.05, H - 0.17, 0.02), (hx - 0.05, H - 0.05, 0.024), "safety_yellow", "+z")
+    _text(m, "PART NEEDED", -hx + 0.08, hx - 0.08, H - 0.11, 0.025, 0.07, "steel_black")
+    x0, x1, y0, y1, z = part_surface(s)
+    box(m, (x0, y0, 0.02), (x1, y1, z), "art_white", "+z")
+
+
+def part_surface(s) -> tuple:
+    """The part picture's drawing surface in its wall frame (x0, x1, y0, y1, z): HANDOFF.md gives it to the game."""
+    L, W, H = s
+    return (-L / 2 + 0.05, L / 2 - 0.05, 0.05, H - 0.17, 0.024)
+
+
+def build_steel_cupboard(m, s, R, prm, rng):
+    """#79: a tall steel garage cupboard in R[0], closed all round (the lift panel's blind side is a tyre rack and two
+    of these): two doors with a centre gap, chrome bar handles, vent slots, a white label card on each door."""
+    L, W, H = s
+    hx, hz = L / 2, W / 2
+    cbox(m, (-hx, 0.0, -hz), (hx, H, hz - 0.02), R[0], 0.008)
+    box(m, (-hx + 0.03, 0.0, hz - 0.06), (hx - 0.03, 0.08, hz - 0.02), "steel_black", "+z+y")  # the plinth
+    for sx in (-1, 1):
+        x0, x1 = sorted((sx * 0.004, sx * (hx - 0.01)))
+        cbox(m, (x0, 0.09, hz - 0.02), (x1, H - 0.02, hz), R[0], 0.003)
+        xh = sx * 0.06
+        rod(m, (xh, H * 0.42, hz), (xh, H * 0.58, hz), 0.007, "chrome")
+        for k in range(4):
+            y = H - 0.25 - 0.05 * k
+            box(m, (min(sx * 0.15, sx * (hx - 0.12)), y, hz), (max(sx * 0.15, sx * (hx - 0.12)), y + 0.015, hz + 0.001),
+                "steel_black", "+z")
+        cx = sx * (hx / 2)
+        box(m, (cx - 0.07, H * 0.62, hz), (cx + 0.07, H * 0.62 + 0.05, hz + 0.002), R[1], "+z")
+
+
+def build_tyre_rack(m, s, R, prm, rng):
+    """#79: a steel tyre rack: uprights and beams in R[0], a closed steel back sheet (-z) so nothing shows through,
+    two rows of upright tyres (a seasonal set and spares) and boxed spares on the top deck."""
+    L, W, H = s
+    hx, hz = L / 2, W / 2
+    for x in (-hx, hx - 0.05):
+        for z in (-hz, hz - 0.05):
+            box(m, (x, 0.0, z), (x + 0.05, H, z + 0.05), R[0])
+    for y in (0.08, 0.78, 1.48):
+        for z in (-hz, hz - 0.05):
+            box(m, (-hx + 0.05, y, z), (hx - 0.05, y + 0.06, z + 0.05), R[0], "+y-y+z-z")
+    box(m, (-hx + 0.05, 0.02, -hz + 0.01), (hx - 0.05, H - 0.02, -hz + 0.02), "steel_warm", "+z-z")
+    box(m, (-hx + 0.05, 1.54, -hz + 0.02), (hx - 0.05, 1.56, hz - 0.02), "steel_warm", "+y-y+z")
+    n = 7
+    for y in (0.41, 1.11):
+        for k in range(n):
+            x0 = -hx + 0.08 + (L - 0.16 - 0.2) * k / (n - 1)
+            tube(m, "x", (y, 0.0), 0.19, 0.29, x0, x0 + 0.2, "rubber_black", 10)
+    for x0, x1, top in ((-hx + 0.1, -0.35, 1.9), (-0.3, 0.3, 1.84), (0.36, hx - 0.1, 1.94)):
+        cbox(m, (x0, 1.56, -hz + 0.06), (x1, top, hz - 0.08), "kraft", 0.006)
+        box(m, (x0 + 0.02, top - 0.001, -0.03), (x1 - 0.02, top + 0.002, 0.03), "kraft_tape", "+y")
+
+
+def build_pegboard_tools(m, s, R, prm, rng):
+    """#79: a garage pegboard tool wall (wall pivot, the board's back on the wall): a board in R[0] in a steel frame,
+    its peg holes, and a full set hung in rows: spanners on a rail, screwdrivers, a hammer, pliers, a saw, a spirit
+    level, a tape measure and a small shelf of tins. Every tool is new and clean."""
+    L, W, H = s
+    hx = L / 2
+    zb = 0.03
+    cbox(m, (-hx, 0.0, 0.0), (hx, H, zb), R[0], 0.004)
+    for x0, x1, y0, y1 in ((-hx, hx, 0.0, 0.03), (-hx, hx, H - 0.03, H), (-hx, -hx + 0.03, 0.0, H), (hx - 0.03, hx, 0.0, H)):
+        box(m, (x0, y0, zb), (x1, y1, zb + 0.008), "steel_black", "+z+x-x+y-y")
+    step = 0.15
+    for i in range(int((L - 0.1) / step)):
+        for j in range(int((H - 0.1) / step)):
+            x, y = -hx + 0.1 + i * step, 0.1 + j * step
+            box(m, (x - 0.006, y - 0.006, zb), (x + 0.006, y + 0.006, zb + 0.0005), "steel_black", "+z")
+    z1 = zb + 0.012
+    # spanners on a rail, top left
+    box(m, (-hx + 0.1, H - 0.16, zb), (-hx + 0.75, H - 0.14, z1), "steel_black", "+z+y-y")
+    for k in range(8):
+        x = -hx + 0.14 + k * 0.08
+        ln = 0.14 + 0.018 * k
+        rod(m, (x, H - 0.17, z1), (x, H - 0.17 - ln, z1), 0.008, "chrome", 6)
+        box(m, (x - 0.02, H - 0.19 - ln, zb + 0.004), (x + 0.02, H - 0.17 - ln, z1 + 0.004), "chrome", "+z+x-x-y")
+    # screwdrivers, top right: handles in three colours
+    for k, role in enumerate(("paint_red", "safety_yellow", "paint_blue", "paint_red", "safety_yellow", "paint_blue")):
+        x = 0.25 + k * 0.09
+        cyl(m, "y", (x, z1 + 0.02), 0.016, H - 0.25, H - 0.13, role, 8)
+        rod(m, (x, H - 0.25, z1 + 0.02), (x, H - 0.4 - 0.02 * (k % 3), z1 + 0.02), 0.004, "chrome", 5)
+    # the hammer and the pliers, middle left
+    box(m, (-hx + 0.2, 0.4, zb), (-hx + 0.24, 0.7, z1 + 0.02), "worktop_wood", "+z+x-x-y")
+    box(m, (-hx + 0.13, 0.7, zb), (-hx + 0.31, 0.75, z1 + 0.03), "steel_black", "+z+x-x+y-y")
+    for sx, role in ((-1, "paint_red"), (1, "paint_red")):
+        rod(m, (-hx + 0.45, 0.7, z1), (-hx + 0.45 + sx * 0.04, 0.5, z1), 0.008, role, 6)
+    rod(m, (-hx + 0.45, 0.7, z1), (-hx + 0.45, 0.78, z1), 0.009, "steel_black", 6)
+    # the saw, middle
+    bar(m, (-0.25, 0.68, z1), (0.25, 0.68, z1), 0.1, "steel_warm", h=0.003)
+    box(m, (0.25, 0.62, zb), (0.37, 0.74, z1 + 0.015), "paint_red", "+z+x-x+y-y")
+    # the spirit level and the tape measure
+    box(m, (-0.3, 0.38, zb), (0.4, 0.43, z1 + 0.025), "safety_yellow", "+z+x-x+y-y")
+    box(m, (0.0, 0.395, z1 + 0.025), (0.06, 0.415, z1 + 0.027), "steel_black", "+z")
+    cyl(m, "z", (0.6, 0.6), 0.04, zb, z1 + 0.035, "safety_yellow", 10, cap_role="steel_black")
+    # a small shelf of tins, bottom right
+    box(m, (0.45, 0.2, zb), (hx - 0.08, 0.22, 0.13), "steel_black", "+y-y+z")
+    for k, role in enumerate(("paint_blue", "art_white", "paint_red", "leaf_green")):
+        x = 0.52 + k * 0.1
+        cyl(m, "y", (x, 0.08), 0.035, 0.22, 0.31 + 0.02 * (k % 2), role, 10, cap_role="chrome")
+
+
+def build_air_compressor(m, s, R, prm, rng):
+    """#79: a garage air compressor on wheels: a horizontal tank in R[0], a motor and pump on top, a gauge and outlet
+    on a front plate, a handle, rubber feet, and a coiled air hose in R[1] hung on its handle."""
+    L, W, H = s
+    hx, hz = L / 2, W / 2
+    r = 0.16
+    cyl(m, "x", (r + 0.04, 0.0), r, -hx + 0.07, hx - 0.03, R[0], 16, cap_role=R[0])
+    for x, d in ((-hx + 0.07, -0.03), (hx - 0.03, 0.03)):
+        cyl(m, "x", (r + 0.04, 0.0), r * 0.85, x, x + d, R[0], 16)
+    for sz in (-1, 1):
+        cyl(m, "z", (-hx + 0.13, 0.09), 0.09, sz * (hz - 0.05), sz * hz, "rubber_black", 12, cap_role="steel_black")
+        box(m, (hx - 0.22, 0.0, sz * 0.12 - 0.03), (hx - 0.16, 0.05, sz * 0.12 + 0.03), "rubber_black")
+    ytop = 2 * r + 0.04
+    cbox(m, (-0.2, ytop, -0.11), (0.12, ytop + 0.17, 0.11), "steel_black", 0.01)  # the motor
+    for k in range(5):
+        box(m, (-0.18 + k * 0.06, ytop + 0.17, -0.1), (-0.16 + k * 0.06, ytop + 0.19, 0.1), "steel_black", "+y+x-x")
+    cyl(m, "y", (0.22, 0.0), 0.06, ytop, ytop + 0.14, "steel_warm", 10, cap_role="steel_black")  # the pump head
+    box(m, (0.12, ytop + 0.02, hz - 0.1), (0.3, ytop + 0.16, hz - 0.08), "art_white", "+z+x-x+y-y")
+    cyl(m, "z", (0.17, ytop + 0.09), 0.035, hz - 0.08, hz - 0.06, "chrome", 12, cap_role="art_white")
+    cyl(m, "z", (0.26, ytop + 0.09), 0.02, hz - 0.08, hz - 0.04, "safety_yellow", 8)
+    # the handle: two uprights at the wheel end and a grip
+    for sz in (-1, 1):
+        rod(m, (-hx + 0.05, 0.25, sz * 0.12), (-hx + 0.02, H - 0.03, sz * 0.12), 0.012, "steel_black", 6)
+    box(m, (-hx, H - 0.04, -0.14), (-hx + 0.035, H, 0.14), "rubber_black")
+    # the coiled hose on the handle
+    tube(m, "x", (H - 0.16, 0.0), 0.09, 0.115, -hx + 0.035, -hx + 0.1, R[1], 14)
+
+
+def build_garden_tool_rack(m, s, R, prm, rng):
+    """#79: a wall rail of garden tools (wall pivot): a steel rail in R[0] with hooks, a spade, a fork, a leaf rake,
+    a broom, a hoe and shears, their wooden handles hanging to just above the floor."""
+    L, W, H = s
+    hx = L / 2
+    yr = H - 0.12
+    cbox(m, (-hx, yr - 0.04, 0.0), (hx, yr + 0.04, 0.03), R[0], 0.004)
+    n = 5
+    xs = [-hx + 0.12 + (L - 0.24) * k / (n - 1) for k in range(n)]
+    zc = 0.08
+    for x in xs:
+        box(m, (x - 0.01, yr - 0.02, 0.03), (x + 0.01, yr, zc + 0.02), "steel_black", "+y-y+x-x+z")
+        rod(m, (x, yr + 0.08, zc), (x, 0.42, zc), 0.016, "worktop_wood", 6)
+    x = xs[0]  # the spade
+    cbox(m, (x - 0.09, 0.08, zc - 0.012), (x + 0.09, 0.42, zc + 0.012), "steel_warm", 0.004)
+    box(m, (x - 0.07, yr + 0.08, zc - 0.02), (x + 0.07, yr + 0.11, zc + 0.02), "rubber_black")
+    x = xs[1]  # the fork
+    box(m, (x - 0.09, 0.38, zc - 0.012), (x + 0.09, 0.42, zc + 0.012), "steel_warm")
+    for k in range(4):
+        xt = x - 0.075 + k * 0.05
+        rod(m, (xt, 0.38, zc), (xt, 0.1, zc), 0.007, "steel_warm", 5)
+    x = xs[2]  # the leaf rake: a fan of tines in green
+    for k in range(9):
+        a = math.radians(-40 + 10 * k)
+        rod(m, (x, 0.42, zc), (x + 0.3 * math.sin(a), 0.42 - 0.3 * math.cos(a), zc), 0.005, R[1], 4)
+    box(m, (x - 0.2, 0.2, zc - 0.008), (x + 0.2, 0.22, zc + 0.008), R[1])
+    x = xs[3]  # the broom: a head with bristles
+    cbox(m, (x - 0.16, 0.22, zc - 0.03), (x + 0.16, 0.3, zc + 0.03), "paint_blue", 0.005)
+    box(m, (x - 0.15, 0.0, zc - 0.025), (x + 0.15, 0.22, zc + 0.025), "rubber_black", "+x-x+y-y+z-z")
+    x = xs[4]  # the hoe
+    box(m, (x - 0.08, 0.3, zc - 0.006), (x + 0.08, 0.42, zc + 0.006), "steel_warm")
+    # shears on two pegs between the spade and the fork
+    xm = (xs[0] + xs[1]) / 2
+    for sx in (-1, 1):
+        rod(m, (xm, yr - 0.05, 0.05), (xm + sx * 0.05, yr - 0.5, 0.05), 0.008, "steel_warm", 5)
+        rod(m, (xm, yr - 0.05, 0.05), (xm - sx * 0.02, yr + 0.1, 0.05), 0.014, R[1], 6)
+
+
 BUILDERS = {name[6:]: fn for name, fn in dict(globals()).items() if name.startswith("build_") and callable(fn)}
 
 

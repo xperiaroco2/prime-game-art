@@ -165,6 +165,20 @@ Every room's props follow these rules; the numbers are data in `props/library.to
    rules of the five plant rooms are empty), never emptier than before (142, 107, 72, 60, 46 and 99 props, main 140,
    105, 71, 60, 45 and 93), and nothing derelict stays (no pipe runs, jerrycans, barrels, crates, cardboard boxes or
    metal shelving). `tools/tests/test_props_basement.py` checks all eight rooms the same way.
+   **The garage** (#79, package P6, library v14; `layouts/house/dressing/garage.toml`). The car and its lift are
+   separate pieces so the game can drop the car: `garage_car` (a present-day five-door hatchback, no badge, hero,
+   `car_body` enamel blue; two collider boxes: the body from the sills at 0.16 m and the cabin), `lift_posts`
+   (static: two posts, the power unit, the floor cover plate) and `lift_arms` (the two carriages and four swing
+   arms, the pads' tops at the sills); the game raises `lift_arms` and `garage_car` together by 1.24 m (the sills
+   from 0.16 m to the car repair ADR's 1.4 m, RD2). `lift_panel` (the control pedestal) stands 0.25 m in front of
+   the LiftPanel marker; its blind side is a closed-back `tyre_rack` and two `steel_cupboard`s between it and the
+   car. `part_picture` is the wall frame the game draws the needed part on (`prop_geom.part_surface`). The dressing:
+   `pegboard_tools`, `air_compressor`, `garden_tool_rack`, `floor_lift_zone` and the stock `store_shelving`,
+   `storage_boxes`, `old_bicycle` (the sage city bike), `fridge`, `tool_chest`, `parts_shelving`, `drum_bund_b`,
+   `wall_hose_reel`, `fire_point`; the light is lights.toml's six fluorescent tubes. `tools/tests/test_props_garage.py`
+   checks the pieces' size, pivot, budget and colliders, the car/lift separation, the stations and spawns clear,
+   that the dressing's `blocks` are the lift's real colliders, and casts rays from the panel's eye points to the
+   space under the raised car (none may reach it).
 8. **Route.** Hard-surface props are code (the shared builders, `prop_geom.py`'s `Style`). Meshy only for organic
    one-offs (food, soft goods, plants) at a hero budget, as a recorded batch (`docs/meshy.md`).
 
@@ -298,7 +312,8 @@ Art #87 (map request #73) makes one shared library of generic props (furniture, 
 things) so that every room package places furniture instead of making it. Task props (#82a, #82b), the car and its
 lift (#79), vegetation (#80), the gazebo (#81b) and kit pieces are made elsewhere; `[skip]` in the mapping file names
 who makes each. The plan is `D:/prime-art-raw/research/2026-10-10-house-plan/` (`props.md`, `inventory.md` §9,
-`look.md` §5 and §6). The GLBs stay in the raw folder (`D:/prime-art-raw/props/library/v13/`: v12 with
+`look.md` §5 and §6). The GLBs stay in the raw folder (`D:/prime-art-raw/props/library/v14/`: v13 with
+#79's garage; v13 v12 with
 #172's plant rooms and the darkroom's island; v12 v11 with
 #170's basement working rooms; v11 v10 with #168's attic; v10 v9 with #166's kids' room and study; v9 v8 with #164's bedroom and guest room; v8 v7 with #162's rebuilt landing runner; v7 v6 with #162's landing and bathroom built over it; v6 v5 with #158's WC, pantry and stairs; v5 v4 with #156's hallway; v4 v3 with #153's dining room; v3 is v2 with #152's
 cream sofa and armchairs, v2 v1 with #150's living room, v1 the version-1 build) until the engineer approves the look
@@ -353,7 +368,7 @@ clutter of art #104 and its story pieces: `laundry_basket`, `drying_rack`, `open
 
 `tools/run.sh props-library --build [--batch 1|2] [--only id,...]` builds the props in one headless Blender run
 (`tools/blender/prop_build.py`) into the mapping file's `out`,
-`D:/prime-art-raw/props/library/v13/`: one `<id>.glb` per prop, `textures/`
+`D:/prime-art-raw/props/library/v14/`: one `<id>.glb` per prop, `textures/`
 (the kit's detail maps), `build.json` (what each GLB holds; batches accumulate) and `props.md` (the build table); then
 it checks every GLB: the mesh and collider nodes, UV2 and vertex colours, at most `max_materials` materials all named
 `-vcol`, glTF-Validator, the class's maximum triangles, a collider unless `none`, a fixture's light anchor. Under the
