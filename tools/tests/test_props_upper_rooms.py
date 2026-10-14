@@ -30,7 +30,11 @@ HOUSE = tomllib.loads((LAYOUT / "house.toml").read_text(encoding="utf-8"))
 TASKS = tomllib.loads((common.ROOT / "props" / "tasks.toml").read_text(encoding="utf-8"))["props"]
 ROOMS = ("landing", "bathroom")
 DOORS = {"landing": 6, "bathroom": 1}
-BEFORE = {"landing": 66, "bathroom": 40}  # the placed props on main before #162's pass
+# The [[props]] entries on main before #162's pass (fixtures not counted; the test counts the same after it).
+BEFORE = {"landing": 66, "bathroom": 40}
+# The big furniture main's landing had (a sitting area: armchairs and a rug) that the pass keeps (round 2): one of
+# each id group at least.
+BIG = {"landing": [("sofa", "armchair"), ("rug",)]}
 
 SOLID = ("bath_tub", "bath_vanity", "bath_shelf")
 WALL = ("towel_rail", "art_bubbles", "bath_tiles", "bath_tiles_short", "bath_tiles_shower")
@@ -213,7 +217,6 @@ class UpperRoomsPropsTest(unittest.TestCase):
         for rid in ROOMS:
             self.assertTrue(all(not v for v in house_clutter.RULES[rid].values()), rid)
 
-
     def test_the_walk_ways_stay_free(self):
         for rid, zones in KEEP_FREE.items():
             for x0, x1, z0, z1 in zones:
@@ -226,8 +229,16 @@ class UpperRoomsPropsTest(unittest.TestCase):
                     self.assertFalse(inside, f"{rid}: {item['id']} at {item['at']} in the walk way {(x0, x1, z0, z1)}")
 
     def test_the_rooms_are_never_emptier_than_before(self):
-        for rid in ROOMS:
-            self.assertGreaterEqual(len(self.placed[rid]), BEFORE[rid], rid)
+        for rid in ROOMS:  # props against props: placed holds the [[props]] entries only, never the fixtures
+            dressing = tomllib.loads((LAYOUT / "dressing" / f"{rid}.toml").read_text(encoding="utf-8"))
+            self.assertEqual(len(self.placed[rid]), len(dressing["props"]), rid)
+            self.assertGreaterEqual(len(dressing["props"]), BEFORE[rid], rid)
+
+    def test_the_landing_keeps_mains_big_furniture(self):
+        for rid, groups in BIG.items():
+            ids = {item["id"] for item, _, _ in self.placed[rid]}
+            for group in groups:
+                self.assertTrue(ids & set(group), f"{rid}: none of {group} placed (main had them; round 2)")
 
     def test_the_name_label_sits_in_no_piece(self):
         h = HOUSE["export"]["label"]["h"]

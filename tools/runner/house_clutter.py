@@ -140,6 +140,7 @@ RULES = {
         "floor": ("toy_blocks", "toy_blocks", "book_stack", "basket", "shoes"),
     },
     "landing": {  # #162: every prop is hand-placed
+        # an empty `hosts`, not a missing one: a missing key means every host takes surface clutter (see below)
         "furn": (),
         "fill": (),
         "island": (),
@@ -156,6 +157,7 @@ RULES = {
         "floor": ("book_stack", "book_stack", "paper_stack", "basket"),
     },
     "bathroom": {  # #162: every prop is hand-placed
+        # an empty `hosts`, not a missing one: a missing key means every host takes surface clutter (see below)
         "furn": (),
         "fill": (),
         "island": (),
