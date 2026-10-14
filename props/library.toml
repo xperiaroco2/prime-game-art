@@ -5,9 +5,10 @@
 # Paints and shapes are taste data: changing a hex or a prop's roles needs no code change.
 
 library = "house"
-version = 13
+version = 14
 kit_spec = "kits/house.json"
-# the build goes under the raw folder: D:/prime-art-raw/props/library/v13/<id>.glb (v13, #172: v12 with the
+# the build goes under the raw folder: D:/prime-art-raw/props/library/v14/<id>.glb (v14, #79: v13 with the
+# garage's car, lift and dressing laid over it; v13, #172: v12 with the
 # basement's plant rooms' pieces and the darkroom's island laid over it; v12, #170: v11 with the
 # basement's working-room pieces laid over it; v11, #168: v10 with the attic's
 # rebuilt and new pieces laid over it; v10, #166: v9 with the kids' room's
@@ -18,7 +19,7 @@ kit_spec = "kits/house.json"
 # pantry's and the stairs' props laid over it; v5, #156: v4 with the hallway's props laid over it; v4, #153: v3 with the dining room's props; v3, #152: v2 with the cream sofa and armchairs
 # rebuilt over it; v2, #150: v1 with the living room's 16 rebuilt props and the eight-slot fine pack laid over it;
 # v1 stays the approved version-1 build; no folder is ever overwritten)
-out = "props/library/v13"
+out = "props/library/v14"
 review = "review/house/87"  # line-up sheets, under the raw folder
 licences = ["CC0-1.0"]
 max_materials = 8
@@ -220,6 +221,7 @@ wine_green = {material = "fine", layer = "gloss", hex = "#23381f"}
 foil_red = {material = "fine", layer = "paint", hex = "#6a1f25"}
 leaf_light = {material = "fine", layer = "paint", hex = "#7a9a4a"}
 cork = {material = "fine", layer = "paint", hex = "#b48a5e"}
+car_body = {material = "fine", layer = "enamel", hex = "#2f5d86"}  # #79: the garage car's clean deep-blue paint
 
 # Inventory props this library does not make, and who does (the manager's split of 2026-10-10).
 [skip]
@@ -245,7 +247,6 @@ hatch_ladder = "kit piece ladder_attic"
 hedge = "vegetation: #80"
 herb_bed = "task prop: #82a/#82b (the car and lift: #79)"
 herb_board = "task prop: #82a/#82b (the car and lift: #79)"
-lift_panel = "garage: #79"
 meat_freezer = "task prop: #82a/#82b (the car and lift: #79)"
 music_speaker = "task prop: #82a/#82b (the car and lift: #79)"
 order_board = "task prop: #82a/#82b (the car and lift: #79)"
@@ -4846,5 +4847,115 @@ count = 1
 route = "proc"
 shape = "cutting_table"
 roles = ["art_pink", "art_sky", "art_terracotta", "art_white", "book_mustard", "chrome", "kraft_tape", "leaf_green", "paint_red", "steel_black", "worktop_wood"]
+pivot = "floor"
+collision = "box"
+
+# --- The garage (#79, package P6; docs/props.md "The garage") ---
+
+[[prop]]
+id = "garage_car"
+batch = 1
+name = "The garage's car: a present-day five-door hatchback, no badge (rests on the lift's arms; the game drops it)"
+class = "hero"
+size_m = [1.78, 4.1, 1.48]
+count = 1
+route = "proc"
+shape = "hatchback"
+params = {sill = 0.16}
+roles = ["car_body", "art_white", "chrome", "enamel_white", "glass_dark", "rubber_black", "signal_red", "steel_black", "steel_warm"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "lift_posts"
+batch = 1
+name = "The two-post lift's posts, base plates, power unit and floor cover plate (static)"
+class = "room"
+size_m = [3.6, 0.6, 2.8]
+count = 1
+route = "proc"
+shape = "lift_posts"
+roles = ["paint_blue", "paint_red", "art_white", "chrome", "safety_yellow", "steel_black", "steel_warm"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "lift_arms"
+batch = 1
+name = "The two-post lift's carriages and swing arms (move with the car)"
+class = "room"
+size_m = [2.78, 1.74, 0.7]
+count = 1
+route = "proc"
+shape = "lift_arms"
+roles = ["paint_blue", "steel_black", "rubber_black", "safety_yellow"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "lift_panel"
+batch = 1
+name = "The lift's control pedestal: hold-to-run up and down, a stop, a key switch"
+class = "room"
+size_m = [0.42, 0.3, 1.5]
+count = 1
+route = "proc"
+shape = "lift_panel"
+roles = ["switch_grey", "art_white", "chrome", "paint_red", "safety_yellow", "signal_green", "steel_black"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "part_picture"
+batch = 1
+name = "The frame on the garage wall that shows the part the car needs (the game draws it)"
+class = "dressing"
+size_m = [0.9, 0.06, 0.75]
+count = 1
+route = "proc"
+shape = "part_picture"
+roles = ["steel_black", "art_white", "safety_yellow"]
+layer = "base"
+pivot = "wall"
+collision = "none"
+
+[[prop]]
+id = "tyre_rack"
+batch = 1
+name = "A steel tyre rack with a closed back: two rows of tyres, boxed spares on top"
+class = "room"
+size_m = [2.0, 0.65, 2.0]
+count = 1
+route = "proc"
+shape = "tyre_rack"
+roles = ["paint_blue", "kraft", "kraft_tape", "rubber_black", "steel_warm"]
+pivot = "floor"
+collision = "box"
+
+[[prop]]
+id = "floor_lift_zone"
+batch = 1
+name = "Yellow and black keep-clear blocks round the lift"
+class = "dressing"
+size_m = [4.6, 5.2, 0.004]
+count = 1
+route = "proc"
+shape = "floor_marking"
+params = {kind = "zone", w = 0.1, seg = 0.4}
+roles = ["safety_yellow", "steel_black"]
+layer = "base"
+pivot = "floor"
+collision = "none"
+
+[[prop]]
+id = "steel_cupboard"
+batch = 1
+name = "A tall two-door steel garage cupboard, closed all round"
+class = "room"
+size_m = [1.2, 0.55, 2.0]
+count = 2
+route = "proc"
+shape = "steel_cupboard"
+roles = ["switch_grey", "art_white", "chrome", "steel_black"]
 pivot = "floor"
 collision = "box"
