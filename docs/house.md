@@ -197,7 +197,10 @@ C2-white kitchen, the fine pack, the Detail node; approved in #149), and #150 ch
 the world look, the fine pack's eight slots), so their approval fields wait again. #150 also re-exported P3 to P5, which place
 some of its rebuilt props (armchair, bookcase, dresser, rug, sideboard, small_table): their scenes override those
 props' `kit_fine` surfaces too, list the fine pack and gain the Detail node, and their approval fields wait as well. #150's round 2 (the warm sofa and armchairs, wall art and 16 more living-room props) re-exported
-P2 and, for the armchair's new bytes, P4's `package.json` (into `<raw>/review/house/150b/export/`). The engineer approves the look from
+P2 and, for the armchair's new bytes, P4's `package.json` (into `<raw>/review/house/150b/export/`). #152 (the engineer's paints of 2026-10-14: walls, warm sand
+ceiling, cream sofa and armchairs) re-exported P1 to P5 and P7 into `<raw>/review/house/152/export/`: P1's 12
+ceiling-role pieces and `kit_set.tres`, P2's five painted rooms, P4's landing, the cream props; P3, P5 and P7 only
+their `package.json`; every approval field waits again. The engineer approves the look from
 
 ```
 tools/run.sh house --package-sheet DIR --package N
