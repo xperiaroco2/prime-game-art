@@ -22,10 +22,10 @@ prop_res = "res://import/prop_{id}.glb"
 # the inner plaster's colour per room id; a room not listed keeps the kit's (role wall_int, #3a6264). The living room
 # is terracotta on every wall; the kitchen, hallway, dining room, stairs and landing a warm greige (they were teal);
 # the WC a soft blue-grey #cfd5d3 and the pantry a pale sage #d3d6c3 (#158: the manager's present-day defaults under
-# the engineer's blanket yes of 2026-10-14); oxblood the bedrooms, ink-blue only the study; the garage is a neutral concrete grey (the basement's walls are the
-# kit's concrete already). Under every room the kit's ceiling is warm sand (#152). The lab's rule: the biggest plane
-# in a frame is never amber. The scene writer puts it on the room's root (`metadata/wall_paint`);
-# the kit's material (godot/kit/kit_materials.gd `paint`) recolours that room's inner plaster.
+# the engineer's blanket yes of 2026-10-14); oxblood the bedrooms, ink-blue only the study; the garage is a neutral
+# concrete grey (the basement's walls are the kit's concrete already). Under every room the kit's ceiling is warm sand
+# (#152). The lab's rule: the biggest plane in a frame is never amber. The scene writer puts it on the room's root
+# (`metadata/wall_paint`); the kit's material (godot/kit/kit_materials.gd `paint`) recolours that room's inner plaster.
 [wall_paint]
 kitchen = "#d9d1c5"
 hallway = "#d9d1c5"
