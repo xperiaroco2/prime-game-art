@@ -97,6 +97,13 @@ own plaster, so the colour stays and the textures are new).
 - **Standing frame (#150).** The side table's frame moved 1 cm inward onto the round top (1.74, 0.7, 13.0); only
   `living_room.tscn` and `package.json` changed, re-exported into review/house/150c/export/p2.
 
+## The engineer's paints of 2026-10-14 (#152)
+
+The living room is terracotta `#a3533b` on every wall; the kitchen, hallway, dining room and stairs are warm
+greige `#d9d1c5` (they were teal); every ceiling is warm sand `#d8c7b4` (P1's rebuilt pieces); `sofa` and `armchair`
+are cream `#e4d9c6` (same file names). Changed: `kit_set.tres`, `dining_room.tscn`, `hallway.tscn`, `kitchen.tscn`,
+`living_room.tscn`, `stairs.tscn` (their `metadata/wall_paint`), and `package.json`.
+
 ## Credits
 The entries are `assets/kit/house_kit/CREDITS.md` and `assets/prop/house_props/CREDITS.md` in this repo (the game's
 `docs/credits/<id>.md` format; copy them to `docs/credits/house_kit.md` and `house_props.md`): own work, the props made

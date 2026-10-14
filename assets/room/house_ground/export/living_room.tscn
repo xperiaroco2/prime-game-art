@@ -64,7 +64,7 @@
 [node name="LivingRoom" type="Node3D"]
 metadata/size_m = Vector2i(8, 14)
 metadata/art_room = "living_room"
-metadata/wall_paint = "#3a6264"
+metadata/wall_paint = "#a3533b"
 
 [node name="Name" type="Label3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 2.4, 7)

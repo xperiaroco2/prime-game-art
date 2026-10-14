@@ -1,5 +1,6 @@
 # Written for #124, re-exported for #132 (the wall paints), for #147 (the C2-white kitchen, the Detail node) and for #150 (the living room) from the P2 export of 2026-10-13 (`house --export <raw>/review/house/150/export/p2 --package 2`); a rebuild
 # changes the hashes below (`manifest-check --hashes` finds it). The game's paths: levels/house/rooms/<name>.
+# #152 (the engineer's paints of 2026-10-14): re-exported as P2 into <raw>/review/house/152/export/p2 (`house --export ... --package 2`); the files it changed point there.
 id = "house_ground"
 kind = "room"
 slot = ""
@@ -10,9 +11,9 @@ licence = "own-work"
 licence_url = "https://github.com/xperiaroco2/prime-game"
 public_repo_ok = true
 ai_generated = false
-approved_by = ["xperiaroco2"]
-approved_at = 2026-10-14
-approval_pr = "https://github.com/xperiaroco2/prime-game-art/pull/151"
+approved_by = []
+approved_at = ""
+approval_pr = ""
 
 [source]
 service = "own"
@@ -29,8 +30,8 @@ sha256 = "d999d8911d4db5f5c6a56ef10ed505ff8671a1c5290cccdc8be2d28606c1c80e"
 
 [[files]]
 name = "dining_room.tscn"
-file = "review/house/150b/export/p2/levels/house/rooms/dining_room.tscn"
-sha256 = "4cfc29b8e870fd6fc1b4018182c6cc31e35ef7440b672e845203da224c6a719f"
+file = "review/house/152/export/p2/levels/house/rooms/dining_room.tscn"
+sha256 = "cc4750bfb73bb9f9ae2f945885bfa16dc3ff5e2e343e9be18e4e19d93b646e8d"
 
 [[files]]
 name = "driveway.tscn"
@@ -39,18 +40,18 @@ sha256 = "41810a08fedf1ed5d2dc9160c83927d43425d9ed902ce7edc50711b940e4dc9a"
 
 [[files]]
 name = "hallway.tscn"
-file = "review/house/150b/export/p2/levels/house/rooms/hallway.tscn"
-sha256 = "f582ca6db31aa950e0c1f4f44549d5edb6a240a434c653f4c94edfeffb17ebe8"
+file = "review/house/152/export/p2/levels/house/rooms/hallway.tscn"
+sha256 = "7f81fb3bb87bc5cd56a416177611a7ad7d195fd9cd159d5b2ef8a80d25773db2"
 
 [[files]]
 name = "kitchen.tscn"
-file = "review/house/150b/export/p2/levels/house/rooms/kitchen.tscn"
-sha256 = "39d6c195fff714b7ee6f712fc90b6208a0dd356db6b79f05cbda0a7e3275bc63"
+file = "review/house/152/export/p2/levels/house/rooms/kitchen.tscn"
+sha256 = "031a7bee64794533789a8669f3ee117dd629bffe78a8b5a5204f60f8ebc71f9f"
 
 [[files]]
 name = "living_room.tscn"
-file = "review/house/150c/export/p2/levels/house/rooms/living_room.tscn"
-sha256 = "50fc7c887cc51068833ec9ef5d2c3d6bcf62e22f09368b7833ea83faefb83815"
+file = "review/house/152/export/p2/levels/house/rooms/living_room.tscn"
+sha256 = "9823287aed34254a14c90466751a5a41888e209995cb9acfee2c01227a1b4eb0"
 
 [[files]]
 name = "outdoor_stairs.tscn"
@@ -74,8 +75,8 @@ sha256 = "dec489766af69a23d9dfdef197530ae7420097662e849b523ff233ac1f30d9d3"
 
 [[files]]
 name = "stairs.tscn"
-file = "review/house/150b/export/p2/levels/house/rooms/stairs.tscn"
-sha256 = "b4f51dba837362d13fb2d87a066c24b421a6fafcaa54479eba9c1906777f4120"
+file = "review/house/152/export/p2/levels/house/rooms/stairs.tscn"
+sha256 = "55dcf52c71e6328b36ac168654390acfcf9a05d384bfe6ac963f0fe70365f7ac"
 
 [[files]]
 name = "street.tscn"
