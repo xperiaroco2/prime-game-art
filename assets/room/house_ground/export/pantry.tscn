@@ -275,6 +275,20 @@ metadata/prop = "open_box"
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.75, 2, 0.33)
 metadata/prop = "cardboard_box"
 
+[node name="drink_crates_3" parent="Dressing" instance=ExtResource("15")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 5.6, 0.62, 5.6)
+metadata/prop = "drink_crates"
+
+[node name="drink_crates" parent="Dressing/drink_crates_3"]
+surface_material_override/0 = ExtResource("11")
+
+[node name="drink_crates_4" parent="Dressing" instance=ExtResource("15")]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 0.35, 0.62, 4.3)
+metadata/prop = "drink_crates"
+
+[node name="drink_crates" parent="Dressing/drink_crates_4"]
+surface_material_override/0 = ExtResource("11")
+
 [node name="Detail" type="Node3D" parent="."]
 
 [node name="parcels_1" parent="Detail" instance=ExtResource("22")]
@@ -300,8 +314,16 @@ transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 1.8, 0, 5.6)
 metadata/prop = "basket"
 
 [node name="bottles_1" parent="Detail" instance=ExtResource("26")]
-transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 5.6, 0.62, 5.6)
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 5.6, 1.24, 5.6)
 metadata/prop = "bottles"
+
+[node name="basket_2" parent="Detail" instance=ExtResource("25")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.4, 0.8, 4.6)
+metadata/prop = "basket"
+
+[node name="basket_3" parent="Detail" instance=ExtResource("25")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.95, 0, 1.6)
+metadata/prop = "basket"
 
 [node name="Fixtures" type="Node3D" parent="."]
 

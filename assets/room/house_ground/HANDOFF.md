@@ -145,8 +145,8 @@ The WC (painted soft blue-grey #CFD5D3) is a WC with a laundry corner: a close-c
 `art_wash` (a washing-day joke print), and under `Detail` a `towel_ring`, `roll_holder`, `pedal_bin`, `toilet_brush`
 and `reed_diffuser` beside the kept dressers, plants, drying rack and towel rack. The pantry (pale sage #D3D6C3) is
 the burger kitchen's store: three `pantry_shelf` units and two `pantry_shelf_buns` stocked with jars, tins, cereal
-boxes, pasta, bottles and buns, a `veg_rack` with potatoes and onions, two `drink_crates`, a `step_stool` and a
-`broom_set`. The stairs get a `stair_runner` on each half flight, a `stair_gallery` of frames going up the wall and a
+boxes, pasta, bottles and buns, a `veg_rack` with potatoes and onions, `drink_crates` stacked in pairs, crates and
+baskets on the floor, a `step_stool` and a `broom_set`. The stairs get a `stair_runner` on each half flight, a `stair_gallery` of frames going up the wall and a
 `landing_plant`. The junk clutter (nightstands, kitchen uppers, the pack crates, a barrel, the old toilet and basin) is
 replaced, never with nothing. Nothing stands within 0.3 m of a station or on a spawn (`test_props_small_rooms`).
 Changed: `wc.tscn`, `pantry.tscn`, `stairs.tscn` and `package.json`; in the props set, 21 new GLBs, 1.81 MB of LFS

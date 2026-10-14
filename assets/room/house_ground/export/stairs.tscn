@@ -36,7 +36,7 @@ metadata/art_room = "stairs"
 metadata/wall_paint = "#d9d1c5"
 
 [node name="Name" type="Label3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 2.4, 3)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 2.4, 3)
 billboard = 1
 text = "Stairs"
 font_size = 72
