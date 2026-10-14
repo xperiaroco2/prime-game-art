@@ -400,7 +400,8 @@ def attic_dressing(z: dict, cat: dict | None = None) -> dict:
     layouts/house/dressing/attic_roof/, plan metres) as the attic room's resolved dressing: room-local, on the floor,
     their yaw kept (the same front-+Z convention). A hero prop with its own `size` and no GLB becomes a Placeholders
     marker like any other prop without one. A library prop keeps its collision (cat: house_dressing.catalogue, the
-    library's by default): picture frames and rugs have none. The roof's items stand on the slopes: not exported yet."""
+    library's by default): picture frames and rugs have none. The layer is the library's (#168: a detail prop goes
+    under Detail, like the rooms'). The roof's items stand on the slopes: not exported yet."""
     if cat is None:
         from . import house_attic, house_dressing
         cat = house_dressing.catalogue([house_attic.LIBRARY])
@@ -410,7 +411,8 @@ def attic_dressing(z: dict, cat: dict | None = None) -> dict:
         out.append({"id": it["id"], "kind": "props", "at": (it["at"][0] - rx, 0.0, it["at"][1] - ry),
                     "yaw": float(it["yaw"]), "size": [it.get("w", 0.5), it.get("d", 0.5), it.get("h", 0.5)],
                     "pivot": "floor", "known": "w" in it,
-                    "collision": it.get("collision", cat.get(it["id"], {}).get("collision", "box"))})
+                    "collision": it.get("collision", cat.get(it["id"], {}).get("collision", "box")),
+                    "layer": it.get("layer", cat.get(it["id"], {}).get("layer", "base"))})
     return {"resolved": out}
 
 
