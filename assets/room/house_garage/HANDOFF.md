@@ -86,7 +86,7 @@ drawn by one merged mesh per material, `Shell/merged_<class>` (`house_kit/merged
 kit's set material on its `kit_set` surfaces with `plan_at` at the room's origin), and each room's static dressing by
 one mesh per group, `Dressing/batch_dressing`, `Detail/batch_detail`, `Fixtures/batch_fixtures`
 (`house_props/merged/batch_*.glb`, the fine material on its `kit_fine` surfaces; a preset hiding `Detail` hides its
-batch too). Here: 2 merged shell meshes and 1 batches, committed in `export/merged/`
+batch too). Here: 2 merged shell meshes and 1 batch, committed in `export/merged/`
 (copy them to `assets/environment/house_kit/merged/` and `assets/environment/house_props/merged/`, as
 `package.json` lists them).
 - Every piece and prop instance is still there with its name, transform, colliders and metadata (`surface`,
