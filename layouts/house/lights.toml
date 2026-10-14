@@ -280,7 +280,13 @@ interior = true
 # over these (no failure yet). baked: the bake alone (no real-time light); high: the High preset's sheen row (the
 # nearest glow lamps real time, shadowed), its visible draw calls and its shadow draw calls (high_shadow).
 [budget]
+# Draw calls per view (#107; `house --bake ZONES --count DIR` WARNs over them, no failure yet). baked: the bake alone
+# (#104's 150). high: the High preset's visible draw calls, shadows cached (after the merged shell and the batched
+# dressing every ground and upper view is <= 303; the basement's storage view 440). high_shadow: its shadow draw
+# calls when every shadow is redrawn at once (a worst case; cached shadows redraw only a lamp whose range moved).
 baked = 150
+high = 350
+high_shadow = 2500
 
 [presets.high]
 lightmap = "texel_high"
