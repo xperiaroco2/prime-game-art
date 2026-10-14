@@ -15,7 +15,7 @@ prop_specs = ["props/tasks.toml", "props/library.toml"]
 # #150: library v2 is v1 with the living room's rebuilt and detail props laid over it (v1 is never overwritten);
 # #152: library v3 is v2 with the cream sofa and armchairs rebuilt over it (v2 is never overwritten).
 # #153: library v4 is v3 with the dining room's props laid over it; task v2 is v1 with the world-look dining table.
-prop_dirs = ["props/task/v2", "props/library/v4"]
+prop_dirs = ["props/task/v2", "props/library/v5"]
 prop_res = "res://import/prop_{id}.glb"
 # Per-room wall paint (the engineer's choice of 2026-10-14, #152; before it Q11 = B of 2026-10-10, look.md section 4):
 # the inner plaster's colour per room id; a room not listed keeps the kit's (role wall_int, #3a6264). The living room
@@ -49,7 +49,7 @@ label = { h = 2.4, font_size = 72, outline_size = 16 }  # the room's Name label,
 # The world look's fine pack (#143, #147; docs/props.md "World look rules"): its build (fine.json and one texture
 # folder per tier) under the raw folder; a package with a prop on it ships house_props/fine/<tier>/, the shader and
 # one material per tier; the room scenes put `fine_tier`'s material on the props' kit_fine surfaces.
-fine_dir = "props/library/v4/textures/fine"  # #150: the eight-slot pack (v1 holds the four-slot one); v3 (#152) the same bytes
+fine_dir = "props/library/v5/textures/fine"  # #150: the eight-slot pack (v1 holds the four-slot one); v3 to v5 the same bytes
 fine_tier = "high"
 
 # Footstep surfaces (art #122; the game's FootstepSurface, its ARCHITECTURE 4.7.40): the kit pieces a player walks on,
@@ -228,7 +228,7 @@ files = ["*.glb"]
 [export.plot]
 scene = "levels/house/outdoor.tscn"
 garden = "house/80/build/garden.json"
-prop_src = { tasks = "props/task/v2", library = "props/library/v4", "#87" = "props/library/v4", zones = "props/zones/v1" }
+prop_src = { tasks = "props/task/v2", library = "props/library/v5", "#87" = "props/library/v5", zones = "props/zones/v1" }
 # The zones' generic plants (`#87` bush and garden_tree, no library GLB) as the garden's plants (house_garden).
 plants = { bush = "bush_boxwood", garden_tree = "garden_tree_apple" }
 

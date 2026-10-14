@@ -70,13 +70,14 @@ RULES = {
         "wall": ("picture_frame", "wall_clock", "wall_shelf", "picture_frame", "picture_frame"),
         "floor": ("basket",),
     },
-    "hallway": {
-        "furn": ("@boots", "@packing"),
-        "fill": ("radiator", "bookcase", "console_table", "landing_bench", "dresser"),
-        "island": ("potted_plant",),
-        "mid": ("potted_plant", "console_table", "shoe_rack"),
-        "wall": ("picture_frame", "picture_frame", "picture_frame", "wall_shelf", "wall_clock", "picture_frame"),
-        "floor": ("doormat", "shoes", "shoes", "basket"),
+    "hallway": {  # #156: every prop is hand-placed (the coat corner, the console, the parcels by the door)
+        "furn": (),
+        "fill": (),
+        "island": (),
+        "mid": (),
+        "wall": (),
+        "floor": (),
+        "hosts": (),
     },
     "living_room": {
         "furn": ("@reading", "@packing"),
