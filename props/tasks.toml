@@ -13,7 +13,7 @@
 
 kit = "kits/house.json"
 library = "props/library.toml"  # the world look: its fine pack, paints and [style] for the props with look = "fine"
-version = 1
+version = 2  # #153: v1 with the world-look dining table laid over it (v1 is never overwritten)
 
 [budget_tris]
 hero = 4000      # task-critical pieces players use (look.md section 6: 1,000 to 4,000)
@@ -117,6 +117,7 @@ notes = "The WineRack marker stands 2 m from the storage's west wall: this doubl
 [[props]]
 id = "dining_table"
 type = "table"
+look = "fine"  # the world look (#153): an oiled-oak table on tapered square legs
 kind = "hero"
 w = 3.0
 d = 1.2

@@ -59,7 +59,8 @@ HOSTS = {
 
 # room -> furniture (`furn`: GROUPS `@name`, ids, `id+` stacks, in order; `fill`: wall-lining kinds in turn until the
 # room's wall lining passes its target, house_fill), mid-size solid items, wall items (in order of placement), floor
-# items; surface items at most per host and room
+# items; surface items at most per host and room; `hosts`: the host ids whose tops take surface clutter (default
+# every HOSTS id)
 RULES = {
     # the ground floor
     "kitchen": {
@@ -85,13 +86,14 @@ RULES = {
                  "picture_frame"),
         "floor": ("basket", "book_stack", "toy_blocks"),
     },
-    "dining_room": {
-        "furn": ("@drying", "@packing", "console_table"),
-        "fill": ("radiator", "sideboard", "bookcase", "dresser", "bookcase"),
-        "island": ("armchair", "small_table"),
+    "dining_room": {  # #153: no laundry or packing; the hand-placed sideboards carry only their own details
+        "furn": ("console_table",),
+        "fill": (),  # the base furniture is hand-placed: the fill lined every wall with radiators and dressers
+        "island": (),  # and the floor with armchairs and small tables
         "mid": ("potted_plant",),
-        "wall": ("picture_frame", "picture_frame", "picture_frame", "wall_clock", "picture_frame", "wall_shelf"),
+        "wall": ("picture_frame", "wall_clock", "picture_frame"),
         "floor": ("basket",),
+        "hosts": ("console_table", "dresser", "small_table"),
     },
     "stairs": {
         "furn": ("@boots", "@packing"),
@@ -374,6 +376,8 @@ def room_clutter(level: dict, room: dict, dressing: dict, cat: dict, rule: dict)
     used: dict = {}
     for host in res:
         kinds = HOSTS.get(host["id"])
+        if "hosts" in rule and host["id"] not in rule["hosts"]:  # the room's hosts (RULES' `hosts`; default all)
+            continue
         if not kinds or host.get("station") or host["kind"] != "props" or placed_on >= PER_ROOM:
             continue
         top = host["span"][1]

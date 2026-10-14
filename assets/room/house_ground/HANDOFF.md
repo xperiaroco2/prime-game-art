@@ -104,6 +104,18 @@ greige `#d9d1c5` (they were teal); every ceiling is warm sand `#d8c7b4` (P1's re
 are cream `#e4d9c6` (same file names). Changed: `kit_set.tres`, `dining_room.tscn`, `hallway.tscn`, `kitchen.tscn`,
 `living_room.tscn`, `stairs.tscn` (their `metadata/wall_paint`), and `package.json`.
 
+## The dining room in the world look (#153)
+
+The dining room is rebuilt: an oiled-oak `dining_table` with eight procedural `dining_chair`s on a `dining_rug`, a
+three-shade pendant `chandelier` over it, a glazed `display_cabinet`, the still life over the west sideboard
+(`art_still_life`, base layer) and two small frames (`art_delivery`, `art_gazebo`), and a half-set table and
+sideboard under `Detail` (`place_setting`, `serving_board`, `tulip_vase`, `homework`, `bottle_rack`, `fruit_dish`,
+`mail_stack`, with `laptop`, `candle_pair` and `board_games` from #150). The laundry, drying rack and open boxes are
+gone. Changed: `dining_room.tscn` and `package.json`; in the props set, 15 GLBs (`dining_chair`, `chandelier` and
+`dining_table` rebuilt with the same file names, 12 new), 771 KB of LFS. Draw calls in the dining room's package-sheet
+views (the room only, before/after): from the door 33/44, across the table 40/47, the set table 36/41, the sideboard
+wall 16/12.
+
 ## Credits
 The entries are `assets/kit/house_kit/CREDITS.md` and `assets/prop/house_props/CREDITS.md` in this repo (the game's
 `docs/credits/<id>.md` format; copy them to `docs/credits/house_kit.md` and `house_props.md`): own work, the props made

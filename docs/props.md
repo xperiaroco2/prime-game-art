@@ -47,6 +47,17 @@ Every room's props follow these rules; the numbers are data in `props/library.to
    procedurally (`art_abstract`, `art_city`, `art_burger`, `art_photos`, `art_score`), ten detail props (`board_games`,
    `candle_jars`, `coffee_books`, `deco_bowl`, `deco_vase`, `game_console`, `laptop`, `side_lamp`, `slippers`,
    `table_plant`) and `floor_plant` (its pot the only collider): 22 new living-room props and 10 rebuilt ones.
+   The dining room (#153) adds `dining_chair` (an oak frame with an upholstered seat; two collider boxes, seat and
+   back), `pendant_trio` (three shades on a ceiling bar; the `chandelier` id, one light anchor), `display_cabinet`
+   (hero: glazed upper doors over a closed base; one collider box), the slate `dining_rug` (`carpet_rug`, paint
+   `carpet_slate`), the base-layer still life `art_still_life` and the detail-layer `art_delivery` and
+   `art_gazebo` (`framed_art` kinds `still_life`, `delivery`, `gazebo`: a delivery route on the House's street
+   map and a photo strip from the gazebo), and the
+   detail props `place_setting`, `serving_board`, `fruit_dish`, `tulip_vase`, `bottle_rack` (shape `wine_rack`;
+   dressing class for its six bottles), `homework` and `mail_stack`; the task prop `dining_table` is the oiled-oak
+   `table` on tapered legs (`look = "fine"`, `props_task.build_table_fine`). `tools/tests/test_props_dining.py`
+   checks their sizes, pivots, budgets and colliders and that the table-top items stand on the top and keep a
+   0.6 m band round the `DiningTable` station (x 6.0 m, the delivery chain's drop-off) clear.
 8. **Route.** Hard-surface props are code (the shared builders, `prop_geom.py`'s `Style`). Meshy only for organic
    one-offs (food, soft goods, plants) at a hero budget, as a recorded batch (`docs/meshy.md`).
 
@@ -56,7 +67,8 @@ The House map (request #73) needs props where the five task chains happen (desig
 `inventory.md` §7) and a few room-defining pieces no pack has. Art #82 builds them as repo code in the House kit's
 way (`docs/kit.md`): a spec (`props/tasks.toml`), a pure-Python geometry module (`tools/blender/props_task.py`), a
 headless Blender builder (`props_task_build.py`, which reuses the kit's `kit_build.py` for objects, materials and the
-export) and the `props` command. The GLBs stay in the raw folder (`D:/prime-art-raw/props/task/v1/`) until the
+export) and the `props` command. The GLBs stay in the raw folder (`D:/prime-art-raw/props/task/v2/`: v1 with #153's
+dining table rebuilt over it) until the
 engineer approves the look; then they come into the repo with their manifests.
 
 ### The command
@@ -164,7 +176,9 @@ Art #87 (map request #73) makes one shared library of generic props (furniture, 
 things) so that every room package places furniture instead of making it. Task props (#82a, #82b), the car and its
 lift (#79), vegetation (#80), the gazebo (#81b) and kit pieces are made elsewhere; `[skip]` in the mapping file names
 who makes each. The plan is `D:/prime-art-raw/research/2026-10-10-house-plan/` (`props.md`, `inventory.md` §9,
-`look.md` §5 and §6). The GLBs stay in the raw folder (`D:/prime-art-raw/props/library/v3/`; v2 is v3 before #152's cream sofa and armchairs, v1 the version-1 build, #150) until the engineer
+`look.md` §5 and §6). The GLBs stay in the raw folder (`D:/prime-art-raw/props/library/v4/`: v3 with #153's
+dining room built over it; v3 is v2 with #152's cream sofa and armchairs, v2 v1 with #150's living room, v1 the
+version-1 build) until the engineer
 approves the look on a review page; then they come into the repo under `assets/prop/<id>/` with their manifests.
 
 ### The mapping file: `props/library.toml`
@@ -215,7 +229,8 @@ clutter of art #104 and its story pieces: `laundry_basket`, `drying_rack`, `open
 ### The build
 
 `tools/run.sh props-library --build [--batch 1|2] [--only id,...]` builds the props in one headless Blender run
-(`tools/blender/prop_build.py`) into the mapping file's `out`, `D:/prime-art-raw/props/library/v3/`: one `<id>.glb` per prop, `textures/`
+(`tools/blender/prop_build.py`) into the mapping file's `out`,
+`D:/prime-art-raw/props/library/v4/`: one `<id>.glb` per prop, `textures/`
 (the kit's detail maps), `build.json` (what each GLB holds; batches accumulate) and `props.md` (the build table); then
 it checks every GLB: the mesh and collider nodes, UV2 and vertex colours, at most `max_materials` materials all named
 `-vcol`, glTF-Validator, the class's maximum triangles, a collider unless `none`, a fixture's light anchor. Under the
