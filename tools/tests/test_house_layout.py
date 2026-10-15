@@ -21,7 +21,11 @@ GREYBOX = G.load()
 # have the roof deck. These are the differences the game side must make (listed in the PR); the comparisons expect them.
 PENDING_ROOMS = {"Roof": None, "Attic": [18, 24, 24, 20]}  # no Roof room; the attic on the whole footprint
 PENDING_DOORS = {"attic": {"Door1"}}  # the attic's door to the deck is gone (the dormer window instead)
-PENDING_STATIONS = {"attic": {"Lookout", "Loot"}}  # the deck's stations, now on the roof, belong to the attic
+PENDING_STATIONS = {"attic": {"Lookout", "Loot"},  # the deck's stations, now on the roof, belong to the attic
+                    # the game removed the basement's switch and generator stations (prime-game#799 at 82efa45e);
+                    # the art's basement keeps them until its next export
+                    "storage": {"SwitchA"}, "boiler_room": {"SwitchB"}, "pump_room": {"SwitchC"},
+                    "switch_room": {"SwitchD"}, "generator_hall": {"Generator"}}
 
 
 def level(name: str) -> dict:
