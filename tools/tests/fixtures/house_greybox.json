@@ -35,7 +35,7 @@
   "WC": [18, 24, 6, 6],
   "Yard": [0, 0, 80, 60]
  },
- "game_commit": "605aed5f502a371d6e0fc6daf3cfc28864b35f9b",
+ "game_commit": "7691a0a3abefe3b13986ecacd38c9449cef427cd",
  "rooms": {
   "attic": {
    "doors": {},
@@ -180,7 +180,7 @@
    "doors": {
     "Door1": [0.0, 0.0, 10.0, ""],
     "Door2": [10.0, 0.0, 14.0, ""],
-    "Door3": [9.0, 0.0, 0.0, ""]
+    "Door3": [11.0, 0.0, 0.0, ""]
    },
    "doors_marker3d": ["Door1", "Door2", "Door3"],
    "markers": {
