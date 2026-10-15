@@ -7,13 +7,14 @@ extends SceneTree
 ## _nospec also sets light_specular 0 (diffuse only, what a lightmap holds). A row with `sheen` (#83c,
 ## house_bake.sheen_mode) is baked plus: lm_specular (LightmapGI.specular_intensity, a directional bake), probes (one
 ## ReflectionProbe per box of `probes`), n (the nearest n lights of `glow_types` as specular-only real-time lights on a
-## black additive copy of the lightmapped meshes, render layer 2), shadow (those lights shadowed). Per shot: _cost (the
+## black additive copy of the lightmapped meshes, render layer 2), shadow (those lights shadowed). Per shot: DrawCost.cost (the
 ## real-time lights in the scene and in view, shadowed or not; draw calls, shadow draw calls and GPU ms with the shadows
 ## cached and with every shadow redrawn), the row's probe count. The sheet
 ## tile of a row's first camera carries the row's label; the measured frame has none.
 ##   -s res://house/bake_shots.gd -- jobs=<abs json> out=<abs dir>  (an off-screen window; a headless Godot draws nothing)
 
-const SHEEN_LAYER := 2  # render layer bit 2 (value 2): the overlay copies and the sheen lights' cull mask
+const DrawCost := preload("draw_cost.gd")  # the overlay and the cost, shared with walk.gd (#185)
+const SHEEN_LAYER := DrawCost.SHEEN_LAYER
 
 
 func _initialize() -> void:
@@ -91,7 +92,7 @@ func _run() -> void:
 					p.cull_mask = 1  # the rooms, not the sheen overlay
 					sc.add_child(p)
 			if int(sh["n"]) > 0:
-				_overlay(sc)
+				DrawCost.overlay(sc.get_node("Meshes").get_children())
 				for l: Light3D in lights:  # the baked lamps would light the copies (no lightmap) in real time
 					l.light_cull_mask &= ~SHEEN_LAYER
 		root.add_child(sc)
@@ -112,7 +113,7 @@ func _run() -> void:
 			img.convert(Image.FORMAT_RGB8)
 			img.save_png("%s/%s_%d.png" % [out, row["label"], ci])
 			var rt_l: Array = added if not sh.is_empty() else ([] if mode == "baked" else lights)
-			var cost: Dictionary = await _cost(cam, rt_l)
+			var cost: Dictionary = await DrawCost.cost(root, cam, rt_l)
 			if ci == 0:  # the sheet's tile carries the row's label; the measured frame above has none
 				tag.text = str(row["label"]).trim_prefix(str(row.get("zone", "")) + "_")
 				tag_layer.visible = true
@@ -139,50 +140,6 @@ func _run() -> void:
 	quit(0)
 
 
-## A black, additive, ambient-free copy of every lightmapped mesh on SHEEN_LAYER: the sheen lights reach only these
-## copies, so they add their specular and nothing else (black albedo: no diffuse; no ambient: the lightmap and the
-## probes are not added twice). The lightmapped originals stay on layer 1, outside the sheen lights' cull mask.
-func _overlay(sc: Node3D) -> void:
-	var mats := {}
-	for mi: MeshInstance3D in sc.get_node("Meshes").get_children():
-		if mi.gi_mode != GeometryInstance3D.GI_MODE_STATIC or mi.mesh == null:
-			continue
-		var o := MeshInstance3D.new()
-		o.mesh = mi.mesh
-		o.transform = mi.transform
-		o.layers = SHEEN_LAYER
-		o.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		o.gi_mode = GeometryInstance3D.GI_MODE_DISABLED
-		for s in mi.mesh.get_surface_count():
-			var m: Material = mi.get_surface_override_material(s)
-			if m == null:
-				m = mi.mesh.surface_get_material(s)
-			if not mats.has(m):
-				mats[m] = _sheen_material(m)
-			o.set_surface_override_material(s, mats[m])
-		sc.get_node("Meshes").add_child(o)
-
-
-func _sheen_material(m: Material) -> Material:
-	var s: BaseMaterial3D
-	if m is BaseMaterial3D:
-		s = (m as BaseMaterial3D).duplicate()
-	else:
-		s = StandardMaterial3D.new()
-		s.roughness = 0.6
-	s.albedo_color = Color.BLACK
-	s.albedo_texture = null
-	s.metallic = 0.0
-	s.emission_enabled = false
-	s.next_pass = null
-	s.shading_mode = BaseMaterial3D.SHADING_MODE_PER_PIXEL
-	s.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
-	s.depth_draw_mode = BaseMaterial3D.DEPTH_DRAW_DISABLED
-	s.disable_ambient_light = true
-	s.disable_fog = true
-	return s
-
-
 ## The nearest n lights of the glow types to `at` as real-time copies (bake mode Disabled, cull mask SHEEN_LAYER,
 ## the lamp's own energy, range and light_specular), shadowed or not; returns them.
 func _sheen_lights(lights: Array, at: Vector3, n: int, shadow: bool, types: Array) -> Array:
@@ -202,39 +159,3 @@ func _sheen_lights(lights: Array, at: Vector3, n: int, shadow: bool, types: Arra
 		l.get_parent().add_child(d)
 		out.append(d)
 	return out
-
-
-## A shot's cost, the same way for every row: the real-time lights `rt` (all, and in view: the range sphere meets the
-## camera's frustum) and their shadowed share; then per frame, averaged over 8 drawn frames, the draw calls, shadow
-## draw calls and GPU ms with the shadows cached ("cached"), and again with every shadowed light nudged 1 mm each frame
-## ("redrawn": every shadow re-rendered, the worst case of a player moving in each lamp's range).
-func _cost(cam: Camera3D, rt: Array) -> Dictionary:
-	var planes := cam.get_frustum()
-	var c := {"rt_lights": rt.size(), "rt_in_view": 0, "shadowed": 0, "shadowed_in_view": 0}
-	for l: Light3D in rt:
-		var rng: float = l.get("omni_range") if l is OmniLight3D else l.get("spot_range")
-		var seen := true
-		for p: Plane in planes:
-			if p.distance_to(l.global_position) > rng:
-				seen = false
-				break
-		c["rt_in_view"] += int(seen)
-		c["shadowed"] += int(l.shadow_enabled)
-		c["shadowed_in_view"] += int(seen and l.shadow_enabled)
-	var vp := root.get_viewport_rid()
-	for phase in ["cached", "redrawn"]:
-		var sum := [0.0, 0.0, 0.0]
-		for i in 10:  # the first 2 frames settle (the GPU timer lags a frame or two)
-			if phase == "redrawn":
-				for l: Light3D in rt:
-					if l.shadow_enabled:
-						l.position.y += 0.001 if i % 2 == 0 else -0.001
-			await RenderingServer.frame_post_draw
-			if i >= 2:
-				sum[0] += root.get_render_info(Viewport.RENDER_INFO_TYPE_VISIBLE, Viewport.RENDER_INFO_DRAW_CALLS_IN_FRAME)
-				sum[1] += root.get_render_info(Viewport.RENDER_INFO_TYPE_SHADOW, Viewport.RENDER_INFO_DRAW_CALLS_IN_FRAME)
-				sum[2] += RenderingServer.viewport_get_measured_render_time_gpu(vp)
-		c["draw_calls_" + phase] = sum[0] / 8
-		c["shadow_draw_calls_" + phase] = sum[1] / 8
-		c["gpu_ms_" + phase] = sum[2] / 8
-	return c

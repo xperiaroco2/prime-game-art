@@ -245,9 +245,15 @@ def write_counts(lights: dict, zones: list[str], rows: list[dict], folder: Path)
     shots = json.loads((folder / "shots.json").read_text(encoding="utf-8")).get("shots", [])
     table = house_bake.draw_calls(shots, rows)
     names = {z: house_bake.view_names(REVIEW_ROOMS[z], REVIEW_WALL.get(z, [])) for z in zones if z in REVIEW_ROOMS}
-    budget = lights.get("budget", {})
     old = folder.parent / "before" / "draw_calls.json"
     before = json.loads(old.read_text(encoding="utf-8"))["table"] if old.is_file() and old.parent != folder else None
+    report(lights.get("budget", {}), table, names, folder, before)
+    return table
+
+
+def report(budget: dict, table: dict, names: dict[str, list[str]], folder: Path, before: dict | None = None) -> None:
+    """The draw calls per view against lights.toml's [budget], one code path for --count and --walk (#185):
+    draw_calls.json and draw_calls.md (house_bake.draw_calls_md) into `folder`, a WARN line per view over a limit."""
     (folder / "draw_calls.json").write_text(json.dumps({"budget": budget, "views": names, "table": table}, indent=1),
                                             encoding="utf-8", newline="\n")
     (folder / "draw_calls.md").write_text(house_bake.draw_calls_md(table, names, budget, before), encoding="utf-8",
@@ -255,7 +261,6 @@ def write_counts(lights: dict, zones: list[str], rows: list[dict], folder: Path)
     for line in house_bake.budget_warnings(budget, table, names):
         common.say(f"  {line}")
     common.say(f"  draw calls: {(folder / 'draw_calls.md').as_posix()}")
-    return table
 
 
 SHEEN_NOTE = "every lamp real-time with shadows and specular plus the bake's bounce: the sheen's target"

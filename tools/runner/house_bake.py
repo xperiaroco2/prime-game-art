@@ -427,6 +427,35 @@ def draw_calls(shots: list[dict], rows: list[dict]) -> dict[str, dict[str, list[
     return out
 
 
+def walk_count(lights: dict, fixtures: list[dict], preset: str = "high") -> dict:
+    """What walk.gd counts per walk view (#185): the preset's sheen row as the light kit's glow fixtures (world x, y, z;
+    light, range, energy; a spot's angle and aim), the nearest `n` of them real-time, `shadow` or not."""
+    sh = sheen_mode(lights["presets"][preset]["sheen"])
+    glow = []
+    for f in fixtures:
+        if not f.get("glow"):
+            continue
+        g = {"name": f["name"], "light": f["light"], "at": [f["x"], f["h"], f["y"]], "range": f["range"],
+             "energy": f["energy"]}
+        if f["light"] == "spot":
+            g["angle"] = f["angle"]
+            g["aim"] = f["aim"]
+        glow.append(g)
+    return {"glow": glow, "n": sh["n"], "shadow": sh["shadow"]}
+
+
+def walk_table(counts: dict[str, dict]) -> tuple[dict[str, dict[str, list[dict]]], dict[str, list[str]]]:
+    """walk.gd's counts (view -> {"baked", "high"}: DrawCost.cost each) as draw_calls()'s table under the zone "walk"
+    and its view names: the same rows as --count's, so budget_warnings and draw_calls_md read both."""
+    names = list(counts)
+    shots, rows = [], [{"label": "walk_baked", "zone": "walk", "mode": "baked"},
+                       {"label": "walk_high", "zone": "walk", "mode": "sheen12_shadow"}]
+    for ci, view in enumerate(names):
+        for kind in ("baked", "high"):
+            shots.append(dict(counts[view][kind], row=f"walk_{kind}", cam=ci))
+    return draw_calls(shots, rows), {"walk": names}
+
+
 def budget_warnings(budget: dict, table: dict[str, dict[str, list[dict]]],
                     names: dict[str, list[str]]) -> list[str]:
     """One WARN line per view over lights.toml's [budget] (baked, high: visible draw calls; high_shadow: shadow draw

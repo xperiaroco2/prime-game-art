@@ -195,7 +195,7 @@ def run(args: argparse.Namespace) -> int:
     if args.walk or args.basement:
         errors = stage(data, summary, found)
         if args.walk:
-            code = walk(data, args.walk.resolve(), routes, errors, dressing)
+            code = walk(data, args.walk.resolve(), routes, errors, dressing, lights)
         if args.basement:
             code = basement(data, args.layouts, args.props_spec, args.basement.resolve(), errors) or code
     return code
@@ -511,13 +511,14 @@ def kit_pack(data: dict) -> dict:
 
 
 def walk(data: dict, folder: Path, routes: dict | None = None, errors: list[str] = (),
-         dressing: dict | None = None) -> int:
+         dressing: dict | None = None, lights: dict | None = None) -> int:
     """Runs godot/house/walk.gd in a window off-screen (pictures need one) on the staged house: every doorway of the
     ground and upper floors and every flight, walked by a 1.36 m capsule; the design doc's routes (routes.toml) at their
     speed, judged against the doc's times (also into tools/out/house/routes.json); the stills, the plan, sheet.png and
     the exterior at dusk (exterior.png); draw calls per view. With a dressing: c2 stand-in lamps at its fixtures, one
     shot per dressed room from its door and rooms.png (house_dressing.review_request), and per room the view's draw
-    calls and the dressing's triangles."""
+    calls and the dressing's triangles. With `lights` (lights.toml): per still and room view the budget's draw calls,
+    baked and High (house_bake.walk_count; draw_calls.json and .md in `folder`, a WARN per view over [budget]; #185)."""
     folder.mkdir(parents=True, exist_ok=True)
     req = common.OUT / "house" / "walk_request.json"
     request = house_layout.walk_request(data)
@@ -526,6 +527,8 @@ def walk(data: dict, folder: Path, routes: dict | None = None, errors: list[str]
     if dressing:  # the walked levels' rooms; the basement's have their own review (--basement)
         walked = {r["id"] for lv in data["levels"] if lv["level"] in house_layout.WALK_LEVELS for r in lv["rooms"]}
         request.update(house_dressing.review_request(data, {rid: r for rid, r in dressing.items() if rid in walked}))
+    if lights:
+        request["count"] = house_bake.walk_count(lights, house_lights.plan(lights, data))
     for name in request["closed"]:
         common.say(f"  not walked (closed kit leaf): {name}")
     req.write_text(json.dumps(request, indent=1), encoding="utf-8", newline="\n")
@@ -559,6 +562,9 @@ def walk(data: dict, folder: Path, routes: dict | None = None, errors: list[str]
         common.say(f"  {name}: {info['draw_calls']} draw calls ({info.get('dressing_draw_calls')} the dressing's), "
                    f"{info['primitives']} primitives in view; dressing {info['dressing_meshes']} meshes, "
                    f"{info['dressing_triangles']} triangles")
+    if lights and result.get("counts"):  # the budget per walk view, as --count reports it (#185)
+        table, names = house_bake.walk_table(result["counts"])
+        _house_bake.report(lights.get("budget", {}), table, names, folder)
     for line in house_dressing.swatch_report(result.get("swatches", [])):
         common.say(f"  swatch {line}")
     common.say(f"  {result['instances']['mesh_instances']} mesh instances, {result['instances']['static_bodies']} bodies; "
