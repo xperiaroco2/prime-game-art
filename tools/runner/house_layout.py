@@ -331,7 +331,7 @@ def plan(data: dict) -> dict:
             for h in holes:
                 r = h.get("rect") or _tile_rect(h, data)
                 blocked |= _cells(r)
-                if "tile" in h and inside(room["rect"], h["tile"][0] + 1, h["tile"][1] + 1):
+                if "tile" in h and inside(room["rect"], h["tile"][0] + 0.5, h["tile"][1] + 0.5):
                     pieces[room["id"]].append({"id": h["piece"], "x": h["tile"][0], "y": h["tile"][1], "h": 0.0, "turn": 0})
             if room["kind"] == "open":
                 for other in by_height[round(lv["floor_y"], 3)]:
@@ -673,7 +673,9 @@ def _cells(rect) -> set:
 
 
 def _tile_rect(h: dict, data: dict):
-    return [h["tile"][0], h["tile"][1], 2, 2]
+    """A hatch tile's footprint: its piece's size (the long hatch over the attic stair is 4 x 2, #183)."""
+    w, d = data["pieces"].get(h["piece"], {}).get("size", [2, 2])
+    return [h["tile"][0], h["tile"][1], int(w), int(d)]
 
 
 def hatch_hole(h: dict, data: dict):
@@ -1085,7 +1087,7 @@ def write_scenes(data: dict, planned: dict, out: Path, dressing: dict | None = N
 
 WALK_LEVELS = ("ground", "upper")  # the storeys whose doors the capsule walks (#75a); stairs are walked on every level
 DOOR_KINDS = ("door", "glass", "gate8")
-STAIR_PIECES = ("stairs_main", "stairs_basement", "stairs_balcony", "stairs_outdoor_half")
+STAIR_PIECES = ("stairs_main", "stairs_basement", "stairs_balcony", "stairs_outdoor_half", "stair_attic")
 TURN_IN = 0.2  # metres onto a U-turn's landing past a flight's top (or before the next one's foot)
 WALK_SIDE = 1.0  # metres either side of a doorway's wall line
 
@@ -1213,8 +1215,9 @@ def walk_request(data: dict, levels=WALK_LEVELS) -> dict:
             start = end(low, foot[0] - fdx * WALK_SIDE, foot[1] - fdy * WALK_SIDE)
             finish = end(high, top[0] + dx * reach, top[1] + dy * reach)
             up = [start] + middle + [finish]
-            walks.append({"name": f"{st['id']}:up", "kind": "stairs", "points": up})
-            walks.append({"name": f"{st['id']}:down", "kind": "stairs", "points": up[::-1]})
+            extra = {"radius": float(st["walk_radius"])} if "walk_radius" in st else {}  # a stair narrower than a door
+            walks.append({"name": f"{st['id']}:up", "kind": "stairs", "points": up, **extra})
+            walks.append({"name": f"{st['id']}:down", "kind": "stairs", "points": up[::-1], **extra})
     for lv in data["levels"]:  # the doc's loops (#76), walked at the game's speed and timed against the doc
         for lp in lv.get("loops", []):
             walks.append({"name": f"loop:{lp['id']}", "kind": "loop", "speed": lp.get("speed", 4.5),

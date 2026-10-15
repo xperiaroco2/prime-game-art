@@ -11,8 +11,8 @@ room = "landing"
 # against the railing, two armchairs facing each other over a coffee table on a rug, a side table with a lamp, a
 # floor lamp and a plant) and a dresser on the west wall; the bench with the photos on the south wall; plants, a
 # big fig with a print in the middle of the east wall, a delivery by the study door and the laundry basket by the
-# bathroom door. The area round the attic
-# hatch's ladder (x 1 to 3.5, z 3 to 6) and the stairs' top (x 4 to 5.5, z 8 to 10) stays clear.
+# bathroom door. The attic stair (#183: x 0.475 to 4, z 4.75 to
+# 5.85, its foot at x 4 facing east) and the stairs' top (x 4 to 5.5, z 8 to 10) stay clear.
 
 [[props]]
 id = "landing_runner"

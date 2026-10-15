@@ -8,7 +8,7 @@ layouts/house/dressing/attic_roof/attic.toml, checked in pure Python (docs/house
   items; the dormers and the chimneys stand on it.
 - `check(z, data)`: the items inside the floor, off each other and the kept-free rects, under the attic's roof, the
   inventory's counts; every hiding spot reachable for a pick-up; the roof's stations reachable from the dormer.
-- `reach(z, data)`: per hiding spot, a point a player (radius PLAYER_R) can walk to from the ladder, within REACH_M of
+- `reach(z, data)`: per hiding spot, a point a player (radius PLAYER_R) can walk to from the stair's top, within REACH_M of
   the spot in plan and with a clear line of sight from the eye (EYE_M) to it.
 - `lookout(rz, data)`: from each lookout eye on the roof, the share of the plot's fence openings in view, and which
   windows of the house can be seen (the design doc: "the roof sees the yard, not inside").
@@ -27,6 +27,8 @@ from typing import Any
 
 from . import common, house_layout
 from .house_zones import _ccw, _near, overlap, rect
+
+GUARD_M = 0.08  # the hatch guard's depth outside the hole (kits/house.json hatch_guard_attic `post`, #183)
 
 DRESSING = common.ROOT / "layouts" / "house" / "dressing" / "attic_roof"  # not the rooms' format (#75b): kept apart
 LIBRARY = common.ROOT / "props" / "library.toml"
@@ -231,12 +233,14 @@ def floor_rect(z: dict) -> tuple[float, float, float, float]:
 
 
 def blocked_rects(z: dict, data: dict) -> list[list[tuple[float, float]]]:
-    """Floor nobody stands on: the hatch's hole in the attic."""
+    """Floor nobody stands on: the hatch's hole in the attic and the guard round its closed sides (#183: GUARD_M
+    outside the hole on the north, south and east; the stair's top on the west is open)."""
     out = []
     if z["room"] == "attic":
         for h in _level(data, "attic").get("holes", []):
             if "tile" in h:
-                out.append(_box(float(h["tile"][0]), float(h["tile"][1]), 2.0, 2.0))
+                x, y, w, d = house_layout.hatch_hole(h, data)
+                out.append(_box(x, y - GUARD_M, w + GUARD_M, d + 2 * GUARD_M))
     return out
 
 
@@ -422,7 +426,7 @@ def step_at_wall(dm: dict, data: dict) -> float:
 
 def climb_problems(z: dict, data: dict) -> list[str]:
     """Every dormer has a stair whose top meets its sill at the front wall's inner face, no steeper than the floor
-    limit, as wide as a capsule, and whose foot the attic's walk reaches (from the hatch ladder)."""
+    limit, as wide as a capsule, and whose foot the attic's walk reaches (from the attic stair's top, #183)."""
     problems = []
     seen, cell = walkable(z, data)
     cs = climbs(data)

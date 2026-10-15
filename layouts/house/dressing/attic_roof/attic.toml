@@ -8,10 +8,10 @@
 room = "attic"
 rect = [18, 24, 24, 20]
 eave_h = 2.2                       # the knee wall; the roof climbs gable_rise_per_m from the eaves on y 24 and 44
-# Floor kept free: the hatch and its 1 m apron, the dormer's climb-out (its stair and the way to it), 1 m round
-# the Knife3 marker (36, 37).
-clear = [[26, 27, 4, 4], [33.4, 39.5, 3.2, 4.5], [35, 36, 2, 2]]
-arrive = [28.0, 31.2]              # where a player steps off the ladder (the walk's start)
+# Floor kept free: the long hatch with its guard and a 1 m apron (#183: the stair's top at x 26.475 steps off
+# west), the dormer's climb-out (its stair and the way to it), 1 m round the Knife3 marker (36, 37).
+clear = [[24.9, 27.6, 5.8, 3.4], [33.4, 39.5, 3.2, 4.5], [35, 36, 2, 2]]
+arrive = [25.7, 29.3]              # where a player steps off the attic stair (the walk's start, #183)
 
 # --- the north eave: the shelving run, the wardrobe and the trunks ---
 [[items]]

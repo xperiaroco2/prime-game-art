@@ -21,7 +21,11 @@ GREYBOX = G.load()
 # have the roof deck. These are the differences the game side must make (listed in the PR); the comparisons expect them.
 PENDING_ROOMS = {"Roof": None, "Attic": [18, 24, 24, 20]}  # no Roof room; the attic on the whole footprint
 PENDING_DOORS = {"attic": {"Door1"}}  # the attic's door to the deck is gone (the dormer window instead)
-PENDING_STATIONS = {"attic": {"Lookout", "Loot"}}  # the deck's stations, now on the roof, belong to the attic
+PENDING_STATIONS = {"attic": {"Lookout", "Loot"},  # the deck's stations, now on the roof, belong to the attic
+                    # the game removed the basement's switch and generator stations (prime-game#799 at 82efa45e);
+                    # the art's basement keeps them until its next export
+                    "storage": {"SwitchA"}, "boiler_room": {"SwitchB"}, "pump_room": {"SwitchC"},
+                    "switch_room": {"SwitchD"}, "generator_hall": {"Generator"}}
 
 
 def level(name: str) -> dict:
@@ -62,7 +66,7 @@ class LayoutDataTest(unittest.TestCase):
         self.assertNotIn("roof", {lv["level"] for lv in DATA["levels"]})
 
     def test_the_kit_path_is_one_setting(self) -> None:
-        self.assertEqual(DATA["settings"]["kit_dir"], "kits/house/v3c")
+        self.assertEqual(DATA["settings"]["kit_dir"], "kits/house/v3d")
         self.assertIn("{id}", DATA["settings"]["kit_res"])
 
     def test_every_planned_piece_is_in_the_kit(self) -> None:
@@ -221,9 +225,9 @@ class PlanTest(unittest.TestCase):
                 self.assertEqual(set(cells), expect, room["id"])
 
     def test_the_hatch_tile_is_in_the_attic_floor(self) -> None:
-        tiles = [p for p in planned("attic")["pieces"]["attic"] if p["id"] == "floor_boards_2x2_hatch"]
-        self.assertEqual([(t["x"], t["y"]) for t in tiles], [(27, 28)])
-        self.assertEqual(H.hatch_hole(level("attic")["holes"][0], DATA), [27.6, 28.3, 0.8, 1.4])
+        tiles = [p for p in planned("attic")["pieces"]["attic"] if p["id"] == "floor_boards_4x2_hatch"]  # #183
+        self.assertEqual([(t["x"], t["y"]) for t in tiles], [(26, 28)])
+        self.assertEqual([round(v, 3) for v in H.hatch_hole(level("attic")["holes"][0], DATA)], [26.475, 28.73, 3.125, 1.14])
 
     def test_stairs_climb_from_their_rect(self) -> None:
         extra = {p.get("name"): p for p in planned("upper")["extra"]}
@@ -344,7 +348,7 @@ class WalkRequestTest(unittest.TestCase):
     def test_each_flight_is_walked_up_and_down(self) -> None:
         stairs = {w["name"]: w["points"] for w in self.REQ["walks"] if w["kind"] == "stairs"}
         self.assertEqual(sorted(stairs), sorted(f"{s}:{d}" for s in ("main_stairs", "pantry_stairs", "balcony_stairs",
-                                                                         "outdoor_stairs")
+                                                                         "outdoor_stairs", "attic_stair")
                                                 for d in ("up", "down")))
         up = stairs["main_stairs:up"]
         self.assertEqual(up[1], [30.0, 0.0, 35.0])  # the U-turn: up west, across the landing, up east

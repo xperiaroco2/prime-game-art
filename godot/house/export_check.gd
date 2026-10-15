@@ -292,11 +292,12 @@ func _package(req: Dictionary) -> Dictionary:
 		problems.append("%s roof: a hole at %.2f, %.2f, %d rays meet %s" % [h[0], h[1], h[2], h[3], at.get_slice("|", 1)])
 	var walks: Array = []
 	for w: Dictionary in req.get("walks", []):
-		var res: Dictionary = await Walker.walk(self, RADIUS, w["points"])
+		var r: float = float(w.get("radius", RADIUS))  # a stair narrower than a door walks the game's capsule (#183)
+		var res: Dictionary = await Walker.walk(self, r, w["points"])
 		res["name"] = w["name"]
 		walks.append(res)
 		if not res["arrived"]:
-			problems.append("walk %s: the %.2f m capsule stops at %s" % [w["name"], 2 * RADIUS, str(res["end"])])
+			problems.append("walk %s: the %.2f m capsule stops at %s" % [w["name"], 2 * r, str(res["end"])])
 	return {"problems": problems, "paints": paints, "rays": rays, "surfaces": counts, "roof_rays": roof_rays, "roof_surfaces": roof_counts,
 		"plot_rays": plot_rays, "plot_surfaces": plot_counts,
 		"none_at": none_at, "pieces": pieces, "walks": walks,

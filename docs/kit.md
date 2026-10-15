@@ -6,8 +6,8 @@ fences, gates and glass walls on one grid. Art #74 built the first kit, the **Ho
 GLB per piece and checks every piece in glTF-Validator and Godot. Art #86 made **version 2** (below): 105 pieces
 (v1's 71 with their ids kept, 34 more), the pitched and glass roofs, the porch, the pillar, the chimney, the gazebo,
 and look.md section 5's material plan (one `set` material for plaster, wood and concrete). The GLBs stay in the raw
-folder (`D:/prime-art-raw/kits/house/v<version>/`; v1 is kept untouched in `v1/`, v2 builds into `v2/`, v3 into `v3c/`: the House layout's `kit_dir`; `v3/` holds a stale in-between build, `v3b/` the
-slate-ceiling build of #77, and `v3c/` is `v3b/` with the 12 pieces carrying the `ceiling` role rebuilt for #152) until the
+folder (`D:/prime-art-raw/kits/house/v<version>/`; v1 is kept untouched in `v1/`, v2 builds into `v2/`, v3 into `v3d/`: the House layout's `kit_dir`; `v3/` holds a stale in-between build, `v3b/` the
+slate-ceiling build of #77, and `v3c/` is `v3b/` with the 12 pieces carrying the `ceiling` role rebuilt for #152; `v3d/` is `v3c/` with the attic stair, the long hatch tile and its guard added for #183) until the
 engineer approves the kit's look on a review page; then they come into the repo with their manifests.
 
 ## The command
@@ -19,7 +19,7 @@ tools/run.sh kit [--spec kits/house.json] [--out DIR] [--only id,...] [--no-buil
 | Option | What it does |
 |---|---|
 | (none) | Checks the spec (with the seam and closure checks), builds every piece in headless Blender (`tools/blender/kit_build.py`), checks every GLB and imports them all into `godot/` headless (`godot/check/kit.gd`); about 5 minutes, plus any wait for the heavy-run lock |
-| `--out` | Output folder (default `<raw>/kits/<kit>/v<version>`; for the House kit the House layout's `kit_dir` while it names a build of the spec's version, now `D:/prime-art-raw/kits/house/v3c`) |
+| `--out` | Output folder (default `<raw>/kits/<kit>/v<version>`; for the House kit the House layout's `kit_dir` while it names a build of the spec's version, now `D:/prime-art-raw/kits/house/v3d`) |
 | `--only` | Only these pieces (`--proof` needs the whole kit) |
 | `--no-build` | Checks the GLBs already in `--out` (about 1 minute with Godot) |
 | `--no-godot` | Skips the Godot import (and the proof) |
@@ -73,7 +73,7 @@ and must check that Godot's "static lightmaps" import keeps the kit's UV2 rather
 - **Collision**: every piece has simple convex colliders, nodes named `<id>_col<k>-convcolonly` (Godot imports each
   as a `StaticBody3D` with a `ConvexPolygonShape3D` and no mesh); glass panes are `<id>_glass<k>-convcolonly`, a
   separate group the game may keep out of line-of-sight rays. A flight's walkable collider is a ramp through its
-  nosings.
+  nosings (the attic stair's, #183, runs on down to the floor one going in front of its foot: no ledge to walk onto).
 - **UV0**: box projection in metres (one texture tile per metre). **UV2** (the lightmap UV, `TEXCOORD_1`): one island
   per face, shelf-packed into the unit square at one scale with a margin, so LightmapGI can bake the pieces.
 

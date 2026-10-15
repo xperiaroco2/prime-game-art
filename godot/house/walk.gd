@@ -96,7 +96,7 @@ func _run(args: PackedStringArray) -> void:
 	var loops: Array = []  # [request walk, its result]: drawn on the upper floor's top-down
 	for w: Dictionary in _req["walks"]:
 		var loop: bool = w["kind"] == "loop"  # a doc route (#76): the game's speed, timed against the doc
-		var r: Dictionary = await _walk(RADIUS, w["points"], float(w.get("speed", SPEED)), float(w.get("max_s", 40.0 if loop else MAX_S)))
+		var r: Dictionary = await _walk(float(w.get("radius", RADIUS)), w["points"], float(w.get("speed", SPEED)), float(w.get("max_s", 40.0 if loop else MAX_S)))
 		r["name"] = w["name"]
 		r["kind"] = w["kind"]
 		if loop:

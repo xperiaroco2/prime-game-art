@@ -1,9 +1,11 @@
 # The house generator's settings (art #75, docs/house.md). One file per level beside this one.
 # The kit: its spec in the repo and its GLBs under the raw folder (kit v3: the 0.35 roof pitch, #77; v2 #86; v1's ids are kept).
 # v3b: #77's full v3 build in its own folder (v3/ holds a stale in-between build of #77, left untouched).
-# v3c (#152): v3b with the pieces the warm sand ceiling (#D8C7B4) changes rebuilt over it; a plain `kit` builds here.
+# v3c (#152): v3b with the pieces the warm sand ceiling (#D8C7B4) changes rebuilt over it.
+# v3d (#183): v3c with the attic stair, the long hatch tile and its guard (stair_attic, floor_boards_4x2_hatch,
+# hatch_guard_attic) added; the other 121 pieces are v3c's files; a plain `kit` builds here.
 kit_spec = "kits/house.json"
-kit_dir = "kits/house/v3c"
+kit_dir = "kits/house/v3d"
 # Where the generated scenes find a piece and each other inside the godot/ project (godot/import/ is ignored).
 kit_res = "res://import/kit_{id}.glb"
 scene_res = "res://import/house"
@@ -31,7 +33,7 @@ prop_res = "res://import/prop_{id}.glb"
 # ceiling_*, the rest) are drawn by one merged mesh; every piece instance stays (its colliders and name) with its own
 # mesh hidden. `keep`: pieces that move, open or animate in the game, always drawn as their own instances.
 [merge]
-keep = ["fence_gates_8m", "fence_wicket_2m", "garage_door_8m", "glass_door_2m", "ladder_attic", "floor_boards_2x2_hatch"]
+keep = ["fence_gates_8m", "fence_wicket_2m", "garage_door_8m", "glass_door_2m"]
 # `keep_props`: dressing props the game moves or uses, never batched (the garage HANDOFF: the car and the lift's arms
 # move together, the lift panel is the repair station's control); a task station is never batched either.
 keep_props = ["garage_car", "lift_arms", "lift_panel"]
@@ -95,6 +97,8 @@ fine_tier = "high"
 "stairs_balcony" = "concrete"
 "stairs_outdoor_*" = "concrete"
 "ladder_attic" = "wood"
+"stair_attic" = "wood"
+"hatch_guard_attic" = "wood"
 "stair_dormer" = "wood"
 "ground*" = "grass"
 "chimney_attic*" = "concrete"  # the chimneys' tops over the free roof (#126)
@@ -248,7 +252,7 @@ look = [40.0, 34.0]
 [[export.sheet_views]]
 room = "attic"
 title = "attic: from the hatch"
-at = [28.0, 31.2]  # #168: where a player steps off the ladder (attic.toml's arrive), toward the south-west corner
+at = [25.7, 29.3]  # #183: where a player steps off the attic stair (attic.toml's arrive), toward the south-west corner
 look = [20.5, 41.0]
 look_h = 0.8
 [[export.sheet_views]]

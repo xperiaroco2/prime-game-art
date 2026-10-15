@@ -7,7 +7,7 @@ and merged (#125, 2026-10-11).
 ## What to copy where (ARCHITECTURE 11.1)
 | From this repo | To the game repo |
 |---|---|
-| `assets/kit/house_kit/export/<piece>.glb` (121) | `assets/environment/house_kit/<piece>.glb` |
+| `assets/kit/house_kit/export/<piece>.glb` (124) | `assets/environment/house_kit/<piece>.glb` |
 | `assets/kit/house_kit/export/textures/set_d.png`, `set_n0.png`, `set_n1.png` | `assets/environment/house_kit/set_d.png`, `set_n0.png`, `set_n1.png` |
 
 `package.json` beside this file lists the 124 game paths with their SHA-256 (the copies must hash the same), the
@@ -62,3 +62,13 @@ The entry is `CREDITS.md` beside this file (the game's `docs/credits/<id>.md` fo
 - 1 unit = 1 m, +Y up, pieces on the 1 m grid with their pivot at a corner on the floor (`docs/kit.md`).
 - Colliders are each GLB's own `-convcolonly` shapes: a `StaticBody3D` on layer 1 after import.
 - The kit keeps a second UV set for a later lightmap bake (#83); no lightmaps ship yet.
+
+## The attic stair (#183)
+
+Three new pieces (kit folder v3d, `<raw>/kits/house/v3d`: v3c plus these; the other 121 files are unchanged):
+`stair_attic` (a straight closed wooden stair, 16 risers of 0.2 m, 40.4 deg, 1.1 m wide, handrails both sides; its
+collider a ramp through the nosings starting on the floor one going in front of the foot), `floor_boards_4x2_hatch`
+(a 4 x 2 m board tile with a 3.125 x 1.14 m hole) and `hatch_guard_attic` (a 1.0 m spindle balustrade round the
+hole's three open sides). P5's attic uses them in place of `ladder_attic` and `floor_boards_2x2_hatch`, which stay in
+the kit (no scene uses them now). Footsteps: all three `wood` (`package.json` `surfaces`). P5's `HANDOFF.md` has the
+place, the clearances and what the game can unlock.
