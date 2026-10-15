@@ -371,11 +371,15 @@ def room_scene(data: dict, lv: dict, room: dict, pieces: list[dict], extras: lis
     for node, path in merged["add"]:  # its vertices are room-local: the set surfaces' plan_at is the room's origin
         sc.instance(node, "Shell", path, H._tf(0, 0, 0, 0))
         stem = path.rsplit("/", 1)[-1][:-4]
+        subs: dict = {}  # one override block per sub-node: the set surfaces and #185's casting
         for s in set_surfaces(merge.files[stem]):
             ox, oy, oz = s["at"]
-            parent, _, leaf = f"Shell/{node}/{s['node']}".rpartition("/")
-            sc.nodes.append("\n".join([f'[node name="{leaf}" parent="{parent}"]']
-                                      + set_lines(s, [rx + ox, fy + oy, ry + oz, 0])))
+            subs.setdefault(s["node"], []).extend(set_lines(s, [rx + ox, fy + oy, ry + oz, 0]))
+        for sub_node, extra in merged.get("cast", {}).get(path, []):
+            subs.setdefault(sub_node, []).extend(extra)
+        for sub_node, extra in subs.items():
+            parent, _, leaf = f"Shell/{node}/{sub_node}".rpartition("/")
+            sc.nodes.append("\n".join([f'[node name="{leaf}" parent="{parent}"]'] + extra))
     props_seen: dict = {}
     for r in resolved:
         if r["kind"] == "props" and have(r["id"]):

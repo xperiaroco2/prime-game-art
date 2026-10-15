@@ -23,6 +23,7 @@ import struct
 from pathlib import Path
 
 COLLIDER = ("-convcolonly", "-colonly", "-col")
+SHADOW_NODE = "shadow"  # the shadow proxy's one node (#185, `shadow`)
 GAP_M = 0.25  # metres between two pieces' UV2 islands in the packed atlas (two texels at the Low preset's 8/m)
 _FMT = {5126: ("f", 4), 5123: ("H", 2), 5125: ("I", 4), 5121: ("B", 1)}
 _N = {"SCALAR": 1, "VEC2": 2, "VEC3": 3, "VEC4": 4}
@@ -292,7 +293,12 @@ def merge(items: list[dict], out: Path, gap: float = GAP_M) -> dict:
         nodes.append({"name": f"merged_{cls}", "mesh": len(meshes) - 1,
                       **({"extras": {"uv2_per_m": rec["uv2_per_m"]}} if has_uv2 else {})})
         record["classes"][cls] = rec
-    gltf = {"asset": {"version": "2.0", "generator": "prime-game-art house_merge (#107)"},
+    _write(out, "prime-game-art house_merge (#107)", nodes, meshes, materials, accessors, views, blob)
+    return record
+
+
+def _write(out: Path, generator: str, nodes, meshes, materials, accessors, views, blob: bytearray) -> None:
+    gltf = {"asset": {"version": "2.0", "generator": generator},
             "scene": 0, "scenes": [{"name": "Scene", "nodes": list(range(len(nodes)))}],
             "nodes": nodes, "meshes": meshes, "materials": materials, "accessors": accessors,
             "bufferViews": views, "buffers": [{"byteLength": len(blob)}]}
@@ -302,4 +308,64 @@ def merge(items: list[dict], out: Path, gap: float = GAP_M) -> dict:
     body = struct.pack("<II", len(js), 0x4E4F534A) + js + struct.pack("<II", len(blob), 0x004E4942) + bytes(blob)
     Path(out).parent.mkdir(parents=True, exist_ok=True)
     Path(out).write_bytes(struct.pack("<III", 0x46546C67, 2, 12 + len(body)) + body)
-    return record
+
+
+def shadow(src: Path, out: Path) -> dict | None:
+    """The shadow proxy of a merged GLB (#185): its shadow-casting geometry (every surface but alpha BLEND, which
+    Godot draws in its alpha pass only, never into a shadow map) as ONE surface per cull mode (double-sided or not; no
+    other material value reaches a depth-only pass) on one node SHADOW_NODE. The scene instances it with cast_shadow
+    = SHADOWS_ONLY and turns the merged mesh's own casting off (`cast_lines`): a shadowed lamp then draws one surface
+    per proxy into each cube face instead of one per material. Writes out and returns {"nodes": the source's visual
+    node names, "surfaces": the source surfaces it replaces, "triangles"}, or None (no file) when the source casts
+    with fewer than two surfaces (nothing to save)."""
+    prims = visual(src)
+    mask = [p for p in prims if p["material"].get("alphaMode") == "MASK"]
+    if mask:  # a cut-out casts its alpha's shape; a depth-only proxy would fill it
+        raise ValueError(f"{src}: material {mask[0]['material'].get('name')!r} is MASK: no shadow proxy for it")
+    cast = [p for p in prims if p["material"].get("alphaMode", "OPAQUE") != "BLEND"]
+    if len(cast) < 2:
+        return None
+    groups: dict = {}
+    for p in cast:
+        g = groups.setdefault(bool(p["material"].get("doubleSided")), {"pos": [], "nrm": [], "idx": []})
+        base = len(g["pos"])
+        g["pos"] += p["pos"]
+        g["nrm"] += p["nrm"] or [(0.0, 1.0, 0.0)] * len(p["pos"])
+        g["idx"] += [base + i for i in p["idx"]]
+    accessors, views, blob, prims_out, materials = [], [], bytearray(), [], []
+
+    def put(data: bytes, comp: int, kind: str, count: int, target: int, minmax=None) -> int:
+        while len(blob) % 4:
+            blob.append(0)
+        views.append({"buffer": 0, "byteOffset": len(blob), "byteLength": len(data), "target": target})
+        blob.extend(data)
+        acc = {"bufferView": len(views) - 1, "componentType": comp, "count": count, "type": kind}
+        if minmax:
+            acc["min"], acc["max"] = minmax
+        accessors.append(acc)
+        return len(accessors) - 1
+    tris = 0
+    for two in sorted(groups):
+        g = groups[two]
+        n = len(g["pos"])
+        lo = [min(v[i] for v in g["pos"]) for i in range(3)]
+        hi = [max(v[i] for v in g["pos"]) for i in range(3)]
+        big = n > 65535
+        att = {"POSITION": put(struct.pack(f"<{3 * n}f", *[c for v in g["pos"] for c in v]), 5126, "VEC3", n, 34962,
+                               (lo, hi)),
+               "NORMAL": put(struct.pack(f"<{3 * n}f", *[c for v in g["nrm"] for c in v]), 5126, "VEC3", n, 34962)}
+        idx = put(struct.pack(f"<{len(g['idx'])}{'I' if big else 'H'}", *g["idx"]), 5125 if big else 5123, "SCALAR",
+                  len(g["idx"]), 34963)
+        materials.append({"name": "shadow_two_sided" if two else "shadow", "doubleSided": two})
+        prims_out.append({"attributes": att, "indices": idx, "material": len(materials) - 1})
+        tris += len(g["idx"]) // 3
+    _write(out, "prime-game-art house_merge shadow proxy (#185)", [{"name": SHADOW_NODE, "mesh": 0}],
+           [{"name": SHADOW_NODE, "primitives": prims_out}], materials, accessors, views, blob)
+    return {"nodes": sorted({p["node"] for p in prims}), "surfaces": len(cast), "triangles": tris}
+
+
+def cast_lines(proxy: dict) -> dict:
+    """A merged GLB's scene override lines once it has a shadow proxy (#185): {"merged": [(sub-node, lines)]: its
+    visual nodes stop casting; "proxy": [(sub-node, lines)]: the proxy only casts and stays out of every bake}."""
+    return {"merged": [(n, ["cast_shadow = 0"]) for n in proxy["nodes"]],
+            "proxy": [(SHADOW_NODE, ["cast_shadow = 3", "gi_mode = 0"])]}

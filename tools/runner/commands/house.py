@@ -370,6 +370,9 @@ def merger(data: dict, found: dict | None = None, out: Path | None = None, kit_r
     prop id -> GLB; not a station, not house.toml's [merge] keep_props) merged into one GLB batch_<level>_<room>_<group>
     (one surface per material, staged as prop_<name>, which Godot unwraps for the bake like any prop); each prop
     instance stays with its colliders, name and metadata, its visual nodes hidden.
+    With house.toml's [merge] shadow_proxy (#185) each merged GLB of two or more casting surfaces gets its shadow
+    proxy <name>_shadow (house_merge.shadow; add entry `<node>_shadow` after the GLB's own); the callable's `cast`
+    maps both res paths to their override lines (the merged mesh casts no shadow, the proxy only casts).
     `out`, `kit_res` and `prop_res` (the export's, #107) put the GLBs elsewhere and name their res:// paths ({id}: the
     GLB's stem); the callable's `files` maps each written GLB's stem to its path. A batch's "add" entries carry the
     stem as a third item (house_dressing.scene_nodes' overrides key)."""
@@ -386,6 +389,24 @@ def merger(data: dict, found: dict | None = None, out: Path | None = None, kit_r
     for old in out.glob("*.glb"):
         old.unlink()
     visuals: dict = {}
+    shadow = bool(data["settings"].get("merge", {}).get("shadow_proxy", False))
+
+    def proxy(name: str, res: str, add: list, entry: tuple) -> None:
+        """#185: the merged GLB's shadow proxy (house_merge.shadow) beside it, its add entry after the GLB's own, and
+        both res paths' override lines in merge.cast (res path -> [(sub-node, lines)])."""
+        add.append(entry)
+        if not shadow:
+            return
+        got = house_merge.shadow(out / f"{name}.glb", out / f"{name}_shadow.glb")
+        if got is None:
+            return
+        lines = house_merge.cast_lines(got)
+        merge.files[f"{name}_shadow"] = out / f"{name}_shadow.glb"
+        merge.cast[res.format(id=name)] = lines["merged"]
+        merge.cast[res.format(id=f"{name}_shadow")] = lines["proxy"]
+        merge.proxies += 1
+        add.append((f"{entry[0]}_shadow", res.format(id=f"{name}_shadow"))
+                   + ((f"{name}_shadow",) if len(entry) > 2 else ()))
 
     def visual_nodes(glb) -> list:
         if glb not in visuals:
@@ -416,9 +437,9 @@ def merger(data: dict, found: dict | None = None, out: Path | None = None, kit_r
                 merge.files[name] = out / f"{name}.glb"
                 merge.uv2[name] = rec["classes"][cls]["uv2_per_m"]
                 hide |= {it["node"] for it in its}
-                add.append((f"merged_{cls}" + (f"_{c}" if c else ""), kit_res.format(id=name)))
+                proxy(name, kit_res, add, (f"merged_{cls}" + (f"_{c}" if c else ""), kit_res.format(id=name)))
         merge.hidden += len(hide)
-        return {"hide": hide, "add": add}
+        return {"hide": hide, "add": add, "cast": merge.cast}
 
     keep_props = set(data["settings"].get("merge", {}).get("keep_props", []))
 
@@ -444,9 +465,11 @@ def merger(data: dict, found: dict | None = None, out: Path | None = None, kit_r
             merge.batched.append(name)
             merge.props += len(group)
             out_hide.update({it["node"]: hide[it["node"]] for it in group})
-            add.append((f"batch_{parent.lower()}" + (f"_{c}" if c else ""), prop_res.format(id=name), name))
-        return {"hide": out_hide, "add": add}
+            proxy(name, prop_res, add, (f"batch_{parent.lower()}" + (f"_{c}" if c else ""), prop_res.format(id=name),
+                                        name))
+        return {"hide": out_hide, "add": add, "cast": merge.cast}
     merge.uv2, merge.hidden, merge.batch, merge.batched, merge.props, merge.files = {}, 0, batch, [], 0, {}
+    merge.cast, merge.proxies = {}, 0
     return merge
 
 
@@ -465,11 +488,11 @@ def stage(data: dict, summary: dict, props: dict | None = None) -> list[str]:
     for pid, name in names.items():
         _godot.stage(kit / f"{pid}.glb", name)
     for name, glb in merged.items():
-        _godot.stage(glb, name, house_bake.KIT_IMPORT)
+        _godot.stage(glb, name, house_bake.SHADOW_IMPORT if name.endswith("_shadow") else house_bake.KIT_IMPORT)
     for pid, glb in props.items():
         _godot.stage(glb, f"prop_{pid}")
     for name, glb in batched.items():
-        _godot.stage(glb, name)
+        _godot.stage(glb, name, house_bake.SHADOW_IMPORT if name.endswith("_shadow") else None)
     errors = [line for line in _godot.import_project() if "ERROR" in line]
     for line in errors[:10]:
         common.say(f"  import: {line}")

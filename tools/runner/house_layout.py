@@ -1036,6 +1036,8 @@ def write_scenes(data: dict, planned: dict, out: Path, dressing: dict | None = N
                     sc.nodes.append(f'[node name="{p["id"]}" parent="Shell/{p["node"]}"]\nvisible = false')
             for node, path in merged["add"]:
                 sc.instance(node, "Shell", path, _tf(0, 0, 0, 0))
+                for sub, extra in merged.get("cast", {}).get(path, []):  # #185: the shadow proxy's casting
+                    sc.nodes.append("\n".join([f'[node name="{sub}" parent="Shell/{node}"]'] + extra))
                 summary.setdefault("merged", []).append(path)
             count += len(pl["pieces"][room["id"]])
             sc.group("Doors")

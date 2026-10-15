@@ -41,6 +41,8 @@ def stage(data: dict, scenes: Path, props: dict) -> list[str]:
             src, params = MERGED / f"{name[5:]}.glb", house_bake.PROP_IMPORT
         else:
             src, params = props.get(name[5:]), house_bake.PROP_IMPORT
+        if name.endswith("_shadow"):  # #185: a shadow proxy (cast_shadow SHADOWS_ONLY, gi_mode off): no UV2
+            params = house_bake.SHADOW_IMPORT
         if src is None or not Path(src).is_file():
             common.say(f"  bake: no GLB for {name} (left out)")
             continue

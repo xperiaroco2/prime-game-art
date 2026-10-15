@@ -115,3 +115,43 @@ class Variants(unittest.TestCase):
         self.assertNotEqual(M.material_key(a), M.material_key({**a, "pbrMetallicRoughness": {"roughnessFactor": 0.6}}))
         with self.assertRaises(ValueError):
             M.material_key({**a, "pbrMetallicRoughness": {"baseColorTexture": {"index": 0}}})
+
+
+class Shadow(unittest.TestCase):
+    """#185: a merged GLB's shadow proxy holds its casting geometry as one surface per cull mode; alpha BLEND
+    surfaces (no shadow in Godot) stay out; a source casting with one surface gets no proxy."""
+
+    def merged(self, d: str, mats: list[dict]) -> Path:
+        items = [{"glb": tiny_glb(Path(d) / f"{i}.glb", m, 2 * i), "transform": IDENT, "class": "props",
+                  "uv2_per_m": None} for i, m in enumerate(mats)]
+        M.merge(items, Path(d) / "m.glb")
+        return Path(d) / "m.glb"
+
+    def test_one_surface_per_cull_mode_without_blend(self):
+        a = {"name": "a", "doubleSided": True}
+        b = {"name": "b", "doubleSided": True, "emissiveFactor": [1.0, 1.0, 1.0]}
+        c = {"name": "c"}
+        glass = {"name": "glass", "alphaMode": "BLEND", "doubleSided": True}
+        with tempfile.TemporaryDirectory() as d:
+            got = M.shadow(self.merged(d, [a, b, c, glass]), Path(d) / "s.glb")
+            prims = M.visual(Path(d) / "s.glb")
+        self.assertEqual(got["surfaces"], 3)
+        self.assertEqual(got["nodes"], ["merged_props"])
+        self.assertEqual(sorted((p["material"].get("doubleSided"), sorted(v[0] for v in p["pos"])) for p in prims),
+                         [(False, [4, 4, 5]), (True, [0, 0, 1, 2, 2, 3])])
+        self.assertEqual({p["node"] for p in prims}, {M.SHADOW_NODE})
+        lines = M.cast_lines(got)
+        self.assertEqual(lines["merged"], [("merged_props", ["cast_shadow = 0"])])
+        self.assertEqual(lines["proxy"], [(M.SHADOW_NODE, ["cast_shadow = 3", "gi_mode = 0"])])
+
+    def test_no_proxy_for_one_casting_surface(self):
+        with tempfile.TemporaryDirectory() as d:
+            src = self.merged(d, [{"name": "a"}, {"name": "glass", "alphaMode": "BLEND"}])
+            self.assertIsNone(M.shadow(src, Path(d) / "s.glb"))
+            self.assertFalse((Path(d) / "s.glb").exists())
+
+    def test_mask_refused(self):
+        with tempfile.TemporaryDirectory() as d:
+            src = self.merged(d, [{"name": "a"}, {"name": "leaf", "alphaMode": "MASK"}])
+            with self.assertRaises(ValueError):
+                M.shadow(src, Path(d) / "s.glb")

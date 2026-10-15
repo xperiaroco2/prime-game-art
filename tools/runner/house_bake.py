@@ -22,6 +22,7 @@ GRANT = "research/2026-10-06-locations/lab/editor_window.txt"
 EDITOR_BAN = ("house --bake: the editor bakes only between 00:00 and 08:00 local (or inside a window the manager "
               "granted); build the zones by day with --no-bake and bake at night")
 PROP_IMPORT = {"meshes/light_baking": 2, "meshes/lightmap_texel_size": 0.2}  # Godot unwraps the props' UV2
+SHADOW_IMPORT = {"meshes/light_baking": 0}  # a shadow proxy (#185): never baked, no UV2 to unwrap
 KIT_IMPORT = {"meshes/light_baking": 1}  # the kit keeps its own UV2 (one island per face, docs/kit.md)
 PROP_TEXEL_PER_M = 1.0 / PROP_IMPORT["meshes/lightmap_texel_size"]
 ABOVE_OTHER_K = 0.1  # Above's walls and props only occlude: a tenth of the texels
