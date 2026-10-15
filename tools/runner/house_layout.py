@@ -1215,8 +1215,9 @@ def walk_request(data: dict, levels=WALK_LEVELS) -> dict:
             start = end(low, foot[0] - fdx * WALK_SIDE, foot[1] - fdy * WALK_SIDE)
             finish = end(high, top[0] + dx * reach, top[1] + dy * reach)
             up = [start] + middle + [finish]
-            walks.append({"name": f"{st['id']}:up", "kind": "stairs", "points": up})
-            walks.append({"name": f"{st['id']}:down", "kind": "stairs", "points": up[::-1]})
+            extra = {"radius": float(st["walk_radius"])} if "walk_radius" in st else {}  # a stair narrower than a door
+            walks.append({"name": f"{st['id']}:up", "kind": "stairs", "points": up, **extra})
+            walks.append({"name": f"{st['id']}:down", "kind": "stairs", "points": up[::-1], **extra})
     for lv in data["levels"]:  # the doc's loops (#76), walked at the game's speed and timed against the doc
         for lp in lv.get("loops", []):
             walks.append({"name": f"loop:{lp['id']}", "kind": "loop", "speed": lp.get("speed", 4.5),
