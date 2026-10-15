@@ -43,10 +43,10 @@ KNOWN = {
     "storage": {"stations": {"SwitchA"}},
     "switch_room": {"stations": {"SwitchD"}},
     "dining_room": {"stations": {"DiningTable"}},
-    # the game removed three stations and added the darkroom's film spawn (prime-game#1058 at 199364a4); the art's rooms
+    # the game removed three stations, added the photo zone's film spawn (prime-game#1058 at 199364a4); the art's rooms
     # keep the stations until their next export
-    "darkroom": {"stations": {"PhotoBoard"}, "markers": {"Film"}},
-    "photo_zone": {"stations": {"PoseScreen"}},
+    "darkroom": {"stations": {"PhotoBoard"}},
+    "photo_zone": {"stations": {"PoseScreen"}, "markers": {"Film"}},
     "study": {"stations": {"Printer"}},
     "garage": {"stations": {"Workbench"}},
     "garden": {"stations": {"GardenDropOff"}, "markers": {"Zone02"}},
