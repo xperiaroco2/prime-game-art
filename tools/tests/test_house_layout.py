@@ -25,7 +25,9 @@ PENDING_STATIONS = {"attic": {"Lookout", "Loot"},  # the deck's stations, now on
                     # the game removed the basement's switch and generator stations (prime-game#799 at 82efa45e);
                     # the art's basement keeps them until its next export
                     "storage": {"SwitchA"}, "boiler_room": {"SwitchB"}, "pump_room": {"SwitchC"},
-                    "switch_room": {"SwitchD"}, "generator_hall": {"Generator"}}
+                    "switch_room": {"SwitchD"}, "generator_hall": {"Generator"},
+                    # and three ground stations (prime-game#1058 at 199364a4), kept until those rooms' next export
+                    "darkroom": {"PhotoBoard"}, "photo_zone": {"PoseScreen"}, "study": {"Printer"}}
 
 
 def level(name: str) -> dict:

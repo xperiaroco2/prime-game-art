@@ -35,7 +35,7 @@
   "WC": [18, 24, 6, 6],
   "Yard": [0, 0, 80, 60]
  },
- "game_commit": "82efa45e72afe1eef9ea61338d492de1d6e3749f",
+ "game_commit": "199364a4ca692aa512869b5702ad4adb89a96f4d",
  "rooms": {
   "attic": {
    "doors": {},
@@ -137,10 +137,8 @@
    "origin": [14.0, -3.2, 34.0],
    "root": "Darkroom",
    "size": [16, 10],
-   "stations": {
-    "PhotoBoard": [8.0, 0.0, 6.0, ""]
-   },
-   "stations_marker3d": ["PhotoBoard"]
+   "stations": {},
+   "stations_marker3d": []
   },
   "dining_room": {
    "doors": {
@@ -390,14 +388,14 @@
     "Door1": [10.0, 0.0, 5.0, ""]
    },
    "doors_marker3d": ["Door1"],
-   "markers": {},
+   "markers": {
+    "Film": [8.5, 0.0, 5.8, "\"spawn_film\""]
+   },
    "origin": [4.0, 0.0, 6.0],
    "root": "PhotoZone",
    "size": [10, 10],
-   "stations": {
-    "PoseScreen": [5.0, 0.0, 5.0, ""]
-   },
-   "stations_marker3d": ["PoseScreen"]
+   "stations": {},
+   "stations_marker3d": []
   },
   "pump_room": {
    "doors": {
@@ -480,10 +478,8 @@
    "origin": [34.0, 3.2, 24.0],
    "root": "Study",
    "size": [8, 8],
-   "stations": {
-    "Printer": [6.0, 0.0, 5.0, ""]
-   },
-   "stations_marker3d": ["Printer"]
+   "stations": {},
+   "stations_marker3d": []
   },
   "switch_room": {
    "doors": {
