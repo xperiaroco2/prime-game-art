@@ -123,7 +123,7 @@ def _merged_visual(path: str, attrs: dict, props: list, real: bool) -> bool:
     """A merged or batch mesh node (a GLB instance or a MeshInstance3D named MERGED*, outside any other merged node) or
     an override section under one, setting only drawing properties (MESH): left out of the contract (#185's review)."""
     parts = path.split("/")
-    if not all(k.startswith(MESH) for k, _ in props):
+    if not all(k.startswith(MESH) for k, _ in props) or "groups" in attrs:  # groups are game-facing (#191's review)
         return False
     if any(part.startswith(MERGED) for part in parts[:-1]):  # under a merged mesh: its overrides only, never a node
         return not real

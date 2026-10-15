@@ -117,7 +117,8 @@ class ContractRules(unittest.TestCase):
         # a game-facing node named like a merged mesh, and a merged mesh given a footstep surface, are seen too
         for section in ['[node name="merged_door" type="Marker3D" parent="Doors"]\n',
                         '[node name="batch_x" type="StaticBody3D" parent="Dressing"]\n',
-                        '[node name="merged_floor" parent="Shell" instance=ExtResource("1")]\nmetadata/surface = "tile"\n']:
+                        '[node name="merged_floor" parent="Shell" instance=ExtResource("1")]\nmetadata/surface = "tile"\n',
+                        '[node name="merged_wall" parent="Shell" groups=["spawn_x"] instance=ExtResource("1")]\n']:
             self.assertNotEqual(before, self.contract(base + "\n" + section), section)
 
     def test_a_collider_under_a_merged_node_is_in_the_contract(self):
