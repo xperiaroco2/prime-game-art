@@ -465,7 +465,8 @@ def build_stairs_balustrade(pc: Piece, p: dict, spec: dict) -> None:
     side = [(0, 0), (run, 0), (run, rise + 0.06), (0, h + 0.06)]
     for za, zb in ((0, st), (w - st, w)):
         m.prism(side, za, zb, body, edges=[False, True, True, True])
-        m.prism([(0, h + 0.06), (run, rise + 0.06), (run, rise + 0.09), (0, h + 0.09)], za, zb, rail, caps=())
+        m.prism([(0, h + 0.06), (run, rise + 0.06), (run, rise + 0.09), (0, h + 0.09)], za, zb, rail, caps=(),
+                edges=[False, True, True, True])  # its underside is the panel's top
     m.poly([(run, 0, st), (run, rise - tt, st), (run, rise - tt, w - st), (run, 0, w - st)], (1, 0, 0), body)
     for za, zb in ((0, st), (w - st, w)):
         zc = (za + zb) / 2
