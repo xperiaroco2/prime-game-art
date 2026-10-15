@@ -275,9 +275,9 @@ origin, size, Doors, Stations and Markers and expects exactly the known differen
 art's House (prime-game PR #1043; the snapshot at prime-game `605aed5f`) its rooms are the art's (the attic on the
 whole footprint, G1; the roof gone; the art's door and Package07 places, G2), so what is left is: the garage (Door3,
 the Workbench's `spawn_drop_*` group; the game swaps P6 later), the attic's Knife3, which the game moved to the pump
-room, the yard's spawns (the game's at 0.0, the art plot's at -0.06), the game's provisional spawn zone markers
-Zone01-Zone03 (yard, garden, landing; prime-game #651, #681) and the `spawn_drop_*` groups of the dining table, the
-garden drop-off and the terrace table, which the art rooms do not carry yet.
+room, the game's provisional spawn zone markers Zone01-Zone03 (yard, garden, landing; prime-game #651, #681) and the
+`spawn_drop_*` groups of the dining table, the garden drop-off and the terrace table, which the art rooms do not carry
+yet. The yard's spawns stand on the plot's ground at 0.0, as the game's do (#185).
 
 ### The game's greybox, pinned (#34)
 The House tests never read the game's live checkout: a marker the game added once turned `main` red. They read

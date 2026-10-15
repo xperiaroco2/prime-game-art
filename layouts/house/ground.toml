@@ -133,20 +133,20 @@ node = "Yard"
 rect = [0, 0, 80, 60]
 kind = "area"
 markers = [
-  { name = "RoundPlayer01", at = [24.0, -0.06, 52.0], group = "spawn_round_player" },
-  { name = "RoundPlayer02", at = [26.5, -0.06, 52.0], group = "spawn_round_player" },
-  { name = "RoundPlayer03", at = [33.5, -0.06, 52.0], group = "spawn_round_player" },
-  { name = "RoundPlayer04", at = [36.0, -0.06, 52.0], group = "spawn_round_player" },
-  { name = "RoundPlayer05", at = [38.5, -0.06, 52.0], group = "spawn_round_player" },
-  { name = "RoundPlayer06", at = [24.0, -0.06, 55.0], group = "spawn_round_player" },
-  { name = "RoundPlayer07", at = [26.5, -0.06, 55.0], group = "spawn_round_player" },
-  { name = "RoundPlayer08", at = [33.5, -0.06, 55.0], group = "spawn_round_player" },
-  { name = "RoundPlayer09", at = [36.0, -0.06, 55.0], group = "spawn_round_player" },
-  { name = "RoundPlayer10", at = [38.5, -0.06, 55.0], group = "spawn_round_player" },
-  { name = "Respawn1", at = [1.5, -0.06, 1.5], group = "spawn_respawn" },
-  { name = "Respawn2", at = [78.5, -0.06, 1.5], group = "spawn_respawn" },
-  { name = "Respawn3", at = [1.5, -0.06, 58.5], group = "spawn_respawn" },
-  { name = "Respawn4", at = [78.5, -0.06, 58.5], group = "spawn_respawn" },
+  { name = "RoundPlayer01", at = [24.0, 0.0, 52.0], group = "spawn_round_player" },
+  { name = "RoundPlayer02", at = [26.5, 0.0, 52.0], group = "spawn_round_player" },
+  { name = "RoundPlayer03", at = [33.5, 0.0, 52.0], group = "spawn_round_player" },
+  { name = "RoundPlayer04", at = [36.0, 0.0, 52.0], group = "spawn_round_player" },
+  { name = "RoundPlayer05", at = [38.5, 0.0, 52.0], group = "spawn_round_player" },
+  { name = "RoundPlayer06", at = [24.0, 0.0, 55.0], group = "spawn_round_player" },
+  { name = "RoundPlayer07", at = [26.5, 0.0, 55.0], group = "spawn_round_player" },
+  { name = "RoundPlayer08", at = [33.5, 0.0, 55.0], group = "spawn_round_player" },
+  { name = "RoundPlayer09", at = [36.0, 0.0, 55.0], group = "spawn_round_player" },
+  { name = "RoundPlayer10", at = [38.5, 0.0, 55.0], group = "spawn_round_player" },
+  { name = "Respawn1", at = [1.5, 0.0, 1.5], group = "spawn_respawn" },
+  { name = "Respawn2", at = [78.5, 0.0, 1.5], group = "spawn_respawn" },
+  { name = "Respawn3", at = [1.5, 0.0, 58.5], group = "spawn_respawn" },
+  { name = "Respawn4", at = [78.5, 0.0, 58.5], group = "spawn_respawn" },
 ]
 
 [[rooms]]
