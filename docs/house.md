@@ -524,11 +524,11 @@ High's shadow draw calls fall 53 % (18,742 -> 8,937), the draw calls stay; still
 (baked 230, High 452) and the basement seam (baked 188, High 359), the wall kitchen view baked 158. The look is
 unchanged: mean dL* per frame over every `--count` frame (baked, real-time, High shadowed; 30 frames) at most 0.001
 (`review/house/185/look/dl_room_vs_proxy.md`, sheet `before_after_realtime.png`). The walk's table
-(`review/house/185/walk/draw_calls.md`, 23 views): sdc 144-1,914, none over 2,500; baked over 150 in 12 views and High
-over 350 in 20, the worst where the yard or several rooms are in sight (front door 334 / 3,096, living room to hallway
-331 / 3,003). The walk's High dc is 4-9x its baked dc where `--count`'s is about 2x; not explained yet (the walk's
-scene holds every level, so the sheen overlay copies every mesh instance, against one zone in `--count`): read the
-walk's High column as an upper bound until that is settled.
+(`review/house/185/walk2/draw_calls.md`, 23 views): sdc 144-1,914, none over 2,500; baked over 150 in 12 views and High
+over 350 in 9, the worst where the yard or several rooms are in sight (front door 334 / 678, living room to hallway
+331 / 669). High is about 2x baked, as in `--count`. The sheen overlay copies only visible meshes: the walk's scene
+hides every piece and prop that its room's merged shell or batch draws, and copying those (the first walk,
+`review/house/185/walk`) drew them again and put High at 4-9x baked.
 
 ### Wall paint (#104)
 
