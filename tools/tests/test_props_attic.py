@@ -37,8 +37,9 @@ SPOTS = {"TrunkNorth": [22, 24.5], "WardrobeTopNorth": [20, 24.5], "SheetNorth":
          "SheetSouthWest": [22.9, 42.4], "BoxSouth": [25.1, 43.05], "TrunkSouthEast": [31.6, 43.5],
          "BicycleBasket": [39, 43.45], "SheetEast": [40.9, 27.6]}
 POINTS = {"HidingSpots": (22.0, 39.0), "Knife3": (36.0, 37.0)}
-# the floor kept free: the hatch and its 1 m apron, the dormer's climb-out, 1 m round Knife3 ([x, y, w, d])
-CLEAR = [[26, 27, 4, 4], [33.4, 39.5, 3.2, 4.5], [35, 36, 2, 2]]
+# the floor kept free: the long hatch with its guard and a 1 m apron (#183), the dormer's climb-out, 1 m round
+# Knife3 ([x, y, w, d])
+CLEAR = [[24.9, 27.6, 5.8, 3.4], [33.4, 39.5, 3.2, 4.5], [35, 36, 2, 2]]
 # main's big furniture, kept (a group's ids together at least this many)
 BIG = [(("old_wardrobe",), 2), (("trunk",), 6), (("sheeted_furniture", "sheeted_sofa", "sheeted_dresser"), 5),
        (("old_bicycle",), 1), (("mannequin",), 1), (("rocking_horse",), 1), (("standing_mirror",), 1),
