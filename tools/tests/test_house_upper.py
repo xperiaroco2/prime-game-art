@@ -71,21 +71,21 @@ class SecondFloor(unittest.TestCase):
             self.assertLess(abs(it["at"][0] - desk["at"][0]), 0.35)
             self.assertLess(abs(it["at"][2] - desk["at"][2]), 0.7)
 
-    def test_the_hatch_ladder_stands_on_the_landing(self):
+    def test_the_attic_stair_stands_on_the_landing(self):
         attic = next(lv for lv in self.data["levels"] if lv["level"] == "attic")
-        lad = next(s for s in attic["stairs"] if s["id"] == "hatch_ladder")
-        x, y, w, d = lad["rect"]
-        dx, dy = hl.CLIMB[lad["climb"]]
+        st = next(s for s in attic["stairs"] if s["id"] == "attic_stair")  # #183, in place of the hatch ladder
+        x, y, w, d = st["rect"]
+        dx, dy = hl.CLIMB[st["climb"]]
         foot = (x + w / 2 - dx * (w / 2 + 0.8), y + d / 2 - dy * (d / 2 + 0.8))
         self.assertTrue(hl.inside(self.rooms["landing"]["rect"], *foot))
         well = next(h for h in self.level["holes"] if h["id"] == "main_stairs")["rect"]
-        self.assertFalse(hl.inside(well, *foot), "the ladder's foot over the stairwell")
+        self.assertFalse(hl.inside(well, *foot), "the stair's foot over the stairwell")
 
     def test_the_checks_hold_and_reach_the_ladder_and_the_stairs(self):
         paths = hd.spec_paths(self.data["settings"])
         rep = hd.check(self.data, {r: self.files[r] for r in ROOMS}, hd.catalogue(paths))
         self.assertEqual(rep["problems"], [])
-        self.assertTrue(rep["rooms"]["landing"]["reach"]["hatch_ladder foot"])
+        self.assertTrue(rep["rooms"]["landing"]["reach"]["attic_stair foot"])
         self.assertTrue(rep["rooms"]["balcony"]["reach"]["door N (9, 0)"])  # the gap at the external stairs' top
         for rid in ROOMS:
             self.assertTrue(all(v for k, v in rep["rooms"][rid]["reach"].items() if k.startswith("door")), rid)

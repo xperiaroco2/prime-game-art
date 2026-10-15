@@ -28,6 +28,8 @@ from typing import Any
 from . import common, house_layout
 from .house_zones import _ccw, _near, overlap, rect
 
+GUARD_M = 0.08  # the hatch guard's depth outside the hole (kits/house.json hatch_guard_attic `post`, #183)
+
 DRESSING = common.ROOT / "layouts" / "house" / "dressing" / "attic_roof"  # not the rooms' format (#75b): kept apart
 LIBRARY = common.ROOT / "props" / "library.toml"
 PLOT = common.ROOT / "layouts" / "house" / "outdoor" / "plot.toml"
@@ -231,12 +233,14 @@ def floor_rect(z: dict) -> tuple[float, float, float, float]:
 
 
 def blocked_rects(z: dict, data: dict) -> list[list[tuple[float, float]]]:
-    """Floor nobody stands on: the hatch's hole in the attic."""
+    """Floor nobody stands on: the hatch's hole in the attic and the guard round its closed sides (#183: GUARD_M
+    outside the hole on the north, south and east; the stair's top on the west is open)."""
     out = []
     if z["room"] == "attic":
         for h in _level(data, "attic").get("holes", []):
             if "tile" in h:
-                out.append(_box(float(h["tile"][0]), float(h["tile"][1]), 2.0, 2.0))
+                x, y, w, d = house_layout.hatch_hole(h, data)
+                out.append(_box(x, y - GUARD_M, w + GUARD_M, d + 2 * GUARD_M))
     return out
 
 

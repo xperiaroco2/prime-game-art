@@ -44,17 +44,23 @@ room = "attic"
 
 [[holes]]
 id = "hatch"
-tile = [27, 28]
-piece = "floor_boards_2x2_hatch"
-note = "the kit's hatch tile centres its hole at (28, 29); the doc says (28, 28.5)"
+tile = [26, 28]
+piece = "floor_boards_4x2_hatch"
+note = "the long hatch over the attic stair (#183, the engineer's option B of prime-game PR #1043): the 4 x 2 m tile at (26, 28) with its hole x 26.475..29.6, y 28.73..29.87 (3.125 x 1.14 m), from the stair's top edge to 0.4 m short of its foot, so the game's 1.8 m capsule of radius 0.4 climbs standing (test_house_attic_stair). Until #183: a 2 x 2 tile at (27, 28) with a 0.8 x 1.4 m hole over a 68 deg ladder no capsule could climb"
 
 [[stairs]]
-id = "hatch_ladder"
-piece = "ladder_attic"
-rect = [27.65, 28.32, 0.7, 1.38]
+id = "attic_stair"
+piece = "stair_attic"
+rect = [26.475, 28.75, 3.525, 1.1]
 y = 3.2
-climb = "S"
-note = "Climbs south (art #76): its foot on the landing at y 28.3, the top on the hole's south edge (29.7); climbing north put the foot at y 29.7, 0.3 m from the stairwell (y 30), where no one can stand. The same direction as the pantry stairs under it."
+climb = "W"
+note = "The attic stair (#183, in place of the hatch ladder): on the landing along the stairwell's north edge, its foot at x 30 facing the landing's east aisle (where the main stairs arrive), climbing west 3.525 m to the hatch's west edge (x 26.475), 40.4 deg, 16 risers of 0.2 m. The ladder's place (climbing south at x 28) leaves no room for a 3.5 m run between the landing's north part and the stairwell; climbing west in the 1.3 m band between the bedroom door (y 27.3..28.7) and the stairwell (y 30) keeps every door and the landing's aisle clear."
+
+[[pieces]]
+piece = "hatch_guard_attic"
+room = "attic"
+at = [26.475, 0.0, 28.73]
+note = "the balustrade round the hatch's north, south and east sides on the attic floor (#183); the west side is the stair's top"
 
 [[roofs]]
 id = "attic_roof"

@@ -221,9 +221,9 @@ class PlanTest(unittest.TestCase):
                 self.assertEqual(set(cells), expect, room["id"])
 
     def test_the_hatch_tile_is_in_the_attic_floor(self) -> None:
-        tiles = [p for p in planned("attic")["pieces"]["attic"] if p["id"] == "floor_boards_2x2_hatch"]
-        self.assertEqual([(t["x"], t["y"]) for t in tiles], [(27, 28)])
-        self.assertEqual(H.hatch_hole(level("attic")["holes"][0], DATA), [27.6, 28.3, 0.8, 1.4])
+        tiles = [p for p in planned("attic")["pieces"]["attic"] if p["id"] == "floor_boards_4x2_hatch"]  # #183
+        self.assertEqual([(t["x"], t["y"]) for t in tiles], [(26, 28)])
+        self.assertEqual([round(v, 3) for v in H.hatch_hole(level("attic")["holes"][0], DATA)], [26.475, 28.73, 3.125, 1.14])
 
     def test_stairs_climb_from_their_rect(self) -> None:
         extra = {p.get("name"): p for p in planned("upper")["extra"]}
@@ -344,7 +344,7 @@ class WalkRequestTest(unittest.TestCase):
     def test_each_flight_is_walked_up_and_down(self) -> None:
         stairs = {w["name"]: w["points"] for w in self.REQ["walks"] if w["kind"] == "stairs"}
         self.assertEqual(sorted(stairs), sorted(f"{s}:{d}" for s in ("main_stairs", "pantry_stairs", "balcony_stairs",
-                                                                         "outdoor_stairs")
+                                                                         "outdoor_stairs", "attic_stair")
                                                 for d in ("up", "down")))
         up = stairs["main_stairs:up"]
         self.assertEqual(up[1], [30.0, 0.0, 35.0])  # the U-turn: up west, across the landing, up east
