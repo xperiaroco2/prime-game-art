@@ -748,11 +748,21 @@ house's scenes into `godot/import/house`, stages their kit GLBs (each `--kit` fo
 `kit_dir`: for a piece not yet in the kit's raw folder, built by `kit --only ... --out`) and the library GLBs of the
 dressing, and renders through `godot/house/zones.gd` at dusk: grey labelled boxes for the placeholders, the hiding
 spots (0.12 m, at their height) and the fence openings the lookout must see, two warm review lamps under the ridge
-(review only), and the views in `commands/attic.py` (`VIEWS`: from the hatch toward the dormer, inside at 1.6 m, the
+(review only), and the views in `commands/attic.py` (`VIEWS`: from the attic stair's top toward the dormer, inside at 1.6 m, the
 hiding spots of the south-west corner and the north eave, the climb-out, the roof from the street (the roof look
 round's south-east camera, high enough that the whole roof shows) and from the south-east, higher, on the slope out
 of the dormer, from the ridge to the yard; one lookout view per eye). Frames 1600x900 and `sheet.png` (1280 px wide)
 go to DIR.
+
+**The attic stair's proof** (#183): `tools/run.sh attic --stair DIR [--kit DIR]` (Godot, off-screen, about 2 minutes)
+first draws `section.png` (`house_stair.py`, plain Python): the stair's walked profile seen from the stairwell (the
+foot on the right; the steps in wood, the nosing ramp in red, the attic slab either side of the hatch in grey), the
+game's standing capsule (1.8 m, radius 0.4) every 0.4 m along the climb (blue), its bottom sphere's path (dark blue)
+and its closest approach to the slab over the foot (orange); `section.json` holds the numbers (risers, going, pitch,
+the hole, the worst gap). The sweep is the one `test_house_attic_stair` asserts. Then the shoot above with the views
+in `STAIR_VIEWS` (from the landing's east aisle, from the foot up through the hatch, from the attic down, the side
+from over the stairwell), review lamps over the landing, and the game's capsule walked from 1 m before the foot up to
+`arrive` and back (`stair_walk`); a walk that does not arrive fails the run.
 
 ## Light (#83a)
 

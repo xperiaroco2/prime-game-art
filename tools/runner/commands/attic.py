@@ -2,7 +2,9 @@
 (layouts/house/dressing/attic_roof/attic.toml, house_attic.py; docs/house.md, "The attic and the free roof") and writes
 the report: every spot's standing point, the dormer's climb-out, the lookout's view per eye. With --shoot, it generates
 the house's scenes, places the dressing (library GLBs, grey boxes for the placeholders) and shoots the attic and the
-free roof at dusk in an off-screen Godot window through godot/house/zones.gd."""
+free roof at dusk in an off-screen Godot window through godot/house/zones.gd. With --stair, the attic stair's proof
+(#183): its section with the game's capsule (house_stair.py) and four frames of it with the capsule's walk up and
+down."""
 
 from __future__ import annotations
 
@@ -12,7 +14,7 @@ import json
 import tomllib
 from pathlib import Path
 
-from .. import common, house_attic, house_layout
+from .. import common, house_attic, house_layout, house_stair
 from . import _props, zones
 from . import house as house_cmd
 
@@ -25,6 +27,9 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
                         help="where the report goes (default tools/out/attic/report.json)")
     parser.add_argument("--shoot", type=Path, metavar="DIR",
                         help="then shoot the attic and the free roof at dusk off-screen into DIR (sheet.png, frames)")
+    parser.add_argument("--stair", type=Path, metavar="DIR",
+                        help="then the attic stair's proof (#183) into DIR: section.png, section.json, the frames and "
+                             "sheet.png, the game's capsule walked up and down")
     parser.add_argument("--kit", type=Path, action="append", default=[], metavar="DIR",
                         help="a folder searched before the layout's kit_dir for kit GLBs (a piece not built there yet)")
 
@@ -64,9 +69,12 @@ def run(args: argparse.Namespace) -> int:
     common.say(f"report: {args.json}")
     if problems:
         raise common.Failure(f"attic: {len(problems)} problems")
-    if not args.shoot:
-        return 0
-    return shoot(args.shoot.resolve(), [k.resolve() for k in args.kit])
+    code = 0
+    if args.shoot:
+        code = shoot(args.shoot.resolve(), [k.resolve() for k in args.kit])
+    if args.stair and code == 0:
+        code = stair(args.stair.resolve(), [k.resolve() for k in args.kit])
+    return code
 
 
 F = 6.4  # the attic's floor (layouts/house/attic.toml); views are plan [x, y, height]
@@ -81,10 +89,11 @@ def _top(y: float) -> float:
 ## ridge, one over the climb-out stair and one in the dormer under its ridge, so the climb-out reads (art #77).
 LAMPS = [[25.0, 34.0, 4.0], [35.0, 34.0, 4.0], [35.0, 39.0, 3.4], [35.0, 41.8, 3.3]]
 LAMP = [[1.0, 0.8, 0.55], 2.4, 9.0]
-## Name, title, eye, look (plan x, y, height), fov. The hatch's hole centres at (28, 29); the dormer's window at
+## Name, title, eye, look (plan x, y, height), fov. The hatch's hole runs x 26.475..29.6, y 28.73..29.87 over the
+## attic stair (#183, climbing west from its foot at x 30 on the landing, floor 3.2); the dormer's window at
 ## (35, 43), its sill 2.97 m over the attic floor; the ridge on y 34.
 VIEWS = [
-    ["hatch", "attic: from the hatch (head 0.9 m over the floor), toward the dormer", [28.0, 29.6, F + 0.9],
+    ["hatch", "attic: from the attic stair's top (eye 1.6 m), toward the dormer", [25.7, 29.3, F + 1.6],
      [35.0, 41.0, F + 1.8], 75.0],
     ["inside", "attic: inside at 1.6 m, toward the west gable", [40.5, 36.0, F + 1.6], [18.0, 30.0, F + 1.4], 75.0],
     ["spots_sw", "attic: hiding spots, the south-west corner", [25.0, 37.5, F + 1.6], [19.0, 43.0, F + 0.4], 75.0],
@@ -215,3 +224,51 @@ def shoot(folder: Path, kits: list[Path]) -> int:
     if missing or absent:
         raise common.Failure(f"missing GLBs (build the kit and the library first): {', '.join(missing + absent)}")
     return zones.render(req, staged, folder, common.OUT / "attic" / "request.json", "attic")
+
+
+U = 3.2  # the upper floor (the landing) under the attic stair
+## The attic stair's frames (#183): plan [x, y, height], the stair on y 28.75..29.85 from x 30 (foot) to 26.475 (top).
+STAIR_VIEWS = [
+    ["stair_landing", "attic stair: from the landing's east aisle (eye 1.6 m)", [33.3, 31.6, U + 1.6],
+     [28.6, 29.3, U + 1.5], 70.0],
+    ["stair_foot", "attic stair: from its foot, up through the hatch", [31.1, 29.3, U + 1.6], [27.0, 29.3, F + 1.4], 75.0],
+    ["stair_down", "attic stair: from the attic, down the stair to the landing", [25.2, 29.3, F + 1.6],
+     [29.8, 29.3, U + 0.6], 75.0],
+    ["stair_side", "attic stair: its side from over the stairwell (south), the attic floor above", [28.3, 34.6, U + 1.7],
+     [28.3, 29.3, U + 1.7], 80.0],
+]
+## Review lamps over the landing (plan x, y, height): the landing's dusk lights are the game's (#83a).
+STAIR_LAMPS = [[31.5, 31.0, U + 2.4], [28.0, 33.0, U + 2.4], [27.5, 27.5, F + 2.0]]
+
+
+def stair_walk() -> dict:
+    """The game's standing capsule (house_stair.CAPSULE_H, CAPSULE_R) from 1 m before the stair's foot up onto the
+    attic floor at `arrive` and back down (zones.gd walks, Godot [x, h, z])."""
+    data = house_layout.load()
+    st = next(s for lv in data["levels"] if lv["level"] == "attic" for s in lv["stairs"] if s["id"] == "attic_stair")
+    x, y, w, d = st["rect"]
+    ax, ay = house_attic.load("attic")["arrive"]
+    start, top = [x + w + 1.0, U, y + d / 2], [ax, F, ay]
+    leg = {"height": house_stair.CAPSULE_H}
+    return {"name": "attic_stair", "radius": house_stair.CAPSULE_R, "step": house_attic.STEP_H, "start": start,
+            "legs": [dict(leg, name="up the attic stair", points=[top]),
+                     dict(leg, name="down to the landing", points=[start])]}
+
+
+def stair(folder: Path, kits: list[Path]) -> int:
+    """The attic stair's proof (#183): section.png and section.json (house_stair.py), then the frames and sheet.png
+    of STAIR_VIEWS at dusk off-screen with the capsule's walk."""
+    folder.mkdir(parents=True, exist_ok=True)
+    info = house_stair.section_png(folder / "section.png")
+    (folder / "section.json").write_text(json.dumps(info, indent=1) + "\n", encoding="utf-8", newline="\n")
+    common.say(f"stair: {info['risers']} risers of {info['riser_m']} m, going {info['going_m']} m, "
+               f"{info['pitch_deg']} deg; the capsule clears the attic slab by {info['worst_gap_m']} m; "
+               f"section {info['png']}")
+    req, staged, missing = shoot_request(kits)
+    absent = sorted(p.as_posix() for p in staged.values() if not p.is_file())
+    if missing or absent:
+        raise common.Failure(f"missing GLBs (build the kit and the library first): {', '.join(missing + absent)}")
+    req["views"] = [list(v) for v in STAIR_VIEWS]
+    req["walks"] = [stair_walk()]
+    req["lamps"] = req["lamps"] + [[x, h, y] for x, y, h in STAIR_LAMPS]
+    return zones.render(req, staged, folder, common.OUT / "attic" / "stair_request.json", "attic stair")

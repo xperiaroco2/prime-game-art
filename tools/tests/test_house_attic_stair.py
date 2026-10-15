@@ -10,6 +10,7 @@ import unittest
 
 from runner import house_attic as A
 from runner import house_layout as H
+from runner import house_stair as S
 from runner.commands import _kit
 
 G = _kit.geom()
@@ -18,8 +19,8 @@ PIECES = {p["id"]: p for p in SPEC["pieces"]}
 DATA = H.load()
 PLAN = H.plan(DATA)
 
-CAPSULE_H = 1.8  # base_mode.tres capsule_height_m
-CAPSULE_R = A.PLAYER_R  # 0.4, base_mode.tres capsule_radius_m
+CAPSULE_H = S.CAPSULE_H  # 1.8, base_mode.tres capsule_height_m
+CAPSULE_R = S.CAPSULE_R  # 0.4, base_mode.tres capsule_radius_m
 FLOOR_MAX_DEG = 45.0  # the controller's floor_max_angle (Godot's default)
 MARGIN = 0.05  # the clearance the sweep asks for over touching
 
@@ -36,35 +37,7 @@ def hatch() -> list[float]:
     return H.hatch_hole(next(h for h in level("attic")["holes"] if h["id"] == "hatch"), DATA)
 
 
-def surface(p: dict, u: float) -> float:
-    """The walked collision's height at u metres along the run from the foot (the floor, the nosing ramp, the top)."""
-    run, rise = float(p["run"]), float(p["rise"])
-    (u0, _), (_, _), (_, _) = G.nosing_ramp(p)
-    if u < u0:
-        return 0.0
-    if u > run:
-        return rise
-    return (u - u0) * rise / (run - u0)
-
-
-def sphere_centre(p: dict, u: float, r: float) -> float:
-    """The lowest height of the capsule's bottom sphere centre over the profile at u (resting on it, exact for a
-    piecewise-linear profile sampled finely, the riser's top corner included)."""
-    best = -1e9
-    n = 80
-    for i in range(n + 1):
-        v = u - r + 2 * r * i / n
-        best = max(best, surface(p, v) + math.sqrt(max(0.0, r * r - (v - u) ** 2)))
-    if abs(u) <= r:  # the riser's top corner
-        best = max(best, surface(p, 0.0) + math.sqrt(r * r - u * u))
-    return best
-
-
-def seg_rect_distance(ax: float, a0: float, a1: float, x0: float, x1: float, y0: float, y1: float) -> float:
-    """The distance from the vertical segment x = ax, y in [a0, a1] to the rectangle [x0, x1] x [y0, y1]."""
-    dx = max(x0 - ax, 0.0, ax - x1)
-    dy = max(y0 - a1, 0.0, a0 - y1)
-    return math.hypot(dx, dy)
+surface, sphere_centre, seg_rect_distance = S.surface, S.sphere_centre, S.seg_rect_distance
 
 
 class AtticStairTest(unittest.TestCase):
@@ -157,6 +130,13 @@ class AtticStairTest(unittest.TestCase):
         names = [e.get("name") for e in next(lv for lv in PLAN["levels"] if lv["level"] == "attic")["extra"]]
         self.assertIn("attic_stair", names)
         self.assertNotIn("hatch_ladder", names)
+
+
+    def test_the_section_matches_the_sweep(self) -> None:
+        sec = S.section(step=0.05)
+        self.assertGreaterEqual(sec["worst_gap"], MARGIN)
+        self.assertAlmostEqual(sec["pitch_deg"], math.degrees(math.atan2(sec["riser"], sec["going"])))
+        self.assertEqual(sec["hole"], hatch())
 
 
 if __name__ == "__main__":
