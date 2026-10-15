@@ -9,12 +9,14 @@ const SHEEN_LAYER := 2  # render layer bit 2 (value 2): the overlay copies and t
 ## A black, additive, ambient-free copy of every mesh of `meshes` with gi_mode Static on SHEEN_LAYER, beside its
 ## original: the sheen lights reach only these copies, so they add their specular and nothing else (black albedo: no
 ## diffuse; no ambient: the lightmap and the probes are not added twice). The originals stay on layer 1, outside the
-## sheen lights' cull mask. Returns the copies.
+## sheen lights' cull mask. A hidden mesh gets no copy (#185: a piece or prop that its room's merged shell or batch
+## draws is hidden, as `zone_build.gd` skips it; the copy, a sibling, inherits only the ancestors' visibility). Returns
+## the copies.
 static func overlay(meshes: Array) -> Array:
 	var mats := {}
 	var out := []
 	for mi: MeshInstance3D in meshes:
-		if mi.gi_mode != GeometryInstance3D.GI_MODE_STATIC or mi.mesh == null:
+		if mi.gi_mode != GeometryInstance3D.GI_MODE_STATIC or mi.mesh == null or not mi.visible:
 			continue
 		var o := MeshInstance3D.new()
 		o.mesh = mi.mesh
