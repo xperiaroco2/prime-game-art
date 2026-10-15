@@ -272,12 +272,16 @@ as a black hole. The flat `house_props/` names follow one rule for every package
 
 `tools/tests/test_house_export.py` diffs the 34 art rooms against the game's greybox rooms (pinned, below) on root,
 origin, size, Doors, Stations and Markers and expects exactly the known differences. Since the game imported the
-art's House (prime-game PR #1043; the snapshot at prime-game `605aed5f`) its rooms are the art's (the attic on the
-whole footprint, G1; the roof gone; the art's door and Package07 places, G2), so what is left is: the garage (Door3,
-the Workbench's `spawn_drop_*` group; the game swaps P6 later), the attic's Knife3, which the game moved to the pump
-room, the game's provisional spawn zone markers Zone01-Zone03 (yard, garden, landing; prime-game #651, #681) and the
+art's House (prime-game PR #1043; the snapshot now at prime-game `199364a4`) its rooms are the art's (the attic on
+the whole footprint, G1; the roof gone; the art's door and Package07 places, G2), so what is left is: the garage's
+Workbench (its `spawn_drop_*` group; the game swaps P6 later), the attic's Knife3, which the game moved to the pump
+room, the pump room's SwitchC, the stations the game removed (the basement's switches and generator, SwitchA, SwitchB,
+SwitchD and Generator, prime-game#799; the darkroom's PhotoBoard, the photo zone's PoseScreen and the study's
+Printer, prime-game#1058) and the darkroom's Film marker it added (#1058), which the art's rooms follow at their next
+export, the game's provisional spawn zone markers Zone01-Zone03 (yard, garden, landing; prime-game #651, #681) and the
 `spawn_drop_*` groups of the dining table, the garden drop-off and the terrace table, which the art rooms do not carry
-yet. The yard's spawns stand on the plot's ground at 0.0, as the game's do (#185).
+yet. The yard's spawns (Respawn1-4, RoundPlayer01-10) stand on the plot's ground at y 0.0 since #185 (the ground mesh
+is flat at 0.0 under each), as the game's do; they stood at -0.06 before.
 
 ### The game's greybox, pinned (#34)
 The House tests never read the game's live checkout: a marker the game added once turned `main` red. They read
@@ -475,10 +479,56 @@ Before -> after on the bake's review cameras (2026-10-15, `review/house/107/afte
 Over the budget still: the basement's storage view (baked 224, High 440: many shelves of distinct materials, and the
 merged meshes' room-sized bounds pull the neighbours' batches into view) and seam (baked 183), the ground's wall
 kitchen view (baked 157). High shadow draw calls fell in the basement (3,266 -> 2,482) but rose 10-35 % on the ground
-and upper floors: a room-sized batch enters every cube face of every shadowing lamp; splitting batches into cells of
-about 3 m is the follow-up. The look is unchanged (mean dL* 0.00-0.03 per view, `review/house/107/look/look.md`),
+and upper floors: a room-sized batch enters every cube face of every shadowing lamp (#185 below halves them). The look is unchanged (mean dL* 0.00-0.03 per view, `review/house/107/look/look.md`),
 and the ground's bake still bakes without seams (`review/house/107/bake-ground/vs_1014.png`). GPU ms High cached:
 kitchen 3.17 -> 1.03, wall kitchen 5.12 -> 1.19, seam 3.80 -> 1.01, living 4.49 -> 4.31.
+
+#185 went after High's shadow draw calls (sdc: every shadow redrawn) and put the budget into the walk:
+- **Cells, tried and not taken**: house.toml `[merge] cell` (metres, or `"room"`) and `house --cell` split each room's
+  merged shell class and each batch into grid cells by every piece's or prop's bounding-box centre
+  (`house_merge.cells`; one GLB per cell, `<name>_c<i>_<k>`). The grid run over the ten bake review views
+  (`review/house/185/grid/grid.md`, sums of baked dc / High dc / High sdc): room 1,300 / 2,507 / 18,742; 2 m 3,548 /
+  9,734 / 17,833; 3 m 4,285 / 9,301 / 19,650; 4 m 3,708 / 7,623 / 19,810. Each cell repeats most of its room's
+  materials, so cells multiply the draw calls for at most 5 % fewer shadow draw calls: `cell = "room"` stays.
+- **Shadow proxies** (`[merge] shadow_proxy = true`, `house_merge.shadow`): each merged shell and batch with two or
+  more shadow-casting surfaces gets a twin GLB `<name>_shadow.glb`, its opaque geometry as one surface per cull mode
+  (no material reaches a depth-only pass; alpha-blend surfaces cast nothing in Godot and are left out; a MASK
+  material fails the build, since a depth-only proxy would fill its cut-out). The scene instances it as
+  `<node>_shadow` beside the merged node with `cast_shadow = SHADOWS_ONLY` and `gi_mode` off, and the merged mesh's
+  own nodes get `cast_shadow = OFF`; the bake stages a proxy without light baking and `zone_build.gd` copies it as a
+  shadow caster only. A shadowed lamp then draws one surface per proxy into each cube face, not one per material.
+  The contract (`house_contract.py`) leaves out every section under a `merged_*` or `batch_*` node, the proxies'
+  included.
+- **The walk's count**: `house --walk DIR` counts each eye-height still and dressed-room view (not the aerial or
+  exterior ones) baked (every `Light3D` hidden) and High (the preset's 12 nearest glow fixtures of the light plan,
+  shadowed, on the sheen overlay), with the same code as `--count` (`godot/house/draw_cost.gd`: the overlay, the
+  sheen material, the count; `house_bake.walk_count`, `_house_bake.report`), writes `draw_calls.json` and `.md` into
+  `DIR` and WARNs over `[budget]`.
+
+Before -> after (#185, room cells with shadow proxies; bake review views, baked dc / High dc / High sdc):
+
+| floor | view | #107 | #185 |
+|---|---|---|---|
+| ground | living room | 126 / 236 / 2,208 | 126 / 236 / 1,053 |
+| ground | kitchen | 111 / 207 / 1,652 | 111 / 207 / 763 |
+| ground | wall kitchen | 158 / 305 / 2,092 | 158 / 305 / 999 |
+| ground | seam | 104 / 195 / 1,640 | 104 / 195 / 785 |
+| upper | bedroom | 101 / 200 / 1,735 | 101 / 200 / 843 |
+| upper | landing | 99 / 198 / 1,641 | 99 / 198 / 796 |
+| upper | seam | 79 / 156 / 1,431 | 79 / 156 / 698 |
+| basement | storage | 230 / 452 / 2,566 | 230 / 452 / 1,196 |
+| basement | generator hall | 104 / 199 / 1,375 | 104 / 199 / 688 |
+| basement | seam | 188 / 359 / 2,402 | 188 / 359 / 1,116 |
+
+High's shadow draw calls fall 53 % (18,742 -> 8,937), the draw calls stay; still over the budget: the storage view
+(baked 230, High 452) and the basement seam (baked 188, High 359), the wall kitchen view baked 158. The look is
+unchanged: mean dL* per frame over every `--count` frame (baked, real-time, High shadowed; 30 frames) at most 0.001
+(`review/house/185/look/dl_room_vs_proxy.md`, sheet `before_after_realtime.png`). The walk's table
+(`review/house/185/walk/draw_calls.md`, 23 views): sdc 144-1,914, none over 2,500; baked over 150 in 12 views and High
+over 350 in 20, the worst where the yard or several rooms are in sight (front door 334 / 3,096, living room to hallway
+331 / 3,003). The walk's High dc is 4-9x its baked dc where `--count`'s is about 2x; not explained yet (the walk's
+scene holds every level, so the sheen overlay copies every mesh instance, against one zone in `--count`): read the
+walk's High column as an upper bound until that is settled.
 
 ### Wall paint (#104)
 
