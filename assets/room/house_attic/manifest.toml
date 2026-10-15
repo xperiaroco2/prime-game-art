@@ -18,7 +18,7 @@ public_repo_ok = true
 ai_generated = false
 approved_by = ["xperiaroco2"]
 approved_at = 2026-10-15
-approval_pr = "https://github.com/xperiaroco2/prime-game-art/pull/184"
+approval_pr = "https://github.com/xperiaroco2/prime-game-art/pull/188"
 
 [source]
 service = "own"
