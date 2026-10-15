@@ -8,7 +8,7 @@ later packages add dressing data (`layouts/house/dressing/`, #75b) and only rege
 
 | File | What |
 |---|---|
-| `layouts/house/house.toml` | Settings: the kit spec, the kit folder under the raw folder (`kit_dir`: `kits/house/v3c`, the full v3 build of #77 (`v3b`, beside a stale in-between `v3/`) with the 12 pieces the warm sand ceiling changes rebuilt over it (#152), and the folder a plain `kit` builds into; the versions share the piece ids, so it is the one setting that switches kits), the `res://` paths of the pieces and scenes, the level order |
+| `layouts/house/house.toml` | Settings: the kit spec, the kit folder under the raw folder (`kit_dir`: `kits/house/v3d`, the full v3 build of #77 (`v3b`, beside a stale in-between `v3/`) with the 12 pieces the warm sand ceiling changes rebuilt over it (#152, `v3c`) and the attic stair, the long hatch tile and its guard added (#183), and the folder a plain `kit` builds into; the versions share the piece ids, so it is the one setting that switches kits), the `res://` paths of the pieces and scenes, the level order |
 | `layouts/house/{basement,ground,upper,attic}.toml` | One level each: `floor_y`, the default wall family, the house `footprint`; `[[rooms]]`, `[[doors]]`, `[[windows]]`, `[[holes]]`, `[[stairs]]` (a U-turn lists its lower half and landing in `below`), `[[pieces]]` (one free kit piece each: `piece`, `room`, `at` = [x, h, y] of its pivot, `turn`; the porch and the chimneys), `[[roofs]]` (a pitched roof from the kit over a room: `room`, `rect`, `gables`, optional `h`, `windows`: gable windows as [x, y] centres; the attic's), `[[dormers]]` (a dormer cut into a roof: the free roof's climb-out, art #77), `[[cornices]]` (brackets under an overhanging deck: `piece`, `room`, `rect` of the walls below, `every`, optional `h`; the roof deck's), `[[placeholders]]` |
 | `tools/runner/house_layout.py` | Load, validate, plan (choose the pieces), write the scenes |
 | `layouts/house/dressing/attic_roof/attic.toml`, `tools/runner/house_attic.py`, `commands/attic.py` | The attic's old things and hiding spots, the climb-out, the free roof's items and lookout, and their checks (below; art #77) |
@@ -57,8 +57,10 @@ take the heavy-run lock). The request (`house_layout.walk_request`, written to `
   the garage gate, the greenhouse door) of the ground and upper floors, crossed from its first room into its
   second, 1 m either side of the wall line, by a capsule 1.36 m wide and 1.8 m tall at 3 m/s (the kit's door is
   exactly 1.4 m clear: a 1.4 m capsule touches both jambs and jams, so the walk keeps 2 cm a side);
-- every flight (`stairs_main`, `stairs_basement`, `stairs_balcony`) up and down, from 1 m before its foot to up to
-  1 m past its top (less where the room there is short: the pantry's landing);
+- every flight (`stairs_main`, `stairs_basement`, `stairs_balcony`, `stair_attic`) up and down, from 1 m before its
+  foot to up to 1 m past its top (less where the room there is short: the pantry's landing); a flight narrower than
+  a door sets `walk_radius` on its `[[stairs]]` entry and walks that capsule instead (the attic stair: the game's
+  own, radius 0.4 m, between its handrails 1.1 m apart; #183);
 - a 3 x 3 m pad under each walk end that has no floor (the yard; #81a builds the real ground), cut back from the
   holes of its level (`house_layout.clip_pad`: a pad over the outdoor stairwell jammed the climb);
 - a control: the 1.5 m capsule must stop at the first door (the colliders are there);
@@ -110,7 +112,7 @@ writes the House's game-ready package (prime-game #523) from the same layout dat
   Colliders are the GLBs' own `-convcolonly` shapes (StaticBody3D on layer 1).
 - Footstep surfaces (#122; the game's `FootstepSurface`, its ARCHITECTURE 4.7.40): every walkable shell piece's
   instance carries `metadata/surface`, one of the game's four (`concrete`, `wood`, `carpet`, `grass`), by
-  `house.toml`'s `[export.surfaces]` (id patterns, the first match wins): boards, the attic ladder and the dormer
+  `house.toml`'s `[export.surfaces]` (id patterns, the first match wins): boards, the attic stair and its hatch guard, the dormer
   stair and the main stairs `wood`; lino, concrete, slabs, flat roofs and the other stairs `concrete`; `ground*`
   `grass`; the free roof's pitched pieces, the attic chimneys and the dormer `concrete` (#126; the game has no tile
   sound); a floor tile at least half under a rug (rugs have no collider) `carpet`, never a roof piece over one. A low
@@ -449,7 +451,8 @@ what does not move, where the scenes are written, so the walk, the bake and the 
   vertices in room space, their UV2 islands packed into one atlas (the bake's flat rule and `lightmap_size_hint` come
   from the pieces' UV2 table). Every piece instance stays, with its name, colliders and `metadata/surface`; only its
   mesh node gets `visible = false`. house.toml `[merge] keep` names the pieces the game moves or opens (gates, garage
-  door, glass door, the attic ladder and hatch boards); a class of one piece stays an instance.
+  door, glass door; the attic stair and its long hatch tile are static and merge, #183); a class of one piece stays
+  an instance.
 - **The batched dressing**: per room and group (Dressing, Detail, Fixtures) the static props become one GLB
   (`batch_<level>_<room>_<group>`), never a task station nor `[merge] keep_props` (the garage's car, lift arms and
   lift panel); each prop instance stays with its colliders and metadata, its visual nodes hidden; the batch joins the
@@ -607,7 +610,7 @@ Defaults used (for the engineer; data, easy to change):
   door) lies inside one wall run, so no door is within 1 m of a corner, and no wall meets it; windows only on
   exterior walls of their own room.
 - Each flight's rise ends at a level's floor; its top edge lies on a hole's edge with the hole over its top metre (the
-  stairs, the pantry stairs, the attic ladder) or on the edge of a floor it stays outside (the balcony stairs).
+  stairs, the pantry stairs; the attic stair's top edge is the long hatch's west edge) or on the edge of a floor it stays outside (the balcony stairs).
 
 ## The plan
 
@@ -643,9 +646,16 @@ Defaults used (for the engineer; data, easy to change):
 - Q7 B: 16 windows on the ground floor, 16 on the second floor, 4 knee windows in the attic, 5 in the garage.
 - Q9 B: leaves standing ajar at the front door, the terrace door and the garage side door; the greenhouse door is
   the kit's own leaf; open doorways elsewhere.
-- The attic hatch: the kit's hatch tile puts the hole's centre on whole metres, at (28, 29) instead of the doc's
-  (28, 28.5). Its ladder climbs south (#76): the foot on the landing at y 28.3; climbing north put the foot 0.3 m
-  from the stairwell (y 30), where no one can stand.
+- The attic stair (#183, in place of #76's hatch ladder, which the game's 1.8 m capsule could not climb): the kit's
+  `stair_attic`, a straight closed wooden stair, 16 risers of 0.2 m (the game's step height is 0.3 m) over 15 goings
+  of 0.235 m, 3.525 m long, 1.1 m wide, 40.4 deg (the game's floor limit is 45 deg), handrails both sides, its
+  collider a ramp through the nosings run on to the floor one going in front of the foot. It stands on the landing along the stairwell's north edge (`upper.toml` `[[stairs]]
+  attic_stair`, rect [26.475, 28.75, 3.525, 1.1]) and climbs west: the foot at x 30, in the landing's east aisle where
+  the main stairs arrive, the top at the hatch's west edge. The ladder's spot (climbing south at x 28) has no room for
+  a 3.5 m run without cutting the route to the bedroom door. The hatch is the kit's `floor_boards_4x2_hatch`, a 4 x 2
+  tile at (26, 28) with a 3.125 x 1.14 m hole (x 26.475..29.6, y 28.73..29.87), so a standing capsule of 1.8 m and
+  radius 0.4 m clears its edges over the whole climb (worst 0.31 m, `test_house_attic_stair`); `hatch_guard_attic`,
+  a 1.0 m spindle balustrade, closes the hole's north, south and east sides on the attic floor.
 - The study door is at (34, 28) as on the plan (the game's greybox has it at (34, 25)).
 - The front porch is a kit v2 piece (`[[pieces]]`): one `porch_2x2` from x 29 on the front wall, so its posts (x 29.12
   and 30.88) leave 1.64 m clear round the front door at x 30, its lamp socket for the porch lamp (#74b).
@@ -682,7 +692,7 @@ and an item dropped on the roof may stay there.
 writes `tools/out/attic/report.json`. The file uses the zones' conventions (docs/zones.md: `[[items]]` with `id`, `at`,
 `yaw`; sizes from `props/library.toml`, or `size` for a placeholder: the mannequin and the rocking horse, hero props
 outside the library); `clear` rects stay free (the hatch's apron, the climb stair's foot, the Knife3 marker), `arrive`
-is where a player comes in (off the ladder). `[[roof.items]]` and `[roof.lookout]` are the free roof's (the Loot crate
+is where a player comes in (off the stair's top, #183). `[[roof.items]]` and `[roof.lookout]` are the free roof's (the Loot crate
 lies on the roof). The light fixtures are #83a's. The rooms' dressing (`<room>.toml` above, #75b) reads every file of
 `dressing/` in another format (`[[props]]` at [x, h, z]); moving the attic onto that format is a follow-up.
 
