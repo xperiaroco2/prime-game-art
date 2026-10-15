@@ -35,7 +35,7 @@
   "WC": [18, 24, 6, 6],
   "Yard": [0, 0, 80, 60]
  },
- "game_commit": "7691a0a3abefe3b13986ecacd38c9449cef427cd",
+ "game_commit": "82efa45e72afe1eef9ea61338d492de1d6e3749f",
  "rooms": {
   "attic": {
    "doors": {},
@@ -99,10 +99,8 @@
    "origin": [30.0, -3.2, 34.0],
    "root": "BoilerRoom",
    "size": [10, 12],
-   "stations": {
-    "SwitchB": [2.0, 0.0, 10.0, ""]
-   },
-   "stations_marker3d": ["SwitchB"]
+   "stations": {},
+   "stations_marker3d": []
   },
   "chill_zone": {
    "doors": {},
@@ -226,10 +224,8 @@
    "origin": [40.0, -3.2, 22.0],
    "root": "GeneratorHall",
    "size": [18, 20],
-   "stations": {
-    "Generator": [9.0, 0.0, 10.0, ""]
-   },
-   "stations_marker3d": ["Generator"]
+   "stations": {},
+   "stations_marker3d": []
   },
   "greenhouse": {
    "doors": {
@@ -414,10 +410,8 @@
    "origin": [44.0, -3.2, 42.0],
    "root": "PumpRoom",
    "size": [10, 8],
-   "stations": {
-    "SwitchC": [8.0, 0.0, 6.0, ""]
-   },
-   "stations_marker3d": ["SwitchC"]
+   "stations": {},
+   "stations_marker3d": []
   },
   "stairs": {
    "doors": {
@@ -458,10 +452,9 @@
     "Buns": [3.0, 0.0, 4.0, ""],
     "Meat": [9.0, 0.0, 3.0, ""],
     "PartsShelf": [13.0, 0.0, 14.0, ""],
-    "SwitchA": [2.0, 0.0, 14.0, ""],
     "WineRack": [2.0, 0.0, 8.0, ""]
    },
-   "stations_marker3d": ["Boxes", "Buns", "Meat", "PartsShelf", "SwitchA", "WineRack"]
+   "stations_marker3d": ["Boxes", "Buns", "Meat", "PartsShelf", "WineRack"]
   },
   "street": {
    "doors": {
@@ -501,10 +494,8 @@
    "origin": [42.0, -3.2, 16.0],
    "root": "SwitchRoom",
    "size": [8, 6],
-   "stations": {
-    "SwitchD": [6.5, 0.0, 3.5, ""]
-   },
-   "stations_marker3d": ["SwitchD"]
+   "stations": {},
+   "stations_marker3d": []
   },
   "terrace": {
    "doors": {

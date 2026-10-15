@@ -36,7 +36,13 @@ PLAN = H.plan(DATA)
 YARD_SPAWNS = {f"Respawn{i}" for i in range(1, 5)} | {f"RoundPlayer{i:02d}" for i in range(1, 11)}
 KNOWN = {
     "attic": {"markers": {"Knife3"}},
-    "pump_room": {"markers": {"Knife3"}},
+    "pump_room": {"markers": {"Knife3"}, "stations": {"SwitchC"}},
+    # the game removed the basement's switch and generator stations (prime-game#799 at 82efa45e); the art's basement
+    # keeps them until its next export
+    "boiler_room": {"stations": {"SwitchB"}},
+    "generator_hall": {"stations": {"Generator"}},
+    "storage": {"stations": {"SwitchA"}},
+    "switch_room": {"stations": {"SwitchD"}},
     "dining_room": {"stations": {"DiningTable"}},
     "garage": {"stations": {"Workbench"}},
     "garden": {"stations": {"GardenDropOff"}, "markers": {"Zone02"}},
