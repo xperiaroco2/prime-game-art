@@ -101,6 +101,31 @@ class RealFilter(unittest.TestCase):
         self.assertEqual([a[0] for a in got["add"]], ["batch_detail_c0_0", "batch_detail_cn1_0"])
         self.assertEqual(vertices(self.root / "out" / "batch_ground_garage_detail_c0_0.glb"), 6)
 
+    def test_cells_split_the_merged_shell_and_room_keeps_one(self):
+        """#185: the kit-shell path with [merge] cell: pieces in two cells give two merged meshes, a lone piece in a
+        third cell stays an instance, `room` gives one mesh; a keep piece is never hidden nor merged either way."""
+        def at(x: float) -> str:  # a tiny piece's visual centre is its origin + (0.5, 0, 0.5)
+            return f"Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, {x}, 0, 0)"
+        pieces = [{"id": pid, "node": node, "transform": at(x)}
+                  for pid, node, x in (("wall_a", "wall_a_1", 0.0), ("wall_b", "wall_b_1", 1.0),
+                                       ("wall_a", "wall_a_2", 3.5), ("wall_b", "wall_b_2", 4.0),
+                                       ("wall_a", "wall_a_3", 7.0), ("door", "door_1", 0.5), ("door", "door_2", 4.0))]
+        self.data["settings"]["merge"]["cell"] = 3.0
+        merge = self.merger()
+        got = merge("ground", "hall", pieces)
+        self.assertEqual(got["hide"], {"wall_a_1", "wall_b_1", "wall_a_2", "wall_b_2"})  # wall_a_3 is alone in c2_0
+        self.assertEqual(got["add"], [("merged_shell_c0_0", "res://k/shell_m_ground_hall_c0_0.glb"),
+                                      ("merged_shell_c1_0", "res://k/shell_m_ground_hall_c1_0.glb")])
+        self.assertEqual(sorted(merge.files), ["shell_m_ground_hall_c0_0", "shell_m_ground_hall_c1_0"])
+        for name in merge.files:
+            self.assertEqual(vertices(merge.files[name]), 6, name)  # two walls of one triangle each, no door
+        self.data["settings"]["merge"]["cell"] = "room"
+        merge = self.merger()
+        got = merge("ground", "hall", pieces)
+        self.assertEqual(got["hide"], {"wall_a_1", "wall_b_1", "wall_a_2", "wall_b_2", "wall_a_3"})
+        self.assertEqual(got["add"], [("merged_shell", "res://k/shell_m_ground_hall.glb")])
+        self.assertEqual(vertices(merge.files["shell_m_ground_hall"]), 15)  # five walls, no door
+
     def test_room_cell_keeps_one_mesh_per_room(self):
         self.data["settings"]["merge"]["cell"] = "room"
         self.assertIsNone(HC.cell_size(self.data))
