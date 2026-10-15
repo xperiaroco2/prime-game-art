@@ -8,8 +8,11 @@ GLBs (`-convcolonly`, `-colonly`, `-col` nodes: the node, its shape kind, its tr
 hash, under the instance's own transform). Left out, because they only change what is drawn:
 - override sections of an instanced GLB's children (no type, no instance) that set only visual properties
   (`VISUAL`: material overrides, instance shader parameters, `visible`);
-- nodes named `merged_*` or `batch_*` (MERGED) and every override section under one: the merged shell's and the
-  batched dressing's meshes, their shadow proxies (`*_shadow`, #185) and their `cast_shadow` overrides.
+- nodes named `merged_*` or `batch_*` (MERGED: the merged shell's and the batched dressing's meshes and their shadow
+  proxies `*_shadow`, #185) that are a GLB instance or a MeshInstance3D setting only drawing properties (MESH), and
+  the override sections under one that set only drawing properties (MESH: materials, shader parameters, visibility,
+  `cast_shadow`, `gi_mode`). Anything else under a merged or batch node (a collider instance, a marker, a door or
+  station, a node with `metadata/surface`, an override with another property) stays in the contract.
 Pure Python, standard library only."""
 
 from __future__ import annotations
@@ -23,6 +26,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 VISUAL = ("surface_material_override/", "instance_shader_parameters/", "visible")
 MERGED = ("merged_", "batch_")
+MESH = VISUAL + ("transform", "layers", "cast_shadow", "gi_mode")  # what a merged mesh and its overrides may set
 COLLIDERS = {"-convcolonly": "convex", "-colonly": "trimesh", "-col": "trimesh_child"}
 _HEAD = re.compile(r'^\[node (.*)\]$')
 _ATTR = re.compile(r'(\w+)=("(?:[^"\\]|\\.)*"|ExtResource\("[^"]*"\)|\[[^\]]*\]|\S+)')
@@ -96,9 +100,9 @@ def scene_contract(text: str, resolve) -> dict:
     for nd in nodes:
         a = nd["attrs"]
         path = _path(a)
-        if any(part.startswith(MERGED) for part in path.split("/")):  # #185: a proxy's or merged mesh's overrides too
-            continue
         real = "type" in a or "instance" in a
+        if _merged_visual(path, a, nd["props"], real):
+            continue
         props = [(k, v) for k, v in nd["props"] if not k.startswith(VISUAL)]
         if not real and not props:
             continue
@@ -113,6 +117,17 @@ def scene_contract(text: str, resolve) -> dict:
             xf = dict(nd["props"]).get("transform", "")
             out_cols += [f"{path} {xf} {c}" for c in colliders(glb)]
     return {"nodes": out_nodes, "colliders": out_cols}
+
+
+def _merged_visual(path: str, attrs: dict, props: list, real: bool) -> bool:
+    """A merged or batch mesh node (a GLB instance or a MeshInstance3D named MERGED*, outside any other merged node) or
+    an override section under one, setting only drawing properties (MESH): left out of the contract (#185's review)."""
+    parts = path.split("/")
+    if not all(k.startswith(MESH) for k, _ in props):
+        return False
+    if any(part.startswith(MERGED) for part in parts[:-1]):  # under a merged mesh: its overrides only, never a node
+        return not real
+    return parts[-1].startswith(MERGED) and attrs.get("type", '"MeshInstance3D"') == '"MeshInstance3D"'
 
 
 def _sha(lines: list[str]) -> str:

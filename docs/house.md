@@ -497,8 +497,10 @@ kitchen 3.17 -> 1.03, wall kitchen 5.12 -> 1.19, seam 3.80 -> 1.01, living 4.49 
   `<node>_shadow` beside the merged node with `cast_shadow = SHADOWS_ONLY` and `gi_mode` off, and the merged mesh's
   own nodes get `cast_shadow = OFF`; the bake stages a proxy without light baking and `zone_build.gd` copies it as a
   shadow caster only. A shadowed lamp then draws one surface per proxy into each cube face, not one per material.
-  The contract (`house_contract.py`) leaves out every section under a `merged_*` or `batch_*` node, the proxies'
-  included.
+  The contract (`house_contract.py`) leaves out the `merged_*` and `batch_*` mesh nodes (a GLB instance or a
+  `MeshInstance3D`, the proxies included) and the override sections under one, as long as they set only drawing
+  properties (materials, shader parameters, visibility, `transform`, `layers`, `cast_shadow`, `gi_mode`); a real
+  node (a collider instance, a marker, a door or station) or any other property under one stays in the contract.
 - **The walk's count**: `house --walk DIR` counts each eye-height still and dressed-room view (not the aerial or
   exterior ones) baked (every `Light3D` hidden) and High (the preset's 12 nearest glow fixtures of the light plan,
   shadowed, on the sheen overlay), with the same code as `--count` (`godot/house/draw_cost.gd`: the overlay, the
