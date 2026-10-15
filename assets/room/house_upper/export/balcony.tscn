@@ -12,9 +12,11 @@
 [ext_resource type="PackedScene" path="res://assets/environment/house_props/balcony_chair.glb" id="10"]
 [ext_resource type="PackedScene" path="res://assets/environment/house_props/planter_pot.glb" id="11"]
 [ext_resource type="PackedScene" path="res://assets/environment/house_props/merged/batch_upper_balcony_dressing.glb" id="12"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/lantern.glb" id="13"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/string_lights.glb" id="14"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/merged/batch_upper_balcony_fixtures.glb" id="15"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/merged/batch_upper_balcony_dressing_shadow.glb" id="13"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/lantern.glb" id="14"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/string_lights.glb" id="15"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/merged/batch_upper_balcony_fixtures.glb" id="16"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/merged/batch_upper_balcony_fixtures_shadow.glb" id="17"]
 
 [node name="Balcony" type="Node3D"]
 metadata/size_m = Vector2i(10, 3)
@@ -225,32 +227,50 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
 
 [node name="merged_props" parent="Dressing/batch_dressing"]
 surface_material_override/0 = ExtResource("9")
+cast_shadow = 0
+
+[node name="batch_dressing_shadow" parent="Dressing" instance=ExtResource("13")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+
+[node name="shadow" parent="Dressing/batch_dressing_shadow"]
+cast_shadow = 3
+gi_mode = 0
 
 [node name="Fixtures" type="Node3D" parent="."]
 
-[node name="lantern_1" parent="Fixtures" instance=ExtResource("13")]
+[node name="lantern_1" parent="Fixtures" instance=ExtResource("14")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.55, 0.7, 1.4)
 metadata/prop = "lantern"
 
 [node name="lantern" parent="Fixtures/lantern_1"]
 visible = false
 
-[node name="lantern_2" parent="Fixtures" instance=ExtResource("13")]
+[node name="lantern_2" parent="Fixtures" instance=ExtResource("14")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3, 0, 2.7)
 metadata/prop = "lantern"
 
 [node name="lantern" parent="Fixtures/lantern_2"]
 visible = false
 
-[node name="string_lights_1" parent="Fixtures" instance=ExtResource("14")]
+[node name="string_lights_1" parent="Fixtures" instance=ExtResource("15")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 2.6, 2.85)
 metadata/prop = "string_lights"
 
 [node name="string_lights" parent="Fixtures/string_lights_1"]
 visible = false
 
-[node name="batch_fixtures" parent="Fixtures" instance=ExtResource("15")]
+[node name="batch_fixtures" parent="Fixtures" instance=ExtResource("16")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+
+[node name="merged_props" parent="Fixtures/batch_fixtures"]
+cast_shadow = 0
+
+[node name="batch_fixtures_shadow" parent="Fixtures" instance=ExtResource("17")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+
+[node name="shadow" parent="Fixtures/batch_fixtures_shadow"]
+cast_shadow = 3
+gi_mode = 0
 
 [node name="balcony_string_lights_01" type="OmniLight3D" parent="Fixtures"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 2.6, 1.5)

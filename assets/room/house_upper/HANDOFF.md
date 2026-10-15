@@ -121,7 +121,7 @@ it later (a U-turn flight would give about 12.1 to 12.5 s, docs/house.md "The se
   stairs up 3.17 s and down 2.58 s, the loop 13.85 s (21/21 points). The hatch ladder up to the attic is P5's piece
   and has no capsule walk yet (a ladder is not a flight).
 
-## Merged shell (#107)
+## Merged shell (#107, #185)
 
 Draw calls, not the look. Each room's own static kit pieces of a class (floors, ceilings, the rest of the shell) are
 drawn by one merged mesh per material, `Shell/merged_<class>` (`house_kit/merged/<class>_m_<level>_<room>.glb`, the
@@ -138,3 +138,11 @@ batch too). Here: 13 merged shell meshes and 20 batches, committed in `export/me
   the attic ladder and hatch boards), task stations and `[merge] keep_props` (the garage's car, lift arms and lift
   panel). A game-side script that moves another prop must move it out of its batch (ask the art side).
 - Numbers: the bake review's cameras (`house --bake --count`): baked 214/191/164 -> 102/100/80 and High 1,060/891/676 -> 202/200/158.
+- Shadow proxies (#185): each merged shell and batch with two or more shadow-casting surfaces has a twin,
+  `<its node>_shadow` (`merged/<its file>_shadow.glb`, one node `shadow`: the same geometry as one surface
+  per cull mode, no material), instanced beside it with `cast_shadow = SHADOWS_ONLY`; the merged mesh's own
+  nodes get `cast_shadow = OFF`. A shadowed lamp then draws one surface per proxy into each cube face, not one
+  per material. Here: 20 proxies, committed in `export/merged/` and copied beside their merged files as
+  `package.json` lists them; a proxy in `Detail` hides with it. Baked and High draw calls are unchanged; the bake review's cameras, High's shadow draw calls 1,735/1,641/1,431 -> 843/796/698 (bedroom, landing, seam).
+  The look is unchanged (mean dL* at most 0.001 per frame). Uniform grid cells of 2-4 m were tried and not
+  taken: they multiply the draw calls for at most 5 % fewer shadow draw calls (docs/house.md "Draw calls").

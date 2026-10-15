@@ -39,20 +39,23 @@
 [ext_resource type="PackedScene" path="res://assets/environment/house_props/drum_bund.glb" id="37"]
 [ext_resource type="PackedScene" path="res://assets/environment/house_props/drum_bund_b.glb" id="38"]
 [ext_resource type="PackedScene" path="res://assets/environment/house_props/merged/batch_basement_generator_hall_dressing.glb" id="39"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/clipboard.glb" id="40"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/sign_plant.glb" id="41"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/isolator.glb" id="42"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/sign_volt.glb" id="43"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/sign_ear.glb" id="44"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/parcels.glb" id="45"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/delivery_bag.glb" id="46"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/wall_calendar.glb" id="47"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/sign_generator.glb" id="48"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/sign_no_smoking.glb" id="49"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/merged/batch_basement_generator_hall_detail.glb" id="50"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/industrial_pendant.glb" id="51"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/cage_lamp.glb" id="52"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/merged/batch_basement_generator_hall_fixtures.glb" id="53"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/merged/batch_basement_generator_hall_dressing_shadow.glb" id="40"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/clipboard.glb" id="41"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/sign_plant.glb" id="42"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/isolator.glb" id="43"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/sign_volt.glb" id="44"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/sign_ear.glb" id="45"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/parcels.glb" id="46"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/delivery_bag.glb" id="47"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/wall_calendar.glb" id="48"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/sign_generator.glb" id="49"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/sign_no_smoking.glb" id="50"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/merged/batch_basement_generator_hall_detail.glb" id="51"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/merged/batch_basement_generator_hall_detail_shadow.glb" id="52"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/industrial_pendant.glb" id="53"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/cage_lamp.glb" id="54"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/merged/batch_basement_generator_hall_fixtures.glb" id="55"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/merged/batch_basement_generator_hall_fixtures_shadow.glb" id="56"]
 
 [node name="GeneratorHall" type="Node3D"]
 metadata/size_m = Vector2i(18, 20)
@@ -2974,10 +2977,18 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
 
 [node name="merged_props" parent="Dressing/batch_dressing"]
 surface_material_override/0 = ExtResource("13")
+cast_shadow = 0
+
+[node name="batch_dressing_shadow" parent="Dressing" instance=ExtResource("40")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+
+[node name="shadow" parent="Dressing/batch_dressing_shadow"]
+cast_shadow = 3
+gi_mode = 0
 
 [node name="Detail" type="Node3D" parent="."]
 
-[node name="clipboard_1" parent="Detail" instance=ExtResource("40")]
+[node name="clipboard_1" parent="Detail" instance=ExtResource("41")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 13.1, 1.3, 0.1)
 metadata/prop = "clipboard"
 
@@ -2985,7 +2996,7 @@ metadata/prop = "clipboard"
 surface_material_override/0 = ExtResource("13")
 visible = false
 
-[node name="sign_plant_1" parent="Detail" instance=ExtResource("41")]
+[node name="sign_plant_1" parent="Detail" instance=ExtResource("42")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12.4, 1.8, 0.1)
 metadata/prop = "sign_plant"
 
@@ -2993,7 +3004,7 @@ metadata/prop = "sign_plant"
 surface_material_override/0 = ExtResource("13")
 visible = false
 
-[node name="isolator_1" parent="Detail" instance=ExtResource("42")]
+[node name="isolator_1" parent="Detail" instance=ExtResource("43")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15.9, 0.9, 0.1)
 metadata/prop = "isolator"
 
@@ -3001,7 +3012,7 @@ metadata/prop = "isolator"
 surface_material_override/0 = ExtResource("13")
 visible = false
 
-[node name="isolator_2" parent="Detail" instance=ExtResource("42")]
+[node name="isolator_2" parent="Detail" instance=ExtResource("43")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16.4, 0.9, 0.1)
 metadata/prop = "isolator"
 
@@ -3009,7 +3020,7 @@ metadata/prop = "isolator"
 surface_material_override/0 = ExtResource("13")
 visible = false
 
-[node name="sign_volt_1" parent="Detail" instance=ExtResource("43")]
+[node name="sign_volt_1" parent="Detail" instance=ExtResource("44")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16.15, 2.55, 0.1)
 metadata/prop = "sign_volt"
 
@@ -3017,7 +3028,7 @@ metadata/prop = "sign_volt"
 surface_material_override/0 = ExtResource("13")
 visible = false
 
-[node name="sign_ear_1" parent="Detail" instance=ExtResource("44")]
+[node name="sign_ear_1" parent="Detail" instance=ExtResource("45")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7.2, 1.7, 0.1)
 metadata/prop = "sign_ear"
 
@@ -3025,7 +3036,7 @@ metadata/prop = "sign_ear"
 surface_material_override/0 = ExtResource("13")
 visible = false
 
-[node name="parcels_1" parent="Detail" instance=ExtResource("45")]
+[node name="parcels_1" parent="Detail" instance=ExtResource("46")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.9, 0.15, 0.6)
 metadata/prop = "parcels"
 
@@ -3033,7 +3044,7 @@ metadata/prop = "parcels"
 surface_material_override/0 = ExtResource("13")
 visible = false
 
-[node name="parcels_2" parent="Detail" instance=ExtResource("45")]
+[node name="parcels_2" parent="Detail" instance=ExtResource("46")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.5, 0.15, 0.6)
 metadata/prop = "parcels"
 
@@ -3041,7 +3052,7 @@ metadata/prop = "parcels"
 surface_material_override/0 = ExtResource("13")
 visible = false
 
-[node name="parcels_3" parent="Detail" instance=ExtResource("45")]
+[node name="parcels_3" parent="Detail" instance=ExtResource("46")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.9, 0.61, 0.6)
 metadata/prop = "parcels"
 
@@ -3049,7 +3060,7 @@ metadata/prop = "parcels"
 surface_material_override/0 = ExtResource("13")
 visible = false
 
-[node name="parcels_4" parent="Detail" instance=ExtResource("45")]
+[node name="parcels_4" parent="Detail" instance=ExtResource("46")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.5, 0.61, 0.6)
 metadata/prop = "parcels"
 
@@ -3057,7 +3068,7 @@ metadata/prop = "parcels"
 surface_material_override/0 = ExtResource("13")
 visible = false
 
-[node name="parcels_5" parent="Detail" instance=ExtResource("45")]
+[node name="parcels_5" parent="Detail" instance=ExtResource("46")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.2, 1.07, 0.6)
 metadata/prop = "parcels"
 
@@ -3065,7 +3076,7 @@ metadata/prop = "parcels"
 surface_material_override/0 = ExtResource("13")
 visible = false
 
-[node name="delivery_bag_1" parent="Detail" instance=ExtResource("46")]
+[node name="delivery_bag_1" parent="Detail" instance=ExtResource("47")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.4, 0, 0.45)
 metadata/prop = "delivery_bag"
 
@@ -3073,7 +3084,7 @@ metadata/prop = "delivery_bag"
 surface_material_override/0 = ExtResource("13")
 visible = false
 
-[node name="wall_calendar_1" parent="Detail" instance=ExtResource("47")]
+[node name="wall_calendar_1" parent="Detail" instance=ExtResource("48")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 0.1, 1.4, 7.1)
 metadata/prop = "wall_calendar"
 
@@ -3081,7 +3092,7 @@ metadata/prop = "wall_calendar"
 surface_material_override/0 = ExtResource("13")
 visible = false
 
-[node name="isolator_3" parent="Detail" instance=ExtResource("42")]
+[node name="isolator_3" parent="Detail" instance=ExtResource("43")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 0.1, 0.9, 9.95)
 metadata/prop = "isolator"
 
@@ -3089,7 +3100,7 @@ metadata/prop = "isolator"
 surface_material_override/0 = ExtResource("13")
 visible = false
 
-[node name="sign_generator_1" parent="Detail" instance=ExtResource("48")]
+[node name="sign_generator_1" parent="Detail" instance=ExtResource("49")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 0.1, 2.05, 11)
 metadata/prop = "sign_generator"
 
@@ -3097,7 +3108,7 @@ metadata/prop = "sign_generator"
 surface_material_override/0 = ExtResource("13")
 visible = false
 
-[node name="isolator_4" parent="Detail" instance=ExtResource("42")]
+[node name="isolator_4" parent="Detail" instance=ExtResource("43")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 0.1, 0.9, 12.05)
 metadata/prop = "isolator"
 
@@ -3105,7 +3116,7 @@ metadata/prop = "isolator"
 surface_material_override/0 = ExtResource("13")
 visible = false
 
-[node name="sign_ear_2" parent="Detail" instance=ExtResource("44")]
+[node name="sign_ear_2" parent="Detail" instance=ExtResource("45")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 7.25, 1.85, 19.9)
 metadata/prop = "sign_ear"
 
@@ -3113,7 +3124,7 @@ metadata/prop = "sign_ear"
 surface_material_override/0 = ExtResource("13")
 visible = false
 
-[node name="sign_no_smoking_1" parent="Detail" instance=ExtResource("49")]
+[node name="sign_no_smoking_1" parent="Detail" instance=ExtResource("50")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 15.3, 1.7, 19.9)
 metadata/prop = "sign_no_smoking"
 
@@ -3121,7 +3132,7 @@ metadata/prop = "sign_no_smoking"
 surface_material_override/0 = ExtResource("13")
 visible = false
 
-[node name="sign_no_smoking_2" parent="Detail" instance=ExtResource("49")]
+[node name="sign_no_smoking_2" parent="Detail" instance=ExtResource("50")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 17.9, 1.75, 2.6)
 metadata/prop = "sign_no_smoking"
 
@@ -3129,7 +3140,7 @@ metadata/prop = "sign_no_smoking"
 surface_material_override/0 = ExtResource("13")
 visible = false
 
-[node name="clipboard_2" parent="Detail" instance=ExtResource("40")]
+[node name="clipboard_2" parent="Detail" instance=ExtResource("41")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 17.9, 1.4, 7.4)
 metadata/prop = "clipboard"
 
@@ -3137,7 +3148,7 @@ metadata/prop = "clipboard"
 surface_material_override/0 = ExtResource("13")
 visible = false
 
-[node name="clipboard_3" parent="Detail" instance=ExtResource("40")]
+[node name="clipboard_3" parent="Detail" instance=ExtResource("41")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 17.9, 1.4, 7.7)
 metadata/prop = "clipboard"
 
@@ -3145,114 +3156,132 @@ metadata/prop = "clipboard"
 surface_material_override/0 = ExtResource("13")
 visible = false
 
-[node name="batch_detail" parent="Detail" instance=ExtResource("50")]
+[node name="batch_detail" parent="Detail" instance=ExtResource("51")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
 
 [node name="merged_props" parent="Detail/batch_detail"]
 surface_material_override/0 = ExtResource("13")
+cast_shadow = 0
+
+[node name="batch_detail_shadow" parent="Detail" instance=ExtResource("52")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+
+[node name="shadow" parent="Detail/batch_detail_shadow"]
+cast_shadow = 3
+gi_mode = 0
 
 [node name="Fixtures" type="Node3D" parent="."]
 
-[node name="industrial_pendant_1" parent="Fixtures" instance=ExtResource("51")]
+[node name="industrial_pendant_1" parent="Fixtures" instance=ExtResource("53")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 3, 6)
 metadata/prop = "industrial_pendant"
 
 [node name="industrial_pendant" parent="Fixtures/industrial_pendant_1"]
 visible = false
 
-[node name="industrial_pendant_2" parent="Fixtures" instance=ExtResource("51")]
+[node name="industrial_pendant_2" parent="Fixtures" instance=ExtResource("53")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 3, 6)
 metadata/prop = "industrial_pendant"
 
 [node name="industrial_pendant" parent="Fixtures/industrial_pendant_2"]
 visible = false
 
-[node name="industrial_pendant_3" parent="Fixtures" instance=ExtResource("51")]
+[node name="industrial_pendant_3" parent="Fixtures" instance=ExtResource("53")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9, 3, 6)
 metadata/prop = "industrial_pendant"
 
 [node name="industrial_pendant" parent="Fixtures/industrial_pendant_3"]
 visible = false
 
-[node name="industrial_pendant_4" parent="Fixtures" instance=ExtResource("51")]
+[node name="industrial_pendant_4" parent="Fixtures" instance=ExtResource("53")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 3, 6)
 metadata/prop = "industrial_pendant"
 
 [node name="industrial_pendant" parent="Fixtures/industrial_pendant_4"]
 visible = false
 
-[node name="industrial_pendant_5" parent="Fixtures" instance=ExtResource("51")]
+[node name="industrial_pendant_5" parent="Fixtures" instance=ExtResource("53")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16, 3, 6)
 metadata/prop = "industrial_pendant"
 
 [node name="industrial_pendant" parent="Fixtures/industrial_pendant_5"]
 visible = false
 
-[node name="industrial_pendant_6" parent="Fixtures" instance=ExtResource("51")]
+[node name="industrial_pendant_6" parent="Fixtures" instance=ExtResource("53")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 3, 14)
 metadata/prop = "industrial_pendant"
 
 [node name="industrial_pendant" parent="Fixtures/industrial_pendant_6"]
 visible = false
 
-[node name="industrial_pendant_7" parent="Fixtures" instance=ExtResource("51")]
+[node name="industrial_pendant_7" parent="Fixtures" instance=ExtResource("53")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 3, 14)
 metadata/prop = "industrial_pendant"
 
 [node name="industrial_pendant" parent="Fixtures/industrial_pendant_7"]
 visible = false
 
-[node name="industrial_pendant_8" parent="Fixtures" instance=ExtResource("51")]
+[node name="industrial_pendant_8" parent="Fixtures" instance=ExtResource("53")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9, 3, 14)
 metadata/prop = "industrial_pendant"
 
 [node name="industrial_pendant" parent="Fixtures/industrial_pendant_8"]
 visible = false
 
-[node name="industrial_pendant_9" parent="Fixtures" instance=ExtResource("51")]
+[node name="industrial_pendant_9" parent="Fixtures" instance=ExtResource("53")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 3, 14)
 metadata/prop = "industrial_pendant"
 
 [node name="industrial_pendant" parent="Fixtures/industrial_pendant_9"]
 visible = false
 
-[node name="industrial_pendant_10" parent="Fixtures" instance=ExtResource("51")]
+[node name="industrial_pendant_10" parent="Fixtures" instance=ExtResource("53")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16, 3, 14)
 metadata/prop = "industrial_pendant"
 
 [node name="industrial_pendant" parent="Fixtures/industrial_pendant_10"]
 visible = false
 
-[node name="cage_lamp_1" parent="Fixtures" instance=ExtResource("52")]
+[node name="cage_lamp_1" parent="Fixtures" instance=ExtResource("54")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 17.9, 2.2, 7)
 metadata/prop = "cage_lamp"
 
 [node name="cage_lamp" parent="Fixtures/cage_lamp_1"]
 visible = false
 
-[node name="cage_lamp_2" parent="Fixtures" instance=ExtResource("52")]
+[node name="cage_lamp_2" parent="Fixtures" instance=ExtResource("54")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 2.2, 0.1)
 metadata/prop = "cage_lamp"
 
 [node name="cage_lamp" parent="Fixtures/cage_lamp_2"]
 visible = false
 
-[node name="cage_lamp_3" parent="Fixtures" instance=ExtResource("52")]
+[node name="cage_lamp_3" parent="Fixtures" instance=ExtResource("54")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 11, 2.2, 19.9)
 metadata/prop = "cage_lamp"
 
 [node name="cage_lamp" parent="Fixtures/cage_lamp_3"]
 visible = false
 
-[node name="cage_lamp_4" parent="Fixtures" instance=ExtResource("52")]
+[node name="cage_lamp_4" parent="Fixtures" instance=ExtResource("54")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 0.1, 2.2, 8)
 metadata/prop = "cage_lamp"
 
 [node name="cage_lamp" parent="Fixtures/cage_lamp_4"]
 visible = false
 
-[node name="batch_fixtures" parent="Fixtures" instance=ExtResource("53")]
+[node name="batch_fixtures" parent="Fixtures" instance=ExtResource("55")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+
+[node name="merged_props" parent="Fixtures/batch_fixtures"]
+cast_shadow = 0
+
+[node name="batch_fixtures_shadow" parent="Fixtures" instance=ExtResource("56")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+
+[node name="shadow" parent="Fixtures/batch_fixtures_shadow"]
+cast_shadow = 3
+gi_mode = 0
 
 [node name="generator_hall_cage_lamp_01" type="OmniLight3D" parent="Fixtures"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.25, 2.7, 2.5)

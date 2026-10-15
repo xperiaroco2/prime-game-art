@@ -33,7 +33,8 @@
 [ext_resource type="PackedScene" path="res://assets/environment/house_props/fridge.glb" id="31"]
 [ext_resource type="PackedScene" path="res://assets/environment/house_props/store_shelving.glb" id="32"]
 [ext_resource type="PackedScene" path="res://assets/environment/house_props/merged/batch_ground_garage_dressing.glb" id="33"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/sign_no_smoking.glb" id="34"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/merged/batch_ground_garage_dressing_shadow.glb" id="34"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/sign_no_smoking.glb" id="35"]
 
 [node name="Garage" type="Node3D"]
 metadata/size_m = Vector2i(18, 14)
@@ -1125,10 +1126,18 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
 [node name="merged_props" parent="Dressing/batch_dressing"]
 surface_material_override/0 = ExtResource("12")
 surface_material_override/1 = ExtResource("12")
+cast_shadow = 0
+
+[node name="batch_dressing_shadow" parent="Dressing" instance=ExtResource("34")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+
+[node name="shadow" parent="Dressing/batch_dressing_shadow"]
+cast_shadow = 3
+gi_mode = 0
 
 [node name="Detail" type="Node3D" parent="."]
 
-[node name="sign_no_smoking_1" parent="Detail" instance=ExtResource("34")]
+[node name="sign_no_smoking_1" parent="Detail" instance=ExtResource("35")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.6, 1.5, 0.1)
 metadata/prop = "sign_no_smoking"
 

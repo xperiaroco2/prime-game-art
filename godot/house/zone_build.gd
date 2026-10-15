@@ -58,6 +58,17 @@ func _initialize() -> void:
 	for mi: MeshInstance3D in src.find_children("*", "MeshInstance3D", true, false):
 		if mi.mesh == null or not mi.visible:  # #107: a hidden piece mesh is drawn by its room's merged shell
 			continue
+		if mi.cast_shadow == GeometryInstance3D.SHADOW_CASTING_SETTING_SHADOWS_ONLY:  # #185: a shadow proxy
+			var sp := MeshInstance3D.new()
+			sp.mesh = mi.mesh
+			sp.transform = _xf(mi, src)
+			sp.cast_shadow = mi.cast_shadow
+			sp.gi_mode = GeometryInstance3D.GI_MODE_DISABLED
+			sp.name = "shadow_%d" % k
+			k += 1
+			meshes.add_child(sp)
+			sp.owner = out
+			continue
 		var pid := _piece(mi)
 		var above := str(src.get_path_to(mi)).begins_with("Above")
 		var flat := pid.begins_with("kit_floor_") or pid.begins_with("kit_ceiling_")
@@ -90,6 +101,7 @@ func _initialize() -> void:
 		var n := MeshInstance3D.new()
 		n.mesh = mesh
 		n.transform = xf
+		n.cast_shadow = mi.cast_shadow  # #185: OFF on a merged mesh whose shadow proxy casts for it
 		box = n.transform * mesh.get_aabb() if stats["meshes"] == 0 else box.merge(n.transform * mesh.get_aabb())
 		n.gi_mode = GeometryInstance3D.GI_MODE_STATIC if has_uv2 else GeometryInstance3D.GI_MODE_DYNAMIC
 		stats["dynamic"] += 0 if has_uv2 else 1

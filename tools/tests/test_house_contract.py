@@ -46,6 +46,11 @@ class ContractRules(unittest.TestCase):
                                '[node name="wall" parent="Shell/wall_1"]\nvisible = false')
         merged += '\n[node name="merged_kit_set" type="MeshInstance3D" parent="Shell"]\nlayers = 1\n'
         self.assertEqual(self.contract(SCENE), self.contract(merged))
+        # #185: a shadow proxy and the merged mesh's cast_shadow override are visual too
+        merged += ('\n[node name="shell_m" parent="Shell/merged_kit_set"]\ncast_shadow = 0\n'
+                   '\n[node name="merged_kit_set_shadow" parent="Shell" instance=ExtResource("1")]\n'
+                   '\n[node name="shadow" parent="Shell/merged_kit_set_shadow"]\ncast_shadow = 3\ngi_mode = 0\n')
+        self.assertEqual(self.contract(SCENE), self.contract(merged))
 
     def test_game_facing_changes_are_seen(self):
         base = self.contract(SCENE)

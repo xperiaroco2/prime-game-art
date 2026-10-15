@@ -452,7 +452,11 @@ def scene_nodes(sc, resolved: list[dict], res_of, overrides=None, batch=None) ->
         for node, path, *key in batched["add"]:  # key: the batch's overrides key (house_export's fine pack)
             sc.nodes.append("\n".join([f'[node name="{node}" parent="{parent}" instance=ExtResource("{sc.res(path)}")]',
                                        "transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)"]))
-            for sub_node, extra in (overrides(key[0]) if overrides and key else []):
+            subs: dict = {}  # one override block per sub-node: the fine pack's materials and #185's casting
+            for sub_node, extra in ((overrides(key[0]) if overrides and key else [])
+                                    + batched.get("cast", {}).get(path, [])):
+                subs.setdefault(sub_node, []).extend(extra)
+            for sub_node, extra in subs.items():
                 sub, _, leaf = f"{parent}/{node}/{sub_node}".rpartition("/")
                 sc.nodes.append("\n".join([f'[node name="{leaf}" parent="{sub}"]'] + extra))
     return placeholders

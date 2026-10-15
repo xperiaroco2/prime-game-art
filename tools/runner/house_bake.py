@@ -22,6 +22,7 @@ GRANT = "research/2026-10-06-locations/lab/editor_window.txt"
 EDITOR_BAN = ("house --bake: the editor bakes only between 00:00 and 08:00 local (or inside a window the manager "
               "granted); build the zones by day with --no-bake and bake at night")
 PROP_IMPORT = {"meshes/light_baking": 2, "meshes/lightmap_texel_size": 0.2}  # Godot unwraps the props' UV2
+SHADOW_IMPORT = {"meshes/light_baking": 0}  # a shadow proxy (#185): never baked, no UV2 to unwrap
 KIT_IMPORT = {"meshes/light_baking": 1}  # the kit keeps its own UV2 (one island per face, docs/kit.md)
 PROP_TEXEL_PER_M = 1.0 / PROP_IMPORT["meshes/lightmap_texel_size"]
 ABOVE_OTHER_K = 0.1  # Above's walls and props only occlude: a tenth of the texels
@@ -424,6 +425,35 @@ def draw_calls(shots: list[dict], rows: list[dict]) -> dict[str, dict[str, list[
             {"dc": round(s.get("draw_calls_cached", s.get("draw_calls", 0))),
              "sdc": round(s.get("shadow_draw_calls_redrawn", 0))})
     return out
+
+
+def walk_count(lights: dict, fixtures: list[dict], preset: str = "high") -> dict:
+    """What walk.gd counts per walk view (#185): the preset's sheen row as the light kit's glow fixtures (world x, y, z;
+    light, range, energy; a spot's angle and aim), the nearest `n` of them real-time, `shadow` or not."""
+    sh = sheen_mode(lights["presets"][preset]["sheen"])
+    glow = []
+    for f in fixtures:
+        if not f.get("glow"):
+            continue
+        g = {"name": f["name"], "light": f["light"], "at": [f["x"], f["h"], f["y"]], "range": f["range"],
+             "energy": f["energy"]}
+        if f["light"] == "spot":
+            g["angle"] = f["angle"]
+            g["aim"] = f["aim"]
+        glow.append(g)
+    return {"glow": glow, "n": sh["n"], "shadow": sh["shadow"]}
+
+
+def walk_table(counts: dict[str, dict]) -> tuple[dict[str, dict[str, list[dict]]], dict[str, list[str]]]:
+    """walk.gd's counts (view -> {"baked", "high"}: DrawCost.cost each) as draw_calls()'s table under the zone "walk"
+    and its view names: the same rows as --count's, so budget_warnings and draw_calls_md read both."""
+    names = list(counts)
+    shots, rows = [], [{"label": "walk_baked", "zone": "walk", "mode": "baked"},
+                       {"label": "walk_high", "zone": "walk", "mode": "sheen12_shadow"}]
+    for ci, view in enumerate(names):
+        for kind in ("baked", "high"):
+            shots.append(dict(counts[view][kind], row=f"walk_{kind}", cam=ci))
+    return draw_calls(shots, rows), {"walk": names}
 
 
 def budget_warnings(budget: dict, table: dict[str, dict[str, list[dict]]],

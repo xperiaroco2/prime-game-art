@@ -195,7 +195,7 @@ entry unless the game wants one.
 - The art's package check (`house --export --package 2`) is green: every scene loads with its root and `size_m`,
   10/10 capsule walks arrive, none of the 25536 rays down hits a shell collider without a surface (80 hit nothing).
 
-## Merged shell (#107)
+## Merged shell (#107, #185)
 
 Draw calls, not the look. Each room's own static kit pieces of a class (floors, ceilings, the rest of the shell) are
 drawn by one merged mesh per material, `Shell/merged_<class>` (`house_kit/merged/<class>_m_<level>_<room>.glb`, the
@@ -212,3 +212,17 @@ batch too). Here: 15 merged shell meshes and 21 batches, committed in `export/me
   the attic ladder and hatch boards), task stations and `[merge] keep_props` (the garage's car, lift arms and lift
   panel). A game-side script that moves another prop must move it out of its batch (ask the art side).
 - Numbers: the export sheet's kitchen views draw 43 and 42 calls before, 23 and 23 after; the bake review's cameras (`house --bake --count`): baked 236/165/257/180 -> 125/110/157/103 and High 875/499/823/561 -> 234/205/303/193 (kitchen, living room, wall kitchen, hallway).
+- Shadow proxies (#185): each merged shell and batch with two or more shadow-casting surfaces has a twin,
+  `<its node>_shadow` (`merged/<its file>_shadow.glb`, one node `shadow`: the same geometry as one surface
+  per cull mode, no material), instanced beside it with `cast_shadow = SHADOWS_ONLY`; the merged mesh's own
+  nodes get `cast_shadow = OFF`. A shadowed lamp then draws one surface per proxy into each cube face, not one
+  per material. Here: 20 proxies, committed in `export/merged/` and copied beside their merged files as
+  `package.json` lists them; a proxy in `Detail` hides with it. Baked and High draw calls are unchanged; the bake review's cameras, High's shadow draw calls 2,208/1,652/2,092/1,640 -> 1,053/763/999/785 (living room, kitchen, wall kitchen, seam).
+  The look is unchanged (mean dL* at most 0.001 per frame). Uniform grid cells of 2-4 m were tried and not
+  taken: they multiply the draw calls for at most 5 % fewer shadow draw calls (docs/house.md "Draw calls").
+
+## The yard's spawns (#185)
+
+`yard.tscn`'s `Respawn1`-`Respawn4` and `RoundPlayer01`-`RoundPlayer10` stand at y 0.0, on the plot's ground (its
+mesh is flat at 0.0 under each of them), as the game's do since prime-game PR #1043; they stood at -0.06 before. No
+other node of the yard moved.

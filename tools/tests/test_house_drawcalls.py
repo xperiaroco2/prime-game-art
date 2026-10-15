@@ -48,6 +48,34 @@ class DrawCalls(unittest.TestCase):
         self.assertIn("| ground | seam | 120 | 300 | 1200 |", md)
 
 
+class WalkCount(unittest.TestCase):
+    """#185: `house --walk` counts its views on the --count code path."""
+
+    def test_request_is_the_high_preset_over_the_glow_fixtures(self):
+        lights = {"presets": {"high": {"sheen": "sheen12_shadow"}}}
+        fx = [{"name": "a_bare_bulb_01", "light": "omni", "x": 1, "h": 2.5, "y": 3, "range": 5, "energy": 1, "glow": True},
+              {"name": "a_tube_01", "light": "omni", "x": 0, "h": 2.5, "y": 0, "range": 4, "energy": 1, "glow": False},
+              {"name": "a_spot_01", "light": "spot", "x": 4, "h": 2.6, "y": 5, "range": 6, "energy": 2, "glow": True,
+               "angle": 40, "aim": [4, 0, 5]}]
+        req = B.walk_count(lights, fx)
+        self.assertEqual((req["n"], req["shadow"]), (12, True))
+        self.assertEqual([g["name"] for g in req["glow"]], ["a_bare_bulb_01", "a_spot_01"])
+        self.assertEqual(req["glow"][0]["at"], [1, 2.5, 3])
+        self.assertEqual((req["glow"][1]["angle"], req["glow"][1]["aim"]), (40, [4, 0, 5]))
+
+    def test_counts_become_the_count_table(self):
+        c = {"front_door": {"baked": {"draw_calls_cached": 151.2}, "high": {"draw_calls_cached": 300,
+                                                                            "shadow_draw_calls_redrawn": 800}},
+             "kitchen": {"baked": {"draw_calls_cached": 90}, "high": {"draw_calls_cached": 200,
+                                                                     "shadow_draw_calls_redrawn": 2500.4}}}
+        table, names = B.walk_table(c)
+        self.assertEqual(names, {"walk": ["front_door", "kitchen"]})
+        self.assertEqual(table["walk"]["baked"], [{"dc": 151, "sdc": 0}, {"dc": 90, "sdc": 0}])
+        self.assertEqual(B.budget_warnings({"baked": 150, "high_shadow": 2000}, table, names),
+                         ["WARN draw calls: walk front_door baked 151 > 150",
+                          "WARN draw calls: walk kitchen high_shadow 2500 > 2000"])
+
+
 class MergeHook(unittest.TestCase):
     def test_pieces_stay_hidden_meshes_and_merged_instances_join_the_shell(self):
         data = H.load()

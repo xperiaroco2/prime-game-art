@@ -66,6 +66,9 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
                              "High, against lights.toml's [budget] (draw_calls.json and .md, the frames; #107)")
     parser.add_argument("--no-merge", action="store_true",
                         help="draw every kit piece as its own instance (the scenes before #107's merged shell)")
+    parser.add_argument("--cell", metavar="M|room",
+                        help="override house.toml's [merge] cell: the merged shell's and batches' grid cell in metres, "
+                             "or room (one per room; #185's grid run)")
     parser.add_argument("--review", type=Path, metavar="DIR",
                         help="with --bake: baked and real-time frames, sheet.png and measures.json into DIR")
     parser.add_argument("--export", type=Path, metavar="DIR",
@@ -114,6 +117,9 @@ def run(args: argparse.Namespace) -> int:
             common.say(f"  {p}")
         raise common.Failure(f"house layout: {len(problems)} problems")
     common.say("house layout: grid, openings, corners, footprints, stairs, holes and the light kit hold")
+    if args.cell:
+        data["settings"].setdefault("merge", {})["cell"] = args.cell
+        cell_size(data)  # refuses a bad value before anything is built
     if args.clutter:
         st = data["settings"]
         cat = house_dressing.catalogue(house_dressing.spec_paths(st, extra=args.props_spec))
@@ -189,7 +195,7 @@ def run(args: argparse.Namespace) -> int:
     if args.walk or args.basement:
         errors = stage(data, summary, found)
         if args.walk:
-            code = walk(data, args.walk.resolve(), routes, errors, dressing)
+            code = walk(data, args.walk.resolve(), routes, errors, dressing, lights)
         if args.basement:
             code = basement(data, args.layouts, args.props_spec, args.basement.resolve(), errors) or code
     return code
@@ -341,6 +347,18 @@ def prop_glbs(data: dict, dressing: dict) -> dict:
     return found
 
 
+def cell_size(data: dict) -> float | None:
+    """house.toml's [merge] cell (#185): the merged shell's and the batched dressing's grid cell in metres, or None
+    ("room" or missing: one merged mesh per room, class and group, as #107 shipped)."""
+    v = data["settings"].get("merge", {}).get("cell", "room")
+    if v in ("room", None):
+        return None
+    v = float(v)
+    if v <= 0:
+        raise ValueError(f"house.toml [merge] cell must be a positive number of metres or \"room\", not {v}")
+    return v
+
+
 def merger(data: dict, found: dict | None = None, out: Path | None = None, kit_res: str | None = None,
            prop_res: str | None = None):
     """The merged shell's callable for house_layout.write_scenes (#107), or None without the kit's pieces.json: per room
@@ -352,6 +370,9 @@ def merger(data: dict, found: dict | None = None, out: Path | None = None, kit_r
     prop id -> GLB; not a station, not house.toml's [merge] keep_props) merged into one GLB batch_<level>_<room>_<group>
     (one surface per material, staged as prop_<name>, which Godot unwraps for the bake like any prop); each prop
     instance stays with its colliders, name and metadata, its visual nodes hidden.
+    With house.toml's [merge] shadow_proxy (#185) each merged GLB of two or more casting surfaces gets its shadow
+    proxy <name>_shadow (house_merge.shadow; add entry `<node>_shadow` after the GLB's own); the callable's `cast`
+    maps both res paths to their override lines (the merged mesh casts no shadow, the proxy only casts).
     `out`, `kit_res` and `prop_res` (the export's, #107) put the GLBs elsewhere and name their res:// paths ({id}: the
     GLB's stem); the callable's `files` maps each written GLB's stem to its path. A batch's "add" entries carry the
     stem as a third item (house_dressing.scene_nodes' overrides key)."""
@@ -360,6 +381,7 @@ def merger(data: dict, found: dict | None = None, out: Path | None = None, kit_r
         return None
     uv2 = house_bake.uv2_table(json.loads((kit / "pieces.json").read_text(encoding="utf-8")))
     keep = set(data["settings"].get("merge", {}).get("keep", []))
+    cell = cell_size(data)
     out = Path(out) if out else _house_bake.MERGED
     kit_res = kit_res or data["settings"]["kit_res"]
     prop_res = prop_res or data["settings"]["prop_res"]
@@ -367,6 +389,24 @@ def merger(data: dict, found: dict | None = None, out: Path | None = None, kit_r
     for old in out.glob("*.glb"):
         old.unlink()
     visuals: dict = {}
+    shadow = bool(data["settings"].get("merge", {}).get("shadow_proxy", False))
+
+    def proxy(name: str, res: str, add: list, entry: tuple) -> None:
+        """#185: the merged GLB's shadow proxy (house_merge.shadow) beside it, its add entry after the GLB's own, and
+        both res paths' override lines in merge.cast (res path -> [(sub-node, lines)])."""
+        add.append(entry)
+        if not shadow:
+            return
+        got = house_merge.shadow(out / f"{name}.glb", out / f"{name}_shadow.glb")
+        if got is None:
+            return
+        lines = house_merge.cast_lines(got)
+        merge.files[f"{name}_shadow"] = out / f"{name}_shadow.glb"
+        merge.cast[res.format(id=name)] = lines["merged"]
+        merge.cast[res.format(id=f"{name}_shadow")] = lines["proxy"]
+        merge.proxies += 1
+        add.append((f"{entry[0]}_shadow", res.format(id=f"{name}_shadow"))
+                   + ((f"{name}_shadow",) if len(entry) > 2 else ()))
 
     def visual_nodes(glb) -> list:
         if glb not in visuals:
@@ -389,14 +429,17 @@ def merger(data: dict, found: dict | None = None, out: Path | None = None, kit_r
                 if visual_nodes(it["glb"]) != [it["id"]]:
                     raise ValueError(f"{it['glb']}: a merged kit piece's visual nodes must be [{it['id']!r}], not "
                                      f"{visual_nodes(it['glb'])} (list the piece in house.toml's [merge] keep)")
-            name = f"{cls}_m_{level}_{rid}"
-            rec = house_merge.merge(items, out / f"{name}.glb")
-            merge.files[name] = out / f"{name}.glb"
-            merge.uv2[name] = rec["classes"][cls]["uv2_per_m"]
-            hide |= {it["node"] for it in items}
-            add.append((f"merged_{cls}", kit_res.format(id=name)))
+            for c, its in house_merge.cells(items, cell):  # a cell of one piece stays an instance
+                if len(its) < 2:
+                    continue
+                name = f"{cls}_m_{level}_{rid}" + (f"_{c}" if c else "")
+                rec = house_merge.merge(its, out / f"{name}.glb")
+                merge.files[name] = out / f"{name}.glb"
+                merge.uv2[name] = rec["classes"][cls]["uv2_per_m"]
+                hide |= {it["node"] for it in its}
+                proxy(name, kit_res, add, (f"merged_{cls}" + (f"_{c}" if c else ""), kit_res.format(id=name)))
         merge.hidden += len(hide)
-        return {"hide": hide, "add": add}
+        return {"hide": hide, "add": add, "cast": merge.cast}
 
     keep_props = set(data["settings"].get("merge", {}).get("keep_props", []))
 
@@ -410,17 +453,23 @@ def merger(data: dict, found: dict | None = None, out: Path | None = None, kit_r
             if not names or not all(re.fullmatch(r"[A-Za-z0-9_]+", v or "") for v in names):
                 continue
             its.append({"glb": Path(glb), "transform": house_dressing.tf_yaw(r["yaw"], *r["at"]), "class": "props",
-                        "uv2_per_m": None})
+                        "uv2_per_m": None, "node": node})
             hide[node] = names
-        if len(its) < 2:
-            return {"hide": {}, "add": []}
-        name = f"batch_{level}_{rid}_{parent.lower()}"
-        house_merge.merge(its, out / f"{name}.glb")
-        merge.files[name] = out / f"{name}.glb"
-        merge.batched.append(name)
-        merge.props += len(its)
-        return {"hide": hide, "add": [(f"batch_{parent.lower()}", prop_res.format(id=name), name)]}
+        out_hide, add = {}, []
+        for c, group in house_merge.cells(its, cell):  # a cell of one prop keeps its instance drawing
+            if len(group) < 2:
+                continue
+            name = f"batch_{level}_{rid}_{parent.lower()}" + (f"_{c}" if c else "")
+            house_merge.merge(group, out / f"{name}.glb")
+            merge.files[name] = out / f"{name}.glb"
+            merge.batched.append(name)
+            merge.props += len(group)
+            out_hide.update({it["node"]: hide[it["node"]] for it in group})
+            proxy(name, prop_res, add, (f"batch_{parent.lower()}" + (f"_{c}" if c else ""), prop_res.format(id=name),
+                                        name))
+        return {"hide": out_hide, "add": add, "cast": merge.cast}
     merge.uv2, merge.hidden, merge.batch, merge.batched, merge.props, merge.files = {}, 0, batch, [], 0, {}
+    merge.cast, merge.proxies = {}, 0
     return merge
 
 
@@ -439,11 +488,11 @@ def stage(data: dict, summary: dict, props: dict | None = None) -> list[str]:
     for pid, name in names.items():
         _godot.stage(kit / f"{pid}.glb", name)
     for name, glb in merged.items():
-        _godot.stage(glb, name, house_bake.KIT_IMPORT)
+        _godot.stage(glb, name, house_bake.SHADOW_IMPORT if name.endswith("_shadow") else house_bake.KIT_IMPORT)
     for pid, glb in props.items():
         _godot.stage(glb, f"prop_{pid}")
     for name, glb in batched.items():
-        _godot.stage(glb, name)
+        _godot.stage(glb, name, house_bake.SHADOW_IMPORT if name.endswith("_shadow") else None)
     errors = [line for line in _godot.import_project() if "ERROR" in line]
     for line in errors[:10]:
         common.say(f"  import: {line}")
@@ -462,13 +511,14 @@ def kit_pack(data: dict) -> dict:
 
 
 def walk(data: dict, folder: Path, routes: dict | None = None, errors: list[str] = (),
-         dressing: dict | None = None) -> int:
+         dressing: dict | None = None, lights: dict | None = None) -> int:
     """Runs godot/house/walk.gd in a window off-screen (pictures need one) on the staged house: every doorway of the
     ground and upper floors and every flight, walked by a 1.36 m capsule; the design doc's routes (routes.toml) at their
     speed, judged against the doc's times (also into tools/out/house/routes.json); the stills, the plan, sheet.png and
     the exterior at dusk (exterior.png); draw calls per view. With a dressing: c2 stand-in lamps at its fixtures, one
     shot per dressed room from its door and rooms.png (house_dressing.review_request), and per room the view's draw
-    calls and the dressing's triangles."""
+    calls and the dressing's triangles. With `lights` (lights.toml): per still and room view the budget's draw calls,
+    baked and High (house_bake.walk_count; draw_calls.json and .md in `folder`, a WARN per view over [budget]; #185)."""
     folder.mkdir(parents=True, exist_ok=True)
     req = common.OUT / "house" / "walk_request.json"
     request = house_layout.walk_request(data)
@@ -477,6 +527,8 @@ def walk(data: dict, folder: Path, routes: dict | None = None, errors: list[str]
     if dressing:  # the walked levels' rooms; the basement's have their own review (--basement)
         walked = {r["id"] for lv in data["levels"] if lv["level"] in house_layout.WALK_LEVELS for r in lv["rooms"]}
         request.update(house_dressing.review_request(data, {rid: r for rid, r in dressing.items() if rid in walked}))
+    if lights:
+        request["count"] = house_bake.walk_count(lights, house_lights.plan(lights, data))
     for name in request["closed"]:
         common.say(f"  not walked (closed kit leaf): {name}")
     req.write_text(json.dumps(request, indent=1), encoding="utf-8", newline="\n")
@@ -510,6 +562,9 @@ def walk(data: dict, folder: Path, routes: dict | None = None, errors: list[str]
         common.say(f"  {name}: {info['draw_calls']} draw calls ({info.get('dressing_draw_calls')} the dressing's), "
                    f"{info['primitives']} primitives in view; dressing {info['dressing_meshes']} meshes, "
                    f"{info['dressing_triangles']} triangles")
+    if lights and result.get("counts"):  # the budget per walk view, as --count reports it (#185)
+        table, names = house_bake.walk_table(result["counts"])
+        _house_bake.report(lights.get("budget", {}), table, names, folder)
     for line in house_dressing.swatch_report(result.get("swatches", [])):
         common.say(f"  swatch {line}")
     common.say(f"  {result['instances']['mesh_instances']} mesh instances, {result['instances']['static_bodies']} bodies; "

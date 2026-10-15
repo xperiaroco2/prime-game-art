@@ -120,7 +120,7 @@ The entries are `assets/kit/house_kit/CREDITS.md` and `assets/prop/house_props/C
   0.89 m from the boiler's axis, past the plinth's corners at 0.85 m, so the game's footstep ray never meets the
   boiler; it carries no surface).
 
-## Merged shell (#107)
+## Merged shell (#107, #185)
 
 Draw calls, not the look. Each room's own static kit pieces of a class (floors, ceilings, the rest of the shell) are
 drawn by one merged mesh per material, `Shell/merged_<class>` (`house_kit/merged/<class>_m_<level>_<room>.glb`, the
@@ -137,3 +137,11 @@ batch too). Here: 16 merged shell meshes and 24 batches, committed in `export/me
   the attic ladder and hatch boards), task stations and `[merge] keep_props` (the garage's car, lift arms and lift
   panel). A game-side script that moves another prop must move it out of its batch (ask the art side).
 - Numbers: the export sheet's storage views draw 61 and 57 calls before, 21 and 19 after; the bake review's cameras (`house --bake --count`): baked 431/171/316 -> 224/101/183 and High 2,719/1,018/1,630 -> 440/193/349 (storage, generator hall, seam); storage stays over the budget (many shelves of distinct materials).
+- Shadow proxies (#185): each merged shell and batch with two or more shadow-casting surfaces has a twin,
+  `<its node>_shadow` (`merged/<its file>_shadow.glb`, one node `shadow`: the same geometry as one surface
+  per cull mode, no material), instanced beside it with `cast_shadow = SHADOWS_ONLY`; the merged mesh's own
+  nodes get `cast_shadow = OFF`. A shadowed lamp then draws one surface per proxy into each cube face, not one
+  per material. Here: 24 proxies, committed in `export/merged/` and copied beside their merged files as
+  `package.json` lists them; a proxy in `Detail` hides with it. Baked and High draw calls are unchanged; the bake review's cameras, High's shadow draw calls 2,566/1,375/2,402 -> 1,196/688/1,116 (storage, generator hall, seam).
+  The look is unchanged (mean dL* at most 0.001 per frame). Uniform grid cells of 2-4 m were tried and not
+  taken: they multiply the draw calls for at most 5 % fewer shadow draw calls (docs/house.md "Draw calls").

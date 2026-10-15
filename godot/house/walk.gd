@@ -13,6 +13,7 @@ extends SceneTree
 const WATCHDOG_S: float = 170.0
 const KitMaterials := preload("res://kit/kit_materials.gd")
 const Walker := preload("walker.gd")
+const DrawCost := preload("draw_cost.gd")  # one code path with --count (#185)
 const EYE: float = 1.6
 const UP := Vector3.UP
 const LAMP := Color(1.0, 0.85, 0.68)
@@ -39,6 +40,7 @@ var _house: Node3D
 var _camera: Camera3D
 var _label: Label
 var _env: Environment
+var _overlay: Array = []  # the High preset's sheen overlay (DrawCost.overlay), hidden but while counting
 
 
 func _initialize() -> void:
@@ -121,8 +123,15 @@ func _run(args: PackedStringArray) -> void:
 		["landing_balcony", "upper landing to the balcony door", Vector3(32, 3.2 + EYE, 29.5), Vector3(32, 3.2 + 1.2, 20)],
 	]
 	var images: Array[Image] = []
+	RenderingServer.viewport_set_measure_render_time(root.get_viewport_rid(), true)
+	if _req.has("count"):
+		_overlay = DrawCost.overlay(_house.find_children("*", "MeshInstance3D", true, false))
+		for o: Node3D in _overlay:
+			o.visible = false
+		result["counts"] = {}
 	for s: Array in shots:
 		images.append(await _shot(s[0], s[1], s[2], s[3], result))
+		await _count(s[0], result)
 	var aerial: Image = await _shot("aerial", "the shell from the south-east (kit v1; orange: placeholders)",
 		Vector3(62, 26, 70), Vector3(32, 2, 30), result, 50.0)
 	var balcony: Image = await _shot("balcony_stairs", "terrace: balcony stairs (Q6 default)",
@@ -144,6 +153,7 @@ func _run(args: PackedStringArray) -> void:
 	result["rooms"] = {}
 	for s: Dictionary in _req.get("room_shots", []):
 		var img: Image = await _shot(s["name"], s["title"], _v(s["from"]), _v(s["to"]), result)
+		await _count(s["name"], result)
 		if s.get("level", "ground") == "upper":
 			upper_images.append(img)
 		else:
@@ -222,6 +232,56 @@ func _environment() -> void:
 	ground.material_override = earth
 	ground.position = Vector3(40, -0.02, 30)
 	root.add_child(ground)
+
+
+## The budget's draw calls of the view the camera holds (#185; lights.toml [budget], `_house_bake.report`): "baked",
+## every light hidden (the bake alone: no real-time light); "high", the High preset's sheen row (house_bake.sheen_mode:
+## the nearest n glow fixtures of the light kit, `count.glow`, as real-time copies on the sheen overlay, shadowed).
+## The walk's own stand-in lamps are hidden while counting and shown again after. Into result["counts"][name].
+func _count(name: String, result: Dictionary) -> void:
+	if not _req.has("count"):
+		return
+	var cnt: Dictionary = _req["count"]
+	var shown: Array = []
+	for l: Node in root.find_children("*", "Light3D", true, false):
+		if (l as Light3D).visible:
+			(l as Light3D).visible = false
+			shown.append(l)
+	var out: Dictionary = {"baked": await DrawCost.cost(root, _camera, [])}
+	var at: Vector3 = _camera.global_position
+	var glow: Array = (cnt["glow"] as Array).duplicate()
+	glow.sort_custom(func(p, q): return _v(p["at"]).distance_to(at) < _v(q["at"]).distance_to(at))
+	var added: Array = []
+	for g: Dictionary in glow.slice(0, int(cnt["n"])):
+		var l: Light3D
+		if g["light"] == "spot":
+			var s: SpotLight3D = SpotLight3D.new()
+			s.spot_range = float(g["range"])
+			s.spot_angle = float(g["angle"])
+			l = s
+		else:
+			var o: OmniLight3D = OmniLight3D.new()
+			o.omni_range = float(g["range"])
+			l = o
+		l.light_energy = float(g["energy"])
+		l.light_cull_mask = DrawCost.SHEEN_LAYER
+		l.shadow_enabled = bool(cnt["shadow"])
+		_house.add_child(l)
+		l.global_position = _v(g["at"])
+		if g.has("aim"):
+			var dir: Vector3 = _v(g["aim"]) - l.global_position
+			l.look_at(_v(g["aim"]), UP if absf(dir.normalized().y) < 0.99 else Vector3.FORWARD)
+		added.append(l)
+	for o: Node3D in _overlay:
+		o.visible = true
+	out["high"] = await DrawCost.cost(root, _camera, added)
+	for o: Node3D in _overlay:
+		o.visible = false
+	for l: Node in added:
+		l.free()
+	for l: Node in shown:
+		(l as Light3D).visible = true
+	result["counts"][name] = out
 
 
 ## A warm lamp without shadows at 2.7 m in every room (kind "room") of every level: light to see the shell by.

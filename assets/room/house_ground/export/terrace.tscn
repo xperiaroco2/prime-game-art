@@ -13,6 +13,7 @@
 [ext_resource type="PackedScene" path="res://assets/environment/house_props/string_lights.glb" id="11"]
 [ext_resource type="PackedScene" path="res://assets/environment/house_props/porch_lamp.glb" id="12"]
 [ext_resource type="PackedScene" path="res://assets/environment/house_props/merged/batch_ground_terrace_fixtures.glb" id="13"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/merged/batch_ground_terrace_fixtures_shadow.glb" id="14"]
 
 [node name="Terrace" type="Node3D"]
 metadata/size_m = Vector2i(20, 8)
@@ -527,6 +528,16 @@ visible = false
 
 [node name="batch_fixtures" parent="Fixtures" instance=ExtResource("13")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+
+[node name="merged_props" parent="Fixtures/batch_fixtures"]
+cast_shadow = 0
+
+[node name="batch_fixtures_shadow" parent="Fixtures" instance=ExtResource("14")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+
+[node name="shadow" parent="Fixtures/batch_fixtures_shadow"]
+cast_shadow = 3
+gi_mode = 0
 
 [node name="terrace_string_lights_01" type="OmniLight3D" parent="Fixtures"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 2.6, 4)

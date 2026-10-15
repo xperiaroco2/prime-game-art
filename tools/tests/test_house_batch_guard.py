@@ -87,6 +87,27 @@ class RealFilter(unittest.TestCase):
         self.assertEqual(got["add"], [("batch_dressing", f"res://p/{name}.glb", name)])
         self.assertEqual(vertices(self.root / "out" / f"{name}.glb"), 9)  # two chairs and a lamp, no desk, no car
 
+    def test_cells_split_the_batch_and_a_lone_prop_keeps_drawing(self):
+        self.data["settings"]["merge"]["cell"] = 3.0
+        batch = self.merger().batch
+        items = [({"id": "chair", "at": (0.5, 0.0, 0.5), "yaw": 0.0}, "chair_1"),
+                 ({"id": "lamp", "at": (1.5, 0.0, 1.5), "yaw": 0.0}, "lamp_1"),
+                 ({"id": "chair", "at": (4.0, 0.0, 0.5), "yaw": 0.0}, "chair_2"),
+                 ({"id": "chair", "at": (-1.0, 0.0, 0.5), "yaw": 0.0}, "chair_3"),
+                 ({"id": "lamp", "at": (-2.0, 0.0, 1.0), "yaw": 0.0}, "lamp_2")]
+        got = batch("ground", "garage", "Detail", items)
+        self.assertEqual(got["hide"], {"chair_1": ["chair"], "lamp_1": ["lamp"], "chair_3": ["chair"],
+                                       "lamp_2": ["lamp"]})  # chair_2 is alone in its cell: its instance draws
+        self.assertEqual([a[0] for a in got["add"]], ["batch_detail_c0_0", "batch_detail_cn1_0"])
+        self.assertEqual(vertices(self.root / "out" / "batch_ground_garage_detail_c0_0.glb"), 6)
+
+    def test_room_cell_keeps_one_mesh_per_room(self):
+        self.data["settings"]["merge"]["cell"] = "room"
+        self.assertIsNone(HC.cell_size(self.data))
+        self.data["settings"]["merge"]["cell"] = 0
+        with self.assertRaises(ValueError):
+            HC.cell_size(self.data)
+
     def test_a_merged_piece_with_a_second_visual_mesh_is_refused(self):
         tiny_glb(self.root / "raw" / "kit" / "wall_b.glb", ["wall_b", "wall_b_leaf"])
         merge = self.merger()
@@ -155,11 +176,12 @@ class CommittedScenes(unittest.TestCase):
                         next((c for c in ("floor", "ceiling") if stem.startswith(c + "_")), "shell"))
                 g = groups.setdefault((group, kind), {"hidden": 0})
                 g["hidden"] += vertices(self.resolve(res), {h.rsplit("/", 1)[1]})
-            for (group, kind), g in groups.items():
+            for (group, kind), g in groups.items():  # the room's mesh, or its cells' (#185): base or base_c<i>_<k>
                 mesh = f"{group}/{'batch_' + group.lower() if kind == 'batch' else 'merged_' + kind}"
-                self.assertIn(mesh, nodes, f"{f.name}: {group} hides {kind} visuals without {mesh}")
-                self.assertEqual(vertices(self.resolve(nodes[mesh]["res"])), g["hidden"],
-                                 f"{f.name}: {mesh} does not hold exactly the visuals {group} hides")
+                meshes = [n for n in nodes if n == mesh or re.fullmatch(re.escape(mesh) + r"_c\w+", n)]
+                self.assertTrue(meshes, f"{f.name}: {group} hides {kind} visuals without {mesh}")
+                self.assertEqual(sum(vertices(self.resolve(nodes[m]["res"])) for m in meshes), g["hidden"],
+                                 f"{f.name}: {meshes} do not hold exactly the visuals {group} hides")
                 checked["batches"] += kind == "batch"
         self.assertGreater(checked["protected"], 10)
         self.assertGreater(checked["batches"], 10)
