@@ -54,6 +54,13 @@ KNOWN = {
     "terrace": {"stations": {"TerraceTable"}},
     "yard": {"markers": {"Zone01"}},
 }
+# the game removed the spawn circles Circle01-09 (prime-game PR #1060, pinned at a079af13); the art's rooms keep them
+# until the game re-imports art main (its M7 manager asked for stable game-facing nodes until then)
+CIRCLES = {"dining_room": "Circle01", "terrace": "Circle02", "garden": "Circle03", "garage": "Circle04",
+           "living_room": "Circle05", "kitchen": "Circle06", "bedroom": "Circle07", "kids_room": "Circle08",
+           "guest_room": "Circle09"}
+for _rid, _circle in CIRCLES.items():
+    KNOWN.setdefault(_rid, {}).setdefault("markers", set()).add(_circle)
 def diff(game: dict, art: dict) -> dict:
     """What differs between a game room and an art room: field -> True, or for a marker group the names that differ."""
     out = {}

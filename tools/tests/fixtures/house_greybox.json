@@ -35,7 +35,7 @@
   "WC": [18, 24, 6, 6],
   "Yard": [0, 0, 80, 60]
  },
- "game_commit": "199364a4ca692aa512869b5702ad4adb89a96f4d",
+ "game_commit": "a079af130d3c1dcc59acd05c599126b3fe10765d",
  "rooms": {
   "attic": {
    "doors": {},
@@ -81,9 +81,7 @@
     "Door1": [8.0, 0.0, 4.0, ""]
    },
    "doors_marker3d": ["Door1"],
-   "markers": {
-    "Circle07": [3.0, 0.5, 4.0, "\"spawn_circle\""]
-   },
+   "markers": {},
    "origin": [18.0, 3.2, 24.0],
    "root": "Bedroom",
    "size": [8, 10],
@@ -148,9 +146,7 @@
     "Door4": [2.0, 0.0, 6.0, ""]
    },
    "doors_marker3d": ["Door1", "Door2", "Door3", "Door4"],
-   "markers": {
-    "Circle01": [5.0, 0.5, 3.0, "\"spawn_circle\""]
-   },
+   "markers": {},
    "origin": [30.0, 0.0, 24.0],
    "root": "DiningRoom",
    "size": [12, 6],
@@ -180,7 +176,6 @@
    },
    "doors_marker3d": ["Door1", "Door2", "Door3"],
    "markers": {
-    "Circle04": [15.0, 0.5, 4.0, "\"spawn_circle\""],
     "Knife2": [15.0, 0.0, 11.5, "\"spawn_knife\""]
    },
    "origin": [54.0, 0.0, 34.0],
@@ -189,7 +184,7 @@
    "stations": {
     "CarLift": [10.0, 0.0, 7.0, ""],
     "LiftPanel": [3.0, 0.0, 12.0, ""],
-    "Workbench": [16.0, 0.0, 3.0, "\"spawn_drop_workbench\""]
+    "Workbench": [17.0, 0.0, 3.0, "\"spawn_drop_workbench\""]
    },
    "stations_marker3d": ["CarLift", "LiftPanel", "Workbench"]
   },
@@ -197,7 +192,6 @@
    "doors": {},
    "doors_marker3d": [],
    "markers": {
-    "Circle03": [14.0, 0.46, 22.0, "\"spawn_circle\""],
     "Knife4": [4.0, -0.04, 8.0, "\"spawn_knife\""],
     "Zone02": [6.0, 0.5, 23.0, "\"spawn_zone\""]
    },
@@ -245,9 +239,7 @@
     "Door1": [0.0, 0.0, 4.0, ""]
    },
    "doors_marker3d": ["Door1"],
-   "markers": {
-    "Circle09": [4.0, 0.5, 4.0, "\"spawn_circle\""]
-   },
+   "markers": {},
    "origin": [34.0, 3.2, 36.0],
    "root": "GuestRoom",
    "size": [8, 8],
@@ -274,9 +266,7 @@
     "Door1": [8.0, 0.0, 6.0, ""]
    },
    "doors_marker3d": ["Door1"],
-   "markers": {
-    "Circle08": [3.0, 0.5, 6.0, "\"spawn_circle\""]
-   },
+   "markers": {},
    "origin": [18.0, 3.2, 34.0],
    "root": "KidsRoom",
    "size": [8, 10],
@@ -291,7 +281,6 @@
    },
    "doors_marker3d": ["Door1", "Door2", "Door3"],
    "markers": {
-    "Circle06": [3.0, 0.5, 12.0, "\"spawn_circle\""],
     "Knife1": [1.5, 0.0, 12.5, "\"spawn_knife\""]
    },
    "origin": [34.0, 0.0, 30.0],
@@ -327,9 +316,7 @@
     "Door2": [3.0, 0.0, 0.0, ""]
    },
    "doors_marker3d": ["Door1", "Door2"],
-   "markers": {
-    "Circle05": [3.0, 0.5, 7.0, "\"spawn_circle\""]
-   },
+   "markers": {},
    "origin": [18.0, 0.0, 30.0],
    "root": "LivingRoom",
    "size": [8, 14],
@@ -498,9 +485,7 @@
     "Door1": [14.0, 0.0, 8.0, ""]
    },
    "doors_marker3d": ["Door1"],
-   "markers": {
-    "Circle02": [6.0, 0.5, 4.0, "\"spawn_circle\""]
-   },
+   "markers": {},
    "origin": [22.0, 0.0, 16.0],
    "root": "Terrace",
    "size": [20, 8],
