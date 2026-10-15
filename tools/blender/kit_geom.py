@@ -417,7 +417,18 @@ def ramp_poly(p: dict) -> list[tuple]:
     return [(0, 0), (run, 0), (run, rise), (gq, 2 * h)]
 
 
+def nosing_ramp(p: dict) -> list[tuple]:
+    """The walkable collision of a closed stair with a balustrade (#183): a ramp through the nosings, from the first
+    riser's top at x 0 to the upper floor's edge, so the steepest walked face is the pitch, never a riser pair."""
+    h, gq, n = stair_numbers(p)
+    run, rise = float(p["run"]), float(p["rise"])
+    return [(0, 0), (run, 0), (run, rise), (0, h)]
+
+
 def build_stairs(pc: Piece, p: dict, spec: dict) -> None:
+    if p.get("balustrade"):
+        build_stairs_balustrade(pc, p, spec)
+        return
     h, gq, n = stair_numbers(p)
     w = float(p["width"])
     m = pc.mesh
@@ -430,6 +441,82 @@ def build_stairs(pc: Piece, p: dict, spec: dict) -> None:
         if i == n - 1:
             m.poly([(xb, 0, 0), (xb, top, 0), (xb, top, w), (xb, 0, w)], (1, 0, 0), p["body"])
     pc.collide(prism_points(ramp_poly(p), 0, w))
+
+
+RAIL_H = 0.9  # the handrail's top over the pitch line (#183)
+
+
+def build_stairs_balustrade(pc: Piece, p: dict, spec: dict) -> None:
+    """The attic stair (#183): a straight closed stair along +X from the pivot (its foot) to (run, rise), its width
+    along +Z. Treads in `tread` with a 2 cm nosing, closed risers and sides (the spandrel) in `body`, a stringer cap,
+    newels, spindles (gaps under 0.1 m) and a handrail RAIL_H over the pitch in `rail` on both sides. Collision: the
+    nosing ramp over the whole width and a wall over each stringer up to the handrail."""
+    h, gq, n = stair_numbers(p)
+    w, run, rise = float(p["width"]), float(p["run"]), float(p["rise"])
+    body, tread, rail = p["body"], p["tread"], p.get("rail", "trim")
+    s = h / gq
+    st, nose, tt = 0.06, 0.02, 0.04
+    m = pc.mesh
+    for i in range(1, n):
+        xa, xb, top = (i - 1) * gq, i * gq, i * h
+        m.box((xa - nose, top - tt, st), (xb, top, w - st), tread, "+y-y-x")
+        m.poly([(xa, top - h, st), (xa, top - h, w - st), (xa, top - tt, w - st), (xa, top - tt, st)], (-1, 0, 0), body)
+    # the sides: the spandrel and stringer as one panel from the floor to 6 cm over the nosings, the back under the top
+    side = [(0, 0), (run, 0), (run, rise + 0.06), (0, h + 0.06)]
+    for za, zb in ((0, st), (w - st, w)):
+        m.prism(side, za, zb, body, edges=[False, True, True, True])
+        m.prism([(0, h + 0.06), (run, rise + 0.06), (run, rise + 0.09), (0, h + 0.09)], za, zb, rail, caps=())
+    m.poly([(run, 0, st), (run, rise - tt, st), (run, rise - tt, w - st), (run, 0, w - st)], (1, 0, 0), body)
+    for za, zb in ((0, st), (w - st, w)):
+        zc = (za + zb) / 2
+        # the handrail, a newel at the foot, spindles every `pitch` along the run
+        m.prism([(0, h + RAIL_H), (run, rise + RAIL_H), (run, rise + RAIL_H + 0.05), (0, h + RAIL_H + 0.05)],
+                zc - 0.03, zc + 0.03, rail)
+        m.box((0, h + 0.06, za), (0.08, h + RAIL_H + 0.12, zb), rail, "+x-x+y+z-z")
+        k, pitch = 1, 0.12
+        while k * pitch < run - 0.04:
+            x = k * pitch
+            y0 = h + x * s + 0.09
+            m.box((x - 0.015, y0, zc - 0.015), (x + 0.015, y0 + RAIL_H - 0.09, zc + 0.015), rail, "+x-x+z-z")
+            k += 1
+        pc.collide(prism_points([(0, h), (run, rise), (run, rise + RAIL_H + 0.05), (0, h + RAIL_H + 0.05)], za, zb))
+    pc.collide(prism_points(nosing_ramp(p), 0, w))
+
+
+def build_hatch_guard(pc: Piece, p: dict, spec: dict) -> None:
+    """The balustrade round a long hatch's three closed sides (#183): the hole is [0, L] x [0, W] from the pivot, open
+    at x 0 (the stair's top); the rails stand outside it on the floor (y 0), `height` high, posts at the corners and
+    the open end, spindles every `pitch`."""
+    L, W = (float(v) for v in p["hole"])
+    H, ps, bar, pitch, role = float(p["height"]), float(p["post"]), float(p["bar"]), float(p["pitch"]), p["role"]
+    m = pc.mesh
+    t = ps  # the rails' depth outside the hole's edge
+    sides = [  # (x0, x1, z0, z1, along x?)
+        (0.0, L + t, -t, 0.0, True),
+        (0.0, L + t, W, W + t, True),
+        (L, L + t, 0.0, W, False),
+    ]
+    for x0, x1, z0, z1, along in sides:
+        zc, xc = (z0 + z1) / 2, (x0 + x1) / 2
+        if along:
+            m.box((x0, H - 0.05, zc - 0.035), (x1, H, zc + 0.035), role, "+y-y+z-z")
+            m.box((x0, 0.06, zc - 0.02), (x1, 0.1, zc + 0.02), role, "+y-y+z-z")
+            k = 1
+            while x0 + k * pitch < x1 - ps:
+                x = x0 + k * pitch
+                m.box((x - bar / 2, 0.1, zc - bar / 2), (x + bar / 2, H - 0.05, zc + bar / 2), role, "+x-x+z-z")
+                k += 1
+        else:
+            m.box((xc - 0.035, H - 0.05, z0), (xc + 0.035, H, z1), role, "+y-y+x-x")
+            m.box((xc - 0.02, 0.06, z0), (xc + 0.02, 0.1, z1), role, "+y-y+x-x")
+            k = 1
+            while z0 + k * pitch < z1 - 0.02:
+                z = z0 + k * pitch
+                m.box((xc - bar / 2, 0.1, z - bar / 2), (xc + bar / 2, H - 0.05, z + bar / 2), role, "+x-x+z-z")
+                k += 1
+        pc.collide_box((x0, 0.0, z0), (x1, H, z1))
+    for x, z in ((0.0, -t), (0.0, W), (L, -t), (L, W)):
+        m.box((x, 0.0, z), (x + t, H + 0.06, z + t), role, "+x-x+y+z-z")
 
 
 def build_stairs_open(pc: Piece, p: dict, spec: dict) -> None:
@@ -1456,6 +1543,7 @@ BUILDERS = {
     "bracket": build_bracket, "cap": build_cap, "gate_post": build_gate_post, "gazebo_sector": build_gazebo_sector,
     "gazebo_roof": build_gazebo_roof, "finial": build_finial, "glass_node": build_glass_node, "slab_edge": build_slab_edge,
     "beam": build_beam,  # #108
+    "hatch_guard": build_hatch_guard,  # #183
 }
 
 
@@ -1592,7 +1680,7 @@ def check_spec(spec: dict) -> list[str]:
         size = nominal_size(p, spec)
         for axis in ("x", "z"):
             v = size[axis]
-            if v is not None and p["type"] not in ("ladder",) and not p.get("overhang") and abs(v - round(v)) > EPS:
+            if v is not None and p["type"] not in ("ladder",) and not p.get("overhang") and not p.get("free") and abs(v - round(v)) > EPS:
                 problems.append(f"{p['id']}: its {axis} size {v} m is not whole metres")
         if "length" in p and p["type"] in ("wall", "parapet", "railing", "fence", "glass", "gable") \
                 and int(p["length"]) not in g["modules_m"]:
