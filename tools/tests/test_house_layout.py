@@ -28,6 +28,11 @@ PENDING_STATIONS = {"attic": {"Lookout", "Loot"},  # the deck's stations, now on
                     "switch_room": {"SwitchD"}, "generator_hall": {"Generator"},
                     # and three ground stations (prime-game#1058 at 199364a4), kept until those rooms' next export
                     "darkroom": {"PhotoBoard"}, "photo_zone": {"PoseScreen"}, "study": {"Printer"}}
+# the game replaced the cooking and car-repair stations with its own (prime-game #774, #809 at 59b50cb6); the art's
+# rooms keep their markers until the game re-imports art main
+for _rid, _names in {"storage": {"Meat", "Buns", "PartsShelf"}, "kitchen": {"OrderBoard"}, "chill_zone": {"Grill"},
+                     "garage": {"CarLift", "LiftPanel"}, "greenhouse": {"HerbBeds", "HerbBoard"}}.items():
+    PENDING_STATIONS.setdefault(_rid, set()).update(_names)
 
 
 def level(name: str) -> dict:
