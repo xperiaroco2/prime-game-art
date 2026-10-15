@@ -79,7 +79,7 @@ the game's `docs/credits/house_kit.md` and `house_props.md`): own work, every P6
   `size_m`; 183 layer-1 bodies; the walks out of the garage (side door, back door) are walked with P2 and the plot.
 - The garage's draw calls in the art's walk: 303 (126 the dressing's), 103716 primitives in view.
 
-## Merged shell (#107)
+## Merged shell (#107, #185)
 
 Draw calls, not the look. Each room's own static kit pieces of a class (floors, ceilings, the rest of the shell) are
 drawn by one merged mesh per material, `Shell/merged_<class>` (`house_kit/merged/<class>_m_<level>_<room>.glb`, the
@@ -96,3 +96,11 @@ batch too). Here: 2 merged shell meshes and 1 batch, committed in `export/merged
   the attic ladder and hatch boards), task stations and `[merge] keep_props` (the garage's car, lift arms and lift
   panel). A game-side script that moves another prop must move it out of its batch (ask the art side).
 - Numbers: this package has no export-sheet or bake-review view of its own; its rooms draw one mesh per class and material.
+- Shadow proxies (#185): each merged shell and batch with two or more shadow-casting surfaces has a twin,
+  `<its node>_shadow` (`merged/<its file>_shadow.glb`, one node `shadow`: the same geometry as one surface
+  per cull mode, no material), instanced beside it with `cast_shadow = SHADOWS_ONLY`; the merged mesh's own
+  nodes get `cast_shadow = OFF`. A shadowed lamp then draws one surface per proxy into each cube face, not one
+  per material. Here: 1 proxy, committed in `export/merged/` and copied beside their merged files as
+  `package.json` lists them; a proxy in `Detail` hides with it. Baked and High draw calls are unchanged; no bake review camera here; over the ten bake review views of the other floors High's shadow draw calls fall 53 %.
+  The look is unchanged (mean dL* at most 0.001 per frame). Uniform grid cells of 2-4 m were tried and not
+  taken: they multiply the draw calls for at most 5 % fewer shadow draw calls (docs/house.md "Draw calls").

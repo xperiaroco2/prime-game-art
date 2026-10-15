@@ -24,13 +24,15 @@
 [ext_resource type="PackedScene" path="res://assets/environment/house_props/crate.glb" id="22"]
 [ext_resource type="PackedScene" path="res://assets/environment/house_props/cardboard_box.glb" id="23"]
 [ext_resource type="PackedScene" path="res://assets/environment/house_props/merged/batch_ground_pantry_dressing.glb" id="24"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/parcels.glb" id="25"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/wall_shelf.glb" id="26"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/wall_calendar.glb" id="27"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/basket.glb" id="28"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/bottles.glb" id="29"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/merged/batch_ground_pantry_detail.glb" id="30"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/bare_bulb.glb" id="31"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/merged/batch_ground_pantry_dressing_shadow.glb" id="25"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/parcels.glb" id="26"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/wall_shelf.glb" id="27"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/wall_calendar.glb" id="28"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/basket.glb" id="29"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/bottles.glb" id="30"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/merged/batch_ground_pantry_detail.glb" id="31"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/merged/batch_ground_pantry_detail_shadow.glb" id="32"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/bare_bulb.glb" id="33"]
 
 [node name="Pantry" type="Node3D"]
 metadata/size_m = Vector2i(6, 6)
@@ -360,10 +362,18 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
 
 [node name="merged_props" parent="Dressing/batch_dressing"]
 surface_material_override/0 = ExtResource("13")
+cast_shadow = 0
+
+[node name="batch_dressing_shadow" parent="Dressing" instance=ExtResource("25")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+
+[node name="shadow" parent="Dressing/batch_dressing_shadow"]
+cast_shadow = 3
+gi_mode = 0
 
 [node name="Detail" type="Node3D" parent="."]
 
-[node name="parcels_1" parent="Detail" instance=ExtResource("25")]
+[node name="parcels_1" parent="Detail" instance=ExtResource("26")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 4.6, 2, 5.68)
 metadata/prop = "parcels"
 
@@ -371,14 +381,14 @@ metadata/prop = "parcels"
 surface_material_override/0 = ExtResource("13")
 visible = false
 
-[node name="wall_shelf_1" parent="Detail" instance=ExtResource("26")]
+[node name="wall_shelf_1" parent="Detail" instance=ExtResource("27")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 0.1, 1.45, 4.9)
 metadata/prop = "wall_shelf"
 
 [node name="wall_shelf" parent="Detail/wall_shelf_1"]
 visible = false
 
-[node name="wall_calendar_1" parent="Detail" instance=ExtResource("27")]
+[node name="wall_calendar_1" parent="Detail" instance=ExtResource("28")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 5.9, 1.4, 2.15)
 metadata/prop = "wall_calendar"
 
@@ -386,43 +396,51 @@ metadata/prop = "wall_calendar"
 surface_material_override/0 = ExtResource("13")
 visible = false
 
-[node name="basket_1" parent="Detail" instance=ExtResource("28")]
+[node name="basket_1" parent="Detail" instance=ExtResource("29")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 1.8, 0, 5.6)
 metadata/prop = "basket"
 
 [node name="basket" parent="Detail/basket_1"]
 visible = false
 
-[node name="bottles_1" parent="Detail" instance=ExtResource("29")]
+[node name="bottles_1" parent="Detail" instance=ExtResource("30")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 5.6, 1.24, 5.6)
 metadata/prop = "bottles"
 
 [node name="bottles" parent="Detail/bottles_1"]
 visible = false
 
-[node name="basket_2" parent="Detail" instance=ExtResource("28")]
+[node name="basket_2" parent="Detail" instance=ExtResource("29")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.4, 0.8, 4.6)
 metadata/prop = "basket"
 
 [node name="basket" parent="Detail/basket_2"]
 visible = false
 
-[node name="basket_3" parent="Detail" instance=ExtResource("28")]
+[node name="basket_3" parent="Detail" instance=ExtResource("29")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.95, 0, 1.6)
 metadata/prop = "basket"
 
 [node name="basket" parent="Detail/basket_3"]
 visible = false
 
-[node name="batch_detail" parent="Detail" instance=ExtResource("30")]
+[node name="batch_detail" parent="Detail" instance=ExtResource("31")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
 
 [node name="merged_props" parent="Detail/batch_detail"]
 surface_material_override/0 = ExtResource("13")
+cast_shadow = 0
+
+[node name="batch_detail_shadow" parent="Detail" instance=ExtResource("32")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+
+[node name="shadow" parent="Detail/batch_detail_shadow"]
+cast_shadow = 3
+gi_mode = 0
 
 [node name="Fixtures" type="Node3D" parent="."]
 
-[node name="bare_bulb_1" parent="Fixtures" instance=ExtResource("31")]
+[node name="bare_bulb_1" parent="Fixtures" instance=ExtResource("33")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 3, 1.5)
 metadata/prop = "bare_bulb"
 

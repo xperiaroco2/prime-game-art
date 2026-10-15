@@ -31,20 +31,23 @@
 [ext_resource type="PackedScene" path="res://assets/environment/house_props/sideboard.glb" id="29"]
 [ext_resource type="PackedScene" path="res://assets/environment/house_props/picture_frame.glb" id="30"]
 [ext_resource type="PackedScene" path="res://assets/environment/house_props/merged/batch_ground_kitchen_dressing.glb" id="31"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/book_stack.glb" id="32"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/cup_set.glb" id="33"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/fruit_bowl.glb" id="34"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/cooking_pot.glb" id="35"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/bottles.glb" id="36"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/plate_stack.glb" id="37"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/wall_clock.glb" id="38"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/wall_shelf.glb" id="39"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/basket.glb" id="40"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/merged/batch_ground_kitchen_detail.glb" id="41"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/pendant_shade.glb" id="42"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/wall_sconce.glb" id="43"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/floor_lamp.glb" id="44"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_props/merged/batch_ground_kitchen_fixtures.glb" id="45"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/merged/batch_ground_kitchen_dressing_shadow.glb" id="32"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/book_stack.glb" id="33"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/cup_set.glb" id="34"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/fruit_bowl.glb" id="35"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/cooking_pot.glb" id="36"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/bottles.glb" id="37"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/plate_stack.glb" id="38"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/wall_clock.glb" id="39"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/wall_shelf.glb" id="40"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/basket.glb" id="41"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/merged/batch_ground_kitchen_detail.glb" id="42"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/merged/batch_ground_kitchen_detail_shadow.glb" id="43"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/pendant_shade.glb" id="44"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/wall_sconce.glb" id="45"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/floor_lamp.glb" id="46"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/merged/batch_ground_kitchen_fixtures.glb" id="47"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_props/merged/batch_ground_kitchen_fixtures_shadow.glb" id="48"]
 
 [node name="Kitchen" type="Node3D"]
 metadata/size_m = Vector2i(8, 14)
@@ -840,191 +843,219 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
 [node name="merged_props" parent="Dressing/batch_dressing"]
 surface_material_override/0 = ExtResource("14")
 surface_material_override/1 = ExtResource("14")
+cast_shadow = 0
+
+[node name="batch_dressing_shadow" parent="Dressing" instance=ExtResource("32")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+
+[node name="shadow" parent="Dressing/batch_dressing_shadow"]
+cast_shadow = 3
+gi_mode = 0
 
 [node name="Detail" type="Node3D" parent="."]
 
-[node name="book_stack_1" parent="Detail" instance=ExtResource("32")]
+[node name="book_stack_1" parent="Detail" instance=ExtResource("33")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 0.445, 0.7, 6.17)
 metadata/prop = "book_stack"
 
 [node name="book_stack" parent="Detail/book_stack_1"]
 visible = false
 
-[node name="cup_set_1" parent="Detail" instance=ExtResource("33")]
+[node name="cup_set_1" parent="Detail" instance=ExtResource("34")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.36, 0.9, 0.23)
 metadata/prop = "cup_set"
 
 [node name="cup_set" parent="Detail/cup_set_1"]
 visible = false
 
-[node name="fruit_bowl_1" parent="Detail" instance=ExtResource("34")]
+[node name="fruit_bowl_1" parent="Detail" instance=ExtResource("35")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.41, 0.9, 0.51)
 metadata/prop = "fruit_bowl"
 
 [node name="fruit_bowl" parent="Detail/fruit_bowl_1"]
 visible = false
 
-[node name="cooking_pot_1" parent="Detail" instance=ExtResource("35")]
+[node name="cooking_pot_1" parent="Detail" instance=ExtResource("36")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.79, 0.9, 0.29)
 metadata/prop = "cooking_pot"
 
 [node name="cooking_pot" parent="Detail/cooking_pot_1"]
 visible = false
 
-[node name="bottles_1" parent="Detail" instance=ExtResource("36")]
+[node name="bottles_1" parent="Detail" instance=ExtResource("37")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.73, 0.9, 0.51)
 metadata/prop = "bottles"
 
 [node name="bottles" parent="Detail/bottles_1"]
 visible = false
 
-[node name="cooking_pot_2" parent="Detail" instance=ExtResource("35")]
+[node name="cooking_pot_2" parent="Detail" instance=ExtResource("36")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.44, 0.9, 0.54)
 metadata/prop = "cooking_pot"
 
 [node name="cooking_pot" parent="Detail/cooking_pot_2"]
 visible = false
 
-[node name="plate_stack_1" parent="Detail" instance=ExtResource("37")]
+[node name="plate_stack_1" parent="Detail" instance=ExtResource("38")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.64, 0.9, 0.39)
 metadata/prop = "plate_stack"
 
 [node name="plate_stack" parent="Detail/plate_stack_1"]
 visible = false
 
-[node name="fruit_bowl_2" parent="Detail" instance=ExtResource("34")]
+[node name="fruit_bowl_2" parent="Detail" instance=ExtResource("35")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.21, 0.9, 0.41)
 metadata/prop = "fruit_bowl"
 
 [node name="fruit_bowl" parent="Detail/fruit_bowl_2"]
 visible = false
 
-[node name="bottles_2" parent="Detail" instance=ExtResource("36")]
+[node name="bottles_2" parent="Detail" instance=ExtResource("37")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.53, 0.9, 0.61)
 metadata/prop = "bottles"
 
 [node name="bottles" parent="Detail/bottles_2"]
 visible = false
 
-[node name="cup_set_2" parent="Detail" instance=ExtResource("33")]
+[node name="cup_set_2" parent="Detail" instance=ExtResource("34")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.59, 0.9, 0.38)
 metadata/prop = "cup_set"
 
 [node name="cup_set" parent="Detail/cup_set_2"]
 visible = false
 
-[node name="plate_stack_2" parent="Detail" instance=ExtResource("37")]
+[node name="plate_stack_2" parent="Detail" instance=ExtResource("38")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.97, 0.9, 0.39)
 metadata/prop = "plate_stack"
 
 [node name="plate_stack" parent="Detail/plate_stack_2"]
 visible = false
 
-[node name="cup_set_3" parent="Detail" instance=ExtResource("33")]
+[node name="cup_set_3" parent="Detail" instance=ExtResource("34")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.54, 0.9, 0.58)
 metadata/prop = "cup_set"
 
 [node name="cup_set" parent="Detail/cup_set_3"]
 visible = false
 
-[node name="fruit_bowl_3" parent="Detail" instance=ExtResource("34")]
+[node name="fruit_bowl_3" parent="Detail" instance=ExtResource("35")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 7.52, 0.9, 1.59)
 metadata/prop = "fruit_bowl"
 
 [node name="fruit_bowl" parent="Detail/fruit_bowl_3"]
 visible = false
 
-[node name="plate_stack_3" parent="Detail" instance=ExtResource("37")]
+[node name="plate_stack_3" parent="Detail" instance=ExtResource("38")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 7.7, 0.9, 1.22)
 metadata/prop = "plate_stack"
 
 [node name="plate_stack" parent="Detail/plate_stack_3"]
 visible = false
 
-[node name="bottles_3" parent="Detail" instance=ExtResource("36")]
+[node name="bottles_3" parent="Detail" instance=ExtResource("37")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 7.62, 0.9, 2.46)
 metadata/prop = "bottles"
 
 [node name="bottles" parent="Detail/bottles_3"]
 visible = false
 
-[node name="cooking_pot_3" parent="Detail" instance=ExtResource("35")]
+[node name="cooking_pot_3" parent="Detail" instance=ExtResource("36")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 7.45, 0.9, 3.37)
 metadata/prop = "cooking_pot"
 
 [node name="cooking_pot" parent="Detail/cooking_pot_3"]
 visible = false
 
-[node name="plate_stack_4" parent="Detail" instance=ExtResource("37")]
+[node name="plate_stack_4" parent="Detail" instance=ExtResource("38")]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 7.65, 0.9, 3.72)
 metadata/prop = "plate_stack"
 
 [node name="plate_stack" parent="Detail/plate_stack_4"]
 visible = false
 
-[node name="wall_clock_1" parent="Detail" instance=ExtResource("38")]
+[node name="wall_clock_1" parent="Detail" instance=ExtResource("39")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 0.1, 1.85, 12.23)
 metadata/prop = "wall_clock"
 
 [node name="wall_clock" parent="Detail/wall_clock_1"]
 visible = false
 
-[node name="wall_shelf_1" parent="Detail" instance=ExtResource("39")]
+[node name="wall_shelf_1" parent="Detail" instance=ExtResource("40")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 0.1, 1.45, 1.5)
 metadata/prop = "wall_shelf"
 
 [node name="wall_shelf" parent="Detail/wall_shelf_1"]
 visible = false
 
-[node name="basket_1" parent="Detail" instance=ExtResource("40")]
+[node name="basket_1" parent="Detail" instance=ExtResource("41")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 0.32, 0, 2.22)
 metadata/prop = "basket"
 
 [node name="basket" parent="Detail/basket_1"]
 visible = false
 
-[node name="batch_detail" parent="Detail" instance=ExtResource("41")]
+[node name="batch_detail" parent="Detail" instance=ExtResource("42")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+
+[node name="merged_props" parent="Detail/batch_detail"]
+cast_shadow = 0
+
+[node name="batch_detail_shadow" parent="Detail" instance=ExtResource("43")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+
+[node name="shadow" parent="Detail/batch_detail_shadow"]
+cast_shadow = 3
+gi_mode = 0
 
 [node name="Fixtures" type="Node3D" parent="."]
 
-[node name="pendant_shade_1" parent="Fixtures" instance=ExtResource("42")]
+[node name="pendant_shade_1" parent="Fixtures" instance=ExtResource("44")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 3, 7)
 metadata/prop = "pendant_shade"
 
 [node name="pendant_shade" parent="Fixtures/pendant_shade_1"]
 visible = false
 
-[node name="pendant_shade_2" parent="Fixtures" instance=ExtResource("42")]
+[node name="pendant_shade_2" parent="Fixtures" instance=ExtResource("44")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 3, 7)
 metadata/prop = "pendant_shade"
 
 [node name="pendant_shade" parent="Fixtures/pendant_shade_2"]
 visible = false
 
-[node name="pendant_shade_3" parent="Fixtures" instance=ExtResource("42")]
+[node name="pendant_shade_3" parent="Fixtures" instance=ExtResource("44")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 3, 7)
 metadata/prop = "pendant_shade"
 
 [node name="pendant_shade" parent="Fixtures/pendant_shade_3"]
 visible = false
 
-[node name="wall_sconce_1" parent="Fixtures" instance=ExtResource("43")]
+[node name="wall_sconce_1" parent="Fixtures" instance=ExtResource("45")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 0.1, 1.95, 7)
 metadata/prop = "wall_sconce"
 
 [node name="wall_sconce" parent="Fixtures/wall_sconce_1"]
 visible = false
 
-[node name="floor_lamp_1" parent="Fixtures" instance=ExtResource("44")]
+[node name="floor_lamp_1" parent="Fixtures" instance=ExtResource("46")]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 0.4, 0, 4.58)
 metadata/prop = "floor_lamp"
 
 [node name="floor_lamp" parent="Fixtures/floor_lamp_1"]
 visible = false
 
-[node name="batch_fixtures" parent="Fixtures" instance=ExtResource("45")]
+[node name="batch_fixtures" parent="Fixtures" instance=ExtResource("47")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+
+[node name="merged_props" parent="Fixtures/batch_fixtures"]
+cast_shadow = 0
+
+[node name="batch_fixtures_shadow" parent="Fixtures" instance=ExtResource("48")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+
+[node name="shadow" parent="Fixtures/batch_fixtures_shadow"]
+cast_shadow = 3
+gi_mode = 0
 
 [node name="kitchen_pendant_shade_01" type="OmniLight3D" parent="Fixtures"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 2.3, 2.333)

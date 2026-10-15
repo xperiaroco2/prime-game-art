@@ -93,7 +93,7 @@ CC0 packs named per file in the props manifest, `ai_generated = false`, `public_
   over the ridge hit 2100 `concrete` and miss 188, all past the eaves and the gables (no floor there). The attic
   stair's walk needs the landing under it (P4) and the dormer's climb-out has no walk in the check yet.
 
-## Merged shell (#107)
+## Merged shell (#107, #185)
 
 Draw calls, not the look. Each room's own static kit pieces of a class (floors, ceilings, the rest of the shell) are
 drawn by one merged mesh per material, `Shell/merged_<class>` (`house_kit/merged/<class>_m_<level>_<room>.glb`, the
@@ -110,6 +110,14 @@ batch too). Here: 2 merged shell meshes and 1 batch, committed in `export/merged
   #183's attic stair and long hatch are static and merge), task stations and `[merge] keep_props` (the garage's car, lift arms and lift
   panel). A game-side script that moves another prop must move it out of its batch (ask the art side).
 - Numbers: the export sheet's attic views draw 66 and 68 calls before, 15 and 15 after.
+- Shadow proxies (#185): each merged shell and batch with two or more shadow-casting surfaces has a twin,
+  `<its node>_shadow` (`merged/<its file>_shadow.glb`, one node `shadow`: the same geometry as one surface
+  per cull mode, no material), instanced beside it with `cast_shadow = SHADOWS_ONLY`; the merged mesh's own
+  nodes get `cast_shadow = OFF`. A shadowed lamp then draws one surface per proxy into each cube face, not one
+  per material. Here: 2 proxies, committed in `export/merged/` and copied beside their merged files as
+  `package.json` lists them; a proxy in `Detail` hides with it. Baked and High draw calls are unchanged; no bake review camera here; over the ten bake review views of the other floors High's shadow draw calls fall 53 %.
+  The look is unchanged (mean dL* at most 0.001 per frame). Uniform grid cells of 2-4 m were tried and not
+  taken: they multiply the draw calls for at most 5 % fewer shadow draw calls (docs/house.md "Draw calls").
 
 ## The attic stair (#183)
 
