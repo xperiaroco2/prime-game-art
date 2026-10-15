@@ -39,12 +39,12 @@ def hatch() -> list[float]:
 def surface(p: dict, u: float) -> float:
     """The walked collision's height at u metres along the run from the foot (the floor, the nosing ramp, the top)."""
     run, rise = float(p["run"]), float(p["rise"])
-    if u < 0:
+    (u0, _), (_, _), (_, _) = G.nosing_ramp(p)
+    if u < u0:
         return 0.0
     if u > run:
         return rise
-    (_, _), (_, _), (_, _), (_, h0) = G.nosing_ramp(p)
-    return h0 + u * (rise - h0) / run
+    return (u - u0) * rise / (run - u0)
 
 
 def sphere_centre(p: dict, u: float, r: float) -> float:
@@ -77,8 +77,9 @@ class AtticStairTest(unittest.TestCase):
         pitch = math.degrees(math.atan2(h, going))
         self.assertLessEqual(pitch, FLOOR_MAX_DEG - 3.0)
         ramp = G.nosing_ramp(p)
-        self.assertLessEqual(ramp[3][1], A.STEP_H, "the ramp's first step")
-        slope = math.degrees(math.atan2(ramp[2][1] - ramp[3][1], ramp[2][0] - ramp[3][0]))
+        self.assertEqual(ramp[0][1], 0, "the ramp starts on the floor: no ledge at the foot")
+        self.assertAlmostEqual(-ramp[0][0], going, places=6, msg="the ramp's toe: one going in front of the foot")
+        slope = math.degrees(math.atan2(ramp[2][1] - ramp[0][1], ramp[2][0] - ramp[0][0]))
         self.assertAlmostEqual(slope, pitch, places=6)
         self.assertGreaterEqual(float(p["width"]) - 2 * 0.06, 2 * CAPSULE_R + 0.15, "the clear width between the balustrades")
 

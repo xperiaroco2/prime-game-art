@@ -418,11 +418,12 @@ def ramp_poly(p: dict) -> list[tuple]:
 
 
 def nosing_ramp(p: dict) -> list[tuple]:
-    """The walkable collision of a closed stair with a balustrade (#183): a ramp through the nosings, from the first
-    riser's top at x 0 to the upper floor's edge, so the steepest walked face is the pitch, never a riser pair."""
+    """The walkable collision of a closed stair with a balustrade (#183): a ramp through the nosings to the upper
+    floor's edge, run on down to the floor one going in front of the foot (a wedge on the floor below), so a capsule
+    walks onto it with no ledge and the steepest walked face is the pitch, never a riser pair."""
     h, gq, n = stair_numbers(p)
     run, rise = float(p["run"]), float(p["rise"])
-    return [(0, 0), (run, 0), (run, rise), (0, h)]
+    return [(-gq, 0), (run, 0), (run, rise)]
 
 
 def build_stairs(pc: Piece, p: dict, spec: dict) -> None:
