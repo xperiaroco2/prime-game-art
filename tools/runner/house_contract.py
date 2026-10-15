@@ -8,7 +8,8 @@ GLBs (`-convcolonly`, `-colonly`, `-col` nodes: the node, its shape kind, its tr
 hash, under the instance's own transform). Left out, because they only change what is drawn:
 - override sections of an instanced GLB's children (no type, no instance) that set only visual properties
   (`VISUAL`: material overrides, instance shader parameters, `visible`);
-- nodes named `merged_*` or `batch_*` (MERGED): the merged shell's and the batched dressing's meshes.
+- nodes named `merged_*` or `batch_*` (MERGED) and every override section under one: the merged shell's and the
+  batched dressing's meshes, their shadow proxies (`*_shadow`, #185) and their `cast_shadow` overrides.
 Pure Python, standard library only."""
 
 from __future__ import annotations
@@ -95,8 +96,7 @@ def scene_contract(text: str, resolve) -> dict:
     for nd in nodes:
         a = nd["attrs"]
         path = _path(a)
-        name = path.rsplit("/", 1)[-1]
-        if name.startswith(MERGED):
+        if any(part.startswith(MERGED) for part in path.split("/")):  # #185: a proxy's or merged mesh's overrides too
             continue
         real = "type" in a or "instance" in a
         props = [(k, v) for k, v in nd["props"] if not k.startswith(VISUAL)]
