@@ -1,7 +1,7 @@
 {
  "house_attic": {
   "attic.tscn": {
-   "colliders": 556,
+   "colliders": 559,
    "groups": {
     "Attic": {
      "nodes": [
@@ -51,12 +51,12 @@
     },
     "Shell": {
      "colliders": [
-      496,
-      "74946076b4ae3dec"
+      499,
+      "ce5eafb5747b8488"
      ],
      "nodes": [
-      420,
-      "3acf025b5940b308"
+      419,
+      "a491e884df961f49"
      ]
     },
     "Stations": {
@@ -66,8 +66,8 @@
      ]
     }
    },
-   "nodes": 503,
-   "sha": "0829f611c83d50a8828fec3efd20da118ff9b15e6ceb836ef0a6ca451c33023f"
+   "nodes": 502,
+   "sha": "4737c0b172ad2385d237af5ab9610a32b0fc3bfb594249938720bf8b6d74c251"
   }
  },
  "house_basement": {

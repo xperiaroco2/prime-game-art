@@ -116,7 +116,7 @@ The House's sets (written for #118 from the 2026-10-10 builds; a rebuild changes
 
 | Manifest | Files |
 |---|---|
-| `assets/kit/house_kit/` | the kit v3b's 121 GLBs (with the greenhouse's 5 glass roof pieces, byte-identical in `house/80/kit`) and the shared texture set `textures/set_d.png`, `set_n0.png`, `set_n1.png`, made from 6 ambientCG maps |
+| `assets/kit/house_kit/` | the kit v3d's 124 GLBs (v3b's 121, #152's rebuilt ceiling pieces, #183's attic stair, long hatch and guard) (with the greenhouse's 5 glass roof pieces, byte-identical in `house/80/kit`) and the shared texture set `textures/set_d.png`, `set_n0.png`, `set_n1.png`, made from 6 ambientCG maps |
 | `assets/prop/house_props/` | `library/` 133 (30 from CC0 packs, named by `source` and `from`; #147 rebuilt the kitchen's in C2-white and added `backsplash_l`, `backsplash_r`), `task/` 34, `zones/` 9 GLBs; they use the kit's texture set, the world look's props also the fine pack (#147): `fine/high/` and `fine/low/` `fine_d.png`, `fine_n0.png`, `fine_n1.png`, made from 4 ambientCG maps, with `prop_fine.gdshader`, `prop_fine_high.tres`, `prop_fine_low.tres` |
 | `assets/environment/house_garden/` | the 14 garden plants of `house/80/plants` |
 | `assets/environment/house_outdoor/` | `outdoor.glb`, `backdrop.glb` (the flats embedded) and `sky.png` of `house/81/build` |

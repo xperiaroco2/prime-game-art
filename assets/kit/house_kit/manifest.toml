@@ -4,11 +4,12 @@
 # #162 (the bathroom's paint): kit_set.tres from <raw>/review/house/162/export/p4 (P4's export; the paints are one shared material); package.json names its new hash.
 # #166 (the kids' room's paint): kit_set.tres from <raw>/review/house/166/export/p4 (P4's export; the paints are one shared material); package.json names its new hash.
 # #168 (the attic's paint): kit_set.tres from <raw>/review/house/168/export/p5b (P5's export; the paints are one shared material); package.json names its new hash.
+# #183 (the attic stair): re-exported as P1 into <raw>/review/house/183/export/p1 (`house --export ... --package 1`); the three new pieces point there, the rest are unchanged.
 id = "house_kit"
 kind = "kit"
 slot = ""
-title = "The House's modular kit v3c: 121 pieces and the shared texture set"
-notes = "Built by `kit` from kits/house.json (docs/kit.md) into kits/house/v3c (v3b with the 12 pieces of the warm sand ceiling rebuilt, #152). Own work; the three textures are packed, grey-averaged derivatives of ambientCG CC0 maps (PaintedPlaster017, WoodFloor051, Concrete034). The greenhouse's glass roof pieces (house/80/kit) are byte-identical to the kit's and ship here. Our own work goes to the game under the game's terms (the engineer's E1, 2026-10-11): the public game repo has no licence file, so all rights reserved. Approved under the engineer's blanket yes of 2026-10-14 (build the House, judge in a playtest; #34) in PR #154. #158 added the WC's and the pantry's wall paints to the shared kit_set.tres (from P2's export, review/house/158/export/p2); no kit piece changed; approved under the engineer's blanket yes of 2026-10-14 (build the House, judge in a playtest; #34) in PR #161. #162 added the bathroom's wall paint to the shared kit_set.tres (from P4's export, review/house/162/export/p4); no kit piece changed; approved under the engineer's blanket yes of 2026-10-14 (build the House, judge in a playtest; #34) in PR #163. #166 added the kids' room's wall paint to the shared kit_set.tres (from P4's export, review/house/166/export/p4); no kit piece changed; approved under the engineer's blanket yes of 2026-10-14 (build the House, judge in a playtest; #34) in PR #167. #168 added the attic's warm white paint (#ece7de, the knee walls and gables) to the shared kit_set.tres (from P5's export, review/house/168/export/p5b); no kit piece changed; approved under the engineer's blanket yes of 2026-10-14 (build the House, judge in a playtest; #34) in PR #169, which the approval fields name."
+title = "The House's modular kit v3d: 124 pieces and the shared texture set"
+notes = "Built by `kit` from kits/house.json (docs/kit.md) into kits/house/v3c (v3b with the 12 pieces of the warm sand ceiling rebuilt, #152). Own work; the three textures are packed, grey-averaged derivatives of ambientCG CC0 maps (PaintedPlaster017, WoodFloor051, Concrete034). The greenhouse's glass roof pieces (house/80/kit) are byte-identical to the kit's and ship here. Our own work goes to the game under the game's terms (the engineer's E1, 2026-10-11): the public game repo has no licence file, so all rights reserved. Approved under the engineer's blanket yes of 2026-10-14 (build the House, judge in a playtest; #34) in PR #154. #158 added the WC's and the pantry's wall paints to the shared kit_set.tres (from P2's export, review/house/158/export/p2); no kit piece changed; approved under the engineer's blanket yes of 2026-10-14 (build the House, judge in a playtest; #34) in PR #161. #162 added the bathroom's wall paint to the shared kit_set.tres (from P4's export, review/house/162/export/p4); no kit piece changed; approved under the engineer's blanket yes of 2026-10-14 (build the House, judge in a playtest; #34) in PR #163. #166 added the kids' room's wall paint to the shared kit_set.tres (from P4's export, review/house/166/export/p4); no kit piece changed; approved under the engineer's blanket yes of 2026-10-14 (build the House, judge in a playtest; #34) in PR #167. #168 added the attic's warm white paint (#ece7de, the knee walls and gables) to the shared kit_set.tres (from P5's export, review/house/168/export/p5b); no kit piece changed; approved under the engineer's blanket yes of 2026-10-14 (build the House, judge in a playtest; #34) in PR #169, which the approval fields name. #183 added stair_attic, floor_boards_4x2_hatch and hatch_guard_attic (kit v3d = v3c plus these three; the attic's walkable stair under a longer hatch, in place of the ladder); approved under the engineer's blanket yes of 2026-10-14 (build the House, judge in a playtest; #34); #183 is his option B of prime-game PR #1043."
 tools = ["blender 5.2.2", "prime-game-art kit (kits/house.json)"]
 licence = "own-work"
 licence_url = "https://github.com/xperiaroco2/prime-game"
@@ -661,3 +662,18 @@ sha256 = "fc8c2dd82c68fc304dc4b0f9ca714d3834c5d74bec9ef87ecc88f34cfd5d4b87"
 name = "kit_set.tres"
 file = "review/house/168/export/p5b/assets/environment/house_kit/kit_set.tres"
 sha256 = "18009a7771f73e760cb6a271fbff7ca62670daf228f3a396644f4a690c64fcfb"
+
+[[files]]
+name = "floor_boards_4x2_hatch.glb"
+file = "review/house/183/export/p1/assets/environment/house_kit/floor_boards_4x2_hatch.glb"
+sha256 = "ddbf892145ec90ad0862d8a510a968ac0c1782a79e402c8d025a3b5017eb6303"
+
+[[files]]
+name = "hatch_guard_attic.glb"
+file = "review/house/183/export/p1/assets/environment/house_kit/hatch_guard_attic.glb"
+sha256 = "b3163f697ac066ba274124eba995125e242983540cd82fd990a87142b4005ee3"
+
+[[files]]
+name = "stair_attic.glb"
+file = "review/house/183/export/p1/assets/environment/house_kit/stair_attic.glb"
+sha256 = "1cef382d2774480f6974f4de5d0c8dbf70b60cdc21dbbb6c469d761714aa59ff"

@@ -7,7 +7,7 @@ look approval on the art PR). P5 was approved and merged in #127 (2026-10-11); #
 ## What to copy where (ARCHITECTURE 11.1)
 | From this repo | To the game repo |
 |---|---|
-| P1 (`assets/kit/house_kit/HANDOFF.md`) | `assets/environment/house_kit/` (P5's room uses 27 of its pieces: floor, knee walls, gables, the pitched roof, chimneys, vents, the dormer, the hatch ladder and the dormer stair) |
+| P1 (`assets/kit/house_kit/HANDOFF.md`) | `assets/environment/house_kit/` (P5's room uses 27 of its pieces: floor, knee walls, gables, the pitched roof, chimneys, vents, the dormer, the attic stair, the long hatch tile and its guard (#183) and the dormer stair) |
 | `assets/kit/house_kit/export/kit_set.gdshader`, `kit_set.tres` (#132) | `assets/environment/house_kit/` (beside the kit's textures) |
 | `assets/prop/house_props/export/library/*.glb` (24), as `package.json` lists | `assets/environment/house_props/<file>.glb` (flat) |
 | `assets/prop/house_props/export/fine/high/*.png`, `fine/low/*.png` (6 each, #147, #150) | `assets/environment/house_props/fine/high/`, `fine/low/` |
@@ -86,12 +86,12 @@ CC0 packs named per file in the props manifest, `ai_generated = false`, `public_
 ## Art defaults (the game may change any)
 - `mannequin` and `rocking_horse` (hero props) have no GLB yet: each is a sized `Marker3D` under `Placeholders`.
 - Colliders are the GLBs' own `-convcolonly` shapes (`StaticBody3D`, layer 1); picture frames and rugs have none.
-- Footsteps: the boards, the hatch ladder and the dormer stair `wood`, the floor under the rugs and the rolled carpets
+- Footsteps: the boards, the attic stair, its hatch guard and the dormer stair `wood`, the floor under the rugs and the rolled carpets
   `carpet`; the pitched roof, the chimneys' tops and the dormer `concrete` (the game has no tile sound).
 - The art's package check (`house --export --package 5`) is green: the scene loads with its root and `size_m`; the
   attic's 1920 rays down hit 1857 `wood` and 59 `carpet`, nothing without a surface; the roof's 2288 rays down from
-  over the ridge hit 2100 `concrete` and miss 188, all past the eaves and the gables (no floor there). The hatch
-  ladder's walk needs the floor under it (P4) and the dormer's climb-out has no walk in the check yet.
+  over the ridge hit 2100 `concrete` and miss 188, all past the eaves and the gables (no floor there). The attic
+  stair's walk needs the landing under it (P4) and the dormer's climb-out has no walk in the check yet.
 
 ## Merged shell (#107)
 
@@ -107,6 +107,28 @@ batch too). Here: 2 merged shell meshes and 1 batch, committed in `export/merged
   `station`, `prop`); only its own mesh node carries `visible = false`. `test_house_contract` checks every
   game-facing node and collider of this package against main's export (layouts/house/export_contract.json): unchanged.
 - Never merged: the pieces the game moves or opens (house.toml `[merge] keep`: gates, wicket, garage door, glass door,
-  the attic ladder and hatch boards), task stations and `[merge] keep_props` (the garage's car, lift arms and lift
+  #183's attic stair and long hatch are static and merge), task stations and `[merge] keep_props` (the garage's car, lift arms and lift
   panel). A game-side script that moves another prop must move it out of its batch (ask the art side).
 - Numbers: the export sheet's attic views draw 66 and 68 calls before, 15 and 15 after.
+
+## The attic stair (#183)
+
+The steep hatch ladder (one convex hull at about 68 deg under a 0.8 x 1.4 m hole) is gone: the game's 1.8 m capsule
+could not climb it, so the game locked the attic in M7's playtest. The engineer's option B (prime-game PR #1043): a
+stair a player walks up, no new mechanic.
+- **Place**: on the landing along the stairwell's north edge (P4's floor; the stair itself is in this package, under
+  `Shell` as `attic_stair`, kit piece `stair_attic`). Its foot is at x 30, y 28.75..29.85 in the house plan (the
+  landing's east aisle, where the main stairs arrive); it climbs west 3.525 m to the hatch's west edge at x 26.475.
+  The ladder's spot had no room for the run without cutting the route to the bedroom door.
+- **The stair**: straight and closed, 16 risers of 0.2 m (the game's step height is 0.3 m) over 15 goings of
+  0.235 m, 40.4 deg (the floor limit is 45 deg), 1.1 m wide, handrails 0.9 m over the pitch on both sides. Its
+  collider is a ramp through the nosings that runs on to the landing floor one going (0.235 m) in front of the foot,
+  so there is no ledge at the foot; plus a wall over each stringer.
+- **The hatch**: the kit's `floor_boards_4x2_hatch` (4 x 2 m tile at x 26, y 28) with a 3.125 x 1.14 m hole (x
+  26.475..29.6, y 28.73..29.87); `hatch_guard_attic`, a 1.0 m spindle balustrade, closes the hole's north, south and
+  east sides on the attic floor, so the only way into the hole is down the stair.
+- **Clearance**: a standing capsule of 1.8 m and radius 0.4 m (the game's) swept along the stair's path clears the
+  hatch's edges and the attic floor by at least 0.31 m, 0.17 m sideways in the hole and 0.09 m to the balustrades
+  (`test_house_attic_stair`); the art's `house --walk` walks it up and down (`attic_stair:up`, `attic_stair:down`).
+- **For the game**: the attic can be unlocked and its walk test brought back (prime-game#1042). The stair and the
+  hatch are static: they merge into `Shell/merged_*` like the other static pieces (not in `[merge] keep`).

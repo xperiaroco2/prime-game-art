@@ -4,9 +4,9 @@
 [ext_resource type="ShaderMaterial" path="res://assets/environment/house_kit/kit_set.tres" id="2"]
 [ext_resource type="PackedScene" path="res://assets/environment/house_kit/wall_knee_2m_window_ext.glb" id="3"]
 [ext_resource type="PackedScene" path="res://assets/environment/house_kit/wall_knee_corner_ext.glb" id="4"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_kit/floor_boards_2x2_hatch.glb" id="5"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_kit/floor_boards_4x2_hatch.glb" id="5"]
 [ext_resource type="PackedScene" path="res://assets/environment/house_kit/floor_boards_2x2.glb" id="6"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_kit/floor_boards_2x1.glb" id="7"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_kit/hatch_guard_attic.glb" id="7"]
 [ext_resource type="PackedScene" path="res://assets/environment/house_kit/chimney_attic.glb" id="8"]
 [ext_resource type="PackedScene" path="res://assets/environment/house_kit/chimney_attic_n.glb" id="9"]
 [ext_resource type="PackedScene" path="res://assets/environment/house_kit/roof_vent.glb" id="10"]
@@ -27,7 +27,7 @@
 [ext_resource type="PackedScene" path="res://assets/environment/house_kit/gable_tri_2m_up.glb" id="25"]
 [ext_resource type="PackedScene" path="res://assets/environment/house_kit/gable_tri_2m_down.glb" id="26"]
 [ext_resource type="PackedScene" path="res://assets/environment/house_kit/gable_band_2m.glb" id="27"]
-[ext_resource type="PackedScene" path="res://assets/environment/house_kit/ladder_attic.glb" id="28"]
+[ext_resource type="PackedScene" path="res://assets/environment/house_kit/stair_attic.glb" id="28"]
 [ext_resource type="PackedScene" path="res://assets/environment/house_kit/merged/floor_m_attic_attic.glb" id="29"]
 [ext_resource type="PackedScene" path="res://assets/environment/house_kit/merged/shell_m_attic_attic.glb" id="30"]
 [ext_resource type="PackedScene" path="res://assets/environment/house_props/old_wardrobe.glb" id="31"]
@@ -455,13 +455,14 @@ surface_material_override/0 = ExtResource("2")
 instance_shader_parameters/plan_at = Vector4(42, 6.4, 44, 0)
 visible = false
 
-[node name="floor_boards_2x2_hatch_1" parent="Shell" instance=ExtResource("5")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9, 0, 4)
+[node name="floor_boards_4x2_hatch_1" parent="Shell" instance=ExtResource("5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 0, 4)
 metadata/surface = "wood"
 
-[node name="floor_boards_2x2_hatch" parent="Shell/floor_boards_2x2_hatch_1"]
+[node name="floor_boards_4x2_hatch" parent="Shell/floor_boards_4x2_hatch_1"]
 surface_material_override/0 = ExtResource("2")
-instance_shader_parameters/plan_at = Vector4(27, 6.4, 28, 0)
+instance_shader_parameters/plan_at = Vector4(26, 6.4, 28, 0)
+visible = false
 
 [node name="floor_boards_2x2_1" parent="Shell" instance=ExtResource("6")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
@@ -1525,22 +1526,13 @@ surface_material_override/0 = ExtResource("2")
 instance_shader_parameters/plan_at = Vector4(40, 6.4, 42, 0)
 visible = false
 
-[node name="floor_boards_2x1_1" parent="Shell" instance=ExtResource("7")]
-transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 9, 0, 4)
+[node name="hatch_guard_attic_1" parent="Shell" instance=ExtResource("7")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8.475, 0, 4.73)
 metadata/surface = "wood"
 
-[node name="floor_boards_2x1" parent="Shell/floor_boards_2x1_1"]
+[node name="hatch_guard_attic" parent="Shell/hatch_guard_attic_1"]
 surface_material_override/0 = ExtResource("2")
-instance_shader_parameters/plan_at = Vector4(27, 6.4, 28, 270)
-visible = false
-
-[node name="floor_boards_2x1_2" parent="Shell" instance=ExtResource("7")]
-transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 12, 0, 4)
-metadata/surface = "wood"
-
-[node name="floor_boards_2x1" parent="Shell/floor_boards_2x1_2"]
-surface_material_override/0 = ExtResource("2")
-instance_shader_parameters/plan_at = Vector4(30, 6.4, 28, 270)
+instance_shader_parameters/plan_at = Vector4(26.475, 6.4, 28.73, 0)
 visible = false
 
 [node name="chimney_attic_1" parent="Shell" instance=ExtResource("8")]
@@ -3706,13 +3698,13 @@ surface_material_override/0 = ExtResource("2")
 instance_shader_parameters/plan_at = Vector4(42, 11.4, 36, 90)
 visible = false
 
-[node name="hatch_ladder" parent="Shell" instance=ExtResource("28")]
-transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 10.35, -3.2, 4.32)
+[node name="attic_stair" parent="Shell" instance=ExtResource("28")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 12, -3.2, 5.85)
 metadata/surface = "wood"
 
-[node name="ladder_attic" parent="Shell/hatch_ladder"]
+[node name="stair_attic" parent="Shell/attic_stair"]
 surface_material_override/0 = ExtResource("2")
-instance_shader_parameters/plan_at = Vector4(28.35, 3.2, 28.32, 270)
+instance_shader_parameters/plan_at = Vector4(30, 3.2, 29.85, 180)
 
 [node name="merged_floor" parent="Shell" instance=ExtResource("29")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
