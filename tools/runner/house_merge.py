@@ -133,6 +133,43 @@ def pack(sizes: list[tuple[float, float]], gap: float = GAP_M) -> tuple[list[tup
     return at, max(width, y + shelf)
 
 
+_CENTRES: dict = {}  # a GLB's visual bounding box centre in its own frame, read once per run
+
+
+def centre(glb: Path, transform: str) -> tuple[float, float, float]:
+    """The centre of a piece's (or prop's) visual bounding box where the scene's transform puts it."""
+    key = str(glb)
+    if key not in _CENTRES:
+        pos = [v for p in visual(Path(glb)) for v in p["pos"]] or [(0.0, 0.0, 0.0)]
+        _CENTRES[key] = tuple((min(v[i] for v in pos) + max(v[i] for v in pos)) / 2 for i in range(3))
+    return _apply(rows_of(transform), _CENTRES[key])
+
+
+def cell_of(x: float, z: float, size: float | None) -> str:
+    """The grid cell (#185) a point of the room's floor plan falls in: "" for no grid (size None: the room is one
+    cell), else `c<i>_<k>` (x and z cell indices; a negative index as `n<i>`, no "-": Godot reads `-col` as a hint)."""
+    if not size:
+        return ""
+    def idx(v: float) -> str:
+        i = math.floor(v / size + 1e-9)
+        return str(i) if i >= 0 else f"n{-i}"
+    return f"c{idx(x)}_{idx(z)}"
+
+
+def cells(items: list[dict], size: float | None) -> list[tuple[str, list[dict]]]:
+    """items (merge's: "glb", "transform") split into the grid cells of `size` metres (#185) by the centre of each one's
+    visual bounding box, in the scene's (the room's) frame: [(cell, its items)] sorted by cell; one ("", items) for
+    size None. A room-sized merged mesh enters every cube face of every shadowing lamp near any part of the room and
+    its bounds pull it into views of the neighbours; a cell's mesh stays local."""
+    if not size:
+        return [("", list(items))]
+    out: dict = {}
+    for it in items:
+        x, _, z = centre(it["glb"], it["transform"])
+        out.setdefault(cell_of(x, z, size), []).append(it)
+    return sorted(out.items())
+
+
 def material_key(material: dict) -> str:
     """A material's values without its name (base colour, emission and its strength, roughness, metallic, alpha mode,
     every extension): two prop GLBs may give one name different values (#184's review: a red safelight and a bare

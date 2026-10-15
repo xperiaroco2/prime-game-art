@@ -66,6 +66,9 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
                              "High, against lights.toml's [budget] (draw_calls.json and .md, the frames; #107)")
     parser.add_argument("--no-merge", action="store_true",
                         help="draw every kit piece as its own instance (the scenes before #107's merged shell)")
+    parser.add_argument("--cell", metavar="M|room",
+                        help="override house.toml's [merge] cell: the merged shell's and batches' grid cell in metres, "
+                             "or room (one per room; #185's grid run)")
     parser.add_argument("--review", type=Path, metavar="DIR",
                         help="with --bake: baked and real-time frames, sheet.png and measures.json into DIR")
     parser.add_argument("--export", type=Path, metavar="DIR",
@@ -114,6 +117,9 @@ def run(args: argparse.Namespace) -> int:
             common.say(f"  {p}")
         raise common.Failure(f"house layout: {len(problems)} problems")
     common.say("house layout: grid, openings, corners, footprints, stairs, holes and the light kit hold")
+    if args.cell:
+        data["settings"].setdefault("merge", {})["cell"] = args.cell
+        cell_size(data)  # refuses a bad value before anything is built
     if args.clutter:
         st = data["settings"]
         cat = house_dressing.catalogue(house_dressing.spec_paths(st, extra=args.props_spec))
@@ -341,6 +347,18 @@ def prop_glbs(data: dict, dressing: dict) -> dict:
     return found
 
 
+def cell_size(data: dict) -> float | None:
+    """house.toml's [merge] cell (#185): the merged shell's and the batched dressing's grid cell in metres, or None
+    ("room" or missing: one merged mesh per room, class and group, as #107 shipped)."""
+    v = data["settings"].get("merge", {}).get("cell", "room")
+    if v in ("room", None):
+        return None
+    v = float(v)
+    if v <= 0:
+        raise ValueError(f"house.toml [merge] cell must be a positive number of metres or \"room\", not {v}")
+    return v
+
+
 def merger(data: dict, found: dict | None = None, out: Path | None = None, kit_res: str | None = None,
            prop_res: str | None = None):
     """The merged shell's callable for house_layout.write_scenes (#107), or None without the kit's pieces.json: per room
@@ -360,6 +378,7 @@ def merger(data: dict, found: dict | None = None, out: Path | None = None, kit_r
         return None
     uv2 = house_bake.uv2_table(json.loads((kit / "pieces.json").read_text(encoding="utf-8")))
     keep = set(data["settings"].get("merge", {}).get("keep", []))
+    cell = cell_size(data)
     out = Path(out) if out else _house_bake.MERGED
     kit_res = kit_res or data["settings"]["kit_res"]
     prop_res = prop_res or data["settings"]["prop_res"]
@@ -389,12 +408,15 @@ def merger(data: dict, found: dict | None = None, out: Path | None = None, kit_r
                 if visual_nodes(it["glb"]) != [it["id"]]:
                     raise ValueError(f"{it['glb']}: a merged kit piece's visual nodes must be [{it['id']!r}], not "
                                      f"{visual_nodes(it['glb'])} (list the piece in house.toml's [merge] keep)")
-            name = f"{cls}_m_{level}_{rid}"
-            rec = house_merge.merge(items, out / f"{name}.glb")
-            merge.files[name] = out / f"{name}.glb"
-            merge.uv2[name] = rec["classes"][cls]["uv2_per_m"]
-            hide |= {it["node"] for it in items}
-            add.append((f"merged_{cls}", kit_res.format(id=name)))
+            for c, its in house_merge.cells(items, cell):  # a cell of one piece stays an instance
+                if len(its) < 2:
+                    continue
+                name = f"{cls}_m_{level}_{rid}" + (f"_{c}" if c else "")
+                rec = house_merge.merge(its, out / f"{name}.glb")
+                merge.files[name] = out / f"{name}.glb"
+                merge.uv2[name] = rec["classes"][cls]["uv2_per_m"]
+                hide |= {it["node"] for it in its}
+                add.append((f"merged_{cls}" + (f"_{c}" if c else ""), kit_res.format(id=name)))
         merge.hidden += len(hide)
         return {"hide": hide, "add": add}
 
@@ -410,16 +432,20 @@ def merger(data: dict, found: dict | None = None, out: Path | None = None, kit_r
             if not names or not all(re.fullmatch(r"[A-Za-z0-9_]+", v or "") for v in names):
                 continue
             its.append({"glb": Path(glb), "transform": house_dressing.tf_yaw(r["yaw"], *r["at"]), "class": "props",
-                        "uv2_per_m": None})
+                        "uv2_per_m": None, "node": node})
             hide[node] = names
-        if len(its) < 2:
-            return {"hide": {}, "add": []}
-        name = f"batch_{level}_{rid}_{parent.lower()}"
-        house_merge.merge(its, out / f"{name}.glb")
-        merge.files[name] = out / f"{name}.glb"
-        merge.batched.append(name)
-        merge.props += len(its)
-        return {"hide": hide, "add": [(f"batch_{parent.lower()}", prop_res.format(id=name), name)]}
+        out_hide, add = {}, []
+        for c, group in house_merge.cells(its, cell):  # a cell of one prop keeps its instance drawing
+            if len(group) < 2:
+                continue
+            name = f"batch_{level}_{rid}_{parent.lower()}" + (f"_{c}" if c else "")
+            house_merge.merge(group, out / f"{name}.glb")
+            merge.files[name] = out / f"{name}.glb"
+            merge.batched.append(name)
+            merge.props += len(group)
+            out_hide.update({it["node"]: hide[it["node"]] for it in group})
+            add.append((f"batch_{parent.lower()}" + (f"_{c}" if c else ""), prop_res.format(id=name), name))
+        return {"hide": out_hide, "add": add}
     merge.uv2, merge.hidden, merge.batch, merge.batched, merge.props, merge.files = {}, 0, batch, [], 0, {}
     return merge
 

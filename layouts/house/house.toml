@@ -37,6 +37,10 @@ keep = ["fence_gates_8m", "fence_wicket_2m", "garage_door_8m", "glass_door_2m"]
 # `keep_props`: dressing props the game moves or uses, never batched (the garage HANDOFF: the car and the lift's arms
 # move together, the lift panel is the repair station's control); a task station is never batched either.
 keep_props = ["garage_car", "lift_arms", "lift_panel"]
+# `cell`: the merged shell's and the batches' grid cell in metres, or "room" (one mesh per room, class and group). The
+# grid run of #185 (review/house/185/grid/grid.md): cells of 2/3/4 m raise baked draw calls 2.7-3.3x and High 3-3.9x
+# (each cell repeats most of the room's materials) and lower High's shadow draw calls 5 % at best, so "room" stays.
+cell = "room"
 
 # Per-room wall paint (the engineer's choice of 2026-10-14, #152; before it Q11 = B of 2026-10-10, look.md section 4):
 # the inner plaster's colour per room id; a room not listed keeps the kit's (role wall_int, #3a6264). The living room
