@@ -61,6 +61,13 @@ CIRCLES = {"dining_room": "Circle01", "terrace": "Circle02", "garden": "Circle03
            "guest_room": "Circle09"}
 for _rid, _circle in CIRCLES.items():
     KNOWN.setdefault(_rid, {}).setdefault("markers", set()).add(_circle)
+KNOWN.setdefault("study", {}).setdefault("markers", set()).add("Circle10")
+# the game replaced the cooking and car-repair task stations with its own (prime-game #774, #809; pinned at 59b50cb6);
+# the art's rooms keep their station markers until the game re-imports art main
+GONE_STATIONS = {"chill_zone": {"Grill"}, "garage": {"CarLift", "LiftPanel"}, "greenhouse": {"HerbBeds", "HerbBoard"},
+                 "kitchen": {"OrderBoard"}, "storage": {"Meat", "Buns", "PartsShelf"}}
+for _rid, _names in GONE_STATIONS.items():
+    KNOWN.setdefault(_rid, {}).setdefault("stations", set()).update(_names)
 def diff(game: dict, art: dict) -> dict:
     """What differs between a game room and an art room: field -> True, or for a marker group the names that differ."""
     out = {}

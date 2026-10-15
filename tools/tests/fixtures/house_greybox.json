@@ -35,7 +35,7 @@
   "WC": [18, 24, 6, 6],
   "Yard": [0, 0, 80, 60]
  },
- "game_commit": "a079af130d3c1dcc59acd05c599126b3fe10765d",
+ "game_commit": "59b50cb6f321d461abf00c476be91c4f56dafc32",
  "rooms": {
   "attic": {
    "doors": {},
@@ -108,10 +108,9 @@
    "root": "ChillZone",
    "size": [14, 14],
    "stations": {
-    "Grill": [6.0, 0.0, 6.0, ""],
     "Speaker": [10.0, 0.0, 11.0, ""]
    },
-   "stations_marker3d": ["Grill", "Speaker"]
+   "stations_marker3d": ["Speaker"]
   },
   "corridor": {
    "doors": {
@@ -182,11 +181,9 @@
    "root": "Garage",
    "size": [18, 14],
    "stations": {
-    "CarLift": [10.0, 0.0, 7.0, ""],
-    "LiftPanel": [3.0, 0.0, 12.0, ""],
     "Workbench": [17.0, 0.0, 3.0, "\"spawn_drop_workbench\""]
    },
-   "stations_marker3d": ["CarLift", "LiftPanel", "Workbench"]
+   "stations_marker3d": ["Workbench"]
   },
   "garden": {
    "doors": {},
@@ -228,11 +225,8 @@
    "origin": [58.0, 0.0, 6.0],
    "root": "Greenhouse",
    "size": [16, 12],
-   "stations": {
-    "HerbBeds": [9.0, 0.0, 5.0, ""],
-    "HerbBoard": [4.0, 0.0, 9.5, ""]
-   },
-   "stations_marker3d": ["HerbBeds", "HerbBoard"]
+   "stations": {},
+   "stations_marker3d": []
   },
   "guest_room": {
    "doors": {
@@ -286,10 +280,8 @@
    "origin": [34.0, 0.0, 30.0],
    "root": "Kitchen",
    "size": [8, 14],
-   "stations": {
-    "OrderBoard": [5.0, 0.0, 7.0, ""]
-   },
-   "stations_marker3d": ["OrderBoard"]
+   "stations": {},
+   "stations_marker3d": []
   },
   "landing": {
    "doors": {
@@ -434,12 +426,9 @@
    "size": [16, 16],
    "stations": {
     "Boxes": [7.0, 0.0, 11.0, ""],
-    "Buns": [3.0, 0.0, 4.0, ""],
-    "Meat": [9.0, 0.0, 3.0, ""],
-    "PartsShelf": [13.0, 0.0, 14.0, ""],
     "WineRack": [2.0, 0.0, 8.0, ""]
    },
-   "stations_marker3d": ["Boxes", "Buns", "Meat", "PartsShelf", "WineRack"]
+   "stations_marker3d": ["Boxes", "WineRack"]
   },
   "street": {
    "doors": {
@@ -459,9 +448,7 @@
     "Door1": [0.0, 0.0, 4.0, ""]
    },
    "doors_marker3d": ["Door1"],
-   "markers": {
-    "Circle10": [3.0, 0.5, 4.0, "\"spawn_circle\""]
-   },
+   "markers": {},
    "origin": [34.0, 3.2, 24.0],
    "root": "Study",
    "size": [8, 8],
