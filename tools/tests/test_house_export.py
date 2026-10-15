@@ -28,7 +28,7 @@ DATA = H.load()
 PLAN = H.plan(DATA)
 # The known differences since the game imported the art's House (prime-game PR #1043, snapshot at prime-game 605aed5f):
 # the game took the art's rooms (the attic on the whole footprint, G1; the roof dropped; the art's door and Package07
-# places, G2) except the garage, which it swaps later (P6: Door3 on the wall grid; spawn_drop_* on its Workbench). The
+# places, G2) and, since prime-game#1052 (P6), the garage's Door3 on the wall grid (spawn_drop_* on its Workbench). The
 # game moved the attic's Knife3 to the pump room, and its yard spawns stand at 0.0 where the art's plot has -0.06. Its
 # provisional spawn_zone markers (prime-game #651, #681: Zone01 yard, Zone02 garden, Zone03 landing) and the
 # spawn_drop_* groups of four stations (prime-game 78135b8c: DiningTable, Workbench, GardenDropOff, TerraceTable; places
@@ -38,7 +38,7 @@ KNOWN = {
     "attic": {"markers": {"Knife3"}},
     "pump_room": {"markers": {"Knife3"}},
     "dining_room": {"stations": {"DiningTable"}},
-    "garage": {"doors": {"Door3"}, "stations": {"Workbench"}},
+    "garage": {"stations": {"Workbench"}},
     "garden": {"stations": {"GardenDropOff"}, "markers": {"Zone02"}},
     "landing": {"markers": {"Zone03"}},
     "terrace": {"stations": {"TerraceTable"}},
