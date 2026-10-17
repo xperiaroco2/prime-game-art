@@ -198,11 +198,20 @@ the far eye sits near the silhouette. `eyes.inset` moves both eyes and their bro
 per family, tuned after the style choice; every family on the other sheets keeps inset 0, so the comparison between
 families is fair.
 
-## Rigid parts or a face texture (the contract's two forms)
+## Morphs on the template head (the contract's form), rigid parts and a face texture
 
-The contract (`contract/contract.toml`, slots `eyes` and `mouth`) allows two forms: **rigid** pieces on the face, or
-**frames in a face texture** that a shader swaps. The kit makes the rigid form. Measured on the review heads
-(`faces_report.json`; the numbers of a full run are in art #21's PR):
+**The contract's form since 2026-10-18 is morphs** (the engineer's decision, art #200,
+`docs/decisions/2026-10-18-faces-as-morphs.md`): an `eyes` or `mouth` piece is a set of morphs (blend shapes, glTF
+morph targets) on one template head, the shape of the eyes, lids, mouth and lips with each expression as a morph over
+it, and every head shape is a wrap of that template so each morph fits every head. Only truly separate parts stay
+meshes: eyeballs, teeth, tusks, hair, crests, hats and clothes. `check --kind body` passes a morph that moves only
+skin on the head bones (`[face].morph_bones`) and fails any other (`docs/contract.md`, "Faces"). The kit's shape keys
+(the mouth states, blinks, ear tucks and eye looks, "The clay face kit" below) are of that form already; its rigid
+eye, brow and mouth meshes are not, and nothing in the game uses them yet.
+
+The two forms the contract allowed before, compared below as the record of art #21, were **rigid** pieces on the face
+or **frames in a face texture** that a shader swaps; both left the contract with the decision. The kit made the rigid
+form. Measured on the review heads (`faces_report.json`; the numbers of a full run are in art #21's PR):
 
 | | Rigid parts (the kit) | Face texture with frames |
 |---|---|---|
@@ -211,17 +220,18 @@ The contract (`contract/contract.toml`, slots `eyes` and `mouth`) allows two for
 | Depth | Real: domes, lids that stand out, slab brows, readable in three-quarter view and with the pack's faceted light | Flat: only the painted family looks the same |
 | Z-fighting | Decals are lifted about 0.4 to 1.5 mm off the skin (measured minimum 0.38 mm, the painted eyes; every other family 0.65 mm or more), at rest and in the motion actions; Godot has used a reversed-Z depth buffer since 4.3 (godotengine.org, "Introducing Reverse Z"), which keeps depth error far below a millimetre at 10 m, so depth precision is not the risk; the risks are a lift too small for the faceted skin between draped vertices and skin that slides under a rigid part. The clearance checks measure both; the second needs every production head's face skin given to the Head bone (`rigid_face_skin`), as the pack weights part of the lower face to Neck | None (on the surface) |
 | UVs | None needed | The pack heads have no usable UVs (every face vertex of the four review heads sits at UV (0, 0)): each head needs a face projection anchored at its eye centres (they differ by 2 to 6 mm between the body types) |
-| Blink and talk | Each expression is its own set of meshes (per family 6 eyes, 5 brows, 8 mouths): the game shows one and hides the rest, or swaps the `mesh` of one `MeshInstance3D`; no bones or blend shapes (the contract forbids them for faces) | Instance uniforms pick the frame of each slot in a texture array; one material, no mesh change, matches the contract's "every piece draws the listed frames" literally |
+| Blink and talk | Each expression is its own set of meshes (per family 6 eyes, 5 brows, 8 mouths): the game shows one and hides the rest, or swaps the `mesh` of one `MeshInstance3D`; no bones or blend shapes (the contract of the time forbade them for faces) | Instance uniforms pick the frame of each slot in a texture array; one material, no mesh change, matches the contract's "every piece draws the listed frames" literally |
 | At distance | Small features are geometry: without anti-aliasing a 1 to 2 px eye at 10 m can shimmer as the head moves (the screen-pixel table above) | Mipmaps average a far face into a soft blur: steadier, but the eyes vanish into the skin colour sooner |
 | Mixing | Any family on any head of either body type without new UVs | A new face means a new texture layer; hair or hats over the face need no change |
 
-**Recommendation: rigid parts**, the kit's form, for the families with depth (F1 to F5, F7), switched per expression by
+**The recommendation of the time (art #21), superseded by the morph form: rigid parts**, the kit's form, for the
+families with depth (F1 to F5, F7), switched per expression by
 visibility in the game, with the flat colours baked into one vertex-coloured material per part at export (one draw
 call per part). They keep the pack's faceted, lit look, need no UV work on 21 heads, cross body types for free and
 cost about 1,000 triangles per face, well inside the character budget. A face texture only pays off for the painted
 family (F6), and then only with a UV projection per head and a shader; if the engineer picks F6, the same drawings can
-be baked into a texture later. The contract text "eyes and mouth animate by texture frames" would change to "by
-switching rigid pieces" (the contract ADR with the engineer, a later wave).
+be baked into a texture later. The contract then said "eyes and mouth animate by texture frames"; since 2026-10-18 it
+says they animate by face morphs on the template head.
 
 ## The clay face kit (art #42 part B)
 
