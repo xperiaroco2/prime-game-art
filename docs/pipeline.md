@@ -32,7 +32,7 @@ section wins:
 | Hands | **Five fingers**, so players can make hand gestures. If a generator's rig has no finger bones, agents add them in headless Blender; AccuRIG is the fallback |
 | Body | **One neutral body in v1**, about 1.75 m (eyes near the game's 1.6 m), modelled in segments so clothing can replace parts. Variety comes from clothing, hair, face and skin colour |
 | Clothing | **Pieces in v1:** `top`, `bottom`, `shoes` (skinned, weights transferred from the body), plus a hat or hair (`hair_or_hat`), a face accessory (`face_accessory`) and a back item (`back_item`), rigid on sockets. **Sets are saved presets of pieces**, not separate meshes |
-| Face | **Eyes and mouth are changeable slots, like the hairstyle** (`eyes`, `mouth`). V1 (separate eyeballs) and V3 (a painted face) decide how they are built |
+| Face | **Eyes and mouth are changeable slots, like the hairstyle** (`eyes`, `mouth`). Since 2026-10-18 they are morphs on one template head, with eyeballs, teeth and tusks as separate meshes (`docs/decisions/2026-10-18-faces-as-morphs.md`) |
 | Colour | Every piece is **recoloured from one shared palette**; flat colours with no textures, soft light and shadows, no outline by default (compared in renders) |
 | Motion | **Animations only.** Falls and knockdowns are canned animations; no ragdoll and no physical wobble (changed 2026-10-11 for the knockdown: it is a ragdoll, every other state a clip; `docs/contract.md`, art #115) |
 | First person | **Hands with forearms in the sleeves of your top**, running off the screen edge, plus your own shadow; never floating hands. A true first-person body may come later |

@@ -103,6 +103,33 @@ class ContractTest(unittest.TestCase):
         self.assertTrue(any("kinds.body.height is 'error'" in e for e in errors), errors)
         self.assertTrue(any("kinds.prop.rig is 'maybe'" in e for e in errors), errors)
 
+    def test_a_face_morph_bone_outside_the_profile_is_caught(self) -> None:
+        broken = copy.deepcopy(self.contract)
+        broken["face"]["morph_bones"] = ["Head", "Brow"]
+        errors = _contract.validate_contract(broken, self.profile)
+        self.assertTrue(any("face.morph_bones names 'Brow'" in e for e in errors), errors)
+        del broken["face"]["morph_bones"]
+        errors = _contract.validate_contract(broken, self.profile)
+        self.assertTrue(any("face.morph_bones is missing" in e for e in errors), errors)
+
+    def test_faces_are_morphs_on_one_template_head(self) -> None:
+        # The engineer, 2026-10-18 (art #200): no face texture frames and no rigid faces laid on the head.
+        face = self.contract["face"]
+        self.assertEqual(face["morph_bones"], ["Head", "Jaw", "LeftEye", "RightEye"])
+        self.assertIn("template", face["template"])
+        for part in ("eyeballs", "teeth", "tusks", "hair", "crests", "clothes"):
+            self.assertIn(part, face["separate"])
+        slots = {s["id"]: s for s in self.contract["slots"]}
+        for slot in ("eyes", "mouth"):
+            self.assertEqual(slots[slot]["forms"], ["morph"])
+            self.assertNotIn("frames", slots[slot])
+            self.assertTrue(slots[slot]["expressions"])
+        self.assertEqual(slots["eyes"]["parts"], ["eyeballs"])
+        self.assertEqual(slots["mouth"]["parts"], ["teeth", "tusks"])
+        self.assertIn("morphs", self.contract["animation"]["face"])
+        limits = self.contract["budgets"]["limits"]
+        self.assertEqual((limits["blend_shapes_body"], limits["face_morphs_target"]), (0, 64))
+
     def test_axes_height_and_weights(self) -> None:
         self.assertEqual((self.contract["axes"]["up"], self.contract["axes"]["front"]), ("+Y", "+Z"))
         self.assertEqual(self.contract["axes"]["rest_pose"], "T")

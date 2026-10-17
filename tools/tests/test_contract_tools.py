@@ -125,6 +125,22 @@ class CheckCommandTest(unittest.TestCase):
         ):
             self.assertEqual(statuses[check], "fail", f"{check}\n{output}")
 
+    def test_face_morphs_pass_and_body_morphs_fail(self) -> None:
+        # Faces are morphs on the template head (art #200): a key on the Head's skin passes, one on the Chest fails.
+        face = self.build("face_morphs.glb", shape_keys={"mouth_a": "Head", "blink": "Head", "look_l": "LeftEye"})
+        code, report, output = self.check(face, "body")
+        self.assertEqual(code, 0, output)
+        self.assertEqual(self.statuses(report)["body_shape_morphs"], "pass", output)
+        self.assertEqual(self.statuses(report)["face_morphs"], "pass", output)
+        moves = report["measure"]["meshes"][0]["shape_key_bones"]
+        self.assertEqual(sorted(moves), ["blink", "look_l", "mouth_a"])
+        self.assertEqual(list(moves["mouth_a"]), ["Head"])
+        self.assertEqual(list(moves["look_l"]), ["LeftEye"])
+        body = self.build("body_morph.glb", shape_keys={"mouth_a": "Head", "belly": "Chest"})
+        code, report, output = self.check(body, "body")
+        self.assertEqual(code, 1, output)
+        self.assertEqual(self.failed(report), ["body_shape_morphs"], output)
+
     def test_a_rigged_body_is_not_an_accessory(self) -> None:
         code, report, output = self.check(self.good, "accessory")
         self.assertEqual(code, 1, output)

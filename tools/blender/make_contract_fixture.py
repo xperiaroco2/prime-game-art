@@ -10,6 +10,7 @@ spec.json: {"profile": ".../humanoid.json", "out": ".../fixture.glb|.blend",
             "weighted_leaves": [bone name, ...] (optional: these end bones take the tail end of their parent's box),
             "connected": true (optional: a bone whose head is at its parent's tail is connected to it),
             "omit": [profile name, ...] (optional: leave these bones out, as Mixamo has no Root and no Jaw),
+            "shape_keys": {key name: profile name} (optional: each key moves that bone's box 5 mm up),
             "defects": [...] (optional; see DEFECTS)}
 """
 
@@ -264,6 +265,12 @@ def main() -> None:
     body.parent = rig
     modifier = body.modifiers.new("Armature", "ARMATURE")
     modifier.object = rig
+    if spec.get("shape_keys"):  # each key lifts its bone's box by 5 mm: a face morph on Head, a body shape elsewhere
+        body.shape_key_add(name="Basis")
+        for key_name, bone in spec["shape_keys"].items():
+            key = body.shape_key_add(name=key_name, from_mix=False)
+            for index in by_bone[bone]:
+                key.data[index].co.z += 0.005
     if "unapplied_scale" in defects:
         body.scale = (1.02, 1.02, 1.02)
 

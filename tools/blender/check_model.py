@@ -1,10 +1,11 @@
 """Measures a model in headless Blender for `tools/run.py check`: mesh counts and topology, UVs, transforms, bounds,
-bones and skin weights. It only measures; the runner (tools/runner/commands/_checks.py) judges the numbers against
-contract/contract.toml and writes report.json.
+bones, skin weights and the bones that carry the vertices each shape key moves. It only measures; the runner
+(tools/runner/commands/_checks.py) judges the numbers against contract/contract.toml and writes report.json.
 
     blender -b --factory-startup --python check_model.py -- <model> <params.json> <measure.json>
 
-params.json: {"min_weight", "weight_sum_tolerance", "max_weights", "weld_distance", "small_island_faces"}.
+params.json: {"min_weight", "weight_sum_tolerance", "max_weights", "weld_distance", "small_island_faces",
+"morph_epsilon"}.
 Every position in measure.json is in glTF space (Y up, front +Z, metres), the contract's space.
 """
 
@@ -92,6 +93,31 @@ def measure_mesh(obj, params: dict) -> dict:
     }
     bm.free()
     result["weights"] = measure_weights(obj, params)
+    result["shape_key_bones"] = measure_shape_keys(obj, params)
+    return result
+
+
+def measure_shape_keys(obj, params: dict) -> dict:
+    """Per shape key, the vertices it moves (farther than morph_epsilon from its relative key), counted by the vertex
+    group with the vertex's largest weight ("" for none): the runner tells face morphs (skin on the head bones) from
+    body-shape morphs by it."""
+    me = obj.data
+    if not me.shape_keys:
+        return {}
+    names = {g.index: g.name for g in obj.vertex_groups}
+    dominant = []
+    for vertex in me.vertices:
+        weights = [(g.weight, names.get(g.group, "")) for g in vertex.groups if g.weight > 0]
+        dominant.append(max(weights)[1] if weights else "")
+    epsilon = params["morph_epsilon"]
+    result: dict[str, dict[str, int]] = {}
+    for key in me.shape_keys.key_blocks[1:]:
+        base = key.relative_key
+        counts: dict[str, int] = {}
+        for index, (moved, rest) in enumerate(zip(key.data, base.data)):
+            if (moved.co - rest.co).length > epsilon:
+                counts[dominant[index]] = counts.get(dominant[index], 0) + 1
+        result[key.name] = dict(sorted(counts.items()))
     return result
 
 
