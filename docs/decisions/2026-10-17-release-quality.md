@@ -1,7 +1,8 @@
 # Release quality, one piece at a time
 
 - Status: accepted (the engineer, 2026-10-17, in chat with the art manager)
-- Issue: #196; the work it stops: #195 (the alien rounds 1 to 4).
+- Issue: [#196](https://github.com/xperiaroco2/prime-game-art/issues/196); the work it stops:
+  [#195](https://github.com/xperiaroco2/prime-game-art/issues/195) (the alien rounds).
 
 ## Context
 
@@ -20,13 +21,14 @@ attractive, stylish.
    interchangeable parts: eyes, mouths, noses, hairstyles, skin colours, outfits. Each part is polished until nothing
    about it looks dumb or ugly, and judged alone before the next one starts.
 3. **No invented lore.** No names, personas, backstories or per-character gags unless the engineer asks for them.
-4. **Variant grids stay for tuning** one parameter on one sheet (docs/agents.md), never for making many whole
+4. **Variant grids stay for tuning** one parameter on one sheet (`docs/agents.md`, rule 6), never for making many whole
    characters at once.
-5. **The look stays his call**: nothing about the look merges without his yes on the pictures (the faces gate).
+5. **The look stays his call**: nothing about the look merges without his yes on the pictures (the trust model keeps
+   the per-asset yes for characters and faces, `docs/decisions/2026-10-03-trust-model.md`).
 
 His answers of the same day set the first target: beautiful aliens (the alien-ness in the skin colour, the eyes, the
 ears or head shapes; attractive proportions), premium plasticine (an expensive stop-motion feature's clean forms and
-fine handmade surface), and the method decided on one head (built in Blender by agents against generated with Meshy and
+fine handmade surface), and the method decided on one head (built in Blender by agents versus generated with Meshy and
 cleaned up), shown side by side.
 
 ## Consequences
