@@ -37,6 +37,12 @@ model's amendment of 2026-10-08). Agents write everything else, verify it from t
   approved exports, manifests and reports.
 - **The Meshy key comes from `MESHY_API_KEY`** (the user environment) and is never printed, logged or committed. Agents
   never enter keys, passwords or payment details anywhere; the engineer buys plans and sets keys.
+- **Release quality, one piece at a time** (the engineer, 2026-10-17, #196): what is made from now on is meant for the
+  final release, or close to it; no throwaway breadth. Characters: one base character first, then interchangeable
+  parts (eyes, mouths, noses, hairstyles, skin colours, outfits), one part at a time, each polished until nothing about
+  it looks dumb or ugly, and judged alone. No invented names, personas, backstories or per-character gags unless he
+  asks. Variant grids stay for tuning a parameter, never for making many whole characters at once
+  (`docs/decisions/2026-10-17-release-quality.md`).
 - **AI rules:** never name How to Fish or any other game or character in a prompt and never upload their screenshots;
   no personal photos; `ai_generated` is recorded per asset.
 - **Git:**
