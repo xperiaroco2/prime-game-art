@@ -30,10 +30,9 @@ PLAN = H.plan(DATA)
 # the game took the art's rooms (the attic on the whole footprint, G1; the roof dropped; the art's door and Package07
 # places, G2) and, since prime-game#1052 (P6), the garage's Door3 on the wall grid (spawn_drop_* on its Workbench). The
 # game's Knife3 is back in the attic since it re-imported art main 7df542b (prime-game#1080; the yard spawns stand on
-# the ground at 0.0 in both since #185). Its
-# provisional spawn_zone markers (prime-game #651, #681: Zone01 yard, Zone02 garden, Zone03 landing) and the
-# spawn_drop_* groups of four stations (prime-game 78135b8c: DiningTable, Workbench, GardenDropOff, TerraceTable; places
-# unchanged) are not in the art's rooms yet.
+# the ground at 0.0 in both since #185). Its provisional spawn_zone markers (prime-game #651, #681: Zone01 yard, Zone02
+# garden, Zone03 landing) and the spawn_drop_* groups of four stations (prime-game 78135b8c: DiningTable, Workbench,
+# GardenDropOff, TerraceTable; places unchanged) are not in the art's rooms yet.
 KNOWN = {
     "pump_room": {"stations": {"SwitchC"}},
     # the game removed the basement's switch and generator stations (prime-game#799 at 82efa45e); the art's basement
@@ -55,7 +54,8 @@ KNOWN = {
     "yard": {"markers": {"Zone01"}},
 }
 # the game removed the spawn circles Circle01-09 (prime-game PR #1060, pinned at a079af13); the art's rooms keep them
-# until the game re-imports art main (its M7 manager asked for stable game-facing nodes until then)
+# (its M7 manager asked for stable game-facing nodes), and the game's re-import of art main 7df542b (#1080) left them
+# out
 CIRCLES = {"dining_room": "Circle01", "terrace": "Circle02", "garden": "Circle03", "garage": "Circle04",
            "living_room": "Circle05", "kitchen": "Circle06", "bedroom": "Circle07", "kids_room": "Circle08",
            "guest_room": "Circle09"}
@@ -63,7 +63,7 @@ for _rid, _circle in CIRCLES.items():
     KNOWN.setdefault(_rid, {}).setdefault("markers", set()).add(_circle)
 KNOWN.setdefault("study", {}).setdefault("markers", set()).add("Circle10")
 # the game replaced the cooking and car-repair task stations with its own (prime-game #774, #809; pinned at 59b50cb6);
-# the art's rooms keep their station markers until the game re-imports art main
+# the art's rooms keep their station markers, and the game's re-import of art main 7df542b (#1080) left them out
 GONE_STATIONS = {"chill_zone": {"Grill"}, "garage": {"CarLift", "LiftPanel"}, "greenhouse": {"HerbBeds", "HerbBoard"},
                  "kitchen": {"OrderBoard"}, "storage": {"Meat", "Buns", "PartsShelf"}}
 for _rid, _names in GONE_STATIONS.items():

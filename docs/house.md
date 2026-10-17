@@ -275,8 +275,8 @@ origin, size, Doors, Stations and Markers and expects exactly the known differen
 art's House (prime-game PR #1043; the snapshot now at prime-game `85bb7c5b`) its rooms are the art's (the attic on
 the whole footprint, G1; the roof gone; the art's door and Package07 places, G2), so what is left is: the garage's
 Workbench (its `spawn_drop_*` group; the game swaps P6 later), the pump room's SwitchC (the attic's Knife3 is the
-game's again since it re-imported art main 7df542b, prime-game#1080), the stations the game removed (the basement's switches and generator, SwitchA, SwitchB,
-SwitchD and Generator, prime-game#799; the darkroom's PhotoBoard, the photo zone's PoseScreen and the study's
+game's again since it re-imported art main 7df542b, prime-game#1080), the stations the game removed (the basement's
+switches and generator, SwitchA, SwitchB, SwitchD and Generator, prime-game#799; the darkroom's PhotoBoard, the photo zone's PoseScreen and the study's
 Printer, prime-game#1058) and the photo zone's Film marker it added (#1058), which the art's rooms follow at their next
 export, the game's provisional spawn zone markers Zone01-Zone03 (yard, garden, landing; prime-game #651, #681) and the
 `spawn_drop_*` groups of the dining table, the garden drop-off and the terrace table, which the art rooms do not carry
