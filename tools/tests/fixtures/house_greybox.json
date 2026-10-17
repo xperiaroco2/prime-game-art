@@ -35,12 +35,14 @@
   "WC": [18, 24, 6, 6],
   "Yard": [0, 0, 80, 60]
  },
- "game_commit": "59b50cb6f321d461abf00c476be91c4f56dafc32",
+ "game_commit": "85bb7c5b0b24f80bc8fd6c59fa6204b6b3468a82",
  "rooms": {
   "attic": {
    "doors": {},
    "doors_marker3d": [],
-   "markers": {},
+   "markers": {
+    "Knife3": [18.0, 0.0, 13.0, "\"spawn_knife\""]
+   },
    "origin": [18.0, 6.4, 24.0],
    "root": "Attic",
    "size": [24, 20],
@@ -381,9 +383,7 @@
     "Door1": [5.0, 0.0, 0.0, ""]
    },
    "doors_marker3d": ["Door1"],
-   "markers": {
-    "Knife3": [6.5, 0.0, 4.5, "\"spawn_knife\""]
-   },
+   "markers": {},
    "origin": [44.0, -3.2, 42.0],
    "root": "PumpRoom",
    "size": [10, 8],
