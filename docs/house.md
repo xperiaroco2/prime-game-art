@@ -272,11 +272,11 @@ as a black hole. The flat `house_props/` names follow one rule for every package
 
 `tools/tests/test_house_export.py` diffs the 34 art rooms against the game's greybox rooms (pinned, below) on root,
 origin, size, Doors, Stations and Markers and expects exactly the known differences. Since the game imported the
-art's House (prime-game PR #1043; the snapshot now at prime-game `199364a4`) its rooms are the art's (the attic on
+art's House (prime-game PR #1043; the snapshot now at prime-game `85bb7c5b`) its rooms are the art's (the attic on
 the whole footprint, G1; the roof gone; the art's door and Package07 places, G2), so what is left is: the garage's
-Workbench (its `spawn_drop_*` group; the game swaps P6 later), the attic's Knife3, which the game moved to the pump
-room, the pump room's SwitchC, the stations the game removed (the basement's switches and generator, SwitchA, SwitchB,
-SwitchD and Generator, prime-game#799; the darkroom's PhotoBoard, the photo zone's PoseScreen and the study's
+Workbench (its `spawn_drop_*` group; the game swaps P6 later), the pump room's SwitchC (the attic's Knife3 is the
+game's again since it re-imported art main 7df542b, prime-game#1080), the stations the game removed (the basement's
+switches and generator, SwitchA, SwitchB, SwitchD and Generator, prime-game#799; the darkroom's PhotoBoard, the photo zone's PoseScreen and the study's
 Printer, prime-game#1058) and the photo zone's Film marker it added (#1058), which the art's rooms follow at their next
 export, the game's provisional spawn zone markers Zone01-Zone03 (yard, garden, landing; prime-game #651, #681) and the
 `spawn_drop_*` groups of the dining table, the garden drop-off and the terrace table, which the art rooms do not carry
