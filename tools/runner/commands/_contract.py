@@ -145,6 +145,12 @@ def validate_contract(contract: dict[str, Any], profile: dict[str, Any]) -> list
     for name in bones:
         if name != skeleton.get("root") and name not in listed and name not in finger_bones:
             errors.append(f"profile bone {name!r} is in neither skeleton.weighted nor skeleton.weights_optional")
+    morph_bones = contract.get("face", {}).get("morph_bones")
+    if not morph_bones:
+        errors.append("face.morph_bones is missing: the bones whose skin the face morphs may move")
+    for name in morph_bones or []:
+        if name not in bones:
+            errors.append(f"face.morph_bones names {name!r}, which is not a profile bone")
     for socket in contract.get("sockets", []):
         if socket.get("bone") not in bones:
             errors.append(f"socket {socket.get('name')} is on {socket.get('bone')!r}, which is not a profile bone")

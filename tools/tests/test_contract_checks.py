@@ -293,5 +293,83 @@ class EvaluateTest(unittest.TestCase):
         self.assertEqual(self.statuses(self.evaluate(rigid_piece(5000)))["rig"], _checks.FAIL)
 
 
+def with_keys(measure: dict, keys: dict[str, dict[str, int]] | None) -> dict:
+    """The measure's first mesh with shape keys; per key the moved vertices counted by their heaviest bone."""
+    mesh = measure["meshes"][0]
+    mesh["shape_keys"] = len(keys or {}) or 3
+    if keys is None:
+        mesh.pop("shape_key_bones", None)  # an old measure, from before the per-key bones
+    else:
+        mesh["shape_key_bones"] = keys
+    return measure
+
+
+class FaceMorphTest(unittest.TestCase):
+    """Faces are morphs on the template head (docs/decisions/2026-10-18-faces-as-morphs.md, art #200)."""
+
+    def setUp(self) -> None:
+        self.profile = _contract.load_profile()
+        self.contract = _contract.load_contract()
+
+    def evaluate(self, measure: dict, kind: str = "body", bone_map: dict | None = None) -> dict:
+        return _checks.evaluate(measure, kind, self.contract, self.profile, bone_map)
+
+    def results(self, report: dict) -> dict[str, tuple[str, str]]:
+        return {r["check"]: (r["status"], r["detail"]) for r in report["results"]}
+
+    def test_face_morphs_on_the_head_pass(self) -> None:
+        keys = {"mouth_a": {"Head": 120, "Jaw": 30}, "blink": {"Head": 80}, "look_l": {"LeftEye": 40}, "noop": {}}
+        report = self.evaluate(with_keys(good_body(self.profile), keys))
+        self.assertEqual(report["verdict"], _checks.PASS, report["results"])
+        results = self.results(report)
+        self.assertEqual(results["body_shape_morphs"][0], _checks.PASS)
+        self.assertEqual(
+            results["face_morphs"], (_checks.PASS, "face morphs on Body (4); at most 64 per mesh (provisional)")
+        )
+        self.assertNotIn("blend_shapes", results)
+
+    def test_a_body_shape_morph_fails(self) -> None:
+        keys = {"mouth_a": {"Head": 120}, "belly": {"Spine": 300, "Hips": 20}, "chin": {"Head": 50, "Neck": 4}}
+        report = self.evaluate(with_keys(good_body(self.profile), keys))
+        self.assertEqual(report["verdict"], _checks.FAIL)
+        status, detail = self.results(report)["body_shape_morphs"]
+        self.assertEqual(status, _checks.FAIL)
+        self.assertIn("Body:belly (moves skin on Hips, Spine)", detail)
+        self.assertIn("Body:chin (moves skin on Neck)", detail)
+        self.assertTrue(self.results(report)["face_morphs"][1].startswith("face morphs on Body (1);"))
+
+    def test_unweighted_moved_vertices_are_not_a_face(self) -> None:
+        report = self.evaluate(with_keys(good_body(self.profile), {"bump": {"": 5, "Head": 9}}))
+        self.assertIn("moves skin on no bone", self.results(report)["body_shape_morphs"][1])
+        self.assertEqual(report["verdict"], _checks.FAIL)
+
+    def test_keys_without_the_per_key_measure_fail_on_a_body(self) -> None:
+        report = self.evaluate(with_keys(good_body(self.profile), None))
+        status, detail = self.results(report)["body_shape_morphs"]
+        self.assertEqual((status, detail), (_checks.FAIL, "1 shape keys move skin off the head bones: "
+                                                          "Body (3 keys, not measured per key)"))
+
+    def test_more_face_morphs_than_the_target_warn(self) -> None:
+        keys = {f"m{i}": {"Head": 10} for i in range(65)}
+        report = self.evaluate(with_keys(good_body(self.profile), keys))
+        self.assertEqual(self.results(report)["face_morphs"][0], _checks.WARN)
+        self.assertEqual(report["verdict"], _checks.PASS)
+
+    def test_the_bone_map_names_the_head(self) -> None:
+        mixamo = _contract.load_map("mixamo")
+        keys = {"mouth_a": {"mixamorig:Head": 100}, "belly": {"mixamorig:Spine": 100}}
+        detail = self.results(self.evaluate(with_keys(good_body(self.profile), keys), bone_map=mixamo))
+        self.assertEqual(detail["body_shape_morphs"][1],
+                         "1 shape keys move skin off the head bones: Body:belly (moves skin on mixamorig:Spine)")
+
+    def test_other_kinds_warn_on_any_shape_key(self) -> None:
+        for kind, measure in (("accessory", rigid_piece(500)), ("prop", rigid_piece(500))):
+            with self.subTest(kind=kind):
+                report = self.evaluate(with_keys(measure, {"look_l": {"": 40}}), kind)
+                self.assertEqual(self.results(report)["blend_shapes"],
+                                 (_checks.WARN, "1 shape keys on Body (1)"))
+                self.assertNotIn("body_shape_morphs", self.results(report))
+
+
 if __name__ == "__main__":
     unittest.main()
