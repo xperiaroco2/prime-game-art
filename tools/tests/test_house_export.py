@@ -29,13 +29,13 @@ PLAN = H.plan(DATA)
 # The known differences since the game imported the art's House (prime-game PR #1043, snapshot at prime-game 605aed5f):
 # the game took the art's rooms (the attic on the whole footprint, G1; the roof dropped; the art's door and Package07
 # places, G2) and, since prime-game#1052 (P6), the garage's Door3 on the wall grid (spawn_drop_* on its Workbench). The
-# game moved the attic's Knife3 to the pump room (the yard spawns stand on the ground at 0.0 in both since #185). Its
+# game's Knife3 is back in the attic since it re-imported art main 7df542b (prime-game#1080; the yard spawns stand on
+# the ground at 0.0 in both since #185). Its
 # provisional spawn_zone markers (prime-game #651, #681: Zone01 yard, Zone02 garden, Zone03 landing) and the
 # spawn_drop_* groups of four stations (prime-game 78135b8c: DiningTable, Workbench, GardenDropOff, TerraceTable; places
 # unchanged) are not in the art's rooms yet.
 KNOWN = {
-    "attic": {"markers": {"Knife3"}},
-    "pump_room": {"markers": {"Knife3"}, "stations": {"SwitchC"}},
+    "pump_room": {"stations": {"SwitchC"}},
     # the game removed the basement's switch and generator stations (prime-game#799 at 82efa45e); the art's basement
     # keeps them until its next export
     "boiler_room": {"stations": {"SwitchB"}},
