@@ -38,7 +38,9 @@ combination of parts. The art manager's answer, which he approved:
    would poke through it. Settled in #202: a vertex tied between a head bone and another bone counts as on the head;
    a soft jaw or chin morph may move `Neck` skin by at most 2 mm (`face.edge_bones`, `face.edge_mm`, provisional and
    measured again on the first template head), a shift a collar fitted to the neck hides, while a 2 mm change
-   anywhere else on the body still fails; only vertex groups that are armature bones decide a vertex's bone.
+   anywhere else on the body still fails; the edge counts only in a key that also moves head skin and only on skin
+   tied to edge bones alone (a `Chest`-`Neck` tie is body skin; #205); only vertex groups that are armature bones
+   decide a vertex's bone.
 4. **The face texture form and the rigid face form are gone.** Their rules (frames in a texture array, rigid eyes or
    mouths laid on the face, "never blend shapes") leave the contract.
 
