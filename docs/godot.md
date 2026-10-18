@@ -150,7 +150,7 @@ without Godot:
 | `animations_move` | in every animation some bone turns 0.5 degrees or moves 2 mm between the three samples |
 | `size_kept` | the rest-pose height equals Blender's within 2 mm |
 | `feet_at_zero` | the lowest skinned vertex is within the contract's `feet_tolerance_m` (0.01 m) of y = 0 |
-| `facing_plus_z` | the eyes are at least 5 cm in front of the Head joint, the shoes reach further forward than back from the ankles, the left wrist is at +X; a barefoot body without a `_shoes` part (the alien, art #196/#207) is measured by its feet instead: the `bone_bounds` of the Foot and Toe bones on every part but the eyes |
+| `facing_plus_z` | the eyes are at least 5 cm in front of the Head joint, the shoes reach further forward than back from the ankles, the left wrist is at +X; a barefoot body without a `_shoes` part (the alien, art #196/#207) is measured by its feet instead: the `bone_bounds` of the Foot and Toe bones on every part but the eyes (the vertices whose heaviest bone is a Foot or Toe bone) |
 | `flat_colours` | no surface has an albedo texture (with `--textured`: the textured checks instead, "Textured export" above) |
 | `godot_output` | no ERROR line in Godot's import and inspection output (warnings are listed) |
 | `contract_height`, `contract_eye_height` | the contract v1 body gates (height 1.70 to 1.80 m to the top, 1.90 m with `--textured`, the plasticine look; eyes 1.6 +- 0.08 m): **warnings** unless `--strict-contract` |

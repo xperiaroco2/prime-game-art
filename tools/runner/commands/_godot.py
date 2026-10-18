@@ -452,7 +452,7 @@ def _body_feet(dump: dict[str, Any], bones: list[str]) -> dict[str, list[float]]
 def _facing(c: Checks, dump: dict[str, Any], skeleton: dict[str, Any], renamed: dict[str, str]) -> None:
     """Front +Z: the eyes in front of the Head joint, the shoes reaching further forward than back from the ankles, and
     the character's left wrist at +X. Without a _shoes part (a barefoot body, art #196) the body's feet stand in: the
-    skin weighted mostly to the Foot and Toe bones."""
+    skin whose heaviest bone is a Foot or Toe bone (each vertex counts for its heaviest bone only)."""
     joints = skeleton["rest_joints"]
     name = lambda bone: renamed.get(bone, bone)  # noqa: E731
     needed = [name(b) for b in ("Head", "Foot.L", "Foot.R", "Wrist.L", "Wrist.R")]
