@@ -128,7 +128,8 @@ and a line that names no staged file counts against every GLB of the run (`_godo
 
 `check/inspect.gd` (headless, `-s`) instantiates the imported scene, waits one frame (the meshes register their skins
 when the tree runs) and describes it: every Skeleton3D (bones, parents, rest joints in world space), every
-MeshInstance3D (its skeleton, Skin binds that do not resolve, surfaces, vertices, materials, its rest-pose bounds),
+MeshInstance3D (its skeleton, Skin binds that do not resolve, surfaces, vertices, materials, its rest-pose bounds
+and, per bone, the rest-pose bounds of the vertices whose largest weight is that bone's: `bone_bounds`),
 every AnimationPlayer (each animation's length, tracks by type, tracks that do not resolve, and how far the bones move
 between the poses at 0, 1/3 and 2/3 of its length), and optionally every joint at requested times. The vertices are
 skinned on the CPU exactly as Godot's renderer does it (bone global pose x the Skin's bind pose, weighted):
@@ -148,7 +149,7 @@ without Godot:
 | `animations_move` | in every animation some bone turns 0.5 degrees or moves 2 mm between the three samples |
 | `size_kept` | the rest-pose height equals Blender's within 2 mm |
 | `feet_at_zero` | the lowest skinned vertex is within the contract's `feet_tolerance_m` (0.01 m) of y = 0 |
-| `facing_plus_z` | the eyes are at least 5 cm in front of the Head joint, the shoes reach further forward than back from the ankles, the left wrist is at +X |
+| `facing_plus_z` | the eyes are at least 5 cm in front of the Head joint, the shoes reach further forward than back from the ankles, the left wrist is at +X; a barefoot body without a `_shoes` part (the alien, art #196/#207) is measured by its feet instead: the `bone_bounds` of the Foot and Toe bones on every part but the eyes |
 | `flat_colours` | no surface has an albedo texture (with `--textured`: the textured checks instead, "Textured export" above) |
 | `godot_output` | no ERROR line in Godot's import and inspection output (warnings are listed) |
 | `contract_height`, `contract_eye_height` | the contract v1 body gates (height 1.70 to 1.80 m to the top, 1.90 m with `--textured`, the plasticine look; eyes 1.6 +- 0.08 m): **warnings** unless `--strict-contract` |
