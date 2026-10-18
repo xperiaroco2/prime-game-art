@@ -2,9 +2,9 @@ extends SceneTree
 ## The character budget bench (art #212, docs/godot.md "Bench"): N copies of a character in a meeting ring, each
 ## playing its idle clip, under a directional light with 4 shadow splits and one shadowed omni lamp at the ring's
 ## centre, timed in a real window for `tools/run.py bench`. Never headless and never minimized (Godot does not draw
-## then); the runner opens the window off-screen:
-##   godot --path godot --position -30000,-30000 --resolution 1920x1080 -s res://bench/bench.gd
-##       -- <out folder> <bench_spec.json>
+## then); the runner opens the window through _godot.window() (1920x1080 in PRIME_WINDOW) and the script moves it
+## off-screen first (godot/lib/offscreen.gd, #214):
+##   godot --position 30000,30000 --resolution 1x1 --path godot -s res://bench/bench.gd -- <out folder> <bench_spec.json>
 ## The spec (tools/runner/commands/_bench.py) lists the GLBs (one per face-morph count) and the variants; a variant
 ## names a GLB, a copy count, the LOD ("auto": the importer's LODs, the viewport's mesh_lod_threshold 1.0; "off":
 ## 0.0, always LOD0; "hand": the shadow part drawn as a hand-made LOD2 from the spec's hand_lod_m on, with visibility
@@ -19,6 +19,7 @@ extends SceneTree
 ## and exits 1.
 
 const Character = preload("res://lib/character.gd")
+const Offscreen = preload("res://lib/offscreen.gd")
 const WATCHDOG_S: float = 900.0
 const MORPH_WEIGHT: float = 0.05
 var _label: Label
@@ -31,6 +32,10 @@ func _initialize() -> void:
 	var args: PackedStringArray = OS.get_cmdline_user_args()
 	if DisplayServer.get_name() == "headless":
 		_fail("running headless; the bench needs a real window")
+		return
+	var placed: String = Offscreen.place()  # first: Godot opened the window at the screen's corner (#214)
+	if placed != "":
+		_fail(placed)
 		return
 	if args.size() < 2:
 		_fail("usage: -- <out folder> <bench_spec.json>")

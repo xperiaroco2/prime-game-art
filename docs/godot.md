@@ -635,7 +635,8 @@ weights), and looks at them from 2.5 m behind the ring at eye height (1.6 m, ver
 small: its far side is 7.1 m from the camera at 10 copies and 10.9 m at 20, so no body stands beyond the contract's
 10 m LOD2 at 10 copies and 5 of 20 do at 20 (each row's `beyond` column counts them, camera to each copy's origin). The stage: a ground plane, a procedural sky, AgX, SSAO, a directional light with 4 shadow splits
 (max distance 60 m) and a shadowed omni lamp (cube shadows, range 9 m) at the ring's centre. The window is 1920x1080,
-off-screen (`--position -30000,-30000`, never headless, never minimized), vsync off.
+off-screen (opened through `_godot.window()` and moved by `Offscreen.place()` first, "The off-screen window"; never
+headless, never minimized), vsync off.
 
 Per GLB and copy count it loads the copies, warms up (120 frames: the GPU clocks up and the pipelines compile), shoots
 the view for the sheet, then measures each variant over 300 frames after 30 settle frames: the median GPU and CPU ms
