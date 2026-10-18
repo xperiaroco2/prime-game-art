@@ -55,7 +55,7 @@ def evaluate(
     report = _Report()
     meshes = measure.get("meshes", [])
     _mesh_checks(report, meshes, measure, contract, kind, budget)
-    _morph_checks(report, meshes, contract, kind, bone_map)
+    _morph_checks(report, meshes, contract, kind, bone_map, slot)
     if meshes:
         _shape_checks(report, meshes, contract, rules)
     bones = _rig_checks(report, measure, kind, contract, profile, rules, bone_map)
@@ -147,21 +147,27 @@ def _mesh_checks(report: _Report, meshes: list, measure: dict, contract: dict, k
         report.add("other_objects", WARN, f"the file also holds {', '.join(measure['other_objects'])} objects")
 
 
-def _morph_checks(report: _Report, meshes: list, contract: dict, kind: str, bone_map: dict | None) -> None:
+def _morph_checks(
+    report: _Report, meshes: list, contract: dict, kind: str, bone_map: dict | None, slot: dict | None
+) -> None:
     """Faces are morphs on the template head (docs/decisions/2026-10-18-faces-as-morphs.md). On a body, a shape key
-    whose moved vertices all have their largest weight on face.morph_bones is a face morph: it passes, and more than
-    budgets.limits.face_morphs_target on one mesh warn. Any other key is a body-shape morph and fails beyond
-    blend_shapes_body (0). Clothing, accessories and props warn on any shape key."""
+    is a face morph when every vertex it moves has its largest weight on face.morph_bones (a tie with another bone
+    counts as on the head), or on face.edge_bones moved at most face.edge_mm (a soft jaw or chin morph's edge on the
+    neck): it passes, and more than budgets.limits.face_morphs_target on one mesh warn. Any other key is a body-shape
+    morph and fails beyond blend_shapes_body (0). On the parts of a slot with part_morphs (the eyes slot's eyeballs:
+    their look morphs) those keys pass; any other shape key on clothing, accessories and props warns."""
     keys = _total(meshes, "shape_keys")
     if not keys:
         return
     if kind != "body":
-        report.add("blend_shapes", WARN, f"{keys} shape keys on {_names(meshes, 'shape_keys')}")
+        _part_morph_checks(report, meshes, slot)
         return
-    face_bones = set(contract["face"]["morph_bones"])
+    face = contract["face"]
+    face_bones, edge_bones, edge_mm = set(face["morph_bones"]), set(face["edge_bones"]), face["edge_mm"]
     limits = contract["budgets"]["limits"]
     body_keys: list[str] = []
     face_counts: dict[str, int] = {}
+    edge_keys = 0
     for mesh in meshes:
         if not mesh.get("shape_keys"):
             continue
@@ -169,12 +175,21 @@ def _morph_checks(report: _Report, meshes: list, contract: dict, kind: str, bone
         if moves is None:  # a measure without the per-key bones: nothing proves a key is a face morph
             body_keys.append(f"{mesh['name']} ({mesh['shape_keys']} keys, not measured per key)")
             continue
-        for key, bones in moves.items():
-            off = sorted(b for b in bones if _contract.mapped_name(b, bone_map) not in face_bones)
+        for key, groups in moves.items():
+            off, on_edge = [], False
+            for group, moved in sorted(groups.items()):
+                bones = {_contract.mapped_name(b, bone_map) for b in group.split("|")} if group else set()
+                if bones & face_bones:
+                    continue
+                if bones & edge_bones and moved["max_mm"] <= edge_mm:
+                    on_edge = True
+                    continue
+                off.append(f"{group or 'no bone'} ({moved['vertices']} vertices, up to {moved['max_mm']:g} mm)")
             if off:
-                body_keys.append(f"{mesh['name']}:{key} (moves skin on {', '.join(b or 'no bone' for b in off)})")
+                body_keys.append(f"{mesh['name']}:{key} moves skin on {', '.join(off)}")
             else:
                 face_counts[mesh["name"]] = face_counts.get(mesh["name"], 0) + 1
+                edge_keys += on_edge
     report.add(
         "body_shape_morphs",
         FAIL if len(body_keys) > limits["blend_shapes_body"] else PASS,
@@ -184,12 +199,40 @@ def _morph_checks(report: _Report, meshes: list, contract: dict, kind: str, bone
     if face_counts:
         target = limits["face_morphs_target"]
         over = any(n > target for n in face_counts.values())
+        edge = (
+            f"; {edge_keys} move {', '.join(sorted(edge_bones))} skin by at most {edge_mm:g} mm" if edge_keys else ""
+        )
         report.add(
             "face_morphs",
             WARN if over else PASS,
-            f"face morphs on {', '.join(f'{n} ({c})' for n, c in sorted(face_counts.items()))}; "
+            f"face morphs on {', '.join(f'{n} ({c})' for n, c in sorted(face_counts.items()))}{edge}; "
             f"at most {target} per mesh (provisional)",
         )
+
+
+def _part_morph_checks(report: _Report, meshes: list, slot: dict | None) -> None:
+    """Shape keys on a piece that is not a body: the slot's part_morphs pass, any other key warns."""
+    allowed = set((slot or {}).get("part_morphs", []))
+    passed: dict[str, int] = {}
+    others: dict[str, int] = {}
+    for mesh in meshes:
+        count = int(mesh.get("shape_keys", 0))
+        if not count:
+            continue
+        good = sum(1 for name in mesh.get("shape_key_bones") or {} if name in allowed)
+        if good:
+            passed[mesh["name"]] = good
+        if count > good:
+            others[mesh["name"]] = count - good
+    if passed:
+        report.add(
+            "part_morphs",
+            PASS,
+            f"the {slot['id']} slot's part morphs on {', '.join(f'{n} ({c})' for n, c in sorted(passed.items()))}",
+        )
+    if others:
+        listed = ", ".join(f"{n} ({c})" for n, c in others.items())
+        report.add("blend_shapes", WARN, f"{sum(others.values())} shape keys on {listed}")
 
 
 def _identity(transform: dict[str, Any], tolerance: float) -> bool:
