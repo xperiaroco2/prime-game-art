@@ -60,7 +60,7 @@ func _run(out_dir: String, spec: Dictionary) -> void:
 					RenderingServer.get_current_rendering_method()],
 			"adapter": RenderingServer.get_video_adapter_name(),
 			"adapter_vendor": RenderingServer.get_video_adapter_vendor(), "fov_deg": spec["fov_deg"],
-			"frames": spec["frames"], "hand_lod_m": spec["hand_lod_m"], "rows": [], "groups": []}
+			"frames": spec["frames"], "hand_lod_m": spec["hand_lod_m"], "ring": _ring, "rows": [], "groups": []}
 	var vp: RID = root.get_viewport_rid()
 	RenderingServer.viewport_set_measure_render_time(vp, true)
 	var shots: Array[Image] = []

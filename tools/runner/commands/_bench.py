@@ -198,6 +198,7 @@ def verdict(record: dict[str, Any], glbs: list[dict[str, Any]], copies: int, bud
 def report(record: dict[str, Any], glbs: list[dict[str, Any]], budget_ms: float = BUDGET_MS) -> list[str]:
     """The Markdown report: the machine, the GLBs, the timing table, the memory per group, the verdicts."""
     far = float(record["hand_lod_m"]) if "hand_lod_m" in record else contract_hand_lod_m()
+    ring = record.get("ring", RING)  # records made before bench.gd wrote its ring have none
     lines = [f"# bench: {', '.join(g['id'] for g in glbs)}", "",
              f"- adapter: {record.get('adapter', '?')} ({record.get('adapter_vendor', '?')}); renderer "
              f"{record.get('renderer', '?')}; Godot {record.get('godot', '?')}",
@@ -220,7 +221,7 @@ def report(record: dict[str, Any], glbs: list[dict[str, Any]], budget_ms: float 
 
     for r in record.get("rows", []):
         n = int(r["copies"])
-        lines.append(f"| {r['id']} | {n} | {int(r.get('beyond_hand_lod', beyond(n, far)))} | {r['lod']} | "
+        lines.append(f"| {r['id']} | {n} | {int(r.get('beyond_hand_lod', beyond(n, far, ring)))} | {r['lod']} | "
                      f"{r['shadow']} | {r['gpu_ms']:.2f} | {r.get('gpu_ms_p95', 0):.2f} | "
                      f"{r.get('char_gpu_ms', 0):.2f} | {r['cpu_ms']:.2f} | {r.get('char_cpu_ms', 0):.2f} | "
                      f"{ms(r, 'process_ms')} | {ms(r, 'frame_ms')} | "
