@@ -6,6 +6,7 @@ Synthetic data; no Blender needed."""
 from __future__ import annotations
 
 import argparse
+import math
 import sys
 import unittest
 from pathlib import Path
@@ -107,6 +108,17 @@ class RestTurn(unittest.TestCase):
         self.assertEqual(sm.rest_turn({"Hips": 1.5, "Wrist.L": 55.1, "Toe.L": 80.0}), (55.1, "Wrist.L"))
         self.assertEqual(sm.rest_turn({"Toe.L": 3.0}), (0.0, ""))
 
+    def test_the_turn_takes_the_shorter_way_round(self) -> None:
+        """Two rests 0.2 degrees apart near a half turn about z: 0.2, not 359.8 (q and -q are one orientation)."""
+        def about_z(deg: float) -> tuple[float, float, float, float]:
+            h = math.radians(deg) / 2
+            return (math.cos(h), 0.0, 0.0, math.sin(h))
+
+        self.assertAlmostEqual(sm.turn_deg(about_z(179.9), about_z(-179.9)), 0.2, places=6)
+        self.assertAlmostEqual(sm.turn_deg(about_z(0.0), about_z(180.0)), 180.0, places=6)
+        self.assertAlmostEqual(sm.turn_deg(about_z(30.0), about_z(85.1)), 55.1, places=6)
+        self.assertAlmostEqual(sm.turn_deg(about_z(10.0), tuple(-c for c in about_z(10.0))), 0.0, places=6)
+
 
 class SizeNote(unittest.TestCase):
     INFO = {"height_m": 1.806, "feet_y_m": 0.0}
@@ -117,7 +129,7 @@ class SizeNote(unittest.TestCase):
         report = {"own_proportions": True, "leg_m": [0.9, 0.72], "leg_scale": 0.8, "rest_max_mm": 214.0,
                   "rest_worst": "Head", "rest_turn_max_deg": 55.1, "rest_turn_worst": "Wrist.L"}
         text = slice_char.size_note(self.INFO, 1.6, report)
-        for part in ("`slice --own-proportions`", "214.0 mm", "`Head`", "55.1 degrees", "`Wrist.L`",
+        for part in ("`slice --own-proportions`", "outside the toes", "214.0 mm", "`Head`", "55.1 degrees", "`Wrist.L`",
                      "0.720 m against the donor's 0.900 m", "scaled by 0.8000"):
             self.assertIn(part, text)
         same = slice_char.size_note(self.INFO, None, {"own_proportions": False, "leg_scale": 1.0})

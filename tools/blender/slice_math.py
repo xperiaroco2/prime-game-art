@@ -5,6 +5,7 @@ rest-pose guard between the character's rig and the animation set's donor, and t
 from __future__ import annotations
 
 import argparse
+import math
 import re
 
 # The rest heads of the two rigs must agree within this (the set's donor and the character share the body type's
@@ -17,6 +18,7 @@ LEG_CHAIN = (("UpperLeg", "LowerLeg"), ("LowerLeg", "Foot"))
 _LOCATION_RE = re.compile(r'^pose\.bones\["([^"]+)"\]\.location$')
 
 Vec = tuple[float, float, float] | list[float]
+Vec4 = tuple[float, float, float, float] | list[float]
 
 
 def rest_check(rest: dict[str, float], own_proportions: bool = False) -> tuple[float, str, str | None]:
@@ -34,8 +36,16 @@ def rest_check(rest: dict[str, float], own_proportions: bool = False) -> tuple[f
                         f"slice --own-proportions accepts a skeleton with its own proportions)")
 
 
+def turn_deg(a: Vec4, b: Vec4) -> float:
+    """The angle (degrees, 0 to 180) between two orientations given as unit quaternions (w, x, y, z): the shorter way
+    round, so q and -q are the same orientation (Blender's Quaternion.angle of their difference runs to 360)."""
+    dot = abs(sum(x * y for x, y in zip(a, b)))
+    return math.degrees(2 * math.acos(min(1.0, dot)))
+
+
 def rest_turn(turns: dict[str, float]) -> tuple[float, str]:
-    """turns: per bone the angle (degrees) between the character's rest orientation and the donor's. Returns the
+    """turns: per bone the shorter angle (degrees, turn_deg) between the character's rest orientation and the donor's.
+    Returns the
     largest outside the toes and its bone, only reported: a bone-local rotation key turns a bone the same about its own
     axes on both rigs, so where the rest orientations differ the pose differs by that much (art #210)."""
     body = {k: v for k, v in turns.items() if k not in TOES}

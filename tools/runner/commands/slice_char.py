@@ -115,10 +115,10 @@ def size_note(info: dict, eye_height: float | None, actions: dict | None = None)
     if actions.get("own_proportions"):
         donor_m, own_m = actions.get("leg_m") or [None, None]
         legs = f"its legs {own_m:.3f} m against the donor's {donor_m:.3f} m, " if donor_m and own_m else ""
-        text += (f" Built with `slice --own-proportions`: the skeleton has its own proportions (rest heads up to "
-                 f"{actions.get('rest_max_mm', 0):.1f} mm from the animation set's donor at `{actions.get('rest_worst', '?')}`, "
-                 f"rest orientations up to {actions.get('rest_turn_max_deg', 0):.1f} degrees at "
-                 f"`{actions.get('rest_turn_worst', '?')}`); {legs}so the clips' Root and Hips location keys were "
+        text += (f" Built with `slice --own-proportions`: the skeleton has its own proportions (outside the toes, rest "
+                 f"heads up to {actions.get('rest_max_mm', 0):.1f} mm from the animation set's donor at "
+                 f"`{actions.get('rest_worst', '?')}`, rest orientations up to "
+                 f"{actions.get('rest_turn_max_deg', 0):.1f} degrees at `{actions.get('rest_turn_worst', '?')}`); {legs}so the clips' Root and Hips location keys were "
                  f"scaled by {actions.get('leg_scale', 1.0):.4f} before the eye-height scale.")
     elif actions:
         text += " Built on the animation set's own skeleton (no `--own-proportions`; leg scale 1)."

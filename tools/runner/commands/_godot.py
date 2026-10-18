@@ -439,7 +439,7 @@ def _loops(c: Checks, anims: dict[str, Any], seams: dict[str, dict[str, float]])
 
 
 def _body_feet(dump: dict[str, Any], bones: list[str]) -> dict[str, list[float]] | None:
-    """A barefoot character's feet: the bounds of the skin whose largest weight is a foot or toe bone, over every part
+    """A barefoot character's feet: the bounds of the skin whose heaviest bone is a Foot or Toe bone, over every part
     but the eyes (inspect.gd's bone_bounds); None when no part has skin on those bones."""
     boxes = [m["bone_bounds"][b] for m in dump["meshes"] if not m["name"].endswith("_eyes")
              for b in bones if (m.get("bone_bounds") or {}).get(b)]

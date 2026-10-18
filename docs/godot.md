@@ -130,7 +130,7 @@ and a line that names no staged file counts against every GLB of the run (`_godo
 `check/inspect.gd` (headless, `-s`) instantiates the imported scene, waits one frame (the meshes register their skins
 when the tree runs) and describes it: every Skeleton3D (bones, parents, rest joints in world space), every
 MeshInstance3D (its skeleton, Skin binds that do not resolve, surfaces, vertices, materials, its rest-pose bounds
-and, per bone, the rest-pose bounds of the vertices whose largest weight is that bone's: `bone_bounds`),
+and, per bone, the rest-pose bounds of the vertices whose heaviest bone is that bone: `bone_bounds`),
 every AnimationPlayer (each animation's length, tracks by type, tracks that do not resolve, and how far the bones move
 between the poses at 0, 1/3 and 2/3 of its length), and optionally every joint at requested times. The vertices are
 skinned on the CPU exactly as Godot's renderer does it (bone global pose x the Skin's bind pose, weighted):
@@ -504,7 +504,7 @@ the stride and the hips' bob in proportion to the legs that carry them. Every ot
 rotations are bone-local, and the location and scale keys that the retarget writes on every bone are left as they are
 (a clip that moves another bone's location moves it by the donor's distance). Since a bone-local rotation turns a bone
 the same about its own axes on both rigs, the pose differs wherever the rest orientations differ: the largest
-difference outside the toes is reported on every run (`rest_turn_max_deg`, `rest_turn_worst`; #210). The
+difference outside the toes (the shorter angle, 0 to 180 degrees, `slice_math.turn_deg`) is reported on every run (`rest_turn_max_deg`, `rest_turn_worst`; #210). The
 `eye_height_m` scale comes after the leg scale. With `--asset`, HANDOFF.md's size note records the flag, the rest
 differences, `leg_m` and `leg_scale` from `<id>.actions.json`. The rules are plain Python in
 `tools/blender/slice_math.py` (tests: `test_slice_proportions.py`). Feet can still slide a little where a clip's foot

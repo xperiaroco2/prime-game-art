@@ -22,7 +22,6 @@ live in slice_math.py.
 from __future__ import annotations
 
 import json
-import math
 import os
 import re
 import sys
@@ -131,8 +130,8 @@ def main(argv):
         if mine is None:
             raise SystemExit(f"the set's rig has bone {b.name!r}, the character's rig has not")
         rest[b.name] = (mine.head_local - b.head_local).length
-        q_mine, q_donor = mine.matrix_local.to_quaternion(), b.matrix_local.to_quaternion()
-        turns[b.name] = math.degrees(q_donor.rotation_difference(q_mine).angle)
+        turns[b.name] = slice_math.turn_deg(tuple(b.matrix_local.to_quaternion().normalized()),
+                                            tuple(mine.matrix_local.to_quaternion().normalized()))
     if set(bones) - set(rest):
         raise SystemExit(f"the character's rig has bones the set's has not: {sorted(set(bones) - set(rest))}")
     body_err, worst, refusal = slice_math.rest_check(rest, a.own_proportions)
