@@ -26,7 +26,8 @@ light = [
 
 [area.anim]
 sources = [
-  "tools/blender/anim_*", "tools/blender/retarget*", "tools/blender/slice_actions.py", "tools/blender/encode_clips.py",
+  "tools/blender/anim_*", "tools/blender/retarget*", "tools/blender/slice_actions.py", "tools/blender/slice_math.py",
+  "tools/blender/encode_clips.py",
   "tools/runner/commands/_anim*.py", "tools/runner/commands/anim_*.py", "tools/runner/commands/retarget.py",
   "tools/runner/commands/slice_char.py", "tools/runner/commands/_slice.py",
 ]
