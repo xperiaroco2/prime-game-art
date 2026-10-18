@@ -204,12 +204,26 @@ def textured_audit(path: Path) -> dict[str, Any]:
 
 # export_glb.palette_part names its image <material>_palette: flat colours (the eyes' whites and pupils), no normal map.
 PALETTE_SUFFIX = "_palette"
+# The eyes' part (the contract's `_eyes` slot) needs no normal map, as godot-check's normal_maps rule has it (#210).
+EYES_SUFFIX = "_eyes"
+
+
+def eye_only_materials(audit: dict[str, Any]) -> set[int]:
+    """The materials that only the `_eyes` part's surfaces use: a glossy eye material with a texture but no normal map
+    (the alien base's `alien_eye`, art #196) is as fine as a palette."""
+    users: dict[int, set[bool]] = {}
+    for name, surfaces in audit["meshes"].items():
+        for s in surfaces:
+            if s["material"] is not None:
+                users.setdefault(s["material"], set()).add(name.endswith(EYES_SUFFIX))
+    return {m for m, eyes in users.items() if eyes == {True}}
 
 
 def textured_check(audit: dict[str, Any], surfaces_cap: int, max_px: int) -> list[str]:
     """Problems with a textured character: no texture at all, an image that is not PNG or JPEG or is larger than
-    max_px on a side, a textured material without a normal map (a palette, export_glb.palette_part, aside), a normal-mapped surface without UVs or tangents, more
-    surfaces than surfaces_cap."""
+    max_px on a side, a textured material without a normal map (a palette, export_glb.palette_part, and a material only
+    the `_eyes` part uses aside, as godot-check's normal_maps has it), a normal-mapped surface without UVs or tangents,
+    more surfaces than surfaces_cap."""
     problems: list[str] = []
     if not any(m["base"] is not None for m in audit["materials"]):
         problems.append("no material has a base colour texture")
@@ -218,10 +232,10 @@ def textured_check(audit: dict[str, Any], surfaces_cap: int, max_px: int) -> lis
             problems.append(f"image {im['name']}: not a PNG or JPEG")
         elif max(im["px"]) > max_px:
             problems.append(f"image {im['name']}: {im['px'][0]} x {im['px'][1]} px, over {max_px}")
-    images = audit["images"]
-    for m in audit["materials"]:
+    images, eyes = audit["images"], eye_only_materials(audit)
+    for i, m in enumerate(audit["materials"]):
         palette = m["base"] is not None and m["base"] < len(images) and images[m["base"]]["name"].endswith(PALETTE_SUFFIX)
-        if m["base"] is not None and m["normal"] is None and not palette:
+        if m["base"] is not None and m["normal"] is None and not palette and i not in eyes:
             problems.append(f"material {m['name']}: a base colour texture without a normal map")
     mats = audit["materials"]
     for name, surfaces in sorted(audit["meshes"].items()):

@@ -82,10 +82,11 @@ textures, so their export and check differ from the flat-colour pack look's:
   `<out>/<id>/<id>.textures.json` (`_export.textured_audit`: every image's mime, bytes and size, each material's base
   colour and normal textures, each surface's UVs and tangents) and fails on `_export.textured_check`: no base colour
   texture at all, an image that is not PNG or JPEG or is over the contract's `texture_character_px` (1024), a textured
-  material without a normal map, a normal-mapped surface without UVs or tangents, more surfaces than the contract's
-  `surfaces_per_character_cap` (8).
+  material without a normal map (a `_palette` image and a material only the `_eyes` part uses aside, as in
+  godot-check's `normal_maps`; #210), a normal-mapped surface without UVs or tangents, more surfaces than the
+  contract's `surfaces_per_character_cap` (8).
 - `godot-check --textured` replaces `flat_colours` with `textured` (some surface has an albedo texture), `normal_maps`
-  (every textured surface but the eyes' palette has a normal map), `eye_pupils` (the `_eyes` part as Godot draws it,
+  (every textured surface but the `_eyes` part's has a normal map), `eye_pupils` (the `_eyes` part as Godot draws it,
   `inspect.gd`'s albedo at each vertex from the colour, the vertex colours if used as albedo and the texture at the
   UV: at least 2 % near-white and 2 % near-black vertices, else the eyes have lost their pupils), `texture_size` (no
   albedo or normal texture side over `texture_character_px`) and `surfaces_cap` (the surfaces within
