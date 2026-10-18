@@ -493,9 +493,21 @@ tools/run.py anim-set --set mvp --body men --out <raw>/anim-sets/slice-42c      
 tools/run.py slice [--cast m1] --anim-set <raw>/anim-sets/slice-42c --asset assets/character/slice_m1 --review <raw>/review/char/42d
 ```
 
+`slice --own-proportions` (art #207) is for a character whose skeleton has the contract's names, parents and
+T-pose but its own proportions, so its rest differs from the set's donor on purpose (the alien base character's by up to
+214 mm, art #196). The rest difference is then only reported (`rest_max_mm`, `rest_worst` in `<id>.actions.json`), and
+the clips' `Root` and `Hips` location keys (and the armature object's, if keyed) scale by the character's leg length
+over the donor's: per leg the thigh (`UpperLeg` to `LowerLeg` head), the shin (`LowerLeg` to `Foot`) and the ankle's
+height, averaged over both legs (`leg_m`, `leg_scale`). That keeps the stride and the hips' bob in proportion to the
+legs that carry them; every other key is a bone-local rotation and carries over unchanged. The `eye_height_m` scale
+comes after it. The rules are plain Python in `tools/blender/slice_math.py` (tests: `test_slice_proportions.py`). Feet
+can still slide a little where a clip's foot placement depends on more than the leg length (a different hip width or
+foot length).
+
 `slice` assembles the cast member (`assemble --look clay --bake`; `--blend` reuses a saved one), puts the set's clips
-on its armature in Blender (`tools/blender/slice_actions.py`; it refuses a rest pose that differs from the set's,
-then scales the rig, the parts with their shape keys and the clips' location keys uniformly about the floor so the
+on its armature in Blender (`tools/blender/slice_actions.py`; it refuses a rest pose that differs from the set's by
+more than 2 mm, the toes excepted, unless `--own-proportions`, above; then it scales the rig, the parts with their shape keys
+and the clips' location keys uniformly about the floor so the
 eyes' rest centre is at `eye_height_m`, 1.60 m: the engineer's `eyes16`, 2026-10-12),
 exports with `export --textured`, runs `godot-check --strict-contract --humanoid --textured`, `frames` of the review
 clips with the Blender comparison and an 8-view turnaround, and with `--asset` writes the asset folder:
