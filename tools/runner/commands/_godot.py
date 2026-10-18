@@ -153,9 +153,68 @@ def lines_for(lines: list[str], res_path: str, staged: list[str]) -> list[str]:
     return [line for line in lines if res_path in line or not any(p in line for p in others)]
 
 
-def godot(args: list[str], timeout: float) -> tuple[int, str]:
-    result = common.run([common.godot_bin(), *args], timeout)
+def godot(args: list[str], timeout: float, env: dict[str, str] | None = None) -> tuple[int, str]:
+    result = common.run([common.godot_bin(), *args], timeout, env=env)
     return result.returncode, (result.stdout or "") + (result.stderr or "")
+
+
+# The off-screen review window (#214, docs/godot.md). Godot 4.7.2 on Windows clamps a new window into the primary
+# screen, whatever --position asks, so a window run starts as one borderless, unfocused pixel at the screen's corner
+# and godot/lib/offscreen.gd moves it off-screen at runtime before growing it to the size in WINDOW_ENV.
+OFFSCREEN_GD = PROJECT / "lib" / "offscreen.gd"
+WINDOW_ENV = "PRIME_WINDOW"
+WINDOW_START = "1x1"
+WINDOW_SETTINGS = ("window/size/borderless=true", "window/size/no_focus=true")  # [display] of every window project
+_OFFSCREEN = re.compile(r"OFFSCREEN window (-?\d+),(-?\d+) (\d+)x(\d+) screens (\S+)")
+
+
+def window_env(size: tuple[int, int]) -> dict[str, str]:
+    w, h = size
+    if w <= 0 or h <= 0:
+        raise ValueError(f"window size {w}x{h}")
+    return {WINDOW_ENV: f"{w}x{h}"}
+
+
+def _overlap(a: tuple[int, ...], b: tuple[int, ...]) -> bool:
+    return a[0] < b[0] + b[2] and b[0] < a[0] + a[2] and a[1] < b[1] + b[3] and b[1] < a[1] + a[3]
+
+
+def offscreen_problems(output: str) -> list[str]:
+    """Why a window run's output does not prove its window stayed off every screen: no OFFSCREEN line (the script
+    never placed its window), or a line whose window rect meets one of the screens it lists. Empty: proven."""
+    found = _OFFSCREEN.findall(ANSI.sub("", output))
+    if not found:
+        return ["no OFFSCREEN line: the script never moved its window off-screen (godot/lib/offscreen.gd place())"]
+    problems = []
+    for x, y, w, h, screens in found:
+        rect = (int(x), int(y), int(w), int(h))
+        for i, screen in enumerate(screens.split(";")):
+            s = tuple(int(v) for v in screen.split(","))
+            if _overlap(rect, s):
+                problems.append(f"the {w}x{h} window at {x},{y} is on screen {i} ({s[2]}x{s[3]} at {s[0]},{s[1]})")
+    return problems
+
+
+def install_offscreen(project: Path) -> None:
+    """Copies offscreen.gd into another Godot project's lib/ (godot/ragdoll, the House export and review folders)."""
+    project = Path(project)
+    if project.resolve() != PROJECT.resolve():
+        (project / "lib").mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(OFFSCREEN_GD, project / "lib" / OFFSCREEN_GD.name)
+
+
+def window(args: list[str], size: tuple[int, int], timeout: float) -> tuple[int, str]:
+    """Runs a Godot window script (args: --path and the rest, no --position or --resolution) in a window of size that
+    never shows on a screen; the script calls godot/lib/offscreen.gd place() first. Raises Failure when the output
+    does not prove the window stayed off every screen (offscreen_problems)."""
+    install_offscreen(Path(args[args.index("--path") + 1]))
+    code, output = godot(["--resolution", WINDOW_START, *args], timeout, env=window_env(size))
+    problems = offscreen_problems(output)
+    if problems:
+        tail = "\n".join(ANSI.sub("", output).splitlines()[-8:])
+        raise common.Failure("Godot's window was not proven off-screen (#214, docs/godot.md): " + "; ".join(problems[:3])
+                             + f"\nexit code {code}; the run's last lines:\n{tail}")
+    return code, output
 
 
 def import_project() -> list[str]:
