@@ -388,7 +388,7 @@ def _textured(c: Checks, dump: dict[str, Any], contract: dict[str, Any]) -> None
     c.add("textured", bool(with_tex), f"{len(with_tex)} of {len(mats)} surfaces textured" if with_tex else "no textured surface")
     flat_nrm = [f"{n}/{mat['name']}" for n, mat in mats if mat.get("textured") and not mat.get("normal_mapped")
                 and not n.endswith("_eyes")]
-    c.add("normal_maps", not flat_nrm, "every textured surface normal-mapped (the eyes' palette aside)" if not flat_nrm
+    c.add("normal_maps", not flat_nrm, "every textured surface normal-mapped (the _eyes part aside)" if not flat_nrm
           else f"textured without a normal map: {', '.join(flat_nrm)}")
     good, detail = eye_pupils(dump)
     c.add("eye_pupils", good, detail)
