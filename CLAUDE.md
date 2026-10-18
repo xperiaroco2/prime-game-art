@@ -22,8 +22,12 @@ model's amendment of 2026-10-08). Agents write everything else, verify it from t
 - **No Godot or Blender window on screen.**
   - Blender runs only as `blender -b` through `tools/runner/blender.py`.
   - Godot checks run with `--headless`.
-  - Godot pictures come from a window placed off-screen: `--position -30000,-30000`, never minimized, never headless
-    (a headless Godot draws nothing). This repo's `frames` does that; so does the game's `tools\run.cmd shot`.
+  - Godot pictures come from a window kept off-screen, never minimized, never headless (a headless Godot draws
+    nothing). `--position -30000,-30000` alone does not do it: Godot 4.7.2 on Windows clamps a new window into the
+    primary screen (#214). Every window run goes through `_godot.window()`: one borderless, unfocused pixel that the
+    clamp leaves just past the screen's right edge, which `godot/lib/offscreen.gd` moves off-screen before growing
+    it; the runner refuses a run whose script did not report its window off every screen (`docs/godot.md`, "The
+    off-screen window").
 - **Every source and asset has its licence recorded**:
   - a downloaded pack or library in `sources/<id>.toml`;
   - an asset in its `manifest.toml` (`docs/manifest.md`).
