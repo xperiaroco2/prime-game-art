@@ -155,6 +155,16 @@ class ArgumentsTest(unittest.TestCase):
                     bench.run(self.parse([*argv, "--out", tmp]))
                 self.assertIn(why, str(caught.exception))
 
+    def test_refuses_two_glbs_with_one_stem(self) -> None:
+        with tempfile.TemporaryDirectory(dir=common.OUT if common.OUT.is_dir() else None) as tmp:
+            for sub in ("a", "b"):
+                (Path(tmp) / sub).mkdir()
+                (Path(tmp) / sub / "char.glb").write_bytes(glb_bytes(GLTF))
+            with self.assertRaises(common.Failure) as caught:
+                bench.run(self.parse([str(Path(tmp) / "a" / "char.glb"), str(Path(tmp) / "b" / "char.glb"),
+                                      "--out", str(Path(tmp) / "out")]))
+            self.assertIn("two GLBs named char", str(caught.exception))
+
 
 if __name__ == "__main__":
     unittest.main()

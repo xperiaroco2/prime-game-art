@@ -100,6 +100,12 @@ def run(args: argparse.Namespace) -> int:
     for p in paths:
         if not p.is_file() or p.suffix.lower() != ".glb":
             raise common.Failure(f"no GLB {p.as_posix()}")
+    stems: dict[str, Path] = {}
+    for p in paths:  # a GLB's stem is its id, its staged name and its rows' prefix
+        if p.stem.lower() in stems:
+            raise common.Failure(f"two GLBs named {p.stem}: {stems[p.stem.lower()].as_posix()} and {p.as_posix()}; "
+                                 "rename one")
+        stems[p.stem.lower()] = p
     glbs = []
     _godot.clear_staged({STAGE_PREFIX + p.stem for p in paths})
     for p in paths:
