@@ -91,20 +91,42 @@ def known_deviations(found: list[str]) -> str:
 Each is a deviation the game's import task must know before it takes the GLB."""
 
 
-def size_note(info: dict, eye_height: float | None) -> str:
-    """HANDOFF.md's line on the character's size: its rest height and feet from the export's description, and the
-    eye height it was scaled to (the engineer's `eyes16`, art #42)."""
+def actions_args(blend: Path, anim_blend: Path, clips: list[str], out: Path, report: Path,
+                 eye_height: float | None, own_proportions: bool) -> list[str]:
+    """slice_actions.py's command line (its parser: slice_math.arguments)."""
+    return (["--character", str(blend), "--anim", str(anim_blend), "--clips", ",".join(clips), "--out", str(out),
+             "--json", str(report)]
+            + (["--eye-height", str(eye_height)] if eye_height else [])
+            + (["--own-proportions"] if own_proportions else []))
+
+
+def size_note(info: dict, eye_height: float | None, actions: dict | None = None) -> str:
+    """HANDOFF.md's line on the character's size: its rest height and feet from the export's description, the eye
+    height it was scaled to (the engineer's `eyes16`, art #42) and, from slice_actions.py's report, whether it was built
+    with `--own-proportions` and its leg scale (art #207, #210)."""
     height, feet = info.get("height_m"), info.get("feet_y_m")
     text = f"Rest height {height:.3f} m, feet at {feet:+.3f} m" if height is not None and feet is not None else "Size unknown"
     if eye_height:
         text += (f"; scaled uniformly so the eyes are at {eye_height:.2f} m (the engineer's `eyes16`, 2026-10-12; "
                  "contract v1's plasticine window 1.70 to 1.90 m). The game's capsule is 1.8 m tall, so the hair top "
                  "passes it by a few cm: the game decides if that matters")
-    return text + "."
+    text += "."
+    actions = actions or {}
+    if actions.get("own_proportions"):
+        donor_m, own_m = actions.get("leg_m") or [None, None]
+        legs = f"its legs {own_m:.3f} m against the donor's {donor_m:.3f} m, " if donor_m and own_m else ""
+        text += (f" Built with `slice --own-proportions`: the skeleton has its own proportions (rest heads up to "
+                 f"{actions.get('rest_max_mm', 0):.1f} mm from the animation set's donor at `{actions.get('rest_worst', '?')}`, "
+                 f"rest orientations up to {actions.get('rest_turn_max_deg', 0):.1f} degrees at "
+                 f"`{actions.get('rest_turn_worst', '?')}`); {legs}so the clips' Root and Hips location keys were "
+                 f"scaled by {actions.get('leg_scale', 1.0):.4f} before the eye-height scale.")
+    elif actions:
+        text += " Built on the animation set's own skeleton (no `--own-proportions`; leg scale 1)."
+    return text
 
 
 def handoff(asset_id: str, cast: str, rows: list[dict], left: list[tuple[str, str]], glb: Path, info: dict,
-            textures: dict, found: list[str], eye_height: float | None = None) -> str:
+            textures: dict, found: list[str], eye_height: float | None = None, actions: dict | None = None) -> str:
     mb = glb.stat().st_size / 1e6
     tex = textures.get("images", [])
     return f"""# {asset_id}: handoff to the game (art #42 part C)
@@ -113,7 +135,7 @@ The slice character for M6.2: cast `{cast}` in the clay look with the clay face 
 carrying {len(rows)} clips of the MVP animation set on the same skeleton. The game takes it only once
 manifest.toml's approval fields are set (the engineer approves the look on the review page).
 
-{size_note(info, eye_height)}
+{size_note(info, eye_height, actions)}
 
 ## Known deviations
 
@@ -209,11 +231,10 @@ def run(args: argparse.Namespace) -> int:
             return 1
         blend = out / "assemble" / "blend" / f"{cast}.blend"
     sliced = out / "blend" / f"{asset_id}.blend"
-    blender.run_script("slice_actions.py", ["--character", str(blend), "--anim", str(anim_blend), "--clips",
-                                            ",".join(r["name"] for r in rows), "--out", str(sliced), "--json",
-                                            str(out / "blend" / f"{asset_id}.actions.json")]
-                       + (["--eye-height", str(settings["eye_height_m"])] if settings.get("eye_height_m") else [])
-                       + (["--own-proportions"] if args.own_proportions else []),
+    actions_json = out / "blend" / f"{asset_id}.actions.json"
+    blender.run_script("slice_actions.py", actions_args(blend, anim_blend, [r["name"] for r in rows], sliced,
+                                                        actions_json, settings.get("eye_height_m"),
+                                                        args.own_proportions),
                        timeout=900)
     common.ok(f"{len(rows)} clips on {sliced}")
     exp = out / "export"
@@ -261,8 +282,9 @@ def run(args: argparse.Namespace) -> int:
         (asset / "manifest.toml").write_text(text, encoding="utf-8", newline="\n")
         pkg = _slice.package_json(asset_id, {glb.name: shipped}, _slice.game_dir(asset_id))
         (asset / "package.json").write_text(json.dumps(pkg, indent=1) + "\n", encoding="utf-8", newline="\n")
+        report = json.loads(actions_json.read_text(encoding="utf-8")) if actions_json.is_file() else {}
         (asset / "HANDOFF.md").write_text(handoff(asset_id, cast, rows, left, shipped, info, textures, found,
-                                                  settings.get("eye_height_m")),
+                                                  settings.get("eye_height_m"), report),
                                           encoding="utf-8", newline="\n")
         # The ragdoll data (art #115): measured from the shipped GLB, listed in package.json, explained in HANDOFF.md.
         ragdoll.put_in_asset(asset, _ragdoll.measure(shipped))

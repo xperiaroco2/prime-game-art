@@ -499,11 +499,16 @@ T-pose but its own proportions, so its rest differs from the set's donor on purp
 214 mm, art #196). The rest difference is then only reported (`rest_max_mm`, `rest_worst` in `<id>.actions.json`), and
 the clips' `Root` and `Hips` location keys (and the armature object's, if keyed) scale by the character's leg length
 over the donor's: per leg the thigh (`UpperLeg` to `LowerLeg` head), the shin (`LowerLeg` to `Foot`) and the ankle's
-height, averaged over both legs (`leg_m`, `leg_scale`). That keeps the stride and the hips' bob in proportion to the
-legs that carry them; every other key is a bone-local rotation and carries over unchanged. The `eye_height_m` scale
-comes after it. The rules are plain Python in `tools/blender/slice_math.py` (tests: `test_slice_proportions.py`). Feet
-can still slide a little where a clip's foot placement depends on more than the leg length (a different hip width or
-foot length).
+height, averaged over both legs (`leg_m`: `[donor, character]` in metres; `leg_scale` = character / donor). That keeps
+the stride and the hips' bob in proportion to the legs that carry them. Every other key carries over unchanged: the
+rotations are bone-local, and the location and scale keys that the retarget writes on every bone are left as they are
+(a clip that moves another bone's location moves it by the donor's distance). Since a bone-local rotation turns a bone
+the same about its own axes on both rigs, the pose differs wherever the rest orientations differ: the largest
+difference outside the toes is reported on every run (`rest_turn_max_deg`, `rest_turn_worst`; #210). The
+`eye_height_m` scale comes after the leg scale. With `--asset`, HANDOFF.md's size note records the flag, the rest
+differences, `leg_m` and `leg_scale` from `<id>.actions.json`. The rules are plain Python in
+`tools/blender/slice_math.py` (tests: `test_slice_proportions.py`). Feet can still slide a little where a clip's foot
+placement depends on more than the leg length (a different hip width or foot length).
 
 `slice` assembles the cast member (`assemble --look clay --bake`; `--blend` reuses a saved one), puts the set's clips
 on its armature in Blender (`tools/blender/slice_actions.py`; it refuses a rest pose that differs from the set's by

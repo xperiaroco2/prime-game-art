@@ -1,12 +1,14 @@
 """The slice character's clips on a skeleton with its own proportions (tools/blender/slice_math.py, art #207): the 2 mm
 rest guard by default, `--own-proportions` accepting any difference, the leg length and its scale, which F-curves
-scale, and the flag's way from `slice` to slice_actions.py. Synthetic data; no Blender needed."""
+scale, the rest orientations' report, and the flag's way from `slice` to slice_actions.py and into HANDOFF.md.
+Synthetic data; no Blender needed."""
 
 from __future__ import annotations
 
 import argparse
 import sys
 import unittest
+from pathlib import Path
 
 from runner import common
 
@@ -57,6 +59,11 @@ class LegScale(unittest.TestCase):
 
     def test_the_legs_average_both_sides(self) -> None:
         r = rig(0.95, 0.42, 0.40, 0.08)
+        r["UpperLeg.R"] = (-0.1, 0.0, 0.94)  # the right hip joint 4 cm higher: that leg 0.94 m, the left 0.90 m
+        self.assertAlmostEqual(sm.leg_length(r), 0.92)
+
+    def test_the_ankle_height_counts_with_the_shin(self) -> None:
+        r = rig(0.95, 0.42, 0.40, 0.08)
         r["Foot.R"] = (-0.1, 0.0, 0.10)  # the right ankle 2 cm higher: its shin 2 cm shorter, its height 2 cm more
         self.assertAlmostEqual(sm.leg_length(r), 0.90)
 
@@ -84,12 +91,38 @@ class SliceFlag(unittest.TestCase):
         self.assertFalse(parser.parse_args([]).own_proportions)
         self.assertTrue(parser.parse_args(["--own-proportions"]).own_proportions)
 
-    def test_slice_actions_passes_it_on(self) -> None:
-        text = (common.ROOT / "tools" / "runner" / "commands" / "slice_char.py").read_text(encoding="utf-8")
-        self.assertIn('["--own-proportions"] if args.own_proportions', text)
-        script = (common.ROOT / "tools" / "blender" / "slice_actions.py").read_text(encoding="utf-8")
-        self.assertIn('"--own-proportions", action="store_true"', script)
-        self.assertIn("slice_math.rest_check(rest, a.own_proportions)", script)
+    def test_slice_actions_receives_it(self) -> None:
+        """The command line slice builds parses in slice_actions.py's own parser, with and without the flag."""
+        from runner.commands import slice_char
+
+        for flag, eye in ((True, 1.6), (False, None)):
+            argv = slice_char.actions_args(Path("c.blend"), Path("a.blend"), ["Idle", "Jog_Fwd"], Path("o.blend"),
+                                           Path("o.json"), eye, flag)
+            a = sm.arguments(argv)
+            self.assertEqual((a.own_proportions, a.eye_height, a.clips), (flag, eye, "Idle,Jog_Fwd"))
+
+
+class RestTurn(unittest.TestCase):
+    def test_the_largest_turn_outside_the_toes(self) -> None:
+        self.assertEqual(sm.rest_turn({"Hips": 1.5, "Wrist.L": 55.1, "Toe.L": 80.0}), (55.1, "Wrist.L"))
+        self.assertEqual(sm.rest_turn({"Toe.L": 3.0}), (0.0, ""))
+
+
+class SizeNote(unittest.TestCase):
+    INFO = {"height_m": 1.806, "feet_y_m": 0.0}
+
+    def test_the_handoff_records_the_flag_and_the_leg_scale(self) -> None:
+        from runner.commands import slice_char
+
+        report = {"own_proportions": True, "leg_m": [0.9, 0.72], "leg_scale": 0.8, "rest_max_mm": 214.0,
+                  "rest_worst": "Head", "rest_turn_max_deg": 55.1, "rest_turn_worst": "Wrist.L"}
+        text = slice_char.size_note(self.INFO, 1.6, report)
+        for part in ("`slice --own-proportions`", "214.0 mm", "`Head`", "55.1 degrees", "`Wrist.L`",
+                     "0.720 m against the donor's 0.900 m", "scaled by 0.8000"):
+            self.assertIn(part, text)
+        same = slice_char.size_note(self.INFO, None, {"own_proportions": False, "leg_scale": 1.0})
+        self.assertIn("no `--own-proportions`; leg scale 1", same)
+        self.assertEqual(slice_char.size_note(self.INFO, None), "Rest height 1.806 m, feet at +0.000 m.")
 
 
 if __name__ == "__main__":

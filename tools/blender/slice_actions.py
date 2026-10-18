@@ -21,8 +21,8 @@ live in slice_math.py.
 
 from __future__ import annotations
 
-import argparse
 import json
+import math
 import os
 import re
 import sys
@@ -101,16 +101,7 @@ def scale_leg_keys(actions, s):
 
 
 def main(argv):
-    ap = argparse.ArgumentParser(prog="slice_actions.py")
-    ap.add_argument("--character", required=True)
-    ap.add_argument("--anim", required=True)
-    ap.add_argument("--clips", required=True, help="comma list of the set's action names to put on the character")
-    ap.add_argument("--out", required=True)
-    ap.add_argument("--json", required=True)
-    ap.add_argument("--eye-height", type=float, help="scale the character so its eyes' rest centre is at this height (m)")
-    ap.add_argument("--own-proportions", action="store_true",
-                    help="accept a skeleton that differs from the donor's; scale the root and hip keys to the leg length")
-    a = ap.parse_args(argv)
+    a = slice_math.arguments(argv)
     clips = [c for c in a.clips.split(",") if c]
 
     bpy.ops.wm.open_mainfile(filepath=os.path.abspath(a.character))
@@ -134,18 +125,21 @@ def main(argv):
         raise SystemExit(f"the set's file holds {len(dst.armatures)} armatures, expected one")
     donor = dst.armatures[0]
     bones = {b.name: b for b in arm.data.bones}
-    rest = {}
+    rest, turns = {}, {}
     for b in donor.bones:
         mine = bones.get(b.name)
         if mine is None:
             raise SystemExit(f"the set's rig has bone {b.name!r}, the character's rig has not")
         rest[b.name] = (mine.head_local - b.head_local).length
+        q_mine, q_donor = mine.matrix_local.to_quaternion(), b.matrix_local.to_quaternion()
+        turns[b.name] = math.degrees(q_donor.rotation_difference(q_mine).angle)
     if set(bones) - set(rest):
         raise SystemExit(f"the character's rig has bones the set's has not: {sorted(set(bones) - set(rest))}")
     body_err, worst, refusal = slice_math.rest_check(rest, a.own_proportions)
     if refusal:
         raise SystemExit(refusal)
-    leg, leg_m = 1.0, None
+    turn, turn_worst = slice_math.rest_turn(turns)
+    leg, leg_m = 1.0, None  # leg_m: [the donor's leg length, the character's] (m)
     if a.own_proportions:
         mine_heads = {b.name: tuple(b.head_local) for b in arm.data.bones}
         donor_heads = {b.name: tuple(b.head_local) for b in donor.bones}
@@ -190,6 +184,7 @@ def main(argv):
               "out": a.out.replace("\\", "/"), "armature": arm.name, "bones": len(bones),
               "parts": [o.name for o in parts], "fps": 30, "dropped_actions": dropped, "actions": actions,
               "rest_max_mm": round(body_err * 1000, 4), "rest_worst": worst,
+              "rest_turn_max_deg": round(turn, 3), "rest_turn_worst": turn_worst,
               "own_proportions": a.own_proportions, "leg_m": leg_m, "leg_scale": round(leg, 6),
               "leg_scaled_location_keys": leg_keys,
               "toes_rest_mm": {t: round(rest[t] * 1000, 2) for t in TOES if t in rest},
@@ -197,7 +192,7 @@ def main(argv):
               "scaled_location_keys": scaled_keys}
     with open(a.json, "w", encoding="utf-8") as fh:
         json.dump(report, fh, indent=1)
-    print("SLICE", json.dumps({k: report[k] for k in ("bones", "rest_max_mm", "toes_rest_mm", "leg_scale", "scale", "eyes_m")}), len(actions), "clips")
+    print("SLICE", json.dumps({k: report[k] for k in ("bones", "rest_max_mm", "rest_turn_max_deg", "rest_turn_worst", "toes_rest_mm", "leg_scale", "scale", "eyes_m")}), len(actions), "clips")
 
 
 if __name__ == "__main__":
