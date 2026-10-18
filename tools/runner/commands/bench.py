@@ -21,6 +21,9 @@ NAME = "bench"
 HELP = "GPU/CPU ms, primitives and memory of N copies of a character in an off-screen Godot window (art #212)"
 TIMEOUT = 1500
 PROXY_TIMEOUT = 900
+# Staged under their own names, so that the VRAM texture settings never reach the textures another command (godot-check,
+# frames) extracts from the same GLB.
+STAGE_PREFIX = "bench_"
 
 
 def add_arguments(parser: argparse.ArgumentParser) -> None:
@@ -98,11 +101,11 @@ def run(args: argparse.Namespace) -> int:
         if not p.is_file() or p.suffix.lower() != ".glb":
             raise common.Failure(f"no GLB {p.as_posix()}")
     glbs = []
-    _godot.clear_staged({p.stem for p in paths})
+    _godot.clear_staged({STAGE_PREFIX + p.stem for p in paths})
     for p in paths:
         info = _bench.describe(_bench.glb_json(p))
         glbs.append({"id": p.stem, "path": p.resolve().as_posix(), "mb": p.stat().st_size / 1e6,
-                     "res": _godot.stage(p.resolve(), params=_godot.import_params(p)), **info})
+                     "res": _godot.stage(p.resolve(), STAGE_PREFIX + p.stem, _godot.import_params(p)), **info})
     try:
         spec = _bench.spec(glbs, copies, args.clip, args.frames, args.warmup, hand_lod_m=args.hand_lod_m)
     except ValueError as e:
@@ -112,7 +115,7 @@ def run(args: argparse.Namespace) -> int:
     spec_path = out / "bench_spec.json"
     spec_path.write_text(json.dumps(spec, indent=1), encoding="utf-8")
     import_lines = _godot.import_project()
-    if vram_textures({p.stem for p in paths}):  # imported again with the textures as the game has them
+    if vram_textures({STAGE_PREFIX + p.stem for p in paths}):  # imported again with the textures as the game has them
         import_lines = _godot.import_project()
     w, h = _bench.WINDOW
     common.say(f"bench: {len(spec['variants'])} variants of {', '.join(g['id'] for g in glbs)} in an off-screen "

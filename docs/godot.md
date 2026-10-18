@@ -598,7 +598,8 @@ primitives, draw calls and objects and the video, texture and buffer memory (`Pe
 The proxy variants need a part whose name holds `bench_shadow`; without it a GLB gets `auto_full` and `off_full` only.
 Godot extracts a GLB's textures as Lossless and only the editor turns them to VRAM Compressed on first use, so the
 command sets the extracted textures' `.import` to VRAM Compressed with mipmaps (normal maps as normal maps) and imports
-again, as the game has them. Memory per group (`buffer MB added` and so on) is the growth from loading the GLB and its
+again, as the game has them. The GLBs are staged as `bench_<stem>.glb`, so these settings never reach the textures
+another command (godot-check, frames) extracts from the same GLB. Memory per group (`buffer MB added` and so on) is the growth from loading the GLB and its
 copies; a GLB's mesh data (its morphs) is counted once, in the first group that loads it.
 
 `--proxy-from <character.blend>` first makes the stand-in in headless Blender (`tools/blender/bench_proxy.py`): the
