@@ -131,23 +131,44 @@ lying-downed and get-up clips are gone. Idle, walk, run, carry, pick up and put 
 - *Proof.* `tools/run.py ragdoll <glb> --fall` (Godot 4.7.2, Jolt Physics, headless) asserts the fall; `--shots DIR`
   shoots it off-screen (docs/godot.md, "The ragdoll").
 
-**Budgets.** Above the target warns, above the cap fails.
+**Budgets.** Above the target warns, above the cap fails. The character budgets are the engineer's decision of
+2026-10-18 (quality over low-end hardware: the target is a mid-range gaming PC, RTX 3060/4060 class), measured with
+`tools/run.py bench` (docs/godot.md, "Bench") and recorded in `docs/decisions/2026-10-18-character-budgets.md` (art
+#212). They replace the foundation ADR's unmeasured sketch (character 8,000 / 12,000, textures 1,024, GLB 5 MB), which
+forced the alien base from its 200k sculpt down to 11.7k triangles.
 
 | Budget | Triangles target | Triangles cap | Vertices target / cap |
 |---|---|---|---|
-| Assembled character (not checked yet) | 8,000 | 12,000 | 8,000 / 12,000 |
-| Base body (five fingers) | 6,000 | 8,000 | 8,000 / 12,000 |
-| Clothing piece (provisional) | 1,200 | 2,000 | |
-| Hair or hat | 800 | 1,200 | |
-| Face accessory, back or belt item | 800 | 1,200 | |
+| Assembled character, LOD0 (not checked yet) | 40,000 | 60,000 | 30,000 / 45,000 |
+| Base body (five fingers, head included) | 22,000 | 30,000 | 16,000 / 24,000 |
+| Template head (part of the body; the only mesh with face morphs; provisional) | 12,000 | 15,000 | 7,000 / 9,000 |
+| Clothing piece (provisional) | 3,000 | 5,000 | |
+| Hair or hat (provisional) | 3,000 | 4,500 | |
+| Face accessory, back or belt item; the eyes' and mouth's parts (provisional) | 1,500 | 2,500 | |
 | Prop or third-person hand item | 1,500 | 2,000 | |
 
-The body budget rose from the ADR sketch's 5,000 / 6,000 to 6,000 / 8,000 for five-finger hands. The assembled
-character keeps the ADR sketch's 8,000 / 12,000, although the body plus one piece per slot at their targets comes to
-12,000: whether to raise it is the engineer's call. `check` judges one file against its kind's budget and does not
-judge the assembled character yet. The clothing budget is a starting guess (the ADR sketch had
-skinned outfits in v2) to revise on the first real pieces. Triangles count after triangulation; vertices count as
-imported, split at UV seams and hard edges, close to what the GPU draws (a glTF file always comes split).
+The pieces add up: the body plus one piece per slot at their targets (22,000 + 3 x 3,000 + 3,000 + 4 x 1,500) is the
+character's 40,000, and at their caps 59,500, inside its 60,000. Body skin an outfit covers is cut out at assembly, so
+a dressed character stays near the target. `check` judges one file against its kind's budget and does not judge the
+assembled character yet. The piece budgets are starting points (the old ones times 2 to 4) to revise on the first real
+pieces. Triangles count after triangulation; vertices count as imported, split at UV seams and hard edges, close to
+what the GPU draws (a glTF file always comes split).
+
+**Limits.** Textures: 2,048 px for the character's main set (base colour, normal and at most one ORM or roughness map,
+`texture_maps_max`), VRAM Compressed in the game; 1,024 for LOD1 and LOD2 and for accessories and small parts.
+Surfaces 6 target, 8 cap; 4 bone influences per vertex. Face morphs: 52 to 64 cover a full face rig (`face_morphs_target`
+64), only on the separate head mesh: Godot keeps every morph dense, about 20 bytes per head vertex per morph in video
+memory, once per unique head mesh (not per copy), so morph memory follows the head's vertex count. GLB cap 40 MB for a
+character (LOD0, hand-made LODs, 64 head morphs and 2,048 textures with headroom; the bench's 40k stand-in with 64
+morphs on an 8,900-vertex head is 29.6 MB, about 39 bytes per head vertex per morph), 4 MB for an accessory.
+
+**Levels of detail** (`[lods]`). LOD0 40,000 / 60,000; LOD1 15,000 / 20,000 from about 4 m; LOD2 6,000 / 8,000 from
+about 10 m; an optional LOD3 2,000 / 3,000 for far bodies and corpses from about 25 m; distances at 1440p and a 75
+degree FOV, to be tuned in playtest. Godot's automatic import LODs stay on: they are index buffers over LOD0's vertices
+(skinning and morphs still run over every LOD0 vertex), and in the bench they halved the characters' GPU time (20
+bodies 1.45 ms at LOD0 only, 0.65 ms with them). Hand-made LOD meshes under visibility ranges and a low-poly shadow
+caster (`cast_shadow = SHADOWS_ONLY`, the drawn meshes' shadows off) are optional, for when a profile shows skinning,
+shadow or memory cost: on top of the automatic LODs the bench measured no saving from either at 20 bodies.
 
 ## What `check` checks
 

@@ -214,40 +214,56 @@ template = "every head shape shares the template head's topology, so every eye a
 separate = ["eyeballs", "teeth", "tusks", "hair", "crests", "hats", "clothes"]
 
 # Budgets: triangles after triangulation; vertices as imported (split at UV seams and hard edges, close to what the
-# GPU draws). Above the target is a warning, above the cap a failure. "provisional" budgets are not in the ADR
-# sketch and are a starting guess for the first real pieces.
-# The assembled character is not judged by `check` yet (it checks one file at a time). The ADR sketch's figures stay;
-# the body plus one piece per slot at their targets (6,000 + 3 x 1,200 + 3 x 800 = 12,000) already exceeds them: an
-# open question for the engineer.
+# GPU draws). Above the target is a warning, above the cap a failure. "provisional" budgets are a starting guess for
+# the first real pieces.
+# The character budgets are the engineer's decision of 2026-10-18 (art #212, quality over low-end hardware: the target
+# is a mid-range gaming PC, RTX 3060/4060 class), measured with `tools/run.py bench` on a 40,000-triangle stand-in
+# (docs/decisions/2026-10-18-character-budgets.md). They replace the foundation ADR's unmeasured sketch (8,000 /
+# 12,000, textures 1,024, GLB 5 MB). The pieces add up: the body plus one piece per slot at their targets is
+# 22,000 + 3 x 3,000 (clothing) + 3,000 (hair or hat) + 4 x 1,500 (eye and mouth parts, face and back items) =
+# 40,000, the character's target; at their caps 59,500, inside its cap.
+# Body skin an outfit covers is cut out at assembly, so a dressed character stays near the target.
+# `check` judges one file at a time; the assembled character is not judged by it yet.
 [budgets.character]
 note = "the assembled character LOD0: body plus every piece; 10 players, about 20 skinned bodies with corpses"
-triangles_target = 8000
-triangles_cap = 12000
-vertices_target = 8000
-vertices_cap = 12000
+triangles_target = 40000
+triangles_cap = 60000
+vertices_target = 30000
+vertices_cap = 45000
 
 [budgets.body]
-note = "the base body with five-finger hands"
-triangles_target = 6000
-triangles_cap = 8000
-vertices_target = 8000       # never more than the whole character's skinned vertices
-vertices_cap = 12000
+note = "the base body with five-finger hands, its head included"
+triangles_target = 22000
+triangles_cap = 30000
+vertices_target = 16000      # never more than the whole character's skinned vertices
+vertices_cap = 24000
+
+[budgets.head]
+note = "the template head, a separate mesh and the only one with face morphs; part of the body budget"
+provisional = true
+triangles_target = 12000
+triangles_cap = 15000
+vertices_target = 7000       # every morph is stored densely: about 20 bytes per head vertex in Godot's video
+                             # memory, once per unique head mesh, and about 39 in the GLB (bench, art #212)
+vertices_cap = 9000
 
 [budgets.clothing]
 note = "one skinned piece (top, bottom or shoes)"
 provisional = true
-triangles_target = 1200
-triangles_cap = 2000
+triangles_target = 3000
+triangles_cap = 5000
 
 [budgets.head_item]
 note = "hair or hat"
-triangles_target = 800
-triangles_cap = 1200
+provisional = true
+triangles_target = 3000
+triangles_cap = 4500
 
 [budgets.accessory]
-note = "a face accessory, back item or belt item"
-triangles_target = 800
-triangles_cap = 1200
+note = "a face accessory, back item or belt item; the eyes' and mouth's parts (eyeballs, teeth, tusks)"
+provisional = true
+triangles_target = 1500
+triangles_cap = 2500
 
 [budgets.prop]
 note = "a level prop or a third-person hand item (first-person hand items: 3,000 target, 4,000 cap)"
@@ -258,15 +274,55 @@ triangles_cap = 2000
 bones = 56                   # the profile; 64 deform and 80 total are the engine-side caps
 blend_shapes_body = 0        # body-shape morphs: none (every skinned outfit would need the same keys); face morphs
                              # on the head bones are allowed ([face])
-face_morphs_target = 64      # face morphs per mesh above this warn; provisional, a starting guess for the first
-                             # template head (the face kit has 8 on its head)
+face_morphs_target = 64      # face morphs per mesh above this warn; 52 to 64 cover a full face rig; only on the head
 surfaces_per_character_target = 6
 surfaces_per_character_cap = 8
-texture_character_px = 1024
-texture_accessory_px = 512
-glb_character_mb = 5
-glb_accessory_mb = 1
+texture_character_px = 2048  # the main set: base colour, normal and at most one ORM/roughness map, VRAM Compressed
+texture_maps_max = 3
+texture_lod_px = 1024        # LOD1 and LOD2's textures
+texture_accessory_px = 1024  # small parts and accessories: 512 to 1,024
+glb_character_mb = 40        # LOD0 plus hand-made LODs plus 64 head morphs plus 2048 textures, with headroom (bench)
+glb_accessory_mb = 4
 glb_animation_library_mb = 10
+
+# Levels of detail of the assembled character (art #212). Godot's importer makes automatic LODs (index buffers over
+# LOD0's vertices, so skinning and morphs still run over every LOD0 vertex); they stay on, and they did most of the
+# saving in the bench: 20 bodies at LOD0 only cost 1.45 ms of GPU, with the automatic LODs 0.65 ms. The levels below
+# are the triangle targets for hand-made LOD meshes switched by GeometryInstance3D visibility ranges: optional, for
+# when a profile shows skinning or memory cost (the bench's hand-made LOD2 beyond 10 m saved nothing on top of the
+# automatic LODs). Distances are a starting point at 1440p and a 75 degree FOV, to be tuned in playtest.
+[lods]
+automatic = "the importer's automatic LODs stay on (meshes/generate_lods); never import a character with them off"
+hand_made = "optional: LOD1 and LOD2 as hand-made meshes (their own vertices, no face morphs) under visibility ranges"
+shadow_proxy = "optional: a LOD2-class copy with cast_shadow SHADOWS_ONLY and the drawn meshes' shadows off"
+shadow_note = """a directional light with 4 splits draws a caster up to 5 times a frame, a shadowed omni lamp up to 6. \
+With the automatic LODs the shadow passes already draw low LODs: the proxy saved 0.03 ms at 20 bodies (0.55 ms with \
+the LODs off)"""
+
+[[lods.levels]]
+name = "LOD0"
+triangles_target = 40000
+triangles_cap = 60000
+from_m = 0.0
+
+[[lods.levels]]
+name = "LOD1"
+triangles_target = 15000
+triangles_cap = 20000
+from_m = 4.0
+
+[[lods.levels]]
+name = "LOD2"
+triangles_target = 6000
+triangles_cap = 8000
+from_m = 10.0
+
+[[lods.levels]]
+name = "LOD3"
+optional = true              # far bodies and corpses
+triangles_target = 2000
+triangles_cap = 3000
+from_m = 25.0
 
 # What `check --kind <kind>` enforces. Severities: "fail" (a hard failure, non-zero exit), "warn", "off".
 # Every kind also gets the mesh checks: budget, n-gons, loose geometry, non-manifold edges, UVs, applied transforms.

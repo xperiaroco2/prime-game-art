@@ -123,10 +123,11 @@ class EvaluateTest(unittest.TestCase):
         self.assertEqual(report["verdict"], _checks.PASS)
 
     def test_budget_target_warns_and_cap_fails(self) -> None:
+        budget = self.contract["budgets"]["body"]  # the numbers come from the contract (art #212)
         measure = good_body(self.profile)
-        measure["meshes"][0]["triangles"] = 7000
+        measure["meshes"][0]["triangles"] = budget["triangles_target"] + 1
         self.assertEqual(self.statuses(self.evaluate(measure))["triangles"], _checks.WARN)
-        measure["meshes"][0]["triangles"] = 8001
+        measure["meshes"][0]["triangles"] = budget["triangles_cap"] + 1
         report = self.evaluate(measure)
         self.assertEqual(self.statuses(report)["triangles"], _checks.FAIL)
         self.assertEqual(report["verdict"], _checks.FAIL)
@@ -271,11 +272,12 @@ class EvaluateTest(unittest.TestCase):
             _contract.checkable_slot(self.contract, "cape")
 
     def test_rigid_accessory(self) -> None:
-        report = self.evaluate(rigid_piece(900), "accessory")
+        budget = self.contract["budgets"]["accessory"]
+        report = self.evaluate(rigid_piece(budget["triangles_target"] + 100), "accessory")
         self.assertEqual(report["verdict"], _checks.PASS, report["results"])
         self.assertEqual(self.statuses(report)["triangles"], _checks.WARN)
         self.assertNotIn("height", self.statuses(report))
-        self.assertEqual(self.evaluate(rigid_piece(1300), "accessory")["verdict"], _checks.FAIL)
+        self.assertEqual(self.evaluate(rigid_piece(budget["triangles_cap"] + 100), "accessory")["verdict"], _checks.FAIL)
         rigged = good_body(self.profile)
         self.assertEqual(self.statuses(self.evaluate(rigged, "accessory"))["rig"], _checks.FAIL)
 
