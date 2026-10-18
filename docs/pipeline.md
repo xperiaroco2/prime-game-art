@@ -55,7 +55,7 @@ section wins:
 | Names | A player's name shows only when you aim at them up close. A game rule, built in the game repo; the engineer, as the designer, may object on #165 |
 | AI rules | Never name How to Fish or any other game or character in a prompt, never upload their screenshots, no personal photos; `ai_generated` recorded per asset; never free-plan output |
 | Raw files | `D:/prime-art-raw` on the engineer's PC; chosen originals copied to `OneDrive/prime-art-raw`; never in git |
-| Who generates | An agent, through the Meshy API, from the start; each batch only after the engineer's yes to its prompts, count and credits (since 2026-10-03: the standing permission within the plan's credits, see the section above). The engineer buys the plan (Meshy Pro, one month; since 2026-10-18 Meshy's top subscription) and sets `MESHY_API_KEY`; agents never enter keys or payment details |
+| Who generates | An agent, through the Meshy API, from the start; each batch only after the engineer's yes to its prompts, count and credits (since 2026-10-03: the standing permission within the plan's credits, see the section above). The engineer buys the plan (Meshy Pro, monthly, from 2026-10-02; a paid monthly plan bought on 2026-10-17; Meshy's top subscription, chosen on 2026-10-18, from the day it starts) and sets `MESHY_API_KEY`; agents never enter keys or payment details |
 
 The look is decided by the engineer, who acts as the designer (@SwiftySinister is not active); the art track proposes and renders,
 it does not choose.

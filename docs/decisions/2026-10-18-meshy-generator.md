@@ -14,7 +14,8 @@ recommended its pipeline B: concept images, then an AI 3D generator, then a fini
 multi-image to 3D as the primary generator, Hyper3D Rodin Gen-2.5 as the challenger and Tripo for part splitting. For
 concepts it named nano-banana-pro and GPT Image, both through our Meshy client.
 
-The showcase built the alien base character from the same turnaround views with all three generators:
+The showcase built the alien base character from the same turnaround with all three generators; Tripo got its front
+view only:
 | | Meshy 7.1 | Tripo v3.1 | Rodin Gen-2.5 |
 |---|---|---|---|
 | Input | the three turnaround views | the front view only | the three views, run by the engineer by hand |
@@ -68,6 +69,6 @@ is an unclothed full-body figure; a head-only input had passed the day before
   `docs/meshy.md` asks when the plan changes.
 - **Provenance.** Every asset made this way records `ai_generated = true`, `source.service = "meshy"`, the model
   versions (the concept model and `meshy-7.1`) and the task ids (`docs/manifest.md`). Raw generations stay in
-  `D:/prime-art-raw`, never in git; `public_repo_ok` follows the paid plan's licence for finished exports, as for
-  earlier Meshy assets.
+  `D:/prime-art-raw`, never in git; `public_repo_ok` follows the paid plan's licence for finished exports, as in
+  `docs/manifest.md`'s example.
 - The Tripo and Rodin files of the showcase stay in the raw folder as records; no client for either is added.
