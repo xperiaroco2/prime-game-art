@@ -5,6 +5,7 @@ run everywhere (docs/godot.md, "Bench")."""
 from __future__ import annotations
 
 import json
+import math
 import struct
 from pathlib import Path
 from typing import Any
@@ -24,6 +25,25 @@ MAX_COPIES = 64
 SHEET_CELL = (424, 240)  # three across: a 1272 px sheet, the agents' size
 SHEET_COLS = 3
 BUDGET_MS = 4.0  # the characters' share of the GPU frame at 20 bodies the measurement is held to (#212)
+# The meeting ring bench.gd stands the copies in, seen from behind it at eye height
+RING = {"spacing_m": 1.3, "min_m": 2.2, "camera_back_m": 2.5, "eye_m": 1.6}
+
+
+def ring_distances(copies: int, ring: dict[str, float] = RING) -> list[float]:
+    """Each copy's distance from the camera (to its origin), as bench.gd places them: a ring of radius
+    max(min_m, copies * spacing_m / 2 pi), the camera camera_back_m behind it at eye_m."""
+    r = max(ring["min_m"], copies * ring["spacing_m"] / math.tau)
+    out = []
+    for i in range(copies):
+        a = math.tau * i / copies
+        across, depth = math.sin(a) * r, r + ring["camera_back_m"] - math.cos(a) * r
+        out.append(math.sqrt(across ** 2 + ring["eye_m"] ** 2 + depth ** 2))
+    return out
+
+
+def beyond(copies: int, far_m: float, ring: dict[str, float] = RING) -> int:
+    """How many of the copies stand farther than far_m from the camera."""
+    return sum(d > far_m for d in ring_distances(copies, ring))
 
 
 def contract_hand_lod_m(contract: dict[str, Any] | None = None) -> float:
@@ -89,8 +109,8 @@ def describe(gltf: dict[str, Any], shadow_part: str = SHADOW_PART) -> dict[str, 
 def variants(glbs: list[dict[str, Any]], copies: list[int]) -> list[dict[str, Any]]:
     """The measured variants: first the empty stage (the scene's own cost), then per GLB and copy count the automatic
     LOD on ("auto") and off ("off"), each with full-mesh shadows and, when the GLB has the shadow part, the shadow
-    proxy; with the shadow part also "hand" (the part as a hand-made LOD2 beyond HAND_LOD_M, the contract's LOD2 distance, full shadows). Grouped
-    by GLB and count, the order bench.gd loads them in."""
+    proxy; with the shadow part also "hand" (the part as a hand-made LOD2 beyond HAND_LOD_M, the contract's LOD2
+    distance, full shadows). Grouped by GLB and count, the order bench.gd loads them in."""
     if not glbs:
         raise ValueError("no GLB to measure")
     out = [{"id": "empty", "glb": glbs[0]["id"], "copies": 0, "lod": "auto", "shadow": "full"}]
@@ -113,7 +133,7 @@ def spec(glbs: list[dict[str, Any]], copies: list[int], clip: str = "Idle", fram
     return {"glbs": {g["id"]: {"res": g["res"], "morphs": g["morphs"]} for g in glbs},
             "variants": variants(glbs, copies), "clip": clip, "frames": frames, "warmup_frames": warmup,
             "settle_frames": settle, "fov_deg": FOV_DEG, "shadow_part": SHADOW_PART,
-            "hand_lod_m": hand_lod_m, "sheet_cell": list(SHEET_CELL), "sheet_cols": SHEET_COLS}
+            "hand_lod_m": hand_lod_m, "ring": dict(RING), "sheet_cell": list(SHEET_CELL), "sheet_cols": SHEET_COLS}
 
 
 def vram_import(text: str, normal: bool) -> str:
@@ -136,14 +156,17 @@ def vram_import(text: str, normal: bool) -> str:
 
 
 def derive(record: dict[str, Any]) -> dict[str, Any]:
-    """Adds to each row its characters' share: gpu_ms and cpu_ms minus the empty stage's (`char_gpu_ms`,
-    `char_cpu_ms`); and to each group its buffer and video memory growth (`buffer_mb_added`, `video_mb_added`)."""
+    """Adds to each row its characters' share: gpu_ms, cpu_ms and process_ms minus the empty stage's (`char_gpu_ms`,
+    `char_cpu_ms`, `char_process_ms`); and to each group its buffer and video memory growth (`buffer_mb_added`,
+    `video_mb_added`)."""
     rows = record.get("rows", [])
     empty = next((r for r in rows if r.get("copies") == 0), None)
     for r in rows:
         if empty is not None:
             r["char_gpu_ms"] = round(r["gpu_ms"] - empty["gpu_ms"], 3)
             r["char_cpu_ms"] = round(r["cpu_ms"] - empty["cpu_ms"], 3)
+            if "process_ms" in r and "process_ms" in empty:
+                r["char_process_ms"] = round(r["process_ms"] - empty["process_ms"], 3)
     for g in record.get("groups", []):
         before, after = g.get("memory_before", {}), g.get("memory_after", {})
         for key in ("buffer_mb", "video_mb", "texture_mb"):
@@ -180,17 +203,28 @@ def report(record: dict[str, Any], glbs: list[dict[str, Any]], budget_ms: float 
              f"- window {'x'.join(map(str, record.get('window', [])))}, vertical FOV {record.get('fov_deg', '?')} deg, "
              f"{int(record.get('frames', 0))} measured frames per variant (median; p95 beside it)",
              "- stage: ground, procedural sky, AgX, SSAO; a directional light with 4 shadow splits and a shadowed "
-             "omni lamp (cube) at the ring's centre; every face morph weighted 0.05", "",
+             "omni lamp (cube) at the ring's centre; every face morph weighted 0.05",
+             "- CPU ms is the viewport's render time only; process ms (animation players, skeleton poses) and frame ms "
+             "(the whole frame) beside it; `beyond` counts the copies farther than the hand-made LOD2's "
+             f"{record.get('hand_lod_m', HAND_LOD_M):g} m from the camera, "
+             "the only ones the hand variant switches", "",
              "| GLB | triangles | shadow part | face morphs | MB |", "|---|---|---|---|---|"]
     for g in glbs:
         lines.append(f"| {g['id']} | {g['triangles']:,} | {g['shadow_triangles']:,} | {g['morphs']} | {g['mb']:.1f} |")
-    lines += ["", "| variant | copies | LOD | shadows | GPU ms | p95 | chars GPU ms | CPU ms | chars CPU ms | "
-                  "primitives | draw calls | video MB | buffer MB |", "|" + "---|" * 13]
+    far = float(record.get("hand_lod_m", HAND_LOD_M))
+    lines += ["", "| variant | copies | beyond | LOD | shadows | GPU ms | p95 | chars GPU ms | CPU ms | chars CPU ms | "
+                  "process ms | frame ms | primitives | draw calls | video MB | buffer MB |", "|" + "---|" * 16]
+
+    def ms(r: dict[str, Any], key: str) -> str:
+        return f"{r[key]:.2f}" if key in r else "-"  # records made before the field have none
+
     for r in record.get("rows", []):
-        lines.append(f"| {r['id']} | {int(r['copies'])} | {r['lod']} | {r['shadow']} | "
-                     f"{r['gpu_ms']:.2f} | {r.get('gpu_ms_p95', 0):.2f} | {r.get('char_gpu_ms', 0):.2f} | "
-                     f"{r['cpu_ms']:.2f} | {r.get('char_cpu_ms', 0):.2f} | {r['primitives']:,} | {r['draw_calls']:,} | "
-                     f"{r['video_mb']:.1f} | {r['buffer_mb']:.1f} |")
+        n = int(r["copies"])
+        lines.append(f"| {r['id']} | {n} | {int(r.get('beyond_hand_lod', beyond(n, far)))} | {r['lod']} | "
+                     f"{r['shadow']} | {r['gpu_ms']:.2f} | {r.get('gpu_ms_p95', 0):.2f} | "
+                     f"{r.get('char_gpu_ms', 0):.2f} | {r['cpu_ms']:.2f} | {r.get('char_cpu_ms', 0):.2f} | "
+                     f"{ms(r, 'process_ms')} | {ms(r, 'frame_ms')} | "
+                     f"{r['primitives']:,} | {r['draw_calls']:,} | {r['video_mb']:.1f} | {r['buffer_mb']:.1f} |")
     lines += ["", "| loaded | buffer MB added | video MB added | texture MB added |", "|---|---|---|---|"]
     for g in record.get("groups", []):
         lines.append(f"| {g['key']} | {g.get('buffer_mb_added', 0):.2f} | {g.get('video_mb_added', 0):.2f} | "

@@ -76,6 +76,16 @@ class PlanTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             _bench.spec([GLB_A], [10], frames=0)
 
+    def test_ring(self) -> None:
+        # the far side of a 10-body ring is 6.9 m away on the ground (7.1 m from the eye): no body past a 10 m LOD2
+        ten = _bench.ring_distances(10)
+        self.assertEqual(len(ten), 10)
+        self.assertAlmostEqual(max(ten), 7.08, places=2)
+        self.assertAlmostEqual(min(ten), 2.97, places=2)
+        self.assertEqual(_bench.beyond(10, 10.0), 0)
+        self.assertEqual(_bench.beyond(20, 10.0), 5)
+        self.assertEqual(_bench.spec([GLB_A], [10])["ring"], _bench.RING)
+
     def test_hand_lod_from_the_contract(self) -> None:
         from runner.commands import _contract
 
@@ -101,9 +111,10 @@ RECORD = {
     "window": [1920, 1080], "fov_deg": 75.0, "frames": 300.0,
     "rows": [
         {"id": "empty", "glb": "a", "copies": 0.0, "lod": "auto", "shadow": "full", "gpu_ms": 0.7, "cpu_ms": 0.1,
+         "process_ms": 0.05, "frame_ms": 1.2,
          "gpu_ms_p95": 0.75, "primitives": 10, "draw_calls": 5, "video_mb": 250.0, "buffer_mb": 31.0},
         {"id": "a_x20_auto_full", "glb": "a", "copies": 20.0, "lod": "auto", "shadow": "full", "gpu_ms": 1.4,
-         "cpu_ms": 0.4, "gpu_ms_p95": 1.5, "primitives": 900000, "draw_calls": 300, "video_mb": 270.0,
+         "cpu_ms": 0.4, "process_ms": 0.25, "frame_ms": 8.1, "gpu_ms_p95": 1.5, "primitives": 900000, "draw_calls": 300, "video_mb": 270.0,
          "buffer_mb": 53.5},
         {"id": "a_x20_off_full", "glb": "a", "copies": 20.0, "lod": "off", "shadow": "full", "gpu_ms": 5.2,
          "cpu_ms": 0.5, "gpu_ms_p95": 6.0, "primitives": 4000000, "draw_calls": 300, "video_mb": 270.0,
@@ -125,7 +136,11 @@ class ReportTest(unittest.TestCase):
         lines = _bench.report(record, [GLB_A], budget_ms=4.0)
         text = "\n".join(lines)
         self.assertIn("Test GPU", text)
-        self.assertIn("| a_x20_auto_full | 20 | auto | full | 1.40 |", text)
+        self.assertIn("| a_x20_auto_full | 20 | 5 | auto | full | 1.40 |", text)  # 5 of 20 beyond 10 m
+        self.assertIn("| 0.40 | 0.30 | 0.25 | 8.10 |", text)  # CPU ms, chars CPU ms, process ms, frame ms
+        self.assertIn("| 0.50 | 0.40 | - | - |", text)  # a row from before the process and frame fields
+        self.assertEqual(rows["a_x20_auto_full"]["char_process_ms"], 0.2)
+        self.assertIn("CPU ms is the viewport's render time only", text)
         self.assertIn("300 measured frames", text)
         verdicts = [ln for ln in lines if "budget" in ln]
         self.assertEqual(len(verdicts), 1)

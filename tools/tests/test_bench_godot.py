@@ -38,6 +38,9 @@ class BenchTest(unittest.TestCase):
         for row in record["rows"][1:]:
             self.assertGreater(row["gpu_ms"], 0.0)
             self.assertGreater(row["primitives"], record["rows"][0]["primitives"])
+            self.assertGreater(row["frame_ms"], 0.0)
+            self.assertGreaterEqual(row["process_ms"], 0.0)
+            self.assertEqual(row["beyond_hand_lod"], 0)  # two copies stand within a few metres
         self.assertGreaterEqual(record["rows"][2]["primitives"], record["rows"][1]["primitives"])  # LOD0 draws the most
 
 

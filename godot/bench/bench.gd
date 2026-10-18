@@ -8,22 +8,21 @@ extends SceneTree
 ## The spec (tools/runner/commands/_bench.py) lists the GLBs (one per face-morph count) and the variants; a variant
 ## names a GLB, a copy count, the LOD ("auto": the importer's LODs, the viewport's mesh_lod_threshold 1.0; "off":
 ## 0.0, always LOD0; "hand": the shadow part drawn as a hand-made LOD2 from the spec's hand_lod_m on, with visibility
-## ranges, the full meshes before it, all casting) and the shadow caster ("full": every mesh casts; "proxy": the meshes draw without shadows and the part whose
-## name holds the spec's shadow_part casts alone, SHADOWS_ONLY). Every face morph is weighted (weight 0.05 each, the
-## worst case). Per variant: the median GPU and CPU ms over the measured frames (viewport measure render time), the
-## frame's primitives, draw calls and objects, and the video, texture and buffer memory (Performance monitors).
+## ranges, the full meshes before it, all casting) and the shadow caster ("full": every mesh casts; "proxy": the
+## meshes draw without shadows and the part whose name holds the spec's shadow_part casts alone, SHADOWS_ONLY).
+## Every face morph is weighted (weight 0.05 each, the worst case). Per variant: the median GPU and CPU ms over the measured frames (viewport measure render time: the
+## rendering only), the median process ms (Performance TIME_PROCESS: the animation players and skeleton poses) and
+## whole frame ms, the frame's primitives, draw calls and objects, the video, texture and buffer memory (Performance
+## monitors), and how many copies stand beyond hand_lod_m from the camera (to each copy's origin). The ring's
+## geometry comes from the spec's "ring".
 ## Writes bench.json and sheet.png (one shot per GLB and copy count); prints BENCH saved <path>, or BENCH error <why>
 ## and exits 1.
 
 const Character = preload("res://lib/character.gd")
 const WATCHDOG_S: float = 900.0
 const MORPH_WEIGHT: float = 0.05
-const RING_SPACING_M: float = 1.3
-const RING_MIN_M: float = 2.2
-const CAMERA_BACK_M: float = 2.5
-const EYE_M: float = 1.6
-
 var _label: Label
+var _ring: Dictionary = {}
 var _copies: Array[Node] = []
 var _players: Array[AnimationPlayer] = []
 
@@ -38,9 +37,10 @@ func _initialize() -> void:
 		return
 	create_timer(WATCHDOG_S).timeout.connect(_fail.bind("not done within %d s" % WATCHDOG_S))
 	var spec: Variant = Character.read_json(args[1])
-	if not (spec is Dictionary and spec.has("variants") and spec.has("glbs")):
+	if not (spec is Dictionary and spec.has("variants") and spec.has("glbs") and spec.has("ring")):
 		_fail("%s is not a bench spec (give an absolute path)" % args[1])
 		return
+	_ring = spec["ring"]
 	_run(args[0], spec)
 
 
@@ -55,7 +55,7 @@ func _run(out_dir: String, spec: Dictionary) -> void:
 					RenderingServer.get_current_rendering_method()],
 			"adapter": RenderingServer.get_video_adapter_name(),
 			"adapter_vendor": RenderingServer.get_video_adapter_vendor(), "fov_deg": spec["fov_deg"],
-			"frames": spec["frames"], "rows": [], "groups": []}
+			"frames": spec["frames"], "hand_lod_m": spec["hand_lod_m"], "rows": [], "groups": []}
 	var vp: RID = root.get_viewport_rid()
 	RenderingServer.viewport_set_measure_render_time(vp, true)
 	var shots: Array[Image] = []
@@ -157,7 +157,7 @@ func _stage() -> void:
 
 
 func _ring_radius(copies: int) -> float:
-	return maxf(RING_MIN_M, copies * RING_SPACING_M / TAU)
+	return maxf(float(_ring["min_m"]), copies * float(_ring["spacing_m"]) / TAU)
 
 
 func _place(packed: PackedScene, copies: int, spec: Dictionary) -> bool:
@@ -188,7 +188,7 @@ func _place(packed: PackedScene, copies: int, spec: Dictionary) -> bool:
 				mi.set_blend_shape_value(b, MORPH_WEIGHT)
 	var cam: Camera3D = root.get_node("BenchCamera") as Camera3D
 	cam.fov = float(spec["fov_deg"])
-	cam.position = Vector3(0.0, EYE_M, r + CAMERA_BACK_M)
+	cam.position = Vector3(0.0, float(_ring["eye_m"]), r + float(_ring["camera_back_m"]))
 	cam.look_at(Vector3(0.0, 1.0, 0.0))
 	cam.current = true
 	return true
@@ -246,8 +246,15 @@ func _measure(v: Dictionary, spec: Dictionary, vp: RID) -> Dictionary:
 	var prims: Array[float] = []
 	var draws: Array[float] = []
 	var objects: Array[float] = []
+	var process: Array[float] = []
+	var frame: Array[float] = []
+	var last_us: int = Time.get_ticks_usec()
 	for f: int in int(spec["frames"]):
 		await RenderingServer.frame_post_draw
+		var now_us: int = Time.get_ticks_usec()
+		frame.append((now_us - last_us) / 1000.0)
+		last_us = now_us
+		process.append(Performance.get_monitor(Performance.TIME_PROCESS) * 1000.0)
 		gpu.append(RenderingServer.viewport_get_measured_render_time_gpu(vp))
 		cpu.append(RenderingServer.viewport_get_measured_render_time_cpu(vp))
 		prims.append(Performance.get_monitor(Performance.RENDER_TOTAL_PRIMITIVES_IN_FRAME))
@@ -257,12 +264,24 @@ func _measure(v: Dictionary, spec: Dictionary, vp: RID) -> Dictionary:
 	row["gpu_ms"] = snappedf(_median(gpu), 0.001)
 	row["cpu_ms"] = snappedf(_median(cpu), 0.001)
 	row["gpu_ms_p95"] = snappedf(_quantile(gpu, 0.95), 0.001)
+	row["process_ms"] = snappedf(_median(process), 0.001)
+	row["frame_ms"] = snappedf(_median(frame), 0.001)
+	row["beyond_hand_lod"] = _beyond(float(spec["hand_lod_m"]))
 	row["primitives"] = int(_median(prims))
 	row["draw_calls"] = int(_median(draws))
 	row["objects"] = int(_median(objects))
 	row["fps"] = Engine.get_frames_per_second()
 	row.merge(_memory())
 	return row
+
+
+func _beyond(far: float) -> int:
+	var cam: Camera3D = root.get_node("BenchCamera") as Camera3D
+	var n: int = 0
+	for node: Node in _copies:
+		if cam.global_position.distance_to((node as Node3D).global_position) > far:
+			n += 1
+	return n
 
 
 func _median(values: Array[float]) -> float:
