@@ -168,6 +168,8 @@ class ProxyImagesTest(unittest.TestCase):
         self.assertEqual(bench_proxy.stem("alien_body_col.001"), "alien_body_col")
         self.assertEqual(bench_proxy.stem("//textures/alien_eyes_col.png"), "alien_eyes_col")
         self.assertEqual(bench_proxy.stem("eyes.v2"), "eyes.v2")
+        self.assertEqual(bench_proxy.stem("alien_body_col.png.001"), "alien_body_col")
+        self.assertEqual(bench_proxy.stem("alien.body.001"), "alien.body")  # only an image extension is stripped
 
 
 class ArgumentsTest(unittest.TestCase):

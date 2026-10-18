@@ -28,6 +28,7 @@ import sys
 
 HEAD_BONES = ("Head", "Jaw", "LeftEye", "RightEye")
 SEED = 212
+IMAGE_EXTS = (".png", ".jpg", ".jpeg", ".tga", ".exr", ".webp")
 
 
 def parse(argv):
@@ -99,9 +100,11 @@ def stem(name):
     """A file or image name without its extension or Blender's .001 suffix, lower case."""
     name = name.replace("\\", "/").rsplit("/", 1)[-1]  # "//textures/x.png": Blender's relative path, not a UNC share
     base, ext = os.path.splitext(name)
-    if ext[1:].isdigit():  # "alien_body_col.001"
-        base = os.path.splitext(base)[0]
-    elif ext.lower() not in (".png", ".jpg", ".jpeg", ".tga", ".exr", ".webp"):
+    if ext[1:].isdigit():  # "alien_body_col.001", "alien_body_col.png.001"; "alien.body.001" keeps its ".body"
+        inner_base, inner = os.path.splitext(base)
+        if inner.lower() in IMAGE_EXTS:
+            base = inner_base
+    elif ext.lower() not in IMAGE_EXTS:
         base = name
     return base.lower()
 
