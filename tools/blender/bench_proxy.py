@@ -12,8 +12,8 @@ Steps, on the largest skinned mesh (the body):
   (with every other mesh) has about --tris triangles; weights limited to 4 per vertex and normalized;
 - the head (vertices whose largest weight is on Head, Jaw or an eye bone) is split off as `<body>_head`, the only mesh
   that carries face morphs, as the contract's [face] wants;
-- images named like *col* or *nrm* are swapped for the 2048 bakes beside the .blend (`*_col_2048.png`,
-  `*_nrm_2048.png`) when they exist;
+- each image is swapped for its own 2048 bake beside the .blend, matched by stem (`alien_body_col` or
+  `alien_body_col.png` takes `alien_body_col_2048.png`); an image without one is kept and listed as kept;
 - per count N of --morphs: N shape keys on the head, each a smooth bump of 1 to 3 mm over a random 3 cm patch (seeded),
   saved as <out>/proxy_m<N>.blend. tools/run.py export --textured makes the GLBs.
 
@@ -95,19 +95,37 @@ def split_head(bpy, body):
     return new[0]
 
 
+def stem(name):
+    """A file or image name without its extension or Blender's .001 suffix, lower case."""
+    name = name.replace("\\", "/").rsplit("/", 1)[-1]  # "//textures/x.png": Blender's relative path, not a UNC share
+    base, ext = os.path.splitext(name)
+    if ext[1:].isdigit():  # "alien_body_col.001"
+        base = os.path.splitext(base)[0]
+    elif ext.lower() not in (".png", ".jpg", ".jpeg", ".tga", ".exr", ".webp"):
+        base = name
+    return base.lower()
+
+
 def swap_images(bpy, folder):
+    """Swaps each image for its own bake, <stem>_2048.png beside the .blend (the stem of its name, else of its file);
+    returns the swaps and the images kept."""
+    bakes = {f.lower(): f for f in os.listdir(folder) if f.lower().endswith("_2048.png")}
     swapped = []
-    found = {k: [f for f in os.listdir(folder) if f.lower().endswith(f"_{k}_2048.png")] for k in ("col", "nrm")}
     for img in list(bpy.data.images):
-        low = img.name.lower()
-        for key, files in found.items():
-            if key in low and files and not low.endswith("_2048.png"):
-                new = bpy.data.images.load(os.path.join(folder, files[0]))
-                new.colorspace_settings.name = img.colorspace_settings.name
-                new.pack()  # the saved proxies stand alone
-                img.user_remap(new)
-                new.name = img.name + "_2048"
-                swapped.append(f"{img.name} -> {files[0]} {tuple(new.size)}")
+        stems = [stem(img.name)] + ([stem(img.filepath)] if img.filepath else [])
+        if img.type != "IMAGE" or stems[0].endswith("_2048"):
+            continue
+        bake = next((bakes[f"{s}_2048.png"] for s in stems if f"{s}_2048.png" in bakes), None)
+        if bake is None:
+            swapped.append(f"{img.name} kept: no {stems[0]}_2048.png")
+            print(f"bench_proxy: {img.name} kept, no {stems[0]}_2048.png beside the .blend")
+            continue
+        new = bpy.data.images.load(os.path.join(folder, bake))
+        new.colorspace_settings.name = img.colorspace_settings.name
+        new.pack()  # the saved proxies stand alone
+        img.user_remap(new)
+        new.name = img.name + "_2048"
+        swapped.append(f"{img.name} -> {bake} {tuple(new.size)}")
     return swapped
 
 

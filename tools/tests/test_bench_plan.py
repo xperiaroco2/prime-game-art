@@ -124,6 +124,18 @@ class ReportTest(unittest.TestCase):
         self.assertIn("OVER the 0.5 ms budget", over[0])
 
 
+class ProxyImagesTest(unittest.TestCase):
+    def test_stem(self) -> None:
+        sys.path.insert(0, str(common.ROOT / "tools" / "blender"))
+        import bench_proxy  # no bpy at import time
+
+        self.assertEqual(bench_proxy.stem("alien_body_col"), "alien_body_col")
+        self.assertEqual(bench_proxy.stem("Alien_Body_Col.png"), "alien_body_col")
+        self.assertEqual(bench_proxy.stem("alien_body_col.001"), "alien_body_col")
+        self.assertEqual(bench_proxy.stem("//textures/alien_eyes_col.png"), "alien_eyes_col")
+        self.assertEqual(bench_proxy.stem("eyes.v2"), "eyes.v2")
+
+
 class ArgumentsTest(unittest.TestCase):
     def parse(self, argv: list[str]) -> argparse.Namespace:
         parser = argparse.ArgumentParser()
