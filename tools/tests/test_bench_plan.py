@@ -76,6 +76,16 @@ class PlanTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             _bench.spec([GLB_A], [10], frames=0)
 
+    def test_hand_lod_from_the_contract(self) -> None:
+        from runner.commands import _contract
+
+        lod2 = next(lv for lv in _contract.load_contract()["lods"]["levels"] if lv["name"] == "LOD2")
+        self.assertEqual(_bench.HAND_LOD_M, float(lod2["from_m"]))
+        self.assertEqual(_bench.spec([GLB_A], [10])["hand_lod_m"], float(lod2["from_m"]))
+        self.assertEqual(_bench.contract_hand_lod_m({"lods": {"levels": [{"name": "LOD2", "from_m": 12}]}}), 12.0)
+        with self.assertRaises(ValueError):
+            _bench.contract_hand_lod_m({"lods": {"levels": []}})
+
     def test_vram_import(self) -> None:
         text = "[remap]\n\nimporter=\"texture\"\n\n[params]\n\ncompress/mode=0\ncompress/normal_map=0\n"
         out = _bench.vram_import(text, normal=True)

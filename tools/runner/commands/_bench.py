@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any
 
 from .. import common
+from . import _contract
 
 OUT = common.OUT / "bench"
 SCRIPT = "res://bench/bench.gd"
@@ -22,8 +23,19 @@ SETTLE = 30
 MAX_COPIES = 64
 SHEET_CELL = (424, 240)  # three across: a 1272 px sheet, the agents' size
 SHEET_COLS = 3
-HAND_LOD_M = 10.0  # the suggested LOD2 distance (contract [lods])
 BUDGET_MS = 4.0  # the characters' share of the GPU frame at 20 bodies the measurement is held to (#212)
+
+
+def contract_hand_lod_m(contract: dict[str, Any] | None = None) -> float:
+    """Where the contract's LOD2 starts (`[[lods.levels]]` LOD2's `from_m`): the 'hand' variant's distance."""
+    contract = contract if contract is not None else _contract.load_contract()
+    for level in contract.get("lods", {}).get("levels", []):
+        if level.get("name") == "LOD2":
+            return float(level["from_m"])
+    raise ValueError("the contract has no [[lods.levels]] LOD2")
+
+
+HAND_LOD_M = contract_hand_lod_m()
 
 
 def parse_copies(text: str) -> list[int]:
@@ -77,7 +89,7 @@ def describe(gltf: dict[str, Any], shadow_part: str = SHADOW_PART) -> dict[str, 
 def variants(glbs: list[dict[str, Any]], copies: list[int]) -> list[dict[str, Any]]:
     """The measured variants: first the empty stage (the scene's own cost), then per GLB and copy count the automatic
     LOD on ("auto") and off ("off"), each with full-mesh shadows and, when the GLB has the shadow part, the shadow
-    proxy; with the shadow part also "hand" (the part as a hand-made LOD2 beyond HAND_LOD_M, full shadows). Grouped
+    proxy; with the shadow part also "hand" (the part as a hand-made LOD2 beyond HAND_LOD_M, the contract's LOD2 distance, full shadows). Grouped
     by GLB and count, the order bench.gd loads them in."""
     if not glbs:
         raise ValueError("no GLB to measure")

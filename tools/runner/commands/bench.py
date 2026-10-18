@@ -38,7 +38,8 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--frames", type=int, default=_bench.FRAMES, help=f"measured frames per variant ({_bench.FRAMES})")
     parser.add_argument("--warmup", type=int, default=_bench.WARMUP, help=f"warm-up frames per GLB and count ({_bench.WARMUP})")
     parser.add_argument("--hand-lod-m", type=float, default=_bench.HAND_LOD_M,
-                        help=f"where the hand-made LOD2 takes over in the 'hand' variant (default {_bench.HAND_LOD_M:g} m)")
+                        help=f"where the hand-made LOD2 takes over in the 'hand' variant (default: the contract's LOD2, "
+                             f"{_bench.HAND_LOD_M:g} m)")
     parser.add_argument("--budget-ms", type=float, default=_bench.BUDGET_MS,
                         help=f"the characters' GPU share the verdict holds them to (default {_bench.BUDGET_MS:g})")
     parser.add_argument("--out", type=Path, help="output folder (default tools/out/bench/run/)")
