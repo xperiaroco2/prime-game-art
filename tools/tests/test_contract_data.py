@@ -208,6 +208,8 @@ class ContractTest(unittest.TestCase):
         self.assertEqual(limits["texture_character_px"], 2048)
         self.assertLessEqual(limits["texture_lod_px"], limits["texture_character_px"])
         self.assertGreaterEqual(limits["glb_character_mb"], 30)
+        self.assertEqual((self.contract["body"]["height_min_m"], self.contract["body"]["height_max_m"]), (1.7, 1.8))
+        self.assertEqual(self.contract["animation"]["ragdoll"], "knockdown")
 
     def test_lods(self) -> None:
         lods = self.contract["lods"]
@@ -221,8 +223,6 @@ class ContractTest(unittest.TestCase):
             self.assertGreater(far["from_m"], near["from_m"], far["name"])
         self.assertIn("SHADOWS_ONLY", lods["shadow_proxy"])
         self.assertIn("stay on", lods["automatic"])
-        self.assertEqual((self.contract["body"]["height_min_m"], self.contract["body"]["height_max_m"]), (1.7, 1.8))
-        self.assertEqual(self.contract["animation"]["ragdoll"], "knockdown")
 
 
 class BoneMapTest(unittest.TestCase):
