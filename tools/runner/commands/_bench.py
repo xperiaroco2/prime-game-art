@@ -153,17 +153,22 @@ def derive(record: dict[str, Any]) -> dict[str, Any]:
 
 
 def verdict(record: dict[str, Any], glbs: list[dict[str, Any]], copies: int, budget_ms: float = BUDGET_MS) -> list[str]:
-    """One line per GLB: its best variant's characters' GPU share at `copies` bodies against budget_ms."""
+    """One line per GLB: the characters' GPU share at `copies` bodies in the default setup (`auto_full`: the automatic
+    LODs, every mesh casting) against budget_ms, and the worst variant beside it."""
     out = []
     for g in glbs:
         rows = [r for r in record.get("rows", []) if r.get("glb") == g["id"] and r.get("copies") == copies
                 and "char_gpu_ms" in r]
-        if not rows:
+        default = next((r for r in rows if r.get("lod") == "auto" and r.get("shadow") == "full"), None)
+        if default is None:
             continue
-        best = min(rows, key=lambda r: r["char_gpu_ms"])
-        word = "within" if best["char_gpu_ms"] <= budget_ms else "OVER"
+        worst = max(rows, key=lambda r: r["char_gpu_ms"])
+        word = "within" if default["char_gpu_ms"] <= budget_ms else "OVER"
+        worst_word = "within" if worst["char_gpu_ms"] <= budget_ms else "OVER"
         out.append(f"{g['id']} ({g['triangles']:,} tris, {g['morphs']} morphs): {int(copies)} bodies cost "
-                   f"{best['char_gpu_ms']:.2f} ms GPU at best ({best['id']}), {word} the {budget_ms:g} ms budget")
+                   f"{default['char_gpu_ms']:.2f} ms GPU in the default setup ({default['id']}), {word} the "
+                   f"{budget_ms:g} ms budget; the worst variant {worst['char_gpu_ms']:.2f} ms ({worst['id']}, "
+                   f"{worst_word})")
     return out
 
 

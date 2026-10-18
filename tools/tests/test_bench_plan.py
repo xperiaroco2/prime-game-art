@@ -129,9 +129,15 @@ class ReportTest(unittest.TestCase):
         self.assertIn("300 measured frames", text)
         verdicts = [ln for ln in lines if "budget" in ln]
         self.assertEqual(len(verdicts), 1)
-        self.assertIn("20 bodies cost 0.70 ms GPU at best (a_x20_auto_full), within the 4 ms budget", verdicts[0])
+        self.assertIn("20 bodies cost 0.70 ms GPU in the default setup (a_x20_auto_full), within the 4 ms budget; "
+                      "the worst variant 4.50 ms (a_x20_off_full, OVER)", verdicts[0])
         over = _bench.verdict(record, [GLB_A], 20, budget_ms=0.5)
         self.assertIn("OVER the 0.5 ms budget", over[0])
+        # the default setup decides, not the cheapest variant
+        cheap = json.loads(json.dumps(record))
+        cheap["rows"].append(dict(rows["a_x20_auto_full"], id="a_x20_auto_proxy", shadow="proxy",
+                                  char_gpu_ms=0.1))
+        self.assertIn("OVER the 0.5 ms budget", _bench.verdict(cheap, [GLB_A], 20, budget_ms=0.5)[0])
 
 
 class ProxyImagesTest(unittest.TestCase):

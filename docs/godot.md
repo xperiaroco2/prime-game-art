@@ -610,7 +610,8 @@ largest weight is on Head, Jaw or an eye bone) split off as its own mesh with `-
 morph count is saved as `proxy_m<N>.blend` and exported with `export --textured`.
 
 Out folder (default `tools/out/bench/run/`): `bench.json` (every row and group, the adapter, the GLBs), `bench.md` (the
-tables and one verdict line per GLB and count: its best variant's `chars GPU ms` against `--budget-ms`, 4 ms),
+tables and one verdict line per GLB and count: the default setup's (`auto_full`) `chars GPU ms` against
+`--budget-ms`, 4 ms, with the worst variant named beside it),
 `sheet.png` (one shot per GLB and count, 1272 px), `shots/`, `godot.log`; with `--proxy-from` also `proxy/` and `glb/`.
 A full run with `--proxy-from` (Blender, three exports, 31 variants) took about 2 minutes on the RTX 4060 machine;
 start it in the background all the same.
