@@ -5,8 +5,10 @@ running the inspection script, and the assertions on its description (docs/godot
 from __future__ import annotations
 
 import json
+import os
 import re
 import shutil
+import time
 from pathlib import Path
 from typing import Any
 
@@ -190,7 +192,13 @@ def offscreen_problems(output: str) -> list[str]:
     for x, y, w, h, screens in found:
         rect = (int(x), int(y), int(w), int(h))
         for i, screen in enumerate(screens.split(";")):
-            s = tuple(int(v) for v in screen.split(","))
+            try:
+                s = tuple(int(v) for v in screen.split(","))
+            except ValueError:
+                s = ()
+            if len(s) != 4:
+                problems.append(f"screen {i} of the OFFSCREEN line is not <x>,<y>,<w>,<h>: {screen!r}")
+                continue
             if _overlap(rect, s):
                 problems.append(f"the {w}x{h} window at {x},{y} is on screen {i} ({s[2]}x{s[3]} at {s[0]},{s[1]})")
     return problems
@@ -204,17 +212,28 @@ def install_offscreen(project: Path) -> None:
         shutil.copyfile(OFFSCREEN_GD, project / "lib" / OFFSCREEN_GD.name)
 
 
-def window(args: list[str], size: tuple[int, int], timeout: float) -> tuple[int, str]:
+def window(args: list[str], size: tuple[int, int], timeout: float, log: Path | None = None) -> tuple[int, str]:
     """Runs a Godot window script (args: --path and the rest, no --position or --resolution) in a window of size that
     never shows on a screen; the script calls godot/lib/offscreen.gd place() first. Raises Failure when the output
-    does not prove the window stayed off every screen (offscreen_problems)."""
+    does not prove the window stayed off every screen (offscreen_problems), after writing the run's whole output to
+    log (the caller's log; None: a new file under tools/out/godot-window/)."""
     install_offscreen(Path(args[args.index("--path") + 1]))
     code, output = godot([*WINDOW_START, *args], timeout, env=window_env(size))
     problems = offscreen_problems(output)
     if problems:
+        if log is None:
+            log = common.OUT / "godot-window" / f"{time.strftime('%Y%m%d-%H%M%S')}-{os.getpid()}.log"
+        log = Path(log)
+        log.parent.mkdir(parents=True, exist_ok=True)
+        log.write_text(output, encoding="utf-8")
         tail = "\n".join(ANSI.sub("", output).splitlines()[-8:])
-        raise common.Failure("Godot's window was not proven off-screen (#214, docs/godot.md): " + "; ".join(problems[:3])
-                             + f"\nexit code {code}; the run's last lines:\n{tail}")
+        if code != 0 and not _OFFSCREEN.search(ANSI.sub("", output)):
+            head = (f"Godot exited {code}: the script failed before placing its window off-screen (no OFFSCREEN line,"
+                    " godot/lib/offscreen.gd place())")
+        else:
+            head = (f"Godot's window was not proven off-screen (#214, docs/godot.md): {'; '.join(problems[:3])}"
+                    f"\nexit code {code}")
+        raise common.Failure(f"{head}\nthe whole output: {log.as_posix()}; its last lines:\n{tail}")
     return code, output
 
 

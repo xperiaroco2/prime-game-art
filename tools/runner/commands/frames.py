@@ -82,7 +82,8 @@ def run(args: argparse.Namespace) -> int:
     w, h = _frames.WINDOW
     # no sound: with no audio output device Godot's WASAPI logs an ERROR (art #69), and a frame sheet needs none
     code, output = _godot.window(["--path", _godot.PROJECT, "--audio-driver", "Dummy", "-s", _frames.SCRIPT, "--",
-                                  res_path, out.as_posix(), spec_path.as_posix()], (w, h), TIMEOUT)
+                                  res_path, out.as_posix(), spec_path.as_posix()], (w, h), TIMEOUT,
+                                  log=out / "godot.log")
     (out / "godot.log").write_text(output, encoding="utf-8")
     lines = _godot.noteworthy(output)
     errors = [ln for ln in output.splitlines() if "FRAMES error" in ln] + [ln for ln in lines if "ERROR" in ln]

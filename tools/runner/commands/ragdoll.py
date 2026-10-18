@@ -104,7 +104,7 @@ def fall(glb: Path, data_path: Path, out: Path, shots: bool) -> dict:
     args = ["--fixed-fps", "60", "--path", PROJECT, "-s", SCRIPT, "--", f"res://import/{glb.name}",
             data_path.resolve().as_posix(), out.resolve().as_posix(), "shots" if shots else "check"]
     if shots:  # an off-screen window (#214)
-        code, output = _godot.window(["--audio-driver", "Dummy", *args], (640, 400), TIMEOUT)
+        code, output = _godot.window(["--audio-driver", "Dummy", *args], (640, 400), TIMEOUT, log=out / "godot.log")
     else:
         code, output = _godot.godot(["--headless", *args], TIMEOUT)
     (out / "godot.log").write_text(output, encoding="utf-8")
