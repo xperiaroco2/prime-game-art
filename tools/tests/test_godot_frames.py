@@ -7,11 +7,12 @@ import json
 import os
 import unittest
 
+from runner import common
 from runner.commands import _frames, _review
 
 from . import _export_fixture as fx
 
-HAVE_DISPLAY = os.name == "nt" or bool(os.environ.get("DISPLAY") or os.environ.get("WAYLAND_DISPLAY"))
+HAVE_DISPLAY = common.have_display()  # an interactive desktop (Windows) or DISPLAY/WAYLAND_DISPLAY
 IN_CI = bool(os.environ.get("CI"))
 
 
