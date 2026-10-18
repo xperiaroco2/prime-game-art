@@ -151,6 +151,12 @@ def validate_contract(contract: dict[str, Any], profile: dict[str, Any]) -> list
     for name in morph_bones or []:
         if name not in bones:
             errors.append(f"face.morph_bones names {name!r}, which is not a profile bone")
+    face = contract.get("face", {})
+    for name in face.get("edge_bones", []):
+        if name not in bones:
+            errors.append(f"face.edge_bones names {name!r}, which is not a profile bone")
+    if not isinstance(face.get("edge_bones"), list) or not isinstance(face.get("edge_mm"), (int, float)):
+        errors.append("face.edge_bones (a list) and face.edge_mm (a number) are missing: a face morph's soft edge")
     for socket in contract.get("sockets", []):
         if socket.get("bone") not in bones:
             errors.append(f"socket {socket.get('name')} is on {socket.get('bone')!r}, which is not a profile bone")
@@ -167,6 +173,8 @@ def validate_contract(contract: dict[str, Any], profile: dict[str, Any]) -> list
             errors.append(f"slot {slot.get('id')} uses the unknown socket {slot['socket']!r}")
         if slot.get("check_kind") and slot["check_kind"] not in KINDS:
             errors.append(f"slot {slot.get('id')} has the unknown check_kind {slot['check_kind']!r}")
+        if "part_morphs" in slot and not (slot.get("parts") and isinstance(slot["part_morphs"], list)):
+            errors.append(f"slot {slot.get('id')}: part_morphs must be a list, on a slot with parts")
     for kind in KINDS:
         rules = contract.get("kinds", {}).get(kind)
         if not rules:

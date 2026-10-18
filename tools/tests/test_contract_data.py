@@ -112,6 +112,20 @@ class ContractTest(unittest.TestCase):
         errors = _contract.validate_contract(broken, self.profile)
         self.assertTrue(any("face.morph_bones is missing" in e for e in errors), errors)
 
+    def test_the_face_edge_and_part_morphs_are_checked(self) -> None:
+        broken = copy.deepcopy(self.contract)
+        broken["face"]["edge_bones"] = ["Collar"]
+        errors = _contract.validate_contract(broken, self.profile)
+        self.assertTrue(any("face.edge_bones names 'Collar'" in e for e in errors), errors)
+        del broken["face"]["edge_mm"]
+        errors = _contract.validate_contract(broken, self.profile)
+        self.assertTrue(any("face.edge_mm (a number) are missing" in e for e in errors), errors)
+        slots = {s["id"]: s for s in broken["slots"]}
+        slots["hair_or_hat"]["part_morphs"] = ["look_l"]
+        errors = _contract.validate_contract(broken, self.profile)
+        self.assertTrue(any("slot hair_or_hat: part_morphs must be a list, on a slot with parts" in e for e in errors),
+                        errors)
+
     def test_faces_are_morphs_on_one_template_head(self) -> None:
         # The engineer, 2026-10-18 (art #200): no face texture frames and no rigid faces laid on the head.
         face = self.contract["face"]
@@ -125,6 +139,9 @@ class ContractTest(unittest.TestCase):
             self.assertNotIn("frames", slots[slot])
             self.assertTrue(slots[slot]["expressions"])
         self.assertEqual(slots["eyes"]["parts"], ["eyeballs"])
+        self.assertEqual(slots["eyes"]["part_morphs"], ["look_l", "look_r", "look_u", "look_d"])
+        self.assertNotIn("part_morphs", slots["mouth"])
+        self.assertEqual((face["edge_bones"], face["edge_mm"]), (["Neck"], 2.0))
         self.assertEqual(slots["mouth"]["parts"], ["teeth", "tusks"])
         self.assertIn("morphs", self.contract["animation"]["face"])
         limits = self.contract["budgets"]["limits"]
