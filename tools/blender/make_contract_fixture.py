@@ -45,6 +45,7 @@ DEFECTS = {
     # Mixed weights on the Head box, for the face morph measure (save as .blend: glTF keeps only bone groups).
     "clay_border": "a clay_border vertex group, not a bone, at 1.0 on every Head vertex",
     "tied_head_vertex": "one Head vertex at 0.5 Head, 0.5 Neck",
+    "near_tied_head_vertex": "one Head vertex at 127/255 Head, 128/255 Neck: an 8-bit glTF tie",
     "neck_heavy_head_vertex": "one Head vertex at 0.4 Head, 0.6 Neck",
     "unweighted_head_vertex": "one Head vertex without bone weights",
 }
@@ -273,6 +274,9 @@ def main() -> None:
     if "tied_head_vertex" in defects:
         groups["Head"].add([head[0]], 0.5, "REPLACE")
         groups["Neck"].add([head[0]], 0.5, "REPLACE")
+    if "near_tied_head_vertex" in defects:
+        groups["Head"].add([head[3]], 127 / 255, "REPLACE")
+        groups["Neck"].add([head[3]], 128 / 255, "REPLACE")
     if "neck_heavy_head_vertex" in defects:
         groups["Head"].add([head[1]], 0.4, "REPLACE")
         groups["Neck"].add([head[1]], 0.6, "REPLACE")
