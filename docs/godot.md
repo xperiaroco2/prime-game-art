@@ -571,6 +571,49 @@ lighter feet did worse. The BoneAttachment3Ds update on the same `skeleton_updat
 compared inside the handler they lag one update (about 0.1 m at the fall's speed); `fall.gd` compares them after the
 frame. Outside that signal `get_bone_global_pose` returns the animation pose, not the simulated one.
 
+## Bench (`bench`, art #212)
+
+`tools/run.py bench [GLB ...] [--proxy-from BLEND] [--copies 10,20]` measures what a character costs in Godot 4.7.2,
+the measurement behind the character budgets (docs/contract.md, `docs/decisions/2026-10-18-character-budgets.md`).
+`godot/bench/bench.gd` stands N copies of each GLB in a meeting ring (1.3 m apart, at least 2.2 m radius), each playing
+its idle clip from its own offset with every face morph weighted 0.05 (the worst case: Godot blends only non-zero
+weights), and looks at them from 2.5 m behind the ring at eye height (1.6 m, vertical FOV 75 degrees, so the far side
+is 8 to 11 m away). The stage: a ground plane, a procedural sky, AgX, SSAO, a directional light with 4 shadow splits
+(max distance 60 m) and a shadowed omni lamp (cube shadows, range 9 m) at the ring's centre. The window is 1920x1080,
+off-screen (`--position -30000,-30000`, never headless, never minimized), vsync off.
+
+Per GLB and copy count it loads the copies, warms up (120 frames: the GPU clocks up and the pipelines compile), shoots
+the view for the sheet, then measures each variant over 300 frames after 30 settle frames: the median GPU and CPU ms
+of the viewport (`viewport_get_measured_render_time_gpu/cpu`, as `showroom`), the p95 GPU ms, and the frame's
+primitives, draw calls and objects and the video, texture and buffer memory (`Performance` monitors). The variants:
+
+| Variant | What |
+|---|---|
+| `empty` | the stage without characters: subtracted from every row as `chars GPU ms` / `chars CPU ms` |
+| `auto_full` | the importer's automatic LODs (the viewport's `mesh_lod_threshold` 1.0), every mesh casts shadows |
+| `auto_proxy` | the drawn meshes cast no shadow; the GLB's `bench_shadow` part casts alone (`SHADOWS_ONLY`) |
+| `off_full`, `off_proxy` | the same with `mesh_lod_threshold` 0: always LOD0 |
+| `hand_full` | `bench_shadow` drawn as a hand-made LOD2 from `--hand-lod-m` (10 m) on, the full meshes before it (visibility ranges) |
+
+The proxy variants need a part whose name holds `bench_shadow`; without it a GLB gets `auto_full` and `off_full` only.
+Godot extracts a GLB's textures as Lossless and only the editor turns them to VRAM Compressed on first use, so the
+command sets the extracted textures' `.import` to VRAM Compressed with mipmaps (normal maps as normal maps) and imports
+again, as the game has them. Memory per group (`buffer MB added` and so on) is the growth from loading the GLB and its
+copies; a GLB's mesh data (its morphs) is counted once, in the first group that loads it.
+
+`--proxy-from <character.blend>` first makes the stand-in in headless Blender (`tools/blender/bench_proxy.py`): the
+largest skinned mesh subdivided once and decimated to `--tris` (40,000) for the whole character with its weights
+interpolated and limited to 4; a copy decimated to `--shadow-tris` (7,000) as `bench_shadow`; the head (vertices whose
+largest weight is on Head, Jaw or an eye bone) split off as its own mesh with `--morphs` (0, 32, 64) seeded random
+1 to 3 mm bumps; the 2048 bakes beside the .blend (`*_col_2048.png`, `*_nrm_2048.png`) in place of the textures. Each
+morph count is saved as `proxy_m<N>.blend` and exported with `export --textured`.
+
+Out folder (default `tools/out/bench/run/`): `bench.json` (every row and group, the adapter, the GLBs), `bench.md` (the
+tables and one verdict line per GLB and count: its best variant's `chars GPU ms` against `--budget-ms`, 4 ms),
+`sheet.png` (one shot per GLB and count, 1272 px), `shots/`, `godot.log`; with `--proxy-from` also `proxy/` and `glb/`.
+A full run with `--proxy-from` (Blender, three exports, 31 variants) took about 2 minutes on the RTX 4060 machine;
+start it in the background all the same.
+
 ## Findings for later tasks
 
 - **Toe bones (art #25):** assembled characters have 64 bones since art #25 (`Toe.L`, `Toe.R`). The export and

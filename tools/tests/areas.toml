@@ -68,7 +68,14 @@ sources = [
   "tools/runner/commands/_showroom.py", "tools/runner/commands/showroom.py",
   "godot/check/*", "godot/frames/*", "godot/showroom/*",
 ]
-tests = ["test_export_*", "test_godot_*"]
+tests = ["test_export_*", "test_godot_*", "test_bench_*"]
+
+[area.bench]
+sources = [
+  "godot/bench/*", "tools/blender/bench_proxy.py", "tools/runner/commands/_bench.py",
+  "tools/runner/commands/bench.py",
+]
+tests = ["test_bench_*"]
 
 [area.ragdoll]
 sources = ["godot/ragdoll/*", "tools/runner/commands/_ragdoll.py", "tools/runner/commands/ragdoll.py"]
