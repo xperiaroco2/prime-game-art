@@ -1,0 +1,44 @@
+# art#196, 2D concepts, sheet 7b. The engineer rejected sheet 7 (2026-10-18, chat): "too realistic, and the clothes are
+# ordinary; they must be fun alien ones". Read as: no photo-real fabric, no plain Earth outfits; clothes and body
+# stylised and sculpted like the head, the outfits themselves alien and funny. The same base character (head 1, teal,
+# eyes 1, mouth 1), only the outfit changes. Two directions to choose between: A, alien party fashion; B, Earth
+# clothes gone alien. GPT Image for both, nano-banana-pro once on A (his word: keep both models).
+# The female sheet `2026-10-18-alien-2d-female1` used sheet 7's rejected approach and is not shown.
+# Written by the art manager, not committed. Schema: docs/meshy.md.
+
+id = "2026-10-18-alien-2d-outfits2"
+purpose = "2D concept sheet 7b for art#196: the base character in fun alien outfits, stylised and sculpted, two directions."
+plan = "Meshy paid plan (monthly; bought by the engineer on 2026-10-17)"
+terms_url = "https://www.meshy.ai/terms-of-use"
+licence = "owned by the customer on a paid plan (Meshy Terms of Use 3.2, updated 2026-09-19); no attribution required"
+credit_cap = 30
+approved_by = "xperiaroco2 (the engineer)"
+approved_at = "2026-10-17"
+approval_ref = "https://github.com/xperiaroco2/prime-game-art/issues/196#issuecomment-6235754823"
+
+[defaults.text_to_image.params]
+ai_model = "gpt-image-2-5-sunburst"
+aspect_ratio = "16:9"
+remove_background = false
+
+[variants.party]
+prompt = "Stylized 3D character concept render for a fun cartoon game, one row of four full-body figures of the same humanoid alien man, side by side, standing three-quarter view, whole figures in frame with feet visible, plain mid-grey studio background, soft key light, gentle rim light, soft contact shadows. Everything is sculpted from premium handmade plasticine, the clothes too: smooth chunky simplified clay forms, a few bold folds, soft matte clay surfaces, no fabric weave, no realistic textures, no photographic detail. Stylised cartoon body about six heads tall, slim limbs, a long neck, simplified soft hands with four fingers, playful but adult, never babyish. The same alien in every figure: a smooth back-swept domed head with a short curved blade crest, teal skin with a lighter mint face and throat, no nose (two tiny nostril slits), no ears, big glossy white bead eyes set wide and high with small dark pupils and heavy half-closed lids with warm reddish rims, bored deadpan, a wide frog-line mouth with rolled coral lips. Only the outfit changes, weird and funny alien party fashion in bold colours with one coral accent each, from left to right: 1 a puffy inflatable bubble jumpsuit in mustard with a tall stiff fin collar and round glowing buttons; 2 a glossy beetle-shell jacket in purple with far too many tiny pockets, striped tights and curled pointy boots; 3 a wobbly translucent jelly poncho with little floating orbs inside, over bright orange shorts and chunky moon boots; 4 an alien tuxedo with a huge stiff ruff collar, dangling tentacle tassels, a sash with a tiny ringed-planet brooch and spiral-toed shoes. Cool, funny, adult deadpan humour, made with care. Not realistic, not childish, not grotesque: no blush stickers, no sparkle eyes, no mascot smile, no slime, no gore, no text, no logo."
+
+[variants.earthwrong]
+prompt = "Stylized 3D character concept render for a fun cartoon game, one row of four full-body figures of the same humanoid alien man, side by side, standing three-quarter view, whole figures in frame with feet visible, plain mid-grey studio background, soft key light, gentle rim light, soft contact shadows. Everything is sculpted from premium handmade plasticine, the clothes too: smooth chunky simplified clay forms, a few bold folds, soft matte clay surfaces, no fabric weave, no realistic textures, no photographic detail. Stylised cartoon body about six heads tall, slim limbs, a long neck, simplified soft hands with four fingers, playful but adult, never babyish. The same alien in every figure: a smooth back-swept domed head with a short curved blade crest, teal skin with a lighter mint face and throat, no nose (two tiny nostril slits), no ears, big glossy white bead eyes set wide and high with small dark pupils and heavy half-closed lids with warm reddish rims, bored deadpan, a wide frog-line mouth with rolled coral lips. Only the outfit changes: Earth clothes an alien got slightly wrong, in bold colours with one coral accent each, from left to right: 1 a business suit with the tie worn as a headband around the crest, a briefcase that is a fishbowl with a tiny planet inside, socks over the shoes; 2 a knitted sweater with a hole cut for the crest and three sleeves, the third sleeve tied in a knot, shorts and bunny slippers; 3 a tracksuit made of shiny foil with fins sewn on the hood, sunglasses with four lenses, a fanny pack with a little antenna; 4 a Hawaiian shirt printed with tiny flying saucers, tucked into high-waisted trousers pulled up to the chest, sandals with socks, a garden gnome under one arm. Cool, funny, adult deadpan humour, made with care. Not realistic, not childish, not grotesque: no blush stickers, no sparkle eyes, no mascot smile, no slime, no gore, no text, no logo."
+
+[[items]]
+id = "g-p1"
+variant = "party"
+kind = "text_to_image"
+
+[[items]]
+id = "g-w1"
+variant = "earthwrong"
+kind = "text_to_image"
+
+[[items]]
+id = "n-p1"
+variant = "party"
+kind = "text_to_image"
+params = { ai_model = "nano-banana-pro" }

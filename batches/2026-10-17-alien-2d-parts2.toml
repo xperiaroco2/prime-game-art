@@ -1,0 +1,48 @@
+# art#196, 2D concepts, sheets 4 and 5 (the handover's order, step 3): eight crests and hairstyles, then twelve skin
+# hues, each on the same head as sheets 2 and 3 (the back-swept dome, his kept eyes 1, the frog-line mouth), so one
+# part changes at a time. Both models, one try each (his word: keep GPT Image and nano-banana-pro, pick the best try).
+# Ready for after the Meshy top-up (balance 4 on 2026-10-17). Written by the art manager, not committed.
+# Schema: docs/meshy.md.
+
+id = "2026-10-17-alien-2d-parts2"
+purpose = "2D concept sheets 4 and 5 for art#196: crests and hairstyles, then skin hues, on one fixed alien head, to pick the parts the engineer likes."
+plan = "Meshy paid plan (monthly; bought by the engineer on 2026-10-17)"
+terms_url = "https://www.meshy.ai/terms-of-use"
+licence = "owned by the customer on a paid plan (Meshy Terms of Use 3.2, updated 2026-09-19); no attribution required"
+credit_cap = 45
+approved_by = "xperiaroco2 (the engineer)"
+approved_at = "2026-10-17"
+approval_ref = "https://github.com/xperiaroco2/prime-game-art/issues/196#issuecomment-6235754823"
+
+[defaults.text_to_image.params]
+ai_model = "gpt-image-2-5-sunburst"
+aspect_ratio = "16:9"
+remove_background = false
+
+[variants.crests]
+prompt = "Character design sheet for a stylized 3D game: one row of eight identical alien head-and-shoulders busts in front three-quarter view, the same size, evenly spaced on one plain mid-grey studio background, soft key light, gentle rim light, soft shadows. Premium handmade plasticine look: smooth clean sculpted forms, soft matte clay skin with a barely visible handmade surface, no pores, no wrinkles, no HD texture detail. Every bust is the same alien: a smooth back-swept domed head, teal skin with a lighter mint face and throat, a slim neck, no human nose (two tiny nostril slits), no human ears, big glossy white bead eyes set wide and high with small dark pupils, one sharp highlight and heavy half-closed upper lids with warm reddish rims, bored, and exactly the same closed wide frog-line mouth with rolled coral clay lips and a fuller lower lip. Only the top of the head changes, from left to right: 1 a short curved blade crest; 2 two swept-back fins in place of ears with warm reddish edges; 3 a smooth quiff-shaped ridge rolled forward like a clay wave; 4 two short antennae with round bobbles; 5 a slicked side-part hairstyle in deep violet; 6 a curtain-bangs bob in lilac; 7 a tall pompadour in tangerine; 8 a short punk crop of soft clay spikes in lime. Hair is sculpted as a few big smooth clay masses with simple grooves, never strands. Adult, cool, funny and appealing, made with care. Not realistic, not childish, not grotesque: no blush stickers, no sparkle eyes, no smile, no text, no numbers, no labels, no logo."
+
+[variants.skins]
+prompt = "Character design sheet for a stylized 3D game: two rows of six identical alien head-and-shoulders busts in front view, the same size, evenly spaced on one plain mid-grey studio background, soft key light, gentle rim light, soft shadows. Premium handmade plasticine look: smooth clean sculpted forms, soft matte clay skin with a barely visible handmade surface, no pores, no wrinkles, no HD texture detail. Every bust is the same alien: a smooth back-swept domed head with a short curved blade crest, a slim neck, no human nose (two tiny nostril slits), no human ears, big glossy white bead eyes set wide and high with small dark pupils, one sharp highlight and heavy half-closed upper lids, bored, and exactly the same closed wide frog-line mouth with rolled clay lips and a fuller lower lip. Only the skin colour changes, saturated but never candy or neon, top row left to right: teal, jade green, mint, lime olive, mustard, lemon yellow; bottom row: coral, tangerine, rose pink, lilac, periwinkle, cobalt blue. Every skin has the same recipe: a lighter second tone of its own hue on the face and throat with a soft organic split, and warmer, redder flush on the eyelid rims, lips, nostrils and crest edge. Adult, cool, funny and appealing, made with care. Not realistic, not childish, not grotesque: no blush stickers, no sparkle eyes, no smile, no text, no numbers, no labels, no logo."
+
+[[items]]
+id = "g-c1"
+variant = "crests"
+kind = "text_to_image"
+
+[[items]]
+id = "n-c1"
+variant = "crests"
+kind = "text_to_image"
+params = { ai_model = "nano-banana-pro" }
+
+[[items]]
+id = "g-s1"
+variant = "skins"
+kind = "text_to_image"
+
+[[items]]
+id = "n-s1"
+variant = "skins"
+kind = "text_to_image"
+params = { ai_model = "nano-banana-pro" }

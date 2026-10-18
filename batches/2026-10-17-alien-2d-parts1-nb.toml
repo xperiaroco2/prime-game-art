@@ -1,0 +1,34 @@
+# art#196, 2D concepts: sheets 2 and 3's exact prompts on nano-banana-pro, to compare with GPT Image (the engineer's
+# request of 2026-10-17). Eyes first (the balance covers one image); mouths (n-m1) after a top-up.
+# Written by the art manager, not committed. Schema: docs/meshy.md.
+
+id = "2026-10-17-alien-2d-parts1-nb"
+purpose = "2D concept sheets 2 and 3 for art#196 on nano-banana-pro, to compare with the GPT Image tries."
+plan = "Meshy paid plan (monthly; bought by the engineer on 2026-10-17)"
+terms_url = "https://www.meshy.ai/terms-of-use"
+licence = "owned by the customer on a paid plan (Meshy Terms of Use 3.2, updated 2026-09-19); no attribution required"
+credit_cap = 20
+approved_by = "xperiaroco2 (the engineer)"
+approved_at = "2026-10-17"
+approval_ref = "https://github.com/xperiaroco2/prime-game-art/issues/196#issuecomment-6235754823"
+
+[defaults.text_to_image.params]
+ai_model = "nano-banana-pro"
+aspect_ratio = "16:9"
+remove_background = false
+
+[variants.eyes]
+prompt = "Character design sheet for a stylized 3D game: one row of eight identical alien head-and-shoulders busts in front view, the same size, evenly spaced on one plain mid-grey studio background, soft key light, gentle rim light, soft shadows. Premium handmade plasticine look: smooth clean sculpted forms, soft matte clay skin with a barely visible handmade surface, no pores, no wrinkles, no HD texture detail. Every bust is the same alien: a smooth back-swept domed head with a short curved blade crest, teal skin with a lighter mint face and throat, a slim neck, no human nose (two tiny nostril slits), no human ears, and exactly the same closed wide frog-line mouth with rolled coral clay lips and a fuller lower lip. Only the eyes change, from left to right: 1 big glossy white bead eyes with small dark pupils and heavy half-closed upper lids, bored; 2 the same beads with vertical slit pupils and a sly narrow look; 3 sleepy droopy lids almost closed with soft eye bags; 4 wide open round eyes with tiny pupils, manic; 5 two bead eyes plus a small third eye above them; 6 two short eye stalks with bead eyes on top; 7 slightly uneven eyes, one bigger, with a raised sceptical lid; 8 almond bead eyes with dark eyeliner rims and a few long simple lashes, smug. Every eye set has warmer reddish lid rims and one sharp highlight. Adult, cool, funny and appealing, made with care. Not realistic, not childish, not grotesque: no blush stickers, no sparkle eyes, no smile, no text, no numbers, no labels, no logo."
+
+[variants.mouths]
+prompt = "Character design sheet for a stylized 3D game: one row of eight identical alien head-and-shoulders busts in front view, the same size, evenly spaced on one plain mid-grey studio background, soft key light, gentle rim light, soft shadows. Premium handmade plasticine look: smooth clean sculpted forms, soft matte clay skin with a barely visible handmade surface, no pores, no wrinkles, no HD texture detail. Every bust is the same alien: a smooth back-swept domed head with a short curved blade crest, teal skin with a lighter mint face and throat, a slim neck, no human nose (two tiny nostril slits), no human ears, and exactly the same eyes: big glossy white bead eyes set wide and high with small dark pupils, one sharp highlight and heavy half-closed upper lids with warm reddish rims, bored. Only the mouth changes, from left to right: 1 a wide closed frog-line mouth with a fuller lower lip; 2 full glossy plum lipstick lips in a pout; 3 an overbite with two separate peg teeth resting on the lower lip; 4 a calm half smile with one gap between the front teeth; 5 a small round pursed fish mouth; 6 a strong underbite with two small tusks pointing up; 7 a long thin smirk pulled to one side; 8 a slack open mouth showing a few crooked separate teeth and the tongue tip. Rolled clay lips in warm coral tones, few separate teeth, never a neat white row. Adult, cool, funny and appealing, made with care. Not realistic, not childish, not grotesque: no blush stickers, no sparkle eyes, no mascot smile, no slime, no text, no numbers, no labels, no logo."
+
+[[items]]
+id = "n-e1"
+variant = "eyes"
+kind = "text_to_image"
+
+[[items]]
+id = "n-m1"
+variant = "mouths"
+kind = "text_to_image"
