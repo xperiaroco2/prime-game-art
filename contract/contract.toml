@@ -287,7 +287,7 @@ glb_animation_library_mb = 10
 
 # Levels of detail of the assembled character (art #212). Godot's importer makes automatic LODs (index buffers over
 # LOD0's vertices, so skinning and morphs still run over every LOD0 vertex); they stay on, and they did most of the
-# saving in the bench: 20 bodies at LOD0 only cost 1.45 ms of GPU, with the automatic LODs 0.65 ms. The levels below
+# saving in the bench: 20 bodies at LOD0 only cost 1.44 ms of GPU, with the automatic LODs 0.64 ms. The levels below
 # are the triangle targets for hand-made LOD meshes switched by GeometryInstance3D visibility ranges: optional, for
 # when a profile shows skinning or memory cost (the bench's hand-made LOD2 beyond 10 m saved nothing on top of the
 # automatic LODs). Distances are a starting point at 1440p and a 75 degree FOV, to be tuned in playtest.
