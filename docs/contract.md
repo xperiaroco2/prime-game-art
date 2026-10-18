@@ -213,9 +213,14 @@ weight a few vertices to the finger ones, and those weights move to the distal j
 bones, so `check --map quaternius` reports those three missing until they are added in Blender. The test
 `test_the_quaternius_map_fits_the_real_rig` pins the 65 names and parents as measured (no raw file is committed).
 
-`meshy.toml` is still a guess with `confirmed = false`: Meshy says its rig follows Mixamo-style names with its own
-spine and clavicle names. When the first rigged file arrives, `check <file> --kind body --map meshy` lists every name
-the map missed as an extra bone; fix the map, set `confirmed = true` and add a test.
+`meshy.toml` is confirmed from Meshy's auto-rig of 2026-10-18 (batch `2026-10-18-alien-3d-base2`, `t1-rig` and
+`t2-rig`, [#196](https://github.com/xperiaroco2/prime-game-art/issues/196)): 24 bones with Mixamo-style limb names and
+no prefix, and a spine that counts down from the hips, `Hips` > `Spine02` > `Spine01` > `Spine` > `neck` (lower case)
+> `Head`, with both shoulders under `Spine`; so `Spine02` is the profile's `Spine` and `Spine` its `UpperChest`. The
+two helper ends `head_end` and `headfront` are dropped. The rig has no finger, eye, jaw or root bones (each hand is one
+bone), so a Meshy-rigged body misses those until they are added in Blender. The map keeps the Mixamo-style finger
+names for a later rig that has them. The test `test_the_meshy_map_fits_the_real_rig` pins the 24 names and parents as
+measured (no raw file is committed).
 
 ## Tests
 

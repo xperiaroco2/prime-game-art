@@ -235,9 +235,9 @@ class BoneMapTest(unittest.TestCase):
             with self.subTest(map=name):
                 self.assertEqual(_contract.validate_map(_contract.load_map(name), self.profile), [])
 
-    def test_unconfirmed_maps_are_marked(self) -> None:
+    def test_every_map_is_confirmed(self) -> None:
         self.assertTrue(_contract.load_map("mixamo")["confirmed"])
-        self.assertFalse(_contract.load_map("meshy")["confirmed"])
+        self.assertTrue(_contract.load_map("meshy")["confirmed"])
         self.assertTrue(_contract.load_map("quaternius")["confirmed"])
 
     def test_mixamo_names(self) -> None:

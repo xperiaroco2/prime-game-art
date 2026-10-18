@@ -1,0 +1,81 @@
+# art#196, step 0 of the ultra order (handover comment 6252602690): the target frame. AI concept images of the base
+# alien as it should look in the game: a hand-made plasticine surface (the engineer: "we drifted from plasticine, it
+# looks like smooth 3D"), real glossy eyes, separate fingers, present-day home interiors under game lighting. GPT Image
+# only (concepts), image to image from the approved turnaround (sheet 10b, u1), no game or character names. Three
+# framings, two tries each: f1 full body at game distance, f2 the face and shoulders, f3 a talking gesture with the
+# hands. The engineer approves one; every later step is shown beside it. Under the standing permission for Meshy
+# generation within the plan's credits (2026-10-03, art#16). Schema: docs/meshy.md.
+
+id = "2026-10-18-alien-2d-target1"
+purpose = "The target frame for art#196: the base alien as it should look in the game, plasticine surface, game lighting."
+plan = "Meshy paid plan (monthly; bought by the engineer on 2026-10-17)"
+terms_url = "https://www.meshy.ai/terms-of-use"
+licence = "owned by the customer on a paid plan (Meshy Terms of Use 3.2, updated 2026-09-19); no attribution required"
+credit_cap = 80
+approved_by = "xperiaroco2 (the engineer)"
+approved_at = "2026-10-03"
+approval_ref = "https://github.com/xperiaroco2/prime-game-art/issues/16"
+
+[defaults.image_to_image.params]
+ai_model = "gpt-image-2-5-sunburst"
+remove_background = false
+
+[[items]]
+id = "f1a"
+kind = "image_to_image"
+params = { aspect_ratio = "3:2" }
+prompt = "Full body, standing relaxed in a bright, well-made present-day family living room (sofa, rug, bookshelf, a floor lamp, a big window), seen at eye height from about three metres away as another player would see him in a first-person game, one hand slightly raised as if saying something dry. The exact character from the reference images: keep his head shape, the back-swept crest, the big glossy eyes with heavy half-closed lids and reddish rims, the wide rolled coral lips, the teal skin with the lighter mint face, throat, chest and belly, the reddish knuckles, elbows and knees, his slim adult human proportions, four separate fingers per hand and three toes. Make him a premium hand-made plasticine figure: a real modelling-clay surface with faint fingerprints, soft thumb smudges, tiny tool marks and a slightly uneven hand-pressed finish, a soft waxy clay sheen, crisp clean edges on the lips, lids and crest, no pores, no wrinkles, never smooth plastic and never glossy CG. His eyes are separate glossy eyeballs with a bright highlight, sharp and clean. Fingers clearly separated with small gaps between them. Shown as a frame from a modern high-end video game rendered in real time: detailed physically based materials, soft real-time shadows, ambient occlusion, warm interior lamp light mixed with cool daylight from a window, a little depth of field. Adult cartoon tone, appealing and cool, not childish, not creepy. One character only. No text, no labels, no logo, no user interface."
+images = [
+  { file = "raw:2026-10-18-alien-2d-turn2/u1/image_to_image-multi_view_image_01a14c18-9ad5-77dd-9793-c1631b328463_part_0.png", provenance = "own Meshy generation, batch 2026-10-18-alien-2d-turn2 item u1 view 0 (front), art#196", sha256 = "d8c6ef6483406beb20b4e065268527c7daa9ae34161e467c7623aa4c4a39d23a" },
+  { file = "raw:2026-10-18-alien-2d-turn2/u1/image_to_image-multi_view_image_01a14c18-9ad5-77dd-9793-c1631b328463_part_1.png", provenance = "own Meshy generation, batch 2026-10-18-alien-2d-turn2 item u1 view 1, art#196", sha256 = "ad8639e5d530ba0cd9bc8b6163311d95874e178048cc839e7d6faff3c44677ea" },
+]
+
+[[items]]
+id = "f1b"
+kind = "image_to_image"
+params = { aspect_ratio = "3:2" }
+prompt = "Full body, standing relaxed in a bright, well-made present-day family living room (sofa, rug, bookshelf, a floor lamp, a big window), seen at eye height from about three metres away as another player would see him in a first-person game, one hand slightly raised as if saying something dry. The exact character from the reference images: keep his head shape, the back-swept crest, the big glossy eyes with heavy half-closed lids and reddish rims, the wide rolled coral lips, the teal skin with the lighter mint face, throat, chest and belly, the reddish knuckles, elbows and knees, his slim adult human proportions, four separate fingers per hand and three toes. Make him a premium hand-made plasticine figure: a real modelling-clay surface with faint fingerprints, soft thumb smudges, tiny tool marks and a slightly uneven hand-pressed finish, a soft waxy clay sheen, crisp clean edges on the lips, lids and crest, no pores, no wrinkles, never smooth plastic and never glossy CG. His eyes are separate glossy eyeballs with a bright highlight, sharp and clean. Fingers clearly separated with small gaps between them. Shown as a frame from a modern high-end video game rendered in real time: detailed physically based materials, soft real-time shadows, ambient occlusion, warm interior lamp light mixed with cool daylight from a window, a little depth of field. Adult cartoon tone, appealing and cool, not childish, not creepy. One character only. No text, no labels, no logo, no user interface."
+images = [
+  { file = "raw:2026-10-18-alien-2d-turn2/u1/image_to_image-multi_view_image_01a14c18-9ad5-77dd-9793-c1631b328463_part_0.png", provenance = "own Meshy generation, batch 2026-10-18-alien-2d-turn2 item u1 view 0 (front), art#196", sha256 = "d8c6ef6483406beb20b4e065268527c7daa9ae34161e467c7623aa4c4a39d23a" },
+  { file = "raw:2026-10-18-alien-2d-turn2/u1/image_to_image-multi_view_image_01a14c18-9ad5-77dd-9793-c1631b328463_part_1.png", provenance = "own Meshy generation, batch 2026-10-18-alien-2d-turn2 item u1 view 1, art#196", sha256 = "ad8639e5d530ba0cd9bc8b6163311d95874e178048cc839e7d6faff3c44677ea" },
+]
+
+[[items]]
+id = "f2a"
+kind = "image_to_image"
+params = { aspect_ratio = "2:3" }
+prompt = "Close portrait of his head and shoulders, three-quarter view, in a present-day kitchen softly out of focus behind him, bored deadpan look straight at the viewer, the clay fingerprints and smudges readable on his cheeks, crest and lips. The exact character from the reference images: keep his head shape, the back-swept crest, the big glossy eyes with heavy half-closed lids and reddish rims, the wide rolled coral lips, the teal skin with the lighter mint face, throat, chest and belly, the reddish knuckles, elbows and knees, his slim adult human proportions, four separate fingers per hand and three toes. Make him a premium hand-made plasticine figure: a real modelling-clay surface with faint fingerprints, soft thumb smudges, tiny tool marks and a slightly uneven hand-pressed finish, a soft waxy clay sheen, crisp clean edges on the lips, lids and crest, no pores, no wrinkles, never smooth plastic and never glossy CG. His eyes are separate glossy eyeballs with a bright highlight, sharp and clean. Fingers clearly separated with small gaps between them. Shown as a frame from a modern high-end video game rendered in real time: detailed physically based materials, soft real-time shadows, ambient occlusion, warm interior lamp light mixed with cool daylight from a window, a little depth of field. Adult cartoon tone, appealing and cool, not childish, not creepy. One character only. No text, no labels, no logo, no user interface."
+images = [
+  { file = "raw:2026-10-18-alien-2d-turn2/u1/image_to_image-multi_view_image_01a14c18-9ad5-77dd-9793-c1631b328463_part_0.png", provenance = "own Meshy generation, batch 2026-10-18-alien-2d-turn2 item u1 view 0 (front), art#196", sha256 = "d8c6ef6483406beb20b4e065268527c7daa9ae34161e467c7623aa4c4a39d23a" },
+  { file = "raw:2026-10-18-alien-2d-turn2/u1/image_to_image-multi_view_image_01a14c18-9ad5-77dd-9793-c1631b328463_part_1.png", provenance = "own Meshy generation, batch 2026-10-18-alien-2d-turn2 item u1 view 1, art#196", sha256 = "ad8639e5d530ba0cd9bc8b6163311d95874e178048cc839e7d6faff3c44677ea" },
+]
+
+[[items]]
+id = "f2b"
+kind = "image_to_image"
+params = { aspect_ratio = "2:3" }
+prompt = "Close portrait of his head and shoulders, three-quarter view, in a present-day kitchen softly out of focus behind him, bored deadpan look straight at the viewer, the clay fingerprints and smudges readable on his cheeks, crest and lips. The exact character from the reference images: keep his head shape, the back-swept crest, the big glossy eyes with heavy half-closed lids and reddish rims, the wide rolled coral lips, the teal skin with the lighter mint face, throat, chest and belly, the reddish knuckles, elbows and knees, his slim adult human proportions, four separate fingers per hand and three toes. Make him a premium hand-made plasticine figure: a real modelling-clay surface with faint fingerprints, soft thumb smudges, tiny tool marks and a slightly uneven hand-pressed finish, a soft waxy clay sheen, crisp clean edges on the lips, lids and crest, no pores, no wrinkles, never smooth plastic and never glossy CG. His eyes are separate glossy eyeballs with a bright highlight, sharp and clean. Fingers clearly separated with small gaps between them. Shown as a frame from a modern high-end video game rendered in real time: detailed physically based materials, soft real-time shadows, ambient occlusion, warm interior lamp light mixed with cool daylight from a window, a little depth of field. Adult cartoon tone, appealing and cool, not childish, not creepy. One character only. No text, no labels, no logo, no user interface."
+images = [
+  { file = "raw:2026-10-18-alien-2d-turn2/u1/image_to_image-multi_view_image_01a14c18-9ad5-77dd-9793-c1631b328463_part_0.png", provenance = "own Meshy generation, batch 2026-10-18-alien-2d-turn2 item u1 view 0 (front), art#196", sha256 = "d8c6ef6483406beb20b4e065268527c7daa9ae34161e467c7623aa4c4a39d23a" },
+  { file = "raw:2026-10-18-alien-2d-turn2/u1/image_to_image-multi_view_image_01a14c18-9ad5-77dd-9793-c1631b328463_part_1.png", provenance = "own Meshy generation, batch 2026-10-18-alien-2d-turn2 item u1 view 1, art#196", sha256 = "ad8639e5d530ba0cd9bc8b6163311d95874e178048cc839e7d6faff3c44677ea" },
+]
+
+[[items]]
+id = "f3a"
+kind = "image_to_image"
+params = { aspect_ratio = "3:2" }
+prompt = "Waist-up, three-quarter view, in a present-day hallway of a family home, talking with both hands raised in an explaining gesture, palms half turned up, the four fingers of each hand spread and clearly separate, a dry unimpressed expression. The exact character from the reference images: keep his head shape, the back-swept crest, the big glossy eyes with heavy half-closed lids and reddish rims, the wide rolled coral lips, the teal skin with the lighter mint face, throat, chest and belly, the reddish knuckles, elbows and knees, his slim adult human proportions, four separate fingers per hand and three toes. Make him a premium hand-made plasticine figure: a real modelling-clay surface with faint fingerprints, soft thumb smudges, tiny tool marks and a slightly uneven hand-pressed finish, a soft waxy clay sheen, crisp clean edges on the lips, lids and crest, no pores, no wrinkles, never smooth plastic and never glossy CG. His eyes are separate glossy eyeballs with a bright highlight, sharp and clean. Fingers clearly separated with small gaps between them. Shown as a frame from a modern high-end video game rendered in real time: detailed physically based materials, soft real-time shadows, ambient occlusion, warm interior lamp light mixed with cool daylight from a window, a little depth of field. Adult cartoon tone, appealing and cool, not childish, not creepy. One character only. No text, no labels, no logo, no user interface."
+images = [
+  { file = "raw:2026-10-18-alien-2d-turn2/u1/image_to_image-multi_view_image_01a14c18-9ad5-77dd-9793-c1631b328463_part_0.png", provenance = "own Meshy generation, batch 2026-10-18-alien-2d-turn2 item u1 view 0 (front), art#196", sha256 = "d8c6ef6483406beb20b4e065268527c7daa9ae34161e467c7623aa4c4a39d23a" },
+  { file = "raw:2026-10-18-alien-2d-turn2/u1/image_to_image-multi_view_image_01a14c18-9ad5-77dd-9793-c1631b328463_part_1.png", provenance = "own Meshy generation, batch 2026-10-18-alien-2d-turn2 item u1 view 1, art#196", sha256 = "ad8639e5d530ba0cd9bc8b6163311d95874e178048cc839e7d6faff3c44677ea" },
+]
+
+[[items]]
+id = "f3b"
+kind = "image_to_image"
+params = { aspect_ratio = "3:2" }
+prompt = "Waist-up, three-quarter view, in a present-day hallway of a family home, talking with both hands raised in an explaining gesture, palms half turned up, the four fingers of each hand spread and clearly separate, a dry unimpressed expression. The exact character from the reference images: keep his head shape, the back-swept crest, the big glossy eyes with heavy half-closed lids and reddish rims, the wide rolled coral lips, the teal skin with the lighter mint face, throat, chest and belly, the reddish knuckles, elbows and knees, his slim adult human proportions, four separate fingers per hand and three toes. Make him a premium hand-made plasticine figure: a real modelling-clay surface with faint fingerprints, soft thumb smudges, tiny tool marks and a slightly uneven hand-pressed finish, a soft waxy clay sheen, crisp clean edges on the lips, lids and crest, no pores, no wrinkles, never smooth plastic and never glossy CG. His eyes are separate glossy eyeballs with a bright highlight, sharp and clean. Fingers clearly separated with small gaps between them. Shown as a frame from a modern high-end video game rendered in real time: detailed physically based materials, soft real-time shadows, ambient occlusion, warm interior lamp light mixed with cool daylight from a window, a little depth of field. Adult cartoon tone, appealing and cool, not childish, not creepy. One character only. No text, no labels, no logo, no user interface."
+images = [
+  { file = "raw:2026-10-18-alien-2d-turn2/u1/image_to_image-multi_view_image_01a14c18-9ad5-77dd-9793-c1631b328463_part_0.png", provenance = "own Meshy generation, batch 2026-10-18-alien-2d-turn2 item u1 view 0 (front), art#196", sha256 = "d8c6ef6483406beb20b4e065268527c7daa9ae34161e467c7623aa4c4a39d23a" },
+  { file = "raw:2026-10-18-alien-2d-turn2/u1/image_to_image-multi_view_image_01a14c18-9ad5-77dd-9793-c1631b328463_part_1.png", provenance = "own Meshy generation, batch 2026-10-18-alien-2d-turn2 item u1 view 1, art#196", sha256 = "ad8639e5d530ba0cd9bc8b6163311d95874e178048cc839e7d6faff3c44677ea" },
+]

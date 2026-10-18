@@ -30,6 +30,15 @@ QUATERNIUS_RIG = [
     ("foot_l", "calf_l"), ("ball_l", "foot_l"), ("ball_leaf_l", "ball_l"), ("thigh_r", "pelvis"),
     ("calf_r", "thigh_r"), ("foot_r", "calf_r"), ("ball_r", "foot_r"), ("ball_leaf_r", "ball_r"),
 ]
+# Meshy's auto-rig as measured on 2026-10-18 (batch 2026-10-18-alien-3d-base2, t2-rig, art#196): names and parents.
+MESHY_RIG = [
+    ("Hips", ""), ("Spine02", "Hips"), ("Spine01", "Spine02"), ("Spine", "Spine01"), ("neck", "Spine"),
+    ("Head", "neck"), ("head_end", "Head"), ("headfront", "Head"), ("LeftShoulder", "Spine"),
+    ("LeftArm", "LeftShoulder"), ("LeftForeArm", "LeftArm"), ("LeftHand", "LeftForeArm"), ("RightShoulder", "Spine"),
+    ("RightArm", "RightShoulder"), ("RightForeArm", "RightArm"), ("RightHand", "RightForeArm"),
+    ("LeftUpLeg", "Hips"), ("LeftLeg", "LeftUpLeg"), ("LeftFoot", "LeftLeg"), ("LeftToeBase", "LeftFoot"),
+    ("RightUpLeg", "Hips"), ("RightLeg", "RightUpLeg"), ("RightFoot", "RightLeg"), ("RightToeBase", "RightFoot"),
+]
 
 
 def bone_heads() -> dict[str, list[float]]:
@@ -235,6 +244,25 @@ class EvaluateTest(unittest.TestCase):
         self.assertEqual(sorted(mapped - set(parents)), [])
         rig_names = {n for n, _ in QUATERNIUS_RIG}
         self.assertEqual([n for n in quaternius["rename"] if n not in rig_names], [], "map entries the rig lacks")
+
+    def test_the_meshy_map_fits_the_real_rig(self) -> None:
+        meshy = _contract.load_map("meshy")
+        self.assertTrue(meshy["confirmed"])
+        self.assertEqual(len(MESHY_RIG), 24)
+        parents = _contract.profile_parents(self.profile)
+        dropped = sorted(n for n, _ in MESHY_RIG if _contract.is_dropped(n, meshy))
+        self.assertEqual(dropped, ["head_end", "headfront"])
+        mapped = {n: _contract.mapped_name(n, meshy) for n, _ in MESHY_RIG if n not in dropped}
+        self.assertEqual(sorted(t for t in mapped.values() if t not in parents), [])
+        for name, parent in MESHY_RIG:
+            if name in mapped and parent:
+                with self.subTest(bone=name):
+                    self.assertEqual(parents[mapped[name]], mapped[parent])
+        # the hand is one bone: no fingers, eyes, jaw or root in Meshy's rig
+        missing = set(parents) - set(mapped.values())
+        self.assertIn("Jaw", missing)
+        self.assertIn("LeftIndexProximal", missing)
+        self.assertEqual(len(missing), len(parents) - 22)
 
     def test_a_quaternius_body_passes_but_for_the_jaw_and_eyes(self) -> None:
         quaternius = _contract.load_map("quaternius")
