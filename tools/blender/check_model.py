@@ -1,6 +1,6 @@
 """Measures a model in headless Blender for `tools/run.py check`: mesh counts and topology, UVs, transforms, bounds,
-bones, skin weights and the bones that carry the vertices each shape key moves. It only measures; the runner
-(tools/runner/commands/_checks.py) judges the numbers against contract/contract.toml and writes report.json.
+bones, skin weights and the bones that carry the vertices each shape key moves, and how far. It only measures; the
+runner (tools/runner/commands/_checks.py) judges the numbers against contract/contract.toml and writes report.json.
 
     blender -b --factory-startup --python check_model.py -- <model> <params.json> <measure.json>
 
@@ -20,6 +20,8 @@ import bpy
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import contract_io  # noqa: E402
+
+TIE = 1e-4  # weights closer than this are equal: a vertex at 0.5 Head and 0.5 Neck is on both
 
 
 def transform_of(obj) -> dict:
@@ -97,37 +99,55 @@ def measure_mesh(obj, params: dict) -> dict:
     return result
 
 
-def measure_shape_keys(obj, params: dict) -> dict:
-    """Per shape key, the vertices it moves (farther than morph_epsilon from its relative key), counted by the vertex
-    group with the vertex's largest weight ("" for none): the runner tells face morphs (skin on the head bones) from
-    body-shape morphs by it."""
-    me = obj.data
-    if not me.shape_keys:
-        return {}
-    names = {g.index: g.name for g in obj.vertex_groups}
-    dominant = []
-    for vertex in me.vertices:
-        weights = [(g.weight, names.get(g.group, "")) for g in vertex.groups if g.weight > 0]
-        dominant.append(max(weights)[1] if weights else "")
-    epsilon = params["morph_epsilon"]
-    result: dict[str, dict[str, int]] = {}
-    for key in me.shape_keys.key_blocks[1:]:
-        base = key.relative_key
-        counts: dict[str, int] = {}
-        for index, (moved, rest) in enumerate(zip(key.data, base.data)):
-            if (moved.co - rest.co).length > epsilon:
-                counts[dominant[index]] = counts.get(dominant[index], 0) + 1
-        result[key.name] = dict(sorted(counts.items()))
-    return result
-
-
-def measure_weights(obj, params: dict) -> dict:
+def armature_bones(obj) -> set[str]:
+    """The names of the bones that can deform obj: its armature modifiers' and its armature parent's."""
     bones: set[str] = set()
     for modifier in obj.modifiers:
         if modifier.type == "ARMATURE" and modifier.object:
             bones |= {b.name for b in modifier.object.data.bones}
     if obj.parent and obj.parent.type == "ARMATURE":
         bones |= {b.name for b in obj.parent.data.bones}
+    return bones
+
+
+def main_bones(vertex, names: dict[int, str], bones: set[str]) -> str:
+    """The bone with the vertex's largest weight, counting only vertex groups that are armature bones (a clay
+    `.blend`'s `clay_border` group is not); bones tied for it (within TIE) are joined by "|" in name order, so the
+    runner can settle a tie in the head bones' favour; "" for a vertex on no bone."""
+    weights = [(g.weight, names[g.group]) for g in vertex.groups if g.weight > 0 and names.get(g.group) in bones]
+    if not weights:
+        return ""
+    top = max(w for w, _ in weights)
+    return "|".join(sorted(name for w, name in weights if top - w <= TIE))
+
+
+def measure_shape_keys(obj, params: dict) -> dict:
+    """Per shape key, the vertices it moves (farther than morph_epsilon from its relative key), grouped by their main
+    bones (main_bones): per group the vertex count and the largest move in mm. The runner tells face morphs (skin on
+    the head bones) from body-shape morphs by it."""
+    me = obj.data
+    if not me.shape_keys:
+        return {}
+    names = {g.index: g.name for g in obj.vertex_groups}
+    bones = armature_bones(obj)
+    main = [main_bones(vertex, names, bones) for vertex in me.vertices]
+    epsilon = params["morph_epsilon"]
+    result: dict[str, dict[str, dict]] = {}
+    for key in me.shape_keys.key_blocks[1:]:
+        base = key.relative_key
+        moves: dict[str, dict] = {}
+        for index, (moved, rest) in enumerate(zip(key.data, base.data)):
+            distance = (moved.co - rest.co).length
+            if distance > epsilon:
+                entry = moves.setdefault(main[index], {"vertices": 0, "max_mm": 0.0})
+                entry["vertices"] += 1
+                entry["max_mm"] = max(entry["max_mm"], round(distance * 1000, 3))
+        result[key.name] = dict(sorted(moves.items()))
+    return result
+
+
+def measure_weights(obj, params: dict) -> dict:
+    bones = armature_bones(obj)
     names = {g.index: g.name for g in obj.vertex_groups}
     weighted: dict[str, int] = {}
     max_influences = over = unweighted = below = unnormalized = 0
