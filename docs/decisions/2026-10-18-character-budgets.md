@@ -40,18 +40,24 @@ The pieces add up: the body plus one piece per slot at their targets (22,000 + 3
 character's 40,000, at their caps 59,500. The piece budgets are the old ones times 2 to 4, chosen so they add up;
 the first real pieces revise them. Godot's automatic import LODs stay on. Hand-made LOD meshes under visibility
 ranges and a low-poly shadow caster (`SHADOWS_ONLY`, the drawn meshes' shadows off) are optional, for when a profile
-shows their cost: the measurement found no saving from either on top of the automatic LODs.
+shows their cost: in the measured scene (a small meeting ring) neither saved anything on top of the automatic LODs.
 
 ## The measurement
 
 `tools/run.py bench --proxy-from D:/prime-art-raw/review/char/alien-base-3d/finish1b/alien_base.blend --copies 10,20
 --out D:/prime-art-raw/review/char/bench-212` (docs/godot.md, "Bench"). The stand-in: finish step 1b's alien base
 subdivided and decimated to 40,000 triangles (body 20,618, head 17,660 with 8,922 vertices, eyes 1,722), a 7,000
-triangle shadow copy, the 2,048 bakes, and 0, 32 or 64 head morphs (GLB 7.5, 18.6 and 29.6 MB). N copies in a meeting
-ring play Idle with every morph weighted, seen from behind the ring at eye height; a directional light with 4 shadow
-splits and a shadowed omni lamp at the centre; AgX, SSAO, sky; 1920x1080, an off-screen window, vsync off; the median
+triangle shadow copy, the 2,048 bakes, and 0, 32 or 64 head morphs (GLB 7.5, 18.6 and 29.6 MB). Its body with
+the head (20,618 + 17,660 = 38,278 triangles) is over the new body cap (30,000), and its head (17,660) over the head
+cap (15,000; its 8,922 vertices just inside the 9,000), so the numbers below are conservative for a character within
+the budgets. N copies in a meeting ring play Idle with every morph weighted, seen from behind the ring at eye height;
+a directional light with 4 shadow splits and a shadowed omni lamp at the centre; AgX, SSAO, sky; 1920x1080, an off-screen window, vsync off; the median
 of 300 frames. Machine: NVIDIA GeForce RTX 4060, Vulkan Forward+, Godot 4.7.2. The empty stage costs 0.67 ms of GPU;
-"chars" is each row minus it.
+"chars" is each row minus it. The CPU ms is the viewport's render time only
+(`viewport_get_measured_render_time_cpu`): the animation players and skeleton updates are not in it. `bench` records
+them since (process ms, `Performance.TIME_PROCESS`, and whole frame ms); this table predates those fields and was not
+re-measured. The ring is small: its far side is 7.1 m from the camera at 10 bodies and 10.9 m at 20, so the
+"hand LOD2 from 10 m" column switches no body at 10 and 5 of 20 at 20.
 
 | Characters' GPU ms (CPU ms) | LOD auto, full shadows | LOD auto, shadow proxy | LOD0 only, full shadows | LOD0 only, shadow proxy | hand LOD2 from 10 m |
 |---|---|---|---|---|---|
@@ -71,14 +77,17 @@ uncompressed, as a headless import leaves them).
 
 **Verdict:** the 40k budget fits with a wide margin. 20 bodies with 64 morphs cost 0.64 ms of GPU with the automatic
 LODs and 1.44 ms in the worst case (every body at LOD0, full shadows), against the 4 ms the brief allowed; the 60k cap
-scales to about 2.2 ms in that worst case. CPU stays at 0.2 to 0.3 ms. Nothing here asks for lower numbers.
+scales to about 2.2 ms in that worst case. The render CPU stays at 0.2 to 0.3 ms (animation and skeleton time not
+measured). Nothing here asks for lower numbers.
 
 What the measurement confirmed and did not:
 - The automatic LODs halve the characters' GPU time (1.44 to 0.64 ms at 20 bodies) and take the shadow passes down
   with them; with them on, the shadow proxy saved 0.03 ms. With LOD0 only it saved 0.55 ms.
-- The hand-made LOD2 beyond 10 m saved nothing on top of the automatic LODs here (only about 5 of the 20 bodies were
-  beyond 10 m). That the automatic LODs keep skinning and morphs over every LOD0 vertex is Godot's design; the bench
-  does not isolate the skinning cost, and at 0.2 to 0.3 ms of CPU and well under 1 ms of GPU it is not a bottleneck.
+- The hand-made LOD2 beyond 10 m saved nothing on top of the automatic LODs here, which says little: no body was
+  beyond 10 m at 10 copies and only 5 of the 20 at 20; a spread-out crowd (3 to 30 m) was not measured. That the
+  automatic LODs keep skinning and morphs over every LOD0 vertex is Godot's design; the bench does not isolate the
+  skinning cost, and at well under 1 ms of GPU it is not a bottleneck there; the CPU side of animation was not
+  measured.
 - Measured at 1080p, not 1440p: the characters' vertex work does not grow with the resolution; the scene's pixel
   work does.
 

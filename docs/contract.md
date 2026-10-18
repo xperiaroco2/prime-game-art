@@ -168,7 +168,9 @@ degree FOV, to be tuned in playtest. Godot's automatic import LODs stay on: they
 (skinning and morphs still run over every LOD0 vertex), and in the bench they halved the characters' GPU time (20
 bodies 1.44 ms at LOD0 only, 0.64 ms with them). Hand-made LOD meshes under visibility ranges and a low-poly shadow
 caster (`cast_shadow = SHADOWS_ONLY`, the drawn meshes' shadows off) are optional, for when a profile shows skinning,
-shadow or memory cost: on top of the automatic LODs the bench measured no saving from either at 20 bodies.
+shadow or memory cost: on top of the automatic LODs the bench measured no saving from either at 20 bodies, in its one
+scene (a small meeting ring: only 5 of the 20 bodies beyond the hand-made LOD2's 10 m; a spread-out crowd was not
+measured).
 
 ## What `check` checks
 

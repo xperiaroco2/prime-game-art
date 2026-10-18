@@ -243,8 +243,8 @@ note = "the template head, a separate mesh and the only one with face morphs; pa
 provisional = true
 triangles_target = 12000
 triangles_cap = 15000
-vertices_target = 7000       # every morph is stored densely: about 20 bytes per head vertex in Godot's video
-                             # memory, once per unique head mesh, and about 39 in the GLB (bench, art #212)
+vertices_target = 7000       # every morph is stored densely: about 20 bytes per head vertex per morph in Godot's
+                             # video memory, once per unique head mesh, and about 39 in the GLB (bench, art #212)
 vertices_cap = 9000
 
 [budgets.clothing]
@@ -289,8 +289,9 @@ glb_animation_library_mb = 10
 # LOD0's vertices, so skinning and morphs still run over every LOD0 vertex); they stay on, and they did most of the
 # saving in the bench: 20 bodies at LOD0 only cost 1.44 ms of GPU, with the automatic LODs 0.64 ms. The levels below
 # are the triangle targets for hand-made LOD meshes switched by GeometryInstance3D visibility ranges: optional, for
-# when a profile shows skinning or memory cost (the bench's hand-made LOD2 beyond 10 m saved nothing on top of the
-# automatic LODs). Distances are a starting point at 1440p and a 75 degree FOV, to be tuned in playtest.
+# when a profile shows skinning or memory cost (in the bench's one scene, a small meeting ring with only 5 of 20 bodies
+# beyond 10 m, the hand-made LOD2 saved nothing on top of the automatic LODs; a spread-out crowd was not measured).
+# Distances are a starting point at 1440p and a 75 degree FOV, to be tuned in playtest.
 [lods]
 automatic = "the importer's automatic LODs stay on (meshes/generate_lods); never import a character with them off"
 hand_made = "optional: LOD1 and LOD2 as hand-made meshes (their own vertices, no face morphs) under visibility ranges"
