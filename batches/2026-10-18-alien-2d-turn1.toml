@@ -1,0 +1,41 @@
+# art#196, 2D concepts, sheet 10: the base character's turnaround, the input for Meshy multi-image to 3D. The engineer
+# picked body 1 of sheet 9 (2026-10-18). Three views in an A-pose (Meshy's multi-view: three images, one charge), no
+# clothes, GPT Image only. t1: image-to-image anchored on sheet 9's try g-b1 (the leftmost figure); t2: text only,
+# same description, to compare which keeps the design better.
+# Written by the art manager, not committed. Schema: docs/meshy.md.
+
+id = "2026-10-18-alien-2d-turn1"
+purpose = "2D concept sheet 10 for art#196: the base alien (head 1, body 1) in three A-pose views for 3D."
+plan = "Meshy paid plan (monthly; bought by the engineer on 2026-10-17)"
+terms_url = "https://www.meshy.ai/terms-of-use"
+licence = "owned by the customer on a paid plan (Meshy Terms of Use 3.2, updated 2026-09-19); no attribution required"
+credit_cap = 25
+approved_by = "xperiaroco2 (the engineer)"
+approved_at = "2026-10-17"
+approval_ref = "https://github.com/xperiaroco2/prime-game-art/issues/196#issuecomment-6235754823"
+
+[defaults.text_to_image.params]
+ai_model = "gpt-image-2-5-sunburst"
+generate_multi_view = true
+pose_mode = "a-pose"
+remove_background = false
+
+[defaults.image_to_image.params]
+ai_model = "gpt-image-2-5-sunburst"
+generate_multi_view = true
+remove_background = false
+
+[variants.turn]
+prompt = "Character turnaround for 3D modelling of one stylized humanoid alien man, full body in a neutral A-pose, arms angled down away from the body, feet apart, plain light-grey background, even soft studio light, no dramatic shadows. Premium handmade plasticine look: smooth chunky simplified clay forms, soft matte clay skin, no pores, no wrinkles, no muscle detail. About six and a half heads tall, slim, long legs, a long thin neck, narrow shoulders, simple soft hands with four fingers, simple rounded feet with three toes, no clothes, a smooth body like a clay figurine with no anatomical details. Teal skin with a lighter mint face, throat, chest and belly with a soft organic split, warmer reddish knuckles, elbows and knees. Head: a smooth back-swept domed head with a short curved blade crest sweeping back, no nose (two tiny nostril slits), no ears, big glossy white bead eyes set wide and high with small dark pupils and heavy half-closed lids with warm reddish rims, bored deadpan, a wide frog-line mouth with rolled coral lips and a fuller lower lip, mouth closed. The same character in every view, the same proportions and colours. Not realistic, not childish, no text, no labels, no logo."
+
+[[items]]
+id = "t1"
+variant = "turn"
+kind = "image_to_image"
+prompt = "The leftmost figure of the reference image, as a character turnaround for 3D modelling. Keep his head, face, crest, colours and slim body exactly. Full body in a neutral A-pose, arms angled down away from the body, feet apart, plain light-grey background, even soft studio light, no dramatic shadows. Premium handmade plasticine look, smooth simplified clay forms, no clothes, no anatomical details, four fingers, three toes, mouth closed. The same character in every view. No text, no labels, no logo."
+images = [{ file = "raw:2026-10-18-alien-2d-body1/g-b1/text_to_image-image_01a14be6-7f87-70f7-899b-5c98c46246f7_0.png", provenance = "own Meshy generation, batch 2026-10-18-alien-2d-body1 item g-b1 (GPT Image), art#196", sha256 = "a10a636520a149436d6e057869ed8269c9c122d48c179b6ee287aa4e6ead4c63" }]
+
+[[items]]
+id = "t2"
+variant = "turn"
+kind = "text_to_image"

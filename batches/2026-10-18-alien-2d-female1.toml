@@ -1,0 +1,39 @@
+# art#196, 2D concepts, sheet 8: the female base character at full body in four present-day outfits, the same form as
+# sheet 7 (only the outfit changes; the release-quality rule). Built from his kept parts: the base dome head with the
+# blade crest under hairstyle 6 (lilac curtain-bangs bob), eyes 8 (almond with liner and lashes), mouth 2 (plum
+# lipstick pout), skin hue 7 (coral). GPT Image twice (his preferred model), nano-banana-pro once (his word: keep both).
+# Written by the art manager, not committed. Schema: docs/meshy.md.
+
+id = "2026-10-18-alien-2d-female1"
+purpose = "2D concept sheet 8 for art#196: the female base character from the kept parts at full body in four outfits."
+plan = "Meshy paid plan (monthly; bought by the engineer on 2026-10-17)"
+terms_url = "https://www.meshy.ai/terms-of-use"
+licence = "owned by the customer on a paid plan (Meshy Terms of Use 3.2, updated 2026-09-19); no attribution required"
+credit_cap = 30
+approved_by = "xperiaroco2 (the engineer)"
+approved_at = "2026-10-17"
+approval_ref = "https://github.com/xperiaroco2/prime-game-art/issues/196#issuecomment-6235754823"
+
+[defaults.text_to_image.params]
+ai_model = "gpt-image-2-5-sunburst"
+aspect_ratio = "16:9"
+remove_background = false
+
+[variants.outfits]
+prompt = "Stylized 3D character concept render, one row of four full-body figures of the same humanoid alien adult woman, side by side, standing three-quarter view, whole figures in frame with feet visible, plain mid-grey studio background, soft key light, gentle rim light, soft contact shadows. Premium handmade plasticine look: smooth clean sculpted forms, soft matte clay skin with a barely visible handmade surface, no pores, no wrinkles, no HD texture detail. Adult proportions about seven heads tall, a normal attractive slim human body with normal shoulders, hips and hands, five fingers, never exaggerated. The same alien in every figure: a smooth back-swept domed head, a lilac curtain-bangs bob sculpted as a few big smooth clay masses, coral skin with a lighter peach face, throat and belly, no human nose (two tiny nostril slits), no human ears, big glossy white almond bead eyes set wide and high with small dark pupils, dark eyeliner rims, a few long simple lashes and heavy half-closed lids, smug deadpan, full glossy plum lipstick lips in a pout, slightly warmer knuckles. Only the outfit changes, present-day Earth clothes in calmer muted colours, simple clean fabric with a few large folds, one plum accent picked up from the lips, from left to right: 1 a black satin slip dress under a cropped denim jacket, plum nail polish, small gold hoop earrings, one hand on hip; 2 a cream knit sweater, a camel mini skirt and chunky black boots, a plum shoulder bag, arms crossed; 3 an oversized charcoal puffer jacket, a white tee, black leggings and plum high-top sneakers, phone in hand; 4 a softly iridescent party top under a black blazer, wide black trousers and plum heels, silver rings, holding a cocktail glass. Funny and appealing, cool, adult deadpan humour, made with care. Not realistic, not heroic, not childish, not grotesque, not sexualised: no blush stickers, no sparkle eyes, no mascot smile, no slime, no gore, no text, no logo."
+
+[[items]]
+id = "g-f1"
+variant = "outfits"
+kind = "text_to_image"
+
+[[items]]
+id = "g-f2"
+variant = "outfits"
+kind = "text_to_image"
+
+[[items]]
+id = "n-f1"
+variant = "outfits"
+kind = "text_to_image"
+params = { ai_model = "nano-banana-pro" }

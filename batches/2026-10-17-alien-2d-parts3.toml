@@ -1,0 +1,49 @@
+# art#196, 2D concepts, sheets 6 and 7 (the handover's order, step 3). Sheet 6, the interchangeability mix: sheet 1's
+# eight head families, each wearing a different combination of his kept eyes (GPT e2: 1, 2, 3, 4, 5, 7, 8) and mouths
+# (GPT m2: all eight), to show that any part fits any head. Sheet 7: the one base character (sheet 1's back-swept dome,
+# teal, eyes 1, mouth 1) at full body in four present-day outfits, so only the outfit changes (the release-quality
+# rule: one base character, a grid only to tune one thing). Both models, one try each.
+# Written by the art manager, not committed. Schema: docs/meshy.md.
+
+id = "2026-10-17-alien-2d-parts3"
+purpose = "2D concept sheets 6 and 7 for art#196: the parts mixed across head families, and the base character at full body in four outfits."
+plan = "Meshy paid plan (monthly; bought by the engineer on 2026-10-17)"
+terms_url = "https://www.meshy.ai/terms-of-use"
+licence = "owned by the customer on a paid plan (Meshy Terms of Use 3.2, updated 2026-09-19); no attribution required"
+credit_cap = 45
+approved_by = "xperiaroco2 (the engineer)"
+approved_at = "2026-10-17"
+approval_ref = "https://github.com/xperiaroco2/prime-game-art/issues/196#issuecomment-6235754823"
+
+[defaults.text_to_image.params]
+ai_model = "gpt-image-2-5-sunburst"
+aspect_ratio = "16:9"
+remove_background = false
+
+[variants.mix]
+prompt = "Character design sheet for a stylized 3D game: one row of eight alien head-and-shoulders busts in front view, the same size, evenly spaced on one plain mid-grey studio background, soft key light, gentle rim light, soft shadows. Premium handmade plasticine look: smooth clean sculpted forms, soft matte clay skin with a barely visible handmade surface, no pores, no wrinkles, no HD texture detail. Every bust has no human nose (two tiny nostril slits), no human ears, glossy white bead eyes with small dark pupils and one sharp highlight, warm reddish lid rims, and rolled coral clay lips; each skin has a lighter tone of its own hue on the face and throat. From left to right, head, skin, eyes and mouth: 1 back-swept dome with a short curved blade crest, teal, almond eyes with dark eyeliner rims and a few long lashes, full glossy plum lipstick pout; 2 tall cone head, coral, vertical slit pupils with a sly narrow look, a long thin smirk pulled to one side; 3 fish-like head with a small chin and fins in place of ears, periwinkle, sleepy droopy lids almost closed, a small round pursed fish mouth; 4 lizard-like head with a flat muzzle and a low brow ridge, jade, uneven eyes with one raised sceptical lid, an underbite with two small tusks; 5 round lemon head with two antenna bobbles, lemon yellow, wide open manic eyes with tiny pupils, an overbite with two peg teeth; 6 broad wedge head with two small side fins, lilac, heavy half-closed bored lids, a calm half smile with one gap between the front teeth; 7 tall narrow egg head with a swept fin crest, tangerine, two bead eyes plus a small third eye above them, a wide closed frog-line mouth with a fuller lower lip; 8 head with a soft frilled collar crest, cobalt blue, heavy bored lids, a slack open mouth with a few crooked separate teeth and the tongue tip. Adult, cool, funny and appealing, made with care. Not realistic, not childish, not grotesque: no blush stickers, no sparkle eyes, no mascot smile, no slime, no text, no numbers, no labels, no logo."
+
+[variants.outfits]
+prompt = "Stylized 3D character concept render, one row of four full-body figures of the same humanoid alien adult man, side by side, standing three-quarter view, whole figures in frame with feet visible, plain mid-grey studio background, soft key light, gentle rim light, soft contact shadows. Premium handmade plasticine look: smooth clean sculpted forms, soft matte clay skin with a barely visible handmade surface, no pores, no wrinkles, no HD texture detail. Adult proportions about seven heads tall, a normal attractive human body with normal shoulders and hands, five fingers, never muscular. The same alien in every figure: a smooth back-swept domed head with a short curved blade crest, teal skin with a lighter mint face, throat and belly, no human nose (two tiny nostril slits), no human ears, big glossy white bead eyes set wide and high with small dark pupils, one sharp highlight and heavy half-closed upper lids with warm reddish rims, bored deadpan, a wide closed frog-line mouth with rolled coral lips and a fuller lower lip, slightly warmer knuckles. Only the outfit changes, present-day Earth clothes in calmer muted colours, simple clean fabric with a few large folds, one accent colour picked up from the face, from left to right: 1 a charcoal blazer over a cream tee, dark jeans and white sneakers, a coral pocket square, hands in pockets; 2 a loud palm-print party shirt under an open navy suit jacket, navy trousers and coral loafers, holding a cocktail glass; 3 an olive bomber jacket over a burgundy hoodie, grey track trousers and chunky sneakers, holding a paper coffee cup; 4 a mustard knit polo, brown corduroy trousers, white sneakers and coral socks, arms crossed. Funny and appealing, cool, adult deadpan humour, made with care. Not realistic, not heroic, not childish, not grotesque: no blush stickers, no sparkle eyes, no mascot smile, no muscles, no slime, no gore, no text, no logo."
+
+[[items]]
+id = "g-x1"
+variant = "mix"
+kind = "text_to_image"
+
+[[items]]
+id = "n-x1"
+variant = "mix"
+kind = "text_to_image"
+params = { ai_model = "nano-banana-pro" }
+
+[[items]]
+id = "g-o1"
+variant = "outfits"
+kind = "text_to_image"
+
+[[items]]
+id = "n-o1"
+variant = "outfits"
+kind = "text_to_image"
+params = { ai_model = "nano-banana-pro" }

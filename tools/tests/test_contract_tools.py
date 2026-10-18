@@ -142,15 +142,18 @@ class CheckCommandTest(unittest.TestCase):
         self.assertEqual(self.failed(report), ["body_shape_morphs"], output)
 
     def test_face_morphs_with_mixed_weights(self) -> None:
-        # Only bone groups pick a vertex's main bone (clay_border is not one), and a Head-Neck tie counts as the head.
+        # Only bone groups pick a vertex's main bone (clay_border is not one), and a Head-Neck tie counts as the head,
+        # also one 8-bit glTF step apart (127/255 Head, 128/255 Neck).
         mixed = self.build(
-            "face_mixed.blend", shape_keys={"mouth_a": "Head"}, defects=["clay_border", "tied_head_vertex"]
+            "face_mixed.blend",
+            shape_keys={"mouth_a": "Head"},
+            defects=["clay_border", "tied_head_vertex", "near_tied_head_vertex"],
         )
         code, report, output = self.check(mixed, "body")
         self.assertEqual(self.statuses(report)["body_shape_morphs"], "pass", output)
         moves = report["measure"]["meshes"][0]["shape_key_bones"]["mouth_a"]
         self.assertEqual(sorted(moves), ["Head", "Head|Neck"], output)
-        self.assertEqual(moves["Head|Neck"], {"vertices": 1, "max_mm": 5.0})
+        self.assertEqual(moves["Head|Neck"], {"vertices": 2, "max_mm": 5.0})
         # A Head key moving a vertex at 0.6 Neck by 5 mm (past face.edge_mm) or one on no bone is a body-shape morph.
         broken = self.build(
             "face_mixed_broken.blend",

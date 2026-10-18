@@ -365,12 +365,29 @@ class FaceMorphTest(unittest.TestCase):
         self.assertIn("Body:slim moves skin on UpperChest", self.results(report)["body_shape_morphs"][1])
         self.assertEqual(report["verdict"], _checks.FAIL)
 
+    def test_the_edge_needs_head_skin_in_the_same_key(self) -> None:
+        # A key that moves only neck skin, however little, is no face morph: the edge is a face morph's soft tail.
+        report = self.evaluate(with_keys(good_body(self.profile), {"neck": {"Neck": (8, 1.0)}}))
+        self.assertEqual(self.results(report)["body_shape_morphs"],
+                         (_checks.FAIL, "1 shape keys move skin off the head bones: "
+                                        "Body:neck moves skin on Neck (8 vertices, up to 1 mm)"))
+        self.assertNotIn("face_morphs", self.results(report))
+
+    def test_the_edge_is_not_for_a_neck_body_tie(self) -> None:
+        # Every tied bone must be an edge bone: a Chest|Neck vertex is body skin, and 2 mm there still fails.
+        report = self.evaluate(with_keys(good_body(self.profile), {"chin": {"Head": 12, "Chest|Neck": (2, 1.0)}}))
+        self.assertEqual(self.results(report)["body_shape_morphs"],
+                         (_checks.FAIL, "1 shape keys move skin off the head bones: "
+                                        "Body:chin moves skin on Chest|Neck (2 vertices, up to 1 mm)"))
+
     def test_a_weight_tie_goes_to_the_head(self) -> None:
-        # check_model.py joins the bones tied for a vertex's largest weight with "|" (0.5 Head, 0.5 Neck).
-        report = self.evaluate(with_keys(good_body(self.profile), {"chin": {"Head|Neck": 12, "Chest|Neck": (2, 1.0)}}))
+        # check_model.py joins the bones tied for a vertex's largest weight with "|" (0.5 Head, 0.5 Neck). The tie
+        # rule, not the edge, passes it: it moves 5 mm, past face.edge_mm.
+        report = self.evaluate(with_keys(good_body(self.profile), {"chin": {"Head|Neck": 12}}))
         results = self.results(report)
         self.assertEqual(results["body_shape_morphs"][0], _checks.PASS, results)
-        self.assertEqual(results["face_morphs"][0], _checks.PASS)
+        self.assertEqual(results["face_morphs"],
+                         (_checks.PASS, "face morphs on Body (1); at most 64 per mesh (provisional)"))
         report = self.evaluate(with_keys(good_body(self.profile), {"chest": {"Chest|Spine": 12}}))
         self.assertIn("Body:chest moves skin on Chest|Spine", self.results(report)["body_shape_morphs"][1])
 

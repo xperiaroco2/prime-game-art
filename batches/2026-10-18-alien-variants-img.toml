@@ -1,0 +1,100 @@
+# art#196, night of 2026-10-18: the face-part variants as AI sculpts. GPT Image edits the approved base turnaround
+# (u1's three views) with ONE part changed; Meshy 3D follows in a second batch; agents wrap each variant onto the base
+# topology as morph deltas. The engineer agreed in advance to the manager's night recommendations (art#196 comment
+# 6243717930). Written by the art manager, not committed. Schema: docs/meshy.md.
+
+id = "2026-10-18-alien-variants-img"
+purpose = "Turnarounds of the alien base with one face part or the head shape changed, the sources of the parts' morphs (art#196)."
+plan = "Meshy paid plan (monthly; bought by the engineer on 2026-10-17)"
+terms_url = "https://www.meshy.ai/terms-of-use"
+licence = "owned by the customer on a paid plan (Meshy Terms of Use 3.2, updated 2026-09-19); no attribution required"
+credit_cap = 90
+approved_by = "xperiaroco2 (the engineer)"
+approved_at = "2026-10-18"
+approval_ref = "https://github.com/xperiaroco2/prime-game-art/issues/196#issuecomment-6243717930"
+
+[defaults.image_to_image.params]
+ai_model = "gpt-image-2-5-sunburst"
+generate_multi_view = true
+remove_background = false
+
+[variants.edit]
+prompt = "PLACEHOLDER"
+
+[[items]]
+id = "h3"
+variant = "edit"
+kind = "image_to_image"
+prompt = "The same character as in the reference images: the same body, A-pose, proportions, teal and mint colours, premium plasticine style and lighting, the same head and face, as a three-view turnaround for 3D modelling (front, side, back), plain background. Change ONLY the head shape: a fish-like head with a small chin and two swept fins in place of ears, keeping the short curved blade crest, the same bead eyes with heavy lids and the same frog-line mouth. Everything else stays exactly the same. No clothes, no anatomical details, no text, no labels, no logo."
+images = [
+  { file = "raw:2026-10-18-alien-2d-turn2/u1/image_to_image-multi_view_image_01a14c18-9ad5-77dd-9793-c1631b328463_part_0.png", provenance = "own Meshy generation, batch 2026-10-18-alien-2d-turn2 item u1, art#196 view 0 (front)", sha256 = "d8c6ef6483406beb20b4e065268527c7daa9ae34161e467c7623aa4c4a39d23a" },
+  { file = "raw:2026-10-18-alien-2d-turn2/u1/image_to_image-multi_view_image_01a14c18-9ad5-77dd-9793-c1631b328463_part_1.png", provenance = "own Meshy generation, batch 2026-10-18-alien-2d-turn2 item u1, art#196 view 1 (side)", sha256 = "ad8639e5d530ba0cd9bc8b6163311d95874e178048cc839e7d6faff3c44677ea" },
+  { file = "raw:2026-10-18-alien-2d-turn2/u1/image_to_image-multi_view_image_01a14c18-9ad5-77dd-9793-c1631b328463_part_2.png", provenance = "own Meshy generation, batch 2026-10-18-alien-2d-turn2 item u1, art#196 view 2 (back)", sha256 = "3427f3474f90dff3cd9e8492e0fd4936e305710978016736ede2d068f6092dff" },
+]
+
+[[items]]
+id = "m2"
+variant = "edit"
+kind = "image_to_image"
+prompt = "The same character as in the reference images: the same body, A-pose, proportions, teal and mint colours, premium plasticine style and lighting, the same head and face, as a three-view turnaround for 3D modelling (front, side, back), plain background. Change ONLY the mouth: full glossy plum lipstick lips in a pout, rolled clay lips. Everything else stays exactly the same. No clothes, no anatomical details, no text, no labels, no logo."
+images = [
+  { file = "raw:2026-10-18-alien-2d-turn2/u1/image_to_image-multi_view_image_01a14c18-9ad5-77dd-9793-c1631b328463_part_0.png", provenance = "own Meshy generation, batch 2026-10-18-alien-2d-turn2 item u1, art#196 view 0 (front)", sha256 = "d8c6ef6483406beb20b4e065268527c7daa9ae34161e467c7623aa4c4a39d23a" },
+  { file = "raw:2026-10-18-alien-2d-turn2/u1/image_to_image-multi_view_image_01a14c18-9ad5-77dd-9793-c1631b328463_part_1.png", provenance = "own Meshy generation, batch 2026-10-18-alien-2d-turn2 item u1, art#196 view 1 (side)", sha256 = "ad8639e5d530ba0cd9bc8b6163311d95874e178048cc839e7d6faff3c44677ea" },
+  { file = "raw:2026-10-18-alien-2d-turn2/u1/image_to_image-multi_view_image_01a14c18-9ad5-77dd-9793-c1631b328463_part_2.png", provenance = "own Meshy generation, batch 2026-10-18-alien-2d-turn2 item u1, art#196 view 2 (back)", sha256 = "3427f3474f90dff3cd9e8492e0fd4936e305710978016736ede2d068f6092dff" },
+]
+
+[[items]]
+id = "m3"
+variant = "edit"
+kind = "image_to_image"
+prompt = "The same character as in the reference images: the same body, A-pose, proportions, teal and mint colours, premium plasticine style and lighting, the same head and face, as a three-view turnaround for 3D modelling (front, side, back), plain background. Change ONLY the mouth: an overbite with two separate rounded peg teeth resting on the lower lip, rolled coral clay lips. Everything else stays exactly the same. No clothes, no anatomical details, no text, no labels, no logo."
+images = [
+  { file = "raw:2026-10-18-alien-2d-turn2/u1/image_to_image-multi_view_image_01a14c18-9ad5-77dd-9793-c1631b328463_part_0.png", provenance = "own Meshy generation, batch 2026-10-18-alien-2d-turn2 item u1, art#196 view 0 (front)", sha256 = "d8c6ef6483406beb20b4e065268527c7daa9ae34161e467c7623aa4c4a39d23a" },
+  { file = "raw:2026-10-18-alien-2d-turn2/u1/image_to_image-multi_view_image_01a14c18-9ad5-77dd-9793-c1631b328463_part_1.png", provenance = "own Meshy generation, batch 2026-10-18-alien-2d-turn2 item u1, art#196 view 1 (side)", sha256 = "ad8639e5d530ba0cd9bc8b6163311d95874e178048cc839e7d6faff3c44677ea" },
+  { file = "raw:2026-10-18-alien-2d-turn2/u1/image_to_image-multi_view_image_01a14c18-9ad5-77dd-9793-c1631b328463_part_2.png", provenance = "own Meshy generation, batch 2026-10-18-alien-2d-turn2 item u1, art#196 view 2 (back)", sha256 = "3427f3474f90dff3cd9e8492e0fd4936e305710978016736ede2d068f6092dff" },
+]
+
+[[items]]
+id = "m6"
+variant = "edit"
+kind = "image_to_image"
+prompt = "The same character as in the reference images: the same body, A-pose, proportions, teal and mint colours, premium plasticine style and lighting, the same head and face, as a three-view turnaround for 3D modelling (front, side, back), plain background. Change ONLY the mouth: a strong underbite with two small rounded tusks pointing up from the lower lip, rolled coral clay lips. Everything else stays exactly the same. No clothes, no anatomical details, no text, no labels, no logo."
+images = [
+  { file = "raw:2026-10-18-alien-2d-turn2/u1/image_to_image-multi_view_image_01a14c18-9ad5-77dd-9793-c1631b328463_part_0.png", provenance = "own Meshy generation, batch 2026-10-18-alien-2d-turn2 item u1, art#196 view 0 (front)", sha256 = "d8c6ef6483406beb20b4e065268527c7daa9ae34161e467c7623aa4c4a39d23a" },
+  { file = "raw:2026-10-18-alien-2d-turn2/u1/image_to_image-multi_view_image_01a14c18-9ad5-77dd-9793-c1631b328463_part_1.png", provenance = "own Meshy generation, batch 2026-10-18-alien-2d-turn2 item u1, art#196 view 1 (side)", sha256 = "ad8639e5d530ba0cd9bc8b6163311d95874e178048cc839e7d6faff3c44677ea" },
+  { file = "raw:2026-10-18-alien-2d-turn2/u1/image_to_image-multi_view_image_01a14c18-9ad5-77dd-9793-c1631b328463_part_2.png", provenance = "own Meshy generation, batch 2026-10-18-alien-2d-turn2 item u1, art#196 view 2 (back)", sha256 = "3427f3474f90dff3cd9e8492e0fd4936e305710978016736ede2d068f6092dff" },
+]
+
+[[items]]
+id = "e3"
+variant = "edit"
+kind = "image_to_image"
+prompt = "The same character as in the reference images: the same body, A-pose, proportions, teal and mint colours, premium plasticine style and lighting, the same head and face, as a three-view turnaround for 3D modelling (front, side, back), plain background. Change ONLY the eyes: sleepy droopy upper lids almost closed, with soft eye bags under them; the same white bead eyes and warm reddish lid rims. Everything else stays exactly the same. No clothes, no anatomical details, no text, no labels, no logo."
+images = [
+  { file = "raw:2026-10-18-alien-2d-turn2/u1/image_to_image-multi_view_image_01a14c18-9ad5-77dd-9793-c1631b328463_part_0.png", provenance = "own Meshy generation, batch 2026-10-18-alien-2d-turn2 item u1, art#196 view 0 (front)", sha256 = "d8c6ef6483406beb20b4e065268527c7daa9ae34161e467c7623aa4c4a39d23a" },
+  { file = "raw:2026-10-18-alien-2d-turn2/u1/image_to_image-multi_view_image_01a14c18-9ad5-77dd-9793-c1631b328463_part_1.png", provenance = "own Meshy generation, batch 2026-10-18-alien-2d-turn2 item u1, art#196 view 1 (side)", sha256 = "ad8639e5d530ba0cd9bc8b6163311d95874e178048cc839e7d6faff3c44677ea" },
+  { file = "raw:2026-10-18-alien-2d-turn2/u1/image_to_image-multi_view_image_01a14c18-9ad5-77dd-9793-c1631b328463_part_2.png", provenance = "own Meshy generation, batch 2026-10-18-alien-2d-turn2 item u1, art#196 view 2 (back)", sha256 = "3427f3474f90dff3cd9e8492e0fd4936e305710978016736ede2d068f6092dff" },
+]
+
+[[items]]
+id = "e4"
+variant = "edit"
+kind = "image_to_image"
+prompt = "The same character as in the reference images: the same body, A-pose, proportions, teal and mint colours, premium plasticine style and lighting, the same head and face, as a three-view turnaround for 3D modelling (front, side, back), plain background. Change ONLY the eyes: wide open round bead eyes with tiny dark pupils, a manic look; the same warm reddish lid rims. Everything else stays exactly the same. No clothes, no anatomical details, no text, no labels, no logo."
+images = [
+  { file = "raw:2026-10-18-alien-2d-turn2/u1/image_to_image-multi_view_image_01a14c18-9ad5-77dd-9793-c1631b328463_part_0.png", provenance = "own Meshy generation, batch 2026-10-18-alien-2d-turn2 item u1, art#196 view 0 (front)", sha256 = "d8c6ef6483406beb20b4e065268527c7daa9ae34161e467c7623aa4c4a39d23a" },
+  { file = "raw:2026-10-18-alien-2d-turn2/u1/image_to_image-multi_view_image_01a14c18-9ad5-77dd-9793-c1631b328463_part_1.png", provenance = "own Meshy generation, batch 2026-10-18-alien-2d-turn2 item u1, art#196 view 1 (side)", sha256 = "ad8639e5d530ba0cd9bc8b6163311d95874e178048cc839e7d6faff3c44677ea" },
+  { file = "raw:2026-10-18-alien-2d-turn2/u1/image_to_image-multi_view_image_01a14c18-9ad5-77dd-9793-c1631b328463_part_2.png", provenance = "own Meshy generation, batch 2026-10-18-alien-2d-turn2 item u1, art#196 view 2 (back)", sha256 = "3427f3474f90dff3cd9e8492e0fd4936e305710978016736ede2d068f6092dff" },
+]
+
+[[items]]
+id = "e7"
+variant = "edit"
+kind = "image_to_image"
+prompt = "The same character as in the reference images: the same body, A-pose, proportions, teal and mint colours, premium plasticine style and lighting, the same head and face, as a three-view turnaround for 3D modelling (front, side, back), plain background. Change ONLY the eyes: slightly uneven eyes, one bigger, with one raised sceptical upper lid; the same white bead eyes and warm reddish lid rims. Everything else stays exactly the same. No clothes, no anatomical details, no text, no labels, no logo."
+images = [
+  { file = "raw:2026-10-18-alien-2d-turn2/u1/image_to_image-multi_view_image_01a14c18-9ad5-77dd-9793-c1631b328463_part_0.png", provenance = "own Meshy generation, batch 2026-10-18-alien-2d-turn2 item u1, art#196 view 0 (front)", sha256 = "d8c6ef6483406beb20b4e065268527c7daa9ae34161e467c7623aa4c4a39d23a" },
+  { file = "raw:2026-10-18-alien-2d-turn2/u1/image_to_image-multi_view_image_01a14c18-9ad5-77dd-9793-c1631b328463_part_1.png", provenance = "own Meshy generation, batch 2026-10-18-alien-2d-turn2 item u1, art#196 view 1 (side)", sha256 = "ad8639e5d530ba0cd9bc8b6163311d95874e178048cc839e7d6faff3c44677ea" },
+  { file = "raw:2026-10-18-alien-2d-turn2/u1/image_to_image-multi_view_image_01a14c18-9ad5-77dd-9793-c1631b328463_part_2.png", provenance = "own Meshy generation, batch 2026-10-18-alien-2d-turn2 item u1, art#196 view 2 (back)", sha256 = "3427f3474f90dff3cd9e8492e0fd4936e305710978016736ede2d068f6092dff" },
+]
+

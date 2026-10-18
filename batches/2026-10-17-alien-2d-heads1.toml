@@ -1,0 +1,44 @@
+# art#196, 2D concepts, sheet 1: eight head-shape families sharing the same eyes and mouth (the interchangeability
+# test), in the visual target's style (D:/prime-art-raw/research/2026-10-17-visual-target/visual-target.md). Text to
+# image, no anchor (the grey human anchor pulled the last concepts toward a human face). 2 on nano-banana-pro (9 credits),
+# 2 on gpt-image-2-5-sunburst (12). Written by the art manager, not committed. Schema: docs/meshy.md.
+
+id = "2026-10-17-alien-2d-heads1"
+purpose = "2D concept sheet 1 for art#196: eight alien head-shape families with identical eyes and mouth, to pick the families the engineer likes."
+plan = "Meshy paid plan (monthly; bought by the engineer on 2026-10-17)"
+terms_url = "https://www.meshy.ai/terms-of-use"
+licence = "owned by the customer on a paid plan (Meshy Terms of Use 3.2, updated 2026-09-19); no attribution required"
+credit_cap = 50
+approved_by = "xperiaroco2 (the engineer)"
+approved_at = "2026-10-17"
+approval_ref = "https://github.com/xperiaroco2/prime-game-art/issues/196#issuecomment-6235754823"
+
+[defaults.text_to_image.params]
+ai_model = "nano-banana-pro"
+aspect_ratio = "16:9"
+remove_background = false
+
+[variants.heads]
+prompt = "Character design sheet for a stylized 3D game: one row of eight alien head-and-shoulders busts, all in front view, the same size, evenly spaced on one plain mid-grey studio background, soft key light, gentle rim light, soft shadows. Premium handmade plasticine look: smooth clean sculpted forms, soft matte clay skin with a barely visible handmade surface, no pores, no wrinkles, no HD texture detail. All eight busts share exactly the same eyes and exactly the same mouth at the same height: big glossy bead eyes set wide and high, white with small dark pupils and one sharp highlight, heavy sculpted upper eyelids giving a bored deadpan look; a wide closed frog-line mouth with rolled clay lips and a fuller lower lip. No human nose, at most two tiny nostril slits; no human ears. Only the head shape changes, from left to right: 1 a smooth back-swept dome with a short blade crest; 2 a tall cone head; 3 a fish-like head with a small chin and fins in place of ears; 4 a lizard-like head with a longer flat muzzle and a low brow ridge; 5 a round lemon-shaped head with a short antenna pair; 6 a broad wedge head with two small side fins; 7 a tall narrow egg head with a swept-back fin crest; 8 a head with a soft frilled amphibian collar crest. Each bust has a different saturated skin hue with a lighter tone on the face and throat, and warmer reddish eyelid rims and lips: teal, coral, periwinkle, jade, lemon yellow, lilac, tangerine, cobalt. Adult, cool, funny and appealing, made with care. Not realistic, not childish, not grotesque: no blush stickers, no sparkle eyes, no smile, no slime, no text, no numbers, no labels, no logo."
+
+[[items]]
+id = "h1-n1"
+variant = "heads"
+kind = "text_to_image"
+
+[[items]]
+id = "h1-n2"
+variant = "heads"
+kind = "text_to_image"
+
+[[items]]
+id = "h1-g1"
+variant = "heads"
+kind = "text_to_image"
+params = { ai_model = "gpt-image-2-5-sunburst", aspect_ratio = "16:9", remove_background = false }
+
+[[items]]
+id = "h1-g2"
+variant = "heads"
+kind = "text_to_image"
+params = { ai_model = "gpt-image-2-5-sunburst", aspect_ratio = "16:9", remove_background = false }

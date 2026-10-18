@@ -199,14 +199,15 @@ face = "eye and mouth expressions are face morphs on the head, weighted at runti
 # not pieces laid on top and not frames in a face texture. Every head shape is a wrap of the template (the same
 # vertices in the same order), so each eye and mouth morph works on every head: N heads + M mouths + K eyes are
 # N + M + K pieces. `check --kind body` passes a shape key only when every vertex it moves has its largest weight on
-# one of `morph_bones` (a tie with another bone counts as on the head), or on one of `edge_bones` moved at most
-# `edge_mm`; any other key is a body-shape morph and fails (every outfit would need the same keys).
+# one of `morph_bones` (a tie with another bone counts as on the head), or on `edge_bones` alone (a Chest|Neck tie
+# is not) moved at most `edge_mm` in a key that also moves head skin; any other key is a body-shape morph and fails
+# (every outfit would need the same keys).
 [face]
 rule = "eyes and mouth are morphs (glTF morph targets) on one template head; meshes only for truly separate parts"
 morph_bones = ["Head", "Jaw", "LeftEye", "RightEye"]
-# A soft jaw or chin morph's falloff may reach the top of the neck. Skin on these bones may move up to edge_mm in a
-# face morph: a shift that a collar fitted to the neck hides, never a change of the body's shape. Provisional, a
-# starting guess; measured again on the first template head.
+# A soft jaw or chin morph's falloff may reach the top of the neck. Skin on these bones only may move up to edge_mm
+# in a key that also moves head skin: a shift that a collar fitted to the neck hides, never a change of the body's
+# shape. Provisional, a starting guess; measured again on the first template head.
 edge_bones = ["Neck"]
 edge_mm = 2.0
 template = "every head shape shares the template head's topology, so every eye and mouth morph fits every head"

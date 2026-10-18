@@ -21,7 +21,9 @@ import bpy
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import contract_io  # noqa: E402
 
-TIE = 1e-4  # weights closer than this are equal: a vertex at 0.5 Head and 0.5 Neck is on both
+# Weights closer than this are equal: a vertex at 0.5 Head and 0.5 Neck is on both. glTF may store weights in 8 bits:
+# two equal weights can come back one step (1/255) apart, one more after the exporter renormalises the sum to 1.
+TIE = 2 / 255
 
 
 def transform_of(obj) -> dict:

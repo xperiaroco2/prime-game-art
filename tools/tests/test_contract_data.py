@@ -122,9 +122,11 @@ class ContractTest(unittest.TestCase):
         self.assertTrue(any("face.edge_mm (a number) are missing" in e for e in errors), errors)
         slots = {s["id"]: s for s in broken["slots"]}
         slots["hair_or_hat"]["part_morphs"] = ["look_l"]
+        slots["eyes"]["part_morphs"] = ["look_l", 2, ""]
         errors = _contract.validate_contract(broken, self.profile)
-        self.assertTrue(any("slot hair_or_hat: part_morphs must be a list, on a slot with parts" in e for e in errors),
-                        errors)
+        for slot in ("hair_or_hat", "eyes"):
+            message = f"slot {slot}: part_morphs must be a list of shape key names, on a slot with parts"
+            self.assertTrue(any(message in e for e in errors), errors)
 
     def test_faces_are_morphs_on_one_template_head(self) -> None:
         # The engineer, 2026-10-18 (art #200): no face texture frames and no rigid faces laid on the head.

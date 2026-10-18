@@ -152,8 +152,9 @@ def _morph_checks(
 ) -> None:
     """Faces are morphs on the template head (docs/decisions/2026-10-18-faces-as-morphs.md). On a body, a shape key
     is a face morph when every vertex it moves has its largest weight on face.morph_bones (a tie with another bone
-    counts as on the head), or on face.edge_bones moved at most face.edge_mm (a soft jaw or chin morph's edge on the
-    neck): it passes, and more than budgets.limits.face_morphs_target on one mesh warn. Any other key is a body-shape
+    counts as on the head), or on face.edge_bones only (every tied bone an edge bone) moved at most face.edge_mm in a
+    key that also moves head skin (a soft jaw or chin morph's edge on the neck): it passes, and more than
+    budgets.limits.face_morphs_target on one mesh warn. Any other key is a body-shape
     morph and fails beyond blend_shapes_body (0). On the parts of a slot with part_morphs (the eyes slot's eyeballs:
     their look morphs) those keys pass; any other shape key on clothing, accessories and props warns."""
     keys = _total(meshes, "shape_keys")
@@ -176,20 +177,23 @@ def _morph_checks(
             body_keys.append(f"{mesh['name']} ({mesh['shape_keys']} keys, not measured per key)")
             continue
         for key, groups in moves.items():
-            off, on_edge = [], False
+            off, edge, on_head = [], [], False
             for group, moved in sorted(groups.items()):
                 bones = {_contract.mapped_name(b, bone_map) for b in group.split("|")} if group else set()
+                where = f"{group or 'no bone'} ({moved['vertices']} vertices, up to {moved['max_mm']:g} mm)"
                 if bones & face_bones:
-                    continue
-                if bones & edge_bones and moved["max_mm"] <= edge_mm:
-                    on_edge = True
-                    continue
-                off.append(f"{group or 'no bone'} ({moved['vertices']} vertices, up to {moved['max_mm']:g} mm)")
+                    on_head = True
+                elif bones and bones <= edge_bones and moved["max_mm"] <= edge_mm:
+                    edge.append((group, where))  # every tied bone an edge bone: a Chest|Neck tie is body skin
+                else:
+                    off.append((group, where))
+            if edge and not on_head:  # the edge is a face morph's soft tail: neck skin alone is a body shape
+                off = sorted(off + edge)
             if off:
-                body_keys.append(f"{mesh['name']}:{key} moves skin on {', '.join(off)}")
+                body_keys.append(f"{mesh['name']}:{key} moves skin on {', '.join(where for _, where in off)}")
             else:
                 face_counts[mesh["name"]] = face_counts.get(mesh["name"], 0) + 1
-                edge_keys += on_edge
+                edge_keys += bool(edge)
     report.add(
         "body_shape_morphs",
         FAIL if len(body_keys) > limits["blend_shapes_body"] else PASS,
@@ -231,7 +235,7 @@ def _part_morph_checks(report: _Report, meshes: list, slot: dict | None) -> None
             f"the {slot['id']} slot's part morphs on {', '.join(f'{n} ({c})' for n, c in sorted(passed.items()))}",
         )
     if others:
-        listed = ", ".join(f"{n} ({c})" for n, c in others.items())
+        listed = ", ".join(f"{n} ({c})" for n, c in sorted(others.items()))
         report.add("blend_shapes", WARN, f"{sum(others.values())} shape keys on {listed}")
 
 

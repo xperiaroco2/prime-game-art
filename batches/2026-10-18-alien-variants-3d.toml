@@ -1,0 +1,83 @@
+# art#196, night of 2026-10-18: Meshy 3D of each face-part variant turnaround (batch 2026-10-18-alien-variants-img),
+# the same settings as the approved base (2026-10-18-alien-3d-base1), so agents can wrap each onto the base topology
+# and keep the difference as a morph. Front view first (found by width and belly brightness). Not committed.
+id = "2026-10-18-alien-variants-3d"
+purpose = "Meshy 3D of the alien base's face-part and head-shape variants, the sources of the parts' morphs (art#196)."
+plan = "Meshy paid plan (monthly; bought by the engineer on 2026-10-17)"
+terms_url = "https://www.meshy.ai/terms-of-use"
+licence = "owned by the customer on a paid plan (Meshy Terms of Use 3.2, updated 2026-09-19); no attribution required"
+credit_cap = 260
+approved_by = "xperiaroco2 (the engineer)"
+approved_at = "2026-10-18"
+approval_ref = "https://github.com/xperiaroco2/prime-game-art/issues/196#issuecomment-6243717930"
+
+[defaults.multi_image_to_3d.params]
+ai_model = "meshy-7.1"
+geometry_resolution = "2k"
+should_texture = true
+texture_resolution = "2k"
+pose_mode = "a-pose"
+target_formats = ["glb"]
+
+[[items]]
+id = "e3"
+kind = "multi_image_to_3d"
+images = [
+  { file = "raw:2026-10-18-alien-variants-img/e3/image_to_image-multi_view_image_01a14c6b-ff93-77ac-a64c-6761395d19aa_part_1.png", provenance = "own Meshy generation, batch 2026-10-18-alien-variants-img item e3 (front), art#196", sha256 = "04fac92275e7200449a43ac3dde57bcd70ce20eaa9564ba88a945dff83c1fdb9" },
+  { file = "raw:2026-10-18-alien-variants-img/e3/image_to_image-multi_view_image_01a14c6b-ff93-77ac-a64c-6761395d19aa_part_2.png", provenance = "own Meshy generation, batch 2026-10-18-alien-variants-img item e3 (side), art#196", sha256 = "96d19c440d8c9e3b4bf2e20fe932919b57d4fdbdd64a7c48e2d8dd5796ab757e" },
+  { file = "raw:2026-10-18-alien-variants-img/e3/image_to_image-multi_view_image_01a14c6b-ff93-77ac-a64c-6761395d19aa_part_0.png", provenance = "own Meshy generation, batch 2026-10-18-alien-variants-img item e3 (back), art#196", sha256 = "9c9cad599e3cabd3e5bb5203d39ba82692af3f9331579c7d0947687bfb26c86a" },
+]
+
+[[items]]
+id = "e4"
+kind = "multi_image_to_3d"
+images = [
+  { file = "raw:2026-10-18-alien-variants-img/e4/image_to_image-multi_view_image_01a14c6c-bc72-7640-b4d4-85a7103727a4_part_0.png", provenance = "own Meshy generation, batch 2026-10-18-alien-variants-img item e4 (front), art#196", sha256 = "3d38e8ecb57c51fe82544fb748f8b24563dd9eb979551dd4847dbd37b5c17be6" },
+  { file = "raw:2026-10-18-alien-variants-img/e4/image_to_image-multi_view_image_01a14c6c-bc72-7640-b4d4-85a7103727a4_part_1.png", provenance = "own Meshy generation, batch 2026-10-18-alien-variants-img item e4 (side), art#196", sha256 = "819ed84280fc08680bae90d84bb7d088145383cb0fa594e6ebe52bcd48e85910" },
+  { file = "raw:2026-10-18-alien-variants-img/e4/image_to_image-multi_view_image_01a14c6c-bc72-7640-b4d4-85a7103727a4_part_2.png", provenance = "own Meshy generation, batch 2026-10-18-alien-variants-img item e4 (back), art#196", sha256 = "4250d29b6c1881d535253a4f3e5d8cf77cdcf9edb693abdc96e0a06c2c22c682" },
+]
+
+[[items]]
+id = "e7"
+kind = "multi_image_to_3d"
+images = [
+  { file = "raw:2026-10-18-alien-variants-img/e7/image_to_image-multi_view_image_01a14c6d-6cf3-7359-aec3-302911257220_part_0.png", provenance = "own Meshy generation, batch 2026-10-18-alien-variants-img item e7 (front), art#196", sha256 = "02c0db89284434fc85cdc44222ff3deb88b0cc3d85375476e755fb7d03462f4b" },
+  { file = "raw:2026-10-18-alien-variants-img/e7/image_to_image-multi_view_image_01a14c6d-6cf3-7359-aec3-302911257220_part_1.png", provenance = "own Meshy generation, batch 2026-10-18-alien-variants-img item e7 (side), art#196", sha256 = "1ee06b11ca5bd485dea425c18c3c533f789e3afe49006a355301b0692dc7cd30" },
+  { file = "raw:2026-10-18-alien-variants-img/e7/image_to_image-multi_view_image_01a14c6d-6cf3-7359-aec3-302911257220_part_2.png", provenance = "own Meshy generation, batch 2026-10-18-alien-variants-img item e7 (back), art#196", sha256 = "31490565b45807f318d91a2893e8692da46d2703031539037c7c41e0a72f3c4f" },
+]
+
+[[items]]
+id = "h3"
+kind = "multi_image_to_3d"
+images = [
+  { file = "raw:2026-10-18-alien-variants-img/h3/image_to_image-multi_view_image_01a14c69-1e4d-704f-a799-d50b98ad982e_part_0.png", provenance = "own Meshy generation, batch 2026-10-18-alien-variants-img item h3 (front), art#196", sha256 = "d8c56043a08be23e4a262e9f7e30fe7033442ed36fd5b9a886683486357a0093" },
+  { file = "raw:2026-10-18-alien-variants-img/h3/image_to_image-multi_view_image_01a14c69-1e4d-704f-a799-d50b98ad982e_part_1.png", provenance = "own Meshy generation, batch 2026-10-18-alien-variants-img item h3 (side), art#196", sha256 = "2eb6ace7305be3bad89e4108aee7036ec01a868d6a1aa44d14276360a3c7305b" },
+  { file = "raw:2026-10-18-alien-variants-img/h3/image_to_image-multi_view_image_01a14c69-1e4d-704f-a799-d50b98ad982e_part_2.png", provenance = "own Meshy generation, batch 2026-10-18-alien-variants-img item h3 (back), art#196", sha256 = "a7bed24d460d774ad34728c20c0a5db0605d4a9299df7a5d76b62900c3ce03bf" },
+]
+
+[[items]]
+id = "m2"
+kind = "multi_image_to_3d"
+images = [
+  { file = "raw:2026-10-18-alien-variants-img/m2/image_to_image-multi_view_image_01a14c69-d786-751c-9a61-19b7ac0f8fb8_part_1.png", provenance = "own Meshy generation, batch 2026-10-18-alien-variants-img item m2 (front), art#196", sha256 = "e911b325583d35265ac9354cc0158e6f61577b8887bcfb14acae996688fdae65" },
+  { file = "raw:2026-10-18-alien-variants-img/m2/image_to_image-multi_view_image_01a14c69-d786-751c-9a61-19b7ac0f8fb8_part_2.png", provenance = "own Meshy generation, batch 2026-10-18-alien-variants-img item m2 (side), art#196", sha256 = "9669c8b96cdb24653b7bc7bac24df8b0cda71ffabbfeabaebc9d846bb0ca6a35" },
+  { file = "raw:2026-10-18-alien-variants-img/m2/image_to_image-multi_view_image_01a14c69-d786-751c-9a61-19b7ac0f8fb8_part_0.png", provenance = "own Meshy generation, batch 2026-10-18-alien-variants-img item m2 (back), art#196", sha256 = "32b2f4eb6ba5593bc149b34b6dc73704a7c3bcaf13a9741789d597ab798474a3" },
+]
+
+[[items]]
+id = "m3"
+kind = "multi_image_to_3d"
+images = [
+  { file = "raw:2026-10-18-alien-variants-img/m3/image_to_image-multi_view_image_01a14c6a-8e4d-70f1-9039-0029434c4c52_part_2.png", provenance = "own Meshy generation, batch 2026-10-18-alien-variants-img item m3 (front), art#196", sha256 = "d389a952d6546c4cdfeed36c2eb58f57965dd962d1641c776c3c8fdc3f2f8889" },
+  { file = "raw:2026-10-18-alien-variants-img/m3/image_to_image-multi_view_image_01a14c6a-8e4d-70f1-9039-0029434c4c52_part_0.png", provenance = "own Meshy generation, batch 2026-10-18-alien-variants-img item m3 (side), art#196", sha256 = "d0814eb676432ee8b83bbc64c80a1f236463d963b964f9273bb83e51d586e8aa" },
+  { file = "raw:2026-10-18-alien-variants-img/m3/image_to_image-multi_view_image_01a14c6a-8e4d-70f1-9039-0029434c4c52_part_1.png", provenance = "own Meshy generation, batch 2026-10-18-alien-variants-img item m3 (back), art#196", sha256 = "8697f595fd48671c76da735ba2fed7bb1226479a1f25dd6e0a9d032fb41b0308" },
+]
+
+[[items]]
+id = "m6"
+kind = "multi_image_to_3d"
+images = [
+  { file = "raw:2026-10-18-alien-variants-img/m6/image_to_image-multi_view_image_01a14c6b-46ea-72a3-b682-e380a6847505_part_0.png", provenance = "own Meshy generation, batch 2026-10-18-alien-variants-img item m6 (front), art#196", sha256 = "c4372a0e7e623a0c810b56f3594e7c6497aac6c581c11f0439eedf6a9bd0ee92" },
+  { file = "raw:2026-10-18-alien-variants-img/m6/image_to_image-multi_view_image_01a14c6b-46ea-72a3-b682-e380a6847505_part_1.png", provenance = "own Meshy generation, batch 2026-10-18-alien-variants-img item m6 (side), art#196", sha256 = "e2ca33f8338e375041e6051832ce8330b61a979a5e0c5df6e591aaa9251bce9f" },
+  { file = "raw:2026-10-18-alien-variants-img/m6/image_to_image-multi_view_image_01a14c6b-46ea-72a3-b682-e380a6847505_part_2.png", provenance = "own Meshy generation, batch 2026-10-18-alien-variants-img item m6 (back), art#196", sha256 = "b9ba4348040309a91d60f115e0364487223872b294b70d7d4cb675b173b04d21" },
+]

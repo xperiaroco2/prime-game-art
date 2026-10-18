@@ -173,8 +173,12 @@ def validate_contract(contract: dict[str, Any], profile: dict[str, Any]) -> list
             errors.append(f"slot {slot.get('id')} uses the unknown socket {slot['socket']!r}")
         if slot.get("check_kind") and slot["check_kind"] not in KINDS:
             errors.append(f"slot {slot.get('id')} has the unknown check_kind {slot['check_kind']!r}")
-        if "part_morphs" in slot and not (slot.get("parts") and isinstance(slot["part_morphs"], list)):
-            errors.append(f"slot {slot.get('id')}: part_morphs must be a list, on a slot with parts")
+        if "part_morphs" in slot and not (
+            slot.get("parts")
+            and isinstance(slot["part_morphs"], list)
+            and all(isinstance(name, str) and name for name in slot["part_morphs"])
+        ):
+            errors.append(f"slot {slot.get('id')}: part_morphs must be a list of shape key names, on a slot with parts")
     for kind in KINDS:
         rules = contract.get("kinds", {}).get(kind)
         if not rules:

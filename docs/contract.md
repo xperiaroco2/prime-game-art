@@ -94,9 +94,10 @@ eyeballs, teeth, tusks, hair, crests, hats and clothes (`[face].separate`). Ever
 the same vertices in the same order, so each eye and mouth morph works on every head: N heads, M mouths and K eyes are
 N + M + K pieces, not N x M x K. A face morph moves only skin whose heaviest bone weight is on `Head`, `Jaw`,
 `LeftEye` or `RightEye` (`[face].morph_bones`; a vertex tied between one of them and another bone, such as 0.5 `Head`
-and 0.5 `Neck`, counts as on the head). One tolerance: a soft jaw or chin morph's falloff may move skin on `Neck`
-(`[face].edge_bones`) by at most 2 mm (`edge_mm`, provisional), a shift a collar fitted to the neck hides; past that,
-or on any other bone, it is a body-shape morph, and there are none (`blend_shapes_body = 0`), because every skinned
+and 0.5 `Neck`, counts as on the head; weights within two 8-bit steps, 2/255, are a tie, as glTF may store them). One tolerance: a soft jaw or chin morph's falloff may move skin on `Neck`
+(`[face].edge_bones`) by at most 2 mm (`edge_mm`, provisional), a shift a collar fitted to the neck hides. The key must
+also move head skin (neck skin alone is a body shape), and every bone a vertex is tied to must be an edge bone (a
+`Chest`-`Neck` tie is body skin); past that, or on any other bone, it is a body-shape morph, and there are none (`blend_shapes_body = 0`), because every skinned
 outfit would need the same keys or the body would poke through it. A shape key that moves nothing counts as a face
 morph (it costs only file size). More than `face_morphs_target` (64, provisional) face morphs on one mesh warn. The
 eyes slot's eyeballs may carry their look morphs (`look_l`, `look_r`, `look_u`, `look_d`, the slot's `part_morphs`):

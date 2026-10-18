@@ -1,0 +1,33 @@
+# art#196, 2D concepts, sheet 9: the base body without clothes, four proportions, only the proportion changes (a grid
+# that tunes one parameter, the release-quality rule). The engineer (2026-10-18): clothes leave this scope (art#199),
+# "now only the model itself"; sheet 7's body at about 7 heads read as too realistic. GPT Image only (his pick).
+# The base: head 1 (back-swept dome, blade crest), teal, eyes 1, mouth 1.
+# Written by the art manager, not committed. Schema: docs/meshy.md.
+
+id = "2026-10-18-alien-2d-body1"
+purpose = "2D concept sheet 9 for art#196: the base alien body without clothes in four proportions, to pick the body."
+plan = "Meshy paid plan (monthly; bought by the engineer on 2026-10-17)"
+terms_url = "https://www.meshy.ai/terms-of-use"
+licence = "owned by the customer on a paid plan (Meshy Terms of Use 3.2, updated 2026-09-19); no attribution required"
+credit_cap = 20
+approved_by = "xperiaroco2 (the engineer)"
+approved_at = "2026-10-17"
+approval_ref = "https://github.com/xperiaroco2/prime-game-art/issues/196#issuecomment-6235754823"
+
+[defaults.text_to_image.params]
+ai_model = "gpt-image-2-5-sunburst"
+aspect_ratio = "16:9"
+remove_background = false
+
+[variants.body]
+prompt = "Stylized 3D character concept render for a fun cartoon game, one row of four full-body figures of the same humanoid alien man, side by side, standing in a relaxed neutral pose with arms slightly away from the body, front three-quarter view, whole figures in frame with feet visible, plain mid-grey studio background, soft key light, gentle rim light, soft contact shadows. Premium handmade plasticine look: smooth chunky simplified clay forms, soft matte clay skin with a barely visible handmade surface, no pores, no wrinkles, no realistic anatomy, no muscle detail. No clothes: a smooth sculpted alien body like a clay figurine, no anatomical details, teal skin with a lighter mint face, throat, chest and belly with a soft organic split, warmer reddish knuckles, elbows and knees, simple soft hands with four fingers, simple rounded feet with three toes. The same alien head on every figure: a smooth back-swept domed head with a short curved blade crest, no nose (two tiny nostril slits), no ears, big glossy white bead eyes set wide and high with small dark pupils and heavy half-closed lids with warm reddish rims, bored deadpan, a wide frog-line mouth with rolled coral lips and a fuller lower lip. Only the body proportions change, from left to right: 1 about six and a half heads tall, slim, long legs, a long neck; 2 about six heads tall, slim limbs, narrow shoulders, a slight soft belly; 3 about five heads tall, a bigger head, a pear-shaped torso, short legs, big hands and feet; 4 about four and a half heads tall, a big head on a short neck, a round soft body, stubby limbs, big hands and feet. Every figure is an adult, cool, funny and appealing, made with care. Not realistic, not heroic, not babyish, not grotesque: no muscles, no blush stickers, no sparkle eyes, no mascot smile, no slime, no text, no numbers, no labels, no logo."
+
+[[items]]
+id = "g-b1"
+variant = "body"
+kind = "text_to_image"
+
+[[items]]
+id = "g-b2"
+variant = "body"
+kind = "text_to_image"
