@@ -876,8 +876,11 @@ tools/run.sh house --bake ZONES [--preset high|low] [--grid] [--diag] [--sheen] 
    scenes, not `Above`) and bake at the full texel. `--merge` welds each room level's floor tiles of one kind into one mesh and
    unwraps it (one lightmap island per floor instead of one per tile). Meshes without UV2 stay Dynamic.
 3. The editor bakes it: Godot opens the project with the `lmbake` plugin (`-- lmbake=<scene>`; without that argument
-   the plugin does nothing) in a 1280x720 window that the plugin moves off-screen first (never minimized; until then
-   the editor's start-up shows part of it at the screen's corner, `docs/godot.md`, "The off-screen window"); the plugin presses
+   the plugin does nothing) in a 1280x720 window (at least the editor's minimum size) that the plugin moves off-screen
+   first (never minimized), with `--single-window` so the editor's dialogs are drawn inside that window instead of
+   being re-centred on the screen. Not yet watched (the bake runs only at night): how much of the window the editor's
+   start-up shows at the screen's corner before the move, and that every bake dialog stays embedded (`docs/godot.md`,
+   "The off-screen window"). The plugin presses
    the LightmapGI's bake button, answers the file dialog, saves and quits (the driver puts back `project.godot`,
    whose header comment the editor rewrites on save). `house --bake` refuses this step outside
    00:00-08:00 local unless the manager wrote a daytime grant (`<raw>/research/2026-10-06-locations/lab/

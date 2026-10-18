@@ -193,8 +193,10 @@ for 3.6 s). Only a runtime `DisplayServer.window_set_position` skips the clamp. 
   resize (the showroom's timing size). `window()` copies the helper into another project's `lib/` (the ragdoll proof,
   the House export and review folders);
 - the runner refuses the run (`common.Failure`) when no OFFSCREEN line came or a reported window meets a screen
-  (`_godot.offscreen_problems`, `tools/tests/test_godot_offscreen.py`), and a test fails a runner that passes
-  `--position` or `--resolution` itself or a window script that never calls `place()`.
+  (`_godot.offscreen_problems`, `tools/tests/test_godot_offscreen.py`), after writing the run's whole output to the
+  caller's log (`window(..., log=)`, else `tools/out/godot-window/<time>-<pid>.log`); a non-zero exit with no OFFSCREEN
+  line is reported as the script failing before it placed its window, exit code first. A test fails a runner that
+  passes `--position` or `--resolution` itself or a window script that never calls `place()`.
 
 Measured after the fix with a 5 ms window watcher around `frames`, `showroom` and `zones --shoot` (#214): no Godot
 window on the screen at any time, and every picture pixel-identical to the one shot before the fix (same sizes, no
@@ -202,13 +204,27 @@ channel differs). The pixel waits past the right edge about 1 s, from Godot show
 `_initialize`. Tried and not used: a 1x1 start without `--position` (Godot centres it: one pixel mid-screen for 1 s);
 a start at -30000,-30000 (clamped to the corner 0,0: one pixel for 0.6 s); without `borderless` (Windows keeps a
 title bar: 136x103 for 0.6 s); a minimized start restored after the move (20 ms of one pixel, but `SW_SHOWMINIMIZED`
-activates the window and takes the focus). With a second monitor right of the primary one, the start pixel would sit
-on that monitor's left edge for that second; `offscreen_problems` still checks every screen.
+activates the window and takes the focus). With a second monitor right of (or below) the primary one, the start pixel
+would sit on that monitor's edge for that second; `offscreen_problems` still checks every screen.
 
-The editor bake (`house --bake`, `addons/lmbake`) is the exception: the editor ignores the project's window settings
-and has a minimum size, so by the source its window opens clamped to the screen's bottom-right corner, about a third
-of it on screen, for the editor's start-up (seconds) until the plugin's `_enter_tree` moves it off-screen and prints
-the OFFSCREEN line. Not measured: the bake runs only at night (`house_bake.editor_allowed`).
+The start pixel's place depends on the taskbar, since the clamp uses the usable area (the screen minus the taskbar):
+measured only with the taskbar at the bottom, (2560, 1392). By the same arithmetic, not measured: with the taskbar on
+the right edge the pixel's column is the usable area's right edge, over the taskbar (2560 minus its width), and only
+its row (1440, the screen's bottom edge) keeps it off; with the taskbar on the left or the top it opens at (2560, 1440).
+If a Windows build treats that row differently, the pixel would sit on screen over the taskbar for about 1 s.
+
+The editor bake (`house --bake`, `addons/lmbake`) is the exception. The editor ignores the project's window settings
+and has a minimum size (1024x600 times the editor scale), so by the source its main window opens clamped to the
+screen's bottom-right corner, about a third of it on screen, for the editor's start-up (seconds), until the plugin's
+`_enter_tree` moves it off-screen with `place(Vector2i.ZERO, false)` (only the off-screen part is checked: at 125 %
+scaling and over the minimum height exceeds 720 px) and prints the OFFSCREEN line. The editor runs with
+`--single-window`: its dialogs (the LightmapGI file dialog the plugin answers, the bake and import progress) are drawn
+inside that main window. Without it each would be a native window, which Godot's `Window::_popup_base` re-centres on
+the primary screen when its rect touches no screen, and the OFFSCREEN line covers only the main window. Uncertain
+until a night bake is watched (it runs only at night, `house_bake.editor_allowed`): how much of the main window shows
+during the start-up and for how long; that every dialog of the bake stays embedded with `--single-window` (a native
+dialog would not show in the OFFSCREEN line, so the runner cannot catch it); and that the bake still succeeds in an
+embedded dialog.
 
 ## frames
 

@@ -6,6 +6,8 @@ extends SceneTree
 ## the `living_players` layer stands in the fall and is passed through), and the sockets (a hat on Head, the package
 ## on the chest) following their simulated bones. In an off-screen window (`shots`) it also shoots the fall front and
 ## side, and the shapes over the body. Arguments after --: <glb res path> <data json> <out dir> <check|shots>.
+## res://lib/offscreen.gd is godot/lib/offscreen.gd, copied in by the runner (`_godot.install_offscreen`) before each
+## run; godot/ragdoll/lib/ is gitignored.
 
 const Offscreen = preload("res://lib/offscreen.gd")
 const Builder = preload("res://builder.gd")
