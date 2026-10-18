@@ -1,12 +1,15 @@
 # Meshy auto-rig names -> Godot's SkeletonProfileHumanoid names (contract/humanoid.json).
-# UNCONFIRMED: no rigged Meshy file has arrived yet. Meshy says its rig follows Mixamo-style naming with its own spine
-# and clavicle names; this map is that guess (Mixamo names without a prefix, Spine01 and Spine02). Fix it from the
-# first rigged file (`check --map meshy` lists the bones it could not map as extra) and set confirmed = true.
+# Measured on Meshy's auto-rig of 2026-10-18 (batch 2026-10-18-alien-3d-base2, t1-rig and t2-rig, art#196): 24 bones,
+# Mixamo-style limb names without a prefix, and a spine chain that counts DOWN: Hips -> Spine02 -> Spine01 -> Spine
+# -> neck (lower case) -> Head, with both shoulders under Spine. Two helper ends (head_end, headfront) are dropped.
+# The rig has no finger, eye, jaw or toe-end bones: the hand is one bone, so the game skeleton's fingers must be added.
 
 source = "Meshy auto-rigging"
-confirmed = false
+confirmed = true
 prefix_pattern = ''
 drop = [
+  "head_end",
+  "headfront",
   "HeadTop_End",
   "LeftHandThumb4",
   "LeftHandIndex4",
@@ -24,10 +27,10 @@ drop = [
 
 [rename]
 Hips = "Hips"
-Spine = "Spine"
+Spine02 = "Spine"
 Spine01 = "Chest"
-Spine02 = "UpperChest"
-Neck = "Neck"
+Spine = "UpperChest"
+neck = "Neck"
 Head = "Head"
 LeftEye = "LeftEye"
 RightEye = "RightEye"
