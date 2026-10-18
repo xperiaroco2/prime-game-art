@@ -529,7 +529,8 @@ def check_request(data: dict, built: dict, kit_ids=()) -> dict:
             "closed": req.get("closed", []), "material": material_res(data) if kit_ids else ""}
 
 
-EXEMPT = ("package.json", "project.godot", "_check/*", "_build/*", ".godot/*", "*.import", "*.uid")  # not package files
+# not package files (lib/offscreen.gd: the sheet's off-screen window helper, copied in by _godot.window, #214)
+EXEMPT = ("package.json", "project.godot", "lib/offscreen.gd", "_check/*", "_build/*", ".godot/*", "*.import", "*.uid")
 
 
 def stale(out: Path, files: dict) -> list[str]:

@@ -10,7 +10,7 @@ import json
 from pathlib import Path
 
 from .. import common, house_garden, house_garden_scene, house_layout, house_outdoor
-from . import _frames, _godot
+from . import _godot
 from . import house as house_cmd
 from . import outdoor as outdoor_cmd
 
@@ -113,9 +113,8 @@ def proof(data: dict, plot: dict, layout: dict, rep: dict, raw80: Path, review: 
     req_path.parent.mkdir(parents=True, exist_ok=True)
     req_path.write_text(json.dumps(req), encoding="utf-8")
     (review / "proof.json").unlink(missing_ok=True)
-    code, output = _godot.godot(["--path", _godot.PROJECT, "--audio-driver", "Dummy", "--position", _frames.POSITION,
-                                 "--resolution", "1600x900", "-s", PROOF, "--", req_path.as_posix(), review.as_posix()],
-                                PROOF_TIMEOUT)
+    code, output = _godot.window(["--path", _godot.PROJECT, "--audio-driver", "Dummy", "-s", PROOF, "--",
+                                  req_path.as_posix(), review.as_posix()], (1600, 900), PROOF_TIMEOUT)
     if code != 0 or not (review / "proof.json").is_file():
         tail = "\n".join(output.splitlines()[-25:])
         raise common.Failure(f"garden proof.gd failed (exit code {code}):\n{tail}")

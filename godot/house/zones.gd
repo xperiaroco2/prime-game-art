@@ -4,7 +4,7 @@ extends SceneTree
 ## turned by its yaw about +Y), grey boxes for the dressing placeholders, a review light at every fixture socket, then
 ## shoots each view, a line-up of the zone props beside a 1.8 m capsule and sheet.png (1280 px wide). Pictures need a
 ## real window placed off-screen, never headless:
-##   godot --path godot --position -30000,-30000 --resolution 1600x900 -s res://house/zones.gd -- <request.json> <out dir>
+##   PRIME_WINDOW=1600x900 godot --path godot --resolution 1x1 -s res://house/zones.gd -- <request.json> <out dir>
 ## request.json: commands/zones.py request(): {"pieces": [{"zone", "id", "src", "pos", "yaw", "scene" | "size",
 ## "lights", "light"}], "views": [[name, title, eye [x, y, h], look [x, y, h], fov]], "lineup": [{"id", "scene", "min",
 ## "max"}], "lineup_at": [x, y], "pack": {...}}; optional "lamps": [[x, h, z]] with "lamp": [colour, energy, range]
@@ -14,6 +14,7 @@ extends SceneTree
 ## step_height_m); before a taller leg it must fit where it stands (standing up). The attic's climb-out (commands/attic.py walks). Writes <out>/<view>.png, lineup.png, sheet.png and zones.json
 ## (with "walks": per walk "arrived" and its legs).
 
+const Offscreen = preload("res://lib/offscreen.gd")
 const KitMaterials := preload("res://kit/kit_materials.gd")
 const WATCHDOG_S: float = 170.0
 const UP := Vector3.UP
@@ -40,6 +41,10 @@ func _initialize() -> void:
 		return
 	if DisplayServer.get_name() == "headless":
 		_fail("needs a window (off-screen), not --headless")
+		return
+	var placed: String = Offscreen.place()  # first: Godot opened the window at the screen's corner (#214)
+	if placed != "":
+		_fail(placed)
 		return
 	create_timer(WATCHDOG_S).timeout.connect(_fail.bind("not done within %d s" % WATCHDOG_S))
 	_run(args)

@@ -2,7 +2,7 @@ extends SceneTree
 ## Motion frame sheets of an imported character, rendered by Godot itself in a real window for `tools/run.py frames`
 ## (docs/godot.md). Never headless and never minimized (Godot does not draw then, so frame_post_draw never fires); the
 ## runner opens the window off-screen like the game's `tools\run.cmd shot`:
-##   godot --path godot --position -30000,-30000 --resolution 480x600 -s res://frames/frames.gd
+##   PRIME_WINDOW=480x600 godot --path godot --resolution 1x1 -s res://frames/frames.gd
 ##       -- <res://import/x.glb> <out folder> <spec.json>
 ## spec.json: {"character": id, "cell": [w, h], "yaw_deg": 35, "pitch_deg": 8, "fps": 24,
 ##             "clips": [{"name": animation, "label": short name, "times": [s, ...], "note": title text,
@@ -13,6 +13,7 @@ extends SceneTree
 ## frame of one cycle at fps as video/<label>/<i>.png. frames.json records the cameras, the times and every joint's
 ## world position at each time, with each bone's two axis points (Character.axis_points). Prints FRAMES saved <path>, or FRAMES error <why> and exits 1.
 
+const Offscreen = preload("res://lib/offscreen.gd")
 const Character = preload("res://lib/character.gd")
 const WATCHDOG_S: float = 600.0
 const BACKGROUND: Color = Color(0.80, 0.80, 0.82)
@@ -33,6 +34,10 @@ func _initialize() -> void:
 	var args: PackedStringArray = OS.get_cmdline_user_args()
 	if DisplayServer.get_name() == "headless":
 		_fail("running headless; frames needs a real window")
+		return
+	var placed: String = Offscreen.place()  # first: Godot opened the window at the screen's corner (#214)
+	if placed != "":
+		_fail(placed)
 		return
 	if args.size() < 3:
 		_fail("usage: -- <res://import/x.glb> <out folder> <spec.json>")

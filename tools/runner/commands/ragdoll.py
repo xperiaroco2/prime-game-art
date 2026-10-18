@@ -95,15 +95,18 @@ def fall(glb: Path, data_path: Path, out: Path, shots: bool) -> dict:
     shutil.copyfile(glb, import_dir / glb.name)
     (import_dir / f"{glb.name}.import").write_text(_godot.import_file(_godot.import_params(glb)), encoding="utf-8",
                                                     newline="\n")
+    _godot.install_offscreen(PROJECT)  # fall.gd preloads res://lib/offscreen.gd in both modes (#214)
     code, output = _godot.godot(["--headless", "--path", PROJECT, "--import"], _godot.IMPORT_TIMEOUT)
     if code != 0:
         raise common.Failure(f"godot --import (godot/ragdoll) exited {code}")
     out.mkdir(parents=True, exist_ok=True)
     (out / "fall.json").unlink(missing_ok=True)
-    mode = ["--position", "-30000,-30000", "--resolution", "640x400", "--audio-driver", "Dummy"] if shots else ["--headless"]
-    code, output = _godot.godot([*mode, "--fixed-fps", "60", "--path", PROJECT, "-s", SCRIPT, "--",
-                                 f"res://import/{glb.name}", data_path.resolve().as_posix(), out.resolve().as_posix(),
-                                 "shots" if shots else "check"], TIMEOUT)
+    args = ["--fixed-fps", "60", "--path", PROJECT, "-s", SCRIPT, "--", f"res://import/{glb.name}",
+            data_path.resolve().as_posix(), out.resolve().as_posix(), "shots" if shots else "check"]
+    if shots:  # an off-screen window (#214)
+        code, output = _godot.window(["--audio-driver", "Dummy", *args], (640, 400), TIMEOUT)
+    else:
+        code, output = _godot.godot(["--headless", *args], TIMEOUT)
     (out / "godot.log").write_text(output, encoding="utf-8")
     report_path = out / "fall.json"
     if not report_path.is_file():

@@ -11,7 +11,7 @@ import json
 from pathlib import Path
 
 from .. import common, house_outdoor, house_outdoor_scene
-from . import _export, _frames, _godot, _kit
+from . import _export, _godot, _kit
 
 PROOF = "res://outdoor/proof.gd"
 PROOF_TIMEOUT = 330
@@ -94,9 +94,8 @@ def proof(data: dict, build: Path, kit: Path, review: Path) -> list[str]:
     req_path.parent.mkdir(parents=True, exist_ok=True)
     req_path.write_text(json.dumps(req), encoding="utf-8")
     (review / "proof.json").unlink(missing_ok=True)
-    code, output = _godot.godot(["--path", _godot.PROJECT, "--audio-driver", "Dummy", "--position", _frames.POSITION,
-                                 "--resolution", "1600x900", "-s", PROOF, "--", req_path.as_posix(), review.as_posix()],
-                                PROOF_TIMEOUT)
+    code, output = _godot.window(["--path", _godot.PROJECT, "--audio-driver", "Dummy", "-s", PROOF, "--",
+                                  req_path.as_posix(), review.as_posix()], (1600, 900), PROOF_TIMEOUT)
     if code != 0 or not (review / "proof.json").is_file():
         tail = "\n".join(output.splitlines()[-20:])
         raise common.Failure(f"proof.gd failed (exit code {code}):\n{tail}")

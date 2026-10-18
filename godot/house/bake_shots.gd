@@ -13,11 +13,17 @@ extends SceneTree
 ## tile of a row's first camera carries the row's label; the measured frame has none.
 ##   -s res://house/bake_shots.gd -- jobs=<abs json> out=<abs dir>  (an off-screen window; a headless Godot draws nothing)
 
+const Offscreen = preload("res://lib/offscreen.gd")
 const DrawCost := preload("draw_cost.gd")  # the overlay and the cost, shared with walk.gd (#185)
 const SHEEN_LAYER := DrawCost.SHEEN_LAYER
 
 
 func _initialize() -> void:
+	var placed: String = Offscreen.place()  # first: Godot opened the window at the screen's corner (#214)
+	if placed != "":
+		printerr("OFFSCREEN error ", placed)
+		quit(1)
+		return
 	_run.call_deferred()
 
 

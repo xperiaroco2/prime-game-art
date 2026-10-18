@@ -5,8 +5,8 @@ extends "res://outdoor/proof.gd"
 ## scatter plants, each GLB as one MultiMesh per mesh (colliders per placement); stand-in lamps; the walks (every
 ## garden path, the herb route from the kitchen), the glass roof's ray test and the pictures with their draw calls
 ## (all, and the garden layer's: the difference when it is hidden).
-## Pictures need a real window placed off-screen (the runner passes --position -30000,-30000), never headless:
-##   godot --path godot --position -30000,-30000 --resolution 1600x900 -s res://garden/proof.gd -- <request.json> <out>
+## Pictures need a real window placed off-screen (the runner, _godot.window(), opens one pixel that lib/offscreen.gd moves off-screen, #214), never headless:
+##   PRIME_WINDOW=1600x900 godot --path godot --resolution 1x1 -s res://garden/proof.gd -- <request.json> <out>
 ## request.json (tools/runner/house_garden_scene.py): the outdoor proof's keys and "house": res, "roof": [[id, at,
 ##   yaw]], "props": [[res, at, yaw]], "plants": {res: [[x, z, yaw, scale]]}, "rays": {"rect", "step", "inset",
 ##   "from_h", "level_step", "gable_tol", "control"}, "no_shadow": [res], "draw_call_limit".

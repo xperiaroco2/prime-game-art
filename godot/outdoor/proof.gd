@@ -3,8 +3,8 @@ extends SceneTree
 ## the kit v2 fence, gates and outdoor stairs placed by house_outdoor.py, the ground (outdoor.glb: `-col` meshes make
 ## their colliders), the backdrop's flats (backdrop.glb: unlit, out of GI and shadows), the painted sky as a panorama,
 ## fog, grey stand-in blocks and prop boxes, warm stand-in lamps; capsules walk it and cameras shoot it.
-## Pictures need a real window placed off-screen (the runner passes --position -30000,-30000), never headless:
-##   godot --path godot --position -30000,-30000 --resolution 1600x900 -s res://outdoor/proof.gd -- <request.json> <out>
+## Pictures need a real window placed off-screen (the runner, _godot.window(), opens one pixel that lib/offscreen.gd moves off-screen, #214), never headless:
+##   PRIME_WINDOW=1600x900 godot --path godot --resolution 1x1 -s res://outdoor/proof.gd -- <request.json> <out>
 ## request.json (tools/runner/house_outdoor_scene.py): {"pieces": {id: res}, "placed": [[id, [x, y, z], yaw]],
 ##   "ground": res, "backdrop": res, "sky": png, "fog": [begin, end], "pack": {...}, "blocks": [{"id", "at", "size",
 ##   "color", "yaw"}], "lights": [[x, h, z, energy, range]], "walks": {name: {"r", "points", "must_pass"}},
@@ -14,6 +14,7 @@ extends SceneTree
 ## proof.json (the walks, and per picture its lit-window pixels: those that change when the flats' textures swap to
 ## copies with the windows painted dark; every 2nd pixel of every 2nd row); prints PROOF saved <dir>.
 
+const Offscreen = preload("res://lib/offscreen.gd")
 const WATCHDOG_S: float = 280.0
 const UP := Vector3.UP
 const LAMP := Color(1.0, 0.8, 0.6)
@@ -40,6 +41,10 @@ func _initialize() -> void:
 		return
 	if DisplayServer.get_name() == "headless":
 		_fail("needs a window (off-screen), not --headless")
+		return
+	var placed: String = Offscreen.place()  # first: Godot opened the window at the screen's corner (#214)
+	if placed != "":
+		_fail(placed)
 		return
 	create_timer(WATCHDOG_S).timeout.connect(_fail.bind("not done within %d s" % WATCHDOG_S))
 	_run(args)
