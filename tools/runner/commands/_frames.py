@@ -9,7 +9,6 @@ from .. import common
 
 OUT = common.OUT / "frames"
 SCRIPT = "res://frames/frames.gd"
-POSITION = "-30000,-30000"  # off-screen, like the game's tools\run.cmd shot
 WINDOW = (480, 600)
 CELL = (320, 400)
 YAW_DEG = 35.0  # the three-quarter view: from the front, turned toward the character's left (+X)

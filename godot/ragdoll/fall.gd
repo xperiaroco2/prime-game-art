@@ -6,7 +6,10 @@ extends SceneTree
 ## the `living_players` layer stands in the fall and is passed through), and the sockets (a hat on Head, the package
 ## on the chest) following their simulated bones. In an off-screen window (`shots`) it also shoots the fall front and
 ## side, and the shapes over the body. Arguments after --: <glb res path> <data json> <out dir> <check|shots>.
+## res://lib/offscreen.gd is godot/lib/offscreen.gd, copied in by the runner (`_godot.install_offscreen`) before each
+## run; godot/ragdoll/lib/ is gitignored.
 
+const Offscreen = preload("res://lib/offscreen.gd")
 const Builder = preload("res://builder.gd")
 
 const STEP_S: float = 1.0 / 60.0
@@ -67,6 +70,11 @@ func _initialize() -> void:
 	data = JSON.parse_string(FileAccess.get_file_as_string(args[1]))
 	out_dir = args[2]
 	shots_mode = args[3] == "shots"
+	if shots_mode:  # first: Godot opened the window at the screen's corner (#214)
+		var placed: String = Offscreen.place()
+		if placed != "":
+			_fail(placed)
+			return
 	if args.size() > 4:  # a tuning grid's overrides: {"foot_kg", "hand_kg", "angular_damp", "friction"}
 		_override(JSON.parse_string(args[4]))
 	DirAccess.make_dir_recursive_absolute(out_dir)

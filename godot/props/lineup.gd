@@ -3,14 +3,16 @@ extends SceneTree
 ## imported props in rows of similar height, each row beside a 1.8 m capsule for scale, every prop labelled with its id,
 ## shot by an orthographic camera from the front-right and above, the kit's `set` pack shader on the `kit_set` surfaces
 ## (kit/kit_materials.gd) and a small warm light at each fixture's LightAnchor.
-## Pictures need a real window placed off-screen (the runner passes --position -30000,-30000), never headless:
-##   godot --path godot --position -30000,-30000 --resolution 1600x900 -s res://props/lineup.gd -- <request.json> <out dir>
+## Pictures need a real window placed off-screen (_godot.window() and lib/offscreen.gd, #214), never headless:
+##   PRIME_WINDOW=1600x900 godot --path godot --position 30000,30000 --resolution 1x1 -s res://props/lineup.gd
+##       -- <request.json> <out dir>
 ## request.json: {"textures": "<dir with set_d.png ...>", "pack": {"roughness": [..], "normal_strength": [..]},
 ##   "fine": {"folder": "<textures/fine/<tier>>", "json": "<textures/fine/fine.json>", "tier": "high"} (optional),
 ##   "sheets": [{"file": "lineup_1.png", "title": "...", "rows": [[{"id", "scene", "min": [x, y, z], "max": [..]}]]}]}.
 ## Writes <out>/<file> per sheet (1280 px wide) and <out>/lineup.json (the rows and the anchors found); prints
 ## LINEUP saved <dir>.
 
+const Offscreen = preload("res://lib/offscreen.gd")
 const KitMaterials := preload("res://kit/kit_materials.gd")
 const PropMaterials := preload("res://props/prop_materials.gd")
 const WATCHDOG_S: float = 170.0
@@ -40,6 +42,10 @@ func _initialize() -> void:
 		return
 	if DisplayServer.get_name() == "headless":
 		_fail("needs a window (off-screen), not --headless")
+		return
+	var placed: String = Offscreen.place()  # first: Godot opened the window at the screen's corner (#214)
+	if placed != "":
+		_fail(placed)
 		return
 	create_timer(WATCHDOG_S).timeout.connect(_fail.bind("not done within %d s" % WATCHDOG_S))
 	_run(args)

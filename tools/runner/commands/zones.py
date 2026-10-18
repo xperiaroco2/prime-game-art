@@ -11,7 +11,7 @@ import tomllib
 from pathlib import Path
 
 from .. import common, house_zones
-from . import _frames, _godot
+from . import _godot
 from . import props as props_cmd
 
 NAME = "zones"
@@ -115,9 +115,8 @@ def render(req: dict, staged: dict[str, Path], folder: Path, path: Path, label: 
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(req, indent=1), encoding="utf-8", newline="\n")
     (folder / "zones.json").unlink(missing_ok=True)
-    code, output = _godot.godot(["--path", _godot.PROJECT, "--audio-driver", "Dummy", "--position", _frames.POSITION,
-                                 "--resolution", "1600x900", "-s", SCRIPT, "--", path.as_posix(), folder.as_posix()],
-                                TIMEOUT)
+    code, output = _godot.window(["--path", _godot.PROJECT, "--audio-driver", "Dummy", "-s", SCRIPT, "--",
+                                  path.as_posix(), folder.as_posix()], (1600, 900), TIMEOUT)
     if code != 0 or not (folder / "zones.json").is_file():
         tail = "\n".join(output.splitlines()[-20:])
         raise common.Failure(f"zones.gd failed (exit code {code}):\n{tail}")

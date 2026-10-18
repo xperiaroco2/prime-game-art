@@ -13,7 +13,7 @@ import json
 from pathlib import Path
 
 from .. import blender, common
-from . import _frames, _godot, _kit, _props
+from . import _godot, _kit, _props
 
 NAME = "props-library"
 BUILD_TIMEOUT = 1500  # seconds for one Blender run of a batch (about 60 props)
@@ -213,9 +213,8 @@ def sheets(props: list[dict], built: dict, dump: dict, out: Path, folder: Path) 
     req = common.OUT / "props" / "lineup_request.json"
     req.write_text(json.dumps(request), encoding="utf-8")
     (folder / "lineup.json").unlink(missing_ok=True)
-    code, output = _godot.godot(["--path", _godot.PROJECT, "--audio-driver", "Dummy", "--position", _frames.POSITION,
-                                 "--resolution", "1600x900", "-s", LINEUP, "--", req.as_posix(), folder.as_posix()],
-                                LINEUP_TIMEOUT)
+    code, output = _godot.window(["--path", _godot.PROJECT, "--audio-driver", "Dummy", "-s", LINEUP, "--",
+                                  req.as_posix(), folder.as_posix()], (1600, 900), LINEUP_TIMEOUT)
     if code != 0 or not (folder / "lineup.json").is_file():
         tail = "\n".join(output.splitlines()[-20:])
         raise common.Failure(f"lineup.gd failed (exit code {code}):\n{tail}")
