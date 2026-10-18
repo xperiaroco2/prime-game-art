@@ -11,7 +11,7 @@ import shutil
 from pathlib import Path
 
 from .. import common
-from . import _frames, _godot, _manifest
+from . import _godot, _manifest
 
 SCRIPT = common.ROOT / "godot" / "house" / "package_sheet.gd"
 REVIEW_DIR = "_review"  # the sheet's own files in DIR (not part of the package)
@@ -26,7 +26,12 @@ config_version=5
 
 config/name="prime-game-art house package sheet"
 config/features=PackedStringArray("4.7", "Forward Plus")
-"""
+
+[display]
+
+window/size/borderless=true
+window/size/no_focus=true
+"""  # [display]: the window starts as one borderless, unfocused pixel; lib/offscreen.gd moves it off-screen (#214)
 
 
 def _sha256(path: Path) -> str:
@@ -246,9 +251,8 @@ def run(folder: Path, n: int, kit_families: dict[str, list[str]], root: Path = c
     report.unlink(missing_ok=True)
     w = 1200 if req["mode"] == "rooms" else 1600
     h = 675 if req["mode"] == "rooms" else 1200
-    code, output = _godot.godot(["--path", folder, "--audio-driver", "Dummy", "--position", _frames.POSITION,
-                                 "--resolution", f"{w}x{h}", "-s", f"res://{REVIEW_DIR}/{SCRIPT.name}", "--",
-                                 f"request={req_path.as_posix()}", f"out={folder.as_posix()}"], TIMEOUT)
+    code, output = _godot.window(["--path", folder, "--audio-driver", "Dummy", "-s", f"res://{REVIEW_DIR}/{SCRIPT.name}",
+                                  "--", f"request={req_path.as_posix()}", f"out={folder.as_posix()}"], (w, h), TIMEOUT)
     if code != 0 or not report.is_file():
         raise common.Failure(f"package_sheet.gd failed (exit {code}):\n" + "\n".join(output.splitlines()[-20:]))
     for line in [x for x in _godot.noteworthy(output) if "ERROR" in x][:10]:

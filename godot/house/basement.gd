@@ -4,10 +4,12 @@ extends SceneTree
 ## fixtures (a review aid: not the light pass, nothing baked), one fixed exposure, then shoots each room from its door at
 ## 1.6 m, the top-down plan of the basement alone with room labels and the route times, and measures the generator
 ## hall's far wall from the passage (median L*). Pictures need a real window placed off-screen, never headless:
-##   godot --path godot --position -30000,-30000 --resolution 1600x900 -s res://house/basement.gd -- <request.json> <out>
+##   PRIME_WINDOW=1600x900 godot --path godot --position 30000,30000 --resolution 1x1 -s res://house/basement.gd
+##       -- <request.json> <out>
 ## request.json: house_basement.review_request(). Writes <out>/<shot>.png, <out>/plan_basement.png, <out>/sheet.png
 ## (1280 px wide) and <out>/basement.json; prints BASEMENT saved <dir>.
 
+const Offscreen = preload("res://lib/offscreen.gd")
 const WATCHDOG_S: float = 170.0
 const SHEET_W: int = 1280
 const GAP: int = 4
@@ -28,6 +30,10 @@ func _initialize() -> void:
 		return
 	if DisplayServer.get_name() == "headless":
 		_fail("needs a window (off-screen), not --headless")
+		return
+	var placed: String = Offscreen.place()  # first: Godot opened the window at the screen's corner (#214)
+	if placed != "":
+		_fail(placed)
 		return
 	create_timer(WATCHDOG_S).timeout.connect(_fail.bind("not done within %d s" % WATCHDOG_S))
 	_run(args)

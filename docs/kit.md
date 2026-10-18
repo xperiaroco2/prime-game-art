@@ -209,7 +209,7 @@ glTF spec's linear colours: Godot shows the paint right; other viewers show it l
 
 ## The proof: `--proof DIR`
 
-`godot/kit/proof.gd` runs in a window placed off-screen (`--position -30000,-30000`, 1600 x 900, the Dummy audio
+`godot/kit/proof.gd` runs in a window kept off-screen (`docs/godot.md`, "The off-screen window"; 1600 x 900, the Dummy audio
 driver), never on screen and never headless. It instances the pieces into a test house: a 6 x 4 m room (x 0..6,
 z 0..4) with exterior walls and windows south and east and an interior wall with the 1.4 m door at z 4, a 2 m
 corridor (z 4..6), `stairs_main` from x 6 to 12 up to a landing (x 12..16) at 3.2 m, the upper storey's walls and

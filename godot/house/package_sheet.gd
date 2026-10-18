@@ -14,6 +14,7 @@ extends SceneTree
 ## Writes <out>/<sheet>.png (`width` px wide), <sheet>_1280.png (the agents' copy) and <sheet>.json (per tile).
 ##   -s res://_review/package_sheet.gd -- request=<abs json> out=<abs dir>
 
+const Offscreen = preload("res://lib/offscreen.gd")
 const SMALL := 1280
 const INSET := 0.3
 const DOORLESS := 1.0  # a door-less room's camera: this far in from its front wall, in front of what lines it
@@ -22,6 +23,11 @@ const ASPECT := 4.0 / 3.0  # the kit tiles' aspect
 
 
 func _initialize() -> void:
+	var placed: String = Offscreen.place()  # first: Godot opened the window at the screen's corner (#214)
+	if placed != "":
+		printerr("OFFSCREEN error ", placed)
+		quit(1)
+		return
 	_run.call_deferred()
 
 

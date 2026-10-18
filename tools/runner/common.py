@@ -261,16 +261,17 @@ def _read_holder(holder: Path) -> str:
 
 
 def run(
-    cmd: list[str], timeout: float, cwd: Path | None = None, heavy: bool | None = None
+    cmd: list[str], timeout: float, cwd: Path | None = None, heavy: bool | None = None,
+    env: dict[str, str] | None = None,
 ) -> subprocess.CompletedProcess[str]:
     """Runs cmd, captures text output, kills it after timeout seconds (raises Failure then). A Blender or Godot cmd
     (is_heavy, or heavy=True) first takes the heavy-run lock; heavy=False skips it (a version probe). The timeout
-    counts from the start of the process, not the wait."""
+    counts from the start of the process, not the wait. env: variables added to the child's environment."""
     if is_heavy(cmd) if heavy is None else heavy:
         _note_heavy()
         with heavy_lock(" ".join(Path(str(c)).name if i == 0 else str(c) for i, c in enumerate(cmd[:6]))):
-            return _run(cmd, timeout, cwd, heavy_env())
-    return _run(cmd, timeout, cwd, None)
+            return _run(cmd, timeout, cwd, {**heavy_env(), **(env or {})})
+    return _run(cmd, timeout, cwd, {**os.environ, **env} if env else None)
 
 
 def _run(

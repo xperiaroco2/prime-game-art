@@ -11,7 +11,7 @@ from pathlib import Path
 
 from .. import (common, house_bake, house_basement, house_bake_props, house_clutter, house_dressing, house_export,
                house_fill, house_layout, house_lights, house_merge, house_routes)
-from . import _frames, _godot, _house_bake
+from . import _godot, _house_bake
 
 NAME = "house"
 HELP = "check the House layout (layouts/house/*.toml) and generate its room, level and house scenes from the kit"
@@ -255,9 +255,8 @@ def basement(data: dict, layouts: Path, extra, folder: Path, errors: list[str] =
     req.write_text(json.dumps(request, indent=1), encoding="utf-8", newline="\n")
     folder.mkdir(parents=True, exist_ok=True)
     (folder / "basement.json").unlink(missing_ok=True)
-    code, output = _godot.godot(["--path", _godot.PROJECT, "--audio-driver", "Dummy", "--position", _frames.POSITION,
-                                 "--resolution", "1600x900", "-s", BASEMENT, "--", req.as_posix(), folder.as_posix()],
-                                WALK_TIMEOUT)
+    code, output = _godot.window(["--path", _godot.PROJECT, "--audio-driver", "Dummy", "-s", BASEMENT, "--",
+                                  req.as_posix(), folder.as_posix()], (1600, 900), WALK_TIMEOUT)
     if code != 0 or not (folder / "basement.json").is_file():
         tail = "\n".join(output.splitlines()[-20:])
         raise common.Failure(f"basement.gd failed (exit code {code}):\n{tail}")
@@ -533,9 +532,8 @@ def walk(data: dict, folder: Path, routes: dict | None = None, errors: list[str]
         common.say(f"  not walked (closed kit leaf): {name}")
     req.write_text(json.dumps(request, indent=1), encoding="utf-8", newline="\n")
     (folder / "walk.json").unlink(missing_ok=True)
-    code, output = _godot.godot(["--path", _godot.PROJECT, "--audio-driver", "Dummy", "--position", _frames.POSITION,
-                                 "--resolution", "1600x900", "-s", WALK, "--", req.as_posix(), folder.as_posix()],
-                                WALK_TIMEOUT)
+    code, output = _godot.window(["--path", _godot.PROJECT, "--audio-driver", "Dummy", "-s", WALK, "--",
+                                  req.as_posix(), folder.as_posix()], (1600, 900), WALK_TIMEOUT)
     if code != 0 or not (folder / "walk.json").is_file():
         tail = "\n".join(output.splitlines()[-20:])
         raise common.Failure(f"walk.gd failed (exit code {code}):\n{tail}")

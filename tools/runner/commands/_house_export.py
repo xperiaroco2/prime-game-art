@@ -8,7 +8,7 @@ import shutil
 from pathlib import Path
 
 from .. import common
-from . import _frames, _godot
+from . import _godot
 
 SCRIPT = common.ROOT / "godot" / "house" / "export_check.gd"
 SHEET_SCRIPT = common.ROOT / "godot" / "house" / "export_sheet.gd"
@@ -23,7 +23,12 @@ config_version=5
 
 config/name="prime-game-art house export check"
 config/features=PackedStringArray("4.7", "Forward Plus")
-"""
+
+[display]
+
+window/size/borderless=true
+window/size/no_focus=true
+"""  # [display]: the window starts as one borderless, unfocused pixel; lib/offscreen.gd moves it off-screen (#214)
 TIMEOUT = 900
 
 
@@ -133,10 +138,10 @@ def sheet(folder: Path, summary: dict, room_dir: str = "levels/house/rooms") -> 
     out = folder / CHECK_DIR
     (out / "sheet.json").unlink(missing_ok=True)
     w, h = SHEET_TILE
-    code, output = _godot.godot(["--path", folder, "--audio-driver", "Dummy", "--position", _frames.POSITION,
-                                 "--resolution", f"{w * 2}x{h * 2}", "-s", f"res://{CHECK_DIR}/{SHEET_SCRIPT.name}",
-                                 "--", f"rooms=res://{room_dir}", f"names={','.join(names)}", f"out={out.as_posix()}",
-                                 f"tile={w}x{h}"], TIMEOUT)
+    code, output = _godot.window(["--path", folder, "--audio-driver", "Dummy", "-s",
+                                  f"res://{CHECK_DIR}/{SHEET_SCRIPT.name}", "--", f"rooms=res://{room_dir}",
+                                  f"names={','.join(names)}", f"out={out.as_posix()}", f"tile={w}x{h}"],
+                                 (w * 2, h * 2), TIMEOUT)
     if code != 0 or not (out / "sheet.json").is_file():
         raise common.Failure(f"export_sheet.gd failed (exit {code}):\n" + "\n".join(output.splitlines()[-20:]))
     for shot in json.loads((out / "sheet.json").read_text(encoding="utf-8"))["shots"]:

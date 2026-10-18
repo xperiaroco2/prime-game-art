@@ -5,6 +5,8 @@ extends EditorPlugin
 ## Without the lmbake arg it does nothing (so --import runs are unaffected). Needs a real window (off-screen):
 ## a headless editor reports "lightmap baking is not supported on this GPU".
 
+const Offscreen = preload("res://lib/offscreen.gd")
+
 var scene := ""
 var log_path := ""
 
@@ -25,6 +27,14 @@ func _enter_tree() -> void:
 	if scene == "":
 		return
 	log_path = scene.get_basename() + "_bake_log.txt"
+	# The editor's window opened at the screen's corner (Godot clamps --position, #214): move it off-screen now. Only
+	# the off-screen part is checked: the editor's minimum size (1024x600 x EDSCALE) can exceed 1280x720's height at
+	# 125 % scaling and over, and a taller window off-screen is fine. Its dialogs stay inside it (--single-window).
+	var placed: String = Offscreen.place(Vector2i.ZERO, false)
+	if placed != "":
+		_log("error: " + placed)
+		get_tree().quit(1)
+		return
 	_log("start %s; display %s; adapter %s" % [scene, DisplayServer.get_name(), RenderingServer.get_video_adapter_name()])
 	var t := Timer.new()
 	t.one_shot = true

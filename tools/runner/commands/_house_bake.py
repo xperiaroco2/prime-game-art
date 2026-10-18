@@ -13,7 +13,7 @@ import time
 from pathlib import Path
 
 from .. import common, house_bake, house_bake_props, house_lights, house_sky
-from . import _frames, _godot
+from . import _godot
 
 BUILD = "res://house/zone_build.gd"
 SHOTS = "res://house/bake_shots.gd"
@@ -136,8 +136,12 @@ def bake_variant(zone: str, v: dict, work: Path, raw: Path, no_bake: bool) -> di
     project = Path(_godot.PROJECT) / "project.godot"
     kept = project.read_bytes()  # the editor rewrites the committed file's header comment on save: put it back
     try:
-        code, out = _godot.godot(["--editor", "--path", _godot.PROJECT, "--position", _frames.POSITION,
-                                  "--resolution", "1280x720", "--", f"lmbake={scene}"], TIMEOUT)
+        # the editor ignores the 1x1 borderless start: part of its window shows at the screen's corner during its
+        # start-up, until lmbake.gd moves it off-screen (#214, docs/godot.md "The off-screen window").
+        # --single-window: the editor's dialogs (the LightmapGI file dialog lmbake answers, the bake and import
+        # progress) live inside that main window; as native windows Godot would re-centre them on the primary screen
+        code, out = _godot.window(["--editor", "--single-window", "--path", _godot.PROJECT, "--", f"lmbake={scene}"],
+                                  (1280, 720), TIMEOUT)
     finally:
         if project.read_bytes() != kept:
             project.write_bytes(kept)
@@ -176,8 +180,8 @@ def shoot(data: dict, lights: dict, zones: list[str], preset: str, grid: bool, m
     layout = house_bake.sheet_layout(len(rows), max(len(r["cams"]) for r in rows))
     jobs.write_text(json.dumps({**layout, "rows": rows}, indent=1), encoding="utf-8", newline="\n")
     review.mkdir(parents=True, exist_ok=True)
-    code, out = _godot.godot(["--path", _godot.PROJECT, "--position", _frames.POSITION, "--resolution", "1280x720",
-                              "-s", SHOTS, "--", f"jobs={jobs.as_posix()}", f"out={review.as_posix()}"], TIMEOUT)
+    code, out = _godot.window(["--path", _godot.PROJECT, "-s", SHOTS, "--", f"jobs={jobs.as_posix()}",
+                               f"out={review.as_posix()}"], (1280, 720), TIMEOUT)
     if code != 0:
         raise common.Failure(f"bake_shots.gd exited {code}:\n" + "\n".join(out.splitlines()[-15:]))
     if count:

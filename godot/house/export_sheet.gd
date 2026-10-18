@@ -6,11 +6,17 @@ extends SceneTree
 ## and a dim review ambient light it; the tiles go into one sheet.
 ##   -s res://_check/export_sheet.gd -- rooms=<res:// folder> names=kitchen,storage,attic out=<abs dir> tile=640x360
 
+const Offscreen = preload("res://lib/offscreen.gd")
 const EYE := 1.5
 const INSET := 0.4
 
 
 func _initialize() -> void:
+	var placed: String = Offscreen.place()  # first: Godot opened the window at the screen's corner (#214)
+	if placed != "":
+		printerr("OFFSCREEN error ", placed)
+		quit(1)
+		return
 	_run.call_deferred()
 
 

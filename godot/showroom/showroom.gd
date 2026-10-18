@@ -2,7 +2,7 @@ extends SceneTree
 ## The showroom (art #140, docs/godot.md "Showroom and recommended look settings"): one character under up to eight look
 ## variants, rendered by Godot in a real window for `tools/run.py showroom`. Never headless and never minimized
 ## (Godot does not draw then); the runner opens the window off-screen:
-##   godot --path godot --position -30000,-30000 --resolution 640x800 -s res://showroom/showroom.gd
+##   PRIME_WINDOW=640x800 godot --path godot --position 30000,30000 --resolution 1x1 -s res://showroom/showroom.gd
 ##       -- <res://import/x.glb> <out folder> <showroom_spec.json>
 ## The spec (tools/runner/commands/_showroom.py) lists the variants; each sets the tonemapper, its exposure and AgX's
 ## white and contrast, the ambient source (a flat colour or the studio sky; its energy, colour and the sky's share), sky
@@ -15,6 +15,7 @@ extends SceneTree
 ## The frames stand (godot/frames/frames.gd) stays the measuring stand; its look is the first variant here.
 ## Prints SHOWROOM saved <path>, or SHOWROOM error <why> and exits 1.
 
+const Offscreen = preload("res://lib/offscreen.gd")
 const Character = preload("res://lib/character.gd")
 const WATCHDOG_S: float = 600.0
 const BACKGROUND: Color = Color(0.80, 0.80, 0.82)
@@ -51,6 +52,10 @@ func _initialize() -> void:
 	var args: PackedStringArray = OS.get_cmdline_user_args()
 	if DisplayServer.get_name() == "headless":
 		_fail("running headless; the showroom needs a real window")
+		return
+	var placed: String = Offscreen.place()  # first: Godot opened the window at the screen's corner (#214)
+	if placed != "":
+		_fail(placed)
 		return
 	if args.size() < 3:
 		_fail("usage: -- <res://import/x.glb> <out folder> <showroom_spec.json>")
@@ -128,7 +133,12 @@ func _run(scene_path: String, out_dir: String, spec: Dictionary) -> void:
 	_save(await _sheet(body_shots, bc, int(spec["body_cols"]), spec["body_title"]), "%s/body.png" % out_dir)
 	# GPU time per variant, the full body framed in a window at the timing size (the label hidden)
 	_label.visible = false
-	DisplayServer.window_set_size(Vector2i(int(spec["timing_size"][0]), int(spec["timing_size"][1])))
+	var timing := Vector2i(int(spec["timing_size"][0]), int(spec["timing_size"][1]))
+	DisplayServer.window_set_size(timing)
+	var grown: String = Offscreen.report(timing)  # still off-screen at the timing size (#214)
+	if grown != "":
+		_fail(grown)
+		return
 	for i: int in 4:
 		await process_frame
 	size = root.get_visible_rect().size

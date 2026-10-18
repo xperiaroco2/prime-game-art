@@ -9,7 +9,7 @@ import json
 from pathlib import Path
 
 from .. import blender, common
-from . import _export, _frames, _godot, _kit
+from . import _export, _godot, _kit
 
 NAME = "kit"
 HELP = "build a modular kit (kits/house.json) as one GLB per piece and check each: grid, budgets, glTF-Validator, Godot import, collision"
@@ -156,9 +156,8 @@ def proof(spec: dict, pieces: list[dict], described: dict, out: Path, folder: Pa
     req = common.OUT / "kit" / "proof_request.json"
     req.write_text(json.dumps(request), encoding="utf-8")
     (folder / "proof.json").unlink(missing_ok=True)
-    code, output = _godot.godot(["--path", _godot.PROJECT, "--audio-driver", "Dummy", "--position", _frames.POSITION,
-                                 "--resolution", "1600x900", "-s", _kit.PROOF, "--", req.as_posix(),
-                                 folder.as_posix()], PROOF_TIMEOUT)
+    code, output = _godot.window(["--path", _godot.PROJECT, "--audio-driver", "Dummy", "-s", _kit.PROOF, "--",
+                                  req.as_posix(), folder.as_posix()], (1600, 900), PROOF_TIMEOUT)
     if code != 0 or not (folder / "proof.json").is_file():
         tail = "\n".join(output.splitlines()[-20:])
         raise common.Failure(f"proof.gd failed (exit code {code}):\n{tail}")

@@ -172,11 +172,64 @@ two contract warnings and the loop-mode warning each): 62 bones, 8 or 9 parts wi
 `remove_immutable_tracks` drops the constant ones: 7 position and 55 rotation tracks remain in Death), 1488 tracks
 resolved, the least motion 1.8 degrees (the women's Idle_Neutral).
 
+## The off-screen window
+
+Pictures need a real window: headless or minimized, Godot draws nothing and `RenderingServer.frame_post_draw` never
+fires. The engineer's kickoff of 2026-10-03 allows a window off-screen, never on it. `--position -30000,-30000` does
+not keep it off: Godot 4.7.2's `DisplayServerWindows::_create_window` (`platform/windows/display_server_windows.cpp`)
+takes the primary screen when the requested rect is on no screen, then clamps a windowed window's position into that
+screen's usable area, so every review window used to open at the top-left corner at its full size (#214; measured
+before the fix: `frames` 496x639 for 2.0 s, `showroom` 656x839 then 1936x1119 for 3.0 s, `zones --shoot` 1616x939
+for 3.6 s). Only a runtime `DisplayServer.window_set_position` skips the clamp. So:
+
+- every window run goes through `_godot.window(args, (w, h), timeout)`: `--position 30000,30000 --resolution 1x1`
+  and `PRIME_WINDOW=<w>x<h>` in the environment; the project starts its window borderless and unfocused (`[display]`
+  `window/size/borderless` and `window/size/no_focus` in `godot/project.godot`, `godot/ragdoll/project.godot` and the
+  House export and review folders' generated `project.godot`), so it is one pixel that takes no focus, and the clamp
+  (`wpos.clamp(srect.position, srect.position + srect.size - p_rect.size / 3)`, a third of one pixel being 0) puts it
+  at the usable area's far corner, (2560, 1392) here: just past the screen's right edge;
+- each window script calls `godot/lib/offscreen.gd` `place()` first in `_initialize` (`const Offscreen =
+  preload("res://lib/offscreen.gd")`): it moves the window to -30000,-30000, then grows it to `PRIME_WINDOW`, and
+  prints `OFFSCREEN window <x>,<y> <w>x<h> screens <rects> ticks <ms>`; `report()` prints the line again after a later
+  resize (the showroom's timing size). `window()` copies the helper into another project's `lib/` (the ragdoll proof,
+  the House export and review folders);
+- the runner refuses the run (`common.Failure`) when no OFFSCREEN line came or a reported window meets a screen
+  (`_godot.offscreen_problems`, `tools/tests/test_godot_offscreen.py`), after writing the run's whole output to the
+  caller's log (`window(..., log=)`, else `tools/out/godot-window/<time>-<pid>.log`); a non-zero exit with no OFFSCREEN
+  line is reported as the script failing before it placed its window, exit code first. A test fails a runner that
+  passes `--position` or `--resolution` itself or a window script that never calls `place()`.
+
+Measured after the fix with a 5 ms window watcher around `frames`, `showroom` and `zones --shoot` (#214): no Godot
+window on the screen at any time, and every picture pixel-identical to the one shot before the fix (same sizes, no
+channel differs). The pixel waits past the right edge about 1 s, from Godot showing it to the script's
+`_initialize`. Tried and not used: a 1x1 start without `--position` (Godot centres it: one pixel mid-screen for 1 s);
+a start at -30000,-30000 (clamped to the corner 0,0: one pixel for 0.6 s); without `borderless` (Windows keeps a
+title bar: 136x103 for 0.6 s); a minimized start restored after the move (20 ms of one pixel, but `SW_SHOWMINIMIZED`
+activates the window and takes the focus). With a second monitor right of (or below) the primary one, the start pixel
+would sit on that monitor's edge for that second; `offscreen_problems` still checks every screen.
+
+The start pixel's place depends on the taskbar, since the clamp uses the usable area (the screen minus the taskbar):
+measured only with the taskbar at the bottom, (2560, 1392). By the same arithmetic, not measured: with the taskbar on
+the right edge the pixel's column is the usable area's right edge, over the taskbar (2560 minus its width), and only
+its row (1440, the screen's bottom edge) keeps it off; with the taskbar on the left or the top it opens at (2560, 1440).
+If a Windows build treats that row differently, the pixel would sit on screen over the taskbar for about 1 s.
+
+The editor bake (`house --bake`, `addons/lmbake`) is the exception. The editor ignores the project's window settings
+and has a minimum size (1024x600 times the editor scale), so by the source its main window opens clamped to the
+screen's bottom-right corner, about a third of it on screen, for the editor's start-up (seconds), until the plugin's
+`_enter_tree` moves it off-screen with `place(Vector2i.ZERO, false)` (only the off-screen part is checked: at 125 %
+scaling and over the minimum height exceeds 720 px) and prints the OFFSCREEN line. The editor runs with
+`--single-window`: its dialogs (the LightmapGI file dialog the plugin answers, the bake and import progress) are drawn
+inside that main window. Without it each would be a native window, which Godot's `Window::_popup_base` re-centres on
+the primary screen when its rect touches no screen, and the OFFSCREEN line covers only the main window. Uncertain
+until a night bake is watched (it runs only at night, `house_bake.editor_allowed`): how much of the main window shows
+during the start-up and for how long; that every dialog of the bake stays embedded with `--single-window` (a native
+dialog would not show in the OFFSCREEN line, so the runner cannot catch it); and that the bake still succeeds in an
+embedded dialog.
+
 ## frames
 
-`frames/frames.gd` runs in a real window off-screen, like the game's `tools\run.cmd shot` (`--position
--30000,-30000 --resolution 480x600`; never headless and never minimized, where Godot does not draw and
-`RenderingServer.frame_post_draw` never fires). The engineer's kickoff of 2026-10-03 allows this, and CLAUDE.md's rules say so. The
+`frames/frames.gd` runs in a real window off-screen (480x600, "The off-screen window"). The
 window plays no sound (`--audio-driver Dummy`, art #69): with no audio output device, WASAPI would log an ERROR. Per
 animation:
 
@@ -227,7 +280,7 @@ The frames stand above is a **measuring stand**: linear tonemapper, no reflected
 on the clay), a flat colour ambient, no SSAO, simple shadows. It shows poses and seams honestly and stays as it is.
 The showroom asks the other question: how close can the game's renderer bring a character to its Blender renders?
 `tools/run.py showroom [<glb>]` (default the approved slice character m1) stages the GLB like `frames` and runs
-`godot/showroom/showroom.gd` in an off-screen window (640 x 800, `--position -30000,-30000`, never headless). The
+`godot/showroom/showroom.gd` in an off-screen window (640 x 800, "The off-screen window", never headless). The
 studio: the frames stand's grey background and floor, Poly Haven's CC0 `studio_small_09` HDRI from the raw folder
 (`sources/polyhaven_hdris_2k.toml`; missing: a ProceduralSky) as a `PanoramaSkyMaterial` that lights and reflects
 but is not seen, a key light with shadows, a fill and a rim light (the stand's three directions), and a perspective
@@ -545,7 +598,7 @@ The knockdown is a ragdoll (docs/contract.md, "Ragdoll"). `tools/run.py ragdoll 
   `tools/out/ragdoll/<stem>/<stem>.ragdoll.json`;
 - `--asset DIR` writes `export/<id>.ragdoll.json` into the character's asset folder, lists it in `package.json` and
   puts the "Ragdoll (art #115)" section in `HANDOFF.md` (replacing an earlier one). `slice --asset` does the same;
-- `--fall` runs the proof headless; `--shots DIR` runs it in an off-screen window (`--position -30000,-30000`) and
+- `--fall` runs the proof headless; `--shots DIR` runs it in an off-screen window ("The off-screen window") and
   copies `fall_sheet.png` (8 moments x front and side, 1280x400), `shapes_sheet.png` (the bodies over the standing
   character, 640x400) and `fall.json` into DIR. Both run `--fixed-fps 60`.
 
