@@ -4,6 +4,8 @@
 > within the plan's credits and free official downloads run under standing permissions; Godot pictures come from an
 > off-screen window.
 > Amended 2026-10-08 by the same trust model's amendment: the engineer acts as the designer and approves the look.
+> Amended 2026-10-18 by `2026-10-18-faces-as-morphs.md`: in the character contract (section 7) the `eyes` and
+> `mouth` slots are morphs on one template head, with eyeballs, teeth and tusks as separate parts.
 
 - **Status:** Accepted for this repository's own tooling (sections 1 to 6: layout, runner, hooks, raw folders,
   manifest, approval). **Proposed** for the character contract (section 7) until the body variants are chosen.

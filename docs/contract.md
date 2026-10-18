@@ -80,9 +80,10 @@ hand, carry and belt start from the greybox's points in `client/player/remote_pl
 `(0.45, 0.95, -0.15)`, belt `(-0.48, 0.85, 0)`, carry `(0, 0.8, -0.72)`, all facing -Z); `contract.toml` stores each
 also in model space (front +Z, the same point turned 180 degrees). The others are measured on the first base body.
 
-**Slots (v1).** `skin_colour` (a palette index), `eyes` and `mouth` (face slots: morphs on the template head, "Faces"
-below, plus their truly separate parts, eyeballs or teeth and tusks, as rigid pieces on `Socket_Face`; every piece
-provides the listed expressions as morphs, so blinking and talking need no mesh change), `hair_or_hat`,
+**Slots (v1).** `skin_colour` (a palette index), `eyes` and `mouth` (face slots: a set of morphs on the template head,
+"Faces" below, that provides the slot's listed expressions as morphs over it, so blinking and talking need no mesh
+change; plus the slot's truly separate parts, eyeballs or teeth and tusks, as rigid pieces on `Socket_Face`, whose
+only morphs are the eyeballs' look morphs, `part_morphs`), `hair_or_hat`,
 `face_accessory` and `back_item` (rigid pieces on their sockets), `top`, `bottom` and `shoes` (skinned to profile
 bones). A set is a preset of pieces, one per slot. Cosmetics are public data and never derived from a role.
 
@@ -91,10 +92,15 @@ bones). A set is a preset of pieces, one per slot. Cosmetics are public data and
 surface, not pieces laid on top and not frames in a face texture. Separate meshes only for what truly is separate:
 eyeballs, teeth, tusks, hair, crests, hats and clothes (`[face].separate`). Every head shape is a wrap of the template,
 the same vertices in the same order, so each eye and mouth morph works on every head: N heads, M mouths and K eyes are
-N + M + K pieces, not N x M x K. A face morph moves only skin whose heaviest weight is on `Head`, `Jaw`, `LeftEye` or
-`RightEye` (`[face].morph_bones`); a morph anywhere else is a body-shape morph, and there are none
-(`blend_shapes_body = 0`), because every skinned outfit would need the same keys or the body would poke through it.
-More than `face_morphs_target` (64, provisional) face morphs on one mesh warn.
+N + M + K pieces, not N x M x K. A face morph moves only skin whose heaviest bone weight is on `Head`, `Jaw`,
+`LeftEye` or `RightEye` (`[face].morph_bones`; a vertex tied between one of them and another bone, such as 0.5 `Head`
+and 0.5 `Neck`, counts as on the head). One tolerance: a soft jaw or chin morph's falloff may move skin on `Neck`
+(`[face].edge_bones`) by at most 2 mm (`edge_mm`, provisional), a shift a collar fitted to the neck hides; past that,
+or on any other bone, it is a body-shape morph, and there are none (`blend_shapes_body = 0`), because every skinned
+outfit would need the same keys or the body would poke through it. A shape key that moves nothing counts as a face
+morph (it costs only file size). More than `face_morphs_target` (64, provisional) face morphs on one mesh warn. The
+eyes slot's eyeballs may carry their look morphs (`look_l`, `look_r`, `look_u`, `look_d`, the slot's `part_morphs`):
+they pass under `check --slot eyes`; any other shape key on a separate part warns.
 
 **Animation.** Skeletal clips on the contract skeleton in one shared library, in place, loops suffixed `_loop`; the
 knockdown is a ragdoll ("Ragdoll" below); every other state is a clip. Eyes and mouth animate by the face morphs
@@ -157,14 +163,16 @@ imported, split at UV seams and hard edges, close to what the GPU draws (a glTF 
 | every profile bone present; the 22 weighted bones carry weights; five weighted finger chains | yes | | | |
 | at most 4 weights per vertex, no unweighted vertex, nothing on Root | yes | yes | | |
 | no armature and no skin (a rigid piece) | | | yes | yes |
-| shape keys that move skin off the head bones (body-shape morphs): fail; face morphs on the head bones pass, more than 64 on one mesh warn | yes | | | |
-| any shape key: warn | | yes | yes | yes |
+| shape keys that move skin off the head bones (body-shape morphs; `Neck` skin up to 2 mm excepted): fail; face morphs on the head bones pass, more than 64 on one mesh warn | yes | | | |
+| any shape key: warn (under `check --slot eyes`, the eyeballs' look morphs pass) | | yes | yes | yes |
 
 Height is measured from the lowest to the highest vertex in the rest pose. Topology checks weld vertices closer
 than 0.01 mm first, because glTF stores a vertex once per UV seam and hard edge. The glTF importer's bone display
 shape is ignored. For each shape key `check` records the vertices it moves (more than 0.01 mm from its relative key)
-counted by the bone with each vertex's largest weight (`shape_key_bones` in the report's measure), and names the bones
-through the bone map; an unweighted vertex counts as off the head.
+grouped by the bone with each vertex's largest weight, with the count and the largest move in mm (`shape_key_bones`
+in the report's measure: `{key: {bone: {"vertices", "max_mm"}}}`). Only vertex groups that are armature bones count
+(a clay `.blend`'s `clay_border` group does not); bones tied for the largest weight (within 0.0001) are joined by `|`
+(`Head|Neck`); the bones are named through the bone map; a vertex on no bone (`""`) counts as off the head.
 
 ## Bone maps
 

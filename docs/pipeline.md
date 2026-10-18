@@ -99,7 +99,6 @@ output: "owned, all rights reserved"), our own work. Private only (`restricted`)
 library motions, anything unclear. Never: free-plan AI output, non-commercial data.
 
 ## Open (decided later, on #165)
-- How eyes and mouth are built (separate eyeballs or a painted face), after the V1 and V3 renders.
 - The final budgets and socket positions, measured on the first approved body (the contract, #4).
 - Whether Meshy's auto-rig has finger bones (the first rigged body settles it).
 - The talking mouth waits for voice playback in the game (an engine request).

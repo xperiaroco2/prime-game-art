@@ -31,11 +31,14 @@ combination of parts. The art manager's answer, which he approved:
    a morph over it. The game sets their weights at runtime; no mesh changes, no bones.
 2. **What stays separate.** Eyeballs, teeth and tusks stay their own meshes (rigid on `Socket_Face`, judged with
    `check --kind accessory`), and so do hair, crests, hats and clothes in their slots. The eyeballs may carry their
-   own look morphs, as the face kit's do.
+   own look morphs, as the face kit's do: the `eyes` slot's `part_morphs` pass under `check --slot eyes` (#202).
 3. **No body-shape morphs.** Morphs are allowed only where the head bones carry the skin (`Head`, `Jaw`, `LeftEye`,
    `RightEye`: the contract's `face.morph_bones`). A morph that moves skin weighted to any other bone is still a
    body-shape morph and fails, for the old reason: every skinned outfit would have to carry the same keys or the body
-   would poke through it.
+   would poke through it. Settled in #202: a vertex tied between a head bone and another bone counts as on the head;
+   a soft jaw or chin morph may move `Neck` skin by at most 2 mm (`face.edge_bones`, `face.edge_mm`, provisional and
+   measured again on the first template head), a shift a collar fitted to the neck hides, while a 2 mm change
+   anywhere else on the body still fails; only vertex groups that are armature bones decide a vertex's bone.
 4. **The face texture form and the rigid face form are gone.** Their rules (frames in a texture array, rigid eyes or
    mouths laid on the face, "never blend shapes") leave the contract.
 
