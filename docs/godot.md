@@ -56,8 +56,9 @@ command, warnings are listed (grouped by code).
 | Draco, meshopt, gltfpack, GPU instances, extras, attributes | off | Godot cannot read Draco or meshopt; nothing else is needed |
 
 Measured (2026-10-03, Blender 5.2.2, exporter 5.2.40): m1_rex 1.85 MB, m2_walt 2.04 MB, w1_ivy 2.03 MB, w2_nova
-2.04 MB (the contract allows 5 MB); 62 joints, 24 animations of 186 channels (62 bones x translation, rotation,
-scale), 8 parts (9 for m2_walt with his moustache), 11 to 17 materials. glTF-Validator 2.0.0-dev.3.10: 0 errors;
+2.04 MB (the contract then allowed 5 MB; raised to 40 MB by the character-budgets ADR); 62 joints, 24 animations of
+186 channels (62 bones x translation, rotation, scale), 8 parts (9 for m2_walt with his moustache), 11 to 17
+materials. glTF-Validator 2.0.0-dev.3.10: 0 errors;
 one warning per part, `NODE_SKINNED_MESH_NON_ROOT` ("parent transforms will not affect a skinned mesh"): the parts are
 children of the armature node, whose transform is the identity (the saved file applies every transform), so it changes
 nothing; infos `UNUSED_OBJECT` for the UVs no texture uses.
@@ -81,7 +82,7 @@ textures, so their export and check differ from the flat-colour pack look's:
   one perpendicular to the normal. The export check then allows images, and the command writes
   `<out>/<id>/<id>.textures.json` (`_export.textured_audit`: every image's mime, bytes and size, each material's base
   colour and normal textures, each surface's UVs and tangents) and fails on `_export.textured_check`: no base colour
-  texture at all, an image that is not PNG or JPEG or is over the contract's `texture_character_px` (1024), a textured
+  texture at all, an image that is not PNG or JPEG or is over the contract's `texture_character_px` (2048), a textured
   material without a normal map (a `_palette` image and a material only the `_eyes` part uses aside, as in
   godot-check's `normal_maps`; #210), a normal-mapped surface without UVs or tangents, more surfaces than the
   contract's `surfaces_per_character_cap` (8).
@@ -94,8 +95,8 @@ textures, so their export and check differ from the flat-colour pack look's:
   Every other check is the same.
 
 Measured on 2026-10-09 (`recipes/clay_round_d.json`): m1 8 surfaces, 12 images 4.41 MB, GLB 6.12 MB; w1 7
-surfaces, 10 images 3.46 MB, GLB 5.13 MB; every map at most 1024 px; validator 0 errors; godot-check passes with the
-contract warnings (heights 1.962 and 1.912 m with the x1.3 clay head) and the loop-mode warning.
+surfaces, 10 images 3.46 MB, GLB 5.13 MB; every map at most 1024 px (the cap then); validator 0 errors; godot-check
+passes with the contract warnings (heights 1.962 and 1.912 m with the x1.3 clay head) and the loop-mode warning.
 
 ## The Godot project: `godot/`
 

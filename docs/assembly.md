@@ -197,7 +197,8 @@ The bake (`um/claybake.py`): per part a fresh UV map `bake` (Smart UV Project, i
 margin), a base colour map (RGB the clay's colour, A the skin mask; clothing takes its colours from the undecimated
 pack part, selected to active, times the mottle) baked at 2x and box-filtered down, a tangent-space normal map (OpenGL
 +Y), gutters flood-filled. Normal maps aim at 1024 px/m on the head and face, 512 elsewhere, as powers of two from 128
-to the contract's 1024; the colour map is half the side. The part then wears one baked material plus its glossy ones.
+to 1024 (`claylook.MAX_SIZE`, the clay bake's own cap; the contract's `texture_character_px` was 1024 then and is 2048
+since the character-budgets ADR); the colour map is half the side. The part then wears one baked material plus its glossy ones.
 
 The library: `<clay-lib>/<M|W>/<role>/<key>/` holds `piece.blend` (the baked object in world rest coordinates with its
 vertex groups and material), `tex/<role>_<key>_col.png`, `_nrm.png` and `piece.json` (the bake's numbers). The key
