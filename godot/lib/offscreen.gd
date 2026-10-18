@@ -29,8 +29,10 @@ static func wanted() -> Vector2i:
 	return Vector2i(int(parts[0]), int(parts[1]))
 
 
-## Moves the main window off-screen, then sizes it (size, else PRIME_WINDOW); "" when it is off every screen.
-static func place(size := Vector2i.ZERO) -> String:
+## Moves the main window off-screen, then sizes it (size, else PRIME_WINDOW); "" when it is off every screen and, with
+## exact, has that size. exact false: only the off-screen part counts (the editor bake: the editor's minimum window size,
+## 1024x600 times the editor scale, can make the asked size unreachable on a scaled display).
+static func place(size := Vector2i.ZERO, exact := true) -> String:
 	if DisplayServer.get_name() == "headless":
 		return "running headless; this script needs a real window (off-screen)"
 	var want := size if size != Vector2i.ZERO else wanted()
@@ -38,7 +40,7 @@ static func place(size := Vector2i.ZERO) -> String:
 		return "no window size: the runner sets %s=<w>x<h> (tools/runner/commands/_godot.py window())" % ENV
 	DisplayServer.window_set_position(POSITION)
 	DisplayServer.window_set_size(want)
-	return report(want)
+	return report(want if exact else Vector2i.ZERO)
 
 
 ## Prints the OFFSCREEN line for the window as it is now; "" when it is off every screen and has the wanted size.
