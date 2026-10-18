@@ -90,7 +90,10 @@ class PlanTest(unittest.TestCase):
         from runner.commands import _contract
 
         lod2 = next(lv for lv in _contract.load_contract()["lods"]["levels"] if lv["name"] == "LOD2")
-        self.assertEqual(_bench.HAND_LOD_M, float(lod2["from_m"]))
+        self.assertEqual(_bench.contract_hand_lod_m(), float(lod2["from_m"]))
+        # read when the bench runs, never at import: cli.py imports every command, so a broken contract.toml would
+        # otherwise break every runner command
+        self.assertFalse(hasattr(_bench, "HAND_LOD_M"))
         self.assertEqual(_bench.spec([GLB_A], [10])["hand_lod_m"], float(lod2["from_m"]))
         self.assertEqual(_bench.contract_hand_lod_m({"lods": {"levels": [{"name": "LOD2", "from_m": 12}]}}), 12.0)
         with self.assertRaises(ValueError):

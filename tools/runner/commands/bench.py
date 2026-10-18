@@ -37,9 +37,9 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--clip", default="Idle", help="the clip every copy plays (default Idle)")
     parser.add_argument("--frames", type=int, default=_bench.FRAMES, help=f"measured frames per variant ({_bench.FRAMES})")
     parser.add_argument("--warmup", type=int, default=_bench.WARMUP, help=f"warm-up frames per GLB and count ({_bench.WARMUP})")
-    parser.add_argument("--hand-lod-m", type=float, default=_bench.HAND_LOD_M,
-                        help=f"where the hand-made LOD2 takes over in the 'hand' variant (default: the contract's LOD2, "
-                             f"{_bench.HAND_LOD_M:g} m)")
+    parser.add_argument("--hand-lod-m", type=float,
+                        help="where the hand-made LOD2 takes over in the 'hand' variant (default: the contract's LOD2 "
+                             "from_m)")
     parser.add_argument("--budget-ms", type=float, default=_bench.BUDGET_MS,
                         help=f"the characters' GPU share the verdict holds them to (default {_bench.BUDGET_MS:g})")
     parser.add_argument("--out", type=Path, help="output folder (default tools/out/bench/run/)")
@@ -114,7 +114,8 @@ def run(args: argparse.Namespace) -> int:
         glbs.append({"id": p.stem, "path": p.resolve().as_posix(), "mb": p.stat().st_size / 1e6,
                      "res": _godot.stage(p.resolve(), STAGE_PREFIX + p.stem, _godot.import_params(p)), **info})
     try:
-        spec = _bench.spec(glbs, copies, args.clip, args.frames, args.warmup, hand_lod_m=args.hand_lod_m)
+        hand_lod_m = args.hand_lod_m if args.hand_lod_m is not None else _bench.contract_hand_lod_m()
+        spec = _bench.spec(glbs, copies, args.clip, args.frames, args.warmup, hand_lod_m=hand_lod_m)
     except ValueError as e:
         raise common.Failure(str(e)) from e
     shutil.rmtree(out / "shots", ignore_errors=True)

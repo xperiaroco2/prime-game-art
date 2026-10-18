@@ -55,9 +55,6 @@ def contract_hand_lod_m(contract: dict[str, Any] | None = None) -> float:
     raise ValueError("the contract has no [[lods.levels]] LOD2")
 
 
-HAND_LOD_M = contract_hand_lod_m()
-
-
 def parse_copies(text: str) -> list[int]:
     """'10,20' -> [10, 20]: distinct positive counts up to MAX_COPIES, in the given order."""
     out: list[int] = []
@@ -109,8 +106,8 @@ def describe(gltf: dict[str, Any], shadow_part: str = SHADOW_PART) -> dict[str, 
 def variants(glbs: list[dict[str, Any]], copies: list[int]) -> list[dict[str, Any]]:
     """The measured variants: first the empty stage (the scene's own cost), then per GLB and copy count the automatic
     LOD on ("auto") and off ("off"), each with full-mesh shadows and, when the GLB has the shadow part, the shadow
-    proxy; with the shadow part also "hand" (the part as a hand-made LOD2 beyond HAND_LOD_M, the contract's LOD2
-    distance, full shadows). Grouped by GLB and count, the order bench.gd loads them in."""
+    proxy; with the shadow part also "hand" (the part as a hand-made LOD2 beyond the spec's hand_lod_m, by default the
+    contract's LOD2 distance, full shadows). Grouped by GLB and count, the order bench.gd loads them in."""
     if not glbs:
         raise ValueError("no GLB to measure")
     out = [{"id": "empty", "glb": glbs[0]["id"], "copies": 0, "lod": "auto", "shadow": "full"}]
@@ -126,8 +123,11 @@ def variants(glbs: list[dict[str, Any]], copies: list[int]) -> list[dict[str, An
 
 
 def spec(glbs: list[dict[str, Any]], copies: list[int], clip: str = "Idle", frames: int = FRAMES,
-         warmup: int = WARMUP, settle: int = SETTLE, hand_lod_m: float = HAND_LOD_M) -> dict[str, Any]:
-    """The spec bench.gd reads. Each GLB: its res:// path and its face morph count."""
+         warmup: int = WARMUP, settle: int = SETTLE, hand_lod_m: float | None = None) -> dict[str, Any]:
+    """The spec bench.gd reads. Each GLB: its res:// path and its face morph count. hand_lod_m None: the contract's
+    LOD2 distance (read here, not at import, so that a broken contract.toml fails only the bench)."""
+    if hand_lod_m is None:
+        hand_lod_m = contract_hand_lod_m()
     if frames < 1 or warmup < 0 or settle < 0:
         raise ValueError("frames must be at least 1, warmup and settle at least 0")
     return {"glbs": {g["id"]: {"res": g["res"], "morphs": g["morphs"]} for g in glbs},
@@ -197,6 +197,7 @@ def verdict(record: dict[str, Any], glbs: list[dict[str, Any]], copies: int, bud
 
 def report(record: dict[str, Any], glbs: list[dict[str, Any]], budget_ms: float = BUDGET_MS) -> list[str]:
     """The Markdown report: the machine, the GLBs, the timing table, the memory per group, the verdicts."""
+    far = float(record["hand_lod_m"]) if "hand_lod_m" in record else contract_hand_lod_m()
     lines = [f"# bench: {', '.join(g['id'] for g in glbs)}", "",
              f"- adapter: {record.get('adapter', '?')} ({record.get('adapter_vendor', '?')}); renderer "
              f"{record.get('renderer', '?')}; Godot {record.get('godot', '?')}",
@@ -206,12 +207,11 @@ def report(record: dict[str, Any], glbs: list[dict[str, Any]], budget_ms: float 
              "omni lamp (cube) at the ring's centre; every face morph weighted 0.05",
              "- CPU ms is the viewport's render time only; process ms (animation players, skeleton poses) and frame ms "
              "(the whole frame) beside it; `beyond` counts the copies farther than the hand-made LOD2's "
-             f"{record.get('hand_lod_m', HAND_LOD_M):g} m from the camera, "
+             f"{far:g} m from the camera, "
              "the only ones the hand variant switches", "",
              "| GLB | triangles | shadow part | face morphs | MB |", "|---|---|---|---|---|"]
     for g in glbs:
         lines.append(f"| {g['id']} | {g['triangles']:,} | {g['shadow_triangles']:,} | {g['morphs']} | {g['mb']:.1f} |")
-    far = float(record.get("hand_lod_m", HAND_LOD_M))
     lines += ["", "| variant | copies | beyond | LOD | shadows | GPU ms | p95 | chars GPU ms | CPU ms | chars CPU ms | "
                   "process ms | frame ms | primitives | draw calls | video MB | buffer MB |", "|" + "---|" * 16]
 
