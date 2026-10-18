@@ -7,6 +7,23 @@ Since art #25 the client also rigs local GLBs, makes text-to-motion clips and li
 `_meshy_api.py` (HTTP, key, polling), `_meshy_batch.py` (batch files, prices), `_meshy_inputs.py` (image inputs),
 `_meshy_run.py` (the run), `raw_backup.py` and `tools/blender/meshy_rig_input.py` (rig inputs); tests: `tools/tests/test_meshy_*.py` (a fake transport, no network).
 
+## The character route (since 2026-10-18)
+
+Meshy is the project's 3D generator, the engineer's decision after the three-generator showcase
+(`docs/decisions/2026-10-18-meshy-generator.md`, #203). Characters and their parts go through two batch kinds of this
+client, then the agents' finish (`docs/pipeline.md`, the section at the top):
+
+| Stage | Batch kind | Model | Credits |
+|---|---|---|---|
+| Concept | `text_to_image` or `image_to_image`, `generate_multi_view` for a turnaround | `gpt-image-2-5-sunburst` | 9 per image or three-view set from text, 12 from images |
+| 3D | `multi_image_to_3d` from the chosen concept's views | `meshy-7.1` | mesh 20, +5 for `geometry_resolution = "2k"`, +10 for a texture (the showcase's model: 35) |
+
+nano-banana-pro and the other image models stay in the API tables below as read, but are set aside for concepts.
+Tripo and Rodin are not used (Tripo's content filter refuses unclothed multi-view input); a batch on any other paid
+service needs the engineer's yes. Every such asset records `ai_generated = true` (`docs/manifest.md`). The engineer
+buys Meshy's top subscription: when it starts, reread the terms and write the new `plan`, `terms_url` and `licence`
+into the next batch ("The Meshy API as read on 2026-10-02", the output licence).
+
 ## Commands
 
 | Command | Network | What it does |

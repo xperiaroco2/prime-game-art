@@ -4,6 +4,21 @@ From a raw generation or download to an approved asset in the game. Based on sec
 (`docs/research/2026-10-02-wave-1/report.md`), updated with the engineer's answers on xperiaroco2/prime-game#165
 (2026-10-02). Where the report and this page differ, this page wins; where #165 and this page differ, fix this page.
 
+## Since 2026-10-18: Meshy generates the character forms
+
+The engineer chose Meshy as the 3D generator after the three-generator showcase of the alien base character
+(`docs/decisions/2026-10-18-meshy-generator.md`, art#196, #203). Where it differs from the sections below, this
+section wins:
+1. **Concepts:** GPT Image through Meshy's API (`gpt-image-2-5-sunburst`, text to image or image to image),
+   turnaround views of one part or character at a time. nano-banana-pro is set aside.
+2. **3D:** Meshy multi-image to 3D (`meshy-7.1`) from the chosen concept's views. Tripo is out (its content filter
+   refuses unclothed multi-view input) and Rodin was not chosen; any other generator needs the engineer's yes.
+3. **Finish:** agents in headless Blender by route R3: keep the sculpt's own surface, collapse decimate to the budget,
+   our clay material, bead eyes, the game skeleton and weights, face morphs on the template head
+   (`docs/decisions/2026-10-18-faces-as-morphs.md`); then `export`, `godot-check` and `frames`.
+
+Every step runs through a Meshy batch file (`docs/meshy.md`), and every such asset records `ai_generated = true`.
+
 ## Since 2026-10-03: the character base and who decides
 
 The direction below changed on 2026-10-03 (xperiaroco2/prime-game#165, stage 1 plan #16). Where they differ, this
@@ -18,6 +33,7 @@ section wins:
   - `retarget` and `anim-review` bake and judge the clips (`docs/animations.md`);
   - `export`, `godot-check` and `frames` carry a character into Godot 4.7.2 (`docs/godot.md`).
 - **Meshy makes items and props only.** It is also tried for animations (#25); characters do not come from it.
+  (Replaced on 2026-10-18: Meshy now generates the character forms, see the section above.)
 - **Who decides:** the trust model (`docs/decisions/2026-10-03-trust-model.md`).
   - The engineer, who acts as the designer, decides taste; the engineer alone decides money and large or hard-to-reverse
     changes.
@@ -39,7 +55,7 @@ section wins:
 | Names | A player's name shows only when you aim at them up close. A game rule, built in the game repo; the engineer, as the designer, may object on #165 |
 | AI rules | Never name How to Fish or any other game or character in a prompt, never upload their screenshots, no personal photos; `ai_generated` recorded per asset; never free-plan output |
 | Raw files | `D:/prime-art-raw` on the engineer's PC; chosen originals copied to `OneDrive/prime-art-raw`; never in git |
-| Who generates | An agent, through the Meshy API, from the start; each batch only after the engineer's yes to its prompts, count and credits (since 2026-10-03: the standing permission within the plan's credits, see the section above). The engineer buys the plan (Meshy Pro, one month) and sets `MESHY_API_KEY`; agents never enter keys or payment details |
+| Who generates | An agent, through the Meshy API, from the start; each batch only after the engineer's yes to its prompts, count and credits (since 2026-10-03: the standing permission within the plan's credits, see the section above). The engineer buys the plan (Meshy Pro, one month; since 2026-10-18 Meshy's top subscription) and sets `MESHY_API_KEY`; agents never enter keys or payment details |
 
 The look is decided by the engineer, who acts as the designer (@SwiftySinister is not active); the art track proposes and renders,
 it does not choose.
@@ -49,7 +65,8 @@ it does not choose.
 ```
 [agent, one batch at a time; Meshy within the plan's credits under the standing permission, approval_ref in batches/]
  1 batch        prompts, count and credits written in a batch file with its approval_ref
- 2 generate     Meshy API (text or image to 3D, about 30 credits per textured body): T-pose, five spread fingers,
+ 2 generate     Meshy API (characters since 2026-10-18: GPT Image concepts, then meshy-7.1 multi-image to 3D, about
+                35 credits per model; other assets: text or image to 3D, about 30 credits): T-pose, five spread fingers,
                 6,000-8,000 faces per body, accessories and props smaller; no game or character names in prompts.
                 Files -> D:/prime-art-raw/<batch>/ with a log row per task; chosen originals -> OneDrive (raw-backup)
 [agent, this repo, blender -b --factory-startup --python-exit-code 1, never a window]
@@ -85,8 +102,9 @@ Commands by step:
 - step 10: `export`, `godot-check` and `frames` (`docs/godot.md`);
 - every step: `manifest-check`, for the manifests and `sources/` records.
 
-Characters come from `assemble` (`docs/assembly.md`) with parts from `catalogue` (`docs/catalogue.md`) and faces from
-`faces` (`docs/faces.md`). Decimation, weight transfer and the palette recolour are later issues.
+The Quaternius characters come from `assemble` (`docs/assembly.md`) with parts from `catalogue` (`docs/catalogue.md`)
+and faces from `faces` (`docs/faces.md`); the generated characters since 2026-10-18 follow the section at the top.
+Decimation, weight transfer and the palette recolour are later issues.
 
 ## What is committed
 Per asset, `assets/<kind>/<id>/`: `manifest.toml`, `source/` (the working .blend), `export/` (the .glb), `report.json`.
@@ -94,9 +112,9 @@ Never: raw generations or downloads, review renders, keys. Every binary goes thr
 10 GiB, so drafts stay in the raw folder.
 
 ## Licences
-Allowed into the public game repo (`public_repo_ok = true`): CC0, CC BY with credit, owned paid output (Meshy Pro
-output: "owned, all rights reserved"), our own work. Private only (`restricted`): Mixamo, store packs, raw Meshy
-library motions, anything unclear. Never: free-plan AI output, non-commercial data.
+Allowed into the public game repo (`public_repo_ok = true`): CC0, CC BY with credit, owned paid output (a paid
+Meshy plan's output: "owned, all rights reserved"; terms reread when the plan changes, `docs/meshy.md`), our own
+work. Private only (`restricted`): Mixamo, store packs, raw Meshy library motions, anything unclear. Never: free-plan AI output, non-commercial data.
 
 ## Open (decided later, on #165)
 - How eyes and mouth are built (separate eyeballs or a painted face), after the V1 and V3 renders.
