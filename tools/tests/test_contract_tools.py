@@ -141,6 +141,29 @@ class CheckCommandTest(unittest.TestCase):
         self.assertEqual(code, 1, output)
         self.assertEqual(self.failed(report), ["body_shape_morphs"], output)
 
+    def test_face_morphs_with_mixed_weights(self) -> None:
+        # Only bone groups pick a vertex's main bone (clay_border is not one), and a Head-Neck tie counts as the head.
+        mixed = self.build(
+            "face_mixed.blend", shape_keys={"mouth_a": "Head"}, defects=["clay_border", "tied_head_vertex"]
+        )
+        code, report, output = self.check(mixed, "body")
+        self.assertEqual(self.statuses(report)["body_shape_morphs"], "pass", output)
+        moves = report["measure"]["meshes"][0]["shape_key_bones"]["mouth_a"]
+        self.assertEqual(sorted(moves), ["Head", "Head|Neck"], output)
+        self.assertEqual(moves["Head|Neck"], {"vertices": 1, "max_mm": 5.0})
+        # A Head key moving a vertex at 0.6 Neck by 5 mm (past face.edge_mm) or one on no bone is a body-shape morph.
+        broken = self.build(
+            "face_mixed_broken.blend",
+            shape_keys={"mouth_a": "Head"},
+            defects=["clay_border", "neck_heavy_head_vertex", "unweighted_head_vertex"],
+        )
+        code, report, output = self.check(broken, "body")
+        self.assertEqual(code, 1, output)
+        results = {r["check"]: r for r in report["results"]}
+        self.assertEqual(results["body_shape_morphs"]["status"], "fail", output)
+        self.assertIn("no bone (1 vertices, up to 5 mm), Neck (1 vertices, up to 5 mm)",
+                      results["body_shape_morphs"]["detail"])
+
     def test_a_rigged_body_is_not_an_accessory(self) -> None:
         code, report, output = self.check(self.good, "accessory")
         self.assertEqual(code, 1, output)

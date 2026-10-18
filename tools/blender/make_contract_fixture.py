@@ -42,6 +42,11 @@ DEFECTS = {
     "too_tall": "2.0 m instead of 1.75 m",
     "backwards": "turned 180 degrees: the front at -Z in glTF",
     "no_uv": "no UV map",
+    # Mixed weights on the Head box, for the face morph measure (save as .blend: glTF keeps only bone groups).
+    "clay_border": "a clay_border vertex group, not a bone, at 1.0 on every Head vertex",
+    "tied_head_vertex": "one Head vertex at 0.5 Head, 0.5 Neck",
+    "neck_heavy_head_vertex": "one Head vertex at 0.4 Head, 0.6 Neck",
+    "unweighted_head_vertex": "one Head vertex without bone weights",
 }
 
 
@@ -262,6 +267,17 @@ def main() -> None:
         v = by_bone["Hips"][1]
         groups["Hips"].add([v], 0.5, "REPLACE")
         groups["Root"].add([v], 0.5, "REPLACE")
+    head = by_bone["Head"]
+    if "clay_border" in defects:
+        body.vertex_groups.new(name="clay_border").add(head, 1.0, "REPLACE")
+    if "tied_head_vertex" in defects:
+        groups["Head"].add([head[0]], 0.5, "REPLACE")
+        groups["Neck"].add([head[0]], 0.5, "REPLACE")
+    if "neck_heavy_head_vertex" in defects:
+        groups["Head"].add([head[1]], 0.4, "REPLACE")
+        groups["Neck"].add([head[1]], 0.6, "REPLACE")
+    if "unweighted_head_vertex" in defects:
+        groups["Head"].remove([head[2]])
     body.parent = rig
     modifier = body.modifiers.new("Armature", "ARMATURE")
     modifier.object = rig
