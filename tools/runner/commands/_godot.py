@@ -388,7 +388,7 @@ def _textured(c: Checks, dump: dict[str, Any], contract: dict[str, Any]) -> None
     c.add("textured", bool(with_tex), f"{len(with_tex)} of {len(mats)} surfaces textured" if with_tex else "no textured surface")
     flat_nrm = [f"{n}/{mat['name']}" for n, mat in mats if mat.get("textured") and not mat.get("normal_mapped")
                 and not n.endswith("_eyes")]
-    c.add("normal_maps", not flat_nrm, "every textured surface normal-mapped (the eyes' palette aside)" if not flat_nrm
+    c.add("normal_maps", not flat_nrm, "every textured surface normal-mapped (the _eyes part aside)" if not flat_nrm
           else f"textured without a normal map: {', '.join(flat_nrm)}")
     good, detail = eye_pupils(dump)
     c.add("eye_pupils", good, detail)
@@ -439,7 +439,7 @@ def _loops(c: Checks, anims: dict[str, Any], seams: dict[str, dict[str, float]])
 
 
 def _body_feet(dump: dict[str, Any], bones: list[str]) -> dict[str, list[float]] | None:
-    """A barefoot character's feet: the bounds of the skin whose largest weight is a foot or toe bone, over every part
+    """A barefoot character's feet: the bounds of the skin whose heaviest bone is a Foot or Toe bone, over every part
     but the eyes (inspect.gd's bone_bounds); None when no part has skin on those bones."""
     boxes = [m["bone_bounds"][b] for m in dump["meshes"] if not m["name"].endswith("_eyes")
              for b in bones if (m.get("bone_bounds") or {}).get(b)]
@@ -452,7 +452,7 @@ def _body_feet(dump: dict[str, Any], bones: list[str]) -> dict[str, list[float]]
 def _facing(c: Checks, dump: dict[str, Any], skeleton: dict[str, Any], renamed: dict[str, str]) -> None:
     """Front +Z: the eyes in front of the Head joint, the shoes reaching further forward than back from the ankles, and
     the character's left wrist at +X. Without a _shoes part (a barefoot body, art #196) the body's feet stand in: the
-    skin weighted mostly to the Foot and Toe bones."""
+    skin whose heaviest bone is a Foot or Toe bone (each vertex counts for its heaviest bone only)."""
     joints = skeleton["rest_joints"]
     name = lambda bone: renamed.get(bone, bone)  # noqa: E731
     needed = [name(b) for b in ("Head", "Foot.L", "Foot.R", "Wrist.L", "Wrist.R")]

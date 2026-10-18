@@ -129,6 +129,7 @@ func _mesh(scene: Node, mesh: MeshInstance3D) -> Dictionary:
 				if str(mesh.name).ends_with("_eyes"):
 					entry["tones"] = _tones(mesh.mesh.surface_get_arrays(s), base)
 			materials.append(entry)
+	var rest: PackedVector3Array = Character.skinned_points(mesh)  # skinned once for both bounds
 	return {
 		"name": str(mesh.name),
 		"path": str(scene.get_path_to(mesh)),
@@ -140,8 +141,8 @@ func _mesh(scene: Node, mesh: MeshInstance3D) -> Dictionary:
 		"surfaces": mesh.mesh.get_surface_count() if mesh.mesh != null else 0,
 		"vertices": vertices,
 		"materials": materials,
-		"rest_bounds": Character.bounds(Character.skinned_points(mesh)),
-		"bone_bounds": Character.bone_bounds(mesh),
+		"rest_bounds": Character.bounds(rest),
+		"bone_bounds": Character.bone_bounds(mesh, rest),
 	}
 
 

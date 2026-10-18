@@ -77,6 +77,18 @@ class Audit(unittest.TestCase):
         a["images"][0]["name"] = "fb_eye_palette"
         self.assertEqual(_export.textured_check(a, 8, 1024), [])
 
+    def test_the_eyes_need_no_normal_map(self) -> None:
+        """As in godot-check's normal_maps (#210): a textured material only the _eyes part uses passes without a normal
+        map; the same material on the body, or on both, still fails."""
+        a = self.audit(normal=False)
+        a["meshes"] = {"alien_base_eyes": a["meshes"].pop("m1_top")}
+        self.assertEqual(_export.textured_check(a, 8, 1024), [])
+        self.assertEqual(_export.eye_only_materials(a), {0, 1})
+        a["meshes"]["alien_base_body"] = [{"material": 0, "uv": True, "tangent": True, "targets": 0}]
+        self.assertIn("m1_top_clay: a base colour texture without a normal map",
+                      " ".join(_export.textured_check(a, 8, 1024)))
+        self.assertEqual(_export.eye_only_materials(a), {1})
+
     def test_jpeg_size(self) -> None:
         sof = b"\xff\xd8" + b"\xff\xe0" + struct.pack(">H", 4) + b"ab" + b"\xff\xc0" + struct.pack(">HBHH", 17, 8, 300, 200)
         self.assertEqual(_export.image_size(sof + bytes(10)), (200, 300))

@@ -122,6 +122,9 @@ class EvaluateTest(unittest.TestCase):
         good = facing(barefoot(toe_z=0.25, heel_z=-0.02))
         self.assertEqual(good["status"], "pass", good)
         self.assertIn("bare feet reach 19.0 cm forward and 8.0 cm back", good["detail"])
+        stray = barefoot(toe_z=0.25, heel_z=-0.02)  # the eyes' skin on a foot bone would move the toes 64 cm out
+        stray["meshes"][1]["bone_bounds"]["Toe.L"] = {"min": [0.0, 1.6, 0.1], "max": [0.01, 1.61, 0.7]}
+        self.assertIn("bare feet reach 19.0 cm forward", facing(stray)["detail"])
         backwards = facing(barefoot(toe_z=0.08, heel_z=-0.2))  # heels further out than toes: the feet face -Z
         self.assertEqual(backwards["status"], "fail", backwards)
         bare = barefoot(toe_z=0.25, heel_z=-0.02)

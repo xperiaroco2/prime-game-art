@@ -4,6 +4,8 @@ rest-pose guard between the character's rig and the animation set's donor, and t
 
 from __future__ import annotations
 
+import argparse
+import math
 import re
 
 # The rest heads of the two rigs must agree within this (the set's donor and the character share the body type's
@@ -16,6 +18,7 @@ LEG_CHAIN = (("UpperLeg", "LowerLeg"), ("LowerLeg", "Foot"))
 _LOCATION_RE = re.compile(r'^pose\.bones\["([^"]+)"\]\.location$')
 
 Vec = tuple[float, float, float] | list[float]
+Vec4 = tuple[float, float, float, float] | list[float]
 
 
 def rest_check(rest: dict[str, float], own_proportions: bool = False) -> tuple[float, str, str | None]:
@@ -31,6 +34,39 @@ def rest_check(rest: dict[str, float], own_proportions: bool = False) -> tuple[f
         return err, worst, None
     return err, worst, (f"the rest poses differ by {err * 1000:.2f} mm at {worst} (tolerance {REST_TOLERANCE_M * 1000} mm; "
                         f"slice --own-proportions accepts a skeleton with its own proportions)")
+
+
+def turn_deg(a: Vec4, b: Vec4) -> float:
+    """The angle (degrees, 0 to 180) between two orientations given as unit quaternions (w, x, y, z): the shorter way
+    round, so q and -q are the same orientation (Blender's Quaternion.angle of their difference runs to 360)."""
+    dot = abs(sum(x * y for x, y in zip(a, b)))
+    return math.degrees(2 * math.acos(min(1.0, dot)))
+
+
+def rest_turn(turns: dict[str, float]) -> tuple[float, str]:
+    """turns: per bone the shorter angle (degrees, turn_deg) between the character's rest orientation and the donor's.
+    Returns the
+    largest outside the toes and its bone, only reported: a bone-local rotation key turns a bone the same about its own
+    axes on both rigs, so where the rest orientations differ the pose differs by that much (art #210)."""
+    body = {k: v for k, v in turns.items() if k not in TOES}
+    if not body:
+        return 0.0, ""
+    worst = max(body, key=body.get)
+    return body[worst], worst
+
+
+def arguments(argv: list[str]) -> argparse.Namespace:
+    """slice_actions.py's command line (kept here so the tests parse it without Blender)."""
+    ap = argparse.ArgumentParser(prog="slice_actions.py")
+    ap.add_argument("--character", required=True)
+    ap.add_argument("--anim", required=True)
+    ap.add_argument("--clips", required=True, help="comma list of the set's action names to put on the character")
+    ap.add_argument("--out", required=True)
+    ap.add_argument("--json", required=True)
+    ap.add_argument("--eye-height", type=float, help="scale the character so its eyes' rest centre is at this height (m)")
+    ap.add_argument("--own-proportions", action="store_true",
+                    help="accept a skeleton that differs from the donor's; scale the root and hip keys to the leg length")
+    return ap.parse_args(argv)
 
 
 def _dist(a: Vec, b: Vec) -> float:

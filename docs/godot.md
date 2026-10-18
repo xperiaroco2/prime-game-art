@@ -82,10 +82,11 @@ textures, so their export and check differ from the flat-colour pack look's:
   `<out>/<id>/<id>.textures.json` (`_export.textured_audit`: every image's mime, bytes and size, each material's base
   colour and normal textures, each surface's UVs and tangents) and fails on `_export.textured_check`: no base colour
   texture at all, an image that is not PNG or JPEG or is over the contract's `texture_character_px` (1024), a textured
-  material without a normal map, a normal-mapped surface without UVs or tangents, more surfaces than the contract's
-  `surfaces_per_character_cap` (8).
+  material without a normal map (a `_palette` image and a material only the `_eyes` part uses aside, as in
+  godot-check's `normal_maps`; #210), a normal-mapped surface without UVs or tangents, more surfaces than the
+  contract's `surfaces_per_character_cap` (8).
 - `godot-check --textured` replaces `flat_colours` with `textured` (some surface has an albedo texture), `normal_maps`
-  (every textured surface but the eyes' palette has a normal map), `eye_pupils` (the `_eyes` part as Godot draws it,
+  (every textured surface but the `_eyes` part's has a normal map), `eye_pupils` (the `_eyes` part as Godot draws it,
   `inspect.gd`'s albedo at each vertex from the colour, the vertex colours if used as albedo and the texture at the
   UV: at least 2 % near-white and 2 % near-black vertices, else the eyes have lost their pupils), `texture_size` (no
   albedo or normal texture side over `texture_character_px`) and `surfaces_cap` (the surfaces within
@@ -129,7 +130,7 @@ and a line that names no staged file counts against every GLB of the run (`_godo
 `check/inspect.gd` (headless, `-s`) instantiates the imported scene, waits one frame (the meshes register their skins
 when the tree runs) and describes it: every Skeleton3D (bones, parents, rest joints in world space), every
 MeshInstance3D (its skeleton, Skin binds that do not resolve, surfaces, vertices, materials, its rest-pose bounds
-and, per bone, the rest-pose bounds of the vertices whose largest weight is that bone's: `bone_bounds`),
+and, per bone, the rest-pose bounds of the vertices whose heaviest bone is that bone: `bone_bounds`),
 every AnimationPlayer (each animation's length, tracks by type, tracks that do not resolve, and how far the bones move
 between the poses at 0, 1/3 and 2/3 of its length), and optionally every joint at requested times. The vertices are
 skinned on the CPU exactly as Godot's renderer does it (bone global pose x the Skin's bind pose, weighted):
@@ -149,7 +150,7 @@ without Godot:
 | `animations_move` | in every animation some bone turns 0.5 degrees or moves 2 mm between the three samples |
 | `size_kept` | the rest-pose height equals Blender's within 2 mm |
 | `feet_at_zero` | the lowest skinned vertex is within the contract's `feet_tolerance_m` (0.01 m) of y = 0 |
-| `facing_plus_z` | the eyes are at least 5 cm in front of the Head joint, the shoes reach further forward than back from the ankles, the left wrist is at +X; a barefoot body without a `_shoes` part (the alien, art #196/#207) is measured by its feet instead: the `bone_bounds` of the Foot and Toe bones on every part but the eyes |
+| `facing_plus_z` | the eyes are at least 5 cm in front of the Head joint, the shoes reach further forward than back from the ankles, the left wrist is at +X; a barefoot body without a `_shoes` part (the alien, art #196/#207) is measured by its feet instead: the `bone_bounds` of the Foot and Toe bones on every part but the eyes (the vertices whose heaviest bone is a Foot or Toe bone) |
 | `flat_colours` | no surface has an albedo texture (with `--textured`: the textured checks instead, "Textured export" above) |
 | `godot_output` | no ERROR line in Godot's import and inspection output (warnings are listed) |
 | `contract_height`, `contract_eye_height` | the contract v1 body gates (height 1.70 to 1.80 m to the top, 1.90 m with `--textured`, the plasticine look; eyes 1.6 +- 0.08 m): **warnings** unless `--strict-contract` |
@@ -498,11 +499,16 @@ T-pose but its own proportions, so its rest differs from the set's donor on purp
 214 mm, art #196). The rest difference is then only reported (`rest_max_mm`, `rest_worst` in `<id>.actions.json`), and
 the clips' `Root` and `Hips` location keys (and the armature object's, if keyed) scale by the character's leg length
 over the donor's: per leg the thigh (`UpperLeg` to `LowerLeg` head), the shin (`LowerLeg` to `Foot`) and the ankle's
-height, averaged over both legs (`leg_m`, `leg_scale`). That keeps the stride and the hips' bob in proportion to the
-legs that carry them; every other key is a bone-local rotation and carries over unchanged. The `eye_height_m` scale
-comes after it. The rules are plain Python in `tools/blender/slice_math.py` (tests: `test_slice_proportions.py`). Feet
-can still slide a little where a clip's foot placement depends on more than the leg length (a different hip width or
-foot length).
+height, averaged over both legs (`leg_m`: `[donor, character]` in metres; `leg_scale` = character / donor). That keeps
+the stride and the hips' bob in proportion to the legs that carry them. Every other key carries over unchanged: the
+rotations are bone-local, and the location and scale keys that the retarget writes on every bone are left as they are
+(a clip that moves another bone's location moves it by the donor's distance). Since a bone-local rotation turns a bone
+the same about its own axes on both rigs, the pose differs wherever the rest orientations differ: the largest
+difference outside the toes (the shorter angle, 0 to 180 degrees, `slice_math.turn_deg`) is reported on every run (`rest_turn_max_deg`, `rest_turn_worst`; #210). The
+`eye_height_m` scale comes after the leg scale. With `--asset`, HANDOFF.md's size note records the flag, the rest
+differences, `leg_m` and `leg_scale` from `<id>.actions.json`. The rules are plain Python in
+`tools/blender/slice_math.py` (tests: `test_slice_proportions.py`). Feet can still slide a little where a clip's foot
+placement depends on more than the leg length (a different hip width or foot length).
 
 `slice` assembles the cast member (`assemble --look clay --bake`; `--blend` reuses a saved one), puts the set's clips
 on its armature in Blender (`tools/blender/slice_actions.py`; it refuses a rest pose that differs from the set's by

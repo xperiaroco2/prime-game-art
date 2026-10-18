@@ -102,10 +102,11 @@ static func dominant_bones(mesh: MeshInstance3D) -> PackedStringArray:
 
 
 ## Per bone, the bounds of mesh's skinned rest points whose largest weight is that bone's: {"<bone>": {"min", "max"}}.
-## godot-check's facing_plus_z measures a barefoot body's feet with it (the foot and toe bones' skin).
-static func bone_bounds(mesh: MeshInstance3D) -> Dictionary:
+## godot-check's facing_plus_z measures a barefoot body's feet with it (the foot and toe bones' skin). skinned:
+## skinned_points(mesh) if the caller has them already (inspect.gd), so the mesh is skinned once.
+static func bone_bounds(mesh: MeshInstance3D, skinned: PackedVector3Array = PackedVector3Array()) -> Dictionary:
 	var owners: PackedStringArray = dominant_bones(mesh)
-	var points: PackedVector3Array = skinned_points(mesh)
+	var points: PackedVector3Array = skinned if not skinned.is_empty() else skinned_points(mesh)
 	var lows: Dictionary = {}
 	var highs: Dictionary = {}
 	if owners.size() != points.size():
