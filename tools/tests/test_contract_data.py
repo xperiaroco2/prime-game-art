@@ -194,11 +194,35 @@ class ContractTest(unittest.TestCase):
 
     def test_budgets(self) -> None:
         budgets = self.contract["budgets"]
-        self.assertEqual((budgets["body"]["triangles_target"], budgets["body"]["triangles_cap"]), (6000, 8000))
+        self.assertEqual((budgets["body"]["triangles_target"], budgets["body"]["triangles_cap"]), (22000, 30000))
         character = budgets["character"]
-        self.assertEqual((character["triangles_target"], character["triangles_cap"]), (8000, 12000))
+        self.assertEqual((character["triangles_target"], character["triangles_cap"]), (40000, 60000))
+        # the pieces add up (art #212): the body plus one piece per slot at their targets is the character's target,
+        # at their caps inside its cap
+        pieces = [s["budget"] for s in self.contract["slots"] if s.get("budget")]
+        for metric, whole in (("triangles_target", "triangles_target"), ("triangles_cap", "triangles_cap")):
+            total = budgets["body"][metric] + sum(budgets[b][metric] for b in pieces)
+            self.assertLessEqual(total, character[whole], metric)
+        self.assertLessEqual(budgets["head"]["triangles_cap"], budgets["body"]["triangles_target"])
+        limits = budgets["limits"]
+        self.assertEqual(limits["texture_character_px"], 2048)
+        self.assertLessEqual(limits["texture_lod_px"], limits["texture_character_px"])
+        self.assertGreaterEqual(limits["glb_character_mb"], 30)
         self.assertEqual((self.contract["body"]["height_min_m"], self.contract["body"]["height_max_m"]), (1.7, 1.8))
         self.assertEqual(self.contract["animation"]["ragdoll"], "knockdown")
+
+    def test_lods(self) -> None:
+        lods = self.contract["lods"]
+        levels = lods["levels"]
+        self.assertEqual([lv["name"] for lv in levels], ["LOD0", "LOD1", "LOD2", "LOD3"])
+        character = self.contract["budgets"]["character"]
+        self.assertEqual((levels[0]["triangles_target"], levels[0]["triangles_cap"]),
+                         (character["triangles_target"], character["triangles_cap"]))
+        for near, far in zip(levels, levels[1:]):
+            self.assertLess(far["triangles_cap"], near["triangles_target"], far["name"])
+            self.assertGreater(far["from_m"], near["from_m"], far["name"])
+        self.assertIn("SHADOWS_ONLY", lods["shadow_proxy"])
+        self.assertIn("stay on", lods["automatic"])
 
 
 class BoneMapTest(unittest.TestCase):

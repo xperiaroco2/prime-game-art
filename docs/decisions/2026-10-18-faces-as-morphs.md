@@ -63,7 +63,8 @@ combination of parts. The art manager's answer, which he approved:
   base alien) need a retopology or wrap onto the template before they can carry faces.
 - Each eye and mouth part is made once and works on every head: N + M + K pieces.
 - The head GLB carries morph targets: the textured export already keeps them (`export --textured`, `export_morph`
-  on); `godot-check` has no morph rule. The morph data counts against the character GLB's 5 MB (`glb_character_mb`):
+  on); `godot-check` has no morph rule. The morph data counts against the character GLB's 5 MB (`glb_character_mb`;
+  raised to 40 MB by the character-budgets ADR, `2026-10-18-character-budgets.md`):
   the textured export writes every morph for every vertex of its mesh (`export_try_sparse_sk` off), so the first
   template head with its full set of morphs has its file size measured before more parts are made.
 - The face kit's rigid decals become the old form: its shape keys are the new form's start, its rigid mouth and eye

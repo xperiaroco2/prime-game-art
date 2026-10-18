@@ -56,8 +56,9 @@ command, warnings are listed (grouped by code).
 | Draco, meshopt, gltfpack, GPU instances, extras, attributes | off | Godot cannot read Draco or meshopt; nothing else is needed |
 
 Measured (2026-10-03, Blender 5.2.2, exporter 5.2.40): m1_rex 1.85 MB, m2_walt 2.04 MB, w1_ivy 2.03 MB, w2_nova
-2.04 MB (the contract allows 5 MB); 62 joints, 24 animations of 186 channels (62 bones x translation, rotation,
-scale), 8 parts (9 for m2_walt with his moustache), 11 to 17 materials. glTF-Validator 2.0.0-dev.3.10: 0 errors;
+2.04 MB (the contract then allowed 5 MB; raised to 40 MB by the character-budgets ADR); 62 joints, 24 animations of
+186 channels (62 bones x translation, rotation, scale), 8 parts (9 for m2_walt with his moustache), 11 to 17
+materials. glTF-Validator 2.0.0-dev.3.10: 0 errors;
 one warning per part, `NODE_SKINNED_MESH_NON_ROOT` ("parent transforms will not affect a skinned mesh"): the parts are
 children of the armature node, whose transform is the identity (the saved file applies every transform), so it changes
 nothing; infos `UNUSED_OBJECT` for the UVs no texture uses.
@@ -81,7 +82,7 @@ textures, so their export and check differ from the flat-colour pack look's:
   one perpendicular to the normal. The export check then allows images, and the command writes
   `<out>/<id>/<id>.textures.json` (`_export.textured_audit`: every image's mime, bytes and size, each material's base
   colour and normal textures, each surface's UVs and tangents) and fails on `_export.textured_check`: no base colour
-  texture at all, an image that is not PNG or JPEG or is over the contract's `texture_character_px` (1024), a textured
+  texture at all, an image that is not PNG or JPEG or is over the contract's `texture_character_px` (2048), a textured
   material without a normal map (a `_palette` image and a material only the `_eyes` part uses aside, as in
   godot-check's `normal_maps`; #210), a normal-mapped surface without UVs or tangents, more surfaces than the
   contract's `surfaces_per_character_cap` (8).
@@ -94,8 +95,8 @@ textures, so their export and check differ from the flat-colour pack look's:
   Every other check is the same.
 
 Measured on 2026-10-09 (`recipes/clay_round_d.json`): m1 8 surfaces, 12 images 4.41 MB, GLB 6.12 MB; w1 7
-surfaces, 10 images 3.46 MB, GLB 5.13 MB; every map at most 1024 px; validator 0 errors; godot-check passes with the
-contract warnings (heights 1.962 and 1.912 m with the x1.3 clay head) and the loop-mode warning.
+surfaces, 10 images 3.46 MB, GLB 5.13 MB; every map at most 1024 px (the cap then); validator 0 errors; godot-check
+passes with the contract warnings (heights 1.962 and 1.912 m with the x1.3 clay head) and the loop-mode warning.
 
 ## The Godot project: `godot/`
 
@@ -623,6 +624,57 @@ ankles about 20 mm apart; the sockets within 0.01 mm. Tuned with one grid of 11 
 lighter feet did worse. The BoneAttachment3Ds update on the same `skeleton_updated` signal after a script's handler:
 compared inside the handler they lag one update (about 0.1 m at the fall's speed); `fall.gd` compares them after the
 frame. Outside that signal `get_bone_global_pose` returns the animation pose, not the simulated one.
+
+## Bench (`bench`, art #212)
+
+`tools/run.py bench [GLB ...] [--proxy-from BLEND] [--copies 10,20]` measures what a character costs in Godot 4.7.2,
+the measurement behind the character budgets (docs/contract.md, `docs/decisions/2026-10-18-character-budgets.md`).
+`godot/bench/bench.gd` stands N copies of each GLB in a meeting ring (1.3 m apart, at least 2.2 m radius), each playing
+its idle clip from its own offset with every face morph weighted 0.05 (the worst case: Godot blends only non-zero
+weights), and looks at them from 2.5 m behind the ring at eye height (1.6 m, vertical FOV 75 degrees). The ring is
+small: its far side is 7.1 m from the camera at 10 copies and 10.9 m at 20, so no body stands beyond the contract's
+10 m LOD2 at 10 copies and 5 of 20 do at 20 (each row's `beyond` column counts them, camera to each copy's origin). The stage: a ground plane, a procedural sky, AgX, SSAO, a directional light with 4 shadow splits
+(max distance 60 m) and a shadowed omni lamp (cube shadows, range 9 m) at the ring's centre. The window is 1920x1080,
+off-screen (opened through `_godot.window()` and moved by `Offscreen.place()` first, "The off-screen window"; never
+headless, never minimized), vsync off.
+
+Per GLB and copy count it loads the copies, warms up (120 frames: the GPU clocks up and the pipelines compile), shoots
+the view for the sheet, then measures each variant over 300 frames after 30 settle frames: the median GPU and CPU ms
+of the viewport (`viewport_get_measured_render_time_gpu/cpu`, as `showroom`; the CPU ms is the rendering's only), the
+median process ms (`Performance.TIME_PROCESS`: the animation players and the skeleton poses, which the render CPU ms
+leaves out) and whole frame ms (between two `frame_post_draw`s), the p95 GPU ms, and the frame's primitives, draw
+calls and objects and the video, texture and buffer memory (`Performance` monitors). The process and frame ms came
+after the measurement of 2026-10-18 (`docs/decisions/2026-10-18-character-budgets.md`), whose table has neither. The variants:
+
+| Variant | What |
+|---|---|
+| `empty` | the stage without characters: subtracted from every row as `chars GPU ms` / `chars CPU ms` |
+| `auto_full` | the importer's automatic LODs (the viewport's `mesh_lod_threshold` 1.0), every mesh casts shadows |
+| `auto_proxy` | the drawn meshes cast no shadow; the GLB's `bench_shadow` part casts alone (`SHADOWS_ONLY`) |
+| `off_full`, `off_proxy` | the same with `mesh_lod_threshold` 0: always LOD0 |
+| `hand_full` | `bench_shadow` drawn as a hand-made LOD2 from `--hand-lod-m` (default: the contract's LOD2 `from_m`, 10 m) on, the full meshes before it (visibility ranges); it switches only the bodies in the `beyond` column |
+
+The proxy variants need a part whose name holds `bench_shadow`; without it a GLB gets `auto_full` and `off_full` only.
+Godot extracts a GLB's textures as Lossless and only the editor turns them to VRAM Compressed on first use, so the
+command sets the extracted textures' `.import` to VRAM Compressed with mipmaps (normal maps as normal maps) and imports
+again, as the game has them. The GLBs are staged as `bench_<stem>.glb`, so these settings never reach the textures
+another command (godot-check, frames) extracts from the same GLB. Memory per group (`buffer MB added` and so on) is the growth from loading the GLB and its
+copies; a GLB's mesh data (its morphs) is counted once, in the first group that loads it.
+
+`--proxy-from <character.blend>` first makes the stand-in in headless Blender (`tools/blender/bench_proxy.py`): the
+largest skinned mesh subdivided once and decimated to `--tris` (40,000) for the whole character with its weights
+interpolated and limited to 4; a copy decimated to `--shadow-tris` (7,000) as `bench_shadow`; the head (vertices whose
+largest weight is on Head, Jaw or an eye bone) split off as its own mesh with `--morphs` (0, 32, 64) seeded random
+1 to 3 mm bumps; each image swapped for its own 2048 bake beside the .blend, matched by stem (`alien_body_col` takes
+`alien_body_col_2048.png`; an image without one is kept and listed in `proxy.json`). Each
+morph count is saved as `proxy_m<N>.blend` and exported with `export --textured`.
+
+Out folder (default `tools/out/bench/run/`): `bench.json` (every row and group, the adapter, the GLBs), `bench.md` (the
+tables and one verdict line per GLB and count: the default setup's (`auto_full`) `chars GPU ms` against
+`--budget-ms`, 4 ms, with the worst variant named beside it),
+`sheet.png` (one shot per GLB and count, 1272 px), `shots/`, `godot.log`; with `--proxy-from` also `proxy/` and `glb/`.
+A full run with `--proxy-from` (Blender, three exports, 31 variants) took about 2 minutes on the RTX 4060 machine;
+start it in the background all the same.
 
 ## Findings for later tasks
 

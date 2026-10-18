@@ -6,6 +6,9 @@
 > Amended 2026-10-08 by the same trust model's amendment: the engineer acts as the designer and approves the look.
 > Amended 2026-10-18 by `2026-10-18-faces-as-morphs.md`: in the character contract (section 7) the `eyes` and
 > `mouth` slots are morphs on one template head, with eyeballs, teeth and tusks as separate parts.
+> Amended 2026-10-18 by `2026-10-18-character-budgets.md`: the character budgets of section 7 (sketched for
+> low-poly pack characters) are raised for quality and measured: LOD0 40,000 / 60,000 triangles, 2,048 textures,
+> a 40 MB GLB cap.
 
 - **Status:** Accepted for this repository's own tooling (sections 1 to 6: layout, runner, hooks, raw folders,
   manifest, approval). **Proposed** for the character contract (section 7) until the body variants are chosen.
