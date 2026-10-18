@@ -158,12 +158,13 @@ def godot(args: list[str], timeout: float, env: dict[str, str] | None = None) ->
     return result.returncode, (result.stdout or "") + (result.stderr or "")
 
 
-# The off-screen review window (#214, docs/godot.md). Godot 4.7.2 on Windows clamps a new window into the primary
-# screen, whatever --position asks, so a window run starts as one borderless, unfocused pixel at the screen's corner
-# and godot/lib/offscreen.gd moves it off-screen at runtime before growing it to the size in WINDOW_ENV.
+# The off-screen review window (#214, docs/godot.md). Godot 4.7.2 on Windows clamps a new window's position into the
+# primary screen's usable area, up to its far edge minus a third of the window's size, whatever --position asks. A
+# borderless 1x1 window's third is 0, so asked far right and down it opens at (screen width, usable height): just past
+# the screen's right edge. godot/lib/offscreen.gd then moves it to -30000,-30000 and grows it to WINDOW_ENV's size.
 OFFSCREEN_GD = PROJECT / "lib" / "offscreen.gd"
 WINDOW_ENV = "PRIME_WINDOW"
-WINDOW_START = "1x1"
+WINDOW_START = ["--position", "30000,30000", "--resolution", "1x1"]
 WINDOW_SETTINGS = ("window/size/borderless=true", "window/size/no_focus=true")  # [display] of every window project
 _OFFSCREEN = re.compile(r"OFFSCREEN window (-?\d+),(-?\d+) (\d+)x(\d+) screens (\S+)")
 
@@ -208,7 +209,7 @@ def window(args: list[str], size: tuple[int, int], timeout: float) -> tuple[int,
     never shows on a screen; the script calls godot/lib/offscreen.gd place() first. Raises Failure when the output
     does not prove the window stayed off every screen (offscreen_problems)."""
     install_offscreen(Path(args[args.index("--path") + 1]))
-    code, output = godot(["--resolution", WINDOW_START, *args], timeout, env=window_env(size))
+    code, output = godot([*WINDOW_START, *args], timeout, env=window_env(size))
     problems = offscreen_problems(output)
     if problems:
         tail = "\n".join(ANSI.sub("", output).splitlines()[-8:])

@@ -5,12 +5,14 @@ extends RefCounted
 ## takes the primary screen when the requested rect is on no screen and clamps a windowed window's position into that
 ## screen's usable area, so the window opens at the screen's top-left corner. Only a runtime
 ## DisplayServer.window_set_position moves a window without that clamp. So the runner (`_godot.window()`) opens the
-## window borderless and unfocused (the project's display/window/size/borderless and no_focus) at 1x1 px
-## (`--resolution 1x1`) and passes the size it wants in the PRIME_WINDOW environment variable; place() moves the
-## window to POSITION, then grows it, and prints one line the runner checks before it accepts the run:
+## window borderless and unfocused (the project's display/window/size/borderless and no_focus) at 1x1 px, asked far
+## right and down (`--position 30000,30000 --resolution 1x1`): the clamp keeps it within the usable area's far edge
+## minus a third of its size, 0 for one pixel, so it opens just past the screen's right edge. The runner passes the
+## size it wants in the PRIME_WINDOW environment variable; place() moves the window to POSITION, then grows it, and
+## prints one line the runner checks before it accepts the run:
 ##   OFFSCREEN window <x>,<y> <w>x<h> screens <x>,<y>,<w>,<h>[;...] ticks <ms since start>
-## Measured (#214): the 1x1 px window sits at the screen's corner for about 0.6 s before place() runs; nothing larger
-## is ever on screen. Returns "" when placed, else why not (the caller fails with it).
+## Measured (#214) with a 5 ms window watcher: nothing on the screen at any time. Returns "" when placed, else why
+## not (the caller fails with it).
 ##   const Offscreen = preload("res://lib/offscreen.gd")
 ##   var err := Offscreen.place()
 ##   if err != "": _fail(err); return

@@ -4,7 +4,8 @@ extends SceneTree
 ## turned by its yaw about +Y), grey boxes for the dressing placeholders, a review light at every fixture socket, then
 ## shoots each view, a line-up of the zone props beside a 1.8 m capsule and sheet.png (1280 px wide). Pictures need a
 ## real window placed off-screen, never headless:
-##   PRIME_WINDOW=1600x900 godot --path godot --resolution 1x1 -s res://house/zones.gd -- <request.json> <out dir>
+##   PRIME_WINDOW=1600x900 godot --path godot --position 30000,30000 --resolution 1x1 -s res://house/zones.gd
+##       -- <request.json> <out dir>
 ## request.json: commands/zones.py request(): {"pieces": [{"zone", "id", "src", "pos", "yaw", "scene" | "size",
 ## "lights", "light"}], "views": [[name, title, eye [x, y, h], look [x, y, h], fov]], "lineup": [{"id", "scene", "min",
 ## "max"}], "lineup_at": [x, y], "pack": {...}}; optional "lamps": [[x, h, z]] with "lamp": [colour, energy, range]

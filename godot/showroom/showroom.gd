@@ -2,7 +2,7 @@ extends SceneTree
 ## The showroom (art #140, docs/godot.md "Showroom and recommended look settings"): one character under up to eight look
 ## variants, rendered by Godot in a real window for `tools/run.py showroom`. Never headless and never minimized
 ## (Godot does not draw then); the runner opens the window off-screen:
-##   PRIME_WINDOW=640x800 godot --path godot --resolution 1x1 -s res://showroom/showroom.gd
+##   PRIME_WINDOW=640x800 godot --path godot --position 30000,30000 --resolution 1x1 -s res://showroom/showroom.gd
 ##       -- <res://import/x.glb> <out folder> <showroom_spec.json>
 ## The spec (tools/runner/commands/_showroom.py) lists the variants; each sets the tonemapper, its exposure and AgX's
 ## white and contrast, the ambient source (a flat colour or the studio sky; its energy, colour and the sky's share), sky

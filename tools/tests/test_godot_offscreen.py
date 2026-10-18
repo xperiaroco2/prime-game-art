@@ -50,6 +50,13 @@ class Problems(unittest.TestCase):
     def test_ansi_colour_is_ignored(self):
         self.assertEqual(_godot.offscreen_problems("\x1b[0m" + line(-30000, -30000, 64, 64) + "\x1b[0m"), [])
 
+    def test_the_window_starts_as_one_pixel_far_right(self):
+        """Godot clamps the start to the usable area's far edge minus a third of the size: 0 for 1x1 px (#214)."""
+        args = _godot.WINDOW_START
+        self.assertEqual(args[args.index("--resolution") + 1], "1x1")
+        x, y = (int(v) for v in args[args.index("--position") + 1].split(","))
+        self.assertGreater(min(x, y), 16384)  # past any screen's far edge, so the clamp puts it there
+
     def test_window_size_argument(self):
         self.assertEqual(_godot.window_env((480, 600)), {_godot.WINDOW_ENV: "480x600"})
         with self.assertRaises(ValueError):

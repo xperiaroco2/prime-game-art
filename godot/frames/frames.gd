@@ -2,7 +2,7 @@ extends SceneTree
 ## Motion frame sheets of an imported character, rendered by Godot itself in a real window for `tools/run.py frames`
 ## (docs/godot.md). Never headless and never minimized (Godot does not draw then, so frame_post_draw never fires); the
 ## runner opens the window off-screen like the game's `tools\run.cmd shot`:
-##   PRIME_WINDOW=480x600 godot --path godot --resolution 1x1 -s res://frames/frames.gd
+##   PRIME_WINDOW=480x600 godot --path godot --position 30000,30000 --resolution 1x1 -s res://frames/frames.gd
 ##       -- <res://import/x.glb> <out folder> <spec.json>
 ## spec.json: {"character": id, "cell": [w, h], "yaw_deg": 35, "pitch_deg": 8, "fps": 24,
 ##             "clips": [{"name": animation, "label": short name, "times": [s, ...], "note": title text,

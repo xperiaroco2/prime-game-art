@@ -3,8 +3,9 @@ extends SceneTree
 ## the kit v2 fence, gates and outdoor stairs placed by house_outdoor.py, the ground (outdoor.glb: `-col` meshes make
 ## their colliders), the backdrop's flats (backdrop.glb: unlit, out of GI and shadows), the painted sky as a panorama,
 ## fog, grey stand-in blocks and prop boxes, warm stand-in lamps; capsules walk it and cameras shoot it.
-## Pictures need a real window placed off-screen (the runner, _godot.window(), opens one pixel that lib/offscreen.gd moves off-screen, #214), never headless:
-##   PRIME_WINDOW=1600x900 godot --path godot --resolution 1x1 -s res://outdoor/proof.gd -- <request.json> <out>
+## Pictures need a real window placed off-screen (_godot.window() and lib/offscreen.gd, #214), never headless:
+##   PRIME_WINDOW=1600x900 godot --path godot --position 30000,30000 --resolution 1x1 -s res://outdoor/proof.gd
+##       -- <request.json> <out>
 ## request.json (tools/runner/house_outdoor_scene.py): {"pieces": {id: res}, "placed": [[id, [x, y, z], yaw]],
 ##   "ground": res, "backdrop": res, "sky": png, "fog": [begin, end], "pack": {...}, "blocks": [{"id", "at", "size",
 ##   "color", "yaw"}], "lights": [[x, h, z, energy, range]], "walks": {name: {"r", "points", "must_pass"}},

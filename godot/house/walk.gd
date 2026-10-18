@@ -4,7 +4,8 @@ extends SceneTree
 ## flight, shoots eye-height stills (1.6 m), a top-down plan of the ground floor with room labels and an aerial view,
 ## and counts the shell's draw calls per view; then the exterior's four sides at dusk (exterior.png), the kit's own
 ## colours, with each `Placeholders` marker drawn as a see-through orange box (its `size` metadata, from the bottom up). Pictures need a real window placed off-screen, never headless:
-##   PRIME_WINDOW=1600x900 godot --path godot --resolution 1x1 -s res://house/walk.gd -- <request.json> <out dir>
+##   PRIME_WINDOW=1600x900 godot --path godot --position 30000,30000 --resolution 1x1 -s res://house/walk.gd
+##       -- <request.json> <out dir>
 ## request.json: house_layout.walk_request(): {"walks": [{"name", "kind", "points": [[x, h, z], ...]}], "pads": [...],
 ## "rooms": [{"level", "id", "title", "rect", "kind", "floor_y"}], "levels": {"<level>": {"node", "floor_y"}}}.
 ## Writes <out>/<shot>.png, <out>/sheet.png, <out>/exterior.png, with upper rooms or a loop <out>/upper.png (all

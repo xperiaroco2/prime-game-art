@@ -5,8 +5,9 @@ extends SceneTree
 ## kit pieces with the `set` pack's shader (kit_materials.gd), lit with the
 ## house lab's round-3 settings (r3_v1 knobs: dusk sky, fog, sun, warm lamps c2, filmic exposure 1.5, saturation 1.35,
 ## SSAO; SDFGI stands in for the lab's baked LightmapGI), walked by capsules and shot at eye height 1.6 m.
-## Pictures need a real window placed off-screen (the runner, _godot.window(), opens one pixel that lib/offscreen.gd moves off-screen, #214), never headless:
-##   PRIME_WINDOW=1600x900 godot --path godot --resolution 1x1 -s res://kit/proof.gd -- <request.json> <out dir>
+## Pictures need a real window placed off-screen (_godot.window() and lib/offscreen.gd, #214), never headless:
+##   PRIME_WINDOW=1600x900 godot --path godot --position 30000,30000 --resolution 1x1 -s res://kit/proof.gd
+##       -- <request.json> <out dir>
 ## request.json: {"pieces": {"<id>": {"scene": "res://import/kit_<id>.glb", "min": [x, y, z], "max": [x, y, z]}},
 ##   "groups": [[title, [ids], view pitch deg]], "attic": [[id, deg, [x, y, z]]], "gazebo": [...], "man": "<glb>",
 ##   "pack": {"textures": dir, "roughness": [3], "normal_strength": [3]}, "version": n, "pitch": rise per m}.

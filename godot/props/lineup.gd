@@ -3,8 +3,9 @@ extends SceneTree
 ## imported props in rows of similar height, each row beside a 1.8 m capsule for scale, every prop labelled with its id,
 ## shot by an orthographic camera from the front-right and above, the kit's `set` pack shader on the `kit_set` surfaces
 ## (kit/kit_materials.gd) and a small warm light at each fixture's LightAnchor.
-## Pictures need a real window placed off-screen (the runner, _godot.window(), opens one pixel that lib/offscreen.gd moves off-screen, #214), never headless:
-##   PRIME_WINDOW=1600x900 godot --path godot --resolution 1x1 -s res://props/lineup.gd -- <request.json> <out dir>
+## Pictures need a real window placed off-screen (_godot.window() and lib/offscreen.gd, #214), never headless:
+##   PRIME_WINDOW=1600x900 godot --path godot --position 30000,30000 --resolution 1x1 -s res://props/lineup.gd
+##       -- <request.json> <out dir>
 ## request.json: {"textures": "<dir with set_d.png ...>", "pack": {"roughness": [..], "normal_strength": [..]},
 ##   "fine": {"folder": "<textures/fine/<tier>>", "json": "<textures/fine/fine.json>", "tier": "high"} (optional),
 ##   "sheets": [{"file": "lineup_1.png", "title": "...", "rows": [[{"id", "scene", "min": [x, y, z], "max": [..]}]]}]}.

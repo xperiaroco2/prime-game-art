@@ -136,7 +136,8 @@ def bake_variant(zone: str, v: dict, work: Path, raw: Path, no_bake: bool) -> di
     project = Path(_godot.PROJECT) / "project.godot"
     kept = project.read_bytes()  # the editor rewrites the committed file's header comment on save: put it back
     try:
-        # the editor window shows (at its minimum size, at the screen's corner) until lmbake.gd moves it (#214)
+        # the editor ignores the 1x1 borderless start: part of its window shows at the screen's corner during its
+        # start-up, until lmbake.gd moves it off-screen (#214, docs/godot.md "The off-screen window")
         code, out = _godot.window(["--editor", "--path", _godot.PROJECT, "--", f"lmbake={scene}"], (1280, 720),
                                   TIMEOUT)
     finally:
