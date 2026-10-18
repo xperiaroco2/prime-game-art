@@ -1,0 +1,43 @@
+# art#196, the "ultra first" master (the engineer, 2026-10-18 ~16:00 UTC): the best the generator gives, before any
+# optimisation. The same approved three views (sheet 10b's turnaround u1), T-pose (palms down, fingers straight), the
+# highest geometry multi-image to 3D takes (2k) and an 8k PBR texture (base colour, normal, roughness), no remesh. Two
+# generations of the same input (u1, u2), because a generation varies (t1 fused the fingers, t2 kept them apart).
+# Under the standing permission for Meshy generation within the plan's credits (2026-10-03, art#16). Schema:
+# docs/meshy.md.
+
+id = "2026-10-18-alien-3d-master1"
+purpose = "The ultra master of the alien base for art#196: T-pose, 2k geometry, 8k PBR texture, two generations."
+plan = "Meshy paid plan (monthly; bought by the engineer on 2026-10-17)"
+terms_url = "https://www.meshy.ai/terms-of-use"
+licence = "owned by the customer on a paid plan (Meshy Terms of Use 3.2, updated 2026-09-19); no attribution required"
+credit_cap = 90
+approved_by = "xperiaroco2 (the engineer)"
+approved_at = "2026-10-03"
+approval_ref = "https://github.com/xperiaroco2/prime-game-art/issues/16"
+
+[defaults.multi_image_to_3d.params]
+ai_model = "meshy-7.1"
+geometry_resolution = "2k"
+should_texture = true
+enable_pbr = true
+texture_resolution = "8k"
+pose_mode = "t-pose"
+target_formats = ["glb"]
+
+[[items]]
+id = "u1"
+kind = "multi_image_to_3d"
+images = [
+  { file = "raw:2026-10-18-alien-2d-turn2/u1/image_to_image-multi_view_image_01a14c18-9ad5-77dd-9793-c1631b328463_part_0.png", provenance = "own Meshy generation, batch 2026-10-18-alien-2d-turn2 item u1 view 0 (front), art#196", sha256 = "d8c6ef6483406beb20b4e065268527c7daa9ae34161e467c7623aa4c4a39d23a" },
+  { file = "raw:2026-10-18-alien-2d-turn2/u1/image_to_image-multi_view_image_01a14c18-9ad5-77dd-9793-c1631b328463_part_1.png", provenance = "own Meshy generation, batch 2026-10-18-alien-2d-turn2 item u1 view 1, art#196", sha256 = "ad8639e5d530ba0cd9bc8b6163311d95874e178048cc839e7d6faff3c44677ea" },
+  { file = "raw:2026-10-18-alien-2d-turn2/u1/image_to_image-multi_view_image_01a14c18-9ad5-77dd-9793-c1631b328463_part_2.png", provenance = "own Meshy generation, batch 2026-10-18-alien-2d-turn2 item u1 view 2, art#196", sha256 = "3427f3474f90dff3cd9e8492e0fd4936e305710978016736ede2d068f6092dff" },
+]
+
+[[items]]
+id = "u2"
+kind = "multi_image_to_3d"
+images = [
+  { file = "raw:2026-10-18-alien-2d-turn2/u1/image_to_image-multi_view_image_01a14c18-9ad5-77dd-9793-c1631b328463_part_0.png", provenance = "own Meshy generation, batch 2026-10-18-alien-2d-turn2 item u1 view 0 (front), art#196", sha256 = "d8c6ef6483406beb20b4e065268527c7daa9ae34161e467c7623aa4c4a39d23a" },
+  { file = "raw:2026-10-18-alien-2d-turn2/u1/image_to_image-multi_view_image_01a14c18-9ad5-77dd-9793-c1631b328463_part_1.png", provenance = "own Meshy generation, batch 2026-10-18-alien-2d-turn2 item u1 view 1, art#196", sha256 = "ad8639e5d530ba0cd9bc8b6163311d95874e178048cc839e7d6faff3c44677ea" },
+  { file = "raw:2026-10-18-alien-2d-turn2/u1/image_to_image-multi_view_image_01a14c18-9ad5-77dd-9793-c1631b328463_part_2.png", provenance = "own Meshy generation, batch 2026-10-18-alien-2d-turn2 item u1 view 2, art#196", sha256 = "3427f3474f90dff3cd9e8492e0fd4936e305710978016736ede2d068f6092dff" },
+]

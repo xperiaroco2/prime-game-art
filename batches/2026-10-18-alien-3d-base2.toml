@@ -1,0 +1,112 @@
+# art#196, the Meshy-native test (the engineer's note of 2026-10-18, comment 6250379091): can Meshy give the base a
+# clean mesh at our density and a standard pose itself, instead of our decimate, remesh and heuristic skeleton fit?
+# The same approved three views as base1 (sheet 10b's turnaround u1). t1: T-pose with Meshy's quad remesh at 30k in
+# the generation; t2: T-pose at full density, then the Remesh API to 30k quad; t3 (control, run only if needed): the
+# A-pose with the same remesh as t1. Meshy's rigger and four library clips (Idle, Run 2, Casual Walk, Talk with Hands
+# Open) on t1 and t2 show its own joint placement on the hands and legs; b1-rig puts the same rigger and clips on the
+# approved base1 sculpt itself (A-pose) as a control. Under the standing permission for Meshy
+# generation within the plan's credits (2026-10-03, art#16). Schema: docs/meshy.md.
+
+id = "2026-10-18-alien-3d-base2"
+purpose = "The Meshy-native base test for art#196: T-pose, quad remesh at about 30k, Meshy's rig and clips, against the finished base."
+plan = "Meshy paid plan (monthly; bought by the engineer on 2026-10-17)"
+terms_url = "https://www.meshy.ai/terms-of-use"
+licence = "owned by the customer on a paid plan (Meshy Terms of Use 3.2, updated 2026-09-19); no attribution required"
+credit_cap = 190
+approved_by = "xperiaroco2 (the engineer)"
+approved_at = "2026-10-03"
+approval_ref = "https://github.com/xperiaroco2/prime-game-art/issues/16"
+
+[defaults.multi_image_to_3d.params]
+ai_model = "meshy-7.1"
+geometry_resolution = "2k"
+should_texture = true
+texture_resolution = "2k"
+pose_mode = "t-pose"
+target_formats = ["glb"]
+
+[defaults.rig.params]
+height_meters = 1.81
+
+[defaults.animate.params]
+action_ids = [0, 14, 30, 313]
+
+[[items]]
+id = "t1"
+kind = "multi_image_to_3d"
+params = { should_remesh = true, topology = "quad", target_polycount = 30000 }
+images = [
+  { file = "raw:2026-10-18-alien-2d-turn2/u1/image_to_image-multi_view_image_01a14c18-9ad5-77dd-9793-c1631b328463_part_0.png", provenance = "own Meshy generation, batch 2026-10-18-alien-2d-turn2 item u1 view 0 (front), art#196", sha256 = "d8c6ef6483406beb20b4e065268527c7daa9ae34161e467c7623aa4c4a39d23a" },
+  { file = "raw:2026-10-18-alien-2d-turn2/u1/image_to_image-multi_view_image_01a14c18-9ad5-77dd-9793-c1631b328463_part_1.png", provenance = "own Meshy generation, batch 2026-10-18-alien-2d-turn2 item u1 view 1, art#196", sha256 = "ad8639e5d530ba0cd9bc8b6163311d95874e178048cc839e7d6faff3c44677ea" },
+  { file = "raw:2026-10-18-alien-2d-turn2/u1/image_to_image-multi_view_image_01a14c18-9ad5-77dd-9793-c1631b328463_part_2.png", provenance = "own Meshy generation, batch 2026-10-18-alien-2d-turn2 item u1 view 2, art#196", sha256 = "3427f3474f90dff3cd9e8492e0fd4936e305710978016736ede2d068f6092dff" },
+]
+
+[[items]]
+id = "t2"
+kind = "multi_image_to_3d"
+images = [
+  { file = "raw:2026-10-18-alien-2d-turn2/u1/image_to_image-multi_view_image_01a14c18-9ad5-77dd-9793-c1631b328463_part_0.png", provenance = "own Meshy generation, batch 2026-10-18-alien-2d-turn2 item u1 view 0 (front), art#196", sha256 = "d8c6ef6483406beb20b4e065268527c7daa9ae34161e467c7623aa4c4a39d23a" },
+  { file = "raw:2026-10-18-alien-2d-turn2/u1/image_to_image-multi_view_image_01a14c18-9ad5-77dd-9793-c1631b328463_part_1.png", provenance = "own Meshy generation, batch 2026-10-18-alien-2d-turn2 item u1 view 1, art#196", sha256 = "ad8639e5d530ba0cd9bc8b6163311d95874e178048cc839e7d6faff3c44677ea" },
+  { file = "raw:2026-10-18-alien-2d-turn2/u1/image_to_image-multi_view_image_01a14c18-9ad5-77dd-9793-c1631b328463_part_2.png", provenance = "own Meshy generation, batch 2026-10-18-alien-2d-turn2 item u1 view 2, art#196", sha256 = "3427f3474f90dff3cd9e8492e0fd4936e305710978016736ede2d068f6092dff" },
+]
+
+[[items]]
+id = "t2-remesh"
+kind = "remesh"
+source = "t2"
+params = { topology = "quad", target_polycount = 30000, target_formats = ["glb"] }
+
+[[items]]
+id = "t1-rig"
+kind = "rig"
+source = "t1"
+
+[[items]]
+id = "t1-anim"
+kind = "animate"
+source = "t1-rig"
+
+[[items]]
+id = "t2-rig"
+kind = "rig"
+source = "t2"
+
+[[items]]
+id = "t2-anim"
+kind = "animate"
+source = "t2-rig"
+
+[[items]]
+id = "t3"
+kind = "multi_image_to_3d"
+params = { pose_mode = "a-pose", should_remesh = true, topology = "quad", target_polycount = 30000 }
+images = [
+  { file = "raw:2026-10-18-alien-2d-turn2/u1/image_to_image-multi_view_image_01a14c18-9ad5-77dd-9793-c1631b328463_part_0.png", provenance = "own Meshy generation, batch 2026-10-18-alien-2d-turn2 item u1 view 0 (front), art#196", sha256 = "d8c6ef6483406beb20b4e065268527c7daa9ae34161e467c7623aa4c4a39d23a" },
+  { file = "raw:2026-10-18-alien-2d-turn2/u1/image_to_image-multi_view_image_01a14c18-9ad5-77dd-9793-c1631b328463_part_1.png", provenance = "own Meshy generation, batch 2026-10-18-alien-2d-turn2 item u1 view 1, art#196", sha256 = "ad8639e5d530ba0cd9bc8b6163311d95874e178048cc839e7d6faff3c44677ea" },
+  { file = "raw:2026-10-18-alien-2d-turn2/u1/image_to_image-multi_view_image_01a14c18-9ad5-77dd-9793-c1631b328463_part_2.png", provenance = "own Meshy generation, batch 2026-10-18-alien-2d-turn2 item u1 view 2, art#196", sha256 = "3427f3474f90dff3cd9e8492e0fd4936e305710978016736ede2d068f6092dff" },
+]
+
+[[items]]
+id = "b1-rig"
+kind = "rig"
+model = { file = "raw:2026-10-18-alien-3d-base1/b1/multi_image_to_3d-model.glb", provenance = "own Meshy generation, batch 2026-10-18-alien-3d-base1 item b1, art#196", sha256 = "d2ba2071ccb112045de74efcfbadef0b08998abac1d7c5a68cceaf22a42dcb70" }
+texture = { file = "raw:2026-10-18-alien-3d-base1/b1/multi_image_to_3d-texture_0.png", provenance = "own Meshy generation, batch 2026-10-18-alien-3d-base1 item b1 (its base colour), art#196", sha256 = "65ac0c97998ae416d2b018dac9c4ff41c5e57a84d5aa8e7955040713186c4ed9" }
+
+[[items]]
+id = "b1-anim"
+kind = "animate"
+source = "b1-rig"
+
+# Meshy's target_polycount counts quads: t1 at 30,000 came out at 54,866 triangles, over the body cap of 30,000
+# triangles. These two remesh the T-pose models to 15,000 quads (about 30,000 triangles).
+[[items]]
+id = "t1-remesh15"
+kind = "remesh"
+source = "t1"
+params = { topology = "quad", target_polycount = 15000, target_formats = ["glb"] }
+
+[[items]]
+id = "t2-remesh15"
+kind = "remesh"
+source = "t2"
+params = { topology = "quad", target_polycount = 15000, target_formats = ["glb"] }
