@@ -64,6 +64,31 @@ def tool_path(env_name: str, default: str | None) -> Path | None:
     return Path(value) if value else None
 
 
+def have_display() -> bool:
+    """Whether this process can open a window that draws. Windows: its window station is interactive (WSF_VISIBLE,
+    the test .NET's Environment.UserInteractive makes), so a service or session-0 task says no; elsewhere DISPLAY or
+    WAYLAND_DISPLAY is set."""
+    if os.name != "nt":
+        return bool(os.environ.get("DISPLAY") or os.environ.get("WAYLAND_DISPLAY"))
+    import ctypes
+    from ctypes import wintypes
+
+    class UserObjectFlags(ctypes.Structure):
+        _fields_ = [("fInherit", wintypes.BOOL), ("fReserved", wintypes.BOOL), ("dwFlags", wintypes.DWORD)]
+
+    user32 = ctypes.WinDLL("user32", use_last_error=True)
+    user32.GetProcessWindowStation.restype = wintypes.HANDLE
+    user32.GetUserObjectInformationW.argtypes = [wintypes.HANDLE, ctypes.c_int, ctypes.c_void_p, wintypes.DWORD,
+                                                 ctypes.POINTER(wintypes.DWORD)]
+    station = user32.GetProcessWindowStation()
+    flags, needed = UserObjectFlags(), wintypes.DWORD()
+    uoi_flags, wsf_visible = 1, 0x0001
+    if not station or not user32.GetUserObjectInformationW(station, uoi_flags, ctypes.byref(flags),
+                                                           ctypes.sizeof(flags), ctypes.byref(needed)):
+        return False
+    return bool(flags.dwFlags & wsf_visible)
+
+
 def blender_bin() -> Path:
     path = tool_path(pins.BLENDER_ENV, pins.BLENDER_DEFAULT)
     if not path or not path.is_file():

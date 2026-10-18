@@ -4,7 +4,6 @@ Skips without Godot, a display or the GLB."""
 
 import argparse
 import json
-import os
 import sys
 import tempfile
 import unittest
@@ -18,7 +17,7 @@ from runner.commands import bench  # noqa: E402
 GLB = common.ROOT / "assets" / "character" / "slice_m1" / "export" / "slice_m1.glb"
 HAVE_GODOT = common.tool_path(pins.GODOT_ENV, None) is not None
 HAVE_GLB = GLB.is_file() and GLB.stat().st_size > 100_000
-HAVE_DISPLAY = os.name == "nt" or bool(os.environ.get("DISPLAY") or os.environ.get("WAYLAND_DISPLAY"))
+HAVE_DISPLAY = common.have_display()  # an interactive desktop (Windows) or DISPLAY/WAYLAND_DISPLAY
 
 
 @unittest.skipUnless(HAVE_GODOT and HAVE_GLB and HAVE_DISPLAY, "needs Godot, a display and slice_m1.glb")
