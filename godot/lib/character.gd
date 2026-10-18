@@ -69,6 +69,63 @@ static func skinned_points(mesh: MeshInstance3D, stride: int = 1) -> PackedVecto
 	return out
 
 
+## The name of the bone with the largest skin weight at each of mesh's vertices, in skinned_points(mesh)'s order; ""
+## for a vertex without weights; empty when the mesh has no skin bound to a skeleton.
+static func dominant_bones(mesh: MeshInstance3D) -> PackedStringArray:
+	var out: PackedStringArray = PackedStringArray()
+	var skin: Skin = mesh.skin
+	var skeleton: Skeleton3D = mesh.get_node_or_null(mesh.skeleton) as Skeleton3D if not mesh.skeleton.is_empty() else null
+	if mesh.mesh == null or skin == null or skeleton == null:
+		return out
+	var names: PackedStringArray = PackedStringArray()
+	for j: int in skin.get_bind_count():
+		var bind_name: StringName = skin.get_bind_name(j)
+		var bone: int = skeleton.find_bone(bind_name) if not str(bind_name).is_empty() else skin.get_bind_bone(j)
+		names.append(skeleton.get_bone_name(bone) if bone >= 0 and bone < skeleton.get_bone_count() else "")
+	for s: int in mesh.mesh.get_surface_count():
+		var arrays: Array = mesh.mesh.surface_get_arrays(s)
+		var count: int = (arrays[Mesh.ARRAY_VERTEX] as PackedVector3Array).size()
+		var bones: PackedInt32Array = arrays[Mesh.ARRAY_BONES] if arrays[Mesh.ARRAY_BONES] != null else PackedInt32Array()
+		var weights: PackedFloat32Array = arrays[Mesh.ARRAY_WEIGHTS] if arrays[Mesh.ARRAY_WEIGHTS] != null else PackedFloat32Array()
+		var per: int = bones.size() / count if count > 0 else 0
+		for i: int in count:
+			var best: String = ""
+			var most: float = 0.0
+			for k: int in per:
+				var w: float = weights[i * per + k]
+				var b: int = bones[i * per + k]
+				if w > most and b >= 0 and b < names.size():
+					most = w
+					best = names[b]
+			out.append(best)
+	return out
+
+
+## Per bone, the bounds of mesh's skinned rest points whose largest weight is that bone's: {"<bone>": {"min", "max"}}.
+## godot-check's facing_plus_z measures a barefoot body's feet with it (the foot and toe bones' skin).
+static func bone_bounds(mesh: MeshInstance3D) -> Dictionary:
+	var owners: PackedStringArray = dominant_bones(mesh)
+	var points: PackedVector3Array = skinned_points(mesh)
+	var lows: Dictionary = {}
+	var highs: Dictionary = {}
+	if owners.size() != points.size():
+		return {}
+	for i: int in points.size():
+		var bone: String = owners[i]
+		if bone.is_empty():
+			continue
+		if lows.has(bone):
+			lows[bone] = (lows[bone] as Vector3).min(points[i])
+			highs[bone] = (highs[bone] as Vector3).max(points[i])
+		else:
+			lows[bone] = points[i]
+			highs[bone] = points[i]
+	var out: Dictionary = {}
+	for bone: String in lows:
+		out[bone] = {"min": vec(lows[bone]), "max": vec(highs[bone])}
+	return out
+
+
 ## {"min": [x, y, z], "max": [x, y, z]} of points; empty when there are none.
 static func bounds(points: PackedVector3Array) -> Dictionary:
 	if points.is_empty():

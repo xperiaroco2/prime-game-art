@@ -103,6 +103,43 @@ class EvaluateTest(unittest.TestCase):
         d["meshes"][1]["rest_bounds"].update(min=[-0.06, 1.69, 0.14], max=[0.06, 1.70, 0.17])  # eyes at 1.695 m
         self.assertEqual(statuses(d, e, strict=True)["contract_eye_height"], "warn")  # the contract's eyes rule is warn
 
+    def test_a_barefoot_body_faces_by_its_foot_and_toe_skin(self) -> None:
+        def barefoot(toe_z: float, heel_z: float) -> dict:
+            d = dump()
+            body = mesh("x_body", [-0.19, -0.001, heel_z], [0.19, 1.76, 0.2])
+            body["bone_bounds"] = {"Head": {"min": [-0.1, 1.45, -0.04], "max": [0.1, 1.76, 0.17]},
+                                   "Foot.L": {"min": [0.05, 0.0, heel_z], "max": [0.19, 0.1, 0.12]},
+                                   "Toe.L": {"min": [0.06, 0.0, 0.12], "max": [0.18, 0.05, toe_z]},
+                                   "Foot.R": {"min": [-0.19, 0.0, heel_z], "max": [-0.05, 0.1, 0.12]}}
+            d["meshes"][1]["bone_bounds"] = {"Head": {"min": [-0.06, 1.60, 0.14], "max": [0.06, 1.63, 0.17]}}
+            d["meshes"] = [body, d["meshes"][1]]
+            return d
+
+        def facing(d: dict) -> dict:
+            e = {**expect(), "parts": ["x_body", "x_eyes"]}
+            return next(c for c in _godot.evaluate(d, e, CONTRACT, []) if c["check"] == "facing_plus_z")
+
+        good = facing(barefoot(toe_z=0.25, heel_z=-0.02))
+        self.assertEqual(good["status"], "pass", good)
+        self.assertIn("bare feet reach 19.0 cm forward and 8.0 cm back", good["detail"])
+        backwards = facing(barefoot(toe_z=0.08, heel_z=-0.2))  # heels further out than toes: the feet face -Z
+        self.assertEqual(backwards["status"], "fail", backwards)
+        bare = barefoot(toe_z=0.25, heel_z=-0.02)
+        bare["meshes"][0]["bone_bounds"] = {"Head": bare["meshes"][0]["bone_bounds"]["Head"]}  # no skin on the feet
+        unsure = facing(bare)
+        self.assertEqual(unsure["status"], "fail")
+        self.assertTrue(unsure["detail"].startswith("cannot tell"), unsure)
+        older = barefoot(toe_z=0.25, heel_z=-0.02)  # an inspect.json from before bone_bounds
+        older["meshes"][0].pop("bone_bounds")
+        self.assertTrue(facing(older)["detail"].startswith("cannot tell"))
+
+    def test_the_shoes_part_wins_over_the_body_feet(self) -> None:
+        d = dump()
+        d["meshes"][0]["bone_bounds"] = {"Foot.L": {"min": [0.05, 0.0, -0.5], "max": [0.19, 0.1, 0.0]}}  # would fail
+        got = next(c for c in _godot.evaluate(d, expect(), CONTRACT, []) if c["check"] == "facing_plus_z")
+        self.assertEqual(got["status"], "pass", got)
+        self.assertIn("shoes reach", got["detail"])
+
     def test_renamed_bones_are_compared_through_the_map(self) -> None:
         renamed = {"Wrist.L": "LeftHand", "Wrist.R": "RightHand", "Foot.L": "LeftFoot", "Foot.R": "RightFoot"}
         d = dump()

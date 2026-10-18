@@ -32,6 +32,9 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--asset", type=Path, help="also write the asset folder here (assets/character/slice_<cast>)")
     parser.add_argument("--review", type=Path, help="copy the review sheets here")
     parser.add_argument("--no-frames", action="store_true", help="skip frames and the turnaround")
+    parser.add_argument("--own-proportions", action="store_true",
+                        help="accept a character skeleton that differs from the set's donor (default: within 2 mm) and "
+                             "scale the clips' root and hip location keys to its leg length (art #207)")
 
 
 def _runner(*args: str) -> int:
@@ -209,7 +212,8 @@ def run(args: argparse.Namespace) -> int:
     blender.run_script("slice_actions.py", ["--character", str(blend), "--anim", str(anim_blend), "--clips",
                                             ",".join(r["name"] for r in rows), "--out", str(sliced), "--json",
                                             str(out / "blend" / f"{asset_id}.actions.json")]
-                       + (["--eye-height", str(settings["eye_height_m"])] if settings.get("eye_height_m") else []),
+                       + (["--eye-height", str(settings["eye_height_m"])] if settings.get("eye_height_m") else [])
+                       + (["--own-proportions"] if args.own_proportions else []),
                        timeout=900)
     common.ok(f"{len(rows)} clips on {sliced}")
     exp = out / "export"

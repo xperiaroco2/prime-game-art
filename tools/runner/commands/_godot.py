@@ -438,25 +438,40 @@ def _loops(c: Checks, anims: dict[str, Any], seams: dict[str, dict[str, float]])
     c.add("loop_modes", not once, detail, "warn")
 
 
+def _body_feet(dump: dict[str, Any], bones: list[str]) -> dict[str, list[float]] | None:
+    """A barefoot character's feet: the bounds of the skin whose largest weight is a foot or toe bone, over every part
+    but the eyes (inspect.gd's bone_bounds); None when no part has skin on those bones."""
+    boxes = [m["bone_bounds"][b] for m in dump["meshes"] if not m["name"].endswith("_eyes")
+             for b in bones if (m.get("bone_bounds") or {}).get(b)]
+    if not boxes:
+        return None
+    return {"min": [min(b["min"][i] for b in boxes) for i in range(3)],
+            "max": [max(b["max"][i] for b in boxes) for i in range(3)]}
+
+
 def _facing(c: Checks, dump: dict[str, Any], skeleton: dict[str, Any], renamed: dict[str, str]) -> None:
     """Front +Z: the eyes in front of the Head joint, the shoes reaching further forward than back from the ankles, and
-    the character's left wrist at +X."""
+    the character's left wrist at +X. Without a _shoes part (a barefoot body, art #196) the body's feet stand in: the
+    skin weighted mostly to the Foot and Toe bones."""
     joints = skeleton["rest_joints"]
     name = lambda bone: renamed.get(bone, bone)  # noqa: E731
     needed = [name(b) for b in ("Head", "Foot.L", "Foot.R", "Wrist.L", "Wrist.R")]
     eyes, shoes = _part(dump, "eyes"), _part(dump, "shoes")
-    if not all(b in joints for b in needed) or eyes is None or shoes is None:
-        c.add("facing_plus_z", False, f"cannot tell: needs the bones {needed}, an _eyes and a _shoes part")
+    feet, what = (shoes["rest_bounds"], "shoes") if shoes is not None else (
+        _body_feet(dump, [name(b) for b in ("Foot.L", "Foot.R", "Toe.L", "Toe.R")]), "bare feet")
+    if not all(b in joints for b in needed) or eyes is None or feet is None:
+        c.add("facing_plus_z", False, f"cannot tell: needs the bones {needed}, an _eyes part, and a _shoes part or "
+              f"skin on the foot and toe bones")
         return
     head, foot_l, foot_r, wrist_l, wrist_r = (joints[b] for b in needed)
     ahead = _centre(eyes["rest_bounds"])[2] - head[2]
     foot_z = (foot_l[2] + foot_r[2]) / 2
-    toes = shoes["rest_bounds"]["max"][2] - foot_z
-    heels = foot_z - shoes["rest_bounds"]["min"][2]
+    toes = feet["max"][2] - foot_z
+    heels = foot_z - feet["min"][2]
     left = wrist_l[0] - wrist_r[0]
     good = ahead >= FACE_AHEAD_M and toes > heels and left > 0
-    c.add("facing_plus_z", good, f"eyes {ahead * 100:+.1f} cm ahead of the Head joint, shoes reach {toes * 100:.1f} cm forward "
-          f"and {heels * 100:.1f} cm back from the ankles, left wrist at {'+X' if left > 0 else '-X'}")
+    c.add("facing_plus_z", good, f"eyes {ahead * 100:+.1f} cm ahead of the Head joint, {what} reach {toes * 100:.1f} cm "
+          f"forward and {heels * 100:.1f} cm back from the ankles, left wrist at {'+X' if left > 0 else '-X'}")
 
 
 def load_contract() -> dict[str, Any]:

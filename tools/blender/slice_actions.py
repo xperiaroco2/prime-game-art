@@ -12,6 +12,11 @@ character's rig and that the two rigs' rest poses agree (the toes excepted: thei
 copy at the set's 30 fps that `export --textured` accepts. With `--eye-height H` it then scales the whole character
 uniformly about the origin (the floor) so the eyes' rest centre is at H metres: the rig's rest, every part's mesh
 with its shape keys, and every clip's location keys (the engineer's `eyes16`, art #42).
+
+With `--own-proportions` (art #207) the character's skeleton may differ from the donor's (the alien base character's
+by up to 214 mm, art #196): the rest difference is only reported, and the clips' Root and Hips location keys (and the
+armature object's) scale by the character's leg length over the donor's, before any `--eye-height` scale. The rules
+live in slice_math.py.
 """
 
 from __future__ import annotations
@@ -25,10 +30,10 @@ import sys
 import bpy
 from mathutils import Matrix
 
-# The rest heads of the two rigs must agree within this (the set's donor and the character share the body type's
-# skeleton; the toes follow the shoe, so they differ and are only reported).
-REST_TOLERANCE_M = 0.002
-TOES = ("Toe.L", "Toe.R")
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import slice_math  # noqa: E402
+
+TOES = slice_math.TOES
 BONE_RE = re.compile(r'pose\.bones\["([^"]+)"\]')
 
 
@@ -79,6 +84,22 @@ def scale_character(arm, parts, actions, s):
     return keys
 
 
+def scale_leg_keys(actions, s):
+    """Scales the clips' Root and Hips location keys (and the armature object's) by s, the leg length ratio of
+    --own-proportions; the other bones' keys are rotations, which carry over to any proportions."""
+    keys = 0
+    for act in actions:
+        for fc in _fcurves(act):
+            if slice_math.scales_with_legs(fc.data_path):
+                for kp in fc.keyframe_points:
+                    kp.co[1] *= s
+                    kp.handle_left[1] *= s
+                    kp.handle_right[1] *= s
+                    keys += 1
+                fc.update()
+    return keys
+
+
 def main(argv):
     ap = argparse.ArgumentParser(prog="slice_actions.py")
     ap.add_argument("--character", required=True)
@@ -87,6 +108,8 @@ def main(argv):
     ap.add_argument("--out", required=True)
     ap.add_argument("--json", required=True)
     ap.add_argument("--eye-height", type=float, help="scale the character so its eyes' rest centre is at this height (m)")
+    ap.add_argument("--own-proportions", action="store_true",
+                    help="accept a skeleton that differs from the donor's; scale the root and hip keys to the leg length")
     a = ap.parse_args(argv)
     clips = [c for c in a.clips.split(",") if c]
 
@@ -119,11 +142,15 @@ def main(argv):
         rest[b.name] = (mine.head_local - b.head_local).length
     if set(bones) - set(rest):
         raise SystemExit(f"the character's rig has bones the set's has not: {sorted(set(bones) - set(rest))}")
-    body_err = max(v for k, v in rest.items() if k not in TOES)
-    if body_err > REST_TOLERANCE_M:
-        worst = max((k for k in rest if k not in TOES), key=rest.get)
-        raise SystemExit(f"the rest poses differ by {body_err * 1000:.2f} mm at {worst} (tolerance "
-                         f"{REST_TOLERANCE_M * 1000} mm)")
+    body_err, worst, refusal = slice_math.rest_check(rest, a.own_proportions)
+    if refusal:
+        raise SystemExit(refusal)
+    leg, leg_m = 1.0, None
+    if a.own_proportions:
+        mine_heads = {b.name: tuple(b.head_local) for b in arm.data.bones}
+        donor_heads = {b.name: tuple(b.head_local) for b in donor.bones}
+        leg = slice_math.leg_scale(mine_heads, donor_heads)
+        leg_m = [round(slice_math.leg_length(donor_heads), 4), round(slice_math.leg_length(mine_heads), 4)]
     bpy.data.armatures.remove(donor)
 
     actions = {}
@@ -141,6 +168,8 @@ def main(argv):
         pb.rotation_quaternion = (1.0, 0.0, 0.0, 0.0)
         pb.rotation_euler = (0.0, 0.0, 0.0)
         pb.scale = (1.0, 1.0, 1.0)
+
+    leg_keys = scale_leg_keys([bpy.data.actions[n] for n in actions], leg) if a.own_proportions else 0
 
     eyes_before = _eye_z(parts)
     scale, scaled_keys = 1.0, 0
@@ -160,13 +189,15 @@ def main(argv):
     report = {"character": a.character.replace("\\", "/"), "anim": a.anim.replace("\\", "/"),
               "out": a.out.replace("\\", "/"), "armature": arm.name, "bones": len(bones),
               "parts": [o.name for o in parts], "fps": 30, "dropped_actions": dropped, "actions": actions,
-              "rest_max_mm": round(body_err * 1000, 4),
+              "rest_max_mm": round(body_err * 1000, 4), "rest_worst": worst,
+              "own_proportions": a.own_proportions, "leg_m": leg_m, "leg_scale": round(leg, 6),
+              "leg_scaled_location_keys": leg_keys,
               "toes_rest_mm": {t: round(rest[t] * 1000, 2) for t in TOES if t in rest},
               "scale": round(scale, 6), "eyes_m": [round(eyes_before, 4), round(eyes_after, 4)],
               "scaled_location_keys": scaled_keys}
     with open(a.json, "w", encoding="utf-8") as fh:
         json.dump(report, fh, indent=1)
-    print("SLICE", json.dumps({k: report[k] for k in ("bones", "rest_max_mm", "toes_rest_mm", "scale", "eyes_m")}), len(actions), "clips")
+    print("SLICE", json.dumps({k: report[k] for k in ("bones", "rest_max_mm", "toes_rest_mm", "leg_scale", "scale", "eyes_m")}), len(actions), "clips")
 
 
 if __name__ == "__main__":

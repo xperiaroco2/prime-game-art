@@ -141,6 +141,7 @@ func _mesh(scene: Node, mesh: MeshInstance3D) -> Dictionary:
 		"vertices": vertices,
 		"materials": materials,
 		"rest_bounds": Character.bounds(Character.skinned_points(mesh)),
+		"bone_bounds": Character.bone_bounds(mesh),
 	}
 
 
