@@ -17,6 +17,7 @@ MASKS = "masks"
 
 
 NECK_RING_COUNT = 48  # S8b: the weld ring's vertices (S1's file has 24; the body's subdivided neck end has 48)
+RIB_START = 0.02  # a fin rib's first ring, as a share of its length from the shared root (art #226)
 
 
 def densify_ring(ring: dict, n: int = NECK_RING_COUNT) -> dict:
@@ -307,7 +308,11 @@ def fin(b: Built, root: Vector, out: Vector, up: Vector, mi, ribs, thick=0.0035,
             b.face((top[k][j], top[k][j + 1], bot[k][j + 1], bot[k][j]), mi)
     for ang, ln in ribs:  # ribs: raised tubes on both faces
         a = math.radians(ang)
-        cs = [at(math.cos(a) * ln * f, math.sin(a) * ln * f) for f in [i / 10 for i in range(11)]]
+        # Each rib starts RIB_START along its ray, not at the root: from one shared root point every rib's start cap
+        # had the same centre and the same two points on the membrane's normal, so two edges per fin were shared by
+        # six cap faces (non-manifold, art #226). The root sits inside the head, so the start does not show.
+        fs = [RIB_START + (1 - RIB_START) * i / 10 for i in range(11)]
+        cs = [at(math.cos(a) * ln * f, math.sin(a) * ln * f) for f in fs]
         rr = [rib_r * (1 - 0.55 * i / 10) for i in range(11)]
         tube(b, cs, rr, rr, [nrm] * 11, mi, seg=8,
              masks=[(0.0, smoothstep(0.35, 1.0, i / 10 * ln / lmax)) for i in range(11)])
