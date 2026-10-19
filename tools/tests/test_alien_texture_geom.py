@@ -96,7 +96,8 @@ class AlbedoTest(unittest.TestCase):
         self.assertGreater(cave[2] / cave[0], flat[2] / flat[0])  # bluer
         self.assertGreater(lum(bump), lum(flat))
 
-    def test_ao_is_half_strength(self):
+    def test_ao_scales_the_albedo_by_its_strength(self):
+        """A closed AO texel keeps 1 - `ao` of the albedo (M3a 0.5, M3c 0.4; the contact lift leaves 0 at 0)."""
         flat = G.albedo(field())
         dark = G.albedo(field(ao=0.0))
         for a, b in zip(dark, flat):
