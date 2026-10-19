@@ -5,10 +5,14 @@ into sheets of about 1280 px.
     blender -b --factory-startup --python-exit-code 1 --python tools/blender/alien_cage_review.py -- \
         --shots <character.blend> --tag <name> --out <dir>          (once per character)
     blender -b ... -- --sheets --tags first,cage --u1 <dir with the u1 *part_0..2.png> --out <dir>
+    blender -b ... -- --detail <character.blend> --tag <name> --out <dir>   (S8: hands and neck close, one sheet each)
 
 The shots: the silhouettes (front and side, orthographic, 640 px per metre), turntables at 1 m and 3 m (8 angles),
 Idle and Walk frames (3/4 view), the neck weld (4 views) and the left wrist (rest and in the Walk). The sheets put the
 characters' tiles side by side, u1 first in the silhouettes (scaled to the same metres per pixel, the soles aligned).
+--detail (S8): the left hand at 0.5 m (rest from four sides, a fist and a relaxed curl from two, the Walk and a talk
+clip) and the neck from the side and the back (rest, an Idle frame, the head turned, nodding down and up), as
+<out>/hands_<tag>.png and <out>/neck_<tag>.png.
 """
 from __future__ import annotations
 
@@ -243,11 +247,132 @@ def sheets(tags, u1, out):
               + [load(f"{out}/{t}/foot_walk_{k}.png") for k in range(2)] for t in tags], f"{out}/feet_{tg}.png")
 
 
+FINGER_SEGS = ("Proximal", "Intermediate", "Distal")
+
+
+def pose_rest(arm):
+    if arm.animation_data:
+        arm.animation_data.action = None
+    for pb in arm.pose.bones:
+        pb.rotation_mode = "QUATERNION"
+        pb.rotation_quaternion = (1, 0, 0, 0)
+        pb.location = (0, 0, 0)
+
+
+def turn_world(arm, name, axis, deg):
+    """Rotates a pose bone by deg about an armature-space axis (at rest, so its local frame is its rest frame)."""
+    from mathutils import Quaternion
+    b = arm.data.bones[name]
+    m = b.matrix_local.to_3x3()
+    q = Quaternion(m.inverted() @ Vector(axis).normalized(), math.radians(deg))
+    pb = arm.pose.bones[name]
+    pb.rotation_quaternion = q @ pb.rotation_quaternion
+
+
+def curl(arm, deg, thumb_deg):
+    """The left hand's fingers curled by deg per joint about the armature's +Y (fingers along +X curl down to the
+    palm), the thumb by thumb_deg toward the palm."""
+    for f in ("Index", "Middle", "Ring"):
+        for s, k in zip(FINGER_SEGS, (0.9, 1.1, 0.7)):
+            turn_world(arm, f"Left{f}{s}", (0, 1, 0), deg * k)
+    b = arm.data.bones["LeftThumbProximal"]
+    d = (b.tail_local - b.head_local).normalized()
+    ax = d.cross(Vector((0, 0, -1)))
+    for s in ("Proximal", "Distal"):
+        turn_world(arm, f"LeftThumb{s}", ax, thumb_deg)
+    turn_world(arm, "LeftThumbMetacarpal", (1, 0, 0), -0.5 * thumb_deg)
+
+
+def play(arm, sc, key, frac):
+    acts = [a for a in bpy.data.actions if key.lower() in a.name.lower()]
+    if not acts:
+        return None
+    act = acts[0]
+    arm.animation_data_create()
+    arm.animation_data.action = act
+    if act.slots:
+        arm.animation_data.action_slot = act.slots[0]
+    f0, f1 = act.frame_range
+    sc.frame_set(int(f0 + (f1 - f0) * frac))
+    bpy.context.view_layer.update()
+    return act.name
+
+
+def detail(blend, tag, out):
+    bpy.ops.wm.open_mainfile(filepath=blend)
+    arm = bpy.data.objects["CharacterArmature"]
+    for o in bpy.data.objects:
+        if o.name.startswith(("eye_", "mouth_", "mouthflip_", "crest_")) and not o.name.startswith(SHOW):
+            for c in [o] + list(o.children_recursive):
+                c.hide_render = True
+    print("ACTIONS", [a.name for a in bpy.data.actions])
+    d = f"{out}/{tag}"
+    os.makedirs(d, exist_ok=True)
+    sc, cam = setup((320, 320))
+    hand = lambda: arm.matrix_world @ arm.pose.bones["LeftHand"].head + Vector((0.09, 0.0, -0.01))  # noqa: E731
+    tiles = []
+    pose_rest(arm)
+    sc.frame_set(1)
+    bpy.context.view_layer.update()
+    views = {"top": (0.0, 0.0, 0.5), "palm": (0.0, 0.02, -0.5), "front": (0.05, -0.5, 0.02),
+             "34": (0.30, -0.30, 0.28)}
+    for k, off in views.items():
+        look(cam, hand() + Vector(off), hand(), lens=50)
+        shot(sc, f"{d}/hand_rest_{k}.png")
+        tiles.append(f"hand_rest_{k}")
+    for name, deg, tdeg in (("fist", 80, 45), ("relaxed", 28, 15)):
+        pose_rest(arm)
+        curl(arm, deg, tdeg)
+        bpy.context.view_layer.update()
+        for k in ("front", "34"):
+            look(cam, hand() + Vector(views[k]), hand(), lens=50)
+            shot(sc, f"{d}/hand_{name}_{k}.png")
+            tiles.append(f"hand_{name}_{k}")
+    for key, frac in (("Walk", 0.25), ("Talk", 0.5), ("Idle", 0.5)):
+        pose_rest(arm)
+        if play(arm, sc, key, frac) is None:
+            continue
+        w = arm.matrix_world @ arm.pose.bones["LeftHand"].head
+        look(cam, w + Vector((0.32, -0.32, 0.05)), w + Vector((0.0, -0.03, -0.06)), lens=50)
+        shot(sc, f"{d}/hand_{key.lower()}.png")
+        tiles.append(f"hand_{key.lower()}")
+    rows = [tiles[i:i + 4] for i in range(0, len(tiles), 4)]
+    grid([[load(f"{d}/{n}.png") for n in r] for r in rows], f"{out}/hands_{tag}.png")
+    # the neck: side and back, at rest, in an Idle frame, the head turned, nodding down and up
+    sc, cam = setup((320, 400))
+    neck = []
+
+    def neck_shots(label):
+        c = arm.matrix_world @ arm.pose.bones["Neck"].head + Vector((0, 0, 0.07))
+        for k, off in (("side", (0.6, 0.0, 0.03)), ("back", (0.0, 0.6, 0.03)), ("34b", (0.42, 0.42, 0.06))):
+            look(cam, c + Vector(off), c, lens=45)
+            shot(sc, f"{d}/neck_{label}_{k}.png")
+            neck.append(f"neck_{label}_{k}")
+    pose_rest(arm)
+    sc.frame_set(1)
+    bpy.context.view_layer.update()
+    neck_shots("rest")
+    pose_rest(arm)
+    if play(arm, sc, "Idle", 0.5):
+        neck_shots("idle")
+    for label, ax, deg in (("turn", (0, 0, 1), 40), ("down", (1, 0, 0), 25), ("up", (1, 0, 0), -20)):
+        pose_rest(arm)
+        sc.frame_set(1)
+        turn_world(arm, "Neck", ax, deg * 0.4)
+        turn_world(arm, "Head", ax, deg * 0.6)
+        bpy.context.view_layer.update()
+        neck_shots(label)
+    rows = [neck[i:i + 3] for i in range(0, len(neck), 3)]
+    rows = [sum(rows[i:i + 2], []) for i in range(0, len(rows), 2)]
+    grid([[load(f"{d}/{n}.png") for n in r] for r in rows], f"{out}/neck_{tag}.png")
+
+
 def main():
     p = argparse.ArgumentParser(prog="alien_cage_review.py")
     p.add_argument("--shots")
     p.add_argument("--tag")
     p.add_argument("--sheets", action="store_true")
+    p.add_argument("--detail")
     p.add_argument("--tags", default="first,cage")
     p.add_argument("--u1")
     p.add_argument("--out", required=True)
@@ -257,6 +382,8 @@ def main():
         shots(a.shots, a.tag, a.out)
     if a.sheets:
         sheets(a.tags.split(","), a.u1, a.out)
+    if a.detail:
+        detail(a.detail, a.tag, a.out)
 
 
 if __name__ == "__main__":
