@@ -1058,6 +1058,43 @@ a time, by visibility.
     (`--m2` is required; `export` also takes `--kit <the kit's export folder>`), in that order (about 90 s, 32 s,
     15 s and 10 s: start each in the background with its log under `tools/out/`), then `alien_texture_review.py`
     the same way; the normal map changes only with the high copy (M2's `--stage high`).
+- **M4, the modern eyes** (output under `D:/prime-art-raw/review/char/alien-parts-kit/M4/`). The designs, the lid
+  shells and the blink by lid rotation are unchanged; what is new is per pixel in Godot, plus one small strip per lid:
+  - `alien_eye.gdshader` (`cornea` 1; 0 keeps S9's painted eye for before/after sheets) draws a **cornea**: a sphere
+    through the limbus ring (`limbus_deg`, bored 27, manic 21) rising `bulge` 0.12 radii above the ball. It is
+    optical only: the lower lids' inner radius (1.012 r) leaves no room for a mesh bulge, so the ball stays a sphere.
+    Per pixel the camera ray (in the ball's model space) meets that sphere, is refracted (`ior` 1.336) and followed to
+    the iris plane `iris_depth` 0.05 below the limbus plane: the iris and pupil sit behind the cornea and shift as the
+    view turns. Their plane radii are solved (`front_rho`) so that seen along the axis they cover `iris_deg` and
+    `pupil_deg` as S9 did. The lights see the cornea's normal at `cornea_normal` (bored 0.4; manic 0.15 with a soft
+    edge of 8 degrees: more drew a ring round the dot pupil) and `cornea_roughness` 0.14 (0.03: a hard second dot;
+    0.06: a mottled softbox). The **catch light** reflects a view-space light (`catch_dir`) on the full cornea normal,
+    pulled 70 % toward a fixed place on the eye (`catch_anchor_deg`; bored just under the rest lid's rim, manic up
+    and left), so it moves a little as the view turns and never leaves the pupil (the rim hid a purely view-space one
+    at rest).
+  - The **iris** (bored): fine radial fibres (0.12), a faint lighter ring round the pupil, the darker limbal ring and
+    a warm glow low in the iris, all kept small so the iris still reads as S9's dark brown.
+  - The **lid shadow**: S9's broad shading under each lid edge, plus a narrow contact band (`contact_deg` 3.5) that
+    also feeds `AO` and dims the specular, clear coat and catch light; both follow the lid edges (`upper_edge_deg`,
+    `lower_edge_deg`, set by `alien.gd` from the lid rotations). The **white** falls toward the warm `shade` where it
+    turns from the view (`edge_falloff` 0.2; 0.35 bared the pale socket skin behind the ball's edge in a turned view)
+    and has a wet clear coat (`wet` 0.5, roughness 0.22).
+  - The **wet line**: `tools/blender/alien_eyes.py` (pure parts in `alien_eyes_geom.py`, test
+    `tools/tests/test_alien_eyes_geom.py`) hangs a strip `eye_<design>_wet_<upper|lower>_<side>` (288 triangles,
+    material `alien_wet`) under each lid as a child with an identity transform, so it turns with the lid: from the
+    ball just beyond the rolled rim (`WET["beyond_deg"]`) up under the rim (a meniscus, `fill`). `alien_wet.gdshader`
+    draws it as a half-transparent glossy film, faded at the corners, on the ball's side and toward the lid's edge
+    (the part under the rim showed as a pale shelf in a turned view; UV v is flipped by the exporter). `alien.gd`
+    turns its shadow off and fades it out as the lid edges close (`WET_OPEN_DEG`, the instance uniform `open`).
+  - `alien_eyes.py --kit <M3a/export> --out <M4> --eye-images <S9/parts/export>` also gives the eyeball materials a
+    clear coat (glTF `KHR_materials_clearcoat`) and puts the 512 px eye textures back: M3a's GLB had lost them (the
+    image files were not beside its .blend), so plain viewers drew white balls. It writes `M4/export/` (GLB 35.1 MB,
+    glTF-Validator 0 errors) with `character.json` (`nodes.eyes.<design>.<side>.wet_upper/wet_lower`,
+    `note_m4_eyes`).
+  - `eye_shots.gd`: the proof (spec in its header; run through `_godot.window()`): per design the face at 1.2 m
+    (three-quarter and front) and 0.4 m, a blink strip (open, rest, half, closed) and its zoom, the parallax sheet
+    (three yaws, S9's eye above M4's), before | after | target sheets from an earlier run's folder (`"before"`;
+    `"eye": {"cornea": 0}` renders S9's eye from the same script), and a tuning grid of eye and wet uniforms.
 
 ## Findings for later tasks
 
