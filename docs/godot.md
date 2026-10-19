@@ -724,6 +724,18 @@ a time, by visibility.
 - `proof.gd`: the off-screen proof (turntables, Idle and Walk, blink, talk, variants, hues, draw calls). No runner
   command calls it yet: run it by hand through `_godot.window()` with `--audio-driver Dummy` (the Dummy driver still mixes, so the analyzer sees the signal) and
   the Master bus muted. `make_test_speech.py` writes its test WAV (standard library).
+- **The mouths from 2D (step S6):** `tools/blender/alien_mouths.py` rebuilds both mouth designs' six pieces by
+  measuring their GPT talk-shape sheets (per pixel column the lip edges, the opening, tongue and teeth; method in its
+  docstring) on the assembled character, and writes the GLB again. The overbite's two teeth are now inside each
+  overbite piece (none in M), so `mouth_overbite_teeth` is gone; `alien.gd` still hides it when an older GLB has it.
+  The same script cuts the six panels' mouths into a 3 x 2 atlas (`mouth_flip_<design>.png`, alpha blended) and adds
+  one face shell per shape, `mouthflip_<design>_<shape>`: the flipbook test. `alien.gd`'s `set_mouth_mode("3d" |
+  "flip")` picks which the talk driver shows. `mouths.gd` is its off-screen proof (window 448 x 300): each shape as the
+  sheet's panel, the 3D piece and the flip shell at the same orthographic framing, both at 35 degrees, and both
+  talking side by side.
+  - The head is rigid and its lower face shorter and narrower than the sheets' (their jaw drops and cheeks stretch in
+    A, E and O), so the script squeezes a shape below the seam to stay above the chin (`CHIN_Z`) and in x to stay
+    within `FACE_FILL` of the face: the open shapes are flatter and narrower than their panels.
 
 ## Findings for later tasks
 
