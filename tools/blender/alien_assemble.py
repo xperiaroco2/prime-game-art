@@ -18,11 +18,14 @@ part export stays valid for a page that loads parts one by one.
 The method:
 1. Weld: the head's last 24 vertices lie on the body's neck ring (S2a, weld error 0); the two meshes are joined
    (vertex groups and UV layers by name), the coincident ring vertices merged, every custom normal cleared and the
-   whole mesh shaded smooth, so the ring's normals are the average over both sides' faces: no lighting seam.
-2. Masks (the `masks` UV layer, TEXCOORD_1, read by godot/alien/alien_hue.gdshader): u = light (mint), v = accent
-   (coral). The head keeps S2a's masks. On the body, u is the throat and belly: within BELLY_DEG of the front around
-   each height's trunk centre, on trunk-weighted skin only, its lower end an oval at the crotch; up the neck it blends
-   into the head ring's own values, so the mask is continuous at the weld. v is the knees (front), the elbows (back)
+   whole mesh shaded smooth, so the ring's normals are the average over both sides' faces: no lighting seam. The
+   band across the weld is then smoothed in x and y (NECK_SMOOTH), which eases the loft's pinch at the back of the neck.
+2. Masks (the `masks` UV layer, TEXCOORD_1, read by godot/alien/alien_hue.gdshader; the glTF export stores V
+   flipped, the shader flips it back): u = light, v = accent. The head keeps S2a's masks. On the body, u is the
+   throat and belly: the front half (in front of each height's midline centre, the middle of the vertices within
+   MIDLINE_X of x = 0) within BELLY_HALF_W of x = 0, a panel narrowing to the throat and ending in an oval at the
+   crotch (the T-pose arms lie outside it), neighbour-averaged MASK_SMOOTH times (the ring kept); up the neck it blends into the head ring's own
+   values, so the mask is continuous at the weld. v is the knees (front), the elbows (back)
    and the knuckles (the proximal finger joints and the thumb's), each a soft sphere on the skin of that limb.
 3. Parts: the socket empties are bone-parented to Head; each eye design and side gets its own node (eye_<design>_<L|R>)
    holding its ball and lids, the lids at the rest angle (parts.json: the lid's local X rotation); mouth pieces under
@@ -45,10 +48,13 @@ from mathutils import Vector
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import export_glb  # noqa: E402
 
-TRUNK = ("Hips", "Spine", "Chest", "UpperChest", "Neck", "Head")
-BELLY_DEG = 50.0  # half angle of the pale front, degrees around the trunk centre
-BELLY_SOFT = 9.0  # its soft edge, degrees
-CROTCH_Z = (0.80, 0.915)  # the oval's bottom and the height where it reaches its full width, m
+BELLY_HALF_W = [(0.78, 0.0), (0.82, 0.035), (0.90, 0.072), (1.00, 0.086), (1.15, 0.076), (1.30, 0.060), (1.40, 0.048)]
+# the pale panel's half width in x by height (z, m): u1's throat-to-belly panel, an oval at the crotch
+BELLY_SOFT = 0.012  # its soft edge, m
+NECK_SMOOTH = [((1.35, 1.435), 4), ((1.365, 1.425), 8)]  # (z band, m), passes: the neck's pinch across the weld
+NECK_R = 0.075  # only vertices this close to the ring's axis (the chin, from z 1.452 down to its underside, stays)
+MIDLINE_X = 0.05  # the trunk centre per height: the middle of the body's vertices within this of x = 0, m
+MASK_SMOOTH = 2  # neighbour-average passes over the body's light mask (the mesh is coarse: about 2 cm edges)
 NECK_BLEND = (1.30, 1.39)  # the body mask blends into the head ring's values over these heights, m
 KNEE = {"offset": (0.0, -0.045, 0.0), "r": 0.040, "soft": 0.028}  # Blender: front is -Y; the body is in a T-pose
 ELBOW = {"offset": (0.0, 0.030, 0.0), "r": 0.032, "soft": 0.026}  # the elbow points back (+Y)
@@ -59,7 +65,7 @@ HUES_SRGB = {  # the saturated hues of the 10-17 sheet (g-s1), picked against u1
     "coral": (0.90, 0.42, 0.34),
     "violet": (0.58, 0.46, 0.82),
 }
-PALE_SRGB = (0.80, 0.91, 0.80)  # u1's mint belly
+PALE_SRGB = {"teal": (0.80, 0.91, 0.80), "coral": (0.98, 0.84, 0.74), "violet": (0.87, 0.83, 0.96)}  # u1's mint belly
 LIGHT_MIX = 0.88
 ACCENT_SRGB = (0.89, 0.42, 0.36)
 ACCENT_MIX = 0.9
@@ -111,21 +117,30 @@ def ring_profile(head, ring_ids, uv_name):
     return [sum(vals[i]) / max(1, len(vals[i])) for i in ring_ids]
 
 
+def half_width(z):
+    pts = BELLY_HALF_W
+    if z <= pts[0][0]:
+        return 0.0
+    for (z0, w0), (z1, w1) in zip(pts, pts[1:]):
+        if z <= z1:
+            return w0 + (w1 - w0) * (z - z0) / (z1 - z0)
+    return pts[-1][1]
+
+
 def body_masks(body, arm, ring, head_ring_u):
     """Writes the body's masks UV layer (u light, v accent); returns its measures."""
     me = body.data
     bones = arm.data.bones
-    trunk_w = [sum(w.values()) for w in weights(body, TRUNK)]
     limb = {}
     for side in ("Left", "Right"):
         limb[f"{side}leg"] = [sum(w.values()) for w in weights(body, (f"{side}UpperLeg", f"{side}LowerLeg", f"{side}Foot"))]
         limb[f"{side}arm"] = [sum(w.values()) for w in weights(body, (f"{side}UpperArm", f"{side}LowerArm"))]
         hand = [f"{side}Hand"] + [f"{side}{f}{j}" for f in FINGERS for j in ("Proximal", "Intermediate", "Distal", "Metacarpal")]
         limb[f"{side}hand"] = [sum(w.values()) for w in weights(body, tuple(hand))]
-    # each height's trunk centre (1 cm bins, trunk-weighted vertices)
+    # each height's trunk centre (1 cm bins, the midline strip)
     bins = {}
-    for v, w in zip(me.vertices, trunk_w):
-        if w > 0.8:
+    for v in me.vertices:
+        if abs(v.co.x) < MIDLINE_X:
             bins.setdefault(int(v.co.z * 100), []).append(v.co.y)
     centre = {k: (min(ys) + max(ys)) / 2 for k, ys in bins.items()}
 
@@ -161,10 +176,9 @@ def body_masks(body, arm, ring, head_ring_u):
         p = v.co
         i = v.index
         # light: the belly and throat
-        ang = math.degrees(math.atan2(abs(p.x), yc(p.z) - p.y))
-        width = BELLY_DEG * math.sqrt(smoothstep(CROTCH_Z[0], CROTCH_Z[1], p.z))
-        u = (1.0 - smoothstep(width - BELLY_SOFT, width + BELLY_SOFT, ang)) if width > 1.0 else 0.0
-        u *= smoothstep(0.45, 0.85, trunk_w[i])
+        hw = half_width(p.z)
+        u = (1.0 - smoothstep(hw - BELLY_SOFT, hw + BELLY_SOFT, abs(p.x))) if hw > 0.0 else 0.0
+        u *= smoothstep(-0.005, 0.025, yc(p.z) - p.y)
         t = smoothstep(NECK_BLEND[0], NECK_BLEND[1], p.z)
         light[i] = u * (1 - t) + ring_u(p.x, p.y) * t
         a = 0.0
@@ -174,6 +188,16 @@ def body_masks(body, arm, ring, head_ring_u):
             d = (p - c).length
             a = max(a, (1.0 - smoothstep(s["r"], s["r"] + s["soft"], d)) * smoothstep(0.3, 0.7, lw[i]))
         accent[i] = a
+    nbrs = [[] for _ in me.vertices]
+    for e in me.edges:
+        a_, b_ = e.vertices
+        nbrs[a_].append(b_)
+        nbrs[b_].append(a_)
+    fixed = [abs(v.co.z - ring["z"]) < 0.004 for v in me.vertices]
+    for _ in range(MASK_SMOOTH):
+        light = [light[i] if fixed[i] or not nbrs[i] else 0.5 * light[i] + 0.5 * sum(light[j] for j in nbrs[i]) / len(nbrs[i])
+                 for i in range(len(light))]
+    back_lit = sum(1 for v in me.vertices if v.normal.y > 0.3 and light[v.index] > 0.2)
     if "masks" not in me.uv_layers:
         extra = [u for u in me.uv_layers if u.name != "UVMap"]
         if extra:
@@ -183,11 +207,11 @@ def body_masks(body, arm, ring, head_ring_u):
     uv = me.uv_layers["masks"].data
     for loop in me.loops:
         uv[loop.index].uv = (light[loop.vertex_index], accent[loop.vertex_index])
-    return {"light_vertices": sum(1 for x in light if x > 0.5), "accent_vertices": sum(1 for x in accent if x > 0.5),
+    return {"light_vertices": sum(1 for x in light if x > 0.5), "back_facing_light_vertices": back_lit, "accent_vertices": sum(1 for x in accent if x > 0.5),
             "vertices": len(me.vertices)}
 
 
-def weld(body, head):
+def weld(body, head, ring_c):
     """Joins the head into the body, merges the coincident ring vertices, clears custom normals, shades smooth."""
     nb = len(body.data.vertices)
     bpy.ops.object.select_all(action="DESELECT")
@@ -204,6 +228,15 @@ def weld(body, head):
     body_ring = [v for v in bm.verts if v.index < nb and abs(v.co.z - 1.39) < 0.01]
     bmesh.ops.remove_doubles(bm, verts=head_verts + body_ring, dist=1e-5)
     merged = before - len(bm.verts)
+    # the neck: the head's loft flares from the thin Meshy neck into the body's ring, a pinch at the back; smooth the
+    # band across the weld in x and y only (heights kept), the inner band more
+    start = {v.index: v.co.copy() for v in bm.verts}
+    for (z0, z1), passes in NECK_SMOOTH:
+        band = [v for v in bm.verts if z0 < v.co.z < z1
+                and math.hypot(v.co.x - ring_c[0], v.co.y - ring_c[1]) < NECK_R]
+        for _ in range(passes):
+            bmesh.ops.smooth_vert(bm, verts=band, factor=0.5, use_axis_x=True, use_axis_y=True, use_axis_z=False)
+    neck_moved_mm = max((v.co - start[v.index]).length for v in bm.verts) * 1000.0
     for f in bm.faces:
         f.smooth = True
     bm.to_mesh(me)
@@ -217,7 +250,7 @@ def weld(body, head):
     bm.from_mesh(me)
     open_neck = sum(1 for e in bm.edges if e.is_boundary and all(1.3 < v.co.z < 1.5 for v in e.verts))
     bm.free()
-    return {"merged": merged, "open_edges_at_neck": open_neck, "vertices": len(me.vertices),
+    return {"merged": merged, "open_edges_at_neck": open_neck, "neck_smooth_max_mm": round(neck_moved_mm, 2), "vertices": len(me.vertices),
             "triangles": sum(len(p.vertices) - 2 for p in me.polygons)}
 
 
@@ -313,7 +346,7 @@ def main():
     nodes["crests"].sort()
     rep["part_triangles"] = {n: tris(o) for n, o in objs.items() if o.type == "MESH" and n != "alien_head"}
     rep["head_triangles"] = tris(head)
-    rep["weld"] = weld(body, head)
+    rep["weld"] = weld(body, head, ring["centre"])
     body.name = "Body"
     for o in bpy.data.objects:  # the lid's local X angle in its eye node, as parts.json gives it
         if "_lid_" in o.name:
