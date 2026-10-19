@@ -11,9 +11,30 @@ extends Node
 ##   1000-1800 Hz, F2 above or below 1800) picks E, else A. One ratio could not tell A from E: A's F2 (about 1150 Hz)
 ##   lies in the high band, so A has the lowest low/high ratio of the three (measured in S3: A 1.8, E 3.5, O 6.3 on
 ##   the test WAV, as the harmonic model predicts). A closed pick just after speech shows M. talk_log holds every pick.
+## - the face materials (S5, set_face_look): "s5" (the default) puts the stage-1 human faces' eye and lip look on the
+##   imported face materials by name: alien_eye.gdshader on the eyeballs (alien_eye_<design>: a warm off-white, soft warm
+##   shading toward the corners and under the lids, a dark iris and pupil, one soft catch light), matte warm lips, a
+##   dark warm mouth cup, ivory teeth, and the lid shells in the lips' material (the eye sheets eb1 and em1: coral
+##   skin domes the colour of the lips); "first" keeps the first test's imported materials (for before/after sheets).
 ## Used through preload (a -s script has no global class cache): const AlienRig = preload("res://alien/alien.gd").
 
 const SHADER: Shader = preload("res://alien/alien_hue.gdshader")
+const EYE_SHADER: Shader = preload("res://alien/alien_eye.gdshader")
+const LIP := Color(0.76, 0.45, 0.40)  # sRGB: e2's dusty salmon lips and lid rims (the first test: a glossy (0.86, 0.42, 0.36))
+const FACE := {  # sRGB colour, roughness, specular: the stage-1 face kit's (faces/clay_kit.json: lip tint on the skin,
+	# cavity (0.05, 0.012, 0.02) and teeth (0.92, 0.9, 0.8) linear, teeth roughness 0.28), soft-matte for the alien
+	"alien_lip": [LIP, 0.6, 0.3],
+	"alien_mouth_inner": [Color(0.25, 0.11, 0.14), 0.9, 0.08],
+	"alien_teeth": [Color(0.96, 0.95, 0.90), 0.4, 0.3],
+}
+const EYE_LOOK := {  # alien_eye.gdshader's per-design uniforms (angles from the pupil axis, degrees; colours sRGB)
+	"bored": {"iris_deg": 25.0, "pupil_deg": 11.5, "iris": Color(0.20, 0.12, 0.08), "catch_at_deg": Vector2(6.0, 1.0)},
+	"manic": {"iris_deg": 0.0, "pupil_deg": 12.0, "iris": Color(0.05, 0.04, 0.05), "catch_at_deg": Vector2(4.5, 4.5)},
+}
+## The eyeballs' rest look: each ball turned inward about its socket's up axis (set absolutely, so a GLB whose balls
+## already carry it is unchanged): the sockets' 8 degrees outward (S2a's sphere fit) undone, plus 3.5 toward each
+## other (the eyes, 15 cm apart, look at a point about 1.2 m ahead). Without it the pupils diverged (S5's grid).
+var aim_in_deg: float = 11.5
 const HUES := {  # sRGB: the base hue and its light tint (face, throat, belly)
 	"teal": [Color(0.17, 0.56, 0.55), Color(0.80, 0.91, 0.80)],
 	"coral": [Color(0.90, 0.42, 0.34), Color(0.98, 0.84, 0.74)],
@@ -51,6 +72,11 @@ var mouth_piece: String = "rest"
 
 var _material: ShaderMaterial
 var _hue_meshes: Array[GeometryInstance3D] = []
+var face_look: String = "s5"
+var _lid_material: Material
+var _face_surfaces: Array = []  # [MeshInstance3D, surface, imported material name]
+var _lid_surfaces: Array = []  # [MeshInstance3D, surface]
+var _face_materials: Dictionary = {}  # imported name -> the S5 material
 var _rng := RandomNumberGenerator.new()
 var _blink_t: float = -1.0  # ms into the current blink, -1 when not blinking
 var _next_blink_s: float = 3.0
@@ -74,13 +100,57 @@ func setup(root: Node3D, seed: int = 196) -> void:
 			if mat != null and mat.resource_name == "alien_hue":
 				m.set_surface_override_material(s, _material)
 				uses = true
+				if m.name.contains("_lid_"):
+					_lid_surfaces.append([m, s])
+			elif mat != null and (FACE.has(mat.resource_name) or mat.resource_name.begins_with("alien_eye_")):
+				_face_surfaces.append([m, s, mat.resource_name])
 		if uses:
 			_hue_meshes.append(m)
+	_make_face_materials()
+	set_face_look(face_look)
 	set_hue("teal")
 	set_eyes(eyes)
 	set_mouth_design(mouth_design)
 	set_crest(crest)
 	_next_blink_s = _rng.randf_range(BLINK_EVERY_S.x, BLINK_EVERY_S.y)
+
+
+func _make_face_materials() -> void:
+	for name: String in FACE:
+		var f: Array = FACE[name]
+		var m := StandardMaterial3D.new()
+		m.resource_name = name
+		m.albedo_color = f[0]
+		m.roughness = f[1]
+		m.metallic_specular = f[2]
+		m.diffuse_mode = BaseMaterial3D.DIFFUSE_LAMBERT_WRAP
+		m.cull_mode = BaseMaterial3D.CULL_DISABLED  # as the imported (double-sided) ones: culled, the inner cup vanished
+		_face_materials[name] = m
+	_lid_material = _face_materials["alien_lip"]  # the eye sheets (eb1, em1): the lids are soft domes in the lips' colour
+	for design: String in EYE_LOOK:
+		var e := ShaderMaterial.new()
+		e.shader = EYE_SHADER
+		e.resource_name = "alien_eye_" + design
+		for k: String in EYE_LOOK[design]:
+			e.set_shader_parameter(k, EYE_LOOK[design][k])
+		_face_materials["alien_eye_" + design] = e
+
+
+## "s5": the new face materials; "first": the first test's imported ones.
+func set_face_look(look: String) -> void:
+	face_look = look
+	for fs: Array in _face_surfaces:
+		var m: MeshInstance3D = fs[0]
+		m.set_surface_override_material(fs[1], _face_materials[fs[2]] if look == "s5" else null)
+	for ls: Array in _lid_surfaces:
+		var m: MeshInstance3D = ls[0]
+		m.set_surface_override_material(ls[1], _lid_material if look == "s5" else _material)
+	set_lids(lid_state)  # the balls' rest look and the eye shader's lid edges
+
+
+## The S5 eye material of a design (for tuning grids).
+func eye_material(design: String) -> ShaderMaterial:
+	return _face_materials["alien_eye_" + design]
 
 
 func node(name: String) -> Node3D:
@@ -112,6 +182,12 @@ func _apply_lids(upper_deg: float, lower_deg: float) -> void:
 	for side: String in ["L", "R"]:
 		node("eye_%s_lid_upper_%s" % [eyes, side]).rotation = Vector3(deg_to_rad(upper_deg), 0, 0)
 		node("eye_%s_lid_lower_%s" % [eyes, side]).rotation = Vector3(deg_to_rad(lower_deg), 0, 0)
+		var ball := node("eye_%s_ball_%s" % [eyes, side]) as GeometryInstance3D
+		if ball != null:  # the eye shader's lid shadow follows the lid edges (edge = -rotation)
+			ball.set_instance_shader_parameter("upper_edge_deg", -upper_deg)
+			ball.set_instance_shader_parameter("lower_edge_deg", -lower_deg)
+			var aim: float = aim_in_deg if face_look == "s5" else 0.0  # the first test: unturned
+			ball.rotation = Vector3(0, deg_to_rad(-aim if side == "L" else aim), 0)
 
 
 ## The lids at t ms into a blink (0 = the lid state, BLINK_MS close, hold, open): returns false once it is over.
