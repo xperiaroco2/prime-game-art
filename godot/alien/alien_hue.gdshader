@@ -22,6 +22,19 @@
 //   - wrapped diffuse (render mode), screen-space subsurface (`sss`), a soft rim (`rim_value`) and a fresnel edge
 //     glow toward the pale tint (`rim_glow`). (S9c: the unused `backlight` uniform went; nothing set it.)
 // The hues (sRGB): godot/alien/alien.gd HUES, from the S3 export's character.json.
+// M5, the texture set (art #196; M3c's authored set and M2's normal map on Body's UV, glTF TEXCOORD_0): with
+// `textured` on (alien.gd sets it, and the textures, from the imported material of a mesh that has them) the albedo
+// comes from `albedo_tex` (sRGB; its alpha is the SSS mask, tools/blender/alien_eyes.py --sss-alpha), the roughness
+// from the ORM's G, the ambient occlusion from its R (no COLOR_0 multiply: the texture's albedo carries 0.4 of the AO
+// already and its R the rest, so the vertex AO would double it), the normal from `normal_tex` (tangent space,
+// OpenGL +Y; Godot rebuilds Z, so an RG-compressed import works) at `normal_depth`; no procedural grain (the normal map
+// has the fine detail). The SSS mask scales the screen-space subsurface (`sss_thin`) and drives a warm transmittance
+// (`transmit`). Another hue than the texture's teal (`tex_hue`) takes the procedural path's flat colour, darkened by
+// the texture's AO as the teal albedo is, with the texture's roughness, AO and normal map. `tex_pale` is the teal's
+// kit pale, kept for a later re-tint (the luminance re-tint tried in M5 drew smudges). `tex_sat`
+// and `tex_pale_sat` scale the texture's saturation about its luminance on the hue and the pale parts (tuned under
+// light D, M5); `tex_value` scales the hue parts' value (the pale keeps its own). Untextured parts (the crests'
+// alien_hue_part, older kits) keep the procedural path above.
 shader_type spatial;
 render_mode diffuse_lambert_wrap, specular_schlick_ggx;
 
@@ -49,6 +62,23 @@ uniform vec2 grain_fade = vec2(0.8, 2.5);  // view distance (m): full grain up t
 uniform float sss : hint_range(0.0, 1.0) = 0.0;
 uniform float rim_glow : hint_range(0.0, 1.0) = 0.0;  // a soft fresnel lift toward the pale tint at grazing angles (rf2's soft edge light, any lighting)
 uniform float rim_glow_power = 3.0;
+// M5, the texture set
+uniform bool textured = false;
+uniform sampler2D albedo_tex : source_color, filter_linear_mipmap_anisotropic, hint_default_white;
+uniform sampler2D orm_tex : filter_linear_mipmap_anisotropic, hint_default_white;
+uniform sampler2D normal_tex : hint_normal, filter_linear_mipmap_anisotropic;
+uniform float normal_depth : hint_range(0.0, 2.0) = 1.0;
+uniform float normal_pale : hint_range(0.0, 1.0) = 1.0;  // the normal map's depth on the pale (face, throat, belly), times normal_depth
+uniform vec3 tex_hue = vec3(0.0117, 0.196, 0.2233);  // linear: the hue the texture was painted in (alien_texture_geom TEAL_SRGB)
+uniform vec3 tex_pale = vec3(0.7105, 0.8276, 0.6209);  // linear: its kit pale (PALE_SRGB), the re-tint's reference
+uniform float tex_sat : hint_range(0.0, 2.0) = 1.0;
+uniform float tex_pale_sat : hint_range(0.0, 2.0) = 1.0;
+uniform float tex_value : hint_range(0.0, 2.0) = 1.0;
+uniform float roughness_add : hint_range(-0.5, 0.5) = 0.0;
+uniform float sss_thin : hint_range(0.0, 2.0) = 0.0;  // the SSS strength gained at the mask's white (sss + sss_thin * mask)
+uniform float transmit : hint_range(0.0, 1.0) = 0.0;  // the transmittance's boost at the mask's white
+uniform float transmit_depth = 0.02;  // m, times the mask
+uniform vec3 transmit_color : source_color = vec3(1.0, 0.55, 0.42);
 
 varying vec3 m_pos;
 varying float m_nz;
@@ -68,40 +98,88 @@ void vertex() {
 	}
 }
 
+float luma(vec3 c) {
+	return dot(c, vec3(0.2126, 0.7152, 0.0722));
+}
+
+vec3 sat(vec3 c, float k) {
+	float y = luma(c);
+	return max(vec3(y) + (c - vec3(y)) * k, vec3(0.0));
+}
+
+// The flat colour from the kit's masks (S9): the hue deepened toward the top and the back, the pale warmed toward the
+// face, the accent; p returns the warmed pale.
+vec3 flat_colour(vec2 m, float y, float nz, out vec3 p) {
+	float light = clamp(m.x, 0.0, 1.0);
+	float top = smoothstep(deep_top_range.x, deep_top_range.y, y) * deep_top;
+	float back = smoothstep(-0.3, 0.9, -nz) * smoothstep(1.0, 1.4, y) * deep_back;
+	float deep = clamp(top + back, 0.0, 1.0) * (1.0 - light);
+	vec3 base = mix(hue, hue * deep_mul, deep);
+	p = pale * mix(vec3(1.0), warm_mul, face_warm * smoothstep(1.38, 1.50, y));
+	vec3 c = mix(base, p, light * light_mix);
+	return mix(c, accent, clamp(1.0 - m.y, 0.0, 1.0) * accent_mix);
+}
+
 void fragment() {
 	vec2 m = UV2;
 	float light = clamp(m.x, 0.0, 1.0);
-	// the gradient
-	float top = smoothstep(deep_top_range.x, deep_top_range.y, m_pos.y) * deep_top;
-	float back = smoothstep(-0.3, 0.9, -m_nz) * smoothstep(1.0, 1.4, m_pos.y) * deep_back;
-	float deep = clamp(top + back, 0.0, 1.0) * (1.0 - light);
-	vec3 base = mix(hue, hue * deep_mul, deep);
-	vec3 p = pale * mix(vec3(1.0), warm_mul, face_warm * smoothstep(1.38, 1.50, m_pos.y));
-	vec3 c = mix(base, p, light * light_mix);
-	c = mix(c, accent, clamp(1.0 - m.y, 0.0, 1.0) * accent_mix);
-	// baked AO
-	float ao = COLOR.r;
-	c *= mix(1.0, ao, ao_albedo);
-	AO = ao;
-	AO_LIGHT_AFFECT = ao_light;
-	// the grain
-	float fade = 1.0 - smoothstep(grain_fade.x, grain_fade.y, length(VERTEX));
-	float rough = roughness_value;
-	if (grain > 0.0 && fade > 0.0) {
-		vec3 q = m_pos * grain_freq;
-		vec3 g = vec3(vnoise(q), vnoise(q + vec3(17.1, 3.3, 9.7)), vnoise(q + vec3(5.9, 23.4, 1.7))) - 0.5;
-		g += 0.5 * (vec3(vnoise(q * 2.3), vnoise(q * 2.3 + 11.0), vnoise(q * 2.3 + 29.0)) - 0.5);
-		vec3 gv = (VIEW_MATRIX * (MODEL_MATRIX * vec4(g, 0.0))).xyz;
-		gv -= dot(gv, NORMAL) * NORMAL;
-		NORMAL = normalize(NORMAL + gv * grain * fade);
-		rough = clamp(rough + (vnoise(q * 0.5) - 0.5) * grain * fade * 0.6, 0.0, 1.0);
+	vec3 c;
+	vec3 p = pale;
+	if (textured) {
+		// M5: the texture set
+		vec4 t = texture(albedo_tex, UV);
+		vec3 orm = texture(orm_tex, UV).rgb;
+		float lm = light * light_mix;
+		c = sat(t.rgb, mix(tex_sat, tex_pale_sat, lm)) * mix(tex_value, 1.0, lm);
+		// another hue: the flat colour of the procedural path, darkened by the texture's AO as the teal's albedo is;
+		// the texture's roughness, AO and normal map stay. (Re-tinting the teal texture by its luminance drew dark
+		// smudges where its blurred accent passed the vertex mask, and grey rings round the knee spots.)
+		float tint = clamp(distance(hue, tex_hue) * 200.0, 0.0, 1.0);
+		if (tint > 0.0) {
+			vec3 fp;
+			vec3 f = flat_colour(m, m_pos.y, m_nz, fp) * mix(1.0, orm.r, 0.4);
+			c = mix(c, f, tint);
+			p = mix(p, fp, tint);
+		}
+		AO = orm.r;
+		AO_LIGHT_AFFECT = ao_light;
+		ROUGHNESS = clamp(orm.g + roughness_add, 0.0, 1.0);
+		NORMAL_MAP = texture(normal_tex, UV).rgb;
+		NORMAL_MAP_DEPTH = normal_depth * mix(1.0, normal_pale, lm);
+		SSS_STRENGTH = sss + sss_thin * t.a;
+		// the transmittance is always written with a depth above 0: Godot divides by it (0 gave NaN, a black skin)
+		SSS_TRANSMITTANCE_COLOR = vec4(transmit_color, step(1e-4, transmit));
+		SSS_TRANSMITTANCE_DEPTH = max(transmit_depth * t.a, 0.001);
+		SSS_TRANSMITTANCE_BOOST = transmit * t.a;
+	} else {
+		SSS_TRANSMITTANCE_COLOR = vec4(transmit_color, 0.0);
+		SSS_TRANSMITTANCE_DEPTH = 1.0;
+		SSS_TRANSMITTANCE_BOOST = 0.0;
+		c = flat_colour(m, m_pos.y, m_nz, p);
+		// baked AO
+		float ao = COLOR.r;
+		c *= mix(1.0, ao, ao_albedo);
+		AO = ao;
+		AO_LIGHT_AFFECT = ao_light;
+		// the grain
+		float fade = 1.0 - smoothstep(grain_fade.x, grain_fade.y, length(VERTEX));
+		float rough = roughness_value;
+		if (grain > 0.0 && fade > 0.0) {
+			vec3 q = m_pos * grain_freq;
+			vec3 g = vec3(vnoise(q), vnoise(q + vec3(17.1, 3.3, 9.7)), vnoise(q + vec3(5.9, 23.4, 1.7))) - 0.5;
+			g += 0.5 * (vec3(vnoise(q * 2.3), vnoise(q * 2.3 + 11.0), vnoise(q * 2.3 + 29.0)) - 0.5);
+			vec3 gv = (VIEW_MATRIX * (MODEL_MATRIX * vec4(g, 0.0))).xyz;
+			gv -= dot(gv, NORMAL) * NORMAL;
+			NORMAL = normalize(NORMAL + gv * grain * fade);
+			rough = clamp(rough + (vnoise(q * 0.5) - 0.5) * grain * fade * 0.6, 0.0, 1.0);
+		}
+		ROUGHNESS = rough;
+		SSS_STRENGTH = sss;
 	}
 	ALBEDO = c;
-	ROUGHNESS = rough;
 	SPECULAR = specular_value;
 	RIM = rim_value;
 	RIM_TINT = rim_tint;
-	SSS_STRENGTH = sss;
 	float fr = pow(1.0 - clamp(dot(NORMAL, VIEW), 0.0, 1.0), rim_glow_power);
 	EMISSION = mix(c, p, 0.5) * fr * rim_glow;
 }
