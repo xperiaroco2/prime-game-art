@@ -21,7 +21,7 @@ neutral body in v1, animations only (no ragdoll). Since 2026-10-11 the knockdown
 ```
 tools/run.py contract              # regenerate contract/humanoid.json from Godot, validate contract/
 tools/run.py contract --check      # change nothing; fail when humanoid.json is stale or contract/ disagrees
-tools/run.py check <model> --kind body|clothing|accessory|prop [--map mixamo|meshy|quaternius] [--report FILE]
+tools/run.py check <model> --kind body|alien|clothing|accessory|prop [--map mixamo|meshy|quaternius] [--report FILE]
 tools/run.py check <model> --slot hair_or_hat|eyes|mouth|top|... [--map NAME] [--report FILE]
 tools/run.py rename-bones <model> --map <name> --out <file.glb|.gltf|.blend>
 ```
@@ -108,7 +108,12 @@ replacement mouth pieces on the Head bone's sockets, never mesh deformation (the
 `docs/decisions/2026-10-19-alien-overlaid-face-four-fingers.md`, which supersedes "Faces" above for the alien). It has
 four fingers (Index, Middle, Ring, Thumb); the Little finger's bones stay in the skeleton, unweighted, so the skeleton
 and the clips are unchanged. The five weighted fingers in "Skeleton" above and `check --kind body`'s finger rule still
-describe the human bodies; the alien's own rule is a follow-up.
+describe the human bodies. The alien is checked with `check --kind alien` (`[kinds.alien]` in `contract.toml`, art
+#223): every body rule, except that its kind lists `fingers_unweighted = ["Little"]`, so the finger rule wants every
+finger chain present, the Little chains without weights and the other four weighted. A Little bone that is missing or
+carries weights fails, and so does another finger left unweighted. `fingers_unweighted` is a rule any kind may carry
+(default none); `contract --check` refuses a finger outside `skeleton.fingers` or a list that leaves no weighted
+finger.
 
 **Animation.** Skeletal clips on the contract skeleton in one shared library, in place, loops suffixed `_loop`; the
 knockdown is a ragdoll ("Ragdoll" below); every other state is a clip. Eyes and mouth animate by the face morphs
@@ -181,7 +186,7 @@ measured).
 
 ## What `check` checks
 
-| Check | body | clothing | accessory | prop |
+| Check | body, alien | clothing | accessory | prop |
 |---|---|---|---|---|
 | triangles and vertices against the kind's budget | yes | yes | yes | yes |
 | n-gons, loose vertices and edges, non-manifold edges (more than two faces on an edge): fail | yes | yes | yes | yes |
@@ -191,7 +196,7 @@ measured).
 | eyes near 1.6 m (from the eye bones) | warn | | | |
 | facing: toes towards +Z, left hand at +X | fail | | | |
 | one armature, skinned; no extra bones; parents as in the profile; duplicate names after the map | yes | yes | | |
-| every profile bone present; the 22 weighted bones carry weights; five weighted finger chains | yes | | | |
+| every profile bone present; the 22 weighted bones carry weights; five weighted finger chains (alien: Thumb, Index, Middle, Ring weighted, Little present and unweighted) | yes | | | |
 | at most 4 weights per vertex, no unweighted vertex, nothing on Root | yes | yes | | |
 | no armature and no skin (a rigid piece) | | | yes | yes |
 | shape keys that move skin off the head bones (body-shape morphs; `Neck` skin up to 2 mm excepted): fail; face morphs on the head bones pass, more than 64 on one mesh warn | yes | | | |
