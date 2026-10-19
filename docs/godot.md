@@ -703,6 +703,28 @@ renders beside the approved target frames (f2a for the face at 0.6 m, f1a for th
 Clay strength 2 is the closest to f2a; at 3 m the strengths cannot be told apart. The look still needs the engineer's
 yes; the game repo takes the material only through a game-repo PR under the character contract.
 
+## The alien parts kit (`godot/alien/`, art #196, step S3)
+The parts-kit alien (not plasticine: a smooth, soft-matte designer-toy look) as one GLB from
+`tools/blender/alien_assemble.py`: the body and head welded into one skinned mesh, every eye design, mouth piece and
+crest a named node under the socket nodes (`Eye_L`, `Eye_R`, `Mouth`, `Crest`) that are children of the Head joint, so
+Godot imports them under a `BoneAttachment3D` and three.js under the Head bone. One variant of each kind is shown at
+a time, by visibility.
+
+- `alien_hue.gdshader`: the hue and its light tint are `instance uniform`s (one material for every hue mesh of all
+  characters), set **linear** from the script: no `source_color` hint on an instance uniform. The masks are in `UV2`
+  (glTF `TEXCOORD_1`): `UV2.x` the light mask, `1 - UV2.y` the accent mask. **The glTF exporter flips V**
+  (v_gltf = 1 - v_blender) and Godot keeps glTF's V, so any mask written into a Blender UV's v must be flipped back in
+  the shader (unflipped, the whole body rendered in the accent colour with hue-coloured knees).
+- `alien.gd`: the controller (`preload`, no class cache in a `-s` script): the material swap by the material's
+  name `alien_hue`; eye, mouth and crest swaps; hues; blink by the lid nodes' local X rotation; talk from an
+  `AudioEffectSpectrumAnalyzer` on the speaker's own bus. `get_magnitude_for_frequency_range` defaults to the band's
+  **maximum** bin, so a band reads its strongest harmonic: on a vowel-like test voice the 150-1000 / 1000-4000 Hz ratio
+  was A 1.8, E 3.5, O 6.3 (as a harmonic model predicts), so one ratio cannot tell A from E (A's second formant,
+  about 1150 Hz, is in the high band); E takes a second ratio, 1800-4000 against 1000-1800 Hz.
+- `proof.gd`: the off-screen proof (turntables, Idle and Walk, blink, talk, variants, hues, draw calls), run through
+  `_godot.window()` with `--audio-driver Dummy` (the Dummy driver still mixes, so the analyzer sees the signal) and
+  the Master bus muted. `make_test_speech.py` writes its test WAV (standard library).
+
 ## Findings for later tasks
 
 - **Toe bones (art #25):** assembled characters have 64 bones since art #25 (`Toe.L`, `Toe.R`). The export and
