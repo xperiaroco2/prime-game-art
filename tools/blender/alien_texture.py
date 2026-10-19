@@ -351,9 +351,15 @@ def smooth_light(body, w):
 
 
 def region_attrs(body):
-    """The per-vertex fields of the rest pose (Blender axes: z up, the character faces -y)."""
+    """The per-vertex fields of the rest pose (Blender axes: z up, the character faces -y), in world space: the face
+    parts' boxes (bbox) are world space, so Body's vertices and normals go through its matrix_world too (identity in
+    M2's export .blend, measured on 2026-10-19; a moved Body would otherwise shift every region)."""
     me = body.data
     co, nr = vertex_arrays(me)
+    mw = np.array(body.matrix_world, dtype=np.float64)
+    co = co @ mw[:3, :3].T + mw[:3, 3]
+    nr = nr @ np.linalg.inv(mw[:3, :3])  # the normals by the inverse transpose
+    nr /= np.maximum(np.linalg.norm(nr, axis=1, keepdims=True), 1e-12)
     x, y, z = co.T
     front = ss(0.2, 0.7, -nr[:, 1])
     eyes = [bbox(bpy.data.objects[f"eye_bored_ball_{s}"]) for s in ("L", "R")]
