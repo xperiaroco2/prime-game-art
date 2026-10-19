@@ -225,6 +225,15 @@ class HumanoidMapTest(unittest.TestCase):
         self.assertEqual(_humanoid.BONE_MAP["LeftIndexProximal"], "Index2.L")  # Index1 is the metacarpal
         self.assertEqual(_humanoid.BONE_MAP["RightLittleDistal"], "Pinky4.R")
 
+    def test_a_contract_named_rig_maps_to_itself(self) -> None:
+        rig = ["Root", "Hips", "Spine", "Chest", "UpperChest", "Neck", "Head", "LeftUpperLeg", "LeftLittleProximal"]
+        mapping = _humanoid.mapping_for(rig)
+        self.assertEqual(mapping["Chest"], "Chest")
+        self.assertEqual(mapping["UpperChest"], "UpperChest")
+        self.assertEqual(mapping["LeftLittleProximal"], "LeftLittleProximal")
+        self.assertNotIn("LeftEye", mapping)  # only the profile bones the rig has
+        self.assertEqual(_humanoid.mapping_for(["Hips", "Abdomen", "Torso", "Chest"]), _humanoid.BONE_MAP)
+
     def test_the_bone_map_resource_text(self) -> None:
         text = _humanoid.bone_map_tres({"Hips": "Hips", "Spine": "Abdomen"})
         self.assertIn('[gd_resource type="BoneMap" load_steps=2 format=3]', text)

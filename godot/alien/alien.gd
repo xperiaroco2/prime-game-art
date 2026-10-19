@@ -1,0 +1,224 @@
+extends Node
+## The alien parts kit's character controller (art #196, S3). Add it as a child of an instanced alien_character.glb
+## (tools/blender/alien_assemble.py: every variant a named node under the Head joint's sockets) and call setup().
+## It swaps the hue material for alien_hue.gdshader, and then:
+## - set_eyes("bored"|"manic"), set_mouth_design("frog"|"overbite"), set_crest(""|"antennae"|"fins"), set_hue(name);
+## - blinks by lid rotation (the lid node's local X, the angles of parts.json): BLINK_MS close, hold, open, every 2-6 s
+##   at random; the lids rest at "rest" (the default: bored's heavy lids; "open" only for surprise, set_lids("open"));
+## - talks: listen(bus) reads an AudioEffectSpectrumAnalyzer on that bus and every 60-80 ms shows one of the six mouth
+##   pieces, snapped: the loudness (against a decaying peak) picks closed, small or wide; among the wide ones the
+##   low/high band ratio (150-1000 against 1000-4000 Hz) picks O when high, and a second ratio (1800-4000 against
+##   1000-1800 Hz, F2 above or below 1800) picks E, else A. One ratio could not tell A from E: A's F2 (about 1150 Hz)
+##   lies in the high band, so A has the lowest low/high ratio of the three (measured in S3: A 1.8, E 3.5, O 6.3 on
+##   the test WAV, as the harmonic model predicts). A closed pick just after speech shows M. talk_log holds every pick.
+## Used through preload (a -s script has no global class cache): const AlienRig = preload("res://alien/alien.gd").
+
+const SHADER: Shader = preload("res://alien/alien_hue.gdshader")
+const HUES := {  # sRGB: the base hue and its light tint (face, throat, belly)
+	"teal": [Color(0.17, 0.56, 0.55), Color(0.80, 0.91, 0.80)],
+	"coral": [Color(0.90, 0.42, 0.34), Color(0.98, 0.84, 0.74)],
+	"violet": [Color(0.58, 0.46, 0.82), Color(0.87, 0.83, 0.96)],
+}
+const LIDS := {  # lid_rot_x_deg of parts.json (S2a): the lid node's local X rotation per state
+	"bored": {"upper": {"open": -30.0, "rest": -6.0, "half": 2.0, "closed": 12.0},
+		"lower": {"open": 40.0, "rest": 30.0, "half": 20.0, "closed": 6.0}},
+	"manic": {"upper": {"open": -58.0, "rest": -50.0, "half": -18.0, "closed": 12.0},
+		"lower": {"open": 55.0, "rest": 50.0, "half": 28.0, "closed": 6.0}},
+}
+const VISEMES: Array[String] = ["rest", "M", "small", "A", "E", "O"]
+const BLINK_MS := {"close": 60.0, "hold": 40.0, "open": 100.0}
+const BLINK_EVERY_S := Vector2(2.0, 6.0)
+const SWITCH_MS := Vector2(60.0, 80.0)
+const BAND_LOW := Vector2(150.0, 1000.0)  # Hz
+const BAND_HIGH := Vector2(1000.0, 4000.0)
+const CLOSED_BELOW := 0.10  # loudness against the decaying peak
+const SMALL_BELOW := 0.40
+const BAND_F2_LOW := Vector2(1000.0, 1800.0)
+const BAND_F2_HIGH := Vector2(1800.0, 4000.0)
+const RATIO_O := 4.8  # low/high above this: O (test WAV: O 6.3, E 3.5, A 1.8)
+const RATIO_E := 1.0  # F2 high/low above this: E (harmonic model: E 9.4, O 0.09, A 0.04)
+const PEAK_DECAY := 0.997  # per pick
+const M_AFTER_MS := 160.0  # a closed pick this soon after an open one shows M
+
+var character: Node3D
+var eyes: String = "bored"
+var mouth_design: String = "frog"
+var crest: String = ""
+var lid_state: String = "rest"
+var auto_blink: bool = true
+var talk_log: Array = []  # {t_ms, low, high, level, ratio, f2, piece}
+var mouth_piece: String = "rest"
+
+var _material: ShaderMaterial
+var _hue_meshes: Array[GeometryInstance3D] = []
+var _rng := RandomNumberGenerator.new()
+var _blink_t: float = -1.0  # ms into the current blink, -1 when not blinking
+var _next_blink_s: float = 3.0
+var _analyzer: AudioEffectSpectrumAnalyzerInstance
+var _next_switch_ms: float = 0.0
+var _peak: float = 1e-4
+var _last_open_ms: float = -1e9
+var _listen_t0: int = 0
+
+
+func setup(root: Node3D, seed: int = 196) -> void:
+	character = root
+	_rng.seed = seed
+	_material = ShaderMaterial.new()
+	_material.shader = SHADER
+	for mi: Node in root.find_children("*", "MeshInstance3D", true, false):
+		var m: MeshInstance3D = mi
+		var uses: bool = false
+		for s: int in m.mesh.get_surface_count():
+			var mat: Material = m.mesh.surface_get_material(s)
+			if mat != null and mat.resource_name == "alien_hue":
+				m.set_surface_override_material(s, _material)
+				uses = true
+		if uses:
+			_hue_meshes.append(m)
+	set_hue("teal")
+	set_eyes(eyes)
+	set_mouth_design(mouth_design)
+	set_crest(crest)
+	_next_blink_s = _rng.randf_range(BLINK_EVERY_S.x, BLINK_EVERY_S.y)
+
+
+func node(name: String) -> Node3D:
+	return character.find_child(name, true, false) as Node3D
+
+
+func set_hue(name: String) -> void:
+	var c: Color = (HUES[name][0] as Color).srgb_to_linear()
+	var p: Color = (HUES[name][1] as Color).srgb_to_linear()
+	for m: GeometryInstance3D in _hue_meshes:
+		m.set_instance_shader_parameter("hue", Vector3(c.r, c.g, c.b))
+		m.set_instance_shader_parameter("pale", Vector3(p.r, p.g, p.b))
+
+
+func set_eyes(design: String) -> void:
+	eyes = design
+	for d: String in LIDS:
+		for side: String in ["L", "R"]:
+			node("eye_%s_%s" % [d, side]).visible = d == design
+	set_lids(lid_state)
+
+
+func set_lids(state: String) -> void:
+	lid_state = state
+	_apply_lids(LIDS[eyes]["upper"][state], LIDS[eyes]["lower"][state])
+
+
+func _apply_lids(upper_deg: float, lower_deg: float) -> void:
+	for side: String in ["L", "R"]:
+		node("eye_%s_lid_upper_%s" % [eyes, side]).rotation = Vector3(deg_to_rad(upper_deg), 0, 0)
+		node("eye_%s_lid_lower_%s" % [eyes, side]).rotation = Vector3(deg_to_rad(lower_deg), 0, 0)
+
+
+## The lids at t ms into a blink (0 = the lid state, BLINK_MS close, hold, open): returns false once it is over.
+func blink_at(t_ms: float) -> bool:
+	var close: float = BLINK_MS["close"]
+	var hold: float = BLINK_MS["hold"]
+	var open: float = BLINK_MS["open"]
+	var k: float
+	if t_ms < close:
+		k = t_ms / close
+	elif t_ms < close + hold:
+		k = 1.0
+	elif t_ms < close + hold + open:
+		k = 1.0 - (t_ms - close - hold) / open
+	else:
+		set_lids(lid_state)
+		return false
+	k = k * k * (3.0 - 2.0 * k)
+	var u: Dictionary = LIDS[eyes]["upper"]
+	var l: Dictionary = LIDS[eyes]["lower"]
+	_apply_lids(lerpf(u[lid_state], u["closed"], k), lerpf(l[lid_state], l["closed"], k))
+	return true
+
+
+func set_mouth_design(design: String) -> void:
+	mouth_design = design
+	show_mouth(mouth_piece)
+
+
+func show_mouth(piece: String) -> void:
+	mouth_piece = piece
+	for d: String in ["frog", "overbite"]:
+		for v: String in VISEMES:
+			node("mouth_%s_%s" % [d, v]).visible = d == mouth_design and v == piece
+	node("mouth_overbite_teeth").visible = mouth_design == "overbite"
+
+
+func set_crest(name: String) -> void:
+	crest = name
+	for c: String in ["antennae", "fins"]:
+		node("crest_%s" % c).visible = c == name
+
+
+func listen(bus: String) -> void:
+	var idx: int = AudioServer.get_bus_index(bus)
+	if idx < 0 or AudioServer.get_bus_effect_count(idx) == 0:
+		push_error("alien: no bus '%s' with a spectrum analyzer; the mouth stays at rest" % bus)
+		_analyzer = null
+		return
+	_analyzer = AudioServer.get_bus_effect_instance(idx, 0) as AudioEffectSpectrumAnalyzerInstance
+	_listen_t0 = Time.get_ticks_msec()
+	_next_switch_ms = 0.0
+	_peak = 1e-4
+	talk_log.clear()
+
+
+func stop_listening() -> void:
+	_analyzer = null
+	show_mouth("rest")
+
+
+## One mouth pick from the analyzer now (also called by _process every 60-80 ms while listening).
+func pick_mouth() -> String:
+	var t: float = float(Time.get_ticks_msec() - _listen_t0)
+	var low: float = _analyzer.get_magnitude_for_frequency_range(BAND_LOW.x, BAND_LOW.y).length()
+	var high: float = _analyzer.get_magnitude_for_frequency_range(BAND_HIGH.x, BAND_HIGH.y).length()
+	var m: float = low + high
+	_peak = maxf(_peak * PEAK_DECAY, m)
+	var level: float = m / _peak
+	var ratio: float = low / maxf(high, 1e-6)
+	var f2: float = _analyzer.get_magnitude_for_frequency_range(BAND_F2_HIGH.x, BAND_F2_HIGH.y).length() / maxf(
+		_analyzer.get_magnitude_for_frequency_range(BAND_F2_LOW.x, BAND_F2_LOW.y).length(), 1e-6)
+	var piece: String
+	if level < CLOSED_BELOW:
+		piece = "M" if t - _last_open_ms < M_AFTER_MS else "rest"
+	elif level < SMALL_BELOW:
+		piece = "small"
+	elif ratio > RATIO_O:
+		piece = "O"
+	elif f2 > RATIO_E:
+		piece = "E"
+	else:
+		piece = "A"
+	if piece != "rest" and piece != "M":
+		_last_open_ms = t
+	show_mouth(piece)
+	talk_log.append({"t_ms": int(t), "low": snappedf(low, 1e-5), "high": snappedf(high, 1e-5),
+		"level": snappedf(level, 0.001), "ratio": snappedf(ratio, 0.01), "f2": snappedf(f2, 0.01), "piece": piece})
+	return piece
+
+
+func _process(delta: float) -> void:
+	if character == null:
+		return
+	if _analyzer != null:
+		var t: float = float(Time.get_ticks_msec() - _listen_t0)
+		if t >= _next_switch_ms:
+			pick_mouth()
+			_next_switch_ms = t + _rng.randf_range(SWITCH_MS.x, SWITCH_MS.y)
+	if not auto_blink:
+		return
+	if _blink_t >= 0.0:
+		_blink_t += delta * 1000.0
+		if not blink_at(_blink_t):
+			_blink_t = -1.0
+			_next_blink_s = _rng.randf_range(BLINK_EVERY_S.x, BLINK_EVERY_S.y)
+	else:
+		_next_blink_s -= delta
+		if _next_blink_s <= 0.0:
+			_blink_t = 0.0
