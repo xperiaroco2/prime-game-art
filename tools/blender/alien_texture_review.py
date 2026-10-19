@@ -6,17 +6,22 @@ Runs in background Blender through the runner, never by hand and never in a wind
 tools/runner/blender.py's run_script("alien_texture_review.py", args) with args
       --character <M2/export/alien_character.blend> --tex <M3a/textures> --normal <M3a/bake/normal.png> \
       --rf2 <rf2.png> --out <M3a/sheets> [--images <the parts build's export/>] [--tile 420] [--sss 0] \
-      [--grid <variants dir> --names a,b,c]
+      [--grid <variants dir> --names a,b,c] [--before-tex <M3a/textures> --before-normal <normal.png>] \
+      [--labels m3a,m3c]
 
 Shots (alien_detail_review's framings), the Idle clip's first frame: face34 (0.5 m), face_front, face_close (0.25 m),
-close (cheek and eye at 0.18 m), hand, neck_back34, body (1.5 m). Writes `<shot>_m2.png`, `<shot>_m3a.png` and:
-- `face.png`: rf2 | M2 | M3a at face34; below M3a face_close | M2 face_front | M3a face_front;
-- `close.png`: the cheek and eye, M2 | M3a;
-- `body.png`: hand, neck_back34, body; M2 above, M3a below.
+near (the face at 3/4 from 0.6 m with a 70 mm lens, M3c: the showroom's close view), close (cheek and eye at 0.18 m),
+hand, knee (M3c: the accent spot), neck_back34, body (1.5 m). With --labels <before>,<after> (default m2,m3a: M2's
+look against --tex) it writes `<shot>_<before>.png`, `<shot>_<after>.png` and:
+- `face.png`: rf2 | before | after at face34; below after near | before face_front | after face_front;
+- `close.png`: near and close (the cheek and eye), before | after;
+- `body.png`: hand, knee, neck_back34, body; before above, after below.
 --grid: only the variants (each a folder of albedo.png and orm.png, in --names order) at --shots (default face34,
 face_close, body), one column per variant, into `grid.png` (rf2 first in the top row's place of a label-less sheet: the column order
 is printed and written to grid.json).
 --sss k: the review's subsurface weight from sss.png times k (0: none, as a plain glTF viewer shows it).
+--before-tex (M3c): the left side is that texture set (with --before-normal) instead of M2's look; --labels names the
+two sides in the file names (default m2,m3a).
 """
 from __future__ import annotations
 
@@ -58,6 +63,9 @@ def args():
     p.add_argument("--grid", default="")
     p.add_argument("--names", default="")
     p.add_argument("--shots", default="face34,face_close,body", help="--grid: the rows")
+    p.add_argument("--before-tex", default="", help="the left side's texture set instead of M2's look")
+    p.add_argument("--before-normal", default="")
+    p.add_argument("--labels", default="m2,m3a", help="the two sides' names in the file names")
     return p.parse_args(sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else [])
 
 
@@ -90,12 +98,12 @@ def stage_d(sc):
     return cam
 
 
-def m3a_material(body, tex, normal, sss):
+def m3a_material(body, tex, normal, sss, name="alien_hue_m3a"):
     orig = body.data.materials[0]
     m3 = orig.copy()
-    m3.name = "alien_hue_m3a"
+    m3.name = name
     body.data.materials[0] = m3
-    X.texture_skin(body, Path(tex), Path(normal))
+    X.texture_skin(body, Path(tex), Path(normal), name)
     nt = m3.node_tree
     bsdf = next(n for n in nt.nodes if n.type == "BSDF_PRINCIPLED")
     if sss > 0:
@@ -140,7 +148,10 @@ def setup(a):
     cam = stage_d(sc)
     m3 = m3a_material(body, a.tex, a.normal, a.sss)
     orig = body.data.materials[0]
-    R.skin(body)  # the M2 look, on the original material
+    if a.before_tex:  # the left side: another texture set (M3c: M3a's)
+        orig = m3a_material(body, a.before_tex, a.before_normal or a.normal, a.sss, "alien_hue_before")
+    else:
+        R.skin(body)  # the M2 look, on the original material
     mw = arm.matrix_world
     pb = arm.pose.bones
     head = mw @ pb["Head"].head
@@ -150,6 +161,9 @@ def setup(a):
     neck = mw @ pb["Neck"].head + Vector((0, 0, 0.05))
     hand = mw @ pb["LeftHand"].head
     hand_c = hand + (mw @ pb["LeftMiddleProximal"].head - hand) * 0.9
+    if "LeftLowerLeg" not in pb:
+        raise SystemExit("review: no LeftLowerLeg bone for the knee shot")
+    knee = mw @ pb["LeftLowerLeg"].head
     cheek = [o for o in eyes if o.name.endswith("_L")]
     cheek_c = (cheek[0].matrix_world.translation if cheek else eye_c) + Vector((0.0, 0.0, -0.02))
     a34 = math.radians(35)
@@ -157,6 +171,8 @@ def setup(a):
         "face34": (face_c + Vector((0, 0, -0.06)), (math.sin(a34), -math.cos(a34), 0.08), 0.5, 30),
         "face_front": (face_c, (0, -1, 0.05), 0.5, 40),
         "face_close": (face_c + Vector((0.01, 0, -0.01)), (math.sin(a34), -math.cos(a34), 0.05), 0.25, 45),
+        "near": (face_c + Vector((0, 0, -0.03)), (math.sin(a34), -math.cos(a34), 0.08), 0.6, 70),
+        "knee": (knee, (0.5, -1, 0.1), 0.45, 45),
         "close": (cheek_c, (0.45, -1, 0.05), 0.18, 45),
         "hand": (hand_c, (0.9, -0.8, 0.15), 0.35, 40),
         "neck_back34": (neck, (0.6, 0.8, 0.15), 0.5, 40),
@@ -205,22 +221,23 @@ def main():
         (out / "grid").mkdir(exist_ok=True)
         grid(a, sc, cam, body, m3, shots, out)
         return
+    lb, la = a.labels.split(",")
     for name, (t, d, dist, lens) in shots.items():
         px = a.tile * 2 if name == "close" else a.tile
         R.look(cam, t, d, dist, lens)
-        for tag, mt in (("m2", orig), ("m3a", m3)):
+        for tag, mt in ((lb, orig), (la, m3)):
             body.data.materials[0] = mt
             R.render(sc, out / f"{name}_{tag}.png", px)
         X.log(f"shot {name}")
     T = a.tile
     L = lambda n: R.load(out / f"{n}.png", T)  # noqa: E731
-    R.sheet([[R.load(Path(a.rf2), T), L("face34_m2"), L("face34_m3a")],
-             [L("face_close_m3a"), L("face_front_m2"), L("face_front_m3a")]], out / "face.png")
+    R.sheet([[R.load(Path(a.rf2), T), L(f"face34_{lb}"), L(f"face34_{la}")],
+             [L(f"near_{la}"), L(f"face_front_{lb}"), L(f"face_front_{la}")]], out / "face.png")
     C = lambda n: R.load(out / f"{n}.png", T * 3 // 2)  # noqa: E731
-    R.sheet([[C("close_m2"), C("close_m3a")]], out / "close.png")
+    R.sheet([[C(f"near_{lb}"), C(f"near_{la}")], [C(f"close_{lb}"), C(f"close_{la}")]], out / "close.png")
     B = lambda n: R.load(out / f"{n}.png", T)  # noqa: E731
-    R.sheet([[B(f"{s}_m2") for s in ("hand", "neck_back34", "body")],
-             [B(f"{s}_m3a") for s in ("hand", "neck_back34", "body")]], out / "body.png")
+    R.sheet([[B(f"{s}_{lb}") for s in ("hand", "knee", "neck_back34", "body")],
+             [B(f"{s}_{la}") for s in ("hand", "knee", "neck_back34", "body")]], out / "body.png")
     X.log("SHEETS " + str(out))
 
 
