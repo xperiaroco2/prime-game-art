@@ -19,7 +19,9 @@ The method:
 1. Weld: the head's last 48 vertices (the densified ring, S8b) lie on the body's neck ring (S2a, weld error 0); the two meshes are joined
    (vertex groups and UV layers by name), the coincident ring vertices merged, every custom normal cleared and the
    whole mesh shaded smooth, so the ring's normals are the average over both sides' faces: no lighting seam. The
-   neck across the weld is then faired as one smooth surface (NECK_FAIR, S8b), so no pleated collar or crease shows.
+   neck across the weld is then faired as one smooth surface (NECK_FAIR, S8b), so no pleated collar or crease shows;
+   S9b then lofts the neck as one column from the shoulders to under the jaw and gives it a smooth weight field
+   (alien_neck.py).
 2. Masks (the `masks` UV layer, TEXCOORD_1, read by godot/alien/alien_hue.gdshader; the glTF export stores V
    flipped, the shader flips it back): u = light, v = accent. The head keeps S2a's masks. On the body, u is the
    throat and belly: the front half (in front of each height's midline centre, the middle of the vertices within
@@ -46,6 +48,7 @@ import bpy
 from mathutils import Matrix, Vector
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import alien_neck  # noqa: E402
 import export_glb  # noqa: E402
 
 from alien_face import ACCENT, EYE_AIM_IN  # noqa: E402  (S5; godot/alien/alien.gd aim_in_deg)
@@ -402,6 +405,16 @@ def main():
     rep["part_triangles"] = {n: tris(o) for n, o in objs.items() if o.type == "MESH" and n != "alien_head"}
     rep["head_triangles"] = tris(head)
     rep["weld"] = weld(body, head, ring)
+    # S9b: the neck as one column from the shoulders to under the jaw (alien_neck.py), its shape and its weights
+    bm = bmesh.new()
+    bm.from_mesh(body.data)
+    before = alien_neck.profile(bm, ring)
+    rep["neck_loft"] = alien_neck.loft(bm, ring)
+    rep["neck_profile"] = {"before": before, "after": alien_neck.profile(bm, ring)}
+    bm.to_mesh(body.data)
+    bm.free()
+    body.data.update()
+    rep["neck_weights"] = alien_neck.column_weights(body, ring)
     body.name = "Body"
     for o in bpy.data.objects:  # the lid's local X angle in its eye node, as parts.json gives it
         if "_lid_" in o.name:
