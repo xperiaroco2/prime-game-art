@@ -9,7 +9,8 @@ extends "res://alien/hero_shots.gd"
 ##   (face34, front, close), before | after | the target (spec "rf2"; the close row its part "rf2_eye"
 ##   [x0, y0, x1, y1], fractions), and blink_<design>.png, before above after;
 ## - with spec "variants" ([{"label", "eye": {alien_eye.gdshader uniform: value}, "wet": {..}}], each on top of the
-##   defaults and undone after its shot): grid_<grid_name>.png, the close eye of both designs per variant.
+##   defaults and undone after its shot): grid_<grid_name>.png, the close eye of both designs per variant ("grid_zoom"
+##   [x0, y0, x1, y1]: only that part of each shot; "grid_only": true skips the shots above).
 ## Spec: {"scenes": {"hero": "res://import/..glb"}, "out": DIR, "hdri": .., "bg": [r, g, b], "rf2": PNG,
 ## "rf2_eye": [..], "before": DIR, "eye": {uniform: value}, "variants": [..], "grid_name": "..", "grid_lids": "rest", "grid_yaw": 18}. Run like second_test.gd (through
 ## _godot.window(), never on a screen) in a 1536 x 1536 window.
@@ -86,7 +87,7 @@ func _run() -> void:
 	var rf2: Image = _load(_spec.get("rf2", ""))
 	var rf2_eye: Image = _region(rf2, _spec.get("rf2_eye", [0.18, 0.36, 0.66, 0.6])) if rf2 != null else null
 	var before: String = _spec.get("before", "")
-	for d: String in DESIGNS:
+	for d: String in ([] if _spec.get("grid_only", false) else DESIGNS):
 		_combo("hero", d, "frog")
 		for _i: int in 4:
 			await process_frame
@@ -120,7 +121,7 @@ func _run() -> void:
 			for yaw: float in PARALLAX_YAWS:
 				_look(_find("hero", "Eye_L"), yaw, 3.0, 0.4, 16.0)
 				turns.append(_region(await _shot(""), ZOOM))
-		em.set_shader_parameter("cornea", 1.0)
+		em.set_shader_parameter("cornea", float(_spec.get("eye", {}).get("cornea", 1.0)))  # back to the run's value
 		rig.set_lids("rest")
 		_sheet(turns, PARALLAX_YAWS.size(), "%s_parallax.png" % d, 1600)
 		var bb: Image = _load(before + "/%s_blink.png" % d) if before != "" else null
@@ -132,11 +133,14 @@ func _run() -> void:
 		for d: String in DESIGNS:
 			_combo("hero", d, "frog")
 			rig.set_lids(_spec.get("grid_lids", "rest"))
+			for _i: int in 4:
+				await process_frame
 			for v: Dictionary in variants:
 				var undo := {}
 				_variant(rig, v, undo)
 				_look(_find("hero", "Eye_L"), _spec.get("grid_yaw", 18.0), 3.0, 0.4, 16.0)
-				imgs.append(await _shot(v.get("label", "")))
+				var gi: Image = await _shot(v.get("label", ""))
+				imgs.append(_region(gi, _spec["grid_zoom"]) if _spec.has("grid_zoom") else gi)
 				_unvariant(rig, undo)
 		_sheet(imgs, variants.size(), "grid_%s.png" % _spec.get("grid_name", "tune"), mini(1600, 400 * variants.size()))
 	quit(0)
