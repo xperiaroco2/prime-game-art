@@ -30,6 +30,7 @@ TASK_PATHS = {
     "multi_image_to_3d": "/openapi/v1/multi-image-to-3d",
     "remesh": "/openapi/v1/remesh",
     "text_to_motion": "/openapi/v1/text-to-motion",
+    "retexture": "/openapi/v1/retexture",
 }
 LIBRARY_PATH = "/openapi/v1/animations/library"  # the animation library's actions (free)
 FINAL_STATUSES = ("SUCCEEDED", "FAILED", "CANCELED")

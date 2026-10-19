@@ -38,6 +38,13 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
                                          "the input of a rig item (no network)")
     p.add_argument("blend", type=Path, nargs="+", help="saved character files, blend/<id>.blend")
     p.add_argument("--out", type=Path, required=True, help="output folder, e.g. <raw>/<batch id>/inputs")
+    p = sub.add_parser("retexture-input", help="one mesh of a saved character as a static rest-pose GLB with only its "
+                                               "texture UV, the model of a retexture item (no network)")
+    p.add_argument("blend", type=Path, help="the character's .blend (e.g. the alien kit's alien_character.blend)")
+    p.add_argument("--out", type=Path, required=True, help="output folder")
+    p.add_argument("--object", default="Body", help="the mesh object (default Body)")
+    p.add_argument("--uv", default="UVMap", help="the UV map to keep as TEXCOORD_0 (default UVMap)")
+    p.add_argument("--name", default="alien_body", help="the file stem (default alien_body)")
 
 
 def run(args: argparse.Namespace) -> int:
@@ -53,6 +60,8 @@ def run(args: argparse.Namespace) -> int:
             return 0
         if args.action == "rig-input":
             return rig_input(args.blend, args.out)
+        if args.action == "retexture-input":
+            return retexture_input(args.blend, args.out, args.object, args.uv, args.name)
         if args.action == "library":
             key = api.api_key()
             return library(api.MeshyClient(key), args.search, args.category, args.out)
@@ -82,6 +91,13 @@ def estimate(batch: batches.Batch) -> int:
             line, trouble = input_line(inp)
             common.say(f"      input {n}: {line}")
             problems += [f"{item.id}: {t}" for t in trouble]
+        if item.kind == "retexture":
+            views = len(item.inputs) - 1
+            style = (f"{views} view input(s) as multiview_image_urls" if item.multiview else
+                     "input 1 as image_style_url" if views else f"the prompt as text_style_prompt ({item.prompt!r})")
+            p = item.stages[0].params
+            common.say(f"      style: {style}; model_url: input 0; enable_original_uv {p.get('enable_original_uv')}, "
+                       f"enable_pbr {p.get('enable_pbr')}, texture_resolution {p.get('texture_resolution', '2k')}")
     common.say(f"  total {batch.credits} credits; approved cap {batch.credit_cap}")
     approval = batches.approval_problems(batch)
     common.say("  approval: " + ("complete, within the cap" if not approval else "; ".join(approval)))
@@ -163,4 +179,51 @@ def rig_input(blends: list[Path], out: Path) -> int:
                   f"{info['height_m']} m, palette {info['palette_px']} px of {len(info['materials'])} colours)")
         common.say(f"    sha256 {inputs.sha256(Path(info['glb']))} (glb), {inputs.sha256(Path(info['texture']))} "
                    "(texture): pin them in the batch")
+    return 0
+
+
+# What a retexture input may hold (art #196 M3b): the mesh, its normals and the one texture UV, nothing else.
+RETEXTURE_ATTRIBUTES = {"POSITION", "NORMAL", "TEXCOORD_0"}
+
+
+def retexture_problems(path: Path) -> list[str]:
+    """Why a GLB is not a clean retexture input: one node with one mesh, only POSITION, NORMAL and TEXCOORD_0, no
+    skin, animation, morph target, image or texture, and within the client's model size."""
+    doc = inputs.glb_json(path)
+    problems = []
+    if len(doc.get("nodes", [])) != 1 or len(doc.get("meshes", [])) != 1:
+        problems.append(f"{len(doc.get('nodes', []))} nodes and {len(doc.get('meshes', []))} meshes, not one of each")
+    for key in ("skins", "animations", "images", "textures"):
+        if doc.get(key):
+            problems.append(f"it has {key}")
+    for mesh in doc.get("meshes", []):
+        for prim in mesh.get("primitives", []):
+            extra = set(prim.get("attributes", {})) - RETEXTURE_ATTRIBUTES
+            if extra or "TEXCOORD_0" not in prim.get("attributes", {}):
+                problems.append(f"attributes {sorted(prim.get('attributes', {}))}, want {sorted(RETEXTURE_ATTRIBUTES)}")
+            if prim.get("targets"):
+                problems.append("it has morph targets")
+    if path.stat().st_size > inputs.MODEL_MAX_BYTES:
+        problems.append(f"{path.stat().st_size} bytes, over the client's {inputs.MODEL_MAX_BYTES}")
+    return problems
+
+
+def retexture_input(blend: Path, out: Path, obj: str, uv: str, name: str) -> int:
+    """Runs tools/blender/meshy_retexture_input.py: <out>/<name>.glb and <name>.json; checks the GLB's contents."""
+    if not blend.is_file():
+        raise common.Failure(f"no file {blend}")
+    out = out.resolve()
+    blender.run_script("meshy_retexture_input.py", ["--blend", str(blend.resolve()), "--out", str(out), "--object", obj,
+                                                    "--uv", uv, "--name", name], timeout=600)
+    info = json.loads((out / f"{name}.json").read_text(encoding="utf-8"))
+    glb = Path(info["glb"])
+    problems = retexture_problems(glb)
+    if problems:
+        rejected = glb.with_suffix(".glb.rejected")  # renamed so that nobody pins it by mistake
+        glb.replace(rejected)
+        raise common.Failure(f"{rejected} is no clean retexture input: " + "; ".join(problems))
+    check = info["uv_check"]
+    common.ok(f"{name}: {glb} ({info['glb_bytes']} bytes, {info['triangles']} triangles, {info['height_m']} m); "
+              f"UV {uv}: {check['islands']} islands, the same in the GLB")
+    common.say(f"    sha256 {inputs.sha256(glb)}: pin it in the batch")
     return 0

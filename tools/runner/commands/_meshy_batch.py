@@ -17,7 +17,7 @@ from . import _meshy_inputs as inputs
 
 BATCHES = common.ROOT / "batches"
 KINDS = ("text_to_3d", "rig", "animate", "text_to_image", "image_to_image", "image_to_3d", "multi_image_to_3d", "remesh",
-         "text_to_motion")
+         "text_to_motion", "retexture")
 IMAGE_KINDS = ("text_to_image", "image_to_image")  # make images; another item takes them with `from`
 MODEL_KINDS = ("text_to_3d", "image_to_3d", "multi_image_to_3d", "remesh")  # make a model; rig and remesh take it
 EXAMPLE_PREFIX = "example-"  # batches/example-*.toml show the schema and never run
@@ -55,14 +55,24 @@ LITE_MODEL = "meshy-6-lite"
 MULTI_IMAGE_MODELS = ("meshy-6-lite", "meshy-6", "meshy-7.1")
 MULTI_IMAGE_GEOMETRY = ("standard", "2k")  # 2k needs meshy-7.1 or latest (docs.meshy.ai, read 2026-10-03)
 REMESH_CREDITS = 5
+# Retexture (docs.meshy.ai/en/api/retexture and /pricing, read 2026-10-19; art #196 M3b): paints a model we send (a GLB
+# data URI, model_url) from one style: a text prompt, one style image, or 1 to 4 views (meshy-7 only). 10 credits at
+# 2k or 4k, 15 at 8k; 4k and 8k not on meshy-6-lite; remove_lighting is refused (400) with meshy-6-lite. This client
+# turns on enable_original_uv (paint our own UV) and enable_pbr (metallic, roughness and normal maps) unless the batch
+# sets them false; the API's own defaults are false for both.
+RETEXTURE_CREDITS = {"2k": 10, "4k": 10, "8k": 15}
+RETEXTURE_MODELS = ("meshy-6-lite", "meshy-6", "meshy-7", "latest")  # latest is meshy-7 there
+RETEXTURE_MULTIVIEW_MODEL = "meshy-7"  # multiview_image_urls "requires explicit ai_model: meshy-7"
+RETEXTURE_DEFAULTS = {"enable_original_uv": True, "enable_pbr": True}
 # How many input images each kind takes (after a `from` without `pick` expands to every image of its source).
-INPUT_COUNTS = {"image_to_image": (1, 5), "image_to_3d": (1, 1), "multi_image_to_3d": (1, 4)}
+INPUT_COUNTS = {"image_to_image": (1, 5), "image_to_3d": (1, 1), "multi_image_to_3d": (1, 4), "retexture": (0, 4)}
 # The keys an item of each kind may have besides id, variant and kind.
 ITEM_KEYS = {"text_to_3d": {"prompt", "preview", "refine", "texture"}, "rig": {"source", "params", "model", "texture"},
              "animate": {"source", "params", "motion"}, "text_to_image": {"prompt", "params"},
              "image_to_image": {"prompt", "params", "images"}, "image_to_3d": {"params", "images"},
              "multi_image_to_3d": {"params", "images"}, "remesh": {"source", "params"},
-             "text_to_motion": {"prompt", "params"}}
+             "text_to_motion": {"prompt", "params"},
+             "retexture": {"prompt", "params", "model", "images", "multiview"}}
 
 APPROVAL_FIELDS = ("approved_by", "approved_at", "approval_ref")
 # Keys the runner fills in itself; a batch may not set them.
@@ -71,7 +81,8 @@ RESERVED = {"preview": {"mode", "prompt"}, "refine": {"mode", "preview_task_id"}
             "animate": {"rig_task_id", "motion_task_id"}, "text_to_image": {"prompt"}, "text_to_motion": {"prompt"},
             "image_to_image": {"prompt", "reference_image_urls", "input_task_id"},
             "image_to_3d": {"image_url", "input_task_id"}, "multi_image_to_3d": {"image_urls", "input_task_id"},
-            "remesh": {"input_task_id", "model_url"}}
+            "remesh": {"input_task_id", "model_url"},
+            "retexture": {"input_task_id", "model_url", "text_style_prompt", "image_style_url", "multiview_image_urls"}}
 # The request parameters the docs list for each image-mode kind (read 2026-10-03, docs/meshy.md). Meshy may ignore
 # what it does not know, so a misspelt key would pay for a generation without the setting; any other key is refused.
 IMAGE_3D_PARAMS = {"ai_model", "geometry_resolution", "should_texture", "enable_pbr", "texture_resolution",
@@ -87,6 +98,9 @@ KNOWN_PARAMS = {
     "rig": {"height_meters"},
     "animate": {"action_id", "action_ids", "post_process"},
     "text_to_motion": {"duration", "mode"},
+    # retexture (docs.meshy.ai/en/api/retexture, read 2026-10-19); hd_texture is deprecated: use texture_resolution
+    "retexture": {"ai_model", "enable_original_uv", "enable_pbr", "texture_resolution", "remove_lighting",
+                  "target_formats", "alpha_thumbnail"},
 }
 # Image parameters this client cannot fill in yet: they would need an input of their own.
 UNSUPPORTED = {"image_to_3d": {"texture_image_url"}, "multi_image_to_3d": {"texture_image_url", "texture_image_urls"}}
@@ -115,6 +129,7 @@ class Item:
     images: int = 0  # images the item makes (text_to_image, image_to_image): 3 for a multi-view set, else 1
     textured: bool = False  # the item makes a textured model (what rigging needs)
     motion: str = ""  # an animate item's text_to_motion item (its motion_task_id), instead of library actions
+    multiview: bool = False  # a retexture's style images go as multiview_image_urls (1 to 4 views), not one image
 
     @property
     def credits(self) -> int:
@@ -256,6 +271,8 @@ def parse(data: dict[str, Any], path: Path) -> Batch:
                 _image(item, raw, kdefaults, seen, where, errors)
             elif kind in ("image_to_3d", "multi_image_to_3d"):
                 _image_to_model(item, raw, kdefaults, seen, where, errors)
+            elif kind == "retexture":
+                _retexture(item, raw, kdefaults, seen, where, errors)
             else:
                 _remesh(item, raw, kdefaults, seen, where, errors)
         except (TypeError, ValueError) as exc:
@@ -419,8 +436,9 @@ def _source(item: Item, seen: dict[str, Item], wanted: tuple[str, ...], where: s
     return src
 
 
-def _inputs(item: Item, raw: dict[str, Any], seen: dict[str, Item], where: str, errors: list[str]) -> None:
-    """The item's `images`: each `from` names an earlier image item and a valid `pick`; the count fits the kind."""
+def _inputs(item: Item, raw: dict[str, Any], seen: dict[str, Item], where: str, errors: list[str]) -> int:
+    """The item's `images`: each `from` names an earlier image item and a valid `pick`; the count fits the kind.
+    Returns the number of images they give."""
     item.inputs = inputs.parse(raw.get("images"), where, errors)
     low, high = INPUT_COUNTS[item.kind]
     count = 0
@@ -451,6 +469,7 @@ def _inputs(item: Item, raw: dict[str, Any], seen: dict[str, Item], where: str, 
             item.variant = src.variant
     if not low <= count <= high:
         errors.append(f"{where}: {item.kind} takes {low} to {high} image(s) in 'images'; these give {count}")
+    return count
 
 
 def _image(item: Item, raw: dict[str, Any], kdefaults: dict[str, Any], seen: dict[str, Item], where: str,
@@ -489,6 +508,52 @@ def _image_to_model(item: Item, raw: dict[str, Any], kdefaults: dict[str, Any], 
         textured = True
     item.textured = textured
     item.stages.append(Stage(item.kind, item.kind, params, image_model_credits(item.kind, params, where, errors)))
+
+
+def _retexture(item: Item, raw: dict[str, Any], kdefaults: dict[str, Any], seen: dict[str, Item], where: str,
+               errors: list[str]) -> None:
+    """A local GLB (`model`) painted from exactly one style: `prompt`, one style image in `images`, or with
+    `multiview = true` 1 to 4 views in `images` (the first is the front)."""
+    params = {**RETEXTURE_DEFAULTS, **_params(item, raw, kdefaults, where, errors)}
+    model = inputs.parse_file(raw.get("model"), "model", where, errors)
+    if "model" not in raw:
+        errors.append(f"{where}: a retexture needs 'model', a local GLB: {{ file = \"raw:....glb\", provenance = ... }}")
+    multiview = raw.get("multiview", False)
+    if not isinstance(multiview, bool):
+        errors.append(f"{where}: multiview must be true or false")
+        multiview = False
+    count = _inputs(item, raw, seen, where, errors)
+    item.inputs = ([model] if model else []) + item.inputs
+    item.multiview = multiview
+    if not item.prompt and not count:
+        errors.append(f"{where}: a retexture needs a style: 'prompt' (text_style_prompt) or a style image in 'images'")
+    elif item.prompt and count:
+        errors.append(f"{where}: set 'prompt' or 'images', not both: the docs take one style, and with both the image "
+                      "wins, so the prompt would be paid for and ignored")
+    if count > 1 and not multiview:
+        errors.append(f"{where}: one style image goes as image_style_url; set multiview = true to send 1 to 4 views")
+    if multiview and not count:
+        errors.append(f"{where}: multiview = true needs 1 to 4 views in 'images'")
+    if len(item.prompt) > PROMPT_MAX:
+        errors.append(f"{where}: the prompt has {len(item.prompt)} characters, text_style_prompt takes at most "
+                      f"{PROMPT_MAX}")
+    ai_model = params.get("ai_model", "latest")
+    if ai_model not in RETEXTURE_MODELS:
+        errors.append(f"{where}: retexture takes ai_model {', '.join(RETEXTURE_MODELS)}, not {ai_model!r}")
+    if multiview and ai_model != RETEXTURE_MULTIVIEW_MODEL:
+        errors.append(f"{where}: multiview views need ai_model = \"{RETEXTURE_MULTIVIEW_MODEL}\" set explicitly "
+                      "(the docs)")
+    for key in ("enable_original_uv", "enable_pbr", "alpha_thumbnail", "remove_lighting"):
+        if key in params and not isinstance(params[key], bool):
+            errors.append(f"{where}: params.{key} must be true or false")
+    if "remove_lighting" in params and ai_model == LITE_MODEL:
+        errors.append(f"{where}: Meshy refuses remove_lighting with {LITE_MODEL} (HTTP 400), whatever its value")
+    resolution = str(params.get("texture_resolution", "2k"))
+    if resolution not in RETEXTURE_CREDITS:
+        errors.append(f"{where}: texture_resolution {resolution!r} is not one of {', '.join(RETEXTURE_CREDITS)}")
+    elif resolution != "2k" and ai_model == LITE_MODEL:
+        errors.append(f"{where}: {LITE_MODEL} retextures at 2k only (4k and 8k need meshy-6, meshy-7 or latest)")
+    item.stages.append(Stage("retexture", "retexture", params, RETEXTURE_CREDITS.get(resolution, 0)))
 
 
 def _remesh(item: Item, raw: dict[str, Any], kdefaults: dict[str, Any], seen: dict[str, Item], where: str,

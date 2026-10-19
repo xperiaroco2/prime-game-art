@@ -12,7 +12,7 @@ from runner.commands._meshy_api import Clock, MeshyClient, Response
 KEY = "msy_TEST_secret_key_0123456789"
 ASSETS = "https://assets.example.test"
 COSTS = {"preview": 20, "refine": 10, "rig": 5, "animate": 3, "text_to_image": 9, "image_to_image": 9,
-         "image_to_3d": 30, "multi_image_to_3d": 30, "remesh": 5, "text_to_motion": 10}
+         "image_to_3d": 30, "multi_image_to_3d": 30, "remesh": 5, "text_to_motion": 10, "retexture": 10}
 MOTION_COSTS = {"prime": 10, "swift": 3}
 # The animation library as the docs list it (docs.meshy.ai/en/api/animation-library), three actions of 591.
 LIBRARY = [{"action_id": 0, "name": "Idle", "category": "DailyActions", "subcategory": "Idle",
@@ -24,7 +24,8 @@ LIBRARY = [{"action_id": 0, "name": "Idle", "category": "DailyActions", "subcate
 # The create path of each image-mode kind (docs/meshy.md).
 IMAGE_MODE_PATHS = {"/openapi/v1/text-to-image": "text_to_image", "/openapi/v1/image-to-image": "image_to_image",
                     "/openapi/v1/image-to-3d": "image_to_3d", "/openapi/v1/multi-image-to-3d": "multi_image_to_3d",
-                    "/openapi/v1/remesh": "remesh", "/openapi/v1/text-to-motion": "text_to_motion"}
+                    "/openapi/v1/remesh": "remesh", "/openapi/v1/text-to-motion": "text_to_motion",
+                    "/openapi/v1/retexture": "retexture"}
 # Real PNG and GLB headers, so the runner's format checks pass on downloaded files.
 PNG = b"\x89PNG\r\n\x1a\n"
 GLB = b"glTF"
@@ -118,6 +119,8 @@ class FakeMeshy:
             cost = self.cost[stage] * (len(payload.get("action_ids", [])) or 1)
         elif stage == "text_to_motion":
             cost = MOTION_COSTS[payload.get("mode", "prime")]
+        elif stage == "retexture":
+            cost = 15 if payload.get("texture_resolution") == "8k" else self.cost[stage]
         else:
             cost = self.cost[stage]  # a three-view image set is one charge, as Meshy bills it
         if self.balance < cost:
@@ -165,6 +168,18 @@ class FakeMeshy:
                 task["payload"].get("image_url") or task["payload"].get("image_urls"))  # inputs echoed back
         elif stage == "remesh":
             out["model_urls"] = {"glb": f"{base}/model.glb?Expires=9"}
+        elif stage == "retexture":
+            # the docs' task object: model_urls, texture_urls (PBR maps with enable_pbr), thumbnail_url, and the
+            # style inputs echoed back (never downloaded); every map named texture_0.png here, so the key path names
+            # the files, as when Meshy's basenames collide
+            out["model_urls"] = {"glb": f"{base}/model.glb?Expires=9", "fbx": f"{base}/model.fbx?Expires=9"}
+            maps = ["base_color"] + (["metallic", "normal", "roughness"] if task["payload"].get("enable_pbr") else [])
+            out["texture_urls"] = [{m: f"{base}/{m}/texture_0.png?Expires=9" for m in maps}]
+            out["thumbnail_url"] = f"{base}/preview.png?Expires=9"
+            for key in ("image_style_url", "text_style_prompt", "multiview_image_urls"):
+                if key in task["payload"]:
+                    out[key] = task["payload"][key]
+            out["texture_image_url"] = "https://input.example.test/style.png"  # in the docs' sample, an input
         elif stage == "text_to_motion":
             mode = task["payload"].get("mode", "prime")
             ext = "fbx" if mode == "prime" else "bvh"
