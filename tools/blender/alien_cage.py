@@ -104,10 +104,14 @@ LEG = [
 FOOT = [
     (0.088, 0.100, 25.0, 0.045, 0.050, 0.075),
     (0.062, 0.060, 55.0, 0.055, 0.062, 0.080),
-    (-0.005, 0.046, 90.0, 0.060, 0.050, 0.046),
-    (-0.048, 0.040, 90.0, 0.071, 0.042, 0.040),
-    (-0.072, 0.040, 90.0, 0.078, 0.044, 0.040),
+    (-0.005, 0.046, 90.0, 0.060, 0.056, 0.046),
+    (-0.048, 0.040, 90.0, 0.071, 0.054, 0.040),
+    (-0.072, 0.040, 90.0, 0.078, 0.054, 0.040),
 ]
+# The vertical rings' top side vertices, as a share of the ring's height (S7: 0.35 -> 0.62, with the tops above raised
+# about 1 cm, so the forefoot stays high and round from the side to the toes, as u1's paddle, and the outer toes sit
+# level instead of slanting down)
+FOOT_SIDE_H = 0.62
 FOOT_X = 0.117
 # Toes: per extrusion (forward m from the toe's base, width scale, height scale, drop m); the middle toe reaches
 # TOE_MID further. Fat round lobes (u1): they keep the base's width and height nearly to the end, then a short
@@ -217,7 +221,7 @@ def build_cage(sole_drop, trunk):
             bm.faces.new((prev[j], prev[(j + 1) % 8], ring[(j + 1) % 8], ring[j]))
         prev = ring
     # feet: the ankle ring's j at -22.5 + 45 j degrees; front four (7, 0, 1, 2) become the top, back four the sole
-    role = {7: (-1.0, 0.35, 1), 0: (-0.4, 1.0, 1), 1: (0.4, 1.0, 1), 2: (1.0, 0.35, 1),
+    role = {7: (-1.0, FOOT_SIDE_H, 1), 0: (-0.4, 1.0, 1), 1: (0.4, 1.0, 1), 2: (1.0, FOOT_SIDE_H, 1),
             3: (1.0, -0.6, -1), 4: (0.4, -1.0, -1), 5: (-0.4, -1.0, -1), 6: (-1.0, -0.6, -1)}
     for y, zc, tilt, w, ht, hb in FOOT:
         al = math.radians(tilt)
