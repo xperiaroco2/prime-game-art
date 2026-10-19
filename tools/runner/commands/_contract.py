@@ -22,7 +22,9 @@ GODOT_PROJECT = common.ROOT / "tools" / "godot"
 DUMP_SCRIPT = "res://dump_profile.gd"
 FINGERS = ("Thumb", "Index", "Middle", "Ring", "Little")
 SIDES = ("Left", "Right")
-KINDS = ("body", "clothing", "accessory", "prop")
+KINDS = ("body", "alien", "clothing", "accessory", "prop")
+# The kinds judged as a whole character body: a body's morph rule (face morphs on the head bones, no body shapes).
+BODY_KINDS = ("body", "alien")
 DECIMALS = 6
 SEVERITIES = ("fail", "warn", "off")
 # The values each kinds.<kind> rule may take in contract.toml.
@@ -191,6 +193,12 @@ def validate_contract(contract: dict[str, Any], profile: dict[str, Any]) -> list
                 errors.append(f"kinds.{kind}.{key} is {rules.get(key)!r}; it must be one of {', '.join(allowed)}")
         if not isinstance(rules.get("max_materials"), int):
             errors.append(f"kinds.{kind}.max_materials must be an integer")
+        fingers = skeleton.get("fingers", [])
+        unweighted = rules.get("fingers_unweighted", [])
+        if not isinstance(unweighted, list) or any(finger not in fingers for finger in unweighted):
+            errors.append(f"kinds.{kind}.fingers_unweighted is {unweighted!r}; it must list fingers of skeleton.fingers")
+        elif unweighted and len(set(unweighted)) >= len(fingers):
+            errors.append(f"kinds.{kind}.fingers_unweighted leaves no weighted finger")
     for name, budget in contract.get("budgets", {}).items():
         if name == "limits":
             continue
