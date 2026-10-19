@@ -48,13 +48,15 @@ def evaluate(
     profile: dict[str, Any],
     bone_map: dict[str, Any] | None = None,
     slot: dict[str, Any] | None = None,
+    socketed: bool = False,
 ) -> dict[str, Any]:
-    """With a slot, the slot's budget wins over the kind's (hair_or_hat: head_item, not accessory)."""
+    """With a slot, the slot's budget wins over the kind's (hair_or_hat: head_item, not accessory). socketed: a rigid
+    part that sits on a socket in its kit's file, placed by its own transform by design (no transforms_applied)."""
     rules = contract["kinds"][kind]
     budget = (slot or {}).get("budget") or rules["budget"]
     report = _Report()
     meshes = measure.get("meshes", [])
-    _mesh_checks(report, meshes, measure, contract, kind, budget)
+    _mesh_checks(report, meshes, measure, contract, kind, budget, socketed)
     _morph_checks(report, meshes, contract, kind, bone_map, slot)
     if meshes:
         _shape_checks(report, meshes, contract, rules)
@@ -78,6 +80,126 @@ def evaluate(
     }
 
 
+# An alien parts kit (art #226): the slot each group of character.json's `nodes` is judged under. A crest takes the
+# hair's place on top of the head, so it is held to the head item's budget.
+KIT_SLOTS = {"eyes": "eyes", "mouths": "mouth", "crests": "hair_or_hat"}
+
+
+def kit_parts(character: dict[str, Any]) -> dict[str, dict[str, list[str]]]:
+    """The choices of an alien kit's character.json (`nodes`, written by tools/blender/alien_assemble.py and
+    alien_mouths.py): {group: {choice: [mesh names shown together]}}. An eye design is both sides' ball and lids
+    (the side's group node is an empty); a mouth choice is one piece, 3D or flipbook, with its design's `teeth` when it
+    has them; a crest is itself."""
+    nodes = character.get("nodes")
+    if not isinstance(nodes, dict):
+        raise ValueError("not an alien kit: character.json has no `nodes`")
+    kit: dict[str, dict[str, list[str]]] = {"eyes": {}, "mouths": {}, "crests": {}}
+    for design, sides in sorted(nodes.get("eyes", {}).items()):
+        kit["eyes"][design] = [
+            name for _, side in sorted(sides.items()) for key, name in sorted(side.items()) if key != "node"
+        ]
+    for design, pieces in sorted(nodes.get("mouths", {}).items()):
+        teeth = [pieces["teeth"]] if "teeth" in pieces else []
+        for shape, name in sorted(pieces.items()):
+            if shape != "teeth":
+                kit["mouths"][name] = [name, *teeth]
+    for name in nodes.get("crests", []):
+        kit["crests"][name] = [name]
+    return kit
+
+
+def evaluate_kit(
+    measure: dict[str, Any],
+    kit: dict[str, dict[str, list[str]]],
+    contract: dict[str, Any],
+    profile: dict[str, Any],
+    bone_map: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """An alien kit GLB judged per part (docs/contract.md, "The alien parts kit"): every mesh the kit does not list
+    (`Body`) as `--kind alien` (its height from them alone); each listed mesh alone under its group's slot (KIT_SLOTS:
+    the slot's check_kind and budget), rigid on its socket by design; and the shown combination (the body, one eye
+    design, one mouth piece, one crest: the largest of each) against the character budget."""
+    by_name = {m["name"]: m for m in measure.get("meshes", [])}
+    listed = {name for choices in kit.values() for members in choices.values() for name in members}
+    body_measure = {**measure, "meshes": [m for m in measure.get("meshes", []) if m["name"] not in listed]}
+    report = evaluate(body_measure, "alien", contract, profile, bone_map)
+    body_results = report["results"]
+    kit_line = _Report()
+    kit_line.add(
+        "kit",
+        PASS,
+        f"Body judged as the alien ({', '.join(m['name'] for m in body_measure['meshes']) or 'no mesh'}); "
+        + ", ".join(f"{len(choices)} {group}" for group, choices in kit.items())
+        + f" judged per part ({len(listed)} meshes)",
+    )
+    parts: dict[str, Any] = {}
+    part_results = _Report()
+    for group, choices in kit.items():
+        slot = _contract.checkable_slot(contract, KIT_SLOTS[group])
+        for name in sorted({n for members in choices.values() for n in members}):
+            mesh = by_name.get(name)
+            if mesh is None:
+                part_results.add(f"part {name}", WARN, f"{group}: listed in the kit but not in the file")
+                continue
+            alone = {"model": measure.get("model"), "meshes": [mesh], "armatures": [], "empties": [],
+                     "other_objects": []}
+            part = evaluate(alone, slot["check_kind"], contract, profile, None, slot, socketed=True)
+            parts[name] = {k: part[k] for k in ("kind", "slot", "budget", "verdict", "summary", "results")}
+            others = [r for r in part["results"] if r["status"] != PASS]
+            status = FAIL if part["verdict"] == FAIL else WARN if others else PASS
+            # the failures with their detail, the warnings by name (report.json's kit.parts holds every detail)
+            notes = "; ".join(f"{r['check']}: {r['detail']}" if r["status"] == FAIL else r["check"] for r in others)
+            part_results.add(
+                f"part {name}",
+                status,
+                f"{group} ({slot['id']}, budget {part['budget']}): {mesh['triangles']:,} triangles, "
+                f"{mesh['vertices']:,} vertices" + (f"; {notes}" if notes else ""),
+            )
+    combination = _kit_combination(report["measure"]["meshes"], kit, by_name)
+    combo = _Report()
+    budget = contract["budgets"]["character"]
+    for metric in ("triangles", "vertices"):
+        value, target, cap = combination[metric], budget[f"{metric}_target"], budget[f"{metric}_cap"]
+        status = FAIL if value > cap else WARN if value > target else PASS
+        terms = " + ".join(f"{label} {n:,}" for label, n in combination[f"{metric}_terms"])
+        combo.add(
+            f"character_{metric}",
+            status,
+            f"{value:,} = {terms}: the largest shown combination (budget character: target {target:,}, cap {cap:,})",
+        )
+    results = kit_line.results + body_results + part_results.results + combo.results
+    summary = {status: sum(1 for r in results if r["status"] == status) for status in (PASS, WARN, FAIL)}
+    report.update(
+        verdict=FAIL if summary[FAIL] else PASS,
+        summary=summary,
+        results=results,
+        measure=measure,
+        kit={"parts": parts, "combination": combination, "slots": KIT_SLOTS},
+    )
+    return report
+
+
+def _kit_combination(body_meshes: list, kit: dict[str, dict[str, list[str]]], by_name: dict) -> dict[str, Any]:
+    """What one character shows at most: the body plus, per group, the choice with the most triangles."""
+    out: dict[str, Any] = {"choices": {}}
+    for metric in ("triangles", "vertices"):
+        terms = [("Body" if len(body_meshes) == 1 else "body", _total(body_meshes, metric))]
+        for group, choices in kit.items():
+            sized = {c: sum(int(by_name[n][metric]) for n in members if n in by_name) for c, members in choices.items()}
+            if not sized:
+                continue
+            biggest = max(sorted(sized), key=lambda c: (_choice_triangles(choices[c], by_name), sized[c]))
+            out["choices"][group] = biggest
+            terms.append((f"{group.removesuffix('s')} {biggest}", sized[biggest]))
+        out[metric] = sum(n for _, n in terms)
+        out[f"{metric}_terms"] = terms
+    return out
+
+
+def _choice_triangles(members: list[str], by_name: dict) -> int:
+    return sum(int(by_name[n]["triangles"]) for n in members if n in by_name)
+
+
 def _total(meshes: list[dict[str, Any]], key: str) -> int:
     return sum(int(m.get(key, 0)) for m in meshes)
 
@@ -86,7 +208,9 @@ def _names(meshes: list[dict[str, Any]], key: str) -> str:
     return ", ".join(f"{m['name']} ({m[key]})" for m in meshes if m.get(key))
 
 
-def _mesh_checks(report: _Report, meshes: list, measure: dict, contract: dict, kind: str, budget_name: str) -> None:
+def _mesh_checks(
+    report: _Report, meshes: list, measure: dict, contract: dict, kind: str, budget_name: str, socketed: bool = False
+) -> None:
     rules = contract["kinds"][kind]
     if not meshes:
         report.add("meshes", FAIL, "the file has no mesh")
@@ -132,17 +256,20 @@ def _mesh_checks(report: _Report, meshes: list, measure: dict, contract: dict, k
     modifiers = sorted({t for m in meshes for t in m.get("modifiers", [])})
     if modifiers:
         report.add("modifiers", WARN, f"unapplied modifiers {', '.join(modifiers)}: apply them before export")
-    tolerance = contract["body"]["transform_tolerance"]
-    unapplied = [
-        obj["name"]
-        for obj in meshes + measure.get("armatures", [])
-        if not _identity(obj["transform"], tolerance)
-    ]
-    report.add(
-        "transforms_applied",
-        FAIL if unapplied else PASS,
-        f"not applied on {', '.join(unapplied)}" if unapplied else "location 0, rotation 0, scale 1 everywhere",
-    )
+    if socketed:
+        report.add("transforms_applied", PASS, "a rigid part on its socket: its transform places it, by design")
+    else:
+        tolerance = contract["body"]["transform_tolerance"]
+        unapplied = [
+            obj["name"]
+            for obj in meshes + measure.get("armatures", [])
+            if not _identity(obj["transform"], tolerance)
+        ]
+        report.add(
+            "transforms_applied",
+            FAIL if unapplied else PASS,
+            f"not applied on {', '.join(unapplied)}" if unapplied else "location 0, rotation 0, scale 1 everywhere",
+        )
     if measure.get("other_objects"):
         report.add("other_objects", WARN, f"the file also holds {', '.join(measure['other_objects'])} objects")
 

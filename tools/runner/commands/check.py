@@ -1,7 +1,9 @@
 """`check <model> --kind body|alien|clothing|accessory|prop | --slot ID [--map NAME]`: measures a model in headless
 Blender (tools/blender/check_model.py) and judges it against contract/contract.toml. Writes report.json; exits 1 on a
 hard failure. --slot judges a piece for a slot in contract.toml: its check_kind and its own budget (hair_or_hat uses
-head_item). With --map, bone names are read through contract/bone_maps/<NAME>.toml first.
+head_item). With --map, bone names are read through contract/bone_maps/<NAME>.toml first. An alien parts kit (`--kind
+alien` with --kit, or a character.json with `nodes` beside the model) is judged per part (art #226): Body as the alien,
+each eye, mouth and crest part under its slot, and the largest shown combination against the character budget.
 """
 
 from __future__ import annotations
@@ -23,6 +25,9 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--kind", choices=_contract.KINDS, help="what the model is (or give --slot)")
     parser.add_argument("--slot", help="a slot id from contract.toml: its check_kind and budget (e.g. hair_or_hat)")
     parser.add_argument("--map", choices=_contract.map_names(), help="read bone names through this bone map")
+    parser.add_argument(
+        "--kit", help="--kind alien: the kit's character.json (default: the one beside the model, when it has `nodes`)"
+    )
     parser.add_argument("--report", help="where to write report.json (default tools/out/check/<model>/report.json)")
 
 
@@ -39,6 +44,13 @@ def run(args: argparse.Namespace) -> int:
     if slot and kind != slot["check_kind"]:
         raise common.Failure(f"slot {slot['id']} is checked as {slot['check_kind']}, not {kind}")
     bone_map = _contract.load_map(args.map) if args.map else None
+    kit_path = _kit_path(model, kind, args.kit)
+    kit = None
+    if kit_path:
+        try:
+            kit = _checks.kit_parts(json.loads(kit_path.read_text(encoding="utf-8")))
+        except ValueError as exc:
+            raise common.Failure(f"{kit_path}: {exc}") from None
     report_path = Path(args.report).resolve() if args.report else common.OUT / "check" / model.stem / "report.json"
     work = report_path.parent
     work.mkdir(parents=True, exist_ok=True)
@@ -48,13 +60,19 @@ def run(args: argparse.Namespace) -> int:
         measure_path.unlink()
     blender.run_script("check_model.py", [model.as_posix(), params_path.as_posix(), measure_path.as_posix()])
     measure = json.loads(measure_path.read_text(encoding="utf-8"))
-    report = _checks.evaluate(measure, kind, contract, profile, bone_map, slot)
+    if kit is not None:
+        report = _checks.evaluate_kit(measure, kit, contract, profile, bone_map)
+        report["kit"]["source"] = kit_path.as_posix()
+    else:
+        report = _checks.evaluate(measure, kind, contract, profile, bone_map, slot)
     report_path.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
     note = ""
     if bone_map:
         note = f", map {bone_map['name']}" + ("" if bone_map.get("confirmed") else " (names unconfirmed)")
     target = f"{kind} for the slot {slot['id']}" if slot else kind
+    if kit is not None:
+        target = f"an alien parts kit, per part ({kit_path.name})"
     common.say(f"check {model.name} as {target}, budget {report['budget']}{note}")
     for result in report["results"]:
         common.say(f"  {MARKS[result['status']]} {result['check']}: {result['detail']}")
@@ -64,3 +82,22 @@ def run(args: argparse.Namespace) -> int:
         f"report {report_path.as_posix()}"
     )
     return 1 if report["verdict"] == _checks.FAIL else 0
+
+
+def _kit_path(model: Path, kind: str, given: str | None) -> Path | None:
+    """The kit's character.json: --kit, or for --kind alien the one beside the model when it lists `nodes`."""
+    if given:
+        if kind != "alien":
+            raise common.Failure("--kit judges an alien parts kit: give --kind alien")
+        path = Path(given).resolve()
+        if not path.is_file():
+            raise common.Failure(f"no such kit file: {path}")
+        return path
+    beside = model.parent / "character.json"
+    if kind != "alien" or not beside.is_file():
+        return None
+    try:
+        nodes = json.loads(beside.read_text(encoding="utf-8")).get("nodes")
+    except (ValueError, AttributeError):
+        return None
+    return beside if isinstance(nodes, dict) else None

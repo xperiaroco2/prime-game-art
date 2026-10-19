@@ -1,7 +1,10 @@
 """The check rules on hand-made measurements: pure Python, no Blender."""
 
 import copy
+import json
+import tempfile
 import unittest
+from pathlib import Path
 
 from runner import common
 from runner.commands import _checks, _contract
@@ -384,6 +387,131 @@ class AlienFingersTest(unittest.TestCase):
     def test_the_alien_keeps_the_body_morph_rule(self) -> None:
         measure = with_keys(four_finger_alien(self.profile), {"belly": {"Spine": 30}})
         self.assertEqual(self.statuses(self.evaluate(measure, "alien"))["body_shape_morphs"], _checks.FAIL)
+
+
+# An alien kit's character.json `nodes`, as tools/blender/alien_mouths.py writes them (S9d, art #196), cut down.
+KIT_NODES = {
+    "eyes": {
+        "bored": {s: {"node": f"eye_bored_{s}", "ball": f"eye_bored_ball_{s}", "lid_upper": f"eye_bored_lid_upper_{s}",
+                      "lid_lower": f"eye_bored_lid_lower_{s}"} for s in ("L", "R")},
+        "manic": {s: {"node": f"eye_manic_{s}", "ball": f"eye_manic_ball_{s}"} for s in ("L", "R")},
+    },
+    "mouths": {
+        "frog": {"rest": "mouth_frog_rest", "A": "mouth_frog_A"},
+        "overbite": {"rest": "mouth_overbite_rest", "teeth": "mouth_overbite_teeth"},
+    },
+    "crests": ["crest_antennae", "crest_fins"],
+}
+REAL_KIT = common.raw_dir() / "review/char/alien-parts-kit/S9d/export/cage/character.json"
+
+
+def alien_kit(profile: dict, part_triangles: dict[str, int] | None = None) -> dict:
+    """A good four-finger alien Body plus every kit part as a rigid mesh off its socket (not at the origin)."""
+    measure = four_finger_alien(profile)
+    kit = _checks.kit_parts({"nodes": KIT_NODES})
+    for name in sorted({n for choices in kit.values() for members in choices.values() for n in members}):
+        part = rigid_piece((part_triangles or {}).get(name, 1000))["meshes"][0]
+        part.update(name=name, min=[-0.05, 1.70, 0.0], max=[0.05, 1.86, 0.1])  # a crest above 1.80 m
+        part["transform"] = {"location": [0.07, 1.55, 0.06], "rotation_deg": 11.5, "scale": [1.0, 1.0, 1.0]}
+        measure["meshes"].append(part)
+    return measure
+
+
+class AlienKitTest(unittest.TestCase):
+    """`check --kind alien` on a parts kit (art #226): Body as the alien, each part under its slot, the largest shown
+    combination against the character budget."""
+
+    setUp = EvaluateTest.setUp
+    statuses = EvaluateTest.statuses
+
+    def evaluate(self, measure: dict) -> dict:
+        return _checks.evaluate_kit(measure, _checks.kit_parts({"nodes": KIT_NODES}), self.contract, self.profile)
+
+    def test_the_kit_parts_are_read_by_group(self) -> None:
+        kit = _checks.kit_parts({"nodes": KIT_NODES})
+        self.assertEqual(kit["eyes"]["bored"], ["eye_bored_ball_L", "eye_bored_lid_lower_L", "eye_bored_lid_upper_L",
+                                                "eye_bored_ball_R", "eye_bored_lid_lower_R", "eye_bored_lid_upper_R"])
+        self.assertEqual(kit["mouths"]["mouth_overbite_rest"], ["mouth_overbite_rest", "mouth_overbite_teeth"])
+        self.assertEqual(kit["mouths"]["mouth_frog_A"], ["mouth_frog_A"])
+        self.assertNotIn("mouth_overbite_teeth", kit["mouths"])  # shown with every overbite piece, not alone
+        self.assertEqual(kit["crests"], {"crest_antennae": ["crest_antennae"], "crest_fins": ["crest_fins"]})
+        with self.assertRaises(ValueError):
+            _checks.kit_parts({"glb": "export/alien_character.glb"})
+
+    def test_a_good_kit_passes_with_its_parts_on_sockets(self) -> None:
+        report = self.evaluate(alien_kit(self.profile))
+        self.assertEqual(report["verdict"], _checks.PASS, [r for r in report["results"] if r["status"] != "pass"])
+        statuses = self.statuses(report)
+        self.assertEqual(statuses["transforms_applied"], _checks.PASS)  # the body's
+        self.assertEqual(statuses["height"], _checks.PASS)  # Body alone: the crest reaches 1.86 m
+        self.assertEqual(statuses["part crest_fins"], _checks.PASS)
+        self.assertEqual(report["kit"]["parts"]["crest_fins"]["slot"], "hair_or_hat")
+        self.assertEqual(report["kit"]["parts"]["mouth_frog_A"]["budget"], "accessory")
+        eye = {r["check"]: r for r in report["kit"]["parts"]["eye_bored_ball_L"]["results"]}
+        self.assertIn("rigid part on its socket", eye["transforms_applied"]["detail"])
+        self.assertEqual(eye["rig"]["status"], _checks.PASS)
+
+    def test_only_the_largest_shown_combination_counts(self) -> None:
+        report = self.evaluate(alien_kit(self.profile, {"mouth_frog_A": 2400, "crest_fins": 1200}))
+        combination = report["kit"]["combination"]
+        # Body 5,800 + the bored eyes (6 x 1,000) + the frog's A (2,400) + crest_fins (1,200); not every part's sum
+        self.assertEqual(combination["triangles"], 5800 + 6000 + 2400 + 1200)
+        self.assertEqual(combination["choices"], {"eyes": "bored", "mouths": "mouth_frog_A", "crests": "crest_fins"})
+        self.assertEqual(self.statuses(report)["character_triangles"], _checks.PASS)
+        self.assertEqual(self.statuses(report)["triangles"], _checks.PASS)  # the body's own budget
+
+    def test_part_failures_fail_the_kit(self) -> None:
+        cap = self.contract["budgets"]["accessory"]["triangles_cap"]
+        measure = alien_kit(self.profile, {"mouth_frog_A": cap + 1})
+        next(m for m in measure["meshes"] if m["name"] == "crest_fins")["non_manifold_edges"] = 4
+        next(m for m in measure["meshes"] if m["name"] == "eye_manic_ball_R")["skinned"] = True
+        report = self.evaluate(measure)
+        statuses = self.statuses(report)
+        self.assertEqual(report["verdict"], _checks.FAIL)
+        for part in ("part mouth_frog_A", "part crest_fins", "part eye_manic_ball_R"):
+            self.assertEqual(statuses[part], _checks.FAIL, part)
+        self.assertEqual(statuses["part mouth_frog_rest"], _checks.PASS)
+
+    def test_the_combination_has_the_character_budget(self) -> None:
+        cap = self.contract["budgets"]["character"]["triangles_cap"]
+        measure = alien_kit(self.profile)
+        measure["meshes"][0]["triangles"] = cap
+        statuses = self.statuses(self.evaluate(measure))
+        self.assertEqual(statuses["character_triangles"], _checks.FAIL)
+        self.assertEqual(statuses["triangles"], _checks.FAIL)  # and the body over its own cap
+
+    def test_a_missing_part_warns(self) -> None:
+        measure = alien_kit(self.profile)
+        measure["meshes"] = [m for m in measure["meshes"] if m["name"] != "mouth_overbite_teeth"]
+        self.assertEqual(self.statuses(self.evaluate(measure))["part mouth_overbite_teeth"], _checks.WARN)
+
+    @unittest.skipUnless(REAL_KIT.is_file(), f"the S9d kit is not in {REAL_KIT.parent.as_posix()}")
+    def test_the_real_kit_file(self) -> None:
+        kit = _checks.kit_parts(json.loads(REAL_KIT.read_text(encoding="utf-8")))
+        self.assertEqual(sorted(kit["eyes"]), ["bored", "manic"])
+        self.assertTrue(all(len(members) == 6 for members in kit["eyes"].values()))
+        self.assertEqual(len(kit["mouths"]), 24)  # two designs, six shapes, 3D pieces and flipbook shells
+        self.assertEqual(sorted(kit["crests"]), ["crest_antennae", "crest_fins"])
+
+
+class KitPathTest(unittest.TestCase):
+    """check.py finds the kit's character.json beside an alien model, only with `nodes`."""
+
+    def test_the_kit_beside_the_model(self) -> None:
+        from runner.commands import check
+
+        with tempfile.TemporaryDirectory() as tmp:
+            model = Path(tmp) / "alien_character.glb"
+            beside = Path(tmp) / "character.json"
+            self.assertIsNone(check._kit_path(model, "alien", None))
+            beside.write_text(json.dumps({"glb": "x.glb"}), encoding="utf-8")
+            self.assertIsNone(check._kit_path(model, "alien", None))
+            beside.write_text(json.dumps({"nodes": KIT_NODES}), encoding="utf-8")
+            self.assertEqual(check._kit_path(model, "alien", None), beside)
+            self.assertIsNone(check._kit_path(model, "body", None))
+            self.assertEqual(check._kit_path(model, "alien", str(beside)), beside.resolve())
+            with self.assertRaises(common.Failure):
+                check._kit_path(model, "body", str(beside))
 
 
 def with_keys(measure: dict, keys: dict[str, dict[str, int | tuple[int, float]]] | None) -> dict:

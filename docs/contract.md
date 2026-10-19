@@ -22,6 +22,7 @@ neutral body in v1, animations only (no ragdoll). Since 2026-10-11 the knockdown
 tools/run.py contract              # regenerate contract/humanoid.json from Godot, validate contract/
 tools/run.py contract --check      # change nothing; fail when humanoid.json is stale or contract/ disagrees
 tools/run.py check <model> --kind body|alien|clothing|accessory|prop [--map mixamo|meshy|quaternius] [--report FILE]
+tools/run.py check <alien kit glb> --kind alien [--kit character.json]   # per part; the kit file beside it by default
 tools/run.py check <model> --slot hair_or_hat|eyes|mouth|top|... [--map NAME] [--report FILE]
 tools/run.py rename-bones <model> --map <name> --out <file.glb|.gltf|.blend>
 ```
@@ -115,6 +116,21 @@ carries weights fails, and so does another finger left unweighted. `fingers_unwe
 (default none); `contract --check` refuses a finger outside `skeleton.fingers` or a list that leaves no weighted
 finger.
 
+**The alien parts kit** (art #226). The kit is one GLB holding the body and every eye, mouth and crest variant
+(`docs/godot.md`, "The alien parts kit"), and a character shows one of each. `check --kind alien` judges it per part
+when it finds the kit's `character.json` (with `nodes`) beside the model, or is given one with `--kit`:
+- every mesh the kit does not list (`Body`) is judged as the alien body, so the height is measured on `Body` alone;
+- each listed mesh is judged alone under its group's slot (`_checks.KIT_SLOTS`): eye balls and lid shells under
+  `eyes`, the mouth pieces (3D and flipbook shells) under `mouth`, both `accessory` with its budget; a crest under
+  `hair_or_hat`, the head item's budget, since it takes the hair's place on top of the head. A part is rigid on its
+  socket by design, so its own transform passes (`transforms_applied`); a skinned part fails as any rigid piece does;
+- the shown combination is the body plus the largest eye design (both sides' balls and lids), the largest mouth piece
+  (with its design's `teeth`, when it has them) and the largest crest, judged against the character budget
+  (`character_triangles`, `character_vertices`); the other variants never count.
+
+Each part's line names its slot, triangles and vertices, and its failures; `report.json` keeps every part's full
+results under `kit.parts`, and the combination under `kit.combination`.
+
 **Animation.** Skeletal clips on the contract skeleton in one shared library, in place, loops suffixed `_loop`; the
 knockdown is a ragdoll ("Ragdoll" below); every other state is a clip. Eyes and mouth animate by the face morphs
 ("Faces" above), weighted at runtime, never by bones or texture frames; the full expression lists wait for the style
@@ -191,7 +207,8 @@ measured).
 | triangles and vertices against the kind's budget | yes | yes | yes | yes |
 | n-gons, loose vertices and edges, non-manifold edges (more than two faces on an edge): fail | yes | yes | yes | yes |
 | open edges, debris parts under 4 faces, UVs outside 0..1, unapplied modifiers, extra materials: warn | yes | yes | yes | yes |
-| a UV map on every mesh; location 0, rotation 0, scale 1 on every mesh and armature | yes | yes | yes | yes |
+| a UV map on every mesh; location 0, rotation 0, scale 1 on every mesh and armature (an alien kit's parts: on their sockets) | yes | yes | yes | yes |
+| an alien parts kit: each part under its slot; the body and the largest shown parts against the character budget | alien | | | |
 | height 1.70 to 1.80 m (plasticine look 1.90 m); feet at y = 0 | fail | | | feet warn |
 | eyes near 1.6 m (from the eye bones) | warn | | | |
 | facing: toes towards +Z, left hand at +X | fail | | | |
