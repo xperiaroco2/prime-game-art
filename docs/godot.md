@@ -739,7 +739,7 @@ a time, by visibility.
     `_apply_lids` sets each ball's rotation to 11.5 degrees inward about the socket's up axis (absolute, so a GLB whose
     balls already carry it is unchanged; `aim_in_deg`): the eyes meet about 1.2 m ahead.
   - Lips, inner cup and teeth: `StandardMaterial3D`s with wrapped diffuse and **culling off** (the imported materials
-    are double-sided; culled, the inner cup vanished and the open mouths showed the skin): lips sRGB (0.76, 0.45, 0.40)
+    are double-sided; culled, the inner cup vanished and the open mouths showed the skin): lips sRGB (0.76, 0.45, 0.40; S9: (0.82, 0.44, 0.37) in `alien_lip.gdshader`)
     roughness 0.6 specular 0.3; the cup a dark plum (0.25, 0.11, 0.14), roughness 0.9; teeth ivory (0.96, 0.95, 0.90).
   - The lid shells take the lips' material: the chosen eye sheets (batch `2026-10-19-alien-face-sheets`, `eb1` and
     `em1`) draw the lids as soft coral domes the colour of the lips, not skin with a coral rim.
@@ -799,7 +799,7 @@ a time, by visibility.
   - **Neck:** `alien_parts.NECK_DROP` (22 mm) seats the head lower on the unchanged ring (`neck_ring.json` did not
     move), `fill_neck` fills the Meshy stalk toward the ring's size (`NECK_FILL`), the Neck weight reaches
     `NECK_BLEND` up the stalk, and `smooth_collar` relaxes the weld band. `CHIN_SCULPT` goes 20 mm forward.
-  - **Mouths:** `alien_mouths.SHAPE_SCALE` (A 0.80, E 0.88, O 0.94) shrinks the open shapes, which were measured to
+  - **Mouths:** `alien_mouths.SHAPE_SCALE` (S8: A 0.80, E 0.88, O 0.94; S8b: A 0.77, E 0.82; S9: A 0.72) shrinks the open shapes, which were measured to
     the sheets' wider faces; `--parts-report` takes `CHIN_Z` from the parts' sculpted chin.
   - `alien_cage_review.py --detail <character.blend>` renders the left hand at 0.5 m (rest, a fist, a relaxed curl,
     Walk, Talk, Idle) and the neck from the side and back (rest, Idle, turned, nodding) as `hands_<tag>.png` and
@@ -831,6 +831,45 @@ a time, by visibility.
     an S8 order made no image and the sheet failed with `Out of bounds get index '0'`), refuses an empty sheet, and
     adds `neck_hands.png`: the neck at 0.5 m from the side, back and three-quarter back in Idle and Talk, and the left
     hand in Idle and Walk, one block per character.
+- **S9, the quality pass** (the target: the GPT paintover `rf2` of batch `2026-10-19-alien-release-look`, drawn over
+  S8b's Godot render at the `hero_face_34` framing):
+  - **The crest** (`alien_parts.crest_blade`, `CREST_BLADE`): the Meshy horn, which curled forward and to one side,
+    is gone; the skull is cut below it and one back-swept blade grows out of it: sections along a Bezier spine, below
+    the cut the skull's own (rays), above it the skull's outline at the cut scaled by a width and a depth taper and
+    blended in from the skull's slope, so the forehead and the back of the head run on into the blade. A voxel union
+    (0.004 Meshy units), a fillet, a Taubin relax, then everything below the crown is projected back onto the Meshy
+    surface (the face is exact). The crown above the eyes is lowered (`crown_k` 0.8: rf2's head is shorter above the
+    eyes). The crest's coral tip is gone (all hue). Tried and dropped: an elliptic blade on a cut dome (a ledge at
+    the cut), the skull's section blended into the ellipse (a waist or a forehead ridge). The head is decimated to
+    `TRIS` 22,000 (S8b: 10,000; the decimation's mean deviation 0.03 mm, max 1.6 mm).
+  - **The surface** (`alien_hue.gdshader`, every term a uniform set from `alien.gd`'s `SKIN`): the hue deepens
+    (`deep_mul`, darker and bluer) toward the top of the head (`deep_top`, by model-space height) and the back
+    (`deep_back`, by the model-space normal) away from the light mask; the pale tint warms toward the face
+    (`face_warm`); baked AO from the vertex colour (`ao_albedo`, `ao_light`); a model-space value-noise micro normal
+    (`grain`, 500 per m, faded out from 0.8 to 2.5 m so it never shimmers far away; `alien_grain.gdshaderinc`);
+    screen-space SSS (`sss`); a fresnel edge glow toward the pale tint (`rim_glow`). The teal is deeper and bluer
+    (sRGB 0.11, 0.48, 0.51; pale 0.86, 0.92, 0.81), sampled against rf2. The masks are softer: the face mask's upper
+    edge is higher between the eyes and fades over 6 cm (`alien_parts.MASK_FACE`), the belly's edge over 4 cm
+    (`BELLY_SOFT`), the knuckle spots smaller and on the back of the hand only (`KNUCKLE["dorsal"]`, by the T-pose
+    normal).
+  - **Baked AO** (`tools/blender/alien_ao.py`, a step after `alien_mouths.py`): Cycles bakes AO (6 cm, 96 samples)
+    into a float colour attribute `ao` on `Body` in the rest pose with the default face shown (bored rest lids, frog
+    rest; other parts hidden), lifted by a floor of 0.18 and smoothed once; exported as glTF `COLOR_0`
+    (`export_vertex_color="ACTIVE"`). The baked face is the default one: other eyes and mouths get the same skin AO.
+  - **Lips and lid domes** take `alien_lip.gdshader` (S5's colour, roughness and specular, both sides, wrapped
+    diffuse) with a soft clear coat (`LIP_LOOK` `sheen`) and a fainter grain; the lip colour is rf2's warmer coral
+    (0.82, 0.44, 0.37). The bored eye's catch light sits below the rest lid's edge and is crisper (`EYE_LOOK`).
+  - `hero_shots.gd`: the hero stills, `beside.png` (render | target) and `grid_<name>.png`, a tuning grid of shader
+    variants (`"variants"`: per-variant `skin`, `lip`, `eye` uniforms and `hue`) after the target, with an optional
+    plain backdrop like the paintover's (`"bg"`).
+  - **For three.js** (beyond S7's list): the page's hue shader must (1) multiply the albedo by `mix(1, COLOR_0.r,
+    0.5)` (`ao_albedo`; a plain material with vertex colours already multiplies it fully), (2) add the gradient: `c =
+    mix(hue, hue * (0.55, 0.72, 0.78), deep)` before the pale mix, with `deep = clamp(0.6 * smoothstep(1.50, 1.85, y)
+    + 1.0 * smoothstep(-0.3, 0.9, -n.z) * smoothstep(1.0, 1.4, y), 0, 1) * (1 - light)` in model space (y up, the
+    character facing +z), and the pale tint times `mix(1, (1.06, 1.0, 0.90), 0.6 * smoothstep(1.38, 1.50, y))`; (3)
+    the grain: the same value noise (`alien_grain.gdshaderinc`) on `position * 500` perturbing the normal by 0.12,
+    faded out from 0.8 to 2.5 m; (4) a fresnel emission `mix(c, pale, 0.5) * (1 - n.v)^3 * 0.3`; (5) the lips' clear
+    coat 0.08 at roughness 0.7.
 
 ## Findings for later tasks
 
