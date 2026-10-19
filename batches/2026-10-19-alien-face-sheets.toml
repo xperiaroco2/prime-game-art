@@ -1,0 +1,82 @@
+# art#196, the parts kit's S6 and S5 targets (the engineer's yes, 2026-10-19 ~14:35 UTC, and his question about the
+# eyes, ~15:00 UTC): GPT Image draws, on ONE sheet per design so the shapes stay consistent,
+# - each chosen mouth design's six talk shapes (1: the wide closed frog-line rolled lips; 3: the overbite with two peg
+#   teeth): the exact target for the 3D replacement pieces and the source of a flipbook-texture mouth test;
+# - each chosen eye design's states (1: bored, heavy half-closed lids; 4: manic, wide open, tiny pupils): the target for
+#   the lid shells, the pupils and the eye material.
+# Two tries per sheet. Under the standing permission for Meshy generation within the plan's credits (2026-10-03,
+# art#16). No game names. Schema: docs/meshy.md.
+
+id = "2026-10-19-alien-face-sheets"
+purpose = "art#196 parts kit S5/S6: one sheet per mouth design of its six talk shapes and one per eye design of its states, as the 3D and material targets."
+plan = "Meshy paid plan (monthly; bought by the engineer on 2026-10-17)"
+terms_url = "https://www.meshy.ai/terms-of-use"
+licence = "owned by the customer on a paid plan (Meshy Terms of Use 3.2, updated 2026-09-19); no attribution required"
+credit_cap = 110
+approved_by = "xperiaroco2 (the engineer)"
+approved_at = "2026-10-03"
+approval_ref = "https://github.com/xperiaroco2/prime-game-art/issues/16"
+
+[defaults.image_to_image.params]
+ai_model = "gpt-image-2-5-sunburst"
+aspect_ratio = "3:2"
+
+[variants.frog]
+prompt = "A mouth-shape model sheet for the character in the reference image: SIX copies of exactly his head, all seen straight from the front at the same size, framing and lighting, in a grid of 3 columns and 2 rows on a plain flat mid-grey background. Everything stays identical in all six (the head, the half-closed bored eyes, the nostrils, the skin) except the mouth, which keeps his wide, soft, rolled coral lips and shows one talk shape per panel, in this order: 1 rest, lips closed in his relaxed wide line exactly as in the reference; 2 M, lips pressed together and slightly rolled in; 3 small, lips slightly parted with a narrow dark opening; 4 A, mouth open wide with the jaw dropped, dark inside with a hint of a tongue; 5 E, mouth wide and stretched sideways, a flat dark opening; 6 O, lips pushed forward into a small round opening. The lips stay thick and soft and the same colour in every panel. Smooth soft-matte stylised surface like a premium designer vinyl toy, no fine texture. No text, no numbers, no labels."
+
+[variants.overbite]
+prompt = "A mouth-shape model sheet for the character in the reference image: SIX copies of exactly his head, all seen straight from the front at the same size, framing and lighting, in a grid of 3 columns and 2 rows on a plain flat mid-grey background. Everything stays identical in all six (the head, the half-closed bored eyes, the nostrils, the skin) except the mouth, which keeps his soft coral lips and his overbite with exactly two square cream peg teeth on the upper jaw, and shows one talk shape per panel, in this order: 1 rest, the two peg teeth resting over the lower lip exactly as in the reference; 2 M, lips pressed together with the teeth hidden; 3 small, lips slightly parted, the two teeth visible; 4 A, mouth open wide with the jaw dropped, the two teeth on the upper jaw, dark inside with a hint of a tongue; 5 E, mouth wide and stretched sideways, the two teeth visible; 6 O, lips pushed forward into a small round opening with the teeth just visible. Always exactly two teeth, the same size in every panel. Smooth soft-matte stylised surface like a premium designer vinyl toy, no fine texture. No text, no numbers, no labels."
+
+[variants.bored]
+prompt = "An eye-state model sheet for the character in the reference image: SIX copies of exactly his head, all seen straight from the front at the same size, framing and lighting, in a grid of 3 columns and 2 rows on a plain flat mid-grey background. Everything stays identical in all six (the head, the closed mouth, the nostrils, the skin) except the eyes, which keep his big round eyeballs set in the head with heavy coral eyelids that have a soft rolled reddish rim, and show one state per panel, in this order: 1 rest, bored, the upper lids heavy and half closed exactly as in the reference; 2 half blink, the lids nearly shut; 3 closed, the upper and lower lids meeting in a soft line; 4 looking left, the dark irises turned to the left, lids at rest; 5 looking right; 6 surprised, the lids pulled wide open, the round eyeballs fully visible. The eyeballs are a warm off-white, glossy with one small soft catch light each and soft shading toward the corners; the irises are dark brown with a black pupil. The eyes are never scary or bloodshot. Smooth soft-matte stylised surface like a premium designer vinyl toy, no fine texture. No text, no numbers, no labels."
+
+[variants.manic]
+prompt = "An eye-state model sheet for the character in the reference image: SIX copies of exactly his head, all seen straight from the front at the same size, framing and lighting, in a grid of 3 columns and 2 rows on a plain flat mid-grey background. Everything stays identical in all six (the head, the closed mouth, the nostrils, the skin) except the eyes, which keep his big wide-open round eyeballs with small black pupils, framed by thin coral eyelids with a soft rolled reddish rim, and show one state per panel, in this order: 1 rest, wide open and manic exactly as in the reference; 2 half blink, the lids halfway down; 3 closed, the upper and lower lids meeting in a soft line; 4 looking left, the pupils turned to the left; 5 looking right; 6 squint, the lids narrowed with suspicion. The eyeballs are a warm off-white, glossy with one small soft catch light each and soft shading toward the corners. The eyes are never scary or bloodshot. Smooth soft-matte stylised surface like a premium designer vinyl toy, no fine texture. No text, no numbers, no labels."
+
+[[items]]
+id = "mf1"
+variant = "frog"
+kind = "image_to_image"
+images = [ { file = "raw:research/2026-10-19-parts-kit/face-crops/m1_frog.png", provenance = "crop (head 1, scaled 2x) of own Meshy generation, batch 2026-10-17-alien-2d-parts1 item m2, art#196", sha256 = "ac8ff6f495bb7eb3cd50f4a6239e949d560d6c0273840c1f5f95fc0cab56e769" } ]
+
+[[items]]
+id = "mf2"
+variant = "frog"
+kind = "image_to_image"
+images = [ { file = "raw:research/2026-10-19-parts-kit/face-crops/m1_frog.png", provenance = "crop (head 1, scaled 2x) of own Meshy generation, batch 2026-10-17-alien-2d-parts1 item m2, art#196", sha256 = "ac8ff6f495bb7eb3cd50f4a6239e949d560d6c0273840c1f5f95fc0cab56e769" } ]
+
+[[items]]
+id = "mo1"
+variant = "overbite"
+kind = "image_to_image"
+images = [ { file = "raw:research/2026-10-19-parts-kit/face-crops/m3_overbite.png", provenance = "crop (head 3, scaled 2x) of own Meshy generation, batch 2026-10-17-alien-2d-parts1 item m2, art#196", sha256 = "ef45f7687113fd944860ec3a1a8ab83bd54b34640c54ceb6c989bc0eda1b2e1f" } ]
+
+[[items]]
+id = "mo2"
+variant = "overbite"
+kind = "image_to_image"
+images = [ { file = "raw:research/2026-10-19-parts-kit/face-crops/m3_overbite.png", provenance = "crop (head 3, scaled 2x) of own Meshy generation, batch 2026-10-17-alien-2d-parts1 item m2, art#196", sha256 = "ef45f7687113fd944860ec3a1a8ab83bd54b34640c54ceb6c989bc0eda1b2e1f" } ]
+
+[[items]]
+id = "eb1"
+variant = "bored"
+kind = "image_to_image"
+images = [ { file = "raw:research/2026-10-19-parts-kit/face-crops/e1_bored.png", provenance = "crop (head 1, scaled 2x) of own Meshy generation, batch 2026-10-17-alien-2d-parts1 item e2, art#196", sha256 = "cc7dbf9a34b35d33a373b0c9c7bfaa5f97f73a4c2dd0f8b0ad02f4d39532dd4e" } ]
+
+[[items]]
+id = "eb2"
+variant = "bored"
+kind = "image_to_image"
+images = [ { file = "raw:research/2026-10-19-parts-kit/face-crops/e1_bored.png", provenance = "crop (head 1, scaled 2x) of own Meshy generation, batch 2026-10-17-alien-2d-parts1 item e2, art#196", sha256 = "cc7dbf9a34b35d33a373b0c9c7bfaa5f97f73a4c2dd0f8b0ad02f4d39532dd4e" } ]
+
+[[items]]
+id = "em1"
+variant = "manic"
+kind = "image_to_image"
+images = [ { file = "raw:research/2026-10-19-parts-kit/face-crops/e4_manic.png", provenance = "crop (head 4, scaled 2x) of own Meshy generation, batch 2026-10-17-alien-2d-parts1 item e2, art#196", sha256 = "a620b82944746a8d963b1b088cc997ce7fdebd5fbaecd04e68dac82098eb6d7a" } ]
+
+[[items]]
+id = "em2"
+variant = "manic"
+kind = "image_to_image"
+images = [ { file = "raw:research/2026-10-19-parts-kit/face-crops/e4_manic.png", provenance = "crop (head 4, scaled 2x) of own Meshy generation, batch 2026-10-17-alien-2d-parts1 item e2, art#196", sha256 = "a620b82944746a8d963b1b088cc997ce7fdebd5fbaecd04e68dac82098eb6d7a" } ]

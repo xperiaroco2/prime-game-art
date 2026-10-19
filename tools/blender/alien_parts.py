@@ -45,18 +45,30 @@ LIGHT_MIX = 0.42  # how far the light mask mixes the hue toward the pale tint
 CREST = {"mid": 0.73, "width": 0.075, "push": 0.06, "smooth": 10}  # Meshy units: a bump round the crest's waist
 
 EYES = {  # elevations in degrees (the lid edge's angle above the eye's forward axis); rho: lid radii / eyeball r
-    "bored": {"pupil": 0.20, "iris": 0.44, "iris_col": (0.10, 0.07, 0.06),
+    "bored": {"pupil": 0.20, "iris": 0.44, "iris_col": (0.20, 0.12, 0.08), "catch": (6.0, 1.0),
               "upper": {"open": 30.0, "rest": 6.0, "half": -2.0, "closed": -12.0, "rho": (1.06, 1.13)},
               "lower": {"open": -40.0, "rest": -30.0, "half": -20.0, "closed": -6.0, "rho": (1.012, 1.05)}},
-    "manic": {"pupil": 0.11, "iris": 0.0, "iris_col": (0.05, 0.05, 0.05),
+    "manic": {"pupil": 0.2094, "iris": 0.0, "iris_col": (0.05, 0.04, 0.05), "catch": (4.5, 4.5),
               "upper": {"open": 58.0, "rest": 50.0, "half": 18.0, "closed": -12.0, "rho": (1.05, 1.095)},
               "lower": {"open": -55.0, "rest": -50.0, "half": -28.0, "closed": -6.0, "rho": (1.012, 1.042)}},
 }
+LID_BEAD = {"upper": 0.10, "lower": 0.035}  # S7: the rolled rim's swell at the lid's edge, a share of the eyeball's r
+# S7: the lower face made fuller (a smooth local sculpt of the faceless head, no jaw bone), so the open mouth shapes
+# (A, E, O) sit inside it with little or no squeeze: the chin moves down and forward by these, m, fading out over
+# CHIN_SCULPT's x half width, up to just under the mouth line and back to the neck's front.
+CHIN_SCULPT = {"down": 0.015, "fwd": 0.013, "x_sigma": 0.042, "top_gap": 0.006}  # 7 mm forward still read chinless
 STATES = ("open", "rest", "half", "closed")
 VISEMES = ("rest", "M", "small", "A", "E", "O")
-LIP = (0.86, 0.42, 0.36)  # sRGB
-INNER = (0.11, 0.03, 0.035)
-TEETH = (0.93, 0.89, 0.76)
+# The face materials (S5, sRGB; godot/alien/alien.gd FACE and alien_eye.gdshader hold the same): the stage-1 human
+# faces' (faces/clay_kit.json: white (0.9, 0.86, 0.72), cavity (0.05, 0.012, 0.02), teeth (0.92, 0.9, 0.8) linear),
+# soft-matte; the first test's glossy orange lips (0.86, 0.42, 0.36) and cold white eyes read "creepy".
+LIP = (0.76, 0.45, 0.40)  # e2's dusty salmon (S5's lip grid: the deepest of three reads best on the mint face)
+LIP_ROUGH = 0.6
+INNER = (0.25, 0.11, 0.14)
+TEETH = (0.96, 0.95, 0.90)
+EYE_WHITE = (0.95, 0.93, 0.86)
+EYE_SHADE = (0.86, 0.72, 0.64)  # the warm tint the white goes toward in its corners and under the lids
+EYE_ROUGH = 0.38
 ACCENT = (0.85, 0.40, 0.36)
 HUE_PICKS = {  # g-s1 cells (col, row) and sample points in cell fractions: base (forehead) and light (throat)
     "teal": ((0, 0), (0.42, 0.27), (0.50, 0.75)),
@@ -168,23 +180,43 @@ def plain(name, srgb, rough=0.5, spec=0.5, image=None):
 
 
 def eye_image(name, d, out_dir):
-    """The eyeball texture for the azimuthal UV: white, a dark iris ring and a black pupil by the angle from the
-    pole (uv radius 0.5 = pi), with soft edges."""
-    n = 256
+    """The eyeball texture for the azimuthal UV (uv radius 0.5 = pi from the pole, the azimuth from local +X toward
+    +Z, up): S5's eye, the same as godot/alien/alien_eye.gdshader at the rest lids (the game draws it with that
+    shader, this texture is for Blender and the three.js page): stage 1's warm off-white, shaded warm toward the
+    corners and under the rest upper lid, a dark iris with a darker edge ring, a near-black pupil, and one painted
+    catch light up and toward -X (the viewer's left on both eyes)."""
+    n = 512
     yy, xx = np.mgrid[0:n, 0:n]
-    rr = np.hypot((xx + 0.5) / n - 0.5, (yy + 0.5) / n - 0.5) * 2 * math.pi  # angle from the pole
-    white = np.array(srgb_to_lin((0.95, 0.94, 0.91)))
-    iris = np.array(srgb_to_lin(d["iris_col"]))
-    pupil = np.array(srgb_to_lin((0.015, 0.012, 0.012)))
-    e = 0.025
-    col = np.tile(white, (n, n, 1))
+    u, v = (xx + 0.5) / n - 0.5, (yy + 0.5) / n - 0.5  # Blender's pixel rows run bottom-up, as the uv's v
+    th = np.hypot(u, v) * 2 * math.pi  # angle from the pole
+    ph = np.arctan2(v, u)
+    x, z, fwd = np.sin(th) * np.cos(ph), np.sin(th) * np.sin(ph), np.cos(th)  # local x, up, forward (-Y)
+    deg = np.degrees
+    white = np.array(srgb_to_lin(EYE_WHITE))
+    shade = np.array(srgb_to_lin(EYE_SHADE))
+    smooth = lambda a, b, t: np.clip((t - a) / (b - a), 0, 1) ** 2 * (3 - 2 * np.clip((t - a) / (b - a), 0, 1))
+    side = deg(np.arctan2(np.abs(x), fwd))
+    elev = deg(np.arctan2(z, np.maximum(fwd, 0) + 1e-4))
+    up_edge, lo_edge = d["upper"]["rest"], d["lower"]["rest"]
+    k = smooth(30.0, 80.0, side) * 0.55
+    k = np.maximum(k, smooth(up_edge - 16.0, up_edge, elev) * 0.6)
+    k = np.maximum(k, (1 - smooth(lo_edge, lo_edge + 8.0, elev)) * 0.3)[..., None]
+    col = white * (1 - k) + white * shade * k
+    from_axis = deg(th)
+    iris_deg, pupil_deg = math.degrees(d["iris"]), math.degrees(d["pupil"])
+    e = 0.9
     if d["iris"] > 0:
-        a = np.clip((d["iris"] + e - rr) / (2 * e), 0, 1)[..., None]
-        col = col * (1 - a) + iris * a
-    a = np.clip((d["pupil"] + e - rr) / (2 * e), 0, 1)[..., None]
-    col = col * (1 - a) + pupil * a
-    # the white darkens a little toward the back (a soft ball read, not a ring)
-    col = col * (1 - 0.12 * np.clip((rr - 1.2) / 1.5, 0, 1))[..., None]
+        a = (1 - smooth(iris_deg - e, iris_deg + e, from_axis))[..., None]
+        ring = (smooth(iris_deg - 5.0, iris_deg, from_axis) * 0.45)[..., None]
+        col = col * (1 - a) + np.array(srgb_to_lin(d["iris_col"])) * (1 - ring) * (1 - 0.2 * k) * a
+    a = (1 - smooth(pupil_deg - e, pupil_deg + e, from_axis))[..., None]
+    col = col * (1 - a) + np.array(srgb_to_lin((0.025, 0.02, 0.025))) * a
+    cx, cz = (math.radians(t) for t in d["catch"])
+    g = np.array([-math.tan(cx), math.tan(cz), 1.0])
+    g /= np.linalg.norm(g)
+    ga = deg(np.arccos(np.clip(x * g[0] + z * g[1] + fwd * g[2], -1, 1)))
+    a = (1 - smooth(2.4, 3.4, ga))[..., None]
+    col = col * (1 - a) + np.array(srgb_to_lin((1.0, 0.98, 0.95))) * a
     img = bpy.data.images.new(name, n, n, alpha=False, float_buffer=False)
     img.colorspace_settings.name = "sRGB"
     lin = col
@@ -410,6 +442,34 @@ def head_masks(ob, eye_z, chin_z):
             lp[uv].uv = vals[lp.vert]
     bm.to_mesh(me)
     bm.free()
+
+
+def sculpt_chin(me, ring, chin, mz, z_cut):
+    """S7: a fuller lower face. Each head vertex under the mouth line moves down and forward by CHIN_SCULPT, weighted
+    by a Gaussian in x, by its height (full at and under the chin, none from top_gap under the mouth line up, so the
+    Mouth socket stays) and by how far in front of the neck it is (none behind the neck ring's front, so the loft and
+    the weld stay). Returns the measures."""
+    C = CHIN_SCULPT
+    ny = ring["centre"][1] - ring["semi_axes"][1]  # the neck ring's front (front is -Y)
+    band = [v.co.y for v in me.vertices if abs(v.co.x) < 0.012 and abs(v.co.z - chin) < 0.012]
+    yf = min(band)  # the chin's front
+    top = mz - C["top_gap"]
+    d = Vector((0.0, -C["fwd"], -C["down"]))
+    n, most = 0, 0.0
+    for v in me.vertices:
+        p = v.co
+        if p.z > top or p.z < z_cut + 0.001:
+            continue
+        fz = 1.0 if p.z <= chin else 1.0 - G.smoothstep(chin, top, p.z)
+        fy = G.smoothstep(ny, yf + 0.012, p.y) if ny > yf + 0.012 else 0.0
+        w = fz * fy * math.exp(-(p.x / C["x_sigma"]) ** 2)
+        if w > 1e-4:
+            v.co = p + d * w
+            n += 1
+            most = max(most, w)
+    me.update()
+    return {"moved_verts": n, "max_weight": round(most, 3), "chin_front_y": round(yf, 4), "neck_front_y": round(ny, 4),
+            "top_z": round(top, 4), **C}
 
 
 def smart_uv(ob):
@@ -674,6 +734,9 @@ def main():
         p.use_smooth = True
     rep["head_tris"] = len(me.polygons)
     rep["deviation"] = deviation(dense_bvh, ob, z_cut + 0.005, HEAD_H)
+    rep["chin_sculpt"] = sculpt_chin(me, ring, chin, W(MESHY["mouth_z"]), z_cut)
+    chin -= CHIN_SCULPT["down"]
+    rep["chin_z_sculpted"] = round(chin, 4)
     rv = [Vector(p) for p in ring["loop"]]
     rep["ring_weld_max_mm"] = round(max((me.vertices[i].co - rv[k]).length for k, i in enumerate(ring_idx)) * 1000, 4)
     eye_w = W(MESHY["eye_z"])
@@ -725,8 +788,8 @@ def main():
     # materials
     hue = hue_material(k_light)
     hue_lin = {k: srgb_to_lin(v["base_srgb"]) for k, v in hues.items()}
-    mats = {"hue": hue, "lip": plain("alien_lip", LIP, 0.42, 0.45), "inner": plain("alien_mouth_inner", INNER, 0.8, 0.2),
-            "teeth": plain("alien_teeth", TEETH, 0.35, 0.5)}
+    mats = {"hue": hue, "lip": plain("alien_lip", LIP, LIP_ROUGH, 0.3),
+            "inner": plain("alien_mouth_inner", INNER, 0.9, 0.08), "teeth": plain("alien_teeth", TEETH, 0.4, 0.3)}
     ob.data.materials.append(hue)
     ob["alien_hue"] = hue_lin["teal"]
 
@@ -734,7 +797,7 @@ def main():
     parts = {"eyes": {}, "mouths": {}, "crests": {}}
     for dname, d in EYES.items():
         img = eye_image(f"alien_eye_{dname}", d, out / "export")
-        em = plain(f"alien_eye_{dname}", (1, 1, 1), 0.12, 0.6, img)
+        em = plain(f"alien_eye_{dname}", (1, 1, 1), EYE_ROUGH, 0.35, img)
         lids = {}
         for side in ("L", "R"):
             sm = sockets[f"Eye_{side}"]
@@ -742,8 +805,9 @@ def main():
             ball.matrix_world = sm
             for lid in ("upper", "lower"):
                 L_ = d[lid]
-                o = G.lid_shell(f"eye_{dname}_lid_{lid}_{side}", r_eye, L_["rho"][0], L_["rho"][1], lid == "upper", hue, coll)
-                o["alien_hue"] = hue_lin["teal"]
+                # S7: the lids in the lips' material (S5, the eye sheets' coral domes) with the sheets' rolled rim
+                o = G.lid_shell(f"eye_{dname}_lid_{lid}_{side}", r_eye, L_["rho"][0], L_["rho"][1], lid == "upper",
+                                mats["lip"], coll, seg_p=18, rim_seg=8, bead=LID_BEAD[lid])
                 o.matrix_world = sm @ Matrix.Rotation(math.radians(-L_["rest"]), 4, "X")
                 o["states"] = {st: -L_[st] for st in STATES}
                 lids[lid] = {st: -L_[st] for st in STATES}

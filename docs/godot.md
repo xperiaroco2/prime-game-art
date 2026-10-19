@@ -724,6 +724,69 @@ a time, by visibility.
 - `proof.gd`: the off-screen proof (turntables, Idle and Walk, blink, talk, variants, hues, draw calls). No runner
   command calls it yet: run it by hand through `_godot.window()` with `--audio-driver Dummy` (the Dummy driver still mixes, so the analyzer sees the signal) and
   the Master bus muted. `make_test_speech.py` writes its test WAV (standard library).
+- **The face materials (S5, art #196):** the first test's eyes (a cold white, roughness 0.12, a 6-degree pupil) and
+  glossy orange lips read "so-so, creepy"; the stage-1 human faces' materials (`faces/clay_kit.json`, docs/faces.md)
+  replace them. `alien.gd` swaps them by the imported material's name (`set_face_look("s5")`, the default; `"first"`
+  keeps the imported ones for before/after sheets):
+  - `alien_eye.gdshader` on `alien_eye_<design>`: no texture, all from the ball's model space (centred, +Z the pupil
+    axis): a warm off-white (sRGB 0.95, 0.93, 0.86), shaded toward a warm tint (never grey) in the corners and under
+    the lids (the lid edges are instance uniforms that `_apply_lids` sets from the lid rotations, edge = -rotation.x,
+    so the shadow follows the blink), a dark iris with a darker edge ring (bored: 25 degrees, a near-black brown), a near-black
+    pupil (bored 11.5, manic 12 degrees), and **one painted catch light** on the pupil, up and toward the viewer's
+    left, as emission (no extra light or render layer; it moves with the eye, as a toy's painted glint). Roughness
+    0.38, so the key light gives a broad sheen and no second hard glint.
+  - **The eyes' rest look:** the sockets point 8 degrees outward (S2a's sphere fit), so the pupils diverged (wall-eyed).
+    `_apply_lids` sets each ball's rotation to 11.5 degrees inward about the socket's up axis (absolute, so a GLB whose
+    balls already carry it is unchanged; `aim_in_deg`): the eyes meet about 1.2 m ahead.
+  - Lips, inner cup and teeth: `StandardMaterial3D`s with wrapped diffuse and **culling off** (the imported materials
+    are double-sided; culled, the inner cup vanished and the open mouths showed the skin): lips sRGB (0.76, 0.45, 0.40)
+    roughness 0.6 specular 0.3; the cup a dark plum (0.25, 0.11, 0.14), roughness 0.9; teeth ivory (0.96, 0.95, 0.90).
+  - The lid shells take the lips' material: the chosen eye sheets (batch `2026-10-19-alien-face-sheets`, `eb1` and
+    `em1`) draw the lids as soft coral domes the colour of the lips, not skin with a coral rim.
+  - `tools/blender/alien_parts.py` builds the same look into the eye texture (rest lids, 512 px) and the plain
+    materials, for Blender and the three.js page.
+  - `face_proof.gd`: the proof under the approved showroom look (`look_presets.json`, Medium: AgX 0.9, the studio sky
+    half the ambient and the reflections, key 2.0, fill 0.12, rim 0.3, SSAO): first test against S5 for all four
+    eye/mouth combinations, the eyes close, blink, the twelve mouth pieces, the hues and a tuning grid. Run it like
+    `proof.gd` (no audio).
+- **The mouths from 2D (step S6):** `tools/blender/alien_mouths.py` rebuilds both mouth designs' six pieces by
+  measuring their GPT talk-shape sheets (per pixel column the lip edges, the opening, tongue and teeth; method in its
+  docstring) on the assembled character, and writes the GLB again. The overbite's two teeth are now inside each
+  overbite piece (none in M), so `mouth_overbite_teeth` is gone; `alien.gd` still shows it with the overbite pieces when an older GLB has it.
+  The same script cuts the six panels' mouths into a 3 x 2 atlas (`mouth_flip_<design>.png`, alpha blended) and adds
+  one face shell per shape, `mouthflip_<design>_<shape>`: the flipbook test. `alien.gd`'s `set_mouth_mode("3d" |
+  "flip")` picks which the talk driver shows. `mouths.gd` is its off-screen proof (window 448 x 300): each shape as the
+  sheet's panel, the 3D piece and the flip shell at the same orthographic framing, both at 35 degrees, and both
+  talking side by side.
+  - The head is rigid and its lower face shorter and narrower than the sheets' (their jaw drops and cheeks stretch in
+    A, E and O), so the script squeezes a shape below the seam to stay above the chin (`CHIN_Z`) and in x to stay
+    within `FACE_FILL` of the face: the open shapes are flatter and narrower than their panels.
+- **The second test (step S7):** two bodies from one cage, `tools/blender/alien_cage.py` (a few hundred quads fitted
+  to u1 by measurement, Catmull-Clark level 2; method in its docstring): **cage** (no `--target`) and **wrap**
+  (`--target <b3d1.glb>`: the same cage shrink-wrapped onto the Meshy faceless body shape, used as a target only).
+  Both keep S1c's hands at the standard wrist ring (`wrist_ring.json`, as `neck_ring.json`), 4 fingers and 3-toe
+  paddles. The pipeline, all headless Blender: `alien_parts.py` (head and face parts) → `alien_cage.py` (body) →
+  `alien_assemble.py` (weld, masks, sockets, GLB) → `alien_mouths.py` (the S6 mouths on the assembled character, the
+  final GLB with `character.json`). `alien_cage_review.py` renders the review sheets that put u1, the first test and the
+  new bodies side by side (turntables, silhouettes, Walk, feet, welds). What S7 put into Blender, so the GLB (and three.js) shows what Godot shows:
+  - the lid shells in the lips' material with a **rolled rim** (`alien_parts_geom.lid_shell(bead=...)`, `LID_BEAD`);
+  - the eyeballs turned 11.5 degrees inward in the GLB (`alien_assemble.EYE_AIM_IN`; `alien.gd` sets the same
+    rotation absolutely, so nothing doubles);
+  - a fuller lower face: `alien_parts.CHIN_SCULPT` moves the chin 15 mm down and 13 mm forward (a smooth local
+    sculpt, no jaw bone; it fades out under the mouth line and before the neck), and `alien_mouths.CHIN_Z` follows,
+    so A, E and O lost most of their squeeze;
+  - smooth lips: the open rings keep only the low Fourier harmonics of their path and width, the skin points and
+    normals under every lip are smoothed (the decimated head's facets rippled them), and a closed mouth's lip ends
+    meet and tuck into the skin (`CORNER`).
+  - `second_test.gd`: the off-screen proof of the first test and both bodies side by side under the showroom look
+    (`face_proof.gd`'s stage): turntables at 3 m and 1 m, Idle and Walk, the Walk's feet from the side, every eye
+    and mouth combination at 0.6 m, crests, blink, the twelve mouth pieces front and three-quarter, the hues. Spec
+    `{"scenes": {"first", "cage", "wrap"}, "out", "hdri"}`.
+  - **For three.js:** the GLB's lids, lips, cup, teeth and tongue are plain Principled materials that look as in
+    Godot. The page must add (1) the hue shader on the material named `alien_hue` (a plain teal stand-in): the hue
+    and its light tint mixed by `TEXCOORD_1.x`, the accent by **`1 - TEXCOORD_1.y`** (the V flip above); (2) the eye
+    look: the GLB's eyeballs carry a 512 px texture drawn at the rest lids (`alien_eye_<design>`), so the lid shadow
+    on the white does not follow a blink and the catch light is painted; Godot's `alien_eye.gdshader` computes both.
 
 ## Findings for later tasks
 
