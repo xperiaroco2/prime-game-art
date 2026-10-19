@@ -1285,6 +1285,72 @@ a time, by visibility.
     - `surfaces_cap`: 64 surfaces against 8;
     - `pack_floor`: 56 bones and 10 clips against the UM rig's 62 and 24.
 
+- **M6, the eyes and lips sized, rounded and integrated** (output under
+  `D:/prime-art-raw/review/char/alien-parts-kit/M6/`). The engineer on M5 (2026-10-19): the eyes too big, their
+  corners very sharp from the front, and the lids and lips "from another universe" (they stood out from the head).
+  The parts stay overlaid parts (no mesh deformation); the skeleton and the blink by lid rotation are unchanged.
+  - **The build:** `tools/blender/alien_m6.py --kit <M5/export> --out <M6> --skin-tex <a set's textures/>
+    [--skin-normal <normal.png>] [--eye-scale K] [--eye-sink M] [--corner JSON] [--export-name NAME]` opens M5's
+    kit and writes `<out>/<export-name>/` (GLB, .blend, `character.json` with `m6` and `note_m6`). The skin's set
+    is an argument: `albedo.png`, `orm.png` and the 2K `sss.png` of a `textures/` folder (M3c's, or M2b's
+    recomposed one), the SSS mask put into the ORM's B again (`alien_eyes.sss_into_orm`). The image check and the
+    SSS route check run on the GLB as in M4 and M5. The pure parts and settings are in `alien_lids_geom.py` (test
+    `tools/tests/test_alien_lids_geom.py`). About 2 to 3 minutes of headless Blender (the parts' AO bake is most of
+    it; `--no-bake` for a geometry check). The armature must go back to POSE before the export: left in REST (for
+    the bakes), the exporter wrote every clip as the rest pose.
+  - **The corners** (`alien_lids_geom.CORNER`, `alien_parts_geom.lid_shell(corner=...)`): S7's rolled rim kept its
+    full swell out to the hinge poles, so the upper lid's rim stuck out 0.1 r past the dome's outline at both
+    corners, a point from the front. Now the swell tapers to nothing from 35 degrees of latitude to the pole, and
+    the edges bend toward each other there (the upper lid's down by 10 degrees, the lower lid's up by 5, fading out
+    toward the shell's back), so the lids meet in a soft almond. 32 rows across the lid (S7: 20). The middle of each
+    lid keeps S7's rim, so `EYE_LOOK`'s `*_reach_deg` hold. The wet strips are rebuilt on the same rims
+    (`alien_eyes.wet_strip(corner=...)`). Chosen on `M6/grids/g1/grid_corners.png` (S7, 6/3 degrees from 45, 10/5
+    from 35: rest, closed, open and the face).
+  - **The size:** the ball, lids and wet strips scaled by `EYE_SCALE` 0.95 about the socket (the ball's centre) and
+    moved `EYE_SINK` 2 mm back along the socket's axis. With the corners' 0.1 r points gone, the upper lid's
+    outline is about 0.87 of M5's width. Smaller units opened a gap between the dome's silhouette and the socket's
+    skin at the inner upper corner, a dark line (86 % a crescent; 90 % with a 5 mm sink still a line at 0.4 m; the
+    sink does not close a sideways gap; `M6/grids/g4`, `tools/out/m6/g4_crop.png`); at 95 % it is a thin contact
+    line. Going smaller needs the socket's skin to follow (or a flared dome back), a later step. The iris and pupil
+    keep their angles (`IRIS_SCALE` 1: 90 % read the same at 1.2 m, and rf2's iris is large). Chosen on
+    `M6/grids/g2` to `g4` (`grid_size.png`: 100, 93, 86 %, iris 90 %, then sizes with sinks of 0 to 5 mm).
+  - **The lips and lid domes** (`alien_lip.gdshader`, `alien.gd` `LIP_LOOK`, `LID_LOOK`; S9's look is
+    `LIP_LOOK_M5`, `alien.gd` `lip_look = "m5"`, for before sheets; every new term is off at its default):
+    - each lid shell and 3D mouth piece carries its own baked AO (Cycles, 2 cm, 64 samples, floor 0.3, glTF
+      `COLOR_0`; each eye design's four lids with its balls and the skin, each mouth piece alone with the skin); the
+      shader moves the coral toward a deeper one (`deep`) over `ao_range`, so the lip line, the mouth's corners, the
+      rim's underside, the lower lids and where a part meets the skin are deeper and the rolls stay light (plain
+      viewers multiply the grey into the base colour);
+    - rf2's coral: sRGB (0.78, 0.35, 0.31), deep (0.56, 0.18, 0.17); M5's (0.82, 0.44, 0.37) read pale salmon
+      under AgX, a deeper orange (0.76, 0.33, 0.25) read orange, a pinker one pink;
+    - a soft colour drift (`drift` 0.06, 2.5 cm blotches), the grain finer and a little stronger (0.08 at 600 per m),
+      the skin's SSS (0.25) and transmittance (0.2), Godot's rim (0.35, as the skin's);
+    - roughness 0.55 with a soft clear coat (0.06) on the lips; the lid domes 0.64 with none (their sheen read
+      plastic beside the skin's satin, and sparkled).
+    - Chosen on `M6/grids/g2` and `g3` (`grid_look*.png`, `zoom_look.png`, rf2 first).
+  - **The skin's contact shade:** per Body vertex the distance to the nearest rest lid or rest lip (both designs),
+    1 at contact to 0 at 7 mm (`CONTACT`), smoothed, in a fifth UV layer `contact` (glTF `TEXCOORD_4`, Godot
+    `CUSTOM1.x`). `alien_hue.gdshader` (textured path) darkens and warms the albedo toward `contact_tint` and lowers
+    AO by `contact_ao` there; `alien.gd` sets it (`SKIN_CONTACT`) only for a kit whose hue material carries
+    `CONTACT_MARKER` (glTF extras `{"prime_contact": "custom1_x"}`). M3c's texture already holds a contact AO round
+    the sockets, so the term is subtle (the grid's "contact off" barely differs).
+  - **The kits:** `M6/export/` (M3c's set and M3a's capped-cage normal map, 36.2 MB) and `M6/export_m2b/` (M2b's
+    recomposed set, `--skin-tex M2b/textures --skin-normal M2b/bake/normal.png`, 29.4 MB; its composed ORM in
+    `M6/skin_export_m2b/`); glTF-Validator 0 errors, 1 warning (`NODE_SKINNED_MESH_NON_ROOT`) on both. Sheets in
+    `M6/godot/final/` and `final_m2b/`, grids in `M6/grids/`, JPEGs in `M6/showroom/`.
+  - **`m6_shots.gd`**, the proof (modes `size`, `corners`, `look`, `final`; its header lists them; `size` and the
+    spec's `scale`/`sink` scale the units at run time for the grids). Driven like `m5_shots.gd` (stage the kits,
+    `_godot.window(...)` with `res://alien/m6_shots.gd`), with `"scenes": {"hero", "before"}` and
+    `"corner_scenes"`. `final` writes `cmp.png` (M5 | M6 | rf2 at rf2's framing, the front at 1.2 m and the close
+    face), `blink_<design>.png`, `designs.png` and `mouths.png`.
+  - **For three.js:** the lids and lips are the GLB's `alien_lip` (Principled) with `COLOR_0` (the AO). The page's
+    material for them: `MeshPhysicalMaterial` with `vertexColors` off and an `onBeforeCompile` that mixes
+    `deep` (0.56, 0.18, 0.17) into `albedo` (0.78, 0.35, 0.31) by `1 - smoothstep(0.45, 0.95, color.r)` (sRGB values,
+    converted to linear), `roughness` 0.55 and `clearcoat` 0.06 at 0.5 on the lips, 0.64 and no clear coat on the
+    lid domes (nodes `eye_*_lid_*`), `sheen` none; the drift is optional; the AO into `aoMap`-like
+    `ambientOcclusion` (`reflectedLight.indirectDiffuse *= mix(1, color.r, 0.5)`). The skin's contact field is in
+    `uv4` (`TEXCOORD_4`): `diffuseColor.rgb *= mix(vec3(1), vec3(0.80, 0.66, 0.62), uv4.x)`.
+
 ## Findings for later tasks
 
 - **Toe bones (art #25):** assembled characters have 64 bones since art #25 (`Toe.L`, `Toe.R`). The export and
