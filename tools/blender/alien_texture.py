@@ -564,9 +564,11 @@ def compose(f, cov, s, tdir, size):
     r, g, b = T.albedo(f, s, np)
     alb = np.stack([r, g, b], -1)
     alb = push_pull(alb, cov)
+    # the numpy twin of alien_texture_geom.linear_to_srgb (save_png clips to 0..1)
     enc = np.where(alb <= 0.0031308, alb * 12.92, 1.055 * np.power(np.clip(alb, 0, 1), 1 / 2.4) - 0.055)
     save_png(enc, tdir / "albedo.png", srgb=True)
     rough = T.roughness(f, s, np)
+    # glTF's packing: R occlusion, G roughness, B metallic 0
     orm = push_pull(np.stack([f["ao"], rough, np.zeros_like(rough)], -1), cov)
     save_png(orm, tdir / "orm.png")
     sss = push_pull(T.sss_mask(f, s, np)[..., None], cov)

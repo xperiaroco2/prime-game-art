@@ -164,11 +164,6 @@ def sss_mask(f, s=None, xp=PY):
     return xp.clip(s["sss_thin"] * thin ** s["sss_gamma"] + s["sss_region"] * xp.clip(f["warm"], 0.0, 1.0), 0.0, 1.0)
 
 
-def orm(ao, rough):
-    """glTF's packed occlusion-roughness-metallic texel: R occlusion, G roughness, B metallic (0)."""
-    return (ao, rough, 0.0)
-
-
 # The bake cage (PR #231 minor 6): an explicit cage, Body's copy with each vertex moved out along its smoothed normal
 # by cage_offset(clearance), where clearance is the distance along that normal to the next surface of the low mesh
 # (the next finger, the nostril's far wall). M2's uniform 2 mm extrusion put the rays' start inside the next finger in

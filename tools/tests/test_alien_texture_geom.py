@@ -126,9 +126,6 @@ class RoughnessTest(unittest.TestCase):
         self.assertGreaterEqual(lo, G.TEX["rough_min"])
         self.assertLessEqual(hi, G.TEX["rough_max"])
 
-    def test_orm_packing(self):
-        self.assertEqual(G.orm(0.8, 0.55), (0.8, 0.55, 0.0))
-
 
 class MaskTest(unittest.TestCase):
     def test_sss(self):
