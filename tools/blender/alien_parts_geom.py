@@ -204,7 +204,7 @@ def eyeball(name: str, r: float, mat, coll, seg=32, rings=24):
 
 
 def lid_shell(name: str, r: float, rho_in: float, rho_out: float, upper: bool, mat, coll, t_max_deg=89.0,
-              span_deg=200.0, seg_t=20, seg_p=12, rim_seg=5, rim_mask_deg=22.0, bead=0.0, bead_deg=26.0):
+              span_deg=200.0, seg_t=20, seg_p=12, rim_seg=5, rim_mask_deg=22.0, bead=0.0, bead_deg=26.0, corner=None):
     """A lid: a closed shell between radii rho_in*r and rho_out*r about the origin, built with its moving edge on
     local -Y (elevation 0). Elevation p is the angle about the hinge (local X) from -Y toward +Z; the upper lid covers
     p in [0, span], the lower p in [-span, 0]; latitude t (toward the hinge) in [-t_max, t_max]. The side edges lie on
@@ -214,43 +214,34 @@ def lid_shell(name: str, r: float, rho_in: float, rho_out: float, upper: bool, m
     bead (a share of r, S7): the rolled rim of the eye sheets eb1 and em1: the outer surface swells by bead*r over the
     last bead_deg before the edge (a smooth bulge, the inner surface unchanged, so the eyeball's clearance stays) and
     the rim's half circle spans the thicker edge. The profile's samples crowd toward the edge (quadratic), so the
-    roll stays round."""
+    roll stays round.
+    corner (M6, art #196; alien_lids_geom.CORNER's form): the swell tapers toward the hinge poles and the edge bends
+    toward the other lid there, so the corners are round from the front (S7's full rim stuck out as a point). None
+    builds S7's shell exactly. The profile itself is alien_lids_geom.shell_profile (per latitude when rounded)."""
+    import alien_lids_geom as LG
     b = Built()
     mi = b.slot(mat)
-    sgn = 1.0 if upper else -1.0
-    ro, ri = rho_out * r, rho_in * r
-    re = ro + bead * r  # the outer radius at the edge
-    rm, hw = (re + ri) / 2, (re - ri) / 2
-    bd = math.radians(bead_deg)
-    # the profile: (rho, p) round a closed loop: outer from the back to the edge, the rim half circle beyond the
-    # edge, inner back again
-    prof = []
-    for j in range(seg_p + 1):
-        f = (1 - j / seg_p) ** (2 if bead else 1)
-        p = math.radians(span_deg) * f
-        swell = bead * r * (1 - smoothstep(0.0, bd, p)) if bead else 0.0
-        prof.append((ro + swell, sgn * p))
-    for j in range(1, rim_seg):
-        a = math.pi * j / rim_seg
-        rho = rm + hw * math.cos(a)
-        prof.append((rho, -sgn * (hw * math.sin(a)) / rm))
-    for j in range(seg_p + 1):
-        prof.append((ri, sgn * math.radians(span_deg) * (j / seg_p) ** (2 if bead else 1)))
     tm = math.radians(t_max_deg)
     grid = []
+    rms = []
+    m = 0
     for i in range(seg_t + 1):
         t = -tm + 2 * tm * i / seg_t
+        bt = LG.bead_at(bead, t, tm, corner) if corner else bead
+        sh = LG.edge_shift(t, tm, upper, corner) if corner else 0.0
+        prof = LG.shell_profile(rho_in, rho_out, bt, upper, span_deg, seg_p, rim_seg, bead_deg, sh, crowd=bool(bead))
+        m = len(prof)
         row = []
-        for rho, p in prof:
+        for rho, p, p0 in prof:
             d = Vector((math.sin(t), -math.cos(t) * math.cos(p), math.cos(t) * math.sin(p)))
-            acc = 1.0 - smoothstep(0.0, math.radians(rim_mask_deg), abs(p))
-            row.append(b.vert(d * rho, 0.0, acc))
+            acc = 1.0 - smoothstep(0.0, math.radians(rim_mask_deg), abs(p0))
+            row.append(b.vert(d * (rho * r), 0.0, acc))
         grid.append(row)
-    m = len(prof)
+        rms.append((rho_out + bt + rho_in) / 2 * r)  # the row's rim centre radius (the side caps' pole)
     for i in range(seg_t):
         for j in range(m):
             b.face((grid[i][j], grid[i][(j + 1) % m], grid[i + 1][(j + 1) % m], grid[i + 1][j]), mi)
-    for sgn_t, row in ((-1.0, grid[0]), (1.0, grid[-1])):
+    for sgn_t, row, rm in ((-1.0, grid[0], rms[0]), (1.0, grid[-1], rms[-1])):
         # side caps: a fan to the hinge pole at the shell's mid radius, which closes the small hole round the hinge
         # axis (a point on the axis stays put as the lid turns)
         cv = b.vert(Vector((sgn_t * rm, 0.0, 0.0)), 0.0, 0.0)
