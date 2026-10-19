@@ -870,6 +870,28 @@ a time, by visibility.
     the grain: the same value noise (`alien_grain.gdshaderinc`) on `position * 500` perturbing the normal by 0.12,
     faded out from 0.8 to 2.5 m; (4) a fresnel emission `mix(c, pale, 0.5) * (1 - n.v)^3 * 0.3`; (5) the lips' clear
     coat 0.08 at roughness 0.7.
+- **S9b, the neck and the rest pose:**
+  - **The neck** (`tools/blender/alien_neck.py`, run by `alien_assemble.py` after the weld): the engineer found S9's
+    neck crooked. Measured: per angle around the ring's axis the radius had a plateau below the weld and a second
+    fast drop above it (a pinch and a step at the nape), the throat dipped 4 mm at the weld, the Head bone held 0.34
+    of the weld ring and the shoulders up to 0.88 of the neck's sides, so Idle, turns and nods bent the weld band
+    into a lump. `loft()` replaces the radius between `LOW_Z` (the shoulders) and `TOP_Z` (under the jaw, 1.418 m at
+    the front, to the nape, 1.444 m at the back) by a monotone cubic Hermite through both anchors' radius and slope
+    (Fritsch-Carlson limits: never below its ends, so no pinch), vertices moving radially only (the ring stays one
+    ring; `neck_ring.json` unchanged). `column_weights()` makes the column's weights a smooth field of height: the
+    lower bones fade out over 1.318-1.372 m, the Head fades in from 3 cm below to 2.2 cm above the upper anchor, the
+    Neck takes the rest (now up to 1.0), then six neighbour-average passes. `neck_shots.gd` judges it: before |
+    after | references at 0.5 m (`beside.png`), seven poses (rest, Walk, turns of 40 degrees, nods of 25 down and 20
+    up, spread 35/65 over Neck and Head) in profile and the three-quarter back (`motion.png`), 1 m views (`far.png`).
+  - **The rest pose for the skin shader:** in Godot `VERTEX` and `NORMAL` in `vertex()` are already skinned, so S9's
+    gradient and grain swam in motion. `alien_ao.py` writes the rest position and normal z in two UV layers,
+    `rest_xy` and `rest_zn` (glTF axes; `TEXCOORD_2` = (x, y), `TEXCOORD_3` = (z, normal z + 2), V stored flipped for
+    the exporter); Godot imports `TEXCOORD_2`/`TEXCOORD_3` as `CUSTOM0` (RGBA float, checked headless by
+    `alien/rest_check.gd`: equal to the rest `VERTEX` within 3e-8 m). `alien_hue.gdshader` reads them when
+    `CUSTOM0.w > 0.5` and falls back to `VERTEX` for a part without them. Proof: `neck_shots.gd`'s `swim.png` (the
+    upper arm in two Walk frames, the camera in the arm bone's frame, the grain exaggerated): the fine pattern's
+    correlation between the frames is 0.02 for S9 and 0.49 for S9b (the rest is the light's change). three.js needs
+    none of this: its `position` attribute is the rest pose (skinning comes after `begin_vertex`).
 
 ## Findings for later tasks
 
