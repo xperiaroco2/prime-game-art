@@ -1009,6 +1009,11 @@ a time, by visibility.
     (`bake/cage_report.json`, `cage_compare.png`): texels tilted over 60 degrees 11,128 to 3,725; only 9,135 texels
     changed by over 0.05, all at the webs; the AO's mean is unchanged. A three-stroke mark at each hand's thumb root
     remains (a low-mesh fold, not a ray miss); it does not show in the renders.
+    - The half-gap cap came after the shipped bake (PR #233's review). On Body 2 vertices have a clearance under
+      0.6 mm, so 22 offsets change (by at most 0.28 mm, with the smoothing). The rebake through the capped cage
+      (`M3a/bake_cage_r2/`) differs from the shipped `bake/` in 217 of 16.8 million normal texels by over 0.05
+      (tilted over 60 degrees: 3,629 against 3,725) and in 9 AO texels. The textures and the GLB still use `bake/`;
+      the next compose takes the capped bake.
   - `--stage fields` (from M2's `export/alien_character.blend`): per-vertex fields of the rest pose (the T-zone, the
     mouth's rim, the flush round the mouth and cheeks, the warm thin parts: fingers, crest, neck; the S9 shader's
     `deep` gradient and face warmth; the light mask smoothed over the head and neck by `smooth_light()`, which removes
