@@ -23,18 +23,22 @@
 //     glow toward the pale tint (`rim_glow`). (S9c: the unused `backlight` uniform went; nothing set it.)
 // The hues (sRGB): godot/alien/alien.gd HUES, from the S3 export's character.json.
 // M5, the texture set (art #196; M3c's authored set and M2's normal map on Body's UV, glTF TEXCOORD_0): with
-// `textured` on (alien.gd sets it, and the textures, from the imported material of a mesh that has them) the albedo
-// comes from `albedo_tex` (sRGB; its alpha is the SSS mask, tools/blender/alien_eyes.py --sss-alpha), the roughness
-// from the ORM's G, the ambient occlusion from its R (no COLOR_0 multiply: the texture's albedo carries 0.4 of the AO
-// already and its R the rest, so the vertex AO would double it), the normal from `normal_tex` (tangent space,
-// OpenGL +Y; Godot rebuilds Z, so an RG-compressed import works) at `normal_depth`; no procedural grain (the normal map
-// has the fine detail). The SSS mask scales the screen-space subsurface (`sss_thin`) and drives a warm transmittance
-// (`transmit`). Another hue than the texture's teal (`tex_hue`) takes the procedural path's flat colour, darkened by
-// the texture's AO as the teal albedo is, with the texture's roughness, AO and normal map. `tex_pale` is the teal's
-// kit pale, kept for a later re-tint (the luminance re-tint tried in M5 drew smudges). `tex_sat`
-// and `tex_pale_sat` scale the texture's saturation about its luminance on the hue and the pale parts (tuned under
-// light D, M5); `tex_value` scales the hue parts' value (the pale keeps its own). Untextured parts (the crests'
-// alien_hue_part, older kits) keep the procedural path above.
+// `textured` on (alien.gd sets it, and the textures, only from an imported material carrying the SSS marker, the glTF
+// extras {"prime_sss": "orm_b"} of tools/blender/alien_eyes.py --sss-orm; older textured kits keep the procedural
+// path) the albedo comes from `albedo_tex` (sRGB, RGB only), the ambient occlusion from the ORM's R, the roughness from
+// its G, and the SSS mask from its B (white = thin; glTF's metallic channel, unused: metallicFactor 0; linear, as the
+// whole ORM). No COLOR_0 multiply: the texture's albedo carries 0.4 of the AO already and its R the rest, so the vertex
+// AO would double it. The normal comes from `normal_tex` (tangent space, OpenGL +Y; Godot rebuilds Z, so an
+// RG-compressed import works) at `normal_depth`; no procedural grain (the normal map has the fine detail). The SSS
+// mask scales the screen-space subsurface (`sss + sss_thin * mask`) and drives a warm transmittance (`transmit`).
+// Another hue than the texture's teal (`tex_hue`) takes the procedural path's flat colour, darkened by the texture's
+// AO by `tint_ao_albedo`, with the texture's roughness, its AO at `tint_ao` (on the direct light at `tint_ao_light`)
+// and the normal map: the teal's full AO (0.4 in the albedo, all of it in AO and on the direct light) drew grey patches
+// on coral and violet where the bake is dark (the outer thigh under the hanging hand, the jaw). `tex_pale` is the teal's kit pale, kept for a later re-tint (the
+// luminance re-tint tried in M5 drew smudges). `tex_sat` and `tex_pale_sat` scale the texture's saturation about its
+// luminance on the hue and the pale parts (tuned under light D, M5); `tex_value` scales the hue parts' value (the pale
+// keeps its own). The procedural path applies the same three to the teal (none at their defaults of 1), so a crest
+// (alien_hue_part, untextured) matches a textured head when alien.gd gives it SKIN_TEX_SHARED.
 shader_type spatial;
 render_mode diffuse_lambert_wrap, specular_schlick_ggx;
 
@@ -79,6 +83,9 @@ uniform float sss_thin : hint_range(0.0, 2.0) = 0.0;  // the SSS strength gained
 uniform float transmit : hint_range(0.0, 1.0) = 0.0;  // the transmittance's boost at the mask's white
 uniform float transmit_depth = 0.02;  // m, times the mask
 uniform vec3 transmit_color : source_color = vec3(1.0, 0.55, 0.42);
+uniform float tint_ao_albedo : hint_range(0.0, 1.0) = 0.15;  // another hue: the texture's AO into the flat colour
+uniform float tint_ao : hint_range(0.0, 1.0) = 0.35;  // another hue: the share of the texture's AO in AO
+uniform float tint_ao_light : hint_range(0.0, 1.0) = 0.25;  // another hue: AO_LIGHT_AFFECT (the teal's is ao_light)
 
 varying vec3 m_pos;
 varying float m_nz;
@@ -137,25 +144,30 @@ void fragment() {
 		float tint = clamp(distance(hue, tex_hue) * 200.0, 0.0, 1.0);
 		if (tint > 0.0) {
 			vec3 fp;
-			vec3 f = flat_colour(m, m_pos.y, m_nz, fp) * mix(1.0, orm.r, 0.4);
+			vec3 f = flat_colour(m, m_pos.y, m_nz, fp) * mix(1.0, orm.r, tint_ao_albedo);
 			c = mix(c, f, tint);
 			p = mix(p, fp, tint);
 		}
-		AO = orm.r;
-		AO_LIGHT_AFFECT = ao_light;
+		AO = mix(orm.r, mix(1.0, orm.r, tint_ao), tint);
+		AO_LIGHT_AFFECT = mix(ao_light, tint_ao_light, tint);
 		ROUGHNESS = clamp(orm.g + roughness_add, 0.0, 1.0);
 		NORMAL_MAP = texture(normal_tex, UV).rgb;
 		NORMAL_MAP_DEPTH = normal_depth * mix(1.0, normal_pale, lm);
-		SSS_STRENGTH = sss + sss_thin * t.a;
+		float mask = orm.b;
+		SSS_STRENGTH = sss + sss_thin * mask;
 		// the transmittance is always written with a depth above 0: Godot divides by it (0 gave NaN, a black skin)
 		SSS_TRANSMITTANCE_COLOR = vec4(transmit_color, step(1e-4, transmit));
-		SSS_TRANSMITTANCE_DEPTH = max(transmit_depth * t.a, 0.001);
-		SSS_TRANSMITTANCE_BOOST = transmit * t.a;
+		SSS_TRANSMITTANCE_DEPTH = max(transmit_depth * mask, 0.001);
+		SSS_TRANSMITTANCE_BOOST = transmit * mask;
 	} else {
 		SSS_TRANSMITTANCE_COLOR = vec4(transmit_color, 0.0);
 		SSS_TRANSMITTANCE_DEPTH = 1.0;
 		SSS_TRANSMITTANCE_BOOST = 0.0;
 		c = flat_colour(m, m_pos.y, m_nz, p);
+		// the textured teal's saturation and value (identity at the defaults; a crest beside a textured head)
+		float lm = light * light_mix;
+		float keep = 1.0 - clamp(distance(hue, tex_hue) * 200.0, 0.0, 1.0);
+		c = mix(c, sat(c, mix(tex_sat, tex_pale_sat, lm)) * mix(tex_value, 1.0, lm), keep);
 		// baked AO
 		float ao = COLOR.r;
 		c *= mix(1.0, ao, ao_albedo);
