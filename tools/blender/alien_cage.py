@@ -76,6 +76,10 @@ ARM = [
     (0.465, 0.069, 1.2765, 0.034, 0.032),
     (0.540, 0.067, 1.2765, 0.031, 0.029),
 ]
+# The limbs a little sturdier than the u1 reading (they read thin at 3 m, UPDATE 10): each arm and leg ring's radii
+# times this, per ring (the last arm ring and the ankle less, so the wrist ring and the foot stay).
+ARM_THICK = [1.10, 1.10, 1.10, 1.10, 1.09, 1.04]
+LEG_THICK = [1.06, 1.12, 1.13, 1.12, 1.12, 1.12, 1.10, 1.06]
 # The order of the arm's octagon (dy, dz), matching the hole: bottom-front, bottom, bottom-back, back, top-back, top,
 # top-front, front (+Y is back).
 OCT = [(-S, -S), (0, -1), (S, -S), (1, 0), (S, S), (0, 1), (-S, S), (-1, 0)]
@@ -96,15 +100,17 @@ LEG = [
 # Foot rings: (y, z centre, tilt deg from horizontal, half width, height above centre, depth below centre). The tilted
 # ring is a regular octagon in its frame; vertical rings (90) are a rounded box with a flat sole.
 FOOT = [
-    (0.084, 0.100, 25.0, 0.042, 0.050, 0.070),
-    (0.055, 0.058, 55.0, 0.050, 0.062, 0.075),
-    (-0.005, 0.046, 90.0, 0.058, 0.050, 0.046),
-    (-0.048, 0.038, 90.0, 0.070, 0.040, 0.038),
-    (-0.080, 0.032, 90.0, 0.077, 0.032, 0.032),
+    (0.088, 0.100, 25.0, 0.045, 0.050, 0.075),
+    (0.062, 0.060, 55.0, 0.055, 0.062, 0.080),
+    (-0.005, 0.046, 90.0, 0.060, 0.050, 0.046),
+    (-0.048, 0.040, 90.0, 0.071, 0.042, 0.040),
+    (-0.072, 0.040, 90.0, 0.078, 0.044, 0.040),
 ]
 FOOT_X = 0.117
-# Toes: per extrusion (forward m, width scale, height scale, drop m); the middle toe reaches TOE_MID further.
-TOE = [(0.016, 0.98, 0.90, 0.002), (0.032, 0.84, 0.70, 0.006)]
+# Toes: per extrusion (forward m from the toe's base, width scale, height scale, drop m); the middle toe reaches
+# TOE_MID further. Fat round lobes (u1): they keep the base's width and height nearly to the end, then a short
+# rounded cap ring, so the subdivided tip stays full instead of pinching.
+TOE = [(0.014, 1.04, 1.0, 0.0), (0.030, 1.0, 0.95, 0.002), (0.040, 0.78, 0.74, 0.004)]
 TOE_MID = 0.006
 WRIST_SMOOTH = (0.006, 4)  # m beyond the hand's cut, passes: the cut's slivers relaxed (the ring fixed)
 SUBDIV = 2
@@ -166,12 +172,13 @@ def build_cage(sole_drop, trunk):
             bm.faces.new((A[k], A[k + 1], B[k + 1], B[k]))
     # arms
     prev = hole
-    for x, yc, zc, ry, rz in ARM + [(WRIST_X, 0.0, 0.0, 0.0, 0.0)]:
+    for i, (x, yc, zc, ry, rz) in enumerate(ARM + [(WRIST_X, 0.0, 0.0, 0.0, 0.0)]):
         if x == WRIST_X:
             ring = [V((x, 0, 0)) for _ in OCT]  # placed after the wrist is measured
             rings["wrist_cage"] = ring
         else:
-            ring = [V((x, yc + ry * dy, zc + rz * dz)) for dy, dz in OCT]
+            t = ARM_THICK[i]
+            ring = [V((x, yc + t * ry * dy, zc + t * rz * dz)) for dy, dz in OCT]
         for i in range(8):
             bm.faces.new((prev[i], prev[(i + 1) % 8], ring[(i + 1) % 8], ring[i]))
         prev = ring
@@ -184,7 +191,8 @@ def build_cage(sole_drop, trunk):
         ring = []
         for j in range(8):
             ph = math.radians(-45 + 45 * j + tw)
-            ring.append(V((cx + rx * math.sin(ph), cy - ry * math.cos(ph), z)))
+            t = LEG_THICK[i]
+            ring.append(V((cx + t * rx * math.sin(ph), cy - t * ry * math.cos(ph), z)))
         for j in range(8):
             bm.faces.new((prev[j], prev[(j + 1) % 8], ring[(j + 1) % 8], ring[j]))
         prev = ring
