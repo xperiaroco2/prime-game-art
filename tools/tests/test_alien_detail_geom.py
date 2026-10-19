@@ -62,6 +62,54 @@ class CreaseTest(unittest.TestCase):
         self.assertEqual(G.line_offsets(1, 5.0), [0.0])
         self.assertEqual(G.line_offsets(3, 1.6), [-1.6, 0.0, 1.6])
 
+    def test_sculpt_m2_is_the_shipped_sculpt(self):
+        s = G.sculpt("m2")
+        self.assertEqual(s["creases"], G.CREASES)
+        self.assertEqual(s["grain"], G.GRAIN)
+        self.assertEqual(s["soften"]["passes"], 0)  # no soften: M2's recipe rebuilds M2
+        self.assertEqual(s["curvature"], {"smooth": 2, "scale": 120.0, "jaw_smooth": 0})  # M2's curv_smooth, curv_scale
+        s["creases"]["neck_front"]["depth"] = 9.0  # a fresh copy: the module's settings stay
+        self.assertNotEqual(G.CREASES["neck_front"]["depth"], 9.0)
+
+    def test_sculpt_merges_and_refuses_typos(self):
+        s = G.sculpt("m2", {"creases": {"neck_front": {"depth": 0.0}}, "grain": {"face": 0.3}})
+        self.assertEqual(s["creases"]["neck_front"], dict(G.CREASES["neck_front"], depth=0.0))
+        self.assertEqual(s["grain"]["face"], 0.3)
+        for bad in ({"creases": {"neck_frnt": {"depth": 0}}}, {"creases": {"neck_front": {"dept": 0}}},
+                    {"grain": {"pores": 1}}, {"soften": {"pass": 3}}, {"jaw": {}}):
+            with self.assertRaises(KeyError, msg=bad):
+                G.sculpt("m2", bad)
+        with self.assertRaises(KeyError):
+            G.sculpt("m9")
+
+    def test_m2b_is_softer_than_m2(self):
+        m2, m2b = G.sculpt("m2"), G.sculpt("m2b")
+        for name in ("neck_front", "neck_back", "lid_fold"):  # the rings and the brow grooves (#196, v27)
+            self.assertLess(m2b["creases"][name]["depth"], 0.5 * m2["creases"][name]["depth"], name)
+        g, g2 = m2["grain"], m2b["grain"]
+        self.assertLess(g2["pore_mm"], g["pore_mm"])  # finer
+        self.assertLess(g2["pore_depth_mm"] * g2["face"], 0.5 * g["pore_depth_mm"] * g["face"])  # weaker on the face
+        self.assertGreater(g2["pore_depth_mm"], 0.0)  # a faint even grain stays
+        self.assertGreater(m2b["soften"]["passes"], 0)  # the jaw's ridge and fold relaxed
+        self.assertGreater(m2b["curvature"]["smooth"], m2["curvature"]["smooth"])  # no ragged cavity line
+        for name, c in m2b["creases"].items():
+            self.assertLessEqual(c["depth"] * c["lines"], G.MAX_DISP_MM, name)
+
+    def test_soften_stays_inside_the_bake_rays(self):
+        # the capped cage starts rays at most CAGE max_mm out and they run CAGE ray_mm: they reach ray - max inside the
+        # low mesh; the relaxed jaw plus the deepest crease must stay within that
+        cage = re.search(r'^CAGE = \{"max_mm": ([0-9.]+),.*"ray_mm": ([0-9.]+)',
+                         (ROOT / "tools" / "blender" / "alien_texture_geom.py").read_text(encoding="utf-8"), re.M)
+        inside = float(cage.group(2)) - float(cage.group(1))
+        self.assertLessEqual(G.sculpt("m2b")["soften"]["max_mm"], inside)
+
+    def test_edge_weight(self):
+        self.assertEqual(G.edge_weight(0.5, 0.15, 0.5), 0.0)  # flat
+        self.assertEqual(G.edge_weight(1.0, 0.15, 0.5), 1.0)  # a sharp ridge
+        self.assertEqual(G.edge_weight(0.0, 0.15, 0.5), 1.0)  # a sharp fold, the same
+        self.assertAlmostEqual(G.edge_weight(0.6, 0.15, 0.5), G.edge_weight(0.4, 0.15, 0.5))
+        self.assertLess(G.edge_weight(0.6, 0.15, 0.5), G.edge_weight(0.7, 0.15, 0.5))
+
     def test_finger_k_matches_the_cage(self):
         cage = (ROOT / "tools" / "blender" / "alien_cage.py").read_text(encoding="utf-8")
         detail = (ROOT / "tools" / "blender" / "alien_detail.py").read_text(encoding="utf-8")
