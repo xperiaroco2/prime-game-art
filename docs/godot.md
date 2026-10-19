@@ -1092,6 +1092,33 @@ a time, by visibility.
     `note_m3c_textures`, the normal image's name). `alien_texture_review.py --before-tex <M3a/textures>
     --before-normal <M3a/bake/normal.png> --labels m3a,m3c` puts M3a on the left of the sheets instead of M2's look;
     its shots gained `near` (the face at 3/4 from 0.6 m, 70 mm) and `knee`. About 30 s, 20 s, 10 s and 10 s.
+- **M2b, the sculpt softened toward rf2** (the engineer on v27: "under the neck something like a scar"; output under
+  `D:/prime-art-raw/review/char/alien-parts-kit/M2b/`, M2/M3a/M3c untouched).
+  - The scar: where the jaw's underside folds into the throat, the low mesh (an irregular triangulation) subdivides
+    into a crumpled crease in the high copy. The normal map draws it faintly; M3c's cavity tint from the curvature bake
+    draws it as a ragged dark double line (`tools/out`'s diagnosis: present with the normal map off, absent on a plain
+    clay, so the texture; present in the high copy's own `curv` colour and its clay, so the sculpt). The neck rings
+    (`neck_front`, `neck_back`) added stripes beside it in the curvature, the AO and the albedo.
+  - `alien_detail_geom.SCULPTS` holds the sculpts (`sculpt(name, extra)`: CREASES, GRAIN, `SOFTEN`, `CURVATURE` with
+    changes; an unknown key is an error). `m2` is M2's, unchanged. `m2b`: no neck rings, the brow folds (`lid_fold`)
+    0.22 mm deep and 3 mm wide (0.70 and 1.5), softer folds under the eyes and creases under the mouth (the groove
+    round the mouth's corners 0.15 mm, was 0.40: at 0.28 it read as a short cut beside the chin), the pores
+    0.7 mm across and 0.016 mm deep at 0.45 on the face (1.1, 0.045 and 1.0), the peel 0.022 mm; `soften`: under the
+    jaw (the head and neck from 3 mm under the rest mouth to 4 cm under the Neck joint) the high copy relaxed along
+    its normals, 300 Laplacian passes weighted by its curvature grown over 24 edges, at most 1.8 mm (the capped cage's
+    rays reach 2 mm inside); the curvature colour smoothed 6 passes, and 120 more where `soften` worked.
+  - Chosen on two sculpt grids (`M2b/variants/g1`, `g2`, rf2 first; rows face34, `chin` (under the chin at 3/4 from
+    below, 0.4 m), `close04` (the face at 3/4 from 0.4 m), `face_close`) with one normal map per variant over M3c's
+    texture without its cavity tint (`variants/base`). Relaxing only the curvature's thin band (g1, up to 20 passes)
+    moved the fold under 0.5 mm and kept the crumple.
+  - Rebuild (each through `tools/runner/blender.py` in the background): `alien_detail.py --stage high --sculpt m2b
+    --character <M2/uv/build/alien_character.blend> --out <M2b>`, `--stage bake --cage capped --out <M2b>` (all four
+    maps through M3a's capped cage), then `alien_texture.py --stage fields --out <M2b> --m2 <M2> --bake <M2b/bake>`,
+    `compose --set m3c --out <M2b> --m2 <M2>`, `export --set m3c ... --kit <M2/export> --bake <M2b/bake>`;
+    `alien_texture_review.py ... --tex <M2b/textures> --normal <M2b/bake/normal.png> --before-tex <M3c/textures>
+    --before-normal <M3a/bake_cage_r2/normal.png> --labels m3c,m2b` adds `compare.png` (rf2 | M3c | M2b: face34,
+    chin, close04, neck_back34, body). A sculpt grid: `alien_detail.py --stage grid --variants <json> --vout <dir>`,
+    then `alien_texture_review.py --grid <dir>` (a variant folder with `normal.png` alone swaps only the normal map).
 - **M4, the modern eyes** (output under `D:/prime-art-raw/review/char/alien-parts-kit/M4/`). The designs, the lid
   shells and the blink by lid rotation are unchanged; what is new is per pixel in Godot, plus one small strip per lid:
   - `alien_eye.gdshader` (`cornea` 1; 0 keeps S9's painted eye for before/after sheets) draws a **cornea**: a sphere
