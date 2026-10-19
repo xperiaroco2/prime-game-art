@@ -9,20 +9,32 @@ standard ring the separate head welds to), on the contract skeleton with Univers
 Writes <out>/alien_body.blend (a saved character for `tools/run.py export`), <out>/neck_ring.json and
 <out>/fit.json (the measured widths before and after against the targets).
 
-How the fit works (no sculpting, all by numbers):
-1. Rest rebuild. Each bone b gets an affine map M_b = T(new head) * S_b * T(-old head), with S_b a scale along world
-   axes (the body is in a T-pose, so arms run along X, legs and spine along Z): one factor along the bone (its new
-   length) and two across it (its thickness). A child's new head is its parent's map of its old head. Every vertex
-   moves by the weight blend of its bones' maps, the same blend its skin uses, so joints stay where they bend.
-2. Bands. The trunk and neck are then scaled per height band in width (X) and depth (Y) to the u1 targets, blended by
-   how much of each vertex the trunk bones carry; a soft forward bulge gives the u1 belly.
-3. Smoothing. The muscle relief (pecs, abs, ribs) is relaxed with a volume-keeping Laplacian smooth.
-4. Hands: the Little finger's mesh is removed and its hole closed; its bones stay, unweighted. The other fingers
-   are thickened. Feet: the five sculpted toes are smoothed away and two grooves cut three toe lobes.
-5. The neck is cut at RING_Z, and its open edge is resampled to RING_N vertices at equal angles on an ellipse: the
-   standard neck ring (neck_ring.json: positions, the next loop below, the weights).
+How the fit works (no sculpting, all by numbers; the constants are at the top):
+1. Rest rebuild. Each bone b gets an affine map M_b = T(new head) * S_b * T(-old head). S_b scales along world axes
+   (the body is in a T-pose, so arms run along X, legs and spine along Z): one factor along the bone (its new length)
+   and two across it (its thickness). Fingers scale along their own bone instead (the thumb runs diagonally): shorter
+   and thicker (FINGER_LEN, FINGER_THICK), the thumb's root slim (THUMB_ROOT), the index and ring bases spread from
+   the middle finger. A child's new head is its parent's map of its old head. Every vertex moves by the weight blend
+   of its bones' maps, the same blend its skin uses, so joints stay where they bend. Then the soles go to z = 0.
+2. Bands, tubes and seat. The trunk and neck are scaled per height in width (X) and depth (Y) to the u1 targets
+   (BANDS; the per-centimetre measures smoothed over height and read between their samples), blended by how much of
+   each vertex the trunk bones carry; a soft forward bulge gives the u1 belly. The thigh-calf and upper arm-forearm
+   chains are relaxed into smooth tubes (`tubify`: no knee caps, calf or biceps bulges). The seat is pressed to u1's
+   depth.
+3. Smoothing. A volume-keeping Taubin smooth over the body (not the hands) relaxes the muscle relief. Then the trunk
+   between TRUNK_Z is refitted (`trunk_fit`): each section's radius, around a smoothed centre line, moves to a radius
+   field over height and angle smoothed along the height, so the trunk is one continuous soft form (no rows on the
+   back or waist, no ledge under the chest, no belly crease; one smooth side curve of belly and seat). The neck is
+   narrowed to u1 above 1.29 m and laid on the NECK ellipse at the cut.
+4. Hands: the Little finger's mesh is removed and its hole closed; its bones stay, unweighted. The hand's skin
+   weights are blended with their neighbours' (soft, round bends in a fist) and the palm and fingers get their own
+   volume-keeping smooth (no knuckle, tendon or pad relief). Feet: the forefoot is cut at the ball and rebuilt as a
+   rounded three-toe paddle whose toe ends round off on a quarter ellipse seen from the side (full, not pinched).
+5. The neck is cut below RING_Z and closed by two standard rings of RING_N vertices at equal angles on an ellipse,
+   zipped to the cut: the standard neck ring (neck_ring.json: positions, the loop below, the weights).
 6. Bones renamed to the contract (the bone map), the leaf bones dropped, Jaw and eye bones added (unweighted).
-7. The clips: Universal Animation Library actions copied as-is (the same 65-bone rig), renamed to the game's names.
+7. The clips: Universal Animation Library actions (the same 65-bone rig) copied key for key into new actions with
+   their own slot on CharacterArmature, the bone names renamed to the contract and the clips to the game's names.
 """
 
 from __future__ import annotations
@@ -72,9 +84,20 @@ TUBE_SIGMA = 0.05          # m: the Gaussian that smooths a limb's radius profil
 TAUBIN = 80                # iterations of the lambda/mu smooth over the body (not the hands)
 TOE_HALF = 0.095           # m: half the paddle's width at the toes (u1: about 0.19 m across)
 TOE_LEN = 0.034            # m: how far each of the three rounded toes reaches past the notches between them
-TOE_H = 0.055              # m: the paddle's height at the toes
+TOE_H = 0.062              # m: the paddle's height at the toes
 GROOVE = 0.009             # m: the crease between the toes on top
-FOOT_RINGS = 8             # rings of the rebuilt forefoot
+FOOT_RINGS = 12            # rings of the rebuilt forefoot (packed towards the toe end)
+TOE_END = 0.4              # the last part of the toes' length that rounds off (a quarter ellipse seen from the side)
+TOE_TIP = 0.2              # the last ring's height against the paddle's: a small cap closes a round nose
+# S1c (UPDATE 3 of the brief): one continuous soft trunk, clean soft hands.
+TRUNK_Z = (0.70, 1.22)     # m: the trunk's sections are refitted between these heights (fading in and out over TRUNK_FADE)
+TRUNK_FADE = 0.08
+TRUNK_SIGMA = 0.05         # m: the Gaussian along the height that smooths the trunk's radius field (rows, ledges, creases)
+TRUNK_BINS = 18            # angle bins over the half section (the body is mirrored)
+TRUNK_KEEP = 0.1           # each vertex keeps this power of its own radius against its bin's mean
+THUMB_ROOT = (0.9, 1.0)    # the thumb's first bone: length and thickness factors (times HAND_SCALE): no root bulge
+HAND_TAUBIN = 30           # iterations of the volume-keeping smooth over the hands (palm and fingers)
+HAND_WEIGHT_SMOOTH = 6     # passes that blend the hand's skin weights with their neighbours' (soft, rounded bends)
 RING_Z = 1.39
 RING_N = 24
 RING_STEP = 0.008
@@ -246,6 +269,111 @@ def tubify(me, ws, pts, names, fade_in, fade_out, step=0.02):
             "radius_smooth": [round(x, 4) for x in smooth]}
 
 
+def at_cm(table, z):
+    """A table sampled per centimetre of height (keys rounded to 0.01 m), read between its samples (linear), so a
+    scale taken from it leaves no 1 cm steps (S1b's per-centimetre lookup left rows on the back)."""
+    a, b = round(math.floor(z * 100) / 100, 2), round(math.ceil(z * 100) / 100, 2)
+    if a not in table or b not in table or a == b:
+        return table.get(a, table.get(b, table.get(round(z, 2))))
+    t = (z - a) / (b - a)
+    va, vb = table[a], table[b]
+    if isinstance(va, tuple):
+        return tuple(x + (y - x) * t for x, y in zip(va, vb))
+    return va + (vb - va) * t
+
+
+def gauss2(grid, sz, sa):
+    """A separable Gaussian over a (height x angle) grid; the angle axis is mirrored at both ends (0 and pi)."""
+    nz, na = len(grid), len(grid[0])
+
+    def g1(vals, sig, mirror):
+        out, n = [], len(vals)
+        for k in range(n):
+            acc = tot = 0.0
+            for j in range(-int(3 * sig) - 1, int(3 * sig) + 2):
+                i = k + j
+                if mirror:
+                    i = -i - 1 if i < 0 else (2 * n - i - 1 if i >= n else i)
+                    i = max(0, min(n - 1, i))
+                elif not 0 <= i < n:
+                    continue
+                w = math.exp(-0.5 * (j / sig) ** 2)
+                acc += w * vals[i]
+                tot += w
+            out.append(acc / tot)
+        return out
+    rows = [g1(r, sa, True) for r in grid]
+    cols = [g1([rows[i][j] for i in range(nz)], sz, False) for j in range(na)]
+    return [[cols[j][i] for j in range(na)] for i in range(nz)]
+
+
+def trunk_fit(verts, tws, step=0.01):
+    """Refits the trunk's horizontal sections: around a centre line (the middle of the front and back midline,
+    smoothed), each trunk vertex's distance moves to a radius field over (height, angle) smoothed by TRUNK_SIGMA along
+    the height, keeping TRUNK_KEEP of its own deviation from its bin's mean. The strength is the cube of the trunk
+    bones' weight (the arm and leg roots keep their shape) and fades over TRUNK_FADE at both ends of TRUNK_Z."""
+    z0, z1 = TRUNK_Z
+    lo, hi = z0 - 0.05, z1 + 0.05
+    nz = int(round((hi - lo) / step)) + 1
+
+    def zi(z):
+        return (z - lo) / step
+    mid = [[] for _ in range(nz)]
+    for v, tw in zip(verts, tws):
+        if tw > 0.95 and lo <= v.co.z <= hi and abs(v.co.x) < 0.03:
+            mid[min(nz - 1, int(round(zi(v.co.z))))].append(v.co.y)
+    cy = [(max(m) + min(m)) / 2 if m else None for m in mid]
+    known = [k for k in range(nz) if cy[k] is not None]
+    cy = [cy[k] if cy[k] is not None else cy[min(known, key=lambda j: abs(j - k))] for k in range(nz)]
+    cy = [c[0] for c in gauss2([[c] for c in cy], TRUNK_SIGMA / step, 1.0)]
+
+    def polar(co):
+        c = interp(cy, co.z - lo, step)
+        dy = co.y - c
+        return c, math.hypot(co.x, dy), math.atan2(abs(co.x), -dy)
+    na = TRUNK_BINS
+    sums = [[0.0] * na for _ in range(nz)]
+    cnt = [[0] * na for _ in range(nz)]
+    for v, tw in zip(verts, tws):
+        if tw > 0.95 and lo <= v.co.z <= hi:
+            _, r, a = polar(v.co)
+            k, j = min(nz - 1, int(round(zi(v.co.z)))), min(na - 1, int(a / math.pi * na))
+            sums[k][j] += r
+            cnt[k][j] += 1
+    cells = [(k, j) for k in range(nz) for j in range(na) if cnt[k][j]]
+    raw = [[sums[k][j] / cnt[k][j] if cnt[k][j] else None for j in range(na)] for k in range(nz)]
+    for k in range(nz):
+        for j in range(na):
+            if raw[k][j] is None:
+                kk, jj = min(cells, key=lambda c: (abs(c[0] - k) * 3) ** 2 + (c[1] - j) ** 2)
+                raw[k][j] = sums[kk][jj] / cnt[kk][jj]
+    smooth = gauss2(raw, TRUNK_SIGMA / step, 1.0)
+
+    def field(grid, z, a):
+        x = max(0.0, min(nz - 1.0, zi(z)))
+        y = max(0.0, min(na - 1.0, a / math.pi * na - 0.5))
+        k, j = min(nz - 2, int(x)), min(na - 2, int(y))
+        fx, fy = x - k, y - j
+        return ((grid[k][j] * (1 - fy) + grid[k][j + 1] * fy) * (1 - fx)
+                + (grid[k + 1][j] * (1 - fy) + grid[k + 1][j + 1] * fy) * fx)
+    moved, worst = 0, 0.0
+    for v, tw in zip(verts, tws):
+        z = v.co.z
+        if not (z0 < z < z1) or tw < 0.3:
+            continue
+        c, r, a = polar(v.co)
+        if r < 1e-5:
+            continue
+        target = field(smooth, z, a) * (r / field(raw, z, a)) ** TRUNK_KEEP
+        k = tw ** 3 * smoothstep((z - z0) / TRUNK_FADE) * (1 - smoothstep((z - (z1 - TRUNK_FADE)) / TRUNK_FADE))
+        f = (r + (target - r) * k) / r
+        worst = max(worst, abs(target - r) * k)
+        v.co.x *= f
+        v.co.y = c + (v.co.y - c) * f
+        moved += 1
+    return {"moved": moved, "largest_move_m": round(worst, 4), "centre_y": [round(c, 4) for c in cy[::5]]}
+
+
 def taubin(verts, weights, iters, lam=0.5, mu=-0.53):
     """A volume-keeping smooth (lambda/mu): each pass pulls a vertex towards its neighbours' mean by lam times its
     weight, then pushes it back by mu, which removes small bumps without shrinking the body."""
@@ -301,6 +429,8 @@ def main():
         ax = axis_of(name)
         if k == "finger":  # scaled along the bone's own direction (the thumb runs diagonally, not along X)
             s_len, s_rad = HAND_SCALE * FINGER_LEN, HAND_SCALE * FINGER_THICK
+            if name[:-2] == "thumb_01":  # the thumb's root in the palm stays slim (no pad bulging out of the palm)
+                s_len, s_rad = HAND_SCALE * THUMB_ROOT[0], HAND_SCALE * THUMB_ROOT[1]
             d = (bones[name]["tail"] - bones[name]["head"]).normalized()
             m3 = Matrix.Identity(3) * s_rad
             for i in range(3):
@@ -404,7 +534,7 @@ def main():
         z = round(v.co.z, 2)
         if z not in cur:
             continue
-        cw, cd, cy = cur[z]
+        cw, cd, cy = cur[z] if v.co.z > 1.25 else at_cm(cur, v.co.z)  # the neck keeps S1b's sampling (its ring)
         tw, td = lerp_bands(v.co.z, 1), lerp_bands(v.co.z, 2)
         # Outside the trunk the arms and the outer thighs keep their shape (a soft falloff, never a cut).
         s *= max(0.0, min(1.0, (0.85 * cw - abs(v.co.x)) / (0.3 * cw)))
@@ -438,7 +568,7 @@ def main():
         depth = lerp_bands(z, 2) or (BANDS[0][2] if z < BANDS[0][0] else None)
         if depth is None or round(z, 2) not in front:
             continue
-        yb = front[round(z, 2)] + depth
+        yb = at_cm(front, z) + depth
         if v.co.y > yb:
             zw = smoothstep((z - 0.66) / 0.1) * (1 - smoothstep((z - 0.94) / 0.08))
             v.co.y = yb + (v.co.y - yb) * (1 - 0.75 * zw)
@@ -461,6 +591,13 @@ def main():
     hand_names = [n for n in gi if kind(n) in ("hand", "finger")]
     allv = list(bm.verts)
     taubin(allv, [1.0 - min(1.0, 1.5 * wsum(v, hand_names)) for v in allv], TAUBIN)
+    # The trunk: one continuous soft form. Its sections are refitted to a radius field smoothed along the height, so
+    # the rows on the back and waist, the ledge under the chest and the belly crease go, and the side silhouette of
+    # the belly and seat is one smooth curve; a short Taubin blends the refit's edges.
+    tws = [wsum(v, TRUNK) for v in allv]
+    report["trunk"] = trunk_fit(allv, tws)
+    z0, z1 = TRUNK_Z
+    taubin(allv, [(tw ** 2 if z0 - 0.04 < v.co.z < z1 + 0.01 else 0.0) for v, tw in zip(allv, tws)], 10)
     # The neck: narrowed to u1's width above 1.30 m and, near the cut, laid exactly on the NECK ellipse, so the cut is
     # an even convex loop and the zip to the standard ring is clean.
     zcut = RING_Z - 2 * RING_STEP
@@ -511,9 +648,30 @@ def main():
                     del d[gi[n]]
             if hw > 0:
                 d[gi[f"hand_{side}"]] = d.get(gi[f"hand_{side}"], 0.0) + hw
-    # Softer fingers: a light volume-keeping smooth over the fingers only.
-    fingers = [v for v in bm.verts if v.is_valid and wsum(v, [n for n in gi if kind(n) == "finger"]) > 0.5]
-    taubin(fingers, [0.7] * len(fingers), 4)
+    # Clean soft hands: the skin weights blended with their neighbours' (so the thick fingers bend in a soft round
+    # curve and do not crush into a knot), then a volume-keeping smooth over the palm and fingers (no knuckle,
+    # tendon or pad relief); separate fingers stay separate, as the smooth follows the mesh's edges.
+    hand_v = [v for v in bm.verts if v.is_valid and wsum(v, hand_names) > 0.3]
+    hand_g = {gi[n] for n in hand_names}
+    for _ in range(HAND_WEIGHT_SMOOTH):
+        new = []
+        for v in hand_v:
+            acc = {}
+            nbs = [e.other_vert(v) for e in v.link_edges]
+            for src, f in [(v, 0.5)] + [(n, 0.5 / len(nbs)) for n in nbs]:
+                for g, w in src[deform].items():
+                    acc[g] = acc.get(g, 0.0) + f * w
+            new.append(acc)
+        for v, acc in zip(hand_v, new):
+            d = v[deform]
+            keep = sum(w for g, w in d.items() if g not in hand_g)  # the wrist's forearm weights stay as they were
+            mix = {g: w for g, w in acc.items() if g in hand_g}
+            tot = sum(mix.values()) or 1.0
+            for g in [g for g in d.keys() if g in hand_g]:
+                del d[g]
+            for g, w in mix.items():
+                d[g] = w / tot * (1.0 - keep)
+    taubin(hand_v, [min(1.0, 2 * wsum(v, hand_names)) for v in hand_v], HAND_TAUBIN)
     # Feet: the forefoot is cut off at the ball and rebuilt as a rounded three-toe paddle. The cut's loop (sorted by
     # angle around its centre) is extruded into FOOT_RINGS rings, each column keeping its place across (u) and up (h)
     # the section while the section widens to TOE_HALF, lowers to TOE_H, rounds off at the end, and reaches further
@@ -546,20 +704,24 @@ def main():
         toe_g = gi[f"ball_{side}"]
         prev = cut
         for k in range(1, FOOT_RINGS + 1):
-            s = k / FOOT_RINGS
+            s = 1 - (1 - k / FOOT_RINGS) ** 1.6  # rings packed towards the end, where the nose rounds off
             g = smoothstep(s / 0.6)
             width = hw0 + (TOE_HALF - hw0) * g
             height = zt0 + (TOE_H - zt0) * smoothstep(s / 0.5)
-            end = max(0.35, math.sqrt(max(0.0, 1 - (max(0.0, s - 0.72) / 0.28) ** 2)))  # a round toe end
+            # A full, round toe end seen from the side: over the last TOE_END of the length the section shrinks on a
+            # quarter ellipse to TOE_TIP of its height, around a centre a third up, so the top comes down and the
+            # sole lifts into a rounded nose (no thin pinched tip).
+            te = max(0.0, (s - (1 - TOE_END)) / TOE_END)
+            end = math.sqrt(1 - (1 - TOE_TIP ** 2) * te * te)
             tw = smoothstep(s / 0.5)
             ring = []
             for u, h, w in cols:
                 scal = max(math.sqrt(max(0.0, 1 - ((u - ci) * 3) ** 2)) for ci in (-2 / 3, 0.0, 2 / 3))
                 reach = L - TOE_LEN * (1 - scal) * g
                 notch = math.exp(-((abs(u) - 1 / 3) / 0.1) ** 2) * smoothstep((s - 0.35) / 0.3)
-                z = zb0 + h * (height - zb0) * end * (1 - 0.3 * g * u * u) - GROOVE * notch * h
-                z += 0.006 * smoothstep((s - 0.6) / 0.4) * (1 - h)  # the toes' tips lift off the ground a little
-                nv = bm.verts.new((xc + u * width * (1 - 0.15 * (1 - end)), ycut - s * reach, z))
+                hs = (height - zb0) * (1 - 0.2 * g * u * u)
+                z = zb0 + hs / 3 + (h - 1 / 3) * hs * end - GROOVE * notch * h
+                nv = bm.verts.new((xc + u * width * (1 - 0.1 * (1 - end)), ycut - s * reach, z))
                 d = nv[deform]
                 for gidx, wt in w.items():
                     d[gidx] = wt * (1 - tw)
@@ -572,7 +734,7 @@ def main():
         cap = bm.faces.new(prev)
         bmesh.ops.triangulate(bm, faces=[cap], quad_method="BEAUTY", ngon_method="BEAUTY")
         new = [v for v in bm.verts if v.co.y < ycut - 1e-4 and v.co.x * sx > 0.02 and v.co.z < 0.1]
-        taubin(new, [0.5] * len(new), 3)
+        taubin(new, [0.5] * len(new), 6)
         foot_info[side] = {"centre_x": xc, "half_width_ball": hw0, "half_width_toes": TOE_HALF, "cut_y": ycut,
                            "length_from_cut": L, "cut_count": len(cut)}
     report["feet"] = foot_info

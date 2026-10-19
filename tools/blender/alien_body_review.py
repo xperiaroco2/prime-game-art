@@ -107,8 +107,10 @@ def pose_fist(arm, amount):
     for pb in arm.pose.bones:
         n = pb.name
         if any(f in n for f in ("Index", "Middle", "Ring", "Little")):
+            # A fist's curl per joint (the knuckle and the middle joint most, the tip less), as a hand closes.
+            curl = 85 if "Proximal" in n else (85 if "Intermediate" in n else 35)
             pb.rotation_mode = "XYZ"
-            pb.rotation_euler = (math.radians(80 * amount), 0, 0)
+            pb.rotation_euler = (math.radians(curl * amount), 0, 0)
         elif "Thumb" in n and "Metacarpal" not in n:
             pb.rotation_mode = "XYZ"
             pb.rotation_euler = (math.radians(35 * amount), 0, math.radians(20 * amount))
@@ -201,9 +203,11 @@ def main():
     # 5. The neck ring from above and the front.
     sc, cam = setup((480, 480))
     tiles = []
-    foot = (0.14, -0.08, 0.03)
+    toe = arm.data.bones["LeftToes"].head_local
+    foot = Vector((toe.x, toe.y - 0.02, 0.035))  # the left forefoot, from its toe bone
     for loc, target in (((0, -0.5, 1.6), (0, 0, 1.33)), ((0.5, 0, 1.55), (0, 0, 1.33)), ((0, 0.001, 1.9), (0, 0, 1.33)),
-                        ((0.14, -0.6, 0.12), foot), ((0.42, -0.42, 0.45), foot), ((0.6, -0.1, 0.1), foot)):
+                        (foot + Vector((0, -0.55, 0.06)), foot), (foot + Vector((0.35, -0.35, 0.3)), foot),
+                        (foot + Vector((0.55, 0, 0.0)), foot)):
         look(cam, loc, target, lens=50)
         tiles.append(shot(sc, f"{out}/_neck_{len(tiles)}.png"))
     stitch(tiles, 3, f"{out}/neck_ring_feet.png")
