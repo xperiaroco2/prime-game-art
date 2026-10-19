@@ -1077,6 +1077,9 @@ a time, by visibility.
     (`accent_blur` 32 texels at 4K, a normalised three-box blur over the covered texels, `blur()`), full from 0.6 of
     the blurred mask, 0.85 at its peak, its chroma kept 0.6 through the edge (`keep_chroma()`: teal and coral mixed
     half and half are a dusty grey). The teal (`hue_sat` 1.15) and the dome's depth are M3a's.
+  - The blur runs in UV space, within each UV island: a spot that a `UVMap` seam cuts (the far knee's) still ends
+    hard at the seam. The fix for later is a blur on the mesh, the accent averaged over vertex neighbours in the
+    `fields` stage (as `smooth_light()`), with its passes matched to the 32 texels and the spots judged again.
   - The fields gained `socket` (in pass `e`, where M3a had a constant): the skin within 14 mm (`SOCKET_MM`) of each
     eye's parts' box, by the distance to the box (full within 7 mm; an ellipsoid round the box reached less far at
     its corners, the outer lid corners).
