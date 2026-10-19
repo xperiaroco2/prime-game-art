@@ -138,11 +138,11 @@ func _shot(text: String, frames: int = 3) -> Image:
 	return root.get_texture().get_image()
 
 
-func _sheet(images: Array, cols: int, name: String) -> void:
+func _sheet(images: Array, cols: int, name: String, width: int = SHEET_W) -> void:
 	if images.is_empty():
 		_fail("no image for %s" % name)
 		return
-	var tw: int = SHEET_W / cols
+	var tw: int = width / cols
 	var first: Image = images[0]
 	var th: int = int(round(float(tw) * first.get_height() / first.get_width()))
 	var rows: int = int(ceil(float(images.size()) / cols))
