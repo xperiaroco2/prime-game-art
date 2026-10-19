@@ -4,8 +4,14 @@ rest pose, onto Body's texture UV `UVMap` (glTF TEXCOORD_0); then the kit export
 
 Runs in background Blender through the runner, never by hand and never in a window:
 tools/runner/blender.py's run_script("alien_texture.py", args) with args
-  --stage cage|fields|compose|export --out <M3a> --m2 <M2> [--size 4096] [--settings JSON] \
-      [--variants FILE --vout DIR] [--kit <the kit's export folder: character.json, mouth atlases>]
+  --stage cage|fields|compose|export --out <M3a> --m2 <M2> [--size 4096] [--set m3a|m3c] [--settings JSON] \
+      [--variants FILE --vout DIR] [--kit <the kit's export folder: character.json, mouth atlases>] \
+      [--bake <the bake folder, default <out>/bake>] [--force]
+--set (required by compose and export) names the texture set: its settings (alien_texture_geom.SETS: m3a the shipped
+M3A, m3c M3A with M3C's changes over it), character.json's note and the images' names. compose refuses an --out whose
+textures/settings.json records other settings, and export one whose textures were composed with other settings than
+the set's, unless --force. M3c (the set tuned toward rf2) runs the same stages with --out <M3c> --set m3c and --bake
+<M3a/bake_cage_r2> (the capped cage's bake; fields and export).
 
 Stages (each a separate run, so none blocks long; each reads the one before from --out):
 - `cage` (reads M2/high/alien_high.blend): the explicit bake cage of PR #231's minor 6. Body's copy, each vertex moved
@@ -20,14 +26,15 @@ Stages (each a separate run, so none blocks long; each reads the one before from
   flush, and a coverage channel), plus the pore field from the normal map's divergence. Saved as float16 .npy in
   M3a/fields/ with `fields.json` (each field's stats).
 - `compose`: the textures from the fields by alien_texture_geom (albedo, roughness, the subsurface mask) with the
-  settings TEX (merged with --settings, a JSON object): M3a/textures/ `albedo.png` (sRGB), `orm.png` (R occlusion,
+  settings of --set (merged with --settings, a JSON object): M3a/textures/ `albedo.png` (sRGB), `orm.png` (R occlusion,
   G roughness, B metallic 0; glTF's packing), `sss.png` (grey, half --size), each with a 1k preview; the UV gaps are
   filled by push-pull, so mip levels never bleed black. --variants FILE (a JSON file: an object of name: settings,
   each merged over the settings) writes each variant at --size into --vout/<name>/ instead (the tuning grids).
 - `export` (reads M2/export/alien_character.blend): the other meshes on alien_hue (the crest parts) move to an
   untextured copy, `alien_hue_part` (alien.gd swaps both for the shader); alien_hue takes albedo
   (baseColorTexture), orm (G roughness, B metallic through Separate Color, R through the glTF Material Output group's
-  Occlusion: occlusionTexture) and M3a/bake/normal.png (normalTexture), all on UVMap; M3a/export/alien_character.glb with its .blend, character.json,
+  Occlusion: occlusionTexture) and the bake folder's normal.png (--bake; normalTexture), all on UVMap;
+  <out>/export/alien_character.glb with its .blend, character.json (the set's note, alien_texture_geom.texture_note),
   the mouth atlases and sss.png beside it.
 """
 from __future__ import annotations
@@ -56,6 +63,7 @@ BAKE = {"normal_samples": 8, "ao_samples": 64, "ao_dist": 0.05, "margin": 16, "a
 NOISE = {"blotch": (9.0, 2.0), "hue": (3.5, 1.0), "fine": (350.0, 1.0)}  # (scale per m, detail): about 11 cm, 29 cm, 3 mm
 FIELDS = ("a", "b", "c", "d", "e")
 LIGHT_SMOOTH = 8  # smooth_light's passes
+SOCKET_MM = 14.0  # the eye socket region's reach past the eye parts' box, full to half of it (M3c's contact AO)
 PART_MATERIAL = "alien_hue_part"  # godot/alien/alien.gd HUE_MATERIALS
 CROPS_1K = ((340, 60), (880, 30), (745, 525), (945, 800), (300, 745))  # M2's web artefacts and the nostrils (1k px)
 
@@ -66,11 +74,19 @@ def args():
     p.add_argument("--out", required=True)
     p.add_argument("--m2", required=True, help="M2's folder: high/, bake/, export/")
     p.add_argument("--size", type=int, default=4096)
-    p.add_argument("--settings", default="", help="compose: a JSON object merged into alien_texture_geom.TEX")
+    p.add_argument("--set", default="", choices=("", *T.SETS),
+                   help="compose, export (required): the texture set, alien_texture_geom.SETS; also the note's and images' name")
+    p.add_argument("--force", action="store_true",
+                   help="compose, export: overwrite or export an --out whose textures/settings.json records other settings")
+    p.add_argument("--settings", default="", help="compose: a JSON object merged into the set's settings")
     p.add_argument("--variants", default="", help="compose: a JSON file, an object {name: settings} -> --vout/<name>/ at --size")
     p.add_argument("--vout", default="")
     p.add_argument("--kit", default="", help="export: the folder of character.json and the mouth atlases")
-    return p.parse_args(sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else [])
+    p.add_argument("--bake", default="", help="fields, export: the bake folder (default <out>/bake; M3c: M3a/bake_cage_r2)")
+    a = p.parse_args(sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else [])
+    if a.stage in ("compose", "export") and not a.set:
+        p.error(f"--stage {a.stage} needs --set ({'|'.join(T.SETS)}): no texture set is assumed")
+    return a
 
 
 def log(*a):
@@ -389,8 +405,19 @@ def region_attrs(body):
     deep = np.clip(0.6 * ss(1.50, 1.85, z) + 1.0 * ss(-0.3, 0.9, nr[:, 1]) * ss(1.0, 1.4, z), 0, 1)
     face = ss(1.38, 1.50, z)
     light = smooth_light(body, head_w + group_weights(body, {"Neck": 1.0}))
+    # the eye sockets (M3c): the skin within SOCKET_MM of each eye's parts' box (ball and lids), for the contact AO:
+    # the distance to the box, full within half of SOCKET_MM, none past it (an ellipsoid round the box reached
+    # less far at the box's corners, the outer lid corners)
+    socket = np.zeros(len(co))
+    for side in ("L", "R"):
+        boxes = [bbox(o) for o in bpy.data.objects if o.type == "MESH" and o.name.startswith("eye_bored_")
+                 and o.name.endswith(f"_{side}")]
+        lo, hi = np.min([b[0] for b in boxes], 0), np.max([b[1] for b in boxes], 0)
+        c, half = (lo + hi) / 2, (hi - lo) / 2
+        d = np.linalg.norm(np.maximum(np.abs(co - c) - half, 0.0), axis=1)
+        socket = np.maximum(socket, 1 - ss(0.5 * SOCKET_MM, SOCKET_MM, d * 1000.0))
     vals = {"f_tzone": tzone, "f_mouth": mouth, "f_flush": flush, "f_warm": warm, "f_deep": deep, "f_face": face,
-            "f_light": light}
+            "f_light": light, "f_socket": socket}
     for k, v in vals.items():
         put_attr(me, k, v)
     log("regions", json.dumps({k: [round(float(v.min()), 3), round(float(v.mean()), 4), round(float(v.max()), 3)]
@@ -420,7 +447,7 @@ def field_material(body, a):
     uv0.uv_map = UV_LAYER
     for k, f in (("ao", "ao"), ("curv", "curvature"), ("thick", "thickness")):
         tex = nt.nodes.new("ShaderNodeTexImage")
-        tex.image = bpy.data.images.load(str(out_dir(a) / "bake" / f"{f}.png"))
+        tex.image = bpy.data.images.load(str(bake_dir(a) / f"{f}.png"))
         tex.image.colorspace_settings.name = "Non-Color"
         tex.interpolation = "Cubic"
         tex.extension = "EXTEND"
@@ -435,14 +462,11 @@ def field_material(body, a):
         nz.inputs["Roughness"].default_value = 0.5
         nt.links.new(tc.outputs["Object"], nz.inputs["Vector"])
         src[k] = nz.outputs["Fac"]
-    for k in ("tzone", "mouth", "flush", "warm", "deep", "face", "light"):
+    for k in ("tzone", "mouth", "flush", "warm", "deep", "face", "light", "socket"):
         at = nt.nodes.new("ShaderNodeAttribute")
         at.attribute_type = "GEOMETRY"
         at.attribute_name = f"f_{k}"
         src[k] = at.outputs["Fac"]
-    val = nt.nodes.new("ShaderNodeValue")
-    val.outputs[0].default_value = 1.0
-    src["one"] = val.outputs[0]
     body.data.materials[0] = mt
     return mt, comb, src
 
@@ -451,8 +475,13 @@ def out_dir(a):
     return Path(a.out)
 
 
+def bake_dir(a):
+    """The bake the fields and the export read: --bake, or <out>/bake (M3a's own)."""
+    return Path(a.bake) if a.bake else out_dir(a) / "bake"
+
+
 PASSES = {"a": ("light", "accent", "ao"), "b": ("curv", "thick", "deep"), "c": ("blotch", "hue", "face"),
-          "d": ("tzone", "mouth", "warm"), "e": ("fine", "flush", "one")}
+          "d": ("tzone", "mouth", "warm"), "e": ("fine", "flush", "socket")}  # M3a's fields had "one" for "socket"
 
 
 def stage_fields(a, out):
@@ -500,7 +529,7 @@ def stage_fields(a, out):
         bpy.data.images.remove(img)
         log(f"field {key} {names} {time.time() - t0:.0f}s coverage {cov.mean():.3f}")
     # the pores: the normal map's divergence (OpenGL +Y; Blender rows go up in v)
-    nm = load_array(out / "bake" / "normal.png")
+    nm = load_array(bake_dir(a) / "normal.png")
     if nm.shape[0] != a.size:
         raise SystemExit("the normal map's size differs from --size")
     nx, ny = nm[..., 0] * 2 - 1, nm[..., 1] * 2 - 1
@@ -555,6 +584,8 @@ def load_fields(out, size):
             f[n] = down(arr[..., i], k)
         del arr
     f["pore"] = down(np.load(fdir / "pore.npy"), k)
+    if "socket" not in json.loads((fdir / "fields.json").read_text(encoding="utf-8"))["passes"]["e"]:
+        f["socket"] = np.zeros_like(f["pore"])  # M3a's fields: a constant 1 in the socket's channel, not a socket
     cov = down(np.load(fdir / "coverage.npy").astype(np.float32), k) > 0.5
     # the noises (0..1 around 0.5) as -1..1 by their own spread
     for n in ("blotch", "hue", "fine"):
@@ -567,6 +598,8 @@ def load_fields(out, size):
 def compose(f, cov, s, tdir, size):
     tdir.mkdir(parents=True, exist_ok=True)
     t0 = time.time()
+    if s["accent_blur"]:
+        f = dict(f, accent=T.blur(f["accent"], cov, max(int(round(s["accent_blur"] * size / 4096)), 1), np))
     r, g, b = T.albedo(f, s, np)
     alb = np.stack([r, g, b], -1)
     alb = push_pull(alb, cov)
@@ -575,7 +608,8 @@ def compose(f, cov, s, tdir, size):
     save_png(enc, tdir / "albedo.png", srgb=True)
     rough = T.roughness(f, s, np)
     # glTF's packing: R occlusion, G roughness, B metallic 0
-    orm = push_pull(np.stack([f["ao"], rough, np.zeros_like(rough)], -1), cov)
+    ao = T.contact_ao(f["ao"], f.get("socket", 0.0), s, np)  # the albedo's AO before its strength
+    orm = push_pull(np.stack([ao, rough, np.zeros_like(rough)], -1), cov)
     save_png(orm, tdir / "orm.png")
     sss = push_pull(T.sss_mask(f, s, np)[..., None], cov)
     save_png(down(sss, 2), tdir / "sss.png")
@@ -587,10 +621,34 @@ def compose(f, cov, s, tdir, size):
     log(f"composed {tdir.name} {size}px {time.time() - t0:.0f}s {json.dumps(st)}")
 
 
-def stage_compose(a, out):
-    base = dict(T.TEX)
+def check_settings(a, tdir, s, what):
+    """Fails unless --force when tdir's settings.json records settings other than s (a missing file passes for
+    compose, fails for export)."""
+    path = tdir / "settings.json"
+    if not path.is_file():
+        if what == "export":
+            raise SystemExit(f"export: no {path}: compose the set first")
+        return
+    diff = T.settings_diff(json.loads(path.read_text(encoding="utf-8"))["settings"], s)
+    if diff and not a.force:
+        raise SystemExit(f"{what}: {path} records other settings than --set {a.set}'s (keys {', '.join(diff)}); "
+                         "pick the set that made it, another --out, or --force")
+    if diff:
+        log(f"{what}: --force over {path} (keys {', '.join(diff)})")
+
+
+def set_settings(a):
+    """--set's settings with --settings merged over them."""
+    base = dict(T.SETS[a.set])
     if a.settings:
         base.update(json.loads(a.settings))
+    return base
+
+
+def stage_compose(a, out):
+    base = set_settings(a)
+    if not a.variants:
+        check_settings(a, out / "textures", base, "compose")
     f, cov = load_fields(out, a.size)
     if a.variants:
         for name, over in json.loads(Path(a.variants).read_text(encoding="utf-8")).items():
@@ -612,7 +670,7 @@ def gltf_output_group():
     return ng
 
 
-def texture_skin(body, tdir, normal_png):
+def texture_skin(body, tdir, normal_png, tag):
     """alien_hue takes the texture set; returns the material."""
     mt = body.data.materials[0]
     nt = mt.node_tree
@@ -646,7 +704,7 @@ def texture_skin(body, tdir, normal_png):
     if nm_tex is not None and normal_png is not None:
         img = bpy.data.images.load(str(normal_png))
         img.colorspace_settings.name = "Non-Color"
-        img.name = "alien_skin_normal_m3a"
+        img.name = f"alien_skin_normal_{tag}"
         nm_tex.image = img
     body.data.uv_layers.active = body.data.uv_layers[UV_LAYER]
     return mt
@@ -681,6 +739,7 @@ def check_images(glb):
 
 
 def stage_export(a, out):
+    check_settings(a, out / "textures", set_settings(a), "export")
     m2 = Path(a.m2)
     bpy.ops.wm.open_mainfile(filepath=str(m2 / "export" / "alien_character.blend"))
     body = bpy.data.objects["Body"]
@@ -696,7 +755,7 @@ def stage_export(a, out):
                     slot.material = part
                     parts.append(o.name)
     log("parts on " + PART_MATERIAL, parts)
-    texture_skin(body, out / "textures", out / "bake" / "normal.png")
+    texture_skin(body, out / "textures", bake_dir(a) / "normal.png", a.set)
     ex = out / "export"
     ex.mkdir(parents=True, exist_ok=True)
     bpy.ops.wm.save_as_mainfile(filepath=str(ex / "alien_character.blend"))
@@ -711,16 +770,7 @@ def stage_export(a, out):
             shutil.copy2(f, ex / f.name)
     shutil.copy2(out / "textures" / "sss.png", ex / "alien_skin_sss.png")
     cj = json.loads((src / "character.json").read_text(encoding="utf-8"))
-    cj["note_m3a_textures"] = (
-        "art #196 M3a: the skin (Body, material alien_hue) carries an authored 4K texture set on UVMap (TEXCOORD_0): "
-        "baseColorTexture (sRGB albedo: the teal and pale by the masks with hue drift, blotches, cavity tint, thin-part "
-        "warmth, flush and half the AO baked in), metallicRoughnessTexture and occlusionTexture in one ORM image (R "
-        "occlusion, G roughness, B metallic 0), normalTexture (the M2 detail normal map rebaked through an explicit "
-        "cage). alien_skin_sss.png beside the GLB is the subsurface mask (white: thin) for the Godot shader (M5). "
-        "The alternative crests (crest_antennae, crest_fins) are on alien_hue_part, an untextured copy of the skin's "
-        "material (no image: their UVs are not Body's UVMap). "
-        "COLOR_0 (the vertex AO) is still exported for alien_hue.gdshader; a plain glTF viewer multiplies it into the "
-        "albedo again. The albedo is for the teal hue only.")
+    cj[f"note_{a.set}_textures"] = T.texture_note(a.set, set_settings(a))
     (ex / "character.json").write_text(json.dumps(cj, indent=1), encoding="utf-8", newline="\n")
     log("EXPORT " + str(ex / "alien_character.glb"))
 
