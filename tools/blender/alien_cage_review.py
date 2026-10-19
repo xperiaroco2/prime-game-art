@@ -137,6 +137,12 @@ def shots(blend, tag, out):
             a = 2 * math.pi * k / 8
             look(cam, (math.sin(a) * dist, -math.cos(a) * dist, tz + 0.05), (0, 0, tz), lens=lens)
             shot(sc, f"{d}/turn_{int(dist)}_{k}.png")
+    # close 3/4 views of the body below the neck, for the forms (knees, groin, belly, seat)
+    sc, cam = setup((420, 760))
+    for k, deg in enumerate((35, 145, 215, 325)):
+        a = math.radians(deg)
+        look(cam, (math.sin(a) * 1.9, -math.cos(a) * 1.9, 0.95), (0, 0, 0.72), lens=35)
+        shot(sc, f"{d}/close_{k}.png")
     # Idle and Walk, 3/4 front
     sc, cam = setup((240, 400))
     arm.animation_data_create()
@@ -176,6 +182,22 @@ def shots(blend, tag, out):
     for k, off in enumerate(((0, -0.6, 0.05), (0.6, 0, 0.05), (0, 0.6, 0.05), (0.42, 0.42, 0.1))):
         look(cam, c + Vector(off), c, lens=50)
         shot(sc, f"{d}/neck_{k}.png")
+    # the left foot close: 3/4 front, front, side, 3/4 back, top; then two Walk phases from the side
+    f = Vector((0.117, -0.01, 0.06))
+    for k, off in enumerate(((0.3, -0.35, 0.18), (0.0, -0.45, 0.1), (0.45, 0.0, 0.05), (0.3, 0.35, 0.15),
+                             (0.05, -0.12, 0.45))):
+        look(cam, f + Vector(off), f, lens=50)
+        shot(sc, f"{d}/foot_{k}.png")
+    arm.animation_data.action = act
+    if act.slots:
+        arm.animation_data.action_slot = act.slots[0]
+    for k in range(2):
+        sc.frame_set(int(f0 + (f1 - f0) * (0.1 + k / 2)))
+        bpy.context.view_layer.update()
+        a_ = arm.matrix_world @ arm.pose.bones["LeftFoot"].head
+        look(cam, a_ + Vector((0.55, -0.05, 0.0)), a_ + Vector((0, -0.04, -0.04)), lens=50)
+        shot(sc, f"{d}/foot_walk_{k}.png")
+    arm.animation_data.action = None
 
 
 def u1_tile(path, key):
@@ -202,17 +224,23 @@ def sheets(tags, u1, out):
     crop = lambda a: a[:, 80:560]  # noqa: E731
     rows = [[u1_tile(u1p["0"], "0")] + [crop(load(f"{out}/{t}/sil_front.png")) for t in tags]
             + [u1_tile(u1p["1"], "1")] + [load(f"{out}/{t}/sil_side.png")[:, 160:480] for t in tags]]
-    grid(rows, f"{out}/silhouettes_u1_first_cage.png")
+    tg = "_".join(tags)
+    grid(rows, f"{out}/silhouettes_u1_{tg}.png")
     for dist in (1, 3):
         grid([[load(f"{out}/{t}/turn_{dist}_{k}.png") for k in range(8)] for t in tags],
-             f"{out}/turntable_{dist}m_first_cage.png")
+             f"{out}/turntable_{dist}m_{tg}.png")
     grid([[load(f"{out}/{t}/{c}_{k}.png") for c in ("Idle_Loop", "Walk_Loop") for k in range(4)] for t in tags],
-         f"{out}/idle_walk_first_cage.png")
+         f"{out}/idle_walk_{tg}.png")
     grid([[load(f"{out}/{t}/{n}.png") for n in ("neck_0", "neck_1", "neck_2", "neck_3")] for t in tags],
-         f"{out}/neck_weld_first_cage.png")
+         f"{out}/neck_weld_{tg}.png")
     grid([[load(f"{out}/{t}/{n}.png") for n in ("wrist_rest_0", "wrist_rest_1", "wrist_rest_2", "wrist_walk_0",
                                                  "wrist_walk_1")] for t in tags],
-         f"{out}/wrist_first_cage.png")
+         f"{out}/wrist_{tg}.png")
+    if all(os.path.exists(f"{out}/{t}/close_0.png") for t in tags):
+        grid([[load(f"{out}/{t}/close_{k}.png") for k in range(4)] for t in tags], f"{out}/close_{tg}.png")
+    if all(os.path.exists(f"{out}/{t}/foot_0.png") for t in tags):
+        grid([[load(f"{out}/{t}/foot_{k}.png") for k in range(5)]
+              + [load(f"{out}/{t}/foot_walk_{k}.png") for k in range(2)] for t in tags], f"{out}/feet_{tg}.png")
 
 
 def main():
