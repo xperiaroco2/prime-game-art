@@ -13,6 +13,13 @@ export/alien_character.blend and writes a new kit beside it (never over it):
 Runs in background Blender through the runner, never by hand and never in a window:
 tools/runner/blender.py's run_script("alien_eyes.py", ["--kit", <M3a/export>, "--out", <M4>, "--eye-images",
 <S9/parts/export>]).
+
+M5 (art #196): `--sss-alpha` also writes the skin's albedo again with the subsurface mask in its alpha
+(`<out>/textures/albedo_sss.png`, 4K RGBA: the kit's albedo RGB unchanged, the 2K `alien_skin_sss.png` beside the kit
+upscaled into A) and points `alien_hue`'s albedo node at it, so the whole texture set travels in the one GLB. The
+material stays opaque (glTF alphaMode OPAQUE: viewers ignore the alpha); godot/alien/alien_hue.gdshader reads it as the
+SSS mask. The exporter copies a PNG file's bytes as they are when one image fills a texture (its "happy path"), so the
+alpha reaches the GLB; the build checks it there (`png_has_alpha`).
 """
 from __future__ import annotations
 
@@ -48,6 +55,8 @@ def args():
     p.add_argument("--kit", required=True, help="the input kit's export folder (alien_character.blend, character.json)")
     p.add_argument("--out", required=True, help="the M4 folder; the kit goes into <out>/export")
     p.add_argument("--eye-images", required=True, help="the parts build's export folder (alien_eye_<design>.png)")
+    p.add_argument("--sss-alpha", action="store_true",
+                   help="M5: the kit's alien_skin_sss.png into the albedo's alpha (<out>/textures/albedo_sss.png)")
     return p.parse_args(argv)
 
 
@@ -95,6 +104,82 @@ def restore_eye_image(mat, bsdf, dname: str, folder: str, ex: Path):
     ex.mkdir(parents=True, exist_ok=True)
     shutil.copy2(src, ex / src.name)
     log(dname, "eye image", src, img.size[:])
+
+
+def sss_into_albedo(kit: Path, out: Path):
+    """M5: alien_hue's albedo image with the kit's SSS mask (2K grey, white = thin) in its alpha, written as a 4K RGBA
+    PNG into <out>/textures/ and put on the albedo node. The RGB is copied unchanged (8-bit in, 8-bit out, checked);
+    the mask is upscaled by two, each output texel bilinear between its source texel and the three nearest."""
+    import numpy as np
+    mat = bpy.data.materials["alien_hue"]
+    node = next(n for n in mat.node_tree.nodes if n.type == "TEX_IMAGE" and n.image is not None
+                and any(lk.to_socket.name == "Base Color" for lk in n.outputs["Color"].links))
+    src = node.image
+    w, h = src.size
+    rgba = np.empty(w * h * 4, dtype=np.float32)
+    src.pixels.foreach_get(rgba)
+    rgba = rgba.reshape(h, w, 4)
+    sp = kit / "alien_skin_sss.png"
+    if not sp.is_file():
+        raise SystemExit(f"no SSS mask {sp}")
+    simg = bpy.data.images.load(str(sp), check_existing=False)
+    simg.colorspace_settings.name = "Non-Color"
+    sw, sh = simg.size
+    if (w, h) != (2 * sw, 2 * sh):
+        raise SystemExit(f"SSS mask {sw}x{sh} is not half the albedo's {w}x{h}")
+    m = np.empty(sw * sh * 4, dtype=np.float32)
+    simg.pixels.foreach_get(m)
+    m = m.reshape(sh, sw, 4)[..., 0]
+    pad = np.pad(m, 1, mode="edge")
+    a = pad[1:-1, 1:-1]
+    up = np.empty((h, w), dtype=np.float32)
+    for dy in (0, 1):  # the output texel 2y + dy sits a quarter texel from its source's centre, toward y - 1 or y + 1
+        for dx in (0, 1):
+            ny, nx = 1 + (-1 if dy == 0 else 1), 1 + (-1 if dx == 0 else 1)
+            b = pad[ny:ny + sh, 1:-1]
+            c = pad[1:-1, nx:nx + sw]
+            d = pad[ny:ny + sh, nx:nx + sw]
+            up[dy::2, dx::2] = 0.5625 * a + 0.1875 * (b + c) + 0.0625 * d
+    rgba[..., 3] = np.clip(up, 0.0, 1.0)
+    tdir = out / "textures"
+    tdir.mkdir(parents=True, exist_ok=True)
+    path = tdir / "albedo_sss.png"
+    img = bpy.data.images.new("alien_skin_albedo_sss_tmp", w, h, alpha=True, float_buffer=False)
+    img.colorspace_settings.name = "sRGB"
+    img.pixels.foreach_set(rgba.ravel())
+    img.filepath_raw = str(path)
+    img.file_format = "PNG"
+    img.save()
+    bpy.data.images.remove(img)
+    new = bpy.data.images.load(str(path), check_existing=False)
+    new.name = "alien_skin_albedo_sss"
+    new.colorspace_settings.name = "sRGB"
+    back = np.empty(w * h * 4, dtype=np.float32)
+    new.pixels.foreach_get(back)
+    back = back.reshape(h, w, 4)
+    drgb = float(np.abs(back[..., :3] - rgba[..., :3]).max()) * 255.0
+    dal = float(np.abs(back[..., 3] - rgba[..., 3]).max()) * 255.0
+    if drgb > 0.5 or dal > 0.6:
+        raise SystemExit(f"albedo_sss.png round trip: rgb {drgb:.2f}, alpha {dal:.2f} (of 255)")
+    node.image = new
+    log("albedo + sss", path, (w, h), "from", src.filepath, "sss mean", round(float(up.mean()), 3),
+        "round trip rgb", round(drgb, 3))
+
+
+def png_has_alpha(glb: Path, material: str) -> bool:
+    """Whether the GLB's material's baseColorTexture is a PNG with an alpha channel (colour type 4 or 6)."""
+    b = glb.read_bytes()
+    n = struct.unpack_from("<I", b, 12)[0]
+    g = json.loads(b[20:20 + n])
+    bin0 = 20 + n + 8
+    for m in g.get("materials", []):
+        if m.get("name") == material:
+            tex = m["pbrMetallicRoughness"]["baseColorTexture"]["index"]
+            im = g["images"][g["textures"][tex]["source"]]
+            v = g["bufferViews"][im["bufferView"]]
+            data = b[bin0 + v.get("byteOffset", 0): bin0 + v.get("byteOffset", 0) + v["byteLength"]]
+            return data[:8] == b"\x89PNG\r\n\x1a\n" and data[25] in (4, 6)
+    raise SystemExit(f"{glb}: no material {material}")
 
 
 def wet_strip(name: str, lid, r: float, rho: tuple, bead: float, upper: bool, mat, coll):
@@ -168,6 +253,8 @@ def main():
                 made.append((name, len(ob.data.polygons)))
             log(dname, side, "r", round(r, 5))
     log("wet strips", made)
+    if a.sss_alpha:
+        sss_into_albedo(kit, out)
     ex.mkdir(parents=True, exist_ok=True)
     bpy.ops.wm.save_as_mainfile(filepath=str(ex / "alien_character.blend"))
     opts = dict(export_glb.options(False), export_image_format="AUTO", export_vertex_color="ACTIVE", export_tangents=True)
@@ -175,6 +262,8 @@ def main():
     if res != {"FINISHED"}:
         raise SystemExit(f"export: {res}")
     check_images(ex / "alien_character.glb")
+    if a.sss_alpha and not png_has_alpha(ex / "alien_character.glb", "alien_hue"):
+        raise SystemExit("the GLB's albedo lost its alpha (the SSS mask)")
     for f in kit.iterdir():
         if f.suffix == ".png":
             shutil.copy2(f, ex / f.name)
@@ -186,6 +275,12 @@ def main():
         "alien_eye_<design> (an optical cornea with refraction and iris depth, the lids' contact shadow, the sclera's "
         "falloff, a view-space catch light). The eyeball materials carry a clear coat (KHR_materials_clearcoat) for "
         "plain glTF viewers; their 512 px texture is S9's.")
+    if a.sss_alpha:
+        cj["note_m5_sss"] = (
+            "art #196 M5: alien_hue's baseColorTexture carries the subsurface mask in its alpha (white = thin: "
+            "fingers, crest, ears; the kit's 2K alien_skin_sss.png upscaled); the material is opaque, so plain viewers "
+            "ignore it. godot/alien/alien_hue.gdshader samples the albedo (sRGB) with that alpha, the ORM (R "
+            "occlusion, G roughness) and the normal map on Body's UVMap, and no longer multiplies COLOR_0 into it.")
     (ex / "character.json").write_text(json.dumps(cj, indent=1), encoding="utf-8", newline="\n")
     log("EXPORT", ex / "alien_character.glb")
 
