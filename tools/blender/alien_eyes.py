@@ -37,6 +37,7 @@ import bmesh
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import alien_eyes_geom as E  # noqa: E402
+import alien_lids_geom as LG  # noqa: E402
 import alien_texture_geom as T  # noqa: E402
 import export_glb  # noqa: E402
 from alien_parts import EYES, LID_BEAD  # noqa: E402
@@ -185,19 +186,25 @@ def sss_into_orm(kit: Path, out: Path) -> Path:
     return path
 
 
-def wet_strip(name: str, lid, r: float, rho: tuple, bead: float, upper: bool, mat, coll):
+def wet_strip(name: str, lid, r: float, rho: tuple, bead: float, upper: bool, mat, coll, corner=None,
+              shell_t_max_deg: float = 89.0):
     """The strip in the lid's own frame, parented to the lid with an identity local transform. UV: u across the lid
-    (its latitude, 0 to 1), v from the ball's side (0) to the lid's edge (1)."""
-    prof = E.wet_profile(rho[0], rho[1], bead, upper)
+    (its latitude, 0 to 1), v from the ball's side (0) to the lid's edge (1). corner (M6, alien_lids_geom.CORNER's
+    form): the lid's rounded corners, so the strip follows the tapered rim and the bent edge."""
     tm = math.radians(E.WET["t_max_deg"])
+    tm_shell = math.radians(shell_t_max_deg)
     n_t = E.WET["seg_t"]
     bm = bmesh.new()
     uv = bm.loops.layers.uv.new("UVMap")
     grid = []
+    m = 0
     for i in range(n_t + 1):
         t = -tm + 2 * tm * i / n_t
-        grid.append([bm.verts.new(tuple(r * c for c in E.lid_point(rh, p, t))) for rh, p in prof])
-    m = len(prof)
+        bt = LG.bead_at(bead, t, tm_shell, corner) if corner else bead
+        sh = LG.edge_shift(t, tm_shell, upper, corner) if corner else 0.0
+        prof = E.wet_profile(rho[0], rho[1], bt, upper)
+        m = len(prof)
+        grid.append([bm.verts.new(tuple(r * c for c in E.lid_point(rh, p + sh, t))) for rh, p in prof])
     for i in range(n_t):
         for j in range(m - 1):
             quad = (grid[i][j], grid[i + 1][j], grid[i + 1][j + 1], grid[i][j + 1])
