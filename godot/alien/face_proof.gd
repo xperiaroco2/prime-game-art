@@ -6,7 +6,8 @@ extends SceneTree
 ## The spec: {"scene": "res://import/alien_character.glb", "out": "<dir>", "hdri": "<studio .hdr, or empty>"}. The stage
 ## is the approved showroom look's Medium preset (godot/showroom/look_presets.json: AgX at exposure 0.9, the studio
 ## sky as ambient (half, the other half a warm colour at 0.12) and reflections, SSAO, MSAA 2x; the lights are
-## look_presets.json's, light D since 2026-10-19: key 3.0 with specular 0.6, fill 0.12, back 0.3, a back rim 3.0; the eyes' catch light is the eye shader's own, alien_eye.gdshader). alien.gd drives the
+## look_presets.json's, light D since 2026-10-19: key 3.0 with specular 0.6, fill 0.12, back 0.3, a back rim 3.0;
+## the eyes' catch light is the eye shader's own, alien_eye.gdshader). alien.gd drives the
 ## character; set_face_look("first") shows the first test's materials, "s5" the new ones. Writes into <out>:
 ## compare.png (the four eye/mouth combinations, first test above, S5 below), faces.png (S5, 2 x 2 close),
 ## eyes.png (both eye designs very close, first test and S5), blink.png, talk.png (the six pieces of both mouths),

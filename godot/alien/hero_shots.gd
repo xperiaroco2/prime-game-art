@@ -8,7 +8,7 @@ extends "res://alien/second_test.gd"
 ##   "eye": {alien_eye.gdshader uniform: value}, "hue": [[r, g, b], [r, g, b]] (sRGB hue and pale)}], each applied
 ##   on top of the defaults and undone after its shot; a variant's "lights" (light_sheet's form, below) replace the
 ##   stage's directional lights for its shot (the approved lights, look_presets.json, come back after it); spec
-##   "grid_zoom" [x0, y0, x1, y1] (fractions of a shot) adds zoom_<name>.png, that part of each shot in one row, the
+##   "grid_zoom" [x0, y0, x1, y1] (fractions of a shot) adds zoom_<name>.png, that part of each shot, the
 ##   target first (its own part: "grid_zoom_target"), 4 columns of 320 px.
 ## - light_sheet.png (spec "lights", S9d: the lighting question): per variant [{"label", "lights": [{"at": [x, y, z],
 ##   "energy", "specular", "shadow"}]}] the stage's directional lights replaced by the variant's (each aimed at
