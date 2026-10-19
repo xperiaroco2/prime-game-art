@@ -136,7 +136,7 @@ FINGER_RINGS = [
 THUMB_R = 0.0215
 THUMB_OUT = 0.014
 THUMB_LEN = 0.062
-THUMB_DIR = (0.82, -0.42, -0.24)
+THUMB_DIR = (0.83, -0.43, -0.14)  # S9: less downward (S8b: z -0.24, the thumb hung below the palm)
 THUMB_RINGS = [
     (0.20, (0.60, 0.92), {"M": 0.85, "H": 0.15}),  # the root: as tall as the palm's side quad (no fold over it)
     (0.42, (0.85, 0.98), {"M": 0.7, "P": 0.3}),

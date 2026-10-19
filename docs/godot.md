@@ -739,7 +739,7 @@ a time, by visibility.
     `_apply_lids` sets each ball's rotation to 11.5 degrees inward about the socket's up axis (absolute, so a GLB whose
     balls already carry it is unchanged; `aim_in_deg`): the eyes meet about 1.2 m ahead.
   - Lips, inner cup and teeth: `StandardMaterial3D`s with wrapped diffuse and **culling off** (the imported materials
-    are double-sided; culled, the inner cup vanished and the open mouths showed the skin): lips sRGB (0.76, 0.45, 0.40)
+    are double-sided; culled, the inner cup vanished and the open mouths showed the skin): lips sRGB (0.76, 0.45, 0.40; S9: (0.82, 0.44, 0.37) in `alien_lip.gdshader`)
     roughness 0.6 specular 0.3; the cup a dark plum (0.25, 0.11, 0.14), roughness 0.9; teeth ivory (0.96, 0.95, 0.90).
   - The lid shells take the lips' material: the chosen eye sheets (batch `2026-10-19-alien-face-sheets`, `eb1` and
     `em1`) draw the lids as soft coral domes the colour of the lips, not skin with a coral rim.
@@ -799,7 +799,7 @@ a time, by visibility.
   - **Neck:** `alien_parts.NECK_DROP` (22 mm) seats the head lower on the unchanged ring (`neck_ring.json` did not
     move), `fill_neck` fills the Meshy stalk toward the ring's size (`NECK_FILL`), the Neck weight reaches
     `NECK_BLEND` up the stalk, and `smooth_collar` relaxes the weld band. `CHIN_SCULPT` goes 20 mm forward.
-  - **Mouths:** `alien_mouths.SHAPE_SCALE` (A 0.80, E 0.88, O 0.94) shrinks the open shapes, which were measured to
+  - **Mouths:** `alien_mouths.SHAPE_SCALE` (S8: A 0.80, E 0.88, O 0.94; S8b: A 0.77, E 0.82; S9: A 0.72) shrinks the open shapes, which were measured to
     the sheets' wider faces; `--parts-report` takes `CHIN_Z` from the parts' sculpted chin.
   - `alien_cage_review.py --detail <character.blend>` renders the left hand at 0.5 m (rest, a fist, a relaxed curl,
     Walk, Talk, Idle) and the neck from the side and back (rest, Idle, turned, nodding) as `hands_<tag>.png` and
@@ -831,6 +831,108 @@ a time, by visibility.
     an S8 order made no image and the sheet failed with `Out of bounds get index '0'`), refuses an empty sheet, and
     adds `neck_hands.png`: the neck at 0.5 m from the side, back and three-quarter back in Idle and Talk, and the left
     hand in Idle and Walk, one block per character.
+- **S9, the quality pass** (the target: the GPT paintover `rf2` of batch `2026-10-19-alien-release-look`, drawn over
+  S8b's Godot render at the `hero_face_34` framing):
+  - **The crest** (`alien_parts.crest_blade`, `CREST_BLADE`): the Meshy horn, which curled forward and to one side,
+    is gone; the skull is cut below it and one back-swept blade grows out of it: sections along a Bezier spine, below
+    the cut the skull's own (rays), above it the skull's outline at the cut scaled by a width and a depth taper and
+    blended in from the skull's slope, so the forehead and the back of the head run on into the blade. A voxel union
+    (0.004 Meshy units), a fillet, a Taubin relax, then everything below the crown is projected back onto the Meshy
+    surface (the face is exact). The crown above the eyes is lowered (`crown_k` 0.8: rf2's head is shorter above the
+    eyes). The crest's coral tip is gone (all hue). Tried and dropped: an elliptic blade on a cut dome (a ledge at
+    the cut), the skull's section blended into the ellipse (a waist or a forehead ridge). The head is decimated to
+    `TRIS` 22,000 (S8b: 10,000; the decimation's mean deviation 0.03 mm, max 1.6 mm).
+  - **The surface** (`alien_hue.gdshader`, every term a uniform set from `alien.gd`'s `SKIN`): the hue deepens
+    (`deep_mul`, darker and bluer) toward the top of the head (`deep_top`, by model-space height) and the back
+    (`deep_back`, by the model-space normal) away from the light mask; the pale tint warms toward the face
+    (`face_warm`); baked AO from the vertex colour (`ao_albedo`, `ao_light`); a model-space value-noise micro normal
+    (`grain`, 500 per m, faded out from 0.8 to 2.5 m so it never shimmers far away; `alien_grain.gdshaderinc`);
+    screen-space SSS (`sss`); a fresnel edge glow toward the pale tint (`rim_glow`). The teal is deeper and bluer
+    (sRGB 0.11, 0.48, 0.51; pale 0.86, 0.92, 0.81), sampled against rf2. The masks are softer: the face mask's upper
+    edge is higher between the eyes and fades over 6 cm (`alien_parts.MASK_FACE`), the belly's edge over 4 cm
+    (`BELLY_SOFT`), the knuckle spots smaller and on the back of the hand only (`KNUCKLE["dorsal"]`, by the T-pose
+    normal).
+  - **Baked AO** (`tools/blender/alien_ao.py`, a step after `alien_mouths.py`): Cycles bakes AO (6 cm, 96 samples)
+    into a float colour attribute `ao` on `Body` in the rest pose with the default face shown (bored rest lids, frog
+    rest; other parts hidden), lifted by a floor of 0.18 and smoothed once; exported as glTF `COLOR_0`
+    (`export_vertex_color="ACTIVE"`). The baked face is the default one: other eyes and mouths get the same skin AO.
+  - **Lips and lid domes** take `alien_lip.gdshader` (S5's colour, roughness and specular, both sides, wrapped
+    diffuse) with a soft clear coat (`LIP_LOOK` `sheen`) and a fainter grain; the lip colour is rf2's warmer coral
+    (0.82, 0.44, 0.37). The bored eye's catch light sits below the rest lid's edge and is crisper (`EYE_LOOK`).
+  - `hero_shots.gd`: the hero stills, `beside.png` (render | target) and `grid_<name>.png`, a tuning grid of shader
+    variants (`"variants"`: per-variant `skin`, `lip`, `eye` uniforms and `hue`) after the target, with an optional
+    plain backdrop like the paintover's (`"bg"`).
+  - **For three.js** (beyond S7's list): the page's hue shader must (1) multiply the albedo by `mix(1, COLOR_0.r,
+    0.5)` (`ao_albedo`; a plain material with vertex colours already multiplies it fully), (2) add the gradient: `c =
+    mix(hue, hue * (0.55, 0.72, 0.78), deep)` before the pale mix, with `deep = clamp(0.6 * smoothstep(1.50, 1.85, y)
+    + 1.0 * smoothstep(-0.3, 0.9, -n.z) * smoothstep(1.0, 1.4, y), 0, 1) * (1 - light)` in model space (y up, the
+    character facing +z), and the pale tint times `mix(1, (1.06, 1.0, 0.90), 0.6 * smoothstep(1.38, 1.50, y))`; (3)
+    the grain: the same value noise (`alien_grain.gdshaderinc`) on `position * 500` perturbing the normal by 0.12,
+    faded out from 0.8 to 2.5 m; (4) a fresnel emission `mix(c, pale, 0.5) * (1 - n.v)^3 * 0.3`; (5) the lips' clear
+    coat 0.08 at roughness 0.7; (6) Godot's own rim (`rim_value` 0.2, tinted 0.6 toward the albedo) and screen-space
+    subsurface (`sss` 0.3) have no three.js equivalent: a wrapped diffuse comes closest. The light mask
+    (`TEXCOORD_1`) and the AO (`COLOR_0`) are baked, so S9c's throat panel and jaw lift need nothing on the page.
+- **S9b, the neck and the rest pose:**
+  - **The neck** (`tools/blender/alien_neck.py`, run by `alien_assemble.py` after the weld): the engineer found S9's
+    neck crooked. Measured: per angle around the ring's axis the radius had a plateau below the weld and a second
+    fast drop above it (a pinch and a step at the nape), the throat dipped 4 mm at the weld, the Head bone held 0.34
+    of the weld ring and the shoulders up to 0.88 of the neck's sides, so Idle, turns and nods bent the weld band
+    into a lump. `loft()` replaces the radius between `LOW_Z` (the shoulders) and `TOP_Z` (under the jaw, 1.418 m at
+    the front, to the nape, 1.444 m at the back) by a monotone cubic Hermite through both anchors' radius and slope
+    (Fritsch-Carlson limits: never below its ends, so no pinch), vertices moving radially only (the ring stays one
+    ring; `neck_ring.json` unchanged). `column_weights()` makes the column's weights a smooth field of height: the
+    lower bones fade out over 1.318-1.372 m, the Head fades in from 3 cm below to 2.2 cm above the upper anchor, the
+    Neck takes the rest (now up to 1.0), then six neighbour-average passes. `neck_shots.gd` judges it: before |
+    after | references at 0.5 m (`beside.png`), seven poses (rest, Walk, turns of 40 degrees, nods of 25 down and 20
+    up, spread 35/65 over Neck and Head) in profile and the three-quarter back (`motion.png`), 1 m views (`far.png`).
+  - **The rest pose for the skin shader:** in Godot `VERTEX` and `NORMAL` in `vertex()` are already skinned, so S9's
+    gradient and grain swam in motion. `alien_ao.py` writes the rest position and normal z in two UV layers,
+    `rest_xy` and `rest_zn` (glTF axes; `TEXCOORD_2` = (x, y), `TEXCOORD_3` = (z, normal z + 2), V stored flipped for
+    the exporter); Godot imports `TEXCOORD_2`/`TEXCOORD_3` as `CUSTOM0` (RGBA float, checked headless by
+    `alien/rest_check.gd`: equal to the rest `VERTEX` within 3e-8 m). `alien_hue.gdshader` reads them when
+    `CUSTOM0.w > 0.5` and falls back to `VERTEX` for a part without them. Proof: `neck_shots.gd`'s `swim.png` (the
+    upper arm in two Walk frames, the camera in the arm bone's frame, the grain exaggerated): the fine pattern's
+    correlation between the frames is 0.02 for S9 and 0.49 for S9b (the rest is the light's change). three.js needs
+    none of this: its `position` attribute is the rest pose (skinning comes after `begin_vertex`).
+- **S9c, the neck's shape and its pale front:** in profile S9b's neck was still a cone (68 mm behind the ring's axis
+  at the shoulders, 35 mm at the nape); rf2 and u1 have a longer column with near-parallel front and back lines.
+  - `alien_neck.column()` (after `loft()`) re-lofts each angle through a shape-preserving cubic (PCHIP: no overshoot,
+    a zero slope where the nape turns) through four points: the shoulders' surface (`COL_LOW`, with its slope), the
+    column's foot (`COL_FOOT`, back 1.36 m) and head, and the skull or the jaw (the first height where the surface
+    stands `COL_JOIN` out of the column, with its slope). `COL_R` holds the column's radius per angle (the back 46.5
+    to 45 mm, the sides 48 to 46 mm); the front keeps S9b's straight throat (the column fades in over 25 to 60
+    degrees). Measured on the result: the back holds 45.0 to 46.6 mm from 1.36 to 1.48 m (S9b: 55 to 35), the sides
+    46 to 50 mm from 1.37 to 1.46 m, at most 11.2 mm moved (9.8 mm outward at the nape). The weights are S9b's.
+  - `alien_neck.throat_panel()` lightens the light mask (`masks` u) over the front half of the neck: by angle around
+    the axis (pale to 88 degrees, soft by 14), from the belly panel (1.30 to 1.345 m) up to the jaw (the top lower at
+    the side, so it ends at the jaw's corner), plus the jaw's underside (a downward normal, within 55 to 82 degrees,
+    so none shows from behind); max with the old mask, then five neighbour passes. The edge runs down the side of the
+    neck, and the throat runs on into the pale chin.
+  - `alien_ao.py`'s `JAW_LIFT` lifts the baked AO by 0.7 toward 1 over the front of the neck and the jaw's underside
+    (mean 0.915 to 0.967): S9's grey band under the jaw goes.
+  - Test: `tools/tests/test_alien_neck.py` (the cubic's no-overshoot and the column, with stub Blender modules).
+- **S9d, the pale panel's edge, the single-sided skin and the lighting question:**
+  - S9c's panel in profile had a bulging top edge behind the jaw (its jaw term followed the voxel head's normals), a
+    pale wedge at the jaw's corner from behind, and at the shoulders it met the belly panel's narrow x half width
+    (about 15 % of the chest's depth in profile) with a step. `alien_neck.throat_panel()` is now a cut in profile:
+    pale in front of one line `y_e(z)` (`panel_line()`): the front `PANEL["depth"]` (0.40) of the trunk's depth (its
+    front and back at x = 0, measured per centimetre on the mesh) up the chest, the ring's axis down the side of the
+    neck, and under the jaw a shape-preserving cubic up to the head mask's own edge under the eye (y -0.026 at z
+    1.535), so the line runs from the neck's side diagonally up to the cheek, as in u1's side view. A cap on |x|
+    (`PANEL["cap"]`, 0.115 m on the chest, in to 0.068 at the neck's foot) keeps teal sides in front view and teal
+    shoulders; the arms and hands (their weights) stay out. It only lightens; five neighbour passes inside it. The cap
+    was chosen on a variant grid (0.100, 0.115, 0.130 m; `alien_assemble.py --panel JSON` merges a variant's settings
+    into `PANEL`). In the Idle pose the arm hides the chest's side in profile, so the cap sets the front view and the
+    depth the trapezius and the neck. Test: `test_alien_neck.py` (`panel_line()`: one line, no step, never moving
+    back under the jaw).
+  - The `Body` material is exported single-sided (`use_backface_culling`, glTF `doubleSided` false): three.js drew the
+    back faces of surfaces inside the skin as pale blotches (the manager's finding). Godot's `alien_hue.gdshader`
+    culls back faces already. `alien_assemble.drop_interior()` deletes the faces above z 1.40 from which no ray of
+    48 over the outward hemisphere leaves the skin; S9d found one (0.01 cm2) at the head. On the body the same test
+    took real skin in the tight folds of the armpits and the crotch, so it stays off there.
+  - `neck_shots.gd` spec `"torso"`: the upper body at 1.5 m from the front, three-quarter, side and three-quarter
+    back, beside u1's views. `hero_shots.gd` spec `"lights"`: the stage's directional lights replaced per variant,
+    face and body shots, `light_sheet.png` (the lighting question; `look_presets.json` stays as approved).
 
 ## Findings for later tasks
 

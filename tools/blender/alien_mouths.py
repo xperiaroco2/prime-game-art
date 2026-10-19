@@ -70,7 +70,7 @@ CHIN_GAP = 0.006  # with --parts-report: CHIN_Z is the report's sculpted chin pl
 # S8: the open shapes against the head. The sheets' heads are wider at the mouth than ours (our face narrows to the
 # chin), so A, measured to the sheet's face width, filled the lower face and its lower lip reached the chin ("far too
 # big"), and A's and E's far corners passed the cheek at three-quarter view. Each shape's size times this:
-SHAPE_SCALE = {"A": 0.77, "E": 0.82, "O": 0.94}  # S8b: A and E narrower (their far corner passed the cheek)
+SHAPE_SCALE = {"A": 0.72, "E": 0.82, "O": 0.94}  # S8b: A and E narrower (their far corner passed the cheek); S9: A 0.77 -> 0.72 (frog A's far corner still reached the face's edge)
 # S8b: an open ring hugs the face at its sides: where the skin turns away from the front (|normal x| from
 # side[0] to side[1]) its lift off the skin and its width shrink by up to `keep`, so the far corner at three-quarter
 # view stays inside the cheek's silhouette.

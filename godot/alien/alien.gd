@@ -22,15 +22,24 @@ extends Node
 
 const SHADER: Shader = preload("res://alien/alien_hue.gdshader")
 const EYE_SHADER: Shader = preload("res://alien/alien_eye.gdshader")
-const LIP := Color(0.76, 0.45, 0.40)  # sRGB: e2's dusty salmon lips and lid rims (the first test: a glossy (0.86, 0.42, 0.36))
+const LIP_SHADER: Shader = preload("res://alien/alien_lip.gdshader")
+const LIP := Color(0.82, 0.44, 0.37)  # sRGB: S9, rf2's warmer coral (S5: e2's dusty salmon (0.76, 0.45, 0.40)) (the first test: a glossy (0.86, 0.42, 0.36))
 const FACE := {  # sRGB colour, roughness, specular: the stage-1 face kit's (faces/clay_kit.json: lip tint on the skin,
 	# cavity (0.05, 0.012, 0.02) and teeth (0.92, 0.9, 0.8) linear, teeth roughness 0.28), soft-matte for the alien
 	"alien_lip": [LIP, 0.6, 0.3],
 	"alien_mouth_inner": [Color(0.25, 0.11, 0.14), 0.9, 0.08],
 	"alien_teeth": [Color(0.96, 0.95, 0.90), 0.4, 0.3],
 }
+## S9, the release look (the paintover rf2): alien_hue.gdshader's gradient, baked AO, grain, subsurface and rim, and
+## alien_lip.gdshader's sheen and grain on the lips and lid domes. Tuned by grids against rf2 (hero_shots.gd).
+const SKIN := {
+	"deep_top": 0.6, "deep_back": 1.0, "face_warm": 0.6, "ao_albedo": 0.5, "ao_light": 1.0, "grain": 0.12, "sss": 0.3,
+	"rim_glow": 0.3,
+}
+const LIP_LOOK := {"sheen": 0.08, "sheen_roughness": 0.7, "grain": 0.05}
 const EYE_LOOK := {  # alien_eye.gdshader's per-design uniforms (angles from the pupil axis, degrees; colours sRGB)
-	"bored": {"iris_deg": 25.0, "pupil_deg": 11.5, "iris": Color(0.20, 0.12, 0.08), "catch_at_deg": Vector2(6.0, 1.0)},
+	"bored": {"iris_deg": 25.0, "pupil_deg": 11.5, "iris": Color(0.20, 0.12, 0.08), "catch_at_deg": Vector2(6.0, -2.0),
+		"catch_deg": 2.5, "catch_soft_deg": 0.4, "catch_energy": 2.2},  # S9: below the rest lid's edge, crisp (rf2)
 	"manic": {"iris_deg": 0.0, "pupil_deg": 12.0, "iris": Color(0.05, 0.04, 0.05), "catch_at_deg": Vector2(4.5, 4.5)},
 }
 ## The eyeballs' rest look: each ball turned inward about its socket's up axis (set absolutely, so a GLB whose balls
@@ -38,7 +47,7 @@ const EYE_LOOK := {  # alien_eye.gdshader's per-design uniforms (angles from the
 ## other (the eyes, 15 cm apart, look at a point about 1.2 m ahead). Without it the pupils diverged (S5's grid).
 var aim_in_deg: float = 11.5
 const HUES := {  # sRGB: the base hue and its light tint (face, throat, belly)
-	"teal": [Color(0.17, 0.56, 0.55), Color(0.80, 0.91, 0.80)],
+	"teal": [Color(0.11, 0.48, 0.51), Color(0.86, 0.92, 0.81)],  # S9: rf2 (S3: (0.17, 0.56, 0.55), (0.80, 0.91, 0.80))
 	"coral": [Color(0.90, 0.42, 0.34), Color(0.98, 0.84, 0.74)],
 	"violet": [Color(0.58, 0.46, 0.82), Color(0.87, 0.83, 0.96)],
 }
@@ -95,6 +104,8 @@ func setup(root: Node3D, seed: int = 196) -> void:
 	_rng.seed = seed
 	_material = ShaderMaterial.new()
 	_material.shader = SHADER
+	for k: String in SKIN:
+		_material.set_shader_parameter(k, SKIN[k])
 	for mi: Node in root.find_children("*", "MeshInstance3D", true, false):
 		var m: MeshInstance3D = mi
 		var uses: bool = false
@@ -121,6 +132,17 @@ func setup(root: Node3D, seed: int = 196) -> void:
 func _make_face_materials() -> void:
 	for name: String in FACE:
 		var f: Array = FACE[name]
+		if name == "alien_lip":  # S9: the lips and lid domes take the sheen and grain shader
+			var lm := ShaderMaterial.new()
+			lm.shader = LIP_SHADER
+			lm.resource_name = name
+			lm.set_shader_parameter("albedo", f[0])
+			lm.set_shader_parameter("roughness_value", f[1])
+			lm.set_shader_parameter("specular_value", f[2])
+			for k: String in LIP_LOOK:
+				lm.set_shader_parameter(k, LIP_LOOK[k])
+			_face_materials[name] = lm
+			continue
 		var m := StandardMaterial3D.new()
 		m.resource_name = name
 		m.albedo_color = f[0]
@@ -149,6 +171,11 @@ func set_face_look(look: String) -> void:
 		var m: MeshInstance3D = ls[0]
 		m.set_surface_override_material(ls[1], _lid_material if look == "s5" else _material)
 	set_lids(lid_state)  # the balls' rest look and the eye shader's lid edges
+
+
+## The hue (skin) material shared by the body, head and crests (for tuning grids).
+func skin_material() -> ShaderMaterial:
+	return _material
 
 
 ## The S5 eye material of a design (for tuning grids).

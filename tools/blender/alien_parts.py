@@ -7,11 +7,12 @@ hue material, one GLB per part and parts.json.
       --hues <parts2/g-s1/*.png> --out <review/char/alien-parts-kit/S2a>
 
 The method, in order:
-1. Head: the Meshy bust (Blender units, 1.90 m) is scaled so that chin to skull top is HEAD_H and placed with its
-   crest top at TOP_Z, its neck centred on the ring. The crest's waist is filled (an inflation along the normals,
-   smoothed) toward the blade crest of the 10-17 sheet. The bust is cut below the neck, decimated to about TRIS
-   (collapse, X symmetric), cut again at the neck; the cut's open edge is merged to 24 vertices at the ring's angles
-   and lofted (Hermite, matching the body's tangent) down to the body's 24 ring vertices, which it ends on exactly.
+1. Head: the Meshy bust (Blender units, 1.90 m) has its horn replaced by one big back-swept blade (crest_blade, S9:
+   the release-look paintover rf2), is scaled so that chin to skull top is HEAD_H and placed with the Meshy horn's
+   top height (MESHY["top"]) at TOP_Z, its neck centred on the ring. The bust is cut below the neck, decimated to about TRIS
+   (collapse, X symmetric), cut again at the neck; the cut's open edge is merged to the ring's vertices at its angles
+   (48 since S8b, alien_parts_geom.densify_ring) and lofted (Hermite, matching the body's tangent) down to the
+   body's ring vertices, which it ends on exactly.
    The ring's normals are set from the ring tangent and the loft direction, so the body (same rule) shades seamless.
 2. Sockets: each eye socket is fitted with a sphere (front ray casts on the bowl); its centre and radius place the
    eyeball. Mouth: the face surface at the lip line; Crest: the forehead at the crest's front base.
@@ -48,9 +49,20 @@ NECK_BLEND = 0.026
 COLLAR = 0.018  # m above the cut: the weld band smoothed around the neck (smooth_collar)
 MESHY = {"chin": -0.22, "skull_top": 0.70, "top": 0.9497, "eye_x": 0.22, "eye_z": 0.205, "mouth_z": -0.075,
          "crest_base": 0.62, "neck_low": -0.30, "ear_z": 0.17}  # read off the probe of h3d1 (Meshy units)
-TRIS = 10000
+TRIS = 22000  # S9: from 10,000; the blade's silhouette and the lids' edges showed facets
 LIGHT_MIX = 0.42  # how far the light mask mixes the hue toward the pale tint
-CREST = {"mid": 0.73, "width": 0.075, "push": 0.06, "smooth": 10}  # Meshy units: a bump round the crest's waist
+MASK_FACE = {"top": 0.05, "slope": 0.45, "soft": 0.06}  # S9: the face mask's upper edge: eye_z + top - slope * abs(x), m, faded over soft
+CREST_BLADE = {  # S9: rf2's back-swept blade in place of the Meshy horn (crest_blade); Meshy units, front -Y
+    "cut": 0.58,  # the skull is cut here (the horn with it) and the hole filled; the blade becomes the crown
+    "blend": 0.20,  # from the cut to this much above it the skull's slope blends into the scaled outline
+    "spine": ((0, 0.07, 0.50), (0, 0.07, 0.82), (0, 0.28, 0.98), (0, 0.62, 0.95)),  # cubic Bezier, base to tip
+    "depth": (0.35, 0.03, 0.8),  # the half-depth in the side plane: at the base, at the tip, the taper's power
+    "width": (0.27, 0.02, 2.5),  # the half-thickness in x: narrows fast above the dome, a blade
+    "back": 0.85,  # the trailing half's share of the ellipse's depth (below the cut, where a ray misses the skull)
+    "crown_k": 0.80, "crown_z0": 0.30, "crown_ease": 0.15,  # the crown's heights above z0 scaled by k (see crest_blade)
+    "tip_t": 0.94,  # from here to the end the sections close as a quarter circle: a round tip
+    "skin": 0.0015, "voxel": 0.004, "fillet": 0.07, "fillet_passes": 60, "relax_passes": 10, "cut_soft": 0.05,
+}
 
 EYES = {  # elevations in degrees (the lid edge's angle above the eye's forward axis); rho: lid radii / eyeball r
     "bored": {"pupil": 0.20, "iris": 0.44, "iris_col": (0.20, 0.12, 0.08), "catch": (6.0, 1.0),
@@ -64,7 +76,7 @@ LID_BEAD = {"upper": 0.10, "lower": 0.035}  # S7: the rolled rim's swell at the 
 # S7: the lower face made fuller (a smooth local sculpt of the faceless head, no jaw bone), so the open mouth shapes
 # (A, E, O) sit inside it with little or no squeeze: the chin moves down and forward by these, m, fading out over
 # CHIN_SCULPT's x half width, up to just under the mouth line and back to the neck's front.
-CHIN_SCULPT = {"down": 0.013, "fwd": 0.026, "x_sigma": 0.046, "top_gap": 0.006}  # S8b: fuller (u1)  # 7 mm forward still read chinless
+CHIN_SCULPT = {"down": 0.013, "fwd": 0.032, "x_sigma": 0.046, "top_gap": 0.006}  # S8b: fuller (u1), S9: 26 -> 32 mm toward rf2's profile  # 7 mm forward still read chinless
 STATES = ("open", "rest", "half", "closed")
 # The face materials (S5, sRGB; godot/alien/alien.gd FACE and alien_eye.gdshader hold the same): the stage-1 human
 # faces' (faces/clay_kit.json: white (0.9, 0.86, 0.72), cavity (0.05, 0.012, 0.02), teeth (0.92, 0.9, 0.8) linear),
@@ -246,25 +258,179 @@ def load_head(path):
     return ob
 
 
-def inflate_crest(me):
-    """Fill the crest's waist (Meshy units): push along the normals by a bump round C["mid"] (the tip and the skull
-    keep their form), then smooth there."""
-    C = CREST
+def _bezier(ps, t):
+    p0, p1, p2, p3 = (Vector(p) for p in ps)
+    u = 1 - t
+    return u ** 3 * p0 + 3 * u * u * t * p1 + 3 * u * t * t * p2 + t ** 3 * p3
+
+
+def _taper(spec, t):
+    base, tip, power = spec
+    return tip + (base - tip) * (1 - t) ** power
+
+
+def _mesh_arrays(me):
+    co = np.empty(len(me.vertices) * 3)
+    me.vertices.foreach_get("co", co)
+    ed = np.empty(len(me.edges) * 2, dtype=np.int64)
+    me.edges.foreach_get("vertices", ed)
+    return co.reshape(-1, 3), ed.reshape(-1, 2)
+
+
+def _relax(co, ed, w, passes, lam=0.5, mu=None):
+    """Uniform Laplacian (Taubin when `mu` is given) moving each vertex by its weight `w`."""
+    deg = np.bincount(ed.ravel(), minlength=len(co)).astype(float)
+    deg[deg == 0] = 1
+    for _ in range(passes):
+        for k in ((lam,) if mu is None else (lam, mu)):
+            s = np.zeros_like(co)
+            np.add.at(s, ed[:, 0], co[ed[:, 1]])
+            np.add.at(s, ed[:, 1], co[ed[:, 0]])
+            co += (k * w)[:, None] * (s / deg[:, None] - co)
+    return co
+
+
+def crest_blade(src, prm=None):
+    """S9 (art #196): the Meshy horn (curling forward and to one side) replaced by rf2's one big back-swept blade.
+    Meshy units, front -Y. The head is cut at C["cut"] (below the horn, through the whole skull) and filled; the blade
+    is a tube of sections along a cubic Bezier spine from inside the skull to the back-swept tip. Below the cut each
+    section is the skull's own (rays from the spine); above it the skull's outline at the cut, scaled in x by the
+    width taper and in the side plane by the depth taper (so the forehead and the back run on into the blade, and the
+    blade narrows fast above the dome), blended in over C["blend"] from the skull's own slope at the cut (an ellipse
+    and a plain union left a ledge or a waist there: S9's grids). The two are united by a voxel remesh; what is left
+    of a crease is filleted (a Laplacian weighted by the nearness to both surfaces and to the cut), the top relaxed
+    (Taubin, no shrink), the crown lowered (C["crown_k"]: rf2's head is shorter above the eyes), and everything below
+    the crown projected back onto the Meshy surface, so the face keeps its exact shape. Returns a new mesh and its
+    report."""
+    C = {**CREST_BLADE, **(prm or {})}
+    orig_bvh = BVHTree.FromObject(src, bpy.context.evaluated_depsgraph_get())
+    # 1. the skull without the horn
     bm = bmesh.new()
-    bm.from_mesh(me)
-    bm.normal_update()
-    region = []
-    for v in bm.verts:
-        z = v.co.z
-        w = math.exp(-((z - C["mid"]) / C["width"]) ** 2)
-        if w > 0.02:
-            v.co += v.normal * C["push"] * w
-            region.append(v)
-    for _ in range(C["smooth"]):
-        bmesh.ops.smooth_vert(bm, verts=region, factor=0.5, use_axis_x=True, use_axis_y=True, use_axis_z=True)
-    bm.to_mesh(me)
+    bm.from_mesh(src.data)
+    geom = bm.verts[:] + bm.edges[:] + bm.faces[:]
+    bmesh.ops.bisect_plane(bm, geom=geom, dist=1e-6, plane_co=(0, 0, C["cut"]), plane_no=(0, 0, 1), clear_outer=True)
+    bmesh.ops.holes_fill(bm, edges=[e for e in bm.edges if e.is_boundary], sides=0)
+    skull_bvh = BVHTree.FromBMesh(bm)
+    # 2. the blade
+    n_ring, seg = 140, 128
+    pts = [_bezier(C["spine"], i / (n_ring - 1)) for i in range(n_ring)]
+    side = Vector((1, 0, 0))
+    rings = []
+    below, cut_r, cut_slope, cut_wd = [], None, None, None
+    blade = bmesh.new()
+    for i, p in enumerate(pts):
+        t = i / (n_ring - 1)
+        tan = (pts[min(i + 1, n_ring - 1)] - pts[max(i - 1, 0)]).normalized()
+        nrm = side.cross(tan).normalized()
+        cap = math.sqrt(max(0.0, 1 - ((t - C["tip_t"]) / (1 - C["tip_t"])) ** 2)) if t > C["tip_t"] else 1.0
+        d, w = _taper(C["depth"], t) * cap + 1e-4, _taper(C["width"], t) * cap + 1e-4  # a round tip
+        back = C.get("back", 1.0)  # the back half's depth share: under 1 a sharper trailing edge
+        # below the cut the section is the skull's own (rays from the spine, a hair outside it); above it the skull's
+        # outline at the cut, continued at the slope it had just below the cut, blends into the ellipse over `blend`,
+        # so the blade grows out of the skull with no ledge or shoulder
+        b = G.smoothstep(C["cut"], C["cut"] + C["blend"], p.z)
+        ring, radii = [], []
+        for k in range(seg):
+            a = 2 * math.pi * k / seg
+            sa = math.sin(a)
+            dirv = side * math.cos(a) + nrm * sa
+            ell = math.hypot(w * math.cos(a), d * sa * (back if sa < 0 else 1.0))
+            r = ell
+            if p.z <= C["cut"]:
+                hit = orig_bvh.ray_cast(p, dirv, 1.0)
+                if hit[0] is not None:
+                    r = hit[3] + C["skin"]
+            elif cut_r is not None:
+                # the skull's outline at the cut, scaled by the blade's taper (its own front-to-back shape kept, so
+                # the forehead and the back both run on), blended in from the skull's slope at the cut
+                ex = p + dirv * max(0.0, cut_r[k] + cut_slope[k] * (p.z - C["cut"]))
+                sc = p + side * (cut_r[k] * math.cos(a) * w / cut_wd[0]) + nrm * (cut_r[k] * sa * d / cut_wd[1])
+                radii.append(0.0)
+                ring.append(blade.verts.new(ex.lerp(sc, b)))
+                continue
+            radii.append(r)
+            ring.append(blade.verts.new(p + dirv * r))
+        if p.z <= C["cut"]:
+            below.append((p.z, radii))
+            cut_r, cut_wd = radii, (w, d)
+            z_ref, r_ref = next(((zz, rr) for zz, rr in reversed(below) if zz < p.z - 0.03), (None, None))
+            cut_slope = [0.0] * seg if z_ref is None else [(r1 - r0) / (p.z - z_ref) for r0, r1 in zip(r_ref, radii)]
+        rings.append(ring)
+    for r0, r1 in zip(rings, rings[1:]):
+        for k in range(seg):
+            blade.faces.new((r0[k], r0[(k + 1) % seg], r1[(k + 1) % seg], r1[k]))
+    blade.faces.new(rings[0][::-1])
+    blade.faces.new(rings[-1])
+    blade.normal_update()
+    bmesh.ops.recalc_face_normals(blade, faces=blade.faces[:])
+    blade_bvh = BVHTree.FromBMesh(blade)
+    # 3. the union (voxel remesh)
+    tmp = bpy.data.meshes.new("crest_tmp")
+    blade.to_mesh(tmp)
+    blade.free()
+    bm2 = bmesh.new()
+    bm2.from_mesh(tmp)
+    bm2.verts.ensure_lookup_table()
+    bpy.data.meshes.remove(tmp)
+    joined = bpy.data.meshes.new("crest_join")
+    bm.to_mesh(joined)
     bm.free()
-    return len(region)
+    bm3 = bmesh.new()
+    bm3.from_mesh(joined)
+    tmp2 = bpy.data.meshes.new("crest_blade_only")
+    bm2.to_mesh(tmp2)
+    bm2.free()
+    bm3.from_mesh(tmp2)
+    bpy.data.meshes.remove(tmp2)
+    bm3.to_mesh(joined)
+    bm3.free()
+    ob = bpy.data.objects.new("crest_join", joined)
+    bpy.context.scene.collection.objects.link(ob)
+    mod = ob.modifiers.new("vox", "REMESH")
+    mod.mode = "VOXEL"
+    mod.voxel_size = C["voxel"]
+    mod.use_smooth_shade = True
+    me = bpy.data.meshes.new_from_object(ob.evaluated_get(bpy.context.evaluated_depsgraph_get()))
+    bpy.data.objects.remove(ob)
+    bpy.data.meshes.remove(joined)
+    # 4. fillet, relax, restore the face
+    co, ed = _mesh_arrays(me)
+    dh = np.array([skull_bvh.find_nearest(Vector(p))[3] for p in co])
+    db = np.array([blade_bvh.find_nearest(Vector(p))[3] for p in co])
+    f = C["fillet"]
+    near = np.maximum(dh, db)
+    w_fil = 1.0 - np.clip(near / f, 0, 1) ** 2
+    w_fil = w_fil * w_fil * (co[:, 2] > C["cut"] - 0.25)
+    # the filled cut's rim, where the blade's base leaves it uncovered: rounded off the same way
+    w_cut = np.clip(1 - np.abs(co[:, 2] - C["cut"]) / C["cut_soft"], 0, 1) ** 2
+    w_fil = np.maximum(w_fil, w_cut)
+    co = _relax(co, ed, w_fil, C["fillet_passes"])
+    z = co[:, 2]
+    crown = np.clip((z - (C["cut"] - 0.12)) / 0.08, 0, 1)
+    co = _relax(co, ed, crown, C["relax_passes"], 0.5, -0.53)
+    low = np.clip(((C["cut"] - 0.06) - co[:, 2]) / 0.06, 0, 1)
+    moved = 0.0
+    for i in np.nonzero(low > 0)[0]:
+        hit = orig_bvh.find_nearest(Vector(co[i]))
+        if hit[0] is not None and hit[3] < 0.02:
+            q = np.array(hit[0])
+            moved = max(moved, float(np.linalg.norm(q - co[i])) * low[i])
+            co[i] = co[i] + (q - co[i]) * low[i]
+    # the crown lowered (rf2's head is shorter above the eyes): heights above crown_z0 scaled by crown_k, the scale
+    # easing in over crown_ease so the dome keeps a smooth curve
+    k, z0, ez = C["crown_k"], C["crown_z0"], C["crown_ease"]
+    if k != 1.0:
+        dz = np.clip(co[:, 2] - z0, 0, None)
+        # the integral of a slope going from 1 to k over [0, ez] (smoothstep), then k beyond
+        t = np.clip(dz / ez, 0, 1)
+        ease = ez * (t ** 3 - 0.5 * t ** 4)  # integral of smoothstep(t) dt, scaled by ez
+        co[:, 2] = np.where(co[:, 2] > z0, z0 + dz - (1 - k) * np.where(dz < ez, ease, ez * 0.5 + (dz - ez)), co[:, 2])
+    me.vertices.foreach_set("co", co.ravel())
+    me.update()
+    top = int(np.argmax(co[:, 2]))
+    rep = {"verts": len(me.vertices), "top": [round(float(x), 4) for x in co[top]], "fillet_verts": int((w_fil > 0.05).sum()),
+           "restore_max": round(moved, 5), "params": {k: v for k, v in C.items()}}
+    return me, rep
 
 
 def bisect(me, z, keep_above=True):
@@ -305,7 +471,7 @@ def ang_of(co, c):
 
 
 def weld_neck(ob, ring, z_cut):
-    """Cut at z_cut, merge the open edge to 24 vertices at the ring's angles, loft down to the ring; returns the
+    """Cut at z_cut, merge the open edge to the ring's vertices (48) at its angles, loft down to the ring; returns the
     ring's vertex indices and the loft's per-vertex Head weight."""
     me = ob.data
     bisect(me, z_cut)
@@ -426,16 +592,16 @@ def head_masks(ob, eye_z, chin_z):
             n += e.other_vert(v).normal
         smooth[v.index] = n.normalized()
     uv = bm.loops.layers.uv.new(G.MASKS)
-    top = max(v.co.z for v in bm.verts)
     vals = {}
     for v in bm.verts:
         n = smooth[v.index]
         front = G.smoothstep(0.15, 0.75, -n.y)
-        face = front * (1 - G.smoothstep(eye_z + 0.005, eye_z + 0.04, v.co.z))
+        hi = eye_z + MASK_FACE["top"] - MASK_FACE["slope"] * abs(v.co.x)  # S9: higher between the eyes (rf2), soft
+        face = front * (1 - G.smoothstep(hi - MASK_FACE["soft"], hi, v.co.z))
         throat = G.smoothstep(-0.1, 0.6, -n.y) * (1 - G.smoothstep(chin_z - 0.01, chin_z + 0.02, v.co.z))
         sides = G.smoothstep(0.75, 0.95, abs(n.x))
         light = max(face, throat) * (1 - 0.6 * sides)
-        acc = 0.65 * G.smoothstep(top - 0.06, top - 0.005, v.co.z)  # the crest's tip blushes
+        acc = 0.0  # S9: the crest is all hue (rf2), no coral tip
         vals[v] = (light, acc)
     for f in bm.faces:
         for lp in f.loops:
@@ -517,7 +683,6 @@ def smooth_collar(me, ring, z_cut, ring_idx, passes=8):
     fixed = set(ring_idx)
     band = [v for v in bm.verts if v.co.z < z_cut + COLLAR and v.index not in fixed]
     rn = lambda c: math.hypot((c.x - cx) / ax, (c.y - cy) / ay)  # noqa: E731
-    most = 0.0
     before = {v: v.co.copy() for v in band}
     for _ in range(4):  # first the pleats across the band: a plain relax in x and y (the heights stay)
         bmesh.ops.smooth_vert(bm, verts=band, factor=0.5, use_axis_x=True, use_axis_y=True, use_axis_z=False)
@@ -533,7 +698,6 @@ def smooth_collar(me, ring, z_cut, ring_idx, passes=8):
             if r0 < 1e-6:
                 continue
             k = r / r0
-            old = v.co.copy()
             v.co.x = cx + (v.co.x - cx) * k
             v.co.y = cy + (v.co.y - cy) * k
     most = max((v.co - before[v]).length for v in band)
@@ -769,7 +933,12 @@ def main():
     ob = load_head(a.head)
     me = ob.data
     rep["meshy_tris"] = len(me.polygons)
-    rep["crest_region_verts"] = inflate_crest(me)
+    blade, rep["crest_blade"] = crest_blade(ob)
+    rep["crest_blade"].pop("params")
+    ob.data = blade
+    bpy.data.meshes.remove(me)
+    me = ob.data
+    me.name = "alien_head"
     s = HEAD_H / (MESHY["skull_top"] - MESHY["chin"])
     # the neck's centre at the Meshy neck_low level
     band = [v.co for v in me.vertices if abs(v.co.z - MESHY["neck_low"]) < 0.01]

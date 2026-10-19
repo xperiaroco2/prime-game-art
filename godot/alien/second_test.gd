@@ -17,7 +17,7 @@ const Offscreen = preload("res://lib/offscreen.gd")
 const AlienRig = preload("res://alien/alien.gd")
 const WATCHDOG_S: float = 280.0
 const SHEET_W: int = 1280
-var ORDER: Array = ["first", "cage", "wrap"]  # the spec's "order" replaces it (S8: ["s7", "s8"])
+var _order: Array = ["first", "cage", "wrap"]  # the spec's "order" replaces it (S8: ["s7", "s8"])
 const SPACING: float = 0.95
 
 var _spec: Dictionary
@@ -138,11 +138,11 @@ func _shot(text: String, frames: int = 3) -> Image:
 	return root.get_texture().get_image()
 
 
-func _sheet(images: Array, cols: int, name: String) -> void:
+func _sheet(images: Array, cols: int, name: String, width: int = SHEET_W) -> void:
 	if images.is_empty():
 		_fail("no image for %s" % name)
 		return
-	var tw: int = SHEET_W / cols
+	var tw: int = width / cols
 	var first: Image = images[0]
 	var th: int = int(round(float(tw) * first.get_height() / first.get_width()))
 	var rows: int = int(ceil(float(images.size()) / cols))
@@ -170,7 +170,9 @@ func _pose(word: String, t: float) -> void:
 	for k: String in _ch:
 		var p: AnimationPlayer = _player[k]
 		var c: String = _clip(p, word)
-		if c == "":
+		if c == "":  # said, not silent (PR #225 review): that character keeps its pose
+			print("PROOF warning: %s has no clip matching %s" % [k, word])
+			_report.get_or_add("missing_clips", []).append("%s:%s" % [k, word])
 			continue
 		p.play(c)
 		var length: float = p.get_animation(c).length
@@ -180,8 +182,8 @@ func _pose(word: String, t: float) -> void:
 
 ## Only the named characters show, at their places (the rest hidden); the others' x places when side by side.
 func _only(names: Array, side_by_side: bool) -> void:
-	for i: int in ORDER.size():
-		var k: String = ORDER[i]
+	for i: int in _order.size():
+		var k: String = _order[i]
 		if not _ch.has(k):
 			continue
 		var n: Node3D = _ch[k]
@@ -220,11 +222,11 @@ func _run() -> void:
 	await process_frame
 	_out = _spec["out"]
 	if _spec.has("order"):
-		ORDER = _spec["order"]
+		_order = _spec["order"]
 	DirAccess.make_dir_recursive_absolute(_out)
 	_stage()
 	var scenes: Dictionary = _spec["scenes"]
-	for k: String in ORDER:
+	for k: String in _order:
 		if not scenes.has(k):
 			continue
 		var packed: PackedScene = load(scenes[k]) as PackedScene
@@ -244,7 +246,7 @@ func _run() -> void:
 		_rig[k] = rig
 		_player[k] = ch.find_child("AnimationPlayer", true, false)
 		_combo(k, "bored", "frog")
-	var all: Array = ORDER.filter(func(k: String) -> bool: return _ch.has(k))
+	var all: Array = _order.filter(func(k: String) -> bool: return _ch.has(k))
 	_pose("Idle", 0.0)
 	for _i: int in 3:
 		await process_frame
