@@ -41,7 +41,7 @@ TOP_Z = 1.795  # the crest's top, m
 MESHY = {"chin": -0.22, "skull_top": 0.70, "top": 0.9497, "eye_x": 0.22, "eye_z": 0.205, "mouth_z": -0.075,
          "crest_base": 0.62, "neck_low": -0.30, "ear_z": 0.17}  # read off the probe of h3d1 (Meshy units)
 TRIS = 10000
-LIGHT_MIX = 0.5  # how far the light mask mixes the hue toward the pale tint
+LIGHT_MIX = 0.42  # how far the light mask mixes the hue toward the pale tint
 CREST = {"mid": 0.73, "width": 0.075, "push": 0.06, "smooth": 10}  # Meshy units: a bump round the crest's waist
 
 EYES = {  # elevations in degrees (the lid edge's angle above the eye's forward axis); rho: lid radii / eyeball r
@@ -150,9 +150,6 @@ def hue_material(k_light):
     bsdf.inputs["Specular IOR Level"].default_value = 0.35
     bsdf.inputs["Sheen Weight"].default_value = 0.35
     bsdf.inputs["Sheen Roughness"].default_value = 0.6
-    bsdf.inputs["Subsurface Weight"].default_value = 0.06
-    bsdf.inputs["Subsurface Radius"].default_value = (0.4, 0.2, 0.1)
-    bsdf.inputs["Subsurface Scale"].default_value = 0.01
     return m
 
 
@@ -528,7 +525,7 @@ def lip_curves(d, sh, z0):
     push = sh.get("push", 0.0)
     sink = sh.get("sink", d["sink"])
     out = []
-    N = 33
+    N = 25
     for i in range(N):
         s = -1 + 2 * i / (N - 1)
         env = max(0.0, 1 - s * s)
@@ -563,10 +560,10 @@ def build_mouth(bvh, d, name, z0, mats, coll, origin, teeth=False):
             ra.append(a)
             rb_.append(bb)
             ns.append(n)
-        G.tube(b, cs, ra, rb_, ns, mi_lip, seg=18)
+        G.tube(b, cs, ra, rb_, ns, mi_lip, seg=12)
     gap = max(q["zu"] - q["bu"] * 0.55 - (q["zl"] + q["bl"] * 0.55) for q in cur)
     if gap > 0.0005 or sh.get("open", (0, 0))[1] > 0:  # the dark inner cup between the lips, tucked under them
-        rows = 7
+        rows = 5
         grid = []
         for q in cur:
             top = q["zu"] - q["bu"] * 0.35
@@ -741,7 +738,7 @@ def main():
         lids = {}
         for side in ("L", "R"):
             sm = sockets[f"Eye_{side}"]
-            ball = G.eyeball(f"eye_{dname}_ball_{side}", r_eye, em, coll)
+            ball = G.eyeball(f"eye_{dname}_ball_{side}", r_eye, em, coll, seg=24, rings=18)
             ball.matrix_world = sm
             for lid in ("upper", "lower"):
                 L_ = d[lid]

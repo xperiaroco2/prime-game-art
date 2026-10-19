@@ -152,7 +152,7 @@ def main():
         for eye in ("bored", "manic"):
             for st in STATES:
                 show(head, eye, "frog_rest" if eye == "bored" else "overbite_rest", hue=hues["teal"], lid_state=st)
-                tiles.append(shot(cam, out / "cells" / f"e_{eye}_{st}.png", ecent, 0, 0.56, 85))
+                tiles.append(shot(cam, out / "cells" / f"e_{eye}_{st}.png", ecent, 0, 0.70, 85))
                 labels.append(f"{eye} {st}")
             for yaw, lab in ((90, "side"), (40, "3q")):
                 tiles.append(shot(cam, out / "cells" / f"e_{eye}_closed_{lab}.png", eL, yaw, 0.30, 85))

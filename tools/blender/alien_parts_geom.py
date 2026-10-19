@@ -176,7 +176,7 @@ def eyeball(name: str, r: float, mat, coll, seg=32, rings=24):
 
 
 def lid_shell(name: str, r: float, rho_in: float, rho_out: float, upper: bool, mat, coll, t_max_deg=89.0,
-              span_deg=200.0, seg_t=28, seg_p=20, rim_seg=6, rim_mask_deg=22.0):
+              span_deg=200.0, seg_t=20, seg_p=12, rim_seg=5, rim_mask_deg=22.0):
     """A lid: a closed shell between radii rho_in*r and rho_out*r about the origin, built with its moving edge on
     local -Y (elevation 0). Elevation p is the angle about the hinge (local X) from -Y toward +Z; the upper lid covers
     p in [0, span], the lower p in [-span, 0]; latitude t (toward the hinge) in [-t_max, t_max]. The side edges lie on
