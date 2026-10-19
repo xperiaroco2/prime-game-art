@@ -243,6 +243,30 @@ def sss_mask(f, s=None, xp=PY):
     return xp.clip(s["sss_thin"] * thin ** s["sss_gamma"] + s["sss_region"] * xp.clip(f["warm"], 0.0, 1.0), 0.0, 1.0)
 
 
+
+def blur(arr, mask, r, xp):
+    """arr (h, w) blurred by three box passes of radius r texels (about a Gaussian), only over mask's texels
+    (normalised by the blurred mask, so the UV gaps' fill never bleeds in); outside mask arr is kept. Arrays only:
+    xp is numpy (tools/tests/test_alien_texture_blur_blender.py runs it in Blender's Python)."""
+    if r < 1:
+        return arr
+
+    def box(x):
+        for ax in (0, 1):
+            c = xp.cumsum(xp.pad(x, [(r + 1, r) if i == ax else (0, 0) for i in range(2)], mode="edge"), axis=ax,
+                          dtype=xp.float64)
+            hi = [slice(None)] * 2
+            lo = [slice(None)] * 2
+            hi[ax], lo[ax] = slice(2 * r + 1, None), slice(None, -2 * r - 1)
+            x = ((c[tuple(hi)] - c[tuple(lo)]) / (2 * r + 1)).astype(xp.float32)
+        return x
+
+    m = mask.astype(xp.float32)
+    v, w = arr * m, m
+    for _ in range(3):
+        v, w = box(v), box(w)
+    return xp.where(mask, v / xp.maximum(w, 1e-6), arr)
+
 # The bake cage (PR #231 minor 6): an explicit cage, Body's copy with each vertex moved out along its smoothed normal
 # by cage_offset(clearance), where clearance is the distance along that normal to the next surface of the low mesh
 # (the next finger, the nostril's far wall). M2's uniform 2 mm extrusion put the rays' start inside the next finger in

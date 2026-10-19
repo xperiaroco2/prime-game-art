@@ -572,29 +572,6 @@ def down(arr, k):
     return arr.astype(np.float32).reshape(sh).mean((1, 3))
 
 
-def blur(arr, mask, r):
-    """arr (h, w) blurred by three box passes of radius r texels (about a Gaussian), only over mask's texels
-    (normalised by the blurred mask, so the UV gaps' fill never bleeds in); outside mask arr is kept."""
-    if r < 1:
-        return arr
-
-    def box(x):
-        for ax in (0, 1):
-            c = np.cumsum(np.pad(x, [(r + 1, r) if i == ax else (0, 0) for i in range(2)], mode="edge"), axis=ax,
-                          dtype=np.float64)
-            hi = [slice(None)] * 2
-            lo = [slice(None)] * 2
-            hi[ax], lo[ax] = slice(2 * r + 1, None), slice(None, -2 * r - 1)
-            x = ((c[tuple(hi)] - c[tuple(lo)]) / (2 * r + 1)).astype(np.float32)
-        return x
-
-    m = mask.astype(np.float32)
-    v, w = arr * m, m
-    for _ in range(3):
-        v, w = box(v), box(w)
-    return np.where(mask, v / np.maximum(w, 1e-6), arr)
-
-
 def load_fields(out, size):
     fdir = out / "fields"
     f = {}
@@ -621,7 +598,7 @@ def compose(f, cov, s, tdir, size):
     tdir.mkdir(parents=True, exist_ok=True)
     t0 = time.time()
     if s["accent_blur"]:
-        f = dict(f, accent=blur(f["accent"], cov, max(int(round(s["accent_blur"] * size / 4096)), 1)))
+        f = dict(f, accent=T.blur(f["accent"], cov, max(int(round(s["accent_blur"] * size / 4096)), 1), np))
     r, g, b = T.albedo(f, s, np)
     alb = np.stack([r, g, b], -1)
     alb = push_pull(alb, cov)
