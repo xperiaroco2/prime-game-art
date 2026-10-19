@@ -95,6 +95,7 @@ def args():
     p.add_argument("--parts", required=True)
     p.add_argument("--parts-json", required=True)
     p.add_argument("--out", required=True)
+    p.add_argument("--panel", default="", help="JSON merged into alien_neck.PANEL (a variant grid's setting)")
     return p.parse_args(sys.argv[sys.argv.index("--") + 1:])
 
 
@@ -221,6 +222,74 @@ def body_masks(body, arm, ring, head_ring_u):
             "vertices": len(me.vertices)}
 
 
+INTERIOR = {"rays": 48, "min_dot": 0.1, "offset": 0.0005, "reach": 2.0, "z_min": 1.40}  # S9d: see drop_interior()
+
+
+def _sphere_dirs(n):
+    """n unit vectors spread evenly over the sphere (a Fibonacci lattice)."""
+    g = math.pi * (3.0 - math.sqrt(5.0))
+    out = []
+    for i in range(n):
+        z = 1.0 - 2.0 * (i + 0.5) / n
+        r = math.sqrt(1.0 - z * z)
+        out.append(Vector((r * math.cos(g * i), r * math.sin(g * i), z)))
+    return out
+
+
+def drop_interior(body):
+    """S9d (art #196, UPDATE 21): deletes the Body's enclosed faces, the surfaces left inside the skin by the head's
+    rebuilds (S9's crest blade over the old dome). A face is enclosed when every one of INTERIOR["rays"] rays spread over
+    its outward hemisphere (dot with its normal over min_dot), cast from just off its centre, hits the Body again: no
+    direction sees out. An outer face, even in a fold (the armpit, between the toes, a nostril), has a way out along
+    its normal. Only above INTERIOR["z_min"] (the head and the neck's top, where the rebuilds were): on the body the
+    test also took real skin in the tight folds of the armpits and the crotch (132 faces, holes in S9d's first build).
+    The Body is exported single-sided after this, so nothing inside may stay. Returns the measures."""
+    from mathutils.bvhtree import BVHTree
+    me = body.data
+    bm = bmesh.new()
+    bm.from_mesh(me)
+    bm.faces.ensure_lookup_table()
+    bvh = BVHTree.FromBMesh(bm)
+    dirs = _sphere_dirs(INTERIOR["rays"])
+    enclosed = []
+    for f in bm.faces:
+        n = f.normal
+        c = f.calc_center_median() + n * INTERIOR["offset"]
+        if c.z < INTERIOR["z_min"]:
+            continue
+        out = False
+        for d in dirs:
+            if d.dot(n) <= INTERIOR["min_dot"]:
+                continue
+            if bvh.ray_cast(c, d, INTERIOR["reach"])[0] is None:
+                out = True
+                break
+        if not out:
+            enclosed.append(f)
+    where = {}
+    for f in enclosed:
+        c = f.calc_center_median()
+        key = "head (z > 1.45)" if c.z > 1.45 else ("neck" if c.z > 1.30 else "body")
+        w = where.setdefault(key, {"faces": 0, "area_cm2": 0.0, "z": [9.0, -9.0]})
+        w["faces"] += 1
+        w["area_cm2"] += f.calc_area() * 1e4
+        w["z"] = [min(w["z"][0], c.z), max(w["z"][1], c.z)]
+    for w in where.values():
+        w["area_cm2"] = round(w["area_cm2"], 2)
+        w["z"] = [round(w["z"][0], 3), round(w["z"][1], 3)]
+    faces_before = len(bm.faces)
+    bmesh.ops.delete(bm, geom=enclosed, context="FACES_ONLY")
+    loose = [v for v in bm.verts if not v.link_faces]
+    bmesh.ops.delete(bm, geom=loose, context="VERTS")
+    loose_e = [e for e in bm.edges if not e.link_faces]
+    bmesh.ops.delete(bm, geom=loose_e, context="EDGES")
+    bm.to_mesh(me)
+    bm.free()
+    me.update()
+    return {"faces_before": faces_before, "faces_dropped": len(enclosed), "verts_dropped": len(loose), "where": where,
+            **INTERIOR}
+
+
 def fair_neck(verts, ring):
     """S8b: NECK_FAIR on the welded neck. Returns the largest radial ripple (mm) before and after (each vertex's
     distance from its neighbourhood's average radius) and the largest move."""
@@ -340,6 +409,8 @@ def tris(o):
 
 def main():
     a = args()
+    if a.panel:
+        alien_neck.PANEL.update(json.loads(a.panel))
     out = Path(a.out)
     (out / "build").mkdir(parents=True, exist_ok=True)
     (out / "export").mkdir(parents=True, exist_ok=True)
@@ -417,7 +488,8 @@ def main():
     bm.free()
     body.data.update()
     rep["neck_weights"] = alien_neck.column_weights(body, ring)
-    rep["throat_panel"] = alien_neck.throat_panel(body, ring)  # S9c: the front half of the neck pale
+    rep["throat_panel"] = alien_neck.throat_panel(body, ring)  # S9c, S9d: the pale panel's clean edge in profile
+    rep["interior"] = drop_interior(body)  # S9d: no surface inside the skin (the Body is single-sided)
     body.name = "Body"
     for o in bpy.data.objects:  # the lid's local X angle in its eye node, as parts.json gives it
         if "_lid_" in o.name:
@@ -429,6 +501,8 @@ def main():
                 o = bpy.data.objects[d[lid]]
                 lid_check[d[lid]] = [round(math.degrees(x), 2) for x in o.rotation_euler]
     rep["lid_local_euler_deg"] = lid_check
+    hue.use_backface_culling = True  # S9d: glTF doubleSided false (three.js drew the inner faces; Godot's shader culls); saved
+    # in the .blend, so the mouths and AO steps' re-exports keep it
     bpy.ops.wm.save_as_mainfile(filepath=str(out / "build" / "alien_character.blend"))
 
     plain_hue(hue, HUES_SRGB["teal"])
