@@ -12,8 +12,6 @@ uniform float sheen_roughness : hint_range(0.0, 1.0) = 0.5;
 uniform float grain : hint_range(0.0, 0.5) = 0.0;
 uniform float grain_freq = 900.0;
 uniform vec2 grain_fade = vec2(0.6, 2.0);
-uniform float sss : hint_range(0.0, 1.0) = 0.0;
-uniform float rim_value : hint_range(0.0, 1.0) = 0.0;
 
 varying vec3 m_pos;
 
@@ -39,7 +37,4 @@ void fragment() {
 	SPECULAR = specular_value;
 	CLEARCOAT = sheen;
 	CLEARCOAT_ROUGHNESS = sheen_roughness;
-	SSS_STRENGTH = sss;
-	RIM = rim_value;
-	RIM_TINT = 0.5;
 }

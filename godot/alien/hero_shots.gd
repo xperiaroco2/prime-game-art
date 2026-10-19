@@ -48,7 +48,7 @@ func _apply(mat: Material, params: Dictionary, undo: Dictionary) -> void:
 			undo[k] = sm.get_shader_parameter(k)
 		var v: Variant = params[k]
 		if v is Array and (v as Array).size() == 3:
-			v = Vector3(v[0], v[1], v[2]) if not k in ["accent", "backlight", "albedo", "iris"] else Color(v[0], v[1], v[2])
+			v = Vector3(v[0], v[1], v[2]) if not k in ["accent", "albedo", "iris"] else Color(v[0], v[1], v[2])
 		elif v is Array and (v as Array).size() == 2:
 			v = Vector2(v[0], v[1])
 		sm.set_shader_parameter(k, v)

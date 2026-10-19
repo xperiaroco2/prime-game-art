@@ -19,8 +19,8 @@
 //   - a soft grain: a value-noise micro normal in model space (`grain`, `grain_freq` per metre), faded out with the
 //     view distance so it never shimmers far away, and a matching small roughness variation;
 //   - S9b: the gradient and the grain read the rest pose (CUSTOM0, see vertex()), so they do not swim in motion;
-//   - wrapped diffuse (render mode), screen-space subsurface (`sss`), a warm back light through thin parts
-//     (`backlight`), a soft rim (`rim_value`) and a fresnel edge glow toward the pale tint (`rim_glow`).
+//   - wrapped diffuse (render mode), screen-space subsurface (`sss`), a soft rim (`rim_value`) and a fresnel edge
+//     glow toward the pale tint (`rim_glow`). (S9c: the unused `backlight` uniform went; nothing set it.)
 // The hues (sRGB): godot/alien/alien.gd HUES, from the S3 export's character.json.
 shader_type spatial;
 render_mode diffuse_lambert_wrap, specular_schlick_ggx;
@@ -47,7 +47,6 @@ uniform float grain : hint_range(0.0, 0.5) = 0.0;
 uniform float grain_freq = 500.0;
 uniform vec2 grain_fade = vec2(0.8, 2.5);  // view distance (m): full grain up to x, none beyond y
 uniform float sss : hint_range(0.0, 1.0) = 0.0;
-uniform vec3 backlight : source_color = vec3(0.0);
 uniform float rim_glow : hint_range(0.0, 1.0) = 0.0;  // a soft fresnel lift toward the pale tint at grazing angles (rf2's soft edge light, any lighting)
 uniform float rim_glow_power = 3.0;
 
@@ -103,7 +102,6 @@ void fragment() {
 	RIM = rim_value;
 	RIM_TINT = rim_tint;
 	SSS_STRENGTH = sss;
-	BACKLIGHT = backlight;
 	float fr = pow(1.0 - clamp(dot(NORMAL, VIEW), 0.0, 1.0), rim_glow_power);
 	EMISSION = mix(c, p, 0.5) * fr * rim_glow;
 }
