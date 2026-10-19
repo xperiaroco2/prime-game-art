@@ -1058,6 +1058,30 @@ a time, by visibility.
     (`--m2` is required; `export` also takes `--kit <the kit's export folder>`), in that order (about 90 s, 32 s,
     15 s and 10 s: start each in the background with its log under `tools/out/`), then `alien_texture_review.py`
     the same way; the normal map changes only with the high copy (M2's `--stage high`).
+- **M3c, the texture set tuned toward rf2** (the same scripts; output under
+  `D:/prime-art-raw/review/char/alien-parts-kit/M3c/`, M3a's files untouched). Beside rf2 (showroom v26) M3a's face
+  read yellow-olive, a dark ring sat round the eye sockets, its roughness of about 0.5 drew M2's pores as a glossy
+  orange peel at 0.6 m, and the knee and knuckle spots were crisp coral discs (stickers).
+  - `alien_texture_geom.M3A` keeps the shipped M3a settings; `TEX` is M3A with `M3C`'s changes over it (the reasons
+    in its comment): the texture's own pale `pale_srgb` (0.81, 0.94, 0.82), mint (green well above red, blue about
+    red; the kit's `PALE_SRGB` stays the kit's), the face warmth without its blue cut; the AO lifted to its contact
+    shade (`contact_ao()`: ao / 0.55, clipped) fully round the eyes and 0.45 everywhere, the sockets' cavity
+    darkening off, 0.4 of the AO in the albedo, and the ORM's R the same lifted AO; roughness 0.66 (convex 0.06
+    glossier, no T-zone, the lips' surroundings 0.14 glossier); the accent over the kit's soft edge, blurred
+    (`accent_blur` 32 texels at 4K, a normalised three-box blur over the covered texels, `blur()`), full from 0.6 of
+    the blurred mask, 0.85 at its peak, its chroma kept 0.6 through the edge (`keep_chroma()`: teal and coral mixed
+    half and half are a dusty grey). The teal (`hue_sat` 1.15) and the dome's depth are M3a's.
+  - The fields gained `socket` (in pass `e`, where M3a had a constant): the skin within 14 mm (`SOCKET_MM`) of each
+    eye's parts' box.
+  - Chosen on two grids, rf2 in the first column (`M3c/variants/g1`: the pale's hue, the AO, the accent; `g2`: the
+    roughness 0.66 against 0.72; `grid.json` names the columns). A cooler pale (blue above red) read cyan, a creamier
+    one yellow again; 0.72 read flat and chalky beside rf2's soft sheen; a blur of 24 texels with the full edge erased
+    the small knuckle spots, hence the edge remap at 0.6.
+  - Rebuild: `--stage fields` with `--bake <M3a/bake_cage_r2>` (the capped cage's bake; `--bake` defaults to
+    `<out>/bake`), then `compose`, then `export` with the same `--bake` and `--tag m3c` (character.json's
+    `note_m3c_textures`, the normal image's name). `alien_texture_review.py --before-tex <M3a/textures>
+    --before-normal <M3a/bake/normal.png> --labels m3a,m3c` puts M3a on the left of the sheets instead of M2's look;
+    its shots gained `near` (the face at 3/4 from 0.6 m, 70 mm) and `knee`. About 30 s, 20 s, 10 s and 10 s.
 
 ## Findings for later tasks
 
