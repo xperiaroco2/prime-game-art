@@ -676,6 +676,32 @@ tables and one verdict line per GLB and count: the default setup's (`auto_full`)
 A full run with `--proxy-from` (Blender, three exports, 31 variants) took about 2 minutes on the RTX 4060 machine;
 start it in the background all the same.
 
+## The alien's plasticine skin (`godot/alien_look/`, art #196)
+The skin material for the plasticine alien in Godot 4.7.2, chosen in art #196 (steps G3 and G3b) by off-screen
+renders beside the approved target frames (f2a for the face at 0.6 m, f1a for the body at 3 m) under the approved look
+(exposure 0.9, no saturation adjustment).
+
+- `alien_clay.gdshaderinc` is the shared body: the baked base colour and normal (the 2048 game sheets at a clay
+  strength), plus a tiling micro-detail normal and height (fingerprint whorls and smudges, 1024, one tile per 7 cm of
+  skin) added to the baked normal in the sheet's UV space, so the pattern stays on the skin when the body bends. The
+  height darkens and roughens the grooves. Roughness about 0.55, a low specular, a light rim and Godot's subsurface
+  scattering in skin mode. The eyes never use it: they keep a `StandardMaterial3D` at roughness 0.3 with a clear coat.
+- `alien_clay_mix.gdshader` (option C2, **the recommended one**) breaks the tile's repetition with a second rotated,
+  rescaled sample blended by a low-frequency noise mask, at the same contrast. 10 characters cost 1.257 ms of GPU
+  against 1.255 ms for the single tile (RTX 4060, 1920x1080).
+- `alien_clay.gdshader` (option C) is the single tile. `alien_clay_tri.gdshader` (option D, triplanar in model space)
+  was measured and set aside: Godot skins before `vertex()`, so its pattern slides where the body bends, and it costs
+  more (0.67 against 0.58 ms for 10).
+- `alien_clay_cal.gdshader` is calibration only: a linear colour matrix on the base colour. `look.gd`'s calibration
+  mode finds the matrix that matches each region (teal, mint, coral) to f2a's lit half, and that correction is then
+  baked into the base colour sheets, so the game's look values stay as approved.
+- `look.gd` is the proof script: a present-day room box, the material options and clay strengths, the bench, the
+  calibration and the review sheets. It runs in the off-screen window like every other window run (the header gives
+  its spec). It is research tooling, not a runner command yet.
+
+Clay strength 2 is the closest to f2a; at 3 m the strengths cannot be told apart. The look still needs the engineer's
+yes; the game repo takes the material only through a game-repo PR under the character contract.
+
 ## Findings for later tasks
 
 - **Toe bones (art #25):** assembled characters have 64 bones since art #25 (`Toe.L`, `Toe.R`). The export and
