@@ -764,8 +764,8 @@ a time, by visibility.
 - **The second test (step S7):** two bodies from one cage, `tools/blender/alien_cage.py` (a few hundred quads fitted
   to u1 by measurement, Catmull-Clark level 2; method in its docstring): **cage** (no `--target`) and **wrap**
   (`--target <b3d1.glb>`: the same cage shrink-wrapped onto the Meshy faceless body shape, used as a target only).
-  Both keep S1c's hands at the standard wrist ring (`wrist_ring.json`, as `neck_ring.json`), 4 fingers and 3-toe
-  paddles. The pipeline, all headless Blender: `alien_parts.py` (head and face parts) → `alien_cage.py` (body) →
+  In S7 both kept S1c's hands at a standard wrist ring; since S8 the hands are built in the cage (below), and
+  4 digits (three fingers and a thumb) and 3-toe paddles stay. The pipeline, all headless Blender: `alien_parts.py` (head and face parts) → `alien_cage.py` (body) →
   `alien_assemble.py` (weld, masks, sockets, GLB) → `alien_mouths.py` (the S6 mouths on the assembled character, the
   final GLB with `character.json`). `alien_cage_review.py` renders the review sheets that put u1, the first test and the
   new bodies side by side (turntables, silhouettes, Walk, feet, welds). What S7 put into Blender, so the GLB (and three.js) shows what Godot shows:
@@ -787,6 +787,24 @@ a time, by visibility.
     and its light tint mixed by `TEXCOORD_1.x`, the accent by **`1 - TEXCOORD_1.y`** (the V flip above); (2) the eye
     look: the GLB's eyeballs carry a 512 px texture drawn at the rest lids (`alien_eye_<design>`), so the lid shadow
     on the white does not follow a blink and the catch light is painted; Godot's `alien_eye.gdshader` computes both.
+- **The polish step (S8):** the engineer chose the **cage** body (the wrap stays an option only).
+  - **Hands in the cage:** `alien_cage.py` continues the arm past the wrist into `HAND`'s rings (rotated octagons, so
+    the knuckle ring's end splits into three quads) and extrudes the Index, Middle and Ring fingers and the thumb as
+    square tubes along the contract's hand bones (`tube()`, `FINGER_RINGS`, `THUMB_RINGS`: a loop either side of every
+    knuckle, a smaller ring and a cap at the tip). No S1c or Quaternius hand mesh is left, and `wrist_ring.json` is no
+    longer written. The hand's weights are set per cage loop and **interpolated by the subdivision** (vertex groups on
+    the cage object; the Mirror modifier flips `Left*` to `Right*`); the rest of the body keeps S1c's transferred
+    weights, scaled by what the hand's leave. The deform layer must exist before the first `bm.verts.new`: adding it
+    later frees every `BMVert` reference.
+  - **Neck:** `alien_parts.NECK_DROP` (22 mm) seats the head lower on the unchanged ring (`neck_ring.json` did not
+    move), `fill_neck` fills the Meshy stalk toward the ring's size (`NECK_FILL`), the Neck weight reaches
+    `NECK_BLEND` up the stalk, and `smooth_collar` relaxes the weld band. `CHIN_SCULPT` goes 20 mm forward.
+  - **Mouths:** `alien_mouths.SHAPE_SCALE` (A 0.80, E 0.88, O 0.94) shrinks the open shapes, which were measured to
+    the sheets' wider faces; `--parts-report` takes `CHIN_Z` from the parts' sculpted chin.
+  - `alien_cage_review.py --detail <character.blend>` renders the left hand at 0.5 m (rest, a fist, a relaxed curl,
+    Walk, Talk, Idle) and the neck from the side and back (rest, Idle, turned, nodding) as `hands_<tag>.png` and
+    `neck_<tag>.png`. `second_test.gd` takes `"order"` from its spec (S8: `["s7", "s8"]`); `alien.gd` has
+    `face_material()` and `face_surface_counts()` for the proofs.
 
 ## Findings for later tasks
 

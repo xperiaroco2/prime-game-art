@@ -156,6 +156,16 @@ func eye_material(design: String) -> ShaderMaterial:
 	return _face_materials["alien_eye_" + design]
 
 
+## For the proofs: the face materials swapped in (imported name -> material) and the counts of the face and lid
+## surfaces they were swapped on.
+func face_material(imported_name: String) -> Material:
+	return _face_materials.get(imported_name)
+
+
+func face_surface_counts() -> Dictionary:
+	return {"face": _face_surfaces.size(), "lid": _lid_surfaces.size()}
+
+
 func node(name: String) -> Node3D:
 	return character.find_child(name, true, false) as Node3D
 

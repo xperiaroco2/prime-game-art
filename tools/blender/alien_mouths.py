@@ -66,6 +66,11 @@ SEAM_OVERLAP = 1.5  # a closed mouth's lips overlap at the crease, px
 RING_SHAPES = ("A", "E", "O")  # the wide shapes are one ring; rest, M and small two tubes
 FACE_FILL = 0.86  # a mouth's half width at most this share of the face's half width at the socket: wider is squeezed
 CHIN_Z = 1.443  # the lowest a lip may reach on the head (S7: the sculpted chin is at 1.437): deeper is squeezed, m
+CHIN_GAP = 0.006  # with --parts-report: CHIN_Z is the report's sculpted chin plus this
+# S8: the open shapes against the head. The sheets' heads are wider at the mouth than ours (our face narrows to the
+# chin), so A, measured to the sheet's face width, filled the lower face and its lower lip reached the chin ("far too
+# big"), and A's and E's far corners passed the cheek at three-quarter view. Each shape's size times this:
+SHAPE_SCALE = {"A": 0.80, "E": 0.88, "O": 0.94}
 RING_KEEP = {"centre": 9, "width": 5}  # S7: the open ring's centre line and lip width keep this many harmonics
 NORMAL_SMOOTH = 8  # S7: passes over the skin points and normals under a lip (the decimated head's facets rippled it)
 STATION_SMOOTH = 5  # S7: passes over the closed lips' measured edges (2 left ripples)
@@ -82,6 +87,7 @@ def args():
     p.add_argument("--frog", required=True)
     p.add_argument("--overbite", required=True)
     p.add_argument("--out", required=True)
+    p.add_argument("--parts-report", help="alien_parts.py's build_report.json: CHIN_Z from its sculpted chin")
     return p.parse_args(sys.argv[sys.argv.index("--") + 1:])
 
 
@@ -644,7 +650,11 @@ def main():
                 best = max(best, abs(h[0].x))
         hw.append(best)
     face_w_m = hw[0] + hw[1]
-    rep = {"socket": [round(x, 5) for x in sock.translation], "face_w_at_socket_m": round(face_w_m, 4), "designs": {}}
+    chin_z = CHIN_Z
+    if a.parts_report:
+        chin_z = json.loads(Path(a.parts_report).read_text(encoding="utf-8"))["chin_z_sculpted"] + CHIN_GAP
+    rep = {"socket": [round(x, 5) for x in sock.translation], "face_w_at_socket_m": round(face_w_m, 4), "designs": {},
+           "chin_z": round(chin_z, 4), "shape_scale": SHAPE_SCALE}
     nodes = {}
     profiles = {}
     meas_imgs = []
@@ -667,12 +677,12 @@ def main():
         flip_rects, flip_wins, worlds = {}, {}, {}
         for k, shape in enumerate(SHAPES):
             m = ms[k]
-            kp = K * max(0.94, min(1.06, r0["face_w_nose"] / m["face_w_nose"]))
+            kp = K * max(0.94, min(1.06, r0["face_w_nose"] / m["face_w_nose"])) * SHAPE_SCALE.get(shape, 1.0)
             hc, ny = m["hc"], m["ny"]
             seam = ny + off
             low = max(r["bot_l"] for r in m["cols"].values()) + 0.5
             z_low = z_sock - (low - seam) * kp
-            squeeze = 1.0 if z_low >= CHIN_Z else (z_sock - CHIN_Z) / (z_sock - z_low)
+            squeeze = 1.0 if z_low >= chin_z else (z_sock - chin_z) / (z_sock - z_low)
 
             half = max(abs(x - hc) for x in m["cols"]) + 0.5
             sx = min(1.0, FACE_FILL * face_w_m / 2 / (half * kp))

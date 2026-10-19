@@ -203,8 +203,8 @@ func _run() -> void:
 	var face: Vector3 = (eye + mouth) * 0.5
 	_report["eye_centre"] = [eye.x, eye.y, eye.z]
 	_report["mouth"] = [mouth.x, mouth.y, mouth.z]
-	_report["face_surfaces"] = _rig._face_surfaces.size()
-	_report["lid_surfaces"] = _rig._lid_surfaces.size()
+	_report["face_surfaces"] = _rig.face_surface_counts()["face"]
+	_report["lid_surfaces"] = _rig.face_surface_counts()["lid"]
 	var combos: Array = [["bored", "frog"], ["bored", "overbite"], ["manic", "frog"], ["manic", "overbite"]]
 	# 1: compare (first test above, S5 below), 3/4 view
 	var imgs: Array = []
@@ -262,7 +262,7 @@ func _run() -> void:
 	_sheet(imgs, 3, "hues.png")
 	# 7: the tuning grid: the lips' roughness (rows) against their colour (columns), front at 0.5 m
 	imgs = []
-	var lip: StandardMaterial3D = _rig._face_materials["alien_lip"]
+	var lip: StandardMaterial3D = _rig.face_material("alien_lip")
 	var col0: Color = lip.albedo_color
 	var r0: float = lip.roughness
 	_combo("bored", "frog")
