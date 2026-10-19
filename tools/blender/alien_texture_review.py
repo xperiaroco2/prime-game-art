@@ -11,12 +11,15 @@ tools/runner/blender.py's run_script("alien_texture_review.py", args) with args
 
 Shots (alien_detail_review's framings), the Idle clip's first frame: face34 (0.5 m), face_front, face_close (0.25 m),
 near (the face at 3/4 from 0.6 m with a 70 mm lens, M3c: the showroom's close view), close (cheek and eye at 0.18 m),
-hand, knee (M3c: the accent spot), neck_back34, body (1.5 m). With --labels <before>,<after> (default m2,m3a: M2's
+hand, knee (M3c: the accent spot), neck_back34, body (1.5 m), chin (M2b: under the chin at 3/4 from below, 0.4 m), close04 (M2b:
+the face at 3/4 from 0.4 m). With --labels <before>,<after> (default m2,m3a: M2's
 look against --tex) it writes `<shot>_<before>.png`, `<shot>_<after>.png` and:
 - `face.png`: rf2 | before | after at face34; below after near | before face_front | after face_front;
 - `close.png`: near and close (the cheek and eye), before | after;
-- `body.png`: hand, knee, neck_back34, body; before above, after below.
---grid: only the variants (each a folder of albedo.png and orm.png, in --names order) at --shots (default face34,
+- `body.png`: hand, knee, neck_back34, body; before above, after below;
+- `compare.png` (M2b): rf2 | before | after, rows face34, chin, close04, neck_back34, body.
+--grid: only the variants (each a folder of albedo.png and orm.png, or of normal.png alone: M2b's sculpt variants over
+--tex; in --names order) at --shots (default face34,
 face_close, body), one column per variant, into `grid.png` (rf2 first in the top row's place of a label-less sheet: the column order
 is printed and written to grid.json).
 --sss k: the review's subsurface weight from sss.png times k (0: none, as a plain glTF viewer shows it).
@@ -177,6 +180,9 @@ def setup(a):
         "hand": (hand_c, (0.9, -0.8, 0.15), 0.35, 40),
         "neck_back34": (neck, (0.6, 0.8, 0.15), 0.5, 40),
         "body": (Vector((0, 0, 0.88)), (0.35, -1, 0.0), 1.5, 28),
+        # M2b: under the chin at 3/4 from below (the "scar" and the neck rings), the face at 3/4 from 0.4 m
+        "chin": (head + Vector((0.0, -0.035, -0.01)), (math.sin(a34), -math.cos(a34), -0.45), 0.4, 50),
+        "close04": (face_c + Vector((0, 0, -0.04)), (math.sin(a34), -math.cos(a34), 0.08), 0.4, 50),
     }
     return sc, cam, body, orig, m3, shots
 
@@ -189,7 +195,13 @@ def grid(a, sc, cam, body, m3, shots, out):
     cols = {}
     for n in names:
         d = Path(a.grid) / n
-        for node, f in (("alien_skin_albedo", "albedo.png"), ("alien_skin_orm", "orm.png")):
+        # a texture variant (albedo.png, orm.png), or a sculpt variant (M2b: normal.png alone, over --tex)
+        sculpt_only = (d / "normal.png").is_file() and not (d / "albedo.png").is_file()
+        for node, f in (("alien_skin_albedo", "albedo.png"), ("alien_skin_orm", "orm.png"), ("skin_normal", "normal.png")):
+            if sculpt_only and f != "normal.png" or f == "normal.png" and not sculpt_only:
+                continue
+            if not (d / f).is_file():
+                raise SystemExit(f"grid: no {f} in {d}")
             img = nt.nodes[node].image
             img.filepath = str(d / f)
             img.reload()
@@ -238,6 +250,15 @@ def main():
     B = lambda n: R.load(out / f"{n}.png", T)  # noqa: E731
     R.sheet([[B(f"{s}_{lb}") for s in ("hand", "knee", "neck_back34", "body")],
              [B(f"{s}_{la}") for s in ("hand", "knee", "neck_back34", "body")]], out / "body.png")
+    # M2b: rf2 | before | after, one row per shot (rf2 in the first row only)
+    rows = [("face34", R.load(Path(a.rf2), T))] + [(s, None) for s in ("chin", "close04", "neck_back34", "body")]
+    def blank(t):  # the sheet's grey, opaque
+        t = t.copy()
+        t[..., :3], t[..., 3] = 0.06, 1.0
+        return t
+
+    R.sheet([[first if first is not None else blank(B(f"{s}_{lb}")), B(f"{s}_{lb}"), B(f"{s}_{la}")]
+             for s, first in rows], out / "compare.png")
     X.log("SHEETS " + str(out))
 
 
