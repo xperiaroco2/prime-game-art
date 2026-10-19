@@ -59,8 +59,8 @@ Two things moved on in art#196:
   `fingers_weighted = true`, and `tools/runner/commands/_checks.py` wants every finger bone weighted. The contract
   text still says that five fingers per hand are present and weighted. This docs task changes neither. A follow-up
   task gives the alien its own check rule (the Little chain present and unweighted, the other four weighted) before
-  an alien asset is checked against the contract for the game. Until then, read the alien's `check` result with this
-  ADR.
+  an alien asset is checked against the contract for the game. Done in art#223: `check --kind alien`
+  (`[kinds.alien]`, `fingers_unweighted = ["Little"]`; `docs/contract.md`).
 - **Gestures use four fingers.** Clips that pose the Little finger show nothing on the alien; they need no change.
   Moving to five fingers later means weighting the Little bones, with no skeleton or clip change.
 - **Reversible.** Neither decision touches the skeleton, so either can be revisited cheaply.

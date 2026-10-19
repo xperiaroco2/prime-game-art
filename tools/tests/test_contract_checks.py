@@ -323,6 +323,69 @@ class EvaluateTest(unittest.TestCase):
         self.assertEqual(self.statuses(self.evaluate(rigid_piece(5000)))["rig"], _checks.FAIL)
 
 
+def four_finger_alien(profile: dict) -> dict:
+    """A good body whose Little chains are present and carry no weights (the alien's four fingers, art #223)."""
+    measure = good_body(profile)
+    painted = measure["meshes"][0]["weights"]["weighted_bones"]
+    for name in [n for n in painted if "Little" in n]:
+        del painted[name]
+    return measure
+
+
+class AlienFingersTest(unittest.TestCase):
+    """kinds.alien: Thumb, Index, Middle and Ring weighted; the Little bones present and unweighted
+    (docs/decisions/2026-10-19-alien-overlaid-face-four-fingers.md)."""
+
+    setUp = EvaluateTest.setUp
+    evaluate = EvaluateTest.evaluate
+    statuses = EvaluateTest.statuses
+
+    def finger_check(self, measure: dict, kind: str = "alien") -> dict:
+        return next(r for r in self.evaluate(measure, kind)["results"] if r["check"] == "finger_chains")
+
+    def test_four_weighted_fingers_and_a_bare_little_pass(self) -> None:
+        report = self.evaluate(four_finger_alien(self.profile), "alien")
+        failures = [r for r in report["results"] if r["status"] != _checks.PASS]
+        self.assertEqual(failures, [])
+        self.assertEqual(report["verdict"], _checks.PASS)
+        detail = self.finger_check(four_finger_alien(self.profile))["detail"]
+        self.assertIn("4 weighted fingers per hand (Thumb, Index, Middle, Ring)", detail)
+        self.assertIn("Little present and unweighted", detail)
+
+    def test_the_body_still_wants_five_weighted_fingers(self) -> None:
+        result = self.finger_check(four_finger_alien(self.profile), "body")
+        self.assertEqual(result["status"], _checks.FAIL)
+        self.assertIn("LeftLittle is not weighted on LeftLittleProximal", result["detail"])
+
+    def test_a_missing_little_bone_fails(self) -> None:
+        measure = four_finger_alien(self.profile)
+        bones = measure["armatures"][0]["bones"]
+        bones[:] = [b for b in bones if b["name"] != "RightLittleDistal"]
+        result = self.finger_check(measure)
+        self.assertEqual(result["status"], _checks.FAIL)
+        self.assertIn("RightLittle lacks RightLittleDistal", result["detail"])
+        self.assertEqual(self.statuses(self.evaluate(measure, "alien"))["missing_bones"], _checks.FAIL)
+
+    def test_a_weighted_little_fails(self) -> None:
+        measure = four_finger_alien(self.profile)
+        measure["meshes"][0]["weights"]["weighted_bones"]["LeftLittleIntermediate"] = 4
+        result = self.finger_check(measure)
+        self.assertEqual(result["status"], _checks.FAIL)
+        self.assertIn("LeftLittle must carry no weights but is weighted on LeftLittleIntermediate", result["detail"])
+        self.assertEqual(self.finger_check(good_body(self.profile))["status"], _checks.FAIL)  # five weighted
+
+    def test_another_unweighted_finger_fails(self) -> None:
+        measure = four_finger_alien(self.profile)
+        del measure["meshes"][0]["weights"]["weighted_bones"]["RightRingProximal"]
+        result = self.finger_check(measure)
+        self.assertEqual(result["status"], _checks.FAIL)
+        self.assertIn("RightRing is not weighted on RightRingProximal", result["detail"])
+
+    def test_the_alien_keeps_the_body_morph_rule(self) -> None:
+        measure = with_keys(four_finger_alien(self.profile), {"belly": {"Spine": 30}})
+        self.assertEqual(self.statuses(self.evaluate(measure, "alien"))["body_shape_morphs"], _checks.FAIL)
+
+
 def with_keys(measure: dict, keys: dict[str, dict[str, int | tuple[int, float]]] | None) -> dict:
     """The measure's first mesh with shape keys; per key the moved vertices grouped by their main bones: a count
     (moved 5 mm) or (count, largest move in mm)."""

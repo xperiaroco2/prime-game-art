@@ -338,6 +338,21 @@ feet = "fail"
 facing = "fail"
 max_materials = 1
 
+# The alien (docs/decisions/2026-10-19-alien-overlaid-face-four-fingers.md): a body with four fingers per hand. Its
+# Little chains stay in the skeleton and carry no weights; Thumb, Index, Middle and Ring are weighted. Every other
+# rule is the body's. fingers_unweighted (any kind, default none): fingers whose bones are present and unweighted.
+[kinds.alien]
+budget = "body"
+rig = "required"
+bones = "all"
+fingers = "fail"
+fingers_unweighted = ["Little"]
+height = "fail"
+eyes = "warn"
+feet = "fail"
+facing = "fail"
+max_materials = 1
+
 [kinds.clothing]
 budget = "clothing"
 rig = "required"
