@@ -7,7 +7,9 @@ extends "res://alien/second_test.gd"
 ##   [{"label", "skin": {alien_hue.gdshader uniform: value}, "lip": {alien_lip.gdshader uniform: value},
 ##   "eye": {alien_eye.gdshader uniform: value}, "hue": [[r, g, b], [r, g, b]] (sRGB hue and pale)}], each applied
 ##   on top of the defaults and undone after its shot; a variant's "lights" (light_sheet's form, below) replace the
-##   stage's directional lights for its shot (the approved lights, look_presets.json, come back after it).
+##   stage's directional lights for its shot (the approved lights, look_presets.json, come back after it); spec
+##   "grid_zoom" [x0, y0, x1, y1] (fractions of a shot) adds zoom_<name>.png, that part of each shot in one row, the
+##   target first (its own part: "grid_zoom_target"), 4 columns of 320 px.
 ## - light_sheet.png (spec "lights", S9d: the lighting question): per variant [{"label", "lights": [{"at": [x, y, z],
 ##   "energy", "specular", "shadow"}]}] the stage's directional lights replaced by the variant's (each aimed at
 ##   (0, 0.9, 0), as the stage's), the face shot and the three-quarter body shot; one sheet with the faces in the top
@@ -65,6 +67,13 @@ func _restore(mat: Material, undo: Dictionary) -> void:
 		return
 	for k: String in undo:
 		sm.set_shader_parameter(k, undo[k])
+
+
+## A part of a shot: [x0, y0, x1, y1] as fractions of its size.
+func _region(img: Image, r: Array) -> Image:
+	var w: int = img.get_width()
+	var h: int = img.get_height()
+	return img.get_region(Rect2i(int(r[0] * w), int(r[1] * h), int((r[2] - r[0]) * w), int((r[3] - r[1]) * h)))
 
 
 func _set_lights(lights: Array) -> void:
@@ -146,6 +155,9 @@ func _run() -> void:
 	var variants: Array = _spec.get("variants", [])
 	if not variants.is_empty():
 		var imgs: Array = [target] if target != null else []
+		var zooms: Array = []
+		if _spec.has("grid_zoom") and target != null:
+			zooms.append(_region(target, _spec.get("grid_zoom_target", _spec["grid_zoom"])))
 		for v: Dictionary in variants:
 			var undo := {"skin": {}, "lip": {}, "eye": {}}
 			_apply(rig.skin_material(), v.get("skin", {}), undo["skin"])
@@ -162,6 +174,8 @@ func _run() -> void:
 			if v.has("lights"):
 				_set_lights(v["lights"])
 			imgs.append(await _shot(v.get("label", "")))
+			if _spec.has("grid_zoom"):
+				zooms.append(_region(imgs[-1], _spec["grid_zoom"]))
 			if v.has("lights"):
 				_set_lights(LookLights.directional())
 			_restore(rig.skin_material(), undo["skin"])
@@ -169,6 +183,8 @@ func _run() -> void:
 			_restore(rig.eye_material("bored"), undo["eye"])
 			rig.set_hue("teal")
 		_sheet(imgs, 2, "grid_%s.png" % _spec.get("grid_name", "tune"))
+		if not zooms.is_empty():
+			_sheet(zooms, mini(zooms.size(), 4), "zoom_%s.png" % _spec.get("grid_name", "tune"), 320 * mini(zooms.size(), 4))
 	var bc: Variant = _spec.get("body", {})
 	if bc is Dictionary:
 		var bfov: float = bc.get("fov", 24.0)

@@ -35,6 +35,7 @@ const FACE := {  # sRGB colour, roughness, specular: the stage-1 face kit's (fac
 const SKIN := {
 	"deep_top": 0.6, "deep_back": 1.0, "face_warm": 0.6, "ao_albedo": 0.5, "ao_light": 1.0, "grain": 0.12, "sss": 0.3,
 	"rim_glow": 0.3,
+	"rim_value": 0.6, "rim_tint": 0.3,  # light D's tuning grid (2026-10-19): Godot's rim, a lighter edge as rf2's (was 0.2, 0.6)
 }
 const LIP_LOOK := {"sheen": 0.08, "sheen_roughness": 0.7, "grain": 0.05}
 const EYE_LOOK := {  # alien_eye.gdshader's per-design uniforms (angles from the pupil axis, degrees; colours sRGB)
