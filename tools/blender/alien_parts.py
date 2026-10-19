@@ -52,6 +52,11 @@ EYES = {  # elevations in degrees (the lid edge's angle above the eye's forward 
               "upper": {"open": 58.0, "rest": 50.0, "half": 18.0, "closed": -12.0, "rho": (1.05, 1.095)},
               "lower": {"open": -55.0, "rest": -50.0, "half": -28.0, "closed": -6.0, "rho": (1.012, 1.042)}},
 }
+LID_BEAD = {"upper": 0.10, "lower": 0.035}  # S7: the rolled rim's swell at the lid's edge, a share of the eyeball's r
+# S7: the lower face made fuller (a smooth local sculpt of the faceless head, no jaw bone), so the open mouth shapes
+# (A, E, O) sit inside it with little or no squeeze: the chin moves down and forward by these, m, fading out over
+# CHIN_SCULPT's x half width, up to just under the mouth line and back to the neck's front.
+CHIN_SCULPT = {"down": 0.014, "fwd": 0.007, "x_sigma": 0.042, "top_gap": 0.006, "neck_gap": 0.03}
 STATES = ("open", "rest", "half", "closed")
 VISEMES = ("rest", "M", "small", "A", "E", "O")
 # The face materials (S5, sRGB; godot/alien/alien.gd FACE and alien_eye.gdshader hold the same): the stage-1 human
@@ -439,6 +444,34 @@ def head_masks(ob, eye_z, chin_z):
     bm.free()
 
 
+def sculpt_chin(me, ring, chin, mz, z_cut):
+    """S7: a fuller lower face. Each head vertex under the mouth line moves down and forward by CHIN_SCULPT, weighted
+    by a Gaussian in x, by its height (full at and under the chin, none from top_gap under the mouth line up, so the
+    Mouth socket stays) and by how far in front of the neck it is (none behind the neck ring's front, so the loft and
+    the weld stay). Returns the measures."""
+    C = CHIN_SCULPT
+    ny = ring["centre"][1] - ring["semi_axes"][1]  # the neck ring's front (front is -Y)
+    band = [v.co.y for v in me.vertices if abs(v.co.x) < 0.012 and abs(v.co.z - chin) < 0.012]
+    yf = min(band)  # the chin's front
+    top = mz - C["top_gap"]
+    d = Vector((0.0, -C["fwd"], -C["down"]))
+    n, most = 0, 0.0
+    for v in me.vertices:
+        p = v.co
+        if p.z > top or p.z < z_cut + 0.001:
+            continue
+        fz = 1.0 if p.z <= chin else 1.0 - G.smoothstep(chin, top, p.z)
+        fy = G.smoothstep(ny, yf + 0.012, p.y) if ny > yf + 0.012 else 0.0
+        w = fz * fy * math.exp(-(p.x / C["x_sigma"]) ** 2)
+        if w > 1e-4:
+            v.co = p + d * w
+            n += 1
+            most = max(most, w)
+    me.update()
+    return {"moved_verts": n, "max_weight": round(most, 3), "chin_front_y": round(yf, 4), "neck_front_y": round(ny, 4),
+            "top_z": round(top, 4), **C}
+
+
 def smart_uv(ob):
     me = ob.data
     if "UVMap" not in me.uv_layers:
@@ -701,6 +734,9 @@ def main():
         p.use_smooth = True
     rep["head_tris"] = len(me.polygons)
     rep["deviation"] = deviation(dense_bvh, ob, z_cut + 0.005, HEAD_H)
+    rep["chin_sculpt"] = sculpt_chin(me, ring, chin, W(MESHY["mouth_z"]), z_cut)
+    chin -= CHIN_SCULPT["down"]
+    rep["chin_z_sculpted"] = round(chin, 4)
     rv = [Vector(p) for p in ring["loop"]]
     rep["ring_weld_max_mm"] = round(max((me.vertices[i].co - rv[k]).length for k, i in enumerate(ring_idx)) * 1000, 4)
     eye_w = W(MESHY["eye_z"])
@@ -769,8 +805,9 @@ def main():
             ball.matrix_world = sm
             for lid in ("upper", "lower"):
                 L_ = d[lid]
-                o = G.lid_shell(f"eye_{dname}_lid_{lid}_{side}", r_eye, L_["rho"][0], L_["rho"][1], lid == "upper", hue, coll)
-                o["alien_hue"] = hue_lin["teal"]
+                # S7: the lids in the lips' material (S5, the eye sheets' coral domes) with the sheets' rolled rim
+                o = G.lid_shell(f"eye_{dname}_lid_{lid}_{side}", r_eye, L_["rho"][0], L_["rho"][1], lid == "upper",
+                                mats["lip"], coll, seg_p=18, rim_seg=8, bead=LID_BEAD[lid])
                 o.matrix_world = sm @ Matrix.Rotation(math.radians(-L_["rest"]), 4, "X")
                 o["states"] = {st: -L_[st] for st in STATES}
                 lids[lid] = {st: -L_[st] for st in STATES}

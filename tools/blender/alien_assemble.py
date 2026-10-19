@@ -43,11 +43,12 @@ from pathlib import Path
 
 import bmesh
 import bpy
-from mathutils import Vector
+from mathutils import Matrix, Vector
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import export_glb  # noqa: E402
 
+EYE_AIM_IN = 11.5  # degrees: each eyeball turned inward about its socket's up axis (S5; godot/alien/alien.gd aim_in_deg)
 BELLY_HALF_W = [(0.78, 0.0), (0.82, 0.035), (0.90, 0.072), (1.00, 0.086), (1.15, 0.076), (1.30, 0.060), (1.40, 0.048)]
 # the pale panel's half width in x by height (z, m): u1's throat-to-belly panel, an oval at the crotch
 BELLY_SOFT = 0.012  # its soft edge, m
@@ -332,6 +333,9 @@ def main():
             for piece in ("ball", "lid_upper", "lid_lower"):
                 o = objs[f"eye_{design}_{piece}_{side}"]
                 set_parent(o, e)
+                if piece == "ball":  # S5's rest aim, so Blender and three.js show what alien.gd sets (absolutely)
+                    o.matrix_world = o.matrix_world @ Matrix.Rotation(math.radians(-EYE_AIM_IN if side == "L"
+                                                                                  else EYE_AIM_IN), 4, "Z")
                 names[piece] = o.name
             nodes["eyes"][design][side] = {"node": e.name, **names}
     for name, o in objs.items():
