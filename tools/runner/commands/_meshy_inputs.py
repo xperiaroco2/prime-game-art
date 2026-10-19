@@ -126,7 +126,7 @@ def parse_file(value: Any, key: str, where: str, errors: list[str]) -> Input | N
         errors.append(f"{at}: unknown key(s) {', '.join(unknown)}")
     file, provenance, sha = value["file"].strip(), value.get("provenance"), value.get("sha256", "")
     if Path(file).suffix.lower() not in suffixes:
-        errors.append(f"{at}: {file} is not a {' or '.join(suffixes)} file (what the rigging docs take)")
+        errors.append(f"{at}: {file} is not a {' or '.join(suffixes)} file (what this client sends as a {key})")
     if not isinstance(provenance, str) or not provenance.strip():
         errors.append(f"{at}: 'provenance' must say where the file comes from, for example \"own work: an assembled "
                       "character exported from Blender\"")
@@ -221,13 +221,18 @@ def glb_contents(path: Path) -> dict[str, list[str]]:
     """The node and mesh names of a GLB, read from its JSON chunk (art #25: a rig input must hold one mesh and
     nothing else; Blender's glTF importer shows an "Icosphere" of its own, its bone display shape, which no file of
     ours or Meshy's contains)."""
+    doc = glb_json(path)
+    return {"nodes": [n.get("name", "") for n in doc.get("nodes", [])],
+            "meshes": [m.get("name", "") for m in doc.get("meshes", [])]}
+
+
+def glb_json(path: Path) -> dict[str, Any]:
+    """The JSON chunk of a GLB."""
     data = path.read_bytes()
     if len(data) < 20 or data[:4] != b"glTF" or data[16:20] != b"JSON":
         raise common.Failure(f"{path.name} is not a GLB with a JSON chunk")
     size = int.from_bytes(data[12:16], "little")
-    doc = json.loads(data[20:20 + size])
-    return {"nodes": [n.get("name", "") for n in doc.get("nodes", [])],
-            "meshes": [m.get("name", "") for m in doc.get("meshes", [])]}
+    return json.loads(data[20:20 + size])
 
 
 def data_uri(path: Path, kind: str) -> str:

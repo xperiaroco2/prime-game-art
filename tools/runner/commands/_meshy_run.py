@@ -367,6 +367,19 @@ class Runner:
                 return {"input_task_id": self.model_task_id(item.source, sources), **params}, []
             sent = [self.model_input(item.source, sources[item.source])]
             return {"model_url": sent[0][0], **params}, sent
+        if stage == "retexture":  # our GLB as model_url, and one style: views, one image or the text prompt
+            model = self.file_inputs(item, item.inputs[:1])
+            styles = self.image_inputs(item, sources, item.inputs[1:])
+            for _, rec in styles:
+                rec["role"] = "style"
+            body = {"model_url": model[0][0], **params}
+            if item.multiview:
+                body["multiview_image_urls"] = [uri for uri, _ in styles]
+            elif styles:
+                body["image_style_url"] = styles[0][0]
+            else:
+                body["text_style_prompt"] = item.prompt
+            return body, model + styles
         sent = self.image_inputs(item, sources)
         uris = [uri for uri, _ in sent]
         if stage == "image_to_image":
@@ -377,10 +390,11 @@ class Runner:
             return {"image_urls": uris, **params}, sent
         raise common.Failure(f"unknown stage {stage}")  # pragma: no cover
 
-    def file_inputs(self, item: Item) -> list[tuple[str, dict[str, Any]]]:
-        """A rig's local model and texture as (data URI, record), each checked again at submit time."""
+    def file_inputs(self, item: Item, which: list[inputs.Input] | None = None) -> list[tuple[str, dict[str, Any]]]:
+        """A rig's (or a retexture's) local model and texture as (data URI, record), each checked again at submit
+        time; `which` limits it to some of the item's inputs."""
         sent = []
-        for inp in item.inputs:
+        for inp in item.inputs if which is None else which:
             problems = inputs.file_problems(inp)
             if problems:
                 raise common.Failure("; ".join(problems))
@@ -390,11 +404,13 @@ class Runner:
             sent.append((inputs.data_uri(path, kind), rec))
         return sent
 
-    def image_inputs(self, item: Item, sources: dict[str, dict[str, Any]]) -> list[tuple[str, dict[str, Any]]]:
+    def image_inputs(self, item: Item, sources: dict[str, dict[str, Any]],
+                     which: list[inputs.Input] | None = None) -> list[tuple[str, dict[str, Any]]]:
         """Every image input as (data URI, record): local files as written, `from` inputs from the source's
-        downloaded images (all of them, or image `pick`), each checked against the sha256 recorded for it."""
+        downloaded images (all of them, or image `pick`), each checked against the sha256 recorded for it; `which`
+        limits it to some of the item's inputs."""
         sent = []
-        for inp in item.inputs:
+        for inp in item.inputs if which is None else which:
             if not inp.from_item:
                 problems = inputs.file_problems(inp)
                 if problems:

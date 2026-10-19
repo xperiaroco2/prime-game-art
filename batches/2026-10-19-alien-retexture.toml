@@ -1,0 +1,50 @@
+# art#196 M3b (the modern-look plan, route b of M3's 4K texture set): Meshy's retexture paints our own alien mesh on
+# our own UV (enable_original_uv), with PBR maps, so the result maps straight back onto the kit's Body. The model is
+# the M2 kit's Body as a static rest-pose GLB with only its texture UV (`meshy retexture-input`, M3b/input/). Three
+# tries, one style each (the docs take one; with an image and a prompt the image wins): the approved look target rf2
+# as the style image; a short text style prompt alone; the approved body turnaround u1 (front, side, back) as views
+# on meshy-7. Under the standing permission for Meshy generation within the plan's credits (2026-10-03, art#16); the
+# outputs are AI-generated: a manifest that uses them records ai_generated = true. No game or film names. Schema:
+# docs/meshy.md ("retexture").
+
+id = "2026-10-19-alien-retexture"
+purpose = "art#196 M3b: Meshy retexture of the alien kit's Body on its own UV (4K, PBR), styled by rf2, a text prompt, and the u1 turnaround, to compare with the Blender-authored M3a texture set."
+plan = "Meshy paid plan (monthly; bought by the engineer on 2026-10-17)"
+terms_url = "https://www.meshy.ai/terms-of-use"
+licence = "owned by the customer on a paid plan (Meshy Terms of Use 3.2, updated 2026-09-19); no attribution required"
+credit_cap = 60
+approved_by = "xperiaroco2 (the engineer)"
+approved_at = "2026-10-03"
+approval_ref = "https://github.com/xperiaroco2/prime-game-art/issues/16"
+
+[defaults.retexture.params]
+ai_model = "meshy-7"
+texture_resolution = "4k"
+enable_original_uv = true
+enable_pbr = true
+target_formats = ["glb"]
+
+[[items]]
+id = "rt-rf2"
+kind = "retexture"
+model = { file = "raw:review/char/alien-parts-kit/M3b/input/alien_body.glb", provenance = "own work: the M2 alien kit's Body (alien_character.blend), rest pose, only its texture UV (UVMap), meshy retexture-input, art#196", sha256 = "cd251100a70df25ffd3cedbd8b98dfa7a9e120990de5c7dd245bc05cf39118e9" }
+images = [
+  { file = "raw:2026-10-19-alien-release-look/rf2/image_to_image-image_01a154a7-63c1-720a-9d8f-39ba1e53026a_0.png", provenance = "own Meshy generation, batch 2026-10-19-alien-release-look item rf2 (the approved look target, a paintover of our own Godot render), art#196", sha256 = "6359ed7e2255c2a582d2f1b5b903da8e355fdd870ae841f27f1cd5ed2b1df6e2" },
+]
+
+[[items]]
+id = "rt-text"
+kind = "retexture"
+model = { file = "raw:review/char/alien-parts-kit/M3b/input/alien_body.glb", provenance = "own work: the M2 alien kit's Body (alien_character.blend), rest pose, only its texture UV (UVMap), meshy retexture-input, art#196", sha256 = "cd251100a70df25ffd3cedbd8b98dfa7a9e120990de5c7dd245bc05cf39118e9" }
+prompt = "Soft, clean, smooth toy-like alien skin: soft-matte premium vinyl with a gentle subsurface glow. Teal on the head, crest, back, arms and legs; a pale mint face, throat and belly panel with soft blended edges; warm coral on the knees, elbows and knuckles. Very subtle colour gradients, no pores, no wrinkles, no grit, no painted shadows or highlights."
+
+[[items]]
+id = "rt-u1"
+kind = "retexture"
+model = { file = "raw:review/char/alien-parts-kit/M3b/input/alien_body.glb", provenance = "own work: the M2 alien kit's Body (alien_character.blend), rest pose, only its texture UV (UVMap), meshy retexture-input, art#196", sha256 = "cd251100a70df25ffd3cedbd8b98dfa7a9e120990de5c7dd245bc05cf39118e9" }
+multiview = true
+images = [
+  { file = "raw:2026-10-18-alien-2d-turn2/u1/image_to_image-multi_view_image_01a14c18-9ad5-77dd-9793-c1631b328463_part_0.png", provenance = "own Meshy generation, batch 2026-10-18-alien-2d-turn2 item u1 view 0 (front; the approved body), art#196", sha256 = "d8c6ef6483406beb20b4e065268527c7daa9ae34161e467c7623aa4c4a39d23a" },
+  { file = "raw:2026-10-18-alien-2d-turn2/u1/image_to_image-multi_view_image_01a14c18-9ad5-77dd-9793-c1631b328463_part_1.png", provenance = "own Meshy generation, batch 2026-10-18-alien-2d-turn2 item u1 view 1 (side), art#196", sha256 = "ad8639e5d530ba0cd9bc8b6163311d95874e178048cc839e7d6faff3c44677ea" },
+  { file = "raw:2026-10-18-alien-2d-turn2/u1/image_to_image-multi_view_image_01a14c18-9ad5-77dd-9793-c1631b328463_part_2.png", provenance = "own Meshy generation, batch 2026-10-18-alien-2d-turn2 item u1 view 2 (back), art#196", sha256 = "3427f3474f90dff3cd9e8492e0fd4936e305710978016736ede2d068f6092dff" },
+]

@@ -5,7 +5,9 @@ Meshy API without a human at the keyboard, downloads every result into the raw f
 Since art #25 the client also rigs local GLBs, makes text-to-motion clips and lists the animation library.
 `tools/run.py raw-backup` copies chosen results to the OneDrive backup. Code: `tools/runner/commands/meshy.py`,
 `_meshy_api.py` (HTTP, key, polling), `_meshy_batch.py` (batch files, prices), `_meshy_inputs.py` (image inputs),
-`_meshy_run.py` (the run), `raw_backup.py` and `tools/blender/meshy_rig_input.py` (rig inputs); tests: `tools/tests/test_meshy_*.py` (a fake transport, no network).
+`_meshy_run.py` (the run), `raw_backup.py`, `tools/blender/meshy_rig_input.py` (rig inputs),
+`tools/blender/alien_retexture_input.py` (retexture inputs) and `tools/blender/alien_retexture_review.py` (the
+retexture review); tests: `tools/tests/test_meshy_*.py` (a fake transport, no network).
 
 ## The character route (since 2026-10-18)
 
@@ -17,6 +19,7 @@ client, then the agents' finish (`docs/pipeline.md`, the section at the top):
 |---|---|---|---|
 | Concept | `text_to_image` or `image_to_image`, `generate_multi_view` for a turnaround | `gpt-image-2-5-sunburst` | 9 per image or three-view set from text, 12 from images |
 | 3D | `multi_image_to_3d` from the chosen concept's views | `meshy-7.1` | mesh 20, +5 for `geometry_resolution = "2k"`, +10 for a texture (the showcase's model: 35) |
+| Texture of our own mesh | `retexture` of a local GLB on its own UV (since 2026-10-19, art #196 M3b) | `meshy-7` | 10 at 2k or 4k, 15 at 8k |
 
 nano-banana-pro and the other image models stay in the API tables below as read, but are set aside for concepts.
 Tripo and Rodin are not used (Tripo's content filter refuses unclothed multi-view input); a batch on any other paid
@@ -34,6 +37,8 @@ into the next batch ("The Meshy API as read on 2026-10-02", the output licence).
 | `meshy status <batch>` | none | Each item's state from its `generation.json`; flags downloaded files that went missing |
 | `meshy library [--search S] [--category C] [--out FILE]` | read only | The animation library's listing (free), saved as Meshy sent it with the time and the query to `<raw>/meshy/animation-library-<date>.json`; prints the count per category |
 | `meshy rig-input <character.blend> ... --out DIR` | none | A saved character (`assemble --blend`) as a rig input: a static textured GLB facing +Z, its palette PNG and a JSON note; prints the sha256 values to pin (below) |
+| `meshy retexture-input <character.blend> --out DIR [--object Body] [--uv UVMap] [--name alien_body]` | none | One mesh of a saved character as a retexture input: a static rest-pose GLB with only POSITION, NORMAL and its texture UV, and a JSON note with the UV check; prints the sha256 to pin (below) |
+| `meshy retexture-review <batch> [item ...] --character BLEND --ref PNG --out DIR [--body-ref PNG] [--images DIR] [--normal m2\|meshy\|none] [--fake]` | none | The finished retexture items on the alien kit's Body beside the reference and the M2 look, under light D in headless Blender: `sheet.png` (about 1280 px for three items) and `sheet.json`; `--fake` reviews a UV checker instead (below) |
 | `raw-backup <batch> [item ...]` | none | Copies finished items (files, `generation.json`, `log.csv`) to `common.raw_backup_dir()`, sha256-checked |
 
 `<batch>` is a path (`batches/2026-10-b1-bodies.toml`) or a bare id (`2026-10-b1-bodies`).
@@ -79,7 +84,7 @@ follow-up updates it.
 | `approved_by`, `approved_at`, `approval_ref` | Who approved, the date (`YYYY-MM-DD`) and a `https://github.com/` link to the yes |
 | `[variants.<name>]` | Shared settings of a variant: `prompt`, optional `preview`/`refine` tables |
 | `[defaults.text_to_3d.preview]`, `[defaults.text_to_3d.refine]` | Request parameters for every text-to-3D item |
-| `[defaults.<kind>.params]` | Request parameters for every item of another kind (`rig`, `animate`, `text_to_image`, `image_to_image`, `image_to_3d`, `multi_image_to_3d`, `remesh`) |
+| `[defaults.<kind>.params]` | Request parameters for every item of another kind (`rig`, `animate`, `text_to_image`, `image_to_image`, `image_to_3d`, `multi_image_to_3d`, `remesh`, `text_to_motion`, `retexture`) |
 | `[[items]]` | `id`, `variant`, `kind` and the kind's settings, below; any other key is an error |
 
 Item kinds (merged: defaults, then the variant, then the item):
@@ -113,6 +118,17 @@ Item kinds (merged: defaults, then the variant, then the item):
   `target_polycount`, `target_formats`. A text-to-3D or image-to-3D source goes by task id (the refine of a textured
   text-to-3D); a multi-image-to-3D source, which the remesh docs do not list, goes as its downloaded GLB.
 
+- `retexture` (art #196 M3b): `model`, a local GLB (a table like a rig's), painted from exactly one style: `prompt`
+  (sent as `text_style_prompt`, at most 800 characters), one style image in `images` (`image_style_url`), or with
+  `multiview = true` 1 to 4 views in `images`, the first the front (`multiview_image_urls`, `ai_model = "meshy-7"`
+  set explicitly). `images` take the image-input forms below (a `file` or a `from`). A prompt together with images
+  is refused: the docs take one style and let the image win, so the prompt would be paid for and ignored. `params`:
+  `ai_model` (`meshy-6-lite`, `meshy-6`, `meshy-7`, `latest`; not `meshy-7.1`), `texture_resolution` (`2k`, `4k`,
+  `8k`; only `2k` on meshy-6-lite), `enable_original_uv` and `enable_pbr` (**this client's default is true for both**,
+  the API's false), `remove_lighting` (meshy-6 only; refused with meshy-6-lite), `target_formats`, `alpha_thumbnail`.
+  The deprecated `hd_texture` is refused (use `texture_resolution`). No `source` yet: the docs also take an earlier
+  task by `input_task_id`, which no batch has needed.
+
 A `rig` takes any earlier item that makes a textured model: `text_to_3d` (textured), `image_to_3d` and
 `multi_image_to_3d` (unless `should_texture = false`); the runner sends the task that made the source's final
 model as `input_task_id`. A rig of a `remesh` is refused: the docs list no `texture_urls` for a remesh result and
@@ -140,7 +156,8 @@ input sends the source's downloaded file, after checking it still matches the sh
 task and image it came from), and the recorded request carries a short note instead of each data URI.
 
 The runner fills in `mode`, `prompt`, `preview_task_id`, `input_task_id`, `rig_task_id`, `motion_task_id`, `model_url`,
-`texture_image_url` (of a rig), `image_url`, `image_urls` and `reference_image_urls`; a batch may not set them. `texture_image_url` and `texture_image_urls` are
+`texture_image_url` (of a rig), `image_url`, `image_urls`, `reference_image_urls` and a retexture's
+`text_style_prompt`, `image_style_url` and `multiview_image_urls`; a batch may not set them. `texture_image_url` and `texture_image_urls` are
 not supported yet (they would need an input of their own). The `params` of an image-mode kind may hold only the
 parameters the docs list for it (`KNOWN_PARAMS` in `_meshy_batch.py`, from the sections below; since art #25 also
 `rig`, `animate` and `text_to_motion`): Meshy may ignore an
@@ -356,6 +373,87 @@ The palette is for the rig input only; nothing of ours changes. `render` of the 
 anything but one node with one mesh. The "Icosphere" that appears beside every import of a Meshy output (and of the
 pack files) in Blender is the glTF importer's own bone display shape: neither the rig inputs (1 node, 1 mesh) nor
 Meshy's GLBs (the 24 bones, the armature node and one mesh: 26 nodes) contain one, so nothing of it reached Meshy.
+
+## Retexture as read on 2026-10-19 (art #196 M3b)
+
+Sources: docs.meshy.ai `/en/api/retexture` and `/en/api/pricing`, read 2026-10-19.
+
+| Use | Endpoint | Credits |
+|---|---|---|
+| Retexture | `POST /openapi/v1/retexture`, answer `{"result": "<task id>"}`; `GET /openapi/v1/retexture/<id>` (also a list, an SSE `/stream` and a `DELETE`, which this client does not use) | 2k or 4k: 10; 8k: 15 (the pricing page's Texturing table; the docs' examples show `consumed_credits: 10`) |
+
+- **The model:** `model_url` (a public URL or a data URI with the media type `application/octet-stream`; `.glb`,
+  `.gltf`, `.obj`, `.fbx`, `.stl`; at most 400 MB by URL and 100 MB as a data URI; over 100 MB at most 10 M faces, no
+  Draco, binary FBX 7.1 or newer) or `input_task_id` (a succeeded text-to-3D preview or refine, image-to-3D or remesh
+  task; it wins when both are sent). This client sends a local GLB as a data URI and keeps its own 20 MB model limit.
+- **The style, one required:**
+  - `text_style_prompt`, at most 800 characters;
+  - `image_style_url`, a URL or data URI of a `.jpg`, `.jpeg`, `.png` or `.webp`, at most 20 MB; it wins over the
+    prompt when both are sent;
+  - `multiview_image_urls`, 1 to 4 images of the same formats, the first the front view; not with the other two, and
+    only with `ai_model: "meshy-7"` set explicitly.
+- **Options:**
+  - `ai_model`: `meshy-6-lite`, `meshy-6`, `meshy-7`, `latest` (= meshy-7); default `latest`. meshy-6-lite and
+    meshy-7 are "rolling out progressively and may not be enabled on every account" (a 400 otherwise).
+  - `enable_original_uv` (default false): "keeps the model's existing UV layout"; for an uploaded model "use true only
+    if the UVs are good; otherwise Meshy generates new UVs".
+  - `enable_pbr` (default false): adds metallic, roughness and normal maps; an emission map only on meshy-6 below 8k.
+  - `texture_resolution`: `2k` (default), `4k`, `8k`; 4k and 8k need meshy-6, meshy-7 or latest. `hd_texture` is
+    deprecated (= 4k).
+  - `remove_lighting` (default true): applied only with meshy-6 at 2k or 4k, ignored on meshy-7 and at 8k, and a 400
+    with meshy-6-lite whatever its value.
+  - `target_formats`: `glb`, `obj`, `fbx`, `stl`, `usdz`, `3mf`; default all but 3mf.
+  - `alpha_thumbnail`: also an `alpha_thumbnail_url`.
+- **The task object:** `model_urls` (`glb`, `fbx`, `obj`, `usdz`, `mtl`, `stl`, `3mf` as requested), `texture_urls`
+  (a list, usually one object: `base_color`, and with PBR `metallic`, `normal`, `roughness`; `emission` on meshy-6
+  only), `thumbnail_url`, the style inputs echoed back (`text_style_prompt`, `image_style_url`,
+  `multiview_image_urls`), `progress`, `status`, the times in ms, `expires_at`, `task_error`, `consumed_credits` (0
+  for a failed task: refunded). The docs' sample also shows a `texture_image_url` that the field list does not name.
+- **Errors at create:** 400 (no model or style, styles together, multi-view without meshy-7, a model not enabled for
+  the account, a bad input task, an unsupported or oversized file, too many faces, remove_lighting with meshy-6-lite),
+  401, 402, 429.
+
+The client downloads every result URL as for any task (`retexture-model.glb`, the maps by their key path when their
+names collide, for example `retexture-texture_urls.0.normal.png`); the echoed style inputs are not result keys and are
+not downloaded. The docs do not say how the maps are named, whether `enable_original_uv` keeps the GLB's vertex order,
+or how long a 4k retexture takes: the first run answers that.
+
+## Retexture inputs and the review (art #196 M3b)
+
+`tools/blender/alien_retexture_input.py` (`meshy retexture-input`) makes the model of a retexture item from a saved
+character, so that Meshy paints our own UV and the maps go straight back onto the kit:
+
+1. opens the .blend, puts the armature in its rest pose and copies the object's own mesh (the kit's GLB is exported
+   with `export_apply` off, so no modifier is applied), placed by its world matrix; drops shape keys, every other UV
+   map, colour attribute and custom attribute; one plain grey material without textures;
+2. exports one node with one mesh: POSITION, NORMAL and TEXCOORD_0 (the chosen UV map) only, no skin, morph target,
+   animation or image (+Y up: the front faces glTF +Z);
+3. re-imports the GLB into the emptied scene and compares its UV islands with the source's (the count, and per island
+   the UV area and bounding box within 1e-4); a mismatch fails the run. The runner then checks the GLB's JSON
+   (`retexture_problems`) and renames a GLB that fails to `.glb.rejected`.
+
+The alien kit's input (2026-10-19, from `M2/export/alien_character.blend`): `M3b/input/alien_body.glb`, 1,126,148
+bytes, 48,829 triangles, 24,417 vertices, 1.763 m, sha256 `cd251100...39118e9`; its UV has the M2 report's 15 islands
+plus one tiny one (UV area 0.00005, a few faces in the square's corner at u, v 0.006 to 0.018), the same in the GLB.
+
+`tools/blender/alien_retexture_review.py` (`meshy retexture-review`) puts each finished item's maps onto the kit's
+`Body` (`UVMap`: base colour sRGB, roughness and metallic non-colour, and the normal map by `--normal`: `m2`, the
+default, keeps our own detail bake `M2/bake/normal.png` as M3's recipe says; `meshy` the item's own; `none`) and
+renders the face at three-quarters and from the front at 0.5 m and the full body at 1.5 m in Eevee under light D
+(sun lamps from light D's directions at its Godot energies times `--light-scale`, default 1), the Idle clip's first
+frame, the eyes and the rest mouth. `sheet.png` has one row per shot: the reference (rf2; the body row `--body-ref`),
+the M2 look, then each item. `--fake` writes a fake item first (a UV checker with an L mark per cell as base colour,
+flat PBR maps, a `generation.json` like the client's) and reviews it: the check that the maps land on the UV
+(`M3b/review-fake/sheet.png`, 2026-10-19: the checker follows the 15 islands, the marks unflipped).
+
+## Batch 2026-10-19-alien-retexture (art #196 M3b, not run yet)
+
+Three retextures of the input above, meshy-7 at 4k with `enable_original_uv` and `enable_pbr`, GLB only: `rt-rf2`
+(rf2, the approved look target, as the style image), `rt-text` (a short text style prompt alone: soft clean smooth
+toy-like skin, teal with a pale mint face, throat and belly panel, coral knees, elbows and knuckles) and `rt-u1` (the
+approved body turnaround u1, front, side and back, as views). `meshy estimate`: 3 x 10 = 30 credits, cap 60, under the
+standing permission (art #16). A manifest that uses an output records `ai_generated = true` and the paid plan's owned
+output (`public_repo_ok = true`).
 
 ## Animation as read on 2026-10-03 (art #25)
 
