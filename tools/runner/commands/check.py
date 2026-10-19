@@ -1,6 +1,6 @@
-"""`check <model> --kind body|clothing|accessory|prop | --slot ID [--map NAME]`: measures a model in headless Blender
-(tools/blender/check_model.py) and judges it against contract/contract.toml. Writes report.json; exits 1 on a hard
-failure. --slot judges a piece for a slot in contract.toml: its check_kind and its own budget (hair_or_hat uses
+"""`check <model> --kind body|alien|clothing|accessory|prop | --slot ID [--map NAME]`: measures a model in headless
+Blender (tools/blender/check_model.py) and judges it against contract/contract.toml. Writes report.json; exits 1 on a
+hard failure. --slot judges a piece for a slot in contract.toml: its check_kind and its own budget (hair_or_hat uses
 head_item). With --map, bone names are read through contract/bone_maps/<NAME>.toml first.
 """
 

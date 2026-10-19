@@ -103,6 +103,25 @@ class ContractTest(unittest.TestCase):
         self.assertTrue(any("kinds.body.height is 'error'" in e for e in errors), errors)
         self.assertTrue(any("kinds.prop.rig is 'maybe'" in e for e in errors), errors)
 
+    def test_the_alien_is_a_body_with_four_weighted_fingers(self) -> None:
+        kinds = self.contract["kinds"]
+        self.assertEqual(kinds["alien"]["fingers_unweighted"], ["Little"])
+        for kind in ("body", "clothing", "accessory", "prop"):
+            self.assertNotIn("fingers_unweighted", kinds[kind], kind)
+        same = {k: v for k, v in kinds["alien"].items() if k != "fingers_unweighted"}
+        self.assertEqual(same, kinds["body"])
+
+    def test_a_bad_unweighted_finger_list_is_caught(self) -> None:
+        for value, message in (
+            (["Pinky"], "kinds.alien.fingers_unweighted is ['Pinky']"),
+            ("Little", "kinds.alien.fingers_unweighted is 'Little'"),
+            (["Thumb", "Index", "Middle", "Ring", "Little"], "leaves no weighted finger"),
+        ):
+            broken = copy.deepcopy(self.contract)
+            broken["kinds"]["alien"]["fingers_unweighted"] = value
+            errors = _contract.validate_contract(broken, self.profile)
+            self.assertTrue(any(message in e for e in errors), (value, errors))
+
     def test_a_face_morph_bone_outside_the_profile_is_caught(self) -> None:
         broken = copy.deepcopy(self.contract)
         broken["face"]["morph_bones"] = ["Head", "Brow"]

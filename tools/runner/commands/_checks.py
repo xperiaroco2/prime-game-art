@@ -160,7 +160,7 @@ def _morph_checks(
     keys = _total(meshes, "shape_keys")
     if not keys:
         return
-    if kind != "body":
+    if kind not in _contract.BODY_KINDS:
         _part_morph_checks(report, meshes, slot)
         return
     face = contract["face"]
@@ -379,20 +379,36 @@ def _rig_checks(
             else f"all {len(skeleton['weighted'])} bones carry weights",
         )
     if rules["fingers"] != "off":
-        problems = []
-        for chain, names in _contract.finger_chains(profile).items():
-            absent = [n for n in names if n not in bones]
-            if absent:
-                problems.append(f"{chain} lacks {', '.join(absent)}")
-            elif skeleton.get("fingers_weighted") and not all(weights.get(n) for n in names):
-                problems.append(f"{chain} is not weighted on {', '.join(n for n in names if not weights.get(n))}")
-        report.gate(
-            "finger_chains",
-            rules["fingers"],
-            not problems,
-            "; ".join(problems) if problems else "five weighted fingers per hand",
-        )
+        _finger_checks(report, bones, weights, skeleton, profile, rules)
     return bones
+
+
+def _finger_checks(
+    report: _Report, bones: dict, weights: dict[str, int], skeleton: dict, profile: dict, rules: dict
+) -> None:
+    """Every finger chain is present. A finger in the kind's fingers_unweighted (the alien's Little,
+    docs/decisions/2026-10-19-alien-overlaid-face-four-fingers.md) carries no weights; the others carry weights when
+    skeleton.fingers_weighted is set."""
+    bare = rules.get("fingers_unweighted", [])
+    problems = []
+    for chain, names in _contract.finger_chains(profile).items():
+        absent = [n for n in names if n not in bones]
+        if absent:
+            problems.append(f"{chain} lacks {', '.join(absent)}")
+        elif chain.removeprefix("Left").removeprefix("Right") in bare:
+            painted = [n for n in names if weights.get(n)]
+            if painted:
+                problems.append(f"{chain} must carry no weights but is weighted on {', '.join(painted)}")
+        elif skeleton.get("fingers_weighted") and not all(weights.get(n) for n in names):
+            problems.append(f"{chain} is not weighted on {', '.join(n for n in names if not weights.get(n))}")
+    good = "five weighted fingers per hand"
+    if bare:
+        weighted = [finger for finger in skeleton["fingers"] if finger not in bare]
+        good = (
+            f"{len(weighted)} weighted fingers per hand ({', '.join(weighted)}); {', '.join(bare)} present and "
+            "unweighted"
+        )
+    report.gate("finger_chains", rules["fingers"], not problems, "; ".join(problems) if problems else good)
 
 
 def _raw_weights(skinned: list[dict[str, Any]]) -> dict[str, int]:
