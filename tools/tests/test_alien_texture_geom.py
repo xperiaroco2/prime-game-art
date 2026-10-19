@@ -210,6 +210,18 @@ class SetTest(unittest.TestCase):
         self.assertEqual(G.settings_diff(old, G.SETS["m3c"]), sorted(k for k in G.M3C if G.M3C[k] != G.M3A[k]))
 
 
+    def test_note_from_the_settings(self):
+        m3a, m3c = G.texture_note("m3a", G.SETS["m3a"]), G.texture_note("m3c", G.SETS["m3c"])
+        self.assertIn("art #196 M3A:", m3a)
+        self.assertIn("and 0.5 of the AO baked in)", m3a)
+        self.assertNotIn("contact", m3a)
+        self.assertIn("roughness about 0.52", m3a)
+        self.assertIn("0.4 of the AO baked in (the AO lifted toward its contact shade, ao / 0.55: by 0.45 everywhere, "
+                      "fully round the eyes)", m3c)
+        self.assertIn("blurred (32 texels at 4K)", m3c)
+        self.assertIn("roughness about 0.66", m3c)
+
+
 class RoughnessTest(unittest.TestCase):
     def test_base_and_gloss(self):
         self.assertAlmostEqual(G.roughness(field()), G.TEX["rough"])

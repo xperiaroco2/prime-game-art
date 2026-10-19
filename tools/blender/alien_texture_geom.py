@@ -267,6 +267,26 @@ def blur(arr, mask, r, xp):
         v, w = box(v), box(w)
     return xp.where(mask, v / xp.maximum(w, 1e-6), arr)
 
+
+def texture_note(name: str, s: dict) -> str:
+    """character.json's note on the exported texture set `name`, its numbers from the set's settings s."""
+    ao = f"{s['ao']:g} of the AO baked in"
+    if s["contact"] or s["socket_contact"]:
+        ao += (f" (the AO lifted toward its contact shade, ao / {s['contact_hi']:g}: by {s['contact']:g} everywhere, "
+               f"fully round the eyes)" if s["socket_contact"] >= 1 else
+               f" (the AO lifted toward its contact shade, ao / {s['contact_hi']:g}, by {s['contact']:g})")
+    accent = (f", the accent spots blurred ({s['accent_blur']:g} texels at 4K)" if s["accent_blur"] else "")
+    return (
+        f"art #196 {name.upper()}: the skin (Body, material alien_hue) carries an authored 4K texture set on UVMap "
+        "(TEXCOORD_0): baseColorTexture (sRGB albedo: the teal and pale by the masks with hue drift, blotches, cavity "
+        f"tint, thin-part warmth, flush{accent} and {ao}), metallicRoughnessTexture and occlusionTexture in one ORM "
+        f"image (R occlusion, G roughness about {s['rough']:g}, B metallic 0), normalTexture (the M2 detail normal map "
+        "rebaked through an explicit cage). alien_skin_sss.png beside the GLB is the subsurface mask (white: thin) for "
+        "the Godot shader (M5). The alternative crests (crest_antennae, crest_fins) are on alien_hue_part, an "
+        "untextured copy of the skin's material (no image: their UVs are not Body's UVMap). COLOR_0 (the vertex AO) "
+        "is still exported for alien_hue.gdshader; a plain glTF viewer multiplies it into the albedo again. The albedo "
+        "is for the teal hue only.")
+
 # The bake cage (PR #231 minor 6): an explicit cage, Body's copy with each vertex moved out along its smoothed normal
 # by cage_offset(clearance), where clearance is the distance along that normal to the next surface of the low mesh
 # (the next finger, the nostril's far wall). M2's uniform 2 mm extrusion put the rays' start inside the next finger in

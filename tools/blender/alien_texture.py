@@ -769,16 +769,7 @@ def stage_export(a, out):
             shutil.copy2(f, ex / f.name)
     shutil.copy2(out / "textures" / "sss.png", ex / "alien_skin_sss.png")
     cj = json.loads((src / "character.json").read_text(encoding="utf-8"))
-    cj[f"note_{a.set}_textures"] = (
-        f"art #196 {a.set.upper()}: the skin (Body, material alien_hue) carries an authored 4K texture set on UVMap (TEXCOORD_0): "
-        "baseColorTexture (sRGB albedo: the teal and pale by the masks with hue drift, blotches, cavity tint, thin-part "
-        "warmth, flush and half the AO baked in), metallicRoughnessTexture and occlusionTexture in one ORM image (R "
-        "occlusion, G roughness, B metallic 0), normalTexture (the M2 detail normal map rebaked through an explicit "
-        "cage). alien_skin_sss.png beside the GLB is the subsurface mask (white: thin) for the Godot shader (M5). "
-        "The alternative crests (crest_antennae, crest_fins) are on alien_hue_part, an untextured copy of the skin's "
-        "material (no image: their UVs are not Body's UVMap). "
-        "COLOR_0 (the vertex AO) is still exported for alien_hue.gdshader; a plain glTF viewer multiplies it into the "
-        "albedo again. The albedo is for the teal hue only.")
+    cj[f"note_{a.set}_textures"] = T.texture_note(a.set, set_settings(a))
     (ex / "character.json").write_text(json.dumps(cj, indent=1), encoding="utf-8", newline="\n")
     log("EXPORT " + str(ex / "alien_character.glb"))
 
