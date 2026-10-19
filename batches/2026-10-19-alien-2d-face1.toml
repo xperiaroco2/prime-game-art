@@ -1,0 +1,104 @@
+# art#196, step 0 of the hybrid order (handover comment 6264648420): the face sheet and the clay restudy. After the
+# engineer rejected the ultra night's Meshy sculpt ("a parody of plasticine"), this batch asks three questions in 2D,
+# on the one approved head (target frame f2a, game distance f1a):
+# - c*: the clay look, restudied as real hand-sculpted modelling clay (chunky lumps, seams where pieces meet, uneven
+#   edges, thumb-pressed forms), never a fine micro-texture on a smooth body. Described in words only: no game, film
+#   or studio is named in any prompt.
+# - e3*: five eye designs on that same head, each drawn as a glossy eyeball under separate clay lid shells, so the
+#   chosen one can be built as parts (a blink rotates the lids). The five come from his kept sheet-2 eyes (e2).
+# - m3*: five mouths on that same head, each a separate clay piece pressed onto the face, as replacement mouths in
+#   clay animation. The five come from his kept sheet-3 mouths (m2).
+# GPT Image only (concepts), image to image from f2a (and f1a for the game-distance try). Under the standing
+# permission for Meshy generation within the plan's credits (2026-10-03, art#16). Schema: docs/meshy.md.
+
+id = "2026-10-19-alien-2d-face1"
+purpose = "art#196 step 0: the clay restudy, five eyes and five mouths on the approved head, all as buildable clay parts."
+plan = "Meshy paid plan (monthly; bought by the engineer on 2026-10-17)"
+terms_url = "https://www.meshy.ai/terms-of-use"
+licence = "owned by the customer on a paid plan (Meshy Terms of Use 3.2, updated 2026-09-19); no attribution required"
+credit_cap = 110
+approved_by = "xperiaroco2 (the engineer)"
+approved_at = "2026-10-03"
+approval_ref = "https://github.com/xperiaroco2/prime-game-art/issues/16"
+
+[defaults.image_to_image.params]
+ai_model = "gpt-image-2-5-sunburst"
+remove_background = false
+
+# --- c: the clay restudy -------------------------------------------------------------------------------------------
+
+[[items]]
+id = "c1a"
+kind = "image_to_image"
+params = { aspect_ratio = "2:3" }
+prompt = "The exact character from the reference image, same head-and-shoulders framing, three-quarter view, same present-day kitchen softly out of focus behind him, same bored deadpan look at the viewer: keep his head shape, the back-swept crest, the big glossy eyes with heavy half-closed lids, the wide rolled coral lips, the two nostril dots, the teal skin with the lighter mint face, throat and chest. Remake him as a real hand-sculpted modelling-clay puppet, as if a sculptor built him from separate pieces of oil-based plasticine by hand: chunky, slightly lumpy forms; visible seams and soft creases where pieces were pressed together, around the lids, the lips, the crest and where the neck meets the head; edges that are rounded and a little uneven, never perfectly crisp; broad shallow thumb-pressed dents and smoothing strokes on the cheeks, skull and shoulders; the teal and the mint blended by hand so the border between them is slightly irregular, with a faint smear. Matte clay with only a soft waxy sheen on the high points. The lips are one thick rolled sausage of coral clay laid on the face. The lids are thick clay caps over the eyeballs. The eyeballs are hard glossy white beads, perfectly smooth, with a bright highlight. Never a fine fingerprint or crumpled-paper texture on a smooth body, never plastic, never smooth CG. Lit like a frame from a modern game: soft shadows, warm lamp light and cool window light. Adult cartoon tone, appealing and cool. One character only. No text, no labels, no logo."
+images = [
+  { file = "raw:2026-10-18-alien-2d-target1/f2a/image_to_image-image_01a14ff7-292f-7298-b8ac-2ffd6833f34b_0.png", provenance = "own Meshy generation, batch 2026-10-18-alien-2d-target1 item f2a (the approved target frame), art#196", sha256 = "525a0896efb3d8fd5e5283266a86cb244c2660f6a8379f40ab6c88e73c0210ca" },
+]
+
+[[items]]
+id = "c1b"
+kind = "image_to_image"
+params = { aspect_ratio = "2:3" }
+prompt = "The exact character from the reference image, same head-and-shoulders framing, three-quarter view, same present-day kitchen softly out of focus behind him, same bored deadpan look at the viewer: keep his head shape, the back-swept crest, the big glossy eyes with heavy half-closed lids, the wide rolled coral lips, the two nostril dots, the teal skin with the lighter mint face, throat and chest. Remake him as a real hand-sculpted modelling-clay puppet, as if a sculptor built him from separate pieces of oil-based plasticine by hand: chunky, slightly lumpy forms; visible seams and soft creases where pieces were pressed together, around the lids, the lips, the crest and where the neck meets the head; edges that are rounded and a little uneven, never perfectly crisp; broad shallow thumb-pressed dents and smoothing strokes on the cheeks, skull and shoulders; the teal and the mint blended by hand so the border between them is slightly irregular, with a faint smear. Matte clay with only a soft waxy sheen on the high points. The lips are one thick rolled sausage of coral clay laid on the face. The lids are thick clay caps over the eyeballs. The eyeballs are hard glossy white beads, perfectly smooth, with a bright highlight. Never a fine fingerprint or crumpled-paper texture on a smooth body, never plastic, never smooth CG. Lit like a frame from a modern game: soft shadows, warm lamp light and cool window light. Adult cartoon tone, appealing and cool. One character only. No text, no labels, no logo."
+images = [
+  { file = "raw:2026-10-18-alien-2d-target1/f2a/image_to_image-image_01a14ff7-292f-7298-b8ac-2ffd6833f34b_0.png", provenance = "own Meshy generation, batch 2026-10-18-alien-2d-target1 item f2a (the approved target frame), art#196", sha256 = "525a0896efb3d8fd5e5283266a86cb244c2660f6a8379f40ab6c88e73c0210ca" },
+]
+
+[[items]]
+id = "c1c"
+kind = "image_to_image"
+params = { aspect_ratio = "2:3" }
+prompt = "A photograph of a real handmade stop-motion clay puppet of the exact character from the reference image, about thirty centimetres tall, standing on a miniature present-day kitchen set built at puppet scale, head-and-shoulders framing, three-quarter view, the same bored deadpan look at the camera: keep his head shape, the back-swept crest, the big glossy eyes with heavy half-closed lids, the wide rolled coral lips, the two nostril dots, the teal skin with the lighter mint face, throat and chest. He is sculpted by hand from oil-based plasticine: chunky, slightly lumpy forms, seams where the pieces meet, rounded uneven edges, broad thumb-pressed dents and tool-smoothed strokes, hand-blended colours with a slightly irregular border, matte with a faint waxy sheen. The lips are a thick rolled coral clay sausage, the lids thick clay caps, the eyeballs hard glossy white beads with a sharp highlight. Shot with a real camera and small practical lamps on the set, shallow depth of field, the honest look of a real object. Adult tone, dry and cool, not childish. One puppet only. No text, no labels, no logo, no hands of the animator."
+images = [
+  { file = "raw:2026-10-18-alien-2d-target1/f2a/image_to_image-image_01a14ff7-292f-7298-b8ac-2ffd6833f34b_0.png", provenance = "own Meshy generation, batch 2026-10-18-alien-2d-target1 item f2a (the approved target frame), art#196", sha256 = "525a0896efb3d8fd5e5283266a86cb244c2660f6a8379f40ab6c88e73c0210ca" },
+]
+
+[[items]]
+id = "c2a"
+kind = "image_to_image"
+params = { aspect_ratio = "3:2" }
+prompt = "The exact character and scene from the reference image: full body, standing relaxed in the same bright present-day living room, seen at eye height from about three metres away as another player sees him in a first-person game, one hand slightly raised. Keep his head, crest, eyes, lips, colours, slim adult human proportions, four separate fingers per hand and three toes. Remake him as a real hand-sculpted modelling-clay puppet built from separate pieces of oil-based plasticine: chunky, slightly lumpy forms; seams and soft creases where pieces meet (lids, lips, crest, neck, wrists, knees); rounded, slightly uneven edges; broad thumb-pressed dents and smoothing strokes that still read from three metres away; teal and mint blended by hand with an irregular border; matte clay with a soft waxy sheen. The fingers are separate rolled clay pieces with small gaps between them. The eyeballs are hard glossy white beads. Never a fine fingerprint or crumpled-paper texture on a smooth body, never plastic, never smooth CG. Lit like a frame from a modern game rendered in real time: soft shadows, ambient occlusion, warm lamp light and cool daylight. Adult cartoon tone, appealing and cool. One character only. No text, no labels, no logo, no user interface."
+images = [
+  { file = "raw:2026-10-18-alien-2d-target1/f1a/image_to_image-image_01a14ff5-c08c-72d1-a22e-245088fbe707_0.png", provenance = "own Meshy generation, batch 2026-10-18-alien-2d-target1 item f1a (the approved game-distance frame), art#196", sha256 = "3aa5d5425a3674ab0c7746bd1861095bb51d782da1cb38fa1660a9d5a4b39371" },
+]
+
+# --- e3: five eyes on the same head ------------------------------------------------------------------------------
+
+[[items]]
+id = "e3a"
+kind = "image_to_image"
+params = { aspect_ratio = "16:9" }
+prompt = "A character design sheet on a plain mid-grey background: five identical clay busts of the exact character from the reference image in one even row, all seen straight from the front, same size, same head shape, same back-swept crest, same wide rolled coral lips and nostril dots, same teal skin with the lighter mint face, same calm neutral lighting. Only the eyes differ, and every pair is built the same way: hard glossy eyeballs set in the head, with separate thick clay lid shells (an upper and a lower lid) wrapped over them, so the lids could close over the eyeball. From left to right: 1) his own big white eyeballs with small dark pupils and heavy half-closed teal lids with a reddish rim, bored; 2) yellow eyeballs with thin vertical slit pupils and narrow lids, sly; 3) huge round white eyeballs with tiny pinprick pupils and the lids pulled wide open, manic; 4) uneven eyes, the left one bigger and wide open, the right one smaller under a lowered sceptical lid; 5) his own two eyes plus a third, smaller eyeball with its own clay lids in the middle of the forehead. Real hand-sculpted modelling clay: chunky forms, seams where pieces meet, rounded uneven edges, thumb-pressed dents, matte with a soft waxy sheen; the eyeballs perfectly smooth and glossy with a bright highlight. Adult cartoon tone, cool, not childish. No text, no numbers, no labels."
+images = [
+  { file = "raw:2026-10-18-alien-2d-target1/f2a/image_to_image-image_01a14ff7-292f-7298-b8ac-2ffd6833f34b_0.png", provenance = "own Meshy generation, batch 2026-10-18-alien-2d-target1 item f2a (the approved target frame), art#196", sha256 = "525a0896efb3d8fd5e5283266a86cb244c2660f6a8379f40ab6c88e73c0210ca" },
+]
+
+[[items]]
+id = "e3b"
+kind = "image_to_image"
+params = { aspect_ratio = "16:9" }
+prompt = "A character design sheet on a plain mid-grey background: five identical clay busts of the exact character from the reference image in one even row, all seen straight from the front, same size, same head shape, same back-swept crest, same wide rolled coral lips and nostril dots, same teal skin with the lighter mint face, same calm neutral lighting. Only the eyes differ, and every pair is built the same way: hard glossy eyeballs set in the head, with separate thick clay lid shells (an upper and a lower lid) wrapped over them, so the lids could close over the eyeball. From left to right: 1) his own big white eyeballs with small dark pupils and heavy half-closed teal lids with a reddish rim, bored; 2) yellow eyeballs with thin vertical slit pupils and narrow lids, sly; 3) huge round white eyeballs with tiny pinprick pupils and the lids pulled wide open, manic; 4) uneven eyes, the left one bigger and wide open, the right one smaller under a lowered sceptical lid; 5) his own two eyes plus a third, smaller eyeball with its own clay lids in the middle of the forehead. Real hand-sculpted modelling clay: chunky forms, seams where pieces meet, rounded uneven edges, thumb-pressed dents, matte with a soft waxy sheen; the eyeballs perfectly smooth and glossy with a bright highlight. Adult cartoon tone, cool, not childish. No text, no numbers, no labels."
+images = [
+  { file = "raw:2026-10-18-alien-2d-target1/f2a/image_to_image-image_01a14ff7-292f-7298-b8ac-2ffd6833f34b_0.png", provenance = "own Meshy generation, batch 2026-10-18-alien-2d-target1 item f2a (the approved target frame), art#196", sha256 = "525a0896efb3d8fd5e5283266a86cb244c2660f6a8379f40ab6c88e73c0210ca" },
+]
+
+# --- m3: five mouths on the same head ----------------------------------------------------------------------------
+
+[[items]]
+id = "m3a"
+kind = "image_to_image"
+params = { aspect_ratio = "16:9" }
+prompt = "A character design sheet on a plain mid-grey background: five identical clay busts of the exact character from the reference image in one even row, all seen straight from the front, same size, same head shape, same back-swept crest, same big glossy eyes with heavy half-closed lids, same nostril dots, same teal skin with the lighter mint face, same calm neutral lighting. Only the mouth differs, and every mouth is a separate piece of clay pressed onto the same flat mouth area of the face, with a visible soft seam around it, the way replacement mouths are swapped on a clay animation puppet. From left to right: 1) his own wide thick rolled coral lips, closed, deadpan; 2) full glossy pink-red lips, slightly pouting; 3) a slightly open mouth with two big square front teeth with a gap between them; 4) a wide flat frown with two small pointed fangs poking up from the lower lip; 5) thin coral lips in a lopsided smirk, one corner raised. Real hand-sculpted modelling clay: chunky forms, rounded uneven edges, thumb-pressed dents, matte with a soft waxy sheen; the teeth are smooth cream-coloured clay. Adult cartoon tone, cool, not childish. No text, no numbers, no labels."
+images = [
+  { file = "raw:2026-10-18-alien-2d-target1/f2a/image_to_image-image_01a14ff7-292f-7298-b8ac-2ffd6833f34b_0.png", provenance = "own Meshy generation, batch 2026-10-18-alien-2d-target1 item f2a (the approved target frame), art#196", sha256 = "525a0896efb3d8fd5e5283266a86cb244c2660f6a8379f40ab6c88e73c0210ca" },
+]
+
+[[items]]
+id = "m3b"
+kind = "image_to_image"
+params = { aspect_ratio = "16:9" }
+prompt = "A character design sheet on a plain mid-grey background: five identical clay busts of the exact character from the reference image in one even row, all seen straight from the front, same size, same head shape, same back-swept crest, same big glossy eyes with heavy half-closed lids, same nostril dots, same teal skin with the lighter mint face, same calm neutral lighting. Only the mouth differs, and every mouth is a separate piece of clay pressed onto the same flat mouth area of the face, with a visible soft seam around it, the way replacement mouths are swapped on a clay animation puppet. From left to right: 1) his own wide thick rolled coral lips, closed, deadpan; 2) full glossy pink-red lips, slightly pouting; 3) a slightly open mouth with two big square front teeth with a gap between them; 4) a wide flat frown with two small pointed fangs poking up from the lower lip; 5) thin coral lips in a lopsided smirk, one corner raised. Real hand-sculpted modelling clay: chunky forms, rounded uneven edges, thumb-pressed dents, matte with a soft waxy sheen; the teeth are smooth cream-coloured clay. Adult cartoon tone, cool, not childish. No text, no numbers, no labels."
+images = [
+  { file = "raw:2026-10-18-alien-2d-target1/f2a/image_to_image-image_01a14ff7-292f-7298-b8ac-2ffd6833f34b_0.png", provenance = "own Meshy generation, batch 2026-10-18-alien-2d-target1 item f2a (the approved target frame), art#196", sha256 = "525a0896efb3d8fd5e5283266a86cb244c2660f6a8379f40ab6c88e73c0210ca" },
+]
