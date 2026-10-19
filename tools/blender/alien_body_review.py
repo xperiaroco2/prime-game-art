@@ -144,10 +144,10 @@ def main():
         bpy.data.objects.remove(plane)
     stitch(tiles, 3, f"{out}/fit_vs_u1.png")
 
-    # 2. Turntables: 8 angles at 1 m (upper body) and at 3 m (whole body), perspective.
+    # 2. Turntables: 8 angles at 1 m and at 3 m, both framing the whole body, perspective.
     sc, cam = setup((320, 480))
     tiles = []
-    for dist, target, lens in ((1.0, (0, 0, 1.15), 28), (3.0, (0, 0, 0.75), 40)):
+    for dist, target, lens in ((1.0, (0, 0, 0.7), 16), (3.0, (0, 0, 0.75), 40)):
         for k in range(8):
             a = 2 * math.pi * k / 8
             loc = (math.sin(a) * dist, -math.cos(a) * dist, target[2] + 0.05)
@@ -184,8 +184,18 @@ def main():
             look(cam, (view[0], view[1], 0.8), (0, 0, 0.7), lens=45)
             tiles.append(shot(sc, f"{out}/_walk_{len(tiles)}.png"))
     stitch(tiles, 4, f"{out}/walk_knees_elbows.png")
-    for k in range(2):  # close-ups: the knee and the elbow at mid-swing
-        pass
+    # Close-ups at four phases: the left knee from the side and the front, the left elbow from the side and behind.
+    sc, cam = setup((320, 320))
+    tiles = []
+    for k in range(4):
+        sc.frame_set(int(f0 + (f1 - f0) * k / 4))
+        bpy.context.view_layer.update()
+        knee = arm.matrix_world @ arm.pose.bones["LeftLowerLeg"].head
+        elbow = arm.matrix_world @ arm.pose.bones["LeftLowerArm"].head
+        for c, off in ((knee, (0.55, 0, 0.05)), (knee, (0.1, -0.55, 0.05)), (elbow, (0.55, 0, 0.0)), (elbow, (0.1, 0.55, 0.0))):
+            look(cam, c + Vector(off), c, lens=50)
+            tiles.append(shot(sc, f"{out}/_joint_{len(tiles)}.png"))
+    stitch(tiles, 4, f"{out}/walk_knee_elbow_closeups.png")
     arm.animation_data.action = None
 
     # 5. The neck ring from above and the front.
@@ -193,7 +203,7 @@ def main():
     tiles = []
     foot = (0.14, -0.08, 0.03)
     for loc, target in (((0, -0.5, 1.6), (0, 0, 1.33)), ((0.5, 0, 1.55), (0, 0, 1.33)), ((0, 0.001, 1.9), (0, 0, 1.33)),
-                        ((0.25, -0.55, 0.35), foot), ((0.14, -0.05, 0.6), foot), ((0.6, -0.1, 0.1), foot)):
+                        ((0.14, -0.6, 0.12), foot), ((0.42, -0.42, 0.45), foot), ((0.6, -0.1, 0.1), foot)):
         look(cam, loc, target, lens=50)
         tiles.append(shot(sc, f"{out}/_neck_{len(tiles)}.png"))
     stitch(tiles, 3, f"{out}/neck_ring_feet.png")
