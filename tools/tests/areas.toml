@@ -22,6 +22,7 @@ light = [
   "tools/runner/commands/wait.py", "tools/runner/commands/workflow_check.py", "tools/runner/commands/_workflow_lint.py",
   "tools/runner/commands/manifest_check.py", "tools/runner/commands/_manifest.py",
   "tools/runner/commands/raw_backup.py", "tools/runner/commands/pins.py", "tools/runner/commands/nightly.py",
+  "godot/alien_look/*",  # research shaders and their proof script; no runner command or test uses them yet (#196)
 ]
 
 [area.anim]
