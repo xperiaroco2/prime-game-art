@@ -148,9 +148,17 @@ class CageTest(unittest.TestCase):
         self.assertEqual(G.cage_offset(math.inf), c["max_mm"])
         self.assertEqual(G.cage_offset(100.0), c["max_mm"])
         self.assertAlmostEqual(G.cage_offset(2.0), c["share"] * 2.0)
-        self.assertEqual(G.cage_offset(0.1), c["min_mm"])
+        self.assertAlmostEqual(G.cage_offset(0.6), c["min_mm"])  # the floor, at exactly half the gap
+        self.assertEqual(G.cage_offset(0.7), c["min_mm"])
         self.assertLess(G.cage_offset(1.0), 1.0)  # never past the middle of a gap
         self.assertLess(c["max_mm"], c["ray_mm"])
+
+    def test_narrow_gaps(self):
+        # below 2 * min_mm the floor gives way to half the gap: the rays never start past its middle
+        self.assertAlmostEqual(G.cage_offset(0.2), 0.1)
+        self.assertAlmostEqual(G.cage_offset(0.5), 0.25)
+        for clr in (0.05, 0.2, 0.5, 0.59, 0.6, 1.0, 3.0, 10.0):
+            self.assertLessEqual(G.cage_offset(clr), 0.5 * clr + 1e-12)
 
 
 class ImageCheckTest(unittest.TestCase):

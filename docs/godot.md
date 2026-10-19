@@ -1004,7 +1004,7 @@ a time, by visibility.
   `D:/prime-art-raw/review/char/alien-parts-kit/M3a/`). Four headless stages, each reading the one before:
   - `--stage cage` (from M2's `high/alien_high.blend`): the explicit bake cage of PR #231's minor 6. Body's copy,
     each vertex moved out along its normal by `cage_offset()`: 40 % of the distance to the low mesh's next surface
-    along that normal, within 0.3 to 2 mm (M2's uniform 2 mm started rays inside the next finger in the webs). It
+    along that normal, within 0.3 to 2 mm and never past half that distance (M2's uniform 2 mm started rays inside the next finger in the webs). It
     rebakes `bake/normal.png` (4K) and `ao.png` (2K) through it and copies M2's curvature and thickness. Measured
     (`bake/cage_report.json`, `cage_compare.png`): texels tilted over 60 degrees 11,128 to 3,725; only 9,135 texels
     changed by over 0.05, all at the webs; the AO's mean is unchanged. A three-stroke mark at each hand's thumb root

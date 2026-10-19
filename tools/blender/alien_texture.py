@@ -10,7 +10,7 @@ tools/runner/blender.py's run_script("alien_texture.py", args) with args
 Stages (each a separate run, so none blocks long; each reads the one before from --out):
 - `cage` (reads M2/high/alien_high.blend): the explicit bake cage of PR #231's minor 6. Body's copy, each vertex moved
   out along its normal by alien_texture_geom.cage_offset(clearance): 40 % of the distance to the next surface of the
-  low mesh along that normal, within 0.3..2 mm (M2: 2 mm everywhere, which started rays inside the next finger in the
+  low mesh along that normal, within 0.3..2 mm and at most half of it (M2: 2 mm everywhere, which started rays inside the next finger in the
   webs and across the nostril slits). Rebakes the normal map (4K) and AO (2K) from Body_high through it into
   M3a/bake/ (curvature and thickness are copied from M2/bake/), `cage_report.json` (the changed texels, the strongly
   tilted texels before and after) and `cage_compare.png` (M2 above, M3a below, the hand webs and the nostrils).
@@ -204,6 +204,21 @@ def clearances(me, co, nr):
     return out
 
 
+def cage_offsets(me, clr, offset=T.cage_offset):
+    """Per vertex the cage's offset (m) from its clearance (mm), then a min-biased smoothing over the edges: the offset
+    never grows where the clearance is short."""
+    off = np.array([offset(c) for c in clr]) / 1000.0
+    e = np.empty(len(me.edges) * 2, dtype=np.int64)
+    me.edges.foreach_get("vertices", e)
+    e = e.reshape(-1, 2)
+    for _ in range(2):
+        nb = off.copy()
+        np.minimum.at(nb, e[:, 0], off[e[:, 1]])
+        np.minimum.at(nb, e[:, 1], off[e[:, 0]])
+        off = np.minimum(off, 0.5 * (off + nb))
+    return off
+
+
 def stage_cage(a, out):
     m2 = Path(a.m2)
     bpy.ops.wm.open_mainfile(filepath=str(m2 / "high" / "alien_high.blend"))
@@ -215,15 +230,7 @@ def stage_cage(a, out):
     co, nr = vertex_arrays(me)
     t = time.time()
     clr = clearances(me, co, nr)
-    off = np.array([T.cage_offset(c) for c in clr]) / 1000.0
-    for _ in range(2):  # a min-biased smoothing over the edges: the offset never grows where the clearance is short
-        e = np.empty(len(me.edges) * 2, dtype=np.int64)
-        me.edges.foreach_get("vertices", e)
-        e = e.reshape(-1, 2)
-        nb = off.copy()
-        np.minimum.at(nb, e[:, 0], off[e[:, 1]])
-        np.minimum.at(nb, e[:, 1], off[e[:, 0]])
-        off = np.minimum(off, 0.5 * (off + nb))
+    off = cage_offsets(me, clr)
     short = int((clr < T.CAGE["max_mm"] / T.CAGE["share"]).sum())
     log(f"cage clearance {time.time() - t:.0f}s; vertices with a short clearance {short}; offset mm min "
         f"{off.min() * 1000:.2f} mean {off.mean() * 1000:.2f}")

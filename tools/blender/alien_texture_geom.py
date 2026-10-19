@@ -178,11 +178,12 @@ CAGE = {"max_mm": 2.0, "min_mm": 0.3, "share": 0.4, "ray_mm": 4.0, "probe_mm": 2
 
 def cage_offset(clearance_mm: float, c=None) -> float:
     """The cage's offset (mm) at a vertex whose normal meets the low mesh again after clearance_mm (math.inf: never):
-    `share` of the clearance, within min_mm..max_mm."""
+    `share` of the clearance, within min_mm..max_mm, and never past half the clearance (in a gap narrower than
+    2 * min_mm the floor would start the rays beyond its middle, nearer the far wall)."""
     c = CAGE if c is None else c
     if math.isinf(clearance_mm):
         return c["max_mm"]
-    return min(max(c["share"] * clearance_mm, c["min_mm"]), c["max_mm"])
+    return min(max(c["share"] * clearance_mm, c["min_mm"]), 0.5 * clearance_mm, c["max_mm"])
 
 
 def micro_pore(div, gain: float = 6.0, xp=PY):
