@@ -38,6 +38,14 @@ import alien_parts_geom as G  # noqa: E402
 
 HEAD_H = 0.27  # chin to skull top, m: about 1/6.5 of the 1.75-1.8 m figure (u1)
 TOP_Z = 1.795  # the crest's top, m
+# S8: a shorter, unbroken neck. The Meshy head's own neck stalk (7.5 cm wide under the jaw) stacked on the body's neck
+# (the ring is 11.3 cm wide), so the neck read long and waisted. The head sits NECK_DROP lower on the same ring, and
+# its stalk is filled out toward the ring's size (NECK_FILL: full at the cut, none `top` m above it; only near the
+# neck's axis, so the jaw and the face keep their shape). The Neck bone's weight reaches NECK_BLEND m up the stalk.
+NECK_DROP = 0.022
+NECK_FILL = {"top": 0.034, "fill": 0.97, "gate": (1.3, 2.0)}
+NECK_BLEND = 0.026
+COLLAR = 0.018  # m above the cut: the weld band smoothed around the neck (smooth_collar)
 MESHY = {"chin": -0.22, "skull_top": 0.70, "top": 0.9497, "eye_x": 0.22, "eye_z": 0.205, "mouth_z": -0.075,
          "crest_base": 0.62, "neck_low": -0.30, "ear_z": 0.17}  # read off the probe of h3d1 (Meshy units)
 TRIS = 10000
@@ -56,20 +64,12 @@ LID_BEAD = {"upper": 0.10, "lower": 0.035}  # S7: the rolled rim's swell at the 
 # S7: the lower face made fuller (a smooth local sculpt of the faceless head, no jaw bone), so the open mouth shapes
 # (A, E, O) sit inside it with little or no squeeze: the chin moves down and forward by these, m, fading out over
 # CHIN_SCULPT's x half width, up to just under the mouth line and back to the neck's front.
-CHIN_SCULPT = {"down": 0.015, "fwd": 0.013, "x_sigma": 0.042, "top_gap": 0.006}  # 7 mm forward still read chinless
+CHIN_SCULPT = {"down": 0.013, "fwd": 0.026, "x_sigma": 0.046, "top_gap": 0.006}  # S8b: fuller (u1)  # 7 mm forward still read chinless
 STATES = ("open", "rest", "half", "closed")
-VISEMES = ("rest", "M", "small", "A", "E", "O")
 # The face materials (S5, sRGB; godot/alien/alien.gd FACE and alien_eye.gdshader hold the same): the stage-1 human
 # faces' (faces/clay_kit.json: white (0.9, 0.86, 0.72), cavity (0.05, 0.012, 0.02), teeth (0.92, 0.9, 0.8) linear),
 # soft-matte; the first test's glossy orange lips (0.86, 0.42, 0.36) and cold white eyes read "creepy".
-LIP = (0.76, 0.45, 0.40)  # e2's dusty salmon (S5's lip grid: the deepest of three reads best on the mint face)
-LIP_ROUGH = 0.6
-INNER = (0.25, 0.11, 0.14)
-TEETH = (0.96, 0.95, 0.90)
-EYE_WHITE = (0.95, 0.93, 0.86)
-EYE_SHADE = (0.86, 0.72, 0.64)  # the warm tint the white goes toward in its corners and under the lids
-EYE_ROUGH = 0.38
-ACCENT = (0.85, 0.40, 0.36)
+from alien_face import ACCENT, EYE_ROUGH, EYE_SHADE, EYE_WHITE, FACE, INNER, LIP, LIP_ROUGH, TEETH, VISEMES  # noqa: E402,F401
 HUE_PICKS = {  # g-s1 cells (col, row) and sample points in cell fractions: base (forehead) and light (throat)
     "teal": ((0, 0), (0.42, 0.27), (0.50, 0.75)),
     "coral": ((0, 1), (0.42, 0.27), (0.50, 0.75)),
@@ -452,6 +452,9 @@ def sculpt_chin(me, ring, chin, mz, z_cut):
     C = CHIN_SCULPT
     ny = ring["centre"][1] - ring["semi_axes"][1]  # the neck ring's front (front is -Y)
     band = [v.co.y for v in me.vertices if abs(v.co.x) < 0.012 and abs(v.co.z - chin) < 0.012]
+    if not band:
+        raise RuntimeError(f"sculpt_chin: no head vertex within 12 mm of the midline at the chin's height z {chin:.4f}: "
+                           "is MESHY['chin'] still the head's chin?")
     yf = min(band)  # the chin's front
     top = mz - C["top_gap"]
     d = Vector((0.0, -C["fwd"], -C["down"]))
@@ -470,6 +473,73 @@ def sculpt_chin(me, ring, chin, mz, z_cut):
     me.update()
     return {"moved_verts": n, "max_weight": round(most, 3), "chin_front_y": round(yf, 4), "neck_front_y": round(ny, 4),
             "top_z": round(top, 4), **C}
+
+
+def fill_neck(me, ring, z_cut):
+    """S8: the head's neck stalk filled out toward the ring's size: each vertex's offset from the ring's axis scaled
+    in x and y, by (fill * ring semi-axis / the stalk's half size at the cut) at and under the cut, easing to 1 at
+    NECK_FILL["top"] above it, and only within the stalk (its offset in stalk half sizes under gate[0], none past
+    gate[1]: the jaw and the face stay). Returns the measures."""
+    F = NECK_FILL
+    cx, cy = ring["centre"]
+    band = [v.co for v in me.vertices if abs(v.co.z - z_cut) < 0.003]
+    hx = max(abs(c.x - cx) for c in band)
+    hy = (max(c.y for c in band) - min(c.y for c in band)) / 2
+    ky, kx = (F["fill"] * ring["semi_axes"][1] / hy, F["fill"] * ring["semi_axes"][0] / hx)
+    g0, g1 = F["gate"]
+    n = 0
+    for v in me.vertices:
+        p = v.co
+        if p.z > z_cut + F["top"]:
+            continue
+        t = 1.0 - G.smoothstep(z_cut, z_cut + F["top"], p.z)
+        d = math.hypot((p.x - cx) / hx, (p.y - cy) / hy)
+        g = 1.0 - G.smoothstep(g0, g1, d)
+        if t * g > 1e-4:
+            p.x = cx + (p.x - cx) * (1 + (kx - 1) * t * g)
+            p.y = cy + (p.y - cy) * (1 + (ky - 1) * t * g)
+            n += 1
+    me.update()
+    return {"stalk_half_m": [round(hx, 4), round(hy, 4)], "scale_at_cut": [round(kx, 3), round(ky, 3)], "moved": n,
+            **F}
+
+
+def smooth_collar(me, ring, z_cut, ring_idx, passes=8):
+    """S8: the weld band's circumferential ripple evened out. Each head vertex between the ring and COLLAR m above
+    the cut keeps its angle and height; its distance from the ring's axis (in the ring's ellipse units) is averaged
+    with its neighbours' at about the same height, so the decimated cut's waviness does not show as a ruffled collar.
+    The ring row stays fixed. Returns the largest radial change (m)."""
+    cx, cy = ring["centre"]
+    ax, ay = ring["semi_axes"]
+    bm = bmesh.new()
+    bm.from_mesh(me)
+    bm.verts.ensure_lookup_table()
+    fixed = set(ring_idx)
+    band = [v for v in bm.verts if v.co.z < z_cut + COLLAR and v.index not in fixed]
+    rn = lambda c: math.hypot((c.x - cx) / ax, (c.y - cy) / ay)  # noqa: E731
+    most = 0.0
+    before = {v: v.co.copy() for v in band}
+    for _ in range(4):  # first the pleats across the band: a plain relax in x and y (the heights stay)
+        bmesh.ops.smooth_vert(bm, verts=band, factor=0.5, use_axis_x=True, use_axis_y=True, use_axis_z=False)
+    for _ in range(passes):
+        new = {}
+        for v in band:
+            nb = [e.other_vert(v) for e in v.link_edges if abs(e.other_vert(v).co.z - v.co.z) < 0.003]
+            if not nb:
+                continue
+            new[v] = (rn(v.co) + sum(rn(o.co) for o in nb)) / (1 + len(nb))
+        for v, r in new.items():
+            r0 = rn(v.co)
+            if r0 < 1e-6:
+                continue
+            k = r / r0
+            old = v.co.copy()
+            v.co.x = cx + (v.co.x - cx) * k
+            v.co.y = cy + (v.co.y - cy) * k
+    most = max((v.co - before[v]).length for v in band)
+    bm.to_mesh(me)
+    bm.free()
+    return round(most * 1000, 2)
 
 
 def smart_uv(ob):
@@ -682,8 +752,8 @@ def main():
     scene = bpy.context.scene
     coll = scene.collection
     rep = {}
-    ring = json.loads(Path(a.ring).read_text(encoding="utf-8"))
-    rep["ring"] = {"z": ring["z"], "centre": ring["centre"], "semi_axes": ring["semi_axes"]}
+    ring = G.densify_ring(json.loads(Path(a.ring).read_text(encoding="utf-8")))
+    rep["ring"] = {"count": ring["count"],"z": ring["z"], "centre": ring["centre"], "semi_axes": ring["semi_axes"]}
     hues, k_light, ks = sample_hues(a.hues)
     rep["hues"] = {"samples": hues, "light_mix": k_light, "light_mix_per_hue": ks}
 
@@ -705,9 +775,10 @@ def main():
     band = [v.co for v in me.vertices if abs(v.co.z - MESHY["neck_low"]) < 0.01]
     ncx = (min(p.x for p in band) + max(p.x for p in band)) / 2
     ncy = (min(p.y for p in band) + max(p.y for p in band)) / 2
-    T = Matrix.Translation((ring["centre"][0] - ncx * s, ring["centre"][1] - ncy * s, TOP_Z - MESHY["top"] * s))
+    top_z = TOP_Z - NECK_DROP
+    T = Matrix.Translation((ring["centre"][0] - ncx * s, ring["centre"][1] - ncy * s, top_z - MESHY["top"] * s))
     me.transform(T @ Matrix.Scale(s, 4))
-    W = lambda zm: TOP_Z - (MESHY["top"] - zm) * s  # noqa: E731  Meshy height -> world height
+    W = lambda zm: top_z - (MESHY["top"] - zm) * s  # noqa: E731  Meshy height -> world height
     chin = W(MESHY["chin"])
     z_cut = min(W(MESHY["neck_low"]), chin - 0.02)
     rep["scale"] = round(s, 5)
@@ -718,11 +789,14 @@ def main():
                                  round(max(p.y for p in nb) - min(p.y for p in nb), 4)]
     rep["ring_size_m"] = [round(2 * ring["semi_axes"][0], 4), round(2 * ring["semi_axes"][1], 4)]
     bisect(me, z_cut - 0.01)
+    rep["neck_fill"] = fill_neck(me, ring, z_cut)
+    rep["neck_drop"] = NECK_DROP
     dense = me.copy()
     dense_bvh = BVHTree.FromPolygons([v.co.copy() for v in dense.vertices], [tuple(p.vertices) for p in dense.polygons])
     rep["dense_tris"] = sum(len(p.vertices) - 2 for p in dense.polygons)
     decimate(ob, TRIS)
     ring_idx, head_w = weld_neck(ob, ring, z_cut)
+    rep["collar_smooth_max_mm"] = smooth_collar(ob.data, ring, z_cut, ring_idx)
     # triangulate for an exact count
     bm = bmesh.new()
     bm.from_mesh(ob.data)
@@ -749,8 +823,18 @@ def main():
     rep["uv_layers"] = names
     vg_h = ob.vertex_groups.new(name="Head")
     vg_n = ob.vertex_groups.new(name="Neck")
+    # the Neck's share: the loft 0.7 at the ring to 0.4 at the cut, then fading out NECK_BLEND up the stalk (only
+    # near the neck's axis, as NECK_FILL), so a turn or a nod bends the whole neck instead of kinking at the cut
+    cx, cy = ring["centre"]
+    hx, hy = rep["neck_fill"]["stalk_half_m"]
+    g0, g1 = NECK_FILL["gate"]
     for v in me.vertices:
-        w = head_w.get(v.index, 1.0)
+        if v.index in head_w:
+            w = 0.3 + (head_w[v.index] - 0.3) * (0.3 / 0.7)
+        else:
+            w = 0.6 + 0.4 * G.smoothstep(z_cut, z_cut + NECK_BLEND, v.co.z)
+            g = 1.0 - G.smoothstep(g0, g1, math.hypot((v.co.x - cx) / hx, (v.co.y - cy) / hy))
+            w = 1.0 - (1.0 - w) * g
         vg_h.add([v.index], w, "REPLACE")
         if w < 1.0:
             vg_n.add([v.index], 1.0 - w, "REPLACE")
@@ -788,8 +872,8 @@ def main():
     # materials
     hue = hue_material(k_light)
     hue_lin = {k: srgb_to_lin(v["base_srgb"]) for k, v in hues.items()}
-    mats = {"hue": hue, "lip": plain("alien_lip", LIP, LIP_ROUGH, 0.3),
-            "inner": plain("alien_mouth_inner", INNER, 0.9, 0.08), "teeth": plain("alien_teeth", TEETH, 0.4, 0.3)}
+    mats = {"hue": hue, **{k: plain(f"alien_{n}", *FACE[f"alien_{n}"])
+                           for k, n in (("lip", "lip"), ("inner", "mouth_inner"), ("teeth", "teeth"))}}
     ob.data.materials.append(hue)
     ob["alien_hue"] = hue_lin["teal"]
 

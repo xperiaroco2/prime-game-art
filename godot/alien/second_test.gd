@@ -17,7 +17,7 @@ const Offscreen = preload("res://lib/offscreen.gd")
 const AlienRig = preload("res://alien/alien.gd")
 const WATCHDOG_S: float = 280.0
 const SHEET_W: int = 1280
-const ORDER: Array[String] = ["first", "cage", "wrap"]
+var ORDER: Array = ["first", "cage", "wrap"]  # the spec's "order" replaces it (S8: ["s7", "s8"])
 const SPACING: float = 0.95
 
 var _spec: Dictionary
@@ -139,6 +139,9 @@ func _shot(text: String, frames: int = 3) -> Image:
 
 
 func _sheet(images: Array, cols: int, name: String) -> void:
+	if images.is_empty():
+		_fail("no image for %s" % name)
+		return
 	var tw: int = SHEET_W / cols
 	var first: Image = images[0]
 	var th: int = int(round(float(tw) * first.get_height() / first.get_width()))
@@ -197,6 +200,13 @@ func _find(k: String, name: String) -> Vector3:
 	return ((_ch[k] as Node3D).find_child(name, true, false) as Node3D).global_position
 
 
+## The left hand's middle knuckle in the world (the skeleton's LeftMiddleProximal), for the close hand shots.
+func _hand(k: String) -> Vector3:
+	var sk: Skeleton3D = (_ch[k] as Node3D).find_child("Skeleton3D", true, false) as Skeleton3D
+	var i: int = sk.find_bone("LeftMiddleProximal")
+	return sk.global_transform * sk.get_bone_global_pose(i).origin
+
+
 func _combo(k: String, e: String, m: String, piece: String = "rest") -> void:
 	var r: Node = _rig[k]
 	r.set_eyes(e)
@@ -209,6 +219,8 @@ func _run() -> void:
 	DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
 	await process_frame
 	_out = _spec["out"]
+	if _spec.has("order"):
+		ORDER = _spec["order"]
 	DirAccess.make_dir_recursive_absolute(_out)
 	_stage()
 	var scenes: Dictionary = _spec["scenes"]
@@ -275,12 +287,11 @@ func _run() -> void:
 			imgs.append(await _shot("%s Walk %.2f side" % [k, f]))
 	_pose("Idle", 0.0)
 	_sheet(imgs, 4, "walk_side.png")
-	# 5: the faces at 0.6 m, every eye and mouth combination, first test above, the second (cage) below
+	# 5: the faces at 0.6 m, every eye and mouth combination, one row per character in the spec's order (S8b: the
+	# old ["first", "cage"] list matched no key of an S8 order ["s7", "s8"], so the sheet had no image)
 	var combos: Array = [["bored", "frog"], ["bored", "overbite"], ["manic", "frog"], ["manic", "overbite"]]
 	imgs = []
-	for k: String in ["first", "cage"]:
-		if not _ch.has(k):
-			continue
+	for k: String in all:
 		_only([k], false)
 		await process_frame
 		var face: Vector3 = ((_find(k, "Eye_L") + _find(k, "Eye_R")) * 0.5 + _find(k, "Mouth")) * 0.5
@@ -289,6 +300,25 @@ func _run() -> void:
 			_look(face, 20, 2, 0.6, 34)
 			imgs.append(await _shot("%s %s+%s" % [k, c[0], c[1]]))
 	_sheet(imgs, 4, "faces.png")
+	# 5b (S8b): the neck weld at 0.5 m from the side, the back and the three-quarter back, in Idle and in the Talk's
+	# head turn, and the left hand at 0.5 m in Idle and Walk; one row per character
+	imgs = []
+	for k: String in all:
+		_only([k], false)
+		for pose: Array in [["Idle", 0.0], ["Talk", -0.5]]:
+			_pose(pose[0], pose[1])
+			await process_frame
+			for yaw: float in [90.0, 180.0, 225.0]:
+				_look(Vector3(0, 1.40, 0), yaw, 4, 0.5, 40)
+				imgs.append(await _shot("%s %s neck %d" % [k, pose[0], int(yaw)]))
+		for pose: Array in [["Idle", 0.0], ["Walk", -0.25], ["Walk", -0.75]]:
+			_pose(pose[0], pose[1])
+			await process_frame
+			var hand: Vector3 = _hand(k)
+			_look(hand, 60, 10, 0.5, 40)
+			imgs.append(await _shot("%s %s %.2f hand" % [k, pose[0], pose[1]]))
+	_pose("Idle", 0.0)
+	_sheet(imgs, 3, "neck_hands.png")
 	# 6: the crests (second test), front three-quarter and side
 	var k2: String = "cage" if _ch.has("cage") else all[-1]
 	_only([k2], false)

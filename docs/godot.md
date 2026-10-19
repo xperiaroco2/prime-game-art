@@ -764,8 +764,8 @@ a time, by visibility.
 - **The second test (step S7):** two bodies from one cage, `tools/blender/alien_cage.py` (a few hundred quads fitted
   to u1 by measurement, Catmull-Clark level 2; method in its docstring): **cage** (no `--target`) and **wrap**
   (`--target <b3d1.glb>`: the same cage shrink-wrapped onto the Meshy faceless body shape, used as a target only).
-  Both keep S1c's hands at the standard wrist ring (`wrist_ring.json`, as `neck_ring.json`), 4 fingers and 3-toe
-  paddles. The pipeline, all headless Blender: `alien_parts.py` (head and face parts) → `alien_cage.py` (body) →
+  In S7 both kept S1c's hands at a standard wrist ring; since S8 the hands are built in the cage (below), and
+  4 digits (three fingers and a thumb) and 3-toe paddles stay. The pipeline, all headless Blender: `alien_parts.py` (head and face parts) → `alien_cage.py` (body) →
   `alien_assemble.py` (weld, masks, sockets, GLB) → `alien_mouths.py` (the S6 mouths on the assembled character, the
   final GLB with `character.json`). `alien_cage_review.py` renders the review sheets that put u1, the first test and the
   new bodies side by side (turntables, silhouettes, Walk, feet, welds). What S7 put into Blender, so the GLB (and three.js) shows what Godot shows:
@@ -787,6 +787,50 @@ a time, by visibility.
     and its light tint mixed by `TEXCOORD_1.x`, the accent by **`1 - TEXCOORD_1.y`** (the V flip above); (2) the eye
     look: the GLB's eyeballs carry a 512 px texture drawn at the rest lids (`alien_eye_<design>`), so the lid shadow
     on the white does not follow a blink and the catch light is painted; Godot's `alien_eye.gdshader` computes both.
+- **The polish step (S8):** the engineer chose the **cage** body (the wrap stays an option only).
+  - **Hands in the cage:** `alien_cage.py` continues the arm past the wrist into `HAND`'s rings (rotated octagons, so
+    the knuckle ring's end splits into three quads) and extrudes the Index, Middle and Ring fingers and the thumb as
+    square tubes along the contract's hand bones (`tube()`, `FINGER_RINGS`, `THUMB_RINGS`: a loop either side of every
+    knuckle, a smaller ring and a cap at the tip). No S1c or Quaternius hand mesh is left, and `wrist_ring.json` is no
+    longer written. The hand's weights are set per cage loop and **interpolated by the subdivision** (vertex groups on
+    the cage object; the Mirror modifier flips `Left*` to `Right*`); the rest of the body keeps S1c's transferred
+    weights, scaled by what the hand's leave. The deform layer must exist before the first `bm.verts.new`: adding it
+    later frees every `BMVert` reference.
+  - **Neck:** `alien_parts.NECK_DROP` (22 mm) seats the head lower on the unchanged ring (`neck_ring.json` did not
+    move), `fill_neck` fills the Meshy stalk toward the ring's size (`NECK_FILL`), the Neck weight reaches
+    `NECK_BLEND` up the stalk, and `smooth_collar` relaxes the weld band. `CHIN_SCULPT` goes 20 mm forward.
+  - **Mouths:** `alien_mouths.SHAPE_SCALE` (A 0.80, E 0.88, O 0.94) shrinks the open shapes, which were measured to
+    the sheets' wider faces; `--parts-report` takes `CHIN_Z` from the parts' sculpted chin.
+  - `alien_cage_review.py --detail <character.blend>` renders the left hand at 0.5 m (rest, a fist, a relaxed curl,
+    Walk, Talk, Idle) and the neck from the side and back (rest, Idle, turned, nodding) as `hands_<tag>.png` and
+    `neck_<tag>.png`. `second_test.gd` takes `"order"` from its spec (S8: `["s7", "s8"]`); `alien.gd` has
+    `face_material()` and `face_surface_counts()` for the proofs.
+- **S8b, the collar and the hand:**
+  - **The neck ring has 48 vertices** in the build: `alien_parts_geom.densify_ring` doubles S1's 24-vertex
+    `neck_ring.json` (`loop` on its exact ellipse, `loop_below` by four-point midpoints) when `alien_parts.py` and
+    `alien_cage.py` load it, and `alien_cage.py` writes the 48-vertex ring into its `--out`, which the assembler reads.
+    The head's loft and the body's subdivided end now meet one to one with plain quads. S1's 48-to-24 triangle zip
+    (alternating triangles and quads) was the pleated collar. S1's file itself is unchanged.
+  - The assembler **fairs the neck** across the weld (`alien_assemble.NECK_FAIR`, replacing `NECK_SMOOTH`): each
+    vertex's radius from the ring's axis, in ellipse units, becomes a Gaussian average by angle (20 degrees) and
+    height (6 mm), full from z 1.36 to 1.418 m and easing out by 1.345 and 1.445; the jaw (radius over 1.22) is left
+    alone. `weld.neck_fair` in the build report gives the ripple in the full zone (S8b: 2.24 mm before, 0.78 after).
+  - **The hand:** each finger ring's place along its bones is pulled toward the knuckle by `FINGER_K` (0.82), so the
+    mesh is shorter than the bones (the skeleton and clips are unchanged); the fingers thicker (`FINGER_R`) with
+    softer distal weights (the tip rings partly on the Intermediate bone, so the tip does not fold when the distal
+    pivot lies beyond the mesh); the palm wider. The thumb leaves the palm's front side quad as a mound and follows a
+    curve out and forward (`THUMB_OUT`, `THUMB_LEN`, `THUMB_DIR`), off its bones' downward line; its root ring is
+    flattened to the quad's height (`tube()` takes a per-axis scale). `cage.json` lists `hand_folds_over_60` with
+    their places. The review's fist (`alien_cage_review.curl`) swings the thumb about the hand's long axis.
+  - **Leftovers:** `alien_face.py` holds the face constants (materials, visemes, eye aim, blink), read by
+    `alien_parts.py` and `alien_assemble.py`; `tools/tests/test_alien_face_constants.py` checks `alien.gd`'s copies.
+    `alien_mouths.RING_SIDE` shrinks an open ring's lift and width where the skin turns away from the front, A and E
+    are narrower (`SHAPE_SCALE` 0.77, 0.82), and `TONGUE_SHAPE` makes the tongue narrower, domed and grooved. A fourth
+    small toe ring rounds the tips (`TOE`); `BELLY_HALF_W` is u1's wider oval with a softer edge; `CHIN_SCULPT` 26 mm.
+  - `second_test.gd` draws `faces.png` for every character of its order (it had matched only `first` and `cage`, so
+    an S8 order made no image and the sheet failed with `Out of bounds get index '0'`), refuses an empty sheet, and
+    adds `neck_hands.png`: the neck at 0.5 m from the side, back and three-quarter back in Idle and Talk, and the left
+    hand in Idle and Walk, one block per character.
 
 ## Findings for later tasks
 

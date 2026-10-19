@@ -1,14 +1,14 @@
 """The alien parts kit's body rebuilt from a clean cage (art #196, step S4a): a symmetric low-poly quad cage built by
 measurement to the approved u1 turnaround, subdivided (Catmull-Clark, level 2, applied) into a smooth designer-toy
-body, with S1c's hands welded at a standard wrist ring and the standard neck ring of S1 unchanged, on S1c's contract
-skeleton and clips.
+body with its hands built in the same cage (S8: a palm, three fingers and a thumb, one surface with the arm), and
+the standard neck ring of S1 unchanged, on S1c's contract skeleton and clips.
 
     blender -b --factory-startup --python-exit-code 1 --python tools/blender/alien_cage.py -- \
         --src <S1c/build/alien_body.blend> --ring <S1/build/neck_ring.json> --out <dir> [--target <body.glb>]
 
 Writes <out>/alien_body.blend (a saved character for `tools/run.py export` and `alien_assemble.py`, with the cage kept
 as the hidden object `BodyCage`), <out>/neck_ring.json (S1's, copied unchanged: the assembler reads it beside the
-body), <out>/wrist_ring.json and <out>/cage.json (the cage's counts and poles, the measures against u1).
+body) and <out>/cage.json (the cage's counts and poles, the measures against u1, the hand's weights).
 
 The method (no sculpting, no smoothing passes over a dense mesh; every shape is a number at the top):
 1. The cage, left half and midline (x >= 0), mirrored and merged at x = 0:
@@ -17,7 +17,13 @@ The method (no sculpting, no smoothing passes over a dense mesh; every shape is 
      side: the round belly, the soft seat, the waist), from the crotch to the neck;
    - the arm hole: between the rings `armpit`, `shoulder` and `top` the side vertices k = 2..4 are the 8 vertices of
      an ellipse around the arm's root (ARM_HOLE); the shoulder ring has no k = 3;
-   - the arms: rings of 8 along x (ARM: the T-pose arm, edge loops either side of the elbow) to the wrist;
+   - the arms: rings of 8 along x (ARM: the T-pose arm, edge loops either side of the elbow) to the wrist, whose
+     ring takes S1c's wrist section;
+   - the hands (S8): HAND's rings (rotated octagons: the wrist joint, the palm, the knuckles), whose end splits into
+     three quads, the roots of the Index, Middle and Ring fingers; the palm's lower front quad is the thumb's root.
+     Each finger and the thumb is a square tube (tube()) along its contract bones, with a loop either side of every
+     knuckle and a smaller ring and a cap at the tip (FINGER_RINGS, THUMB_RINGS), so it subdivides into a round,
+     soft finger;
    - the legs: the crotch vertex C closes each leg's first loop (the trunk's bottom k = 0..6 and C); rings of 8 down
      the leg (LEG: loops at the hip, knee and ankle) turn by 22.5 degrees from hip to ankle, so the ankle ring has
      four vertices in front and four behind;
@@ -31,22 +37,27 @@ The method (no sculpting, no smoothing passes over a dense mesh; every shape is 
 2. Subdivision: Catmull-Clark, level 2, applied. The soles: the cage's lowest vertices are lowered until the
    subdivided sole touches z = 0.
 3. Rings: the neck's open end (48 vertices) is laid on the ellipse just below S1's ring and joined to S1's two rings
-   (2 to 1), so the head welds exactly as before; each wrist's open end (32 vertices) is laid on the standard wrist
-   ring (an ellipse measured on S1c's wrist, wrist_ring.json) and S1c's hand, cut WRIST_GAP beyond it, is zipped to it.
-4. Weights: copied from S1c's body (the Quaternius base's weights, refitted) by nearest-face interpolation, then
-   blended with the neighbours' at every joint (WEIGHT_SMOOTH passes; the hands and the rings keep theirs), at most
-   four per vertex, normalised. The Little finger's bones stay, unweighted.
+   (2 to 1), so the head welds exactly as before.
+4. Weights: the hand's are set on the cage's loops (per ring, by finger segment: FINGER_RINGS, THUMB_RINGS, HAND_W)
+   and interpolated by the subdivision; the rest are copied from S1c's body (the Quaternius base's weights, refitted)
+   by nearest-face interpolation, scaled by what the hand's leave, then blended with the neighbours' at every joint
+   (WEIGHT_SMOOTH passes; the hands and the rings keep theirs), at most four per vertex, normalised. The Little
+   finger's bones stay, unweighted.
 """
 from __future__ import annotations
 
 import argparse
 import json
 import math
+import os
 import sys
 
 import bmesh
 import bpy
 from mathutils import Vector
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import alien_parts_geom as G  # noqa: E402
 
 S = math.sqrt(0.5)
 SUPER = 2.5  # the trunk sections' superellipse exponent (2: an ellipse; higher: fuller sides)
@@ -85,9 +96,58 @@ LEG_THICK = [1.06, 1.12, 1.13, 1.12, 1.12, 1.12, 1.10, 1.06]
 # The order of the arm's octagon (dy, dz), matching the hole: bottom-front, bottom, bottom-back, back, top-back, top,
 # top-front, front (+Y is back).
 OCT = [(-S, -S), (0, -1), (S, -S), (1, 0), (S, S), (0, 1), (-S, S), (-1, 0)]
-WRIST_X = 0.605   # m: the standard wrist ring's plane
-WRIST_GAP = 0.005  # m: S1c's hand is cut this far beyond it and zipped to it
-WRIST_N = 32      # the ring's vertex count: the cage's 8 times 4
+WRIST_X = 0.605   # m: the arm's last ring (S1c's wrist section, measured at WRIST_X + WRIST_GAP)
+WRIST_GAP = 0.005
+# The hand (S8, art #196): built in the cage, one surface with the arm (no S1c or Quaternius hand mesh). Rings along x
+# after the wrist: (x, y centre, z centre, half width in y, half height in z). Each is a rounded box on a rotated
+# octagon (vertices at 22.5 + 45 k degrees), so the last ring's end splits into three quads, one per finger, and the
+# palm's lower front quad between the second and third ring is the thumb's root. The positions are read off the
+# contract skeleton's hand bones (LeftHand's head at x 0.644; the knuckles at 0.767 to 0.776; Index, Middle and Ring
+# 4.1 to 4.5 cm apart in y): u1's big soft hand with three fat fingers and a thumb.
+HAND = [  # S8b: the palm a little wider and thicker (u1's soft mitten)
+    (0.640, 0.062, 1.2725, 0.033, 0.0245),  # the wrist joint
+    (0.680, 0.056, 1.2690, 0.051, 0.0260),  # the palm's heel
+    (0.722, 0.050, 1.2700, 0.061, 0.0242),
+    (0.758, 0.049, 1.2705, 0.062, 0.0218),  # the knuckles: its end is the fingers' roots
+]
+HAND_INNER = (0.56, 0.56, 0.50, 0.36)  # each ring's top and bottom inner vertices at this share of the half width
+HAND_SIDE_H = 0.55  # the side vertices' height, a share of the half height
+FINGERS = ("Index", "Middle", "Ring")  # the Little finger's bones stay, unweighted
+# S8b: shorter, chunkier fingers in the mesh only (the bones and clips stay): each finger ring's place along its bones
+# is pulled toward the knuckle (J0) by FINGER_K, so the knuckle loops sit up to 1.2 cm before the bones' joints and
+# the tip ends about 1.5 cm short of S8's; the weights follow the rings.
+FINGER_K = 0.82
+FINGER_R = 0.0208  # m: a finger tube's cage half side times 0.93 (subdivided, the finger's radius is about 0.7 of it)
+TIP_BACK = 0.010  # m: the tips end this far before the distal bone's tail (before FINGER_K)
+# Per finger ring: (joint, offset m along the finger, radius scale, weights by segment P/I/D/H(and)/M(etacarpal)).
+FINGER_RINGS = [
+    ("J0", 0.008, 1.00, {"P": 0.85, "H": 0.15}),
+    ("J1", -0.006, 0.98, {"P": 0.8, "I": 0.2}),
+    ("J1", 0.006, 0.98, {"P": 0.2, "I": 0.8}),
+    ("J2", -0.005, 0.97, {"I": 0.85, "D": 0.15}),
+    ("J2", 0.005, 0.96, {"I": 0.5, "D": 0.5}),
+    ("TIP", -0.004, 0.92, {"I": 0.3, "D": 0.7}),
+    ("TIP", 0.004, 0.60, {"I": 0.3, "D": 0.7}),
+]
+# S8b: the thumb leaves the palm's front side (the quad between the heel and the middle ring) as a soft mound and
+# points forward along the hand and a little toward the palm (u1), not down along its bones: a quadratic curve from the
+# quad's centre, THUMB_OUT m out of the side, then THUMB_LEN m along THUMB_DIR (Blender: +X along the hand, -Y the
+# front, -Z the palm). Rings: (t on the curve, radius scale, weights by segment M/P/D/H).
+THUMB_R = 0.0215
+THUMB_OUT = 0.014
+THUMB_LEN = 0.062
+THUMB_DIR = (0.82, -0.42, -0.24)
+THUMB_RINGS = [
+    (0.20, (0.60, 0.92), {"M": 0.85, "H": 0.15}),  # the root: as tall as the palm's side quad (no fold over it)
+    (0.42, (0.85, 0.98), {"M": 0.7, "P": 0.3}),
+    (0.56, 0.97, {"M": 0.2, "P": 0.8}),
+    (0.72, 0.95, {"P": 0.7, "D": 0.3}),
+    (0.83, 0.93, {"P": 0.2, "D": 0.8}),
+    (0.95, 0.85, {"D": 1.0}),
+    (1.00, 0.52, {"D": 1.0}),
+]
+HAND_W = [{"Hand": 0.5}, {"Hand": 1.0}, {"Hand": 1.0}, {"Hand": 1.0}]  # the rest of the wrist ring's weight: S1c's
+THUMB_ROOT_W = {"Hand": 0.6, "ThumbMetacarpal": 0.4}
 # Leg rings: (z, x centre, y centre, rx, ry); a ring of 8 turning by 22.5 degrees from the first to the last.
 LEG = [
     (0.715, 0.104, 0.030, 0.066, 0.071),
@@ -116,9 +176,9 @@ FOOT_X = 0.117
 # Toes: per extrusion (forward m from the toe's base, width scale, height scale, drop m); the middle toe reaches
 # TOE_MID further. Fat round lobes (u1): they keep the base's width and height nearly to the end, then a short
 # rounded cap ring, so the subdivided tip stays full instead of pinching.
-TOE = [(0.014, 1.04, 1.0, 0.0), (0.030, 1.0, 0.95, 0.002), (0.040, 0.78, 0.74, 0.004)]
+# S8b: a fourth, small ring closes each toe in a dome (S7's flat cap on the third read boxy from the side)
+TOE = [(0.014, 1.04, 1.0, 0.0), (0.028, 1.0, 0.95, 0.002), (0.038, 0.84, 0.80, 0.004), (0.045, 0.48, 0.46, 0.006)]
 TOE_MID = 0.006
-WRIST_SMOOTH = (0.006, 4)  # m beyond the hand's cut, passes: the cut's slivers relaxed (the ring fixed)
 SUBDIV = 2
 # The trunk's fit: which of each ring's numbers are corrected against u1 (the arm hole's rings only their depth).
 FIT = {"hip": ("a", "yf", "yb"), "belly": ("a", "yf", "yb"), "navel": ("a", "yf", "yb"),
@@ -154,9 +214,102 @@ def trunk_vert(k, z, a, yf, yb, n=SUPER):
     return Vector((x, y, z))
 
 
-def build_cage(sole_drop, trunk):
-    """The half cage (x >= 0) as a bmesh, and the named vertex lists."""
+def tube(bm, base, path, half, out):
+    """Extrudes a square tube from a quad `base` through `path` [(centre, direction, half side scale, weights)]; each
+    ring is a square around its centre, normal to its direction, its corners on the base corners' sides (no twist);
+    the last ring is capped. Weights per vertex go into `out`."""
+    bc = sum((v.co for v in base), Vector()) / 4
+    last = base
+    for c, d, sc, w in path:
+        e1 = base[1].co - base[0].co
+        e1 = (e1 - d * e1.dot(d)).normalized()
+        e2 = d.cross(e1)
+        ring = []
+        for b in base:
+            u = b.co - bc
+            s1 = 1.0 if u.dot(e1) >= 0 else -1.0
+            s2 = 1.0 if u.dot(e2) >= 0 else -1.0
+            k1, k2 = sc if isinstance(sc, tuple) else (sc, sc)  # a ring's scale, or (along e1, along e2)
+            ring.append(bm.verts.new(c + (e1 * s1 * k1 + e2 * s2 * k2) * half))
+            out[ring[-1]] = dict(w)
+        for j in range(4):
+            bm.faces.new((last[j], last[(j + 1) % 4], ring[(j + 1) % 4], ring[j]))
+        last = ring
+    bm.faces.new(last)
+
+
+def build_hand(bm, wrist, bones):
+    """S8: the left hand in the cage, from the wrist ring (8, OCT order): HAND's rings (rotated octagons), three
+    finger tubes from the knuckle ring's end and the thumb from the palm's lower front quad. Returns the hand
+    vertices' weights {vertex: {group: w}} (the Little finger gets none)."""
+    out = {}
+    prev = wrist
+    hr = []
+    for i, ((x, yc, zc, w, h), inner) in enumerate(zip(HAND, HAND_INNER)):
+        ring = []
+        for k in range(8):
+            ph = math.radians(202.5 - 45 * k)
+            sy, sz = math.copysign(1, math.sin(ph)), math.copysign(1, math.cos(ph))
+            side = abs(math.sin(ph)) > 0.7
+            ring.append(bm.verts.new((x, yc + sy * w * (1.0 if side else inner),
+                                      zc + sz * h * (HAND_SIDE_H if side else 1.0))))
+            out[ring[-1]] = dict(HAND_W[i])
+        for k in range(8):
+            if i == 2 and k == 6:
+                continue  # the thumb's root: the front side quad
+            bm.faces.new((prev[k], prev[(k + 1) % 8], ring[(k + 1) % 8], ring[k]))
+        hr.append(ring)
+        prev = ring
+    K = hr[-1]
+    seg = {"P": "Proximal", "I": "Intermediate", "D": "Distal"}
+
+    def path(joints, rows, radius, names):
+        pts = []
+        for jn, off, sc, w in rows:
+            if jn == "TIP":
+                a, b = joints["J2"], joints["T"]
+                d = (b - a).normalized()
+                c = b - d * (TIP_BACK - off)
+            else:
+                j = joints[jn]
+                nxt = {"J0": "J1", "J1": "J2", "J2": "T"}[jn]
+                prv = {"J0": None, "J1": "J0", "J2": "J1"}[jn]
+                d = (joints[nxt] - j).normalized() if off >= 0 or prv is None else (j - joints[prv]).normalized()
+                c = j + d * off
+            c = joints["J0"] + (c - joints["J0"]) * FINGER_K
+            pts.append((c, d, sc, {names[k]: v for k, v in w.items()}))
+        return pts, radius / 0.93
+
+    for f, base in zip(FINGERS, ([K[6], K[5], K[0], K[7]], [K[5], K[4], K[1], K[0]], [K[4], K[3], K[2], K[1]])):
+        j = {"J0": bones[f"Left{f}Proximal"][0], "J1": bones[f"Left{f}Intermediate"][0],
+             "J2": bones[f"Left{f}Distal"][0], "T": bones[f"Left{f}Distal"][1]}
+        names = {k: f"Left{f}{v}" for k, v in seg.items()} | {"H": "LeftHand"}
+        pts, half = path(j, FINGER_RINGS, FINGER_R, names)
+        tube(bm, base, pts, half, out)
+    P1, P2 = hr[1], hr[2]
+    base = [P1[6], P1[7], P2[7], P2[6]]
+    for v in base:
+        out[v] = {"Left" + k: w for k, w in THUMB_ROOT_W.items()}
+    names = {"M": "LeftThumbMetacarpal", "P": "LeftThumbProximal", "D": "LeftThumbDistal", "H": "LeftHand"}
+    q0 = sum((v.co for v in base), Vector()) / 4
+    q1 = q0 + Vector((0.0, -THUMB_OUT, 0.0))
+    q2 = q1 + Vector(THUMB_DIR).normalized() * THUMB_LEN
+    pts = []
+    for t, sc, w in THUMB_RINGS:
+        c = q0 * (1 - t) ** 2 + q1 * 2 * t * (1 - t) + q2 * t * t
+        d = ((q1 - q0) * 2 * (1 - t) + (q2 - q1) * 2 * t).normalized()
+        pts.append((c, d, sc, {names[k]: v for k, v in w.items()}))
+    tube(bm, base, pts, THUMB_R / 0.93, out)
+    for v, w in list(out.items()):  # HAND_W's "Hand" -> LeftHand
+        out[v] = {(k if k.startswith("Left") else "Left" + k): x for k, x in w.items()}
+    return out
+
+
+def build_cage(sole_drop, trunk, bones=None):
+    """The half cage (x >= 0) as a bmesh, and the named vertex lists; with `bones` ({name: (head, tail)} of the left
+    hand) the hand is built in the cage (rings["hand_w"]: its vertices' weights)."""
     bm = bmesh.new()
+    bm.verts.layers.deform.verify()  # before any vertex: adding a layer later frees the BMVert references
     V = lambda co: bm.verts.new(co)  # noqa: E731
     meta = []  # (vertex, kind, ring, ring centre) of every trunk, arm and leg ring vertex: the wrap's stations
     rings = {"meta": meta}
@@ -205,6 +358,8 @@ def build_cage(sole_drop, trunk):
         for i in range(8):
             bm.faces.new((prev[i], prev[(i + 1) % 8], ring[(i + 1) % 8], ring[i]))
         prev = ring
+    if bones is not None:
+        rings["hand_w"] = build_hand(bm, prev, bones)
     # legs: the first loop is the crotch ring's k = 0..6 and C
     c = V(CROTCH)
     loop = rings["crotch"][:7] + [c]
@@ -271,12 +426,15 @@ def trunk_measure(me, z):
             "yf": min((c.y for c in mid), default=None), "yb": max((c.y for c in mid), default=None)}
 
 
-def subdivided(bm_half, name):
-    """Mirrors and subdivides a half cage; returns (cage object, subdivided mesh object)."""
+def subdivided(bm_half, name, gnames=()):
+    """Mirrors and subdivides a half cage; returns (cage object, subdivided mesh object). The cage's vertex groups
+    (`gnames`, in the bmesh's deform indices) are mirrored Left -> Right and interpolated by the subdivision."""
     me = bpy.data.meshes.new(name + "Cage")
     bm_half.to_mesh(me)
     cage = bpy.data.objects.new(name + "Cage", me)
     bpy.context.scene.collection.objects.link(cage)
+    for n in gnames:
+        cage.vertex_groups.new(name=n)
     mm = cage.modifiers.new("Mirror", "MIRROR")
     mm.use_axis = (True, False, False)
     mm.use_clip = True
@@ -505,7 +663,7 @@ def main():
     args = p.parse_args(sys.argv[sys.argv.index("--") + 1:])
     report = {"src": args.src, "target": args.target}
     with open(args.ring, encoding="utf-8") as fh:
-        ring = json.load(fh)
+        ring = G.densify_ring(json.load(fh))  # S8b: 48 vertices, one to one with the body's end
     bpy.ops.wm.open_mainfile(filepath=args.src)
     arm = bpy.data.objects["CharacterArmature"]
     old = bpy.data.objects["Body"]
@@ -538,13 +696,13 @@ def main():
     def wrist_pt(t, scale=1.0):
         r = wrist_r(t) * scale
         return wy - r * math.cos(t), wz + r * math.sin(t)
-    wrist = {"count": WRIST_N, "x": WRIST_X, "centre": [round(wy, 5), round(wz, 5)],
-             "radius_mean": round(sum(wrist_r(2 * math.pi * k / WRIST_N) for k in range(WRIST_N)) / WRIST_N, 5),
+    wrist = {"count": 32, "x": WRIST_X, "centre": [round(wy, 5), round(wz, 5)],
+             "radius_mean": round(sum(wrist_r(2 * math.pi * k / 32) for k in range(32)) / 32, 5),
              "shape": "S1c's wrist section at x + 0.005 (a radius per angle), not an ellipse",
              "order": "index k at angle 2*pi*k/count around +X from the front (-Y) towards up (+Z); the right "
                       "wrist is the mirror (x -> -x)",
              "axes": "Blender (Z up, front -Y); glTF/Godot: (x, z, -y)"}
-    wrist["loop"] = [[WRIST_X] + [round(c, 5) for c in wrist_pt(2 * math.pi * k / WRIST_N)] for k in range(WRIST_N)]
+    wrist["loop"] = [[WRIST_X] + [round(c, 5) for c in wrist_pt(2 * math.pi * k / 32)] for k in range(32)]
 
     # 1-2. The cage, mirrored and subdivided; the soles lowered until the subdivided sole is at z = 0.
     # The trunk's rings are fitted the same way: subdivision pulls a ring towards its neighbours (the belly's peak
@@ -553,14 +711,22 @@ def main():
     drop = 0.0
     trunk = [list(t) for t in TRUNK]
     wrap = Wrap(args.target) if args.target else None
+    gnames = [g.name for g in old.vertex_groups]
+    gidx = {n: i for i, n in enumerate(gnames)}
+    bones = {b.name: (arm.matrix_world @ b.head_local, arm.matrix_world @ b.tail_local) for b in arm.data.bones
+             if b.name.startswith("Left")}
     for it in range(FIT_ITERS):
-        bm, rings = build_cage(drop, trunk)
+        bm, rings = build_cage(drop, trunk, bones)
         for (dy, dz), v in zip(OCT, rings["wrist_cage"]):  # a subdivided octagon's edge lies at 0.902 of its radius
             v.co = Vector((WRIST_X, *wrist_pt(math.atan2(dz, -dy), 1 / 0.902)))
         if wrap:
             wrap.apply(bm, rings)
+        dl = bm.verts.layers.deform.verify()
+        for v, w in rings["hand_w"].items():
+            for n, x in w.items():
+                v[dl][gidx[n]] = x
         cage_faces = len(bm.faces)
-        cage, body = subdivided(bm, "BodyNew")
+        cage, body = subdivided(bm, "BodyNew", gnames)
         bm.free()
         low = min(v.co.z for v in body.data.vertices)
         worst = 0.0
@@ -619,31 +785,35 @@ def main():
     N = len(lower)
     for k in range(N):
         bm.faces.new((lower[k], lower[(k + 1) % N], top[(k + 1) % N], top[k]))
-    step = nn // N
-    for i in range(N):
-        a0, a1, a2 = neck[step * i], neck[step * i + 1], neck[(step * i + 2) % nn]
-        bm.faces.new((a0, a1, lower[i]))
-        bm.faces.new((a1, a2, lower[(i + 1) % N], lower[i]))
-    wr = {}
-    for sx in (1, -1):
-        loopv = [v for v in bnd if v.co.x * sx > 0.5]
-        loopv, kw = angle_sort(loopv, (wy, wz), "x")
-        e = 0.0
-        for k, v in enumerate(loopv):
-            t = 2 * math.pi * k / len(loopv)
-            new = Vector((sx * WRIST_X, *wrist_pt(t)))
-            e = max(e, (new - v.co).length)
-            v.co = new
-        wr[sx] = ([v.index for v in loopv], kw)
-        report.setdefault("wrist", {})["l" if sx > 0 else "r"] = {"open_end": len(loopv), "snap_max_mm": round(e * 1000, 2)}
+    # S8b: the body's end meets the ring one to one (the ring densified to 48, G.densify_ring): plain quads, no S1
+    # triangle zip, whose alternating triangles and quads showed as a pleated collar. A 24-vertex ring (a ring file
+    # used without densifying) gets a quad reduction: four edges to two per unit, one middle vertex each.
+    if nn == N:
+        for k in range(N):
+            bm.faces.new((neck[k], neck[(k + 1) % N], lower[(k + 1) % N], lower[k]))
+        report["neck"]["join"] = f"quads {nn} -> {N}"
+    elif nn != 2 * N or N % 2:
+        raise RuntimeError(f"neck: the body's open end has {nn} vertices, the ring {N}; the join needs 1:1 or 2:1")
+    for i in range(N // 2 if nn == 2 * N else 0):
+        a = [neck[(4 * i + j) % nn] for j in range(5)]
+        b = [lower[(2 * i + j) % N] for j in range(3)]
+        m = bm.verts.new(a[2].co.lerp(b[1].co, 0.5))
+        for f in ((a[0], a[1], m, b[0]), (a[1], a[2], a[3], m), (a[3], a[4], b[2], m), (b[0], m, b[2], b[1])):
+            bm.faces.new(f)
+        report["neck"]["join"] = f"quad reduction {nn} -> {N}"
     bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
     bm.to_mesh(me)
     bm.free()
     ring_ids = {v.index for v in me.vertices if v.co.z > ring["z"] - ring["step"] - 1e-4}
 
-    # 4. Weights: from S1c's body by nearest-face interpolation.
-    for g in old.vertex_groups:
-        body.vertex_groups.new(name=g.name)
+    # 4. Weights. The hand's come from the cage (its loops' weights, interpolated by the subdivision); the rest from
+    # S1c's body by nearest-face interpolation, scaled by what the hand's leave (the wrist ring is half and half).
+    hand_w = [{g.group: g.weight for g in v.groups if g.weight > 0} for v in me.vertices]
+    for n in gnames:
+        if n not in body.vertex_groups:
+            body.vertex_groups.new(name=n)
+    gname = {g.index: g.name for g in body.vertex_groups}
+    hand_w = [{gname[g]: w for g, w in d.items()} for d in hand_w]
     dt = body.modifiers.new("Weights", "DATA_TRANSFER")
     dt.object = old
     dt.use_vert_data = True
@@ -654,77 +824,36 @@ def main():
     with bpy.context.temp_override(object=body, active_object=body):
         bpy.ops.object.modifier_apply(modifier=dt.name)
     nbody = len(me.vertices)
-
-    # The hands: S1c's mesh beyond WRIST_X + WRIST_GAP, joined and zipped to the wrist rings.
-    hands = old.copy()
-    hands.data = old.data.copy()
-    hands.modifiers.clear()
-    bpy.context.scene.collection.objects.link(hands)
-    hm = hands.data
-    bm = bmesh.new()
-    bm.from_mesh(hm)
-    xc = WRIST_X + WRIST_GAP
-    for sx in (1, -1):
-        side = [f for f in bm.faces if all(v.co.x * sx > 0.3 for v in f.verts)]
-        geom = list({v for f in side for v in f.verts}) + list({e for f in side for e in f.edges}) + side
-        bmesh.ops.bisect_plane(bm, geom=geom, plane_co=(sx * xc, 0, 0), plane_no=(sx, 0, 0))
-    bmesh.ops.delete(bm, geom=[v for v in bm.verts if abs(v.co.x) < xc - 1e-5], context="VERTS")
-    bm.to_mesh(hm)
-    bm.free()
-    report["hands_verts"] = len(hm.vertices)
-    for o in bpy.data.objects:
-        o.select_set(False)
-    body.select_set(True)
-    hands.select_set(True)
-    bpy.context.view_layer.objects.active = body
-    bpy.ops.object.join()
-    me = body.data
     bm = bmesh.new()
     bm.from_mesh(me)
     bm.verts.ensure_lookup_table()
-    for sx in (1, -1):
-        cut = [v for v in bm.verts if v.index >= nbody and abs(v.co.x - sx * xc) < 1e-4
-               and any(e.is_boundary for e in v.link_edges)]
-        cut, kc = angle_sort(cut, (wy, wz), "x")
-        ringv = [bm.verts[i] for i in wr[sx][0]]
-        zip_loops(bm, ringv, wr[sx][1], cut, kc)
-        report["wrist"]["l" if sx > 0 else "r"]["hand_cut"] = len(cut)
-    # S1c's right hand keeps an open hole where its Little finger was removed: closed here.
-    hole = [e for e in bm.edges if e.is_boundary and abs(e.verts[0].co.x) > 0.65]
-    report["hand_hole_edges_closed"] = len(hole)
-    if hole:  # walk the loop and cap it with one face, triangulated
-        loop = [hole[0].verts[0]]
-        e = hole[0]
-        while True:
-            nxt = e.other_vert(loop[-1])
-            if nxt is loop[0]:
-                break
-            loop.append(nxt)
-            e = next(x for x in nxt.link_edges if x is not e and x in hole)
-        # a fan around a new centre vertex (the loop's chords may already be edges of the hand), weights averaged
-        dl = bm.verts.layers.deform.verify()
-        c = bm.verts.new(sum((v.co for v in loop), Vector()) / len(loop))
-        for v in loop:
-            for g, w in v[dl].items():
-                c[dl][g] = c[dl].get(g, 0.0) + w / len(loop)
-        for i in range(len(loop)):
-            bm.faces.new((loop[i], loop[(i + 1) % len(loop)], c))
-        hv = set(loop) | {c}
-        for _ in range(3):
-            bmesh.ops.smooth_vert(bm, verts=list(hv), factor=0.5, use_axis_x=True, use_axis_y=True, use_axis_z=True)
-    bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
-    # The weld's band: the bisect leaves thin slivers on the hand's side of the cut, which fold the shading into a
-    # line. The cut row and the hand's rows within WRIST_SMOOTH[0] beyond it are relaxed (all axes); the standard ring
-    # stays fixed, so the arm's shape at the weld is kept.
-    band_w, passes = WRIST_SMOOTH
-    band = [v for v in bm.verts if WRIST_X + 0.001 < abs(v.co.x) < WRIST_X + WRIST_GAP + band_w]
-    for _ in range(passes):
-        bmesh.ops.smooth_vert(bm, verts=band, factor=0.5, use_axis_x=True, use_axis_y=True, use_axis_z=True)
-    # The weld's sharpest fold: the largest angle between neighbouring faces' normals within 1.5 cm of the ring.
-    folds = [math.degrees(e.link_faces[0].normal.angle(e.link_faces[1].normal)) for e in bm.edges
-             if len(e.link_faces) == 2 and abs(abs(e.verts[0].co.x) - WRIST_X) < 0.015 and e.verts[0].co.z > 1.1]
-    report["wrist_max_fold_deg"] = round(max(folds), 1)
-    report["wrist_folds_over_30"] = sum(1 for f in folds if f > 30)
+    dl = bm.verts.layers.deform.verify()
+    gi0 = {g.name: g.index for g in body.vertex_groups}
+    n_hand = 0
+    for v in bm.verts:
+        hw = hand_w[v.index] if v.index < len(hand_w) else {}
+        s_ = sum(hw.values())
+        if s_ <= 1e-4:
+            continue
+        n_hand += 1
+        d = v[dl]
+        tot = sum(d.values()) or 1.0
+        keep = {g: w / tot * max(0.0, 1.0 - s_) for g, w in d.items()}
+        for g in list(d.keys()):
+            del d[g]
+        for g, w in keep.items():
+            if w > 1e-4:
+                d[g] = w
+        for n, w in hw.items():
+            d[gi0[n]] = d.get(gi0[n], 0.0) + w
+    report["hand_weighted_verts"] = n_hand
+    # The hand's largest fold between neighbouring faces (a crease or a pinch would show here).
+    bm.normal_update()
+    folds = sorted(((math.degrees(e.link_faces[0].normal.angle(e.link_faces[1].normal)),
+                     [round(c, 3) for c in (e.verts[0].co + e.verts[1].co) / 2]) for e in bm.edges
+                    if len(e.link_faces) == 2 and e.verts[0].co.x > WRIST_X), reverse=True)
+    report["hand_max_fold_deg"] = round(folds[0][0], 1)
+    report["hand_folds_over_60"] = [[round(f, 1), at] for f, at in folds[:6] if f > 60]
     # Loose parts and open edges (only the neck ring's top should be open).
     seen, parts = set(), 0
     for v0 in bm.verts:
@@ -829,15 +958,25 @@ def main():
     for zc in range(70, 138, 2):
         m = trunk_measure(me, zc / 100)
         report["profile"].append([zc / 100] + [None if m[k] is None else round(m[k], 4) for k in ("a", "yf", "yb")])
-    with open(f"{args.out}/wrist_ring.json", "w", encoding="utf-8") as fh:
-        json.dump(wrist, fh, indent=1)
+    # each digit's subdivided radius at the middle of its second segment (the mean distance from the bone)
+    report["finger_radius_mm"] = {}
+    for f in FINGERS + ("Thumb",):
+        h, t = bones[f"Left{f}{'Proximal' if f == 'Thumb' else 'Intermediate'}"]
+        m, d = (h + t) / 2, (t - h).normalized()
+        sec = [v.co - m for v in me.vertices if abs((v.co - m).dot(d)) < 0.0015 and (v.co - m).length < 0.019]
+        r = [(c - d * c.dot(d)).length for c in sec]
+        report["finger_radius_mm"][f] = round(1000 * sum(r) / max(len(r), 1), 1)
+    report["hand_groups"] = {g.name: sum(1 for v in me.vertices for x in v.groups if x.group == g.index and x.weight > 0.01)
+                             for g in body.vertex_groups if any(k in g.name for k in ("Thumb", "Index", "Middle", "Ring", "Little"))}
+    report["wrist_section"] = wrist
     with open(f"{args.out}/neck_ring.json", "w", encoding="utf-8") as fh:
         json.dump(ring, fh, indent=1)
     with open(f"{args.out}/cage.json", "w", encoding="utf-8") as fh:
         json.dump(report, fh, indent=1)
     bpy.ops.wm.save_as_mainfile(filepath=f"{args.out}/alien_body.blend")
-    print("cage:", json.dumps({k: report[k] for k in ("body", "neck", "wrist", "fit_iterations", "loose_parts",
-                                                      "open_edges_below_ring", "little_weighted_verts", "wrist_max_fold_deg", "wrist_folds_over_30")}))
+    print("cage:", json.dumps({k: report[k] for k in ("body", "neck", "fit_iterations", "loose_parts",
+                                                      "open_edges_below_ring", "little_weighted_verts",
+                                                      "hand_weighted_verts", "hand_max_fold_deg", "hand_folds_over_60")}))
 
 
 if __name__ == "__main__":
