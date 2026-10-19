@@ -752,7 +752,7 @@ a time, by visibility.
 - **The mouths from 2D (step S6):** `tools/blender/alien_mouths.py` rebuilds both mouth designs' six pieces by
   measuring their GPT talk-shape sheets (per pixel column the lip edges, the opening, tongue and teeth; method in its
   docstring) on the assembled character, and writes the GLB again. The overbite's two teeth are now inside each
-  overbite piece (none in M), so `mouth_overbite_teeth` is gone; `alien.gd` still hides it when an older GLB has it.
+  overbite piece (none in M), so `mouth_overbite_teeth` is gone; `alien.gd` still shows it with the overbite pieces when an older GLB has it.
   The same script cuts the six panels' mouths into a 3 x 2 atlas (`mouth_flip_<design>.png`, alpha blended) and adds
   one face shell per shape, `mouthflip_<design>_<shape>`: the flipbook test. `alien.gd`'s `set_mouth_mode("3d" |
   "flip")` picks which the talk driver shows. `mouths.gd` is its off-screen proof (window 448 x 300): each shape as the
@@ -767,7 +767,8 @@ a time, by visibility.
   Both keep S1c's hands at the standard wrist ring (`wrist_ring.json`, as `neck_ring.json`), 4 fingers and 3-toe
   paddles. The pipeline, all headless Blender: `alien_parts.py` (head and face parts) → `alien_cage.py` (body) →
   `alien_assemble.py` (weld, masks, sockets, GLB) → `alien_mouths.py` (the S6 mouths on the assembled character, the
-  final GLB with `character.json`). What S7 put into Blender, so the GLB (and three.js) shows what Godot shows:
+  final GLB with `character.json`). `alien_cage_review.py` renders the review sheets that put u1, the first test and the
+  new bodies side by side (turntables, silhouettes, Walk, feet, welds). What S7 put into Blender, so the GLB (and three.js) shows what Godot shows:
   - the lid shells in the lips' material with a **rolled rim** (`alien_parts_geom.lid_shell(bead=...)`, `LID_BEAD`);
   - the eyeballs turned 11.5 degrees inward in the GLB (`alien_assemble.EYE_AIM_IN`; `alien.gd` sets the same
     rotation absolutely, so nothing doubles);
