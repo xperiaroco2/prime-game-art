@@ -157,9 +157,14 @@ func set_crest(name: String) -> void:
 
 func listen(bus: String) -> void:
 	var idx: int = AudioServer.get_bus_index(bus)
+	if idx < 0 or AudioServer.get_bus_effect_count(idx) == 0:
+		push_error("alien: no bus '%s' with a spectrum analyzer; the mouth stays at rest" % bus)
+		_analyzer = null
+		return
 	_analyzer = AudioServer.get_bus_effect_instance(idx, 0) as AudioEffectSpectrumAnalyzerInstance
 	_listen_t0 = Time.get_ticks_msec()
 	_next_switch_ms = 0.0
+	_peak = 1e-4
 	talk_log.clear()
 
 
