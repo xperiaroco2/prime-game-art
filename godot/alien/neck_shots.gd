@@ -180,7 +180,9 @@ func _run() -> void:
 		imgs = []
 		for k: String in _order:
 			_only([k], false)
-			var mat: ShaderMaterial = _rig[k].skin_material()
+			# the procedural skin: the grain is its own (M5's textured skin has none; on a textured kit this swims
+			# the crests only)
+			var mat: ShaderMaterial = _rig[k].procedural_material()
 			mat.set_shader_parameter("grain", 0.5)
 			mat.set_shader_parameter("grain_freq", 150.0)
 			for t: float in [-0.10, -0.40]:

@@ -160,6 +160,8 @@ func _run() -> void:
 			zooms.append(_region(target, _spec.get("grid_zoom_target", _spec["grid_zoom"])))
 		for v: Dictionary in variants:
 			var undo := {"skin": {}, "lip": {}, "eye": {}}
+			# the skin material: since M5 the textured one on a kit with the SSS marker (alien.gd SKIN_TEX: SKIN's grain
+			# and ao_albedo do nothing there; tune those on an untextured kit or through rig.procedural_material())
 			_apply(rig.skin_material(), v.get("skin", {}), undo["skin"])
 			_apply(rig.face_material("alien_lip"), v.get("lip", {}), undo["lip"])
 			_apply(rig.eye_material("bored"), v.get("eye", {}), undo["eye"])
@@ -168,7 +170,8 @@ func _run() -> void:
 				var c := Color(h[0][0], h[0][1], h[0][2]).srgb_to_linear()
 				var p := Color(h[1][0], h[1][1], h[1][2]).srgb_to_linear()
 				for m: Node in ch.find_children("*", "MeshInstance3D", true, false):
-					if (m as MeshInstance3D).get_surface_override_material(0) == rig.skin_material():
+					var om: Material = (m as MeshInstance3D).get_surface_override_material(0)
+					if om == rig.skin_material() or om == rig.procedural_material():  # M5: the crests too
 						(m as GeometryInstance3D).set_instance_shader_parameter("hue", Vector3(c.r, c.g, c.b))
 						(m as GeometryInstance3D).set_instance_shader_parameter("pale", Vector3(p.r, p.g, p.b))
 			if v.has("lights"):

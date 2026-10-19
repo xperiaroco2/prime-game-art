@@ -47,6 +47,27 @@ const SKIN := {
 	"rim_glow": 0.3,
 	"rim_value": 0.6, "rim_tint": 0.3,  # light D's tuning grid (2026-10-19): Godot's rim, a lighter edge as rf2's (was 0.2, 0.6)
 }
+## M5 (art #196): the textured skin's own uniforms (alien_hue.gdshader `textured`), on top of SKIN, for a mesh whose
+## imported hue material carries the SSS marker (SSS_MARKER: M5's kit, tools/blender/alien_eyes.py --sss-orm; the
+## albedo, the ORM with the subsurface mask in B, M2's normal map). A kit without the marker (M3a, M3c, M4) keeps the
+## procedural skin, its look before M5. Tuned on grids under light D against rf2 (m5_shots.gd); SKIN's grain and
+## ao_albedo do not apply to it. Chosen on M5's grids g1, g2 (rf2 first): the texture's teal washed out to a light
+## cyan under AgX (sat 1.45 and the hue parts' value 0.72 bring rf2's deeper teal; the pale's sat 1.3 its mint); the
+## screen-space SSS at SKIN's 0.3 and the fresnel glow made a waxy, hazy skin with no form, so the SSS is 0.08 plus
+## 0.4 on the mask's thin parts and the glow is off (0; a white line along the jaw's and neck's contour at 0.4 m),
+## with Godot's rim at 0.35; specular 0.5 and the roughness 0.08 lower give rf2's soft sheen on the dome; the normal
+## map at 0.7 (M2's neck rings and brow grooves read less; the sculpt's own fix is later), and on the pale only 0.35
+## of that (g3, the face from 0.4 m: the creases under the mouth and on the throat read as wrinkles).
+const SKIN_TEX := {
+	"textured": true, "normal_depth": 0.7, "normal_pale": 0.35, "tex_sat": 1.45, "tex_pale_sat": 1.3,
+	"tex_value": 0.72, "roughness_add": -0.08, "specular_value": 0.5, "sss": 0.08, "sss_thin": 0.4, "transmit": 0.3,
+	"rim_value": 0.35, "rim_glow": 0.0,
+}
+## M5: the SKIN_TEX keys the procedural skin (the crests' alien_hue_part, untextured) also takes when the kit is
+## textured, so a crest matches the head it sits on: the teal's saturation and value, the specular, the rim and glow,
+## and the dome's SSS (the mask is about 0 where the crests stand).
+const SKIN_TEX_SHARED := ["tex_sat", "tex_pale_sat", "tex_value", "specular_value", "sss", "rim_value", "rim_glow"]
+const SSS_MARKER := {"prime_sss": "orm_b"}  # the imported material's glTF extras (tools/blender/alien_eyes_geom.py)
 const LIP_LOOK := {"sheen": 0.08, "sheen_roughness": 0.7, "grain": 0.05}
 const EYE_LOOK := {  # alien_eye.gdshader's per-design uniforms (angles from the pupil axis, degrees; colours sRGB)
 	"bored": {"limbus_deg": 27.0, "iris_deg": 25.0, "pupil_deg": 11.5, "iris": Color(0.20, 0.12, 0.08),
@@ -103,6 +124,7 @@ var mouth_piece: String = "rest"
 var mouth_mode: String = "3d"
 
 var _material: ShaderMaterial
+var _tex_material: ShaderMaterial  # M5: the skin on its texture set (null for a kit without SSS_MARKER)
 var _hue_meshes: Array[GeometryInstance3D] = []
 var face_look: String = "s5"
 var _lid_material: Material
@@ -133,7 +155,8 @@ func setup(root: Node3D, seed: int = 196) -> void:
 		for s: int in m.mesh.get_surface_count():
 			var mat: Material = m.mesh.surface_get_material(s)
 			if mat != null and HUE_MATERIALS.has(mat.resource_name):
-				m.set_surface_override_material(s, _material)
+				var textured: ShaderMaterial = _textured_material(mat)
+				m.set_surface_override_material(s, textured if textured != null else _material)
 				uses = true
 				if m.name.contains("_lid_"):
 					_lid_surfaces.append([m, s])
@@ -152,6 +175,56 @@ func setup(root: Node3D, seed: int = 196) -> void:
 	set_mouth_design(mouth_design)
 	set_crest(crest)
 	_next_blink_s = _rng.randf_range(BLINK_EVERY_S.x, BLINK_EVERY_S.y)
+
+
+## M5: the skin material on the imported material's texture set (the albedo, the ORM with the SSS mask in B, the
+## normal map), made once and shared like _material; null unless the imported material carries SSS_MARKER (its glTF
+## extras, Godot's "extras" metadata) and an albedo texture: an older textured kit keeps the procedural skin. The first
+## textured surface also gives _material SKIN_TEX_SHARED (the crests).
+func _textured_material(imported: Material) -> ShaderMaterial:
+	var bm := imported as BaseMaterial3D
+	if bm == null or bm.albedo_texture == null or not has_sss_marker(imported):
+		return null
+	if _tex_material == null:
+		_tex_material = ShaderMaterial.new()
+		_tex_material.shader = SHADER
+		_tex_material.resource_name = "alien_hue_textured"
+		for k: String in SKIN:
+			_tex_material.set_shader_parameter(k, SKIN[k])
+		for k: String in SKIN_TEX:
+			_tex_material.set_shader_parameter(k, SKIN_TEX[k])
+		for k: String in SKIN_TEX_SHARED:
+			_material.set_shader_parameter(k, SKIN_TEX[k])
+		_tex_material.set_shader_parameter("albedo_tex", bm.albedo_texture)
+		var orm: Texture2D = bm.roughness_texture if bm.roughness_texture != null else bm.ao_texture
+		if orm != null:
+			_tex_material.set_shader_parameter("orm_tex", orm)
+		if bm.normal_enabled and bm.normal_texture != null:
+			_tex_material.set_shader_parameter("normal_tex", bm.normal_texture)
+		var t: Color = (HUES["teal"][0] as Color).srgb_to_linear()
+		var p: Color = (HUES["teal"][1] as Color).srgb_to_linear()
+		for m: ShaderMaterial in [_tex_material, _material]:
+			m.set_shader_parameter("tex_hue", Vector3(t.r, t.g, t.b))
+			m.set_shader_parameter("tex_pale", Vector3(p.r, p.g, p.b))
+	return _tex_material
+
+
+## M5: whether an imported material carries SSS_MARKER in its glTF extras.
+static func has_sss_marker(imported: Material) -> bool:
+	if imported == null or not imported.has_meta("extras"):
+		return false
+	var ex: Variant = imported.get_meta("extras")
+	if not ex is Dictionary:
+		return false
+	for k: String in SSS_MARKER:
+		if (ex as Dictionary).get(k, "") != SSS_MARKER[k]:
+			return false
+	return true
+
+
+## M5: whether the skin samples a texture set.
+func is_textured() -> bool:
+	return _tex_material != null
 
 
 func _make_face_materials() -> void:
@@ -202,8 +275,14 @@ func set_face_look(look: String) -> void:
 	set_lids(lid_state)  # the balls' rest look and the eye shader's lid edges
 
 
-## The hue (skin) material shared by the body, head and crests (for tuning grids).
+## The hue (skin) material shared by the body and head (for tuning grids): since M5 the textured one when the kit's
+## hue material carries SSS_MARKER (the crests keep the procedural one, procedural_material()).
 func skin_material() -> ShaderMaterial:
+	return _tex_material if _tex_material != null else _material
+
+
+## The procedural skin: the whole skin of a kit without SSS_MARKER, the crests' on a textured kit (SKIN_TEX_SHARED).
+func procedural_material() -> ShaderMaterial:
 	return _material
 
 
