@@ -190,3 +190,43 @@ def micro_pore(div, gain: float = 6.0, xp=PY):
     +Y). For a height field h the normal leans along -grad h, so the divergence is -laplacian(h): in a pit (h at a
     minimum) it is negative, on a bump positive."""
     return xp.clip(-div * gain, 0.0, 1.0)
+
+
+# The export's image check: the materials that may reference an image in the GLB. The skin carries the texture set on
+# Body's UVMap; the flipbook mouths their atlases. Anything else (as M3a's first export, whose alien_hue_part kept M2's
+# 4K normal map and sampled it through the crests' own UVs) fails the export stage.
+IMAGE_MATERIALS = ("alien_hue",)
+IMAGE_MATERIAL_PREFIXES = ("alien_mouth_flip_",)
+
+
+def _texture_refs(o):
+    """The texture indices of a glTF material (any `*Texture` object with an index, extensions included)."""
+    if isinstance(o, dict):
+        for k, v in o.items():
+            if k.endswith("Texture") and isinstance(v, dict) and "index" in v:
+                yield v["index"]
+            yield from _texture_refs(v)
+    elif isinstance(o, list):
+        for v in o:
+            yield from _texture_refs(v)
+
+
+def image_materials(gltf: dict) -> dict:
+    """{material name: the sorted names (or indices) of the images it references} of a parsed glTF JSON, only the
+    materials with at least one."""
+    images, textures = gltf.get("images", []), gltf.get("textures", [])
+    out = {}
+    for i, m in enumerate(gltf.get("materials", [])):
+        refs = set()
+        for t in _texture_refs(m):
+            src = textures[t].get("source")
+            refs.add(images[src].get("name", str(src)) if src is not None else f"texture {t}")
+        if refs:
+            out[m.get("name", f"material {i}")] = sorted(refs)
+    return out
+
+
+def unexpected_images(gltf: dict) -> dict:
+    """image_materials() without the materials allowed an image (IMAGE_MATERIALS, IMAGE_MATERIAL_PREFIXES)."""
+    return {k: v for k, v in image_materials(gltf).items()
+            if k not in IMAGE_MATERIALS and not k.startswith(IMAGE_MATERIAL_PREFIXES)}

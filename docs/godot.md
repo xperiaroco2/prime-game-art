@@ -1033,11 +1033,14 @@ a time, by visibility.
       laid a wet patch on the forehead, and a pore-scale roughness noise of 0.05 made the highlight sparkle.
   - `--stage export`: the other meshes on `alien_hue` (the alternative crests `crest_antennae`, `crest_fins`) move
     to an untextured copy, `alien_hue_part`, since their UVs are not Body's (`alien.gd`'s `HUE_MATERIALS` swaps both
-    for the shader). `alien_hue` takes the set on `UVMap` (Base Color from the albedo; Separate Color of the ORM
+    for the shader). The copy's image and Normal Map nodes are removed (`strip_images()`): kept, M2's 4K normal map
+    went into the GLB a second time (14.3 MB) as the crests' `normalTexture`, sampled through their own UVs. `alien_hue` takes the set on `UVMap` (Base Color from the albedo; Separate Color of the ORM
     into Roughness and Metallic, and R into the `glTF Material Output` group's Occlusion), so the GLB has
     `baseColorTexture`, `metallicRoughnessTexture` and `occlusionTexture` on one ORM image, and `normalTexture`.
-    `export/alien_character.glb` (38 MB) with its `.blend`, `character.json` (`note_m3a_textures`), the mouth atlases
-    and `alien_skin_sss.png`.
+    `export/alien_character.glb` (34.9 MB: the normal map 16.1, the ORM 7.7, the albedo 3.5, the two mouth atlases
+    0.6) with its `.blend`, `character.json` (`note_m3a_textures`), the mouth atlases and `alien_skin_sss.png`. The
+    stage then reads the GLB's JSON and fails when any material but `alien_hue` and the flipbook mouths
+    (`alien_mouth_flip_*`) references an image (`alien_texture_geom.unexpected_images()`).
   - `COLOR_0` (the vertex AO) is still exported because `alien_hue.gdshader` reads it; a plain glTF viewer multiplies
     it into the albedo on top of the half AO already in it. The albedo is the teal hue's only: the other hues need
     M5's shader to tint (or one albedo per hue).

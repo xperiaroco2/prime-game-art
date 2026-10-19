@@ -21,8 +21,9 @@ extends Node
 ## Used through preload (a -s script has no global class cache): const AlienRig = preload("res://alien/alien.gd").
 
 const SHADER: Shader = preload("res://alien/alien_hue.gdshader")
-## The hue materials the shader replaces: the skin, and since M3a (art #196) the crest parts' own untextured copy
-## (the skin's material carries the texture set on Body's UV, which the crest parts do not share).
+## The hue materials the shader replaces: the skin, and since M3a (art #196) the crest parts' own copy with no image
+## at all, not even M2's normal map (the skin's material carries the texture set on Body's UV, which the crest parts
+## do not share; alien_texture.py's export stage fails if any material but the skin and the flipbook mouths has one).
 const HUE_MATERIALS := ["alien_hue", "alien_hue_part"]
 const EYE_SHADER: Shader = preload("res://alien/alien_eye.gdshader")
 const LIP_SHADER: Shader = preload("res://alien/alien_lip.gdshader")

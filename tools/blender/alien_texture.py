@@ -36,6 +36,7 @@ import argparse
 import json
 import math
 import shutil
+import struct
 import sys
 import time
 from pathlib import Path
@@ -636,13 +637,42 @@ def texture_skin(body, tdir, normal_png):
     return mt
 
 
+def strip_images(mt):
+    """Removes a material's image and normal map nodes (their links go with them): the crest parts' copy of the
+    skin must not carry M2's normal map, which they would sample through their own UVs."""
+    nt = mt.node_tree
+    gone = [n.name for n in nt.nodes if n.type in ("TEX_IMAGE", "NORMAL_MAP")]
+    for name in gone:
+        nt.nodes.remove(nt.nodes[name])
+    return gone
+
+
+def glb_json(path):
+    """The JSON chunk of a GLB."""
+    b = Path(path).read_bytes()
+    n, kind = struct.unpack_from("<I4s", b, 12)
+    if b[:4] != b"glTF" or kind != b"JSON":
+        raise SystemExit(f"{path}: not a GLB")
+    return json.loads(b[20:20 + n])
+
+
+def check_images(glb):
+    """Fails the stage when a material other than alien_hue and the mouth flipbooks references an image."""
+    g = glb_json(glb)
+    bad = T.unexpected_images(g)
+    if bad:
+        raise SystemExit(f"export: images on materials that must have none: {json.dumps(bad)}")
+    log("images per material", json.dumps(T.image_materials(g)))
+
+
 def stage_export(a, out):
     m2 = Path(a.m2)
     bpy.ops.wm.open_mainfile(filepath=str(m2 / "export" / "alien_character.blend"))
     body = bpy.data.objects["Body"]
     skin = body.data.materials[0]
-    part = skin.copy()  # the crest parts keep the untextured stand-in: their UVs are not Body's UVMap
+    part = skin.copy()  # the crest parts get an untextured copy: their UVs are not Body's UVMap
     part.name = PART_MATERIAL
+    log("removed from " + PART_MATERIAL, strip_images(part))
     parts = []
     for o in bpy.data.objects:
         if o is not body and o.type == "MESH":
@@ -659,6 +689,7 @@ def stage_export(a, out):
     res = bpy.ops.export_scene.gltf(filepath=str(ex / "alien_character.glb"), **opts)
     if res != {"FINISHED"}:
         raise SystemExit(f"export: {res}")
+    check_images(ex / "alien_character.glb")
     src = Path(a.kit) if a.kit else m2 / "export"
     for f in src.iterdir():
         if f.suffix == ".png":
@@ -671,6 +702,8 @@ def stage_export(a, out):
         "warmth, flush and half the AO baked in), metallicRoughnessTexture and occlusionTexture in one ORM image (R "
         "occlusion, G roughness, B metallic 0), normalTexture (the M2 detail normal map rebaked through an explicit "
         "cage). alien_skin_sss.png beside the GLB is the subsurface mask (white: thin) for the Godot shader (M5). "
+        "The alternative crests (crest_antennae, crest_fins) are on alien_hue_part, an untextured copy of the skin's "
+        "material (no image: their UVs are not Body's UVMap). "
         "COLOR_0 (the vertex AO) is still exported for alien_hue.gdshader; a plain glTF viewer multiplies it into the "
         "albedo again. The albedo is for the teal hue only.")
     (ex / "character.json").write_text(json.dumps(cj, indent=1), encoding="utf-8", newline="\n")

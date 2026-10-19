@@ -153,5 +153,33 @@ class CageTest(unittest.TestCase):
         self.assertLess(c["max_mm"], c["ray_mm"])
 
 
+class ImageCheckTest(unittest.TestCase):
+    """The export's check that only the skin and the flipbook mouths reference images."""
+
+    @staticmethod
+    def gltf(materials):
+        return {"images": [{"name": "albedo"}, {"name": "normal"}, {"name": "mouth_flip_frog"}],
+                "textures": [{"source": 0}, {"source": 1}, {"source": 2}], "materials": materials}
+
+    def test_allowed(self):
+        g = self.gltf([
+            {"name": "alien_hue", "normalTexture": {"index": 1},
+             "pbrMetallicRoughness": {"baseColorTexture": {"index": 0}}},
+            {"name": "alien_mouth_flip_frog", "pbrMetallicRoughness": {"baseColorTexture": {"index": 2}}},
+            {"name": "alien_hue_part", "pbrMetallicRoughness": {"baseColorFactor": [1, 1, 1, 1]}},
+        ])
+        self.assertEqual(G.unexpected_images(g), {})
+        self.assertEqual(G.image_materials(g), {"alien_hue": ["albedo", "normal"],
+                                                "alien_mouth_flip_frog": ["mouth_flip_frog"]})
+
+    def test_part_with_a_normal_map_fails(self):
+        g = self.gltf([{"name": "alien_hue_part", "normalTexture": {"index": 1}}])
+        self.assertEqual(G.unexpected_images(g), {"alien_hue_part": ["normal"]})
+
+    def test_extension_textures_count(self):
+        g = self.gltf([{"name": "alien_lip", "extensions": {"KHR_materials_sheen": {"sheenColorTexture": {"index": 0}}}}])
+        self.assertEqual(G.unexpected_images(g), {"alien_lip": ["albedo"]})
+
+
 if __name__ == "__main__":
     unittest.main()
