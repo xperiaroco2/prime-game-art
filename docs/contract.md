@@ -103,6 +103,13 @@ morph (it costs only file size). More than `face_morphs_target` (64, provisional
 eyes slot's eyeballs may carry their look morphs (`look_l`, `look_r`, `look_u`, `look_d`, the slot's `part_morphs`):
 they pass under `check --slot eyes`; any other shape key on a separate part warns.
 
+**The alien (exception).** The alien's face is overlaid rigid parts, not morphs: eyeballs with rotating lid shells and
+replacement mouth pieces on the Head bone's sockets, never mesh deformation (the engineer, 2026-10-19; art #221,
+`docs/decisions/2026-10-19-alien-overlaid-face-four-fingers.md`, which supersedes "Faces" above for the alien). It has
+four fingers (Index, Middle, Ring, Thumb); the Little finger's bones stay in the skeleton, unweighted, so the skeleton
+and the clips are unchanged. The five weighted fingers in "Skeleton" above and `check --kind body`'s finger rule still
+describe the human bodies; the alien's own rule is a follow-up.
+
 **Animation.** Skeletal clips on the contract skeleton in one shared library, in place, loops suffixed `_loop`; the
 knockdown is a ragdoll ("Ragdoll" below); every other state is a clip. Eyes and mouth animate by the face morphs
 ("Faces" above), weighted at runtime, never by bones or texture frames; the full expression lists wait for the style

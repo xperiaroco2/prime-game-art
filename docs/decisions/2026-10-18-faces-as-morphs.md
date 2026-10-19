@@ -6,6 +6,10 @@
   [art#196 comment](https://github.com/xperiaroco2/prime-game-art/issues/196#issuecomment-6242847632), "For you" 2.
 - Changes: the character contract (`contract/contract.toml`, `docs/contract.md`), written in 2026-10-02's ADR
   (`2026-10-02-art-repo-foundation.md`).
+- Superseded in part by: [`2026-10-19-alien-overlaid-face-four-fingers.md`](2026-10-19-alien-overlaid-face-four-fingers.md)
+  (the engineer, 2026-10-19, art#221). For the alien the face is overlaid rigid parts (eyeballs with lid shells,
+  replacement mouth pieces) on the Head bone's sockets, never morphs, so the face part of this ADR no longer applies
+  to it. The no-body-shape-morphs rule stands.
 
 ## Context
 
