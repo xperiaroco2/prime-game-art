@@ -16,6 +16,33 @@ from mathutils import Matrix, Vector
 MASKS = "masks"
 
 
+NECK_RING_COUNT = 48  # S8b: the weld ring's vertices (S1's file has 24; the body's subdivided neck end has 48)
+
+
+def densify_ring(ring: dict, n: int = NECK_RING_COUNT) -> dict:
+    """S8b: the neck ring at n vertices, so the head's loft and the body's subdivided end meet one to one (S1's 24-vertex
+    ring needed a 2-to-1 join on the body side, the pleated collar). Each step doubles it: `loop` (an exact ellipse)
+    gets the ellipse's points at the middle angles, `loop_below` (a measured loop) four-point midpoints."""
+    out = dict(ring)
+    while out["count"] < n:
+        c, (ax, ay) = out["centre"], out["semi_axes"]
+        m = out["count"] * 2
+        loop, below = [], []
+        lb = out["loop_below"]
+        k0 = out["count"]
+        for k in range(k0):
+            loop.append(out["loop"][k])
+            t = 2 * math.pi * (2 * k + 1) / m
+            loop.append([round(c[0] + ax * math.sin(t), 6), round(c[1] - ay * math.cos(t), 6), out["z"]])
+            below.append(lb[k])
+            p0, p1, p2, p3 = (lb[(k + j) % k0] for j in (-1, 0, 1, 2))
+            below.append([round((-p0[i] + 9 * p1[i] + 9 * p2[i] - p3[i]) / 16, 6) for i in range(3)])
+        out.update({"count": m, "loop": loop, "loop_below": below, "densified_from": ring["count"]})
+    if out["count"] != n:
+        raise ValueError(f"densify_ring: {ring['count']} does not double to {n}")
+    return out
+
+
 def smoothstep(a: float, b: float, x: float) -> float:
     t = max(0.0, min(1.0, (x - a) / (b - a)))
     return t * t * (3 - 2 * t)

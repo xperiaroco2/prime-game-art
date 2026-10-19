@@ -19,7 +19,7 @@ The method:
 1. Weld: the head's last 24 vertices lie on the body's neck ring (S2a, weld error 0); the two meshes are joined
    (vertex groups and UV layers by name), the coincident ring vertices merged, every custom normal cleared and the
    whole mesh shaded smooth, so the ring's normals are the average over both sides' faces: no lighting seam. The
-   band across the weld is then smoothed in x and y (NECK_SMOOTH), which eases the loft's pinch at the back of the neck.
+   neck across the weld is then faired as one smooth surface (NECK_FAIR, S8b), so no pleated collar or crease shows.
 2. Masks (the `masks` UV layer, TEXCOORD_1, read by godot/alien/alien_hue.gdshader; the glTF export stores V
    flipped, the shader flips it back): u = light, v = accent. The head keeps S2a's masks. On the body, u is the
    throat and belly: the front half (in front of each height's midline centre, the middle of the vertices within
@@ -48,11 +48,16 @@ from mathutils import Matrix, Vector
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import export_glb  # noqa: E402
 
-EYE_AIM_IN = 11.5  # degrees: each eyeball turned inward about its socket's up axis (S5; godot/alien/alien.gd aim_in_deg)
-BELLY_HALF_W = [(0.78, 0.0), (0.82, 0.035), (0.90, 0.072), (1.00, 0.086), (1.15, 0.076), (1.30, 0.060), (1.40, 0.048)]
+from alien_face import EYE_AIM_IN  # noqa: E402  (S5; godot/alien/alien.gd aim_in_deg)
+BELLY_HALF_W = [(0.78, 0.0), (0.80, 0.045), (0.86, 0.082), (0.95, 0.100), (1.05, 0.100), (1.15, 0.090), (1.25, 0.074),
+                (1.33, 0.058), (1.40, 0.046)]  # S8b: u1's oval on the cage body (S7's read as a strip)
 # the pale panel's half width in x by height (z, m): u1's throat-to-belly panel, an oval at the crotch
-BELLY_SOFT = 0.012  # its soft edge, m
-NECK_SMOOTH = [((1.35, 1.435), 4), ((1.365, 1.425), 8)]  # (z band, m), passes: the neck's pinch across the weld
+BELLY_SOFT = 0.018  # its soft edge, m (S8b: softer)
+# S8b: the neck across the weld faired as one smooth surface. Each vertex's distance from the ring's axis (in the ring's
+# ellipse units) is replaced by a Gaussian average of its neighbours' by angle and height, so the ripple of the 24-to-48
+# join and the decimated head cut (a ruffled collar of pleats) and the creases at the loft's ends go, while the neck's
+# own shape (lower harmonics, its flare) stays. Full between z[1] and z[2], easing to none at z[0] and z[3] (m).
+NECK_FAIR = {"z": (1.345, 1.360, 1.418, 1.445), "sigma_deg": 20.0, "sigma_z": 0.006, "r_max": 1.22}
 NECK_R = 0.075  # only vertices this close to the ring's axis (the chin, from z 1.452 down to its underside, stays)
 MIDLINE_X = 0.05  # the trunk centre per height: the middle of the body's vertices within this of x = 0, m
 MASK_SMOOTH = 2  # neighbour-average passes over the body's light mask (the mesh is coarse: about 2 cm edges)
@@ -212,8 +217,58 @@ def body_masks(body, arm, ring, head_ring_u):
             "vertices": len(me.vertices)}
 
 
-def weld(body, head, ring_c):
-    """Joins the head into the body, merges the coincident ring vertices, clears custom normals, shades smooth."""
+def fair_neck(verts, ring):
+    """S8b: NECK_FAIR on the welded neck. Returns the largest radial ripple (mm) before and after (each vertex's
+    distance from its neighbourhood's average radius) and the largest move."""
+    F = NECK_FAIR
+    cx, cy = ring["centre"]
+    ax, ay = ring["semi_axes"]
+    z0, z1, z2, z3 = F["z"]
+    sg, sz = math.radians(F["sigma_deg"]), F["sigma_z"]
+    rn = lambda c: math.hypot((c.x - cx) / ax, (c.y - cy) / ay)  # noqa: E731
+    band = [v for v in verts if z0 < v.co.z < z3 and math.hypot(v.co.x - cx, v.co.y - cy) < NECK_R
+            and rn(v.co) < F["r_max"]]
+    pts = [(math.atan2(v.co.x - cx, -(v.co.y - cy)), v.co.z, rn(v.co)) for v in band]
+
+    def target(t, z):
+        acc = wsum = 0.0
+        for t2, z2_, r2 in pts:
+            dt = (t2 - t + math.pi) % (2 * math.pi) - math.pi
+            dz = z2_ - z
+            if abs(dz) > 3 * sz or abs(dt) > 3 * sg:
+                continue
+            w = math.exp(-(dt / sg) ** 2 - (dz / sz) ** 2)
+            acc += w * r2
+            wsum += w
+        return acc / wsum
+
+    def ripple():
+        return 1000 * max(abs(r - target(t, z)) for t, z, r in pts if z1 <= z <= z2) * (ax + ay) / 2  # the full zone
+
+    before = ripple()
+    goal = [target(t, z) for t, z, _ in pts]
+    most = 0.0
+    for v, (t, z, r), g in zip(band, pts, goal):
+        w = _smoothstep(z0, z1, z) * (1.0 - _smoothstep(z2, z3, z))
+        k = (r + w * (g - r)) / r if r > 1e-6 else 1.0
+        old = v.co.copy()
+        v.co.x = cx + (v.co.x - cx) * k
+        v.co.y = cy + (v.co.y - cy) * k
+        most = max(most, (v.co - old).length)
+    pts = [(t, z, rn(v.co)) for v, (t, z, _) in zip(band, pts)]
+    return {"verts": len(band), "ripple_before_mm": round(before, 2), "ripple_after_mm": round(ripple(), 2),
+            "max_move_mm": round(most * 1000, 2), **F}
+
+
+def _smoothstep(a, b, x):
+    t = min(max((x - a) / (b - a), 0.0), 1.0)
+    return t * t * (3 - 2 * t)
+
+
+def weld(body, head, ring):
+    """Joins the head into the body, merges the coincident ring vertices, fairs the neck across the weld
+    (fair_neck), clears custom normals, shades smooth."""
+    ring_c = ring["centre"]
     nb = len(body.data.vertices)
     bpy.ops.object.select_all(action="DESELECT")
     head.select_set(True)
@@ -229,15 +284,9 @@ def weld(body, head, ring_c):
     body_ring = [v for v in bm.verts if v.index < nb and abs(v.co.z - 1.39) < 0.01]
     bmesh.ops.remove_doubles(bm, verts=head_verts + body_ring, dist=1e-5)
     merged = before - len(bm.verts)
-    # the neck: the head's loft flares from the thin Meshy neck into the body's ring, a pinch at the back; smooth the
-    # band across the weld in x and y only (heights kept), the inner band more
-    start = {v.index: v.co.copy() for v in bm.verts}
-    for (z0, z1), passes in NECK_SMOOTH:
-        band = [v for v in bm.verts if z0 < v.co.z < z1
-                and math.hypot(v.co.x - ring_c[0], v.co.y - ring_c[1]) < NECK_R]
-        for _ in range(passes):
-            bmesh.ops.smooth_vert(bm, verts=band, factor=0.5, use_axis_x=True, use_axis_y=True, use_axis_z=False)
-    neck_moved_mm = max((v.co - start[v.index]).length for v in bm.verts) * 1000.0
+    # the neck: one smooth surface across the weld (no pleats, no crease at the loft's ends)
+    fair = fair_neck(bm.verts, ring)
+    neck_moved_mm = fair["max_move_mm"]
     for f in bm.faces:
         f.smooth = True
     bm.to_mesh(me)
@@ -251,7 +300,8 @@ def weld(body, head, ring_c):
     bm.from_mesh(me)
     open_neck = sum(1 for e in bm.edges if e.is_boundary and all(1.3 < v.co.z < 1.5 for v in e.verts))
     bm.free()
-    return {"merged": merged, "open_edges_at_neck": open_neck, "neck_smooth_max_mm": round(neck_moved_mm, 2), "vertices": len(me.vertices),
+    return {"merged": merged, "open_edges_at_neck": open_neck, "neck_smooth_max_mm": round(neck_moved_mm, 2), "neck_fair": fair,
+            "vertices": len(me.vertices),
             "triangles": sum(len(p.vertices) - 2 for p in me.polygons)}
 
 
@@ -350,7 +400,7 @@ def main():
     nodes["crests"].sort()
     rep["part_triangles"] = {n: tris(o) for n, o in objs.items() if o.type == "MESH" and n != "alien_head"}
     rep["head_triangles"] = tris(head)
-    rep["weld"] = weld(body, head, ring["centre"])
+    rep["weld"] = weld(body, head, ring)
     body.name = "Body"
     for o in bpy.data.objects:  # the lid's local X angle in its eye node, as parts.json gives it
         if "_lid_" in o.name:

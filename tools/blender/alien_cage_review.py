@@ -275,12 +275,13 @@ def curl(arm, deg, thumb_deg):
     for f in ("Index", "Middle", "Ring"):
         for s, k in zip(FINGER_SEGS, (0.9, 1.1, 0.7)):
             turn_world(arm, f"Left{f}{s}", (0, 1, 0), deg * k)
-    b = arm.data.bones["LeftThumbProximal"]
-    d = (b.tail_local - b.head_local).normalized()
+    # S8b: the thumb's mesh points forward along the hand (alien_cage.THUMB_DIR), not down its bones: it swings under
+    # the palm about the hand's long axis, and its joints bend about the axis across the mesh thumb
+    d = Vector((0.82, -0.42, -0.24)).normalized()
     ax = d.cross(Vector((0, 0, -1)))
     for s in ("Proximal", "Distal"):
-        turn_world(arm, f"LeftThumb{s}", ax, thumb_deg)
-    turn_world(arm, "LeftThumbMetacarpal", (1, 0, 0), -0.5 * thumb_deg)
+        turn_world(arm, f"LeftThumb{s}", ax, 0.6 * thumb_deg)
+    turn_world(arm, "LeftThumbMetacarpal", (1, 0, 0), 0.9 * thumb_deg)
 
 
 def play(arm, sc, key, frac):

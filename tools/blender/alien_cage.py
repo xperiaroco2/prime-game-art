@@ -49,11 +49,15 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import os
 import sys
 
 import bmesh
 import bpy
 from mathutils import Vector
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import alien_parts_geom as G  # noqa: E402
 
 S = math.sqrt(0.5)
 SUPER = 2.5  # the trunk sections' superellipse exponent (2: an ellipse; higher: fuller sides)
@@ -100,35 +104,47 @@ WRIST_GAP = 0.005
 # palm's lower front quad between the second and third ring is the thumb's root. The positions are read off the
 # contract skeleton's hand bones (LeftHand's head at x 0.644; the knuckles at 0.767 to 0.776; Index, Middle and Ring
 # 4.1 to 4.5 cm apart in y): u1's big soft hand with three fat fingers and a thumb.
-HAND = [
-    (0.640, 0.062, 1.2725, 0.031, 0.0235),  # the wrist joint
-    (0.680, 0.056, 1.2690, 0.047, 0.0245),  # the palm's heel
-    (0.722, 0.050, 1.2700, 0.057, 0.0225),
-    (0.758, 0.049, 1.2705, 0.058, 0.0200),  # the knuckles: its end is the fingers' roots
+HAND = [  # S8b: the palm a little wider and thicker (u1's soft mitten)
+    (0.640, 0.062, 1.2725, 0.033, 0.0245),  # the wrist joint
+    (0.680, 0.056, 1.2690, 0.051, 0.0260),  # the palm's heel
+    (0.722, 0.050, 1.2700, 0.061, 0.0242),
+    (0.758, 0.049, 1.2705, 0.062, 0.0218),  # the knuckles: its end is the fingers' roots
 ]
 HAND_INNER = (0.56, 0.56, 0.50, 0.36)  # each ring's top and bottom inner vertices at this share of the half width
 HAND_SIDE_H = 0.55  # the side vertices' height, a share of the half height
 FINGERS = ("Index", "Middle", "Ring")  # the Little finger's bones stay, unweighted
-FINGER_R = 0.0175  # m: a finger tube's cage half side times 0.93 (subdivided, the finger's radius is about 0.7 of it)
-THUMB_R = 0.0185
-TIP_BACK = 0.010  # m: the tips end this far before the distal bone's tail (a little shorter than human)
+# S8b: shorter, chunkier fingers in the mesh only (the bones and clips stay): each finger ring's place along its bones
+# is pulled toward the knuckle (J0) by FINGER_K, so the knuckle loops sit up to 1.2 cm before the bones' joints and
+# the tip ends about 1.5 cm short of S8's; the weights follow the rings.
+FINGER_K = 0.82
+FINGER_R = 0.0208  # m: a finger tube's cage half side times 0.93 (subdivided, the finger's radius is about 0.7 of it)
+TIP_BACK = 0.010  # m: the tips end this far before the distal bone's tail (before FINGER_K)
 # Per finger ring: (joint, offset m along the finger, radius scale, weights by segment P/I/D/H(and)/M(etacarpal)).
 FINGER_RINGS = [
     ("J0", 0.008, 1.00, {"P": 0.85, "H": 0.15}),
-    ("J1", -0.006, 0.97, {"P": 0.8, "I": 0.2}),
-    ("J1", 0.006, 0.97, {"P": 0.2, "I": 0.8}),
-    ("J2", -0.005, 0.95, {"I": 0.8, "D": 0.2}),
-    ("J2", 0.005, 0.95, {"I": 0.2, "D": 0.8}),
-    ("TIP", -0.004, 0.90, {"D": 1.0}),
-    ("TIP", 0.003, 0.55, {"D": 1.0}),
+    ("J1", -0.006, 0.98, {"P": 0.8, "I": 0.2}),
+    ("J1", 0.006, 0.98, {"P": 0.2, "I": 0.8}),
+    ("J2", -0.005, 0.97, {"I": 0.85, "D": 0.15}),
+    ("J2", 0.005, 0.96, {"I": 0.5, "D": 0.5}),
+    ("TIP", -0.004, 0.92, {"I": 0.3, "D": 0.7}),
+    ("TIP", 0.004, 0.60, {"I": 0.3, "D": 0.7}),
 ]
+# S8b: the thumb leaves the palm's front side (the quad between the heel and the middle ring) as a soft mound and
+# points forward along the hand and a little toward the palm (u1), not down along its bones: a quadratic curve from the
+# quad's centre, THUMB_OUT m out of the side, then THUMB_LEN m along THUMB_DIR (Blender: +X along the hand, -Y the
+# front, -Z the palm). Rings: (t on the curve, radius scale, weights by segment M/P/D/H).
+THUMB_R = 0.0215
+THUMB_OUT = 0.014
+THUMB_LEN = 0.062
+THUMB_DIR = (0.82, -0.42, -0.24)
 THUMB_RINGS = [
-    ("J1", -0.010, 1.15, {"M": 0.85, "P": 0.15}),
-    ("J1", 0.006, 0.97, {"M": 0.2, "P": 0.8}),
-    ("J2", -0.005, 0.95, {"P": 0.8, "D": 0.2}),
-    ("J2", 0.005, 0.95, {"P": 0.2, "D": 0.8}),
-    ("TIP", -0.004, 0.90, {"D": 1.0}),
-    ("TIP", 0.003, 0.55, {"D": 1.0}),
+    (0.20, (0.60, 0.92), {"M": 0.85, "H": 0.15}),  # the root: as tall as the palm's side quad (no fold over it)
+    (0.42, (0.85, 0.98), {"M": 0.7, "P": 0.3}),
+    (0.56, 0.97, {"M": 0.2, "P": 0.8}),
+    (0.72, 0.95, {"P": 0.7, "D": 0.3}),
+    (0.83, 0.93, {"P": 0.2, "D": 0.8}),
+    (0.95, 0.85, {"D": 1.0}),
+    (1.00, 0.52, {"D": 1.0}),
 ]
 HAND_W = [{"Hand": 0.5}, {"Hand": 1.0}, {"Hand": 1.0}, {"Hand": 1.0}]  # the rest of the wrist ring's weight: S1c's
 THUMB_ROOT_W = {"Hand": 0.6, "ThumbMetacarpal": 0.4}
@@ -160,7 +176,8 @@ FOOT_X = 0.117
 # Toes: per extrusion (forward m from the toe's base, width scale, height scale, drop m); the middle toe reaches
 # TOE_MID further. Fat round lobes (u1): they keep the base's width and height nearly to the end, then a short
 # rounded cap ring, so the subdivided tip stays full instead of pinching.
-TOE = [(0.014, 1.04, 1.0, 0.0), (0.030, 1.0, 0.95, 0.002), (0.040, 0.78, 0.74, 0.004)]
+# S8b: a fourth, small ring closes each toe in a dome (S7's flat cap on the third read boxy from the side)
+TOE = [(0.014, 1.04, 1.0, 0.0), (0.028, 1.0, 0.95, 0.002), (0.038, 0.84, 0.80, 0.004), (0.045, 0.48, 0.46, 0.006)]
 TOE_MID = 0.006
 SUBDIV = 2
 # The trunk's fit: which of each ring's numbers are corrected against u1 (the arm hole's rings only their depth).
@@ -212,7 +229,8 @@ def tube(bm, base, path, half, out):
             u = b.co - bc
             s1 = 1.0 if u.dot(e1) >= 0 else -1.0
             s2 = 1.0 if u.dot(e2) >= 0 else -1.0
-            ring.append(bm.verts.new(c + (e1 * s1 + e2 * s2) * half * sc))
+            k1, k2 = sc if isinstance(sc, tuple) else (sc, sc)  # a ring's scale, or (along e1, along e2)
+            ring.append(bm.verts.new(c + (e1 * s1 * k1 + e2 * s2 * k2) * half))
             out[ring[-1]] = dict(w)
         for j in range(4):
             bm.faces.new((last[j], last[(j + 1) % 4], ring[(j + 1) % 4], ring[j]))
@@ -237,8 +255,8 @@ def build_hand(bm, wrist, bones):
                                       zc + sz * h * (HAND_SIDE_H if side else 1.0))))
             out[ring[-1]] = dict(HAND_W[i])
         for k in range(8):
-            if i == 2 and k == 7:
-                continue  # the thumb's root
+            if i == 2 and k == 6:
+                continue  # the thumb's root: the front side quad
             bm.faces.new((prev[k], prev[(k + 1) % 8], ring[(k + 1) % 8], ring[k]))
         hr.append(ring)
         prev = ring
@@ -258,6 +276,7 @@ def build_hand(bm, wrist, bones):
                 prv = {"J0": None, "J1": "J0", "J2": "J1"}[jn]
                 d = (joints[nxt] - j).normalized() if off >= 0 or prv is None else (j - joints[prv]).normalized()
                 c = j + d * off
+            c = joints["J0"] + (c - joints["J0"]) * FINGER_K
             pts.append((c, d, sc, {names[k]: v for k, v in w.items()}))
         return pts, radius / 0.93
 
@@ -268,14 +287,19 @@ def build_hand(bm, wrist, bones):
         pts, half = path(j, FINGER_RINGS, FINGER_R, names)
         tube(bm, base, pts, half, out)
     P1, P2 = hr[1], hr[2]
-    base = [P1[7], P1[0], P2[0], P2[7]]
+    base = [P1[6], P1[7], P2[7], P2[6]]
     for v in base:
         out[v] = {"Left" + k: w for k, w in THUMB_ROOT_W.items()}
-    j = {"J0": bones["LeftThumbMetacarpal"][0], "J1": bones["LeftThumbProximal"][0],
-         "J2": bones["LeftThumbDistal"][0], "T": bones["LeftThumbDistal"][1]}
     names = {"M": "LeftThumbMetacarpal", "P": "LeftThumbProximal", "D": "LeftThumbDistal", "H": "LeftHand"}
-    pts, half = path(j, THUMB_RINGS, THUMB_R, names)
-    tube(bm, base, pts, half, out)
+    q0 = sum((v.co for v in base), Vector()) / 4
+    q1 = q0 + Vector((0.0, -THUMB_OUT, 0.0))
+    q2 = q1 + Vector(THUMB_DIR).normalized() * THUMB_LEN
+    pts = []
+    for t, sc, w in THUMB_RINGS:
+        c = q0 * (1 - t) ** 2 + q1 * 2 * t * (1 - t) + q2 * t * t
+        d = ((q1 - q0) * 2 * (1 - t) + (q2 - q1) * 2 * t).normalized()
+        pts.append((c, d, sc, {names[k]: v for k, v in w.items()}))
+    tube(bm, base, pts, THUMB_R / 0.93, out)
     for v, w in list(out.items()):  # HAND_W's "Hand" -> LeftHand
         out[v] = {(k if k.startswith("Left") else "Left" + k): x for k, x in w.items()}
     return out
@@ -639,7 +663,7 @@ def main():
     args = p.parse_args(sys.argv[sys.argv.index("--") + 1:])
     report = {"src": args.src, "target": args.target}
     with open(args.ring, encoding="utf-8") as fh:
-        ring = json.load(fh)
+        ring = G.densify_ring(json.load(fh))  # S8b: 48 vertices, one to one with the body's end
     bpy.ops.wm.open_mainfile(filepath=args.src)
     arm = bpy.data.objects["CharacterArmature"]
     old = bpy.data.objects["Body"]
@@ -761,11 +785,22 @@ def main():
     N = len(lower)
     for k in range(N):
         bm.faces.new((lower[k], lower[(k + 1) % N], top[(k + 1) % N], top[k]))
-    step = nn // N
-    for i in range(N):
-        a0, a1, a2 = neck[step * i], neck[step * i + 1], neck[(step * i + 2) % nn]
-        bm.faces.new((a0, a1, lower[i]))
-        bm.faces.new((a1, a2, lower[(i + 1) % N], lower[i]))
+    # S8b: the body's end meets the ring one to one (the ring densified to 48, G.densify_ring): plain quads, no S1
+    # triangle zip, whose alternating triangles and quads showed as a pleated collar. A 24-vertex ring (a ring file
+    # used without densifying) gets a quad reduction: four edges to two per unit, one middle vertex each.
+    if nn == N:
+        for k in range(N):
+            bm.faces.new((neck[k], neck[(k + 1) % N], lower[(k + 1) % N], lower[k]))
+        report["neck"]["join"] = f"quads {nn} -> {N}"
+    elif nn != 2 * N or N % 2:
+        raise RuntimeError(f"neck: the body's open end has {nn} vertices, the ring {N}; the join needs 1:1 or 2:1")
+    for i in range(N // 2 if nn == 2 * N else 0):
+        a = [neck[(4 * i + j) % nn] for j in range(5)]
+        b = [lower[(2 * i + j) % N] for j in range(3)]
+        m = bm.verts.new(a[2].co.lerp(b[1].co, 0.5))
+        for f in ((a[0], a[1], m, b[0]), (a[1], a[2], a[3], m), (a[3], a[4], b[2], m), (b[0], m, b[2], b[1])):
+            bm.faces.new(f)
+        report["neck"]["join"] = f"quad reduction {nn} -> {N}"
     bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
     bm.to_mesh(me)
     bm.free()
@@ -813,9 +848,12 @@ def main():
             d[gi0[n]] = d.get(gi0[n], 0.0) + w
     report["hand_weighted_verts"] = n_hand
     # The hand's largest fold between neighbouring faces (a crease or a pinch would show here).
-    folds = [math.degrees(e.link_faces[0].normal.angle(e.link_faces[1].normal)) for e in bm.edges
-             if len(e.link_faces) == 2 and abs(e.verts[0].co.x) > WRIST_X]
-    report["hand_max_fold_deg"] = round(max(folds), 1)
+    bm.normal_update()
+    folds = sorted(((math.degrees(e.link_faces[0].normal.angle(e.link_faces[1].normal)),
+                     [round(c, 3) for c in (e.verts[0].co + e.verts[1].co) / 2]) for e in bm.edges
+                    if len(e.link_faces) == 2 and e.verts[0].co.x > WRIST_X), reverse=True)
+    report["hand_max_fold_deg"] = round(folds[0][0], 1)
+    report["hand_folds_over_60"] = [[round(f, 1), at] for f, at in folds[:6] if f > 60]
     # Loose parts and open edges (only the neck ring's top should be open).
     seen, parts = set(), 0
     for v0 in bm.verts:
@@ -938,7 +976,7 @@ def main():
     bpy.ops.wm.save_as_mainfile(filepath=f"{args.out}/alien_body.blend")
     print("cage:", json.dumps({k: report[k] for k in ("body", "neck", "fit_iterations", "loose_parts",
                                                       "open_edges_below_ring", "little_weighted_verts",
-                                                      "hand_weighted_verts", "hand_max_fold_deg", "finger_radius_mm")}))
+                                                      "hand_weighted_verts", "hand_max_fold_deg", "hand_folds_over_60")}))
 
 
 if __name__ == "__main__":

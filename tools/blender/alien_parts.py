@@ -64,20 +64,12 @@ LID_BEAD = {"upper": 0.10, "lower": 0.035}  # S7: the rolled rim's swell at the 
 # S7: the lower face made fuller (a smooth local sculpt of the faceless head, no jaw bone), so the open mouth shapes
 # (A, E, O) sit inside it with little or no squeeze: the chin moves down and forward by these, m, fading out over
 # CHIN_SCULPT's x half width, up to just under the mouth line and back to the neck's front.
-CHIN_SCULPT = {"down": 0.012, "fwd": 0.020, "x_sigma": 0.042, "top_gap": 0.006}  # 7 mm forward still read chinless
+CHIN_SCULPT = {"down": 0.013, "fwd": 0.026, "x_sigma": 0.046, "top_gap": 0.006}  # S8b: fuller (u1)  # 7 mm forward still read chinless
 STATES = ("open", "rest", "half", "closed")
-VISEMES = ("rest", "M", "small", "A", "E", "O")
 # The face materials (S5, sRGB; godot/alien/alien.gd FACE and alien_eye.gdshader hold the same): the stage-1 human
 # faces' (faces/clay_kit.json: white (0.9, 0.86, 0.72), cavity (0.05, 0.012, 0.02), teeth (0.92, 0.9, 0.8) linear),
 # soft-matte; the first test's glossy orange lips (0.86, 0.42, 0.36) and cold white eyes read "creepy".
-LIP = (0.76, 0.45, 0.40)  # e2's dusty salmon (S5's lip grid: the deepest of three reads best on the mint face)
-LIP_ROUGH = 0.6
-INNER = (0.25, 0.11, 0.14)
-TEETH = (0.96, 0.95, 0.90)
-EYE_WHITE = (0.95, 0.93, 0.86)
-EYE_SHADE = (0.86, 0.72, 0.64)  # the warm tint the white goes toward in its corners and under the lids
-EYE_ROUGH = 0.38
-ACCENT = (0.85, 0.40, 0.36)
+from alien_face import ACCENT, EYE_ROUGH, EYE_SHADE, EYE_WHITE, FACE, INNER, LIP, LIP_ROUGH, TEETH, VISEMES  # noqa: E402,F401
 HUE_PICKS = {  # g-s1 cells (col, row) and sample points in cell fractions: base (forehead) and light (throat)
     "teal": ((0, 0), (0.42, 0.27), (0.50, 0.75)),
     "coral": ((0, 1), (0.42, 0.27), (0.50, 0.75)),
@@ -760,8 +752,8 @@ def main():
     scene = bpy.context.scene
     coll = scene.collection
     rep = {}
-    ring = json.loads(Path(a.ring).read_text(encoding="utf-8"))
-    rep["ring"] = {"z": ring["z"], "centre": ring["centre"], "semi_axes": ring["semi_axes"]}
+    ring = G.densify_ring(json.loads(Path(a.ring).read_text(encoding="utf-8")))
+    rep["ring"] = {"count": ring["count"],"z": ring["z"], "centre": ring["centre"], "semi_axes": ring["semi_axes"]}
     hues, k_light, ks = sample_hues(a.hues)
     rep["hues"] = {"samples": hues, "light_mix": k_light, "light_mix_per_hue": ks}
 
@@ -880,8 +872,8 @@ def main():
     # materials
     hue = hue_material(k_light)
     hue_lin = {k: srgb_to_lin(v["base_srgb"]) for k, v in hues.items()}
-    mats = {"hue": hue, "lip": plain("alien_lip", LIP, LIP_ROUGH, 0.3),
-            "inner": plain("alien_mouth_inner", INNER, 0.9, 0.08), "teeth": plain("alien_teeth", TEETH, 0.4, 0.3)}
+    mats = {"hue": hue, **{k: plain(f"alien_{n}", *FACE[f"alien_{n}"])
+                           for k, n in (("lip", "lip"), ("inner", "mouth_inner"), ("teeth", "teeth"))}}
     ob.data.materials.append(hue)
     ob["alien_hue"] = hue_lin["teal"]
 
