@@ -1,0 +1,31 @@
+id = "quaternius_universal_base_characters"
+title = "Universal Base Characters [Standard]: male and female base bodies on the 65-bone Unreal-mannequin rig"
+author = "Quaternius"
+url = "https://quaternius.com"
+licence = "CC0-1.0"
+licence_url = "https://creativecommons.org/publicdomain/zero/1.0/"
+public_repo_ok = true
+ai_generated = false
+downloaded_at = 2026-10-02
+credit = "Universal Base Characters by Quaternius (CC0 1.0)"
+notes = """The free Standard tier (the Source tier adds the rigged .blends and more models). The zip's \
+License_Standard.txt says CC0 1.0 Universal. Superhero_Male_FullBody.gltf (about 12,600 triangles, five-finger hands, \
+skinned to the same 65-bone rig as the Universal Animation Library) is the base of the alien parts kit's body \
+(tools/blender/alien_body.py, art #196): refitted by measurement, four fingers, no head. The pack's textures are not \
+used. The record was added on 2026-10-19; the zip was downloaded on 2026-10-02 with the animation libraries."""
+
+[[raw]]
+file = "quaternius/Universal Base Characters [Standard].zip"
+sha256 = "fdbf1804c90dfc1ea03e992bff7da2dfd1a79318e13270a660180f9308455f40"
+
+[[raw]]
+file = "quaternius/Universal_Base_Characters/Universal Base Characters[Standard]/Base Characters/Godot - UE/Superhero_Male_FullBody.gltf"
+sha256 = "e7fcea214ecf8855afbf910b50de6f9c7d1decfb71ca28bad8a4481452dafeb4"
+
+[[raw]]
+file = "quaternius/Universal_Base_Characters/Universal Base Characters[Standard]/Base Characters/Godot - UE/Superhero_Male_FullBody.bin"
+sha256 = "459003f9745853ae562a85506a2b94dd56515c1f37728f9fa3d2ce1a3e4cd92f"
+
+[[raw]]
+file = "quaternius/Universal_Base_Characters/Universal Base Characters[Standard]/License_Standard.txt"
+sha256 = "0f4beaf0fe360a7732e58bbe3dbf60a2422367fbea60cb9ea4add968f383268e"
