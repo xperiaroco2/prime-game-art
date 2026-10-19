@@ -76,10 +76,27 @@ class AlienNeckColumn(unittest.TestCase):
 
     def test_throat_panel(self):
         p = self.n.PANEL
-        self.assertTrue(80.0 <= p["edge"] <= 95.0)  # the front half of the neck
-        (f0, f1), (s0, s1) = p["top"]
-        self.assertLess(s1, f1)  # the panel ends lower at the side than at the front (the jaw's corner)
-        self.assertLess(p["jaw"]["deg"][1], p["edge"])  # the jaw's pale never shows from behind
+        self.assertTrue(0.25 <= p["depth"] <= 0.45)  # u1's side view: about the front 40 % of the chest pale
+        self.assertLess(p["chest_top"], p["neck"][0])
+        self.assertLess(p["neck"][1], p["jaw_z"])
+        self.assertLessEqual(p["jaw_z"], p["top"][0])  # the cut reaches the head mask's edge before it fades out
+        caps = [w for _, w in p["cap"]]
+        self.assertTrue(all(w > 0.06 for w in caps))  # never cuts the neck's sides (about 48 mm)
+
+    def test_panel_line(self):
+        n = self.n
+        ring = {"centre": [0.0, 0.0473]}
+        y_e = n.panel_line(ring, lambda z: (-0.06, 0.15))
+        p = n.PANEL
+        self.assertAlmostEqual(y_e(1.10), -0.06 + p["depth"] * 0.21)
+        self.assertAlmostEqual(y_e(1.40), 0.0473 + p["neck_y"])
+        self.assertAlmostEqual(y_e(p["jaw_z"]), p["jaw_y"])
+        zs = [p["chest_top"] + i * 0.001 for i in range(int((p["jaw_z"] - p["chest_top"]) / 0.001) + 1)]
+        ys = [y_e(z) for z in zs]
+        for (z0, a), (z1, b) in zip(zip(zs, ys), zip(zs[1:], ys[1:])):
+            self.assertLess(abs(b - a), 0.004, f"a step in the panel's line at z {z1:.3f}")  # one clean line
+            if z0 >= p["neck"][1]:
+                self.assertLessEqual(b, a + 1e-9)  # under the jaw it only runs forward: no bump
 
 
 if __name__ == "__main__":

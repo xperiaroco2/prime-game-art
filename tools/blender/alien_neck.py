@@ -351,39 +351,111 @@ def column(bm, ring):
             "col_r": COL_R, "fade_deg": COL_FADE}
 
 
-# S9c: the pale throat panel. S9b's neck took the belly panel's x half width (narrow on the neck) blended into the
-# head ring's values, so in profile its edge ran diagonally. rf2 and u1 keep the front half of the neck pale, the edge
-# running down the side: by angle around the ring's axis, pale up to PANEL["edge"] degrees from the front (soft by
-# PANEL["soft"]), over the column's height (PANEL["z"]: in from the belly panel over z[0..1]; out under the jaw over
-# PANEL["top"], from the front's band to the side's at 90 degrees, so it ends at the jaw's corner, never on the head's
-# side behind it), on the column only (PANEL["r"]). The jaw's underside (PANEL["jaw"]: a downward normal, between the
-# heights z, within deg of the front (narrower than the panel: none of it shows from behind), out to radius r) is pale too, so the throat runs on into the pale chin with
-# no teal wedge between them in profile. It only lightens (the max with the masks there), so the face, the throat's head mask and the belly
-# panel stay continuous with it; then PANEL["smooth"] neighbour-average passes inside it.
-PANEL = {"edge": 88.0, "soft": 14.0, "z": (1.300, 1.345), "top": ((1.460, 1.495), (1.420, 1.470)), "r": (0.078, 0.092),
-         "smooth": 5, "jaw": {"nz": (-0.05, -0.45), "z": (1.39, 1.41, 1.47, 1.50), "r": (0.14, 0.16),
-                                    "deg": (55.0, 82.0)}}
+# S9c: the pale throat panel; S9d: its edge as one clean line in profile, from the jaw down the neck and the chest.
+# S9c lightened the neck's front by angle around the ring's axis and the jaw's underside by its normal; in profile its
+# top edge bulged behind the jaw (the voxel head's normals), a pale wedge showed at the jaw's corner from behind, and at
+# the shoulders it met the belly panel's narrow x half width (about 15 % of the chest's depth in profile) with a step.
+# S9d: the panel is a cut in profile. A vertex is pale in front of the line y_e(z) (Blender: front is -Y; soft by
+# PANEL["soft"]):
+# - the chest and belly (up to PANEL["chest_top"]): the front PANEL["depth"] share of the trunk's depth at that height
+#   (its front and back at x = 0, measured on the mesh), u1's side view;
+# - the neck (from PANEL["neck"][0] to [1]): the ring's axis plus PANEL["neck_y"] (the edge down the side of the neck,
+#   about 88 degrees from the front at the column's 46 to 50 mm);
+# - under the jaw: a shape-preserving cubic from the neck's line to the head mask's own edge in profile
+#   (PANEL["jaw_y"] at PANEL["jaw_z"], with zero slopes at both ends, so it runs on into both as one line), then the cut
+#   fades out over PANEL["top"] where the head's mask takes over (the cheek's pale under the eye).
+# The cut lives between PANEL["z"] (in from the belly's oval) and PANEL["top"], within PANEL["cap"] of x = 0 (the
+# shoulders and the jaw stay teal in front view), off the arms and legs (their weights). It only lightens (the max with
+# the old masks), then PANEL["smooth"] neighbour passes inside it.
+PANEL = {"depth": 0.40, "chest_top": 1.30, "neck": (1.345, 1.430), "neck_y": 0.002, "jaw_z": 1.535, "jaw_y": -0.026,
+         "soft": 0.012, "z": (0.94, 1.04), "top": (1.535, 1.565),
+         "cap": [(0.95, 0.10), (1.05, 0.105), (1.15, 0.115), (1.25, 0.115), (1.29, 0.107), (1.32, 0.080), (1.345, 0.068),
+                 (1.38, 0.075), (1.42, 0.12), (1.46, 0.20)],
+         "cap_soft": 0.016, "limbs": (0.2, 0.5), "smooth": 5}
+# S9d's variant grid (S9d/var/shots2): the cap at the chest 0.100, 0.115 (chosen) or 0.130 m at depth 0.40; the
+# Idle arm hides the chest's side in profile, so the cap sets the front view (u1's panel with teal sides) and the
+# depth the trapezius and the neck. jaw_y and jaw_z: near the head mask's own edge in profile under the eye (y -0.022 at
+# z 1.53-1.55, measured; a little forward of it, so less of the cheek peeks out from behind), so the line runs from the neck's side diagonally up to the cheek, as in u1's side view.
+LIMBS = ("UpperArm", "LowerArm", "Hand", "Index", "Middle", "Ring", "Thumb", "Little")  # the legs: PANEL["z"], the cap
+
+
+def _lerp_pts(pts, z):
+    if z <= pts[0][0]:
+        return pts[0][1]
+    for (z0, w0), (z1, w1) in zip(pts, pts[1:]):
+        if z <= z1:
+            return w0 + (w1 - w0) * (z - z0) / (z1 - z0)
+    return pts[-1][1]
+
+
+def trunk_depth(verts, half=0.03, smooth=2):
+    """The trunk's front and back (min and max y of the vertices within `half` of x = 0) per 1 cm bin, averaged over
+    +-`smooth` bins: {bin: (front, back)}."""
+    raw = {}
+    for co in verts:
+        if abs(co.x) < half:
+            k = int(round(co.z * 100))
+            f, b = raw.get(k, (co.y, co.y))
+            raw[k] = (min(f, co.y), max(b, co.y))
+    out = {}
+    for k in raw:
+        near = [raw[kk] for kk in range(k - smooth, k + smooth + 1) if kk in raw]
+        out[k] = (sum(f for f, _ in near) / len(near), sum(b for _, b in near) / len(near))
+    return out
+
+
+def panel_line(ring, depth_of):
+    """y_e(z): the panel's edge in profile (see PANEL). depth_of(z) -> (front, back) of the trunk."""
+    P = PANEL
+    cy = ring["centre"][1]
+    neck_y = cy + P["neck_y"]
+    ct, (n0, n1) = P["chest_top"], P["neck"]
+    xs, ys = [n1, P["jaw_z"]], [neck_y, P["jaw_y"]]
+    ds = _pchip(xs, ys, 0.0, 0.0)
+
+    def chest(z):
+        f, b = depth_of(z)
+        return f + P["depth"] * (b - f)
+
+    def y_e(z):
+        if z <= ct:
+            return chest(z)
+        if z < n0:  # from the chest's line at chest_top to the neck's
+            t = _ss(ct, n0, z)
+            return chest(ct) * (1 - t) + neck_y * t
+        if z <= n1:
+            return neck_y
+        return _hermite(xs, ys, ds, z)
+    return y_e
 
 
 def throat_panel(body, ring):
-    """Lightens the masks' u (the light mask) over the front half of the neck. Returns the measures."""
+    """Lightens the masks' u (the light mask) in front of the panel's line in profile. Returns the measures."""
+    P = PANEL
     me = body.data
-    cx, cy = ring["centre"]
-    zs = PANEL["z"]
     n = len(me.vertices)
+    depth = trunk_depth([v.co for v in me.vertices])
+
+    def depth_of(z):
+        k = int(round(z * 100))
+        for d in range(0, 20):
+            for kk in (k - d, k + d):
+                if kk in depth:
+                    return depth[kk]
+        raise ValueError(f"no trunk section near z {z}")
+    y_e = panel_line(ring, depth_of)
+    gid = {g.index for g in body.vertex_groups if any(name in g.name for name in LIMBS)}
     p = [0.0] * n
-    J = PANEL["jaw"]
     for v in me.vertices:
         co = v.co
-        a = abs(math.degrees(_angle(co, cx, cy)))
-        side = 1.0 - _ss(PANEL["edge"] - PANEL["soft"], PANEL["edge"] + PANEL["soft"], a)
-        rr = math.hypot(co.x - cx, co.y - cy)
-        jaw = (_ss(J["nz"][0], J["nz"][1], v.normal.z) * _ss(J["z"][0], J["z"][1], co.z)
-               * (1.0 - _ss(J["z"][2], J["z"][3], co.z)) * (1.0 - _ss(*J["r"], rr)) * (1.0 - _ss(*J["deg"], a)))
-        k = min(1.0, a / 90.0)
-        (f0, f1), (s0, s1) = PANEL["top"]
-        h = _ss(zs[0], zs[1], co.z) * (1.0 - _ss(f0 + k * (s0 - f0), f1 + k * (s1 - f1), co.z))
-        p[v.index] = max(jaw, h * side * (1.0 - _ss(*PANEL["r"], rr)))
+        if co.z < P["z"][0] or co.z > P["top"][1]:
+            continue
+        limb = sum(g.weight for g in v.groups if g.group in gid)
+        cap = _lerp_pts(P["cap"], co.z)
+        zone = _ss(*P["z"], co.z) * (1.0 - _ss(*P["top"], co.z))
+        cut = 1.0 - _ss(-P["soft"], P["soft"], co.y - y_e(co.z))
+        p[v.index] = (zone * cut * (1.0 - _ss(cap - P["cap_soft"], cap + P["cap_soft"], abs(co.x)))
+                      * (1.0 - _ss(*P["limbs"], limb)))
     uv = me.uv_layers["masks"].data
     old = [None] * n
     for lp in me.loops:
@@ -396,17 +468,19 @@ def throat_panel(body, ring):
         a_, b_ = e.vertices
         nbr[a_].append(b_)
         nbr[b_].append(a_)
-    for _ in range(PANEL["smooth"]):
+    for _ in range(P["smooth"]):
         u = [u[i] if p[i] <= 0.0 or not nbr[i] else 0.5 * u[i] + 0.5 * sum(u[j] for j in nbr[i]) / len(nbr[i])
              for i in range(n)]
     for lp in me.loops:
         uv[lp.index].uv[0] = u[lp.vertex_index]
     changed = sum(1 for o, x in zip(old, u) if abs(o - x) > 0.02)
-    # the edge's angle at three heights: the first angle from the front where u drops under 0.5
+    # the edge in profile: per height, the largest y of a side-facing vertex (x > 0.02) still pale (u > 0.5)
     edge = {}
-    for zz in (1.36, 1.40, 1.44):
-        band = [(abs(math.degrees(_angle(v.co, cx, cy))), u[v.index]) for v in me.vertices
-                if abs(v.co.z - zz) < 0.006 and math.hypot(v.co.x - cx, v.co.y - cy) < PANEL["r"][0]]
-        band.sort()
-        edge[str(zz)] = next((round(a, 1) for a, x in band if x < 0.5), None)
-    return {"changed_vertices": changed, "edge_deg_at_z": edge, **{k: v for k, v in PANEL.items()}}
+    for zz in (1.00, 1.10, 1.20, 1.25, 1.30, 1.34, 1.38, 1.42, 1.45, 1.48, 1.51):
+        pale = [v.co.y for v in me.vertices if abs(v.co.z - zz) < 0.005 and v.co.x > 0.02 and u[v.index] > 0.5]
+        f, b = depth_of(zz)
+        wide = [v.co.x for v in me.vertices if abs(v.co.z - zz) < 0.005 and v.co.y < 0.0 and u[v.index] > 0.5]
+        edge[f"{zz:.2f}"] = {"y_e": round(y_e(zz), 4), "pale_max_y": round(max(pale), 4) if pale else None,
+                             "pale_max_x": round(max(wide), 4) if wide else None,
+                             "front": round(f, 4), "back": round(b, 4)}
+    return {"changed_vertices": changed, "edge_in_profile": edge, **{k: v for k, v in P.items()}}

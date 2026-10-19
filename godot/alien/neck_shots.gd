@@ -11,6 +11,9 @@ extends "res://alien/second_test.gd"
 ## - swim.png (spec "swim": true): the left upper arm at two Walk times with the camera fixed in the arm bone's frame
 ##   and the grain exaggerated (grain 0.5 at 150 per metre), one row per character: a skin whose gradient and grain
 ##   read the rest pose shows the same pattern in both frames; one reading the skinned VERTEX shows it swim.
+## - torso.png (spec "torso": [PNG, ...], S9d): the pale panel's edge on the upper body at 1.5 m, one row per
+##   character (front, three-quarter, profile, three-quarter back), then a row of the given turnaround views (their
+##   upper halves, e.g. u1's front and side).
 ## Spec: {"scenes": {key: "res://import/..glb"}, "order": [keys], "out": DIR, "hdri": .., "refs": [PNG, PNG]}.
 
 const NECK_SHARE: float = 0.35
@@ -73,6 +76,42 @@ func _ref(path: String) -> Image:
 	return img.get_region(Rect2i((img.get_width() - s) / 2, (img.get_height() - s) / 2, s, s))
 
 
+## A full-body turnaround view's upper body: from 4 % to 58 % of its height, as a square.
+func _ref_torso(path: String) -> Image:
+	var img: Image = Image.load_from_file(path)
+	if img == null or img.is_empty():
+		_fail("cannot read %s" % path)
+		return null
+	img.convert(Image.FORMAT_RGBA8)
+	var h: int = int(img.get_height() * 0.54)
+	var w: int = mini(h, img.get_width())
+	var part: Image = img.get_region(Rect2i((img.get_width() - w) / 2, int(img.get_height() * 0.04), w, h))
+	var r := Image.create(h, h, false, Image.FORMAT_RGBA8)
+	r.fill(Color(0.5, 0.5, 0.52))
+	r.blend_rect(part, Rect2i(0, 0, w, h), Vector2i((h - w) / 2, 0))
+	return r
+
+
+func _torso() -> void:
+	var imgs: Array = []
+	await _set_pose(POSES[0])
+	var yaws: Array = [0.0, 45.0, 90.0, 150.0]
+	for k: String in _order:
+		_only([k], false)
+		await process_frame
+		for yaw: float in yaws:
+			_look(_neck(k) - Vector3(0, 0.30, 0), yaw, 2.0, 1.5, 40)
+			imgs.append(await _shot("%s %d 1.5 m" % [k, int(yaw)]))
+	var refs: Array = _spec["torso"]
+	for i: int in yaws.size():
+		if i < refs.size():
+			var r: Image = _ref_torso(refs[i])
+			if r == null:
+				return
+			imgs.append(r)
+	_sheet(imgs, yaws.size(), "torso.png")
+
+
 func _run() -> void:
 	DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
 	await process_frame
@@ -96,6 +135,8 @@ func _run() -> void:
 		_rig[k] = rig
 		_player[k] = ch.find_child("AnimationPlayer", true, false)
 		_combo(k, "bored", "frog")
+	if _spec.has("torso"):
+		await _torso()
 	var refs: Array = _spec.get("refs", [])
 	# beside.png
 	var imgs: Array = []
