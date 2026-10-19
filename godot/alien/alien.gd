@@ -16,6 +16,8 @@ extends Node
 ##   shading toward the corners and under the lids, a dark iris and pupil, one soft catch light), matte warm lips, a
 ##   dark warm mouth cup, ivory teeth, and the lid shells in the lips' material (the eye sheets eb1 and em1: coral
 ##   skin domes the colour of the lips); "first" keeps the first test's imported materials (for before/after sheets).
+## - set_mouth_mode("3d"|"flip"): the replacement pieces or the flipbook test's face shells (S6); since S6 the overbite
+##   pieces hold their own teeth.
 ## Used through preload (a -s script has no global class cache): const AlienRig = preload("res://alien/alien.gd").
 
 const SHADER: Shader = preload("res://alien/alien_hue.gdshader")
@@ -69,6 +71,7 @@ var lid_state: String = "rest"
 var auto_blink: bool = true
 var talk_log: Array = []  # {t_ms, low, high, level, ratio, f2, piece}
 var mouth_piece: String = "rest"
+var mouth_mode: String = "3d"
 
 var _material: ShaderMaterial
 var _hue_meshes: Array[GeometryInstance3D] = []
@@ -217,12 +220,24 @@ func set_mouth_design(design: String) -> void:
 	show_mouth(mouth_piece)
 
 
+## "3d": the replacement pieces (mouth_<design>_<shape>); "flip": the flipbook test (S6), one face shell per shape
+## (mouthflip_<design>_<shape>) on the design's atlas. A GLB without flip shells keeps "3d".
+func set_mouth_mode(mode: String) -> void:
+	mouth_mode = mode
+	show_mouth(mouth_piece)
+
+
 func show_mouth(piece: String) -> void:
 	mouth_piece = piece
 	for d: String in ["frog", "overbite"]:
 		for v: String in VISEMES:
-			node("mouth_%s_%s" % [d, v]).visible = d == mouth_design and v == piece
-	node("mouth_overbite_teeth").visible = mouth_design == "overbite"
+			node("mouth_%s_%s" % [d, v]).visible = mouth_mode == "3d" and d == mouth_design and v == piece
+			var f: Node3D = node("mouthflip_%s_%s" % [d, v])
+			if f != null:
+				f.visible = mouth_mode == "flip" and d == mouth_design and v == piece
+	var teeth: Node3D = node("mouth_overbite_teeth")  # S3's separate teeth; since S6 each overbite piece has its own
+	if teeth != null:
+		teeth.visible = mouth_mode == "3d" and mouth_design == "overbite"
 
 
 func set_crest(name: String) -> void:
