@@ -6,7 +6,8 @@
 //   edges), and under the lids: a broad soft shadow below the upper lid's edge and above the lower one, plus a narrow
 //   contact shadow right at each edge (`contact_*`, also an AO term that dims the reflections there). The lid edges
 //   are `instance uniform`s in degrees above the forward axis (alien.gd sets them from the lid rotations: edge =
-//   -rotation.x), so both shadows follow a blink.
+//   -rotation.x), so both shadows follow a blink. The contact shadow starts where the lid's rolled rim stops hiding the
+//   ball (`upper_reach_deg`, `lower_reach_deg` beyond each edge: alien_eyes_geom.rim_reach), so it shows.
 // - M4, the cornea (`cornea` 1; 0 keeps S9's painted eye for before/after sheets): a clear cap over the iris, a
 //   sphere through the limbus ring (`limbus_deg` from the axis) rising `bulge` above the ball. It is optical only: the
 //   ball's mesh stays a sphere (the lower lids' inner radius, 1.012, leaves no room for a real bulge). Per pixel the
@@ -15,11 +16,13 @@
 //   pupil radii on that plane are solved so that seen along the axis they cover `iris_deg` and `pupil_deg` of the
 //   ball exactly as the S9 design did. The cornea's own normal and a low roughness give the key light and the sky a
 //   crisp reflection (`cornea_normal`: only part of it for the diffuse, so no ring shows round the manic eye's pupil);
-//   the catch light is a view-space light (`catch_dir`, toward the camera, a little left) reflected on the cornea,
-//   pulled toward a place on the eye (`catch_anchor_deg`, `catch_follow`), so it moves over the cornea as the view turns
-//   but never leaves the pupil and iris.
+//   the catch light is a view-space light (`catch_dir`, toward the camera from the viewer's left, a little below or
+//   above) reflected on the cornea; its normal is mixed with a fixed one on the eye (`catch_anchor_deg`: the cornea's
+//   normal toward that ball point; `catch_follow` 0.3: 70 % fixed), so it moves a little over the cornea as the view
+//   turns and stays by the pupil in the shots' views (a turned eye that loses it reads dead).
 // - The iris (bored): a dark brown with fine radial fibres, a lighter ring round the pupil, a darker limbal ring and
-//   a warm glow low on the side away from the catch light (light through the cornea).
+//   a warm glow in its lower half on the ball's +X side (the viewer's right when the eye faces the camera), across the
+//   pupil from the catch light, as light through the cornea would fall.
 // - The wet film: a soft clear coat over the white (`wet`), sharper on the cornea.
 shader_type spatial;
 render_mode diffuse_lambert_wrap, specular_schlick_ggx;
@@ -55,7 +58,8 @@ uniform float cornea_roughness : hint_range(0.0, 1.0) = 0.14;  // 0.03: a hard s
 uniform float cornea_specular : hint_range(0.0, 1.0) = 0.25;
 uniform float cornea_normal : hint_range(0.0, 1.0) = 0.4;  // how much of the cornea's normal the lights see (the catch light: all)
 uniform vec3 catch_dir = vec3(-0.45, -0.25, 1.0);  // view space: x right, y up, z toward the camera
-uniform vec2 catch_anchor_deg = vec2(5.0, -10.0);  // its place on the eye (as catch_at_deg): just below the rest lid
+uniform vec2 catch_anchor_deg = vec2(5.0, -10.0);  // the ball point (as catch_at_deg) whose direction from the cornea's
+// centre is the catch light's fixed normal: (5, -10) is low left by the pupil, just under the rim with the lids at rest
 uniform float catch_follow : hint_range(0.0, 1.0) = 0.3;  // 0: fixed on the eye at catch_anchor_deg, 1: the view's
 uniform float catch_size_deg = 4.0;  // the catch light's half angle on the cornea (of the half vector)
 uniform float catch_m4_energy = 2.4;
@@ -65,11 +69,14 @@ uniform float iris_glow : hint_range(0.0, 2.0) = 0.5;  // the warm glow low in t
 uniform float limbal : hint_range(0.0, 1.0) = 0.55;  // the darkness inside the cornea beyond the iris (the limbal ring)
 uniform float edge_falloff : hint_range(0.0, 1.0) = 0.2;  // the white toward `shade` where the ball turns away (0.35 bared the socket)
 uniform float contact_deg = 3.5;  // the contact shadow's width below the upper and above the lower lid's edge
-uniform float contact_dark : hint_range(0.0, 1.0) = 0.45;
+uniform float contact_dark : hint_range(0.0, 1.0) = 0.3;  // 0.45 read as a grey band once the band showed beyond the rim
 uniform float wet : hint_range(0.0, 1.0) = 0.5;  // the clear coat on the white
-uniform float wet_roughness : hint_range(0.0, 1.0) = 0.22;
+uniform float wet_roughness : hint_range(0.0, 1.0) = 0.3;  // 0.22: a small second glint on the white beside the catch light
+uniform float upper_reach_deg = 4.3;  // how far the upper lid's rim hides the ball beyond its edge (alien.gd EYE_LOOK)
+uniform float lower_reach_deg = 2.0;
 instance uniform float upper_edge_deg = 6.0;
 instance uniform float lower_edge_deg = -30.0;
+instance uniform float aim_deg = 0.0;  // the ball's turn about Y from its lids (alien.gd sets it with the turn)
 
 varying vec3 pos_m;
 varying vec3 cam_m;
@@ -104,7 +111,13 @@ void fragment() {
 	float R = length(pos_m);
 	vec3 d = pos_m / R;
 	float side = degrees(atan(abs(d.x), d.z));
-	float elev = degrees(atan(d.y, max(d.z, 0.0) + 1e-4));
+	// the elevation about the lids' hinge. S9: about the ball's own X axis, z clamped at 0. The ball is turned inward
+	// from its lids (`aim_deg`), so in a turned view the ball's side meridian shows: S9's elevation jumped to +-90 there
+	// (under both lids at once), which M4's contact shadow drew as a crisp line and a dark wedge. M4 measures it in the
+	// lids' frame (the ball's direction turned by aim_deg about Y), where the lid edges meet at the hidden corners.
+	float ar = radians(aim_deg);
+	vec3 dl = vec3(d.x * cos(ar) + d.z * sin(ar), d.y, -d.x * sin(ar) + d.z * cos(ar));
+	float elev = cornea < 0.5 ? degrees(atan(d.y, max(d.z, 0.0) + 1e-4)) : degrees(atan(dl.y, abs(dl.z) + 1e-4));
 	float k = smoothstep(corner_from_deg, corner_to_deg, side) * corner_shade;
 	float lid_k = smoothstep(upper_edge_deg - lid_soft_deg, upper_edge_deg, elev) * lid_shade;
 	lid_k = max(lid_k, (1.0 - smoothstep(lower_edge_deg, lower_edge_deg + 0.5 * lid_soft_deg, elev)) * lower_shade);
@@ -128,9 +141,11 @@ void fragment() {
 		EMISSION = vec3(1.0, 0.98, 0.95) * (1.0 - smoothstep(catch_deg, catch_deg + catch_soft_deg, ga)) * catch_energy;
 	} else {
 		// the contact shadow right at each lid's edge, and the white's falloff toward the rim
-		float contact = smoothstep(upper_edge_deg - contact_deg, upper_edge_deg, elev);
-		contact = max(contact, 1.0 - smoothstep(lower_edge_deg, lower_edge_deg + contact_deg, elev));
-		mat3 to_view = mat3(VIEW_MATRIX) * mat3(MODEL_MATRIX);
+		float ue = upper_edge_deg - upper_reach_deg;  // where the rims stop hiding the ball
+		float le = lower_edge_deg + lower_reach_deg;
+		float contact = smoothstep(ue - contact_deg, ue, elev);
+		contact = max(contact, 1.0 - smoothstep(le, le + contact_deg, elev));
+		mat3 to_view = mat3(VIEW_MATRIX) * MODEL_NORMAL_MATRIX;  // model-space normals to view space
 		vec3 n_ball = normalize(to_view * p);
 		float nv = clamp(dot(n_ball, VIEW), 0.0, 1.0);
 		c = mix(c, c * shade, edge_falloff * (1.0 - smoothstep(0.15, 0.75, nv)));
@@ -161,11 +176,12 @@ void fragment() {
 			float u = rho / max(iris_rho, 1e-4);  // 0 at the centre, 1 at the iris edge
 			float a = atan(q.y, q.x);
 			vec3 ic = iris * (1.0 + fibres * fibre_noise(a, u) * smoothstep(0.3, 0.6, u) * (1.0 - smoothstep(0.85, 1.0, u)));
-			ic *= 1.0 + collarette * exp(-pow((u - 0.62) / 0.1, 2.0));
+			float cr = (u - 0.62) / 0.1;
+			ic *= 1.0 + collarette * exp(-cr * cr);
 			ic *= 1.0 - ring * smoothstep(0.78, 1.0, u);
 			// the glow: low in the iris, on the side away from the catch light (in the ball's plane, the view's left is
 			// the ball's -X when the eye faces the camera)
-			float g = smoothstep(-0.1, -0.9, (q.y - 0.35 * q.x) / max(iris_rho, 1e-4)) * smoothstep(0.35, 0.65, u);
+			float g = (1.0 - smoothstep(-0.9, -0.1, (q.y - 0.35 * q.x) / max(iris_rho, 1e-4))) * smoothstep(0.35, 0.65, u);
 			ic *= 1.0 + iris_glow * g;
 			ic *= mix(1.0, 0.8, k);
 			vec3 beyond = mix(c, c * iris * 2.0, limbal);  // inside the cornea past the iris disc
@@ -186,8 +202,8 @@ void fragment() {
 		AO_LIGHT_AFFECT = 0.3;
 		CLEARCOAT = wet * occ;
 		CLEARCOAT_ROUGHNESS = mix(wet_roughness, cornea_roughness, in_c);
-		// the catch light: a view-space light reflected on the cornea, pulled toward S9's place on the eye (so a turned
-		// eye never loses it: a dead eye reads creepy)
+		// the catch light: a view-space light reflected on the cornea, its normal mostly the fixed one toward
+		// catch_anchor_deg (so a turned eye keeps it: a dead eye reads creepy)
 		vec3 hv = normalize(normalize(catch_dir) + VIEW);
 		vec3 g = normalize(vec3(-tan(radians(catch_anchor_deg.x)), tan(radians(catch_anchor_deg.y)), 1.0));
 		vec3 anchor = normalize(to_view * normalize(g - vec3(0.0, 0.0, cs.x)));

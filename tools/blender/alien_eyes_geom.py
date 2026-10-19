@@ -11,13 +11,18 @@ import math
 
 # The wet line (a tear film where a lid meets the ball): a strip in the lid's own frame, so it turns with the lid.
 # Seen from the front it is a thin glossy band on the ball just beyond the lid's rim, which runs on under the rim
-# into the gap between the ball and the lid's inner surface (a meniscus).
+# close to the ball (hidden there; the shader fades it out just under the rim).
 WET = {
-    "beyond_deg": 1.0,  # how far the band reaches past the rim's farthest point onto the ball
+    "beyond_deg": 1.5,  # how far the band reaches past the rim's farthest point onto the ball
     "lift": 0.0015,  # the band's height above the ball where it starts (a share of r), so it never z-fights
-    "fill": 0.7,  # the meniscus under the rim: this share of the way from the ball up to the rim's lower surface
+    # under the rim: this share of the way from the ball up to the rim's lower surface. 0.7 (the first M4) stood the
+    # strip up as a wall under the rim, a grey shelf with a light line in a turned view; 0.1 keeps it on the ball
+    "fill": 0.1,
     "t_max_deg": 80.0,  # the band's span across the lid (the lid's own latitude), faded at both ends by the shader
-    "seg_t": 48, "seg_p": 6,
+    "seg_t": 48,
+    # segments beyond the rim (v 0 to RIM_V) and under it (RIM_V to 1): the rim's reach is at v = RIM_V on every lid,
+    # so alien_wet.gdshader's alpha ramp (`rim_v`) follows it
+    "seg_beyond": 3, "seg_under": 3,
 }
 # The cornea (alien_eye.gdshader's defaults; alien.gd EYE_LOOK sets limbus_deg per design)
 CORNEA = {"limbus_deg": 27.0, "bulge": 0.12, "iris_depth": 0.05, "ior": 1.336}
@@ -27,6 +32,19 @@ def rim(rho_in: float, rho_out: float, bead: float) -> tuple[float, float]:
     """The rolled rim of lid_shell(): its centre radius and half width (both in r), as lid_shell builds them."""
     re = rho_out + bead
     return (re + rho_in) / 2, (re - rho_in) / 2
+
+
+def rim_reach(rho_in: float, rho_out: float, bead: float) -> float:
+    """How far (radians, about the hinge) the rolled rim's farthest point lies beyond the lid's edge: the lid hides
+    the ball that far past its edge (alien_eye.gdshader's contact shadow starts there, alien.gd EYE_LOOK's
+    `*_reach_deg`)."""
+    rm, hw = rim(rho_in, rho_out, bead)
+    return hw / rm
+
+
+def rim_v(w: dict = WET) -> float:
+    """The strip's V (from the ball's side) at the rim's reach (alien_wet.gdshader's `rim_v`)."""
+    return w["seg_beyond"] / (w["seg_beyond"] + w["seg_under"])
 
 
 def rim_lower_surface(p_abs: float, rm: float, hw: float) -> float | None:
@@ -39,20 +57,19 @@ def rim_lower_surface(p_abs: float, rm: float, hw: float) -> float | None:
 
 def wet_profile(rho_in: float, rho_out: float, bead: float, upper: bool, w: dict = WET) -> list[tuple[float, float]]:
     """The wet line's cross-section as (rho, p) from the ball's side (beyond the rim, on the ball) to under the rim's
-    inner edge (p = 0). The radius follows the meniscus: lift above the ball, then fill of the way up to the rim's
-    lower surface where the rim is over it."""
+    inner edge (p = 0): lift above the ball beyond the rim's reach, then rising evenly to `fill` of the way up to the
+    lid's inner surface at its edge (under the rim's lower surface all the way)."""
     sgn = 1.0 if upper else -1.0
     rm, hw = rim(rho_in, rho_out, bead)
-    reach = hw / rm  # the rim's farthest point beyond the edge (lid_shell's half circle)
+    reach = rim_reach(rho_in, rho_out, bead)
     p0 = reach + math.radians(w["beyond_deg"])
+    nb, nu = w["seg_beyond"], w["seg_under"]
     out = []
-    n = w["seg_p"]
-    for j in range(n + 1):
-        pa = p0 * (1.0 - j / n)  # |p| from the band's far edge to the lid's edge
+    for j in range(nb + nu + 1):  # |p| from the band's far edge to the rim's reach, then on to the lid's edge
+        pa = p0 - (p0 - reach) * j / nb if j <= nb else reach * (1.0 - (j - nb) / nu)
         rho = 1.0 + w["lift"]
-        under = rim_lower_surface(pa, rm, hw)
-        if under is not None:
-            rho = max(rho, rho + (under - rho) * w["fill"])
+        if pa < reach:  # under the rim: rising evenly from the ball toward the lid's inner surface, never a wall
+            rho += (rho_in - rho) * w["fill"] * (1.0 - pa / reach)
         out.append((rho, -sgn * pa))
     return out
 

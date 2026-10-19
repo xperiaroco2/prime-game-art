@@ -52,11 +52,15 @@ const EYE_LOOK := {  # alien_eye.gdshader's per-design uniforms (angles from the
 	"bored": {"limbus_deg": 27.0, "iris_deg": 25.0, "pupil_deg": 11.5, "iris": Color(0.20, 0.12, 0.08),
 		"catch_at_deg": Vector2(6.0, -2.0),
 		"catch_deg": 2.5, "catch_soft_deg": 0.4, "catch_energy": 2.2,  # S9: below the rest lid's edge, crisp (rf2)
-		"catch_anchor_deg": Vector2(5.0, -10.0), "catch_dir": Vector3(-0.45, -0.25, 1.0)},  # M4: under the rim's edge
+		# M4: low left by the pupil, just under the rim with the lids at rest
+		"catch_anchor_deg": Vector2(5.0, -10.0), "catch_dir": Vector3(-0.45, -0.25, 1.0),
+		"limbus_soft_deg": 1.0,  # the cornea's edge outside the iris' soft edge (25 + 0.9 <= 27 - 1)
+		"upper_reach_deg": 4.3, "lower_reach_deg": 2.0},  # the rims' reach beyond the lid edges (alien_eyes_geom)
 	"manic": {"limbus_deg": 21.0, "iris_deg": 0.0, "pupil_deg": 12.0, "iris": Color(0.05, 0.04, 0.05),
 		"catch_at_deg": Vector2(4.5, 4.5),
 		"catch_anchor_deg": Vector2(4.5, 4.5), "catch_dir": Vector3(-0.45, 0.12, 1.0),  # M4: up and left (S9's place)
-		"cornea_normal": 0.15, "limbus_soft_deg": 8.0},  # M4: no ring round the dot pupil (the cornea's edge on the white)
+		"cornea_normal": 0.15, "limbus_soft_deg": 8.0,  # M4: no ring round the dot pupil (the cornea's edge on the white)
+		"upper_reach_deg": 3.7, "lower_reach_deg": 1.8},
 }
 ## The eyeballs' rest look: each ball turned inward about its socket's up axis (set absolutely, so a GLB whose balls
 ## already carry it is unchanged): the sockets' 8 degrees outward (S2a's sphere fit) undone, plus 3.5 toward each
@@ -253,6 +257,7 @@ func _apply_lids(upper_deg: float, lower_deg: float) -> void:
 			ball.set_instance_shader_parameter("lower_edge_deg", -lower_deg)
 			var aim: float = aim_in_deg if face_look == "s5" else 0.0  # the first test: unturned
 			ball.rotation = Vector3(0, deg_to_rad(-aim if side == "L" else aim), 0)
+			ball.set_instance_shader_parameter("aim_deg", -aim if side == "L" else aim)  # M4: the lids' frame
 		var open: float = smoothstep(WET_OPEN_DEG.x, WET_OPEN_DEG.y, lower_deg - upper_deg)  # the edges' gap
 		for lid: String in ["upper", "lower"]:
 			var wet := node("eye_%s_wet_%s_%s" % [eyes, lid, side]) as GeometryInstance3D
