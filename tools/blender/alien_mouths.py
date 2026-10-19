@@ -65,14 +65,14 @@ RING_N, RING_SEG = 96, 14  # an open mouth's ring: sections around, vertices per
 SEAM_OVERLAP = 1.5  # a closed mouth's lips overlap at the crease, px
 RING_SHAPES = ("A", "E", "O")  # the wide shapes are one ring; rest, M and small two tubes
 FACE_FILL = 0.86  # a mouth's half width at most this share of the face's half width at the socket: wider is squeezed
-CHIN_Z = 1.444  # the lowest a lip may reach on the head (S7: the sculpted chin is at 1.438): deeper is squeezed, m
+CHIN_Z = 1.443  # the lowest a lip may reach on the head (S7: the sculpted chin is at 1.437): deeper is squeezed, m
 RING_KEEP = {"centre": 9, "width": 5}  # S7: the open ring's centre line and lip width keep this many harmonics
 NORMAL_SMOOTH = 8  # S7: passes over the skin points and normals under a lip (the decimated head's facets rippled it)
 STATION_SMOOTH = 5  # S7: passes over the closed lips' measured edges (2 left ripples)
 CORNER = {"share": 0.16, "join": 0.85, "tuck": 0.9}  # S7: over the last share of a closed mouth's stations the two
 # lips' centres meet (join) and sink into the skin by tuck times their depth, so the corner is a soft tucked dimple
 TOOTH_D, TOOTH_TUCK = 0.0055, 0.003  # a tooth's depth, and how far it runs up under the upper lip, m
-TONGUE = (0.80, 0.45, 0.44)  # sRGB
+TONGUE = (0.66, 0.30, 0.33)  # sRGB (S7: a deeper rose; the lips' near twin read as a doubled lower lip in A)
 FLIP_OUT = 0.0015
 
 

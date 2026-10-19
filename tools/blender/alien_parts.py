@@ -56,7 +56,7 @@ LID_BEAD = {"upper": 0.10, "lower": 0.035}  # S7: the rolled rim's swell at the 
 # S7: the lower face made fuller (a smooth local sculpt of the faceless head, no jaw bone), so the open mouth shapes
 # (A, E, O) sit inside it with little or no squeeze: the chin moves down and forward by these, m, fading out over
 # CHIN_SCULPT's x half width, up to just under the mouth line and back to the neck's front.
-CHIN_SCULPT = {"down": 0.014, "fwd": 0.007, "x_sigma": 0.042, "top_gap": 0.006, "neck_gap": 0.03}
+CHIN_SCULPT = {"down": 0.015, "fwd": 0.013, "x_sigma": 0.042, "top_gap": 0.006}  # 7 mm forward still read chinless
 STATES = ("open", "rest", "half", "closed")
 VISEMES = ("rest", "M", "small", "A", "E", "O")
 # The face materials (S5, sRGB; godot/alien/alien.gd FACE and alien_eye.gdshader hold the same): the stage-1 human
