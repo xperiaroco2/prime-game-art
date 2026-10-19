@@ -724,6 +724,30 @@ a time, by visibility.
 - `proof.gd`: the off-screen proof (turntables, Idle and Walk, blink, talk, variants, hues, draw calls). No runner
   command calls it yet: run it by hand through `_godot.window()` with `--audio-driver Dummy` (the Dummy driver still mixes, so the analyzer sees the signal) and
   the Master bus muted. `make_test_speech.py` writes its test WAV (standard library).
+- **The face materials (S5, art #196):** the first test's eyes (a cold white, roughness 0.12, a 6-degree pupil) and
+  glossy orange lips read "so-so, creepy"; the stage-1 human faces' materials (`faces/clay_kit.json`, docs/faces.md)
+  replace them. `alien.gd` swaps them by the imported material's name (`set_face_look("s5")`, the default; `"first"`
+  keeps the imported ones for before/after sheets):
+  - `alien_eye.gdshader` on `alien_eye_<design>`: no texture, all from the ball's model space (centred, +Z the pupil
+    axis): a warm off-white (sRGB 0.95, 0.93, 0.86), shaded toward a warm tint (never grey) in the corners and under
+    the lids (the lid edges are instance uniforms that `_apply_lids` sets from the lid rotations, edge = -rotation.x,
+    so the shadow follows the blink), a dark iris with a darker edge ring (bored: 25 degrees, brown), a near-black
+    pupil (bored 11.5, manic 12 degrees), and **one painted catch light** on the pupil, up and toward the viewer's
+    left, as emission (no extra light or render layer; it moves with the eye, as a toy's painted glint). Roughness
+    0.38, so the key light gives a broad sheen and no second hard glint.
+  - **The eyes' rest look:** the sockets point 8 degrees outward (S2a's sphere fit), so the pupils diverged (wall-eyed).
+    `_apply_lids` sets each ball's rotation to 11.5 degrees inward about the socket's up axis (absolute, so a GLB whose
+    balls already carry it is unchanged; `aim_in_deg`): the eyes meet about 1.2 m ahead.
+  - Lips, inner cup and teeth: `StandardMaterial3D`s with wrapped diffuse and **culling off** (the imported materials
+    are double-sided; culled, the inner cup vanished and the open mouths showed the skin): lips sRGB (0.76, 0.45, 0.40)
+    roughness 0.6 specular 0.3; the cup a dark plum (0.25, 0.11, 0.14), roughness 0.9; teeth ivory (0.96, 0.95, 0.90).
+  - The lid shells take a copy of the hue material whose accent is the lips' colour (rim 0), so lids and lips match.
+  - `tools/blender/alien_parts.py` builds the same look into the eye texture (rest lids, 512 px) and the plain
+    materials, for Blender and the three.js page.
+  - `face_proof.gd`: the proof under the approved showroom look (`look_presets.json`, Medium: AgX 0.9, the studio sky
+    half the ambient and the reflections, key 2.0, fill 0.12, rim 0.3, SSAO): first test against S5 for all four
+    eye/mouth combinations, the eyes close, blink, the twelve mouth pieces, the hues and a tuning grid. Run it like
+    `proof.gd` (no audio).
 
 ## Findings for later tasks
 
