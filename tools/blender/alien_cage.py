@@ -4,7 +4,7 @@ body, with S1c's hands welded at a standard wrist ring and the standard neck rin
 skeleton and clips.
 
     blender -b --factory-startup --python-exit-code 1 --python tools/blender/alien_cage.py -- \
-        --src <S1c/build/alien_body.blend> --ring <S1/build/neck_ring.json> --out <dir>
+        --src <S1c/build/alien_body.blend> --ring <S1/build/neck_ring.json> --out <dir> [--target <body.glb>]
 
 Writes <out>/alien_body.blend (a saved character for `tools/run.py export` and `alien_assemble.py`, with the cage kept
 as the hidden object `BodyCage`), <out>/neck_ring.json (S1's, copied unchanged: the assembler reads it beside the
@@ -26,6 +26,8 @@ The method (no sculpting, no smoothing passes over a dense mesh; every shape is 
      extruded twice and capped (TOE), the middle one longest.
    The poles (vertices of valence 3 or 5 and more) sit at the arm hole's corners, the crotch and the toes, away from
    the elbow, knee, wrist, ankle and neck loops.
+   With --target <glb> (step S4b), the cage is then shrink-wrapped onto that body shape, which is measured and
+   never kept (class Wrap): the ring vertices move only along their ring's radius, so the loops stay.
 2. Subdivision: Catmull-Clark, level 2, applied. The soles: the cage's lowest vertices are lowered until the
    subdivided sole touches z = 0.
 3. Rings: the neck's open end (48 vertices) is laid on the ellipse just below S1's ring and joined to S1's two rings
@@ -123,6 +125,20 @@ FIT_ITERS = 8
 WEIGHT_SMOOTH = 4
 WRIST_KEEP = 0.04  # m: the arm's vertices this close to the wrist ring keep S1c's weights (no step at the weld)
 RING_W = {"Neck": 0.7, "Head": 0.3}
+# S4b's wrap onto a target body (--target): the stations, cage -> target, m above each one's sole. Heights: the ankle,
+# knee, crotch, armpit (the arm's underside), shoulder top and neck; the arm's x: the shoulder, elbow and wrist.
+WRAP_Z = [(0.0, 0.0), (0.17, 0.205), (0.518, 0.575), (0.748, 0.815), (1.231, 1.300), (1.312, 1.395), (1.374, 1.45)]
+WRAP_X = [(0.15, 0.185), (0.413, 0.355), (0.605, 0.525)]
+WRAP_S = 0.95  # the trunk's target radii are scaled by this
+# The rings' weights: 1 takes the target fully, 0 keeps the cage (the neck, the wrist, the feet stay the cage's).
+WRAP_W = {"trunk": {"crotch": 0.3, "hip": 0.7, "belly": 1.0, "navel": 1.0, "waist": 1.0, "chest": 1.0,
+                    "armpit": 0.6, "shoulder": 0.5, "top": 0.3, "neck": 0.0},
+          "arm": [0.7, 1.0, 1.0, 1.0, 1.0, 0.4],
+          "leg": [0.5, 0.9, 0.9, 0.6, 0.6, 0.9, 0.9, 0.4]}
+# The goals' ratios to the cage's radii relaxed over the cage's edges: (factor, passes) per kind. The limbs more, so
+# the target's kneecap and calf hints do not come through as knobs.
+WRAP_RELAX = {"trunk": (0.5, 1), "arm": (0.5, 6), "leg": (0.5, 8)}
+WRAP_TOL = 0.0015
 
 
 def trunk_vert(k, z, a, yf, yb, n=SUPER):
@@ -138,7 +154,8 @@ def build_cage(sole_drop, trunk):
     """The half cage (x >= 0) as a bmesh, and the named vertex lists."""
     bm = bmesh.new()
     V = lambda co: bm.verts.new(co)  # noqa: E731
-    rings = {}
+    meta = []  # (vertex, kind, ring, ring centre) of every trunk, arm and leg ring vertex: the wrap's stations
+    rings = {"meta": meta}
     (hy, hz), (hry, hrz), (hx0, hx1, hx2) = ARM_HOLE
     hole = [V((hx0 if dz < 0 else (hx2 if dz > 0 else hx1), hy + hry * dy, hz + hrz * dz)) for dy, dz in OCT]
     for name, z, a, yf, yb in trunk:
@@ -155,6 +172,7 @@ def build_cage(sole_drop, trunk):
                 if name == "crotch" and k in CROTCH_Z:
                     co.z = CROTCH_Z[k]
                 ring.append(V(co))
+                meta.append((ring[-1], "trunk", name, Vector((0.0, 0.5 * (yf + yb), z))))
         rings[name] = ring
     # the neck's end ring: an ellipse on the ring's centre, sized so its subdivided edge lies near the ring
     names = [t[0] for t in trunk]
@@ -179,6 +197,7 @@ def build_cage(sole_drop, trunk):
         else:
             t = ARM_THICK[i]
             ring = [V((x, yc + t * ry * dy, zc + t * rz * dz)) for dy, dz in OCT]
+            meta += [(v, "arm", i, Vector((x, yc, zc))) for v in ring]
         for i in range(8):
             bm.faces.new((prev[i], prev[(i + 1) % 8], ring[(i + 1) % 8], ring[i]))
         prev = ring
@@ -193,6 +212,7 @@ def build_cage(sole_drop, trunk):
             ph = math.radians(-45 + 45 * j + tw)
             t = LEG_THICK[i]
             ring.append(V((cx + t * rx * math.sin(ph), cy - t * ry * math.cos(ph), z)))
+        meta += [(v, "leg", i, Vector((cx, cy, z))) for v in ring]
         for j in range(8):
             bm.faces.new((prev[j], prev[(j + 1) % 8], ring[(j + 1) % 8], ring[j]))
         prev = ring
@@ -292,6 +312,155 @@ def poles(me):
     return out
 
 
+class Wrap:
+    """S4b: the cage shrink-wrapped onto a target body shape (a Meshy generation), used only as a surface to measure,
+    never as mesh. Each trunk, arm and leg ring vertex keeps its ring and its direction from the ring's centre; only
+    its distance changes, to the target section's radius in that direction at the matching station (WRAP_Z, WRAP_X:
+    the joints matched, so the forms land on the cage's skeleton), blended by the ring's weight (WRAP_W: the neck,
+    the wrists, the feet and the arm hole stay the cage's). The trunk takes the target's radii times WRAP_S; each limb
+    takes the target's shape at the cage's own mean thickness. Then the radii are relaxed over the cage's edges
+    (WRAP_RELAX), and corrected each fit iteration by the subdivided body's error, as the trunk's fit is in S4a."""
+
+    def __init__(self, path):
+        from mathutils.bvhtree import BVHTree
+        before = set(bpy.data.objects)
+        bpy.ops.import_scene.gltf(filepath=path)
+        new = [o for o in bpy.data.objects if o not in before]
+        pts, polys = [], []
+        for o in new:
+            if o.type == "MESH":
+                base = len(pts)
+                pts += [o.matrix_world @ v.co for v in o.data.vertices]
+                polys += [[base + i for i in p.vertices] for p in o.data.polygons]
+        for o in new:
+            me = o.data if o.type == "MESH" else None
+            bpy.data.objects.remove(o)
+            if me is not None:
+                bpy.data.meshes.remove(me)
+        lo_z = min(p.z for p in pts)
+        cx = 0.5 * (min(p.x for p in pts) + max(p.x for p in pts))
+        self.pts = [Vector((p.x - cx, p.y, p.z - lo_z)) for p in pts]
+        self.bvh = BVHTree.FromPolygons(self.pts, polys)
+        self.report = {"target": path, "target_verts": len(pts), "target_height": round(max(p.z for p in self.pts), 4)}
+        self.corr = {}
+        self.cache = {}
+
+    def ray(self, bvh, o, d):
+        hit = bvh.ray_cast(o, d)
+        return hit[3]
+
+    def centre(self, kind, station):
+        """The target section's centre at a station: (x, y, z) found by casting rays both ways along the section's
+        two axes from a first guess, twice."""
+        if kind == "arm":
+            c, axes = Vector((station, -0.01, 1.34)), (Vector((0, 1, 0)), Vector((0, 0, 1)))
+        elif kind == "leg":
+            band = [p for p in self.pts if abs(p.z - station) < 0.006 and 0.05 < p.x < 0.35]
+            c = Vector((0.5 * (min(p.x for p in band) + max(p.x for p in band)),
+                        0.5 * (min(p.y for p in band) + max(p.y for p in band)), station))
+            axes = (Vector((1, 0, 0)), Vector((0, 1, 0)))
+        else:
+            c, axes = Vector((0.0, -0.04, station)), (Vector((0, 1, 0)),)
+        for _ in range(2):
+            for ax in axes:
+                a, b = self.ray(self.bvh, c, ax), self.ray(self.bvh, c, -ax)
+                if a is not None and b is not None:
+                    c = c + ax * (0.5 * (a - b))
+        return c
+
+    @staticmethod
+    def interp(table, v):
+        for (a0, b0), (a1, b1) in zip(table, table[1:]):
+            if v <= a1 or (a1, b1) == table[-1]:
+                return b0 + (b1 - b0) * (v - a0) / (a1 - a0)
+        return table[0][1]
+
+    def goals(self, bm, rings):
+        """Each wrapped cage vertex's goal: (index, ring centre, unit direction, cage radius, goal radius, weight)."""
+        rows, raw = [], {"arm": [], "leg": []}
+        cache = self.cache
+        for v, kind, ring, c in rings["meta"]:
+            w = WRAP_W[kind][ring]
+            if w <= 0:
+                continue
+            d = v.co - c
+            if kind == "arm":
+                d.x = 0.0
+                station = self.interp(WRAP_X, c.x)
+            else:
+                d.z = 0.0
+                station = self.interp(WRAP_Z, c.z)
+            r0 = d.length
+            d.normalize()
+            key = (kind, round(station, 4))
+            if key not in cache:
+                cache[key] = self.centre(kind, station)
+            rt = self.ray(self.bvh, cache[key], d)
+            if rt is None:
+                continue
+            rows.append([v.index, c, d, r0, rt, w, kind])
+            if kind in raw:
+                raw[kind].append((r0, rt))
+        k = {kind: sum(a for a, _ in pairs) / sum(b for _, b in pairs) for kind, pairs in raw.items() if pairs}
+        k["trunk"] = WRAP_S
+        for row in rows:
+            row[4] *= k[row[6]]
+        self.report["scale"] = {key: round(val, 4) for key, val in k.items()}
+        # the relax: each goal's ratio to the cage radius averaged with its wrapped neighbours' (along the cage's edges)
+        bm.verts.ensure_lookup_table()
+        ratio = {row[0]: row[4] / row[3] for row in rows}
+        kinds = {row[0]: row[6] for row in rows}
+        for p in range(max(n for _, n in WRAP_RELAX.values())):
+            new = {}
+            for i, q in ratio.items():
+                fac, passes = WRAP_RELAX[kinds[i]]
+                nb = [ratio[e.other_vert(bm.verts[i]).index] for e in bm.verts[i].link_edges
+                      if e.other_vert(bm.verts[i]).index in ratio]
+                new[i] = q if not nb or p >= passes else (1 - fac) * q + fac * sum(nb) / len(nb)
+            ratio = new
+        for row in rows:
+            row[4] = row[3] * ratio[row[0]]
+        return rows
+
+    def apply(self, bm, rings):
+        """Moves the wrapped cage vertices to their goals (blended by weight), plus the corrections so far."""
+        bm.verts.index_update()
+        bm.verts.ensure_lookup_table()
+        self.rows = self.goals(bm, rings)
+        for i, c, d, r0, rg, w, kind in self.rows:
+            v = bm.verts[i]
+            r = r0 + w * (rg - r0) + self.corr.get(i, 0.0)
+            along = v.co.x if kind == "arm" else v.co.z
+            v.co = c + d * r
+            if kind == "arm":
+                v.co.x = along
+            else:
+                v.co.z = along
+
+    def measure(self, body):
+        """The subdivided body's radius along each wrapped vertex's direction against its goal; the corrections are
+        updated. Returns the worst error (m)."""
+        from mathutils.bvhtree import BVHTree
+        me = body.data
+        bvh = BVHTree.FromPolygons([v.co for v in me.vertices], [p.vertices for p in me.polygons])
+        worst = 0.0
+        errs = []
+        for i, c, d, r0, rg, w, kind in self.rows:
+            c2 = Vector(c)
+            if kind == "arm":
+                c2.x = c.x
+            rs = self.ray(bvh, c2, d)
+            if rs is None:
+                continue
+            err = (r0 + w * (rg - r0)) - rs
+            self.corr[i] = self.corr.get(i, 0.0) + err * w
+            worst = max(worst, abs(err) * w)
+            errs.append(abs(err) * w)
+        self.report.setdefault("fit_worst_mm", []).append(round(worst * 1000, 2))
+        self.report.setdefault("fit_mean_mm", []).append(round(1000 * sum(errs) / max(len(errs), 1), 2))
+        return worst
+
+
 def angle_sort(verts, centre, axis):
     """Sorts a loop by its angle around an axis ('x' for the wrists, 'z' for the neck): 0 at the front (-Y)."""
     if axis == "z":
@@ -328,8 +497,9 @@ def main():
     p.add_argument("--src", required=True)
     p.add_argument("--ring", required=True)
     p.add_argument("--out", required=True)
+    p.add_argument("--target", help="S4b: a body shape (GLB) the cage is shrink-wrapped onto before subdividing")
     args = p.parse_args(sys.argv[sys.argv.index("--") + 1:])
-    report = {"src": args.src}
+    report = {"src": args.src, "target": args.target}
     with open(args.ring, encoding="utf-8") as fh:
         ring = json.load(fh)
     bpy.ops.wm.open_mainfile(filepath=args.src)
@@ -378,16 +548,22 @@ def main():
     # u1 target, until it is under FIT_TOL.
     drop = 0.0
     trunk = [list(t) for t in TRUNK]
+    wrap = Wrap(args.target) if args.target else None
     for it in range(FIT_ITERS):
         bm, rings = build_cage(drop, trunk)
         for (dy, dz), v in zip(OCT, rings["wrist_cage"]):  # a subdivided octagon's edge lies at 0.902 of its radius
             v.co = Vector((WRIST_X, *wrist_pt(math.atan2(dz, -dy), 1 / 0.902)))
+        if wrap:
+            wrap.apply(bm, rings)
         cage_faces = len(bm.faces)
         cage, body = subdivided(bm, "BodyNew")
         bm.free()
         low = min(v.co.z for v in body.data.vertices)
         worst = 0.0
-        for row, target in zip(trunk, TRUNK):
+        if wrap:  # the wrap replaces the trunk's u1 fit
+            worst = wrap.measure(body) * FIT_TOL / WRAP_TOL
+            report["wrap"] = wrap.report
+        for row, target in zip(trunk, TRUNK if not wrap else []):
             name, z = row[0], row[1]
             if name not in FIT:
                 continue
