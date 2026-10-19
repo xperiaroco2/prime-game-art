@@ -1,0 +1,55 @@
+# art#196, step S9 (the engineer, 2026-10-19: "it looks like a 2010 low-poly game; polish until final-release
+# quality"): GPT Image paints over Godot renders of the iteration-3 alien (S8b) in a final-release finish, keeping
+# the same shapes, so the engineer sees the quality target before the 3D material and mesh work. Two tries each for
+# the face and the full body. Under the standing permission for Meshy generation within the plan's credits
+# (2026-10-03, art#16). No game names. Schema: docs/meshy.md.
+
+id = "2026-10-19-alien-release-look"
+purpose = "art#196 S9: a final-release quality target painted over the iteration-3 alien's Godot renders (same shapes, premium surface and light)."
+plan = "Meshy paid plan (monthly; bought by the engineer on 2026-10-17)"
+terms_url = "https://www.meshy.ai/terms-of-use"
+licence = "owned by the customer on a paid plan (Meshy Terms of Use 3.2, updated 2026-09-19); no attribution required"
+credit_cap = 60
+approved_by = "xperiaroco2 (the engineer)"
+approved_at = "2026-10-03"
+approval_ref = "https://github.com/xperiaroco2/prime-game-art/issues/16"
+
+[defaults.image_to_image.params]
+ai_model = "gpt-image-2-5-sunburst"
+aspect_ratio = "1:1"
+
+[variants.face]
+prompt = "Re-render the character in the FIRST reference image as a final-release, top-quality stylised 3D game character render, as seen in a premium modern game's character showcase. Keep exactly his shapes, proportions, pose, camera angle and colours: the teal head, the lighter mint face, throat and belly, the heavy half-closed coral eyelids over big glossy eyeballs with dark brown irises, the two nostril slits, the wide soft rolled coral lips. Take ONLY the crest shape from the SECOND reference image: one big smooth back-swept curved blade on top of the head, in the same teal. Raise the finish to final quality: a soft-matte premium vinyl-toy skin with subtle subsurface glow, very gentle colour gradients (slightly warmer and lighter on the face, deeper teal toward the back of the head), soft ambient occlusion in the creases under the lids, around the lips and under the jaw, soft blended edges between teal and mint (no hard lines), perfectly smooth high-density silhouettes, lids and lips with a slight soft sheen and a rolled rim, eyeballs with a crisp catch light and soft shading at their edges. Soft studio key light with a gentle rim light, a plain soft grey background. Appealing, characterful, adult cartoon tone. One character only. No text."
+
+[variants.body]
+prompt = "Re-render the character in the reference image as a final-release, top-quality stylised 3D game character render, as seen in a premium modern game's character showcase. Keep exactly his shapes, proportions, pose, camera angle and colours: the slim teal body, the lighter mint face, throat and oval belly patch, coral patches on the knees and elbows and on the knuckles (never on the fingertips), four soft chunky fingers on each hand, rounded three-toe paddle feet, the heavy half-closed coral eyelids over big glossy eyeballs, the wide soft rolled coral lips, a back-swept curved blade crest on the head. Raise the finish to final quality: a soft-matte premium vinyl-toy skin with subtle subsurface glow, very gentle colour gradients, soft ambient occlusion at the neck, armpits, between the fingers and toes and under the belly, soft blended edges between teal, mint and coral (no hard lines), perfectly smooth high-density silhouettes, a smooth neck that flows into the back of the head with no step. Soft studio key light with a gentle rim light, a soft contact shadow, a plain soft grey background. Appealing, characterful, adult cartoon tone. One character only. No text."
+
+[[items]]
+id = "rf1"
+variant = "face"
+kind = "image_to_image"
+images = [
+  { file = "raw:review/char/alien-parts-kit/S9/hero/hero_face_34.png", provenance = "own Godot render of the iteration-3 alien (S8b), art#196", sha256 = "1f55744fcf4ae9161cd46bbf9898a634f2bcf2ffc44142f0392c254861ac1dbc" },
+  { file = "raw:research/2026-10-19-parts-kit/head1_crop.png", provenance = "crop of own Meshy generation, batch 2026-10-17-alien-2d-heads1 item h1-g1, head 1 (the liked teal blade-crest head), art#196", sha256 = "32cd1061b61a0649968011176e0a4a05d3440bc0c95820e2bc64b192f639010e" },
+]
+
+[[items]]
+id = "rf2"
+variant = "face"
+kind = "image_to_image"
+images = [
+  { file = "raw:review/char/alien-parts-kit/S9/hero/hero_face_34.png", provenance = "own Godot render of the iteration-3 alien (S8b), art#196", sha256 = "1f55744fcf4ae9161cd46bbf9898a634f2bcf2ffc44142f0392c254861ac1dbc" },
+  { file = "raw:research/2026-10-19-parts-kit/head1_crop.png", provenance = "crop of own Meshy generation, batch 2026-10-17-alien-2d-heads1 item h1-g1, head 1 (the liked teal blade-crest head), art#196", sha256 = "32cd1061b61a0649968011176e0a4a05d3440bc0c95820e2bc64b192f639010e" },
+]
+
+[[items]]
+id = "rb1"
+variant = "body"
+kind = "image_to_image"
+images = [ { file = "raw:review/char/alien-parts-kit/S9/hero/hero_body_34.png", provenance = "own Godot render of the iteration-3 alien (S8b), art#196", sha256 = "97294c9b9aea8463c421d59d6ba17cb231c1c3b731da20f3fd32bf1143c2bf96" } ]
+
+[[items]]
+id = "rb2"
+variant = "body"
+kind = "image_to_image"
+images = [ { file = "raw:review/char/alien-parts-kit/S9/hero/hero_body_34.png", provenance = "own Godot render of the iteration-3 alien (S8b), art#196", sha256 = "97294c9b9aea8463c421d59d6ba17cb231c1c3b731da20f3fd32bf1143c2bf96" } ]
