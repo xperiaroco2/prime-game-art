@@ -595,6 +595,8 @@ def load_fields(out, size):
             f[n] = down(arr[..., i], k)
         del arr
     f["pore"] = down(np.load(fdir / "pore.npy"), k)
+    if "socket" not in json.loads((fdir / "fields.json").read_text(encoding="utf-8"))["passes"]["e"]:
+        f["socket"] = np.zeros_like(f["pore"])  # M3a's fields: a constant 1 in the socket's channel, not a socket
     cov = down(np.load(fdir / "coverage.npy").astype(np.float32), k) > 0.5
     # the noises (0..1 around 0.5) as -1..1 by their own spread
     for n in ("blotch", "hue", "fine"):
