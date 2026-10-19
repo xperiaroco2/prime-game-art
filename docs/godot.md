@@ -999,6 +999,65 @@ a time, by visibility.
   - `alien_detail_review.py` renders the review: the same Eevee skin with and without the normal map beside rf2,
     as `face.png`, `body.png` and `close.png`.
   - The shaders do not sample the map yet: that is M5 (Godot) and the three.js page.
+- **M3a, the authored 4K texture set** (`tools/blender/alien_texture.py`; the formulas and settings in
+  `alien_texture_geom.py`, test `tools/tests/test_alien_texture_geom.py`; output under
+  `D:/prime-art-raw/review/char/alien-parts-kit/M3a/`). Four headless stages, each reading the one before:
+  - `--stage cage` (from M2's `high/alien_high.blend`): the explicit bake cage of PR #231's minor 6. Body's copy,
+    each vertex moved out along its normal by `cage_offset()`: 40 % of the distance to the low mesh's next surface
+    along that normal, within 0.3 to 2 mm and never past half that distance (M2's uniform 2 mm started rays inside the next finger in the webs). It
+    rebakes `bake/normal.png` (4K) and `ao.png` (2K) through it and copies M2's curvature and thickness. Measured
+    (`bake/cage_report.json`, `cage_compare.png`): texels tilted over 60 degrees 11,128 to 3,725; only 9,135 texels
+    changed by over 0.05, all at the webs; the AO's mean is unchanged. A three-stroke mark at each hand's thumb root
+    remains (a low-mesh fold, not a ray miss); it does not show in the renders.
+    - The half-gap cap came after the shipped bake (PR #233's review). On Body 2 vertices have a clearance under
+      0.6 mm, so 22 offsets change (by at most 0.28 mm, with the smoothing). The rebake through the capped cage
+      (`M3a/bake_cage_r2/`) differs from the shipped `bake/` in 217 of 16.8 million normal texels by over 0.05
+      (tilted over 60 degrees: 3,629 against 3,725) and in 9 AO texels. The textures and the GLB still use `bake/`;
+      the next compose takes the capped bake.
+  - `--stage fields` (from M2's `export/alien_character.blend`): per-vertex fields of the rest pose (the T-zone, the
+    mouth's rim, the flush round the mouth and cheeks, the warm thin parts: fingers, crest, neck; the S9 shader's
+    `deep` gradient and face warmth; the light mask smoothed over the head and neck by `smooth_light()`, which removes
+    the pale specks along the throat panel's edge behind the jaw), three noises in rest object space (blotch 11 cm,
+    hue 29 cm, fine 3 mm), the masks' accent and M2's maps, baked by Cycles EMIT onto `UVMap` at 4K as five RGB
+    fields (`fields/*.npy`, float16), plus `pore.npy`, the pores of the normal map (its divergence).
+  - `--stage compose`: `textures/albedo.png` (sRGB), `orm.png` (glTF's packing: R occlusion = the AO, G roughness,
+    B metallic 0) and `sss.png` (2K grey, white = thin: the subsurface mask for the Godot shader, M5), each with a
+    `_1k` preview; the UV gaps are filled by push-pull, so far mip levels never bleed black. `--variants FILE --vout
+    DIR` (FILE: a JSON file, an object of name: settings, each merged over the settings) writes a tuning grid's
+    variants instead, each at `--size` into `DIR/<name>/` (the grids `g1` to `g4` were composed at `--size 2048`).
+    - Albedo (linear, `albedo()`): the kit's flat look first (teal and pale by the light mask, the `deep` gradient,
+      the face warmth, the accent with its edge narrowed to smoothstep 0.2 to 0.8, so no grey band round the knuckle
+      spots), then a warm/cool hue drift (6 %) and soft blotches (5 %), the curvature cavity (concave up to 20 %
+      darker and bluer, convex up to 10 % lighter in its own hue; a mix toward the pale washed the thin fingers out
+      to grey), the thin parts' warmth (a multiply toward more red and green, so the teal stays saturated), the flush
+      (10 %, on the pale), half the AO.
+    - Roughness (`roughness()`): 0.52, convex down to 0.38, creases up 0.06, the T-zone -0.06, the mouth's rim -0.16,
+      a fine noise of 0.015.
+    - Tuned on grids (`M3a/variants/g1` to `g4`, rf2 first): stronger cavity and pore darkening drew M2's creases as
+      dark lines (an older, wrinkled face); roughness 0.55 read matte beside rf2's sheen, 0.48 with a T-zone of -0.14
+      laid a wet patch on the forehead, and a pore-scale roughness noise of 0.05 made the highlight sparkle.
+  - `--stage export`: the other meshes on `alien_hue` (the alternative crests `crest_antennae`, `crest_fins`) move
+    to an untextured copy, `alien_hue_part`, since their UVs are not Body's (`alien.gd`'s `HUE_MATERIALS` swaps both
+    for the shader). The copy's image and Normal Map nodes are removed (`strip_images()`): kept, M2's 4K normal map
+    went into the GLB a second time (14.3 MB) as the crests' `normalTexture`, sampled through their own UVs. `alien_hue` takes the set on `UVMap` (Base Color from the albedo; Separate Color of the ORM
+    into Roughness and Metallic, and R into the `glTF Material Output` group's Occlusion), so the GLB has
+    `baseColorTexture`, `metallicRoughnessTexture` and `occlusionTexture` on one ORM image, and `normalTexture`.
+    `export/alien_character.glb` (34.9 MB: the normal map 16.1, the ORM 7.7, the albedo 3.5, the two mouth atlases
+    0.6) with its `.blend`, `character.json` (`note_m3a_textures`), the mouth atlases and `alien_skin_sss.png`. The
+    stage then reads the GLB's JSON and fails when any material but `alien_hue` and the flipbook mouths
+    (`alien_mouth_flip_*`) references an image (`alien_texture_geom.unexpected_images()`).
+  - `COLOR_0` (the vertex AO) is still exported because `alien_hue.gdshader` reads it; a plain glTF viewer multiplies
+    it into the albedo on top of the half AO already in it. The albedo is the teal hue's only: the other hues need
+    M5's shader to tint (or one albedo per hue).
+  - `alien_texture_review.py` renders the review under light D in Blender (Eevee, AgX): the four suns of
+    `look_presets.json` turned into Blender's axes, each at 2.5 times its Godot energy (Lambert's 1 / pi; at 1 the
+    face read grey, at pi the teal washed out), M2's look beside M3a's (`face.png`, `close.png`, `body.png` in
+    `M3a/sheets/`); `--grid DIR --names a,b --shots ...` renders a tuning grid's variants.
+  - To rebuild: each stage in background Blender through the runner, `tools/runner/blender.py`'s
+    `run_script("alien_texture.py", ["--stage", <cage|fields|compose|export>, "--out", <M3a>, "--m2", <M2>, ...])`
+    (`--m2` is required; `export` also takes `--kit <the kit's export folder>`), in that order (about 90 s, 32 s,
+    15 s and 10 s: start each in the background with its log under `tools/out/`), then `alien_texture_review.py`
+    the same way; the normal map changes only with the high copy (M2's `--stage high`).
 
 ## Findings for later tasks
 
