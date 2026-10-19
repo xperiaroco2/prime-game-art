@@ -16,7 +16,7 @@ BoneAttachment3D and three.js under the Head bone; no socket transform has to be
 part export stays valid for a page that loads parts one by one.
 
 The method:
-1. Weld: the head's last 24 vertices lie on the body's neck ring (S2a, weld error 0); the two meshes are joined
+1. Weld: the head's last 48 vertices (the densified ring, S8b) lie on the body's neck ring (S2a, weld error 0); the two meshes are joined
    (vertex groups and UV layers by name), the coincident ring vertices merged, every custom normal cleared and the
    whole mesh shaded smooth, so the ring's normals are the average over both sides' faces: no lighting seam. The
    neck across the weld is then faired as one smooth surface (NECK_FAIR, S8b), so no pleated collar or crease shows.
@@ -48,11 +48,11 @@ from mathutils import Matrix, Vector
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import export_glb  # noqa: E402
 
-from alien_face import EYE_AIM_IN  # noqa: E402  (S5; godot/alien/alien.gd aim_in_deg)
+from alien_face import ACCENT, EYE_AIM_IN  # noqa: E402  (S5; godot/alien/alien.gd aim_in_deg)
 BELLY_HALF_W = [(0.78, 0.0), (0.80, 0.045), (0.86, 0.082), (0.95, 0.100), (1.05, 0.100), (1.15, 0.090), (1.25, 0.074),
                 (1.33, 0.058), (1.40, 0.046)]  # S8b: u1's oval on the cage body (S7's read as a strip)
 # the pale panel's half width in x by height (z, m): u1's throat-to-belly panel, an oval at the crotch
-BELLY_SOFT = 0.018  # its soft edge, m (S8b: softer)
+BELLY_SOFT = 0.04  # its soft edge, m (S8b: 0.018; S9: rf2's soft teal-to-mint blend)
 # S8b: the neck across the weld faired as one smooth surface. Each vertex's distance from the ring's axis (in the ring's
 # ellipse units) is replaced by a Gaussian average of its neighbours' by angle and height, so the ripple of the 24-to-48
 # join and the decimated head cut (a ruffled collar of pleats) and the creases at the loft's ends go, while the neck's
@@ -60,20 +60,20 @@ BELLY_SOFT = 0.018  # its soft edge, m (S8b: softer)
 NECK_FAIR = {"z": (1.345, 1.360, 1.418, 1.445), "sigma_deg": 20.0, "sigma_z": 0.006, "r_max": 1.22}
 NECK_R = 0.075  # only vertices this close to the ring's axis (the chin, from z 1.452 down to its underside, stays)
 MIDLINE_X = 0.05  # the trunk centre per height: the middle of the body's vertices within this of x = 0, m
-MASK_SMOOTH = 2  # neighbour-average passes over the body's light mask (the mesh is coarse: about 2 cm edges)
+MASK_SMOOTH = 4  # neighbour-average passes over the body's light mask (the mesh is coarse: about 2 cm edges)
 NECK_BLEND = (1.30, 1.39)  # the body mask blends into the head ring's values over these heights, m
 KNEE = {"offset": (0.0, -0.045, 0.0), "r": 0.040, "soft": 0.028}  # Blender: front is -Y; the body is in a T-pose
 ELBOW = {"offset": (0.0, 0.030, 0.0), "r": 0.032, "soft": 0.026}  # the elbow points back (+Y)
-KNUCKLE = {"r": 0.016, "soft": 0.014}
+KNUCKLE = {"r": 0.011, "soft": 0.012, "dorsal": (-0.1, 0.6)}  # S9: the back of the hand only (normal z, T-pose palms down)
 FINGERS = ("Index", "Middle", "Ring", "Thumb")
 HUES_SRGB = {  # the saturated hues of the 10-17 sheet (g-s1), picked against u1's teal: art #196 S3
-    "teal": (0.17, 0.56, 0.55),
+    "teal": (0.11, 0.48, 0.51),  # S9: rf2's deeper, bluer teal (S3: (0.17, 0.56, 0.55))
     "coral": (0.90, 0.42, 0.34),
     "violet": (0.58, 0.46, 0.82),
 }
-PALE_SRGB = {"teal": (0.80, 0.91, 0.80), "coral": (0.98, 0.84, 0.74), "violet": (0.87, 0.83, 0.96)}  # u1's mint belly
+PALE_SRGB = {"teal": (0.86, 0.92, 0.81), "coral": (0.98, 0.84, 0.74), "violet": (0.87, 0.83, 0.96)}  # u1's mint belly
 LIGHT_MIX = 0.88
-ACCENT_SRGB = (0.89, 0.42, 0.36)
+ACCENT_SRGB = ACCENT  # alien_face.ACCENT, also alien_hue.gdshader's accent default
 ACCENT_MIX = 0.9
 
 
@@ -113,7 +113,7 @@ def weights(body, groups):
 
 
 def ring_profile(head, ring_ids, uv_name):
-    """The head's mask u at its 24 ring vertices, by angle index (k at 2*pi*k/24 from the front towards +X)."""
+    """The head's mask u at its ring vertices (48), by angle index (k at 2*pi*k/n from the front towards +X)."""
     me = head.data
     uv = me.uv_layers[uv_name].data
     vals = {i: [] for i in ring_ids}
@@ -192,7 +192,8 @@ def body_masks(body, arm, ring, head_ring_u):
             if lw[i] < 0.3:
                 continue
             d = (p - c).length
-            a = max(a, (1.0 - smoothstep(s["r"], s["r"] + s["soft"], d)) * smoothstep(0.3, 0.7, lw[i]))
+            side_w = smoothstep(*s["dorsal"], v.normal.z) if "dorsal" in s else 1.0
+            a = max(a, (1.0 - smoothstep(s["r"], s["r"] + s["soft"], d)) * smoothstep(0.3, 0.7, lw[i]) * side_w)
         accent[i] = a
     nbrs = [[] for _ in me.vertices]
     for e in me.edges:
