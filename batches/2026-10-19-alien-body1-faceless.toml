@@ -1,0 +1,60 @@
+# art#196, the parts kit's S4 candidate (b) (the engineer's yes, 2026-10-19 ~14:35 UTC): a smooth, simplified
+# designer-toy body shape for the cage to shrink-wrap onto. Stage 1: GPT Image redraws the approved u1 body as a
+# faceless T-pose turnaround (two tries); stage 2: Meshy multi-image to 3D from each try, untextured (the colour comes
+# from our shader). Run the stages separately: `meshy run <batch> bv1 bv2`, look, then the 3D items.
+# Under the standing permission for Meshy generation within the plan's credits (2026-10-03, art#16). No game names.
+# Schema: docs/meshy.md.
+
+id = "2026-10-19-alien-body1-faceless"
+purpose = "art#196 parts kit S4b: a faceless, smooth designer-toy body in T-pose (no muscle, nipples or navel) as the shape a clean cage is shrink-wrapped onto."
+plan = "Meshy paid plan (monthly; bought by the engineer on 2026-10-17)"
+terms_url = "https://www.meshy.ai/terms-of-use"
+licence = "owned by the customer on a paid plan (Meshy Terms of Use 3.2, updated 2026-09-19); no attribution required"
+credit_cap = 100
+approved_by = "xperiaroco2 (the engineer)"
+approved_at = "2026-10-03"
+approval_ref = "https://github.com/xperiaroco2/prime-game-art/issues/16"
+
+[defaults.image_to_image.params]
+ai_model = "gpt-image-2-5-sunburst"
+generate_multi_view = true
+remove_background = true
+
+[defaults.multi_image_to_3d.params]
+ai_model = "meshy-7.1"
+geometry_resolution = "2k"
+should_texture = false
+target_formats = ["glb"]
+
+[variants.faceless]
+prompt = "The exact same character as in the reference images, redrawn as a clean 3D character-model sheet from three sides (front, side, back) in a T-pose: arms straight out horizontally, palms down, legs straight and slightly apart, on a transparent background, neutral even studio light. Keep his proportions and his slim adult build: the long slim neck, the narrow shoulders, the soft slightly rounded belly, the long slim limbs, four fingers on each hand, rounded three-toe paddle feet. Make the whole body a SIMPLIFIED SOFT DESIGNER-TOY FORM: smooth continuous tube-like arms and legs with gentle joints, no muscle definition, no ribs, no collarbones, no kneecaps, no visible tendons, no nipples, no navel, no genitals, a smooth seat. The head keeps its shape and its back-swept curved blade crest but has NO FACE: no eyes, no eyelids, no mouth, no lips; two smooth shallow round eye sockets and a smooth mouth area. One even smooth teal surface with the lighter mint front, soft-matte like a premium vinyl toy, no pores, no wrinkles, no fine texture. One character only. No text, no labels."
+
+[[items]]
+id = "bv1"
+variant = "faceless"
+kind = "image_to_image"
+images = [
+  { file = "raw:2026-10-18-alien-2d-turn2/u1/image_to_image-multi_view_image_01a14c18-9ad5-77dd-9793-c1631b328463_part_0.png", provenance = "own Meshy generation, batch 2026-10-18-alien-2d-turn2 item u1 view 0 (front), art#196", sha256 = "d8c6ef6483406beb20b4e065268527c7daa9ae34161e467c7623aa4c4a39d23a" },
+  { file = "raw:2026-10-18-alien-2d-turn2/u1/image_to_image-multi_view_image_01a14c18-9ad5-77dd-9793-c1631b328463_part_1.png", provenance = "own Meshy generation, batch 2026-10-18-alien-2d-turn2 item u1 view 1 (side), art#196", sha256 = "ad8639e5d530ba0cd9bc8b6163311d95874e178048cc839e7d6faff3c44677ea" },
+  { file = "raw:2026-10-18-alien-2d-turn2/u1/image_to_image-multi_view_image_01a14c18-9ad5-77dd-9793-c1631b328463_part_2.png", provenance = "own Meshy generation, batch 2026-10-18-alien-2d-turn2 item u1 view 2 (back), art#196", sha256 = "3427f3474f90dff3cd9e8492e0fd4936e305710978016736ede2d068f6092dff" },
+]
+
+[[items]]
+id = "bv2"
+variant = "faceless"
+kind = "image_to_image"
+images = [
+  { file = "raw:2026-10-18-alien-2d-turn2/u1/image_to_image-multi_view_image_01a14c18-9ad5-77dd-9793-c1631b328463_part_0.png", provenance = "own Meshy generation, batch 2026-10-18-alien-2d-turn2 item u1 view 0 (front), art#196", sha256 = "d8c6ef6483406beb20b4e065268527c7daa9ae34161e467c7623aa4c4a39d23a" },
+  { file = "raw:2026-10-18-alien-2d-turn2/u1/image_to_image-multi_view_image_01a14c18-9ad5-77dd-9793-c1631b328463_part_1.png", provenance = "own Meshy generation, batch 2026-10-18-alien-2d-turn2 item u1 view 1 (side), art#196", sha256 = "ad8639e5d530ba0cd9bc8b6163311d95874e178048cc839e7d6faff3c44677ea" },
+  { file = "raw:2026-10-18-alien-2d-turn2/u1/image_to_image-multi_view_image_01a14c18-9ad5-77dd-9793-c1631b328463_part_2.png", provenance = "own Meshy generation, batch 2026-10-18-alien-2d-turn2 item u1 view 2 (back), art#196", sha256 = "3427f3474f90dff3cd9e8492e0fd4936e305710978016736ede2d068f6092dff" },
+]
+
+[[items]]
+id = "b3d1"
+kind = "multi_image_to_3d"
+images = [ { from = "bv1", pick = 0 }, { from = "bv1", pick = 1 }, { from = "bv1", pick = 2 } ]
+
+[[items]]
+id = "b3d2"
+kind = "multi_image_to_3d"
+images = [ { from = "bv2", pick = 0 }, { from = "bv2", pick = 1 }, { from = "bv2", pick = 2 } ]
