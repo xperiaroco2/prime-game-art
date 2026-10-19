@@ -960,6 +960,45 @@ a time, by visibility.
     face and body shots, `light_sheet.png` (the lighting question; `look_presets.json` stays as approved). The
     engineer chose D (2026-10-19; "Light D" above): the stage now takes its lights from `look_presets.json`; a tuning
     variant may carry its own `lights`, and spec `grid_zoom` adds `zoom_<name>.png`, one part of every shot.
+- **M2, the texture UV and the detail normal map** (the modern-look plan: a texture set instead of a smooth
+  subdivision cage). Three steps after `alien_ao.py`, all headless Blender; the pure parts and settings are in
+  `alien_detail_geom.py` (test `tools/tests/test_alien_detail_geom.py`):
+  - `alien_uv.py --character <ao/build/alien_character.blend> --out <uv>` writes a texture UV into `Body`'s first UV
+    layer `UVMap`, so it is **glTF `TEXCOORD_0`**. It held nothing used before. `masks` (TEXCOORD_1), `COLOR_0` and
+    `rest_xy`/`rest_zn` (TEXCOORD_2/3) are untouched.
+    - Islands come from the dominant bone's part (`part_of_bone`), with neighbour-majority passes and strays merged.
+    - The torso is split front and back down the flanks, under the arms.
+    - Each hand is split into palm and back by its smoothed T-pose normal. A raw normal left folding flaps: 26
+      overlapping faces.
+    - Each foot loses its sole.
+    - Tube parts get one lengthwise cut where the angle around their axis wraps: the head up the nape and along the
+      crest blade's back edge, the arms underneath, the legs on the inner side, the foot up the heel.
+    - Then a minimum-stretch unwrap, the same texel density per island times `DENSITY` (head 1.75, hands 1.45), and
+      a pack with a 24 px margin at 4K.
+    - Measured (`uv/build_report.json`): 15 islands, 0 overlapping or flipped faces, stretch p5-p95 within 0.78-1.18
+      (head) and 0.97-1.03 (limbs). At 4K: head 38 px/cm, hands 31.5, torso and arms 21.7, legs 19.6.
+    - An angle-based unwrap crushed the feet (stretch 0.03) and folded the thumbs.
+  - `alien_detail.py --stage high` subdivides a copy (`Body_high`, rest pose) three times to 1.9 million quads. Then
+    it moves the copy along its normals by `CREASES`: Ricker profiles, a valley with shoulders and zero net volume,
+    each at most `MAX_DISP_MM`.
+    - The creases: finger joints (at the mesh's own joints, `FINGER_K`), wrists, elbows, knees, armpits, the neck, a
+      fold above and below each eye socket, a groove under the rest mouth and round its corners, the philtrum,
+      nasolabial lines, the
+      belly's centre line.
+    - Each crease is placed by bone planes, rings or curves in the rest pose. It is faded by side (normal) and by
+      bone-weight attributes written before subdividing.
+    - The fine grain (`GRAIN`: Voronoi pores and a noise peel, the face stronger by the Head weight) is a Bump on the
+      copy's material. Cycles bakes shading normals, so it reaches the map without polygons.
+    - The copy also stores its mean curvature as the colour `curv`.
+  - `--stage bake` uses Cycles, selected to active onto `UVMap` (cage 2 mm, ray 4 mm, 16 px extend margin). It
+    writes `normal.png` (4K tangent space, OpenGL +Y), and at 2K `ao.png` (5 cm, with the default face),
+    `curvature.png` (0.5 flat) and `thickness.png` (AO from inside with the copy's normals flipped: white thick, dark
+    thin within 6 cm). Each map gets a `_1k` preview.
+  - `--stage export` puts `normal.png` on `alien_hue` through a Normal Map node, so glTF gets `normalTexture`
+    (texCoord 0), with tangents exported.
+  - `alien_detail_review.py` renders the review: the same Eevee skin with and without the normal map beside rf2,
+    as `face.png`, `body.png` and `close.png`.
+  - The shaders do not sample the map yet: that is M5 (Godot) and the three.js page.
 
 ## Findings for later tasks
 
