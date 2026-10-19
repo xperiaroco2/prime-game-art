@@ -309,7 +309,31 @@ game's recommended look: Low = ladder variant 3, Medium = 4, High = 5, Ultra = 6
 grid (below) set the clay's specular to 0.1 and the eyes' glint, step 3's the sky's ambient share, the fill and the
 exposure (0.9). `godot/showroom/look_presets.json` says so in its `status` (`_showroom.STATUS`); the game side copies
 it (this repo does not touch the game). **Still open:** the hair is 5 to 7 L* darker than Blender's, and the
-game-side wiring is untested. Every preset uses AgX, the
+game-side wiring is untested.
+
+**Light D (2026-10-19, art #196, [the engineer's choice](https://github.com/xperiaroco2/prime-game-art/issues/196#issuecomment-6272668389)):**
+the characters' lights are the approved stage's with a stronger key and a back rim, the same in every preset (the
+shared `lights` block of `look_presets.json`, `_showroom.LOOK_LIGHTS`). Each directional light now carries its
+position: `at` and `look_at` (0, 0.9, 0), placed with `look_at_from_position` in the character's model space (origin
+at its feet, front +Z; only the direction counts, so the game turns the set with the character or the camera):
+
+| Light | `at` | Energy | Specular | Shadow |
+|---|---|---|---|---|
+| key | (-2.0, 3.2, 3.0) | 3.0 (was 2.0) | 0.6 | yes |
+| fill | (3.0, 1.6, 2.0) | 0.12 | 0 | no |
+| back (named `rim` before light D) | (0.5, 2.5, -3.0) | 0.30 | 0 | no |
+| rim (new) | (0.7, 1.6, -2.8) | 3.0 | 0.5 | no |
+
+The alien proofs' stage (`second_test.gd` and the scripts on it, `face_proof.gd`) reads these lights from
+`look_presets.json` through `godot/showroom/look_lights.gd`, so every later proof renders under the approved lights.
+The showroom's own ladder and grids keep their measured variants (key 1.05 to 3.0, no rim). Light D's tuning grid
+toward the paintover rf2's thinner, crisper rim (`D:/prime-art-raw/review/char/alien-parts-kit/lightD/grid.png` with
+`zoom.png`, `final.png`) tried the skin shader's fresnel glow sharper, Godot's rim term, the rim light further behind
+and stronger, and its specular up: a rim specular of 1.0 laid a white sheen on the crest's top that rf2 does not have,
+so the lights stay exactly D and only the skin's own rim changed (`alien.gd` `SKIN`: `rim_value` 0.2 to 0.6,
+`rim_tint` 0.6 to 0.3), a lighter edge along the head's right contour.
+
+Every preset uses AgX, the
 sky as ambient and reflections and the catch light; each turns on everything the one below does. The shadow filter is the project setting
 `rendering/lights_and_shadows/directional_shadow/soft_shadow_filter_quality`, whose values are Godot's
 `RenderingServer.ShadowQuality`: 0 hard, 1 very low, 2 low, 3 medium, 4 high, 5 ultra (`_showroom.SHADOW_FILTER`).
@@ -869,7 +893,8 @@ a time, by visibility.
     character facing +z), and the pale tint times `mix(1, (1.06, 1.0, 0.90), 0.6 * smoothstep(1.38, 1.50, y))`; (3)
     the grain: the same value noise (`alien_grain.gdshaderinc`) on `position * 500` perturbing the normal by 0.12,
     faded out from 0.8 to 2.5 m; (4) a fresnel emission `mix(c, pale, 0.5) * (1 - n.v)^3 * 0.3`; (5) the lips' clear
-    coat 0.08 at roughness 0.7; (6) Godot's own rim (`rim_value` 0.2, tinted 0.6 toward the albedo) and screen-space
+    coat 0.08 at roughness 0.7; (6) Godot's own rim (`rim_value` 0.2, tinted 0.6 toward the albedo; 0.6 tinted 0.3 since light D's grid,
+    below) and screen-space
     subsurface (`sss` 0.3) have no three.js equivalent: a wrapped diffuse comes closest. The light mask
     (`TEXCOORD_1`) and the AO (`COLOR_0`) are baked, so S9c's throat panel and jaw lift need nothing on the page.
 - **S9b, the neck and the rest pose:**
@@ -932,7 +957,9 @@ a time, by visibility.
     took real skin in the tight folds of the armpits and the crotch, so it stays off there.
   - `neck_shots.gd` spec `"torso"`: the upper body at 1.5 m from the front, three-quarter, side and three-quarter
     back, beside u1's views. `hero_shots.gd` spec `"lights"`: the stage's directional lights replaced per variant,
-    face and body shots, `light_sheet.png` (the lighting question; `look_presets.json` stays as approved).
+    face and body shots, `light_sheet.png` (the lighting question; `look_presets.json` stays as approved). The
+    engineer chose D (2026-10-19; "Light D" above): the stage now takes its lights from `look_presets.json`; a tuning
+    variant may carry its own `lights`, and spec `grid_zoom` adds `zoom_<name>.png`, one part of every shot.
 
 ## Findings for later tasks
 
