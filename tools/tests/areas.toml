@@ -87,6 +87,10 @@ tests = ["test_ragdoll_*", "test_slice_*"]
 sources = ["faces/*", "tools/blender/faces_*", "tools/runner/commands/faces.py"]
 tests = ["test_faces_*"]
 
+[area.alien_texture]
+sources = ["tools/blender/alien_texture_geom.py"]  # the alien skin's texture formulas (#196); before light's alien_*
+tests = ["test_alien_texture_*"]
+
 [area.meshy]
 sources = ["tools/blender/meshy_rig_input.py", "tools/runner/commands/_meshy_*.py", "tools/runner/commands/meshy.py"]
 tests = ["test_meshy_*"]
