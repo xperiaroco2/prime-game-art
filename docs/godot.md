@@ -911,6 +911,28 @@ a time, by visibility.
   - `alien_ao.py`'s `JAW_LIFT` lifts the baked AO by 0.7 toward 1 over the front of the neck and the jaw's underside
     (mean 0.915 to 0.967): S9's grey band under the jaw goes.
   - Test: `tools/tests/test_alien_neck.py` (the cubic's no-overshoot and the column, with stub Blender modules).
+- **S9d, the pale panel's edge, the single-sided skin and the lighting question:**
+  - S9c's panel in profile had a bulging top edge behind the jaw (its jaw term followed the voxel head's normals), a
+    pale wedge at the jaw's corner from behind, and at the shoulders it met the belly panel's narrow x half width
+    (about 15 % of the chest's depth in profile) with a step. `alien_neck.throat_panel()` is now a cut in profile:
+    pale in front of one line `y_e(z)` (`panel_line()`): the front `PANEL["depth"]` (0.40) of the trunk's depth (its
+    front and back at x = 0, measured per centimetre on the mesh) up the chest, the ring's axis down the side of the
+    neck, and under the jaw a shape-preserving cubic up to the head mask's own edge under the eye (y -0.026 at z
+    1.535), so the line runs from the neck's side diagonally up to the cheek, as in u1's side view. A cap on |x|
+    (`PANEL["cap"]`, 0.115 m on the chest, in to 0.068 at the neck's foot) keeps teal sides in front view and teal
+    shoulders; the arms and hands (their weights) stay out. It only lightens; five neighbour passes inside it. The cap
+    was chosen on a variant grid (0.100, 0.115, 0.130 m; `alien_assemble.py --panel JSON` merges a variant's settings
+    into `PANEL`). In the Idle pose the arm hides the chest's side in profile, so the cap sets the front view and the
+    depth the trapezius and the neck. Test: `test_alien_neck.py` (`panel_line()`: one line, no step, never moving
+    back under the jaw).
+  - The `Body` material is exported single-sided (`use_backface_culling`, glTF `doubleSided` false): three.js drew the
+    back faces of surfaces inside the skin as pale blotches (the manager's finding). Godot's `alien_hue.gdshader`
+    culls back faces already. `alien_assemble.drop_interior()` deletes the faces above z 1.40 from which no ray of
+    48 over the outward hemisphere leaves the skin; S9d found one (0.01 cm2) at the head. On the body the same test
+    took real skin in the tight folds of the armpits and the crotch, so it stays off there.
+  - `neck_shots.gd` spec `"torso"`: the upper body at 1.5 m from the front, three-quarter, side and three-quarter
+    back, beside u1's views. `hero_shots.gd` spec `"lights"`: the stage's directional lights replaced per variant,
+    face and body shots, `light_sheet.png` (the lighting question; `look_presets.json` stays as approved).
 
 ## Findings for later tasks
 
