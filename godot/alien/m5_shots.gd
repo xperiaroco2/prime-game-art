@@ -12,11 +12,15 @@ extends "res://alien/hero_shots.gd"
 ##   to the textured skin material) and zoom_<grid_name>.png (spec "grid_zoom");
 ## - "room": room.png, before, teal, coral and violet side by side on the stand at game distance (spec "room":
 ##   {"dist", "eye", "fov"}; the camera at eye height, as a player), and room_hues.png, the three hues closer;
-## - "taa": taa.png, the close face and the body under MSAA 2x, TAA, both, and FSR 2 at 1.0 scale, each with the
-##   GPU ms of the frame (median of 40), and taa_zoom.png, the face's eye and lid zoomed; m5_shots.json "gpu_ms";
+## - "crest": crest.png, the textured head with each crest (antennae, fins; the crests keep the procedural skin with
+##   alien.gd SKIN_TEX_SHARED) from 1.1 m, three-quarter and side, and crest_zoom.png, the crest's root;
+## - "taa": taa.png, the close face and the body under MSAA 2x (the Medium preset), MSAA 4x (High and Ultra), MSAA 4x
+##   with TAA (the TAA proposal, docs/godot.md) and TAA alone, each with the GPU ms of the frame (median of 40), and
+##   taa_zoom.png, the face's eye and lid zoomed; m5_shots.json "gpu_ms";
 ## - "clips": clips/<clip>/<nnnn>.png, every frame of one cycle of each spec "clips" (default Idle, Walk) at 30 fps,
-##   the body three-quarter at 768 x 960, for tools/blender/encode_clips.py; with spec "taa" true under TAA (the
-##   stills stay without it: a cut leaves TAA's history of the last view in the first frames).
+##   the body three-quarter at 768 x 960, for tools/blender/encode_clips.py; with spec "taa" true under TAA, a
+##   proof-only setting (TAA is a proposal, not in the approved presets; the stills stay without it, at second_test's
+##   MSAA 2x: a cut leaves TAA's history of the last view in the first frames).
 ## Spec: hero_shots.gd's ("scenes": {"hero", "before"?}, "out", "hdri", "beside", "bg", "face"), plus "modes",
 ## "skin" (alien_hue.gdshader uniforms over alien.gd SKIN_TEX for the whole run: the chosen tuning), "variants",
 ## "grid_name", "grid_zoom", "grid_view" ("face" or "close"), "body_ref", "room", "clips", "taa".
@@ -211,6 +215,8 @@ func _run() -> void:
 		_camera.look_at_from_position(Vector3(0.0, 1.5, 2.6), Vector3(0, 1.05, 0), Vector3.UP)
 		_save("room_hues.png", await _shot(""))
 		_only(["hero"], false)
+	if _modes.has("crest"):
+		await _crests()
 	if _modes.has("taa"):
 		await _taa()
 	if _modes.has("clips"):
@@ -236,9 +242,9 @@ func _taa() -> void:
 	var zooms: Array = []
 	var res: Dictionary = {}
 	var modes := [["msaa2x", Viewport.MSAA_2X, false, Viewport.SCALING_3D_MODE_BILINEAR],
-		["taa", Viewport.MSAA_DISABLED, true, Viewport.SCALING_3D_MODE_BILINEAR],
-		["msaa2x_taa", Viewport.MSAA_2X, true, Viewport.SCALING_3D_MODE_BILINEAR],
-		["fsr2", Viewport.MSAA_DISABLED, false, Viewport.SCALING_3D_MODE_FSR2]]
+		["msaa4x", Viewport.MSAA_4X, false, Viewport.SCALING_3D_MODE_BILINEAR],
+		["msaa4x_taa", Viewport.MSAA_4X, true, Viewport.SCALING_3D_MODE_BILINEAR],
+		["taa", Viewport.MSAA_DISABLED, true, Viewport.SCALING_3D_MODE_BILINEAR]]
 	for views: Array in [["face", [fv[0], 30.0, 2.0, 0.4, CLOSE_FOV]], ["body", _body_view("hero", 30.0)]]:
 		for md: Array in modes:
 			root.msaa_3d = md[1]
@@ -261,12 +267,30 @@ func _taa() -> void:
 	_sheet(zooms, 4, "taa_zoom.png", 2560)
 
 
+## The crests beside the textured head (the PR #236 review): each crest, three-quarter and side, and the root zoomed.
+func _crests() -> void:
+	var rig: Node = _rig["hero"]
+	var fv: Array = _face_view("hero")
+	var shots: Array = []
+	var zooms: Array = []
+	for c: String in ["antennae", "fins"]:
+		rig.set_crest(c)
+		for yaw: float in [30.0, 90.0]:
+			_look(fv[0] + Vector3(0, 0.1, 0), yaw, 6.0, 1.1, 32.0)
+			var img: Image = await _shot("%s %d" % [c, int(yaw)])
+			shots.append(img)
+			zooms.append(_region(img, [0.3, 0.05, 0.7, 0.45]))
+	rig.set_crest("")
+	_sheet(shots, 4, "crest.png", 2560)
+	_sheet(zooms, 4, "crest_zoom.png", 2560)
+
+
 func _clips() -> void:
 	var p: AnimationPlayer = _player["hero"]
 	var view: Array = _body_view("hero", 30.0, 0.8)
 	_view(view)
 	_label.text = ""
-	root.use_taa = _spec.get("taa", false)  # look_presets.json High and Ultra (M5)
+	root.use_taa = _spec.get("taa", false)  # proof-only: TAA is a proposal (docs/godot.md, M5), not in the presets
 	for word: String in _spec.get("clips", ["Idle", "Walk"]):
 		var c: String = _clip(p, word)
 		if c == "":
