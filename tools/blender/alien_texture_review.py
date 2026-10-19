@@ -6,14 +6,16 @@ Runs in background Blender through the runner, never by hand and never in a wind
 tools/runner/blender.py's run_script("alien_texture_review.py", args) with args
       --character <M2/export/alien_character.blend> --tex <M3a/textures> --normal <M3a/bake/normal.png> \
       --rf2 <rf2.png> --out <M3a/sheets> [--images <the parts build's export/>] [--tile 420] [--sss 0] \
-      [--grid <variants dir> --names a,b,c] [--before-tex <M3a/textures> --before-normal <normal.png>]       [--labels m3a,m3c]
+      [--grid <variants dir> --names a,b,c] [--before-tex <M3a/textures> --before-normal <normal.png>] \
+      [--labels m3a,m3c]
 
 Shots (alien_detail_review's framings), the Idle clip's first frame: face34 (0.5 m), face_front, face_close (0.25 m),
 near (the face at 3/4 from 0.6 m with a 70 mm lens, M3c: the showroom's close view), close (cheek and eye at 0.18 m),
-hand, knee (M3c: the accent spot), neck_back34, body (1.5 m). Writes `<shot>_m2.png`, `<shot>_m3a.png` and:
-- `face.png`: rf2 | M2 | M3a at face34; below M3a face_close | M2 face_front | M3a face_front;
-- `close.png`: the cheek and eye, M2 | M3a;
-- `body.png`: hand, neck_back34, body; M2 above, M3a below.
+hand, knee (M3c: the accent spot), neck_back34, body (1.5 m). With --labels <before>,<after> (default m2,m3a: M2's
+look against --tex) it writes `<shot>_<before>.png`, `<shot>_<after>.png` and:
+- `face.png`: rf2 | before | after at face34; below after near | before face_front | after face_front;
+- `close.png`: near and close (the cheek and eye), before | after;
+- `body.png`: hand, knee, neck_back34, body; before above, after below.
 --grid: only the variants (each a folder of albedo.png and orm.png, in --names order) at --shots (default face34,
 face_close, body), one column per variant, into `grid.png` (rf2 first in the top row's place of a label-less sheet: the column order
 is printed and written to grid.json).

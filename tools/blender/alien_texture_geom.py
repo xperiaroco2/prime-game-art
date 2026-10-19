@@ -73,8 +73,9 @@ M3A = {
 #   the sockets' cavity darkening off, and 0.4 of it in the albedo;
 # - roughness 0.66 (g2: 0.72 read flat and chalky beside rf2's soft sheen on the dome), convex only 0.06 glossier, no
 #   T-zone, the lips' surroundings 0.14 glossier (rf2's soft sheen there);
-# - the accent: the kit's full soft edge, blurred (accent_blur 12 texels at 4K; g2's 24 erased the small knuckle
-#   spots), 0.85 at its peak, its chroma kept 0.6 through the edge (no dusty band); the teal (hue_sat) stays M3a's.
+# - the accent: the kit's full soft edge, blurred (accent_blur 32 texels at 4K) and full from 0.6 of the blurred mask
+#   (g2's 24 texels on the full edge erased the small knuckle spots), 0.85 at its peak, its chroma kept 0.6 through
+#   the edge (no dusty band); the teal (hue_sat) stays M3a's.
 M3C = {
     "pale_srgb": (0.81, 0.94, 0.82), "pale_sat": 1.15, "warm_mul": (1.0, 1.0, 0.97), "ao": 0.4,
     "contact": 0.45, "socket_contact": 1.0, "contact_hi": 0.55, "socket_cavity": 1.0,

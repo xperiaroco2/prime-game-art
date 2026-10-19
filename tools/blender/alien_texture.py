@@ -33,7 +33,8 @@ Stages (each a separate run, so none blocks long; each reads the one before from
 - `export` (reads M2/export/alien_character.blend): the other meshes on alien_hue (the crest parts) move to an
   untextured copy, `alien_hue_part` (alien.gd swaps both for the shader); alien_hue takes albedo
   (baseColorTexture), orm (G roughness, B metallic through Separate Color, R through the glTF Material Output group's
-  Occlusion: occlusionTexture) and M3a/bake/normal.png (normalTexture), all on UVMap; M3a/export/alien_character.glb with its .blend, character.json,
+  Occlusion: occlusionTexture) and the bake folder's normal.png (--bake; normalTexture), all on UVMap;
+  <out>/export/alien_character.glb with its .blend, character.json (the set's note, alien_texture_geom.texture_note),
   the mouth atlases and sss.png beside it.
 """
 from __future__ import annotations
