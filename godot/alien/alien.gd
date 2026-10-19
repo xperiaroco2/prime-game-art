@@ -68,7 +68,28 @@ const SKIN_TEX := {
 ## and the dome's SSS (the mask is about 0 where the crests stand).
 const SKIN_TEX_SHARED := ["tex_sat", "tex_pale_sat", "tex_value", "specular_value", "sss", "rim_value", "rim_glow"]
 const SSS_MARKER := {"prime_sss": "orm_b"}  # the imported material's glTF extras (tools/blender/alien_eyes_geom.py)
-const LIP_LOOK := {"sheen": 0.08, "sheen_roughness": 0.7, "grain": 0.05}
+## S9 to M5's lip and lid look (lip_look "m5", for before/after sheets).
+const LIP_LOOK_M5 := {"albedo": LIP, "roughness_value": 0.6, "specular_value": 0.3, "sheen": 0.08,
+	"sheen_roughness": 0.7, "grain": 0.05}
+## M6 (art #196): the lips and lid domes in the skin's surface quality (alien_lip.gdshader's M6 terms; the engineer:
+## they looked like parts "from another universe"): rf2's deeper, warmer coral, deeper still in the folds and where a
+## part meets the skin (the part's baked AO, tools/blender/alien_m6.py), lighter on the rolls; a soft colour drift; the
+## skin's subsurface, transmittance and rim; a satin roughness near the skin's (M3c 0.66 - 0.08) with a soft sheen
+## on the lips; the grain finer. Chosen on M6's grids beside rf2 (m6_shots.gd).
+const LIP_LOOK := {"albedo": Color(0.78, 0.35, 0.31), "deep": Color(0.56, 0.18, 0.17), "ao_mix": 1.0,
+	"ao_range": Vector2(0.45, 0.95), "ao_occl": 0.5, "drift": 0.06, "roughness_value": 0.55, "specular_value": 0.4,
+	"sheen": 0.06, "sheen_roughness": 0.5, "grain": 0.08, "grain_freq": 600.0, "sss": 0.25, "transmit": 0.2,
+	"rim_value": 0.35, "rim_tint": 0.5}
+## M6: the lid domes' own values over LIP_LOOK (a satin dome as the skin's, no clear coat: its sheen read plastic;
+## the lips keep a soft sheen).
+const LID_LOOK := {"roughness_value": 0.64, "sheen": 0.0}
+## M6: the textured skin's contact shade near the lids and lips (alien_hue.gdshader `contact*`), only for a kit whose
+## hue material carries CONTACT_MARKER (tools/blender/alien_m6.py's contact field in TEXCOORD_4).
+const CONTACT_MARKER := {"prime_contact": "custom1_x"}
+const SKIN_CONTACT := {"contact": 1.0, "contact_tint": Vector3(0.80, 0.66, 0.62), "contact_ao": 0.3}
+## "m6" (the default): LIP_LOOK and LID_LOOK; "m5": LIP_LOOK_M5 on both, no contact shade (before/after sheets). Set
+## before setup().
+var lip_look: String = "m6"
 const EYE_LOOK := {  # alien_eye.gdshader's per-design uniforms (angles from the pupil axis, degrees; colours sRGB)
 	"bored": {"limbus_deg": 27.0, "iris_deg": 25.0, "pupil_deg": 11.5, "iris": Color(0.20, 0.12, 0.08),
 		"catch_at_deg": Vector2(6.0, -2.0),
@@ -162,7 +183,11 @@ func setup(root: Node3D, seed: int = 196) -> void:
 					_lid_surfaces.append([m, s])
 			elif mat != null and (FACE.has(mat.resource_name) or mat.resource_name.begins_with("alien_eye_")
 					or mat.resource_name == "alien_wet"):
-				_face_surfaces.append([m, s, mat.resource_name])
+				# M6: the lid domes take their own copy of the lips' material (LID_LOOK)
+				var key: String = mat.resource_name
+				if key == "alien_lip" and m.name.contains("_lid_"):
+					key = "alien_lid"
+				_face_surfaces.append([m, s, key])
 				if mat.resource_name == "alien_wet" and not _wet_nodes.has(m):
 					m.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 					_wet_nodes.append(m)
@@ -201,6 +226,9 @@ func _textured_material(imported: Material) -> ShaderMaterial:
 			_tex_material.set_shader_parameter("orm_tex", orm)
 		if bm.normal_enabled and bm.normal_texture != null:
 			_tex_material.set_shader_parameter("normal_tex", bm.normal_texture)
+		if has_marker(imported, CONTACT_MARKER) and lip_look != "m5":  # M6: the contact shade
+			for k: String in SKIN_CONTACT:
+				_tex_material.set_shader_parameter(k, SKIN_CONTACT[k])
 		var t: Color = (HUES["teal"][0] as Color).srgb_to_linear()
 		var p: Color = (HUES["teal"][1] as Color).srgb_to_linear()
 		for m: ShaderMaterial in [_tex_material, _material]:
@@ -211,13 +239,18 @@ func _textured_material(imported: Material) -> ShaderMaterial:
 
 ## M5: whether an imported material carries SSS_MARKER in its glTF extras.
 static func has_sss_marker(imported: Material) -> bool:
+	return has_marker(imported, SSS_MARKER)
+
+
+## Whether an imported material's glTF extras hold every key of a marker (M5's SSS_MARKER, M6's CONTACT_MARKER).
+static func has_marker(imported: Material, marker: Dictionary) -> bool:
 	if imported == null or not imported.has_meta("extras"):
 		return false
 	var ex: Variant = imported.get_meta("extras")
 	if not ex is Dictionary:
 		return false
-	for k: String in SSS_MARKER:
-		if (ex as Dictionary).get(k, "") != SSS_MARKER[k]:
+	for k: String in marker:
+		if (ex as Dictionary).get(k, "") != marker[k]:
 			return false
 	return true
 
@@ -230,16 +263,21 @@ func is_textured() -> bool:
 func _make_face_materials() -> void:
 	for name: String in FACE:
 		var f: Array = FACE[name]
-		if name == "alien_lip":  # S9: the lips and lid domes take the sheen and grain shader
-			var lm := ShaderMaterial.new()
-			lm.shader = LIP_SHADER
-			lm.resource_name = name
-			lm.set_shader_parameter("albedo", f[0])
-			lm.set_shader_parameter("roughness_value", f[1])
-			lm.set_shader_parameter("specular_value", f[2])
-			for k: String in LIP_LOOK:
-				lm.set_shader_parameter(k, LIP_LOOK[k])
-			_face_materials[name] = lm
+		if name == "alien_lip":  # S9: the lips and lid domes take the sheen and grain shader (M6: the lids a copy)
+			for key: String in ["alien_lip", "alien_lid"]:
+				var lm := ShaderMaterial.new()
+				lm.shader = LIP_SHADER
+				lm.resource_name = key
+				lm.set_shader_parameter("albedo", f[0])
+				lm.set_shader_parameter("roughness_value", f[1])
+				lm.set_shader_parameter("specular_value", f[2])
+				var look: Dictionary = LIP_LOOK_M5 if lip_look == "m5" else LIP_LOOK
+				for k: String in look:
+					lm.set_shader_parameter(k, look[k])
+				if key == "alien_lid" and lip_look != "m5":
+					for k: String in LID_LOOK:
+						lm.set_shader_parameter(k, LID_LOOK[k])
+				_face_materials[key] = lm
 			continue
 		var m := StandardMaterial3D.new()
 		m.resource_name = name
@@ -253,7 +291,7 @@ func _make_face_materials() -> void:
 	w.shader = WET_SHADER
 	w.resource_name = "alien_wet"
 	_face_materials["alien_wet"] = w
-	_lid_material = _face_materials["alien_lip"]  # the eye sheets (eb1, em1): the lids are soft domes in the lips' colour
+	_lid_material = _face_materials["alien_lid"]  # the eye sheets (eb1, em1): the lids are soft domes in the lips' colour
 	for design: String in EYE_LOOK:
 		var e := ShaderMaterial.new()
 		e.shader = EYE_SHADER

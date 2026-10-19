@@ -87,8 +87,17 @@ uniform float tint_ao_albedo : hint_range(0.0, 1.0) = 0.15;  // another hue: the
 uniform float tint_ao : hint_range(0.0, 1.0) = 0.35;  // another hue: the share of the texture's AO in AO
 uniform float tint_ao_light : hint_range(0.0, 1.0) = 0.25;  // another hue: AO_LIGHT_AFFECT (the teal's is ao_light)
 
+// M6 (art #196): the contact shade where the skin meets the lid domes and lips, on the textured path only: the kit's
+// contact field (tools/blender/alien_m6.py: 1 at contact, 0 at 7 mm, in glTF TEXCOORD_4 = CUSTOM1.x) darkens and
+// warms the albedo toward `contact_tint` and lowers AO by `contact_ao`. alien.gd sets `contact` only for a kit whose
+// hue material carries the contact marker (an older kit has no TEXCOORD_4; 0 keeps M5's skin).
+uniform float contact : hint_range(0.0, 1.0) = 0.0;
+uniform vec3 contact_tint = vec3(0.80, 0.66, 0.62);  // linear multiplier at full contact: darker, warmer
+uniform float contact_ao : hint_range(0.0, 1.0) = 0.0;
+
 varying vec3 m_pos;
 varying float m_nz;
+varying float m_contact;
 
 #include "res://alien/alien_grain.gdshaderinc"
 
@@ -103,6 +112,7 @@ void vertex() {
 		m_pos = VERTEX;
 		m_nz = NORMAL.z;
 	}
+	m_contact = contact > 0.0 ? clamp(CUSTOM1.x, 0.0, 1.0) * contact : 0.0;
 }
 
 float luma(vec3 c) {
@@ -148,7 +158,8 @@ void fragment() {
 			c = mix(c, f, tint);
 			p = mix(p, fp, tint);
 		}
-		AO = mix(orm.r, mix(1.0, orm.r, tint_ao), tint);
+		c *= mix(vec3(1.0), contact_tint, m_contact);
+		AO = mix(orm.r, mix(1.0, orm.r, tint_ao), tint) * (1.0 - contact_ao * m_contact);
 		AO_LIGHT_AFFECT = mix(ao_light, tint_ao_light, tint);
 		ROUGHNESS = clamp(orm.g + roughness_add, 0.0, 1.0);
 		NORMAL_MAP = texture(normal_tex, UV).rgb;
