@@ -45,6 +45,18 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
     p.add_argument("--object", default="Body", help="the mesh object (default Body)")
     p.add_argument("--uv", default="UVMap", help="the UV map to keep as TEXCOORD_0 (default UVMap)")
     p.add_argument("--name", default="alien_body", help="the file stem (default alien_body)")
+    p = sub.add_parser("retexture-review", help="a batch's finished retexture items on the alien kit's Body beside the "
+                                                "reference and the M2 look, rendered in headless Blender (no network)")
+    p.add_argument("batch", help="batches/<id>.toml or a batch id")
+    p.add_argument("items", nargs="*", help="only these items (default: every finished retexture item)")
+    p.add_argument("--character", type=Path, required=True, help="the kit's alien_character.blend (M2/export/)")
+    p.add_argument("--ref", type=Path, required=True, help="the face rows' reference image (rf2)")
+    p.add_argument("--body-ref", type=Path, help="the body row's reference image (default --ref)")
+    p.add_argument("--images", type=Path, help="the eye textures' folder (alien_parts.py's export/)")
+    p.add_argument("--normal", choices=("m2", "meshy", "none"), default="m2", help="the normal map (default m2)")
+    p.add_argument("--fake", action="store_true", help="review a fake checker item instead (tests the mapping)")
+    p.add_argument("--light-scale", type=float, default=1.0, help="Blender sun strength per unit of Godot energy")
+    p.add_argument("--out", type=Path, required=True, help="output folder")
 
 
 def run(args: argparse.Namespace) -> int:
@@ -62,6 +74,8 @@ def run(args: argparse.Namespace) -> int:
             return rig_input(args.blend, args.out)
         if args.action == "retexture-input":
             return retexture_input(args.blend, args.out, args.object, args.uv, args.name)
+        if args.action == "retexture-review":
+            return retexture_review(batches.load(args.batch), args)
         if args.action == "library":
             key = api.api_key()
             return library(api.MeshyClient(key), args.search, args.category, args.out)
@@ -209,11 +223,11 @@ def retexture_problems(path: Path) -> list[str]:
 
 
 def retexture_input(blend: Path, out: Path, obj: str, uv: str, name: str) -> int:
-    """Runs tools/blender/meshy_retexture_input.py: <out>/<name>.glb and <name>.json; checks the GLB's contents."""
+    """Runs tools/blender/alien_retexture_input.py: <out>/<name>.glb and <name>.json; checks the GLB's contents."""
     if not blend.is_file():
         raise common.Failure(f"no file {blend}")
     out = out.resolve()
-    blender.run_script("meshy_retexture_input.py", ["--blend", str(blend.resolve()), "--out", str(out), "--object", obj,
+    blender.run_script("alien_retexture_input.py", ["--blend", str(blend.resolve()), "--out", str(out), "--object", obj,
                                                     "--uv", uv, "--name", name], timeout=600)
     info = json.loads((out / f"{name}.json").read_text(encoding="utf-8"))
     glb = Path(info["glb"])
@@ -226,4 +240,42 @@ def retexture_input(blend: Path, out: Path, obj: str, uv: str, name: str) -> int
     common.ok(f"{name}: {glb} ({info['glb_bytes']} bytes, {info['triangles']} triangles, {info['height_m']} m); "
               f"UV {uv}: {check['islands']} islands, the same in the GLB")
     common.say(f"    sha256 {inputs.sha256(glb)}: pin it in the batch")
+    return 0
+
+
+def review_folders(batch: batches.Batch, only: list[str]) -> list[Path]:
+    """The raw folders of a batch's finished retexture items (all of them, or the named ones)."""
+    unknown = set(only) - {i.id for i in batch.items}
+    if unknown:
+        raise common.Failure(f"batch {batch.id} has no item {', '.join(sorted(unknown))}")
+    folders = []
+    for item in batch.items:
+        if item.kind != "retexture" or (only and item.id not in only):
+            continue
+        state = runs.read_state(batch, item)
+        if state and state.get("status") == "done":
+            folders.append(runs.item_dir(batch, item))
+        elif only:
+            raise common.Failure(f"{item.id} is not done ({(state or {}).get('status', 'not started')})")
+    return folders
+
+
+def retexture_review(batch: batches.Batch, args: argparse.Namespace) -> int:
+    """Runs tools/blender/alien_retexture_review.py on the finished items (or on a fake one with --fake)."""
+    folders = [] if args.fake else review_folders(batch, args.items)
+    if not folders and not args.fake:
+        raise common.Failure(f"batch {batch.id} has no finished retexture item to review (`meshy status`)")
+    out = args.out.resolve()
+    cmd = ["--character", str(args.character.resolve()), "--rf2", str(args.ref.resolve()), "--out", str(out),
+           "--normal", args.normal, "--light-scale", str(args.light_scale)]
+    for folder in folders:
+        cmd += ["--item", str(folder)]
+    if args.fake:
+        cmd += ["--make-fake", str(out / "fake-checker")]
+    if args.body_ref:
+        cmd += ["--body-ref", str(args.body_ref.resolve())]
+    if args.images:
+        cmd += ["--images", str(args.images.resolve())]
+    blender.run_script("alien_retexture_review.py", cmd, timeout=900)
+    common.ok(f"{out / 'sheet.png'} ({len(folders) or 1} item(s); rows: face 3/4, face front, body at 1.5 m)")
     return 0

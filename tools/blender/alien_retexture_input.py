@@ -3,7 +3,7 @@ rest-pose GLB that holds its texture UV and nothing else, so Meshy's retexture (
 UV and the result maps straight back onto the kit. Background Blender only, through the runner
 (`tools/run.py meshy retexture-input`):
 
-  blender -b --factory-startup --python-exit-code 1 --python tools/blender/meshy_retexture_input.py -- \
+  blender -b --factory-startup --python-exit-code 1 --python tools/blender/alien_retexture_input.py -- \
       --blend <M2/export/alien_character.blend> --out <M3b/input> [--object Body] [--uv UVMap] [--name alien_body]
 
 What it writes into --out:

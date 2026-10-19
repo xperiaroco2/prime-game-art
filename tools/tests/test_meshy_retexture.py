@@ -21,9 +21,47 @@ from runner.commands import _meshy_inputs as inputs
 from runner.commands import _meshy_run as runs
 from runner.commands import meshy
 
-from tests._meshy_fake import GLB, PNG, FakeMeshy
+from runner.commands._meshy_api import Response
+from tests._meshy_fake import ASSETS, GLB, PNG, FakeMeshy
 from tests.test_meshy_batch import APPROVAL, parse
 from tests.test_meshy_rig_input import write_glb
+
+RETEXTURE_PATH = "/openapi/v1/retexture"
+
+
+class RetextureFake(FakeMeshy):
+    """The shared fake plus the retexture endpoint: 10 credits (15 at 8k) and the docs' task object."""
+
+    def _create(self, path: str, payload: dict[str, Any]) -> Response:
+        if path != RETEXTURE_PATH:
+            return super()._create(path, payload)
+        cost = 15 if payload.get("texture_resolution") == "8k" else 10
+        if self.balance < cost:
+            return Response(402, {}, b'{"message": "Insufficient credits"}')
+        task_id = f"task-{len(self.tasks) + 1}-retexture"
+        self.tasks[task_id] = {"id": task_id, "stage": "retexture", "gets": 0, "cost": cost, "payload": payload}
+        return Response(202, {}, json.dumps({"result": task_id}).encode())
+
+    def _advance(self, task: dict[str, Any]) -> dict[str, Any]:
+        if task["stage"] != "retexture":
+            return super()._advance(task)
+        task["stage"] = "remesh"  # the shared lifecycle (polls, charge), then the retexture result on top
+        out = super()._advance(task)
+        task["stage"] = out["type"] = "retexture"
+        if out["status"] != "SUCCEEDED":
+            return out
+        base = f"{ASSETS}/tasks/{task['id']}/output"
+        # model_urls, texture_urls (PBR maps with enable_pbr), thumbnail_url, and the style inputs echoed back (never
+        # downloaded); every map named texture_0.png here, so the key path names the files, as when names collide
+        out["model_urls"] = {"glb": f"{base}/model.glb?Expires=9", "fbx": f"{base}/model.fbx?Expires=9"}
+        maps = ["base_color"] + (["metallic", "normal", "roughness"] if task["payload"].get("enable_pbr") else [])
+        out["texture_urls"] = [{m: f"{base}/{m}/texture_0.png?Expires=9" for m in maps}]
+        out["thumbnail_url"] = f"{base}/preview.png?Expires=9"
+        for key in ("image_style_url", "text_style_prompt", "multiview_image_urls"):
+            if key in task["payload"]:
+                out[key] = task["payload"][key]
+        out["texture_image_url"] = "https://input.example.test/style.png"  # in the docs' sample, an input
+        return out
 
 MODEL = {"file": "raw:inputs/body.glb", "provenance": "own work: the alien kit's Body, rest pose, its texture UV"}
 STYLE = {"file": "raw:inputs/style.png", "provenance": "own Meshy image-to-image output (a paintover of our render)"}
@@ -101,7 +139,7 @@ class RunTest(unittest.TestCase):
         (self.raw / "inputs" / "body.glb").write_bytes(GLB + b"\x02\x00\x00\x00 the body")
         for name in ("style", "side", "back"):
             (self.raw / "inputs" / f"{name}.png").write_bytes(PNG + name.encode())
-        self.fake = FakeMeshy(balance=100)
+        self.fake = RetextureFake(balance=100)
         self.log: list[str] = []
 
     def tearDown(self) -> None:
@@ -161,6 +199,26 @@ class RunTest(unittest.TestCase):
         self.assertIn("3 view input(s) as multiview_image_urls", out)
         self.assertIn("text_style_prompt ('soft smooth toy-like teal skin')", out)
         self.assertIn("every one is ready to send", out)
+
+
+class ReviewTest(unittest.TestCase):
+    def test_the_finished_items_go_to_the_review_script(self) -> None:
+        with TemporaryDirectory() as tmp, mock.patch.dict(os.environ, {"ART_RAW_DIR": tmp}):
+            batch = parse(retexture_batch())
+            done = Path(tmp) / "t-batch" / "rt-text"
+            done.mkdir(parents=True)
+            (done / "generation.json").write_text(json.dumps({"status": "done"}), encoding="utf-8")
+            self.assertEqual(meshy.review_folders(batch, []), [done])
+            with self.assertRaises(common.Failure):
+                meshy.review_folders(batch, ["rt-rf2"])  # not run yet
+            args = mock.Mock(items=[], fake=False, out=Path(tmp) / "review", character=Path(tmp) / "a.blend",
+                             ref=Path(tmp) / "rf2.png", body_ref=None, images=None, normal="m2", light_scale=1.0)
+            with mock.patch.object(meshy.blender, "run_script") as run, contextlib.redirect_stdout(io.StringIO()):
+                self.assertEqual(meshy.retexture_review(batch, args), 0)
+        script, cmd = run.call_args.args
+        self.assertEqual(script, "alien_retexture_review.py")
+        self.assertEqual(cmd[cmd.index("--item") + 1], str(done))
+        self.assertNotIn("--make-fake", cmd)
 
 
 class InputCheckTest(unittest.TestCase):
