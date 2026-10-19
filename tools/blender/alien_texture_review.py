@@ -2,7 +2,8 @@
 map) beside the authored texture set, in Blender (Eevee, AgX) under light D (docs/godot.md, "Light D": the key, fill,
 back and rim directional lights of look_presets.json, turned into Blender's axes), beside the target paintover rf2.
 
-  blender -b --factory-startup --python-exit-code 1 --python tools/blender/alien_texture_review.py -- \
+Runs in background Blender through the runner, never by hand and never in a window:
+tools/runner/blender.py's run_script("alien_texture_review.py", args) with args
       --character <M2/export/alien_character.blend> --tex <M3a/textures> --normal <M3a/bake/normal.png> \
       --rf2 <rf2.png> --out <M3a/sheets> [--images <the parts build's export/>] [--tile 420] [--sss 0] \
       [--grid <variants dir> --names a,b,c]

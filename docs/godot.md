@@ -1017,8 +1017,9 @@ a time, by visibility.
     fields (`fields/*.npy`, float16), plus `pore.npy`, the pores of the normal map (its divergence).
   - `--stage compose`: `textures/albedo.png` (sRGB), `orm.png` (glTF's packing: R occlusion = the AO, G roughness,
     B metallic 0) and `sss.png` (2K grey, white = thin: the subsurface mask for the Godot shader, M5), each with a
-    `_1k` preview; the UV gaps are filled by push-pull, so far mip levels never bleed black. `--variants JSON --vout
-    DIR` writes a tuning grid's variants (2K) instead.
+    `_1k` preview; the UV gaps are filled by push-pull, so far mip levels never bleed black. `--variants FILE --vout
+    DIR` (FILE: a JSON file, an object of name: settings, each merged over the settings) writes a tuning grid's
+    variants instead, each at `--size` into `DIR/<name>/` (the grids `g1` to `g4` were composed at `--size 2048`).
     - Albedo (linear, `albedo()`): the kit's flat look first (teal and pale by the light mask, the `deep` gradient,
       the face warmth, the accent with its edge narrowed to smoothstep 0.2 to 0.8, so no grey band round the knuckle
       spots), then a warm/cool hue drift (6 %) and soft blotches (5 %), the curvature cavity (concave up to 20 %
@@ -1044,9 +1045,11 @@ a time, by visibility.
     `look_presets.json` turned into Blender's axes, each at 2.5 times its Godot energy (Lambert's 1 / pi; at 1 the
     face read grey, at pi the teal washed out), M2's look beside M3a's (`face.png`, `close.png`, `body.png` in
     `M3a/sheets/`); `--grid DIR --names a,b --shots ...` renders a tuning grid's variants.
-  - To rebuild: `blender -b --factory-startup --python-exit-code 1 --python tools/blender/alien_texture.py --
-    --stage <cage|fields|compose|export> --out <M3a> [--m2 <M2>]`, in that order (about 90 s, 32 s, 15 s and 10 s),
-    then `alien_texture_review.py`; the normal map changes only with the high copy (M2's `--stage high`).
+  - To rebuild: each stage in background Blender through the runner, `tools/runner/blender.py`'s
+    `run_script("alien_texture.py", ["--stage", <cage|fields|compose|export>, "--out", <M3a>, "--m2", <M2>, ...])`
+    (`--m2` is required; `export` also takes `--kit <the kit's export folder>`), in that order (about 90 s, 32 s,
+    15 s and 10 s: start each in the background with its log under `tools/out/`), then `alien_texture_review.py`
+    the same way; the normal map changes only with the high copy (M2's `--stage high`).
 
 ## Findings for later tasks
 

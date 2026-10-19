@@ -2,9 +2,10 @@
 headless Blender from M2's bakes (normal, AO, curvature, thickness), the `masks` UV (light, accent) and fields of the
 rest pose, onto Body's texture UV `UVMap` (glTF TEXCOORD_0); then the kit exported with the set on the skin.
 
-  blender -b --factory-startup --python-exit-code 1 --python tools/blender/alien_texture.py -- \
-      --stage cage|fields|compose|export --out <M3a> [--m2 <M2>] [--size 4096] [--settings JSON] \
-      [--variants JSON --vout DIR] [--kit <the kit's export folder: character.json, mouth atlases>]
+Runs in background Blender through the runner, never by hand and never in a window:
+tools/runner/blender.py's run_script("alien_texture.py", args) with args
+  --stage cage|fields|compose|export --out <M3a> --m2 <M2> [--size 4096] [--settings JSON] \
+      [--variants FILE --vout DIR] [--kit <the kit's export folder: character.json, mouth atlases>]
 
 Stages (each a separate run, so none blocks long; each reads the one before from --out):
 - `cage` (reads M2/high/alien_high.blend): the explicit bake cage of PR #231's minor 6. Body's copy, each vertex moved
@@ -21,8 +22,8 @@ Stages (each a separate run, so none blocks long; each reads the one before from
 - `compose`: the textures from the fields by alien_texture_geom (albedo, roughness, the subsurface mask) with the
   settings TEX (merged with --settings, a JSON object): M3a/textures/ `albedo.png` (sRGB), `orm.png` (R occlusion,
   G roughness, B metallic 0; glTF's packing), `sss.png` (grey, half --size), each with a 1k preview; the UV gaps are
-  filled by push-pull, so mip levels never bleed black. --variants (a JSON object of name: settings) writes each at
-  --size into --vout/<name>/ instead (the tuning grids).
+  filled by push-pull, so mip levels never bleed black. --variants FILE (a JSON file: an object of name: settings,
+  each merged over the settings) writes each variant at --size into --vout/<name>/ instead (the tuning grids).
 - `export` (reads M2/export/alien_character.blend): the other meshes on alien_hue (the crest parts) move to an
   untextured copy, `alien_hue_part` (alien.gd swaps both for the shader); alien_hue takes albedo
   (baseColorTexture), orm (G roughness, B metallic through Separate Color, R through the glTF Material Output group's
@@ -62,10 +63,10 @@ def args():
     p = argparse.ArgumentParser()
     p.add_argument("--stage", required=True, choices=("cage", "fields", "compose", "export"))
     p.add_argument("--out", required=True)
-    p.add_argument("--m2", default="D:/prime-art-raw/review/char/alien-parts-kit/M2")
+    p.add_argument("--m2", required=True, help="M2's folder: high/, bake/, export/")
     p.add_argument("--size", type=int, default=4096)
     p.add_argument("--settings", default="", help="compose: a JSON object merged into alien_texture_geom.TEX")
-    p.add_argument("--variants", default="", help="compose: a JSON object {name: settings} -> --vout/<name>/")
+    p.add_argument("--variants", default="", help="compose: a JSON file, an object {name: settings} -> --vout/<name>/ at --size")
     p.add_argument("--vout", default="")
     p.add_argument("--kit", default="", help="export: the folder of character.json and the mouth atlases")
     return p.parse_args(sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else [])
