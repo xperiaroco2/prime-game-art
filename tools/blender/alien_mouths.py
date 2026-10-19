@@ -65,7 +65,12 @@ RING_N, RING_SEG = 96, 14  # an open mouth's ring: sections around, vertices per
 SEAM_OVERLAP = 1.5  # a closed mouth's lips overlap at the crease, px
 RING_SHAPES = ("A", "E", "O")  # the wide shapes are one ring; rest, M and small two tubes
 FACE_FILL = 0.86  # a mouth's half width at most this share of the face's half width at the socket: wider is squeezed
-CHIN_Z = 1.458  # the lowest a lip may reach on the head (its chin is at 1.452): a deeper drop is squeezed, m
+CHIN_Z = 1.444  # the lowest a lip may reach on the head (S7: the sculpted chin is at 1.438): deeper is squeezed, m
+RING_KEEP = {"centre": 9, "width": 5}  # S7: the open ring's centre line and lip width keep this many harmonics
+NORMAL_SMOOTH = 8  # S7: passes over the skin points and normals under a lip (the decimated head's facets rippled it)
+STATION_SMOOTH = 5  # S7: passes over the closed lips' measured edges (2 left ripples)
+CORNER = {"share": 0.16, "join": 0.85, "tuck": 0.9}  # S7: over the last share of a closed mouth's stations the two
+# lips' centres meet (join) and sink into the skin by tuck times their depth, so the corner is a soft tucked dimple
 TOOTH_D, TOOTH_TUCK = 0.0055, 0.003  # a tooth's depth, and how far it runs up under the upper lip, m
 TONGUE = (0.80, 0.45, 0.44)  # sRGB
 FLIP_OUT = 0.0015
@@ -250,7 +255,7 @@ def stations(cols):
         rec["open"] = cols[a_]["open"] or cols[b_]["open"]
         st.append(rec)
     for k in ("top_u", "bot_u", "top_l", "bot_l"):
-        for r, v in zip(st, smooth([r[k] for r in st], 2)):
+        for r, v in zip(st, smooth([r[k] for r in st], STATION_SMOOTH)):
             r[k] = v
     return st
 
@@ -304,6 +309,13 @@ def ring_contours(cols):
     return (cx, cy), pairs
 
 
+def lowpass(vals, keep):
+    """A closed sequence with only its first `keep` Fourier harmonics: a smooth curve through the measured one."""
+    f = np.fft.rfft(np.asarray(vals, float))
+    f[keep + 1:] = 0
+    return [float(v) for v in np.fft.irfft(f, len(vals))]
+
+
 def circ_smooth(vals, n):
     v = list(vals)
     for _ in range(n):
@@ -338,11 +350,16 @@ def build_piece(bvh, m, design, shape, world, mats, coll, origin):
         outs = [world(*p[1]) for p in pairs]
         mid = [((i[0] + o[0]) / 2, (i[1] + o[1]) / 2) for i, o in zip(ins, outs)]
         hw = [max(MIN_B, math.hypot(o[0] - i[0], o[1] - i[1]) / 2) for i, o in zip(ins, outs)]
-        mx, mz, hw = circ_smooth([q[0] for q in mid], 3), circ_smooth([q[1] for q in mid], 3), circ_smooth(hw, 3)
+        mx, mz = lowpass([q[0] for q in mid], RING_KEEP["centre"]), lowpass([q[1] for q in mid], RING_KEEP["centre"])
+        hw = [max(MIN_B, h) for h in lowpass(hw, RING_KEEP["width"])]
+        pn = [surf(bvh, mx[k], mz[k]) for k in range(RING_N)]  # S7: the skin points' depth and normals smoothed
+        py_ = circ_smooth([q[0].y for q in pn], NORMAL_SMOOTH)
+        nn_ = [circ_smooth([q[1][i] for q in pn], NORMAL_SMOOTH) for i in range(3)]
         rings = []
         for k in range(RING_N):
             th = 2 * math.pi * k / RING_N
-            p, n = surf(bvh, mx[k], mz[k])
+            p = Vector((pn[k][0].x, py_[k], pn[k][0].z))
+            n = Vector((nn_[0][k], nn_[1][k], nn_[2][k])).normalized()
             a = DEPTH_A * hw[k] + DEPTH_C
             low = G.smoothstep(-0.35, 0.35, math.sin(th))  # px y grows downward: sin > 0 is the lower lip
             c3 = p + n * (a * (1 - SINK) + push + back * low)
@@ -380,6 +397,7 @@ def build_piece(bvh, m, design, shape, world, mats, coll, origin):
                 b.face((grid[k][j], grid[k][j + 1], grid[k2][j + 1], grid[k2][j]), mi_in)
     else:
         meas["form"] = "tubes"
+        lips = {}
         for lip in ("u", "l"):
             cs, ra, rb, ns = [], [], [], []
             for r in st:
@@ -399,7 +417,27 @@ def build_piece(bvh, m, design, shape, world, mats, coll, origin):
                 rb.append(hb)
                 ns.append(n)
                 sections.append(((r["x"], (t + bt) / 2), c3, a, n, p))
-            G.tube(b, cs, ra, rb, ns, mi_lip, seg=14)
+            lips[lip] = (cs, ra, rb, ns)
+        # S7: smooth paths (the head's facets made the normals, and so the lips, ripple), and soft corners: over the
+        # last CORNER share at each end both lips' centres meet and sink into the skin, so neither floats or cuts off
+        nst = len(st)
+        sm = {}
+        for lip, (cs, ra, rb, ns) in lips.items():
+            cs = [Vector(v) for v in zip(*(smooth([c[i] for c in cs], NORMAL_SMOOTH) for i in range(3)))]
+            ns = [Vector(v).normalized() for v in zip(*(smooth([c[i] for c in ns], NORMAL_SMOOTH) for i in range(3)))]
+            sm[lip] = [cs, list(ra), list(rb), ns]
+        for i in range(nst):
+            e = min(i, nst - 1 - i) / max(1.0, (nst - 1) * CORNER["share"])
+            w = 1.0 - G.smoothstep(0.0, 1.0, e)
+            if w <= 0.0:
+                continue
+            mid = (sm["u"][0][i] + sm["l"][0][i]) / 2
+            for lip in ("u", "l"):
+                cs, ra, rb, ns = sm[lip]
+                c = cs[i].lerp(mid, CORNER["join"] * w)
+                cs[i] = c - ns[i] * (CORNER["tuck"] * ra[i] * w * w)
+        for lip in ("u", "l"):
+            G.tube(b, *sm[lip], mi_lip, seg=14)
         if m["teeth"]:  # the dark between the teeth and behind them, from lip axis to lip axis
             rows = 5
             grid = []
