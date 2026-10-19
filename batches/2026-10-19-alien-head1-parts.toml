@@ -1,0 +1,59 @@
+# art#196, the parts kit's first test (the engineer's yes, 2026-10-19 ~11:30 UTC): head shape 1 of the liked
+# 2026-10-17 heads sheet (the teal head with the back-swept blade crest) as a separate rigid head WITHOUT a face, so
+# the eyes (eyeballs and lid shells) and the mouths (replacement pieces) are overlaid parts. Stage 1: GPT Image draws
+# the faceless head from three sides (two tries); stage 2: Meshy multi-image to 3D from the better try, untextured
+# (the colour comes from our shader). Run the stages separately: `meshy run <batch> hv1 hv2`, then the 3D item.
+# Under the standing permission for Meshy generation within the plan's credits (2026-10-03, art#16). No game names.
+# Schema: docs/meshy.md.
+
+id = "2026-10-19-alien-head1-parts"
+purpose = "art#196 parts kit, first test: head shape 1 as a faceless rigid head (smooth eye sockets, a smooth mouth area) for overlaid eyes and mouths."
+plan = "Meshy paid plan (monthly; bought by the engineer on 2026-10-17)"
+terms_url = "https://www.meshy.ai/terms-of-use"
+licence = "owned by the customer on a paid plan (Meshy Terms of Use 3.2, updated 2026-09-19); no attribution required"
+credit_cap = 90
+approved_by = "xperiaroco2 (the engineer)"
+approved_at = "2026-10-03"
+approval_ref = "https://github.com/xperiaroco2/prime-game-art/issues/16"
+
+[defaults.image_to_image.params]
+ai_model = "gpt-image-2-5-sunburst"
+generate_multi_view = true
+remove_background = true
+
+[defaults.multi_image_to_3d.params]
+ai_model = "meshy-7.1"
+geometry_resolution = "2k"
+should_texture = false
+target_formats = ["glb"]
+
+[variants.faceless]
+prompt = "The exact head and neck of the character in the reference images, shown alone as a 3D character-model sheet from three sides (front, side, back) on a transparent background, neutral even studio light. Keep exactly his head shape: the smooth teal head tapering up into one back-swept curved blade crest, the lighter mint face, throat and front of the neck, the slim neck down to the top of the collarbones, and the two tiny nostril holes. REMOVE THE WHOLE FACE: no eyes, no eyelids, no eyebrows, no mouth, no lips. Where the eyes were, two smooth shallow round sockets; where the mouth was, a smooth gently rounded area with no opening and no line. Smooth soft-matte stylised surface like a premium designer vinyl toy, no pores, no wrinkles, no fine texture. One head only. No text, no labels."
+
+[[items]]
+id = "hv1"
+variant = "faceless"
+kind = "image_to_image"
+images = [
+  { file = "raw:research/2026-10-19-parts-kit/head1_crop.png", provenance = "crop of own Meshy generation, batch 2026-10-17-alien-2d-heads1 item h1-g1, head 1 (the liked teal blade-crest head), art#196", sha256 = "32cd1061b61a0649968011176e0a4a05d3440bc0c95820e2bc64b192f639010e" },
+  { file = "raw:2026-10-18-alien-2d-turn2/u1/image_to_image-multi_view_image_01a14c18-9ad5-77dd-9793-c1631b328463_part_1.png", provenance = "own Meshy generation, batch 2026-10-18-alien-2d-turn2 item u1 view 1, art#196", sha256 = "ad8639e5d530ba0cd9bc8b6163311d95874e178048cc839e7d6faff3c44677ea" },
+]
+
+[[items]]
+id = "hv2"
+variant = "faceless"
+kind = "image_to_image"
+images = [
+  { file = "raw:research/2026-10-19-parts-kit/head1_crop.png", provenance = "crop of own Meshy generation, batch 2026-10-17-alien-2d-heads1 item h1-g1, head 1 (the liked teal blade-crest head), art#196", sha256 = "32cd1061b61a0649968011176e0a4a05d3440bc0c95820e2bc64b192f639010e" },
+  { file = "raw:2026-10-18-alien-2d-turn2/u1/image_to_image-multi_view_image_01a14c18-9ad5-77dd-9793-c1631b328463_part_1.png", provenance = "own Meshy generation, batch 2026-10-18-alien-2d-turn2 item u1 view 1, art#196", sha256 = "ad8639e5d530ba0cd9bc8b6163311d95874e178048cc839e7d6faff3c44677ea" },
+]
+
+[[items]]
+id = "h3d1"
+kind = "multi_image_to_3d"
+images = [ { from = "hv1", pick = 0 }, { from = "hv1", pick = 1 }, { from = "hv1", pick = 2 } ]
+
+[[items]]
+id = "h3d2"
+kind = "multi_image_to_3d"
+images = [ { from = "hv2", pick = 0 }, { from = "hv2", pick = 1 }, { from = "hv2", pick = 2 } ]
