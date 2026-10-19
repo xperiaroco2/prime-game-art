@@ -375,7 +375,13 @@ STATUS = ("APPROVED: the engineer approved this look per graphics preset on 2026
           "High = 5 (+soft shadows), Ultra = 6 (+SSS on the clay), all at tonemap exposure 0.9. Still open: the hair "
           "5 to 7 L* darker than Blender's, and the game-side wiring is untested. Amended 2026-10-19 (art #196, "
           "comment 6272668389): the characters' lights are light D, the key at 3.0 (was 2.0) plus a back rim at 3.0; "
-          "'lights' gives each directional light's position.")
+          "'lights' gives each directional light's position. Amended 2026-10-19 (art #196, M5): High and Ultra add "
+          "TAA on top of their MSAA ('taa'), for the textured alien skin's sheen and normal map.")
+# M5 (art #196, godot/alien/m5_shots.gd "taa"): the textured skin's specular on the lid domes and M2's normal map
+# sparkled under MSAA alone at 0.4 m; TAA smoothed it. GPU ms of one 1536 x 1536 frame, the face from 0.4 m, RTX 4060:
+# MSAA 2x 2.47, TAA 2.70, both 3.29, FSR 2 at scale 1.0 3.30 (the body at 3 m: 1.58, 1.56, 2.05, 2.26). FSR 2 costs
+# more and softens as much, so TAA. Motion: the Idle and Walk clips were rendered with TAA on (no ghosting seen at
+# 30 fps; the game's own camera motion is not tested).
 SHADOW_FILTER = ("hard", "very low", "low", "medium", "high", "ultra")
 SHADOW_FILTER_SETTING = "rendering/lights_and_shadows/directional_shadow/soft_shadow_filter_quality"
 
@@ -462,7 +468,7 @@ PRESETS: dict[str, dict[str, Any]] = {
         },
     },
     "High": {
-        "effects": ["agx", "sky_ambient", "sky_reflections", "catch_light", "ssao", "soft_shadows"],
+        "effects": ["agx", "sky_ambient", "sky_reflections", "catch_light", "ssao", "soft_shadows", "taa"],
         "environment": {"ssao_enabled": True, "ssao_radius": 0.6, "ssao_intensity": 1.5},
         "key_light": {"light_angular_distance": 1.5, "shadow_blur": 1.0},
         "materials": {"clay_subsurf_scatter_enabled": False},
@@ -473,11 +479,12 @@ PRESETS: dict[str, dict[str, Any]] = {
             "rendering/environment/ssao/half_size": False,
             "rendering/environment/subsurface_scattering/subsurface_scattering_quality": 0,
             "rendering/anti_aliasing/quality/msaa_3d": 2,
+            "rendering/anti_aliasing/quality/use_taa": True,  # M5 (art #196), see STATUS's comment
             "rendering/reflections/sky_reflections/roughness_layers": 8,
         },
     },
     "Ultra": {
-        "effects": ["agx", "sky_ambient", "sky_reflections", "catch_light", "ssao", "soft_shadows", "sss"],
+        "effects": ["agx", "sky_ambient", "sky_reflections", "catch_light", "ssao", "soft_shadows", "taa", "sss"],
         "environment": {"ssao_enabled": True, "ssao_radius": 0.6, "ssao_intensity": 1.5},
         "key_light": {"light_angular_distance": 1.5, "shadow_blur": 1.0},
         "materials": {"clay_subsurf_scatter_enabled": True, "clay_subsurf_scatter_strength": 0.25,
@@ -489,6 +496,7 @@ PRESETS: dict[str, dict[str, Any]] = {
             "rendering/environment/ssao/half_size": False,
             "rendering/environment/subsurface_scattering/subsurface_scattering_quality": 2,
             "rendering/anti_aliasing/quality/msaa_3d": 2,
+            "rendering/anti_aliasing/quality/use_taa": True,
             "rendering/reflections/sky_reflections/roughness_layers": 8,
         },
     },
