@@ -373,7 +373,9 @@ def masked_table(blender: dict[str, float], base: str, rows: list[tuple[str, dic
 STATUS = ("APPROVED: the engineer approved this look per graphics preset on 2026-10-13 (art PR #148, issue #140) as "
           "the game's recommended look: Low = ladder variant 3 (AgX, sky, eye catch light), Medium = 4 (+SSAO), "
           "High = 5 (+soft shadows), Ultra = 6 (+SSS on the clay), all at tonemap exposure 0.9. Still open: the hair "
-          "5 to 7 L* darker than Blender's, and the game-side wiring is untested.")
+          "5 to 7 L* darker than Blender's, and the game-side wiring is untested. Amended 2026-10-19 (art #196, "
+          "comment 6272668389): the characters' lights are light D, the key at 3.0 (was 2.0) plus a back rim at 3.0; "
+          "'lights' gives each directional light's position.")
 SHADOW_FILTER = ("hard", "very low", "low", "medium", "high", "ultra")
 SHADOW_FILTER_SETTING = "rendering/lights_and_shadows/directional_shadow/soft_shadow_filter_quality"
 
@@ -396,11 +398,26 @@ LOOK_ENVIRONMENT = {
            "energy_multiplier at 0.5 (W2) did not reach the face's skin (a no-op for the face). Exposure 0.9 (the "
            "exposure grid's X2) brings the skin 1 to 2 L* darker, nearer Blender's; 0.8 and 0.7 overshoot",
 }
+# Light D (2026-10-19, art #196 comment 6272668389): the key at 3.0 (was 2.0) and a back rim from behind. Each
+# directional light stands at "at" and looks at LIGHTS_LOOK_AT (Node3D.look_at_from_position); only its direction
+# counts. Model space: the character at the origin, its front +Z (the contract's model front). The alien proofs'
+# stage (godot/showroom/look_lights.gd) reads these from look_presets.json.
+LIGHTS_LOOK_AT = [0.0, 0.9, 0.0]
 LOOK_LIGHTS = {
-    "key": {"type": "DirectionalLight3D", "energy": 2.0, "specular": 0.6, "shadow": True},
-    "fill": {"type": "DirectionalLight3D", "energy": _FILL["fill_energy"], "specular": 0.0, "shadow": False,
+    "placement": "each DirectionalLight3D at 'at', turned with look_at_from_position(at, look_at), in the "
+                 "character's model space (origin at its feet, front +Z); only the direction counts, so the game "
+                 "turns the set with the character (its scene faces -Z) or with the camera",
+    "key": {"type": "DirectionalLight3D", "at": [-2.0, 3.2, 3.0], "look_at": LIGHTS_LOOK_AT, "energy": 3.0,
+            "specular": 0.6, "shadow": True, "why": "light D: a stronger key (2.0 to 3.0) models the face more"},
+    "fill": {"type": "DirectionalLight3D", "at": [3.0, 1.6, 2.0], "look_at": LIGHTS_LOOK_AT,
+             "energy": _FILL["fill_energy"], "specular": 0.0, "shadow": False,
              "why": "a weaker fill (0.35 to 0.12, step 3's W4) gives the face more of the key's shading"},
-    "rim": {"type": "DirectionalLight3D", "energy": 0.30, "specular": 0.0, "shadow": False},
+    "back": {"type": "DirectionalLight3D", "at": [0.5, 2.5, -3.0], "look_at": LIGHTS_LOOK_AT, "energy": 0.30,
+             "specular": 0.0, "shadow": False, "why": "the weak back light (named 'rim' before light D), unchanged"},
+    "rim": {"type": "DirectionalLight3D", "at": [0.7, 1.6, -2.8], "look_at": LIGHTS_LOOK_AT, "energy": 3.0,
+            "specular": 0.5, "shadow": False,
+            "why": "light D's back rim: behind, grazing, on the camera's right; a light edge on the head's and the "
+                   "crest's contour that separates the character from the backdrop (the paintover rf2)"},
     "catch": {"type": "OmniLight3D, a child of the camera at (-0.25, 0.3, 0) (up-left of the view)",
               "energy": CATCH["catch_energy"], "specular": CATCH["catch_specular"],
               "light_size": CATCH["catch_size"], "omni_range": 50.0, "omni_attenuation": 0.0, "shadow": False,

@@ -5,7 +5,8 @@ extends SceneTree
 ## window") with the arguments
 ##   --path godot -s res://alien/second_test.gd -- <spec.json>
 ## The spec: {"scenes": {"first": "res://import/...glb", "cage": ..., "wrap": ...}, "out": "<dir>", "hdri": "<.hdr>"}.
-## The stage is face_proof.gd's (the showroom's Medium preset: AgX 0.9, the studio sky, key, fill, rim, SSAO, MSAA 2x).
+## The stage is face_proof.gd's (the showroom's Medium preset: AgX 0.9, the studio sky, SSAO, MSAA 2x; the lights from
+## look_presets.json: light D's key, fill, back and rim since 2026-10-19).
 ## Each character gets its own alien.gd; the first test keeps its own materials (set_face_look("first")). Writes into
 ## <out>: turntable_3m.png (the three side by side, 8 angles), turntable_1m.png (one row per body, 8 angles),
 ## idle_walk.png (4 Idle and 6 Walk frames, the three side by side), walk_side.png (the Walk from the side at the
@@ -15,6 +16,7 @@ extends SceneTree
 
 const Offscreen = preload("res://lib/offscreen.gd")
 const AlienRig = preload("res://alien/alien.gd")
+const LookLights = preload("res://showroom/look_lights.gd")
 const WATCHDOG_S: float = 280.0
 const SHEET_W: int = 1280
 var _order: Array = ["first", "cage", "wrap"]  # the spec's "order" replaces it (S8: ["s7", "s8"])
@@ -53,17 +55,31 @@ func _fail(why: String) -> void:
 	quit(1)
 
 
-func _light(at: Vector3, energy: float, specular: float, shadow: bool) -> void:
+func _light(at: Vector3, energy: float, specular: float, shadow: bool, aim: Vector3 = Vector3(0, 0.9, 0)) -> void:
 	var light := DirectionalLight3D.new()
 	root.add_child(light)
-	light.look_at_from_position(at, Vector3(0, 0.9, 0))
+	light.look_at_from_position(at, aim)
 	light.light_energy = energy
 	light.light_specular = specular
 	light.shadow_enabled = shadow
 	light.directional_shadow_max_distance = 12.0
 
 
-## face_proof.gd's stage: the showroom's studio under the approved Medium preset.
+## The approved look's directional lights (look_presets.json "lights": light D since 2026-10-19, art #196).
+func _look_lights() -> void:
+	var lights: Array = LookLights.directional()
+	if lights.is_empty():
+		_fail("no lights in %s" % LookLights.PRESETS_PATH)
+		return
+	for l: Dictionary in lights:
+		var at: Array = l["at"]
+		var aim: Array = l.get("look_at", [0.0, 0.9, 0.0])
+		_light(Vector3(at[0], at[1], at[2]), l["energy"], l.get("specular", 0.0), l.get("shadow", false),
+			Vector3(aim[0], aim[1], aim[2]))
+	_report["lights"] = lights
+
+
+## face_proof.gd's stage: the showroom's studio under the approved Medium preset and its lights (light D).
 func _stage() -> void:
 	root.msaa_3d = Viewport.MSAA_2X
 	var env := Environment.new()
@@ -96,9 +112,7 @@ func _stage() -> void:
 	var we := WorldEnvironment.new()
 	we.environment = env
 	root.add_child(we)
-	_light(Vector3(-2.0, 3.2, 3.0), 2.0, 0.6, true)
-	_light(Vector3(3.0, 1.6, 2.0), 0.12, 0.0, false)
-	_light(Vector3(0.5, 2.5, -3.0), 0.3, 0.0, false)
+	_look_lights()
 	RenderingServer.directional_soft_shadow_filter_set_quality(RenderingServer.SHADOW_QUALITY_SOFT_MEDIUM)
 	var floor_mesh := MeshInstance3D.new()
 	var plane := PlaneMesh.new()
