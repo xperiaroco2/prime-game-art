@@ -869,7 +869,9 @@ a time, by visibility.
     character facing +z), and the pale tint times `mix(1, (1.06, 1.0, 0.90), 0.6 * smoothstep(1.38, 1.50, y))`; (3)
     the grain: the same value noise (`alien_grain.gdshaderinc`) on `position * 500` perturbing the normal by 0.12,
     faded out from 0.8 to 2.5 m; (4) a fresnel emission `mix(c, pale, 0.5) * (1 - n.v)^3 * 0.3`; (5) the lips' clear
-    coat 0.08 at roughness 0.7.
+    coat 0.08 at roughness 0.7; (6) Godot's own rim (`rim_value` 0.2, tinted 0.6 toward the albedo) and screen-space
+    subsurface (`sss` 0.3) have no three.js equivalent: a wrapped diffuse comes closest. The light mask
+    (`TEXCOORD_1`) and the AO (`COLOR_0`) are baked, so S9c's throat panel and jaw lift need nothing on the page.
 - **S9b, the neck and the rest pose:**
   - **The neck** (`tools/blender/alien_neck.py`, run by `alien_assemble.py` after the weld): the engineer found S9's
     neck crooked. Measured: per angle around the ring's axis the radius had a plateau below the weld and a second
@@ -892,6 +894,23 @@ a time, by visibility.
     upper arm in two Walk frames, the camera in the arm bone's frame, the grain exaggerated): the fine pattern's
     correlation between the frames is 0.02 for S9 and 0.49 for S9b (the rest is the light's change). three.js needs
     none of this: its `position` attribute is the rest pose (skinning comes after `begin_vertex`).
+- **S9c, the neck's shape and its pale front:** in profile S9b's neck was still a cone (68 mm behind the ring's axis
+  at the shoulders, 35 mm at the nape); rf2 and u1 have a longer column with near-parallel front and back lines.
+  - `alien_neck.column()` (after `loft()`) re-lofts each angle through a shape-preserving cubic (PCHIP: no overshoot,
+    a zero slope where the nape turns) through four points: the shoulders' surface (`COL_LOW`, with its slope), the
+    column's foot (`COL_FOOT`, back 1.36 m) and head, and the skull or the jaw (the first height where the surface
+    stands `COL_JOIN` out of the column, with its slope). `COL_R` holds the column's radius per angle (the back 46.5
+    to 45 mm, the sides 48 to 46 mm); the front keeps S9b's straight throat (the column fades in over 25 to 60
+    degrees). Measured on the result: the back holds 45.0 to 46.6 mm from 1.36 to 1.48 m (S9b: 55 to 35), the sides
+    46 to 50 mm from 1.37 to 1.46 m, at most 11.2 mm moved (9.8 mm outward at the nape). The weights are S9b's.
+  - `alien_neck.throat_panel()` lightens the light mask (`masks` u) over the front half of the neck: by angle around
+    the axis (pale to 88 degrees, soft by 14), from the belly panel (1.30 to 1.345 m) up to the jaw (the top lower at
+    the side, so it ends at the jaw's corner), plus the jaw's underside (a downward normal, within 55 to 82 degrees,
+    so none shows from behind); max with the old mask, then five neighbour passes. The edge runs down the side of the
+    neck, and the throat runs on into the pale chin.
+  - `alien_ao.py`'s `JAW_LIFT` lifts the baked AO by 0.7 toward 1 over the front of the neck and the jaw's underside
+    (mean 0.915 to 0.967): S9's grey band under the jaw goes.
+  - Test: `tools/tests/test_alien_neck.py` (the cubic's no-overshoot and the column, with stub Blender modules).
 
 ## Findings for later tasks
 
