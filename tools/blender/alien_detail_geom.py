@@ -88,3 +88,68 @@ GRAIN = {"pore_mm": 1.1, "pore_depth_mm": 0.045, "peel_mm": 4.5, "peel_depth_mm"
 def line_offsets(lines: int, gap: float) -> list[float]:
     """The offsets (mm) of a crease's parallel lines, centred on the joint."""
     return [(i - (lines - 1) / 2.0) * gap for i in range(lines)]
+
+
+# M2b (art #196, the engineer's notes on v27): the sculpt softened toward rf2's smooth toy skin. A sculpt is CREASES
+# and GRAIN with changes over them, plus:
+# - `soften`: before the creases, the high copy's sharp ridges and folds under the jaw (the jaw's edge from the mouth's
+#   corners to the neck, and the fold where the jaw's underside meets the throat) relaxed along the normal: `passes`
+#   Laplacian passes of `step`, each vertex weighted by its curvature (edge_weight: |curvature| from `lo` to `hi` of the
+#   half range) grown over `spread` edges, inside the jaw region; the total move capped at `max_mm` (within the bake's
+#   cage and ray). The low mesh is an irregular triangulation, and its subdivision crumples where the jaw's underside
+#   folds into the throat: a ragged crease in the high copy, drawn by the normal map and, far darker, by the texture's
+#   cavity tint from the curvature bake. That is "the scar under the neck" (v27);
+# - `curvature`: the curvature colour's smoothing passes and tanh scale (alien_detail.curvature).
+# M2 is the shipped sculpt, no changes.
+SOFTEN = {"passes": 0, "step": 0.5, "lo": 0.15, "hi": 0.5, "spread": 0, "max_mm": 1.5}
+CURVATURE = {"smooth": 2, "scale": 120.0, "jaw_smooth": 0}  # jaw_smooth: more passes where `soften` worked
+SCULPT_PARTS = ("creases", "grain", "soften", "curvature")
+SCULPTS = {
+    "m2": {},
+    # Chosen on two grids (M2b/variants/g1, g2; rf2 first, light D, M3c's texture without its cavity tint): the neck
+    # rings gone (rf2 has none), the brow folds a third as deep and twice as wide, the creases under the mouth softer
+    # (the groove at the mouth's corners read as a short cut beside the chin at 0.28 mm),
+    # the pores finer (0.7 mm) and about a third as deep on the face, a faint even grain left (g2's f_grain_mid, at
+    # 0.024 mm and 0.6 on the face, read sandy again at 0.25 m); the jaw's fold relaxed over 24 edges (g2's d_fold,
+    # 12 edges and 120 passes, left the crumple) and its curvature smoothed 120 passes more.
+    "m2b": {
+        "creases": {"neck_front": {"depth": 0.0}, "neck_back": {"depth": 0.0},
+                    "lid_fold": {"depth": 0.22, "width": 3.0}, "under_eye": {"depth": 0.08},
+                    "lip_groove": {"depth": 0.15}, "nasolabial": {"depth": 0.30}},
+        "grain": {"pore_mm": 0.7, "pore_depth_mm": 0.016, "peel_depth_mm": 0.022, "face": 0.45},
+        "curvature": {"smooth": 6, "jaw_smooth": 120},
+        "soften": {"passes": 300, "step": 0.6, "lo": 0.08, "hi": 0.3, "spread": 24, "max_mm": 1.8},
+    },
+}
+
+
+def sculpt(name: str, extra: dict | None = None) -> dict:
+    """The full settings of sculpt `name` (SCULPTS) with `extra` (the same shape) over them: {"creases", "grain",
+    "soften", "curvature"}, each a fresh dict. An unknown crease or key is an error, so a typo never passes silently."""
+    if name not in SCULPTS:
+        raise KeyError(f"no sculpt {name!r}; known: {', '.join(SCULPTS)}")
+    out = {"creases": {k: dict(v) for k, v in CREASES.items()}, "grain": dict(GRAIN), "soften": dict(SOFTEN),
+           "curvature": dict(CURVATURE)}
+    for changes in (SCULPTS[name], extra or {}):
+        unknown = set(changes) - set(SCULPT_PARTS)
+        if unknown:
+            raise KeyError(f"unknown sculpt keys {sorted(unknown)}")
+        for k, v in changes.get("creases", {}).items():
+            if k not in out["creases"]:
+                raise KeyError(f"no crease {k!r}")
+            bad = set(v) - set(out["creases"][k])
+            if bad:
+                raise KeyError(f"unknown keys {sorted(bad)} in crease {k!r}")
+            out["creases"][k].update(v)
+        for part in ("grain", "soften", "curvature"):
+            bad = set(changes.get(part, {})) - set(out[part])
+            if bad:
+                raise KeyError(f"unknown {part} keys {sorted(bad)}")
+            out[part].update(changes.get(part, {}))
+    return out
+
+
+def edge_weight(curv01: float, lo: float, hi: float) -> float:
+    """How strongly `soften` relaxes a vertex: its curvature colour (0..1, 0.5 flat) away from flat, as a share of the
+    half range (a convex ridge and a concave fold alike), smoothstepped from lo to hi."""
+    return smoothstep(lo, hi, abs(curv01 - 0.5) / 0.5)
