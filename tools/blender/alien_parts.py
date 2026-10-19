@@ -45,18 +45,25 @@ LIGHT_MIX = 0.42  # how far the light mask mixes the hue toward the pale tint
 CREST = {"mid": 0.73, "width": 0.075, "push": 0.06, "smooth": 10}  # Meshy units: a bump round the crest's waist
 
 EYES = {  # elevations in degrees (the lid edge's angle above the eye's forward axis); rho: lid radii / eyeball r
-    "bored": {"pupil": 0.20, "iris": 0.44, "iris_col": (0.10, 0.07, 0.06),
+    "bored": {"pupil": 0.20, "iris": 0.44, "iris_col": (0.26, 0.16, 0.11), "catch": (6.0, 1.0),
               "upper": {"open": 30.0, "rest": 6.0, "half": -2.0, "closed": -12.0, "rho": (1.06, 1.13)},
               "lower": {"open": -40.0, "rest": -30.0, "half": -20.0, "closed": -6.0, "rho": (1.012, 1.05)}},
-    "manic": {"pupil": 0.11, "iris": 0.0, "iris_col": (0.05, 0.05, 0.05),
+    "manic": {"pupil": 0.2094, "iris": 0.0, "iris_col": (0.05, 0.04, 0.05), "catch": (4.5, 4.5),
               "upper": {"open": 58.0, "rest": 50.0, "half": 18.0, "closed": -12.0, "rho": (1.05, 1.095)},
               "lower": {"open": -55.0, "rest": -50.0, "half": -28.0, "closed": -6.0, "rho": (1.012, 1.042)}},
 }
 STATES = ("open", "rest", "half", "closed")
 VISEMES = ("rest", "M", "small", "A", "E", "O")
-LIP = (0.86, 0.42, 0.36)  # sRGB
-INNER = (0.11, 0.03, 0.035)
-TEETH = (0.93, 0.89, 0.76)
+# The face materials (S5, sRGB; godot/alien/alien.gd FACE and alien_eye.gdshader hold the same): the stage-1 human
+# faces' (faces/clay_kit.json: white (0.9, 0.86, 0.72), cavity (0.05, 0.012, 0.02), teeth (0.92, 0.9, 0.8) linear),
+# soft-matte; the first test's glossy orange lips (0.86, 0.42, 0.36) and cold white eyes read "creepy".
+LIP = (0.76, 0.45, 0.40)  # e2's dusty salmon (S5's lip grid: the deepest of three reads best on the mint face)
+LIP_ROUGH = 0.6
+INNER = (0.25, 0.11, 0.14)
+TEETH = (0.96, 0.95, 0.90)
+EYE_WHITE = (0.95, 0.93, 0.86)
+EYE_SHADE = (0.86, 0.72, 0.64)  # the warm tint the white goes toward in its corners and under the lids
+EYE_ROUGH = 0.38
 ACCENT = (0.85, 0.40, 0.36)
 HUE_PICKS = {  # g-s1 cells (col, row) and sample points in cell fractions: base (forehead) and light (throat)
     "teal": ((0, 0), (0.42, 0.27), (0.50, 0.75)),
@@ -168,23 +175,43 @@ def plain(name, srgb, rough=0.5, spec=0.5, image=None):
 
 
 def eye_image(name, d, out_dir):
-    """The eyeball texture for the azimuthal UV: white, a dark iris ring and a black pupil by the angle from the
-    pole (uv radius 0.5 = pi), with soft edges."""
-    n = 256
+    """The eyeball texture for the azimuthal UV (uv radius 0.5 = pi from the pole, the azimuth from local +X toward
+    +Z, up): S5's eye, the same as godot/alien/alien_eye.gdshader at the rest lids (the game draws it with that
+    shader, this texture is for Blender and the three.js page): stage 1's warm off-white, shaded warm toward the
+    corners and under the rest upper lid, a dark iris with a darker edge ring, a near-black pupil, and one painted
+    catch light up and toward -X (the viewer's left on both eyes)."""
+    n = 512
     yy, xx = np.mgrid[0:n, 0:n]
-    rr = np.hypot((xx + 0.5) / n - 0.5, (yy + 0.5) / n - 0.5) * 2 * math.pi  # angle from the pole
-    white = np.array(srgb_to_lin((0.95, 0.94, 0.91)))
-    iris = np.array(srgb_to_lin(d["iris_col"]))
-    pupil = np.array(srgb_to_lin((0.015, 0.012, 0.012)))
-    e = 0.025
-    col = np.tile(white, (n, n, 1))
+    u, v = (xx + 0.5) / n - 0.5, (yy + 0.5) / n - 0.5  # Blender's pixel rows run bottom-up, as the uv's v
+    th = np.hypot(u, v) * 2 * math.pi  # angle from the pole
+    ph = np.arctan2(v, u)
+    x, z, fwd = np.sin(th) * np.cos(ph), np.sin(th) * np.sin(ph), np.cos(th)  # local x, up, forward (-Y)
+    deg = np.degrees
+    white = np.array(srgb_to_lin(EYE_WHITE))
+    shade = np.array(srgb_to_lin(EYE_SHADE))
+    smooth = lambda a, b, t: np.clip((t - a) / (b - a), 0, 1) ** 2 * (3 - 2 * np.clip((t - a) / (b - a), 0, 1))
+    side = deg(np.arctan2(np.abs(x), fwd))
+    elev = deg(np.arctan2(z, np.maximum(fwd, 0) + 1e-4))
+    up_edge, lo_edge = d["upper"]["rest"], d["lower"]["rest"]
+    k = smooth(30.0, 80.0, side) * 0.55
+    k = np.maximum(k, smooth(up_edge - 16.0, up_edge, elev) * 0.6)
+    k = np.maximum(k, (1 - smooth(lo_edge, lo_edge + 8.0, elev)) * 0.3)[..., None]
+    col = white * (1 - k) + white * shade * k
+    from_axis = deg(th)
+    iris_deg, pupil_deg = math.degrees(d["iris"]), math.degrees(d["pupil"])
+    e = 0.9
     if d["iris"] > 0:
-        a = np.clip((d["iris"] + e - rr) / (2 * e), 0, 1)[..., None]
-        col = col * (1 - a) + iris * a
-    a = np.clip((d["pupil"] + e - rr) / (2 * e), 0, 1)[..., None]
-    col = col * (1 - a) + pupil * a
-    # the white darkens a little toward the back (a soft ball read, not a ring)
-    col = col * (1 - 0.12 * np.clip((rr - 1.2) / 1.5, 0, 1))[..., None]
+        a = (1 - smooth(iris_deg - e, iris_deg + e, from_axis))[..., None]
+        ring = (smooth(iris_deg - 5.0, iris_deg, from_axis) * 0.45)[..., None]
+        col = col * (1 - a) + np.array(srgb_to_lin(d["iris_col"])) * (1 - ring) * (1 - 0.2 * k) * a
+    a = (1 - smooth(pupil_deg - e, pupil_deg + e, from_axis))[..., None]
+    col = col * (1 - a) + np.array(srgb_to_lin((0.025, 0.02, 0.025))) * a
+    cx, cz = (math.radians(t) for t in d["catch"])
+    g = np.array([-math.tan(cx), math.tan(cz), 1.0])
+    g /= np.linalg.norm(g)
+    ga = deg(np.arccos(np.clip(x * g[0] + z * g[1] + fwd * g[2], -1, 1)))
+    a = (1 - smooth(2.4, 3.4, ga))[..., None]
+    col = col * (1 - a) + np.array(srgb_to_lin((1.0, 0.98, 0.95))) * a
     img = bpy.data.images.new(name, n, n, alpha=False, float_buffer=False)
     img.colorspace_settings.name = "sRGB"
     lin = col
@@ -725,8 +752,8 @@ def main():
     # materials
     hue = hue_material(k_light)
     hue_lin = {k: srgb_to_lin(v["base_srgb"]) for k, v in hues.items()}
-    mats = {"hue": hue, "lip": plain("alien_lip", LIP, 0.42, 0.45), "inner": plain("alien_mouth_inner", INNER, 0.8, 0.2),
-            "teeth": plain("alien_teeth", TEETH, 0.35, 0.5)}
+    mats = {"hue": hue, "lip": plain("alien_lip", LIP, LIP_ROUGH, 0.3),
+            "inner": plain("alien_mouth_inner", INNER, 0.9, 0.08), "teeth": plain("alien_teeth", TEETH, 0.4, 0.3)}
     ob.data.materials.append(hue)
     ob["alien_hue"] = hue_lin["teal"]
 
@@ -734,7 +761,7 @@ def main():
     parts = {"eyes": {}, "mouths": {}, "crests": {}}
     for dname, d in EYES.items():
         img = eye_image(f"alien_eye_{dname}", d, out / "export")
-        em = plain(f"alien_eye_{dname}", (1, 1, 1), 0.12, 0.6, img)
+        em = plain(f"alien_eye_{dname}", (1, 1, 1), EYE_ROUGH, 0.35, img)
         lids = {}
         for side in ("L", "R"):
             sm = sockets[f"Eye_{side}"]
