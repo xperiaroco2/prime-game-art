@@ -161,6 +161,9 @@ def shots(blend, tag, out):
         look(cam, w + Vector((0.35, -0.12, 0.05)), w, lens=50)
         shot(sc, f"{d}/wrist_walk_{k}.png")
     arm.animation_data.action = None
+    for pb in arm.pose.bones:
+        pb.rotation_quaternion = (1, 0, 0, 0)
+        pb.location = (0, 0, 0)
     sc.frame_set(1)
     bpy.context.view_layer.update()
     w = arm.data.bones["LeftHand"].head_local

@@ -106,7 +106,7 @@ FOOT_X = 0.117
 # Toes: per extrusion (forward m, width scale, height scale, drop m); the middle toe reaches TOE_MID further.
 TOE = [(0.016, 0.98, 0.90, 0.002), (0.032, 0.84, 0.70, 0.006)]
 TOE_MID = 0.006
-WRIST_SMOOTH = (0.012, 6)  # m either side of the wrist ring, passes: the weld's band eased across (y and z only)
+WRIST_SMOOTH = (0.006, 4)  # m beyond the hand's cut, passes: the cut's slivers relaxed (the ring fixed)
 SUBDIV = 2
 # The trunk's fit: which of each ring's numbers are corrected against u1 (the arm hole's rings only their depth).
 FIT = {"hip": ("a", "yf", "yb"), "belly": ("a", "yf", "yb"), "navel": ("a", "yf", "yb"),
@@ -115,6 +115,7 @@ FIT = {"hip": ("a", "yf", "yb"), "belly": ("a", "yf", "yb"), "navel": ("a", "yf"
 FIT_TOL = 0.001
 FIT_ITERS = 8
 WEIGHT_SMOOTH = 4
+WRIST_KEEP = 0.04  # m: the arm's vertices this close to the wrist ring keep S1c's weights (no step at the weld)
 RING_W = {"Neck": 0.7, "Head": 0.3}
 
 
@@ -331,19 +332,37 @@ def main():
     arm.data.pose_position = "REST"
     bpy.context.view_layer.update()
 
-    # The wrist: S1c's section just beyond the ring's plane, measured: its centre and half extents in y and z.
-    sec = [v.co for v in old.data.vertices if abs(v.co.x - (WRIST_X + WRIST_GAP)) < 0.004]
-    wy = (max(c.y for c in sec) + min(c.y for c in sec)) / 2
-    wz = (max(c.z for c in sec) + min(c.z for c in sec)) / 2
-    wry = (max(c.y for c in sec) - min(c.y for c in sec)) / 2
-    wrz = (max(c.z for c in sec) - min(c.z for c in sec)) / 2
+    # The wrist: S1c's section at the hand's cut (WRIST_X + WRIST_GAP), as a radius per angle around its centre. The
+    # standard ring and the cage's last octagon take that shape, so the arm meets the hand's section exactly.
+    xs = WRIST_X + WRIST_GAP
+    sec = []
+    for e in old.data.edges:
+        a, b = (old.data.vertices[i].co for i in e.vertices)
+        if a.x > 0.3 and (a.x - xs) * (b.x - xs) < 0:
+            p_ = a.lerp(b, (xs - a.x) / (b.x - a.x))
+            sec.append((p_.y, p_.z))
+    wy = (max(c[0] for c in sec) + min(c[0] for c in sec)) / 2
+    wz = (max(c[1] for c in sec) + min(c[1] for c in sec)) / 2
+    prof = sorted((math.atan2(z - wz, -(y - wy)) % (2 * math.pi), math.hypot(y - wy, z - wz)) for y, z in sec)
+    prof = [(t - 2 * math.pi, r) for t, r in prof[-2:]] + prof + [(t + 2 * math.pi, r) for t, r in prof[:2]]
+
+    def wrist_r(t):
+        t %= 2 * math.pi
+        for (t0, r0), (t1, r1) in zip(prof, prof[1:]):
+            if t0 <= t <= t1:
+                return r0 + (r1 - r0) * (t - t0) / max(t1 - t0, 1e-9)
+        return prof[0][1]
+
+    def wrist_pt(t, scale=1.0):
+        r = wrist_r(t) * scale
+        return wy - r * math.cos(t), wz + r * math.sin(t)
     wrist = {"count": WRIST_N, "x": WRIST_X, "centre": [round(wy, 5), round(wz, 5)],
-             "semi_axes": [round(wry, 5), round(wrz, 5)],
+             "radius_mean": round(sum(wrist_r(2 * math.pi * k / WRIST_N) for k in range(WRIST_N)) / WRIST_N, 5),
+             "shape": "S1c's wrist section at x + 0.005 (a radius per angle), not an ellipse",
              "order": "index k at angle 2*pi*k/count around +X from the front (-Y) towards up (+Z); the right "
                       "wrist is the mirror (x -> -x)",
              "axes": "Blender (Z up, front -Y); glTF/Godot: (x, z, -y)"}
-    wrist["loop"] = [[WRIST_X, round(wy - wry * math.cos(2 * math.pi * k / WRIST_N), 5),
-                      round(wz + wrz * math.sin(2 * math.pi * k / WRIST_N), 5)] for k in range(WRIST_N)]
+    wrist["loop"] = [[WRIST_X] + [round(c, 5) for c in wrist_pt(2 * math.pi * k / WRIST_N)] for k in range(WRIST_N)]
 
     # 1-2. The cage, mirrored and subdivided; the soles lowered until the subdivided sole is at z = 0.
     # The trunk's rings are fitted the same way: subdivision pulls a ring towards its neighbours (the belly's peak
@@ -354,7 +373,7 @@ def main():
     for it in range(FIT_ITERS):
         bm, rings = build_cage(drop, trunk)
         for (dy, dz), v in zip(OCT, rings["wrist_cage"]):  # a subdivided octagon's edge lies at 0.902 of its radius
-            v.co = Vector((WRIST_X, wy + wry * dy / 0.902, wz + wrz * dz / 0.902))
+            v.co = Vector((WRIST_X, *wrist_pt(math.atan2(dz, -dy), 1 / 0.902)))
         cage_faces = len(bm.faces)
         cage, body = subdivided(bm, "BodyNew")
         bm.free()
@@ -424,7 +443,7 @@ def main():
         e = 0.0
         for k, v in enumerate(loopv):
             t = 2 * math.pi * k / len(loopv)
-            new = Vector((sx * WRIST_X, wy - wry * math.cos(t), wz + wrz * math.sin(t)))
+            new = Vector((sx * WRIST_X, *wrist_pt(t)))
             e = max(e, (new - v.co).length)
             v.co = new
         wr[sx] = ([v.index for v in loopv], kw)
@@ -506,12 +525,18 @@ def main():
         for _ in range(3):
             bmesh.ops.smooth_vert(bm, verts=list(hv), factor=0.5, use_axis_x=True, use_axis_y=True, use_axis_z=True)
     bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
-    # The weld's band: eased across in y and z (lengths along the arm kept), so the hand's and the arm's sections
-    # meet without a step.
+    # The weld's band: the bisect leaves thin slivers on the hand's side of the cut, which fold the shading into a
+    # line. The cut row and the hand's rows within WRIST_SMOOTH[0] beyond it are relaxed (all axes); the standard ring
+    # stays fixed, so the arm's shape at the weld is kept.
     band_w, passes = WRIST_SMOOTH
-    band = [v for v in bm.verts if abs(abs(v.co.x) - WRIST_X - WRIST_GAP / 2) < band_w]
+    band = [v for v in bm.verts if WRIST_X + 0.001 < abs(v.co.x) < WRIST_X + WRIST_GAP + band_w]
     for _ in range(passes):
-        bmesh.ops.smooth_vert(bm, verts=band, factor=0.5, use_axis_x=False, use_axis_y=True, use_axis_z=True)
+        bmesh.ops.smooth_vert(bm, verts=band, factor=0.5, use_axis_x=True, use_axis_y=True, use_axis_z=True)
+    # The weld's sharpest fold: the largest angle between neighbouring faces' normals within 1.5 cm of the ring.
+    folds = [math.degrees(e.link_faces[0].normal.angle(e.link_faces[1].normal)) for e in bm.edges
+             if len(e.link_faces) == 2 and abs(abs(e.verts[0].co.x) - WRIST_X) < 0.015 and e.verts[0].co.z > 1.1]
+    report["wrist_max_fold_deg"] = round(max(folds), 1)
+    report["wrist_folds_over_30"] = sum(1 for f in folds if f > 30)
     # Loose parts and open edges (only the neck ring's top should be open).
     seen, parts = set(), 0
     for v0 in bm.verts:
@@ -532,7 +557,8 @@ def main():
     deform = bm.verts.layers.deform.verify()
     gi = {g.name: g.index for g in body.vertex_groups}
     # The joints: each cage vertex's weights blended with its neighbours' (the hands and the rings keep theirs).
-    free = [v for v in bm.verts if v.index < nbody and v.index not in ring_ids]
+    free = [v for v in bm.verts if v.index < nbody and v.index not in ring_ids
+            and abs(v.co.x) < WRIST_X - WRIST_KEEP]  # near the wrist the weights stay S1c's, as the hand's
     for _ in range(WEIGHT_SMOOTH):
         new = []
         for v in free:
@@ -623,7 +649,7 @@ def main():
         json.dump(report, fh, indent=1)
     bpy.ops.wm.save_as_mainfile(filepath=f"{args.out}/alien_body.blend")
     print("cage:", json.dumps({k: report[k] for k in ("body", "neck", "wrist", "fit_iterations", "loose_parts",
-                                                      "open_edges_below_ring", "little_weighted_verts")}))
+                                                      "open_edges_below_ring", "little_weighted_verts", "wrist_max_fold_deg", "wrist_folds_over_30")}))
 
 
 if __name__ == "__main__":
