@@ -70,13 +70,20 @@ CHIN_GAP = 0.006  # with --parts-report: CHIN_Z is the report's sculpted chin pl
 # S8: the open shapes against the head. The sheets' heads are wider at the mouth than ours (our face narrows to the
 # chin), so A, measured to the sheet's face width, filled the lower face and its lower lip reached the chin ("far too
 # big"), and A's and E's far corners passed the cheek at three-quarter view. Each shape's size times this:
-SHAPE_SCALE = {"A": 0.80, "E": 0.88, "O": 0.94}
+SHAPE_SCALE = {"A": 0.77, "E": 0.82, "O": 0.94}  # S8b: A and E narrower (their far corner passed the cheek)
+# S8b: an open ring hugs the face at its sides: where the skin turns away from the front (|normal x| from
+# side[0] to side[1]) its lift off the skin and its width shrink by up to `keep`, so the far corner at three-quarter
+# view stays inside the cheek's silhouette.
+RING_SIDE = {"side": (0.30, 0.75), "keep": 0.55}
 RING_KEEP = {"centre": 9, "width": 5}  # S7: the open ring's centre line and lip width keep this many harmonics
 NORMAL_SMOOTH = 8  # S7: passes over the skin points and normals under a lip (the decimated head's facets rippled it)
 STATION_SMOOTH = 5  # S7: passes over the closed lips' measured edges (2 left ripples)
 CORNER = {"share": 0.16, "join": 0.85, "tuck": 0.9}  # S7: over the last share of a closed mouth's stations the two
 # lips' centres meet (join) and sink into the skin by tuck times their depth, so the corner is a soft tucked dimple
 TOOTH_D, TOOTH_TUCK = 0.0055, 0.003  # a tooth's depth, and how far it runs up under the upper lip, m
+# S8b: the tongue as a tongue, not a second lower lip: TONGUE_SHAPE["width"] of the measured run, a rounded
+# dome with a midline groove, lifted less off the cup
+TONGUE_SHAPE = {"width": 0.62, "dome": 0.0034, "groove": 0.35, "lift": 0.0012}
 TONGUE = (0.66, 0.30, 0.33)  # sRGB (S7: a deeper rose; the lips' near twin read as a doubled lower lip in A)
 FLIP_OUT = 0.0015
 
@@ -366,9 +373,10 @@ def build_piece(bvh, m, design, shape, world, mats, coll, origin):
             th = 2 * math.pi * k / RING_N
             p = Vector((pn[k][0].x, py_[k], pn[k][0].z))
             n = Vector((nn_[0][k], nn_[1][k], nn_[2][k])).normalized()
-            a = DEPTH_A * hw[k] + DEPTH_C
+            side = 1.0 - (1.0 - RING_SIDE["keep"]) * G.smoothstep(*RING_SIDE["side"], abs(n.x))
+            a = (DEPTH_A * hw[k] + DEPTH_C) * side
             low = G.smoothstep(-0.35, 0.35, math.sin(th))  # px y grows downward: sin > 0 is the lower lip
-            c3 = p + n * (a * (1 - SINK) + push + back * low)
+            c3 = p + n * (a * (1 - SINK) + (push + back * low) * side)
             nxt = ((mx[(k + 1) % RING_N] - mx[k - 1]), (mz[(k + 1) % RING_N] - mz[k - 1]))
             tang = Vector((nxt[0], 0.0, nxt[1]))
             radial = tang.cross(n).normalized()  # in the skin's plane, across the ring
@@ -377,7 +385,7 @@ def build_piece(bvh, m, design, shape, world, mats, coll, origin):
             ring = []
             for j in range(RING_SEG):
                 ph = 2 * math.pi * j / RING_SEG
-                ring.append(b.vert(c3 + n * (a * math.cos(ph)) + radial * (hw[k] * math.sin(ph))))
+                ring.append(b.vert(c3 + n * (a * math.cos(ph)) + radial * (hw[k] * side * math.sin(ph))))
             rings.append(ring)
             sections.append((((pairs[k][0][0] + pairs[k][1][0]) / 2, (pairs[k][0][1] + pairs[k][1][1]) / 2), c3, a, n, p))
         for k in range(RING_N):
@@ -472,7 +480,7 @@ def build_piece(bvh, m, design, shape, world, mats, coll, origin):
     if len(tcols) >= 12 and meas.get("form") == "ring":
         mi_t = b.slot(mats["tongue"])
         tl, tr = tcols[0], tcols[-1]
-        xm, half = (tl + tr) / 2, (tr - tl) / 2
+        xm, half = (tl + tr) / 2, (tr - tl) / 2 * TONGUE_SHAPE["width"]  # S8b: narrower than the cup
         centre_cols = [x for x in tcols if abs(x - xm) <= half / 3]
         top = float(np.median([cols[x]["tongue_top"] for x in centre_cols]))
         base_m = float(np.median([(cols[x]["top_l"] + cols[x]["bot_l"]) / 2 for x in centre_cols]))
@@ -487,8 +495,9 @@ def build_piece(bvh, m, design, shape, world, mats, coll, origin):
             for j in range(6):
                 f = j / 5
                 p, n = surf(bvh, *world(xp, yt + (base - yt) * f))
-                dome = 0.0028 * math.sqrt(max(0.0, 1 - u * u)) * math.sin(math.pi * (0.2 + 0.8 * f) / 1.0) ** 0.5
-                col.append(b.vert(p + n * (0.0020 + dome)))
+                dome = TONGUE_SHAPE["dome"] * math.sqrt(max(0.0, 1 - u * u)) * math.sin(math.pi * (0.2 + 0.8 * f)) ** 0.5
+                dome *= 1.0 - TONGUE_SHAPE["groove"] * math.exp(-(u / 0.2) ** 2)  # the midline groove
+                col.append(b.vert(p + n * (TONGUE_SHAPE["lift"] + dome)))
             grid.append(col)
         for i in range(n_t - 1):
             for j in range(5):
