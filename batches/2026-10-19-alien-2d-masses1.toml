@@ -1,0 +1,62 @@
+# art#196, after the restart research (comment 6265145110; the engineer's yes, comment 6265560744): a NEW alien
+# designed as a clay puppet from the start, never from the f2a/base1 head. The research's rules go into every prompt:
+# a few big hand-rolled masses, each colour region its own pressed-on piece, details at fingertip scale, flat solid
+# colour per piece, matte clay with a soft broad sheen, soft theatrical light, the face as separate pinned pieces
+# (bead eyes under lid caps, a pressed-on mouth). Each sheet shows ONE design in three proportions side by side (the
+# parameter he picks): about 7 heads (adult human), about 5 heads, about 3.5 heads (puppet). Three design directions,
+# two tries each. GPT Image text to image only (concepts); no game, film or studio is named in any prompt. Under the
+# standing permission for Meshy generation within the plan's credits (2026-10-03, art#16). Schema: docs/meshy.md.
+
+id = "2026-10-19-alien-2d-masses1"
+purpose = "art#196 restart: a new alien designed as clay masses, three designs, each in three proportions, for the engineer's pick before the route A/B tests."
+plan = "Meshy paid plan (monthly; bought by the engineer on 2026-10-17)"
+terms_url = "https://www.meshy.ai/terms-of-use"
+licence = "owned by the customer on a paid plan (Meshy Terms of Use 3.2, updated 2026-09-19); no attribution required"
+credit_cap = 90
+approved_by = "xperiaroco2 (the engineer)"
+approved_at = "2026-10-03"
+approval_ref = "https://github.com/xperiaroco2/prime-game-art/issues/16"
+
+[defaults.text_to_image.params]
+ai_model = "gpt-image-2-5-sunburst"
+aspect_ratio = "16:9"
+remove_background = false
+
+[variants.d1]
+prompt = "A photograph of three real handmade stop-motion clay puppets standing side by side on a plain warm-grey studio table, full body, front view, the same height of camera, soft theatrical studio light from above with a gentle rim light, soft shadows, shallow depth of field. All three are the SAME adult male alien character; only his proportions differ, from left to right: about seven heads tall with adult human body proportions; about five heads tall; about three and a half heads tall with a big head and short stocky limbs. The character: a big smooth egg-shaped head in teal clay with one thick back-swept crest lump pressed on top, two small glossy black bead eyes set wide, each under a thick separate teal clay lid cap, half closed, bored and dry; a separate coral clay mouth piece pressed onto the face, a wide flat closed sausage of clay; no nose, only two pin holes; a thick neck; a simple tube torso in teal with a separate mint clay belly piece pressed on; plain thick arms and legs; four thick rolled-clay fingers per hand and three stubby toes; coral clay patches pressed on the knees and elbows. Built by a sculptor from a few big hand-rolled masses of oil-based plasticine: chunky simple shapes, every colour region a separate piece pressed on with a visible soft seam, details as big as a fingertip, slightly lumpy and uneven, flat solid colour per piece, matte with a soft broad waxy sheen, a few broad thumb dents. Not smooth CG, not plastic, not a realistic body with clay skin, no fine wrinkles or pores. Adult cartoon tone, cool, deadpan and appealing, not childish, not cute. No clothes. No text, no numbers, no labels, no logo."
+
+[variants.d2]
+prompt = "A photograph of three real handmade stop-motion clay puppets standing side by side on a plain warm-grey studio table, full body, front view, the same height of camera, soft theatrical studio light from above with a gentle rim light, soft shadows, shallow depth of field. All three are the SAME adult male alien character; only his proportions differ, from left to right: about seven heads tall with adult human body proportions; about five heads tall; about three and a half heads tall with a big head and short stocky limbs. The character: a tall bean-shaped head in violet clay leaning slightly back, two short rounded antenna nubs on top, two big glossy white bead eyes with small dark pupils set close together, each under a separate thick lilac clay lid cap, looking sly; a small separate orange clay mouth piece pressed on in a lopsided smirk; a thin neck; a pear-shaped violet torso with a separate pale lilac chest piece pressed on; long simple arms and legs; four rolled-clay fingers per hand and three toes; orange clay pads pressed on the palms and soles. Built by a sculptor from a few big hand-rolled masses of oil-based plasticine: chunky simple shapes, every colour region a separate piece pressed on with a visible soft seam, details as big as a fingertip, slightly lumpy and uneven, flat solid colour per piece, matte with a soft broad waxy sheen, a few broad thumb dents. Not smooth CG, not plastic, not a realistic body with clay skin, no fine wrinkles or pores. Adult cartoon tone, cool, sly and appealing, not childish, not cute. No clothes. No text, no numbers, no labels, no logo."
+
+[variants.d3]
+prompt = "A photograph of three real handmade stop-motion clay puppets standing side by side on a plain warm-grey studio table, full body, front view, the same height of camera, soft theatrical studio light from above with a gentle rim light, soft shadows, shallow depth of field. All three are the SAME adult male alien character; only his proportions differ, from left to right: about seven heads tall with adult human body proportions; about five heads tall; about three and a half heads tall with a big head and short stocky limbs. The character: a wide flat pebble-shaped head in olive-green clay with a row of three small rounded ridges pressed along the top, two big glossy yellow bead eyes with black slit pupils set far apart on the sides of the head, each under a separate thick dark-olive clay lid cap, heavy and unimpressed; a wide separate dusty-pink clay mouth piece pressed on with two small cream clay teeth showing; a short thick neck; a barrel-shaped olive torso with a separate sand-coloured belly piece pressed on; sturdy simple arms and legs; four thick rolled-clay fingers per hand and three toes. Built by a sculptor from a few big hand-rolled masses of oil-based plasticine: chunky simple shapes, every colour region a separate piece pressed on with a visible soft seam, details as big as a fingertip, slightly lumpy and uneven, flat solid colour per piece, matte with a soft broad waxy sheen, a few broad thumb dents. Not smooth CG, not plastic, not a realistic body with clay skin, no fine wrinkles or pores. Adult cartoon tone, cool, tough and appealing, not childish, not cute. No clothes. No text, no numbers, no labels, no logo."
+
+[[items]]
+id = "d1a"
+variant = "d1"
+kind = "text_to_image"
+
+[[items]]
+id = "d1b"
+variant = "d1"
+kind = "text_to_image"
+
+[[items]]
+id = "d2a"
+variant = "d2"
+kind = "text_to_image"
+
+[[items]]
+id = "d2b"
+variant = "d2"
+kind = "text_to_image"
+
+[[items]]
+id = "d3a"
+variant = "d3"
+kind = "text_to_image"
+
+[[items]]
+id = "d3b"
+variant = "d3"
+kind = "text_to_image"
