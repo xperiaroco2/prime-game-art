@@ -1310,7 +1310,7 @@ a time, by visibility.
     moved `EYE_SINK` 2 mm back along the socket's axis. With the corners' 0.1 r points gone, the upper lid's
     outline is about 0.87 of M5's width. Smaller units opened a gap between the dome's silhouette and the socket's
     skin at the inner upper corner, a dark line (86 % a crescent; 90 % with a 5 mm sink still a line at 0.4 m; the
-    sink does not close a sideways gap; `M6/grids/g4`, `tools/out/m6/g4_crop.png`); at 95 % it is a thin contact
+    sink does not close a sideways gap; `M6/grids/g4`); at 95 % it is a thin contact
     line. Going smaller needs the socket's skin to follow (or a flared dome back), a later step. The iris and pupil
     keep their angles (`IRIS_SCALE` 1: 90 % read the same at 1.2 m, and rf2's iris is large). Chosen on
     `M6/grids/g2` to `g4` (`grid_size.png`: 100, 93, 86 %, iris 90 %, then sizes with sinks of 0 to 5 mm).
@@ -1328,6 +1328,10 @@ a time, by visibility.
     - roughness 0.55 with a soft clear coat (0.06) on the lips; the lid domes 0.64 with none (their sheen read
       plastic beside the skin's satin, and sparkled).
     - Chosen on `M6/grids/g2` and `g3` (`grid_look*.png`, `zoom_look.png`, rf2 first).
+    - Gated like the SSS and contact terms: `alien.gd` takes `LIP_LOOK` and `LID_LOOK` only for a kit whose imported
+      `alien_lip` (the lips' and the lid domes' one material) carries `PART_AO_MARKER` (glTF extras
+      `{"prime_part_ao": "color0_r"}`, set by `alien_m6.py` after the bake); an older kit (M5 and before) keeps
+      `LIP_LOOK_M5` under the default `lip_look` (test `test_part_ao_marker_matches_the_build`).
   - **The skin's contact shade:** per Body vertex the distance to the nearest rest lid or rest lip (both designs),
     1 at contact to 0 at 7 mm (`CONTACT`), smoothed, in a fifth UV layer `contact` (glTF `TEXCOORD_4`, Godot
     `CUSTOM1.x`). `alien_hue.gdshader` (textured path) darkens and warms the albedo toward `contact_tint` and lowers
@@ -1336,7 +1340,9 @@ a time, by visibility.
     the sockets, so the term is subtle (the grid's "contact off" barely differs).
   - **The kits:** `M6/export/` (M3c's set and M3a's capped-cage normal map, 36.2 MB) and `M6/export_m2b/` (M2b's
     recomposed set, `--skin-tex M2b/textures --skin-normal M2b/bake/normal.png`, 29.4 MB; its composed ORM in
-    `M6/skin_export_m2b/`); glTF-Validator 0 errors, 1 warning (`NODE_SKINNED_MESH_NON_ROOT`) on both. Sheets in
+    `M6/skin_export_m2b/`). The rebuild of each is `blender.run_script("alien_m6.py", ["--kit", <M5/export>, "--out",
+    <M6>, "--export-name", <name>, "--skin-tex", <set>/textures, "--skin-normal", <normal.png>])` (about 3 min, in the
+    background); glTF-Validator 0 errors, 1 warning (`NODE_SKINNED_MESH_NON_ROOT`) on both. Sheets in
     `M6/godot/final/` and `final_m2b/`, grids in `M6/grids/`, JPEGs in `M6/showroom/`.
   - **`m6_shots.gd`**, the proof (modes `size`, `corners`, `look`, `final`; its header lists them; `size` and the
     spec's `scale`/`sink` scale the units at run time for the grids). Driven like `m5_shots.gd` (stage the kits,
