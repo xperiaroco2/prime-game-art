@@ -45,7 +45,7 @@ LIGHT_MIX = 0.42  # how far the light mask mixes the hue toward the pale tint
 CREST = {"mid": 0.73, "width": 0.075, "push": 0.06, "smooth": 10}  # Meshy units: a bump round the crest's waist
 
 EYES = {  # elevations in degrees (the lid edge's angle above the eye's forward axis); rho: lid radii / eyeball r
-    "bored": {"pupil": 0.20, "iris": 0.44, "iris_col": (0.26, 0.16, 0.11), "catch": (6.0, 1.0),
+    "bored": {"pupil": 0.20, "iris": 0.44, "iris_col": (0.20, 0.12, 0.08), "catch": (6.0, 1.0),
               "upper": {"open": 30.0, "rest": 6.0, "half": -2.0, "closed": -12.0, "rho": (1.06, 1.13)},
               "lower": {"open": -40.0, "rest": -30.0, "half": -20.0, "closed": -6.0, "rho": (1.012, 1.05)}},
     "manic": {"pupil": 0.2094, "iris": 0.0, "iris_col": (0.05, 0.04, 0.05), "catch": (4.5, 4.5),

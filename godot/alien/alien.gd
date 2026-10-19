@@ -14,8 +14,8 @@ extends Node
 ## - the face materials (S5, set_face_look): "s5" (the default) puts the stage-1 human faces' eye and lip look on the
 ##   imported face materials by name: alien_eye.gdshader on the eyeballs (alien_eye_<design>: a warm off-white, soft warm
 ##   shading toward the corners and under the lids, a dark iris and pupil, one soft catch light), matte warm lips, a
-##   dark warm mouth cup, ivory teeth, and the lid shells' rim in the lips' colour (a copy of the hue material with
-##   accent = LIP); "first" keeps the first test's imported materials (for the before/after sheets).
+##   dark warm mouth cup, ivory teeth, and the lid shells in the lips' material (the eye sheets eb1 and em1: coral
+##   skin domes the colour of the lips); "first" keeps the first test's imported materials (for before/after sheets).
 ## Used through preload (a -s script has no global class cache): const AlienRig = preload("res://alien/alien.gd").
 
 const SHADER: Shader = preload("res://alien/alien_hue.gdshader")
@@ -28,7 +28,7 @@ const FACE := {  # sRGB colour, roughness, specular: the stage-1 face kit's (fac
 	"alien_teeth": [Color(0.96, 0.95, 0.90), 0.4, 0.3],
 }
 const EYE_LOOK := {  # alien_eye.gdshader's per-design uniforms (angles from the pupil axis, degrees; colours sRGB)
-	"bored": {"iris_deg": 25.0, "pupil_deg": 11.5, "iris": Color(0.26, 0.16, 0.11), "catch_at_deg": Vector2(6.0, 1.0)},
+	"bored": {"iris_deg": 25.0, "pupil_deg": 11.5, "iris": Color(0.20, 0.12, 0.08), "catch_at_deg": Vector2(6.0, 1.0)},
 	"manic": {"iris_deg": 0.0, "pupil_deg": 12.0, "iris": Color(0.05, 0.04, 0.05), "catch_at_deg": Vector2(4.5, 4.5)},
 }
 ## The eyeballs' rest look: each ball turned inward about its socket's up axis (set absolutely, so a GLB whose balls
@@ -73,7 +73,7 @@ var mouth_piece: String = "rest"
 var _material: ShaderMaterial
 var _hue_meshes: Array[GeometryInstance3D] = []
 var face_look: String = "s5"
-var _lid_material: ShaderMaterial
+var _lid_material: Material
 var _face_surfaces: Array = []  # [MeshInstance3D, surface, imported material name]
 var _lid_surfaces: Array = []  # [MeshInstance3D, surface]
 var _face_materials: Dictionary = {}  # imported name -> the S5 material
@@ -116,10 +116,6 @@ func setup(root: Node3D, seed: int = 196) -> void:
 
 
 func _make_face_materials() -> void:
-	_lid_material = _material.duplicate() as ShaderMaterial
-	_lid_material.set_shader_parameter("accent", LIP)
-	_lid_material.set_shader_parameter("accent_mix", 1.0)
-	_lid_material.set_shader_parameter("rim_value", 0.0)
 	for name: String in FACE:
 		var f: Array = FACE[name]
 		var m := StandardMaterial3D.new()
@@ -130,6 +126,7 @@ func _make_face_materials() -> void:
 		m.diffuse_mode = BaseMaterial3D.DIFFUSE_LAMBERT_WRAP
 		m.cull_mode = BaseMaterial3D.CULL_DISABLED  # as the imported (double-sided) ones: culled, the inner cup vanished
 		_face_materials[name] = m
+	_lid_material = _face_materials["alien_lip"]  # the eye sheets (eb1, em1): the lids are soft domes in the lips' colour
 	for design: String in EYE_LOOK:
 		var e := ShaderMaterial.new()
 		e.shader = EYE_SHADER

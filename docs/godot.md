@@ -731,7 +731,7 @@ a time, by visibility.
   - `alien_eye.gdshader` on `alien_eye_<design>`: no texture, all from the ball's model space (centred, +Z the pupil
     axis): a warm off-white (sRGB 0.95, 0.93, 0.86), shaded toward a warm tint (never grey) in the corners and under
     the lids (the lid edges are instance uniforms that `_apply_lids` sets from the lid rotations, edge = -rotation.x,
-    so the shadow follows the blink), a dark iris with a darker edge ring (bored: 25 degrees, brown), a near-black
+    so the shadow follows the blink), a dark iris with a darker edge ring (bored: 25 degrees, a near-black brown), a near-black
     pupil (bored 11.5, manic 12 degrees), and **one painted catch light** on the pupil, up and toward the viewer's
     left, as emission (no extra light or render layer; it moves with the eye, as a toy's painted glint). Roughness
     0.38, so the key light gives a broad sheen and no second hard glint.
@@ -741,7 +741,8 @@ a time, by visibility.
   - Lips, inner cup and teeth: `StandardMaterial3D`s with wrapped diffuse and **culling off** (the imported materials
     are double-sided; culled, the inner cup vanished and the open mouths showed the skin): lips sRGB (0.76, 0.45, 0.40)
     roughness 0.6 specular 0.3; the cup a dark plum (0.25, 0.11, 0.14), roughness 0.9; teeth ivory (0.96, 0.95, 0.90).
-  - The lid shells take a copy of the hue material whose accent is the lips' colour (rim 0), so lids and lips match.
+  - The lid shells take the lips' material: the chosen eye sheets (batch `2026-10-19-alien-face-sheets`, `eb1` and
+    `em1`) draw the lids as soft coral domes the colour of the lips, not skin with a coral rim.
   - `tools/blender/alien_parts.py` builds the same look into the eye texture (rest lids, 512 px) and the plain
     materials, for Blender and the three.js page.
   - `face_proof.gd`: the proof under the approved showroom look (`look_presets.json`, Medium: AgX 0.9, the studio sky
