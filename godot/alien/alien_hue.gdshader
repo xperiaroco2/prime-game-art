@@ -18,6 +18,7 @@
 //     absent): it darkens the albedo by `ao_albedo` and feeds AO for the ambient light;
 //   - a soft grain: a value-noise micro normal in model space (`grain`, `grain_freq` per metre), faded out with the
 //     view distance so it never shimmers far away, and a matching small roughness variation;
+//   - S9b: the gradient and the grain read the rest pose (CUSTOM0, see vertex()), so they do not swim in motion;
 //   - wrapped diffuse (render mode), screen-space subsurface (`sss`), a warm back light through thin parts
 //     (`backlight`), a soft rim (`rim_value`) and a fresnel edge glow toward the pale tint (`rim_glow`).
 // The hues (sRGB): godot/alien/alien.gd HUES, from the S3 export's character.json.
@@ -51,22 +52,29 @@ uniform float rim_glow : hint_range(0.0, 1.0) = 0.0;  // a soft fresnel lift tow
 uniform float rim_glow_power = 3.0;
 
 varying vec3 m_pos;
-varying vec3 m_nrm;
+varying float m_nz;
 
 #include "res://alien/alien_grain.gdshaderinc"
 
 void vertex() {
-	m_pos = VERTEX;
-	m_nrm = NORMAL;
+	// S9b: the rest pose, so the gradient and the grain stay on the skin in motion (VERTEX here is already skinned).
+	// The skin carries it in CUSTOM0 (glTF TEXCOORD_2 = rest x, y; TEXCOORD_3 = rest z, normal z + 2; written by
+	// tools/blender/alien_ao.py); a part without it (CUSTOM0 = 0: the crests, rigid under the Head) uses its own.
+	if (CUSTOM0.w > 0.5) {
+		m_pos = CUSTOM0.xyz;
+		m_nz = CUSTOM0.w - 2.0;
+	} else {
+		m_pos = VERTEX;
+		m_nz = NORMAL.z;
+	}
 }
 
 void fragment() {
 	vec2 m = UV2;
 	float light = clamp(m.x, 0.0, 1.0);
-	vec3 n = normalize(m_nrm);
 	// the gradient
 	float top = smoothstep(deep_top_range.x, deep_top_range.y, m_pos.y) * deep_top;
-	float back = smoothstep(-0.3, 0.9, -n.z) * smoothstep(1.0, 1.4, m_pos.y) * deep_back;
+	float back = smoothstep(-0.3, 0.9, -m_nz) * smoothstep(1.0, 1.4, m_pos.y) * deep_back;
 	float deep = clamp(top + back, 0.0, 1.0) * (1.0 - light);
 	vec3 base = mix(hue, hue * deep_mul, deep);
 	vec3 p = pale * mix(vec3(1.0), warm_mul, face_warm * smoothstep(1.38, 1.50, m_pos.y));

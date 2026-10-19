@@ -71,6 +71,17 @@ class FaceConstants(unittest.TestCase):
         self.assertEqual(color(m.group(1)), tuple(map(float, hue.groups())))
         self.assertEqual(color(m.group(2)), tuple(map(float, pale.groups())))
 
+    def test_rest_channel(self):  # S9b: alien_ao.py's rest-pose UV layers and alien_hue.gdshader's CUSTOM0 agree
+        ao = (ROOT / "tools" / "blender" / "alien_ao.py").read_text(encoding="utf-8")
+        sh = (ROOT / "godot" / "alien" / "alien_hue.gdshader").read_text(encoding="utf-8")
+        self.assertRegex(ao, r'REST_UV = \("rest_xy", "rest_zn"\)')
+        offset = float(re.search(rf"ngl_z \+ ({NUM})", ao).group(1))
+        self.assertEqual(float(re.search(rf"m_nz = CUSTOM0\.w - ({NUM});", sh).group(1)), offset)
+        threshold = float(re.search(rf"if \(CUSTOM0\.w > ({NUM})\)", sh).group(1))
+        self.assertTrue(0.0 < threshold < offset - 1.0, "the flag must split absent (0) from any normal z + offset")
+        self.assertIn("m_pos = CUSTOM0.xyz;", sh)
+        self.assertNotIn("m_nrm", sh)  # the skinned normal no longer drives the gradient
+
     def test_visemes(self):
         m = self.grab(r"^const VISEMES: Array\[String\] = \[([^\]]*)\]")
         self.assertEqual(tuple(re.findall(r'"([^"]+)"', m.group(1))), self.f.VISEMES)
