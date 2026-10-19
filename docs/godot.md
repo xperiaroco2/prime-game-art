@@ -695,9 +695,10 @@ renders beside the approved target frames (f2a for the face at 0.6 m, f1a for th
 - `alien_clay_cal.gdshader` is calibration only: a linear colour matrix on the base colour. `look.gd`'s calibration
   mode finds the matrix that matches each region (teal, mint, coral) to f2a's lit half, and that correction is then
   baked into the base colour sheets, so the game's look values stay as approved.
-- `look.gd` is the proof script: a present-day room box, the material options and clay strengths, the bench, the
-  calibration and the review sheets. It runs in the off-screen window like every other window run (the header gives
-  its spec). It is research tooling, not a runner command yet.
+- `look.gd` is the proof script, with six modes: `shots` (a present-day room box, the material options and clay
+  strengths), `bench`, `grid` (the micro-detail's gain), `calib`, `cells` (one pixel under several overrides) and
+  `sheets_b` (the before/after sheets). It is research tooling, not a runner command yet: a run goes through
+  `_godot.window()` like every other window run (its header gives the arguments and the spec).
 
 Clay strength 2 is the closest to f2a; at 3 m the strengths cannot be told apart. The look still needs the engineer's
 yes; the game repo takes the material only through a game-repo PR under the character contract.

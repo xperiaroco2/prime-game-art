@@ -86,6 +86,7 @@ void fragment() {
 	vec3 d = vec3(0.0, mx.y, mx.x) * w.x + vec3(my.x, 0.0, my.y) * w.y + vec3(mz.x, mz.y, 0.0) * w.z;
 	vec3 dv = (VIEW_MATRIX * vec4(MODEL_NORMAL_MATRIX * d, 0.0)).xyz;
 	vec3 nb = vec3(base_xy, sqrt(max(0.0, 1.0 - dot(base_xy, base_xy))));
+	// needs the mesh's tangents (the export writes them for the normal map); without them the base normal collapses
 	vec3 n = TANGENT * nb.x + BINORMAL * nb.y + NORMAL * nb.z;
 	NORMAL = normalize(n + dv * micro_strength);
 #else

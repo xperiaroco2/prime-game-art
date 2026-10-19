@@ -1,7 +1,10 @@
 extends SceneTree
 ## The alien's plasticine look in Godot 4.7.2 at game distance (art #196, step G3). Runs in a real window kept
-## off-screen (godot/lib/offscreen.gd, #214; never headless, never minimized), opened by the runner's _godot.window():
-##   godot --position 30000,30000 --resolution 1x1 --path godot -s res://alien_look/look.gd -- <spec.json>
+## off-screen (godot/lib/offscreen.gd, #214; never headless, never minimized). No runner command starts it yet: a run
+## goes through the runner's _godot.window() (docs/godot.md, "The off-screen window"), which adds
+## `--position 30000,30000 --resolution 1x1` and `PRIME_WINDOW=<w>x<h>`, with the arguments
+##   --path godot -s res://alien_look/look.gd -- <spec.json>
+## Modes: "shots", "bench", "grid" (G3's tuning grid of the micro-detail's gain), "calib", "cells", "sheets_b".
 ## The spec names the staged character GLB (res://), its 4096 clay sheets per clay strength (head and body, base colour
 ## and normal; loaded at run time, halved to the game's 2048, mipmapped and VRAM-compressed as the game imports them),
 ## the tiling micro-detail (normal and height) and the mode:
