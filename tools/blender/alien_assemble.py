@@ -21,7 +21,7 @@ The method:
    whole mesh shaded smooth, so the ring's normals are the average over both sides' faces: no lighting seam. The
    neck across the weld is then faired as one smooth surface (NECK_FAIR, S8b), so no pleated collar or crease shows;
    S9b then lofts the neck as one column from the shoulders to under the jaw and gives it a smooth weight field
-   (alien_neck.py).
+   (alien_neck.py); S9c re-lofts it with near-parallel front and back lines and a filled nape (alien_neck.column).
 2. Masks (the `masks` UV layer, TEXCOORD_1, read by godot/alien/alien_hue.gdshader; the glTF export stores V
    flipped, the shader flips it back): u = light, v = accent. The head keeps S2a's masks. On the body, u is the
    throat and belly: the front half (in front of each height's midline centre, the middle of the vertices within
@@ -410,11 +410,14 @@ def main():
     bm.from_mesh(body.data)
     before = alien_neck.profile(bm, ring)
     rep["neck_loft"] = alien_neck.loft(bm, ring)
-    rep["neck_profile"] = {"before": before, "after": alien_neck.profile(bm, ring)}
+    rep["neck_column"] = alien_neck.column(bm, ring)  # S9c: near-parallel front and back lines, the nape filled
+    zs = [round(1.28 + 0.01 * i, 3) for i in range(25)]
+    rep["neck_profile"] = {"before": before, "after": alien_neck.profile(bm, ring, zs=zs)}
     bm.to_mesh(body.data)
     bm.free()
     body.data.update()
     rep["neck_weights"] = alien_neck.column_weights(body, ring)
+    rep["throat_panel"] = alien_neck.throat_panel(body, ring)  # S9c: the front half of the neck pale
     body.name = "Body"
     for o in bpy.data.objects:  # the lid's local X angle in its eye node, as parts.json gives it
         if "_lid_" in o.name:
