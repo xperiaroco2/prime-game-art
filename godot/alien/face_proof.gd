@@ -262,18 +262,18 @@ func _run() -> void:
 	_sheet(imgs, 3, "hues.png")
 	# 7: the tuning grid: the lips' roughness (rows) against their colour (columns), front at 0.5 m
 	imgs = []
-	var lip: StandardMaterial3D = _rig.face_material("alien_lip")
-	var col0: Color = lip.albedo_color
-	var r0: float = lip.roughness
+	var lip: ShaderMaterial = _rig.face_material("alien_lip")  # S9: alien_lip.gdshader
+	var col0: Color = lip.get_shader_parameter("albedo")
+	var r0: float = lip.get_shader_parameter("roughness_value")
 	_combo("bored", "frog")
 	for r: float in [0.75, 0.6, 0.45]:
 		for c: Color in [Color(0.74, 0.42, 0.38), col0, Color(0.86, 0.57, 0.49)]:
-			lip.roughness = r
-			lip.albedo_color = c
+			lip.set_shader_parameter("roughness_value", r)
+			lip.set_shader_parameter("albedo", c)
 			_look(face, 10, 3, 0.5, 34)
 			imgs.append(await _shot("lip rough %.2f  (%.2f %.2f %.2f)" % [r, c.r, c.g, c.b]))
-	lip.albedo_color = col0
-	lip.roughness = r0
+	lip.set_shader_parameter("albedo", col0)
+	lip.set_shader_parameter("roughness_value", r0)
 	_sheet(imgs, 3, "grid.png")
 	var f :=FileAccess.open(_out + "/face_proof.json", FileAccess.WRITE)
 	f.store_string(JSON.stringify(_report, " "))

@@ -45,6 +45,32 @@ class FaceConstants(unittest.TestCase):
                 got = self.f.LIP if m.group(1) == "LIP" else color(m.group(1))
                 self.assertEqual((got, float(m.group(2)), float(m.group(3))), (col, rough, spec))
 
+    def shader_default(self, shader: str, uniform: str) -> tuple:
+        text = (GD.parent / shader).read_text(encoding="utf-8")
+        m = re.search(rf"^uniform (?:vec3|float) {uniform}\b[^=]*= (?:vec3\(({NUM}), ({NUM}), ({NUM})\)|({NUM}));", text, re.M)
+        self.assertIsNotNone(m, f"{shader} has no default for {uniform}")
+        vals = [float(x) for x in m.groups() if x is not None]
+        return tuple(vals) if len(vals) > 1 else vals[0]
+
+    def test_accent(self):  # S9 (PR #225 review): the knee, elbow and knuckle accent
+        self.assertEqual(self.shader_default("alien_hue.gdshader", "accent"), self.f.ACCENT)
+
+    def test_eye_colours(self):  # S9 (PR #225 review): the eyeball's white, its warm shade and its roughness
+        self.assertEqual(self.shader_default("alien_eye.gdshader", "white"), self.f.EYE_WHITE)
+        self.assertEqual(self.shader_default("alien_eye.gdshader", "shade"), self.f.EYE_SHADE)
+        self.assertEqual(self.shader_default("alien_eye.gdshader", "roughness_value"), self.f.EYE_ROUGH)
+
+    def test_lip_shader(self):  # S9: alien_lip.gdshader's default colour is the lips'
+        self.assertEqual(self.shader_default("alien_lip.gdshader", "albedo"), self.f.LIP)
+
+    def test_teal(self):  # S9: the teal and its pale tint, in alien.gd and the assembler (character.json, the GLB)
+        m = self.grab(r'^\t"teal": \[(Color\([^)]*\)), (Color\([^)]*\))\]')
+        asm = (ROOT / "tools" / "blender" / "alien_assemble.py").read_text(encoding="utf-8")
+        hue = re.search(rf'^    "teal": \(({NUM}), ({NUM}), ({NUM})\)', asm, re.M)
+        pale = re.search(rf'^PALE_SRGB = \{{"teal": \(({NUM}), ({NUM}), ({NUM})\)', asm, re.M)
+        self.assertEqual(color(m.group(1)), tuple(map(float, hue.groups())))
+        self.assertEqual(color(m.group(2)), tuple(map(float, pale.groups())))
+
     def test_visemes(self):
         m = self.grab(r"^const VISEMES: Array\[String\] = \[([^\]]*)\]")
         self.assertEqual(tuple(re.findall(r'"([^"]+)"', m.group(1))), self.f.VISEMES)
