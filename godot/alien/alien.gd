@@ -22,6 +22,9 @@ extends Node
 ##   no shadow and fades out as the lids close (instance uniform `open`, set with the lids).
 ## - set_mouth_mode("3d"|"flip"): the replacement pieces or the flipbook test's face shells (S6); since S6 the overbite
 ##   pieces hold their own teeth.
+## - M6, the lips and lid domes in the skin's surface quality (lip_look, LIP_LOOK, LID_LOOK) and the textured skin's
+##   contact shade (SKIN_CONTACT), each only on a kit that carries its marker (PART_AO_MARKER, CONTACT_MARKER): an older
+##   kit keeps its look.
 ## Used through preload (a -s script has no global class cache): const AlienRig = preload("res://alien/alien.gd").
 
 const SHADER: Shader = preload("res://alien/alien_hue.gdshader")
@@ -87,8 +90,11 @@ const LID_LOOK := {"roughness_value": 0.64, "sheen": 0.0}
 ## hue material carries CONTACT_MARKER (tools/blender/alien_m6.py's contact field in TEXCOORD_4).
 const CONTACT_MARKER := {"prime_contact": "custom1_x"}
 const SKIN_CONTACT := {"contact": 1.0, "contact_tint": Vector3(0.80, 0.66, 0.62), "contact_ao": 0.3}
-## "m6" (the default): LIP_LOOK and LID_LOOK; "m5": LIP_LOOK_M5 on both, no contact shade (before/after sheets). Set
-## before setup().
+## M6: LIP_LOOK reads the part's baked AO (COLOR_0), so it applies only to a kit whose imported alien_lip (the lips' and
+## the lid domes' one material) carries this marker in its glTF extras (tools/blender/alien_m6.py, after the bake).
+const PART_AO_MARKER := {"prime_part_ao": "color0_r"}
+## "m6" (the default): LIP_LOOK and LID_LOOK on a kit with PART_AO_MARKER, LIP_LOOK_M5 on an older kit; "m5":
+## LIP_LOOK_M5 on both, no contact shade (before/after sheets). Set before setup().
 var lip_look: String = "m6"
 const EYE_LOOK := {  # alien_eye.gdshader's per-design uniforms (angles from the pupil axis, degrees; colours sRGB)
 	"bored": {"limbus_deg": 27.0, "iris_deg": 25.0, "pupil_deg": 11.5, "iris": Color(0.20, 0.12, 0.08),
@@ -145,6 +151,7 @@ var mouth_piece: String = "rest"
 var mouth_mode: String = "3d"
 
 var _material: ShaderMaterial
+var _part_ao: bool = false  # M6: the kit's alien_lip carries PART_AO_MARKER
 var _tex_material: ShaderMaterial  # M5: the skin on its texture set (null for a kit without SSS_MARKER)
 var _hue_meshes: Array[GeometryInstance3D] = []
 var face_look: String = "s5"
@@ -185,6 +192,8 @@ func setup(root: Node3D, seed: int = 196) -> void:
 					or mat.resource_name == "alien_wet"):
 				# M6: the lid domes take their own copy of the lips' material (LID_LOOK)
 				var key: String = mat.resource_name
+				if key == "alien_lip" and has_marker(mat, PART_AO_MARKER):
+					_part_ao = true
 				if key == "alien_lip" and m.name.contains("_lid_"):
 					key = "alien_lid"
 				_face_surfaces.append([m, s, key])
@@ -255,6 +264,11 @@ static func has_marker(imported: Material, marker: Dictionary) -> bool:
 	return true
 
 
+## M6: whether the lips and lid domes take LIP_LOOK and LID_LOOK (lip_look "m6" on a kit with PART_AO_MARKER).
+func uses_m6_lips() -> bool:
+	return lip_look != "m5" and _part_ao
+
+
 ## M5: whether the skin samples a texture set.
 func is_textured() -> bool:
 	return _tex_material != null
@@ -271,10 +285,16 @@ func _make_face_materials() -> void:
 				lm.set_shader_parameter("albedo", f[0])
 				lm.set_shader_parameter("roughness_value", f[1])
 				lm.set_shader_parameter("specular_value", f[2])
-				var look: Dictionary = LIP_LOOK_M5 if lip_look == "m5" else LIP_LOOK
+				var m6: bool = uses_m6_lips()
+				var look: Dictionary = LIP_LOOK if m6 else LIP_LOOK_M5
 				for k: String in look:
-					lm.set_shader_parameter(k, look[k])
-				if key == "alien_lid" and lip_look != "m5":
+					var v: Variant = look[k]
+					if k == "ao_range":  # smoothstep needs 0 <= x < y <= 1
+						var r: Vector2 = v
+						r.x = clampf(r.x, 0.0, 0.99)
+						v = Vector2(r.x, clampf(r.y, r.x + 0.01, 1.0))
+					lm.set_shader_parameter(k, v)
+				if key == "alien_lid" and m6:
 					for k: String in LID_LOOK:
 						lm.set_shader_parameter(k, LID_LOOK[k])
 				_face_materials[key] = lm

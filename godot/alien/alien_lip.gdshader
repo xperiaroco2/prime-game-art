@@ -21,7 +21,7 @@ uniform float grain : hint_range(0.0, 0.5) = 0.0;
 uniform float grain_freq = 900.0;
 uniform vec2 grain_fade = vec2(0.6, 2.0);
 // M6
-uniform vec3 deep : source_color = vec3(0.66, 0.26, 0.22);  // the coral in the folds (sRGB)
+uniform vec3 deep : source_color = vec3(0.56, 0.18, 0.17);  // the coral in the folds (sRGB)
 uniform float ao_mix : hint_range(0.0, 1.0) = 0.0;
 uniform vec2 ao_range = vec2(0.45, 0.95);  // COLOR.r from full `deep` to the plain albedo
 uniform float ao_occl : hint_range(0.0, 1.0) = 0.0;

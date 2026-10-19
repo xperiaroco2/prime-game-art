@@ -42,8 +42,24 @@ func _add_look(k: String, res: String, look: String) -> bool:
 	_player[k] = ch.find_child("AnimationPlayer", true, false)
 	_combo(k, "bored", "frog")
 	_order.append(k)
-	print("PROOF ", k, " textured ", rig.is_textured(), " look ", look)
+	print("PROOF ", k, " textured ", rig.is_textured(), " look ", look, " m6 lips ", rig.uses_m6_lips(),
+		" contact max ", _contact_max(ch))
 	return true
+
+
+## The largest contact value on Body (CUSTOM1.x, alien_m6.py's field; -1 when Body has no CUSTOM1 floats).
+func _contact_max(ch: Node3D) -> float:
+	var body: MeshInstance3D = ch.find_child("Body", true, false) as MeshInstance3D
+	if body == null:
+		return -1.0
+	var best: float = -1.0
+	for s: int in body.mesh.get_surface_count():
+		var c: Variant = body.mesh.surface_get_arrays(s)[Mesh.ARRAY_CUSTOM1]
+		if c is PackedFloat32Array:
+			var a: PackedFloat32Array = c
+			for i: int in range(0, a.size(), 2):  # RG_FLOAT: u (the field), v
+				best = maxf(best, a[i])
+	return best
 
 
 ## The eye units of a character scaled by s about each ball's centre and moved `sink` m back along the socket's axis

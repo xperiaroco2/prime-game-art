@@ -168,6 +168,21 @@ class Constants(unittest.TestCase):
         self.assertIsNotNone(gd)
         self.assertEqual(gd.groups(), py.groups())
 
+    def test_part_ao_marker_matches_the_build(self):
+        gd = re.search(r'const PART_AO_MARKER := \{"(\w+)": "(\w+)"\}', self.gd)
+        py = re.search(r'PART_AO_MARKER = \{"(\w+)": "(\w+)"\}', M6.read_text(encoding="utf-8"))
+        self.assertIsNotNone(gd)
+        self.assertIsNotNone(py)
+        self.assertEqual(gd.groups(), py.groups())
+        # the M6 lip look is gated on the marker, so an older kit keeps LIP_LOOK_M5
+        self.assertIn('has_marker(mat, PART_AO_MARKER)', self.gd)
+        self.assertRegex(self.gd, r'return lip_look != "m5" and _part_ao')
+
+    def test_lip_deep_default_matches_the_look(self):
+        m = re.search(r'^uniform vec3 deep\b[^=]*= vec3\(([^)]*)\);', LIP.read_text(encoding="utf-8"), re.M)
+        gd = re.search(r'"deep": Color\(([^)]*)\)', self.gd)
+        self.assertEqual([float(x) for x in m.group(1).split(",")], [float(x) for x in gd.group(1).split(",")])
+
     def test_m5_look_is_the_s9_lip(self):
         # lip_look "m5" must draw the lips and lids as before M6: the new lip shader terms are off at their defaults
         sh = LIP.read_text(encoding="utf-8")

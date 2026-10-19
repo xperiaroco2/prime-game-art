@@ -46,6 +46,7 @@ import export_glb  # noqa: E402
 from alien_parts import EYES, LID_BEAD  # noqa: E402
 
 CONTACT_MARKER = {"prime_contact": "custom1_x"}
+PART_AO_MARKER = {"prime_part_ao": "color0_r"}  # on alien_lip (the lips and lid domes) once the parts' AO is baked
 PART_AO = {"distance": 0.02, "samples": 64, "floor": 0.3, "smooth": 1}
 LID_SEG_T = 32  # S7: 20 rows across the lid; the rounded corners need more near the poles
 DESIGNS_MOUTH = ("frog", "overbite")
@@ -234,6 +235,9 @@ def bake_parts_ao(body) -> dict:
     for o in bpy.data.objects:
         if o.name in hide0:
             o.hide_render = hide0[o.name]
+    lip = bpy.data.materials["alien_lip"]  # godot/alien/alien.gd takes LIP_LOOK only with this marker
+    for k2, v2 in PART_AO_MARKER.items():
+        lip[k2] = v2
     log("parts ao (min, mean)", json.dumps(rep))
     return rep
 
