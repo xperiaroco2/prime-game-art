@@ -21,6 +21,9 @@ extends Node
 ## Used through preload (a -s script has no global class cache): const AlienRig = preload("res://alien/alien.gd").
 
 const SHADER: Shader = preload("res://alien/alien_hue.gdshader")
+## The hue materials the shader replaces: the skin, and since M3a (art #196) the crest parts' own untextured copy
+## (the skin's material carries the texture set on Body's UV, which the crest parts do not share).
+const HUE_MATERIALS := ["alien_hue", "alien_hue_part"]
 const EYE_SHADER: Shader = preload("res://alien/alien_eye.gdshader")
 const LIP_SHADER: Shader = preload("res://alien/alien_lip.gdshader")
 const LIP := Color(0.82, 0.44, 0.37)  # sRGB: S9, rf2's warmer coral (S5: e2's dusty salmon (0.76, 0.45, 0.40)) (the first test: a glossy (0.86, 0.42, 0.36))
@@ -112,7 +115,7 @@ func setup(root: Node3D, seed: int = 196) -> void:
 		var uses: bool = false
 		for s: int in m.mesh.get_surface_count():
 			var mat: Material = m.mesh.surface_get_material(s)
-			if mat != null and mat.resource_name == "alien_hue":
+			if mat != null and HUE_MATERIALS.has(mat.resource_name):
 				m.set_surface_override_material(s, _material)
 				uses = true
 				if m.name.contains("_lid_"):
