@@ -161,7 +161,9 @@ def setup(a):
     neck = mw @ pb["Neck"].head + Vector((0, 0, 0.05))
     hand = mw @ pb["LeftHand"].head
     hand_c = hand + (mw @ pb["LeftMiddleProximal"].head - hand) * 0.9
-    knee = mw @ pb["LeftLowerLeg"].head if "LeftLowerLeg" in pb else Vector((0.1, 0, 0.5))
+    if "LeftLowerLeg" not in pb:
+        raise SystemExit("review: no LeftLowerLeg bone for the knee shot")
+    knee = mw @ pb["LeftLowerLeg"].head
     cheek = [o for o in eyes if o.name.endswith("_L")]
     cheek_c = (cheek[0].matrix_world.translation if cheek else eye_c) + Vector((0.0, 0.0, -0.02))
     a34 = math.radians(35)
