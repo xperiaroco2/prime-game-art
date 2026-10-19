@@ -285,6 +285,25 @@ class PresetsTest(unittest.TestCase):
         self.assertIn("2026-10-13", doc["status"])
         self.assertEqual(doc["environment"]["ambient_light_energy"], _showroom.variants("ssao")[0]["ambient_energy"])
 
+    def test_the_lights_are_light_d(self) -> None:
+        """The engineer's light D (2026-10-19, art #196 comment 6272668389): the key at 3.0, a back rim at 3.0, the
+        fill and the back light as before; each directional light with a position the game and the proofs copy."""
+        doc = _showroom.presets_document()
+        self.assertIn("2026-10-19", doc["status"])
+        lights = doc["lights"]
+        directional = {k: v for k, v in lights.items() if isinstance(v, dict) and v["type"] == "DirectionalLight3D"}
+        self.assertEqual(list(directional), ["key", "fill", "back", "rim"])
+        for name, light in directional.items():
+            self.assertEqual(len(light["at"]), 3, name)
+            self.assertEqual(light["look_at"], [0.0, 0.9, 0.0], name)
+        key, rim = directional["key"], directional["rim"]
+        self.assertEqual((key["at"], key["energy"], key["specular"], key["shadow"]), ([-2.0, 3.2, 3.0], 3.0, 0.6, True))
+        self.assertEqual((directional["fill"]["energy"], directional["back"]["energy"]), (0.12, 0.30))
+        self.assertLess(rim["at"][2], 0.0, "the rim lights from behind")
+        self.assertFalse(rim["shadow"])
+        gd = (common.ROOT / "godot" / "alien" / "second_test.gd").read_text(encoding="utf-8")
+        self.assertIn("LookLights.directional()", gd, "the alien proofs' stage reads the approved lights")
+
     def test_docs_name_the_shadow_filter_levels(self) -> None:
         docs = (common.ROOT / "docs" / "godot.md").read_text(encoding="utf-8")
         for name, preset in _showroom.PRESETS.items():

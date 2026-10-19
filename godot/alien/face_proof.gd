@@ -5,8 +5,8 @@ extends SceneTree
 ##   --path godot -s res://alien/face_proof.gd -- <spec.json>
 ## The spec: {"scene": "res://import/alien_character.glb", "out": "<dir>", "hdri": "<studio .hdr, or empty>"}. The stage
 ## is the approved showroom look's Medium preset (godot/showroom/look_presets.json: AgX at exposure 0.9, the studio
-## sky as ambient (half, the other half a warm colour at 0.12) and reflections, key 2.0 with specular 0.6, fill 0.12,
-## rim 0.3, SSAO, MSAA 2x; the eyes' catch light is the eye shader's own, alien_eye.gdshader). alien.gd drives the
+## sky as ambient (half, the other half a warm colour at 0.12) and reflections, SSAO, MSAA 2x; the lights are
+## look_presets.json's, light D since 2026-10-19: key 3.0 with specular 0.6, fill 0.12, back 0.3, a back rim 3.0; the eyes' catch light is the eye shader's own, alien_eye.gdshader). alien.gd drives the
 ## character; set_face_look("first") shows the first test's materials, "s5" the new ones. Writes into <out>:
 ## compare.png (the four eye/mouth combinations, first test above, S5 below), faces.png (S5, 2 x 2 close),
 ## eyes.png (both eye designs very close, first test and S5), blink.png, talk.png (the six pieces of both mouths),
@@ -15,6 +15,7 @@ extends SceneTree
 
 const Offscreen = preload("res://lib/offscreen.gd")
 const AlienRig = preload("res://alien/alien.gd")
+const LookLights = preload("res://showroom/look_lights.gd")
 const WATCHDOG_S: float = 300.0
 const SHEET_W: int = 1280
 
@@ -95,9 +96,11 @@ func _stage() -> void:
 	var we := WorldEnvironment.new()
 	we.environment = env
 	root.add_child(we)
-	_light(Vector3(-2.0, 3.2, 3.0), 2.0, 0.6, true)
-	_light(Vector3(3.0, 1.6, 2.0), 0.12, 0.0, false)
-	_light(Vector3(0.5, 2.5, -3.0), 0.3, 0.0, false)
+	for l: Dictionary in LookLights.directional():  # light D since 2026-10-19 (art #196)
+		var at: Array = l["at"]
+		var aim: Array = l.get("look_at", [0.0, 0.9, 0.0])
+		var light := _light(Vector3(at[0], at[1], at[2]), l["energy"], l.get("specular", 0.0), l.get("shadow", false))
+		light.look_at_from_position(Vector3(at[0], at[1], at[2]), Vector3(aim[0], aim[1], aim[2]))
 	RenderingServer.directional_soft_shadow_filter_set_quality(RenderingServer.SHADOW_QUALITY_SOFT_MEDIUM)
 	var floor_mesh := MeshInstance3D.new()
 	var plane := PlaneMesh.new()
