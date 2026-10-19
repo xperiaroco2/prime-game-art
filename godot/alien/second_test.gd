@@ -17,7 +17,7 @@ const Offscreen = preload("res://lib/offscreen.gd")
 const AlienRig = preload("res://alien/alien.gd")
 const WATCHDOG_S: float = 280.0
 const SHEET_W: int = 1280
-const ORDER: Array[String] = ["first", "cage", "wrap"]
+var ORDER: Array = ["first", "cage", "wrap"]  # the spec's "order" replaces it (S8: ["s7", "s8"])
 const SPACING: float = 0.95
 
 var _spec: Dictionary
@@ -209,6 +209,8 @@ func _run() -> void:
 	DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
 	await process_frame
 	_out = _spec["out"]
+	if _spec.has("order"):
+		ORDER = _spec["order"]
 	DirAccess.make_dir_recursive_absolute(_out)
 	_stage()
 	var scenes: Dictionary = _spec["scenes"]
