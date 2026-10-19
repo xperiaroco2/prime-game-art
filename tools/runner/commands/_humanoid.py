@@ -47,6 +47,15 @@ def staged_name(stem: str, variant: str) -> str:
 POSES = {"CharacterArmature|Idle": (0, 10, 20, 30), "CharacterArmature|Walk": (0, 8, 16, 24), "CharacterArmature|Wave": (0, 15, 30)}
 
 
+def mapping_for(rig_bones: list[str]) -> dict[str, str]:
+    """The BoneMap for a rig: a rig already named to the contract (the profile's own names, as the alien body of art
+    #196) maps every profile bone it has to itself; any other rig takes the Ultimate Modular map above. Through the UM
+    map a contract-named rig's Chest lands on the profile's UpperChest and Godot adds an UpperChest2."""
+    if all(b in rig_bones for b in ("Hips", "Spine", "Chest", "UpperChest", "LeftUpperLeg")):
+        return {p: p for p in [*BONE_MAP, *PROFILE_ONLY] if p in rig_bones}
+    return dict(BONE_MAP)
+
+
 def bone_map_tres(mapping: dict[str, str] = BONE_MAP) -> str:
     """The BoneMap resource as text (Godot's .tres format): the profile is a SkeletonProfileHumanoid sub-resource."""
     lines = ['[gd_resource type="BoneMap" load_steps=2 format=3]', "",
@@ -88,26 +97,28 @@ def trial(glb: Path, out: Path, contract: dict[str, Any], textured: bool = False
     plain_path = f"res://import/{glb.stem}.glb"
     plain, _ = _godot.inspect(plain_path, out / "plain_poses.json", _request())
     skeleton_path = plain["skeletons"][0]["path"]
-    (_godot.IMPORT_DIR / Path(BONE_MAP_RES).name).write_text(bone_map_tres(), encoding="utf-8", newline="\n")
+    expect = _godot.expectations(glb)
+    rig_bones = expect["bones"]
+    mapping = mapping_for(rig_bones)
+    (_godot.IMPORT_DIR / Path(BONE_MAP_RES).name).write_text(bone_map_tres(mapping), encoding="utf-8", newline="\n")
     staged = {}
     for variant, options in VARIANTS.items():
         node = nodes(skeleton_path)
         node[f"PATH:{skeleton_path}"].update(options)
         staged[variant] = _godot.stage(glb, staged_name(glb.stem, variant), nodes=node, params=_godot.import_params(glb))
     lines = _godot.import_project()
-    renamed = {rig: profile for profile, rig in BONE_MAP.items()}
-    expect = _godot.expectations(glb)
-    rig_bones = expect["bones"]
+    renamed = {rig: profile for profile, rig in mapping.items()}
+    unmatched = [p for p in [*BONE_MAP, *PROFILE_ONLY] if p not in mapping]
     report: dict[str, Any] = {
         "glb": glb.as_posix(),
-        "mapped": {profile: rig for profile, rig in BONE_MAP.items()},
-        "mapped_count": len(BONE_MAP),
+        "mapped": dict(mapping),
+        "mapped_count": len(mapping),
         "rig_bones_unmapped": [b for b in rig_bones if b not in renamed],
-        "profile_bones_without_rig_bone": list(PROFILE_ONLY),
+        "profile_bones_without_rig_bone": unmatched,
         "variants": {},
     }
-    common.say(f"  mapped {len(BONE_MAP)} of the profile's {len(BONE_MAP) + len(PROFILE_ONLY)} bones; rig bones left "
-               f"unmapped: {', '.join(report['rig_bones_unmapped'])}; profile bones without a rig bone: {', '.join(PROFILE_ONLY)}")
+    common.say(f"  mapped {len(mapping)} of the profile's {len(BONE_MAP) + len(PROFILE_ONLY)} bones; rig bones left "
+               f"unmapped: {', '.join(report['rig_bones_unmapped'])}; profile bones without a rig bone: {', '.join(unmatched)}")
     for variant, res_path in staged.items():
         dump, more = _godot.inspect(res_path, out / f"humanoid_{variant}_inspect.json", _request())
         mine = _godot.lines_for(lines, res_path, list(staged.values()))
