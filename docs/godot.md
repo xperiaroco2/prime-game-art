@@ -1164,6 +1164,76 @@ a time, by visibility.
     ```
 
     A full run takes about 2 minutes (one Godot run at a time).
+- **M5, the skin shader on its texture set** (output under `D:/prime-art-raw/review/char/alien-parts-kit/M5/`):
+  - **The kit:** `alien_eyes.py --kit <M3c/export> --out <M5> --eye-images <S9/parts/export> --sss-alpha`: M4's eyes
+    on M3c's kit, so one GLB carries M3c's albedo and ORM, the capped cage's normal map and the M4 eyes. `--sss-alpha`
+    writes `M5/textures/albedo_sss.png`: M3c's albedo RGB unchanged (checked to the bit) with the 2K SSS mask
+    (`alien_skin_sss.png`) upscaled into its alpha, and puts it on `alien_hue`. The material stays opaque (glTF
+    `alphaMode` OPAQUE: viewers ignore the alpha). Blender's exporter copies a PNG file's bytes when one image fills a
+    texture, so the alpha reaches the GLB; the script checks the GLB's PNG colour type and `character.json` gets
+    `note_m5_sss`. `export/alien_character.glb` 37.2 MB, glTF-Validator 0 errors, 1 warning
+    (`NODE_SKINNED_MESH_NON_ROOT`). About 40 s of headless Blender.
+  - **The shader:** `alien_hue.gdshader` `textured` (off by default). `alien.gd` makes a second skin material,
+    `_textured_material()`, for a surface whose imported hue material has an `albedo_texture`. It takes the albedo,
+    the ORM (`roughness_texture`, the same image as `ao_texture`) and the normal texture from the imported
+    `StandardMaterial3D` and sets `SKIN` then `SKIN_TEX`. `skin_material()` returns it; the crests'
+    `alien_hue_part` keeps the procedural path (`procedural_material()`).
+    - Albedo: sRGB, saturation scaled about its luminance (`tex_sat` on the hue, `tex_pale_sat` on the light mask),
+      the hue parts' value by `tex_value`.
+    - AO: the ORM's R into `AO`. `COLOR_0` is not read on this path, so the AO is not doubled (the albedo already
+      carries 0.4 of it). Roughness: the ORM's G plus `roughness_add`.
+    - Normal map: `NORMAL_MAP` at `normal_depth`, times `normal_pale` on the light mask. Godot rebuilds Z, so an
+      RG-compressed import works. No procedural grain on this path.
+    - SSS: `sss + sss_thin * mask` (the albedo's alpha), and a warm transmittance (`transmit`, depth
+      `transmit_depth * mask`).
+    - **Godot divides by `SSS_TRANSMITTANCE_DEPTH`.** A shader that writes any transmittance built-in must write a
+      depth above 0 on every path. The first M5 shader wrote it only in one branch: the other path's depth stayed 0
+      and every skin, textured or not, rendered black (NaN).
+    - **Other hues** (coral, violet) take the procedural path's flat colour (`flat_colour()`, shared by both paths),
+      darkened by 0.4 of the texture's AO as the teal albedo is. They keep the texture's roughness, AO and normal
+      map. Teal takes the texture as is (`distance(hue, tex_hue)` 0).
+    - A re-tint of the teal texture by its luminance was tried and dropped. It drew dark smudges where the texture's
+      blurred accent passed the vertex mask, and grey rings round the knee spots.
+  - **The tuning** (`SKIN_TEX`, chosen on grids in `M5/godot/g1`..`g3`, rf2 first):
+    - Under AgX the texture's teal washed out to a light cyan: `tex_sat` 1.45 and `tex_value` 0.72 give rf2's deeper
+      teal, and `tex_pale_sat` 1.3 its mint.
+    - SKIN's SSS 0.3 and fresnel glow made a waxy, hazy skin with no form. Now the SSS is 0.08, plus 0.4 on the
+      mask's thin parts, the glow is off, and the rim is 0.35.
+    - Specular 0.5 and roughness 0.08 lower: rf2's soft sheen on the dome.
+    - Normal map 0.7, and 0.35 of that on the pale: the creases under the mouth and on the throat read as wrinkles at
+      0.4 m.
+  - **TAA:** `look_presets.json` High and Ultra add `use_taa` on top of MSAA. The lid domes' sheen and the normal
+    map sparkled under MSAA alone. Measured (`m5_shots.gd` "taa", one 1536 x 1536 frame, RTX 4060, GPU ms):
+
+    | Shot (two runs) | MSAA 2x | TAA | MSAA 2x + TAA | FSR 2 (1.0) |
+    |---|---|---|---|---|
+    | Face, 0.4 m | 2.47, 2.46 | 2.70, 2.34 | 3.29, 2.79 | 3.30, 2.94 |
+    | Body, 3 m | 1.58, 1.58 | 1.56, 1.56 | 2.05, 2.04 | 2.26, 2.26 |
+
+    FSR 2 costs more and softens as much as TAA. The Walk clip, rendered under TAA, shows no ghosting at 30 fps. The
+    game's own camera motion is not tested.
+  - **`m5_shots.gd`**, the proof (it extends `hero_shots.gd`; its header lists the modes):
+    - `hero`: the face at rf2's framing;
+    - `turntable`: a 3840 x 1920 sheet with rf2, 8 angles and the hero face;
+    - `close`: the face from 0.4 m (fov 50);
+    - `compare`: before (S9d's procedural kit) | M5 | rf2 or u1;
+    - `grid`: a tuning grid (`grid_view` face or close);
+    - `room`: four characters on the stand at game distance, the camera at 1.6 m, fov 70;
+    - `taa`;
+    - `clips`: every frame of Idle and Walk at 30 fps for `encode_clips.py`, under TAA with spec `taa`.
+
+    Driver: `_godot.stage` the M5 GLB (and S9d's as `before`), `import_project()`, then `_godot.window([... "-s",
+    "res://alien/m5_shots.gd", "--", spec], (1536, 1536), ...)`, as `eye_shots.gd`. The watchdog is 280 s: run the
+    stills and `room,taa,clips` as two runs.
+  - **`godot-check --textured`** on the M5 GLB. It passes the skeleton, the separate parts, the 10 animations (lengths,
+    tracks, motion, loops), the feet at 0, the height (1.806 m), `textured` (17 of 64 surfaces) and 0 import errors.
+    It fails only rules written for the Ultimate Modular characters, as M3a and M4 did:
+    - `parts_skinned`: the crests and eye parts are rigid under the Head;
+    - `facing_plus_z` and `eye_pupils`: no `_eyes` part, and not the UM's bone names;
+    - `normal_maps`: the flipbook mouths and eyeballs have no normal map;
+    - `texture_size`: 4096 px against 2048;
+    - `surfaces_cap`: 64 surfaces against 8;
+    - `pack_floor`: 56 bones and 10 clips against the UM rig's 62 and 24.
 
 ## Findings for later tasks
 
