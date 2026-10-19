@@ -189,10 +189,10 @@ def micro_pore(div, gain: float = 6.0, xp=PY):
 
 
 # The export's image check: the materials that may reference an image in the GLB. The skin carries the texture set on
-# Body's UVMap; the flipbook mouths their atlases. Anything else (as M3a's first export, whose alien_hue_part kept M2's
+# Body's UVMap; the flipbook mouths their atlases; the eyeballs (M4) their 512 px eye image. Anything else (as M3a's first export, whose alien_hue_part kept M2's
 # 4K normal map and sampled it through the crests' own UVs) fails the export stage.
 IMAGE_MATERIALS = ("alien_hue",)
-IMAGE_MATERIAL_PREFIXES = ("alien_mouth_flip_",)
+IMAGE_MATERIAL_PREFIXES = ("alien_mouth_flip_", "alien_eye_")
 
 
 def _texture_refs(o):

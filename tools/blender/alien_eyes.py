@@ -20,6 +20,7 @@ import argparse
 import json
 import math
 import shutil
+import struct
 import sys
 from pathlib import Path
 
@@ -28,6 +29,7 @@ import bmesh
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import alien_eyes_geom as E  # noqa: E402
+import alien_texture_geom as T  # noqa: E402
 import export_glb  # noqa: E402
 from alien_parts import EYES, LID_BEAD  # noqa: E402
 
@@ -47,6 +49,20 @@ def args():
     p.add_argument("--out", required=True, help="the M4 folder; the kit goes into <out>/export")
     p.add_argument("--eye-images", required=True, help="the parts build's export folder (alien_eye_<design>.png)")
     return p.parse_args(argv)
+
+
+def check_images(glb: Path):
+    """M3a's export check on the new GLB: only the skin, the flipbook mouths and the eyeballs (alien_texture_geom's
+    IMAGE_MATERIALS, IMAGE_MATERIAL_PREFIXES) may reference an image; anything else fails the build."""
+    b = glb.read_bytes()
+    n, kind = struct.unpack_from("<I4s", b, 12)
+    if b[:4] != b"glTF" or kind != b"JSON":
+        raise SystemExit(f"{glb}: not a GLB")
+    g = json.loads(b[20:20 + n])
+    bad = T.unexpected_images(g)
+    if bad:
+        raise SystemExit(f"export: images on materials that must have none: {json.dumps(bad)}")
+    log("images per material", json.dumps(T.image_materials(g)))
 
 
 def wet_material():
@@ -158,6 +174,7 @@ def main():
     res = bpy.ops.export_scene.gltf(filepath=str(ex / "alien_character.glb"), **opts)
     if res != {"FINISHED"}:
         raise SystemExit(f"export: {res}")
+    check_images(ex / "alien_character.glb")
     for f in kit.iterdir():
         if f.suffix == ".png":
             shutil.copy2(f, ex / f.name)

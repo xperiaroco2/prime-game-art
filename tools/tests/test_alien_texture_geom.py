@@ -181,6 +181,12 @@ class ImageCheckTest(unittest.TestCase):
         g = self.gltf([{"name": "alien_hue_part", "normalTexture": {"index": 1}}])
         self.assertEqual(G.unexpected_images(g), {"alien_hue_part": ["normal"]})
 
+    def test_eyeballs_carry_their_image(self):  # M4: alien_eye_<design> has S9's 512 px eye image back
+        g = self.gltf([{"name": "alien_eye_bored", "pbrMetallicRoughness": {"baseColorTexture": {"index": 0}}},
+                       {"name": "alien_eye_manic", "pbrMetallicRoughness": {"baseColorTexture": {"index": 0}}},
+                       {"name": "alien_wet", "pbrMetallicRoughness": {"baseColorTexture": {"index": 0}}}])
+        self.assertEqual(G.unexpected_images(g), {"alien_wet": ["albedo"]})
+
     def test_extension_textures_count(self):
         g = self.gltf([{"name": "alien_lip", "extensions": {"KHR_materials_sheen": {"sheenColorTexture": {"index": 0}}}}])
         self.assertEqual(G.unexpected_images(g), {"alien_lip": ["albedo"]})
