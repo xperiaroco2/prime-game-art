@@ -16,6 +16,10 @@ extends Node
 ##   shading toward the corners and under the lids, a dark iris and pupil, one soft catch light), matte warm lips, a
 ##   dark warm mouth cup, ivory teeth, and the lid shells in the lips' material (the eye sheets eb1 and em1: coral
 ##   skin domes the colour of the lips); "first" keeps the first test's imported materials (for before/after sheets).
+## - M4, the modern eyes (art #196): alien_eye.gdshader draws a cornea (refraction, iris depth, a view-space catch
+##   light), the lids' contact shadow and the white's falloff per pixel; each lid's wet line (the strip
+##   eye_<design>_wet_<lid>_<side>, material alien_wet, from tools/blender/alien_eyes.py) takes alien_wet.gdshader, casts
+##   no shadow and fades out as the lids close (instance uniform `open`, set with the lids).
 ## - set_mouth_mode("3d"|"flip"): the replacement pieces or the flipbook test's face shells (S6); since S6 the overbite
 ##   pieces hold their own teeth.
 ## Used through preload (a -s script has no global class cache): const AlienRig = preload("res://alien/alien.gd").
@@ -27,6 +31,8 @@ const SHADER: Shader = preload("res://alien/alien_hue.gdshader")
 const HUE_MATERIALS := ["alien_hue", "alien_hue_part"]
 const EYE_SHADER: Shader = preload("res://alien/alien_eye.gdshader")
 const LIP_SHADER: Shader = preload("res://alien/alien_lip.gdshader")
+const WET_SHADER: Shader = preload("res://alien/alien_wet.gdshader")
+const WET_OPEN_DEG := Vector2(6.0, 16.0)  # M4: the wet lines fade out as the gap between the lid edges closes (degrees)
 const LIP := Color(0.82, 0.44, 0.37)  # sRGB: S9, rf2's warmer coral (S5: e2's dusty salmon (0.76, 0.45, 0.40)) (the first test: a glossy (0.86, 0.42, 0.36))
 const FACE := {  # sRGB colour, roughness, specular: the stage-1 face kit's (faces/clay_kit.json: lip tint on the skin,
 	# cavity (0.05, 0.012, 0.02) and teeth (0.92, 0.9, 0.8) linear, teeth roughness 0.28), soft-matte for the alien
@@ -43,9 +49,14 @@ const SKIN := {
 }
 const LIP_LOOK := {"sheen": 0.08, "sheen_roughness": 0.7, "grain": 0.05}
 const EYE_LOOK := {  # alien_eye.gdshader's per-design uniforms (angles from the pupil axis, degrees; colours sRGB)
-	"bored": {"iris_deg": 25.0, "pupil_deg": 11.5, "iris": Color(0.20, 0.12, 0.08), "catch_at_deg": Vector2(6.0, -2.0),
-		"catch_deg": 2.5, "catch_soft_deg": 0.4, "catch_energy": 2.2},  # S9: below the rest lid's edge, crisp (rf2)
-	"manic": {"iris_deg": 0.0, "pupil_deg": 12.0, "iris": Color(0.05, 0.04, 0.05), "catch_at_deg": Vector2(4.5, 4.5)},
+	"bored": {"limbus_deg": 27.0, "iris_deg": 25.0, "pupil_deg": 11.5, "iris": Color(0.20, 0.12, 0.08),
+		"catch_at_deg": Vector2(6.0, -2.0),
+		"catch_deg": 2.5, "catch_soft_deg": 0.4, "catch_energy": 2.2,  # S9: below the rest lid's edge, crisp (rf2)
+		"catch_anchor_deg": Vector2(5.0, -10.0), "catch_dir": Vector3(-0.45, -0.25, 1.0)},  # M4: under the rim's edge
+	"manic": {"limbus_deg": 21.0, "iris_deg": 0.0, "pupil_deg": 12.0, "iris": Color(0.05, 0.04, 0.05),
+		"catch_at_deg": Vector2(4.5, 4.5),
+		"catch_anchor_deg": Vector2(4.5, 4.5), "catch_dir": Vector3(-0.45, 0.12, 1.0),  # M4: up and left (S9's place)
+		"cornea_normal": 0.15, "limbus_soft_deg": 8.0},  # M4: no ring round the dot pupil (the cornea's edge on the white)
 }
 ## The eyeballs' rest look: each ball turned inward about its socket's up axis (set absolutely, so a GLB whose balls
 ## already carry it is unchanged): the sockets' 8 degrees outward (S2a's sphere fit) undone, plus 3.5 toward each
@@ -94,6 +105,7 @@ var _lid_material: Material
 var _face_surfaces: Array = []  # [MeshInstance3D, surface, imported material name]
 var _lid_surfaces: Array = []  # [MeshInstance3D, surface]
 var _face_materials: Dictionary = {}  # imported name -> the S5 material
+var _wet_nodes: Array[GeometryInstance3D] = []  # M4: the lids' wet lines
 var _rng := RandomNumberGenerator.new()
 var _blink_t: float = -1.0  # ms into the current blink, -1 when not blinking
 var _next_blink_s: float = 3.0
@@ -121,8 +133,12 @@ func setup(root: Node3D, seed: int = 196) -> void:
 				uses = true
 				if m.name.contains("_lid_"):
 					_lid_surfaces.append([m, s])
-			elif mat != null and (FACE.has(mat.resource_name) or mat.resource_name.begins_with("alien_eye_")):
+			elif mat != null and (FACE.has(mat.resource_name) or mat.resource_name.begins_with("alien_eye_")
+					or mat.resource_name == "alien_wet"):
 				_face_surfaces.append([m, s, mat.resource_name])
+				if mat.resource_name == "alien_wet" and not _wet_nodes.has(m):
+					m.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+					_wet_nodes.append(m)
 		if uses:
 			_hue_meshes.append(m)
 	_make_face_materials()
@@ -156,6 +172,10 @@ func _make_face_materials() -> void:
 		m.diffuse_mode = BaseMaterial3D.DIFFUSE_LAMBERT_WRAP
 		m.cull_mode = BaseMaterial3D.CULL_DISABLED  # as the imported (double-sided) ones: culled, the inner cup vanished
 		_face_materials[name] = m
+	var w := ShaderMaterial.new()
+	w.shader = WET_SHADER
+	w.resource_name = "alien_wet"
+	_face_materials["alien_wet"] = w
 	_lid_material = _face_materials["alien_lip"]  # the eye sheets (eb1, em1): the lids are soft domes in the lips' colour
 	for design: String in EYE_LOOK:
 		var e := ShaderMaterial.new()
@@ -233,6 +253,11 @@ func _apply_lids(upper_deg: float, lower_deg: float) -> void:
 			ball.set_instance_shader_parameter("lower_edge_deg", -lower_deg)
 			var aim: float = aim_in_deg if face_look == "s5" else 0.0  # the first test: unturned
 			ball.rotation = Vector3(0, deg_to_rad(-aim if side == "L" else aim), 0)
+		var open: float = smoothstep(WET_OPEN_DEG.x, WET_OPEN_DEG.y, lower_deg - upper_deg)  # the edges' gap
+		for lid: String in ["upper", "lower"]:
+			var wet := node("eye_%s_wet_%s_%s" % [eyes, lid, side]) as GeometryInstance3D
+			if wet != null:
+				wet.set_instance_shader_parameter("open", open)
 
 
 ## The lids at t ms into a blink (0 = the lid state, BLINK_MS close, hold, open): returns false once it is over.
