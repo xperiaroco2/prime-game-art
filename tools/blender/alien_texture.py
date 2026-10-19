@@ -62,7 +62,7 @@ BAKE = {"normal_samples": 8, "ao_samples": 64, "ao_dist": 0.05, "margin": 16, "a
 NOISE = {"blotch": (9.0, 2.0), "hue": (3.5, 1.0), "fine": (350.0, 1.0)}  # (scale per m, detail): about 11 cm, 29 cm, 3 mm
 FIELDS = ("a", "b", "c", "d", "e")
 LIGHT_SMOOTH = 8  # smooth_light's passes
-SOCKET_MM = 14.0  # the eye socket region's reach past the eye parts' box (M3c's contact AO)
+SOCKET_MM = 14.0  # the eye socket region's reach past the eye parts' box, full to half of it (M3c's contact AO)
 PART_MATERIAL = "alien_hue_part"  # godot/alien/alien.gd HUE_MATERIALS
 CROPS_1K = ((340, 60), (880, 30), (745, 525), (945, 800), (300, 745))  # M2's web artefacts and the nostrils (1k px)
 
@@ -404,15 +404,17 @@ def region_attrs(body):
     deep = np.clip(0.6 * ss(1.50, 1.85, z) + 1.0 * ss(-0.3, 0.9, nr[:, 1]) * ss(1.0, 1.4, z), 0, 1)
     face = ss(1.38, 1.50, z)
     light = smooth_light(body, head_w + group_weights(body, {"Neck": 1.0}))
-    # the eye sockets (M3c): the skin within about SOCKET_MM of each eye's parts (ball and lids), for the contact AO
+    # the eye sockets (M3c): the skin within SOCKET_MM of each eye's parts' box (ball and lids), for the contact AO:
+    # the distance to the box, full within half of SOCKET_MM, none past it (an ellipsoid round the box reached
+    # less far at the box's corners, the outer lid corners)
     socket = np.zeros(len(co))
     for side in ("L", "R"):
         boxes = [bbox(o) for o in bpy.data.objects if o.type == "MESH" and o.name.startswith("eye_bored_")
                  and o.name.endswith(f"_{side}")]
         lo, hi = np.min([b[0] for b in boxes], 0), np.max([b[1] for b in boxes], 0)
-        c, h = (lo + hi) / 2, (hi - lo) / 2 + SOCKET_MM / 1000.0
-        ds = np.sqrt((((co - c) / h) ** 2).sum(1))
-        socket = np.maximum(socket, 1 - ss(0.75, 1.0, ds))
+        c, half = (lo + hi) / 2, (hi - lo) / 2
+        d = np.linalg.norm(np.maximum(np.abs(co - c) - half, 0.0), axis=1)
+        socket = np.maximum(socket, 1 - ss(0.5 * SOCKET_MM, SOCKET_MM, d * 1000.0))
     vals = {"f_tzone": tzone, "f_mouth": mouth, "f_flush": flush, "f_warm": warm, "f_deep": deep, "f_face": face,
             "f_light": light, "f_socket": socket}
     for k, v in vals.items():

@@ -1078,7 +1078,8 @@ a time, by visibility.
     the blurred mask, 0.85 at its peak, its chroma kept 0.6 through the edge (`keep_chroma()`: teal and coral mixed
     half and half are a dusty grey). The teal (`hue_sat` 1.15) and the dome's depth are M3a's.
   - The fields gained `socket` (in pass `e`, where M3a had a constant): the skin within 14 mm (`SOCKET_MM`) of each
-    eye's parts' box.
+    eye's parts' box, by the distance to the box (full within 7 mm; an ellipsoid round the box reached less far at
+    its corners, the outer lid corners).
   - Chosen on two grids, rf2 in the first column (`M3c/variants/g1`: the pale's hue, the AO, the accent; `g2`: the
     roughness 0.66 against 0.72; `grid.json` names the columns). A cooler pale (blue above red) read cyan, a creamier
     one yellow again; 0.72 read flat and chalky beside rf2's soft sheen; a blur of 24 texels with the full edge erased
