@@ -56,7 +56,7 @@ class ColourTest(unittest.TestCase):
 
 class AlbedoTest(unittest.TestCase):
     def test_flat_inputs_give_the_kit_colours(self):
-        s = dict(G.TEX, hue_sat=1.0, pale_sat=1.0)
+        s = dict(G.M3A, hue_sat=1.0, pale_sat=1.0)
         teal = G.albedo(field(), s)
         for a, b in zip(teal, G.lin3(G.TEAL_SRGB)):
             self.assertAlmostEqual(a, b, places=6)
@@ -73,10 +73,20 @@ class AlbedoTest(unittest.TestCase):
         self.assertEqual(G.saturate(c, 1.0), c)
 
     def test_accent_edge_is_narrowed(self):
-        flat = G.albedo(field())
-        self.assertEqual(G.albedo(field(accent=0.15)), flat)  # below the edge: no grey fringe
-        full = G.albedo(field(accent=1.0))
+        """M3a: the narrowed edge; below it no grey fringe."""
+        flat = G.albedo(field(), G.M3A)
+        self.assertEqual(G.albedo(field(accent=0.15), G.M3A), flat)
+        full = G.albedo(field(accent=1.0), G.M3A)
         self.assertGreater(full[0], 3 * flat[0])  # coral
+
+    def test_accent_edge_is_soft_and_never_grey(self):
+        """M3c: the kit's whole soft edge, red rising steadily, and the half-way texel keeps more chroma than the plain
+        mix (no dusty band)."""
+        reds = [G.albedo(field(accent=a))[0] for a in (0.0, 0.15, 0.3, 0.5, 0.7, 1.0)]
+        self.assertEqual(reds, sorted(reds))
+        self.assertGreater(reds[1], reds[0])
+        plain = dict(G.TEX, accent_keep=0.0)
+        self.assertGreater(G.chroma(G.albedo(field(accent=0.5))), G.chroma(G.albedo(field(accent=0.5), plain)))
 
     def test_concave_darker_and_bluer_convex_paler(self):
         flat = G.albedo(field())
@@ -112,12 +122,66 @@ class AlbedoTest(unittest.TestCase):
                 self.assertLessEqual(ch, 1.0)
 
 
+class M3cTest(unittest.TestCase):
+    """M3c's tuning helpers: the contact AO, the accent's chroma, the texture's own pale."""
+
+    def test_contact_ao_only_lifts(self):
+        s = dict(G.TEX, contact=0.0, socket_contact=1.0, contact_hi=0.6)
+        for ao in (0.0, 0.2, 0.5, 0.6, 0.9, 1.0):
+            self.assertEqual(G.contact_ao(ao, 0.0, s), ao)  # outside the sockets: unchanged
+            lifted = G.contact_ao(ao, 1.0, s)
+            self.assertGreaterEqual(lifted, ao)
+            self.assertLessEqual(lifted, 1.0)
+        self.assertEqual(G.contact_ao(0.0, 1.0, s), 0.0)  # the contact itself stays dark
+        self.assertEqual(G.contact_ao(0.7, 1.0, s), 1.0)  # the wide ring goes
+        self.assertAlmostEqual(G.contact_ao(0.3, 0.5, s), 0.3 + (0.5 - 0.3) * 0.5)
+
+    def test_contact_everywhere(self):
+        s = dict(G.TEX, contact=0.5, socket_contact=0.0, contact_hi=0.5)
+        self.assertAlmostEqual(G.contact_ao(0.25, 0.0, s), 0.375)
+        s["socket_contact"] = 1.0
+        self.assertAlmostEqual(G.contact_ao(0.25, 1.0, s), 0.5)  # the weights add up to at most 1
+
+    def test_socket_lifts_the_albedo(self):
+        s = dict(G.TEX, socket_contact=1.0, socket_cavity=1.0, contact_hi=0.6)
+        ring = field(ao=0.6, curv=0.4)
+        self.assertGreater(lum(G.albedo(dict(ring, socket=1.0), s)), lum(G.albedo(ring, s)))
+        self.assertAlmostEqual(lum(G.albedo(dict(ring, socket=1.0), s)), lum(G.albedo(field(), s)), places=6)
+
+    def test_keep_chroma(self):
+        teal, coral = G.lin3(G.TEAL_SRGB), G.lin3(G.ACCENT_SRGB)
+        t = 0.5
+        mixed = [G.mix(a, b, t) for a, b in zip(teal, coral)]
+        kept = G.keep_chroma(mixed, teal, coral, t, 1.0)
+        self.assertGreater(G.chroma(kept), G.chroma(mixed))
+        self.assertAlmostEqual(lum(kept), lum(mixed), places=6)  # about its own luminance
+        self.assertLessEqual(G.chroma(kept), 2.0 * G.chroma(mixed) + 1e-9)  # the cap
+        self.assertEqual(G.keep_chroma(mixed, teal, coral, t, 0.0), tuple(mixed))  # k 0: the plain mix
+        same = G.keep_chroma(list(teal), teal, coral, 0.0, 1.0)  # t 0: the skin unchanged
+        for a, b in zip(same, teal):
+            self.assertAlmostEqual(a, b, places=4)
+
+    def test_chosen_pale_is_mint(self):
+        """The chosen pale is greener than red and its blue near its red (rf2's mint), never yellow-olive."""
+        p = G.TEX["pale_srgb"]
+        self.assertGreater(p[1] - p[0], 0.08)
+        self.assertGreaterEqual(p[2], p[0] - 0.02)
+        pale = [G.linear_to_srgb(c) for c in G.albedo(field(light=1.0, face=1.0), G.TEX)]
+        self.assertGreater(pale[1] - pale[0], 0.05)
+
+    def test_chosen_roughness_is_soft(self):
+        """rf2's soft sheen: the skin's base roughness 0.65..0.75 (M3a's 0.52 read as an orange peel at 0.6 m)."""
+        self.assertGreaterEqual(G.TEX["rough"], 0.65)
+        self.assertLessEqual(G.TEX["rough"], 0.75)
+        self.assertGreaterEqual(G.roughness(field(curv=0.7)), 0.6)
+
+
 class RoughnessTest(unittest.TestCase):
     def test_base_and_gloss(self):
         self.assertAlmostEqual(G.roughness(field()), G.TEX["rough"])
         self.assertLess(G.roughness(field(curv=0.8)), G.TEX["rough"])  # glossier convex
-        self.assertLess(G.roughness(field(tzone=1.0)), G.TEX["rough"])
-        self.assertLess(G.roughness(field(mouth=1.0)), G.roughness(field(tzone=1.0)) + 0.05)
+        self.assertLess(G.roughness(field(tzone=1.0), G.M3A), G.M3A["rough"])  # M3c: no T-zone
+        self.assertLess(G.roughness(field(mouth=1.0)), G.TEX["rough"] - 0.1)
         self.assertGreater(G.roughness(field(curv=0.2)), G.TEX["rough"])  # rougher in the creases
 
     def test_clamped(self):
