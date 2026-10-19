@@ -11,6 +11,7 @@ alien_face.ACCENT) and converted here.
 """
 from __future__ import annotations
 
+import json
 import math
 
 TEAL_SRGB = (0.11, 0.48, 0.51)  # alien_assemble.HUES_SRGB["teal"] (S9, sampled against rf2)
@@ -82,6 +83,19 @@ M3C = {
     "accent_edge": (0.0, 0.6), "accent_mix": 0.85, "accent_keep": 0.6, "accent_blur": 32,
 }
 TEX = {**M3A, **M3C}
+# The texture sets alien_texture.py composes and exports (--set, required): each name's settings in full.
+SETS = {"m3a": M3A, "m3c": TEX}
+
+
+def settings_diff(old: dict, new: dict, legacy: dict = M3A) -> list:
+    """The keys whose values differ between a texture folder's recorded settings (old: settings.json's "settings")
+    and new, compared as JSON (tuples as lists). A key missing from old counts as its legacy value: M3a's
+    settings.json predates M3c's keys, whose M3A values reproduce M3a's formulas."""
+    def norm(v):
+        return json.loads(json.dumps(v))
+
+    return sorted(k for k in set(old) | set(new)
+                  if norm(old.get(k, legacy.get(k))) != norm(new.get(k, legacy.get(k))))
 WARM_TINT = (1.45, 1.18, 0.86)  # the thin parts' multiplier at full warmth (linear): more red and green, less blue, so a
 # teal turns a lighter, warmer green-teal and keeps its saturation (a coral mix turned the fingers grey)
 COOL_TINT = (0.80, 0.95, 1.12)  # the cavity's blue shift (linear multiplier direction)

@@ -101,7 +101,7 @@ def m3a_material(body, tex, normal, sss, name="alien_hue_m3a"):
     m3 = orig.copy()
     m3.name = name
     body.data.materials[0] = m3
-    X.texture_skin(body, Path(tex), Path(normal))
+    X.texture_skin(body, Path(tex), Path(normal), name)
     nt = m3.node_tree
     bsdf = next(n for n in nt.nodes if n.type == "BSDF_PRINCIPLED")
     if sss > 0:

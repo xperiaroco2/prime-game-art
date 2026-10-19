@@ -176,6 +176,39 @@ class M3cTest(unittest.TestCase):
         self.assertGreaterEqual(G.roughness(field(curv=0.7)), 0.6)
 
 
+class SetTest(unittest.TestCase):
+    """The texture sets (alien_texture.py --set): M3C only changes M3A's keys, and M3A still gives the shipped M3a
+    set's numbers (golden values from main's alien_texture_geom.TEX at eaf3ee9, PR #233)."""
+
+    GOLDEN = (  # (fields over FLAT, linear albedo, roughness) under M3A
+        ({}, (0.001, 0.2015761, 0.2331089), 0.52),
+        (dict(light=1.0, face=1.0, ao=0.6, flush=0.5), (0.4869792, 0.6075353, 0.3592964), 0.52),
+        (dict(accent=0.5, curv=0.3, hue=0.7, blotch=-0.4), (0.2630038, 0.138205, 0.1386884), 0.58),
+        (dict(deep=0.8, thick=0.2, warm=1.0, curv=0.62, tzone=0.2, mouth=0.1, fine=-0.5, pore=0.4, socket=1.0),
+         (0.0007714, 0.1748964, 0.1949269), 0.4005),
+    )
+
+    def test_m3c_changes_only_m3a_keys(self):
+        self.assertLessEqual(set(G.M3C), set(G.M3A))
+        self.assertEqual(G.SETS["m3a"], G.M3A)
+        self.assertEqual(G.SETS["m3c"], {**G.M3A, **G.M3C})
+
+    def test_m3a_is_pinned(self):
+        for over, alb, rough in self.GOLDEN:
+            f = field(**over)
+            for a, b in zip(G.albedo(f, G.M3A), alb):
+                self.assertAlmostEqual(a, b, places=6)
+            self.assertAlmostEqual(G.roughness(f, G.M3A), rough, places=6)
+
+    def test_settings_diff(self):
+        self.assertEqual(G.settings_diff(G.M3A, dict(G.M3A)), [])
+        recorded = {k: list(v) if isinstance(v, tuple) else v for k, v in G.M3A.items()}  # as settings.json holds it
+        self.assertEqual(G.settings_diff(recorded, G.M3A), [])
+        old = {k: v for k, v in G.M3A.items() if k not in G.M3C}  # M3a's settings.json: before M3c's keys
+        self.assertEqual(G.settings_diff(old, G.M3A), [])
+        self.assertEqual(G.settings_diff(old, G.SETS["m3c"]), sorted(k for k in G.M3C if G.M3C[k] != G.M3A[k]))
+
+
 class RoughnessTest(unittest.TestCase):
     def test_base_and_gloss(self):
         self.assertAlmostEqual(G.roughness(field()), G.TEX["rough"])

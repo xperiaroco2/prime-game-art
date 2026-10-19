@@ -1055,9 +1055,15 @@ a time, by visibility.
     `M3a/sheets/`); `--grid DIR --names a,b --shots ...` renders a tuning grid's variants.
   - To rebuild: each stage in background Blender through the runner, `tools/runner/blender.py`'s
     `run_script("alien_texture.py", ["--stage", <cage|fields|compose|export>, "--out", <M3a>, "--m2", <M2>, ...])`
-    (`--m2` is required; `export` also takes `--kit <the kit's export folder>`), in that order (about 90 s, 32 s,
-    15 s and 10 s: start each in the background with its log under `tools/out/`), then `alien_texture_review.py`
-    the same way; the normal map changes only with the high copy (M2's `--stage high`).
+    (`--m2` is required; `compose` and `export` need `--set m3a`, `export` also takes `--kit <the kit's export
+    folder>`), in that order (about 90 s, 32 s, 15 s and 10 s: start each in the background with its log under
+    `tools/out/`), then `alien_texture_review.py` the same way; the normal map changes only with the high copy (M2's
+    `--stage high`).
+  - `--set m3a|m3c` names the texture set (`alien_texture_geom.SETS`: its settings, `character.json`'s note and the
+    images' names); there is no default. `compose` refuses an `--out` whose `textures/settings.json` records other
+    settings, and `export` one whose textures were composed with other settings than the set's, unless `--force` (a
+    key missing from an older `settings.json` counts as its M3A value). So M3a's recipe can no longer write M3c's
+    look into `M3a/`.
 - **M3c, the texture set tuned toward rf2** (the same scripts; output under
   `D:/prime-art-raw/review/char/alien-parts-kit/M3c/`, M3a's files untouched). Beside rf2 (showroom v26) M3a's face
   read yellow-olive, a dark ring sat round the eye sockets, its roughness of about 0.5 drew M2's pores as a glossy
@@ -1078,7 +1084,7 @@ a time, by visibility.
     one yellow again; 0.72 read flat and chalky beside rf2's soft sheen; a blur of 24 texels with the full edge erased
     the small knuckle spots, hence the edge remap at 0.6.
   - Rebuild: `--stage fields` with `--bake <M3a/bake_cage_r2>` (the capped cage's bake; `--bake` defaults to
-    `<out>/bake`), then `compose`, then `export` with the same `--bake` and `--tag m3c` (character.json's
+    `<out>/bake`), then `compose --set m3c`, then `export --set m3c` with the same `--bake` (character.json's
     `note_m3c_textures`, the normal image's name). `alien_texture_review.py --before-tex <M3a/textures>
     --before-normal <M3a/bake/normal.png> --labels m3a,m3c` puts M3a on the left of the sheets instead of M2's look;
     its shots gained `near` (the face at 3/4 from 0.6 m, 70 mm) and `knee`. About 30 s, 20 s, 10 s and 10 s.

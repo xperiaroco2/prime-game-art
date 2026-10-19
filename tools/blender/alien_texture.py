@@ -4,11 +4,14 @@ rest pose, onto Body's texture UV `UVMap` (glTF TEXCOORD_0); then the kit export
 
 Runs in background Blender through the runner, never by hand and never in a window:
 tools/runner/blender.py's run_script("alien_texture.py", args) with args
-  --stage cage|fields|compose|export --out <M3a> --m2 <M2> [--size 4096] [--settings JSON] \
+  --stage cage|fields|compose|export --out <M3a> --m2 <M2> [--size 4096] [--set m3a|m3c] [--settings JSON] \
       [--variants FILE --vout DIR] [--kit <the kit's export folder: character.json, mouth atlases>] \
-      [--bake <the bake folder, default <out>/bake>] [--tag m3a]
-M3c (the set tuned toward rf2) runs the same stages with --out <M3c> --bake <M3a/bake_cage_r2> (the capped cage's
-bake; fields and export) and --tag m3c (export); alien_texture_geom.TEX is M3a's settings with M3C's over them.
+      [--bake <the bake folder, default <out>/bake>] [--force]
+--set (required by compose and export) names the texture set: its settings (alien_texture_geom.SETS: m3a the shipped
+M3A, m3c M3A with M3C's changes over it), character.json's note and the images' names. compose refuses an --out whose
+textures/settings.json records other settings, and export one whose textures were composed with other settings than
+the set's, unless --force. M3c (the set tuned toward rf2) runs the same stages with --out <M3c> --set m3c and --bake
+<M3a/bake_cage_r2> (the capped cage's bake; fields and export).
 
 Stages (each a separate run, so none blocks long; each reads the one before from --out):
 - `cage` (reads M2/high/alien_high.blend): the explicit bake cage of PR #231's minor 6. Body's copy, each vertex moved
@@ -23,7 +26,7 @@ Stages (each a separate run, so none blocks long; each reads the one before from
   flush, and a coverage channel), plus the pore field from the normal map's divergence. Saved as float16 .npy in
   M3a/fields/ with `fields.json` (each field's stats).
 - `compose`: the textures from the fields by alien_texture_geom (albedo, roughness, the subsurface mask) with the
-  settings TEX (merged with --settings, a JSON object): M3a/textures/ `albedo.png` (sRGB), `orm.png` (R occlusion,
+  settings of --set (merged with --settings, a JSON object): M3a/textures/ `albedo.png` (sRGB), `orm.png` (R occlusion,
   G roughness, B metallic 0; glTF's packing), `sss.png` (grey, half --size), each with a 1k preview; the UV gaps are
   filled by push-pull, so mip levels never bleed black. --variants FILE (a JSON file: an object of name: settings,
   each merged over the settings) writes each variant at --size into --vout/<name>/ instead (the tuning grids).
@@ -70,13 +73,19 @@ def args():
     p.add_argument("--out", required=True)
     p.add_argument("--m2", required=True, help="M2's folder: high/, bake/, export/")
     p.add_argument("--size", type=int, default=4096)
-    p.add_argument("--settings", default="", help="compose: a JSON object merged into alien_texture_geom.TEX")
+    p.add_argument("--set", default="", choices=("", *T.SETS),
+                   help="compose, export (required): the texture set, alien_texture_geom.SETS; also the note's and images' name")
+    p.add_argument("--force", action="store_true",
+                   help="compose, export: overwrite or export an --out whose textures/settings.json records other settings")
+    p.add_argument("--settings", default="", help="compose: a JSON object merged into the set's settings")
     p.add_argument("--variants", default="", help="compose: a JSON file, an object {name: settings} -> --vout/<name>/ at --size")
     p.add_argument("--vout", default="")
     p.add_argument("--kit", default="", help="export: the folder of character.json and the mouth atlases")
     p.add_argument("--bake", default="", help="fields, export: the bake folder (default <out>/bake; M3c: M3a/bake_cage_r2)")
-    p.add_argument("--tag", default="m3a", help="export: the step's name in character.json's note and the images' names")
-    return p.parse_args(sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else [])
+    a = p.parse_args(sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else [])
+    if a.stage in ("compose", "export") and not a.set:
+        p.error(f"--stage {a.stage} needs --set ({'|'.join(T.SETS)}): no texture set is assumed")
+    return a
 
 
 def log(*a):
@@ -632,10 +641,34 @@ def compose(f, cov, s, tdir, size):
     log(f"composed {tdir.name} {size}px {time.time() - t0:.0f}s {json.dumps(st)}")
 
 
-def stage_compose(a, out):
-    base = dict(T.TEX)
+def check_settings(a, tdir, s, what):
+    """Fails unless --force when tdir's settings.json records settings other than s (a missing file passes for
+    compose, fails for export)."""
+    path = tdir / "settings.json"
+    if not path.is_file():
+        if what == "export":
+            raise SystemExit(f"export: no {path}: compose the set first")
+        return
+    diff = T.settings_diff(json.loads(path.read_text(encoding="utf-8"))["settings"], s)
+    if diff and not a.force:
+        raise SystemExit(f"{what}: {path} records other settings than --set {a.set}'s (keys {', '.join(diff)}); "
+                         "pick the set that made it, another --out, or --force")
+    if diff:
+        log(f"{what}: --force over {path} (keys {', '.join(diff)})")
+
+
+def set_settings(a):
+    """--set's settings with --settings merged over them."""
+    base = dict(T.SETS[a.set])
     if a.settings:
         base.update(json.loads(a.settings))
+    return base
+
+
+def stage_compose(a, out):
+    base = set_settings(a)
+    if not a.variants:
+        check_settings(a, out / "textures", base, "compose")
     f, cov = load_fields(out, a.size)
     if a.variants:
         for name, over in json.loads(Path(a.variants).read_text(encoding="utf-8")).items():
@@ -657,7 +690,7 @@ def gltf_output_group():
     return ng
 
 
-def texture_skin(body, tdir, normal_png, tag="m3a"):
+def texture_skin(body, tdir, normal_png, tag):
     """alien_hue takes the texture set; returns the material."""
     mt = body.data.materials[0]
     nt = mt.node_tree
@@ -726,6 +759,7 @@ def check_images(glb):
 
 
 def stage_export(a, out):
+    check_settings(a, out / "textures", set_settings(a), "export")
     m2 = Path(a.m2)
     bpy.ops.wm.open_mainfile(filepath=str(m2 / "export" / "alien_character.blend"))
     body = bpy.data.objects["Body"]
@@ -741,7 +775,7 @@ def stage_export(a, out):
                     slot.material = part
                     parts.append(o.name)
     log("parts on " + PART_MATERIAL, parts)
-    texture_skin(body, out / "textures", bake_dir(a) / "normal.png", a.tag)
+    texture_skin(body, out / "textures", bake_dir(a) / "normal.png", a.set)
     ex = out / "export"
     ex.mkdir(parents=True, exist_ok=True)
     bpy.ops.wm.save_as_mainfile(filepath=str(ex / "alien_character.blend"))
@@ -756,8 +790,8 @@ def stage_export(a, out):
             shutil.copy2(f, ex / f.name)
     shutil.copy2(out / "textures" / "sss.png", ex / "alien_skin_sss.png")
     cj = json.loads((src / "character.json").read_text(encoding="utf-8"))
-    cj[f"note_{a.tag}_textures"] = (
-        f"art #196 {a.tag.upper()}: the skin (Body, material alien_hue) carries an authored 4K texture set on UVMap (TEXCOORD_0): "
+    cj[f"note_{a.set}_textures"] = (
+        f"art #196 {a.set.upper()}: the skin (Body, material alien_hue) carries an authored 4K texture set on UVMap (TEXCOORD_0): "
         "baseColorTexture (sRGB albedo: the teal and pale by the masks with hue drift, blotches, cavity tint, thin-part "
         "warmth, flush and half the AO baked in), metallicRoughnessTexture and occlusionTexture in one ORM image (R "
         "occlusion, G roughness, B metallic 0), normalTexture (the M2 detail normal map rebaked through an explicit "
