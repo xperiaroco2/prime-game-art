@@ -23,7 +23,12 @@ class Failure(Exception):
 
 
 def say(text: str = "") -> None:
-    print(text, flush=True)
+    """Print a line; a character the console cannot encode (Cyrillic on a cp1252 console) prints as `?`."""
+    try:
+        print(text, flush=True)
+    except UnicodeEncodeError:
+        encoding = getattr(sys.stdout, "encoding", None) or "ascii"
+        print(text.encode(encoding, errors="replace").decode(encoding, errors="replace"), flush=True)
 
 
 def ok(text: str) -> None:

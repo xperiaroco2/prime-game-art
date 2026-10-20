@@ -137,3 +137,29 @@ class NativePathTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class SayEncodingTest(unittest.TestCase):
+    """`common.say` on a console that cannot encode a log line (cp1252 and Cyrillic) prints `?` instead of crashing."""
+
+    def test_cyrillic_on_cp1252(self) -> None:
+        from runner import common
+
+        raw = io.BytesIO()
+        console = io.TextIOWrapper(raw, encoding="cp1252", errors="strict", newline="\n")
+        with contextlib.redirect_stdout(console):
+            common.say("очі 80 %, ok")
+        console.flush()
+        self.assertEqual(raw.getvalue().decode("cp1252"), "??? 80 %, ok\n")
+
+    def test_wait_prints_a_cyrillic_tail(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            log = Path(tmp) / "job.log"
+            log.write_text("губи -15 %\nexit=0\n", encoding="utf-8")
+            raw = io.BytesIO()
+            console = io.TextIOWrapper(raw, encoding="cp1252", errors="strict", newline="\n")
+            with contextlib.redirect_stdout(console):
+                code = wait.main(str(log), wait.DEFAULT_MAX, clock=lambda: 0.0, sleep=lambda s: None, now=lambda: 0.0)
+            console.flush()
+        self.assertEqual(code, 0)
+        self.assertIn("???? -15 %", raw.getvalue().decode("cp1252"))
