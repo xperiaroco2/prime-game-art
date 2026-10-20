@@ -26,6 +26,8 @@ and the corners tucked into the skin. A lip shape (LIP_SHAPE, or a variant merge
 - plump (M10): both lips' thickness times this on top of `full` (1: M8b's lips). The depth follows the thickness
   (alien_mouths.DEPTH_A), so the volume grows with it; the bow's dip (a share of the thickness), the corners' taper
   (`corner`, a share of the centre) and the lip line are kept.
+- size (M12): the whole mouth (x and height) as a share of the sheet-measured one, about the face's centre line and
+  the Mouth socket's height (scale_size), so a design measured off its own sheet gets its own size on the fixed mount.
 
 Every edit keeps the lip line where the sheet measured it: the upper lip moves its top edge, the lower lip its bottom
 edge, an open ring its outer edge, so the six speech phases keep their openings and stay consistent.
@@ -63,6 +65,30 @@ def mouth_mount(node: tuple, m: dict = MOUTH_MOUNT) -> tuple:
     return ((0.0, node[1] + m["dy"], node[2] + m["dz"]), m["half_w"], m["half_h"], node[1] + m["front"])
 
 
+# M12 (art #196): the red pout mouth mp1 (D:/prime-art-raw/2026-10-20-alien-face-sheets-2/mp1/), the third mouth
+# design ("pout") on the same mount. Its sheet already draws full lips, so the profile keeps about the sheet's
+# thickness per lip (upper 0.95, lower 1.10: the lower lip the bigger cushion), tapers to fine tucked ends a little
+# rounder than the frog's (corner 0.18, pw 2.0), a soft cupid's bow (0.25; at 0.45 with corner 0.30 the upper lip
+# read as four lumps), M8's section (square 0.85, lean 0.25) and corners that sink a little less (depth_corner 0.35);
+# O, the kiss, keeps half the profile; the bow's side peaks low (bow_peak 0.15: at 0.40 the upper lip had four lumps).
+# size 0.95 and plump 1.15: the pick of M12's 3 x 2 grid (size 0.85 / 0.95 / 1.05 x plump 1.00 / 1.15). ring_corner (0.45): the open rings' corners keep this share of the centre's
+# thickness (E's wide corners at 0.18 were thin flaps the AO painted almost black). size and plump are the grid's pick
+# (docs/godot.md, M12).
+LIP_SHAPE_POUT = {
+    "w": 1.0, "corner": 0.18, "pw": 2.0, "full": 1.0, "upper": 0.95, "lower": 1.10,
+    "bow": 0.25, "bow_w": 0.10, "bow_peak": 0.15, "bow_at": 0.24,
+    "lean": 0.25, "square": 0.85, "depth_corner": 0.35,
+    "ring": {"A": 1.0, "E": 1.0, "O": 0.5}, "ring_corner": 0.45,
+    "width": 1.0, "size": 0.95, "plump": 1.15,
+}
+
+# M12: the third mouth's contact channel. TEXCOORD_4 (bored, manic) and TEXCOORD_5 (frog, overbite) are full, so the
+# pout mouth's skin contact is Body's seventh UV layer, glTF TEXCOORD_6 (u: pout, v: free for the next mouth, mg2),
+# which Godot imports as CUSTOM2 (x pout). Like the other layers, v is stored flipped (the exporter writes 1 - v).
+CONTACT_UV_MOUTH2 = ("contact_mouth2", ("pout", ""))
+CONTACT_MARKER_MOUTH2 = {"prime_contact_mouth2": "custom2_xy"}
+
+
 def merged(over: dict | None) -> dict:
     """LIP_SHAPE with `over` merged on top (the ring weights merged key by key); None or {} is LIP_SHAPE itself."""
     out = dict(LIP_SHAPE)
@@ -84,6 +110,30 @@ def scale_x(world, k: float):
         wx, wz = world(x, y)
         return wx * k, wz
     return scaled
+
+
+def scale_size(world, k: float, z0: float):
+    """world(x_px, y_px) -> (x, z) scaled by k about (0, z0) (the face's centre line, the Mouth socket's height);
+    world itself for k = 1."""
+    if k == 1.0:
+        return world
+
+    def scaled(x, y):
+        wx, wz = world(x, y)
+        return wx * k, z0 + (wz - z0) * k
+    return scaled
+
+
+def merged_pout(over: dict | None = None) -> dict:
+    """LIP_SHAPE_POUT with `over` merged on top (as merged())."""
+    out = dict(LIP_SHAPE_POUT)
+    out["ring"] = dict(LIP_SHAPE_POUT["ring"])
+    for k, v in (over or {}).items():
+        if k == "ring":
+            out["ring"].update(v)
+        else:
+            out[k] = v
+    return out
 
 
 def taper(s: float, p: dict) -> float:
@@ -152,7 +202,8 @@ def ring_width(th: float, hw: float, hc: float, low: float, shape: str, p: dict)
         return hw
     s = math.cos(th)
     k = p["upper"] + (p["lower"] - p["upper"]) * low
-    target = hc * p["full"] * p.get("plump", 1.0) * k * taper(s, p)
+    tp = dict(p, corner=p["ring_corner"]) if "ring_corner" in p else p  # M12: the open ring's own corner
+    target = hc * p["full"] * p.get("plump", 1.0) * k * taper(s, tp)
     up = max(0.0, -math.sin(th))  # the upper lip's top centre: the bow
     target *= 1.0 + bow(s, p) * up * up
     return hw + w * (target - hw)

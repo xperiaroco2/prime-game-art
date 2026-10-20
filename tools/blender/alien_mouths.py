@@ -58,7 +58,8 @@ WIN = (224, 150)  # the mouth window per panel, px (w, h); its top NOSE_GAP px u
 NOSE_GAP = 14
 DEPTH_A, DEPTH_C = 0.80, 0.0012  # a lip tube's depth from its measured half-height, m
 SINK = 0.30  # the share of the depth inside the skin
-PUSH = {"frog": {"O": 0.007}, "overbite": {"O": 0.006, "*": 0.004}}  # the lips' push out of the skin, m (O: pucker)
+PUSH = {"frog": {"O": 0.007}, "overbite": {"O": 0.006, "*": 0.004},
+        "pout": {"O": 0.008, "*": 0.003}}  # the lips' push out of the skin, m (O: pucker; M12: the pout stands out)
 LOWER_BACK = {"overbite": -0.002}  # the overbite's lower lip sits back
 MIN_B = 0.0011  # a lip's smallest half-height (the corners), m
 STATIONS = 41
@@ -76,6 +77,25 @@ SHAPE_SCALE = {"A": 0.72, "E": 0.82, "O": 0.94}  # S8b: A and E narrower (their 
 # side[0] to side[1]) its lift off the skin and its width shrink by up to `keep`, so the far corner at three-quarter
 # view stays inside the cheek's silhouette.
 RING_SIDE = {"side": (0.30, 0.75), "keep": 0.55}
+# M12 (art #196): a design's own open-shape scales (over SHAPE_SCALE) and pixel classes. mp1's red lips have blue about
+# green (B - G -0.02 to -0.05), which the coral sheets' lip class (B - G < -0.035) half called tongue; its tongue
+# is pinker (B - G about 0 to +0.01), so the lip/tongue split moves to -0.008 for it. Its mouth's inside is a dark
+# red that grades into the lips (R 0.44 .. 0.05), which the lip class took as lip (the openings measured half their
+# size, the lips too tall), so in A and E (PALETTE_SHAPE) a lip pixel needs R >= 0.50 (lip_min_r; the lips' own
+# shaded edges are 0.50 .. 0.55). The closed shapes keep 0.30 (their dark crease is no opening), and so does O (its
+# hole's edge drops straight from 0.4 to 0.05; at 0.50 the kiss's hole measured too big). A and E are about as wide as
+# rest on the sheet, so they shrink less than the frog's.
+SHAPE_SCALE_DESIGN = {"pout": {"A": 0.95, "E": 0.90, "O": 0.94}}
+PALETTE = {"pout": {"tongue_bg": -0.008}}
+PALETTE_SHAPE = {"pout": {"A": {"lip_min_r": 0.50}, "E": {"lip_min_r": 0.50}}}
+# M12: where an open ring's dark cup ends, as a share of the lip's half width in from its axis toward the opening (0:
+# under the axis, as S6..M10): the pout's cup stays under the lips' inner half.
+CUP_IN = {"pout": 0.6}
+# M12: an open ring's lips close over the opening toward its corners: at |cos| from CORNER_CLOSE["from"] to "to" the
+# lip moves into the opening by up to "share" of its half width. The sheet's pout E (and A's far corner) runs out in a
+# long thin dark slit between thin rims, which read as black flaps at 0.4 m; closed, the lips meet at the corners. Not
+# O: the kiss keeps its round hole (closed, it read as a knot).
+CORNER_CLOSE = {"pout": {"share": 1.0, "from": 0.55, "to": 0.92, "shapes": ("A", "E")}}
 RING_KEEP = {"centre": 9, "width": 5}  # S7: the open ring's centre line and lip width keep this many harmonics
 NORMAL_SMOOTH = 8  # S7: passes over the skin points and normals under a lip (the decimated head's facets rippled it)
 STATION_SMOOTH = 5  # S7: passes over the closed lips' measured edges (2 left ripples)
@@ -125,13 +145,15 @@ def save_rgba(arr, path, name):
     return im
 
 
-def classes(P):
+def classes(P, tongue_bg=-0.035, lip_min_r=0.30):
+    """Pixel classes of a panel; tongue_bg: the blue-minus-green split between lip (below) and tongue, lip_min_r a
+    lip pixel's least red (M12's pout)."""
     R, Gc, B = P[..., 0], P[..., 1], P[..., 2]
     lum = R + Gc + B
     bg = (np.abs(R - Gc) < 0.04) & (np.abs(Gc - B) < 0.04) & (R > 0.33) & (R < 0.52)
     teeth = (R > 0.68) & (Gc > 0.60) & (B > 0.42) & (R >= Gc - 0.01) & (B < Gc) & (R - Gc < 0.16)
-    lip = (R > Gc + 0.15) & (R > 0.30) & (B - Gc < -0.035) & ~teeth
-    tongue = (R > Gc + 0.08) & (R > 0.20) & (B - Gc >= -0.035) & ~teeth
+    lip = (R > Gc + 0.15) & (R > lip_min_r) & (B - Gc < tongue_bg) & ~teeth
+    tongue = (R > Gc + 0.08) & (R > 0.20) & (B - Gc >= tongue_bg) & ~teeth
     dark = (lum < 0.60) & (R >= Gc - 0.02) & ~lip
     return {"bg": bg, "teeth": teeth, "lip": lip, "tongue": tongue, "dark": dark, "lum": lum}
 
@@ -166,9 +188,9 @@ def runs(mask):
     return out
 
 
-def measure_panel(P):
+def measure_panel(P, design="", shape=""):
     """The mouth's columns in one panel: per x (panel px) the lip edges, the opening, the tongue top, the teeth."""
-    C = classes(P)
+    C = classes(P, **PALETTE.get(design, {}), **PALETTE_SHAPE.get(design, {}).get(shape, {}))
     # the head centre: first a rough one at a mid-face row, then at the nostril row
     l0, r0 = width_at(C["bg"], 250)
     ny, nbox = nostrils(C, (l0 + r0) / 2)
@@ -378,6 +400,7 @@ def build_piece(bvh, m, design, shape, world, mats, coll, origin, lips=None, nam
     back = LOWER_BACK.get(design, 0.0)
     lips_p = LP.LIP_SHAPE_M6C if lips is None else lips
     world = LP.scale_x(world, lips_p.get("width", 1.0))  # M8b: the mouth's width
+    world = LP.scale_size(world, lips_p.get("size", 1.0), origin.translation.z)  # M12: the whole mouth's size
     st = stations(cols)
     b = G.Built()
     mi_lip = b.slot(mats["lip"])
@@ -418,8 +441,12 @@ def build_piece(bvh, m, design, shape, world, mats, coll, origin, lips=None, nam
             radial = tang.cross(n).normalized()  # in the skin's plane, across the ring
             if radial.dot(Vector((mx[k] - world(cx, cy)[0], 0.0, mz[k] - world(cx, cy)[1]))) < 0:
                 radial = -radial
-            c3 = p + n * (a * (1 - SINK) + (push + back * low) * side) + radial * ((hw_k - hw[k]) * side)
-            cup.append((mx[k] + radial.x * (hw_k - hw[k]) * side, mz[k] + radial.z * (hw_k - hw[k]) * side))
+            cc = CORNER_CLOSE.get(design)
+            cc = cc if cc and shape in cc["shapes"] else None
+            close = cc["share"] * hw_k * G.smoothstep(cc["from"], cc["to"], abs(math.cos(th))) if cc else 0.0
+            c3 = p + n * (a * (1 - SINK) + (push + back * low) * side) + radial * ((hw_k - hw[k] - close) * side)
+            ci = (hw_k - hw[k] - close - CUP_IN.get(design, 0.0) * hw_k) * side  # M12: the cup ends inside the lip
+            cup.append((mx[k] + radial.x * ci, mz[k] + radial.z * ci))
             ring = []
             for j in range(RING_SEG):
                 ph = 2 * math.pi * j / RING_SEG
@@ -689,14 +716,19 @@ def overlay(P, m, y0, x0):
     return img
 
 
-def shape_frames(sheet, face_w_m, z_sock, chin_z):
+def shape_scale(design, shape):
+    """An open shape's size against its panel: SHAPE_SCALE, or the design's own (M12)."""
+    return SHAPE_SCALE_DESIGN.get(design, SHAPE_SCALE).get(shape, 1.0)
+
+
+def shape_frames(sheet, face_w_m, z_sock, chin_z, design=""):
     """One design's sheet measured: the six panels (measure_panel) and per shape its sheet-to-head mapping. Returns
     (the panels' measures, the design's report, {shape: {"hc", "ny", "kp", "squeeze", "sx", "world"}}), world(x_px,
     y_px) -> (x, z) in m round the Mouth socket (main's step 3)."""
     ms = []
     for k, shape in enumerate(SHAPES):
         px, py = (k % 3) * PANEL, (k // 3) * PANEL
-        ms.append(measure_panel(sheet[py:py + PANEL, px:px + PANEL]))
+        ms.append(measure_panel(sheet[py:py + PANEL, px:px + PANEL], design, shape))
     r0 = ms[0]
     xs = sorted(r0["cols"])
     seam_rows = [(r0["cols"][x]["bot_u"] + r0["cols"][x]["top_l"]) / 2 for x in xs if abs(x - r0["hc"]) < 30]
@@ -709,7 +741,7 @@ def shape_frames(sheet, face_w_m, z_sock, chin_z):
     frames = {}
     for k, shape in enumerate(SHAPES):
         m = ms[k]
-        kp = K * max(0.94, min(1.06, r0["face_w_nose"] / m["face_w_nose"])) * SHAPE_SCALE.get(shape, 1.0)
+        kp = K * max(0.94, min(1.06, r0["face_w_nose"] / m["face_w_nose"])) * shape_scale(design, shape)
         hc, ny = m["hc"], m["ny"]
         seam = ny + off
         low = max(r["bot_l"] for r in m["cols"].values()) + 0.5
@@ -768,7 +800,7 @@ def main():
     rep["lips"] = lips
     for design in ("frog", "overbite"):
         sheet = load_rgb(getattr(a, design))
-        ms, drep, frames = shape_frames(sheet, face_w_m, z_sock, chin_z)
+        ms, drep, frames = shape_frames(sheet, face_w_m, z_sock, chin_z, design)
         atlas = np.zeros((WIN[1] * 2, WIN[0] * 3, 4), np.float32)
         flip_rects, flip_wins, worlds = {}, {}, {}
         for k, shape in enumerate(SHAPES):
