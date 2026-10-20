@@ -58,7 +58,7 @@ import alien_texture_geom as T  # noqa: E402
 import export_glb  # noqa: E402
 
 UV_LAYER = "UVMap"
-SHOWN = ("eye_bored_", "mouth_frog_rest")  # alien_detail.SHOWN: the default face, in the AO bake
+SHOWN = ("eye_bored_",)  # alien_detail.SHOWN: the default eyes, in the AO bake (M7: no mouth piece)
 BAKE = {"normal_samples": 8, "ao_samples": 64, "ao_dist": 0.05, "margin": 16, "aux": 2048}  # alien_detail.BAKE's
 NOISE = {"blotch": (9.0, 2.0), "hue": (3.5, 1.0), "fine": (350.0, 1.0)}  # (scale per m, detail): about 11 cm, 29 cm, 3 mm
 FIELDS = ("a", "b", "c", "d", "e")

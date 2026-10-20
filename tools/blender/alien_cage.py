@@ -179,6 +179,13 @@ FOOT_X = 0.117
 # S8b: a fourth, small ring closes each toe in a dome (S7's flat cap on the third read boxy from the side)
 TOE = [(0.014, 1.04, 1.0, 0.0), (0.028, 1.0, 0.95, 0.002), (0.038, 0.84, 0.80, 0.004), (0.045, 0.48, 0.46, 0.006)]
 TOE_MID = 0.006
+# M7 (art #196): the engineer found the digits "like sausages": a little longer and slimmer, chosen on a 3 x 3 grid
+# (length x thickness; `--digits JSON` sets these names for a variant). THUMB_R0 and the toes' first ring keep the
+# root's size (the palm's quad, the foot's), so the slimming starts past the root and the roots do not fold.
+THUMB_R0 = 0.0215  # the thumb's root rings' radius (S9's THUMB_R)
+TOE_LEN = 1.0  # TOE's forward steps times this
+TOE_THICK = 1.0  # TOE's width and height scales times this (the first ring by half as much)
+DIGITS = ("FINGER_K", "FINGER_R", "TIP_BACK", "THUMB_R", "THUMB_LEN", "TOE_LEN", "TOE_THICK", "TOE_MID")
 SUBDIV = 2
 # The trunk's fit: which of each ring's numbers are corrected against u1 (the arm hole's rings only their depth).
 FIT = {"hip": ("a", "yf", "yb"), "belly": ("a", "yf", "yb"), "navel": ("a", "yf", "yb"),
@@ -236,6 +243,27 @@ def tube(bm, base, path, half, out):
             bm.faces.new((last[j], last[(j + 1) % 4], ring[(j + 1) % 4], ring[j]))
         last = ring
     bm.faces.new(last)
+
+
+def thumb_thin(t):
+    """M7: a thumb ring's radius factor at curve parameter t: 1 (THUMB_R0) at the root, THUMB_R / THUMB_R0 from
+    t 0.56 on, a smoothstep between (from t 0.2)."""
+    s = min(max((t - 0.2) / 0.36, 0.0), 1.0)
+    return 1.0 + (THUMB_R / THUMB_R0 - 1.0) * s * s * (3 - 2 * s)
+
+
+def toe_ring(i, fwd, sw, sh):
+    """M7: TOE's ring i scaled by TOE_LEN (forward) and TOE_THICK (width, height; the first ring by half)."""
+    k = 1.0 + (TOE_THICK - 1.0) * (0.5 if i == 0 else 1.0)
+    return fwd * TOE_LEN, sw * k, sh * k
+
+
+def set_digits(spec):
+    """M7: a variant's digit settings ({name: value}, names from DIGITS) over the module's."""
+    bad = set(spec) - set(DIGITS)
+    if bad:
+        raise SystemExit(f"--digits: unknown {sorted(bad)}; known {DIGITS}")
+    globals().update({k: float(v) for k, v in spec.items()})
 
 
 def build_hand(bm, wrist, bones):
@@ -298,8 +326,10 @@ def build_hand(bm, wrist, bones):
     for t, sc, w in THUMB_RINGS:
         c = q0 * (1 - t) ** 2 + q1 * 2 * t * (1 - t) + q2 * t * t
         d = ((q1 - q0) * 2 * (1 - t) + (q2 - q1) * 2 * t).normalized()
-        pts.append((c, d, sc, {names[k]: v for k, v in w.items()}))
-    tube(bm, base, pts, THUMB_R / 0.93, out)
+        k = thumb_thin(t)  # M7: the root keeps THUMB_R0, the rest THUMB_R
+        sc = (sc[0] * k, sc[1] * k) if isinstance(sc, tuple) else sc * k
+        pts.append((c, d, sc, {names[k_]: v for k_, v in w.items()}))
+    tube(bm, base, pts, THUMB_R0 / 0.93, out)
     for v, w in list(out.items()):  # HAND_W's "Hand" -> LeftHand
         out[v] = {(k if k.startswith("Left") else "Left" + k): x for k, x in w.items()}
     return out
@@ -402,8 +432,9 @@ def build_cage(sole_drop, trunk, bones=None):
         base = [top[i], top[i + 1], bot[i + 1], bot[i]]
         cen = sum((p.co for p in base), Vector()) / 4
         last = base
-        for fwd, sw, sh, drop in TOE:
-            f = fwd + (TOE_MID * fwd / TOE[-1][0] if i == 1 else 0.0)
+        for r, (fwd, sw, sh, drop) in enumerate(TOE):
+            fwd, sw, sh = toe_ring(r, fwd, sw, sh)
+            f = fwd + (TOE_MID * fwd / (TOE[-1][0] * TOE_LEN) if i == 1 else 0.0)
             ring = []
             for p in base:
                 d = p.co - cen
@@ -660,8 +691,11 @@ def main():
     p.add_argument("--ring", required=True)
     p.add_argument("--out", required=True)
     p.add_argument("--target", help="S4b: a body shape (GLB) the cage is shrink-wrapped onto before subdividing")
+    p.add_argument("--digits", default="", help="M7: JSON {name: value} over DIGITS (a variant grid's setting)")
     args = p.parse_args(sys.argv[sys.argv.index("--") + 1:])
-    report = {"src": args.src, "target": args.target}
+    if args.digits:
+        set_digits(json.loads(args.digits))
+    report = {"src": args.src, "target": args.target, "digits": {k: globals()[k] for k in DIGITS}}
     with open(args.ring, encoding="utf-8") as fh:
         ring = G.densify_ring(json.load(fh))  # S8b: 48 vertices, one to one with the body's end
     bpy.ops.wm.open_mainfile(filepath=args.src)
