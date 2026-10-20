@@ -12,14 +12,16 @@ model's amendment of 2026-10-08). Agents write everything else, verify it from t
 
 ## Rules
 - **Paid services and downloads.** Three standing permissions from the engineer need no separate yes:
-  - Meshy generation within the plan's credits (2026-10-03), for 3D, rigging, retexture and motion;
+  - Meshy generation within the plan's credits (2026-10-03);
   - free downloads from official sources (2026-10-03);
-  - OpenAI image generation (`gpt-image-2.5-sunburst`; medium for exploration and variants, high for focused finals)
-    within the batch's dollar cap, from `OPENAI_API_KEY` (2026-10-20, #196 and xperiaroco2/prime-game#1095;
-    `docs/openai-images.md`).
+  - OpenAI image generation with `gpt-image-2.5-sunburst` from `OPENAI_API_KEY`, within a batch's `cost_cap_usd`:
+    medium for exploration and many variants, high for focused work on one piece (2026-10-20,
+    [#196, comment 6291187194](https://github.com/xperiaroco2/prime-game-art/issues/196#issuecomment-6291187194);
+    xperiaroco2/prime-game#1095; `docs/openai-images.md`).
 
   Every Meshy or OpenAI batch still has a batch file with its `approval_ref`, and the spend goes into the plan issue's
   reports. These still need the engineer's yes: purchases, subscriptions, paid generation beyond the plan's credits,
+  OpenAI image generation beyond the prepaid balance he funds, on another model, or above a batch's `cost_cap_usd`,
   generation on any other paid service, any other download (mirrors, re-uploads, unofficial sources), and
   installing anything. Reading web documentation is fine.
 - **No Godot or Blender window on screen.**

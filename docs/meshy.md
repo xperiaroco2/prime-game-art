@@ -13,7 +13,7 @@ retexture review); tests: `tools/tests/test_meshy_*.py` (a fake transport, no ne
 
 The engineer's decision of 2026-10-20 (#196, comment 6291187194; xperiaroco2/prime-game#1095): the art track makes
 **images** through the OpenAI API with `tools/run.py openai-images` (`docs/openai-images.md`), medium quality for
-exploration and variants, high for focused finals, instead of Meshy's `text_to_image` and `image_to_image` (Meshy
+exploration and many variants, high for focused work on one piece, instead of Meshy's `text_to_image` and `image_to_image` (Meshy
 used the same model, `gpt-image-2-5-sunburst`, at about $0.18 an image; OpenAI's medium edit cost $0.015). Meshy
 stays for 3D, rigging, retexture and motion. The image kinds below stay working for the batches already run.
 

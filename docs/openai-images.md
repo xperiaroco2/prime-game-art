@@ -13,8 +13,9 @@ The engineer, 2026-10-20 (#196, comment 6291187194; xperiaroco2/prime-game#1095,
 the art track generates images through the OpenAI API instead of Meshy, **medium** quality for exploration and many
 variants, **high** for focused work on one piece. Meshy stays for 3D, rigging, retexture and motion
 (`docs/meshy.md`). It is a standing permission (`CLAUDE.md`, "Paid services and downloads"): a batch needs no
-separate yes when it stays within its `cost_cap_usd`; its spend goes into the plan issue's reports. A batch on another
-OpenAI model, another quality, or past what the engineer expects needs his own yes linked in `approval_ref`.
+separate yes when it stays within its `cost_cap_usd`; its spend goes into the plan issue's reports. OpenAI image
+generation beyond the prepaid balance he funds, on another model, or above a batch's `cost_cap_usd` needs his own yes
+linked in `approval_ref` (and, for another model, a change to `MODELS` in `_openai_batch.py`).
 
 ## Commands
 
@@ -32,7 +33,9 @@ the engineer sees the prepaid balance on the platform's billing page. `raw-backu
 `OPENAI_API_KEY`, read with `common.env` (the process environment, else the Windows user environment; no restart
 after setting it), exactly as `MESHY_API_KEY` is. The key goes only into the `Authorization: Bearer` header of
 api.openai.com calls: never into a request body, `generation.json`, `log.csv`, a log line or an error message
-(every message passes through `redact`, the command redacts a failure once more and lets no traceback out). A
+(every message passes through `redact`, the command redacts a failure once more and lets no traceback out). `redact`
+also scrubs anything shaped like an OpenAI key, `sk-` and 4 or more of `A-Za-z0-9_*-` after a word boundary, so the
+masked form OpenAI's own 401 message shows (`sk-proj-****...abcd`) never reaches a log either. A
 missing key fails with the engineer's steps (top up, create a key, `[Environment]::SetEnvironmentVariable(
 "OPENAI_API_KEY", "<the key>", "User")`). The batch files never name the variable.
 
@@ -49,8 +52,8 @@ missing key fails with the engineer's steps (top up, create a key, `[Environment
 | `plan`, `terms_url`, `licence` | The account (prepaid API balance), the terms (`https://openai.com/policies/services-agreement/`) and the outputs' licence: OpenAI assigns the customer all its rights in the Output (Services Agreement 4.1, read 2026-10-20); copied into every `generation.json` |
 | `cost_cap_usd` | The most dollars the approval covers (a positive number) |
 | `approved_by`, `approved_at`, `approval_ref` | Who, the date, and a `https://github.com/` link (the decision's comment for the standing permission) |
-| `model` | `gpt-image-2.5-sunburst` (precision first, our default) or `gpt-image-2.5-flare` (speed first, the same rates) |
-| `quality` | **Required, no default**: `"medium"` (exploration, variants) or `"high"` (a focused final); an item may set its own |
+| `model` | `gpt-image-2.5-sunburst`, the model the standing permission names (`gpt-image-2.5-flare`, speed first at the same rates, is refused: another model needs the engineer's yes and a code change) |
+| `quality` | **Required, no default**: `"medium"` (exploration and many variants) or `"high"` (focused work on one piece); an item may set its own |
 | `[defaults]` | `size` (required somewhere), `n` (1 to 10, default 1), `background` (`auto`, `opaque`, `transparent`), `moderation` (`auto`, `low`; generations only) |
 | `[variants.<name>]` | A shared `prompt` and any of the `[defaults]` keys |
 | `[[items]]` | `id`, `kind`, `variant`, `prompt`, `images` and any of the `[defaults]` keys or `quality`; any other key is an error |
@@ -73,7 +76,7 @@ character in a prompt.
 
 ## Prices and the estimate
 
-$ per 1M tokens (the model page, read 2026-10-20; Flare the same): text input 5, image input 8, image output 30. Text
+$ per 1M tokens (the model page, read 2026-10-20): text input 5, image input 8, image output 30. Text
 output is not billed; the client prices every output token at the image rate, an upper bound. The cost of a request
 is computed from its answer's `usage` (`input_tokens_details.text_tokens` and `image_tokens`, `output_tokens`).
 
@@ -86,31 +89,47 @@ The docs give no token table for GPT Image 2.5 (only a calculator), so the estim
 | Input, one 380x960 PNG reference | 416 image tokens | the edit test below |
 | Input, a 1,104-character prompt | 278 text tokens | the edit test below |
 
-The estimate per request: output tokens scaled by the pixel count from 1536x1024, times `n`; 1,500 image tokens per
-reference; the prompt's characters / 3; all of it **times 2** (`ESTIMATE_MARGIN`). A medium 1536x1024 edit with one
-reference estimates at about $0.05 and cost $0.015. Change the table in `_openai_batch.py` when a run measures
-something new.
+The estimate per request: output tokens scaled by the pixel count from 1536x1024, times `n`; per reference image
+the measured 416 tokens scaled by its pixel count from 380x960 (364,800 pixels), at least 416; the prompt's
+characters / 3; all of it **times 2** (`ESTIMATE_MARGIN`). A local reference's size is read from its PNG header
+(`IHDR`) or JPEG header (the first start-of-frame segment), locally, without decoding it; a file whose header cannot
+be read counts 1,500 tokens (`UNREAD_INPUT_TOKENS`; the run refuses such a file anyway). A `from` input counts the
+source item's size, once with `pick` and `n` times without it (all its images are sent). A 1536x1024 reference so
+estimates at 1,794 tokens before the margin; whether OpenAI scales large references down first is not measured, so a
+large one may be over-estimated, the safe side. The medium 1536x1024 edit with the one 380x960 reference estimates at
+$0.031 and cost $0.015. Change the table in `_openai_batch.py` when a run measures something new.
 
 ## A run
 
-`openai-images run` checks the approval and the estimate against `cost_cap_usd` before reading the key, then every
-local input file of the items it may send. Then, one item at a time:
+`openai-images run` checks the approval and the estimate against `cost_cap_usd` before reading the key, takes the
+batch's lock (`<raw>/<batch id>/run.lock`, made exclusively: a second run of the same batch is refused, since both
+would check the cap against the same spend; a run that was killed leaves it behind, to be deleted by hand once no run
+of the batch is going), then checks every local input file of the items it may send. Then, one item at a time:
 
 1. A `done` item is skipped; a `failed` one unless `--retry-failed`; an item whose `from` items are not done waits.
-2. **The dollar cap before every request**: what the batch has spent (each answered request's cost, plus the
-   estimate of each request whose answer was lost, which may have been billed) plus this request's estimate must stay
-   within `cost_cap_usd`; else the run stops before sending.
+2. **The dollar cap before every request, and again before each of its HTTP attempts**: what the batch has spent
+   plus this request's estimate must stay within `cost_cap_usd`; else the run stops before sending (`CapReached`).
+   The spend is summed over every `*/generation.json` in the batch folder, an item since renamed or dropped from the
+   batch file included: each priced request's cost, plus the estimate of each request without a price that was not
+   surely refused (lost, unreadable, still out when a run was killed), which may have been billed.
 3. `generation.json` gets the request (fields, a note per image part, never the key) with `outcome: sent` **before**
    the call, so a run killed mid-request leaves it counted as maybe billed (`unsure`).
 4. The call: a 160 s socket timeout per HTTP attempt (under the 170 s a tool call may block; with retries a request
-   can take longer, which is why runs go to the background); HTTP 429 and 5xx are retried 4 times, 2, 4, 8, 16 s apart (`Retry-After` when sent, at most 60 s). A 429 with `insufficient_quota` (no balance)
-   is not retried. A lost connection or a timeout is never resent on its own: the item fails "request unsure", its
-   estimate stays counted, and the run stops; check the usage page, then `--retry-failed`.
+   can take longer, which is why runs go to the background). Resent only when OpenAI surely refused it, as the Meshy
+   client does: a 429 that is not `insufficient_quota` (no balance), or a 503 carrying `Retry-After`; up to 4 times,
+   2, 4, 8, 16 s apart (`Retry-After` when sent, at most 60 s). Everything else that may have been served and billed
+   is **unsure** and never resent: a lost connection, a timeout, any other 5xx (a 502, 504 or 524 from a proxy can
+   come after the image was made) and a 2xx that cannot be read (not JSON, no `data`, no or bad base64). The item
+   fails "request unsure", its estimate stays counted, and the run stops; check the usage page, then
+   `--retry-failed`.
 5. HTTP 400, 404, 409, 413, 415 or 422 (a bad field, `moderation_blocked`) fail that item alone at $0 and the run goes
    on; 401, 403 and the rest stop the run.
-6. Each `data[i].b64_json` is decoded, checked to be a PNG and saved as `image-<i>.png` through a `.part` file;
-   `generation.json` gets the usage, the billed tokens, `cost_usd`, the seconds, `x-request-id`, the answer's fields
-   (without the image data) and the files' sizes, sha256 and pixel sizes; a row goes to `log.csv`.
+6. Each `data[i].b64_json` is decoded, checked to be a PNG and saved as `image-<i>.png` through a `.part` file,
+   before the answer is priced; then `generation.json` gets the usage, the billed tokens, `cost_usd`, the seconds,
+   `x-request-id`, the answer's fields (without the image data) and the files' sizes, sha256 and pixel sizes; a row
+   goes to `log.csv`. An answer without a `usage` block keeps its images and is counted at its estimate
+   (`priced_from: "estimate"`, else `"usage"`). Whatever fails after the request went out, the item never stays
+   `running`: it is marked failed with the request counted as maybe billed.
 
 A medium request takes 20 to 30 s, high about 50 s (the docs: complex prompts up to 2 minutes). A batch of more than
 a few items runs in the background (`> tools/out/<log> 2>&1; echo "exit=$?" >> <log>`, checked with
@@ -131,10 +150,13 @@ estimate, each saved image, the item's tokens, $ and seconds, the batch's spend 
 `inputs` (each reference's `file` or `from`/`pick`, `path`, `media_type`, `bytes`, `sha256`, `provenance`),
 `requests` (per attempt: `sent_at`, `endpoint`, `request`, `estimated_usd`, `estimated_tokens`, `outcome` (`sent`,
 `answered`, `error`, `unsure`), `status`, `finished_at`, `seconds`, `attempts`, `request_id`, `usage`,
-`billed_tokens`, `cost_usd`, `answer`) and `files` (`name`, `bytes`, `sha256`, `width`, `height`).
+`priced_from`, `billed_tokens`, `cost_usd`, `answer`) and `files` (`name`, `bytes`, `sha256`, `width`, `height`).
 
 `log.csv` columns: `time, item, variant, kind, status, model, quality, size, images, input_tokens, output_tokens,
-cost_usd, seconds, request_id, files`.
+cost_usd, seconds, request_id, files`; `images` is the number of reference images the request sends (a `from`
+without `pick` counts all its source's images), `files` the number it saved.
+
+`<raw>/<batch id>/run.lock` exists only while a run holds the batch.
 
 An asset made from these images records (`docs/manifest.md`) `ai_generated = true`, the model as
 `source.model_version` and the requests' `request_id`s as `source.task_ids`, with the batch file as its record.
