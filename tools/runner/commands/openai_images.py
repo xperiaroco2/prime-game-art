@@ -52,7 +52,7 @@ def estimate(batch: batches.Batch) -> int:
     problems: list[str] = []
     for item in batch.items:
         t = item.tokens()
-        common.say(f"  {item.id:12} {item.kind:9} {item.quality:7} {item.size:10} {item.n:>2} {len(item.inputs):>6} "
+        common.say(f"  {item.id:12} {item.kind:9} {item.quality:7} {item.size:10} {item.n:>2} {item.image_count:>6} "
                    f"{t['text_in']:>8} {t['image_in']:>8} {t['image_out']:>7}  ${item.estimate_usd:.4f}")
         for n, inp in enumerate(item.inputs):
             if inp.from_item:
@@ -78,9 +78,8 @@ def estimate(batch: batches.Batch) -> int:
 
 def status(batch: batches.Batch) -> int:
     common.say(f"batch {batch.id} in {runs.batch_dir(batch)}")
-    total = 0.0
     for item in batch.items:
         common.say("  " + runs.item_status(batch, item))
-        total += runs.spent(runs.read_state(batch, item))
-    common.say(f"  ${total:.4f} spent of the cap ${batch.cost_cap_usd:.2f}")
+    common.say(f"  ${runs.batch_spent(batch):.4f} spent of the cap ${batch.cost_cap_usd:.2f} (every generation.json "
+               "in the folder)")
     return 0

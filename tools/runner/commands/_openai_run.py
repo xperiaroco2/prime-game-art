@@ -2,9 +2,10 @@
 
 Every item keeps its state in <raw>/<batch id>/<item id>/generation.json, written before its request (so an
 interrupted run knows a request may have been billed) and after it. A done item is skipped; one row per finished or
-failed item goes to <raw>/<batch id>/log.csv. The dollar cap is checked before every request: what the batch has
-spent (the answers' usage at the model's rates, plus the estimate of every request whose answer was lost) plus this
-request's estimate must stay within `cost_cap_usd`.
+failed item goes to <raw>/<batch id>/log.csv. The dollar cap is checked before every request and again before
+each of its HTTP attempts: what the batch has spent (every generation.json in its folder: the answers' usage at the
+model's rates, plus the estimate of every request whose answer was lost or unreadable) plus this request's estimate
+must stay within `cost_cap_usd`. A lock file in the batch folder refuses a second run of the same batch.
 """
 
 from __future__ import annotations
@@ -13,6 +14,7 @@ import csv
 import datetime as dt
 import hashlib
 import json
+import os
 import struct
 from pathlib import Path
 from typing import Any
@@ -24,6 +26,8 @@ from . import _openai_batch as batches
 
 STATE = "generation.json"
 LOG = "log.csv"
+LOCK = "run.lock"
+CAP_SLACK = 1e-6  # the recorded estimates are rounded to 6 decimals
 LOG_COLUMNS = ("time", "item", "variant", "kind", "status", "model", "quality", "size", "images", "input_tokens",
                "output_tokens", "cost_usd", "seconds", "request_id", "files")
 PNG_MAGIC = b"\x89PNG\r\n\x1a\n"
@@ -58,17 +62,63 @@ def write_state(path: Path, state: dict[str, Any]) -> None:
 
 
 def spent(state: dict[str, Any] | None) -> float:
-    """$ an item has spent or may have spent: its billed requests, and the estimate of every request without an
-    answer (still in flight when the run stopped, or lost), which may have been billed."""
+    """$ an item has spent or may have spent: its billed requests, and the estimate of every request without a
+    price that was not surely refused (still in flight when the run stopped, lost, unreadable, or answered but never
+    priced), which may have been billed."""
     if not state:
         return 0.0
     total = 0.0
     for attempt in state.get("requests", []):
         if attempt.get("cost_usd") is not None:
             total += float(attempt["cost_usd"])
-        elif attempt.get("outcome") in (None, "sent", "unsure"):
+        elif attempt.get("outcome") != "error":
             total += float(attempt.get("estimated_usd") or 0.0)
     return total
+
+
+def batch_spent(batch: batches.Batch, raw: Path | None = None) -> float:
+    """$ the batch has spent or may have spent: every */generation.json in its folder, whether or not its item is
+    still in the batch file (an item renamed or removed after it ran still counts against the cap)."""
+    folder = batch_dir(batch, raw)
+    total = 0.0
+    for path in sorted(folder.glob(f"*/{STATE}")):
+        try:
+            total += spent(json.loads(path.read_text(encoding="utf-8")))
+        except ValueError as exc:
+            raise common.Failure(f"{path} is not valid JSON ({exc}); fix or move it before running again") from None
+    return total
+
+
+class BatchLock:
+    """<raw>/<batch id>/run.lock, made exclusively: a second run of one batch at the same time is refused, since both
+    would check the cap against the same spend. A run that was killed leaves it behind; delete it by hand once no run
+    of the batch is going."""
+
+    def __init__(self, folder: Path, now: str) -> None:
+        self.path = folder / LOCK
+        self.now = now
+        self.held = False
+
+    def __enter__(self) -> "BatchLock":
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        try:
+            fd = os.open(self.path, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+        except FileExistsError:
+            try:
+                holder = self.path.read_text(encoding="utf-8").strip()
+            except OSError:
+                holder = "?"
+            raise common.Failure(f"another run of this batch holds {self.path} ({holder}); nothing was sent. If no "
+                                 "run of it is going (a run that was killed), delete the file and run again") from None
+        with os.fdopen(fd, "w", encoding="utf-8", newline="\n") as f:
+            f.write(f"pid {os.getpid()}, since {self.now}\n")
+        self.held = True
+        return self
+
+    def __exit__(self, *exc: object) -> None:
+        if self.held:
+            self.path.unlink(missing_ok=True)
+            self.held = False
 
 
 def png_size(data: bytes) -> tuple[int, int]:
@@ -91,7 +141,7 @@ class Runner:
         return dt.datetime.fromtimestamp(self.client.clock.now(), dt.UTC).isoformat(timespec="seconds")
 
     def total_spent(self) -> float:
-        return sum(spent(read_state(self.batch, i, self.raw)) for i in self.batch.items)
+        return batch_spent(self.batch, self.raw)
 
     def run(self) -> int:
         problems = batches.approval_problems(self.batch)
@@ -100,13 +150,14 @@ class Runner:
         unknown = self.only - {i.id for i in self.batch.items}
         if unknown:
             raise common.Failure(f"batch {self.batch.id} has no item {', '.join(sorted(unknown))}")
-        self.preflight()
-        failed = 0
-        todo = [i for i in self.batch.items if not self.only or i.id in self.only]
-        for n, item in enumerate(todo, 1):
-            self.log(f"[{n}/{len(todo)}] {item.id}")
-            outcome = self.run_item(item)
-            failed += outcome not in ("done", "skipped")
+        with BatchLock(batch_dir(self.batch, self.raw), self.now()):
+            self.preflight()
+            failed = 0
+            todo = [i for i in self.batch.items if not self.only or i.id in self.only]
+            for n, item in enumerate(todo, 1):
+                self.log(f"[{n}/{len(todo)}] {item.id}")
+                outcome = self.run_item(item)
+                failed += outcome not in ("done", "skipped")
         self.log(f"openai-images run {self.batch.id}: ${self.total_spent():.4f} spent of the cap "
                  f"${self.batch.cost_cap_usd:.2f}; " + ("all items done" if not failed else f"{failed} item(s) not done"))
         return 1 if failed else 0
@@ -177,7 +228,32 @@ class Runner:
         self.log(f"{item.id}: {item.kind} {item.model} {item.quality} {item.size} x{item.n}, estimate ${estimate:.4f}"
                  f" (cap ${self.batch.cost_cap_usd:.2f}, spent ${already:.4f}); waiting for the answer")
         try:
-            answer = self.client.edit(fields, files) if item.kind == "edit" else self.client.generate(payload)
+            return self.send(item, state, attempt, fields, files, payload)
+        except BaseException as exc:  # never leave the item `running`: an unfinished request counts as maybe billed
+            if state.get("status") == "running":
+                if attempt.get("outcome") == "sent":
+                    attempt["outcome"] = "unsure"
+                attempt.setdefault("finished_at", self.now())
+                self.finish(item, state, "failed", f"the run stopped while handling the request ({type(exc).__name__}: "
+                                                   f"{exc}); it may have been billed")
+            raise
+
+    def check_cap(self, item: batches.Item, attempt_no: int) -> None:
+        """Before each HTTP attempt of a request: the batch's spend, this request's estimate included (it is recorded
+        as sent), within the cap."""
+        total = self.total_spent()
+        if total > self.batch.cost_cap_usd + CAP_SLACK:
+            raise api.CapReached(f"{item.id}: before HTTP attempt {attempt_no}, the batch's spend with this request's "
+                                 f"estimate is ${total:.4f}, past the cap of ${self.batch.cost_cap_usd:.2f}; stopped "
+                                 "before sending")
+
+    def send(self, item: batches.Item, state: dict[str, Any], attempt: dict[str, Any],
+             fields: list[tuple[str, str]], files: list[api.FilePart], payload: dict[str, Any]) -> str:
+        folder = item_dir(self.batch, item, self.raw)
+        before = lambda n: self.check_cap(item, n)  # noqa: E731
+        try:
+            answer = (self.client.edit(fields, files, before=before) if item.kind == "edit"
+                      else self.client.generate(payload, before=before))
         except api.OpenAIError as exc:
             attempt["outcome"] = "unsure" if exc.unsure else "error"
             attempt["status"] = exc.status
@@ -191,18 +267,16 @@ class Runner:
                 return self.finish(item, state, "failed", f"refused: {exc}")
             self.finish(item, state, "failed", str(exc))
             raise
-        tokens = batches.usage_tokens(answer.body.get("usage"))
-        cost = batches.cost(tokens, batches.MODELS[item.model])
         attempt.update({"outcome": "answered", "finished_at": self.now(), "seconds": round(answer.seconds, 1),
                         "attempts": answer.attempts, "request_id": answer.request_id, "usage": answer.body.get("usage"),
-                        "billed_tokens": tokens, "cost_usd": round(cost, 6),
                         "answer": {k: v for k, v in answer.body.items() if k != "usage"}})
-        saved = []
-        for n, data in enumerate(answer.images):
+        saved, problem = [], ""
+        for n, data in enumerate(answer.images):  # the paid images first, before anything that could fail
             try:
                 width, height = png_size(data)
             except common.Failure as exc:
-                return self.finish(item, state, "failed", f"image {n}: {exc} (paid ${cost:.4f})")
+                problem = f"image {n}: {exc}"
+                break
             dest = folder / f"image-{n}.png"
             part = dest.with_name(dest.name + ".part")
             part.write_bytes(data)
@@ -211,6 +285,17 @@ class Runner:
                           "width": width, "height": height})
             self.log(f"{item.id}: saved {dest} ({width}x{height}, {len(data)} bytes)")
         state["files"] = saved
+        try:
+            tokens = batches.usage_tokens(answer.body.get("usage"))
+            attempt["priced_from"] = "usage"
+        except common.Failure:  # billed, but the answer does not say for how much: count the estimate
+            tokens = dict(attempt["estimated_tokens"])
+            attempt["priced_from"] = "estimate"
+            self.log(f"{item.id}: the answer has no usage block; counted at the estimate ${attempt['estimated_usd']:.4f}")
+        cost = batches.cost(tokens, batches.MODELS[item.model])
+        attempt.update({"billed_tokens": tokens, "cost_usd": round(cost, 6)})
+        if problem:
+            return self.finish(item, state, "failed", f"{problem} (paid ${cost:.4f})")
         state["cost_usd"] = round(spent(state), 6)
         return self.finish(item, state, "done")
 
@@ -308,7 +393,7 @@ class Runner:
             if new:
                 writer.writerow(LOG_COLUMNS)
             writer.writerow([state["finished_at"], item.id, item.variant, item.kind, state["status"], item.model,
-                             item.quality, item.size, len(item.inputs), usage.get("input_tokens", ""),
+                             item.quality, item.size, item.image_count, usage.get("input_tokens", ""),
                              usage.get("output_tokens", ""), f"{state.get('cost_usd', 0):.6f}",
                              last.get("seconds", ""), last.get("request_id", ""), len(state.get("files", []))])
 
