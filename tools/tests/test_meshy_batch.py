@@ -143,6 +143,8 @@ class RepositoryBatchesTest(unittest.TestCase):
         files = sorted(batches.BATCHES.glob("*.toml"))
         self.assertTrue(files, "batches/ has no batch")
         for path in files:
+            if tomllib.loads(path.read_text(encoding="utf-8")).get("service") in batches.OTHER_SERVICES:
+                continue  # an OpenAI image batch: test_openai_images checks it
             with self.subTest(batch=path.name):
                 batch = batches.load(path)
                 if path.stem.startswith(batches.EXAMPLE_PREFIX):  # an example shows the schema and is never approved
