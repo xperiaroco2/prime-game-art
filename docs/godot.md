@@ -1421,6 +1421,40 @@ a time, by visibility.
   - **For three.js:** GLTFLoader keeps the two layers as the attributes `texcoord_4` (bored, manic) and `texcoord_5`
     (frog, overbite); the shade's field is `max(max(t4.x * pick.x, t4.y * pick.y), max(t5.x * pick.z, t5.y *
     pick.w))` with `pick` 1 on the shown eye design's and mouth's channels (`CONTACT_CHANNEL`).
+- **M8, the lips shaped like lips** (output under `D:/prime-art-raw/review/char/alien-parts-kit/M8/`). The engineer
+  (2026-10-20): the lips were "two sausages, the same thickness end to end"; the sheets (mf1, mo1) and rf2 show each
+  lip narrow at the corners, full in the middle and narrow again.
+  - **The profile** (`tools/blender/alien_lips_geom.py`, plain Python, `LIP_SHAPE`; `LIP_SHAPE_M6C` = `{"w": 0}` is the
+    old lips exactly): along each closed lip (rest, M, small) the half-height is `centre * full * (upper | lower) *
+    taper(s)`, `taper(s) = corner + (1 - corner) * (1 - |s|^pw)` (s from -1 to 1 corner to corner: a pointed lens), the
+    upper lip times 0.82 and the lower 1.12, the upper lip's top edge dipping at the centre by `bow` of its height
+    (a soft bow, two small peaks at s = +-0.2); the lip line (the upper lip's bottom, the lower lip's top) stays where
+    the sheet measured it, so the phases keep their openings. The open rings (A, E, O) take the same profile round
+    the ring with their inner edge (the opening) kept, weighted by `ring` (A 1, E 1, O 0.35: the pucker stays round).
+    The constant depth `DEPTH_C` falls to `depth_corner` (0.25) at the corners, so the ends sink into the skin as
+    points (S7's corner join and tuck still apply). The section (`section()`, `alien_mouths.lip_tube`): a
+    superellipse front (`square` 0.85, a flatter cushion) with its swell moved toward the lip line (`lean` 0.3), so
+    both lips are fullest where they meet and the line reads as a crease. The dark cup of an open ring and the dark
+    between the overbite's teeth end under the new lips' axes (a thin corner no longer bares them).
+  - **`alien_mouths.py`**: `build_piece(..., lips=, name=)` takes the shape; `shape_frames()` and `face_width()` are
+    main's measuring steps as functions; `--lips JSON|m6c`; `main()` runs only as a script. The same sheets, stations
+    and sheet-to-head mapping as S9: rebuilt with `m6c` on M6c's kit every piece is the old one to 0.0 mm.
+  - **`alien_m8.py`** (the kit step): opens a kit (`--kit <M6c/export>`), rebuilds the twelve 3D mouth pieces in place
+    (the same objects, names, parent on the Mouth socket, materials; only the meshes change, so `alien.gd`'s talk and
+    blink logic is untouched; the flipbook shells, the eyes, the Body's mesh and skin AO are not touched), rebakes
+    the mouth pieces' AO (`alien_m6.bake_parts_ao(body, eyes=False, pieces=...)`, the lids' AO kept), recomputes
+    Body's contact channels (`alien_m6.contact_field`: the eye channels come out as before, frog 414/25 and overbite
+    340/91 touched/full vertices against 421/22 and 354/93), exports with M6's options. `--grid SPEC` adds variant
+    pieces `lipvar_<variant>_<design>_<shape>` (the grid kit only). About 25 s (60 s with the grid).
+  - **Chosen on** `M8/grids/g1/grid_a.png`, `grid_b.png` (`m8_shots.gd` mode `grid`: the references, then per variant
+    frog rest from the front and at 3/4 at 0.4 m, 3/4 at 1.2 m, frog A, overbite rest): the M6c lips (c0) and
+    corner {0.35, 0.15} x full {1.0, 1.2} x bow {0.15, 0.30}; the pick is c8 (0.15, 1.2, 0.30): the fine corners and
+    the bow of the sheets, without losing the lips' size at 1.2 m.
+  - **On M6c's skin** the thinner lips bare a dark edge above the upper lip and at the corners: M6c's skin AO was
+    baked with frog rest on the face (M7's finding), so the skin under the old, bigger piece is nearly black. M7's
+    mouth-free AO removes it (`M8/godot/on_m7/`: the same lips on M7's kit, no dark edge).
+  - **`m8_shots.gd`**, the proof (modes `grid`, `phases`: per design a row per shape, the sheet's panel then before
+    and after from the front, at 3/4 and in profile; `talk`; `cmp` as `m6c_shots.gd`).
 
 ## Findings for later tasks
 
