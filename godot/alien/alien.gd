@@ -98,6 +98,7 @@ const SKIN_CONTACT := {"contact": 1.0, "contact_tint": Vector3(0.80, 0.66, 0.62)
 ## M6: LIP_LOOK reads the part's baked AO (COLOR_0), so it applies only to a kit whose imported alien_lip (the lips' and
 ## the lid domes' one material) carries this marker in its glTF extras (tools/blender/alien_m6.py, after the bake).
 const PART_AO_MARKER := {"prime_part_ao": "color0_r"}
+const LIDS_MARKER := "prime_lids"  # M10: alien_lip's extras key with the lids' rim reaches (tools/blender/alien_m6.py)
 ## "m6" (the default): LIP_LOOK and LID_LOOK on a kit with PART_AO_MARKER, LIP_LOOK_M5 on an older kit; "m5":
 ## LIP_LOOK_M5 on both, no contact shade (before/after sheets). Set before setup().
 var lip_look: String = "m6"
@@ -108,14 +109,14 @@ const EYE_LOOK := {  # alien_eye.gdshader's per-design uniforms (angles from the
 		# M4: low left by the pupil, just under the rim with the lids at rest
 		"catch_anchor_deg": Vector2(5.0, -10.0), "catch_dir": Vector3(-0.45, -0.25, 1.0),
 		"limbus_soft_deg": 1.0,  # the cornea's edge outside the iris' soft edge (25 + 0.9 <= 27 - 1)
-		# the rims' reach beyond the lid edges (alien_eyes_geom.rim_reach of the lids slimmed by alien_lids_geom.LIDS,
-		# M9b; S9's full lids reached 4.3 and 2.0)
-		"upper_reach_deg": 2.36, "lower_reach_deg": 1.0},
+		# the rims' reach beyond the lid edges (alien_eyes_geom.rim_reach) of S9's lids; a kit with LIDS_MARKER gives
+		# its own (M10; M9b's slim lids reached 2.36 and 1.0)
+		"upper_reach_deg": 4.3, "lower_reach_deg": 2.0},
 	"manic": {"limbus_deg": 21.0, "iris_deg": 0.0, "pupil_deg": 12.0, "iris": Color(0.05, 0.04, 0.05),
 		"catch_at_deg": Vector2(4.5, 4.5),
 		"catch_anchor_deg": Vector2(4.5, 4.5), "catch_dir": Vector3(-0.45, 0.12, 1.0),  # M4: up and left (S9's place)
 		"cornea_normal": 0.15, "limbus_soft_deg": 8.0,  # M4: no ring round the dot pupil (the cornea's edge on the white)
-		"upper_reach_deg": 2.19, "lower_reach_deg": 0.93},  # M9b's slim lids (S9's: 3.7, 1.8)
+		"upper_reach_deg": 3.7, "lower_reach_deg": 1.8},  # S9's lids (M9b's slim: 2.19, 0.93; LIDS_MARKER)
 }
 ## The eyeballs' rest look: each ball turned inward about its socket's up axis (set absolutely, so a GLB whose balls
 ## already carry it is unchanged): the sockets' 8 degrees outward (S2a's sphere fit) undone, plus 3.5 toward each
@@ -166,6 +167,7 @@ var face_look: String = "s5"
 var _lid_material: Material
 var _face_surfaces: Array = []  # [MeshInstance3D, surface, imported material name]
 var _lid_surfaces: Array = []  # [MeshInstance3D, surface]
+var _lid_reach: Dictionary = {}  # M10: design -> [upper, lower] rim reach (deg) from the kit's LIDS_MARKER
 var _face_materials: Dictionary = {}  # imported name -> the S5 material
 var _wet_nodes: Array[GeometryInstance3D] = []  # M4: the lids' wet lines
 var _rng := RandomNumberGenerator.new()
@@ -202,6 +204,8 @@ func setup(root: Node3D, seed: int = 196) -> void:
 				var key: String = mat.resource_name
 				if key == "alien_lip" and has_marker(mat, PART_AO_MARKER):
 					_part_ao = true
+				if key == "alien_lip":
+					_read_lid_reach(mat)
 				if key == "alien_lip" and m.name.contains("_lid_"):
 					key = "alien_lid"
 				_face_surfaces.append([m, s, key])
@@ -327,7 +331,30 @@ func _make_face_materials() -> void:
 		e.resource_name = "alien_eye_" + design
 		for k: String in EYE_LOOK[design]:
 			e.set_shader_parameter(k, EYE_LOOK[design][k])
+		if _lid_reach.has(design):  # M10: the kit's own lids' rim reaches (LIDS_MARKER)
+			e.set_shader_parameter("upper_reach_deg", float(_lid_reach[design][0]))
+			e.set_shader_parameter("lower_reach_deg", float(_lid_reach[design][1]))
 		_face_materials["alien_eye_" + design] = e
+
+
+## M10 (PR #243's review minor 1): the rims' reaches from alien_lip's LIDS_MARKER (tools/blender/alien_m6.py: a JSON
+## string {"lids": {...}, "reach_deg": {design: [upper, lower]}}); a kit without it keeps EYE_LOOK's (S9's lids).
+func _read_lid_reach(imported: Material) -> void:
+	if imported == null or not imported.has_meta("extras"):
+		return
+	var ex: Variant = imported.get_meta("extras")
+	if not ex is Dictionary or not (ex as Dictionary).has(LIDS_MARKER):
+		return
+	var parsed: Variant = JSON.parse_string(str((ex as Dictionary)[LIDS_MARKER]))
+	if parsed is Dictionary and (parsed as Dictionary).get("reach_deg") is Dictionary:
+		_lid_reach = (parsed as Dictionary)["reach_deg"]
+
+
+## The rim reaches in use for an eye design: [upper, lower] degrees.
+func lid_reach(design: String) -> Array:
+	if _lid_reach.has(design):
+		return _lid_reach[design]
+	return [EYE_LOOK[design]["upper_reach_deg"], EYE_LOOK[design]["lower_reach_deg"]]
 
 
 ## "s5": the new face materials; "first": the first test's imported ones.
