@@ -1561,7 +1561,52 @@ a time, by visibility.
     `alien_texture.py` takes the mount's box (the ball's x `MOUNT_OUT` 1.23), not a design's lids.
   - **`m9_shots.gd`**: `eyes` (a row per kit and design: front and 3/4 at 0.4 m and 1.2 m, spec `e2` and `e2_crops`
     as the first row), `socket` (the left socket close: front, outer side, above, below), `blink`, and m6c's and
-    m7's `designs`, `contact`, `body`.
+    m7's `designs`, `contact`, `body`; spec `eye_views` replaces the four eye views (M9b's lid grid).
+- **M9b, the eyes finished on the merged lips** (brief UPDATE 11; output under
+  `D:/prime-art-raw/review/char/alien-parts-kit/M9/`: the kit `export/`, the intermediates `b/`, M9's first kit kept
+  in `export_m9a/`). Three changes, then the chain once on M8b's lips.
+  - **Slim lid shells** (`alien_lids_geom.LIDS`, `slim`, `set_lids`): a lid keeps its inner radius (the ball's
+    clearance, the wet strip, the blink: the closed upper lid still slides over the lower, its inner radius above the
+    lower's outer) and its thickness (`rho_out - rho_in`) is multiplied by `thin`, its rolled rim's swell (`LID_BEAD`)
+    by `rim`. `alien_m6.py` rebuilds the shells and wet strips with it on a mounted kit (S9's shells on an older kit;
+    `--lids JSON` for a grid); `alien.gd` `EYE_LOOK`'s `*_reach_deg` are the slimmed rims' reach
+    (`alien_eyes_geom.rim_reach`: bored 2.36 / 1.0, manic 2.19 / 0.93 degrees; S9's 4.3 / 2.0 and 3.7 / 1.8).
+    **The grid** (`M9/b/godot/lgrid/lids.png` and `lgrid2/socket.png`, JPEGs `M9/showroom/m9b-lids4.jpg` and
+    `m9b-lids_close.jpg`): S9's domes, thin x rim 0.6 x 0.6, 0.45 x 0.55, 0.45 x 0.8, 0.3 x 0.45, 0.3 x 0.7, both
+    designs, front and 3/4 at 0.4 m and the socket close. **The pick: thin 0.3, rim 0.7**: the upper lid's edge at
+    1.15 ball radii (S9's 1.23), its rim half as thick as S9's, the shell 0.7 mm; the thinnest cells read thinnest,
+    and of those 0.7's roll still shows as a soft ring round the manic eye as in e2's fourth head, where 0.45 left a
+    hard edge.
+  - **The pale round the eye** (the teal band on M9's socket slope): the mount had pulled the vertices carrying the
+    crown's teal (light 0 in the `masks` UV, once hidden under S9's big lids) down beside the smaller eye, and on the
+    slope, which faces down, they shaded to a dark band like heavy eye shadow. `alien_socket.py` (`raise_light`) now
+    raises the `masks` light, never lowers it, to `alien_lids_geom.eye_light`: full within `SOCKET` `light_in` (1.4
+    new ball radii) of the new centre, none past `light_out` (1.95), on skin whose normal faces the socket's way
+    (cosine from -0.3, full at 0.4: the temples and the head's sides keep their teal). The texture's pale and `deep`,
+    and Godot's `UV2.x`, follow. The first try (1.6 / 2.3, `M9/b/godot/try1/`) pushed the crown far up and laid the
+    slope's ripples bare: the warp packs the old socket's skin into a narrower slope, and its undulations showed on
+    the pale as two or three arcs above each eye. So `alien_socket.py` (`smooth_slope`) also runs `SOCKET` `smooth`
+    (30) Taubin passes (lambda 0.5, mu -0.53) over the slope above each eye before the rim is raised
+    (`alien_lids_geom.smooth_band`: from `inner` to 0.85 of the way to `outer`, from 0.2 old radii below the eye's
+    centre up; a pass over the nose bridge folded faces there, so it stays out). On the kit: 1480 vertices smoothed,
+    0.49 mm on average; 2063 vertices made paler; still no fold and the mouth's skin unmoved.
+  - **The mouth mount** (PR #242's review minor 2): `alien_lips_geom.MOUTH_MOUNT` and `mouth_mount()`, a constant box
+    on the `Mouth` node (M8b's frog rest box, centred on the midline: centre 2.7 mm below and 3.8 mm behind the node,
+    half width 41.4 mm, half height 20.8 mm, front 19.8 mm before it). `alien_detail.py`'s philtrum and nasolabial
+    lines and `alien_texture.py`'s mouth rim, flush and cheek patches hang on it, never on a mouth piece's box.
+  - **The chain** (the documented one from here; driver `tools/out/m9b/go.sh all`, about 15 minutes): cage, asm,
+    mouths (M8's default lips, width 0.72), socket (the mount and the pale), ao (no part), uv, high with the sculpt
+    `m8b` (never `m6c`: it brings back the groove round the mouth), the capped-cage bake, export, M3c's fields,
+    compose and export, `alien_eyes.py --sss-orm`, `alien_m6.py` (the slim lids), glTF-Validator.
+  - **The kit:** `M9/export/alien_character.glb`, 34.5 MB, glTF-Validator 0 errors (1 warning,
+    `NODE_SKINNED_MESH_NON_ROOT`); `godot-check --textured` 14 ok and the same seven pack-contract failures as M7.
+    Proofs in `M9/godot/final/` (M8 | M9 | M9b, every run logged `OFFSCREEN`): `eyes.png` (e2's heads 1 and 4
+    first), `s/` socket and blinks (open, rest, half, closed: both designs seal), `d/` designs, hues, contact, body,
+    `m/` and `p/` the six mouth shapes of both mouths and the talking frames (the mouths read as M8b's), `frames/`
+    Idle, Walk and Talk_Upper; JPEGs `M9/showroom/m9b-*.jpg`.
+  - **Open:** the pale's edge toward the crown keeps the texture's frayed light-mask edge (as elsewhere on the face);
+    on the socket's outer side, which faces away, a teal crescent stays (the facing rule keeps the head's sides teal);
+    the closed manic lids keep a faint darker patch at the upper inner corner (as on M9's kit).
 
 ## Findings for later tasks
 
