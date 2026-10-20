@@ -54,6 +54,7 @@ from mathutils import Vector
 from mathutils.bvhtree import BVHTree
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import alien_lips_geom as LP  # noqa: E402
 import alien_texture_geom as T  # noqa: E402
 import export_glb  # noqa: E402
 
@@ -382,9 +383,11 @@ def region_attrs(body):
     front = ss(0.2, 0.7, -nr[:, 1])
     eyes = [bbox(bpy.data.objects[f"eye_bored_ball_{s}"]) for s in ("L", "R")]
     ez = float(np.mean([(lo[2] + hi[2]) / 2 for lo, hi in eyes]))
-    elo, ehi = bbox(bpy.data.objects["mouth_frog_rest"])
-    mc = (elo + ehi) / 2
-    mw, mh = (ehi[0] - elo[0]) / 2, (ehi[2] - elo[2]) / 2
+    # M9b: the mouth mount (alien_lips_geom.MOUTH_MOUNT on the Mouth node), never one mouth piece's box, so every
+    # mouth design and width sits on the same rim, flush and cheeks
+    node = np.array(bpy.data.objects["Mouth"].matrix_world.translation, dtype=np.float64)
+    c, mw, mh, _front = LP.mouth_mount(tuple(node))
+    mc = np.array(c)
     head_w = group_weights(body, {"Head": 1.0})
     top = float(z[head_w > 0.5].max())
     # the T-zone: a strip down the face's middle from the forehead to above the mouth, and a forehead patch

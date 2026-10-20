@@ -43,6 +43,21 @@ LIP_SHAPE = {
     "width": 0.72,
 }
 
+# M9b (art #196, PR #242's review minor 2): the mouth mount, the mouth-side twin of alien_lids_geom.SOCKET. The skin's
+# marks round the mouth (alien_detail.py's philtrum and nasolabial lines, alien_texture.py's soft mouth rim, flush and
+# cheek patches) hang on this constant box, placed by the `Mouth` socket node (rest pose, world), never on one mouth
+# piece's box (they followed `mouth_frog_rest`'s), so a new mouth design or width lands on the same neutral skin. The
+# values are M8b's frog rest box measured on its kit (centre 2.7 mm below and 3.8 mm behind the node, half width 41.4 mm, half height
+# 20.8 mm, its front 19.8 mm before the node), centred on the face's midline (frog rest's box sat 1.4 mm to one side),
+# so the frog and overbite skin reads as in M8b. Metres.
+MOUTH_MOUNT = {"dy": 0.0038, "dz": -0.0027, "half_w": 0.0414, "half_h": 0.0208, "front": -0.0198}
+
+
+def mouth_mount(node: tuple, m: dict = MOUTH_MOUNT) -> tuple:
+    """The mount box from the Mouth node's world position (x, y, z; Blender: z up, the face toward -y): its centre
+    (x 0, the face's midline), half width, half height and front y."""
+    return ((0.0, node[1] + m["dy"], node[2] + m["dz"]), m["half_w"], m["half_h"], node[1] + m["front"])
+
 
 def merged(over: dict | None) -> dict:
     """LIP_SHAPE with `over` merged on top (the ring weights merged key by key); None or {} is LIP_SHAPE itself."""

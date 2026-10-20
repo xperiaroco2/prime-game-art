@@ -48,6 +48,7 @@ from mathutils import Vector
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import alien_detail_geom as G  # noqa: E402
+import alien_lips_geom as LP  # noqa: E402
 import export_glb  # noqa: E402
 
 HIGH = {"levels": 3}
@@ -146,8 +147,9 @@ def landmarks(arm):
         ball = bpy.data.objects[f"eye_bored_ball_{s}"]
         lo, hi = world_bbox(ball)
         face[f"eye_{s}"] = ((lo + hi) / 2, max(hi - lo) / 2)
-    lo, hi = world_bbox(bpy.data.objects["mouth_frog_rest"])
-    face["mouth"] = ((lo + hi) / 2, (hi.x - lo.x) / 2, (hi.z - lo.z) / 2, lo.y)
+    # M9b: the mouth mount (alien_lips_geom.MOUTH_MOUNT on the Mouth node), never one mouth piece's box
+    c, hw_m, hh_m, front = LP.mouth_mount(tuple(bpy.data.objects["Mouth"].matrix_world.translation))
+    face["mouth"] = (Vector(c), hw_m, hh_m, front)
     return j, face
 
 
