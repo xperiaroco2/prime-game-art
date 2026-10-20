@@ -1628,9 +1628,9 @@ a time, by visibility.
     socket skin, which is never moved. The shell's outer surface swells by `amount` ball radii over a ramp that
     starts 5 degrees before the elevation where the dome turns away from a front view and rises over 50 degrees.
     The rim, the bead, the wet strip, the inner surface (the blink's seal) and the rim reach are unchanged.
-    `alien_m6.py --flare auto` (the default) measures, per design, lid and side, the skin's distance outside the
-    dome per 10-degree latitude band, and takes the smallest amount (0.0025 r steps) that leaves every band at least
-    0.004 r into the skin (the larger side's). The skin meets M8b's domes 70 to 180 degrees behind the edge. Before the
+    `alien_m6.py --flare auto` (M10's default; since M10b the default is `off`, the collar fills the gap) measures,
+    per design, lid and side, the skin's distance outside the dome per 10-degree latitude band, and takes the smallest
+    amount (0.0025 r steps) that leaves every band at least 0.004 r into the skin (the larger side's). The skin meets M8b's domes 70 to 180 degrees behind the edge. Before the
     flare, the widest band gaps were 0.6 to 1.1 mm already at 100 % (the corners and the lower lids) and 3.4 to
     4.4 mm at 92 %, 6.1 to 7.0 mm at 86 %. The amounts are in each kit's `character.json` (`m6.flare`). A first ramp
     from 25 degrees swelled the dome's visible top, and the eyes did not read smaller (`M10/godot/grid_try1/`).
