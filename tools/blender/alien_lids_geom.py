@@ -81,7 +81,8 @@ def edge_shift(t: float, t_max: float, upper: bool, c: dict = CORNER) -> float:
 
 def shell_profile(rho_in: float, rho_out: float, bead: float, upper: bool, span_deg: float = 200.0, seg_p: int = 12,
                   rim_seg: int = 5, bead_deg: float = 26.0, shift: float = 0.0,
-                  crowd: bool | None = None, flare: dict | None = None) -> list[tuple[float, float, float]]:
+                  crowd: bool | None = None, flare: dict | None = None,
+                  t: float = 0.0) -> list[tuple[float, float, float]]:
     """lid_shell()'s closed cross-section as (rho, p, p0) round the loop: the outer surface from the back to the edge,
     the rim's half circle beyond the edge, the inner surface back again (rho in r; p the elevation, p0 the same point's
     elevation before `shift`, for the accent mask). `bead` swells the outer surface over the last bead_deg before the
@@ -90,7 +91,7 @@ def shell_profile(rho_in: float, rho_out: float, bead: float, upper: bool, span_
     stays closed and its back is unchanged. With shift 0 this is S7's profile exactly. `crowd` (default: bead > 0)
     sets the quadratic sampling apart from the bead, so a rounded shell tapered to no bead at its poles keeps the
     same sampling in every row (no crease). `flare` (M10, FLARE_OFF's form) swells the outer surface behind the edge
-    (flare_at); None or amount 0 changes nothing."""
+    (flare_at, faded toward the hinge poles by the row's latitude t, M10b); None or amount 0 changes nothing."""
     sgn = 1.0 if upper else -1.0
     ex = 2 if (bool(bead) if crowd is None else crowd) else 1
     span = math.radians(span_deg)
@@ -107,7 +108,7 @@ def shell_profile(rho_in: float, rho_out: float, bead: float, upper: bool, span_
         f = (1 - j / seg_p) ** ex
         p = span * f
         swell = bead * (1 - smoothstep(0.0, bd, p)) if bead else 0.0
-        put(ro + swell + flare_at(p, flare), sgn * p)
+        put(ro + swell + flare_at(p, flare, t), sgn * p)
     for j in range(1, rim_seg):
         a = math.pi * j / rim_seg
         put(rm + hw * math.cos(a), -sgn * (hw * math.sin(a)) / rm)
@@ -293,7 +294,15 @@ FLARE_OFF = {"amount": 0.0, "from_deg": 25.0, "to_deg": 70.0}
 # read smaller): it starts `from_off` degrees before the elevation where the dome turns away from a front view (90
 # degrees from the eye's forward axis, at local p = 90 - |the lid's rest edge elevation|) and rises over `width`
 # degrees behind it, so the swell sits behind the dome's front outline, where it runs into the head's skin.
-FLARE_SIL = {"from_off": -5.0, "width": 50.0}
+# M10b: the ramp is longer (width 50 -> 90 degrees: M10's 50 left a soft shoulder where the swell began at 0.4 m).
+FLARE_SIL = {"from_off": -5.0, "width": 90.0}
+# M10b: the flare can fade toward the hinge poles (the corners, where the two lids meet): at latitude t it is
+# 1 - FLARE_POLE_FADE * corner_weight(t, FLARE_POLE_TMAX) of the amount, with CORNER's ramp. Off (0): the gaps are
+# largest at the corners (M10: 0.6 to 1.1 mm at 100 %), so a fade there only raises the amount everywhere (a uniform
+# bowl: 0.0765 r without, 0.1275 r with a fade of 0.5), which swells the dome's middle. The corner notch is gone
+# instead by alien_m6.flares giving both lids of a design one amount.
+FLARE_POLE_FADE = 0.0
+FLARE_POLE_TMAX = 89.0  # lid_shell's t_max_deg
 
 
 def flare_base(rest_deg: float, s: dict = FLARE_SIL) -> dict:
@@ -305,11 +314,13 @@ FLARE_STEP = 0.0025
 FLARE_MAX = 0.4
 
 
-def flare_at(p_abs: float, f: dict | None) -> float:
-    """The outer surface's swell (ball radii) at |p| radians behind the lid's edge."""
+def flare_at(p_abs: float, f: dict | None, t: float = 0.0) -> float:
+    """The outer surface's swell (ball radii) at |p| radians behind the lid's edge and latitude t (radians; the
+    swell fades toward the hinge poles by f's `pole_fade`, FLARE_POLE_FADE when f has none)."""
     if not f or not f["amount"]:
         return 0.0
-    return f["amount"] * smoothstep(math.radians(f["from_deg"]), math.radians(f["to_deg"]), abs(p_abs))
+    fade = 1.0 - f.get("pole_fade", FLARE_POLE_FADE) * corner_weight(t, math.radians(FLARE_POLE_TMAX))
+    return f["amount"] * fade * smoothstep(math.radians(f["from_deg"]), math.radians(f["to_deg"]), abs(p_abs))
 
 
 def local_tp(pts) -> list[tuple[float, float, float]]:
@@ -343,7 +354,7 @@ def lid_gap(pts, rho_out: float, bead: float, upper: bool, flare: dict | None, s
         i = int(math.floor((math.degrees(t) + t_max_deg) / bin_deg))
         if not 0 <= i < nb:
             continue
-        g = rho - (rho_out + bead * (1.0 - smoothstep(0.0, bd, pa)) + flare_at(pa, flare))
+        g = rho - (rho_out + bead * (1.0 - smoothstep(0.0, bd, pa)) + flare_at(pa, flare, t))
         count[i] += 1
         if best[i] is None or g < best[i][0]:
             best[i] = (g, pa)

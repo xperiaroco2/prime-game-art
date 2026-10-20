@@ -232,7 +232,7 @@ def lid_shell(name: str, r: float, rho_in: float, rho_out: float, upper: bool, m
         bt = LG.bead_at(bead, t, tm, corner) if corner else bead
         sh = LG.edge_shift(t, tm, upper, corner) if corner else 0.0
         prof = LG.shell_profile(rho_in, rho_out, bt, upper, span_deg, seg_p, rim_seg, bead_deg, sh, crowd=bool(bead),
-                                flare=flare)
+                                flare=flare, t=t)
         m = len(prof)
         row = []
         for rho, p, p0 in prof:

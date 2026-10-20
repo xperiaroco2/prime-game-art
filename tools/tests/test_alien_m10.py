@@ -67,10 +67,25 @@ class Flare(unittest.TestCase):
         self.assertAlmostEqual(f["amount"], 0.0725 + LG.FLARE_MARGIN, delta=LG.FLARE_STEP + 1e-9)
         self.assertLessEqual(max(g for _, g, _ in LG.lid_gap(pts, 1.13, 0.1, True, f)), -LG.FLARE_MARGIN)
 
+    def test_a_pole_fade_raises_the_amount_so_it_is_off(self):
+        pts = sphere_points(1.20)
+        self.assertEqual(LG.FLARE_POLE_FADE, 0.0)
+        plain = LG.auto_flare(pts, 1.13, 0.1, True)["amount"]
+        faded = LG.auto_flare(pts, 1.13, 0.1, True, base=dict(LG.FLARE_OFF, pole_fade=0.5))["amount"]
+        self.assertGreater(faded, plain + 0.03)
+        f = dict(LG.FLARE_OFF, amount=0.1, pole_fade=0.5)
+        self.assertAlmostEqual(LG.flare_at(math.radians(90.0), f, 0.0), 0.1)
+        self.assertAlmostEqual(LG.flare_at(math.radians(90.0), f, math.radians(89.0)), 0.05)
+
+    def test_both_lids_of_a_design_share_one_amount(self):
+        src = (BLENDER / "alien_m6.py").read_text(encoding="utf-8")
+        self.assertIn('shared = max(out[f"{dname}_{lid}"]["amount"] for lid in ("upper", "lower"))', src)
+        self.assertIn('f["amount"] = shared', src)
+
     def test_the_ramp_sits_behind_the_front_outline(self):
         # the upper bored lid rests at 6 degrees: the dome turns away from a front view at local p = 84
         f = LG.flare_base(6.0)
-        self.assertEqual((f["from_deg"], f["to_deg"]), (79.0, 129.0))
+        self.assertEqual((f["from_deg"], f["to_deg"]), (79.0, 169.0))  # M10b: the ramp 90 degrees long
         self.assertEqual(f["amount"], 0.0)
         self.assertEqual(LG.flare_base(-50.0)["from_deg"], 35.0)  # the manic lower lid
         f["amount"] = 0.1
@@ -142,7 +157,7 @@ class Wiring(unittest.TestCase):
 
     def test_the_parts_geom_passes_the_flare(self):
         src = (BLENDER / "alien_parts_geom.py").read_text(encoding="utf-8")
-        self.assertIn("flare=flare)", src)
+        self.assertIn("flare=flare, t=t)", src)  # M10b: the row's latitude for the pole fade
 
 
 if __name__ == "__main__":

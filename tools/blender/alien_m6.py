@@ -164,10 +164,13 @@ def lid_skin_local(lo, r: float, back: Vector, skin: np.ndarray, reach: float = 
 def flares(k: float, sink: float, lids: dict | None, spec: str) -> dict:
     """M10: per design and lid the flare (alien_lids_geom.FLARE_OFF's form) for the unit at k: "off" none, "auto" the
     smallest closing every latitude's gap on both sides (alien_lids_geom.auto_flare, the larger side's), else JSON
-    {"amount", "from_deg", "to_deg"} for every lid. Measured on the kit's skin with the lids at rest."""
+    {"amount", "from_deg", "to_deg"} for every lid. Measured on the kit's skin with the lids at rest. M10b: with
+    "auto" both lids of a design take the larger of their two amounts (each keeps its own ramp), so the corners,
+    where the lids meet, show no notch; `gap_r` is measured with that amount."""
     out = {}
     skin = skin_points() if spec == "auto" else None
     for dname, d in EYES.items():
+        pts_of = {}
         for lid in ("upper", "lower"):
             if spec == "off":
                 out[f"{dname}_{lid}"] = dict(LG.FLARE_OFF)
@@ -182,17 +185,30 @@ def flares(k: float, sink: float, lids: dict | None, spec: str) -> dict:
                 r = ball_radius(ball) * k
                 lo = bpy.data.objects[f"eye_{dname}_lid_{lid}_{side}"]
                 pts = lid_skin_local(lo, r, sink_vector(side, sink), skin).tolist()
+                pts_of[(lid, side)] = (pts, r)
                 f = LG.auto_flare(pts, rho[1], bead, lid == "upper", base=LG.flare_base(d[lid]["rest"]))
+                if best is None or f["amount"] > best["amount"]:
+                    best = f
+            out[f"{dname}_{lid}"] = dict(best, own_amount=best["amount"])
+        if spec != "auto":
+            continue
+        shared = max(out[f"{dname}_{lid}"]["amount"] for lid in ("upper", "lower"))
+        for lid in ("upper", "lower"):
+            f = out[f"{dname}_{lid}"]
+            f["amount"] = shared
+            rho, bead = LG.slim(d[lid]["rho"], LID_BEAD[lid], lids or LG.LIDS_S9)
+            gaps = {}
+            for side in ("L", "R"):
+                pts, r = pts_of[(lid, side)]
+                fl = {k_: f[k_] for k_ in ("amount", "from_deg", "to_deg")}
                 g0 = LG.lid_gap(pts, rho[1], bead, lid == "upper", None)
-                g1 = LG.lid_gap(pts, rho[1], bead, lid == "upper", f)
+                g1 = LG.lid_gap(pts, rho[1], bead, lid == "upper", fl)
                 gaps[side] = {"before_r": round(max(g for _, g, _ in g0), 4),
                               "after_r": round(max(g for _, g, _ in g1), 4),
                               "before_mm": round(max(g for _, g, _ in g0) * r * 1000.0, 2),
                               "bins_open_before": [t for t, g, _ in g0 if g > 0],
                               "contact_p_deg": [pp for _, _, pp in g1]}
-                if best is None or f["amount"] > best["amount"]:
-                    best = f
-            out[f"{dname}_{lid}"] = dict(best, gap_r=gaps)
+            f["gap_r"] = gaps
     log("flare", json.dumps(out))
     return out
 
