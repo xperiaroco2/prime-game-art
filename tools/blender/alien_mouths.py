@@ -431,7 +431,7 @@ def build_piece(bvh, m, design, shape, world, mats, coll, origin, lips=None, nam
         meas["form"] = "ring"
         rp = (lips_p.get("ring_param") or {}).get(shape)  # M12b: a designed ring (alien_lips_geom.ring_param)
         if rp:
-            (cx, cy), pairs, outer0, cw = LP.ring_param(ring_measure(cols), rp, lips_p, RING_N)
+            (cx, cy), pairs, outer0, cwt = LP.ring_param(ring_measure(cols), rp, lips_p, RING_N)
         else:
             (cx, cy), pairs = ring_contours(cols)
         ins = [world(*p[0]) for p in pairs]
@@ -471,8 +471,8 @@ def build_piece(bvh, m, design, shape, world, mats, coll, origin, lips=None, nam
             if rp:  # M12b: the designed width as is; the depth from the width without the bow, the corners tucked
                 hw_k = hw[k]
                 dc = rp.get("depth_corner", lips_p["depth_corner"])
-                a = (DEPTH_A * hw0[k] + DEPTH_C * (1.0 - (1.0 - dc) * cw[k])) * side
-                tuck = rp.get("tuck", 0.0) * a * cw[k]
+                a = (DEPTH_A * hw0[k] + DEPTH_C * (1.0 - (1.0 - dc) * cwt[k])) * side
+                tuck = rp.get("tuck", 0.0) * a * cwt[k]
             else:
                 # M8: the lips' width round the ring from LIP (thin corners, the bow); the opening's edge stays
                 hw_k = max(MIN_B, LP.ring_width(th, hw[k], hc, low, shape, lips_p))
