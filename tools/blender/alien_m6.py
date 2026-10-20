@@ -43,6 +43,7 @@ import alien_eyes as AE  # noqa: E402
 import alien_eyes_geom as E  # noqa: E402
 import alien_lids_geom as LG  # noqa: E402
 import alien_parts_geom as G  # noqa: E402
+import alien_socket  # noqa: E402
 import export_glb  # noqa: E402
 from alien_parts import EYES, LID_BEAD  # noqa: E402
 
@@ -69,7 +70,11 @@ def args():
     p.add_argument("--eye-scale", type=float, default=LG.EYE_SCALE)
     p.add_argument("--eye-sink", type=float, default=LG.EYE_SINK, help="m back into the head along the socket axis")
     p.add_argument("--corner", default="", help="JSON merged over alien_lids_geom.CORNER")
+    p.add_argument("--lids", default="", help="M9b: JSON over alien_lids_geom.LIDS (the slim shells' thin, rim); "
+                   "the default on a mounted kit is LIDS, on an older kit S9's shells")
     p.add_argument("--no-bake", action="store_true", help="skip the parts' AO bake (a quick geometry check)")
+    p.add_argument("--socket", default="", help="M9: JSON over alien_lids_geom.SOCKET, the eye mount applied here "
+                   "(a variant grid on a kit without one; a chain-built kit carries Body['prime_socket'] already)")
     return p.parse_args(argv)
 
 
@@ -120,8 +125,9 @@ def swap_skin(a, out: Path) -> dict:
     return rep
 
 
-def rebuild_eyes(k: float, corner: dict, sink: float = 0.0) -> dict:
-    """Every lid shell rebuilt with the rounded corners at k times the ball's radius, the ball's mesh scaled by k about
+def rebuild_eyes(k: float, corner: dict, sink: float = 0.0, lids: dict | None = None) -> dict:
+    """Every lid shell rebuilt with the rounded corners at k times the ball's radius (M9b: slimmed by `lids`,
+    alien_lids_geom.slim; None builds S9's shells), the ball's mesh scaled by k about
     its centre (the socket), the wet strips rebuilt."""
     wet = bpy.data.materials["alien_wet"]
     lip = bpy.data.materials["alien_lip"]
@@ -143,9 +149,9 @@ def rebuild_eyes(k: float, corner: dict, sink: float = 0.0) -> dict:
                 lo = bpy.data.objects[f"eye_{dname}_lid_{lid}_{side}"]
                 if (lo.matrix_world.translation - ball.matrix_world.translation).length > 1e-5:
                     raise SystemExit(f"{lo.name}: not hinged at the ball's centre")
-                L_ = d[lid]
-                tmp = G.lid_shell(lo.name + "_m6", r * k, L_["rho"][0], L_["rho"][1], lid == "upper", lip,
-                                  lo.users_collection[0], seg_t=LID_SEG_T, seg_p=18, rim_seg=8, bead=LID_BEAD[lid],
+                rho, bead = LG.slim(d[lid]["rho"], LID_BEAD[lid], lids or LG.LIDS_S9)
+                tmp = G.lid_shell(lo.name + "_m6", r * k, rho[0], rho[1], lid == "upper", lip,
+                                  lo.users_collection[0], seg_t=LID_SEG_T, seg_p=18, rim_seg=8, bead=bead,
                                   corner=corner)
                 old = lo.data
                 name = old.name
@@ -159,7 +165,7 @@ def rebuild_eyes(k: float, corner: dict, sink: float = 0.0) -> dict:
                         me = ch.data
                         bpy.data.objects.remove(ch)
                         bpy.data.meshes.remove(me)
-                AE.wet_strip(f"eye_{dname}_wet_{lid}_{side}", lo, r * k, L_["rho"], LID_BEAD[lid], lid == "upper",
+                AE.wet_strip(f"eye_{dname}_wet_{lid}_{side}", lo, r * k, rho, bead, lid == "upper",
                              wet, lo.users_collection[0], corner=corner)
             if sink:  # back into the head along the socket's axis (local +Y; the eye looks down -Y), so the
                 # smaller domes still meet the socket's skin (at 93 % without it the socket's rim showed as a dark gap)
@@ -169,9 +175,11 @@ def rebuild_eyes(k: float, corner: dict, sink: float = 0.0) -> dict:
                     mw = o.matrix_world.copy()
                     mw.translation += back
                     o.matrix_world = mw
+            up_rho, up_bead = LG.slim(d["upper"]["rho"], LID_BEAD["upper"], lids or LG.LIDS_S9)
             rep[f"{dname}_{side}"] = {"r_before": round(r, 5), "r": round(r * k, 5), "sink_m": sink,
-                                      "overhang_upper_r": round(LG.corner_overhang(d["upper"]["rho"][1],
-                                                                                   LID_BEAD["upper"], corner), 4)}
+                                      "lids": lids or LG.LIDS_S9,
+                                      "overhang_upper_r": round(LG.corner_overhang(
+                                          up_rho[1], up_bead, corner), 4)}
     log("eyes", json.dumps(rep))
     return rep
 
@@ -319,8 +327,19 @@ def main():
     # the composed ORM (with the SSS mask) of the default build goes to <out>/textures, another's to <out>/skin_<name>
     skin_root = out if a.export_name == "export" else out / f"skin_{a.export_name}"
     rep = {"eye_scale": a.eye_scale, "eye_sink": a.eye_sink, "corner": corner, "skin": swap_skin(a, skin_root)}
-    rep["eyes"] = rebuild_eyes(a.eye_scale, corner, a.eye_sink)
     body = rest_pose()
+    k, sink = a.eye_scale, a.eye_sink
+    if a.socket:  # M9's grid: the mount on this kit (refused if it has one)
+        rep["socket"] = alien_socket.apply(json.loads(a.socket))
+    if alien_socket.MARKER in body.keys():  # M9: the mount sized and placed the eyes; rebuild the lids at that size
+        k, sink = 1.0, 0.0
+        rep["socket_mount"] = json.loads(body[alien_socket.MARKER])
+    # M9b: the slim shells on the mount (an unmounted kit keeps S9's shells unless --lids asks)
+    lids = LG.set_lids(json.loads(a.lids)) if a.lids else (LG.LIDS if "socket_mount" in rep else None)
+    rep["lids"] = lids or LG.LIDS_S9
+    rep["eye_scale"], rep["eye_sink"] = k, sink
+    rep["eyes"] = rebuild_eyes(k, corner, sink, lids)
+    bpy.context.view_layer.update()
     rep["contact"] = contact_field(body)
     if not a.no_bake:
         rep["parts_ao"] = bake_parts_ao(body)

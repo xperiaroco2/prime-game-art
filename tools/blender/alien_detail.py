@@ -20,7 +20,7 @@ Stages (each a separate run, so none blocks for long; each reads the one before 
   Cycles bakes the shading normal, so it lands in the normal map without more polygons. The mean curvature of the
   displaced surface is stored as a colour attribute for the curvature bake. Saves high/alien_high.blend.
 - `bake`: Cycles, selected to active from `Body_high` to `Body` (cage extrusion BAKE["cage"], ray distance
-  BAKE["ray"]): `normal.png` (tangent space, OpenGL +Y, --size), `ao.png` (BAKE["ao_dist"], the default face shown),
+  BAKE["ray"]): `normal.png` (tangent space, OpenGL +Y, --size), `ao.png` (BAKE["ao_dist"], no part shown, M9),
   `curvature.png` (0.5 flat, brighter convex, darker concave) and `thickness.png` (AO from inside: white thick, dark
   thin within BAKE["thick_dist"]) at --aux, each with a 1024 px preview, into bake/.
 - `export`: `Body`'s material `alien_hue` takes `normal.png` through a Normal Map node on `UVMap`, so the GLB's skin
@@ -48,15 +48,24 @@ from mathutils import Vector
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import alien_detail_geom as G  # noqa: E402
+import alien_lips_geom as LP  # noqa: E402
 import export_glb  # noqa: E402
 
 HIGH = {"levels": 3}
 BAKE = {"cage": 0.002, "ray": 0.004, "margin": 16, "normal_samples": 8, "ao_samples": 64, "ao_dist": 0.05,
         "thick_samples": 64, "thick_dist": 0.06}  # the curvature colour: alien_detail_geom.CURVATURE
-SHOWN = ("eye_bored_",)  # alien_ao.SHOWN: the default eyes, in the AO bake (M7: no mouth piece)
+SHOWN = ()  # alien_ao.SHOWN: no part in the AO bake (M7: no mouth piece; M9: no eye either)
 CHAINS = ("Index", "Middle", "Ring")  # the thumb leaves its bones' line (alien_cage.THUMB_DIR): no joint planes
 FINGER_K = 0.984  # alien_cage.FINGER_K: the mesh's finger joints sit at J0 + K (J - J0) of the bones'
 UV_LAYER = "UVMap"
+
+
+def finger_k(ob) -> float:
+    """The character's FINGER_K: the cage's own (alien_cage.py writes its digits into Body["prime_digits"]; PR #240's
+    review: a --digits variant must not get the default's joint planes), else FINGER_K."""
+    if "prime_digits" in ob.keys():
+        return float(json.loads(ob["prime_digits"])["FINGER_K"])
+    return FINGER_K
 
 
 def args():
@@ -138,8 +147,9 @@ def landmarks(arm):
         ball = bpy.data.objects[f"eye_bored_ball_{s}"]
         lo, hi = world_bbox(ball)
         face[f"eye_{s}"] = ((lo + hi) / 2, max(hi - lo) / 2)
-    lo, hi = world_bbox(bpy.data.objects["mouth_frog_rest"])
-    face["mouth"] = ((lo + hi) / 2, (hi.x - lo.x) / 2, (hi.z - lo.z) / 2, lo.y)
+    # M9b: the mouth mount (alien_lips_geom.MOUTH_MOUNT on the Mouth node), never one mouth piece's box
+    c, hw_m, hh_m, front = LP.mouth_mount(tuple(bpy.data.objects["Mouth"].matrix_world.translation))
+    face["mouth"] = (Vector(c), hw_m, hh_m, front)
     return j, face
 
 
@@ -306,6 +316,7 @@ def displacement(P, N, me, joints, face, C=None):
         rad = np.linalg.norm(r - s[:, None] * np.array(dd), axis=1)
         return s, 1.0 - ss(0.6 * radius, radius, rad)
 
+    fk = finger_k(bpy.data.objects["Body"])  # the low mesh carries the cage's digits
     up = np.array([0.0, 0.0, 1.0])
     front = np.array([0.0, -1.0, 0.0])
     for side in ("Left", "Right"):
@@ -314,7 +325,7 @@ def displacement(P, N, me, joints, face, C=None):
             w = get_attr(me, f"w_{side}{c}")
             j0 = joints[f"{side}{c}Proximal"][0]
             for k, seg in enumerate(("Proximal", "Intermediate", "Distal")):
-                s, near = plane(f"{side}{c}{seg}", 0.022, j0 + (joints[f"{side}{c}{seg}"][0] - j0) * FINGER_K)
+                s, near = plane(f"{side}{c}{seg}", 0.022, j0 + (joints[f"{side}{c}{seg}"][0] - j0) * fk)
                 wm = ss(0.15, 0.5, w + (hand if k == 0 else 0.0)) * near
                 dors = ss(-0.1, 0.35, N @ up)
                 add(f"knuckle_dorsal_{side}{c}{k}", s, wm * dors, "knuckle_dorsal")

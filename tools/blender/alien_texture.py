@@ -54,16 +54,19 @@ from mathutils import Vector
 from mathutils.bvhtree import BVHTree
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import alien_lips_geom as LP  # noqa: E402
 import alien_texture_geom as T  # noqa: E402
 import export_glb  # noqa: E402
 
 UV_LAYER = "UVMap"
-SHOWN = ("eye_bored_",)  # alien_detail.SHOWN: the default eyes, in the AO bake (M7: no mouth piece)
+SHOWN = ()  # alien_detail.SHOWN: no part in the AO bake (M7: no mouth piece; M9: no eye either)
 BAKE = {"normal_samples": 8, "ao_samples": 64, "ao_dist": 0.05, "margin": 16, "aux": 2048}  # alien_detail.BAKE's
 NOISE = {"blotch": (9.0, 2.0), "hue": (3.5, 1.0), "fine": (350.0, 1.0)}  # (scale per m, detail): about 11 cm, 29 cm, 3 mm
 FIELDS = ("a", "b", "c", "d", "e")
 LIGHT_SMOOTH = 8  # smooth_light's passes
 SOCKET_MM = 14.0  # the eye socket region's reach past the eye parts' box, full to half of it (M3c's contact AO)
+MOUNT_OUT = 1.23  # M9: the eye mount's outer radius in ball radii (S9's lids reach 1.23 r): the socket field's
+# box, so it is the same for every eye design on the mount (UPDATE 8: the skin never depends on a design)
 PART_MATERIAL = "alien_hue_part"  # godot/alien/alien.gd HUE_MATERIALS
 CROPS_1K = ((340, 60), (880, 30), (745, 525), (945, 800), (300, 745))  # M2's web artefacts and the nostrils (1k px)
 
@@ -380,9 +383,11 @@ def region_attrs(body):
     front = ss(0.2, 0.7, -nr[:, 1])
     eyes = [bbox(bpy.data.objects[f"eye_bored_ball_{s}"]) for s in ("L", "R")]
     ez = float(np.mean([(lo[2] + hi[2]) / 2 for lo, hi in eyes]))
-    elo, ehi = bbox(bpy.data.objects["mouth_frog_rest"])
-    mc = (elo + ehi) / 2
-    mw, mh = (ehi[0] - elo[0]) / 2, (ehi[2] - elo[2]) / 2
+    # M9b: the mouth mount (alien_lips_geom.MOUTH_MOUNT on the Mouth node), never one mouth piece's box, so every
+    # mouth design and width sits on the same rim, flush and cheeks
+    node = np.array(bpy.data.objects["Mouth"].matrix_world.translation, dtype=np.float64)
+    c, mw, mh, _front = LP.mouth_mount(tuple(node))
+    mc = np.array(c)
     head_w = group_weights(body, {"Head": 1.0})
     top = float(z[head_w > 0.5].max())
     # the T-zone: a strip down the face's middle from the forehead to above the mouth, and a forehead patch
@@ -405,15 +410,13 @@ def region_attrs(body):
     deep = np.clip(0.6 * ss(1.50, 1.85, z) + 1.0 * ss(-0.3, 0.9, nr[:, 1]) * ss(1.0, 1.4, z), 0, 1)
     face = ss(1.38, 1.50, z)
     light = smooth_light(body, head_w + group_weights(body, {"Neck": 1.0}))
-    # the eye sockets (M3c): the skin within SOCKET_MM of each eye's parts' box (ball and lids), for the contact AO:
+    # the eye sockets (M3c): the skin within SOCKET_MM of each eye mount's box (M9: the ball's x MOUNT_OUT), for the AO:
     # the distance to the box, full within half of SOCKET_MM, none past it (an ellipsoid round the box reached
     # less far at the box's corners, the outer lid corners)
     socket = np.zeros(len(co))
     for side in ("L", "R"):
-        boxes = [bbox(o) for o in bpy.data.objects if o.type == "MESH" and o.name.startswith("eye_bored_")
-                 and o.name.endswith(f"_{side}")]
-        lo, hi = np.min([b[0] for b in boxes], 0), np.max([b[1] for b in boxes], 0)
-        c, half = (lo + hi) / 2, (hi - lo) / 2
+        lo, hi = bbox(bpy.data.objects[f"eye_bored_ball_{side}"])  # M9: the mount's ball, never a design's lids
+        c, half = (lo + hi) / 2, MOUNT_OUT * (hi - lo) / 2
         d = np.linalg.norm(np.maximum(np.abs(co - c) - half, 0.0), axis=1)
         socket = np.maximum(socket, 1 - ss(0.5 * SOCKET_MM, SOCKET_MM, d * 1000.0))
     vals = {"f_tzone": tzone, "f_mouth": mouth, "f_flush": flush, "f_warm": warm, "f_deep": deep, "f_face": face,

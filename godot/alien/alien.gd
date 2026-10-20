@@ -108,12 +108,14 @@ const EYE_LOOK := {  # alien_eye.gdshader's per-design uniforms (angles from the
 		# M4: low left by the pupil, just under the rim with the lids at rest
 		"catch_anchor_deg": Vector2(5.0, -10.0), "catch_dir": Vector3(-0.45, -0.25, 1.0),
 		"limbus_soft_deg": 1.0,  # the cornea's edge outside the iris' soft edge (25 + 0.9 <= 27 - 1)
-		"upper_reach_deg": 4.3, "lower_reach_deg": 2.0},  # the rims' reach beyond the lid edges (alien_eyes_geom)
+		# the rims' reach beyond the lid edges (alien_eyes_geom.rim_reach of the lids slimmed by alien_lids_geom.LIDS,
+		# M9b; S9's full lids reached 4.3 and 2.0)
+		"upper_reach_deg": 2.36, "lower_reach_deg": 1.0},
 	"manic": {"limbus_deg": 21.0, "iris_deg": 0.0, "pupil_deg": 12.0, "iris": Color(0.05, 0.04, 0.05),
 		"catch_at_deg": Vector2(4.5, 4.5),
 		"catch_anchor_deg": Vector2(4.5, 4.5), "catch_dir": Vector3(-0.45, 0.12, 1.0),  # M4: up and left (S9's place)
 		"cornea_normal": 0.15, "limbus_soft_deg": 8.0,  # M4: no ring round the dot pupil (the cornea's edge on the white)
-		"upper_reach_deg": 3.7, "lower_reach_deg": 1.8},
+		"upper_reach_deg": 2.19, "lower_reach_deg": 0.93},  # M9b's slim lids (S9's: 3.7, 1.8)
 }
 ## The eyeballs' rest look: each ball turned inward about its socket's up axis (set absolutely, so a GLB whose balls
 ## already carry it is unchanged): the sockets' 8 degrees outward (S2a's sphere fit) undone, plus 3.5 toward each

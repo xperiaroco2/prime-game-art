@@ -842,8 +842,10 @@ a time, by visibility.
     vertex's radius from the ring's axis, in ellipse units, becomes a Gaussian average by angle (20 degrees) and
     height (6 mm), full from z 1.36 to 1.418 m and easing out by 1.345 and 1.445; the jaw (radius over 1.22) is left
     alone. `weld.neck_fair` in the build report gives the ripple in the full zone (S8b: 2.24 mm before, 0.78 after).
-  - **The hand:** each finger ring's place along its bones is pulled toward the knuckle by `FINGER_K` (0.82; M7:
-    0.984), so the mesh is shorter than the bones (the skeleton and clips are unchanged); the fingers thicker (`FINGER_R`) with
+  - **The hand:** each finger ring's place along its bones is pulled toward the knuckle by `FINGER_K` (S9: 0.82; M7:
+    0.984, never above 1: `--digits` refuses it), so the mesh's joints sit at or before the bones' (the skeleton and
+    clips are unchanged); the cage writes its digits into `Body["prime_digits"]`, and `alien_detail.py`'s finger
+    joint planes take `FINGER_K` from there (M9); the fingers (`FINGER_R`) with
     softer distal weights (the tip rings partly on the Intermediate bone, so the tip does not fold when the distal
     pivot lies beyond the mesh); the palm wider. The thumb leaves the palm's front side quad as a mound and follows a
     curve out and forward (`THUMB_OUT`, `THUMB_LEN`, `THUMB_DIR`), off its bones' downward line; its root ring is
@@ -880,9 +882,11 @@ a time, by visibility.
     (`BELLY_SOFT`), the knuckle spots smaller and on the back of the hand only (`KNUCKLE["dorsal"]`, by the T-pose
     normal).
   - **Baked AO** (`tools/blender/alien_ao.py`, a step after `alien_mouths.py`): Cycles bakes AO (6 cm, 96 samples)
-    into a float colour attribute `ao` on `Body` in the rest pose with the default face shown (bored rest lids, frog
-    rest; other parts hidden), lifted by a floor of 0.18 and smoothed once; exported as glTF `COLOR_0`
-    (`export_vertex_color="ACTIVE"`). The baked face is the default one: other eyes and mouths get the same skin AO.
+    into a float colour attribute `ao` on `Body` in the rest pose, lifted by a floor of 0.18 and smoothed once;
+    exported as glTF `COLOR_0` (`export_vertex_color="ACTIVE"`). S9 baked it with the default face shown; since M7 no
+    mouth piece and since M9 no part at all (`SHOWN = ()` here, in `alien_detail.py` and `alien_texture.py`): the
+    skin's AO is the Body's own shape, the same under every eye and mouth design, whose shade on the skin is its
+    per-design contact channel (M6c).
   - **Lips and lid domes** take `alien_lip.gdshader` (S5's colour, roughness and specular, both sides, wrapped
     diffuse) with a soft clear coat (`LIP_LOOK` `sheen`) and a fainter grain; the lip colour is rf2's warmer coral
     (0.82, 0.44, 0.37). The bored eye's catch light sits below the rest lid's edge and is crisper (`EYE_LOOK`).
@@ -994,7 +998,7 @@ a time, by visibility.
       copy's material. Cycles bakes shading normals, so it reaches the map without polygons.
     - The copy also stores its mean curvature as the colour `curv`.
   - `--stage bake` uses Cycles, selected to active onto `UVMap` (cage 2 mm, ray 4 mm, 16 px extend margin). It
-    writes `normal.png` (4K tangent space, OpenGL +Y), and at 2K `ao.png` (5 cm, with the default face),
+    writes `normal.png` (4K tangent space, OpenGL +Y), and at 2K `ao.png` (5 cm, no part shown since M9),
     `curvature.png` (0.5 flat) and `thickness.png` (AO from inside with the copy's normals flipped: white thick, dark
     thin within 6 cm). Each map gets a `_1k` preview.
   - `--stage export` puts `normal.png` on `alien_hue` through a Normal Map node, so glTF gets `normalTexture`
@@ -1523,6 +1527,86 @@ a time, by visibility.
   - **For three.js:** no material, node, attribute or layout change; the Body's `UVMap`, textures and `COLOR_0` are
     regenerated (no dark band under the mouth in `COLOR_0` either), so the page takes the M7 kit folder as it took
     M6c's.
+- **M9, one standard eye mount: smaller eyes nested in the sockets** (output under
+  `D:/prime-art-raw/review/char/alien-parts-kit/M9/`). The engineer (2026-10-20): the eyes too big, bulging out
+  "like a crab's"; in the liked 2D part sheet e2 (`D:/prime-art-raw/2026-10-17-alien-2d-parts1/e2/`, 8 eye designs
+  on our head) the ball's front sits about flush with the face, the eyes stay inside the head's front silhouette, the
+  lids are slim shells and a soft rim surrounds each socket. The skin must not depend on any eye design.
+  - **Measured on M7's kit:** S9's ball radius 42.4 mm (M7 drew it at 0.95), the lid shells reach 1.23 r; the ball
+    centres at x = +-76 mm, so the lids reached x = 128 mm against the head's half width of 99 mm at the eyes' height
+    (2.5 cm outside the front silhouette), and the ball's front stood 3 cm before the face's midline. S9's socket
+    bowl hugs the full-size ball (the skin within 0.9 to 1.0 r of its centre): M6's dark line came from scaling the
+    eye alone (the bowl stayed full size).
+  - **The mount** (`alien_lids_geom.SOCKET`, `tools/blender/alien_socket.py`): every eye part (both designs' balls,
+    lids and wet strips) and the `Eye_<side>` node are scaled by `scale` about the old ball centre C and moved by
+    `eye_offset` (`sink` back along the socket's axis, `inward` toward the midline); the Body's skin follows: within
+    `inner` (1.3 old radii) exactly, so the bowl hugs the smaller lids as it hugged the full-size ones, then a
+    smootherstep fade to `outer` (2.0) that forms the socket's slope, and a soft rim (`rim` 0.8 mm at 1.1 new lid
+    radii, the socket's front half). Refused: a face folding over on visible skin, the Mouth's or the crest's skin
+    moving over 0.2 mm, the designs' balls not on their socket. `Body["prime_socket"]` records it (glTF extras on the
+    Body node); `alien_m6.py` then rebuilds the lids at the mounted size (`eye_scale` 1, no sink). Any later eye
+    design authored in the socket's frame at S9's size and scaled by `scale` lands on the same mount.
+  - **The chain:** a stage between `alien_mouths.py` and `alien_ao.py` (`alien_socket.py --character
+    <mouths/build/alien_character.blend> --out <s/socket>`), so the AO, the texture UV, the detail sculpt's eye folds
+    (they hang on the ball's box) and the bake all see the new sockets. `alien_m6.py --socket JSON` applies a variant
+    to a finished kit without one (the grid: M7's `m5/export` kit, its texture moved with the skin).
+  - **The grid** (`M9/godot/grid/eyes.png`, `M9/showroom/m9grid-eyes.jpg`; e2's heads 1 and 4 first, then M7): scale
+    0.82 and 0.76 against sinks of 15 to 25 mm, inward 19 or 16 mm, a steeper socket (`outer` 1.7, rim 1.2 mm);
+    front and 3/4 at 0.4 m and 1.2 m. The 0.70 cells and a 2.4 `outer` were refused by the checks (a fold at the
+    inner corner; the mouth's skin moved 5 to 8 mm). **The pick: 0.82, 20 mm back, 19 mm inward**: e2's eyes are
+    large (the lid about 0.43 of the head's width at the eyes) and reach the head's edge; 0.82 keeps that size inside
+    the silhouette (2.2 mm in) with the ball's front 8 mm before the skin beside it (M7: 30 mm); 0.76 read small
+    beside e2, and the 25 mm sink at 0.82 folded the inner corner.
+  - **The skin's AO (brief UPDATE 8):** the three bakes show no part (`SHOWN = ()`); M3c's socket field in
+    `alien_texture.py` takes the mount's box (the ball's x `MOUNT_OUT` 1.23), not a design's lids.
+  - **`m9_shots.gd`**: `eyes` (a row per kit and design: front and 3/4 at 0.4 m and 1.2 m, spec `e2` and `e2_crops`
+    as the first row), `socket` (the left socket close: front, outer side, above, below), `blink`, and m6c's and
+    m7's `designs`, `contact`, `body`; spec `eye_views` replaces the four eye views (M9b's lid grid).
+- **M9b, the eyes finished on the merged lips** (brief UPDATE 11; output under
+  `D:/prime-art-raw/review/char/alien-parts-kit/M9/`: the kit `export/`, the intermediates `b/`, M9's first kit kept
+  in `export_m9a/`). Three changes, then the chain once on M8b's lips.
+  - **Slim lid shells** (`alien_lids_geom.LIDS`, `slim`, `set_lids`): a lid keeps its inner radius (the ball's
+    clearance, the wet strip, the blink: the closed upper lid still slides over the lower, its inner radius above the
+    lower's outer) and its thickness (`rho_out - rho_in`) is multiplied by `thin`, its rolled rim's swell (`LID_BEAD`)
+    by `rim`. `alien_m6.py` rebuilds the shells and wet strips with it on a mounted kit (S9's shells on an older kit;
+    `--lids JSON` for a grid); `alien.gd` `EYE_LOOK`'s `*_reach_deg` are the slimmed rims' reach
+    (`alien_eyes_geom.rim_reach`: bored 2.36 / 1.0, manic 2.19 / 0.93 degrees; S9's 4.3 / 2.0 and 3.7 / 1.8).
+    **The grid** (`M9/b/godot/lgrid/lids.png` and `lgrid2/socket.png`, JPEGs `M9/showroom/m9b-lids4.jpg` and
+    `m9b-lids_close.jpg`): S9's domes, thin x rim 0.6 x 0.6, 0.45 x 0.55, 0.45 x 0.8, 0.3 x 0.45, 0.3 x 0.7, both
+    designs, front and 3/4 at 0.4 m and the socket close. **The pick: thin 0.3, rim 0.7**: the upper lid's edge at
+    1.15 ball radii (S9's 1.23), its rim half as thick as S9's, the shell 0.7 mm; the thinnest cells read thinnest,
+    and of those 0.7's roll still shows as a soft ring round the manic eye as in e2's fourth head, where 0.45 left a
+    hard edge.
+  - **The pale round the eye** (the teal band on M9's socket slope): the mount had pulled the vertices carrying the
+    crown's teal (light 0 in the `masks` UV, once hidden under S9's big lids) down beside the smaller eye, and on the
+    slope, which faces down, they shaded to a dark band like heavy eye shadow. `alien_socket.py` (`raise_light`) now
+    raises the `masks` light, never lowers it, to `alien_lids_geom.eye_light`: full within `SOCKET` `light_in` (1.4
+    new ball radii) of the new centre, none past `light_out` (1.95), on skin whose normal faces the socket's way
+    (cosine from -0.3, full at 0.4: the temples and the head's sides keep their teal). The texture's pale and `deep`,
+    and Godot's `UV2.x`, follow. The first try (1.6 / 2.3, `M9/b/godot/try1/`) pushed the crown far up and laid the
+    slope's ripples bare: the warp packs the old socket's skin into a narrower slope, and its undulations showed on
+    the pale as two or three arcs above each eye. So `alien_socket.py` (`smooth_slope`) also runs `SOCKET` `smooth`
+    (30) Taubin passes (lambda 0.5, mu -0.53) over the slope above each eye before the rim is raised
+    (`alien_lids_geom.smooth_band`: from `inner` to 0.85 of the way to `outer`, from 0.2 old radii below the eye's
+    centre up; a pass over the nose bridge folded faces there, so it stays out). On the kit: 1480 vertices smoothed,
+    0.49 mm on average; 2063 vertices made paler; still no fold and the mouth's skin unmoved.
+  - **The mouth mount** (PR #242's review minor 2): `alien_lips_geom.MOUTH_MOUNT` and `mouth_mount()`, a constant box
+    on the `Mouth` node (M8b's frog rest box, centred on the midline: centre 2.7 mm below and 3.8 mm behind the node,
+    half width 41.4 mm, half height 20.8 mm, front 19.8 mm before it). `alien_detail.py`'s philtrum and nasolabial
+    lines and `alien_texture.py`'s mouth rim, flush and cheek patches hang on it, never on a mouth piece's box.
+  - **The chain** (the documented one from here; driver `tools/out/m9b/go.sh all`, about 15 minutes): cage, asm,
+    mouths (M8's default lips, width 0.72), socket (the mount and the pale), ao (no part), uv, high with the sculpt
+    `m8b` (never `m6c`: it brings back the groove round the mouth), the capped-cage bake, export, M3c's fields,
+    compose and export, `alien_eyes.py --sss-orm`, `alien_m6.py` (the slim lids), glTF-Validator.
+  - **The kit:** `M9/export/alien_character.glb`, 34.5 MB, glTF-Validator 0 errors (1 warning,
+    `NODE_SKINNED_MESH_NON_ROOT`); `godot-check --textured` 14 ok and the same seven pack-contract failures as M7.
+    Proofs in `M9/godot/final/` (M8 | M9 | M9b, every run logged `OFFSCREEN`): `eyes.png` (e2's heads 1 and 4
+    first), `s/` socket and blinks (open, rest, half, closed: both designs seal), `d/` designs, hues, contact, body,
+    `m/` and `p/` the six mouth shapes of both mouths and the talking frames (the mouths read as M8b's), `frames/`
+    Idle, Walk and Talk_Upper; JPEGs `M9/showroom/m9b-*.jpg`.
+  - **Open:** the pale's edge toward the crown keeps the texture's frayed light-mask edge (as elsewhere on the face);
+    on the socket's outer side, which faces away, a teal crescent stays (the facing rule keeps the head's sides teal);
+    the closed manic lids keep a faint darker patch at the upper inner corner (as on M9's kit).
 
 ## Findings for later tasks
 
