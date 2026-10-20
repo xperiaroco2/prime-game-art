@@ -398,16 +398,19 @@ def collar_gaps(pts, rd: float, rd_ref: float, c: dict = COLLAR) -> list:
     """pts: the skin's points (s, h, phi) in the eye's frame (m, m, radians; alien_m6 casts them from the front);
     per azimuth bin (gap, h) of the farthest
     bare crater point: outside the new outline (s > rd), within margin_mm of M8b's dome (|(s, h)| < rd_ref + margin)
-    and not far behind (h > -h_back * rd); gap = its s - rd. None for a bin without such a point."""
+    and not far behind (h > -h_back * rd); gap = its s - rd. None for a bin without such a point. M10c's skin collar
+    (c["sphere"] False) takes any skin point out to s = rd_ref + margin, however deep (down to h_back), since the
+    front view saw all of it covered by M8b's dome."""
     n, lim = c["bins"], rd_ref + c["margin_mm"] / 1000.0
     best = [None] * n
     for s, h, ph in pts:
-        if s <= rd or math.hypot(s, h) > lim or h < -c["h_back"] * rd:
+        if s <= rd or s > lim or (c.get("sphere", True) and math.hypot(s, h) > lim) or h < -c["h_back"] * rd:
             continue
         i = int((ph + math.pi) / (2.0 * math.pi) * n) % n
         if best[i] is None or s > best[i][0]:
             best[i] = (s, h)
-    return [None if b is None else (b[0] - rd, b[1]) for b in best]
+    gmin = c.get("gap_min_mm", 0.0) / 1000.0  # M10c: a bin whose crater is narrower is none (no deep thin wall)
+    return [None if b is None or b[0] - rd < gmin else (b[0] - rd, b[1]) for b in best]
 
 
 def collar_smooth(gaps: list, c: dict = COLLAR) -> list:
@@ -433,6 +436,75 @@ def collar_smooth(gaps: list, c: dict = COLLAR) -> list:
     k = c["smooth"]
     return [(sum(w[(i + j) % n] for j in range(-k, k + 1)) / (2 * k + 1),
              sum(g[(i + j) % n][1] for j in range(-k, k + 1)) / (2 * k + 1)) for i in range(n)]
+
+
+# M10c (brief UPDATE 16): the collar as skin. M10b's coral ring kept the coral area round a smaller eye as large
+# as round M8b's, so 90 and 80 % did not read smaller, and from 3/4 it stood out as a stacked ring with a tab under
+# the eye.
+# The skin collar (alien_m6.build_skin_collars, `eye_<design>_collar_<side>`: no `_lid_`, so alien.gd gives it the
+# skin's textured material) takes the Body's material, and per vertex the Body's UVs, masks, rest pose, AO and contact
+# field sampled from the skin, so the bare crater reads as face skin up to the smaller dome. Its section per azimuth
+# bin is a fillet (fillet_section) out to the farthest skin a front view saw under M8b's dome, however deep behind
+# (collar_gaps with "sphere" off, down to `h_back` ball radii: the brow above the eye lies 16 to 29 mm behind the
+# dome's outline, a dark trench round the smaller dome without it): a cubic from `tuck_out_mm` out on the face and
+# `sink_mm` under it, leaving tangent to the skin at the crater's edge (no seam), to `tuck_in_mm` inside the dome's
+# outline (hidden by the dome), closed by a back `back_mm` behind. No crater (`min_mm` 0): the section stays inside the
+# dome. The normals: the skin's at the edge blended toward the fillet's own by `geom_end` at the dome end (0: the
+# face's shading carried in; 1: the fillet's slope shades). `uv_pull`: where a vertex samples the skin: 0 the crater
+# straight behind it (front projection), 1 the crater's edge (the dark bottom of the old crater never reaches it).
+COLLAR_SKIN = {"min_mm": 0.0, "h_back": 0.9, "gap_min_mm": 0.0, "tuck_out_mm": 1.5, "sink_mm": 0.3, "tuck_in_mm": 3.0, "front": 10,
+               "back_mm": 1.5, "end_h": 0.6, "end_back_mm": 4.0, "shrink_mm": 4.0, "geom_end": 0.5, "uv_pull": 1.0}
+
+
+def fillet_section(gap: float, h_edge: float, n_edge: tuple, rd: float, c: dict = COLLAR_SKIN) -> tuple:
+    """(front, normals, back) of the skin collar's section in the (s, h) half-plane (s: from the eye's axis, h: along
+    it, forward): the skin's edge B = (rd + gap, h_edge) with the skin's unit normal n_edge there (in the plane,
+    pointing out of the skin). front: `front` + 1 points of a cubic from P0 (B moved tuck_out_mm out along the skin and
+    sink_mm under it), leaving along the skin toward the eye, to P3 = (rd - tuck_in_mm, h3), arriving radially; h3 is
+    min(h_edge, 0) - end_back_mm held within end_h of the dome's half-chord there, so P3 is inside the dome (with
+    end_back_mm behind the equator, inside the ball too: the lids' rounded corners leave the shell open at the
+    poles). normals: the fillet's own unit normal per front point (toward the front side of the curve, the skin's
+    side). back: two points back_mm behind P3 and P0, closing the section. A crater narrower than shrink_mm draws the
+    whole section toward P3 by gap / shrink_mm (none at 0: all of it at P3, inside the dome)."""
+    ns, nh = n_edge
+    ln = math.hypot(ns, nh) or 1.0
+    ns, nh = ns / ln, nh / ln
+    t = (nh, -ns) if nh >= 0.0 else (-nh, ns)  # the skin's tangent toward the eye (s decreasing)
+    if t[0] > 0.0:
+        t = (-t[0], -t[1])
+    to, sk, ti = c["tuck_out_mm"] / 1000.0, c["sink_mm"] / 1000.0, c["tuck_in_mm"] / 1000.0
+    p0 = (rd + gap - t[0] * to - ns * sk, h_edge - t[1] * to - nh * sk)
+    s3 = rd - ti
+    half = math.sqrt(max(rd * rd - s3 * s3, 0.0))
+    h3 = max(-c["end_h"] * half, min(min(h_edge, 0.0) - c["end_back_mm"] / 1000.0, c["end_h"] * half))
+    p3 = (s3, h3)
+    L = math.hypot(p3[0] - p0[0], p3[1] - p0[1])
+    p1 = (p0[0] + t[0] * L / 3.0, p0[1] + t[1] * L / 3.0)
+    p2 = (p3[0] + L / 3.0, p3[1])
+    front, normals = [], []
+    k = c["front"]
+    for i in range(k + 1):
+        u = i / k
+        a, b, cc, d = (1 - u) ** 3, 3 * u * (1 - u) ** 2, 3 * u * u * (1 - u), u ** 3
+        front.append((a * p0[0] + b * p1[0] + cc * p2[0] + d * p3[0], a * p0[1] + b * p1[1] + cc * p2[1] + d * p3[1]))
+        da, db, dc = 3 * (1 - u) ** 2, 6 * u * (1 - u), 3 * u * u
+        dx = da * (p1[0] - p0[0]) + db * (p2[0] - p1[0]) + dc * (p3[0] - p2[0])
+        dy = da * (p1[1] - p0[1]) + db * (p2[1] - p1[1]) + dc * (p3[1] - p2[1])
+        m = math.hypot(dx, dy) or 1.0
+        nx, ny = -dy / m, dx / m  # the curve runs inward: its left is the skin's outside
+        if nx * ns + ny * nh < 0.0 and i == 0:
+            nx, ny = -nx, -ny
+        if normals and nx * normals[-1][0] + ny * normals[-1][1] < 0.0:
+            nx, ny = -nx, -ny
+        normals.append((nx, ny))
+    bk = c["back_mm"] / 1000.0
+    back = [(p3[0], p3[1] - bk), (p0[0] - ns * bk, p0[1] - nh * bk)]
+    w = min(1.0, gap / (c["shrink_mm"] / 1000.0)) if c["shrink_mm"] > 0.0 else 1.0
+    if w < 1.0:  # a narrow crater (the ends of the covered arc): drawn toward P3, inside the dome, so the section
+        # never lies on the dome's side where no skin is near (it showed as a crack down the dome from 3/4)
+        front = [(p3[0] + w * (x - p3[0]), p3[1] + w * (y - p3[1])) for x, y in front]
+        back = [(p3[0] + w * (x - p3[0]), p3[1] + w * (y - p3[1])) for x, y in back]
+    return front, normals, back
 
 
 def collar_section(gap: float, h_edge: float, rd: float, c: dict = COLLAR) -> tuple:
