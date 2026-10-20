@@ -200,8 +200,14 @@ def load(ref: str | Path) -> Batch:
     return parse(data, path)
 
 
+OTHER_SERVICES = {"openai-images": "tools/run.py openai-images (docs/openai-images.md)"}
+
+
 def parse(data: dict[str, Any], path: Path) -> Batch:
     errors: list[str] = []
+    if data.get("service") in OTHER_SERVICES:
+        raise common.Failure(f"{path.name} is a {data['service']} batch, not a Meshy one: run it with "
+                             f"{OTHER_SERVICES[data['service']]}")
 
     def text(table: dict[str, Any], key: str, where: str, required: bool = True) -> str:
         value = table.get(key, "")
