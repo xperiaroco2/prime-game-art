@@ -44,6 +44,7 @@ import alien_eyes_geom as E  # noqa: E402
 import alien_lids_geom as LG  # noqa: E402
 import alien_parts_geom as G  # noqa: E402
 import alien_socket  # noqa: E402
+import alien_thumb  # noqa: E402
 import export_glb  # noqa: E402
 from alien_parts import EYES, LID_BEAD  # noqa: E402
 
@@ -76,6 +77,8 @@ def args():
     p.add_argument("--corner", default="", help="JSON merged over alien_lids_geom.CORNER")
     p.add_argument("--lids", default="", help="M9b: JSON over alien_lids_geom.LIDS (the slim shells' thin, rim); "
                    "the default on a mounted kit is LIDS, on an older kit S9's shells")
+    p.add_argument("--thumb", choices=("rigid", "segments"), default="rigid",
+                   help="M10b: the thumb's skin weights (alien_thumb.py): rigid (the default) or the cage's segments")
     p.add_argument("--no-bake", action="store_true", help="skip the parts' AO bake (a quick geometry check)")
     p.add_argument("--socket", default="", help="M9 (REJECTED, M10): JSON over alien_lids_geom.SOCKET, the eye mount "
                    "applied here; refused without --opt-in-rejected-m9")
@@ -418,6 +421,9 @@ def main():
     skin_root = out if a.export_name == "export" else out / f"skin_{a.export_name}"
     rep = {"eye_scale": a.eye_scale, "eye_sink": a.eye_sink, "corner": corner, "skin": swap_skin(a, skin_root)}
     body = rest_pose()
+    if a.thumb == "rigid":  # M10b: the thumb moves as one piece (the Idle thumb read swollen)
+        rep["thumb"] = alien_thumb.apply(body)
+        log("thumb", json.dumps(rep["thumb"]))
     k, sink = a.eye_scale, a.eye_sink
     if a.socket:  # M9's grid: the mount on this kit (refused if it has one); rejected since M10
         if not a.opt_in_rejected_m9:
