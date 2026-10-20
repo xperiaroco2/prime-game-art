@@ -1363,7 +1363,7 @@ a time, by visibility.
     1 at contact to 0 at 7 mm (`CONTACT`), smoothed, in a fifth UV layer `contact` (glTF `TEXCOORD_4`, Godot
     `CUSTOM1.x`). `alien_hue.gdshader` (textured path) darkens and warms the albedo toward `contact_tint` and lowers
     AO by `contact_ao` there; `alien.gd` sets it (`SKIN_CONTACT`) only for a kit whose hue material carries
-    `CONTACT_MARKER` (glTF extras `{"prime_contact": "custom1_x"}`). M3c's texture already holds a contact AO round
+    `CONTACT_MARKER_M6` (glTF extras `{"prime_contact": "custom1_x"}`). M3c's texture already holds a contact AO round
     the sockets, so the term is subtle (the grid's "contact off" barely differs).
   - **The kits:** `M6/export/` (M3c's set and M3a's capped-cage normal map, 36.2 MB) and `M6/export_m2b/` (M2b's
     recomposed set, `--skin-tex M2b/textures --skin-normal M2b/bake/normal.png`, 29.4 MB; its composed ORM in
@@ -1382,7 +1382,7 @@ a time, by visibility.
     converted to linear), `roughness` 0.55 and `clearcoat` 0.06 at 0.5 on the lips, 0.64 and no clear coat on the
     lid domes (nodes `eye_*_lid_*`), `sheen` none; the drift is optional; the AO into `aoMap`-like
     `ambientOcclusion` (`reflectedLight.indirectDiffuse *= mix(1, color.r, 0.5)`). The skin's contact field is in
-    `uv4` (`TEXCOORD_4`): `diffuseColor.rgb *= mix(vec3(1), vec3(0.80, 0.66, 0.62), uv4.x)`. M6c splits it per
+    `texcoord_4` (`TEXCOORD_4`): `diffuseColor.rgb *= mix(vec3(1), vec3(0.80, 0.66, 0.62), texcoord_4.x)`. M6c splits it per
     design (below).
 - **M6c, the grain back and one contact channel per design** (output under
   `D:/prime-art-raw/review/char/alien-parts-kit/M6c/`). The engineer on v28's release candidate (`M6/export_m2b`):
@@ -1392,7 +1392,7 @@ a time, by visibility.
     RMS of the map minus its 3-texel box blur): the normal map's x/y 0.0118 against M2's 0.0215 (55 %); the albedo
     (0.0057 against 0.0056) and the ORM (R 0.0090, G 0.0030 both) did not change: the grain is a bump on the high
     copy, never in the curvature or the AO the texture is composed from. In Godot (light D, the same camera) the lit
-    luminance's fine grain on the forehead at 0.4 m fell to a third (0.0011 against 0.0035).
+    luminance's fine grain on the forehead at 0.4 m fell to a third (0.00125 against 0.00396).
   - **The sculpt `m6c`** (`alien_detail_geom.SCULPTS`): M2b's creases, jaw relax and curvature smoothing with M2's
     grain (pores 1.1 mm and 0.045 mm deep, peel 0.06 mm, face 1.0). Its normal map's face energy is M2's (0.0215);
     in Godot the forehead's grain is v27's (0.00395 against 0.00396 at 0.4 m); the softer brow keeps less there

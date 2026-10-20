@@ -26,7 +26,7 @@ Stages (each a separate run, so none blocks for long; each reads the one before 
 - `export`: `Body`'s material `alien_hue` takes `normal.png` through a Normal Map node on `UVMap`, so the GLB's skin
   has `normalTexture` (texCoord 0) and the mesh tangents; export/alien_character.glb with character.json beside it.
 
-M2b (art #196): `--sculpt m2|m2b` (high, grid; default m2, the shipped sculpt) picks alien_detail_geom.SCULPTS (the
+M2b (art #196): `--sculpt m2|m2b|m6c` (high, grid; default m2, the shipped sculpt) picks alien_detail_geom.SCULPTS (the
 creases, grain, the jaw's `soften` and the curvature colour's smoothing), `--settings JSON` goes over it; `--cage
 capped` (bake) bakes all four maps through M3a's capped cage (alien_texture's cage helpers) instead of the uniform
 extrusion; `--stage grid --variants FILE --vout DIR` subdivides once and writes per variant (name: sculpt settings)
