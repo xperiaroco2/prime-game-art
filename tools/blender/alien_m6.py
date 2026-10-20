@@ -193,9 +193,10 @@ def rest_pose():
     return body
 
 
-def bake_parts_ao(body) -> dict:
+def bake_parts_ao(body, eyes: bool = True, pieces=None) -> dict:
     """AO into a grey colour attribute `ao` on every lid shell and 3D mouth piece: per eye design its four lids at
-    once, per mouth piece the piece alone, each with the skin (and the default other parts hidden)."""
+    once, per mouth piece the piece alone, each with the skin (and the default other parts hidden). M8: eyes=False
+    leaves the lids' AO as it is; pieces (objects) replaces the twelve mouth pieces (M8's grid variants too)."""
     sc = bpy.context.scene
     sc.render.engine = "CYCLES"
     sc.cycles.device = "CPU"
@@ -204,8 +205,8 @@ def bake_parts_ao(body) -> dict:
         sc.world = bpy.data.worlds.new("w")
     sc.world.light_settings.distance = PART_AO["distance"]
     groups = [([bpy.data.objects[f"eye_{d}_lid_{lid}_{s}"] for lid in ("upper", "lower") for s in ("L", "R")],
-               {f"eye_{d}_ball_{s}" for s in ("L", "R")}) for d in EYES]  # the design's balls occlude too
-    groups += [([o], set()) for o in mouth_pieces()]
+               {f"eye_{d}_ball_{s}" for s in ("L", "R")}) for d in EYES] if eyes else []  # the balls occlude too
+    groups += [([o], set()) for o in (mouth_pieces() if pieces is None else pieces)]
     hide0 = {o.name: o.hide_render for o in bpy.data.objects}
     rep = {}
     for grp, also in groups:

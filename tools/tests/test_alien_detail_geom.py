@@ -102,6 +102,16 @@ class CreaseTest(unittest.TestCase):
         for part in ("creases", "soften", "curvature"):
             self.assertEqual(m6c[part], m2b[part], part)
 
+    def test_m8b_is_m6c_without_the_lip_groove(self):
+        m6c, m8b = G.sculpt("m6c"), G.sculpt("m8b")
+        self.assertEqual(m8b["creases"]["lip_groove"]["depth"], 0.0)
+        self.assertGreater(m6c["creases"]["lip_groove"]["depth"], 0.0, "M6c's sculpt is unchanged")
+        for k in m6c["creases"]:
+            if k != "lip_groove":
+                self.assertEqual(m8b["creases"][k], m6c["creases"][k], k)
+        for part in ("grain", "soften", "curvature"):
+            self.assertEqual(m8b[part], m6c[part], part)
+
     def test_soften_stays_inside_the_bake_rays(self):
         # the capped cage starts rays at most CAGE max_mm out and they run CAGE ray_mm: they reach ray - max inside the
         # low mesh; the relaxed jaw plus the deepest crease must stay within that

@@ -1425,6 +1425,71 @@ a time, by visibility.
   - **For three.js:** GLTFLoader keeps the two layers as the attributes `texcoord_4` (bored, manic) and `texcoord_5`
     (frog, overbite); the shade's field is `max(max(t4.x * pick.x, t4.y * pick.y), max(t5.x * pick.z, t5.y *
     pick.w))` with `pick` 1 on the shown eye design's and mouth's channels (`CONTACT_CHANNEL`).
+- **M8, the lips shaped like lips** (output under `D:/prime-art-raw/review/char/alien-parts-kit/M8/`). The engineer
+  (2026-10-20): the lips were "two sausages, the same thickness end to end"; the sheets (mf1, mo1) and rf2 show each
+  lip narrow at the corners, full in the middle and narrow again.
+  - **The profile** (`tools/blender/alien_lips_geom.py`, plain Python, `LIP_SHAPE`; `LIP_SHAPE_M6C` = `{"w": 0}` is the
+    old lips exactly): along each closed lip (rest, M, small) the half-height is `centre * full * (upper | lower) *
+    taper(s)`, `taper(s) = corner + (1 - corner) * (1 - |s|^pw)` (s from -1 to 1 corner to corner: a pointed lens), the
+    upper lip times 0.82 and the lower 1.12, the upper lip's top edge dipping at the centre by `bow` of its height
+    (a soft bow, two small peaks at s = +-0.2); the lip line (the upper lip's bottom, the lower lip's top) stays where
+    the sheet measured it, so the phases keep their openings. The open rings (A, E, O) take the same profile round
+    the ring with their inner edge (the opening) kept, weighted by `ring` (A 1, E 1, O 0.35: the pucker stays round).
+    The constant depth `DEPTH_C` falls to `depth_corner` (0.25) at the corners, so the ends sink into the skin as
+    points (S7's corner join and tuck still apply). The section (`section()`, `alien_mouths.lip_tube`): a
+    superellipse front (`square` 0.85, a flatter cushion) with its swell moved toward the lip line (`lean` 0.3), so
+    both lips are fullest where they meet and the line reads as a crease. The dark cup of an open ring and the dark
+    between the overbite's teeth end under the new lips' axes (a thin corner no longer bares them).
+  - **`alien_mouths.py`**: `build_piece(..., lips=, name=)` takes the shape; `shape_frames()` and `face_width()` are
+    main's measuring steps as functions; `--lips JSON|m6c`; `main()` runs only as a script. The same sheets, stations
+    and sheet-to-head mapping as S9: rebuilt with `m6c` on M6c's kit every piece is the old one to 0.0 mm.
+  - **`alien_m8.py`** (the kit step): opens a kit (`--kit <M6c/export>`), rebuilds the twelve 3D mouth pieces in place
+    (the same objects, names, parent on the Mouth socket, materials; only the meshes change, so `alien.gd`'s talk and
+    blink logic is untouched; the flipbook shells, the eyes, the Body's mesh and skin AO are not touched), rebakes
+    the mouth pieces' AO (`alien_m6.bake_parts_ao(body, eyes=False, pieces=...)`, the lids' AO kept), recomputes
+    Body's contact channels (`alien_m6.contact_field`: the eye channels come out as before, frog 414/25 and overbite
+    340/91 touched/full vertices against 421/22 and 354/93), exports with M6's options. `--grid SPEC` adds variant
+    pieces `lipvar_<variant>_<design>_<shape>` (the grid kit only). About 25 s (60 s with the grid).
+  - **Chosen on** `M8/grids/g1/grid_a.png`, `grid_b.png` (`m8_shots.gd` mode `grid`: the references, then per variant
+    frog rest from the front and at 3/4 at 0.4 m, 3/4 at 1.2 m, frog A, overbite rest): the M6c lips (c0) and
+    corner {0.35, 0.15} x full {1.0, 1.2} x bow {0.15, 0.30}; the pick is c8 (0.15, 1.2, 0.30): the fine corners and
+    the bow of the sheets, without losing the lips' size at 1.2 m.
+  - **On M6c's skin** the thinner lips bare a dark edge above the upper lip and at the corners: M6c's skin AO was
+    baked with frog rest on the face (M7's finding), so the skin under the old, bigger piece is nearly black. M7's
+    mouth-free AO removes it (`M8/godot/on_m7/`: the same lips on M7's kit, no dark edge).
+  - **`m8_shots.gd`**, the proof (modes `grid`, `phases`: per design a row per shape, the sheet's panel then before
+    and after from the front, at 3/4 and in profile; `talk`; `cmp` as `m6c_shots.gd`; M8b's `wgrid`, below).
+  - **M8b, the width** (the manager on M8, with UPDATE 9's target, m2's first head: a compact mouth). `LIP_SHAPE`'s
+    `width` scales every x of a piece (lips, cup, tongue, teeth) about the face's centre line (`scale_x`, applied
+    in `build_piece` before anything is laid on the skin), heights kept: all six phases of both designs narrow alike
+    and their corners are ray-cast onto the skin where they now sit. Chosen on `M8/wgrid/shots/wgrid.png` (`m8_shots.gd`
+    mode `wgrid`: m2's first and third heads, mf1 rest and A, mo1 rest; then a row per kit, each width a kit of its
+    own with its own contact channels: frog rest from the front and at 3/4 at 0.4 m and 1.2 m, overbite rest, frog A)
+    from 1.0, 0.85, 0.72 and 0.62: **0.72**. At 1.0 the corners reach the narrow lower face's silhouette from the front
+    and wrap round the jaw at 3/4; at 0.85 the far corner still nearly does; at 0.72 both corners sit in the face's
+    front with skin beyond them, as on m2's broad face, and the mouth still reads at 1.2 m; 0.62 reads as a pucker
+    and crowds the overbite's teeth. Frog rest is 81.7 mm wide (was 113.4), 0.57 of the face's silhouette at the
+    socket (0.143 m). m2's own lips are wide against its broad face (about 0.8 of it at their row), so "compact"
+    here is the corners inside the face, not a measured share. The flipbook shells (the 2D fallback) keep the
+    sheet's width.
+  - **The thin outline round the mouth** (M8 on M7's kit, `m8m7-close_front.jpg`): the detail sculpt's `lip_groove`,
+    cut round frog rest's box (the old, wide piece) below the mouth and round its corners; the normal map and the
+    texture's cavity tint (the curvature bake) drew it on the bare skin once the lips were thinner. The sculpt
+    `m8b` (`alien_detail_geom.SCULPTS`) is `m6c` with the groove's depth 0; the skin carries no mouth's mark, as its
+    AO since M7, and each mouth's shade on the skin is its contact channel. The texture's soft mouth-rim gloss and
+    flush (`alien_texture.py` fields), the philtrum and the nasolabial lines still follow frog rest's box, now the
+    narrower one. Proof `M8/godot/outline/`: the same 0.72 lips on M7's skin (with the groove) and on M8b's; the
+    difference of the close front and 3/4 frames (`outline_diff.png`, x12) is the groove's crescent under the lower
+    lip and round the old corners, at most 15 of 255 in the lit frame, plus the moved nasolabial lines; nothing of
+    it is left on M8b's skin.
+  - **The build (M8b):** M7's chain from the mouths step on M7's cage and assembly (`M7/s/asm`), the sculpt `m8b`,
+    then `alien_m6.py --export-name kit6` and `alien_m8.py --kit <M8/kit6> --out <M8> --export-name export`
+    (`tools/out/m8/go8.sh chain`, about 9 minutes in the background). `alien_m8.py` then moves no vertex (0.0 mm:
+    the chain's mouths step already built the 0.72 lips); the mouth contact is frog 277/19 and overbite 238/57
+    touched/full vertices (the narrower footprint). GLB 34.1 MB, glTF-Validator 0 errors, `godot-check --textured`
+    as M7's kit (14 ok, the same seven pack-contract failures).
+  - **Open:** with every x scaled, the open phases are narrower than the sheets' (frog and overbite A read taller
+    than wide, closer to an "oh"); a per-shape width weight (as `ring`) would widen A and E again if wanted.
 
 - **M7, the mouth's black strip and the longer, slimmer digits** (output under
   `D:/prime-art-raw/review/char/alien-parts-kit/M7/`). The engineer on v29: a black wedge beside and above the
