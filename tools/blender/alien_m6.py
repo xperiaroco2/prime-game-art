@@ -12,10 +12,11 @@ export/alien_character.blend (M5's: M3c's skin, M4's eyes, the SSS mask in the O
   shell and 3D mouth piece, each design and piece alone with the skin (the lids at rest), so the folds (the lip line,
   the mouth's corners, the rim's underside, where a part meets the skin) are deeper; godot/alien/alien_lip.gdshader
   turns it into a deeper, warmer coral (plain viewers multiply it into the base colour);
-- the skin's contact field: per Body vertex the distance to the nearest rest lid or rest lip surface (both eye and
-  both mouth designs) as alien_lids_geom.contact(), smoothed, in a fifth UV layer `contact` (u; glTF TEXCOORD_4,
-  Godot CUSTOM1.x); alien_hue gets the custom property CONTACT_MARKER (glTF extras), so alien.gd turns the textured
-  skin's contact shade on only for such a kit;
+- the skin's contact field: per Body vertex and per design the distance to the nearest rest lid or rest lip
+  surface as alien_lids_geom.contact(), smoothed, one channel per design (M6c) in a fifth and sixth UV layer
+  (alien_lids_geom.CONTACT_UVS: glTF TEXCOORD_4 = (bored, manic), TEXCOORD_5 = (frog, overbite); Godot CUSTOM1);
+  alien_hue gets the custom property CONTACT_MARKER (glTF extras), so alien.gd turns the textured skin's contact
+  shade on only for such a kit and picks the shown designs' channels;
 - export/alien_character.glb (M5's options with extras), its .blend, character.json (`note_m6`, `m6` settings), the
   PNGs beside the kit's GLB; the image check and the SSS route check as M4 and M5.
 
@@ -45,7 +46,7 @@ import alien_parts_geom as G  # noqa: E402
 import export_glb  # noqa: E402
 from alien_parts import EYES, LID_BEAD  # noqa: E402
 
-CONTACT_MARKER = {"prime_contact": "custom1_x"}
+CONTACT_MARKER = {"prime_contact": "custom1_designs"}  # M6c; M6's kits: "custom1_x"
 PART_AO_MARKER = {"prime_part_ao": "color0_r"}  # on alien_lip (the lips and lid domes) once the parts' AO is baked
 PART_AO = {"distance": 0.02, "samples": 64, "floor": 0.3, "smooth": 1}
 LID_SEG_T = 32  # S7: 20 rows across the lid; the rounded corners need more near the poles
@@ -258,39 +259,49 @@ def smooth(me, v, passes: int):
 
 
 def contact_field(body) -> dict:
-    """The skin's contact field in the UV layer LG.CONTACT_UV (u; v 0): per Body vertex alien_lids_geom.contact() of
-    its rest-pose distance to the nearest rest lid or rest lip (both eye and both mouth designs)."""
-    verts, polys = [], []
-    parts = [bpy.data.objects[f"eye_{d}_lid_{lid}_{s}"] for d in EYES for lid in ("upper", "lower") for s in ("L", "R")]
-    parts += [bpy.data.objects[f"mouth_{d}_rest"] for d in DESIGNS_MOUTH if f"mouth_{d}_rest" in bpy.data.objects]
-    for o in parts:
-        mw = o.matrix_world
-        base = len(verts)
-        verts += [mw @ v.co for v in o.data.vertices]
-        polys += [[base + i for i in p.vertices] for p in o.data.polygons]
-    tree = BVHTree.FromPolygons(verts, polys)
+    """The skin's contact field, one channel per design (M6c): per Body vertex alien_lids_geom.contact() of its
+    rest-pose distance to the nearest rest lid of each eye design and the rest lips of each mouth design, in the UV
+    layers alien_lids_geom.CONTACT_UVS (Body's fifth and sixth: glTF TEXCOORD_4 = (bored, manic), TEXCOORD_5 = (frog,
+    overbite); Godot CUSTOM1). The glTF exporter writes 1 - v, so v is stored flipped here (as alien_ao.py's rest
+    coordinates)."""
+    groups = {d: [bpy.data.objects[f"eye_{d}_lid_{lid}_{s}"] for lid in ("upper", "lower") for s in ("L", "R")]
+              for d in EYES}
+    groups.update({d: [bpy.data.objects[f"mouth_{d}_rest"]] for d in DESIGNS_MOUTH})
     me = body.data
     mw = body.matrix_world
     reach = LG.CONTACT["reach"]
     n = len(me.vertices)
-    c = np.zeros(n)
-    for i, v in enumerate(me.vertices):
-        hit = tree.find_nearest(mw @ v.co, reach)
-        if hit[0] is not None:
-            c[i] = LG.contact(hit[3], reach)
-    c = smooth(me, c, LG.CONTACT["smooth"])
-    if LG.CONTACT_UV in me.uv_layers:
-        me.uv_layers.remove(me.uv_layers[LG.CONTACT_UV])
+    co = [mw @ v.co for v in me.vertices]
+    fields = {}
+    for d, parts in groups.items():
+        verts, polys = [], []
+        for o in parts:
+            omw = o.matrix_world
+            base = len(verts)
+            verts += [omw @ v.co for v in o.data.vertices]
+            polys += [[base + i for i in p.vertices] for p in o.data.polygons]
+        tree = BVHTree.FromPolygons(verts, polys)
+        c = np.zeros(n)
+        for i, p in enumerate(co):
+            hit = tree.find_nearest(p, reach)
+            if hit[0] is not None:
+                c[i] = LG.contact(hit[3], reach)
+        fields[d] = smooth(me, c, LG.CONTACT["smooth"])
+    for name in LG.CONTACT_UVS:
+        if name in me.uv_layers:
+            me.uv_layers.remove(me.uv_layers[name])
     if len(me.uv_layers) != 4:
         raise SystemExit(f"Body has {len(me.uv_layers)} UV layers, expected UVMap, masks, rest_xy, rest_zn")
-    layer = me.uv_layers.new(name=LG.CONTACT_UV)
     lv = np.empty(len(me.loops), dtype=np.int64)
     me.loops.foreach_get("vertex_index", lv)
-    layer.data.foreach_set("uv", np.stack([c[lv], np.ones(len(lv))], 1).astype(np.float32).ravel())
+    for name, (du, dv) in LG.CONTACT_UVS.items():
+        layer = me.uv_layers.new(name=name)
+        layer.data.foreach_set("uv", np.stack([fields[du][lv], 1.0 - fields[dv][lv]], 1).astype(np.float32).ravel())
     mat = bpy.data.materials["alien_hue"]
     for k2, v2 in CONTACT_MARKER.items():
         mat[k2] = v2
-    rep = {"touched": int((c > 0.01).sum()), "full": int((c > 0.9).sum()), "uv_layers": [u.name for u in me.uv_layers]}
+    rep = {d: {"touched": int((c > 0.01).sum()), "full": int((c > 0.9).sum())} for d, c in fields.items()}
+    rep["uv_layers"] = [u.name for u in me.uv_layers]
     log("contact", json.dumps(rep))
     return rep
 
@@ -339,7 +350,8 @@ def main():
         "shells' corners rounded (m6.corner: the rolled rim tapers toward the hinge poles, the edges bend toward each "
         "other), the lid shells and 3D mouth pieces carry their own baked AO (COLOR_0, grey; "
         "godot/alien/alien_lip.gdshader deepens the coral there), and Body carries the skin's contact field near the "
-        "rest lids and lips in a fifth UV layer `contact` (glTF TEXCOORD_4, Godot CUSTOM1.x), marked by alien_hue's "
+        "rest lids and lips, one channel per design, in a fifth and sixth UV layer (glTF TEXCOORD_4 = bored, manic; "
+        "TEXCOORD_5 = frog, overbite; Godot CUSTOM1.xyzw), marked by alien_hue's "
         "extras " + json.dumps(CONTACT_MARKER) + " (alien_hue.gdshader's contact shade on the textured skin).")
     (ex / "character.json").write_text(json.dumps(cj, indent=1), encoding="utf-8", newline="\n")
     log("EXPORT", glb, round(glb.stat().st_size / 1e6, 2), "MB")

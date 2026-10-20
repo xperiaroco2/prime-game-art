@@ -32,10 +32,24 @@ EYE_SINK = 0.002  # m: the unit moved back into the head along the socket's axis
 IRIS_SCALE = 1.0
 
 # The skin's contact shade near the lids and lips (alien_hue.gdshader `contact_*`): full where the skin touches a
-# part, none `reach` m away (a smoothstep), stored per Body vertex in the UV layer CONTACT_UV (glTF TEXCOORD_4,
-# Godot CUSTOM1.x).
+# part, none `reach` m away (a smoothstep), stored per Body vertex and per design (M6c: one channel per design, so the
+# shade under the hidden design's lips or lids never shows; PR #238's minor 4) in two UV layers, CONTACT_UVS: layer
+# name -> its (u, v) designs. Body's fifth and sixth UV layers are glTF TEXCOORD_4 and TEXCOORD_5, which Godot imports
+# together as CUSTOM1 (RGBA_FLOAT: x, y from TEXCOORD_4, z, w from TEXCOORD_5): CONTACT_CHANNEL is a design's
+# component there, and the skin shader takes the max of the picked eye design's and the picked mouth's (alien.gd
+# CONTACT_CHANNEL, alien_hue.gdshader `contact_pick`).
 CONTACT = {"reach": 0.007, "smooth": 2}
-CONTACT_UV = "contact"
+CONTACT_UVS = {"contact": ("bored", "manic"), "contact_mouth": ("frog", "overbite")}
+CONTACT_CHANNEL = {d: 2 * i + j for i, ds in enumerate(CONTACT_UVS.values()) for j, d in enumerate(ds)}
+
+
+def contact_pick(eye: str, mouth: str) -> tuple[float, float, float, float]:
+    """The skin shader's `contact_pick` (a weight per CUSTOM1 component) for an eye design and a mouth design: 1 on
+    the two designs' channels, 0 elsewhere."""
+    pick = [0.0] * 4
+    for d in (eye, mouth):
+        pick[CONTACT_CHANNEL[d]] = 1.0
+    return (pick[0], pick[1], pick[2], pick[3])
 
 
 def smoothstep(a: float, b: float, x: float) -> float:
