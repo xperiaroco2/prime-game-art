@@ -266,7 +266,10 @@ def set_digits(spec):
     bad = set(spec) - set(DIGITS)
     if bad:
         raise SystemExit(f"--digits: unknown {sorted(bad)}; known {DIGITS}")
-    globals().update({k: float(v) for k, v in spec.items()})
+    vals = {k: float(v) for k, v in spec.items()}
+    if vals.get("FINGER_K", 0.0) > 1.0:  # PR #240's review: past 1 the mesh's finger joints pass the bones'
+        raise SystemExit(f"--digits: FINGER_K {vals['FINGER_K']} > 1 puts the mesh's joints past the bones'")
+    globals().update(vals)
 
 
 def build_hand(bm, wrist, bones):
@@ -1010,6 +1013,7 @@ def main():
         json.dump(ring, fh, indent=1)
     with open(f"{args.out}/cage.json", "w", encoding="utf-8") as fh:
         json.dump(report, fh, indent=1)
+    body["prime_digits"] = json.dumps(report["digits"])  # M9: alien_detail.py's joint planes follow it
     bpy.ops.wm.save_as_mainfile(filepath=f"{args.out}/alien_body.blend")
     print("cage:", json.dumps({k: report[k] for k in ("body", "neck", "fit_iterations", "loose_parts",
                                                       "open_edges_below_ring", "little_weighted_verts",

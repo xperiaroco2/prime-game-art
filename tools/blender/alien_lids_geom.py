@@ -160,3 +160,62 @@ def iris_look(look: dict, k: float) -> dict:
 def contact(dist: float, reach: float = CONTACT["reach"]) -> float:
     """The contact field at a skin point `dist` m from the nearest lid or lip surface: 1 at contact, 0 beyond reach."""
     return 1.0 - smoothstep(0.0, reach, dist)
+
+
+# M9 (art #196): one standard eye mount. The engineer (2026-10-20): the eyes too big and bulging out "like a crab's";
+# in the liked 2D part sheet e2 the ball's front sits about flush with the face, the eyes stay inside the head's front
+# silhouette and a soft socket rim surrounds each. So the eye unit and the skin's socket move together: every eye
+# part (ball, lids, wet strips) and the Body's socket bowl are scaled by `scale` about the old ball centre C and moved
+# by eye_offset() (`sink` m back along the socket's axis, `inward` m toward the head's midline), so the bowl still
+# hugs the smaller eye as it hugged the full-size one (no gap, no dark line where a lid meets the skin; M6's open
+# issue). The skin within `inner` old ball radii of C follows exactly; from there to `outer` the follow fades
+# (socket_weight, a smootherstep), which forms the socket's slope. A soft rim of `rim` m is raised on the skin round
+# the smaller eye, at `rim_at` new lid radii from the new centre (rim_bump, `rim_w` wide), on the socket's front half.
+# `scale` is against S9's full-size eye (M6/M7's EYE_SCALE 0.95 is the same measure). Every design built on S9's
+# sockets fits the mount; tools/blender/alien_socket.py applies it to a character (Body["prime_socket"] records it,
+# so alien_m6.py does not scale the eyes again). Chosen on M9's grid beside e2.
+SOCKET = {"scale": 0.82, "sink": 0.020, "inward": 0.019, "inner": 1.3, "outer": 2.0, "rim": 0.0008, "rim_at": 1.10,
+          "rim_w": 0.14}
+SOCKET_KEYS = tuple(SOCKET)
+
+
+def clamp01(x):
+    """x clamped to [0, 1]; plain arithmetic, so it takes floats and numpy arrays alike."""
+    return (abs(x) - abs(x - 1.0) + 1.0) * 0.5
+
+
+def socket_weight(d, inner: float, outer: float):
+    """How fully the skin follows the eye at d old ball radii from the old centre: 1 within `inner`, a smootherstep
+    down to 0 at `outer`."""
+    t = clamp01((d - inner) / (outer - inner))
+    return 1.0 - t * t * t * (t * (t * 6.0 - 15.0) + 10.0)
+
+
+def rim_bump(dd, at: float, width: float):
+    """The soft rim's profile at dd new lid radii from the new centre: 1 at `at`, 0 beyond `width` either side."""
+    x = (dd - at) / width
+    b = clamp01(1.0 - x * x)
+    return b * b
+
+
+def eye_offset(fwd: tuple, x_sign: float, sink: float, inward: float) -> tuple:
+    """The eye unit's move (m, world): `sink` back along the socket's forward axis fwd, `inward` toward x = 0 (x_sign:
+    the side's sign of x)."""
+    return (-fwd[0] * sink - x_sign * inward, -fwd[1] * sink, -fwd[2] * sink)
+
+
+def socket_warp(p: tuple, c: tuple, off: tuple, k: float, r0: float, s: dict = SOCKET) -> tuple:
+    """A skin point p after the mount (the rim aside): toward c + off + k (p - c) by socket_weight of its distance."""
+    w = socket_weight(math.dist(p, c) / r0, s["inner"], s["outer"])
+    return tuple(pi + w * (ci + oi + k * (pi - ci) - pi) for pi, ci, oi in zip(p, c, off))
+
+
+def set_socket(spec: dict) -> dict:
+    """SOCKET with a variant's values over it ({name: value}, names from SOCKET_KEYS)."""
+    bad = set(spec) - set(SOCKET_KEYS)
+    if bad:
+        raise SystemExit(f"socket: unknown {sorted(bad)}; known {SOCKET_KEYS}")
+    out = dict(SOCKET, **{k: float(v) for k, v in spec.items()})
+    if not 0.4 <= out["scale"] <= 1.2 or out["outer"] <= out["inner"] or out["rim_w"] <= 0:
+        raise SystemExit(f"socket: out of range {out}")
+    return out

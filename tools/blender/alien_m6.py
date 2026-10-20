@@ -43,6 +43,7 @@ import alien_eyes as AE  # noqa: E402
 import alien_eyes_geom as E  # noqa: E402
 import alien_lids_geom as LG  # noqa: E402
 import alien_parts_geom as G  # noqa: E402
+import alien_socket  # noqa: E402
 import export_glb  # noqa: E402
 from alien_parts import EYES, LID_BEAD  # noqa: E402
 
@@ -70,6 +71,8 @@ def args():
     p.add_argument("--eye-sink", type=float, default=LG.EYE_SINK, help="m back into the head along the socket axis")
     p.add_argument("--corner", default="", help="JSON merged over alien_lids_geom.CORNER")
     p.add_argument("--no-bake", action="store_true", help="skip the parts' AO bake (a quick geometry check)")
+    p.add_argument("--socket", default="", help="M9: JSON over alien_lids_geom.SOCKET, the eye mount applied here "
+                   "(a variant grid on a kit without one; a chain-built kit carries Body['prime_socket'] already)")
     return p.parse_args(argv)
 
 
@@ -318,8 +321,16 @@ def main():
     # the composed ORM (with the SSS mask) of the default build goes to <out>/textures, another's to <out>/skin_<name>
     skin_root = out if a.export_name == "export" else out / f"skin_{a.export_name}"
     rep = {"eye_scale": a.eye_scale, "eye_sink": a.eye_sink, "corner": corner, "skin": swap_skin(a, skin_root)}
-    rep["eyes"] = rebuild_eyes(a.eye_scale, corner, a.eye_sink)
     body = rest_pose()
+    k, sink = a.eye_scale, a.eye_sink
+    if a.socket:  # M9's grid: the mount on this kit (refused if it has one)
+        rep["socket"] = alien_socket.apply(json.loads(a.socket))
+    if alien_socket.MARKER in body.keys():  # M9: the mount sized and placed the eyes; rebuild the lids at that size
+        k, sink = 1.0, 0.0
+        rep["socket_mount"] = json.loads(body[alien_socket.MARKER])
+    rep["eye_scale"], rep["eye_sink"] = k, sink
+    rep["eyes"] = rebuild_eyes(k, corner, sink)
+    bpy.context.view_layer.update()
     rep["contact"] = contact_field(body)
     if not a.no_bake:
         rep["parts_ao"] = bake_parts_ao(body)

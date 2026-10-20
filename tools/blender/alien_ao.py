@@ -6,9 +6,9 @@ show the same.
       --character <mouths/build/alien_character.blend> --out <S9/cage/ao>
 
 The method: Cycles bakes AO (distance AO["distance"], AO["samples"] samples) into a float colour attribute `ao` on the
-Point domain of the skin mesh (`Body`, the welded body and head), in the rest pose, with the default eyes shown
-(bored eyes at their rest lids; no mouth piece since M7, no crest) so the lids occlude the skin; every other part is
-hidden from the bake. The raw values are lifted by AO["floor"] (no black creases) and smoothed over the
+Point domain of the skin mesh (`Body`, the welded body and head), in the rest pose, with every part hidden (M9: no
+eye, no mouth piece, no crest), so the skin's AO is the Body's own shape (sockets, creases, nostrils) and fits every
+eye and mouth design; each part's shade on the skin is its design's contact channel (alien_m6.py). The raw values are lifted by AO["floor"] (no black creases) and smoothed over the
 mesh once. The GLB is exported again with the attribute as glTF COLOR_0 (grey, linear), which three.js multiplies into
 the base colour by itself and alien_hue.gdshader reads as COLOR.r. Writes build/alien_character.blend,
 export/alien_character.glb (with character.json and the mouths' atlases copied beside it) and build_report.json.
@@ -29,10 +29,11 @@ import export_glb  # noqa: E402
 
 AO = {"distance": 0.06, "samples": 96, "floor": 0.18, "smooth": 1}
 REST_UV = ("rest_xy", "rest_zn")  # S9b: TEXCOORD_2 and TEXCOORD_3 (rest_coords)
-# M7: the eyes only. With the frog rest piece in the bake the skin under it baked to about 0.3 (0.03 in the
+# M7: no mouth piece. With the frog rest piece in the bake the skin under it baked to about 0.3 (0.03 in the
 # 2K map), and every other mouth piece, smaller than frog rest, showed that skin as a black strip beside it
 # (art #196); the lips' own shade on the skin is the per-design contact field (alien_m6.py, TEXCOORD_5).
-SHOWN = ("eye_bored_",)  # the parts that occlude the skin in the bake (with Body)
+# M9 (brief UPDATE 8): no eye either, since more eye designs come; the eyes' shade is TEXCOORD_4's channels.
+SHOWN = ()  # M9 (UPDATE 8): no part occludes the skin in the bake, only the Body's own shape
 # S9c: the band under the jaw. The jaw's overhang shades the top of the throat into a grey band that made the throat's
 # join into the jaw look dirty (S9, S9b); rf2 keeps only a faint shade there. Over the front of the neck (within
 # "deg" degrees of the front around the neck ring's axis, soft), from z[0..1] up to z[2..3] (m) and within "r" of the

@@ -1,6 +1,7 @@
 """The alien's longer, slimmer digits and the mouth-free AO (art #196, M7). alien_cage.py runs inside Blender; its
 digit helpers are loaded here with stub Blender modules. The AO bakes (alien_ao, alien_detail, alien_texture) show
-the eyes alone: a mouth piece in the bake left a black band on the skin round the smaller mouth shapes."""
+no part: a mouth piece in the bake left a black band on the skin round the smaller mouth shapes (M7), and since M9
+no eye either, so the skin fits every eye design (brief UPDATE 8)."""
 from __future__ import annotations
 
 import importlib.util
@@ -90,21 +91,23 @@ class AlienDigits(unittest.TestCase):
         self.assertEqual((c.FINGER_K, c.TOE_LEN), (0.82, 1.0))
         with self.assertRaises(SystemExit):
             c.set_digits({"FINGER_LEN": 1.0})
+        with self.assertRaises(SystemExit):  # PR #240's review: the mesh's joints never pass the bones'
+            c.set_digits({"FINGER_K": 1.05})
+        c.set_digits({"FINGER_K": 0.984})
 
     def test_finger_k_matches_the_detail_sculpt(self):
         detail = (BLENDER / "alien_detail.py").read_text(encoding="utf-8")
         self.assertEqual(float(re.search(r"^FINGER_K = ([0-9.]+)", detail, re.M).group(1)), self.c.FINGER_K)
 
 
-class AlienAoShowsNoMouth(unittest.TestCase):
-    def test_no_mouth_piece_in_any_ao_bake(self):
+class AlienAoShowsNoPart(unittest.TestCase):
+    def test_no_part_in_any_ao_bake(self):
         for name in ("alien_ao.py", "alien_detail.py", "alien_texture.py"):
             text = (BLENDER / name).read_text(encoding="utf-8")
             m = re.search(r"^SHOWN = \(([^)]*)\)", text, re.M)
             self.assertIsNotNone(m, name)
             shown = re.findall(r'"([^"]+)"', m.group(1))
-            self.assertEqual(shown, ["eye_bored_"], name)
-            self.assertFalse([s for s in shown if "mouth" in s], name)
+            self.assertEqual(shown, [], name)
 
 
 if __name__ == "__main__":
