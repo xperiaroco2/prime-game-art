@@ -5,7 +5,7 @@ extends "res://alien/m7_shots.gd"
 ## "e2_crops": [[x0, y0, x1, y1], ...] its heads' close and whole-head regions (fractions), shown as the first row;
 ## "designs": the eye designs per kit (default ["bored"]). "modes", in this order:
 ## - "eyes": eyes.png ("eyes_name"), a row per kit and design: the face from the front and at 3/4 from 0.4 m, then
-##   from 1.2 m;
+##   from 1.2 m ("eye_views": [[yaw, pitch, distance], ...] instead, M9b's lid grid);
 ## - "socket": socket.png, a row per kit and design: the left eye's socket close (front, from the outer side, from
 ##   above and from below), the place where a lid meets the skin;
 ## - "blink": m6c_shots.gd's blink_<design>.png (open, rest, half, closed);
@@ -62,13 +62,14 @@ func _e2_row(cols: int) -> Array:
 
 
 func _eyes() -> void:
-	var cells: Array = _e2_row(EYE_VIEWS.size())
+	var views: Array = _spec.get("eye_views", EYE_VIEWS)
+	var cells: Array = _e2_row(views.size())
 	for k: String in _keys:
 		_only([k], false)
 		for d: String in _spec.get("designs", ["bored"]):
 			_combo(k, d, "frog")
 			await process_frame
-			for v: Array in EYE_VIEWS:
+			for v: Array in views:
 				var fv: Array = _face_view(k)
 				if v[2] < 1.0:
 					_look(fv[0], v[0], v[1], v[2], CLOSE_FOV)
@@ -76,7 +77,7 @@ func _eyes() -> void:
 					_face_at(k, v[0], v[2])
 				cells.append(await _shot("%s %s y%d %.1fm" % [_labels[k], d, v[0], v[2]]))
 			_combo(k, "bored", "frog")
-	_grid_cells(cells, EYE_VIEWS.size(), Vector2i(400, 400), _spec.get("eyes_name", "eyes.png"))
+	_grid_cells(cells, views.size(), Vector2i(400, 400), _spec.get("eyes_name", "eyes.png"))
 
 
 func _socket() -> void:
