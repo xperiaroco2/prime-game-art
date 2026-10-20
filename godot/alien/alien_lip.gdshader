@@ -34,12 +34,27 @@ uniform vec3 transmit_color : source_color = vec3(1.0, 0.55, 0.42);
 uniform float rim_value : hint_range(0.0, 1.0) = 0.0;
 uniform float rim_tint : hint_range(0.0, 1.0) = 0.5;
 
+// M12 (art #196): the pout mouth's secondary motion on the shown piece (alien.gd's talk style, alien_talk.gd; both 0 by
+// default, so every other part draws as before). The pieces' model space is the Mouth socket's: y up, z toward the
+// front, the rest seam at y 0. `lip_drop` (m) moves the lower lip (below the seam) down: the soft bounce after a phase
+// change; `pucker` (0..1) purses the lips between words: narrower toward the centre line (`pucker_amount.x` of x at
+// full) and forward at the centre (`pucker_amount.y` m).
+instance uniform float lip_drop = 0.0;
+instance uniform float pucker = 0.0;
+uniform vec2 pucker_amount = vec2(0.14, 0.003);
+
 varying vec3 m_pos;
 
 #include "res://alien/alien_grain.gdshaderinc"
 
 void vertex() {
-	m_pos = VERTEX;
+	m_pos = VERTEX;  // the grain and drift stay on the lips as they move
+	if (lip_drop != 0.0 || pucker > 0.0) {
+		float low = 1.0 - smoothstep(-0.002, 0.004, VERTEX.y);
+		VERTEX.y -= lip_drop * low;
+		VERTEX.x *= 1.0 - pucker_amount.x * pucker;
+		VERTEX.z += pucker_amount.y * pucker * (1.0 - smoothstep(0.0, 0.03, abs(VERTEX.x)));
+	}
 }
 
 void fragment() {
