@@ -88,6 +88,14 @@ class EyeLight(unittest.TestCase):
         self.assertGreater(s["light_in"], s["rim_at"] * 1.23)
         self.assertLess(s["light_out"], s["outer"] / s["scale"] + 0.5)
 
+    def test_the_slope_smoothing_band(self):
+        s = LG.SOCKET
+        self.assertGreater(s["smooth"], 0)
+        self.assertAlmostEqual(LG.smooth_band(s["inner"] - 0.1, s["inner"], s["outer"]), 0.0, places=9)
+        self.assertEqual(LG.smooth_band((s["inner"] + s["outer"]) / 2, s["inner"], s["outer"]), 1.0)
+        self.assertAlmostEqual(LG.smooth_band(s["outer"], s["inner"], s["outer"]), 0.0, places=9)
+        self.assertIn("smooth_slope(", (BLENDER / "alien_socket.py").read_text(encoding="utf-8"))
+
     def test_set_socket_refuses_a_reversed_light(self):
         with self.assertRaises(SystemExit):
             LG.set_socket({"light_in": 2.0, "light_out": 1.5})

@@ -175,14 +175,20 @@ def contact(dist: float, reach: float = CONTACT["reach"]) -> float:
 # sockets fits the mount; tools/blender/alien_socket.py applies it to a character (Body["prime_socket"] records it,
 # so alien_m6.py does not scale the eyes again). Chosen on M9's grid beside e2.
 SOCKET = {"scale": 0.82, "sink": 0.020, "inward": 0.019, "inner": 1.3, "outer": 2.0, "rim": 0.0008, "rim_at": 1.10,
-          "rim_w": 0.14, "light_in": 1.6, "light_out": 2.3}
+          "rim_w": 0.14, "light_in": 1.4, "light_out": 1.95, "smooth": 30}
 # M9b: the pale skin round the mounted eye. The mount pulls the skin within `inner` toward the smaller eye, so the
 # vertices that carried the crown's teal (the `masks` light 0, once hidden under S9's big lids) moved down beside the
 # eye and read, shaded on the socket's downward slope, as a dark band of eye shadow. In e2 the skin round each eye is
 # the pale face's. So the mount raises the light mask (never lowers it) to eye_light(): full within `light_in` new
 # ball radii of the new centre, none past `light_out` (a smoothstep), on skin facing the socket's way (the skin
-# normal's cosine to the socket's forward axis: none below -0.1, full from 0.4; the temples and the head's sides keep
+# normal's cosine to the socket's forward axis: none below -0.3, full from 0.4; the temples and the head's sides keep
 # their teal). light_out 0 is M9's mask.
+# M9b: the slope's ripples. The warp packs the old socket's skin (1.3 to 2.0 old radii) into a narrower slope, and its
+# small undulations, hidden under S9's lids and the teal, showed on the pale as two or three arcs above each eye.
+# `smooth` Taubin passes (alien_socket.py) even out that band before the rim is raised: full weight from `inner` to
+# 0.85 of the way to `outer`, none at `outer`, above the eye only (from 0.2 old radii below its centre, full
+# from 0.3 above; the nose keeps its shape); the bowl inside `inner` (under the lids) and the skin beyond keep
+# their shape. 0 is M9's slope.
 SOCKET_KEYS = tuple(SOCKET)
 
 
@@ -209,7 +215,15 @@ def eye_light(dd, cos_fwd, light_in: float, light_out: float):
     """The light mask's floor at dd new ball radii from the new centre, cos_fwd the skin normal's cosine to the
     socket's forward axis: 1 inside light_in, a smoothstep to 0 at light_out, on skin facing forward only."""
     t = clamp01((dd - light_in) / max(light_out - light_in, 1e-9))
-    return (1.0 - t * t * (3.0 - 2.0 * t)) * clamp01((cos_fwd + 0.1) / 0.5)
+    return (1.0 - t * t * (3.0 - 2.0 * t)) * clamp01((cos_fwd + 0.3) / 0.7)
+
+
+def smooth_band(d, inner: float, outer: float):
+    """The slope smoothing's weight at d old ball radii: 0 inside `inner`, a smoothstep up to 1 just past it, 1 to
+    0.85 of the way to `outer`, a smoothstep down to 0 at `outer`."""
+    a = clamp01((d - inner) / 0.08)
+    b = clamp01((outer - d) / (0.15 * (outer - inner)))
+    return a * a * (3.0 - 2.0 * a) * b * b * (3.0 - 2.0 * b)
 
 
 def eye_offset(fwd: tuple, x_sign: float, sink: float, inward: float) -> tuple:

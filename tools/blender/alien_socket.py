@@ -105,8 +105,9 @@ def apply(spec: dict) -> dict:
         disp += wt[:, None] * (c + off + k * (co0 - c) - co0)
         lid_r = max(float(np.linalg.norm(world_co(bpy.data.objects[f"eye_{d}_lid_upper_{side}"]) - c, axis=1).max())
                     for d in DESIGNS)
-        sides[side] = {"c": c, "fwd": fwd, "off": off, "r0": r0, "lid_r": lid_r}
+        sides[side] = {"c": c, "fwd": fwd, "off": off, "r0": r0, "lid_r": lid_r, "dist": dist}
     co1 = co0 + disp
+    co1, rep_smooth = smooth_slope(me, co1, sides, s)
     for side, v in sides.items():  # the soft rim round the smaller eye, on the socket's front half
         c1 = v["c"] + v["off"]
         q = co1 - c1
@@ -136,7 +137,7 @@ def apply(spec: dict) -> dict:
     # the eye parts: world targets first, then the nodes moved, then the meshes written in their new frames
     rep = {"socket": s, "folds": folds, "folds_inside_ball": folds_hidden, "keep_mm": keep,
            "moved_max_mm": round(float(moved.max() * 1000), 2), "moved_verts": int((moved > 1e-4).sum()),
-           "light": rep_light}
+           "light": rep_light, "smooth": rep_smooth}
     for side, v in sides.items():
         c, off = v["c"], v["off"]
         parts = eye_parts(side)
@@ -159,6 +160,32 @@ def apply(spec: dict) -> dict:
     body[MARKER] = json.dumps(s, sort_keys=True)
     log("mount", json.dumps(rep))
     return rep
+
+
+def smooth_slope(me, co: np.ndarray, sides: dict, s: dict):
+    """M9b: Taubin passes (lambda 0.5, mu -0.53, so the slope does not shrink) over the socket's slope above the eye,
+    weighted by alien_lids_geom.smooth_band of each vertex's old distance; returns the positions and a report."""
+    n = int(s.get("smooth", 0))
+    if n <= 0:
+        return co, {"passes": 0}
+    w = np.zeros(len(co))
+    for v in sides.values():  # the slope above the eye only (the nostrils and the nose bridge below keep their shape)
+        up = LG.clamp01(((co[:, 2] - v["c"][2]) / v["r0"] + 0.2) / 0.5)
+        w = np.maximum(w, LG.smooth_band(v["dist"], s["inner"], s["outer"]) * up)
+    e = np.empty(len(me.edges) * 2, dtype=np.int64)
+    me.edges.foreach_get("vertices", e)
+    e = e.reshape(-1, 2)
+    deg = np.maximum(np.bincount(e.ravel(), None, len(co)), 1)[:, None]
+    out = co.copy()
+    for _ in range(n):
+        for f in (0.5, -0.53):
+            acc = np.zeros_like(out)
+            np.add.at(acc, e[:, 0], out[e[:, 1]])
+            np.add.at(acc, e[:, 1], out[e[:, 0]])
+            out = out + (f * w)[:, None] * (acc / deg - out)
+    mv = np.linalg.norm(out - co, axis=1)
+    return out, {"passes": n, "verts": int((w > 0).sum()), "moved_max_mm": round(float(mv.max() * 1000), 2),
+                 "moved_mean_mm": round(float(mv[w > 0].mean() * 1000), 3) if (w > 0).any() else 0.0}
 
 
 def raise_light(me, co1: np.ndarray, sides: dict, k: float, s: dict) -> dict:
