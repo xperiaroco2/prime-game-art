@@ -289,6 +289,17 @@ def slim(rho: tuple, bead: float, lids: dict = LIDS) -> tuple[tuple[float, float
 # smallest amount per design and lid with which the dome reaches `margin` into the skin at every latitude (lid_gap).
 # FLARE_OFF is S9's shell exactly.
 FLARE_OFF = {"amount": 0.0, "from_deg": 25.0, "to_deg": 70.0}
+# Where the ramp sits (M10's first grid: a ramp from 25 degrees swelled the dome's visible top, so the eyes did not
+# read smaller): it starts `from_off` degrees before the elevation where the dome turns away from a front view (90
+# degrees from the eye's forward axis, at local p = 90 - |the lid's rest edge elevation|) and rises over `width`
+# degrees behind it, so the swell sits behind the dome's front outline, where it runs into the head's skin.
+FLARE_SIL = {"from_off": -5.0, "width": 50.0}
+
+
+def flare_base(rest_deg: float, s: dict = FLARE_SIL) -> dict:
+    """FLARE_OFF with its ramp placed for a lid whose edge rests at rest_deg (alien_parts.EYES' `rest`)."""
+    a = max(10.0, 90.0 - abs(rest_deg) + s["from_off"])
+    return dict(FLARE_OFF, from_deg=a, to_deg=a + s["width"])
 FLARE_MARGIN = 0.004  # ball radii (about 0.15 mm): the dome must reach this far into the skin at every latitude
 FLARE_STEP = 0.0025
 FLARE_MAX = 0.4

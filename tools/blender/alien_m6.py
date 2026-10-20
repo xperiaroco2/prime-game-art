@@ -179,13 +179,14 @@ def flares(k: float, sink: float, lids: dict | None, spec: str) -> dict:
                 r = ball_radius(ball) * k
                 lo = bpy.data.objects[f"eye_{dname}_lid_{lid}_{side}"]
                 pts = lid_skin_local(lo, r, sink_vector(side, sink), skin).tolist()
-                f = LG.auto_flare(pts, rho[1], bead, lid == "upper")
+                f = LG.auto_flare(pts, rho[1], bead, lid == "upper", base=LG.flare_base(d[lid]["rest"]))
                 g0 = LG.lid_gap(pts, rho[1], bead, lid == "upper", None)
                 g1 = LG.lid_gap(pts, rho[1], bead, lid == "upper", f)
                 gaps[side] = {"before_r": round(max(g for _, g, _ in g0), 4),
                               "after_r": round(max(g for _, g, _ in g1), 4),
                               "before_mm": round(max(g for _, g, _ in g0) * r * 1000.0, 2),
-                              "bins_open_before": [t for t, g, _ in g0 if g > 0]}
+                              "bins_open_before": [t for t, g, _ in g0 if g > 0],
+                              "contact_p_deg": [pp for _, _, pp in g1]}
                 if best is None or f["amount"] > best["amount"]:
                     best = f
             out[f"{dname}_{lid}"] = dict(best, gap_r=gaps)
