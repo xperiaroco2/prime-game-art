@@ -95,6 +95,13 @@ class CreaseTest(unittest.TestCase):
         for name, c in m2b["creases"].items():
             self.assertLessEqual(c["depth"] * c["lines"], G.MAX_DISP_MM, name)
 
+    def test_m6c_is_m2b_with_m2s_grain(self):
+        # the engineer on v28 (#196): M2b's neck and creases, M3c's (M2's) fine grain back
+        m2, m2b, m6c = G.sculpt("m2"), G.sculpt("m2b"), G.sculpt("m6c")
+        self.assertEqual(m6c["grain"], m2["grain"])
+        for part in ("creases", "soften", "curvature"):
+            self.assertEqual(m6c[part], m2b[part], part)
+
     def test_soften_stays_inside_the_bake_rays(self):
         # the capped cage starts rays at most CAGE max_mm out and they run CAGE ray_mm: they reach ray - max inside the
         # low mesh; the relaxed jaw plus the deepest crease must stay within that

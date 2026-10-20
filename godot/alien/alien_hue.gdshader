@@ -88,10 +88,14 @@ uniform float tint_ao : hint_range(0.0, 1.0) = 0.35;  // another hue: the share 
 uniform float tint_ao_light : hint_range(0.0, 1.0) = 0.25;  // another hue: AO_LIGHT_AFFECT (the teal's is ao_light)
 
 // M6 (art #196): the contact shade where the skin meets the lid domes and lips, on the textured path only: the kit's
-// contact field (tools/blender/alien_m6.py: 1 at contact, 0 at 7 mm, in glTF TEXCOORD_4 = CUSTOM1.x) darkens and
-// warms the albedo toward `contact_tint` and lowers AO by `contact_ao`. alien.gd sets `contact` only for a kit whose
-// hue material carries the contact marker (an older kit has no TEXCOORD_4; 0 keeps M5's skin).
+// contact field (tools/blender/alien_m6.py: 1 at contact, 0 at 7 mm) darkens and warms the albedo toward
+// `contact_tint` and lowers AO by `contact_ao`. alien.gd sets `contact` only for a kit whose hue material carries a
+// contact marker (an older kit has no TEXCOORD_4; 0 keeps M5's skin). M6c: one channel per design, glTF TEXCOORD_4 =
+// (bored, manic) and TEXCOORD_5 = (frog, overbite), imported together as CUSTOM1; the field is the max over the
+// channels weighted by `contact_pick` (alien.gd: the shown eye design's and mouth's). The default picks x alone: M6's
+// kits carry one field for every design in TEXCOORD_4's u.
 uniform float contact : hint_range(0.0, 1.0) = 0.0;
+uniform vec4 contact_pick = vec4(1.0, 0.0, 0.0, 0.0);
 uniform vec3 contact_tint = vec3(0.80, 0.66, 0.62);  // linear multiplier at full contact: darker, warmer
 uniform float contact_ao : hint_range(0.0, 1.0) = 0.0;
 
@@ -112,7 +116,8 @@ void vertex() {
 		m_pos = VERTEX;
 		m_nz = NORMAL.z;
 	}
-	m_contact = contact > 0.0 ? clamp(CUSTOM1.x, 0.0, 1.0) * contact : 0.0;
+	vec4 cf = clamp(CUSTOM1, 0.0, 1.0) * contact_pick;
+	m_contact = contact > 0.0 ? max(max(cf.x, cf.y), max(cf.z, cf.w)) * contact : 0.0;
 }
 
 float luma(vec3 c) {

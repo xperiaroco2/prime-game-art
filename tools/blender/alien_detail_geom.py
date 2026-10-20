@@ -121,6 +121,12 @@ SCULPTS = {
         "soften": {"passes": 300, "step": 0.6, "lo": 0.08, "hi": 0.3, "spread": 24, "max_mm": 1.8},
     },
 }
+# M6c (the engineer on v28: the release candidate's skin "smooth again, without any texture"; v27's "M3c + M4" with
+# M2's grain read better): M2b's neck fix, soft creases and jaw relax, with M2's fine grain back (the pores 1.1 mm and
+# 0.045 mm deep, the peel 0.06 mm, full on the head). Measured on the face (M6c's handoff): M2b's grain left 55 % of
+# M2's normal-map energy at the pore scale and a third of its lit-luminance grain in Godot at 0.4 m; the albedo and
+# ORM did not change (the grain is a bump, never in the curvature or the AO).
+SCULPTS["m6c"] = {k: v for k, v in SCULPTS["m2b"].items() if k != "grain"}
 
 
 def sculpt(name: str, extra: dict | None = None) -> dict:

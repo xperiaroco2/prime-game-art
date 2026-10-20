@@ -87,8 +87,13 @@ const LIP_LOOK := {"albedo": Color(0.78, 0.35, 0.31), "deep": Color(0.56, 0.18, 
 ## the lips keep a soft sheen).
 const LID_LOOK := {"roughness_value": 0.64, "sheen": 0.0}
 ## M6: the textured skin's contact shade near the lids and lips (alien_hue.gdshader `contact*`), only for a kit whose
-## hue material carries CONTACT_MARKER (tools/blender/alien_m6.py's contact field in TEXCOORD_4).
-const CONTACT_MARKER := {"prime_contact": "custom1_x"}
+## hue material carries a contact marker: M6's CONTACT_MARKER_M6 (one field for every design in TEXCOORD_4's u) or
+## M6c's CONTACT_MARKER (tools/blender/alien_m6.py: one channel per design, TEXCOORD_4 = (bored, manic), TEXCOORD_5 =
+## (frog, overbite), Godot CUSTOM1; CONTACT_CHANNEL is a design's component, as alien_lids_geom.CONTACT_CHANNEL).
+## On an M6c kit set_eyes() and set_mouth_design() pick the shown designs' channels (`contact_pick`).
+const CONTACT_MARKER := {"prime_contact": "custom1_designs"}
+const CONTACT_MARKER_M6 := {"prime_contact": "custom1_x"}
+const CONTACT_CHANNEL := {"bored": 0, "manic": 1, "frog": 2, "overbite": 3}
 const SKIN_CONTACT := {"contact": 1.0, "contact_tint": Vector3(0.80, 0.66, 0.62), "contact_ao": 0.3}
 ## M6: LIP_LOOK reads the part's baked AO (COLOR_0), so it applies only to a kit whose imported alien_lip (the lips' and
 ## the lid domes' one material) carries this marker in its glTF extras (tools/blender/alien_m6.py, after the bake).
@@ -153,6 +158,7 @@ var mouth_mode: String = "3d"
 var _material: ShaderMaterial
 var _part_ao: bool = false  # M6: the kit's alien_lip carries PART_AO_MARKER
 var _tex_material: ShaderMaterial  # M5: the skin on its texture set (null for a kit without SSS_MARKER)
+var _contact_designs: bool = false  # M6c: the kit's contact field has one channel per design (CONTACT_MARKER)
 var _hue_meshes: Array[GeometryInstance3D] = []
 var face_look: String = "s5"
 var _lid_material: Material
@@ -235,7 +241,8 @@ func _textured_material(imported: Material) -> ShaderMaterial:
 			_tex_material.set_shader_parameter("orm_tex", orm)
 		if bm.normal_enabled and bm.normal_texture != null:
 			_tex_material.set_shader_parameter("normal_tex", bm.normal_texture)
-		if has_marker(imported, CONTACT_MARKER) and lip_look != "m5":  # M6: the contact shade
+		_contact_designs = has_marker(imported, CONTACT_MARKER)
+		if (_contact_designs or has_marker(imported, CONTACT_MARKER_M6)) and lip_look != "m5":  # M6: the contact shade
 			for k: String in SKIN_CONTACT:
 				_tex_material.set_shader_parameter(k, SKIN_CONTACT[k])
 		var t: Color = (HUES["teal"][0] as Color).srgb_to_linear()
@@ -373,6 +380,7 @@ func set_hue(name: String) -> void:
 
 func set_eyes(design: String) -> void:
 	eyes = design
+	_pick_contact()
 	for d: String in LIDS:
 		for side: String in ["L", "R"]:
 			node("eye_%s_%s" % [d, side]).visible = d == design
@@ -402,6 +410,17 @@ func _apply_lids(upper_deg: float, lower_deg: float) -> void:
 				wet.set_instance_shader_parameter("open", open)
 
 
+## M6c: the skin's contact shade from the shown eye design's and mouth's channels only (an M6c kit; M6's one field
+## stays on CUSTOM1.x, the shader's default pick).
+func _pick_contact() -> void:
+	if _tex_material == null or not _contact_designs:
+		return
+	var pick := Vector4.ZERO
+	pick[CONTACT_CHANNEL[eyes]] = 1.0
+	pick[CONTACT_CHANNEL[mouth_design]] = 1.0
+	_tex_material.set_shader_parameter("contact_pick", pick)
+
+
 ## The lids at t ms into a blink (0 = the lid state, BLINK_MS close, hold, open): returns false once it is over.
 func blink_at(t_ms: float) -> bool:
 	var close: float = BLINK_MS["close"]
@@ -426,6 +445,7 @@ func blink_at(t_ms: float) -> bool:
 
 func set_mouth_design(design: String) -> void:
 	mouth_design = design
+	_pick_contact()
 	show_mouth(mouth_piece)
 
 

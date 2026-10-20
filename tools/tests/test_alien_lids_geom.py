@@ -146,6 +146,13 @@ class SizeAndContact(unittest.TestCase):
         vals = [LG.contact(r * i / 20) for i in range(21)]
         self.assertTrue(all(a >= b for a, b in zip(vals, vals[1:])))
 
+    def test_one_contact_channel_per_design(self):
+        # M6c (PR #238 minor 4): TEXCOORD_4 = (bored, manic), TEXCOORD_5 = (frog, overbite) -> CUSTOM1.xyzw
+        self.assertEqual(list(LG.CONTACT_UVS), ["contact", "contact_mouth"])
+        self.assertEqual(LG.CONTACT_CHANNEL, {"bored": 0, "manic": 1, "frog": 2, "overbite": 3})
+        self.assertEqual(LG.contact_pick("bored", "frog"), (1.0, 0.0, 1.0, 0.0))
+        self.assertEqual(LG.contact_pick("manic", "overbite"), (0.0, 1.0, 0.0, 1.0))
+
 
 class Constants(unittest.TestCase):
     @classmethod
@@ -161,6 +168,17 @@ class Constants(unittest.TestCase):
     def test_contact_keys_are_uniforms(self):
         missing = gd_const_keys(self.gd, "SKIN_CONTACT") - uniforms(HUE)
         self.assertFalse(missing, missing)
+
+    def test_contact_channels_match_the_build(self):
+        m = re.search(r'const CONTACT_CHANNEL := \{([^}]*)\}', self.gd)
+        self.assertIsNotNone(m)
+        gd = {k: int(v) for k, v in re.findall(r'"(\w+)": (\d+)', m.group(1))}
+        self.assertEqual(gd, LG.CONTACT_CHANNEL)
+        hue = HUE.read_text(encoding="utf-8")
+        # the shader's default pick reads M6's one field (CUSTOM1.x), so M6's kits keep their shade
+        self.assertRegex(hue, r'uniform vec4 contact_pick = vec4\(1\.0, 0\.0, 0\.0, 0\.0\);')
+        self.assertIn('set_shader_parameter("contact_pick"', self.gd)
+        self.assertIn('CONTACT_MARKER_M6 := {"prime_contact": "custom1_x"}', self.gd)
 
     def test_marker_matches_the_build(self):
         gd = re.search(r'const CONTACT_MARKER := \{"(\w+)": "(\w+)"\}', self.gd)

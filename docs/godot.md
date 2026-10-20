@@ -1363,7 +1363,7 @@ a time, by visibility.
     1 at contact to 0 at 7 mm (`CONTACT`), smoothed, in a fifth UV layer `contact` (glTF `TEXCOORD_4`, Godot
     `CUSTOM1.x`). `alien_hue.gdshader` (textured path) darkens and warms the albedo toward `contact_tint` and lowers
     AO by `contact_ao` there; `alien.gd` sets it (`SKIN_CONTACT`) only for a kit whose hue material carries
-    `CONTACT_MARKER` (glTF extras `{"prime_contact": "custom1_x"}`). M3c's texture already holds a contact AO round
+    `CONTACT_MARKER_M6` (glTF extras `{"prime_contact": "custom1_x"}`). M3c's texture already holds a contact AO round
     the sockets, so the term is subtle (the grid's "contact off" barely differs).
   - **The kits:** `M6/export/` (M3c's set and M3a's capped-cage normal map, 36.2 MB) and `M6/export_m2b/` (M2b's
     recomposed set, `--skin-tex M2b/textures --skin-normal M2b/bake/normal.png`, 29.4 MB; its composed ORM in
@@ -1382,7 +1382,45 @@ a time, by visibility.
     converted to linear), `roughness` 0.55 and `clearcoat` 0.06 at 0.5 on the lips, 0.64 and no clear coat on the
     lid domes (nodes `eye_*_lid_*`), `sheen` none; the drift is optional; the AO into `aoMap`-like
     `ambientOcclusion` (`reflectedLight.indirectDiffuse *= mix(1, color.r, 0.5)`). The skin's contact field is in
-    `uv4` (`TEXCOORD_4`): `diffuseColor.rgb *= mix(vec3(1), vec3(0.80, 0.66, 0.62), uv4.x)`.
+    `texcoord_4` (`TEXCOORD_4`): `diffuseColor.rgb *= mix(vec3(1), vec3(0.80, 0.66, 0.62), texcoord_4.x)`. M6c splits it per
+    design (below).
+- **M6c, the grain back and one contact channel per design** (output under
+  `D:/prime-art-raw/review/char/alien-parts-kit/M6c/`). The engineer on v28's release candidate (`M6/export_m2b`):
+  the skin "smooth again, without any texture" beside v27's "M3c + M4"; with the overbite mouth black shades where
+  the frog lips sit; the manic eyes without their "shell".
+  - **What flattened the grain:** M2b's normal map. Measured on the face (the face field of the fields, eroded; the
+    RMS of the map minus its 3-texel box blur): the normal map's x/y 0.0118 against M2's 0.0215 (55 %); the albedo
+    (0.0057 against 0.0056) and the ORM (R 0.0090, G 0.0030 both) did not change: the grain is a bump on the high
+    copy, never in the curvature or the AO the texture is composed from. In Godot (light D, the same camera) the lit
+    luminance's fine grain on the forehead at 0.4 m fell to a third (0.00125 against 0.00396).
+  - **The sculpt `m6c`** (`alien_detail_geom.SCULPTS`): M2b's creases, jaw relax and curvature smoothing with M2's
+    grain (pores 1.1 mm and 0.045 mm deep, peel 0.06 mm, face 1.0). Its normal map's face energy is M2's (0.0215);
+    in Godot the forehead's grain is v27's (0.00395 against 0.00396 at 0.4 m); the softer brow keeps less there
+    (0.0028 against 0.0032). Its curvature bake is M2b's byte for byte, so M2b's composed set (`M2b/textures`) is
+    the skin's albedo and ORM unchanged; only the normal map is new (`M6c/bake/normal.png`).
+  - **One contact channel per design:** `alien_m6.py` writes the field per design into two UV layers
+    (`alien_lids_geom.CONTACT_UVS`): `contact` = glTF `TEXCOORD_4` (u bored, v manic) and `contact_mouth` =
+    `TEXCOORD_5` (u frog, v overbite); v is stored flipped (the exporter writes 1 - v). Godot 4.7.2 imports both as
+    `CUSTOM1` (RGBA_FLOAT: x bored, y manic, z frog, w overbite; measured maxima 1.00, 1.00, 0.96, 0.97).
+    `alien_hue.gdshader` takes the max of `CUSTOM1 * contact_pick`; `alien.gd` sets `contact_pick` from
+    `CONTACT_CHANNEL` in `set_eyes()` and `set_mouth_design()` on a kit with `CONTACT_MARKER`
+    (`{"prime_contact": "custom1_designs"}`). M6's kits (`CONTACT_MARKER_M6`, `custom1_x`) keep their one field: the
+    shader's default pick is x alone. Proof `M6c/godot/r3/channels.png` (the shade drawn black): every channel at
+    once (M6) puts a black band above the overbite lips where the frog lips sit and above the manic lids where the
+    bored domes sit; the picked channels do not.
+  - **The manic eyes:** the M6 kit's manic lids, wet strips and cornea are all there and seal in the blink
+    (`r2/blink_manic.png`); what flattened them in Godot was the bored domes' contact shade, a dark halo round the
+    smaller manic lids, gone with the per-design channel. They keep M6's rounded corners, so they lack v27's corner
+    wings (the "very sharp corners" of UPDATE 4).
+  - **The build:** `alien_m6.py --kit <M5/export> --out <M6c> --skin-tex <M2b/textures> --skin-normal
+    <M6c/bake/normal.png>` after `alien_detail.py --stage high --sculpt m6c --character <M2/uv/build/
+    alien_character.blend> --out <M6c>` and `--stage bake --cage capped --out <M6c>` (each through
+    `tools/runner/blender.py` in the background; about 2, 2 and 3 minutes). GLB 34.4 MB, glTF-Validator 0 errors.
+  - **`m6c_shots.gd`**, the proof (spec `"kits"`: key, res, look, label, the hero last; modes `cmp`, `designs`
+    (with `hues.png`: teal, coral, violet), `contact`, `channels`, `blink`, `manic`; its header lists the sheets).
+  - **For three.js:** GLTFLoader keeps the two layers as the attributes `texcoord_4` (bored, manic) and `texcoord_5`
+    (frog, overbite); the shade's field is `max(max(t4.x * pick.x, t4.y * pick.y), max(t5.x * pick.z, t5.y *
+    pick.w))` with `pick` 1 on the shown eye design's and mouth's channels (`CONTACT_CHANNEL`).
 
 ## Findings for later tasks
 
