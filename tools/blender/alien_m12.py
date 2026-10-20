@@ -180,6 +180,7 @@ def main():
             attach(vo, mouth)
             rep.setdefault("grid", {})[vo.name] = {kk: vm[kk] for kk in ("width_mm", "height_mm", "max_open_mm")}
             extra.append(vo)
+    log("rings", json.dumps({k: v["ring_mm"] for k, v in rep["pieces"].items() if "ring_mm" in v}))  # M12b: w, h, hole w, h
     log("pieces", json.dumps({k: [v["width_mm"], v["height_mm"], v["max_open_mm"], v["form"], v["verts"]]
                               for k, v in rep["pieces"].items()}))
     if extra:

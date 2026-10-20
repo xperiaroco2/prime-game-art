@@ -346,6 +346,22 @@ def ring_contours(cols):
     return (cx, cy), pairs
 
 
+def ring_measure(cols):
+    """M12b: an open panel's scalars for alien_lips_geom.ring_param (px): the lips' outer centre cx and half width W,
+    the opening's centre row cy and half height hu, each lip's thickness t_u, t_l, all at the centre columns."""
+    xs = sorted(cols)
+    xl, xr = xs[0] - 0.5, xs[-1] + 0.5
+    cx = (xl + xr) / 2
+    near = [x for x in xs if abs(x - cx) <= 4] or [min(xs, key=lambda x: abs(x - cx))]
+
+    def med(key):
+        v = sorted(cols[x][key] for x in near)
+        return v[len(v) // 2]
+    top_u, bot_u, top_l, bot_l = med("top_u"), med("bot_u"), med("top_l"), med("bot_l")
+    return {"cx": cx, "cy": (bot_u + top_l) / 2, "W": (xr - xl) / 2, "hu": max(0.5, (top_l - bot_u) / 2),
+            "t_u": bot_u - top_u + 0.5, "t_l": bot_l - top_l + 0.5}
+
+
 def lowpass(vals, keep):
     """A closed sequence with only its first `keep` Fourier harmonics: a smooth curve through the measured one."""
     f = np.fft.rfft(np.asarray(vals, float))
@@ -413,38 +429,64 @@ def build_piece(bvh, m, design, shape, world, mats, coll, origin, lips=None, nam
             "max_open_mm": round(max(world(0, r["bot_u"])[1] - world(0, r["top_l"])[1] for r in st) * 1000, 1)}
     if shape in RING_SHAPES and n_open >= 10:
         meas["form"] = "ring"
-        (cx, cy), pairs = ring_contours(cols)
+        rp = (lips_p.get("ring_param") or {}).get(shape)  # M12b: a designed ring (alien_lips_geom.ring_param)
+        if rp:
+            (cx, cy), pairs, outer0, cw = LP.ring_param(ring_measure(cols), rp, lips_p, RING_N)
+        else:
+            (cx, cy), pairs = ring_contours(cols)
         ins = [world(*p[0]) for p in pairs]
         outs = [world(*p[1]) for p in pairs]
         mid = [((i[0] + o[0]) / 2, (i[1] + o[1]) / 2) for i, o in zip(ins, outs)]
         hw = [max(MIN_B, math.hypot(o[0] - i[0], o[1] - i[1]) / 2) for i, o in zip(ins, outs)]
-        mx, mz = lowpass([q[0] for q in mid], RING_KEEP["centre"]), lowpass([q[1] for q in mid], RING_KEEP["centre"])
-        hw = [max(MIN_B, h) for h in lowpass(hw, RING_KEEP["width"])]
+        if rp:  # already smooth: no low pass (it rippled E's tight ends)
+            meas["ring_mm"] = [round((max(q[0] for q in outs) - min(q[0] for q in outs)) * 1000, 1),
+                               round((max(q[1] for q in outs) - min(q[1] for q in outs)) * 1000, 1),
+                               round((max(q[0] for q in ins) - min(q[0] for q in ins)) * 1000, 1),
+                               round((max(q[1] for q in ins) - min(q[1] for q in ins)) * 1000, 1)]
+            mx, mz = [q[0] for q in mid], [q[1] for q in mid]
+            hw0 = [max(MIN_B, math.hypot(o[0] - i[0], o[1] - i[1]) / 2)
+                   for i, o in zip(ins, (world(*q) for q in outer0))]
+        else:
+            mx, mz = lowpass([q[0] for q in mid], RING_KEEP["centre"]), lowpass([q[1] for q in mid], RING_KEEP["centre"])
+            hw = [max(MIN_B, h) for h in lowpass(hw, RING_KEEP["width"])]
         pn = [surf(bvh, mx[k], mz[k]) for k in range(RING_N)]  # S7: the skin points' depth and normals smoothed
         py_ = circ_smooth([q[0].y for q in pn], NORMAL_SMOOTH)
         nn_ = [circ_smooth([q[1][i] for q in pn], NORMAL_SMOOTH) for i in range(3)]
         rings = []
         ring_p = dict(lips_p, w=lips_p.get("w", 0.0) * lips_p.get("ring", {}).get(shape, 1.0))
         hc = LP.centre_value([math.cos(2 * math.pi * k / RING_N) for k in range(RING_N)], hw)
+        n0 = Vector([sum(c) for c in nn_]).normalized()  # M12b: the mouth's mean skin normal
+        throat = []  # M12b: per angle the depth of the lips' axis off the skin (the hole's narrowest ring)
         cup = []  # M8: the lips' axis after the reshape (x, z): the dark cup ends under it, never past a thin lip
         for k in range(RING_N):
             th = 2 * math.pi * k / RING_N
             p = Vector((pn[k][0].x, py_[k], pn[k][0].z))
             n = Vector((nn_[0][k], nn_[1][k], nn_[2][k])).normalized()
-            side = 1.0 - (1.0 - RING_SIDE["keep"]) * G.smoothstep(*RING_SIDE["side"], abs(n.x))
+            keep = rp.get("side_keep", RING_SIDE["keep"]) if rp else RING_SIDE["keep"]
+            side = 1.0 - (1.0 - keep) * G.smoothstep(*RING_SIDE["side"], abs(n.x))
+            if rp and rp.get("n_flat"):  # M12b: the lips stand out along the mouth's mean normal (n0), not the
+                n = n.lerp(n0, rp["n_flat"]).normalized()  # skin's own: the chin's and philtrum's slopes closed O's hole
             low = G.smoothstep(-0.35, 0.35, math.sin(th))  # px y grows downward: sin > 0 is the lower lip
-            # M8: the lips' width round the ring from LIP (thin corners, the bow); the opening's edge stays
-            hw_k = max(MIN_B, LP.ring_width(th, hw[k], hc, low, shape, lips_p))
-            a = (DEPTH_A * hw_k + DEPTH_C * LP.depth_scale(math.cos(th), ring_p)) * side
+            tuck = 0.0
+            if rp:  # M12b: the designed width as is; the depth from the width without the bow, the corners tucked
+                hw_k = hw[k]
+                dc = rp.get("depth_corner", lips_p["depth_corner"])
+                a = (DEPTH_A * hw0[k] + DEPTH_C * (1.0 - (1.0 - dc) * cw[k])) * side
+                tuck = rp.get("tuck", 0.0) * a * cw[k]
+            else:
+                # M8: the lips' width round the ring from LIP (thin corners, the bow); the opening's edge stays
+                hw_k = max(MIN_B, LP.ring_width(th, hw[k], hc, low, shape, lips_p))
+                a = (DEPTH_A * hw_k + DEPTH_C * LP.depth_scale(math.cos(th), ring_p)) * side
             nxt = ((mx[(k + 1) % RING_N] - mx[k - 1]), (mz[(k + 1) % RING_N] - mz[k - 1]))
             tang = Vector((nxt[0], 0.0, nxt[1]))
             radial = tang.cross(n).normalized()  # in the skin's plane, across the ring
             if radial.dot(Vector((mx[k] - world(cx, cy)[0], 0.0, mz[k] - world(cx, cy)[1]))) < 0:
                 radial = -radial
             cc = CORNER_CLOSE.get(design)
-            cc = cc if cc and shape in cc["shapes"] else None
+            cc = cc if cc and shape in cc["shapes"] and not rp else None
             close = cc["share"] * hw_k * G.smoothstep(cc["from"], cc["to"], abs(math.cos(th))) if cc else 0.0
-            c3 = p + n * (a * (1 - SINK) + (push + back * low) * side) + radial * ((hw_k - hw[k] - close) * side)
+            c3 = p + n * (a * (1 - SINK) + (push + back * low) * side - tuck) + radial * ((hw_k - hw[k] - close) * side)
+            throat.append(a * (1 - SINK) + (push + back * low) * side - tuck)
             ci = (hw_k - hw[k] - close - CUP_IN.get(design, 0.0) * hw_k) * side  # M12: the cup ends inside the lip
             cup.append((mx[k] + radial.x * ci, mz[k] + radial.z * ci))
             ring = []
@@ -463,7 +505,13 @@ def build_piece(bvh, m, design, shape, world, mats, coll, origin, lips=None, nam
                         rings[(k + 1) % RING_N][j]), mi_lip)
         # the dark cup: a disc from the opening's centre out to under the lips' axis, on the skin
         cw = world(cx, cy)
-        centre = b.vert(surf(bvh, *cw)[0] + surf(bvh, *cw)[1] * 0.0012)
+        # M12b: rp["cup_lift"] lifts the cup along n0 by that share of the push, rp["cup_throat"] by that share of the
+        # lips' axis depth (the hole's narrowest ring), so a pushed-out kiss (O) shows its dark cup in the hole, not
+        # the lips' long lit inner wall; the cup's rim stays inside the lips (0.6 of their half width in)
+        lift = Vector((0.0, 0.0, 0.0))
+        if rp:
+            lift = n0 * (rp.get("cup_lift", 0.0) * push + rp.get("cup_throat", 0.0) * sum(throat) / len(throat))
+        centre = b.vert(surf(bvh, *cw)[0] + surf(bvh, *cw)[1] * 0.0012 + lift)
         rows = 5
         grid = []
         for k in range(RING_N):
@@ -471,7 +519,7 @@ def build_piece(bvh, m, design, shape, world, mats, coll, origin, lips=None, nam
             for j in range(1, rows + 1):
                 f = j / rows
                 p, n = surf(bvh, cw[0] + (cup[k][0] - cw[0]) * f, cw[1] + (cup[k][1] - cw[1]) * f)
-                col.append(b.vert(p + n * 0.0012))
+                col.append(b.vert(p + n * 0.0012 + lift))
             grid.append(col)
         for k in range(RING_N):
             k2 = (k + 1) % RING_N
@@ -496,10 +544,12 @@ def build_piece(bvh, m, design, shape, world, mats, coll, origin, lips=None, nam
                 edges.append((x, zt, zb, t, bt))
             # M8: the lip's thickness along it from LIP (thin corners, full centre, the bow); the lip line stays
             tops, bots = LP.closed_edges(ss, [e[1] for e in edges], [e[2] for e in edges], lip, lips_p)
+            # M12b: the depth from the lip without the bow (bow_flat), so the bow notches the outline only
+            t0, b0 = LP.closed_edges(ss, [e[1] for e in edges], [e[2] for e in edges], lip, LP.flat_bow(lips_p))
             axes[lip] = [(e[0], (zt + zb) / 2) for e, zt, zb in zip(edges, tops, bots)]
-            for r, s, (x, _zt, _zb, t, bt), zt, zb in zip(st, ss, edges, tops, bots):
+            for r, s, (x, _zt, _zb, t, bt), zt, zb, zt0, zb0 in zip(st, ss, edges, tops, bots, t0, b0):
                 hb = max(MIN_B, (zt - zb) / 2)
-                a = DEPTH_A * hb + DEPTH_C * LP.depth_scale(s, lips_p)
+                a = DEPTH_A * max(MIN_B, (zt0 - zb0) / 2) + DEPTH_C * LP.depth_scale(s, lips_p)
                 p, n = surf(bvh, x, (zt + zb) / 2)
                 env = math.sin(math.pi * (r["x"] - xl) / max(1.0, xr - xl)) ** 0.5
                 c3 = p + n * (a * (1 - SINK) + (push + (back if lip == "l" else 0.0)) * env)
