@@ -48,6 +48,7 @@ from mathutils import Matrix, Vector
 from mathutils.bvhtree import BVHTree
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import alien_lips_geom as LP  # noqa: E402
 import alien_parts_geom as G  # noqa: E402
 import export_glb  # noqa: E402
 
@@ -95,6 +96,7 @@ def args():
     p.add_argument("--overbite", required=True)
     p.add_argument("--out", required=True)
     p.add_argument("--parts-report", help="alien_parts.py's build_report.json: CHIN_Z from its sculpted chin")
+    p.add_argument("--lips", default="", help="M8: JSON merged over alien_lips_geom.LIP_SHAPE, or m6c (the old lips)")
     return p.parse_args(sys.argv[sys.argv.index("--") + 1:])
 
 
@@ -336,8 +338,36 @@ def circ_smooth(vals, n):
     return v
 
 
-def build_piece(bvh, m, design, shape, world, mats, coll, origin):
+def lip_tube(b, centres, radii_a, radii_b, normals, mi, seg, lips_p, lip):
+    """M8: alien_parts_geom.tube with a lip's section (alien_lips_geom.section): the front flatter by lips_p["square"]
+    and its swell moved toward the lip line (the upper lip's bottom, the lower lip's top) by lips_p["lean"]."""
+    n = len(centres)
+    rings = []
+    for i in range(n):
+        t = (centres[min(i + 1, n - 1)] - centres[max(i - 1, 0)]).normalized()
+        nn = (normals[i] - t * normals[i].dot(t)).normalized()
+        bb = t.cross(nn).normalized()
+        down = 1.0 if bb.z < 0 else -1.0  # sin > 0 along bb points down when bb.z < 0
+        toward = down if lip == "u" else -down
+        ring = []
+        for k in range(seg):
+            cn, sn = LP.section(2 * math.pi * k / seg, lips_p["lean"], lips_p["square"], toward)
+            ring.append(b.vert(centres[i] + nn * (radii_a[i] * cn) + bb * (radii_b[i] * sn)))
+        rings.append(ring)
+    for i in range(n - 1):
+        for k in range(seg):
+            b.face((rings[i][k], rings[i][(k + 1) % seg], rings[i + 1][(k + 1) % seg], rings[i + 1][k]), mi)
+    for i, ring in ((0, rings[0]), (n - 1, rings[-1])):
+        c = b.vert(centres[i])
+        for k in range(seg):
+            b.face((ring[k], ring[(k + 1) % seg], c), mi)
+    return rings
+
+
+def build_piece(bvh, m, design, shape, world, mats, coll, origin, lips=None, name=None):
     """One mouth piece from one panel's measured columns, in world space; returns the object and its measures.
+    lips: an alien_lips_geom lip shape (None: LIP_SHAPE_M6C, the S6..M6c lips unchanged); name: the object's name
+    (default mouth_<design>_<shape>).
     world(x_px, y_px) -> (x, z) in m. An open mouth is one ring (a torus whose section spans the lips between the
     opening's edge and the outer edge at each angle); a closed one is two tubes, upper and lower lip, meeting at
     the crease."""
@@ -346,6 +376,7 @@ def build_piece(bvh, m, design, shape, world, mats, coll, origin):
     xl, xr = xs[0], xs[-1]
     push = PUSH.get(design, {}).get(shape, PUSH.get(design, {}).get("*", 0.0))
     back = LOWER_BACK.get(design, 0.0)
+    lips_p = LP.LIP_SHAPE_M6C if lips is None else lips
     st = stations(cols)
     b = G.Built()
     mi_lip = b.slot(mats["lip"])
@@ -369,23 +400,33 @@ def build_piece(bvh, m, design, shape, world, mats, coll, origin):
         py_ = circ_smooth([q[0].y for q in pn], NORMAL_SMOOTH)
         nn_ = [circ_smooth([q[1][i] for q in pn], NORMAL_SMOOTH) for i in range(3)]
         rings = []
+        ring_p = dict(lips_p, w=lips_p.get("w", 0.0) * lips_p.get("ring", {}).get(shape, 1.0))
+        hc = LP.centre_value([math.cos(2 * math.pi * k / RING_N) for k in range(RING_N)], hw)
+        cup = []  # M8: the lips' axis after the reshape (x, z): the dark cup ends under it, never past a thin lip
         for k in range(RING_N):
             th = 2 * math.pi * k / RING_N
             p = Vector((pn[k][0].x, py_[k], pn[k][0].z))
             n = Vector((nn_[0][k], nn_[1][k], nn_[2][k])).normalized()
             side = 1.0 - (1.0 - RING_SIDE["keep"]) * G.smoothstep(*RING_SIDE["side"], abs(n.x))
-            a = (DEPTH_A * hw[k] + DEPTH_C) * side
             low = G.smoothstep(-0.35, 0.35, math.sin(th))  # px y grows downward: sin > 0 is the lower lip
-            c3 = p + n * (a * (1 - SINK) + (push + back * low) * side)
+            # M8: the lips' width round the ring from LIP (thin corners, the bow); the opening's edge stays
+            hw_k = max(MIN_B, LP.ring_width(th, hw[k], hc, low, shape, lips_p))
+            a = (DEPTH_A * hw_k + DEPTH_C * LP.depth_scale(math.cos(th), ring_p)) * side
             nxt = ((mx[(k + 1) % RING_N] - mx[k - 1]), (mz[(k + 1) % RING_N] - mz[k - 1]))
             tang = Vector((nxt[0], 0.0, nxt[1]))
             radial = tang.cross(n).normalized()  # in the skin's plane, across the ring
             if radial.dot(Vector((mx[k] - world(cx, cy)[0], 0.0, mz[k] - world(cx, cy)[1]))) < 0:
                 radial = -radial
+            c3 = p + n * (a * (1 - SINK) + (push + back * low) * side) + radial * ((hw_k - hw[k]) * side)
+            cup.append((mx[k] + radial.x * (hw_k - hw[k]) * side, mz[k] + radial.z * (hw_k - hw[k]) * side))
             ring = []
             for j in range(RING_SEG):
                 ph = 2 * math.pi * j / RING_SEG
-                ring.append(b.vert(c3 + n * (a * math.cos(ph)) + radial * (hw[k] * side * math.sin(ph))))
+                if ring_p["w"] > 0.0:  # the swell toward the opening's edge (sin < 0 is the inner side)
+                    cn, sn = LP.section(ph, lips_p["lean"], lips_p["square"], -1.0)
+                else:
+                    cn, sn = math.cos(ph), math.sin(ph)
+                ring.append(b.vert(c3 + n * (a * cn) + radial * (hw_k * side * sn)))
             rings.append(ring)
             sections.append((((pairs[k][0][0] + pairs[k][1][0]) / 2, (pairs[k][0][1] + pairs[k][1][1]) / 2), c3, a, n, p))
         for k in range(RING_N):
@@ -401,7 +442,7 @@ def build_piece(bvh, m, design, shape, world, mats, coll, origin):
             col = []
             for j in range(1, rows + 1):
                 f = j / rows
-                p, n = surf(bvh, cw[0] + (mx[k] - cw[0]) * f, cw[1] + (mz[k] - cw[1]) * f)
+                p, n = surf(bvh, cw[0] + (cup[k][0] - cw[0]) * f, cw[1] + (cup[k][1] - cw[1]) * f)
                 col.append(b.vert(p + n * 0.0012))
             grid.append(col)
         for k in range(RING_N):
@@ -412,8 +453,11 @@ def build_piece(bvh, m, design, shape, world, mats, coll, origin):
     else:
         meas["form"] = "tubes"
         lips = {}
+        axes = {}  # M8: per lip and station (x, z) of its axis after the reshape
+        ss = [2 * (r["x"] - xl) / max(1.0, xr - xl) - 1 for r in st]  # M8: -1 .. 1 corner to corner
         for lip in ("u", "l"):
             cs, ra, rb, ns = [], [], [], []
+            edges = []
             for r in st:
                 if lip == "u":
                     t, bt = r["top_u"], r["bot_u"] + (0.0 if r["open"] else SEAM_OVERLAP)
@@ -421,8 +465,13 @@ def build_piece(bvh, m, design, shape, world, mats, coll, origin):
                     t, bt = r["top_l"] - (0.0 if r["open"] else SEAM_OVERLAP), r["bot_l"]
                 x, zt = world(r["x"], t - 0.5)
                 _, zb = world(r["x"], bt + 0.5)
+                edges.append((x, zt, zb, t, bt))
+            # M8: the lip's thickness along it from LIP (thin corners, full centre, the bow); the lip line stays
+            tops, bots = LP.closed_edges(ss, [e[1] for e in edges], [e[2] for e in edges], lip, lips_p)
+            axes[lip] = [(e[0], (zt + zb) / 2) for e, zt, zb in zip(edges, tops, bots)]
+            for r, s, (x, _zt, _zb, t, bt), zt, zb in zip(st, ss, edges, tops, bots):
                 hb = max(MIN_B, (zt - zb) / 2)
-                a = DEPTH_A * hb + DEPTH_C
+                a = DEPTH_A * hb + DEPTH_C * LP.depth_scale(s, lips_p)
                 p, n = surf(bvh, x, (zt + zb) / 2)
                 env = math.sin(math.pi * (r["x"] - xl) / max(1.0, xr - xl)) ** 0.5
                 c3 = p + n * (a * (1 - SINK) + (push + (back if lip == "l" else 0.0)) * env)
@@ -451,15 +500,22 @@ def build_piece(bvh, m, design, shape, world, mats, coll, origin):
                 c = cs[i].lerp(mid, CORNER["join"] * w)
                 cs[i] = c - ns[i] * (CORNER["tuck"] * ra[i] * w * w)
         for lip in ("u", "l"):
-            G.tube(b, *sm[lip], mi_lip, seg=14)
+            if lips_p.get("w", 0.0) > 0.0:
+                lip_tube(b, *sm[lip], mi_lip, 14, lips_p, lip)
+            else:
+                G.tube(b, *sm[lip], mi_lip, seg=14)
         if m["teeth"]:  # the dark between the teeth and behind them, from lip axis to lip axis
             rows = 5
             grid = []
-            for r in st:
+            for i, r in enumerate(st):
                 col = []
                 for j in range(rows):
-                    y = (r["top_u"] + r["bot_u"]) / 2 + ((r["top_l"] + r["bot_l"]) / 2 - (r["top_u"] + r["bot_u"]) / 2) * j / (rows - 1)
-                    p, n = surf(bvh, *world(r["x"], y))
+                    if lips_p.get("w", 0.0) > 0.0:  # M8: between the reshaped lips' axes
+                        (x, zu), (_x, zl) = axes["u"][i], axes["l"][i]
+                        p, n = surf(bvh, x, zu + (zl - zu) * j / (rows - 1))
+                    else:
+                        y = (r["top_u"] + r["bot_u"]) / 2 + ((r["top_l"] + r["bot_l"]) / 2 - (r["top_u"] + r["bot_u"]) / 2) * j / (rows - 1)
+                        p, n = surf(bvh, *world(r["x"], y))
                     col.append(b.vert(p + n * 0.0012))
                 grid.append(col)
             for i in range(len(grid) - 1):
@@ -533,7 +589,7 @@ def build_piece(bvh, m, design, shape, world, mats, coll, origin):
             bm.free()
             meas["teeth_mm"].append([round((x1 - x0) * 1000, 1), round((zt - TOOTH_TUCK - zb) * 1000, 1)])
     bmesh.ops.remove_doubles(b.bm, verts=b.bm.verts[:], dist=1e-7)
-    ob = G.to_object(b, f"mouth_{design}_{shape}", coll, origin)
+    ob = G.to_object(b, name or f"mouth_{design}_{shape}", coll, origin)
     return ob, meas, st
 
 
@@ -632,6 +688,55 @@ def overlay(P, m, y0, x0):
     return img
 
 
+def shape_frames(sheet, face_w_m, z_sock, chin_z):
+    """One design's sheet measured: the six panels (measure_panel) and per shape its sheet-to-head mapping. Returns
+    (the panels' measures, the design's report, {shape: {"hc", "ny", "kp", "squeeze", "sx", "world"}}), world(x_px,
+    y_px) -> (x, z) in m round the Mouth socket (main's step 3)."""
+    ms = []
+    for k, shape in enumerate(SHAPES):
+        px, py = (k % 3) * PANEL, (k // 3) * PANEL
+        ms.append(measure_panel(sheet[py:py + PANEL, px:px + PANEL]))
+    r0 = ms[0]
+    xs = sorted(r0["cols"])
+    seam_rows = [(r0["cols"][x]["bot_u"] + r0["cols"][x]["top_l"]) / 2 for x in xs if abs(x - r0["hc"]) < 30]
+    seam_y = sum(seam_rows) / len(seam_rows)
+    off = seam_y - r0["ny"]
+    fl, fr = width_at(r0["C"]["bg"], seam_y)
+    K = face_w_m / (fr - fl)
+    drep = {"K_mm_per_px": round(K * 1000, 4), "rest_seam_below_nostrils_px": round(off, 1),
+            "face_w_px_at_rest_seam": fr - fl, "shapes": {}}
+    frames = {}
+    for k, shape in enumerate(SHAPES):
+        m = ms[k]
+        kp = K * max(0.94, min(1.06, r0["face_w_nose"] / m["face_w_nose"])) * SHAPE_SCALE.get(shape, 1.0)
+        hc, ny = m["hc"], m["ny"]
+        seam = ny + off
+        low = max(r["bot_l"] for r in m["cols"].values()) + 0.5
+        z_low = z_sock - (low - seam) * kp
+        squeeze = 1.0 if z_low >= chin_z else (z_sock - chin_z) / (z_sock - z_low)
+        half = max(abs(x - hc) for x in m["cols"]) + 0.5
+        sx = min(1.0, FACE_FILL * face_w_m / 2 / (half * kp))
+
+        def world(x, y, hc=hc, kp=kp, seam=seam, squeeze=squeeze, sx=sx):
+            dz = (y - seam) * kp
+            return (x - hc) * kp * sx, z_sock - (dz * squeeze if dz > 0 else dz)
+        frames[shape] = {"hc": hc, "ny": ny, "kp": kp, "squeeze": squeeze, "sx": sx, "world": world}
+    return ms, drep, frames
+
+
+def face_width(bvh, z_sock):
+    """The head's front silhouette width at the socket's height (m)."""
+    hw = []
+    for sx in (1, -1):
+        best = 0.0
+        for j in range(60):
+            h = bvh.ray_cast(Vector((sx * 0.5, -0.12 + 0.004 * j, z_sock)), Vector((-sx, 0, 0)))
+            if h[0] is not None:
+                best = max(best, abs(h[0].x))
+        hw.append(best)
+    return hw[0] + hw[1]
+
+
 def main():
     a = args()
     out = Path(a.out)
@@ -649,16 +754,7 @@ def main():
     coll = bpy.context.scene.collection
     mats = {"lip": bpy.data.materials["alien_lip"], "inner": bpy.data.materials["alien_mouth_inner"],
             "teeth": bpy.data.materials["alien_teeth"], "tongue": plain("alien_tongue", TONGUE, 0.5, 0.4)}
-    # the head's front silhouette half width at the socket's height
-    hw = []
-    for sx in (1, -1):
-        best = 0.0
-        for j in range(60):
-            h = bvh.ray_cast(Vector((sx * 0.5, -0.12 + 0.004 * j, z_sock)), Vector((-sx, 0, 0)))
-            if h[0] is not None:
-                best = max(best, abs(h[0].x))
-        hw.append(best)
-    face_w_m = hw[0] + hw[1]
+    face_w_m = face_width(bvh, z_sock)
     chin_z = CHIN_Z
     if a.parts_report:
         chin_z = json.loads(Path(a.parts_report).read_text(encoding="utf-8"))["chin_z_sculpted"] + CHIN_GAP
@@ -667,39 +763,18 @@ def main():
     nodes = {}
     profiles = {}
     meas_imgs = []
+    lips = LP.LIP_SHAPE_M6C if a.lips == "m6c" else LP.merged(json.loads(a.lips) if a.lips else None)
+    rep["lips"] = lips
     for design in ("frog", "overbite"):
         sheet = load_rgb(getattr(a, design))
-        ms = []
-        for k, shape in enumerate(SHAPES):
-            px, py = (k % 3) * PANEL, (k // 3) * PANEL
-            ms.append(measure_panel(sheet[py:py + PANEL, px:px + PANEL]))
-        r0 = ms[0]
-        xs = sorted(r0["cols"])
-        seam_rows = [(r0["cols"][x]["bot_u"] + r0["cols"][x]["top_l"]) / 2 for x in xs if abs(x - r0["hc"]) < 30]
-        seam_y = sum(seam_rows) / len(seam_rows)
-        off = seam_y - r0["ny"]
-        fl, fr = width_at(r0["C"]["bg"], seam_y)
-        K = face_w_m / (fr - fl)
-        drep = {"K_mm_per_px": round(K * 1000, 4), "rest_seam_below_nostrils_px": round(off, 1),
-                "face_w_px_at_rest_seam": fr - fl, "shapes": {}}
+        ms, drep, frames = shape_frames(sheet, face_w_m, z_sock, chin_z)
         atlas = np.zeros((WIN[1] * 2, WIN[0] * 3, 4), np.float32)
         flip_rects, flip_wins, worlds = {}, {}, {}
         for k, shape in enumerate(SHAPES):
             m = ms[k]
-            kp = K * max(0.94, min(1.06, r0["face_w_nose"] / m["face_w_nose"])) * SHAPE_SCALE.get(shape, 1.0)
-            hc, ny = m["hc"], m["ny"]
-            seam = ny + off
-            low = max(r["bot_l"] for r in m["cols"].values()) + 0.5
-            z_low = z_sock - (low - seam) * kp
-            squeeze = 1.0 if z_low >= chin_z else (z_sock - chin_z) / (z_sock - z_low)
-
-            half = max(abs(x - hc) for x in m["cols"]) + 0.5
-            sx = min(1.0, FACE_FILL * face_w_m / 2 / (half * kp))
-
-            def world(x, y, hc=hc, kp=kp, seam=seam, squeeze=squeeze, sx=sx):
-                dz = (y - seam) * kp
-                return (x - hc) * kp * sx, z_sock - (dz * squeeze if dz > 0 else dz)
-            ob, meas, st = build_piece(bvh, m, design, shape, world, mats, coll, sock)
+            f = frames[shape]
+            hc, ny, kp, squeeze, sx, world = f["hc"], f["ny"], f["kp"], f["squeeze"], f["sx"], f["world"]
+            ob, meas, st = build_piece(bvh, m, design, shape, world, mats, coll, sock, lips=lips)
             meas["below_seam_squeeze"] = round(squeeze, 3)
             meas["width_squeeze"] = round(sx, 3)
             worlds[shape] = world
@@ -774,4 +849,5 @@ def main():
     print("MOUTHS " + json.dumps(rep))
 
 
-main()
+if __name__ == "__main__":
+    main()
