@@ -135,22 +135,32 @@ func _diff(a: Image, b: Image) -> Array:
 
 
 ## Two silhouette passes (unshaded white on the stage): white where only one of them covers a pixel, grey where both
-## do; and the count of the white.
+## do; and the count of the white, and the covered pixels of a (the tonemapped white is not 1: a pixel counts as
+## covered when it is brighter than the stage's corner by over half the way to the brightest pixel).
 func _silhouette_diff(a: Image, b: Image) -> Array:
 	var w: int = a.get_width()
 	var h: int = a.get_height()
 	var d := Image.create(w, h, false, Image.FORMAT_RGB8)
 	var n: int = 0
+	var bg: float = a.get_pixel(2, 2).v
+	var top: float = bg
+	for y: int in range(0, h, 4):
+		for x: int in range(0, w, 4):
+			top = maxf(top, a.get_pixel(x, y).v)
+	var cut: float = bg + 0.5 * (top - bg)
+	var covered: int = 0
 	for y: int in h:
 		for x: int in w:
-			var ia: bool = a.get_pixel(x, y).v > 0.85
-			var ib: bool = b.get_pixel(x, y).v > 0.85
+			var ia: bool = a.get_pixel(x, y).v > cut
+			var ib: bool = b.get_pixel(x, y).v > cut
+			if ia:
+				covered += 1
 			if ia != ib:
 				n += 1
 				d.set_pixel(x, y, Color(1, 1, 1))
 			else:
 				d.set_pixel(x, y, Color(0.25, 0.25, 0.25) if ia else Color(0, 0, 0))
-	return [d, n]
+	return [d, n, covered]
 
 
 func _head() -> void:
@@ -189,7 +199,7 @@ func _head() -> void:
 			var ds: Array = _diff(shots[before + "_clay"], shots[k + "_clay"])
 			var sil: Array = _silhouette_diff(shots[before + "_sil"], shots[k + "_sil"])
 			print("PROOF head %s vs %s %s: with parts changed %.4f, skull (plain grey, no part) changed %.4f, "
-				% [_labels[before], _labels[k], v[0], dp[1], ds[1]] + "silhouette changed %d px" % sil[1])
+				% [_labels[before], _labels[k], v[0], dp[1], ds[1]] + "silhouette changed %d px of %d covered" % [sil[1], sil[2]])
 			rows[0].append(shots[before + "_parts_tag"])
 			rows[1].append(shots[k + "_parts_tag"])
 			rows[2].append(_tag(dp[0], "diff x4 %.2f %%" % (dp[1] * 100.0)))
