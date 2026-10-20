@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import base64
 import json
+import re
 import secrets
 import time
 from dataclasses import dataclass, field
@@ -23,6 +24,9 @@ GENERATIONS_PATH = "/v1/images/generations"
 EDITS_PATH = "/v1/images/edits"
 KEY_ENV = "OPENAI_API_KEY"  # the Windows user environment (or the process's); never printed, logged or committed
 REDACTED = "<OPENAI_API_KEY redacted>"
+# A key in the form OpenAI's own error messages show it, masked ("Incorrect API key provided: sk-proj-****...abcd"),
+# or any other sk- key: scrubbed from every message even when it is not the key in use.
+KEY_PATTERN = re.compile(r"\bsk-[A-Za-z0-9_*-]{4,}")
 USER_AGENT = "prime-game-art-runner"
 # Every HTTP call stays under the 170 s a workflow agent's tool call may block (CLAUDE.md, "Shell"); the docs say a
 # complex prompt may take up to 2 minutes. A long batch runs in the background and prints progress per item.
@@ -40,13 +44,18 @@ class OpenAIError(common.Failure):
     """An OpenAI call failed; the message never contains the key.
 
     `status` is the HTTP status (0: no answer); `unsure` marks a call whose request may have been served and billed
-    although no answer came back (a lost connection or a timeout); `code` is OpenAI's error code, if any."""
+    although no usable answer came back (a lost connection, a timeout, a server error, a malformed 2xx); `code` is
+    OpenAI's error code, if any."""
 
     def __init__(self, message: str, status: int = 0, unsure: bool = False, code: str = "") -> None:
         super().__init__(message)
         self.status = status
         self.unsure = unsure
         self.code = code
+
+
+class CapReached(OpenAIError):
+    """The batch's dollar cap stopped a request before its next HTTP attempt (nothing more was sent)."""
 
 
 def api_key() -> str:
@@ -57,11 +66,11 @@ def api_key() -> str:
 
 
 def redact(text: object, key: str | None) -> str:
-    """str(text) with every occurrence of the key replaced."""
+    """str(text) with every occurrence of the key, and anything shaped like an OpenAI key (masked or not), replaced."""
     out = str(text)
     if key:
         out = out.replace(key, REDACTED)
-    return out
+    return KEY_PATTERN.sub(REDACTED, out)
 
 
 # --- multipart/form-data, by hand (RFC 7578) -------------------------------------------------------------------------
@@ -126,15 +135,23 @@ class OpenAIClient:
     retries: int = 4
     log: Callable[[str], None] = common.say
 
-    def generate(self, payload: dict[str, Any]) -> Answer:
+    def generate(self, payload: dict[str, Any], before: Callable[[int], None] | None = None) -> Answer:
         body = json.dumps(payload).encode("utf-8")
-        return self._post(GENERATIONS_PATH, body, "application/json")
+        return self._post(GENERATIONS_PATH, body, "application/json", before)
 
-    def edit(self, fields: list[tuple[str, str]], files: list[FilePart]) -> Answer:
+    def edit(self, fields: list[tuple[str, str]], files: list[FilePart],
+             before: Callable[[int], None] | None = None) -> Answer:
         body, content_type = encode_multipart(fields, files)
-        return self._post(EDITS_PATH, body, content_type)
+        return self._post(EDITS_PATH, body, content_type, before)
 
-    def _post(self, path: str, body: bytes, content_type: str) -> Answer:
+    def _post(self, path: str, body: bytes, content_type: str, before: Callable[[int], None] | None = None) -> Answer:
+        """One paid request. `before(attempt)` runs before every HTTP attempt (the batch runner's dollar cap) and may
+        raise CapReached to stop it.
+
+        Resent only when OpenAI surely refused it: a 429 that is not `insufficient_quota`, or a 503 carrying
+        `Retry-After`. Any other 5xx may come after the image was made and billed (a 502, 504 or 524 from a proxy),
+        and so may a 2xx that cannot be read: both are `unsure` and never resent, so a second POST cannot pay twice
+        (the Meshy client's rule, `_meshy_api.py`)."""
         url = self.base + path
         if not url.startswith("https://"):
             raise OpenAIError(f"refusing a non-HTTPS URL: {redact(url, self.key)}")
@@ -142,17 +159,18 @@ class OpenAIClient:
                    "User-Agent": USER_AGENT}
         delay = 2.0
         for attempt in range(1, self.retries + 2):
+            if before is not None:
+                before(attempt)
             start = self.clock.now()
             try:
                 resp = self.transport.request("POST", url, headers, body, self.timeout)
             except Exception as exc:  # no answer: the image may have been made and billed, so never resent on its own
-                raise OpenAIError(f"POST {path}: no answer ({redact(exc, self.key)}); the request may have been "
-                                  "served and billed: check the usage page before running the item again",
-                                  unsure=True) from None
+                raise OpenAIError(f"POST {path}: no answer ({redact(exc, self.key)}){UNSURE}", unsure=True) from None
             seconds = self.clock.now() - start
             code = _code(resp)
-            retry = (resp.status == 429 and code != "insufficient_quota") or resp.status >= 500
-            if retry and attempt <= self.retries:
+            refused = ((resp.status == 429 and code != "insufficient_quota")
+                       or (resp.status == 503 and _retry_after(resp) is not None))
+            if refused and attempt <= self.retries:
                 wait = min(60.0, _retry_after(resp) or delay)
                 self.log(f"  openai: POST {path} returned {resp.status}{f' ({code})' if code else ''}, retry in "
                          f"{wait:.0f} s")
@@ -161,26 +179,36 @@ class OpenAIClient:
                 continue
             if 200 <= resp.status < 300:
                 return _answer(resp, path, seconds, attempt)
+            if resp.status >= 500:
+                raise OpenAIError(f"POST {path}: HTTP {resp.status}{_explain(resp, self.key)}{UNSURE}", resp.status,
+                                  unsure=True, code=code)
             raise OpenAIError(f"POST {path}: HTTP {resp.status}{_explain(resp, self.key)}", resp.status, code=code)
         raise OpenAIError(f"POST {path}: gave up after {self.retries} retries")  # pragma: no cover
 
 
+UNSURE = "; the request may have been served and billed: check the usage page before running the item again"
+
+
 def _answer(resp: Response, path: str, seconds: float, attempts: int) -> Answer:
+    """The images of a 2xx. A 2xx that cannot be read was most likely billed: every failure here is `unsure`."""
+    def bad(what: str) -> OpenAIError:
+        return OpenAIError(f"POST {path}: HTTP {resp.status}, {what}{UNSURE}", resp.status, unsure=True)
+
     try:
         data = resp.json()
     except ValueError:
-        raise OpenAIError(f"POST {path}: the answer is not JSON") from None
+        raise bad("the answer is not JSON") from None
     if not isinstance(data, dict) or not isinstance(data.get("data"), list) or not data["data"]:
-        raise OpenAIError(f"POST {path}: the answer holds no images in 'data'")
+        raise bad("the answer holds no images in 'data'")
     images, kept = [], []
     for n, entry in enumerate(data["data"]):
         b64 = entry.get("b64_json") if isinstance(entry, dict) else None
         if not isinstance(b64, str):
-            raise OpenAIError(f"POST {path}: image {n} has no b64_json")
+            raise bad(f"image {n} has no b64_json")
         try:
             raw = base64.b64decode(b64, validate=True)
         except ValueError:
-            raise OpenAIError(f"POST {path}: image {n} is not valid base64") from None
+            raise bad(f"image {n} is not valid base64") from None
         images.append(raw)
         kept.append({**{k: v for k, v in entry.items() if k != "b64_json"}, "b64_json": f"<{len(raw)} bytes>"})
     body = {**{k: v for k, v in data.items() if k != "data"}, "data": kept}
