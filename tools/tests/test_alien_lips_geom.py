@@ -109,6 +109,31 @@ class MergeTest(unittest.TestCase):
         self.assertEqual(LP.LIP_SHAPE["ring"]["O"], 0.35, "merged() does not change the pick")
 
 
+class WidthTest(unittest.TestCase):
+    def test_scale_x_narrows_about_the_centre_and_keeps_heights(self):
+        def world(x, y):
+            return (x - 100.0) * 0.001, 1.5 - y * 0.001
+        self.assertIs(LP.scale_x(world, 1.0), world, "width 1 is the measured mouth itself")
+        w = LP.scale_x(world, 0.72)
+        for x, y in ((40.0, 10.0), (100.0, 30.0), (170.0, 5.0)):
+            self.assertAlmostEqual(w(x, y)[0], 0.72 * world(x, y)[0])
+            self.assertEqual(w(x, y)[1], world(x, y)[1])
+
+    def test_the_pick_is_narrower_and_m6c_keeps_its_width(self):
+        self.assertLess(LP.LIP_SHAPE["width"], 1.0)
+        self.assertGreater(LP.LIP_SHAPE["width"], 0.5)
+        self.assertNotIn("width", LP.LIP_SHAPE_M6C, "the old lips keep the measured width")
+        self.assertEqual(LP.merged({"width": 1.0})["width"], 1.0)
+
+    def test_build_piece_scales_every_x(self):
+        src = MOUTHS.read_text(encoding="utf-8")
+        i = src.index("def build_piece(")
+        body = src[i:src.index("\ndef ", i + 1)]
+        j = body.index('world = LP.scale_x(world, lips_p.get("width", 1.0))')
+        doc_end = body.index('"""', body.index('"""') + 3)
+        self.assertLess(j, body.index("world(", doc_end), "the width applies before the first use of world")
+
+
 class UseTest(unittest.TestCase):
     def test_mouths_use_the_profile_and_keep_names(self):
         src = MOUTHS.read_text(encoding="utf-8")
