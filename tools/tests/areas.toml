@@ -95,6 +95,10 @@ tests = ["test_alien_texture_*"]
 sources = ["tools/blender/meshy_rig_input.py", "tools/runner/commands/_meshy_*.py", "tools/runner/commands/meshy.py"]
 tests = ["test_meshy_*"]
 
+[area.openai]
+sources = ["tools/runner/commands/_openai_*.py", "tools/runner/commands/openai_images.py"]
+tests = ["test_openai_*"]
+
 [area.house]
 sources = [
   "layouts/*", "kits/*", "props/*",

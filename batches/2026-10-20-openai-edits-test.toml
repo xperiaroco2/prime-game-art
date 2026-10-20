@@ -1,0 +1,32 @@
+# art#196, the first live test of OpenAI's image edits (POST /v1/images/edits) through `openai-images`: one edit at
+# medium of the reference crop of batch 2026-10-20-alien-face-sheets-2's item mp1, with mp1's prompt (the pout mouth's
+# six talk shapes on one sheet), to measure the real tokens, dollars and seconds of an edit and to see whether the
+# output keeps the reference's look. Under the engineer's decision of 2026-10-20 (images through the OpenAI API:
+# medium for exploration and variants, high for focused finals), within this batch's dollar cap. No game names.
+# Schema: docs/openai-images.md.
+
+id = "2026-10-20-openai-edits-test"
+service = "openai-images"
+purpose = "art#196: the first live edit through the OpenAI Images API, the pout mouth's six talk shapes from the m2 crop at medium, to measure an edit's tokens, cost and time and check it keeps the reference's look."
+plan = "OpenAI API, prepaid balance (topped up by the engineer, 2026-10-20)"
+terms_url = "https://openai.com/policies/services-agreement/"
+licence = "owned by the customer: OpenAI assigns to the customer all its rights in the Output (OpenAI Services Agreement, section 4.1, read 2026-10-20); no attribution required"
+cost_cap_usd = 0.10
+approved_by = "xperiaroco2 (the engineer)"
+approved_at = "2026-10-20"
+approval_ref = "https://github.com/xperiaroco2/prime-game-art/issues/196#issuecomment-6291187194"
+model = "gpt-image-2.5-sunburst"
+quality = "medium"
+
+[defaults]
+size = "1536x1024"
+n = 1
+
+[variants.pout]
+prompt = "A mouth-shape model sheet for the character in the reference image: SIX copies of exactly this head, all seen straight from the front at the same size, framing and lighting, in a grid of 3 columns and 2 rows on a plain flat mid-grey background. Everything stays identical in all six (the head, the half-closed bored eyes, the nostrils, the skin) except the mouth, which keeps its full, soft, glossy red pouty lips and shows one talk shape per panel, in this order: 1 rest, the full pouty lips closed exactly as in the reference; 2 M, the lips pressed together, still full and pouty; 3 small, the lips slightly parted with a narrow dark opening; 4 A, mouth open wide with the jaw dropped, the full lips framing a dark inside with a hint of a tongue; 5 E, mouth wide and stretched sideways, a flat dark opening between the full lips; 6 O, the lips pushed forward into a big round kiss. The lips stay full, glossy and the same red in every panel, with one soft highlight on the lower lip. Smooth soft-matte stylised surface like a premium designer vinyl toy, no fine texture. No text, no numbers, no labels."
+
+[[items]]
+id = "mp1"
+variant = "pout"
+kind = "edit"
+images = [ { file = "raw:research/2026-10-19-parts-kit/face-crops/m2_pout.png", provenance = "crop (head 2, scaled 2x) of own Meshy generation, batch 2026-10-17-alien-2d-parts1 item m2, art#196", sha256 = "cfa6b635d24391aabc9fa57062e64c60dfafb7f88bc5864adf94fbe67638ee47" } ]

@@ -9,6 +9,14 @@ Since art #25 the client also rigs local GLBs, makes text-to-motion clips and li
 `tools/blender/alien_retexture_input.py` (retexture inputs) and `tools/blender/alien_retexture_review.py` (the
 retexture review); tests: `tools/tests/test_meshy_*.py` (a fake transport, no network).
 
+## Images moved to the OpenAI API (2026-10-20)
+
+The engineer's decision of 2026-10-20 (#196, comment 6291187194; xperiaroco2/prime-game#1095): the art track makes
+**images** through the OpenAI API with `tools/run.py openai-images` (`docs/openai-images.md`), medium quality for
+exploration and many variants, high for focused work on one piece, instead of Meshy's `text_to_image` and `image_to_image` (Meshy
+used the same model, `gpt-image-2-5-sunburst`, at about $0.18 an image; OpenAI's medium edit cost $0.015). Meshy
+stays for 3D, rigging, retexture and motion. The image kinds below stay working for the batches already run.
+
 ## The character route (since 2026-10-18)
 
 Meshy is the project's 3D generator, the engineer's decision after the three-generator showcase
@@ -17,7 +25,7 @@ client, then the agents' finish (`docs/pipeline.md`, the section at the top):
 
 | Stage | Batch kind | Model | Credits |
 |---|---|---|---|
-| Concept | `text_to_image` or `image_to_image`, `generate_multi_view` for a turnaround | `gpt-image-2-5-sunburst` | 9 per image or three-view set from text, 12 from images |
+| Concept (since 2026-10-20 through `openai-images`, above) | `text_to_image` or `image_to_image`, `generate_multi_view` for a turnaround | `gpt-image-2-5-sunburst` | 9 per image or three-view set from text, 12 from images |
 | 3D | `multi_image_to_3d` from the chosen concept's views | `meshy-7.1` | mesh 20, +5 for `geometry_resolution = "2k"`, +10 for a texture (the showcase's model: 35) |
 | Texture of our own mesh | `retexture` of a local GLB on its own UV (since 2026-10-19, art #196 M3b) | `meshy-7` | 10 at 2k or 4k, 15 at 8k |
 
