@@ -451,15 +451,18 @@ class RunTest(unittest.TestCase):
         self.assertAlmostEqual(runs.spent(state), batch.items[0].estimate_usd, places=6)
 
     def test_a_missing_usage_block_saves_the_images_and_counts_the_estimate(self) -> None:
-        batch = parse()
-        body = {"created": 1, "data": [{"b64_json": base64.b64encode(png()).decode()}]}
-        fake = FakeOpenAI([Response(200, {}, json.dumps(body).encode())])
-        self.assertEqual(self.runner(batch, fake, []).run(), 0)
-        state = runs.read_state(batch, batch.items[0], self.raw)
-        self.assertEqual(state["status"], "done")
-        self.assertEqual((self.raw / "t-batch" / "g1" / "image-0.png").read_bytes(), png())
-        self.assertEqual(state["requests"][0]["priced_from"], "estimate")
-        self.assertAlmostEqual(state["cost_usd"], batch.items[0].estimate_usd, places=6)
+        for what, extra in {"missing": {}, "unreadable": {"usage": {"input_tokens": "lots"}}}.items():
+            with self.subTest(usage=what), TemporaryDirectory() as tmp:
+                raw = Path(tmp)
+                batch = parse()
+                body = {"created": 1, "data": [{"b64_json": base64.b64encode(png()).decode()}], **extra}
+                fake = FakeOpenAI([Response(200, {}, json.dumps(body).encode())])
+                self.assertEqual(runs.Runner(batch, fake.client([]), raw=raw).run(), 0)
+                state = runs.read_state(batch, batch.items[0], raw)
+                self.assertEqual(state["status"], "done")
+                self.assertEqual((raw / "t-batch" / "g1" / "image-0.png").read_bytes(), png())
+                self.assertEqual(state["requests"][0]["priced_from"], "estimate")
+                self.assertAlmostEqual(state["cost_usd"], batch.items[0].estimate_usd, places=6)
 
     def test_an_unexpected_failure_never_leaves_the_item_running(self) -> None:
         batch = parse()

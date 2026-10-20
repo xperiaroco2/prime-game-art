@@ -288,10 +288,11 @@ class Runner:
         try:
             tokens = batches.usage_tokens(answer.body.get("usage"))
             attempt["priced_from"] = "usage"
-        except common.Failure:  # billed, but the answer does not say for how much: count the estimate
+        except (common.Failure, ValueError, TypeError):  # billed, but not saying for how much: count the estimate
             tokens = dict(attempt["estimated_tokens"])
             attempt["priced_from"] = "estimate"
-            self.log(f"{item.id}: the answer has no usage block; counted at the estimate ${attempt['estimated_usd']:.4f}")
+            self.log(f"{item.id}: the answer has no readable usage block; counted at the estimate "
+                     f"${attempt['estimated_usd']:.4f}")
         cost = batches.cost(tokens, batches.MODELS[item.model])
         attempt.update({"billed_tokens": tokens, "cost_usd": round(cost, 6)})
         if problem:
