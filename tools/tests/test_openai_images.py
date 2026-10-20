@@ -3,12 +3,15 @@ every log and generation.json (a fake transport, no network)."""
 
 from __future__ import annotations
 
+import argparse
 import base64
 import contextlib
+import csv
 import email.parser
 import email.policy
 import io
 import json
+import math
 import struct
 import tomllib
 import unittest
@@ -16,14 +19,24 @@ import zlib
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Any
+from unittest import mock
 
 from runner import cli, common
 from runner.commands import _openai_api as api
 from runner.commands import _openai_batch as batches
 from runner.commands import _openai_run as runs
+from runner.commands import openai_images
 from runner.commands._meshy_api import Clock, Response
 
 KEY = "sk-proj-TEST_secret_openai_key_0123456789"
+MASKED = "sk-proj-****************************6789"  # how OpenAI's own 401 message shows a key
+
+
+def jpeg(width: int, height: int) -> bytes:
+    """The header of a baseline JPEG, an APP0 segment and then the frame (SOF0) with its size; enough to measure."""
+    app0 = b"\xff\xe0" + struct.pack(">H", 16) + b"JFIF\x00\x01\x01\x00\x00\x01\x00\x01\x00\x00"
+    sof = b"\xff\xc0" + struct.pack(">HBHHB", 11, 8, height, width, 1) + b"\x01\x11\x00"
+    return b"\xff\xd8" + app0 + b"\xff" + sof + b"\xff\xd9"  # one fill byte before the frame
 
 
 def png(width: int = 4, height: int = 2) -> bytes:
@@ -128,6 +141,8 @@ class SchemaTest(unittest.TestCase):
     def test_service_model_size_and_unknown_keys(self) -> None:
         self.assertIn('service = "openai-images" is required', errors_of(service="meshy"))
         self.assertIn("'model' must be one of", errors_of(model="gpt-image-1"))
+        # the standing permission names Sunburst only; Flare needs the engineer's own yes and a code change
+        self.assertIn("'model' must be one of gpt-image-2.5-sunburst", errors_of(model="gpt-image-2.5-flare"))
         self.assertIn("auto is refused", errors_of(defaults={"size": "auto"}))
         self.assertIn("multiples of 16", errors_of(defaults={"size": "1000x1000"}))
         self.assertIn("3 times", errors_of(defaults={"size": "3840x1024"}))
@@ -166,6 +181,42 @@ class SchemaTest(unittest.TestCase):
         self.assertLess(square.tokens()["image_out"], medium.tokens()["image_out"])
         self.assertAlmostEqual(batches.cost({"text_in": 1_000_000, "image_in": 1_000_000, "image_out": 1_000_000}),
                                43.0)
+
+    def test_reference_images_are_priced_by_their_pixels(self) -> None:
+        with TemporaryDirectory() as tmp:
+            measured, large, small, photo = (Path(tmp) / n for n in ("m.png", "l.png", "s.png", "p.jpg"))
+            measured.write_bytes(png(380, 960))
+            large.write_bytes(png(1536, 1024))
+            small.write_bytes(png(8, 8))
+            photo.write_bytes(jpeg(1536, 1024))
+            self.assertEqual(batches.image_pixels(measured), 380 * 960)
+            self.assertEqual(batches.image_pixels(photo), 1536 * 1024)
+            self.assertIsNone(batches.image_pixels(Path(tmp) / "missing.png"))
+
+            def image_in(path: Path) -> int:
+                item = parse(items=[{"id": "e1", "kind": "edit", "prompt": "x",
+                                     "images": [{"file": str(path), "provenance": "own render"}]}]).items[0]
+                return item.tokens()["image_in"]
+
+            self.assertEqual(image_in(measured), 416 * 2)  # the measurement, times the margin
+            self.assertEqual(image_in(large), math.ceil(416 * 1536 * 1024 / (380 * 960) * 2))
+            self.assertEqual(image_in(photo), image_in(large))
+            self.assertEqual(image_in(small), 416 * 2)  # never below the measured 416
+            self.assertEqual(image_in(Path(tmp) / "missing.png"), batches.UNREAD_INPUT_TOKENS * 2)
+
+    def test_a_from_input_without_pick_counts_every_source_image(self) -> None:
+        image = {"file": "raw:a.png", "provenance": "own render"}
+        batch = parse(items=[{"id": "e1", "kind": "edit", "prompt": "x", "images": [image], "n": 3,
+                              "size": "1024x1024"},
+                             {"id": "e2", "kind": "edit", "prompt": "y", "images": [{"from": "e1"}]},
+                             {"id": "e3", "kind": "edit", "prompt": "y", "images": [{"from": "e1", "pick": 2}]}])
+        e2, e3 = batch.items[1], batch.items[2]
+        self.assertEqual((e2.image_count, e3.image_count), (3, 1))
+        self.assertEqual(e2.input_pixels(), [1024 * 1024] * 3)
+        self.assertAlmostEqual(e2.tokens()["image_in"], 3 * e3.tokens()["image_in"], delta=2)  # each rounded up
+        self.assertIn("1 to 16 images", errors_of(items=[
+            {"id": "e1", "kind": "edit", "prompt": "x", "images": [image], "n": 10, "size": "1024x1024"},
+            {"id": "e2", "kind": "edit", "prompt": "y", "images": [{"from": "e1"}, {"from": "e1"}]}]))
 
     def test_usage_is_priced_per_kind(self) -> None:
         tokens = batches.usage_tokens(USAGE)
@@ -220,14 +271,52 @@ class ClientTest(unittest.TestCase):
         self.assertEqual(answer.body["data"][0]["b64_json"], f"<{len(png())} bytes>")
         self.assertEqual(answer.request_id, "req_123")
 
-    def test_429_and_5xx_are_retried_with_backoff(self) -> None:
+    def test_only_sure_refusals_are_retried_with_backoff(self) -> None:
+        # a 429 (not insufficient_quota) and a 503 with Retry-After: OpenAI refused them, nothing was made or billed
         fake = FakeOpenAI([Response(429, {"retry-after": "7"}, b'{"error": {"message": "slow down"}}'),
-                           Response(500, {}, b"oops"), Response(503, {}, b"")])
+                           Response(429, {}, b'{"error": {"message": "slow down"}}'),
+                           Response(503, {"retry-after": "3"}, b"")])
         logs: list[str] = []
         answer = fake.client(logs).edit([("model", "m")], [])
         self.assertEqual(answer.attempts, 4)
-        self.assertEqual(fake.clock.sleeps, [7.0, 4.0, 8.0])
+        self.assertEqual(fake.clock.sleeps, [7.0, 4.0, 3.0])
         self.assertEqual(fake.requests[0][1], "https://api.openai.com/v1/images/edits")
+
+    def test_a_server_error_is_unsure_and_not_resent(self) -> None:
+        # a 502, 504 or 524 may come after the image was made and billed; so may a 500 or a 503 without Retry-After
+        for status in (500, 502, 503, 504, 524):
+            with self.subTest(status=status):
+                fake = FakeOpenAI([Response(status, {}, b"<html>bad gateway</html>")])
+                with self.assertRaises(api.OpenAIError) as ctx:
+                    fake.client().generate({})
+                self.assertTrue(ctx.exception.unsure)
+                self.assertEqual(ctx.exception.status, status)
+                self.assertEqual(len(fake.requests), 1)
+                self.assertEqual(fake.clock.sleeps, [])
+
+    def test_a_malformed_2xx_is_unsure_and_not_resent(self) -> None:
+        answers = {"not JSON": b"<html>ok</html>", "no data": b'{"created": 1}', "no b64": b'{"data": [{}]}',
+                   "bad base64": b'{"data": [{"b64_json": "not base64!"}]}'}
+        for what, body in answers.items():
+            with self.subTest(what=what):
+                fake = FakeOpenAI([Response(200, {}, body)])
+                with self.assertRaises(api.OpenAIError) as ctx:
+                    fake.client().generate({})
+                self.assertTrue(ctx.exception.unsure)
+                self.assertEqual(len(fake.requests), 1)
+
+    def test_the_hook_runs_before_every_http_attempt(self) -> None:
+        fake = FakeOpenAI([Response(429, {}, b"{}"), Response(429, {}, b"{}")])
+        seen: list[tuple[int, int]] = []
+
+        def before(attempt: int) -> None:
+            seen.append((attempt, len(fake.requests)))
+            if attempt == 3:
+                raise api.CapReached("cap")
+        with self.assertRaises(api.CapReached):
+            fake.client().generate({}, before=before)
+        self.assertEqual(seen, [(1, 0), (2, 1), (3, 2)])
+        self.assertEqual(len(fake.requests), 2)
 
     def test_no_balance_is_not_retried(self) -> None:
         fake = FakeOpenAI([Response(429, {}, b'{"error": {"message": "You exceeded your current quota", '
@@ -243,6 +332,15 @@ class ClientTest(unittest.TestCase):
             fake.client().generate({})
         self.assertTrue(ctx.exception.unsure)
         self.assertEqual(len(fake.requests), 1)
+
+    def test_redact_scrubs_the_key_and_its_masked_form(self) -> None:
+        text = f"Incorrect API key provided: {MASKED}. Also {KEY} and sk-abc_DEF-123."
+        out = api.redact(text, KEY)
+        for secret in (KEY, MASKED, "sk-abc_DEF-123", "****"):
+            self.assertNotIn(secret, out)
+        self.assertEqual(out.count(api.REDACTED), 3)
+        self.assertEqual(api.redact(f"no key at hand: {MASKED}", None), f"no key at hand: {api.REDACTED}")
+        self.assertEqual(api.redact("task-1234 and disk-5678 stay", None), "task-1234 and disk-5678 stay")
 
     def test_errors_never_carry_the_key(self) -> None:
         fake = FakeOpenAI([Response(401, {}, json.dumps({"error": {"message": f"Incorrect API key provided: {KEY}",
@@ -299,6 +397,124 @@ class RunTest(unittest.TestCase):
         self.assertEqual(self.runner(batch, fake, logs).run(), 0)
         self.assertEqual(len(fake.requests), 2)
 
+    def test_the_cap_is_checked_before_every_http_attempt(self) -> None:
+        batch = parse()
+        batch.cost_cap_usd = batch.items[0].estimate_usd * 1.5
+        other = self.raw / "t-batch" / "old-item" / "generation.json"  # an item no longer in the batch file
+
+        class Spender(FakeOpenAI):
+            def request(inner, *args: Any) -> Response:  # noqa: N805
+                answer = super().request(*args)
+                # while the first attempt is out, spend appears in the batch folder (a removed item's record)
+                runs.write_state(other, {"status": "done", "requests": [{"cost_usd": batch.cost_cap_usd}]})
+                return answer
+
+        fake, logs = Spender([Response(429, {}, b'{"error": {"message": "slow down"}}')]), []
+        with self.assertRaisesRegex(api.CapReached, "before HTTP attempt 2"):
+            self.runner(batch, fake, logs).run()
+        self.assertEqual(len(fake.requests), 1)  # the retry was never sent
+        state = runs.read_state(batch, batch.items[0], self.raw)
+        self.assertEqual(state["status"], "failed")
+        self.assertEqual(state["requests"][0]["cost_usd"], 0.0)  # the 429 was refused, not billed
+        self.assertAlmostEqual(runs.batch_spent(batch, self.raw), batch.cost_cap_usd)
+
+    def test_a_second_run_of_one_batch_is_refused(self) -> None:
+        batch = parse()
+        lock = self.raw / "t-batch" / runs.LOCK
+        lock.parent.mkdir(parents=True)
+        lock.write_text("pid 1, since then\n", encoding="utf-8")
+        fake = FakeOpenAI()
+        with self.assertRaisesRegex(common.Failure, "another run of this batch"):
+            self.runner(batch, fake, []).run()
+        self.assertEqual(fake.requests, [])
+        lock.unlink()
+        self.assertEqual(self.runner(batch, fake, []).run(), 0)
+        self.assertFalse(lock.exists())  # released after the run
+
+    def test_a_server_error_counts_the_estimate_and_stops(self) -> None:
+        batch = self.edit_batch()
+        fake = FakeOpenAI([Response(502, {}, b"bad gateway")])
+        with self.assertRaises(api.OpenAIError):
+            self.runner(batch, fake, []).run()
+        self.assertEqual(len(fake.requests), 1)
+        state = runs.read_state(batch, batch.items[0], self.raw)
+        self.assertEqual((state["status"], state["requests"][0]["outcome"]), ("failed", "unsure"))
+        self.assertAlmostEqual(runs.spent(state), batch.items[0].estimate_usd, places=6)
+
+    def test_a_malformed_200_counts_the_estimate_and_stops(self) -> None:
+        batch = self.edit_batch()
+        fake = FakeOpenAI([Response(200, {}, b'{"created": 1, "data": []}')])
+        with self.assertRaises(api.OpenAIError):
+            self.runner(batch, fake, []).run()
+        state = runs.read_state(batch, batch.items[0], self.raw)
+        self.assertEqual((state["status"], state["requests"][0]["outcome"]), ("failed", "unsure"))
+        self.assertAlmostEqual(runs.spent(state), batch.items[0].estimate_usd, places=6)
+
+    def test_a_missing_usage_block_saves_the_images_and_counts_the_estimate(self) -> None:
+        batch = parse()
+        body = {"created": 1, "data": [{"b64_json": base64.b64encode(png()).decode()}]}
+        fake = FakeOpenAI([Response(200, {}, json.dumps(body).encode())])
+        self.assertEqual(self.runner(batch, fake, []).run(), 0)
+        state = runs.read_state(batch, batch.items[0], self.raw)
+        self.assertEqual(state["status"], "done")
+        self.assertEqual((self.raw / "t-batch" / "g1" / "image-0.png").read_bytes(), png())
+        self.assertEqual(state["requests"][0]["priced_from"], "estimate")
+        self.assertAlmostEqual(state["cost_usd"], batch.items[0].estimate_usd, places=6)
+
+    def test_an_unexpected_failure_never_leaves_the_item_running(self) -> None:
+        batch = parse()
+        fake = FakeOpenAI()
+        with mock.patch.object(runs, "png_size", side_effect=RuntimeError("disk gone")):
+            with self.assertRaises(RuntimeError):
+                self.runner(batch, fake, []).run()
+        state = runs.read_state(batch, batch.items[0], self.raw)
+        self.assertEqual(state["status"], "failed")  # answered, so billed, but never priced: the estimate counts
+        self.assertAlmostEqual(runs.spent(state), batch.items[0].estimate_usd, places=6)
+        self.assertFalse((self.raw / "t-batch" / runs.LOCK).exists())
+
+    def test_a_from_input_without_pick_sends_every_image(self) -> None:
+        image = {"file": str(self.ref), "provenance": "own render", "sha256": runs.inputs.sha256(self.ref)}
+        batch = parse(items=[{"id": "e1", "kind": "edit", "prompt": "x", "images": [image], "n": 2},
+                             {"id": "e2", "kind": "edit", "prompt": "y", "images": [{"from": "e1"}]}])
+        fake = FakeOpenAI([ok_answer(n=2), ok_answer()])
+        self.assertEqual(self.runner(batch, fake, []).run(), 0)
+        self.assertEqual(fake.requests[1][3].count(b'name="image[]"'), 2)
+        state = runs.read_state(batch, batch.items[1], self.raw)
+        self.assertEqual([r["pick"] for r in state["inputs"]], [0, 1])
+        self.assertEqual(state["requests"][0]["estimated_tokens"], batch.items[1].tokens())
+        rows = list(csv.DictReader(io.StringIO((self.raw / "t-batch" / "log.csv").read_text(encoding="utf-8"))))
+        self.assertEqual([(r["item"], r["images"], r["files"]) for r in rows], [("e1", "1", "2"), ("e2", "2", "1")])
+
+    def test_the_command_redacts_the_key_and_its_masked_form(self) -> None:
+        batch = self.edit_batch()
+        args = argparse.Namespace(action="run", batch="t-batch", items=[], retry_failed=False)
+        leak = json.dumps({"error": {"message": f"Incorrect API key provided: {MASKED}; was {KEY}",
+                                     "code": "invalid_api_key"}}).encode()
+        fake, logs = FakeOpenAI([Response(401, {}, leak)]), []
+        client = fake.client(logs)  # the real client on the fake transport, made before OpenAIClient is patched
+        out = io.StringIO()
+        with mock.patch.object(batches, "load", return_value=batch), \
+                mock.patch.object(api, "api_key", return_value=KEY), \
+                mock.patch.object(api, "OpenAIClient", side_effect=lambda key: client), \
+                mock.patch.object(common, "raw_dir", return_value=self.raw), contextlib.redirect_stdout(out):
+            with self.assertRaises(common.Failure) as ctx:
+                openai_images.run(args)
+            # an unexpected error carrying both forms leaves through the command's own redact
+            with mock.patch.object(runs.Runner, "run", side_effect=RuntimeError(f"boom {KEY} {MASKED}")):
+                with self.assertRaises(common.Failure) as crash:
+                    openai_images.run(args)
+        self.assertEqual(len(fake.requests), 1)
+        for text in (str(ctx.exception), str(crash.exception), out.getvalue(), *logs):
+            self.assertNotIn(KEY, text)
+            self.assertNotIn(MASKED, text)
+            self.assertNotIn("****", text)
+        self.assertIn(api.REDACTED, str(ctx.exception))
+        self.assertEqual(str(crash.exception), f"RuntimeError: boom {api.REDACTED} {api.REDACTED}")
+        for path in self.raw.rglob("*"):
+            if path.is_file():
+                self.assertNotIn(KEY.encode(), path.read_bytes(), path.name)
+                self.assertNotIn(MASKED.encode(), path.read_bytes(), path.name)
+
     def test_the_cap_is_checked_before_every_request(self) -> None:
         batch = self.edit_batch()
         cap = batch.items[0].estimate_usd + batch.items[1].estimate_usd
@@ -349,7 +565,7 @@ class RunTest(unittest.TestCase):
     def test_the_key_is_never_logged_or_recorded(self) -> None:
         batch = self.edit_batch()
         leak = json.dumps({"error": {"message": f"bad key {KEY}"}}).encode()
-        fake, logs = FakeOpenAI([Response(500, {}, leak), ok_answer(), Response(401, {}, leak)]), []
+        fake, logs = FakeOpenAI([Response(429, {}, leak), ok_answer(), Response(401, {}, leak)]), []
         with self.assertRaises(api.OpenAIError) as ctx:
             self.runner(batch, fake, logs).run()
         self.assertNotIn(KEY, str(ctx.exception))
