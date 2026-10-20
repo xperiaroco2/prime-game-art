@@ -81,7 +81,7 @@ def edge_shift(t: float, t_max: float, upper: bool, c: dict = CORNER) -> float:
 
 def shell_profile(rho_in: float, rho_out: float, bead: float, upper: bool, span_deg: float = 200.0, seg_p: int = 12,
                   rim_seg: int = 5, bead_deg: float = 26.0, shift: float = 0.0,
-                  crowd: bool | None = None) -> list[tuple[float, float, float]]:
+                  crowd: bool | None = None, flare: dict | None = None) -> list[tuple[float, float, float]]:
     """lid_shell()'s closed cross-section as (rho, p, p0) round the loop: the outer surface from the back to the edge,
     the rim's half circle beyond the edge, the inner surface back again (rho in r; p the elevation, p0 the same point's
     elevation before `shift`, for the accent mask). `bead` swells the outer surface over the last bead_deg before the
@@ -89,7 +89,8 @@ def shell_profile(rho_in: float, rho_out: float, bead: float, upper: bool, span_
     `shift` moves the edge by that many radians, fading out to nothing at the shell's back (span_deg), so the shell
     stays closed and its back is unchanged. With shift 0 this is S7's profile exactly. `crowd` (default: bead > 0)
     sets the quadratic sampling apart from the bead, so a rounded shell tapered to no bead at its poles keeps the
-    same sampling in every row (no crease)."""
+    same sampling in every row (no crease). `flare` (M10, FLARE_OFF's form) swells the outer surface behind the edge
+    (flare_at); None or amount 0 changes nothing."""
     sgn = 1.0 if upper else -1.0
     ex = 2 if (bool(bead) if crowd is None else crowd) else 1
     span = math.radians(span_deg)
@@ -106,7 +107,7 @@ def shell_profile(rho_in: float, rho_out: float, bead: float, upper: bool, span_
         f = (1 - j / seg_p) ** ex
         p = span * f
         swell = bead * (1 - smoothstep(0.0, bd, p)) if bead else 0.0
-        put(ro + swell, sgn * p)
+        put(ro + swell + flare_at(p, flare), sgn * p)
     for j in range(1, rim_seg):
         a = math.pi * j / rim_seg
         put(rm + hw * math.cos(a), -sgn * (hw * math.sin(a)) / rm)
@@ -276,3 +277,80 @@ def slim(rho: tuple, bead: float, lids: dict = LIDS) -> tuple[tuple[float, float
     """A lid's (rho_in, rho_out) and rim swell under a lid setting: the inner radius kept, the thickness times
     `thin`, the swell times `rim`."""
     return (rho[0], rho[0] + lids["thin"] * (rho[1] - rho[0])), bead * lids["rim"]
+
+
+# M10 (art #196, brief UPDATE 12): smaller eyes on the unchanged skull. M9's socket re-sculpt was rejected (the skull
+# looked dented), so the skin round the eye never moves: the eye unit is only scaled about its socket (EYE_SCALE, as
+# M6) and S9's lids are kept. Below about 95 % a gap opens between the shrunken dome and the socket's skin, which was
+# shaped for the full-size eye (M6's grid: a dark crescent at 86 %). The flare closes it on the lid alone: the
+# shell's outer surface swells by `amount` ball radii from `from_deg` to `to_deg` of elevation behind the edge (a
+# smoothstep measured from the edge), where the dome runs into the socket's skin, so the rim, the rolled bead, the
+# wet strip, the rim reach and the blink's seal (the inner surface) are untouched. alien_m6.py --flare auto finds the
+# smallest amount per design and lid with which the dome reaches `margin` into the skin at every latitude (lid_gap).
+# FLARE_OFF is S9's shell exactly.
+FLARE_OFF = {"amount": 0.0, "from_deg": 25.0, "to_deg": 70.0}
+FLARE_MARGIN = 0.004  # ball radii (about 0.15 mm): the dome must reach this far into the skin at every latitude
+FLARE_STEP = 0.0025
+FLARE_MAX = 0.4
+
+
+def flare_at(p_abs: float, f: dict | None) -> float:
+    """The outer surface's swell (ball radii) at |p| radians behind the lid's edge."""
+    if not f or not f["amount"]:
+        return 0.0
+    return f["amount"] * smoothstep(math.radians(f["from_deg"]), math.radians(f["to_deg"]), abs(p_abs))
+
+
+def local_tp(pts) -> list[tuple[float, float, float]]:
+    """Points (x, y, z) in a lid's local frame (lid_shell's: the edge on -Y, the hinge on X) as (rho, t, p): their
+    distance (in the points' unit), the latitude toward the hinge and the elevation from -Y toward +Z (radians)."""
+    out = []
+    for x, y, z in pts:
+        rho = math.sqrt(x * x + y * y + z * z)
+        t = math.asin(max(-1.0, min(1.0, x / max(rho, 1e-12))))
+        out.append((rho, t, math.atan2(z, -y)))
+    return out
+
+
+def lid_gap(pts, rho_out: float, bead: float, upper: bool, flare: dict | None, span_deg: float = 200.0,
+            bead_deg: float = 26.0, bin_deg: float = 10.0, t_max_deg: float = 80.0, rho_max: float = 1.8,
+            min_pts: int = 3, tp: list | None = None) -> list[tuple[float, float, float]]:
+    """How far the socket's skin stands outside a lid's dome. pts: the skin's points (x, y, z) in the lid's local
+    frame, in ball radii (the lid at rest; or tp, their local_tp). Per latitude bin (bin_deg wide, |t| < t_max_deg)
+    over the skin the lid covers (p of the lid's sign, within span_deg, closer than rho_max): (the bin's centre t in
+    degrees, the smallest rho minus the dome's outer radius there (r; negative: the dome reaches into the skin), the p
+    in degrees where it is). A positive value is a gap: along that latitude the dome never meets the skin."""
+    sgn = 1.0 if upper else -1.0
+    span, bd = math.radians(span_deg), math.radians(bead_deg)
+    nb = int(round(2 * t_max_deg / bin_deg))
+    best: list = [None] * nb
+    count = [0] * nb
+    for rho, t, p in (tp if tp is not None else local_tp(pts)):
+        pa = p * sgn
+        if not (0.0 < pa < span and rho < rho_max):
+            continue
+        i = int(math.floor((math.degrees(t) + t_max_deg) / bin_deg))
+        if not 0 <= i < nb:
+            continue
+        g = rho - (rho_out + bead * (1.0 - smoothstep(0.0, bd, pa)) + flare_at(pa, flare))
+        count[i] += 1
+        if best[i] is None or g < best[i][0]:
+            best[i] = (g, pa)
+    return [(round(-t_max_deg + (i + 0.5) * bin_deg, 1), b[0], round(math.degrees(b[1]), 1))
+            for i, b in enumerate(best) if b is not None and count[i] >= min_pts]
+
+
+def auto_flare(pts, rho_out: float, bead: float, upper: bool, base: dict = FLARE_OFF,
+               margin: float = FLARE_MARGIN) -> dict:
+    """The smallest flare (base's ramp; the amount in FLARE_STEP steps up to FLARE_MAX) with which lid_gap is at most
+    -margin in every latitude bin; refuses when even FLARE_MAX leaves a gap."""
+    tp = local_tp(pts)
+    n = 0
+    while True:
+        f = dict(base, amount=round(n * FLARE_STEP, 4))
+        gaps = lid_gap(None, rho_out, bead, upper, f, tp=tp)
+        if not gaps or max(g for _, g, _ in gaps) <= -margin:
+            return f
+        n += 1
+        if n * FLARE_STEP > FLARE_MAX + 1e-9:
+            raise SystemExit(f"auto_flare: a gap is left at {FLARE_MAX} r: {gaps}")

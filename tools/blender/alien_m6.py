@@ -50,6 +50,10 @@ from alien_parts import EYES, LID_BEAD  # noqa: E402
 CONTACT_MARKER = {"prime_contact": "custom1_designs"}  # M6c; M6's kits: "custom1_x"
 PART_AO_MARKER = {"prime_part_ao": "color0_r"}  # on alien_lip (the lips and lid domes) once the parts' AO is baked
 PART_AO = {"distance": 0.02, "samples": 64, "floor": 0.3, "smooth": 1}
+# M10 (PR #243's review minor 1): alien_lip's custom property (glTF extras) with the lid setting and each design's rim
+# reaches beyond the lid edges ({"lids": {...}, "reach_deg": {design: [upper, lower]}}, JSON); alien.gd takes the
+# reaches from it, an older kit without it keeps S9's (EYE_LOOK)
+LIDS_MARKER = "prime_lids"
 LID_SEG_T = 32  # S7: 20 rows across the lid; the rounded corners need more near the poles
 DESIGNS_MOUTH = ("frog", "overbite")
 VISEMES = ("rest", "M", "small", "A", "E", "O")
@@ -73,8 +77,11 @@ def args():
     p.add_argument("--lids", default="", help="M9b: JSON over alien_lids_geom.LIDS (the slim shells' thin, rim); "
                    "the default on a mounted kit is LIDS, on an older kit S9's shells")
     p.add_argument("--no-bake", action="store_true", help="skip the parts' AO bake (a quick geometry check)")
-    p.add_argument("--socket", default="", help="M9: JSON over alien_lids_geom.SOCKET, the eye mount applied here "
-                   "(a variant grid on a kit without one; a chain-built kit carries Body['prime_socket'] already)")
+    p.add_argument("--socket", default="", help="M9 (REJECTED, M10): JSON over alien_lids_geom.SOCKET, the eye mount "
+                   "applied here; refused without --opt-in-rejected-m9")
+    p.add_argument("--opt-in-rejected-m9", action="store_true", help="allow --socket (M9's rejected skull change)")
+    p.add_argument("--flare", default="auto", help="M10: the lids' flare behind the edge (alien_lids_geom.FLARE_OFF): "
+                   "auto (the smallest that leaves no gap to the unchanged socket skin), off, or JSON for every lid")
     return p.parse_args(argv)
 
 
@@ -125,13 +132,94 @@ def swap_skin(a, out: Path) -> dict:
     return rep
 
 
-def rebuild_eyes(k: float, corner: dict, sink: float = 0.0, lids: dict | None = None) -> dict:
+def skin_points() -> np.ndarray:
+    """The Body's rest-pose vertices in world space (as contact_field reads them)."""
+    body = bpy.data.objects["Body"]
+    me = body.data
+    co = np.empty(len(me.vertices) * 3)
+    me.vertices.foreach_get("co", co)
+    co = co.reshape(-1, 3)
+    mw = np.array(body.matrix_world)
+    return co @ mw[:3, :3].T + mw[:3, 3]
+
+
+def sink_vector(side: str, sink: float) -> Vector:
+    """The eye unit's move back into the head along the socket's axis (local +Y; the eye looks down -Y)."""
+    sock = bpy.data.objects[f"Eye_{side}"]
+    return (sock.matrix_world.to_3x3() @ Vector((0.0, 1.0, 0.0))).normalized() * sink
+
+
+def lid_skin_local(lo, r: float, back: Vector, skin: np.ndarray, reach: float = 2.0) -> np.ndarray:
+    """The skin's points near a lid in its local frame after the unit's sink, in ball radii (r: the new radius)."""
+    c = np.array(lo.matrix_world.translation) + np.array(back)
+    near = skin[np.linalg.norm(skin - c, axis=1) < reach * r]
+    inv = np.array(lo.matrix_world.inverted())
+    loc = (near - np.array(back)) @ inv[:3, :3].T + inv[:3, 3]  # the frame moves by `back`: the points by -back
+    return loc / r
+
+
+def flares(k: float, sink: float, lids: dict | None, spec: str) -> dict:
+    """M10: per design and lid the flare (alien_lids_geom.FLARE_OFF's form) for the unit at k: "off" none, "auto" the
+    smallest closing every latitude's gap on both sides (alien_lids_geom.auto_flare, the larger side's), else JSON
+    {"amount", "from_deg", "to_deg"} for every lid. Measured on the kit's skin with the lids at rest."""
+    out = {}
+    skin = skin_points() if spec == "auto" else None
+    for dname, d in EYES.items():
+        for lid in ("upper", "lower"):
+            if spec == "off":
+                out[f"{dname}_{lid}"] = dict(LG.FLARE_OFF)
+                continue
+            if spec != "auto":
+                out[f"{dname}_{lid}"] = dict(LG.FLARE_OFF, **json.loads(spec))
+                continue
+            rho, bead = LG.slim(d[lid]["rho"], LID_BEAD[lid], lids or LG.LIDS_S9)
+            best, gaps = None, {}
+            for side in ("L", "R"):
+                ball = bpy.data.objects[f"eye_{dname}_ball_{side}"]
+                r = ball_radius(ball) * k
+                lo = bpy.data.objects[f"eye_{dname}_lid_{lid}_{side}"]
+                pts = lid_skin_local(lo, r, sink_vector(side, sink), skin).tolist()
+                f = LG.auto_flare(pts, rho[1], bead, lid == "upper")
+                g0 = LG.lid_gap(pts, rho[1], bead, lid == "upper", None)
+                g1 = LG.lid_gap(pts, rho[1], bead, lid == "upper", f)
+                gaps[side] = {"before_r": round(max(g for _, g, _ in g0), 4),
+                              "after_r": round(max(g for _, g, _ in g1), 4),
+                              "before_mm": round(max(g for _, g, _ in g0) * r * 1000.0, 2),
+                              "bins_open_before": [t for t, g, _ in g0 if g > 0]}
+                if best is None or f["amount"] > best["amount"]:
+                    best = f
+            out[f"{dname}_{lid}"] = dict(best, gap_r=gaps)
+    log("flare", json.dumps(out))
+    return out
+
+
+def ball_radius(ball) -> float:
+    n = len(ball.data.vertices)
+    co = np.empty(n * 3)
+    ball.data.vertices.foreach_get("co", co)
+    return float(np.linalg.norm(co.reshape(-1, 3), axis=1).max())
+
+
+def lid_reach(lids: dict | None) -> dict:
+    """M10 (PR #243's review minor 1): per design the rims' reach beyond the lid edges in degrees (upper, lower),
+    alien_eyes_geom.rim_reach of the shells as built; alien.gd takes it from LIDS_MARKER."""
+    out = {}
+    for dname, d in EYES.items():
+        out[dname] = []
+        for lid in ("upper", "lower"):
+            rho, bead = LG.slim(d[lid]["rho"], LID_BEAD[lid], lids or LG.LIDS_S9)
+            out[dname].append(round(math.degrees(E.rim_reach(rho[0], rho[1], bead)), 2))
+    return out
+
+
+def rebuild_eyes(k: float, corner: dict, sink: float = 0.0, lids: dict | None = None, flare: dict | None = None) -> dict:
     """Every lid shell rebuilt with the rounded corners at k times the ball's radius (M9b: slimmed by `lids`,
-    alien_lids_geom.slim; None builds S9's shells), the ball's mesh scaled by k about
-    its centre (the socket), the wet strips rebuilt."""
+    alien_lids_geom.slim; None builds S9's shells; M10: swollen behind the edge by `flare`, per "<design>_<lid>"),
+    the ball's mesh scaled by k about its centre (the socket), the wet strips rebuilt."""
     wet = bpy.data.materials["alien_wet"]
     lip = bpy.data.materials["alien_lip"]
     rep = {}
+    flare = flare or {}
     for dname, d in EYES.items():
         for side in ("L", "R"):
             ball = bpy.data.objects[f"eye_{dname}_ball_{side}"]
@@ -152,7 +240,7 @@ def rebuild_eyes(k: float, corner: dict, sink: float = 0.0, lids: dict | None = 
                 rho, bead = LG.slim(d[lid]["rho"], LID_BEAD[lid], lids or LG.LIDS_S9)
                 tmp = G.lid_shell(lo.name + "_m6", r * k, rho[0], rho[1], lid == "upper", lip,
                                   lo.users_collection[0], seg_t=LID_SEG_T, seg_p=18, rim_seg=8, bead=bead,
-                                  corner=corner)
+                                  corner=corner, flare=flare.get(f"{dname}_{lid}"))
                 old = lo.data
                 name = old.name
                 new = tmp.data
@@ -169,8 +257,7 @@ def rebuild_eyes(k: float, corner: dict, sink: float = 0.0, lids: dict | None = 
                              wet, lo.users_collection[0], corner=corner)
             if sink:  # back into the head along the socket's axis (local +Y; the eye looks down -Y), so the
                 # smaller domes still meet the socket's skin (at 93 % without it the socket's rim showed as a dark gap)
-                sock = bpy.data.objects[f"Eye_{side}"]
-                back = (sock.matrix_world.to_3x3() @ Vector((0.0, 1.0, 0.0))).normalized() * sink
+                back = sink_vector(side, sink)
                 for o in [ball] + [bpy.data.objects[f"eye_{dname}_lid_{lid}_{side}"] for lid in ("upper", "lower")]:
                     mw = o.matrix_world.copy()
                     mw.translation += back
@@ -178,6 +265,8 @@ def rebuild_eyes(k: float, corner: dict, sink: float = 0.0, lids: dict | None = 
             up_rho, up_bead = LG.slim(d["upper"]["rho"], LID_BEAD["upper"], lids or LG.LIDS_S9)
             rep[f"{dname}_{side}"] = {"r_before": round(r, 5), "r": round(r * k, 5), "sink_m": sink,
                                       "lids": lids or LG.LIDS_S9,
+                                      "flare_r": {lid: (flare.get(f"{dname}_{lid}") or {}).get("amount", 0.0)
+                                                  for lid in ("upper", "lower")},
                                       "overhang_upper_r": round(LG.corner_overhang(
                                           up_rho[1], up_bead, corner), 4)}
     log("eyes", json.dumps(rep))
@@ -329,7 +418,9 @@ def main():
     rep = {"eye_scale": a.eye_scale, "eye_sink": a.eye_sink, "corner": corner, "skin": swap_skin(a, skin_root)}
     body = rest_pose()
     k, sink = a.eye_scale, a.eye_sink
-    if a.socket:  # M9's grid: the mount on this kit (refused if it has one)
+    if a.socket:  # M9's grid: the mount on this kit (refused if it has one); rejected since M10
+        if not a.opt_in_rejected_m9:
+            raise SystemExit(alien_socket.REJECTED.replace("alien_socket.py", "alien_m6.py --socket"))
         rep["socket"] = alien_socket.apply(json.loads(a.socket))
     if alien_socket.MARKER in body.keys():  # M9: the mount sized and placed the eyes; rebuild the lids at that size
         k, sink = 1.0, 0.0
@@ -338,7 +429,11 @@ def main():
     lids = LG.set_lids(json.loads(a.lids)) if a.lids else (LG.LIDS if "socket_mount" in rep else None)
     rep["lids"] = lids or LG.LIDS_S9
     rep["eye_scale"], rep["eye_sink"] = k, sink
-    rep["eyes"] = rebuild_eyes(k, corner, sink, lids)
+    rep["flare"] = flares(k, sink, lids, a.flare)
+    rep["eyes"] = rebuild_eyes(k, corner, sink, lids, rep["flare"])
+    rep["lid_reach_deg"] = lid_reach(lids)
+    bpy.data.materials["alien_lip"][LIDS_MARKER] = json.dumps(  # PR #243's minor 1: alien.gd's rim reaches
+        {"lids": lids or LG.LIDS_S9, "reach_deg": rep["lid_reach_deg"]}, sort_keys=True)
     bpy.context.view_layer.update()
     rep["contact"] = contact_field(body)
     if not a.no_bake:
