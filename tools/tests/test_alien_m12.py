@@ -4,6 +4,7 @@ alien_talk.gd (read by pattern; no Blender, no Godot)."""
 from __future__ import annotations
 
 import importlib.util
+import math
 import re
 import unittest
 from pathlib import Path
@@ -54,7 +55,7 @@ class PoutShapeTest(unittest.TestCase):
         self.assertGreater(p["lower"], p["upper"])  # the lower lip the bigger cushion
         self.assertGreater(p["upper"], LP.LIP_SHAPE["upper"])  # mp1's upper lip fuller than the frog's
         self.assertGreater(p["corner"], LP.LIP_SHAPE["corner"])  # a little rounder ends
-        self.assertEqual(set(p), set(LP.LIP_SHAPE) | {"size", "ring_corner"})
+        self.assertEqual(set(p), set(LP.LIP_SHAPE) | {"size", "ring_corner", "bow_flat", "ring_param"})
         # the open rings' corners fuller than the closed lips' ends, and only for the pout
         th = 0.0
         thin = LP.ring_width(th, 1.0, 1.0, 0.5, "E", dict(p, ring_corner=p["corner"]))
@@ -66,6 +67,63 @@ class PoutShapeTest(unittest.TestCase):
         self.assertEqual(p["ring"], {"A": 1.0, "E": 1.0, "O": 0.3})
         self.assertEqual(LP.LIP_SHAPE_POUT["ring"]["O"], 0.5)  # the default is not changed
         self.assertEqual(LP.merged_pout(None), LP.LIP_SHAPE_POUT)
+
+
+class RingParamTest(unittest.TestCase):
+    """M12b: the open shapes as designed rings (UPDATE 19 items 1-3, 5)."""
+    MEAS = {"A": {"cx": 274.0, "cy": 285.0, "W": 42.5, "hu": 19.5, "t_u": 22.0, "t_l": 24.0},
+            "E": {"cx": 241.5, "cy": 278.5, "W": 56.0, "hu": 14.0, "t_u": 20.0, "t_l": 22.0},
+            "O": {"cx": 209.0, "cy": 277.5, "W": 39.5, "hu": 7.0, "t_u": 27.0, "t_l": 31.0}}  # mp1's panels
+
+    def ring(self, shape):
+        p = LP.merged_pout()
+        return LP.ring_param(self.MEAS[shape], p["ring_param"][shape], p, 96)
+
+    def test_every_open_shape_is_designed(self):
+        self.assertEqual(set(LP.LIP_SHAPE_POUT["ring_param"]), {"A", "E", "O"})
+        self.assertEqual(LP.LIP_SHAPE.get("ring_param"), None)  # the frog and overbite trace their sheets as before
+
+    def test_no_spikes_and_no_folds(self):
+        for shape in ("A", "E", "O"):
+            _c, pairs, outer0, _cw = self.ring(shape)
+            for edge, pts in enumerate(([q[0] for q in pairs], outer0, [q[1] for q in pairs])):
+                turns = []
+                for k in range(96):
+                    (ax, ay), (bx, by), (cx, cy) = pts[k - 1], pts[k], pts[(k + 1) % 96]
+                    a1, a2 = math.atan2(by - ay, bx - ax), math.atan2(cy - by, cx - bx)
+                    turns.append((a2 - a1 + math.pi) % (2 * math.pi) - math.pi)
+                self.assertAlmostEqual(abs(sum(turns)), 2 * math.pi, places=3)  # one simple loop
+                if edge < 2:  # the opening and the outline without the bow are convex: never fold
+                    self.assertTrue(all(t * turns[0] >= -1e-9 for t in turns), (shape, edge))
+                else:  # the outline with the bow: its sharpest turn is soft (E's traced corners turned ~90 deg)
+                    self.assertLess(max(abs(t) for t in turns), math.radians(20), shape)
+
+    def test_an_even_roll_with_round_corners(self):
+        for shape, lo in (("A", 0.6), ("E", 0.55), ("O", 0.75)):
+            _c, pairs, outer0, _cw = self.ring(shape)
+            t = [math.hypot(o[0] - i[0], o[1] - i[1]) for (i, _o), o in zip(pairs, outer0)]
+            self.assertGreater(min(t) / max(t), lo, shape)  # never a thin flap
+            for k in range(96):  # no ripple: the thickness changes smoothly round the ring
+                self.assertLess(abs(t[k] - t[k - 1]), 0.08 * max(t), shape)
+
+    def test_o_is_a_small_round_hole(self):
+        (cx, cy), pairs, _o0, _cw = self.ring("O")
+        r = [math.hypot(i[0] - cx, i[1] - cy) for i, _o in pairs]
+        self.assertLess(max(r) / min(r), 1.01)
+        self.assertAlmostEqual(min(r), 0.30 * self.MEAS["O"]["W"], places=3)
+        outer = [q[1] for q in pairs]
+        w = max(x for x, _y in outer) - min(x for x, _y in outer)
+        self.assertLess(w, 2 * self.MEAS["O"]["W"] * 1.08)  # the kiss keeps about the sheet's size (plump 1.15)
+
+    def test_flat_bow(self):
+        p = LP.merged_pout()
+        self.assertEqual(LP.flat_bow(p)["bow"], 0.0)
+        self.assertGreater(p["bow"], 0.0)  # the outline keeps a bow
+        self.assertIs(LP.flat_bow(LP.LIP_SHAPE), LP.LIP_SHAPE)  # frog: unchanged
+        q = LP.merged_pout({"ring_param": {"O": {"hole": 0.3}}})
+        self.assertEqual(q["ring_param"]["O"]["hole"], 0.3)
+        self.assertEqual(q["ring_param"]["O"]["corner"], 1.0)  # merged key by key
+        self.assertEqual(LP.LIP_SHAPE_POUT["ring_param"]["O"]["hole"], 0.30)
 
 
 class LayoutTest(unittest.TestCase):
