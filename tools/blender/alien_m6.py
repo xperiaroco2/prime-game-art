@@ -77,17 +77,19 @@ def args():
     p.add_argument("--corner", default="", help="JSON merged over alien_lids_geom.CORNER")
     p.add_argument("--lids", default="", help="M9b: JSON over alien_lids_geom.LIDS (the slim shells' thin, rim); "
                    "the default on a mounted kit is LIDS, on an older kit S9's shells")
-    p.add_argument("--thumb", choices=("rigid", "segments"), default="rigid",
-                   help="M10b: the thumb's skin weights (alien_thumb.py): rigid (the default) or the cage's segments")
-    p.add_argument("--collar", choices=("off", "on"), default="off",
-                   help="M10b: the static socket collar per design and side (alien_lids_geom.COLLAR); "
-                   "needs --flare off")
+    p.add_argument("--thumb", choices=("blend", "segments"), default="blend",
+                   help="M10b: the thumb's skin weights (alien_thumb.py): blend (the default, a smooth split along "
+                   "the thumb) or the cage's segments")
+    p.add_argument("--collar", choices=("off", "on"), default="on",
+                   help="M10b: the static socket collar per design and side (alien_lids_geom.COLLAR), the default; "
+                   "needs --flare off; none on a unit at full size (--eye-scale >= alien_lids_geom.EYE_SCALE)")
     p.add_argument("--no-bake", action="store_true", help="skip the parts' AO bake (a quick geometry check)")
     p.add_argument("--socket", default="", help="M9 (REJECTED, M10): JSON over alien_lids_geom.SOCKET, the eye mount "
                    "applied here; refused without --opt-in-rejected-m9")
     p.add_argument("--opt-in-rejected-m9", action="store_true", help="allow --socket (M9's rejected skull change)")
-    p.add_argument("--flare", default="auto", help="M10: the lids' flare behind the edge (alien_lids_geom.FLARE_OFF): "
-                   "auto (the smallest that leaves no gap to the unchanged socket skin), off, or JSON for every lid")
+    p.add_argument("--flare", default="off", help="M10: the lids' flare behind the edge (alien_lids_geom.FLARE_OFF): "
+                   "off (M10b's default: the collar fills the gap), auto (the smallest that leaves no gap to the "
+                   "unchanged socket skin; with --collar off), or JSON for every lid")
     return p.parse_args(argv)
 
 
@@ -522,6 +524,9 @@ def contact_field(body) -> dict:
 
 def main():
     a = args()
+    if a.collar == "on" and a.flare != "off":  # PR #245's review: refused before any work
+        raise SystemExit("--collar on needs --flare off (the collar fills the gap the flare closed); "
+                         "with a flare, pass --collar off")
     kit, out = Path(a.kit), Path(a.out)
     ex = out / a.export_name
     if ex.resolve() == kit.resolve():
@@ -533,7 +538,7 @@ def main():
     skin_root = out if a.export_name == "export" else out / f"skin_{a.export_name}"
     rep = {"eye_scale": a.eye_scale, "eye_sink": a.eye_sink, "corner": corner, "skin": swap_skin(a, skin_root)}
     body = rest_pose()
-    if a.thumb == "rigid":  # M10b: the thumb moves as one piece (the Idle thumb read swollen)
+    if a.thumb == "blend":  # M10b: the thumb's smooth split (the Idle thumb read swollen; the fist kept its curl)
         rep["thumb"] = alien_thumb.apply(body)
         log("thumb", json.dumps(rep["thumb"]))
     k, sink = a.eye_scale, a.eye_sink
@@ -551,9 +556,7 @@ def main():
     rep["flare"] = flares(k, sink, lids, a.flare)
     rep["eyes"] = rebuild_eyes(k, corner, sink, lids, rep["flare"])
     rep["lid_reach_deg"] = lid_reach(lids)
-    if a.collar == "on":
-        if a.flare != "off":
-            raise SystemExit("--collar on needs --flare off (the collar fills the gap the flare closed)")
+    if a.collar == "on" and k < LG.EYE_SCALE:  # a full-size unit is M8b's as it was: no gap, no collar
         rep["collar"] = build_collars(k, lids)
     bpy.data.materials["alien_lip"][LIDS_MARKER] = json.dumps(  # PR #243's minor 1: alien.gd's rim reaches
         {"lids": lids or LG.LIDS_S9, "reach_deg": rep["lid_reach_deg"]}, sort_keys=True)

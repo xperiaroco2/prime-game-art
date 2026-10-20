@@ -75,9 +75,15 @@ class Wiring(unittest.TestCase):
         self.assertIn("_lid_", name)  # alien.gd: the lids' material (LID_LOOK)
         self.assertTrue(name.startswith("eye_{d}_"))
 
-    def test_off_by_default_and_never_with_the_flare(self):
-        self.assertRegex(self.src, r'"--collar", choices=\("off", "on"\), default="off"')
-        self.assertIn('if a.flare != "off":', self.src)
+    def test_the_defaults_build_the_pick_and_refuse_the_flare_first(self):
+        # PR #245's review: the defaults are the pick's (--flare off --collar on), and the refusal of the collar with
+        # a flare comes before any work (the blend file is opened after it)
+        self.assertRegex(self.src, r'"--collar", choices=\("off", "on"\), default="on"')
+        self.assertIn('p.add_argument("--flare", default="off"', self.src)
+        main = self.src[self.src.index("def main("):]
+        check = main.index('if a.collar == "on" and a.flare != "off":')
+        self.assertLess(check, main.index("open_mainfile"))
+        self.assertIn('if a.collar == "on" and k < LG.EYE_SCALE:', main)  # the full-size unit: no collar
 
     def test_its_ao_and_the_skins_contact_take_it(self):
         body = self.src[self.src.index("def bake_parts_ao"):self.src.index("def smooth(")]

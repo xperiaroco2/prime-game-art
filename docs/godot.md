@@ -1668,12 +1668,20 @@ a time, by visibility.
   - **The thumb at rest read swollen** (`alien_thumb.py`, its docstring has the measurements). The mesh's thumb points
     forward along the hand, 5 to 7 cm off its bones, which run down from the wrist; the cage weighted its rings by
     segment, so the clips' thumb turns swung each ring about a far pivot and stretched the tube (Idle: edges up to
-    2.2 times, the thumb 10 % larger; Walk 23 %). M7's longer thumb lengthened the lever. `alien_m6.py` now puts each
-    thumb vertex's thumb weight 0.7 on the Metacarpal and 0.3 on the Hand (`--thumb rigid`, the default): the thumb
-    moves as one piece (Idle 2.5 % larger, the stretch left at the root's blend into the palm). The mesh, skeleton,
-    clips and the cage's segment masks are unchanged. In a fist the thumb no longer curls; it stays straight beside
-    the fingers. Proofs: `M10b/thumb/hands_sheet.png` (Blender: M6c, M7, M10, M10b in Idle, Walk, Talk, fist) and
-    `M10b/godot/digits/digits.png`.
+    2.2 times, the thumb 10 % larger; Walk 23 %). M7's longer thumb lengthened the lever. M10b first put each thumb
+    vertex's thumb weight 0.7 on the Metacarpal and 0.3 on the Hand: no swelling, but a straight bar in fists (PR
+    #245's review). Now (`--thumb blend`, the default) each thumb vertex's weight is split by its position along the
+    thumb (projected on the mesh thumb's root-to-tip axis, never by the distance to the far bones): 0.6 on the Hand, a
+    Proximal share rising to 0.2 over u 0.1 to 0.6, a Distal share rising to 0.2 over u 0.6 to 1, the rest on the
+    Metacarpal. The shares change slowly along the tube, so rings move alike. The left thumb against rest (its
+    largest distance from its centre in the Hand's frame, eight phases per clip): Idle 1.026, Walk 1.029; the fist
+    bends 22 degrees (the rigid split: 6), a grip 13 (3). The cage's segment weights are kept in point attributes
+    `prime_cage_*` (never exported) and `alien_texture.group_weights` reads them, so a re-texture keeps the warm
+    thumb tip. The mesh, skeleton and clips are unchanged. Proofs: `M10b/godot/hands_fix/hands_fix.png` (Blender:
+    rows M6c, M7, M10b's rigid split, the blend; Idle, Walk, Talk, fist, grip; `measure.log` has the numbers) and
+    `M10b/godot/hands_fix/godot/` (Godot: open, fist, Idle, Sprint, Walk).
+  - **`alien_m6.py`'s defaults build the pick:** `--flare off --collar on` (no collar on a full-size unit,
+    `--eye-scale` 0.95); `--collar on` with a flare is refused before the kit is opened.
   - **One flare per design** (`alien_m6.flares`: both lids take the larger amount; `FLARE_SIL` width 90): the corner
     notch is gone, but at 80 % the flare still stands out as flanges at the eye corners (`M10b/godot/sock80/`).
   - **The socket collar** (`alien_lids_geom.COLLAR`, `collar_gaps`, `collar_smooth`, `collar_section`;
@@ -1690,7 +1698,7 @@ a time, by visibility.
     **The recommendation: eyes 80 %, lips -15 %, width 0.80**, built as `M10b/export/`.
   - **The gate** (`M10b/godot/head/head.png`, M8b against the pick and against `e80_p75_w86`): the plain-grey skull
     with no part changes 0.0000 of the pixels in the front, 3/4 and profile views; in the top view 0.0049 and 730
-    silhouette pixels, all of them the thumbs (the rigid thumb in Idle). With the parts: 4.5 / 3.9 / 2.3 / 3.3 %.
+    silhouette pixels, all of them the thumbs (M10b's rigid thumb in Idle, before the review's blend). With the parts: 4.5 / 3.9 / 2.3 / 3.3 %.
   - **The kit:** glTF-Validator 0 errors (1 warning `NODE_SKINNED_MESH_NON_ROOT`); `godot-check --textured` 14 ok and
     the same seven pack-contract failures as M10 (surfaces 68: the four collars).
   - **Open:** at 0.4 m the collar still shows a small tab below the eye from 3/4 and from below, and the crater

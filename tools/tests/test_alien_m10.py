@@ -146,7 +146,7 @@ class Wiring(unittest.TestCase):
 
     def test_m6_flares_and_marks_the_lids(self):
         m6 = (BLENDER / "alien_m6.py").read_text(encoding="utf-8")
-        self.assertIn('p.add_argument("--flare", default="auto"', m6)
+        self.assertIn('p.add_argument("--flare", default="off"', m6)  # M10b: the collar's pick
         self.assertIn("LG.auto_flare(", m6)
         self.assertIn("flare=flare.get(", m6)
         self.assertIn('LIDS_MARKER = "prime_lids"', m6)

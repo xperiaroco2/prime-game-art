@@ -135,9 +135,6 @@ class NativePathTest(unittest.TestCase):
         self.assertEqual(wait.native_path("D:/a b/y.log", windows=True), Path("D:/a b/y.log"))
 
 
-if __name__ == "__main__":
-    unittest.main()
-
 
 class SayEncodingTest(unittest.TestCase):
     """`common.say` on a console that cannot encode a log line (cp1252 and Cyrillic) prints `?` instead of crashing."""
@@ -163,3 +160,7 @@ class SayEncodingTest(unittest.TestCase):
             console.flush()
         self.assertEqual(code, 0)
         self.assertIn("???? -15 %", raw.getvalue().decode("cp1252"))
+
+
+if __name__ == "__main__":
+    unittest.main()
