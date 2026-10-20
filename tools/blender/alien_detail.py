@@ -53,9 +53,9 @@ import export_glb  # noqa: E402
 HIGH = {"levels": 3}
 BAKE = {"cage": 0.002, "ray": 0.004, "margin": 16, "normal_samples": 8, "ao_samples": 64, "ao_dist": 0.05,
         "thick_samples": 64, "thick_dist": 0.06}  # the curvature colour: alien_detail_geom.CURVATURE
-SHOWN = ("eye_bored_", "mouth_frog_rest")  # alien_ao.SHOWN: the default face, in the AO bake
+SHOWN = ("eye_bored_",)  # alien_ao.SHOWN: the default eyes, in the AO bake (M7: no mouth piece)
 CHAINS = ("Index", "Middle", "Ring")  # the thumb leaves its bones' line (alien_cage.THUMB_DIR): no joint planes
-FINGER_K = 0.82  # alien_cage.FINGER_K: the mesh's finger joints sit at J0 + K (J - J0) of the bones'
+FINGER_K = 0.984  # alien_cage.FINGER_K: the mesh's finger joints sit at J0 + K (J - J0) of the bones'
 UV_LAYER = "UVMap"
 
 
