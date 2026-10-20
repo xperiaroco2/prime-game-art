@@ -314,7 +314,7 @@ def displacement(P, N, me, joints, face, C=None):
         rad = np.linalg.norm(r - s[:, None] * np.array(dd), axis=1)
         return s, 1.0 - ss(0.6 * radius, radius, rad)
 
-    fk = finger_k(hi)
+    fk = finger_k(bpy.data.objects["Body"])  # the low mesh carries the cage's digits
     up = np.array([0.0, 0.0, 1.0])
     front = np.array([0.0, -1.0, 0.0])
     for side in ("Left", "Right"):

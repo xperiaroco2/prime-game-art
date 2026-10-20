@@ -183,8 +183,8 @@ FOOT_X = 0.117
 TOE = [(0.014, 1.04, 1.0, 0.0), (0.028, 1.0, 0.95, 0.002), (0.038, 0.84, 0.80, 0.004), (0.045, 0.48, 0.46, 0.006)]
 TOE_MID = 0.006
 # M7 (art #196): the engineer found the digits "like sausages": a little longer and slimmer, chosen on a 3 x 3 grid
-# (length x thickness, the pick L1.2 T0.8 above; `--digits JSON` sets these names for a variant). THUMB_R0 and the toes' first ring keep the
-# root's size (the palm's quad, the foot's), so the slimming starts past the root and the roots do not fold.
+# (length x thickness, the pick L1.2 T0.8 above; `--digits JSON` sets these names for a variant, FINGER_K at most 1).
+# THUMB_R0 and the toes' first ring keep the root's size (the palm's quad, the foot's), so the slimming starts past the root and the roots do not fold.
 THUMB_R0 = 0.0215  # the thumb's root rings' radius (S9's THUMB_R)
 TOE_LEN = 1.2  # TOE's forward steps times this (S9: 1)
 TOE_THICK = 0.8  # TOE's width and height scales times this (the first ring by half as much; S9: 1)
