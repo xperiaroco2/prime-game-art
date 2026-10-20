@@ -14,7 +14,13 @@ extends "res://alien/m10_shots.gd"
 ##   frames in video/talk_34/ and video/talk_front/ (tools/blender/encode_clips.py makes the MP4s);
 ## - "clips": clips.png, Idle, Walk and Talk_Upper at four times each, the face at 3/4 from 0.9 m and the body;
 ## - "hues": hues.png, teal, coral and violet, the pout from the front and at 3/4 at 0.4 m and at 3/4 at 1.2 m;
-## - "head": m10_shots.gd's whole-head gate, each kit with its own "mouth".
+## - "head": m10_shots.gd's whole-head gate, each kit with its own "mouth";
+## - "vgrid" (M12b): the variant grid of the open shapes, vgrid.png: a row of the sheet's mouths, then per variant
+##   (spec "variants", the hero's lipvar_<name>_pout_<shape> nodes; first the hero's own pieces, "M12") each piece of
+##   spec "vgrid" ([[shape, yaw], ...]) at 0.4 m;
+## - "compare" (M12b): before above after, compare_closed.png (rest, M, small) and compare_open.png (A, E, O): per
+##   shape the sheet's mouth, then the first kit's pout (before) and the hero's (after) from the front, at 3/4 and in
+##   profile at 0.4 m and at 3/4 at 1.2 m.
 
 const AlienTalkData = preload("res://alien/alien_talk.gd")
 const PH_FOV := 20.0  # the phases: about 0.14 m of face at 0.4 m (the crops are 140 px of the sheet: about 0.13 m)
@@ -63,6 +69,10 @@ func _run() -> void:
 		await _phues(hero)
 	if _modes.has("head"):
 		await _head()
+	if _modes.has("vgrid"):
+		await _pvgrid(hero)
+	if _modes.has("compare"):
+		await _pcompare(hero)
 	quit(0)
 
 
@@ -230,3 +240,45 @@ func _phues(hero: String) -> void:
 		cells.append(await _shot("%s 3/4 1.2 m" % h))
 	_rig[hero].set_hue("teal")
 	_grid_cells(cells, 3, Vector2i(420, 420), "hues.png")
+
+
+func _pvgrid(hero: String) -> void:
+	var views: Array = _spec.get("vgrid", [["A", 0.0], ["A", 35.0], ["E", 0.0], ["E", 35.0], ["O", 0.0], ["O", 35.0]])
+	var cells: Array = []
+	for v: Array in views:
+		cells.append(_crop(v[0]))
+	_only([hero], false)
+	_combo(hero, "bored", "pout")
+	var rows: Array = [["", "M12"]]
+	rows.append_array(_spec.get("variants", []))
+	for r: Array in rows:
+		for v: Array in views:
+			_show_only(hero, ("mouth_pout_%s" % v[0]) if r[0] == "" else ("lipvar_%s_pout_%s" % [r[0], v[0]]))
+			await process_frame
+			_mouth_view(hero, v[1], 2.0, 0.4, PH_FOV)
+			cells.append(await _shot("%s %s y%d" % [r[1], v[0], v[1]]))
+	var px: int = int(_spec.get("vgrid_px", 0))
+	if px <= 0:
+		px = mini(320, 1280 / views.size())
+	_grid_cells(cells, views.size(), Vector2i(px, px), "vgrid.png")
+	_combo(hero, "bored", "pout")
+
+
+func _pcompare(hero: String) -> void:
+	var before: String = _keys[0]
+	for part: Array in [["compare_closed.png", ["rest", "M", "small"]], ["compare_open.png", ["A", "E", "O"]]]:
+		var cells: Array = []
+		for s: String in part[1]:
+			for k: String in [before, hero]:
+				cells.append(_crop(s) if k == before else null)
+				_only([k], false)
+				_combo(k, "bored", "pout", s)
+				await process_frame
+				for v: Array in [[0.0, 0.4], [35.0, 0.4], [90.0, 0.4]]:
+					_mouth_view(k, v[0], 2.0, v[1], PH_FOV)
+					cells.append(await _shot("%s %s y%d %.1f m" % [_labels[k], s, v[0], v[1]]))
+				_face_at(k, 30.0, 1.2)
+				cells.append(await _shot("%s %s 3/4 1.2 m" % [_labels[k], s]))
+		_grid_cells(cells, 5, Vector2i(256, 256), part[0])
+	_only([hero], false)
+	_combo(hero, "bored", "pout")
