@@ -842,8 +842,8 @@ a time, by visibility.
     vertex's radius from the ring's axis, in ellipse units, becomes a Gaussian average by angle (20 degrees) and
     height (6 mm), full from z 1.36 to 1.418 m and easing out by 1.345 and 1.445; the jaw (radius over 1.22) is left
     alone. `weld.neck_fair` in the build report gives the ripple in the full zone (S8b: 2.24 mm before, 0.78 after).
-  - **The hand:** each finger ring's place along its bones is pulled toward the knuckle by `FINGER_K` (0.82), so the
-    mesh is shorter than the bones (the skeleton and clips are unchanged); the fingers thicker (`FINGER_R`) with
+  - **The hand:** each finger ring's place along its bones is pulled toward the knuckle by `FINGER_K` (0.82; M7:
+    0.984), so the mesh is shorter than the bones (the skeleton and clips are unchanged); the fingers thicker (`FINGER_R`) with
     softer distal weights (the tip rings partly on the Intermediate bone, so the tip does not fold when the distal
     pivot lies beyond the mesh); the palm wider. The thumb leaves the palm's front side quad as a mound and follows a
     curve out and forward (`THUMB_OUT`, `THUMB_LEN`, `THUMB_DIR`), off its bones' downward line; its root ring is
@@ -1421,6 +1421,43 @@ a time, by visibility.
   - **For three.js:** GLTFLoader keeps the two layers as the attributes `texcoord_4` (bored, manic) and `texcoord_5`
     (frog, overbite); the shade's field is `max(max(t4.x * pick.x, t4.y * pick.y), max(t5.x * pick.z, t5.y *
     pick.w))` with `pick` 1 on the shown eye design's and mouth's channels (`CONTACT_CHANNEL`).
+
+- **M7, the mouth's black strip and the longer, slimmer digits** (output under
+  `D:/prime-art-raw/review/char/alien-parts-kit/M7/`). The engineer on v29: a black wedge beside and above the
+  overlaid mouth pieces (frog A and O, overbite rest's far corner, A and O), and fingers and toes "like sausages".
+  - **The cause of the strip:** the Body has no mouth slit (a front-ray height field round the `Mouth` socket: the
+    deepest groove is 1.7 mm, the soft groove under the mouth). The skin's AO was baked with the default face shown,
+    and that face includes `mouth_frog_rest`, the widest piece (x -60..56 mm). The skin under it baked almost black
+    (front view, the loops under frog rest: `ao.png` 0.03-0.09, ORM R 0.05-0.14, `COLOR_0` 0.33-0.55 against
+    0.87, 0.96 and 0.88 elsewhere); every smaller piece bares that skin.
+  - **The fix:** the three AO bakes show the eyes alone, `SHOWN = ("eye_bored_",)` in `alien_ao.py`,
+    `alien_detail.py` and `alien_texture.py` (`test_alien_digits` holds it). The lips' own shade on the skin stays
+    M6c's per-design contact field (`TEXCOORD_5`), which follows the mouth shown. The skin geometry and the mouth
+    pieces are unchanged. Measured in Godot (light D, `cmp.png`'s close 3/4): the rest mouth's surroundings did not
+    change (the mean luminance below the lower lip 187.0 before, 187.1 after; the corner 195.8 both).
+  - **The digits:** `alien_cage.py --digits JSON` overrides `DIGITS` (`FINGER_K`, `FINGER_R`, `TIP_BACK`,
+    `THUMB_R`, `THUMB_LEN`, `TOE_LEN`, `TOE_THICK`, `TOE_MID`) for a variant; `cage.json` records them. The thumb's
+    root rings keep `THUMB_R0` (S9's 0.0215) and `thumb_thin()` slims it from t 0.2 to 0.56; the toes' first ring
+    takes half the thinning (`toe_ring()`), so the roots do not fold. A 3 x 3 grid (length x 1.0, 1.1, 1.2 on
+    `FINGER_K`, `THUMB_LEN`, `TOE_LEN`; thickness x 1.0, 0.9, 0.8 on `FINGER_R`, `THUMB_R`, `TOE_THICK`) picked
+    **L1.2 T0.8**: `FINGER_K` 0.984 (the mesh's joints nearly at the bones'), `FINGER_R` 0.01664, `THUMB_R` 0.0172,
+    `THUMB_LEN` 0.0744, `TOE_LEN` 1.2, `TOE_THICK` 0.8. Still three fingers and a thumb with round tips; the fist
+    closes without tearing; `hand_max_fold_deg` 155.9 (S9: 148.0, at the same thumb-root vertex). The knuckle accents
+    (`alien_assemble.KNUCKLE`, spheres at the Proximal heads) now reach the slimmer fingers' backs: they show as
+    small coral patches, stronger on the index and ring than on the middle.
+  - **The chain, once:** cage, assemble, mouths, AO (S9's drivers), then `alien_uv.py`, `alien_detail.py --stage
+    high --sculpt m6c`, `--stage bake --cage capped`, `--stage export --kit <s/ao/export>`, `alien_texture.py
+    --stage fields|compose|export --set m3c` on that bake, `alien_eyes.py --sss-orm`, `alien_m6.py --skin-tex
+    <m3/textures> --skin-normal <m2/bake/normal.png>` into `M7/export/` (about 7 minutes in all). GLB 34.1 MB,
+    glTF-Validator 0 errors, `godot-check --textured` as M6c's (14 ok, the same seven pack-contract failures).
+  - **`m7_shots.gd`**, the proof (spec `"kits"` as `m6c_shots.gd`): `digits` (frames aimed on the bones, spec
+    `"marks"` draws the aim points: the rest-pose open hand, `alien_cage_review.curl`'s fist, Idle, Sprint, the
+    planted foot in Walk, the hand at 3.5 m), `mouths` (`mouths_<design>.png`: six shapes, before above after,
+    front, both 3/4, profile, from below at 0.4 m and 3/4 at 1.2 m; `mouths_clips.png`: Talk and Walk), `body`, and
+    m6c's `cmp`, `designs`, `contact`. Split the modes across runs (the watchdog).
+  - **For three.js:** no material, node, attribute or layout change; the Body's `UVMap`, textures and `COLOR_0` are
+    regenerated (no dark band under the mouth in `COLOR_0` either), so the page takes the M7 kit folder as it took
+    M6c's.
 
 ## Findings for later tasks
 
