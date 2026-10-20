@@ -1662,6 +1662,39 @@ a time, by visibility.
     swell rotates into view. The next step: one amount per design for both lids, and a longer, gentler ramp
     (`FLARE_SIL` width 80 to 100). If that is not enough, a separate socket collar part per side, or the flare
     faded toward the hinge poles.
+- **M10b, the engineer's numbers, the socket collar and the thumb** (brief UPDATE 13 to 15; output under
+  `D:/prime-art-raw/review/char/alien-parts-kit/M10b/`). The skull stays M8b's: the pick's Body against `M8/export`
+  moves 0.0 mm (`M10b/export/cmp_m8b.json`).
+  - **The thumb at rest read swollen** (`alien_thumb.py`, its docstring has the measurements). The mesh's thumb points
+    forward along the hand, 5 to 7 cm off its bones, which run down from the wrist; the cage weighted its rings by
+    segment, so the clips' thumb turns swung each ring about a far pivot and stretched the tube (Idle: edges up to
+    2.2 times, the thumb 10 % larger; Walk 23 %). M7's longer thumb lengthened the lever. `alien_m6.py` now puts each
+    thumb vertex's thumb weight 0.7 on the Metacarpal and 0.3 on the Hand (`--thumb rigid`, the default): the thumb
+    moves as one piece (Idle 2.5 % larger, the stretch left at the root's blend into the palm). The mesh, skeleton,
+    clips and the cage's segment masks are unchanged. In a fist the thumb no longer curls; it stays straight beside
+    the fingers. Proofs: `M10b/thumb/hands_sheet.png` (Blender: M6c, M7, M10, M10b in Idle, Walk, Talk, fist) and
+    `M10b/godot/digits/digits.png`.
+  - **One flare per design** (`alien_m6.flares`: both lids take the larger amount; `FLARE_SIL` width 90): the corner
+    notch is gone, but at 80 % the flare still stands out as flanges at the eye corners (`M10b/godot/sock80/`).
+  - **The socket collar** (`alien_lids_geom.COLLAR`, `collar_gaps`, `collar_smooth`, `collar_section`;
+    `alien_m6.py --collar on --flare off`): per design and side `eye_<design>_lid_collar_<side>`, a sibling of the
+    ball (shown with its design; `_lid_` gives it the lids' material in `alien.gd`), static. It covers, as a front
+    view sees it (rays down the eye's axis onto the Body), the crater M8b's larger dome covered and the smaller one
+    leaves bare, as a flat elliptic tube from 3.5 mm inside the dome's outline to 0.8 mm into the skin, with an even
+    3 mm rim where no crater shows. Its AO bakes with its design's lids and the contact channels include it. Tries
+    in `M10b/godot/sockc3` to `sockc8`: following the deep crater gave fins at the temple, no rim gave a lopsided
+    disc, a ring ending at the outline left a dark slit at the lids' corners. 100 % is M8b's unit and needs neither.
+  - **The grid** (`M10b/grid/<cell>/`, 27 kits: `e100|e90|e80` (`--eye-scale` 0.95 / 0.855 / 0.76) x
+    `p100|p85|p75` (plump 1.0 / 0.85 / 0.75) x `w72|w80|w86`; sheets `M10b/godot/grid/grid_e<eye>_w<width>.png`, one
+    per eye size and width, plus `grid_manic.png`; labels in Ukrainian). The skin maps are the same for every cell.
+    **The recommendation: eyes 80 %, lips -15 %, width 0.80**, built as `M10b/export/`.
+  - **The gate** (`M10b/godot/head/head.png`, M8b against the pick and against `e80_p75_w86`): the plain-grey skull
+    with no part changes 0.0000 of the pixels in the front, 3/4 and profile views; in the top view 0.0049 and 730
+    silhouette pixels, all of them the thumbs (the rigid thumb in Idle). With the parts: 4.5 / 3.9 / 2.3 / 3.3 %.
+  - **The kit:** glTF-Validator 0 errors (1 warning `NODE_SKINNED_MESH_NON_ROOT`); `godot-check --textured` 14 ok and
+    the same seven pack-contract failures as M10 (surfaces 68: the four collars).
+  - **Open:** at 0.4 m the collar still shows a small tab below the eye from 3/4 and from below, and the crater
+    behind its top shows from above (`M10b/godot/socket/`).
 
 ## Findings for later tasks
 
