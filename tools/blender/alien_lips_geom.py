@@ -22,7 +22,10 @@ and the corners tucked into the skin. A lip shape (LIP_SHAPE, or a variant merge
 - width (M8b): the mouth's width as a share of the sheet-measured one (1: M8's first lips, about 0.8 of the face's
   silhouette at the socket). Every x of a piece (lips, cup, tongue, teeth) is scaled about the face's centre line by
   it (scale_x), its heights are kept, so all six phases narrow together and the corners still meet the skin where
-  they now sit (the pieces are laid on the skin by ray casts at the scaled x).
+  they now sit (the pieces are laid on the skin by ray casts at the scaled x);
+- plump (M10): both lips' thickness times this on top of `full` (1: M8b's lips). The depth follows the thickness
+  (alien_mouths.DEPTH_A), so the volume grows with it; the bow's dip (a share of the thickness), the corners' taper
+  (`corner`, a share of the centre) and the lip line are kept.
 
 Every edit keeps the lip line where the sheet measured it: the upper lip moves its top edge, the lower lip its bottom
 edge, an open ring its outer edge, so the six speech phases keep their openings and stay consistent.
@@ -41,6 +44,7 @@ LIP_SHAPE = {
     "lean": 0.30, "square": 0.85, "depth_corner": 0.25,
     "ring": {"A": 1.0, "E": 1.0, "O": 0.35},
     "width": 0.72,
+    "plump": 1.0,
 }
 
 # M9b (art #196, PR #242's review minor 2): the mouth mount, the mouth-side twin of alien_lids_geom.SOCKET. The skin's
@@ -116,12 +120,13 @@ def closed_edges(ss, top, bot, lip: str, p: dict):
     hb = [(t - b) / 2 for t, b in zip(top, bot)]
     hc = centre_value(ss, hb)
     k = p["upper"] if lip == "u" else p["lower"]
+    full = p["full"] * p.get("plump", 1.0)
     nt, nb = [], []
     for s, t, b, h in zip(ss, top, bot, hb):
-        target = hc * p["full"] * k * taper(s, p)
+        target = hc * full * k * taper(s, p)
         h2 = h + w * (target - h)
         if lip == "u":
-            t2 = b + 2 * h2 + w * bow(s, p) * 2 * hc * k * p["full"]
+            t2 = b + 2 * h2 + w * bow(s, p) * 2 * hc * k * full
             nt.append(max(t2, b + 1e-4))
             nb.append(b)
         else:
@@ -147,7 +152,7 @@ def ring_width(th: float, hw: float, hc: float, low: float, shape: str, p: dict)
         return hw
     s = math.cos(th)
     k = p["upper"] + (p["lower"] - p["upper"]) * low
-    target = hc * p["full"] * k * taper(s, p)
+    target = hc * p["full"] * p.get("plump", 1.0) * k * taper(s, p)
     up = max(0.0, -math.sin(th))  # the upper lip's top centre: the bow
     target *= 1.0 + bow(s, p) * up * up
     return hw + w * (target - hw)
