@@ -127,6 +127,11 @@ SCULPTS = {
 # M2's normal-map energy at the pore scale and a third of its lit-luminance grain in Godot at 0.4 m; the albedo and
 # ORM did not change (the grain is a bump, never in the curvature or the AO).
 SCULPTS["m6c"] = {k: v for k, v in SCULPTS["m2b"].items() if k != "grain"}
+# M8b (art #196): M6c without the lip groove. The groove was cut round one mouth's outline (frog rest's box, the
+# widest piece), so it drew a faint dark line round that old footprint on every other mouth and width: the normal map
+# and the texture's cavity tint (the curvature bake) both traced it. The skin carries no mouth's mark now, as the AO
+# since M7; each mouth's shade on the skin is its own contact channel (TEXCOORD_5).
+SCULPTS["m8b"] = dict(SCULPTS["m6c"], creases=dict(SCULPTS["m6c"]["creases"], lip_groove={"depth": 0.0}))
 
 
 def sculpt(name: str, extra: dict | None = None) -> dict:
