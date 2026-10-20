@@ -56,6 +56,7 @@ from mathutils.bvhtree import BVHTree
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import alien_lips_geom as LP  # noqa: E402
 import alien_texture_geom as T  # noqa: E402
+import alien_thumb  # noqa: E402
 import export_glb  # noqa: E402
 
 UV_LAYER = "UVMap"
@@ -320,15 +321,21 @@ def ss(a, b, x):
 
 
 def group_weights(obj, prefixes):
+    """Per vertex the sum of its groups' weights times the factor of the first prefix in the group's name. The
+    thumb's vertices count with the cage's weights (alien_thumb.cage_view) on a Body whose thumb skin was blended
+    (M10b), so the masks (the warm finger tips) stay where the cage put them."""
     me = obj.data
     idx = {g.index: g.name for g in obj.vertex_groups}
+    cage = alien_thumb.stored(obj) or {}
     out = np.zeros(len(me.vertices))
     for v in me.vertices:
-        for g in v.groups:
-            name = idx[g.group]
+        w = {idx[g.group]: g.weight for g in v.groups}
+        if v.index in cage:
+            w = alien_thumb.cage_view(w, alien_thumb.side_of(w) or "Left", cage[v.index])
+        for name, wt in w.items():
             for p, k in prefixes.items():
                 if p in name:
-                    out[v.index] += g.weight * k
+                    out[v.index] += wt * k
                     break
     return out
 

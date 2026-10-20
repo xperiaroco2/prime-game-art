@@ -112,13 +112,14 @@ class EyeLookTest(unittest.TestCase):
                 self.assertLessEqual(max(v["iris_deg"], v["pupil_deg"]) + edge, v["limbus_deg"] - soft)
 
     def test_the_rim_reach_matches_the_lids(self):
-        # M9b: the kit's lids are S9's slimmed by alien_lids_geom.LIDS (alien_m6.py on a mounted kit)
+        # M10: EYE_LOOK holds S9's lids' reaches, the default for a kit without alien_m6.py's LIDS_MARKER (a kit with
+        # it brings its own; M9b's slim lids were rejected with the socket)
         import alien_lids_geom as LG
         eyes, beads = _P["EYES"], _P["LID_BEAD"]
         for design, v in eye_look().items():
             for lid in ("upper", "lower"):
                 with self.subTest(design=design, lid=lid):
-                    rho, bead = LG.slim(eyes[design][lid]["rho"], beads[lid], LG.LIDS)
+                    rho, bead = LG.slim(eyes[design][lid]["rho"], beads[lid], LG.LIDS_S9)
                     want = math.degrees(E.rim_reach(*rho, bead))
                     self.assertAlmostEqual(v[f"{lid}_reach_deg"], want, delta=0.06)
 
