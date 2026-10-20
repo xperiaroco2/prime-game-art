@@ -1755,8 +1755,40 @@ a time, by visibility.
     parts, the plain-grey skull, the silhouette); against M12 with the pout 2.06 / 2.07 / 1.27 / 0.69 % (front / 3/4 /
     profile / top), all of it at the mouth, the skull 0.0000 and 0 silhouette pixels. The Body against `M8/export`:
     `M12/export/cmp_m8b.json`.
-  - **Open:** O keeps a small slit, not the sheet's round hole; A's lips are a little crumpled at 3/4 with a small
-    dark notch at the far corner; the flipbook test has no pout atlas.
+  - **Open after M12** (fixed by M12b below): O kept a small slit, not the sheet's round hole; A's lips were a little
+    crumpled at 3/4 with a small dark notch at the far corner; the flipbook test has no pout atlas.
+- **M12b, the pout's open shapes** (brief UPDATE 19; output under `D:/prime-art-raw/review/char/alien-parts-kit/M12b/`):
+  A and E looked crumpled and torn (rims waving round the opening, the roll's thickness changing along it, a ragged
+  inner edge, the far side folding at 3/4), E's corners were sharp spikes, O a puckered slit, and the upper lip's bow
+  read as two balls. The pout only; frog and overbite build exactly as before (every new key is in
+  `LIP_SHAPE_POUT`), and the size 0.95 / plump 1.15 pick is kept.
+  - **Designed rings (`alien_lips_geom.ring_param`, `LIP_SHAPE_POUT["ring_param"]`):** the open shapes no longer trace
+    the sheet's contours (their low-passed waves were the crumpling and E's long thin slit made the spikes). From the
+    panel's measured scalars (`alien_mouths.ring_measure`: the lips' outer centre and half width, the opening's centre
+    and half height, each lip's thickness at the centre) the opening is a superellipse (A n 2.1, E 2.0) of the measured
+    half height and the outer half width less the corners' thickness, and the lips an even roll laid off its edge
+    along its normal: the measured mean thickness times full x plump and upper/lower, blended round the ring, tapering
+    to `corner` of it at the corners (A 0.68, E 0.60, exponent 2.5), the bow (0.12) on the upper lip's top. An
+    outward offset of a convex curve never folds, so the corners are round (the outline's sharpest turn is the bow's
+    notch). In the build: no low pass, the depth from the width without the bow, the corners tucked 35 % of their
+    depth into the skin with half the constant depth (`tuck`, `depth_corner`), the cheek-side shrink milder
+    (`side_keep` 0.85), `CORNER_CLOSE` off, A 4 % wider (`wide`). **`n_flat` 1:** a ring stands out along the mouth's
+    mean skin normal, not each point's own: the philtrum's and chin's slopes tilted the top and bottom of the ring
+    toward each other and closed O's hole to a slit (measured: 0.4 mm from the centre at the bottom).
+  - **O:** a round hole of 0.30 of the half width (`hole`) in an even ring (`corner` 1.0, `thick` 0.9), the sheet's
+    M-shaped top (bow 0.30), and its dark cup lifted along the mean normal to 0.85 of the lips' axis depth
+    (`cup_throat`; `cup_lift` is the same as a share of the push): the cup on the skin left a 20 mm tunnel whose lit
+    inner wall read as a pale triangle in the hole. The cup's rim stays inside the lips.
+  - **The bow (rest, M, small):** 0.14 over `bow_w` 0.16, side peaks 0.10 (M12: 0.25 / 0.10 / 0.15), and `bow_flat` 1:
+    the tube's depth comes from the lip without the bow (`flat_bow`), so the bow notches the outline only and the upper
+    lip's front is one continuous roll.
+  - **Grids** (`M12b/godot/g1..g5/vgrid.png`; JPEGs `showroom/m12b-vgrid_*.jpg`): g1 corner 0.60 / 0.75 x n 2.0 / 2.5
+    (all far better than M12; 2.5 boxy), g2 + O's hole, g3 `n_flat` 0 / 0.5 / 1.0 (only 1.0 opens O), g4 O's hole, bow
+    and `cup_lift`, g5 `cup_throat` 0.6 / 0.85 with hole 0.26 / 0.30.
+  - **`m12_shots.gd`:** modes `vgrid` (a reference row of the sheet's mouths, then the hero's own pieces and each
+    `lipvar_` variant at spec `vgrid` views, 0.4 m) and `compare` (`compare_closed.png`, `compare_open.png`: per shape
+    the sheet's mouth, then the first kit's pout above the hero's, front / 3/4 / profile at 0.4 m and 3/4 at 1.2 m).
+  - **The talk style** (`alien_talk.gd`) is unchanged; the MP4s are re-rendered on the new pieces.
 
 ## Findings for later tasks
 
