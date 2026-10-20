@@ -376,3 +376,78 @@ def auto_flare(pts, rho_out: float, bead: float, upper: bool, base: dict = FLARE
         n += 1
         if n * FLARE_STEP > FLARE_MAX + 1e-9:
             raise SystemExit(f"auto_flare: a gap is left at {FLARE_MAX} r: {gaps}")
+
+
+# M10b: the static socket collar (brief UPDATE 14; the manager approved it for the case the flare showed at 80 %). The
+# socket, unchanged, was shaped round M8b's eye unit (EYE_SCALE); a smaller unit leaves a crater ring bare, about 9 mm
+# wide at 80 %, and the flare that closed it on the lids stood out as flanges at the eye corners (M10b/godot/sock80).
+# The collar is a thin coral ring per design and side that belongs to the eye unit (alien_m6.build_collars:
+# `eye_<design>_lid_collar_<side>`, a sibling of the ball, so it shows with its design and takes the lids' material;
+# it neither blinks nor follows the gaze). It covers exactly the skin M8b's larger dome covered and the smaller one
+# leaves bare: per azimuth round the eye's forward axis, in the (s, h) half-plane (s: the distance from the axis, h:
+# along it, from the ball's centre), a flat elliptic tube from `tuck_in_mm` inside the dome's outline (s = rd, the lids'
+# outer radius) to `tuck_mm` past the farthest skin point within `margin_mm` of M8b's dome (radius rd_ref), as a front
+# view sees it. Where no bare crater shows (the skin meets the new dome, or falls away far behind it at the temple)
+# the ring keeps `min_mm`, so it reads as one even rim round the eye (M10b/godot/sockc7: without it a lopsided disc
+# on the nose side; with the deep crater followed, fins at the temple). The skin is never moved.
+COLLAR = {"bins": 72, "margin_mm": 1.5, "h_back": 0.25, "fill_bins": 2, "grow": 1, "smooth": 2, "tuck_mm": 0.8,
+          "tuck_in_mm": 3.5, "ds_mm": 0.5, "min_mm": 3.0, "flat": 0.45, "depth_max_mm": 3.0, "back": 0.3, "seg": 16}
+
+
+def collar_gaps(pts, rd: float, rd_ref: float, c: dict = COLLAR) -> list:
+    """pts: the skin's points (s, h, phi) in the eye's frame (m, m, radians; alien_m6 casts them from the front);
+    per azimuth bin (gap, h) of the farthest
+    bare crater point: outside the new outline (s > rd), within margin_mm of M8b's dome (|(s, h)| < rd_ref + margin)
+    and not far behind (h > -h_back * rd); gap = its s - rd. None for a bin without such a point."""
+    n, lim = c["bins"], rd_ref + c["margin_mm"] / 1000.0
+    best = [None] * n
+    for s, h, ph in pts:
+        if s <= rd or math.hypot(s, h) > lim or h < -c["h_back"] * rd:
+            continue
+        i = int((ph + math.pi) / (2.0 * math.pi) * n) % n
+        if best[i] is None or s > best[i][0]:
+            best[i] = (s, h)
+    return [None if b is None else (b[0] - rd, b[1]) for b in best]
+
+
+def collar_smooth(gaps: list, c: dict = COLLAR) -> list:
+    """The (gap, h) round the circle: an empty bin takes its nearest bin's within fill_bins (the skin's vertex spacing),
+    else (0, 0) (no bare crater: the skin meets the new dome, or falls away far behind it); then the gap's max over
+    +-grow bins and min_mm (no bin falls short of its own; the ring never thins out to nothing, so it reads as one
+    even rim where the crater is narrow or deep), then a mean of both over +-smooth bins."""
+    n = len(gaps)
+    known = [i for i, g in enumerate(gaps) if g is not None]
+
+    def circ(i, j):
+        d = abs(i - j) % n
+        return min(d, n - d)
+
+    g = []
+    for i in range(n):
+        if gaps[i] is not None:
+            g.append(gaps[i])
+            continue
+        j = min(known, key=lambda j: circ(i, j)) if known else None
+        g.append(gaps[j] if j is not None and circ(i, j) <= c["fill_bins"] else (0.0, 0.0))
+    w = [max([g[(i + j) % n][0] for j in range(-c["grow"], c["grow"] + 1)] + [c["min_mm"] / 1000.0]) for i in range(n)]
+    k = c["smooth"]
+    return [(sum(w[(i + j) % n] for j in range(-k, k + 1)) / (2 * k + 1),
+             sum(g[(i + j) % n][1] for j in range(-k, k + 1)) / (2 * k + 1)) for i in range(n)]
+
+
+def collar_section(gap: float, h_edge: float, rd: float, c: dict = COLLAR) -> tuple:
+    """(centre, u, n, a, b) of the collar's elliptic section in the (s, h) half-plane: its long axis u from A = (rd -
+    tuck_in, 0), inside the dome's outline down to about the ball (no dark slit between the lids' corners and the
+    ring), to tuck past the crater's edge (rd + gap, h_edge); half-length a, half-depth
+    b = flat * a (at least tuck, at most depth_max_mm) along n (u turned toward the front), the centre `back` * b
+    behind the axis. A point is centre + a cos(t) u + b sin(t) n."""
+    t, ti = c["tuck_mm"] / 1000.0, c["tuck_in_mm"] / 1000.0
+    ax, ay = rd - ti, 0.0
+    dx, dy = rd + gap - ax, h_edge - ay
+    ln = math.hypot(dx, dy)
+    u = (dx / ln, dy / ln)
+    n = (-u[1], u[0])
+    a = (ln + t) / 2.0
+    b = min(max(c["flat"] * a, t), c["depth_max_mm"] / 1000.0)
+    cen = (ax + a * u[0] - c["back"] * b * n[0], ay + a * u[1] - c["back"] * b * n[1])
+    return cen, u, n, a, b

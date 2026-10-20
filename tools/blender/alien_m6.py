@@ -79,6 +79,9 @@ def args():
                    "the default on a mounted kit is LIDS, on an older kit S9's shells")
     p.add_argument("--thumb", choices=("rigid", "segments"), default="rigid",
                    help="M10b: the thumb's skin weights (alien_thumb.py): rigid (the default) or the cage's segments")
+    p.add_argument("--collar", choices=("off", "on"), default="off",
+                   help="M10b: the static socket collar per design and side (alien_lids_geom.COLLAR); "
+                   "needs --flare off")
     p.add_argument("--no-bake", action="store_true", help="skip the parts' AO bake (a quick geometry check)")
     p.add_argument("--socket", default="", help="M9 (REJECTED, M10): JSON over alien_lids_geom.SOCKET, the eye mount "
                    "applied here; refused without --opt-in-rejected-m9")
@@ -293,6 +296,98 @@ def rebuild_eyes(k: float, corner: dict, sink: float = 0.0, lids: dict | None = 
     return rep
 
 
+# M10b: the static socket collar per design and side (alien_lids_geom.COLLAR; brief UPDATE 14): a thin coral ring
+# that fills the gap between the smaller lid domes and the unchanged socket, built on the eye units as rebuilt (scaled,
+# sunk). Use it with --flare off.
+COLLAR_NAME = "eye_{d}_lid_collar_{s}"  # "_lid_": alien.gd and the page give it the lids' material (LID_LOOK)
+
+
+def collars() -> list:
+    """The kit's collar objects (none on a kit built without --collar)."""
+    return [bpy.data.objects[n] for n in (COLLAR_NAME.format(d=d, s=s) for d in EYES for s in ("L", "R"))
+            if n in bpy.data.objects]
+
+
+def build_collars(k: float, lids: dict | None) -> dict:
+    """The collars (COLLAR_NAME) on the kit's eye units as rebuilt at k (M8b's: LG.EYE_SCALE); per side the bare
+    crater measured round the dome as a front view sees it: per azimuth bin's centre and every ds_mm of s a ray down
+    the eye's axis onto the Body (its first hit; the vertices alone were too sparse, a third of the bins had none)."""
+    from mathutils import Matrix
+    c = LG.COLLAR
+    body = bpy.data.objects["Body"]
+    bmw = body.matrix_world
+    tree = BVHTree.FromPolygons([bmw @ v.co for v in body.data.vertices],
+                                [list(pl.vertices) for pl in body.data.polygons])
+    lip = bpy.data.materials["alien_lip"]
+    rep = {}
+    for dname, d in EYES.items():
+        rho_out = max(LG.slim(d[lid]["rho"], LID_BEAD[lid], lids or LG.LIDS_S9)[0][1] for lid in ("upper", "lower"))
+        for side in ("L", "R"):
+            ball = bpy.data.objects[f"eye_{dname}_ball_{side}"]
+            cen = np.array(ball.matrix_world.translation)
+            rd = ball_radius(ball) * rho_out
+            rd_ref = rd * LG.EYE_SCALE / k  # M8b's dome, which the socket was shaped round
+            R = bpy.data.objects[f"Eye_{side}"].matrix_world.to_3x3().normalized()
+            fw, ax, az = (np.array(R @ Vector(v)).ravel() for v in ((0, -1, 0), (1, 0, 0), (0, 0, 1)))
+            hits = []
+            down = Vector((-fw).tolist())
+            n_s = int((rd_ref + c["margin_mm"] / 1000.0 - rd) / (c["ds_mm"] / 1000.0)) + 2
+            for i in range(c["bins"]):
+                p = -math.pi + 2.0 * math.pi * (i + 0.5) / c["bins"]
+                radial = math.cos(p) * ax + math.sin(p) * az
+                for j in range(n_s):
+                    s_ = rd + (j + 0.5) * c["ds_mm"] / 1000.0
+                    hit = tree.ray_cast(Vector((cen + 1.5 * rd_ref * fw + s_ * radial).tolist()), down, 3.0 * rd_ref)
+                    if hit[0] is not None:
+                        hits.append((s_, float(np.dot(np.array(hit[0]) - cen, fw)), p))
+            raw = LG.collar_gaps(hits, rd, rd_ref)
+            gaps = LG.collar_smooth(raw)
+            n, m = c["bins"], c["seg"]
+            b = G.Built()
+            mi = b.slot(lip)
+            rings = []
+            for i in range(n):
+                p = -math.pi + 2.0 * math.pi * (i + 0.5) / n
+                radial = math.cos(p) * ax + math.sin(p) * az
+                (cs, ch), u, nn, ea, eb = LG.collar_section(gaps[i][0], gaps[i][1], rd)
+                ring = []
+                for j in range(m):
+                    t = 2.0 * math.pi * j / m
+                    ps = cs + ea * math.cos(t) * u[0] + eb * math.sin(t) * nn[0]
+                    hs = ch + ea * math.cos(t) * u[1] + eb * math.sin(t) * nn[1]
+                    co = cen + hs * fw + ps * radial
+                    ring.append(b.vert(Vector(co.tolist()), 0.0, 1.0))
+                rings.append(ring)
+            for i in range(n):
+                r0, r1 = rings[i], rings[(i + 1) % n]
+                for j in range(m):
+                    b.face((r0[j], r1[j], r1[(j + 1) % m], r0[(j + 1) % m]), mi)
+            name = COLLAR_NAME.format(d=dname, s=side)
+            old = bpy.data.objects.get(name)
+            if old is not None:
+                bpy.data.objects.remove(old)
+            ob = G.to_object(b, name, ball.users_collection[0], origin=Matrix(ball.matrix_world))
+            par = ball.parent
+            if par is not None:  # a sibling of the ball: shown with its design (alien.gd's eye_<design>_<side>)
+                mw = ob.matrix_world.copy()
+                ob.parent = par
+                if ball.parent_type == "BONE":
+                    ob.parent_type, ob.parent_bone = "BONE", ball.parent_bone
+                ob.matrix_world = mw
+            known = [g for g in raw if g is not None]
+            gw = [g[0] for g in gaps]
+            rep[f"{dname}_{side}"] = {"rd_mm": round(rd * 1000.0, 2), "rd_ref_mm": round(rd_ref * 1000.0, 2),
+                                      "parent": par.name if par else None,
+                                      "gap_mm_max": round(max(gw) * 1000.0, 2),
+                                      "gap_mm_mean": round(sum(gw) / n * 1000.0, 2),
+                                      "gap_mm_min": round(min(gw) * 1000.0, 2),
+                                      "h_edge_mm": [round(min(g[1] for g in gaps) * 1000.0, 2),
+                                                    round(max(g[1] for g in gaps) * 1000.0, 2)],
+                                      "bins_with_skin": len(known), "verts": len(ob.data.vertices)}
+    log("collar", json.dumps(rep))
+    return rep
+
+
 def mouth_pieces():
     return [bpy.data.objects[f"mouth_{d}_{v}"] for d in DESIGNS_MOUTH for v in VISEMES
             if f"mouth_{d}_{v}" in bpy.data.objects]
@@ -318,7 +413,8 @@ def bake_parts_ao(body, eyes: bool = True, pieces=None) -> dict:
     if sc.world is None:
         sc.world = bpy.data.worlds.new("w")
     sc.world.light_settings.distance = PART_AO["distance"]
-    groups = [([bpy.data.objects[f"eye_{d}_lid_{lid}_{s}"] for lid in ("upper", "lower") for s in ("L", "R")],
+    groups = [([bpy.data.objects[f"eye_{d}_lid_{lid}_{s}"] for lid in ("upper", "lower") for s in ("L", "R")]
+               + [o for o in collars() if o.name.startswith(f"eye_{d}_")],  # M10b: a design's collars with its lids
                {f"eye_{d}_ball_{s}" for s in ("L", "R")}) for d in EYES] if eyes else []  # the balls occlude too
     groups += [([o], set()) for o in (mouth_pieces() if pieces is None else pieces)]
     hide0 = {o.name: o.hide_render for o in bpy.data.objects}
@@ -383,7 +479,7 @@ def contact_field(body) -> dict:
     overbite); Godot CUSTOM1). The glTF exporter writes 1 - v, so v is stored flipped here (as alien_ao.py's rest
     coordinates)."""
     groups = {d: [bpy.data.objects[f"eye_{d}_lid_{lid}_{s}"] for lid in ("upper", "lower") for s in ("L", "R")]
-              for d in EYES}
+              + [o for o in collars() if o.name.startswith(f"eye_{d}_")] for d in EYES}  # M10b: and its collars
     groups.update({d: [bpy.data.objects[f"mouth_{d}_rest"]] for d in DESIGNS_MOUTH})
     me = body.data
     mw = body.matrix_world
@@ -455,6 +551,10 @@ def main():
     rep["flare"] = flares(k, sink, lids, a.flare)
     rep["eyes"] = rebuild_eyes(k, corner, sink, lids, rep["flare"])
     rep["lid_reach_deg"] = lid_reach(lids)
+    if a.collar == "on":
+        if a.flare != "off":
+            raise SystemExit("--collar on needs --flare off (the collar fills the gap the flare closed)")
+        rep["collar"] = build_collars(k, lids)
     bpy.data.materials["alien_lip"][LIDS_MARKER] = json.dumps(  # PR #243's minor 1: alien.gd's rim reaches
         {"lids": lids or LG.LIDS_S9, "reach_deg": rep["lid_reach_deg"]}, sort_keys=True)
     bpy.context.view_layer.update()
