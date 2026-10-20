@@ -102,8 +102,8 @@ local input file of the items it may send. Then, one item at a time:
    within `cost_cap_usd`; else the run stops before sending.
 3. `generation.json` gets the request (fields, a note per image part, never the key) with `outcome: sent` **before**
    the call, so a run killed mid-request leaves it counted as maybe billed (`unsure`).
-4. The call: at most 160 s per HTTP attempt (inside the 170 s a tool call may block); HTTP 429 and 5xx are retried 4
-   times, 2, 4, 8, 16 s apart (`Retry-After` when sent, at most 60 s). A 429 with `insufficient_quota` (no balance)
+4. The call: a 160 s socket timeout per HTTP attempt (under the 170 s a tool call may block; with retries a request
+   can take longer, which is why runs go to the background); HTTP 429 and 5xx are retried 4 times, 2, 4, 8, 16 s apart (`Retry-After` when sent, at most 60 s). A 429 with `insufficient_quota` (no balance)
    is not retried. A lost connection or a timeout is never resent on its own: the item fails "request unsure", its
    estimate stays counted, and the run stops; check the usage page, then `--retry-failed`.
 5. HTTP 400, 404, 409, 413, 415 or 422 (a bad field, `moderation_blocked`) fail that item alone at $0 and the run goes

@@ -166,8 +166,10 @@ class Runner:
         except common.Failure as exc:  # an input that cannot be sent: nothing sent, nothing paid
             return self.finish(item, state, "failed", f"inputs: {exc}")
         state["inputs"] = sent
+        payload = {**dict(fields), "n": item.n}  # a generation's JSON body takes n as a number
         attempt = {"sent_at": self.now(), "endpoint": api.EDITS_PATH if item.kind == "edit" else api.GENERATIONS_PATH,
-                   "request": self.recorded(fields, sent), "estimated_usd": round(estimate, 6),
+                   "request": self.recorded(fields, sent) if item.kind == "edit" else payload,
+                   "estimated_usd": round(estimate, 6),
                    "estimated_tokens": item.tokens(), "outcome": "sent"}
         state.setdefault("requests", []).append(attempt)
         state["status"] = "running"
@@ -175,8 +177,7 @@ class Runner:
         self.log(f"{item.id}: {item.kind} {item.model} {item.quality} {item.size} x{item.n}, estimate ${estimate:.4f}"
                  f" (cap ${self.batch.cost_cap_usd:.2f}, spent ${already:.4f}); waiting for the answer")
         try:
-            answer = (self.client.edit(fields, files) if item.kind == "edit"
-                      else self.client.generate({**dict(fields), "n": item.n}))  # JSON takes n as a number
+            answer = self.client.edit(fields, files) if item.kind == "edit" else self.client.generate(payload)
         except api.OpenAIError as exc:
             attempt["outcome"] = "unsure" if exc.unsure else "error"
             attempt["status"] = exc.status

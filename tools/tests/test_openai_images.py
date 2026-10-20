@@ -363,7 +363,17 @@ class RunTest(unittest.TestCase):
         for request in fake.requests:  # the key travels in the header only
             self.assertNotIn(KEY.encode(), request[3])
 
-    def test_the_command_redacts_the_key(self) -> None:
+    def test_a_generation_records_the_json_it_sent(self) -> None:
+        batch = parse()
+        fake = FakeOpenAI()
+        self.assertEqual(self.runner(batch, fake, []).run(), 0)
+        sent = json.loads(fake.requests[0][3])
+        state = runs.read_state(batch, batch.items[0], self.raw)
+        self.assertEqual(state["requests"][0]["request"], sent)
+        self.assertEqual(sent["n"], 1)
+        self.assertEqual(sent["quality"], "medium")
+
+    def test_the_estimate_command(self) -> None:
         out = io.StringIO()
         with contextlib.redirect_stdout(out):
             code = cli.main(["openai-images", "estimate", "batches/2026-10-20-openai-edits-test.toml"])
