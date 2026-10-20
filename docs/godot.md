@@ -1695,6 +1695,60 @@ a time, by visibility.
     the same seven pack-contract failures as M10 (surfaces 68: the four collars).
   - **Open:** at 0.4 m the collar still shows a small tab below the eye from 3/4 and from below, and the crater
     behind its top shows from above (`M10b/godot/socket/`).
+- **M12, the red pout mouth mp1** (brief UPDATE 16 and 17; output under
+  `D:/prime-art-raw/review/char/alien-parts-kit/M12/`): a third mouth design, `pout`, beside frog and overbite, from
+  the sheet `D:/prime-art-raw/2026-10-20-alien-face-sheets-2/mp1/` (six shapes, the panel order rest, M, small, A, E,
+  O). Built on M10b's pick (`M10b/export`); the Body, the skull, the eyes and the other mouths are untouched.
+  - **Measuring (`alien_mouths.py`):** the same panels, stations and sheet-to-head mapping as frog and overbite, with
+    a design's own pixel classes and scales. mp1's red lips have blue about green, which the coral lip class half
+    called tongue (`PALETTE`: the lip/tongue split at B - G -0.008); its dark-red inside grades into the lips, so in A
+    and E a lip pixel needs R >= 0.50 (`PALETTE_SHAPE`; at 0.30 the openings measured half their size and the lips too
+    tall; the closed shapes and O keep 0.30). `SHAPE_SCALE_DESIGN` (A 0.95, E 0.90, O 0.94: the sheet's A and E are
+    about as wide as rest). Two ring rules for the pout only: `CUP_IN` (the dark cup ends 0.6 of the lip's half width
+    inside its axis) and `CORNER_CLOSE` (in A and E the lips move into the opening toward the corners, up to their
+    half width from |cos| 0.55 to 0.92): the sheet's E runs out in a long thin dark slit between thin rims, which read
+    as black flaps at 0.4 m. Frog and overbite measure and build exactly as before (every new table is per design).
+  - **The lips (`alien_lips_geom.LIP_SHAPE_POUT`):** the sheet's thickness per lip (upper 0.95, lower 1.10: the lower
+    the bigger cushion; the frog's upper is 0.82), ends a little rounder than the frog's (corner 0.18, pw 2.0), the open
+    rings' own corner 0.45 (`ring_corner`), a soft bow (0.25, side peaks 0.15: at 0.45 / 0.40 the upper lip read as
+    four lumps), M8's section, depth_corner 0.35; `size` (new: the whole mouth, x and height, about the face's centre
+    line and the socket's height, `scale_size`) 0.95 and `plump` 1.15. The rest piece is 77.8 x 51.4 mm (frog at M10b:
+    about 91 mm wide).
+  - **The grid** (`M12/godot/grid4/grid.png`, JPEG `showroom/m12-grid.jpg`; the grid kit `M12/grid_export/` with
+    `lipvar_<variant>_pout_<shape>` nodes): size 0.85 / 0.95 / 1.05 x fullness 1.00 / +15 %, each rest front and 3/4 at
+    0.4 m, 3/4 at 1.2 m, A at 3/4, O, under the sheet's rest, A, O, E and m2's second head. **Pick 0.95, +15 %**: the
+    closest to the sheet's and m2's compact full pout; 0.85 reads small at 1.2 m, 1.05 brings A's lower lip near the
+    chin.
+  - **`alien_m12.py`** (the kit step; about 50 s): opens a kit, builds the six `mouth_pout_<shape>` on the Mouth socket
+    (`--lips` merges over `LIP_SHAPE_POUT`, `--grid` adds variants), their material `alien_lip_pout` (a copy of
+    `alien_lip`: deep red, roughness 0.32, a clear coat), bakes their AO (`alien_m6.bake_parts_ao`, each piece alone
+    with the skin), writes the pout's skin contact into Body's **seventh UV layer** `contact_mouth2`
+    (`alien_lips_geom.CONTACT_UV_MOUTH2`: glTF `TEXCOORD_6`, u pout, v free for the next mouth; Godot `CUSTOM2`; v stored
+    flipped), marks `alien_hue` with `{"prime_contact_mouth2": "custom2_xy"}` and exports. Contact: 347 touched / 136 full
+    vertices. It refuses a Body without exactly the six layers of `alien_m6` (the new one must be the seventh), so it
+    runs last: `alien_m6.py` and `alien_m8.py` on an M12 kit stop at their own layer check.
+  - **Godot (`alien.gd`):** `MOUTH_DESIGNS` frog, overbite, pout; `show_mouth` skips a design the kit lacks (the pout has
+    no flipbook shells and shows its 3D pieces in both modes); `LIP_LOOK_POUT` on `alien_lip_pout` (albedo sRGB (0.72,
+    0.18, 0.18), deep (0.42, 0.05, 0.07), roughness 0.30, specular 0.55, clear coat 0.55 at 0.12: the wet highlight);
+    `CONTACT_CHANNEL2` {pout: 0} picks `contact_pick2` (`alien_hue.gdshader`: the max also over `CUSTOM2.xy`, off by
+    default).
+  - **The talk style (`alien_talk.gd`):** a phase line (`LINE`, 5.3 s: words of 1-3 phases, syllables 40-260 ms, word
+    gaps 60-200 ms, two sentence pauses) and per design `STYLES`: frog and overbite keep their snapped talk; the pout
+    follows 25 ms late, merges phases under 70 ms, shows A and E under 85 ms half open (`small`), shows M in gaps
+    under 120 ms, its lower lip springs after every change of shape (1.4 mm x the change in openness, 6.5 Hz, 140 ms
+    decay) and its lips purse between words (pucker 0.8 over gaps from 100 ms). The motion is two instance uniforms of
+    `alien_lip.gdshader` on the shown piece (`lip_drop` moves the part below the seam down; `pucker` narrows x by 14 %
+    and moves the centre 3 mm forward; both 0 by default). `alien.gd` `talk_at(t_ms, line)` renders any moment,
+    `play_line(line)` drives it in time.
+  - **`m12_shots.gd`**, the proof (modes `grid`, `phases` with `noblack.png`, `talk` (pout and frog), `video` (the line
+    at 30 fps during Talk_Upper, 3/4 at 0.6 m and front at 0.45 m; `encode_clips.py` makes the MP4s), `clips`, `hues`,
+    `head` with a mouth per kit).
+  - **The gate** (`M12/godot/final/head.png`): M10b (frog) against M12 with frog changes 0.0000 in all four views (with
+    parts, the plain-grey skull, the silhouette); against M12 with the pout 2.06 / 2.07 / 1.27 / 0.69 % (front / 3/4 /
+    profile / top), all of it at the mouth, the skull 0.0000 and 0 silhouette pixels. The Body against `M8/export`:
+    `M12/export/cmp_m8b.json`.
+  - **Open:** O keeps a small slit, not the sheet's round hole; A's lips are a little crumpled at 3/4 with a small
+    dark notch at the far corner; the flipbook test has no pout atlas.
 
 ## Findings for later tasks
 
