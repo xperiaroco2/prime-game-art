@@ -1454,7 +1454,38 @@ a time, by visibility.
     baked with frog rest on the face (M7's finding), so the skin under the old, bigger piece is nearly black. M7's
     mouth-free AO removes it (`M8/godot/on_m7/`: the same lips on M7's kit, no dark edge).
   - **`m8_shots.gd`**, the proof (modes `grid`, `phases`: per design a row per shape, the sheet's panel then before
-    and after from the front, at 3/4 and in profile; `talk`; `cmp` as `m6c_shots.gd`).
+    and after from the front, at 3/4 and in profile; `talk`; `cmp` as `m6c_shots.gd`; M8b's `wgrid`, below).
+  - **M8b, the width** (the manager on M8, with UPDATE 9's target, m2's first head: a compact mouth). `LIP_SHAPE`'s
+    `width` scales every x of a piece (lips, cup, tongue, teeth) about the face's centre line (`scale_x`, applied
+    in `build_piece` before anything is laid on the skin), heights kept: all six phases of both designs narrow alike
+    and their corners are ray-cast onto the skin where they now sit. Chosen on `M8/wgrid/shots/wgrid.png` (`m8_shots.gd`
+    mode `wgrid`: m2's first and third heads, mf1 rest and A, mo1 rest; then a row per kit, each width a kit of its
+    own with its own contact channels: frog rest from the front and at 3/4 at 0.4 m and 1.2 m, overbite rest, frog A)
+    from 1.0, 0.85, 0.72 and 0.62: **0.72**. At 1.0 the corners reach the narrow lower face's silhouette from the front
+    and wrap round the jaw at 3/4; at 0.85 the far corner still nearly does; at 0.72 both corners sit in the face's
+    front with skin beyond them, as on m2's broad face, and the mouth still reads at 1.2 m; 0.62 reads as a pucker
+    and crowds the overbite's teeth. Frog rest is 81.7 mm wide (was 113.4), 0.57 of the face's silhouette at the
+    socket (0.143 m). m2's own lips are wide against its broad face (about 0.8 of it at their row), so "compact"
+    here is the corners inside the face, not a measured share. The flipbook shells (the 2D fallback) keep the
+    sheet's width.
+  - **The thin outline round the mouth** (M8 on M7's kit, `m8m7-close_front.jpg`): the detail sculpt's `lip_groove`,
+    cut round frog rest's box (the old, wide piece) below the mouth and round its corners; the normal map and the
+    texture's cavity tint (the curvature bake) drew it on the bare skin once the lips were thinner. The sculpt
+    `m8b` (`alien_detail_geom.SCULPTS`) is `m6c` with the groove's depth 0; the skin carries no mouth's mark, as its
+    AO since M7, and each mouth's shade on the skin is its contact channel. The texture's soft mouth-rim gloss and
+    flush (`alien_texture.py` fields), the philtrum and the nasolabial lines still follow frog rest's box, now the
+    narrower one. Proof `M8/godot/outline/`: the same 0.72 lips on M7's skin (with the groove) and on M8b's; the
+    difference of the close front and 3/4 frames (`outline_diff.png`, x12) is the groove's crescent under the lower
+    lip and round the old corners, at most 15 of 255 in the lit frame, plus the moved nasolabial lines; nothing of
+    it is left on M8b's skin.
+  - **The build (M8b):** M7's chain from the mouths step on M7's cage and assembly (`M7/s/asm`), the sculpt `m8b`,
+    then `alien_m6.py --export-name kit6` and `alien_m8.py --kit <M8/kit6> --out <M8> --export-name export`
+    (`tools/out/m8/go8.sh chain`, about 9 minutes in the background). `alien_m8.py` then moves no vertex (0.0 mm:
+    the chain's mouths step already built the 0.72 lips); the mouth contact is frog 277/19 and overbite 238/57
+    touched/full vertices (the narrower footprint). GLB 34.1 MB, glTF-Validator 0 errors, `godot-check --textured`
+    as M7's kit (14 ok, the same seven pack-contract failures).
+  - **Open:** with every x scaled, the open phases are narrower than the sheets' (frog and overbite A read taller
+    than wide, closer to an "oh"); a per-shape width weight (as `ring`) would widen A and E again if wanted.
 
 - **M7, the mouth's black strip and the longer, slimmer digits** (output under
   `D:/prime-art-raw/review/char/alien-parts-kit/M7/`). The engineer on v29: a black wedge beside and above the
