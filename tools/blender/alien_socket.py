@@ -1,6 +1,11 @@
 """M9, one standard eye mount (art #196), in headless Blender: the eye units smaller and nested in the head, the Body's
 sockets re-sculpted to them (alien_lids_geom.SOCKET; the why is there).
 
+REJECTED (M10, art #196, brief UPDATE 12): on v30 the engineer found M9's re-sculpted skull looked as if "half the head
+was removed", with giant dents. Since M10 the chain runs WITHOUT this stage (the Body's head shape is M8b's exactly).
+The code stays for reference behind an explicit opt-in: this script refuses to run without `--opt-in-rejected-m9`,
+and alien_m6.py's `--socket` (the grid route through apply()) refuses without its own `--opt-in-rejected-m9`.
+
     blender -b --factory-startup --python-exit-code 1 --python tools/blender/alien_socket.py -- \
         --character <mouths/build/alien_character.blend> --out <s/socket> [--socket JSON]
 
@@ -36,6 +41,8 @@ import alien_lids_geom as LG  # noqa: E402
 
 MARKER = "prime_socket"
 DESIGNS = ("bored", "manic")
+REJECTED = ("alien_socket.py: M9's socket re-sculpt was rejected (M10, art #196: the skull stays M8b's) and the "
+            "chain runs without it; pass --opt-in-rejected-m9 to run it anyway")
 KEEP_MM = 0.2  # the Mouth socket's and the crest's skin may move at most this much
 
 
@@ -245,11 +252,15 @@ def args():
     p.add_argument("--character", required=True, help="alien_mouths.py's build/alien_character.blend")
     p.add_argument("--out", required=True)
     p.add_argument("--socket", default="", help="JSON over alien_lids_geom.SOCKET (a grid's variant)")
+    p.add_argument("--opt-in-rejected-m9", action="store_true",
+                   help="run M9's rejected socket re-sculpt anyway (M10: off by default, never in the chain)")
     return p.parse_args(sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else [])
 
 
 def main():
     a = args()
+    if not a.opt_in_rejected_m9:
+        raise SystemExit(REJECTED)
     out = Path(a.out)
     (out / "build").mkdir(parents=True, exist_ok=True)
     (out / "export").mkdir(parents=True, exist_ok=True)
