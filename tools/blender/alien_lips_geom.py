@@ -18,7 +18,11 @@ and the corners tucked into the skin. A lip shape (LIP_SHAPE, or a variant merge
   ellipse; below 1 a flatter, cushion-like front);
 - depth_corner: the share of a lip's constant depth (alien_mouths.DEPTH_C) kept at the corners, so the corners sink
   to a point instead of ending as blunt caps;
-- ring: per open shape (A, E, O) the weight of the profile on the ring (O's pucker is round, so less).
+- ring: per open shape (A, E, O) the weight of the profile on the ring (O's pucker is round, so less);
+- width (M8b): the mouth's width as a share of the sheet-measured one (1: M8's first lips, about 0.8 of the face's
+  silhouette at the socket). Every x of a piece (lips, cup, tongue, teeth) is scaled about the face's centre line by
+  it (scale_x), its heights are kept, so all six phases narrow together and the corners still meet the skin where
+  they now sit (the pieces are laid on the skin by ray casts at the scaled x).
 
 Every edit keeps the lip line where the sheet measured it: the upper lip moves its top edge, the lower lip its bottom
 edge, an open ring its outer edge, so the six speech phases keep their openings and stay consistent.
@@ -36,6 +40,7 @@ LIP_SHAPE = {
     "bow": 0.30, "bow_w": 0.085, "bow_peak": 0.35, "bow_at": 0.20,
     "lean": 0.30, "square": 0.85, "depth_corner": 0.25,
     "ring": {"A": 1.0, "E": 1.0, "O": 0.35},
+    "width": 0.72,
 }
 
 
@@ -49,6 +54,17 @@ def merged(over: dict | None) -> dict:
         else:
             out[k] = v
     return out
+
+
+def scale_x(world, k: float):
+    """world(x_px, y_px) -> (x, z) with x scaled by k about the face's centre line (x = 0); world itself for k = 1."""
+    if k == 1.0:
+        return world
+
+    def scaled(x, y):
+        wx, wz = world(x, y)
+        return wx * k, wz
+    return scaled
 
 
 def taper(s: float, p: dict) -> float:

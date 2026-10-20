@@ -183,7 +183,8 @@ def main():
     cj["note_m8"] = (
         "art #196 M8: the 3D mouth pieces rebuilt with alien_lips_geom's lip shape (m8.lips): each lip thin at its "
         "corners and fullest in the middle, the upper lip thinner with a soft bow, the lower a fuller cushion, the "
-        "swell toward the lip line, the corners tucked; the same nodes, materials and socket; their AO (COLOR_0) "
+        "swell toward the lip line, the corners tucked; M8b: the mouth narrowed to m8.lips.width of the sheet's "
+        "measure (every phase alike); the same nodes, materials and socket; their AO (COLOR_0) "
         "rebaked and Body's mouth contact channels (TEXCOORD_5) recomputed." +
         (" The grid kit also has lipvar_<variant>_<design>_<shape> nodes (m8.grid)." if extra else ""))
     if extra:

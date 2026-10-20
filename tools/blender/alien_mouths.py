@@ -377,6 +377,7 @@ def build_piece(bvh, m, design, shape, world, mats, coll, origin, lips=None, nam
     push = PUSH.get(design, {}).get(shape, PUSH.get(design, {}).get("*", 0.0))
     back = LOWER_BACK.get(design, 0.0)
     lips_p = LP.LIP_SHAPE_M6C if lips is None else lips
+    world = LP.scale_x(world, lips_p.get("width", 1.0))  # M8b: the mouth's width
     st = stations(cols)
     b = G.Built()
     mi_lip = b.slot(mats["lip"])
