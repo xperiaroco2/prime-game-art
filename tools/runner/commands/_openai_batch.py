@@ -19,20 +19,26 @@ SERVICE = "openai-images"  # a batch for this client says so; `meshy` never take
 EXAMPLE_PREFIX = "example-"
 SLUG = re.compile(r"^[a-z0-9][a-z0-9._-]*$")
 KINDS = ("generate", "edit")  # POST /v1/images/generations (text) and /v1/images/edits (reference images)
-# The engineer, 2026-10-20 (art #196, prime-game #1095): medium for exploration and variants, high for focused finals.
-# No default: every batch says which it pays for.
+# The engineer, 2026-10-20 (art #196, comment 6291187194; prime-game #1095): medium for exploration and many
+# variants, high for focused work on one piece. No default: every batch says which it pays for.
 QUALITIES = ("medium", "high")
-# $ per 1M tokens (developers.openai.com/api/docs/models/gpt-image-2.5-sunburst, read 2026-10-20; Flare has the same
-# token rates). Text output is not billed; this client prices every output token at the image rate, an upper bound.
+# $ per 1M tokens (developers.openai.com/api/docs/models/gpt-image-2.5-sunburst, read 2026-10-20). Text output is not
+# billed; this client prices every output token at the image rate, an upper bound.
 PRICES = {"text_in": 5.0, "image_in": 8.0, "image_out": 30.0}
-MODELS = {"gpt-image-2.5-sunburst": PRICES, "gpt-image-2.5-flare": PRICES}
+# The model the engineer's standing permission names. Another one (gpt-image-2.5-flare, say) needs his own yes and a
+# change here (CLAUDE.md, "Paid services and downloads").
+MODELS = {"gpt-image-2.5-sunburst": PRICES}
 # Output image tokens per image, measured (the docs give only a calculator): 1536x1024, gpt-image-2.5-sunburst,
 # medium 343 and high 1372 (prime-game #1095, comment 6291051168, 2026-10-20). Other sizes scale with the pixel count.
 MEASURED_OUTPUT = {"medium": 343, "high": 1372}
 MEASURED_PIXELS = 1536 * 1024
-# Image input tokens per reference image of an edit: the edit test (batch 2026-10-20-openai-edits-test, art #196)
-# measured 416 for one 380x960 PNG crop; this client estimates with 1,500, since a larger reference may cost more.
-INPUT_IMAGE_TOKENS = 1500
+# Image input tokens per reference image of an edit, from the one measurement: the edit test (batch
+# 2026-10-20-openai-edits-test, art #196) paid 416 for one 380x960 PNG crop. A reference is priced by its pixel count
+# (read from its PNG or JPEG header) scaled from that, at least the measured 416; a file whose header cannot be read
+# is priced at UNREAD_INPUT_TOKENS (the run refuses such a file before sending anything).
+MEASURED_INPUT_TOKENS = 416
+MEASURED_INPUT_PIXELS = 380 * 960
+UNREAD_INPUT_TOKENS = 1500
 TEXT_CHARS_PER_TOKEN = 3  # an over-estimate of the prompt's tokens (English runs about 4 characters a token)
 # The estimate is one measurement times this margin, so the cap check before a request stays on the safe side.
 ESTIMATE_MARGIN = 2.0
@@ -67,6 +73,7 @@ class Item:
     background: str = ""
     moderation: str = ""
     inputs: list[inputs.Input] = field(default_factory=list)
+    sources: dict[str, tuple[int, str]] = field(default_factory=dict)  # a `from` item's id -> its n and size
 
     @property
     def depends(self) -> list[str]:
@@ -76,12 +83,32 @@ class Item:
                 out.append(inp.from_item)
         return out
 
+    def input_pixels(self) -> list[int | None]:
+        """The pixel count of each reference image the request sends, in order: a `from` input gives one image (its
+        `pick`) or all its source item's `n`, each of the source's size; a local file's from its header (None when
+        it cannot be read)."""
+        out: list[int | None] = []
+        for inp in self.inputs:
+            if inp.from_item:
+                n, size = self.sources.get(inp.from_item, (1, self.size))
+                width, height = (int(v) for v in size.split("x"))
+                out += [width * height] * (1 if inp.pick is not None else n)
+            else:
+                out.append(image_pixels(inputs.resolve(inp.file)))
+        return out
+
+    @property
+    def image_count(self) -> int:
+        """How many reference images the request sends (a `from` input without `pick`: all its source's images)."""
+        return sum(1 if not inp.from_item or inp.pick is not None else self.sources.get(inp.from_item, (1, ""))[0]
+                   for inp in self.inputs)
+
     def tokens(self) -> dict[str, int]:
         """The estimated tokens of the item's one request, the margin included."""
         width, height = (int(v) for v in self.size.split("x"))
         out = MEASURED_OUTPUT[self.quality] * width * height / MEASURED_PIXELS * self.n
         text = len(self.prompt) / TEXT_CHARS_PER_TOKEN
-        image = INPUT_IMAGE_TOKENS * len(self.inputs)
+        image = sum(input_tokens(pixels) for pixels in self.input_pixels())
         return {k: math.ceil(v * ESTIMATE_MARGIN) for k, v in (("text_in", text), ("image_in", image),
                                                                ("image_out", out))}
 
@@ -115,6 +142,53 @@ class Batch:
             if it.id == item_id:
                 return it
         raise common.Failure(f"batch {self.id} has no item {item_id!r} (it has {', '.join(i.id for i in self.items)})")
+
+
+def input_tokens(pixels: int | None) -> float:
+    """The estimated image input tokens of one reference image of this many pixels, before the margin."""
+    if pixels is None:
+        return float(UNREAD_INPUT_TOKENS)
+    return max(float(MEASURED_INPUT_TOKENS), MEASURED_INPUT_TOKENS * pixels / MEASURED_INPUT_PIXELS)
+
+
+# JPEG start-of-frame markers (they carry the size): C0 to CF except C4 (DHT), C8 (JPG) and CC (DAC).
+SOF_MARKERS = frozenset(range(0xC0, 0xD0)) - {0xC4, 0xC8, 0xCC}
+
+
+def image_pixels(path: Path) -> int | None:
+    """Width times height of a PNG (its IHDR) or a JPEG (its first start-of-frame segment), read locally from the
+    header; None when the file is missing or not a PNG or JPEG that can be read."""
+    try:
+        with path.open("rb") as f:
+            head = f.read(24)
+            if head.startswith(b"\x89PNG\r\n\x1a\n") and head[12:16] == b"IHDR":
+                return int.from_bytes(head[16:20], "big") * int.from_bytes(head[20:24], "big")
+            if not head.startswith(b"\xff\xd8"):
+                return None
+            f.seek(2)
+            while True:
+                marker = f.read(2)
+                if len(marker) < 2 or marker[0] != 0xFF:
+                    return None
+                while marker[1] == 0xFF:  # fill bytes before a marker
+                    marker = marker[1:] + f.read(1)
+                    if len(marker) < 2:
+                        return None
+                if marker[1] in (0xD8, 0x01) or 0xD0 <= marker[1] <= 0xD7:  # markers without a length
+                    continue
+                if marker[1] in (0xD9, 0xDA):  # the end, or the scan before any frame
+                    return None
+                length = int.from_bytes(f.read(2), "big")
+                if marker[1] in SOF_MARKERS:
+                    segment = f.read(5)
+                    if len(segment) < 5:
+                        return None
+                    return int.from_bytes(segment[1:3], "big") * int.from_bytes(segment[3:5], "big")
+                if length < 2:
+                    return None
+                f.seek(length - 2, 1)
+    except OSError:
+        return None
 
 
 def cost(tokens: dict[str, int], prices: dict[str, float] = PRICES) -> float:
@@ -274,16 +348,19 @@ def parse(data: dict[str, Any], path: Path) -> Batch:
         item.inputs = inputs.parse(raw.get("images"), where, errors)
         if kind == "generate" and item.inputs:
             errors.append(f"{where}: a generate item takes no images (an edit does)")
-        if kind == "edit" and not 1 <= len(item.inputs) <= MAX_IMAGES:
-            errors.append(f"{where}: an edit takes 1 to {MAX_IMAGES} images in 'images'")
         for inp in item.inputs:
             if not inp.from_item:
                 continue
             src = seen.get(inp.from_item)
             if src is None:
                 errors.append(f"{where}: images from {inp.from_item!r}: not an earlier item of this batch")
-            elif inp.pick is not None and inp.pick >= src.n:
+                continue
+            item.sources[src.id] = (src.n, src.size)
+            if inp.pick is not None and inp.pick >= src.n:
                 errors.append(f"{where}: pick {inp.pick} from {inp.from_item!r}, which makes {src.n} image(s)")
+        if kind == "edit" and not (1 <= len(item.inputs) and item.image_count <= MAX_IMAGES):
+            errors.append(f"{where}: an edit takes 1 to {MAX_IMAGES} images in 'images' (a `from` without `pick` "
+                          "counts all its source's images)")
         seen[item_id] = item
         items.append(item)
 
