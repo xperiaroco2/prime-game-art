@@ -77,8 +77,9 @@ def args():
     p.add_argument("--corner", default="", help="JSON merged over alien_lids_geom.CORNER")
     p.add_argument("--lids", default="", help="M9b: JSON over alien_lids_geom.LIDS (the slim shells' thin, rim); "
                    "the default on a mounted kit is LIDS, on an older kit S9's shells")
-    p.add_argument("--thumb", choices=("rigid", "segments"), default="rigid",
-                   help="M10b: the thumb's skin weights (alien_thumb.py): rigid (the default) or the cage's segments")
+    p.add_argument("--thumb", choices=("blend", "segments"), default="blend",
+                   help="M10b: the thumb's skin weights (alien_thumb.py): blend (the default, a smooth split along "
+                   "the thumb) or the cage's segments")
     p.add_argument("--collar", choices=("off", "on"), default="on",
                    help="M10b: the static socket collar per design and side (alien_lids_geom.COLLAR), the default; "
                    "needs --flare off; none on a unit at full size (--eye-scale >= alien_lids_geom.EYE_SCALE)")
@@ -537,7 +538,7 @@ def main():
     skin_root = out if a.export_name == "export" else out / f"skin_{a.export_name}"
     rep = {"eye_scale": a.eye_scale, "eye_sink": a.eye_sink, "corner": corner, "skin": swap_skin(a, skin_root)}
     body = rest_pose()
-    if a.thumb == "rigid":  # M10b: the thumb moves as one piece (the Idle thumb read swollen)
+    if a.thumb == "blend":  # M10b: the thumb's smooth split (the Idle thumb read swollen; the fist kept its curl)
         rep["thumb"] = alien_thumb.apply(body)
         log("thumb", json.dumps(rep["thumb"]))
     k, sink = a.eye_scale, a.eye_sink
