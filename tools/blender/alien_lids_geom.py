@@ -219,3 +219,31 @@ def set_socket(spec: dict) -> dict:
     if not 0.4 <= out["scale"] <= 1.2 or out["outer"] <= out["inner"] or out["rim_w"] <= 0:
         raise SystemExit(f"socket: out of range {out}")
     return out
+
+
+# M9b (art #196): slim lid shells. In the liked sheet e2 the coral lids are thin shells hugging the ball with a soft
+# rolled rim; S9's shells (alien_parts.EYES rho, LID_BEAD) read as thick domes on M9's smaller eyes. A lid setting
+# keeps each shell's inner radius (the ball's clearance, the wet strip under it and the blink: the upper lid's inner
+# surface stays outside the lower lid, so the closed lids still overlap and seal) and multiplies the shell's thickness
+# (rho_out - rho_in) by `thin` and the rolled rim's swell (LID_BEAD) by `rim`. alien_m6.py rebuilds the shells and the
+# wet strips with it (`--lids JSON` for a grid); alien.gd EYE_LOOK's *_reach_deg follow (alien_eyes_geom.rim_reach of
+# the slimmed lid). LIDS_S9 builds S9's shells exactly. Chosen on M9b's grid beside e2.
+LIDS = {"thin": 0.3, "rim": 0.7}
+LIDS_S9 = {"thin": 1.0, "rim": 1.0}
+
+
+def set_lids(spec: dict) -> dict:
+    """LIDS with a variant's values over it; refuses unknown keys and a value outside (0.1, 1.5)."""
+    bad = set(spec) - set(LIDS)
+    if bad:
+        raise SystemExit(f"lids: unknown {sorted(bad)}; known {sorted(LIDS)}")
+    out = dict(LIDS, **{k: float(v) for k, v in spec.items()})
+    if not all(0.1 <= v <= 1.5 for v in out.values()):
+        raise SystemExit(f"lids: out of range {out}")
+    return out
+
+
+def slim(rho: tuple, bead: float, lids: dict = LIDS) -> tuple[tuple[float, float], float]:
+    """A lid's (rho_in, rho_out) and rim swell under a lid setting: the inner radius kept, the thickness times
+    `thin`, the swell times `rim`."""
+    return (rho[0], rho[0] + lids["thin"] * (rho[1] - rho[0])), bead * lids["rim"]
