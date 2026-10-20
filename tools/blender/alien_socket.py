@@ -132,9 +132,11 @@ def apply(spec: dict) -> dict:
         where = cen[flip & ~hidden][:4].round(4).tolist()
         raise SystemExit(f"the mount folds {folds} visible faces (at {where}) or moves the mouth/crest skin {keep} mm")
     set_world_co(body, co1)
+    rep_light = raise_light(me, co1, sides, k, s)
     # the eye parts: world targets first, then the nodes moved, then the meshes written in their new frames
     rep = {"socket": s, "folds": folds, "folds_inside_ball": folds_hidden, "keep_mm": keep,
-           "moved_max_mm": round(float(moved.max() * 1000), 2), "moved_verts": int((moved > 1e-4).sum())}
+           "moved_max_mm": round(float(moved.max() * 1000), 2), "moved_verts": int((moved > 1e-4).sum()),
+           "light": rep_light}
     for side, v in sides.items():
         c, off = v["c"], v["off"]
         parts = eye_parts(side)
@@ -157,6 +159,34 @@ def apply(spec: dict) -> dict:
     body[MARKER] = json.dumps(s, sort_keys=True)
     log("mount", json.dumps(rep))
     return rep
+
+
+def raise_light(me, co1: np.ndarray, sides: dict, k: float, s: dict) -> dict:
+    """M9b: the `masks` light (u, per loop) raised round each mounted eye to alien_lids_geom.eye_light (never
+    lowered), so the skin round the eye is the pale face's and no crown teal sits on the socket's slope."""
+    if not s["light_out"]:
+        return {"raised_verts": 0}
+    me.update()
+    nr = np.empty(len(me.vertices) * 3)
+    me.vertices.foreach_get("normal", nr)
+    nr = nr.reshape(-1, 3) @ np.linalg.inv(np.array(bpy.data.objects["Body"].matrix_world)[:3, :3])
+    nr /= np.maximum(np.linalg.norm(nr, axis=1, keepdims=True), 1e-12)
+    floor = np.zeros(len(co1))
+    for v in sides.values():
+        q = co1 - (v["c"] + v["off"])
+        ql = np.maximum(np.linalg.norm(q, axis=1), 1e-9)
+        floor = np.maximum(floor, LG.eye_light(ql / (k * v["r0"]), nr @ v["fwd"], s["light_in"], s["light_out"]))
+    uv = np.empty(len(me.loops) * 2)
+    me.uv_layers["masks"].data.foreach_get("uv", uv)
+    lv = np.empty(len(me.loops), dtype=np.int64)
+    me.loops.foreach_get("vertex_index", lv)
+    u0 = uv[0::2].copy()
+    uv[0::2] = np.maximum(u0, floor[lv])
+    me.uv_layers["masks"].data.foreach_set("uv", uv)
+    me.update()
+    up = uv[0::2] - u0
+    return {"raised_verts": int(len(np.unique(lv[up > 0.01]))), "raised_mean": round(float(up[up > 0.01].mean()), 3)
+            if (up > 0.01).any() else 0.0}
 
 
 def measure(body, sides: dict, k: float) -> dict:

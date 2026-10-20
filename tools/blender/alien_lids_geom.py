@@ -175,7 +175,14 @@ def contact(dist: float, reach: float = CONTACT["reach"]) -> float:
 # sockets fits the mount; tools/blender/alien_socket.py applies it to a character (Body["prime_socket"] records it,
 # so alien_m6.py does not scale the eyes again). Chosen on M9's grid beside e2.
 SOCKET = {"scale": 0.82, "sink": 0.020, "inward": 0.019, "inner": 1.3, "outer": 2.0, "rim": 0.0008, "rim_at": 1.10,
-          "rim_w": 0.14}
+          "rim_w": 0.14, "light_in": 1.6, "light_out": 2.3}
+# M9b: the pale skin round the mounted eye. The mount pulls the skin within `inner` toward the smaller eye, so the
+# vertices that carried the crown's teal (the `masks` light 0, once hidden under S9's big lids) moved down beside the
+# eye and read, shaded on the socket's downward slope, as a dark band of eye shadow. In e2 the skin round each eye is
+# the pale face's. So the mount raises the light mask (never lowers it) to eye_light(): full within `light_in` new
+# ball radii of the new centre, none past `light_out` (a smoothstep), on skin facing the socket's way (the skin
+# normal's cosine to the socket's forward axis: none below -0.1, full from 0.4; the temples and the head's sides keep
+# their teal). light_out 0 is M9's mask.
 SOCKET_KEYS = tuple(SOCKET)
 
 
@@ -198,6 +205,13 @@ def rim_bump(dd, at: float, width: float):
     return b * b
 
 
+def eye_light(dd, cos_fwd, light_in: float, light_out: float):
+    """The light mask's floor at dd new ball radii from the new centre, cos_fwd the skin normal's cosine to the
+    socket's forward axis: 1 inside light_in, a smoothstep to 0 at light_out, on skin facing forward only."""
+    t = clamp01((dd - light_in) / max(light_out - light_in, 1e-9))
+    return (1.0 - t * t * (3.0 - 2.0 * t)) * clamp01((cos_fwd + 0.1) / 0.5)
+
+
 def eye_offset(fwd: tuple, x_sign: float, sink: float, inward: float) -> tuple:
     """The eye unit's move (m, world): `sink` back along the socket's forward axis fwd, `inward` toward x = 0 (x_sign:
     the side's sign of x)."""
@@ -216,7 +230,8 @@ def set_socket(spec: dict) -> dict:
     if bad:
         raise SystemExit(f"socket: unknown {sorted(bad)}; known {SOCKET_KEYS}")
     out = dict(SOCKET, **{k: float(v) for k, v in spec.items()})
-    if not 0.4 <= out["scale"] <= 1.2 or out["outer"] <= out["inner"] or out["rim_w"] <= 0:
+    if (not 0.4 <= out["scale"] <= 1.2 or out["outer"] <= out["inner"] or out["rim_w"] <= 0
+            or (out["light_out"] and out["light_out"] <= out["light_in"])):
         raise SystemExit(f"socket: out of range {out}")
     return out
 
