@@ -1,0 +1,85 @@
+# art#196, more of the parts kit's S6 and S5 targets (the engineer's picks, 2026-10-20, from the liked sheets of batch
+# 2026-10-17-alien-2d-parts1: mouths 2, 6 and 8 of m2 and eye design 8 of e2, "a beautiful alien girl"; each mouth
+# will talk in its own funny way). GPT Image draws, on ONE sheet per design so the shapes stay consistent,
+# - each chosen mouth design's six talk shapes (2: the full glossy red pouty lips; 6: two lower fangs over the upper
+#   lip; 8: the playful tongue out): the exact target for the 3D replacement pieces and the flipbook-texture mouths;
+# - the chosen eye design's states (8: long dark lashes on half-lidded flirty eyes): the target for the lid shells,
+#   the lashes, the pupils and the eye material.
+# The same settings as batch 2026-10-19-alien-face-sheets (12 credits per sheet there, log.csv). Two tries per sheet.
+# The references are 2x nearest-neighbour crops of one head each, the same crop size and row as that batch's.
+# Under the standing permission for Meshy generation within the plan's credits (2026-10-03, art#16). No game names.
+# Schema: docs/meshy.md.
+
+id = "2026-10-20-alien-face-sheets-2"
+purpose = "art#196 parts kit S5/S6: one sheet per newly picked mouth design (pout, fangs, tongue) of its six talk shapes and one of the lashes eye design's states, as the 3D and material targets."
+plan = "Meshy paid plan (monthly; bought by the engineer on 2026-10-17)"
+terms_url = "https://www.meshy.ai/terms-of-use"
+licence = "owned by the customer on a paid plan (Meshy Terms of Use 3.2, updated 2026-09-19); no attribution required"
+credit_cap = 110
+approved_by = "xperiaroco2 (the engineer)"
+approved_at = "2026-10-03"
+approval_ref = "https://github.com/xperiaroco2/prime-game-art/issues/16"
+
+[defaults.image_to_image.params]
+ai_model = "gpt-image-2-5-sunburst"
+aspect_ratio = "3:2"
+
+[variants.pout]
+prompt = "A mouth-shape model sheet for the character in the reference image: SIX copies of exactly this head, all seen straight from the front at the same size, framing and lighting, in a grid of 3 columns and 2 rows on a plain flat mid-grey background. Everything stays identical in all six (the head, the half-closed bored eyes, the nostrils, the skin) except the mouth, which keeps its full, soft, glossy red pouty lips and shows one talk shape per panel, in this order: 1 rest, the full pouty lips closed exactly as in the reference; 2 M, the lips pressed together, still full and pouty; 3 small, the lips slightly parted with a narrow dark opening; 4 A, mouth open wide with the jaw dropped, the full lips framing a dark inside with a hint of a tongue; 5 E, mouth wide and stretched sideways, a flat dark opening between the full lips; 6 O, the lips pushed forward into a big round kiss. The lips stay full, glossy and the same red in every panel, with one soft highlight on the lower lip. Smooth soft-matte stylised surface like a premium designer vinyl toy, no fine texture. No text, no numbers, no labels."
+
+[variants.fangs]
+prompt = "A mouth-shape model sheet for the character in the reference image: SIX copies of exactly this head, all seen straight from the front at the same size, framing and lighting, in a grid of 3 columns and 2 rows on a plain flat mid-grey background. Everything stays identical in all six (the head, the half-closed bored eyes, the nostrils, the skin) except the mouth, which keeps its soft coral lips and exactly two cream lower fangs, one near each mouth corner, pointing up from the lower jaw over the upper lip, and shows one talk shape per panel, in this order: 1 rest, lips closed with the two fang tips over the upper lip exactly as in the reference; 2 M, lips pressed together, the two fang tips still over the upper lip; 3 small, lips slightly parted with a narrow dark opening, the two fangs rising from the lower jaw; 4 A, mouth open wide with the jaw dropped, the two fangs standing up from the lower jaw, dark inside with a hint of a tongue; 5 E, mouth wide and stretched sideways, the two fangs visible at the corners; 6 O, lips pushed forward into a small round opening with the two fangs just visible. Always exactly two fangs, the same size in every panel, cute and toothy, never scary. Smooth soft-matte stylised surface like a premium designer vinyl toy, no fine texture. No text, no numbers, no labels."
+
+[variants.tongue]
+prompt = "A mouth-shape model sheet for the character in the reference image: SIX copies of exactly this head, all seen straight from the front at the same size, framing and lighting, in a grid of 3 columns and 2 rows on a plain flat mid-grey background. Everything stays identical in all six (the head, the half-closed bored eyes, the nostrils, the skin) except the mouth, which keeps its soft coral lips, its few small cream teeth and its playful pink tongue, and shows one talk shape per panel, in this order: 1 rest, the tongue sticking out over the lower lip to one side, cheeky and playful, exactly as in the reference; 2 M, lips pressed together with just the tip of the tongue poking out between them; 3 small, lips slightly parted, the tongue resting on the lower lip; 4 A, mouth open wide with the jaw dropped, the tongue lolling out over the lower lip; 5 E, mouth wide and stretched sideways, the tongue lolling out of one corner; 6 O, lips pushed forward into a round opening with the tongue tip lolling out. The tongue is the same soft pink and size in every panel, with a soft centre groove; funny, never gross. Smooth soft-matte stylised surface like a premium designer vinyl toy, no fine texture. No text, no numbers, no labels."
+
+[variants.lashes]
+prompt = "An eye-state model sheet for the character in the reference image: SIX copies of exactly her head, all seen straight from the front at the same size, framing and lighting, in a grid of 3 columns and 2 rows on a plain flat mid-grey background. Everything stays identical in all six (the head, the closed mouth, the nostrils, the skin) except the eyes, which keep her eyeballs nested deep in the sockets as in the reference, never bulging, under soft coral eyelids, with long dark eyelashes on the upper lids drawn as soft separate curved strands that sweep out at the outer corners, and show one state per panel, in this order: 1 rest, half-lidded and flirty, the upper lids lowered with the long lashes exactly as in the reference; 2 half blink, the lids nearly shut, the lashes curving down; 3 closed, the upper and lower lids meeting in a soft line with the lashes resting on the cheek line; 4 looking left, the dark green irises turned to the left, lids at rest; 5 looking right; 6 surprised, the lids pulled wide open, the lashes flared up, the eyeballs fully visible. The eyeballs are a warm off-white, glossy with one small soft catch light each and soft shading toward the corners; the irises are dark green with a black pupil. Beautiful and appealing, never creepy, scary or bloodshot. Smooth soft-matte stylised surface like a premium designer vinyl toy, no fine texture. No text, no numbers, no labels."
+
+[[items]]
+id = "mp1"
+variant = "pout"
+kind = "image_to_image"
+images = [ { file = "raw:research/2026-10-19-parts-kit/face-crops/m2_pout.png", provenance = "crop (head 2, scaled 2x) of own Meshy generation, batch 2026-10-17-alien-2d-parts1 item m2, art#196", sha256 = "cfa6b635d24391aabc9fa57062e64c60dfafb7f88bc5864adf94fbe67638ee47" } ]
+
+[[items]]
+id = "mp2"
+variant = "pout"
+kind = "image_to_image"
+images = [ { file = "raw:research/2026-10-19-parts-kit/face-crops/m2_pout.png", provenance = "crop (head 2, scaled 2x) of own Meshy generation, batch 2026-10-17-alien-2d-parts1 item m2, art#196", sha256 = "cfa6b635d24391aabc9fa57062e64c60dfafb7f88bc5864adf94fbe67638ee47" } ]
+
+[[items]]
+id = "mg1"
+variant = "fangs"
+kind = "image_to_image"
+images = [ { file = "raw:research/2026-10-19-parts-kit/face-crops/m6_fangs.png", provenance = "crop (head 6, scaled 2x) of own Meshy generation, batch 2026-10-17-alien-2d-parts1 item m2, art#196", sha256 = "162d8e4815813d7462208cd42ed1ee09201a0e2ab28f3f39c514b2936a10a824" } ]
+
+[[items]]
+id = "mg2"
+variant = "fangs"
+kind = "image_to_image"
+images = [ { file = "raw:research/2026-10-19-parts-kit/face-crops/m6_fangs.png", provenance = "crop (head 6, scaled 2x) of own Meshy generation, batch 2026-10-17-alien-2d-parts1 item m2, art#196", sha256 = "162d8e4815813d7462208cd42ed1ee09201a0e2ab28f3f39c514b2936a10a824" } ]
+
+[[items]]
+id = "mt1"
+variant = "tongue"
+kind = "image_to_image"
+images = [ { file = "raw:research/2026-10-19-parts-kit/face-crops/m8_tongue.png", provenance = "crop (head 8, scaled 2x) of own Meshy generation, batch 2026-10-17-alien-2d-parts1 item m2, art#196", sha256 = "bd43123ace3da1203f18675aabacefd43f73cb0b64aa9bdbb72542c6b0613ec1" } ]
+
+[[items]]
+id = "mt2"
+variant = "tongue"
+kind = "image_to_image"
+images = [ { file = "raw:research/2026-10-19-parts-kit/face-crops/m8_tongue.png", provenance = "crop (head 8, scaled 2x) of own Meshy generation, batch 2026-10-17-alien-2d-parts1 item m2, art#196", sha256 = "bd43123ace3da1203f18675aabacefd43f73cb0b64aa9bdbb72542c6b0613ec1" } ]
+
+[[items]]
+id = "el1"
+variant = "lashes"
+kind = "image_to_image"
+images = [ { file = "raw:research/2026-10-19-parts-kit/face-crops/e8_lashes.png", provenance = "crop (head 8, scaled 2x) of own Meshy generation, batch 2026-10-17-alien-2d-parts1 item e2, art#196", sha256 = "81b0539c1e1cfea40fbd81d7aa12e2eace0db51b02c4f2ae2967961a962dbc2e" } ]
+
+[[items]]
+id = "el2"
+variant = "lashes"
+kind = "image_to_image"
+images = [ { file = "raw:research/2026-10-19-parts-kit/face-crops/e8_lashes.png", provenance = "crop (head 8, scaled 2x) of own Meshy generation, batch 2026-10-17-alien-2d-parts1 item e2, art#196", sha256 = "81b0539c1e1cfea40fbd81d7aa12e2eace0db51b02c4f2ae2967961a962dbc2e" } ]
