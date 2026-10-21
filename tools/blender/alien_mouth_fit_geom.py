@@ -49,16 +49,29 @@ FIT = {
     "plane_sample": 6000,  # ... the points it scores (every k-th of the form)
     "mid_band": 0.002, "mid_smooth": 6,  # alien_mouth_fit.py: the band |x| < mid_band smoothed in depth (y) only
     "line_band_z": 0.0012, "line_smooth": 2,  # ... and the lip line's band (+-line_band_z), the facets' specks
-    "contact_margin": 0.002,  # contact_distance: an outside skin point's distance less this (m; 2.5 mm: full 52,
+    "contact_margin": 0.005,  # contact_distance: an outside skin point's distance less this (m; 2.5 mm: full 52,
     # 3.5 mm: 61 and a pale band still under the lower lip at 3/4; 5 mm: 72; M20c with contact_keep: 5 mm 156,
-    # 3.5 mm 135, 2 mm the pick)
+    # 3.5 mm 135, 2 mm 124 but a narrower halo, the skin under the lower lip 3-6 brighter at 3/4; M20d: 5 mm again,
+    # judged by that skin's measured brightness against M20b, docs/godot.md M20d)
     "contact_keep": 0.999,  # alien_mouth_fit.py closed_contact: a raw contact at least this stays 1 after the
     # smoothing (M20c: the smoothing had lightened the band within contact_margin of the lower lip)
     "cleft_band": 0.004, "cleft_most": 0.002,  # alien_mouth_fit.py fill_cleft: the lower lip's central groove
     # filled within +-4 mm, a vertex at most 2 mm behind the band edge's front (M20's groove: 0.8-1.4 mm)
+    "centre_band": 0.002, "centre_ref": (0.002, 0.0035), "centre_most": 0.002, "centre_surface": 0.0003,
+    # alien_mouth_fit.py smooth_centre (M20d): the lower lip's front within +-2 mm of x = 0 onto the even curve
+    # through its front at +-2 and +-3.5 mm at the same height (centre_target), a vertex at most 2 mm forward, only
+    # one the front ray meets within 0.3 mm (M20c: a 1 mm notch at x = 0 and a 1 mm valley over +-4 mm under the
+    # lip line, two lobes in front; +-4 / 6 mm changed nothing seen at 0.4 m, so only the notch)
     "xy_scale": {"M": (1.04, 0.92)},  # a closed shape's width and depth about its centre / front (minor 4: M wider,
     # pressed flatter; mp1's M in front is as wide as its rest and 0.92 of its height, which M20's already was)
 }
+
+
+def centre_target(x1: float, y1: float, x2: float, y2: float, x: float) -> float:
+    """M20d: the depth at x of the even curve y = a + b x^2 through (x1, y1) and (x2, y2), 0 < x1 < x2: the lower
+    lip's front across its centre without the notch at x = 0."""
+    b = (y2 - y1) / (x2 * x2 - x1 * x1)
+    return y1 + b * (x * x - x1 * x1)
 
 
 def bbox(points) -> tuple[tuple[float, float, float], tuple[float, float, float]]:

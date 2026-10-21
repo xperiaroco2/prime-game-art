@@ -1,6 +1,6 @@
 """M19 (art #196): tools/blender/alien_mouth_fit_geom.py, the AI mouth route's fit without Blender: the lip line of a
 closed form, the alignment onto our socket, the back closed into the skin, the wrap weight, the decimate ratio and the
-mirror error; M20's lip line, closed jaw weight and corner sink. Plain Python."""
+mirror error; M20's lip line, closed jaw weight and corner sink; M20d's centre curve. Plain Python."""
 from __future__ import annotations
 
 import importlib.util
@@ -215,6 +215,28 @@ class ContactDistanceTest(unittest.TestCase):
         self.assertEqual(G.contact_distance(0.0035, True), 0.0)
         self.assertEqual(G.contact_distance(0.0035, False, 0.001), 0.0025)
         self.assertEqual(G.contact_distance(0.0005, False, 0.001), 0.0)
+
+
+class CentreTest(unittest.TestCase):
+    """M20d (brief UPDATE 49): smooth_centre's even curve and the contact margin's range."""
+
+    def test_the_curve_through_both_points(self):
+        self.assertAlmostEqual(G.centre_target(0.002, 0.0096, 0.0035, 0.0088, 0.002), 0.0096)
+        self.assertAlmostEqual(G.centre_target(0.002, 0.0096, 0.0035, 0.0088, 0.0035), 0.0088)
+        f = lambda x: 0.01 - 80.0 * x * x  # an even front, the centre the deepest
+        self.assertAlmostEqual(G.centre_target(0.002, f(0.002), 0.0035, f(0.0035), 0.0), f(0.0))
+        self.assertAlmostEqual(G.centre_target(0.002, f(0.002), 0.0035, f(0.0035), 0.001), f(0.001))
+
+    def test_a_notch_lies_behind_the_curve(self):
+        # M20c's rest 3 mm under the lip line (mm): x = 0 at 11.5, +-2 at 9.6, +-3.5 at 8.8: about 1.5 mm behind
+        self.assertGreater(0.0115 - G.centre_target(0.002, 0.0096, 0.0035, 0.0088, 0.0), 0.0014)
+
+    def test_the_contact_margin_keeps_the_halo(self):
+        # PR #262's fresh review major: 2 mm narrowed the halo (the skin under the lower lip paler); 3.5-5 mm
+        self.assertGreaterEqual(G.FIT["contact_margin"], 0.0035)
+        self.assertLessEqual(G.FIT["contact_margin"], 0.005)
+        self.assertLessEqual(G.FIT["centre_band"], G.FIT["centre_ref"][0])  # no step at the band's edge
+        self.assertLess(G.FIT["centre_ref"][0], G.FIT["centre_ref"][1])
 
 
 if __name__ == "__main__":
