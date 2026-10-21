@@ -130,32 +130,31 @@ hinge = [0.0, -4.6]                          # at floor_h, the mouth room's nort
 foot = [0.0, -7.0]                           # at ground_h
 thickness_m = 0.15
 
-# The hull: lofted sections across x (mirrored for x < 0). Row: [x, lead y, trail y, edge h, top h, core half-depth].
-# Core rows (half-depth > 0) cover the hall and the corridors, open at their outer end inside the tip shell; plate
-# rows (half-depth -1, top below the deck) run under and round the tip rooms. The outline (the footprint) is the
-# core rows up to the first plate row's x, then the plate rows.
+# The hull's footprint (the skin of tools/blender/ship_hull_skin.py, variant F; `ship --check` tests the rooms and
+# pieces inside it). Rows [x, lead y, trail y, edge h, top h, core half-depth]: core rows up to the tip room's centre,
+# plate rows round the tip fairing to the swept tip (x 13.23, y 5.9); mirrored for x < 0. Regenerate the rows from
+# ship_hull_skin.outline() when the variant changes.
 [hull]
-bottom_h = 0.75
-brow_h = 3.8                                 # the front slope's crease over the mouth
+bottom_h = 0.35                              # the keel under the hall (0.6 under the wings)
+brow_h = 3.92                                # the brow over the mouth
 mouth_half_width_m = 1.3                     # the front face's opening over the mouth room
 stern_y = 6.9                                # the nozzles' tips
-pod_radius_m = 2.3                           # the tip rooms' outer shells
+pod_radius_m = 2.41                          # the tip fairing's window band
 core = [
-  [0.0, -4.6, 6.0, 0.95, 5.4, 3.65],
-  [1.3, -4.6, 5.9, 0.95, 5.35, 3.45],
-  [2.6, -4.4, 5.6, 1.3, 5.0, 2.7],
-  [3.4, -4.1, 5.15, 1.3, 4.75, 1.85],
-  [3.7, -4.0, 4.95, 1.3, 4.5, 1.6],
-  [4.0, -3.9, 4.8, 1.3, 3.95, 1.5],
-  [6.0, -3.3, 4.1, 1.3, 3.95, 1.5],
-  [9.0, -2.6, 3.25, 1.3, 3.95, 1.5],
+  [0.0, -4.6, 5.0, 2.3, 5.95, 3.65],
+  [1.5, -6.3, 5.08, 1.1, 5.95, 3.4],
+  [3.0, -5.82, 5.15, 1.13, 5.3, 2.2],
+  [4.0, -5.5, 5.12, 1.13, 4.85, 1.72],
+  [6.0, -4.8, 5.05, 1.2, 4.15, 1.72],
+  [8.0, -4.1, 5.0, 1.27, 4.15, 1.72],
+  [9.1, -3.66, 4.96, 1.3, 4.15, 1.72],
 ]
 plate = [
-  [8.6, -2.68, 3.36, 0.86, 0.98, -1],
-  [9.5, -2.55, 3.0, 0.86, 0.98, -1],
-  [11.0, -2.45, 2.6, 0.86, 0.98, -1],
-  [12.4, -1.8, 2.0, 0.86, 0.98, -1],
-  [13.05, -0.6, 0.9, 0.86, 0.98, -1],
+  [11.35, -2.81, 5.12, 1.38, 4.42, -1],
+  [12.15, -2.49, 5.46, 1.38, 4.42, -1],
+  [12.65, -2.31, 5.65, 1.38, 4.42, -1],
+  [13.05, -1.83, 5.86, 1.38, 4.42, -1],
+  [13.23, 5.0, 5.9, 1.38, 1.38, -1],
 ]
 
 # Review light (the exterior lane tunes it). lamps: [x, y, h, energy, range, r, g, b].

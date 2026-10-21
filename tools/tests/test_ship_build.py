@@ -21,29 +21,31 @@ class ShipBuildTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         shutil.rmtree(OUT, ignore_errors=True)  # an --only build keeps an earlier report's other pieces
-        cls.code, cls.output = run_cli("ship", "--build", "--only", "ramp,hull_pod,blade_e_lead", "--out", str(OUT))
+        cls.code, cls.output = run_cli("ship", "--build", "--only", "ramp,skin_tip_e,skin_body_e", "--out", str(OUT))
         cls.report = json.loads((OUT / "build_report.json").read_text(encoding="utf-8"))["pieces"]
 
     def test_the_build_passes(self) -> None:
         self.assertEqual(self.code, 0, self.output[-2000:])
-        self.assertEqual(set(self.report), {"ramp", "hull_pod", "blade_e_lead"})
+        self.assertEqual(set(self.report), {"ramp", "skin_tip_e", "skin_body_e"})
         for pid in self.report:
             self.assertTrue((OUT / f"{pid}.glb").is_file())
 
     def test_bounds_hold_the_numbers(self) -> None:
         """The exterior's numbers survive the build (Godot's frame (x, h, y)): the ramp as wide as the mouth and as
-        long as its run, the tip pod from the belly (h 0.6) to its 4.6 m crown, the lead blade inside the footprint."""
+        long as its run, the tip fairing from the belly (h 0.6) to its 4.42 m crown inside the span, the body's keel at 0.35 and its
+        nose short of the ramp's foot."""
         layout = ship_layout.load()
         ramp = self.report["ramp"]["bounds"]
         run = layout["ramp"]["hinge"][1] - layout["ramp"]["foot"][1]
         self.assertAlmostEqual(ramp["max"][0] - ramp["min"][0], layout["ramp"]["width_m"], delta=0.01)
         self.assertAlmostEqual(ramp["min"][2], -run, delta=0.05)
-        pod = self.report["hull_pod"]["bounds"]
-        self.assertAlmostEqual(pod["min"][1], 0.6, delta=0.01)
-        self.assertAlmostEqual(pod["max"][1], 4.6, delta=0.02)
-        blade = self.report["blade_e_lead"]["bounds"]
-        self.assertGreater(blade["min"][2], layout["ramp"]["foot"][1])
-        self.assertGreater(blade["min"][0], layout["ramp"]["width_m"] / 2)
+        tip = self.report["skin_tip_e"]["bounds"]
+        self.assertAlmostEqual(tip["min"][1], 0.6, delta=0.01)
+        self.assertAlmostEqual(tip["max"][1], 4.42, delta=0.02)
+        self.assertLessEqual(tip["max"][0], layout["size"]["width_m"] / 2 + layout["size"]["tolerance_m"] / 2)
+        body = self.report["skin_body_e"]["bounds"]
+        self.assertGreater(body["min"][2], layout["ramp"]["foot"][1])
+        self.assertAlmostEqual(body["min"][1], 0.35, delta=0.01)
 
 if __name__ == "__main__":
     unittest.main()

@@ -1,38 +1,35 @@
 # The EXTERIOR lane's pieces (builders in tools/blender/ship_hull*.py) and their placements (art #263, docs/ship.md);
 # the format as in interior.toml. outside: the piece may stand beyond the hull's outline (the ramp meets the ground,
-# the clearing). The hull is a kit: drum, nose, nozzle mount, three wing sections per side, the tip pods; every light
+# the clearing). The hull is a kit: the skin (ship_hull_skin.py: body, three wing sections and the tip fairing per side,
+# variant F of the silhouette grid), the nozzle mount; every light
 # run (stripes, mouth, ramp, nozzle rings, bubble glow) is its own piece. The clearing's pines and rocks were placed by
 # a seeded ring (pines 30..46 m from the centre, young pines and rocks nearer) and are plain data from here on.
 
 place = [
-  # the hull kit (plan origin; the wing sections share their end stations)
-  ["hull_drum", [0.00, 0.00, 0.00], 0.0],
-  ["hull_nose", [0.00, 0.00, 0.00], 0.0],
+  # the hull skin kit, variant F of the silhouette grid (tools/blender/ship_hull_skin.py; plan origin)
+  ["skin_body_e", [0.00, 0.00, 0.00], 0.0],
+  ["skin_body_w", [0.00, 0.00, 0.00], 0.0],
+  ["skin_wing1_e", [0.00, 0.00, 0.00], 0.0],
+  ["skin_wing2_e", [0.00, 0.00, 0.00], 0.0],
+  ["skin_wing3_e", [0.00, 0.00, 0.00], 0.0],
+  ["skin_tip_e", [0.00, 0.00, 0.00], 0.0],
+  ["skin_wing1_w", [0.00, 0.00, 0.00], 0.0],
+  ["skin_wing2_w", [0.00, 0.00, 0.00], 0.0],
+  ["skin_wing3_w", [0.00, 0.00, 0.00], 0.0],
+  ["skin_tip_w", [0.00, 0.00, 0.00], 0.0],
+  ["skin_stripes_e", [0.00, 0.00, 0.00], 0.0],
+  ["skin_stripes_w", [0.00, 0.00, 0.00], 0.0],
   ["nozzle_mount", [0.00, 0.00, 0.00], 0.0],
-  ["hull_wing_e1", [0.00, 0.00, 0.00], 0.0],
-  ["hull_wing_e2", [0.00, 0.00, 0.00], 0.0],
-  ["hull_wing_e3", [0.00, 0.00, 0.00], 0.0],
-  ["stripes_e", [0.00, 0.00, 0.00], 0.0],
-  ["blade_e_lead", [0.00, 0.00, 0.00], 0.0],
-  ["blade_e_trail", [0.00, 0.00, 0.00], 0.0],
-  ["hull_wing_w1", [0.00, 0.00, 0.00], 0.0],
-  ["hull_wing_w2", [0.00, 0.00, 0.00], 0.0],
-  ["hull_wing_w3", [0.00, 0.00, 0.00], 0.0],
-  ["stripes_w", [0.00, 0.00, 0.00], 0.0],
-  ["blade_w_lead", [0.00, 0.00, 0.00], 0.0],
-  ["blade_w_trail", [0.00, 0.00, 0.00], 0.0],
-  # the tip pods and their window frames (built facing east; the west ones at yaw 180)
-  ["hull_pod", [-10.75, 0.00, 0.00], 180.0],
+  # the tip windows' frames (built facing east; the west one at yaw 180)
   ["window_frame", [-10.75, 0.00, 0.00], 180.0],
-  ["hull_pod", [10.75, 0.00, 0.00], 0.0],
   ["window_frame", [10.75, 0.00, 0.00], 0.0],
   # the cockpit bubbles (outside only), the mouth, the ramp
-  ["bubble_collar", [-2.40, -3.55, 3.55], 0.0],
-  ["bubble_glass", [-2.40, -3.55, 3.55], 0.0],
-  ["bubble_glow", [-2.40, -3.55, 3.55], 0.0],
-  ["bubble_collar", [2.40, -3.55, 3.55], 0.0],
-  ["bubble_glass", [2.40, -3.55, 3.55], 0.0],
-  ["bubble_glow", [2.40, -3.55, 3.55], 0.0],
+  ["bubble_collar", [-1.90, -3.75, 4.15], 0.0],
+  ["bubble_glass", [-1.90, -3.75, 4.15], 0.0],
+  ["bubble_glow", [-1.90, -3.75, 4.15], 0.0],
+  ["bubble_collar", [1.90, -3.75, 4.15], 0.0],
+  ["bubble_glass", [1.90, -3.75, 4.15], 0.0],
+  ["bubble_glow", [1.90, -3.75, 4.15], 0.0],
   ["mouth_frame", [0.00, -4.60, 0.00], 0.0],
   ["mouth_lights", [0.00, -4.60, 0.00], 0.0],
   ["ramp", [0.00, -4.60, 0.00], 0.0],
@@ -174,80 +171,68 @@ place = [
 ]
 
 [[pieces]]
-id = "hull_drum"
-builder = "hull_drum"
+id = "skin_body_e"
+builder = "hull_skin"
+args = { part = "body", side = 1.0, variant = "F" }
 
 [[pieces]]
-id = "hull_nose"
-builder = "hull_nose"
+id = "skin_wing1_e"
+builder = "hull_skin"
+args = { part = "wing1", side = 1.0, variant = "F" }
+
+[[pieces]]
+id = "skin_wing2_e"
+builder = "hull_skin"
+args = { part = "wing2", side = 1.0, variant = "F" }
+
+[[pieces]]
+id = "skin_wing3_e"
+builder = "hull_skin"
+args = { part = "wing3", side = 1.0, variant = "F" }
+
+[[pieces]]
+id = "skin_tip_e"
+builder = "hull_skin"
+args = { part = "tip", side = 1.0, variant = "F" }
+
+[[pieces]]
+id = "skin_stripes_e"
+builder = "skin_stripes"
+args = { side = 1.0, variant = "F" }
+
+[[pieces]]
+id = "skin_body_w"
+builder = "hull_skin"
+args = { part = "body", side = -1.0, variant = "F" }
+
+[[pieces]]
+id = "skin_wing1_w"
+builder = "hull_skin"
+args = { part = "wing1", side = -1.0, variant = "F" }
+
+[[pieces]]
+id = "skin_wing2_w"
+builder = "hull_skin"
+args = { part = "wing2", side = -1.0, variant = "F" }
+
+[[pieces]]
+id = "skin_wing3_w"
+builder = "hull_skin"
+args = { part = "wing3", side = -1.0, variant = "F" }
+
+[[pieces]]
+id = "skin_tip_w"
+builder = "hull_skin"
+args = { part = "tip", side = -1.0, variant = "F" }
+
+[[pieces]]
+id = "skin_stripes_w"
+builder = "skin_stripes"
+args = { side = -1.0, variant = "F" }
 
 [[pieces]]
 id = "nozzle_mount"
 builder = "nozzle_mount"
-
-[[pieces]]
-id = "hull_wing_e1"
-builder = "hull_wing"
-args = { side = 1.0, x = [1.5, 2.6, 3.7, 4.8] }
-
-[[pieces]]
-id = "hull_wing_e2"
-builder = "hull_wing"
-args = { side = 1.0, x = [4.8, 5.9, 7.0, 8.0] }
-
-[[pieces]]
-id = "hull_wing_e3"
-builder = "hull_wing"
-args = { side = 1.0, x = [8.0, 9.0, 9.9, 10.75] }
-
-[[pieces]]
-id = "stripes_e"
-builder = "stripes"
-args = { side = 1.0, count = 14 }
-
-[[pieces]]
-id = "blade_e_lead"
-builder = "blade"
-args = { side = 1.0, edge = "lead" }
-
-[[pieces]]
-id = "blade_e_trail"
-builder = "blade"
-args = { side = 1.0, edge = "trail" }
-
-[[pieces]]
-id = "blade_w_lead"
-builder = "blade"
-args = { side = -1.0, edge = "lead" }
-
-[[pieces]]
-id = "blade_w_trail"
-builder = "blade"
-args = { side = -1.0, edge = "trail" }
-
-[[pieces]]
-id = "hull_wing_w1"
-builder = "hull_wing"
-args = { side = -1.0, x = [1.5, 2.6, 3.7, 4.8] }
-
-[[pieces]]
-id = "hull_wing_w2"
-builder = "hull_wing"
-args = { side = -1.0, x = [4.8, 5.9, 7.0, 8.0] }
-
-[[pieces]]
-id = "hull_wing_w3"
-builder = "hull_wing"
-args = { side = -1.0, x = [8.0, 9.0, 9.9, 10.75] }
-
-[[pieces]]
-id = "stripes_w"
-builder = "stripes"
-args = { side = -1.0, count = 14 }
-
-[[pieces]]
-id = "hull_pod"
-builder = "hull_pod"
 
 [[pieces]]
 id = "window_frame"
@@ -287,10 +272,12 @@ outside = true
 [[pieces]]
 id = "nozzle"
 builder = "nozzle"
+outside = true                               # the nozzle pods stick out of the stern (turnaround back and side)
 
 [[pieces]]
 id = "nozzle_ring"
 builder = "nozzle_ring"
+outside = true                               # the nozzle pods stick out of the stern (turnaround back and side)
 
 [[pieces]]
 id = "leg"

@@ -121,28 +121,45 @@ compare sheets. Full run of `--godot --walk DIR --shoot DIR`: about 15 min.
 
 ## The exterior (EXTERIOR lane)
 
-`tools/blender/ship_hull.py` builds the outside as a kit, each piece its own GLB (`layouts/ship/exterior.toml`): the
-drum over the hall, the nose over the mouth, the nozzle mount, three wing sections per side, the knife-edge blades
-along the wing chines, the tip pods and their window frames, the cockpit bubbles (collar, tinted glass, warm glow;
-outside only, the hall's ceiling closes them off), the mouth frame and its amber lights, the ramp and its lights,
-three nozzles with their cyan rings, eight landing legs, the cyan wing stripes; the clearing's ground, pines and
-rocks. Every skin face is cut into plates of about 1.5 m, each with a 2.2 cm chamfer sinking 1.4 cm into a dark seam
-(real bevels, not a texture).
+`tools/blender/ship_hull.py` and `ship_hull_skin.py` build the outside as a kit, each piece its own GLB
+(`layouts/ship/exterior.toml`): the skin (body, three wing sections and the tip fairing per side), the nozzle mount,
+the cyan wing stripes, the tip windows' frames, the cockpit bubbles (collar, tinted glass, warm glow; outside only, the
+hall's ceiling closes them off), the mouth frame and its amber lights, the ramp and its lights, three nozzles with
+their cyan rings, eight landing legs; the clearing's ground, pines and rocks. Every skin face is cut into plates of
+about 1.5 m, each with a 2.2 cm chamfer sinking 1.4 cm into a dark seam (real bevels, not a texture).
 
-| What | Number (plan m) | Why |
+### The hull skin (hull lane, step 1)
+
+One continuous faceted surface from the centre to the tips (`ship_hull_skin.py`; the old drum, nose, wing, pod and
+blade builders in `ship_hull.py` are no longer placed). The half-span is lofted through sections across x, each the
+same loop of 14 (y, h) points (lead edge, two upper-front slope points, the eave, two ridge points, the rear eave, two
+upper-rear points, trail edge, lower rear, two belly points, lower front), so the facets run as long creases from the
+body to the tips; past the tip room's centre (x 10.75) the tip fairing is a revolve whose +-90 deg profiles equal the
+loft's last section. The rooms give the inside: `clearance()` lists room points outside a section (the hall's wall at
+h 4.4, the corridors' top corners (1.45, 3.85), the tip room's wall top (r 2.25, 3.8) and dome), and the fast test
+keeps it empty for every variant.
+
+The silhouette grid (`tools/blender/ship_hull_grid.py`, headless Workbench with the rooms as an orange ghost): the
+variants of `VARIANTS` in front, side, top and three-quarter views under the approved 2D and the Meshy silhouette
+reference (batch `2026-10-22-ship-hull-ref`, 20 credits, a multi-image-to-3D of turnaround.jpg's four views, scaled to
+a 26.5 m span; never shipped). Variant F was picked (`<raw>/ship/v1/grid/hull2/grid.png`, rows 2D, ref, B, D, E, F).
+
+| What | Number (plan m), variant F | Why |
 |---|---|---|
-| Wing | belly h 0.6, crest h 4.0 (corridor ceilings top out at 3.85); half-width 1.6 by the corridors, 2.3 at the pods | hugs the corridors |
-| Chines | lead (1.5, -6.2) -> (9.0, -3.0) -> (10.75, -2.5); trail (3.3, 5.0) -> (9.0, 2.9) -> (10.75, 2.5); h 1.4 -> 2.0 | the manta's raised tips |
-| Blades | along each chine, 0.3 m sunk into the hull; lead reaches 0.75 m forward at the root, 0.95 mid-wing, 0 at x 10.2; trail 0.5 m back; 0.12 m thick to a 2 cm edge | the thin edge a 3.4 m deep wing cannot have |
-| Pods | profile (r, h) (2.25, 0.6) (2.41, 1.5) (2.5, 2.0) (2.36, 3.4) (2.3, 4.0) (1.3, 4.45) (0, 4.6); window band h 1.5..3.4 within 65 deg | round the tip rooms; width 26.5 m |
-| Drum | (3.85, 0.6) (3.95, 1.4) (3.95, 4.0) (3.9, 4.75) (3.0, 5.15) (1.5, 5.45) (0, 5.55) | over the hall's ceiling |
-| Bubbles | (+-2.4, -3.55) at h 3.55, collar r 0.8 (8 cm outside the hall's wall) | outside only |
-| Legs | (+-2.0, -2.9), (+-7.2, -1.2), (+-7.2, 1.3), (+-2.2, 3.9); 0.6 m to the belly | the floor on legs |
-| Clearing | flat within 16 m (h 0), rolling beyond; pines 30..46 m, young pines and rocks 13..27 m, none within 3.5 m of an outside camera's line | seen through the tip windows |
+| Lead edge | (1.5, -6.3) -> (4.0, -5.5) -> (8.0, -4.1) -> (10.75, -3.0); h 1.1 -> 1.2 at x 6 -> 1.38 | the blades well ahead of the corridor ridge |
+| Trail edge | (0, 5.0) -> (3.0, 5.15) -> (8.0, 5.0) -> (10.75, 4.9); the body's stern edge h 2.45 | the blades well behind it |
+| Swept tip | round the tip centre (dx, dy): (2.1, -2.2), (2.47, -0.6), (2.48, 5.9), (1.2, 5.4); edge h 1.38 (under the sill) | turnaround top's tips swept back, outside the window's 65 deg |
+| Ridge | spine h 6.05 over the hall's middle (x < 0.9), the hall's eave r 3.72 at h 4.75, the wing's eave 0.12 m outside the corridor walls at h 3.95 (4.75 at the hall), ridge 4.15, the tip fairing's eave (2.28, 4.02) and crown 4.42 | sloping down outward; the rooms inside |
+| Belly | keel h 0.35 under the hall and the mouth, 0.6 under the wings | the belly slopes up toward the edges |
+| Mouth | the opening's face cut between x -1.3 and 1.3 (h 0.95..3.65 at y -4.6) under a brow 0.55 m forward at h 3.92 | a notched recess in a low nose |
+| Window | the fairing's band r 2.41, h 1.5..3.4 within 65 deg of the tip's axis left open | the frame and the interior's glass fill it |
+| Bubbles | (+-1.9, -3.75) at h 4.15, on the forward body over the mouth | two eyes over the mouth |
+| Footprint | 26.46 x 13.90 m (`ship --check`); ship.toml [hull] rows from `ship_hull_skin.outline()` | the numbers hold; nothing bent |
 
-Where the interior forces the silhouette thicker than the 2D: the wings are 3.4 m deep everywhere (belly 0.6 to crest
-4.0) and the tips are 4.6 m round pods, against the turnaround's thin blades; the blades along the chines give back
-the sharp edge, and the front view still reads as a long low body.
+Where the interior forces the silhouette thicker than the 2D: scaled to the same span, the Meshy reference's wing is
+about 1 m thick and its body about 2.5 m, while the rooms need 0.6 to 4.4 m at the tips (tip room apex 4.2 over a
+1.0 m deck) and to 5.0 under the hall's apex. The skin slopes and thins everywhere the rooms allow, but from the front
+the wings stay a thick wedge with the tip fairings at their ends.
 
 **Winding.** Plan coordinates are left-handed (x east, y south, h up); the harness's (x, -y, h) mirrors them, which
 flips every winding set in plan coordinates with `ship_lib.orient`. `ship_hull.py` reverses its open (`solid=False`)
@@ -188,11 +205,10 @@ views and tiles them with `house_bake_props.sheet` (`<raw>/ship/v1/logs/join_gri
 
 ## Open problems (after step 1)
 
-- **The hull does not read as the manta yet** (the manager's note after the first shots): from the front and in the
-  hero view it reads as a box body with a drum over the hall and two drum pods at the tips, not one continuous,
-  faceted surface thinning toward sharp swept tips (turnaround.jpg, hero.jpg). The interior's numbers stay; the
-  skin around them needs a rebuild: one grid of 3 or 4 silhouette variants (front, side, top, three-quarter), then
-  the chosen one detailed. Not a small change; the next step's first job.
+- **The hull's thickness** (after the hull lane's step 1): the skin is now one continuous faceted surface (variant
+  F), but the rooms' heights keep the wings about 3.5 m deep and the tips 3.8 m tall, so from the front it is a thick
+  wedge, not the turnaround's thin plate. Only a lower deck and rooms, or a wider span with blades beyond the tip
+  rooms, would thin it; both change the numbers.
 - The hall is still the brightest room (its lamp ring's cells); the corridors and tip rooms read at night.
 - The pines are layered cones; the ground is flat and empty (no grass tint, needles, dirt by the ramp).
 - The nozzles sit flush in a box mount (out_back); the ramp reads dark from the hero view.

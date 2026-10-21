@@ -681,3 +681,7 @@ for _name in ("hull_wing", "stripes", "blade", "hull_drum", "hull_nose", "hull_p
               "bubble_collar", "bubble_glass", "bubble_glow", "mouth_frame", "mouth_lights", "ramp", "ramp_lights",
               "leg", "nozzle", "nozzle_ring", "ground", "pine", "rock"):
     globals()[_name] = _outward(globals()[_name])
+
+import ship_hull_skin  # noqa: E402  (the manta's skin; it imports this module's helpers)
+
+MODULES.append(ship_hull_skin)
