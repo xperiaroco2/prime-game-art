@@ -11,7 +11,7 @@ from runner import blender, common, pins
 
 HAVE = bool((path := common.tool_path(pins.BLENDER_ENV, pins.BLENDER_DEFAULT)) and path.is_file())
 KITS = common.raw_dir() / "review" / "char" / "alien-parts-kit"
-BASE, M16 = KITS / "M10c" / "export", KITS / "M16" / "export"
+BASE, M16 = KITS / "M10c" / "export", KITS / "M16b" / "export"  # M16b: the bow back
 SCRIPT = common.ROOT / "tools" / "blender" / "alien_pout_check.py"
 TOL_MM = 0.1
 
@@ -41,8 +41,14 @@ class PoutRestBuiltTest(unittest.TestCase):
     def test_on_the_centre_line(self):
         self.assertAlmostEqual(self.d["socket_x_mm"], 0.0, delta=TOL_MM)
 
+    def test_the_open_rings_are_centred(self):  # M16b: A and O were 0.4 and 0.6 mm off the face's centre line
+        self.assertEqual(sorted(self.d["open"]), ["A", "E", "O"])
+        for s, r in self.d["open"].items():
+            self.assertEqual(r["form"], "ring", s)
+            self.assertLess(abs(r["centre_mm"]), TOL_MM, s)
 
-@unittest.skipUnless(HAVE and (M16 / "alien_character.blend").is_file(), "needs Blender and the M16 raw kit")
+
+@unittest.skipUnless(HAVE and (M16 / "alien_character.blend").is_file(), "needs Blender and the M16b raw kit")
 class PoutRestKitTest(unittest.TestCase):
     def test_the_kits_closed_pieces_are_mirrored(self):
         d = run(M16, "--kit-pieces")
