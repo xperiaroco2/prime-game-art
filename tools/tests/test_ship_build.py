@@ -5,6 +5,7 @@ deck height, the ramp from its hinge at the deck down to the ground). Skips with
 from __future__ import annotations
 
 import json
+import shutil
 import unittest
 
 from runner import common, pins, ship_layout
@@ -19,6 +20,7 @@ OUT = common.OUT / "ship" / "test_build"
 class ShipBuildTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
+        shutil.rmtree(OUT, ignore_errors=True)  # an --only build keeps an earlier report's other pieces
         cls.code, cls.output = run_cli("ship", "--build", "--only", "ramp,hull_pod,blade_e_lead", "--out", str(OUT))
         cls.report = json.loads((OUT / "build_report.json").read_text(encoding="utf-8"))["pieces"]
 
