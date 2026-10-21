@@ -52,6 +52,10 @@ from alien_parts import EYES, LID_BEAD  # noqa: E402
 CONTACT_MARKER = {"prime_contact": "custom1_designs"}  # M6c; M6's kits: "custom1_x"
 PART_AO_MARKER = {"prime_part_ao": "color0_r"}  # on alien_lip (the lips and lid domes) once the parts' AO is baked
 PART_AO = {"distance": 0.02, "samples": 64, "floor": 0.3, "smooth": 1}
+# M17 (art #196): how the lids' AO is baked (bake_parts_ao); LID_STATES as alien.gd's and alien_lashes.py's
+LID_AO_MODES = ("rest", "states", "free")
+LID_AO = "states"  # M17: the pick (grid rest / states / free; states keeps the always-hidden rim deep)
+LID_STATES = ("open", "rest", "half", "closed")
 # M10 (PR #243's review minor 1): alien_lip's custom property (glTF extras) with the lid setting and each design's rim
 # reaches beyond the lid edges ({"lids": {...}, "reach_deg": {design: [upper, lower]}}, JSON); alien.gd takes the
 # reaches from it, an older kit without it keeps S9's (EYE_LOOK)
@@ -87,6 +91,9 @@ def args():
                    "material and surface (alien_lids_geom.COLLAR_SKIN); on: M10b's coral ring (alien_lids_geom.COLLAR)")
     p.add_argument("--collar-opts", default="", help="M10c: JSON merged over alien_lids_geom.COLLAR_SKIN")
     p.add_argument("--no-bake", action="store_true", help="skip the parts' AO bake (a quick geometry check)")
+    p.add_argument("--lid-ao", choices=LID_AO_MODES, default=LID_AO,
+                   help="M17: the lids' AO bake (bake_parts_ao): rest, states (least occluded over the lid states) or "
+                   "free (no skin)")
     p.add_argument("--socket", default="", help="M9 (REJECTED, M10): JSON over alien_lids_geom.SOCKET, the eye mount "
                    "applied here; refused without --opt-in-rejected-m9")
     p.add_argument("--opt-in-rejected-m9", action="store_true", help="allow --socket (M9's rejected skull change)")
@@ -668,10 +675,64 @@ def rest_pose():
     return body
 
 
-def bake_parts_ao(body, eyes: bool = True, pieces=None) -> dict:
+def _bake_ao(grp: list, shown: set) -> dict:
+    """One Cycles AO bake into a fresh grey colour attribute `ao` on every object of grp, with only the meshes named
+    in `shown` rendered; returns each object's raw AO (R) per vertex."""
+    for o in bpy.data.objects:
+        if o.type == "MESH":
+            o.hide_render = o.name not in shown
+    for o in bpy.context.view_layer.objects:
+        o.select_set(False)
+    for o in grp:
+        me = o.data
+        if "ao" in me.color_attributes:
+            me.color_attributes.remove(me.color_attributes["ao"])
+        at = me.color_attributes.new("ao", "FLOAT_COLOR", "POINT")
+        me.color_attributes.active_color = at
+        me.color_attributes.render_color_index = me.color_attributes.find("ao")
+        o.select_set(True)
+    bpy.context.view_layer.objects.active = grp[0]
+    res = bpy.ops.object.bake(type="AO", target="VERTEX_COLORS")
+    if res != {"FINISHED"}:
+        raise SystemExit(f"bake {sorted(shown)}: {res}")
+    out = {}
+    for o in grp:
+        col = np.empty(len(o.data.vertices) * 4, dtype=np.float32)
+        o.data.color_attributes["ao"].data.foreach_get("color", col)
+        out[o.name] = col.reshape(-1, 4)[:, 0].astype(np.float64)
+    return out
+
+
+def _lid_states_ao(d: str, grp: list, shown: set) -> dict:
+    """M17: a design's lids baked at every lid state (LID_STATES), each vertex keeping its least occluded value."""
+    rot0 = {o.name: o.rotation_euler.x for o in grp if "_lid_" in o.name}
+    best = {}
+    for st in LID_STATES:
+        for o in grp:
+            if "_lid_" in o.name:
+                lid = "upper" if "_lid_upper_" in o.name else "lower"
+                o.rotation_euler.x = -math.radians(EYES[d][lid][st])  # as alien_lashes.py poses them
+        bpy.context.view_layer.update()
+        for name, v in _bake_ao(grp, shown).items():
+            best[name] = v if name not in best else np.maximum(best[name], v)
+    for o in grp:
+        if o.name in rot0:
+            o.rotation_euler.x = rot0[o.name]
+    bpy.context.view_layer.update()
+    return best
+
+
+def bake_parts_ao(body, eyes: bool = True, pieces=None, lid_ao: str = LID_AO) -> dict:
     """AO into a grey colour attribute `ao` on every lid shell and 3D mouth piece: per eye design its four lids at
     once, per mouth piece the piece alone, each with the skin (and the default other parts hidden). M8: eyes=False
-    leaves the lids' AO as it is; pieces (objects) replaces the twelve mouth pieces (M8's grid variants too)."""
+    leaves the lids' AO as it is; pieces (objects) replaces the twelve mouth pieces (M8's grid variants too).
+    M17 (art #196): the lids turn in the socket, so AO baked with the skin at the rest pose rides on the lid into every
+    other state: on M15's tight socket the manic upper lid (rest 50 degrees open, closed -12) carried the rest pose's
+    socket shade as a light diagonal band across the closed lid. `lid_ao` (LID_AO_MODES): "rest" (before M17),
+    "states" (each vertex its least occluded value over the lid states, with the skin) or "free" (the design's lids
+    and balls only, no skin: rotation-invariant)."""
+    if lid_ao not in LID_AO_MODES:
+        raise SystemExit(f"lid_ao {lid_ao!r}: one of {LID_AO_MODES}")
     sc = bpy.context.scene
     sc.render.engine = "CYCLES"
     sc.cycles.device = "CPU"
@@ -679,40 +740,26 @@ def bake_parts_ao(body, eyes: bool = True, pieces=None) -> dict:
     if sc.world is None:
         sc.world = bpy.data.worlds.new("w")
     sc.world.light_settings.distance = PART_AO["distance"]
-    groups = [([bpy.data.objects[f"eye_{d}_lid_{lid}_{s}"] for lid in ("upper", "lower") for s in ("L", "R")]
+    groups = [(d, [bpy.data.objects[f"eye_{d}_lid_{lid}_{s}"] for lid in ("upper", "lower") for s in ("L", "R")]
                + [o for o in collars() if o.name.startswith(f"eye_{d}_")],  # M10b: a design's collars with its lids
                {f"eye_{d}_ball_{s}" for s in ("L", "R")}) for d in EYES] if eyes else []  # the balls occlude too
-    groups += [([o], set()) for o in (mouth_pieces() if pieces is None else pieces)]
+    groups += [("", [o], set()) for o in (mouth_pieces() if pieces is None else pieces)]
     hide0 = {o.name: o.hide_render for o in bpy.data.objects}
     rep = {}
-    for grp, also in groups:
-        names = {o.name for o in grp} | also
-        for o in bpy.data.objects:
-            if o.type == "MESH":
-                o.hide_render = not (o is body or o.name in names)
-        for o in bpy.context.view_layer.objects:
-            o.select_set(False)
-        for o in grp:
-            me = o.data
-            if "ao" in me.color_attributes:
-                me.color_attributes.remove(me.color_attributes["ao"])
-            at = me.color_attributes.new("ao", "FLOAT_COLOR", "POINT")
-            me.color_attributes.active_color = at
-            me.color_attributes.render_color_index = me.color_attributes.find("ao")
-            o.select_set(True)
-        bpy.context.view_layer.objects.active = grp[0]
-        res = bpy.ops.object.bake(type="AO", target="VERTEX_COLORS")
-        if res != {"FINISHED"}:
-            raise SystemExit(f"bake {sorted(names)}: {res}")
+    for d, grp, also in groups:
+        shown = {o.name for o in grp} | also | {body.name}
+        if d and lid_ao == "free":
+            shown.discard(body.name)
+        raw = _lid_states_ao(d, grp, shown) if d and lid_ao == "states" else _bake_ao(grp, shown)
         for o in grp:
             me = o.data
             n = len(me.vertices)
-            col = np.empty(n * 4, dtype=np.float32)
-            me.color_attributes["ao"].data.foreach_get("color", col)
-            v = PART_AO["floor"] + (1 - PART_AO["floor"]) * col.reshape(-1, 4)[:, 0].astype(np.float64)
+            v = PART_AO["floor"] + (1 - PART_AO["floor"]) * raw[o.name]
             v = smooth(me, v, PART_AO["smooth"])
             me.color_attributes["ao"].data.foreach_set("color", np.stack([v, v, v, np.ones(n)], 1).astype(np.float32).ravel())
             rep[o.name] = [round(float(v.min()), 3), round(float(v.mean()), 3)]
+    if eyes:
+        rep["lid_ao"] = lid_ao
     for o in bpy.data.objects:
         if o.name in hide0:
             o.hide_render = hide0[o.name]
@@ -843,7 +890,7 @@ def main():
     bpy.context.view_layer.update()
     rep["contact"] = contact_field(body)
     if not a.no_bake:
-        rep["parts_ao"] = bake_parts_ao(body)
+        rep["parts_ao"] = bake_parts_ao(body, lid_ao=a.lid_ao)
     arm = body.find_armature()
     if arm is not None:  # back to POSE: in REST the exporter bakes every clip as the rest pose (a T-pose)
         arm.data.pose_position = "POSE"

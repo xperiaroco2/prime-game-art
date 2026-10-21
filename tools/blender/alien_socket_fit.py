@@ -142,6 +142,7 @@ def apply(spec: dict, debug: bool = False) -> dict:
         band = free & v["own"] & F.rim_band(P, v["c1"], v["a"], v["ex"], v["ey"], tc, s["fillet"], v["R"])
         P[ins] = F.bowl_map(P[ins], v["c1"], v["a"], v["ex"], v["ey"], v["R"], tc)
         P = F.fillet(P, lap, band, v["c1"], v["R"], s["fillet_passes"])
+        P = F.rim_drop(P, free & v["own"], v["c1"], v["a"], v["ex"], v["ey"], tc, v["R"], s["rim_drop"])  # M17
         v["rho_c_mm"] = [round(float(np.degrees(tc.min())), 1), round(float(np.degrees(tc.max())), 1)]
         v["inside_verts"] = int(ins.sum())
     moved = np.linalg.norm(P - co0, axis=1)
@@ -163,6 +164,8 @@ def apply(spec: dict, debug: bool = False) -> dict:
         raise SystemExit(f"fit: {nf} folded edges on the seen skin (at {rep['folds_where']} mm, ex/ey/a), or the "
                          f"mouth/crest skin moved {keep} mm")
     set_body(body, P, co0)
+    if s["mask_fill"]:
+        rep["mask_fill"] = fill_masks(body, lap, free)
     rep.update({"folds": nf, "folds_hidden": nh, "keep_mm": keep, "moved_max_mm": round(float(moved.max() * 1000), 2),
                 "moved_verts": int((moved > 1e-4).sum())})
     # the eye units: world targets first, then the node placed, then the meshes written in their new frames
@@ -195,6 +198,29 @@ def apply(spec: dict, debug: bool = False) -> dict:
     body[MARKER] = json.dumps({"route": "m15", **s}, sort_keys=True)
     log("fit", json.dumps(rep))
     return rep
+
+
+def fill_masks(body, lap, free: np.ndarray) -> dict:
+    """M17: the Body's paint masks (UV layer `masks`: u light, v accent; per vertex, the loops' mean) over the free
+    skin filled from the fixed face round it (alien_fit_geom.fair_fill on the values), written to every loop of a free
+    vertex. Returns the light mask's mean over the free skin before and after."""
+    me = body.data
+    uv = np.empty(len(me.loops) * 2)
+    me.uv_layers["masks"].data.foreach_get("uv", uv)
+    uv = uv.reshape(-1, 2)
+    lv = np.empty(len(me.loops), dtype=np.int64)
+    me.loops.foreach_get("vertex_index", lv)
+    n = len(me.vertices)
+    cnt = np.maximum(np.bincount(lv, minlength=n), 1)
+    per = np.zeros((n, 3))
+    for k in range(2):
+        per[:, k] = np.bincount(lv, weights=uv[:, k], minlength=n) / cnt
+    filled = np.clip(F.fair_fill(per, lap, free, 1500), 0.0, 1.0)
+    at = free[lv]
+    uv[at] = filled[lv[at], :2]
+    me.uv_layers["masks"].data.foreach_set("uv", uv.ravel())
+    return {"light_before": round(float(per[free, 0].mean()), 3), "light_after": round(float(filled[free, 0].mean()), 3),
+            "verts": int(free.sum())}
 
 
 def _in_deg(ball, sock, side: str) -> tuple[float, float]:

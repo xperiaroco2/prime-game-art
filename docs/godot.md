@@ -2192,6 +2192,28 @@ a time, by visibility.
     - **alien.gd:** `_has_splay` (not a negative `_splay_deg`), `setup()` resets the lids' reaches and the splay for
       each kit; `alien_fit_geom.set_fit` range-checks every key. Tests: `test_alien_splay.py` (fast: the formula, the
       marker, the fallback, the reset, the fit's rest), `test_alien_lashes.py` (the socket defaults).
+  - **M17, the socket's edge and the lids' AO** (brief UPDATE 36; output under `.../alien-parts-kit/M17/`):
+    - **The pale ring round each eye at game distance** had two causes. The fit's rounded edge stood 0.6 mm from the
+      lid as a convex lip facing the key light (plain grey shows it too), and the free skin kept the old crater's
+      paint masks, so a pale band ran between the crown's teal and the lid. The fit now lowers the edge onto the lids
+      (`FIT["rim_drop"]` 4 mm, `alien_fit_geom.rim_drop`: the face less than 4 mm over the socket's sphere is drawn
+      onto it, its height h -> h * smoothstep(0, 4 mm, h), monotone along each ray, so the skin meets the lid's
+      surface tangentially and the lid reads tucked under the skin; nothing farther moves, nothing outside the free
+      area) and fills the free skin's `masks` from the face round it (`FIT["mask_fill"]`, `fill_masks`: fair_fill on
+      the values), so the texture's teal reaches the upper lid as on the face beside it. The masks did most of it; a grid
+      of 0 / 4 / 7 / 10 mm (`M17/grid/`, the late route on M10's kit) narrowed the lip a little more with each step,
+      but from 7 mm the manic lash line's end came within 0.24 mm of the drawn-in skin (`alien_lashes.py` needs
+      0.5): the pick is 4 mm (least lash-skin gap 0.5 mm).
+    - **The light diagonal band on the manic closed lid:** the lids' AO was baked with the skin at the rest pose and
+      rides on the lid; manic's upper lid rests 50 degrees open (rolled under the tight socket's brow) and closes at
+      -12, so the rest pose's socket shade crossed the closed lid as a band. `alien_m6.bake_parts_ao` now bakes a
+      design's lids per `LID_AO` (`--lid-ao`): `rest` (before), `states` (the pick: the lids posed as `alien_lashes.py`
+      poses them at open, rest, half and closed, each vertex its least occluded value, so only the always-hidden rim
+      stays deep) or `free` (no skin: even, but the lid's edge loses its seat). `alien_m8.py`/`alien_m12.py` keep the
+      lids' AO. Tests: `test_alien_lid_ao.py` (fast), `test_alien_fit_geom.py` (the drop, the defaults).
+    - **Proofs:** `godot/alien/m17_shots.gd` "rim" (per kit: bored's socket at 0.4 m, manic closed, bored 3/4 and
+      manic front at 1.2 m, the 3.5 m crops of both designs with and without lashes; a kit's `hue` overrides the skin
+      material's uniforms for a contact variant).
 
 - **M19, the AI mouth route test** (brief UPDATE 38; output under
   `D:/prime-art-raw/review/char/alien-parts-kit/M19/`): GPT Image views of mp1's lips (`batches/2026-10-21-alien-mouth-views.toml`)
