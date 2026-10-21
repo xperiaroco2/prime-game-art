@@ -50,11 +50,16 @@ LASHES = {"count": 7, "t_in_deg": 0.0, "t_out_deg": 74.0, "crowd": 1.5,
 # 1 to 2.5 mm into the brow's skin with manic's lid open and at rest (-30 cleared it at 105 %). M17c (PR #259's review):
 # bored keeps -42 (0.87 to 3.39 mm in every state; a shorter liner left a bare pale lid corner at the inner end and
 # broke the 3.5 m lash line into dashes); manic takes its own, the longest of a -36 / -30 / -25 grid at 108 % that
-# clears the skin by 0.5 mm in every state. merged() is shallow: "design" carries manic's whole entry.
+# clears the skin by 0.5 mm in every state (-36 cut 1.4 mm into the brow with the lid open; -30 clears 1.38 mm). With
+# the lid resting 50 degrees up, manic's liner (0.06 r) broke into dashes at 3.5 m with every inner end; 0.09 r reads
+# as one line again (0.075 still broke), and the least skin gap does not change (it is at the liner's tapered end).
+# merged() is shallow: "design" carries manic's whole entry.
 MANIC_LINER_T_IN_DEG = -30.0
+MANIC_LINER = 0.09
 SOCKET_LASHES = {"m15": {"liner_t_in_deg": -42.0, "sink": 0.003,
                          "design": {**LASHES["design"],
-                                    "manic": {**LASHES["design"]["manic"], "liner_t_in_deg": MANIC_LINER_T_IN_DEG}}}}
+                                    "manic": {**LASHES["design"]["manic"], "liner_t_in_deg": MANIC_LINER_T_IN_DEG,
+                                              "liner": MANIC_LINER}}}}
 
 
 def merged(spec: dict | None = None, route: str = "") -> dict:

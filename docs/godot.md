@@ -2288,7 +2288,9 @@ a time, by visibility.
       `MANIC_LINER_T_IN_DEG` (`merged()` is shallow: the entry carries manic's whole `LASHES["design"]` keys). The
       grid at 108 % (`M17b/grid/u108M36`, `M30`, `M25`, lashes only; least lash or liner gap to the skin over open,
       rest, half and closed): -36 cuts 1.4 mm into the brow with manic open; -30 clears it by 1.38 mm (rest 2.4);
-      -25 by 3.89 mm. **Pick: -30**, the longest that clears 0.5 mm.
+      -25 by 3.89 mm. **Pick: -30**, the longest that clears 0.5 mm. Manic's lid rests 50 degrees up, and on the
+      108 % unit its 0.06 r liner broke into dashes at 3.5 m with every inner end (`u108T075`, `u108T090`):
+      `MANIC_LINER` 0.09 r reads as one dark line as in M17 (0.075 still broke); the least skin gap does not change.
     - **PR #257's review minors:** `rim_drop`'s reach limits (45 degrees past the crossing curve, 1.6 R) fade over
       their last 15 degrees and 0.2 R instead of cutting (`rim_drop_weight`), and `rim_drop_steps` counts the edges
       where a drawn-in point meets the fixed face inside the band. The stage refuses a count above 0 (M15's socket: 0).

@@ -48,6 +48,7 @@ class Geometry(unittest.TestCase):
         bored, manic = LL.for_design(m15, "bored"), LL.for_design(m15, "manic")
         self.assertEqual(bored["liner_t_in_deg"], -42.0)
         self.assertEqual(manic["liner_t_in_deg"], LL.MANIC_LINER_T_IN_DEG)
+        self.assertEqual((bored["liner"], manic["liner"]), (LL.LASHES["liner"], LL.MANIC_LINER))  # one line at 3.5 m
         self.assertGreater(LL.MANIC_LINER_T_IN_DEG, -42.0)  # shorter than bored's ...
         self.assertLess(LL.MANIC_LINER_T_IN_DEG, -20.0)  # ... and longer than M17b's -20
         for k, v in LL.LASHES["design"]["manic"].items():
