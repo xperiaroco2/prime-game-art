@@ -1,0 +1,34 @@
+# The empty ship's hull silhouette reference (art #263, step 1, hull lane): one multi-image-to-3D model from the four
+# views of the approved 2D turnaround (prime-game-design ideas/ship-components/2d/turnaround.jpg, cropped into
+# front, side, back and top PNGs under raw:ship/v1/meshy_in/). Used ONLY to compare and trace the outline and the
+# thickness profile in the hull's silhouette grid (tools/blender/ship_hull_grid.py); never shipped, never placed.
+# Untextured: only the shape matters.
+
+id = "2026-10-22-ship-hull-ref"
+purpose = "A silhouette reference of the approved manta ship for the hull's skin grid (art#263); not shipped."
+plan = "Meshy Pro (monthly)"
+terms_url = "https://www.meshy.ai/terms-of-use"
+licence = "owned by the customer on a paid plan (Meshy Terms of Use 3.2, updated 2026-09-19); no attribution required"
+credit_cap = 100
+approved_by = "xperiaroco2 (the engineer)"
+approved_at = "2026-10-22"
+approval_ref = "https://github.com/xperiaroco2/prime-game-art/issues/263#issuecomment-6327428873"
+
+[defaults.multi_image_to_3d.params]
+ai_model = "meshy-7.1"
+should_remesh = true
+topology = "triangle"
+target_polycount = 30000
+should_texture = false
+target_formats = ["glb"]
+
+[[items]]
+id = "hull-ref"
+variant = "turnaround"
+kind = "multi_image_to_3d"
+images = [
+  { file = "raw:ship/v1/meshy_in/turnaround_1_front.png", provenance = "own approved 2D (OpenAI generation, prime-game#1095), turnaround.jpg cropped: front view", sha256 = "0a4fd04eaeeb14e6b7f3eb66de90577a4f90ab9a3ae5dff3aabdf54f93d6fe20" },
+  { file = "raw:ship/v1/meshy_in/turnaround_2_side.png", provenance = "own approved 2D (OpenAI generation, prime-game#1095), turnaround.jpg cropped: side view", sha256 = "6142bfe503a7a5ec9195f787bfd2cd18400672a836392a01e580a98f51a46d46" },
+  { file = "raw:ship/v1/meshy_in/turnaround_3_back.png", provenance = "own approved 2D (OpenAI generation, prime-game#1095), turnaround.jpg cropped: back view", sha256 = "a39c3602693a57e95f05f25798d32af521d78b1bd9503a932748d0a581b49dd4" },
+  { file = "raw:ship/v1/meshy_in/turnaround_4_top.png", provenance = "own approved 2D (OpenAI generation, prime-game#1095), turnaround.jpg cropped: top view", sha256 = "586139c265ebc4a553033207fbdffb7284e57ecb388a95092f5495c022675712" },
+]
