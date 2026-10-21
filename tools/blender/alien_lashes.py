@@ -15,7 +15,9 @@ kit into <out>/<export-name> (never over its input) with upper lashes on both ey
   inside the skin (Body and the skin collars), the eyeball, the lower lid and (away from the sunk roots) the upper lid,
   M11b also every edge through the skin, the ball or the lower lid and a set nearer the skin than CLEAR_MM; the kit is
   refused on any of them (--allow-clip for a variant grid);
-- export/alien_character.glb with alien_m6's options, its .blend, character.json (nodes.lashes, `m11`, `note_m11`) and
+- M21: on each tube set a shape key "closed" (alien_lashes_geom.CLOSED: the lashes laid down from the closed line), a
+  glTF morph target alien.gd weighs by the upper lid's angle (0 at half, 1 at closed); the clip check poses it;
+- export/alien_character.glb with alien_m6's options (and the morph targets), its .blend, character.json (nodes.lashes, `m11`, `note_m11`) and
   the kit's PNGs. Nothing else in the kit changes.
 
     tools/runner/blender.py run_script("alien_lashes.py", ["--kit", <kit>/export, "--out", <M11>])
@@ -103,10 +105,15 @@ def temple_side(lid) -> float:
     return 1.0 if x_axis.dot(out) > 0.0 else -1.0
 
 
-def _mesh_object(name: str, verts, faces, r: float, mat, lid):
+def _mesh_object(name: str, verts, faces, r: float, mat, lid, uv=None):
     me = bpy.data.meshes.new(name)
     me.from_pydata([tuple(c * r for c in v) for v in verts], [], faces)
     me.update()
+    if uv is not None:  # M21: a UV map per vertex (Godot generates a morph target's tangents from it)
+        layer = me.uv_layers.new(name="UVMap")
+        vi = np.empty(len(me.loops), dtype=np.int64)
+        me.loops.foreach_get("vertex_index", vi)
+        layer.data.foreach_set("uv", np.asarray(uv, dtype=np.float32)[vi].ravel())
     for poly in me.polygons:
         poly.use_smooth = True
     me.materials.append(mat)
@@ -118,6 +125,19 @@ def _mesh_object(name: str, verts, faces, r: float, mat, lid):
     return ob
 
 
+def tube_uv(u: list, spec: dict) -> list:
+    """M21: the lash tubes' UVs: along the lash (u, 0 root to 1 tip) and round its ring (the tip and root 0.5). The
+    closed shape key is a glTF morph target, and without UVs Godot's import cannot make its tangents (an error per
+    set)."""
+    sides = int(spec["sides"])
+    ring = sides * (int(spec["seg"]) + 1) + 2  # alien_lashes_geom.tube: the rings, then the tip and the root
+    out = []
+    for k, x in enumerate(u):
+        j = k % ring
+        out.append((x, (j % sides) / sides if j < ring - 2 else 0.5))
+    return out
+
+
 def make_set(name: str, liner_name: str, lid, spec: dict, mat, lids: dict, corner: dict) -> tuple:
     """A design and side's set: the lash tubes (name) and, M11b, the liner as its own node (liner_name; none when the
     spec has no liner), both children of the upper lid. Returns ([(object, u per vertex)], report)."""
@@ -126,11 +146,22 @@ def make_set(name: str, liner_name: str, lid, spec: dict, mat, lids: dict, corne
     ball = bpy.data.objects[lid.name.replace("_lid_upper_", "_ball_")]
     r = M6.ball_radius(ball)
     side = temple_side(lid)
+    closed = LL.closed_spec(spec, d)  # M21: the closed shape (alien_lashes_geom.CLOSED)
     spec = LL.for_design(spec, d)  # the design's own lift and keys (alien_lashes_geom.LASHES design_lift_deg, design)
     verts, faces, rep = LL.build(spec, rho[0], rho[1], bead, corner, side)
     u = rep.pop("u")
     parts = LL.split(verts, faces, u)
-    out = [(_mesh_object(name, *parts["lashes"], r, mat, lid), [x for x in u if x >= 0.0])]
+    ul = [x for x in u if x >= 0.0]
+    out = [(_mesh_object(name, *parts["lashes"], r, mat, lid, tube_uv(ul, spec)), ul)]
+    cv, cf, crep = LL.build(closed, rho[0], rho[1], bead, corner, side)
+    cl = LL.split(cv, cf, crep.pop("u"))["lashes"]
+    if len(cl[0]) != len(parts["lashes"][0]) or cl[1] != parts["lashes"][1]:
+        raise SystemExit(f"{name}: the closed shape's topology differs from the open set's")
+    ob = out[0][0]
+    ob.shape_key_add(name="Basis", from_mix=False)
+    key = ob.shape_key_add(name=LL.CLOSED_KEY, from_mix=False)
+    key.data.foreach_set("co", np.array([c * r for v in cl[0] for c in v], dtype=np.float32))
+    ob.data.update()
     if parts["liner"][0]:
         out.append((_mesh_object(liner_name, *parts["liner"], r, mat, lid), [-1.0] * len(parts["liner"][0])))
     rep.update({"r_mm": round(r * 1000.0, 2), "side": side, "faces": len(faces),
@@ -208,7 +239,7 @@ def clip_check(sets: dict) -> dict:
                 ws, us, es, base = [], [], [], 0
                 for ob, u in sets[(d, s)]:
                     mw = np.array(ob.matrix_world)
-                    co = np.array([v.co[:] for v in ob.data.vertices])
+                    co = shaped(ob, d, st)
                     ws.append(co @ mw[:3, :3].T + mw[:3, 3])
                     us.append(np.array(u))
                     ev = np.empty(2 * len(ob.data.edges), dtype=np.int64)
@@ -235,6 +266,23 @@ def clip_check(sets: dict) -> dict:
         bpy.data.objects[name].rotation_euler.x = x
     bpy.context.view_layer.update()
     return out
+
+
+def closed_weight(d: str, st: str) -> float:
+    """M21: the closed shape key's weight at a lid state (alien.gd's: 0 at half, 1 at closed)."""
+    up = EYES[d]["upper"]
+    return LL.closed_weight(up[st], up["half"], up["closed"])
+
+
+def shaped(ob, d: str, st: str) -> np.ndarray:
+    """An object's local vertex positions at a lid state: the basis, or with a CLOSED_KEY shape key the mix at the
+    state's weight (closed_weight)."""
+    co = np.array([v.co[:] for v in ob.data.vertices])
+    keys = ob.data.shape_keys
+    if keys is not None and LL.CLOSED_KEY in keys.key_blocks:
+        kc = np.array([k.co[:] for k in keys.key_blocks[LL.CLOSED_KEY].data])
+        co = co + closed_weight(d, st) * (kc - co)
+    return co
 
 
 def clipping(x: dict) -> bool:
@@ -308,8 +356,13 @@ def main():
     bpy.context.view_layer.update()
     ex.mkdir(parents=True, exist_ok=True)
     bpy.ops.wm.save_as_mainfile(filepath=str(ex / "alien_character.blend"))
+    others = sorted(o.name for o in bpy.data.objects if o.type == "MESH" and o.data.shape_keys is not None
+                    and not any(o.name == ob.name for objs in sets.values() for ob, _ in objs))
+    if others:  # M21: the export now keeps morph targets; until M21 no other mesh had shape keys
+        raise SystemExit(f"shape keys beside the lashes' would be exported: {others}")
     opts = dict(export_glb.options(False), export_image_format="AUTO", export_vertex_color="ACTIVE",
-                export_tangents=True, export_extras=True)
+                export_tangents=True, export_extras=True, export_morph=True, export_morph_normal=True,
+                export_morph_tangent=False)
     glb = ex / "alien_character.glb"
     res = bpy.ops.export_scene.gltf(filepath=str(glb), **opts)
     if res != {"FINISHED"}:
@@ -326,6 +379,13 @@ def main():
     cj["nodes"]["lashes"] = nodes
     cj["nodes"]["lash_liners"] = liners
     cj["m11"] = rep
+    cj["m21"] = {"closed_key": LL.CLOSED_KEY, "closed": LL.CLOSED,
+                 "weight_deg": {d: [EYES[d]["upper"]["half"], EYES[d]["upper"]["closed"]] for d in EYES}}
+    cj["note_m21"] = (
+        "art #196 M21: each eye_<design>_lashes_<side> carries the morph target '" + LL.CLOSED_KEY + "' (the tubes "
+        "laid down and out from the closed line, alien_lashes_geom.CLOSED); its weight is a smoothstep of the upper "
+        "lid's elevation from the half state (0) to the closed state (1), m21.weight_deg (alien.gd: LIDS). The liners "
+        "have no morph.")
     cj["note_m11"] = (
         "art #196 M11: upper lashes (the el2 sheet) per eye design and side, eye_<design>_lashes_<side>, a child of "
         "eye_<design>_lid_upper_<side> (identity local transform: it turns with the lid), and M11b its lash line "
