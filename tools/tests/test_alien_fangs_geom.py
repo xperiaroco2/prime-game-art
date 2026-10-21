@@ -148,6 +148,22 @@ class FangLipsTest(unittest.TestCase):
         self.assertGreater(p["length"], FG._FANG_M13["length"])
         self.assertGreater(p["radius"], FG._FANG_M13["radius"])
         self.assertEqual(set(p["ring_drop"]), {"A", "E"})
+        # PR #250's review: fang_roots itself puts both fangs at +-x_m in every shape but O
+        lower = [(-0.05 + 0.005 * i, -0.004 + 0.0001 * abs(i - 10)) for i in range(21)]
+        tubes = {"form": "tubes", "lower": lower, "centre": (0.0, 0.0), "outer_hw": 0.045}
+        ring = {"form": "ring", "lower": lower, "centre": (0.002, -0.01), "outer_hw": 0.05, "outer_hh": 0.03,
+                "shape": "A", "inner_hw": 0.03}
+        o = {"form": "O", "lower": lower, "centre": (0.0, -0.005), "outer_hw": 0.025, "outer_hh": 0.026, "shape": "O"}
+        for anchor in (tubes, ring):
+            xs = sorted(x for x, _z in FG.fang_roots(anchor, p))
+            self.assertAlmostEqual(xs[0], -p["x_m"], places=6)
+            self.assertAlmostEqual(xs[1], p["x_m"], places=6)
+        self.assertEqual(len({z for _x, z in FG.fang_roots(tubes, p)}), 1, "both closed-shape fangs at one height")
+        for _x, z in FG.fang_roots(ring, p):
+            self.assertAlmostEqual(z, -0.01 - p["ring_drop"]["A"] * 0.03 + p["lift"], places=6)
+        for x, z in FG.fang_roots(o, p):  # attached inside the pursed ring's edge, below its centre
+            self.assertAlmostEqual(abs(x), 0.025 - p["o_in"] * p["radius"], places=6)
+            self.assertAlmostEqual(z, -0.005 - p["o_drop"] * 0.026, places=6)
 
 
 if __name__ == "__main__":
