@@ -96,12 +96,18 @@ _RING = {"bow": 0.12, "tuck": 0.35, "side_keep": 0.85, "depth_corner": 0.5, "n_f
 # M16c: cup_even: the dark cup's rim resampled at even angles (star_resample; O's traced rim folded, a zero tangent).
 _POUT_RING = {"upper": 0.95, "lower": 1.10, "lean": 0.25, "bow_w": 0.16, "bow_peak": 0.10, "bow_at": 0.24,
               "cup_even": 1}
+# M16c (UPDATE 36, #254's minors 1 and 3): mp1's long fine corner points with the upper lip overhanging the lower:
+# the ends thinner (corner 0.06, min_b 0.6 mm: alien_mouths.MIN_B's 1.1 mm rounded them to caps) and nearly flat
+# (depth_corner 0.05), tapering over a longer stretch (pw 1.75, the corner rule over the last 0.26), the lower lip's
+# end sunk under the upper's (corner_over 0.8); small's parting dark behind it (parting_dark: the open stations
+# without each end's 0.2). The pick of M16c's grids (docs/godot.md, M16c).
 LIP_SHAPE_POUT = {
-    "w": 1.0, "corner": 0.12, "pw": 2.0, "full": 1.0, "upper": 0.85, "lower": 1.20,
+    "w": 1.0, "corner": 0.06, "pw": 1.75, "full": 1.0, "upper": 0.85, "lower": 1.20,
     "bow": 0.30, "bow_w": 0.12, "bow_peak": 0.40, "bow_at": 0.22,
-    "lean": 0.10, "square": 0.85, "depth_corner": 0.35,
+    "lean": 0.10, "square": 0.85, "depth_corner": 0.05,
     "width": 1.0, "size": 0.95, "plump": 1.15,
-    "bow_flat": 1.0, "corner_tuck": 1.1, "corner_share": 0.18, "corner_join": 0.95,
+    "bow_flat": 1.0, "corner_tuck": 1.1, "corner_share": 0.26, "corner_join": 0.95,
+    "min_b": 0.0006, "corner_over": 0.8,
     "mirror": 1.0, "seam_fit": 3, "parting_dark": 0.2,
     "ring_param": {  # M16: the open rings keep M12b's balance and lean (the rest's change is the closed lips' only)
         "A": dict(_RING, n=2.1, corner=0.68, wide=1.04, **_POUT_RING),

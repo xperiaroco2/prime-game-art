@@ -676,8 +676,9 @@ def build_piece(bvh, m, design, shape, world, mats, coll, origin, lips=None, nam
                 anchor = {"form": "tubes", "lower": lo, "centre": ((lo[0][0] + lo[-1][0]) / 2, 0.0),
                           "outer_hw": (lo[-1][0] - lo[0][0]) / 2}
             for r, s, (x, _zt, _zb, t, bt), zt, zb, zt0, zb0 in zip(st, ss, edges, tops, bots, t0, b0):
-                hb = max(MIN_B, (zt - zb) / 2)
-                a = DEPTH_A * max(MIN_B, (zt0 - zb0) / 2) + DEPTH_C * LP.depth_scale(s, lips_p)
+                mb = lips_p.get("min_b", MIN_B)  # M16c: a lip shape's own thinnest end (the pout's finer points)
+                hb = max(mb, (zt - zb) / 2)
+                a = DEPTH_A * max(mb, (zt0 - zb0) / 2) + DEPTH_C * LP.depth_scale(s, lips_p)
                 p, n = surf(bvh, x, (zt + zb) / 2)
                 env = math.sin(math.pi * (r["x"] - xl) / max(1.0, xr - xl)) ** 0.5
                 c3 = p + n * (a * (1 - SINK) + (push + (back if lip == "l" else 0.0)) * env)
@@ -705,11 +706,14 @@ def build_piece(bvh, m, design, shape, world, mats, coll, origin, lips=None, nam
             w = 1.0 - G.smoothstep(0.0, 1.0, e)
             if w <= 0.0:
                 continue
-            mid = (sm["u"][0][i] + sm["l"][0][i]) / 2
+            # M16c: corner_over > 0: the upper lip's end overhangs the lower's (mp1's points): the ends meet lower,
+            # toward the lower lip's centre by half of it, the lower end sinks (1 + over) deeper, the upper (1 - over / 2)
+            over = lips_p.get("corner_over", 0.0)
+            mid = ((sm["u"][0][i] + sm["l"][0][i]) / 2).lerp(sm["l"][0][i], over / 2)
             for lip in ("u", "l"):
                 cs, ra, rb, ns = sm[lip]
                 c = cs[i].lerp(mid, cn["join"] * w)
-                cs[i] = c - ns[i] * (cn["tuck"] * ra[i] * w * w)
+                cs[i] = c - ns[i] * (cn["tuck"] * (1.0 + over if lip == "l" else 1.0 - over / 2) * ra[i] * w * w)
         for lip in ("u", "l"):
             if lips_p.get("w", 0.0) > 0.0:
                 lip_tube(b, *sm[lip], mi_lip, 14, lips_p, lip)
