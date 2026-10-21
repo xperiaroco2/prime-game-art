@@ -99,9 +99,10 @@ _POUT_RING = {"upper": 0.95, "lower": 1.10, "lean": 0.25, "bow_w": 0.16, "bow_pe
 # M16c (UPDATE 36, #254's minors 1 and 3): mp1's long fine corner points with the upper lip overhanging the lower:
 # the ends thinner (corner 0.06, min_b 0.6 mm: alien_mouths.MIN_B's 1.1 mm rounded them to caps) and nearly flat
 # (depth_corner 0.05), tapering over a longer stretch (pw 1.75, the corner rule over the last 0.26), the lower lip's
-# end sunk under the upper's (corner_over 0.8); small's parting dark behind it (parting_dark: the open stations
-# without each end's 0.2), small parted as mp1 draws it (parting: 6 px over the middle 0.55; the sheet's traced gap
-# was 4 stations wide and hidden by the lips). The pick of M16c's grids (docs/godot.md, M16c).
+# end sunk under the upper's (corner_over 0.8); a dark strip behind a closed piece's open stations (parting_dark:
+# without each end's 0.2; small's and rest's traced open stations), small given a designed parting (parting: 6 px
+# over the middle 0.55; the sheet's traced gap was 4 stations wide), still hidden from the front by the lips' rolled
+# fronts. The pick of M16c's grids (docs/godot.md, M16c).
 LIP_SHAPE_POUT = {
     "w": 1.0, "corner": 0.06, "pw": 1.75, "full": 1.0, "upper": 0.85, "lower": 1.20,
     "bow": 0.30, "bow_w": 0.12, "bow_peak": 0.40, "bow_at": 0.22,

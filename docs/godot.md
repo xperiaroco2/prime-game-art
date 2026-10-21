@@ -2106,8 +2106,8 @@ a time, by visibility.
   - **The corners:** `corner` 0.12 (M16 0.18) and the lip shape's own corner rule over `alien_mouths.CORNER`: the last
     `corner_share` 0.18 of the stations join 0.95 (`corner_join`) and sink 1.1 of their depth (`corner_tuck`), so the
     ends tuck into the skin as points instead of round ends.
-  - **Grids** (`M16b/godot/g1/vgrid.png`, `M16b/godot/g2/vgrid.png`; rest front / 3/4 / profile at 0.4 m, 3/4 at 1.2 m, mp1's rest the
-    first row, M16 the second): g1 `bow` 0.30 / 0.45 x `bow_peak` 0.20 / 0.40, two with tucked corners (`corner_tuck`
+  - **Grids** (`M16b/godot/g1/vgrid.png`, `M16b/godot/g2/vgrid.png`; rest front / 3/4 / profile at 0.4 m, 3/4 at
+    1.2 m, mp1's rest the first row, M16 the second): g1 `bow` 0.30 / 0.45 x `bow_peak` 0.20 / 0.40, two with tucked corners (`corner_tuck`
     1.3 over 0.20); at 0.45 the upper lip read as two lumps at 3/4. g2: 0.30 / 0.40 and 0.36 / 0.50, each plain and
     tucked, and 0.30 / 0.40 with the softer tuck (1.1 over 0.18, join 0.95). 1.3 over 0.20 narrowed the mouth; 0.36 /
     0.50 began to lump. Pick: 0.30 / 0.40 with the softer tuck.
