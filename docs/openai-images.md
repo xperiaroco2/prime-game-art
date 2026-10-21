@@ -208,3 +208,15 @@ high redraws of the picks (m-m 0, small-m 0), n = 1: $0.0632 and $0.0633. **$0.3
 sheets kept the rest sheet's layout and look; M came out slimmer than mp1's M (the prompt asked for "a little
 flatter"), so the fit stretches it (`docs/godot.md`, M20).
 
+
+## Batch 2026-10-22-alien-roster-r1 (art #196, roster round 1)
+
+Direction D's roster as 2D concepts (the engineer's yes, comment 6326683249): edits at medium, 2560x1440, n = 4 each,
+with our own approved images as style references (u1's front, rf2, el2): **l1** ten heads (five men, five women) on
+the one body, front; **l2** the same ten heads in 3/4, an edit of the picked l1 image; **o1** rf2's head on the body in
+ten present-day outfits; **c1** the strongest head (a crop of l2) in eight skin colours. Measured: three references
+and a 3,000-character prompt, 3,088 text and 12,416 image input tokens; 1,911 output tokens for four 2560x1440 images
+(about 478 each, 1.4 times a medium 1536x1024); $0.086 to $0.172 a request, 26 to 33 s. **$0.4884** of the $6 cap.
+The styles held from the first request (smooth toy look, one body); an edit of one picked image (l2) gives four near
+copies, so variety comes from the generation before it. Images: `D:/prime-art-raw/2026-10-22-alien-roster-r1/`;
+sheets and handoff: `D:/prime-art-raw/research/2026-10-22-roster/`.
