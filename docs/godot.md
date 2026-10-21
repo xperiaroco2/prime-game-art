@@ -2353,7 +2353,8 @@ a time, by visibility.
     only (`smooth_bands`), so the silhouette, the bow's dip and the line's height stay;
   - **the skin contact:** `alien_m12.contact_field` measured a skin point under the lips 3-4 mm from the form's back
     (it goes under the skin), so `full` was 0; `closed_contact` counts a skin point inside the form as touching it
-    and an outside one `contact_margin` (3.5 mm) closer (`contact_distance`; 0: full 29, 2.5 mm: 52);
+    and an outside one `contact_margin` (5 mm, as the code) closer (`contact_distance`; 0: full 29, 2.5 mm: 52,
+    3.5 mm: 61, 5 mm: 72);
   - **rest -> A:** A's and E's rings carry the rest's two-peak bow (bow 0.30, bow_w 0.12, side peaks 0.40 at 0.22)
     and stand back to the AI rest's stand-off (`ring_param` `push`, `push_lo`, read by `alien_mouths`' rings: the
     lips' front ahead of the skin at the centre, upper / lower, A 16.6 / 14.0 mm, E 16.5 / 13.8, the AI rest 16.0 /
