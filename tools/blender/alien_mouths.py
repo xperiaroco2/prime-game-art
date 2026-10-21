@@ -676,7 +676,8 @@ def build_piece(bvh, m, design, shape, world, mats, coll, origin, lips=None, nam
                 ns.append(n)
                 sections.append(((r["x"], (t + bt) / 2), c3, a, n, p))
             if mirror:  # M16: the skin under the lips is up to 0.4 mm lopsided: each station and its mirror averaged,
-                # so the tube (and every later pass: smoothing, corners, sections) is mirrored across x = 0 exactly
+                # so the tube (and every later pass: smoothing, corners) is mirrored across x = 0 exactly (`sections`,
+                # the teeth's and tongue's anchors, are taken before this; the pout uses neither)
                 cs, ra, rb, ns = mirrored(cs, ra, rb, ns)
             lips[lip] = (cs, ra, rb, ns)
         # S7: smooth paths (the head's facets made the normals, and so the lips, ripple), and soft corners: over the
