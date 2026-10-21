@@ -524,6 +524,9 @@ def build_piece(bvh, m, design, shape, world, mats, coll, origin, lips=None, nam
         meas["form"] = "ring"
         rp = (lips_p.get("ring_param") or {}).get(shape)  # M12b: a designed ring (alien_lips_geom.ring_param)
         if rp:
+            # M20b: a ring's own stand-off change (m, < 0 back toward the skin), push_lo the lower lip's on top
+            push += rp.get("push", 0.0)
+            back += rp.get("push_lo", 0.0)
             rm = ring_measure(cols)
             # M13b: the ring on the face's centre line (the fangs' refilled columns moved A's measured centre 3.5 mm
             # aside); M16b: a mirrored lip shape's too (the pout's A and O were 0.4 and 0.6 mm aside)

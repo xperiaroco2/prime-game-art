@@ -1,6 +1,6 @@
 """M19 (art #196): tools/blender/alien_mouth_fit_geom.py, the AI mouth route's fit without Blender: the lip line of a
 closed form, the alignment onto our socket, the back closed into the skin, the wrap weight, the decimate ratio and the
-mirror error. Plain Python."""
+mirror error; M20's lip line, closed jaw weight and corner sink. Plain Python."""
 from __future__ import annotations
 
 import importlib.util
@@ -111,6 +111,110 @@ class BudgetMirrorTest(unittest.TestCase):
         self.assertAlmostEqual(G.mirror_error(sym), 0.0, places=12)
         bent = sym + [(0.052, 0.0, 0.0)]
         self.assertAlmostEqual(G.mirror_error(bent), 0.002, places=9)
+
+
+def curved_lips(n: int = 40):
+    """lips() with its groove bent: the line at height 0.4 + 0.1 x^2 (the ends higher, a smile)."""
+    pts = []
+    for i in range(n + 1):
+        x = -1.0 + 2.0 * i / n
+        seam = 0.4 + 0.1 * x * x
+        for j in range(n + 1):
+            z = j / n
+            u = z / seam if z <= seam else (z - seam) / (1.0 - seam)
+            pts.append((x, -0.3 * math.sin(math.pi * u) * (1.2 - x * x), z))
+    return pts
+
+
+class LipLineTest(unittest.TestCase):
+    def test_follows_a_curved_groove(self):
+        knots = G.lip_line(curved_lips(), columns=10, reach=0.8, bins=50)
+        self.assertEqual(len(knots), 12)
+        for x, z in knots[2:-2]:
+            self.assertAlmostEqual(z, 0.4 + 0.1 * x * x, delta=0.035)
+        self.assertLess(G.line_at(knots, 0.0), G.line_at(knots, 0.6))
+
+    def test_symmetric_and_held_beyond_the_ends(self):
+        knots = G.lip_line(curved_lips(), columns=10, reach=0.8, bins=50)
+        for (xa, za), (xb, zb) in zip(knots, reversed(knots)):
+            self.assertAlmostEqual(xa, -xb, places=6)
+            self.assertAlmostEqual(za, zb, places=9)
+        self.assertEqual(G.line_at(knots, -5.0), knots[0][1])
+        self.assertEqual(G.line_at(knots, 5.0), knots[-1][1])
+
+
+class JawClosedTest(unittest.TestCase):
+    JAW = {"from": 0.45, "corner": 0.3}
+
+    def test_below_moves_above_stays(self):
+        knots = [(-1.0, 0.4), (1.0, 0.4)]
+        self.assertAlmostEqual(G.jaw_closed((0.0, 0.0, 0.1), knots, 0.0, 1.0, 0.05, self.JAW), 1.0)
+        self.assertAlmostEqual(G.jaw_closed((0.0, 0.0, 0.8), knots, 0.0, 1.0, 0.05, self.JAW), 0.0)
+        self.assertAlmostEqual(G.jaw_closed((0.0, 0.0, 0.4), knots, 0.0, 1.0, 0.05, self.JAW), 0.5)
+
+    def test_corners_fall_off(self):
+        knots = [(-1.0, 0.4), (1.0, 0.4)]
+        self.assertAlmostEqual(G.jaw_closed((1.0, 0.0, 0.1), knots, 0.0, 1.0, 0.05, self.JAW), 0.3)
+        self.assertAlmostEqual(G.jaw_closed((0.4, 0.0, 0.1), knots, 0.0, 1.0, 0.05, self.JAW), 1.0)
+
+
+class CornerSinkTest(unittest.TestCase):
+    def test_zero_inside_full_at_the_corner(self):
+        self.assertEqual(G.corner_sink(0.5, 0.0, 1.0, depth=0.002, start=0.6), 0.0)
+        self.assertAlmostEqual(G.corner_sink(-1.0, 0.0, 1.0, depth=0.002, start=0.6), 0.002)
+        mid = G.corner_sink(0.8, 0.0, 1.0, depth=0.002, start=0.6)
+        self.assertTrue(0.0 < mid < 0.002)
+
+
+class StretchTest(unittest.TestCase):
+    def test_about_the_line_and_from_the_front(self):
+        out = G.stretch([(0.5, 0.0, 1.0), (0.2, 0.4, -1.0)], 0.0, 0.0, 1.5, 1.25)
+        self.assertEqual(out, [(0.5, 0.0, 1.5), (0.2, 0.5, -1.5)])
+
+    def test_below_only(self):
+        out = G.stretch_below([(0.0, 0.1, 0.3), (0.0, 0.1, -0.2)], 0.1, 2.0)
+        self.assertEqual(out[0], (0.0, 0.1, 0.3))
+        self.assertAlmostEqual(out[1][2], -0.5)
+
+
+class PlaneTest(unittest.TestCase):
+    """M20b: the AI form's own mirror plane found and put on x = 0 before the mirror (PR #260's review major 1)."""
+
+    def form(self):  # a lopsided-free form: a symmetric cloud about x = 0
+        return [(sx * x, y, z) for x in (0.004, 0.011, 0.019) for y in (0.0, 0.003, 0.006) for z in (-0.01, 0.0, 0.012)
+                for sx in (-1.0, 1.0)] + [(0.0, 0.002, 0.004)]
+
+    def test_reflect_and_to_plane_are_consistent(self):
+        p = (0.01, 0.002, 0.3)
+        self.assertEqual(G.reflect(p, 0.0, 0.0), (-0.01, 0.002, 0.3))
+        q = G.reflect(G.reflect(p, 0.003, 2.0), 0.003, 2.0)
+        for a, b in zip(p, q):
+            self.assertAlmostEqual(a, b)
+        x, y, z = G.to_plane([G.reflect(p, 0.003, 2.0)], 0.003, 2.0)[0]
+        x0, y0, z0 = G.to_plane([p], 0.003, 2.0)[0]
+        self.assertAlmostEqual(x, -x0)
+        self.assertAlmostEqual(y, y0)
+
+    def test_finds_a_shifted_turned_plane(self):
+        a = math.radians(2.0)
+        moved = [(x * math.cos(a) - y * math.sin(a) + 0.003, x * math.sin(a) + y * math.cos(a), z) for x, y, z in self.form()]
+
+        def nearest(q):
+            return min(math.dist(q, r) for r in moved)
+
+        x0, yaw, err = G.best_plane(moved, nearest, span=0.005, step=0.0005, yaws=(-2.0, 0.0, 2.0))
+        self.assertAlmostEqual(x0, 0.003, delta=1e-4)
+        self.assertEqual(yaw, 2.0)
+        self.assertLess(err, 1e-4)
+        back = G.to_plane(moved, x0, yaw)
+        self.assertLess(G.mirror_error(back), 3e-4)
+
+
+class ContactDistanceTest(unittest.TestCase):
+    def test_inside_touches(self):
+        self.assertEqual(G.contact_distance(0.0035, True), 0.0)
+        self.assertEqual(G.contact_distance(0.0035, False, 0.001), 0.0025)
+        self.assertEqual(G.contact_distance(0.0005, False, 0.001), 0.0)
 
 
 if __name__ == "__main__":

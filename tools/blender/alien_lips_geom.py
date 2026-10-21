@@ -125,6 +125,16 @@ _POUT_RING = {"lean": 0.25, "bow_w": 0.16, "bow_peak": 0.10, "bow_at": 0.24, "cu
 # the way to the mouth's mean normal (tube_n_flat: the skin under the lower lip faces down toward the chin, and the
 # lower lip hung along it), the lower lip 1.05 (the rounder tube measured it 0.93 of the upper; now 1.0). Front
 # ratios as M16d's (upper 0.30, lower 0.30 of the width). The pick of M16e's grids e1 / e2 (docs/godot.md, M16e).
+# M20 (UPDATE 42, the hybrid pout: rest, M and small are the AI forms of alien_mouth_fit.py --replace): measured on
+# the front cells at 0.4 m the rings' lips already sit at the AI rest's heights (A 35 / 37 px, E 30 / 32, O 30 / 37
+# against the rest's 40 / 37); what still jumped from rest to A was A's blunt round corners against the AI rest's
+# long fine points, so A's and E's corners taper further (corner 0.28 / 0.30; M16e 0.40 / 0.35).
+# M20b (PR #260's review major 3, the rest -> A jump): A and E read as the same mouth as the AI rest: mp1's two-peak
+# bow on the upper lip (the rest's bow 0.30 over bow_w 0.12, side peaks 0.40 at 0.22; the dip 2.8 mm on A, 5.1 on E,
+# the rest's 4.2) and the stand-off of the rest (push, push_lo: alien_mouths' ring stand-off, m; the lips' front ahead
+# of the skin at the centre A 16.6 / 14.0 mm, E 16.5 / 13.8, the AI rest 16.0 / 14.3; M20 A 19.6 / 20.5). The pick of
+# M20b's stand-off x bow grid (docs/godot.md, M20b).
+_POUT_RING_TALK = dict(_POUT_RING, bow_w=0.12, bow_peak=0.40, bow_at=0.22)
 LIP_SHAPE_POUT = {
     "w": 1.0, "corner": 0.06, "pw": 1.3, "full": 1.0, "upper": 1.10, "lower": 1.05,
     "bow": 0.30, "bow_w": 0.12, "bow_peak": 0.40, "bow_at": 0.22,
@@ -134,8 +144,10 @@ LIP_SHAPE_POUT = {
     "min_b": 0.0008, "corner_over": 0.6,
     "mirror": 1.0, "seam_fit": 3, "parting_dark": 0.2, "parting": {"small": (6.0, 0.55)}, "closed": ("rest",),
     "ring_param": {  # M16: the open rings' own balance and lean; M16e their own fullness (_POUT_RING)
-        "A": dict(_RING, n=2.1, corner=0.40, wide=1.0, upper=1.15, lower=1.20, **_POUT_RING),
-        "E": dict(_RING, n=2.0, corner=0.35, upper=1.15, lower=1.25, **_POUT_RING),
+        "A": dict(_RING, n=2.1, corner=0.28, wide=1.0, upper=1.15, lower=1.20, bow=0.30, push=-0.0032,
+                  push_lo=-0.0030, **_POUT_RING_TALK),
+        "E": dict(_RING, n=2.0, corner=0.30, upper=1.15, lower=1.25, bow=0.30, push=-0.0012, push_lo=-0.0042,
+                  **_POUT_RING_TALK),
         "O": dict(_RING, n=2.0, hole=0.30, corner=1.0, thick=0.9, bow=0.30, tuck=0.0, cup_throat=0.85, upper=1.10,
                   lower=1.10, **_POUT_RING),
     },

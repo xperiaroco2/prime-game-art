@@ -85,8 +85,12 @@ class PoutShapeTest(unittest.TestCase):
         for key in ('lips_p.get("min_b", MIN_B)', 'lips_p.get("corner_over", 0.0)', 'lips_p.get("parting_dark")',
                     'lips_p.get("sink", SINK)', 'lips_p.get("tube_n_flat", 0.0)'):
             self.assertIn(key, src)  # the closed tubes read them
-        for s, rp in p["ring_param"].items():  # the open rings keep M12b's bow shape
-            self.assertEqual((rp["bow_w"], rp["bow_peak"], rp["bow_at"]), (0.16, 0.10, 0.24), s)
+        for s, rp in p["ring_param"].items():  # O keeps M12b's bow shape; M20b: A and E carry the rest's (mp1's)
+            want = (0.16, 0.10, 0.24) if s == "O" else (p["bow_w"], p["bow_peak"], p["bow_at"])
+            self.assertEqual((rp["bow_w"], rp["bow_peak"], rp["bow_at"]), want, s)
+            if s != "O":
+                self.assertEqual(rp["bow"], p["bow"], s)
+                self.assertLess(rp["push"], 0.0, s)  # M20b: back to the AI rest's stand-off
         # M13 (PR #246's review minor 3): no dead settings: every open shape is a designed ring (ring_param), so the
         # traced rings' weights (`ring`) and their corner (`ring_corner`) are not part of the pout's shape
         self.assertEqual(set(p), set(LP.LIP_SHAPE) - {"ring"} | {"size", "bow_flat", "ring_param", "mirror", "seam_fit",
@@ -130,12 +134,15 @@ class RingParamTest(unittest.TestCase):
                 self.assertAlmostEqual(abs(sum(turns)), 2 * math.pi, places=3)  # one simple loop
                 if edge < 2:  # the opening and the outline without the bow are convex: never fold
                     self.assertTrue(all(t * turns[0] >= -1e-9 for t in turns), (shape, edge))
-                else:  # the outline with the bow: its sharpest turn is soft (E's traced corners turned ~90 deg)
-                    self.assertLess(max(abs(t) for t in turns), math.radians(20), shape)
+                else:  # the outline with the bow: its sharpest turn is soft (E's traced corners turned ~90 deg);
+                    # M20b: mp1's two-peak bow on A and E: a sharp dip at the centre, its side peaks under 35 deg
+                    side = [t for t, q in zip(turns, pts) if abs(q[0] - self.MEAS[shape]["cx"]) > 0.3 * self.MEAS[shape]["W"]]
+                    self.assertLess(max(abs(t) for t in side), math.radians(35 if shape != "O" else 20), shape)
+                    self.assertLess(max(abs(t) for t in turns), math.radians(75), shape)
 
     def test_an_even_roll_with_round_corners(self):
-        # M16e: A's and E's corners taper (0.40 / 0.35 of the centre's thickness, mp1's open lips thin toward the ends)
-        for shape, lo in (("A", 0.35), ("E", 0.30), ("O", 0.75)):
+        # M16e: A's and E's corners taper; M20: further (0.28 / 0.30 of the centre's thickness, to the AI rest's points)
+        for shape, lo in (("A", 0.24), ("E", 0.25), ("O", 0.75)):
             _c, pairs, outer0, _cw = self.ring(shape)
             t = [math.hypot(o[0] - i[0], o[1] - i[1]) for (i, _o), o in zip(pairs, outer0)]
             self.assertGreater(min(t) / max(t), lo, shape)  # never a thin flap
