@@ -60,6 +60,34 @@ class TongueTest(unittest.TestCase):
         self.assertAlmostEqual(hm, p["thick"] / 2)
         self.assertAlmostEqual(TG.profile(L, L, p)[0], 0.0, places=6)  # the round tip closes
 
+    def test_tip_plump_in_profile(self):  # M14b (PR #251's review): no knife-thin blade
+        p = TG.merged()
+        L = 0.05
+        tip = 0.45 * p["width"]
+        at = lambda q: TG.profile(L - tip + q * tip, L, p)  # noqa: E731
+        self.assertGreaterEqual(at(0.8)[1], 0.35 * p["thick"])
+        for k in range(1, 20):  # never below the floor before the last station, never thicker than wide
+            w, h = at(k / 20)
+            self.assertGreaterEqual(h, min(w, p["tip"]["floor"] * p["thick"] / 2) - 1e-9)
+            self.assertLessEqual(h, w + 1e-9)
+        self.assertAlmostEqual(at(1.0)[0], 0.0, places=6)  # the round tip closes
+        self.assertAlmostEqual(at(1.0)[1], 0.0, places=6)
+        verts = self.build("A")[-3]  # the built tongue: the second-to-last ring at least half the thickness
+        K = TG.AROUND
+        ring = verts[(TG.STATIONS - 1) * K:TG.STATIONS * K]
+        thick = max(math.dist(ring[k], ring[K - k]) for k in range(1, K // 2))  # top to underside, beside the groove
+        self.assertGreater(thick, 0.5 * p["thick"] * (1 + p["flat"]) / 2 * 0.9)
+
+    def test_shape_width_and_teeth_per_shape(self):
+        p = TG.merged()
+        self.assertLess(TG.shape_params(p, "O")["width"], p["width"] * 0.85)
+        self.assertEqual(TG.shape_params(p, "A")["width"], p["width"])
+        t = TG.merged_teeth()
+        a, r = TG.teeth_for(t, "A"), TG.teeth_for(t, "rest")
+        self.assertEqual(len(a["lower"]), 2, "the sheet's A shows two lower teeth")
+        self.assertEqual(r["lower"], TG.TEETH["lower"])
+        self.assertNotIn("per_shape", a)
+
     def test_flop_weight_zero_inside_one_at_tip(self):
         *_r, verts, faces, flop = self.build("A")
         self.assertEqual(len(verts), len(flop))

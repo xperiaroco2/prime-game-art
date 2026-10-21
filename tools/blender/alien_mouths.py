@@ -788,7 +788,7 @@ def build_piece(bvh, m, design, shape, world, mats, coll, origin, lips=None, nam
     if fang is not None:
         meas["fangs_mm"] = build_fangs(b, bvh, anchor, mats, fang, mi_lip, origin.translation.z)
     if teeth is not None and shape in teeth["shapes"] and anchor:
-        meas["teeth_mm"] = build_teeth(b, anchor, sections, mats, teeth)
+        meas["teeth_mm"] = build_teeth(b, anchor, sections, mats, TG.teeth_for(teeth, shape))
     if tongue is not None and anchor:
         meas["tongue_out"] = build_tongue_out(b, bvh, anchor, rolls, mats, tongue, shape)
     bmesh.ops.remove_doubles(b.bm, verts=b.bm.verts[:], dist=1e-7)
@@ -850,6 +850,7 @@ def build_tongue_out(b, bvh, anchor, rolls, mats, tp, shape):
     section gives the roll (its axis, depth and half height: an ellipse); the spine wraps over it, and every station
     below the lip stays its half thickness plus TONGUE_SKIN_GAP in front of the skin (the chin). Returns its x, width,
     length past the lip's top, the tip below the lip and the push off the chin (mm)."""
+    tp = TG.shape_params(tp, shape)  # M14b: the shape's width (O's narrower than its hole)
     sp = dict(tp["shapes"][shape])
     cx = anchor["centre"][0]
     x0 = cx + sp["x"] * anchor["outer_hw"]
@@ -881,7 +882,11 @@ def drape(b, verts, tp, reach=0.008, most=0.006):
     """M14: the tongue's sections lifted where its underside would cut into the piece's lips (the roll is an ellipse,
     the lip is not, and a wide tongue crosses a lip that rises toward the corners): per underside vertex a ray down
     from `reach` above it onto the lip faces; the lift (at most `most`) moves the vertex and its mirror on the top
-    together (the thickness kept), smoothed round each section and along the tongue. Returns the vertices and the largest lift (m)."""
+    together (the thickness kept), smoothed round each section and along the tongue. M14b (PR #251's review: a white
+    rim and a crumpled highlight at 3/4 where it crosses the lip): tp["drape"]'s `passes` of smoothing, and the
+    section's sides (|cos| toward 1) aimed `sink` into the lip, so its edge meets the lip without a gap. Returns the
+    vertices and the largest lift (m)."""
+    dr = tp.get("drape", {"sink": 0.0, "passes": 6})
     mi_lip = next(i for i, m in enumerate(b.mats) if m.name.startswith("alien_lip"))
     lipf = [f for f in b.bm.faces if f.material_index == mi_lip]
     lv = list({v for f in lipf for v in f.verts})
@@ -897,10 +902,16 @@ def drape(b, verts, tp, reach=0.008, most=0.006):
             x, y, z = verts[r * K + k]
             hit = tree.ray_cast(Vector((x, y, z + reach)), Vector((0.0, 0.0, -1.0)), reach + 0.004)
             if hit[0] is not None:
-                d = min(most, max(0.0, hit[0].z + tp["clear"] - z))
+                side = abs(math.cos(2 * math.pi * k / K)) ** 2
+                d = min(most, max(0.0, hit[0].z + tp["clear"] - dr["sink"] * side - z))
                 lift[r][k] = max(lift[r][k], d)
                 lift[r][(K - k) % K] = max(lift[r][(K - k) % K], d)
-    for _ in range(6):  # smooth round each section and along the tongue (column by column it crumpled the root)
+    # smooth round each section and along the tongue (column by column it crumpled the root)
+    for r in range(n_ring):  # M14b: the section's two side vertices (no underside partner) as their neighbours, so
+        # the side does not stay down while the top and underside rise (that crease was the 3/4 view's white rim)
+        lift[r][0] = max(lift[r][0], lift[r][K - 1], lift[r][1])
+        lift[r][K // 2] = max(lift[r][K // 2], lift[r][K // 2 + 1], lift[r][K // 2 - 1])
+    for _ in range(dr["passes"]):
         lift = [[(lift[r][k - 1] + 2 * lift[r][k] + lift[r][(k + 1) % K]) / 4 for k in range(K)] for r in range(n_ring)]
         lift = [[(lift[max(0, r - 1)][k] + 2 * lift[r][k] + lift[min(n_ring - 1, r + 1)][k]) / 4 for k in range(K)]
                 for r in range(n_ring)]
@@ -914,7 +925,8 @@ def drape(b, verts, tp, reach=0.008, most=0.006):
 
 def build_teeth(b, anchor, sections, mats, tt):
     """M14: the tongue design's gappy teeth (alien_tongue_geom.tooth_boxes, tooth_mesh) on a piece being built, from
-    its opening's edges (anchor upper/lower) and the lips' axes (sections). Returns per tooth [x, w, visible h] mm."""
+    its opening's edges (anchor upper/lower) and the lips' axes (sections). Returns per tooth [x, w, visible h,
+    centre z off the opening's middle] mm."""
     edges = {"upper": anchor["upper"], "lower": anchor["lower"]}
     cx = anchor["centre"][0]
     zmid = (_z_at(edges["upper"], cx) + _z_at(edges["lower"], cx)) / 2
@@ -931,7 +943,8 @@ def build_teeth(b, anchor, sections, mats, tt):
         bv = [b.vert(Vector(v)) for v in verts]
         for f in faces:
             b.face([bv[i] for i in f], mi_te)
-        out.append([round(t["centre"][0] * 1000, 1), round(t["w"] * 1000, 1), t["visible_mm"]])
+        out.append([round(t["centre"][0] * 1000, 1), round(t["w"] * 1000, 1), t["visible_mm"],
+                    round((t["centre"][2] - zmid) * 1000, 1)])  # M14b: its centre's height off the opening's middle
     return out
 
 

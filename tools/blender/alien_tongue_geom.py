@@ -13,7 +13,7 @@ The tongue is built round the lower lip it lies on: alien_mouths.build_tongue_ou
   half the tongue's thickness plus `clear`;
 - a straight hang along the wrap's last tangent (`hang` long), leaning sideways by `slant` degrees as it leaves the
   lip, twisted by `roll` degrees toward the tip;
-- the last half width a round tip (in plan a half ellipse, the thickness thinning with it).
+- the last 0.45 width a round tip (in plan a half ellipse; in profile plump to the end, M14b: TONGUE["tip"]).
 Coordinates are the world's (x to the viewer's right, y backward: the front is -y, z up). Sections are flattened
 ellipses (`width` x `thick`), squarer at the sides, a flatter underside (`flat`) and a soft groove on top (`groove`);
 the top faces up inside the mouth and toward the viewer where the tongue hangs. Each vertex carries a flop weight
@@ -30,23 +30,31 @@ import math
 
 TONGUE = {
     "width": 0.039,  # m, the widest (the sheet's: about 0.42 of the rest mouth's width; M14 grid g1: 32 / 36 / 40 mm)
-    "thick": 0.0075,  # m, the thickest (top to underside)
-    "groove": 0.50,  # the centre groove's depth, a share of the half thickness
-    "flat": 0.70,  # the underside's half thickness, a share of the top's
+    "thick": 0.010,  # m, the thickest (top to underside; M14b grid g3: 7.5 read as a strap in profile, 11 a sausage)
+    "groove": 0.70,  # the centre groove's depth, a share of the half thickness (M14b: 0.50 barely read)
+    "groove_root": 0.45,  # M14b: the groove's share up to the lip's top (deep there it notched the root's top edge)
+    "flat": 0.75,  # the underside's half thickness, a share of the top's
     "square": 0.75,  # the section's sides: 1 an ellipse, lower squarer
     "clear": 0.0015,  # m, the underside's gap over the lip (it lies on it, its top well above the lip's)
     "dip": 0.007,  # m, how far the root end sinks below the lip's top inside the mouth
     "root_w": 0.68,  # the width at the root (inside the mouth), a share of `width`: a spatula, widest near the tip
     "widest": 0.75,  # where it is widest, a share of the length
+    # M14b (PR #251's review: the tip was knife-thin in profile): over the tip the half thickness follows
+    # c ** pow * (1 - taper * q) (q 0 to 1 along the tip, c the plan's quarter ellipse), never below `floor` of the
+    # half thickness before the last station: plump with a round end, as mt2's
+    "tip": {"pow": 0.25, "taper": 0.2, "floor": 0.5},
+    # M14b: alien_mouths.drape's smoothing passes and how far the section's sides sink into the lip (m)
+    "drape": {"sink": 0.002, "passes": 10},  # sink: `clear` plus 0.5 mm into the lip
     "shapes": {
         # x: the tongue's centre line off the mouth's centre, a share of the lips' outer half width (+: the viewer's
-        # right); inside (m): how far it reaches back behind the lip's top; wrap (deg); hang (m); slant, roll (deg)
+        # right); inside (m): how far it reaches back behind the lip's top; wrap (deg); hang (m); slant, roll (deg);
+        # w (M14b): the width, a share of `width` (O's tongue narrower than its ring's hole)
         "rest": {"x": 0.28, "inside": 0.020, "wrap": 80.0, "hang": 0.007, "slant": 16.0, "roll": 10.0},
         "M": {"x": 0.0, "inside": 0.014, "wrap": 55.0, "hang": 0.0, "slant": 0.0, "roll": 0.0},
         "small": {"x": 0.04, "inside": 0.020, "wrap": 45.0, "hang": 0.0, "slant": 0.0, "roll": 0.0},
         "A": {"x": 0.12, "inside": 0.022, "wrap": 85.0, "hang": 0.006, "slant": -6.0, "roll": -4.0},
         "E": {"x": 0.45, "inside": 0.020, "wrap": 82.0, "hang": 0.004, "slant": 24.0, "roll": 16.0},
-        "O": {"x": 0.0, "inside": 0.016, "wrap": 78.0, "hang": 0.0, "slant": 0.0, "roll": 0.0},
+        "O": {"x": 0.0, "inside": 0.016, "wrap": 78.0, "hang": 0.0, "slant": 0.0, "roll": 0.0, "w": 0.75},
     },
 }
 STATIONS = 40  # along the spine
@@ -59,6 +67,11 @@ TEETH = {
     "lower": [(-0.0240, 0.0090, 0.0075, -7.0)],
     "depth": 0.0060, "tuck": 0.0030, "round": 0.45, "front": 0.5, "max_open": 0.55,
     "shapes": ["rest", "small", "A", "E"],
+    # M14b: per shape keys over the above (A: the sheet's two lower teeth at the opening's lower left, forward of the
+    # lip's axis and tucked deeper: at the default tuck they floated over the ring's lower edge; the one at -24 mm sat
+    # in the ring's side, out of sight)
+    "per_shape": {"A": {"lower": [(-0.0200, 0.0090, 0.0075, -7.0), (-0.0130, 0.0072, 0.0058, 4.0)], "front": 0.9,
+                        "tuck": 0.007}},
 }
 
 
@@ -78,6 +91,20 @@ def merged(over: dict | None = None) -> dict:
 def merged_teeth(over: dict | None = None) -> dict:
     out = dict(TEETH)
     out.update(over or {})
+    return out
+
+
+def teeth_for(t: dict, shape: str) -> dict:
+    """M14b: the teeth settings of one shape: t with t["per_shape"][shape]'s keys on top."""
+    out = {k: v for k, v in t.items() if k != "per_shape"}
+    out.update((t.get("per_shape") or {}).get(shape, {}))
+    return out
+
+
+def shape_params(p: dict, shape: str) -> dict:
+    """M14b: the tongue's settings for one shape: `width` times the shape's `w` (default 1)."""
+    out = dict(p)
+    out["width"] = p["width"] * p["shapes"][shape].get("w", 1.0)
     return out
 
 
@@ -134,7 +161,8 @@ def spine2d(radii: tuple, p: dict, sp: dict) -> tuple[list[tuple], float]:
 
 def profile(s: float, L: float, p: dict) -> tuple[float, float]:
     """The half width and the half thickness at arc length s of L: the root a little narrower, the last 0.45 width a
-    round tip (a quarter ellipse in plan; the thickness thins toward the tip, a flat tongue's, not a ball's)."""
+    round tip (a quarter ellipse in plan; in profile plump with a round end, p["tip"]: M14b, the old
+    c ** 0.5 * (1 - 0.45 q) made a knife-thin blade; never thicker than wide)."""
     tip = 0.45 * p["width"]
     w = p["width"] / 2 * (p["root_w"] + (1 - p["root_w"]) * _smooth(0.0, p.get("widest", 0.5) * L, s))
     h = p["thick"] / 2
@@ -142,7 +170,11 @@ def profile(s: float, L: float, p: dict) -> tuple[float, float]:
         q = min(1.0, (s - (L - tip)) / tip)
         c = math.sqrt(max(0.0, 1 - q * q))
         w *= c
-        h *= c ** 0.5 * (1.0 - 0.45 * q)
+        t = p.get("tip", {"pow": 0.5, "taper": 0.45, "floor": 0.0})
+        f = c ** t["pow"] * (1.0 - t["taper"] * q)
+        if q < 1.0:
+            f = max(f, t["floor"])
+        h = min(h * f, w)
     return w, h
 
 
@@ -193,6 +225,8 @@ def tongue_mesh(pts3: list[tuple], ss: list[float], s_top: float, p: dict, sp: d
         S2 = tuple(ca * a + sa * b for a, b in zip(S, N))
         N2 = tuple(-sa * a + ca * b for a, b in zip(S, N))
         wt = max(0.0, (s - s_top) / max(1e-9, L - s_top)) ** 2 if s > s_top else 0.0
+        gr = p.get("groove_root", 1.0)
+        groove = p["groove"] * (gr + (1.0 - gr) * _smooth(s_top, s_top + 0.010, s))  # M14b: deep where it hangs
         ring = []
         for k in range(AROUND):
             ps = 2 * math.pi * k / AROUND
@@ -200,7 +234,7 @@ def tongue_mesh(pts3: list[tuple], ss: list[float], s_top: float, p: dict, sp: d
             sx = w * math.copysign(abs(c) ** p["square"], c)
             if sn >= 0:
                 sy = h * sn
-                sy -= p["groove"] * h * math.exp(-(sx / max(1e-9, 0.22 * w)) ** 2) * sn ** 2
+                sy -= groove * h * math.exp(-(sx / max(1e-9, 0.22 * w)) ** 2) * sn ** 2
             else:
                 sy = h * p["flat"] * sn
             ring.append(len(verts))
