@@ -113,9 +113,11 @@ tools/run.sh ship --godot --walk DIR    # headless: sizes, colliders, the capsul
 tools/run.sh ship --shoot DIR           # off-screen night shots, compare_top.png (plan-3 left), sheet.png
 ```
 
-Runs over 180 s go to the background with their log (CLAUDE.md, "Shell"). Step 1's greybox (2026-10-22): 21 pieces,
-40 placements, 4004 triangles, glTF-Validator clean; Godot sizes equal Blender's, 16 colliders; the walk reaches all
-14 points in 18.8 s.
+Runs over 180 s go to the background with their log (CLAUDE.md, "Shell"). The whole of step 1 (the join, 2026-10-22):
+105 pieces (70 interior, 35 exterior and clearing), 789 placements, 35558 triangles per piece set (about 126k placed
+inside), glTF-Validator clean; `--godot`: Godot sizes equal Blender's, 88 colliders, the capsule walk reaches all 14
+points; `--walk` adds the 1280x720 walk-through (about 90 s, under 15 MB); `--shoot` makes 14 views and their
+compare sheets. Full run of `--godot --walk DIR --shoot DIR`: about 15 min.
 
 ## The exterior (EXTERIOR lane)
 
@@ -160,3 +162,39 @@ keys (cubic in time) from outside, up the ramp, the hall, both corridors and tip
 fps in the off-screen window (ship.gd mode `video`, one PNG per frame), encoded by `tools/blender/ship_video.py`
 (encode_clips.py's route at an average bit rate that fits `max_mb`, 15 MB: constant quality made 20 MB even at its lowest), then the frames are deleted;
 `--no-video` skips it.
+
+## The night look's numbers (the join step)
+
+The first whole shots washed the inside out: the walls glowed beige-white and the cyan and amber strips rendered
+white. Lowering the lamps, the ambient and the exposure barely changed it (look grid 1, `<raw>/ship/v1/grid/grid.png`):
+the interior's metal (metallic 0.7) mirrored the emissive strips and lamps (glTF strength 8..12) through the rooms'
+reflection probes. Grid 2 (`grid2.png`, variant H) fixed it; the numbers live in ship.toml `[light]` and ship.gd
+reads them with `_lk(key, old value)`:
+
+| Key | Value | Was |
+|---|---|---|
+| `ambient_energy` | 0.12 | 0.9 |
+| `exposure` (AgX) | 1.0 | 1.2 |
+| `emission_scale` (every emissive material) | 0.12 | 1 |
+| `strip_light_scale` (the OmniLight per emissive cell, from the unscaled strength) | 1.5 | 1 |
+| `strip_whiten` | 0 | 0.15 |
+| `lamp_scale` (ship.toml's lamps) | 0.25 | 1 |
+| `probe_intensity` (the windowless rooms' probes) | 0.15 | 1 |
+| `int_value`, `int_rough_add` (the `int_silver_*` metals) | 0.55, +0.25 | 1, 0 |
+| `hull_rough_add` (the hull silvers: the moonlit white plates) | +0.22 | 0 |
+
+A look grid: a scratch script that loads the layout, overrides `[light]` per variant, calls `ship.shoot` on a few
+views and tiles them with `house_bake_props.sheet` (`<raw>/ship/v1/logs/join_grid.py`).
+
+## Open problems (after step 1)
+
+- **The hull does not read as the manta yet** (the manager's note after the first shots): from the front and in the
+  hero view it reads as a box body with a drum over the hall and two drum pods at the tips, not one continuous,
+  faceted surface thinning toward sharp swept tips (turnaround.jpg, hero.jpg). The interior's numbers stay; the
+  skin around them needs a rebuild: one grid of 3 or 4 silhouette variants (front, side, top, three-quarter), then
+  the chosen one detailed. Not a small change; the next step's first job.
+- The hall is still the brightest room (its lamp ring's cells); the corridors and tip rooms read at night.
+- The pines are layered cones; the ground is flat and empty (no grass tint, needles, dirt by the ramp).
+- The nozzles sit flush in a box mount (out_back); the ramp reads dark from the hero view.
+- The interior has no UVs: the brushed grain is geometry and the triplanar shader only on the hull's metals.
+- Triangles: the grates are about 60% of the 126k placed inside; measure with `bench` before the game takes it.
