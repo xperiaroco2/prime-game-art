@@ -24,7 +24,7 @@ from __future__ import annotations
 
 import math
 
-FANG = {"x": 0.72, "x_open": 0.80, "o_gap": -0.003, "o_drop": 0.40, "length": 0.020, "radius": 0.0065, "tip": 0.50,
+FANG = {"x": 0.72, "x_open": 0.80, "o_gap": 0.002, "o_drop": 0.40, "length": 0.020, "radius": 0.0065, "tip": 0.50,
         "pw": 1.6, "flat": 0.90, "curve": 0.08, "lean": 0.0, "root": 0.30, "out": 0.70, "lift": 0.0}
 SEG = 18  # around
 ROWS = 16  # along the body (base to the tip's cap)

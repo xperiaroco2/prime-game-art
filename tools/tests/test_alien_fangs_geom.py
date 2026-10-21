@@ -97,6 +97,22 @@ class AxisTest(unittest.TestCase):
         self.assertTrue(all(-0.035 < y < -0.02 for y in ys))  # between the lips, not sunk to the skin
 
 
+    def test_straight_axis_clears_and_never_kinks(self):  # O's fangs beside the ring
+        p = FG.merged()
+        n = FG.ROWS
+        zs = [1.40 + p["length"] * i / n for i in range(n + 1)]
+        z_root = zs[0] + p["root"] * p["length"]
+        fronts = [None if i < 9 else -0.034 for i in range(n + 1)]  # the ring's side, then the cheek falling away
+        skin = [-0.025 + 0.0004 * i for i in range(n + 1)]
+        radii = [FG.radius_at(i / n, p) for i in range(n + 1)]
+        ys = FG.axis_depths(zs, fronts, skin, radii, p, z_root, straight=True)
+        d = [b - a for a, b in zip(ys, ys[1:])]
+        self.assertLess(max(d) - min(d), 1e-9)  # one straight line
+        for z, y, f, s, r in zip(zs, ys, fronts, skin, radii):
+            if z > z_root:
+                self.assertLessEqual(y, min(f if f is not None else s, s) - p["out"] * r * p["flat"] + 1e-9)
+
+
 class FangLipsTest(unittest.TestCase):
     def test_thin_wide_calm(self):
         f, frog = LP.LIP_SHAPE_FANGS, LP.LIP_SHAPE
