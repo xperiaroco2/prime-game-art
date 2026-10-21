@@ -2008,6 +2008,8 @@ a time, by visibility.
     the tongue's channel is `CUSTOM2.z` (`alien_hue.gdshader` `contact_pick3`, `alien.gd CONTACT_CHANNEL3`). The mouth
     step rewrites both layers in that order; the contact counts only the rest piece's lip faces (the tongue hanging in
     front of the chin is no lip contact). Blender allows eight UV layers, so a sixth mouth needs a shared channel.
+    M11's collar (`alien_m6.py`) carries seven layers, so it has no `TEXCOORD_7` and reads 0 there (no tongue
+    contact on the collar, as wanted).
   - **Measuring:** the tongue covers the lower lip in every panel, so the columns where its lip pixels below the tongue
     are fewer than half the usual lower-lip thickness are refilled from the clean columns beside them
     (`alien_mouths.FILL_TONGUE`, `tongue_cover`, then `fill_teeth`). M's lips are pressed shut (the sheet's seam);
