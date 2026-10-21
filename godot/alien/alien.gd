@@ -30,6 +30,10 @@ extends Node
 ##   talk style of its own: talk_at(t_ms, line) shows a phase line's piece at t through the design's style
 ##   (alien_talk.gd: lag, merged flickers, a lower-lip bounce and a pucker between words, as the lip shader's
 ##   instance uniforms lip_drop and pucker on the shown piece); play_line(line) drives it in time.
+## - M11, the lashes eyes (el2): on a kit with them (eye_<design>_lashes_<side> and, M11b, the liner
+##   eye_<design>_liner_<side>, children of the upper lids, so they turn with every blink and lid state; material
+##   alien_lash) set_lashes(true) shows them, false (the default) hides them, so the same eyes serve both looks;
+##   LASH_LOOK, a black glossy coat; the tubes fade out past LASH_FADE_M, the liner stays.
 ## - M13, the fangs mouth (mg2): a fourth design "fangs" (mouth_fangs_<shape>: the coral alien_lip lips, two lower fangs
 ##   in alien_fang, FANG_LOOK), its contact in CUSTOM2.y, a heavier jaw's talk (alien_talk.gd: a slower opening, a
 ##   forward jaw thrust on A and E, a small bounce). The talking designs' lips, fangs, cup and tongue move together on
@@ -44,6 +48,7 @@ const AlienTalk = preload("res://alien/alien_talk.gd")
 const HUE_MATERIALS := ["alien_hue", "alien_hue_part"]
 const EYE_SHADER: Shader = preload("res://alien/alien_eye.gdshader")
 const LIP_SHADER: Shader = preload("res://alien/alien_lip.gdshader")
+const LINER_SHADER: Shader = preload("res://alien/alien_liner.gdshader")  # M11b: the lash line's least screen width
 const WET_SHADER: Shader = preload("res://alien/alien_wet.gdshader")
 ## M13: the inner cup and tongue of a talking design's pieces, moving with the lips (alien_mouth_motion.gdshaderinc).
 const MOUTH_PART_SHADER: Shader = preload("res://alien/alien_mouth_part.gdshader")
@@ -103,6 +108,19 @@ const LID_LOOK := {"roughness_value": 0.64, "sheen": 0.0}
 ## grain (a smooth gloss). Chosen beside the sheet on M12's grid (m12_shots.gd).
 const LIP_LOOK_POUT := {"albedo": Color(0.72, 0.18, 0.18), "deep": Color(0.42, 0.05, 0.07), "roughness_value": 0.30,
 	"specular_value": 0.55, "sheen": 0.55, "sheen_roughness": 0.12, "drift": 0.03, "grain": 0.03}
+## M11: the upper lashes' material (alien_lash, tools/blender/alien_lashes.py): near black, glossy with a clear coat
+## (el2's lashes catch a soft highlight); closed tubes, so culled as usual; they cast their own small shadow.
+const LASH_LOOK := {"albedo": Color(0.035, 0.03, 0.04), "roughness": 0.32, "specular": 0.55, "clearcoat": 0.6,
+	"clearcoat_roughness": 0.15}
+## M11b: past about 3 m the lash tubes are under a pixel and draw as a dotted line that shimmers (PR #249's review);
+## they fade out (visibility range, fade SELF: Forward+; the other renderers cut them at LASH_FADE_M) between
+## LASH_FADE_M - LASH_FADE_MARGIN_M and LASH_FADE_M from the camera, and the liner (eye_<design>_liner_<side>, the
+## bold lash line) stays at every distance.
+const LASH_FADE_M := 3.0
+const LASH_FADE_MARGIN_M := 0.6
+## M11b: the liner's least width on screen (alien_liner.gdshader): at 3.5 m its modelled band covers about one pixel
+## and broke into dashes; it widens to about two.
+const LINER_MIN_PX := 2.0
 ## M13: the fangs mouth's two lower fangs (material alien_fang, the lips' shader so they move with the lower jaw):
 ## ivory, a soft satin with a little clear coat, deeper and warmer at the root (the baked AO), a faint warm
 ## transmittance. The lips are the kit's coral alien_lip (LIP_LOOK). Chosen beside the mg2 sheet on M13's grids.
@@ -204,6 +222,8 @@ var auto_blink: bool = true
 var talk_log: Array = []  # {t_ms, low, high, level, ratio, f2, piece}
 var mouth_piece: String = "rest"
 var mouth_mode: String = "3d"
+var lashes: bool = false  # M11: the upper lashes shown (set before setup(), or set_lashes())
+var _lash_nodes: Array[Node3D] = []
 
 var _material: ShaderMaterial
 var _part_ao: bool = false  # M6: the kit's alien_lip carries PART_AO_MARKER
@@ -250,7 +270,8 @@ func setup(root: Node3D, seed: int = 196) -> void:
 					_lid_surfaces.append([m, s])
 			elif mat != null and (FACE.has(mat.resource_name) or mat.resource_name.begins_with("alien_eye_")
 					or mat.resource_name == "alien_wet" or mat.resource_name in EXTRA_FACE
-					or (mat.resource_name in MOVING_PARTS and _moving_piece(m.name))):
+					or (mat.resource_name in MOVING_PARTS and _moving_piece(m.name))
+					or mat.resource_name == "alien_lash"):
 				# M6: the lid domes take their own copy of the lips' material (LID_LOOK)
 				var key: String = mat.resource_name
 				if key == "alien_lip" and has_marker(mat, PART_AO_MARKER):
@@ -259,6 +280,8 @@ func setup(root: Node3D, seed: int = 196) -> void:
 					_read_lid_reach(mat)
 				if key == "alien_lip" and m.name.contains("_lid_"):
 					key = "alien_lid"
+				if key == "alien_lash" and m.name.contains("_liner_"):  # M11b: the liner keeps a least screen width
+					key = "alien_lash_liner"
 				if key in MOVING_PARTS and _moving_piece(m.name):  # M13: the cup and tongue move with the lips
 					key += "_moving"
 					_moving_src[key] = mat
@@ -272,10 +295,17 @@ func setup(root: Node3D, seed: int = 196) -> void:
 			# PR #250's review: an M13 kit (the weight in COLOR_0.g, alpha 1) moves the whole piece with the jaw
 			push_warning(("alien: %s has no jaw weight (COLOR_0's alpha is 1 everywhere): rebuild the kit with "
 				+ "tools/blender/alien_m12.py") % m.name)
+		if m.name.begins_with("eye_") and m.name.contains("_lashes_"):  # M11: the lash sets (not the lashvar_ grid)
+			_lash_nodes.append(m)
+			lash_fade(m)
+		if m.name.begins_with("eye_") and m.name.contains("_liner_"):  # M11b: the lash line, at every distance
+			_lash_nodes.append(m)
+			m.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF  # alien_liner.gdshader grows it with distance
 	_make_face_materials()
 	set_face_look(face_look)
 	set_hue("teal")
 	set_eyes(eyes)
+	set_lashes(lashes)
 	set_mouth_design(mouth_design)
 	set_crest(crest)
 	_next_blink_s = _rng.randf_range(BLINK_EVERY_S.x, BLINK_EVERY_S.y)
@@ -409,6 +439,25 @@ func _make_face_materials() -> void:
 		m.diffuse_mode = BaseMaterial3D.DIFFUSE_LAMBERT_WRAP
 		m.cull_mode = BaseMaterial3D.CULL_DISABLED  # as the imported (double-sided) ones: culled, the inner cup vanished
 		_face_materials[name] = m
+	var lash := StandardMaterial3D.new()  # M11
+	lash.resource_name = "alien_lash"
+	lash.albedo_color = LASH_LOOK["albedo"]
+	lash.roughness = LASH_LOOK["roughness"]
+	lash.metallic_specular = LASH_LOOK["specular"]
+	lash.clearcoat_enabled = true
+	lash.clearcoat = LASH_LOOK["clearcoat"]
+	lash.clearcoat_roughness = LASH_LOOK["clearcoat_roughness"]
+	_face_materials["alien_lash"] = lash
+	var liner := ShaderMaterial.new()  # M11b: the same look, never thinner than LINER_MIN_PX on screen
+	liner.resource_name = "alien_lash_liner"
+	liner.shader = LINER_SHADER
+	liner.set_shader_parameter("albedo", LASH_LOOK["albedo"])
+	liner.set_shader_parameter("roughness_value", LASH_LOOK["roughness"])
+	liner.set_shader_parameter("specular_value", LASH_LOOK["specular"])
+	liner.set_shader_parameter("clearcoat_value", LASH_LOOK["clearcoat"])
+	liner.set_shader_parameter("clearcoat_roughness_value", LASH_LOOK["clearcoat_roughness"])
+	liner.set_shader_parameter("min_px", LINER_MIN_PX)
+	_face_materials["alien_lash_liner"] = liner
 	for key: String in _moving_src:  # M13: the moving cups and tongues (alien_mouth_part.gdshader)
 		var src: Material = _moving_src[key]
 		var base: String = key.trim_suffix("_moving")
@@ -518,6 +567,26 @@ func set_eyes(design: String) -> void:
 		for side: String in ["L", "R"]:
 			node("eye_%s_%s" % [d, side]).visible = d == design
 	set_lids(lid_state)
+
+
+## M11: whether the kit has upper lashes (eye_<design>_lashes_<side>).
+func has_lashes() -> bool:
+	return not _lash_nodes.is_empty()
+
+
+## M11b: a lash tube mesh fades out past LASH_FADE_M (its liner stays); also for a grid's lashvar_ nodes.
+static func lash_fade(m: GeometryInstance3D) -> void:
+	m.visibility_range_end = LASH_FADE_M
+	m.visibility_range_end_margin = LASH_FADE_MARGIN_M
+	m.visibility_range_fade_mode = GeometryInstance3D.VISIBILITY_RANGE_FADE_SELF
+
+
+## M11: the upper lashes on or off (both designs; each set, its tubes and its liner, shows with its design's eye
+## group).
+func set_lashes(on: bool) -> void:
+	lashes = on
+	for n: Node3D in _lash_nodes:
+		n.visible = on
 
 
 func set_lids(state: String) -> void:

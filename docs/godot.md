@@ -1721,8 +1721,10 @@ a time, by visibility.
     (barycentric, `BodySampler`) on the skin at the crater's edge (`uv_pull` 1: the old crater's dark bottom never
     reaches it); the normals are the skin's at the edge, blended halfway toward the fillet's own at the dome
     (`geom_end` 0.5, custom normals); `contact_field` writes the lids' contact into its `contact` and `contact_mouth`
-    layers as it does for the Body (the Body's own field no longer counts any collar). The GLB primitive has the
-    Body's attributes but the skin weights: `COLOR_0`, `NORMAL`, `TANGENT`, `TEXCOORD_0` to `TEXCOORD_5`.
+    layers as it does for the Body (with `--collar skin` the Body's own field no longer counts the collar; M10b's
+    coral ring, `--collar on`, still counts). The GLB primitive has the Body's attributes but the skin weights:
+    `COLOR_0`, `NORMAL`, `TANGENT`, `TEXCOORD_0` to `TEXCOORD_5`, and since M11 `TEXCOORD_6` (the later mouths'
+    contact, 0 on the collar; an M10c kit's collar lacks it, and the page must read 0 there).
   - **The join, chosen on a grid of eleven variants** on `e80_p85_w80` (`M10c/try/`, sheets `M10c/godot/try*/`):
     the normal blend (0, 0.5, 1) and the UV pull hardly showed; what mattered was the reach (M10b's sphere limit left
     the brow trench), where the inner end sits (at the equator it showed through the lids' open corners as a dark
@@ -1869,6 +1871,93 @@ a time, by visibility.
     the pout's, no pucker. `godot/alien/talk_check.gd` runs `styled()`/`sample()` headless and
     `tools/tests/test_alien_talk_godot.py` checks each rule (heavy: it needs Godot).
   - **`m12_shots.gd`:** spec `design` (the design every mode shows), `talk_also`, `hero_label`.
+- **M11, the lashes eyes el2 and the collar minors** (brief UPDATE 21; output under
+  `D:/prime-art-raw/review/char/alien-parts-kit/M11/`). The female look of the sheet
+  `D:/prime-art-raw/2026-10-20-alien-face-sheets-2/el2/`: black, glossy, curled upper lashes, bolder and longer toward
+  the temple, the outer ones winging out past the corner, a dark lash line; none on the lower lid.
+  - **The collar minors (PR #247's review):** the skin collar's section starts on the skin the ray hit (`h_hit`; a hit
+    over 4 mm from the smoothed `h_edge` keeps the smoothed start, `far_bins` in the report), so it no longer floats or
+    sinks where the brow trench's depth changes; `UVMap` runs along the section (`COLLAR_SKIN` `uv_run` 1,
+    `section_run`: the skin's UV gradient outward from the edge, measured over `uv_probe_mm`, times the arc length,
+    mirrored onto the face outside the edge), so its triangles have UV area and defined tangents; the collar carries the
+    Body's seventh layer `contact_mouth2` (`TEXCOORD_6`) at 0.
+  - **The lashes (`alien_lashes.py`, the kit step; `alien_lashes_geom.py`, the plain geometry):** per design and side
+    `eye_<design>_lashes_<side>`, one mesh, a child of `eye_<design>_lid_upper_<side>` with an identity local transform,
+    so it turns with the lid in every blink and lid state and shows with its design; built in the lid's frame from the
+    kit's own lids (`character.json` `m6`: the lid setting and corners) at the ball's radius, so it fits every eye size
+    (every length is a share of r). Each lash roots on the rolled rim (`root_a_deg` from the outer surface, sunk `sink`),
+    leaves `lift_deg` above the radial and bends up by `curl_deg` toward its tip, splays toward its side (`fan_deg`), a
+    tapered, slightly flat tube with a round tip; `count` lashes from `t_in_deg` to `t_out_deg` of latitude, closer and
+    longer toward the temple, the last `wing` longer still (`wing_len`) and swept out (`wing_sweep_deg`). The liner is a
+    lens hugging `liner_deg` of the roll from `liner_t_in_deg` to the last lash. `design_lift_deg` gives a design its
+    own lift: the manic lids rest 50 degrees up. Material `alien_lash` (Principled near black, roughness 0.28, coat
+    0.6; extras `prime_lashes`). The step checks both designs in every lid state (open, rest, half, closed) for lash
+    vertices inside the skin (Body and collars), the ball and the lids, and refuses a clipping kit; `--grid` adds
+    `lashvar_<variant>_<design>_<side>` nodes.
+  - **The pick, on five grids beside el2** (`M11/godot/g1..g5/lgrid_<design>.png`, JPEGs `M11/showroom/`): g1's thin
+    lashes over the whole edge (nine, 0.02 to 0.04 r) were hardly visible from the front, since they pointed at the
+    camera; el2's lashes sit on the outer half and wing out. Pick: seven lashes from latitude 0 to 74 degrees, 0.35 to
+    0.80 r long, 0.075 to 0.11 r at the root (tip 0.25), lift 30 and curl 75 toward the tip (`curl_pow` 2.2: a hook in
+    profile), the last two 1.4 times longer and swept 45 degrees out; the liner 0.03 r thick at the roll's front (60
+    degrees; at 40 and 0.05 r it read as a cable on the lid from close up). The manic lids rest 50 degrees up: with the
+    bored lift their lashes lay along the dome like a fringe, so `design_lift_deg` manic is 0 (g4; below 0 they tangled
+    in profile). No variant clips in any lid state.
+  - **Godot (`alien.gd`):** `set_lashes(on)` (default off: the same eyes serve both looks), `has_lashes()`;
+    `alien_lash` gets `LASH_LOOK` (a StandardMaterial3D: near black, roughness 0.32, specular 0.55, clear coat 0.6 at
+    0.15). `m11_shots.gd`: `lgrid`, `lviews`, `lblink`, `lsizes`, `lmouths`, `lhues`, `lgame` (3.5 m and a shimmer
+    measure), `lvideo`, `head`, `socket`.
+  - **The kit** (`M11/export/` = M10c's pick e80_p85_w80 rebuilt with the fixed collar (`M11/e80_eyes`), M10c's lips
+    (`e80_lips`), the pout (`alien_m12.py`, `e80_base`), then `alien_lashes.py`; `e90_lashes/` and `e100_lashes/` the
+    same at 90 and 100 %; drivers `tools/out/m11/chain.sh`, `lashes.sh`, `final.sh`): glTF-Validator 0 errors (1
+    warning `NODE_SKINNED_MESH_NON_ROOT`), `godot-check --textured` the same seven pack-contract failures, the Body
+    against `M8/export` 0.0 mm. After merging M13 (#248), `M11/export/` is rebuilt as `e80_lips` -> `alien_m12.py`
+    (pout and fangs, `M11/e80_mouths`) -> `alien_lashes.py`, so it carries the lashes and all four mouths; the lashes
+    step still finds no clipping. `alien.gd` keeps both: `alien_lash` in `setup()`'s face materials beside
+    `EXTRA_FACE` and the moving cups and tongues (`MOVING_PARTS`). The check (`M11/godot/merge/`, a temporary script,
+    not kept): lashes on, bored and manic with the pout and the fangs; in a blink's closed hold while talking each
+    lash set keeps its upper lid's transform (0 rotation, 0 offset), and both mouths walk the line's pieces.
+  - **The gate** (`M11/godot/final/gate/head.png`): the kit with the lashes off against `e80_base` changes 0.0000 in
+    all four views (with parts, the plain-grey skull, 0 silhouette px); on, 0.31 / 0.28 / 0.14 / 0.24 % (front / 3/4
+    / profile / top), the lashes alone. The collar fix against M10c (`collar/head.png`): 0.20 / 0.13 / 0.03 / 0.08 %,
+    at the collar; the skull 0.0000.
+  - **Open:** at 3.5 m (FOV 70, 1536 px) the lashes are under a pixel thick and draw as a broken dark line at the
+    outer corners (`lgame.png`); the mean frame-to-frame change round the eyes in Idle with a blink rises from 0.0094
+    to 0.0121 with them. From straight above, the bored dome's temple-side nub of M10c is still there
+    (`collar/socket.png`).
+- **M11b, PR #249's review fixes and the lashes' look** (brief UPDATE 23; output under `M11/godot/m11b/`, JPEGs
+  `M11/showroom/m11b-*.jpg`; drivers `tools/out/m11/m11b.sh`, `g.sh` with `grid6..8.json`).
+  - **The game distance (the major):** the liner is its own node, `eye_<design>_liner_<side>` (a sibling of the tubes
+    under the upper lid, the same material; `character.json` `nodes.lash_liners`). `alien.gd` gives each tube mesh a
+    visibility range (`LASH_FADE_M` 3.0, `LASH_FADE_MARGIN_M` 0.6, fade SELF, Forward+; the other renderers cut them)
+    and keeps the liner at every distance, so past about 3 m the lashes read as one dark line along the lid. At 3.5 m
+    the modelled liner covered about one pixel and broke into dashes, so it takes its own shader,
+    `alien_liner.gdshader` (`alien_lash_liner`, `LASH_LOOK`): where its band (`band_m` 4 mm) would cover fewer than
+    `LINER_MIN_PX` 2 pixels, each vertex moves out along its normal by 0.55 of the missing width (at most 4 mm), so it
+    stays one unbroken line; below about 2.4 m nothing moves. The liner casts no shadow: a light's shadow camera
+    stands far away, and the growth there ballooned the band into a shadow over the whole face (the first try).
+    `m11_shots.gd` `lfade`: both designs from 1.2 to 4.5 m; `lgame` also measures Idle without the blink at 3.5 and
+    3.0 m (the line's own crawl apart from the lid's motion).
+  - **The look (grids g6 to g8 beside el2):** thickness x curl (g6), lean x curl (g7), manic's lift x lean (g8). Pick:
+    root width 0.12 to 0.19 r (`flat` 0.6), curl 160 degrees evenly (`curl_pow` 1) from a lift of 10, every lash
+    leaning toward the temple (`fan_bias_deg` 45, 0.3 to 1 of it inner to outer), the liner 0.06 r over 130 degrees
+    of the roll and 1.8 times as thick at the outer end (`liner_out`). The thin wires and the comb in profile are gone:
+    the lashes curl back over the lid. A design's own keys go in `design` (`for_design`): manic leaves 30 degrees below
+    the radial, leans 25 and ends at 66 degrees, so its lashes stand out of the dome's outline as in el2's wide panel.
+  - **The clip check** also counts edges through the skin, the ball and the lower lid (`edge_crossings`,
+    `ball_edges`) and refuses a set nearer the skin than `CLEAR_MM` 0.5; it names the nearest vertex
+    (`skin_least_u`, `skin_least_vi`). Manic's last lash root touched the skin with the lid open at 74 degrees; at 66
+    every set keeps 10 mm (the search reach) from the skin in every lid state.
+  - `alien_lash` is one-sided (`use_backface_culling`: glTF `doubleSided` false).
+  - **The collar (minors 1, 2, 5):** a bin whose UV probe fails takes the last good bin's gradient, wrapping round the
+    ring (`alien_lids_geom.last_good_cyclic`; the right collars' first bins took zeros); a far bin's start runs
+    linearly between the nearest good bins' offsets from the smoothed edge (`cyclic_fill`), so a far run meets its
+    neighbours with no step (`start_step_mm_max` in the report); a test reads the kit's collars from the GLB
+    (`TEXCOORD_6` all 0, the Body's attribute set). The bored dome's nub from above stays: it is not the boundary step.
+  - **Proofs** (kits `M11/b80_*`, `b90_*`, `b100_*`: the fixed collar, the lips, main's `alien_m12.py` with M13b's
+    fangs, then the lashes; `M11/export` the 80 % pick): the gate with the lashes off 0.0000 in all four views; on
+    0.42 / 0.41 / 0.22 / 0.44 %, lash pixels only, the skull 0.0000. The shimmer at 3.5 m (Idle with a blink) 0.00941
+    off, 0.01125 on (M11: 0.0121); Idle alone 0.00726 / 0.00765, the line's own crawl +5 %. Closed, the curled lashes
+    point up from the lid's line (blink frames), where el2's hang down: open.
 - **M13b, the fangs mouth mg2 brought to the sheet** (brief UPDATE 22; output under
   `D:/prime-art-raw/review/char/alien-parts-kit/M13b/`): M13's lips read as thin flat double sticks with pointed
   corners at 3/4, its fangs as small pins hanging in front of the lip (floating on the cheeks in O, jumping sideways

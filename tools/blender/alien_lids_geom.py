@@ -453,7 +453,13 @@ def collar_smooth(gaps: list, c: dict = COLLAR) -> list:
 # face's shading carried in; 1: the fillet's slope shades). `uv_pull`: where a vertex samples the skin: 0 the crater
 # straight behind it (front projection), 1 the crater's edge (the dark bottom of the old crater never reaches it).
 COLLAR_SKIN = {"min_mm": 0.0, "h_back": 0.9, "gap_min_mm": 0.0, "tuck_out_mm": 1.5, "sink_mm": 0.3, "tuck_in_mm": 3.0, "front": 10,
-               "back_mm": 1.5, "end_h": 0.6, "end_back_mm": 4.0, "shrink_mm": 4.0, "geom_end": 0.5, "uv_pull": 1.0}
+               "back_mm": 1.5, "end_h": 0.6, "end_back_mm": 4.0, "shrink_mm": 4.0, "geom_end": 0.5, "uv_pull": 1.0,
+               "uv_run": 1.0, "uv_probe_mm": 2.0}
+# M11 (PR #247's review minor 2): with uv_pull 1 every vertex of a section sampled the same skin UV, so the collar's
+# triangles had no UV area and no defined tangent (the page's normal map could streak). `uv_run` adds to UVMap the
+# skin's UV gradient outward from the edge (measured over `uv_probe_mm` on the face) times the vertex's run along the
+# section (section_run): the collar maps onto the face just outside its edge, mirrored, continuous where it leaves the
+# skin, with real area. 0: M10c's constant UV. The other layers (masks, rest, AO) keep the pulled samples.
 
 
 def fillet_section(gap: float, h_edge: float, n_edge: tuple, rd: float, c: dict = COLLAR_SKIN) -> tuple:
@@ -523,3 +529,45 @@ def collar_section(gap: float, h_edge: float, rd: float, c: dict = COLLAR) -> tu
     b = min(max(c["flat"] * a, t), c["depth_max_mm"] / 1000.0)
     cen = (ax + a * u[0] - c["back"] * b * n[0], ay + a * u[1] - c["back"] * b * n[1])
     return cen, u, n, a, b
+
+
+def section_run(front: list, back: list) -> list[float]:
+    """M11: per point of a skin collar section (fillet_section's front, then back) its run for the UV (m): along the
+    front the arc length from its first point; the back's first point (behind P3) the front's whole length plus its
+    depth, the second (behind P0) its depth alone, so the faces that close the loop stay small and hidden."""
+    run = [0.0]
+    for a, b in zip(front, front[1:]):
+        run.append(run[-1] + math.hypot(b[0] - a[0], b[1] - a[1]))
+    run.append(run[-1] + math.hypot(back[0][0] - front[-1][0], back[0][1] - front[-1][1]))
+    run.append(math.hypot(back[1][0] - front[0][0], back[1][1] - front[0][1]))
+    return run
+
+
+def cyclic_fill(vals: list) -> list[float]:
+    """M11b (PR #249's review minor 2): a ring of values (the azimuth bins) with gaps (None) filled linearly between
+    the nearest known values on either side, wrapping round the ring, so a run of unknown bins meets its neighbours
+    without a step. No known value: all 0."""
+    n = len(vals)
+    known = [i for i, v in enumerate(vals) if v is not None]
+    if not known:
+        return [0.0] * n
+    out = list(vals)
+    for i in range(n):
+        if out[i] is not None:
+            continue
+        a = next(j for j in range(1, n + 1) if vals[(i - j) % n] is not None)  # back to the last known
+        b = next(j for j in range(1, n + 1) if vals[(i + j) % n] is not None)  # on to the next known
+        va, vb = vals[(i - a) % n], vals[(i + b) % n]
+        out[i] = va + (vb - va) * a / (a + b)
+    return out
+
+
+def last_good_cyclic(vals: list) -> list:
+    """M11b (PR #249's review minor 1): a ring of values with gaps (None), each gap taking the last known value before
+    it, wrapping round the ring (a run at the ring's start takes the ring's last known value). None everywhere stays."""
+    n = len(vals)
+    known = [i for i, v in enumerate(vals) if v is not None]
+    if not known:
+        return list(vals)
+    return [v if v is not None else vals[next((i - j) % n for j in range(1, n + 1) if vals[(i - j) % n] is not None)]
+            for i, v in enumerate(vals)]
