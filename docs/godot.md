@@ -1628,9 +1628,9 @@ a time, by visibility.
     socket skin, which is never moved. The shell's outer surface swells by `amount` ball radii over a ramp that
     starts 5 degrees before the elevation where the dome turns away from a front view and rises over 50 degrees.
     The rim, the bead, the wet strip, the inner surface (the blink's seal) and the rim reach are unchanged.
-    `alien_m6.py --flare auto` (the default) measures, per design, lid and side, the skin's distance outside the
-    dome per 10-degree latitude band, and takes the smallest amount (0.0025 r steps) that leaves every band at least
-    0.004 r into the skin (the larger side's). The skin meets M8b's domes 70 to 180 degrees behind the edge. Before the
+    `alien_m6.py --flare auto` (M10's default; since M10b the default is `off`, the collar fills the gap) measures,
+    per design, lid and side, the skin's distance outside the dome per 10-degree latitude band, and takes the smallest
+    amount (0.0025 r steps) that leaves every band at least 0.004 r into the skin (the larger side's). The skin meets M8b's domes 70 to 180 degrees behind the edge. Before the
     flare, the widest band gaps were 0.6 to 1.1 mm already at 100 % (the corners and the lower lids) and 3.4 to
     4.4 mm at 92 %, 6.1 to 7.0 mm at 86 %. The amounts are in each kit's `character.json` (`m6.flare`). A first ramp
     from 25 degrees swelled the dome's visible top, and the eyes did not read smaller (`M10/godot/grid_try1/`).
@@ -1703,6 +1703,45 @@ a time, by visibility.
     the same seven pack-contract failures as M10 (surfaces 68: the four collars).
   - **Open:** at 0.4 m the collar still shows a small tab below the eye from 3/4 and from below, and the crater
     behind its top shows from above (`M10b/godot/socket/`).
+- **M10c, the socket collar as skin** (brief UPDATE 16 and 18; output under
+  `D:/prime-art-raw/review/char/alien-parts-kit/M10c/`). On M10b's sheets the 90 and 80 % eyes did not read smaller:
+  the coral collar filled the gap with more coral, so the coral round each eye stayed as large as at 100 %, and from
+  3/4 it read as a stacked ring with a tab under the eye. The skull and the skin mesh are unchanged (the gate below).
+  - **The skin collar** (`alien_m6.py --collar skin`, the default; `--collar on` keeps M10b's coral ring;
+    `--collar-opts` JSON over `alien_lids_geom.COLLAR_SKIN`): per design and side `eye_<design>_collar_<side>` (no
+    `_lid_` in the name: `alien.gd` would give a `_lid_` surface the lids' coral), a static sibling of the ball in the
+    Body's material `alien_hue`, so `alien.gd` gives it the textured skin and its hue like the Body. Its section per
+    azimuth bin (`fillet_section`) runs from 1.5 mm out on the face and 0.3 mm under it, tangent to the skin at the edge
+    of the crater M8b's dome covered as a front view sees it, to 3 mm inside the dome's outline and 4 mm behind its
+    equator (inside the ball too: the lids' rounded corners leave the shell open at the poles). The crater is measured
+    without M10b's sphere limit (`collar_gaps` with `sphere` off, down to 0.9 ball radii behind): the brow above the
+    eye lies 16 to 29 mm behind the outline, a dark trench without it. A crater narrower than 4 mm draws the section
+    into the dome (`shrink_mm`), so where the skin falls away at the temple no strip lies on the dome's side.
+  - **Seamless with the skin:** per vertex the Body's `UVMap`, `masks`, `rest_xy`, `rest_zn` and point AO are sampled
+    (barycentric, `BodySampler`) on the skin at the crater's edge (`uv_pull` 1: the old crater's dark bottom never
+    reaches it); the normals are the skin's at the edge, blended halfway toward the fillet's own at the dome
+    (`geom_end` 0.5, custom normals); `contact_field` writes the lids' contact into its `contact` and `contact_mouth`
+    layers as it does for the Body (the Body's own field no longer counts any collar). The GLB primitive has the
+    Body's attributes but the skin weights: `COLOR_0`, `NORMAL`, `TANGENT`, `TEXCOORD_0` to `TEXCOORD_5`.
+  - **The join, chosen on a grid of eleven variants** on `e80_p85_w80` (`M10c/try/`, sheets `M10c/godot/try*/`):
+    the normal blend (0, 0.5, 1) and the UV pull hardly showed; what mattered was the reach (M10b's sphere limit left
+    the brow trench), where the inner end sits (at the equator it showed through the lids' open corners as a dark
+    seam) and the ends of the covered arc (wider smoothing or a gap minimum gave cracks and fins down the dome's
+    side; the shrink removed them).
+  - **The grid** (`M10c/grid/<cell>/`, the 27 cells under M10b's names, every one rebuilt with the blended thumb of
+    PR #245's review fix; the 100 % row is M8b's unit with no collar): sheets `M10c/godot/grid/grid_e<eye>_w<width>.png`
+    and `grid_manic.png` (M10b's layout and Ukrainian labels). **The pick stays eyes 80 %, lips -15 %, width 0.80**,
+    built as `M10c/export/`. At 80 % and 90 % the eyes now read smaller, from the front and at 1.2 m.
+  - **The gate** (`M10c/godot/head/head.png`, M8b against the pick and against `e80_p75_w86`): the Body's rest
+    vertices against `M8/export` move 0.0 mm (`M10c/export/cmp_m8b.json`); the plain-grey skull with no part changes
+    0.0000 of the pixels in the front, 3/4 and profile views, and the silhouette 0 px; in the top view 0.0048 and 485
+    px, all of them the thumbs in Idle (the blended thumb). With the parts: 4.9 / 4.1 / 2.2 / 3.3 %.
+  - **The kit:** glTF-Validator 0 errors (1 warning `NODE_SKINNED_MESH_NON_ROOT`); `godot-check --textured` the same
+    seven pack-contract failures as M10 and 21 of 68 surfaces textured (the four collars now take the skin's maps).
+    No Body vertex carries more than four weight groups after `alien_thumb` (counted in Blender on the pick).
+  - **Open:** from straight above, a nub of skin a few millimetres long still shows at the top of the bored dome's
+    temple side (`M10c/godot/socket/`, third column); from 3/4 at 0.4 m the far eye's nose side shows the skin
+    bridge to the nose where M8b's dome sat.
 - **M12, the red pout mouth mp1** (brief UPDATE 16 and 17; output under
   `D:/prime-art-raw/review/char/alien-parts-kit/M12/`): a third mouth design, `pout`, beside frog and overbite, from
   the sheet `D:/prime-art-raw/2026-10-20-alien-face-sheets-2/mp1/` (six shapes, the panel order rest, M, small, A, E,
