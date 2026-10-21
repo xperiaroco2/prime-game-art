@@ -122,12 +122,33 @@ LIP_SHAPE_FANGS = {
     },
 }
 
+# M14 (art #196): the tongue mouth mt2's lips: soft, full, rolled coral lips (the kit's alien_lip), the lower a little
+# fuller, round tucked corners, a soft bow; A, E and O designed rings as the pout's and the fangs' (UPDATE 19). The
+# tongue and teeth are alien_tongue_geom's.
+LIP_SHAPE_TONGUE = {
+    "w": 1.0, "corner": 0.55, "pw": 2.2, "full": 1.0, "upper": 0.85, "lower": 1.10,
+    "bow": 0.10, "bow_w": 0.16, "bow_peak": 0.06, "bow_at": 0.24,
+    "lean": 0.30, "square": 0.85, "depth_corner": 0.25,
+    "width": 0.90, "size": 1.0, "plump": 1.20,
+    "bow_flat": 1.0, "corner_tuck": 1.3, "corner_share": 0.20,
+    "ring_param": {
+        "A": dict(_RING, n=2.0, corner=0.80, bow=0.06, open=1.15, drop=1.10, upper=0.85, lower=1.05),
+        "E": dict(_RING, n=2.0, corner=0.70, bow=0.04, upper=0.85, lower=1.05),
+        "O": dict(_RING, n=2.0, hole=0.36, corner=1.0, thick=1.15, bow=0.20, tuck=0.0, cup_throat=0.85, upper=0.95,
+                  lower=1.15),
+    },
+}
+
 # M12: the third and fourth mouths' contact channels. TEXCOORD_4 (bored, manic) and TEXCOORD_5 (frog, overbite) are
 # full, so the pout's and (M13) the fangs' skin contact is Body's seventh UV layer, glTF TEXCOORD_6 (u: pout, v:
 # fangs), which Godot imports as CUSTOM2 (x pout, y fangs). Like the other layers, v is stored flipped (the exporter
 # writes 1 - v).
 CONTACT_UV_MOUTH2 = ("contact_mouth2", ("pout", "fangs"))
 CONTACT_MARKER_MOUTH2 = {"prime_contact_mouth2": "custom2_xy"}
+# M14: TEXCOORD_6 is full, so the fifth mouth's (the tongue's) skin contact is Body's eighth and last UV layer, glTF
+# TEXCOORD_7 (u: tongue, v: free, stored as 0), which Godot imports with TEXCOORD_6 as CUSTOM2's zw (z tongue).
+CONTACT_UV_MOUTH3 = ("contact_mouth3", ("tongue", ""))
+CONTACT_MARKER_MOUTH3 = {"prime_contact_mouth3": "custom2_zw"}
 
 
 def merged(over: dict | None) -> dict:
@@ -168,6 +189,11 @@ def scale_size(world, k: float, z0: float):
 def merged_fangs(over: dict | None = None) -> dict:
     """LIP_SHAPE_FANGS with `over` merged on top (as merged_pout)."""
     return merged_pout(over, LIP_SHAPE_FANGS)
+
+
+def merged_tongue(over: dict | None = None) -> dict:
+    """LIP_SHAPE_TONGUE with `over` merged on top (as merged_pout)."""
+    return merged_pout(over, LIP_SHAPE_TONGUE)
 
 
 def merged_pout(over: dict | None = None, base: dict | None = None) -> dict:
