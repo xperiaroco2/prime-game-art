@@ -74,7 +74,7 @@ class PoutShapeTest(unittest.TestCase):
         # traced rings' weights (`ring`) and their corner (`ring_corner`) are not part of the pout's shape
         self.assertEqual(set(p), set(LP.LIP_SHAPE) - {"ring"} | {"size", "bow_flat", "ring_param", "mirror", "seam_fit",
                                                                          "corner_tuck", "corner_share", "corner_join",
-                                                                         "min_b", "corner_over", "parting_dark"})
+                                                                         "min_b", "corner_over", "parting_dark", "parting"})
         self.assertEqual(set(p["ring_param"]), {"A", "E", "O"})
 
     def test_merged_pout(self):

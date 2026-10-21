@@ -652,6 +652,8 @@ def build_piece(bvh, m, design, shape, world, mats, coll, origin, lips=None, nam
         if mirror or lips_p.get("seam_fit"):
             st = LP.rest_stations(st, m["hc"], lips_p)
             xl, xr = st[0]["x"] - 0.5, st[-1]["x"] + 0.5
+        if (lips_p.get("parting") or {}).get(shape):  # M16c: a designed parting (mp1's small: a slit over the middle)
+            st = LP.parted(st, lips_p["parting"][shape])
         ss = [2 * (r["x"] - xl) / max(1.0, xr - xl) - 1 for r in st]  # M8: -1 .. 1 corner to corner
         for lip in ("u", "l"):
             cs, ra, rb, ns = [], [], [], []

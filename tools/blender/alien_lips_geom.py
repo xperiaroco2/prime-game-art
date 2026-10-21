@@ -100,7 +100,8 @@ _POUT_RING = {"upper": 0.95, "lower": 1.10, "lean": 0.25, "bow_w": 0.16, "bow_pe
 # the ends thinner (corner 0.06, min_b 0.6 mm: alien_mouths.MIN_B's 1.1 mm rounded them to caps) and nearly flat
 # (depth_corner 0.05), tapering over a longer stretch (pw 1.75, the corner rule over the last 0.26), the lower lip's
 # end sunk under the upper's (corner_over 0.8); small's parting dark behind it (parting_dark: the open stations
-# without each end's 0.2). The pick of M16c's grids (docs/godot.md, M16c).
+# without each end's 0.2), small parted as mp1 draws it (parting: 6 px over the middle 0.55; the sheet's traced gap
+# was 4 stations wide and hidden by the lips). The pick of M16c's grids (docs/godot.md, M16c).
 LIP_SHAPE_POUT = {
     "w": 1.0, "corner": 0.06, "pw": 1.75, "full": 1.0, "upper": 0.85, "lower": 1.20,
     "bow": 0.30, "bow_w": 0.12, "bow_peak": 0.40, "bow_at": 0.22,
@@ -108,7 +109,7 @@ LIP_SHAPE_POUT = {
     "width": 1.0, "size": 0.95, "plump": 1.15,
     "bow_flat": 1.0, "corner_tuck": 1.1, "corner_share": 0.26, "corner_join": 0.95,
     "min_b": 0.0006, "corner_over": 0.8,
-    "mirror": 1.0, "seam_fit": 3, "parting_dark": 0.2,
+    "mirror": 1.0, "seam_fit": 3, "parting_dark": 0.2, "parting": {"small": (6.0, 0.55)},
     "ring_param": {  # M16: the open rings keep M12b's balance and lean (the rest's change is the closed lips' only)
         "A": dict(_RING, n=2.1, corner=0.68, wide=1.04, **_POUT_RING),
         "E": dict(_RING, n=2.0, corner=0.60, **_POUT_RING),
@@ -392,6 +393,26 @@ def rest_stations(st: list, hc: float, p: dict) -> list:
             gap = max(1.0, r["top_l"] - r["bot_u"]) if r["open"] else 1.0
             r["bot_u"], r["top_l"] = mid - gap / 2, mid + gap / 2
     return st
+
+
+def parted(st: list, part) -> list:
+    """M16c: a closed piece's designed parting, part = (gap, half_width): over the middle the lips stand apart by
+    gap px x (1 - (s / half_width)^2)^1.5 round their lip line (s -1 .. 1 corner to corner), never less than the
+    stations' own gap; a station so parted by 1 px or more is open (its dark strip, alien_mouths' parting_dark).
+    Symmetric in s, so a mirrored piece stays mirrored."""
+    gap, half = part
+    x0, x1 = st[0]["x"], st[-1]["x"]
+    out = []
+    for r in st:
+        s = 2 * (r["x"] - x0) / max(1e-9, x1 - x0) - 1
+        g = gap * max(0.0, 1.0 - (s / half) ** 2) ** 1.5
+        r = dict(r)
+        if g > r["top_l"] - r["bot_u"]:
+            mid = (r["bot_u"] + r["top_l"]) / 2
+            r["bot_u"], r["top_l"] = mid - g / 2, mid + g / 2
+            r["open"] = r["open"] or g >= 1.0
+        out.append(r)
+    return out
 
 
 def star_resample(pts: list, centre: tuple, n: int) -> list:

@@ -257,5 +257,21 @@ class CupRimTest(unittest.TestCase):  # M16c (UPDATE 36): the pout O's dark cup 
         self.assertIn('cup = LP.star_resample(cup, cw, RING_N)', src)
 
 
+class PartedTest(unittest.TestCase):  # M16c: small's designed parting (mp1's dark slit over the middle)
+    def test_parted_over_the_middle_and_mirrored(self):
+        st = [{"x": 230.0 + i * 2.2, "top_u": 250.0, "bot_u": 271.5, "top_l": 272.5, "bot_l": 296.0, "open": False}
+              for i in range(41)]
+        out = LP.parted(st, (6.0, 0.55))
+        mid = out[20]
+        self.assertAlmostEqual(mid["top_l"] - mid["bot_u"], 6.0)
+        self.assertAlmostEqual((mid["top_l"] + mid["bot_u"]) / 2, 272.0)  # round the lip line
+        self.assertTrue(mid["open"])
+        for i in range(41):
+            self.assertAlmostEqual(out[i]["top_l"] - out[i]["bot_u"], out[40 - i]["top_l"] - out[40 - i]["bot_u"])
+        self.assertFalse(out[3]["open"])  # the ends stay closed
+        self.assertEqual(out[3]["top_l"] - out[3]["bot_u"], 1.0)
+        self.assertEqual(LP.LIP_SHAPE_POUT["parting"], {"small": (6.0, 0.55)})
+
+
 if __name__ == "__main__":
     unittest.main()
