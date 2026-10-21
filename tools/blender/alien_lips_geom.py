@@ -94,26 +94,50 @@ _RING = {"bow": 0.12, "tuck": 0.35, "side_keep": 0.85, "depth_corner": 0.5, "n_f
 # skin; 1.3 over 0.20 narrowed the mouth). The pick of M16b's grids (docs/godot.md, M16b). The open rings keep M12b's
 # bow shape (bow_w, bow_peak, bow_at in _POUT_RING; ring_param reads a ring's own).
 # M16c: cup_even: the dark cup's rim resampled at even angles (star_resample; O's traced rim folded, a zero tangent).
-_POUT_RING = {"upper": 0.95, "lower": 1.10, "lean": 0.25, "bow_w": 0.16, "bow_peak": 0.10, "bow_at": 0.24,
-              "cup_even": 1}
+# M16e (PR #258 major 2: next to the slim rest A/E/O read thicker and wider, the talk jumped): measured on the front
+# cells (px at 0.4 m, the lips' centre, the tongue left out) the rings' lips were no thicker than the rest's (A 34 / 38,
+# E 29 / 34, O 29 / 43 against rest 40 / 40); the jump was the rest's flat blades (M16d's depth 0.5) against the
+# rings' round rolls, and the rings' thick round corners against the rest's fine points. So plump 1.0 with each
+# ring's own upper / lower keeping its lips a little under the rest's (an open lip stretches thinner: A 34 / 36,
+# E 30 / 34, O 29 / 37), A's and E's corners tapered (corner 0.40 / 0.35, mp1's A and E thin toward the ends) and A
+# no wider than the rest (wide 1.0). The pick of M16e's grid e3 (docs/godot.md, M16e).
+_POUT_RING = {"lean": 0.25, "bow_w": 0.16, "bow_peak": 0.10, "bow_at": 0.24, "cup_even": 1, "plump": 1.0}
 # M16c (UPDATE 36, #254's minors 1 and 3): mp1's long fine corner points with the upper lip overhanging the lower:
 # the ends thinner (corner 0.06, min_b 0.6 mm: alien_mouths.MIN_B's 1.1 mm rounded them to caps) and nearly flat
 # (depth_corner 0.05), tapering over a longer stretch (pw 1.75, the corner rule over the last 0.26), the lower lip's
-# end sunk under the upper's (corner_over 0.8); small's parting dark behind it (parting_dark: the open stations
-# without each end's 0.2), small parted as mp1 draws it (parting: 6 px over the middle 0.55; the sheet's traced gap
-# was 4 stations wide and hidden by the lips). The pick of M16c's grids (docs/godot.md, M16c).
+# end sunk under the upper's (corner_over 0.8); a dark strip behind a closed piece's open stations (parting_dark:
+# without each end's 0.2; small's and rest's traced open stations), small given a designed parting (parting: 6 px
+# over the middle 0.55; the sheet's traced gap was 4 stations wide). The pick of M16c's grids (docs/godot.md, M16c).
+# M16e (PR #258 minor 5): with M16d's slimmer lips small's parting shows from the front as a fine dark slit, and its
+# ends stepped (the parted stations dropped the closed ones' 1.5 px seam overlap at once): parted() now eases the
+# overlap out over the first 3 px of the gap (`overlap` per station, alien_mouths' tubes read it).
+# M16d (UPDATE 37/39: the rest "stung by a wasp", swollen; mp1's sheet reads slim and elegant): fitted to mp1's rest
+# measured on the sheet (each lip 0.30 of the mouth's width, the lower over the upper 1.0, the corner's half-height
+# point 0.28 of the half width in, the ends' height 0.43 of the centre's): even lips (upper 1.10, lower 1.00, plump
+# 1.00; M16's 0.85 / 1.20 / 1.15 drew a ballooning lower cushion, 1.57 x the upper), the tubes shallower (depth 0.5,
+# the lower 0.75 of that: in profile they stood off the face 0.36 of the mouth's width, a beak; now 0.21), a longer
+# taper to finer ends (pw 1.3 over the last 0.32, tucked 0.7; the ends' min_b 0.8 mm and corner_over 0.6, #255
+# minor 4's pale tick), and rest's lips closed along the whole line (closed: its traced open stations notched the
+# line). M and small take the same. The pick of M16d's grids (docs/godot.md, M16d).
+# M16e (PR #258 major 1: in profile M16d's slim lips read as a beak or petal, each a flat blade, the lower a narrow
+# tongue with a sharp downward tip): round tubes again (depth 0.9, the lower as deep, depth_l 1.0) sunk half into the
+# skin (sink 0.5, so they stand off 0.28 of the mouth's width, not M16's 0.36), each station's section turned 0.6 of
+# the way to the mouth's mean normal (tube_n_flat: the skin under the lower lip faces down toward the chin, and the
+# lower lip hung along it), the lower lip 1.05 (the rounder tube measured it 0.93 of the upper; now 1.0). Front
+# ratios as M16d's (upper 0.30, lower 0.30 of the width). The pick of M16e's grids e1 / e2 (docs/godot.md, M16e).
 LIP_SHAPE_POUT = {
-    "w": 1.0, "corner": 0.06, "pw": 1.75, "full": 1.0, "upper": 0.85, "lower": 1.20,
+    "w": 1.0, "corner": 0.06, "pw": 1.3, "full": 1.0, "upper": 1.10, "lower": 1.05,
     "bow": 0.30, "bow_w": 0.12, "bow_peak": 0.40, "bow_at": 0.22,
     "lean": 0.10, "square": 0.85, "depth_corner": 0.05,
-    "width": 1.0, "size": 0.95, "plump": 1.15,
-    "bow_flat": 1.0, "corner_tuck": 1.1, "corner_share": 0.26, "corner_join": 0.95,
-    "min_b": 0.0006, "corner_over": 0.8,
-    "mirror": 1.0, "seam_fit": 3, "parting_dark": 0.2, "parting": {"small": (6.0, 0.55)},
-    "ring_param": {  # M16: the open rings keep M12b's balance and lean (the rest's change is the closed lips' only)
-        "A": dict(_RING, n=2.1, corner=0.68, wide=1.04, **_POUT_RING),
-        "E": dict(_RING, n=2.0, corner=0.60, **_POUT_RING),
-        "O": dict(_RING, n=2.0, hole=0.30, corner=1.0, thick=0.9, bow=0.30, tuck=0.0, cup_throat=0.85, **_POUT_RING),
+    "width": 1.0, "size": 0.95, "plump": 1.00, "depth": 0.9, "depth_l": 1.0, "sink": 0.5, "tube_n_flat": 0.6,
+    "bow_flat": 1.0, "corner_tuck": 0.7, "corner_share": 0.32, "corner_join": 0.95,
+    "min_b": 0.0008, "corner_over": 0.6,
+    "mirror": 1.0, "seam_fit": 3, "parting_dark": 0.2, "parting": {"small": (6.0, 0.55)}, "closed": ("rest",),
+    "ring_param": {  # M16: the open rings' own balance and lean; M16e their own fullness (_POUT_RING)
+        "A": dict(_RING, n=2.1, corner=0.40, wide=1.0, upper=1.15, lower=1.20, **_POUT_RING),
+        "E": dict(_RING, n=2.0, corner=0.35, upper=1.15, lower=1.25, **_POUT_RING),
+        "O": dict(_RING, n=2.0, hole=0.30, corner=1.0, thick=0.9, bow=0.30, tuck=0.0, cup_throat=0.85, upper=1.10,
+                  lower=1.10, **_POUT_RING),
     },
 }
 
@@ -298,6 +322,12 @@ def depth_scale(s: float, p: dict) -> float:
     return 1.0 + w * (p["depth_corner"] + (1.0 - p["depth_corner"]) * t - 1.0)
 
 
+def depth_factor(p: dict, lip: str) -> float:
+    """M16d: a closed lip's tube depth (its forward radius) times p["depth"], the lower lip's (`l`) also times
+    p["depth_l"]; 1 without them (every design but the pout)."""
+    return p.get("depth", 1.0) * (p.get("depth_l", 1.0) if lip == "l" else 1.0)
+
+
 def ring_width(th: float, hw: float, hc: float, low: float, shape: str, p: dict) -> float:
     """An open ring's lip half width at angle th (cos th = +-1 at the corners, sin th > 0 the lower lip; low the
     lower lip's share at th): hw measured, hc the ring's measured centre width."""
@@ -374,13 +404,16 @@ def even_fit(ss, vals, terms: int = 3) -> list:
     return [sum(c[j] * s ** (2 * j) for j in range(terms)) for s in ss]
 
 
-def rest_stations(st: list, hc: float, p: dict) -> list:
+def rest_stations(st: list, hc: float, p: dict, shape: str = "") -> list:
     """M16: a closed piece's stations as the lip shape asks: with p["mirror"] mirrored about the face's centre line
     (mirror_stations); with p["seam_fit"] (a number of even terms) the lip line (the upper lip's bottom and the lower
     lip's top) an even polynomial fit (even_fit). Without either the stations as they are.
 
     M16b: only the lip line's middle is fitted; a closed station's lips meet on it (1 px apart), an open station keeps
-    its measured gap round it (small's parting, as mp1 draws it)."""
+    its measured gap round it (small's parting, as mp1 draws it).
+
+    M16d: a shape in p["closed"] has every station closed, its lips meeting along the whole line (the rest's few
+    traced open stations kept a 1-2 px gap whose ends notched the lip line on each side of the centre)."""
     if p.get("mirror", 0.0) > 0.0:
         st = mirror_stations(st, hc)
     terms = int(p.get("seam_fit", 0))
@@ -389,16 +422,20 @@ def rest_stations(st: list, hc: float, p: dict) -> list:
         ss = [2 * (r["x"] - x0) / max(1e-9, x1 - x0) - 1 for r in st]
         st = [dict(r) for r in st]
         mids = even_fit(ss, [(r["bot_u"] + r["top_l"]) / 2 for r in st], terms)
+        shut = shape in p.get("closed", ())
         for r, mid in zip(st, mids):
+            if shut:
+                r["open"] = False
             gap = max(1.0, r["top_l"] - r["bot_u"]) if r["open"] else 1.0
             r["bot_u"], r["top_l"] = mid - gap / 2, mid + gap / 2
     return st
 
 
-def parted(st: list, part) -> list:
+def parted(st: list, part, seam_overlap: float = 1.5) -> list:
     """M16c: a closed piece's designed parting, part = (gap, half_width): over the middle the lips stand apart by
     gap px x (1 - (s / half_width)^2)^1.5 round their lip line (s -1 .. 1 corner to corner), never less than the
-    stations' own gap; a station so parted by 1 px or more is open (its dark strip, alien_mouths' parting_dark).
+    stations' own gap; a station so parted by 1 px or more is open (its dark strip, alien_mouths' parting_dark), and
+    each parted station's `overlap` (px, each lip over the lip line) eases from seam_overlap to 0 as the gap opens.
     Symmetric in s, so a mirrored piece stays mirrored."""
     gap, half = part
     x0, x1 = st[0]["x"], st[-1]["x"]
@@ -411,6 +448,9 @@ def parted(st: list, part) -> list:
             mid = (r["bot_u"] + r["top_l"]) / 2
             r["bot_u"], r["top_l"] = mid - g / 2, mid + g / 2
             r["open"] = r["open"] or g >= 1.0
+            # M16e: each lip's overlap over the seam eased from the closed stations' (seam_overlap px at a 1 px gap)
+            # to none at 4 px, so the lips part smoothly at the slit's ends instead of in a 3 px step
+            r["overlap"] = seam_overlap * (1.0 - _smooth01((g - 1.0) / 3.0))
         out.append(r)
     return out
 
@@ -471,7 +511,7 @@ def ring_param(meas: dict, rp: dict, p: dict, n: int):
     weights (0 at the centre, 1 at the corners)), n angles, th = 2 pi k / n, sin > 0 the lower lip (px y down)."""
     cx, cy, W = meas["cx"], meas["cy"], meas["W"] * rp.get("wide", 1.0)
     tm = 0.5 * (meas["t_u"] + meas["t_l"]) * rp.get("thick", 1.0)
-    full = p["full"] * p.get("plump", 1.0)
+    full = p["full"] * rp.get("plump", p.get("plump", 1.0))  # M16d: a ring's own fullness (the pout's keeps 1.15)
     corner, pw, ex = rp.get("corner", 0.6), rp.get("pw", 2.5), 2.0 / rp.get("n", 2.0)
     if rp.get("hole"):  # a round hole of radius hole x W, the lips all round W - the radius thick
         ow = oh = rp["hole"] * W

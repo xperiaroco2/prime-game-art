@@ -38,7 +38,19 @@ def mirror_dev(ob) -> dict:
     kd.balance()
     dev = max(kd.find((-c.x, c.y, c.z))[2] for c in co)
     xs = [c.x for c in co]
-    return {"max_mm": round(dev * 1000, 4), "verts": len(co), "x_mm": [round(min(xs) * 1000, 2), round(max(xs) * 1000, 2)]}
+    return {"max_mm": round(dev * 1000, 4), "verts": len(co),
+            "x_mm": [round(min(xs) * 1000, 2), round(max(xs) * 1000, 2)], "min_tri_mm2": min_tri(co, ob.data)}
+
+
+def min_tri(co, me) -> float:
+    """M16d (#255 minor 1): the piece's smallest triangle (mm^2; polygons fanned from their first corner), from the
+    current code: a sliver (M16b's O cup had one of 0.006 mm^2) gives the exported GLB a zero tangent."""
+    best = float("inf")
+    for poly in me.polygons:
+        vs = [co[i] for i in poly.vertices]
+        for k in range(1, len(vs) - 1):
+            best = min(best, (vs[k] - vs[0]).cross(vs[k + 1] - vs[0]).length / 2)
+    return round(best * 1e6, 5)
 
 
 def main():

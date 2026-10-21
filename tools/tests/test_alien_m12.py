@@ -52,11 +52,27 @@ class SizeTest(unittest.TestCase):
 class PoutShapeTest(unittest.TestCase):
     def test_the_sheets_fullness_and_a_clearer_bow(self):
         p = LP.LIP_SHAPE_POUT
-        self.assertGreater(p["lower"], p["upper"])  # the lower lip the bigger cushion
+        # M16d (UPDATE 39): mp1's measured rest, even lips, never M16's swollen lower cushion (lower 1.20 over plump
+        # 1.15); M16e (PR #258 major 1): round tubes sunk half into the skin, never M16d's flat blades (depth 0.5,
+        # the lower 0.75 of it), their sections turned toward the mouth's mean normal
+        self.assertLessEqual(p["lower"], p["upper"])
+        self.assertLessEqual(p["plump"], 1.0)
+        self.assertLessEqual(p["lower"] * p["plump"], 1.1)
+        self.assertGreaterEqual(p["depth"] * p["depth_l"], 0.85)
+        self.assertLessEqual(p["depth"], 1.0)
+        self.assertGreater(p["sink"], 0.30)
+        self.assertLess(p["sink"], 0.7)
+        self.assertGreater(p["tube_n_flat"], 0.0)
+        self.assertLessEqual(p["tube_n_flat"], 1.0)
+        self.assertEqual(p["closed"], ("rest",))
         self.assertGreater(p["upper"], LP.LIP_SHAPE["upper"])  # mp1's upper lip fuller than the frog's
-        # M16b (UPDATE 30): mp1's ends tucked to points, finer than the frog's, and its clear double-peaked bow
+        # M16b (UPDATE 30): mp1's ends tucked to points, finer than the frog's, and its clear double-peaked bow;
+        # M16d: the points from a longer taper (pw 1.3 over 0.32) with a softer tuck
         self.assertLess(p["corner"], LP.LIP_SHAPE["corner"])
-        self.assertGreater(p["corner_tuck"], 1.0)
+        self.assertLess(p["pw"], 1.5)
+        self.assertGreaterEqual(p["corner_share"], 0.30)
+        self.assertGreaterEqual(p["corner_tuck"], 0.5)  # PR #258 minor 7: a tuck still, never none
+        self.assertLessEqual(p["corner_tuck"], 1.2)
         self.assertGreaterEqual(p["bow"], 0.30)
         self.assertGreater(p["bow_peak"], 0.30)
         # M16c (UPDATE 36): mp1's long fine points, the upper lip's end over the lower's, small's dark parting
@@ -66,7 +82,8 @@ class PoutShapeTest(unittest.TestCase):
         self.assertGreater(p["corner_share"], 0.18)
         self.assertGreater(p["parting_dark"], 0.0)
         src = (Path(__file__).resolve().parents[1] / "blender" / "alien_mouths.py").read_text(encoding="utf-8")
-        for key in ('lips_p.get("min_b", MIN_B)', 'lips_p.get("corner_over", 0.0)', 'lips_p.get("parting_dark")'):
+        for key in ('lips_p.get("min_b", MIN_B)', 'lips_p.get("corner_over", 0.0)', 'lips_p.get("parting_dark")',
+                    'lips_p.get("sink", SINK)', 'lips_p.get("tube_n_flat", 0.0)'):
             self.assertIn(key, src)  # the closed tubes read them
         for s, rp in p["ring_param"].items():  # the open rings keep M12b's bow shape
             self.assertEqual((rp["bow_w"], rp["bow_peak"], rp["bow_at"]), (0.16, 0.10, 0.24), s)
@@ -74,7 +91,9 @@ class PoutShapeTest(unittest.TestCase):
         # traced rings' weights (`ring`) and their corner (`ring_corner`) are not part of the pout's shape
         self.assertEqual(set(p), set(LP.LIP_SHAPE) - {"ring"} | {"size", "bow_flat", "ring_param", "mirror", "seam_fit",
                                                                          "corner_tuck", "corner_share", "corner_join",
-                                                                         "min_b", "corner_over", "parting_dark", "parting"})
+                                                                         "min_b", "corner_over", "parting_dark", "parting",
+                                                                         "depth", "depth_l", "closed",
+                                                                         "sink", "tube_n_flat"})
         self.assertEqual(set(p["ring_param"]), {"A", "E", "O"})
 
     def test_merged_pout(self):
@@ -115,7 +134,8 @@ class RingParamTest(unittest.TestCase):
                     self.assertLess(max(abs(t) for t in turns), math.radians(20), shape)
 
     def test_an_even_roll_with_round_corners(self):
-        for shape, lo in (("A", 0.6), ("E", 0.55), ("O", 0.75)):
+        # M16e: A's and E's corners taper (0.40 / 0.35 of the centre's thickness, mp1's open lips thin toward the ends)
+        for shape, lo in (("A", 0.35), ("E", 0.30), ("O", 0.75)):
             _c, pairs, outer0, _cw = self.ring(shape)
             t = [math.hypot(o[0] - i[0], o[1] - i[1]) for (i, _o), o in zip(pairs, outer0)]
             self.assertGreater(min(t) / max(t), lo, shape)  # never a thin flap
@@ -129,7 +149,7 @@ class RingParamTest(unittest.TestCase):
         self.assertAlmostEqual(min(r), 0.30 * self.MEAS["O"]["W"], places=3)
         outer = [q[1] for q in pairs]
         w = max(x for x, _y in outer) - min(x for x, _y in outer)
-        self.assertLess(w, 2 * self.MEAS["O"]["W"] * 1.08)  # the kiss keeps about the sheet's size (plump 1.15)
+        self.assertLess(w, 2 * self.MEAS["O"]["W"] * 1.08)  # the kiss keeps about the sheet's size
 
     def test_flat_bow(self):
         p = LP.merged_pout()
