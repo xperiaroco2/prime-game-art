@@ -10,7 +10,8 @@
 - `--kit`: the same on a finished kit (M5's export, S9's eyes), for the depth grid: <out>/alien_character.blend and the
   kit's other files. The skin's maps stay the input's (the UVs ride with the vertices), so only the shape is new.
 
-Per side every eye part of every design (balls, lids, wet strips) is scaled by `eye_scale` about the old centre,
+Per side every eye part of every design (balls, lids, wet strips) is scaled by `eye_scale` times `unit` (M17b: the
+unit grown inside a socket cut for `eye_scale`, alien_fit_geom.socket_radius) about the old centre,
 turned by `toe` and moved (alien_fit_geom.place); the `Eye_<side>` node takes the new centre and turn, so the lids
 hinge at the new centre and look straight ahead. The Body's skin is filled, cut and filleted (alien_fit_geom). The
 mount is recorded as Body["prime_socket"] (alien_socket.MARKER, JSON with "route": "m15"): alien_m6.py then scales no
@@ -94,6 +95,7 @@ def apply(spec: dict, debug: bool = False) -> dict:
     tris = tris.reshape(-1, 3)
     lap = F.Lap(n, edges)
     k = s["eye_scale"]
+    ku = k * s["unit"]  # M17b: the unit's own scale (the socket's sphere follows `follow` of the growth)
     reach = F.lid_reach(EYES, LID_BEAD, LG.LIDS)
     keep_pts = {nm: np.array(bpy.data.objects[nm].matrix_world.translation) for nm in ("Mouth", "Crest")}
     near_keep = np.zeros(n, dtype=bool)
@@ -120,7 +122,7 @@ def apply(spec: dict, debug: bool = False) -> dict:
         r0 = r_m
         c1, _rz, f1 = F.place(c_m if sx > 0 else c_m * mir, f_m if sx > 0 else f_m * mir, sx, s)
         rz = F.place(c, fwd, sx, s)[1]  # the unit's own turn (its own axis straightened)
-        R = k * r0 * reach + s["gap"]
+        R = F.socket_radius(k, r0, reach, s)
         ex, ey = F.frame(f1, sx)
         own = co0[:, 0] * sx > 0.010
         fr = own & ~near_keep & (co0[:, 2] > c[2] - s["free_below"]) & ((np.linalg.norm(co0 - c, axis=1) < s["free_r"] * r0)
@@ -143,6 +145,10 @@ def apply(spec: dict, debug: bool = False) -> dict:
         P[ins] = F.bowl_map(P[ins], v["c1"], v["a"], v["ex"], v["ey"], v["R"], tc)
         P = F.fillet(P, lap, band, v["c1"], v["R"], s["fillet_passes"])
         P = F.rim_drop(P, free & v["own"], v["c1"], v["a"], v["ex"], v["ey"], tc, v["R"], s["rim_drop"])  # M17
+        v["rim_drop_steps"] = F.rim_drop_steps(P, free & v["own"], edges, v["c1"], v["a"], v["ex"], v["ey"], tc,
+                                               v["R"], s["rim_drop"])  # M17b: PR #257 review minor 3
+        if v["rim_drop_steps"] and not debug:
+            raise SystemExit(f"fit {side}: rim_drop leaves {v['rim_drop_steps']} stepped edges against the fixed face")
         v["rho_c_mm"] = [round(float(np.degrees(tc.min())), 1), round(float(np.degrees(tc.max())), 1)]
         v["inside_verts"] = int(ins.sum())
     moved = np.linalg.norm(P - co0, axis=1)
@@ -156,7 +162,7 @@ def apply(spec: dict, debug: bool = False) -> dict:
     rep["folds_before"] = int(len(f0))
     hid = np.zeros(len(fp), dtype=bool)
     for v in sides.values():
-        hid |= F.hidden(fp, v["c1"], v["a"], k * v["r0"], v["R"])
+        hid |= F.hidden(fp, v["c1"], v["a"], ku * v["r0"], v["R"])
     nf, nh = int((~hid).sum()), int(hid.sum())
     rep["folds_where"] = [[round(float((p_ - sides["L" if p_[0] > 0 else "R"]["c1"]) @ sides["L" if p_[0] > 0 else "R"][ax]) * 1000, 1)
                            for ax in ("ex", "ey", "a")] for p_ in fp[~hid][:12]]
@@ -165,14 +171,14 @@ def apply(spec: dict, debug: bool = False) -> dict:
                          f"mouth/crest skin moved {keep} mm")
     set_body(body, P, co0)
     if s["mask_fill"]:
-        rep["mask_fill"] = fill_masks(body, lap, free)
+        rep["mask_fill"] = fill_masks(body, lap, free, s["fill_iters"])
     rep.update({"folds": nf, "folds_hidden": nh, "keep_mm": keep, "moved_max_mm": round(float(moved.max() * 1000), 2),
                 "moved_verts": int((moved > 1e-4).sum())})
     # the eye units: world targets first, then the node placed, then the meshes written in their new frames
     for side, v in sides.items():
         c, c1, rz = v["c"], v["c1"], v["rz"]
         parts = unit_meshes(side)
-        targets = {o.name: c1 + (k * (world_co(o) - c)) @ rz.T for o in parts}
+        targets = {o.name: c1 + (ku * (world_co(o) - c)) @ rz.T for o in parts}
         sock = bpy.data.objects[f"Eye_{side}"]
         mw = np.array(sock.matrix_world)
         new = np.eye(4)
@@ -191,16 +197,16 @@ def apply(spec: dict, debug: bool = False) -> dict:
         v["aim"] = aim
         rep[side] = {"centre_before": c.round(4).tolist(), "centre": c1.round(4).tolist(),
                      "move_mm": ((c1 - c) * 1000).round(2).tolist(), "toe_deg": round(float(np.degrees(
-                         F.toe_angle(tuple(v["fwd"]), s["toe"]))), 2), "ball_r": round(k * v["r0"], 4),
+                         F.toe_angle(tuple(v["fwd"]), s["toe"]))), 2), "ball_r": round(ku * v["r0"], 4),
                      "socket_R": round(v["R"], 4), "opening_deg": v["rho_c_mm"], "inside_verts": v["inside_verts"],
-                     "ball_aim_in_deg": v["aim"]}
-    rep.update(measure(body, sides, k))
+                     "ball_aim_in_deg": v["aim"], "rim_drop_steps": v["rim_drop_steps"]}
+    rep.update(measure(body, sides, ku))
     body[MARKER] = json.dumps({"route": "m15", **s}, sort_keys=True)
     log("fit", json.dumps(rep))
     return rep
 
 
-def fill_masks(body, lap, free: np.ndarray) -> dict:
+def fill_masks(body, lap, free: np.ndarray, iters: int = 1500) -> dict:
     """M17: the Body's paint masks (UV layer `masks`: u light, v accent; per vertex, the loops' mean) over the free
     skin filled from the fixed face round it (alien_fit_geom.fair_fill on the values), written to every loop of a free
     vertex. Returns the light mask's mean over the free skin before and after."""
@@ -215,7 +221,7 @@ def fill_masks(body, lap, free: np.ndarray) -> dict:
     per = np.zeros((n, 3))
     for k in range(2):
         per[:, k] = np.bincount(lv, weights=uv[:, k], minlength=n) / cnt
-    filled = np.clip(F.fair_fill(per, lap, free, 1500), 0.0, 1.0)
+    filled = np.clip(F.fair_fill(per, lap, free, iters), 0.0, 1.0)  # M17b: FIT's fill_iters (PR #257 review minor 4)
     at = free[lv]
     uv[at] = filled[lv[at], :2]
     me.uv_layers["masks"].data.foreach_set("uv", uv.ravel())

@@ -26,6 +26,12 @@ with it: "half the head removed". Here the face never follows the eye back. Per 
    (fair_fill on the values), so the crown's hue reaches the lid above the eye as on the face beside it; the free
    skin kept the old crater's masks, a pale band between the teal and the lid (`mask_fill` 1).
 
+7. M17b: the unit grows inside the socket (`unit`, a factor over `eye_scale`; brief UPDATE 40, "the eyes about 5 %
+   bigger so less of the hollow shows"). The socket's sphere follows only `follow` of that growth (socket_radius;
+   0: the socket as cut for `eye_scale`), so a bigger ball and lids fill more of the same hole and the gap between
+   the lids and the bowl shrinks. The lids' rolled rim fades to nothing at the corners (alien_lids_geom.CORNER), so
+   the largest reach (the upper rim's middle) only sweeps the front of the opening.
+
 The unit's front then sits against the face's level instead of 30 mm before it (M10c), and the head round it keeps
 its shape; the sink sets how deep the eye sits (the depth grid).
 """
@@ -37,10 +43,15 @@ import numpy as np
 
 FIT = {"eye_scale": 0.76, "sink": 0.018, "inward": 0.019, "toe": 1.0, "gap": 0.0006, "free_r": 1.5,
        "free_margin": 0.010, "free_below": 0.065, "fillet": 0.008, "fillet_passes": 24, "keep_mm": 0.2, "fill_iters": 1500,
-       "rim_drop": 0.004, "mask_fill": 1.0}
+       "rim_drop": 0.004, "mask_fill": 1.0, "unit": 1.08, "follow": 0.0}
 FIT_KEYS = tuple(FIT)
 BINS = 72
+# M17b: the pick of the size grid (100 / 105 / 110 %, then 108 %; brief UPDATE 40): unit 1.08 in M15's socket (follow
+# 0). At 100 % a 4 mm gap ran between the lower lid (1.048 r) and the socket (1.151 r + 0.6 mm) and read as a cavity at
+# 0.4 m; at 105 % it was 2.3 mm and still showed the lit lip and the groove; from 108 % it reads as a shadowed crease.
 RIM_DROP_DEG = 45.0  # M17: rim_drop reaches at most this far (from the ball's centre) beyond the crossing curve
+RIM_DROP_FADE = 15.0  # M17b: ... fading out over the last this many degrees (and the last RIM_DROP_FADE_R R of 1.6 R)
+RIM_DROP_FADE_R = 0.2
 LAST = {}  # fair_fill's convergence per axis (iterations, the gradient's last share of its first): the stage reports it
 
 
@@ -57,7 +68,8 @@ def set_fit(spec: dict) -> dict:
             and 0.0 <= out["free_below"] <= 0.12 and 0.0 <= out["free_margin"] <= 0.03
             and 0.0 <= out["fillet"] <= 0.02 and 0 <= out["fillet_passes"] <= 100
             and 1 <= out["fill_iters"] <= 10000 and 0.0 < out["keep_mm"] <= 1.0
-            and 0.0 <= out["rim_drop"] <= 0.02 and out["mask_fill"] in (0.0, 1.0)):  # M15b: review minor 4
+            and 0.0 <= out["rim_drop"] <= 0.02 and out["mask_fill"] in (0.0, 1.0)  # M15b: review minor 4
+            and 0.9 <= out["unit"] <= 1.25 and 0.0 <= out["follow"] <= 1.0):  # M17b
         raise SystemExit(f"fit: out of range {out}")
     return out
 
@@ -71,6 +83,12 @@ def lid_reach(eyes: dict, beads: dict, lids: dict) -> float:
             r0, r1 = d[lid]["rho"]
             best = max(best, r0 + lids["thin"] * (r1 - r0) + lids["rim"] * beads[lid])
     return best
+
+
+def socket_radius(k: float, r0: float, reach: float, s: dict) -> float:
+    """M17b: the socket sphere's radius: the slim lids' reach on the `eye_scale` unit, grown by `follow` of the unit's
+    own growth `unit`, plus `gap`. unit 1 (or follow 1 with unit 1) is M15's k * r0 * reach + gap exactly."""
+    return k * r0 * reach * (1.0 + s["follow"] * (s["unit"] - 1.0)) + s["gap"]
 
 
 def toe_angle(fwd: tuple, toe: float) -> float:
@@ -268,21 +286,54 @@ def fillet(P: np.ndarray, lap: Lap, band: np.ndarray, c: np.ndarray, R: float, p
 
 def rim_drop(P: np.ndarray, sel: np.ndarray, c: np.ndarray, a: np.ndarray, ex: np.ndarray, ey: np.ndarray,
              th_c: np.ndarray, R: float, width: float) -> np.ndarray:
-    """M17: the socket's edge lowered onto the lids. Each selected point outside the sphere (c, R), less than `width`
-    over it, within 1.6 R of c and at most RIM_DROP_DEG beyond the crossing curve th_c, is drawn along its ray from c:
-    its height h over the sphere becomes h * smoothstep(0, width, h) (monotone, so nothing folds along a ray). The
-    face then meets the sphere (the lid's surface plus the gap) tangentially instead of in a rounded convex lip and
-    is back at its own level `width` over the sphere; nothing farther and nothing inside the sphere moves."""
+    """M17: the socket's edge lowered onto the lids. Each selected point outside the sphere (c, R) and less than
+    `width` over it is drawn along its ray from c: its height h over the sphere becomes
+    h * (1 - w + w * smoothstep(0, width, h)) (monotone in h, so nothing folds along a ray). The face then meets the
+    sphere (the lid's surface plus the gap) tangentially instead of in a rounded convex lip and is back at its own
+    level `width` over the sphere; nothing farther and nothing inside the sphere moves.
+    M17b (PR #257 review, minor 3): the reach limits fade instead of cutting (w, rim_drop_weight: 1 inside, 0 past
+    RIM_DROP_DEG beyond the crossing curve th_c and past 1.6 R from c), so no step is left where a limit ran through
+    the band; rim_drop_steps counts what a cut still leaves (unselected points in the band)."""
     out = P.copy()
     if width <= 0.0:
         return out
     d, th, phi = polar(P, c, a, ex, ey)
     h = d - R
-    m = sel & (h > 0.0) & (h < width) & (d < 1.6 * R) & (th < at_phi(phi, th_c) + math.radians(RIM_DROP_DEG))
+    w = rim_drop_weight(d, th, at_phi(phi, th_c), R)
+    m = sel & (h > 0.0) & (h < width) & (w > 0.0)
     u = h[m] / width
-    dn = R + h[m] * (u * u * (3.0 - 2.0 * u))
+    dn = R + h[m] * (1.0 - w[m] + w[m] * (u * u * (3.0 - 2.0 * u)))
     out[m] = c + (P[m] - c) * (dn / d[m])[:, None]
     return out
+
+
+def rim_drop_weight(d: np.ndarray, th: np.ndarray, th_lim: np.ndarray, R: float) -> np.ndarray:
+    """M17b: rim_drop's reach, faded: 1 up to RIM_DROP_FADE before each limit (RIM_DROP_DEG beyond the crossing curve,
+    1.6 R from the centre), 0 at it, a smoothstep between."""
+    lim = math.radians(RIM_DROP_DEG)
+    fade = math.radians(RIM_DROP_FADE)
+    wa = 1.0 - smoothstep(lim - fade, lim, th - th_lim)
+    wd = 1.0 - smoothstep(1.6 * R - RIM_DROP_FADE_R * R, 1.6 * R, d)
+    return wa * wd
+
+
+def smoothstep(e0: float, e1: float, x: np.ndarray) -> np.ndarray:
+    u = np.clip((x - e0) / (e1 - e0), 0.0, 1.0)
+    return u * u * (3.0 - 2.0 * u)
+
+
+def rim_drop_steps(P: np.ndarray, sel: np.ndarray, edges: np.ndarray, c: np.ndarray, a: np.ndarray, ex: np.ndarray,
+                   ey: np.ndarray, th_c: np.ndarray, R: float, width: float) -> int:
+    """M17b: the steps rim_drop can still leave: edges between a point it draws in (selected, in the band, weight > 0)
+    and an unselected point in the same band (the fixed face, which never moves). 0 on M15's socket."""
+    if width <= 0.0:
+        return 0
+    d, th, phi = polar(P, c, a, ex, ey)
+    h = d - R
+    band = (h > 0.0) & (h < width) & (rim_drop_weight(d, th, at_phi(phi, th_c), R) > 0.0)
+    moved = sel & band
+    fixed = ~sel & band
+    return int((moved[edges[:, 0]] & fixed[edges[:, 1]]).sum() + (fixed[edges[:, 0]] & moved[edges[:, 1]]).sum())
 
 
 def tri_normals(co: np.ndarray, tris: np.ndarray) -> np.ndarray:
