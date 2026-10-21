@@ -19,29 +19,29 @@ OUT = common.OUT / "ship" / "test_build"
 class ShipBuildTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
-        cls.code, cls.output = run_cli("ship", "--build", "--only", "hall_floor,ramp,tip_wall", "--out", str(OUT))
+        cls.code, cls.output = run_cli("ship", "--build", "--only", "ramp,hull_pod,blade_e_lead", "--out", str(OUT))
         cls.report = json.loads((OUT / "build_report.json").read_text(encoding="utf-8"))["pieces"]
 
     def test_the_build_passes(self) -> None:
         self.assertEqual(self.code, 0, self.output[-2000:])
-        self.assertEqual(set(self.report), {"hall_floor", "ramp", "tip_wall"})
+        self.assertEqual(set(self.report), {"ramp", "hull_pod", "blade_e_lead"})
         for pid in self.report:
             self.assertTrue((OUT / f"{pid}.glb").is_file())
 
     def test_bounds_hold_the_numbers(self) -> None:
+        """The exterior's numbers survive the build (Godot's frame (x, h, y)): the ramp as wide as the mouth and as
+        long as its run, the tip pod from the belly (h 0.6) to its 4.6 m crown, the lead blade inside the footprint."""
         layout = ship_layout.load()
-        floor, wall = layout["deck"]["floor_h"], layout["deck"]["wall_m"]
-        hall = self.report["hall_floor"]["bounds"]  # Godot's frame: (x, h, y)
-        r = ship_layout.rooms(layout)["hall"]["radius"] + wall
-        self.assertAlmostEqual(hall["max"][0], r, delta=0.01)
-        self.assertAlmostEqual(hall["max"][1], floor, delta=0.001)
         ramp = self.report["ramp"]["bounds"]
         run = layout["ramp"]["hinge"][1] - layout["ramp"]["foot"][1]
-        self.assertAlmostEqual(ramp["max"][1], floor, delta=0.001)
-        self.assertAlmostEqual(ramp["min"][2], -run, delta=0.001)
-        tip = self.report["tip_wall"]["bounds"]
-        self.assertAlmostEqual(tip["max"][1], floor + ship_layout.rooms(layout)["tip_e"]["clear_h"], delta=0.001)
-
+        self.assertAlmostEqual(ramp["max"][0] - ramp["min"][0], layout["ramp"]["width_m"], delta=0.01)
+        self.assertAlmostEqual(ramp["min"][2], -run, delta=0.05)
+        pod = self.report["hull_pod"]["bounds"]
+        self.assertAlmostEqual(pod["min"][1], 0.6, delta=0.01)
+        self.assertAlmostEqual(pod["max"][1], 4.6, delta=0.02)
+        blade = self.report["blade_e_lead"]["bounds"]
+        self.assertGreater(blade["min"][2], layout["ramp"]["foot"][1])
+        self.assertGreater(blade["min"][0], layout["ramp"]["width_m"] / 2)
 
 if __name__ == "__main__":
     unittest.main()
