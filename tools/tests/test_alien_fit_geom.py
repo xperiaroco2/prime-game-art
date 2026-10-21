@@ -158,7 +158,7 @@ class FitGeom(unittest.TestCase):
         src = (BLENDER / "alien_socket_fit.py").read_text(encoding="utf-8")
         self.assertLess(src.index("P = F.fillet("), src.index("P = F.rim_drop("))
         self.assertIn('rep["mask_fill"] = fill_masks(body, lap, free, s["fill_iters"])', src)  # M17b: minor 4
-        self.assertNotIn("1500)", src[src.index("def fill_masks("):])
+        self.assertIn("F.fair_fill(per, lap, free, iters)", src)
 
     def test_m17b_unit_grows_in_the_socket(self):
         """M17b: `unit` scales the eye unit over `eye_scale`; the socket's sphere follows only `follow` of it, so with
