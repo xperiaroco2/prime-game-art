@@ -13,7 +13,10 @@ views of the pout mp1's lips) onto our mouth socket. Opens a kit's export/alien_
   the open shapes A, E, O stay ours); the skin's pout contact (Body's TEXCOORD_6.u, alien_m12.mouth2_contact) is
   rebuilt from the new rest; each piece's AO and its jaw weight (COLOR_0.a; G.jaw_closed below the lip line); the
   provenance of each piece (ai_generated, the Meshy task, the batch files, from the generation.json beside each GLB)
-  in character.json's `m20`.
+  in character.json's `m20`. M20b (brief UPDATE 44, PR #260's review): each form put on its own best mirror plane
+  before the mirror (centre_plane), mirrored at full resolution and then decimated symmetrically, its middle band and
+  lip line smoothed in depth (smooth_bands), the lower lip's central groove filled (fill_cleft); the skin's pout contact rebuilt with the skin under the form touching it
+  (closed_contact); M's width and depth (FIT["xy_scale"]).
 
 The fit of an `aia` form (both modes): imported, aligned (alien_mouth_fit_geom.align: one uniform scale to our
 piece's lip width, centred on x = 0; a closed shape by its lip line (seam_z) on ours, an open one by its box's middle
@@ -43,6 +46,7 @@ import bpy
 import numpy as np
 from mathutils import Vector
 from mathutils.bvhtree import BVHTree
+from mathutils.kdtree import KDTree
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import alien_eyes as AE  # noqa: E402
@@ -138,28 +142,127 @@ def skin_depth(bvh, sock, x: float, z: float, near_y: float):
     return None if hit[0] is None else (sock.inverted() @ hit[0]).y
 
 
+def symmetrize(ob) -> None:
+    """The -x half mirrored onto +x (the plane x = 0)."""
+    bm = bmesh.new()
+    bm.from_mesh(ob.data)
+    bmesh.ops.symmetrize(bm, input=bm.verts[:] + bm.edges[:] + bm.faces[:], direction="X", dist=1e-5)
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
+    bm.to_mesh(ob.data)
+    bm.free()
+    ob.data.update()
+
+
 def decimate_and_mirror(ob, budget: int) -> dict:
-    """Decimated toward the budget, then made symmetric (its -x half mirrored onto +x). The mirror does not keep the
-    count exactly (M19 ended at 6,302 for 6,000), so a pass that ends over the budget is repeated on the result."""
+    """Made symmetric at full resolution, then decimated toward the budget with the modifier's own X symmetry and
+    mirrored once more, so both halves match exactly (M20b: decimating first and mirroring the coarse result cut a
+    ragged row of slivers along x = 0, the seam down the lower lip of PR #260's review). A pass that ends over the
+    budget is repeated on the result."""
     raw = sum(len(p.vertices) - 2 for p in ob.data.polygons)
-    tris, passes = raw, 0
+    symmetrize(ob)
+    tris, passes = sum(len(p.vertices) - 2 for p in ob.data.polygons), 0
     while tris > budget and passes < 3:
         ratio = G.decimate_ratio(tris, int(budget * 0.97))
         mod = ob.modifiers.new("dec", "DECIMATE")
         mod.ratio = ratio
         mod.use_collapse_triangulate = True
+        mod.use_symmetry, mod.symmetry_axis = True, "X"
         bpy.context.view_layer.objects.active = ob
         bpy.ops.object.modifier_apply(modifier=mod.name)
-        bm = bmesh.new()
-        bm.from_mesh(ob.data)
-        bmesh.ops.symmetrize(bm, input=bm.verts[:] + bm.edges[:] + bm.faces[:], direction="X", dist=1e-5)
-        bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
-        bm.to_mesh(ob.data)
-        bm.free()
-        ob.data.update()
+        symmetrize(ob)
         tris = sum(len(p.vertices) - 2 for p in ob.data.polygons)
         passes += 1
     return {"raw_tris": raw, "passes": passes, "tris": tris, "budget": budget}
+
+
+def centre_plane(pts) -> tuple[list, dict]:
+    """M20b: the aligned form's points moved so its own best mirror plane (G.best_plane, scored on every k-th point
+    against the whole form) is x = 0. Returns the points and the plane found."""
+    kd = KDTree(len(pts))
+    for i, q in enumerate(pts):
+        kd.insert(q, i)
+    kd.balance()
+    sample = pts[::max(1, len(pts) // G.FIT["plane_sample"])]
+    before = sum(kd.find(G.reflect(q, 0.0, 0.0))[2] for q in sample) / len(sample)
+    x0, yaw, err = G.best_plane(sample, lambda q: kd.find(q)[2])
+    return G.to_plane(pts, x0, yaw), {"x0_mm": round(x0 * 1000, 2), "yaw": yaw,
+                                      "mean_mm_before": round(before * 1000, 3), "mean_mm": round(err * 1000, 3)}
+
+
+def smooth_bands(form) -> dict:
+    """M20b: the band |x| < FIT["mid_band"] (the mirror's join) and the lip line's band (+-line_band_z round
+    G.lip_line, the middle 85 % of the width, front-facing; the decimation's thin facets there caught the light as
+    specks) smoothed in depth (y) only, so neither the silhouette, the bow's dip nor the line's height changes."""
+    me = form.data
+    co = local_co(form)
+    hw = float(co[:, 0].max() - co[:, 0].min()) / 2
+    knots = G.lip_line([tuple(q) for q in co])
+    mid = [i for i, q in enumerate(co) if abs(q[0]) < G.FIT["mid_band"]]
+    line = [i for i, q in enumerate(co) if abs(q[0]) < 0.85 * hw and me.vertices[i].normal.y < 0
+            and abs(q[2] - G.line_at(knots, q[0])) < G.FIT["line_band_z"]]
+    bm = bmesh.new()
+    bm.from_mesh(me)
+    bm.verts.ensure_lookup_table()
+    for ids, n in ((mid, G.FIT["mid_smooth"]), (line, G.FIT["line_smooth"])):
+        vs = [bm.verts[i] for i in ids]
+        for _k in range(n):
+            bmesh.ops.smooth_vert(bm, verts=vs, factor=0.5, use_axis_x=False, use_axis_y=True, use_axis_z=False)
+    bm.to_mesh(me)
+    bm.free()
+    me.update()
+    return {"mid_verts": len(mid), "line_verts": len(line)}
+
+
+def fill_cleft(form) -> dict:
+    """M20b: the AI lower lip's central groove filled (measured on M20's rest: the front 0.8-1.4 mm further back at
+    x = 0 than at +-2-3 mm, a cleft down the lower lip that read as a seam; mp1's lower lip is one smooth cushion).
+    A front-facing vertex below the lip line within FIT["cleft_band"] of x = 0 comes forward toward the lip's front
+    at the band's edge at its own height (a ray along +y), never back, by a smoothstep weight from the edge to x = 0."""
+    me = form.data
+    co = local_co(form)
+    tree = BVHTree.FromPolygons([tuple(q) for q in co], [list(p.vertices) for p in me.polygons])
+    knots = G.lip_line([tuple(q) for q in co])
+    band, front = G.FIT["cleft_band"], float(co[:, 1].min()) - 0.02
+    moved, most = 0, 0.0
+    for i, v in enumerate(me.vertices):
+        x, y, z = co[i]
+        if abs(x) >= band or v.normal.y > -0.3 or z > G.line_at(knots, x) - 0.001:
+            continue
+        hit = tree.ray_cast(Vector((band, front, z)), Vector((0, 1, 0)), 0.2)
+        if hit[0] is None or hit[0].y >= y or y - hit[0].y > G.FIT["cleft_most"]:
+            continue  # never back; deeper than a groove is small's parting (it moved 11 mm without the cap)
+        d = (y - hit[0].y) * G.smoothstep(band, 0.0, abs(x))
+        co[i, 1] = y - d
+        moved, most = moved + 1, max(most, d)
+    set_points(form, co)
+    return {"moved": moved, "most_mm": round(most * 1000, 2)}
+
+
+def closed_contact(body, piece) -> dict:
+    """M20b: the skin's pout contact (Body's CONTACT_UV_MOUTH2 u) from a closed AI rest: alien_m12.contact_field's
+    rule, but a skin point inside the form (under the lips, where its back went 3-4 mm under the skin) touches it
+    (G.contact_distance), so the shadow is full where the lips meet the skin (PR #260: `full` 0)."""
+    me = body.data
+    mw, omw = body.matrix_world, piece.matrix_world
+    tree = BVHTree.FromPolygons([omw @ v.co for v in piece.data.vertices],
+                                [list(p.vertices) for p in piece.data.polygons])
+    reach = M12.LG.CONTACT["reach"]
+    c = np.zeros(len(me.vertices))
+    for i, v in enumerate(me.vertices):
+        p = mw @ v.co
+        hit = tree.find_nearest(p, reach)
+        if hit[0] is not None:
+            c[i] = M12.LG.contact(G.contact_distance(hit[3], (p - hit[0]).dot(hit[1]) < 0.0), reach)
+    c = M6.smooth(me, c, M12.LG.CONTACT["smooth"])
+    layer = me.uv_layers[M12.LP.CONTACT_UV_MOUTH2[0]]
+    lv = np.empty(len(me.loops), dtype=np.int64)
+    me.loops.foreach_get("vertex_index", lv)
+    uv = np.empty(len(me.loops) * 2, dtype=np.float32)
+    layer.data.foreach_get("uv", uv)
+    uv = uv.reshape(-1, 2)
+    uv[:, 0] = c[lv]
+    layer.data.foreach_set("uv", uv.ravel())
+    return {"touched": int((c > 0.01).sum()), "full": int((c > 0.9).sum()), "inside_touches": True}
 
 
 def align_form(form, ours, shape: str, bvh, sock) -> dict:
@@ -185,6 +288,11 @@ def align_form(form, ours, shape: str, bvh, sock) -> dict:
         pts = G.stretch(pts, oline, olo[1], kz, 1.0 + G.FIT["y_follow"] * (kz - 1.0))
         if G.FIT["lower_scale"] != 1.0:  # the lower lip alone a little fuller (mp1: lower = upper)
             pts = G.stretch_below(pts, G.seam_z(pts), G.FIT["lower_scale"])
+    kx, ky = G.FIT["xy_scale"].get(shape, (1.0, 1.0)) if shape in CLOSED else (1.0, 1.0)
+    if (kx, ky) != (1.0, 1.0):  # M20b minor 4: M wider and flatter in depth (pressed), as mp1's M
+        f0 = min(p[1] for p in pts)
+        pts = [(x * kx, f0 + (y - f0) * ky, z) for x, y, z in pts]
+    pts, plane = centre_plane(pts)  # M20b: on its own mirror plane before the mirror
     seat = None
     if G.FIT["seat"] == "back":  # the form's flat back on the skin at the lip line's centre, so only it sticks out
         sy = skin_depth(bvh, sock, 0.0, oline, olo[1])
@@ -195,7 +303,8 @@ def align_form(form, ours, shape: str, bvh, sock) -> dict:
     lo2, hi2 = G.bbox(map(tuple, local_co(form)))
     return {"scale": round(s, 6), "ours_mm": [round((ohi[i] - olo[i]) * 1000, 1) for i in range(3)],
             "form_mm": [round((hi2[i] - lo2[i]) * 1000, 1) for i in range(3)], "line_z": round(oline, 5),
-            "seat_mm": None if seat is None else round(seat * 1000, 2), "z_scale": kz}
+            "seat_mm": None if seat is None else round(seat * 1000, 2), "z_scale": kz, "xy_scale": [kx, ky],
+            "plane": plane}
 
 
 def close_form(form, bvh, sock, corners: bool = False) -> dict:
@@ -372,6 +481,9 @@ def fit_form(path: Path, ours, shape: str, bvh, sock, mouth, mats, corners: bool
     r["clean"] = decimate_and_mirror(form, G.FIT["budget_tris"])
     r["materials"] = form_materials(form, shape, mats)  # before the close: the floor by the form's own depth
     r["close"] = close_form(form, bvh, sock, corners=corners)
+    if shape in CLOSED:
+        r["cleft"] = fill_cleft(form)
+        r["bands"] = smooth_bands(form)
     to_socket(form, mouth)
     return form, r
 
@@ -448,6 +560,9 @@ def replace_main(a, kit: Path, ex: Path, ai: dict) -> None:
         new.append(form)
     bpy.context.view_layer.update()
     rep["contact"] = M12.mouth2_contact(body)  # the skin's pout contact from the new rest
+    if "mouth_pout_rest" in bpy.data.objects:  # M20b: with the skin under the closed form touching it
+        rep["contact"]["pout"] = closed_contact(body, bpy.data.objects["mouth_pout_rest"])
+        log("contact pout", json.dumps(rep["contact"]["pout"]))
     if not a.no_bake:
         rep["parts_ao"] = M6.bake_parts_ao(body, eyes=False, pieces=new)
     rep["jaw"] = {o.name: jaw_closed(o) for o in new}
