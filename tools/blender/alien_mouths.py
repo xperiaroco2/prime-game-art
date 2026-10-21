@@ -653,16 +653,17 @@ def build_piece(bvh, m, design, shape, world, mats, coll, origin, lips=None, nam
             st = LP.rest_stations(st, m["hc"], lips_p, shape)
             xl, xr = st[0]["x"] - 0.5, st[-1]["x"] + 0.5
         if (lips_p.get("parting") or {}).get(shape):  # M16c: a designed parting (mp1's small: a slit over the middle)
-            st = LP.parted(st, lips_p["parting"][shape])
+            st = LP.parted(st, lips_p["parting"][shape], SEAM_OVERLAP)
         ss = [2 * (r["x"] - xl) / max(1.0, xr - xl) - 1 for r in st]  # M8: -1 .. 1 corner to corner
         for lip in ("u", "l"):
             cs, ra, rb, ns = [], [], [], []
             edges = []
             for r in st:
+                ov = r.get("overlap", 0.0 if r["open"] else SEAM_OVERLAP)  # M16e: a parted station's eased overlap
                 if lip == "u":
-                    t, bt = r["top_u"], r["bot_u"] + (0.0 if r["open"] else SEAM_OVERLAP)
+                    t, bt = r["top_u"], r["bot_u"] + ov
                 else:
-                    t, bt = r["top_l"] - (0.0 if r["open"] else SEAM_OVERLAP), r["bot_l"]
+                    t, bt = r["top_l"] - ov, r["bot_l"]
                 x, zt = world(r["x"], t - 0.5)
                 _, zb = world(r["x"], bt + 0.5)
                 edges.append((x, zt, zb, t, bt))

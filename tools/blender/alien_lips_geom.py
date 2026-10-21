@@ -417,10 +417,11 @@ def rest_stations(st: list, hc: float, p: dict, shape: str = "") -> list:
     return st
 
 
-def parted(st: list, part) -> list:
+def parted(st: list, part, seam_overlap: float = 1.5) -> list:
     """M16c: a closed piece's designed parting, part = (gap, half_width): over the middle the lips stand apart by
     gap px x (1 - (s / half_width)^2)^1.5 round their lip line (s -1 .. 1 corner to corner), never less than the
-    stations' own gap; a station so parted by 1 px or more is open (its dark strip, alien_mouths' parting_dark).
+    stations' own gap; a station so parted by 1 px or more is open (its dark strip, alien_mouths' parting_dark), and
+    each parted station's `overlap` (px, each lip over the lip line) eases from seam_overlap to 0 as the gap opens.
     Symmetric in s, so a mirrored piece stays mirrored."""
     gap, half = part
     x0, x1 = st[0]["x"], st[-1]["x"]
@@ -433,6 +434,9 @@ def parted(st: list, part) -> list:
             mid = (r["bot_u"] + r["top_l"]) / 2
             r["bot_u"], r["top_l"] = mid - g / 2, mid + g / 2
             r["open"] = r["open"] or g >= 1.0
+            # M16e: each lip's overlap over the seam eased from the closed stations' (seam_overlap px at a 1 px gap)
+            # to none at 4 px, so the lips part smoothly at the slit's ends instead of in a 3 px step
+            r["overlap"] = seam_overlap * (1.0 - _smooth01((g - 1.0) / 3.0))
         out.append(r)
     return out
 
