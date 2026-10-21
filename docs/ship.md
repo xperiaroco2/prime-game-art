@@ -24,7 +24,8 @@ arrangement, the numbers give the sizes. A gentle curve is fine only where the n
 | `tools/blender/ship_build.py` | the build harness: one GLB per piece, `build_report.json` | shared, frozen (additions only) |
 | `tools/blender/ship_interior*.py` | the interior builders | INTERIOR lane |
 | `tools/blender/ship_hull*.py` | the exterior builders | EXTERIOR lane |
-| `godot/ship/` | `ship.gd`: assembly, headless check and walk, night shots | EXTERIOR lane |
+| `godot/ship/` | `ship.gd`: assembly, headless check and walk, night shots, the walk-through frames | EXTERIOR lane |
+| `tools/blender/ship_video.py` | encodes the walk-through MP4 under its size cap | EXTERIOR lane |
 | `tools/tests/test_ship_*.py` | `test_ship_layout.py` (fast), `test_ship_build.py` (heavy: Blender) | either lane adds its own file |
 
 Raw output (never in git): `<raw>/ship/v1/` with `pieces/` (GLBs, `build_report.json`, validator `reports/`),
@@ -115,3 +116,47 @@ tools/run.sh ship --shoot DIR           # off-screen night shots, compare_top.pn
 Runs over 180 s go to the background with their log (CLAUDE.md, "Shell"). Step 1's greybox (2026-10-22): 21 pieces,
 40 placements, 4004 triangles, glTF-Validator clean; Godot sizes equal Blender's, 16 colliders; the walk reaches all
 14 points in 18.8 s.
+
+## The exterior (EXTERIOR lane)
+
+`tools/blender/ship_hull.py` builds the outside as a kit, each piece its own GLB (`layouts/ship/exterior.toml`): the
+drum over the hall, the nose over the mouth, the nozzle mount, three wing sections per side, the knife-edge blades
+along the wing chines, the tip pods and their window frames, the cockpit bubbles (collar, tinted glass, warm glow;
+outside only, the hall's ceiling closes them off), the mouth frame and its amber lights, the ramp and its lights,
+three nozzles with their cyan rings, eight landing legs, the cyan wing stripes; the clearing's ground, pines and
+rocks. Every skin face is cut into plates of about 1.5 m, each with a 2.2 cm chamfer sinking 1.4 cm into a dark seam
+(real bevels, not a texture).
+
+| What | Number (plan m) | Why |
+|---|---|---|
+| Wing | belly h 0.6, crest h 4.0 (corridor ceilings top out at 3.85); half-width 1.6 by the corridors, 2.3 at the pods | hugs the corridors |
+| Chines | lead (1.5, -6.2) -> (9.0, -3.0) -> (10.75, -2.5); trail (3.3, 5.0) -> (9.0, 2.9) -> (10.75, 2.5); h 1.4 -> 2.0 | the manta's raised tips |
+| Blades | along each chine, 0.3 m sunk into the hull; lead reaches 0.75 m forward at the root, 0.95 mid-wing, 0 at x 10.2; trail 0.5 m back; 0.12 m thick to a 2 cm edge | the thin edge a 3.4 m deep wing cannot have |
+| Pods | profile (r, h) (2.25, 0.6) (2.41, 1.5) (2.5, 2.0) (2.36, 3.4) (2.3, 4.0) (1.3, 4.45) (0, 4.6); window band h 1.5..3.4 within 65 deg | round the tip rooms; width 26.5 m |
+| Drum | (3.85, 0.6) (3.95, 1.4) (3.95, 4.0) (3.9, 4.75) (3.0, 5.15) (1.5, 5.45) (0, 5.55) | over the hall's ceiling |
+| Bubbles | (+-2.4, -3.55) at h 3.55, collar r 0.8 (8 cm outside the hall's wall) | outside only |
+| Legs | (+-2.0, -2.9), (+-7.2, -1.2), (+-7.2, 1.3), (+-2.2, 3.9); 0.6 m to the belly | the floor on legs |
+| Clearing | flat within 16 m (h 0), rolling beyond; pines 30..46 m, young pines and rocks 13..27 m, none within 3.5 m of an outside camera's line | seen through the tip windows |
+
+Where the interior forces the silhouette thicker than the 2D: the wings are 3.4 m deep everywhere (belly 0.6 to crest
+4.0) and the tips are 4.6 m round pods, against the turnaround's thin blades; the blades along the chines give back
+the sharp edge, and the front view still reads as a long low body.
+
+**Winding.** Plan coordinates are left-handed (x east, y south, h up); the harness's (x, -y, h) mirrors them, which
+flips every winding set in plan coordinates with `ship_lib.orient`. `ship_hull.py` reverses its open (`solid=False`)
+parts once at the end (`_outward`); a lane that orients open parts must do the same, or they come out inside-out
+(Blender exports double-sided materials, so they still show, lit from the wrong side).
+
+**The night look** (`godot/ship/ship.gd`): a star sky with a moon (`night_sky.gdshader`), moonlight (ship.toml
+`[light]`), one shared triplanar metal shader by glTF material name (`metal.gdshader`: grain, fine seams, scratches,
+grime), an OmniLight per 1.6 m cell of emissive surfaces (at most 96: the strips and lamps light the ship), a
+ReflectionProbe per room, AgX, SSAO 0.6 / 1.5 (look_presets High), SSIL, glow, a thin blue fog.
+
+**Review.** `ship --shoot DIR`: the views of exterior.toml `[shots]` (each with its 2D sheet, `compare_<view>.png`
+with the sheet left) and ship.toml's others, the plan view against plan-3, `sheet.png`; it shoots whatever pieces
+are built and names the missing ones. `ship --walk DIR`: the headless capsule walk (`check.json`), then the
+walk-through `DIR/walkthrough.mp4`: a camera at eye height (1.65 m over the floor) through exterior.toml `[video]`
+keys (cubic in time) from outside, up the ramp, the hall, both corridors and tip rooms and back out, 1280x720 at 24
+fps in the off-screen window (ship.gd mode `video`, one PNG per frame), encoded by `tools/blender/ship_video.py`
+(encode_clips.py's route at an average bit rate that fits `max_mb`, 15 MB: constant quality made 20 MB even at its lowest), then the frames are deleted;
+`--no-video` skips it.

@@ -33,7 +33,10 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--only", default="", help="comma-separated piece ids to build (default every piece)")
     parser.add_argument("--out", type=Path, help="the pieces folder (default <raw>/ship/v1/pieces)")
     parser.add_argument("--godot", action="store_true", help="headless import: sizes, colliders and the capsule walk")
-    parser.add_argument("--walk", type=Path, metavar="DIR", help="the capsule walk (headless) into DIR/walk.json")
+    parser.add_argument("--walk", type=Path, metavar="DIR",
+                        help="the capsule walk (headless) into DIR/check.json, then the eye-height walk-through video "
+                             "DIR/walkthrough.mp4 (off-screen window, 1280x720)")
+    parser.add_argument("--no-video", action="store_true", help="--walk without the video")
     parser.add_argument("--shoot", type=Path, metavar="DIR", help="off-screen shots at night, plan compare and sheet into DIR")
 
 
@@ -61,6 +64,8 @@ def run(args: argparse.Namespace) -> int:
         code |= build(layout, out, [s for s in args.only.split(",") if s])
     if args.godot or args.walk:
         code |= godot_check(layout, out, args.walk.resolve() if args.walk else common.OUT / "ship" / "godot")
+    if args.walk and not args.no_video and code == 0:
+        code |= walk_video(layout, out, args.walk.resolve())
     if args.shoot:
         code |= shoot(layout, out, args.shoot.resolve())
     return code
@@ -249,4 +254,54 @@ def shoot(layout: dict, out: Path, folder: Path) -> int:
         common.bad(f"ship --shoot: {len(errors)} import errors")
         return 1
     common.ok(f"ship --shoot: {len(result['shots'])} shots, sheet {(folder / 'sheet.png').as_posix()}")
+    return 0
+
+
+# --- the walk-through video (the exterior lane) --------------------------------------------------------------------
+VIDEO_SCRIPT = "ship_video.py"
+VIDEO_TIMEOUT = 1500
+
+
+def video_request(layout: dict) -> dict:
+    """exterior.toml's [video] in Godot coordinates: size, fps, fov, keys [[eye, look, seconds]], max_mb."""
+    import tomllib
+    with (common.ROOT / layout["exterior"]).open("rb") as f:
+        v = tomllib.load(f)["video"]
+    return {"size": v["size"], "fps": v["fps"], "fov": v["fov"], "max_mb": v["max_mb"],
+            "keys": [[_g(eye), _g(look), float(sec)] for eye, look, sec in v["keys"]]}
+
+
+def walk_video(layout: dict, out: Path, folder: Path) -> int:
+    """The eye-height walk-through: Godot renders every frame in the off-screen window (ship.gd mode "video"), headless
+    Blender encodes them (ship_video.py, under max_mb), and the frames are deleted."""
+    import shutil
+    video = video_request(layout)
+    req, staged = built_request(layout, out)
+    req.update({"mode": "video", "video": video, "watchdog_s": VIDEO_TIMEOUT - 60,
+                "light": {**layout["light"], "lamps": [[*_g(l[:3]), *l[3:]] for l in layout["light"]["lamps"]]},
+                "rooms": room_boxes(layout)})
+    errors = _stage(staged)
+    work = folder / "video"
+    shutil.rmtree(work / "frames", ignore_errors=True)
+    work.mkdir(parents=True, exist_ok=True)
+    path = common.OUT / "ship" / "video_request.json"
+    path.write_text(json.dumps(req, indent=1), encoding="utf-8", newline="\n")
+    code, output = _godot.window(["--path", str(_godot.PROJECT), "--audio-driver", "Dummy", "-s", GODOT_SCRIPT, "--",
+                                  path.as_posix(), work.as_posix()], tuple(video["size"]), VIDEO_TIMEOUT)
+    if code != 0 or not (work / "video.json").is_file():
+        raise common.Failure(f"ship.gd video failed (exit code {code}):\n" + "\n".join(output.splitlines()[-20:]))
+    info = json.loads((work / "video.json").read_text(encoding="utf-8"))
+    clip = folder / "walkthrough.mp4"
+    clip.unlink(missing_ok=True)
+    blender.run_script(VIDEO_SCRIPT, ["--frames", str(work / "frames"), "--out", str(clip), "--fps", str(video["fps"]),
+                                      "--max-mb", str(video["max_mb"])], timeout=VIDEO_TIMEOUT)
+    if not clip.is_file():
+        raise common.Failure(f"{VIDEO_SCRIPT} wrote no {clip}")
+    shutil.rmtree(work / "frames", ignore_errors=True)
+    mb = clip.stat().st_size / 2 ** 20
+    if errors or mb > video["max_mb"]:
+        common.bad(f"ship --walk: video {mb:.1f} MB (max {video['max_mb']}), {len(errors)} import errors")
+        return 1
+    common.ok(f"ship --walk: {clip.as_posix()} {video['size'][0]}x{video['size'][1]}, {info['seconds']:.1f} s, "
+              f"{info['frames']} frames, {mb:.1f} MB (rendered in {info['render_s']:.0f} s)")
     return 0

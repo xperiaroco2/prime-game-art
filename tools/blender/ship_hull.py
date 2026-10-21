@@ -288,6 +288,38 @@ def stripes(args: dict, layout: dict) -> list:
     return [L.part("stripes", *L.merge(*out), "glow_cyan")]
 
 
+def blade(args: dict, layout: dict) -> list:
+    """A thin knife-edge flange along a wing's chine (args side, edge "lead" or "trail"): the manta's sharp edge that
+    the thick wing (the corridors' height) cannot have. Its root sinks 0.3 m into the hull; it reaches out w(x) in plan
+    (lead: forward, 0.75 m at the root, 0.95 m mid-wing, 0 at the pod; trail: back, 0.5 m) and thins from 0.12 m to a
+    2 cm edge. Its top catches the moon as a bright line along the wing."""
+    side = float(args.get("side", 1.0))
+    lead = args.get("edge", "lead") == "lead"
+    s = -1.0 if lead else 1.0
+    row = 0 if lead else 5
+    x0 = 1.65 if lead else 3.4
+    widths = [(x0, 0.75 if lead else 0.5), (6.0, 0.95 if lead else 0.55), (9.0, 0.6 if lead else 0.35), (10.2, 0.0)]
+    xs = [x0 + (10.2 - x0) * k / 16 for k in range(17)]
+    secs = []
+    for x in xs:
+        y, h = _wing_rows(x)[row]
+        w = max(0.02, _lin(widths, x))
+        t = 0.06 * min(1.0, w / 0.5) + 0.01
+        secs.append([(side * x, y - s * 0.3, h + t), (side * x, y + s * w, h + 0.012), (side * x, y + s * w, h - 0.012),
+                     (side * x, y - s * 0.3, h - t)])
+    n = 4
+    verts = [p for sec in secs for p in sec]
+    faces = [(i * n + j, i * n + (j + 1) % n, (i + 1) * n + (j + 1) % n, (i + 1) * n + j)
+             for i in range(len(secs) - 1) for j in range(n)]
+    faces += [(0, 1, 2, 3), tuple(range(len(verts) - 1, len(verts) - 5, -1))]
+
+    def inner(c):
+        y, h = _wing_rows(min(max(abs(c[0]), x0), 10.2))[row]
+        return (c[0], y, h)
+    faces = L.orient(verts, faces, inner)
+    return [L.part("blade", verts, faces, "hull_silver", solid=False)]
+
+
 # --- the drum over the hall, the nose, the pods, the nozzle mount --------------------------------------------------
 DRUM = [(0.0, BELLY_H), (3.85, BELLY_H), (3.95, 1.4), (3.95, CREST_H), (3.9, 4.75), (3.0, 5.15), (1.5, 5.45),
         (0.0, 5.55)]
@@ -597,24 +629,28 @@ def ground(args: dict, layout: dict) -> list:
 
 
 def pine(args: dict, layout: dict) -> list:
-    """A faceted pine: a trunk and stacked jagged cone tiers (args height, seed)."""
+    """A pine: a tapered trunk and stacked drooping branch skirts (args height, seed); each skirt's rim alternates
+    long branch tips and short notches with a seeded jitter, so the silhouette reads as branches, not a cone."""
     height, seed = float(args.get("height", 14.0)), float(args.get("seed", 1.0))
-    trunk = _rod((0.0, 0.0, -0.3), (0.0, 0.0, height * 0.55), 0.22 * height / 14.0, 7)
-    tiers = []
-    n = 5
+    trunk = _rod((0.0, 0.0, -0.3), (0.0, 0.0, height * 0.7), 0.2 * height / 14.0, 8)
+    skirts = []
+    n, m = 8, 18
     for k in range(n):
-        base = height * (0.18 + 0.15 * k)
-        r = height * (0.3 - 0.045 * k)
-        tip = base + height * 0.32
+        u = k / (n - 1)
+        base = height * (0.16 + 0.68 * u)
+        r = height * (0.27 - 0.215 * u) * (0.9 + 0.2 * _hash(seed, k))
         ring = []
-        for j in range(9):
-            a = 2 * math.pi * (j + _hash(seed, k, j) * 0.4) / 9
-            rr = r * (0.82 + 0.3 * _hash(seed, j, k))
-            ring.append((rr * math.cos(a), rr * math.sin(a), base - 0.4 * _hash(k, j, seed)))
-        v = ring + [(0.0, 0.0, tip), (0.0, 0.0, base + 0.3)]
-        f = [(j, (j + 1) % 9, 9) for j in range(9)] + [((j + 1) % 9, j, 10) for j in range(9)]
-        tiers.append((v, f))
-    return [L.part("pine_trunk", *trunk, "ext_bark"), L.part("pine_needles", *L.merge(*tiers), "ext_needles")]
+        for j in range(m):
+            a = 2 * math.pi * (j + 0.35 * _hash(seed, k, j)) / m
+            rr = r * ((0.95 + 0.25 * _hash(seed, j, k)) if j % 2 == 0 else 0.58)
+            droop = r * (0.42 if j % 2 == 0 else 0.22) * (0.8 + 0.4 * _hash(k, j, seed))
+            ring.append((rr * math.cos(a), rr * math.sin(a), base - droop))
+        top = base + height * (0.13 if k < n - 1 else 0.2)
+        v = ring + [(0.0, 0.0, top), (0.0, 0.0, base - 0.25 * r)]
+        f = [(j, (j + 1) % m, m) for j in range(m)] + [((j + 1) % m, j, m + 1) for j in range(m)]
+        skirts.append((v, f))
+    v, f = L.merge(*skirts)
+    return [L.part("pine_trunk", *trunk, "ext_bark"), L.part("pine_needles", v, f, "ext_needles")]
 
 
 def rock(args: dict, layout: dict) -> list:
@@ -641,7 +677,7 @@ def _outward(fn):
     return run
 
 
-for _name in ("hull_wing", "stripes", "hull_drum", "hull_nose", "hull_pod", "window_frame", "nozzle_mount",
+for _name in ("hull_wing", "stripes", "blade", "hull_drum", "hull_nose", "hull_pod", "window_frame", "nozzle_mount",
               "bubble_collar", "bubble_glass", "bubble_glow", "mouth_frame", "mouth_lights", "ramp", "ramp_lights",
               "leg", "nozzle", "nozzle_ring", "ground", "pine", "rock"):
     globals()[_name] = _outward(globals()[_name])

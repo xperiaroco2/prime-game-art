@@ -98,5 +98,36 @@ class ShipExteriorTest(unittest.TestCase):
             self.assertEqual(len(v), 6, f"view {v[0]} needs its 2D sheet")
 
 
+    def test_the_blades_stay_outside_the_rooms_and_the_mouth(self) -> None:
+        """The knife-edge flanges along the chines never reach into a room or over the mouth and ramp, and stay
+        within the footprint's length."""
+        mouth = next(r for r in LAYOUT["rooms"] if r["id"] == "mouth")
+        half_ramp = LAYOUT["ramp"]["width_m"] / 2
+        for side in (1.0, -1.0):
+            for edge in ("lead", "trail"):
+                (part,) = H.blade({"side": side, "edge": edge}, LAYOUT)
+                for x, y, h in part["verts"]:
+                    self.assertGreater(abs(x), max(half_ramp, abs(mouth["x"][0])), f"{edge} blade over the mouth")
+                    self.assertTrue(-7.05 < y < 7.0, f"{edge} blade at y {y:.2f} beyond the footprint")
+                    for room in ROOMS.values():
+                        if room["id"] == "mouth":
+                            continue
+                        self.assertFalse(sl.room_margin(room, (x, y)) > 0.0 and h < DECK["floor_h"] + room["clear_h"],
+                                         f"{edge} blade vertex ({x:.2f}, {y:.2f}, {h:.2f}) inside {room['id']}")
+
+    def test_the_walk_video_keys(self) -> None:
+        """The walk-through: 1280x720, 60..90 s, under 15 MB, every key's eye above the ground and, on the deck, at
+        eye height inside a room."""
+        v = EXT["video"]
+        self.assertEqual(v["size"], [1280, 720])
+        seconds = sum(k[2] for k in v["keys"][1:])
+        self.assertTrue(60.0 <= seconds <= 90.0, f"{seconds} s")
+        self.assertLessEqual(v["max_mb"], 15.0)
+        for eye, look, _s in v["keys"]:
+            self.assertGreater(eye[2], 1.5, f"key {eye} below eye height")
+            if eye[2] > 2.6 and abs(eye[1]) < 4.5:  # on the deck (outside keys stand off the hull)
+                self.assertTrue(any(sl.room_margin(r, (eye[0], eye[1])) > 0.3 for r in ROOMS.values()),
+                                f"deck key {eye} is not 0.3 m inside a room")
+
 if __name__ == "__main__":
     unittest.main()

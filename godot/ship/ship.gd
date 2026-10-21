@@ -12,6 +12,8 @@ extends SceneTree
 ## check: <out>/check.json {"bounds": {id: {min, max}} (each piece at the origin), "colliders": {id: n}, "walk"}.
 ## shoot: <out>/<view>.png at the window's size, compare_<shot>.png (the reference left, the shot right),
 ##   sheet.png (1280 px wide) and shots.json; prints SHIP saved <dir>.
+## video (off-screen window, as shoot): "video": {"fps", "fov", "keys": [[eye, look, seconds]]} (Godot coordinates):
+##   the camera through the keys (cubic in time), one PNG per frame in <out>/frames/, video.json; "watchdog_s".
 
 const Offscreen = preload("res://lib/offscreen.gd")
 const WATCHDOG_S: float = 240.0
@@ -57,7 +59,7 @@ func _initialize() -> void:
 	_req = request
 	_out = args[1]
 	DirAccess.make_dir_recursive_absolute(_out)
-	if _req["mode"] == "shoot":
+	if _req["mode"] in ["shoot", "video"]:
 		if DisplayServer.get_name() == "headless":
 			_fail("shoot needs a window (off-screen), not --headless")
 			return
@@ -65,9 +67,12 @@ func _initialize() -> void:
 		if placed != "":
 			_fail(placed)
 			return
-	create_timer(WATCHDOG_S).timeout.connect(_fail.bind("not done within %d s" % WATCHDOG_S))
+	var watchdog: float = float(_req.get("watchdog_s", WATCHDOG_S))
+	create_timer(watchdog).timeout.connect(_fail.bind("not done within %d s" % watchdog))
 	if _req["mode"] == "check":
 		_check()
+	elif _req["mode"] == "video":
+		_video()
 	else:
 		_shoot()
 
@@ -372,6 +377,60 @@ func _shoot() -> void:
 	_write("shots.json", {"shots": shots})
 	print("SHIP saved %s" % _out)
 	quit(0)
+
+
+## The walk-through: the night scene as shoot dresses it, the camera at eye height through the keys, every frame
+## saved as a PNG (the runner encodes them with Blender's FFmpeg).
+func _video() -> void:
+	_environment()
+	var lights: int = _dress(_build())
+	_probes()
+	var v: Dictionary = _req["video"]
+	_camera = Camera3D.new()
+	_camera.near = 0.05
+	_camera.far = 500.0
+	_camera.fov = float(v["fov"])
+	root.add_child(_camera)
+	_camera.make_current()
+	var keys: Array = v["keys"]
+	var times: Array = [0.0]
+	for i: int in range(1, keys.size()):
+		times.append(float(times[-1]) + float(keys[i][2]))
+	var fps: float = float(v["fps"])
+	var count: int = int(float(times[-1]) * fps) + 1
+	var dir: String = _out.path_join("frames")
+	DirAccess.make_dir_recursive_absolute(dir)
+	_camera.look_at_from_position(_v(keys[0][0]), _v(keys[0][1]), UP)
+	for i: int in 30:  # the probes, SSAO and glow settle
+		await process_frame
+	var started: int = Time.get_ticks_msec()
+	var k: int = 0
+	for f: int in count:
+		var t: float = minf(f / fps, float(times[-1]))
+		while k < keys.size() - 2 and t > float(times[k + 1]):
+			k += 1
+		var w: float = (t - float(times[k])) / (float(times[k + 1]) - float(times[k]))
+		_camera.look_at_from_position(_key(keys, times, k, w, 0), _key(keys, times, k, w, 1), UP)
+		await RenderingServer.frame_post_draw
+		var image: Image = root.get_texture().get_image()
+		image.convert(Image.FORMAT_RGB8)
+		_save(image, dir.path_join("%05d.png" % f))
+	_write("video.json", {"frames": count, "fps": fps, "seconds": times[-1], "lights": lights,
+		"render_s": (Time.get_ticks_msec() - started) / 1000.0})
+	print("SHIP video %d frames" % count)
+	quit(0)
+
+
+## Key j (0 eye, 1 look) between keys k and k + 1 at weight w, cubic in time through the neighbouring keys.
+func _key(keys: Array, times: Array, k: int, w: float, j: int) -> Vector3:
+	var a: Vector3 = _v(keys[k][j])
+	var b: Vector3 = _v(keys[k + 1][j])
+	var span: float = float(times[k + 1]) - float(times[k])
+	var pre: Vector3 = _v(keys[k - 1][j]) if k > 0 else a
+	var pre_t: float = float(times[k - 1]) - float(times[k]) if k > 0 else -span
+	var post: Vector3 = _v(keys[k + 2][j]) if k + 2 < keys.size() else b
+	var post_t: float = float(times[k + 2]) - float(times[k]) if k + 2 < keys.size() else 2.0 * span
+	return a.cubic_interpolate_in_time(b, pre, post, w, span, pre_t, post_t)
 
 
 func _shot(name: String, title: String, shots: Dictionary) -> Image:
