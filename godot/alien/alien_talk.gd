@@ -23,11 +23,20 @@ extends RefCounted
 ## - thrust {amount, ms, shapes} (M13, optional): while one of `shapes` shows, the lower jaw moves forward by amount
 ##   (m), eased in over ms and out over ms after the last of a chain of them (thrust_at; M13b: A -> E holds it)
 ##   (alien_lip.gdshader `jaw_thrust`).
+## - lopside_ms (M14, optional): every second run of the styled line starts this much later, the run before it
+##   holding on (a loose, lopsided rhythm);
+## - flop {amp, hz, decay_ms, lag_ms, sway, sway_ms} (M14, optional): the tongue's tip (alien_lip.gdshader
+##   `tongue_flop` on its flop weight) lags the jaw and flops: after every change of shape it first holds lag_ms, then
+##   y = amp x the signed change in openness x cos(2 pi hz dt) x exp(-dt / decay) (an opening leaves the tip up, then
+##   it swings down past and settles), and it sways sideways by `sway`, to the left on one run and the right on the
+##   next, eased in over sway_ms.
 ## frog and overbite keep the snapped talk they had (no lag, merge, bounce or pucker). The pout (mp1, M12) talks soft
 ## and a little lazy: a 25 ms lag, merged 70 ms flickers, quick A and E shown half open, a soft lower-lip bounce, and a
 ## slight pucker between words. The fangs (mg2, M13) talk with a heavier jaw: a 40 ms lag, a slower opening (small
 ## for the first 60 ms of A, E and O after a closed shape), a slight forward thrust of the lower jaw on A and E (the
-## fangs rise with it), a smaller bounce than the pout's and no pucker.
+## fangs rise with it), a smaller bounce than the pout's and no pucker. The tongue (mt2, M14) talks loose and floppy:
+## a 35 ms lag, every second syllable 25 ms late (lopsided), a slow soft lower-lip bounce, and the tongue's tip lagging
+## and flopping after each change of shape, swaying to alternate sides.
 
 const OPEN := {"rest": 0.0, "M": 0.0, "small": 0.4, "O": 0.6, "E": 0.7, "A": 1.0}
 
@@ -42,6 +51,10 @@ const STYLES := {
 		"bounce": {"amp": 0.0007, "hz": 5.0, "decay_ms": 120.0}, "pucker": {"amount": 0.0, "min_gap_ms": 100.0},
 		"rise": {"ms": 60.0, "via": "small", "below": 0.3},
 		"thrust": {"amount": 0.0022, "ms": 120.0, "shapes": ["A", "E"]}},
+	"tongue": {"lag_ms": 35.0, "merge_ms": 70.0, "short_ms": 85.0, "short_to": "small", "m_gap_ms": 130.0,
+		"bounce": {"amp": 0.0012, "hz": 4.5, "decay_ms": 170.0}, "pucker": {"amount": 0.0, "min_gap_ms": 100.0},
+		"lopside_ms": 25.0,
+		"flop": {"amp": 0.0035, "hz": 4.0, "decay_ms": 220.0, "lag_ms": 45.0, "sway": 0.0015, "sway_ms": 140.0}},
 }
 
 ## A test line with a voice-like rhythm (5.3 s, the speech from 0.2 to 4.7 s: two short sentences and an answer;
@@ -92,6 +105,16 @@ static func styled(design: String, segs: Array) -> Array:
 			out[-1][1] = s[1]  # the shape before it holds on
 			continue
 		out.append([s[0], s[1], ph])
+	var lop: float = float(st.get("lopside_ms", 0.0))
+	if lop > 0.0:  # M14: every second run late, the one before it holding on
+		for i: int in range(1, out.size(), 2):
+			var r: Array = out[i]
+			var ns: float = minf(float(r[0]) + lop, float(r[1]) - 20.0)
+			if ns <= float(r[0]):
+				continue
+			if float(r[0]) - float(out[i - 1][1]) < 1.0:
+				out[i - 1][1] = ns
+			r[0] = ns
 	return out
 
 
@@ -101,6 +124,7 @@ static func sample(design: String, segs: Array, t_ms: float) -> Dictionary:
 	var runs: Array = styled(design, segs)
 	var t: float = t_ms - float(st["lag_ms"])
 	var piece := "rest"
+	var run_i := -1  # M14: the shown run (-1 in a silence), for the tongue's alternating sway
 	var since: float = t  # when the shown shape began
 	var prev_open: float = 0.0
 	var pk: float = 0.0
@@ -119,6 +143,7 @@ static func sample(design: String, segs: Array, t_ms: float) -> Dictionary:
 			break
 		if t < r[1]:
 			piece = r[2]
+			run_i = i
 			since = r[0]
 			var before_open: float = 0.0
 			if i > 0 and r[0] - runs[i - 1][1] < 1.0:
@@ -141,7 +166,23 @@ static func sample(design: String, segs: Array, t_ms: float) -> Dictionary:
 	var drop: float = float(b["amp"]) * change * sin(TAU * float(b["hz"]) * dt / 1000.0) * exp(-dt / float(b["decay_ms"]))
 	if OPEN.get(piece, 0.0) <= 0.0:
 		drop = minf(drop, 0.0)  # a closed mouth only presses shut, never sags open
-	return {"piece": piece, "drop": drop, "pucker": pk, "thrust": thrust_at(st, runs, t), "since_ms": since}
+	return {"piece": piece, "drop": drop, "pucker": pk, "thrust": thrust_at(st, runs, t),
+		"flop": flop_at(st, change, dt, run_i), "since_ms": since}
+
+
+## M14: the tongue's tip (m, the socket's frame: y up, x to the side) dt ms into a shape after a signed change in
+## openness, in run run_i (-1: a silence, no sway): STYLES' `flop` (Vector3.ZERO for a style without one).
+static func flop_at(st: Dictionary, change: float, dt: float, run_i: int) -> Vector3:
+	var fl: Dictionary = st.get("flop", {})
+	if fl.is_empty():
+		return Vector3.ZERO
+	var dtf: float = maxf(0.0, dt - float(fl["lag_ms"]))
+	var y: float = float(fl["amp"]) * change * cos(TAU * float(fl["hz"]) * dtf / 1000.0) * exp(-dtf / float(fl["decay_ms"]))
+	var x := 0.0
+	if run_i >= 0:
+		var u: float = clampf(dt / float(fl["sway_ms"]), 0.0, 1.0)
+		x = float(fl["sway"]) * (1.0 if run_i % 2 == 0 else -1.0) * u * u * (3.0 - 2.0 * u)
+	return Vector3(x, y, 0.0)
 
 
 ## M13b (PR #248's review minor 2): the lower jaw's forward thrust at t (lag applied), continuous: it eases in over

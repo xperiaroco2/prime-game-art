@@ -51,6 +51,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import alien_fangs_geom as FG  # noqa: E402
 import alien_lips_geom as LP  # noqa: E402
 import alien_parts_geom as G  # noqa: E402
+import alien_tongue_geom as TG  # noqa: E402
 import export_glb  # noqa: E402
 
 SHAPES = ("rest", "M", "small", "A", "E", "O")
@@ -61,7 +62,8 @@ DEPTH_A, DEPTH_C = 0.80, 0.0012  # a lip tube's depth from its measured half-hei
 SINK = 0.30  # the share of the depth inside the skin
 PUSH = {"frog": {"O": 0.007}, "overbite": {"O": 0.006, "*": 0.004},
         "pout": {"O": 0.008, "*": 0.003},
-        "fangs": {"O": 0.006, "*": 0.001}}  # the lips' push out of the skin, m (O: pucker; M12: the pout stands out)
+        "fangs": {"O": 0.006, "*": 0.001},
+        "tongue": {"O": 0.006, "*": 0.002}}  # the lips' push out of the skin, m (O: pucker; M12: the pout stands out)
 LOWER_BACK = {"overbite": -0.002}  # the overbite's lower lip sits back
 MIN_B = 0.0011  # a lip's smallest half-height (the corners), m
 STATIONS = 41
@@ -87,18 +89,25 @@ RING_SIDE = {"side": (0.30, 0.75), "keep": 0.55}
 # shaded edges are 0.50 .. 0.55). The closed shapes keep 0.30 (their dark crease is no opening), and so does O (its
 # hole's edge drops straight from 0.4 to 0.05; at 0.50 the kiss's hole measured too big). A and E are about as wide as
 # rest on the sheet, so they shrink less than the frog's.
-SHAPE_SCALE_DESIGN = {"pout": {"A": 0.95, "E": 0.90, "O": 0.94}, "fangs": {"A": 1.08, "E": 0.95, "O": 0.94}}
+SHAPE_SCALE_DESIGN = {"pout": {"A": 0.95, "E": 0.90, "O": 0.94}, "fangs": {"A": 1.08, "E": 0.95, "O": 0.94},
+                      "tongue": {"A": 1.0, "E": 0.90, "O": 0.94}}
 PALETTE = {"pout": {"tongue_bg": -0.008}}
 PALETTE_SHAPE = {"pout": {"A": {"lip_min_r": 0.50}, "E": {"lip_min_r": 0.50}}}
 # M12: where an open ring's dark cup ends, as a share of the lip's half width in from its axis toward the opening (0:
 # under the axis, as S6..M10): the pout's cup stays under the lips' inner half.
-CUP_IN = {"pout": 0.6, "fangs": 0.6}
+CUP_IN = {"pout": 0.6, "fangs": 0.6, "tongue": 0.6}
 # M13 (art #196): the fangs (mg2) cross the lips in every panel, so the measure fills a fang's columns (and FANG_PAD px
 # either side) from the clean columns beside them (FILL_TEETH), instead of the overbite's rule (a tooth hides the lower
 # lip's top edge); the fangs themselves are built by build_fangs from the measured tooth boxes (alien_fangs_geom),
 # never as the overbite's boxes, and a closed fangs piece has no dark between its lips.
 FILL_TEETH = {"fangs"}
 FANG_PAD = 3
+# M14 (art #196): the tongue (mt2) pokes out over the lower lip in every panel, hiding it: the measure refills the
+# columns where the tongue covers the lower lip (FANG_PAD px wider) from the clean columns beside them, as the fangs'
+# (tongue_cover); its teeth and tongue are designed (alien_tongue_geom, build_tongue_out, build_teeth), never the
+# overbite's measured boxes or the measured in-mouth tongue, and an open closed-form piece (rest, small) has the dark
+# between its lips.
+FILL_TONGUE = {"tongue"}
 RING_KEEP = {"centre": 9, "width": 5}  # S7: the open ring's centre line and lip width keep this many harmonics
 NORMAL_SMOOTH = 8  # S7: passes over the skin points and normals under a lip (the decimated head's facets rippled it)
 STATION_SMOOTH = 5  # S7: passes over the closed lips' measured edges (2 left ripples)
@@ -109,6 +118,7 @@ TOOTH_D, TOOTH_TUCK = 0.0055, 0.003  # a tooth's depth, and how far it runs up u
 # dome with a midline groove, lifted less off the cup
 TONGUE_TUCK = 0.003  # M13b: a designed tongue's base this far under the opening's lower edge, m
 TONGUE_SHAPE = {"width": 0.62, "dome": 0.0034, "groove": 0.35, "lift": 0.0012}
+TONGUE_SKIN_GAP = 0.0012  # M14: the hanging tongue's underside at least this far in front of the chin, m
 TONGUE = (0.66, 0.30, 0.33)  # sRGB (S7: a deeper rose; the lips' near twin read as a doubled lower lip in A)
 FLIP_OUT = 0.0015
 
@@ -246,6 +256,10 @@ def measure_panel(P, design="", shape=""):
     if design in FILL_TEETH:  # M13: every edge under a fang from the clean columns beside it
         return {"hc": hc, "ny": ny, "nostril_box": nbox, "face_w_nose": r1 - l1,
                 "cols": fill_teeth(cols, teeth), "teeth": teeth, "C": C}
+    if design in FILL_TONGUE:  # M14: every edge under the tongue from the clean columns beside it
+        cover = tongue_cover(C, cols, y0, y1)
+        return {"hc": hc, "ny": ny, "nostril_box": nbox, "face_w_nose": r1 - l1,
+                "cols": fill_teeth(cols, cover), "teeth": teeth, "tongue_cover": cover, "C": C}
     # a tooth over the lower lip hides its top edge: interpolate that edge from the nearest clean columns (a tooth
     # counts as the opening, so the upper lip's bottom edge is the tooth's visible top)
     xs = sorted(cols)
@@ -293,6 +307,25 @@ def fill_teeth(cols, teeth):
         rec.update(open=a["open"] and b["open"], teeth=True)
         out[x] = rec
     return out
+
+
+def tongue_cover(C, cols, y0, y1):
+    """M14: the runs of columns where the tongue covers the lower lip, as fill_teeth's boxes ({"x0", "x1"}): a column
+    with tongue pixels whose lip pixels below the tongue's lowest are fewer than half the lower lip's usual thickness
+    (the median of the columns without tongue)."""
+    xs = sorted(cols)
+    thick = [cols[x]["bot_l"] - cols[x]["top_l"] for x in xs if not C["tongue"][y0:y1, x].any()]
+    tl = float(np.median(thick)) if thick else 6.0
+    bad = []
+    for x in xs:
+        tg = np.nonzero(C["tongue"][y0:y1, x])[0]
+        if len(tg) < 3:
+            continue
+        ys = np.nonzero(C["lip"][y0:y1, x])[0]
+        if int((ys > tg.max()).sum()) < 0.5 * tl:
+            bad.append(x)
+    return [{"x0": xs_[0] - 0.5, "x1": xs_[-1] + 0.5}
+            for xs_ in ([xs[i] for i in range(a, b + 1)] for a, b in runs([x in bad for x in xs])) if len(xs_) >= 2]
 
 
 def smooth(vals, n=2):
@@ -412,6 +445,20 @@ def circ_smooth(vals, n):
     return v
 
 
+def mirrored(cs, ra, rb, ns):
+    """M16: a lip's stations (centres, depths, half heights, normals; corner to corner across x = 0) with each station
+    the mean of itself and its mirror station mirrored (x -> -x): exactly symmetric across the face's centre line."""
+    n = len(cs)
+
+    def mx(v):
+        return Vector((-v.x, v.y, v.z))
+    cs2 = [(cs[i] + mx(cs[n - 1 - i])) / 2 for i in range(n)]
+    ns2 = [(ns[i] + mx(ns[n - 1 - i])).normalized() for i in range(n)]
+    ra2 = [(ra[i] + ra[n - 1 - i]) / 2 for i in range(n)]
+    rb2 = [(rb[i] + rb[n - 1 - i]) / 2 for i in range(n)]
+    return cs2, ra2, rb2, ns2
+
+
 def lip_tube(b, centres, radii_a, radii_b, normals, mi, seg, lips_p, lip):
     """M8: alien_parts_geom.tube with a lip's section (alien_lips_geom.section): the front flatter by lips_p["square"]
     and its swell moved toward the lip line (the upper lip's bottom, the lower lip's top) by lips_p["lean"]."""
@@ -438,15 +485,21 @@ def lip_tube(b, centres, radii_a, radii_b, normals, mi, seg, lips_p, lip):
     return rings
 
 
-def build_piece(bvh, m, design, shape, world, mats, coll, origin, lips=None, name=None, fang=None):
+def build_piece(bvh, m, design, shape, world, mats, coll, origin, lips=None, name=None, fang=None, tongue=None,
+                teeth=None):
     """One mouth piece from one panel's measured columns, in world space; returns the object and its measures.
     lips: an alien_lips_geom lip shape (None: LIP_SHAPE_M6C, the S6..M6c lips unchanged); name: the object's name
     (default mouth_<design>_<shape>); fang: an alien_fangs_geom shape (M13: the fangs design's two lower fangs from the
-    panel's tooth boxes, build_fangs; mats["fang"] their material).
+    panel's tooth boxes, build_fangs; mats["fang"] their material); tongue, teeth: alien_tongue_geom's TONGUE and
+    TEETH (M14: the tongue design's tongue over the lower lip and its gappy teeth, build_tongue_out and build_teeth;
+    mats["tongue_out"] the tongue's material).
     world(x_px, y_px) -> (x, z) in m. An open mouth is one ring (a torus whose section spans the lips between the
     opening's edge and the outer edge at each angle); a closed one is two tubes, upper and lower lip, meeting at
     the crease."""
     cols = m["cols"]
+    if design in FILL_TONGUE and shape == "M":  # M14: M's lips pressed shut round the tongue (the sheet's seam)
+        cols = {x: dict(c, open=False, bot_u=(c["bot_u"] + c["top_l"]) / 2 - 0.5, top_l=(c["bot_u"] + c["top_l"]) / 2 + 0.5)
+                if c["open"] else c for x, c in cols.items()}
     xs = sorted(cols)
     xl, xr = xs[0], xs[-1]
     push = PUSH.get(design, {}).get(shape, PUSH.get(design, {}).get("*", 0.0))
@@ -461,6 +514,7 @@ def build_piece(bvh, m, design, shape, world, mats, coll, origin, lips=None, nam
     n_open = sum(1 for x in xs if cols[x]["open"] and cols[x]["top_l"] - cols[x]["bot_u"] >= 3)
     sections = []  # (px centre, world centre on the lip's axis, depth a, normal)
     anchor = {}  # M13: where the fangs stand (build_fangs)
+    rolls = []  # M14: the lower lip's sections (axis, depth, half height, normal), where the tongue lies
     meas = {"width_mm": round((world(xr + 0.5, 0)[0] - world(xl - 0.5, 0)[0]) * 1000, 1),
             "height_mm": round((world(0, min(r["top_u"] for r in st) - 0.5)[1]
                                 - world(0, max(r["bot_l"] for r in st) + 0.5)[1]) * 1000, 1),
@@ -487,6 +541,8 @@ def build_piece(bvh, m, design, shape, world, mats, coll, origin, lips=None, nam
                   "inner_hw": (max(q[0] for q in ins) - min(q[0] for q in ins)) / 2,
                   "outer_hw": (max(q[0] for q in outs) - min(q[0] for q in outs)) / 2,
                   "outer_hh": (max(q[1] for q in outs) - min(q[1] for q in outs)) / 2}
+        anchor["upper"] = sorted((q for q in ins if q[1] > cz0), key=lambda q: q[0])  # M14: the opening's top edge
+        anchor["open_h"] = max(q[1] for q in ins) - min(q[1] for q in ins)
         mid = [((i[0] + o[0]) / 2, (i[1] + o[1]) / 2) for i, o in zip(ins, outs)]
         hw = [max(MIN_B, math.hypot(o[0] - i[0], o[1] - i[1]) / 2) for i, o in zip(ins, outs)]
         if rp:  # already smooth: no low pass (it rippled E's tight ends)
@@ -534,14 +590,16 @@ def build_piece(bvh, m, design, shape, world, mats, coll, origin, lips=None, nam
             if radial.dot(Vector((mx[k] - world(cx, cy)[0], 0.0, mz[k] - world(cx, cy)[1]))) < 0:
                 radial = -radial
             c3 = p + n * (a * (1 - SINK) + (push + back * low) * side - tuck) + radial * ((hw_k - hw[k]) * side)
+            if low > 0.5:
+                rolls.append((c3.copy(), a, hw_k * side, n.copy()))
             throat.append(a * (1 - SINK) + (push + back * low) * side - tuck)
             ci = (hw_k - hw[k] - CUP_IN.get(design, 0.0) * hw_k) * side  # M12: the cup ends inside the lip
             cup.append((mx[k] + radial.x * ci, mz[k] + radial.z * ci))
             ring = []
             for j in range(RING_SEG):
                 ph = 2 * math.pi * j / RING_SEG
-                if ring_p["w"] > 0.0:  # the swell toward the opening's edge (sin < 0 is the inner side)
-                    cn, sn = LP.section(ph, lips_p["lean"], lips_p["square"], -1.0)
+                if ring_p["w"] > 0.0:  # the swell toward the opening's edge (sin < 0 is the inner side; M16: a
+                    cn, sn = LP.section(ph, (rp or {}).get("lean", lips_p["lean"]), lips_p["square"], -1.0)  # ring's own)
                 else:
                     cn, sn = math.cos(ph), math.sin(ph)
                 ring.append(b.vert(c3 + n * (a * cn) + radial * (hw_k * side * sn)))
@@ -578,6 +636,11 @@ def build_piece(bvh, m, design, shape, world, mats, coll, origin, lips=None, nam
         meas["form"] = "tubes"
         lips = {}
         axes = {}  # M8: per lip and station (x, z) of its axis after the reshape
+        # M16: a lip shape's mirrored stations and fitted lip line (alien_lips_geom.rest_stations; the pout's)
+        mirror = lips_p.get("mirror", 0.0) > 0.0
+        if mirror or lips_p.get("seam_fit"):
+            st = LP.rest_stations(st, m["hc"], lips_p)
+            xl, xr = st[0]["x"] - 0.5, st[-1]["x"] + 0.5
         ss = [2 * (r["x"] - xl) / max(1.0, xr - xl) - 1 for r in st]  # M8: -1 .. 1 corner to corner
         for lip in ("u", "l"):
             cs, ra, rb, ns = [], [], [], []
@@ -595,6 +658,8 @@ def build_piece(bvh, m, design, shape, world, mats, coll, origin, lips=None, nam
             # M12b: the depth from the lip without the bow (bow_flat), so the bow notches the outline only
             t0, b0 = LP.closed_edges(ss, [e[1] for e in edges], [e[2] for e in edges], lip, LP.flat_bow(lips_p))
             axes[lip] = [(e[0], (zt + zb) / 2) for e, zt, zb in zip(edges, tops, bots)]
+            if lip == "u":  # M14: the upper lip's bottom (the opening's top edge), where the upper teeth hang
+                upper_edge = sorted((e[0], zb) for e, zb in zip(edges, bots))
             if lip == "l":  # M13: the lower lip's top (the crease of a closed mouth), where the fangs rise
                 lo = sorted((e[0], zt) for e, zt in zip(edges, tops))
                 anchor = {"form": "tubes", "lower": lo, "centre": ((lo[0][0] + lo[-1][0]) / 2, 0.0),
@@ -610,6 +675,10 @@ def build_piece(bvh, m, design, shape, world, mats, coll, origin, lips=None, nam
                 rb.append(hb)
                 ns.append(n)
                 sections.append(((r["x"], (t + bt) / 2), c3, a, n, p))
+            if mirror:  # M16: the skin under the lips is up to 0.4 mm lopsided: each station and its mirror averaged,
+                # so the tube (and every later pass: smoothing, corners) is mirrored across x = 0 exactly (`sections`,
+                # the teeth's and tongue's anchors, are taken before this; the pout uses neither)
+                cs, ra, rb, ns = mirrored(cs, ra, rb, ns)
             lips[lip] = (cs, ra, rb, ns)
         # S7: smooth paths (the head's facets made the normals, and so the lips, ripple), and soft corners: over the
         # last CORNER share at each end both lips' centres meet and sink into the skin, so neither floats or cuts off
@@ -635,10 +704,19 @@ def build_piece(bvh, m, design, shape, world, mats, coll, origin, lips=None, nam
                 lip_tube(b, *sm[lip], mi_lip, 14, lips_p, lip)
             else:
                 G.tube(b, *sm[lip], mi_lip, seg=14)
-        if m["teeth"] and design not in FILL_TEETH:  # the dark between the teeth and behind them, lip axis to axis
+        anchor["upper"] = upper_edge
+        zl_ = sorted(anchor["lower"], key=lambda q: abs(q[0] - anchor["centre"][0]))[0][1]
+        zu_ = sorted(upper_edge, key=lambda q: abs(q[0] - anchor["centre"][0]))[0][1]
+        anchor["open_h"] = max(0.0, zu_ - zl_)
+        rolls = list(zip(*sm["l"]))
+        dark = (m["teeth"] and design not in FILL_TEETH) or (design in FILL_TONGUE and n_open >= 5)
+        if dark:  # the dark between the teeth and behind them, lip axis to axis (M14: any open tongue piece)
             rows = 5
             grid = []
-            for i, r in enumerate(st):
+            # M14: the tongue design's dark stops short of the corners (the lips sink into the skin there and the
+            # dark, on the skin, showed as a dark dot past each corner)
+            i0 = int((len(st) - 1) * cn["share"] * 0.7) if design in FILL_TONGUE else 0
+            for i, r in list(enumerate(st))[i0:len(st) - i0]:
                 col = []
                 for j in range(rows):
                     if lips_p.get("w", 0.0) > 0.0:  # M8: between the reshaped lips' axes
@@ -665,7 +743,9 @@ def build_piece(bvh, m, design, shape, world, mats, coll, origin, lips=None, nam
         groups.append(g)
         tcols = max(groups, key=len)
     tring = (rp or {}).get("tongue") if meas.get("form") == "ring" else None
-    if tring and anchor.get("lower"):  # M13b: a designed tongue in the designed opening (the measured one was a
+    if design in FILL_TONGUE:  # M14: the designed tongue and teeth below
+        pass
+    elif tring and anchor.get("lower"):  # M13b: a designed tongue in the designed opening (the measured one was a
         # small blob in A and ragged in E: the refilled fang columns broke its run): tongue[0] of the opening's half
         # width, its top tongue[1] of the way from the lower edge up to the opening's centre, tucked under the edge
         build_tongue_ring(b, bvh, anchor, mats, tring, meas)
@@ -700,7 +780,7 @@ def build_piece(bvh, m, design, shape, world, mats, coll, origin, lips=None, nam
                 b.face((grid[i][j], grid[i + 1][j], grid[i + 1][j + 1], grid[i][j + 1]), mi_t)
         meas["tongue_mm"] = [round((world(tr, 0)[0] - world(tl, 0)[0]) * 1000, 1),
                              round((world(0, top)[1] - world(0, base_m)[1]) * 1000, 1)]
-    if m["teeth"] and shape != "M" and design not in FILL_TEETH:
+    if m["teeth"] and shape != "M" and design not in FILL_TEETH | FILL_TONGUE:
         mi_te = b.slot(mats["teeth"])
         meas["teeth_mm"] = []
         for t in m["teeth"]:
@@ -730,6 +810,10 @@ def build_piece(bvh, m, design, shape, world, mats, coll, origin, lips=None, nam
             meas["teeth_mm"].append([round((x1 - x0) * 1000, 1), round((zt - TOOTH_TUCK - zb) * 1000, 1)])
     if fang is not None:
         meas["fangs_mm"] = build_fangs(b, bvh, anchor, mats, fang, mi_lip, origin.translation.z)
+    if teeth is not None and shape in teeth["shapes"] and anchor:
+        meas["teeth_mm"] = build_teeth(b, anchor, sections, mats, TG.teeth_for(teeth, shape))
+    if tongue is not None and anchor:
+        meas["tongue_out"] = build_tongue_out(b, bvh, anchor, rolls, mats, tongue, shape)
     bmesh.ops.remove_doubles(b.bm, verts=b.bm.verts[:], dist=1e-7)
     ob = G.to_object(b, name or f"mouth_{design}_{shape}", coll, origin)
     return ob, meas, st
@@ -774,47 +858,121 @@ def build_tongue_ring(b, bvh, anchor, mats, tring, meas):
     meas["tongue_mm"] = [round(2 * half * 1000, 1), round((h + TONGUE_TUCK) * 1000, 1)]
 
 
-def fang_roots(anchor, p):
-    """M13: the two fangs' (x, z) where they leave the lips (their root's top), from the built piece's lips (anchor):
-    a closed mouth's at p["x"] of the lips' half width on the lower lip's top (the crease); an open ring's (A, E) at
-    p["x_open"] of the opening's half width on the lower lip's inner edge (they stand in the opening's sides); O's
-    beside the pursed ring (p["o_gap"] past its outer edge), p["o_drop"] of its half height below its centre. M13b:
-    with p["x_m"] every shape but O at that x about the face's centre line (closed: on the crease there, both at their
-    mean height; A, E: p["ring_drop"][shape] of the ring's half height below its centre, on the lower lip in the
-    opening's corner), O's attached to the ring (p["o_in"] of the base radius inside its outer edge)."""
-    def z_at(pts, x):
-        if x <= pts[0][0]:
-            return pts[0][1]
-        for (x0, z0), (x1, z1) in zip(pts, pts[1:]):
-            if x0 <= x <= x1:
-                return z0 + (z1 - z0) * (x - x0) / max(1e-9, x1 - x0)
-        return pts[-1][1]
-    cx, cz = anchor["centre"]
+def _z_at(pts, x):
+    if x <= pts[0][0]:
+        return pts[0][1]
+    for (x0, z0), (x1, z1) in zip(pts, pts[1:]):
+        if x0 <= x <= x1:
+            return z0 + (z1 - z0) * (x - x0) / max(1e-9, x1 - x0)
+    return pts[-1][1]
+
+
+def build_tongue_out(b, bvh, anchor, rolls, mats, tp, shape):
+    """M14: the tongue design's tongue (alien_tongue_geom) on a piece being built, lying on its lower lip: at the
+    tongue's x (tp["shapes"][shape]["x"] of the lips' outer half width off their centre) the nearest lower-lip
+    section gives the roll (its axis, depth and half height: an ellipse); the spine wraps over it, and every station
+    below the lip stays its half thickness plus TONGUE_SKIN_GAP in front of the skin (the chin). Returns its x, width,
+    length past the lip's top, the tip below the lip and the push off the chin (mm)."""
+    tp = TG.shape_params(tp, shape)  # M14b: the shape's width (O's narrower than its hole)
+    sp = dict(tp["shapes"][shape])
+    cx = anchor["centre"][0]
+    x0 = cx + sp["x"] * anchor["outer_hw"]
+    c3, a, hb, _n = min(rolls, key=lambda r: abs(r[0].x - x0))
+    ra = a + tp["thick"] / 2 + tp["clear"]
+    rb = hb + tp["thick"] / 2 + tp["clear"]
+    sp2d, s_top = TG.spine2d((ra, rb), tp, sp)
+    pts = TG.world_spine(sp2d, s_top, x0, c3.y, c3.z, sp)
+    ss = [q[2] for q in sp2d]
+    push = 0.0
     out = []
-    for side in (-1.0, 1.0):
-        if anchor["form"] == "O":
-            if p.get("x_m"):  # M13b: attached to the pursed ring's sides, o_in of the base radius inside its edge
-                x = cx + side * (anchor["outer_hw"] - p["o_in"] * p["radius"])
-            else:
-                x = cx + side * (anchor["outer_hw"] + p["o_gap"])
-            out.append((x, cz - p["o_drop"] * anchor["outer_hh"]))
-            continue
-        if p.get("x_m"):  # M13b: one place on the lower jaw in every shape, about the face's centre line
-            x = side * p["x_m"]
-        elif anchor["form"] == "tubes":
-            x = cx + side * p["x"] * anchor["outer_hw"]
-        else:
-            x = cx + side * p["x_open"] * anchor["inner_hw"]
-        if anchor["form"] == "ring" and p.get("x_m"):  # M13b: on the lower lip in the opening's corner, the
-            # shape's ring_drop of the ring's half height below its centre (on the opening's edge at x they stood
-            # beside the opening's top: a round opening is at its widest there)
-            out.append((x, cz - p["ring_drop"].get(anchor["shape"], 0.3) * anchor["outer_hh"] + p["lift"]))
-            continue
-        out.append((x, z_at(anchor["lower"], x) + p["lift"]))
-    if p.get("x_m") and anchor["form"] == "tubes":  # M13b: both at one height (the sheet's crease is 1.6 mm aslant)
-        zm = sum(z for _x, z in out) / len(out)
-        out = [(x, zm) for x, _z in out]
+    for (x, y, z), s in zip(pts, ss):  # in front of the chin: never closer than the gap to the skin
+        if z < c3.z - hb and s > s_top:
+            sy = surf(bvh, x, z)[0].y
+            push = max(push, (y + tp["thick"] / 2 + TONGUE_SKIN_GAP) - sy)
+        out.append((x, y - push, z))
+    verts, faces, flop = TG.tongue_mesh(out, ss, s_top, tp, sp)
+    verts, lifted = drape(b, verts, tp)
+    mi_t = b.slot(mats["tongue_out"])
+    bv = [b.vert(Vector(v), light=w) for v, w in zip(verts, flop)]
+    for f in faces:
+        b.face([bv[i] for i in f], mi_t)
+    return {"x": round(x0 * 1000, 1), "width": round(tp["width"] * 1000, 1),
+            "out": round((ss[-1] - s_top) * 1000, 1), "tip_below_lip": round((c3.z - hb - out[-1][2]) * 1000, 1),
+            "chin_push": round(push * 1000, 2), "drape_mm": round(lifted * 1000, 2)}
+
+
+def drape(b, verts, tp, reach=0.008, most=0.006):
+    """M14: the tongue's sections lifted where its underside would cut into the piece's lips (the roll is an ellipse,
+    the lip is not, and a wide tongue crosses a lip that rises toward the corners): per underside vertex a ray down
+    from `reach` above it onto the lip faces; the lift (at most `most`) moves the vertex and its mirror on the top
+    together (the thickness kept), smoothed round each section and along the tongue. M14b (PR #251's review: a white
+    rim and a crumpled highlight at 3/4 where it crosses the lip): tp["drape"]'s `passes` of smoothing, and the
+    section's sides (|cos| toward 1) aimed `sink` into the lip, so its edge meets the lip without a gap. Returns the
+    vertices and the largest lift (m)."""
+    dr = tp.get("drape", {"sink": 0.0, "passes": 6})
+    mi_lip = next(i for i, m in enumerate(b.mats) if m.name.startswith("alien_lip"))
+    lipf = [f for f in b.bm.faces if f.material_index == mi_lip]
+    lv = list({v for f in lipf for v in f.verts})
+    idx = {v: i for i, v in enumerate(lv)}
+    tree = BVHTree.FromPolygons([v.co.copy() for v in lv], [[idx[v] for v in f.verts] for f in lipf])
+    K = TG.AROUND
+    n_ring = (len(verts) - 2) // K
+    lift = [[0.0] * K for _ in range(n_ring)]
+    for r in range(n_ring):
+        for k in range(K):
+            if math.sin(2 * math.pi * k / K) > -0.05:
+                continue
+            x, y, z = verts[r * K + k]
+            hit = tree.ray_cast(Vector((x, y, z + reach)), Vector((0.0, 0.0, -1.0)), reach + 0.004)
+            if hit[0] is not None:
+                side = abs(math.cos(2 * math.pi * k / K)) ** 2
+                d = min(most, max(0.0, hit[0].z + tp["clear"] - dr["sink"] * side - z))
+                lift[r][k] = max(lift[r][k], d)
+                lift[r][(K - k) % K] = max(lift[r][(K - k) % K], d)
+    # smooth round each section and along the tongue (column by column it crumpled the root)
+    for r in range(n_ring):  # M14b: the section's two side vertices (no underside partner) as their neighbours, so
+        # the side does not stay down while the top and underside rise (that crease was the 3/4 view's white rim)
+        lift[r][0] = max(lift[r][0], lift[r][K - 1], lift[r][1])
+        lift[r][K // 2] = max(lift[r][K // 2], lift[r][K // 2 + 1], lift[r][K // 2 - 1])
+    for _ in range(dr["passes"]):
+        lift = [[(lift[r][k - 1] + 2 * lift[r][k] + lift[r][(k + 1) % K]) / 4 for k in range(K)] for r in range(n_ring)]
+        lift = [[(lift[max(0, r - 1)][k] + 2 * lift[r][k] + lift[min(n_ring - 1, r + 1)][k]) / 4 for k in range(K)]
+                for r in range(n_ring)]
+    out = list(verts)
+    for r in range(n_ring):
+        for k in range(K):
+            x, y, z = out[r * K + k]
+            out[r * K + k] = (x, y, z + lift[r][k])
+    return out, max(max(row) for row in lift)
+
+
+def build_teeth(b, anchor, sections, mats, tt):
+    """M14: the tongue design's gappy teeth (alien_tongue_geom.tooth_boxes, tooth_mesh) on a piece being built, from
+    its opening's edges (anchor upper/lower) and the lips' axes (sections). Returns per tooth [x, w, visible h,
+    centre z off the opening's middle] mm."""
+    edges = {"upper": anchor["upper"], "lower": anchor["lower"]}
+    cx = anchor["centre"][0]
+    zmid = (_z_at(edges["upper"], cx) + _z_at(edges["lower"], cx)) / 2
+
+    def edge_y(lip, x, z):
+        cand = [s for s in sections if (s[1].z > zmid) == (lip == "upper")] or sections
+        s = min(cand, key=lambda s: (s[1].x - x) ** 2 + (s[1].z - z) ** 2)
+        return s[1].y - tt["front"] * s[2]
+    boxes = TG.tooth_boxes(lambda lip, x: _z_at(edges[lip], cx + x), edge_y, anchor.get("open_h", 0.0), tt, cx)
+    mi_te = b.slot(mats.get("tooth", mats["teeth"]))
+    out = []
+    for t in boxes:
+        verts, faces = TG.tooth_mesh(t["centre"], t["w"], t["d"], t["h"], t["tilt"], tt["round"])
+        bv = [b.vert(Vector(v)) for v in verts]
+        for f in faces:
+            b.face([bv[i] for i in f], mi_te)
+        out.append([round(t["centre"][0] * 1000, 1), round(t["w"] * 1000, 1), t["visible_mm"],
+                    round((t["centre"][2] - zmid) * 1000, 1)])  # M14b: its centre's height off the opening's middle
     return out
+
+
+# M14 (PR #250's review): fang_roots lives in alien_fangs_geom (plain Python, unit-tested); the name stays here.
+fang_roots = FG.fang_roots
 
 
 def build_fangs(b, bvh, anchor, mats, p, mi_lip, z0=0.0):
@@ -831,7 +989,7 @@ def build_fangs(b, bvh, anchor, mats, p, mi_lip, z0=0.0):
     idx = {v: i for i, v in enumerate(vs)}
     tree = BVHTree.FromPolygons([v.co.copy() for v in vs], [[idx[v] for v in f.verts] for f in lipf])
     out = []
-    for x, z_root in fang_roots(anchor, p):
+    for x, z_root in FG.fang_roots(anchor, p):
         z_base = z_root - p["root"] * p["length"]
         z_tip = z_base + p["length"]
         side = 1.0 if x > 0 else -1.0

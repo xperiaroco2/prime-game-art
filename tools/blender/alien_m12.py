@@ -46,19 +46,28 @@ import alien_lids_geom as LG  # noqa: E402
 import alien_lips_geom as LP  # noqa: E402
 import alien_m6 as M6  # noqa: E402
 import alien_mouths as AM  # noqa: E402
+import alien_tongue_geom as TG  # noqa: E402
 import export_glb  # noqa: E402
 
 SHEET = ("D:/prime-art-raw/2026-10-20-alien-face-sheets-2/mp1/"
          "image_to_image-image_01a15906-86c2-76fb-a3e5-4de29c5c46e8_0.png")
 SHEET_FANGS = ("D:/prime-art-raw/2026-10-20-alien-face-sheets-2/mg2/"
                "image_to_image-image_01a15908-9f6b-7219-a4df-4ca6606c5c8c_0.png")
-# The new designs in build order; their contact channels are CONTACT_UV_MOUTH2's (u pout, v fangs).
-DESIGNS = ("pout", "fangs")
+SHEET_TONGUE = ("D:/prime-art-raw/2026-10-20-alien-face-sheets-2/mt2/"
+                "image_to_image-image_01a1590a-0530-728a-8a04-6f8ddd199946_0.png")
+# The new designs in build order; their contact channels are CONTACT_UV_MOUTH2's (u pout, v fangs) and (M14)
+# CONTACT_UV_MOUTH3's (u tongue).
+DESIGNS = ("pout", "fangs", "tongue")
 # The pout's lips (sRGB, Blender's Principled stand-in; Godot's alien.gd LIP_LOOK_POUT is the release look): a deep
 # red-coral, glossy (a low roughness and a clear coat), as the sheet's lips.
 POUT_MAT = {"color": (0.68, 0.14, 0.14), "roughness": 0.32, "coat": 0.5, "coat_roughness": 0.15, "specular": 0.5}
 # M13: the fangs (sRGB, Blender's stand-in; Godot's alien.gd FANG_LOOK is the release look): ivory, a soft satin.
 FANG_MAT = {"color": (0.90, 0.82, 0.64), "roughness": 0.38, "coat": 0.25, "coat_roughness": 0.3, "specular": 0.45}
+# M14: the tongue mouth's tongue (sRGB, Blender's stand-in; Godot's alien.gd TONGUE_LOOK is the release look): the mt2
+# sheet's soft pink, a soft wet sheen.
+TONGUE_MAT = {"color": (0.86, 0.38, 0.47), "roughness": 0.35, "coat": 0.35, "coat_roughness": 0.2, "specular": 0.5}
+# M14: its teeth (alien_tooth): the sheet's cream, the fangs' satin.
+TOOTH_MAT = {"color": (0.92, 0.86, 0.68), "roughness": 0.40, "coat": 0.25, "coat_roughness": 0.3, "specular": 0.45}
 # M13: the jaw weight (COLOR_0.a since M13b) toward the mouth's corners: full to `from` of the lips' half width, `corner` at the
 # corners (the corners stay on the face as the lower jaw moves); round an open ring, the lower half by the opening's
 # centre height over `band` of its half height either side.
@@ -81,6 +90,10 @@ def args():
     p.add_argument("--lips", default="", help="JSON merged over alien_lips_geom.LIP_SHAPE_POUT")
     p.add_argument("--lips-fangs", default="", help="JSON merged over alien_lips_geom.LIP_SHAPE_FANGS")
     p.add_argument("--fang", default="", help="JSON merged over alien_fangs_geom.FANG")
+    p.add_argument("--sheet-tongue", default=SHEET_TONGUE, help="the mt2 talk-shape sheet (3 x 2 panels)")
+    p.add_argument("--lips-tongue", default="", help="JSON merged over alien_lips_geom.LIP_SHAPE_TONGUE")
+    p.add_argument("--tongue", default="", help="JSON merged over alien_tongue_geom.TONGUE")
+    p.add_argument("--teeth", default="", help="JSON merged over alien_tongue_geom.TEETH")
     p.add_argument("--grid", default="", help="a grid spec JSON file (design, variants and pieces)")
     p.add_argument("--orm-sss", default="", help="the composed ORM for the SSS route check")
     p.add_argument("--no-bake", action="store_true")
@@ -93,7 +106,8 @@ def srgb_to_lin(c):
 
 def lip_material(name, look):
     """A copy of the kit's alien_lip (its node layout kept, its extras dropped) in `look`'s colour and finish: the
-    pout's alien_lip_pout (POUT_MAT), the fangs' alien_fang (FANG_MAT)."""
+    pout's alien_lip_pout (POUT_MAT), the fangs' alien_fang (FANG_MAT), the tongue mouth's alien_tongue_pink
+    (TONGUE_MAT)."""
     old = bpy.data.materials.get(name)
     if old is not None:
         bpy.data.materials.remove(old)
@@ -179,8 +193,11 @@ def jaw_weights(ob) -> dict:
     g = g * env(co[:, 0])
     for r, k in kind.items():
         sel = isl == r
-        if k in ("alien_tongue", "alien_fang"):
+        if k in ("alien_tongue", "alien_fang", "alien_tongue_pink"):
             g[sel] = env(co[sel, 0])
+        elif k == "alien_tooth":  # M14: the upper teeth stay with the skull, the lower ones move with the jaw
+            zl = float(co[lipv, 2].mean())
+            g[sel] = env(co[sel, 0]) if co[sel, 2].mean() < zl else 0.0
     if "ao" not in me.color_attributes:
         at = me.color_attributes.new("ao", "FLOAT_COLOR", "POINT")
         at.data.foreach_set("color", np.ones(n * 4, dtype=np.float32))
@@ -195,9 +212,10 @@ def jaw_weights(ob) -> dict:
     return {"moving": round(float((g > 0.5).mean()), 3), "max": round(float(g.max()), 3)}
 
 
-def contact_field(body, piece):
+def contact_field(body, piece, lips_only=False):
     """The skin's contact field of a design's rest lips (alien_m6.contact_field's rule: alien_lids_geom.contact of the
-    rest-pose distance, smoothed); zeros without the piece."""
+    rest-pose distance, smoothed); zeros without the piece. lips_only (M14): only the piece's lip faces (the tongue
+    hanging in front of the chin is no lip contact)."""
     me = body.data
     c = np.zeros(len(me.vertices))
     if piece is None:
@@ -205,7 +223,9 @@ def contact_field(body, piece):
     mw = body.matrix_world
     omw = piece.matrix_world
     verts = [omw @ v.co for v in piece.data.vertices]
-    tree = BVHTree.FromPolygons(verts, [list(p.vertices) for p in piece.data.polygons])
+    polys = [p for p in piece.data.polygons
+             if not lips_only or piece.material_slots[p.material_index].material.name.startswith("alien_lip")]
+    tree = BVHTree.FromPolygons(verts, [list(p.vertices) for p in polys])
     reach = LG.CONTACT["reach"]
     for i, v in enumerate(me.vertices):
         hit = tree.find_nearest(mw @ v.co, reach)
@@ -215,23 +235,29 @@ def contact_field(body, piece):
 
 
 def mouth2_contact(body) -> dict:
-    """The new designs' contact into Body's seventh UV layer CONTACT_UV_MOUTH2 (u pout, v fangs; v stored flipped),
-    each from its rest piece in the kit (the ones this run built, or the input kit's)."""
-    name, chans = LP.CONTACT_UV_MOUTH2
+    """The new designs' contact into Body's seventh UV layer CONTACT_UV_MOUTH2 (u pout, v fangs; v stored flipped)
+    and (M14) its eighth CONTACT_UV_MOUTH3 (u tongue, v 0), each from its rest piece in the kit (the ones this run
+    built, or the input kit's): both layers are rewritten in that order, so they stay TEXCOORD_6 and TEXCOORD_7."""
     me = body.data
-    if name in me.uv_layers:
-        me.uv_layers.remove(me.uv_layers[name])
+    for name, _c in (LP.CONTACT_UV_MOUTH3, LP.CONTACT_UV_MOUTH2):
+        if name in me.uv_layers:
+            me.uv_layers.remove(me.uv_layers[name])
     if len(me.uv_layers) != 6:
         raise SystemExit(f"Body has {len(me.uv_layers)} UV layers, expected the six of alien_m6 (TEXCOORD_0..5)")
-    fields = [contact_field(body, bpy.data.objects.get(f"mouth_{d}_rest")) for d in chans]
     lv = np.empty(len(me.loops), dtype=np.int64)
     me.loops.foreach_get("vertex_index", lv)
-    layer = me.uv_layers.new(name=name)
-    layer.data.foreach_set("uv", np.stack([fields[0][lv], 1.0 - fields[1][lv]], 1).astype(np.float32).ravel())
     mat = bpy.data.materials["alien_hue"]
-    for k, v in LP.CONTACT_MARKER_MOUTH2.items():
-        mat[k] = v
-    rep = {d: {"touched": int((c > 0.01).sum()), "full": int((c > 0.9).sum())} for d, c in zip(chans, fields)}
+    rep = {}
+    for (name, chans), marker in ((LP.CONTACT_UV_MOUTH2, LP.CONTACT_MARKER_MOUTH2),
+                                  (LP.CONTACT_UV_MOUTH3, LP.CONTACT_MARKER_MOUTH3)):
+        fields = [contact_field(body, bpy.data.objects.get(f"mouth_{d}_rest") if d else None, d == "tongue")
+                  for d in chans]
+        layer = me.uv_layers.new(name=name)
+        layer.data.foreach_set("uv", np.stack([fields[0][lv], 1.0 - fields[1][lv]], 1).astype(np.float32).ravel())
+        for k, v in marker.items():
+            mat[k] = v
+        rep.update({d: {"touched": int((c > 0.01).sum()), "full": int((c > 0.9).sum())}
+                    for d, c in zip(chans, fields) if d})
     rep["uv_layers"] = [u.name for u in me.uv_layers]
     log("contact", json.dumps(rep))
     return rep
@@ -241,11 +267,15 @@ def build_design(design, a, bvh, face_w, z_sock, chin_z, sock, mouth, coll, grid
     """One design's six pieces (and the grid's variants when the grid is this design's): (report, pieces, extra)."""
     if design == "pout":
         merge, over, sheet_path = LP.merged_pout, a.lips, a.sheet
-    else:
+    elif design == "fangs":
         merge, over, sheet_path = LP.merged_fangs, a.lips_fangs, a.sheet_fangs
+    else:
+        merge, over, sheet_path = LP.merged_tongue, a.lips_tongue, a.sheet_tongue
     lips = merge(json.loads(over) if over else None)
     fang = FG.merged(json.loads(a.fang) if a.fang else None) if design == "fangs" else None
-    rep = {"sheet": sheet_path, "lips": lips, "fang": fang, "pieces": {}}
+    tongue = TG.merged(json.loads(a.tongue) if a.tongue else None) if design == "tongue" else None
+    teeth = TG.merged_teeth(json.loads(a.teeth) if a.teeth else None) if design == "tongue" else None
+    rep = {"sheet": sheet_path, "lips": lips, "fang": fang, "tongue": tongue, "teeth": teeth, "pieces": {}}
     sheet = AM.load_rgb(sheet_path)
     ms, drep, frames = AM.shape_frames(sheet, face_w, z_sock, chin_z, design)
     rep["measure"] = {k: v for k, v in drep.items() if k != "shapes"}
@@ -253,7 +283,8 @@ def build_design(design, a, bvh, face_w, z_sock, chin_z, sock, mouth, coll, grid
     pieces, extra = [], []
     for k, shape in enumerate(AM.SHAPES):
         f = frames[shape]
-        ob, meas, _st = AM.build_piece(bvh, ms[k], design, shape, f["world"], mats, coll, sock, lips=lips, fang=fang)
+        ob, meas, _st = AM.build_piece(bvh, ms[k], design, shape, f["world"], mats, coll, sock, lips=lips, fang=fang,
+                                       tongue=tongue, teeth=teeth)
         attach(ob, mouth)
         meas.update({"verts": len(ob.data.vertices), "squeeze": round(f["squeeze"], 3), "sx": round(f["sx"], 3)})
         rep["pieces"][ob.name] = meas
@@ -263,21 +294,42 @@ def build_design(design, a, bvh, face_w, z_sock, chin_z, sock, mouth, coll, grid
         for vname, vl in gd["variants"].items():
             vl = dict(vl)
             vf = FG.merged(dict(fang or {}, **vl.pop("fang", {}))) if design == "fangs" else None
+            vt = vth = None
+            if design == "tongue":  # M14: a variant's "tongue" and "teeth" over the run's
+                vt = TG.merged(_deep(json.loads(a.tongue) if a.tongue else {}, vl.pop("tongue", {})))
+                vth = TG.merged_teeth(dict(json.loads(a.teeth) if a.teeth else {}, **vl.pop("teeth", {})))
             vo, vm, _s = AM.build_piece(bvh, ms[k], design, shape, f["world"], mats, coll, sock,
                                         lips=merge(dict(json.loads(over) if over else {}, **vl)),
-                                        name=f"lipvar_{vname}_{design}_{shape}", fang=vf)
+                                        name=f"lipvar_{vname}_{design}_{shape}", fang=vf, tongue=vt, teeth=vth)
             attach(vo, mouth)
             rep.setdefault("grid", {})[vo.name] = {kk: vm.get(kk) for kk in ("width_mm", "height_mm", "max_open_mm",
-                                                                              "fangs_mm")}
+                                                                              "fangs_mm", "tongue_out")}
             extra.append(vo)
     log(design, "rings", json.dumps({k: v["ring_mm"] for k, v in rep["pieces"].items() if "ring_mm" in v}))
     log(design, "pieces", json.dumps({k: [v["width_mm"], v["height_mm"], v["max_open_mm"], v["form"], v["verts"]]
                                        for k, v in rep["pieces"].items()}))
     if design == "fangs":
         log(design, "fangs", json.dumps({k: v.get("fangs_mm") for k, v in rep["pieces"].items()}))
+    if design == "tongue":
+        log(design, "tongue", json.dumps({k: v.get("tongue_out") for k, v in rep["pieces"].items()}))
+        log(design, "teeth", json.dumps({k: v.get("teeth_mm") for k, v in rep["pieces"].items()}))
     if extra:
         log(design, "grid", json.dumps(rep["grid"]))
     return rep, pieces, extra
+
+
+def _deep(base: dict, over: dict) -> dict:
+    """base with over merged on top, `shapes` shape by shape (a grid variant's tongue over the run's --tongue)."""
+    out = dict(base)
+    for k, v in over.items():
+        if k == "shapes":
+            sh = {s: dict(d) for s, d in out.get("shapes", {}).items()}
+            for s, d in v.items():
+                sh.setdefault(s, {}).update(d)
+            out["shapes"] = sh
+        else:
+            out[k] = v
+    return out
 
 
 def main():
@@ -309,6 +361,10 @@ def main():
         mats["pout"] = dict(base, lip=lip_material("alien_lip_pout", POUT_MAT))
     if "fangs" in designs:
         mats["fangs"] = dict(base, lip=bpy.data.materials["alien_lip"], fang=lip_material("alien_fang", FANG_MAT))
+    if "tongue" in designs:
+        mats["tongue"] = dict(base, lip=bpy.data.materials["alien_lip"],
+                              tongue_out=lip_material("alien_tongue_pink", TONGUE_MAT),
+                              tooth=lip_material("alien_tooth", TOOTH_MAT))
     reps, pieces, extra = {}, [], []
     for d in designs:
         r, p, e = build_design(d, a, bvh, face_w, z_sock, chin_z, sock, mouth, coll, grid, mats[d])
@@ -326,7 +382,7 @@ def main():
         for d in designs:
             reps[d]["parts_ao"] = {k: v for k, v in ao.items() if f"_{d}_" in k}
             # the part's AO marker only on a baked kit (PR #246's review minor 7): with it alien.gd reads COLOR_0.r
-            for key in ("lip", "fang"):
+            for key in ("lip", "fang", "tongue_out", "tooth"):
                 if key in mats[d] and mats[d][key].name != "alien_lip":
                     for k2, v2 in M6.PART_AO_MARKER.items():
                         mats[d][key][k2] = v2
@@ -361,6 +417,7 @@ def main():
         if f.suffix == ".png":
             shutil.copy2(f, ex / f.name)
     marker = json.dumps(LP.CONTACT_MARKER_MOUTH2)
+    marker3 = json.dumps(LP.CONTACT_MARKER_MOUTH3)
     for d in designs:
         cj["nodes"].setdefault("mouths", {})[d] = {v: f"mouth_{d}_{v}" for v in AM.SHAPES}
     if "pout" in reps:
@@ -382,6 +439,17 @@ def main():
             "flipbook shells; the skin's fangs contact in TEXCOORD_6's v (Godot CUSTOM2.y), alien_hue extras "
             + marker + "." +
             (" The grid kit also has lipvar_<variant>_fangs_<shape> nodes (m13.grid)." if reps["fangs"].get("grid")
+             else ""))
+    if "tongue" in reps:
+        cj["m14"] = reps["tongue"]
+        cj["note_m14"] = (
+            "art #196 M14: a fifth mouth design, tongue (the mt2 sheet: soft coral lips, a few gappy blunt teeth and a "
+            "pink tongue poking out over the lower lip): mouth_tongue_<shape> on the Mouth socket, its lips the kit's "
+            "alien_lip, its tongue alien_tongue_pink (extras prime_part_ao when baked; TEXCOORD_1's u its flop weight, "
+            "0 at the lip's top to 1 at the tip), its teeth alien_tooth (cream); COLOR_0 the baked AO (grey) and its "
+            "alpha the jaw weight; no flipbook shells; the skin's tongue contact in Body's eighth UV layer "
+            "contact_mouth3 (glTF TEXCOORD_7: u tongue, v 0; Godot CUSTOM2.z), alien_hue extras " + marker3 + "." +
+            (" The grid kit also has lipvar_<variant>_tongue_<shape> nodes (m14.grid)." if reps["tongue"].get("grid")
              else ""))
     (ex / "character.json").write_text(json.dumps(cj, indent=1), encoding="utf-8", newline="\n")
     log("EXPORT", glb, round(glb.stat().st_size / 1e6, 2), "MB")

@@ -44,7 +44,7 @@ varying vec3 m_pos;
 
 void vertex() {
 	m_pos = VERTEX;  // the grain and drift stay on the lips as they move
-	VERTEX = mouth_motion(VERTEX, COLOR.a);
+	VERTEX = mouth_motion(tongue_motion(VERTEX, UV2.x), COLOR.a);
 }
 
 void fragment() {
