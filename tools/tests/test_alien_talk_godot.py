@@ -1,0 +1,94 @@
+"""M13 (art #196, PR #246's review minor 2): alien_talk.gd's styled() and sample() in Godot 4.7.2, headless
+(godot/alien/talk_check.gd): every rule a style claims triggers on LINE (the pout's merged flickers and half-open quick
+A/E, its pucker in the pauses, its lag), frog and overbite stay snapped, a closed mouth only presses shut (minor 4),
+and the fangs' heavier jaw (the slower opening, the forward thrust on A and E, the smaller bounce). Skips without
+Godot."""
+
+from __future__ import annotations
+
+import json
+import sys
+import unittest
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+from runner import common, pins  # noqa: E402
+from runner.commands import _godot  # noqa: E402
+
+HAVE_GODOT = common.tool_path(pins.GODOT_ENV, None) is not None
+
+
+@unittest.skipUnless(HAVE_GODOT, "needs Godot")
+class TalkStyleTest(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        code, out = _godot.godot(["--headless", "--path", str(_godot.PROJECT), "-s", "res://alien/talk_check.gd"], 120)
+        line = next((ln for ln in out.splitlines() if ln.startswith("TALK ")), None)
+        if code != 0 or line is None:
+            raise AssertionError(f"talk_check.gd: exit {code}\n{out[-2000:]}")
+        cls.d = json.loads(line[5:])
+        cls.open = cls.d["open"]
+
+    def samples(self, design):
+        return self.d["designs"][design]["samples"]
+
+    def test_snapped_designs_follow_the_line(self):
+        segs = [[s[0], s[1], s[2]] for s in self.d["segments"]]
+        for design in ("frog", "overbite"):
+            self.assertEqual(self.d["designs"][design]["styled"], segs, design)
+            self.assertTrue(all(s[2] == 0 and s[3] == 0 and s[4] == 0 for s in self.samples(design)), design)
+
+    def test_pout_merges_flickers(self):
+        segs, runs = self.d["segments"], self.d["designs"]["pout"]["styled"]
+        self.assertLess(len(runs), len(segs))
+        merged = [s for s in segs if s[1] - s[0] < 70 and not any(abs(r[0] - s[0]) < 1e-6 for r in runs)]
+        self.assertGreaterEqual(len(merged), 2, "the line has no flicker the pout merges")
+        for s in merged:  # the run before it holds on through it
+            self.assertTrue(any(r[0] < s[0] and abs(r[1] - s[1]) < 1e-6 for r in runs), s)
+
+    def test_pout_shows_quick_open_phases_half_open(self):
+        segs, runs = self.d["segments"], self.d["designs"]["pout"]["styled"]
+        quick = [s for s in segs if s[2] in ("A", "E") and s[1] - s[0] < 85]
+        self.assertTrue(quick, "the line has no quick A or E")
+        for s in quick:
+            r = next(r for r in runs if abs(r[0] - s[0]) < 1e-6)
+            self.assertEqual(r[2], "small", s)
+
+    def test_pout_lags_and_puckers_in_the_pauses(self):
+        lag = self.d["styles"]["pout"]["lag_ms"]
+        first = self.d["segments"][0]
+        by_t = {s[0]: s for s in self.samples("pout")}
+        self.assertEqual(by_t[first[0] + lag - 5][1], "rest")
+        self.assertEqual(by_t[first[0] + lag + 5][1], first[2])
+        pk = [s for s in self.samples("pout") if s[3] > 0.5]
+        self.assertTrue(pk)
+        self.assertTrue(all(s[1] in ("rest", "M") for s in pk))  # only in a silence
+
+    def test_a_closed_mouth_only_presses_shut(self):
+        for design in ("pout", "fangs"):
+            ss = self.samples(design)
+            closed = [s for s in ss if self.open[s[1]] == 0]
+            self.assertTrue(all(s[2] <= 1e-12 for s in closed), design)
+            self.assertTrue(any(s[2] < -1e-4 for s in closed), f"{design}: the closing never presses")
+            self.assertTrue(any(s[2] > 1e-4 for s in ss if self.open[s[1]] > 0), f"{design}: no opening sag")
+
+    def test_fangs_heavier_jaw(self):
+        st = self.d["styles"]["fangs"]
+        ss = self.samples("fangs")
+        lag, rise = st["lag_ms"], st["rise"]["ms"]
+        # "I" (A at 470 ms after a silence) shows small for its first rise ms, then A
+        t0 = 470 + lag
+        self.assertEqual(next(s for s in ss if s[0] == t0 + 10)[1], "small")
+        self.assertEqual(next(s for s in ss if s[0] == t0 + rise + 10)[1], "A")
+        thr = [s for s in ss if s[4] > 0]
+        self.assertTrue(thr and all(s[1] in ("A", "E") for s in thr))
+        self.assertAlmostEqual(max(s[4] for s in ss), st["thrust"]["amount"], places=5)
+        pout = self.d["styles"]["pout"]
+        self.assertLess(st["bounce"]["amp"], pout["bounce"]["amp"])  # less bounce than the pout
+        self.assertLess(max(abs(s[2]) for s in ss), max(abs(s[2]) for s in self.samples("pout")))
+        self.assertTrue(all(s[3] == 0 for s in ss))  # no pucker
+
+
+if __name__ == "__main__":
+    unittest.main()
