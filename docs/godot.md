@@ -2106,7 +2106,7 @@ a time, by visibility.
   - **The corners:** `corner` 0.12 (M16 0.18) and the lip shape's own corner rule over `alien_mouths.CORNER`: the last
     `corner_share` 0.18 of the stations join 0.95 (`corner_join`) and sink 1.1 of their depth (`corner_tuck`), so the
     ends tuck into the skin as points instead of round ends.
-  - **Grids** (`M16b/godot/g1`, `g2`, `vgrid.png`; rest front / 3/4 / profile at 0.4 m, 3/4 at 1.2 m, mp1's rest the
+  - **Grids** (`M16b/godot/g1/vgrid.png`, `M16b/godot/g2/vgrid.png`; rest front / 3/4 / profile at 0.4 m, 3/4 at 1.2 m, mp1's rest the
     first row, M16 the second): g1 `bow` 0.30 / 0.45 x `bow_peak` 0.20 / 0.40, two with tucked corners (`corner_tuck`
     1.3 over 0.20); at 0.45 the upper lip read as two lumps at 3/4. g2: 0.30 / 0.40 and 0.36 / 0.50, each plain and
     tucked, and 0.30 / 0.40 with the softer tuck (1.1 over 0.18, join 0.95). 1.3 over 0.20 narrowed the mouth; 0.36 /
@@ -2119,6 +2119,28 @@ a time, by visibility.
   - **Tests:** `RestStationsTest.test_open_stations_keep_their_gap`; `PoutShapeTest` (the bow, the tucked corners, the
     rings' own bow); `test_alien_pout_rest_blender.py` also checks A, E, O centred within 0.1 mm, and both heavy pout
     tests read the M16b kit. Area `alien_pout` also covers `alien_m12.py`, `alien_m6.py`, `alien.gd`, `alien_talk.gd`.
+- **M16c, the pout's fixes** (brief UPDATE 36, PR #254's review minors 1, 3, 5; output under
+  `D:/prime-art-raw/review/char/alien-parts-kit/M16c/`, the kit on M15's head: the chain's `mouthsk` and `lashes`
+  stages on `M15/b/lips`, `handoff-M15.md`).
+  - **The validator error:** M16b's and M15's kits failed glTF-Validator (`ACCESSOR_VECTOR3_NON_UNIT`, a zero tangent
+    on `mouth_pout_O`'s dark cup): one fan triangle of 0.006 mm^2, two rim points 0.06 mm apart where the skin's
+    normal turns fast near the cup's centre. A pout ring sets `cup_even`: the rim resampled at even angles round the
+    centre (`alien_lips_geom.star_resample`) and every cup point lifted along the mouth's mean normal `n0`. The heavy
+    `test_alien_pout_rest_blender.py` validates the kit's GLB (0 errors).
+  - **Small's parting:** a closed piece's open stations (without each end's `parting_dark` 0.2) get a thin dark
+    strip on the skin behind the lips, lip axis to axis, mirrored, one closed station past either end of the gap.
+    The sheet's traced gap was 4 stations wide, so small also gets a designed parting (`parting` {"small": (6 px,
+    0.55)}, `alien_lips_geom.parted`). Still not seen from the front at 0.4 m: the lips' rolled fronts cover the gap
+    (as before M16c); showing it needs the lips' sections or a wider gap, not done.
+  - **The corners:** a lip shape's own thinnest end (`min_b`, 0.6 mm; `alien_mouths.MIN_B` 1.1 mm rounded the ends to
+    caps) and `corner_over` (the ends meet toward the lower lip by half of it, the lower end sinks 1 + over of its
+    depth, the upper 1 - over / 2: the upper lip's end overhangs the lower's, as on mp1). Grids
+    (`M16c/godot/g1/vgrid.png` .. `g3/vgrid.png`, row 1 mp1's rest, row 2 M15's kit): g1 `corner_share` 0.18 / 0.26 x
+    `corner` 0.12 / 0.06 (hardly visible alone: the end's depth kept the cap round); g2 `depth_corner` 0.15 / 0.05,
+    `corner_over` 0.5, `pw` 1.5; g3 around the best (over 0.5 / 0.8, `pw` 2 / 1.75 / 1.5, share 0.26 / 0.30). Pick:
+    `corner` 0.06, `min_b` 0.0006, `depth_corner` 0.05, `pw` 1.75, `corner_share` 0.26, `corner_over` 0.8 (pw 1.5
+    thinned the whole lip; share 0.30 shortened the full part). The open rings read their own `ring_param` and do not
+    change (A 76.2 x 73.9, E 89.2 x 58.5, O 66.4 x 60.7 mm).
 - **M15, the eye socket rebuilt for the 80 % eye** (brief UPDATE 26; output under
   `D:/prime-art-raw/review/char/alien-parts-kit/M15/`). The engineer's pick `e80_p85_w80` showed "weird things" in the
   sockets (M10c's skin collar filling the gap between the 80 % eye and the socket sculpted for S9's big eye) and eyes
