@@ -110,8 +110,11 @@ class FitGeom(unittest.TestCase):
         line = (~ins) & (np.abs(co[:, 1]) < 1e-9) & (co[:, 0] > 0)
         order = np.argsort(co[line, 0])
         self.assertTrue(np.all(np.diff(h[line][order]) >= -1e-9))
-        every = np.ones(len(tris), dtype=bool)  # the unfilleted cut has its own creases at the crossing: none added
-        self.assertLessEqual(len(F.folds(Q, tris, every)), len(F.folds(P, tris, every)))
+        # the stage's order (fillet, then the drop): no fold on the rounded edge
+        lap = F.Lap(len(co), e)
+        P2 = F.fillet(P, lap, F.rim_band(co, c, a, ex, ey, tc, 0.006, R), c, R, 12)
+        Q2 = F.rim_drop(P2, region, c, a, ex, ey, tc, R, width)
+        self.assertEqual(len(F.folds(Q2, tris, np.ones(len(tris), dtype=bool))), 0)
         with self.assertRaises(SystemExit):
             F.set_fit({"rim_drop": 0.05})
 
