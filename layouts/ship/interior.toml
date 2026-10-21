@@ -1,0 +1,96 @@
+# The INTERIOR lane's pieces (builders in tools/blender/ship_interior*.py) and their placements (art #263).
+# A piece is one GLB (<raw>/ship/v1/pieces/<id>.glb) built in its own local frame; a placement puts it at [x, y, h]
+# (plan coordinates, layouts/ship/ship.toml) turned by yaw degrees about the vertical (Godot's rotation y).
+# collide: the Godot scene gives it a trimesh collider (both faces). args: passed to the builder.
+
+# Placements: [piece, [x, y, h], yaw]. The tip-room pieces face east at yaw 0 (window outward) and west at 180.
+place = [
+  ["hall_floor", [0.0, 0.0, 0.0], 0.0],
+  ["hall_wall", [0.0, 0.0, 0.0], 0.0],
+  ["hall_ceiling", [0.0, 0.0, 0.0], 0.0],
+  ["mouth_floor", [0.0, -3.95, 0.0], 0.0],
+  ["mouth_wall", [-1.4, -3.95, 0.0], 0.0],
+  ["mouth_wall", [1.4, -3.95, 0.0], 0.0],
+  ["mouth_ceiling", [0.0, -3.95, 0.0], 0.0],
+  ["corridor_floor", [-6.2, 0.0, 0.0], 0.0],
+  ["corridor_floor", [6.2, 0.0, 0.0], 0.0],
+  ["corridor_wall", [-6.2, -1.35, 0.0], 0.0],
+  ["corridor_wall", [-6.2, 1.35, 0.0], 0.0],
+  ["corridor_wall", [6.2, -1.35, 0.0], 0.0],
+  ["corridor_wall", [6.2, 1.35, 0.0], 0.0],
+  ["corridor_ceiling", [-6.2, 0.0, 0.0], 0.0],
+  ["corridor_ceiling", [6.2, 0.0, 0.0], 0.0],
+  ["tip_floor", [-10.75, 0.0, 0.0], 180.0],
+  ["tip_floor", [10.75, 0.0, 0.0], 0.0],
+  ["tip_wall", [-10.75, 0.0, 0.0], 180.0],
+  ["tip_wall", [10.75, 0.0, 0.0], 0.0],
+  ["tip_ceiling", [-10.75, 0.0, 0.0], 180.0],
+  ["tip_ceiling", [10.75, 0.0, 0.0], 0.0],
+  ["tip_window", [-10.75, 0.0, 0.0], 180.0],
+  ["tip_window", [10.75, 0.0, 0.0], 0.0],
+]
+
+[[pieces]]
+id = "hall_floor"
+builder = "hall_floor"
+collide = true
+
+[[pieces]]
+id = "hall_wall"
+builder = "hall_wall"
+collide = true
+
+[[pieces]]
+id = "hall_ceiling"
+builder = "hall_ceiling"
+collide = true
+
+[[pieces]]
+id = "mouth_floor"
+builder = "mouth_floor"
+collide = true
+
+[[pieces]]
+id = "mouth_wall"
+builder = "mouth_wall"
+collide = true
+
+[[pieces]]
+id = "mouth_ceiling"
+builder = "mouth_ceiling"
+collide = true
+
+[[pieces]]
+id = "corridor_floor"
+builder = "corridor_floor"
+collide = true
+
+[[pieces]]
+id = "corridor_wall"
+builder = "corridor_wall"
+collide = true
+
+[[pieces]]
+id = "corridor_ceiling"
+builder = "corridor_ceiling"
+collide = true
+
+[[pieces]]
+id = "tip_floor"
+builder = "tip_floor"
+collide = true
+
+[[pieces]]
+id = "tip_wall"
+builder = "tip_wall"
+collide = true
+
+[[pieces]]
+id = "tip_ceiling"
+builder = "tip_ceiling"
+collide = true
+
+[[pieces]]
+id = "tip_window"
+builder = "tip_window"
+collide = true

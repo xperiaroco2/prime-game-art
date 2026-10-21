@@ -1,0 +1,59 @@
+# The EXTERIOR lane's pieces (builders in tools/blender/ship_hull*.py) and their placements (art #263); the format as
+# in interior.toml. outside: the piece may stand beyond the hull's outline (the ramp meets the ground).
+
+place = [
+  ["hull_core", [0.0, 0.0, 0.0], 0.0],
+  ["hull_tip_e", [0.0, 0.0, 0.0], 0.0],
+  ["hull_tip_w", [0.0, 0.0, 0.0], 0.0],
+  ["tip_shell", [-10.75, 0.0, 0.0], 180.0],
+  ["tip_shell", [10.75, 0.0, 0.0], 0.0],
+  ["ramp", [0.0, -4.6, 0.0], 0.0],
+  ["leg", [-6.8, -2.4, 0.0], 0.0],
+  ["leg", [6.8, -2.4, 0.0], 0.0],
+  ["leg", [-6.8, 3.0, 0.0], 0.0],
+  ["leg", [6.8, 3.0, 0.0], 0.0],
+  ["leg", [-2.2, -3.6, 0.0], 0.0],
+  ["leg", [2.2, -3.6, 0.0], 0.0],
+  ["bubble", [-2.4, -3.55, 3.4], 0.0],
+  ["bubble", [2.4, -3.55, 3.4], 0.0],
+  ["nozzle", [-2.4, 5.5, 2.3], 0.0],
+  ["nozzle", [0.0, 5.8, 2.6], 0.0],
+  ["nozzle", [2.4, 5.5, 2.3], 0.0],
+]
+
+[[pieces]]
+id = "hull_core"
+builder = "hull_core"
+
+[[pieces]]
+id = "hull_tip_e"
+builder = "hull_tip"
+args = { side = 1.0 }
+
+[[pieces]]
+id = "hull_tip_w"
+builder = "hull_tip"
+args = { side = -1.0 }
+
+[[pieces]]
+id = "tip_shell"
+builder = "tip_shell"
+
+[[pieces]]
+id = "ramp"
+builder = "ramp"
+collide = true
+outside = true
+
+[[pieces]]
+id = "leg"
+builder = "leg"
+collide = true
+
+[[pieces]]
+id = "bubble"
+builder = "bubble"
+
+[[pieces]]
+id = "nozzle"
+builder = "nozzle"
