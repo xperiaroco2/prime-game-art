@@ -203,6 +203,31 @@ reads them with `_lk(key, old value)`:
 A look grid: a scratch script that loads the layout, overrides `[light]` per variant, calls `ship.shoot` on a few
 views and tiles them with `house_bake_props.sheet` (`<raw>/ship/v1/logs/join_grid.py`).
 
+## The inside's light, room by room (inside lane, launch 2)
+
+The join's numbers left the hall washed out (a white blob on the centre disc) and the corridors and tip rooms nearly
+black. Three grid runs on the six interior views (`<raw>/ship/v1/grid_in{,2,3}/{hall,corridor,tip}.png`, each beside
+its 2D sheet; script `<raw>/ship/v1/logs/in_grid.py`) found the causes and the numbers:
+
+- **The metal only mirrored.** At metallic 0.7..0.8 the lamps hardly lit the silver diffusely: the windowless rooms
+  mirrored their own dark, the hall mirrored its strips. `[light.mats]` sets `int_silver_*` to metallic 0.45, value
+  x0.55, roughness +0.25; the grates metallic 0.6, value x1.2.
+- **White strips.** Emission near 1 loses its hue under AgX: cyan (0.05, 0.8, 1.0) at x0.05 of its glTF strength and
+  amber (1.0, 0.42, 0.06) at x0.08 stay saturated. Each emissive material's cell lights scale separately (`l`): cyan
+  0.3 (at 1.5 they washed the hall's walls white-blue), amber 5 (the floor strips' warm pools), the lamp ring and
+  lamps 0 (they glow, they light nothing).
+- **The centre disc's blob** was light, not the disc: the eight hall lamps and the lamp ring's cells all met over the
+  centre, and so did the hall's sixteen amber floor arcs' cell lights. The hall's lamps now hang by the wall (r 3.0,
+  h 4.2, range 3.2, out of the disc's reach), the ring lights nothing, the amber cells reach half as far (`rr` 0.5:
+  tight pools), the disc (`int_plate`) value x0.2, roughness +0.45.
+- **Lamp groups** scale per room: `hall_lamp` 0.7, `corr_lamp` 2.0 (three ceiling lamps a corridor), `tip_lamp` 2.4
+  (the ring lamp and a moonlight fill by the window), `out_lamp` 2.5 (warm camp lights at the treeline, x +-27, and
+  in front of the ramp, for the windows and the ramp's view); `sky_horizon` 5 lifts the horizon behind the trees.
+- The lamp ring has an emissive underside band (`lamp_ring`'s `band`): the thick warm ring of hall_in-3.
+
+`ship.gd` `_look` applies `[light.mats]` (keys `v`, `r`, `m`, `c`, `e`, `a`, `l`, `rr`); a material without an entry keeps
+the join's `int_value`, `int_rough_add` and `emission_scale`.
+
 ## Open problems (after step 1)
 
 - **The hull's thickness** (after the hull lane's step 1): the skin is now one continuous faceted surface (variant
