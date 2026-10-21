@@ -220,3 +220,14 @@ and a 3,000-character prompt, 3,088 text and 12,416 image input tokens; 1,911 ou
 The styles held from the first request (smooth toy look, one body); an edit of one picked image (l2) gives four near
 copies, so variety comes from the generation before it. Images: `D:/prime-art-raw/2026-10-22-alien-roster-r1/`;
 sheets and handoff: `D:/prime-art-raw/research/2026-10-22-roster/`.
+
+## Batch 2026-10-22-alien-roster-r2 (art #196, roster round 2)
+
+The ten head concepts of the design research (`D:/prime-art-raw/research/2026-10-22-roster/design/`), one edit per
+head at medium, 1024x1280, n = 3, under the standing permission: heads 1 and 3 from their round-1 crops plus rf2, the
+eight new heads with rf2 as a style reference only (the prompt says what the reference is for). Measured: one
+reference and a 1,900-character prompt, 1,400 to 1,590 text and 3,072 image input tokens, 1,133 output tokens for
+three 1024x1280 images (about 378 each); $0.066 a request, $0.085 with two references, 21 to 24 s. **$0.6999** of the
+$5 cap. A style reference used only for finish and light held the look without copying its face; framing (one bust
+edge) did not follow the prompt reliably. Images: `D:/prime-art-raw/2026-10-22-alien-roster-r2/`; JPEGs, overview and
+handoff: `D:/prime-art-raw/research/2026-10-22-roster/design/`.
