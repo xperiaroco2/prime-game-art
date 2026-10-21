@@ -2324,6 +2324,12 @@ a time, by visibility.
       "closed"), so open, rest and half keep their lashes and the blink morphs into the closed ones. The clip check
       poses the key at every state (`alien_lashes.shaped`). Grid (`M21/grid/shots*/lclosed.png`): curl 100 / 60 / 30
       and the lift -10 to -40; 100 still hooked, -10 hooked again, 30 read as straight spikes.
+      M21b (brief UPDATE 46): closed, the outer lashes still fanned up and out at the corner, the wing curling back
+      up. `CLOSED` also sets the wing per design (`wing_lift_deg` -35, `wing_sweep_deg` 15, `fan_bias_deg` bored 20,
+      manic 10): the closed wing runs out level, each tip further out and lower than the last (tested). Only the
+      morph target changes; the open tubes are byte-equal. Grids `M21b/grid/shots*/lclosed.png` (`lclosed_fov` 20
+      frames the corner, `lclosed_far` adds 3.5 m): the wing lift alone (-20 / -35 / -50) left the fan; -50 with no
+      sweep bunched the wing into one dark wedge.
     - **At 3.5 m:** the liner's clear coat put single white pixels along the closed line. `alien_liner.gdshader`
       fades its specular and clear coat out between `gloss_fade`'s 2 and 3 m, as the tubes fade.
 
