@@ -2391,7 +2391,7 @@ a time, by visibility.
   - **the skin contact:** `alien_m12.contact_field` measured a skin point under the lips 3-4 mm from the form's back
     (it goes under the skin), so `full` was 0; `closed_contact` counts a skin point inside the form as touching it
     and an outside one `contact_margin` (M20b 5 mm) closer (`contact_distance`; 0: full 29, 2.5 mm: 52, 3.5 mm:
-    61, 5 mm: 72; M20c's 2 mm below);
+    61, 5 mm: 72; M20c's 2 mm and M20d's 5 mm again below);
   - **rest -> A:** A's and E's rings carry the rest's two-peak bow (bow 0.30, bow_w 0.12, side peaks 0.40 at 0.22)
     and stand back to the AI rest's stand-off (`ring_param` `push`, `push_lo`, read by `alien_mouths`' rings: the
     lips' front ahead of the skin at the centre, upper / lower, A 16.6 / 14.0 mm, E 16.5 / 13.8, the AI rest 16.0 /
@@ -2418,6 +2418,26 @@ a time, by visibility.
     25.5 / 27.9 as M20b's). Grids `M20c/godot/grid1/vgrid.png` (depth 1.0 / 1.3 / 1.6 x stand-off 0 / -1.5 / -3 mm)
     and `grid/vgrid.png` (depth 1.0 / 1.15 / 1.3 at the rest's stand-off). After, at 0.4 m: A 0.30 / 0.39 / 0.32 /
     0.76, E 0.21 / 0.23 / 0.22 / 0.78, O 0.32 / 0.15 / 0.40 / 0.29.
+- **M20d** (brief UPDATE 49, PR #262's fresh review; output `M20d/`, the same chain into `M20d/export/` on `main`
+  after PR #261, so the kit carries M21b's eyes and lashes; gate against `M21b/final/export/`):
+  - **the skin contact:** M20c's 2 mm `contact_margin` narrowed the halo (`touched` 329 -> 308) and the skin under
+    the lower lip got 3-6 brighter at 3/4. `contact_margin` is 5 mm again with `contact_keep` (touched 329, full
+    154). Judged by the skin's measured brightness under the lower lip (the mean of r, g, b, 1-12 px under the lips'
+    lowest pixel over the middle 70 % of their columns, the rest at 3/4 0.4 m in `compare_closed.png`): M20b 182.5,
+    M20c 185.9, M20d **180.4**, rising evenly away from the lip (no darker ring);
+  - **the dimple:** after `fill_cleft`'s clamp, `smooth_centre` lays the lower lip's front within +-2 mm of x = 0
+    onto the even curve through its front at +-2 and +-3.5 mm at the same height (`centre_target`, forward only, at
+    most 2 mm, only vertices the front ray meets), rest and M (small keeps its parting). M20c's rest still had a
+    1 mm notch at x = 0 in the top few mm under the lip line (3 mm under it: x = 0 11.5 mm behind the front, +-1 mm
+    10.3, +-2 mm 9.6); after, 10.3 / 9.9 / 9.5, within 0.4 mm of the curve. A smooth 1 mm valley over +-4 mm stays
+    (the AI form's), and with the highlights either side it still reads as two soft lobes in front; a +-4 / 6 mm
+    band changed nothing seen at 0.4 m. `fit.json` records each shape's `centre` (moves, `kink_mm` before and after);
+  - **O's hole:** `hole` 0.23 measures 0.21 of W tall (mp1 0.20; M20c 0.15). Its width stays 0.34 (mp1's round hole
+    0.23): a round ring's hole projects wider than tall on the face. A/E/O at 0.4 m (as M20c's table): A 0.30 /
+    0.39 / 0.32 / 0.76, E 0.22 / 0.23 / 0.22 / 0.78, O 0.30 / 0.21 / 0.37 / 0.34;
+  - the heavy pout tests read `M20d/export`: the contact (`full` >= 140, `touched` >= 329), the dimple from
+    `fit.json`, and the open rings' lip depth at the centre (`alien_pout_check.py` `rolls`, M20b's depth 1.0: A
+    19.4, E 17.1, O 20.1 mm; at least A 23, E 20.5, O 24).
 
 ## Findings for later tasks
 
