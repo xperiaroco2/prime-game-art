@@ -1,0 +1,24 @@
+// M12/M13 (art #196): a talking mouth piece's secondary motion (alien.gd's talk styles, alien_talk.gd), shared by the
+// lips' shader (alien_lip.gdshader: the lips and the fangs) and the inner cup's and tongue's (alien_mouth_part.gdshader),
+// so everything of the shown piece moves together. All three are instance uniforms on the shown piece, 0 by default:
+// every other part draws as before. The pieces' model space is the Mouth socket's: y up, z toward the front.
+// - `lip_drop` (m): the lower jaw down (positive) or pressed up (negative), times the vertex's jaw weight;
+// - `jaw_thrust` (m): the lower jaw forward, times the jaw weight (the fangs' A and E);
+// - `pucker` (0..1): the lips purse between words: narrower toward the centre line (`pucker_amount.x` of x at full)
+//   and forward at the centre (`pucker_amount.y` m).
+// The jaw weight is COLOR_0.g, written by tools/blender/alien_m12.py (1 on the lower lip, the tongue and the fangs, 0
+// on the upper lip, a smooth blend round an open ring, less toward the corners); COLOR_0.r stays the baked AO.
+instance uniform float lip_drop = 0.0;
+instance uniform float pucker = 0.0;
+instance uniform float jaw_thrust = 0.0;
+uniform vec2 pucker_amount = vec2(0.14, 0.003);
+
+vec3 mouth_motion(vec3 v, float jaw) {
+	if (lip_drop != 0.0 || jaw_thrust != 0.0 || pucker > 0.0) {
+		v.y -= lip_drop * jaw;
+		v.z += jaw_thrust * jaw;
+		v.x *= 1.0 - pucker_amount.x * pucker;
+		v.z += pucker_amount.y * pucker * (1.0 - smoothstep(0.0, 0.03, abs(v.x)));
+	}
+	return v;
+}
