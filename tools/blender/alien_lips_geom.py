@@ -363,7 +363,10 @@ def even_fit(ss, vals, terms: int = 3) -> list:
 def rest_stations(st: list, hc: float, p: dict) -> list:
     """M16: a closed piece's stations as the lip shape asks: with p["mirror"] mirrored about the face's centre line
     (mirror_stations); with p["seam_fit"] (a number of even terms) the lip line (the upper lip's bottom and the lower
-    lip's top) an even polynomial fit (even_fit). Without either the stations as they are."""
+    lip's top) an even polynomial fit (even_fit). Without either the stations as they are.
+
+    M16b: only the lip line's middle is fitted; a closed station's lips meet on it (1 px apart), an open station keeps
+    its measured gap round it (small's parting, as mp1 draws it)."""
     if p.get("mirror", 0.0) > 0.0:
         st = mirror_stations(st, hc)
     terms = int(p.get("seam_fit", 0))
@@ -371,13 +374,10 @@ def rest_stations(st: list, hc: float, p: dict) -> list:
         x0, x1 = st[0]["x"], st[-1]["x"]
         ss = [2 * (r["x"] - x0) / max(1e-9, x1 - x0) - 1 for r in st]
         st = [dict(r) for r in st]
-        for k in ("bot_u", "top_l"):
-            for r, v in zip(st, even_fit(ss, [r[k] for r in st], terms)):
-                r[k] = v
-        for r in st:  # a closed station's lips still meet (the fit never opens a crease)
-            if not r["open"]:
-                mid = (r["bot_u"] + r["top_l"]) / 2
-                r["bot_u"], r["top_l"] = mid - 0.5, mid + 0.5
+        mids = even_fit(ss, [(r["bot_u"] + r["top_l"]) / 2 for r in st], terms)
+        for r, mid in zip(st, mids):
+            gap = max(1.0, r["top_l"] - r["bot_u"]) if r["open"] else 1.0
+            r["bot_u"], r["top_l"] = mid - gap / 2, mid + gap / 2
     return st
 
 
