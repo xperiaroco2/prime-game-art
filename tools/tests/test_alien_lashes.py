@@ -32,13 +32,29 @@ class Geometry(unittest.TestCase):
     def test_m15s_socket_has_its_own_defaults_under_the_spec(self):  # M15b
         self.assertEqual(LL.merged(), LL.LASHES)  # older kits (no route) build as before
         m15 = LL.merged(route="m15")
-        self.assertEqual((m15["liner_t_in_deg"], m15["sink"]), (-20.0, 0.003))  # M17b: the 108 % unit
-        self.assertEqual({k: v for k, v in m15.items() if k not in ("liner_t_in_deg", "sink")},
-                         {k: v for k, v in LL.LASHES.items() if k not in ("liner_t_in_deg", "sink")})
+        self.assertEqual((m15["liner_t_in_deg"], m15["sink"]), (-42.0, 0.003))  # M17c: bored's liner as M15b's
+        self.assertEqual({k: v for k, v in m15.items() if k not in ("liner_t_in_deg", "sink", "design")},
+                         {k: v for k, v in LL.LASHES.items() if k not in ("liner_t_in_deg", "sink", "design")})
         self.assertEqual(LL.merged({"sink": 0.005}, "m15")["sink"], 0.005)  # an explicit spec still wins
         self.assertEqual(LL.merged(route="other"), LL.LASHES)
         for over in LL.SOCKET_LASHES.values():
             self.assertFalse(set(over) - set(LL.LASHES))
+
+    def test_m17c_manic_has_its_own_liner_end_on_m15s_socket(self):
+        """M17c (PR #259's review): on the 108 % unit bored keeps -42, manic ends shorter (its lid rests 50 degrees up,
+        so the liner's inner end met the brow's skin); merged() is shallow, so the socket's "design" carries manic's
+        whole entry: its lift, lean and last lash stay LASHES'."""
+        m15 = LL.merged(route="m15")
+        bored, manic = LL.for_design(m15, "bored"), LL.for_design(m15, "manic")
+        self.assertEqual(bored["liner_t_in_deg"], -42.0)
+        self.assertEqual(manic["liner_t_in_deg"], LL.MANIC_LINER_T_IN_DEG)
+        self.assertGreater(LL.MANIC_LINER_T_IN_DEG, -42.0)  # shorter than bored's ...
+        self.assertLess(LL.MANIC_LINER_T_IN_DEG, -20.0)  # ... and longer than M17b's -20
+        for k, v in LL.LASHES["design"]["manic"].items():
+            self.assertEqual(manic[k], v)
+        self.assertEqual(manic["lift_deg"], -30.0)
+        self.assertEqual(LL.for_design(LL.merged(), "manic")["liner_t_in_deg"], LL.LASHES["liner_t_in_deg"])
+        self.assertFalse(set(m15["design"]["manic"]) - set(LL.LASHES))
 
     def test_the_rim_point_lies_on_the_lid_roll(self):
         pt, n, p, hw = LL.rim(0.0, 0.0, RHO[0], RHO[1], BEAD, LG.CORNER)
