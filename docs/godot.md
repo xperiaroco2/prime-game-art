@@ -1865,6 +1865,19 @@ a time, by visibility.
     `alien_lash` gets `LASH_LOOK` (a StandardMaterial3D: near black, roughness 0.32, specular 0.55, clear coat 0.6 at
     0.15). `m11_shots.gd`: `lgrid`, `lviews`, `lblink`, `lsizes`, `lmouths`, `lhues`, `lgame` (3.5 m and a shimmer
     measure), `lvideo`, `head`, `socket`.
+  - **The kit** (`M11/export/` = M10c's pick e80_p85_w80 rebuilt with the fixed collar (`M11/e80_eyes`), M10c's lips
+    (`e80_lips`), the pout (`alien_m12.py`, `e80_base`), then `alien_lashes.py`; `e90_lashes/` and `e100_lashes/` the
+    same at 90 and 100 %; drivers `tools/out/m11/chain.sh`, `lashes.sh`, `final.sh`): glTF-Validator 0 errors (1
+    warning `NODE_SKINNED_MESH_NON_ROOT`), `godot-check --textured` the same seven pack-contract failures, the Body
+    against `M8/export` 0.0 mm.
+  - **The gate** (`M11/godot/final/gate/head.png`): the kit with the lashes off against `e80_base` changes 0.0000 in
+    all four views (with parts, the plain-grey skull, 0 silhouette px); on, 0.31 / 0.28 / 0.14 / 0.24 % (front / 3/4
+    / profile / top), the lashes alone. The collar fix against M10c (`collar/head.png`): 0.20 / 0.13 / 0.03 / 0.08 %,
+    at the collar; the skull 0.0000.
+  - **Open:** at 3.5 m (FOV 70, 1536 px) the lashes are under a pixel thick and draw as a broken dark line at the
+    outer corners (`lgame.png`); the mean frame-to-frame change round the eyes in Idle with a blink rises from 0.0094
+    to 0.0121 with them. From straight above, the bored dome's temple-side nub of M10c is still there
+    (`collar/socket.png`).
 
 ## Findings for later tasks
 
