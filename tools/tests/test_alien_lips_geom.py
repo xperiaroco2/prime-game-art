@@ -210,10 +210,13 @@ class RestStationsTest(unittest.TestCase):  # M16 (UPDATE 29): the pout's rest m
             self.assertNotIn("mirror", p)
             self.assertNotIn("seam_fit", p)
 
-    def test_the_open_rings_keep_m12b(self):
+    def test_the_open_rings_match_the_slim_rest(self):
+        # M16e (PR #258 major 2): plump 1.0, each ring's own balance (its lips a little under the rest's), M12b's lean
         for s, rp in LP.LIP_SHAPE_POUT["ring_param"].items():
-            self.assertEqual((rp["upper"], rp["lower"], rp["lean"]), (0.95, 1.10, 0.25), s)
-            self.assertEqual(rp["plump"], 1.15, s)  # M16d: the open rings keep their fullness under the slim rest
+            self.assertEqual(rp["plump"], 1.0, s)
+            self.assertEqual(rp["lean"], 0.25, s)
+            self.assertLessEqual(rp["upper"] * rp["plump"], 1.2, s)
+            self.assertLessEqual(rp["lower"] * rp["plump"], 1.3, s)
 
     def test_a_closed_shape_has_no_open_station(self):  # M16d: rest's traced gap notched its lip line
         st = self._stations()

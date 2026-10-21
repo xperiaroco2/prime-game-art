@@ -1,5 +1,5 @@
-"""M16e (art #196, PR #258 minor 3): tools/runner/mouth_measure.py, the mouth's proportions in a PNG box, on a drawn
-test mouth (two red lips with a dark lip line on a grey face, two dark nostrils above)."""
+"""M16e (art #196, PR #258 minor 3): tools/blender/alien_mouth_measure.py, the mouth's proportions in a PNG box,
+on a drawn test mouth (two red lips with a dark lip line on a grey face, two dark nostrils above)."""
 from __future__ import annotations
 
 import importlib.util
@@ -10,7 +10,8 @@ import zlib
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-spec = importlib.util.spec_from_file_location("mouth_measure", ROOT / "tools" / "runner" / "mouth_measure.py")
+spec = importlib.util.spec_from_file_location("alien_mouth_measure",
+                                              ROOT / "tools" / "blender" / "alien_mouth_measure.py")
 MM = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(MM)
 

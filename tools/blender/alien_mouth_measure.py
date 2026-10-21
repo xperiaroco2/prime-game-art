@@ -1,7 +1,7 @@
-"""A closed mouth's proportions in a box of an 8-bit RGB(A) PNG (plain Python; M16d, art #196): a sheet panel or a
-Godot cell, so a 3D mouth can be fitted to a drawn one by numbers (docs/godot.md, M16d and M16e).
+"""A closed mouth's proportions in a box of an 8-bit RGB(A) PNG (M16d, art #196): a sheet panel or a Godot cell
+(plain Python, not run in Blender), so a 3D mouth can be fitted to a drawn one by numbers (docs/godot.md, M16d, M16e).
 
-    python tools/runner/mouth_measure.py <png> <x0> <y0> <x1> <y1> [front|face|profile]
+    python tools/blender/alien_mouth_measure.py <png> <x0> <y0> <x1> <y1> [front|face|profile]
 
 - front: the lip mask (red: r > g + 45 and r > b + 35), the mouth's width W (px; the longest run of lip columns), at
   the centre (|x - xc| < 0.08 W) the upper and lower lip's heights (top to the lip line, the lip line to the bottom;

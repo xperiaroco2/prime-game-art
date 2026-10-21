@@ -2144,7 +2144,8 @@ a time, by visibility.
 - **M16d, the pout's rest slimmed to mp1's measured proportions** (brief UPDATE 37 and 39; output under
   `D:/prime-art-raw/review/char/alien-parts-kit/M16d/`, the kit on M15's head as M16c). The engineer: the rest looked
   "stung by a wasp", swollen; mp1's sheet reads slim and elegant.
-  - **Measured** (`tools/runner/mouth_measure.py`, mp1's box documented there: the red lip mask of a front image; per column the lips' top and bottom,
+  - **Measured** (`tools/blender/alien_mouth_measure.py`, plain Python, mp1's box documented there: the red lip
+    mask of a front image; per column the lips' top and bottom,
     the lip line the darkest row of the middle half; at the centre each lip's height over the mouth's width W; the
     corner length: from each tip to where the lips' height first reaches half the centre's, over W / 2; the tip:
     the height 1/8 W in from the tip over the centre's; in profile the lips' stand-off beyond the line from the skin
@@ -2188,7 +2189,7 @@ a time, by visibility.
     with each ring's own upper / lower, A's and E's `corner` 0.50 / 0.45 and 0.40 / 0.35, A's `wide` 1.0). **Pick:**
     `_POUT_RING` plump 1.0; A upper 1.15, lower 1.20, corner 0.40, wide 1.0; E upper 1.15, lower 1.25, corner 0.35;
     O upper 1.10, lower 1.10 (each ring's lips a little under the rest's: an open lip stretches thinner).
-  - **Minors:** `mouth_measure.py` committed (PR #258 minor 3); small's parting eases each lip's seam overlap out
+  - **Minors:** `alien_mouth_measure.py` committed (PR #258 minor 3); small's parting eases each lip's seam overlap out
     over the first 3 px of the gap (`alien_lips_geom.parted`'s `overlap`; the slit's ends stepped 3 px, minor 5);
     `corner_tuck` bounded 0.5-1.2 in `test_alien_m12.py` (minor 7).
 - **M15, the eye socket rebuilt for the 80 % eye** (brief UPDATE 26; output under
