@@ -1,0 +1,73 @@
+# art#196 M19 (brief UPDATE 38), the AI mouth route test, stage 1: the pout mp1's lips drawn as an isolated soft
+# sculpture (no face, no teeth, a plain light background) in two shapes, rest and A, each as one sheet of three views
+# (front, three-quarter, side) stacked in rows so the views stay consistent; the rows are cut apart for Meshy's
+# multi-image to 3D (batch 2026-10-21-alien-mouth-3d). Edits of mp1's own panels (our generation, batch
+# 2026-10-20-alien-face-sheets-2 item mp1): medium for the variants (n = 3), then high for the chosen view set. The
+# engineer's yes: art#196 comment 6318565360, within this batch's dollar cap. No game names. Schema:
+# docs/openai-images.md.
+
+id = "2026-10-21-alien-mouth-views"
+service = "openai-images"
+purpose = "art#196 M19: the pout mp1's lips as an isolated soft sculpture, rest and A, three consistent views each (front, 3/4, side), as the input of Meshy multi-image to 3D for the AI mouth route test."
+plan = "OpenAI API, prepaid balance (topped up by the engineer, 2026-10-20)"
+terms_url = "https://openai.com/policies/services-agreement/"
+licence = "owned by the customer: OpenAI assigns to the customer all its rights in the Output (OpenAI Services Agreement, section 4.1, read 2026-10-20); no attribution required"
+cost_cap_usd = 3.0
+approved_by = "xperiaroco2 (the engineer)"
+approved_at = "2026-10-21"
+approval_ref = "https://github.com/xperiaroco2/prime-game-art/issues/196#issuecomment-6318565360"
+model = "gpt-image-2.5-sunburst"
+quality = "medium"
+
+[defaults]
+size = "1024x1536"
+n = 3
+
+[variants.rest]
+prompt = "A 3D model sheet of ONE sculpted object: exactly the lips in the reference images, alone. Keep their exact design: full, soft, glossy coral-red stylised cartoon lips, closed and relaxed at rest, the upper lip with a clear cupid's bow of two rounded peaks, the lower lip fuller and rounder, the two lips resting on each other along one soft curved line, the corners tapering into fine points. Show them ISOLATED as a soft sculpture: no face, no skin, no head, no nose, no chin, no teeth, no tongue, nothing around them; the back of the lips is one flat smooth surface. The SAME object three times, stacked in three rows of equal height on one plain flat light-grey background, same size, same scale and the same soft even studio light in every row: row 1 seen straight from the front; row 2 a three-quarter view, turned 45 degrees to its left; row 3 an exact side profile, turned 90 degrees to its left, showing how far the lips stick out. The shape stays perfectly consistent and symmetric between the views. Smooth soft-matte stylised surface with one soft highlight, premium designer vinyl toy finish, no pores, no fine texture, no cast shadow on the background. No text, no numbers, no labels."
+
+[variants.a]
+prompt = "A 3D model sheet of ONE sculpted object: exactly the open lips in the reference images, alone. Keep their exact design: full, soft, glossy coral-red stylised cartoon lips opened wide into an A shape, the upper lip with a clear cupid's bow of two rounded peaks, the lower lip fuller and rounder, the two lips forming one continuous soft ring around a tall rounded opening, the corners rounded where the lips meet. The opening is a smooth shallow dark-red cup closed at the back, no teeth, no tongue. Show the lips ISOLATED as a soft sculpture: no face, no skin, no head, no nose, no chin, nothing around them; the back of the ring is one flat smooth surface. The SAME object three times, stacked in three rows of equal height on one plain flat light-grey background, same size, same scale and the same soft even studio light in every row: row 1 seen straight from the front; row 2 a three-quarter view, turned 45 degrees to its left; row 3 an exact side profile, turned 90 degrees to its left, showing how far the lips stick out. The shape stays perfectly consistent and symmetric between the views. Smooth soft-matte stylised surface with one soft highlight, premium designer vinyl toy finish, no pores, no fine texture, no cast shadow on the background. No text, no numbers, no labels."
+
+[[items]]
+id = "rest-m"
+variant = "rest"
+kind = "edit"
+images = [
+  { file = "raw:review/char/alien-parts-kit/M19/refs/mp1_rest_mouth.png", provenance = "crop (the mouth, scaled 4x) of our own generation, batch 2026-10-20-alien-face-sheets-2 item mp1, panel 1 (rest), art#196", sha256 = "40b14b1171ca67c2b3123c789de8a90db0c29824de37ae8ccec80d1bafc763ed" },
+  { file = "raw:review/char/alien-parts-kit/M19/refs/mp1_rest_head.png", provenance = "crop (panel 1, rest) of our own generation, batch 2026-10-20-alien-face-sheets-2 item mp1, art#196", sha256 = "7bfafb949cf8dad000c51dc5defdda7889f0cece60ff5ddfd017cd967b905c21" },
+]
+
+[[items]]
+id = "a-m"
+variant = "a"
+kind = "edit"
+images = [
+  { file = "raw:review/char/alien-parts-kit/M19/refs/mp1_A_mouth.png", provenance = "crop (the mouth, scaled 4x) of our own generation, batch 2026-10-20-alien-face-sheets-2 item mp1, panel 4 (A), art#196", sha256 = "209547928285729b0c138772865841e1e461be624f16ca53a05374e07214eb47" },
+  { file = "raw:review/char/alien-parts-kit/M19/refs/mp1_A_head.png", provenance = "crop (panel 4, A) of our own generation, batch 2026-10-20-alien-face-sheets-2 item mp1, art#196", sha256 = "5d7d2b42af78602bfabd0e9b7b458d435bc1a956522908bfc908b4c4ba2d6eeb" },
+]
+
+# The chosen sets (picked by eye on 2026-10-21: rest-m image 1, the flat back and the most consistent views; a-m
+# image 0, the cleanest ring and back plate), redrawn at high quality with the same prompt, the pick first.
+
+[[items]]
+id = "rest-h"
+variant = "rest"
+kind = "edit"
+quality = "high"
+n = 1
+images = [
+  { from = "rest-m", pick = 1 },
+  { file = "raw:review/char/alien-parts-kit/M19/refs/mp1_rest_mouth.png", provenance = "crop (the mouth, scaled 4x) of our own generation, batch 2026-10-20-alien-face-sheets-2 item mp1, panel 1 (rest), art#196", sha256 = "40b14b1171ca67c2b3123c789de8a90db0c29824de37ae8ccec80d1bafc763ed" },
+]
+
+[[items]]
+id = "a-h"
+variant = "a"
+kind = "edit"
+quality = "high"
+n = 1
+images = [
+  { from = "a-m", pick = 0 },
+  { file = "raw:review/char/alien-parts-kit/M19/refs/mp1_A_mouth.png", provenance = "crop (the mouth, scaled 4x) of our own generation, batch 2026-10-20-alien-face-sheets-2 item mp1, panel 4 (A), art#196", sha256 = "209547928285729b0c138772865841e1e461be624f16ca53a05374e07214eb47" },
+]

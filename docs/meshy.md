@@ -454,6 +454,17 @@ the M2 look, then each item. `--fake` writes a fake item first (a UV checker wit
 flat PBR maps, a `generation.json` like the client's) and reviews it: the check that the maps land on the UV
 (`M3b/review-fake/sheet.png`, 2026-10-19: the checker follows the 15 islands, the marks unflipped).
 
+## Batch 2026-10-21-alien-mouth-3d (art #196 M19, the AI mouth route test)
+
+The pout mp1's lips at rest (`rest3d`) and in the A shape (`a3d`) as isolated soft sculptures, `multi_image_to_3d` on
+`meshy-7.1`, `geometry_resolution = "2k"`, untextured, from three views each (front first, then 3/4 and side): the
+rows of the OpenAI sheets `rest-h` and `a-h` (batch `2026-10-21-alien-mouth-views`, `docs/openai-images.md`), cut
+apart and padded to 1024 px squares. The engineer's yes: art#196 comment 6318565360, cap 120. **Balance 140 before,
+90 after: 50 credits** (25 each, as estimated). The forms: 82,606 and 107,242 triangles, closed, symmetric to the eye,
+a flat back as the views asked; both kept the views' bow, rolled lower lip and fine corners (`rest3d`) and the round
+rolled ring (`a3d`, whose opening came out with a shallow floor). `tools/blender/alien_mouth_fit.py` fits them onto the
+alien's mouth socket (`docs/godot.md`, "The alien parts kit", M19).
+
 ## Batch 2026-10-19-alien-retexture (art #196 M3b, not run yet)
 
 Three retextures of the input above, meshy-7 at 4k with `enable_original_uv` and `enable_pbr`, GLB only: `rt-rf2`

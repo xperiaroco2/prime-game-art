@@ -619,15 +619,24 @@ def build_piece(bvh, m, design, shape, world, mats, coll, origin, lips=None, nam
         lift = Vector((0.0, 0.0, 0.0))
         if rp:
             lift = n0 * (rp.get("cup_lift", 0.0) * push + rp.get("cup_throat", 0.0) * sum(throat) / len(throat))
-        centre = b.vert(surf(bvh, *cw)[0] + surf(bvh, *cw)[1] * 0.0012 + lift)
+        # M16c (cup_even): the rim at even angles round the centre, and every cup point off the skin along the mouth's
+        # mean normal n0, not the skin's own: the pout O's cup had a fan triangle 0.006 mm^2 (two points 0.06 mm
+        # apart where the skin's normal turns fast near the centre), a zero tangent the glTF-Validator rejects
+        even = bool(rp and rp.get("cup_even"))
+        if even:
+            cup = LP.star_resample(cup, cw, RING_N)
+
+        def off(q):
+            return q[0] + (n0 if even else q[1]) * 0.0012
+        centre = b.vert(off(surf(bvh, *cw)) + lift)
         rows = 5
         grid = []
         for k in range(RING_N):
             col = []
             for j in range(1, rows + 1):
                 f = j / rows
-                p, n = surf(bvh, cw[0] + (cup[k][0] - cw[0]) * f, cw[1] + (cup[k][1] - cw[1]) * f)
-                col.append(b.vert(p + n * 0.0012 + lift))
+                col.append(b.vert(off(surf(bvh, cw[0] + (cup[k][0] - cw[0]) * f, cw[1] + (cup[k][1] - cw[1]) * f))
+                                  + lift))
             grid.append(col)
         for k in range(RING_N):
             k2 = (k + 1) % RING_N
@@ -643,6 +652,8 @@ def build_piece(bvh, m, design, shape, world, mats, coll, origin, lips=None, nam
         if mirror or lips_p.get("seam_fit"):
             st = LP.rest_stations(st, m["hc"], lips_p)
             xl, xr = st[0]["x"] - 0.5, st[-1]["x"] + 0.5
+        if (lips_p.get("parting") or {}).get(shape):  # M16c: a designed parting (mp1's small: a slit over the middle)
+            st = LP.parted(st, lips_p["parting"][shape])
         ss = [2 * (r["x"] - xl) / max(1.0, xr - xl) - 1 for r in st]  # M8: -1 .. 1 corner to corner
         for lip in ("u", "l"):
             cs, ra, rb, ns = [], [], [], []
@@ -667,8 +678,9 @@ def build_piece(bvh, m, design, shape, world, mats, coll, origin, lips=None, nam
                 anchor = {"form": "tubes", "lower": lo, "centre": ((lo[0][0] + lo[-1][0]) / 2, 0.0),
                           "outer_hw": (lo[-1][0] - lo[0][0]) / 2}
             for r, s, (x, _zt, _zb, t, bt), zt, zb, zt0, zb0 in zip(st, ss, edges, tops, bots, t0, b0):
-                hb = max(MIN_B, (zt - zb) / 2)
-                a = DEPTH_A * max(MIN_B, (zt0 - zb0) / 2) + DEPTH_C * LP.depth_scale(s, lips_p)
+                mb = lips_p.get("min_b", MIN_B)  # M16c: a lip shape's own thinnest end (the pout's finer points)
+                hb = max(mb, (zt - zb) / 2)
+                a = DEPTH_A * max(mb, (zt0 - zb0) / 2) + DEPTH_C * LP.depth_scale(s, lips_p)
                 p, n = surf(bvh, x, (zt + zb) / 2)
                 env = math.sin(math.pi * (r["x"] - xl) / max(1.0, xr - xl)) ** 0.5
                 c3 = p + n * (a * (1 - SINK) + (push + (back if lip == "l" else 0.0)) * env)
@@ -696,11 +708,14 @@ def build_piece(bvh, m, design, shape, world, mats, coll, origin, lips=None, nam
             w = 1.0 - G.smoothstep(0.0, 1.0, e)
             if w <= 0.0:
                 continue
-            mid = (sm["u"][0][i] + sm["l"][0][i]) / 2
+            # M16c: corner_over > 0: the upper lip's end overhangs the lower's (mp1's points): the ends meet lower,
+            # toward the lower lip's centre by half of it, the lower end sinks (1 + over) deeper, the upper (1 - over / 2)
+            over = lips_p.get("corner_over", 0.0)
+            mid = ((sm["u"][0][i] + sm["l"][0][i]) / 2).lerp(sm["l"][0][i], over / 2)
             for lip in ("u", "l"):
                 cs, ra, rb, ns = sm[lip]
                 c = cs[i].lerp(mid, cn["join"] * w)
-                cs[i] = c - ns[i] * (cn["tuck"] * ra[i] * w * w)
+                cs[i] = c - ns[i] * (cn["tuck"] * (1.0 + over if lip == "l" else 1.0 - over / 2) * ra[i] * w * w)
         for lip in ("u", "l"):
             if lips_p.get("w", 0.0) > 0.0:
                 lip_tube(b, *sm[lip], mi_lip, 14, lips_p, lip)
@@ -732,6 +747,32 @@ def build_piece(bvh, m, design, shape, world, mats, coll, origin, lips=None, nam
             for i in range(len(grid) - 1):
                 for j in range(rows - 1):
                     b.face((grid[i][j], grid[i + 1][j], grid[i + 1][j + 1], grid[i][j + 1]), mi_in)
+        elif lips_p.get("parting_dark") and lips_p.get("w", 0.0) > 0.0:
+            # M16c (#254 minor 1): a closed piece's parting (small's open stations, the gap rest_stations keeps) shows
+            # a dark strip behind it, lip axis to axis on the skin as the teeth's dark; only over the open run away
+            # from the corners (parting_dark: the share of each end left out), so no dark shows past a corner
+            i0 = max(1, int(round((len(st) - 1) * lips_p["parting_dark"])))
+            ns_ = len(st)
+            run = [i for i in range(i0, ns_ - i0) if st[i]["open"] or (mirror and st[ns_ - 1 - i]["open"])]
+            if len(run) >= 2:
+                run = list(range(run[0] - 1, run[-1] + 2))  # one closed station either end: the gap's ends tuck in
+                rows = 3
+                pos = []
+                for i in run:
+                    (x, zu), (_x, zl) = axes["u"][i], axes["l"][i]
+                    col = []
+                    for j in range(rows):
+                        p, n = surf(bvh, x, zu + (zl - zu) * j / (rows - 1))
+                        col.append(p + n * 0.0012)
+                    pos.append(col)
+                if mirror and run[0] + run[-1] == ns_ - 1:  # mirrored as the lips (the skin is 0.4 mm lopsided)
+                    pos = [[(pos[i][j] + Vector((-pos[-1 - i][j].x, pos[-1 - i][j].y, pos[-1 - i][j].z))) / 2
+                            for j in range(rows)] for i in range(len(pos))]
+                grid = [[b.vert(q) for q in col] for col in pos]
+                for i in range(len(grid) - 1):
+                    for j in range(rows - 1):
+                        b.face((grid[i][j], grid[i + 1][j], grid[i + 1][j + 1], grid[i][j + 1]), mi_in)
+            meas["parting_dark"] = [len(run), round(axes["u"][run[0]][0] * 1000, 1), round(axes["u"][run[-1]][0] * 1000, 1)] if len(run) >= 2 else [0]
     # the tongue: where the panel shows one, an arch from the lower lip's axis up to its measured top, on the cup
     tcols = [x for x in xs if "tongue_top" in cols[x]]
     if tcols:  # the longest run of neighbouring columns (gaps up to 3 px)

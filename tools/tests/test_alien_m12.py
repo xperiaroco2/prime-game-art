@@ -59,12 +59,22 @@ class PoutShapeTest(unittest.TestCase):
         self.assertGreater(p["corner_tuck"], 1.0)
         self.assertGreaterEqual(p["bow"], 0.30)
         self.assertGreater(p["bow_peak"], 0.30)
+        # M16c (UPDATE 36): mp1's long fine points, the upper lip's end over the lower's, small's dark parting
+        self.assertLess(p["min_b"], 0.0011)
+        self.assertLessEqual(p["corner"], 0.06)
+        self.assertGreater(p["corner_over"], 0.0)
+        self.assertGreater(p["corner_share"], 0.18)
+        self.assertGreater(p["parting_dark"], 0.0)
+        src = (Path(__file__).resolve().parents[1] / "blender" / "alien_mouths.py").read_text(encoding="utf-8")
+        for key in ('lips_p.get("min_b", MIN_B)', 'lips_p.get("corner_over", 0.0)', 'lips_p.get("parting_dark")'):
+            self.assertIn(key, src)  # the closed tubes read them
         for s, rp in p["ring_param"].items():  # the open rings keep M12b's bow shape
             self.assertEqual((rp["bow_w"], rp["bow_peak"], rp["bow_at"]), (0.16, 0.10, 0.24), s)
         # M13 (PR #246's review minor 3): no dead settings: every open shape is a designed ring (ring_param), so the
         # traced rings' weights (`ring`) and their corner (`ring_corner`) are not part of the pout's shape
         self.assertEqual(set(p), set(LP.LIP_SHAPE) - {"ring"} | {"size", "bow_flat", "ring_param", "mirror", "seam_fit",
-                                                                         "corner_tuck", "corner_share", "corner_join"})
+                                                                         "corner_tuck", "corner_share", "corner_join",
+                                                                         "min_b", "corner_over", "parting_dark", "parting"})
         self.assertEqual(set(p["ring_param"]), {"A", "E", "O"})
 
     def test_merged_pout(self):

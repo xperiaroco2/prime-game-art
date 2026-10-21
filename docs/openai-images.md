@@ -186,3 +186,14 @@ rendering, all six heads consistent. The six shapes read in order (rest, M, smal
 round O kiss). Unlike Meshy's sheet it frames the heads larger and cuts them at the neck (Meshy kept the reference's
 whole bust), and its rest panel shows a slight gap between the lips. Saved in
 `D:/prime-art-raw/2026-10-20-openai-edits-test/mp1/image-0.png`.
+
+## Batch 2026-10-21-alien-mouth-views (art #196 M19)
+
+Edits of mp1's rest and A panels (a 720 px mouth crop and the 512 px head panel as references) into an isolated lip
+sculpture, three views stacked in rows on one 1024x1536 sheet (rows keep the views consistent; they are cut apart for
+Meshy). Measured: medium, n = 3, two references: 894 to 945 text and 6,144 image input tokens, 1,029 output tokens
+(343 per image, the same as one medium 1536x1024), **$0.085** a request, 23 to 30 s; high, n = 1, the picked image and
+one crop as references: 315 text and 2,560 image input tokens, 1,372 output tokens, **$0.063**, about 33 s. The
+batch: **$0.2956** of its $3 cap (`req_85f6e47a...`, `req_bfbca41c...`, `req_e5cc1b93...`, `req_26ad9708...`). All
+six medium sheets were clean and close to mp1's lips; the high redraws kept the picks almost exactly, a little
+crisper. The images: `D:/prime-art-raw/2026-10-21-alien-mouth-views/`.
