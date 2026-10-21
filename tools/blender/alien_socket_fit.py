@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import shutil
 import sys
 from pathlib import Path
@@ -32,6 +33,7 @@ from mathutils import Matrix, Vector
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import alien_fit_geom as F  # noqa: E402
 import alien_lids_geom as LG  # noqa: E402
+from alien_face import EYE_AIM_CONVERGE  # noqa: E402
 from alien_parts import EYES, LID_BEAD  # noqa: E402
 
 MARKER = "prime_socket"  # alien_socket.MARKER: alien_m6.py reads it as "the eyes are sized and placed"
@@ -98,12 +100,26 @@ def apply(spec: dict, debug: bool = False) -> dict:
     for p in keep_pts.values():
         near_keep |= np.linalg.norm(co0 - p, axis=1) < 0.035
     sides, free = {}, np.zeros(n, dtype=bool)
-    for side, sx in (("L", 1.0), ("R", -1.0)):
+    got = {}
+    for side in ("L", "R"):
         sock = bpy.data.objects[f"Eye_{side}"]
         c = np.array(sock.matrix_world.translation)
         fwd = np.array((sock.matrix_world.to_3x3() @ Vector((0.0, -1.0, 0.0))).normalized())
-        r0 = float(np.linalg.norm(world_co(bpy.data.objects[f"eye_bored_ball_{side}"]) - c, axis=1).max())
-        c1, rz, f1 = F.place(c, fwd, sx, s)
+        got[side] = (c, fwd, float(np.linalg.norm(world_co(bpy.data.objects[f"eye_bored_ball_{side}"]) - c,
+                                                  axis=1).max()))
+    # M15b (PR #253 review, minor 6): S2a's two sockets differ by about 0.3 mm and a few hundredths of a degree, so the
+    # two cuts came out unlike (one crescent shelf); the new mount is placed from their mirrored mean, so both sockets'
+    # centres, axes and spheres are exact mirrors (the units still move from their own centres)
+    mir = np.array((-1.0, 1.0, 1.0))
+    c_m = (got["L"][0] + got["R"][0] * mir) / 2.0
+    f_m = (got["L"][1] + got["R"][1] * mir) / 2.0
+    f_m /= np.linalg.norm(f_m)
+    r_m = (got["L"][2] + got["R"][2]) / 2.0
+    for side, sx in (("L", 1.0), ("R", -1.0)):
+        c, fwd, _r = got[side]
+        r0 = r_m
+        c1, _rz, f1 = F.place(c_m if sx > 0 else c_m * mir, f_m if sx > 0 else f_m * mir, sx, s)
+        rz = F.place(c, fwd, sx, s)[1]  # the unit's own turn (its own axis straightened)
         R = k * r0 * reach + s["gap"]
         ex, ey = F.frame(f1, sx)
         own = co0[:, 0] * sx > 0.010
@@ -163,18 +179,50 @@ def apply(spec: dict, debug: bool = False) -> dict:
         bpy.context.view_layer.update()
         for o in parts:
             set_world_co(o, targets[o.name])
+        aim = {}
         for d in DESIGNS:
             ball = bpy.data.objects[f"eye_{d}_ball_{side}"]
             if np.linalg.norm(np.array(ball.matrix_world.translation) - c1) > 1e-5:
                 raise SystemExit(f"{ball.name}: did not move with {sock.name}")
+            aim[d] = rest_aim(ball, sock, side)
+        v["aim"] = aim
         rep[side] = {"centre_before": c.round(4).tolist(), "centre": c1.round(4).tolist(),
                      "move_mm": ((c1 - c) * 1000).round(2).tolist(), "toe_deg": round(float(np.degrees(
                          F.toe_angle(tuple(v["fwd"]), s["toe"]))), 2), "ball_r": round(k * v["r0"], 4),
-                     "socket_R": round(v["R"], 4), "opening_deg": v["rho_c_mm"], "inside_verts": v["inside_verts"]}
+                     "socket_R": round(v["R"], 4), "opening_deg": v["rho_c_mm"], "inside_verts": v["inside_verts"],
+                     "ball_aim_in_deg": v["aim"]}
     rep.update(measure(body, sides, k))
     body[MARKER] = json.dumps({"route": "m15", **s}, sort_keys=True)
     log("fit", json.dumps(rep))
     return rep
+
+
+def _in_deg(ball, sock, side: str) -> tuple[float, float]:
+    """(the ball's inward turn against its socket's forward, the socket's own outward look), degrees, about world up."""
+    sx = 1.0 if side == "L" else -1.0
+    fs = sock.matrix_world.to_3x3() @ Vector((0.0, -1.0, 0.0))
+    fb = ball.matrix_world.to_3x3() @ Vector((0.0, -1.0, 0.0))
+    splay = math.degrees(math.atan2(sx * fs.x, -fs.y))
+    return splay - math.degrees(math.atan2(sx * fb.x, -fb.y)), splay
+
+
+def rest_aim(ball, sock, side: str) -> list:
+    """M15b (PR #253 review, major 1): the ball's turn in the GLB's rest. The assembler turned each ball EYE_AIM_IN in
+    against S2a's sockets (8 degrees outward); the fit straightens the unit and kept that turn, so Blender and three.js
+    showed the eyes crossed. The ball (its iris on its own forward, a sphere about its node) is turned about its up
+    axis to EYE_AIM_CONVERGE plus the unit's remaining outward look, what alien.gd sets (AIM_CONVERGE_DEG +
+    splay_deg). Returns [before, after] in degrees."""
+    before, splay = _in_deg(ball, sock, side)
+    want = EYE_AIM_CONVERGE + splay
+    for _ in range(2):  # the second pass only trims a tilt of the up axis
+        cur, _s = _in_deg(ball, sock, side)
+        turn = math.radians(cur - want) * (1.0 if side == "L" else -1.0)
+        ball.matrix_world = ball.matrix_world @ Matrix.Rotation(turn, 4, "Z")
+        bpy.context.view_layer.update()
+    after, _s = _in_deg(ball, sock, side)
+    if abs(after - want) > 0.05:
+        raise SystemExit(f"{ball.name}: rest aim {after:.2f} degrees, wanted {want:.2f}")
+    return [round(before, 2), round(after, 2)]
 
 
 def measure(body, sides: dict, k: float) -> dict:
