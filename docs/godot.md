@@ -2008,8 +2008,12 @@ a time, by visibility.
     the tongue's channel is `CUSTOM2.z` (`alien_hue.gdshader` `contact_pick3`, `alien.gd CONTACT_CHANNEL3`). The mouth
     step rewrites both layers in that order; the contact counts only the rest piece's lip faces (the tongue hanging in
     front of the chin is no lip contact). Blender allows eight UV layers, so a sixth mouth needs a shared channel.
-    M11's collar (`alien_m6.py`) carries seven layers, so it has no `TEXCOORD_7` and reads 0 there (no tongue
-    contact on the collar, as wanted).
+    M11's collar (`alien_m6.py`) carries six UV layers (`TEXCOORD_0..5`), so it has neither `TEXCOORD_6` nor
+    `TEXCOORD_7` (no tongue contact on the collar, as wanted). **Unchecked (PR #251's review):** on a mesh with
+    `TEXCOORD_6` but no `TEXCOORD_7`, `CUSTOM2.z` is taken as 0 but `CUSTOM2.w` may read 1 (a default alpha), not 0.
+    Harmless today (`w` is never picked); a sixth mouth in `TEXCOORD_7`'s v must first check that every surface it
+    shades carries `TEXCOORD_7` (or use another channel), else it shades there at full contact
+    (`alien_hue.gdshader`'s comment says the same).
   - **Measuring:** the tongue covers the lower lip in every panel, so the columns where its lip pixels below the tongue
     are fewer than half the usual lower-lip thickness are refilled from the clean columns beside them
     (`alien_mouths.FILL_TONGUE`, `tongue_cover`, then `fill_teeth`). M's lips are pressed shut (the sheet's seam);
@@ -2034,7 +2038,9 @@ a time, by visibility.
     upper ones either side of a gap and one lower one on the left, each a rounded box (a superellipsoid) tucked 3 mm
     into its lip's inner edge, its front half the lip's depth in front of the lip's axis (set back, the AO bake made
     it black), its visible height at most 0.55 of the opening; in rest, small, A and E (O's hole and M none).
-    Material `alien_tooth` (`TOOTH_LOOK` over `FANG_LOOK`). Its jaw weight: the upper teeth 0, the lower 1.
+    Material `alien_tooth` (`TOOTH_LOOK` over `FANG_LOOK`). Its jaw weight: the upper teeth 0, the lower ones the
+    lips' corner falloff (`alien_m12.py jaw_weights`, `env(x)`: 1 up to `JAW["from"]` of the lips' half width, down
+    to `JAW["corner"]` at the corners).
   - **The talk (`alien_talk.gd` `STYLES["tongue"]`):** loose and floppy: a 35 ms lag, merged flickers and half-open
     quick A/E as the pout's, every second styled run 25 ms late with the run before it holding on (`lopside_ms`), a
     slow soft lower-lip bounce (1.2 mm, 4.5 Hz, 170 ms), and `flop` (`flop_at`): after each change of shape the
@@ -2047,6 +2053,21 @@ a time, by visibility.
     `fang_roots` moved to `alien_fangs_geom` and `test_one_fang_place` tests it; `parse_check.gd broken` parses a
     deliberately broken shader (`test_a_broken_shader_is_caught`); the M13 line names the jaw weight's alpha. The
     fangs' 3/4 lip tail past the fang is not changed (see `handoff-M14.md`).
+  - **M14b (PR #251's review):** the tongue's tip was knife-thin in profile (its half thickness fell by
+    `c ** 0.5 * (1 - 0.45 q)` over the tip): now `TONGUE["tip"]` (`c ** 0.25 * (1 - 0.2 q)`, never below 0.5 of the
+    half thickness before the last station, never thicker than wide; `test_tip_plump_in_profile`), and the tongue
+    10 mm thick (grids `M14/godot/g2`-`g4`: 7.5 mm read as a strap in profile, 11 mm as a sausage), its underside
+    0.75 of its top. The groove 0.70 of the half thickness where it hangs, 0.45 of that up to the lip's top
+    (`groove_root`: deep there it notched the root's top edge). Per shape a width share (`shapes[...]["w"]`: O 0.75,
+    narrower than its ring's hole; `shape_params`). `drape`: the section's two side vertices take their neighbours'
+    lift (the side stayed down while top and underside rose: the 3/4 view's white rim), 10 smoothing passes, and the
+    sides aimed 0.5 mm into the lip (`TONGUE["drape"]["sink"]` = `clear` + 0.5 mm). The teeth per shape
+    (`TEETH["per_shape"]`, `teeth_for`): A has the sheet's two lower teeth at the opening's lower left (the one at
+    -24 mm sat in the ring's side, out of sight), further forward and tucked deeper. `TONGUE_LOOK` a deeper salmon
+    pink (albedo (0.80, 0.33, 0.36), deep (0.52, 0.12, 0.17); the first read as pale bubblegum beside the sheet).
+    `has_jaw_weight` runs in debug builds only and is cached per mesh; `parse_check.gd` tests it on made meshes
+    (`test_jaw_weight_check`), and `test_alien_m12.py` checks the tongue's contact wiring (`CONTACT_CHANNEL3`,
+    `contact_pick3`, `CUSTOM2.zw`).
 
 ## Findings for later tasks
 
