@@ -1952,7 +1952,12 @@ a time, by visibility.
     ring (`alien_lids_geom.last_good_cyclic`; the right collars' first bins took zeros); a far bin's start runs
     linearly between the nearest good bins' offsets from the smoothed edge (`cyclic_fill`), so a far run meets its
     neighbours with no step (`start_step_mm_max` in the report); a test reads the kit's collars from the GLB
-    (`TEXCOORD_6` all 0, the Body's attribute set).
+    (`TEXCOORD_6` all 0, the Body's attribute set). The bored dome's nub from above stays: it is not the boundary step.
+  - **Proofs** (kits `M11/b80_*`, `b90_*`, `b100_*`: the fixed collar, the lips, main's `alien_m12.py` with M13b's
+    fangs, then the lashes; `M11/export` the 80 % pick): the gate with the lashes off 0.0000 in all four views; on
+    0.42 / 0.41 / 0.22 / 0.44 %, lash pixels only, the skull 0.0000. The shimmer at 3.5 m (Idle with a blink) 0.00941
+    off, 0.01125 on (M11: 0.0121); Idle alone 0.00726 / 0.00765, the line's own crawl +5 %. Closed, the curled lashes
+    point up from the lid's line (blink frames), where el2's hang down: open.
 - **M13b, the fangs mouth mg2 brought to the sheet** (brief UPDATE 22; output under
   `D:/prime-art-raw/review/char/alien-parts-kit/M13b/`): M13's lips read as thin flat double sticks with pointed
   corners at 3/4, its fangs as small pins hanging in front of the lip (floating on the cheeks in O, jumping sideways
