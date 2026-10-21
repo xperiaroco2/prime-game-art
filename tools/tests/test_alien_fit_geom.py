@@ -102,7 +102,7 @@ class FitGeom(unittest.TestCase):
         h0 = np.linalg.norm(P - c, axis=1) - R
         h = np.linalg.norm(Q - c, axis=1) - R
         self.assertTrue(np.array_equal(Q[h0 >= width], P[h0 >= width]))
-        self.assertTrue(np.array_equal(Q[ins], P[ins]))
+        self.assertTrue(np.allclose(Q[ins], P[ins], rtol=0.0, atol=1e-9))  # on the sphere to rounding: h about 0
         band = (~ins) & (h0 > 1e-6) & (h0 < width)
         self.assertGreater(int(band.sum()), 20)
         self.assertTrue(np.all(h[band] < h0[band]))
