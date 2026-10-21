@@ -2,7 +2,7 @@ extends Node
 ## The alien parts kit's character controller (art #196, S3). Add it as a child of an instanced alien_character.glb
 ## (tools/blender/alien_assemble.py: every variant a named node under the Head joint's sockets) and call setup().
 ## It swaps the hue material for alien_hue.gdshader, and then:
-## - set_eyes("bored"|"manic"), set_mouth_design("frog"|"overbite"), set_crest(""|"antennae"|"fins"), set_hue(name);
+## - set_eyes("bored"|"manic"), set_mouth_design("frog"|"overbite"|"pout"), set_crest(""|"antennae"|"fins"), set_hue(name);
 ## - blinks by lid rotation (the lid node's local X, the angles of parts.json): BLINK_MS close, hold, open, every 2-6 s
 ##   at random; the lids rest at "rest" (the default: bored's heavy lids; "open" only for surprise, set_lids("open"));
 ## - talks: listen(bus) reads an AudioEffectSpectrumAnalyzer on that bus and every 60-80 ms shows one of the six mouth
@@ -25,9 +25,15 @@ extends Node
 ## - M6, the lips and lid domes in the skin's surface quality (lip_look, LIP_LOOK, LID_LOOK) and the textured skin's
 ##   contact shade (SKIN_CONTACT), each only on a kit that carries its marker (PART_AO_MARKER, CONTACT_MARKER): an older
 ##   kit keeps its look.
+## - M12, the red pout mouth (mp1): a third mouth design "pout" on a kit that has its pieces (mouth_pout_<shape>,
+##   material alien_lip_pout: LIP_LOOK_POUT, glossy deep red), its skin contact in CUSTOM2.x (contact_pick2), and a
+##   talk style of its own: talk_at(t_ms, line) shows a phase line's piece at t through the design's style
+##   (alien_talk.gd: lag, merged flickers, a lower-lip bounce and a pucker between words, as the lip shader's
+##   instance uniforms lip_drop and pucker on the shown piece); play_line(line) drives it in time.
 ## Used through preload (a -s script has no global class cache): const AlienRig = preload("res://alien/alien.gd").
 
 const SHADER: Shader = preload("res://alien/alien_hue.gdshader")
+const AlienTalk = preload("res://alien/alien_talk.gd")
 ## The hue materials the shader replaces: the skin, and since M3a (art #196) the crest parts' own copy with no image
 ## at all, not even M2's normal map (the skin's material carries the texture set on Body's UV, which the crest parts
 ## do not share; alien_texture.py's export stage fails if any material but the skin and the flipbook mouths has one).
@@ -86,6 +92,12 @@ const LIP_LOOK := {"albedo": Color(0.78, 0.35, 0.31), "deep": Color(0.56, 0.18, 
 ## M6: the lid domes' own values over LIP_LOOK (a satin dome as the skin's, no clear coat: its sheen read plastic;
 ## the lips keep a soft sheen).
 const LID_LOOK := {"roughness_value": 0.64, "sheen": 0.0}
+## M12: the pout mouth's lips (material alien_lip_pout) over LIP_LOOK: the mp1 sheet's glossy deep red-coral, a deeper
+## red in the folds, a low roughness with a clear, crisp coat (the wet highlight on the lower lip), less drift and
+## grain (a smooth gloss). Chosen beside the sheet on M12's grid (m12_shots.gd).
+const LIP_LOOK_POUT := {"albedo": Color(0.72, 0.18, 0.18), "deep": Color(0.42, 0.05, 0.07), "roughness_value": 0.30,
+	"specular_value": 0.55, "sheen": 0.55, "sheen_roughness": 0.12, "drift": 0.03, "grain": 0.03}
+const MOUTH_DESIGNS: Array[String] = ["frog", "overbite", "pout"]
 ## M6: the textured skin's contact shade near the lids and lips (alien_hue.gdshader `contact*`), only for a kit whose
 ## hue material carries a contact marker: M6's CONTACT_MARKER_M6 (one field for every design in TEXCOORD_4's u) or
 ## M6c's CONTACT_MARKER (tools/blender/alien_m6.py: one channel per design, TEXCOORD_4 = (bored, manic), TEXCOORD_5 =
@@ -94,6 +106,9 @@ const LID_LOOK := {"roughness_value": 0.64, "sheen": 0.0}
 const CONTACT_MARKER := {"prime_contact": "custom1_designs"}
 const CONTACT_MARKER_M6 := {"prime_contact": "custom1_x"}
 const CONTACT_CHANNEL := {"bored": 0, "manic": 1, "frog": 2, "overbite": 3}
+## M12: the third mouth's channel, a component of CUSTOM2 (glTF TEXCOORD_6 = (pout, free); alien_lips_geom
+## CONTACT_UV_MOUTH2), picked by `contact_pick2`.
+const CONTACT_CHANNEL2 := {"pout": 0}
 const SKIN_CONTACT := {"contact": 1.0, "contact_tint": Vector3(0.80, 0.66, 0.62), "contact_ao": 0.3}
 ## M6: LIP_LOOK reads the part's baked AO (COLOR_0), so it applies only to a kit whose imported alien_lip (the lips' and
 ## the lid domes' one material) carries this marker in its glTF extras (tools/blender/alien_m6.py, after the bake).
@@ -178,6 +193,8 @@ var _next_switch_ms: float = 0.0
 var _peak: float = 1e-4
 var _last_open_ms: float = -1e9
 var _listen_t0: int = 0
+var _line: Array = []  # M12: the phase line play_line() drives (alien_talk.gd segments)
+var _line_t0: int = 0
 
 
 func setup(root: Node3D, seed: int = 196) -> void:
@@ -199,7 +216,7 @@ func setup(root: Node3D, seed: int = 196) -> void:
 				if m.name.contains("_lid_"):
 					_lid_surfaces.append([m, s])
 			elif mat != null and (FACE.has(mat.resource_name) or mat.resource_name.begins_with("alien_eye_")
-					or mat.resource_name == "alien_wet"):
+					or mat.resource_name == "alien_wet" or mat.resource_name == "alien_lip_pout"):
 				# M6: the lid domes take their own copy of the lips' material (LID_LOOK)
 				var key: String = mat.resource_name
 				if key == "alien_lip" and has_marker(mat, PART_AO_MARKER):
@@ -311,6 +328,14 @@ func _make_face_materials() -> void:
 					for k: String in LID_LOOK:
 						lm.set_shader_parameter(k, LID_LOOK[k])
 				_face_materials[key] = lm
+			var pm := ShaderMaterial.new()  # M12: the pout's own glossy red (alien_lip_pout)
+			pm.shader = LIP_SHADER
+			pm.resource_name = "alien_lip_pout"
+			for k: String in LIP_LOOK:
+				pm.set_shader_parameter(k, LIP_LOOK[k])
+			for k: String in LIP_LOOK_POUT:
+				pm.set_shader_parameter(k, LIP_LOOK_POUT[k])
+			_face_materials["alien_lip_pout"] = pm
 			continue
 		var m := StandardMaterial3D.new()
 		m.resource_name = name
@@ -445,9 +470,14 @@ func _pick_contact() -> void:
 	if _tex_material == null or not _contact_designs:
 		return
 	var pick := Vector4.ZERO
-	pick[CONTACT_CHANNEL[eyes]] = 1.0
-	pick[CONTACT_CHANNEL[mouth_design]] = 1.0
+	var pick2 := Vector2.ZERO  # M12: CUSTOM2 (TEXCOORD_6: pout, free)
+	for d: String in [eyes, mouth_design]:
+		if CONTACT_CHANNEL.has(d):
+			pick[CONTACT_CHANNEL[d]] = 1.0
+		else:
+			pick2[CONTACT_CHANNEL2[d]] = 1.0
 	_tex_material.set_shader_parameter("contact_pick", pick)
+	_tex_material.set_shader_parameter("contact_pick2", pick2)
 
 
 ## The lids at t ms into a blink (0 = the lid state, BLINK_MS close, hold, open): returns false once it is over.
@@ -487,15 +517,49 @@ func set_mouth_mode(mode: String) -> void:
 
 func show_mouth(piece: String) -> void:
 	mouth_piece = piece
-	for d: String in ["frog", "overbite"]:
+	for d: String in MOUTH_DESIGNS:
 		for v: String in VISEMES:
-			node("mouth_%s_%s" % [d, v]).visible = mouth_mode == "3d" and d == mouth_design and v == piece
+			var p: Node3D = node("mouth_%s_%s" % [d, v])
+			if p == null:  # a kit without that design (the pout before M12)
+				continue
+			# the pout has no flipbook shells: it shows its 3D pieces in both modes
+			p.visible = (mouth_mode == "3d" or d == "pout") and d == mouth_design and v == piece
 			var f: Node3D = node("mouthflip_%s_%s" % [d, v])
 			if f != null:
 				f.visible = mouth_mode == "flip" and d == mouth_design and v == piece
 	var teeth: Node3D = node("mouth_overbite_teeth")  # S3's separate teeth; since S6 each overbite piece has its own
 	if teeth != null:
 		teeth.visible = mouth_mode == "3d" and mouth_design == "overbite"
+
+
+## M12: whether the kit has a mouth design's pieces.
+func has_mouth_design(design: String) -> bool:
+	return node("mouth_%s_rest" % design) != null
+
+
+## M12: the secondary motion on the shown 3D piece (alien_lip.gdshader's instance uniforms; 0 = none).
+func set_mouth_motion(drop: float, pucker: float) -> void:
+	var p := node("mouth_%s_%s" % [mouth_design, mouth_piece]) as GeometryInstance3D
+	if p != null:
+		p.set_instance_shader_parameter("lip_drop", drop)
+		p.set_instance_shader_parameter("pucker", pucker)
+
+
+## M12: a phase line's piece and motion at t_ms through the shown design's talk style (alien_talk.gd); returns the
+## sample ({"piece", "drop", "pucker", "since_ms"}).
+func talk_at(t_ms: float, line: Array = AlienTalk.LINE) -> Dictionary:
+	var s: Dictionary = AlienTalk.sample(mouth_design, AlienTalk.segments(line), t_ms)
+	set_mouth_motion(0.0, 0.0)
+	show_mouth(s["piece"])
+	set_mouth_motion(s["drop"], s["pucker"])
+	return s
+
+
+## M12: talk a phase line from now (stops listening; _process drives talk_at until the line ends).
+func play_line(line: Array = AlienTalk.LINE) -> void:
+	_analyzer = null
+	_line = line
+	_line_t0 = Time.get_ticks_msec()
 
 
 func set_crest(name: String) -> void:
@@ -555,6 +619,14 @@ func pick_mouth() -> String:
 func _process(delta: float) -> void:
 	if character == null:
 		return
+	if not _line.is_empty():  # M12: a phase line
+		var tl: float = float(Time.get_ticks_msec() - _line_t0)
+		talk_at(tl, _line)
+		var segs: Array = AlienTalk.segments(_line)
+		if segs.is_empty() or tl > float(segs[-1][1]) + 600.0:
+			_line = []
+			set_mouth_motion(0.0, 0.0)
+			show_mouth("rest")
 	if _analyzer != null:
 		var t: float = float(Time.get_ticks_msec() - _listen_t0)
 		if t >= _next_switch_ms:
