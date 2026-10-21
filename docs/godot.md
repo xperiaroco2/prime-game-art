@@ -2296,6 +2296,33 @@ a time, by visibility.
       where a drawn-in point meets the fixed face inside the band. The stage refuses a count above 0 (M15's socket: 0).
       `fill_masks` runs `FIT["fill_iters"]` iterations.
 
+- **M21, the eyes' last flaws at game distance** (brief UPDATE 45, PR #259's review; output under
+  `D:/prime-art-raw/review/char/alien-parts-kit/M21/`, kit `M21/export/` = M17c's with the closed lashes). Each flaw was
+  isolated first in the off-screen window (`godot/alien/m21_shots.gd` "diag": per variant hidden parts, face-material
+  or skin uniforms, a per-mesh LOD bias or the viewport's LOD threshold, at 3.5 m and 0.4 m; `M21/diag/d1` to `d11`):
+  - **The blotchy upper lids at 3.5 m: Godot's automatic mesh LODs.** The decimated lid shells lost their baked AO
+    (COLOR_0, which `LIP_LOOK` turns into the deeper coral) and normals. With the LODs off (the viewport's threshold 0,
+    or a high LOD bias on the eye parts) the lids are even in every state; with the AO off they are even too, but flat
+    up close. `alien.gd` gives every `eye_*` mesh `lod_bias` `EYE_LOD_BIAS` (100): full detail at every distance.
+  - **The pale line under the eyes at 3.5 m: the lids' screen-space SSS.** At 3.5 m the lower lid is 2 to 4 px tall,
+    and Godot's SSS blur mixed its light with the white's and the pale skin's into a beige band (rows of
+    `c7a392`-like pixels where the coral should be). With the lid's `sss` 0 the band is coral; the wet line, the
+    lid's rim and specular, the transmittance, the skin's contact and normal map changed nothing. `alien_lip.gdshader`
+    has `sss_fade` (view distances in m; the default never, so the lips, pout and fangs keep theirs), and `LID_LOOK`
+    fades the lids' SSS out between 1.5 and 3 m: up close it is still the lid's soft edge.
+  - **Manic's closed "zipper"** had two causes:
+    - **Up close:** the lash sets are rigid children of the upper lid, so the open curl rode into the closed state.
+      Manic's lashes (leaving 30 degrees below the radial, curled 160) dipped under the closed line and hooked back up
+      over the lid, teeth above and below in turn; bored's stood over the line as a comb. Each tube set now has a
+      shape key `closed` (`alien_lashes_geom.CLOSED`, a glTF morph target; the tubes get a UV map so Godot can make
+      its tangents): the same tubes with the lift -30 and the curl 60, laid down and out from the line over the lower
+      lid. `alien.gd` weighs it with `lash_closed_weight` (a smoothstep of the upper lid's angle from "half" to
+      "closed"), so open, rest and half keep their lashes and the blink morphs into the closed ones. The clip check
+      poses the key at every state (`alien_lashes.shaped`). Grid (`M21/grid/shots*/lclosed.png`): curl 100 / 60 / 30
+      and the lift -10 to -40; 100 still hooked, -10 hooked again, 30 read as straight spikes.
+    - **At 3.5 m:** the liner's clear coat put single white pixels along the closed line. `alien_liner.gdshader`
+      fades its specular and clear coat out between `gloss_fade`'s 2 and 3 m, as the tubes fade.
+
 - **M19, the AI mouth route test** (brief UPDATE 38; output under
   `D:/prime-art-raw/review/char/alien-parts-kit/M19/`): GPT Image views of mp1's lips (`batches/2026-10-21-alien-mouth-views.toml`)
   -> Meshy multi-image 3D (`batches/2026-10-21-alien-mouth-3d.toml`) -> `tools/blender/alien_mouth_fit.py`, which
