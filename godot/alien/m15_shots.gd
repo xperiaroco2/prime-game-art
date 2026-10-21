@@ -2,7 +2,7 @@ extends "res://alien/m11_shots.gd"
 ## M15's proofs (art #196, brief UPDATE 26): the eye socket rebuilt for the 80 % eye, under the approved look
 ## (second_test.gd's stage, light D), no crest, in an off-screen window (the runner's _godot.window(), 1536 x 1536).
 ## Spec as m11_shots.gd's, plus "refs" (m10_shots.gd's reference row: [[png, [x0, y0, x1, y1]], ...]). Modes, besides
-## m11_shots.gd's:
+## m11_shots.gd's, and m12_shots.gd's "phases" (the hero's own mouth, its "mouth"):
 ## - "depth": the reference row, then per kit three rows: bored and manic with the kit's own lashes and mouth, and
 ##   bored with the skin in one plain grey (the parts keep their look, so only the socket's shape shades), each from
 ##   the front, at 3/4 and in profile at 0.4 m and at 3/4 from 1.2 m: depth.png ("depth_name").
@@ -62,6 +62,9 @@ func _run() -> void:
 		await _socket()
 	if _modes.has("depth"):
 		await _depth()
+	if _modes.has("phases"):  # m12_shots.gd's six shapes and the no-black check, on the hero's mouth
+		_design = _mouth_of[hero]
+		await _pphases(hero)
 	quit(0)
 
 

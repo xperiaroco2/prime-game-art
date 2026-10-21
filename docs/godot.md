@@ -1996,6 +1996,39 @@ a time, by visibility.
   - **Tests:** `godot/alien/parse_check.gd` + `tools/tests/test_alien_parse_godot.py` (heavy, area `alien_parse`):
     every `godot/alien` shader parses in the dummy renderer (a broken one logs `SHADER ERROR` and lists no uniforms)
     and `alien.gd`/`alien_talk.gd` reload (minor 7). `m12_shots.gd` vgrid views take an optional distance.
+- **M15, the eye socket rebuilt for the 80 % eye** (brief UPDATE 26; output under
+  `D:/prime-art-raw/review/char/alien-parts-kit/M15/`). The engineer's pick `e80_p85_w80` showed "weird things" in the
+  sockets (M10c's skin collar filling the gap between the 80 % eye and the socket sculpted for S9's big eye) and eyes
+  "squeezed out of the skull, like a crab's"; he wants them deeper in the head, symmetric, as in e2 / el2.
+  - **Measured on M11's kit:** the ball's front stood 30 mm before the face beside it and 17 mm before the nose
+    bridge in profile; the lids reached x = 112 mm against a head about 99 mm half wide (outside the front
+    silhouette); the old crater's floor sat 42 mm behind the eye's centre, the brow over it 22 mm behind; each eye
+    looked 7.9 degrees outward.
+  - **`tools/blender/alien_socket_fit.py`** (plain geometry and the why in `alien_fit_geom.py`, `FIT`): per side the
+    eye unit is scaled to 0.76 of S9's (the 80 % eye), turned straight ahead (`toe` 1), sunk `sink` along its axis and
+    moved `inward` 19 mm; the Body's old crater (within `free_r` 1.5 old ball radii, never lower than `free_below`
+    65 mm under the old centre, never the mouth's or crest's skin) is replaced by the fairest surface that meets the
+    untouched face with its slope (least squares on the uniform Laplacian, CGLS); then the skin that the socket's
+    sphere (the slim lids' reach 1.151 r plus a 0.6 mm gap) opens is laid onto the sphere's far side by its angle from
+    the front pole (the opening's edge is the smooth crossing curve per azimuth, so a skin wall along the axis at the
+    temple leaves no saw), and the edge is rounded (24 Taubin passes over an 8 mm band, the skin kept outside the
+    sphere). Unlike M9 the face never follows the eye back: the crater is filled, nothing sinks. Checks: no folded
+    edge on the seen skin (one the input had is not counted), the mouth's and crest's skin unmoved, every ball on its
+    node. `--debug` saves a folding variant for a look, never a kit.
+  - **The marker:** `Body["prime_socket"]` (`alien_socket.MARKER`) with `"route": "m15"`, so `alien_m6.py` scales no
+    eye again and builds the slim lids (`alien_lids_geom.LIDS`, M9b's t30r70) the socket was cut for; with k 1 no
+    collar is built (pass `--collar off --flare off` anyway). The texture's socket field and the detail sculpt's lid
+    folds read the placed ball, so in the S chain (`mouths -> fit -> ao -> ...`) they follow the new socket.
+  - **The balls' aim:** `alien.gd aim_in_deg` 11.5 undid S2a's sockets' 8 degrees outward plus 3.5 of convergence;
+    M15's units already look straight, so 11.5 made them cross-eyed. `alien_m6.py` writes the units' own outward look
+    (`splay_deg`, from the `Eye_<side>` axes: 7.9 on older kits, 0 on M15's) into alien_lip's `prime_lids`; with it
+    `alien.gd` turns the balls in by `AIM_CONVERGE_DEG` 3.5 plus `splay_deg`; a kit without it keeps 11.5.
+  - **Two routes:** `--character` is the S chain's stage (the final kit: AO, UV, sculpt, bake and textures all see the
+    new socket); `--kit` runs on a finished kit (M10's `m5/export`) for the depth grid, where the skin's maps stay
+    M10's (the UVs ride with the vertices), so only the shape is new.
+  - **Proofs:** `godot/alien/m15_shots.gd` "depth" (the reference row of e2 and el2, then per kit bored, manic and
+    bored with the skin plain grey, front / 3/4 / profile at 0.4 m and 3/4 at 1.2 m) and m10_shots.gd's "head" gate.
+    Tests: `tools/tests/test_alien_fit_geom.py` (its numpy checks run in background Blender's Python).
 
 ## Findings for later tasks
 
