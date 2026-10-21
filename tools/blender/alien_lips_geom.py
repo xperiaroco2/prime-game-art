@@ -88,13 +88,18 @@ _RING = {"bow": 0.12, "tuck": 0.35, "side_keep": 0.85, "depth_corner": 0.5, "n_f
 # thinner upper lip over a bigger lower cushion (upper 0.85, lower 1.20; M12b 0.95 / 1.10) and a soft crease (lean
 # 0.10; at 0.25 both lips swelled toward the line and read pressed together). Corners as M12b (corner 0.18: at 0.32
 # and 0.45 the ends went blunt, like sausages). The pick of M16's grids (docs/godot.md, M16).
-_POUT_RING = {"upper": 0.95, "lower": 1.10, "lean": 0.25}
+# M16b (UPDATE 30: M16's front read as a smooth oval with round corners): mp1's clear double-peaked cupid's bow (bow
+# 0.30 over a narrower bow_w 0.12, side peaks 0.40 at 0.22; at 0.36 / 0.50 and 0.45 the upper lip read as two lumps at
+# 3/4) and corners tucked to points (corner 0.12; the ends' last 0.18 joined 0.95 and sunk 1.1 of their depth into the
+# skin; 1.3 over 0.20 narrowed the mouth). The pick of M16b's grids (docs/godot.md, M16b). The open rings keep M12b's
+# bow shape (bow_w, bow_peak, bow_at in _POUT_RING; ring_param reads a ring's own).
+_POUT_RING = {"upper": 0.95, "lower": 1.10, "lean": 0.25, "bow_w": 0.16, "bow_peak": 0.10, "bow_at": 0.24}
 LIP_SHAPE_POUT = {
-    "w": 1.0, "corner": 0.18, "pw": 2.0, "full": 1.0, "upper": 0.85, "lower": 1.20,
-    "bow": 0.14, "bow_w": 0.16, "bow_peak": 0.10, "bow_at": 0.24,
+    "w": 1.0, "corner": 0.12, "pw": 2.0, "full": 1.0, "upper": 0.85, "lower": 1.20,
+    "bow": 0.30, "bow_w": 0.12, "bow_peak": 0.40, "bow_at": 0.22,
     "lean": 0.10, "square": 0.85, "depth_corner": 0.35,
     "width": 1.0, "size": 0.95, "plump": 1.15,
-    "bow_flat": 1.0,
+    "bow_flat": 1.0, "corner_tuck": 1.1, "corner_share": 0.18, "corner_join": 0.95,
     "mirror": 1.0, "seam_fit": 3,
     "ring_param": {  # M16: the open rings keep M12b's balance and lean (the rest's change is the closed lips' only)
         "A": dict(_RING, n=2.1, corner=0.68, wide=1.04, **_POUT_RING),
@@ -414,7 +419,7 @@ def ring_param(meas: dict, rp: dict, p: dict, n: int):
         oh = meas["hu"] * rp.get("open", 1.0)
     drop = rp.get("drop", 1.0)
     tu, tl = tm * full * rp.get("upper", p["upper"]), tm * full * rp.get("lower", p["lower"])  # M13b: a ring's own
-    bp = dict(p, bow=rp.get("bow", p["bow"]))
+    bp = dict(p, **{k: rp.get(k, p[k]) for k in ("bow", "bow_w", "bow_peak", "bow_at")})  # M16b: a ring's own bow
     inner = []
     for k in range(n):
         th = 2 * math.pi * k / n
