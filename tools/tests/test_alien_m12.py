@@ -153,7 +153,7 @@ class MouthsTest(unittest.TestCase):
         src = (BL / "alien_mouths.py").read_text(encoding="utf-8")
         self.assertIn('PALETTE = {"pout": {"tongue_bg": -0.008}}', src)
         self.assertIn('PALETTE_SHAPE = {"pout": {"A": {"lip_min_r": 0.50}, "E": {"lip_min_r": 0.50}}}', src)
-        self.assertIn('CUP_IN = {"pout": 0.6, "fangs": 0.6}', src)  # frog and overbite: 0, their cups unchanged
+        self.assertIn('CUP_IN = {"pout": 0.6, "fangs": 0.6, "tongue": 0.6}', src)  # frog and overbite: 0, their cups unchanged
         self.assertNotIn("CORNER_CLOSE", src)  # PR #246's review minor 3: no dead pout settings
         m = re.search(r'SHAPE_SCALE_DESIGN = \{"pout": \{([^}]*)\}', src)
         self.assertIsNotNone(m)
@@ -176,8 +176,8 @@ class GodotLookTest(unittest.TestCase):
         for shader in ("alien_lip.gdshader", "alien_mouth_part.gdshader"):  # the lips, fangs, cup and tongue move
             text = (GA / shader).read_text(encoding="utf-8")
             self.assertIn('#include "res://alien/alien_mouth_motion.gdshaderinc"', text)
-            self.assertIn("VERTEX = mouth_motion(VERTEX, COLOR.a);", text)  # M13b: the jaw weight in the alpha
-        self.assertIn('const MOUTH_DESIGNS: Array[String] = ["frog", "overbite", "pout", "fangs"]', gd)
+            self.assertIn("VERTEX = mouth_motion(tongue_motion(VERTEX, UV2.x), COLOR.a);", text)  # M13b: the jaw weight in the alpha; M14 the tongue flop
+        self.assertIn('const MOUTH_DESIGNS: Array[String] = ["frog", "overbite", "pout", "fangs", "tongue"]', gd)
         self.assertIn('const MOVING_PARTS: Array[String] = ["alien_mouth_inner", "alien_tongue"]', gd)
 
     def test_listen_ends_a_line(self):  # PR #246's review minor 6
