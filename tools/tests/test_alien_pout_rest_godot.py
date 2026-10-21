@@ -16,12 +16,12 @@ from runner import common, pins  # noqa: E402
 from runner.commands import _godot  # noqa: E402
 
 HAVE_GODOT = common.tool_path(pins.GODOT_ENV, None) is not None
-GLB = common.raw_dir() / "review" / "char" / "alien-parts-kit" / "M20c" / "export" / "alien_character.glb"
+GLB = common.raw_dir() / "review" / "char" / "alien-parts-kit" / "M20d" / "export" / "alien_character.glb"
 NAME = "alien_pout_rest_check"
 TOL_MM = 0.1
 
 
-@unittest.skipUnless(HAVE_GODOT and GLB.is_file(), "needs Godot and the M20c raw kit")
+@unittest.skipUnless(HAVE_GODOT and GLB.is_file(), "needs Godot and the M20d raw kit")
 class PoutRestGodotTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):

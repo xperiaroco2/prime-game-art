@@ -4,7 +4,9 @@ the current code (alien_mouths.build_piece with alien_lips_geom.LIP_SHAPE_POUT, 
 bake, nothing saved) and, for a kit that already has them (--kit-pieces), its own mouth_pout_<shape> nodes, and
 prints one line "POUT_SYM {json}": per piece the largest distance (mm) from a vertex's mirror (x -> -x, world, rest
 pose) to the nearest vertex, its vertex count and its x extent; M16b: per open piece (A, E, O; "open") the same and
-its x extent's centre (centre_mm). tools/tests/test_alien_pout_rest_blender.py reads it.
+its x extent's centre (centre_mm). M20d (brief UPDATE 49): with --kit-pieces also per open kit piece the lips' depth
+front to back at the centre ("rolls": the y extent of its alien_lip_pout vertices within 1.5 mm of x = 0, above and
+below its middle height; M20c's ring `depth` 1.3). tools/tests/test_alien_pout_rest_blender.py reads it.
 
     tools/runner/blender.py run_script("alien_pout_check.py", ["--kit", <M10c/export>])
 """
@@ -26,6 +28,8 @@ import alien_m12 as M12  # noqa: E402
 import alien_mouths as AM  # noqa: E402
 
 CLOSED = ("rest", "M", "small")
+OPEN = ("A", "E", "O")
+LIP_MAT = "alien_lip_pout"
 
 
 def mirror_dev(ob) -> dict:
@@ -53,6 +57,21 @@ def min_tri(co, me) -> float:
     return round(best * 1e6, 5)
 
 
+def roll_depth(ob) -> dict:
+    """M20d: the lips' depth front to back at the centre (mm, world): the y extent of the piece's LIP_MAT vertices
+    within 1.5 mm of x = 0, upper (above the piece's middle height) and lower."""
+    mw = ob.matrix_world
+    mi = [i for i, m in enumerate(ob.data.materials) if m is not None and m.name.startswith(LIP_MAT)]
+    vs = {v for p in ob.data.polygons if p.material_index in mi for v in p.vertices}
+    co = [mw @ ob.data.vertices[i].co for i in vs]
+    zc = (max(q.z for q in co) + min(q.z for q in co)) / 2
+    out = {}
+    for side, keep in (("upper", lambda q: q.z > zc), ("lower", lambda q: q.z <= zc)):
+        ys = [q.y for q in co if abs(q.x) < 0.0015 and keep(q)]
+        out[side] = round((max(ys) - min(ys)) * 1000, 2) if ys else 0.0
+    return out
+
+
 def main():
     argv = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
     p = argparse.ArgumentParser()
@@ -68,6 +87,10 @@ def main():
             ob = bpy.data.objects.get(f"mouth_pout_{s}")
             if ob is not None:
                 out["kit"][s] = mirror_dev(ob)
+        for s in OPEN:
+            ob = bpy.data.objects.get(f"mouth_pout_{s}")
+            if ob is not None:
+                out.setdefault("rolls", {})[s] = roll_depth(ob)
     cj = json.loads((kit / "character.json").read_text(encoding="utf-8"))
     body = M6.rest_pose()
     bvh = BVHTree.FromObject(body, bpy.context.evaluated_depsgraph_get())
