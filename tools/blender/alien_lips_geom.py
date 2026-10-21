@@ -299,6 +299,12 @@ def depth_scale(s: float, p: dict) -> float:
     return 1.0 + w * (p["depth_corner"] + (1.0 - p["depth_corner"]) * t - 1.0)
 
 
+def depth_factor(p: dict, lip: str) -> float:
+    """M16d: a closed lip's tube depth (its forward radius) times p["depth"], the lower lip's (`l`) also times
+    p["depth_l"]; 1 without them (every design but the pout)."""
+    return p.get("depth", 1.0) * (p.get("depth_l", 1.0) if lip == "l" else 1.0)
+
+
 def ring_width(th: float, hw: float, hc: float, low: float, shape: str, p: dict) -> float:
     """An open ring's lip half width at angle th (cos th = +-1 at the corners, sin th > 0 the lower lip; low the
     lower lip's share at th): hw measured, hc the ring's measured centre width."""

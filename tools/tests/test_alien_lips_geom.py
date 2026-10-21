@@ -273,5 +273,18 @@ class PartedTest(unittest.TestCase):  # M16c: small's designed parting (mp1's da
         self.assertEqual(LP.LIP_SHAPE_POUT["parting"], {"small": (6.0, 0.55)})
 
 
+class DepthFactorTest(unittest.TestCase):  # M16d: a lip shape's own tube depth (the pout's beak in profile)
+    def test_one_without_the_keys(self):
+        for lip in ("u", "l"):
+            self.assertEqual(LP.depth_factor({}, lip), 1.0)
+            self.assertEqual(LP.depth_factor(LP.LIP_SHAPE_FANGS, lip), 1.0)
+            self.assertEqual(LP.depth_factor(LP.LIP_SHAPE_TONGUE, lip), 1.0)
+
+    def test_the_lower_lip_also_takes_depth_l(self):
+        p = {"depth": 0.6, "depth_l": 0.5}
+        self.assertAlmostEqual(LP.depth_factor(p, "u"), 0.6)
+        self.assertAlmostEqual(LP.depth_factor(p, "l"), 0.3)
+
+
 if __name__ == "__main__":
     unittest.main()

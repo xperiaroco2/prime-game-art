@@ -680,7 +680,10 @@ def build_piece(bvh, m, design, shape, world, mats, coll, origin, lips=None, nam
             for r, s, (x, _zt, _zb, t, bt), zt, zb, zt0, zb0 in zip(st, ss, edges, tops, bots, t0, b0):
                 mb = lips_p.get("min_b", MIN_B)  # M16c: a lip shape's own thinnest end (the pout's finer points)
                 hb = max(mb, (zt - zb) / 2)
-                a = DEPTH_A * max(mb, (zt0 - zb0) / 2) + DEPTH_C * LP.depth_scale(s, lips_p)
+                # M16d: a lip shape's own depth (`depth`, the lower lip also `depth_l`): the pout stood off the face
+                # like a beak in profile
+                dk = LP.depth_factor(lips_p, lip)
+                a = dk * (DEPTH_A * max(mb, (zt0 - zb0) / 2) + DEPTH_C * LP.depth_scale(s, lips_p))
                 p, n = surf(bvh, x, (zt + zb) / 2)
                 env = math.sin(math.pi * (r["x"] - xl) / max(1.0, xr - xl)) ** 0.5
                 c3 = p + n * (a * (1 - SINK) + (push + (back if lip == "l" else 0.0)) * env)
