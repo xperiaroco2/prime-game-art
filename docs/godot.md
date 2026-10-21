@@ -2300,10 +2300,14 @@ a time, by visibility.
   `D:/prime-art-raw/review/char/alien-parts-kit/M21/`, kit `M21/export/` = M17c's with the closed lashes). Each flaw was
   isolated first in the off-screen window (`godot/alien/m21_shots.gd` "diag": per variant hidden parts, face-material
   or skin uniforms, a per-mesh LOD bias or the viewport's LOD threshold, at 3.5 m and 0.4 m; `M21/diag/d1` to `d11`):
-  - **The blotchy upper lids at 3.5 m: Godot's automatic mesh LODs.** The decimated lid shells lost their baked AO
-    (COLOR_0, which `LIP_LOOK` turns into the deeper coral) and normals. With the LODs off (the viewport's threshold 0,
-    or a high LOD bias on the eye parts) the lids are even in every state; with the AO off they are even too, but flat
-    up close. `alien.gd` gives every `eye_*` mesh `lod_bias` `EYE_LOD_BIAS` (100): full detail at every distance.
+  - **The blotchy upper lids at 3.5 m: Godot's automatic mesh LODs.** A LOD keeps the mesh's vertex data and drops
+    triangles (a coarser index list over the same vertices). On the thin lid shells the few kept triangles spread the
+    baked AO (COLOR_0, which `LIP_LOOK` turns into the deeper coral) and the normals over large spans, so the shading
+    came out in patches. With the LODs off (the viewport's threshold 0, or a high LOD bias on the eye parts) the lids
+    are even in every state; with the AO off they are even too, but flat up close. `alien.gd` gives every `eye_*` mesh
+    `lod_bias` `EYE_LOD_BIAS` (100): full detail at every distance. The cost (M21b, counted from the kit's GLB): the
+    shown design's eye parts are 20,008 triangles for both eyes (lids 11,880, liners 2,344, wet lines 2,304, lash
+    tubes 1,848, balls 1,632), all kept at 3.5 m; the tubes fade out by 3 m, so 18,160 are drawn there.
   - **The pale line under the eyes at 3.5 m: the lids' screen-space SSS.** At 3.5 m the lower lid is 2 to 4 px tall,
     and Godot's SSS blur mixed its light with the white's and the pale skin's into a beige band (rows of
     `c7a392`-like pixels where the coral should be). With the lid's `sss` 0 the band is coral; the wet line, the

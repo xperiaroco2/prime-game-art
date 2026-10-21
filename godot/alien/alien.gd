@@ -124,8 +124,10 @@ const LASH_FADE_MARGIN_M := 0.6
 ## and broke into dashes; it widens to about two.
 const LINER_MIN_PX := 2.0
 ## M21 (art #196, brief UPDATE 45): the eye parts (balls, lids, wet lines, lashes, liners: every eye_* mesh) never take
-## Godot's automatic mesh LODs. The decimated lid shells lost their baked AO (COLOR_0) and normals and drew the upper
-## lids blotchy at 3.5 m (with the LODs off the same frame is even). They are small meshes, so the cost is small.
+## Godot's automatic mesh LODs. A LOD keeps the vertex data and drops triangles; on the thin lid shells the few kept
+## triangles spread the baked AO (COLOR_0) and normals over large spans and drew the upper lids blotchy at 3.5 m (with
+## the LODs off the same frame is even). The cost (M21b): 20,008 triangles for the shown design's two eyes, all kept at
+## 3.5 m (18,160 drawn there: the lash tubes fade out by LASH_FADE_M).
 const EYE_LOD_BIAS := 100.0
 ## M21: the lash sets' closed shape (a glTF morph target of tools/blender/alien_lashes.py), weighed by
 ## lash_closed_weight as the upper lid closes: manic's open curl hooked back over the closed lid (the "zipper").
