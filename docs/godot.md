@@ -1922,6 +1922,35 @@ a time, by visibility.
     outer corners (`lgame.png`); the mean frame-to-frame change round the eyes in Idle with a blink rises from 0.0094
     to 0.0121 with them. From straight above, the bored dome's temple-side nub of M10c is still there
     (`collar/socket.png`).
+- **M11b, PR #249's review fixes and the lashes' look** (brief UPDATE 23; output under `M11/godot/m11b/`, JPEGs
+  `M11/showroom/m11b-*.jpg`; drivers `tools/out/m11/m11b.sh`, `g.sh` with `grid6..8.json`).
+  - **The game distance (the major):** the liner is its own node, `eye_<design>_liner_<side>` (a sibling of the tubes
+    under the upper lid, the same material; `character.json` `nodes.lash_liners`). `alien.gd` gives each tube mesh a
+    visibility range (`LASH_FADE_M` 3.0, `LASH_FADE_MARGIN_M` 0.6, fade SELF, Forward+; the other renderers cut them)
+    and keeps the liner at every distance, so past about 3 m the lashes read as one dark line along the lid. At 3.5 m
+    the modelled liner covered about one pixel and broke into dashes, so it takes its own shader,
+    `alien_liner.gdshader` (`alien_lash_liner`, `LASH_LOOK`): where its band (`band_m` 4 mm) would cover fewer than
+    `LINER_MIN_PX` 2 pixels, each vertex moves out along its normal by 0.55 of the missing width (at most 4 mm), so it
+    stays one unbroken line; below about 2.4 m nothing moves. The liner casts no shadow: a light's shadow camera
+    stands far away, and the growth there ballooned the band into a shadow over the whole face (the first try).
+    `m11_shots.gd` `lfade`: both designs from 1.2 to 4.5 m; `lgame` also measures Idle without the blink at 3.5 and
+    3.0 m (the line's own crawl apart from the lid's motion).
+  - **The look (grids g6 to g8 beside el2):** thickness x curl (g6), lean x curl (g7), manic's lift x lean (g8). Pick:
+    root width 0.12 to 0.19 r (`flat` 0.6), curl 160 degrees evenly (`curl_pow` 1) from a lift of 10, every lash
+    leaning toward the temple (`fan_bias_deg` 45, 0.3 to 1 of it inner to outer), the liner 0.06 r over 130 degrees
+    of the roll and 1.8 times as thick at the outer end (`liner_out`). The thin wires and the comb in profile are gone:
+    the lashes curl back over the lid. A design's own keys go in `design` (`for_design`): manic leaves 30 degrees below
+    the radial, leans 25 and ends at 66 degrees, so its lashes stand out of the dome's outline as in el2's wide panel.
+  - **The clip check** also counts edges through the skin, the ball and the lower lid (`edge_crossings`,
+    `ball_edges`) and refuses a set nearer the skin than `CLEAR_MM` 0.5; it names the nearest vertex
+    (`skin_least_u`, `skin_least_vi`). Manic's last lash root touched the skin with the lid open at 74 degrees; at 66
+    every set keeps 10 mm (the search reach) from the skin in every lid state.
+  - `alien_lash` is one-sided (`use_backface_culling`: glTF `doubleSided` false).
+  - **The collar (minors 1, 2, 5):** a bin whose UV probe fails takes the last good bin's gradient, wrapping round the
+    ring (`alien_lids_geom.last_good_cyclic`; the right collars' first bins took zeros); a far bin's start runs
+    linearly between the nearest good bins' offsets from the smoothed edge (`cyclic_fill`), so a far run meets its
+    neighbours with no step (`start_step_mm_max` in the report); a test reads the kit's collars from the GLB
+    (`TEXCOORD_6` all 0, the Body's attribute set).
 
 ## Findings for later tasks
 
