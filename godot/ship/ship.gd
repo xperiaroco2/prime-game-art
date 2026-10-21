@@ -236,6 +236,7 @@ func _environment() -> void:
 	env.ssao_radius = 0.6
 	env.ssao_intensity = 1.5
 	env.ssil_enabled = true
+	env.ssil_intensity = _lk("ssil_intensity", 1.0)  # SSIL threw the hall's lamp ring onto the centre disc
 	env.fog_enabled = true
 	env.fog_light_color = Color(0.05, 0.07, 0.12)
 	env.fog_density = 0.0045
@@ -319,7 +320,7 @@ func _dress(ship: Node3D) -> int:
 				var key: String = "%d_%d_%d_%s" % [floori(c.x / LIGHT_CELL_M), floori(c.y / LIGHT_CELL_M),
 					floori(c.z / LIGHT_CELL_M), bm.emission.to_html(false)]
 				if not cells.has(key):
-					cells[key] = [Vector3.ZERO, 0.0, bm.emission, 0.0]
+					cells[key] = [Vector3.ZERO, 0.0, bm.emission, 0.0, float(mats.get(bm.resource_name, {}).get("rr", 1.0))]
 				var cell: Array = cells[key]
 				cell[0] = (cell[0] as Vector3) + c * area
 				cell[1] = float(cell[1]) + area
@@ -332,7 +333,7 @@ func _dress(ship: Node3D) -> int:
 		omni.position = (cell[0] as Vector3) / maxf(float(cell[1]), 1e-6) + Vector3(0, 0.12, 0)
 		omni.light_color = (cell[2] as Color).lightened(_lk("strip_whiten", 0.15))
 		omni.light_energy = clampf(sqrt(float(cell[1])) * 0.9 * float(cell[3]) / 3.0, 0.08, 1.6 * maxf(float(cell[3]) / 6.0, 1.0)) * _lk("strip_light_scale", 1.0)
-		omni.omni_range = clampf(2.2 + sqrt(float(cell[1])) * 2.0, 2.2, 5.0)
+		omni.omni_range = clampf(2.2 + sqrt(float(cell[1])) * 2.0, 2.2, 5.0) * float(cell[4])
 		omni.omni_attenuation = 1.6
 		root.add_child(omni)
 	return mini(list.size(), MAX_LIGHTS)
@@ -340,7 +341,7 @@ func _dress(ship: Node3D) -> int:
 
 ## One glTF material's night look from ship.toml [light.mats] (the room-by-room light grid, inside-1): "v" base
 ## colour x, "r" roughness +, "m" metallic, "c" [r, g, b] colour (and emission colour), "e" emission x (else
-## emission_scale), "a" alpha, "l" its strip lights x (read by _dress). Without an entry the int_silver_* metals keep
+## emission_scale), "a" alpha, "l" its strip lights x, "rr" their range x (both read by _dress). Without an entry the int_silver_* metals keep
 ## int_value / int_rough_add and the emissive ones emission_scale.
 func _look(bm: BaseMaterial3D, look: Dictionary) -> void:
 	if look.is_empty() and bm.resource_name.begins_with("int_silver"):

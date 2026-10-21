@@ -207,17 +207,18 @@ hall_lamp = 0.7
 corr_lamp = 2.0
 tip_lamp = 2.4
 out_lamp = 2.5
+ssil_intensity = 0.4                           # screen-space bounce (1: the lamp ring's band lit a spot on the hall's disc)
 sky_horizon = 5.0                              # the sky's horizon colour x this (the windows' and the ramp's view)
 
 # Per glTF material (ship.gd _look): v base colour x, r roughness +, m metallic, c colour (and emission colour),
-# e emission x (keeps the hue under AgX), a alpha, l its strip lights x (0: glows, lights nothing). Metallic 0.45
+# e emission x (keeps the hue under AgX), a alpha, l its strip lights x (0: glows, lights nothing), rr their range x. Metallic 0.45
 # lets the lamps light the silver (at 0.7 it only mirrored the dark rooms); the lamp ring and lamps light nothing,
 # so the hall's centre disc stays dark metal.
 [light.mats]
 int_cyan = {c = [0.05, 0.8, 1.0], e = 0.05, l = 0.3}
-int_amber = {c = [1.0, 0.42, 0.06], e = 0.08, l = 5.0}
+int_amber = {c = [1.0, 0.42, 0.06], e = 0.08, l = 5.0, rr = 0.5}
 int_lamp = {c = [1.0, 0.6, 0.26], e = 0.08, l = 0.0}
-int_plate = {v = 0.3, r = 0.45}
+int_plate = {v = 0.2, r = 0.45}
 int_grate = {v = 1.2, r = 0.1, m = 0.6}
 int_glass = {a = 0.05, r = -0.03}
 int_silver_a = {v = 0.55, r = 0.25, m = 0.45}
