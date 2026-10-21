@@ -9,7 +9,7 @@ tip, never a point. FANG (a variant merges over it, merged()):
 - x: a closed mouth's fang at this share of the lips' half width, on the lower lip's top (the sheet's rest: about
   0.78, "at the corners' inner thirds"); x_open: an open ring's (A, E) at this share of the opening's half width, on
   the lower lip's inner edge; O's fangs beside the pursed ring, o_gap (m) past its outer edge, o_drop of its half
-  height below its centre (alien_mouths.fang_roots);
+  height below its centre (fang_roots, below; M14 moved it here from alien_mouths);
 - length: base to tip, m, the same in every shape (the sheet: "the same size in every panel");
 - radius: the base's half width, m; tip: the tip's radius as a share of it (a blunt, round end); pw: the taper's
   exponent (1: a straight cone; above 1 fuller toward the tip); flat: the
@@ -189,3 +189,46 @@ def axis_depths(zs: list[float], fronts: list[float | None], skin: list[float], 
     push = max([v - w for v, w, z in zip(y, want, zs) if z > z_root] or [0.0])
     y = [v - max(0.0, push) for v in y]
     return y
+
+
+def fang_roots(anchor, p):
+    """M13: the two fangs' (x, z) where they leave the lips (their root's top), from the built piece's lips (anchor):
+    a closed mouth's at p["x"] of the lips' half width on the lower lip's top (the crease); an open ring's (A, E) at
+    p["x_open"] of the opening's half width on the lower lip's inner edge (they stand in the opening's sides); O's
+    beside the pursed ring (p["o_gap"] past its outer edge), p["o_drop"] of its half height below its centre. M13b:
+    with p["x_m"] every shape but O at that x about the face's centre line (closed: on the crease there, both at their
+    mean height; A, E: p["ring_drop"][shape] of the ring's half height below its centre, on the lower lip in the
+    opening's corner), O's attached to the ring (p["o_in"] of the base radius inside its outer edge)."""
+    def z_at(pts, x):
+        if x <= pts[0][0]:
+            return pts[0][1]
+        for (x0, z0), (x1, z1) in zip(pts, pts[1:]):
+            if x0 <= x <= x1:
+                return z0 + (z1 - z0) * (x - x0) / max(1e-9, x1 - x0)
+        return pts[-1][1]
+    cx, cz = anchor["centre"]
+    out = []
+    for side in (-1.0, 1.0):
+        if anchor["form"] == "O":
+            if p.get("x_m"):  # M13b: attached to the pursed ring's sides, o_in of the base radius inside its edge
+                x = cx + side * (anchor["outer_hw"] - p["o_in"] * p["radius"])
+            else:
+                x = cx + side * (anchor["outer_hw"] + p["o_gap"])
+            out.append((x, cz - p["o_drop"] * anchor["outer_hh"]))
+            continue
+        if p.get("x_m"):  # M13b: one place on the lower jaw in every shape, about the face's centre line
+            x = side * p["x_m"]
+        elif anchor["form"] == "tubes":
+            x = cx + side * p["x"] * anchor["outer_hw"]
+        else:
+            x = cx + side * p["x_open"] * anchor["inner_hw"]
+        if anchor["form"] == "ring" and p.get("x_m"):  # M13b: on the lower lip in the opening's corner, the
+            # shape's ring_drop of the ring's half height below its centre (on the opening's edge at x they stood
+            # beside the opening's top: a round opening is at its widest there)
+            out.append((x, cz - p["ring_drop"].get(anchor["shape"], 0.3) * anchor["outer_hh"] + p["lift"]))
+            continue
+        out.append((x, z_at(anchor["lower"], x) + p["lift"]))
+    if p.get("x_m") and anchor["form"] == "tubes":  # M13b: both at one height (the sheet's crease is 1.6 mm aslant)
+        zm = sum(z for _x, z in out) / len(out)
+        out = [(x, zm) for x, _z in out]
+    return out

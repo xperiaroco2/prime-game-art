@@ -99,6 +99,11 @@ uniform vec4 contact_pick = vec4(1.0, 0.0, 0.0, 0.0);
 // M12: the third and fourth mouths' channels: glTF TEXCOORD_6 = (pout, fangs), imported as CUSTOM2 (alien.gd
 // picks it with the design; a kit without TEXCOORD_6 reads 0 there).
 uniform vec2 contact_pick2 = vec2(0.0);
+// M14: the fifth mouth's (tongue) channel: glTF TEXCOORD_7 = (tongue, 0), imported with TEXCOORD_6 as CUSTOM2's zw.
+// PR #251's review: a mesh with TEXCOORD_6 but no TEXCOORD_7 is unchecked there: z is taken as 0, but w may read 1
+// (a default alpha), not 0. Harmless today (w is never picked); a sixth mouth in TEXCOORD_7's v must first check
+// that every surface it shades carries TEXCOORD_7 (or move its channel), else it would shade at full contact.
+uniform vec2 contact_pick3 = vec2(0.0);
 uniform vec3 contact_tint = vec3(0.80, 0.66, 0.62);  // linear multiplier at full contact: darker, warmer
 uniform float contact_ao : hint_range(0.0, 1.0) = 0.0;
 
@@ -121,7 +126,9 @@ void vertex() {
 	}
 	vec4 cf = clamp(CUSTOM1, 0.0, 1.0) * contact_pick;
 	vec2 cf2 = clamp(CUSTOM2.xy, 0.0, 1.0) * contact_pick2;
-	m_contact = contact > 0.0 ? max(max(max(cf.x, cf.y), max(cf.z, cf.w)), max(cf2.x, cf2.y)) * contact : 0.0;
+	vec2 cf3 = clamp(CUSTOM2.zw, 0.0, 1.0) * contact_pick3;
+	m_contact = contact > 0.0
+		? max(max(max(cf.x, cf.y), max(cf.z, cf.w)), max(max(cf2.x, cf2.y), max(cf3.x, cf3.y))) * contact : 0.0;
 }
 
 float luma(vec3 c) {

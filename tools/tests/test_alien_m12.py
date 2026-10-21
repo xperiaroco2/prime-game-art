@@ -136,6 +136,15 @@ class LayoutTest(unittest.TestCase):
         hue = (GA / "alien_hue.gdshader").read_text(encoding="utf-8")
         self.assertIn("uniform vec2 contact_pick2 = vec2(0.0);", hue)  # off by default: older kits unchanged
         self.assertIn("CUSTOM2.xy", hue)
+        # M14 (PR #251's review minor 7): the tongue's channel, TEXCOORD_7 = CUSTOM2.zw, picked by contact_pick3
+        self.assertEqual(LP.CONTACT_UV_MOUTH3, ("contact_mouth3", ("tongue", "")))
+        m3 = re.search(r'const CONTACT_CHANNEL3 := \{([^}]*)\}', gd)
+        self.assertIsNotNone(m3)
+        self.assertEqual({k: int(v) for k, v in re.findall(r'"(\w+)": (\d+)', m3.group(1))}, {"tongue": 0})
+        self.assertIn('set_shader_parameter("contact_pick3"', gd)
+        self.assertIn("uniform vec2 contact_pick3 = vec2(0.0);", hue)
+        self.assertIn("clamp(CUSTOM2.zw, 0.0, 1.0) * contact_pick3", hue)
+        self.assertEqual(LP.CONTACT_MARKER_MOUTH3, {"prime_contact_mouth3": "custom2_zw"})
 
     def test_the_kit_step_writes_the_seventh_layer(self):
         src = (BL / "alien_m12.py").read_text(encoding="utf-8")
@@ -153,7 +162,7 @@ class MouthsTest(unittest.TestCase):
         src = (BL / "alien_mouths.py").read_text(encoding="utf-8")
         self.assertIn('PALETTE = {"pout": {"tongue_bg": -0.008}}', src)
         self.assertIn('PALETTE_SHAPE = {"pout": {"A": {"lip_min_r": 0.50}, "E": {"lip_min_r": 0.50}}}', src)
-        self.assertIn('CUP_IN = {"pout": 0.6, "fangs": 0.6}', src)  # frog and overbite: 0, their cups unchanged
+        self.assertIn('CUP_IN = {"pout": 0.6, "fangs": 0.6, "tongue": 0.6}', src)  # frog and overbite: 0, their cups unchanged
         self.assertNotIn("CORNER_CLOSE", src)  # PR #246's review minor 3: no dead pout settings
         m = re.search(r'SHAPE_SCALE_DESIGN = \{"pout": \{([^}]*)\}', src)
         self.assertIsNotNone(m)
@@ -176,8 +185,8 @@ class GodotLookTest(unittest.TestCase):
         for shader in ("alien_lip.gdshader", "alien_mouth_part.gdshader"):  # the lips, fangs, cup and tongue move
             text = (GA / shader).read_text(encoding="utf-8")
             self.assertIn('#include "res://alien/alien_mouth_motion.gdshaderinc"', text)
-            self.assertIn("VERTEX = mouth_motion(VERTEX, COLOR.a);", text)  # M13b: the jaw weight in the alpha
-        self.assertIn('const MOUTH_DESIGNS: Array[String] = ["frog", "overbite", "pout", "fangs"]', gd)
+            self.assertIn("VERTEX = mouth_motion(tongue_motion(VERTEX, UV2.x), COLOR.a);", text)  # M13b: the jaw weight in the alpha; M14 the tongue flop
+        self.assertIn('const MOUTH_DESIGNS: Array[String] = ["frog", "overbite", "pout", "fangs", "tongue"]', gd)
         self.assertIn('const MOVING_PARTS: Array[String] = ["alien_mouth_inner", "alien_tongue"]', gd)
 
     def test_listen_ends_a_line(self):  # PR #246's review minor 6

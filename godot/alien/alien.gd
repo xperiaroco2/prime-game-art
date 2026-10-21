@@ -130,13 +130,21 @@ const FANG_LOOK := {"albedo": Color(0.88, 0.80, 0.62), "deep": Color(0.60, 0.46,
 	"ao_range": Vector2(0.40, 0.98), "ao_occl": 0.6, "drift": 0.02, "roughness_value": 0.45, "specular_value": 0.40,
 	"sheen": 0.25, "sheen_roughness": 0.3, "grain": 0.02, "sss": 0.35, "transmit": 0.40,
 	"transmit_color": Color(1.0, 0.80, 0.56), "transmit_depth": 0.006, "rim_value": 0.2}
-const MOUTH_DESIGNS: Array[String] = ["frog", "overbite", "pout", "fangs"]
+## M14: the tongue mouth's tongue (material alien_tongue_pink, the lips' shader so it moves with the lower jaw and
+## flops, `flop_mask`): the mt2 sheet's salmon pink (M14b: deeper, the first read as bubblegum), a deeper rose in the
+## groove and at the root (the baked AO), a soft wet sheen, a little warm SSS. Its teeth are alien_tooth (FANG_LOOK's
+## ivory with TOOTH_LOOK: the sheet's cream), its lips alien_lip (LIP_LOOK).
+const TONGUE_LOOK := {"albedo": Color(0.80, 0.33, 0.36), "deep": Color(0.52, 0.12, 0.17), "ao_mix": 1.0,
+	"ao_range": Vector2(0.40, 0.95), "ao_occl": 0.5, "drift": 0.03, "roughness_value": 0.38, "specular_value": 0.45,
+	"sheen": 0.25, "sheen_roughness": 0.25, "grain": 0.02, "sss": 0.15, "rim_value": 0.10, "flop_mask": 1.0}
+const TOOTH_LOOK := {"albedo": Color(0.92, 0.86, 0.68), "deep": Color(0.62, 0.52, 0.36), "transmit": 0.2}
+const MOUTH_DESIGNS: Array[String] = ["frog", "overbite", "pout", "fangs", "tongue"]
 ## M13: the talking designs whose pieces move (alien_talk.gd's bounce, pucker, thrust): their lips, fangs, cup and
 ## tongue take the motion shaders on the jaw weight COLOR_0.a (tools/blender/alien_m12.py); frog and overbite snap.
-const MOVING_DESIGNS: Array[String] = ["pout", "fangs"]
+const MOVING_DESIGNS: Array[String] = ["pout", "fangs", "tongue"]
 const MOVING_PARTS: Array[String] = ["alien_mouth_inner", "alien_tongue"]
-## The face materials beyond FACE that the s5 look replaces (M12 the pout's lips, M13 the fangs).
-const EXTRA_FACE: Array[String] = ["alien_lip_pout", "alien_fang"]
+## The face materials beyond FACE that the s5 look replaces (M12 the pout's lips, M13 the fangs, M14 the tongue).
+const EXTRA_FACE: Array[String] = ["alien_lip_pout", "alien_fang", "alien_tongue_pink", "alien_tooth"]
 ## M6: the textured skin's contact shade near the lids and lips (alien_hue.gdshader `contact*`), only for a kit whose
 ## hue material carries a contact marker: M6's CONTACT_MARKER_M6 (one field for every design in TEXCOORD_4's u) or
 ## M6c's CONTACT_MARKER (tools/blender/alien_m6.py: one channel per design, TEXCOORD_4 = (bored, manic), TEXCOORD_5 =
@@ -148,6 +156,9 @@ const CONTACT_CHANNEL := {"bored": 0, "manic": 1, "frog": 2, "overbite": 3}
 ## M12: the third mouth's channel, a component of CUSTOM2 (glTF TEXCOORD_6 = (pout, fangs); alien_lips_geom
 ## CONTACT_UV_MOUTH2), picked by `contact_pick2`; M13: the fourth mouth's (fangs) is its v.
 const CONTACT_CHANNEL2 := {"pout": 0, "fangs": 1}
+## M14: the fifth mouth's (tongue) channel, a component of CUSTOM2's zw (glTF TEXCOORD_7 = (tongue, 0);
+## alien_lips_geom CONTACT_UV_MOUTH3), picked by `contact_pick3`.
+const CONTACT_CHANNEL3 := {"tongue": 0}
 const SKIN_CONTACT := {"contact": 1.0, "contact_tint": Vector3(0.80, 0.66, 0.62), "contact_ao": 0.3}
 ## M6: LIP_LOOK reads the part's baked AO (COLOR_0), so it applies only to a kit whose imported alien_lip (the lips' and
 ## the lid domes' one material) carries this marker in its glTF extras (tools/blender/alien_m6.py, after the bake).
@@ -280,6 +291,12 @@ func setup(root: Node3D, seed: int = 196) -> void:
 					_wet_nodes.append(m)
 		if uses:
 			_hue_meshes.append(m)
+		if (OS.is_debug_build() and _moving_piece(m.name) and m.name.begins_with("mouth_")
+				and not has_jaw_weight(m.mesh)):
+			# PR #250's review: an M13 kit (the weight in COLOR_0.g, alpha 1) moves the whole piece with the jaw
+			# (PR #251's review: debug builds only, and cached per mesh: it reads every surface's colours)
+			push_warning(("alien: %s has no jaw weight (COLOR_0's alpha is 1 everywhere): rebuild the kit with "
+				+ "tools/blender/alien_m12.py") % m.name)
 		if m.name.begins_with("eye_") and m.name.contains("_lashes_"):  # M11: the lash sets (not the lashvar_ grid)
 			_lash_nodes.append(m)
 			lash_fade(m)
@@ -400,6 +417,21 @@ func _make_face_materials() -> void:
 			for k: String in FANG_LOOK:
 				fm.set_shader_parameter(k, FANG_LOOK[k])
 			_face_materials["alien_fang"] = fm
+			var tm := ShaderMaterial.new()  # M14: the tongue (alien_tongue_pink)
+			tm.shader = LIP_SHADER
+			tm.resource_name = "alien_tongue_pink"
+			for k: String in LIP_LOOK:
+				tm.set_shader_parameter(k, LIP_LOOK[k])
+			for k: String in TONGUE_LOOK:
+				tm.set_shader_parameter(k, TONGUE_LOOK[k])
+			_face_materials["alien_tongue_pink"] = tm
+			var th := ShaderMaterial.new()  # M14: the tongue mouth's teeth (alien_tooth)
+			th.shader = LIP_SHADER
+			th.resource_name = "alien_tooth"
+			for look: Dictionary in [LIP_LOOK, FANG_LOOK, TOOTH_LOOK]:
+				for k: String in look:
+					th.set_shader_parameter(k, look[k])
+			_face_materials["alien_tooth"] = th
 			continue
 		var m := StandardMaterial3D.new()
 		m.resource_name = name
@@ -588,14 +620,18 @@ func _pick_contact() -> void:
 	if _tex_material == null or not _contact_designs:
 		return
 	var pick := Vector4.ZERO
-	var pick2 := Vector2.ZERO  # M12: CUSTOM2 (TEXCOORD_6: pout, free)
+	var pick2 := Vector2.ZERO  # M12: CUSTOM2.xy (TEXCOORD_6: pout, fangs)
+	var pick3 := Vector2.ZERO  # M14: CUSTOM2.zw (TEXCOORD_7: tongue, 0)
 	for d: String in [eyes, mouth_design]:
 		if CONTACT_CHANNEL.has(d):
 			pick[CONTACT_CHANNEL[d]] = 1.0
-		else:
+		elif CONTACT_CHANNEL2.has(d):
 			pick2[CONTACT_CHANNEL2[d]] = 1.0
+		elif CONTACT_CHANNEL3.has(d):
+			pick3[CONTACT_CHANNEL3[d]] = 1.0
 	_tex_material.set_shader_parameter("contact_pick", pick)
 	_tex_material.set_shader_parameter("contact_pick2", pick2)
+	_tex_material.set_shader_parameter("contact_pick3", pick3)
 
 
 ## The lids at t ms into a blink (0 = the lid state, BLINK_MS close, hold, open): returns false once it is over.
@@ -650,6 +686,33 @@ func show_mouth(piece: String) -> void:
 		teeth.visible = mouth_mode == "3d" and mouth_design == "overbite"
 
 
+## PR #250's review: whether a talking piece's mesh carries a jaw weight (COLOR_0's alpha below 1 somewhere; the
+## upper lip is 0). A mesh without vertex colours has none. PR #251's review: cached per mesh (by its instance id;
+## setup() calls it in debug builds only), so a second spawn copies no arrays.
+static var _jaw_weight_cache := {}
+
+
+static func has_jaw_weight(mesh: Mesh) -> bool:
+	if mesh == null:
+		return false
+	var id := mesh.get_instance_id()
+	if _jaw_weight_cache.has(id):
+		return _jaw_weight_cache[id]
+	var found := false
+	for s: int in mesh.get_surface_count():
+		var arrays: Array = mesh.surface_get_arrays(s)
+		var cols: Variant = arrays[Mesh.ARRAY_COLOR]
+		if cols is PackedColorArray:
+			for c: Color in cols:
+				if c.a < 0.999:
+					found = true
+					break
+		if found:
+			break
+	_jaw_weight_cache[id] = found
+	return found
+
+
 ## M12: whether the kit has a mouth design's pieces.
 func has_mouth_design(design: String) -> bool:
 	return node("mouth_%s_rest" % design) != null
@@ -669,21 +732,23 @@ static func _moving_piece(name: String) -> bool:
 ## M12: the secondary motion on the shown 3D piece (alien_mouth_motion.gdshaderinc's instance uniforms on the lips,
 ## fangs, cup and tongue; 0 = none). M13: the lower jaw's forward thrust; the motion lives in the s5 face look's
 ## shaders, so with the "first" look (the imported materials) the piece does not move.
-func set_mouth_motion(drop: float, pucker: float, thrust: float = 0.0) -> void:
+## M14: `flop`, the tongue mouth's tongue tip (m, the socket's frame: y up, z forward).
+func set_mouth_motion(drop: float, pucker: float, thrust: float = 0.0, flop: Vector3 = Vector3.ZERO) -> void:
 	var p := node("mouth_%s_%s" % [mouth_design, mouth_piece]) as GeometryInstance3D
 	if p != null and face_look == "s5":
 		p.set_instance_shader_parameter("lip_drop", drop)
 		p.set_instance_shader_parameter("pucker", pucker)
 		p.set_instance_shader_parameter("jaw_thrust", thrust)
+		p.set_instance_shader_parameter("tongue_flop", flop)
 
 
 ## M12: a phase line's piece and motion at t_ms through the shown design's talk style (alien_talk.gd); returns the
-## sample ({"piece", "drop", "pucker", "thrust", "since_ms"}).
+## sample ({"piece", "drop", "pucker", "thrust", "flop", "since_ms"}).
 func talk_at(t_ms: float, line: Array = AlienTalk.LINE) -> Dictionary:
 	var s: Dictionary = AlienTalk.sample(mouth_design, AlienTalk.segments(line), t_ms)
 	set_mouth_motion(0.0, 0.0)
 	show_mouth(s["piece"])
-	set_mouth_motion(s["drop"], s["pucker"], s["thrust"])
+	set_mouth_motion(s["drop"], s["pucker"], s["thrust"], s["flop"])
 	return s
 
 

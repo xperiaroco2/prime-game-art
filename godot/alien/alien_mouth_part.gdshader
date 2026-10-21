@@ -12,7 +12,7 @@ uniform float specular_value : hint_range(0.0, 1.0) = 0.08;
 #include "res://alien/alien_mouth_motion.gdshaderinc"
 
 void vertex() {
-	VERTEX = mouth_motion(VERTEX, COLOR.a);
+	VERTEX = mouth_motion(tongue_motion(VERTEX, UV2.x), COLOR.a);
 }
 
 void fragment() {
