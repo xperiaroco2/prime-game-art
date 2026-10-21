@@ -30,9 +30,10 @@ extends Node
 ##   talk style of its own: talk_at(t_ms, line) shows a phase line's piece at t through the design's style
 ##   (alien_talk.gd: lag, merged flickers, a lower-lip bounce and a pucker between words, as the lip shader's
 ##   instance uniforms lip_drop and pucker on the shown piece); play_line(line) drives it in time.
-## - M11, the lashes eyes (el2): on a kit with them (eye_<design>_lashes_<side>, children of the upper lids, so they turn
-##   with every blink and lid state; material alien_lash) set_lashes(true) shows them, false (the default) hides them,
-##   so the same eyes serve both looks; LASH_LOOK, a black glossy coat.
+## - M11, the lashes eyes (el2): on a kit with them (eye_<design>_lashes_<side> and, M11b, the liner
+##   eye_<design>_liner_<side>, children of the upper lids, so they turn with every blink and lid state; material
+##   alien_lash) set_lashes(true) shows them, false (the default) hides them, so the same eyes serve both looks;
+##   LASH_LOOK, a black glossy coat; the tubes fade out past LASH_FADE_M, the liner stays.
 ## - M13, the fangs mouth (mg2): a fourth design "fangs" (mouth_fangs_<shape>: the coral alien_lip lips, two lower fangs
 ##   in alien_fang, FANG_LOOK), its contact in CUSTOM2.y, a heavier jaw's talk (alien_talk.gd: a slower opening, a
 ##   forward jaw thrust on A and E, a small bounce). The talking designs' lips, fangs, cup and tongue move together on
@@ -110,6 +111,12 @@ const LIP_LOOK_POUT := {"albedo": Color(0.72, 0.18, 0.18), "deep": Color(0.42, 0
 ## (el2's lashes catch a soft highlight); closed tubes, so culled as usual; they cast their own small shadow.
 const LASH_LOOK := {"albedo": Color(0.035, 0.03, 0.04), "roughness": 0.32, "specular": 0.55, "clearcoat": 0.6,
 	"clearcoat_roughness": 0.15}
+## M11b: past about 3 m the lash tubes are under a pixel and draw as a dotted line that shimmers (PR #249's review);
+## they fade out (visibility range, fade SELF: Forward+; the other renderers cut them at LASH_FADE_M) between
+## LASH_FADE_M - LASH_FADE_MARGIN_M and LASH_FADE_M from the camera, and the liner (eye_<design>_liner_<side>, the
+## bold lash line) stays at every distance.
+const LASH_FADE_M := 3.0
+const LASH_FADE_MARGIN_M := 0.6
 ## M13: the fangs mouth's two lower fangs (material alien_fang, the lips' shader so they move with the lower jaw):
 ## ivory, a soft satin with a little clear coat, deeper and warmer at the root (the baked AO), a faint warm
 ## transmittance. The lips are the kit's coral alien_lip (LIP_LOOK). Chosen beside the mg2 sheet on M13's grids.
@@ -265,6 +272,9 @@ func setup(root: Node3D, seed: int = 196) -> void:
 		if uses:
 			_hue_meshes.append(m)
 		if m.name.begins_with("eye_") and m.name.contains("_lashes_"):  # M11: the lash sets (not the lashvar_ grid)
+			_lash_nodes.append(m)
+			lash_fade(m)
+		if m.name.begins_with("eye_") and m.name.contains("_liner_"):  # M11b: the lash line, at every distance
 			_lash_nodes.append(m)
 	_make_face_materials()
 	set_face_look(face_look)
@@ -514,7 +524,15 @@ func has_lashes() -> bool:
 	return not _lash_nodes.is_empty()
 
 
-## M11: the upper lashes on or off (both designs; each set shows with its design's eye group).
+## M11b: a lash tube mesh fades out past LASH_FADE_M (its liner stays); also for a grid's lashvar_ nodes.
+static func lash_fade(m: GeometryInstance3D) -> void:
+	m.visibility_range_end = LASH_FADE_M
+	m.visibility_range_end_margin = LASH_FADE_MARGIN_M
+	m.visibility_range_fade_mode = GeometryInstance3D.VISIBILITY_RANGE_FADE_SELF
+
+
+## M11: the upper lashes on or off (both designs; each set, its tubes and its liner, shows with its design's eye
+## group).
 func set_lashes(on: bool) -> void:
 	lashes = on
 	for n: Node3D in _lash_nodes:

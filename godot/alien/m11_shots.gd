@@ -16,6 +16,8 @@ extends "res://alien/m12_shots.gd"
 ## - "lgame": the game's distance: the hero at 3.5 m (FOV 70, a 1536 px frame: the head about 50 px tall) with and
 ##   without lashes, and 3x crops of the head (nearest); then 24 frames of Idle with a blink at 3.5 m and at 1.2 m as
 ##   PNGs in game/far and game/near (the shimmer check: PROOF lines give the mean frame-to-frame change round the eyes);
+## - "lfade" (M11b): the lashes' fade with distance, bored and manic with lashes at 1.2, 2.0, 2.4, 2.8, 3.2, 3.5 and
+##   4.5 m (FOV 70), the head's eye band cropped and scaled to one size (nearest): lfade.png;
 ## - "lvideo": a blink and talk line (the hero's mouth, its talk style, blinks at 0.5, 2.3 and 4.0 s) at 30 fps,
 ##   3/4 at 0.6 m and front at 0.45 m, as PNG frames in video/lash_34/ and video/lash_front/;
 ## - "head": m10_shots.gd's whole-head gate (each kit with its own "lashes" and "mouth");
@@ -68,6 +70,8 @@ func _run() -> void:
 		await _lhues(hero)
 	if _modes.has("lgame"):
 		await _lgame(hero)
+	if _modes.has("lfade"):
+		await _lfade(hero)
 	if _modes.has("lvideo"):
 		await _lvideo(hero)
 	if _modes.has("head"):
@@ -297,6 +301,24 @@ func _lgame(hero: String) -> void:
 			_rig[hero].set_lids("rest")
 	_rig[hero].set_lashes(_lashes_of[hero])
 	_pose("Idle", 0.0)
+
+
+func _lfade(hero: String) -> void:
+	var cells: Array = []
+	_only([hero], false)
+	for d: String in ["bored", "manic"]:
+		_combo(hero, d, _mouth_of[hero])
+		_rig[hero].set_lashes(true)
+		for dist: float in [1.2, 2.0, 2.4, 2.8, 3.2, 3.5, 4.5]:
+			_look(_head_target(hero), 20.0, 2.0, dist, 70.0)
+			var img: Image = await _shot("")
+			var r: Rect2i = _screen_rect(hero, 0.16)
+			var crop: Image = img.get_region(r.grow_individual(0, r.size.y / 2, 0, r.size.y / 2))
+			crop.resize(360, int(360.0 * crop.get_height() / maxf(1.0, crop.get_width())), Image.INTERPOLATE_NEAREST)
+			cells.append(crop)
+			print("PROOF fade %s %.1f m: the eyes' box %s px" % [d, dist, r.size])
+	_grid_cells(cells, 7, Vector2i(360, 220), "lfade.png")
+	_rig[hero].set_lashes(_lashes_of[hero])
 
 
 func _lvideo(hero: String) -> void:
