@@ -1828,6 +1828,45 @@ a time, by visibility.
     `lipvar_` variant at spec `vgrid` views, 0.4 m) and `compare` (`compare_closed.png`, `compare_open.png`: per shape
     the sheet's mouth, then the first kit's pout above the hero's, front / 3/4 / profile at 0.4 m and 3/4 at 1.2 m).
   - **The talk style** (`alien_talk.gd`) is unchanged; the MP4s are re-rendered on the new pieces.
+- **M13, the fangs mouth mg2 and the pout's talk fixes** (brief UPDATE 20 and 21; output under
+  `D:/prime-art-raw/review/char/alien-parts-kit/M13/`): a fourth mouth design, `fangs`, from the sheet
+  `D:/prime-art-raw/2026-10-20-alien-face-sheets-2/mg2/` (rest, M, small, A, E, O), and PR #246's review minors.
+  Built on M10c's pick (`M10c/export`); the Body, the skull, the eyes and the frog and overbite are untouched.
+  - **One mouth step (`alien_m12.py`):** one run adds every new mouth onto a kit (`--designs pout,fangs`, the
+    default), so the chain is eyes -> mouths: `run_script("alien_m12.py", ["--kit", <eyes kit>/export, "--out", <dir>,
+    "--orm-sss", <its skin_pick_eyes/textures/orm_sss.png>])`. It refuses a Body without exactly alien_m6's six UV
+    layers (an M12 or M13 kit is fine: it drops its own seventh layer first). `--lips`, `--lips-fangs` and `--fang`
+    merge over the designs' shapes; `--grid` takes `"design"`.
+  - **The lips (`alien_lips_geom.LIP_SHAPE_FANGS`):** the kit's coral `alien_lip`; thin rolls (upper and lower 0.80 of
+    the measured centre, plump 1.4), round soft ends (corner 0.30), almost no bow (0.05: a flat calm line), the sheet's
+    width (the rest piece about 105 mm wide, the frog's about 91); A, E and O designed rings as the pout's (UPDATE 19),
+    A 0.95 and E 0.90 of the panel. Measuring: the fangs cross the lips in every panel, so their columns (3 px wider)
+    are refilled from the clean columns beside them (`alien_mouths.FILL_TEETH`, `fill_teeth`).
+  - **The fangs (`alien_fangs_geom.py`, `alien_mouths.build_fangs`):** two blunt ivory cones per piece, 20 mm long
+    (30 % of it a root hidden behind the lower lip), 13 mm wide at the base, a round tip of half that, a slight curve
+    toward the centre line, the section a little flattened. They stand on the built lips (`fang_roots`): closed shapes
+    at 0.72 of the lips' half width on the lower lip's top (the crease), A and E at 0.80 of the opening's half width on
+    the lower lip's inner edge, O on the cheek 2 mm past the pursed ring, 0.40 of its half height below its centre. The
+    axis stands 0.70 of the fang's depth in front of the lips' front at each height (a ray cast on the piece's lip
+    faces; the opening bridged) and is smoothed, so the fang rises from behind the lower lip and stands before the upper
+    lip; O's is one straight line moved forward until it clears (a smoothed axis kinked where the ring ends). Grids:
+    `M13/godot/gf1/vgrid.png` (length 16 / 19 / 22 mm x place 0.62 / 0.72), `go1/vgrid.png` (O's place). Material
+    `alien_fang` (Blender: a copy of `alien_lip`, ivory; Godot `FANG_LOOK` on the lips' shader).
+  - **The jaw weight (`alien_m12.jaw_weights`, COLOR_0.g):** 1 on the lower lip, the tongue and the fangs, 0 on the upper
+    lip; round an open ring a smooth step at the opening's centre height; times a falloff to 0.3 at the corners.
+    COLOR_0.r stays the baked AO. `PART_AO_MARKER` goes on the new materials only when the AO was baked.
+  - **Godot (`alien.gd`):** `MOUTH_DESIGNS` + fangs, `CONTACT_CHANNEL2` {pout: 0, fangs: 1} (TEXCOORD_6's v, CUSTOM2.y),
+    `FANG_LOOK`, `MOVING_DESIGNS` (pout, fangs): their cup and tongue take `alien_mouth_part.gdshader`, so with the lips
+    and fangs (`alien_lip.gdshader`) everything of the shown piece moves on `alien_mouth_motion.gdshaderinc`
+    (`lip_drop`, `pucker`, `jaw_thrust` times COLOR_0.g). The motion is the s5 look's; `set_mouth_motion` skips
+    otherwise. `listen()` ends a playing line.
+  - **The talk (`alien_talk.gd`):** the bounce uses the signed change in openness (a closing presses the lower lip up,
+    an opening sags it) and a closed shape only ever presses; `LINE` (5.3 s) now triggers every rule (two merged
+    flickers, a 75 ms E shown half open). The fangs' style: a 40 ms lag, `rise` (A, E and O after a closed shape show
+    small for 60 ms: a heavier jaw), `thrust` (the lower jaw 2.2 mm forward on A and E over 120 ms), a bounce of half
+    the pout's, no pucker. `godot/alien/talk_check.gd` runs `styled()`/`sample()` headless and
+    `tools/tests/test_alien_talk_godot.py` checks each rule (heavy: it needs Godot).
+  - **`m12_shots.gd`:** spec `design` (the design every mode shows), `talk_also`, `hero_label`.
 
 ## Findings for later tasks
 
