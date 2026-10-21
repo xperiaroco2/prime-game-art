@@ -6,8 +6,9 @@
 // - `jaw_thrust` (m): the lower jaw forward, times the jaw weight (the fangs' A and E);
 // - `pucker` (0..1): the lips purse between words: narrower toward the centre line (`pucker_amount.x` of x at full)
 //   and forward at the centre (`pucker_amount.y` m).
-// The jaw weight is COLOR_0.g, written by tools/blender/alien_m12.py (1 on the lower lip, the tongue and the fangs, 0
-// on the upper lip, a smooth blend round an open ring, less toward the corners); COLOR_0.r stays the baked AO.
+// The jaw weight is COLOR_0's alpha (M13b; M13 had it in g, which tinted a viewer that shows vertex colour), written
+// by tools/blender/alien_m12.py (1 on the lower lip, the tongue and the fangs, 0
+// on the upper lip, a smooth blend round an open ring, less toward the corners); COLOR_0's rgb stays the baked AO.
 instance uniform float lip_drop = 0.0;
 instance uniform float pucker = 0.0;
 instance uniform float jaw_thrust = 0.0;

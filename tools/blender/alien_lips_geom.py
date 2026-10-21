@@ -96,21 +96,29 @@ LIP_SHAPE_POUT = {
 }
 
 # M13 (art #196): the fangs mouth mg2 (D:/prime-art-raw/2026-10-20-alien-face-sheets-2/mg2/), the fourth design
-# ("fangs"): thin, wide, soft coral lips in a flat calm line (the kit's alien_lip), wider than the frog's, with two
-# lower fangs (alien_fangs_geom). The closed lips thinner than the frog's (upper 0.70, lower 0.85 of the measured
-# centre, plump 1.0), round soft ends (corner 0.30), almost no bow (0.05: a calm line), the frog's section; size 1.0
-# and width 1.0 (the sheet's own, about 1.1 x the frog's at M10b). A, E and O designed rings as the pout's (a thin even
-# roll, round tucked corners); O a small round hole in a pursed ring. The fangs' size and place: FANGS (M13's grid).
+# ("fangs"), with two lower fangs (alien_fangs_geom). M13b (UPDATE 22: M13's lips read as thin flat double sticks with
+# pointed corners at 3/4, A as a flat box): soft rolled lips. The sheet's crease measures low (the upper lip about
+# 15 px, the lower 4.5 px at the centre), so the factors are against that: the upper a thin roll (0.55), the lower a
+# fuller cushion (1.45), plump 1.25, the lower lip 1.5 mm further forward (`lower_fwd`: the fangs rise out of it in
+# front of the upper lip), a slight downturn toward the corners (`downturn` 4 mm: mg2's grumpy-cute line), round ends
+# (corner 0.60, depth_corner 0.20) tucked deeper (`corner_share`, `corner_tuck` over alien_mouths.CORNER), the mouth
+# narrower (width 0.85) so the fangs stand just inside its corners. A is a real jaw drop (the opening taller, `open`,
+# its lower half deeper, `drop`) with an even roll all round (ring corner 0.85), E wide with the fangs at its corners,
+# O a round hole in a pursed ring with the fangs on its sides; A and E with a designed tongue (`tongue`), each ring
+# its own upper/lower. The values: M13b's grids (docs/godot.md, M13b).
 LIP_SHAPE_FANGS = {
-    "w": 1.0, "corner": 0.30, "pw": 2.0, "full": 1.0, "upper": 0.80, "lower": 0.80,
-    "bow": 0.05, "bow_w": 0.16, "bow_peak": 0.0, "bow_at": 0.24,
-    "lean": 0.30, "square": 0.85, "depth_corner": 0.35,
-    "width": 1.0, "size": 1.0, "plump": 1.4,
-    "bow_flat": 1.0,
+    "w": 1.0, "corner": 0.60, "pw": 2.2, "full": 1.0, "upper": 0.55, "lower": 1.45,
+    "bow": 0.06, "bow_w": 0.16, "bow_peak": 0.0, "bow_at": 0.24,
+    "lean": 0.30, "square": 0.85, "depth_corner": 0.20,
+    "width": 0.85, "size": 1.0, "plump": 1.25,
+    "bow_flat": 1.0, "downturn": 0.004, "downturn_pw": 2.5, "lower_fwd": 0.0015, "corner_tuck": 1.4,
+    "corner_share": 0.22,
     "ring_param": {
-        "A": dict(_RING, n=2.1, corner=0.70, bow=0.03),
-        "E": dict(_RING, n=2.0, corner=0.62, bow=0.03),
-        "O": dict(_RING, n=2.0, hole=0.30, corner=1.0, thick=0.8, bow=0.10, tuck=0.0, cup_throat=0.85),
+        "A": dict(_RING, n=2.0, corner=0.85, bow=0.03, open=1.25, drop=1.15, tongue=(0.72, 0.80), upper=0.62,
+                  lower=1.15),
+        "E": dict(_RING, n=2.0, corner=0.75, bow=0.03, tongue=(0.80, 0.70), upper=0.62, lower=1.15),
+        "O": dict(_RING, n=2.0, hole=0.30, corner=1.0, thick=0.8, bow=0.10, tuck=0.0, cup_throat=0.85, upper=0.62,
+                  lower=1.30),
     },
 }
 
@@ -216,14 +224,21 @@ def closed_edges(ss, top, bot, lip: str, p: dict):
     for s, t, b, h in zip(ss, top, bot, hb):
         target = hc * full * k * taper(s, p)
         h2 = h + w * (target - h)
+        dn = w * downturn(s, p)  # M13b: both lips (and the line between them) bend down toward the corners
         if lip == "u":
             t2 = b + 2 * h2 + w * bow(s, p) * 2 * hc * k * full
-            nt.append(max(t2, b + 1e-4))
-            nb.append(b)
+            nt.append(max(t2, b + 1e-4) - dn)
+            nb.append(b - dn)
         else:
-            nt.append(t)
-            nb.append(t - 2 * h2)
+            nt.append(t - dn)
+            nb.append(t - 2 * h2 - dn)
     return nt, nb
+
+
+def downturn(s: float, p: dict) -> float:
+    """M13b: how far (m) a closed mouth's lips sit lower at s than at the centre: p["downturn"] x |s|^downturn_pw (0
+    without it), a slight downturn toward the corners (mg2's grumpy-cute line)."""
+    return p.get("downturn", 0.0) * abs(s) ** p.get("downturn_pw", 2.5)
 
 
 def depth_scale(s: float, p: dict) -> float:
@@ -300,7 +315,7 @@ def ring_param(meas: dict, rp: dict, p: dict, n: int):
         ow = max(0.15 * W, W - corner * tm)
         oh = meas["hu"] * rp.get("open", 1.0)
     drop = rp.get("drop", 1.0)
-    tu, tl = tm * full * p["upper"], tm * full * p["lower"]
+    tu, tl = tm * full * rp.get("upper", p["upper"]), tm * full * rp.get("lower", p["lower"])  # M13b: a ring's own
     bp = dict(p, bow=rp.get("bow", p["bow"]))
     inner = []
     for k in range(n):

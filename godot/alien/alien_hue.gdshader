@@ -96,7 +96,7 @@ uniform float tint_ao_light : hint_range(0.0, 1.0) = 0.25;  // another hue: AO_L
 // kits carry one field for every design in TEXCOORD_4's u.
 uniform float contact : hint_range(0.0, 1.0) = 0.0;
 uniform vec4 contact_pick = vec4(1.0, 0.0, 0.0, 0.0);
-// M12: a third mouth's channel (and the next one's): glTF TEXCOORD_6 = (pout, free), imported as CUSTOM2 (alien.gd
+// M12: the third and fourth mouths' channels: glTF TEXCOORD_6 = (pout, fangs), imported as CUSTOM2 (alien.gd
 // picks it with the design; a kit without TEXCOORD_6 reads 0 there).
 uniform vec2 contact_pick2 = vec2(0.0);
 uniform vec3 contact_tint = vec3(0.80, 0.66, 0.62);  // linear multiplier at full contact: darker, warmer

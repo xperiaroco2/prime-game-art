@@ -14,14 +14,15 @@ extends RefCounted
 ## - m_gap_ms: a silence shorter than this between two phases shows M (the lips pressed), longer shows rest;
 ## - bounce {amp, hz, decay_ms}: after every change of shape the lower lip springs: drop = amp x the signed change in
 ##   openness x sin(2 pi hz dt) x exp(-dt / decay) metres (positive: down; alien_lip.gdshader `lip_drop` on the jaw
-##   weight, COLOR_0.g): an opening sags the lower lip a little further first, a closing presses it up against the
+##   weight, COLOR_0.a): an opening sags the lower lip a little further first, a closing presses it up against the
 ##   upper lip; a closed shape (rest, M) only ever presses, it never sags open (PR #246's review minor 4);
 ## - pucker {amount, min_gap_ms}: in a silence at least min_gap_ms long the lips purse, amount x a sine ease over the
 ##   gap (alien_lip.gdshader `pucker`);
 ## - rise {ms, via, below} (M13, optional): a heavier jaw opens slower: an open phase (OPEN >= 0.6) that follows a
 ##   shape less open than `below` shows `via` for its first ms;
 ## - thrust {amount, ms, shapes} (M13, optional): while one of `shapes` shows, the lower jaw moves forward by amount
-##   (m) x a smooth ease over ms (alien_lip.gdshader `jaw_thrust`).
+##   (m), eased in over ms and out over ms after the last of a chain of them (thrust_at; M13b: A -> E holds it)
+##   (alien_lip.gdshader `jaw_thrust`).
 ## frog and overbite keep the snapped talk they had (no lag, merge, bounce or pucker). The pout (mp1, M12) talks soft
 ## and a little lazy: a 25 ms lag, merged 70 ms flickers, quick A and E shown half open, a soft lower-lip bounce, and a
 ## slight pucker between words. The fangs (mg2, M13) talk with a heavier jaw: a 40 ms lag, a slower opening (small
@@ -140,9 +141,37 @@ static func sample(design: String, segs: Array, t_ms: float) -> Dictionary:
 	var drop: float = float(b["amp"]) * change * sin(TAU * float(b["hz"]) * dt / 1000.0) * exp(-dt / float(b["decay_ms"]))
 	if OPEN.get(piece, 0.0) <= 0.0:
 		drop = minf(drop, 0.0)  # a closed mouth only presses shut, never sags open
-	var thrust := 0.0
+	return {"piece": piece, "drop": drop, "pucker": pk, "thrust": thrust_at(st, runs, t), "since_ms": since}
+
+
+## M13b (PR #248's review minor 2): the lower jaw's forward thrust at t (lag applied), continuous: it eases in over
+## `ms` from the start of a chain of touching `shapes` runs (after the heavier jaw's `rise`, when one applies), holds
+## through the whole chain (A -> E keeps it, no snap back to 0) and eases out over `ms` after the chain ends.
+static func thrust_at(st: Dictionary, runs: Array, t: float) -> float:
 	var th: Dictionary = st.get("thrust", {})
-	if not th.is_empty() and (th["shapes"] as Array).has(piece):
-		var u: float = clampf(maxf(0.0, t - since) / float(th["ms"]), 0.0, 1.0)
-		thrust = float(th["amount"]) * u * u * (3.0 - 2.0 * u)
-	return {"piece": piece, "drop": drop, "pucker": pk, "thrust": thrust, "since_ms": since}
+	if th.is_empty():
+		return 0.0
+	var shapes: Array = th["shapes"]
+	var ms: float = float(th["ms"])
+	var rise: Dictionary = st.get("rise", {})
+	var best := 0.0
+	var i := 0
+	while i < runs.size():
+		if not shapes.has(runs[i][2]):
+			i += 1
+			continue
+		var a: float = runs[i][0]
+		var before_open: float = 0.0
+		if i > 0 and a - runs[i - 1][1] < 1.0:
+			before_open = OPEN[runs[i - 1][2]]
+		if not rise.is_empty() and OPEN[runs[i][2]] >= 0.6 and before_open < float(rise["below"]):
+			a += float(rise["ms"])  # it opens via `rise.via` first
+		var j := i
+		while j + 1 < runs.size() and runs[j + 1][0] - runs[j][1] < 1.0 and shapes.has(runs[j + 1][2]):
+			j += 1
+		var u_in: float = clampf((t - a) / ms, 0.0, 1.0)
+		var u_out: float = clampf((t - float(runs[j][1])) / ms, 0.0, 1.0)
+		var w: float = u_in * u_in * (3.0 - 2.0 * u_in) * (1.0 - u_out * u_out * (3.0 - 2.0 * u_out))
+		best = maxf(best, w)
+		i = j + 1
+	return float(th["amount"]) * best

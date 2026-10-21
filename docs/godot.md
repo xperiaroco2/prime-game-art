@@ -1754,7 +1754,8 @@ a time, by visibility.
     about as wide as rest). Two ring rules for the pout only: `CUP_IN` (the dark cup ends 0.6 of the lip's half width
     inside its axis) and `CORNER_CLOSE` (in A and E the lips move into the opening toward the corners, up to their
     half width from |cos| 0.55 to 0.92): the sheet's E runs out in a long thin dark slit between thin rims, which read
-    as black flaps at 0.4 m. Frog and overbite measure and build exactly as before (every new table is per design).
+    as black flaps at 0.4 m (M13 removed `CORNER_CLOSE`, off since M12b, and M12's `ring`/`ring_corner`: the
+    designed rings replaced them). Frog and overbite measure and build exactly as before (every new table is per design).
   - **The lips (`alien_lips_geom.LIP_SHAPE_POUT`):** the sheet's thickness per lip (upper 0.95, lower 1.10: the lower
     the bigger cushion; the frog's upper is 0.82), ends a little rounder than the frog's (corner 0.18, pw 2.0), the open
     rings' own corner 0.45 (`ring_corner`), a soft bow (0.25, side peaks 0.15: at 0.45 / 0.40 the upper lip read as
@@ -1852,9 +1853,10 @@ a time, by visibility.
     lip; O's is one straight line moved forward until it clears (a smoothed axis kinked where the ring ends). Grids:
     `M13/godot/gf1/vgrid.png` (length 16 / 19 / 22 mm x place 0.62 / 0.72), `go1/vgrid.png` (O's place). Material
     `alien_fang` (Blender: a copy of `alien_lip`, ivory; Godot `FANG_LOOK` on the lips' shader).
-  - **The jaw weight (`alien_m12.jaw_weights`, COLOR_0.g):** 1 on the lower lip, the tongue and the fangs, 0 on the upper
-    lip; round an open ring a smooth step at the opening's centre height; times a falloff to 0.3 at the corners.
-    COLOR_0.r stays the baked AO. `PART_AO_MARKER` goes on the new materials only when the AO was baked.
+  - **The jaw weight (`alien_m12.jaw_weights`, COLOR_0.g; COLOR_0.a since M13b):** 1 on the lower lip, the tongue and
+    the fangs, 0 on the upper lip; round an open ring a smooth step at the opening's centre height; times a falloff
+    to 0.3 at the corners. COLOR_0.r stays the baked AO.
+    `PART_AO_MARKER` goes on the new materials only when the AO was baked.
   - **Godot (`alien.gd`):** `MOUTH_DESIGNS` + fangs, `CONTACT_CHANNEL2` {pout: 0, fangs: 1} (TEXCOORD_6's v, CUSTOM2.y),
     `FANG_LOOK`, `MOVING_DESIGNS` (pout, fangs): their cup and tongue take `alien_mouth_part.gdshader`, so with the lips
     and fangs (`alien_lip.gdshader`) everything of the shown piece moves on `alien_mouth_motion.gdshaderinc`
@@ -1867,6 +1869,44 @@ a time, by visibility.
     the pout's, no pucker. `godot/alien/talk_check.gd` runs `styled()`/`sample()` headless and
     `tools/tests/test_alien_talk_godot.py` checks each rule (heavy: it needs Godot).
   - **`m12_shots.gd`:** spec `design` (the design every mode shows), `talk_also`, `hero_label`.
+- **M13b, the fangs mouth mg2 brought to the sheet** (brief UPDATE 22; output under
+  `D:/prime-art-raw/review/char/alien-parts-kit/M13b/`): M13's lips read as thin flat double sticks with pointed
+  corners at 3/4, its fangs as small pins hanging in front of the lip (floating on the cheeks in O, jumping sideways
+  between shapes), A as a flat box. Built on M10c's pick like M13; the frog, overbite and pout pieces are unchanged.
+  - **The lips (`alien_lips_geom.LIP_SHAPE_FANGS`):** soft rolled lips: the sheet's crease measures low (the upper lip
+    about 15 px, the lower 4.5 px at the centre), so the factors are against that: upper 0.55, lower 1.45, plump 1.25
+    (the upper a thin roll, the lower the fuller cushion); `lower_fwd` (new) puts the lower lip 1.5 mm further
+    forward; `downturn` (new, closed shapes: both lips and the line between them `downturn` x |s|^2.5 lower toward the
+    corners) 4 mm, mg2's grumpy-cute line; width 0.85 (about 89 mm, M13's 105) so the fangs stand just inside the
+    corners; rounder, deeper-tucked ends (corner 0.60, depth_corner 0.20, and the new per-shape `corner_share` 0.22,
+    `corner_tuck` 1.4 over `alien_mouths.CORNER`). The rings take their own `upper`/`lower` (A and E 0.62 / 1.15, O
+    0.62 / 1.30); A is a real jaw drop (`open` 1.25, `drop` 1.15, an even roll all round, ring corner 0.85,
+    `SHAPE_SCALE_DESIGN` A 1.08), E 0.95. The fangs' rings stand on the face's centre line (A's measured centre was 3.5
+    mm aside). Grids `M13b/godot/g1..g5/vgrid.png` (lip fullness x fang size, corners, width, fang curve, O).
+  - **The fangs (`alien_fangs_geom.FANG`, M13b's `FANG_M13B` over M13's):** 25 mm long, 15 mm at the base, the tip 0.42
+    of that, a convex taper (pw 1.3), leaning a little outward (curve -0.08: mg2's tips lean out), 15 % of the length
+    a root in the lower lip. **One place:** `x_m` 34 mm from the face's centre line in rest, M, small, A and E, so they
+    only move with the jaw (A's and E's roots `ring_drop` 0.40 / 0.25 of the ring's half height below its centre, on
+    the lower lip in the opening's corner); O's attached to the pursed ring's sides (`o_in` 0.6 of the base radius
+    inside its edge, `o_drop` 0.80). The axis keeps the nearest lip's front above and below the lips (`keep_front`; the
+    skin's bent the tip back toward the philtrum, a flat top from the front), sunk `sink` 1.0 behind the lower lip's
+    front at the root and standing `out` 0.50 in front of the upper lip over `blend` 0.30 of the length.
+  - **The tongue:** A and E build a designed tongue in the designed opening (`ring_param` `tongue` (width share, height
+    share): A 0.72 / 0.80, E 0.80 / 0.70; `alien_mouths.build_tongue_ring`); the measured one was a small blob in A and
+    ragged in E (the refilled fang columns broke its run). The measured route smooths its base for the fangs.
+  - **The fangs' look (`alien.gd FANG_LOOK`):** a creamier ivory with a warmer, deeper root over a wider AO range, more
+    AO occlusion, warm SSS and transmittance (0.35 / 0.40, colour (1.0, 0.80, 0.56), depth 6 mm) through the thin tip.
+  - **The jaw weight moved to COLOR_0's alpha** (PR #248's review minor 4; `alien_m12.jaw_weights`): the colour is the
+    grey AO again, so a viewer that uses vertex colour as albedo does not tint the mouths; the pieces are opaque. The
+    shaders read `COLOR.a` (`alien_mouth_motion.gdshaderinc`, `alien_lip.gdshader`, `alien_mouth_part.gdshader`); an
+    M13 kit (the weight in g, alpha 1) moves its whole piece, so rebuild it. Every pout and fangs piece in the kit gets
+    the weight, not only the run's (minor 3), and the fangs take the corner falloff per vertex like the lip under them
+    (minor 6).
+  - **The talk (`alien_talk.gd thrust_at`):** the jaw thrust eases in from the start of a chain of touching A/E runs
+    (after the rise), holds through it (A -> E no longer snaps to 0) and eases out after (PR #248's minor 2).
+  - **Tests:** `godot/alien/parse_check.gd` + `tools/tests/test_alien_parse_godot.py` (heavy, area `alien_parse`):
+    every `godot/alien` shader parses in the dummy renderer (a broken one logs `SHADER ERROR` and lists no uniforms)
+    and `alien.gd`/`alien_talk.gd` reload (minor 7). `m12_shots.gd` vgrid views take an optional distance.
 
 ## Findings for later tasks
 

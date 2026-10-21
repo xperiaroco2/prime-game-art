@@ -95,6 +95,10 @@ tests = ["test_alien_texture_*"]
 sources = ["godot/alien/alien_talk.gd", "godot/alien/talk_check.gd"]  # the mouths' talk styles (#196, M13); before light's godot/alien/*
 tests = ["test_alien_talk_*"]
 
+[area.alien_parse]
+sources = ["godot/alien/*.gdshader", "godot/alien/*.gdshaderinc", "godot/alien/alien.gd", "godot/alien/parse_check.gd"]  # the alien kit's shaders and alien.gd parse (#196, M13b); before light's godot/alien/*
+tests = ["test_alien_parse_*"]
+
 [area.meshy]
 sources = ["tools/blender/meshy_rig_input.py", "tools/runner/commands/_meshy_*.py", "tools/runner/commands/meshy.py"]
 tests = ["test_meshy_*"]
