@@ -13,9 +13,11 @@ from runner.commands import _export
 
 HAVE = bool((path := common.tool_path(pins.BLENDER_ENV, pins.BLENDER_DEFAULT)) and path.is_file())
 KITS = common.raw_dir() / "review" / "char" / "alien-parts-kit"
-BASE, M16 = KITS / "M10c" / "export", KITS / "M16c" / "export"  # M16c: on M15's head, the finer corners
+BASE, M16 = KITS / "M10c" / "export", KITS / "M16d" / "export"  # M16d: on M15's head, the slim rest
 SCRIPT = common.ROOT / "tools" / "blender" / "alien_pout_check.py"
 TOL_MM = 0.1
+MIN_TRI_MM2 = 0.02  # M16b's O cup sliver: 0.006 mm^2
+HAVE_VALIDATOR = bool((v := common.tool_path(pins.GLTF_VALIDATOR_ENV, pins.GLTF_VALIDATOR_DEFAULT)) and v.is_file())
 
 
 def run(kit, *extra) -> dict:
@@ -49,8 +51,12 @@ class PoutRestBuiltTest(unittest.TestCase):
             self.assertEqual(r["form"], "ring", s)
             self.assertLess(abs(r["centre_mm"]), TOL_MM, s)
 
+    def test_no_sliver_triangles(self):  # M16d: every piece the current code builds, open and closed
+        for s, r in {**self.d["built"], **self.d["open"]}.items():
+            self.assertGreater(r["min_tri_mm2"], MIN_TRI_MM2, s)
 
-@unittest.skipUnless(HAVE and (M16 / "alien_character.blend").is_file(), "needs Blender and the M16c raw kit")
+
+@unittest.skipUnless(HAVE and (M16 / "alien_character.blend").is_file(), "needs Blender and the M16d raw kit")
 class PoutRestKitTest(unittest.TestCase):
     def test_the_kits_closed_pieces_are_mirrored(self):
         d = run(M16, "--kit-pieces")
@@ -58,6 +64,7 @@ class PoutRestKitTest(unittest.TestCase):
         for s, r in d["kit"].items():
             self.assertLess(r["max_mm"], TOL_MM, s)
 
+    @unittest.skipUnless(HAVE_VALIDATOR, "needs glTF-Validator")
     def test_the_kits_glb_validates(self):  # M16c: no validator error (a zero tangent hid in M16b's kit)
         glb = M16 / "alien_character.glb"
         rep = _export.validate(glb, common.ROOT / "tools" / "out" / "test_alien_pout_validator.json")
