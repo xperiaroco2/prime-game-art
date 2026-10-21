@@ -217,6 +217,7 @@ func _environment() -> void:
 	var sm: ShaderMaterial = ShaderMaterial.new()
 	sm.shader = load("res://ship/night_sky.gdshader") as Shader
 	sky.sky_material = sm
+	sm.set_shader_parameter("horizon", Vector3(0.04, 0.06, 0.12) * _lk("sky_horizon", 1.0))
 	sky.radiance_size = Sky.RADIANCE_SIZE_256
 	env.background_mode = Environment.BG_SKY
 	env.sky = sky
@@ -249,13 +250,17 @@ func _environment() -> void:
 	moon.directional_shadow_max_distance = 90.0
 	moon.rotation_degrees = Vector3(float(light["moon_dir_deg"][0]), float(light["moon_dir_deg"][1]), 0)
 	root.add_child(moon)
-	for l: Array in light["lamps"]:
+	for l: Array in light["lamps"]:  # [x, h, y, energy, range, r, g, b, (group), (shadow)]
 		var omni: OmniLight3D = OmniLight3D.new()
 		omni.position = Vector3(float(l[0]), float(l[1]), float(l[2]))
-		omni.light_energy = float(l[3]) * _lk("lamp_scale", 1.0)
+		var scale: float = _lk("lamp_scale", 1.0)
+		if l.size() > 8:  # a room's lamps scale by its own number, "<group>_lamp" (ship.toml [light])
+			scale = _lk(str(l[8]) + "_lamp", scale)
+		omni.light_energy = float(l[3]) * scale
 		omni.omni_range = float(l[4])
+		omni.omni_attenuation = 1.4
 		omni.light_color = Color(float(l[5]), float(l[6]), float(l[7]))
-		omni.shadow_enabled = true
+		omni.shadow_enabled = bool(l[9]) if l.size() > 9 else true
 		root.add_child(omni)
 
 
@@ -285,6 +290,7 @@ func _metal(name: String) -> Material:
 func _dress(ship: Node3D) -> int:
 	var cells: Dictionary = {}
 	var seen: Dictionary = {}
+	var mats: Dictionary = (_req["light"] as Dictionary).get("mats", {})
 	var stack: Array = [ship]
 	while not stack.is_empty():
 		var n: Node = stack.pop_back()
@@ -298,17 +304,15 @@ func _dress(ship: Node3D) -> int:
 				continue
 			if METALS.has(mat.resource_name):
 				mi.set_surface_override_material(i, _metal(mat.resource_name))
-			elif mat is BaseMaterial3D and mat.resource_name.begins_with("int_silver") and not seen.has(mat):
-				var im: BaseMaterial3D = mat  # the interior's metal: mid-to-dark brushed silver at night
-				seen[im] = 0.0
-				im.albedo_color = im.albedo_color * Color(1, 1, 1, 1) * _lk("int_value", 1.0)
-				im.albedo_color.a = 1.0
-				im.roughness = minf(im.roughness + _lk("int_rough_add", 0.0), 0.95)
+			elif mat is BaseMaterial3D and not seen.has(mat) and not (mat as BaseMaterial3D).emission_enabled:
+				seen[mat] = 0.0
+				_look(mat, mats.get(mat.resource_name, {}))
 			elif mat is BaseMaterial3D and (mat as BaseMaterial3D).emission_enabled:
 				var bm: BaseMaterial3D = mat
 				if not seen.has(bm):  # a shared glTF material is scaled once; its strip light keeps the original
-					seen[bm] = bm.emission_energy_multiplier
-					bm.emission_energy_multiplier *= _lk("emission_scale", 1.0)
+					var look: Dictionary = mats.get(bm.resource_name, {})
+					seen[bm] = minf(bm.emission_energy_multiplier, 6.0) * float(look.get("l", 1.0))  # its lights' strength
+					_look(bm, look)
 				var box: AABB = mi.global_transform * mi.mesh.get_aabb()
 				var area: float = maxf(box.size.x * box.size.z, maxf(box.size.x * box.size.y, box.size.y * box.size.z))
 				var c: Vector3 = box.get_center()
@@ -322,15 +326,38 @@ func _dress(ship: Node3D) -> int:
 				cell[3] = maxf(float(cell[3]), float(seen[bm]))
 	var list: Array = cells.values()
 	list.sort_custom(func(a: Array, b: Array) -> bool: return float(a[1]) > float(b[1]))
+	list = list.filter(func(c: Array) -> bool: return float(c[3]) > 0.0)  # "l" 0: the surface glows, lights nothing
 	for cell: Array in list.slice(0, MAX_LIGHTS):
 		var omni: OmniLight3D = OmniLight3D.new()
 		omni.position = (cell[0] as Vector3) / maxf(float(cell[1]), 1e-6) + Vector3(0, 0.12, 0)
 		omni.light_color = (cell[2] as Color).lightened(_lk("strip_whiten", 0.15))
-		omni.light_energy = clampf(sqrt(float(cell[1])) * 0.9 * minf(float(cell[3]), 6.0) / 3.0, 0.08, 1.6) * _lk("strip_light_scale", 1.0)
+		omni.light_energy = clampf(sqrt(float(cell[1])) * 0.9 * float(cell[3]) / 3.0, 0.08, 1.6 * maxf(float(cell[3]) / 6.0, 1.0)) * _lk("strip_light_scale", 1.0)
 		omni.omni_range = clampf(2.2 + sqrt(float(cell[1])) * 2.0, 2.2, 5.0)
 		omni.omni_attenuation = 1.6
 		root.add_child(omni)
 	return mini(list.size(), MAX_LIGHTS)
+
+
+## One glTF material's night look from ship.toml [light.mats] (the room-by-room light grid, inside-1): "v" base
+## colour x, "r" roughness +, "m" metallic, "c" [r, g, b] colour (and emission colour), "e" emission x (else
+## emission_scale), "a" alpha, "l" its strip lights x (read by _dress). Without an entry the int_silver_* metals keep
+## int_value / int_rough_add and the emissive ones emission_scale.
+func _look(bm: BaseMaterial3D, look: Dictionary) -> void:
+	if look.is_empty() and bm.resource_name.begins_with("int_silver"):
+		look = {"v": _lk("int_value", 1.0), "r": _lk("int_rough_add", 0.0)}
+	var a: float = bm.albedo_color.a
+	if look.has("c"):
+		var c: Array = look["c"]
+		bm.albedo_color = Color(float(c[0]), float(c[1]), float(c[2]))
+		if bm.emission_enabled:
+			bm.emission = bm.albedo_color
+	bm.albedo_color = bm.albedo_color * float(look.get("v", 1.0))
+	bm.albedo_color.a = float(look.get("a", a))
+	bm.roughness = clampf(bm.roughness + float(look.get("r", 0.0)), 0.0, 0.95)
+	if look.has("m"):
+		bm.metallic = float(look["m"])
+	if bm.emission_enabled:
+		bm.emission_energy_multiplier *= float(look.get("e", _lk("emission_scale", 1.0)))
 
 
 ## A reflection probe per room (the request's rooms: [id, centre [x, h, y], size [x, h, y], interior]).
@@ -342,7 +369,7 @@ func _probes() -> void:
 		probe.box_projection = true
 		probe.interior = bool(r[3])
 		probe.update_mode = ReflectionProbe.UPDATE_ONCE
-		probe.intensity = _lk("probe_intensity", 1.0) if bool(r[3]) else 1.0
+		probe.intensity = _lk("probe_" + str(r[0]), _lk("probe_intensity", 1.0) if bool(r[3]) else 1.0)
 		root.add_child(probe)
 
 

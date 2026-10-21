@@ -174,14 +174,56 @@ probe_intensity = 0.15                         # interior rooms' reflection prob
 int_value = 0.55                               # the int_silver_* base colour x this
 int_rough_add = 0.25                           # + the int_silver_* roughness
 hull_rough_add = 0.22                          # + the hull silvers' roughness (the moonlit white plates)
+# The room-by-room light (the inside lane's grids, <raw>/ship/v1/grid_in3/{hall,corridor,tip}.png, variant J with
+# L's corridor and tip lamps): rows [x, y, h, energy, range, r, g, b, group, shadow]; each group's energies scale by
+# its "<group>_lamp" number below (a row without a group by lamp_scale).
 lamps = [
-  [0.0, 0.0, 4.1, 2.2, 7.0, 1.0, 0.82, 0.6],
-  [0.0, -4.0, 3.3, 1.0, 4.0, 1.0, 0.82, 0.6],
-  [-6.0, 0.0, 3.3, 1.2, 5.0, 1.0, 0.8, 0.55],
-  [6.0, 0.0, 3.3, 1.2, 5.0, 1.0, 0.8, 0.55],
-  [-10.75, 0.0, 3.5, 1.2, 4.5, 0.85, 0.95, 1.0],
-  [10.75, 0.0, 3.5, 1.2, 4.5, 0.85, 0.95, 1.0],
+  [2.772, 1.148, 4.2, 0.5, 3.2, 1.0, 0.7, 0.42, "hall", false],  # hall, by the wall
+  [1.148, 2.772, 4.2, 0.5, 3.2, 1.0, 0.7, 0.42, "hall", false],  # hall, by the wall
+  [-1.148, 2.772, 4.2, 0.5, 3.2, 1.0, 0.7, 0.42, "hall", false],  # hall, by the wall
+  [-2.772, 1.148, 4.2, 0.5, 3.2, 1.0, 0.7, 0.42, "hall", false],  # hall, by the wall
+  [-2.772, -1.148, 4.2, 0.5, 3.2, 1.0, 0.7, 0.42, "hall", false],  # hall, by the wall
+  [-1.148, -2.772, 4.2, 0.5, 3.2, 1.0, 0.7, 0.42, "hall", false],  # hall, by the wall
+  [1.148, -2.772, 4.2, 0.5, 3.2, 1.0, 0.7, 0.42, "hall", false],  # hall, by the wall
+  [2.772, -1.148, 4.2, 0.5, 3.2, 1.0, 0.7, 0.42, "hall", false],  # hall, by the wall
+  [0.0, -3.9, 3.3, 0.6, 3.5, 1.0, 0.7, 0.42, "hall", true],  # the mouth
+  [-4.3, 0.0, 3.3, 0.5, 3.0, 0.9, 0.93, 1.0, "corr", false],  # west corridor ceiling
+  [-6.1, 0.0, 3.3, 0.5, 3.0, 0.9, 0.93, 1.0, "corr", false],  # west corridor ceiling
+  [-7.9, 0.0, 3.3, 0.5, 3.0, 0.9, 0.93, 1.0, "corr", false],  # west corridor ceiling
+  [-10.75, 0.0, 3.6, 1.0, 4.5, 0.95, 0.9, 0.85, "tip", true],  # west tip room
+  [-12.2, 0.0, 2.4, 0.6, 3.5, 0.55, 0.68, 1.0, "tip", false],  # west window: moonlight
+  [-27.0, -3.0, 3.0, 3.0, 12.0, 1.0, 0.6, 0.3, "out", false],  # west treeline camp light
+  [-27.0, 5.0, 3.0, 3.0, 12.0, 1.0, 0.6, 0.3, "out", false],  # west treeline camp light
+  [4.3, 0.0, 3.3, 0.5, 3.0, 0.9, 0.93, 1.0, "corr", false],  # east corridor ceiling
+  [6.1, 0.0, 3.3, 0.5, 3.0, 0.9, 0.93, 1.0, "corr", false],  # east corridor ceiling
+  [7.9, 0.0, 3.3, 0.5, 3.0, 0.9, 0.93, 1.0, "corr", false],  # east corridor ceiling
+  [10.75, 0.0, 3.6, 1.0, 4.5, 0.95, 0.9, 0.85, "tip", true],  # east tip room
+  [12.2, 0.0, 2.4, 0.6, 3.5, 0.55, 0.68, 1.0, "tip", false],  # east window: moonlight
+  [27.0, -3.0, 3.0, 3.0, 12.0, 1.0, 0.6, 0.3, "out", false],  # east treeline camp light
+  [27.0, 5.0, 3.0, 3.0, 12.0, 1.0, 0.6, 0.3, "out", false],  # east treeline camp light
+  [0.0, -16.0, 1.4, 2.5, 8.0, 1.0, 0.6, 0.3, "out", false],  # the clearing in front of the ramp
 ]
+hall_lamp = 0.7
+corr_lamp = 2.0
+tip_lamp = 2.4
+out_lamp = 2.5
+sky_horizon = 5.0                              # the sky's horizon colour x this (the windows' and the ramp's view)
+
+# Per glTF material (ship.gd _look): v base colour x, r roughness +, m metallic, c colour (and emission colour),
+# e emission x (keeps the hue under AgX), a alpha, l its strip lights x (0: glows, lights nothing). Metallic 0.45
+# lets the lamps light the silver (at 0.7 it only mirrored the dark rooms); the lamp ring and lamps light nothing,
+# so the hall's centre disc stays dark metal.
+[light.mats]
+int_cyan = {c = [0.05, 0.8, 1.0], e = 0.05, l = 0.3}
+int_amber = {c = [1.0, 0.42, 0.06], e = 0.08, l = 5.0}
+int_lamp = {c = [1.0, 0.6, 0.26], e = 0.08, l = 0.0}
+int_plate = {v = 0.3, r = 0.45}
+int_grate = {v = 1.2, r = 0.1, m = 0.6}
+int_glass = {a = 0.05, r = -0.03}
+int_silver_a = {v = 0.55, r = 0.25, m = 0.45}
+int_silver_b = {v = 0.55, r = 0.25, m = 0.45}
+int_silver_c = {v = 0.55, r = 0.25, m = 0.45}
+
 
 # The capsule walk: up the ramp, through the hall into both tip rooms and back out. Points [x, y, h].
 [walk]
