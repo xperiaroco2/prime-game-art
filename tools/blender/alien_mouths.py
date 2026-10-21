@@ -655,6 +655,20 @@ def build_piece(bvh, m, design, shape, world, mats, coll, origin, lips=None, nam
         if (lips_p.get("parting") or {}).get(shape):  # M16c: a designed parting (mp1's small: a slit over the middle)
             st = LP.parted(st, lips_p["parting"][shape], SEAM_OVERLAP)
         ss = [2 * (r["x"] - xl) / max(1.0, xr - xl) - 1 for r in st]  # M8: -1 .. 1 corner to corner
+        # M16e: a lip shape's own sink (the share of a tube's depth inside the skin; a rounder tube sits deeper, so
+        # it stands off no further) and tube_n_flat, each station's normal blended toward the mouth's mean normal
+        # along its lip line (the skin under the lower lip faces down toward the chin: the tube's section followed it
+        # and the lower lip hung in profile, a tongue with a downward tip)
+        sink = lips_p.get("sink", SINK)
+        nf = lips_p.get("tube_n_flat", 0.0)
+        n_mouth = None
+        if nf > 0.0:
+            n_mouth = Vector((0.0, 0.0, 0.0))
+            for r in st:
+                n_mouth += surf(bvh, *world(r["x"], (r["bot_u"] + r["top_l"]) / 2))[1]
+            if mirror:
+                n_mouth.x = 0.0
+            n_mouth.normalize()
         for lip in ("u", "l"):
             cs, ra, rb, ns = [], [], [], []
             edges = []
@@ -686,8 +700,10 @@ def build_piece(bvh, m, design, shape, world, mats, coll, origin, lips=None, nam
                 dk = LP.depth_factor(lips_p, lip)
                 a = dk * (DEPTH_A * max(mb, (zt0 - zb0) / 2) + DEPTH_C * LP.depth_scale(s, lips_p))
                 p, n = surf(bvh, x, (zt + zb) / 2)
+                if n_mouth is not None:
+                    n = n.lerp(n_mouth, nf).normalized()
                 env = math.sin(math.pi * (r["x"] - xl) / max(1.0, xr - xl)) ** 0.5
-                c3 = p + n * (a * (1 - SINK) + (push + (back if lip == "l" else 0.0)) * env)
+                c3 = p + n * (a * (1 - sink) + (push + (back if lip == "l" else 0.0)) * env)
                 cs.append(c3)
                 ra.append(a)
                 rb.append(hb)
