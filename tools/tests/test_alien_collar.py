@@ -4,8 +4,10 @@ UPDATE 16): the skin collar (fillet_section, the deep crater, the skin's materia
 from __future__ import annotations
 
 import importlib.util
+import json
 import math
 import re
+import struct
 import unittest
 from pathlib import Path
 
@@ -16,6 +18,28 @@ LG = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(LG)
 C = LG.COLLAR
 RD, RD_REF = 0.036, 0.045
+KIT_GLB = Path("D:/prime-art-raw/review/char/alien-parts-kit/M11/export/alien_character.glb")
+
+
+def read_glb(path: Path) -> tuple[dict, bytes]:
+    """A GLB's JSON and BIN chunks."""
+    data = path.read_bytes()
+    n = struct.unpack_from("<I", data, 12)[0]
+    gltf = json.loads(data[20:20 + n])
+    m = struct.unpack_from("<I", data, 20 + n)[0]
+    return gltf, data[28 + n:28 + n + m]
+
+
+def accessor(gltf: dict, bin_: bytes, i: int) -> list[float]:
+    """An accessor's components (float, tightly packed or strided), flat."""
+    acc = gltf["accessors"][i]
+    bv = gltf["bufferViews"][acc["bufferView"]]
+    size = {"SCALAR": 1, "VEC2": 2, "VEC3": 3, "VEC4": 4}[acc["type"]]
+    if acc["componentType"] != 5126:
+        raise ValueError("float accessors only")
+    stride = bv.get("byteStride", 4 * size)
+    base = bv.get("byteOffset", 0) + acc.get("byteOffset", 0)
+    return [v for k in range(acc["count"]) for v in struct.unpack_from(f"<{size}f", bin_, base + k * stride)]
 
 
 def phi(i: int) -> float:
@@ -164,6 +188,111 @@ class Fillet(unittest.TestCase):
         p3 = wide[-1]
         self.assertAlmostEqual(half[-1][0], p3[0], places=9)
         self.assertLess(math.dist(half[0], p3), math.dist(wide[0], p3))
+
+
+class M11Fixes(unittest.TestCase):
+    """PR #247's review minors 1, 2 and 4 (brief UPDATE 21)."""
+    src = (BLENDER / "alien_m6.py").read_text(encoding="utf-8")
+
+    def test_the_section_starts_on_the_skin_the_ray_hit(self):
+        build = self.src[self.src.index("def build_skin_collars"):self.src.index("def skin_collar_layers")]
+        self.assertIn("h_hit = float(np.dot(loc - cen, fw))", build)
+        self.assertIn("LG.fillet_section(gap, h_hit,", build)
+
+    def test_the_uv_runs_along_the_section(self):
+        self.assertGreater(S["uv_run"], 0.0)
+        front, _, back = LG.fillet_section(0.006, -0.004, (0.2, 0.95), RD)
+        run = LG.section_run(front, back)
+        self.assertEqual(len(run), len(front) + len(back))
+        self.assertEqual(run[0], 0.0)
+        for a, b in zip(run[:len(front)], run[1:len(front)]):
+            self.assertGreater(b, a)  # strictly along the front: every quad has UV area
+        self.assertGreater(run[len(front)], run[len(front) - 1])
+        self.assertAlmostEqual(run[-1], S["back_mm"] / 1000.0, places=6)  # the closing faces stay small
+        # two neighbouring sections whose edge UVs differ along the azimuth: the quad between them has area
+        g = (0.8, -0.3)
+        uv = [[(0.30 + di * 0.001 + g[0] * r, 0.50 + g[1] * r) for r in run[:2]] for di in (0, 1)]
+        (a, b), (c, _) = uv
+        self.assertGreater(abs((b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0])), 1e-9)
+        build = self.src[self.src.index("def build_skin_collars"):self.src.index("def skin_collar_layers")]
+        self.assertIn('sm["UVMap"] = sm["UVMap"] + g * run[j] * opts.get("uv_run", 0.0)', build)
+
+    def test_the_collar_carries_the_seventh_layer_at_zero(self):
+        """M11b (PR #249's minor 5): the layer is the seventh (index 6, glTF TEXCOORD_6), after the four skin layers
+        and the two contact layers, and it holds 0 (u 0, v stored flipped as 1)."""
+        layers = self.src[self.src.index("def skin_collar_layers"):self.src.index("def mouth_pieces")]
+        skin = re.search(r"^SKIN_LAYERS = \(([^)]*)\)", self.src, re.M).group(1)
+        n_skin = len([x for x in skin.split(",") if x.strip()])
+        order = re.findall(r"for name in (SKIN_LAYERS|LG\.CONTACT_UVS):|uv_layers\.new\(name=(LP\.CONTACT_UV_MOUTH2\[0\])",
+                           layers)
+        self.assertEqual([a or b for a, b in order], ["SKIN_LAYERS", "LG.CONTACT_UVS", "LP.CONTACT_UV_MOUTH2[0]"])
+        self.assertEqual(n_skin + len(LG.CONTACT_UVS), 6)  # so the mouth2 layer is index 6
+        m2 = layers[layers.index("LP.CONTACT_UV_MOUTH2[0]"):]
+        self.assertIn("np.tile([0.0, 1.0], len(me.loops))", m2[:200])
+
+    def test_the_kit_s_collars_carry_texcoord_6_at_zero(self):
+        """The M11 kit itself (skipped without the raw files): every skin collar has the Body's attribute set, its
+        TEXCOORD_6 is all 0."""
+        if not KIT_GLB.exists():
+            self.skipTest(f"no kit at {KIT_GLB}")
+        gltf, bin_ = read_glb(KIT_GLB)
+        body = collars = 0
+        for mesh in gltf["meshes"]:
+            for prim in mesh["primitives"]:
+                at = prim["attributes"]
+                if mesh["name"].startswith("Body"):
+                    body_set = set(at)
+                    body += 1
+                if "_collar_" in mesh["name"] and "TEXCOORD_6" in at:
+                    vals = accessor(gltf, bin_, at["TEXCOORD_6"])
+                    self.assertEqual(max(abs(v) for v in vals), 0.0, mesh["name"])
+                    collars += 1
+        self.assertGreater(body, 0)
+        self.assertGreaterEqual(collars, 4)  # both designs, both sides
+        for mesh in gltf["meshes"]:
+            if "_collar_" in mesh["name"] and any("TEXCOORD_6" in p["attributes"] for p in mesh["primitives"]):
+                for prim in mesh["primitives"]:
+                    self.assertEqual({k for k in prim["attributes"] if k.startswith("TEXCOORD")},
+                                     {k for k in body_set if k.startswith("TEXCOORD")}, mesh["name"])
+
+
+class M11bFixes(unittest.TestCase):
+    """PR #249's review minors 1 and 2 (brief UPDATE 23)."""
+    src = (BLENDER / "alien_m6.py").read_text(encoding="utf-8")
+    build = src[src.index("def build_skin_collars"):src.index("def skin_collar_layers")]
+
+    def test_a_run_of_failed_uv_bins_at_the_start_takes_the_last_good_bin_wrapping(self):
+        # the right collars' shape: the probe fails at bins 0..8 (bored_R) and at the temple side, 58..63
+        g = [(0.1 * i, -0.02 * i) for i in range(C["bins"])]
+        for i in list(range(9)) + list(range(58, 64)):
+            g[i] = None
+        out = LG.last_good_cyclic(g)
+        for i in range(9):
+            self.assertEqual(out[i], g[C["bins"] - 1])  # the ring's last good bin, never zeros
+        for i in range(58, 64):
+            self.assertEqual(out[i], g[57])
+        self.assertTrue(all(v is not None for v in out))
+        self.assertEqual(LG.last_good_cyclic([None, None]), [None, None])
+        self.assertIn("LG.last_good_cyclic(g_bins)", self.build)
+        self.assertNotIn("g_last", self.build)
+
+    def test_far_bins_meet_their_neighbours_without_a_step(self):
+        # the start's offset from the smoothed edge: the good bins round a far run sit 3 mm below it, the far run
+        # (the ray fell into the trench) is unknown; before M11b it went back to 0, a 3 mm step at both ends
+        dh = [-0.003] * C["bins"]
+        far = range(20, 31)
+        for i in far:
+            dh[i] = None
+        dh[19], dh[31] = -0.0035, -0.0025
+        out = LG.cyclic_fill(dh)
+        steps = [abs(out[i] - out[(i + 1) % C["bins"]]) for i in range(C["bins"])]
+        self.assertLess(max(steps), 0.0006)
+        for i in far:
+            self.assertTrue(-0.0035 <= out[i] <= -0.0025)
+        self.assertEqual(LG.cyclic_fill([None] * 4), [0.0] * 4)
+        self.assertIn("dh = LG.cyclic_fill(", self.build)
+        self.assertIn("h_hit = h_edge + dh[i]", self.build)
+        self.assertIn('"start_step_mm_max"', self.build)
 
 
 if __name__ == "__main__":
