@@ -83,6 +83,37 @@ class FitGeom(unittest.TestCase):
         self.assertGreaterEqual(float(np.linalg.norm(P2 - c, axis=1).min()), R - 1e-9)
         self.assertEqual(len(F.folds(P2, tris, np.ones(len(tris), dtype=bool))), 0)
 
+    def test_rim_drop_meets_the_sphere(self):
+        """M17: the face near the sphere is drawn onto it (its height over the sphere h -> h * smoothstep(0, width,
+        h)), the face higher than `width` and the bowl stay, the height still grows outward, no fold; width 0 changes
+        nothing."""
+        F = self.F
+        co, e, tris = grid(81)
+        c, a, R = np.array((0.0, 0.0, -0.01)), np.array((0.0, 0.0, 1.0)), 0.03
+        ex, ey = np.array((1.0, 0.0, 0.0)), np.array((0.0, 1.0, 0.0))
+        region = np.ones(len(co), dtype=bool)
+        tc = F.crossing_angles(co, e, region, c, a, ex, ey, R)
+        ins = F.opening(co, c, a, ex, ey, tc, R)
+        P = co.copy()
+        P[ins] = F.bowl_map(co[ins], c, a, ex, ey, R, tc)
+        self.assertTrue(np.array_equal(F.rim_drop(P, region, c, a, ex, ey, tc, R, 0.0), P))
+        width = 0.004
+        Q = F.rim_drop(P, region, c, a, ex, ey, tc, R, width)
+        h0 = np.linalg.norm(P - c, axis=1) - R
+        h = np.linalg.norm(Q - c, axis=1) - R
+        self.assertTrue(np.array_equal(Q[h0 >= width], P[h0 >= width]))
+        self.assertTrue(np.array_equal(Q[ins], P[ins]))
+        band = (~ins) & (h0 > 1e-6) & (h0 < width)
+        self.assertGreater(int(band.sum()), 20)
+        self.assertTrue(np.all(h[band] < h0[band]))
+        self.assertGreaterEqual(float(h.min()), -1e-9)
+        line = (~ins) & (np.abs(co[:, 1]) < 1e-9) & (co[:, 0] > 0)
+        order = np.argsort(co[line, 0])
+        self.assertTrue(np.all(np.diff(h[line][order]) >= -1e-9))
+        self.assertEqual(len(F.folds(Q, tris, np.ones(len(tris), dtype=bool))), 0)
+        with self.assertRaises(SystemExit):
+            F.set_fit({"rim_drop": 0.05})
+
     def test_fold_found(self):
         F = self.F
         co = np.array([[0, 0, 0], [1, 0, 0], [0, 1, 0], [0.2, 0.2, -0.0]], dtype=float)
@@ -110,6 +141,18 @@ class FitGeom(unittest.TestCase):
                 and len(n.targets) == 1 and isinstance(n.targets[0], ast.Name)
                 and n.targets[0].id in ("EYES", "LID_BEAD")}
         self.assertAlmostEqual(F.lid_reach(cons["EYES"], cons["LID_BEAD"], {"thin": 0.3, "rim": 0.7}), 1.151, places=3)
+
+    def test_m17_defaults_and_stage(self):
+        """M17's pick (rim_drop 4 mm, the masks filled) is the default, mask_fill is 0 or 1, and the stage applies
+        both after the fillet."""
+        F = self.F
+        s = F.set_fit({})
+        self.assertEqual((s["rim_drop"], s["mask_fill"]), (0.004, 1.0))
+        with self.assertRaises(SystemExit):
+            F.set_fit({"mask_fill": 0.5})
+        src = (BLENDER / "alien_socket_fit.py").read_text(encoding="utf-8")
+        self.assertLess(src.index("P = F.fillet("), src.index("P = F.rim_drop("))
+        self.assertIn('rep["mask_fill"] = fill_masks(body, lap, free)', src)
 
     def test_stage_uses_the_marker(self):
         """alien_m6.py reads alien_socket.MARKER as "sized and placed"; the fit writes the same key."""
