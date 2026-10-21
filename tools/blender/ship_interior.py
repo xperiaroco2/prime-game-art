@@ -289,8 +289,10 @@ def lamp_ring(args, layout):
     lip = M(*[L.sector(r - 0.16, r - 0.12, p, q, h - 0.19, h - 0.1) for p, q in zip(a, a[1:])])
     cap = L.disc(r - 0.1, 32, h - 0.02, h + 0.08)
     boss = L.disc(r * 0.4, 16, h - 0.08, h - 0.02)
+    # the warm band: the beam's whole underside glows (hall_in-3's thick amber ring of light, inside-1)
+    band = M(*[L.sector(r - 0.11, r + 0.08, p, q, h - 0.165, h - 0.15) for p, q in zip(a, a[1:])])
     return [P("beam", beam, "int_silver_c"), P("lip", lip, "int_silver_a"), P("cap", cap, "int_silver_b"),
-            P("boss", boss, "int_silver_c")]
+            P("boss", boss, "int_silver_c"), P("band", band, "int_lamp")]
 
 
 def lamp(args, layout):
