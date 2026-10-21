@@ -11,7 +11,8 @@ with it: "half the head removed". Here the face never follows the eye back. Per 
 2. The old crater (S9's socket, sized for the big eye) is filled: the skin within `free_r` old ball radii of C (and
    within the new socket's sphere plus `free_margin` of C') is replaced by the fairest surface (least squares on the
    uniform Laplacian, fair_fill) that meets the untouched face round it with its slope. The face round the eye is
-   continued over the crater; nothing sinks.
+   continued over the crater; nothing sinks. Nothing more than `free_below` under the old centre is free (the
+   cheek toward the mouth keeps its shape; a free area reaching the mouth's kept skin left a crease there).
 3. The socket is cut into that surface: the skin inside the sphere of radius R_s (the slim lids' outer reach plus
    `gap`) round C' is laid onto the sphere's far side (bowl_map: the disc of skin the sphere covers goes onto the
    bowl behind the ball, its centre to the back pole, its edge to where the surface meets the sphere), so the lids
@@ -27,8 +28,8 @@ import math
 
 import numpy as np
 
-FIT = {"eye_scale": 0.76, "sink": 0.012, "inward": 0.012, "toe": 1.0, "gap": 0.0006, "free_r": 1.32,
-       "free_margin": 0.010, "fillet": 0.008, "fillet_passes": 24, "keep_mm": 0.2, "fill_iters": 1500}
+FIT = {"eye_scale": 0.76, "sink": 0.018, "inward": 0.019, "toe": 1.0, "gap": 0.0006, "free_r": 1.5,
+       "free_margin": 0.010, "free_below": 0.065, "fillet": 0.008, "fillet_passes": 24, "keep_mm": 0.2, "fill_iters": 1500}
 FIT_KEYS = tuple(FIT)
 BINS = 72
 LAST = {}  # fair_fill's convergence per axis (iterations, the gradient's last share of its first): the stage reports it

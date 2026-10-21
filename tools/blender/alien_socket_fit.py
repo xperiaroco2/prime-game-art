@@ -107,7 +107,7 @@ def apply(spec: dict, debug: bool = False) -> dict:
         R = k * r0 * reach + s["gap"]
         ex, ey = F.frame(f1, sx)
         own = co0[:, 0] * sx > 0.010
-        fr = own & ~near_keep & ((np.linalg.norm(co0 - c, axis=1) < s["free_r"] * r0)
+        fr = own & ~near_keep & (co0[:, 2] > c[2] - s["free_below"]) & ((np.linalg.norm(co0 - c, axis=1) < s["free_r"] * r0)
                                  | (np.linalg.norm(co0 - c1, axis=1) < R + s["free_margin"]))
         free |= fr
         sides[side] = {"c": c, "fwd": fwd, "c1": c1, "rz": rz, "a": f1, "ex": ex, "ey": ey, "r0": r0, "R": R,
