@@ -62,6 +62,31 @@ SOCKET_LASHES = {"m15": {"liner_t_in_deg": -42.0, "sink": 0.003,
                                               "liner": MANIC_LINER}}}}
 
 
+# M21 (art #196, brief UPDATE 45): the closed lashes. The sets are rigid children of the upper lid, so the open curl
+# rode into the closed state: manic's lashes (leaving 30 degrees below the radial, curled 160) dipped under the closed
+# line and hooked back up over the lid, upper and lower teeth in turn (the "zipper"), and bored's stood over the line
+# as a comb. Each tube set has a shape key CLOSED_KEY (a glTF morph target), the same tubes built with CLOSED's keys
+# over the design's own: down and out from the line in a soft curl, one calm closed line with the lashes laid over the
+# lower lid. alien.gd weighs it by the upper lid's angle, 0 at "half" to 1 at "closed" (closed_weight), so open, rest
+# and half keep their look. Chosen on M21's grids (lclosed: the curl 160 / 100 / 60 / 30, the lift -10 to -40).
+CLOSED = {"bored": {"lift_deg": -30.0, "curl_deg": 60.0}, "manic": {"lift_deg": -30.0, "curl_deg": 60.0}}
+CLOSED_KEY = "closed"
+
+
+def closed_weight(upper: float, half: float, closed: float) -> float:
+    """The closed shape key's weight with the upper lid at `upper` (degrees, either sign convention): 0 at the lid's
+    half state, 1 at its closed state, a smoothstep between."""
+    if closed == half:
+        return 1.0 if upper == closed else 0.0
+    x = min(1.0, max(0.0, (upper - half) / (closed - half)))
+    return x * x * (3.0 - 2.0 * x)
+
+
+def closed_spec(c: dict, design: str) -> dict:
+    """The spec a design's closed shape builds with: its open spec (for_design) with CLOSED's keys over it."""
+    return {**for_design(c, design), **CLOSED.get(design, {})}
+
+
 def merged(spec: dict | None = None, route: str = "") -> dict:
     """LASHES (with the socket route's SOCKET_LASHES over it) with spec's keys over it; an unknown key is refused (a
     typo would build the default silently)."""

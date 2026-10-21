@@ -127,6 +127,9 @@ const LINER_MIN_PX := 2.0
 ## Godot's automatic mesh LODs. The decimated lid shells lost their baked AO (COLOR_0) and normals and drew the upper
 ## lids blotchy at 3.5 m (with the LODs off the same frame is even). They are small meshes, so the cost is small.
 const EYE_LOD_BIAS := 100.0
+## M21: the lash sets' closed shape (a glTF morph target of tools/blender/alien_lashes.py), weighed by
+## lash_closed_weight as the upper lid closes: manic's open curl hooked back over the closed lid (the "zipper").
+const LASH_CLOSED_KEY := "closed"
 ## M13: the fangs mouth's two lower fangs (material alien_fang, the lips' shader so they move with the lower jaw):
 ## ivory, a soft satin with a little clear coat, deeper and warmer at the root (the baked AO), a faint warm
 ## transmittance. The lips are the kit's coral alien_lip (LIP_LOOK). Chosen beside the mg2 sheet on M13's grids.
@@ -621,6 +624,15 @@ func set_lids(state: String) -> void:
 	_apply_lids(LIDS[eyes]["upper"][state], LIDS[eyes]["lower"][state])
 
 
+## M21: the closed lashes' morph weight with design's upper lid at upper_deg (LIDS' rotation): 0 at "half", 1 at
+## "closed", a smoothstep between (tools/blender/alien_lashes_geom.closed_weight), so open, rest and half keep the
+## open lashes.
+func lash_closed_weight(design: String, upper_deg: float) -> float:
+	var half: float = LIDS[design]["upper"]["half"]
+	var closed: float = LIDS[design]["upper"]["closed"]
+	return smoothstep(0.0, 1.0, clampf((upper_deg - half) / (closed - half), 0.0, 1.0))
+
+
 func _apply_lids(upper_deg: float, lower_deg: float) -> void:
 	for side: String in ["L", "R"]:
 		node("eye_%s_lid_upper_%s" % [eyes, side]).rotation = Vector3(deg_to_rad(upper_deg), 0, 0)
@@ -632,6 +644,11 @@ func _apply_lids(upper_deg: float, lower_deg: float) -> void:
 			var aim: float = rest_aim_deg() if face_look == "s5" else 0.0  # the first test: unturned
 			ball.rotation = Vector3(0, deg_to_rad(-aim if side == "L" else aim), 0)
 			ball.set_instance_shader_parameter("aim_deg", -aim if side == "L" else aim)  # M4: the lids' frame
+		var lash := node("eye_%s_lashes_%s" % [eyes, side]) as MeshInstance3D
+		if lash != null:  # M21: the closed lashes (the morph target LASH_CLOSED_KEY) as the upper lid closes
+			var bi: int = lash.find_blend_shape_by_name(LASH_CLOSED_KEY)
+			if bi >= 0:
+				lash.set_blend_shape_value(bi, lash_closed_weight(eyes, upper_deg))
 		var open: float = smoothstep(WET_OPEN_DEG.x, WET_OPEN_DEG.y, lower_deg - upper_deg)  # the edges' gap
 		for lid: String in ["upper", "lower"]:
 			var wet := node("eye_%s_wet_%s_%s" % [eyes, lid, side]) as GeometryInstance3D
