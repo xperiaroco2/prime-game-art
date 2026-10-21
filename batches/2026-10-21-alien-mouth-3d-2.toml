@@ -1,0 +1,41 @@
+# art#196 M20 (brief UPDATE 42), the hybrid pout, stage 2: Meshy multi-image to 3D (meshy-7.1, untextured: the colour
+# comes from our lip shader) of the pout mp1's lips pressed (M) and slightly parted (small), each from the three views
+# of batch 2026-10-21-alien-mouth-views-2 (the high redraws m-h and small-h, cut into rows: front first, then 3/4 and
+# side), the same settings as M19's rest (batch 2026-10-21-alien-mouth-3d item rest3d). With rest3d they become the
+# pout's three closed pieces (rest, M, small) in the kit, fitted by tools/blender/alien_mouth_fit.py --replace; the
+# open shapes stay ours. The engineer's yes (the hybrid pout): art#196 comment 6319459349, within this batch's credit
+# cap (the balance was 90). No game names. Schema: docs/meshy.md.
+
+id = "2026-10-21-alien-mouth-3d-2"
+purpose = "art#196 M20: the pout's lips pressed (M) and slightly parted (small) as AI 3D forms (Meshy multi-image to 3D from our GPT Image views), the hybrid pout's closed pieces beside M19's rest."
+plan = "Meshy paid plan (monthly; bought by the engineer on 2026-10-17)"
+terms_url = "https://www.meshy.ai/terms-of-use"
+licence = "owned by the customer on a paid plan (Meshy Terms of Use 3.2, updated 2026-09-19); no attribution required"
+credit_cap = 80
+approved_by = "xperiaroco2 (the engineer)"
+approved_at = "2026-10-21"
+approval_ref = "https://github.com/xperiaroco2/prime-game-art/issues/196#issuecomment-6319459349"
+
+[defaults.multi_image_to_3d.params]
+ai_model = "meshy-7.1"
+geometry_resolution = "2k"
+should_texture = false
+target_formats = ["glb"]
+
+[[items]]
+id = "m3d"
+kind = "multi_image_to_3d"
+images = [
+  { file = "raw:review/char/alien-parts-kit/M20/views/m_front.png", provenance = "row 1 of our own OpenAI generation, batch 2026-10-21-alien-mouth-views-2 item m-h (gpt-image-2.5-sunburst, high), padded to a square, art#196", sha256 = "24df349b2a785cd70ae53c1d0b876bd3919b20188449d90a88e8fd0f8380a15c" },
+  { file = "raw:review/char/alien-parts-kit/M20/views/m_34.png", provenance = "row 2 of our own OpenAI generation, batch 2026-10-21-alien-mouth-views-2 item m-h (gpt-image-2.5-sunburst, high), padded to a square, art#196", sha256 = "2ad8bdcc9f8c09fc8404759614fd880fcad578dd580e942e9603b2734ae220e4" },
+  { file = "raw:review/char/alien-parts-kit/M20/views/m_side.png", provenance = "row 3 of our own OpenAI generation, batch 2026-10-21-alien-mouth-views-2 item m-h (gpt-image-2.5-sunburst, high), padded to a square, art#196", sha256 = "44b715e84ddd3ea163c80c21485903aff6dad5c3a80100c08ec5e3771244ca6f" },
+]
+
+[[items]]
+id = "small3d"
+kind = "multi_image_to_3d"
+images = [
+  { file = "raw:review/char/alien-parts-kit/M20/views/small_front.png", provenance = "row 1 of our own OpenAI generation, batch 2026-10-21-alien-mouth-views-2 item small-h (gpt-image-2.5-sunburst, high), padded to a square, art#196", sha256 = "45a27eb1034b9d730cec30610c6a8f3a4f33cb9a728fb771eddb8b010df8bff5" },
+  { file = "raw:review/char/alien-parts-kit/M20/views/small_34.png", provenance = "row 2 of our own OpenAI generation, batch 2026-10-21-alien-mouth-views-2 item small-h (gpt-image-2.5-sunburst, high), padded to a square, art#196", sha256 = "80647ca9935515f343b80b1fbd6cc78a5be31dae10cfebaa97d054d09c091d6f" },
+  { file = "raw:review/char/alien-parts-kit/M20/views/small_side.png", provenance = "row 3 of our own OpenAI generation, batch 2026-10-21-alien-mouth-views-2 item small-h (gpt-image-2.5-sunburst, high), padded to a square, art#196", sha256 = "bab96631bd6d37f1a099e8d094222997cb4b20ec34e9279946023471e12a08c2" },
+]
