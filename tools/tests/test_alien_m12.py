@@ -55,17 +55,16 @@ class PoutShapeTest(unittest.TestCase):
         self.assertGreater(p["lower"], p["upper"])  # the lower lip the bigger cushion
         self.assertGreater(p["upper"], LP.LIP_SHAPE["upper"])  # mp1's upper lip fuller than the frog's
         self.assertGreater(p["corner"], LP.LIP_SHAPE["corner"])  # a little rounder ends
-        self.assertEqual(set(p), set(LP.LIP_SHAPE) | {"size", "ring_corner", "bow_flat", "ring_param"})
-        # the open rings' corners fuller than the closed lips' ends, and only for the pout
-        th = 0.0
-        thin = LP.ring_width(th, 1.0, 1.0, 0.5, "E", dict(p, ring_corner=p["corner"]))
-        self.assertGreater(LP.ring_width(th, 1.0, 1.0, 0.5, "E", p), thin)
+        # M13 (PR #246's review minor 3): no dead settings: every open shape is a designed ring (ring_param), so the
+        # traced rings' weights (`ring`) and their corner (`ring_corner`) are not part of the pout's shape
+        self.assertEqual(set(p), set(LP.LIP_SHAPE) - {"ring"} | {"size", "bow_flat", "ring_param"})
+        self.assertEqual(set(p["ring_param"]), {"A", "E", "O"})
 
     def test_merged_pout(self):
-        p = LP.merged_pout({"size": 0.95, "ring": {"O": 0.3}})
-        self.assertEqual(p["size"], 0.95)
-        self.assertEqual(p["ring"], {"A": 1.0, "E": 1.0, "O": 0.3})
-        self.assertEqual(LP.LIP_SHAPE_POUT["ring"]["O"], 0.5)  # the default is not changed
+        p = LP.merged_pout({"size": 0.9, "ring_param": {"O": {"hole": 0.2}}})
+        self.assertEqual(p["size"], 0.9)
+        self.assertEqual(p["ring_param"]["O"]["hole"], 0.2)
+        self.assertEqual(LP.LIP_SHAPE_POUT["ring_param"]["O"]["hole"], 0.30)  # the default is not changed
         self.assertEqual(LP.merged_pout(None), LP.LIP_SHAPE_POUT)
 
 
@@ -128,11 +127,11 @@ class RingParamTest(unittest.TestCase):
 
 class LayoutTest(unittest.TestCase):
     def test_the_contact_layer_and_its_channel(self):
-        self.assertEqual(LP.CONTACT_UV_MOUTH2, ("contact_mouth2", ("pout", "")))
+        self.assertEqual(LP.CONTACT_UV_MOUTH2, ("contact_mouth2", ("pout", "fangs")))
         gd = (GA / "alien.gd").read_text(encoding="utf-8")
         m = re.search(r'const CONTACT_CHANNEL2 := \{([^}]*)\}', gd)
         self.assertIsNotNone(m)
-        self.assertEqual({k: int(v) for k, v in re.findall(r'"(\w+)": (\d+)', m.group(1))}, {"pout": 0})
+        self.assertEqual({k: int(v) for k, v in re.findall(r'"(\w+)": (\d+)', m.group(1))}, {"pout": 0, "fangs": 1})
         self.assertIn('set_shader_parameter("contact_pick2"', gd)
         hue = (GA / "alien_hue.gdshader").read_text(encoding="utf-8")
         self.assertIn("uniform vec2 contact_pick2 = vec2(0.0);", hue)  # off by default: older kits unchanged
@@ -143,6 +142,10 @@ class LayoutTest(unittest.TestCase):
         self.assertIn("LP.CONTACT_UV_MOUTH2", src)
         self.assertIn("len(me.uv_layers) != 6", src)  # TEXCOORD_6 only after the six of alien_m6
         self.assertIn("LP.CONTACT_MARKER_MOUTH2", src)
+        # PR #246's review minor 7: the AO marker only on a baked kit
+        bake = src.index("if not a.no_bake:")
+        self.assertGreater(src.index("M6.PART_AO_MARKER.items()"), bake)
+        self.assertEqual(src.count("M6.PART_AO_MARKER"), 1)
 
 
 class MouthsTest(unittest.TestCase):
@@ -150,8 +153,9 @@ class MouthsTest(unittest.TestCase):
         src = (BL / "alien_mouths.py").read_text(encoding="utf-8")
         self.assertIn('PALETTE = {"pout": {"tongue_bg": -0.008}}', src)
         self.assertIn('PALETTE_SHAPE = {"pout": {"A": {"lip_min_r": 0.50}, "E": {"lip_min_r": 0.50}}}', src)
-        self.assertIn('CUP_IN = {"pout": 0.6}', src)  # frog and overbite: 0, their cups unchanged
-        m = re.search(r'SHAPE_SCALE_DESIGN = \{"pout": \{([^}]*)\}\}', src)
+        self.assertIn('CUP_IN = {"pout": 0.6, "fangs": 0.6}', src)  # frog and overbite: 0, their cups unchanged
+        self.assertNotIn("CORNER_CLOSE", src)  # PR #246's review minor 3: no dead pout settings
+        m = re.search(r'SHAPE_SCALE_DESIGN = \{"pout": \{([^}]*)\}', src)
         self.assertIsNotNone(m)
         self.assertEqual(set(re.findall(r'"(\w)":', m.group(1))), {"A", "E", "O"})
         self.assertIn('"pout": {"O": 0.008, "*": 0.003}', src)  # the pout stands out of the skin
@@ -161,13 +165,25 @@ class MouthsTest(unittest.TestCase):
 class GodotLookTest(unittest.TestCase):
     def test_pout_look_and_motion_are_uniforms(self):
         gd = (GA / "alien.gd").read_text(encoding="utf-8")
-        lip = uniforms(GA / "alien_lip.gdshader")
+        motion = GA / "alien_mouth_motion.gdshaderinc"
+        lip = uniforms(GA / "alien_lip.gdshader") | uniforms(motion)
         self.assertFalse(gd_dict_keys(gd, "LIP_LOOK_POUT") - lip)
-        self.assertTrue({"lip_drop", "pucker"} <= lip)
-        shader = (GA / "alien_lip.gdshader").read_text(encoding="utf-8")
-        self.assertIn("instance uniform float lip_drop = 0.0;", shader)  # off for every other part
-        self.assertIn("instance uniform float pucker = 0.0;", shader)
-        self.assertIn('const MOUTH_DESIGNS: Array[String] = ["frog", "overbite", "pout"]', gd)
+        self.assertFalse(gd_dict_keys(gd, "FANG_LOOK") - lip)
+        self.assertTrue({"lip_drop", "pucker", "jaw_thrust"} <= lip)
+        inc = motion.read_text(encoding="utf-8")
+        for u in ("lip_drop", "pucker", "jaw_thrust"):  # off for every other part
+            self.assertIn(f"instance uniform float {u} = 0.0;", inc)
+        for shader in ("alien_lip.gdshader", "alien_mouth_part.gdshader"):  # the lips, fangs, cup and tongue move
+            text = (GA / shader).read_text(encoding="utf-8")
+            self.assertIn('#include "res://alien/alien_mouth_motion.gdshaderinc"', text)
+            self.assertIn("VERTEX = mouth_motion(VERTEX, COLOR.g);", text)
+        self.assertIn('const MOUTH_DESIGNS: Array[String] = ["frog", "overbite", "pout", "fangs"]', gd)
+        self.assertIn('const MOVING_PARTS: Array[String] = ["alien_mouth_inner", "alien_tongue"]', gd)
+
+    def test_listen_ends_a_line(self):  # PR #246's review minor 6
+        gd = (GA / "alien.gd").read_text(encoding="utf-8")
+        body = gd[gd.index("func listen("):gd.index("func stop_listening(")]
+        self.assertIn("_line = []", body)
 
 
 class TalkDataTest(unittest.TestCase):
@@ -181,7 +197,7 @@ class TalkDataTest(unittest.TestCase):
 
     def test_styles(self):
         self.assertEqual(gd_dict_keys(self.src, "OPEN") , VISEMES)
-        for d in ("frog", "overbite", "pout"):
+        for d in ("frog", "overbite", "pout", "fangs"):
             self.assertIn(f'"{d}": {{"lag_ms"', self.src)
 
     def test_a_voice_like_rhythm(self):
