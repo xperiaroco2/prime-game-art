@@ -26,6 +26,8 @@ and the corners tucked into the skin. A lip shape (LIP_SHAPE, or a variant merge
 - plump (M10): both lips' thickness times this on top of `full` (1: M8b's lips). The depth follows the thickness
   (alien_mouths.DEPTH_A), so the volume grows with it; the bow's dip (a share of the thickness), the corners' taper
   (`corner`, a share of the centre) and the lip line are kept.
+- size (M12): the whole mouth (x and height) as a share of the sheet-measured one, about the face's centre line and
+  the Mouth socket's height (scale_size), so a design measured off its own sheet gets its own size on the fixed mount.
 
 Every edit keeps the lip line where the sheet measured it: the upper lip moves its top edge, the lower lip its bottom
 edge, an open ring its outer edge, so the six speech phases keep their openings and stay consistent.
@@ -63,6 +65,46 @@ def mouth_mount(node: tuple, m: dict = MOUTH_MOUNT) -> tuple:
     return ((0.0, node[1] + m["dy"], node[2] + m["dz"]), m["half_w"], m["half_h"], node[1] + m["front"])
 
 
+# M12 (art #196): the red pout mouth mp1 (D:/prime-art-raw/2026-10-20-alien-face-sheets-2/mp1/), the third mouth
+# design ("pout") on the same mount. Its sheet already draws full lips, so the profile keeps about the sheet's
+# thickness per lip (upper 0.95, lower 1.10: the lower lip the bigger cushion), tapers to fine tucked ends a little
+# rounder than the frog's (corner 0.18, pw 2.0), a soft cupid's bow (0.25; at 0.45 with corner 0.30 the upper lip
+# read as four lumps), M8's section (square 0.85, lean 0.25) and corners that sink a little less (depth_corner 0.35);
+# O, the kiss, keeps half the profile; the bow's side peaks low (bow_peak 0.15: at 0.40 the upper lip had four lumps).
+# size 0.95 and plump 1.15: the pick of M12's 3 x 2 grid (size 0.85 / 0.95 / 1.05 x plump 1.00 / 1.15). ring_corner (0.45): the open rings' corners keep this share of the centre's
+# thickness (E's wide corners at 0.18 were thin flaps the AO painted almost black). size and plump are the grid's pick
+# (docs/godot.md, M12).
+# M12b (UPDATE 19): the bow softer and wider (0.14 over bow_w 0.16, side peaks 0.10; at 0.25 / 0.10 with the depth
+# dipping too the upper lip read as two balls), and it notches the outline only (bow_flat 1: the depth from the lip
+# without the bow, so the front is one continuous roll). A, E and O are designed rings (ring_param; the traced
+# contours waved, tore and ran out in spikes; see ring_param): the opening a superellipse inside the measured
+# envelope, an even roll round it with round corners (A 0.68 of the centre's thickness, E 0.60) tucked 35 % of their
+# depth into the skin, A 4 % wider; O a round hole of 0.30 of its half width in an even pursed ring with the sheet's
+# M-shaped top (bow 0.30), its dark cup lifted to 0.85 of the lips' axis depth (cup_throat: else the hole showed the
+# lips' long lit inner wall, a pale triangle); every ring stands out along the mouth's mean normal (n_flat 1: along the skin's own, the
+# chin's and philtrum's slopes squeezed O's hole to a slit). The variant grids: docs/godot.md, M12b.
+_RING = {"bow": 0.12, "tuck": 0.35, "side_keep": 0.85, "depth_corner": 0.5, "n_flat": 1.0}
+LIP_SHAPE_POUT = {
+    "w": 1.0, "corner": 0.18, "pw": 2.0, "full": 1.0, "upper": 0.95, "lower": 1.10,
+    "bow": 0.14, "bow_w": 0.16, "bow_peak": 0.10, "bow_at": 0.24,
+    "lean": 0.25, "square": 0.85, "depth_corner": 0.35,
+    "ring": {"A": 1.0, "E": 1.0, "O": 0.5}, "ring_corner": 0.45,
+    "width": 1.0, "size": 0.95, "plump": 1.15,
+    "bow_flat": 1.0,
+    "ring_param": {
+        "A": dict(_RING, n=2.1, corner=0.68, wide=1.04),
+        "E": dict(_RING, n=2.0, corner=0.60),
+        "O": dict(_RING, n=2.0, hole=0.30, corner=1.0, thick=0.9, bow=0.30, tuck=0.0, cup_throat=0.85),
+    },
+}
+
+# M12: the third mouth's contact channel. TEXCOORD_4 (bored, manic) and TEXCOORD_5 (frog, overbite) are full, so the
+# pout mouth's skin contact is Body's seventh UV layer, glTF TEXCOORD_6 (u: pout, v: free for the next mouth, mg2),
+# which Godot imports as CUSTOM2 (x pout). Like the other layers, v is stored flipped (the exporter writes 1 - v).
+CONTACT_UV_MOUTH2 = ("contact_mouth2", ("pout", ""))
+CONTACT_MARKER_MOUTH2 = {"prime_contact_mouth2": "custom2_xy"}
+
+
 def merged(over: dict | None) -> dict:
     """LIP_SHAPE with `over` merged on top (the ring weights merged key by key); None or {} is LIP_SHAPE itself."""
     out = dict(LIP_SHAPE)
@@ -84,6 +126,34 @@ def scale_x(world, k: float):
         wx, wz = world(x, y)
         return wx * k, wz
     return scaled
+
+
+def scale_size(world, k: float, z0: float):
+    """world(x_px, y_px) -> (x, z) scaled by k about (0, z0) (the face's centre line, the Mouth socket's height);
+    world itself for k = 1."""
+    if k == 1.0:
+        return world
+
+    def scaled(x, y):
+        wx, wz = world(x, y)
+        return wx * k, z0 + (wz - z0) * k
+    return scaled
+
+
+def merged_pout(over: dict | None = None) -> dict:
+    """LIP_SHAPE_POUT with `over` merged on top (as merged(); ring_param merged shape by shape, key by key)."""
+    out = dict(LIP_SHAPE_POUT)
+    out["ring"] = dict(LIP_SHAPE_POUT["ring"])
+    out["ring_param"] = {k: dict(v) for k, v in LIP_SHAPE_POUT.get("ring_param", {}).items()}
+    for k, v in (over or {}).items():
+        if k == "ring":
+            out["ring"].update(v)
+        elif k == "ring_param":
+            for shape, rp in v.items():
+                out["ring_param"].setdefault(shape, {}).update(rp)
+        else:
+            out[k] = v
+    return out
 
 
 def taper(s: float, p: dict) -> float:
@@ -152,7 +222,8 @@ def ring_width(th: float, hw: float, hc: float, low: float, shape: str, p: dict)
         return hw
     s = math.cos(th)
     k = p["upper"] + (p["lower"] - p["upper"]) * low
-    target = hc * p["full"] * p.get("plump", 1.0) * k * taper(s, p)
+    tp = dict(p, corner=p["ring_corner"]) if "ring_corner" in p else p  # M12: the open ring's own corner
+    target = hc * p["full"] * p.get("plump", 1.0) * k * taper(s, tp)
     up = max(0.0, -math.sin(th))  # the upper lip's top centre: the bow
     target *= 1.0 + bow(s, p) * up * up
     return hw + w * (target - hw)
@@ -167,3 +238,74 @@ def section(phi: float, lean: float, square: float, toward_line: float) -> tuple
     if c > 0:
         cn *= 1.0 + lean * s * toward_line
     return cn, s
+
+
+def flat_bow(p: dict) -> dict:
+    """M12b: the lip shape whose thickness gives a lip's depth (the tube's forward radius): with bow_flat 1 the bow is
+    left out, so the bow notches the upper lip's outline only and its front stays one continuous roll (the bow's
+    dip in the depth made two separate balls); 0 the bow as before."""
+    k = p.get("bow_flat", 0.0)
+    return p if k <= 0.0 else dict(p, bow=p["bow"] * (1.0 - k))
+
+
+def _smooth01(t: float) -> float:
+    t = max(0.0, min(1.0, t))
+    return t * t * (3 - 2 * t)
+
+
+def ring_param(meas: dict, rp: dict, p: dict, n: int):
+    """M12b: an open mouth's ring as designed curves, not the sheet's traced contours (they waved, the roll's
+    thickness changed along the rim, the inner edge was ragged and E's corners ran out in spikes). From the panel's
+    measured scalars (px; meas: cx, cy the opening's centre, W the lips' outer half width, hu the opening's half
+    height at the centre, t_u, t_l the lips' thickness at the centre):
+
+    - the opening: a superellipse (exponent rp["n"]; 2 an ellipse) of half height hu * rp["open"] and half width W
+      (times rp["wide"]) less the corners' thickness; rp["hole"]: a round hole of radius hole x W in lips W less it
+      thick; its lower half rp["drop"] times the upper's;
+    - the lips round it: the measured mean thickness times full * plump and upper/lower (the lower lip the bigger
+      cushion), blended round the ring, tapering toward the corners to rp["corner"] of it (exponent rp["pw"] in the
+      opening's |x| share), the upper lip's top with the bow (rp["bow"], else p's) laid off the opening's edge along
+      its normal, so the roll is one even ring with round ends (an outward offset of a convex curve never folds).
+
+    Returns ((cx, cy), [(inner, outer)] per angle, outer edges without the bow (the depth's thickness), the corner
+    weights (0 at the centre, 1 at the corners)), n angles, th = 2 pi k / n, sin > 0 the lower lip (px y down)."""
+    cx, cy, W = meas["cx"], meas["cy"], meas["W"] * rp.get("wide", 1.0)
+    tm = 0.5 * (meas["t_u"] + meas["t_l"]) * rp.get("thick", 1.0)
+    full = p["full"] * p.get("plump", 1.0)
+    corner, pw, ex = rp.get("corner", 0.6), rp.get("pw", 2.5), 2.0 / rp.get("n", 2.0)
+    if rp.get("hole"):  # a round hole of radius hole x W, the lips all round W - the radius thick
+        ow = oh = rp["hole"] * W
+        tm = (W - ow) / corner * rp.get("thick", 1.0)
+    else:
+        ow = max(0.15 * W, W - corner * tm)
+        oh = meas["hu"] * rp.get("open", 1.0)
+    drop = rp.get("drop", 1.0)
+    tu, tl = tm * full * p["upper"], tm * full * p["lower"]
+    bp = dict(p, bow=rp.get("bow", p["bow"]))
+    inner = []
+    for k in range(n):
+        th = 2 * math.pi * k / n
+        c, s = math.cos(th), math.sin(th)
+        x = cx + ow * math.copysign(abs(c) ** ex, c)
+        y = cy + oh * (drop if s > 0 else 1.0) * math.copysign(abs(s) ** ex, s)
+        inner.append((x, y))
+    pairs, outer0, cw = [], [], []
+    for k in range(n):
+        (xa, ya), (xb, yb), (x, y) = inner[k - 1], inner[(k + 1) % n], inner[k]
+        tx, ty = xb - xa, yb - ya
+        nx, ny = ty, -tx
+        if nx * (x - cx) + ny * (y - cy) < 0:
+            nx, ny = -nx, -ny
+        ln = math.hypot(nx, ny) or 1.0
+        nx, ny = nx / ln, ny / ln
+        s = math.sin(2 * math.pi * k / n)
+        u = min(1.0, abs(x - cx) / max(1e-6, ow))
+        low = _smooth01(0.5 + 0.5 * s / 0.6)
+        w = u ** pw
+        t0 = (tu + (tl - tu) * low) * (corner + (1.0 - corner) * (1.0 - w))
+        up = max(0.0, -s)
+        t = t0 * (1.0 + bow((x - cx) / W, bp) * up * up)  # the bow over the lips' width, as ring_width
+        pairs.append(((x, y), (x + nx * t, y + ny * t)))
+        outer0.append((x + nx * t0, y + ny * t0))
+        cw.append(w)
+    return (cx, cy), pairs, outer0, cw
