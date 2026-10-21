@@ -619,15 +619,24 @@ def build_piece(bvh, m, design, shape, world, mats, coll, origin, lips=None, nam
         lift = Vector((0.0, 0.0, 0.0))
         if rp:
             lift = n0 * (rp.get("cup_lift", 0.0) * push + rp.get("cup_throat", 0.0) * sum(throat) / len(throat))
-        centre = b.vert(surf(bvh, *cw)[0] + surf(bvh, *cw)[1] * 0.0012 + lift)
+        # M16c (cup_even): the rim at even angles round the centre, and every cup point off the skin along the mouth's
+        # mean normal n0, not the skin's own: the pout O's cup had a fan triangle 0.006 mm^2 (two points 0.06 mm
+        # apart where the skin's normal turns fast near the centre), a zero tangent the glTF-Validator rejects
+        even = bool(rp and rp.get("cup_even"))
+        if even:
+            cup = LP.star_resample(cup, cw, RING_N)
+
+        def off(q):
+            return q[0] + (n0 if even else q[1]) * 0.0012
+        centre = b.vert(off(surf(bvh, *cw)) + lift)
         rows = 5
         grid = []
         for k in range(RING_N):
             col = []
             for j in range(1, rows + 1):
                 f = j / rows
-                p, n = surf(bvh, cw[0] + (cup[k][0] - cw[0]) * f, cw[1] + (cup[k][1] - cw[1]) * f)
-                col.append(b.vert(p + n * 0.0012 + lift))
+                col.append(b.vert(off(surf(bvh, cw[0] + (cup[k][0] - cw[0]) * f, cw[1] + (cup[k][1] - cw[1]) * f))
+                                  + lift))
             grid.append(col)
         for k in range(RING_N):
             k2 = (k + 1) % RING_N

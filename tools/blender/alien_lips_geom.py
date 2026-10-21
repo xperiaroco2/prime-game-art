@@ -93,7 +93,9 @@ _RING = {"bow": 0.12, "tuck": 0.35, "side_keep": 0.85, "depth_corner": 0.5, "n_f
 # 3/4) and corners tucked to points (corner 0.12; the ends' last 0.18 joined 0.95 and sunk 1.1 of their depth into the
 # skin; 1.3 over 0.20 narrowed the mouth). The pick of M16b's grids (docs/godot.md, M16b). The open rings keep M12b's
 # bow shape (bow_w, bow_peak, bow_at in _POUT_RING; ring_param reads a ring's own).
-_POUT_RING = {"upper": 0.95, "lower": 1.10, "lean": 0.25, "bow_w": 0.16, "bow_peak": 0.10, "bow_at": 0.24}
+# M16c: cup_even: the dark cup's rim resampled at even angles (star_resample; O's traced rim folded, a zero tangent).
+_POUT_RING = {"upper": 0.95, "lower": 1.10, "lean": 0.25, "bow_w": 0.16, "bow_peak": 0.10, "bow_at": 0.24,
+              "cup_even": 1}
 LIP_SHAPE_POUT = {
     "w": 1.0, "corner": 0.12, "pw": 2.0, "full": 1.0, "upper": 0.85, "lower": 1.20,
     "bow": 0.30, "bow_w": 0.12, "bow_peak": 0.40, "bow_at": 0.22,
@@ -384,6 +386,39 @@ def rest_stations(st: list, hc: float, p: dict) -> list:
             gap = max(1.0, r["top_l"] - r["bot_u"]) if r["open"] else 1.0
             r["bot_u"], r["top_l"] = mid - gap / 2, mid + gap / 2
     return st
+
+
+def star_resample(pts: list, centre: tuple, n: int) -> list:
+    """M16c: a closed outline pts [(x, z), ...] seen from centre, resampled at n even angles (0, 2 pi / n, ...): per
+    angle the nearest crossing of the ray from centre with the outline. A dark cup is a fan from its centre to its
+    rim; where the traced rim folds back on itself (the pout's O: neighbouring rim points 0.08 degrees apart, one fan
+    triangle 0.006 mm^2, a zero tangent the glTF-Validator rejects) the even angles give every fan triangle the same
+    opening. The outline's turning direction is kept (so are the fan's faces); an angle whose ray misses the outline
+    keeps the nearest point by angle."""
+    cx, cz = centre
+    m = len(pts)
+    turn = 1.0 if sum(pts[i][0] * pts[(i + 1) % m][1] - pts[(i + 1) % m][0] * pts[i][1] for i in range(m)) >= 0 else -1.0
+    out = []
+    for k in range(n):
+        th = turn * 2 * math.pi * k / n
+        dx, dz = math.cos(th), math.sin(th)
+        best = None
+        for i in range(m):
+            (ax, az), (bx, bz) = pts[i], pts[(i + 1) % m]
+            ex, ez = bx - ax, bz - az
+            den = dx * ez - dz * ex
+            if abs(den) < 1e-15:
+                continue
+            t = ((ax - cx) * ez - (az - cz) * ex) / den  # along the ray
+            u = ((ax - cx) * dz - (az - cz) * dx) / den  # along the edge
+            if t > 0.0 and -1e-9 <= u <= 1.0 + 1e-9 and (best is None or t < best):
+                best = t
+        if best is None:
+            best_pt = min(pts, key=lambda q: abs(math.remainder(math.atan2(q[1] - cz, q[0] - cx) - th, 2 * math.pi)))
+            out.append(tuple(best_pt))
+        else:
+            out.append((cx + dx * best, cz + dz * best))
+    return out
 
 
 def _smooth01(t: float) -> float:
