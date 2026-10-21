@@ -32,7 +32,7 @@ class Geometry(unittest.TestCase):
     def test_m15s_socket_has_its_own_defaults_under_the_spec(self):  # M15b
         self.assertEqual(LL.merged(), LL.LASHES)  # older kits (no route) build as before
         m15 = LL.merged(route="m15")
-        self.assertEqual((m15["liner_t_in_deg"], m15["sink"]), (-42.0, 0.003))
+        self.assertEqual((m15["liner_t_in_deg"], m15["sink"]), (-20.0, 0.003))  # M17b: the 108 % unit
         self.assertEqual({k: v for k, v in m15.items() if k not in ("liner_t_in_deg", "sink")},
                          {k: v for k, v in LL.LASHES.items() if k not in ("liner_t_in_deg", "sink")})
         self.assertEqual(LL.merged({"sink": 0.005}, "m15")["sink"], 0.005)  # an explicit spec still wins

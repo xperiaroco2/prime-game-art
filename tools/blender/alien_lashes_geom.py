@@ -46,7 +46,10 @@ LASHES = {"count": 7, "t_in_deg": 0.0, "t_out_deg": 74.0, "crowd": 1.5,
 # LASHES' liner_t_in_deg -60 the liner's inner end came within 0.12 mm of the socket skin (the step needs 0.5) and with
 # sink 0.008 one lash root vertex touched the slim lower lid in bored's half state; with these: no clip, least skin gap
 # 0.95 mm. The look is otherwise M11b's.
-SOCKET_LASHES = {"m15": {"liner_t_in_deg": -42.0, "sink": 0.003}}
+# M17b: the eye unit grew to 108 % in the same socket (alien_fit_geom.FIT["unit"]); with -42 the liner's inner end went
+# 1 to 2.5 mm into the brow's skin with manic's lid open and at rest (-30 cleared it at 105 %); -20 clears it at 108 and
+# 110 % (no clip in any state).
+SOCKET_LASHES = {"m15": {"liner_t_in_deg": -20.0, "sink": 0.003}}
 
 
 def merged(spec: dict | None = None, route: str = "") -> dict:
