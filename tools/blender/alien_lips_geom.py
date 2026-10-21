@@ -70,10 +70,8 @@ def mouth_mount(node: tuple, m: dict = MOUTH_MOUNT) -> tuple:
 # thickness per lip (upper 0.95, lower 1.10: the lower lip the bigger cushion), tapers to fine tucked ends a little
 # rounder than the frog's (corner 0.18, pw 2.0), a soft cupid's bow (0.25; at 0.45 with corner 0.30 the upper lip
 # read as four lumps), M8's section (square 0.85, lean 0.25) and corners that sink a little less (depth_corner 0.35);
-# O, the kiss, keeps half the profile; the bow's side peaks low (bow_peak 0.15: at 0.40 the upper lip had four lumps).
-# size 0.95 and plump 1.15: the pick of M12's 3 x 2 grid (size 0.85 / 0.95 / 1.05 x plump 1.00 / 1.15). ring_corner (0.45): the open rings' corners keep this share of the centre's
-# thickness (E's wide corners at 0.18 were thin flaps the AO painted almost black). size and plump are the grid's pick
-# (docs/godot.md, M12).
+# the bow's side peaks low (bow_peak 0.15: at 0.40 the upper lip had four lumps). size 0.95 and plump 1.15: the pick
+# of M12's 3 x 2 grid (size 0.85 / 0.95 / 1.05 x plump 1.00 / 1.15; docs/godot.md, M12).
 # M12b (UPDATE 19): the bow softer and wider (0.14 over bow_w 0.16, side peaks 0.10; at 0.25 / 0.10 with the depth
 # dipping too the upper lip read as two balls), and it notches the outline only (bow_flat 1: the depth from the lip
 # without the bow, so the front is one continuous roll). A, E and O are designed rings (ring_param; the traced
@@ -88,7 +86,6 @@ LIP_SHAPE_POUT = {
     "w": 1.0, "corner": 0.18, "pw": 2.0, "full": 1.0, "upper": 0.95, "lower": 1.10,
     "bow": 0.14, "bow_w": 0.16, "bow_peak": 0.10, "bow_at": 0.24,
     "lean": 0.25, "square": 0.85, "depth_corner": 0.35,
-    "ring": {"A": 1.0, "E": 1.0, "O": 0.5}, "ring_corner": 0.45,
     "width": 1.0, "size": 0.95, "plump": 1.15,
     "bow_flat": 1.0,
     "ring_param": {
@@ -98,10 +95,30 @@ LIP_SHAPE_POUT = {
     },
 }
 
-# M12: the third mouth's contact channel. TEXCOORD_4 (bored, manic) and TEXCOORD_5 (frog, overbite) are full, so the
-# pout mouth's skin contact is Body's seventh UV layer, glTF TEXCOORD_6 (u: pout, v: free for the next mouth, mg2),
-# which Godot imports as CUSTOM2 (x pout). Like the other layers, v is stored flipped (the exporter writes 1 - v).
-CONTACT_UV_MOUTH2 = ("contact_mouth2", ("pout", ""))
+# M13 (art #196): the fangs mouth mg2 (D:/prime-art-raw/2026-10-20-alien-face-sheets-2/mg2/), the fourth design
+# ("fangs"): thin, wide, soft coral lips in a flat calm line (the kit's alien_lip), wider than the frog's, with two
+# lower fangs (alien_fangs_geom). The closed lips thinner than the frog's (upper 0.70, lower 0.85 of the measured
+# centre, plump 1.0), round soft ends (corner 0.30), almost no bow (0.05: a calm line), the frog's section; size 1.0
+# and width 1.0 (the sheet's own, about 1.1 x the frog's at M10b). A, E and O designed rings as the pout's (a thin even
+# roll, round tucked corners); O a small round hole in a pursed ring. The fangs' size and place: FANGS (M13's grid).
+LIP_SHAPE_FANGS = {
+    "w": 1.0, "corner": 0.30, "pw": 2.0, "full": 1.0, "upper": 0.80, "lower": 0.80,
+    "bow": 0.05, "bow_w": 0.16, "bow_peak": 0.0, "bow_at": 0.24,
+    "lean": 0.30, "square": 0.85, "depth_corner": 0.35,
+    "width": 1.0, "size": 1.0, "plump": 1.4,
+    "bow_flat": 1.0,
+    "ring_param": {
+        "A": dict(_RING, n=2.1, corner=0.70, bow=0.03),
+        "E": dict(_RING, n=2.0, corner=0.62, bow=0.03),
+        "O": dict(_RING, n=2.0, hole=0.30, corner=1.0, thick=0.8, bow=0.10, tuck=0.0, cup_throat=0.85),
+    },
+}
+
+# M12: the third and fourth mouths' contact channels. TEXCOORD_4 (bored, manic) and TEXCOORD_5 (frog, overbite) are
+# full, so the pout's and (M13) the fangs' skin contact is Body's seventh UV layer, glTF TEXCOORD_6 (u: pout, v:
+# fangs), which Godot imports as CUSTOM2 (x pout, y fangs). Like the other layers, v is stored flipped (the exporter
+# writes 1 - v).
+CONTACT_UV_MOUTH2 = ("contact_mouth2", ("pout", "fangs"))
 CONTACT_MARKER_MOUTH2 = {"prime_contact_mouth2": "custom2_xy"}
 
 
@@ -140,15 +157,19 @@ def scale_size(world, k: float, z0: float):
     return scaled
 
 
-def merged_pout(over: dict | None = None) -> dict:
-    """LIP_SHAPE_POUT with `over` merged on top (as merged(); ring_param merged shape by shape, key by key)."""
-    out = dict(LIP_SHAPE_POUT)
-    out["ring"] = dict(LIP_SHAPE_POUT["ring"])
-    out["ring_param"] = {k: dict(v) for k, v in LIP_SHAPE_POUT.get("ring_param", {}).items()}
+def merged_fangs(over: dict | None = None) -> dict:
+    """LIP_SHAPE_FANGS with `over` merged on top (as merged_pout)."""
+    return merged_pout(over, LIP_SHAPE_FANGS)
+
+
+def merged_pout(over: dict | None = None, base: dict | None = None) -> dict:
+    """LIP_SHAPE_POUT (or base, e.g. LIP_SHAPE_FANGS) with `over` merged on top (as merged(); ring_param merged shape
+    by shape, key by key)."""
+    base = LIP_SHAPE_POUT if base is None else base
+    out = dict(base)
+    out["ring_param"] = {k: dict(v) for k, v in base.get("ring_param", {}).items()}
     for k, v in (over or {}).items():
-        if k == "ring":
-            out["ring"].update(v)
-        elif k == "ring_param":
+        if k == "ring_param":
             for shape, rp in v.items():
                 out["ring_param"].setdefault(shape, {}).update(rp)
         else:
@@ -222,8 +243,7 @@ def ring_width(th: float, hw: float, hc: float, low: float, shape: str, p: dict)
         return hw
     s = math.cos(th)
     k = p["upper"] + (p["lower"] - p["upper"]) * low
-    tp = dict(p, corner=p["ring_corner"]) if "ring_corner" in p else p  # M12: the open ring's own corner
-    target = hc * p["full"] * p.get("plump", 1.0) * k * taper(s, tp)
+    target = hc * p["full"] * p.get("plump", 1.0) * k * taper(s, p)
     up = max(0.0, -math.sin(th))  # the upper lip's top centre: the bow
     target *= 1.0 + bow(s, p) * up * up
     return hw + w * (target - hw)

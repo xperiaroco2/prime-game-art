@@ -2,7 +2,7 @@ extends Node
 ## The alien parts kit's character controller (art #196, S3). Add it as a child of an instanced alien_character.glb
 ## (tools/blender/alien_assemble.py: every variant a named node under the Head joint's sockets) and call setup().
 ## It swaps the hue material for alien_hue.gdshader, and then:
-## - set_eyes("bored"|"manic"), set_mouth_design("frog"|"overbite"|"pout"), set_crest(""|"antennae"|"fins"), set_hue(name);
+## - set_eyes("bored"|"manic"), set_mouth_design("frog"|"overbite"|"pout"|"fangs"), set_crest(""|"antennae"|"fins"), set_hue(name);
 ## - blinks by lid rotation (the lid node's local X, the angles of parts.json): BLINK_MS close, hold, open, every 2-6 s
 ##   at random; the lids rest at "rest" (the default: bored's heavy lids; "open" only for surprise, set_lids("open"));
 ## - talks: listen(bus) reads an AudioEffectSpectrumAnalyzer on that bus and every 60-80 ms shows one of the six mouth
@@ -30,6 +30,10 @@ extends Node
 ##   talk style of its own: talk_at(t_ms, line) shows a phase line's piece at t through the design's style
 ##   (alien_talk.gd: lag, merged flickers, a lower-lip bounce and a pucker between words, as the lip shader's
 ##   instance uniforms lip_drop and pucker on the shown piece); play_line(line) drives it in time.
+## - M13, the fangs mouth (mg2): a fourth design "fangs" (mouth_fangs_<shape>: the coral alien_lip lips, two lower fangs
+##   in alien_fang, FANG_LOOK), its contact in CUSTOM2.y, a heavier jaw's talk (alien_talk.gd: a slower opening, a
+##   forward jaw thrust on A and E, a small bounce). The talking designs' lips, fangs, cup and tongue move together on
+##   the jaw weight COLOR_0.g (alien_mouth_motion.gdshaderinc; the bounce presses a closed mouth shut, never sags it).
 ## Used through preload (a -s script has no global class cache): const AlienRig = preload("res://alien/alien.gd").
 
 const SHADER: Shader = preload("res://alien/alien_hue.gdshader")
@@ -41,6 +45,8 @@ const HUE_MATERIALS := ["alien_hue", "alien_hue_part"]
 const EYE_SHADER: Shader = preload("res://alien/alien_eye.gdshader")
 const LIP_SHADER: Shader = preload("res://alien/alien_lip.gdshader")
 const WET_SHADER: Shader = preload("res://alien/alien_wet.gdshader")
+## M13: the inner cup and tongue of a talking design's pieces, moving with the lips (alien_mouth_motion.gdshaderinc).
+const MOUTH_PART_SHADER: Shader = preload("res://alien/alien_mouth_part.gdshader")
 const WET_OPEN_DEG := Vector2(6.0, 16.0)  # M4: the wet lines fade out as the gap between the lid edges closes (degrees)
 const LIP := Color(0.82, 0.44, 0.37)  # sRGB: S9, rf2's warmer coral (S5: e2's dusty salmon (0.76, 0.45, 0.40)) (the first test: a glossy (0.86, 0.42, 0.36))
 const FACE := {  # sRGB colour, roughness, specular: the stage-1 face kit's (faces/clay_kit.json: lip tint on the skin,
@@ -97,7 +103,19 @@ const LID_LOOK := {"roughness_value": 0.64, "sheen": 0.0}
 ## grain (a smooth gloss). Chosen beside the sheet on M12's grid (m12_shots.gd).
 const LIP_LOOK_POUT := {"albedo": Color(0.72, 0.18, 0.18), "deep": Color(0.42, 0.05, 0.07), "roughness_value": 0.30,
 	"specular_value": 0.55, "sheen": 0.55, "sheen_roughness": 0.12, "drift": 0.03, "grain": 0.03}
-const MOUTH_DESIGNS: Array[String] = ["frog", "overbite", "pout"]
+## M13: the fangs mouth's two lower fangs (material alien_fang, the lips' shader so they move with the lower jaw):
+## ivory, a soft satin with a little clear coat, deeper and warmer at the root (the baked AO), a faint warm
+## transmittance. The lips are the kit's coral alien_lip (LIP_LOOK). Chosen beside the mg2 sheet on M13's grids.
+const FANG_LOOK := {"albedo": Color(0.90, 0.82, 0.64), "deep": Color(0.70, 0.56, 0.40), "ao_mix": 1.0,
+	"ao_range": Vector2(0.45, 0.95), "ao_occl": 0.4, "drift": 0.02, "roughness_value": 0.38, "specular_value": 0.45,
+	"sheen": 0.25, "sheen_roughness": 0.3, "grain": 0.02, "sss": 0.15, "transmit": 0.15, "rim_value": 0.2}
+const MOUTH_DESIGNS: Array[String] = ["frog", "overbite", "pout", "fangs"]
+## M13: the talking designs whose pieces move (alien_talk.gd's bounce, pucker, thrust): their lips, fangs, cup and
+## tongue take the motion shaders on the jaw weight COLOR_0.g (tools/blender/alien_m12.py); frog and overbite snap.
+const MOVING_DESIGNS: Array[String] = ["pout", "fangs"]
+const MOVING_PARTS: Array[String] = ["alien_mouth_inner", "alien_tongue"]
+## The face materials beyond FACE that the s5 look replaces (M12 the pout's lips, M13 the fangs).
+const EXTRA_FACE: Array[String] = ["alien_lip_pout", "alien_fang"]
 ## M6: the textured skin's contact shade near the lids and lips (alien_hue.gdshader `contact*`), only for a kit whose
 ## hue material carries a contact marker: M6's CONTACT_MARKER_M6 (one field for every design in TEXCOORD_4's u) or
 ## M6c's CONTACT_MARKER (tools/blender/alien_m6.py: one channel per design, TEXCOORD_4 = (bored, manic), TEXCOORD_5 =
@@ -106,9 +124,9 @@ const MOUTH_DESIGNS: Array[String] = ["frog", "overbite", "pout"]
 const CONTACT_MARKER := {"prime_contact": "custom1_designs"}
 const CONTACT_MARKER_M6 := {"prime_contact": "custom1_x"}
 const CONTACT_CHANNEL := {"bored": 0, "manic": 1, "frog": 2, "overbite": 3}
-## M12: the third mouth's channel, a component of CUSTOM2 (glTF TEXCOORD_6 = (pout, free); alien_lips_geom
-## CONTACT_UV_MOUTH2), picked by `contact_pick2`.
-const CONTACT_CHANNEL2 := {"pout": 0}
+## M12: the third mouth's channel, a component of CUSTOM2 (glTF TEXCOORD_6 = (pout, fangs); alien_lips_geom
+## CONTACT_UV_MOUTH2), picked by `contact_pick2`; M13: the fourth mouth's (fangs) is its v.
+const CONTACT_CHANNEL2 := {"pout": 0, "fangs": 1}
 const SKIN_CONTACT := {"contact": 1.0, "contact_tint": Vector3(0.80, 0.66, 0.62), "contact_ao": 0.3}
 ## M6: LIP_LOOK reads the part's baked AO (COLOR_0), so it applies only to a kit whose imported alien_lip (the lips' and
 ## the lid domes' one material) carries this marker in its glTF extras (tools/blender/alien_m6.py, after the bake).
@@ -184,6 +202,7 @@ var _face_surfaces: Array = []  # [MeshInstance3D, surface, imported material na
 var _lid_surfaces: Array = []  # [MeshInstance3D, surface]
 var _lid_reach: Dictionary = {}  # M10: design -> [upper, lower] rim reach (deg) from the kit's LIDS_MARKER
 var _face_materials: Dictionary = {}  # imported name -> the S5 material
+var _moving_src: Dictionary = {}  # M13: "<imported name>_moving" -> the imported material (its colour if not in FACE)
 var _wet_nodes: Array[GeometryInstance3D] = []  # M4: the lids' wet lines
 var _rng := RandomNumberGenerator.new()
 var _blink_t: float = -1.0  # ms into the current blink, -1 when not blinking
@@ -216,7 +235,8 @@ func setup(root: Node3D, seed: int = 196) -> void:
 				if m.name.contains("_lid_"):
 					_lid_surfaces.append([m, s])
 			elif mat != null and (FACE.has(mat.resource_name) or mat.resource_name.begins_with("alien_eye_")
-					or mat.resource_name == "alien_wet" or mat.resource_name == "alien_lip_pout"):
+					or mat.resource_name == "alien_wet" or mat.resource_name in EXTRA_FACE
+					or (mat.resource_name in MOVING_PARTS and _moving_piece(m.name))):
 				# M6: the lid domes take their own copy of the lips' material (LID_LOOK)
 				var key: String = mat.resource_name
 				if key == "alien_lip" and has_marker(mat, PART_AO_MARKER):
@@ -225,6 +245,9 @@ func setup(root: Node3D, seed: int = 196) -> void:
 					_read_lid_reach(mat)
 				if key == "alien_lip" and m.name.contains("_lid_"):
 					key = "alien_lid"
+				if key in MOVING_PARTS and _moving_piece(m.name):  # M13: the cup and tongue move with the lips
+					key += "_moving"
+					_moving_src[key] = mat
 				_face_surfaces.append([m, s, key])
 				if mat.resource_name == "alien_wet" and not _wet_nodes.has(m):
 					m.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
@@ -336,6 +359,14 @@ func _make_face_materials() -> void:
 			for k: String in LIP_LOOK_POUT:
 				pm.set_shader_parameter(k, LIP_LOOK_POUT[k])
 			_face_materials["alien_lip_pout"] = pm
+			var fm := ShaderMaterial.new()  # M13: the fangs (alien_fang)
+			fm.shader = LIP_SHADER
+			fm.resource_name = "alien_fang"
+			for k: String in LIP_LOOK:
+				fm.set_shader_parameter(k, LIP_LOOK[k])
+			for k: String in FANG_LOOK:
+				fm.set_shader_parameter(k, FANG_LOOK[k])
+			_face_materials["alien_fang"] = fm
 			continue
 		var m := StandardMaterial3D.new()
 		m.resource_name = name
@@ -345,6 +376,21 @@ func _make_face_materials() -> void:
 		m.diffuse_mode = BaseMaterial3D.DIFFUSE_LAMBERT_WRAP
 		m.cull_mode = BaseMaterial3D.CULL_DISABLED  # as the imported (double-sided) ones: culled, the inner cup vanished
 		_face_materials[name] = m
+	for key: String in _moving_src:  # M13: the moving cups and tongues (alien_mouth_part.gdshader)
+		var src: Material = _moving_src[key]
+		var base: String = key.trim_suffix("_moving")
+		var mm := ShaderMaterial.new()
+		mm.shader = MOUTH_PART_SHADER
+		mm.resource_name = key
+		if FACE.has(base):
+			mm.set_shader_parameter("albedo", FACE[base][0])
+			mm.set_shader_parameter("roughness_value", FACE[base][1])
+			mm.set_shader_parameter("specular_value", FACE[base][2])
+		elif src is BaseMaterial3D:
+			mm.set_shader_parameter("albedo", (src as BaseMaterial3D).albedo_color)
+			mm.set_shader_parameter("roughness_value", (src as BaseMaterial3D).roughness)
+			mm.set_shader_parameter("specular_value", (src as BaseMaterial3D).metallic_specular)
+		_face_materials[key] = mm
 	var w := ShaderMaterial.new()
 	w.shader = WET_SHADER
 	w.resource_name = "alien_wet"
@@ -522,8 +568,8 @@ func show_mouth(piece: String) -> void:
 			var p: Node3D = node("mouth_%s_%s" % [d, v])
 			if p == null:  # a kit without that design (the pout before M12)
 				continue
-			# the pout has no flipbook shells: it shows its 3D pieces in both modes
-			p.visible = (mouth_mode == "3d" or d == "pout") and d == mouth_design and v == piece
+			# the pout and the fangs have no flipbook shells: they show their 3D pieces in both modes
+			p.visible = (mouth_mode == "3d" or d in MOVING_DESIGNS) and d == mouth_design and v == piece
 			var f: Node3D = node("mouthflip_%s_%s" % [d, v])
 			if f != null:
 				f.visible = mouth_mode == "flip" and d == mouth_design and v == piece
@@ -537,21 +583,35 @@ func has_mouth_design(design: String) -> bool:
 	return node("mouth_%s_rest" % design) != null
 
 
-## M12: the secondary motion on the shown 3D piece (alien_lip.gdshader's instance uniforms; 0 = none).
-func set_mouth_motion(drop: float, pucker: float) -> void:
+## M13: whether a piece node (mouth_<design>_<shape>, a grid's lipvar_<variant>_<design>_<shape>) is of a talking
+## design whose cup and tongue move with its lips.
+static func _moving_piece(name: String) -> bool:
+	if not (name.begins_with("mouth_") or name.begins_with("lipvar_")):
+		return false
+	for d: String in MOVING_DESIGNS:
+		if name.begins_with("mouth_%s_" % d) or (name.begins_with("lipvar_") and name.contains("_%s_" % d)):
+			return true
+	return false
+
+
+## M12: the secondary motion on the shown 3D piece (alien_mouth_motion.gdshaderinc's instance uniforms on the lips,
+## fangs, cup and tongue; 0 = none). M13: the lower jaw's forward thrust; the motion lives in the s5 face look's
+## shaders, so with the "first" look (the imported materials) the piece does not move.
+func set_mouth_motion(drop: float, pucker: float, thrust: float = 0.0) -> void:
 	var p := node("mouth_%s_%s" % [mouth_design, mouth_piece]) as GeometryInstance3D
-	if p != null:
+	if p != null and face_look == "s5":
 		p.set_instance_shader_parameter("lip_drop", drop)
 		p.set_instance_shader_parameter("pucker", pucker)
+		p.set_instance_shader_parameter("jaw_thrust", thrust)
 
 
 ## M12: a phase line's piece and motion at t_ms through the shown design's talk style (alien_talk.gd); returns the
-## sample ({"piece", "drop", "pucker", "since_ms"}).
+## sample ({"piece", "drop", "pucker", "thrust", "since_ms"}).
 func talk_at(t_ms: float, line: Array = AlienTalk.LINE) -> Dictionary:
 	var s: Dictionary = AlienTalk.sample(mouth_design, AlienTalk.segments(line), t_ms)
 	set_mouth_motion(0.0, 0.0)
 	show_mouth(s["piece"])
-	set_mouth_motion(s["drop"], s["pucker"])
+	set_mouth_motion(s["drop"], s["pucker"], s["thrust"])
 	return s
 
 
@@ -576,6 +636,8 @@ func listen(bus: String) -> void:
 		return
 	_analyzer = AudioServer.get_bus_effect_instance(idx, 0) as AudioEffectSpectrumAnalyzerInstance
 	_listen_t0 = Time.get_ticks_msec()
+	_line = []  # M13 (PR #246's review minor 6): listening ends a playing line
+	set_mouth_motion(0.0, 0.0)
 	_next_switch_ms = 0.0
 	_peak = 1e-4
 	talk_log.clear()
