@@ -1860,7 +1860,7 @@ a time, by visibility.
   - **Godot (`alien.gd`):** `MOUTH_DESIGNS` + fangs, `CONTACT_CHANNEL2` {pout: 0, fangs: 1} (TEXCOORD_6's v, CUSTOM2.y),
     `FANG_LOOK`, `MOVING_DESIGNS` (pout, fangs): their cup and tongue take `alien_mouth_part.gdshader`, so with the lips
     and fangs (`alien_lip.gdshader`) everything of the shown piece moves on `alien_mouth_motion.gdshaderinc`
-    (`lip_drop`, `pucker`, `jaw_thrust` times COLOR_0.g). The motion is the s5 look's; `set_mouth_motion` skips
+    (`lip_drop`, `pucker`, `jaw_thrust` times the jaw weight, COLOR_0.a since M13b). The motion is the s5 look's; `set_mouth_motion` skips
     otherwise. `listen()` ends a playing line.
   - **The talk (`alien_talk.gd`):** the bounce uses the signed change in openness (a closing presses the lower lip up,
     an opening sags it) and a closed shape only ever presses; `LINE` (5.3 s) now triggers every rule (two merged
@@ -1907,6 +1907,55 @@ a time, by visibility.
   - **Tests:** `godot/alien/parse_check.gd` + `tools/tests/test_alien_parse_godot.py` (heavy, area `alien_parse`):
     every `godot/alien` shader parses in the dummy renderer (a broken one logs `SHADER ERROR` and lists no uniforms)
     and `alien.gd`/`alien_talk.gd` reload (minor 7). `m12_shots.gd` vgrid views take an optional distance.
+- **M14, the tongue mouth mt2** (brief UPDATE 25; output under `D:/prime-art-raw/review/char/alien-parts-kit/M14/`): a
+  fifth mouth design, `tongue`, from the sheet `D:/prime-art-raw/2026-10-20-alien-face-sheets-2/mt2/` (rest with the
+  tongue out at one corner, M with its tip between pressed lips, small resting on the lower lip, A lolling out of the
+  dropped jaw, E out of one corner, O with its tip out of the round opening). Built on M10c's pick by the same mouth
+  step (`alien_m12.py`, `--designs pout,fangs,tongue`, the default); the Body, the skull, the eyes and the other
+  mouths are untouched.
+  - **The contact layout:** `TEXCOORD_6` is full (pout, fangs), so the tongue's skin contact is Body's **eighth and
+    last** UV layer `contact_mouth3` (`alien_lips_geom.CONTACT_UV_MOUTH3`, glTF **`TEXCOORD_7`**: u tongue, v 0; v
+    stored flipped like every layer). Godot imports `TEXCOORD_6` and `TEXCOORD_7` together as `CUSTOM2` (xy, zw), so
+    the tongue's channel is `CUSTOM2.z` (`alien_hue.gdshader` `contact_pick3`, `alien.gd CONTACT_CHANNEL3`). The mouth
+    step rewrites both layers in that order; the contact counts only the rest piece's lip faces (the tongue hanging in
+    front of the chin is no lip contact). Blender allows eight UV layers, so a sixth mouth needs a shared channel.
+  - **Measuring:** the tongue covers the lower lip in every panel, so the columns where its lip pixels below the tongue
+    are fewer than half the usual lower-lip thickness are refilled from the clean columns beside them
+    (`alien_mouths.FILL_TONGUE`, `tongue_cover`, then `fill_teeth`). M's lips are pressed shut (the sheet's seam);
+    the open closed-form pieces (rest, small) have the dark between the lips, stopping short of the corners (on the
+    skin it showed as a dark dot past each tucked corner).
+  - **The lips (`alien_lips_geom.LIP_SHAPE_TONGUE`):** the kit's coral `alien_lip`, full soft rolls (upper 0.85, lower
+    1.10, plump 1.20), round tucked corners, a soft bow, width 0.90; A, E and O designed rings as the pout's and the
+    fangs' (O a fuller ring with a bigger hole: hole 0.36, thick 1.15).
+  - **The tongue (`alien_tongue_geom.TONGUE`, `alien_mouths.build_tongue_out`):** one size in every shape (39 mm wide,
+    7.5 mm thick, the root 0.68 of the width: a spatula, widest at 0.75 of its length; a soft centre groove; a thin
+    round tip). Per shape it is only placed (`shapes`: x as a share of the lips' half width, `inside`, `wrap`, `hang`,
+    `slant`, `roll`): the nearest lower-lip section gives the lip's roll (its axis, depth and half height, an
+    ellipse); the spine runs from inside the mouth (its root `dip` 7 mm lower, into the dark) onto the roll's top,
+    wraps over its front by `wrap` degrees, hangs `hang` further, leaning `slant` sideways and twisting `roll`; a
+    station below the lip stays its half thickness plus 1.2 mm in front of the chin. `drape` then lifts the sections
+    where the underside would cut the real lip (a downward ray per underside vertex, smoothed round each section and
+    along the tongue: column by column it crumpled the root). Grid `M14/godot/g1/vgrid.png` (width 32 / 36 / 40 mm,
+    shorter hangs): the sheet's tongue is about 0.42 of the rest mouth's width, so 39 mm, with the shorter hangs for A,
+    E and O. Material `alien_tongue_pink` (Godot `TONGUE_LOOK` on the lips' shader: a saturated soft pink, a deeper
+    rose in the AO, a soft wet sheen).
+  - **The teeth (`alien_tongue_geom.TEETH`, `build_teeth`):** three blunt cream teeth, uneven in size and tilt: two
+    upper ones either side of a gap and one lower one on the left, each a rounded box (a superellipsoid) tucked 3 mm
+    into its lip's inner edge, its front half the lip's depth in front of the lip's axis (set back, the AO bake made
+    it black), its visible height at most 0.55 of the opening; in rest, small, A and E (O's hole and M none).
+    Material `alien_tooth` (`TOOTH_LOOK` over `FANG_LOOK`). Its jaw weight: the upper teeth 0, the lower 1.
+  - **The talk (`alien_talk.gd` `STYLES["tongue"]`):** loose and floppy: a 35 ms lag, merged flickers and half-open
+    quick A/E as the pout's, every second styled run 25 ms late with the run before it holding on (`lopside_ms`), a
+    slow soft lower-lip bounce (1.2 mm, 4.5 Hz, 170 ms), and `flop` (`flop_at`): after each change of shape the
+    tongue's tip holds 45 ms, then moves `amp` (3.5 mm) x the signed change in openness x cos(2 pi 4 Hz dt) x
+    exp(-dt / 220 ms) (an opening leaves the tip up, then it swings down past and settles) and sways 1.5 mm to the
+    left on one run and the right on the next. `alien_mouth_motion.gdshaderinc` moves the tongue by the instance
+    uniform `tongue_flop` times its flop weight (`TEXCOORD_1`'s u: 0 up to the lip's top, rising to 1 at the tip,
+    Godot `UV2.x`) times the material's `flop_mask` (1 only on `alien_tongue_pink`).
+  - **PR #250's review minors:** `alien.gd` warns when a talking piece's COLOR_0 alpha is 1 everywhere (an M13 kit);
+    `fang_roots` moved to `alien_fangs_geom` and `test_one_fang_place` tests it; `parse_check.gd broken` parses a
+    deliberately broken shader (`test_a_broken_shader_is_caught`); the M13 line names the jaw weight's alpha. The
+    fangs' 3/4 lip tail past the fang is not changed (see `handoff-M14.md`).
 
 ## Findings for later tasks
 

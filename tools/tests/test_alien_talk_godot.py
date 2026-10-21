@@ -98,5 +98,27 @@ class TalkStyleTest(unittest.TestCase):
         self.assertTrue(all(s[3] == 0 for s in ss))  # no pucker
 
 
+    def test_tongue_lopsided_and_floppy(self):  # M14: the tongue's loose talk
+        st = self.d["styles"]["tongue"]
+        runs, pout = self.d["designs"]["tongue"]["styled"], self.d["designs"]["pout"]["styled"]
+        self.assertEqual(len(runs), len(pout))  # the same merges, then every second run late
+        late = [r[0] - p[0] for r, p in zip(runs, pout)]
+        self.assertTrue(all(abs(d) < 1e-6 for d in late[0::2]))
+        self.assertTrue(any(abs(d - st["lopside_ms"]) < 1e-6 for d in late[1::2]))
+        for a, b in zip(runs, runs[1:]):  # no run overlaps the next
+            self.assertLessEqual(a[1], b[0] + 1e-6)
+        s = self.samples("tongue")
+        fy = [x[6] for x in s]
+        self.assertGreater(max(fy), 0.5 * st["flop"]["amp"] * 0.4)  # the tip left up after an opening
+        self.assertLess(min(fy), 0.0)  # then it swings down past
+        fx = {round(x[5], 6) for x in s if x[1] not in ("rest", "M")}
+        self.assertTrue(any(v > 0 for v in fx) and any(v < 0 for v in fx), "it sways to both sides")
+        for x in s:  # a silence never sways
+            if x[1] in ("rest", "M") and x[0] > 300:
+                self.assertEqual(x[5], 0.0)
+        for d in ("frog", "pout", "fangs"):  # the other styles have no flop
+            self.assertTrue(all(x[5] == 0 and x[6] == 0 for x in self.samples(d)), d)
+
+
 if __name__ == "__main__":
     unittest.main()
