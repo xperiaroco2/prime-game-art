@@ -15,8 +15,8 @@ from runner.commands import _export
 HAVE = bool((path := common.tool_path(pins.BLENDER_ENV, pins.BLENDER_DEFAULT)) and path.is_file())
 KITS = common.raw_dir() / "review" / "char" / "alien-parts-kit"
 BASE, M16 = KITS / "M10c" / "export", KITS / "M16d" / "export"  # M16d: on M15's head, the slim rest
-HYBRID = KITS / "M20b" / "export"  # M20b: the closed pieces AI forms (alien_mouth_fit.py --replace)
-MIN_CONTACT_FULL = 60  # M20b: the pout contact's full skin vertices (M20 0, M17's parametric rest 112)
+HYBRID = KITS / "M20c" / "export"  # M20b: the closed pieces AI forms (alien_mouth_fit.py --replace); M20c's
+MIN_CONTACT_FULL = 100  # the pout contact's full skin vertices (M20 0, M20b 72, M20c 124, M17's parametric 112)
 SCRIPT = common.ROOT / "tools" / "blender" / "alien_pout_check.py"
 TOL_MM = 0.1
 MIN_TRI_MM2 = 0.02  # M16b's O cup sliver: 0.006 mm^2

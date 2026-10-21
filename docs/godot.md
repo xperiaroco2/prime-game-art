@@ -2353,8 +2353,8 @@ a time, by visibility.
     only (`smooth_bands`), so the silhouette, the bow's dip and the line's height stay;
   - **the skin contact:** `alien_m12.contact_field` measured a skin point under the lips 3-4 mm from the form's back
     (it goes under the skin), so `full` was 0; `closed_contact` counts a skin point inside the form as touching it
-    and an outside one `contact_margin` (5 mm, as the code) closer (`contact_distance`; 0: full 29, 2.5 mm: 52,
-    3.5 mm: 61, 5 mm: 72);
+    and an outside one `contact_margin` (M20b 5 mm) closer (`contact_distance`; 0: full 29, 2.5 mm: 52, 3.5 mm:
+    61, 5 mm: 72; M20c's 2 mm below);
   - **rest -> A:** A's and E's rings carry the rest's two-peak bow (bow 0.30, bow_w 0.12, side peaks 0.40 at 0.22)
     and stand back to the AI rest's stand-off (`ring_param` `push`, `push_lo`, read by `alien_mouths`' rings: the
     lips' front ahead of the skin at the centre, upper / lower, A 16.6 / 14.0 mm, E 16.5 / 13.8, the AI rest 16.0 /
@@ -2363,6 +2363,24 @@ a time, by visibility.
   - M a little wider and flatter in depth (`FIT["xy_scale"]` M 1.04 / 0.92; in front mp1's M is as wide as its
     rest and 0.92 of its height, which M20's already was); the heavy pout tests read `M20b/export` (the hybrid
     pieces mirrored, the GLB validated, the contact's `full`).
+- **M20c** (brief UPDATE 47, PR #260's last review minors 1-5; output `M20c/`, the same chain as M20b into
+  `M20c/export/`):
+  - **the dimple at the top of the lower lip's centre:** `fill_cleft` skipped a vertex deeper than `cleft_most`
+    (2 mm); for rest and M it now comes forward by 2 mm (`clamp`; rest 42 vertices, M 14), small keeps the skip (its
+    parting);
+  - **the skin contact:** `closed_contact` keeps a touching skin point (raw contact at least `contact_keep`, under the
+    form or within `contact_margin` of it) at 1 after the smoothing, which had lightened the band under the lower lip;
+    `contact_margin` 2 mm (with the keep: 5 mm full 156, 3.5 mm 135, 2 mm **124**; M20b 72);
+  - **rest -> A/E/O:** mp1's open shapes measured on the sheet (`tools/out/m20c/openmeas.py` in the worktree: the
+    lip mask without the pink tongue, at the centre, each over the lips' width W: upper lip / opening height / lower
+    lip / opening width): mp1 A 0.30 / 0.39 / 0.31 / 0.68, E 0.21 / 0.21 / 0.22 / 0.78, O 0.34 / 0.20 / 0.38 / 0.23;
+    M20b A 0.30 / 0.44 / 0.32 / 0.87, E 0.20 / 0.23 / 0.22 / 0.85, O 0.27 / 0.28 / 0.35 / 0.38. The rolls' front
+    heights already matched; the openings were too wide (A corner 0.53, E 0.57), A's too tall (open 0.88), O's hole
+    too big (hole 0.18). What read thin at 3/4 was the rolls' depth: `ring_param` `depth` (alien_mouths, a ring's own
+    roll depth) 1.3, pushed back so the front stands where the AI rest's does (16.0 / 15.4 mm ahead of the skin; O
+    25.5 / 27.9 as M20b's). Grids `M20c/godot/grid1/vgrid.png` (depth 1.0 / 1.3 / 1.6 x stand-off 0 / -1.5 / -3 mm)
+    and `grid/vgrid.png` (depth 1.0 / 1.15 / 1.3 at the rest's stand-off). After, at 0.4 m: A 0.30 / 0.39 / 0.32 /
+    0.76, E 0.21 / 0.23 / 0.22 / 0.78, O 0.32 / 0.15 / 0.40 / 0.29.
 
 ## Findings for later tasks
 
