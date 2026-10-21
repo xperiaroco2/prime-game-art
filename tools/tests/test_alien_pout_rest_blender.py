@@ -91,6 +91,8 @@ class PoutHybridKitTest(unittest.TestCase):
         self.assertTrue(ok, f"{line}: {_export.issues(rep)['error']}")
 
     def test_the_skin_contact_is_full_at_the_lips(self):
+        # PR #260's last review minor 5: this re-reads the count alien_mouth_fit.py's closed_contact wrote into the
+        # kit's character.json when it built the kit; it does not recompute the contact (that needs a fit run)
         cj = json.loads((HYBRID / "character.json").read_text(encoding="utf-8"))
         c = cj["m20"]["contact"]["pout"]
         self.assertTrue(c.get("inside_touches"))
