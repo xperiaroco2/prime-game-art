@@ -224,11 +224,14 @@ def mirror_pairs(ob) -> np.ndarray:
 
 
 def mirror_snap(ob, pairs) -> float:
-    """M20b: each vertex averaged with its partner's mirror, so the per-vertex skin rays of the close (the face is
-    not exactly symmetric) leave the piece mirrored (it ended 0.33 mm off); returns the largest move (m)."""
+    """M20b: each vertex averaged with its partner's mirror across the body's centre plane (world x = 0, not the
+    socket's: the Mouth socket rolls 0.24 degrees, 0.33 mm at the corners), so the piece is mirrored as the
+    parametric pieces were; returns the largest move (m). The piece is on its socket already."""
+    mw = np.array(ob.matrix_world)
     co = local_co(ob)
-    m = co[pairs] * np.array([-1.0, 1.0, 1.0])
-    new = (co + m) / 2
+    w = co @ mw[:3, :3].T + mw[:3, 3]
+    m = w[pairs] * np.array([-1.0, 1.0, 1.0])
+    new = ((w + m) / 2 - mw[:3, 3]) @ np.linalg.inv(mw[:3, :3]).T
     set_points(ob, new)
     return float(np.linalg.norm(new - co, axis=1).max())
 
@@ -505,8 +508,9 @@ def fit_form(path: Path, ours, shape: str, bvh, sock, mouth, mats, corners: bool
     if shape in CLOSED:
         r["cleft"] = fill_cleft(form)
         r["bands"] = smooth_bands(form)
-        r["mirror_snap_mm"] = round(mirror_snap(form, pairs) * 1000, 3)
     to_socket(form, mouth)
+    if shape in CLOSED:
+        r["mirror_snap_mm"] = round(mirror_snap(form, pairs) * 1000, 3)
     return form, r
 
 
