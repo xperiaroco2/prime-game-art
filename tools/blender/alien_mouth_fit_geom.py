@@ -49,8 +49,11 @@ FIT = {
     "plane_sample": 6000,  # ... the points it scores (every k-th of the form)
     "mid_band": 0.002, "mid_smooth": 6,  # alien_mouth_fit.py: the band |x| < mid_band smoothed in depth (y) only
     "line_band_z": 0.0012, "line_smooth": 2,  # ... and the lip line's band (+-line_band_z), the facets' specks
-    "contact_margin": 0.005,  # contact_distance: an outside skin point's distance less this (m; 2.5 mm: full 52,
-    # 3.5 mm: 61 and a pale band still under the lower lip at 3/4)
+    "contact_margin": 0.002,  # contact_distance: an outside skin point's distance less this (m; 2.5 mm: full 52,
+    # 3.5 mm: 61 and a pale band still under the lower lip at 3/4; 5 mm: 72; M20c with contact_keep: 5 mm 156,
+    # 3.5 mm 135, 2 mm the pick)
+    "contact_keep": 0.999,  # alien_mouth_fit.py closed_contact: a raw contact at least this stays 1 after the
+    # smoothing (M20c: the smoothing had lightened the band within contact_margin of the lower lip)
     "cleft_band": 0.004, "cleft_most": 0.002,  # alien_mouth_fit.py fill_cleft: the lower lip's central groove
     # filled within +-4 mm, a vertex at most 2 mm behind the band edge's front (M20's groove: 0.8-1.4 mm)
     "xy_scale": {"M": (1.04, 0.92)},  # a closed shape's width and depth about its centre / front (minor 4: M wider,
