@@ -94,15 +94,23 @@ _RING = {"bow": 0.12, "tuck": 0.35, "side_keep": 0.85, "depth_corner": 0.5, "n_f
 # skin; 1.3 over 0.20 narrowed the mouth). The pick of M16b's grids (docs/godot.md, M16b). The open rings keep M12b's
 # bow shape (bow_w, bow_peak, bow_at in _POUT_RING; ring_param reads a ring's own).
 # M16c: cup_even: the dark cup's rim resampled at even angles (star_resample; O's traced rim folded, a zero tangent).
-_POUT_RING = {"upper": 0.95, "lower": 1.10, "lean": 0.25, "bow_w": 0.16, "bow_peak": 0.10, "bow_at": 0.24,
-              "cup_even": 1, "plump": 1.15}
+# M16e (PR #258 major 2: next to the slim rest A/E/O read thicker and wider, the talk jumped): measured on the front
+# cells (px at 0.4 m, the lips' centre, the tongue left out) the rings' lips were no thicker than the rest's (A 34 / 38,
+# E 29 / 34, O 29 / 43 against rest 40 / 40); the jump was the rest's flat blades (M16d's depth 0.5) against the
+# rings' round rolls, and the rings' thick round corners against the rest's fine points. So plump 1.0 with each
+# ring's own upper / lower keeping its lips a little under the rest's (an open lip stretches thinner: A 34 / 36,
+# E 30 / 34, O 29 / 37), A's and E's corners tapered (corner 0.40 / 0.35, mp1's A and E thin toward the ends) and A
+# no wider than the rest (wide 1.0). The pick of M16e's grid e3 (docs/godot.md, M16e).
+_POUT_RING = {"lean": 0.25, "bow_w": 0.16, "bow_peak": 0.10, "bow_at": 0.24, "cup_even": 1, "plump": 1.0}
 # M16c (UPDATE 36, #254's minors 1 and 3): mp1's long fine corner points with the upper lip overhanging the lower:
 # the ends thinner (corner 0.06, min_b 0.6 mm: alien_mouths.MIN_B's 1.1 mm rounded them to caps) and nearly flat
 # (depth_corner 0.05), tapering over a longer stretch (pw 1.75, the corner rule over the last 0.26), the lower lip's
 # end sunk under the upper's (corner_over 0.8); a dark strip behind a closed piece's open stations (parting_dark:
 # without each end's 0.2; small's and rest's traced open stations), small given a designed parting (parting: 6 px
-# over the middle 0.55; the sheet's traced gap was 4 stations wide), still hidden from the front by the lips' rolled
-# fronts. The pick of M16c's grids (docs/godot.md, M16c).
+# over the middle 0.55; the sheet's traced gap was 4 stations wide). The pick of M16c's grids (docs/godot.md, M16c).
+# M16e (PR #258 minor 5): with M16d's slimmer lips small's parting shows from the front as a fine dark slit, and its
+# ends stepped (the parted stations dropped the closed ones' 1.5 px seam overlap at once): parted() now eases the
+# overlap out over the first 3 px of the gap (`overlap` per station, alien_mouths' tubes read it).
 # M16d (UPDATE 37/39: the rest "stung by a wasp", swollen; mp1's sheet reads slim and elegant): fitted to mp1's rest
 # measured on the sheet (each lip 0.30 of the mouth's width, the lower over the upper 1.0, the corner's half-height
 # point 0.28 of the half width in, the ends' height 0.43 of the centre's): even lips (upper 1.10, lower 1.00, plump
@@ -110,20 +118,26 @@ _POUT_RING = {"upper": 0.95, "lower": 1.10, "lean": 0.25, "bow_w": 0.16, "bow_pe
 # the lower 0.75 of that: in profile they stood off the face 0.36 of the mouth's width, a beak; now 0.21), a longer
 # taper to finer ends (pw 1.3 over the last 0.32, tucked 0.7; the ends' min_b 0.8 mm and corner_over 0.6, #255
 # minor 4's pale tick), and rest's lips closed along the whole line (closed: its traced open stations notched the
-# line). M and small take the same; the open rings keep plump 1.15 (_POUT_RING).
-# The pick of M16d's grids (docs/godot.md, M16d).
+# line). M and small take the same. The pick of M16d's grids (docs/godot.md, M16d).
+# M16e (PR #258 major 1: in profile M16d's slim lips read as a beak or petal, each a flat blade, the lower a narrow
+# tongue with a sharp downward tip): round tubes again (depth 0.9, the lower as deep, depth_l 1.0) sunk half into the
+# skin (sink 0.5, so they stand off 0.28 of the mouth's width, not M16's 0.36), each station's section turned 0.6 of
+# the way to the mouth's mean normal (tube_n_flat: the skin under the lower lip faces down toward the chin, and the
+# lower lip hung along it), the lower lip 1.05 (the rounder tube measured it 0.93 of the upper; now 1.0). Front
+# ratios as M16d's (upper 0.30, lower 0.30 of the width). The pick of M16e's grids e1 / e2 (docs/godot.md, M16e).
 LIP_SHAPE_POUT = {
-    "w": 1.0, "corner": 0.06, "pw": 1.3, "full": 1.0, "upper": 1.10, "lower": 1.00,
+    "w": 1.0, "corner": 0.06, "pw": 1.3, "full": 1.0, "upper": 1.10, "lower": 1.05,
     "bow": 0.30, "bow_w": 0.12, "bow_peak": 0.40, "bow_at": 0.22,
     "lean": 0.10, "square": 0.85, "depth_corner": 0.05,
-    "width": 1.0, "size": 0.95, "plump": 1.00, "depth": 0.5, "depth_l": 0.75,
+    "width": 1.0, "size": 0.95, "plump": 1.00, "depth": 0.9, "depth_l": 1.0, "sink": 0.5, "tube_n_flat": 0.6,
     "bow_flat": 1.0, "corner_tuck": 0.7, "corner_share": 0.32, "corner_join": 0.95,
     "min_b": 0.0008, "corner_over": 0.6,
     "mirror": 1.0, "seam_fit": 3, "parting_dark": 0.2, "parting": {"small": (6.0, 0.55)}, "closed": ("rest",),
-    "ring_param": {  # M16: the open rings keep M12b's balance and lean (the rest's change is the closed lips' only)
-        "A": dict(_RING, n=2.1, corner=0.68, wide=1.04, **_POUT_RING),
-        "E": dict(_RING, n=2.0, corner=0.60, **_POUT_RING),
-        "O": dict(_RING, n=2.0, hole=0.30, corner=1.0, thick=0.9, bow=0.30, tuck=0.0, cup_throat=0.85, **_POUT_RING),
+    "ring_param": {  # M16: the open rings' own balance and lean; M16e their own fullness (_POUT_RING)
+        "A": dict(_RING, n=2.1, corner=0.40, wide=1.0, upper=1.15, lower=1.20, **_POUT_RING),
+        "E": dict(_RING, n=2.0, corner=0.35, upper=1.15, lower=1.25, **_POUT_RING),
+        "O": dict(_RING, n=2.0, hole=0.30, corner=1.0, thick=0.9, bow=0.30, tuck=0.0, cup_throat=0.85, upper=1.10,
+                  lower=1.10, **_POUT_RING),
     },
 }
 
