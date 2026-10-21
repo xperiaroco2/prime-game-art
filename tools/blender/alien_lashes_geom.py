@@ -42,13 +42,21 @@ LASHES = {"count": 7, "t_in_deg": 0.0, "t_out_deg": 74.0, "crowd": 1.5,
           "design": {"manic": {"lift_deg": -30.0, "fan_bias_deg": 25.0, "t_out_deg": 66.0}}}
 
 
-def merged(spec: dict | None = None) -> dict:
-    """LASHES with spec's keys over it; an unknown key is refused (a typo would build the default silently)."""
+# M15b: the defaults on M15's socket (Body["prime_socket"] route "m15"): the slim lids sit in a tighter hole, so with
+# LASHES' liner_t_in_deg -60 the liner's inner end came within 0.12 mm of the socket skin (the step needs 0.5) and with
+# sink 0.008 one lash root vertex touched the slim lower lid in bored's half state; with these: no clip, least skin gap
+# 0.95 mm. The look is otherwise M11b's.
+SOCKET_LASHES = {"m15": {"liner_t_in_deg": -42.0, "sink": 0.003}}
+
+
+def merged(spec: dict | None = None, route: str = "") -> dict:
+    """LASHES (with the socket route's SOCKET_LASHES over it) with spec's keys over it; an unknown key is refused (a
+    typo would build the default silently)."""
     spec = spec or {}
     bad = sorted(set(spec) - set(LASHES))
     if bad:
         raise ValueError(f"unknown lash keys: {bad}")
-    return dict(LASHES, **spec)
+    return {**LASHES, **SOCKET_LASHES.get(route, {}), **spec}
 
 
 def for_design(c: dict, design: str) -> dict:
