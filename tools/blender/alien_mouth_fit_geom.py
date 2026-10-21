@@ -10,7 +10,14 @@ toward -y, so a smaller y sticks out further), z up. Points are (x, y, z) tuples
 - `close_back` (the form's back pushed into the skin, so no gap shows behind the lips) and `taper_back` (the
   same with the side curving under, no straight wall), `wrap_weight` (how much of our
   tube follows the AI surface: the front-facing part fully, the part tucked into the skin not at all), `decimate_ratio`
-  (to our budget) and `mirror_error` (how far a form is from its own mirror).
+  (to our budget) and `mirror_error` (how far a form is from its own mirror);
+- M20 (brief UPDATE 42, the hybrid pout: the AI forms become the kit's closed pieces rest, M and small): `lip_line`
+  and `line_at` (the closed form's lip line across its width), `jaw_closed` (the jaw weight of a one-piece closed
+  form: the part below the line moves with the jaw, the corners stay), `corner_sink` (the thin ends sit deeper
+  under the skin), `stretch` and `stretch_below` (the AI lips' height toward mp1's fullness);
+- M20b (brief UPDATE 44, PR #260's review): `reflect`, `to_plane` and `best_plane` (the AI form's own best mirror
+  plane, a vertical plane through x0 turned by yaw about z, put on x = 0 before the mirror, so the mirror leaves no
+  kink down the lips' middle), `contact_distance` (a skin point inside the closed form touches it).
 """
 from __future__ import annotations
 
@@ -27,6 +34,27 @@ FIT = {
     "taper": 0.35,  # taper_back: how far a closed-back vertex comes in toward the centre, per depth it went back
     "smooth": 8,  # alien_mouth_fit.py: smoothing passes over the closed back (bmesh smooth_vert, factor 0.5)
     "wrap_lo": -0.15, "wrap_hi": 0.35,  # wrap_weight: n.(-y) from no wrap to the full wrap
+    # M20 (the hybrid pout: the AI forms as the kit's closed pieces)
+    "line_columns": 12, "line_reach": 0.8, "line_band": 0.2,  # lip_line: columns over the middle 80 %, +-20 % height
+    "jaw_band": 0.0015,  # jaw_closed: the smoothstep's half width (m) across the lip line
+    "corner_sink": 0.0015, "corner_start": 0.6,  # corner_sink: the ends' extra depth under the skin (m), from 60 %
+    "slit_depth": 0.55,  # alien_mouth_fit.py: small's parting, front-seen faces deeper than this share of the depth,
+    "slit_band": 0.12, "slit_reach": 0.5,  # ... within this share of the height of its lip line, the middle 50 %
+    "closed_align": "centre",  # the closed shapes' height: "centre" (the visible lips' middle) or "line" (seam_z)
+    "z_scale": {"rest": 1.10, "M": 1.40, "small": 1.30},  # stretch: the AI lips' height toward mp1's fullness
+    "y_follow": 0.5,  # ... the depth stretched by this share of the height's
+    "lower_scale": 1.12,  # stretch_below: the closed shapes' lower lip a little fuller (front lower / upper 0.8 -> 0.9)
+    # M20b (PR #260's review majors 1-2, minor 4)
+    "plane_span": 0.005, "plane_step": 0.0005, "plane_yaws": (-3.0, -2.0, -1.0, 0.0, 1.0, 2.0, 3.0),  # best_plane
+    "plane_sample": 6000,  # ... the points it scores (every k-th of the form)
+    "mid_band": 0.002, "mid_smooth": 6,  # alien_mouth_fit.py: the band |x| < mid_band smoothed in depth (y) only
+    "line_band_z": 0.0012, "line_smooth": 2,  # ... and the lip line's band (+-line_band_z), the facets' specks
+    "contact_margin": 0.005,  # contact_distance: an outside skin point's distance less this (m; 2.5 mm: full 52,
+    # 3.5 mm: 61 and a pale band still under the lower lip at 3/4)
+    "cleft_band": 0.004, "cleft_most": 0.002,  # alien_mouth_fit.py fill_cleft: the lower lip's central groove
+    # filled within +-4 mm, a vertex at most 2 mm behind the band edge's front (M20's groove: 0.8-1.4 mm)
+    "xy_scale": {"M": (1.04, 0.92)},  # a closed shape's width and depth about its centre / front (minor 4: M wider,
+    # pressed flatter; mp1's M in front is as wide as its rest and 0.92 of its height, which M20's already was)
 }
 
 
@@ -121,6 +149,121 @@ def decimate_ratio(tris: int, budget: int | None = None) -> float:
     if tris <= 0:
         raise ValueError("decimate_ratio of no triangles")
     return min(1.0, budget / tris)
+
+
+def lip_line(points, columns: int | None = None, reach: float | None = None, bins: int | None = None) -> list:
+    """M20: the lip line of a closed form across its width, as (x, z) knots: per column of the middle `reach` share of
+    the width (columns of them), the groove the way seam_z finds it in the centre (the deepest front in the height
+    band), searched only within FIT["line_band"] of the height round the centre's line, so a column never jumps to the
+    form's top or bottom edge; the two ends are the form's corners at the centre's line height."""
+    columns = columns or FIT["line_columns"]
+    reach = FIT["line_reach"] if reach is None else reach
+    bins = bins or FIT["seam_bins"]
+    pts = list(points)
+    lo, hi = bbox(pts)
+    cx, w, h = (lo[0] + hi[0]) / 2, hi[0] - lo[0], hi[2] - lo[2]
+    z0 = seam_z(pts)
+    knots = [(lo[0], z0)]
+    for c in range(columns):
+        x0 = cx - reach * w / 2 + reach * w * c / columns
+        x1 = x0 + reach * w / columns
+        front = [math.inf] * bins
+        for x, y, z in pts:
+            if x0 <= x < x1:
+                b = min(bins - 1, int((z - lo[2]) / h * bins))
+                front[b] = min(front[b], y)
+        cand = [b for b in range(bins) if abs(lo[2] + (b + 0.5) / bins * h - z0) <= FIT["line_band"] * h
+                and front[b] < math.inf]
+        z = z0 if not cand else lo[2] + (max(cand, key=lambda k: front[k]) + 0.5) / bins * h
+        knots.append(((x0 + x1) / 2, z))
+    knots.append((hi[0], z0))
+    # mirrored and lightly smoothed: the form is symmetric, a column's bin step should not show as a kink
+    zs = [k[1] for k in knots]
+    zs = [(a + b) / 2 for a, b in zip(zs, reversed(zs))]
+    sm = [zs[0]] + [(zs[i - 1] + 2 * zs[i] + zs[i + 1]) / 4 for i in range(1, len(zs) - 1)] + [zs[-1]]
+    return [(k[0], z) for k, z in zip(knots, sm)]
+
+
+def line_at(knots, x: float) -> float:
+    """The lip line's height at x (linear between the knots, held beyond the ends)."""
+    if x <= knots[0][0]:
+        return knots[0][1]
+    for (xa, za), (xb, zb) in zip(knots, knots[1:]):
+        if x <= xb:
+            return za if xb == xa else za + (zb - za) * (x - xa) / (xb - xa)
+    return knots[-1][1]
+
+
+def jaw_closed(p, knots, centre_x: float, half_w: float, band: float, jaw: dict) -> float:
+    """M20: the jaw weight of a closed one-piece form's vertex (alien_m12.jaw_weights' rule for two tubes, made
+    smooth): 0 above the lip line, 1 below it, a smoothstep across `band` metres either side, times jaw's falloff
+    toward the corners (jaw "from" and "corner" as alien_m12.JAW: the corners stay put)."""
+    x, _y, z = p
+    zl = line_at(knots, x)
+    g = smoothstep(zl + band, zl - band, z)
+    u = min(1.0, max(0.0, (abs(x - centre_x) / (half_w or 1.0) - jaw["from"]) / (1.0 - jaw["from"])))
+    return g * (1.0 - (1.0 - jaw["corner"]) * u * u * (3 - 2 * u))
+
+
+def corner_sink(x: float, centre_x: float, half_w: float, depth: float | None = None, start: float | None = None) -> float:
+    """M20: how much further (m) the closed back goes under the skin at x: 0 inside `start` of the half width, rising
+    smoothly to `depth` at the corner (the thin ends sit deeper, so no glossy rim of the back shows where they meet
+    the skin)."""
+    depth = FIT["corner_sink"] if depth is None else depth
+    start = FIT["corner_start"] if start is None else start
+    return depth * smoothstep(start, 1.0, abs(x - centre_x) / (half_w or 1.0))
+
+
+def stretch(points, line_z: float, front_y: float, kz: float, ky: float) -> list:
+    """M20: the points stretched about the lip line (z) by kz and back from the front (y) by ky; x unchanged."""
+    return [(x, front_y + (y - front_y) * ky, line_z + (z - line_z) * kz) for x, y, z in points]
+
+
+def stretch_below(points, line_z: float, k: float) -> list:
+    """M20: the part below the lip line stretched down by k (heights under line_z times k); the rest unchanged."""
+    return [(x, y, z if z >= line_z else line_z + (z - line_z) * k) for x, y, z in points]
+
+
+def reflect(p, x0: float, yaw_deg: float) -> tuple[float, float, float]:
+    """M20b: p mirrored in the vertical plane through (x0, *, *) whose normal is x turned by yaw (degrees) about z."""
+    a = math.radians(yaw_deg)
+    nx, ny = math.cos(a), math.sin(a)
+    d = (p[0] - x0) * nx + p[1] * ny
+    return (p[0] - 2 * d * nx, p[1] - 2 * d * ny, p[2])
+
+
+def to_plane(points, x0: float, yaw_deg: float) -> list:
+    """M20b: the points moved so the plane (x0, yaw) becomes x = 0: turned by -yaw about z round (x0, 0), shifted by
+    -x0."""
+    a = math.radians(-yaw_deg)
+    c, s = math.cos(a), math.sin(a)
+    return [((x - x0) * c - y * s, (x - x0) * s + y * c, z) for x, y, z in points]
+
+
+def best_plane(points, nearest, span: float | None = None, step: float | None = None, yaws=None):
+    """M20b: the vertical mirror plane (x0, yaw) that a form fits best: the least mean distance from each point's
+    reflection to the form (nearest(q) -> distance), over x0 in +-span by step and the yaws, then a finer x0 step
+    round the best. Returns (x0, yaw, mean distance)."""
+    span = FIT["plane_span"] if span is None else span
+    step = FIT["plane_step"] if step is None else step
+    yaws = FIT["plane_yaws"] if yaws is None else yaws
+    pts = list(points)
+
+    def cost(x0, yaw):
+        return sum(nearest(reflect(p, x0, yaw)) for p in pts) / len(pts)
+
+    n = int(round(span / step))
+    best = min(((cost(k * step, y), k * step, y) for k in range(-n, n + 1) for y in yaws))
+    fine = min((cost(best[1] + k * step / 5, best[2]), best[1] + k * step / 5, best[2]) for k in range(-4, 5))
+    return fine[1], fine[2], fine[0]
+
+
+def contact_distance(dist: float, inside: bool, margin: float | None = None) -> float:
+    """M20b: the distance the skin's contact field takes for a skin point dist m from a closed lip form: 0 inside it
+    (the form's back goes 3-4 mm under the skin, so a point under the lips was 3-4 mm from the nearest surface and its
+    contact stayed near half: PR #260's `full` 0), else dist less margin."""
+    margin = FIT["contact_margin"] if margin is None else margin
+    return 0.0 if inside else max(0.0, dist - margin)
 
 
 def mirror_error(points, cell: float = 0.002) -> float:

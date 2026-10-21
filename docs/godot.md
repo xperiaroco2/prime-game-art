@@ -2352,7 +2352,53 @@ a time, by visibility.
     keeps faces selected (clear the selection before a selection-based delete); work in the Mouth socket's space (it
     leans about 14 degrees), where our pieces' coordinates already are.
   - The variants keep the Body's contact layers, which come from our `mouth_pout_rest`; a route that ships an AI form
-    must rebuild them from it.
+    must rebuild them from it (M20 does).
+- **M20, the hybrid pout** (brief UPDATE 42, the engineer's pick: art#196 comment 6319459349; output under
+  `D:/prime-art-raw/review/char/alien-parts-kit/M20/`): the pout's **closed shapes rest, M and small are AI forms**
+  (M19's route (a)), the open shapes A, E, O ours. M and small came from `batches/2026-10-21-alien-mouth-views-2.toml`
+  (edits of M19's rest sheet with mp1's M or small panel, so the three closed pieces share the lips, light and scale)
+  and `batches/2026-10-21-alien-mouth-3d-2.toml`; rest is M19's `rest3d`. The kit is the chain's `mouthsk` and
+  `lashes` on `M17/b/lips`, then `alien_mouth_fit.py --replace` into `M20/export/`:
+  - each form scaled to our piece's lip width (rest 77.6, M 76.4, small 72.3 mm, measured off mp1 by `alien_mouths`),
+    its box's middle on the middle of **our visible lips** (`FIT["closed_align"]` "centre": the lip vertices in front
+    of the skin; `seam_z` on the whole parametric rest found the groove 5 mm low, among the parts tucked under the
+    skin, and on small the parting's ends 10 mm low), then **stretched toward mp1's fullness** (`FIT["z_scale"]` rest
+    1.10, M 1.40, small 1.30 about the line, the depth half as much, and the lower lip 1.12 below its own line,
+    `stretch_below`): the AI views drew each lip slimmer than mp1 (front upper / lower over the width rest 0.28 /
+    0.23, M 0.21 / 0.15, small 0.27 / 0.20 against mp1's 0.30 / 0.30, 0.29 / 0.28, 0.33 / 0.37); after it 0.30 /
+    0.28, 0.28 / 0.25, 0.33 / 0.33;
+  - decimated to 6k triangles and mirrored (a second pass when the mirror passed the budget: about 5.85k), the back
+    under the skin with the thin ends 1.5 mm deeper (`corner_sink`, the glossy rim at the corners), small's parting
+    (front-seen faces deeper than 55 % of the form, within 12 % of the height of its lip line, the middle half)
+    painted `alien_mouth_inner`;
+  - one closed piece each (no upper and lower tube): the jaw weight in `COLOR_0.a` is 1 below the form's own lip
+    line (`lip_line`: per column the deepest front in a band round the centre's groove, mirrored and smoothed), 0
+    above, a 1.5 mm smoothstep across it and `alien_m12.JAW`'s falloff to the corners (`jaw_closed`); the skin's pout
+    contact (`TEXCOORD_6.u`) rebuilt from the new rest (`alien_m12.mouth2_contact`); parts AO baked per piece;
+  - provenance per piece in `character.json` `m20.shapes.<shape>.provenance` (`ai_generated` true, `meshy-7.1`, the
+    task id, batch file, the GLB's sha256 and the inputs' provenance); the kit is not an asset yet, so no manifest;
+  - the open rings already sat at the AI rest's lip heights (front, px at 0.4 m: A 35 / 37, E 30 / 32, O 30 / 37
+    against the rest's 40 / 37); A's and E's corners taper further (`ring_param` corner 0.28 / 0.30, M16e 0.40 /
+    0.35) toward the AI rest's fine points.
+- **M20b** (brief UPDATE 44, PR #260's review; output `M20b/`, the kit on M17c's eyes: `mouthsk` and `lashes` on
+  `M17b/b/lips`, then the fit into `M20b/export/`):
+  - **the seam down the lower lip:** the forms are mirrored at full resolution, then decimated with the modifier's X
+    symmetry and mirrored once more (decimating first cut a ragged row of slivers along x = 0); each form is first
+    put on its own best mirror plane (`best_plane`, `to_plane`; the three AI forms' best plane is the box's centre,
+    mean mirror distance 0.13-0.17 mm, so the 4-5 mm of `mirror_mm_before` are a few outliers at the back, not a
+    misplaced plane); the band |x| < 2 mm (6 passes) and the lip line's band (+-1.2 mm, 2 passes) smoothed in depth
+    only (`smooth_bands`), so the silhouette, the bow's dip and the line's height stay;
+  - **the skin contact:** `alien_m12.contact_field` measured a skin point under the lips 3-4 mm from the form's back
+    (it goes under the skin), so `full` was 0; `closed_contact` counts a skin point inside the form as touching it
+    and an outside one `contact_margin` (3.5 mm) closer (`contact_distance`; 0: full 29, 2.5 mm: 52);
+  - **rest -> A:** A's and E's rings carry the rest's two-peak bow (bow 0.30, bow_w 0.12, side peaks 0.40 at 0.22)
+    and stand back to the AI rest's stand-off (`ring_param` `push`, `push_lo`, read by `alien_mouths`' rings: the
+    lips' front ahead of the skin at the centre, upper / lower, A 16.6 / 14.0 mm, E 16.5 / 13.8, the AI rest 16.0 /
+    14.3; M20's A 19.6 / 20.5); the pick of a stand-off (0, 0.5, 1 of the gap) x bow (M12b's, between, the rest's)
+    grid, `M20b/godot/grid/vgrid.png`;
+  - M a little wider and flatter in depth (`FIT["xy_scale"]` M 1.04 / 0.92; in front mp1's M is as wide as its
+    rest and 0.92 of its height, which M20's already was); the heavy pout tests read `M20b/export` (the hybrid
+    pieces mirrored, the GLB validated, the contact's `full`).
 
 ## Findings for later tasks
 

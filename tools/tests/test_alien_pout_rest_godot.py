@@ -1,5 +1,5 @@
 """M16 (art #196, brief UPDATE 29): the pout at rest in Godot 4.7.2, headless (godot/alien/pout_rest_check.gd) on the
-M16d kit (on M15's head): the closed pieces, unskinned meshes under the rigid Mouth socket, mirrored across the
+M20b kit (M20b: the hybrid pout's AI closed pieces, on M17c's head): the closed pieces, unskinned meshes under the rigid Mouth socket, mirrored across the
 body's centre plane within 0.1 mm, the rest piece shown with no motion (lip_drop, pucker, jaw_thrust 0), and the talk
 at rest (before the test line and after it) the rest piece with no pucker or drop. Skips without Godot or the raw kit."""
 
@@ -16,12 +16,12 @@ from runner import common, pins  # noqa: E402
 from runner.commands import _godot  # noqa: E402
 
 HAVE_GODOT = common.tool_path(pins.GODOT_ENV, None) is not None
-GLB = common.raw_dir() / "review" / "char" / "alien-parts-kit" / "M16d" / "export" / "alien_character.glb"
+GLB = common.raw_dir() / "review" / "char" / "alien-parts-kit" / "M20b" / "export" / "alien_character.glb"
 NAME = "alien_pout_rest_check"
 TOL_MM = 0.1
 
 
-@unittest.skipUnless(HAVE_GODOT and GLB.is_file(), "needs Godot and the M16d raw kit")
+@unittest.skipUnless(HAVE_GODOT and GLB.is_file(), "needs Godot and the M20b raw kit")
 class PoutRestGodotTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
