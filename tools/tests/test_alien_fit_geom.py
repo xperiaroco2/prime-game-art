@@ -152,11 +152,63 @@ class FitGeom(unittest.TestCase):
         F = self.F
         s = F.set_fit({})
         self.assertEqual((s["rim_drop"], s["mask_fill"]), (0.004, 1.0))
+        self.assertEqual((s["unit"], s["follow"]), (1.08, 0.0))  # M17b's pick: the unit 108 % in M15's socket
         with self.assertRaises(SystemExit):
             F.set_fit({"mask_fill": 0.5})
         src = (BLENDER / "alien_socket_fit.py").read_text(encoding="utf-8")
         self.assertLess(src.index("P = F.fillet("), src.index("P = F.rim_drop("))
-        self.assertIn('rep["mask_fill"] = fill_masks(body, lap, free)', src)
+        self.assertIn('rep["mask_fill"] = fill_masks(body, lap, free, s["fill_iters"])', src)  # M17b: minor 4
+        self.assertNotIn("1500)", src[src.index("def fill_masks("):])
+
+    def test_m17b_unit_grows_in_the_socket(self):
+        """M17b: `unit` scales the eye unit over `eye_scale`; the socket's sphere follows only `follow` of it, so with
+        follow 0 the socket is M15's and with unit 1 every follow gives M15's radius; out-of-range values refuse."""
+        F = self.F
+        k, r0, reach = 0.76, 0.0424, 1.151
+        base = F.socket_radius(k, r0, reach, F.set_fit({"unit": 1.0}))
+        self.assertAlmostEqual(base, k * r0 * reach + 0.0006, places=12)
+        self.assertAlmostEqual(F.socket_radius(k, r0, reach, F.set_fit({"unit": 1.05, "follow": 0.0})), base, places=12)
+        self.assertAlmostEqual(F.socket_radius(k, r0, reach, F.set_fit({"unit": 1.0, "follow": 1.0})), base, places=12)
+        full = F.socket_radius(k, r0, reach, F.set_fit({"unit": 1.05, "follow": 1.0}))
+        self.assertAlmostEqual(full - 0.0006, 1.05 * (base - 0.0006), places=12)
+        half = F.socket_radius(k, r0, reach, F.set_fit({"unit": 1.05, "follow": 0.5}))
+        self.assertTrue(base < half < full)
+        for bad in ({"unit": 1.4}, {"unit": 0.8}, {"follow": 1.5}, {"follow": -0.1}):
+            with self.assertRaises(SystemExit):
+                F.set_fit(bad)
+        src = (BLENDER / "alien_socket_fit.py").read_text(encoding="utf-8")
+        self.assertIn("R = F.socket_radius(k, r0, reach, s)", src)
+        self.assertIn("targets = {o.name: c1 + (ku * (world_co(o) - c)) @ rz.T", src)
+
+    def test_m17b_rim_drop_fades_at_its_limits(self):
+        """M17b (PR #257 review, minor 3): rim_drop's reach fades to nothing at RIM_DROP_DEG past the crossing curve
+        and at 1.6 R (rim_drop_weight is 1 well inside, 0 at the limit, monotone between), and rim_drop_steps counts
+        the edges where a drawn-in point meets an unselected one in the band: 0 with everything selected, more than 0
+        when half the band is held fixed."""
+        F = self.F
+        R = 0.03
+        lim = math.radians(F.RIM_DROP_DEG)
+        th = np.linspace(0.0, lim + 0.1, 200)
+        w = F.rim_drop_weight(np.full_like(th, R), th, np.zeros_like(th), R)
+        self.assertEqual(float(w[0]), 1.0)
+        self.assertEqual(float(w[-1]), 0.0)
+        self.assertTrue(np.all(np.diff(w) <= 1e-12))
+        d = np.linspace(R, 1.7 * R, 200)
+        wd = F.rim_drop_weight(d, np.zeros_like(d), np.zeros_like(d), R)
+        self.assertEqual(float(wd[0]), 1.0)
+        self.assertEqual(float(wd[-1]), 0.0)
+        co, e, tris = grid(81)
+        c, a = np.array((0.0, 0.0, -0.01)), np.array((0.0, 0.0, 1.0))
+        ex, ey = np.array((1.0, 0.0, 0.0)), np.array((0.0, 1.0, 0.0))
+        region = np.ones(len(co), dtype=bool)
+        tc = F.crossing_angles(co, e, region, c, a, ex, ey, R)
+        ins = F.opening(co, c, a, ex, ey, tc, R)
+        P = co.copy()
+        P[ins] = F.bowl_map(co[ins], c, a, ex, ey, R, tc)
+        self.assertEqual(F.rim_drop_steps(P, region, e, c, a, ex, ey, tc, R, 0.004), 0)
+        half = co[:, 0] < 0.0
+        self.assertGreater(F.rim_drop_steps(P, half, e, c, a, ex, ey, tc, R, 0.004), 0)
+        self.assertEqual(F.rim_drop_steps(P, half, e, c, a, ex, ey, tc, R, 0.0), 0)
 
     def test_stage_uses_the_marker(self):
         """alien_m6.py reads alien_socket.MARKER as "sized and placed"; the fit writes the same key."""
