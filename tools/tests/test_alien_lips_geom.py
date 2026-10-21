@@ -149,5 +149,60 @@ class UseTest(unittest.TestCase):
         self.assertTrue(re.search(r"bake_parts_ao\(body, eyes=False", src), "the lids' AO is not rebaked")
 
 
+class RestStationsTest(unittest.TestCase):  # M16 (UPDATE 29): the pout's rest mirrored, its lip line smooth
+    def _stations(self):
+        st = []
+        for i, s in enumerate(SS):
+            seam = 272 + 5 * s * s + (-4.0 if 0.1 < s < 0.25 else 0.0)  # the sheet's kink right of the centre
+            st.append({"x": 229.5 + i * 2.2, "top_u": seam - 18 + 0.6 * s, "bot_u": seam - 0.5, "top_l": seam + 0.5,
+                       "bot_l": seam + 24 - 0.4 * s, "open": False})
+        return st
+
+    def test_mirrored_about_the_face_centre(self):
+        st = LP.mirror_stations(self._stations(), 274.0)
+        n = len(st)
+        for i in range(n):
+            self.assertAlmostEqual(st[i]["x"] - 274.0, 274.0 - st[n - 1 - i]["x"])
+            for k in ("top_u", "bot_u", "top_l", "bot_l"):
+                self.assertAlmostEqual(st[i][k], st[n - 1 - i][k])
+        self.assertAlmostEqual(st[-1]["x"] - st[0]["x"], 88.0)  # the measured span kept
+
+    def test_even_fit(self):
+        vals = [3.0 + 2.0 * s * s - 0.5 * s ** 4 for s in SS]
+        for a, b in zip(LP.even_fit(SS, vals, 3), vals):
+            self.assertAlmostEqual(a, b, places=9)
+        f = LP.even_fit(SS, [s for s in SS], 3)  # an odd curve has no even part
+        self.assertLess(max(abs(v) for v in f), 1e-9)
+
+    def test_rest_stations_smooth_and_closed(self):
+        p = LP.merged_pout(None)
+        st = LP.rest_stations(self._stations(), 274.0, p)
+        seam = [(r["bot_u"] + r["top_l"]) / 2 for r in st]
+        n = len(st)
+        for i in range(n):
+            self.assertAlmostEqual(seam[i], seam[n - 1 - i])
+            self.assertAlmostEqual(st[i]["top_l"] - st[i]["bot_u"], 1.0)  # the lips still meet
+        second = [seam[i - 1] - 2 * seam[i] + seam[i + 1] for i in range(1, n - 1)]
+        self.assertLess(max(abs(v) for v in second), 0.05)  # no kink left
+        self.assertGreater(seam[0], seam[n // 2])  # the corners lower than the centre, as the sheet's
+
+    def test_without_the_keys_nothing_changes(self):
+        st = self._stations()
+        self.assertEqual(LP.rest_stations(st, 274.0, LP.LIP_SHAPE), st)
+        for p in (LP.LIP_SHAPE_FANGS, LP.LIP_SHAPE_TONGUE):
+            self.assertNotIn("mirror", p)
+            self.assertNotIn("seam_fit", p)
+
+    def test_the_open_rings_keep_m12b(self):
+        for s, rp in LP.LIP_SHAPE_POUT["ring_param"].items():
+            self.assertEqual((rp["upper"], rp["lower"], rp["lean"]), (0.95, 1.10, 0.25), s)
+
+    def test_mouths_mirror_the_closed_pieces(self):
+        src = MOUTHS.read_text(encoding="utf-8")
+        self.assertIn("LP.rest_stations(st, m[\"hc\"], lips_p)", src)
+        self.assertIn("cs, ra, rb, ns = mirrored(cs, ra, rb, ns)", src)
+        self.assertIn('(rp or {}).get("lean", lips_p["lean"])', src)
+
+
 if __name__ == "__main__":
     unittest.main()

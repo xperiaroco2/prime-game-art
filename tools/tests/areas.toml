@@ -95,6 +95,10 @@ tests = ["test_alien_texture_*"]
 sources = ["godot/alien/alien_talk.gd", "godot/alien/talk_check.gd"]  # the mouths' talk styles (#196, M13); before light's godot/alien/*
 tests = ["test_alien_talk_*"]
 
+[area.alien_pout]
+sources = ["tools/blender/alien_mouths.py", "tools/blender/alien_lips_geom.py", "tools/blender/alien_pout_check.py", "godot/alien/pout_rest_check.gd"]  # the pout's mirrored rest (#196, M16); before light's alien_* and godot/alien/*
+tests = ["test_alien_pout_*"]
+
 [area.alien_parse]
 sources = ["godot/alien/*.gdshader", "godot/alien/*.gdshaderinc", "godot/alien/alien.gd", "godot/alien/parse_check.gd"]  # the alien kit's shaders and alien.gd parse (#196, M13b); before light's godot/alien/*
 tests = ["test_alien_parse_*"]

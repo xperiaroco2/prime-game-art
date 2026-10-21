@@ -445,6 +445,20 @@ def circ_smooth(vals, n):
     return v
 
 
+def mirrored(cs, ra, rb, ns):
+    """M16: a lip's stations (centres, depths, half heights, normals; corner to corner across x = 0) with each station
+    the mean of itself and its mirror station mirrored (x -> -x): exactly symmetric across the face's centre line."""
+    n = len(cs)
+
+    def mx(v):
+        return Vector((-v.x, v.y, v.z))
+    cs2 = [(cs[i] + mx(cs[n - 1 - i])) / 2 for i in range(n)]
+    ns2 = [(ns[i] + mx(ns[n - 1 - i])).normalized() for i in range(n)]
+    ra2 = [(ra[i] + ra[n - 1 - i]) / 2 for i in range(n)]
+    rb2 = [(rb[i] + rb[n - 1 - i]) / 2 for i in range(n)]
+    return cs2, ra2, rb2, ns2
+
+
 def lip_tube(b, centres, radii_a, radii_b, normals, mi, seg, lips_p, lip):
     """M8: alien_parts_geom.tube with a lip's section (alien_lips_geom.section): the front flatter by lips_p["square"]
     and its swell moved toward the lip line (the upper lip's bottom, the lower lip's top) by lips_p["lean"]."""
@@ -584,8 +598,8 @@ def build_piece(bvh, m, design, shape, world, mats, coll, origin, lips=None, nam
             ring = []
             for j in range(RING_SEG):
                 ph = 2 * math.pi * j / RING_SEG
-                if ring_p["w"] > 0.0:  # the swell toward the opening's edge (sin < 0 is the inner side)
-                    cn, sn = LP.section(ph, lips_p["lean"], lips_p["square"], -1.0)
+                if ring_p["w"] > 0.0:  # the swell toward the opening's edge (sin < 0 is the inner side; M16: a
+                    cn, sn = LP.section(ph, (rp or {}).get("lean", lips_p["lean"]), lips_p["square"], -1.0)  # ring's own)
                 else:
                     cn, sn = math.cos(ph), math.sin(ph)
                 ring.append(b.vert(c3 + n * (a * cn) + radial * (hw_k * side * sn)))
@@ -622,6 +636,11 @@ def build_piece(bvh, m, design, shape, world, mats, coll, origin, lips=None, nam
         meas["form"] = "tubes"
         lips = {}
         axes = {}  # M8: per lip and station (x, z) of its axis after the reshape
+        # M16: a lip shape's mirrored stations and fitted lip line (alien_lips_geom.rest_stations; the pout's)
+        mirror = lips_p.get("mirror", 0.0) > 0.0
+        if mirror or lips_p.get("seam_fit"):
+            st = LP.rest_stations(st, m["hc"], lips_p)
+            xl, xr = st[0]["x"] - 0.5, st[-1]["x"] + 0.5
         ss = [2 * (r["x"] - xl) / max(1.0, xr - xl) - 1 for r in st]  # M8: -1 .. 1 corner to corner
         for lip in ("u", "l"):
             cs, ra, rb, ns = [], [], [], []
@@ -656,6 +675,10 @@ def build_piece(bvh, m, design, shape, world, mats, coll, origin, lips=None, nam
                 rb.append(hb)
                 ns.append(n)
                 sections.append(((r["x"], (t + bt) / 2), c3, a, n, p))
+            if mirror:  # M16: the skin under the lips is up to 0.4 mm lopsided: each station and its mirror averaged,
+                # so the tube (and every later pass: smoothing, corners) is mirrored across x = 0 exactly (`sections`,
+                # the teeth's and tongue's anchors, are taken before this; the pout uses neither)
+                cs, ra, rb, ns = mirrored(cs, ra, rb, ns)
             lips[lip] = (cs, ra, rb, ns)
         # S7: smooth paths (the head's facets made the normals, and so the lips, ripple), and soft corners: over the
         # last CORNER share at each end both lips' centres meet and sink into the skin, so neither floats or cuts off
