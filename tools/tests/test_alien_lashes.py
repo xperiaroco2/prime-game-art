@@ -56,7 +56,9 @@ class Geometry(unittest.TestCase):
         ls = rep["lashes"]
         self.assertLess(ls[0]["len_r"], ls[-1]["len_r"])
         self.assertLess(ls[0]["width_r"], ls[-1]["width_r"])
-        self.assertLess(ls[0]["t_deg"], 0.0)  # the first on the nose side
+        self.assertGreaterEqual(ls[0]["t_deg"], 0.0)  # el2: the lashes on the outer half
+        v, _, rep2 = build()
+        self.assertTrue(any(p[0] < 0.0 for p, uu in zip(v, rep2["u"]) if uu < 0.0))  # the liner runs to the nose side
         self.assertGreater(ls[-1]["t_deg"], 45.0)
         self.assertEqual(sum(1 for x in ls if x["wing"] > 0), LL.LASHES["wing"])
         self.assertGreater(ls[-1]["tip"][0], math.sin(math.radians(ls[-1]["t_deg"])) * (RHO[1] + BEAD))  # out past it

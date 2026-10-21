@@ -102,6 +102,8 @@ def make_set(name: str, lid, spec: dict, mat, lids: dict, corner: dict) -> tuple
     ball = bpy.data.objects[lid.name.replace("_lid_upper_", "_ball_")]
     r = M6.ball_radius(ball)
     side = temple_side(lid)
+    if d in spec["design_lift_deg"]:  # the design's own lift (alien_lashes_geom.LASHES design_lift_deg)
+        spec = dict(spec, lift_deg=spec["design_lift_deg"][d])
     verts, faces, rep = LL.build(spec, rho[0], rho[1], bead, corner, side)
     me = bpy.data.meshes.new(name)
     me.from_pydata([tuple(c * r for c in v) for v in verts], [], faces)

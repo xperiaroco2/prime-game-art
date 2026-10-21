@@ -18,7 +18,8 @@ extends "res://alien/m12_shots.gd"
 ##   PNGs in game/far and game/near (the shimmer check: PROOF lines give the mean frame-to-frame change round the eyes);
 ## - "lvideo": a blink and talk line (the hero's mouth, its talk style, blinks at 0.5, 2.3 and 4.0 s) at 30 fps,
 ##   3/4 at 0.6 m and front at 0.45 m, as PNG frames in video/lash_34/ and video/lash_front/;
-## - "head": m10_shots.gd's whole-head gate (each kit with its own "lashes" and "mouth").
+## - "head": m10_shots.gd's whole-head gate (each kit with its own "lashes" and "mouth");
+## - "socket": m9_shots.gd's socket close-ups (the collar from four sides) of every kit.
 
 const EL2_PANELS: Array = [0, 1, 2, 5]  # rest, half, closed, wide (the sheet's panels, row-major)
 const EYE_BAND := [0.17, 0.36, 0.83, 0.66]  # a panel's eye band (shares of the 512 px panel)
@@ -71,6 +72,8 @@ func _run() -> void:
 		await _lvideo(hero)
 	if _modes.has("head"):
 		await _head()
+	if _modes.has("socket"):
+		await _socket()
 	quit(0)
 
 

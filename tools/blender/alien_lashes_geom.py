@@ -10,6 +10,8 @@ half lid or surprise, and scales with the eye unit (every length is a share of t
 - The lashes run from `t_in_deg` (the nose side) to `t_out_deg` (the temple side) of latitude, closer together toward
   the outer corner (`crowd`), longer and thicker there (`len_*`, `width_*`); the last `wing` lashes are longer still and
   sweep out past the corner (`wing_sweep_deg`, `wing_len`): el2's winged look. None on the lower lid.
+- `design_lift_deg` ({design: lift}): a design's own lift (alien_lashes.py): the manic lids rest 50 degrees up, so
+  its lashes leave lower on the lid to stand off the dome as the bored ones do at their rest.
 - The liner (`liner_deg` of the rim's roll, `liner` thick, 0 for none): a thin band hugging the roll along the roots,
   so the lash line reads as one dark line at the game's distance; it starts at `liner_t_in_deg` (or the first lash)
   and ends just past the last.
@@ -21,12 +23,15 @@ from __future__ import annotations
 
 import math
 
-LASHES = {"count": 9, "t_in_deg": -46.0, "t_out_deg": 68.0, "crowd": 1.5,
-          "len_in": 0.20, "len_out": 0.50, "len_pow": 1.6, "width_in": 0.022, "width_out": 0.036, "tip": 0.22,
-          "flat": 0.7, "lift_deg": 15.0, "curl_deg": 60.0, "curl_pow": 1.6, "fan_deg": 10.0,
-          "wing": 3, "wing_len": 1.25, "wing_sweep_deg": 30.0, "wing_lift_deg": -6.0,
+# The pick (M11's grids g1 to g4, beside el2): seven bold lashes on the outer half, the last two winging out, a thick
+# liner along the whole edge; the manic lids leave at the radial (lift 0), the bored 30 degrees above it.
+LASHES = {"count": 7, "t_in_deg": 0.0, "t_out_deg": 74.0, "crowd": 1.5,
+          "len_in": 0.35, "len_out": 0.80, "len_pow": 1.6, "width_in": 0.075, "width_out": 0.11, "tip": 0.3,
+          "flat": 0.7, "lift_deg": 30.0, "curl_deg": 55.0, "curl_pow": 1.6, "fan_deg": 20.0,
+          "wing": 2, "wing_len": 1.4, "wing_sweep_deg": 45.0, "wing_lift_deg": -6.0,
           "root_a_deg": 30.0, "sink": 0.008, "seg": 10, "sides": 6,
-          "liner": 0.010, "liner_deg": 70.0, "liner_a_deg": 40.0, "liner_t_in_deg": -60.0, "liner_rows": 48, "liner_k": 6, "liner_embed": 0.004}
+          "liner": 0.05, "liner_deg": 110.0, "liner_a_deg": 40.0, "liner_t_in_deg": -60.0, "liner_rows": 48,
+          "liner_k": 6, "liner_embed": 0.004, "design_lift_deg": {"manic": 0.0}}
 
 
 def merged(spec: dict | None = None) -> dict:
