@@ -82,16 +82,24 @@ def mouth_mount(node: tuple, m: dict = MOUTH_MOUNT) -> tuple:
 # lips' long lit inner wall, a pale triangle); every ring stands out along the mouth's mean normal (n_flat 1: along the skin's own, the
 # chin's and philtrum's slopes squeezed O's hole to a slit). The variant grids: docs/godot.md, M12b.
 _RING = {"bow": 0.12, "tuck": 0.35, "side_keep": 0.85, "depth_corner": 0.5, "n_flat": 1.0}
+# M16 (UPDATE 29: the rest read asymmetric and squeezed): the closed lips (rest, M, small) mirrored about the face's
+# centre line with a smooth even lip line (mirror, seam_fit: the sheet's lips are drawn a little lopsided, 1 px off
+# the face's centre, and its darkest row per column, the traced lip line, jumped 4.4 mm just right of the centre), a
+# thinner upper lip over a bigger lower cushion (upper 0.85, lower 1.20; M12b 0.95 / 1.10) and a soft crease (lean
+# 0.10; at 0.25 both lips swelled toward the line and read pressed together). Corners as M12b (corner 0.18: at 0.32
+# and 0.45 the ends went blunt, like sausages). The pick of M16's grids (docs/godot.md, M16).
+_POUT_RING = {"upper": 0.95, "lower": 1.10, "lean": 0.25}
 LIP_SHAPE_POUT = {
-    "w": 1.0, "corner": 0.18, "pw": 2.0, "full": 1.0, "upper": 0.95, "lower": 1.10,
+    "w": 1.0, "corner": 0.18, "pw": 2.0, "full": 1.0, "upper": 0.85, "lower": 1.20,
     "bow": 0.14, "bow_w": 0.16, "bow_peak": 0.10, "bow_at": 0.24,
-    "lean": 0.25, "square": 0.85, "depth_corner": 0.35,
+    "lean": 0.10, "square": 0.85, "depth_corner": 0.35,
     "width": 1.0, "size": 0.95, "plump": 1.15,
     "bow_flat": 1.0,
-    "ring_param": {
-        "A": dict(_RING, n=2.1, corner=0.68, wide=1.04),
-        "E": dict(_RING, n=2.0, corner=0.60),
-        "O": dict(_RING, n=2.0, hole=0.30, corner=1.0, thick=0.9, bow=0.30, tuck=0.0, cup_throat=0.85),
+    "mirror": 1.0, "seam_fit": 3,
+    "ring_param": {  # M16: the open rings keep M12b's balance and lean (the rest's change is the closed lips' only)
+        "A": dict(_RING, n=2.1, corner=0.68, wide=1.04, **_POUT_RING),
+        "E": dict(_RING, n=2.0, corner=0.60, **_POUT_RING),
+        "O": dict(_RING, n=2.0, hole=0.30, corner=1.0, thick=0.9, bow=0.30, tuck=0.0, cup_throat=0.85, **_POUT_RING),
     },
 }
 
@@ -307,6 +315,70 @@ def flat_bow(p: dict) -> dict:
     dip in the depth made two separate balls); 0 the bow as before."""
     k = p.get("bow_flat", 0.0)
     return p if k <= 0.0 else dict(p, bow=p["bow"] * (1.0 - k))
+
+
+def mirror_stations(st: list, hc: float, keys=("top_u", "bot_u", "top_l", "bot_l")) -> list:
+    """M16: a closed piece's stations (alien_mouths.stations: per station x and the four lip edges, px) mirrored about
+    the face's centre line (x = hc, px): the stations' x symmetric round hc with the measured span kept, each edge the
+    mean of its own station's and the mirror station's (the sheet's lips are drawn a little lopsided and off the
+    face's centre), open where either is."""
+    n = len(st)
+    h = (st[-1]["x"] - st[0]["x"]) / 2
+    out = []
+    for i, r in enumerate(st):
+        q = st[n - 1 - i]
+        rec = {k: (r[k] + q[k]) / 2 for k in keys}
+        rec["x"] = hc - h + 2 * h * i / max(1, n - 1)
+        rec["open"] = bool(r["open"] or q["open"])
+        out.append(rec)
+    return out
+
+
+def even_fit(ss, vals, terms: int = 3) -> list:
+    """M16: vals over ss (-1 .. 1) least-squares fitted by an even polynomial c0 + c1 s^2 + ... (terms of them): a
+    smooth, mirror-symmetric curve through a measured lip line (the sheet's darkest row per column jumps where the
+    shading under the bow changes)."""
+    a = [[0.0] * terms for _ in range(terms)]
+    y = [0.0] * terms
+    for s, v in zip(ss, vals):
+        p = [s ** (2 * j) for j in range(terms)]
+        for i in range(terms):
+            y[i] += p[i] * v
+            for j in range(terms):
+                a[i][j] += p[i] * p[j]
+    for i in range(terms):  # Gaussian elimination with partial pivoting
+        piv = max(range(i, terms), key=lambda r: abs(a[r][i]))
+        a[i], a[piv], y[i], y[piv] = a[piv], a[i], y[piv], y[i]
+        for r in range(i + 1, terms):
+            f = a[r][i] / a[i][i]
+            for c in range(i, terms):
+                a[r][c] -= f * a[i][c]
+            y[r] -= f * y[i]
+    c = [0.0] * terms
+    for i in reversed(range(terms)):
+        c[i] = (y[i] - sum(a[i][j] * c[j] for j in range(i + 1, terms))) / a[i][i]
+    return [sum(c[j] * s ** (2 * j) for j in range(terms)) for s in ss]
+
+
+def rest_stations(st: list, hc: float, p: dict) -> list:
+    """M16: a closed piece's stations as the lip shape asks: with p["mirror"] mirrored about the face's centre line
+    (mirror_stations); with p["seam_fit"] (a number of even terms) the lip line (the upper lip's bottom and the lower
+    lip's top) an even polynomial fit (even_fit). Without either the stations as they are."""
+    if p.get("mirror", 0.0) > 0.0:
+        st = mirror_stations(st, hc)
+    terms = int(p.get("seam_fit", 0))
+    if terms > 0 and len(st) > terms:
+        x0, x1 = st[0]["x"], st[-1]["x"]
+        ss = [2 * (r["x"] - x0) / max(1e-9, x1 - x0) - 1 for r in st]
+        st = [dict(r) for r in st]
+        for k in ("bot_u", "top_l"):
+            for r, v in zip(st, even_fit(ss, [r[k] for r in st], terms)):
+                r[k] = v
+        for r in st:  # a closed station's lips still meet (the fit never opens a crease)
+            if not r["open"]:
+                mid = (r["bot_u"] + r["top_l"]) / 2
+                r["bot_u"], r["top_l"] = mid - 0.5, mid + 0.5
+    return st
 
 
 def _smooth01(t: float) -> float:
