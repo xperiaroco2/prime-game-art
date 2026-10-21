@@ -241,10 +241,6 @@ class Wiring(unittest.TestCase):
         setup = self.gd[self.gd.index("func setup("):self.gd.index("func _textured_material(")]
         self.assertIn("set_lashes(lashes)", setup)
 
-
-if __name__ == "__main__":
-    unittest.main()
-
     def test_m21_the_closed_key_is_built_checked_exported_and_driven(self):
         build = self.src[self.src.index("def make_set"):self.src.index("def inside_count")]
         self.assertIn("LL.closed_spec(spec, d)", build)
@@ -285,3 +281,7 @@ if __name__ == "__main__":
         self.assertGreater(float(fade.group(1)), 1.2)  # whole at the 1.2 m view
         lip = re.search(r"const LIP_LOOK := \{([^}]*)\}", self.gd).group(1)
         self.assertNotIn("sss_fade", lip)
+
+
+if __name__ == "__main__":
+    unittest.main()
