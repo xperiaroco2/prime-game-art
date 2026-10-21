@@ -93,14 +93,23 @@ _RING = {"bow": 0.12, "tuck": 0.35, "side_keep": 0.85, "depth_corner": 0.5, "n_f
 # 3/4) and corners tucked to points (corner 0.12; the ends' last 0.18 joined 0.95 and sunk 1.1 of their depth into the
 # skin; 1.3 over 0.20 narrowed the mouth). The pick of M16b's grids (docs/godot.md, M16b). The open rings keep M12b's
 # bow shape (bow_w, bow_peak, bow_at in _POUT_RING; ring_param reads a ring's own).
-_POUT_RING = {"upper": 0.95, "lower": 1.10, "lean": 0.25, "bow_w": 0.16, "bow_peak": 0.10, "bow_at": 0.24}
+# M16c: cup_even: the dark cup's rim resampled at even angles (star_resample; O's traced rim folded, a zero tangent).
+_POUT_RING = {"upper": 0.95, "lower": 1.10, "lean": 0.25, "bow_w": 0.16, "bow_peak": 0.10, "bow_at": 0.24,
+              "cup_even": 1}
+# M16c (UPDATE 36, #254's minors 1 and 3): mp1's long fine corner points with the upper lip overhanging the lower:
+# the ends thinner (corner 0.06, min_b 0.6 mm: alien_mouths.MIN_B's 1.1 mm rounded them to caps) and nearly flat
+# (depth_corner 0.05), tapering over a longer stretch (pw 1.75, the corner rule over the last 0.26), the lower lip's
+# end sunk under the upper's (corner_over 0.8); small's parting dark behind it (parting_dark: the open stations
+# without each end's 0.2), small parted as mp1 draws it (parting: 6 px over the middle 0.55; the sheet's traced gap
+# was 4 stations wide and hidden by the lips). The pick of M16c's grids (docs/godot.md, M16c).
 LIP_SHAPE_POUT = {
-    "w": 1.0, "corner": 0.12, "pw": 2.0, "full": 1.0, "upper": 0.85, "lower": 1.20,
+    "w": 1.0, "corner": 0.06, "pw": 1.75, "full": 1.0, "upper": 0.85, "lower": 1.20,
     "bow": 0.30, "bow_w": 0.12, "bow_peak": 0.40, "bow_at": 0.22,
-    "lean": 0.10, "square": 0.85, "depth_corner": 0.35,
+    "lean": 0.10, "square": 0.85, "depth_corner": 0.05,
     "width": 1.0, "size": 0.95, "plump": 1.15,
-    "bow_flat": 1.0, "corner_tuck": 1.1, "corner_share": 0.18, "corner_join": 0.95,
-    "mirror": 1.0, "seam_fit": 3,
+    "bow_flat": 1.0, "corner_tuck": 1.1, "corner_share": 0.26, "corner_join": 0.95,
+    "min_b": 0.0006, "corner_over": 0.8,
+    "mirror": 1.0, "seam_fit": 3, "parting_dark": 0.2, "parting": {"small": (6.0, 0.55)},
     "ring_param": {  # M16: the open rings keep M12b's balance and lean (the rest's change is the closed lips' only)
         "A": dict(_RING, n=2.1, corner=0.68, wide=1.04, **_POUT_RING),
         "E": dict(_RING, n=2.0, corner=0.60, **_POUT_RING),
@@ -384,6 +393,59 @@ def rest_stations(st: list, hc: float, p: dict) -> list:
             gap = max(1.0, r["top_l"] - r["bot_u"]) if r["open"] else 1.0
             r["bot_u"], r["top_l"] = mid - gap / 2, mid + gap / 2
     return st
+
+
+def parted(st: list, part) -> list:
+    """M16c: a closed piece's designed parting, part = (gap, half_width): over the middle the lips stand apart by
+    gap px x (1 - (s / half_width)^2)^1.5 round their lip line (s -1 .. 1 corner to corner), never less than the
+    stations' own gap; a station so parted by 1 px or more is open (its dark strip, alien_mouths' parting_dark).
+    Symmetric in s, so a mirrored piece stays mirrored."""
+    gap, half = part
+    x0, x1 = st[0]["x"], st[-1]["x"]
+    out = []
+    for r in st:
+        s = 2 * (r["x"] - x0) / max(1e-9, x1 - x0) - 1
+        g = gap * max(0.0, 1.0 - (s / half) ** 2) ** 1.5
+        r = dict(r)
+        if g > r["top_l"] - r["bot_u"]:
+            mid = (r["bot_u"] + r["top_l"]) / 2
+            r["bot_u"], r["top_l"] = mid - g / 2, mid + g / 2
+            r["open"] = r["open"] or g >= 1.0
+        out.append(r)
+    return out
+
+
+def star_resample(pts: list, centre: tuple, n: int) -> list:
+    """M16c: a closed outline pts [(x, z), ...] seen from centre, resampled at n even angles (0, 2 pi / n, ...): per
+    angle the nearest crossing of the ray from centre with the outline. A dark cup is a fan from its centre to its
+    rim; where the traced rim folds back on itself (the pout's O: neighbouring rim points 0.08 degrees apart, one fan
+    triangle 0.006 mm^2, a zero tangent the glTF-Validator rejects) the even angles give every fan triangle the same
+    opening. The outline's turning direction is kept (so are the fan's faces); an angle whose ray misses the outline
+    keeps the nearest point by angle."""
+    cx, cz = centre
+    m = len(pts)
+    turn = 1.0 if sum(pts[i][0] * pts[(i + 1) % m][1] - pts[(i + 1) % m][0] * pts[i][1] for i in range(m)) >= 0 else -1.0
+    out = []
+    for k in range(n):
+        th = turn * 2 * math.pi * k / n
+        dx, dz = math.cos(th), math.sin(th)
+        best = None
+        for i in range(m):
+            (ax, az), (bx, bz) = pts[i], pts[(i + 1) % m]
+            ex, ez = bx - ax, bz - az
+            den = dx * ez - dz * ex
+            if abs(den) < 1e-15:
+                continue
+            t = ((ax - cx) * ez - (az - cz) * ex) / den  # along the ray
+            u = ((ax - cx) * dz - (az - cz) * dx) / den  # along the edge
+            if t > 0.0 and -1e-9 <= u <= 1.0 + 1e-9 and (best is None or t < best):
+                best = t
+        if best is None:
+            best_pt = min(pts, key=lambda q: abs(math.remainder(math.atan2(q[1] - cz, q[0] - cx) - th, 2 * math.pi)))
+            out.append(tuple(best_pt))
+        else:
+            out.append((cx + dx * best, cz + dz * best))
+    return out
 
 
 def _smooth01(t: float) -> float:

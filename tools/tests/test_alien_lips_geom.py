@@ -221,5 +221,57 @@ class RestStationsTest(unittest.TestCase):  # M16 (UPDATE 29): the pout's rest m
         self.assertIn('(rp or {}).get("lean", lips_p["lean"])', src)
 
 
+class CupRimTest(unittest.TestCase):  # M16c (UPDATE 36): the pout O's dark cup had a zero tangent (a folded rim)
+    def _folded(self):
+        pts = []
+        for k in range(96):
+            th = 2 * math.pi * k / 96
+            r = 0.013 + 0.001 * math.cos(3 * th)
+            pts.append((0.002 + r * math.cos(th), -0.01 + 0.9 * r * math.sin(th)))
+        pts[40], pts[41] = pts[41], pts[40]  # a rim that steps back: two fan triangles fold
+        return pts
+
+    def test_even_angles_and_no_thin_fan_triangle(self):
+        c = (0.002, -0.01)
+        out = LP.star_resample(self._folded(), c, 96)
+        self.assertEqual(len(out), 96)
+        for k in range(96):
+            (ax, az), (bx, bz) = out[k], out[(k + 1) % 96]
+            cross = (ax - c[0]) * (bz - c[1]) - (az - c[1]) * (bx - c[0])  # twice the fan triangle's area
+            self.assertGreater(cross, 1e-6, k)  # 96 even angles of a 12 mm rim: about 9e-6; folded or thin: <= 0
+            self.assertAlmostEqual(math.atan2(az - c[1], ax - c[0]) % (2 * math.pi), 2 * math.pi * k / 96, places=6)
+
+    def test_on_the_outline_and_turning_kept(self):
+        sq = [(-1.0, -1.0), (1.0, -1.0), (1.0, 1.0), (-1.0, 1.0)]
+        out = LP.star_resample(sq, (0.0, 0.0), 8)
+        self.assertAlmostEqual(out[0][0], 1.0)
+        self.assertAlmostEqual(out[1][0], 1.0)
+        self.assertAlmostEqual(out[1][1], 1.0)
+        back = LP.star_resample(sq[::-1], (0.0, 0.0), 8)  # clockwise in, clockwise out (the fan's faces kept)
+        self.assertAlmostEqual(back[2][1], -1.0)
+
+    def test_the_pout_rings_ask_for_it(self):
+        for s in ("A", "E", "O"):
+            self.assertTrue(LP.LIP_SHAPE_POUT["ring_param"][s].get("cup_even"), s)
+        src = (ROOT / "tools/blender/alien_mouths.py").read_text(encoding="utf-8")
+        self.assertIn('cup = LP.star_resample(cup, cw, RING_N)', src)
+
+
+class PartedTest(unittest.TestCase):  # M16c: small's designed parting (mp1's dark slit over the middle)
+    def test_parted_over_the_middle_and_mirrored(self):
+        st = [{"x": 230.0 + i * 2.2, "top_u": 250.0, "bot_u": 271.5, "top_l": 272.5, "bot_l": 296.0, "open": False}
+              for i in range(41)]
+        out = LP.parted(st, (6.0, 0.55))
+        mid = out[20]
+        self.assertAlmostEqual(mid["top_l"] - mid["bot_u"], 6.0)
+        self.assertAlmostEqual((mid["top_l"] + mid["bot_u"]) / 2, 272.0)  # round the lip line
+        self.assertTrue(mid["open"])
+        for i in range(41):
+            self.assertAlmostEqual(out[i]["top_l"] - out[i]["bot_u"], out[40 - i]["top_l"] - out[40 - i]["bot_u"])
+        self.assertFalse(out[3]["open"])  # the ends stay closed
+        self.assertEqual(out[3]["top_l"] - out[3]["bot_u"], 1.0)
+        self.assertEqual(LP.LIP_SHAPE_POUT["parting"], {"small": (6.0, 0.55)})
+
+
 if __name__ == "__main__":
     unittest.main()
