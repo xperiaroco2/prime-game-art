@@ -1754,7 +1754,8 @@ a time, by visibility.
     about as wide as rest). Two ring rules for the pout only: `CUP_IN` (the dark cup ends 0.6 of the lip's half width
     inside its axis) and `CORNER_CLOSE` (in A and E the lips move into the opening toward the corners, up to their
     half width from |cos| 0.55 to 0.92): the sheet's E runs out in a long thin dark slit between thin rims, which read
-    as black flaps at 0.4 m. Frog and overbite measure and build exactly as before (every new table is per design).
+    as black flaps at 0.4 m (M13 removed `CORNER_CLOSE`, off since M12b, and M12's `ring`/`ring_corner`: the
+    designed rings replaced them). Frog and overbite measure and build exactly as before (every new table is per design).
   - **The lips (`alien_lips_geom.LIP_SHAPE_POUT`):** the sheet's thickness per lip (upper 0.95, lower 1.10: the lower
     the bigger cushion; the frog's upper is 0.82), ends a little rounder than the frog's (corner 0.18, pw 2.0), the open
     rings' own corner 0.45 (`ring_corner`), a soft bow (0.25, side peaks 0.15: at 0.45 / 0.40 the upper lip read as
