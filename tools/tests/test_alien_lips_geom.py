@@ -213,10 +213,23 @@ class RestStationsTest(unittest.TestCase):  # M16 (UPDATE 29): the pout's rest m
     def test_the_open_rings_keep_m12b(self):
         for s, rp in LP.LIP_SHAPE_POUT["ring_param"].items():
             self.assertEqual((rp["upper"], rp["lower"], rp["lean"]), (0.95, 1.10, 0.25), s)
+            self.assertEqual(rp["plump"], 1.15, s)  # M16d: the open rings keep their fullness under the slim rest
+
+    def test_a_closed_shape_has_no_open_station(self):  # M16d: rest's traced gap notched its lip line
+        st = self._stations()
+        n = len(st)
+        for i in range(n // 2 - 3, n // 2 + 4):
+            st[i]["bot_u"], st[i]["top_l"], st[i]["open"] = st[i]["bot_u"] - 1.0, st[i]["top_l"] + 1.0, True
+        p = LP.merged_pout({"closed": ("rest",)})
+        out = LP.rest_stations(st, 274.0, p, "rest")
+        self.assertFalse(any(r["open"] for r in out))
+        for r in out:
+            self.assertAlmostEqual(r["top_l"] - r["bot_u"], 1.0)
+        self.assertTrue(any(r["open"] for r in LP.rest_stations(st, 274.0, p, "small")))
 
     def test_mouths_mirror_the_closed_pieces(self):
         src = MOUTHS.read_text(encoding="utf-8")
-        self.assertIn("LP.rest_stations(st, m[\"hc\"], lips_p)", src)
+        self.assertIn("LP.rest_stations(st, m[\"hc\"], lips_p, shape)", src)
         self.assertIn("cs, ra, rb, ns = mirrored(cs, ra, rb, ns)", src)
         self.assertIn('(rp or {}).get("lean", lips_p["lean"])', src)
 

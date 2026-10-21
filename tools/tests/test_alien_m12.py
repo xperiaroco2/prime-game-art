@@ -52,11 +52,20 @@ class SizeTest(unittest.TestCase):
 class PoutShapeTest(unittest.TestCase):
     def test_the_sheets_fullness_and_a_clearer_bow(self):
         p = LP.LIP_SHAPE_POUT
-        self.assertGreater(p["lower"], p["upper"])  # the lower lip the bigger cushion
+        # M16d (UPDATE 39): mp1's measured rest, even lips (the lower renders a little taller from the same factor),
+        # never M16's swollen lower cushion (lower 1.20 over plump 1.15), shallower tubes, the lower the shallower
+        self.assertLessEqual(p["lower"], p["upper"])
+        self.assertLessEqual(p["plump"], 1.0)
+        self.assertLessEqual(p["lower"] * p["plump"], 1.0)
+        self.assertLess(p["depth"], 1.0)
+        self.assertLess(p["depth_l"], 1.0)
+        self.assertEqual(p["closed"], ("rest",))
         self.assertGreater(p["upper"], LP.LIP_SHAPE["upper"])  # mp1's upper lip fuller than the frog's
-        # M16b (UPDATE 30): mp1's ends tucked to points, finer than the frog's, and its clear double-peaked bow
+        # M16b (UPDATE 30): mp1's ends tucked to points, finer than the frog's, and its clear double-peaked bow;
+        # M16d: the points from a longer taper (pw 1.3 over 0.32) with a softer tuck
         self.assertLess(p["corner"], LP.LIP_SHAPE["corner"])
-        self.assertGreater(p["corner_tuck"], 1.0)
+        self.assertLess(p["pw"], 1.5)
+        self.assertGreaterEqual(p["corner_share"], 0.30)
         self.assertGreaterEqual(p["bow"], 0.30)
         self.assertGreater(p["bow_peak"], 0.30)
         # M16c (UPDATE 36): mp1's long fine points, the upper lip's end over the lower's, small's dark parting
@@ -74,7 +83,8 @@ class PoutShapeTest(unittest.TestCase):
         # traced rings' weights (`ring`) and their corner (`ring_corner`) are not part of the pout's shape
         self.assertEqual(set(p), set(LP.LIP_SHAPE) - {"ring"} | {"size", "bow_flat", "ring_param", "mirror", "seam_fit",
                                                                          "corner_tuck", "corner_share", "corner_join",
-                                                                         "min_b", "corner_over", "parting_dark", "parting"})
+                                                                         "min_b", "corner_over", "parting_dark", "parting",
+                                                                         "depth", "depth_l", "closed"})
         self.assertEqual(set(p["ring_param"]), {"A", "E", "O"})
 
     def test_merged_pout(self):

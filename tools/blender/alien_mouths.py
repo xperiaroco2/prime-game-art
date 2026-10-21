@@ -650,7 +650,7 @@ def build_piece(bvh, m, design, shape, world, mats, coll, origin, lips=None, nam
         # M16: a lip shape's mirrored stations and fitted lip line (alien_lips_geom.rest_stations; the pout's)
         mirror = lips_p.get("mirror", 0.0) > 0.0
         if mirror or lips_p.get("seam_fit"):
-            st = LP.rest_stations(st, m["hc"], lips_p)
+            st = LP.rest_stations(st, m["hc"], lips_p, shape)
             xl, xr = st[0]["x"] - 0.5, st[-1]["x"] + 0.5
         if (lips_p.get("parting") or {}).get(shape):  # M16c: a designed parting (mp1's small: a slit over the middle)
             st = LP.parted(st, lips_p["parting"][shape])
