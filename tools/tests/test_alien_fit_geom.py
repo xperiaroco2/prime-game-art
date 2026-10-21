@@ -197,6 +197,8 @@ class FitGeom(unittest.TestCase):
         wd = F.rim_drop_weight(d, np.zeros_like(d), np.zeros_like(d), R)
         self.assertEqual(float(wd[0]), 1.0)
         self.assertEqual(float(wd[-1]), 0.0)
+        self.assertTrue(np.all(np.diff(wd) <= 1e-12))  # M17c (PR #259 review, minor 3): the distance fade never rises
+        self.assertTrue(np.all((wd >= 0.0) & (wd <= 1.0)))
         co, e, tris = grid(81)
         c, a = np.array((0.0, 0.0, -0.01)), np.array((0.0, 0.0, 1.0))
         ex, ey = np.array((1.0, 0.0, 0.0)), np.array((0.0, 1.0, 0.0))
