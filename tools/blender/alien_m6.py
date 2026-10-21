@@ -80,9 +80,11 @@ def args():
     p.add_argument("--thumb", choices=("blend", "segments"), default="blend",
                    help="M10b: the thumb's skin weights (alien_thumb.py): blend (the default, a smooth split along "
                    "the thumb) or the cage's segments")
-    p.add_argument("--collar", choices=("off", "on"), default="on",
-                   help="M10b: the static socket collar per design and side (alien_lids_geom.COLLAR), the default; "
-                   "needs --flare off; none on a unit at full size (--eye-scale >= alien_lids_geom.EYE_SCALE)")
+    p.add_argument("--collar", choices=("off", "on", "skin"), default="skin",
+                   help="the static socket collar per design and side; needs --flare off; none on a unit at full "
+                   "size (--eye-scale >= alien_lids_geom.EYE_SCALE). skin (M10c, the default): in the skin's "
+                   "material and surface (alien_lids_geom.COLLAR_SKIN); on: M10b's coral ring (alien_lids_geom.COLLAR)")
+    p.add_argument("--collar-opts", default="", help="M10c: JSON merged over alien_lids_geom.COLLAR_SKIN")
     p.add_argument("--no-bake", action="store_true", help="skip the parts' AO bake (a quick geometry check)")
     p.add_argument("--socket", default="", help="M9 (REJECTED, M10): JSON over alien_lids_geom.SOCKET, the eye mount "
                    "applied here; refused without --opt-in-rejected-m9")
@@ -390,6 +392,210 @@ def build_collars(k: float, lids: dict | None) -> dict:
     return rep
 
 
+# M10c: the collar as skin (alien_lids_geom.COLLAR_SKIN; brief UPDATE 16): no `_lid_` in its name, so alien.gd and the
+# page give it the skin's textured material (alien_hue), not the lids'.
+SKIN_COLLAR_NAME = "eye_{d}_collar_{s}"
+SKIN_LAYERS = ("UVMap", "masks", "rest_xy", "rest_zn")  # the Body's first four UV layers, sampled per vertex
+
+
+def skin_collars() -> list:
+    """The kit's skin collar objects (M10c; none on a kit built without --collar skin)."""
+    return [bpy.data.objects[n] for n in (SKIN_COLLAR_NAME.format(d=d, s=s) for d in EYES for s in ("L", "R"))
+            if n in bpy.data.objects]
+
+
+class BodySampler:
+    """The rest Body's surface for the skin collar: rays and nearest points on its loop triangles, and per hit the
+    barycentric blend of its corner UV layers (SKIN_LAYERS), corner normals (world) and point AO."""
+
+    def __init__(self, body):
+        me = body.data
+        me.calc_loop_triangles()
+        mw = body.matrix_world
+        self.co = np.array([tuple(mw @ v.co) for v in me.vertices])
+        n = len(me.loop_triangles)
+        self.tv = np.empty(n * 3, dtype=np.int64)
+        me.loop_triangles.foreach_get("vertices", self.tv)
+        self.tv = self.tv.reshape(-1, 3)
+        self.tl = np.empty(n * 3, dtype=np.int64)
+        me.loop_triangles.foreach_get("loops", self.tl)
+        self.tl = self.tl.reshape(-1, 3)
+        self.tree = BVHTree.FromPolygons([Vector(c) for c in self.co], self.tv.tolist())
+        self.uv = {}
+        for name in SKIN_LAYERS:
+            a = np.empty(len(me.loops) * 2, dtype=np.float32)
+            me.uv_layers[name].data.foreach_get("uv", a)
+            self.uv[name] = a.reshape(-1, 2).astype(np.float64)
+        cn = np.empty(len(me.loops) * 3, dtype=np.float32)
+        me.corner_normals.foreach_get("vector", cn)
+        r = np.array(mw.to_3x3().inverted().transposed())
+        cn = cn.reshape(-1, 3).astype(np.float64) @ r.T
+        self.cn = cn / np.maximum(np.linalg.norm(cn, axis=1, keepdims=True), 1e-12)
+        ao = np.ones((len(me.vertices), 4))
+        if "ao" in me.color_attributes:
+            a = np.empty(len(me.vertices) * 4, dtype=np.float32)
+            me.color_attributes["ao"].data.foreach_get("color", a)
+            ao = a.reshape(-1, 4).astype(np.float64)
+        self.ao = ao
+
+    def hit(self, origin: np.ndarray, direction: np.ndarray, dist: float, fallback: np.ndarray):
+        """(location, triangle) of the first hit of the ray (none when dist is 0), else the nearest point to
+        fallback."""
+        loc, idx = None, None
+        if dist > 0.0:
+            loc, _, idx, _ = self.tree.ray_cast(Vector(origin.tolist()), Vector(direction.tolist()), dist)
+        if loc is None:
+            loc, _, idx, _ = self.tree.find_nearest(Vector(fallback.tolist()))
+        return np.array(loc), idx
+
+    def sample(self, loc: np.ndarray, t: int) -> dict:
+        a, b, c = self.co[self.tv[t]]
+        v0, v1, v2 = b - a, c - a, loc - a
+        d00, d01, d11, d20, d21 = v0 @ v0, v0 @ v1, v1 @ v1, v2 @ v0, v2 @ v1
+        den = d00 * d11 - d01 * d01 or 1e-18
+        w1 = (d11 * d20 - d01 * d21) / den
+        w2 = (d00 * d21 - d01 * d20) / den
+        w = np.clip(np.array([1.0 - w1 - w2, w1, w2]), 0.0, 1.0)
+        w /= w.sum() or 1.0
+        lp = self.tl[t]
+        out = {name: w @ self.uv[name][lp] for name in SKIN_LAYERS}
+        nn = w @ self.cn[lp]
+        out["normal"] = nn / (np.linalg.norm(nn) or 1.0)
+        out["ao"] = w @ self.ao[self.tv[t]]
+        return out
+
+
+def crater_hits(tree, cen, fw, ax, az, rd: float, rd_ref: float, c: dict) -> list:
+    """The skin's points (s, h, phi) round an eye as a front view sees them: per azimuth bin's centre and every ds_mm
+    of s out to M8b's dome a ray down the eye's axis onto the Body (its first hit)."""
+    hits = []
+    down = Vector((-fw).tolist())
+    n_s = int((rd_ref + c["margin_mm"] / 1000.0 - rd) / (c["ds_mm"] / 1000.0)) + 2
+    for i in range(c["bins"]):
+        p = -math.pi + 2.0 * math.pi * (i + 0.5) / c["bins"]
+        radial = math.cos(p) * ax + math.sin(p) * az
+        for j in range(n_s):
+            s_ = rd + (j + 0.5) * c["ds_mm"] / 1000.0
+            hit = tree.ray_cast(Vector((cen + 1.5 * rd_ref * fw + s_ * radial).tolist()), down, 3.0 * rd_ref)
+            if hit[0] is not None:
+                hits.append((s_, float(np.dot(np.array(hit[0]) - cen, fw)), p))
+    return hits
+
+
+def build_skin_collars(k: float, lids: dict | None, opts: dict) -> dict:
+    """M10c: the skin collars (SKIN_COLLAR_NAME) on the kit's eye units as rebuilt at k: per side the bare crater
+    measured as build_collars does (M10b), then per azimuth bin alien_lids_geom.fillet_section from the crater's edge,
+    tangent to the skin there, to inside the dome's outline. Material alien_hue; per vertex the Body's UV layers
+    (SKIN_LAYERS) and AO sampled from the skin behind it (front projection, pulled toward the edge by uv_pull), the
+    normals the skin's at the edge blended toward the fillet's own (geom_end); the contact layers are written by
+    contact_field. Static, a sibling of the ball."""
+    from mathutils import Matrix
+    # the crater's measure: M10b's, with the skin collar's own keys over it (min_mm, h_back, gap_min_mm; smooth, grow,
+    # fill_bins when given) and no sphere limit
+    c = dict(LG.COLLAR, sphere=False, gap_min_mm=opts["gap_min_mm"])
+    c.update({k: v for k, v in opts.items() if k in ("min_mm", "h_back", "smooth", "grow", "fill_bins")})
+    body = bpy.data.objects["Body"]
+    smp = BodySampler(body)
+    hue = bpy.data.materials["alien_hue"]
+    rep = {}
+    for dname, d in EYES.items():
+        rho_out = max(LG.slim(d[lid]["rho"], LID_BEAD[lid], lids or LG.LIDS_S9)[0][1] for lid in ("upper", "lower"))
+        for side in ("L", "R"):
+            ball = bpy.data.objects[f"eye_{dname}_ball_{side}"]
+            cen = np.array(ball.matrix_world.translation)
+            rd = ball_radius(ball) * rho_out
+            rd_ref = rd * LG.EYE_SCALE / k
+            R = bpy.data.objects[f"Eye_{side}"].matrix_world.to_3x3().normalized()
+            fw, ax, az = (np.array(R @ Vector(v)).ravel() for v in ((0, -1, 0), (1, 0, 0), (0, 0, 1)))
+            raw = LG.collar_gaps(crater_hits(smp.tree, cen, fw, ax, az, rd, rd_ref, c), rd, rd_ref, c)
+            gaps = LG.collar_smooth(raw, c)
+            n = c["bins"]
+            b = G.Built()
+            mi = b.slot(hue)
+            rings, data = [], []
+            for i in range(n):
+                p = -math.pi + 2.0 * math.pi * (i + 0.5) / n
+                radial = math.cos(p) * ax + math.sin(p) * az
+                gap, h_edge = gaps[i]
+                edge = cen + h_edge * fw + (rd + gap) * radial
+                loc, t = smp.hit(cen + 1.5 * rd_ref * fw + (rd + gap) * radial, -fw, 3.0 * rd_ref, edge)
+                if abs(float(np.dot(loc - edge, fw))) > 0.004:  # the skin far behind: the nearest skin instead
+                    loc, t = smp.hit(edge, -fw, 0.0, edge)
+                n_edge = smp.sample(loc, t)["normal"]
+                front, normals, back = LG.fillet_section(gap, h_edge, (float(n_edge @ radial), float(n_edge @ fw)),
+                                                         rd, opts)
+                s0 = front[0][0]
+                ring = []
+                kf = len(front) - 1
+                for j, (sv, hv) in enumerate(front + back):
+                    co = cen + hv * fw + sv * radial
+                    su = sv + (s0 - sv) * opts["uv_pull"]
+                    sl, st = smp.hit(cen + 1.5 * rd_ref * fw + su * radial, -fw, 3.0 * rd_ref, co)
+                    sm = smp.sample(sl, st)
+                    if j <= kf:
+                        ng = normals[j][0] * radial + normals[j][1] * fw
+                        w = opts["geom_end"] * LG.smoothstep(0.0, 1.0, j / kf)
+                        nv = (1.0 - w) * n_edge + w * ng
+                    else:
+                        nv = n_edge
+                    sm["normal"] = nv / (np.linalg.norm(nv) or 1.0)
+                    ring.append(b.vert(Vector(co.tolist())))
+                    data.append(sm)
+                rings.append(ring)
+            m = len(rings[0])
+            for i in range(n):
+                r0, r1 = rings[i], rings[(i + 1) % n]
+                for j in range(m):
+                    b.face((r0[j], r1[j], r1[(j + 1) % m], r0[(j + 1) % m]), mi)
+            name = SKIN_COLLAR_NAME.format(d=dname, s=side)
+            old = bpy.data.objects.get(name)
+            if old is not None:
+                bpy.data.objects.remove(old)
+            ob = G.to_object(b, name, ball.users_collection[0], origin=Matrix(ball.matrix_world))
+            skin_collar_layers(ob, data)
+            par = ball.parent
+            if par is not None:  # a sibling of the ball: shown with its design (alien.gd's eye_<design>_<side>)
+                mw = ob.matrix_world.copy()
+                ob.parent = par
+                if ball.parent_type == "BONE":
+                    ob.parent_type, ob.parent_bone = "BONE", ball.parent_bone
+                ob.matrix_world = mw
+            gw = [g[0] for g in gaps]
+            rep[f"{dname}_{side}"] = {"rd_mm": round(rd * 1000.0, 2), "rd_ref_mm": round(rd_ref * 1000.0, 2),
+                                      "parent": par.name if par else None,
+                                      "gap_mm_max": round(max(gw) * 1000.0, 2),
+                                      "gap_mm_mean": round(sum(gw) / n * 1000.0, 2),
+                                      "bins_with_skin": len([g for g in raw if g is not None]),
+                                      "verts": len(ob.data.vertices)}
+    rep["opts"] = opts
+    log("skin collar", json.dumps(rep))
+    return rep
+
+
+def skin_collar_layers(ob, data: list) -> None:
+    """A skin collar's per-vertex samples (BodySampler.sample, in vertex order) into its UV layers in the Body's order
+    (SKIN_LAYERS, then the contact layers contact_field fills), its point AO and its custom normals (object space)."""
+    me = ob.data
+    lv = np.empty(len(me.loops), dtype=np.int64)
+    me.loops.foreach_get("vertex_index", lv)
+    for name in list(me.uv_layers.keys()):
+        me.uv_layers.remove(me.uv_layers[name])
+    for name in SKIN_LAYERS:
+        vals = np.array([d[name] for d in data])
+        me.uv_layers.new(name=name).data.foreach_set("uv", vals[lv].astype(np.float32).ravel())
+    for name in LG.CONTACT_UVS:
+        me.uv_layers.new(name=name).data.foreach_set("uv", np.tile([0.0, 1.0], len(me.loops)).astype(np.float32))
+    me.uv_layers.active_index = 0
+    for name in [at.name for at in me.color_attributes]:
+        me.color_attributes.remove(me.color_attributes[name])
+    at = me.color_attributes.new("ao", "FLOAT_COLOR", "POINT")
+    at.data.foreach_set("color", np.array([d["ao"] for d in data]).astype(np.float32).ravel())
+    me.color_attributes.active_color = at
+    me.color_attributes.render_color_index = me.color_attributes.find("ao")
+    m3 = ob.matrix_world.to_3x3().transposed()
+    me.normals_split_custom_set_from_vertices([tuple((m3 @ Vector(d["normal"].tolist())).normalized()) for d in data])
+
+
 def mouth_pieces():
     return [bpy.data.objects[f"mouth_{d}_{v}"] for d in DESIGNS_MOUTH for v in VISEMES
             if f"mouth_{d}_{v}" in bpy.data.objects]
@@ -488,7 +694,7 @@ def contact_field(body) -> dict:
     reach = LG.CONTACT["reach"]
     n = len(me.vertices)
     co = [mw @ v.co for v in me.vertices]
-    fields = {}
+    fields, collar_fields = {}, {}
     for d, parts in groups.items():
         verts, polys = [], []
         for o in parts:
@@ -503,6 +709,13 @@ def contact_field(body) -> dict:
             if hit[0] is not None:
                 c[i] = LG.contact(hit[3], reach)
         fields[d] = smooth(me, c, LG.CONTACT["smooth"])
+        for sc in skin_collars():  # M10c: the skin collars carry the field too (continuous with the Body's)
+            cc = np.zeros(len(sc.data.vertices))
+            for i, v in enumerate(sc.data.vertices):
+                hit = tree.find_nearest(sc.matrix_world @ v.co, reach)
+                if hit[0] is not None:
+                    cc[i] = LG.contact(hit[3], reach)
+            collar_fields.setdefault(sc.name, {})[d] = smooth(sc.data, cc, LG.CONTACT["smooth"])
     for name in LG.CONTACT_UVS:
         if name in me.uv_layers:
             me.uv_layers.remove(me.uv_layers[name])
@@ -513,6 +726,12 @@ def contact_field(body) -> dict:
     for name, (du, dv) in LG.CONTACT_UVS.items():
         layer = me.uv_layers.new(name=name)
         layer.data.foreach_set("uv", np.stack([fields[du][lv], 1.0 - fields[dv][lv]], 1).astype(np.float32).ravel())
+    for sc in skin_collars():
+        cf, cl = collar_fields[sc.name], np.empty(len(sc.data.loops), dtype=np.int64)
+        sc.data.loops.foreach_get("vertex_index", cl)
+        for name, (du, dv) in LG.CONTACT_UVS.items():
+            sc.data.uv_layers[name].data.foreach_set("uv", np.stack([cf[du][cl], 1.0 - cf[dv][cl]], 1)
+                                                     .astype(np.float32).ravel())
     mat = bpy.data.materials["alien_hue"]
     for k2, v2 in CONTACT_MARKER.items():
         mat[k2] = v2
@@ -524,8 +743,8 @@ def contact_field(body) -> dict:
 
 def main():
     a = args()
-    if a.collar == "on" and a.flare != "off":  # PR #245's review: refused before any work
-        raise SystemExit("--collar on needs --flare off (the collar fills the gap the flare closed); "
+    if a.collar != "off" and a.flare != "off":  # PR #245's review: refused before any work
+        raise SystemExit("--collar on|skin needs --flare off (the collar fills the gap the flare closed); "
                          "with a flare, pass --collar off")
     kit, out = Path(a.kit), Path(a.out)
     ex = out / a.export_name
@@ -556,8 +775,9 @@ def main():
     rep["flare"] = flares(k, sink, lids, a.flare)
     rep["eyes"] = rebuild_eyes(k, corner, sink, lids, rep["flare"])
     rep["lid_reach_deg"] = lid_reach(lids)
-    if a.collar == "on" and k < LG.EYE_SCALE:  # a full-size unit is M8b's as it was: no gap, no collar
-        rep["collar"] = build_collars(k, lids)
+    if a.collar != "off" and k < LG.EYE_SCALE:  # a full-size unit is M8b's as it was: no gap, no collar
+        opts = dict(LG.COLLAR_SKIN, **(json.loads(a.collar_opts) if a.collar_opts else {}))
+        rep["collar"] = build_collars(k, lids) if a.collar == "on" else build_skin_collars(k, lids, opts)
     bpy.data.materials["alien_lip"][LIDS_MARKER] = json.dumps(  # PR #243's minor 1: alien.gd's rim reaches
         {"lids": lids or LG.LIDS_S9, "reach_deg": rep["lid_reach_deg"]}, sort_keys=True)
     bpy.context.view_layer.update()
