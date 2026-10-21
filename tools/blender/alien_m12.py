@@ -13,9 +13,10 @@ writes a new kit into <out>/<export-name> (never over its input) with the design
   with an optional "fang" over FANG}, "pieces": ["rest", "A", ...]}) each variant's pieces as extra nodes
   lipvar_<name>_<design>_<shape> (the grid's kit only);
 - the pieces' own AO (COLOR_0.r) baked as alien_m6.bake_parts_ao does (each piece alone with the skin; the new
-  materials get PART_AO_MARKER only then), and (M13) the jaw weight in COLOR_0.g (jaw_weights: the lower lip, tongue
-  and fangs 1, the upper lip 0, less toward the corners) that godot/alien/alien_mouth_motion.gdshaderinc moves (the
-  talk's bounce, pucker and jaw thrust);
+  materials get PART_AO_MARKER only then), and (M13) the jaw weight in COLOR_0.a (jaw_weights: the lower lip, tongue
+  and fangs 1, the upper lip 0, less toward the corners; M13b: in COLOR_0's alpha, the colour stays the grey AO) that
+  godot/alien/alien_mouth_motion.gdshaderinc moves (the talk's bounce, pucker and jaw thrust) on every pout and fangs
+  piece in the kit;
 - the new designs' skin contact in Body's seventh UV layer (alien_lips_geom.CONTACT_UV_MOUTH2: glTF TEXCOORD_6, u
   pout, v fangs; Godot CUSTOM2), alien_hue marked with CONTACT_MARKER_MOUTH2. The frog, overbite and eye channels,
   the Body's mesh, its skin AO and texture and every other part are not touched;
@@ -58,7 +59,7 @@ DESIGNS = ("pout", "fangs")
 POUT_MAT = {"color": (0.68, 0.14, 0.14), "roughness": 0.32, "coat": 0.5, "coat_roughness": 0.15, "specular": 0.5}
 # M13: the fangs (sRGB, Blender's stand-in; Godot's alien.gd FANG_LOOK is the release look): ivory, a soft satin.
 FANG_MAT = {"color": (0.90, 0.82, 0.64), "roughness": 0.38, "coat": 0.25, "coat_roughness": 0.3, "specular": 0.45}
-# M13: the jaw weight (COLOR_0.g) toward the mouth's corners: full to `from` of the lips' half width, `corner` at the
+# M13: the jaw weight (COLOR_0.a since M13b) toward the mouth's corners: full to `from` of the lips' half width, `corner` at the
 # corners (the corners stay on the face as the lower jaw moves); round an open ring, the lower half by the opening's
 # centre height over `band` of its half height either side.
 JAW = {"from": 0.45, "corner": 0.3, "band": 0.5}
@@ -127,11 +128,14 @@ def attach(ob, mouth):
 
 
 def jaw_weights(ob) -> dict:
-    """M13: the jaw weight per vertex into COLOR_0.g (the `ao` attribute, made white if the AO was not baked): which
-    part of the piece moves with the lower jaw (godot/alien/alien_mouth_motion.gdshaderinc). Per connected island:
-    a closed piece's upper lip tube 0 and lower lip tube 1; round an open ring (lips and cup) a smooth step at the
-    opening's centre height (JAW["band"] of its half height either side); the tongue 1 and each fang 1 (rigidly, at
-    its own x). Times JAW's falloff toward the mouth's corners (the corners stay put)."""
+    """M13: the jaw weight per vertex into COLOR_0's alpha (the `ao` attribute, made white if the AO was not baked;
+    M13b, PR #248's review minor 4: the alpha, not g, so the colour stays the grey AO and a viewer that uses vertex
+    colour as albedo does not tint the mouth; the pieces are opaque, so the alpha is no transparency): which part of
+    the piece moves with the lower jaw (godot/alien/alien_mouth_motion.gdshaderinc). Per connected island: a closed
+    piece's upper lip tube 0 and lower lip tube 1; round an open ring (lips and cup) a smooth step at the opening's
+    centre height (JAW["band"] of its half height either side); the tongue and the fangs 1. Times JAW's falloff
+    toward the mouth's corners (the corners stay put), per vertex on the fangs too (M13b, minor 6: a fang moved
+    rigidly at its mean x while the lip under it moved at its own, so they could part under the bounce and thrust)."""
     me = ob.data
     n = len(me.vertices)
     mw = ob.matrix_world
@@ -175,10 +179,8 @@ def jaw_weights(ob) -> dict:
     g = g * env(co[:, 0])
     for r, k in kind.items():
         sel = isl == r
-        if k == "alien_tongue":
+        if k in ("alien_tongue", "alien_fang"):
             g[sel] = env(co[sel, 0])
-        elif k == "alien_fang":
-            g[sel] = env(np.array([co[sel, 0].mean()]))[0]
     if "ao" not in me.color_attributes:
         at = me.color_attributes.new("ao", "FLOAT_COLOR", "POINT")
         at.data.foreach_set("color", np.ones(n * 4, dtype=np.float32))
@@ -187,7 +189,8 @@ def jaw_weights(ob) -> dict:
     col = np.empty(n * 4, dtype=np.float32)
     me.color_attributes["ao"].data.foreach_get("color", col)
     col = col.reshape(-1, 4)
-    col[:, 1] = g
+    col[:, 1] = col[:, 0]  # an M13 kit's jaw weight in g back to the grey AO
+    col[:, 3] = g
     me.color_attributes["ao"].data.foreach_set("color", col.astype(np.float32).ravel())
     return {"moving": round(float((g > 0.5).mean()), 3), "max": round(float(g.max()), 3)}
 
@@ -327,7 +330,11 @@ def main():
                 if key in mats[d] and mats[d][key].name != "alien_lip":
                     for k2, v2 in M6.PART_AO_MARKER.items():
                         mats[d][key][k2] = v2
-    jaw = {o.name: jaw_weights(o) for o in pieces + extra}
+    # M13b (PR #248's review minor 3): every piece of every new design in the kit, not only this run's (with
+    # --designs fangs on an M12 kit the pout's pieces kept a grey g, so its upper lip moved by its AO)
+    moving = [o for o in bpy.data.objects if o.type == "MESH" and o.name.startswith(
+        tuple(f"mouth_{d}_" for d in DESIGNS) + ("lipvar_",))]
+    jaw = {o.name: jaw_weights(o) for o in moving}
     log("jaw", json.dumps({k: v for k, v in jaw.items() if k.startswith("mouth_")}))
     arm = body.find_armature()
     if arm is not None:  # back to POSE: in REST the exporter bakes every clip as the rest pose
@@ -361,7 +368,7 @@ def main():
         cj["note_m12"] = (
             "art #196 M12: a third mouth design, pout (the red pout lips of the mp1 sheet): mouth_pout_<shape> on the "
             "Mouth socket (the fixed mount), material alien_lip_pout (glossy deep red; extras prime_part_ao when "
-            "baked), COLOR_0.r the baked AO and (M13) COLOR_0.g the jaw weight; no flipbook shells; the skin's pout "
+            "baked), COLOR_0 the baked AO (grey) and (M13b) its alpha the jaw weight; no flipbook shells; the skin's pout "
             "contact in Body's seventh UV layer contact_mouth2 (glTF TEXCOORD_6: u pout, v fangs; Godot CUSTOM2), "
             "alien_hue extras " + marker + "." +
             (" The grid kit also has lipvar_<variant>_pout_<shape> nodes (m12.grid)." if reps["pout"].get("grid")
@@ -371,7 +378,7 @@ def main():
         cj["note_m13"] = (
             "art #196 M13: a fourth mouth design, fangs (the mg2 sheet: thin, wide, soft coral lips with two lower "
             "fangs): mouth_fangs_<shape> on the Mouth socket, its lips the kit's alien_lip, its two fangs alien_fang "
-            "(ivory; extras prime_part_ao when baked), COLOR_0.r the baked AO and COLOR_0.g the jaw weight; no "
+            "(ivory; extras prime_part_ao when baked), COLOR_0 the baked AO (grey) and its alpha the jaw weight; no "
             "flipbook shells; the skin's fangs contact in TEXCOORD_6's v (Godot CUSTOM2.y), alien_hue extras "
             + marker + "." +
             (" The grid kit also has lipvar_<variant>_fangs_<shape> nodes (m13.grid)." if reps["fangs"].get("grid")

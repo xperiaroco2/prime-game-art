@@ -35,7 +35,7 @@ uniform float rim_value : hint_range(0.0, 1.0) = 0.0;
 uniform float rim_tint : hint_range(0.0, 1.0) = 0.5;
 
 // M12/M13 (art #196): a talking mouth piece's secondary motion (lip_drop, jaw_thrust, pucker on the jaw weight
-// COLOR.g): alien_mouth_motion.gdshaderinc.
+// COLOR.a since M13b): alien_mouth_motion.gdshaderinc.
 #include "res://alien/alien_mouth_motion.gdshaderinc"
 
 varying vec3 m_pos;
@@ -44,7 +44,7 @@ varying vec3 m_pos;
 
 void vertex() {
 	m_pos = VERTEX;  // the grain and drift stay on the lips as they move
-	VERTEX = mouth_motion(VERTEX, COLOR.g);
+	VERTEX = mouth_motion(VERTEX, COLOR.a);
 }
 
 void fragment() {

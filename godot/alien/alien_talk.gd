@@ -14,7 +14,7 @@ extends RefCounted
 ## - m_gap_ms: a silence shorter than this between two phases shows M (the lips pressed), longer shows rest;
 ## - bounce {amp, hz, decay_ms}: after every change of shape the lower lip springs: drop = amp x the signed change in
 ##   openness x sin(2 pi hz dt) x exp(-dt / decay) metres (positive: down; alien_lip.gdshader `lip_drop` on the jaw
-##   weight, COLOR_0.g): an opening sags the lower lip a little further first, a closing presses it up against the
+##   weight, COLOR_0.a): an opening sags the lower lip a little further first, a closing presses it up against the
 ##   upper lip; a closed shape (rest, M) only ever presses, it never sags open (PR #246's review minor 4);
 ## - pucker {amount, min_gap_ms}: in a silence at least min_gap_ms long the lips purse, amount x a sine ease over the
 ##   gap (alien_lip.gdshader `pucker`);

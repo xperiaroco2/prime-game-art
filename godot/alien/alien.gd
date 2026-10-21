@@ -33,7 +33,7 @@ extends Node
 ## - M13, the fangs mouth (mg2): a fourth design "fangs" (mouth_fangs_<shape>: the coral alien_lip lips, two lower fangs
 ##   in alien_fang, FANG_LOOK), its contact in CUSTOM2.y, a heavier jaw's talk (alien_talk.gd: a slower opening, a
 ##   forward jaw thrust on A and E, a small bounce). The talking designs' lips, fangs, cup and tongue move together on
-##   the jaw weight COLOR_0.g (alien_mouth_motion.gdshaderinc; the bounce presses a closed mouth shut, never sags it).
+##   the jaw weight COLOR_0.a (M13b; alien_mouth_motion.gdshaderinc; the bounce presses a closed mouth shut, never sags it).
 ## Used through preload (a -s script has no global class cache): const AlienRig = preload("res://alien/alien.gd").
 
 const SHADER: Shader = preload("res://alien/alien_hue.gdshader")
@@ -111,7 +111,7 @@ const FANG_LOOK := {"albedo": Color(0.90, 0.82, 0.64), "deep": Color(0.70, 0.56,
 	"sheen": 0.25, "sheen_roughness": 0.3, "grain": 0.02, "sss": 0.15, "transmit": 0.15, "rim_value": 0.2}
 const MOUTH_DESIGNS: Array[String] = ["frog", "overbite", "pout", "fangs"]
 ## M13: the talking designs whose pieces move (alien_talk.gd's bounce, pucker, thrust): their lips, fangs, cup and
-## tongue take the motion shaders on the jaw weight COLOR_0.g (tools/blender/alien_m12.py); frog and overbite snap.
+## tongue take the motion shaders on the jaw weight COLOR_0.a (tools/blender/alien_m12.py); frog and overbite snap.
 const MOVING_DESIGNS: Array[String] = ["pout", "fangs"]
 const MOVING_PARTS: Array[String] = ["alien_mouth_inner", "alien_tongue"]
 ## The face materials beyond FACE that the s5 look replaces (M12 the pout's lips, M13 the fangs).
