@@ -48,6 +48,7 @@ LINER_NAME = "eye_{d}_liner_{s}"  # M11b: the lash line, its own node (it stays 
 VAR_NAME = "lashvar_{v}_{d}_{s}"
 VAR_LINER = "lashvar_{v}_{d}_liner_{s}"
 MATERIAL = "alien_lash"
+SOCKET_MARKER = "prime_socket"  # alien_socket.MARKER (alien_socket_fit.py writes {"route": "m15", ...})
 LASH_MARKER = {"prime_lashes": "m11"}  # alien.gd: the lash material's look and the toggle
 LASH_LOOK = {"base": (0.010, 0.009, 0.011), "roughness": 0.28, "coat": 0.6, "coat_roughness": 0.12}
 STATES = ("open", "rest", "half", "closed")
@@ -243,22 +244,36 @@ def clipping(x: dict) -> bool:
                 or x["lower_edges"] or x["skin_least_mm"] < CLEAR_MM)
 
 
+def socket_route() -> str:
+    """The Body's socket route (M15b): "m15" on M15's rebuilt socket (its lash defaults, alien_lashes_geom
+    SOCKET_LASHES), else ""."""
+    body = bpy.data.objects.get("Body")
+    raw = body.get(SOCKET_MARKER) if body is not None else None
+    if not raw:
+        return ""
+    try:
+        return str(json.loads(raw).get("route", ""))
+    except (TypeError, ValueError, AttributeError):
+        return ""
+
+
 def main():
     a = args()
     kit, out = Path(a.kit), Path(a.out)
     ex = out / a.export_name
     if ex.resolve() == kit.resolve():
         raise SystemExit("the M11 kit must not overwrite its input")
-    spec = LL.merged(json.loads(a.lashes) if a.lashes else None)
     grid = json.loads(Path(a.grid).read_text(encoding="utf-8")) if a.grid else {"variants": {}}
     bpy.ops.wm.open_mainfile(filepath=str(kit / "alien_character.blend"))
+    route = socket_route()
+    spec = LL.merged(json.loads(a.lashes) if a.lashes else None, route)
     cj = json.loads((kit / "character.json").read_text(encoding="utf-8"))
     m6 = cj.get("m6", {})
     lids, corner = m6.get("lids", LG.LIDS_S9), m6.get("corner", LG.CORNER)
     body = M6.rest_pose()
     remove_old()
     mat = lash_material()
-    rep = {"lashes": spec, "lids": lids, "corner": corner, "sets": {}}
+    rep = {"lashes": spec, "socket_route": route, "lids": lids, "corner": corner, "sets": {}}
     sets, nodes, liners = {}, {}, {}
     for d in EYES:
         for s in ("L", "R"):
@@ -271,7 +286,7 @@ def main():
             rep["sets"][objs[0][0].name]["lashes"] = r["lashes"]
             for vn, vs in grid["variants"].items():
                 vo, vr = make_set(VAR_NAME.format(v=vn, d=d, s=s), VAR_LINER.format(v=vn, d=d, s=s), lid,
-                                  LL.merged(vs), mat, lids, corner)
+                                  LL.merged(vs, route), mat, lids, corner)
                 sets[(d, s, vn)] = vo
                 rep.setdefault("grid", {})[vo[0][0].name] = {"verts": vr["verts"], "spec": vs}
     log("sets", json.dumps({k: [v["verts"], v["r_mm"], v["side"], v["nodes"]] for k, v in rep["sets"].items()}))

@@ -221,6 +221,16 @@ def flares(k: float, sink: float, lids: dict | None, spec: str) -> dict:
     return out
 
 
+def eye_splay() -> float:
+    """M15: how far the eye units look outward (degrees, the mean of both sides' socket axes against straight ahead):
+    S2a's sockets 7.9, M15's mount 0. alien.gd turns the balls in by this plus its convergence (LIDS_MARKER)."""
+    out = []
+    for side, sx in (("L", 1.0), ("R", -1.0)):
+        f = bpy.data.objects[f"Eye_{side}"].matrix_world.to_3x3() @ Vector((0.0, -1.0, 0.0))
+        out.append(math.degrees(math.atan2(sx * f.x, -f.y)))
+    return round(sum(out) / 2.0, 2)
+
+
 def ball_radius(ball) -> float:
     n = len(ball.data.vertices)
     co = np.empty(n * 3)
@@ -826,8 +836,10 @@ def main():
     if a.collar != "off" and k < LG.EYE_SCALE:  # a full-size unit is M8b's as it was: no gap, no collar
         opts = dict(LG.COLLAR_SKIN, **(json.loads(a.collar_opts) if a.collar_opts else {}))
         rep["collar"] = build_collars(k, lids) if a.collar == "on" else build_skin_collars(k, lids, opts)
+    rep["splay_deg"] = eye_splay()
     bpy.data.materials["alien_lip"][LIDS_MARKER] = json.dumps(  # PR #243's minor 1: alien.gd's rim reaches
-        {"lids": lids or LG.LIDS_S9, "reach_deg": rep["lid_reach_deg"]}, sort_keys=True)
+        {"lids": lids or LG.LIDS_S9, "reach_deg": rep["lid_reach_deg"], "splay_deg": rep["splay_deg"]},
+        sort_keys=True)
     bpy.context.view_layer.update()
     rep["contact"] = contact_field(body)
     if not a.no_bake:

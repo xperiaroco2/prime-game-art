@@ -88,6 +88,10 @@ class FaceConstants(unittest.TestCase):
 
     def test_eye_aim(self):
         self.assertEqual(float(self.grab(rf"^var aim_in_deg: float = ({NUM})").group(1)), self.f.EYE_AIM_IN)
+        # M15b: the convergence the fit sets in the GLB's rest and alien.gd turns the balls by (with splay_deg)
+        self.assertEqual(float(self.grab(rf"^const AIM_CONVERGE_DEG := ({NUM})").group(1)), self.f.EYE_AIM_CONVERGE)
+        fit = (ROOT / "tools" / "blender" / "alien_socket_fit.py").read_text(encoding="utf-8")
+        self.assertIn("EYE_AIM_CONVERGE", fit)
 
     def test_blink(self):
         m = self.grab(rf'^const BLINK_MS := \{{"close": ({NUM}), "hold": ({NUM}), "open": ({NUM})\}}')

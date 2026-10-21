@@ -214,7 +214,7 @@ func _lmouths(hero: String) -> void:
 	_grid_cells(cells, 4, Vector2i(400, 400), "lmouths.png")
 
 
-const MOUTH_DESIGNS_ALL: Array[String] = ["frog", "overbite", "pout", "fangs"]
+const MOUTH_DESIGNS_ALL: Array[String] = ["frog", "overbite", "pout", "fangs", "tongue"]
 
 
 func _lhues(hero: String) -> void:

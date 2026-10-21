@@ -29,6 +29,17 @@ class Geometry(unittest.TestCase):
         with self.assertRaises(ValueError):
             LL.merged({"lenght_out": 0.6})
 
+    def test_m15s_socket_has_its_own_defaults_under_the_spec(self):  # M15b
+        self.assertEqual(LL.merged(), LL.LASHES)  # older kits (no route) build as before
+        m15 = LL.merged(route="m15")
+        self.assertEqual((m15["liner_t_in_deg"], m15["sink"]), (-42.0, 0.003))
+        self.assertEqual({k: v for k, v in m15.items() if k not in ("liner_t_in_deg", "sink")},
+                         {k: v for k, v in LL.LASHES.items() if k not in ("liner_t_in_deg", "sink")})
+        self.assertEqual(LL.merged({"sink": 0.005}, "m15")["sink"], 0.005)  # an explicit spec still wins
+        self.assertEqual(LL.merged(route="other"), LL.LASHES)
+        for over in LL.SOCKET_LASHES.values():
+            self.assertFalse(set(over) - set(LL.LASHES))
+
     def test_the_rim_point_lies_on_the_lid_roll(self):
         pt, n, p, hw = LL.rim(0.0, 0.0, RHO[0], RHO[1], BEAD, LG.CORNER)
         self.assertAlmostEqual(math.dist(pt, (0, 0, 0)), RHO[1] + BEAD, places=9)  # a=0: the roll's outer side
@@ -109,6 +120,12 @@ class Geometry(unittest.TestCase):
 class Wiring(unittest.TestCase):
     src = (BLENDER / "alien_lashes.py").read_text(encoding="utf-8")
     gd = (ROOT / "godot" / "alien" / "alien.gd").read_text(encoding="utf-8")
+
+    def test_the_socket_route_picks_the_defaults(self):  # M15b: the grid's variants too
+        main = self.src[self.src.index("def main("):]
+        self.assertIn("route = socket_route()", main)
+        self.assertIn("LL.merged(json.loads(a.lashes) if a.lashes else None, route)", main)
+        self.assertIn("LL.merged(vs, route)", main)
 
     def test_a_child_of_the_upper_lid_named_for_its_design(self):
         name = re.search(r'NAME = "([^"]+)"', self.src).group(1)

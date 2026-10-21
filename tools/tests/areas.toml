@@ -87,6 +87,10 @@ tests = ["test_ragdoll_*", "test_slice_*"]
 sources = ["faces/*", "tools/blender/faces_*", "tools/runner/commands/faces.py"]
 tests = ["test_faces_*"]
 
+[area.alien_fit]
+sources = ["tools/blender/alien_fit_geom.py", "tools/blender/alien_socket_fit.py"]  # M15's eye socket fit (#196); before light's alien_*
+tests = ["test_alien_fit_*"]
+
 [area.alien_texture]
 sources = ["tools/blender/alien_texture_geom.py"]  # the alien skin's texture formulas (#196); before light's alien_*
 tests = ["test_alien_texture_*"]
