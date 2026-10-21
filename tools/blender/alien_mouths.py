@@ -525,8 +525,10 @@ def build_piece(bvh, m, design, shape, world, mats, coll, origin, lips=None, nam
         rp = (lips_p.get("ring_param") or {}).get(shape)  # M12b: a designed ring (alien_lips_geom.ring_param)
         if rp:
             rm = ring_measure(cols)
-            if design in FILL_TEETH:  # M13b: the ring on the face's centre line (the fangs' refilled columns moved
-                x0, x1 = world(0.0, rm["cy"])[0], world(1.0, rm["cy"])[0]  # A's measured centre 3.5 mm aside)
+            # M13b: the ring on the face's centre line (the fangs' refilled columns moved A's measured centre 3.5 mm
+            # aside); M16b: a mirrored lip shape's too (the pout's A and O were 0.4 and 0.6 mm aside)
+            if design in FILL_TEETH or lips_p.get("mirror", 0.0) > 0.0:
+                x0, x1 = world(0.0, rm["cy"])[0], world(1.0, rm["cy"])[0]
                 rm = dict(rm, cx=-x0 / (x1 - x0))
             (cx, cy), pairs, outer0, cwt = LP.ring_param(rm, rp, lips_p, RING_N)
         else:
