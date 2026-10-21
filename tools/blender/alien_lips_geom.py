@@ -134,6 +134,18 @@ _POUT_RING = {"lean": 0.25, "bow_w": 0.16, "bow_peak": 0.10, "bow_at": 0.24, "cu
 # the rest's 4.2) and the stand-off of the rest (push, push_lo: alien_mouths' ring stand-off, m; the lips' front ahead
 # of the skin at the centre A 16.6 / 14.0 mm, E 16.5 / 13.8, the AI rest 16.0 / 14.3; M20 A 19.6 / 20.5). The pick of
 # M20b's stand-off x bow grid (docs/godot.md, M20b).
+# M20c (PR #260's last review minor 3, brief UPDATE 47): A/E/O fitted to mp1's open shapes measured on the sheet
+# (tools: the lip mask without the pink tongue; at the centre, each / the lips' width W; upper lip, opening height,
+# lower lip, opening width): mp1 A 0.30 / 0.39 / 0.31 / 0.68, E 0.21 / 0.21 / 0.22 / 0.78, O 0.34 / 0.20 / 0.38 / 0.23;
+# M20b's A 0.30 / 0.44 / 0.32 / 0.87, E 0.20 / 0.23 / 0.22 / 0.85, O 0.27 / 0.28 / 0.35 / 0.38. So the front
+# heights already matched; A's and E's openings were too wide (corner 0.53 / 0.57: the opening's half width is W less
+# corner x the lips' mean thickness), A's too tall (open 0.88), O's hole too big and its lips thin (hole 0.18). What
+# still read thinner than the AI rest at 3/4 was the rolls' depth front to back: `depth` 1.3 (alien_mouths: a ring's
+# own roll depth), pushed back so the lips' front stands where the rest's does (16.0 / 15.4 mm ahead of the skin, A
+# and E 16.0 / 15.4, O 25.5 / 27.9 as M20b's). After: A 0.30 / 0.39 / 0.32 / 0.76, E 0.21 / 0.23 / 0.22 / 0.78, O
+# 0.32 / 0.15 / 0.40 / 0.29. The pick of M20c's depth x stand-off grids (docs/godot.md, M20c).
+# M20d (PR #262's fresh review minor 3, brief UPDATE 49): O's hole measured 0.15 of W against mp1's 0.20 (a thick
+# donut): hole 0.23 measures 0.30 / 0.21 / 0.37 / 0.34 (its height as mp1's; still wider than mp1's round 0.23).
 _POUT_RING_TALK = dict(_POUT_RING, bow_w=0.12, bow_peak=0.40, bow_at=0.22)
 LIP_SHAPE_POUT = {
     "w": 1.0, "corner": 0.06, "pw": 1.3, "full": 1.0, "upper": 1.10, "lower": 1.05,
@@ -144,12 +156,12 @@ LIP_SHAPE_POUT = {
     "min_b": 0.0008, "corner_over": 0.6,
     "mirror": 1.0, "seam_fit": 3, "parting_dark": 0.2, "parting": {"small": (6.0, 0.55)}, "closed": ("rest",),
     "ring_param": {  # M16: the open rings' own balance and lean; M16e their own fullness (_POUT_RING)
-        "A": dict(_RING, n=2.1, corner=0.28, wide=1.0, upper=1.15, lower=1.20, bow=0.30, push=-0.0032,
-                  push_lo=-0.0030, **_POUT_RING_TALK),
-        "E": dict(_RING, n=2.0, corner=0.30, upper=1.15, lower=1.25, bow=0.30, push=-0.0012, push_lo=-0.0042,
-                  **_POUT_RING_TALK),
-        "O": dict(_RING, n=2.0, hole=0.30, corner=1.0, thick=0.9, bow=0.30, tuck=0.0, cup_throat=0.85, upper=1.10,
-                  lower=1.10, **_POUT_RING),
+        "A": dict(_RING, n=2.1, corner=0.53, open=0.88, depth=1.3, wide=1.0, upper=1.15, lower=1.20, bow=0.30,
+                  push=-0.0090, push_lo=-0.0016, **_POUT_RING_TALK),
+        "E": dict(_RING, n=2.0, corner=0.57, depth=1.3, upper=1.15, lower=1.25, bow=0.30, push=-0.0063,
+                  push_lo=-0.0027, **_POUT_RING_TALK),
+        "O": dict(_RING, n=2.0, hole=0.23, corner=1.0, thick=0.9, depth=1.3, bow=0.30, tuck=0.0, cup_throat=0.85,
+                  upper=1.10, lower=1.10, push=-0.0085, **_POUT_RING),
     },
 }
 

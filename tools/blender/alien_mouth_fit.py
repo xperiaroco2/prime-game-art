@@ -15,7 +15,8 @@ views of the pout mp1's lips) onto our mouth socket. Opens a kit's export/alien_
   provenance of each piece (ai_generated, the Meshy task, the batch files, from the generation.json beside each GLB)
   in character.json's `m20`. M20b (brief UPDATE 44, PR #260's review): each form put on its own best mirror plane
   before the mirror (centre_plane), mirrored at full resolution and then decimated symmetrically, its middle band and
-  lip line smoothed in depth (smooth_bands), the lower lip's central groove filled (fill_cleft); the skin's pout contact rebuilt with the skin under the form touching it
+  lip line smoothed in depth (smooth_bands), the lower lip's central groove filled (fill_cleft) and, M20d, its
+  centre's last notch (smooth_centre); the skin's pout contact rebuilt with the skin under the form touching it
   (closed_contact); M's width and depth (FIT["xy_scale"]).
 
 The fit of an `aia` form (both modes): imported, aligned (alien_mouth_fit_geom.align: one uniform scale to our
@@ -236,29 +237,90 @@ def mirror_snap(ob, pairs) -> float:
     return float(np.linalg.norm(new - co, axis=1).max())
 
 
-def fill_cleft(form) -> dict:
+def fill_cleft(form, clamp: bool = True) -> dict:
     """M20b: the AI lower lip's central groove filled (measured on M20's rest: the front 0.8-1.4 mm further back at
     x = 0 than at +-2-3 mm, a cleft down the lower lip that read as a seam; mp1's lower lip is one smooth cushion).
     A front-facing vertex below the lip line within FIT["cleft_band"] of x = 0 comes forward toward the lip's front
-    at the band's edge at its own height (a ray along +y), never back, by a smoothstep weight from the edge to x = 0."""
+    at the band's edge at its own height (a ray along +y), never back, by a smoothstep weight from the edge to x = 0.
+    M20c (PR #260's last review, minor 1): a vertex deeper than FIT["cleft_most"] comes forward by cleft_most
+    (`clamp`, rest and M; skipping it left a dimple at the top of the lower lip's centre); small skips it (its
+    parting, 11 mm deep)."""
     me = form.data
     co = local_co(form)
     tree = BVHTree.FromPolygons([tuple(q) for q in co], [list(p.vertices) for p in me.polygons])
     knots = G.lip_line([tuple(q) for q in co])
     band, front = G.FIT["cleft_band"], float(co[:, 1].min()) - 0.02
-    moved, most = 0, 0.0
+    moved, most, clamped = 0, 0.0, 0
     for i, v in enumerate(me.vertices):
         x, y, z = co[i]
         if abs(x) >= band or v.normal.y > -0.3 or z > G.line_at(knots, x) - 0.001:
             continue
         hit = tree.ray_cast(Vector((band, front, z)), Vector((0, 1, 0)), 0.2)
-        if hit[0] is None or hit[0].y >= y or y - hit[0].y > G.FIT["cleft_most"]:
-            continue  # never back; deeper than a groove is small's parting (it moved 11 mm without the cap)
-        d = (y - hit[0].y) * G.smoothstep(band, 0.0, abs(x))
+        if hit[0] is None or hit[0].y >= y:
+            continue  # never back
+        depth = y - hit[0].y
+        if depth > G.FIT["cleft_most"]:
+            if not clamp:
+                continue  # deeper than a groove is small's parting (it moved 11 mm without the cap)
+            depth, clamped = G.FIT["cleft_most"], clamped + 1
+        d = depth * G.smoothstep(band, 0.0, abs(x))
         co[i, 1] = y - d
         moved, most = moved + 1, max(most, d)
     set_points(form, co)
-    return {"moved": moved, "most_mm": round(most * 1000, 2)}
+    return {"moved": moved, "clamped": clamped, "most_mm": round(most * 1000, 2)}
+
+
+def smooth_centre(form) -> dict:
+    """M20d (PR #262's fresh review minor 6, brief UPDATE 49): the dimple's rest after fill_cleft, a notch at x = 0
+    in the top few mm of the lower lip under the lip line (M20c's rest: the front there about 1 mm behind the even
+    curve through its neighbours). A front vertex of the lower lip (one the ray along +y meets within
+    FIT["centre_surface"]) within FIT["centre_band"] of x = 0 comes forward onto G.centre_target, the even curve
+    through the lip's front at +-centre_ref at its own height, never back, at most FIT["centre_most"]. Returns the
+    moves and the notch (`kink_mm`: the most the front at x = 0 lies behind that curve) before and after."""
+    me = form.data
+    co = local_co(form)
+    knots = G.lip_line([tuple(q) for q in co])
+    band, (r1, r2) = G.FIT["centre_band"], G.FIT["centre_ref"]
+    front = float(co[:, 1].min()) - 0.02
+
+    def tree_of(pts):
+        return BVHTree.FromPolygons([tuple(q) for q in pts], [list(p.vertices) for p in me.polygons])
+
+    def at(tree, x, z):
+        hit = tree.ray_cast(Vector((x, front, z)), Vector((0, 1, 0)), 0.2)
+        return None if hit[0] is None else hit[0].y
+
+    def target(tree, x, z):
+        ys = [at(tree, sx, z) for sx in (-r1, r1, -r2, r2)]
+        return None if None in ys else G.centre_target(r1, (ys[0] + ys[1]) / 2, r2, (ys[2] + ys[3]) / 2, x)
+
+    def kink(tree) -> float:
+        z0, worst = G.line_at(knots, 0.0), 0.0
+        for k in range(2, 41):  # every 0.25 mm from 0.5 to 10 mm under the line (not the line's own groove)
+            y0, t = at(tree, 0.0, z0 - k * 0.00025), target(tree, 0.0, z0 - k * 0.00025)
+            if y0 is not None and t is not None:
+                worst = max(worst, y0 - t)
+        return worst
+
+    tree = tree_of(co)
+    before = kink(tree)
+    new, moved, most = co.copy(), 0, 0.0
+    for i, v in enumerate(me.vertices):
+        x, y, z = co[i]
+        if abs(x) >= band or v.normal.y >= 0.0 or z > G.line_at(knots, x):
+            continue
+        own = at(tree, x, z)
+        if own is None or abs(own - y) > G.FIT["centre_surface"]:
+            continue  # not on the front (a vertex inside the lip line's groove or behind the lip)
+        t = target(tree, x, z)
+        if t is None or t >= y:
+            continue  # never back
+        d = min(y - t, G.FIT["centre_most"])
+        new[i, 1] = y - d
+        moved, most = moved + 1, max(most, d)
+    set_points(form, new)
+    return {"moved": moved, "most_mm": round(most * 1000, 2), "kink_mm_before": round(before * 1000, 2),
+            "kink_mm": round(kink(tree_of(new)) * 1000, 2)}
 
 
 def closed_contact(body, piece) -> dict:
@@ -276,7 +338,9 @@ def closed_contact(body, piece) -> dict:
         hit = tree.find_nearest(p, reach)
         if hit[0] is not None:
             c[i] = M12.LG.contact(G.contact_distance(hit[3], (p - hit[0]).dot(hit[1]) < 0.0), reach)
-    c = M6.smooth(me, c, M12.LG.CONTACT["smooth"])
+    # M20c (PR #260's last review, minor 2: full 72, a pale band under the lower lip at 3/4): the smoothing spreads
+    # the shadow out but never lightens a touching point (one under the form or within contact_margin of it)
+    c = np.maximum(M6.smooth(me, c, M12.LG.CONTACT["smooth"]), np.where(c >= G.FIT["contact_keep"], 1.0, 0.0))
     layer = me.uv_layers[M12.LP.CONTACT_UV_MOUTH2[0]]
     lv = np.empty(len(me.loops), dtype=np.int64)
     me.loops.foreach_get("vertex_index", lv)
@@ -506,7 +570,9 @@ def fit_form(path: Path, ours, shape: str, bvh, sock, mouth, mats, corners: bool
     r["materials"] = form_materials(form, shape, mats)  # before the close: the floor by the form's own depth
     r["close"] = close_form(form, bvh, sock, corners=corners)
     if shape in CLOSED:
-        r["cleft"] = fill_cleft(form)
+        r["cleft"] = fill_cleft(form, clamp=shape != "small")
+        if shape != "small":  # small's parting stays (fill_cleft's skip)
+            r["centre"] = smooth_centre(form)
         r["bands"] = smooth_bands(form)
     to_socket(form, mouth)
     if shape in CLOSED:

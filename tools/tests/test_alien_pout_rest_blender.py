@@ -2,7 +2,8 @@
 line within 0.1 mm, built from the current code on M10c's kit (tools/blender/alien_pout_check.py), and so are the M16
 kit's own pieces. M16c: the kit's GLB passes glTF-Validator with no error (M16b's kit carried a zero tangent on the O's
 dark cup). M20b (PR #260's review minor 5): the hybrid kit (M20b, the AI closed pieces) mirrored, validated, and its
-skin's pout contact full where the lips meet the skin. Skips without Blender or the raw kits."""
+skin's pout contact full where the lips meet the skin. M20d (brief UPDATE 49): the kit's fit.json (the dimple's
+clamp and centre curve) and the open rings' depth front to back. Skips without Blender or the raw kits."""
 
 from __future__ import annotations
 
@@ -15,8 +16,11 @@ from runner.commands import _export
 HAVE = bool((path := common.tool_path(pins.BLENDER_ENV, pins.BLENDER_DEFAULT)) and path.is_file())
 KITS = common.raw_dir() / "review" / "char" / "alien-parts-kit"
 BASE, M16 = KITS / "M10c" / "export", KITS / "M16d" / "export"  # M16d: on M15's head, the slim rest
-HYBRID = KITS / "M20b" / "export"  # M20b: the closed pieces AI forms (alien_mouth_fit.py --replace)
-MIN_CONTACT_FULL = 60  # M20b: the pout contact's full skin vertices (M20 0, M17's parametric rest 112)
+HYBRID = KITS / "M20d" / "export"  # M20b: the closed pieces AI forms (alien_mouth_fit.py --replace); M20d's
+MIN_CONTACT_FULL = 140  # the pout contact's full skin vertices (M20 0, M20b 72, M20c 124, M20d 155, M17's 112)
+MIN_TOUCHED = 329  # ... and every touched one (M20b 329; M20c's 2 mm margin 308 and a paler skin under the lip)
+MIN_ROLL_MM = {"A": 23.0, "E": 20.5, "O": 24.0}  # the open lips' depth at the centre, both lips (M20b's
+# depth 1.0: A 19.4, E 17.1, O 20.1 mm; M20c's 1.3: 25.3, 22.3, 30.0)
 SCRIPT = common.ROOT / "tools" / "blender" / "alien_pout_check.py"
 TOL_MM = 0.1
 MIN_TRI_MM2 = 0.02  # M16b's O cup sliver: 0.006 mm^2
@@ -91,10 +95,35 @@ class PoutHybridKitTest(unittest.TestCase):
         self.assertTrue(ok, f"{line}: {_export.issues(rep)['error']}")
 
     def test_the_skin_contact_is_full_at_the_lips(self):
+        # PR #260's last review minor 5: this re-reads the count alien_mouth_fit.py's closed_contact wrote into the
+        # kit's character.json when it built the kit; it does not recompute the contact (that needs a fit run)
         cj = json.loads((HYBRID / "character.json").read_text(encoding="utf-8"))
         c = cj["m20"]["contact"]["pout"]
         self.assertTrue(c.get("inside_touches"))
         self.assertGreaterEqual(c["full"], MIN_CONTACT_FULL)
+        self.assertGreaterEqual(c["touched"], MIN_TOUCHED)  # M20d: the halo no narrower than M20b's
+
+    def test_the_dimple_is_filled(self):
+        # M20d (PR #262's fresh review minor 5): re-reads the fit report alien_mouth_fit.py wrote beside the kit;
+        # rest and M clamp the groove (at most cleft_most) and lay the centre on the even curve; small keeps its
+        # parting (no clamp, no centre curve)
+        fit = json.loads((HYBRID / "fit.json").read_text(encoding="utf-8"))
+        for s in ("rest", "M"):
+            r = fit["shapes"][s]
+            self.assertGreater(r["cleft"]["clamped"], 0, s)
+            self.assertLessEqual(r["cleft"]["most_mm"], fit["fit"]["cleft_most"] * 1000 + 1e-6, s)
+            self.assertGreater(r["centre"]["moved"], 0, s)
+            self.assertLess(r["centre"]["kink_mm"], r["centre"]["kink_mm_before"], s)
+        self.assertEqual(fit["shapes"]["small"]["cleft"]["clamped"], 0)
+        self.assertNotIn("centre", fit["shapes"]["small"])
+
+    def test_the_open_rolls_are_deep(self):
+        # M20d (PR #262's fresh review minor 5): ring_param `depth` 1.3 reaches the kit's A, E and O
+        d = run(HYBRID, "--kit-pieces")
+        self.assertEqual(sorted(d["rolls"]), ["A", "E", "O"])
+        for s, r in d["rolls"].items():
+            self.assertGreater(r["upper"], MIN_ROLL_MM[s], s)
+            self.assertGreater(r["lower"], MIN_ROLL_MM[s], s)
 
 
 if __name__ == "__main__":

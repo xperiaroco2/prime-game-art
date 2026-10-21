@@ -584,6 +584,7 @@ def build_piece(bvh, m, design, shape, world, mats, coll, origin, lips=None, nam
                 hw_k = hw[k]
                 dc = rp.get("depth_corner", lips_p["depth_corner"])
                 a = (DEPTH_A * hw0[k] + DEPTH_C * (1.0 - (1.0 - dc) * cwt[k])) * side
+                a *= rp.get("depth", 1.0)  # M20c: a ring's own roll depth (front to back), its front height kept
                 tuck = rp.get("tuck", 0.0) * a * cwt[k]
             else:
                 # M8: the lips' width round the ring from LIP (thin corners, the bow); the opening's edge stays
