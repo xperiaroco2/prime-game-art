@@ -513,7 +513,13 @@ def build_skin_collars(k: float, lids: dict | None, opts: dict) -> dict:
             n = c["bins"]
             b = G.Built()
             mi = b.slot(hue)
-            rings, data, hit_dh, uv_skip, g_last, far = [], [], [], [], np.zeros(2), []
+            rings, data, hit_dh, far = [], [], [], []
+            # pass 1: where each bin's section starts. The ray down the axis onto the skin (minor 1 of PR #247: the
+            # start on the skin it hit); a hit more than 4 mm off the smoothed edge fell into the brow trench (a far
+            # bin): M11b (PR #249's minor 2) its start's offset from the smoothed edge runs linearly between the
+            # nearest good bins' offsets (alien_lids_geom.cyclic_fill), so a far run meets its neighbours with no
+            # step (the nub and notch from above)
+            starts = []
             for i in range(n):
                 p = -math.pi + 2.0 * math.pi * (i + 0.5) / n
                 radial = math.cos(p) * ax + math.sin(p) * az
@@ -521,21 +527,23 @@ def build_skin_collars(k: float, lids: dict | None, opts: dict) -> dict:
                 edge = cen + h_edge * fw + (rd + gap) * radial
                 loc, t = smp.hit(cen + 1.5 * rd_ref * fw + (rd + gap) * radial, -fw, 3.0 * rd_ref, edge)
                 h_hit = float(np.dot(loc - cen, fw))
-                if abs(h_hit - h_edge) > 0.004:  # the skin far behind: the nearest skin instead, the smoothed start
-                    loc, t = smp.hit(edge, -fw, 0.0, edge)
-                    h_hit = h_edge
+                ok = abs(h_hit - h_edge) <= 0.004
+                if not ok:
                     far.append(i)
+                starts.append((p, radial, gap, h_edge, loc, t, h_hit if ok else None))
+            dh = LG.cyclic_fill([None if st[6] is None else st[6] - st[3] for st in starts])
+            secs, g_bins = [], []
+            for i, (p, radial, gap, h_edge, loc, t, h_ok) in enumerate(starts):
+                h_hit = h_edge + dh[i]
+                if h_ok is None:  # a far bin: the nearest skin to its interpolated start
+                    pt = cen + h_hit * fw + (rd + gap) * radial
+                    loc, t = smp.hit(pt, -fw, 0.0, pt)
                 n_edge = smp.sample(loc, t)["normal"]
-                # M11 (PR #247's review minor 1): the section starts on the skin the ray hit (the same s: the ray runs
-                # along the axis), not at the smoothed h_edge, which floated above or sank under the skin by up to
-                # 4 mm where the brow trench's depth changes (the nub and notch from above)
                 front, normals, back = LG.fillet_section(gap, h_hit, (float(n_edge @ radial), float(n_edge @ fw)),
                                                          rd, opts)
-                hit_dh.append(abs(h_hit - h_edge))
+                hit_dh.append(abs(dh[i]))
                 s0 = front[0][0]
-                ring = []
-                kf = len(front) - 1
-                run, g = LG.section_run(front, back), np.zeros(2)
+                g = None
                 if opts.get("uv_run", 0.0):  # M11 (PR #247's minor 2): the skin's UV gradient outward from the edge
                     probe = opts["uv_probe_mm"] / 1000.0
                     pa, ta = smp.hit(cen + 1.5 * rd_ref * fw + s0 * radial, -fw, 3.0 * rd_ref,
@@ -544,10 +552,21 @@ def build_skin_collars(k: float, lids: dict | None, opts: dict) -> dict:
                     d3 = float(np.linalg.norm(pb - pa))
                     du = smp.sample(pb, tb)["UVMap"] - smp.sample(pa, ta)["UVMap"]
                     if 1e-5 < d3 < 3.0 * probe and float(np.linalg.norm(du)) < 0.02:  # no UV seam, no far surface
-                        g = g_last = du / d3
-                    else:  # the last good bin's gradient
-                        g = g_last
-                        uv_skip.append(i)
+                        g = du / d3
+                secs.append((radial, n_edge, front, normals, back, s0))
+                g_bins.append(g)
+            # pass 2: a bin whose probe hit a seam or a far surface takes the last good bin's gradient, wrapping round
+            # the ring (M11b, PR #249's minor 1: a run at bin 0 took zeros, so its UVs stood still)
+            uv_skip = [i for i, g in enumerate(g_bins) if g is None]
+            g_bins = [np.zeros(2) if g is None else g for g in LG.last_good_cyclic(g_bins)]
+            steps = [abs((h_edge_i + dh[i]) - (starts[(i + 1) % n][3] + dh[(i + 1) % n]))
+                     for i, h_edge_i in enumerate(st[3] for st in starts)]
+            for i in range(n):
+                radial, n_edge, front, normals, back, s0 = secs[i]
+                g = g_bins[i]
+                ring = []
+                kf = len(front) - 1
+                run = LG.section_run(front, back)
                 for j, (sv, hv) in enumerate(front + back):
                     co = cen + hv * fw + sv * radial
                     su = sv + (s0 - sv) * opts["uv_pull"]
@@ -589,6 +608,7 @@ def build_skin_collars(k: float, lids: dict | None, opts: dict) -> dict:
                                       "gap_mm_mean": round(sum(gw) / n * 1000.0, 2),
                                       "bins_with_skin": len([g for g in raw if g is not None]),
                                       "start_dh_mm_max": round(max(hit_dh) * 1000.0, 2),
+                                      "start_step_mm_max": round(max(steps) * 1000.0, 2),
                                       "uv_run_skipped_bins": uv_skip, "far_bins": far,
                                       "verts": len(ob.data.vertices)}
     rep["opts"] = opts

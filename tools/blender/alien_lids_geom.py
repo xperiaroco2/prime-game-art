@@ -541,3 +541,33 @@ def section_run(front: list, back: list) -> list[float]:
     run.append(run[-1] + math.hypot(back[0][0] - front[-1][0], back[0][1] - front[-1][1]))
     run.append(math.hypot(back[1][0] - front[0][0], back[1][1] - front[0][1]))
     return run
+
+
+def cyclic_fill(vals: list) -> list[float]:
+    """M11b (PR #249's review minor 2): a ring of values (the azimuth bins) with gaps (None) filled linearly between
+    the nearest known values on either side, wrapping round the ring, so a run of unknown bins meets its neighbours
+    without a step. No known value: all 0."""
+    n = len(vals)
+    known = [i for i, v in enumerate(vals) if v is not None]
+    if not known:
+        return [0.0] * n
+    out = list(vals)
+    for i in range(n):
+        if out[i] is not None:
+            continue
+        a = next(j for j in range(1, n + 1) if vals[(i - j) % n] is not None)  # back to the last known
+        b = next(j for j in range(1, n + 1) if vals[(i + j) % n] is not None)  # on to the next known
+        va, vb = vals[(i - a) % n], vals[(i + b) % n]
+        out[i] = va + (vb - va) * a / (a + b)
+    return out
+
+
+def last_good_cyclic(vals: list) -> list:
+    """M11b (PR #249's review minor 1): a ring of values with gaps (None), each gap taking the last known value before
+    it, wrapping round the ring (a run at the ring's start takes the ring's last known value). None everywhere stays."""
+    n = len(vals)
+    known = [i for i, v in enumerate(vals) if v is not None]
+    if not known:
+        return list(vals)
+    return [v if v is not None else vals[next((i - j) % n for j in range(1, n + 1) if vals[(i - j) % n] is not None)]
+            for i, v in enumerate(vals)]
