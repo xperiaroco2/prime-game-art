@@ -32,6 +32,9 @@ func _run() -> void:
 		for n: Node in _ch[k].find_children("lashvar_*", "", true, false):
 			(n as Node3D).visible = false
 		_rig[k].set_lashes(_lashes_of[k])
+		if kit.has("aim_in_deg"):  # M15b: a kit built before alien_m6 wrote splay_deg (the depth grid's cells)
+			_rig[k].aim_in_deg = float(kit["aim_in_deg"])
+			print("PROOF kit %s aim_in_deg %.1f" % [k, _rig[k].aim_in_deg])
 		print("PROOF kit %s lashes %s (has %s) mouth %s" % [k, _lashes_of[k], _rig[k].has_lashes(), _mouth_of[k]])
 	var hero: String = _keys[-1]
 	_pose("Idle", 0.0)
