@@ -176,7 +176,7 @@ class GodotLookTest(unittest.TestCase):
         for shader in ("alien_lip.gdshader", "alien_mouth_part.gdshader"):  # the lips, fangs, cup and tongue move
             text = (GA / shader).read_text(encoding="utf-8")
             self.assertIn('#include "res://alien/alien_mouth_motion.gdshaderinc"', text)
-            self.assertIn("VERTEX = mouth_motion(VERTEX, COLOR.g);", text)
+            self.assertIn("VERTEX = mouth_motion(VERTEX, COLOR.a);", text)  # M13b: the jaw weight in the alpha
         self.assertIn('const MOUTH_DESIGNS: Array[String] = ["frog", "overbite", "pout", "fangs"]', gd)
         self.assertIn('const MOVING_PARTS: Array[String] = ["alien_mouth_inner", "alien_tongue"]', gd)
 
