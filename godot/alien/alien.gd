@@ -176,6 +176,10 @@ const EYE_LOOK := {  # alien_eye.gdshader's per-design uniforms (angles from the
 ## already carry it is unchanged): the sockets' 8 degrees outward (S2a's sphere fit) undone, plus 3.5 toward each
 ## other (the eyes, 15 cm apart, look at a point about 1.2 m ahead). Without it the pupils diverged (S5's grid).
 var aim_in_deg: float = 11.5
+## M15: the convergence alone (aim_in_deg less S2a's 8 degrees); a kit whose LIDS_MARKER gives "splay_deg" (the
+## units' own outward look: M15's mount turned them straight, 0) turns its balls in by that plus this.
+const AIM_CONVERGE_DEG := 3.5
+var _splay_deg: float = -1.0  # the kit's LIDS_MARKER splay_deg; -1: not given (aim_in_deg as before)
 const HUES := {  # sRGB: the base hue and its light tint (face, throat, belly)
 	"teal": [Color(0.11, 0.48, 0.51), Color(0.86, 0.92, 0.81)],  # S9: rf2 (S3: (0.17, 0.56, 0.55), (0.80, 0.91, 0.80))
 	"coral": [Color(0.90, 0.42, 0.34), Color(0.98, 0.84, 0.74)],
@@ -471,6 +475,8 @@ func _read_lid_reach(imported: Material) -> void:
 	var parsed: Variant = JSON.parse_string(str((ex as Dictionary)[LIDS_MARKER]))
 	if parsed is Dictionary and (parsed as Dictionary).get("reach_deg") is Dictionary:
 		_lid_reach = (parsed as Dictionary)["reach_deg"]
+	if parsed is Dictionary and (parsed as Dictionary).has("splay_deg"):  # M15
+		_splay_deg = float((parsed as Dictionary)["splay_deg"])
 
 
 ## The rim reaches in use for an eye design: [upper, lower] degrees.
@@ -572,7 +578,7 @@ func _apply_lids(upper_deg: float, lower_deg: float) -> void:
 		if ball != null:  # the eye shader's lid shadow follows the lid edges (edge = -rotation)
 			ball.set_instance_shader_parameter("upper_edge_deg", -upper_deg)
 			ball.set_instance_shader_parameter("lower_edge_deg", -lower_deg)
-			var aim: float = aim_in_deg if face_look == "s5" else 0.0  # the first test: unturned
+			var aim: float = (aim_in_deg if _splay_deg < 0.0 else AIM_CONVERGE_DEG + _splay_deg) 				if face_look == "s5" else 0.0  # the first test: unturned
 			ball.rotation = Vector3(0, deg_to_rad(-aim if side == "L" else aim), 0)
 			ball.set_instance_shader_parameter("aim_deg", -aim if side == "L" else aim)  # M4: the lids' frame
 		var open: float = smoothstep(WET_OPEN_DEG.x, WET_OPEN_DEG.y, lower_deg - upper_deg)  # the edges' gap
