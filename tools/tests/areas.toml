@@ -91,6 +91,10 @@ tests = ["test_faces_*"]
 sources = ["tools/blender/alien_fit_geom.py", "tools/blender/alien_socket_fit.py"]  # M15's eye socket fit (#196); before light's alien_*
 tests = ["test_alien_fit_*"]
 
+[area.alien_mouth_fit]
+sources = ["tools/blender/alien_mouth_fit_geom.py", "tools/blender/alien_mouth_fit.py"]  # M19's AI mouth fit (#196); before light's alien_*
+tests = ["test_alien_mouth_fit_*"]
+
 [area.alien_texture]
 sources = ["tools/blender/alien_texture_geom.py"]  # the alien skin's texture formulas (#196); before light's alien_*
 tests = ["test_alien_texture_*"]
