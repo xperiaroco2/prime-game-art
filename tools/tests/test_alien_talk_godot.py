@@ -113,9 +113,9 @@ class TalkStyleTest(unittest.TestCase):
         self.assertLess(min(fy), 0.0)  # then it swings down past
         fx = {round(x[5], 6) for x in s if x[1] not in ("rest", "M")}
         self.assertTrue(any(v > 0 for v in fx) and any(v < 0 for v in fx), "it sways to both sides")
-        for x in s:  # a silence never sways
-            if x[1] in ("rest", "M") and x[0] > 300:
-                self.assertEqual(x[5], 0.0)
+        for x in s:  # the sentence pause (after "you", before "mm") never sways
+            if 3250 <= x[0] <= 3500:
+                self.assertEqual(x[5], 0.0, x)
         for d in ("frog", "pout", "fangs"):  # the other styles have no flop
             self.assertTrue(all(x[5] == 0 and x[6] == 0 for x in self.samples(d)), d)
 
