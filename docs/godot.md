@@ -2068,6 +2068,34 @@ a time, by visibility.
     `has_jaw_weight` runs in debug builds only and is cached per mesh; `parse_check.gd` tests it on made meshes
     (`test_jaw_weight_check`), and `test_alien_m12.py` checks the tongue's contact wiring (`CONTACT_CHANNEL3`,
     `contact_pick3`, `CUSTOM2.zw`).
+- **M16, the pout at rest, mirrored and relaxed** (brief UPDATE 29, the engineer on showroom v35: the red pout looked
+  asymmetric and squeezed at rest; output under `D:/prime-art-raw/review/char/alien-parts-kit/M16/`, the kit on M10c's
+  pick with every mouth). Only the pout's closed pieces (rest, M, small) change; A, E, O, the talk, the frog, fangs and
+  tongue are as before.
+  - **The cause:** the closed pieces are traced per column off the mp1 sheet. The sheet's darkest row per column (the
+    lip line, `measure_panel`) jumped 4.4 mm just right of the centre (a shadow under the bow), the drawn mouth sat
+    1 px (0.9 mm) off the face's centre, and the skin under the lips differs by up to 0.4 mm side to side. The kit's
+    rest piece was 4.1 mm off its mirror (M 1.7, small 2.6). Not the talk: at rest `alien_talk.gd` gives no drop or
+    pucker, and `alien.gd` clears the uniforms when a line ends.
+  - **The fix** (`LIP_SHAPE_POUT` `mirror` 1, `seam_fit` 3; a lip shape without them builds as before):
+    `alien_lips_geom.rest_stations` mirrors the stations about the face's centre line (`mirror_stations`: x symmetric
+    round the panel's `hc`, each edge the mean of its own and its mirror station's) and fits the lip line with an even
+    polynomial (`even_fit`, c0 + c1 s^2 + c2 s^4); `alien_mouths.mirrored` averages each tube station's skin point,
+    normal, depth and height with its mirror's, so every later pass (smoothing, corners, sections) keeps the piece an
+    exact mirror (0.0001 mm).
+  - **The rest's shape:** a thinner upper lip over a bigger lower cushion (`upper` 0.85, `lower` 1.20; M12b 0.95 /
+    1.10) and a soft crease (`lean` 0.10: at 0.25 both lips swelled toward the line and read pressed together).
+    Corners as M12b (`corner` 0.18). The open rings keep M12b's values (`_POUT_RING`: `upper`, `lower`, and a ring's
+    own `lean`, which `build_piece` now reads).
+  - **Grids** (`M16/godot/g1`, `g2`, `vgrid.png`; rest front / 3/4 / profile at 0.4 m, 3/4 at 1.2 m): g1 fullness
+    (`plump` 1.15 / 1.30) x corners (tight 0.18; mid 0.32 with `corner_join` 0.70, `corner_tuck` 0.75; soft 0.45 with
+    0.55 / 0.60). Mid and soft ends went blunt like sausages, 1.30 heavy. g2 on tight corners: `lean` 0.10, the
+    lips' balance 0.85 / 1.20, both, both at `plump` 1.25, both with corner 0.24. Pick: both at 1.15.
+  - **Tests:** `test_alien_lips_geom.py` `RestStationsTest` (plain Python); `test_alien_pout_rest_blender.py`
+    (`tools/blender/alien_pout_check.py`: the closed pieces built from the current code on M10c's kit, and the M16
+    kit's own, mirrored within 0.1 mm); `test_alien_pout_rest_godot.py` (`godot/alien/pout_rest_check.gd`, headless:
+    the M16 kit's closed pieces mirrored within 0.1 mm with the skeleton at rest, rest shown with `lip_drop`, `pucker`,
+    `jaw_thrust` 0, the talk at rest the rest piece without drop or pucker). Area `alien_pout` in `areas.toml`.
 
 ## Findings for later tasks
 
