@@ -18,6 +18,13 @@ with it: "half the head removed". Here the face never follows the eye back. Per 
    bowl behind the ball, its centre to the back pole, its edge to where the surface meets the sphere), so the lids
    sit in a socket that hugs them, with the face's own level round it.
 4. The socket's edge is rounded (`fillet` m wide, `fillet_passes` smoothing passes, the skin kept outside R_s).
+5. M17: the edge is lowered onto the lids (rim_drop): the rounded edge stood 0.6 mm from the lid as a convex lip
+   that caught the light, a thin pale ring round each eye at game distance. The face less than `rim_drop` m over the
+   socket's sphere is drawn onto it, so it meets the lid's surface tangentially and the lid reads tucked under the
+   skin.
+6. M17: the paint masks (the Body's `masks` UV: light, accent) of the free skin are filled from the face round it
+   (fair_fill on the values), so the crown's hue reaches the lid above the eye as on the face beside it; the free
+   skin kept the old crater's masks, a pale band between the teal and the lid (`mask_fill` 1).
 
 The unit's front then sits against the face's level instead of 30 mm before it (M10c), and the head round it keeps
 its shape; the sink sets how deep the eye sits (the depth grid).
@@ -29,9 +36,11 @@ import math
 import numpy as np
 
 FIT = {"eye_scale": 0.76, "sink": 0.018, "inward": 0.019, "toe": 1.0, "gap": 0.0006, "free_r": 1.5,
-       "free_margin": 0.010, "free_below": 0.065, "fillet": 0.008, "fillet_passes": 24, "keep_mm": 0.2, "fill_iters": 1500}
+       "free_margin": 0.010, "free_below": 0.065, "fillet": 0.008, "fillet_passes": 24, "keep_mm": 0.2, "fill_iters": 1500,
+       "rim_drop": 0.004, "mask_fill": 1.0}
 FIT_KEYS = tuple(FIT)
 BINS = 72
+RIM_DROP_DEG = 45.0  # M17: rim_drop reaches at most this far (from the ball's centre) beyond the crossing curve
 LAST = {}  # fair_fill's convergence per axis (iterations, the gradient's last share of its first): the stage reports it
 
 
@@ -47,7 +56,8 @@ def set_fit(spec: dict) -> dict:
             and 0.0 <= out["toe"] <= 1.0 and 0.0 <= out["gap"] <= 0.004 and 1.0 <= out["free_r"] <= 2.0
             and 0.0 <= out["free_below"] <= 0.12 and 0.0 <= out["free_margin"] <= 0.03
             and 0.0 <= out["fillet"] <= 0.02 and 0 <= out["fillet_passes"] <= 100
-            and 1 <= out["fill_iters"] <= 10000 and 0.0 < out["keep_mm"] <= 1.0):  # M15b: review minor 4
+            and 1 <= out["fill_iters"] <= 10000 and 0.0 < out["keep_mm"] <= 1.0
+            and 0.0 <= out["rim_drop"] <= 0.02 and out["mask_fill"] in (0.0, 1.0)):  # M15b: review minor 4
         raise SystemExit(f"fit: out of range {out}")
     return out
 
@@ -253,6 +263,25 @@ def fillet(P: np.ndarray, lap: Lap, band: np.ndarray, c: np.ndarray, R: float, p
         ql = np.linalg.norm(q, axis=1)
         ins = ql < R
         out[idx[ins]] = c + q[ins] * (R / np.maximum(ql[ins], 1e-12))[:, None]
+    return out
+
+
+def rim_drop(P: np.ndarray, sel: np.ndarray, c: np.ndarray, a: np.ndarray, ex: np.ndarray, ey: np.ndarray,
+             th_c: np.ndarray, R: float, width: float) -> np.ndarray:
+    """M17: the socket's edge lowered onto the lids. Each selected point outside the sphere (c, R), less than `width`
+    over it, within 1.6 R of c and at most RIM_DROP_DEG beyond the crossing curve th_c, is drawn along its ray from c:
+    its height h over the sphere becomes h * smoothstep(0, width, h) (monotone, so nothing folds along a ray). The
+    face then meets the sphere (the lid's surface plus the gap) tangentially instead of in a rounded convex lip and
+    is back at its own level `width` over the sphere; nothing farther and nothing inside the sphere moves."""
+    out = P.copy()
+    if width <= 0.0:
+        return out
+    d, th, phi = polar(P, c, a, ex, ey)
+    h = d - R
+    m = sel & (h > 0.0) & (h < width) & (d < 1.6 * R) & (th < at_phi(phi, th_c) + math.radians(RIM_DROP_DEG))
+    u = h[m] / width
+    dn = R + h[m] * (u * u * (3.0 - 2.0 * u))
+    out[m] = c + (P[m] - c) * (dn / d[m])[:, None]
     return out
 
 

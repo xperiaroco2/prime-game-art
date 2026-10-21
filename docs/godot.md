@@ -2216,6 +2216,49 @@ a time, by visibility.
     - **alien.gd:** `_has_splay` (not a negative `_splay_deg`), `setup()` resets the lids' reaches and the splay for
       each kit; `alien_fit_geom.set_fit` range-checks every key. Tests: `test_alien_splay.py` (fast: the formula, the
       marker, the fallback, the reset, the fit's rest), `test_alien_lashes.py` (the socket defaults).
+  - **M17, the socket's edge and the lids' AO** (brief UPDATE 36; output under `.../alien-parts-kit/M17/`):
+    - **The pale ring round each eye at game distance** had two causes. The fit's rounded edge stood 0.6 mm from the
+      lid as a convex lip facing the key light (plain grey shows it too), and the free skin kept the old crater's
+      paint masks, so a pale band ran between the crown's teal and the lid. The fit now lowers the edge onto the lids
+      (`FIT["rim_drop"]` 4 mm, `alien_fit_geom.rim_drop`: the face less than 4 mm over the socket's sphere is drawn
+      onto it, its height h -> h * smoothstep(0, 4 mm, h), monotone along each ray, so the skin meets the lid's
+      surface tangentially and the lid reads tucked under the skin; nothing farther moves, nothing outside the free
+      area) and fills the free skin's `masks` from the face round it (`FIT["mask_fill"]`, `fill_masks`: fair_fill on
+      the values), so the texture's teal reaches the upper lid as on the face beside it. The masks did most of it; a grid
+      of 0 / 4 / 7 / 10 mm (`M17/grid/`, the late route on M10's kit) narrowed the lip a little more with each step,
+      but from 7 mm the manic lash line's end came within 0.24 mm of the drawn-in skin (`alien_lashes.py` needs
+      0.5): the pick is 4 mm (least lash-skin gap 0.5 mm).
+    - **The light diagonal band on the manic closed lid:** the lids' AO was baked with the skin at the rest pose and
+      rides on the lid; manic's upper lid rests 50 degrees open (rolled under the tight socket's brow) and closes at
+      -12, so the rest pose's socket shade crossed the closed lid as a band. `alien_m6.bake_parts_ao` now bakes a
+      design's lids per `LID_AO` (`--lid-ao`): `rest` (before), `states` (the pick: the lids posed as `alien_lashes.py`
+      poses them at open, rest, half and closed, each vertex its least occluded value, so only the always-hidden rim
+      stays deep) or `free` (no skin: even, but the lid's edge loses its seat). `alien_m8.py`/`alien_m12.py` keep the
+      lids' AO. Tests: `test_alien_lid_ao.py` (fast), `test_alien_fit_geom.py` (the drop, the defaults).
+    - **Proofs:** `godot/alien/m17_shots.gd` "rim" (per kit: bored's socket at 0.4 m, manic closed, bored 3/4 and
+      manic front at 1.2 m, the 3.5 m crops of both designs with and without lashes; a kit's `hue` overrides the skin
+      material's uniforms for a contact variant).
+
+- **M19, the AI mouth route test** (brief UPDATE 38; output under
+  `D:/prime-art-raw/review/char/alien-parts-kit/M19/`): GPT Image views of mp1's lips (`batches/2026-10-21-alien-mouth-views.toml`)
+  -> Meshy multi-image 3D (`batches/2026-10-21-alien-mouth-3d.toml`) -> `tools/blender/alien_mouth_fit.py`, which
+  writes a grid kit (`M19/kit/`, M15's head) with `lipvar_aia_pout_<shape>` and `lipvar_aib_pout_<shape>` beside our
+  pieces (and `--also m16c=<blend>`'s as `lipvar_m16c_*`), shown by `m12_shots.gd`'s `vgrid`
+  (`M19/godot/rest/vgrid.png`, `M19/godot/A/vgrid.png`). The geometry is `alien_mouth_fit_geom.py` (tested):
+  - **(a) the AI mesh:** scaled uniformly to our piece's lip width, centred, its lip line on ours (`seam_z`), then
+    **seated with its flat back 4 mm under the skin** at the lip line's centre (`FIT["seat"]`; aligning its front on
+    ours left a box-like wall in profile), collapse-decimated to `FIT["budget_tris"]` (6k), its -x half mirrored, the
+    back vertices pushed under the skin and curved in toward the centre (`taper_back`) and smoothed. On A the form's
+    own floor (faces seen from the front, deeper than 45 % of its depth, inside the opening's box) is removed and our
+    A piece's cup and tongue are joined in behind it. Our materials, parts AO and jaw weights (`alien_m12.jaw_weights`).
+  - **(b) our tubes on the AI form:** a copy of our piece whose lip vertices facing forward and outside the skin
+    shrink-wrap to the nearest surface point of (a), three rounds with a relax between. Projection along the normals
+    folded more.
+  - **Gotchas:** a `bpy` vertex-group reference dangles once a modifier is applied (use its name); an imported mesh
+    keeps faces selected (clear the selection before a selection-based delete); work in the Mouth socket's space (it
+    leans about 14 degrees), where our pieces' coordinates already are.
+  - The variants keep the Body's contact layers, which come from our `mouth_pout_rest`; a route that ships an AI form
+    must rebuild them from it.
 
 ## Findings for later tasks
 
