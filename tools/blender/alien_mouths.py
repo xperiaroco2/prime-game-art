@@ -779,8 +779,9 @@ def fang_roots(anchor, p):
     a closed mouth's at p["x"] of the lips' half width on the lower lip's top (the crease); an open ring's (A, E) at
     p["x_open"] of the opening's half width on the lower lip's inner edge (they stand in the opening's sides); O's
     beside the pursed ring (p["o_gap"] past its outer edge), p["o_drop"] of its half height below its centre. M13b:
-    with p["x_m"] every shape but O at that x (on the lower lip's top or inner edge there; past the opening's end its
-    corner), O's attached to the ring (p["o_in"] of the base radius inside its outer edge)."""
+    with p["x_m"] every shape but O at that x about the face's centre line (closed: on the crease there, both at their
+    mean height; A, E: p["ring_drop"][shape] of the ring's half height below its centre, on the lower lip in the
+    opening's corner), O's attached to the ring (p["o_in"] of the base radius inside its outer edge)."""
     def z_at(pts, x):
         if x <= pts[0][0]:
             return pts[0][1]
