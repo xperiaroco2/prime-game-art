@@ -4,8 +4,8 @@ extends "res://alien/m12_shots.gd"
 ## Spec as m12_shots.gd's, plus "el2" (the el2 sheet: six 512 px panels), per kit "lashes" (on or off) and "mouth",
 ## "variants" ([[name, label], ...]: the grid kit's lashvar_<name>_<design>_<side> nodes). Every lashvar_ node is
 ## hidden after loading. "modes" (the hero is the last kit):
-## - "lgrid": el2's eyes (rest, wide), then per variant the eyes from the front, at 3/4 and in profile at 0.4 m and at
-##   3/4 at 1.2 m (bored; "lgrid_design" for another): lgrid_<design>.png;
+## - "lgrid": el2's eyes (rest, half, closed, wide), then per variant the eyes from the front, at 3/4 and in profile at
+##   0.4 m, at 3/4 at 1.2 m and the left eye close (bored; "lgrid_design" for another): lgrid_<design>.png;
 ## - "lviews": el2's row, then per design the hero with lashes, front / 3/4 / profile at 0.4 m and 3/4 at 1.2 m:
 ##   lviews.png;
 ## - "lblink": per design open, rest, half and closed, the left eye close (0.4 m) and both eyes from the front:
@@ -122,7 +122,7 @@ func _show_variant(k: String, v: String) -> void:
 
 func _lgrid(hero: String) -> void:
 	var design: String = _spec.get("lgrid_design", "bored")
-	var cells: Array = _el2_row(4)
+	var cells: Array = _el2_row(5)
 	_only([hero], false)
 	_combo(hero, design, _mouth_of[hero])
 	for v: Array in _spec.get("variants", []):
@@ -131,9 +131,11 @@ func _lgrid(hero: String) -> void:
 		for view: Array in _views():
 			_eyes_view(hero, view[1], view[2])
 			cells.append(await _shot("%s: %s" % [v[1], view[0]]))
+		_look(_find(hero, "Eye_L") + Vector3(0, 0.004, 0), 25.0, 2.0, 0.4, 14.0)  # the left eye close
+		cells.append(await _shot("%s: ліве око зблизька" % v[1]))
 	_show_variant(hero, "")
 	_rig[hero].set_lashes(_lashes_of[hero])
-	_grid_cells(cells, 4, Vector2i(480, 320), "lgrid_%s.png" % design)
+	_grid_cells(cells, 5, Vector2i(480, 320), "lgrid_%s.png" % design)
 
 
 func _lviews(hero: String) -> void:

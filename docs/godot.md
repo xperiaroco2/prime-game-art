@@ -1830,6 +1830,41 @@ a time, by visibility.
     `lipvar_` variant at spec `vgrid` views, 0.4 m) and `compare` (`compare_closed.png`, `compare_open.png`: per shape
     the sheet's mouth, then the first kit's pout above the hero's, front / 3/4 / profile at 0.4 m and 3/4 at 1.2 m).
   - **The talk style** (`alien_talk.gd`) is unchanged; the MP4s are re-rendered on the new pieces.
+- **M11, the lashes eyes el2 and the collar minors** (brief UPDATE 21; output under
+  `D:/prime-art-raw/review/char/alien-parts-kit/M11/`). The female look of the sheet
+  `D:/prime-art-raw/2026-10-20-alien-face-sheets-2/el2/`: black, glossy, curled upper lashes, bolder and longer toward
+  the temple, the outer ones winging out past the corner, a dark lash line; none on the lower lid.
+  - **The collar minors (PR #247's review):** the skin collar's section starts on the skin the ray hit (`h_hit`; a hit
+    over 4 mm from the smoothed `h_edge` keeps the smoothed start, `far_bins` in the report), so it no longer floats or
+    sinks where the brow trench's depth changes; `UVMap` runs along the section (`COLLAR_SKIN` `uv_run` 1,
+    `section_run`: the skin's UV gradient outward from the edge, measured over `uv_probe_mm`, times the arc length,
+    mirrored onto the face outside the edge), so its triangles have UV area and defined tangents; the collar carries the
+    Body's seventh layer `contact_mouth2` (`TEXCOORD_6`) at 0.
+  - **The lashes (`alien_lashes.py`, the kit step; `alien_lashes_geom.py`, the plain geometry):** per design and side
+    `eye_<design>_lashes_<side>`, one mesh, a child of `eye_<design>_lid_upper_<side>` with an identity local transform,
+    so it turns with the lid in every blink and lid state and shows with its design; built in the lid's frame from the
+    kit's own lids (`character.json` `m6`: the lid setting and corners) at the ball's radius, so it fits every eye size
+    (every length is a share of r). Each lash roots on the rolled rim (`root_a_deg` from the outer surface, sunk `sink`),
+    leaves `lift_deg` above the radial and bends up by `curl_deg` toward its tip, splays toward its side (`fan_deg`), a
+    tapered, slightly flat tube with a round tip; `count` lashes from `t_in_deg` to `t_out_deg` of latitude, closer and
+    longer toward the temple, the last `wing` longer still (`wing_len`) and swept out (`wing_sweep_deg`). The liner is a
+    lens hugging `liner_deg` of the roll from `liner_t_in_deg` to the last lash. `design_lift_deg` gives a design its
+    own lift: the manic lids rest 50 degrees up. Material `alien_lash` (Principled near black, roughness 0.28, coat
+    0.6; extras `prime_lashes`). The step checks both designs in every lid state (open, rest, half, closed) for lash
+    vertices inside the skin (Body and collars), the ball and the lids, and refuses a clipping kit; `--grid` adds
+    `lashvar_<variant>_<design>_<side>` nodes.
+  - **The pick, on five grids beside el2** (`M11/godot/g1..g5/lgrid_<design>.png`, JPEGs `M11/showroom/`): g1's thin
+    lashes over the whole edge (nine, 0.02 to 0.04 r) were hardly visible from the front, since they pointed at the
+    camera; el2's lashes sit on the outer half and wing out. Pick: seven lashes from latitude 0 to 74 degrees, 0.35 to
+    0.80 r long, 0.075 to 0.11 r at the root (tip 0.25), lift 30 and curl 75 toward the tip (`curl_pow` 2.2: a hook in
+    profile), the last two 1.4 times longer and swept 45 degrees out; the liner 0.03 r thick at the roll's front (60
+    degrees; at 40 and 0.05 r it read as a cable on the lid from close up). The manic lids rest 50 degrees up: with the
+    bored lift their lashes lay along the dome like a fringe, so `design_lift_deg` manic is 0 (g4; below 0 they tangled
+    in profile). No variant clips in any lid state.
+  - **Godot (`alien.gd`):** `set_lashes(on)` (default off: the same eyes serve both looks), `has_lashes()`;
+    `alien_lash` gets `LASH_LOOK` (a StandardMaterial3D: near black, roughness 0.32, specular 0.55, clear coat 0.6 at
+    0.15). `m11_shots.gd`: `lgrid`, `lviews`, `lblink`, `lsizes`, `lmouths`, `lhues`, `lgame` (3.5 m and a shimmer
+    measure), `lvideo`, `head`, `socket`.
 
 ## Findings for later tasks
 

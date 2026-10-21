@@ -23,14 +23,14 @@ from __future__ import annotations
 
 import math
 
-# The pick (M11's grids g1 to g4, beside el2): seven bold lashes on the outer half, the last two winging out, a thick
-# liner along the whole edge; the manic lids leave at the radial (lift 0), the bored 30 degrees above it.
+# The pick (M11's grids g1 to g5, beside el2): seven bold lashes on the outer half, curling toward their tips, the last
+# two winging out, a liner along the whole edge at the front of the roll; the manic lids leave at the radial (lift 0), the bored 30 degrees above it.
 LASHES = {"count": 7, "t_in_deg": 0.0, "t_out_deg": 74.0, "crowd": 1.5,
-          "len_in": 0.35, "len_out": 0.80, "len_pow": 1.6, "width_in": 0.075, "width_out": 0.11, "tip": 0.3,
-          "flat": 0.7, "lift_deg": 30.0, "curl_deg": 55.0, "curl_pow": 1.6, "fan_deg": 20.0,
+          "len_in": 0.35, "len_out": 0.80, "len_pow": 1.6, "width_in": 0.075, "width_out": 0.11, "tip": 0.25,
+          "flat": 0.7, "lift_deg": 30.0, "curl_deg": 75.0, "curl_pow": 2.2, "fan_deg": 20.0,
           "wing": 2, "wing_len": 1.4, "wing_sweep_deg": 45.0, "wing_lift_deg": -6.0,
           "root_a_deg": 30.0, "sink": 0.008, "seg": 10, "sides": 6,
-          "liner": 0.05, "liner_deg": 110.0, "liner_a_deg": 40.0, "liner_t_in_deg": -60.0, "liner_rows": 48,
+          "liner": 0.03, "liner_deg": 110.0, "liner_a_deg": 60.0, "liner_t_in_deg": -60.0, "liner_rows": 48,
           "liner_k": 6, "liner_embed": 0.004, "design_lift_deg": {"manic": 0.0}}
 
 
