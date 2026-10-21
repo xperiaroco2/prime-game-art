@@ -1721,8 +1721,10 @@ a time, by visibility.
     (barycentric, `BodySampler`) on the skin at the crater's edge (`uv_pull` 1: the old crater's dark bottom never
     reaches it); the normals are the skin's at the edge, blended halfway toward the fillet's own at the dome
     (`geom_end` 0.5, custom normals); `contact_field` writes the lids' contact into its `contact` and `contact_mouth`
-    layers as it does for the Body (the Body's own field no longer counts any collar). The GLB primitive has the
-    Body's attributes but the skin weights: `COLOR_0`, `NORMAL`, `TANGENT`, `TEXCOORD_0` to `TEXCOORD_5`.
+    layers as it does for the Body (with `--collar skin` the Body's own field no longer counts the collar; M10b's
+    coral ring, `--collar on`, still counts). The GLB primitive has the Body's attributes but the skin weights:
+    `COLOR_0`, `NORMAL`, `TANGENT`, `TEXCOORD_0` to `TEXCOORD_5`, and since M11 `TEXCOORD_6` (the later mouths'
+    contact, 0 on the collar; an M10c kit's collar lacks it, and the page must read 0 there).
   - **The join, chosen on a grid of eleven variants** on `e80_p85_w80` (`M10c/try/`, sheets `M10c/godot/try*/`):
     the normal blend (0, 0.5, 1) and the UV pull hardly showed; what mattered was the reach (M10b's sphere limit left
     the brow trench), where the inner end sits (at the equator it showed through the lids' open corners as a dark

@@ -166,5 +166,37 @@ class Fillet(unittest.TestCase):
         self.assertLess(math.dist(half[0], p3), math.dist(wide[0], p3))
 
 
+class M11Fixes(unittest.TestCase):
+    """PR #247's review minors 1, 2 and 4 (brief UPDATE 21)."""
+    src = (BLENDER / "alien_m6.py").read_text(encoding="utf-8")
+
+    def test_the_section_starts_on_the_skin_the_ray_hit(self):
+        build = self.src[self.src.index("def build_skin_collars"):self.src.index("def skin_collar_layers")]
+        self.assertIn("h_hit = float(np.dot(loc - cen, fw))", build)
+        self.assertIn("LG.fillet_section(gap, h_hit,", build)
+
+    def test_the_uv_runs_along_the_section(self):
+        self.assertGreater(S["uv_run"], 0.0)
+        front, _, back = LG.fillet_section(0.006, -0.004, (0.2, 0.95), RD)
+        run = LG.section_run(front, back)
+        self.assertEqual(len(run), len(front) + len(back))
+        self.assertEqual(run[0], 0.0)
+        for a, b in zip(run[:len(front)], run[1:len(front)]):
+            self.assertGreater(b, a)  # strictly along the front: every quad has UV area
+        self.assertGreater(run[len(front)], run[len(front) - 1])
+        self.assertAlmostEqual(run[-1], S["back_mm"] / 1000.0, places=6)  # the closing faces stay small
+        # two neighbouring sections whose edge UVs differ along the azimuth: the quad between them has area
+        g = (0.8, -0.3)
+        uv = [[(0.30 + di * 0.001 + g[0] * r, 0.50 + g[1] * r) for r in run[:2]] for di in (0, 1)]
+        (a, b), (c, _) = uv
+        self.assertGreater(abs((b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0])), 1e-9)
+        build = self.src[self.src.index("def build_skin_collars"):self.src.index("def skin_collar_layers")]
+        self.assertIn('sm["UVMap"] = sm["UVMap"] + g * run[j] * opts.get("uv_run", 0.0)', build)
+
+    def test_the_collar_carries_the_seventh_layer_at_zero(self):
+        layers = self.src[self.src.index("def skin_collar_layers"):self.src.index("def mouth_pieces")]
+        self.assertIn("LP.CONTACT_UV_MOUTH2[0]", layers)
+
+
 if __name__ == "__main__":
     unittest.main()
