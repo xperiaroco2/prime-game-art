@@ -54,10 +54,17 @@ class PoutShapeTest(unittest.TestCase):
         p = LP.LIP_SHAPE_POUT
         self.assertGreater(p["lower"], p["upper"])  # the lower lip the bigger cushion
         self.assertGreater(p["upper"], LP.LIP_SHAPE["upper"])  # mp1's upper lip fuller than the frog's
-        self.assertGreater(p["corner"], LP.LIP_SHAPE["corner"])  # a little rounder ends
+        # M16b (UPDATE 30): mp1's ends tucked to points, finer than the frog's, and its clear double-peaked bow
+        self.assertLess(p["corner"], LP.LIP_SHAPE["corner"])
+        self.assertGreater(p["corner_tuck"], 1.0)
+        self.assertGreaterEqual(p["bow"], 0.30)
+        self.assertGreater(p["bow_peak"], 0.30)
+        for s, rp in p["ring_param"].items():  # the open rings keep M12b's bow shape
+            self.assertEqual((rp["bow_w"], rp["bow_peak"], rp["bow_at"]), (0.16, 0.10, 0.24), s)
         # M13 (PR #246's review minor 3): no dead settings: every open shape is a designed ring (ring_param), so the
         # traced rings' weights (`ring`) and their corner (`ring_corner`) are not part of the pout's shape
-        self.assertEqual(set(p), set(LP.LIP_SHAPE) - {"ring"} | {"size", "bow_flat", "ring_param", "mirror", "seam_fit"})
+        self.assertEqual(set(p), set(LP.LIP_SHAPE) - {"ring"} | {"size", "bow_flat", "ring_param", "mirror", "seam_fit",
+                                                                         "corner_tuck", "corner_share", "corner_join"})
         self.assertEqual(set(p["ring_param"]), {"A", "E", "O"})
 
     def test_merged_pout(self):

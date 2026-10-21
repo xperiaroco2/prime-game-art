@@ -3,7 +3,8 @@ headless Blender. Opens a kit's export/alien_character.blend (M10b's or later), 
 the current code (alien_mouths.build_piece with alien_lips_geom.LIP_SHAPE_POUT, as alien_m12.build_design does, no
 bake, nothing saved) and, for a kit that already has them (--kit-pieces), its own mouth_pout_<shape> nodes, and
 prints one line "POUT_SYM {json}": per piece the largest distance (mm) from a vertex's mirror (x -> -x, world, rest
-pose) to the nearest vertex, its vertex count and its x extent. tools/tests/test_alien_pout_rest_blender.py reads it.
+pose) to the nearest vertex, its vertex count and its x extent; M16b: per open piece (A, E, O; "open") the same and
+its x extent's centre (centre_mm). tools/tests/test_alien_pout_rest_blender.py reads it.
 
     tools/runner/blender.py run_script("alien_pout_check.py", ["--kit", <M10c/export>])
 """
@@ -67,11 +68,13 @@ def main():
     mats = {"lip": mat, "inner": mat, "teeth": mat, "tongue": mat}
     coll = bpy.context.scene.collection
     for k, s in enumerate(AM.SHAPES):
-        if s not in CLOSED:
-            continue
         ob, meas, _st = AM.build_piece(bvh, ms[k], "pout", s, frames[s]["world"], mats, coll, sock,
                                        lips=LP.merged_pout(None), name=f"pout_check_{s}")
-        out["built"][s] = dict(mirror_dev(ob), form=meas["form"], width_mm=meas["width_mm"])
+        rec = dict(mirror_dev(ob), form=meas["form"], width_mm=meas["width_mm"])
+        if s in CLOSED:
+            out["built"][s] = rec
+        else:  # M16b: an open ring's x extent and its centre (mm off the face's centre line)
+            out.setdefault("open", {})[s] = dict(rec, centre_mm=round(sum(rec["x_mm"]) / 2, 2))
     out["socket_x_mm"] = round(sock.translation.x * 1000, 4)
     print("POUT_SYM " + json.dumps(out))
 

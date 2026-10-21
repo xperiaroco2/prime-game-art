@@ -186,6 +186,23 @@ class RestStationsTest(unittest.TestCase):  # M16 (UPDATE 29): the pout's rest m
         self.assertLess(max(abs(v) for v in second), 0.05)  # no kink left
         self.assertGreater(seam[0], seam[n // 2])  # the corners lower than the centre, as the sheet's
 
+    def test_open_stations_keep_their_gap(self):  # M16b (PR #252 minor 2): small's parting is not smoothed away
+        st = self._stations()
+        n = len(st)
+        gaps = {}
+        for i in range(n // 2 - 3, n // 2 + 4):  # an open middle, its gap widest at the centre (px)
+            g = 6.0 - abs(i - n // 2)
+            st[i]["bot_u"], st[i]["top_l"], st[i]["open"] = st[i]["bot_u"] - g / 2, st[i]["top_l"] + g / 2, True
+            gaps[i] = st[i]["top_l"] - st[i]["bot_u"]
+        out = LP.rest_stations(st, 274.0, LP.merged_pout(None))
+        seam = [(r["bot_u"] + r["top_l"]) / 2 for r in out]
+        for i in range(n):
+            self.assertAlmostEqual(seam[i], seam[n - 1 - i])  # the lip line still mirrored and even
+            # the open run is centred, so the mirror keeps each measured gap; a closed station's lips meet
+            self.assertEqual(out[i]["open"], i in gaps)
+            self.assertAlmostEqual(out[i]["top_l"] - out[i]["bot_u"], gaps.get(i, 1.0))
+        self.assertAlmostEqual(out[n // 2]["top_l"] - out[n // 2]["bot_u"], 7.0)  # not smoothed to the fit
+
     def test_without_the_keys_nothing_changes(self):
         st = self._stations()
         self.assertEqual(LP.rest_stations(st, 274.0, LP.LIP_SHAPE), st)

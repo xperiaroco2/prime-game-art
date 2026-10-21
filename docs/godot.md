@@ -2081,7 +2081,7 @@ a time, by visibility.
     `alien_lips_geom.rest_stations` mirrors the stations about the face's centre line (`mirror_stations`: x symmetric
     round the panel's `hc`, each edge the mean of its own and its mirror station's) and fits the lip line with an even
     polynomial (`even_fit`, c0 + c1 s^2 + c2 s^4); `alien_mouths.mirrored` averages each tube station's skin point,
-    normal, depth and height with its mirror's, so every later pass (smoothing, corners, sections) keeps the piece an
+    normal, depth and height with its mirror's, so the tube's later passes (smoothing, corners) keep the piece an
     exact mirror (0.0001 mm).
   - **The rest's shape:** a thinner upper lip over a bigger lower cushion (`upper` 0.85, `lower` 1.20; M12b 0.95 /
     1.10) and a soft crease (`lean` 0.10: at 0.25 both lips swelled toward the line and read pressed together).
@@ -2094,8 +2094,31 @@ a time, by visibility.
   - **Tests:** `test_alien_lips_geom.py` `RestStationsTest` (plain Python); `test_alien_pout_rest_blender.py`
     (`tools/blender/alien_pout_check.py`: the closed pieces built from the current code on M10c's kit, and the M16
     kit's own, mirrored within 0.1 mm); `test_alien_pout_rest_godot.py` (`godot/alien/pout_rest_check.gd`, headless:
-    the M16 kit's closed pieces mirrored within 0.1 mm with the skeleton at rest, rest shown with `lip_drop`, `pucker`,
-    `jaw_thrust` 0, the talk at rest the rest piece without drop or pucker). Area `alien_pout` in `areas.toml`.
+    the M16 kit's closed pieces, unskinned meshes under the rigid Mouth socket, mirrored within 0.1 mm, rest shown
+    with `lip_drop`, `pucker`, `jaw_thrust` 0, the talk at rest the rest piece without drop or pucker). Area
+    `alien_pout` in `areas.toml`.
+
+- **M16b, the pout's bow and tucked corners back** (brief UPDATE 30, PR #252's review: M16's front read as a smooth
+  oval with round corners; output under `D:/prime-art-raw/review/char/alien-parts-kit/M16b/`, the kit on M10c's pick
+  with every mouth). M16's mirrored, relaxed rest is kept; the closed pieces (rest, M, small) take the pick together.
+  - **The bow:** `bow` 0.30 over a narrower `bow_w` 0.12, side peaks `bow_peak` 0.40 at `bow_at` 0.22 (M16: 0.14,
+    0.16, 0.10, 0.24), so the upper lip's top draws mp1's double-peaked M. It notches the outline only (`bow_flat` 1).
+  - **The corners:** `corner` 0.12 (M16 0.18) and the lip shape's own corner rule over `alien_mouths.CORNER`: the last
+    `corner_share` 0.18 of the stations join 0.95 (`corner_join`) and sink 1.1 of their depth (`corner_tuck`), so the
+    ends tuck into the skin as points instead of round ends.
+  - **Grids** (`M16b/godot/g1`, `g2`, `vgrid.png`; rest front / 3/4 / profile at 0.4 m, 3/4 at 1.2 m, mp1's rest the
+    first row, M16 the second): g1 `bow` 0.30 / 0.45 x `bow_peak` 0.20 / 0.40, two with tucked corners (`corner_tuck`
+    1.3 over 0.20); at 0.45 the upper lip read as two lumps at 3/4. g2: 0.30 / 0.40 and 0.36 / 0.50, each plain and
+    tucked, and 0.30 / 0.40 with the softer tuck (1.1 over 0.18, join 0.95). 1.3 over 0.20 narrowed the mouth; 0.36 /
+    0.50 began to lump. Pick: 0.30 / 0.40 with the softer tuck.
+  - **The open rings** keep M12b's bow shape: `ring_param` reads a ring's own `bow_w`, `bow_peak`, `bow_at`
+    (`_POUT_RING`), and a mirrored lip shape's rings sit on the face's centre line as the fangs' do (A and O were 0.4
+    and 0.6 mm aside).
+  - **Small's parting:** `rest_stations` fits only the lip line's middle; an open station keeps its measured gap round
+    it (M16's fit smoothed it away), a closed station's lips meet on it.
+  - **Tests:** `RestStationsTest.test_open_stations_keep_their_gap`; `PoutShapeTest` (the bow, the tucked corners, the
+    rings' own bow); `test_alien_pout_rest_blender.py` also checks A, E, O centred within 0.1 mm, and both heavy pout
+    tests read the M16b kit. Area `alien_pout` also covers `alien_m12.py`, `alien_m6.py`, `alien.gd`, `alien_talk.gd`.
 - **M15, the eye socket rebuilt for the 80 % eye** (brief UPDATE 26; output under
   `D:/prime-art-raw/review/char/alien-parts-kit/M15/`). The engineer's pick `e80_p85_w80` showed "weird things" in the
   sockets (M10c's skin collar filling the gap between the 80 % eye and the socket sculpted for S9's big eye) and eyes
