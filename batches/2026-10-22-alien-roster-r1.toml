@@ -1,0 +1,64 @@
+# art#196 roster round 1 (direction D of the 2026-10-21 clean-slate research): 2D concepts of ten finished alien heads
+# (five read as men, five as women) on one shared body, an outfit sheet for that body, and one head in eight skin
+# colours. Edits with our own approved images as style references (rf2, u1's front view, the lash sheet el2; our own
+# Meshy generations). Medium for every item (exploration, several variants each). Items run in phases: l1 and o1
+# first; l2 (the line-up's heads in 3/4) is an edit of the l1 image picked by eye, and c1 (skin colours) an edit of
+# the strongest head picked from l2. The engineer's yes: art#196 comment 6326683249 (2026-10-22), within this
+# batch's dollar cap. No game, film, studio or character names; no real people. Schema: docs/openai-images.md.
+
+id = "2026-10-22-alien-roster-r1"
+service = "openai-images"
+purpose = "art#196 roster round 1: ten alien heads (5 men, 5 women) on one shared body, front and 3/4, an outfit sheet for the shared body, and one head in eight skin colours, as 2D concepts for the engineer to pick from."
+plan = "OpenAI API, prepaid balance (topped up by the engineer, 2026-10-20)"
+terms_url = "https://openai.com/policies/services-agreement/"
+licence = "owned by the customer: OpenAI assigns to the customer all its rights in the Output (OpenAI Services Agreement, section 4.1, read 2026-10-20); no attribution required"
+cost_cap_usd = 6.0
+approved_by = "xperiaroco2 (the engineer)"
+approved_at = "2026-10-22"
+approval_ref = "https://github.com/xperiaroco2/prime-game-art/issues/196#issuecomment-6326683249"
+model = "gpt-image-2.5-sunburst"
+quality = "medium"
+
+[defaults]
+size = "2560x1440"
+n = 4
+
+[[items]]
+id = "l1"
+kind = "edit"
+prompt = "Character line-up concept sheet for a stylish adult cartoon alien cast: front view, full body, ten characters standing side by side in ONE row, evenly spaced, all exactly the same height and size, feet on the same line, a relaxed neutral standing pose with the arms slightly away from the body. Match the style, rendering and body of the reference images exactly: the same slender toy-like alien body for all ten (identical proportions and height, a long neck, narrow shoulders, slim limbs, hands with three fingers and a thumb, simple rounded feet, a smooth featureless body with no anatomy details), the same two-tone teal skin on every character (a darker teal on the top and back of the head, the back and the outer limbs; a pale mint face, throat and belly), coral lips and coral eyelids, white eyes with dark irises and a small catch light. ONLY the heads differ: each one a distinct, memorable alien head silhouette with its own charisma and attitude, cool, confident and attractive, adult cartoon appeal, never childish, never a human with coloured skin. Every mouth is closed. The ten heads, left to right (the first five read as men, the last five as women): 1. the head of the reference images: a tall smooth skull sweeping up into one curled backward crest, heavy-lidded bored eyes under thick coral eyelids, two nostril slits, full glossy coral pout lips; 2. a broad low dome with two short blunt horns at the temples and a heavy brow ridge, small narrowed confident eyes, a wide flat closed mouth in a smug one-sided smirk, a strong wide jaw; 3. a long narrow head stretching far back into a smooth cone, big round wide-set eyes, a small hooked upper lip that overhangs the lower one like a little beak; 4. a round bald dome with two long thin antennae ending in soft balls, droopy half-closed eyes, a big rounded chin, a sly lopsided closed grin; 5. a tall fin ridge running from the brow over the top of the head to the back like a mohawk, two swept-back ear fins, intense narrowed eyes under a thick brow ridge, a square jaw, firmly pressed lips; 6. the head of the reference images with long dark eyelashes: the curled backward crest, half-lidded eyes with coral lids and lashes, a full glossy coral pout; 7. a smooth tall heart-shaped dome with two long soft head tendrils falling back like a ponytail, almond eyes with long lashes and winged coral lids, small heart-shaped lips; 8. a round head ringed at the back by a fan-shaped frill of soft rounded spines, big glossy eyes with long lashes, a coy closed half-smile with one upturned corner; 9. a long sleek head with two smooth horns curving backward, sharp cat-eye lids with lashes, plump coral lips in a knowing closed smirk; 10. a small round head with a big round bulb on top like a top-knot bun, big bright doe eyes with lashes, a few darker freckle dots on the cheeks, small pursed lips. Stylised 3D character render, smooth soft-matte designer vinyl toy finish with a subtle soft glow in the skin, clean simple big shapes, no pores, no wrinkles, no fine texture, not clay, not realistic skin; soft even studio light with a gentle rim light; a plain flat neutral mid-grey background. No clothes. No text, no numbers, no labels, no logos."
+images = [
+  { file = "raw:2026-10-18-alien-2d-turn2/u1/image_to_image-multi_view_image_01a14c18-9ad5-77dd-9793-c1631b328463_part_0.png", provenance = "u1, the approved body (front view), our own Meshy generation, batch 2026-10-18-alien-2d-turn2 item u1, art#196", sha256 = "d8c6ef6483406beb20b4e065268527c7daa9ae34161e467c7623aa4c4a39d23a" },
+  { file = "raw:2026-10-19-alien-release-look/rf2/image_to_image-image_01a154a7-63c1-720a-9d8f-39ba1e53026a_0.png", provenance = "rf2, the approved look target (head and shoulders, 3/4), our own Meshy generation, batch 2026-10-19-alien-release-look item rf2, art#196", sha256 = "6359ed7e2255c2a582d2f1b5b903da8e355fdd870ae841f27f1cd5ed2b1df6e2" },
+  { file = "raw:2026-10-20-alien-face-sheets-2/el2/image_to_image-image_01a1590b-6b43-717e-a6d0-f3a0f79ade3e_0.png", provenance = "el2, the approved lash-eyes sheet (female read), our own Meshy generation, batch 2026-10-20-alien-face-sheets-2 item el2, art#196", sha256 = "740f70207b10881ae8f01282c79f7cbef64ea14247dc32e48351fa0f8429a9da" },
+]
+
+[[items]]
+id = "o1"
+kind = "edit"
+prompt = "Outfit concept sheet: ten present-day stylish outfits on the same alien character. Front view, full body, ten copies of the character standing side by side in ONE row, evenly spaced, all exactly the same height and size, feet on the same line, a relaxed confident standing pose. The character is the one in the reference images, identical in every copy: the same head (a tall smooth skull sweeping up into one curled backward crest, heavy-lidded eyes under thick coral eyelids, two nostril slits, full glossy coral pout lips), the same slender alien body (a long neck, narrow shoulders, slim limbs, hands with three fingers and a thumb), the same two-tone teal skin (darker teal on top, pale mint face and throat). Every outfit is a whole, well-made, fashionable present-day look that fits this one body, worn and draped naturally, simple clear shapes, solid fabric colours with a little texture, adult and cool, never a costume, never childish. No hats, no glasses, no bags. Left to right: 1. a charcoal tailored wool overcoat over a black turtleneck, slim grey trousers, black Chelsea boots; 2. a dark green satin bomber jacket over a white T-shirt, straight blue jeans, white sneakers; 3. a short-sleeved camp-collar shirt with a bold coral-and-cream leaf print, beige chinos, brown loafers; 4. a navy two-piece suit with an open-collar white shirt and no tie, black shoes; 5. a black satin slip dress under a cropped black leather biker jacket, black ankle boots; 6. an oversized camel blazer over a short pleated cream skirt, tall brown boots; 7. a cropped lilac knit cardigan, high-waisted wide-leg white trousers, chunky platform sneakers; 8. a fitted ribbed burgundy midi dress under a long beige trench coat, heeled mules; 9. a matching mustard-yellow tracksuit, chunky sneakers; 10. a grey hoodie under a black utility vest, olive cargo trousers, sturdy hiking shoes. Stylised 3D character render, smooth soft-matte designer vinyl toy finish, clean simple big shapes, no pores, no fine texture, not clay, not realistic skin; soft even studio light with a gentle rim light; a plain flat neutral mid-grey background. No text, no numbers, no labels, no logos."
+images = [
+  { file = "raw:2026-10-18-alien-2d-turn2/u1/image_to_image-multi_view_image_01a14c18-9ad5-77dd-9793-c1631b328463_part_0.png", provenance = "u1, the approved body (front view), our own Meshy generation, batch 2026-10-18-alien-2d-turn2 item u1, art#196", sha256 = "d8c6ef6483406beb20b4e065268527c7daa9ae34161e467c7623aa4c4a39d23a" },
+  { file = "raw:2026-10-19-alien-release-look/rf2/image_to_image-image_01a154a7-63c1-720a-9d8f-39ba1e53026a_0.png", provenance = "rf2, the approved look target (head and shoulders, 3/4), our own Meshy generation, batch 2026-10-19-alien-release-look item rf2, art#196", sha256 = "6359ed7e2255c2a582d2f1b5b903da8e355fdd870ae841f27f1cd5ed2b1df6e2" },
+]
+
+# l2: the ten heads of the l1 image picked by eye on 2026-10-22 (image 0, the clearest silhouettes: the horned dome,
+# the ridged fin, the flower frill, the bun) as a 3/4 head-and-shoulders sheet, to judge the faces' appeal.
+
+[[items]]
+id = "l2"
+kind = "edit"
+prompt = "Redraw the ten characters of the reference image as a portrait sheet of their heads: head and shoulders, every head in a three-quarter view turned about 45 degrees toward the viewer's left, in TWO rows of five, evenly spaced, all heads the same size and large in their cells. Top row: the first five characters from the left of the reference, in the same order. Bottom row: the last five, in the same order. Keep every head EXACTLY as in the reference: the same silhouette (crests, horns, antennae, fins, frills, tendrils, bun), the same eyes, eyelids, lashes, brows, nostrils and closed mouth, the same two-tone teal skin (darker teal on the top and back of the head, pale mint face and throat), coral lips and coral eyelids, white eyes with dark irises and a small catch light. Show each one's charisma: a confident, appealing, slightly cheeky expression, cool and attractive adult cartoon appeal, never childish, never grotesque, never a human with coloured skin. Every mouth closed. Stylised 3D character render, smooth soft-matte designer vinyl toy finish with a subtle soft glow in the skin, clean simple big shapes, no pores, no wrinkles, no fine texture, not clay, not realistic skin; soft even studio light with a gentle rim light; a plain flat neutral mid-grey background. No clothes. No text, no numbers, no labels, no logos."
+images = [ { from = "l1", pick = 0 } ]
+
+# c1: the strongest head picked by eye on 2026-10-22, head 8 of l2 image 0 (the round head with the frill of soft
+# lobes, the clearest silhouette and the warmest face of the ten), cropped to 448x704, in eight skin colours from a
+# curated palette that keeps the coral lips and lids and the white eyes.
+
+[[items]]
+id = "c1"
+kind = "edit"
+prompt = "Skin colour sheet of ONE alien character: the head and shoulders of the reference image, eight times, in TWO rows of four, evenly spaced, all the same size, the same three-quarter view, pose, expression and light. Keep the head EXACTLY as in the reference: the round head ringed at the back by a frill of soft rounded lobes, the heart-shaped pale face mask, the almond eyes with long dark lashes, the nostril dots, the small closed smile. Change ONLY the skin colour, each copy a different colour from this curated palette, left to right, top row then bottom row: 1. teal, as in the reference; 2. deep jade green; 3. soft sage olive green; 4. warm ochre gold; 5. periwinkle blue; 6. soft lavender; 7. deep plum purple; 8. cool slate blue-grey. Every skin keeps the same two-tone pattern: a richer, darker shade on the top and back of the head, the frill and the shoulders, and a lighter, paler tint of the same colour on the face mask and the throat. In every copy the lips and the eyelids stay the same coral, the eyes stay white with the same irises and a small catch light, the lashes stay dark. Each colour clean and appealing, attractive adult cartoon look, never a human skin tone, never sickly. Stylised 3D character render, smooth soft-matte designer vinyl toy finish with a subtle soft glow in the skin, no pores, no fine texture, not clay, not realistic skin; soft even studio light with a gentle rim light; a plain flat neutral mid-grey background. No text, no numbers, no labels, no colour swatches."
+images = [
+  { file = "raw:research/2026-10-22-roster/refs/l2-1_head8.png", provenance = "crop (head 8, 448x704) of our own OpenAI generation, batch 2026-10-22-alien-roster-r1 item l2, image 0, art#196", sha256 = "dea1916c8539b39043e85271887f5d6fc66ec8cd8062d1448292eeb8c976d205" },
+]
