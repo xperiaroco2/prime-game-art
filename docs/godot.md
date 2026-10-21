@@ -2081,7 +2081,7 @@ a time, by visibility.
     `alien_lips_geom.rest_stations` mirrors the stations about the face's centre line (`mirror_stations`: x symmetric
     round the panel's `hc`, each edge the mean of its own and its mirror station's) and fits the lip line with an even
     polynomial (`even_fit`, c0 + c1 s^2 + c2 s^4); `alien_mouths.mirrored` averages each tube station's skin point,
-    normal, depth and height with its mirror's, so every later pass (smoothing, corners, sections) keeps the piece an
+    normal, depth and height with its mirror's, so the tube's later passes (smoothing, corners) keep the piece an
     exact mirror (0.0001 mm).
   - **The rest's shape:** a thinner upper lip over a bigger lower cushion (`upper` 0.85, `lower` 1.20; M12b 0.95 /
     1.10) and a soft crease (`lean` 0.10: at 0.25 both lips swelled toward the line and read pressed together).
@@ -2094,7 +2094,7 @@ a time, by visibility.
   - **Tests:** `test_alien_lips_geom.py` `RestStationsTest` (plain Python); `test_alien_pout_rest_blender.py`
     (`tools/blender/alien_pout_check.py`: the closed pieces built from the current code on M10c's kit, and the M16
     kit's own, mirrored within 0.1 mm); `test_alien_pout_rest_godot.py` (`godot/alien/pout_rest_check.gd`, headless:
-    the M16 kit's closed pieces mirrored within 0.1 mm with the skeleton at rest, rest shown with `lip_drop`, `pucker`,
+    the M16 kit's closed pieces, unskinned meshes under the rigid Mouth socket, mirrored within 0.1 mm, rest shown with `lip_drop`, `pucker`,
     `jaw_thrust` 0, the talk at rest the rest piece without drop or pucker). Area `alien_pout` in `areas.toml`.
 
 ## Findings for later tasks
