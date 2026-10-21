@@ -83,6 +83,28 @@ class Geometry(unittest.TestCase):
         _, _, none = build(liner=0.0)
         self.assertNotIn("liner_verts", none)
 
+    def test_the_liner_swells_toward_the_temple(self):
+        def thick(**kw):  # the liner's greatest reach off the roll's outer radius, nose half and temple half
+            v, _, rep = build(**kw)
+            pts = [p for p, uu in zip(v, rep["u"]) if uu < 0.0]
+            nose = max(math.dist(p, (0, 0, 0)) for p in pts if p[0] < -0.5)
+            temple = max(math.dist(p, (0, 0, 0)) for p in pts if p[0] > 0.6)
+            return nose, temple
+        even, swell = thick(liner=0.05, liner_out=1.0), thick(liner=0.05, liner_out=2.0)
+        self.assertGreater(swell[1] - even[1], 3.0 * (swell[0] - even[0]))  # the swell sits at the temple end
+        self.assertGreater(swell[1], even[1] + 0.01)
+
+    def test_split_cuts_the_tubes_from_the_liner(self):
+        v, f, rep = build()
+        parts = LL.split(v, f, rep["u"])
+        self.assertEqual(len(parts["lashes"][0]) + len(parts["liner"][0]), len(v))
+        self.assertEqual(len(parts["lashes"][1]) + len(parts["liner"][1]), len(f))
+        self.assertEqual(len(parts["liner"][0]), rep["liner_verts"])
+        for vs, fs in parts.values():
+            self.assertTrue(all(0 <= i < len(vs) for fc in fs for i in fc))
+        none = build(liner=0.0)
+        self.assertEqual(LL.split(*none[:2], none[2]["u"])["liner"], ([], []))
+
 
 class Wiring(unittest.TestCase):
     src = (BLENDER / "alien_lashes.py").read_text(encoding="utf-8")
@@ -92,10 +114,42 @@ class Wiring(unittest.TestCase):
         name = re.search(r'NAME = "([^"]+)"', self.src).group(1)
         self.assertTrue(name.startswith("eye_{d}_"))  # hidden with the parts by the gate; shown with its design
         self.assertNotIn("_lid_", name)  # alien.gd would give a _lid_ surface the lids' coral
-        build = self.src[self.src.index("def make_set"):self.src.index("def inside_count")]
+        build = self.src[self.src.index("def _mesh_object"):self.src.index("def inside_count")]
         self.assertIn("ob.parent = lid", build)
         self.assertIn("ob.matrix_basis = Matrix.Identity(4)", build)
         self.assertIn('lid.name.replace("_lid_upper_", "_ball_")', build)  # sized on the ball's radius
+
+    def test_the_liner_is_its_own_node_beside_the_tubes(self):
+        liner = re.search(r'LINER_NAME = "([^"]+)"', self.src).group(1)
+        self.assertEqual(liner, "eye_{d}_liner_{s}")
+        self.assertNotIn("_lid_", liner)
+        build = self.src[self.src.index("def make_set"):self.src.index("def inside_count")]
+        self.assertIn("parts = LL.split(verts, faces, u)", build)
+        self.assertIn('_mesh_object(liner_name, *parts["liner"]', build)
+
+    def test_the_material_is_one_sided(self):
+        mat = self.src[self.src.index("def lash_material"):self.src.index("def remove_old")]
+        self.assertIn("mat.use_backface_culling = True", mat)  # the glTF exporter: doubleSided false
+
+    def test_edges_and_a_touch_count_as_a_clip(self):
+        clip = self.src[self.src.index("def clipping"):self.src.index("def main(")]
+        for k in ("skin_edges", "ball_edges", "lower_edges", 'x["skin_least_mm"] < CLEAR_MM'):
+            self.assertIn(k, clip)
+        self.assertGreater(float(re.search(r"CLEAR_MM = ([0-9.]+)", self.src).group(1)), 0.0)
+        main = self.src[self.src.index("def main("):]
+        self.assertIn("any(clipping(x) for x in v.values())", main)
+
+    def test_alien_gd_fades_the_tubes_and_keeps_the_liner(self):
+        fade = float(re.search(r"const LASH_FADE_M := ([0-9.]+)", self.gd).group(1))
+        margin = float(re.search(r"const LASH_FADE_MARGIN_M := ([0-9.]+)", self.gd).group(1))
+        self.assertLessEqual(fade, 3.5)  # gone at the game's 3.5 m
+        self.assertGreater(fade - margin, 1.2)  # whole at the 1.2 m view
+        setup = self.gd[self.gd.index("func setup("):self.gd.index("func _textured_material(")]
+        lashes = setup[setup.index('m.name.contains("_lashes_")'):]
+        self.assertIn("lash_fade(m)", lashes[:200])
+        liner = setup[setup.index('m.name.contains("_liner_")'):]
+        self.assertNotIn("lash_fade", liner[:200])
+        self.assertIn("VISIBILITY_RANGE_FADE_SELF", self.gd)
 
     def test_the_kit_is_refused_when_a_lash_clips(self):
         main = self.src[self.src.index("def main("):]

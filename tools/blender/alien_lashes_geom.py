@@ -6,12 +6,14 @@ half lid or surprise, and scales with the eye unit (every length is a share of t
 - Each lash roots on the lid's rolled rim (alien_lids_geom.shell_profile's half circle: rim angle `root_a_deg` from the
   outer surface toward the front edge), sunk `sink` into it, and leaves `lift_deg` above the radial; it bends up over
   its length by `curl_deg` (more toward the tip, `curl_pow`) and splays toward its own side (`fan_deg` times its
-  place from the middle); a tapered, slightly flat tube (`width`, `tip`, `flat`) with a round tip.
+  place from the middle), M11b all of them leaning toward the temple by `fan_bias_deg` (0.3 to 1 of it, inner to
+  outer: el2's lashes sweep out, so they read as strokes from the front and less as a comb in profile); a tapered, slightly flat tube (`width`, `tip`, `flat`) with a round tip.
 - The lashes run from `t_in_deg` (the nose side) to `t_out_deg` (the temple side) of latitude, closer together toward
   the outer corner (`crowd`), longer and thicker there (`len_*`, `width_*`); the last `wing` lashes are longer still and
   sweep out past the corner (`wing_sweep_deg`, `wing_len`): el2's winged look. None on the lower lid.
 - `design_lift_deg` ({design: lift}): a design's own lift (alien_lashes.py): the manic lids rest 50 degrees up, so
-  its lashes leave lower on the lid to stand off the dome as the bored ones do at their rest.
+  its lashes leave lower on the lid to stand off the dome as the bored ones do at their rest. M11b: `design`
+  ({design: {key: value}}) any other keys of a design's own, over the rest (alien_lashes.py, `for_design`).
 - The liner (`liner_deg` of the rim's roll, `liner` thick, 0 for none): a thin band hugging the roll along the roots,
   so the lash line reads as one dark line at the game's distance; it starts at `liner_t_in_deg` (or the first lash)
   and ends just past the last.
@@ -23,15 +25,21 @@ from __future__ import annotations
 
 import math
 
-# The pick (M11's grids g1 to g5, beside el2): seven bold lashes on the outer half, curling toward their tips, the last
-# two winging out, a liner along the whole edge at the front of the roll; the manic lids leave at the radial (lift 0), the bored 30 degrees above it.
+# The pick (M11's grids g1 to g5, beside el2): seven bold lashes on the outer half, the last two winging out, a liner
+# along the whole edge. M11b (grids g6 to g8, brief UPDATE 23: el2's lashes are bold curls, ours were thin wires, the
+# liner too faint, and in profile they stood over the dome like a comb): fatter (0.12 to 0.19 r at the root, a flatter
+# section), curled round evenly (160 degrees, curl_pow 1) from a lower lift (10), all leaning toward the temple (45),
+# and a bold liner (0.06 r, 1.8 times that at the outer end, over 130 degrees of the roll). The manic lids rest 50
+# degrees up: its lashes leave 30 degrees below the radial and lean 25 (they stand out of the dome's outline as in
+# el2's wide panel), and end at 66 degrees (at 74 the last lash's root touched the skin with the lid open).
 LASHES = {"count": 7, "t_in_deg": 0.0, "t_out_deg": 74.0, "crowd": 1.5,
-          "len_in": 0.35, "len_out": 0.80, "len_pow": 1.6, "width_in": 0.075, "width_out": 0.11, "tip": 0.25,
-          "flat": 0.7, "lift_deg": 30.0, "curl_deg": 75.0, "curl_pow": 2.2, "fan_deg": 20.0,
+          "len_in": 0.35, "len_out": 0.80, "len_pow": 1.6, "width_in": 0.12, "width_out": 0.19, "tip": 0.3,
+          "flat": 0.6, "lift_deg": 10.0, "curl_deg": 160.0, "curl_pow": 1.0, "fan_deg": 20.0, "fan_bias_deg": 45.0,
           "wing": 2, "wing_len": 1.4, "wing_sweep_deg": 45.0, "wing_lift_deg": -6.0,
           "root_a_deg": 30.0, "sink": 0.008, "seg": 10, "sides": 6,
-          "liner": 0.03, "liner_deg": 110.0, "liner_a_deg": 60.0, "liner_t_in_deg": -60.0, "liner_rows": 48,
-          "liner_k": 6, "liner_embed": 0.004, "design_lift_deg": {"manic": 0.0}}
+          "liner": 0.06, "liner_deg": 130.0, "liner_a_deg": 60.0, "liner_t_in_deg": -60.0, "liner_rows": 48,
+          "liner_k": 6, "liner_embed": 0.004, "liner_out": 1.8, "design_lift_deg": {"manic": 0.0},
+          "design": {"manic": {"lift_deg": -30.0, "fan_bias_deg": 25.0, "t_out_deg": 66.0}}}
 
 
 def merged(spec: dict | None = None) -> dict:
@@ -41,6 +49,19 @@ def merged(spec: dict | None = None) -> dict:
     if bad:
         raise ValueError(f"unknown lash keys: {bad}")
     return dict(LASHES, **spec)
+
+
+def for_design(c: dict, design: str) -> dict:
+    """The spec a design builds with: its `design_lift_deg` as `lift_deg`, then its `design` keys."""
+    out = dict(c)
+    if design in c["design_lift_deg"]:
+        out["lift_deg"] = c["design_lift_deg"][design]
+    over = c["design"].get(design, {})
+    bad = sorted(set(over) - set(LASHES))
+    if bad:
+        raise ValueError(f"unknown lash keys for {design}: {bad}")
+    out.update(over)
+    return out
 
 
 def _norm(v):
@@ -98,7 +119,8 @@ def lash_params(c: dict) -> list[dict]:
         out.append({"t": t, "u": u, "wing": wing,
                     "len": (c["len_in"] + (c["len_out"] - c["len_in"]) * g) * (1.0 + (c["wing_len"] - 1.0) * wing),
                     "width": c["width_in"] + (c["width_out"] - c["width_in"]) * g,
-                    "fan": math.radians(c["fan_deg"]) * (2.0 * u - 1.0) + math.radians(c["wing_sweep_deg"]) * wing,
+                    "fan": (math.radians(c["fan_deg"]) * (2.0 * u - 1.0) + math.radians(c["wing_sweep_deg"]) * wing
+                            + math.radians(c["fan_bias_deg"]) * (0.3 + 0.7 * u)),
                     "lift": math.radians(c["lift_deg"] + c["wing_lift_deg"] * wing)})
     return out
 
@@ -152,10 +174,31 @@ def tube(curve, c: dict, side_axis) -> tuple[list, list]:
     return verts, faces
 
 
+def _smooth(x: float) -> float:
+    """A smoothstep from 0 to 1 over x in [0, 1]."""
+    x = min(1.0, max(0.0, x))
+    return x * x * (3.0 - 2.0 * x)
+
+
+def split(verts: list, faces: list, u: list) -> dict:
+    """M11b: a set's mesh (build's verts, faces and rep["u"]) cut into its parts, each (verts, faces) with its own
+    indices: "lashes" (u >= 0, the tubes) and "liner" (u < 0). The liner is its own node, so the game can fade the
+    tubes out past a few metres and keep the lash line (brief UPDATE 23)."""
+    out = {}
+    for part, keep in (("lashes", lambda x: x >= 0.0), ("liner", lambda x: x < 0.0)):
+        idx = {i: n for n, i in enumerate(i for i, x in enumerate(u) if keep(x))}
+        fs = [tuple(idx[i] for i in fc) for fc in faces if all(i in idx for i in fc)]
+        if any(any(i in idx for i in fc) and not all(i in idx for i in fc) for fc in faces):
+            raise ValueError(f"a face spans the lashes and the liner ({part})")
+        out[part] = ([verts[i] for i in idx], fs)
+    return out
+
+
 def liner(c: dict, rho_in: float, rho_out: float, bead: float, corner: dict | None, t0: float, t1: float):
     """The liner band (verts, faces) in r: per latitude row from t0 to t1, a lens over `liner_deg` of the roll about
     `liner_a_deg`, `liner` thick in its middle, tapering to nothing at both ends of the row, its underside
-    `liner_embed` inside the roll. None when `liner` is 0."""
+    `liner_embed` inside the roll; `liner_out` times thicker at t1 than at t0 (M11b: el2's line swells toward the outer
+    corner). None when `liner` is 0."""
     if c["liner"] <= 0.0:
         return None
     rows, k = int(c["liner_rows"]), int(c["liner_k"])
@@ -165,6 +208,7 @@ def liner(c: dict, rho_in: float, rho_out: float, bead: float, corner: dict | No
         f = i / rows
         t = t0 + (t1 - t0) * f
         taper = math.sin(math.pi * min(1.0, f / 0.12) / 2.0) * math.sin(math.pi * min(1.0, (1.0 - f) / 0.25) / 2.0)
+        taper *= 1.0 + (c["liner_out"] - 1.0) * _smooth(f)
         for j in range(k + 1):  # the top (out), then back along the underside (in)
             a = a0 + (a1 - a0) * j / k
             pt, n, _, _ = rim(t, a, rho_in, rho_out, bead, corner)
