@@ -18,6 +18,9 @@ extends "res://alien/m10_shots.gd"
 ## - "vgrid" (M12b): the variant grid of the open shapes, vgrid.png: a row of the sheet's mouths, then per variant
 ##   (spec "variants", the hero's lipvar_<name>_pout_<shape> nodes; first the hero's own pieces, "M12") each piece of
 ##   spec "vgrid" ([[shape, yaw], ...]) at 0.4 m;
+## M13: spec "design" (default "pout") is the design every mode shows ("fangs": the mg2 mouth; "sheet" and "crops" then
+## its sheet's), "talk_also" the other designs whose talk.png follows ("talk_<design>.png", default ["frog"]),
+## "hero_label" vgrid's first row's label (default "M12").
 ## - "compare" (M12b): before above after, compare_closed.png (rest, M, small) and compare_open.png (A, E, O): per
 ##   shape the sheet's mouth, then the first kit's pout (before) and the hero's (after) from the front, at 3/4 and in
 ##   profile at 0.4 m and at 3/4 at 1.2 m.
@@ -25,6 +28,7 @@ extends "res://alien/m10_shots.gd"
 const AlienTalkData = preload("res://alien/alien_talk.gd")
 const PH_FOV := 20.0  # the phases: about 0.14 m of face at 0.4 m (the crops are 140 px of the sheet: about 0.13 m)
 var _mouth_of: Dictionary = {}
+var _design: String = "pout"  # M13: the design the proofs show (spec "design")
 
 
 func _run() -> void:
@@ -45,11 +49,12 @@ func _run() -> void:
 		_labels[k] = kit.get("label", k)
 		_mouth_of[k] = kit.get("mouth", "pout")
 	var hero: String = _keys[-1]
-	if not _rig[hero].has_mouth_design("pout"):
-		_fail("the hero kit has no pout mouth")
+	_design = _spec.get("design", _design)
+	if not _rig[hero].has_mouth_design(_design):
+		_fail("the hero kit has no %s mouth" % _design)
 		return
-	var p: Node3D = _rig[hero].node("mouth_pout_rest")
-	print("PROOF mouth_pout_rest basis ", p.global_transform.basis, " at ", p.global_position)
+	var p: Node3D = _rig[hero].node("mouth_%s_rest" % _design)
+	print("PROOF mouth_%s_rest basis " % _design, p.global_transform.basis, " at ", p.global_position)
 	_pose("Idle", 0.0)
 	_only([hero], false)
 	for _i: int in 4:
@@ -59,8 +64,9 @@ func _run() -> void:
 	if _modes.has("phases"):
 		await _pphases(hero)
 	if _modes.has("talk"):
-		await _ptalk(hero, "pout", "talk.png")
-		await _ptalk(hero, "frog", "talk_frog.png")
+		await _ptalk(hero, _design, "talk.png")
+		for other: String in _spec.get("talk_also", ["frog"]):
+			await _ptalk(hero, other, "talk_%s.png" % other)
 	if _modes.has("video"):
 		await _pvideo(hero)
 	if _modes.has("clips"):
@@ -110,8 +116,8 @@ func _pgrid(hero: String) -> void:
 	var cells: Array = refs
 	_only([hero], false)
 	for v: Array in _spec.get("variants", []):
-		_combo(hero, "bored", "pout")
-		_show_only(hero, "lipvar_%s_pout_rest" % v[0])
+		_combo(hero, "bored", _design)
+		_show_only(hero, "lipvar_%s_%s_rest" % [v[0], _design])
 		await process_frame
 		_mouth_view(hero, 0.0, 2.0, 0.4, 26.0)
 		cells.append(await _shot("%s: спокій, анфас 0.4 м" % v[1]))
@@ -119,14 +125,14 @@ func _pgrid(hero: String) -> void:
 		cells.append(await _shot("%s: 3/4 0.4 м" % v[1]))
 		_face_at(hero, 30.0, 1.2)
 		cells.append(await _shot("%s: 3/4 1.2 м" % v[1]))
-		_show_only(hero, "lipvar_%s_pout_A" % v[0])
+		_show_only(hero, "lipvar_%s_%s_A" % [v[0], _design])
 		_mouth_view(hero, 35.0, 2.0, 0.4, 26.0)
 		cells.append(await _shot("%s: A 3/4" % v[1]))
-		_show_only(hero, "lipvar_%s_pout_O" % v[0])
+		_show_only(hero, "lipvar_%s_%s_O" % [v[0], _design])
 		_mouth_view(hero, 0.0, 2.0, 0.4, 26.0)
 		cells.append(await _shot("%s: O анфас" % v[1]))
 	_grid_cells(cells, 5, Vector2i(256, 256), "grid.png")
-	_combo(hero, "bored", "pout")
+	_combo(hero, "bored", _design)
 
 
 func _pphases(hero: String) -> void:
@@ -135,20 +141,20 @@ func _pphases(hero: String) -> void:
 	var cells: Array = []
 	var nb: Array = []
 	for s: String in SHAPES:
-		_combo(hero, "bored", "pout", s)
+		_combo(hero, "bored", _design, s)
 		await process_frame
 		cells.append(_crop(s))
 		_mouth_view(hero, 0.0)
-		cells.append(await _shot("pout %s front 0.4 m" % s))
+		cells.append(await _shot("%s %s front 0.4 m" % [_design, s]))
 		_mouth_view(hero, 35.0)
-		cells.append(await _shot("pout %s 3/4 0.4 m" % s))
+		cells.append(await _shot("%s %s 3/4 0.4 m" % [_design, s]))
 		var m: Vector3 = _find(hero, "Mouth") + Vector3(0, -0.012, 0)
 		for v: Array in MOUTH_VIEWS:
 			_look(m, v[0], v[1], v[2], 30.0 if v[2] < 1.0 else 12.0)
-			nb.append(await _shot("pout %s y%d p%d %.1fm" % [s, v[0], v[1], v[2]]))
+			nb.append(await _shot("%s %s y%d p%d %.1fm" % [_design, s, v[0], v[1], v[2]]))
 	_grid_cells(cells, 3, Vector2i(420, 420), "phases.png")
 	_grid_cells(nb, MOUTH_VIEWS.size(), Vector2i(260, 260), "noblack.png")
-	_combo(hero, "bored", "pout")
+	_combo(hero, "bored", _design)
 
 
 ## The talk pose at line time t_ms: Talk_Upper at the same time (looped), the line's sample through the style.
@@ -172,18 +178,18 @@ func _ptalk(hero: String, design: String, name: String) -> void:
 		var s: Dictionary = _talk_pose(hero, t)
 		await process_frame
 		_look(_find(hero, "Mouth") + Vector3(0, 0.02, 0), 30.0, 2.0, 0.5, 30.0)
-		cells.append(await _shot("%s %.1f s %s drop %.1f mm pucker %.2f" % [design, t / 1000.0, s["piece"],
-			s["drop"] * 1000.0, s["pucker"]]))
+		cells.append(await _shot("%s %.1f s %s drop %.1f mm pucker %.2f thrust %.1f mm" % [design, t / 1000.0,
+			s["piece"], s["drop"] * 1000.0, s["pucker"], s["thrust"] * 1000.0]))
 		t += 200.0
 	_grid_cells(cells, 6, Vector2i(213, 213), name)
 	_rig[hero].set_mouth_motion(0.0, 0.0)
-	_combo(hero, "bored", "pout")
+	_combo(hero, "bored", _design)
 	_pose("Idle", 0.0)
 
 
 func _pvideo(hero: String) -> void:
 	_only([hero], false)
-	_combo(hero, "bored", "pout")
+	_combo(hero, "bored", _design)
 	_label.text = ""
 	var n: int = int(ceil(AlienTalkData.LINE_MS / 1000.0 * 30.0))
 	for view: Array in [["talk_34", 30.0, 0.6, 0.02], ["talk_front", 0.0, 0.45, 0.03]]:
@@ -207,13 +213,13 @@ func _pvideo(hero: String) -> void:
 
 func _pclips(hero: String) -> void:
 	_only([hero], false)
-	_combo(hero, "bored", "pout")
+	_combo(hero, "bored", _design)
 	var cells: Array = []
 	for word: String in ["Idle", "Walk", "Talk_Upper"]:
 		for i: int in 4:
 			var tt: float = -0.05 - 0.3 * float(i)  # shares of the clip (negative: m5's seek by share)
 			_pose(word, tt)
-			_combo(hero, "bored", "pout", ["rest", "A", "O", "E"][i] if word == "Talk_Upper" else "rest")
+			_combo(hero, "bored", _design, ["rest", "A", "O", "E"][i] if word == "Talk_Upper" else "rest")
 			await process_frame
 			_look(_find(hero, "Mouth") + Vector3(0, 0.04, 0), 30.0, 2.0, 0.9, 30.0)
 			cells.append(await _shot("%s %.0f %% face" % [word, -tt * 100.0]))
@@ -222,7 +228,7 @@ func _pclips(hero: String) -> void:
 		cells.append(await _shot("%s body" % word))
 	_grid_cells(cells, 5, Vector2i(256, 256), "clips.png")
 	_pose("Idle", 0.0)
-	_combo(hero, "bored", "pout")
+	_combo(hero, "bored", _design)
 
 
 func _phues(hero: String) -> void:
@@ -230,7 +236,7 @@ func _phues(hero: String) -> void:
 	var cells: Array = []
 	for h: String in HUE_NAMES:
 		_rig[hero].set_hue(h)
-		_combo(hero, "bored", "pout")
+		_combo(hero, "bored", _design)
 		await process_frame
 		_mouth_view(hero, 0.0, 2.0, 0.4, 26.0)
 		cells.append(await _shot("%s front 0.4 m" % h))
@@ -248,12 +254,12 @@ func _pvgrid(hero: String) -> void:
 	for v: Array in views:
 		cells.append(_crop(v[0]))
 	_only([hero], false)
-	_combo(hero, "bored", "pout")
-	var rows: Array = [["", "M12"]]
+	_combo(hero, "bored", _design)
+	var rows: Array = [["", _spec.get("hero_label", "M12")]]
 	rows.append_array(_spec.get("variants", []))
 	for r: Array in rows:
 		for v: Array in views:
-			_show_only(hero, ("mouth_pout_%s" % v[0]) if r[0] == "" else ("lipvar_%s_pout_%s" % [r[0], v[0]]))
+			_show_only(hero, ("mouth_%s_%s" % [_design, v[0]]) if r[0] == "" else ("lipvar_%s_%s_%s" % [r[0], _design, v[0]]))
 			await process_frame
 			_mouth_view(hero, v[1], 2.0, 0.4, PH_FOV)
 			cells.append(await _shot("%s %s y%d" % [r[1], v[0], v[1]]))
@@ -261,7 +267,7 @@ func _pvgrid(hero: String) -> void:
 	if px <= 0:
 		px = mini(320, 1280 / views.size())
 	_grid_cells(cells, views.size(), Vector2i(px, px), "vgrid.png")
-	_combo(hero, "bored", "pout")
+	_combo(hero, "bored", _design)
 
 
 func _pcompare(hero: String) -> void:
@@ -272,7 +278,7 @@ func _pcompare(hero: String) -> void:
 			for k: String in [before, hero]:
 				cells.append(_crop(s) if k == before else null)
 				_only([k], false)
-				_combo(k, "bored", "pout", s)
+				_combo(k, "bored", _design, s)
 				await process_frame
 				for v: Array in [[0.0, 0.4], [35.0, 0.4], [90.0, 0.4]]:
 					_mouth_view(k, v[0], 2.0, v[1], PH_FOV)
@@ -281,4 +287,4 @@ func _pcompare(hero: String) -> void:
 				cells.append(await _shot("%s %s 3/4 1.2 m" % [_labels[k], s]))
 		_grid_cells(cells, 5, Vector2i(256, 256), part[0])
 	_only([hero], false)
-	_combo(hero, "bored", "pout")
+	_combo(hero, "bored", _design)
