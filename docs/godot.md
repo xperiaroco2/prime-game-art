@@ -2193,6 +2193,27 @@ a time, by visibility.
       each kit; `alien_fit_geom.set_fit` range-checks every key. Tests: `test_alien_splay.py` (fast: the formula, the
       marker, the fallback, the reset, the fit's rest), `test_alien_lashes.py` (the socket defaults).
 
+- **M19, the AI mouth route test** (brief UPDATE 38; output under
+  `D:/prime-art-raw/review/char/alien-parts-kit/M19/`): GPT Image views of mp1's lips (`batches/2026-10-21-alien-mouth-views.toml`)
+  -> Meshy multi-image 3D (`batches/2026-10-21-alien-mouth-3d.toml`) -> `tools/blender/alien_mouth_fit.py`, which
+  writes a grid kit (`M19/kit/`, M15's head) with `lipvar_aia_pout_<shape>` and `lipvar_aib_pout_<shape>` beside our
+  pieces (and `--also m16c=<blend>`'s as `lipvar_m16c_*`), shown by `m12_shots.gd`'s `vgrid`
+  (`M19/godot/rest/vgrid.png`, `M19/godot/A/vgrid.png`). The geometry is `alien_mouth_fit_geom.py` (tested):
+  - **(a) the AI mesh:** scaled uniformly to our piece's lip width, centred, its lip line on ours (`seam_z`), then
+    **seated with its flat back 4 mm under the skin** at the lip line's centre (`FIT["seat"]`; aligning its front on
+    ours left a box-like wall in profile), collapse-decimated to `FIT["budget_tris"]` (6k), its -x half mirrored, the
+    back vertices pushed under the skin and curved in toward the centre (`taper_back`) and smoothed. On A the form's
+    own floor (faces seen from the front, deeper than 45 % of its depth, inside the opening's box) is removed and our
+    A piece's cup and tongue are joined in behind it. Our materials, parts AO and jaw weights (`alien_m12.jaw_weights`).
+  - **(b) our tubes on the AI form:** a copy of our piece whose lip vertices facing forward and outside the skin
+    shrink-wrap to the nearest surface point of (a), three rounds with a relax between. Projection along the normals
+    folded more.
+  - **Gotchas:** a `bpy` vertex-group reference dangles once a modifier is applied (use its name); an imported mesh
+    keeps faces selected (clear the selection before a selection-based delete); work in the Mouth socket's space (it
+    leans about 14 degrees), where our pieces' coordinates already are.
+  - The variants keep the Body's contact layers, which come from our `mouth_pout_rest`; a route that ships an AI form
+    must rebuild them from it.
+
 ## Findings for later tasks
 
 - **Toe bones (art #25):** assembled characters have 64 bones since art #25 (`Toe.L`, `Toe.R`). The export and
