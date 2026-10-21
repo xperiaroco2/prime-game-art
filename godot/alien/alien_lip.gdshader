@@ -28,6 +28,10 @@ uniform float ao_occl : hint_range(0.0, 1.0) = 0.0;
 uniform float drift : hint_range(0.0, 0.3) = 0.0;
 uniform float drift_freq = 40.0;  // per m: blotches of about 2.5 cm
 uniform float sss : hint_range(0.0, 1.0) = 0.0;
+// M21 (art #196): the SSS fades out between these view distances (m; the default never). Godot's screen-space SSS
+// blurs a thin part's light with its neighbours': at 3.5 m the lower lid (2 to 4 px) took the pale skin's and the
+// white's light and drew a pale line under the eyes; up close the same blur is the lid's soft edge (alien.gd LID_LOOK).
+uniform vec2 sss_fade = vec2(1000.0, 1001.0);
 uniform float transmit : hint_range(0.0, 1.0) = 0.0;
 uniform float transmit_depth = 0.01;
 uniform vec3 transmit_color : source_color = vec3(1.0, 0.55, 0.42);
@@ -76,7 +80,7 @@ void fragment() {
 	SPECULAR = specular_value;
 	CLEARCOAT = sheen;
 	CLEARCOAT_ROUGHNESS = sheen_roughness;
-	SSS_STRENGTH = sss;
+	SSS_STRENGTH = sss * (1.0 - smoothstep(sss_fade.x, sss_fade.y, length(VERTEX)));
 	// the transmittance is always written with a depth above 0: Godot divides by it (M5's black skin)
 	SSS_TRANSMITTANCE_COLOR = vec4(transmit_color, step(1e-4, transmit));
 	SSS_TRANSMITTANCE_DEPTH = max(transmit_depth, 0.001);

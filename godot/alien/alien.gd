@@ -101,8 +101,10 @@ const LIP_LOOK := {"albedo": Color(0.78, 0.35, 0.31), "deep": Color(0.56, 0.18, 
 	"sheen": 0.06, "sheen_roughness": 0.5, "grain": 0.08, "grain_freq": 600.0, "sss": 0.25, "transmit": 0.2,
 	"rim_value": 0.35, "rim_tint": 0.5}
 ## M6: the lid domes' own values over LIP_LOOK (a satin dome as the skin's, no clear coat: its sheen read plastic;
-## the lips keep a soft sheen).
-const LID_LOOK := {"roughness_value": 0.64, "sheen": 0.0}
+## the lips keep a soft sheen). M21 (brief UPDATE 45): their SSS fades out between 1.5 and 3 m (alien_lip.gdshader
+## `sss_fade`): at 3.5 m the screen-space blur mixed the thin lower lid with the pale skin into a pale line under the
+## eyes; up close it stays the lid's soft edge.
+const LID_LOOK := {"roughness_value": 0.64, "sheen": 0.0, "sss_fade": Vector2(1.5, 3.0)}
 ## M12: the pout mouth's lips (material alien_lip_pout) over LIP_LOOK: the mp1 sheet's glossy deep red-coral, a deeper
 ## red in the folds, a low roughness with a clear, crisp coat (the wet highlight on the lower lip), less drift and
 ## grain (a smooth gloss). Chosen beside the sheet on M12's grid (m12_shots.gd).
@@ -121,6 +123,10 @@ const LASH_FADE_MARGIN_M := 0.6
 ## M11b: the liner's least width on screen (alien_liner.gdshader): at 3.5 m its modelled band covers about one pixel
 ## and broke into dashes; it widens to about two.
 const LINER_MIN_PX := 2.0
+## M21 (art #196, brief UPDATE 45): the eye parts (balls, lids, wet lines, lashes, liners: every eye_* mesh) never take
+## Godot's automatic mesh LODs. The decimated lid shells lost their baked AO (COLOR_0) and normals and drew the upper
+## lids blotchy at 3.5 m (with the LODs off the same frame is even). They are small meshes, so the cost is small.
+const EYE_LOD_BIAS := 100.0
 ## M13: the fangs mouth's two lower fangs (material alien_fang, the lips' shader so they move with the lower jaw):
 ## ivory, a soft satin with a little clear coat, deeper and warmer at the root (the baked AO), a faint warm
 ## transmittance. The lips are the kit's coral alien_lip (LIP_LOOK). Chosen beside the mg2 sheet on M13's grids.
@@ -305,6 +311,8 @@ func setup(root: Node3D, seed: int = 196) -> void:
 			# (PR #251's review: debug builds only, and cached per mesh: it reads every surface's colours)
 			push_warning(("alien: %s has no jaw weight (COLOR_0's alpha is 1 everywhere): rebuild the kit with "
 				+ "tools/blender/alien_m12.py") % m.name)
+		if m.name.begins_with("eye_"):  # M21: full detail at every distance (EYE_LOD_BIAS)
+			m.lod_bias = EYE_LOD_BIAS
 		if m.name.begins_with("eye_") and m.name.contains("_lashes_"):  # M11: the lash sets (not the lashvar_ grid)
 			_lash_nodes.append(m)
 			lash_fade(m)
