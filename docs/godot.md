@@ -2422,7 +2422,7 @@ a time, by visibility.
   after PR #261, so the kit carries M21b's eyes and lashes; gate against `M21b/final/export/`):
   - **the skin contact:** M20c's 2 mm `contact_margin` narrowed the halo (`touched` 329 -> 308) and the skin under
     the lower lip got 3-6 brighter at 3/4. `contact_margin` is 5 mm again with `contact_keep` (touched 329, full
-    154). Judged by the skin's measured brightness under the lower lip (the mean of r, g, b, 1-12 px under the lips'
+    155). Judged by the skin's measured brightness under the lower lip (the mean of r, g, b, 1-12 px under the lips'
     lowest pixel over the middle 70 % of their columns, the rest at 3/4 0.4 m in `compare_closed.png`): M20b 182.5,
     M20c 185.9, M20d **180.4**, rising evenly away from the lip (no darker ring);
   - **the dimple:** after `fill_cleft`'s clamp, `smooth_centre` lays the lower lip's front within +-2 mm of x = 0
