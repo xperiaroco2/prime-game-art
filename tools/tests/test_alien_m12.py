@@ -134,8 +134,8 @@ class RingParamTest(unittest.TestCase):
                     self.assertLess(max(abs(t) for t in turns), math.radians(20), shape)
 
     def test_an_even_roll_with_round_corners(self):
-        # M16e: A's and E's corners taper (0.40 / 0.35 of the centre's thickness, mp1's open lips thin toward the ends)
-        for shape, lo in (("A", 0.35), ("E", 0.30), ("O", 0.75)):
+        # M16e: A's and E's corners taper; M20: further (0.28 / 0.30 of the centre's thickness, to the AI rest's points)
+        for shape, lo in (("A", 0.24), ("E", 0.25), ("O", 0.75)):
             _c, pairs, outer0, _cw = self.ring(shape)
             t = [math.hypot(o[0] - i[0], o[1] - i[1]) for (i, _o), o in zip(pairs, outer0)]
             self.assertGreater(min(t) / max(t), lo, shape)  # never a thin flap
