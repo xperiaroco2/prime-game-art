@@ -22,5 +22,8 @@ EYE_ROUGH = 0.38
 ACCENT = (0.89, 0.42, 0.36)  # knees, elbows, knuckles (S9: the value alien_assemble and alien_hue.gdshader use; it was (0.85, 0.40, 0.36) here)
 VISEMES = ("rest", "M", "small", "A", "E", "O")
 EYE_AIM_IN = 11.5  # degrees: each eyeball turned inward about its socket's up axis (S5; alien.gd aim_in_deg)
+# M15b: the convergence alone (EYE_AIM_IN less S2a's sockets' 8 degrees outward): a ball turns in by this plus its
+# unit's own outward look (alien_socket_fit.py sets it in the GLB's rest; alien.gd AIM_CONVERGE_DEG)
+EYE_AIM_CONVERGE = 3.5
 BLINK_MS = {"close": 60.0, "hold": 40.0, "open": 100.0}
 BLINK_EVERY_S = (2.0, 6.0)
