@@ -82,7 +82,15 @@ class TalkStyleTest(unittest.TestCase):
         self.assertEqual(next(s for s in ss if s[0] == t0 + 10)[1], "small")
         self.assertEqual(next(s for s in ss if s[0] == t0 + rise + 10)[1], "A")
         thr = [s for s in ss if s[4] > 0]
-        self.assertTrue(thr and all(s[1] in ("A", "E") for s in thr))
+        self.assertTrue(thr)
+        amt = st["thrust"]["amount"]
+        for a, b in zip(ss, ss[1:]):  # M13b (PR #248's minor 2): it eases in and out, never snaps
+            self.assertLess(abs(b[4] - a[4]), 0.1 * amt, (a, b))
+            if a[4] == 0 and b[4] > 0:
+                self.assertIn(b[1], ("A", "E"), b)  # it starts only on A or E
+        ae = [b for a, b in zip(ss, ss[1:]) if a[1] == "A" and b[1] == "E"]
+        self.assertTrue(ae, "the line has no A -> E")
+        self.assertTrue(all(b[4] > 0.9 * amt for b in ae), ae)  # A -> E holds the thrust
         self.assertAlmostEqual(max(s[4] for s in ss), st["thrust"]["amount"], places=5)
         pout = self.d["styles"]["pout"]
         self.assertLess(st["bounce"]["amp"], pout["bounce"]["amp"])  # less bounce than the pout

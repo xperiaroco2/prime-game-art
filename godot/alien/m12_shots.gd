@@ -17,7 +17,7 @@ extends "res://alien/m10_shots.gd"
 ## - "head": m10_shots.gd's whole-head gate, each kit with its own "mouth";
 ## - "vgrid" (M12b): the variant grid of the open shapes, vgrid.png: a row of the sheet's mouths, then per variant
 ##   (spec "variants", the hero's lipvar_<name>_pout_<shape> nodes; first the hero's own pieces, "M12") each piece of
-##   spec "vgrid" ([[shape, yaw], ...]) at 0.4 m;
+##   spec "vgrid" ([[shape, yaw], ...] at 0.4 m, or [shape, yaw, dist]);
 ## M13: spec "design" (default "pout") is the design every mode shows ("fangs": the mg2 mouth; "sheet" and "crops" then
 ## its sheet's), "talk_also" the other designs whose talk.png follows ("talk_<design>.png", default ["frog"]),
 ## "hero_label" vgrid's first row's label (default "M12").
@@ -261,7 +261,7 @@ func _pvgrid(hero: String) -> void:
 		for v: Array in views:
 			_show_only(hero, ("mouth_%s_%s" % [_design, v[0]]) if r[0] == "" else ("lipvar_%s_%s_%s" % [r[0], _design, v[0]]))
 			await process_frame
-			_mouth_view(hero, v[1], 2.0, 0.4, PH_FOV)
+			_mouth_view(hero, v[1], 2.0, float(v[2]) if v.size() > 2 else 0.4, PH_FOV)  # M13b: [shape, yaw, dist]
 			cells.append(await _shot("%s %s y%d" % [r[1], v[0], v[1]]))
 	var px: int = int(_spec.get("vgrid_px", 0))
 	if px <= 0:

@@ -37,7 +37,7 @@ extends Node
 ## - M13, the fangs mouth (mg2): a fourth design "fangs" (mouth_fangs_<shape>: the coral alien_lip lips, two lower fangs
 ##   in alien_fang, FANG_LOOK), its contact in CUSTOM2.y, a heavier jaw's talk (alien_talk.gd: a slower opening, a
 ##   forward jaw thrust on A and E, a small bounce). The talking designs' lips, fangs, cup and tongue move together on
-##   the jaw weight COLOR_0.g (alien_mouth_motion.gdshaderinc; the bounce presses a closed mouth shut, never sags it).
+##   the jaw weight COLOR_0.a (M13b; alien_mouth_motion.gdshaderinc; the bounce presses a closed mouth shut, never sags it).
 ## Used through preload (a -s script has no global class cache): const AlienRig = preload("res://alien/alien.gd").
 
 const SHADER: Shader = preload("res://alien/alien_hue.gdshader")
@@ -124,12 +124,15 @@ const LINER_MIN_PX := 2.0
 ## M13: the fangs mouth's two lower fangs (material alien_fang, the lips' shader so they move with the lower jaw):
 ## ivory, a soft satin with a little clear coat, deeper and warmer at the root (the baked AO), a faint warm
 ## transmittance. The lips are the kit's coral alien_lip (LIP_LOOK). Chosen beside the mg2 sheet on M13's grids.
-const FANG_LOOK := {"albedo": Color(0.90, 0.82, 0.64), "deep": Color(0.70, 0.56, 0.40), "ao_mix": 1.0,
-	"ao_range": Vector2(0.45, 0.95), "ao_occl": 0.4, "drift": 0.02, "roughness_value": 0.38, "specular_value": 0.45,
-	"sheen": 0.25, "sheen_roughness": 0.3, "grain": 0.02, "sss": 0.15, "transmit": 0.15, "rim_value": 0.2}
+## M13b (UPDATE 22: soft ivory shading, a hint of translucency at the tip): a creamier ivory, a warmer and deeper root
+## over a wider AO range, more AO occlusion, and a warm SSS and transmittance through the thin tip.
+const FANG_LOOK := {"albedo": Color(0.88, 0.80, 0.62), "deep": Color(0.60, 0.46, 0.30), "ao_mix": 1.0,
+	"ao_range": Vector2(0.40, 0.98), "ao_occl": 0.6, "drift": 0.02, "roughness_value": 0.45, "specular_value": 0.40,
+	"sheen": 0.25, "sheen_roughness": 0.3, "grain": 0.02, "sss": 0.35, "transmit": 0.40,
+	"transmit_color": Color(1.0, 0.80, 0.56), "transmit_depth": 0.006, "rim_value": 0.2}
 const MOUTH_DESIGNS: Array[String] = ["frog", "overbite", "pout", "fangs"]
 ## M13: the talking designs whose pieces move (alien_talk.gd's bounce, pucker, thrust): their lips, fangs, cup and
-## tongue take the motion shaders on the jaw weight COLOR_0.g (tools/blender/alien_m12.py); frog and overbite snap.
+## tongue take the motion shaders on the jaw weight COLOR_0.a (tools/blender/alien_m12.py); frog and overbite snap.
 const MOVING_DESIGNS: Array[String] = ["pout", "fangs"]
 const MOVING_PARTS: Array[String] = ["alien_mouth_inner", "alien_tongue"]
 ## The face materials beyond FACE that the s5 look replaces (M12 the pout's lips, M13 the fangs).

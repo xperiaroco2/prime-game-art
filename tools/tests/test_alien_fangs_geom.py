@@ -29,7 +29,8 @@ class ShapeTest(unittest.TestCase):
         self.assertTrue(all(a >= b for a, b in zip(r, r[1:])))  # a cone, no waist
         self.assertAlmostEqual(r[0], p["radius"])
         self.assertGreaterEqual(r[-1], 0.4 * p["radius"])  # a round, blunt tip: never a point
-        self.assertLess((1 - p["root"]) * p["length"], 0.016)  # short: under 16 mm shows above the lips
+        # M13b (UPDATE 22: M13's were small pins): 16 to 24 mm shows above the lips, the tips just over the upper lip
+        self.assertTrue(0.016 <= (1 - p["root"]) * p["length"] <= 0.024)
         self.assertLess(p["length"] / (2 * p["radius"]), 3.0)  # stubby: cute-tough, not a tusk
 
     def test_merged(self):
@@ -82,8 +83,8 @@ class AxisTest(unittest.TestCase):
         ys = FG.axis_depths(zs, fronts, skin, radii, p, z_root)
         for z, y, f, r in zip(zs, ys, fronts, radii):
             h = r * p["flat"]
-            if z > z_root + 0.2 * p["length"] and f is not None:
-                self.assertLessEqual(y, f - 0.6 * h)  # before the upper lip, never in it
+            if z > z_root + p["blend"] * p["length"] and f is not None:
+                self.assertLessEqual(y, f - (p["out"] - 0.05) * h)  # before the upper lip, never in it
             if z < z_root - 0.2 * p["length"]:
                 self.assertGreater(y, f - 0.4 * h)  # the root behind the lower lip's front
         for a, b, c in zip(ys, ys[1:], ys[2:]):
@@ -114,16 +115,39 @@ class AxisTest(unittest.TestCase):
 
 
 class FangLipsTest(unittest.TestCase):
-    def test_thin_wide_calm(self):
+    def test_soft_rolled_lips_grumpy_line(self):  # M13b (UPDATE 22)
         f, frog = LP.LIP_SHAPE_FANGS, LP.LIP_SHAPE
-        self.assertLess(f["upper"], frog["upper"])
-        self.assertLess(f["lower"], frog["lower"])
-        self.assertLess(f["bow"], frog["bow"])  # a flat calm line
-        self.assertGreater(f["width"], frog["width"])
+        self.assertLess(f["upper"], f["lower"])  # the upper thin, the lower a fuller cushion
+        self.assertGreater(f["lower_fwd"], 0.0)  # the lower lip forward: the fangs rise out of it
+        self.assertLess(f["bow"], frog["bow"])  # a calm line
+        self.assertGreater(f["downturn"], 0.0)
+        self.assertEqual(LP.downturn(0.0, f), 0.0)
+        self.assertAlmostEqual(LP.downturn(-1.0, f), f["downturn"])
+        self.assertLess(LP.downturn(0.5, f), 0.25 * f["downturn"])  # the bend is at the corners
+        self.assertEqual(LP.downturn(1.0, LP.LIP_SHAPE_POUT), 0.0)  # the other designs keep their line
         self.assertEqual(set(f["ring_param"]), {"A", "E", "O"})
+        for shape in ("A", "E"):  # designed tongues; A a real jaw drop
+            self.assertEqual(len(f["ring_param"][shape]["tongue"]), 2)
+        self.assertGreater(f["ring_param"]["A"]["open"], 1.0)
         self.assertEqual(LP.merged_fangs(None), f)
         self.assertEqual(LP.merged_fangs({"upper": 0.6})["upper"], 0.6)
         self.assertEqual(LP.CONTACT_UV_MOUTH2[1], ("pout", "fangs"))
+
+    def test_closed_edges_keep_the_lip_line_and_bend_it(self):
+        f = LP.LIP_SHAPE_FANGS
+        ss = [-1.0, -0.5, 0.0, 0.5, 1.0]
+        top, bot = [1.405] * 5, [1.400] * 5
+        ut, ub = LP.closed_edges(ss, top, bot, "u", f)
+        for s_, b0, b1 in zip(ss, bot, ub):  # the upper lip's bottom (the lip line) only moves by the downturn
+            self.assertAlmostEqual(b1, b0 - LP.downturn(s_, f), places=9)
+        self.assertLess(ub[0], ub[2])  # the corners lower than the centre
+
+    def test_one_fang_place(self):  # M13b: one x for every shape but O, bigger than M13's
+        p = FG.merged()
+        self.assertGreater(p["x_m"], 0.0)
+        self.assertGreater(p["length"], FG._FANG_M13["length"])
+        self.assertGreater(p["radius"], FG._FANG_M13["radius"])
+        self.assertEqual(set(p["ring_drop"]), {"A", "E"})
 
 
 if __name__ == "__main__":

@@ -14,18 +14,39 @@ tip, never a point. FANG (a variant merges over it, merged()):
 - radius: the base's half width, m; tip: the tip's radius as a share of it (a blunt, round end); pw: the taper's
   exponent (1: a straight cone; above 1 fuller toward the tip); flat: the
   section's front-to-back half axis as a share of the side-to-side one (a slightly flattened tooth);
-- curve: the tip's sideways bend toward the face's centre line, as a share of the length (the sheet's fangs lean in
-  a little); lean: the tip's extra forward lean, as a share of the length;
+- curve: the tip's sideways bend toward the face's centre line, as a share of the length (M13 read the sheet's fangs
+  as leaning in; M13b: they lean out a little, so negative); lean: the tip's extra forward lean, as a share of
+  the length;
 - root: the share of the length below the root's top, hidden behind the lower lip (it rises from behind it); out: above the root, the share of the fang's front-to-back half axis in front of the lips' front (1:
   touching, the whole fang in front);
 - lift: the root's top (where the fang leaves the lips) above the lower lip's top, m.
+
+M13b (UPDATE 22: the M13 fangs read as small thin pins hanging in front of the lip, floating on the cheeks in O and
+jumping between shapes):
+- x_m: when set, every shape's fang stands this far from the face's centre line (m), the same in rest, M, small, A
+  and E: the fangs sit on the lower jaw, which only drops (no sideways jump between pieces); x and x_open are then
+  unused. O's pursed lips pull them in: O's fangs stand o_in of their base radius inside the pursed ring's outer edge
+  (attached to its sides, not on the cheek);
+- sink: below the root the axis sinks this share of the fang's front-to-back half axis behind the lips' front (the
+  lower lip wraps the base: the fang rises out of it); blend: the share of the length over which the axis moves from
+  sunk to standing in front, starting blend_at of it below the root;
+- keep_front: above and below the lips the axis keeps the nearest lip's front (0: the skin's, M13; the philtrum
+  slopes back, so the tip bent back toward the face and read as a flat top from the front);
+- ring_drop: per open ring (A, E) the root's height, this share of the ring's half height below its centre (on the
+  lower lip in the opening's corner; the jaw drop lowers it with the lower lip).
 """
 from __future__ import annotations
 
 import math
 
-FANG = {"x": 0.72, "x_open": 0.80, "o_gap": 0.002, "o_drop": 0.40, "length": 0.020, "radius": 0.0065, "tip": 0.50,
-        "pw": 1.6, "flat": 0.90, "curve": 0.08, "lean": 0.0, "root": 0.30, "out": 0.70, "lift": 0.0}
+_FANG_M13 = {"x": 0.72, "x_open": 0.80, "o_gap": 0.002, "o_drop": 0.40, "length": 0.020, "radius": 0.0065, "tip": 0.50,
+              "pw": 1.6, "flat": 0.90, "curve": 0.08, "lean": 0.0, "root": 0.30, "out": 0.70, "lift": 0.0,
+              "sink": 0.5, "blend": 0.25, "blend_at": 0.5}
+# M13b: the pick of M13b's grids (docs/godot.md, M13b) over M13's fangs.
+FANG_M13B = {"x_m": 0.034, "o_in": 0.6, "o_drop": 0.80, "ring_drop": {"A": 0.40, "E": 0.25}, "length": 0.025,
+             "radius": 0.0075, "tip": 0.42, "pw": 1.3, "flat": 0.95, "curve": -0.08, "root": 0.15, "out": 0.50,
+             "sink": 1.0, "blend": 0.30, "blend_at": 0.0, "keep_front": 1}
+FANG = dict(_FANG_M13, **FANG_M13B)
 SEG = 18  # around
 ROWS = 16  # along the body (base to the tip's cap)
 CAP = 5  # rings of the round tip
@@ -140,15 +161,17 @@ def axis_depths(zs: list[float], fronts: list[float | None], skin: list[float], 
         if lo is not None and hi is not None:
             f = (zs[i] - zs[lo]) / max(1e-9, zs[hi] - zs[lo])
             fr.append(fronts[lo] + (fronts[hi] - fronts[lo]) * f)
+        elif p.get("keep_front") and (lo is not None or hi is not None):  # M13b: past the lips the nearest lip's
+            fr.append(fronts[lo if lo is not None else hi])  # front (the skin's bent the tip back: a flat top)
         else:
             fr.append(skin[i])
     fr = [min(f, s) for f, s in zip(fr, skin)]  # never behind the skin
     want = []
     for z, f, r in zip(zs, fr, radii):
         h = r * p["flat"]
-        u = max(0.0, min(1.0, (z - z_root) / max(1e-6, 0.25 * p["length"]) + 0.5))
+        u = max(0.0, min(1.0, (z - z_root) / max(1e-6, p.get("blend", 0.25) * p["length"]) + p.get("blend_at", 0.5)))
         u = u * u * (3 - 2 * u)
-        want.append(f + h * (0.5 * (1 - u) - p["out"] * u))
+        want.append(f + h * (p.get("sink", 0.5) * (1 - u) - p["out"] * u))
     if not straight:
         y = list(want)
         for _ in range(6):  # smooth, then keep the part above the root in front
