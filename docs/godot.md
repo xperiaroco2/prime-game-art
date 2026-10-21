@@ -2122,13 +2122,31 @@ a time, by visibility.
   - **The balls' aim:** `alien.gd aim_in_deg` 11.5 undid S2a's sockets' 8 degrees outward plus 3.5 of convergence;
     M15's units already look straight, so 11.5 made them cross-eyed. `alien_m6.py` writes the units' own outward look
     (`splay_deg`, from the `Eye_<side>` axes: 7.9 on older kits, 0 on M15's) into alien_lip's `prime_lids`; with it
-    `alien.gd` turns the balls in by `AIM_CONVERGE_DEG` 3.5 plus `splay_deg`; a kit without it keeps 11.5.
+    `alien.gd` turns the balls in by `AIM_CONVERGE_DEG` 3.5 plus `splay_deg`; a kit without it keeps 11.5 (an older
+    kit rebuilt with this `alien_m6.py` measures 7.93, so 11.43: within a tenth of a degree, not identical).
   - **Two routes:** `--character` is the S chain's stage (the final kit: AO, UV, sculpt, bake and textures all see the
     new socket); `--kit` runs on a finished kit (M10's `m5/export`) for the depth grid, where the skin's maps stay
     M10's (the UVs ride with the vertices), so only the shape is new.
   - **Proofs:** `godot/alien/m15_shots.gd` "depth" (the reference row of e2 and el2, then per kit bored, manic and
     bored with the skin plain grey, front / 3/4 / profile at 0.4 m and 3/4 at 1.2 m) and m10_shots.gd's "head" gate.
     Tests: `tools/tests/test_alien_fit_geom.py` (its numpy checks run in background Blender's Python).
+  - **M15b** (brief UPDATE 32-33, PR #253's fresh review): `origin/main` merged (the tongue mouth, M16's pout) and the
+    kit rebuilt with every mouth.
+    - **The GLB's rest aim:** the assembler turns each ball `EYE_AIM_IN` 11.5 in against S2a's sockets; the fit
+      straightened the unit and kept that turn, so Blender and three.js showed the eyes crossed (only Godot, which sets
+      the turn absolutely, was right). The fit now sets each ball's rest turn to `alien_face.EYE_AIM_CONVERGE` 3.5 plus
+      its unit's remaining outward look (`rest_aim`, reported as `ball_aim_in_deg` [before, after]), the same as
+      `alien.gd rest_aim_deg()`; `test_alien_face_constants` checks the constant against `AIM_CONVERGE_DEG`.
+    - **Mirrored sockets:** S2a's two sockets differ by about 0.3 mm; the fit places both new units from their
+      mirrored mean (centre, axis, ball radius), so the two spheres and cuts are mirrors (each unit still moves from
+      its own centre and turns by its own axis).
+    - **The lashes on this socket:** `alien_lashes_geom.SOCKET_LASHES["m15"]` (`liner_t_in_deg` -42, `sink` 0.003) goes
+      under any `--lashes` spec when the Body's `prime_socket` route is `m15` (`alien_lashes.py socket_route()`; the
+      report's `socket_route`): with `LASHES`' defaults the liner's inner end came within 0.12 mm of the socket skin and
+      a lash root touched the slim lower lid in bored's half state. Older kits build as before.
+    - **alien.gd:** `_has_splay` (not a negative `_splay_deg`), `setup()` resets the lids' reaches and the splay for
+      each kit; `alien_fit_geom.set_fit` range-checks every key. Tests: `test_alien_splay.py` (fast: the formula, the
+      marker, the fallback, the reset, the fit's rest), `test_alien_lashes.py` (the socket defaults).
 
 ## Findings for later tasks
 
