@@ -75,8 +75,10 @@ def build(layout: dict, out: Path, only: list[str]) -> int:
     request = common.OUT / "ship" / "build_request.json"
     request.parent.mkdir(parents=True, exist_ok=True)
     request.write_text(json.dumps({"layout": layout, "only": only}, indent=1), encoding="utf-8", newline="\n")
+    old = _old_report(out) if only else {}
     blender.run_script(BUILD_SCRIPT, ["--request", str(request), "--out", str(out)], timeout=BUILD_TIMEOUT)
     report = json.loads((out / "build_report.json").read_text(encoding="utf-8"))
+    _keep_others(out, report, old)
     reports = out / "reports"
     reports.mkdir(exist_ok=True)
     bad = []
@@ -93,6 +95,17 @@ def build(layout: dict, out: Path, only: list[str]) -> int:
         return 1
     common.ok(f"ship --build: {len(report['pieces'])} GLBs, {tris} triangles, glTF-Validator clean -> {out.as_posix()}")
     return 0
+
+
+def _old_report(out: Path) -> dict:
+    path = out / "build_report.json"
+    return json.loads(path.read_text(encoding="utf-8"))["pieces"] if path.is_file() else {}
+
+
+def _keep_others(out: Path, report: dict, old: dict) -> None:
+    """An --only build keeps the other pieces' entries of the previous report (the lanes build their own pieces)."""
+    merged = {**{k: v for k, v in old.items() if Path(v["glb"]).is_file()}, **report["pieces"]}
+    (out / "build_report.json").write_text(json.dumps({"pieces": merged}, indent=1), encoding="utf-8", newline="\n")
 
 
 # --- Godot ---------------------------------------------------------------------------------------------------------
@@ -171,12 +184,55 @@ def godot_check(layout: dict, out: Path, folder: Path) -> int:
     return 0
 
 
+def shot_views(layout: dict) -> tuple[list, list]:
+    """The review views: the exterior lane's (exterior.toml [shots], each with its 2D sheet) replace ship.toml's of the
+    same name; ship.toml's others follow. Returns (views [name, title, eye, look, fov] in plan coordinates, compares
+    [name, reference image])."""
+    import tomllib
+    with (common.ROOT / layout["exterior"]).open("rb") as f:
+        ext = tomllib.load(f).get("shots", {})
+    mine = {v[0]: v for v in ext.get("views", [])}
+    views = list(mine.values()) + [v for v in layout["shots"]["views"] if v[0] not in mine]
+    compares = [[v[0], f"{ext['ref_dir'].rstrip('/')}/{v[5]}"] for v in mine.values() if len(v) > 5]
+    return [v[:5] for v in views], compares
+
+
+def room_boxes(layout: dict) -> list:
+    """A reflection probe box per room: [id, centre (Godot), size (Godot), interior]; the tip rooms see the sky."""
+    deck = layout["deck"]
+    out = []
+    for r in layout["rooms"]:
+        if r["shape"] == "circle":
+            cx, cy, sx, sy = r["centre"][0], r["centre"][1], 2 * r["radius"], 2 * r["radius"]
+        else:
+            cx, cy = sum(r["x"]) / 2, sum(r["y"]) / 2
+            sx, sy = r["x"][1] - r["x"][0], r["y"][1] - r["y"][0]
+        hh = r.get("apex_h", r["clear_h"])
+        out.append([r["id"], _g([cx, cy, deck["floor_h"] + hh / 2]), [sx + 0.4, hh + 0.2, sy + 0.4],
+                    "window" not in r and not r.get("exit")])
+    return out
+
+
+def built_request(layout: dict, out: Path) -> tuple[dict, dict[str, Path]]:
+    """The scene part of a shoot or walk request from the pieces whose GLBs exist (the current whole while a lane
+    is mid-change); says which placed pieces are missing."""
+    ids = [p["id"] for p in layout["pieces"] if (out / f"{p['id']}.glb").is_file()]
+    missing = sorted({p["id"] for p in layout["pieces"]} - set(ids))
+    if missing:
+        common.say(f"  not built, left out: {', '.join(missing)}")
+    req = {"pieces": {pid: f"res://import/ship_{pid}.glb" for pid in ids},
+           "collide": [p["id"] for p in layout["pieces"] if p["collide"] and p["id"] in ids],
+           "place": [[pid, _g(at), yaw] for pid, at, yaw in layout["place"] if pid in ids]}
+    return req, {f"ship_{pid}": out / f"{pid}.glb" for pid in ids}
+
+
 def shoot(layout: dict, out: Path, folder: Path) -> int:
-    req, staged = scene_request(layout, out)
+    req, staged = built_request(layout, out)
+    views, compares = shot_views(layout)
     req.update({"mode": "shoot", "light": {**layout["light"], "lamps": [[*_g(l[:3]), *l[3:]] for l in layout["light"]["lamps"]]},
-                "views": [[v[0], v[1], _g(v[2]), _g(v[3]), v[4]] for v in layout["shots"]["views"]],
+                "views": [[v[0], v[1], _g(v[2]), _g(v[3]), v[4]] for v in views],
                 "top": {"name": "top", "title": "top: plan view, south up (as plan-3)", "size_m": 30.0},
-                "compare": [["top", layout["plan_ref"]]]})
+                "compare": [["top", layout["plan_ref"]], *compares], "rooms": room_boxes(layout)})
     errors = _stage(staged)
     folder.mkdir(parents=True, exist_ok=True)
     path = common.OUT / "ship" / "shoot_request.json"

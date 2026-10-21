@@ -161,7 +161,7 @@ plate = [
 # Review light (the exterior lane tunes it). lamps: [x, y, h, energy, range, r, g, b].
 [light]
 moon_dir_deg = [-38.0, 140.0]                # pitch, yaw
-moon_energy = 0.55
+moon_energy = 1.3                           # tuned by the exterior lane (ext1: 0.55 left the silver black)
 lamps = [
   [0.0, 0.0, 4.1, 2.2, 7.0, 1.0, 0.82, 0.6],
   [0.0, -4.0, 3.3, 1.0, 4.0, 1.0, 0.82, 0.6],

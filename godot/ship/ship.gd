@@ -25,6 +25,24 @@ var _out: String
 var _camera: Camera3D
 var _label: Label
 var _scenes: Dictionary = {}
+var _metals: Dictionary = {}
+
+## The shared metal library (metal.gdshader) by glTF material name: base colour, metallic, roughness, grain, seams,
+## scratches, grime. Other materials keep their glTF look.
+const METALS: Dictionary = {
+	"hull_silver": [Color(0.66, 0.68, 0.71), 0.6, 0.36, 0.6, 0.35, 0.55, 0.25],
+	"ext_silver_b": [Color(0.74, 0.76, 0.79), 0.6, 0.32, 0.6, 0.35, 0.5, 0.2],
+	"ext_silver_c": [Color(0.56, 0.58, 0.61), 0.6, 0.4, 0.6, 0.35, 0.6, 0.3],
+	"hull_dark": [Color(0.12, 0.125, 0.13), 0.8, 0.42, 0.4, 0.2, 0.4, 0.3],
+	"ext_frame": [Color(0.17, 0.18, 0.19), 0.85, 0.34, 0.35, 0.0, 0.35, 0.2],
+	"leg_metal": [Color(0.32, 0.33, 0.35), 0.9, 0.36, 0.5, 0.15, 0.6, 0.35],
+	"wall_panel": [Color(0.42, 0.44, 0.47), 0.75, 0.4, 0.4, 0.4, 0.3, 0.25],
+	"ceiling": [Color(0.36, 0.38, 0.41), 0.75, 0.42, 0.4, 0.4, 0.2, 0.2],
+	"ext_seam": [Color(0.035, 0.037, 0.04), 0.6, 0.6, 0.0, 0.0, 0.0, 0.0],
+}
+const METAL_KEYS: Array = ["metallic", "roughness", "grain", "seams", "scratches", "grime"]
+const LIGHT_CELL_M: float = 1.6
+const MAX_LIGHTS: int = 96
 
 
 func _initialize() -> void:
@@ -77,6 +95,9 @@ func _build() -> Node3D:
 	var shape: CollisionShape3D = CollisionShape3D.new()
 	shape.shape = WorldBoundaryShape3D.new()
 	ground.add_child(shape)
+	root.add_child(ground)
+	if _req["pieces"].has("ground"):  # the clearing's own ground piece draws it
+		return ship
 	var mesh: MeshInstance3D = MeshInstance3D.new()
 	var plane: PlaneMesh = PlaneMesh.new()
 	plane.size = Vector2(200, 200)
@@ -86,7 +107,6 @@ func _build() -> Node3D:
 	plane.material = mat
 	mesh.mesh = plane
 	ground.add_child(mesh)
-	root.add_child(ground)
 	return ship
 
 
@@ -182,24 +202,38 @@ func _walk(r: float, h: float, points: Array) -> Dictionary:
 
 
 # --- pictures ------------------------------------------------------------------------------------------------------
+## The night: the star sky (night_sky.gdshader), the look of godot/showroom/look_presets.json's High preset (AgX,
+## SSAO 0.6 / 1.5) at exposure 1.1 for a night exterior, glow for the emissive strips, SSIL, a thin blue distance fog,
+## the moonlight and the layout's lamps.
 func _environment() -> void:
 	var light: Dictionary = _req["light"]
 	var env: Environment = Environment.new()
 	var sky: Sky = Sky.new()
-	var sm: ProceduralSkyMaterial = ProceduralSkyMaterial.new()
-	sm.sky_top_color = Color(0.015, 0.025, 0.06)
-	sm.sky_horizon_color = Color(0.05, 0.07, 0.12)
-	sm.ground_bottom_color = Color(0.01, 0.012, 0.015)
-	sm.ground_horizon_color = Color(0.04, 0.05, 0.07)
+	var sm: ShaderMaterial = ShaderMaterial.new()
+	sm.shader = load("res://ship/night_sky.gdshader") as Shader
 	sky.sky_material = sm
+	sky.radiance_size = Sky.RADIANCE_SIZE_256
 	env.background_mode = Environment.BG_SKY
 	env.sky = sky
-	env.ambient_light_source = Environment.AMBIENT_SOURCE_SKY
-	env.ambient_light_energy = 0.6
+	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
+	env.ambient_light_color = Color(0.13, 0.155, 0.24)
+	env.ambient_light_energy = 0.9
 	env.reflected_light_source = Environment.REFLECTION_SOURCE_SKY
 	env.tonemap_mode = Environment.TONE_MAPPER_AGX
+	env.tonemap_exposure = 1.2
 	env.glow_enabled = true
+	env.glow_intensity = 0.6
+	env.glow_bloom = 0.03
+	env.glow_hdr_threshold = 1.0
+	env.glow_blend_mode = Environment.GLOW_BLEND_MODE_SOFTLIGHT
 	env.ssao_enabled = true
+	env.ssao_radius = 0.6
+	env.ssao_intensity = 1.5
+	env.ssil_enabled = true
+	env.fog_enabled = true
+	env.fog_light_color = Color(0.05, 0.07, 0.12)
+	env.fog_density = 0.0045
+	env.fog_sky_affect = 0.0
 	var we: WorldEnvironment = WorldEnvironment.new()
 	we.environment = env
 	root.add_child(we)
@@ -207,6 +241,7 @@ func _environment() -> void:
 	moon.light_color = Color(0.62, 0.72, 1.0)
 	moon.light_energy = float(light["moon_energy"])
 	moon.shadow_enabled = true
+	moon.directional_shadow_max_distance = 90.0
 	moon.rotation_degrees = Vector3(float(light["moon_dir_deg"][0]), float(light["moon_dir_deg"][1]), 0)
 	root.add_child(moon)
 	for l: Array in light["lamps"]:
@@ -219,9 +254,80 @@ func _environment() -> void:
 		root.add_child(omni)
 
 
+## The shared metal for a library material name (one ShaderMaterial per name, shared by every piece).
+func _metal(name: String) -> Material:
+	if not _metals.has(name):
+		var m: Array = METALS[name]
+		var sm: ShaderMaterial = ShaderMaterial.new()
+		sm.shader = load("res://ship/metal.gdshader") as Shader
+		var c: Color = m[0]
+		sm.set_shader_parameter("base_color", Vector3(c.r, c.g, c.b))
+		for i: int in METAL_KEYS.size():
+			sm.set_shader_parameter(METAL_KEYS[i], float(m[i + 1]))
+		_metals[name] = sm
+	return _metals[name]
+
+
+## The look: the library metal on every surface whose glTF material is one; an omni light for every cell of emissive
+## surfaces (the lamp and strip pieces light the ship). Returns the number of lights it added.
+func _dress(ship: Node3D) -> int:
+	var cells: Dictionary = {}
+	var stack: Array = [ship]
+	while not stack.is_empty():
+		var n: Node = stack.pop_back()
+		stack.append_array(n.get_children())
+		if not (n is MeshInstance3D) or (n as MeshInstance3D).mesh == null:
+			continue
+		var mi: MeshInstance3D = n
+		for i: int in mi.mesh.get_surface_count():
+			var mat: Material = mi.mesh.surface_get_material(i)
+			if mat == null:
+				continue
+			if METALS.has(mat.resource_name):
+				mi.set_surface_override_material(i, _metal(mat.resource_name))
+			elif mat is BaseMaterial3D and (mat as BaseMaterial3D).emission_enabled:
+				var bm: BaseMaterial3D = mat
+				var box: AABB = mi.global_transform * mi.mesh.get_aabb()
+				var area: float = maxf(box.size.x * box.size.z, maxf(box.size.x * box.size.y, box.size.y * box.size.z))
+				var c: Vector3 = box.get_center()
+				var key: String = "%d_%d_%d_%s" % [floori(c.x / LIGHT_CELL_M), floori(c.y / LIGHT_CELL_M),
+					floori(c.z / LIGHT_CELL_M), bm.emission.to_html(false)]
+				if not cells.has(key):
+					cells[key] = [Vector3.ZERO, 0.0, bm.emission, 0.0]
+				var cell: Array = cells[key]
+				cell[0] = (cell[0] as Vector3) + c * area
+				cell[1] = float(cell[1]) + area
+				cell[3] = maxf(float(cell[3]), bm.emission_energy_multiplier)
+	var list: Array = cells.values()
+	list.sort_custom(func(a: Array, b: Array) -> bool: return float(a[1]) > float(b[1]))
+	for cell: Array in list.slice(0, MAX_LIGHTS):
+		var omni: OmniLight3D = OmniLight3D.new()
+		omni.position = (cell[0] as Vector3) / maxf(float(cell[1]), 1e-6) + Vector3(0, 0.12, 0)
+		omni.light_color = (cell[2] as Color).lightened(0.15)
+		omni.light_energy = clampf(sqrt(float(cell[1])) * 0.9 * minf(float(cell[3]), 6.0) / 3.0, 0.08, 1.6)
+		omni.omni_range = clampf(2.2 + sqrt(float(cell[1])) * 2.0, 2.2, 5.0)
+		omni.omni_attenuation = 1.6
+		root.add_child(omni)
+	return mini(list.size(), MAX_LIGHTS)
+
+
+## A reflection probe per room (the request's rooms: [id, centre [x, h, y], size [x, h, y], interior]).
+func _probes() -> void:
+	for r: Array in _req.get("rooms", []):
+		var probe: ReflectionProbe = ReflectionProbe.new()
+		probe.position = _v(r[1])
+		probe.size = _v(r[2])
+		probe.box_projection = true
+		probe.interior = bool(r[3])
+		probe.update_mode = ReflectionProbe.UPDATE_ONCE
+		root.add_child(probe)
+
+
 func _shoot() -> void:
 	_environment()
-	_build()
+	var lights: int = _dress(_build())
+	_probes()
+	print("SHIP look: %d emissive lights" % lights)
 	_camera = Camera3D.new()
 	_camera.near = 0.05
 	_camera.far = 500.0
@@ -259,7 +365,6 @@ func _shoot() -> void:
 		ref.convert(Image.FORMAT_RGB8)
 		var pair: Image = _sheet([[ref, images[c[0]]]])
 		_save(pair, _out.path_join("compare_%s.png" % c[0]))
-		rows.append([ref, images[c[0]]])
 	var names: Array = images.keys()
 	for i: int in range(0, names.size(), 3):
 		rows.append(names.slice(i, i + 3).map(func(n: String) -> Image: return images[n]))
