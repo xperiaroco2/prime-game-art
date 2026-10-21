@@ -2144,7 +2144,7 @@ a time, by visibility.
 - **M16d, the pout's rest slimmed to mp1's measured proportions** (brief UPDATE 37 and 39; output under
   `D:/prime-art-raw/review/char/alien-parts-kit/M16d/`, the kit on M15's head as M16c). The engineer: the rest looked
   "stung by a wasp", swollen; mp1's sheet reads slim and elegant.
-  - **Measured** (the drivers' `measure.py`: the red lip mask of a front image; per column the lips' top and bottom,
+  - **Measured** (`tools/runner/mouth_measure.py`, mp1's box documented there: the red lip mask of a front image; per column the lips' top and bottom,
     the lip line the darkest row of the middle half; at the centre each lip's height over the mouth's width W; the
     corner length: from each tip to where the lips' height first reaches half the centre's, over W / 2; the tip:
     the height 1/8 W in from the tip over the centre's; in profile the lips' stand-off beyond the line from the skin
@@ -2159,12 +2159,38 @@ a time, by visibility.
     `corner_tuck` 0.7, `min_b` 0.8 mm, `corner_over` 0.6, `closed` ("rest",) (`rest_stations` closes every station of
     the shape: rest's traced 1-2 px gap notched the lip line either side of the centre, and its dark strip goes with
     it). Ours now: upper 0.30, lower 0.29, both 0.59, lower / upper 0.97, corner 0.29-0.30, tip 0.40-0.42, stand-off
-    0.21, each within 5 % of mp1's. The open rings read their own `plump` 1.15 (`_POUT_RING`), so A, E, O keep their
+    0.21: these within 5 % of mp1's, except two: the width against the face (0.67-0.69 against mp1's 0.58, our jaw
+    is narrower) and the stand-off (0.21, a shade above the inferred 0.15-0.20). The open rings read their own `plump` 1.15 (`_POUT_RING`), so A, E, O keep their
     lips (A 76.2 x 73.9, E 89.2 x 58.5, O 66.4 x 60.7 mm).
   - **Grids** (`M16d/godot/g1/vgrid.png` .. `g5/vgrid.png`; row 1 mp1, row 2 the kit; rest front / 3/4 / profile at
     0.4 m, front and 3/4 at 1.2 m): g1 fullness, balance, depth and width; g2 depth 0.6 with the taper (`pw` 1.3 / 1.0,
     tuck, share); g3 the heights round it (upper 1.10 / 1.15, lower 0.95, plump 1.05, `depth_l`); g4 the pick on rest,
     M and small; g5 depth 0.5 / 0.6, `depth_l` 0.70 / 0.75, the ends' `min_b` and `corner_over`.
+- **M16e, the pout's profile and the open shapes** (brief UPDATE 41, PR #258's review; output under
+  `D:/prime-art-raw/review/char/alien-parts-kit/M16d/`, the kit on M17's head, sheets in `M16d/godot/m16e/`, grids
+  `M16d/godot/e1..e3/vgrid.png`, M16d's kit kept in `M16d/export_old/`).
+  - **Major 1, the profile:** M16d's shallow tubes (`depth` 0.5, `depth_l` 0.75 at the same height) were flat blades
+    in profile: the upper lip curled to a point, the lower hung as a narrow tongue with a sharp downward tip. Two new
+    closed-lip keys (`alien_mouths.build_piece`): `sink`, the share of a tube's depth inside the skin (default
+    `SINK` 0.30), so a rounder tube sits deeper and stands off no further; `tube_n_flat`, each station's normal
+    blended toward the mouth's mean normal along the lip line (the skin under the lower lip faces down toward the
+    chin, and the tube's section followed it). e1 (depth 0.8-1.0, sink 0.30-0.55, `tube_n_flat` 0.6 / 1.0,
+    `square` 1.0, `lean` 0.2): depth 0.9 turns both lips into round cushions; sink 0.5 brings the stand-off from
+    0.31 to 0.28 of the width; `tube_n_flat` 0.6 turns the lower lip forward and keeps the front ratios (1.0 made the
+    upper lip 0.34 and the lower 0.27 of the width). e2: the lower lip 1.05 (the round tube measured it 0.93 of the
+    upper), sink 0.6 (no visible gain). **Pick:** `depth` 0.9, `depth_l` 1.0, `sink` 0.5, `tube_n_flat` 0.6, `lower`
+    1.05: front upper 0.30, lower 0.30 of the width as M16d (rest 40 / 40 px at 0.4 m), stand-off 0.28 (round
+    cushions now; M16's 0.36 was a swollen pair).
+  - **Major 2, the talk's jump:** measured on the front cells (px at 0.4 m at the lips' centre, the tongue left out
+    by `r > b + 85`), M16d's rings were no thicker than the rest: A 34 / 38, E 29 / 34, O 29 / 43 px against rest
+    40 / 40. The jump was the rest's blades against the rings' round rolls (major 1 fixes it) and the rings' thick
+    round corners against the rest's fine points. e2 (ring `plump` 1.0 / 0.9, the rest's balance) and e3 (plump 1.0
+    with each ring's own upper / lower, A's and E's `corner` 0.50 / 0.45 and 0.40 / 0.35, A's `wide` 1.0). **Pick:**
+    `_POUT_RING` plump 1.0; A upper 1.15, lower 1.20, corner 0.40, wide 1.0; E upper 1.15, lower 1.25, corner 0.35;
+    O upper 1.10, lower 1.10 (each ring's lips a little under the rest's: an open lip stretches thinner).
+  - **Minors:** `mouth_measure.py` committed (PR #258 minor 3); small's parting eases each lip's seam overlap out
+    over the first 3 px of the gap (`alien_lips_geom.parted`'s `overlap`; the slit's ends stepped 3 px, minor 5);
+    `corner_tuck` bounded 0.5-1.2 in `test_alien_m12.py` (minor 7).
 - **M15, the eye socket rebuilt for the 80 % eye** (brief UPDATE 26; output under
   `D:/prime-art-raw/review/char/alien-parts-kit/M15/`). The engineer's pick `e80_p85_w80` showed "weird things" in the
   sockets (M10c's skin collar filling the gap between the 80 % eye and the socket sculpted for S9's big eye) and eyes
