@@ -78,6 +78,10 @@ uniform vec3 tex_pale = vec3(0.7105, 0.8276, 0.6209);  // linear: its kit pale (
 uniform float tex_sat : hint_range(0.0, 2.0) = 1.0;
 uniform float tex_pale_sat : hint_range(0.0, 2.0) = 1.0;
 uniform float tex_value : hint_range(0.0, 2.0) = 1.0;
+// Test D (art #196): the pale (face, throat, belly) toward the 2D's mid sage: its value and a linear tint, both on the
+// light mask only (the dome's teal unchanged); identity at the defaults.
+uniform float pale_value : hint_range(0.0, 2.0) = 1.0;
+uniform vec3 pale_mul = vec3(1.0, 1.0, 1.0);
 uniform float roughness_add : hint_range(-0.5, 0.5) = 0.0;
 uniform float sss_thin : hint_range(0.0, 2.0) = 0.0;  // the SSS strength gained at the mask's white (sss + sss_thin * mask)
 uniform float transmit : hint_range(0.0, 1.0) = 0.0;  // the transmittance's boost at the mask's white
@@ -163,7 +167,7 @@ void fragment() {
 		vec4 t = texture(albedo_tex, UV);
 		vec3 orm = texture(orm_tex, UV).rgb;
 		float lm = light * light_mix;
-		c = sat(t.rgb, mix(tex_sat, tex_pale_sat, lm)) * mix(tex_value, 1.0, lm);
+		c = sat(t.rgb, mix(tex_sat, tex_pale_sat, lm)) * mix(tex_value, pale_value, lm) * mix(vec3(1.0), pale_mul, lm);
 		// another hue: the flat colour of the procedural path, darkened by the texture's AO as the teal's albedo is;
 		// the texture's roughness, AO and normal map stay. (Re-tinting the teal texture by its luminance drew dark
 		// smudges where its blurred accent passed the vertex mask, and grey rings round the knee spots.)
@@ -194,7 +198,7 @@ void fragment() {
 		// the textured teal's saturation and value (identity at the defaults; a crest beside a textured head)
 		float lm = light * light_mix;
 		float keep = 1.0 - clamp(distance(hue, tex_hue) * 200.0, 0.0, 1.0);
-		c = mix(c, sat(c, mix(tex_sat, tex_pale_sat, lm)) * mix(tex_value, 1.0, lm), keep);
+		c = mix(c, sat(c, mix(tex_sat, tex_pale_sat, lm)) * mix(tex_value, pale_value, lm) * mix(vec3(1.0), pale_mul, lm), keep);
 		// baked AO
 		float ao = COLOR.r;
 		c *= mix(1.0, ao, ao_albedo);

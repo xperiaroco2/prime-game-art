@@ -79,6 +79,14 @@ class SkinTex(unittest.TestCase):
         self.assertEqual(vals[:3], self.t.TEAL_SRGB)
         self.assertEqual(vals[3:], self.t.PALE_SRGB)
 
+    def test_pale_terms_are_identity_and_on_the_light_mask(self):  # Test D (art #196): today's look by default
+        self.assertEqual(self.vec3_default("pale_mul"), (1.0, 1.0, 1.0))
+        m = re.search(rf"^uniform float pale_value\b[^=]*= ({NUM});", self.sh, re.M)
+        self.assertIsNotNone(m)
+        self.assertEqual(float(m.group(1)), 1.0)
+        # both paths: the value and the tint mix in by lm (the light mask), so the dome's teal (lm = 0) is unchanged
+        self.assertEqual(self.sh.count("mix(tex_value, pale_value, lm) * mix(vec3(1.0), pale_mul, lm)"), 2)
+
     def test_every_skin_tex_key_is_a_uniform(self):
         for k in gd_dict(self.gd, "SKIN_TEX"):
             with self.subTest(key=k):

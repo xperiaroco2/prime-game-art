@@ -2438,6 +2438,25 @@ a time, by visibility.
   - the heavy pout tests read `M20d/export`: the contact (`full` >= 140, `touched` >= 329), the dimple from
     `fit.json`, and the open rings' lip depth at the centre (`alien_pout_check.py` `rolls`, M20b's depth 1.0: A
     19.4, E 17.1, O 20.1 mm; at least A 23, E 20.5, O 24).
+- **Test D, one material** (brief UPDATE 53; output `D:/prime-art-raw/review/char/alien-parts-kit/TD/`, handoff
+  `handoff-TD.md`): can today's parts kit read as one painted head by material and light alone? No geometry changed.
+  - `alien_hue.gdshader` gained `pale_value` and `pale_mul` (linear), both mixed in by the light mask on both paths, so
+    the face, throat and belly darken and tint while the dome's teal stays; identity at the defaults (1.0, (1, 1, 1)),
+    so the shipped look is unchanged (test `test_pale_terms_are_identity_and_on_the_light_mask`).
+  - `td_shots.gd`, the proof: looks (skin uniforms, face material uniforms in sRGB, light energies, angular size,
+    blur and position, the environment's ambient, SSAO and exposure, and the diffuse mode: the skin, lip and mouth
+    part shaders recompiled from `diffuse_lambert_wrap` to `diffuse_burley`) as a grid (skins x lights x lips, the
+    pout at rest from the front at 0.4 m and 3/4 at 1.2 m, `grid.json` with the mouth's box per cell) and as view
+    rows beside the 2D sheets. The cells are measured with the step back's `scripts/measure.py` (median luminance,
+    saturation, spread round the mouth).
+  - Measured round the mouth, front at 0.4 m (2D: skin 122-154, sat 0.14-0.23, sd 36-45, darkest 10 % 86-95; lips
+    90-135, sd 28-32, sat 0.48-0.56, hue 6-13): today skin 195 / 0.096 / 16 / 173, lips 117 / 18 / 0.57 / 6; the
+    pick skin 131 / 0.183 / 34 / 78, lips 111 / 31 / 0.56 / 11. The biggest single lever for form was the diffuse:
+    the lambert wrap on the skin flattened the shading (sd 16 -> 22-24 with burley at the same light); more skin
+    sheen (roughness down, specular up) lowered the spread (the sky's reflection fills the shadow side). The spread
+    stays below the 2D's 36 on this flat lower face: the rest is form (Test B), not material.
+  - The pick is not in `alien.gd` or `look_presets.json`: the look needs the engineer's yes (the values are in the
+    handoff and `TD/final/spec.json`).
 
 ## Findings for later tasks
 
