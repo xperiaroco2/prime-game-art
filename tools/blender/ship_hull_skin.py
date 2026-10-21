@@ -149,6 +149,14 @@ def section(x: float, var: dict) -> list[tuple[float, float]]:
     return [pts[i] for i in range(14)]
 
 
+def _turn_up(verts, faces, ref):
+    """Faces of one loft or revolve share one winding: turn them all so faces[ref] (a ridge face) points up (+h).
+    ship_lib.orient's inner-point test failed on the long flat blades far from the axis (tops turned down)."""
+    p = [verts[i] for i in faces[ref]]
+    n = H._newell(p)
+    return faces if n[2] > 0 else [tuple(reversed(f)) for f in faces]
+
+
 def _loft(xs, var, side, skip=None):
     secs = [[(side * x, y, h) for y, h in section(x, var)] for x in xs]
     n = 14
@@ -160,10 +168,8 @@ def _loft(xs, var, side, skip=None):
                 continue
             faces.append((i * n + j, i * n + (j + 1) % n, (i + 1) * n + (j + 1) % n, (i + 1) * n + j))
 
-    def inner(c):
-        loop = section(min(max(abs(c[0]), 0.0), TIP_X), var)
-        return (c[0], sum(p[0] for p in loop) / n, 2.4)
-    return verts, L.orient(verts, faces, inner)
+    ref = next(k for k, f in enumerate(faces) if f[0] % n == 4)
+    return verts, _turn_up(verts, faces, ref)
 
 
 def _mouth_skip(x0, x1, j):
@@ -221,8 +227,8 @@ def _tip(var, side, layout):
             face = [q for k, q in enumerate(quad) if math.dist(verts[q], verts[quad[k - 1]]) > 1e-6]
             if len(face) >= 3:
                 faces.append(tuple(face))
-    faces = L.orient(verts, faces, lambda c: (side * TIP_X, 0.0, 2.4))
-    return verts, faces
+    ref = next(k for k, f in enumerate(faces) if f[0] % m == 6 and abs(verts[f[0]][2] - EAVE_TIP[1]) < 1e-6)
+    return verts, _turn_up(verts, faces, ref)
 
 
 def hull_skin(args: dict, layout: dict) -> list:

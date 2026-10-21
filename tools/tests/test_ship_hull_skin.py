@@ -71,18 +71,18 @@ class HullSkinTest(unittest.TestCase):
             self.assertFalse(c[0] < 1.3 and c[1] < -4.5 and 1.0 < c[2] < 3.6, f"skin across the mouth at {c}")
 
     def test_faces_point_outward_after_the_mirror(self) -> None:
-        """The harness writes (x, -y, h): after it, every wing face's normal points away from its section's middle."""
-        for part in ("wing1", "wing2"):
-            parts = S.hull_skin({"part": part, "side": 1.0, "variant": "F"}, LAYOUT)
-            seam = [p for p in parts if p["name"].endswith("_seam")][0]
-            verts = [(x, -y, h) for x, y, h in seam["verts"]]
-            for face in seam["faces"]:
+        """The harness writes (x, -y, h): after it, the tops of the blades and of the swept tip's plate face up and the
+        belly faces down (the inner-point test once turned the far blades' tops down; Godot culled them)."""
+        var = S.VARIANTS["F"]
+        meshes = [(S._loft(S.STATIONS[p], var, 1.0), 14, set(range(9))) for p in ("wing1", "wing2", "wing3")]
+        meshes.append((S._tip(var, 1.0, LAYOUT), 9, set(range(3, 9))))
+        for (verts, faces), n, upper in meshes:
+            for face in faces:
                 p = [verts[i] for i in face]
-                c = [sum(q[k] for q in p) / len(p) for k in range(3)]
-                loop = S.section(c[0], S.VARIANTS["F"])
-                mid = (-sum(q[0] for q in loop) / 14, 2.4)
-                n = newell(p)
-                self.assertGreater(n[1] * (c[1] - mid[0]) + n[2] * (c[2] - mid[1]), 0.0, f"inward face at {c}")
+                nz = newell(p)
+                size = math.sqrt(sum(v * v for v in nz)) or 1.0
+                if abs(nz[2]) / size > 0.5:  # plan coordinates: the final outward normal (mirror and _outward cancel)
+                    self.assertEqual(nz[2] > 0, face[0] % n in upper, f"face {face[0] % n} at {p[0]} turned")
 
     def test_the_footprint_rows_follow_the_skin(self) -> None:
         rows = {r[0]: r for r in LAYOUT["hull"]["core"]}
