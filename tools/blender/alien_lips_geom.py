@@ -142,8 +142,10 @@ _POUT_RING = {"lean": 0.25, "bow_w": 0.16, "bow_peak": 0.10, "bow_at": 0.24, "cu
 # corner x the lips' mean thickness), A's too tall (open 0.88), O's hole too big and its lips thin (hole 0.18). What
 # still read thinner than the AI rest at 3/4 was the rolls' depth front to back: `depth` 1.3 (alien_mouths: a ring's
 # own roll depth), pushed back so the lips' front stands where the rest's does (16.0 / 15.4 mm ahead of the skin, A
-# and E 16.0 / 15.4, O 25.5 / 27.9 as M20b's). After: A 0.29 / 0.40 / 0.31 / 0.79, E 0.20 / 0.23 / 0.23 / 0.78, O
-# 0.33 / 0.15 / 0.39 / 0.29. The pick of M20c's depth x stand-off grids (docs/godot.md, M20c).
+# and E 16.0 / 15.4, O 25.5 / 27.9 as M20b's). After: A 0.30 / 0.39 / 0.32 / 0.76, E 0.21 / 0.23 / 0.22 / 0.78, O
+# 0.32 / 0.15 / 0.40 / 0.29. The pick of M20c's depth x stand-off grids (docs/godot.md, M20c).
+# M20d (PR #262's fresh review minor 3, brief UPDATE 49): O's hole measured 0.15 of W against mp1's 0.20 (a thick
+# donut): hole 0.23 measures 0.30 / 0.21 / 0.37 / 0.34 (its height as mp1's; still wider than mp1's round 0.23).
 _POUT_RING_TALK = dict(_POUT_RING, bow_w=0.12, bow_peak=0.40, bow_at=0.22)
 LIP_SHAPE_POUT = {
     "w": 1.0, "corner": 0.06, "pw": 1.3, "full": 1.0, "upper": 1.10, "lower": 1.05,
@@ -158,7 +160,7 @@ LIP_SHAPE_POUT = {
                   push=-0.0090, push_lo=-0.0016, **_POUT_RING_TALK),
         "E": dict(_RING, n=2.0, corner=0.57, depth=1.3, upper=1.15, lower=1.25, bow=0.30, push=-0.0063,
                   push_lo=-0.0027, **_POUT_RING_TALK),
-        "O": dict(_RING, n=2.0, hole=0.18, corner=1.0, thick=0.9, depth=1.3, bow=0.30, tuck=0.0, cup_throat=0.85,
+        "O": dict(_RING, n=2.0, hole=0.23, corner=1.0, thick=0.9, depth=1.3, bow=0.30, tuck=0.0, cup_throat=0.85,
                   upper=1.10, lower=1.10, push=-0.0085, **_POUT_RING),
     },
 }

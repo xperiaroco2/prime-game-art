@@ -104,7 +104,7 @@ class PoutShapeTest(unittest.TestCase):
         p = LP.merged_pout({"size": 0.9, "ring_param": {"O": {"hole": 0.2}}})
         self.assertEqual(p["size"], 0.9)
         self.assertEqual(p["ring_param"]["O"]["hole"], 0.2)
-        self.assertEqual(LP.LIP_SHAPE_POUT["ring_param"]["O"]["hole"], 0.18)  # the default is not changed (M20c)
+        self.assertEqual(LP.LIP_SHAPE_POUT["ring_param"]["O"]["hole"], 0.23)  # the default is not changed (M20d)
         self.assertEqual(LP.merged_pout(None), LP.LIP_SHAPE_POUT)
 
 
@@ -153,7 +153,7 @@ class RingParamTest(unittest.TestCase):
         (cx, cy), pairs, _o0, _cw = self.ring("O")
         r = [math.hypot(i[0] - cx, i[1] - cy) for i, _o in pairs]
         self.assertLess(max(r) / min(r), 1.01)
-        self.assertAlmostEqual(min(r), 0.18 * self.MEAS["O"]["W"], places=3)  # M20c: mp1's measured hole
+        self.assertAlmostEqual(min(r), 0.23 * self.MEAS["O"]["W"], places=3)  # M20d: shot, mp1's 0.20
         outer = [q[1] for q in pairs]
         w = max(x for x, _y in outer) - min(x for x, _y in outer)
         self.assertLess(w, 2 * self.MEAS["O"]["W"] * 1.08)  # the kiss keeps about the sheet's size
@@ -166,7 +166,7 @@ class RingParamTest(unittest.TestCase):
         q = LP.merged_pout({"ring_param": {"O": {"hole": 0.3}}})
         self.assertEqual(q["ring_param"]["O"]["hole"], 0.3)
         self.assertEqual(q["ring_param"]["O"]["corner"], 1.0)  # merged key by key
-        self.assertEqual(LP.LIP_SHAPE_POUT["ring_param"]["O"]["hole"], 0.18)
+        self.assertEqual(LP.LIP_SHAPE_POUT["ring_param"]["O"]["hole"], 0.23)
 
 
 class LayoutTest(unittest.TestCase):
