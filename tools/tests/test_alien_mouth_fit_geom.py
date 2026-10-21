@@ -76,6 +76,20 @@ class BackTest(unittest.TestCase):
         self.assertEqual(G.close_back(-0.10, 1.0, None), -0.10)  # no skin found
 
 
+class TaperTest(unittest.TestCase):
+    def test_moved_vertex_comes_in(self):
+        x, y, z = G.taper_back((0.04, -0.10, 0.02), 1.0, -0.09, (0.0, 0.0), 0.02, 0.003, 0.35)
+        self.assertAlmostEqual(y, -0.087)
+        k = 1 - 0.35 * 0.013 / 0.02
+        self.assertAlmostEqual(x, 0.04 * k)
+        self.assertAlmostEqual(z, 0.02 * k)
+
+    def test_at_most_half_and_unmoved_stays(self):
+        x, _y, _z = G.taper_back((0.04, -0.20, 0.0), 1.0, -0.09, (0.0, 0.0), 0.01, 0.003, 1.0)
+        self.assertAlmostEqual(x, 0.02)
+        self.assertEqual(G.taper_back((0.04, -0.10, 0.02), -1.0, -0.09, (0.0, 0.0), 0.02), (0.04, -0.10, 0.02))
+
+
 class WrapTest(unittest.TestCase):
     def test_front_full_back_none(self):
         self.assertEqual(G.wrap_weight(-1.0, False), 1.0)

@@ -7,7 +7,8 @@ toward -y, so a smaller y sticks out further), z up. Points are (x, y, z) tuples
 - `bbox`, `seam_z` (the lip line of a closed form: the most recessed front row in the middle of its height),
   `align` (one uniform scale and a shift: the form's width to ours, its centre on x = 0, its lip line on ours and its
   front on our front), `apply`;
-- `close_back` (the form's back pushed into the skin, so no gap shows behind the lips), `wrap_weight` (how much of our
+- `close_back` (the form's back pushed into the skin, so no gap shows behind the lips) and `taper_back` (the
+  same with the side curving under, no straight wall), `wrap_weight` (how much of our
   tube follows the AI surface: the front-facing part fully, the part tucked into the skin not at all), `decimate_ratio`
   (to our budget) and `mirror_error` (how far a form is from its own mirror).
 """
@@ -21,6 +22,10 @@ FIT = {
     "seam_half_width": 0.12,  # ... in the columns within this share of the width round the centre
     "seam_bins": 48,
     "sink": 0.003,  # close_back: the back goes this far (m) under the skin
+    "seat": "back",  # alien_mouth_fit.py: "back" seats the form's flat back on the skin, "front" keeps align's front
+    "seat_sink": 0.004,  # ... that far (m) under the skin at the lip line's centre
+    "taper": 0.35,  # taper_back: how far a closed-back vertex comes in toward the centre, per depth it went back
+    "smooth": 8,  # alien_mouth_fit.py: smoothing passes over the closed back (bmesh smooth_vert, factor 0.5)
     "wrap_lo": -0.15, "wrap_hi": 0.35,  # wrap_weight: n.(-y) from no wrap to the full wrap
 }
 
@@ -79,6 +84,20 @@ def close_back(y: float, normal_y: float, skin_y: float | None, sink: float | No
     if skin_y is None or normal_y <= 0.0:
         return y
     return max(y, skin_y + sink)
+
+
+def taper_back(p, normal_y: float, skin_y: float | None, centre, depth: float, sink: float | None = None,
+               taper: float | None = None) -> tuple[float, float, float]:
+    """close_back for a whole vertex, rounding the closed back into the skin instead of a straight wall: a vertex that
+    goes back by dy also comes in toward the form's centre (cx, cz) by taper x dy / depth of its distance (at most
+    half), so the side of the form curves under like a fillet. Any other vertex stays."""
+    taper = FIT["taper"] if taper is None else taper
+    x, y, z = p
+    y1 = close_back(y, normal_y, skin_y, sink)
+    if y1 == y or depth <= 0:
+        return (x, y, z)
+    k = 1.0 - min(0.5, taper * (y1 - y) / depth)
+    return (centre[0] + (x - centre[0]) * k, y1, centre[1] + (z - centre[1]) * k)
 
 
 def smoothstep(e0: float, e1: float, x: float) -> float:
