@@ -134,6 +134,33 @@ class Geometry(unittest.TestCase):
         self.assertEqual(LL.split(*none[:2], none[2]["u"])["liner"], ([], []))
 
 
+class Closed(unittest.TestCase):  # M21 (brief UPDATE 45): the closed lashes' shape key
+    def test_the_weight_runs_from_half_to_closed(self):
+        for half, closed in ((-2.0, -12.0), (18.0, -12.0), (2.0, 12.0)):  # alien_parts.EYES and alien.gd's LIDS signs
+            self.assertEqual(LL.closed_weight(half, half, closed), 0.0)
+            self.assertEqual(LL.closed_weight(closed, half, closed), 1.0)
+            self.assertEqual(LL.closed_weight(half - (closed - half), half, closed), 0.0)  # rest and open keep it 0
+            ws = [LL.closed_weight(half + (closed - half) * i / 10.0, half, closed) for i in range(11)]
+            self.assertEqual(ws, sorted(ws))
+            self.assertAlmostEqual(ws[5], 0.5)
+
+    def test_the_closed_shape_keeps_the_topology_and_lays_the_lashes_down(self):
+        for design in ("bored", "manic"):
+            c = LL.merged(None, "m15")
+            o = LL.build(LL.for_design(c, design), RHO[0], RHO[1], BEAD, LG.CORNER, 1.0)
+            k = LL.build(LL.closed_spec(c, design), RHO[0], RHO[1], BEAD, LG.CORNER, 1.0)
+            so, sk = LL.split(*o[:2], o[2]["u"])["lashes"], LL.split(*k[:2], k[2]["u"])["lashes"]
+            self.assertEqual(len(so[0]), len(sk[0]))
+            self.assertEqual(so[1], sk[1])
+            for lo, lk in zip(o[2]["lashes"], k[2]["lashes"]):
+                self.assertLess(lk["tip"][2], lo["tip"][2])  # no hook back up over the lid (+Z at the edge)
+            self.assertEqual(LL.closed_spec(c, design)["liner"], LL.for_design(c, design)["liner"])
+
+    def test_closed_takes_only_known_keys(self):
+        for over in LL.CLOSED.values():
+            self.assertFalse(set(over) - set(LL.LASHES))
+
+
 class Wiring(unittest.TestCase):
     src = (BLENDER / "alien_lashes.py").read_text(encoding="utf-8")
     gd = (ROOT / "godot" / "alien" / "alien.gd").read_text(encoding="utf-8")
@@ -217,3 +244,44 @@ class Wiring(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+    def test_m21_the_closed_key_is_built_checked_exported_and_driven(self):
+        build = self.src[self.src.index("def make_set"):self.src.index("def inside_count")]
+        self.assertIn("LL.closed_spec(spec, d)", build)
+        self.assertIn("ob.shape_key_add(name=LL.CLOSED_KEY", build)
+        self.assertIn("tube_uv(ul, spec)", build)  # Godot makes the morph target's tangents from the UVs
+        clip = self.src[self.src.index("def clip_check"):self.src.index("def clipping")]
+        self.assertIn("co = shaped(ob, d, st)", clip)  # every state with its own weight
+        main = self.src[self.src.index("def main("):]
+        self.assertIn("export_morph=True", main)
+        self.assertLess(main.index("shape keys beside the lashes'"), main.index("export_scene.gltf"))
+        self.assertIn('const LASH_CLOSED_KEY := "%s"' % LL.CLOSED_KEY, self.gd)
+        lids = self.gd[self.gd.index("func _apply_lids("):self.gd.index("func _pick_contact(")]
+        self.assertIn("set_blend_shape_value(bi, lash_closed_weight(eyes, upper_deg))", lids)
+        w = self.gd[self.gd.index("func lash_closed_weight("):self.gd.index("func _apply_lids(")]
+        self.assertIn('LIDS[design]["upper"]["half"]', w)
+        self.assertIn('LIDS[design]["upper"]["closed"]', w)
+
+    def test_m21_eye_parts_keep_full_detail_and_the_liner_goes_matte_far(self):
+        setup = self.gd[self.gd.index("func setup("):self.gd.index("func _textured_material(")]
+        self.assertIn('if m.name.begins_with("eye_"):  # M21', setup)
+        self.assertIn("m.lod_bias = EYE_LOD_BIAS", setup)
+        self.assertGreaterEqual(float(re.search(r"const EYE_LOD_BIAS := ([0-9.]+)", self.gd).group(1)), 50.0)
+        sh = (ROOT / "godot" / "alien" / "alien_liner.gdshader").read_text(encoding="utf-8")
+        self.assertIn("float gloss = 1.0 - smoothstep(gloss_fade.x, gloss_fade.y, length(VERTEX));", sh)
+        fade = re.search(r"uniform vec2 gloss_fade = vec2\(([0-9.]+), ([0-9.]+)\);", sh)
+        self.assertGreater(float(fade.group(1)), 1.2)  # glossy at the 1.2 m view
+        self.assertLess(float(fade.group(2)), 3.5)  # matte at the game's 3.5 m
+        self.assertIn("SPECULAR = specular_value * gloss;", sh)
+        self.assertIn("CLEARCOAT = clearcoat_value * gloss;", sh)
+
+    def test_m21_the_lids_sss_fades_far_and_the_lips_keep_theirs(self):
+        sh = (ROOT / "godot" / "alien" / "alien_lip.gdshader").read_text(encoding="utf-8")
+        self.assertIn("uniform vec2 sss_fade = vec2(1000.0, 1001.0);", sh)  # the lips, pout and fangs: never
+        self.assertIn("SSS_STRENGTH = sss * (1.0 - smoothstep(sss_fade.x, sss_fade.y, length(VERTEX)));", sh)
+        look = re.search(r"const LID_LOOK := \{([^}]*)\}", self.gd).group(1)
+        fade = re.search(r'"sss_fade": Vector2\(([0-9.]+), ([0-9.]+)\)', look)
+        self.assertLess(float(fade.group(2)), 3.5)  # gone at the game's 3.5 m
+        self.assertGreater(float(fade.group(1)), 1.2)  # whole at the 1.2 m view
+        lip = re.search(r"const LIP_LOOK := \{([^}]*)\}", self.gd).group(1)
+        self.assertNotIn("sss_fade", lip)
