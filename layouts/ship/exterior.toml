@@ -1,43 +1,253 @@
-# The EXTERIOR lane's pieces (builders in tools/blender/ship_hull*.py) and their placements (art #263); the format as
-# in interior.toml. outside: the piece may stand beyond the hull's outline (the ramp meets the ground).
+# The EXTERIOR lane's pieces (builders in tools/blender/ship_hull*.py) and their placements (art #263, docs/ship.md);
+# the format as in interior.toml. outside: the piece may stand beyond the hull's outline (the ramp meets the ground,
+# the clearing). The hull is a kit: drum, nose, nozzle mount, three wing sections per side, the tip pods; every light
+# run (stripes, mouth, ramp, nozzle rings, bubble glow) is its own piece. The clearing's pines and rocks were placed by
+# a seeded ring (pines 30..46 m from the centre, young pines and rocks nearer) and are plain data from here on.
 
 place = [
-  ["hull_core", [0.0, 0.0, 0.0], 0.0],
-  ["hull_tip_e", [0.0, 0.0, 0.0], 0.0],
-  ["hull_tip_w", [0.0, 0.0, 0.0], 0.0],
-  ["tip_shell", [-10.75, 0.0, 0.0], 180.0],
-  ["tip_shell", [10.75, 0.0, 0.0], 0.0],
-  ["ramp", [0.0, -4.6, 0.0], 0.0],
-  ["leg", [-6.8, -2.4, 0.0], 0.0],
-  ["leg", [6.8, -2.4, 0.0], 0.0],
-  ["leg", [-6.8, 3.0, 0.0], 0.0],
-  ["leg", [6.8, 3.0, 0.0], 0.0],
-  ["leg", [-2.2, -3.6, 0.0], 0.0],
-  ["leg", [2.2, -3.6, 0.0], 0.0],
-  ["bubble", [-2.4, -3.55, 3.4], 0.0],
-  ["bubble", [2.4, -3.55, 3.4], 0.0],
-  ["nozzle", [-2.4, 5.5, 2.3], 0.0],
-  ["nozzle", [0.0, 5.8, 2.6], 0.0],
-  ["nozzle", [2.4, 5.5, 2.3], 0.0],
+  # the hull kit (plan origin; the wing sections share their end stations)
+  ["hull_drum", [0.00, 0.00, 0.00], 0.0],
+  ["hull_nose", [0.00, 0.00, 0.00], 0.0],
+  ["nozzle_mount", [0.00, 0.00, 0.00], 0.0],
+  ["hull_wing_e1", [0.00, 0.00, 0.00], 0.0],
+  ["hull_wing_e2", [0.00, 0.00, 0.00], 0.0],
+  ["hull_wing_e3", [0.00, 0.00, 0.00], 0.0],
+  ["stripes_e", [0.00, 0.00, 0.00], 0.0],
+  ["hull_wing_w1", [0.00, 0.00, 0.00], 0.0],
+  ["hull_wing_w2", [0.00, 0.00, 0.00], 0.0],
+  ["hull_wing_w3", [0.00, 0.00, 0.00], 0.0],
+  ["stripes_w", [0.00, 0.00, 0.00], 0.0],
+  # the tip pods and their window frames (built facing east; the west ones at yaw 180)
+  ["hull_pod", [-10.75, 0.00, 0.00], 180.0],
+  ["window_frame", [-10.75, 0.00, 0.00], 180.0],
+  ["hull_pod", [10.75, 0.00, 0.00], 0.0],
+  ["window_frame", [10.75, 0.00, 0.00], 0.0],
+  # the cockpit bubbles (outside only), the mouth, the ramp
+  ["bubble_collar", [-2.40, -3.55, 3.55], 0.0],
+  ["bubble_glass", [-2.40, -3.55, 3.55], 0.0],
+  ["bubble_glow", [-2.40, -3.55, 3.55], 0.0],
+  ["bubble_collar", [2.40, -3.55, 3.55], 0.0],
+  ["bubble_glass", [2.40, -3.55, 3.55], 0.0],
+  ["bubble_glow", [2.40, -3.55, 3.55], 0.0],
+  ["mouth_frame", [0.00, -4.60, 0.00], 0.0],
+  ["mouth_lights", [0.00, -4.60, 0.00], 0.0],
+  ["ramp", [0.00, -4.60, 0.00], 0.0],
+  ["ramp_lights", [0.00, -4.60, 0.00], 0.0],
+  # nozzles and their cyan rings
+  ["nozzle", [-2.40, 5.50, 2.30], 0.0],
+  ["nozzle_ring", [-2.40, 5.50, 2.30], 0.0],
+  ["nozzle", [0.00, 5.80, 2.60], 0.0],
+  ["nozzle_ring", [0.00, 5.80, 2.60], 0.0],
+  ["nozzle", [2.40, 5.50, 2.30], 0.0],
+  ["nozzle_ring", [2.40, 5.50, 2.30], 0.0],
+  # landing legs, yawed outward from the ship's centre
+  ["leg", [-2.00, -2.90, 0.00], 124.6],
+  ["leg", [2.00, -2.90, 0.00], 55.4],
+  ["leg", [-7.20, -1.20, 0.00], 176.2],
+  ["leg", [7.20, -1.20, 0.00], 3.8],
+  ["leg", [-7.20, 1.30, 0.00], -175.9],
+  ["leg", [7.20, 1.30, 0.00], -4.1],
+  ["leg", [-2.20, 3.90, 0.00], -119.4],
+  ["leg", [2.20, 3.90, 0.00], -60.6],
+  # the clearing: ground, a ring of pines (30..46 m), young pines and rocks nearer
+  ["ground", [0.00, 0.00, 0.00], 0.0],
+  ["pine_c", [34.69, 0.09, 0.00], 12.4],
+  ["pine_c", [45.19, 2.39, 0.00], 58.6],
+  ["pine_b", [36.89, 4.77, 0.00], 72.6],
+  ["pine_a", [33.74, 7.76, 0.00], 276.4],
+  ["pine_c", [40.87, 11.58, 0.00], 191.6],
+  ["pine_c", [33.19, 10.56, 0.00], 69.1],
+  ["pine_a", [42.63, 15.95, 0.00], 106.5],
+  ["pine_a", [36.93, 16.69, 0.00], 291.8],
+  ["pine_c", [44.30, 22.75, 0.00], 244.2],
+  ["pine_c", [29.62, 18.04, 0.00], 138.4],
+  ["pine_a", [36.51, 24.81, 0.00], 178.7],
+  ["pine_b", [27.96, 19.78, 0.00], 16.7],
+  ["pine_c", [34.35, 26.98, 0.00], 283.0],
+  ["pine_a", [34.57, 29.98, 0.00], 298.3],
+  ["pine_a", [25.72, 28.68, 0.00], 357.6],
+  ["pine_a", [28.61, 35.25, 0.00], 104.7],
+  ["pine_b", [19.03, 30.33, 0.00], 217.5],
+  ["pine_c", [22.09, 39.46, 0.00], 85.6],
+  ["pine_c", [18.60, 36.94, 0.00], 339.9],
+  ["pine_a", [16.27, 41.45, 0.00], 167.9],
+  ["pine_c", [16.87, 50.25, 0.00], 79.3],
+  ["pine_b", [11.29, 44.14, 0.00], 236.4],
+  ["pine_a", [10.48, 51.58, 0.00], 341.7],
+  ["pine_a", [7.46, 44.23, 0.00], 221.5],
+  ["pine_c", [1.78, 30.60, 0.00], 50.0],
+  ["pine_b", [-1.50, 42.07, 0.00], 154.0],
+  ["pine_c", [-4.52, 52.68, 0.00], 97.9],
+  ["pine_a", [-5.50, 39.10, 0.00], 264.9],
+  ["pine_a", [-8.80, 45.86, 0.00], 335.1],
+  ["pine_a", [-11.11, 44.21, 0.00], 242.5],
+  ["pine_b", [-9.19, 29.39, 0.00], 285.6],
+  ["pine_a", [-14.68, 39.84, 0.00], 28.7],
+  ["pine_b", [-14.38, 31.64, 0.00], 52.1],
+  ["pine_b", [-17.14, 29.77, 0.00], 158.1],
+  ["pine_a", [-24.93, 38.70, 0.00], 125.3],
+  ["pine_c", [-27.17, 36.11, 0.00], 329.1],
+  ["pine_c", [-24.85, 30.17, 0.00], 213.2],
+  ["pine_a", [-33.92, 37.22, 0.00], 179.5],
+  ["pine_b", [-24.32, 23.44, 0.00], 345.8],
+  ["pine_c", [-32.38, 28.23, 0.00], 158.8],
+  ["pine_a", [-26.61, 20.44, 0.00], 231.2],
+  ["pine_a", [-35.24, 24.37, 0.00], 139.6],
+  ["pine_b", [-28.77, 18.21, 0.00], 90.8],
+  ["pine_b", [-37.17, 17.45, 0.00], 260.8],
+  ["pine_a", [-45.85, 18.80, 0.00], 53.0],
+  ["pine_b", [-36.58, 12.75, 0.00], 349.4],
+  ["pine_c", [-45.69, 13.40, 0.00], 43.1],
+  ["pine_c", [-35.39, 9.18, 0.00], 296.5],
+  ["pine_b", [-30.23, 4.20, 0.00], 9.8],
+  ["pine_c", [-43.40, 2.73, 0.00], 78.8],
+  ["pine_c", [-38.02, -0.62, 0.00], 233.4],
+  ["pine_b", [-44.66, -4.64, 0.00], 72.3],
+  ["pine_b", [-33.37, -8.01, 0.00], 209.1],
+  ["pine_b", [-37.26, -11.38, 0.00], 148.7],
+  ["pine_a", [-45.24, -16.33, 0.00], 306.7],
+  ["pine_c", [-35.22, -15.79, 0.00], 291.6],
+  ["pine_c", [-44.08, -22.47, 0.00], 352.1],
+  ["pine_c", [-38.04, -21.42, 0.00], 258.4],
+  ["pine_b", [-27.21, -18.50, 0.00], 133.1],
+  ["pine_c", [-31.37, -23.71, 0.00], 277.0],
+  ["pine_b", [-29.99, -24.88, 0.00], 259.7],
+  ["pine_a", [-34.20, -31.39, 0.00], 52.0],
+  ["pine_b", [-26.74, -28.66, 0.00], 113.5],
+  ["pine_c", [-29.37, -34.81, 0.00], 309.7],
+  ["pine_c", [-22.94, -31.50, 0.00], 220.6],
+  ["pine_a", [-26.07, -39.85, 0.00], 217.7],
+  ["pine_a", [-21.21, -35.24, 0.00], 87.3],
+  ["pine_c", [-23.58, -44.03, 0.00], 96.1],
+  ["pine_a", [-18.23, -36.37, 0.00], 94.8],
+  ["pine_a", [-19.99, -45.44, 0.00], 166.6],
+  ["pine_a", [-12.04, -33.55, 0.00], 19.7],
+  ["pine_c", [-12.47, -41.09, 0.00], 313.6],
+  ["pine_c", [-9.84, -34.42, 0.00], 151.4],
+  ["pine_a", [-10.15, -43.67, 0.00], 147.9],
+  ["pine_b", [-6.31, -45.07, 0.00], 341.6],
+  ["pine_a", [-4.02, -40.80, 0.00], 338.1],
+  ["pine_c", [0.09, -44.53, 0.00], 239.1],
+  ["pine_b", [5.47, -43.57, 0.00], 173.4],
+  ["pine_a", [9.07, -51.32, 0.00], 121.1],
+  ["pine_a", [8.17, -31.72, 0.00], 35.5],
+  ["pine_c", [11.69, -37.49, 0.00], 279.4],
+  ["pine_c", [10.89, -35.44, 0.00], 309.8],
+  ["pine_a", [15.42, -32.19, 0.00], 325.1],
+  ["pine_b", [21.68, -38.74, 0.00], 88.1],
+  ["pine_c", [26.11, -36.67, 0.00], 167.9],
+  ["pine_c", [31.76, -40.20, 0.00], 308.2],
+  ["pine_a", [28.95, -34.92, 0.00], 12.6],
+  ["pine_a", [38.18, -41.62, 0.00], 53.5],
+  ["pine_a", [28.10, -26.74, 0.00], 275.4],
+  ["pine_c", [24.59, -18.63, 0.00], 195.7],
+  ["pine_c", [32.82, -20.61, 0.00], 78.9],
+  ["pine_a", [38.19, -18.30, 0.00], 202.5],
+  ["pine_a", [48.09, -20.16, 0.00], 271.1],
+  ["pine_c", [30.26, -11.44, 0.00], 184.1],
+  ["pine_c", [40.44, -13.02, 0.00], 299.9],
+  ["pine_a", [41.37, -11.16, 0.00], 300.5],
+  ["pine_c", [38.31, -5.82, 0.00], 102.3],
+  ["pine_b", [38.78, -2.00, 0.00], 198.2],
+  ["pine_a", [50.22, -0.08, 0.00], 102.8],
+  ["pine_s", [17.08, -18.47, 0.00], 310.2],
+  ["pine_s", [-13.17, 14.25, 0.00], 115.7],
+  ["pine_s", [-21.67, 13.59, 0.00], 298.1],
+  ["pine_s", [-17.22, 9.32, 0.00], 128.0],
+  ["pine_s", [-20.61, 16.82, 0.00], 34.4],
+  ["pine_s", [-26.77, 0.46, 0.00], 165.1],
+  ["pine_s", [-13.84, 15.02, 0.00], 296.3],
+  ["pine_s", [18.86, -7.59, 0.00], 185.7],
+  ["pine_s", [-14.10, 17.60, 0.00], 9.8],
+  ["rock_a", [-11.46, 15.73, 0.00], 45.8],
+  ["rock_b", [10.83, -11.31, 0.00], 279.4],
+  ["rock_c", [-12.31, 13.72, 0.00], 58.8],
+  ["rock_a", [-7.20, 11.51, 0.00], 159.5],
+  ["rock_b", [-12.55, -6.53, 0.00], 57.4],
+  ["rock_a", [9.92, 14.62, 0.00], 57.6],
+  ["rock_a", [11.79, -16.06, 0.00], 185.0],
+  ["rock_c", [10.60, 9.65, 0.00], 147.6],
 ]
 
 [[pieces]]
-id = "hull_core"
-builder = "hull_core"
+id = "hull_drum"
+builder = "hull_drum"
 
 [[pieces]]
-id = "hull_tip_e"
-builder = "hull_tip"
-args = { side = 1.0 }
+id = "hull_nose"
+builder = "hull_nose"
 
 [[pieces]]
-id = "hull_tip_w"
-builder = "hull_tip"
-args = { side = -1.0 }
+id = "nozzle_mount"
+builder = "nozzle_mount"
 
 [[pieces]]
-id = "tip_shell"
-builder = "tip_shell"
+id = "hull_wing_e1"
+builder = "hull_wing"
+args = { side = 1.0, x = [1.5, 2.6, 3.7, 4.8] }
+
+[[pieces]]
+id = "hull_wing_e2"
+builder = "hull_wing"
+args = { side = 1.0, x = [4.8, 5.9, 7.0, 8.0] }
+
+[[pieces]]
+id = "hull_wing_e3"
+builder = "hull_wing"
+args = { side = 1.0, x = [8.0, 9.0, 9.9, 10.75] }
+
+[[pieces]]
+id = "stripes_e"
+builder = "stripes"
+args = { side = 1.0, count = 14 }
+
+[[pieces]]
+id = "hull_wing_w1"
+builder = "hull_wing"
+args = { side = -1.0, x = [1.5, 2.6, 3.7, 4.8] }
+
+[[pieces]]
+id = "hull_wing_w2"
+builder = "hull_wing"
+args = { side = -1.0, x = [4.8, 5.9, 7.0, 8.0] }
+
+[[pieces]]
+id = "hull_wing_w3"
+builder = "hull_wing"
+args = { side = -1.0, x = [8.0, 9.0, 9.9, 10.75] }
+
+[[pieces]]
+id = "stripes_w"
+builder = "stripes"
+args = { side = -1.0, count = 14 }
+
+[[pieces]]
+id = "hull_pod"
+builder = "hull_pod"
+
+[[pieces]]
+id = "window_frame"
+builder = "window_frame"
+
+[[pieces]]
+id = "bubble_collar"
+builder = "bubble_collar"
+
+[[pieces]]
+id = "bubble_glass"
+builder = "bubble_glass"
+
+[[pieces]]
+id = "bubble_glow"
+builder = "bubble_glow"
+
+[[pieces]]
+id = "mouth_frame"
+builder = "mouth_frame"
+
+[[pieces]]
+id = "mouth_lights"
+builder = "mouth_lights"
 
 [[pieces]]
 id = "ramp"
@@ -46,14 +256,87 @@ collide = true
 outside = true
 
 [[pieces]]
+id = "ramp_lights"
+builder = "ramp_lights"
+outside = true
+
+[[pieces]]
+id = "nozzle"
+builder = "nozzle"
+
+[[pieces]]
+id = "nozzle_ring"
+builder = "nozzle_ring"
+
+[[pieces]]
 id = "leg"
 builder = "leg"
 collide = true
 
 [[pieces]]
-id = "bubble"
-builder = "bubble"
+id = "ground"
+builder = "ground"
+outside = true
 
 [[pieces]]
-id = "nozzle"
-builder = "nozzle"
+id = "pine_a"
+builder = "pine"
+args = { height = 15.0, seed = 1.0 }
+outside = true
+
+[[pieces]]
+id = "pine_b"
+builder = "pine"
+args = { height = 11.0, seed = 2.0 }
+outside = true
+
+[[pieces]]
+id = "pine_c"
+builder = "pine"
+args = { height = 19.0, seed = 3.0 }
+outside = true
+
+[[pieces]]
+id = "pine_s"
+builder = "pine"
+args = { height = 5.5, seed = 4.0 }
+outside = true
+
+[[pieces]]
+id = "rock_a"
+builder = "rock"
+args = { size = 1.3, seed = 1.0 }
+outside = true
+
+[[pieces]]
+id = "rock_b"
+builder = "rock"
+args = { size = 0.6, seed = 2.0 }
+outside = true
+
+[[pieces]]
+id = "rock_c"
+builder = "rock"
+args = { size = 2.2, seed = 3.0 }
+outside = true
+
+# The review shots (`ship --shoot`, the exterior lane): [name, title, eye [x, y, h], look [x, y, h], fov, the 2D sheet
+# in ref_dir it is compared with side by side]. They replace ship.toml's views of the same name; ship.toml's other
+# views (the interior lane's) are shot too.
+[shots]
+ref_dir = "D:/prime-game-design/ideas/ship-components/2d/"
+views = [
+  ["out_front", "outside: front, ramp down (turnaround front)", [0.0, -21.0, 2.6], [0.0, 0.0, 2.3], 50.0, "turnaround.jpg"],
+  ["out_hero", "outside: three-quarter at night (hero)", [-15.0, -17.0, 6.5], [0.8, 0.0, 1.8], 50.0, "hero.jpg"],
+  ["out_side", "outside: side (turnaround side)", [-25.0, -3.0, 2.6], [0.0, 0.0, 2.2], 46.0, "turnaround.jpg"],
+  ["out_back", "outside: back with the nozzles (turnaround back)", [4.0, 21.0, 3.4], [0.0, 0.0, 2.3], 50.0, "turnaround.jpg"],
+  ["in_hall", "inside: the hall from the ramp (hall_in-3)", [0.0, -4.3, 2.6], [0.0, 2.0, 2.4], 75.0, "hall_in-3.jpg"],
+  ["in_hall_out", "inside: the hall toward the ramp (hall_out-2)", [0.0, 2.6, 2.6], [0.0, -4.0, 2.0], 75.0, "hall_out-2.jpg"],
+  ["in_corridor_e", "inside: the east corridor (corridor)", [3.0, 0.0, 2.6], [10.0, 0.0, 2.4], 70.0, "corridor.jpg"],
+  ["in_corridor_w", "inside: the west corridor (corridor)", [-3.0, 0.0, 2.6], [-10.0, 0.0, 2.4], 70.0, "corridor.jpg"],
+  ["in_tip_e", "inside: the east tip room toward its window (tip-3)", [9.3, 0.3, 2.6], [14.0, -0.2, 2.3], 75.0, "tip-3.jpg"],
+  ["in_tip_w", "inside: the west tip room toward its window (tip-3)", [-9.3, -0.3, 2.6], [-14.0, 0.2, 2.3], 75.0, "tip-3.jpg"],
+  ["detail_seam", "detail: hull seams and scratches (materials-3)", [-3.9, -7.2, 3.1], [-3.3, -4.6, 2.4], 34.0, "materials-3.jpg"],
+  ["detail_floor", "detail: a floor light strip and grate (materials-3)", [4.4, 0.4, 2.1], [5.6, -0.3, 1.0], 50.0, "materials-3.jpg"],
+  ["detail_cables", "detail: a cable channel with clips (materials-3)", [6.2, 0.7, 2.3], [6.6, -1.2, 1.9], 55.0, "materials-3.jpg"],
+]
