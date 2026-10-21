@@ -8,7 +8,22 @@ extends SceneTree
 const SCRIPTS: Array[String] = ["res://alien/alien.gd", "res://alien/alien_talk.gd"]
 
 
+## M14 (PR #250's review): with the user argument "broken" it parses one deliberately broken shader instead and
+## prints "PARSE_BROKEN {...}" (its uniform count), so the test knows a parse error does show as no uniforms and a
+## "SHADER ERROR" line (the check would otherwise only ever see good shaders).
+const BROKEN := "shader_type spatial;
+uniform float amount = 1.0;
+void fragment() { ALBEDO = vec3(not_declared); }
+"
+
+
 func _init() -> void:
+	if OS.get_cmdline_user_args().has("broken"):
+		var bad := Shader.new()
+		bad.code = BROKEN
+		print("PARSE_BROKEN ", JSON.stringify({"uniforms": bad.get_shader_uniform_list().size()}))
+		quit(0)
+		return
 	var out := {"shaders": {}, "scripts": {}}
 	for f: String in DirAccess.get_files_at("res://alien"):
 		if not f.ends_with(".gdshader"):

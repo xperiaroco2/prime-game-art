@@ -43,6 +43,14 @@ class AlienParseTest(unittest.TestCase):
             self.assertTrue(r["loaded"], name)
             self.assertGreater(r["uniforms"], 0, f"{name}: no uniforms listed (a parse error)")
 
+    def test_a_broken_shader_is_caught(self):  # M14 (PR #250's review): the check can fail
+        code, out = _godot.godot(["--headless", "--path", str(_godot.PROJECT), "-s", "res://alien/parse_check.gd",
+                                  "--", "broken"], 150)
+        line = next((ln for ln in out.splitlines() if ln.startswith("PARSE_BROKEN ")), None)
+        self.assertIsNotNone(line, out[-1500:])
+        self.assertEqual(json.loads(line[13:])["uniforms"], 0)
+        self.assertIn("SHADER ERROR", out)
+
     def test_scripts_load(self):
         for path, r in self.d["scripts"].items():
             self.assertTrue(r["loaded"] and r["can_instantiate"], path)
