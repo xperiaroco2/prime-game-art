@@ -69,7 +69,15 @@ SOCKET_LASHES = {"m15": {"liner_t_in_deg": -42.0, "sink": 0.003,
 # over the design's own: down and out from the line in a soft curl, one calm closed line with the lashes laid over the
 # lower lid. alien.gd weighs it by the upper lid's angle, 0 at "half" to 1 at "closed" (closed_weight), so open, rest
 # and half keep their look. Chosen on M21's grids (lclosed: the curl 160 / 100 / 60 / 30, the lift -10 to -40).
-CLOSED = {"bored": {"lift_deg": -30.0, "curl_deg": 60.0}, "manic": {"lift_deg": -30.0, "curl_deg": 60.0}}
+# M21b (brief UPDATE 46): closed, the outer lashes still fanned up and out at the corner, the wing curling back up.
+# The closed wing now lies lower (wing_lift -35), sweeps less past the corner (15) and every lash leans less toward the
+# temple (fan_bias: bored 20, manic 10), so the wing runs out level from the corner, each tip further out and lower
+# than the last. Chosen on M21b's grids (M21b/grid/shots*/lclosed.png: the wing lift -20 / -35 / -50, the sweep 15 / 0,
+# the fan bias; -50 with no sweep bunched the wing into one dark wedge).
+CLOSED = {"bored": {"lift_deg": -30.0, "curl_deg": 60.0, "wing_lift_deg": -35.0, "wing_sweep_deg": 15.0,
+                    "fan_bias_deg": 20.0},
+          "manic": {"lift_deg": -30.0, "curl_deg": 60.0, "wing_lift_deg": -35.0, "wing_sweep_deg": 15.0,
+                    "fan_bias_deg": 10.0}}
 CLOSED_KEY = "closed"
 
 

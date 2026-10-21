@@ -156,6 +156,15 @@ class Closed(unittest.TestCase):  # M21 (brief UPDATE 45): the closed lashes' sh
                 self.assertLess(lk["tip"][2], lo["tip"][2])  # no hook back up over the lid (+Z at the edge)
             self.assertEqual(LL.closed_spec(c, design)["liner"], LL.for_design(c, design)["liner"])
 
+    def test_the_closed_wing_runs_out_and_down_from_the_corner(self):  # M21b: no wing curling back up
+        for design in ("bored", "manic"):
+            c = LL.merged(None, "m15")
+            tips = [x["tip"] for x in LL.build(LL.closed_spec(c, design), RHO[0], RHO[1], BEAD, LG.CORNER, 1.0)[2]
+                    ["lashes"][-(c["wing"] + 1):]]  # the last unwinged lash and the wing
+            for a, b in zip(tips, tips[1:]):
+                self.assertGreater(b[0], a[0])  # further out toward the temple
+                self.assertLess(b[2], a[2])  # and lower, not hooked back over the lid
+
     def test_closed_takes_only_known_keys(self):
         for over in LL.CLOSED.values():
             self.assertFalse(set(over) - set(LL.LASHES))
