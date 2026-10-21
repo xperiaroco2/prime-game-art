@@ -162,6 +162,19 @@ plate = [
 [light]
 moon_dir_deg = [-38.0, 140.0]                # pitch, yaw
 moon_energy = 1.3                           # tuned by the exterior lane (ext1: 0.55 left the silver black)
+# The night look, picked by the join step's look grid (<raw>/ship/v1/grid/grid2.png, variant H): the interior's metal
+# mirrored its strips and lamps (strength 8..12) through the room probes and washed out white; these keep it mid-to-dark
+# with saturated cyan and amber. Read by godot/ship/ship.gd (_lk); a missing key keeps the old value.
+ambient_energy = 0.12                          # env ambient (was 0.9)
+exposure = 1.0                                 # AgX exposure (was 1.2)
+emission_scale = 0.12                          # every emissive glTF material's strength x this (keeps the hue)
+strip_light_scale = 1.5                        # the OmniLight per emissive cell (from the unscaled strength)
+strip_whiten = 0.0                             # those lights' colour lightened by this (was 0.15)
+lamp_scale = 0.25                              # the lamps below
+probe_intensity = 0.15                         # interior rooms' reflection probes (the tip rooms with windows keep 1.0)
+int_value = 0.55                               # the int_silver_* base colour x this
+int_rough_add = 0.25                           # + the int_silver_* roughness
+hull_rough_add = 0.22                          # + the hull silvers' roughness (the moonlit white plates)
 lamps = [
   [0.0, 0.0, 4.1, 2.2, 7.0, 1.0, 0.82, 0.6],
   [0.0, -4.0, 3.3, 1.0, 4.0, 1.0, 0.82, 0.6],
