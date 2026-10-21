@@ -96,7 +96,8 @@ sources = ["godot/alien/alien_talk.gd", "godot/alien/talk_check.gd"]  # the mout
 tests = ["test_alien_talk_*"]
 
 [area.alien_pout]
-sources = ["tools/blender/alien_mouths.py", "tools/blender/alien_lips_geom.py", "tools/blender/alien_pout_check.py", "godot/alien/pout_rest_check.gd"]  # the pout's mirrored rest (#196, M16); before light's alien_* and godot/alien/*
+sources = ["tools/blender/alien_mouths.py", "tools/blender/alien_lips_geom.py", "tools/blender/alien_pout_check.py", "godot/alien/pout_rest_check.gd",
+  "tools/blender/alien_m12.py", "tools/blender/alien_m6.py", "godot/alien/alien.gd", "godot/alien/alien_talk.gd"]  # the pout's mirrored rest (#196, M16); before light's alien_* and godot/alien/*
 tests = ["test_alien_pout_*"]
 
 [area.alien_parse]
