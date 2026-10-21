@@ -44,7 +44,10 @@ def set_fit(spec: dict) -> dict:
     out["fillet_passes"] = int(out["fillet_passes"])
     out["fill_iters"] = int(out["fill_iters"])
     if not (0.5 <= out["eye_scale"] <= 1.0 and -0.01 <= out["sink"] <= 0.04 and -0.01 <= out["inward"] <= 0.03
-            and 0.0 <= out["toe"] <= 1.0 and 0.0 <= out["gap"] <= 0.004 and 1.0 <= out["free_r"] <= 2.0):
+            and 0.0 <= out["toe"] <= 1.0 and 0.0 <= out["gap"] <= 0.004 and 1.0 <= out["free_r"] <= 2.0
+            and 0.0 <= out["free_below"] <= 0.12 and 0.0 <= out["free_margin"] <= 0.03
+            and 0.0 <= out["fillet"] <= 0.02 and 0 <= out["fillet_passes"] <= 100
+            and 1 <= out["fill_iters"] <= 10000 and 0.0 < out["keep_mm"] <= 1.0):  # M15b: review minor 4
         raise SystemExit(f"fit: out of range {out}")
     return out
 
