@@ -131,10 +131,10 @@ const FANG_LOOK := {"albedo": Color(0.88, 0.80, 0.62), "deep": Color(0.60, 0.46,
 	"sheen": 0.25, "sheen_roughness": 0.3, "grain": 0.02, "sss": 0.35, "transmit": 0.40,
 	"transmit_color": Color(1.0, 0.80, 0.56), "transmit_depth": 0.006, "rim_value": 0.2}
 ## M14: the tongue mouth's tongue (material alien_tongue_pink, the lips' shader so it moves with the lower jaw and
-## flops, `flop_mask`): the mt2 sheet's soft pink, a deeper rose in the groove and at the root (the baked AO), a soft
-## wet sheen, a little warm SSS. Its teeth are alien_tooth (FANG_LOOK's ivory with TOOTH_LOOK: the sheet's cream),
-## its lips alien_lip (LIP_LOOK).
-const TONGUE_LOOK := {"albedo": Color(0.86, 0.38, 0.47), "deep": Color(0.58, 0.16, 0.27), "ao_mix": 1.0,
+## flops, `flop_mask`): the mt2 sheet's salmon pink (M14b: deeper, the first read as bubblegum), a deeper rose in the
+## groove and at the root (the baked AO), a soft wet sheen, a little warm SSS. Its teeth are alien_tooth (FANG_LOOK's
+## ivory with TOOTH_LOOK: the sheet's cream), its lips alien_lip (LIP_LOOK).
+const TONGUE_LOOK := {"albedo": Color(0.80, 0.33, 0.36), "deep": Color(0.52, 0.12, 0.17), "ao_mix": 1.0,
 	"ao_range": Vector2(0.40, 0.95), "ao_occl": 0.5, "drift": 0.03, "roughness_value": 0.38, "specular_value": 0.45,
 	"sheen": 0.25, "sheen_roughness": 0.25, "grain": 0.02, "sss": 0.15, "rim_value": 0.10, "flop_mask": 1.0}
 const TOOTH_LOOK := {"albedo": Color(0.92, 0.86, 0.68), "deep": Color(0.62, 0.52, 0.36), "transmit": 0.2}
@@ -291,8 +291,10 @@ func setup(root: Node3D, seed: int = 196) -> void:
 					_wet_nodes.append(m)
 		if uses:
 			_hue_meshes.append(m)
-		if _moving_piece(m.name) and m.name.begins_with("mouth_") and not has_jaw_weight(m.mesh):
+		if (OS.is_debug_build() and _moving_piece(m.name) and m.name.begins_with("mouth_")
+				and not has_jaw_weight(m.mesh)):
 			# PR #250's review: an M13 kit (the weight in COLOR_0.g, alpha 1) moves the whole piece with the jaw
+			# (PR #251's review: debug builds only, and cached per mesh: it reads every surface's colours)
 			push_warning(("alien: %s has no jaw weight (COLOR_0's alpha is 1 everywhere): rebuild the kit with "
 				+ "tools/blender/alien_m12.py") % m.name)
 		if m.name.begins_with("eye_") and m.name.contains("_lashes_"):  # M11: the lash sets (not the lashvar_ grid)
@@ -414,7 +416,7 @@ func _make_face_materials() -> void:
 				fm.set_shader_parameter(k, LIP_LOOK[k])
 			for k: String in FANG_LOOK:
 				fm.set_shader_parameter(k, FANG_LOOK[k])
-				_face_materials["alien_fang"] = fm
+			_face_materials["alien_fang"] = fm
 			var tm := ShaderMaterial.new()  # M14: the tongue (alien_tongue_pink)
 			tm.shader = LIP_SHADER
 			tm.resource_name = "alien_tongue_pink"
@@ -685,18 +687,30 @@ func show_mouth(piece: String) -> void:
 
 
 ## PR #250's review: whether a talking piece's mesh carries a jaw weight (COLOR_0's alpha below 1 somewhere; the
-## upper lip is 0). A mesh without vertex colours has none.
+## upper lip is 0). A mesh without vertex colours has none. PR #251's review: cached per mesh (by its instance id;
+## setup() calls it in debug builds only), so a second spawn copies no arrays.
+static var _jaw_weight_cache := {}
+
+
 static func has_jaw_weight(mesh: Mesh) -> bool:
 	if mesh == null:
 		return false
+	var id := mesh.get_instance_id()
+	if _jaw_weight_cache.has(id):
+		return _jaw_weight_cache[id]
+	var found := false
 	for s: int in mesh.get_surface_count():
 		var arrays: Array = mesh.surface_get_arrays(s)
 		var cols: Variant = arrays[Mesh.ARRAY_COLOR]
 		if cols is PackedColorArray:
 			for c: Color in cols:
 				if c.a < 0.999:
-					return true
-	return false
+					found = true
+					break
+		if found:
+			break
+	_jaw_weight_cache[id] = found
+	return found
 
 
 ## M12: whether the kit has a mouth design's pieces.

@@ -17,6 +17,27 @@ void fragment() { ALBEDO = vec3(not_declared); }
 "
 
 
+## PR #251's review: alien.gd's has_jaw_weight on three made meshes: no vertex colours, alpha 1 everywhere (an
+## M13 kit), one vertex below 1 (a jaw weight); and its cache (the same mesh asked twice).
+func _jaw_weight_cases() -> Dictionary:
+	var A: GDScript = load("res://alien/alien.gd")
+	var res := {}
+	for case: String in ["none", "alpha_one", "weighted"]:
+		var arrays := []
+		arrays.resize(Mesh.ARRAY_MAX)
+		arrays[Mesh.ARRAY_VERTEX] = PackedVector3Array([Vector3.ZERO, Vector3.RIGHT, Vector3.UP])
+		if case != "none":
+			var c := PackedColorArray([Color(1, 1, 1, 1), Color(1, 1, 1, 1), Color(1, 1, 1, 1)])
+			if case == "weighted":
+				c[2] = Color(1, 1, 1, 0.4)
+			arrays[Mesh.ARRAY_COLOR] = c
+		var m := ArrayMesh.new()
+		m.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+		res[case] = [A.has_jaw_weight(m), A.has_jaw_weight(m)]
+	res["null"] = A.has_jaw_weight(null)
+	return res
+
+
 func _init() -> void:
 	if OS.get_cmdline_user_args().has("broken"):
 		var bad := Shader.new()
@@ -35,5 +56,6 @@ func _init() -> void:
 		var s: GDScript = load(p)
 		var err: int = s.reload(true) if s != null else -1
 		out["scripts"][p] = {"loaded": s != null, "reload": err, "can_instantiate": s != null and s.can_instantiate()}
+	out["jaw_weight"] = _jaw_weight_cases()
 	print("PARSE ", JSON.stringify(out))
 	quit(0)

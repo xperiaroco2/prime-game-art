@@ -51,6 +51,10 @@ class AlienParseTest(unittest.TestCase):
         self.assertEqual(json.loads(line[13:])["uniforms"], 0)
         self.assertIn("SHADER ERROR", out)
 
+    def test_jaw_weight_check(self):  # PR #251's review minor 7: alien.gd's has_jaw_weight, asked twice (cached)
+        self.assertEqual(self.d["jaw_weight"], {"none": [False, False], "alpha_one": [False, False],
+                                                "weighted": [True, True], "null": False})
+
     def test_scripts_load(self):
         for path, r in self.d["scripts"].items():
             self.assertTrue(r["loaded"] and r["can_instantiate"], path)
