@@ -29,16 +29,25 @@ from __future__ import annotations
 import math
 
 TONGUE = {
-    "width": 0.039,  # m, the widest (the sheet's: about 0.42 of the rest mouth's width; M14 grid g1: 32 / 36 / 40 mm)
+    # M18 (UPDATE 50: ours read sick and scary, the tongue too big; mt2 reads a cheeky tongue-out face): fitted to
+    # mt2's tongue measured on the sheet's front panels (tools: the pink tongue's largest blob against the coral lips'
+    # width W; widest row, height, the tip below the lower lip's bottom, area / W^2): rest 0.44 / 0.34 / 0.04 / 0.11
+    # (M20d's 0.47 / 0.55 / 0.22 / 0.21), M 0.38 / 0.29 / 0.07 / 0.08, small 0.50 / 0.28 / - / 0.11, A 0.45 / 0.48 /
+    # 0.15 / 0.16, E 0.40 / 0.31 / 0.05 / 0.07, O 0.62 / 0.65 / - / 0.32. Narrower (34 mm, each shape's `w` from its
+    # measured width), a shorter tip (`tip_len` 0.30 of the width, M14's 0.45), no hang, a shorter root sunk deeper;
+    # M and A poke forward-down (wrap 30 / 35 with a longer tip) instead of hanging down the chin. The pick of M18's
+    # grids g1-g6 (docs/godot.md, M18).
+    "width": 0.034,  # m, the widest (M14: 39; M14 grid g1: 32 / 36 / 40 mm)
     "thick": 0.010,  # m, the thickest (top to underside; M14b grid g3: 7.5 read as a strap in profile, 11 a sausage)
     "groove": 0.70,  # the centre groove's depth, a share of the half thickness (M14b: 0.50 barely read)
     "groove_root": 0.45,  # M14b: the groove's share up to the lip's top (deep there it notched the root's top edge)
     "flat": 0.75,  # the underside's half thickness, a share of the top's
     "square": 0.75,  # the section's sides: 1 an ellipse, lower squarer
     "clear": 0.0015,  # m, the underside's gap over the lip (it lies on it, its top well above the lip's)
-    "dip": 0.007,  # m, how far the root end sinks below the lip's top inside the mouth
+    "dip": 0.010,  # m, how far the root end sinks below the lip's top inside the mouth (M14: 7)
     "root_w": 0.68,  # the width at the root (inside the mouth), a share of `width`: a spatula, widest near the tip
     "widest": 0.75,  # where it is widest, a share of the length
+    "tip_len": 0.30,  # M18: the round tip's length, a share of the width (M14: 0.45); a shape's own over it
     # M14b (PR #251's review: the tip was knife-thin in profile): over the tip the half thickness follows
     # c ** pow * (1 - taper * q) (q 0 to 1 along the tip, c the plan's quarter ellipse), never below `floor` of the
     # half thickness before the last station: plump with a round end, as mt2's
@@ -48,13 +57,15 @@ TONGUE = {
     "shapes": {
         # x: the tongue's centre line off the mouth's centre, a share of the lips' outer half width (+: the viewer's
         # right); inside (m): how far it reaches back behind the lip's top; wrap (deg); hang (m); slant, roll (deg);
-        # w (M14b): the width, a share of `width` (O's tongue narrower than its ring's hole)
-        "rest": {"x": 0.28, "inside": 0.020, "wrap": 80.0, "hang": 0.007, "slant": 16.0, "roll": 10.0},
-        "M": {"x": 0.0, "inside": 0.014, "wrap": 55.0, "hang": 0.0, "slant": 0.0, "roll": 0.0},
-        "small": {"x": 0.04, "inside": 0.020, "wrap": 45.0, "hang": 0.0, "slant": 0.0, "roll": 0.0},
-        "A": {"x": 0.12, "inside": 0.022, "wrap": 85.0, "hang": 0.006, "slant": -6.0, "roll": -4.0},
-        "E": {"x": 0.45, "inside": 0.020, "wrap": 82.0, "hang": 0.004, "slant": 24.0, "roll": 16.0},
-        "O": {"x": 0.0, "inside": 0.016, "wrap": 78.0, "hang": 0.0, "slant": 0.0, "roll": 0.0, "w": 0.75},
+        # w (M14b): the width, a share of `width`; tip_len (M18): the shape's own tip length
+        "rest": {"x": 0.28, "inside": 0.012, "wrap": 60.0, "hang": 0.0, "slant": 16.0, "roll": 10.0, "w": 1.1},
+        "M": {"x": 0.0, "inside": 0.012, "wrap": 30.0, "hang": 0.0, "slant": 0.0, "roll": 0.0, "w": 0.85,
+              "tip_len": 0.90},
+        "small": {"x": 0.04, "inside": 0.012, "wrap": 45.0, "hang": 0.0, "slant": 0.0, "roll": 0.0, "w": 1.2},
+        "A": {"x": 0.12, "inside": 0.018, "wrap": 35.0, "hang": 0.0, "slant": -6.0, "roll": -4.0, "w": 1.25,
+              "tip_len": 0.70},
+        "E": {"x": 0.45, "inside": 0.012, "wrap": 65.0, "hang": 0.0, "slant": 24.0, "roll": 16.0, "w": 1.12},
+        "O": {"x": 0.0, "inside": 0.012, "wrap": 65.0, "hang": 0.0, "slant": 0.0, "roll": 0.0, "w": 1.1},
     },
 }
 STATIONS = 40  # along the spine
@@ -102,9 +113,13 @@ def teeth_for(t: dict, shape: str) -> dict:
 
 
 def shape_params(p: dict, shape: str) -> dict:
-    """M14b: the tongue's settings for one shape: `width` times the shape's `w` (default 1)."""
+    """M14b: the tongue's settings for one shape: `width` times the shape's `w` (default 1); M18: the shape's own
+    `tip_len` (a share of its width) over the tongue's."""
     out = dict(p)
-    out["width"] = p["width"] * p["shapes"][shape].get("w", 1.0)
+    sp = p["shapes"][shape]
+    out["width"] = p["width"] * sp.get("w", 1.0)
+    if "tip_len" in sp:
+        out["tip_len"] = sp["tip_len"]
     return out
 
 
@@ -138,7 +153,7 @@ def spine2d(radii: tuple, p: dict, sp: dict) -> tuple[list[tuple], float]:
         for i in range(1, n_h + 1):
             pts.append((f0 + t[0] * sp["hang"] * i / n_h, u0 + t[1] * sp["hang"] * i / n_h))
     # the round tip: the spine runs on by the tip's length along the last direction
-    tip = 0.45 * p["width"]
+    tip = p.get("tip_len", 0.45) * p["width"]
     (fa, ua), (fb, ub) = pts[-2], pts[-1]
     d = math.hypot(fb - fa, ub - ua) or 1.0
     tdir = ((fb - fa) / d, (ub - ua) / d)
@@ -163,7 +178,7 @@ def profile(s: float, L: float, p: dict) -> tuple[float, float]:
     """The half width and the half thickness at arc length s of L: the root a little narrower, the last 0.45 width a
     round tip (a quarter ellipse in plan; in profile plump with a round end, p["tip"]: M14b, the old
     c ** 0.5 * (1 - 0.45 q) made a knife-thin blade; never thicker than wide)."""
-    tip = 0.45 * p["width"]
+    tip = p.get("tip_len", 0.45) * p["width"]
     w = p["width"] / 2 * (p["root_w"] + (1 - p["root_w"]) * _smooth(0.0, p.get("widest", 0.5) * L, s))
     h = p["thick"] / 2
     if s > L - tip:

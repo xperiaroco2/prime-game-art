@@ -195,15 +195,20 @@ LIP_SHAPE_FANGS = {
 # M14 (art #196): the tongue mouth mt2's lips: soft, full, rolled coral lips (the kit's alien_lip), the lower a little
 # fuller, round tucked corners, a soft bow; A, E and O designed rings as the pout's and the fangs' (UPDATE 19). The
 # tongue and teeth are alien_tongue_geom's.
+# M18 (UPDATE 50: "lips soft coral as mt2's, never swollen"): each lip's thickness over the mouth's width fitted to
+# mt2's front panels (upper / lower): rest 0.15 / 0.14 (M20d's 0.10 / 0.17), A 0.16 / 0.16 (0.14 / 0.21), E 0.10 /
+# 0.11 (0.12 / 0.14): the lower lip slimmer everywhere (rest 0.13 now), A's upper fuller, E's both slimmer; M its own
+# slimmer, narrower lens (shape_param: mt2's M is 0.86 of the rest's width, ours was 1.02). The pick of M18's grids.
 LIP_SHAPE_TONGUE = {
-    "w": 1.0, "corner": 0.55, "pw": 2.2, "full": 1.0, "upper": 0.85, "lower": 1.10,
+    "w": 1.0, "corner": 0.55, "pw": 2.2, "full": 1.0, "upper": 1.15, "lower": 0.85,
     "bow": 0.10, "bow_w": 0.16, "bow_peak": 0.06, "bow_at": 0.24,
     "lean": 0.30, "square": 0.85, "depth_corner": 0.25,
     "width": 0.90, "size": 1.0, "plump": 1.20,
     "bow_flat": 1.0, "corner_tuck": 1.3, "corner_share": 0.20,
+    "shape_param": {"M": {"upper": 0.75, "lower": 0.65, "width": 0.84, "plump": 1.0}},
     "ring_param": {
-        "A": dict(_RING, n=2.0, corner=0.80, bow=0.06, open=1.15, drop=1.10, upper=0.85, lower=1.05),
-        "E": dict(_RING, n=2.0, corner=0.70, bow=0.04, upper=0.85, lower=1.05),
+        "A": dict(_RING, n=2.0, corner=0.80, bow=0.06, open=1.15, drop=1.10, upper=1.35, lower=0.80),
+        "E": dict(_RING, n=2.0, corner=0.70, bow=0.04, upper=0.62, lower=0.78),
         "O": dict(_RING, n=2.0, hole=0.36, corner=1.0, thick=1.15, bow=0.20, tuck=0.0, cup_throat=0.85, upper=0.95,
                   lower=1.15),
     },
@@ -279,6 +284,13 @@ def merged_pout(over: dict | None = None, base: dict | None = None) -> dict:
         else:
             out[k] = v
     return out
+
+
+def shape_lips(p: dict, shape: str) -> dict:
+    """M18: a lip shape for one piece: p with p["shape_param"][shape]'s keys on top (the tongue mouth's M slimmer than
+    its rest, as mt2's); p itself when it has none for the shape (every other design and shape unchanged)."""
+    over = (p.get("shape_param") or {}).get(shape)
+    return dict(p, **over) if over else p
 
 
 def taper(s: float, p: dict) -> float:

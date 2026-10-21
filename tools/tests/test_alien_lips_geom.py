@@ -302,5 +302,22 @@ class DepthFactorTest(unittest.TestCase):  # M16d: a lip shape's own tube depth 
         self.assertAlmostEqual(LP.depth_factor(p, "l"), 0.3)
 
 
+class ShapeLipsTest(unittest.TestCase):  # M18: a design's own lip keys for one piece
+    def test_tongue_m_slimmer_others_unchanged(self):
+        p = LP.merged_tongue()
+        m = LP.shape_lips(p, "M")
+        self.assertLess(m["upper"], p["upper"])
+        self.assertLess(m["lower"], p["lower"])
+        self.assertLess(m["width"], p["width"])
+        self.assertIs(LP.shape_lips(p, "rest"), p)
+        self.assertIs(LP.shape_lips(LP.LIP_SHAPE_POUT, "M"), LP.LIP_SHAPE_POUT)  # the pout has none
+        self.assertIs(LP.shape_lips(LP.LIP_SHAPE_FANGS, "M"), LP.LIP_SHAPE_FANGS)
+
+    def test_tongue_lower_lip_not_fuller_than_upper(self):  # mt2: the lower lip 0.94 of the upper
+        p = LP.LIP_SHAPE_TONGUE
+        self.assertLessEqual(p["lower"], p["upper"])
+        self.assertLessEqual(p["ring_param"]["A"]["lower"], p["ring_param"]["A"]["upper"])
+
+
 if __name__ == "__main__":
     unittest.main()

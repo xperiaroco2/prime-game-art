@@ -63,7 +63,7 @@ class TongueTest(unittest.TestCase):
     def test_tip_plump_in_profile(self):  # M14b (PR #251's review): no knife-thin blade
         p = TG.merged()
         L = 0.05
-        tip = 0.45 * p["width"]
+        tip = p["tip_len"] * p["width"]
         at = lambda q: TG.profile(L - tip + q * tip, L, p)  # noqa: E731
         self.assertGreaterEqual(at(0.8)[1], 0.35 * p["thick"])
         for k in range(1, 20):  # never below the floor before the last station, never thicker than wide
@@ -80,13 +80,29 @@ class TongueTest(unittest.TestCase):
 
     def test_shape_width_and_teeth_per_shape(self):
         p = TG.merged()
-        self.assertLess(TG.shape_params(p, "O")["width"], p["width"] * 0.85)
-        self.assertEqual(TG.shape_params(p, "A")["width"], p["width"])
+        self.assertAlmostEqual(TG.shape_params(p, "A")["width"], p["width"] * p["shapes"]["A"]["w"])
+        self.assertEqual(TG.shape_params(p, "M")["tip_len"], p["shapes"]["M"]["tip_len"])  # M18: its own tip
+        self.assertEqual(TG.shape_params(p, "E")["tip_len"], p["tip_len"])
         t = TG.merged_teeth()
         a, r = TG.teeth_for(t, "A"), TG.teeth_for(t, "rest")
         self.assertEqual(len(a["lower"]), 2, "the sheet's A shows two lower teeth")
         self.assertEqual(r["lower"], TG.TEETH["lower"])
         self.assertNotIn("per_shape", a)
+
+    def test_m18_fitted_to_mt2(self):  # M18: smaller than M14's, never hanging down the chin
+        p = TG.merged()
+        self.assertLessEqual(p["width"], 0.035)
+        self.assertLessEqual(p["tip_len"], 0.35)
+        for shape, sp in p["shapes"].items():
+            self.assertEqual(sp["hang"], 0.0, shape)
+            self.assertLessEqual(sp["wrap"], 65.0, shape)
+            q = TG.shape_params(p, shape)
+            self.assertLessEqual(q["width"], 0.0435, shape)  # at most mt2's widest share (0.50 of W) on our lips
+        for shape in ("M", "A"):  # forward-down: the last spine step goes forward at least as much as down
+            sp = p["shapes"][shape]
+            pts2, _s = TG.spine2d((0.006, 0.005), TG.shape_params(p, shape), sp)
+            df, du = pts2[-1][0] - pts2[-4][0], pts2[-1][1] - pts2[-4][1]
+            self.assertGreaterEqual(df, -du * 0.6, shape)
 
     def test_flop_weight_zero_inside_one_at_tip(self):
         *_r, verts, faces, flop = self.build("A")
@@ -110,12 +126,12 @@ class TongueTest(unittest.TestCase):
         self.assertAlmostEqual(pts[-1][0], pts[0][0], places=9)
 
     def test_merged_overrides_by_shape(self):
-        p = TG.merged({"width": 0.03, "shapes": {"A": {"hang": 0.0}}})
+        p = TG.merged({"width": 0.03, "shapes": {"A": {"wrap": 50.0}}})
         self.assertEqual(p["width"], 0.03)
-        self.assertEqual(p["shapes"]["A"]["hang"], 0.0)
-        self.assertEqual(p["shapes"]["A"]["wrap"], TG.TONGUE["shapes"]["A"]["wrap"])
+        self.assertEqual(p["shapes"]["A"]["wrap"], 50.0)
+        self.assertEqual(p["shapes"]["A"]["inside"], TG.TONGUE["shapes"]["A"]["inside"])
         self.assertEqual(TG.TONGUE["width"], TG.merged()["width"])
-        self.assertNotEqual(TG.TONGUE["shapes"]["A"]["hang"], 0.0)
+        self.assertNotEqual(TG.TONGUE["shapes"]["A"]["wrap"], 50.0)
 
 
 class TeethTest(unittest.TestCase):

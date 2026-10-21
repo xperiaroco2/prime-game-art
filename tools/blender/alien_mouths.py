@@ -504,6 +504,7 @@ def build_piece(bvh, m, design, shape, world, mats, coll, origin, lips=None, nam
     xl, xr = xs[0], xs[-1]
     push = PUSH.get(design, {}).get(shape, PUSH.get(design, {}).get("*", 0.0))
     lips_p = LP.LIP_SHAPE_M6C if lips is None else lips
+    lips_p = LP.shape_lips(lips_p, shape)  # M18: a design's own keys for one piece (`shape_param`; none: unchanged)
     back = LOWER_BACK.get(design, 0.0) + lips_p.get("lower_fwd", 0.0)  # M13b: a lip shape's lower lip forward (m)
     world = LP.scale_x(world, lips_p.get("width", 1.0))  # M8b: the mouth's width
     world = LP.scale_size(world, lips_p.get("size", 1.0), origin.translation.z)  # M12: the whole mouth's size
