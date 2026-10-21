@@ -1,26 +1,38 @@
-"""M19 (art #196, brief UPDATE 38): the AI mouth route test. Fits AI-made lip forms (Meshy multi-image to 3D of GPT
-Image views of the pout mp1's lips) onto our mouth socket and writes a grid kit with the variants beside our pieces.
+"""M19 (art #196, brief UPDATE 38): the AI mouth route. Fits AI-made lip forms (Meshy multi-image to 3D of GPT Image
+views of the pout mp1's lips) onto our mouth socket. Opens a kit's export/alien_character.blend (read only) and writes
+<out>/<export-name>/ (never over its input). Two modes:
 
-Opens a kit's export/alien_character.blend (M15's or later, read only) and writes <out>/<export-name>/ (never over its
-input): the same kit plus, per shape of --ai ({"rest": GLB, "A": GLB}), two pout variants as grid nodes
-lipvar_<variant>_pout_<shape> (the names godot/alien/m12_shots.gd's "vgrid" shows):
-- `aia` (the AI mesh itself): imported, aligned (alien_mouth_fit_geom.align: one uniform scale to our piece's lip
-  width, centred on x = 0, its lip line on ours, its front on ours), decimated to FIT["budget_tris"], made symmetric
-  (its -x half mirrored), its back pushed under the skin (close_back); on the A shape the deep front-facing floor of
-  its opening gets our dark alien_mouth_inner;
-- `aib` (our topology on the AI form): a copy of our piece whose lip vertices follow the aligned AI surface by
-  wrap_weight (a Shrinkwrap to the nearest surface point; the parts under the skin and our cup stay);
-- with --also KEY=BLEND, that kit's own mouth_pout_<shape> as lipvar_<KEY>_pout_<shape> (M16c's pieces beside).
-Every variant gets our materials (alien_lip_pout, alien_mouth_inner), its own parts AO and jaw weights (alien_m6,
-alien_m12's rules); the kit's own pieces, the Body and its contact layers are untouched. alien_mouths.py and
-alien_lips_geom.py are only read (through alien_m12). Report: <out>/<export-name>/fit.json; log lines "M19 ...".
+- the grid (M19, without --replace): the same kit plus, per shape of --ai ({"rest": GLB, "A": GLB}), two pout
+  variants as grid nodes lipvar_<variant>_pout_<shape> (the names godot/alien/m12_shots.gd's "vgrid" shows):
+  `aia` (the AI mesh itself) and `aib` (a copy of our piece whose lip vertices follow the aligned AI surface by
+  wrap_weight, a Shrinkwrap to the nearest surface point; the parts under the skin and our cup stay, and the AI form
+  it targets has no cup joined yet); with --also KEY=BLEND, that kit's own mouth_pout_<shape> as
+  lipvar_<KEY>_pout_<shape>;
+- --replace (M20, brief UPDATE 42, the hybrid pout the engineer picked): the AI forms of the closed shapes ({"rest":
+  GLB, "M": GLB, "small": GLB}) become the kit's own mouth_pout_rest / _M / _small (the parametric pieces removed;
+  the open shapes A, E, O stay ours); the skin's pout contact (Body's TEXCOORD_6.u, alien_m12.mouth2_contact) is
+  rebuilt from the new rest; each piece's AO and its jaw weight (COLOR_0.a; G.jaw_closed below the lip line); the
+  provenance of each piece (ai_generated, the Meshy task, the batch files, from the generation.json beside each GLB)
+  in character.json's `m20`.
 
-    tools/runner/blender.py run_script("alien_mouth_fit.py", ["--kit", <M15/export>, "--out", <M19>,
-                                       "--ai", '{"rest": "...glb", "A": "...glb"}'])
+The fit of an `aia` form (both modes): imported, aligned (alien_mouth_fit_geom.align: one uniform scale to our
+piece's lip width, centred on x = 0; a closed shape by its lip line (seam_z) on ours, an open one by its box's middle
+height, which on M19's A left the AI ring 79.5 mm tall against our 71.2), its flat back seated on the skin
+(FIT["seat"] "back"); its mirror error measured, then decimated to FIT["budget_tris"] and made symmetric (its -x half
+mirrored; a second pass when the mirror took it over the budget); its back pushed under the skin and curved under
+(taper_back; --replace adds corner_sink at the thin ends); on A the deep front-facing floor of its opening removed
+and our dark cup joined; on small the deep front-facing faces of its parting get alien_mouth_inner. Our materials
+(alien_lip_pout, alien_mouth_inner) on every variant; the kit's other pieces and the Body's other layers untouched.
+alien_mouths.py and alien_lips_geom.py are only read (through alien_m12). Report: <out>/<export-name>/fit.json; log
+lines "M19 ..." / "M20 ...".
+
+    tools/runner/blender.py run_script("alien_mouth_fit.py", ["--kit", <kit/export>, "--out", <M20>, "--replace",
+                                       "--ai", '{"rest": "...glb", "M": "...glb", "small": "...glb"}'])
 """
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import shutil
 import sys
@@ -40,6 +52,7 @@ import alien_mouth_fit_geom as G  # noqa: E402
 import export_glb  # noqa: E402
 
 LIP = "alien_lip_pout"
+CLOSED = ("rest", "M", "small")  # the closed shapes, aligned by their lip line (M20: the kit's AI pieces)
 INNER = "alien_mouth_inner"
 WRAP_ROUNDS = 3  # aib: shrinkwrap rounds with a relax between
 OPENING = (0.32, 0.30)  # aia's A: the floor is looked for within these shares of the width and height round the centre
@@ -60,6 +73,8 @@ def args():
     p.add_argument("--also", action="append", default=[], help="KEY=BLEND: that kit's pout pieces as lipvar_KEY_*")
     p.add_argument("--fit", default="", help="JSON merged over alien_mouth_fit_geom.FIT")
     p.add_argument("--no-bake", action="store_true")
+    p.add_argument("--replace", action="store_true", help="M20: the AI forms become the kit's closed pout pieces")
+    p.add_argument("--orm-sss", default="", help="--replace: the skin's orm_sss.png for the GLB's SSS route check")
     return p.parse_args(argv)
 
 
@@ -124,35 +139,52 @@ def skin_depth(bvh, sock, x: float, z: float, near_y: float):
 
 
 def decimate_and_mirror(ob, budget: int) -> dict:
-    tris = sum(len(p.vertices) - 2 for p in ob.data.polygons)
-    ratio = G.decimate_ratio(tris, budget)  # the mirror keeps the count: one half cut, the other copied
-    mod = ob.modifiers.new("dec", "DECIMATE")
-    mod.ratio = ratio
-    mod.use_collapse_triangulate = True
-    bpy.context.view_layer.objects.active = ob
-    bpy.ops.object.modifier_apply(modifier=mod.name)
-    bm = bmesh.new()
-    bm.from_mesh(ob.data)
-    bmesh.ops.symmetrize(bm, input=bm.verts[:] + bm.edges[:] + bm.faces[:], direction="X", dist=1e-5)
-    bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
-    bm.to_mesh(ob.data)
-    bm.free()
-    ob.data.update()
-    return {"raw_tris": tris, "ratio": round(ratio, 4), "tris": sum(len(p.vertices) - 2 for p in ob.data.polygons)}
+    """Decimated toward the budget, then made symmetric (its -x half mirrored onto +x). The mirror does not keep the
+    count exactly (M19 ended at 6,302 for 6,000), so a pass that ends over the budget is repeated on the result."""
+    raw = sum(len(p.vertices) - 2 for p in ob.data.polygons)
+    tris, passes = raw, 0
+    while tris > budget and passes < 3:
+        ratio = G.decimate_ratio(tris, int(budget * 0.97))
+        mod = ob.modifiers.new("dec", "DECIMATE")
+        mod.ratio = ratio
+        mod.use_collapse_triangulate = True
+        bpy.context.view_layer.objects.active = ob
+        bpy.ops.object.modifier_apply(modifier=mod.name)
+        bm = bmesh.new()
+        bm.from_mesh(ob.data)
+        bmesh.ops.symmetrize(bm, input=bm.verts[:] + bm.edges[:] + bm.faces[:], direction="X", dist=1e-5)
+        bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
+        bm.to_mesh(ob.data)
+        bm.free()
+        ob.data.update()
+        tris = sum(len(p.vertices) - 2 for p in ob.data.polygons)
+        passes += 1
+    return {"raw_tris": raw, "passes": passes, "tris": tris, "budget": budget}
 
 
 def align_form(form, ours, shape: str, bvh, sock) -> dict:
-    """form (world) aligned onto our piece `ours` (world): rest by the lip line, A by the lips' centre height."""
+    """form (world) aligned onto our piece `ours` (world): a closed shape by the lip line, A by the lips' centre
+    height. Our lip line is looked for on the lip vertices in front of the skin only (M20: the parts tucked under
+    the skin put the parametric rest's line 5 mm low, M and small's at the right height)."""
     oc = local_co(ours)[lip_mask(ours)]
     olo, ohi = G.bbox(map(tuple, oc))
+    front = [tuple(q) for q in oc if (lambda sy: sy is None or q[1] < sy)(skin_depth(bvh, sock, q[0], q[2], olo[1]))]
     fc = local_co(form)
     flo, fhi = G.bbox(map(tuple, fc))
-    if shape == "rest":
-        oline, fline = G.seam_z([tuple(p) for p in oc]), G.seam_z([tuple(p) for p in fc])
+    if shape in CLOSED and G.FIT["closed_align"] == "centre":  # M20: the visible lips' middle height on ours
+        flo_v, fhi_v = G.bbox(front)
+        oline, fline = (flo_v[2] + fhi_v[2]) / 2, (flo[2] + fhi[2]) / 2
+    elif shape in CLOSED:
+        oline, fline = G.seam_z(front), G.seam_z([tuple(p) for p in fc])
     else:
         oline, fline = (olo[2] + ohi[2]) / 2, (flo[2] + fhi[2]) / 2
     s, t = G.align(flo, fhi, fline, ohi[0] - olo[0], oline, olo[1])
     pts = G.apply(map(tuple, fc), s, t)
+    kz = G.FIT["z_scale"].get(shape, 1.0) if shape in CLOSED else 1.0
+    if kz != 1.0:  # M20: the AI lips' fullness toward mp1's (the height about the line, the depth half as much)
+        pts = G.stretch(pts, oline, olo[1], kz, 1.0 + G.FIT["y_follow"] * (kz - 1.0))
+        if G.FIT["lower_scale"] != 1.0:  # the lower lip alone a little fuller (mp1: lower = upper)
+            pts = G.stretch_below(pts, G.seam_z(pts), G.FIT["lower_scale"])
     seat = None
     if G.FIT["seat"] == "back":  # the form's flat back on the skin at the lip line's centre, so only it sticks out
         sy = skin_depth(bvh, sock, 0.0, oline, olo[1])
@@ -163,20 +195,23 @@ def align_form(form, ours, shape: str, bvh, sock) -> dict:
     lo2, hi2 = G.bbox(map(tuple, local_co(form)))
     return {"scale": round(s, 6), "ours_mm": [round((ohi[i] - olo[i]) * 1000, 1) for i in range(3)],
             "form_mm": [round((hi2[i] - lo2[i]) * 1000, 1) for i in range(3)], "line_z": round(oline, 5),
-            "seat_mm": None if seat is None else round(seat * 1000, 2)}
+            "seat_mm": None if seat is None else round(seat * 1000, 2), "z_scale": kz}
 
 
-def close_form(form, bvh, sock) -> dict:
-    """The form's back pushed under the skin and curved under (taper_back), then the moved band smoothed."""
+def close_form(form, bvh, sock, corners: bool = False) -> dict:
+    """The form's back pushed under the skin and curved under (taper_back), then the moved band smoothed; corners
+    (M20): the thin ends' back goes corner_sink deeper, so its glossy rim does not show where it meets the skin."""
     me = form.data
     co = local_co(form)
     lo, hi = co.min(0), co.max(0)
     centre = ((lo[0] + hi[0]) / 2, (lo[2] + hi[2]) / 2)
     depth = float(hi[1] - lo[1])
     moved = set()
+    hw = float(hi[0] - lo[0]) / 2
     for i, v in enumerate(me.vertices):
         sy = skin_depth(bvh, sock, co[i, 0], co[i, 2], lo[1])
-        q = G.taper_back(tuple(co[i]), v.normal.y, sy, centre, depth)
+        sink = G.FIT["sink"] + (G.corner_sink(co[i, 0], centre[0], hw) if corners else 0.0)
+        q = G.taper_back(tuple(co[i]), v.normal.y, sy, centre, depth, sink=sink)
         if q != tuple(co[i]):
             co[i] = q
             moved.add(i)
@@ -195,28 +230,42 @@ def close_form(form, bvh, sock) -> dict:
 
 
 def form_materials(form, shape: str, mats: dict) -> dict:
-    """Our lip material on the form; on A the deep front-facing floor of its opening removed (cup_from_ours fills it)."""
+    """Our lip material on the form; on A the deep front-facing floor of its opening removed (cup_from_ours fills it);
+    on small (M20) the deep front-facing faces of its parting painted alien_mouth_inner (a dark slit, no hole)."""
     me = form.data
     me.materials.clear()
     me.materials.append(mats[LIP])
     me.materials.append(mats[INNER])
     inner = 0
-    if shape != "rest":
+    if shape not in ("rest", "M"):
         co = local_co(form)
         lo, hi = co.min(0), co.max(0)
         depth, w, h = hi[1] - lo[1], hi[0] - lo[0], hi[2] - lo[2]
         cx, cz = (lo[0] + hi[0]) / 2, (lo[2] + hi[2]) / 2
+        knots = G.lip_line([tuple(q) for q in co]) if shape == "small" else None
         tree = BVHTree.FromPolygons([tuple(p) for p in co], [list(p.vertices) for p in me.polygons])
         for f in me.polygons:
             f.select = False  # the import and the mirror leave faces selected
         for f in me.polygons:
             c = f.center
-            if abs(c.x - cx) > OPENING[0] * w or abs(c.z - cz) > OPENING[1] * h:
+            if knots is not None:  # small: only round its parting, never the lips' outer rims
+                if abs(c.x - cx) > G.FIT["slit_reach"] * w / 2 or abs(c.z - G.line_at(knots, c.x)) > G.FIT["slit_band"] * h:
+                    continue
+            elif abs(c.x - cx) > OPENING[0] * w or abs(c.z - cz) > OPENING[1] * h:
                 continue
             hit = tree.ray_cast(Vector((c.x, lo[1] - 0.01, c.z)), Vector((0, 1, 0)), 1.0)
-            if hit[2] == f.index and (c.y - lo[1]) > INNER_DEPTH * depth:  # seen from the front, deep
+            deep = G.FIT["slit_depth"] if shape == "small" else INNER_DEPTH
+            if hit[2] == f.index and (c.y - lo[1]) > deep * depth:  # seen from the front, deep
                 f.select = True
                 inner += 1
+        if shape == "small":
+            for f in me.polygons:
+                if f.select:
+                    f.material_index = 1
+                    f.select = False
+            for f in me.polygons:
+                f.use_smooth = True
+            return {"slit_faces": inner}
         # the floor goes: our own cup and tongue (cup_from_ours) show through the opening, dark and clean-edged
         bm = bmesh.new()
         bm.from_mesh(me)
@@ -313,6 +362,131 @@ def also_pieces(key: str, blend: Path, shapes, mouth, mats) -> list:
     return out
 
 
+def fit_form(path: Path, ours, shape: str, bvh, sock, mouth, mats, corners: bool = False):
+    """An AI form aligned, measured, cleaned, painted and closed into the skin, on the Mouth socket."""
+    form = import_form(path, f"m19_form_{shape}")
+    r = {"align": align_form(form, ours, shape, bvh, sock)}
+    # PR #256's review minor 4: the mirror error of the aligned form before it is made symmetric (every 4th point)
+    pts = [tuple(q) for q in local_co(form)]
+    r["mirror_mm_before"] = round(G.mirror_error(pts[::4]) * 1000, 2)
+    r["clean"] = decimate_and_mirror(form, G.FIT["budget_tris"])
+    r["materials"] = form_materials(form, shape, mats)  # before the close: the floor by the form's own depth
+    r["close"] = close_form(form, bvh, sock, corners=corners)
+    to_socket(form, mouth)
+    return form, r
+
+
+def provenance(path: Path) -> dict:
+    """The AI piece's record from the Meshy generation.json beside its GLB (docs/manifest.md's fields)."""
+    g = json.loads((path.parent / "generation.json").read_text(encoding="utf-8"))
+    task = next(iter(g["tasks"].values()))
+    return {"ai_generated": True, "service": "meshy", "model": g.get("model_version"), "kind": g.get("kind"),
+            "task_id": task.get("id"), "credits": task.get("consumed_credits"), "batch": g.get("batch"),
+            "batch_file": "batches/" + g.get("batch_file", ""), "item": g.get("item"), "licence": g.get("licence"),
+            "approval_ref": (g.get("approval") or {}).get("ref"), "glb": path.as_posix(),
+            "glb_sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+            "inputs": [i.get("provenance") for i in g.get("inputs", [])]}
+
+
+def jaw_closed(ob) -> dict:
+    """The jaw weight of a one-piece closed form into COLOR_0's alpha (alien_m12.jaw_weights' channel; the colour
+    stays the grey AO): G.jaw_closed below the form's own lip line (G.lip_line of its lip faces)."""
+    me = ob.data
+    co = local_co(ob)
+    lp = [tuple(q) for q in co[lip_mask(ob)]]
+    knots = G.lip_line(lp)
+    lo, hi = G.bbox(lp)
+    cx, hw = (lo[0] + hi[0]) / 2, (hi[0] - lo[0]) / 2
+    g = np.array([G.jaw_closed(tuple(q), knots, cx, hw, G.FIT["jaw_band"], M12.JAW) for q in co])
+    n = len(me.vertices)
+    if "ao" not in me.color_attributes:
+        at = me.color_attributes.new("ao", "FLOAT_COLOR", "POINT")
+        at.data.foreach_set("color", np.ones(n * 4, dtype=np.float32))
+        me.color_attributes.active_color = at
+        me.color_attributes.render_color_index = me.color_attributes.find("ao")
+    col = np.empty(n * 4, dtype=np.float32)
+    me.color_attributes["ao"].data.foreach_get("color", col)
+    col = col.reshape(-1, 4)
+    col[:, 1] = col[:, 0]
+    col[:, 3] = g
+    me.color_attributes["ao"].data.foreach_set("color", col.astype(np.float32).ravel())
+    return {"moving": round(float((g > 0.5).mean()), 3), "max": round(float(g.max()), 3),
+            "line_mm": [[round(x * 1000, 1), round(z * 1000, 1)] for x, z in knots]}
+
+
+def replace_main(a, kit: Path, ex: Path, ai: dict) -> None:
+    """M20: the AI forms as the kit's closed pout pieces (see the module's docstring)."""
+    if set(ai) - set(CLOSED):
+        raise SystemExit(f"--replace takes the closed shapes {CLOSED}, got {sorted(ai)}")
+    bpy.ops.wm.open_mainfile(filepath=str(kit / "alien_character.blend"))
+    cj = json.loads((kit / "character.json").read_text(encoding="utf-8"))
+    body = M6.rest_pose()
+    bvh = BVHTree.FromObject(body, bpy.context.evaluated_depsgraph_get())
+    mouth = bpy.data.objects["Mouth"]
+    sock = mouth.matrix_world.copy()
+    mats = {n: bpy.data.materials[n] for n in (LIP, INNER)}
+    rep = {"kit": str(kit), "fit": dict(G.FIT), "shapes": {}}
+    new = []
+    for shape in CLOSED:
+        if shape not in ai:
+            continue
+        name = f"mouth_pout_{shape}"
+        ours = bpy.data.objects[name]
+        hidden = ours.hide_render
+        form, r = fit_form(ai[shape], ours, shape, bvh, sock, mouth, mats, corners=True)
+        r["ours_tris"] = sum(len(q.vertices) - 2 for q in ours.data.polygons)
+        old = ours.data
+        bpy.data.objects.remove(ours)
+        bpy.data.meshes.remove(old)
+        form.name = form.data.name = name
+        form.hide_render = hidden
+        lo, hi = G.bbox(map(tuple, local_co(form)))
+        r["mm"] = [round((hi[i] - lo[i]) * 1000, 1) for i in range(3)]
+        r["provenance"] = provenance(ai[shape])
+        log(shape, json.dumps({k: v for k, v in r.items() if k != "provenance"}))
+        rep["shapes"][shape] = r
+        new.append(form)
+    bpy.context.view_layer.update()
+    rep["contact"] = M12.mouth2_contact(body)  # the skin's pout contact from the new rest
+    if not a.no_bake:
+        rep["parts_ao"] = M6.bake_parts_ao(body, eyes=False, pieces=new)
+    rep["jaw"] = {o.name: jaw_closed(o) for o in new}
+    log("jaw", json.dumps({k: {kk: vv for kk, vv in v.items() if kk != "line_mm"} for k, v in rep["jaw"].items()}))
+    arm = body.find_armature()
+    if arm is not None:  # back to POSE: in REST the exporter bakes every clip as the rest pose
+        arm.data.pose_position = "POSE"
+    bpy.context.view_layer.update()
+    ex.mkdir(parents=True, exist_ok=True)
+    bpy.ops.wm.save_as_mainfile(filepath=str(ex / "alien_character.blend"))
+    opts = dict(export_glb.options(False), export_image_format="AUTO", export_vertex_color="ACTIVE",
+                export_tangents=True, export_extras=True)
+    glb = ex / "alien_character.glb"
+    res = bpy.ops.export_scene.gltf(filepath=str(glb), **opts)
+    if res != {"FINISHED"}:
+        raise SystemExit(f"export: {res}")
+    AE.check_images(glb)
+    if a.orm_sss:
+        bad = M12.E.sss_orm_problems(glb.read_bytes(), "alien_hue", Path(a.orm_sss).read_bytes())
+        if bad:
+            raise SystemExit(f"the GLB's SSS route: {bad}")
+        log("sss route ok")
+    for f in kit.iterdir():
+        if f.suffix == ".png":
+            shutil.copy2(f, ex / f.name)
+    cj["m20"] = rep
+    cj["note_m20"] = (
+        "art #196 M20 (the hybrid pout): mouth_pout_rest, mouth_pout_M and mouth_pout_small are AI-made forms "
+        "(Meshy multi-image to 3D, meshy-7.1, of our GPT Image views of the mp1 sheet's lips; ai_generated = true, the "
+        "task ids and batch files per shape in m20.shapes.<shape>.provenance), fitted onto the Mouth socket by "
+        "tools/blender/alien_mouth_fit.py --replace: one closed piece each (no separate upper and lower tube), "
+        "alien_lip_pout, small's parting alien_mouth_inner; COLOR_0 the baked AO and its alpha the jaw weight (below "
+        "the lip line 1, above 0, the corners less); the skin's pout contact (TEXCOORD_6.u) from the new rest. The "
+        "open shapes A, E, O are ours (alien_mouths).")
+    (ex / "character.json").write_text(json.dumps(cj, indent=1), encoding="utf-8", newline="\n")
+    (ex / "fit.json").write_text(json.dumps(rep, indent=1), encoding="utf-8", newline="\n")
+    log("EXPORT", glb, round(glb.stat().st_size / 1e6, 2), "MB")
+
+
 def main():
     a = args()
     if a.fit:
@@ -322,6 +496,9 @@ def main():
     if ex.resolve() == kit.resolve():
         raise SystemExit("the new kit must not overwrite its input")
     ai = {k: Path(v) for k, v in json.loads(a.ai).items()}
+    if a.replace:
+        replace_main(a, kit, ex, ai)
+        return
     bpy.ops.wm.open_mainfile(filepath=str(kit / "alien_character.blend"))
     body = M6.rest_pose()
     bvh = BVHTree.FromObject(body, bpy.context.evaluated_depsgraph_get())
@@ -332,16 +509,11 @@ def main():
     new = []
     for shape, path in ai.items():
         ours = bpy.data.objects[f"mouth_pout_{shape}"]
-        form = import_form(path, f"m19_form_{shape}")
-        r = {"align": align_form(form, ours, shape, bvh, sock)}
-        r["clean"] = decimate_and_mirror(form, G.FIT["budget_tris"])
-        r["mirror_mm"] = round(G.mirror_error([tuple(p) for p in local_co(form)]) * 1000, 3)
-        r["materials"] = form_materials(form, shape, mats)  # before the close: the floor by the form's own depth
-        r["close"] = close_form(form, bvh, sock)
-        to_socket(form, mouth)
-        if shape != "rest":
-            r["cup_faces"] = cup_from_ours(form, ours)
+        form, r = fit_form(path, ours, shape, bvh, sock, mouth, mats)
+        # aib targets the AI lips alone (PR #256's review minor 1: with our cup joined first, A's corners crumpled)
         wb, r["aib"] = wrap_ours(ours, form, bvh, sock, f"lipvar_aib_pout_{shape}")
+        if shape not in CLOSED:
+            r["cup_faces"] = cup_from_ours(form, ours)
         lo, hi = G.bbox(map(tuple, local_co(form)))
         r["aia_mm"] = [round((hi[i] - lo[i]) * 1000, 1) for i in range(3)]
         form.name = form.data.name = f"lipvar_aia_pout_{shape}"
