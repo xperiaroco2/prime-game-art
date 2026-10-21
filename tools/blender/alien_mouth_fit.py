@@ -213,6 +213,26 @@ def smooth_bands(form) -> dict:
     return {"mid_verts": len(mid), "line_verts": len(line)}
 
 
+def mirror_pairs(ob) -> np.ndarray:
+    """M20b: per vertex the index of its mirror (-x, y, z), taken right after the mirror while it is exact."""
+    co = local_co(ob)
+    kd = KDTree(len(co))
+    for i, q in enumerate(co):
+        kd.insert(q, i)
+    kd.balance()
+    return np.array([kd.find((-q[0], q[1], q[2]))[1] for q in co])
+
+
+def mirror_snap(ob, pairs) -> float:
+    """M20b: each vertex averaged with its partner's mirror, so the per-vertex skin rays of the close (the face is
+    not exactly symmetric) leave the piece mirrored (it ended 0.33 mm off); returns the largest move (m)."""
+    co = local_co(ob)
+    m = co[pairs] * np.array([-1.0, 1.0, 1.0])
+    new = (co + m) / 2
+    set_points(ob, new)
+    return float(np.linalg.norm(new - co, axis=1).max())
+
+
 def fill_cleft(form) -> dict:
     """M20b: the AI lower lip's central groove filled (measured on M20's rest: the front 0.8-1.4 mm further back at
     x = 0 than at +-2-3 mm, a cleft down the lower lip that read as a seam; mp1's lower lip is one smooth cushion).
@@ -479,11 +499,13 @@ def fit_form(path: Path, ours, shape: str, bvh, sock, mouth, mats, corners: bool
     pts = [tuple(q) for q in local_co(form)]
     r["mirror_mm_before"] = round(G.mirror_error(pts[::4]) * 1000, 2)
     r["clean"] = decimate_and_mirror(form, G.FIT["budget_tris"])
+    pairs = mirror_pairs(form) if shape in CLOSED else None
     r["materials"] = form_materials(form, shape, mats)  # before the close: the floor by the form's own depth
     r["close"] = close_form(form, bvh, sock, corners=corners)
     if shape in CLOSED:
         r["cleft"] = fill_cleft(form)
         r["bands"] = smooth_bands(form)
+        r["mirror_snap_mm"] = round(mirror_snap(form, pairs) * 1000, 3)
     to_socket(form, mouth)
     return form, r
 
