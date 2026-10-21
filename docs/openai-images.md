@@ -193,7 +193,18 @@ Edits of mp1's rest and A panels (a 720 px mouth crop and the 512 px head panel 
 sculpture, three views stacked in rows on one 1024x1536 sheet (rows keep the views consistent; they are cut apart for
 Meshy). Measured: medium, n = 3, two references: 894 to 945 text and 6,144 image input tokens, 1,029 output tokens
 (343 per image, the same as one medium 1536x1024), **$0.085** a request, 23 to 30 s; high, n = 1, the picked image and
-one crop as references: 315 text and 2,560 image input tokens, 1,372 output tokens, **$0.063**, about 33 s. The
+one crop as references: 298 to 315 text and 2,560 image input tokens, 1,372 output tokens, **$0.063**, about 33 s. The
 batch: **$0.2956** of its $3 cap (`req_85f6e47a...`, `req_bfbca41c...`, `req_e5cc1b93...`, `req_26ad9708...`). All
 six medium sheets were clean and close to mp1's lips; the high redraws kept the picks almost exactly, a little
 crisper. The images: `D:/prime-art-raw/2026-10-21-alien-mouth-views/`.
+
+## Batch 2026-10-21-alien-mouth-views-2 (art #196 M20)
+
+The hybrid pout's other closed shapes, M (pressed) and small (slightly parted), as the same isolated lip sculpture as
+M19's `rest-h`: edits with that sheet first ("keep everything, change only the shape") and mp1's M or small panel (a
+720 px mouth crop) second, so the three closed pieces share the lips, the light and the scale. Medium, n = 3:
+$0.0969 and $0.0972 (969 text, 7,680 image input and 1,029 output tokens; the estimate's 2x margin said $0.104);
+high redraws of the picks (m-m 0, small-m 0), n = 1: $0.0632 and $0.0633. **$0.3205** of the $2 cap. All six medium
+sheets kept the rest sheet's layout and look; M came out slimmer than mp1's M (the prompt asked for "a little
+flatter"), so the fit stretches it (`docs/godot.md`, M20).
+

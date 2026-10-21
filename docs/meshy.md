@@ -465,6 +465,14 @@ a flat back as the views asked; both kept the views' bow, rolled lower lip and f
 rolled ring (`a3d`, whose opening came out with a shallow floor). `tools/blender/alien_mouth_fit.py` fits them onto the
 alien's mouth socket (`docs/godot.md`, "The alien parts kit", M19).
 
+## Batch 2026-10-21-alien-mouth-3d-2 (art #196 M20, the hybrid pout)
+
+M (`m3d`) and small (`small3d`), `multi_image_to_3d` on `meshy-7.1` as M19's `rest3d` (2k, untextured, three views:
+the rows of `m-h` and `small-h`, batch `2026-10-21-alien-mouth-views-2`). The engineer's yes: art#196 comment
+6319459349, cap 80. **Balance 90 before, 40 after: 50 credits** (25 each, as estimated), about 40 s a task. The forms:
+66,168 and 81,900 triangles; M a pressed, slimmer pair, small a recessed lens-shaped parting. With `rest3d` they are
+the pout's closed pieces in the kit (`alien_mouth_fit.py --replace`, `docs/godot.md`, M20).
+
 ## Batch 2026-10-19-alien-retexture (art #196 M3b, not run yet)
 
 Three retextures of the input above, meshy-7 at 4k with `enable_original_uv` and `enable_pbr`, GLB only: `rt-rf2`
