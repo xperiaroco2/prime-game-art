@@ -210,13 +210,29 @@ class RestStationsTest(unittest.TestCase):  # M16 (UPDATE 29): the pout's rest m
             self.assertNotIn("mirror", p)
             self.assertNotIn("seam_fit", p)
 
-    def test_the_open_rings_keep_m12b(self):
+    def test_the_open_rings_match_the_slim_rest(self):
+        # M16e (PR #258 major 2): plump 1.0, each ring's own balance (its lips a little under the rest's), M12b's lean
         for s, rp in LP.LIP_SHAPE_POUT["ring_param"].items():
-            self.assertEqual((rp["upper"], rp["lower"], rp["lean"]), (0.95, 1.10, 0.25), s)
+            self.assertEqual(rp["plump"], 1.0, s)
+            self.assertEqual(rp["lean"], 0.25, s)
+            self.assertLessEqual(rp["upper"] * rp["plump"], 1.2, s)
+            self.assertLessEqual(rp["lower"] * rp["plump"], 1.3, s)
+
+    def test_a_closed_shape_has_no_open_station(self):  # M16d: rest's traced gap notched its lip line
+        st = self._stations()
+        n = len(st)
+        for i in range(n // 2 - 3, n // 2 + 4):
+            st[i]["bot_u"], st[i]["top_l"], st[i]["open"] = st[i]["bot_u"] - 1.0, st[i]["top_l"] + 1.0, True
+        p = LP.merged_pout({"closed": ("rest",)})
+        out = LP.rest_stations(st, 274.0, p, "rest")
+        self.assertFalse(any(r["open"] for r in out))
+        for r in out:
+            self.assertAlmostEqual(r["top_l"] - r["bot_u"], 1.0)
+        self.assertTrue(any(r["open"] for r in LP.rest_stations(st, 274.0, p, "small")))
 
     def test_mouths_mirror_the_closed_pieces(self):
         src = MOUTHS.read_text(encoding="utf-8")
-        self.assertIn("LP.rest_stations(st, m[\"hc\"], lips_p)", src)
+        self.assertIn("LP.rest_stations(st, m[\"hc\"], lips_p, shape)", src)
         self.assertIn("cs, ra, rb, ns = mirrored(cs, ra, rb, ns)", src)
         self.assertIn('(rp or {}).get("lean", lips_p["lean"])', src)
 
@@ -271,6 +287,19 @@ class PartedTest(unittest.TestCase):  # M16c: small's designed parting (mp1's da
         self.assertFalse(out[3]["open"])  # the ends stay closed
         self.assertEqual(out[3]["top_l"] - out[3]["bot_u"], 1.0)
         self.assertEqual(LP.LIP_SHAPE_POUT["parting"], {"small": (6.0, 0.55)})
+
+
+class DepthFactorTest(unittest.TestCase):  # M16d: a lip shape's own tube depth (the pout's beak in profile)
+    def test_one_without_the_keys(self):
+        for lip in ("u", "l"):
+            self.assertEqual(LP.depth_factor({}, lip), 1.0)
+            self.assertEqual(LP.depth_factor(LP.LIP_SHAPE_FANGS, lip), 1.0)
+            self.assertEqual(LP.depth_factor(LP.LIP_SHAPE_TONGUE, lip), 1.0)
+
+    def test_the_lower_lip_also_takes_depth_l(self):
+        p = {"depth": 0.6, "depth_l": 0.5}
+        self.assertAlmostEqual(LP.depth_factor(p, "u"), 0.6)
+        self.assertAlmostEqual(LP.depth_factor(p, "l"), 0.3)
 
 
 if __name__ == "__main__":

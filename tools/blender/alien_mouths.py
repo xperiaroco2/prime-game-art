@@ -650,19 +650,34 @@ def build_piece(bvh, m, design, shape, world, mats, coll, origin, lips=None, nam
         # M16: a lip shape's mirrored stations and fitted lip line (alien_lips_geom.rest_stations; the pout's)
         mirror = lips_p.get("mirror", 0.0) > 0.0
         if mirror or lips_p.get("seam_fit"):
-            st = LP.rest_stations(st, m["hc"], lips_p)
+            st = LP.rest_stations(st, m["hc"], lips_p, shape)
             xl, xr = st[0]["x"] - 0.5, st[-1]["x"] + 0.5
         if (lips_p.get("parting") or {}).get(shape):  # M16c: a designed parting (mp1's small: a slit over the middle)
-            st = LP.parted(st, lips_p["parting"][shape])
+            st = LP.parted(st, lips_p["parting"][shape], SEAM_OVERLAP)
         ss = [2 * (r["x"] - xl) / max(1.0, xr - xl) - 1 for r in st]  # M8: -1 .. 1 corner to corner
+        # M16e: a lip shape's own sink (the share of a tube's depth inside the skin; a rounder tube sits deeper, so
+        # it stands off no further) and tube_n_flat, each station's normal blended toward the mouth's mean normal
+        # along its lip line (the skin under the lower lip faces down toward the chin: the tube's section followed it
+        # and the lower lip hung in profile, a tongue with a downward tip)
+        sink = lips_p.get("sink", SINK)
+        nf = lips_p.get("tube_n_flat", 0.0)
+        n_mouth = None
+        if nf > 0.0:
+            n_mouth = Vector((0.0, 0.0, 0.0))
+            for r in st:
+                n_mouth += surf(bvh, *world(r["x"], (r["bot_u"] + r["top_l"]) / 2))[1]
+            if mirror:
+                n_mouth.x = 0.0
+            n_mouth.normalize()
         for lip in ("u", "l"):
             cs, ra, rb, ns = [], [], [], []
             edges = []
             for r in st:
+                ov = r.get("overlap", 0.0 if r["open"] else SEAM_OVERLAP)  # M16e: a parted station's eased overlap
                 if lip == "u":
-                    t, bt = r["top_u"], r["bot_u"] + (0.0 if r["open"] else SEAM_OVERLAP)
+                    t, bt = r["top_u"], r["bot_u"] + ov
                 else:
-                    t, bt = r["top_l"] - (0.0 if r["open"] else SEAM_OVERLAP), r["bot_l"]
+                    t, bt = r["top_l"] - ov, r["bot_l"]
                 x, zt = world(r["x"], t - 0.5)
                 _, zb = world(r["x"], bt + 0.5)
                 edges.append((x, zt, zb, t, bt))
@@ -680,10 +695,15 @@ def build_piece(bvh, m, design, shape, world, mats, coll, origin, lips=None, nam
             for r, s, (x, _zt, _zb, t, bt), zt, zb, zt0, zb0 in zip(st, ss, edges, tops, bots, t0, b0):
                 mb = lips_p.get("min_b", MIN_B)  # M16c: a lip shape's own thinnest end (the pout's finer points)
                 hb = max(mb, (zt - zb) / 2)
-                a = DEPTH_A * max(mb, (zt0 - zb0) / 2) + DEPTH_C * LP.depth_scale(s, lips_p)
+                # M16d: a lip shape's own depth (`depth`, the lower lip also `depth_l`): the pout stood off the face
+                # like a beak in profile
+                dk = LP.depth_factor(lips_p, lip)
+                a = dk * (DEPTH_A * max(mb, (zt0 - zb0) / 2) + DEPTH_C * LP.depth_scale(s, lips_p))
                 p, n = surf(bvh, x, (zt + zb) / 2)
+                if n_mouth is not None:
+                    n = n.lerp(n_mouth, nf).normalized()
                 env = math.sin(math.pi * (r["x"] - xl) / max(1.0, xr - xl)) ** 0.5
-                c3 = p + n * (a * (1 - SINK) + (push + (back if lip == "l" else 0.0)) * env)
+                c3 = p + n * (a * (1 - sink) + (push + (back if lip == "l" else 0.0)) * env)
                 cs.append(c3)
                 ra.append(a)
                 rb.append(hb)
