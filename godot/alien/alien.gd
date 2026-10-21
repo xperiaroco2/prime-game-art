@@ -30,6 +30,9 @@ extends Node
 ##   talk style of its own: talk_at(t_ms, line) shows a phase line's piece at t through the design's style
 ##   (alien_talk.gd: lag, merged flickers, a lower-lip bounce and a pucker between words, as the lip shader's
 ##   instance uniforms lip_drop and pucker on the shown piece); play_line(line) drives it in time.
+## - M11, the lashes eyes (el2): on a kit with them (eye_<design>_lashes_<side>, children of the upper lids, so they turn
+##   with every blink and lid state; material alien_lash) set_lashes(true) shows them, false (the default) hides them,
+##   so the same eyes serve both looks; LASH_LOOK, a black glossy coat.
 ## Used through preload (a -s script has no global class cache): const AlienRig = preload("res://alien/alien.gd").
 
 const SHADER: Shader = preload("res://alien/alien_hue.gdshader")
@@ -98,6 +101,10 @@ const LID_LOOK := {"roughness_value": 0.64, "sheen": 0.0}
 const LIP_LOOK_POUT := {"albedo": Color(0.72, 0.18, 0.18), "deep": Color(0.42, 0.05, 0.07), "roughness_value": 0.30,
 	"specular_value": 0.55, "sheen": 0.55, "sheen_roughness": 0.12, "drift": 0.03, "grain": 0.03}
 const MOUTH_DESIGNS: Array[String] = ["frog", "overbite", "pout"]
+## M11: the upper lashes' material (alien_lash, tools/blender/alien_lashes.py): near black, glossy with a clear coat
+## (el2's lashes catch a soft highlight); closed tubes, so culled as usual; they cast their own small shadow.
+const LASH_LOOK := {"albedo": Color(0.035, 0.03, 0.04), "roughness": 0.32, "specular": 0.55, "clearcoat": 0.6,
+	"clearcoat_roughness": 0.15}
 ## M6: the textured skin's contact shade near the lids and lips (alien_hue.gdshader `contact*`), only for a kit whose
 ## hue material carries a contact marker: M6's CONTACT_MARKER_M6 (one field for every design in TEXCOORD_4's u) or
 ## M6c's CONTACT_MARKER (tools/blender/alien_m6.py: one channel per design, TEXCOORD_4 = (bored, manic), TEXCOORD_5 =
@@ -172,6 +179,8 @@ var auto_blink: bool = true
 var talk_log: Array = []  # {t_ms, low, high, level, ratio, f2, piece}
 var mouth_piece: String = "rest"
 var mouth_mode: String = "3d"
+var lashes: bool = false  # M11: the upper lashes shown (set before setup(), or set_lashes())
+var _lash_nodes: Array[Node3D] = []
 
 var _material: ShaderMaterial
 var _part_ao: bool = false  # M6: the kit's alien_lip carries PART_AO_MARKER
@@ -216,7 +225,8 @@ func setup(root: Node3D, seed: int = 196) -> void:
 				if m.name.contains("_lid_"):
 					_lid_surfaces.append([m, s])
 			elif mat != null and (FACE.has(mat.resource_name) or mat.resource_name.begins_with("alien_eye_")
-					or mat.resource_name == "alien_wet" or mat.resource_name == "alien_lip_pout"):
+					or mat.resource_name == "alien_wet" or mat.resource_name == "alien_lip_pout"
+					or mat.resource_name == "alien_lash"):
 				# M6: the lid domes take their own copy of the lips' material (LID_LOOK)
 				var key: String = mat.resource_name
 				if key == "alien_lip" and has_marker(mat, PART_AO_MARKER):
@@ -231,10 +241,13 @@ func setup(root: Node3D, seed: int = 196) -> void:
 					_wet_nodes.append(m)
 		if uses:
 			_hue_meshes.append(m)
+		if m.name.begins_with("eye_") and m.name.contains("_lashes_"):  # M11: the lash sets (not the lashvar_ grid)
+			_lash_nodes.append(m)
 	_make_face_materials()
 	set_face_look(face_look)
 	set_hue("teal")
 	set_eyes(eyes)
+	set_lashes(lashes)
 	set_mouth_design(mouth_design)
 	set_crest(crest)
 	_next_blink_s = _rng.randf_range(BLINK_EVERY_S.x, BLINK_EVERY_S.y)
@@ -345,6 +358,15 @@ func _make_face_materials() -> void:
 		m.diffuse_mode = BaseMaterial3D.DIFFUSE_LAMBERT_WRAP
 		m.cull_mode = BaseMaterial3D.CULL_DISABLED  # as the imported (double-sided) ones: culled, the inner cup vanished
 		_face_materials[name] = m
+	var lash := StandardMaterial3D.new()  # M11
+	lash.resource_name = "alien_lash"
+	lash.albedo_color = LASH_LOOK["albedo"]
+	lash.roughness = LASH_LOOK["roughness"]
+	lash.metallic_specular = LASH_LOOK["specular"]
+	lash.clearcoat_enabled = true
+	lash.clearcoat = LASH_LOOK["clearcoat"]
+	lash.clearcoat_roughness = LASH_LOOK["clearcoat_roughness"]
+	_face_materials["alien_lash"] = lash
 	var w := ShaderMaterial.new()
 	w.shader = WET_SHADER
 	w.resource_name = "alien_wet"
@@ -439,6 +461,18 @@ func set_eyes(design: String) -> void:
 		for side: String in ["L", "R"]:
 			node("eye_%s_%s" % [d, side]).visible = d == design
 	set_lids(lid_state)
+
+
+## M11: whether the kit has upper lashes (eye_<design>_lashes_<side>).
+func has_lashes() -> bool:
+	return not _lash_nodes.is_empty()
+
+
+## M11: the upper lashes on or off (both designs; each set shows with its design's eye group).
+func set_lashes(on: bool) -> void:
+	lashes = on
+	for n: Node3D in _lash_nodes:
+		n.visible = on
 
 
 func set_lids(state: String) -> void:
