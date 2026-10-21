@@ -2214,6 +2214,27 @@ a time, by visibility.
     - **Proofs:** `godot/alien/m17_shots.gd` "rim" (per kit: bored's socket at 0.4 m, manic closed, bored 3/4 and
       manic front at 1.2 m, the 3.5 m crops of both designs with and without lashes; a kit's `hue` overrides the skin
       material's uniforms for a contact variant).
+  - **M17b, the eyes 8 % bigger in the same socket** (brief UPDATE 40; output under `.../alien-parts-kit/M17b/`):
+    - **Why:** the engineer on M17: the eyes are well set, but "a huge cavity shows". The socket's sphere is cut for
+      the slim lids' largest reach (the upper lid's rolled rim, 1.151 r, + 0.6 mm), while the lower lid reaches only
+      1.048 r, so a 4 mm deep gap ran round the lower half of the eye and read as a hollow at 0.4 m.
+    - **How:** `FIT["unit"]` scales the eye unit (balls, lids, wet strips; the slim lids, lashes and liner are built on
+      the scaled ball, the blink's angles do not change) over `eye_scale`, and `FIT["follow"]` sets how much of that
+      growth the socket's sphere follows (`alien_fit_geom.socket_radius`; 0: the socket as M15 cut it). The rolled
+      rim fades to nothing at the corners (`alien_lids_geom.CORNER`), so only the upper rim's middle reaches past the
+      sphere, and it sweeps the front of the opening.
+    - **The grid** (`M17b/grid/`, the late route on M10's kit; sheets `M17b/showroom/m17b-size_*.jpg`,
+      `m17b-size2_*.jpg`): 100 / 105 / 110 % in the same socket, 105 % with the socket following, then 108 %. With
+      the socket following, 105 % looks like 100 % (the gap grows with the eye). In the same socket the lower gap is
+      4.0 / 2.3 / 1.3 / 0.6 mm at 100 / 105 / 108 / 110 %. 105 % still shows the lit lip and the groove; from 108 % the
+      gap reads as a shadowed crease under the lid. **Pick: 108 %, follow 0** (`FIT` defaults).
+    - **The lashes on the bigger unit:** with the liner's inner end at -42 degrees, the liner went 1 to 2.5 mm into the
+      brow's skin with manic's lid open and at rest. `SOCKET_LASHES["m15"]["liner_t_in_deg"]` is now -20 (no clip in
+      any state at 108 and 110 %).
+    - **PR #257's review minors:** `rim_drop`'s reach limits (45 degrees past the crossing curve, 1.6 R) fade over
+      their last 15 degrees and 0.2 R instead of cutting (`rim_drop_weight`), and `rim_drop_steps` counts the edges
+      where a drawn-in point meets the fixed face inside the band. The stage refuses a count above 0 (M15's socket: 0).
+      `fill_masks` runs `FIT["fill_iters"]` iterations.
 
 - **M19, the AI mouth route test** (brief UPDATE 38; output under
   `D:/prime-art-raw/review/char/alien-parts-kit/M19/`): GPT Image views of mp1's lips (`batches/2026-10-21-alien-mouth-views.toml`)
