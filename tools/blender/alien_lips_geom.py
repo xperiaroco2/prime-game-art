@@ -102,7 +102,7 @@ LIP_SHAPE_POUT = {
     "lean": 0.10, "square": 0.85, "depth_corner": 0.35,
     "width": 1.0, "size": 0.95, "plump": 1.15,
     "bow_flat": 1.0, "corner_tuck": 1.1, "corner_share": 0.18, "corner_join": 0.95,
-    "mirror": 1.0, "seam_fit": 3,
+    "mirror": 1.0, "seam_fit": 3, "parting_dark": 0.2,
     "ring_param": {  # M16: the open rings keep M12b's balance and lean (the rest's change is the closed lips' only)
         "A": dict(_RING, n=2.1, corner=0.68, wide=1.04, **_POUT_RING),
         "E": dict(_RING, n=2.0, corner=0.60, **_POUT_RING),

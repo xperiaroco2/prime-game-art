@@ -741,6 +741,32 @@ def build_piece(bvh, m, design, shape, world, mats, coll, origin, lips=None, nam
             for i in range(len(grid) - 1):
                 for j in range(rows - 1):
                     b.face((grid[i][j], grid[i + 1][j], grid[i + 1][j + 1], grid[i][j + 1]), mi_in)
+        elif lips_p.get("parting_dark") and lips_p.get("w", 0.0) > 0.0:
+            # M16c (#254 minor 1): a closed piece's parting (small's open stations, the gap rest_stations keeps) shows
+            # a dark strip behind it, lip axis to axis on the skin as the teeth's dark; only over the open run away
+            # from the corners (parting_dark: the share of each end left out), so no dark shows past a corner
+            i0 = max(1, int(round((len(st) - 1) * lips_p["parting_dark"])))
+            ns_ = len(st)
+            run = [i for i in range(i0, ns_ - i0) if st[i]["open"] or (mirror and st[ns_ - 1 - i]["open"])]
+            if len(run) >= 2:
+                run = list(range(run[0] - 1, run[-1] + 2))  # one closed station either end: the gap's ends tuck in
+                rows = 3
+                pos = []
+                for i in run:
+                    (x, zu), (_x, zl) = axes["u"][i], axes["l"][i]
+                    col = []
+                    for j in range(rows):
+                        p, n = surf(bvh, x, zu + (zl - zu) * j / (rows - 1))
+                        col.append(p + n * 0.0012)
+                    pos.append(col)
+                if mirror and run[0] + run[-1] == ns_ - 1:  # mirrored as the lips (the skin is 0.4 mm lopsided)
+                    pos = [[(pos[i][j] + Vector((-pos[-1 - i][j].x, pos[-1 - i][j].y, pos[-1 - i][j].z))) / 2
+                            for j in range(rows)] for i in range(len(pos))]
+                grid = [[b.vert(q) for q in col] for col in pos]
+                for i in range(len(grid) - 1):
+                    for j in range(rows - 1):
+                        b.face((grid[i][j], grid[i + 1][j], grid[i + 1][j + 1], grid[i][j + 1]), mi_in)
+            meas["parting_dark"] = [len(run), round(axes["u"][run[0]][0] * 1000, 1), round(axes["u"][run[-1]][0] * 1000, 1)] if len(run) >= 2 else [0]
     # the tongue: where the panel shows one, an arch from the lower lip's axis up to its measured top, on the cup
     tcols = [x for x in xs if "tongue_top" in cols[x]]
     if tcols:  # the longest run of neighbouring columns (gaps up to 3 px)
