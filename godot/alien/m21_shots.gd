@@ -9,7 +9,8 @@ extends "res://alien/m17_shots.gd"
 ##   ("diag_name"); "diag_near": the same rows at 0.4 m (the left eye): diag_near.png.
 ## - "lclosed": the closed lashes' grid: per variant of "variants" ([[name, label], ...], the grid kit's lashvar_ sets;
 ##   "" the kit's own) bored closed (the left eye close, both eyes from the front at 0.4 m), manic closed (the same)
-##   and manic half (close): lclosed.png;
+##   and manic half (close): lclosed.png; M21b: with "lclosed_far" true also each closed state at 3.5 m,
+##   "lclosed_fov" the close view's field of view (14; 20 shows the outer corner);
 ## - "states": per kit and design open, rest, half and closed at 3.5 m (lashes on), one row of eight per kit, and the
 ##   same at 0.4 m (the left eye): states_game.png, states_near.png.
 
@@ -165,12 +166,14 @@ func _lclosed(hero: String) -> void:
 			for st: String in (["closed"] if d == "bored" else ["closed", "half"]):
 				_rig[hero].set_lids(st)
 				await process_frame
-				_look(_find(hero, "Eye_L") + Vector3(0, 0.004, 0), 25.0, 2.0, 0.4, 14.0)
+				_look(_find(hero, "Eye_L") + Vector3(0, 0.004, 0), 25.0, 2.0, 0.4, _spec.get("lclosed_fov", 14.0))
 				cells.append(await _shot("%s: %s %s" % [v[1], d, st]))
 				if st == "closed":
 					_eyes_view(hero, 0.0, 0.4)
 					cells.append(await _shot("%s: %s %s" % [v[1], d, st]))
+					if _spec.get("lclosed_far", false):  # M21b: the same closed eyes at the game's 3.5 m
+						cells.append(_tag(await _game_crop(hero), "%s: %s %s far" % [v[1], d, st]))
 			_rig[hero].set_lids("rest")
 	_show_variant(hero, "")
 	_combo(hero, "bored", _mouth_of[hero])
-	_grid_cells(cells, 5, Vector2i(400, 280), "lclosed.png")
+	_grid_cells(cells, 7 if _spec.get("lclosed_far", false) else 5, Vector2i(400, 280), "lclosed.png")
