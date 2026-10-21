@@ -68,6 +68,41 @@ The hull is lofted from `[hull] core` and `plate` rows. The core covers the hall
 ends (inside the tip shells) and on its lower front over the mouth; the thin plates (top below the deck) run under
 and round the tip rooms. Seen from inside, every hull face is a back face and is culled, so the rooms' own walls show.
 
+## The interior kit
+
+`layouts/ship/interior.toml` is GENERATED: `$PYTHON_BIN tools/blender/ship_interior_place.py` writes it from the
+numbers at the top of `tools/blender/ship_interior.py` (`--check` compares; the fast test
+`test_ship_interior.py` fails when the file is stale). Edit the numbers or the generator, never the file. The builders
+use absolute heights (deck at h 1.0), so a placement's h is an offset (the clips' heights); a piece built at plan
+angle 0 (its room toward -x) standing at angle a gets yaw -a; in a tip room turned by r, yaw r - a.
+
+The numbers (step 1, art #263):
+- hall: 16 facets, inner faces at apothem 3.4 (vertices at 3.467), rim 3.4 m, apex 4.0 m; the three openings
+  (corridors east and west, the mouth north) are two facets wide, framed by a portal on their chord (x 3.203, half
+  width 1.327) 0.15 m deep; floor: plain disc r 1.0, eight radial grate sectors r 1.1 to 2.5 between wedge spokes,
+  the amber ring at r 2.58, solid plates to the walls; ceiling: 16 facet panels, ribs with cyan strips, the lamp
+  ring (eight lamps) at r 1.25.
+- corridors: one profile, 2.5 m wide, vertical to 1.45 m (cable channel 1.1 to 1.45 m), slanted in to 1.8 m wide at
+  the 2.6 m ceiling; five modules of 1.117 m from x 3.353 (hall portal) to 8.936 (tip portal); arches at the first
+  three module joints only, none near the vent and socket spots (x 5 and 8). The mouth passage is one module of
+  1.247 m with an arch at the ramp hinge.
+- tip rooms: polygon on radius 2.1, eight window segments over +-65 deg (sill 0.5, head 2.4), three wall facets a
+  side, the corridor chord over +-37.6 deg (half width 1.281); rim 2.8 m, apex 3.2 m; radial grate floor with amber
+  spokes; ribbed ceiling with cyan strips and a six-lamp ring.
+- details: three crushed cup models (five placed, off every station spot), two scratch decal clusters (geometry
+  0.6 mm proud of flat panel faces, eight placed).
+
+Materials `int_*` (metallic 0.7 to 0.8 so the silver reads under lamps at night, not only in reflections): two silver
+tones alternating per panel, a darker trim silver, grate and floor plate metal, dark recesses, emissive cyan, amber and
+warm lamp, glass, three cable colours, the cup's red and white. No textures or UVs yet (seams, folds, bevels and
+scratches are geometry).
+
+The lane's own look check (no Godot): `ship_interior_render.py` in headless Blender through `runner.blender`
+imports each GLB once, instances it at every placement, lights it with `[light]` and a moon and writes Eevee views
+and `compare.png` (the 2D left, the render right). Interior pieces build with `ship --build --only <their ids>
+--out <raw>/ship/v1/pieces_int`, then their GLBs and report entries are copied into `pieces/` (one build report for
+the Godot run).
+
 ## Running it
 
 ```
