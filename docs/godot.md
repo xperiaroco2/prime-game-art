@@ -2343,6 +2343,25 @@ a time, by visibility.
   - the open rings already sat at the AI rest's lip heights (front, px at 0.4 m: A 35 / 37, E 30 / 32, O 30 / 37
     against the rest's 40 / 37); A's and E's corners taper further (`ring_param` corner 0.28 / 0.30, M16e 0.40 /
     0.35) toward the AI rest's fine points.
+- **M20b** (brief UPDATE 44, PR #260's review; output `M20b/`, the kit on M17c's eyes: `mouthsk` and `lashes` on
+  `M17b/b/lips`, then the fit into `M20b/export/`):
+  - **the seam down the lower lip:** the forms are mirrored at full resolution, then decimated with the modifier's X
+    symmetry and mirrored once more (decimating first cut a ragged row of slivers along x = 0); each form is first
+    put on its own best mirror plane (`best_plane`, `to_plane`; the three AI forms' best plane is the box's centre,
+    mean mirror distance 0.13-0.17 mm, so the 4-5 mm of `mirror_mm_before` are a few outliers at the back, not a
+    misplaced plane); the band |x| < 2 mm (6 passes) and the lip line's band (+-1.2 mm, 2 passes) smoothed in depth
+    only (`smooth_bands`), so the silhouette, the bow's dip and the line's height stay;
+  - **the skin contact:** `alien_m12.contact_field` measured a skin point under the lips 3-4 mm from the form's back
+    (it goes under the skin), so `full` was 0; `closed_contact` counts a skin point inside the form as touching it
+    and an outside one `contact_margin` (3.5 mm) closer (`contact_distance`; 0: full 29, 2.5 mm: 52);
+  - **rest -> A:** A's and E's rings carry the rest's two-peak bow (bow 0.30, bow_w 0.12, side peaks 0.40 at 0.22)
+    and stand back to the AI rest's stand-off (`ring_param` `push`, `push_lo`, read by `alien_mouths`' rings: the
+    lips' front ahead of the skin at the centre, upper / lower, A 16.6 / 14.0 mm, E 16.5 / 13.8, the AI rest 16.0 /
+    14.3; M20's A 19.6 / 20.5); the pick of a stand-off (0, 0.5, 1 of the gap) x bow (M12b's, between, the rest's)
+    grid, `M20b/godot/grid/vgrid.png`;
+  - M a little wider and flatter in depth (`FIT["xy_scale"]` M 1.04 / 0.92; in front mp1's M is as wide as its
+    rest and 0.92 of its height, which M20's already was); the heavy pout tests read `M20b/export` (the hybrid
+    pieces mirrored, the GLB validated, the contact's `full`).
 
 ## Findings for later tasks
 

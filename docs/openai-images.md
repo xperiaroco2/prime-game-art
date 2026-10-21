@@ -203,7 +203,7 @@ crisper. The images: `D:/prime-art-raw/2026-10-21-alien-mouth-views/`.
 The hybrid pout's other closed shapes, M (pressed) and small (slightly parted), as the same isolated lip sculpture as
 M19's `rest-h`: edits with that sheet first ("keep everything, change only the shape") and mp1's M or small panel (a
 720 px mouth crop) second, so the three closed pieces share the lips, the light and the scale. Medium, n = 3:
-$0.0969 and $0.0972 (969 text, 7,680 image input and 1,029 output tokens; the estimate's 2x margin said $0.104);
+$0.0969 and $0.0972 (921 to 969 text, 7,680 image input and 1,029 output tokens; the estimate's 2x margin said $0.104);
 high redraws of the picks (m-m 0, small-m 0), n = 1: $0.0632 and $0.0633. **$0.3205** of the $2 cap. All six medium
 sheets kept the rest sheet's layout and look; M came out slimmer than mp1's M (the prompt asked for "a little
 flatter"), so the fit stretches it (`docs/godot.md`, M20).
