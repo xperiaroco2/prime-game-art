@@ -151,6 +151,19 @@ class Wiring(unittest.TestCase):
         self.assertNotIn("lash_fade", liner[:200])
         self.assertIn("VISIBILITY_RANGE_FADE_SELF", self.gd)
 
+    def test_the_liner_keeps_a_least_screen_width_and_casts_no_shadow(self):
+        sh = (ROOT / "godot" / "alien" / "alien_liner.gdshader").read_text(encoding="utf-8")
+        self.assertIn("render_mode cull_back;", sh)
+        self.assertIn("float grow = clamp((min_px * px - band_m) * grow_share, 0.0, max_grow_m);", sh)
+        self.assertIn("VERTEX += NORMAL * grow", sh)
+        self.assertIn('const LINER_SHADER: Shader = preload("res://alien/alien_liner.gdshader")', self.gd)
+        setup = self.gd[self.gd.index("func setup("):self.gd.index("func _textured_material(")]
+        liner = setup[setup.index('m.name.contains("_liner_"):  # M11b: the lash line'):]
+        self.assertIn("m.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF", liner[:300])
+        self.assertIn('key = "alien_lash_liner"', setup)
+        self.assertIn('_face_materials["alien_lash_liner"] = liner', self.gd)
+        self.assertGreaterEqual(float(re.search(r"const LINER_MIN_PX := ([0-9.]+)", self.gd).group(1)), 1.5)
+
     def test_the_kit_is_refused_when_a_lash_clips(self):
         main = self.src[self.src.index("def main("):]
         self.assertIn("rep[\"clip\"] = clip_check(sets)", main)

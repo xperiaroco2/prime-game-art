@@ -15,7 +15,8 @@ extends "res://alien/m12_shots.gd"
 ## - "lhues": teal, coral, violet with lashes, front at 0.4 m and 3/4 at 1.2 m: lhues.png;
 ## - "lgame": the game's distance: the hero at 3.5 m (FOV 70, a 1536 px frame: the head about 50 px tall) with and
 ##   without lashes, and 3x crops of the head (nearest); then 24 frames of Idle with a blink at 3.5 m and at 1.2 m as
-##   PNGs in game/far and game/near (the shimmer check: PROOF lines give the mean frame-to-frame change round the eyes);
+##   PNGs in game/far and game/near (the shimmer check: PROOF lines give the mean frame-to-frame change round the eyes;
+##   M11b: also Idle without the blink at 3.5 and 3.0 m, game/faridle and game/mididle);
 ## - "lfade" (M11b): the lashes' fade with distance, bored and manic with lashes at 1.2, 2.0, 2.4, 2.8, 3.2, 3.5 and
 ##   4.5 m (FOV 70), the head's eye band cropped and scaled to one size (nearest): lfade.png;
 ## - "lvideo": a blink and talk line (the hero's mouth, its talk style, blinks at 0.5, 2.3 and 4.0 s) at 30 fps,
@@ -275,7 +276,9 @@ func _lgame(hero: String) -> void:
 	_grid_cells(cells, 2, Vector2i(480, 400), "lgame.png")
 	# the shimmer check: Idle at 30 fps with one blink, with and without lashes
 	_combo(hero, "bored", _mouth_of[hero])
-	for view: Array in [["far", 3.5, 70.0], ["near", 1.2, 30.0]]:
+	# M11b: also Idle alone (no blink) at 3.5 and 3.0 m, the line's own crawl apart from the lid's motion
+	for view: Array in [["far", 3.5, 70.0, true], ["near", 1.2, 30.0, true], ["faridle", 3.5, 70.0, false],
+			["mididle", 3.0, 70.0, false]]:
 		for on: bool in [false, true]:
 			_rig[hero].set_lashes(on)
 			var dir: String = "%s/game/%s_%s" % [_out, view[0], "on" if on else "off"]
@@ -284,7 +287,8 @@ func _lgame(hero: String) -> void:
 			var tot: float = 0.0
 			for i: int in 24:
 				_pose("Idle", float(i) / 30.0)
-				_rig[hero].blink_at(float(i) * 1000.0 / 30.0 - 150.0)
+				if view[3]:
+					_rig[hero].blink_at(float(i) * 1000.0 / 30.0 - 150.0)
 				_look(_head_target(hero), 20.0, 2.0, view[1], view[2])
 				_label.text = ""
 				await process_frame

@@ -48,6 +48,7 @@ const AlienTalk = preload("res://alien/alien_talk.gd")
 const HUE_MATERIALS := ["alien_hue", "alien_hue_part"]
 const EYE_SHADER: Shader = preload("res://alien/alien_eye.gdshader")
 const LIP_SHADER: Shader = preload("res://alien/alien_lip.gdshader")
+const LINER_SHADER: Shader = preload("res://alien/alien_liner.gdshader")  # M11b: the lash line's least screen width
 const WET_SHADER: Shader = preload("res://alien/alien_wet.gdshader")
 ## M13: the inner cup and tongue of a talking design's pieces, moving with the lips (alien_mouth_motion.gdshaderinc).
 const MOUTH_PART_SHADER: Shader = preload("res://alien/alien_mouth_part.gdshader")
@@ -117,6 +118,9 @@ const LASH_LOOK := {"albedo": Color(0.035, 0.03, 0.04), "roughness": 0.32, "spec
 ## bold lash line) stays at every distance.
 const LASH_FADE_M := 3.0
 const LASH_FADE_MARGIN_M := 0.6
+## M11b: the liner's least width on screen (alien_liner.gdshader): at 3.5 m its modelled band covers about one pixel
+## and broke into dashes; it widens to about two.
+const LINER_MIN_PX := 2.0
 ## M13: the fangs mouth's two lower fangs (material alien_fang, the lips' shader so they move with the lower jaw):
 ## ivory, a soft satin with a little clear coat, deeper and warmer at the root (the baked AO), a faint warm
 ## transmittance. The lips are the kit's coral alien_lip (LIP_LOOK). Chosen beside the mg2 sheet on M13's grids.
@@ -262,6 +266,8 @@ func setup(root: Node3D, seed: int = 196) -> void:
 					_read_lid_reach(mat)
 				if key == "alien_lip" and m.name.contains("_lid_"):
 					key = "alien_lid"
+				if key == "alien_lash" and m.name.contains("_liner_"):  # M11b: the liner keeps a least screen width
+					key = "alien_lash_liner"
 				if key in MOVING_PARTS and _moving_piece(m.name):  # M13: the cup and tongue move with the lips
 					key += "_moving"
 					_moving_src[key] = mat
@@ -276,6 +282,7 @@ func setup(root: Node3D, seed: int = 196) -> void:
 			lash_fade(m)
 		if m.name.begins_with("eye_") and m.name.contains("_liner_"):  # M11b: the lash line, at every distance
 			_lash_nodes.append(m)
+			m.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF  # alien_liner.gdshader grows it with distance
 	_make_face_materials()
 	set_face_look(face_look)
 	set_hue("teal")
@@ -408,6 +415,16 @@ func _make_face_materials() -> void:
 	lash.clearcoat = LASH_LOOK["clearcoat"]
 	lash.clearcoat_roughness = LASH_LOOK["clearcoat_roughness"]
 	_face_materials["alien_lash"] = lash
+	var liner := ShaderMaterial.new()  # M11b: the same look, never thinner than LINER_MIN_PX on screen
+	liner.resource_name = "alien_lash_liner"
+	liner.shader = LINER_SHADER
+	liner.set_shader_parameter("albedo", LASH_LOOK["albedo"])
+	liner.set_shader_parameter("roughness_value", LASH_LOOK["roughness"])
+	liner.set_shader_parameter("specular_value", LASH_LOOK["specular"])
+	liner.set_shader_parameter("clearcoat_value", LASH_LOOK["clearcoat"])
+	liner.set_shader_parameter("clearcoat_roughness_value", LASH_LOOK["clearcoat_roughness"])
+	liner.set_shader_parameter("min_px", LINER_MIN_PX)
+	_face_materials["alien_lash_liner"] = liner
 	for key: String in _moving_src:  # M13: the moving cups and tongues (alien_mouth_part.gdshader)
 		var src: Material = _moving_src[key]
 		var base: String = key.trim_suffix("_moving")
