@@ -22,12 +22,12 @@ MODULES: list = []  # further interior modules the harness searches for builders
 
 # --- the lane's materials (added to the shared library; ship_lib.material builds them) ------------------------------
 L.MATERIALS.update({
-    "int_silver_a": {"base": (0.62, 0.63, 0.65, 1.0), "metallic": 1.0, "roughness": 0.27},
-    "int_silver_b": {"base": (0.52, 0.535, 0.56, 1.0), "metallic": 1.0, "roughness": 0.33},
-    "int_silver_c": {"base": (0.36, 0.37, 0.39, 1.0), "metallic": 1.0, "roughness": 0.30},
+    "int_silver_a": {"base": (0.66, 0.67, 0.69, 1.0), "metallic": 0.7, "roughness": 0.36},
+    "int_silver_b": {"base": (0.55, 0.565, 0.59, 1.0), "metallic": 0.7, "roughness": 0.42},
+    "int_silver_c": {"base": (0.38, 0.39, 0.41, 1.0), "metallic": 0.8, "roughness": 0.34},
     "int_dark": {"base": (0.035, 0.038, 0.042, 1.0), "metallic": 0.6, "roughness": 0.55},
-    "int_grate": {"base": (0.17, 0.175, 0.18, 1.0), "metallic": 1.0, "roughness": 0.40},
-    "int_plate": {"base": (0.30, 0.31, 0.32, 1.0), "metallic": 1.0, "roughness": 0.36},
+    "int_grate": {"base": (0.22, 0.225, 0.23, 1.0), "metallic": 0.8, "roughness": 0.42},
+    "int_plate": {"base": (0.34, 0.35, 0.36, 1.0), "metallic": 0.8, "roughness": 0.40},
     "int_cyan": {"base": (0.25, 0.95, 1.0, 1.0), "metallic": 0.0, "roughness": 0.3, "emission": (0.25, 0.95, 1.0),
                  "strength": 9.0},
     "int_amber": {"base": (1.0, 0.55, 0.15, 1.0), "metallic": 0.0, "roughness": 0.3, "emission": (1.0, 0.55, 0.15),
@@ -222,8 +222,8 @@ def amber_arc(args, layout):
     """One arc of the hall's amber floor ring: a bezel and the light, +-10 deg about angle 0."""
     r, ref = args["radius"], args["radius"]
     a = L.angles(D(-10.0), D(10.0), D(2.5))
-    bezel = M(*[L.sector(r - 0.04, r + 0.04, p, q, FLOOR - 0.01, FLOOR + 0.003) for p, q in zip(a, a[1:])])
-    light = M(*[L.sector(r - 0.017, r + 0.017, p, q, FLOOR + 0.003, FLOOR + 0.006) for p, q in zip(a, a[1:])])
+    bezel = M(*[L.sector(r - 0.055, r + 0.055, p, q, FLOOR - 0.01, FLOOR + 0.003) for p, q in zip(a, a[1:])])
+    light = M(*[L.sector(r - 0.03, r + 0.03, p, q, FLOOR + 0.003, FLOOR + 0.006) for p, q in zip(a, a[1:])])
     return [P("bezel", shift(bezel, -ref), "int_silver_c"), P("light", shift(light, -ref), "int_amber")]
 
 
@@ -325,8 +325,8 @@ def cor_gutter(args, layout):
 def floor_light(args, layout):
     """An amber light bar set in the floor along local x: bezel and light (length from args)."""
     hl = args.get("length", 0.44) / 2
-    return [P("bezel", G.bbox(-hl, hl, -0.035, 0.035, FLOOR - 0.002, FLOOR + 0.004, 0.002), "int_silver_c"),
-            P("light", G.bbox(-hl + 0.03, hl - 0.03, -0.015, 0.015, FLOOR + 0.004, FLOOR + 0.007), "int_amber")]
+    return [P("bezel", G.bbox(-hl, hl, -0.042, 0.042, FLOOR - 0.002, FLOOR + 0.004, 0.002), "int_silver_c"),
+            P("light", G.bbox(-hl + 0.03, hl - 0.03, -0.024, 0.024, FLOOR + 0.004, FLOOR + 0.007), "int_amber")]
 
 
 def cor_wall_low(args, layout):

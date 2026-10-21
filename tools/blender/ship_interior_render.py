@@ -25,8 +25,8 @@ VIEWS = {
     "in_corridor_w": ((-3.0, 0.0, 2.6), (-10.0, 0.0, 2.3), 70.0, "corridor.jpg"),
     "in_tip_e": ((8.9, 0.0, 2.6), (12.5, 0.0, 2.15), 80.0, "tip-3.jpg"),
     "in_tip_w": ((-8.9, 0.0, 2.6), (-12.5, 0.0, 2.15), 80.0, "tip-3.jpg"),
-    "close_seam": ((2.05, 1.37, 3.95), (2.83, 1.89, 3.95), 40.0, "materials-3.jpg"),
-    "close_floor": ((5.3, -0.25, 1.75), (5.05, -1.0, 1.0), 50.0, "materials-3.jpg"),
+    "close_seam": ((1.75, 1.17, 3.6), (2.83, 1.89, 3.95), 45.0, "materials-3.jpg"),
+    "close_floor": ((5.6, 0.1, 1.9), (5.03, -1.0, 1.0), 55.0, "materials-3.jpg"),
     "close_cable": ((5.0, -0.1, 2.3), (5.03, -1.3, 2.25), 45.0, "materials-3.jpg"),
 }
 
@@ -63,7 +63,7 @@ def setup(scene, ship: dict) -> None:
     scene.collection.objects.link(sun)
     for i, (x, y, h, energy, rng, r, g, b) in enumerate(ship["light"]["lamps"]):
         lamp = bpy.data.objects.new(f"lamp{i}", bpy.data.lights.new(f"lamp{i}", "POINT"))
-        lamp.data.energy, lamp.data.color, lamp.data.shadow_soft_size = 90.0 * energy, (r, g, b), 0.15
+        lamp.data.energy, lamp.data.color, lamp.data.shadow_soft_size = 30.0 * energy, (r, g, b), 0.15
         lamp.location = (x, -y, h)
         scene.collection.objects.link(lamp)
 
