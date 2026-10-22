@@ -762,7 +762,11 @@ pilot's static premium heads"):
   normal map, grey geometry only, the albedo alone: tells a geometry fault from a normal-bake or an albedo-bake fault.
 - `static_alive.gd`: review sheets from a JSON job (heads, sheets, rows of cells: head, shader parameters, debug
   mode, tone, a framing by target, yaw and width; optional GPU ms) in an off-screen window, written and run by
-  `tools/blender/alien_static_review.py <seams|grid|ladder|gate>` (`docs/pipeline.md`).
+  `tools/blender/alien_static_review.py <seams|grid|final|gate>` (`docs/pipeline.md`).
+- **Round 3 (static_v3, 2026-10-22):** the alive read moved into the textures (`docs/pipeline.md`), so the shader's
+  `cavity`, `flush` and `micro_strength` stay off in the pick. New: `plain_tex` and `alive_mix` (1 = the GLB's albedo;
+  0 the albedo without the baked layers, above 1 extrapolated; `apply(root, mask, base_skin, detail, plain)`) for the
+  review grid. The pick (`alien_static_review.py` `PICK`) also lowers `specular_level` on the skin.
 
 ## The alien parts kit (`godot/alien/`, art #196, step S3)
 The parts-kit alien (not plasticine: a smooth, soft-matte designer-toy look) as one GLB from

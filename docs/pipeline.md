@@ -125,6 +125,32 @@ runs separately. Output: `<raw>/research/2026-10-22-roster/design/pilot3d/static
   cleaned further toward white. Review: `$PYTHON_BIN tools/blender/alien_static_review.py <seams|grid|ladder|gate>`
   (seams before and after under the full material and the three debug views, the "alive" levers' variant grid, the
   cumulative ladder A..F with GPU ms, the whole-head gate against #288).
+- **Round 3 (static_v3, 2026-10-22; output `<raw>/.../pilot3d/static_v3/<name>/`, `static/` and `static_v2/` kept).**
+  The manager's verdict on round 2: an orange-peel grain over both heads, the axolotl's upper-lip spike, the
+  chameleon's lids heavier and lower than #288's, and a material that barely moved (still vinyl), judged in a browser
+  as well as in Godot. Fixes:
+  - **Orange peel:** the normal map and the cavity and thinness bakes come from a smoothed copy of the dense original
+    (`DENSE_SMOOTH`, a Laplacian relax 0.5 x 24): the short rays of round 2 picked up its millimetre noise. The
+    decimation still takes the original's shape. The shader's micro grain stays off.
+  - **Lip spike:** a convex vertex near the lips or lid rims that stands out of its neighbours' plane by more than
+    `DESPIKE` (0.3) of its mean edge length moves to its neighbours' mean (concave points, the lip slit, are never
+    touched; `build.json` `despiked`), and the lips' normal detail is fully flat (0.8 in round 2).
+  - **Chameleon lids:** `RIMS` per head; the chameleon's default decimates the lid rims plainly (#288's lids), and
+    `--rims on` builds the named alternative `chameleon_heavylid` (the denser rims keep the dense original's heavier
+    lids). `alien_static_compare.py lids` renders the dense original beside #288, round 2 and both builds in grey.
+  - **Alive in the textures** (`alive`, strength `--alive`, so it shows in a browser's glTF viewer as well): the
+    axolotl's teal crown and cheeks from the 2D, a gentle hue and value drift over big areas, a coloured cavity in
+    the creases (deeper, more saturated, a little bluer; never grey), a warmer, more saturated flush on the lips,
+    lids, nostrils and the thin parts' roots (gills, crest); the roughness gets the same drift and rougher creases
+    on a satin skin (0.5). `<name>_albedo_plain.png` (without the layers) feeds Godot's `alive_mix` grid only.
+  - **glTF extensions** on the exported material: `KHR_materials_clearcoat` on the eyes (`<name>_coat.png`, R),
+    `KHR_materials_sheen` on the skin, `KHR_materials_specular` lowered (`SPEC_LEVEL`, `SHEEN`). Godot's importer
+    ignores the three; the head's ShaderMaterial does the same in Godot.
+
+  Review: `alien_static_review.py <seams|grid|final|gate>` (seams with #288, round 2 and round 3 rows; the
+  levers' decisive grid; the before/after under AgX 0.65 + saturation 1.35 and the showroom's AgX 0.9; the gate),
+  `alien_static_compare.py <lids|web>` (the browser-like render: Blender's glTF import, Cycles, the studio HDRI only,
+  the Standard view transform).
 
 ## Since 2026-10-03: the character base and who decides
 
