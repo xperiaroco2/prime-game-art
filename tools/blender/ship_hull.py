@@ -28,6 +28,13 @@ L.MATERIALS.update({
                       "strength": 1.6},
     "ext_glow_cyan_dim": {"base": (0.1, 0.6, 0.8, 1.0), "metallic": 0.0, "roughness": 0.4,
                           "emission": (0.15, 0.85, 1.0), "strength": 2.5},
+    # details 1: the lens band's faint warm glow seen from outside (one-sided: "cull"), the canopies' lighter glass
+    # and their cockpit screens
+    "ext_window_glow": {"base": (1.0, 0.62, 0.3, 0.18), "metallic": 0.0, "roughness": 0.5, "alpha": True,
+                        "emission": (1.0, 0.55, 0.22), "strength": 3.0, "cull": True},
+    "glass_canopy": {"base": (0.16, 0.19, 0.22, 0.28), "metallic": 0.0, "roughness": 0.05, "alpha": True},
+    "ext_screen": {"base": (0.1, 0.7, 0.9, 1.0), "metallic": 0.0, "roughness": 0.3, "emission": (0.15, 0.85, 1.0),
+                   "strength": 5.0},
     "ext_ground": {"base": (0.05, 0.062, 0.035, 1.0), "metallic": 0.0, "roughness": 0.95},
     "ext_bark": {"base": (0.12, 0.075, 0.05, 1.0), "metallic": 0.0, "roughness": 0.9},
     "ext_needles": {"base": (0.03, 0.075, 0.045, 1.0), "metallic": 0.0, "roughness": 0.85},

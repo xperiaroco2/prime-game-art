@@ -62,6 +62,8 @@ def material(name: str):
     if spec.get("alpha"):
         bsdf.inputs["Alpha"].default_value = spec["base"][3]
         mat.surface_render_method = "BLENDED"
+    if spec.get("cull"):  # details 1: one-sided (the glTF's doubleSided false: Godot culls its back)
+        mat.use_backface_culling = True
     if spec.get("emission"):
         bsdf.inputs["Emission Color"].default_value = (*spec["emission"], 1.0)
         bsdf.inputs["Emission Strength"].default_value = spec["strength"]

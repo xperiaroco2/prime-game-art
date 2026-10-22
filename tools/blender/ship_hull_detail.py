@@ -49,7 +49,8 @@ def _bar(path, w, t, lift=0.0, up=(0.0, 0.0, 1.0)):
 
 
 # --- the canopies --------------------------------------------------------------------------------------------------
-CANOPY = {"x": 2.25, "y": -3.6, "ax": 0.95, "ay": 1.35, "height": 0.75, "segs": 28, "rings": 5}   # J's
+CANOPY = {"x": 2.25, "y": -3.6, "ax": 0.95, "ay": 1.35, "height": 0.85, "segs": 28, "rings": 5}   # J's; details 1:
+#   0.85 high (was 0.75), room over a pilot's seat
 
 
 def _canopy_frame(side):
@@ -74,7 +75,8 @@ def _canopy_frame(side):
 def canopy(args: dict, layout: dict) -> list:
     """A cockpit canopy (args side; part glass|fairing|glow), outside only: the hall's ceiling closes it from inside.
     Set flush in the forward hull (its base follows the skin), smooth (28 sides, 5 rings), a low smooth collar
-    round it and a lit floor, seat and desk under the tinted glass."""
+    round it; details 1: a cockpit under lighter glass (glass_canopy): a pilot's seat facing forward (-y), a console
+    with two grips and three cyan screens, a warm floor and a warm glow round the glass's foot (cockpit())."""
     side = float(args.get("side", 1.0))
     part = args.get("part", "glass")
     c = CANOPY
@@ -101,7 +103,7 @@ def canopy(args: dict, layout: dict) -> list:
                 px, py = cx + c["ax"] * math.cos(t0) * math.cos(phi), cy + c["ay"] * math.sin(t0) * math.cos(phi)
                 path.append((px, py, deck(px, py) + 0.06 + (c["height"] + 0.01) * math.sin(phi)))
             ribs.append(_bar(path, 0.07, 0.05))
-        return [_smooth(L.part("canopy_glass", v, f, "glass_tint", solid=False)),
+        return [_smooth(L.part("canopy_glass", v, f, "glass_canopy", solid=False)),
                 L.part("canopy_ribs", *L.merge(*ribs), "ext_frame")]
     if part == "fairing":
         # the deck ring between the glass and the teardrop outline, the collar down into the skin, the rim lip
@@ -126,21 +128,88 @@ def canopy(args: dict, layout: dict) -> list:
               for j in range(n) for k in range(4)]
         return [_smooth(L.part("canopy_fairing", v, f, "ext_silver_b", solid=False)),
                 L.part("canopy_lip", lv, lf, "ext_frame")]
-    # glow: the lit cockpit floor under the glass, a dark seat and a console
-    floor = [(cx + (x - cx) * 0.85, cy + (y - cy) * 0.85, 0.0) for x, y in glass]
-    fv = [(x, y, deck(x, y) + 0.06) for x, y, _h in floor] + [(cx, cy, deck(cx, cy) + 0.06)]
-    ff = [(j, (j + 1) % n, n) for j in range(n)]
-    ff = L.orient(fv, ff, lambda _c: (cx, cy, deck(cx, cy) - 1.0))
-    def on(y, hx, hy):  # the highest deck point under a box's footprint
-        return max(deck(cx + sx * hx, y + sy * hy) for sx in (-1, 1) for sy in (-1, 1))
-    # hull 3-2: low enough to stay under the flush glass (0.85 high at the centre)
-    seat = H._obox((cx, cy + 0.25, on(cy + 0.25, 0.26, 0.22) + 0.2), (0.26, 0, 0), (0, 0.22, 0), (0, 0, 0.14))
-    back = H._obox((cx, cy + 0.5, on(cy + 0.5, 0.26, 0.06) + 0.4), (0.26, 0, 0), (0, 0.06, 0), (0, 0, 0.2))
-    desk = H._obox((cx, cy - 0.55, on(cy - 0.55, 0.5, 0.16) + 0.2), (0.5, 0, 0), (0, 0.16, 0), (0, 0, 0.12))
-    screen = H._obox((cx, cy - 0.62, on(cy - 0.62, 0.4, 0.03) + 0.36), (0.4, 0, 0), (0, 0.03, 0), (0, 0, 0.05))
+    return cockpit(side)
+
+
+def glass_h(side: float, x: float, y: float) -> float:
+    """The canopy glass's inner height over plan (x, y) (its ellipse's dome over the deck; the deck where outside)."""
+    c = CANOPY
+    _ts, _rim, _glass, deck, _o = _canopy_frame(side)
+    q = math.hypot((x - side * c["x"]) / c["ax"], (y - c["y"]) / c["ay"])
+    return deck(x, y) + 0.04 + c["height"] * math.sqrt(max(0.0, 1.0 - q * q))
+
+
+def _tilt(c, hx, hy, hz, deg):
+    """An oriented box at c, half sizes hx (x), hy, hz, turned deg about x (+: its top leans aft, +y)."""
+    a = math.radians(deg)
+    return H._obox(c, (hx, 0, 0), (0, hy * math.cos(a), -hy * math.sin(a)), (0, hz * math.sin(a), hz * math.cos(a)))
+
+
+def cockpit(side: float) -> list:
+    """details 1: the cockpit under a canopy (plan frame, outside only): the warm-lit floor and a warm glow ring at
+    the glass's foot (the 2D's orange domes), a pilot's seat facing forward (-y): a pedestal, the seat pan with its
+    cushion, a reclined back and a headrest, two armrests (silver shell, dark pads), and a console ahead with a
+    sloped face, two grips and three cyan screens (ext_screen, bright enough to read through the glass at night).
+    Sized for a person: the pan 0.5 m wide, the back and headrest 0.61 m long reclined 40 deg (the glass is 0.85 m
+    high); every vertex stays under the glass (test_ship_hull_detail)."""
+    c = CANOPY
+    ts, rim, glass, deck, outline = _canopy_frame(side)
+    n = len(ts)
+    cx, cy = side * c["x"], c["y"]
+    floor = [(cx + (x - cx) * 0.85, cy + (y - cy) * 0.85) for x, y in glass]
+    fv = [(x, y, deck(x, y) + 0.06) for x, y in floor] + [(cx, cy, deck(cx, cy) + 0.06)]
+    ff = L.orient(fv, [(j, (j + 1) % n, n) for j in range(n)], lambda _c: (cx, cy, deck(cx, cy) - 1.0))
+    # the glow ring: a low warm band just inside the glass's foot, its face turned in
+    gv = []
+    for x, y in glass:
+        ix, iy = cx + (x - cx) * 0.95, cy + (y - cy) * 0.95
+        gv += [(ix, iy, deck(ix, iy) + 0.05), (ix, iy, deck(ix, iy) + 0.11)]
+    gf = [(2 * j, 2 * ((j + 1) % n), 2 * ((j + 1) % n) + 1, 2 * j + 1) for j in range(n)]
+    gf = L.orient(gv, gf, lambda q: (cx + (q[0] - cx) * 1.5, cy + (q[1] - cy) * 1.5, q[2]))
+
+    def on(x, y, hx, hy):  # the highest cockpit floor point under a footprint
+        return max(deck(x + sx * hx, y + sy * hy) for sx in (-1, 1) for sy in (-1, 1)) + 0.06
+    # the seat: its pan's centre 0.1 m aft of the canopy's centre, the back pivot at its rear edge
+    sy0 = cy + 0.02
+    f0 = on(cx, sy0, 0.25, 0.3)
+    pan_top = f0 + 0.17
+    rec = 40.0
+    ra = math.radians(rec)
+    up, aft = (math.sin(ra), math.cos(ra)), (math.cos(ra), -math.sin(ra))   # along the back (y, h), its thickness
+    py, ph = sy0 + 0.2, pan_top          # the back's foot
+    def along(t, d=0.0):  # a point t up the back, d behind its face
+        return (cx, py + up[0] * t + aft[0] * d, ph + up[1] * t + aft[1] * d)
+    shell = [H._obox((cx, sy0, f0 + 0.06), (0.07, 0, 0), (0, 0.07, 0), (0, 0, 0.06)),          # the pedestal
+             H._obox((cx, sy0, pan_top - 0.06), (0.25, 0, 0), (0, 0.22, 0), (0, 0, 0.035)),      # the pan's shell
+             _tilt(along(0.25, 0.05), 0.24, 0.035, 0.25, rec),                                   # the back's shell
+             _tilt(along(0.55, 0.04), 0.14, 0.03, 0.06, rec)]                                    # the headrest's
+    pads = [H._obox((cx, sy0 - 0.01, pan_top - 0.0125), (0.22, 0, 0), (0, 0.2, 0), (0, 0, 0.0125)),
+            _tilt(along(0.25, 0.0), 0.21, 0.015, 0.23, rec), _tilt(along(0.55, 0.0), 0.12, 0.012, 0.05, rec)]
+    for sx in (-1, 1):   # the armrests: a post and a pad, level with the pan + 0.18
+        ax_ = cx + sx * 0.28
+        shell.append(H._obox((ax_, sy0 + 0.1, pan_top + 0.06), (0.025, 0, 0), (0, 0.025, 0), (0, 0, 0.06)))
+        pads.append(H._obox((ax_, sy0 + 0.02, pan_top + 0.15), (0.035, 0, 0), (0, 0.17, 0), (0, 0, 0.025)))
+    # the console: a body 0.6 m wide 0.5 m ahead of the pan, its face sloped toward the pilot, a shelf, two grips
+    ky = cy - 0.47
+    k0 = on(cx, ky, 0.3, 0.12)
+    shell.append(H._obox((cx, ky, k0 + 0.11), (0.3, 0, 0), (0, 0.12, 0), (0, 0, 0.11)))         # the body
+    shell.append(_tilt((cx, ky + 0.07, k0 + 0.28), 0.3, 0.03, 0.1, -40.0))                     # the sloped face
+    shell.append(H._obox((cx, ky + 0.18, k0 + 0.19), (0.27, 0, 0), (0, 0.07, 0), (0, 0, 0.015)))  # the shelf
+    for sx in (-1, 1):
+        gx = cx + sx * 0.2
+        shell.append(H._obox((gx, ky + 0.2, k0 + 0.24), (0.018, 0, 0), (0, 0.018, 0), (0, 0, 0.045)))
+        pads.append(H._obox((gx, ky + 0.205, k0 + 0.31), (0.028, 0, 0), (0, 0.03, 0), (0, 0, 0.035)))
+    screens = []
+    for k, (sx, w) in enumerate(((-0.225, 0.08), (0.0, 0.1), (0.225, 0.08))):
+        # on the sloped face, 1 cm proud of it toward the pilot (+y, up)
+        d = (0.0, math.cos(math.radians(40.0)) * 0.035, math.sin(math.radians(40.0)) * 0.035)
+        cc = (cx + sx, ky + 0.07 + d[1], k0 + 0.28 + d[2])
+        screens.append(_tilt(cc, w, 0.004, 0.07, -40.0))
     return [L.part("canopy_floor", fv, ff, "ext_glow_warm", solid=False),
-            L.part("canopy_seat", *L.merge(seat, back, desk), "ext_frame"),
-            L.part("canopy_screen", *screen, "ext_glow_cyan_dim")]
+            L.part("canopy_glow", gv, gf, "ext_glow_warm", solid=False),
+            L.part("canopy_seat", *L.merge(*shell), "ext_silver_b"),
+            L.part("canopy_pads", *L.merge(*pads), "ext_frame"),
+            L.part("canopy_screen", *L.merge(*screens), "ext_screen")]
 
 
 # --- the nozzle pods -----------------------------------------------------------------------------------------------
@@ -326,7 +395,9 @@ def _box2(p0, p1, w, h0, h1, lift=0.0):
 def lens_frames(args: dict, layout: dict) -> list:
     """lens step 2: the lenses' outer window frames (ext_frame): along the band's sill and head on the rim (5 cm, 3 cm
     proud), its two end posts, a mullion in the reveal at each of the room's inner window vertices (step 1's
-    mullions), and a thin raised frame round each roof window on the slanted top."""
+    mullions), and (details 1) the oculus's thick silver ring frame on the top, and the band's warm glow: a faint
+    emissive pane in the reveal, one-sided (it faces out: from the room it is culled), so the band reads lit at night
+    from outside at a grazing angle."""
     bars = []
     ax = S.p_axis_deg()
     a0, a1 = math.radians(ax + S.P_BAND[0]), math.radians(ax + S.P_BAND[1])
@@ -360,25 +431,44 @@ def lens_frames(args: dict, layout: dict) -> list:
             c = (cx + 0.5 * (r0 + r1) * u[0], cy + 0.5 * (r0 + r1) * u[1])
             bars.append(H._obox((c[0], c[1], 0.5 * (S.SILL + S.HEAD)), (0.5 * (r1 - r0) * u[0], 0.5 * (r1 - r0) * u[1], 0.0),
                                 (-0.025 * u[1], 0.025 * u[0], 0.0), (0.0, 0.0, 0.5 * (S.HEAD - S.SILL))))
-    roof = []
-    la, lw = S.P_ROOF_WIN_M
+    # details 1: the oculus's ring frame on the hull, thick silver: the section (r, h over the hull's top) from a lip
+    # 1 cm over the cut's edge and 4 cm down into it, out over the plates, a chamfered crown 8.5 cm proud
+    sec = [(-0.012, -0.04), (0.15, -0.02), (0.15, 0.03), (0.105, 0.085), (0.02, 0.085), (-0.012, 0.05)]
+    n = S.P_OCULUS_N * 2
+    ring_v, ring_f = [], []
     for sx in (1, -1):
-        ux, uy = S.p_axis(sx)
-        nx, ny = -uy, ux
-        for t, w in S.P_ROOF_WIN:
-            mx, my = sx * S.P_TIP[0] + t * ux + w * nx, S.P_TIP[1] + t * uy + w * ny
-            cs = [(mx + a * (la / 2 + 0.025) * ux + b * (lw / 2 + 0.025) * nx,
-                   my + a * (la / 2 + 0.025) * uy + b * (lw / 2 + 0.025) * ny)
-                  for a, b in ((-1, -1), (1, -1), (1, 1), (-1, 1))]
-            for i in range(4):
-                p, q = cs[i], cs[(i + 1) % 4]
-                dx, dy = q[0] - p[0], q[1] - p[1]
-                ln = math.hypot(dx, dy)
-                p2 = (p[0] - 0.025 * dx / ln, p[1] - 0.025 * dy / ln)
-                q2 = (q[0] + 0.025 * dx / ln, q[1] + 0.025 * dy / ln)
-                tops = [S.heights(*e, S.DEFAULT)[0] for e in (p2, q2)]
-                roof.append(_box2(p2, q2, 0.05, tuple(h - 0.02 for h in tops), tuple(h + 0.02 for h in tops)))
-    return [L.part("band_frame", *L.merge(*bars), "ext_frame"), L.part("roof_frame", *L.merge(*roof), "ext_frame")]
+        cx, cy = sx * S.P_TIP[0], S.P_TIP[1]
+        base = len(ring_v)
+        for j in range(n):
+            a = 2 * math.pi * (j + 0.5) / n
+            u = (math.cos(a), math.sin(a))
+            r0 = S.P_OCULUS_R / math.cos(math.pi / S.P_OCULUS_N)   # the cut's vertices: no sliver of hull shows inside
+            for dr, dh in sec:
+                x, y = cx + (r0 + dr) * u[0], cy + (r0 + dr) * u[1]
+                ring_v.append((x, y, S.heights(x, y, S.DEFAULT)[0] + dh))
+        m = len(sec)
+        for j in range(n):
+            for q in range(m):
+                a0, a1 = base + j * m + q, base + j * m + (q + 1) % m
+                b0, b1 = base + ((j + 1) % n) * m + q, base + ((j + 1) % n) * m + (q + 1) % m
+                ring_f.append((a0, b0, b1, a1))
+    gv, gf = [], []
+    step = 2 * math.pi / S.P_LENS_N
+    for sx in (1, -1):
+        g0, g1 = math.radians(ax + S.P_BAND[0]), math.radians(ax + S.P_BAND[1])
+        cuts = [g0] + [k * step for k in range(math.floor(g0 / step) + 1, math.ceil(g1 / step))] + [g1]
+        cx, cy = sx * S.P_TIP[0], S.P_TIP[1]
+        for a, b in zip(cuts, cuts[1:]):
+            k = len(gv)
+            for g, h in ((a, S.SILL + 0.01), (b, S.SILL + 0.01), (b, S.HEAD - 0.01), (a, S.HEAD - 0.01)):
+                gv.append((cx + sx * GLOW_PANE_R * math.cos(g), cy + GLOW_PANE_R * math.sin(g), h))
+            gf.append((k, k + 1, k + 2, k + 3))
+    gf = L.orient(gv, gf, lambda q: (math.copysign(S.P_TIP[0], q[0]), S.P_TIP[1], q[2]))
+    return [L.part("band_frame", *L.merge(*bars), "ext_frame"), L.part("oculus_frame", ring_v, ring_f, "ext_silver_b"),
+            L.part("band_glow", gv, gf, "ext_window_glow", solid=False)]
+
+
+GLOW_PANE_R = 2.32   # details 1: the band's glow pane, outside the room's wall (2.21) and inside the rim (2.55)
 
 
 for _name in ("edge_light", "lens_frames"):

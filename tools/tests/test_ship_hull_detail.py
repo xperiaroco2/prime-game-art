@@ -26,6 +26,32 @@ def verts(parts):
 
 
 class ShipHullDetailTest(unittest.TestCase):
+    def test_the_cockpits_fit_under_their_glass(self) -> None:
+        """details 1: each canopy holds a seat (pan, back, headrest, armrests), a console with three screens, all
+        under the glass (2 cm clear), the screens glowing cyan, the glass the lighter canopy glass."""
+        for side in (-1.0, 1.0):
+            parts = {p["name"]: p for p in D.cockpit(side)}
+            self.assertEqual(set(parts), {"canopy_floor", "canopy_glow", "canopy_seat", "canopy_pads", "canopy_screen"})
+            for name, p in parts.items():
+                for x, y, h in p["verts"]:
+                    self.assertLess(h, D.glass_h(side, x, y) - 0.02, f"{name} through the glass at ({x:.2f}, {y:.2f})")
+            self.assertEqual(len(parts["canopy_screen"]["verts"]), 3 * 8)
+            self.assertEqual(parts["canopy_screen"]["mat"], "ext_screen")
+            seat = [y for _x, y, _h in parts["canopy_seat"]["verts"]]
+            self.assertLess(min(seat), D.CANOPY["y"] - 0.4, "no console ahead of the seat (-y)")
+            glass = D.canopy({"side": side, "part": "glass"}, LAYOUT)
+            self.assertEqual(glass[0]["mat"], "glass_canopy")
+
+    def test_the_oculus_frame_rings_the_cut(self) -> None:
+        """details 1: the oculus's ring frame on each lens, round its centre, over the cut's edge and out onto the
+        plates, on the hull's top."""
+        frame = next(p for p in D.lens_frames({}, LAYOUT) if p["name"] == "oculus_frame")
+        for sx in (1, -1):
+            cx, cy = sx * S.P_TIP[0], S.P_TIP[1]
+            rs = [math.hypot(x - cx, y - cy) for x, y, _h in frame["verts"] if x * sx > 0]
+            self.assertLess(min(rs), S.P_OCULUS_R)
+            self.assertGreater(max(rs), S.P_OCULUS_R + 0.12)
+            self.assertLess(max(rs), S.P_OCULUS_R + 0.2)
     def test_the_canopies_sit_on_the_hull(self) -> None:
         for side in (-1.0, 1.0):
             for part in ("glass", "fairing", "glow"):
@@ -34,7 +60,8 @@ class ShipHullDetailTest(unittest.TestCase):
                     if top is not None:
                         self.assertGreater(h, top - 0.1, f"canopy {part} under the hull at ({x:.2f}, {y:.2f})")
             glass = verts(D.canopy({"side": side, "part": "glass"}, LAYOUT))
-            self.assertLess(max(h for _x, _y, h in glass) - D.skin_h(side * D.CANOPY["x"], D.CANOPY["y"]), 0.95)
+            # details 1: 0.85 high (was 0.75 under a 0.95 cap), room over the pilot's seat
+            self.assertLess(max(h for _x, _y, h in glass) - D.skin_h(side * D.CANOPY["x"], D.CANOPY["y"]), 1.05)
 
     def test_the_pods_stay_out_of_the_hall_and_end_as_ps(self) -> None:
         pods = {p["id"]: p for p in LAYOUT["pieces"] if p["builder"] in ("nozzle_pod", "pod_ring")}
