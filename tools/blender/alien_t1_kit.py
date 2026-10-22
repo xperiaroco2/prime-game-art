@@ -13,6 +13,9 @@ head and exports the kit.
 - Mouths (rest, smile, sad, O) and brows (sad, raised, angry): Meshy's meshes, decimated, scaled to the dish or the
   rim, turned to the skin's normal and seated (alien_t1_geom.seat_y: the back sinks behind the skin, no gap); the O's
   back ball is cut off and a dark throat disc closes the hole. Every piece is a separate object parented to the head.
+- `--fill` (step 3): fills the sockets and the mouth dish flush first (fill_recesses), then seats the eyes on that
+  skin, `--eye-sink` of their radius behind it; `--eye-scale` shrinks the eyeballs and lids (0.75 in step 3);
+  `--ref-step2 DIR` puts step 2's front row on the sheet instead of H2's; `--sheet`, `--glb-name` name the outputs.
 - `--grid`: renders an expression (`--grid-expr`, rest) for a grid of mouth widths x eyeball scales (`--grid-mouth`,
   `--grid-eye`) front and three-quarter (grid.jpg) and stops.
 - Otherwise: the expressions (alien_t1_geom.expressions) front and three-quarter, close-ups of the mouth seam and the
@@ -151,6 +154,87 @@ def measure(head, bvh) -> dict:
     dish = {"cx": 0.0, "cz": float(zs[jv]), "prominence": prom, "z_upper": float(zs[ju]), "z_lower": float(zs[jl]),
             "w": max(lip_width(ju), lip_width(jl)), "h": float(zs[ju] - zs[jl]), "y_valley": float(col[jv])}
     return {"bbox": [lo.tolist(), hi.tolist()], "sockets": sockets, "dish": dish}
+
+
+# ---------------------------------------------------------------- step 3: the recesses filled flush
+def grid_at(xs, zs, a: np.ndarray, x: float, z: float) -> float:
+    """a (rows z, columns x) at (x, z), bilinear."""
+    fx = min(max((x - xs[0]) / (xs[1] - xs[0]), 0.0), len(xs) - 1.001)
+    fz = min(max((z - zs[0]) / (zs[1] - zs[0]), 0.0), len(zs) - 1.001)
+    i, j = int(fx), int(fz)
+    tx, tz = fx - i, fz - j
+    return float((a[j, i] * (1 - tx) + a[j, i + 1] * tx) * (1 - tz) + (a[j + 1, i] * (1 - tx) + a[j + 1, i + 1] * tx) * tz)
+
+
+def fill_recesses(head, bvh, m: dict, centre=(0.0, 0.1, 0.1), sigma: float = 0.05, iters: int = 100,
+                  tol: float = 0.08, max_rise: float = 0.3, dish_rise: float = 0.06) -> dict:
+    """Fills the eye sockets and the mouth dish flush, radially from a point inside the head: the outer radius map
+    R(azimuth, elevation) is closed (env = max(env, blur(env)) repeated: hollows rise to a smooth surface, convex skin
+    stays where it is), applied only inside soft masks around the two sockets and the dish; the vertices there move
+    outward along their ray onto it (a front-only move left the sockets' side walls visible from three-quarter). The
+    rest of the head is untouched."""
+    C = Vector(centre)
+    na, ne = 220, 200
+    az = np.linspace(-1.9, 1.9, na)  # 0 = straight ahead (-Y), + toward +X
+    el = np.linspace(-1.1, 1.3, ne)
+    R = np.full((ne, na), np.nan)
+    for j, e in enumerate(el):
+        for i, a in enumerate(az):
+            d = Vector((math.sin(a) * math.cos(e), -math.cos(a) * math.cos(e), math.sin(e)))
+            loc, _, _, _ = bvh.ray_cast(C + d * 5.0, -d)
+            if loc is not None:
+                R[j, i] = (loc - C).length
+    valid = ~np.isnan(R)
+    inner = float(np.nanmin(R))
+    env = np.where(valid, R, inner)
+    step = float(az[1] - az[0])
+    for _ in range(iters):
+        env = np.maximum(env, gauss(env, sigma / step))
+    A, E = np.meshgrid(az, el)
+    Rf = np.where(valid, R, 0.0)
+    PX, PY, PZ = (C.x + Rf * np.sin(A) * np.cos(E), C.y - Rf * np.cos(A) * np.cos(E), C.z + Rf * np.sin(E))
+    regions = []
+    for side in G.SIDES:
+        s = m["sockets"][side]
+        bx, _, bz = s["bowl_centre"]
+        regions.append((bx, bz, 1.05 * s["bowl_r"], 1.05 * s["bowl_r"], 1.4))
+    d = m["dish"]
+    # the dish only: a wider ellipse reached the jaw's corners, where the jaw meets the neck (a hollow too)
+    regions.append((0.0, d["cz"], 0.6 * d["w"], 0.75 * d["h"], 1.35))
+
+    def mask(x, z, only=None):  # 1 inside a region, a smoothstep down to 0 at its `fall`
+        out = np.zeros_like(np.asarray(x, dtype=float))
+        for cx, cz, ra, rb, fall in regions if only is None else [regions[only]]:
+            t = np.clip((np.hypot((x - cx) / ra, (z - cz) / rb) - 1.0) / (fall - 1.0), 0.0, 1.0)
+            out = np.maximum(out, 1.0 - t * t * (3.0 - 2.0 * t))
+        return out
+
+    w = np.where(valid & (PY < 0.0), mask(PX, PZ), 0.0)
+    moved, worst = 0, 0.0
+    for v in head.data.vertices:
+        p = v.co - C
+        rv = p.length
+        e = math.asin(max(-1.0, min(1.0, p.z / rv)))
+        a = math.atan2(p.x, -p.y)
+        if not (az[0] <= a <= az[-1] and el[0] <= e <= el[-1]):
+            continue
+        # the vertex itself must lie in a region too: under the jaw a ray's outer skin is the chin, not the neck
+        k = grid_at(az, el, w, a, e) * float(mask(v.co.x, v.co.z)) if v.co.y < 0.0 else 0.0
+        socket = float(max(mask(v.co.x, v.co.z, 0), mask(v.co.x, v.co.z, 1))) > 0.0
+        if not socket:  # the dish is shallow: no lift below the lower lip (the jaw's corners grew tabs) nor over cap
+            k *= G.smoothstep(d["z_lower"] - 0.08, d["z_lower"] - 0.02, v.co.z)
+        if k <= 0.0:
+            continue
+        target = grid_at(az, el, env, a, e)
+        behind = grid_at(az, el, Rf, a, e) - rv  # how far under the outer skin (undercuts inside a socket)
+        k *= 1.0 - G.smoothstep(0.5 * tol, tol, behind)
+        if rv < target and k > 0.0:
+            dr = k * min(target - rv, max_rise if socket else dish_rise)
+            v.co = C + p * ((rv + dr) / rv)
+            moved += 1
+            worst = max(worst, dr)
+    head.data.update()
+    return {"moved": moved, "max_rise": round(worst, 4), "sigma": sigma, "iters": iters, "centre": list(centre)}
 
 
 # ---------------------------------------------------------------- materials
@@ -409,11 +493,17 @@ def throat(name: str, o, bvh, mat):
 
 
 # ---------------------------------------------------------------- the kit
-def build(raw: Path, mouth_w: float, eye_k: float, cache: dict | None = None) -> dict:
+def build(raw: Path, mouth_w: float, eye_k: float, cache: dict | None = None, fill: bool = False,
+          eye_scale: float = 1.0, eye_sink: float = 0.3) -> dict:
     bpy.ops.wm.read_factory_settings(use_empty=True)
     head = import_one(raw / "head" / "multi_image_to_3d-model.glb", "head")
     bvh = make_bvh(head)
     m = measure(head, bvh)
+    filled = None
+    if fill:
+        filled = fill_recesses(head, bvh, m)
+        log("fill", json.dumps(filled))
+        bvh = make_bvh(head)
     log("measure", json.dumps(m["sockets"]), json.dumps(m["dish"]))
     skin = skin_colour(head, m["sockets"]["L"])
     clay = clay_material("t1_clay", skin, 0.5)
@@ -424,8 +514,13 @@ def build(raw: Path, mouth_w: float, eye_k: float, cache: dict | None = None) ->
     for side in G.SIDES:
         s = m["sockets"][side]
         c = Vector(s["bowl_centre"])
-        r = s["bowl_r"] * eye_k
+        r = s["bowl_r"] * eye_k * eye_scale
         sgn = 1.0 if side == "L" else -1.0
+        if fill:  # the ball sits on the flush skin, eye_sink of its radius behind it along the skin's normal
+            loc, nrm = skin_hit(bvh, c.x, c.z)
+            n = nrm.normalized() if nrm.y < 0 else -nrm.normalized()
+            c = loc - n * (eye_sink * r)
+        s["eye_centre"], s["eye_r"] = list(c), r  # the brows sit above this ball
         gaze = Vector((sgn * 0.12, -1.0, 0.0)).normalized()
         kit[f"eye_{side}"] = eyeball(f"eye_{side}", c, r, gaze, eye_mat)
         axes = frame_axes(gaze)
@@ -458,8 +553,10 @@ def build(raw: Path, mouth_w: float, eye_k: float, cache: dict | None = None) ->
             o.data.materials.clear()
             o.data.materials.append(clay)
             p = G.BROWS[pose]
-            c, r = s["bowl_centre"], s["bowl_r"] * eye_k
-            seats[name] = seat(o, bvh, G.BROW_WIDTH * r, c[0] - sgn * 0.08 * r, c[2] + r * (G.BROW_BASE + p["lift"]),
+            c, r = s["eye_centre"], s["eye_r"]
+            # the brow keeps its step 2 length (eye_scale shrinks the eyes only); it sits above the ball it has
+            seats[name] = seat(o, bvh, G.BROW_WIDTH * s["bowl_r"] * eye_k, c[0] - sgn * 0.08 * r,
+                               c[2] + r * (G.BROW_BASE + p["lift"]),
                                0.4, 0.004, G.brow_tilt_rad(side, pose))
             kit[name] = o
     gaps = {n: round(float_gap(kit[n], bvh, seats[n]["frac"]), 4) for n in seats}
@@ -471,7 +568,7 @@ def build(raw: Path, mouth_w: float, eye_k: float, cache: dict | None = None) ->
             o.parent = head
             o.matrix_parent_inverse = Matrix.Identity(4)
             o.matrix_world = mw
-    return {"kit": kit, "measure": m, "gaps": gaps}
+    return {"kit": kit, "measure": m, "gaps": gaps, "fill": filled}
 
 
 # ---------------------------------------------------------------- render
@@ -605,6 +702,12 @@ def main():
     ap.add_argument("--ref-approved", type=Path, help="the approved 2D expressions (3 x 2: rest smile sad / angry surprised talk)")
     ap.add_argument("--ref-h2", type=Path, help="H2's ch_expr4 (2 x 2: rest smile / sad surprised)")
     ap.add_argument("--samples", type=int, default=48)
+    ap.add_argument("--fill", action="store_true", help="step 3: fill the sockets and the mouth dish flush")
+    ap.add_argument("--eye-scale", type=float, default=1.0, help="eyeballs and lids x this (step 3: 0.75)")
+    ap.add_argument("--eye-sink", type=float, default=0.3, help="with --fill: the ball's centre this x r behind the skin")
+    ap.add_argument("--ref-step2", type=Path, help="step 2's render folder: its front row replaces H2's row")
+    ap.add_argument("--sheet", type=Path, help="the comparison sheet's path (default <out>/step2_compare.jpg)")
+    ap.add_argument("--glb-name", default="t1_chameleon_kit.glb")
     a = ap.parse_args(argv)
     a.out.mkdir(parents=True, exist_ok=True)
     if a.grid:
@@ -624,7 +727,7 @@ def main():
                 log("grid", mw, ek, json.dumps(b["gaps"]))
         sheet(cells, 2 * len(a.grid_eye), 1280 // (2 * len(a.grid_eye)), 1280 // (2 * len(a.grid_eye)), a.out / "grid.jpg")
         return
-    b = build(a.raw, a.mouth_w, a.eye_k)
+    b = build(a.raw, a.mouth_w, a.eye_k, fill=a.fill, eye_scale=a.eye_scale, eye_sink=a.eye_sink)
     kit, m = b["kit"], b["measure"]
     rest = {s: kit[f"eye_{s}"].matrix_world.copy() for s in G.SIDES}
     setup_render(512, 512, a.samples)
@@ -646,20 +749,23 @@ def main():
     for k, c in close.items():
         render(a.out / f"close_{k}.png", c)
     sheet([load_rgb(a.out / f"close_{k}.png") for k in close], 2, 640, 640, a.out / "step2_closeups.jpg")
-    if a.ref_approved and a.ref_h2:
+    five = ("rest", "smile", "sad", "surprised", "angry")
+    if a.ref_approved and (a.ref_h2 or a.ref_step2):
         approved = load_rgb(a.ref_approved)
-        h2 = load_rgb(a.ref_h2)
         ah, aw = approved.shape[0] // 2, approved.shape[1] // 3
         ap_cells = [approved[r * ah:(r + 1) * ah, c * aw:(c + 1) * aw] for r, c in ((0, 0), (0, 1), (0, 2), (1, 1), (1, 0))]
-        hh, hw = h2.shape[0] // 2, h2.shape[1] // 2
-        h2_cells = [h2[r * hh:(r + 1) * hh, c * hw:(c + 1) * hw] for r, c in ((0, 0), (0, 1), (1, 0), (1, 1))] + [None]
-        five = ("rest", "smile", "sad", "surprised", "angry")
+        if a.ref_step2:  # step 3: step 2's front row instead of H2's
+            h2_cells = [load_rgb(a.ref_step2 / f"{e}_front.png") for e in five]
+        else:
+            h2 = load_rgb(a.ref_h2)
+            hh, hw = h2.shape[0] // 2, h2.shape[1] // 2
+            h2_cells = [h2[r * hh:(r + 1) * hh, c * hw:(c + 1) * hw] for r, c in ((0, 0), (0, 1), (1, 0), (1, 1))] + [None]
         cells = ap_cells + h2_cells + [load_rgb(shots[(e, "front")]) for e in five] + \
             [load_rgb(shots[(e, "q")]) for e in five] + \
             [load_rgb(shots[("gaze_left", "front")]), load_rgb(shots[("gaze_right", "front")]),
              load_rgb(shots[("blink", "front")]), load_rgb(a.out / "close_mouth.png"),
              load_rgb(a.out / "close_socket.png")]
-        sheet(cells, 5, 256, 256, a.out / "step2_compare.jpg")
+        sheet(cells, 5, 256, 256, a.sheet or a.out / "step2_compare.jpg")
     # the kit GLB: every node, the rest set marked visible
     show(kit, set(kit), 0.0, rest)
     for n, o in kit.items():
@@ -667,7 +773,7 @@ def main():
     for o in list(bpy.data.objects):
         if o.type in ("CAMERA", "LIGHT"):
             bpy.data.objects.remove(o)
-    glb = a.out / "t1_chameleon_kit.glb"
+    glb = a.out / a.glb_name
     bpy.ops.export_scene.gltf(filepath=str(glb), export_format="GLB", use_visible=False, export_extras=True,
                               export_apply=False, export_yup=True, export_image_format="AUTO",
                               export_materials="EXPORT")
@@ -676,7 +782,7 @@ def main():
            "gaze": {"nodes": ["eye_L", "eye_R"], "axis": "the head's up axis (glTF +Y)",
                     "pivot": "each eye node's origin (the ball's centre)", "eye_centres_blender": centres},
            "visibility": "glTF has no hidden flag: every node is in the file; nodes' extras.prime_visible_rest "
-                         "marks the rest set", "measure": m, "float_gaps": b["gaps"]}
+                         "marks the rest set", "measure": m, "float_gaps": b["gaps"], "fill": b["fill"]}
     (a.out / "t1_expressions.json").write_text(json.dumps(doc, indent=1), encoding="utf-8", newline="\n")
     log("done", glb)
 
