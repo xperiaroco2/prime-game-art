@@ -40,7 +40,7 @@ class ShipHullDetailTest(unittest.TestCase):
 
     def test_the_pods_and_housing_stay_out_of_the_hall(self) -> None:
         r_hall = float(HALL["radius"]) + 0.2
-        pods = {"nozzle_pod_outer": (2.75, 3.5, 2.15, 1.05, 3.6), "nozzle_pod_mid": (0.0, 3.9, 2.45, 1.2, 4.0)}
+        pods = {"nozzle_pod_outer": (2.75, 3.85, 2.15, 1.05, 3.25), "nozzle_pod_mid": (0.0, 4.25, 2.45, 1.2, 3.65)}
         for _pid, (x0, y0, h0, r, ln) in pods.items():
             for x, y, h in verts(D.nozzle_pod({"r": r, "length": ln}, LAYOUT)):
                 for sx in ((1, -1) if x0 else (1,)):
