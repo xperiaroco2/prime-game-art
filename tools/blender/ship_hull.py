@@ -456,6 +456,9 @@ for _name in ("window_frame", "mouth_frame", "mouth_lights", "ramp", "ramp_light
 import ship_hull_skin  # noqa: E402  (the manta's skin; it imports this module's helpers)
 
 MODULES.append(ship_hull_skin)
+import ship_hull_smooth  # noqa: E402  (v2: the smooth skin that replaces the faceted one)
+
+MODULES.append(ship_hull_smooth)
 import ship_hull_detail  # noqa: E402  (the canopies, pods, blades, hatches and lamps; step 2)
 
 MODULES.append(ship_hull_detail)
