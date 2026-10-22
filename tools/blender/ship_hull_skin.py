@@ -313,7 +313,7 @@ def tip_window(args: dict, layout: dict) -> list:
     for a in (-half, -half / 2, 0.0, half / 2, half):
         w = 0.12 if abs(a) == half else 0.07
         frames.append(bar([pt(a, 4, t, 0.03) for t in (0.0, 0.5, 1.0)], w, 0.06))
-    return [L.part("window_glass", gv, gf, "glass_tint", solid=False),
+    return [L.part("window_glass", gv, gf, "glass_window", solid=False),
             L.part("window_frame", *L.merge(*frames), "ext_frame")]
 
 

@@ -23,6 +23,8 @@ MATERIALS = {
     "glass": {"base": (0.25, 0.35, 0.40, 0.25), "metallic": 0.0, "roughness": 0.05, "alpha": True},
     "glass_tint": {"base": (0.10, 0.08, 0.06, 0.6), "metallic": 0.0, "roughness": 0.06, "alpha": True,
                    "emission": (1.0, 0.55, 0.2), "strength": 0.6},
+    # polish 4: the tip windows' one pane, clear and cool (glass_tint's 0.6 brown alpha dimmed the clearing orange)
+    "glass_window": {"base": (0.10, 0.14, 0.17, 0.12), "metallic": 0.0, "roughness": 0.03, "alpha": True},
     "glow_cyan": {"base": (0.2, 0.9, 1.0, 1.0), "metallic": 0.0, "roughness": 0.3, "emission": (0.2, 0.9, 1.0),
                   "strength": 6.0},
     "glow_amber": {"base": (1.0, 0.6, 0.2, 1.0), "metallic": 0.0, "roughness": 0.3, "emission": (1.0, 0.6, 0.2),

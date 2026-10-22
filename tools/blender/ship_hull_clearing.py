@@ -104,7 +104,10 @@ def _posts() -> list:
     return out
 
 
-POSTS = _posts()  # the party lights' posts along the path [(x, y)]
+# polish 4: the first post (-3.82, -15.51) stood alone, a stick in the front and hero shots; now a pair flanks the path
+# 5.5 m past the ramp's foot so the string crosses it (in the hall-out view through the mouth, as hall_out-2), then on
+GATE = [(2.6, -14.6), (-3.0, -15.0)]
+POSTS = GATE + _posts()[1:]  # the party lights' posts along the path [(x, y)]
 
 
 # --- the builders --------------------------------------------------------------------------------------------------

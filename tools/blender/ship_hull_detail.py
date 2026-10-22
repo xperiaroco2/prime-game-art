@@ -206,10 +206,18 @@ def pod_ring(args: dict, layout: dict) -> list:
     for k in range(10):
         a0, a1 = 2 * math.pi * k / 10 + 0.06, 2 * math.pi * (k + 1) / 10 - 0.06
         v, f = L.sector(0.5 * r, 0.62 * r, a0, a1, ln + 0.0, ln + 0.05)
-        segs.append(([(x, h, y) for x, y, h in v], f))
+        v = [(x, h, y) for x, y, h in v]  # the swap mirrors the winding: orient the faces rearward (polish 4)
+        segs.append((v, L.orient(v, f, lambda q: (0.0, q[1] - 1.0, 0.0))))
     core = H._lathe_y([(0.0, ln - 0.22), (0.2 * r, ln - 0.22), (0.0, ln - 0.18)], 12)
+    # polish 4: a bright inner ring in the nozzle's mouth (0.5..0.72 r, 3 cm proud of the bell's rear cap at ln + 0.4,
+    # which hides the throat), so each nozzle reads as a lit tube, not a black hole
+    inner = []
+    for k in range(24):
+        v, f = L.sector(0.5 * r, 0.72 * r, 2 * math.pi * k / 24, 2 * math.pi * (k + 1) / 24, ln + 0.405, ln + 0.435)
+        v = [(x, h, y) for x, y, h in v]
+        inner.append((v, L.orient(v, f, lambda q: (0.0, q[1] - 1.0, 0.0))))
     return [L.part("pod_band", *L.merge(band, band2), "glow_cyan"),
-            L.part("pod_segments", *L.merge(*segs), "glow_cyan"),
+            L.part("pod_segments", *L.merge(*segs, *inner), "glow_cyan"),
             L.part("pod_core", *core, "ext_glow_cyan_dim")]
 
 

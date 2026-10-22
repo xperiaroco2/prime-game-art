@@ -385,6 +385,8 @@ func _look(bm: BaseMaterial3D, look: Dictionary) -> void:
 	bm.roughness = clampf(bm.roughness + float(look.get("r", 0.0)), 0.0, 0.95)
 	if look.has("m"):
 		bm.metallic = float(look["m"])
+	if look.has("s"):  # s: specular (polish 4: the ground's grazing sky reflection)
+		bm.metallic_specular = float(look["s"])
 	if bm.emission_enabled:
 		bm.emission_energy_multiplier *= float(look.get("e", _lk("emission_scale", 1.0)))
 
