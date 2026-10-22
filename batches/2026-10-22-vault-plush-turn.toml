@@ -1,0 +1,29 @@
+# art#297, the vault's plush alien, step 1: a turnaround sheet of the approved concept (round 6 "combined", the
+# engineer, 2026-10-22; xperiaroco2/prime-game#1040 comment 6345636663), the reference for Meshy's image-to-3D. Five
+# views in one row at one scale: front, side, back, three-quarter, top. High quality (work inside a picked concept,
+# the one-image rule's second half, #276), one image. Standing permission art#196 comment 6291187194. No game, film,
+# studio or character names; never the original toy or its photos.
+id = "2026-10-22-vault-plush-turn"
+service = "openai-images"
+purpose = "art#297: a five-view turnaround sheet of the vault's plush alien from the approved concept, the reference for its 3D model."
+plan = "OpenAI API, prepaid balance (topped up by the engineer, 2026-10-20)"
+terms_url = "https://openai.com/policies/services-agreement/"
+licence = "owned by the customer: OpenAI assigns to the customer all its rights in the Output (OpenAI Services Agreement, section 4.1, read 2026-10-20); no attribution required"
+cost_cap_usd = 1.0
+approved_by = "xperiaroco2 (the engineer)"
+approved_at = "2026-10-20"
+approval_ref = "https://github.com/xperiaroco2/prime-game-art/issues/196#issuecomment-6291187194"
+model = "gpt-image-2.5-sunburst"
+quality = "high"
+
+[defaults]
+size = "2560x1024"
+n = 1
+
+[[items]]
+id = "turn5"
+kind = "edit"
+prompt = "The reference image shows a finished plush toy design: a sitting plush alien about 30 cm tall. Make a clean product turnaround sheet of this exact toy: five views side by side in one row, evenly spaced, all at the same scale and standing on the same ground line, each view showing the whole toy: 1) the front view, the toy facing straight at the viewer; 2) the exact side profile facing left; 3) the back view; 4) a three-quarter front view facing right; 5) the top view, seen from straight above. The toy must be the same object in every view, so it can be built in 3D: keep exactly the same proportions, shapes and colours as the reference: the round orange fuzzy bean-shaped body with a vertical stitched seam down the belly; the thick round muzzle with the big round dark brown pompom nose; the heavy drooping orange lids over pink, red-veined eyes with small dark pupils looking lazily sideways; the wide self-satisfied stitched smile; the short dark brown velour arms with round paws; the big round dark brown sitting feet with stitched edges, soles facing forward; the two round brown pads on thin orange antenna stalks on top of the head; the long thin orange tail coming out low at the back and lying on the floor, ending in a round brown pompom; the visible stitched seams, the fuzzy orange plush and the brown velour. Show the back and the tail clearly in the side and back views. Plain flat light neutral grey background, soft even studio light, only a faint contact shadow under each view. No text, no labels, no numbers, no logos, no people, no other objects."
+images = [
+  { file = "raw:vault-plush/ref/final.jpg", provenance = "the approved concept, round 6 \"combined\" (the engineer, 2026-10-22, xperiaroco2/prime-game#1040 comment 6345636663), our own OpenAI generation; copied from prime-game-design ideas/vault-plush/final.jpg (commit e76df51)", sha256 = "8224f79bf5099d30311175b79c3a96805405621dd316793f066ca373462a6bb9" },
+]
