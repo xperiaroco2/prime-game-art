@@ -33,6 +33,7 @@ L.MATERIALS.update({
     "ext_window_glow": {"base": (1.0, 0.62, 0.3, 0.18), "metallic": 0.0, "roughness": 0.5, "alpha": True,
                         "emission": (1.0, 0.55, 0.22), "strength": 3.0, "cull": True},
     "glass_canopy": {"base": (0.16, 0.19, 0.22, 0.28), "metallic": 0.0, "roughness": 0.05, "alpha": True},
+    "ext_seat": {"base": (0.6, 0.62, 0.65, 1.0), "metallic": 0.3, "roughness": 0.45},   # catches the cockpit's glow
     "ext_screen": {"base": (0.1, 0.7, 0.9, 1.0), "metallic": 0.0, "roughness": 0.3, "emission": (0.15, 0.85, 1.0),
                    "strength": 5.0},
     "ext_ground": {"base": (0.05, 0.062, 0.035, 1.0), "metallic": 0.0, "roughness": 0.95},

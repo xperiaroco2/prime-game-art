@@ -37,6 +37,7 @@ class ShipHullDetailTest(unittest.TestCase):
                     self.assertLess(h, D.glass_h(side, x, y) - 0.02, f"{name} through the glass at ({x:.2f}, {y:.2f})")
             self.assertEqual(len(parts["canopy_screen"]["verts"]), 3 * 8)
             self.assertEqual(parts["canopy_screen"]["mat"], "ext_screen")
+            self.assertEqual(parts["canopy_seat"]["mat"], "ext_seat")
             seat = [y for _x, y, _h in parts["canopy_seat"]["verts"]]
             self.assertLess(min(seat), D.CANOPY["y"] - 0.4, "no console ahead of the seat (-y)")
             glass = D.canopy({"side": side, "part": "glass"}, LAYOUT)
@@ -51,7 +52,7 @@ class ShipHullDetailTest(unittest.TestCase):
             rs = [math.hypot(x - cx, y - cy) for x, y, _h in frame["verts"] if x * sx > 0]
             self.assertLess(min(rs), S.P_OCULUS_R)
             self.assertGreater(max(rs), S.P_OCULUS_R + 0.12)
-            self.assertLess(max(rs), S.P_OCULUS_R + 0.2)
+            self.assertLess(max(rs), S.P_OCULUS_R + 0.25)
     def test_the_canopies_sit_on_the_hull(self) -> None:
         for side in (-1.0, 1.0):
             for part in ("glass", "fairing", "glow"):

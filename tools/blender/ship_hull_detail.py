@@ -156,9 +156,14 @@ def cockpit(side: float) -> list:
     ts, rim, glass, deck, outline = _canopy_frame(side)
     n = len(ts)
     cx, cy = side * c["x"], c["y"]
-    floor = [(cx + (x - cx) * 0.85, cy + (y - cy) * 0.85) for x, y in glass]
-    fv = [(x, y, deck(x, y) + 0.06) for x, y in floor] + [(cx, cy, deck(cx, cy) + 0.06)]
-    ff = L.orient(fv, [(j, (j + 1) % n, n) for j in range(n)], lambda _c: (cx, cy, deck(cx, cy) - 1.0))
+    # the floor in rings (a single fan's chords dipped under the convex hull: dark wedges through it), 8 cm up
+    ks = (0.85, 0.6, 0.35)
+    fv = [(cx + (x - cx) * k, cy + (y - cy) * k) for k in ks for x, y in glass]
+    fv = [(x, y, deck(x, y) + 0.08) for x, y in fv] + [(cx, cy, deck(cx, cy) + 0.08)]
+    ff = [(i * n + j, i * n + (j + 1) % n, (i + 1) * n + (j + 1) % n, (i + 1) * n + j)
+          for i in range(len(ks) - 1) for j in range(n)]
+    ff += [((len(ks) - 1) * n + j, (len(ks) - 1) * n + (j + 1) % n, len(fv) - 1) for j in range(n)]
+    ff = L.orient(fv, ff, lambda _c: (cx, cy, deck(cx, cy) - 1.0))
     # the glow ring: a low warm band just inside the glass's foot, its face turned in
     gv = []
     for x, y in glass:
@@ -207,7 +212,7 @@ def cockpit(side: float) -> list:
         screens.append(_tilt(cc, w, 0.004, 0.07, -40.0))
     return [L.part("canopy_floor", fv, ff, "ext_glow_warm", solid=False),
             L.part("canopy_glow", gv, gf, "ext_glow_warm", solid=False),
-            L.part("canopy_seat", *L.merge(*shell), "ext_silver_b"),
+            L.part("canopy_seat", *L.merge(*shell), "ext_seat"),
             L.part("canopy_pads", *L.merge(*pads), "ext_frame"),
             L.part("canopy_screen", *L.merge(*screens), "ext_screen")]
 
@@ -432,8 +437,9 @@ def lens_frames(args: dict, layout: dict) -> list:
             bars.append(H._obox((c[0], c[1], 0.5 * (S.SILL + S.HEAD)), (0.5 * (r1 - r0) * u[0], 0.5 * (r1 - r0) * u[1], 0.0),
                                 (-0.025 * u[1], 0.025 * u[0], 0.0), (0.0, 0.0, 0.5 * (S.HEAD - S.SILL))))
     # details 1: the oculus's ring frame on the hull, thick silver: the section (r, h over the hull's top) from a lip
-    # 1 cm over the cut's edge and 4 cm down into it, out over the plates, a chamfered crown 8.5 cm proud
-    sec = [(-0.012, -0.04), (0.15, -0.02), (0.15, 0.03), (0.105, 0.085), (0.02, 0.085), (-0.012, 0.05)]
+    # 1 cm over the cut's edge and 4 cm down into it, 20 cm out over the plates (their cut slivers), a chamfered crown
+    # 8.5 cm proud
+    sec = [(-0.012, -0.04), (0.2, -0.02), (0.2, 0.03), (0.14, 0.085), (0.02, 0.085), (-0.012, 0.05)]
     n = S.P_OCULUS_N * 2
     ring_v, ring_f = [], []
     for sx in (1, -1):
