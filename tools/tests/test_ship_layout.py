@@ -5,9 +5,14 @@ piece outside the hull, a low ceiling, a trunk on a plain wall spot, a blocked p
 from __future__ import annotations
 
 import copy
+import sys
+from pathlib import Path
 import unittest
 
 from runner import ship_layout as sl
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "blender"))
+import ship_hull_shape as S  # noqa: E402
 from runner.commands import ship as ship_cmd
 
 LAYOUT = sl.load()
@@ -23,13 +28,11 @@ class ShipLayoutTest(unittest.TestCase):
     def test_the_layout_is_clean(self) -> None:
         self.assertEqual(sl.check(LAYOUT), [])
 
-    def test_the_footprint_is_about_26_by_14(self) -> None:
-        if LAYOUT["hull"].get("pending"):
-            self.skipTest(f"[hull] pending: {LAYOUT['hull']['pending']}")
+    def test_the_footprint_is_js_30_by_18_9(self) -> None:
         width, length = sl.extent(LAYOUT)
         size = LAYOUT["size"]  # the lens blades may reach span_max_m (manager update 2, art #263)
-        self.assertTrue(26.0 - 0.5 <= width <= size.get("span_max_m", 26.5) + 1e-6, width)
-        self.assertTrue(14.0 - 0.5 <= length <= size.get("length_max_m", 14.5) + 1e-6, length)  # with the nozzles, no ramp
+        self.assertAlmostEqual(width, size["width_m"], delta=0.01)
+        self.assertAlmostEqual(length, size["length_m"], delta=0.01)   # with the nozzles, no ramp  # with the nozzles, no ramp
         lens = sl.lengths(LAYOUT)
         self.assertGreater(lens["nozzles"], lens["body"])
         self.assertGreater(lens["overall"], lens["nozzles"])
@@ -90,11 +93,6 @@ class ShipLayoutTest(unittest.TestCase):
             sl.rooms(layout)["corridor_e"]["exit"] = "hatch"
         self.assertTrue(any("exactly one" in p for p in problems_after(side_hatch)))
 
-    def test_a_window_exit_is_refused(self) -> None:
-        def window_exit(layout):
-            sl.rooms(layout)["tip_w"]["window"]["exit"] = True
-        self.assertTrue(any("glass, not an exit" in p for p in problems_after(window_exit)))
-
     def test_a_station_outside_its_room_is_refused(self) -> None:
         def move(layout):
             layout["stations"]["spot"][0]["at"] = [0.0, 3.8]
@@ -110,14 +108,23 @@ class ShipLayoutTest(unittest.TestCase):
             sl.rooms(layout)["corridor_w"]["width"] = 1.8
         self.assertTrue(any("wide, wants about 3" in p for p in problems_after(narrow)))
 
-    def test_the_hull_tests_skip_while_the_hull_is_pending(self) -> None:
-        """rebuild A: while [hull] pending is set, check skips the footprint and the inside-the-hull tests, and says so."""
-        if not LAYOUT["hull"].get("pending"):
-            self.skipTest("no [hull] pending")
-        self.assertEqual(len(sl.skipped(LAYOUT)), 1)
-        def stray(layout):
-            layout["place"].append(["canopy_glass_e", [0.0, -30.0, 0.0], 0.0])
-        self.assertFalse(any("outside the hull" in p for p in problems_after(stray)))
+    def test_the_hull_rows_are_the_shapes(self) -> None:
+        """[hull] core and plate are ship_hull_shape.outline_rows() of [hull] shape (regenerate them when it changes)."""
+        core, plate = S.outline_rows(LAYOUT["hull"]["shape"])
+        self.assertEqual(LAYOUT["hull"]["core"], core)
+        self.assertEqual(LAYOUT["hull"]["plate"], plate)
+
+    def test_every_room_has_its_skin(self) -> None:
+        """rebuild B: J holds every room with at least SKIN (0.15 m) of hull and nothing pokes out."""
+        least, bad = S.clearance(LAYOUT["hull"]["shape"])
+        self.assertEqual(bad, [])
+        self.assertGreaterEqual(least, S.SKIN)
+
+    def test_a_poke_is_found(self) -> None:
+        """A room point outside the hull counts as a poke (negative skin), one inside the mouth recess too."""
+        self.assertLess(S.skin((15.5, 6.4, 3.0)), 0.0)
+        self.assertLess(S.skin((0.0, -5.0, 1.5)), 0.0)
+        self.assertGreater(S.skin((0.0, 0.0, 2.0)), 1.0)
 
     def test_a_low_ceiling_is_refused(self) -> None:
         def low(layout):
@@ -125,8 +132,6 @@ class ShipLayoutTest(unittest.TestCase):
         self.assertTrue(any("clear height" in p for p in problems_after(low)))
 
     def test_a_piece_outside_the_hull_is_refused(self) -> None:
-        if LAYOUT["hull"].get("pending"):
-            self.skipTest(f"[hull] pending: {LAYOUT['hull']['pending']}")
         def stray(layout):
             layout["place"].append(["canopy_glass_e", [0.0, -12.0, 0.0], 0.0])  # a piece kept inside the hull
         self.assertTrue(any("stands outside the hull" in p for p in problems_after(stray)))

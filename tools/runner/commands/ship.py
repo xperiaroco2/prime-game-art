@@ -54,16 +54,14 @@ def run(args: argparse.Namespace) -> int:
     common.say(f"ship v{layout['version']}: {width:.2f} x {length:.2f} m (with the nozzles), {len(layout['rooms'])} rooms, "
                f"{len(layout['pieces'])} pieces, {len(layout['place'])} placements; length with the nozzles "
                f"{lens['nozzles']:.2f} m, ramp foot to nozzle tips {lens['overall']:.2f} m")
-    skipped = ship_layout.skipped(layout)
-    for p in problems + skipped:
+    for p in problems:
         common.say(f"  {p}")
     if problems:
         raise common.Failure(f"ship: {len(problems)} layout problems")
     plan = raw(layout) / "plan" / "plan.txt"
     plan.parent.mkdir(parents=True, exist_ok=True)
     plan.write_text(ship_layout.ascii_plan(layout), encoding="utf-8", newline="\n")
-    held = "corridors" if skipped else "footprint, corridors"
-    held += ", stations, head room and the one entrance" if skipped else ", stations, hull, head room and the one entrance"
+    held = "footprint, corridors, stations, hull, skin, head room and the one entrance"
     common.ok(f"ship: {held} hold; plan {plan.as_posix()}")
     out = (args.out or raw(layout) / "pieces").resolve()
     # Each stage stops the run on a failure: a later stage would work on pieces just reported bad.

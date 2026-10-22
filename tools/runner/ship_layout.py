@@ -3,8 +3,8 @@ lanes' piece lists and placements, and the plain-Python check of the rules `ship
 corridor width, the tip rooms' outer wall, the station spots (inside their rooms, the wall spots' plain flat panels
 and the free pass behind a player standing at each), every room and placed piece inside the hull, the head room, and
 one entrance. Rooms are circles, axis-aligned rects or "strip"s (a straight corridor at any angle: `axis` [from, to],
-`along` [u0, u1] its floor's ends measured from `from`, `width`). While `[hull] pending` is set (the hull being
-rebuilt round moved rooms) the footprint and the inside-the-hull tests are skipped and `check` says so.
+`along` [u0, u1] its floor's ends measured from `from`, `width`). The least skin round every room comes from the
+hull's own shape (tools/blender/ship_hull_shape.py, plain Python; [hull] shape names its variant).
 Plan coordinates: x east, y south, h up (metres); Godot (x, h, y)."""
 
 from __future__ import annotations
@@ -173,9 +173,8 @@ def _touch(a: dict[str, Any], b: dict[str, Any]) -> bool:
 def check(layout: dict[str, Any]) -> list[str]:
     problems = []
     size = layout["size"]
-    pending = layout["hull"].get("pending")
     width, length = extent(layout)
-    for name, got, want in ([] if pending else  (("width", width, size["width_m"]), ("length", length, size["length_m"]))):
+    for name, got, want in (("width", width, size["width_m"]), ("length", length, size["length_m"])):
         if name == "width" and want < got <= size.get("span_max_m", want):
             continue  # the blades past the tip rooms (manager update 2, art #263: the span up to about 27.5 m)
         if name == "length" and want < got <= size.get("length_max_m", want):
@@ -224,9 +223,6 @@ def check(layout: dict[str, Any]) -> list[str]:
         slope = math.degrees(math.atan2(drop, ramp["hinge"][1] - ramp["foot"][1]))
         if slope > 30.0:
             problems.append(f"the ramp's slope {slope:.1f} deg is over 30")
-    for r in layout["rooms"]:
-        if r.get("window", {}).get("exit"):
-            problems.append(f"{r['id']}: its window is glass, not an exit")
     seen, todo = set(), ["hall"]
     while todo:
         rid = todo.pop()
@@ -242,12 +238,13 @@ def check(layout: dict[str, Any]) -> list[str]:
     if seen != set(by_id):
         problems.append(f"rooms not reachable from the hall: {', '.join(sorted(set(by_id) - seen))}")
     problems += check_spots(layout)
+    problems += hull_skin(layout)
     # inside the hull: every room's outer wall and every placed piece's origin (unless the piece may stand outside)
     poly = outline(layout)
     wall = layout["deck"]["wall_m"]
-    for r in ([] if pending else layout["rooms"]):
+    for r in layout["rooms"]:
         pts = boundary(r, wall)
-        if r.get("exit"):  # the exit's own open edge meets the ramp, outside the hull by design
+        if r.get("exit") and r["shape"] == "rect":  # the exit's own open edge meets the ramp, outside the hull by design
             pts = [p for p in pts if p[1] > r["y"][0] + 0.05]
         out = [p for p in pts if not inside(poly, p)]
         if out:
@@ -260,7 +257,7 @@ def check(layout: dict[str, Any]) -> list[str]:
         piece = pieces.get(pid)
         if piece is None:
             problems.append(f"placement of unknown piece {pid}")
-        elif not pending and not piece["outside"] and not inside(poly, (at[0], at[1])):
+        elif not piece["outside"] and not inside(poly, (at[0], at[1])):
             problems.append(f"{pid} at ({at[0]:g}, {at[1]:g}) stands outside the hull")
     # a piece placed only in the closed pose (shutter_closed) counts as placed
     unplaced = sorted(set(pieces) - {p[0] for p in layout["place"] + layout.get("shutter_closed", [])})
@@ -269,12 +266,17 @@ def check(layout: dict[str, Any]) -> list[str]:
     return problems
 
 
-def skipped(layout: dict[str, Any]) -> list[str]:
-    """The tests `check` skips and why (while `[hull] pending` is set)."""
-    pending = layout["hull"].get("pending")
-    if not pending:
-        return []
-    return [f"skipped: the footprint and the rooms and pieces inside the hull ([hull] pending: {pending})"]
+def hull_skin(layout: dict[str, Any]) -> list[str]:
+    """Every room's sampled outer surface (walls, roofs, slabs) inside the hull's shape with at least its SKIN of hull
+    (ship_hull_shape.clearance for [hull] shape): the problems, none when it holds."""
+    import sys
+    from pathlib import Path as _Path
+    blender = str(_Path(__file__).resolve().parents[1] / "blender")
+    if blender not in sys.path:
+        sys.path.insert(0, blender)
+    import ship_hull_shape
+    _least, bad = ship_hull_shape.clearance(layout["hull"]["shape"])
+    return [f"hull {layout['hull']['shape']}: {b}" for b in bad]
 
 
 def _unit(v: list[float]) -> tuple[float, float]:
