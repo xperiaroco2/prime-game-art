@@ -395,6 +395,6 @@ growths (four new shapes, two restyled lock versions, three undercuts described 
 uploaded); he picked **ug3**; 9 requests, $0.02259 to $0.02287 each, **$0.2043**. **Orchid and cactus**: two cleaner
 backs for the kept orchid (he picked **or1**) and two cactus men (rejected); $0.0899. **Goth**: three reworks of round
 9's w96 ($0.0675), then w96's face with three new head growths and a new woman with g2's bob shape and three faces; he
-picked **gh2** and **b2** ($0.1367); 4 + 3 + 6 requests at $0.022367 to $0.022865 each. Images under
+picked **gh2** and **b2** ($0.1367); orchid-cactus 4, goth 3 and goth-bob 6 requests at $0.022367 to $0.022865 each. Images under
 `D:/prime-art-raw/2026-10-22-alien-<rockgirl-hair|orchid-cactus|goth|goth-bob>/`; sheets under
 `D:/prime-art-raw/research/2026-10-22-roster/design/<rockgirl|orchid-cactus|goth>/`; the roster line-up in `.../final/`.
