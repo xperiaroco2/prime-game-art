@@ -50,6 +50,9 @@ def main() -> int:
     ap.add_argument("--rig-tag", default="", help="rig into <head>/<rig-tag>/; its sheet and shot copied up tagged")
     ap.add_argument("--grid", action="store_true", help="only the rig's variant grids (lips, expression amounts)")
     ap.add_argument("--grid-mouth", action="store_true", help="only the rig's mouth grid (2b-2)")
+    ap.add_argument("--char", type=Path, default=None, help="weld the rigged head onto this alien_body.blend (2b-2)")
+    ap.add_argument("--only-char", action="store_true", help="weld the existing rig, no build and no rig")
+    ap.add_argument("--sheet", action="store_true", help="Godot expression sheet (and gill strip) of the char GLB")
     ap.add_argument("--src-dir", type=Path, default=None,
                     help="rig the head build in <src-dir>/<head>/ (read only), writing into --out (2b-2)")
     args = ap.parse_args()
@@ -58,7 +61,7 @@ def main() -> int:
     for head in args.heads.split(","):
         out = args.out / head / args.tag if args.tag else args.out / head
         out.mkdir(parents=True, exist_ok=True)
-        if not args.no_build and not args.only_rig:
+        if not args.no_build and not args.only_rig and not args.only_char:
             extra = ["--smooth", args.smooth] if args.smooth else []
             if args.prev:
                 extra += ["--prev-views", args.prev.format(head=head)]
@@ -71,7 +74,7 @@ def main() -> int:
             (out / "build.log").write_text("\n".join(lines) + "\n", encoding="utf-8", newline="\n")
             print(f"built {head}", *lines[-3:], sep="\n", flush=True)
         glbs = [out / f"{head}.glb", out / f"{head}_lod1.glb"]
-        if args.rig or args.only_rig or args.grid or args.grid_mouth:
+        if (args.rig or args.only_rig or args.grid or args.grid_mouth) and not args.only_char:
             rig_out = out / args.rig_tag if args.rig_tag else out
             rig_out.mkdir(parents=True, exist_ok=True)
             src = args.src_dir / head if args.src_dir else out
@@ -93,6 +96,21 @@ def main() -> int:
                 continue
             out = rig_out
             glbs = [out / f"{head}_rig.glb"]
+        if args.char:  # 2b-2: the rigged head welded onto the shared body, <head>_char.glb
+            rig_dir = out / args.rig_tag if args.rig_tag else out
+            src = args.src_dir / head if args.src_dir else out
+            result = blender.run_script("alien_pilot_char.py", ["--head", head, "--rig", str(rig_dir / f"{head}_rig.blend"),
+                                                        "--build", str(src / "build.json"), "--body", str(args.char),
+                                                        "--out", str(rig_dir)], timeout=1200)
+            lines = [x for x in (result.stdout or "").splitlines() if x.startswith("CHAR ")]
+            (rig_dir / "char.log").write_text("\n".join(lines) + "\n", encoding="utf-8", newline="\n")
+            print(f"char {head} exit {result.returncode}", *lines[-4:], sep="\n", flush=True)
+            if result.returncode:
+                print((result.stderr or "")[-2000:], (result.stdout or "")[-3000:], sep="\n", flush=True)
+                failed = True
+                continue
+            out = rig_dir
+            glbs = [out / f"{head}_char.glb"]
         for glb in glbs:
             report = _export.validate(glb, out / f"{glb.stem}.validator.json")
             ok, text = _export.verdict(report)
@@ -107,6 +125,16 @@ def main() -> int:
             print(f"godot shot {head}: exit {code} {shot}", flush=True)
             summary[f"{head}_godot"] = code
             failed = failed or code != 0
+        if args.sheet:  # 2b-2: the welded character's expression sheet and, with gills, the spring strip (Godot)
+            res = _godot.stage(glbs[0], f"pilot_{head}_char")
+            _godot.import_project()
+            for mode in ("expr", "gills") if head == "axolotl" else ("expr",):
+                png = out / f"{head}_godot_{mode}.png"
+                code, _ = _godot.window(["--path", str(_godot.PROJECT), "-s", "res://alien/pilot_sheet.gd", "--", res,
+                                         str(png), mode], (640, 640), 170, log=out / f"godot_{mode}.log")
+                print(f"godot {mode} {head}: exit {code} {png}", flush=True)
+                summary[f"{head}_godot_{mode}"] = code
+                failed = failed or code != 0
         if args.rig_tag:  # the rig's sheet and Godot shot copied up beside the head's earlier ones, the tag in the name
             for name, dst in ((f"{head}_rig_1280_{args.rig_tag}", f"{head}_rig_1280_{args.rig_tag}"),
                               (f"{head}_godot", f"{head}_godot_{args.rig_tag}")):
