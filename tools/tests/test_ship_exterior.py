@@ -38,18 +38,19 @@ def newell(p: list) -> tuple:
 
 class ShipExteriorTest(unittest.TestCase):
     def test_faces_point_outward_after_the_mirror(self) -> None:
-        """The harness writes (x, -y, h): after it, every face of a nozzle pod's under-skin points away from its axis
-        (the pod's barrel runs along local y, its axis at x 0, h 0)."""
-        parts = next(m for m in H.MODULES if hasattr(m, "nozzle_pod")).nozzle_pod({"r": 1.05, "length": 3.6}, LAYOUT)
-        skin = [p for p in parts if p["name"].endswith("_seam")][0]
+        """The harness writes (x, -y, h): after it, every face of the pod housing's smooth shell (an open part) points
+        away from its inner line (x 0, h 2.45)."""
+        parts = next(m for m in H.MODULES if hasattr(m, "pod_housing")).pod_housing({}, LAYOUT)
+        skin = next(p for p in parts if p["name"] == "housing")
+        self.assertFalse(skin["solid"])
         verts = [(x, -y, h) for x, y, h in skin["verts"]]
         for face in skin["faces"]:
             p = [verts[i] for i in face]
             c = [sum(q[k] for q in p) / len(p) for k in range(3)]
             n = newell(p)
-            if abs(n[1]) > 0.9 * math.sqrt(sum(k * k for k in n)):
-                continue  # the flat rear cap faces along the axis
-            self.assertGreater(n[0] * c[0] + n[2] * c[2], 0.0, f"inward face at {c}")
+            if sum(k * k for k in n) < 1e-12:
+                continue
+            self.assertGreater(n[0] * c[0] + n[2] * (c[2] - 2.45), 0.0, f"inward face at {c}")
 
     def test_placements_and_views(self) -> None:
         pieces = {p["id"] for p in EXT["pieces"]}

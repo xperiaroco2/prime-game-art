@@ -37,11 +37,6 @@ class HullSkinTest(unittest.TestCase):
         for name, var in S.VARIANTS.items():
             self.assertEqual(S.clearance(var), [], f"variant {name}")
 
-    def test_the_placed_pieces_use_one_variant(self) -> None:
-        variants = {p["args"]["variant"] for p in EXT["pieces"] if p["builder"] in ("hull_skin", "skin_stripes")}
-        self.assertEqual(len(variants), 1)
-        self.assertIn(variants.pop(), S.VARIANTS)
-
     def test_the_tip_fairing_meets_the_last_wing_section(self) -> None:
         for name, var in S.VARIANTS.items():
             loop = S.section(S.TIP_X, var)

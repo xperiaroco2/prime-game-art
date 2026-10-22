@@ -110,7 +110,7 @@ class ShipLayoutTest(unittest.TestCase):
 
     def test_a_piece_outside_the_hull_is_refused(self) -> None:
         def stray(layout):
-            layout["place"].append(["hatches_e", [0.0, -12.0, 0.0], 0.0])  # a piece kept inside the hull
+            layout["place"].append(["canopy_glass_e", [0.0, -12.0, 0.0], 0.0])  # a piece kept inside the hull
         self.assertTrue(any("stands outside the hull" in p for p in problems_after(stray)))
 
     def test_lanes_do_not_share_pieces(self) -> None:

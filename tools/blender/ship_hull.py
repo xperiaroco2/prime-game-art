@@ -270,8 +270,7 @@ def mouth_frame(args: dict, layout: dict) -> list:
     v, f = _ring_prism(inner, outer, -0.2, 0.1)
     lip_o = [(x * 1.03, h + (0.04 if h > 2.0 else 0.0)) for x, h in inner]
     lv, lf = _ring_prism(inner, lip_o, -0.26, -0.18)
-    return _skin("portal", v, f, size=0.9, inset=0.02, depth=0.012, mats=("ext_frame", "hull_silver")) + [
-        L.part("portal_lip", lv, lf, "ext_chrome")]
+    return [L.part("portal", v, f, "ext_frame"), L.part("portal_lip", lv, lf, "ext_chrome")]  # v2: no plates
 
 
 def mouth_lights(args: dict, layout: dict) -> list:
@@ -347,12 +346,12 @@ def ramp_lights(args: dict, layout: dict) -> list:
 
 def leg(args: dict, layout: dict) -> list:
     """A chunky landing leg splaying toward local +x (exterior.toml yaws it outward; hull 3-2): args top (the mount's
-    height: the skin's underside there + 0.12) and reach (mount to foot). A faceted mount box with cheeks, a thick
-    upper strut down to the knee drum at (0.62 reach, 0.45 top + 0.12), the lower strut to the ankle, a twin chrome
+    height: about the lowest belly under its footprint + 0.1; the mount box reaches 0.42 over it, into the skin) and
+    reach (mount to foot). A faceted mount box with cheeks, a thick upper strut down to the knee drum at (0.62 reach, 0.45 top + 0.12), the lower strut to the ankle, a twin chrome
     piston pair in dark sleeves, a broad faceted foot plate (r 0.5) with three toes and a dark sole."""
     top, reach = float(args.get("top", 0.9)), float(args.get("reach", 1.5))
     knee, ankle, foot = (0.62 * reach, 0.0, 0.45 * top + 0.12), (reach, 0.0, 0.2), (reach, 0.0, 0.0)
-    mount = _obox((0.0, 0.0, top - 0.05), (0.42, 0, 0), (0, 0.34, 0), (0, 0, 0.17))
+    mount = _obox((0.0, 0.0, top + 0.1), (0.42, 0, 0), (0, 0.34, 0), (0, 0, 0.32))  # v2: up 0.42 into the skin
     cheek = [_obox((0.22, s * 0.25, top - 0.2), (0.26, 0, 0), (0, 0.05, 0), (0, 0, 0.13)) for s in (-1, 1)]
     upper = _rod((0.08, 0.0, top - 0.2), knee, 0.17, 8)
     lower = _rod(knee, ankle, 0.14, 8)
