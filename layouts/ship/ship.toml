@@ -188,20 +188,26 @@ lamps = [
   [1.148, -2.772, 3.6, 0.5, 3.2, 1.0, 0.7, 0.42, "hall", false],  # hall, by the wall
   [2.772, -1.148, 3.6, 0.5, 3.2, 1.0, 0.7, 0.42, "hall", false],  # hall, by the wall
   [0.0, -3.9, 2.8, 0.6, 3.5, 1.0, 0.7, 0.42, "hall", true],  # the mouth
-  [-4.3, 0.0, 2.8, 0.5, 3.0, 0.9, 0.93, 1.0, "corr", false],  # west corridor ceiling
-  [-6.1, 0.0, 2.8, 0.5, 3.0, 0.9, 0.93, 1.0, "corr", false],  # west corridor ceiling
-  [-7.9, 0.0, 2.8, 0.5, 3.0, 0.9, 0.93, 1.0, "corr", false],  # west corridor ceiling
+  [0.0, 0.0, 4.2, 0.5, 1.3, 1.0, 0.7, 0.42, "hall", false],  # the hall cap's lamp: lights the faceted cone, not the floor
+  [-4.3, 0.0, 2.8, 0.5, 3.0, 1.0, 0.95, 0.88, "corr", false],  # west corridor ceiling
+  [-6.1, 0.0, 2.8, 0.5, 3.0, 1.0, 0.95, 0.88, "corr", false],  # west corridor ceiling
+  [-7.9, 0.0, 2.8, 0.5, 3.0, 1.0, 0.95, 0.88, "corr", false],  # west corridor ceiling
   [-10.75, 0.0, 3.0, 1.0, 4.5, 0.95, 0.9, 0.85, "tip", true],  # west tip room
   [-12.2, 0.0, 2.0, 0.6, 3.5, 0.55, 0.68, 1.0, "tip", false],  # west window: moonlight
   [-27.0, -3.0, 3.0, 3.0, 12.0, 1.0, 0.6, 0.3, "out", false],  # west treeline camp light
   [-27.0, 5.0, 3.0, 3.0, 12.0, 1.0, 0.6, 0.3, "out", false],  # west treeline camp light
-  [4.3, 0.0, 2.8, 0.5, 3.0, 0.9, 0.93, 1.0, "corr", false],  # east corridor ceiling
-  [6.1, 0.0, 2.8, 0.5, 3.0, 0.9, 0.93, 1.0, "corr", false],  # east corridor ceiling
-  [7.9, 0.0, 2.8, 0.5, 3.0, 0.9, 0.93, 1.0, "corr", false],  # east corridor ceiling
+  [4.3, 0.0, 2.8, 0.5, 3.0, 1.0, 0.95, 0.88, "corr", false],  # east corridor ceiling
+  [6.1, 0.0, 2.8, 0.5, 3.0, 1.0, 0.95, 0.88, "corr", false],  # east corridor ceiling
+  [7.9, 0.0, 2.8, 0.5, 3.0, 1.0, 0.95, 0.88, "corr", false],  # east corridor ceiling
   [10.75, 0.0, 3.0, 1.0, 4.5, 0.95, 0.9, 0.85, "tip", true],  # east tip room
   [12.2, 0.0, 2.0, 0.6, 3.5, 0.55, 0.68, 1.0, "tip", false],  # east window: moonlight
   [27.0, -3.0, 3.0, 3.0, 12.0, 1.0, 0.6, 0.3, "out", false],  # east treeline camp light
   [27.0, 5.0, 3.0, 3.0, 12.0, 1.0, 0.6, 0.3, "out", false],  # east treeline camp light
+  # inside 3-1 (grid_in31 C): moonlight on the pines the tip windows look at, kept off the wing tips (x 13.9)
+  [-23.0, -4.0, 7.0, 4.0, 9.5, 0.55, 0.68, 1.0, "fill", false],  # west pines, window view
+  [-23.0, 4.0, 7.0, 4.0, 9.5, 0.55, 0.68, 1.0, "fill", false],  # west pines, window view
+  [23.0, -4.0, 7.0, 4.0, 9.5, 0.55, 0.68, 1.0, "fill", false],  # east pines, window view
+  [23.0, 4.0, 7.0, 4.0, 9.5, 0.55, 0.68, 1.0, "fill", false],  # east pines, window view
   [0.0, -12.5, 1.4, 1.0, 7.0, 1.0, 0.6, 0.3, "out", false],  # the clearing in front of the ramp (hull 3: was 2.5 at y -16, a blob in the front shot)
   # the hull lane's outside light (step 3): ground lamps' and belly pools, the party string, the rim
   [-2.99, -4.34, 0.3, 1.0, 3.5, 1.0, 0.55, 0.22, "pool", true],  # ground lamp pool
@@ -230,21 +236,22 @@ lamps = [
   [14.0, 22.0, 13.0, 1.0, 34.0, 0.62, 0.74, 1.0, "rim", false],  # cool rim from behind (south-east)
 ]
 hall_lamp = 0.7
-corr_lamp = 2.0
+corr_lamp = 2.6                                # inside 3-1 (grid_in31 C; was 2.0): warm-white rows, no teal
+fill_lamp = 1.0
 tip_lamp = 2.4
 out_lamp = 2.5
 pool_lamp = 1.6                                # the outside lamps' groups (hull step 3; the light grid)
 party_lamp = 1.3
 rim_lamp = 1.2
 ssil_intensity = 0.4                           # screen-space bounce (1: the lamp ring's band lit a spot on the hall's disc)
-sky_horizon = 5.0                              # the sky's horizon colour x this (the windows' and the ramp's view)
+sky_horizon = 10.0                             # inside 3-1 (grid_in31 C; was 5): the sky's horizon colour x this (the windows' and the ramp's view)
 
 # Per glTF material (ship.gd _look): v base colour x, r roughness +, m metallic, c colour (and emission colour),
 # e emission x (keeps the hue under AgX), a alpha, l its strip lights x (0: glows, lights nothing), rr their range x. Metallic 0.45
 # lets the lamps light the silver (at 0.7 it only mirrored the dark rooms); the lamp ring and lamps light nothing,
 # so the hall's centre disc stays dark metal.
 [light.mats]
-int_cyan = {c = [0.05, 0.8, 1.0], e = 0.05, l = 0.04}               # inside-3 (grid_in6 H): 0.3 washed the walls teal once the lights stood on their strips
+int_cyan = {c = [0.05, 0.8, 1.0], e = 0.05, l = 0.0}                # inside 3-1 (grid_in31 C): glows only; 0.04 still washed the corridors teal
 int_amber = {c = [1.0, 0.42, 0.06], e = 0.14, l = 2.0, rr = 0.5}    # e 0.14: the strips pass the glow threshold, still amber
 int_amber_ring = {c = [1.0, 0.42, 0.06], e = 0.14, l = 0.8, rr = 0.3}  # the hall's floor ring: its own, shorter lights
 int_lamp = {c = [1.0, 0.6, 0.26], e = 0.08, l = 0.0}
