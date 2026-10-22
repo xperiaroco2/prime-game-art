@@ -306,3 +306,16 @@ requests, $0.0231 to $0.0236 each; **$0.3495** of the $3 cap. Eight of ten types
 butler only half. Full lips, eyeliner or a mass hanging at the sides of the head turned two men into women (m85, m89);
 the types pull the faces toward human, so the alien lives in the head shape. Images:
 `D:/prime-art-raw/2026-10-22-alien-roster-r7/`; JPEGs, overview and handoff: `.../design/r7/`.
+
+## Batch 2026-10-22-alien-roster-r8 (art #196, roster round 8, three men reworked)
+
+The engineer marked three round-7 men as maybe, "a cool concept, needs a little rework": m82r the gentle giant, m89
+the serene monk (the first try) and m87r the young jock. Two different reworks per man (m82a/b, m89a/b, m87a/b), each
+an edit of that man's own round-7 PNG (hash pinned) with rf2 as the second, style-only reference; medium, 1024x1280,
+**n = 1**. Both serene reworks missed, so m89c is that man's one revised item; the third eye was dropped (no forehead
+marks or sacred iconography). 7 requests, $0.032597 to $0.032967 each (two input images cost about $0.0095 more per
+request than round 7's one); **$0.2292** of the $2 cap. The jock is solved (m87b: golden slit-pupil eyes, level lids,
+no smirk); the giant reads as one only with a bull neck and shoulders (m82b), which breaks the shared body; the serene
+man is closer (m89c's nose pad, thin lips and lobes behind the jaw) but still slightly androgynous. Lobes beside the
+cheeks read as hair whatever the prompt says. Images: `D:/prime-art-raw/2026-10-22-alien-roster-r8/`; JPEGs, overview
+and handoff: `D:/prime-art-raw/research/2026-10-22-roster/design/r8/`.
