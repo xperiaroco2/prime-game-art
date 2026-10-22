@@ -26,7 +26,7 @@ arrangement, the numbers give the sizes. A gentle curve is fine only where the n
 | `tools/blender/ship_hull*.py` | the exterior builders | EXTERIOR lane |
 | `godot/ship/` | `ship.gd`: assembly, headless check and walk, night shots, the walk-through frames | EXTERIOR lane |
 | `tools/blender/ship_video.py` | encodes the walk-through MP4 under its size cap | EXTERIOR lane |
-| `tools/tests/test_ship_*.py` | `test_ship_layout.py` (fast), `test_ship_build.py` (heavy: Blender) | either lane adds its own file |
+| `tools/tests/test_ship_*.py` | fast: `test_ship_layout.py`, `test_ship_interior.py`, `test_ship_hull_skin.py`, `test_ship_hull_detail.py`, `test_ship_exterior.py`, `test_ship_clearing.py`; heavy (Blender): `test_ship_build.py` | either lane adds its own file |
 
 Raw output (never in git): `<raw>/ship/v1/` with `pieces/` (GLBs, `build_report.json`, validator `reports/`),
 `plan/` (`plan.txt`), `shots/` (the views, `compare_*.png` with the 2D left, among them `compare_top.png` against
@@ -86,26 +86,27 @@ and round the tip rooms. Seen from inside, every hull face is a back face and is
 `layouts/ship/interior.toml` is GENERATED: `$PYTHON_BIN tools/blender/ship_interior_place.py` writes it from the
 numbers at the top of `tools/blender/ship_interior.py` (`--check` compares; the fast test
 `test_ship_interior.py` fails when the file is stale). Edit the numbers or the generator, never the file. The builders
-use absolute heights (deck at h 1.0), so a placement's h is an offset (the clips' heights); a piece built at plan
+use absolute heights (deck at ship.toml `floor_h`, 0.6), so a placement's h is an offset (the clips' heights); a piece built at plan
 angle 0 (its room toward -x) standing at angle a gets yaw -a; in a tip room turned by r, yaw r - a.
 
 The numbers (step 1, art #263):
-- hall: 16 facets, inner faces at apothem 3.4 (vertices at 3.467), rim 3.4 m, apex 4.0 m; the three openings
+- hall: 16 facets, inner faces at apothem 3.4 (vertices at 3.467), rim 3.2 m, apex 3.8 m (ship.toml `clear_h`, `apex_h`); the three openings
   (corridors east and west, the mouth north) are two facets wide, framed by a portal on their chord (x 3.203, half
   width 1.327) 0.15 m deep; floor: plain disc r 1.0, eight radial grate sectors r 1.1 to 2.5 between wedge spokes,
   the amber ring at r 2.58, solid plates to the walls; ceiling: 16 facet panels, ribs with cyan strips, the lamp
   ring (eight lamps) at r 1.25.
 - corridors: one profile, 2.5 m wide, vertical to 1.45 m (cable channel 1.1 to 1.45 m), slanted in to 1.8 m wide at
-  the 2.6 m ceiling; five modules of 1.117 m from x 3.353 (hall portal) to 8.936 (tip portal); arches at the first
+  the 2.4 m ceiling (`clear_h`); five modules of 1.117 m from x 3.353 (hall portal) to 8.936 (tip portal); arches at the first
   three module joints only, none near the vent and socket spots (x 5 and 8). The mouth passage is one module of
   1.247 m with an arch at the ramp hinge.
 - tip rooms: polygon on radius 2.1, eight window segments over +-65 deg (sill 1.0, head 2.2 since launch 3), three wall facets a
-  side, the corridor chord over +-37.6 deg (half width 1.281); rim 2.8 m, apex 3.2 m; radial grate floor with amber
+  side, the corridor chord over +-37.6 deg (half width 1.281); rim 2.5 m, apex 2.8 m; radial grate floor with amber
   spokes; ribbed ceiling with cyan strips and a six-lamp ring.
 - details: three crushed cup models (five placed, off every station spot), two scratch decal clusters (geometry
   0.6 mm proud of flat panel faces, eight placed).
 
-Materials `int_*` (metallic 0.7 to 0.8 so the silver reads under lamps at night, not only in reflections): two silver
+Materials `int_*` (the library in `ship_interior.py` sets metallic 0.7 to 0.8; at night ship.toml `[light.mats]`
+overrides them in Godot: the silvers 0.45 so the lamps light them, the plate 0.3, the grate 0.6): two silver
 tones alternating per panel, a darker trim silver, grate and floor plate metal, dark recesses, emissive cyan, amber and
 warm lamp, glass, three cable colours, the cup's red and white. No textures or UVs yet (seams, folds, bevels and
 scratches are geometry).
@@ -134,8 +135,8 @@ tools/run.sh ship --godot --walk DIR    # headless: sizes, colliders, the capsul
 tools/run.sh ship --shoot DIR           # off-screen night shots, compare_top.png (plan-3 left), sheet.png
 ```
 
-Runs over 180 s go to the background with their log (CLAUDE.md, "Shell"). The whole after launch 2's join
-(2026-10-22): 139 pieces, 1094 placements (the clearing's 162 pines, 26 bushes, 6 logs, 5 stumps, 160 tufts and 8
+Runs over 180 s go to the background with their log (CLAUDE.md, "Shell"). A snapshot of the whole after launch
+2's join (2026-10-22; superseded: `ship --check` prints the current pieces and placements, 157 and 1226 at aa561f1): 139 pieces, 1094 placements (the clearing's 162 pines, 26 bushes, 6 logs, 5 stumps, 160 tufts and 8
 party-light posts among them), 59310 triangles per piece set, glTF-Validator clean; extent 26.46 x 13.9 m;
 `--godot`: Godot sizes equal Blender's, 105 colliders, the capsule walk reaches all 14 points (18.8 s);
 `--walk`: the 1280x720 walk-through, 89.5 s, 2149 frames, 12.8 MB (rendered in 313 s); `--shoot`: 14 views and

@@ -5,11 +5,12 @@ heights absolute from the ground, so a placement's h is an offset). A placement 
 interior.toml, written by ship_interior_place.py) moves it; yaw turns a plan angle a into a - yaw. Wall-like pieces are
 built at plan angle 0 (their room toward -x) and placed with yaw = -(their angle).
 
-The numbers (ship.toml): the hall a 16-sided room, inner faces at apothem 3.4, rim 3.4 m, apex 4.0 m over the deck at
-h 1.0; three openings (mouth north, corridors east and west) two facets wide, framed by portals on the chords; the
-corridors one profile (2.5 m wide, vertical to 1.45 m, slanted in to 1.8 m wide at the 2.6 m ceiling) in five modules
-from the hall portal to the tip portal; the tip rooms polygons on radius 2.1 (eight window segments over +-65 deg,
-three wall facets a side, the corridor chord over +-37.6 deg from the back), rim 2.8 m, apex 3.2 m."""
+The numbers (heights from ship.toml: `floor_h`, each room's `clear_h` and `apex_h`): the hall a 16-sided room, inner
+faces at apothem 3.4, rim 3.2 m, apex 3.8 m over the deck at h 0.6; three openings (mouth north, corridors east and
+west) two facets wide, framed by portals on the chords; the corridors one profile (2.5 m wide, vertical to 1.45 m,
+slanted in to 1.8 m wide at the 2.4 m ceiling) in five modules from the hall portal to the tip portal; the tip rooms
+polygons on radius 2.1 (eight window segments over +-65 deg, three wall facets a side, the corridor chord over
++-37.6 deg from the back), rim 2.5 m, apex 2.8 m."""
 
 from __future__ import annotations
 
