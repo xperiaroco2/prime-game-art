@@ -97,7 +97,12 @@ PIECES: dict[str, tuple[str, dict, bool]] = {
     "tip_trunk": ("trunk", {"height": S.H_TIP}, True),
     "tip_trunk_cables": ("trunk_cables", {"height": S.H_TIP}, False),
     "tip_window_frame": ("tip_window_frame", {}, True),
-    "tip_glass": ("tip_glass", {}, True),
+    # inside 3-2: the window's well out to the lens's slanted band and the glass in the band, one per side (the lens
+    # is not symmetric about the room's axis: the swept tip's rear side reaches farther)
+    "tip_well_e": ("tip_well", {"side": 1}, False),
+    "tip_well_w": ("tip_well", {"side": -1}, False),
+    "tip_glass_e": ("tip_band_glass", {"side": 1}, True),
+    "tip_glass_w": ("tip_band_glass", {"side": -1}, True),
     "tip_sill_strip": ("tip_sill_strip", {}, False),
     "tip_portal": ("portal", {"half": S.TIP_CHORD_H, "height": S.H_TIP}, True),
     "tip_ceiling": ("tip_ceiling", {}, False),
@@ -223,9 +228,11 @@ def placements() -> list[tuple[str, list[float], float]]:
     step = (180.0 - S.DOOR_HALF - S.WIN_HALF) / 3
     for s, room in ((1, 0.0), (-1, 180.0)):
         c = (s * S.TIP_X, 0.0)
-        for pid in ("tip_floor_base", "tip_floor_disc", "tip_floor_rim", "tip_window_frame", "tip_glass",
+        for pid in ("tip_floor_base", "tip_floor_disc", "tip_floor_rim", "tip_window_frame",
                     "tip_ceiling", "tip_lamp_ring"):
             put(pid, list(c), room)
+        for pid in ("tip_well", "tip_glass"):
+            put(f"{pid}_{'e' if s > 0 else 'w'}", list(c), room)
         for k in range(8):
             put("tip_grate", polar(1.2, 22.5 + 45 * k, c, room), room - (22.5 + 45 * k))
             put("tip_spoke", polar(1.2, 45 * k, c, room), room - 45 * k)

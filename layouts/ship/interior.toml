@@ -418,9 +418,10 @@ place = [
   ["tip_floor_disc", [10.75, 0.0, 0.0], 0.0],
   ["tip_floor_rim", [10.75, 0.0, 0.0], 0.0],
   ["tip_window_frame", [10.75, 0.0, 0.0], 0.0],
-  ["tip_glass", [10.75, 0.0, 0.0], 0.0],
   ["tip_ceiling", [10.75, 0.0, 0.0], 0.0],
   ["tip_lamp_ring", [10.75, 0.0, 0.0], 0.0],
+  ["tip_well_e", [10.75, 0.0, 0.0], 0.0],
+  ["tip_glass_e", [10.75, 0.0, 0.0], 0.0],
   ["tip_grate", [11.8587, 0.4592, 0.0], -22.5],
   ["tip_spoke", [11.95, 0.0, 0.0], 0.0],
   ["tip_light", [11.97, 0.0, 0.0], 0.0],
@@ -530,9 +531,10 @@ place = [
   ["tip_floor_disc", [-10.75, 0.0, 0.0], -180.0],
   ["tip_floor_rim", [-10.75, 0.0, 0.0], -180.0],
   ["tip_window_frame", [-10.75, 0.0, 0.0], -180.0],
-  ["tip_glass", [-10.75, 0.0, 0.0], -180.0],
   ["tip_ceiling", [-10.75, 0.0, 0.0], -180.0],
   ["tip_lamp_ring", [-10.75, 0.0, 0.0], -180.0],
+  ["tip_well_w", [-10.75, 0.0, 0.0], -180.0],
+  ["tip_glass_w", [-10.75, 0.0, 0.0], -180.0],
   ["tip_grate", [-11.8587, -0.4592, 0.0], 157.5],
   ["tip_spoke", [-11.95, -0.0, 0.0], -180.0],
   ["tip_light", [-11.97, -0.0, 0.0], -180.0],
@@ -1038,9 +1040,28 @@ builder = "tip_window_frame"
 collide = true
 
 [[pieces]]
-id = "tip_glass"
-builder = "tip_glass"
+id = "tip_well_e"
+builder = "tip_well"
+collide = false
+args = { side = 1 }
+
+[[pieces]]
+id = "tip_well_w"
+builder = "tip_well"
+collide = false
+args = { side = -1 }
+
+[[pieces]]
+id = "tip_glass_e"
+builder = "tip_band_glass"
 collide = true
+args = { side = 1 }
+
+[[pieces]]
+id = "tip_glass_w"
+builder = "tip_band_glass"
+collide = true
+args = { side = -1 }
 
 [[pieces]]
 id = "tip_sill_strip"

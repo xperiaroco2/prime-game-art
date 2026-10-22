@@ -596,12 +596,86 @@ def tip_window_frame(args, layout):
             P("mullions", M(*mull), "int_silver_c")]
 
 
-def tip_glass(args, layout):
-    half = WIN_HALF / 8
-    apo, hw = R_TIP * math.cos(D(half)), R_TIP * math.sin(D(half))
-    panes = [rot(G.slab(G.wall_frame(FLOOR, apo + 0.06), G.rect(-hw, hw, SILL - 0.02, HEAD + 0.02), -0.02, 0.0),
-                 -WIN_HALF + half * (2 * i + 1)) for i in range(8)]
-    return [P("glass", M(*panes), "int_glass")]
+def _well_rows(side):
+    """The tip window's well (inside 3-2): per local angle b (east room frame; the west room is turned 180, so its b
+    is the hull's -a) the room wall's face r_in and the hull lens's window band (its lower and upper edge, (r, h)) from
+    ship_hull_skin's placed variant, sampled at the hull's own angles so the well meets the band's hole edge exactly."""
+    import ship_hull_skin as HS
+    var = HS.VARIANTS[HS.DEFAULT]
+    half = D(WIN_HALF)
+    hull = [a for a in L.angles(-math.pi / 2, math.pi / 2, D(10.0), (-half, half))
+            + [math.atan2(dy, dx) for dx, dy in var["tip"]] if -half - 1e-6 <= a <= half + 1e-6]
+    bs = sorted({round(side * a, 6) for a in hull} | {round(D(a), 6) for a in tip_vertices() if abs(a) <= WIN_HALF + 1e-6})
+    seg = D(WIN_HALF / 8)
+    apo = R_TIP * math.cos(seg)
+    rows = []
+    for b in bs:
+        k = min(7, max(0, int((b + half) / (2 * seg))))
+        c = -half + seg * (2 * k + 1)
+        prof = HS.tip_profile(var, side * b)
+        rows.append((b, apo / math.cos(b - c), prof[4], prof[5]))
+    return rows
+
+
+def _pt(b, r, h):
+    return (r * math.cos(b), r * math.sin(b), h)
+
+
+def _sheet(cols, both=True):
+    """A surface through columns of points (each column the same count); both: a back copy with reversed faces."""
+    verts, faces = [], []
+    n = len(cols[0])
+    for side in ((0, 1) if both else (0,)):
+        base = len(verts)
+        for col in cols:
+            verts += col
+        for i in range(len(cols) - 1):
+            for j in range(n - 1):
+                q = [base + i * n + j, base + (i + 1) * n + j, base + (i + 1) * n + j + 1, base + i * n + j + 1]
+                faces.append(tuple(q if side == 0 else q[::-1]))
+    return verts, faces
+
+
+def _band_in(rb, hb, rt, ht, d):
+    """The band's edges moved d into the lens (against its outward normal)."""
+    dr, dh = rt - rb, ht - hb
+    ln = math.hypot(dr, dh)
+    nr, nh = dh / ln, -dr / ln
+    return (rb - d * nr, hb - d * nh), (rt - d * nr, ht - d * nh)
+
+
+def tip_well(args, layout):
+    """The tip window's well (tip-3; inside 3-2): the room wall's opening (sill to head) lined out to the lens's
+    slanted window band, so the glass sits in the band and no lens face shows inside: a sill rising outward, a soffit,
+    two jambs, and slim frame bars along the glass's lower and upper edges."""
+    side = args["side"]
+    rows = _well_rows(side)
+    sill, head = FLOOR + SILL, FLOOR + HEAD
+    lin, top = [], []
+    for b, r_in, (rb, hb), (rt, ht) in rows:
+        lin.append([_pt(b, r_in, sill), _pt(b, (r_in + rb) / 2, (sill + hb) / 2 - 0.02), _pt(b, rb, hb)])
+        top.append([_pt(b, r_in, head), _pt(b, rt, ht)])
+    jambs = []
+    for b, r_in, (rb, hb), (rt, ht) in (rows[0], rows[-1]):
+        jambs.append(_sheet([[_pt(b, r_in, sill), _pt(b, rb, hb)], [_pt(b, r_in, head), _pt(b, rt, ht)]]))
+    lo, hi = [], []
+    for b, r_in, (rb, hb), (rt, ht) in rows:
+        (r0, h0), (r1, h1) = _band_in(rb, hb, rt, ht, 0.03)
+        lo.append(_pt(b, r0, h0 + 0.02))
+        hi.append(_pt(b, r1, h1 - 0.02))
+    return [L.part("sill", *_sheet(lin), "int_silver_c", solid=False),
+            L.part("soffit", *_sheet(top), "int_silver_b", solid=False),
+            L.part("jambs", *M(*jambs), "int_silver_b", solid=False),
+            P("bars", M(G.tube(lo, 0.03, 8), G.tube(hi, 0.03, 8)), "int_silver_c")]
+
+
+def tip_band_glass(args, layout):
+    """The glass in the lens's window band, 1.5 cm inside the band's hole (tip-3; inside 3-2)."""
+    cols = []
+    for b, r_in, (rb, hb), (rt, ht) in _well_rows(args["side"]):
+        (r0, h0), (r1, h1) = _band_in(rb, hb, rt, ht, 0.015)
+        cols.append([_pt(b, r0, h0), _pt(b, r1, h1)])
+    return [L.part("glass", *_sheet(cols), "int_glass", solid=False)]
 
 
 def tip_sill_strip(args, layout):
