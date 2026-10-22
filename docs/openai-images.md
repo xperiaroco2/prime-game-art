@@ -261,3 +261,61 @@ the first look), $0.067 to $0.069 each; **$0.8782** of the $5 cap. Writing the a
 the model still slides back to a human face where the animal's feature can sit on one: a forehead hump becomes a quiff
 over pouting lips, a beetle's shell a visor over a human chin, a moth the classic big black alien eyes. Images:
 `D:/prime-art-raw/2026-10-22-alien-roster-r4/`; JPEGs, overview and handoff: `.../design/r4/`.
+
+## Batch 2026-10-22-alien-roster-r5 (art #196, roster round 5)
+
+Twelve heads (seven men, five women) from the design principles of animated alien and monster films: each a blend of
+two or three animals written mostly as shapes (a few compare a shape to an animal); the men follow five rules (a soft skull with no
+keratin, horn or beak; one silhouette; one alien eye idea under heavy lids; a big closed mouth with lips; one male
+signal). Medium, 1024x1280, n = 3, and **two references** per edit: rf2 for the style (round 4's lead, framing sentence
+and style tail) and one kept head (h01, m5a, w42 or w10a) for the face language only, with "never its head shape or
+features" and a list of its shapes not to copy. The batch file is generated from
+`D:/prime-art-raw/research/2026-10-22-roster/design/r5/concepts_r5.src.json`. 17 requests (five revised prompts after
+the first look), $0.098 to $0.100 each (the second image adds about $0.03); **$1.6857** of the $5 cap. The face
+reference carries the eyes, lids and lips well, but it also drags its head along: every man given h01 took its frog
+mouth, m67 copied m5a's flat head, and the women all share one face. Ideas behind or beside the head (a streamer, a
+nape coil, brow fins) slid into hair (a ponytail, a bun, one crest). Images:
+`D:/prime-art-raw/2026-10-22-alien-roster-r5/`; JPEGs, overview and handoff: `.../design/r5/`.
+
+## Batch 2026-10-22-alien-roster-r6 (art #196, roster round 6, inner states)
+
+The engineer asked for aliens that differ inside too: a stoned, a sleepy, an angry and a scared one. **A**: seven
+kept heads re-expressed (h02 angry, h03 scared, m5a stoned, h08 sleepy, m65 paranoid, w45 irritated, w10a smitten),
+each an edit of the kept head's own raw PNG alone, no rf2, led by "keep this exact head, shape, features, colours,
+finish, framing and light; change ONLY the facial expression and what the lids, eyes, mouth and soft parts do".
+**B**: four new heads whose shape carries the state (m71 stoned, m72 sleepy, w71 angry, w72 scared), rf2 as the style
+reference only, round 4's lead, framing sentence and style tail. Medium, 1024x1280, n = 3; the batch file is
+generated from `D:/prime-art-raw/research/2026-10-22-roster/design/r6/concepts_r6.src.json`. 13 requests (two
+revised prompts, h02r and w71r, after the first look), $0.068 to $0.070 each; **$0.8931** of the $4 cap. An edit of
+the kept image alone keeps the head, colour, finish and framing every time; strong states read in one second, but
+the model only nudges a kept look unless the prompt asks for an extreme, and mixed states (offended, smitten) come out
+as the nearest simple one. Soft parts act best (limp whiskers, drooping gills, pinned ears, raised spines). Images:
+`D:/prime-art-raw/2026-10-22-alien-roster-r6/`; JPEGs, overview and handoff: `.../design/r6/`.
+
+## Batch 2026-10-22-alien-roster-r7 (art #196, roster round 7, ten men by character type)
+
+The engineer rejected round 6's emotions: he meant heads whose base features hint at a character type at a calm,
+neutral rest, as the kept ones do (the catfish a count, the night ears a vampire). Ten new men, m81..m90: an old
+professor, a gentle giant, a sleazy salesman, an old sea captain, a rock star, a hermit sage, a young jock, a mob boss,
+a serene monk and a butler, each carried by the head and face shapes alone (no clothes, hats or props), by round 5's
+principles. rf2 as the style reference only, round 5's lead, framing sentence and style tail; the prompt names the type
+in plain words, then forbids anything worn or held and any visible emotion. Medium, 1024x1280, **n = 1** (three
+variants came out nearly alike); a concept that missed got one revised item instead (m82r, m85r, m87r, m89r, m90r).
+The batch file is generated from `D:/prime-art-raw/research/2026-10-22-roster/design/r7/concepts_r7.src.json`. 15
+requests, $0.0231 to $0.0236 each; **$0.3495** of the $3 cap. Eight of ten types read in a second; the giant and the
+butler only half. Full lips, eyeliner or a mass hanging at the sides of the head turned two men into women (m85, m89);
+the types pull the faces toward human, so the alien lives in the head shape. Images:
+`D:/prime-art-raw/2026-10-22-alien-roster-r7/`; JPEGs, overview and handoff: `.../design/r7/`.
+
+## Batch 2026-10-22-alien-roster-r8 (art #196, roster round 8, three men reworked)
+
+The engineer marked three round-7 men as maybe, "a cool concept, needs a little rework": m82r the gentle giant, m89
+the serene monk (the first try) and m87r the young jock. Two different reworks per man (m82a/b, m89a/b, m87a/b), each
+an edit of that man's own round-7 PNG (hash pinned) with rf2 as the second, style-only reference; medium, 1024x1280,
+**n = 1**. Both serene reworks missed, so m89c is that man's one revised item; the third eye was dropped (no forehead
+marks or sacred iconography). 7 requests, $0.032597 to $0.032967 each (two input images cost about $0.0095 more per
+request than round 7's one); **$0.2292** of the $2 cap. The jock is solved (m87b: golden slit-pupil eyes, level lids,
+no smirk); the giant reads as one only with a bull neck and shoulders (m82b), which breaks the shared body; the serene
+man is closer (m89c's nose pad, thin lips and lobes behind the jaw) but still slightly androgynous. Lobes beside the
+cheeks read as hair whatever the prompt says. Images: `D:/prime-art-raw/2026-10-22-alien-roster-r8/`; JPEGs, overview
+and handoff: `D:/prime-art-raw/research/2026-10-22-roster/design/r8/`.
