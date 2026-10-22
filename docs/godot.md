@@ -730,6 +730,26 @@ renders beside the approved target frames (f2a for the face at 0.6 m, f1a for th
 Clay strength 2 is the closest to f2a; at 3 m the strengths cannot be told apart. The look still needs the engineer's
 yes; the game repo takes the material only through a game-repo PR under the character contract.
 
+## The alien pilot's static heads (`godot/alien/alien_static*`, art #196)
+One material for a whole static head (Meshy's sculpt with its painted eyes; `docs/pipeline.md`, "The roster
+pilot's static premium heads"):
+- `alien_static.gdshader`: `albedo_tex` (sRGB), `normal_tex`, `mask_tex` (linear: R the skin tint mask, G roughness,
+  B the subsurface and sheen weight), `diffuse_burley` (Test D's finding: the lambert wrap flattened the shading),
+  `sss_mode_skin`, the sheen as Godot's rim. **The skin colour:** `skin_color` against `base_skin` (the albedo's own
+  skin teal, the GLB's `base_skin_srgb` extra): every masked texel's hue is turned by the two colours' hue difference
+  and its saturation and value scaled by their ratios, so the shade, the light and the pale front's two-tone stay;
+  `skin_color == base_skin` is the identity. Hue turning moves the pale front with it (mint under a yellow skin turns
+  a pale pink cream).
+- `alien_static.gd` (`preload`, no class cache in a `-s` script): `apply(root, mask, base_skin)` swaps every surface
+  material whose name ends in `_static_skin` for the ShaderMaterial (keeping the imported albedo and normal textures)
+  and returns the materials; `set_skin(mats, color)`; `PALETTE`, the curated skin colours after the build's teal.
+  The mask PNG travels beside the GLB (`<head>_mask.png`); the proof loads it with `Image.load_from_file`.
+- `static_shots.gd`: the review sheets in an off-screen window under the showroom's ladder step 6 (the studio HDRI,
+  AgX 0.9, key 2.0 with 1.5 degree soft shadows, fill 0.12, rim 0.3, SSAO, SSS medium), plus the tone grid
+  (`TONES`: the showroom's AgX 0.9, AgX 0.65, AgX 0.65 with the environment's saturation 1.35, linear 0.6) measured
+  against the 2D front (median teal and pale skin, `colour.json`); the closest is the pick for `views_pick.png` and
+  `colours.png`.
+
 ## The alien parts kit (`godot/alien/`, art #196, step S3)
 The parts-kit alien (not plasticine: a smooth, soft-matte designer-toy look) as one GLB from
 `tools/blender/alien_assemble.py`: the body and head welded into one skinned mesh, every eye design, mouth piece and
