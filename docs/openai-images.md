@@ -421,3 +421,18 @@ axolotl it reads small and stuck on, a pout where her approved mouth is a wide t
 module would need a per-head variant (width, thickness). Images: `D:/prime-art-raw/2026-10-22-alien-h1-mouthless/`;
 JPEG copies and the sheet (with the approved expression sheets as the before row):
 `D:/prime-art-raw/research/2026-10-22-roster/design/h1/`.
+
+## Batch 2026-10-22-alien-h2-clayparts (art #196, hypothesis H2: clay with separate face pieces)
+
+The engineer's hypothesis H2 (art#196 comment 6343841227): hand-made plasticine aliens whose eyes and mouth are
+visibly separate clay pieces pressed onto the head, so swapping pieces gives expressions and the separateness reads
+as charm. The two kept heads (w01 axolotl woman, m01 chameleon man; the roster's final JPEGs, pinned by sha256) as
+clay busts, front and three-quarter (`ax_clay`, `ch_clay`); a parts kit on a worktable, per head five mouths, three
+eyes with lids and two brows in its colours (`parts`, edit of both clay images); per head four expressions made only by
+swapping pieces, rest, smile, sad, surprised, at 1536x1536 (`ax_expr4`, `ch_expr4`, edits of the clay image). Medium,
+n = 1 (one image per concept); the style in words only (real modelling clay, fingerprints and tool marks, bead eyes in
+shallow sockets, a rolled mouth with a soft seam). 5 requests, $0.0186 to $0.0367 each; **$0.1394** of the $3 cap;
+no item needed a revision. All five kept both characters; the pressed-on mouths and lids read as intentional pieces
+and the swap-only expressions read clearly; the surface reads more as smooth soft clay than as rough hand-worked
+plasticine (fingerprints faint). Images: `D:/prime-art-raw/2026-10-22-alien-h2-clayparts/`; JPEGs and the labelled
+sheet `h2_sheet.jpg`: `D:/prime-art-raw/research/2026-10-22-roster/design/h2/`.

@@ -1,0 +1,66 @@
+# art#196, hypothesis H2 (the engineer, 2026-10-22, art#196 comment 6343841227): hand-made plasticine aliens whose
+# eyes and mouth are visibly separate clay pieces pressed onto the head, so swapping pieces gives expressions and the
+# separateness reads as charm, not as a defect. The two picked heads (the axolotl woman w01, the chameleon man m01,
+# the roster's final JPEGs) as clay versions; a parts sheet of separate clay mouths, eyes and brows; four expressions
+# per head made only by swapping pieces. Medium (exploration), n = 1 per concept (#276); the expression and parts items
+# edit the clay items' outputs so the clay look carries over. Standing permission art#196 comment 6291187194. No game,
+# film, studio or character names; no photos; no real people.
+id = "2026-10-22-alien-h2-clayparts"
+service = "openai-images"
+purpose = "art#196 H2: clay versions of the axolotl woman and the chameleon man with separate pressed-on clay eyes and mouths, a parts sheet and swap-only expressions."
+plan = "OpenAI API, prepaid balance (topped up by the engineer, 2026-10-20)"
+terms_url = "https://openai.com/policies/services-agreement/"
+licence = "owned by the customer: OpenAI assigns to the customer all its rights in the Output (OpenAI Services Agreement, section 4.1, read 2026-10-20); no attribution required"
+cost_cap_usd = 3.0
+approved_by = "xperiaroco2 (the engineer)"
+approved_at = "2026-10-22"
+approval_ref = "https://github.com/xperiaroco2/prime-game-art/issues/196#issuecomment-6343841227"
+model = "gpt-image-2.5-sunburst"
+quality = "medium"
+
+[defaults]
+size = "1536x1024"
+n = 1
+
+[[items]]
+id = "ax_clay"
+kind = "edit"
+prompt = "The reference image shows the axolotl woman, a finished alien character design. Remake her as a real hand-made plasticine puppet bust for a high-end stop-motion clay animation, photographed in a studio. Two views side by side, the same size and scale: on the left the front view looking at the viewer, on the right a three-quarter view. Keep her exactly recognisable: the same head shape, the long slender neck, the narrow shoulders, the six feathery gill fronds (three on each side, sculpted as fine clay combs), the scatter of freckle dots, the two small nostril dots, the same teal and pale mint colours. Her face is built from separate clay pieces: the eyes are glossy dark clay balls, like polished beads, set into shallow sockets, each with a thin separate clay eyelid piece; the mouth is a separately rolled clay piece in a slightly darker teal, a gentle closed smile, pressed onto the face with a visible soft seam where it meets the head, like a replaceable part of a stop-motion puppet. The separate pieces look intentional, neat and charming, never like a defect. Real modelling clay: slightly uneven hand-sculpted surfaces, subtle fingerprints and fine tool marks, a matte-to-satin clay sheen, soft studio light, a plain neutral mid-grey backdrop. Well-crafted, professional work with clean, intact anatomy: nothing torn, cracked or broken. Cool and appealing for an adult party game, never childish, never creepy. No clothes, no text, no labels, no logos, no numbers."
+images = [
+  { file = "raw:research/2026-10-22-roster/design/final/w01-axolotl.jpg", provenance = "w01, the roster's kept axolotl woman (final line-up JPEG), our own OpenAI generation, art#196", sha256 = "41e9054af43a8c3f04d2c8575aeb2726a459f8a4e6189e1534b4b24c5d65961d" },
+]
+
+[[items]]
+id = "ch_clay"
+kind = "edit"
+prompt = "The reference image shows the chameleon man, a finished alien character design. Remake him as a real hand-made plasticine puppet bust for a high-end stop-motion clay animation, photographed in a studio. Two views side by side, the same size and scale: on the left the front view looking at the viewer, on the right a three-quarter view. Keep him exactly recognisable: the same head shape with the backward-curling crest, the long slender neck, the narrow shoulders, the faint darker bands on the crest, the two small nostril dots, the same teal and pale mint colours. His face is built from separate clay pieces: the big eyes are glossy white clay balls, like polished beads, with dark brown irises, set into shallow round sockets, each with a thick separate heavy-lidded clay eyelid piece giving his bored, half-closed look; the mouth is a separately rolled full clay piece in a slightly darker teal, closed and calm, pressed onto the face with a visible soft seam where it meets the head, like a replaceable part of a stop-motion puppet. The separate pieces look intentional, neat and charming, never like a defect. Real modelling clay: slightly uneven hand-sculpted surfaces, subtle fingerprints and fine tool marks, a matte-to-satin clay sheen, soft studio light, a plain neutral mid-grey backdrop. Well-crafted, professional work with clean, intact anatomy: nothing torn, cracked or broken. Cool and appealing for an adult party game, never childish, never creepy. No clothes, no text, no labels, no logos, no numbers."
+images = [
+  { file = "raw:research/2026-10-22-roster/design/final/m01-chameleon.jpg", provenance = "m01, the roster's kept chameleon man (final line-up JPEG), our own OpenAI generation, art#196", sha256 = "9a4109f9495e3d9ccc72b2517d6036c431799435e204bed3bc7024880bcf6750" },
+]
+
+[[items]]
+id = "parts"
+kind = "edit"
+prompt = "The two reference images show two hand-made plasticine alien puppet heads: the axolotl woman (teal and pale mint) and the chameleon man (teal and pale mint, with big white eyes). Make a top-down studio photo of a neat worktable laid out like a stop-motion animator's replacement-parts kit: small separate hand-made clay face pieces arranged in two tidy rows on a plain light grey cutting mat, evenly spaced, each piece lying flat and clearly separate from the others. Top row, for the axolotl woman, in her colours: five mouth pieces (a calm closed rest mouth, a wide smile, a sad downturned mouth, a small round open O, an open talking mouth showing a dark inside), three eye pieces (glossy dark bead eyes, each with its own small clay eyelid: open, half-closed, closed), two small brow pieces (a calm one and a raised one). Bottom row, for the chameleon man, in his colours: the same five mouth shapes as fuller rolled clay lips, three eye pieces (glossy white bead eyes with dark brown irises, each with a thick heavy clay eyelid: half-closed, open, wide), two brow pieces (a flat one and a frowning one). Each piece has a smooth flat back for pressing onto a head. Real modelling clay: slightly uneven hand-sculpted surfaces, subtle fingerprints and fine tool marks, a matte-to-satin clay sheen, soft studio light. Well-crafted, professional, cool and appealing, never childish, never creepy. No heads in the picture, no tools, no hands, no text, no labels, no logos, no numbers."
+images = [
+  { from = "ax_clay", pick = 0 },
+  { from = "ch_clay", pick = 0 },
+]
+
+[[items]]
+id = "ax_expr4"
+kind = "edit"
+size = "1536x1536"
+prompt = "The reference image shows the axolotl woman as a hand-made plasticine stop-motion puppet bust whose eyes, eyelids and mouth are separate clay pieces pressed onto the head. Make an expression sheet: the same puppet four times in a grid of two columns and two rows, all in the same three-quarter view, the same size, scale and light. The head, neck, gill fronds and freckles stay exactly the same in every cell; only the separate clay face pieces are swapped, the way a stop-motion animator changes replacement parts: top left at rest (calm closed mouth, open lids), top right smiling (a wide smiling mouth piece, lids slightly raised into happy crescents), bottom left sad (a downturned mouth piece, droopy lids, a small worried brow piece above each eye), bottom right surprised (a small round open O mouth piece with a dark inside, wide-open eyes, raised brow pieces). Each mouth piece sits on the face with a visible soft seam; the pieces look intentional, neat and charming, never like a defect. Real modelling clay: slightly uneven hand-sculpted surfaces, subtle fingerprints and fine tool marks, a matte-to-satin clay sheen, soft studio light, a plain neutral mid-grey backdrop. Well-crafted, professional work with clean, intact anatomy. Cool and appealing for an adult party game, never childish, never creepy. No clothes, no text, no labels, no logos, no numbers."
+images = [
+  { from = "ax_clay", pick = 0 },
+]
+
+[[items]]
+id = "ch_expr4"
+kind = "edit"
+size = "1536x1536"
+prompt = "The reference image shows the chameleon man as a hand-made plasticine stop-motion puppet bust whose eyes, eyelids and mouth are separate clay pieces pressed onto the head. Make an expression sheet: the same puppet four times in a grid of two columns and two rows, all in the same three-quarter view, the same size, scale and light. The head, crest, neck and big round eye balls stay exactly the same in every cell; only the separate clay face pieces are swapped, the way a stop-motion animator changes replacement parts: top left at rest (calm closed full lips, heavy half-closed lids), top right smiling (a wide smiling lip piece, lids lifted a little), bottom left sad (a downturned lip piece, lids drooping lower, small worried brow pieces above the eyes), bottom right surprised (a round open O lip piece with a dark inside, the lids pulled fully open showing the whole eye balls, raised brow pieces). Each mouth piece sits on the face with a visible soft seam; the pieces look intentional, neat and charming, never like a defect. Real modelling clay: slightly uneven hand-sculpted surfaces, subtle fingerprints and fine tool marks, a matte-to-satin clay sheen, soft studio light, a plain neutral mid-grey backdrop. Well-crafted, professional work with clean, intact anatomy. Cool and appealing for an adult party game, never childish, never creepy. No clothes, no text, no labels, no logos, no numbers."
+images = [
+  { from = "ch_clay", pick = 0 },
+]
