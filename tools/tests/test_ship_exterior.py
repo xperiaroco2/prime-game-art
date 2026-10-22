@@ -69,7 +69,6 @@ class ShipExteriorTest(unittest.TestCase):
             self.assertEqual(len(v), 6, f"view {v[0]} needs its 2D sheet")
 
 
-    @unittest.skipIf(LAYOUT["hull"].get("pending"), "[hull] pending: the video keys follow the hull P (lens step 2)")
     def test_the_walk_video_keys(self) -> None:
         """The walk-through: 1280x720, 60..90 s, under 15 MB, every key's eye above the ground; a key on the deck at
         eye height over floor_h and 0.3 m inside a room, the key on the ramp at eye height over the ramp's plane."""

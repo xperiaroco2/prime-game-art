@@ -818,12 +818,28 @@ def measures(name: str = DEFAULT) -> dict:
 # (the blockout's rear tangent hid it from +45.0). The fins' edges come down to P_LENS_EDGE at the rim, under the band's
 # sill, so the edge light runs at one height round the lens. The openings (the band, three roof windows per lens) are
 # cut from the faces (`p_openings`), not from the skin: the skin is measured on the closed union.
-P_TIP = (10.5, 1.2)                     # the lens rooms' centres (mirrored)
-P_ROOM_R = 2.0
+# The rooms' numbers come from ship.toml (the east lens room `tip_e`, the west mirrored, and the `vault`), the band as
+# the interior builds it (`_p_band`), so the cuts and the rooms cannot drift apart.
+
+
+def _p_band():
+    """The window band as built (deg round the lens's axis, + aft): ship.toml's band snapped to the lens room's wall
+    facets (ship_interior.tip_band_facets: each end to a vertex within 1.5 deg; facets 3..7, -65.86..43.91 for the
+    asked -65..45)."""
+    import ship_interior   # plain Python (bpy only inside its builders); it reads the same ship.toml
+    tv, fs = ship_interior.tip_vertices(), ship_interior.tip_band_facets(1)
+    return tv[fs[0]], tv[fs[-1] + 1]
+
+
+_LENS, _VAULT = RM["tip_e"], RM["vault"]
+P_TIP = tuple(_LENS["centre"])          # the lens rooms' centres (mirrored): (10.5, 1.2)
+P_ROOM_R = _LENS["radius"]              # 2.0
 P_RIM_R = P_ROOM_R + WALL + 0.35        # 2.55: the lens's rim radius
-P_CLEAR = (2.35, 2.45)                  # the lens room's clear height at its outer wall, at its inner wall
+P_CLEAR = (_LENS["clear_h"], _LENS["clear_h_in"])   # the lens room's clear height at its outer wall, at its inner
+#                                                     wall: (2.35, 2.45)
 P_RIDGE = (3.30, 1.85, 2.05)            # the corridor ridge's top h, its top and belly half widths about the axis
-P_VAULT = (0.9, 3.85, 5.85, 2.3, 1.6)   # half width, clear y0..y1, clear height at the door and at the back
+P_VAULT = (_VAULT["x"][1], *_VAULT["y"], _VAULT["clear_h"], _VAULT["clear_h_back"])   # half width, clear y0..y1,
+#                                         clear height at the door and at the back: (0.9, 3.85, 5.85, 2.3, 1.6)
 P_STERN_Y = STERN_Y + 3.9 + 2.5         # 12.7: J's stern moved 2.5 m aft (P's stern_ext)
 P_STERN = [(1.2, 4.0), (2.2, 3.55), (2.75, 2.45), (2.35, 1.25), (1.2, 0.9)]   # (x, h): the tapered stern face
 P_SPINE_END = (11.0, 4.3)               # the spine's rear (y, h)
@@ -831,10 +847,10 @@ P_TRAIL = (3.3, P_STERN_Y - 0.4, 2.0, 0.4)     # the fins' trail corner: x, y, t
 P_NOSE_EDGE = (NOSE[2], 0.3)            # the fins' edge at the nose: mid h, thickness
 P_LENS_EDGE = (1.35, 0.4)               # at the lens rim: under the band's sill (1.6)
 P_LEAD_DEG, P_TRAIL_DEG = -72.0, 50.0   # the fins' roots on the rim, deg round the lens's outward axis (+ aft)
-P_BAND = (-65.862, 43.908)              # the window band as built (ship_interior: the lens room's facets 3..7)
+P_BAND = _p_band()                      # the window band as built (ship_interior: the lens room's facets 3..7)
 P_BAND_IN = 2.13                        # the band's cut from this radius out (the room's wall's outer face 2.21)
-P_ROOF_WIN = [(0.35, -0.8), (0.35, 0.8), (1.3, 0.0)]   # the roof windows' centres (along, across) from the centre
-P_ROOF_WIN_M = (0.9, 0.7)               # along, across
+P_ROOF_WIN = [tuple(w) for w in _LENS["roof_windows"]]   # the roof windows' centres (along, across) from the centre
+P_ROOF_WIN_M = tuple(_LENS["roof_window_m"])              # along, across: (0.9, 0.7)
 P_ROOF_CUT = 0.245                      # the roof window's reveal down to this over the ceiling (the well's top 0.26)
 P_PODS = [(3.0, 2.0, 1.42, 2.0), (0.0, 2.55, 1.62, 2.3)]   # (x, h, r, out past the stern face): 2.84 / 3.24 across
 P_POD_IN = 1.6                          # a pod's full barrel starts this far forward of the stern face

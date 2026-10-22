@@ -55,8 +55,6 @@ def run(args: argparse.Namespace) -> int:
     skins = ship_layout.room_skin(layout)
     if skins:
         common.say("  least skin: " + ", ".join(f"{r} {s:.3f} ({w})" for r, (s, w) in skins.items()))
-    for note in ship_layout.skipped(layout):
-        common.say(f"  {note}")
     for p in problems:
         common.say(f"  {p}")
     if problems:
@@ -65,8 +63,6 @@ def run(args: argparse.Namespace) -> int:
     plan.parent.mkdir(parents=True, exist_ok=True)
     plan.write_text(ship_layout.ascii_plan(layout), encoding="utf-8", newline="\n")
     held = "footprint, corridors, stations, hull, skin, head room and the one entrance"
-    if ship_layout.skipped(layout):   # lens step 1: [hull] pending
-        held = "corridors, stations, window bands, the closed vault, head room and the one entrance (hull pending)"
     common.ok(f"ship: {held} hold; plan {plan.as_posix()}")
     out = (args.out or raw(layout) / "pieces").resolve()
     # Each stage stops the run on a failure: a later stage would work on pieces just reported bad.

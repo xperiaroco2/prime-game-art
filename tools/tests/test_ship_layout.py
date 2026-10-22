@@ -17,7 +17,6 @@ import ship_hull_shape as S  # noqa: E402
 from runner.commands import ship as ship_cmd
 
 LAYOUT = sl.load()
-PENDING = LAYOUT["hull"].get("pending")   # lens step 1: the rooms are P's, the live hull still J (step 2 drops it)
 
 
 def problems_after(change) -> list[str]:
@@ -30,7 +29,6 @@ class ShipLayoutTest(unittest.TestCase):
     def test_the_layout_is_clean(self) -> None:
         self.assertEqual(sl.check(LAYOUT), [])
 
-    @unittest.skipIf(PENDING, f"[hull] pending: {PENDING}")
     def test_the_footprint_is_the_hulls(self) -> None:
         width, length = sl.extent(LAYOUT)
         size = LAYOUT["size"]  # the lens blades may reach span_max_m (manager update 2, art #263)
@@ -100,6 +98,47 @@ class ShipLayoutTest(unittest.TestCase):
         self.assertEqual((v["x"], v["y"], v["clear_h"], v["clear_h_back"]), ([-hw, hw], [y0, y1], h0, h1))
         self.assertTrue(v["closed"])
         self.assertEqual(v["door"], {"at": [0.0, 3.6], "width_m": 1.0, "room": "hall"})
+        # the hull's cuts read the same rooms (ship_hull_shape derives them): the lens, its roof windows, the vault
+        t = r["tip_e"]
+        self.assertEqual(S.P_TIP, tuple(t["centre"]))
+        self.assertEqual(S.P_ROOM_R, t["radius"])
+        self.assertEqual(S.P_CLEAR, (t["clear_h"], t["clear_h_in"]))
+        self.assertEqual(S.P_ROOF_WIN, [tuple(w) for w in t["roof_windows"]])
+        self.assertEqual(S.P_ROOF_WIN_M, tuple(t["roof_window_m"]))
+        self.assertEqual(S.P_VAULT, (v["x"][1], *v["y"], v["clear_h"], v["clear_h_back"]))
+        self.assertEqual(v["x"][0], -v["x"][1])
+        # the band's cut is the interior's band as built: the asked -65..45 snapped to the wall facets 3..7 (each end
+        # to a facet vertex within 1.5 deg: -65.86 and 43.91)
+        import ship_interior as I
+        tv, fs = I.tip_vertices(), I.tip_band_facets(1)
+        self.assertEqual(fs, [3, 4, 5, 6, 7])
+        self.assertEqual(S.P_BAND, (tv[fs[0]], tv[fs[-1] + 1]))
+        self.assertEqual((round(S.P_BAND[0], 3), round(S.P_BAND[1], 3)), (-65.863, 43.909))
+        self.assertLessEqual(abs(S.P_BAND[0] - t["band"]["from_deg"]), 1.5)
+        self.assertLessEqual(abs(S.P_BAND[1] - t["band"]["to_deg"]), 1.5)
+        self.assertEqual(r["tip_w"]["band"], t["band"])   # the west band is the east one mirrored (+ aft)
+
+    def test_the_built_window_band_is_fully_visible(self) -> None:
+        """lens step 2: no hull part (the body, the fins, the other lens) covers the window band as built: points 0.05 and
+        0.3 m outside each lens's rim, across the built band (S.P_BAND round the lens's axis, + aft, the west mirrored),
+        from the sill + 0.02 to the head - 0.02, lie inside none of P's convex parts."""
+        parts = S._parts("P")
+        a0, a1 = S.P_BAND
+        n_a, n_h, hits, seen = 56, 7, [], 0
+        for sx in (1, -1):
+            for dr in (0.05, 0.3):
+                for i in range(n_a + 1):
+                    x, y = S.p_rim(a0 + (a1 - a0) * i / n_a, sx, S.P_RIM_R + dr)
+                    for k in range(n_h + 1):
+                        h = S.SILL + 0.02 + (S.HEAD - S.SILL - 0.04) * k / n_h
+                        seen += 1
+                        if any(all(S._dot(n, (x, y, h)) <= d + 1e-9 for n, d, _poly in fac) for fac in parts):
+                            hits.append((sx, dr, round(x, 3), round(y, 3), round(h, 3)))
+        self.assertEqual(seen, 2 * 2 * (n_a + 1) * (n_h + 1))
+        self.assertEqual(hits, [], f"{len(hits)} band points inside a hull part, e.g. {hits[:3]}")
+        # the sampler sees a part: 0.05 m inside the rim is inside the lens
+        x, y = S.p_rim(0.0, 1, S.P_RIM_R - 0.05)
+        self.assertTrue(any(all(S._dot(n, (x, y, 2.2)) <= d for n, d, _p in fac) for fac in parts))
 
     def test_the_vault_is_closed(self) -> None:
         """lens step 1: the vault's door is no exit and needs no link or walk; a link to it, an exit in it, a walk
@@ -210,14 +249,12 @@ class ShipLayoutTest(unittest.TestCase):
         self.assertEqual(LAYOUT["hull"]["core"], core)
         self.assertEqual(LAYOUT["hull"]["plate"], plate)
 
-    @unittest.skipIf(PENDING, f"[hull] pending: {PENDING}")
     def test_every_room_has_its_skin(self) -> None:
         """rebuild B, lens step 2: the live hull (P) holds every room with at least SKIN (0.15 m) of hull and nothing pokes out."""
         least, bad = S.clearance(LAYOUT["hull"]["shape"])
         self.assertEqual(bad, [])
         self.assertGreaterEqual(least, S.SKIN)
 
-    @unittest.skipIf(PENDING, f"[hull] pending: {PENDING}")
     def test_a_poke_is_found(self) -> None:
         """A room point outside the hull counts as a poke (negative skin), one inside the throat's open notch too; and
         `check()` reports a room pushed out through the hull (the east tip room's roof raised 1.6 m)."""
@@ -231,7 +268,6 @@ class ShipLayoutTest(unittest.TestCase):
         found = problems_after(tall)
         self.assertTrue(any("POKES OUT" in p and "tip_e" in p for p in found), found[:3])
 
-    @unittest.skipIf(PENDING, f"[hull] pending: {PENDING}")
     def test_every_room_is_checked_from_the_layout_given(self) -> None:
         """rebuild D: the skin check samples every room of the checked layout on its own, the west ones too (it used
         to read ship.toml once and mirror the east rooms): a west tip room or corridor raised in a copy fails."""
@@ -251,6 +287,11 @@ class ShipLayoutTest(unittest.TestCase):
             sl.rooms(layout)["throat"]["clear_h"] = 3.6
         self.assertTrue(any(p.startswith("hull P: throat") for p in problems_after(throat)))
 
+        def vault(layout):   # lens step 3 review: the vault is sampled from the layout given too
+            sl.rooms(layout)["vault"]["clear_h"] = 4.0
+        found = problems_after(vault)
+        self.assertTrue(any("vault" in p and p.startswith("hull P") for p in found), found[:3])
+
     def test_a_bad_poly_and_a_walk_point_off_the_floor_are_refused(self) -> None:
         def reverse(layout):
             sl.rooms(layout)["throat"]["points"].reverse()
@@ -267,9 +308,25 @@ class ShipLayoutTest(unittest.TestCase):
     def test_a_low_ceiling_is_refused(self) -> None:
         def low(layout):
             sl.rooms(layout)["corridor_e"]["clear_h"] = 2.0
-        self.assertTrue(any("clear height" in p for p in problems_after(low)))
+        self.assertTrue(any("corridor_e: clear height 2 m" in p for p in problems_after(low)))
 
-    @unittest.skipIf(PENDING, f"[hull] pending: {PENDING}")
+        def low_in(layout):   # a slanted ceiling: its lower end counts
+            sl.rooms(layout)["tip_e"]["clear_h_in"] = 1.9
+        self.assertTrue(any("tip_e: clear height 1.9 m" in p for p in problems_after(low_in)))
+
+        def low_vault(layout):   # a closed room: nobody walks there
+            sl.rooms(layout)["vault"]["clear_h"] = 1.5
+        self.assertFalse(any("vault: clear height" in p for p in problems_after(low_vault)))
+
+    def test_the_walk_enters_every_open_room(self) -> None:
+        """lens step 3 review: the walk (its points and the samples between them) enters every room but a closed one."""
+        def skip_west(layout):   # the walk turns back in the hall: neither the west corridor nor the west lens
+            layout["walk"]["points"] = [p for p in layout["walk"]["points"] if p[0] >= -0.01]
+        found = problems_after(skip_west)
+        self.assertTrue(any(p.startswith("tip_w: the walk does not enter it") for p in found), found[:3])
+        self.assertTrue(any(p.startswith("corridor_w: the walk does not enter it") for p in found), found[:3])
+        self.assertFalse(any(p.startswith(("tip_e", "corridor_e", "vault")) for p in found), found[:3])
+
     def test_a_piece_outside_the_hull_is_refused(self) -> None:
         def stray(layout):
             layout["place"].append(["canopy_glass_e", [0.0, -12.0, 0.0], 0.0])  # a piece kept inside the hull
