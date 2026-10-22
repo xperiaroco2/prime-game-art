@@ -27,7 +27,7 @@ arrangement, the numbers give the sizes. A gentle curve is fine only where the n
 | `tools/blender/ship_hull*.py` | the exterior builders | EXTERIOR lane |
 | `godot/ship/` | `ship.gd`: assembly, headless check and walk, night shots, the walk-through frames | EXTERIOR lane |
 | `tools/blender/ship_video.py` | encodes the walk-through MP4 under its size cap | EXTERIOR lane |
-| `tools/tests/test_ship_*.py` | fast: `test_ship_layout.py`, `test_ship_interior.py`, `test_ship_hull_skin.py`, `test_ship_hull_smooth.py`, `test_ship_hull_detail.py`, `test_ship_exterior.py`, `test_ship_clearing.py`; heavy (Blender): `test_ship_build.py` | either lane adds its own file |
+| `tools/tests/test_ship_*.py` | fast: `test_ship_layout.py`, `test_ship_interior.py`, `test_ship_hull_detail.py`, `test_ship_exterior.py`, `test_ship_clearing.py`; heavy (Blender): `test_ship_build.py` | either lane adds its own file |
 
 Raw output (never in git): `<raw>/ship/v2/` (the layout's `raw_dir`; v1's in `<raw>/ship/v1/`) with `pieces/` (GLBs, `build_report.json`, validator `reports/`),
 `plan/` (`plan.txt`), `shots/` (the views, `compare_*.png` with the 2D left, among them `compare_top.png` against
@@ -221,7 +221,12 @@ fps in the off-screen window (ship.gd mode `video`, one PNG per frame), encoded 
 (encode_clips.py's route at an average bit rate that fits `max_mb`, 15 MB: constant quality made 20 MB even at its lowest), then the frames are deleted;
 `--no-video` skips it.
 
-### The smooth skin (v2 hull lane, step 1)
+### The smooth skin (v2 hull lane, step 1; retired by rebuild B)
+
+Retired (rebuild B, 2026-10-22): the engineer rejected it; `ship_hull_smooth.py`, its grid and its test are gone
+from the tree (git history keeps them), and so are v1's faceted loft `ship_hull_skin.py`, `ship_hull_grid.py` and
+`ship_hull_look.py`. The hull is J now ("Rebuild B" below). What follows is the record.
+
 
 `tools/blender/ship_hull_smooth.py` replaces the faceted, plated skin outside (the engineer after the night build:
 smooth like a ray, no plate grid, no seams, no scratches). The skin is four large pieces, shaded smooth
@@ -631,7 +636,7 @@ wall, no tip windows; the hall's look frozen. What rebuild A changed:
 | Vents, console | unchanged |
 | Size | `[size]` J's: width and span 30.0, length 18.9 with the nozzles (max 19.4) |
 
-`[hull] pending` (the hull lane's v2 skin still stands round the old tip rooms): `ship --check` skips the footprint
+(Undone by rebuild B, below.) `[hull] pending` (the hull lane's v2 skin still stood round the old tip rooms): `ship --check` skips the footprint
 and the rooms' and pieces' inside-the-hull tests and prints the skip; the tests that need J's skin (the footprint,
 a piece outside the hull, the walk-through's keys, the skin's span) skip with the same reason. The tip rooms keep a
 legacy `window` key that only the v2 hull skin reads (`ship_hull_skin`, `ship_hull_smooth`); `ship_hull_blockout.py`
@@ -682,3 +687,36 @@ rooms' walls onto their floors), and made `ext_silver_c` (belly, brow, mouth) ta
 - The tip pods still read as bulges from the top; the open window shows the curled wing tip as a pale triangle.
 - The closed shutter reads fairly light under the room's lamps; a darker slat material is the next knob.
 - Stale GLBs in `<raw>/ship/v2/pieces` (`tip_louvre*`, `tip_shutter_ta..td`): unplaced, harmless.
+
+## Rebuild B: the hull J (hull lane, 2026-10-22)
+
+The engineer's decisions: the hull is variant J of the blockouts (F's outline, span 30 m, length 18.9 m with the
+nozzles, the wing tips rounded in plan, radius 1.5 m, edge 0.3 m), built faithfully: flat wings, no upcurl, the rooms
+hidden (no domes, pods or bulges), no tip windows; the two canopies and the three nozzle pods as in J; the night
+build's plated, faceted brushed silver with no scratches ("smooth like a ray" meant the shape, not a glossy material);
+no outside light strips; the inside (rebuild A) frozen; the clearing only scaled.
+
+- **The shape** is `tools/blender/ship_hull_shape.py`, plain Python: the blockouts' variants and design points (moved
+  out of `ship_hull_blockout.py`, which imports them and now reads the corridors' `axis`/`along` keys), a convex hull
+  of them (`facets()`, 111 facets for J), the mouth recess cut as four convex pieces per facet plus the recess's own
+  faces (`surface()`, 126 faces), `skin(p)` (a point's distance to the outside), `clearance()` (every room's sampled
+  walls, roofs and slabs against SKIN 0.15 m), `heights(x, y)` and `outline_rows()` (ship.toml's `[hull]` rows,
+  checked by `test_ship_layout`). `[hull] shape = "J"` names the variant; `ship --check` runs `clearance` too
+  (`ship_layout.hull_skin`): least skin 0.16 m, no poke.
+- **The skin** is `ship_hull_j.py` (builder `j_skin`, pieces `skin_top`, `skin_belly`, `skin_mouth`): each face cut in
+  its own plane into plates (rows 1.3 m wide along the facet's span direction, cut every 1.8 m, staggered like
+  brickwork; slivers under 3 cm stay open as seams), each plate v1's `_plate` (inset 0.022, chamfer 0.014 deep) in
+  one of v1's silvers by a hash, the dark `ext_seam` under-skin 0.025 inside. Flat shaded. `ship.gd`'s METALS are the
+  night build's again (brush 0.6, grime), with no scratches and no shader seam grid (the seams are geometry).
+- **Gone:** the lead blades, the stripes, the tip windows' glass and frames, the pod housing (J's stern face holds the
+  pods), `skin_brow`. The canopies are J's (0.95 x 1.35 at (+-2.25, -3.6), 0.75 high) on `ship_hull_shape.heights`.
+  The pods keep their style, placed so their rear ends are J's (y 11.0 and 11.8: J's y less `pod_tail_m`).
+- **Legs** at J's spots off the corridors and the tip rooms: front (+-4.6, -3.4), wing (+-11.6, 4.4), stern
+  (+-5.0, 8.6); `top` = J's lowest belly under the mount + 0.1 (0.6, 0.63, 0.52); the six ground lamps 0.9 m past
+  their feet. The flank lamps moved to (+-17.0, 6.0) beyond J's tips.
+- **The clearing** is scaled by `ship_hull.CLEARING_K` 1.25 round the centre (the ground's radii and flat 20 m, the
+  dirt patch, the path past its first point, the gate posts, every clearing placement, its height again on the
+  ground's facets).
+- **Views:** the turnaround views backed off and widened for the 30 m span; `detail_seam` on the plated east wing,
+  `detail_floor` and `detail_cables` in the diagonal east corridor; the walk video's corridor and tip-room keys turned
+  onto the diagonal axes. The exterior's `in_*` rows stay overridden by ship.toml's.
