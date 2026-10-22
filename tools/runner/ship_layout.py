@@ -96,12 +96,12 @@ def lengths(layout: dict[str, Any]) -> dict[str, float]:
 
 
 def extent(layout: dict[str, Any]) -> tuple[float, float]:
-    """(width east-west, body length north-south): the hull and the tip shells' blades; the length without the ramp
-    and the nozzle pods (lengths() has those)."""
+    """(width east-west, length north-south): the hull and the tip shells' blades; the length with the nozzle pods,
+    without the ramp (lengths() has the body alone and the overall)."""
     poly = outline(layout)
     pods = [r for r in layout["rooms"] if r["shape"] == "circle" and r.get("window")]
     xs = [p[0] for p in poly] + [r["centre"][0] + s * layout["hull"]["pod_radius_m"] for r in pods for s in (-1, 1)]
-    return max(xs) - min(xs), lengths(layout)["body"]
+    return max(xs) - min(xs), lengths(layout)["nozzles"]
 
 
 TOUCH_M = 0.05  # how far a linked room's edge must reach into the other
@@ -127,8 +127,10 @@ def check(layout: dict[str, Any]) -> list[str]:
     for name, got, want in (("width", width, size["width_m"]), ("length", length, size["length_m"])):
         if name == "width" and want < got <= size.get("span_max_m", want):
             continue  # the blades past the tip rooms (manager update 2, art #263: the span up to about 27.5 m)
+        if name == "length" and want < got <= size.get("length_max_m", want):
+            continue  # the nozzle pods behind the hull (the manager, art #263: their reach is open, up to 15 m)
         if abs(got - want) > size["tolerance_m"]:
-            what = "length (hull body, no ramp or nozzles)" if name == "length" else name
+            what = "length (with the nozzles, no ramp)" if name == "length" else name
             problems.append(f"footprint {what} {got:.2f} m, wants {want:g} +- {size['tolerance_m']:g}")
     by_id = rooms(layout)
     for r in layout["rooms"]:
