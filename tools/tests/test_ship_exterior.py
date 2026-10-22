@@ -93,5 +93,17 @@ class ShipExteriorTest(unittest.TestCase):
         self.assertGreater(on_ramp, 0, "no key on the ramp")
 
 
+    def test_the_flank_lamps_light_only_the_outside(self) -> None:
+        """The join's flank lamps: a mirrored pair outside the wing tips, culled to the outside layer in ship.gd."""
+        lamps = [lamp for lamp in LAYOUT["light"]["lamps"] if len(lamp) > 8 and lamp[8] == "flank"]
+        self.assertEqual(len(lamps), 2)
+        self.assertAlmostEqual(lamps[0][0], -lamps[1][0])
+        for lamp in lamps:  # the wing tips at +-13.75 (ship_hull_smooth.SPAN_X)
+            self.assertGreater(abs(lamp[0]), 13.75 + 1.0, "a flank lamp inside the wing")
+        self.assertIn("flank_lamp", LAYOUT["light"])
+        gd = (Path(__file__).resolve().parents[2] / "godot" / "ship" / "ship.gd").read_text(encoding="utf-8")
+        self.assertRegex(gd, r'== "flank":[^\n]*\n\t+omni\.light_cull_mask = OUTSIDE_LAYER')
+
+
 if __name__ == "__main__":
     unittest.main()
