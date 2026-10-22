@@ -34,6 +34,27 @@ class SmoothSkin(unittest.TestCase):
         top = SKIN["top"][0]
         self.assertLess(abs(max(abs(p[0]) for p in top) - S.SPAN_X), 0.05)
 
+    def test_the_tip_window_looks_over_the_wing(self) -> None:
+        # hull-3: from a player at the renewer spot (0.5 m in from the tip centre, eye 1.65 m over the floor) the wing's
+        # top stays under eye height straight out and to the bow side, so the window shows the clearing, not skin; the
+        # band's sill never drops under the room's sill (the inside lane's well rises outward to it)
+        var = S.VARIANTS[S.DEFAULT]
+        ex, ez = S.TIP_X + 0.5, S.FLOOR + 1.65
+        rs = S.pod_r(S.SILL - 0.05)
+        for deg in range(-50, 1, 10):
+            a = math.radians(deg)
+            for i in range(1, 200):
+                d = i * 0.03
+                x, y = ex + d * math.cos(a), d * math.sin(a)
+                if math.hypot(x - S.TIP_X, y) < rs:
+                    continue
+                if x > S.SPAN_X or not S.lead(x, var) <= y <= S.trail(x, var):
+                    break
+                self.assertLess(S.heights(x, y, var)[0], ez - 0.1, f"{deg} deg, {d:.2f} m out")
+        for deg in range(-65, 66, 5):
+            a = math.radians(deg)
+            self.assertGreaterEqual(S.heights(S.TIP_X + rs * math.cos(a), rs * math.sin(a), var)[0], S.SILL, deg)
+
     def test_the_window_bands_and_the_mouth_are_open(self) -> None:
         verts, faces = SKIN["top"]
         for side in (1, -1):

@@ -62,8 +62,10 @@ VARIANTS = {
           "spine": 4.95, "front": 1.15, "p": 0.6, "stern": 1.4},
     "L": {"lead": [(0.0, -6.15), (2.0, -5.75), (4.0, -5.15), (6.0, -4.45), (8.3, -3.75), (11.0, -1.5), (SPAN_X, 1.8)],
           "trail": [(0.0, 5.8), (1.6, 5.6), (3.2, 5.1), (5.5, 4.7), (8.3, 4.3), (11.0, 3.4), (SPAN_X, 2.2)],
-          "edge": [(0.0, 0.95), (4.0, 0.95), (8.3, 1.2), (10.1, 1.55), (12.0, 2.45), (SPAN_X, 4.0)],
-          "t": [(0.0, 1.0), (4.0, 0.95), (8.3, 0.75), (10.1, 0.62), (12.0, 0.4), (SPAN_X, 0.0)],
+          "edge": [(0.0, 0.95), (4.0, 0.95), (8.3, 1.0), (10.1, 1.0), (11.0, 1.1), (12.0, 1.65), (13.0, 2.8),
+                   (SPAN_X, 3.8)],
+          "t": [(0.0, 1.0), (4.0, 0.95), (8.3, 0.75), (10.1, 0.66), (11.0, 0.6), (12.0, 0.48), (13.0, 0.28),
+                (SPAN_X, 0.0)],
           "spine": 5.1, "front": 1.2, "p": 0.65, "stern": 1.4},
     "M": {"lead": [(0.0, -7.6), (2.0, -6.8), (4.0, -5.8), (6.0, -4.8), (8.3, -3.75), (11.0, -2.1), (SPAN_X, 0.0)],
           "trail": [(0.0, 5.8), (1.6, 5.6), (3.2, 5.0), (5.5, 4.5), (8.3, 4.0), (11.0, 2.7), (SPAN_X, 0.4)],
@@ -77,6 +79,9 @@ VARIANTS = {
           "spine": 5.05, "front": 1.25, "p": 0.75, "stern": 1.5},
 }
 DEFAULT = "L"   # grid smooth2: the highest curl and the most swept tips; its nose -8.4 -> -6.15 (ship --check: 14 +- 0.5 m with the nozzles)
+# hull-3: L's wing stays low (edge 1.0..1.1, top about 1.7) out to x 11 and curls up only past x 12, so the tip window
+# looks over the wing onto the clearing (the old L's wing top stood 2.39 at the band's sill, over eye height 2.25)
+LIP = 0.06     # the window band's sill lip over SILL (the skin's top never under the room's sill at the band)
 
 
 # --- smooth helpers ---------------------------------------------------------------------------------------------
@@ -175,6 +180,10 @@ def heights(x, y, var):
     e = _sstep(0.0, EDGE, dist)
     need, ceil = _needs(x, y, var)
     top = _smax(ct + t * f, ct + e * (need - ct), 0.35 * e + 1e-6)
+    dx = abs(x) - TIP_X
+    rr, th = math.hypot(dx, y), abs(math.atan2(y, dx))
+    lip = (SILL + LIP) * (1 - _sstep(_RS + 0.02, _RS + 0.32, rr)) * (1 - _sstep(HALF + 0.05, HALF + 0.3, th))
+    top = _smax(top, lip, 0.12)
     bot = _smin(cb - 0.7 * t * f, cb + e * (ceil - cb), 0.3 * e + 1e-6)
     return top, max(bot, 0.22)
 
@@ -182,6 +191,9 @@ def heights(x, y, var):
 def pod_r(h):
     """The pod's window-sector radius where its outer face passes height h (the band's rings)."""
     return POD_R + 0.9 * math.sqrt(max(0.0, 1 - (h / POD_TOP) ** 2))
+
+
+_RS = pod_r(SILL - 0.05)   # the band's sill ring
 
 
 # --- the mesh -----------------------------------------------------------------------------------------------------
