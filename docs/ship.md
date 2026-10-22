@@ -134,11 +134,13 @@ tools/run.sh ship --godot --walk DIR    # headless: sizes, colliders, the capsul
 tools/run.sh ship --shoot DIR           # off-screen night shots, compare_top.png (plan-3 left), sheet.png
 ```
 
-Runs over 180 s go to the background with their log (CLAUDE.md, "Shell"). The whole of step 1 (the join, 2026-10-22):
-105 pieces (70 interior, 35 exterior and clearing), 789 placements, 35558 triangles per piece set (about 126k placed
-inside), glTF-Validator clean; `--godot`: Godot sizes equal Blender's, 88 colliders, the capsule walk reaches all 14
-points; `--walk` adds the 1280x720 walk-through (about 90 s, under 15 MB); `--shoot` makes 14 views and their
-compare sheets. Full run of `--godot --walk DIR --shoot DIR`: about 15 min.
+Runs over 180 s go to the background with their log (CLAUDE.md, "Shell"). The whole after launch 2's join
+(2026-10-22): 139 pieces, 1094 placements (the clearing's 162 pines, 26 bushes, 6 logs, 5 stumps, 160 tufts and 8
+party-light posts among them), 59310 triangles per piece set, glTF-Validator clean; extent 26.46 x 13.9 m;
+`--godot`: Godot sizes equal Blender's, 105 colliders, the capsule walk reaches all 14 points (18.8 s);
+`--walk`: the 1280x720 walk-through, 89.5 s, 2149 frames, 12.8 MB (rendered in 313 s); `--shoot`: 14 views and
+their compare sheets, 415..620 draw calls inside the tip rooms, 1740..2032 outside. Times: `--build` about 2 min,
+`--godot --walk DIR --shoot DIR` about 10 min.
 
 ## The exterior (EXTERIOR lane)
 
@@ -317,13 +319,22 @@ the join's `int_value`, `int_rough_add` and `emission_scale`.
   rim floor) and `rim_bolts` (hex bolts down every rim plate's seam). The layout test keeps every cup, spill, coil
   and patch outside a station's clearance + 0.4 m.
 
-## Open problems (after step 1)
+## Open problems (after launch 2)
 
 - **The hull's thickness** (after the hull lane's step 1): the skin is now one continuous faceted surface (variant
   F), but the rooms' heights keep the wings about 3.5 m deep and the tips 3.8 m tall, so from the front it is a thick
   wedge, not the turnaround's thin plate. Only a lower deck and rooms, or a wider span with blades beyond the tip
   rooms, would thin it; both change the numbers.
-- The hall is still the brightest room (its lamp ring's cells); the corridors and tip rooms read at night.
-- The ramp reads dark from the hero view; the ground lamps glow but light nothing yet (no Godot lights: step 3).
+- **The hull still does not read as the manta** from the front and the three-quarter (critique 1-4, the manager's
+  updates 1 and 2): launch 3 lowers the deck (floor_h 1.0 -> 0.6, corridor clear 2.6 -> 2.4, tip room 2.8 -> 2.5,
+  keeping 0.5 m over the 1.8 m capsule), removes every vertical outside face (>= 25 deg from vertical), makes the tip
+  fairing a lens with a horizontal blade edge about 0.8 m past the room wall and lets the span grow to about 27.5 m.
+- The inside after launch 2 (strip lights on their strips, the join's `int_plate` v 1.0 r +0.45 m 0.3): silver walls in mid
+  values, cyan strips, amber pools; the hall's centre disc no longer reads as a black hole.
+- The outside's hero view lost its bright silver (moon from behind, SE); the back view's top plates read flat lit.
+  The seam close-up looks at the moonlit east wing's back slope since join 2 (the front hull is in the moon's shadow).
+- 26 small strip cells get no light (`MAX_LIGHTS` 96); raise to 128 only if a strip reads unlit.
+- The tip windows show 7 mullions against tip-3's few; the clearing through them is dark.
 - The interior has no UVs: the brushed grain is geometry and the triplanar shader only on the hull's metals.
-- Triangles: the grates are about 60% of the 126k placed inside; measure with `bench` before the game takes it.
+- Draw calls outside 1740..2032 per view (the clearing about 400) and the grates about 60% of the inside's triangles:
+  measure with `bench` before the game takes it.

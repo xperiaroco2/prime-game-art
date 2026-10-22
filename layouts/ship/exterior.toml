@@ -612,7 +612,7 @@ views = [
   ["in_corridor_w", "inside: the west corridor (corridor)", [-3.0, 0.0, 2.6], [-10.0, 0.0, 2.4], 70.0, "corridor.jpg"],
   ["in_tip_e", "inside: the east tip room toward its window (tip-3)", [9.3, 0.3, 2.6], [14.0, -0.2, 2.3], 75.0, "tip-3.jpg"],
   ["in_tip_w", "inside: the west tip room toward its window (tip-3)", [-9.3, -0.3, 2.6], [-14.0, 0.2, 2.3], 75.0, "tip-3.jpg"],
-  ["detail_seam", "detail: hull seams and scratches (materials-3)", [-3.9, -7.2, 3.1], [-3.3, -4.6, 2.4], 34.0, "materials-3.jpg"],
+  ["detail_seam", "detail: hull seams and scratches (materials-3)", [4.5, 7.5, 5.2], [6.0, 3.0, 3.7], 34.0, "materials-3.jpg"],  # join 2: the moonlit east wing's back slope (the front hull is in the moon's shadow)
   ["detail_floor", "detail: a floor light strip and grate (materials-3)", [4.4, 0.4, 2.1], [5.6, -0.3, 1.0], 50.0, "materials-3.jpg"],
   ["detail_cables", "detail: a cable channel with clips (materials-3)", [6.2, 0.7, 2.3], [6.6, -1.2, 1.9], 55.0, "materials-3.jpg"],
 ]
