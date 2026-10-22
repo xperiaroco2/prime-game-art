@@ -15,8 +15,13 @@ The method:
 4. Skeleton: the head's face bones join the body's armature under its Head (the body's own Jaw and eyes replaced by
    the head's, at the head's joints); the head's skin over NECK_BLEND above the cut takes Neck weight from the ring's
    0.7 down to 0, so turning the Head bone bends the neck smoothly instead of at a seam.
-5. The body's plain material takes the head's neck colour (median of samples round the cut): the game replaces it by
-   name with the hue shader anyway.
+5. The neck band's texture (2b-3): from the cut up to NECK_PAINT above it (never above the lips' lowest point less
+   1 cm), fading out over NECK_PAINT_FADE, the colour goes to the band's median and the normal map flat
+   (alien_pilot_head.flatten_lips): Meshy's hatched bake under the jaw, stretched by the band's morph, is gone. The
+   two images are written as new files into <out> (<head>_colour.png, <head>_normal.png); the rig's stay untouched.
+6. The body's plain material takes the head's neck colour (median of samples round the cut), converted from the
+   texture's sRGB to the linear value a Principled BSDF's Base Color holds (2b-2 set the sRGB value as linear: the
+   body read paler than the neck): the game replaces it by name with the hue shader anyway.
 
 Writes <out>/<head>_char.glb (the body's clips included), <head>_char.blend and char.json. Runs only through
 tools/runner/blender.py: run_script("alien_pilot_char.py", ["--head", h, "--rig", <head>_rig.blend, "--build",
@@ -43,6 +48,8 @@ GAP = 0.008  # the cut above the ring (the ring's own step), m
 NECK_BAND = 0.05  # the morph band above the cut, m
 NECK_BLEND = 0.07  # the Neck weight's fade above the cut, m
 NECK_RING_W = 0.7  # the ring's Neck weight (neck_ring.json)
+NECK_PAINT = 0.07  # the neck band's flattened texture above the cut, m
+NECK_PAINT_FADE = 0.02  # its fade, m
 REPLACED = ("Jaw", "LeftEye", "RightEye")  # the body's bones the head brings its own of
 
 
@@ -147,40 +154,67 @@ def main():
     bm = bmesh.new()
     bm.from_mesh(skin.data)
     keys = list(bm.verts.layers.shape.values())
+    # each vertex's index before the cut, kept in a layer: bmesh renumbers .index after a delete (2b-2 read the
+    # renumbered index, so 1046 of the axolotl's head vertices took the deleted shoulders' pull toward the ring and
+    # her right gill stubs smeared sideways by up to 20 cm; the chameleon's jaw took the same)
+    oid = bm.verts.layers.int.new("pilot_oid")
+    bm.verts.index_update()
+    for v in bm.verts:
+        v[oid] = v.index
     dead = [f for f in bm.faces if any(sco[v.index, 2] < cut - 1e-6 for v in f.verts)]
     bmesh.ops.delete(bm, geom=dead, context="FACES")
     loose = [v for v in bm.verts if not v.link_faces]
     bmesh.ops.delete(bm, geom=loose, context="VERTS")
-    bm.verts.ensure_lookup_table()
+    moved = 0
     for v in bm.verts:  # every shape key moved by the basis' morph (the band is below the face: no key moves it)
-        i = v.index  # the indices before the deletion: no index_update since
+        i = v[oid]
         d = Vector(new[i] - sco[i])
         if v.is_boundary and v.co.z < cut + 0.03:
             d.z = cut - v.co.z  # the boundary flat on the cut
         v.co += d
+        moved += d.length > 1e-6
         for ly in keys:
             v[ly] += d
+    bm.verts.layers.int.remove(oid)
     bm.to_mesh(skin.data)
     bm.free()
     skin.data.update()
     rep["cut_faces_deleted"] = len(dead)
+    rep["band_moved"] = int(moved)
     pg = skin.vertex_groups.new(name="PilotSkin")
     pg.add(list(range(len(skin.data.vertices))), 1.0, "REPLACE")
 
-    # the neck colour for the body's plain material
+    # the neck band's texture: flat colour and normals (Meshy's hatching under the jaw), into new image files
     img = H.base_image(skin.active_material)
+    nimg = next(n.image for n in skin.active_material.node_tree.nodes if n.type == "TEX_IMAGE" and n.image is not None
+                and any(lk.to_node.type == "NORMAL_MAP" for lk in n.outputs["Color"].links))
+    lips = [o for o in meshes if o.name.startswith(f"{head}_lips")]
+    top = cut + NECK_PAINT
+    if lips:
+        top = min(top, float(world(lips[0])[:, 2].min()) - 0.01)
+    pw = 1 - H.sstep(top - NECK_PAINT_FADE, top, world(skin)[:, 2])
+    for im, kind in ((img, "colour"), (nimg, "normal")):
+        im.pixels[0]  # loaded from the rig's file before the path moves
+        im.filepath_raw = str(out / f"{head}_{kind}.png")
+        im.file_format = "PNG"
+    rep["neck_paint"] = {"top_above_cut": round(top - cut, 4), "pixels": H.flatten_lips(skin, pw, img, nimg, keep=0.0)}
+    log(f"neck paint {rep['neck_paint']}")
+
+    # the neck colour for the body's plain material
     samples = []
     for k_ in range(8):
         p = 2 * math.pi * k_ / 8
         rr = float(ring_r(np.array([p]))[0])
         pt = Vector((ring_c[0] + 1.05 * rr * math.sin(p), ring_c[1] - 1.05 * rr * math.cos(p), cut + 0.03))
         samples.append(H.sample_skin(skin, img, pt))
-    rgb = tuple(float(c) for c in np.median(np.array(samples), axis=0))
+    srgb = np.median(np.array(samples), axis=0)
+    rgb = tuple(float(c) for c in np.where(srgb <= 0.04045, srgb / 12.92, ((srgb + 0.055) / 1.055) ** 2.4))
     bmat = body.data.materials[0]
     bsdf = next((n for n in bmat.node_tree.nodes if n.type == "BSDF_PRINCIPLED"), None) if bmat.use_nodes else None
     if bsdf is not None and not bsdf.inputs["Base Color"].is_linked:
         bsdf.inputs["Base Color"].default_value = (*rgb, 1.0)
     rep["body_rgb"] = [round(c, 4) for c in rgb]
+    rep["body_srgb"] = [round(float(c), 4) for c in srgb]
 
     # weld: join (the skin active), bridge the cut and the ring
     body.modifiers.clear()
